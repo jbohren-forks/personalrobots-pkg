@@ -58,7 +58,7 @@ int main( int argc, char** argv )
   robot_srvs::IKService::Request  req;
   robot_srvs::IKService::Response res;
 
-  tf::Pose pose(btQuaternion(0,0,0),btVector3(0.75,0.5,0));
+  tf::Pose pose(btQuaternion(0,0,0),btVector3(0.75,-0.288,0));
 
   tf::PoseTFToMsg(pose,req.pose);
 

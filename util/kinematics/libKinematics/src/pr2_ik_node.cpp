@@ -33,7 +33,7 @@
 
 #include <libKinematics/pr2_ik_node.h>
 
-LibKinematicsNode::LibKinematicsNode(std::string node_name,std::string arm_name):ros::Node(node_name),arm_name_(arm_name),root_x_(0.0),root_y_(0.0), root_z_(0.0)
+LibKinematicsNode::LibKinematicsNode(std::string node_name,std::string arm_name):ros::Node(node_name),arm_name_(arm_name),increment_(0.01),root_x_(0.0),root_y_(0.0), root_z_(0.0)
 {
     advertiseService("perform_pr2_ik", &LibKinematicsNode::processIKRequest); 
 };
@@ -100,11 +100,19 @@ bool LibKinematicsNode::initializeKinematicModel()
   min_joint_limits.resize(NUM_JOINTS);
   max_joint_limits.resize(NUM_JOINTS);
   angle_multipliers.resize(NUM_JOINTS);
-  for(int i=0; i<NUM_JOINTS; i++)
+//  for(int i=0; i<NUM_JOINTS; i++)
+  int joint_counter = 0;
+  while(joint_counter < NUM_JOINTS)
   {
+    if(link_current->joint->type == robot_desc::URDF::Link::Joint::FIXED)
+    {
+      link_current = findNextLinkInGroup(link_current, groups[group_index]);
+      continue;
+    }
+
     aj << fabs(link_current->joint->axis[0]) << fabs(link_current->joint->axis[1]) << fabs(link_current->joint->axis[2]);
     axis.push_back(aj);
-    if(i > 0)
+    if(joint_counter > 0)
     {
       an(1,1) = an(1,1) + link_current->xyz[0];
       an(2,1) = an(2,1) + link_current->xyz[1];
@@ -117,24 +125,25 @@ bool LibKinematicsNode::initializeKinematicModel()
       an(3,1) = 0.0;
     }
     anchor.push_back(an);   
-    min_joint_limits[i] = link_current->joint->limit[0];
-    max_joint_limits[i] = link_current->joint->limit[1];
-    angle_multipliers[i] = link_current->joint->axis[0]*fabs(link_current->joint->axis[0]) +  link_current->joint->axis[1]*fabs(link_current->joint->axis[1]) +  link_current->joint->axis[2]*fabs(link_current->joint->axis[2]);
+    min_joint_limits[joint_counter] = link_current->joint->limit[0];
+    max_joint_limits[joint_counter] = link_current->joint->limit[1];
+    angle_multipliers[joint_counter] = link_current->joint->axis[0]*fabs(link_current->joint->axis[0]) +  link_current->joint->axis[1]*fabs(link_current->joint->axis[1]) +  link_current->joint->axis[2]*fabs(link_current->joint->axis[2]);
     ROS_INFO("Adding joint %s\naxis: %f %f %f\nanchor: %f %f %f",link_current->joint->name.c_str(),link_current->joint->axis[0],link_current->joint->axis[1],link_current->joint->axis[2],an(1,1),an(2,1),an(3,1));
-    if(min_joint_limits[i] == 0.0 && max_joint_limits[i] == 0.0)
+    if(min_joint_limits[joint_counter] == 0.0 && max_joint_limits[joint_counter] == 0.0)
     {
       ROS_INFO("Continuous joint");
-      min_joint_limits[i] = -M_PI;
-      max_joint_limits[i] = M_PI;
+      min_joint_limits[joint_counter] = -M_PI;
+      max_joint_limits[joint_counter] = M_PI;
     }
-    if(i==2)
+    if(joint_counter==2)
     {
-      init_solution_theta3_ = (min_joint_limits[i]+max_joint_limits[i])/2.0;
+      init_solution_theta3_ = (min_joint_limits[joint_counter]+max_joint_limits[joint_counter])/2.0;
       ROS_INFO("Initial guess for inverse kinematics: %f",init_solution_theta3_);
     }
-    ROS_INFO("Joint limits %f, %f\n",min_joint_limits[i],max_joint_limits[i]);
+    ROS_INFO("Joint limits %f, %f\n",min_joint_limits[joint_counter],max_joint_limits[joint_counter]);
 
     link_current = findNextLinkInGroup(link_current, groups[group_index]);
+    joint_counter++;
   }
 
   for(int i=0; i < 7; i++)
@@ -186,7 +195,7 @@ bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::Request &req, ro
   btScalar m[16];
   tf_pose.getOpenGLMatrix(m);
 
-  ROS_INFO("computeIKSolution: Input transform");
+  //ROS_INFO("computeIKSolution: Input transform");
   for(int i=0; i < 4; i++)
   {
     for(int j=0; j < 4; j++)
@@ -201,7 +210,7 @@ bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::Request &req, ro
 
   if(arm_kinematics_->computeIKFast(g0,2,init_solution_theta3_))
   {
-     ROS_INFO("Solution::");
+//     ROS_INFO("Solution::");
     resp.traj.set_points_size(arm_kinematics_->solution_ik_.size());
 
     for(int i=0; i < (int) arm_kinematics_->solution_ik_.size(); i++)
@@ -210,7 +219,7 @@ bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::Request &req, ro
       for(int j=0; j < 7; j++)
       {
         resp.traj.points[i].positions[j] = arm_kinematics_->solution_ik_[i][j]; 
-        ROS_INFO("%f\n",arm_kinematics_->solution_ik_[i][j]);
+//        ROS_INFO("%f\n",arm_kinematics_->solution_ik_[i][j]);
       }
     }
 
@@ -228,7 +237,7 @@ int main(int argc, char **argv)
   LibKinematicsNode kn("lib_kinematic_node","right_arm");
   kn.init();
 
-  NEWMAT::Matrix g(4,4); 
+/*  NEWMAT::Matrix g(4,4); 
   g(1,1) = 1.0;
   g(1,2) = 0.0;
   g(1,3) = 0.0;
@@ -254,7 +263,7 @@ int main(int argc, char **argv)
    }
    printf("\n");
  }
-
+*/
   try {
     kn.spin();
   }
