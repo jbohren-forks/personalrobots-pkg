@@ -104,7 +104,7 @@ namespace kinematic_planning
 	
 	double evaluateGoalAux(ompl::SpaceInformationKinematic::StateKinematic_t state, std::vector<bool> *decision) const
 	{
-	    m_model->lock.lock();
+	    m_model->kmodel->lock();
 	    update(state);
 	    
 	    if (decision)
@@ -118,7 +118,7 @@ namespace kinematic_planning
 		    (*decision)[i] = m_pce[i]->decide(dPos, dAng);
 		distance += dPos + m_pce[i]->getConstraintMessage().orientation_importance * dAng;
 	    }
-	    m_model->lock.unlock();
+	    m_model->kmodel->unlock();
 
 	    return distance;
 	}

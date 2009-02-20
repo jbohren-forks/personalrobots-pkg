@@ -64,13 +64,13 @@ namespace kinematic_planning
 	virtual void operator()(const ompl::SpaceInformation::State *state, double *projection) const
 	{  
 	    const ompl::SpaceInformationKinematic::StateKinematic *kstate = static_cast<const ompl::SpaceInformationKinematic::StateKinematic*>(state);
-	    m_model->lock.lock();
+	    m_model->kmodel->lock();
 	    m_model->kmodel->computeTransformsGroup(kstate->values, m_model->groupID);
 	    const btVector3 &origin = m_link->globalTrans.getOrigin();
 	    projection[0] = origin.x();
 	    projection[1] = origin.y();
 	    projection[2] = origin.z();
-	    m_model->lock.unlock();
+	    m_model->kmodel->unlock();
 	}
 	
     protected:
