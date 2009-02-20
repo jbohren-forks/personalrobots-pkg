@@ -59,6 +59,19 @@ using std::max;
 namespace topological_map
 {
 
+
+uint numRows(const OccupancyGrid& grid)
+{
+  const occ_grid_size* dims=grid.shape();
+  return dims[0];
+}
+
+uint numCols(const OccupancyGrid& grid)
+{
+  const occ_grid_size* dims=grid.shape();
+  return dims[1];
+}
+
 RegionId TopologicalMap::GraphImpl::containingRegion (const Cell2D& p) const
 {
   RegionMap::const_iterator pos=region_map_.find(p);

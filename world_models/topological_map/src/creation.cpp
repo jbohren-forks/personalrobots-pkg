@@ -96,7 +96,6 @@ typedef cell_stat::CellStatus CellStatus;
 typedef multi_array<CellStatus, 2> CellStatusArray;
 typedef map<Cell2D, GridGraphVertex> CellVertexMap;
 typedef CellStatusArray::size_type grid_size;
-typedef OccupancyGrid::size_type occ_grid_size;
 
 typedef multi_array<bool, 2> Mask;
 
@@ -192,21 +191,6 @@ const GridGraphVertex& BottleneckFinder::cellVertex (const int r, const int c)
 {
   return cellVertex(Cell2D(r,c));
 }
-
-
-// Used only by constructor
-uint numRows(const OccupancyGrid& grid)
-{
-  const occ_grid_size* dims=grid.shape();
-  return dims[0];
-}
-
-uint numCols(const OccupancyGrid& grid)
-{
-  const occ_grid_size* dims=grid.shape();
-  return dims[1];
-}
-
 
 BottleneckFinder::BottleneckFinder(const OccupancyGrid& g, const double resolution, const uint size, const uint width, const uint skip, const uint r, const string& dir) :
   grid_(g), bottleneck_size_(size), bottleneck_width_(width), bottleneck_skip_(skip), inflation_radius_(r), ppm_output_dir_(dir), 

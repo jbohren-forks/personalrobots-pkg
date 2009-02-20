@@ -139,22 +139,27 @@ private:
  * Creation
  ************************************************************/
 
-typedef boost::multi_array<bool, 2> OccupancyGrid;
-typedef boost::shared_ptr<TopologicalMap> TopologicalMapPtr;
+ typedef boost::multi_array<bool, 2> OccupancyGrid;
+ typedef boost::shared_ptr<TopologicalMap> TopologicalMapPtr;
+ typedef OccupancyGrid::size_type occ_grid_size;
 
-/// \return shared_ptr to a new topological map generated using a bottleneck analysis of \a grid.  The region types of the returned map are either OPEN or DOORWAY
-TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_width, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir);
+ // Utilities for the occupancy grid
+ uint numRows(const OccupancyGrid& grid);
+ uint numCols(const OccupancyGrid& grid);
 
-enum RegionType { OPEN, DOORWAY };
+ /// \return shared_ptr to a new topological map generated using a bottleneck analysis of \a grid.  The region types of the returned map are either OPEN or DOORWAY
+ TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_width, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir);
+
+ enum RegionType { OPEN, DOORWAY };
 
 
-/************************************************************
- * Debug
- ************************************************************/
+ /************************************************************
+  * Debug
+  ************************************************************/
 
 
-/// \brief Print the topological map in human readable form
-ostream& operator<< (ostream& str, const TopologicalMap& c);
+ /// \brief Print the topological map in human readable form
+ ostream& operator<< (ostream& str, const TopologicalMap& c);
 
 
 
