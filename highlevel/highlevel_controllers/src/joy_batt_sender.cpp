@@ -37,17 +37,17 @@
 #include "robot_msgs/BatteryState.h"
 #include "joy/Joy.h"
 
-class JoyBattSender : public ros::Node
+class JoyBattSender
 {
   public:
-    JoyBattSender() : ros::Node("joy_batt_msg")
+    JoyBattSender()
     {
-      param<int>("~stop_button", stop_button_, 7);
-      param<int>("~go_button", go_button_, 5);
-      param<int>("~deadman_button", deadman_button_, 4);
+      ros::Node::instance()->param<int>("~stop_button", stop_button_, 7);
+      ros::Node::instance()->param<int>("~go_button", go_button_, 5);
+      ros::Node::instance()->param<int>("~deadman_button", deadman_button_, 4);
       robot_msgs::BatteryState bs;
-      advertise("bogus_battery_state", bs, &JoyBattSender::sendHeartbeat, 2);
-      subscribe("joy", joy_msg_, &JoyBattSender::handleJoyMsg, 2);
+      ros::Node::instance()->advertise("bogus_battery_state", bs, &JoyBattSender::sendHeartbeat, 2);
+      ros::Node::instance()->subscribe("joy", joy_msg_, &JoyBattSender::handleJoyMsg, this, 2);
     }
 
     void handleJoyMsg()
@@ -61,7 +61,7 @@ class JoyBattSender : public ros::Node
         s.energy_capacity = 1000.0;
         s.power_consumption = -800.0;
 
-        publish("bogus_battery_state", s);
+        ros::Node::instance()->publish("bogus_battery_state", s);
 
         ROS_INFO("Published bogus battery message");
       }
@@ -73,7 +73,7 @@ class JoyBattSender : public ros::Node
         s.energy_capacity = 1000.0;
         s.power_consumption = -800.0;
 
-        publish("bogus_battery_state", s);
+        ros::Node::instance()->publish("bogus_battery_state", s);
 
         ROS_INFO("Published bogus battery message");
       }
@@ -86,7 +86,7 @@ class JoyBattSender : public ros::Node
         s.energy_capacity = 1000.0;
         s.power_consumption = -800.0;
 
-        publish("bogus_battery_state", s);
+        ros::Node::instance()->publish("bogus_battery_state", s);
 
         ROS_INFO("Published bogus battery message");
     }
@@ -103,10 +103,10 @@ int
 main(int argc, char** argv)
 {
   ros::init(argc, argv);
-
+  ros::Node node("joy_batt_sender");
   JoyBattSender jbs;
 
-  jbs.spin();
+  node.spin();
 
   
 

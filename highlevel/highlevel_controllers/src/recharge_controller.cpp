@@ -118,14 +118,14 @@ namespace highlevel_controllers {
       m_unplugBody("Hello, could you please unplug me?\nThanks, PR2"), m_mailClient("mailx -s"),
       pluginNotified_(false), unplugNotified_(false), connectionCount_(0){
 
-    param("recharge/email_addresses", m_addresses, m_addresses);
-    param("recharge/subject_plugin", m_pluginSubject, m_pluginSubject);
-    param("recharge/subject_unplug", m_unplugSubject, m_unplugSubject);
-    param("recharge/body_plugin", m_pluginBody, m_pluginBody);
-    param("recharge/body_unplug", m_unplugBody, m_unplugBody);
-    param("recharge/mail_client", m_mailClient,  m_mailClient);
-    param("recharge/body_unplug", m_unplugBody, m_unplugBody);
-    param("recharge/mail_client", m_mailClient,  m_mailClient);
+    ros::Node::instance()->param("recharge/email_addresses", m_addresses, m_addresses);
+    ros::Node::instance()->param("recharge/subject_plugin", m_pluginSubject, m_pluginSubject);
+    ros::Node::instance()->param("recharge/subject_unplug", m_unplugSubject, m_unplugSubject);
+    ros::Node::instance()->param("recharge/body_plugin", m_pluginBody, m_pluginBody);
+    ros::Node::instance()->param("recharge/body_unplug", m_unplugBody, m_unplugBody);
+    ros::Node::instance()->param("recharge/mail_client", m_mailClient,  m_mailClient);
+    ros::Node::instance()->param("recharge/body_unplug", m_unplugBody, m_unplugBody);
+    ros::Node::instance()->param("recharge/mail_client", m_mailClient,  m_mailClient);
 
     if (m_addresses == "") {
       ROS_INFO("There are no email addresses in the param server. Opening the text file.\n");
@@ -150,7 +150,7 @@ namespace highlevel_controllers {
 
 
     // We will listen to battery state messages to monitor for transitions. We only care about the latest one
-    subscribe("battery_state", batteryStateMsg_, &RechargeController::batteryStateCallback, 1);
+    ros::Node::instance()->subscribe("battery_state", batteryStateMsg_, &RechargeController::batteryStateCallback, this, 1);
 
     lock();
     stateMsg.recharge_level = 0.0;
@@ -262,6 +262,7 @@ int
 main(int argc, char** argv)
 {
   ros::init(argc,argv);
+  ros::Node rosnode("recharge_controller");
   try{
     highlevel_controllers::RechargeController node("recharge_state", "recharge_goal");
     node.run();

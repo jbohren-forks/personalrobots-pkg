@@ -168,7 +168,7 @@ int main(int argc, char** argv)
   ros::init(argc,argv); 
 
   assert(argc>1);
-
+  ros::Node rosnode("move_base_topological");
   ros::highlevel_controllers::MoveBaseTopological node (argv[1]);
 
   try {

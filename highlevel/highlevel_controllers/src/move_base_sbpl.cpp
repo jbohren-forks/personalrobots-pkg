@@ -334,6 +334,7 @@ namespace ros {
 int main(int argc, char** argv)
 {
   ros::init(argc,argv); 
+  ros::Node rosnode("move_base_sbpl");
 
   ros::highlevel_controllers::MoveBaseSBPL node;
 

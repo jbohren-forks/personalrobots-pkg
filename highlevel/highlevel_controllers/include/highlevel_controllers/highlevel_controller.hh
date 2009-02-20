@@ -50,7 +50,7 @@
  * goals, and can transition between an active state (when pursuing a goal), and an inactive state when is its effectively
  * idle and should not be imposing any control. A high level control must also handle goal recalls.
  */
-template <class S, class G> class HighlevelController: public ros::Node {
+template <class S, class G> class HighlevelController {
 public:
   enum State {
     INACTIVE = 0,
@@ -69,7 +69,7 @@ public:
    * @param goalTopic The ROS topic on which controller goals are received
    */
   HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
-    ros::Node(nodeName), initialized(false), terminated(false), stateTopic(_stateTopic), 
+    initialized(false), terminated(false), stateTopic(_stateTopic), 
     goalTopic(_goalTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), timeout(0, 0) {
 
     // Obtain the control frequency for this node
@@ -88,13 +88,13 @@ public:
       plannerCycleTime_ = -1;
 
     // Advertize controller state updates - do not want to miss a state transition.
-    advertise<S>(stateTopic, QUEUE_MAX());
+    ros::Node::instance()->advertise<S>(stateTopic, QUEUE_MAX());
 
     // Subscribe to controller goal requests. Last request winds. We drop others
-    subscribe(goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback, 1);
+    ros::Node::instance()->subscribe(goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
 
     // Subscribe to executive shutdown signal
-    subscribe("highlevel_controllers/shutdown", shutdownMsg_, &HighlevelController<S, G>::shutdownCallback, 1);
+    ros::Node::instance()->subscribe("highlevel_controllers/shutdown", shutdownMsg_, &HighlevelController<S, G>::shutdownCallback, this, 1);
 
     // Initially inactive
     deactivate();
@@ -127,14 +127,14 @@ public:
    * @brief The main run loop of the controller
    */
   void run(){
-    while(ok()  && !isTerminated()) {
+    while(ros::Node::instance()->ok()  && !isTerminated()) {
       ros::Time curr = ros::Time::now();
 	
       // Guard with initialization check to prevent sending bogus state messages.
       if(isInitialized()){
 	doOneCycle();
 
-	publish(stateTopic, this->stateMsg);
+	ros::Node::instance()->publish(stateTopic, this->stateMsg);
       }
  
       sleep(curr, controllerCycleTime_);
@@ -148,7 +148,7 @@ public:
   void plannerLoop(){
     ros::Time lastPlan = ros::Time::now();
 
-    while(ok() && !isTerminated()){
+    while(ros::Node::instance()->ok() && !isTerminated()){
       ros::Time curr = ros::Time::now();
 
       // Check for bogus time value and update to correct. This can happen for example where the node starts up
@@ -345,8 +345,8 @@ protected:
 
   template <class T>
   void local_param(const std::string& localName, T& param, const T& defaultValue){
-    std::string globalName = getName() + "/" + localName;
-    Node::param<T>(globalName, param, defaultValue);
+    std::string globalName = ros::Node::instance()->getName() + "/" + localName;
+    ros::Node::instance()->Node::param<T>(globalName, param, defaultValue);
     std::stringstream ss;
     ss << param;
     ROS_INFO("Setting %s to %s\n", globalName.c_str(), ss.str().c_str());
@@ -382,7 +382,7 @@ private:
       // If we are active, and this is a goal, publish the state message and activate. This allows us
       // to over-ride a new goal, but still forces the transition between active and inactive states
       if(goalMsg.enable){
-	publish(stateTopic, stateMsg);
+	ros::Node::instance()->publish(stateTopic, stateMsg);
 	activate();
       }
     }
@@ -433,7 +433,7 @@ private:
     // Publish a response reflecting the state for this cycle. The state may change
     // after this execution, but publishing it here ensures we get a message where the state
     // is active, even if it transitions in the first cycle to an inactive state
-    publish(stateTopic, this->stateMsg);
+    ros::Node::instance()->publish(stateTopic, this->stateMsg);
 
     // If we are in an active state, we want to evalaute what to do whether we have a plan or not. In
     // the latter case, commands may be given to maintain a fail-safe state. The structure here ensures

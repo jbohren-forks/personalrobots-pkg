@@ -53,7 +53,7 @@ namespace ros {
 
     MoveBase::MoveBase()
       : HighlevelController<robot_msgs::Planner2DState, robot_msgs::Planner2DGoal>("move_base", "state", "goal"),
-        tf_(*this, true, ros::Duration(10)), // cache for 10 sec, no extrapolation
+        tf_(*ros::Node::instance(), true, ros::Duration(10)), // cache for 10 sec, no extrapolation
       controller_(NULL),
       costMap_(NULL),
       global_map_accessor_(NULL),
@@ -91,16 +91,16 @@ namespace ros {
       double inscribedRadius(0.325);
       double weight(0.1); // Scale costs down by a factor of 10
       // Which frame is "global"
-      param("/global_frame_id", global_frame_, std::string("/map"));
-      param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
-      param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
+      ros::Node::instance()->param("/global_frame_id", global_frame_, std::string("/map"));
+      ros::Node::instance()->param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
+      ros::Node::instance()->param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
        
       //thresholds for ground plane detection
-      param("/ransac_ground_plane_extraction/distance_threshold", ransac_distance_threshold_, 0.03);
+      ros::Node::instance()->param("/ransac_ground_plane_extraction/distance_threshold", ransac_distance_threshold_, 0.03);
 
       // Unsigned chars cannot be stored in parameter server
       int tmpLethalObstacleThreshold;
-      param("/costmap_2d/lethal_obstacle_threshold", tmpLethalObstacleThreshold, int(lethalObstacleThreshold));
+      ros::Node::instance()->param("/costmap_2d/lethal_obstacle_threshold", tmpLethalObstacleThreshold, int(lethalObstacleThreshold));
       if (tmpLethalObstacleThreshold > 255)
         tmpLethalObstacleThreshold = 255;
       else if (tmpLethalObstacleThreshold < 0)
@@ -109,7 +109,7 @@ namespace ros {
       lethalObstacleThreshold = tmpLethalObstacleThreshold;
 
       int tmpNoInformation;
-      param("/costmap_2d/no_information_value", tmpNoInformation, int(noInformation));
+      ros::Node::instance()->param("/costmap_2d/no_information_value", tmpNoInformation, int(noInformation));
       if (tmpNoInformation > 255)
         tmpNoInformation = 255;
       else if (tmpNoInformation < 0)
@@ -117,14 +117,14 @@ namespace ros {
 
       noInformation = tmpNoInformation;
 
-      param("/costmap_2d/z_threshold_max", maxZ_, maxZ_);
-      param("/costmap_2d/z_threshold_min", minZ_, minZ_);
-      param("/costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
-      param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);
-      param("/costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
-      param("/costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
-      param("/costmap_2d/robot_radius", robotRadius, robotRadius);
-      param("/costmap_2d/weight", weight, weight);
+      ros::Node::instance()->param("/costmap_2d/z_threshold_max", maxZ_, maxZ_);
+      ros::Node::instance()->param("/costmap_2d/z_threshold_min", minZ_, minZ_);
+      ros::Node::instance()->param("/costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
+      ros::Node::instance()->param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);
+      ros::Node::instance()->param("/costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
+      ros::Node::instance()->param("/costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
+      ros::Node::instance()->param("/costmap_2d/robot_radius", robotRadius, robotRadius);
+      ros::Node::instance()->param("/costmap_2d/weight", weight, weight);
 
       robotWidth_ = inscribedRadius * 2;
       xy_goal_tolerance_ = robotWidth_ / 2;
@@ -134,26 +134,26 @@ namespace ros {
       double tilt_laser_update_rate(2.0);
       double low_obstacle_update_rate(0.2);
       double stereo_update_rate(2.0);
-      param("/costmap_2d/base_laser_update_rate", base_laser_update_rate , base_laser_update_rate);
-      param("/costmap_2d/tilt_laser_update_rate", tilt_laser_update_rate , tilt_laser_update_rate);
-      param("/costmap_2d/low_obstacle_update_rate", low_obstacle_update_rate , low_obstacle_update_rate);
-      param("/costmap_2d/stereo_update_rate", stereo_update_rate , stereo_update_rate);
+      ros::Node::instance()->param("/costmap_2d/base_laser_update_rate", base_laser_update_rate , base_laser_update_rate);
+      ros::Node::instance()->param("/costmap_2d/tilt_laser_update_rate", tilt_laser_update_rate , tilt_laser_update_rate);
+      ros::Node::instance()->param("/costmap_2d/low_obstacle_update_rate", low_obstacle_update_rate , low_obstacle_update_rate);
+      ros::Node::instance()->param("/costmap_2d/stereo_update_rate", stereo_update_rate , stereo_update_rate);
       double base_laser_keepalive(0.0);
       double tilt_laser_keepalive(3.0);
       double low_obstacle_keepalive(2.0);
       double stereo_keepalive(0.0);
-      param("/costmap_2d/base_laser_keepalive", base_laser_keepalive, base_laser_keepalive);
-      param("/costmap_2d/tilt_laser_keepalive", tilt_laser_keepalive, tilt_laser_keepalive);
-      param("/costmap_2d/low_obstacle_keepalive", low_obstacle_keepalive, low_obstacle_keepalive);
-      param("/costmap_2d/stereo_keepalive", stereo_keepalive, stereo_keepalive);
+      ros::Node::instance()->param("/costmap_2d/base_laser_keepalive", base_laser_keepalive, base_laser_keepalive);
+      ros::Node::instance()->param("/costmap_2d/tilt_laser_keepalive", tilt_laser_keepalive, tilt_laser_keepalive);
+      ros::Node::instance()->param("/costmap_2d/low_obstacle_keepalive", low_obstacle_keepalive, low_obstacle_keepalive);
+      ros::Node::instance()->param("/costmap_2d/stereo_keepalive", stereo_keepalive, stereo_keepalive);
 
       //Create robot filter
       std::string robotName = "/robotdesc/pr2";
       double bodypartScale = 2.4;
       bool useFilter = false;
-      param("/costmap_2d/body_part_scale", bodypartScale, bodypartScale);
-      param("/costmap_2d/robot_name", robotName, robotName);
-      param("/costmap_2d/filter_robot_points", useFilter, useFilter);
+      ros::Node::instance()->param("/costmap_2d/body_part_scale", bodypartScale, bodypartScale);
+      ros::Node::instance()->param("/costmap_2d/robot_name", robotName, robotName);
+      ros::Node::instance()->param("/costmap_2d/filter_robot_points", useFilter, useFilter);
       
       if (useFilter) {
 	filter_ = new robot_filter::RobotFilter((ros::Node*)this, robotName, true, bodypartScale);
@@ -205,11 +205,11 @@ namespace ros {
 
       // Now allocate the cost map and its sliding window used by the controller
       double zLB, zUB, raytraceWindow, obstacleRange, rayTraceRange;
-      param("/costmap_2d/zLB", zLB, 0.15);
-      param("/costmap_2d/zUB", zUB, 0.25);
-      param("/costmap_2d/raytrace_window", raytraceWindow, 2.5);
-      param("/costmap_2d/raytrace_range", rayTraceRange, 10.0);
-      param("/costmap_2d/obstacle_range", obstacleRange, 10.0);
+      ros::Node::instance()->param("/costmap_2d/zLB", zLB, 0.15);
+      ros::Node::instance()->param("/costmap_2d/zUB", zUB, 0.25);
+      ros::Node::instance()->param("/costmap_2d/raytrace_window", raytraceWindow, 2.5);
+      ros::Node::instance()->param("/costmap_2d/raytrace_range", rayTraceRange, 10.0);
+      ros::Node::instance()->param("/costmap_2d/obstacle_range", obstacleRange, 10.0);
 
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
 			       inputData , resp.map.resolution, 
@@ -229,9 +229,9 @@ namespace ros {
 
       // Allocate Velocity Controller
       double mapSize(2.0);
-      param("/trajectory_rollout/map_size", mapSize, 2.0);
-      param("/trajectory_rollout/yaw_goal_tolerance", yaw_goal_tolerance_, yaw_goal_tolerance_);
-      param("/trajectory_rollout/xy_goal_tolerance", xy_goal_tolerance_, xy_goal_tolerance_);
+      ros::Node::instance()->param("/trajectory_rollout/map_size", mapSize, 2.0);
+      ros::Node::instance()->param("/trajectory_rollout/yaw_goal_tolerance", yaw_goal_tolerance_, yaw_goal_tolerance_);
+      ros::Node::instance()->param("/trajectory_rollout/xy_goal_tolerance", xy_goal_tolerance_, xy_goal_tolerance_);
 
       ROS_ASSERT(mapSize <= costMap_->getWidth());
       ROS_ASSERT(mapSize <= costMap_->getHeight());
@@ -260,49 +260,49 @@ namespace ros {
       pt.y = 0;
       footprint_.push_back(pt);
 
-      controller_ = new trajectory_rollout::TrajectoryControllerROS(*this, tf_, global_frame_, *local_map_accessor_, 
+      controller_ = new trajectory_rollout::TrajectoryControllerROS(*ros::Node::instance(), tf_, global_frame_, *local_map_accessor_, 
           footprint_, inscribedRadius, circumscribedRadius);
 
       // Advertize messages to publish cost map updates
-      advertise<robot_msgs::Polyline2D>("raw_obstacles", 1);
-      advertise<robot_msgs::Polyline2D>("inflated_obstacles", 1);
+      ros::Node::instance()->advertise<robot_msgs::Polyline2D>("raw_obstacles", 1);
+      ros::Node::instance()->advertise<robot_msgs::Polyline2D>("inflated_obstacles", 1);
 
       // Advertize message to publish the global plan
-      advertise<robot_msgs::Polyline2D>("gui_path", 1);
+      ros::Node::instance()->advertise<robot_msgs::Polyline2D>("gui_path", 1);
 
       // Advertize message to publish local plan
-      advertise<robot_msgs::Polyline2D>("local_path", 1);
+      ros::Node::instance()->advertise<robot_msgs::Polyline2D>("local_path", 1);
 
       // Advertize message to publish robot footprint
-      advertise<robot_msgs::Polyline2D>("robot_footprint", 1);
+      ros::Node::instance()->advertise<robot_msgs::Polyline2D>("robot_footprint", 1);
 
       // Advertize message to publish velocity cmds
-      advertise<robot_msgs::PoseDot>("cmd_vel", 1);
+      ros::Node::instance()->advertise<robot_msgs::PoseDot>("cmd_vel", 1);
 
       //Advertize message to publish local goal for head to track
-      advertise<robot_msgs::PointStamped>("head_controller/head_track_point", 1);
+      ros::Node::instance()->advertise<robot_msgs::PointStamped>("head_controller/head_track_point", 1);
 
       // Advertise costmap service
       // Might be worth eventually having a dedicated node provide this service and all
       // nodes including move_base access the costmap through it, but for now leaving costmap
       // in move_base for fast access
-      advertiseService("costmap", &MoveBase::costmapCallback);
+      ros::Node::instance()->advertiseService("costmap", &MoveBase::costmapCallback);
 
       // The cost map is populated with either laser scans in the case that we are unable to use a
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
       // point clouds
-      baseScanNotifier_ = new tf::MessageNotifier<laser_scan::LaserScan>(&tf_, this,  
+      baseScanNotifier_ = new tf::MessageNotifier<laser_scan::LaserScan>(&tf_, ros::Node::instance(),  
                                  boost::bind(&MoveBase::baseScanCallback, this, _1), 
                                 "base_scan", global_frame_, 50); 
-      tiltLaserNotifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, this, 
+      tiltLaserNotifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, ros::Node::instance(), 
 				 boost::bind(&MoveBase::tiltCloudCallback, this, _1),
 				 "tilt_laser_cloud_filtered", global_frame_, 50);
-      subscribe("dcam/cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
-      subscribe("ground_plane",  groundPlaneMsg_,  &MoveBase::groundPlaneCallback, 1);
-      subscribe("obstacle_cloud",  groundPlaneCloudMsg_,  &MoveBase::groundPlaneCloudCallback, 1);
+      ros::Node::instance()->subscribe("dcam/cloud",  stereoCloudMsg_, &MoveBase::stereoCloudCallback, this, 1);
+      ros::Node::instance()->subscribe("ground_plane",  groundPlaneMsg_, &MoveBase::groundPlaneCallback, this, 1);
+      ros::Node::instance()->subscribe("obstacle_cloud",  groundPlaneCloudMsg_, &MoveBase::groundPlaneCloudCallback, this, 1);
 
       // Subscribe to odometry messages to get global pose
-      subscribe("odom", odomMsg_, &MoveBase::odomCallback, 1);
+      ros::Node::instance()->subscribe("odom", odomMsg_, &MoveBase::odomCallback, this, 1);
 
       // Spawn map update thread
       map_update_thread_ = new boost::thread(boost::bind(&MoveBase::mapUpdateLoop, this));
@@ -348,13 +348,13 @@ namespace ros {
         tf_.transformPose(global_frame_, robotPose, global_pose_);
       }
       catch(tf::LookupException& ex) {
-        ROS_INFO("No Transform available Error\n");
+        ROS_ERROR("No Transform available Error: %s\n", ex.what());
       }
       catch(tf::ConnectivityException& ex) {
-        ROS_INFO("Connectivity Error\n");
+        ROS_ERROR("Connectivity Error: %s\n", ex.what());
       }
       catch(tf::ExtrapolationException& ex) {
-        ROS_INFO("Extrapolation Error\n");
+        ROS_ERROR("Extrapolation Error: %s\n", ex.what());
       }
 
       // Update the cost map window
@@ -566,7 +566,7 @@ namespace ros {
         footprint_msg.points[i].x = footprint[i].x;
         footprint_msg.points[i].y = footprint[i].y;
       }
-      publish("robot_footprint", footprint_msg);
+      ros::Node::instance()->publish("robot_footprint", footprint_msg);
     }
 
     void MoveBase::publishPath(bool isGlobal, const std::list<deprecated_msgs::Pose2DFloat32>& path) {
@@ -586,14 +586,14 @@ namespace ros {
         guiPathMsg.color.g = 1.0;
         guiPathMsg.color.b = 0;
         guiPathMsg.color.a = 0;
-        publish("gui_path", guiPathMsg);
+        ros::Node::instance()->publish("gui_path", guiPathMsg);
       }
       else {
         guiPathMsg.color.r = 0;
         guiPathMsg.color.g = 0;
         guiPathMsg.color.b = 1.0;
         guiPathMsg.color.a = 0;
-        publish("local_path", guiPathMsg);
+        ros::Node::instance()->publish("local_path", guiPathMsg);
       }
 
     }
@@ -743,7 +743,7 @@ namespace ros {
         }
       }
 
-      publish("cmd_vel", cmdVel);
+      ros::Node::instance()->publish("cmd_vel", cmdVel);
       double uselessPitch, uselessRoll, yaw;
       global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
       publishFootprint(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
@@ -757,7 +757,7 @@ namespace ros {
       target_point.point.z = 1;
       target_point.header.stamp = ros::Time::now();
       target_point.header.frame_id = global_frame_;
-      publish("head_controller/head_track_point", target_point);
+      ros::Node::instance()->publish("head_controller/head_track_point", target_point);
       return planOk;
     }
 
@@ -811,10 +811,10 @@ namespace ros {
         pointCloudMsg.points[i].y = rawObstacles[i].second;
       }
 
-      if (!this->ok()) { 
+      if (!ros::Node::instance()->ok()) { 
 	return; 
       }
-      publish("raw_obstacles", pointCloudMsg);
+      ros::Node::instance()->publish("raw_obstacles", pointCloudMsg);
 
       // Now do inflated obstacles in blue
       pointCount = inflatedObstacles.size();
@@ -829,10 +829,10 @@ namespace ros {
         pointCloudMsg.points[i].y = inflatedObstacles[i].second;
       }
 
-      if (!this->ok()) { 
+      if (!ros::Node::instance()->ok()) { 
 	return; 
       }
-      publish("inflated_obstacles", pointCloudMsg);
+      ros::Node::instance()->publish("inflated_obstacles", pointCloudMsg);
     }
 
 
@@ -876,7 +876,7 @@ namespace ros {
         pointCloudMsg.points[i].y = rawObstacles[i].second;
       }
 
-      publish("raw_obstacles", pointCloudMsg);
+      ros::Node::instance()->publish("raw_obstacles", pointCloudMsg);
 
       // Now do inflated obstacles in blue
       pointCount = inflatedObstacles.size();
@@ -891,7 +891,7 @@ namespace ros {
         pointCloudMsg.points[i].y = inflatedObstacles[i].second;
       }
 
-      publish("inflated_obstacles", pointCloudMsg);
+      ros::Node::instance()->publish("inflated_obstacles", pointCloudMsg);
     }
 
     void MoveBase::stopRobot(){
@@ -900,7 +900,7 @@ namespace ros {
       cmdVel.vel.vx = 0.0;
       cmdVel.vel.vy = 0.0;
       cmdVel.ang_vel.vz = 0.0;
-      publish("cmd_vel", cmdVel);
+      ros::Node::instance()->publish("cmd_vel", cmdVel);
     }
 
     void MoveBase::handleDeactivation(){

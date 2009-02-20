@@ -1,4 +1,5 @@
-/********************************************************************* Software License Agreement (BSD License)
+/*********************************************************************
+*  Software License Agreement (BSD License)
 * 
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
@@ -169,7 +170,7 @@ MoveArm::MoveArm(const std::string& node_name,
 
   //Create robot model.
   std::string model;
-  if (getParam("robot_description", model))
+  if (ros::Node::instance()->getParam("robot_description", model))
   {
     robot_desc::URDF file;
     file.loadString(model.c_str());
@@ -189,11 +190,11 @@ MoveArm::MoveArm(const std::string& node_name,
   }
 
 
-  ros::Node::subscribe("mechanism_state",
-                       mechanism_state_msg_,
-                       &MoveArm::mechanismStateCallback,
-                       1);
-  advertise<robot_msgs::JointTraj>(controller_topic_, 1);
+  ros::Node::instance()->ros::Node::subscribe("mechanism_state",
+					      mechanism_state_msg_,
+					      &MoveArm::mechanismStateCallback,
+					      this, 1);
+  ros::Node::instance()->advertise<robot_msgs::JointTraj>(controller_topic_, 1);
 }
 
 void MoveArm::updateGoalMsg()
@@ -320,8 +321,8 @@ bool MoveArm::makePlan()
 
   //Erase the first element, because the trajectory controllers could
   //try to use it as a waypoint, slowing things down.
-  if (!current_trajectory_.states.empty()) 
-    current_trajectory_.states.erase(current_trajectory_.states.begin());
+  //if (!current_trajectory_.states.empty() ) 
+  //  current_trajectory_.states.erase(current_trajectory_.states.begin());
   
 
   if (!res.value.valid)
@@ -367,12 +368,16 @@ void MoveArm::getTrajectoryMsg(robot_msgs::KinematicPath &path,
                                robot_msgs::JointTraj &traj)
 {
   traj.set_points_size(path.get_states_size());
-
+  ROS_INFO("ARM:");
   for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
   {
     traj.points[i].set_positions_size(path.states[i].get_vals_size());
+    ROS_INFO("STEP:");
     for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
+    {
       traj.points[i].positions[j] = path.states[i].vals[j];
+      ROS_INFO("%f ", path.states[i].vals[j]);
+    }
     traj.points[i].time = 0.0;
   }	
 }
@@ -382,8 +387,9 @@ void MoveArm::sendArmCommand(robot_msgs::KinematicPath &path,
 {
   robot_msgs::JointTraj traj;
   getTrajectoryMsg(path, traj);
-  publish(controller_topic_, traj);
+  ros::Node::instance()->publish(controller_topic_, traj);
   trajectory_stopped_ = false;
+  trajectory_changed_ = false;
 }
 
 void MoveArm::stopArm()
@@ -456,11 +462,13 @@ main(int argc, char** argv)
   const std::string param = argv[1];
 
   if(param == "left"){
+    ros::Node rosnode("left_arm_controller");
     MoveLeftArm node;
     node.run();
     
   }
   else if(param == "right"){
+    ros::Node rosnode("right_arm_controller");
     MoveRightArm node;
     node.run();
     

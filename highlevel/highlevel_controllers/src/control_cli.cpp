@@ -46,15 +46,15 @@
 
 using namespace std;
 
-class ControlCLI : public ros::Node {
+class ControlCLI {
 public:
-  ControlCLI() : ros::Node("CommandLineInterface") {
+  ControlCLI() {
     dead = false;
-    advertise<pr2_msgs::MoveArmGoal>("left_arm_goal", 1);
-    advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
-    advertise<highlevel_controllers::RechargeGoal>("recharge_goal", 1);
-    advertise<robot_msgs::BatteryState>("bogus_battery_state", 1);
-    advertise<robot_msgs::MechanismState>("mechanism_state", 1);
+    ros::Node::instance()->advertise<pr2_msgs::MoveArmGoal>("left_arm_goal", 1);
+    ros::Node::instance()->advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
+    ros::Node::instance()->advertise<highlevel_controllers::RechargeGoal>("recharge_goal", 1);
+    ros::Node::instance()->advertise<robot_msgs::BatteryState>("bogus_battery_state", 1);
+    ros::Node::instance()->advertise<robot_msgs::MechanismState>("mechanism_state", 1);
 
     // Set default values such that the robot is connected and fully charged
     batteryState_.power_consumption = -800;
@@ -77,7 +77,7 @@ private:
 
   void publishingLoop(){
     while (true) {
-      publish("bogus_battery_state", batteryState_);
+      ros::Node::instance()->publish("bogus_battery_state", batteryState_);
       usleep(100000);
     }
   }
@@ -150,7 +150,7 @@ private:
       highlevel_controllers::RechargeGoal goal;
       goal.enable = 1;
       goal.recharge_level = recharge_level;
-      publish("recharge_goal", goal);
+      ros::Node::instance()->publish("recharge_goal", goal);
     } else if (c == 'N') {
       printf("Joint names (number of parameters):\n");
 
@@ -178,7 +178,7 @@ private:
         mechanismState.joint_states[i].name = names[i];
       }
       printf("Publishing states.\n");
-      publish("mechanism_state", mechanismState);
+      ros::Node::instance()->publish("mechanism_state", mechanismState);
 
     } else if (c == 'S') {
       std::vector<std::string> names;
@@ -203,7 +203,7 @@ private:
       }
       printf("\n");
 
-      publish("right_arm_goal", goalMsg);
+      ros::Node::instance()->publish("right_arm_goal", goalMsg);
 
     } else if (c == 'L' || c == 'R') {
       printf("%s Arm\n", c == 'L' ? "Left" : "Right");
@@ -233,7 +233,7 @@ private:
       }
       printf("\n");
 
-      publish(c == 'L' ? "left_arm_goal" : "right_arm_goal", goalMsg);
+      ros::Node::instance()->publish(c == 'L' ? "left_arm_goal" : "right_arm_goal", goalMsg);
 
     } else if (c == 'Q') {
       dead = true;
@@ -256,9 +256,9 @@ main(int argc, char** argv)
 {
 
   ros::init(argc,argv);
-
+  ros::Node rosnode("control_cli");
   ControlCLI node;
-  while (node.ok() && node.alive()) {
+  while (rosnode.ok() && node.alive()) {
     usleep(100);
   }
   

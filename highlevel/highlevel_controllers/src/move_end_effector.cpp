@@ -144,12 +144,12 @@ static const double L1_JOINT_DIFF_MAX = .11;
 MoveEndEffector::MoveEndEffector(const std::string& nodeName, const std::string& stateTopic, const std::string& goalTopic,
 		 const std::string& armPosTopic, const std::string& _armCmdTopic, const std::string& _kinematicModel)
   : HighlevelController<pr2_msgs::MoveEndEffectorState, pr2_msgs::MoveEndEffectorGoal>(nodeName, stateTopic, goalTopic),
-    armCmdTopic(_armCmdTopic), kinematicModel(_kinematicModel), currentWaypoint(0), tf_(*this, true, ros::Duration(10)) {
+    armCmdTopic(_armCmdTopic), kinematicModel(_kinematicModel), currentWaypoint(0), tf_(*ros::Node::instance(), true, ros::Duration(10)) {
   // Subscribe to arm configuration messages
-  subscribe(armPosTopic, mechanismState, &MoveEndEffector::handleArmConfigurationCallback, QUEUE_MAX());
+  ros::Node::instance()->subscribe(armPosTopic, mechanismState, &MoveEndEffector::handleArmConfigurationCallback, this, QUEUE_MAX());
 
   // Advertise for messages to command the arm
-  advertise<pr2_mechanism_controllers::JointPosCmd>(armCmdTopic, QUEUE_MAX());
+  ros::Node::instance()->advertise<pr2_mechanism_controllers::JointPosCmd>(armCmdTopic, QUEUE_MAX());
 }
 
 MoveEndEffector::~MoveEndEffector(){}
@@ -366,7 +366,7 @@ bool MoveEndEffector::dispatchCommands(){
 
   std::cout << std::endl;
 
-  publish(armCmdTopic, armCommand);
+  ros::Node::instance()->publish(armCmdTopic, armCommand);
 
   return true;
 }
@@ -442,11 +442,13 @@ main(int argc, char** argv)
   const std::string param = argv[1];
 
   if(param == "left"){
+    ros::Node rosnode("left_end_effector_controller");
     MoveLeftEndEffector node;
     node.run();
     
   }
   else if(param == "right"){
+    ros::Node rosnode("right_end_effector_controller");
     MoveRightEndEffector node;
     node.run();
     

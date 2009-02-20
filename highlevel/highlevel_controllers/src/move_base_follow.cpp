@@ -154,7 +154,7 @@ namespace ros {
         }
       }
 
-      publish("cmd_vel", cmdVel);
+      ros::Node::instance()->publish("cmd_vel", cmdVel);
       double uselessPitch, uselessRoll, yaw;
       global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
       publishFootprint(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
@@ -168,7 +168,7 @@ namespace ros {
       target_point.point.z = 1;
       target_point.header.stamp = ros::Time::now();
       target_point.header.frame_id = global_frame_;
-      publish("head_controller/head_track_point", target_point);
+      ros::Node::instance()->publish("head_controller/head_track_point", target_point);
       return planOk;
     }
   }
@@ -178,7 +178,7 @@ namespace ros {
 int main(int argc, char** argv)
 {
   ros::init(argc,argv); 
-
+  ros::Node rosnode("move_base_follow");
   ros::highlevel_controllers::MoveBaseFollow node;
 
   try {
