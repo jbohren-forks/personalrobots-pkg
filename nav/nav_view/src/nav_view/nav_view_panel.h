@@ -38,9 +38,9 @@
 #include "deprecated_msgs/Pose2DFloat32.h"
 #include "robot_srvs/StaticMap.h"
 
-#include <OgreTexture.h>
-#include <OgreMaterial.h>
-#include <OgreRenderOperation.h>
+#include <OGRE/OgreTexture.h>
+#include <OGRE/OgreMaterial.h>
+#include <OGRE/OgreRenderOperation.h>
 
 #include <list>
 

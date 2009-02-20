@@ -30,7 +30,7 @@
 #ifndef NAV_VIEW_TOOLS_H
 #define NAV_VIEW_TOOLS_H
 
-#include <OgreVector3.h>
+#include <OGRE/OgreVector3.h>
 
 namespace Ogre
 {

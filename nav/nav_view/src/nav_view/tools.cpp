@@ -32,7 +32,7 @@
 #include <ogre_tools/wx_ogre_render_window.h>
 
 #include <ros/node.h>
-#include <Ogre.h>
+#include <OGRE/Ogre.h>
 #include <wx/wx.h>
 
 #include "nav_view_panel.h"

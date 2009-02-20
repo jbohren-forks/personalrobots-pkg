@@ -40,7 +40,7 @@
 
 #include "nav_view_panel.h"
 
-#include "Ogre.h"
+#include "OGRE/Ogre.h"
 
 using namespace nav_view;
 

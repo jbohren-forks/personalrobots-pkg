@@ -51,7 +51,9 @@ $(SOURCE_DIR)/Makefile: $(SOURCE_DIR)/unpacked changelist.txt
 #
 #ogre: ogre/lib/pkgconfig/OGRE.pc
 ogre:
-	if ! pkg-config --exact-version 1.4.9 OGRE; then \
+	@if test `uname` = Darwin ; then \
+	  echo "OS X detected; assuming that you have installed the OGRE SDK"; \
+	elif ! pkg-config --exact-version 1.4.9 OGRE; then \
 	  echo "You don't have OGRE.  I'm going to build it."; \
 	  if [ -h ogre/lib/OGRE ]; then \
 	    rm ogre/lib/OGRE; \

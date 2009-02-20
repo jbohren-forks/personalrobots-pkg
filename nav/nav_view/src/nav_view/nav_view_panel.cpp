@@ -35,7 +35,7 @@
 #include "ros/node.h"
 #include <tf/transform_listener.h>
 
-#include <Ogre.h>
+#include <OGRE/Ogre.h>
 
 #include "ogre_tools/axes.h"
 
