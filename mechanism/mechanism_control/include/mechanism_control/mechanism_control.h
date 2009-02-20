@@ -56,6 +56,7 @@
 #include <robot_srvs/ListControllers.h>
 #include <robot_srvs/SpawnController.h>
 #include <robot_srvs/KillController.h>
+#include <robot_srvs/SwitchController.h>
 #include <robot_msgs/MechanismState.h>
 #include <robot_msgs/DiagnosticMessage.h>
 #include "tf/tfMessage.h"
@@ -75,6 +76,8 @@ public:
   void getControllerNames(std::vector<std::string> &v);
   bool spawnController(const std::string &type, const std::string &name, TiXmlElement *config);
   bool killController(const std::string &name);
+  bool switchController(const std::vector<std::string>& start_controllers,
+                        const std::vector<std::string>& stop_controllers);
   controller::Controller* getControllerByName(std::string name);
 
   mechanism::Robot model_;
@@ -111,6 +114,9 @@ private:
   // please_remove_ must be -1 when not removing
   int please_remove_;
   controller::Controller* removed_;
+  std::vector<controller::Controller*> start_request_, stop_request_;
+  bool please_switch_;
+
 };
 
 /*
@@ -132,12 +138,16 @@ public:
                        robot_srvs::ListControllers::Response &resp);
   bool spawnController(robot_srvs::SpawnController::Request &req,
                        robot_srvs::SpawnController::Response &resp);
+  bool switchController(robot_srvs::SwitchController::Request &req,
+                        robot_srvs::SwitchController::Response &resp);
 
 private:
   ros::Node *node_;
 
   bool killController(robot_srvs::KillController::Request &req,
                       robot_srvs::KillController::Response &resp);
+
+  bool getController(const std::string& name, int& id);
 
   MechanismControl *mc_;
 
@@ -151,7 +161,7 @@ private:
   realtime_tools::RealtimePublisher<tf::tfMessage> transform_publisher_;
 
   AdvertisedServiceGuard list_controllers_guard_, list_controller_types_guard_,
-    spawn_controller_guard_, kill_controller_guard_;
+    spawn_controller_guard_, kill_controller_guard_, switch_controller_guard_;
 };
 
 #endif /* MECHANISM_CONTROL_H */

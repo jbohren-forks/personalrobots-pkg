@@ -177,6 +177,24 @@ void MechanismControl::update()
     controllers_[please_remove_] = NULL;
     please_remove_ = -1;
   }
+
+  // there are controllers to start/stop
+  if (please_switch_)
+  {
+    std_srvs::Empty::Request req;
+    std_srvs::Empty::Request res;
+
+    for (unsigned int i=0; i<stop_request_.size(); i++)
+      stop_request_[i]->stopRequest(req, res);
+    stop_request_.clear();
+
+    for (unsigned int i=0; i<start_request_.size(); i++)
+      start_request_[i]->startRequest(req, res);
+    start_request_.clear();
+
+    please_switch_ = false;
+  }
+
 }
 
 void MechanismControl::getControllerNames(std::vector<std::string> &controllers)
@@ -273,6 +291,40 @@ bool MechanismControl::killController(const std::string &name)
 }
 
 
+bool MechanismControl::switchController(const std::vector<std::string>& start_controllers,
+                                        const std::vector<std::string>& stop_controllers)
+{
+  controllers_lock_.lock();
+
+  controller::Controller* ct;
+  // list all controllers to stop
+  for (unsigned int i=0; i<stop_controllers.size(); i++)
+  {
+    ct = getControllerByName(stop_controllers[i]);
+    if (ct != NULL)
+        stop_request_.push_back(ct);
+  }
+
+  // list all controllers to start
+  for (unsigned int i=0; i<start_controllers.size(); i++)
+  {
+    ct = getControllerByName(start_controllers[i]);
+    if (ct != NULL)
+        start_request_.push_back(ct);
+  }
+
+  // start the atomic controller switching
+  please_switch_ = true;
+
+  // wait until switch is finished
+  while (please_switch_)
+    usleep(100);
+
+  controllers_lock_.unlock();
+  return true;
+}
+
+
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   : mc_(mc), cycles_since_publish_(0),
     mechanism_state_topic_("mechanism_state"),
@@ -319,6 +371,8 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
   spawn_controller_guard_.set("spawn_controller");
   node_->advertiseService("kill_controller", &MechanismControlNode::killController, this);
   kill_controller_guard_.set("kill_controller");
+  node_->advertiseService("switch_controller", &MechanismControlNode::switchController, this);
+  switch_controller_guard_.set("switch_controller");
 
   return true;
 }
@@ -493,5 +547,13 @@ bool MechanismControlNode::killController(
   robot_srvs::KillController::Response &resp)
 {
   resp.ok = mc_->killController(req.name);
+  return true;
+}
+
+bool MechanismControlNode::switchController(
+  robot_srvs::SwitchController::Request &req,
+  robot_srvs::SwitchController::Response &resp)
+{
+  resp.ok = mc_->switchController(req.start_controllers, req.stop_controllers);
   return true;
 }
