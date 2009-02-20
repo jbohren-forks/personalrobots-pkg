@@ -40,6 +40,8 @@
 
 #include "tf/FrameGraph.h" //frame graph service
 
+extern const double tf::Transformer::DEFAULT_CACHE_TIME;
+
 namespace tf{
 
 /** \brief This class inherits from Transformer and automatically subscribes to ROS transform messages */
