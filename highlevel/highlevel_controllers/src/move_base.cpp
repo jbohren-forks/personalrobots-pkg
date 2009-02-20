@@ -671,7 +671,7 @@ namespace ros {
         cmdVel.vel.vx = 0;
         cmdVel.vel.vy = 0;
         cmdVel.ang_vel.vz =  stateMsg.goal.th - yaw;
-        cmdVel.ang_vel.vz = cmdVel.ang_vel.vz >= 0.0 ? cmdVel.ang_vel.vz + .4 : cmdVel.ang_vel.vz - .4;
+        cmdVel.ang_vel.vz = cmdVel.ang_vel.vz >= 0.0 ? std::max(cmdVel.ang_vel.vz, .4) : std::min(cmdVel.ang_vel.vz,  -.4);
       }
       else {
         // Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
