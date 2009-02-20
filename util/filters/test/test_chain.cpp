@@ -73,13 +73,12 @@ TEST(FilterChain, configuring){
   filters::FilterChain<std_vector_float > chain;
   //filters::FilterChain<float> chain;
 
-
-  //  chain.add("TestFilter", "");
-  EXPECT_TRUE(chain.add(mean_filter_5));
+  // EXPECT_TRUE(chain.add(mean_filter_5));
  
-  EXPECT_TRUE(chain.add(median_filter_5));
-  
-  EXPECT_TRUE(chain.configure(5));
+  //  EXPECT_TRUE(chain.add(median_filter_5));
+  TiXmlDocument chain_def = TiXmlDocument();
+  chain_def.Parse(median_filter_5.c_str());
+  EXPECT_TRUE(chain.configure(5, chain_def));
  
   float input1[] = {1,2,3,4,5};
   float input1a[] = {9,9,9,9,9};//seed w/incorrect values
@@ -101,10 +100,13 @@ TEST(FilterChain, MisconfiguredNumberOfChannels){
   filters::FilterChain<std_vector_float > chain;
 
 
-  EXPECT_TRUE(chain.add(mean_filter_5));
-  EXPECT_TRUE(chain.add(median_filter_5));
+  //  EXPECT_TRUE(chain.add(mean_filter_5));
+  //EXPECT_TRUE(chain.add(median_filter_5));
+  TiXmlDocument chain_def = TiXmlDocument();
+  chain_def.Parse(median_filter_5.c_str());
+  EXPECT_TRUE(chain.configure(10, chain_def));
 
-  EXPECT_TRUE(chain.configure(10));
+  //  EXPECT_TRUE(chain.configure(10));
 
   float input1[] = {1,2,3,4,5};
   float input1a[] = {1,2,3,4,5};
@@ -117,20 +119,15 @@ TEST(FilterChain, MisconfiguredNumberOfChannels){
   chain.clear();
 
 }
-
-TEST(FilterChain, OverlappingNamesPrevious){
+TEST(FilterChain, OverlappingNames){
   filters::FilterChain<std_vector_float > chain;
 
 
-  EXPECT_TRUE(chain.add(mean_filter_5));
-  EXPECT_FALSE(chain.add(mean_filter_5));
+  std::string bad_xml = "<filters> <filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter></filters>";
 
-}
-TEST(FilterChain, OverlappingNamesSelf){
-  filters::FilterChain<std_vector_float > chain;
-
-
-  EXPECT_FALSE(chain.add("<filters> <filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter></filters>"));
+  TiXmlDocument chain_def = TiXmlDocument();
+  chain_def.Parse(bad_xml.c_str());
+  EXPECT_FALSE(chain.configure(5, chain_def));
 
 }
 

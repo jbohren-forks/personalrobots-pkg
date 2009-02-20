@@ -46,12 +46,10 @@ bool LaserMedianFilter::configure(const std::string & xml_parameters)
 {
   latest_xml_ = xml_parameters;
   range_filter_ = new FilterChain<std_vector_float >();
-  range_filter_->add(latest_xml_);
-  range_filter_->configure(num_ranges_);
+  range_filter_->configure(num_ranges_, latest_xml_);
   
   intensity_filter_ = new FilterChain<std_vector_float >();
-  intensity_filter_->add(latest_xml_);
-  intensity_filter_->configure(num_ranges_);
+  intensity_filter_->configure(num_ranges_, latest_xml_);
 };
 
 LaserMedianFilter::~LaserMedianFilter()
@@ -75,12 +73,10 @@ bool LaserMedianFilter::update(const laser_scan::LaserScan& scan_in, laser_scan:
     num_ranges_ = scan_in.get_ranges_size();
     
     range_filter_ = new FilterChain<std_vector_float >();
-    range_filter_->add(latest_xml_);
-    range_filter_->configure(num_ranges_);
+    range_filter_->configure(num_ranges_, latest_xml_);
     
     intensity_filter_ = new FilterChain<std_vector_float >();
-    intensity_filter_->add(latest_xml_);
-    intensity_filter_->configure(num_ranges_);
+    intensity_filter_->configure(num_ranges_, latest_xml_);
     
   }
 
