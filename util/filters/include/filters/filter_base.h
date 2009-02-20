@@ -103,7 +103,6 @@ class FilterFactory : public Loki::SingletonHolder < Loki::Factory< filters::Fil
   bool ROS_FILTER_## c ## _ ## t =                                                    \
     filters::FilterFactory<t>::Instance().Register(filters::getFilterID(#c , #t ), Filters_New_##c##__##t); 
 ///\todo make this use templating to get the data type, the user doesn't ever set the data type at runtime
-///\todo make sure that the error messages for invalid data types are reasonable
 
 }
 

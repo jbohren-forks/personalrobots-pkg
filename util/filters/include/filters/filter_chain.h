@@ -88,17 +88,25 @@ public:
         
     std::stringstream constructor_string;
     constructor_string << config->Attribute("type") << typeid(T).name();
-
-    boost::shared_ptr<filters::FilterBase<T> > p( filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
-    printf("type: %s\n", p.get()->getType().c_str());
-    result = result &&  p.get()->configure(size, config);    
-    reference_pointers_.push_back(p);
+    try
+    {
+      boost::shared_ptr<filters::FilterBase<T> > p( filters::FilterFactory<T>::Instance().CreateObject(constructor_string.str()));
+      printf("type: %s\n", p.get()->getType().c_str());
+      result = result &&  p.get()->configure(size, config);    
+      reference_pointers_.push_back(p);
+      printf("Configured %s:%s filter at %p\n", config->Attribute("type"),
+             config->Attribute("name"),  p.get());
+   }
+    catch (typename Loki::DefaultFactoryError<std::string, filters::FilterBase<T> >::Exception & ex)
+    {
+      std::stringstream ss;
+      ss /*<< ex.what()*/ << " A Filter of type \"" << config->Attribute("type") << "\" cannot be constructed with string " <<constructor_string.str() ;
+      throw std::runtime_error(ss.str());
+    }
         
         
     
-    printf("Configured %s:%s filter at %p\n", config->Attribute("type"),
-           config->Attribute("name"),  p.get());
-  
+   
     }
     
     if (result == true)
