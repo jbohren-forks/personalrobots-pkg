@@ -2,10 +2,17 @@
 
 
 /* Waypoints */
-Waypoint w1 = new Waypoint(18.848, 16.087, -1.559);
-Waypoint w2 = new Waypoint(18.848, 16.087, 2.0);
+Waypoint w1 = new Waypoint(2.0, 2.0, -1.559);
+Waypoint w2 = new Waypoint(10.0, 10.0 , 2.0);
 
 /* Charging Stations */
-ChargingStation c1 = new ChargingStation(18.683, 17.667, 1.959);
+ChargingStation c1 = new ChargingStation(15, 15, 1.959);
 
 close();
+
+// The goal is a path destination. This will forward iterate to accomplsih the position
+rejectable(Path.Holds g0);
+g0.active = true;
+g0.final_x = 13.0;
+g0.final_y = 13.0;
+g0.final_th = 0.0;
