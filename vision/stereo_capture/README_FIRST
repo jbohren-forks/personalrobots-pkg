@@ -5,7 +5,7 @@ Purpose:
   synchronizes this with stereo capture using DCAM_NODE 
   as the sensor data provider.  
 =======================================================
-Written by: Ethan Dreyfuss (ethan@cs.stanford.edu)
+Written by: Ethan Dreyfuss (ethan@cs.stanford.edu), modified by Gary Bradski
 Based on code from vision/stereo_view, and code written by Federico Tombari.
 
 To use this package, first build the package with rosmake stereo_capture.  
