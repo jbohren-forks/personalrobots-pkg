@@ -39,6 +39,7 @@
 
 #include <urdf/URDF.h>
 #include <LinearMath/btTransform.h>
+#include <boost/thread/mutex.hpp>
 
 #include <iostream>
 #include <vector>
@@ -670,6 +671,18 @@ namespace planning_models
 	
 	/** Add thansforms to the rootTransform such that the robot is in its planar/floating link frame */
 	bool reduceToRobotFrame(void);
+
+	/** Provide interface to a lock. Use carefully! */
+	void lock(void)
+	{
+	    m_lock.lock();
+	}
+	
+	/** Provide interface to a lock. Use carefully! */
+	void unlock(void)
+	{
+	    m_lock.unlock();
+	}
 	
 	void printModelInfo(std::ostream &out = std::cout);
 	void printLinkPoses(std::ostream &out = std::cout) const;
@@ -691,7 +704,9 @@ namespace planning_models
 	bool                              m_ignoreSensors;
 	bool                              m_verbose;    
 	bool                              m_built;
-	
+
+	boost::mutex                      m_lock;
+
 	/* Subsequent calls with the same argument should not redo computation; 
 	 * We simply store this state information and compare against it for next time */
 	double                           *m_lastTransformParams;

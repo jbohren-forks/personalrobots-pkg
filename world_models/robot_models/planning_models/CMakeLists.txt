@@ -7,3 +7,4 @@ rospack_add_library(planning_models src/kinematic.cpp)
 # Unit tests
 rospack_add_gtest(test_kinematic test/test_kinematic.cpp)
 target_link_libraries(test_kinematic planning_models)
+rospack_link_boost(test_kinematic thread)
