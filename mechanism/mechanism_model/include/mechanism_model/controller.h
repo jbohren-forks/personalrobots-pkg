@@ -125,14 +125,14 @@ public:
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config) = 0;
 
 
-  void update_request()
+  void updateRequest()
   {
     if (state_ == RUNNING)
       update();
   }
 
-  bool start_request(std_srvs::Empty::Request &req,
-                     std_srvs::Empty::Request &res)
+  bool startRequest(std_srvs::Empty::Request &req,
+                    std_srvs::Empty::Request &res)
   {
     bool ret = false;
 
@@ -145,8 +145,8 @@ public:
   }
 
 
-  bool stop_request(std_srvs::Empty::Request &req,
-                    std_srvs::Empty::Request &res)
+  bool stopRequest(std_srvs::Empty::Request &req,
+                   std_srvs::Empty::Request &res)
 
   {
     bool ret = false;
@@ -159,7 +159,7 @@ public:
     return ret;
   }
 
-  bool initXml_request(mechanism::RobotState *robot, TiXmlElement *config, std::string controller_name)
+  bool initXmlRequest(mechanism::RobotState *robot, TiXmlElement *config, std::string controller_name)
   {
     if (state_ != CONSTRUCTED)
       return false;
@@ -176,13 +176,13 @@ public:
       ros::Node::instance()->param(controller_name+"/autostart", autostart_, true);
       std_srvs::Empty::Request req;
       std_srvs::Empty::Request res;
-      if (autostart_ && !start_request(req, res))
+      if (autostart_ && !startRequest(req, res))
         return false;
       
       // what if multiple controllers have same name?
       if (!autostart_){
-        ros::Node::instance()->advertiseService(controller_name+"/start", &Controller::start_request, this);
-        ros::Node::instance()->advertiseService(controller_name+"/stop", &Controller::stop_request, this);
+        ros::Node::instance()->advertiseService(controller_name+"/start", &Controller::startRequest, this);
+        ros::Node::instance()->advertiseService(controller_name+"/stop", &Controller::stopRequest, this);
       }
 
 
