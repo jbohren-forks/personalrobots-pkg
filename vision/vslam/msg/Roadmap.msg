@@ -5,4 +5,4 @@ Edge[] edges
 
 # Localization within the graph
 
-Localization[] localizations
+int32 localization
