@@ -35,6 +35,7 @@
 #include <ros/node.h>
 #include <robot_msgs/Door.h>
 #include <robot_msgs/TaskFrameFormalism.h>
+#include <robot_srvs/SwitchController.h>
 #include <std_msgs/Float64.h>
 #include <door_handle_detector/DoorDetector.h>
 #include <tf/tf.h>
@@ -67,6 +68,8 @@ private:
   robot_mechanism_controllers::MoveToPose::Request  req_moveto;
   robot_mechanism_controllers::MoveToPose::Response res_moveto;
 
+  robot_srvs::SwitchController::Request req_switch;
+  robot_srvs::SwitchController::Response res_switch;
 
 public:
   OpenDoorExecutiveTest(std::string node_name):
@@ -153,6 +156,7 @@ public:
 
   bool openDoor()
   {
+    /*
     // stop arm trajectory controller
     cout << "stopping moveto controller..." << flush;
     if (!ros::service::call("cartesian_trajectory_right/stop", req_empty, res_empty))
@@ -165,6 +169,16 @@ public:
     if (!ros::service::call("cartesian_tff_right/start", req_empty, res_empty))
       return false;
     cout << "successful" << endl;
+    */
+
+    cout << "switch from moveto to tff controller..." << flush;
+    req_switch.stop_controllers.clear();      req_switch.stop_controllers.push_back("cartesian_trajectory_right");
+    req_switch.start_controllers.clear();     req_switch.start_controllers.push_back("cartesian_tff_right");
+    ros::service::call("switch_controller", req_switch, res_switch);
+    if (!res_switch.ok)
+      return false;
+    cout << "successful" << endl;
+
 
     // turn handle
     tff_msg_.mode.vel.x = tff_msg_.FORCE;
