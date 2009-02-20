@@ -124,6 +124,8 @@
     <param name="/trajectory_rollout/freespace_model" value="true" />
     <param name="/trajectory_rollout/dwa" value="false" />
     <param name="/trajectory_rollout/simple_attractor" value="false" />
+    <param name="/trajectory_rollout/yaw_goal_tolerance" value=".05" />
+    <param name="/trajectory_rollout/xy_goal_tolerance" value=".1" />
 
     <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" />-->
     <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen"/>
