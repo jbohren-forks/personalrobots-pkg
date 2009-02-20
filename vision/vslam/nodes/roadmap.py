@@ -43,7 +43,6 @@ from math import *
 from skeleton import Skeleton
 import image_msgs.msg
 
-from vslam.srv import *
 import camera
 import rospy
 import Image
@@ -59,16 +58,17 @@ class RoadmapServer:
     self.skel = Skeleton(stereo_cam)
     if len(args) > 1:
       self.skel.load(args[1])
+    self.skel.optimize()
     self.pub = rospy.Publisher("/roadmap", vslam.msg.Roadmap)
-    time.sleep(10)
+    time.sleep(1)
     self.send_map()
 
   def send_map(self):
     p = vslam.msg.Roadmap()
     (ns,es) = self.skel.localization()
-    p.nodes = [ vslam.msg.Node(x,y) for (x,y) in ns ]
+    p.nodes = [ vslam.msg.Node(x,y,t) for (x,y,t) in ns ]
     p.edges = [ vslam.msg.Edge(a,b) for (a,b) in es ]
-    p.localizations = []
+    p.localization = max(self.skel.nodes)
     print "publishing message"
     self.pub.publish(p)
 

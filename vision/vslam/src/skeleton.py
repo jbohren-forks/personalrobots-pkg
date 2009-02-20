@@ -285,14 +285,21 @@ class Skeleton:
       return sol
 
     Ns = sorted(self.nodes)
-    nodepts = [ self.newpose(id).xform(0,0,0) for id in Ns ]
+    poses = [ self.newpose(id) for id in Ns ]
+    nodepts = [ p.xform(0,0,0) for p in poses ]
+    nodedirs = [ p.xform(0,0,1) for p in poses ]
     a,b,c,d = planar(numpy.array([x for (x,y,z) in nodepts]), numpy.array([y for (x,y,z) in nodepts]), numpy.array([z for (x,y,z) in nodepts]))
     mag = math.sqrt(float(a*a + b*b + c*c))
     a /= mag
     b /= mag
     c /= mag
     plane_xform = numpy.array([[ b, c, a ], [ c, a, b ]])
-    return_positions = [ tuple(numpy.dot(plane_xform, numpy.array( [ [x], [y], [z] ])).transpose()[0]) for (x,y,z) in nodepts ]
+    pos0 = [ tuple(numpy.dot(plane_xform, numpy.array( [ [x], [y], [z] ]))) for (x,y,z) in nodepts ]
+    pos1 = [ tuple(numpy.dot(plane_xform, numpy.array( [ [x], [y], [z] ]))) for (x,y,z) in nodedirs ]
+    u = [ p1[0] - p0[0] for (p0,p1) in zip(pos0, pos1) ]
+    v = [ p1[1] - p0[1] for (p0,p1) in zip(pos0, pos1) ]
+    thetas = [ math.atan2(vi, ui) for (ui, vi) in zip(u,v) ]
+    return_positions = [ tuple(numpy.dot(plane_xform, numpy.array( [ [x], [y], [z] ])).transpose()[0]) + (thetas[i],) for (i, (x,y,z)) in enumerate(nodepts) ]
 
     reversal = dict([(Ns[i],i) for i in range(len(Ns))])
 
