@@ -82,7 +82,7 @@ typedef struct ENV_ROBARM_CONFIG
     int EnvWidth_c;
     int EnvHeight_c;
     int EnvDepth_c;
-    
+
     //fixed location of shoulder base (cells) 
     int BaseX_c;
     int BaseY_c;
@@ -102,13 +102,18 @@ typedef struct ENV_ROBARM_CONFIG
     int LowResEnvWidth_c;
     int LowResEnvHeight_c;
     int LowResEnvDepth_c;
-    
+
     //flag determines if the environment has been initialized or not
     bool EnvInitialized;
 
     //end effector goal orientation
     double EndEffGoalOrientation[3][3];
     double GoalOrientationMOE[3][3];
+
+    short unsigned int ** EndEffGoals_c;
+    double ** EndEffGoals_m;
+    double ** EndEffGoalOrientations;
+    int nEndEffGoals;
 
     //robot arm dimensions/positions
     double LinkLength_m[NUMOFLINKS];
@@ -231,6 +236,7 @@ public:
     void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
     void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
     void SetEndEffGoal(double* position, int numofpositions);
+    void SetEndEffGoals(double** EndEffGoals, int goal_type, int num_goals);
     bool SetStartJointConfig(double angles[NUMOFLINKS], bool bRad);
     void StateID2Angles(int stateID, double* angles_r);
 
@@ -238,7 +244,6 @@ public:
     void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
     void PrintEnv_Config(FILE* fOut);
     void PrintHeurGrid();
-    
 
     void PrintTimeStat(FILE* fOut);
     void CloseKinNode();
@@ -318,6 +323,7 @@ private:
     int XYZTO3DIND(int x, int y, int z);
     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned  int searchstartx, short unsigned int searchstarty, short unsigned int searchstartz);
 //     void Search3DwithHeap(State3D*** statespace, int* HeurGrid, int searchstartx, int searchstarty, int searchstartz);
+    void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned int ** EndEffGoals_c);
 
     //forward kinematics
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);
