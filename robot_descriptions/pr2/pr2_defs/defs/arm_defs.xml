@@ -426,7 +426,7 @@
       <limit effort="30" velocity="${VELOCITY_LIMIT_SCALE*6}" k_velocity="1" />
       <calibration reference_position="forearm_roll_cal" values="1.5 -1" />
 
-      <joint_properties damping="1.0" />
+      <joint_properties damping="10.0" />
       <map name="${side}_forearm_roll_joint_ode" flag="gazebo">
         <elem key="fudgeFactor" value="0.5" />
       </map>
