@@ -52,7 +52,7 @@ class OpenDoorExecutiveTest : public ros::Node
 private:
   tf::TransformListener tf_; 
 
-  enum {INITIALIZED, DETECTING, GRASPING, OPENDOOR, FINISHED };
+  enum {INITIALIZED, DETECTING, GRASPING, OPENDOOR, SUCCESS, FAILED };
   int state_;
   robot_msgs::Door my_door_;
   robot_msgs::TaskFrameFormalism tff_msg_;
@@ -136,6 +136,12 @@ public:
 
     // close the gripper
 
+
+    // stop arm trajectory controller
+    cout << "stopping moveto controller" << endl;
+    if (!ros::service::call("cartesian_trajectory_right/stop", req_empty, res_empty))
+      return false;
+
     return true;
   }
 
@@ -193,12 +199,12 @@ public:
   }
 
 
-  void initialize()
+  bool initialize()
   {
     // start arm trajectory controller
     cout << "starting moveto controller" << endl;
     if (!ros::service::call("cartesian_trajectory_right/start", req_empty, res_empty))
-      return;
+      return false;
     cout << "starting moveto controller successful" << endl;
     
     robot_msgs::PoseStamped init_pose;
@@ -212,7 +218,7 @@ public:
     init_pose.pose.orientation.y = 0;
     init_pose.pose.orientation.z = 0;
     init_pose.pose.orientation.w = 1;	  
-    //moveTo(init_pose);
+    moveTo(init_pose);
   }
 
 
@@ -223,24 +229,31 @@ public:
 	switch (state_){
 	  
 	case INITIALIZED:{
-          initialize();
-	  state_ = FINISHED;
+          if (initialize())
+	    state_ = SUCCESS;
+	  else
+	    state_ = FAILED;
 	  break;
 	}
 	case DETECTING:{
-	  detectDoor(my_door_, my_door_);
-	  state_ = GRASPING;
+	  if (detectDoor(my_door_, my_door_))
+	    state_ = GRASPING;
+	  else
+	    state_ = FAILED;
 	  break;
 	}
 	case GRASPING:{
-	  graspDoor(my_door_);
-	  
-	  state_ = OPENDOOR;
+	  if (graspDoor(my_door_))
+	    state_ = OPENDOOR;
+	  else
+	    state_ = FAILED;
 	  break;
 	}
         case OPENDOOR:{
-          //openDoor();
-	  state_ = FINISHED;
+          if (openDoor())
+	    state_ = SUCCESS;
+	  else
+	    state_ = FAILED;
           break;
         }
 	}
@@ -256,11 +269,6 @@ public:
          << pose.header.frame_id << endl;
     req_moveto.pose = pose;
     if (!ros::service::call("cartesian_trajectory_right/move_to", req_moveto, res_moveto))
-      return false;
-
-    // stop arm trajectory controller
-    cout << "stopping moveto controller" << endl;
-    if (!ros::service::call("cartesian_trajectory_right/stop", req_empty, res_empty))
       return false;
 
     return true;
