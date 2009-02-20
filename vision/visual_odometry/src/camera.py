@@ -107,3 +107,15 @@ class StereoCamera(Camera):
     Cy = matrix[1][2]
     Tx = -matrix[0][3] / Fx
     Camera.__init__(self, (Fx, Fy, Tx, Cx, Cx, Cy))
+
+class DictCamera(Camera):
+  def __init__(self, pd):
+
+    Fx = float(pd['F'])
+    Fy = float(pd['F'])
+    Clx = float(pd['Clx'])
+    Crx = float(pd['Crx'])
+    Cy = float(pd['Cy'])
+    Tx = float(pd['Tx'])
+
+    Camera.__init__(self, (Fx, Fy, Tx, Clx, Crx, Cy))
