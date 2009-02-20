@@ -34,29 +34,29 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_IKKPIECE_SETUP_
-#define KINEMATIC_PLANNING_RKP_IKKPIECE_SETUP_
+#ifndef KINEMATIC_PLANNING_OMPL_PLANNER_RKP_IKSBL_SETUP_
+#define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_IKSBL_SETUP_
 
-#include "kinematic_planning/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/kpiece/IKKPIECE1.h>
+#include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
+#include <ompl/extension/samplingbased/kinematic/extension/sbl/IKSBL.h>
 
 namespace kinematic_planning
 {
     
-    class RKPIKKPIECESetup : public RKPPlannerSetup
+    class RKPIKSBLSetup : public RKPPlannerSetup
     {
     public:
 	
-        RKPIKKPIECESetup(void) : RKPPlannerSetup()
+        RKPIKSBLSetup(void) : RKPPlannerSetup()
 	{
-	    name = "IKKPIECE";	    
+	    name = "IKSBL";	    
 	}
 	
-	virtual ~RKPIKKPIECESetup(void)
+	virtual ~RKPIKSBLSetup(void)
 	{
-	    if (dynamic_cast<ompl::IKKPIECE1*>(mp))
+	    if (dynamic_cast<ompl::IKSBL*>(mp))
 	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::IKKPIECE1*>(mp)->getProjectionEvaluator();
+		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::IKSBL*>(mp)->getProjectionEvaluator();
 		if (pe)
 		    delete pe;
 	    }
@@ -66,19 +66,19 @@ namespace kinematic_planning
 	{
 	    preSetup(model, options);
 	    
-	    ompl::IKKPIECE1* kpiece = new ompl::IKKPIECE1(si);
-	    mp                      = kpiece;	
+	    ompl::IKSBL* sbl = new ompl::IKSBL(si);
+	    mp               = sbl;	
 	    
 	    if (options.find("range") != options.end())
 	    {
-		double range = parseDouble(options["range"], kpiece->getRange());
-		kpiece->setRange(range);
+		double range = parseDouble(options["range"], sbl->getRange());
+		sbl->setRange(range);
 		ROS_INFO("Range is set to %g", range);
 	    }
 
-	    kpiece->setProjectionEvaluator(getProjectionEvaluator(model, options));
+	    sbl->setProjectionEvaluator(getProjectionEvaluator(model, options));
 	    
-	    if (kpiece->getProjectionEvaluator() == NULL)
+	    if (sbl->getProjectionEvaluator() == NULL)
 	    {
 		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
 		return false;

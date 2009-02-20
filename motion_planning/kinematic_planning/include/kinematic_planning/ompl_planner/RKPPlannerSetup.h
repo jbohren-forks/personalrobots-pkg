@@ -34,8 +34,8 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_PLANNER_SETUP_
-#define KINEMATIC_PLANNING_RKP_PLANNER_SETUP_
+#ifndef KINEMATIC_PLANNING_OMPL_PLANNER_RKP_PLANNER_SETUP_
+#define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_PLANNER_SETUP_
 
 #include "kinematic_planning/RKPModelBase.h"
 #include "kinematic_planning/RKPStateValidator.h"

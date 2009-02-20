@@ -34,56 +34,65 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_LAZY_RRT_SETUP_
-#define KINEMATIC_PLANNING_RKP_LAZY_RRT_SETUP_
+#ifndef KINEMATIC_PLANNING_OMPL_PLANNER_RKP_SBL_SETUP_
+#define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_SBL_SETUP_
 
-#include "kinematic_planning/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
+#include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
+#include <ompl/extension/samplingbased/kinematic/extension/sbl/SBL.h>
 
 namespace kinematic_planning
 {
     
-    class RKPLazyRRTSetup : public RKPPlannerSetup
+    class RKPSBLSetup : public RKPPlannerSetup
     {
     public:
 	
-        RKPLazyRRTSetup(void) : RKPPlannerSetup()
+        RKPSBLSetup(void) : RKPPlannerSetup()
 	{
-	    name = "LazyRRT";
+	    name = "SBL";	    
 	}
 	
-	virtual ~RKPLazyRRTSetup(void)
+	virtual ~RKPSBLSetup(void)
 	{
+	    if (dynamic_cast<ompl::SBL_t>(mp))
+	    {
+		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::SBL_t>(mp)->getProjectionEvaluator();
+		if (pe)
+		    delete pe;
+	    }
 	}
-		
+	
 	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
 	{
 	    preSetup(model, options);
 	    
-	    ompl::LazyRRT_t rrt = new ompl::LazyRRT(si);
-	    mp                  = rrt;
+	    ompl::SBL_t sbl = new ompl::SBL(si);
+	    mp              = sbl;	
 	    
 	    if (options.find("range") != options.end())
 	    {
-		double range = parseDouble(options["range"], rrt->getRange());
-		rrt->setRange(range);
+		double range = parseDouble(options["range"], sbl->getRange());
+		sbl->setRange(range);
 		ROS_INFO("Range is set to %g", range);
 	    }
 	    
-	    if (options.find("goal_bias") != options.end())
-	    {	
-		double bias = parseDouble(options["goal_bias"], rrt->getGoalBias());
-		rrt->setGoalBias(bias);
-		ROS_INFO("Goal bias is set to %g", bias);
+	    sbl->setProjectionEvaluator(getProjectionEvaluator(model, options));
+	    
+	    if (sbl->getProjectionEvaluator() == NULL)
+	    {
+		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
+		return false;
 	    }
-	    
-	    postSetup(model, options);
-	    
-	    return true;
+	    else
+	    {
+		postSetup(model, options);
+		return true;
+	    }
 	}
 	
     };
-}
+
+} // kinematic_planning
 
 #endif
     

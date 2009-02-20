@@ -34,34 +34,34 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_RRT_SETUP_
-#define KINEMATIC_PLANNING_RKP_RRT_SETUP_
+#ifndef KINEMATIC_PLANNING_OMPL_PLANNER_RKP_LAZY_RRT_SETUP_
+#define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_LAZY_RRT_SETUP_
 
-#include "kinematic_planning/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
+#include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
+#include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
 
 namespace kinematic_planning
 {
     
-    class RKPRRTSetup : public RKPPlannerSetup
+    class RKPLazyRRTSetup : public RKPPlannerSetup
     {
     public:
 	
-        RKPRRTSetup(void) : RKPPlannerSetup()
+        RKPLazyRRTSetup(void) : RKPPlannerSetup()
 	{
-	    name = "RRT";
+	    name = "LazyRRT";
 	}
 	
-	virtual ~RKPRRTSetup(void)
+	virtual ~RKPLazyRRTSetup(void)
 	{
 	}
-	
+		
 	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
 	{
 	    preSetup(model, options);
 	    
-	    ompl::RRT_t rrt = new ompl::RRT(si);
-	    mp              = rrt;
+	    ompl::LazyRRT_t rrt = new ompl::LazyRRT(si);
+	    mp                  = rrt;
 	    
 	    if (options.find("range") != options.end())
 	    {
@@ -83,8 +83,7 @@ namespace kinematic_planning
 	}
 	
     };
-    
-} // kinematic_planning
+}
 
 #endif
     

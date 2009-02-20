@@ -39,13 +39,13 @@
 
 #include "kinematic_planning/RKPModelBase.h"
 
-#include "kinematic_planning/RKPRRTSetup.h"
-#include "kinematic_planning/RKPLazyRRTSetup.h"
-#include "kinematic_planning/RKPSBLSetup.h"
-#include "kinematic_planning/RKPESTSetup.h"
-#include "kinematic_planning/RKPIKSBLSetup.h"
-#include "kinematic_planning/RKPKPIECESetup.h"
-#include "kinematic_planning/RKPIKKPIECESetup.h"
+#include "kinematic_planning/ompl_planner/RKPRRTSetup.h"
+#include "kinematic_planning/ompl_planner/RKPLazyRRTSetup.h"
+#include "kinematic_planning/ompl_planner/RKPSBLSetup.h"
+#include "kinematic_planning/ompl_planner/RKPESTSetup.h"
+#include "kinematic_planning/ompl_planner/RKPIKSBLSetup.h"
+#include "kinematic_planning/ompl_planner/RKPKPIECESetup.h"
+#include "kinematic_planning/ompl_planner/RKPIKKPIECESetup.h"
 
 #include <string>
 #include <map>

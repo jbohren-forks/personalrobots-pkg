@@ -34,29 +34,29 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_KPIECE_SETUP_
-#define KINEMATIC_PLANNING_RKP_KPIECE_SETUP_
+#ifndef KINEMATIC_PLANNING_OMPL_PLANNER_RKP_EST_SETUP_
+#define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_EST_SETUP_
 
-#include "kinematic_planning/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/kpiece/KPIECE1.h>
+#include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
+#include <ompl/extension/samplingbased/kinematic/extension/est/EST.h>
 
 namespace kinematic_planning
 {
     
-    class RKPKPIECESetup : public RKPPlannerSetup
+    class RKPESTSetup : public RKPPlannerSetup
     {
     public:
 	
-        RKPKPIECESetup(void) : RKPPlannerSetup()
+        RKPESTSetup(void) : RKPPlannerSetup()
 	{
-	    name = "KPIECE";	    
+	    name = "EST";
 	}
 	
-	virtual ~RKPKPIECESetup(void)
+	virtual ~RKPESTSetup(void)
 	{
-	    if (dynamic_cast<ompl::KPIECE1_t>(mp))
+	    if (dynamic_cast<ompl::EST_t>(mp))
 	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::KPIECE1_t>(mp)->getProjectionEvaluator();
+		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::EST_t>(mp)->getProjectionEvaluator();
 		if (pe)
 		    delete pe;
 	    }
@@ -66,19 +66,19 @@ namespace kinematic_planning
 	{
 	    preSetup(model, options);
 	    
-	    ompl::KPIECE1_t kpiece = new ompl::KPIECE1(si);
-	    mp                     = kpiece;	
+	    ompl::EST_t est = new ompl::EST(si);
+	    mp              = est;	
 	    
 	    if (options.find("range") != options.end())
 	    {
-		double range = parseDouble(options["range"], kpiece->getRange());
-		kpiece->setRange(range);
+		double range = parseDouble(options["range"], est->getRange());
+		est->setRange(range);
 		ROS_INFO("Range is set to %g", range);
 	    }
 	    
-	    kpiece->setProjectionEvaluator(getProjectionEvaluator(model, options));
+	    est->setProjectionEvaluator(getProjectionEvaluator(model, options));
 	    
-	    if (kpiece->getProjectionEvaluator() == NULL)
+	    if (est->getProjectionEvaluator() == NULL)
 	    {
 		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
 		return false;
@@ -91,7 +91,7 @@ namespace kinematic_planning
 	}
 	
     };
-
+    
 } // kinematic_planning
 
 #endif

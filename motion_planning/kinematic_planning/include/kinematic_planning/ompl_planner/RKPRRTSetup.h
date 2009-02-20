@@ -34,64 +34,56 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_RKP_IKSBL_SETUP_
-#define KINEMATIC_PLANNING_RKP_IKSBL_SETUP_
+#ifndef KINEMATIC_PLANNING_OMPL_PLANNER_RKP_RRT_SETUP_
+#define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_RRT_SETUP_
 
-#include "kinematic_planning/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/sbl/IKSBL.h>
+#include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
+#include <ompl/extension/samplingbased/kinematic/extension/rrt/RRT.h>
 
 namespace kinematic_planning
 {
     
-    class RKPIKSBLSetup : public RKPPlannerSetup
+    class RKPRRTSetup : public RKPPlannerSetup
     {
     public:
 	
-        RKPIKSBLSetup(void) : RKPPlannerSetup()
+        RKPRRTSetup(void) : RKPPlannerSetup()
 	{
-	    name = "IKSBL";	    
+	    name = "RRT";
 	}
 	
-	virtual ~RKPIKSBLSetup(void)
+	virtual ~RKPRRTSetup(void)
 	{
-	    if (dynamic_cast<ompl::IKSBL*>(mp))
-	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::IKSBL*>(mp)->getProjectionEvaluator();
-		if (pe)
-		    delete pe;
-	    }
 	}
 	
 	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
 	{
 	    preSetup(model, options);
 	    
-	    ompl::IKSBL* sbl = new ompl::IKSBL(si);
-	    mp               = sbl;	
+	    ompl::RRT_t rrt = new ompl::RRT(si);
+	    mp              = rrt;
 	    
 	    if (options.find("range") != options.end())
 	    {
-		double range = parseDouble(options["range"], sbl->getRange());
-		sbl->setRange(range);
+		double range = parseDouble(options["range"], rrt->getRange());
+		rrt->setRange(range);
 		ROS_INFO("Range is set to %g", range);
 	    }
-
-	    sbl->setProjectionEvaluator(getProjectionEvaluator(model, options));
 	    
-	    if (sbl->getProjectionEvaluator() == NULL)
-	    {
-		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
-		return false;
+	    if (options.find("goal_bias") != options.end())
+	    {	
+		double bias = parseDouble(options["goal_bias"], rrt->getGoalBias());
+		rrt->setGoalBias(bias);
+		ROS_INFO("Goal bias is set to %g", bias);
 	    }
-	    else
-	    {
-		postSetup(model, options);
-		return true;
-	    }
+	    
+	    postSetup(model, options);
+	    
+	    return true;
 	}
 	
     };
-
+    
 } // kinematic_planning
 
 #endif

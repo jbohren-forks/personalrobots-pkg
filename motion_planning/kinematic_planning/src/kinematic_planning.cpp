@@ -253,23 +253,20 @@ public:
     bool forceReplanning(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
     {
 	ROS_INFO("Received request to force replanning");
+	notifyReplanning();
+	return true;
+    }
+    
+    void notifyReplanning(void)
+    {
 	m_continueReplanningLock.lock();
 	m_collisionMonitorChange = true;
 	m_continueReplanningLock.unlock();
 	m_collisionMonitorCondition.notify_all();
-	return true;
     }
     
     void stopReplanning(void)
-    {
-	std_srvs::Empty::Request  dummy1;
-	std_srvs::Empty::Response dummy2;
-	ROS_INFO("Auto-stopping replanning...");	
-	stopReplanning(dummy1, dummy2);
-    }
-    
-    bool stopReplanning(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
-    {
+    {	
 	m_replanningLock.lock();
 	bool stop = false;
 	m_continueReplanningLock.lock();
@@ -292,6 +289,12 @@ public:
 	
 	m_replanningLock.unlock();
 	ROS_INFO("Replanning stopped");	
+    }
+    
+    bool stopReplanning(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+    {
+	ROS_INFO("Received request to stop replanning");	
+	stopReplanning();
 	return true;
     }
     
