@@ -45,8 +45,6 @@ unsigned int collision_space::EnvironmentModel::addRobotModel(planning_models::K
 {
     unsigned int pos = m_models.size();
     m_models.push_back(model);
-    m_modelLocks.resize(pos + 1);
-    m_modelLocks[pos] = new boost::mutex();
     return pos;
 }
 
@@ -58,16 +56,6 @@ void collision_space::EnvironmentModel::lock(void)
 void collision_space::EnvironmentModel::unlock(void)
 {
     m_lock.unlock();    
-}
-
-void collision_space::EnvironmentModel::lockModel(unsigned int model_id)
-{
-    m_modelLocks[model_id]->lock();
-}
-
-void collision_space::EnvironmentModel::unlockModel(unsigned int model_id)
-{
-    m_modelLocks[model_id]->unlock();
 }
 
 void collision_space::EnvironmentModel::setSelfCollision(bool selfCollision)
