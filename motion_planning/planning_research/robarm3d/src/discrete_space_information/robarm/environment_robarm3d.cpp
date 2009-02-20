@@ -1773,35 +1773,27 @@ bool EnvironmentROBARM::InitializeEnvironment()
     for(i = 0; i < NUMOFLINKS; i++)
         coord[i] = 0;
 
-    endeff[0] = EnvROBARMCfg.EndEffGoalX_c;
-    endeff[1] = EnvROBARMCfg.EndEffGoalY_c;
-    endeff[2] = EnvROBARMCfg.EndEffGoalZ_c;
-    EnvROBARM.goalHashEntry = CreateNewHashEntry(coord, NUMOFLINKS, endeff, 0, NULL);
-
-
+    for(i = 0; i < EnvROBARMCfg.nEndEffGoals; i++)
+    {
+        endeff[0] = EnvROBARMCfg.EndEffGoals_c[i][0];
+        endeff[1] = EnvROBARMCfg.EndEffGoals_c[i][1];
+        endeff[2] = EnvROBARMCfg.EndEffGoals_c[i][2];
+        EnvROBARM.goalHashEntry = CreateNewHashEntry(coord, NUMOFLINKS, endeff, 0, NULL);
     
-    //check the validity of both goal and start configurations
-    //testing for EnvROBARMCfg.EndEffGoalX_c < 0  and EnvROBARMCfg.EndEffGoalY_c < 0 is useless since they are unsigned 
-//     if(!IsValidCoord(EnvROBARM.startHashEntry->coord) || EnvROBARMCfg.EndEffGoalX_c >= EnvROBARMCfg.EnvWidth_c ||
-// 	EnvROBARMCfg.EndEffGoalY_c >= EnvROBARMCfg.EnvHeight_c || EnvROBARMCfg.EndEffGoalZ_c >= EnvROBARMCfg.EnvDepth_c)
-//     {
-//         printf("Either start or goal configuration is invalid\n");
-//         return false;
-//     }
-
-    if(EnvROBARMCfg.EndEffGoalX_c >= EnvROBARMCfg.EnvWidth_c || EnvROBARMCfg.EndEffGoalY_c >= EnvROBARMCfg.EnvHeight_c || 
-        EnvROBARMCfg.EndEffGoalZ_c >= EnvROBARMCfg.EnvDepth_c)
-    {
-        printf("End effector goal position is out of bounds (%u %u %u).\n",EnvROBARMCfg.EndEffGoalX_c,EnvROBARMCfg.EndEffGoalY_c,EnvROBARMCfg.EndEffGoalZ_c);
-        return false;
+        //check if goal position is valid
+        if(endeff[0] >= EnvROBARMCfg.EnvWidth_c || endeff[1] >= EnvROBARMCfg.EnvHeight_c || endeff[2] >= EnvROBARMCfg.EnvDepth_c)
+        {
+            printf("End effector goal position(%u %u %u) is out of bounds.\n",endeff[0], endeff[1], endeff[2]);
+            return false;
+        }
+    
+        if(EnvROBARMCfg.Grid3D[endeff[0]][endeff[1]][endeff[2]] > 1)
+        {
+            printf("End Effector Goal is invalid\n");
+            exit(1);
+        }
     }
-
-    if(EnvROBARMCfg.Grid3D[EnvROBARMCfg.EndEffGoalX_c][EnvROBARMCfg.EndEffGoalY_c][EnvROBARMCfg.EndEffGoalZ_c] == 1)
-    {
-	printf("End Effector Goal is invalid\n");
-        exit(1);
-    }
-
+    
     //for now heuristics are not set
     EnvROBARM.Heur = NULL;
 
@@ -1902,7 +1894,8 @@ bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
     ComputeCostPerCell();
 
     //pre-compute heuristics
-    ComputeHeuristicValues();
+    if(EnvROBARMCfg.dijkstra_heuristic)
+        ComputeHeuristicValues();
     
 #if VERBOSE
     //output environment data
@@ -2530,7 +2523,50 @@ void EnvironmentROBARM::SetEndEffGoal(double* position, int numofpositions)
     }
 
     //pre-compute heuristics with new goal
-    ComputeHeuristicValues();
+    if(EnvROBARMCfg.dijkstra_heuristic)    
+        ComputeHeuristicValues();
+}
+
+void EnvironmentROBARM::SetEndEffGoal(double** EndEffGoals, int goal_type, int num_goals)
+{
+    //Goal is in cartesian coordinates in world frame in meters
+    if(goal_type == 0)
+    {
+        EnvROBARMCfg.nEndEffGoals = num_goals;
+        
+        //loop through all the goal positions
+        for(int i = 0; i < num_goals; i++)
+        {
+            //convert goal position from meters to cells
+            ContXYZ2Cell(EndEffGoals[i][0],EndEffGoals[i][1],EndEffGoals[i][2], &(EnvROBARMCfg.EndEffGoals_c[i][0]), &(EnvROBARMCfg.EndEffGoals_c[i][1]), &(EnvROBARMCfg.EndEffGoals_c[i][2]));
+            
+            //input orientation (rotation matrix) of each goal position 
+            for(int k = 0; k < 9; k++)
+                EnvROBARMCfg.EndEffGoalOrientations[i][k] = EndEffGoals[i][k+3];
+        }
+        
+        //set goalangle to invalid number
+        EnvROBARMCfg.LinkGoalAngles_d[0] = INVALID_NUMBER;
+    }
+    
+    //Goal is a joint space vector in radians
+    else if(goal_type == 1)
+    {
+        for(int i = 0; i < 7; i++)
+            EnvROBARMCfg.LinkGoalAngles_d[i] = DEG2RAD(position[i]);
+
+        //so the goal's location (forward kinematics) can be calculated after the initialization completes
+        EnvROBARMCfg.JointSpaceGoal = 1;
+    }
+    
+    else
+    {
+        printf("[SetEndEffGoal] Invalid type of goal vector.\n");
+    }
+
+    //pre-compute heuristics with new goal
+    if(EnvROBARMCfg.dijkstra_heuristic)    
+        ComputeHeuristicValues();
 }
 
 bool EnvironmentROBARM::SetStartJointConfig(double angles[NUMOFLINKS], bool bRad)
