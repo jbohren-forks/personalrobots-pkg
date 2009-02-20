@@ -159,7 +159,7 @@ public:
 	unsigned char GetMapCost(int x, int y);
 	void GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly, unsigned char* obsthresh);
 
-	bool SetEnvParameter(char* parameter, int value);
+	bool SetEnvParameter(const char* parameter, int value);
 
 	const EnvNAV2DConfig_t* GetEnvNavConfig();
 

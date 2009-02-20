@@ -1093,7 +1093,7 @@ void EnvironmentNAV2D::GetEnvParms(int *size_x, int *size_y, int* startx, int* s
 	*obsthresh = EnvNAV2DCfg.obsthresh;
 }
 
-bool EnvironmentNAV2D::SetEnvParameter(char* parameter, int value)
+bool EnvironmentNAV2D::SetEnvParameter(const char* parameter, int value)
 {
 
 	if(EnvNAV2D.bInitialized == true)

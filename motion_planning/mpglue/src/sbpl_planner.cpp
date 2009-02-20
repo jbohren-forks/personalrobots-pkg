@@ -79,7 +79,7 @@ namespace mpglue {
   }
   
   
-  char * const SBPLPlannerStats::
+  const char * const SBPLPlannerStats::
   getClassName() const
   {
     return "mpglue::SBPLPlannerStats";

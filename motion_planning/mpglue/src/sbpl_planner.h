@@ -63,7 +63,7 @@ namespace mpglue {
 			   std::string const & title,
 			   std::string const & prefix) const;
     
-    virtual char * const getClassName() const;
+    virtual const char * const getClassName() const;
     
     virtual void dumpSubclassXML(std::ostream & os,
 				 std::string const & prefix) const;
