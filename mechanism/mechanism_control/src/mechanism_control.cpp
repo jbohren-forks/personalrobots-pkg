@@ -153,7 +153,7 @@ void MechanismControl::update()
     if (controllers_[i] != NULL)
     {
       double start = realtime_gettime();
-      controllers_[i]->update_request();
+      controllers_[i]->updateRequest();
       double end = realtime_gettime();
       diagnostics_.controllers_[i].acc_(end - start);
     }
@@ -214,7 +214,7 @@ bool MechanismControl::spawnController(const std::string &type,
 
   ROS_INFO("Spawning %s", name.c_str());
 
-  if (!c->initXml_request(state_, config, name))
+  if (!c->initXmlRequest(state_, config, name))
   {
     delete c;
     return false;
