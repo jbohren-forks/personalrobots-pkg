@@ -122,11 +122,13 @@ double Pid::updatePid(double error, double dt)
   double p_term, d_term, i_term;
   p_error_ = error; //this is pError = pState-pTarget
 
+  /*
   if (dt == 0)
   {
     throw "dividebyzero"; //TODO: not sure how to deal with this
   }
   else
+  */
   {
     // Calculate proportional contribution to command
     p_term = p_gain_ * p_error_;
@@ -168,11 +170,13 @@ double Pid::updatePid(double error, double error_dot, double dt)
   double p_term, d_term, i_term;
   p_error_ = error; //this is pError = pState-pTarget
   d_error_ = error_dot;
+  /*
   if (dt == 0)
   {
     throw "dividebyzero"; //TODO: not sure how to deal with this
   }
   else
+  */
   {
     // Calculate proportional contribution to command
     p_term = p_gain_ * p_error_;
