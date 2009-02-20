@@ -22,4 +22,5 @@
  <depend package="collision_map"/>
  <depend package="laser_scan"/>
  <depend package="kinematic_planning"/>
+ <depend package="robot_pose_ekf"/>
 </package>
