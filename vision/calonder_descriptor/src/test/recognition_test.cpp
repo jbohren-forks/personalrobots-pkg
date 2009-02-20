@@ -111,7 +111,7 @@ int main( int argc, char** argv )
     matches_file.open( file_name.c_str() );
   }
   
-  RTreeClassifier classifier(true);
+  RTreeClassifier classifier;
   classifier.read(trees_file.c_str());
   Rng rng(seed);
   

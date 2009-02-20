@@ -33,9 +33,6 @@ public:
              size_t reduced_num_dim = RandomizedTree::DEFAULT_REDUCED_NUM_DIM,
              int num_quant_bits = DEFAULT_NUM_QUANT_BITS);
 
-  // Caller is responsible for calling free() on returned signature
-  //float* getSignature(IplImage* patch);
-  
   // sig must point to a memory block of at least classes()*sizeof(float|uint8_t) bytes
   void getSignature(IplImage *patch, uint8_t *sig);
   void getSignature(IplImage *patch, float *sig);

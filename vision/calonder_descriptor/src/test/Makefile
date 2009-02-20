@@ -6,9 +6,8 @@ CV_LATEST = $(shell rospack find opencv_latest)/opencv
 CFLAGS += -I$(CV_LATEST)/include/opencv
 LDFLAGS = -L$(CV_LATEST)/lib -lcv -lhighgui
 # Boost
-BOOST_ROOT = $(shell rospack find boost)/boost
-CFLAGS += -I$(BOOST_ROOT)/include
-LDFLAGS += -L$(BOOST_ROOT)/lib -lboost_program_options-mt -lboost_thread-mt
+CFLAGS += -I$(ROS_BOOST_ROOT)/include
+LDFLAGS += -L$(ROS_BOOST_ROOT)/lib -lboost_program_options-gcc42-mt -lboost_thread-gcc42-mt
 # Descriptor
 CALONDER = $(shell rospack find calonder_descriptor)
 CFLAGS += -I/usr/include -I$(CALONDER)/include

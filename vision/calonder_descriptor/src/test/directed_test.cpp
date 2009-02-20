@@ -12,12 +12,12 @@
 
 using namespace features;
 
-xy* fast(const IplImage* image, int threshold, int barrier, int* num_nonmax)
+xyr* fast(const IplImage* image, int threshold, int barrier, int* num_nonmax)
 {
   int num_corners = 0;
   unsigned char *imdata = (unsigned char*)image->imageData;
-  xy* corners = fast_corner_detect_9(imdata, image->width, image->height, threshold, &num_corners);
-  xy* nm = fast_nonmax(imdata, image->width, image->height, corners, num_corners, barrier, num_nonmax);
+  xyr* corners = fast_corner_detect_9(imdata, image->width, image->height, threshold, &num_corners);
+  xyr* nm = fast_nonmax(imdata, image->width, image->height, corners, num_corners, barrier, num_nonmax);
   free(corners);
   return nm;
 }
@@ -28,7 +28,7 @@ int main(int argc, char** argv)
   static const char tree_name[] = "cpp.tree";
   cv::WImageBuffer1_b im( cvLoadImage(im_name, CV_LOAD_IMAGE_GRAYSCALE) );
   int num_corners = 0;
-  xy* kp = fast(im.Ipl(), 150, 40, &num_corners);
+  xyr* kp = fast(im.Ipl(), 150, 40, &num_corners);
   printf("%d keypoints\n", num_corners);
 
   std::vector<BaseKeypoint> base_set;
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
   for (int i = 0; i < num_corners; ++i)
     base_set.push_back( BaseKeypoint(kp[i].x, kp[i].y, im.Ipl()) );
   
-  RTreeClassifier cl(true);
+  RTreeClassifier cl;
   //Rng rng( std::time(0) );
   Rng rng( 0 );
   /*
@@ -49,11 +49,11 @@ int main(int argc, char** argv)
   */
 
   size_t sig_size = num_corners;
-  cl.train(base_set, rng, /*make_patch,*/ 25, 10, 1000, num_corners); // Only 20 views?
+  cl.train(base_set, rng, /*make_patch,*/ 50, 10, 1000, num_corners); // Only 20 views?
   cl.write(tree_name);
 
-  typedef float SigType;
-  //typedef uint8_t SigType;
+  //typedef float SigType;
+  typedef uint8_t SigType;
   typedef Promote<SigType>::type DistanceType;
   BruteForceMatcher<SigType, CvPoint> matcher(cl.classes());
 
