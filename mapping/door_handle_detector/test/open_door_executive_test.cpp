@@ -35,6 +35,7 @@
 #include <ros/node.h>
 #include <robot_msgs/Door.h>
 #include <robot_msgs/TaskFrameFormalism.h>
+#include <std_msgs/Float64.h>
 #include <door_handle_detector/DoorDetector.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -82,6 +83,9 @@ public:
     param("~/door_hinge" , tmp2, -1); my_door_.hinge = tmp2;
     param("~/door_rot_dir" , tmp2, -1); my_door_.rot_dir = tmp2;
     my_door_.header.frame_id = "odom_combined";
+
+    advertise<robot_msgs::TaskFrameFormalism>("cartesian_tff_right/command",1);
+    advertise<std_msgs::Float64>("gripper_effort_right/set_command",1);
   }
   
   
@@ -211,14 +215,14 @@ public:
     init_pose.header.frame_id = "base_link";
     // dirty hack because service sets time 0 to time now
     init_pose.header.stamp = Time().now() - Duration().fromSec(1); 
-    init_pose.pose.position.x = 0.5;
+    init_pose.pose.position.x = 0.2;
     init_pose.pose.position.y = 0.0;
-    init_pose.pose.position.y = 0.4;
+    init_pose.pose.position.z = 0.4;
     init_pose.pose.orientation.x = 0;
     init_pose.pose.orientation.y = 0;
     init_pose.pose.orientation.z = 0;
     init_pose.pose.orientation.w = 1;	  
-    moveTo(init_pose);
+    return moveTo(init_pose);
   }
 
 

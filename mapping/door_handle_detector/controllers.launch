@@ -1,6 +1,6 @@
 <launch>
 <!-- Gripper controller -->
-  <node pkg="mechanism_control" type="spawner.py" args="$(find door_handle_detector)/gripper_effor_right.xml" />
+  <!--node pkg="mechanism_control" type="spawner.py" args="$(find door_handle_detector)/gripper_effor_right.xml" /-->
 
 <!-- Cartesian trajectory controller -->
   <param name="cartesian_trajectory_right/autostart" type="bool" value="false" />
