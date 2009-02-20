@@ -1,0 +1,3 @@
+<controller type="JointEffortControllerNode" name="gripper_effort" >
+   <joint name="r_gripper_l_finger_joint" />
+</controller>
