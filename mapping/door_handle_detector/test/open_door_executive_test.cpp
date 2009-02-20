@@ -53,7 +53,7 @@ class OpenDoorExecutiveTest : public ros::Node
 private:
   tf::TransformListener tf_; 
 
-  enum {INITIALIZED, DETECTING, GRASPING, OPENDOOR, SUCCESS, FAILED };
+  enum {INITIALIZED, DETECTING, GRASPING, OPENDOOR, SUCCESS, FAILED, FINISHED };
   int state_;
   robot_msgs::Door my_door_;
   robot_msgs::TaskFrameFormalism tff_msg_;
@@ -142,10 +142,10 @@ public:
 
 
     // stop arm trajectory controller
-    cout << "stopping moveto controller" << endl;
+    cout << "stopping moveto controller..." << flush;
     if (!ros::service::call("cartesian_trajectory_right/stop", req_empty, res_empty))
       return false;
-    cout << "stopping moveto controller successful" << endl;
+    cout << "successful" << endl;
 
     return true;
   }
@@ -153,10 +153,18 @@ public:
 
   bool openDoor()
   {
+    // stop arm trajectory controller
+    cout << "stopping moveto controller..." << flush;
+    if (!ros::service::call("cartesian_trajectory_right/stop", req_empty, res_empty))
+      return false;
+    cout << "successful" << endl;
+
+
     // turn on tff controller
-    cout << "starting tff controller" << endl;
+    cout << "starting tff controller..." << flush;
     if (!ros::service::call("cartesian_tff_right/start", req_empty, res_empty))
       return false;
+    cout << "successful" << endl;
 
     // turn handle
     tff_msg_.mode.vel.x = tff_msg_.FORCE;
@@ -196,9 +204,10 @@ public:
     usleep(1e6*15);
 
     // turn off tff controller
-    cout << "stopping tff controller" << endl;
+    cout << "stopping tff controller..." << flush;
     if (!ros::service::call("cartesian_tff_right/stop", req_empty, res_empty))
       return false;
+    cout << "successful" << endl;
 
     return true;
   }
@@ -207,10 +216,10 @@ public:
   bool initialize()
   {
     // start arm trajectory controller
-    cout << "starting moveto controller" << endl;
+    cout << "starting moveto controller..." << flush;
     if (!ros::service::call("cartesian_trajectory_right/start", req_empty, res_empty))
       return false;
-    cout << "starting moveto controller successful" << endl;
+    cout << "successful" << endl;
     
     robot_msgs::PoseStamped init_pose;
     init_pose.header.frame_id = "base_link";
@@ -238,13 +247,17 @@ public:
 	switch (state_){
 	  
 	case INITIALIZED:{
+          cout << "Initializing door opening... " << endl;
+          usleep(1e6*2);
           if (initialize())
-	    state_ = DETECTING;
+	    //state_ = DETECTING;
+            state_ = OPENDOOR;
 	  else
 	    state_ = FAILED;
 	  break;
 	}
 	case DETECTING:{
+          cout << "Detecting door... " << endl;
 	  if (detectDoor(my_door_, my_door_))
 	    state_ = GRASPING;
 	  else
@@ -252,6 +265,7 @@ public:
 	  break;
 	}
 	case GRASPING:{
+          cout << "Grasping door... " << endl;
 	  if (graspDoor(my_door_))
 	    state_ = OPENDOOR;
 	  else
@@ -259,14 +273,26 @@ public:
 	  break;
 	}
         case OPENDOOR:{
+          cout << "Opening door... " << endl;
           if (openDoor())
 	    state_ = SUCCESS;
 	  else
 	    state_ = FAILED;
           break;
         }
+        case FAILED:{
+          cout << "FAILED" << endl;
+          state_ = FINISHED;
+          break;
 	}
-	usleep(1e3*100);
+        case SUCCESS:{
+          cout << "success" << endl;
+          state_ = FINISHED;
+          break;
+	}
+        case FINISHED: return;
+        }
+        usleep(1e3*100);
       }
   }
 
