@@ -670,8 +670,19 @@ namespace ros {
         ROS_DEBUG("Moving to desired goal orientation\n");
         cmdVel.vel.vx = 0;
         cmdVel.vel.vy = 0;
-        cmdVel.ang_vel.vz =  stateMsg.goal.th - yaw;
-        cmdVel.ang_vel.vz = cmdVel.ang_vel.vz >= 0.0 ? std::max(cmdVel.ang_vel.vz, .4) : std::min(cmdVel.ang_vel.vz,  -.4);
+        double ang_diff =  fmod((double)stateMsg.goal.th, 2 * M_PI) - fmod(yaw, 2 * M_PI);
+        if(ang_diff < 0){
+          if(ang_diff < -1.0 * M_PI)
+            cmdVel.ang_vel.vz = .6;
+          else
+            cmdVel.ang_vel.vz = -.6;
+        }
+        else{
+          if(ang_diff > M_PI)
+            cmdVel.ang_vel.vz = -.6;
+          else
+            cmdVel.ang_vel.vz = .6;
+        }
       }
       else {
         // Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
