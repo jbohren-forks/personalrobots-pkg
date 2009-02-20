@@ -15,6 +15,8 @@ int planrobarm(int argc, char *argv[])
     double allocated_time_secs = MAX_RUNTIME; //in seconds
     MDPConfig MDPCfg;
 
+    clock_t totaltime = clock();
+    
     //Initialize Environment (should be called before initializing anything else)
     EnvironmentROBARM environment_robarm;
 
@@ -67,6 +69,8 @@ int planrobarm(int argc, char *argv[])
     printf("done planning\n");
     std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
 
+    printf("\ntotal planning time is %.4f seconds.\n", double(clock()-totaltime) / CLOCKS_PER_SEC);
+    
     // create filename with current time
     string outputfile = "sol";
     outputfile.append(".txt");

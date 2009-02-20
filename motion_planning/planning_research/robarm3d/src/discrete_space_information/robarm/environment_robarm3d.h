@@ -187,14 +187,11 @@ typedef struct ENV_ROBARM_CONFIG
 // hash entry that contains end effector coordinates
 typedef struct ENVROBARMHASHENTRY
 {
-    int stateID;
-    //state coordinates
-    short unsigned int coord[NUMOFLINKS];
-    short unsigned int wrist[3];
-    short unsigned int elbow[3];
-    short unsigned int endeff[3];
-    short unsigned int action;
-    double orientation[3][3];
+    int stateID;                            //hash entry ID number
+    short unsigned int coord[NUMOFLINKS];   //state coordinates
+    short unsigned int endeff[3];           //end eff pos (xyz)
+    short unsigned int action;              //successor action number
+    double orientation[3][3];               //orientation of end effector (rotation matrix)
 } EnvROBARMHashEntry_t;
 
 // main structure that stores environment data used in planning
@@ -223,6 +220,7 @@ class EnvironmentROBARM: public DiscreteSpaceInformation
 public:
 
     EnvironmentROBARM();
+    ~EnvironmentROBARM(){};
     bool InitializeEnv(const char* sEnvFile);
     bool InitializeMDPCfg(MDPConfig *MDPCfg);
     int  GetFromToHeuristic(int FromStateID, int ToStateID);
@@ -240,7 +238,7 @@ public:
     void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
     void PrintEnv_Config(FILE* fOut);
     void PrintHeurGrid();
-    ~EnvironmentROBARM(){};
+    
 
     void PrintTimeStat(FILE* fOut);
     void CloseKinNode();
@@ -261,8 +259,6 @@ private:
     unsigned int GETHASHBIN(short unsigned int* coord, int numofcoord);
     void PrintHashTableHist();
     EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, short unsigned int action, bool bIsGoal);
-    EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, bool bIsGoal);
-    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int action);
     EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int action, double orientation[3][3]);
 
     //initialization
@@ -286,10 +282,7 @@ private:
     void HighResGrid2LowResGrid(short unsigned int * XYZ_hr, short unsigned int * XYZ_lr);
 
     //bounds/error checking
-    int IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D=NULL, vector<CELLV>* pTestedCells=NULL);
-    int IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROBARMHashEntry_t* arm);  //get rid of this
-    int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);
-    
+    int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);    
     int IsValidLineSegment(double x0, double y0, double z0, double x1, double y1, double z1, char ***Grid3D, vector<CELLV>* pTestedCells);
     int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, char ***Grid3D, vector<CELLV>* pTestedCells);
     bool IsValidCell(int X, int Y, int Z);
@@ -306,7 +299,6 @@ private:
 
     //output
     void PrintHeader(FILE* fOut);
-    void OutputJointPositions(EnvROBARMHashEntry_t* H); // for early debugging - remove this 
     void PrintConfiguration();
     void printangles(FILE* fOut, short unsigned int* coord, bool bGoal, bool bVerbose, bool bLocal);
     void PrintSuccGoal(int SourceStateID, int costtogoal, bool bVerbose, bool bLocal /*=false*/, FILE* fOut /*=NULL*/);
