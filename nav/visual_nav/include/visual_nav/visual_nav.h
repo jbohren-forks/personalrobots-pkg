@@ -84,9 +84,20 @@ public:
   /// \return estimated current pos in navigation frame given the first node in this path
   Pose estimatedPose (PathPtr p) const;
 
+  /// \return number of nodes
+  uint numNodes () const;
+
+  /// \return Pose of node \a i
+  /// \throws UnknownNodeId
+  Pose nodePose (NodeId i) const;
+
+  /// \return vector of neighbors of node \a i
+  /// \throws UnknownNodeId
+  vector<NodeId> neighbors (NodeId i) const;
+
 private:
 
-  // Avoid client compilation dependency on implementation details
+  // Avoid client dependency on implementation details
   class RoadmapImpl;
   shared_ptr<RoadmapImpl> roadmap_impl_;
 
@@ -97,8 +108,9 @@ private:
 };
 
 
-/// \return A pointer to a roadmap read from file f
 typedef shared_ptr<VisualNavRoadmap> RoadmapPtr;
+
+/// \return A pointer to a roadmap read from file f
 RoadmapPtr readRoadmapFromFile(const string& filename);
 
 

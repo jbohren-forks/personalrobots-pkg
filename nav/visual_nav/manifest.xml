@@ -5,6 +5,8 @@
 <review status="unreviewed" notes=""/>
 <depend package="roscpp" />
 <depend package="rosconsole" />
+<depend package="deprecated_msgs" />
+<depend package="robot_msgs" />
 <export>
 <cpp cflags="-I${prefix}/include"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf" />
 </export>

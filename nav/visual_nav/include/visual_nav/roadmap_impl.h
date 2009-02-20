@@ -144,6 +144,12 @@ public:
   
   bool distanceLessThan (const Pose& pose, NodeId id, double r) const;
 
+  uint numNodes () const;
+
+  Pose nodePose (NodeId i) const;
+
+  vector<NodeId> neighbors (NodeId i) const;
+
 private:
 
   RoadmapVertex idVertex (const NodeId id) const;

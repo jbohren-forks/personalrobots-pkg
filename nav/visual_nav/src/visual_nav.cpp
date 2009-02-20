@@ -231,7 +231,22 @@ Pose VisualNavRoadmap::RoadmapImpl::pathExitPoint (PathPtr p, double r) const
 }
 
 
-                          
+uint VisualNavRoadmap::RoadmapImpl::numNodes () const
+{
+  return num_vertices(graph_);
+}
+
+Pose VisualNavRoadmap::RoadmapImpl::nodePose (NodeId i) const
+{
+  return graph_[idVertex(i)].getPose();
+}
+
+vector<NodeId> VisualNavRoadmap::RoadmapImpl::neighbors (NodeId i) const
+{
+  vector<NodeId> neighbors;
+  return neighbors;
+}
+
 
 
 /************************************************************
@@ -293,6 +308,21 @@ Pose VisualNavRoadmap::pathExitPoint (PathPtr p, double r) const
 Pose VisualNavRoadmap::estimatedPose (PathPtr p) const
 {
   return roadmap_impl_->estimatedPose(p);
+}
+
+uint VisualNavRoadmap::numNodes () const
+{
+  return roadmap_impl_->numNodes();
+}
+
+Pose VisualNavRoadmap::nodePose (NodeId i) const
+{
+  return roadmap_impl_->nodePose (i);
+}
+
+vector<NodeId> VisualNavRoadmap::neighbors (NodeId i) const 
+{
+  return roadmap_impl_->neighbors(i);
 }
 
 

@@ -15,3 +15,6 @@ rospack_add_library(visual_nav src/visual_nav.cpp src/transform.cpp)
 rospack_add_gtest(test/test_visual_nav test/test_visual_nav.cpp)
 target_link_libraries(test/test_visual_nav visual_nav)
 
+rospack_add_executable(bin/ros_visual_nav src/ros_visual_nav.cpp)
+target_link_libraries(bin/ros_visual_nav visual_nav)
+rospack_link_boost(bin/ros_visual_nav filesystem)
