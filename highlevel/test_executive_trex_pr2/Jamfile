@@ -21,12 +21,6 @@ SubDir test_executive_trex_pr2 ;
 		[ FDirName $(TESTEXEC_HOME) arm.1 pr2.exec.nddl ]
 		[ FDirName $(TESTEXEC_HOME) arm.2 pr2.exec.nddl ]
 		[ FDirName $(TESTEXEC_HOME) nav.0 pr2.exec.nddl ]
-		[ FDirName $(TESTEXEC_HOME) sim.0 pr2.exec.nddl ]
-		[ FDirName $(TESTEXEC_HOME) sim.0 pr2.sim.nddl ]
-		[ FDirName $(TESTEXEC_HOME) sim.1 pr2.exec.nddl ]
-		[ FDirName $(TESTEXEC_HOME) sim.1 pr2.sim.nddl ]
-		[ FDirName $(TESTEXEC_HOME) master.0 pr2.master.nddl ]
-		[ FDirName $(TESTEXEC_HOME) master.0 pr2.master.sim.nddl ]
 		;
 
    local file ;
