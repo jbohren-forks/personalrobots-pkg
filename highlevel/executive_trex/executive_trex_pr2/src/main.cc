@@ -118,6 +118,7 @@ Publishes to (name/type):
 bool g_playback = false;
 
 TREX::ExecutiveId node;
+ros::Node* g_ros_node;
 
 namespace executive_trex_pr2 {
 
@@ -142,8 +143,10 @@ namespace executive_trex_pr2 {
  */
 void cleanup(){
   if(node.isId()){
-    node->shutdown();
-    delete (ros::Node*) node;
+    g_ros_node->shutdown();
+    delete (ros::Node*) g_ros_node;
+    delete (TREX::Executive*) node;
+    node = TREX::ExecutiveId::noId();
   }
   exit(0);
 }
@@ -168,6 +171,7 @@ int main(int argc, char **argv)
   signal(SIGKILL, &TREX::signalHandler);
 
   ros::init(argc, argv);
+  g_ros_node = new ros::Node("trex");
 
   if(executive_trex_pr2::isArg(argc, argv, "--help")){
     std::cout << "\n";
@@ -201,8 +205,9 @@ int main(int argc, char **argv)
     success = -1;
   }
 
-  node->shutdown();
-  delete (ros::Node*) node;
+  g_ros_node->shutdown();
+  delete (ros::Node*) g_ros_node;
+  delete (TREX::Executive*) node;
   node = TREX::ExecutiveId::noId();
 
 

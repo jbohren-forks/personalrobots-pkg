@@ -86,7 +86,7 @@ namespace TREX {
    * @brief Executive constructor sets up the trex agent instance
    */
   Executive::Executive(bool playback)
-    : ros::Node("trex"), m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(playback)
+    : m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(playback)
   {
     s_id = m_id;
     m_refCount = 0;
@@ -97,11 +97,11 @@ namespace TREX {
     std::string path;
     int time_limit(0);
     std::string log_dir;
-    param("/trex/ping_frequency", ping_frequency, ping_frequency);
-    param("/trex/input_file", input_file, input_file);
-    param("/trex/path", path, path);
-    param("/trex/time_limit", time_limit, time_limit);
-    param("/trex/log_dir", log_dir, log_dir);
+    ros::Node::instance()->param("/trex/ping_frequency", ping_frequency, ping_frequency);
+    ros::Node::instance()->param("/trex/input_file", input_file, input_file);
+    ros::Node::instance()->param("/trex/path", path, path);
+    ros::Node::instance()->param("/trex/time_limit", time_limit, time_limit);
+    ros::Node::instance()->param("/trex/log_dir", log_dir, log_dir);
 
     // Bind the watchdog loop sleep time from input controller frequency
     if(ping_frequency > 0)
@@ -146,7 +146,7 @@ namespace TREX {
     TREX::Agent::initialize(*input_xml_root_, *agent_clock_, time_limit);
 
     // Set up  watchdog thread message generation
-    ros::Node::advertise<highlevel_controllers::Ping>("trex/ping", 1);
+    ros::Node::instance()->ros::Node::advertise<highlevel_controllers::Ping>("trex/ping", 1);
     new boost::thread(boost::bind(&Executive::watchDogLoop, this));
 
     ROS_INFO("Executive created.\n");
@@ -207,7 +207,7 @@ namespace TREX {
   void Executive::watchDogLoop(){
     highlevel_controllers::Ping pingMsg;
     while(!Agent::terminated()){
-      publish("trex/ping", pingMsg);
+      ros::Node::instance()->publish("trex/ping", pingMsg);
       usleep((unsigned int) rint(watchDogCycleTime_ * 1e6));
     }
   }

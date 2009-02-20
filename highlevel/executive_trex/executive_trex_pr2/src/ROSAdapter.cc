@@ -41,7 +41,7 @@ namespace TREX {
     registerSubscribers();
 
     // Wait till we get a message before starting the agent
-    while(!isInitialized() && m_node->ok()){
+    while(!isInitialized() && ros::Node::instance()->ok()){
       std::cout << "Waiting to connect for " << timelineName << ". If this is taking too long then the expected message is not being published." << std::endl;
       sleep(1);
     }

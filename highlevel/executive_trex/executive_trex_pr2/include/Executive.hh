@@ -16,7 +16,7 @@ namespace TREX{
   typedef EUROPA::Id<Executive> ExecutiveId;
 
 
-  class Executive : public ros::Node
+  class Executive
   {
   public:
 
@@ -41,17 +41,17 @@ namespace TREX{
 
     template<class T>
     void registerPublisher(const std::string &topic, size_t max_queue){
-      ros::Node::advertise<T>(topic, max_queue);
+      ros::Node::instance()->advertise<T>(topic, max_queue);
     }
 
     template<class M, class T>
     void registerSubscriber(const std::string &_topic, M &_msg, void (T::*fp)(), T* obj, int max_queue){
-      ros::Node::subscribe(_topic, _msg, fp, obj, max_queue);
+      ros::Node::instance()->subscribe(_topic, _msg, fp, obj, max_queue);
     }
 
     template<class M>
     void publishMsg(const std::string &_topic, M &msg){
-      ros::Node::publish(_topic, msg);
+      ros::Node::instance()->publish(_topic, msg);
     }
 
   private:
