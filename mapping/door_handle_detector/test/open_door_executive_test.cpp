@@ -193,6 +193,29 @@ public:
   }
 
 
+  void initialize()
+  {
+    // start arm trajectory controller
+    cout << "starting moveto controller" << endl;
+    if (!ros::service::call("cartesian_trajectory_right/start", req_empty, res_empty))
+      return;
+    cout << "starting moveto controller successful" << endl;
+    
+    robot_msgs::PoseStamped init_pose;
+    init_pose.header.frame_id = "base_link";
+    // dirty hack because service sets time 0 to time now
+    init_pose.header.stamp = Time().now() - Duration().fromSec(1); 
+    init_pose.pose.position.x = 0.5;
+    init_pose.pose.position.y = 0.0;
+    init_pose.pose.position.y = 0.4;
+    init_pose.pose.orientation.x = 0;
+    init_pose.pose.orientation.y = 0;
+    init_pose.pose.orientation.z = 0;
+    init_pose.pose.orientation.w = 1;	  
+    //moveTo(init_pose);
+  }
+
+
 
   void spin()
   {
@@ -200,19 +223,8 @@ public:
 	switch (state_){
 	  
 	case INITIALIZED:{
-	  robot_msgs::PoseStamped init_pose;
-	  init_pose.header.frame_id = "base_link";
-          // dirty hack because service sets time 0 to time now
-	  init_pose.header.stamp = Time().now() - Duration().fromSec(1); 
-	  init_pose.pose.position.x = 0.5;
-	  init_pose.pose.position.y = 0.0;
-	  init_pose.pose.position.y = 0.4;
-	  init_pose.pose.orientation.x = 0;
-	  init_pose.pose.orientation.y = 0;
-	  init_pose.pose.orientation.z = 0;
-	  init_pose.pose.orientation.w = 1;	  
-	  moveTo(init_pose);
-	  state_ = DETECTING;
+          initialize();
+	  state_ = FINISHED;
 	  break;
 	}
 	case DETECTING:{
@@ -239,11 +251,6 @@ public:
 
   bool moveTo(const robot_msgs::PoseStamped& pose)
   {
-    // start arm trajectory controller
-    cout << "starting moveto controller" << endl;
-    if (!ros::service::call("cartesian_trajectory_right/start", req_empty, res_empty))
-      return false;
-
     cout << "giving moveto command for time " 
          << pose.header.stamp.toSec() << " and frame " 
          << pose.header.frame_id << endl;
