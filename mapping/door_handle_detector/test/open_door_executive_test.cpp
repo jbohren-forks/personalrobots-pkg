@@ -145,6 +145,7 @@ public:
     cout << "stopping moveto controller" << endl;
     if (!ros::service::call("cartesian_trajectory_right/stop", req_empty, res_empty))
       return false;
+    cout << "stopping moveto controller successful" << endl;
 
     return true;
   }
@@ -222,8 +223,12 @@ public:
     init_pose.pose.orientation.y = 0;
     init_pose.pose.orientation.z = 0;
     init_pose.pose.orientation.w = 1;	  
-    return moveTo(init_pose);
+    if (!moveTo(init_pose))
+      return false;
+
+    return true;
   }
+
 
 
 
@@ -234,7 +239,7 @@ public:
 	  
 	case INITIALIZED:{
           if (initialize())
-	    state_ = SUCCESS;
+	    state_ = DETECTING;
 	  else
 	    state_ = FAILED;
 	  break;
@@ -274,6 +279,7 @@ public:
     req_moveto.pose = pose;
     if (!ros::service::call("cartesian_trajectory_right/move_to", req_moveto, res_moveto))
       return false;
+    cout << "moveto command finished" << endl; 
 
     return true;
   }

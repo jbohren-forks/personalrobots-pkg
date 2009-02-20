@@ -758,15 +758,7 @@ int
 
   DoorHandleDetector p;
 
-  door_handle_detector::DoorDetector::Request req;
-  req.door.header.frame_id = "base_link";//odom_combined";
-  req.door.frame_p1.x = 1.9; req.door.frame_p1.y = 0.6; req.door.frame_p1.z = 0;
-  req.door.frame_p2.x = 2.0; req.door.frame_p2.y = -0.3; req.door.frame_p2.z = 0;
-
-  door_handle_detector::DoorDetector::Response resp;
-  ros::service::call ("door_handle_detector", req, resp);
-
-//  p.spin ();
+  p.spin ();
 
   p.shutdown ();
   return (0);
