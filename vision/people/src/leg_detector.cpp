@@ -79,19 +79,19 @@ class SavedFeature
 {
 public:
   static int nextid;
-  string id_;
-  string object_id;
-  ros::Time time_;
-  ros::Time meas_time_;
-
   TransformListener& tfl_;
 
   BFL::StatePosVel sys_sigma_;
   TrackerKalman filter_;
 
-  Stamped<Point> position_;
+  string id_;
+  string object_id;
+  ros::Time time_;
+  ros::Time meas_time_;
 
-  float dist_to_person_;
+  Stamped<Point> position_;
+  bool had_two_legs_;
+  mutable float dist_to_person_;
 
   // one leg tracker
   SavedFeature(Stamped<Point> loc, TransformListener& tfl)
@@ -106,6 +106,7 @@ public:
     object_id = "";
     time_ = loc.stamp_;
     meas_time_ = loc.stamp_;
+    had_two_legs_ = false;
 
     tfl_.transformPoint(fixed_frame, loc, loc);
     Stamped<Transform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
@@ -146,6 +147,11 @@ public:
     filter_.updateCorrection(loc, cov);
 
     updatePosition();
+  }
+
+  double getLifetime()
+  {
+    return filter_.getLifetime();
   }
 
 private:
@@ -280,9 +286,9 @@ public:
     float closest_dist = max_meas_jump_m;
     float closest_pair_dist = 2*max_meas_jump_m;
 
-    list<SavedFeature*>::iterator it1 = saved_features_.begin();
-    list<SavedFeature*>::iterator it2 = saved_features_.end();
+    list<SavedFeature*>::iterator begin = saved_features_.begin();
     list<SavedFeature*>::iterator end = saved_features_.end();
+    list<SavedFeature*>::iterator it1, it2;
 
     // If there's a pair of legs with the right label and within the max dist, return
     // If there's one leg with the right label and within the max dist, 
@@ -294,7 +300,7 @@ public:
     //   find a new unlabeled leg and assign the label.
     
     // For each tracker, get the distance to this person.
-    for (; it1 != end; ++it1) 
+    for (it1 = begin; it1 != end; ++it1) 
     {
       tfl_.transformPoint((*it1)->id_, people_meas->header.stamp,
 			  person_loc, fixed_frame, dest_loc);
@@ -303,8 +309,8 @@ public:
 
     // Try to find one or two trackers with the same label and within the max distance of the person.
     cout << "Looking for two legs" << endl;
-    it1 = saved_features_.begin();
-    for (; it1 != end; ++it1)
+    it2 = end;
+    for (it1 = begin; it1 != end; ++it1)
     {
       // If this leg belongs to the person...
       if ((*it1)->object_id == people_meas->object_id) 
@@ -317,18 +323,29 @@ public:
 	  else
 	    break;
 	}
-	else
+	else{
+          // the two trackers moved apart. This should not happeh
 	  (*it1)->object_id = "";
+          (*it1)->had_two_legs_ = false;
+        }
       }
     }
     // If we found two legs with the right label and within the max distance, all is good, return.
     if (it1 != end && it2 != end) 
     {
+      // mark that these trackers belong to a pair of legs
+      (*it1)->had_two_legs_ = true;
+      (*it2)->had_two_legs_ = true;
       cout << "Found matching pair. The second distance was " << (*it1)->dist_to_person_ << endl;
       return;
     }
 
-    // If we found one leg, let's try to find a second leg that doesn't yet have a label and is within the max distance.
+
+
+    // If we found one leg, let's try to find a second leg that 
+    //   * doesn't yet have a label  (=valid precondition)
+    //   * is within the max distance.
+    //   * is less than no_observation_timeout_s old
     cout << "Looking for one leg plus one new leg" << endl;
     float dist_between_legs, closest_dist_between_legs;
     if (it2 != end) 
@@ -336,12 +353,16 @@ public:
       closest_dist = max_meas_jump_m;
       closest = saved_features_.end();
 
-      it1 = saved_features_.begin();
-      for (; it1 != end; ++it1) 
+      for (it1 = begin; it1 != end; ++it1) 
       {
+        // do not use the same leg twice
 	if (it1 == it2)
 	  continue;
 	
+        // check if tracker is not too old: we want a new tracker
+        if ((*it2)->had_two_legs_ && (*it1)->getLifetime() > no_observation_timeout_s)
+          continue;
+
 	// Get the distance between the two legs
 	tfl_.transformPoint((*it1)->id_, (*it2)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
 	dist_between_legs = dest_loc.length();

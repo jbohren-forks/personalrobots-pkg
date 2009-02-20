@@ -57,7 +57,7 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
-#include "people.h"
+#include "people/people.h"
 #include "utils.h"
 
 using namespace std;

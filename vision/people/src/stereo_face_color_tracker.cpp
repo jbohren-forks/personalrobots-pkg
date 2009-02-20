@@ -57,7 +57,7 @@
 #include "opencv/highgui.h"
 #include <boost/thread/mutex.hpp>
 
-#include "people.h"
+#include "people/people.h"
 #include "utils.h"
 
 #define __FACE_COLOR_TRACKER_DEBUG__ 0
