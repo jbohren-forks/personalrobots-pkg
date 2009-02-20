@@ -33,6 +33,11 @@
 #include <sys/time.h>
 using namespace tf;
 
+// Must provide storage for non-integral static const class members.
+// Otherwise you get undefined symbol errors on OS X (why not on Linux?).
+// Thanks to Rob for pointing out the right way to do this.
+const double tf::Transformer::DEFAULT_CACHE_TIME;
+
 std::string tf::remap(const std::string& prefix, const std::string& frame_id)
 {
   //  printf ("remapping prefix:%s with frame_id:%s\n", prefix.c_str(), frame_id.c_str());

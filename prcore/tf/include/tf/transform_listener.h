@@ -40,13 +40,6 @@
 
 #include "tf/FrameGraph.h" //frame graph service
 
-// This extern avoids an undefined symbol error on OS X.  In Linux, it
-// generates multiply defined symobls.  There must be some non-ifdef middle
-// ground.
-#if defined(__APPLE__)
-extern const double tf::Transformer::DEFAULT_CACHE_TIME;
-#endif
-
 namespace tf{
 
 /** \brief This class inherits from Transformer and automatically subscribes to ROS transform messages */
