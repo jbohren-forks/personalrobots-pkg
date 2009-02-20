@@ -90,6 +90,12 @@ def set_controller(controller, command):
                               SendMessageOnSubscribe(Float64(command)))
 
 def hold_side(side, pan_angle, holding):
+    hold_joint("%s_forearm_roll" % side, 20, 3, 4, 2, holding)
+    set_controller("%s_forearm_roll_controller" % side, float(0.0))
+
+    hold_joint("%s_wrist_flex" % side, 20, 3, 4, 2, holding)
+    set_controller("%s_wrist_flex_controller" % side, float(3.0))
+
     hold_joint("%s_elbow_flex" % side, 50, 15, 8, 2, holding)
     set_controller("%s_elbow_flex_controller" % side, float(3.0))
 
