@@ -115,7 +115,7 @@ void CartesianWrenchController::update()
       jnt_eff_(i) += (jacobian_(j,i) * wrench_desi_(j));
   }
 
-  // add effort to joints
+  // set effort to joints
   robot_.setEfforts(jnt_eff_, robot_state_->joint_states_);
 }
 

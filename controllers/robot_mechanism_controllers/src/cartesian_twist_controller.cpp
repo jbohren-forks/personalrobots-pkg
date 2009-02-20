@@ -100,20 +100,15 @@ bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, co
 
 bool CartesianTwistController::start()
 {
-  cout << "reset pid" << endl;
-
   // reset pid controllers
   for (unsigned int i=0; i<6; i++)
     fb_pid_controller_[i].reset();
 
-  cout << "init time" << endl;
   // time
   last_time_ = robot_state_->hw_->current_time_;
 
   // set disired twist to 0
   twist_desi_ = Twist::Zero();
-
-  cout << "start wrench" << endl;
 
   return wrench_controller_.start();
 }
@@ -123,7 +118,8 @@ bool CartesianTwistController::start()
 void CartesianTwistController::update()
 {
   // check if joints are calibrated
-  if (!robot_.allCalibrated(robot_state_->joint_states_)) return;
+  if (!robot_.allCalibrated(robot_state_->joint_states_))
+    return;
 
   // get time
   double time = robot_state_->hw_->current_time_;
