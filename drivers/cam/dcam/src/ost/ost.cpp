@@ -1923,7 +1923,7 @@ void cal_save_params(char *fname)
 
 void cal_save_params_cb(Fl_Button*, void*)
 {
-  char *fname = fl_file_chooser("Save params (.ini)", "{.ini}", NULL);
+  char *fname = fl_file_chooser("Save params (.ini)", "{*.ini}", NULL);
   if (fname == NULL)
     return;
 

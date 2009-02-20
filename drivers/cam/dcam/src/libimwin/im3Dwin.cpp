@@ -52,9 +52,9 @@ im3DWindow::im3DWindow(int X, int Y, int W, int H)
   anglex = 0;			// in degrees
   angley = 180;			// in degrees
   anglez = 0;			// in degrees
-  newModel = 0;		    // should we recalculate a new model view?
-  moving = 0;  // only needed for mouse interaction (disabled for now)
-  numPoints = bufsize = 0; // number of 3D points we get from a disparity image
+  newModel = 0;			// should we recalculate a new model view?
+  moving = 0;			// only needed for mouse interaction (disabled for now)
+  numPoints = bufsize = 0;	// number of 3D points we get from a disparity image
   axesLen = 1.0;		// display or don't display the axes
 
   scale = 1.0;			// don't scale for now
@@ -404,6 +404,9 @@ int im3DWindow::handle(int event)
   // effects: handles users events in the gl window
   // rotates the 3D model
 
+  double ds, sfact;
+  int dy;
+
   switch(event) {
     
   case FL_PUSH:
@@ -412,6 +415,7 @@ int im3DWindow::handle(int event)
     beginx = Fl::event_x();
     beginy = Fl::event_y();
     return 1;
+
   case FL_DRAG:
     // mouse drag (while down) event
     if(moving) {
@@ -423,6 +427,17 @@ int im3DWindow::handle(int event)
       redraw();
     }
     return 1;
+
+  case FL_MOUSEWHEEL:		// change scale
+    // mouse scroll wheel event
+    sfact = 0.01;
+    dy = Fl::event_dy();	// down is positive
+    ds =  1.0 + sfact * -(double)dy;
+    scale = scale * ds;
+    newModel = 1;
+    redraw();
+    return 1;
+
   case FL_RELEASE:
     // mouse up event
     moving = 0;
