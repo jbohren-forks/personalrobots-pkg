@@ -86,6 +86,8 @@ namespace collision_space
 	{
 	    for (unsigned int i = 0 ; i < m_models.size() ; ++i)
 		delete m_models[i];
+	    for (unsigned int i = 0 ; i < m_modelLocks.size() ; ++i)
+		delete m_modelLocks[i];
 	}
 	
 	/** Enable/disable verbosity */
@@ -140,6 +142,12 @@ namespace collision_space
 	
 	/** Provide interface to a lock. Use carefully! */
 	void unlock(void);
+
+	/** Provide interface to a lock for a specific model. Use carefully! */
+	void lockModel(unsigned int model_id);
+	
+	/** Provide interface to a lock for a specific model. Use carefully! */
+	void unlockModel(unsigned int model_id);
 	
 	/** Set the status of self collision */
 	void setSelfCollision(bool selfCollision);
@@ -155,6 +163,7 @@ namespace collision_space
 	
 	/** List of loaded robot models */	
 	std::vector<planning_models::KinematicModel*> m_models;
+	std::vector<boost::mutex*>                    m_modelLocks;
 	
     };
 }
