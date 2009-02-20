@@ -121,7 +121,7 @@ ground_truth = []
 started = time.time()
 
 connected = False
-for i in range(0,100):
+for i in range(0,400):
   print i
   (desired_pose, imL, imR) = getImage(i)
   ground_truth.append(desired_pose.xform(0,0,0))
@@ -130,25 +130,12 @@ for i in range(0,100):
   skel.add(vo.keyframe, connected)
   connected = True
 
-if 1:
+if 0:
   (desired_pose, imL, imR) = getImage(408)
   ground_truth.append(desired_pose.xform(0,0,0))
   qf = SparseStereoFrame(imL, imR)
   skel.localization(qf)
   sys.exit(0)
-
-vo = VisualOdometer(stereo_cam, descriptor_scheme = DescriptorSchemeCalonder(), scavenge = False, sba=None, inlier_error_threshold = 3.0)
-vo.num_frames = 400
-
-connected = False
-for i in range(400,500):
-  print i
-  (desired_pose, imL, imR) = getImage(i)
-  ground_truth.append(desired_pose.xform(0,0,0))
-  f = SparseStereoFrame(imL, imR)
-  vo.handle_frame(f)
-  skel.add(vo.keyframe, connected)
-  connected = True
 
 print "nodes", skel.nodes
 
@@ -158,29 +145,9 @@ print "Took", took, "so", 1000*took / i, "ms/frame"
 
 
 skel.optimize()
-skel.localization()
-sys.exit(1)
 
-pts = dict([ (f,skel.newpose(f).xform(0,0,0)) for f in skel.nodes ])
-nodepts = pts.values()
-a,b,c,d = planar(numpy.array([x for (x,y,z) in nodepts]), numpy.array([y for (x,y,z) in nodepts]), numpy.array([z for (x,y,z) in nodepts]))
-mag = sqrt(float(a*a + b*b + c*c))
-a /= mag
-b /= mag
-c /= mag
-plane_xform = numpy.array([[ b, c, a ], [ c, a, b ], [ a, b, c]])
-
-if 1:
-  print "original", pts
-  projected = [ tuple(numpy.dot(plane_xform, numpy.array( [ [x], [y], [z] ])).transpose()[0]) for (x,y,z) in nodepts ]
-  print "projected", projected
-  pylab.plot([x for (x,y,z) in ground_truth], [z for (x,y,z) in ground_truth], c = 'green', label = 'ground truth')
-  pylab.scatter([x for (x,y,z) in nodepts], [z for (x,y,z) in nodepts], c = 'r')
-  pylab.scatter([x for (x,y,z) in projected], [y for (x,y,z) in projected], c = 'b')
-  pylab.show()
-  sys.exit(1)
-
-skel.save("saved-skel")
+skel.save("saved-skel400")
+sys.exit(0)
 
 skel = Skeleton(stereo_cam)
 skel.load("saved-skel")

@@ -24,6 +24,7 @@ import pickle
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 from skeleton import Skeleton
+from reader import reader
 
 from math import *
 
@@ -53,24 +54,7 @@ def planar(x, y, z):
   return (a, b, c)
   return sqrt(sum((y - (a*x + b*z + c)) ** 2) / len(x))
 
-class dcamImage:
-  def __init__(self, m):
-    if hasattr(m, "byte_data"):
-      ma = m.byte_data
-      self.data = ma.data
-    else:
-      ma = m.uint8_data # MultiArray
-      self.data = "".join([chr(x) for x in ma.data])
-    d = ma.layout.dim
-    assert d[0].label == "height"
-    assert d[1].label == "width"
-    self.size = (d[1].size, d[0].size)
-    self.mode = "L"
-
-  def tostring(self):
-    return self.data
-
-cam = None
+vos = None
 filename = sys.argv[1]
 framecounter = 0
 first_pair = None
@@ -88,84 +72,53 @@ print "starting loop"
 #f = open(filename)
 f = filename
 keys = set()
-for topic, msg, t in rosrecord.logplayer(f):
-  if skipto and (f.tell() < skipto):
-    f.seek(skipto)
-  #print f.tell(), msg
-  if rospy.is_shutdown():
+
+r = reader(f)
+for cam,l_image,r_image in r.next():
+  if vos == None:
+    vos = [
+      VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(),
+                          descriptor_scheme = DescriptorSchemeCalonder(),
+                          inlier_error_threshold = 3.0, sba = None,
+                          inlier_thresh = 100,
+                          position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
+    ]
+    vo_x = [ [] for i in vos]
+    vo_y = [ [] for i in vos]
+    vo_u = [ [] for i in vos]
+    vo_v = [ [] for i in vos]
+    trajectory = [ [] for i in vos]
+    skel = Skeleton(cam)
+    oe_x = []
+    oe_y = []
+    oe_home = None
+  print framecounter
+  if framecounter == end:
     break
+  if start <= framecounter and (framecounter % 1) == 0:
+    for i,vo in enumerate(vos):
+      af = SparseStereoFrame(l_image, r_image)
+      vo.handle_frame(af)
+      # Log keyframes into "pool_loop"
+      if False and not vo.keyframe.id in keys:
+        k = vo.keyframe
+        Image.fromstring("L", (640,480), k.lf.tostring()).save("trial/%06dL.png" % len(keys))
+        Image.fromstring("L", (640,480), k.rf.tostring()).save("trial/%06dR.png" % len(keys))
+        print "saving frame", "id", k.id, "as key", len(keys), "inliers:", k.inl, "keypoints:", len(k.kp2d), len(k.kp)
+        #vo.report_frame(k)
+        keys.add(k.id)
 
-  if topic.endswith("stereo/raw_stereo") or topic.endswith("dcam/raw_stereo"):
-    if not cam:
-      cam = camera.StereoCamera(msg.right_info)
-      print cam.params
-      vos = [
-        VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(), inlier_error_threshold = 3.0, sba = None,
-                            inlier_thresh = 100,
-                            position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
-      ]
-      vo_x = [ [] for i in vos]
-      vo_y = [ [] for i in vos]
-      vo_u = [ [] for i in vos]
-      vo_v = [ [] for i in vos]
-      trajectory = [ [] for i in vos]
-      skel = Skeleton(cam)
-      oe_x = []
-      oe_y = []
-      oe_home = None
-    if framecounter == end:
-      break
-    if start <= framecounter and (framecounter % 1) == 0:
-      for i,vo in enumerate(vos):
-        af = SparseStereoFrame(dcamImage(msg.left_image), dcamImage(msg.right_image))
-        vo.handle_frame(af)
-        # Log keyframes into "pool_loop"
-        if not vo.keyframe.id in keys:
-          k = vo.keyframe
-          Image.fromstring("L", (640,480), k.lf.tostring()).save("trial/%06dL.png" % len(keys))
-          Image.fromstring("L", (640,480), k.rf.tostring()).save("trial/%06dR.png" % len(keys))
-          print "saving frame", "id", k.id, "as key", len(keys), "inliers:", k.inl, "keypoints:", len(k.kp2d), len(k.kp)
-          #vo.report_frame(k)
-          keys.add(k.id)
-
-        if i == 999:
-          skel.add(vo.keyframe)
-          vo.correct(skel.correct_frame_pose, af)
-        x,y,z = vo.pose.xform(0,0,0)
-        trajectory[i].append((x,y,z))
-        vo_x[i].append(x)
-        vo_y[i].append(z)
-        x1,y1,z1 = vo.pose.xform(0,0,1)
-        vo_u[i].append(x1 - x)
-        vo_v[i].append(z1 - z)
-      print framecounter, "kp", len(af.kp), "inliers:", vo.inl
-      inliers.append(vo.inl)
-
-      if 0:
-        disk = {}
-        for i in range(len(vos)):
-          xs = numpy.array(vo_x[i])
-          ys = numpy.array(vo_y[i])
-          if 0:
-            xs -= 4.5 * 1e-3
-            fa = -0.06
-          else:
-            fa = 0.0
-          xp = xs * cos(fa) - ys * sin(fa)
-          yp = ys * cos(fa) + xs * sin(fa)
-          disk['xp'] = xp
-          disk['yp'] = yp
-
-        disk['oe_x'] = oe_x
-        disk['oe_y'] = oe_y
-
-        disk['graph'] = skel.drawable()
-
-        pf = open("foo%06d.pickle" % framecounter, 'w')
-        pickle.dump(disk, pf)
-        pf.close()
-        if 1:
-          Image.fromstring("L", (640,480), af.lf.tostring()).save("img%06d.png" % framecounter)
+      if i == 0:
+        skel.add(vo.keyframe)
+      x,y,z = vo.pose.xform(0,0,0)
+      trajectory[i].append((x,y,z))
+      vo_x[i].append(x)
+      vo_y[i].append(z)
+      x1,y1,z1 = vo.pose.xform(0,0,1)
+      vo_u[i].append(x1 - x)
+      vo_v[i].append(z1 - z)
+    print framecounter, "kp", len(af.kp), "inliers:", vo.inl
+    inliers.append(vo.inl)
 
     if False:
       fig = pylab.figure(figsize=(10,10))
@@ -199,26 +152,27 @@ for topic, msg, t in rosrecord.logplayer(f):
       pylab.savefig("foo%06d.png" % framecounter, dpi=100)
       pylab.close(fig)
 
-    framecounter += 1
+  framecounter += 1
 
   def ground_truth(p, q):
     return Pose(transformations.rotation_matrix_from_quaternion([q.x, q.y, q.z, q.w])[:3,:3], [p.x, p.y, p.z])
 
   gtp = None
-  if topic.endswith("odom_estimation"):
-    gtp = ground_truth(msg.pose.position, msg.pose.orientation)
-    ground_truth_label = "PhaseSpace"
-  if topic.endswith("phase_space_snapshot"):
-    gtp = ground_truth(msg.bodies[0].pose.translation, msg.bodies[0].pose.rotation)
-    ground_truth_label = "wheel + IMU odometry"
-  if gtp and cam:
-    oe_pose = gtp
-    if not oe_home:
-      oe_home = oe_pose
-    local = ~oe_home * oe_pose
-    (x,y,z) = local.xform(0,0,0)
-    oe_x.append(-y)
-    oe_y.append(x)
+  if 0:
+    if topic.endswith("odom_estimation"):
+      gtp = ground_truth(msg.pose.position, msg.pose.orientation)
+      ground_truth_label = "PhaseSpace"
+    if topic.endswith("phase_space_snapshot"):
+      gtp = ground_truth(msg.bodies[0].pose.translation, msg.bodies[0].pose.rotation)
+      ground_truth_label = "wheel + IMU odometry"
+    if gtp and cam:
+      oe_pose = gtp
+      if not oe_home:
+        oe_home = oe_pose
+      local = ~oe_home * oe_pose
+      (x,y,z) = local.xform(0,0,0)
+      oe_x.append(-y)
+      oe_y.append(x)
 
 print "There are", len(vo.tracks), "tracks"
 print "There are", len([t for t in vo.tracks if t.alive]), "live tracks"
@@ -232,9 +186,8 @@ for vo in vos:
   print
 skel.summarize_timers()
 
-pylab.figure(figsize=(10,10))
-pylab.hist(inliers, bins=100)
-#pylab.show()
+skel.plot('blue')
+pylab.show()
 sys.exit(0)
 
 colors = [ 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
