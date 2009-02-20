@@ -47,41 +47,9 @@ namespace kinematic_planning
     {
     public:
 	
-        RKPLazyRRTSetup(void) : RKPPlannerSetup()
-	{
-	    name = "LazyRRT";
-	}
-	
-	virtual ~RKPLazyRRTSetup(void)
-	{
-	}
-		
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
-	{
-	    preSetup(model, options);
-	    
-	    ompl::LazyRRT_t rrt = new ompl::LazyRRT(si);
-	    mp                  = rrt;
-	    
-	    if (options.find("range") != options.end())
-	    {
-		double range = parseDouble(options["range"], rrt->getRange());
-		rrt->setRange(range);
-		ROS_INFO("Range is set to %g", range);
-	    }
-	    
-	    if (options.find("goal_bias") != options.end())
-	    {	
-		double bias = parseDouble(options["goal_bias"], rrt->getGoalBias());
-		rrt->setGoalBias(bias);
-		ROS_INFO("Goal bias is set to %g", bias);
-	    }
-	    
-	    postSetup(model, options);
-	    
-	    return true;
-	}
-	
+        RKPLazyRRTSetup(void);
+	virtual ~RKPLazyRRTSetup(void);
+	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options);
     };
 }
 

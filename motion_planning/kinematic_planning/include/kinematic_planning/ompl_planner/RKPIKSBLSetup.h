@@ -47,49 +47,9 @@ namespace kinematic_planning
     {
     public:
 	
-        RKPIKSBLSetup(void) : RKPPlannerSetup()
-	{
-	    name = "IKSBL";	    
-	}
-	
-	virtual ~RKPIKSBLSetup(void)
-	{
-	    if (dynamic_cast<ompl::IKSBL*>(mp))
-	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::IKSBL*>(mp)->getProjectionEvaluator();
-		if (pe)
-		    delete pe;
-	    }
-	}
-	
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
-	{
-	    preSetup(model, options);
-	    
-	    ompl::IKSBL* sbl = new ompl::IKSBL(si);
-	    mp               = sbl;	
-	    
-	    if (options.find("range") != options.end())
-	    {
-		double range = parseDouble(options["range"], sbl->getRange());
-		sbl->setRange(range);
-		ROS_INFO("Range is set to %g", range);
-	    }
-
-	    sbl->setProjectionEvaluator(getProjectionEvaluator(model, options));
-	    
-	    if (sbl->getProjectionEvaluator() == NULL)
-	    {
-		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
-		return false;
-	    }
-	    else
-	    {
-		postSetup(model, options);
-		return true;
-	    }
-	}
-	
+        RKPIKSBLSetup(void);
+	virtual ~RKPIKSBLSetup(void);
+	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options);
     };
 
 } // kinematic_planning

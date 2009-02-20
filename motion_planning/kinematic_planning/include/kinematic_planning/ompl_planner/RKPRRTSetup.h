@@ -47,41 +47,9 @@ namespace kinematic_planning
     {
     public:
 	
-        RKPRRTSetup(void) : RKPPlannerSetup()
-	{
-	    name = "RRT";
-	}
-	
-	virtual ~RKPRRTSetup(void)
-	{
-	}
-	
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
-	{
-	    preSetup(model, options);
-	    
-	    ompl::RRT_t rrt = new ompl::RRT(si);
-	    mp              = rrt;
-	    
-	    if (options.find("range") != options.end())
-	    {
-		double range = parseDouble(options["range"], rrt->getRange());
-		rrt->setRange(range);
-		ROS_INFO("Range is set to %g", range);
-	    }
-	    
-	    if (options.find("goal_bias") != options.end())
-	    {	
-		double bias = parseDouble(options["goal_bias"], rrt->getGoalBias());
-		rrt->setGoalBias(bias);
-		ROS_INFO("Goal bias is set to %g", bias);
-	    }
-	    
-	    postSetup(model, options);
-	    
-	    return true;
-	}
-	
+        RKPRRTSetup(void);
+	virtual ~RKPRRTSetup(void);
+	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options);
     };
     
 } // kinematic_planning

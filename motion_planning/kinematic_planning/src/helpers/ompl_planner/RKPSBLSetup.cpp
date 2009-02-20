@@ -34,25 +34,47 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_PLANNING_OMPL_PLANNER_RKP_SBL_SETUP_
-#define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_SBL_SETUP_
+#include "kinematic_planning/ompl_planner/RKPSBLSetup.h"
 
-#include "kinematic_planning/ompl_planner/RKPPlannerSetup.h"
-#include <ompl/extension/samplingbased/kinematic/extension/sbl/SBL.h>
-
-namespace kinematic_planning
+kinematic_planning::RKPSBLSetup::RKPSBLSetup(void) : RKPPlannerSetup()
 {
-    
-    class RKPSBLSetup : public RKPPlannerSetup
+    name = "SBL";	    
+}
+
+kinematic_planning::RKPSBLSetup::~RKPSBLSetup(void)
+{
+    if (dynamic_cast<ompl::SBL*>(mp))
     {
-    public:
-	
-        RKPSBLSetup(void);
-	virtual ~RKPSBLSetup(void);
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options);
-    };
+	ompl::ProjectionEvaluator *pe = dynamic_cast<ompl::SBL*>(mp)->getProjectionEvaluator();
+	if (pe)
+	    delete pe;
+    }
+}
 
-} // kinematic_planning
-
-#endif
+bool kinematic_planning::RKPSBLSetup::setup(RKPModelBase *model, std::map<std::string, std::string> &options)
+{
+    preSetup(model, options);
     
+    ompl::SBL *sbl = new ompl::SBL(si);
+    mp             = sbl;	
+    
+    if (options.find("range") != options.end())
+    {
+	double range = parseDouble(options["range"], sbl->getRange());
+	sbl->setRange(range);
+	ROS_INFO("Range is set to %g", range);
+    }
+    
+    sbl->setProjectionEvaluator(getProjectionEvaluator(model, options));
+    
+    if (sbl->getProjectionEvaluator() == NULL)
+    {
+	ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
+	return false;
+    }
+    else
+    {
+	postSetup(model, options);
+	return true;
+    }
+}

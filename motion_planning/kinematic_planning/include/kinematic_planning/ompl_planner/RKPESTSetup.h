@@ -47,49 +47,9 @@ namespace kinematic_planning
     {
     public:
 	
-        RKPESTSetup(void) : RKPPlannerSetup()
-	{
-	    name = "EST";
-	}
-	
-	virtual ~RKPESTSetup(void)
-	{
-	    if (dynamic_cast<ompl::EST_t>(mp))
-	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::EST_t>(mp)->getProjectionEvaluator();
-		if (pe)
-		    delete pe;
-	    }
-	}
-	
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
-	{
-	    preSetup(model, options);
-	    
-	    ompl::EST_t est = new ompl::EST(si);
-	    mp              = est;	
-	    
-	    if (options.find("range") != options.end())
-	    {
-		double range = parseDouble(options["range"], est->getRange());
-		est->setRange(range);
-		ROS_INFO("Range is set to %g", range);
-	    }
-	    
-	    est->setProjectionEvaluator(getProjectionEvaluator(model, options));
-	    
-	    if (est->getProjectionEvaluator() == NULL)
-	    {
-		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
-		return false;
-	    }
-	    else
-	    {
-		postSetup(model, options);
-		return true;
-	    }
-	}
-	
+        RKPESTSetup(void);
+	virtual ~RKPESTSetup(void);
+	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options);
     };
     
 } // kinematic_planning

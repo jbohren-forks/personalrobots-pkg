@@ -45,13 +45,9 @@
 
 #include <ompl/base/Planner.h>
 #include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>
+#include <ompl/extension/samplingbased/kinematic/extension/ik/GAIK.h>
 
 #include <ros/console.h>
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string.hpp>
-#include <cassert>
-
-#include <vector>
 #include <string>
 #include <map>
 
@@ -62,129 +58,32 @@ namespace kinematic_planning
     {
     public:
 	
-	RKPPlannerSetup(void)
-	{
-	    mp = NULL;
-	    si = NULL;
-	    svc = NULL;
-	    smoother = NULL;
-	}
+	RKPPlannerSetup(void);
 	
-	virtual ~RKPPlannerSetup(void)
-	{
-	    if (mp)
-		delete mp;
-	    if (svc)
-		delete svc;
-	    for (std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t>::iterator j = sde.begin(); j != sde.end() ; ++j)
-		if (j->second)
-		    delete j->second;
-	    if (smoother)
-		delete smoother;
-	    if (si)
-		delete si;
-	}
+	virtual ~RKPPlannerSetup(void);
 	
 	/** For each planner definition, define the set of distance metrics it can use */
-	virtual void setupDistanceEvaluators(void)
-	{
-	    assert(si);
-	    sde["L2Square"] = new ompl::SpaceInformationKinematic::StateKinematicL2SquareDistanceEvaluator(si);
-	}
+	virtual void setupDistanceEvaluators(void);
 	
-	virtual ompl::ProjectionEvaluator_t getProjectionEvaluator(RKPModelBase *model, const std::map<std::string, std::string> &options) const
-	{
-	    std::map<std::string, std::string>::const_iterator pit = options.find("projection");
-	    std::map<std::string, std::string>::const_iterator cit = options.find("celldim");
-	    ompl::ProjectionEvaluator_t pe = NULL;
-	    
-	    if (pit != options.end() && cit != options.end())
-	    {
-		std::string proj = pit->second;
-		boost::trim(proj);
-		std::string celldim = cit->second;
-		boost::trim(celldim);
-		
-		if (proj.substr(0, 4) == "link")
-		{
-		    std::string linkName = proj.substr(4);
-		    boost::trim(linkName);
-		    pe = new LinkPositionProjectionEvaluator(model, linkName);
-		}
-		else
-		{
-		    std::vector<unsigned int> projection;
-		    std::stringstream ss(proj);
-		    while (ss.good())
-		    {
-			unsigned int comp;
-			ss >> comp;
-			projection.push_back(comp);
-		    }
-		    pe = new ompl::OrthogonalProjectionEvaluator(projection);
-		}
-		
-		std::vector<double> cdim;
-		std::stringstream ss(celldim);
-		while (ss.good())
-		{
-		    double comp;
-		    ss >> comp;
-		    cdim.push_back(comp);
-		}
-		
-		pe->setCellDimensions(cdim);
-		ROS_INFO("Projection is set to %s", proj.c_str());
-		ROS_INFO("Cell dimensions set to %s", celldim.c_str());
-	    }
-	    
-	    return pe;
-	}
-
-	virtual void preSetup(RKPModelBase *model, std::map<std::string, std::string> &options)
-	{
-	    ROS_INFO("Adding %s instance for motion planning: %s", name.c_str(), model->groupName.c_str());
-	    
-	    si       = new SpaceInformationRKPModel(model);
-	    svc      = new StateValidityPredicate(model);
-	    si->setStateValidityChecker(svc);
-	    
-	    smoother = new ompl::PathSmootherKinematic(si);
-	    smoother->setMaxSteps(50);
-	    smoother->setMaxEmptySteps(4);
-	    
-	}
+	virtual ompl::ProjectionEvaluator* getProjectionEvaluator(RKPModelBase *model,
+								  const std::map<std::string, std::string> &options) const;
 	
-	virtual void postSetup(RKPModelBase *model, std::map<std::string, std::string> &options)
-	{
-	    setupDistanceEvaluators();
-	    si->setup();
-	    mp->setup();	    
-	}
+	virtual void preSetup(RKPModelBase *model, std::map<std::string, std::string> &options);
+	virtual void postSetup(RKPModelBase *model, std::map<std::string, std::string> &options);
 	
 	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options) = 0;
 	
-	std::string                                                             name;	
-	ompl::Planner_t                                                         mp;
-	ompl::SpaceInformationKinematic_t                                       si;
-	ompl::SpaceInformation::StateValidityChecker_t                          svc;
-	std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator_t> sde;
-	ompl::PathSmootherKinematic_t                                           smoother;
+	std::string                                                            name;	
+	ompl::Planner                                                         *mp;
+	ompl::GAIK                                                            *gaik;
+	ompl::SpaceInformationKinematic                                       *si;
+	ompl::SpaceInformation::StateValidityChecker                          *svc;
+	std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator*> sde;
+	ompl::PathSmootherKinematic                                           *smoother;
 
     protected:
 	
-	double parseDouble(const std::string &value, double def)
-	{
-	    try
-	    {
-		return boost::lexical_cast<double>(value);
-	    }
-	    catch (...)
-	    {
-		return def;
-	    }
-	}
-	
+	double parseDouble(const std::string &value, double def);
     };
 
     

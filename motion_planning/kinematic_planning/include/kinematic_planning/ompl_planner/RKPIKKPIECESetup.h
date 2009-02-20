@@ -47,48 +47,9 @@ namespace kinematic_planning
     {
     public:
 	
-        RKPIKKPIECESetup(void) : RKPPlannerSetup()
-	{
-	    name = "IKKPIECE";	    
-	}
-	
-	virtual ~RKPIKKPIECESetup(void)
-	{
-	    if (dynamic_cast<ompl::IKKPIECE1*>(mp))
-	    {
-		ompl::ProjectionEvaluator_t pe = dynamic_cast<ompl::IKKPIECE1*>(mp)->getProjectionEvaluator();
-		if (pe)
-		    delete pe;
-	    }
-	}
-	
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options)
-	{
-	    preSetup(model, options);
-	    
-	    ompl::IKKPIECE1* kpiece = new ompl::IKKPIECE1(si);
-	    mp                      = kpiece;	
-	    
-	    if (options.find("range") != options.end())
-	    {
-		double range = parseDouble(options["range"], kpiece->getRange());
-		kpiece->setRange(range);
-		ROS_INFO("Range is set to %g", range);
-	    }
-
-	    kpiece->setProjectionEvaluator(getProjectionEvaluator(model, options));
-	    
-	    if (kpiece->getProjectionEvaluator() == NULL)
-	    {
-		ROS_WARN("Adding %s failed: need to set both 'projection' and 'celldim' for %s", name.c_str(), model->groupName.c_str());
-		return false;
-	    }
-	    else
-	    {
-		postSetup(model, options);
-		return true;
-	    }
-	}
+        RKPIKKPIECESetup(void);
+	virtual ~RKPIKKPIECESetup(void);
+	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options);
 	
     };
 
