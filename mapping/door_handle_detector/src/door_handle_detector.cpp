@@ -80,8 +80,7 @@ public:
 
     // Parameters regarding geometric constraints for the door/handle
     double door_min_height_, door_min_width_, door_max_height_, door_max_width_, door_min_z_;
-    double handle_distance_door_min_threshold_, handle_distance_door_max_threshold_, handle_max_height_, handle_min_height_;
-    double handle_height_threshold_;
+    double handle_distance_door_max_threshold_, handle_max_height_, handle_min_height_;
 
     // Parameters regarding the size of the 3D bounding box where we will conduct the search for a door/handle
     double door_min_z_bounds_, door_max_z_bounds_;
@@ -122,8 +121,6 @@ public:
                      door_min_height_, door_max_height_, door_min_width_, door_max_width_);
 
           param ("~handle_distance_door_max_threshold", handle_distance_door_max_threshold_, 0.15); // maximum distance between the handle and the door
-          param ("~handle_distance_door_min_threshold", handle_distance_door_min_threshold_, 0.02); // minimum distance between the handle and the door
-          param ("~handle_height_threshold", handle_height_threshold_, 0.1); // Additional threshold for filtering large Z clusters (potentially part of the handle)
 
           // This parameter constrains the door polygon to resamble a rectangle,
           // that is: the two lines parallel (with some angular threshold) to the Z-axis must have some minimal length
@@ -627,25 +624,6 @@ public:
         }
       }
 
-/*        cloud_geometry::statistics::getMinMax (points, &clusters[i], minP, maxP);
-
-        double dist_x = fabs (maxP.x - minP.x);
-        double dist_y = fabs (maxP.y - minP.y);
-        double dist_z = fabs (maxP.z - minP.z);
-
-        if (dist_z > 2 * dist_x && dist_z > 2 * dist_y)
-        {
-          ROS_WARN ("Rejecting potential handle cluster (%d) because elongation on z (%g) is larger than elongation on x (%g) and y (%g)!",
-                    clusters[i].size (), dist_z, dist_x, dist_y);
-//          continue;
-        }
-
-        if (fabs (maxP.z - minP.z) > handle_height_threshold_)
-        {
-          ROS_WARN ("Rejecting potential handle cluster (%d) because height (%g) is above threshold (%g)!",
-                    clusters[i].size (), fabs (maxP.z - minP.z), handle_height_threshold_);
-//          continue;
-        }*/
       if (best_i == -1)
       {
         ROS_ERROR ("All clusters rejected! Should exit here.");
