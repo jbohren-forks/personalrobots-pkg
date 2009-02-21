@@ -76,6 +76,7 @@ target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
                        src/sample_consensus/sac_model_sphere.cpp
                        src/sample_consensus/sac_model_cylinder.cpp
                       )
+  target_link_libraries(sample_consensus cloud_geometry)
   rospack_add_gtest (bin/test_sample_consensus_line_fit test/sample_consensus/test_line_fit.cpp)
   rospack_add_gtest (bin/test_sample_consensus_plane_fit test/sample_consensus/test_plane_fit.cpp)
   rospack_add_gtest (bin/test_sample_consensus_circle_fit test/sample_consensus/test_circle_fit.cpp)

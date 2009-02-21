@@ -96,7 +96,7 @@ namespace cloud_geometry
       double rad = acos ( cloud_geometry::dot (v1, v2) / sqrt (norm_v1 * norm_v2) );
 
       // Check against NaN
-      if (isnan (rad))
+      if (std::isnan (rad))
         ROS_ERROR ("[cloud_geometry::angles::getAngle3D] got a NaN angle!");
       return (rad);
     }
