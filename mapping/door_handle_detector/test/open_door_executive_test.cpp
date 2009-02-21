@@ -88,7 +88,7 @@ public:
     my_door_.header.frame_id = "odom_combined";
 
     advertise<robot_msgs::TaskFrameFormalism>("cartesian_tff_right/command",1);
-    advertise<std_msgs::Float64>("gripper_effort_right/set_command",1);
+    advertise<std_msgs::Float64>("gripper_effort/set_command",1);
   }
   
   
@@ -134,6 +134,13 @@ public:
     pose_msg.pose.position.y = pose_msg.pose.position.y + offset[1];
     pose_msg.pose.position.z = pose_msg.pose.position.z + offset[2];
     moveTo(pose_msg);
+
+    // open the gripper
+    std_msgs::Float64 gripper_msg;
+    gripper_msg.data = 2.0;
+    publish("gripper_effort/set_command", gripper_msg);
+    usleep(1e6 * 4);
+
     
     // move over door handle
     pose_msg.pose.position.x = pose_msg.pose.position.x - offset[0];
@@ -142,7 +149,9 @@ public:
     moveTo(pose_msg);
 
     // close the gripper
-
+    gripper_msg.data = -2.0;
+    publish("gripper_effort/set_command", gripper_msg);
+    usleep(1e6 * 4);
 
     // stop arm trajectory controller
     cout << "stopping moveto controller..." << flush;
@@ -237,8 +246,6 @@ public:
     
     robot_msgs::PoseStamped init_pose;
     init_pose.header.frame_id = "base_link";
-    // dirty hack because service sets time 0 to time now
-    init_pose.header.stamp = Time().now() - Duration().fromSec(1); 
     init_pose.pose.position.x = 0.2;
     init_pose.pose.position.y = 0.0;
     init_pose.pose.position.z = 0.4;
@@ -264,8 +271,7 @@ public:
           cout << "Initializing door opening... " << endl;
           usleep(1e6*2);
           if (initialize())
-	    //state_ = DETECTING;
-            state_ = OPENDOOR;
+	    state_ = DETECTING;
 	  else
 	    state_ = FAILED;
 	  break;
@@ -281,7 +287,7 @@ public:
 	case GRASPING:{
           cout << "Grasping door... " << endl;
 	  if (graspDoor(my_door_))
-	    state_ = OPENDOOR;
+	    state_ = SUCCESS;
 	  else
 	    state_ = FAILED;
 	  break;
@@ -311,8 +317,10 @@ public:
   }
 
 
-  bool moveTo(const robot_msgs::PoseStamped& pose)
+  bool moveTo(robot_msgs::PoseStamped& pose)
   {
+    pose.header.stamp = Time().now() - Duration().fromSec(1); 
+
     cout << "giving moveto command for time " 
          << pose.header.stamp.toSec() << " and frame " 
          << pose.header.frame_id << endl;
