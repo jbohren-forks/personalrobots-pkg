@@ -82,7 +82,7 @@ namespace controller
 
     friend std::ostream & operator<<(std::ostream& mystream, const controller::BaseParam &bp);
 
-    BaseParam():direction_multiplier_(1),name_(" "),joint_state_(NULL),parent_(NULL){};
+    BaseParam():name_(" "),joint_state_(NULL),parent_(NULL),direction_multiplier_(1){};
 
     ~BaseParam(){}
 

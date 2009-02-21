@@ -964,7 +964,7 @@ void BaseControllerNode::update()
 
       //      out.transform.rotation.x = 0;
       //      out.transform.rotation.y = 0;
-      double angle = angles::normalize_angle(-yaw);
+      /*double angle =*/ angles::normalize_angle(-yaw);
       //      out.transform.rotation.z = sqrt(1/(1 + pow(angle, 2)));
       //      out.transform.rotation.w = sqrt(pow(angle, 2) / (1 + pow(angle, 2)));
       //      out.pitch = 0;

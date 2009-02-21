@@ -1020,7 +1020,7 @@ void BaseControllerPosNode::update()
       out.transform.translation.z = 0;
       out.transform.rotation.x = 0;
       out.transform.rotation.y = 0;
-      double angle = angles::normalize_angle(-yaw);
+      /*double angle =*/ angles::normalize_angle(-yaw);
 
 
       tf::Quaternion quat_trans = tf::Quaternion(-yaw,0.0,0.0);
