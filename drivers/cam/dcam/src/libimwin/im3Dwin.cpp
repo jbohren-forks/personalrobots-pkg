@@ -422,7 +422,7 @@ int im3DWindow::handle(int event)
     if(moving) 
       {
 	// find which button is pushed
-	if (Fl::event_state() | FL_BUTTON1) // left button, rotate
+	if (Fl::event_state() & FL_BUTTON1) // left button, rotate
 	  {
 	    anglex = anglex + (Fl::event_x()-beginx);
 	    beginx = Fl::event_x();
