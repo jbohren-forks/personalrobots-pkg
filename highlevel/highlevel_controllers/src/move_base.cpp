@@ -386,15 +386,15 @@ namespace ros {
         tf_.transformPose(global_frame_, goalPose, transformedGoalPose);
       }
       catch(tf::LookupException& ex){
-        ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
+        ROS_ERROR("No transform available from %s to %s. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str(), global_frame_.c_str());
         ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
       }
       catch(tf::ConnectivityException& ex){
-        ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
+        ROS_ERROR("No transform available from %s to %s. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str(), global_frame_.c_str());
         ROS_ERROR("The details of the ConnectivityException are: %s\n", ex.what());
       }
       catch(tf::ExtrapolationException& ex){
-        ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
+        ROS_ERROR("No transform available from %s to %s. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str(), global_frame_.c_str());
         ROS_ERROR("The details of the ExtrapolationException are: %s\n", ex.what());
       }
 
