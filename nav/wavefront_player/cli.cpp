@@ -24,9 +24,9 @@ public:
   }
   void state_cb()
   {
-    if (state == WF_IDLE && wf_state.active)
+    if (state == WF_IDLE && wf_state.status == wf_state.ACTIVE)
       state = WF_SEEKING_GOAL;
-    else if (state == WF_SEEKING_GOAL && !wf_state.active)
+    else if (state == WF_SEEKING_GOAL && wf_state.status != wf_state.ACTIVE)
       state = WF_DONE;
   }
   void deactivate_goal()

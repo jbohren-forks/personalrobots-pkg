@@ -401,16 +401,14 @@ WavefrontNode::goalReceived()
     this->planner_state = NEW_GOAL;
 
     // Set state for actively pursuing a goal
-    this->pstate.active = 1;
-    this->pstate.valid = 0;
-    this->pstate.done = 0;
+    this->pstate.status = this->pstate.ACTIVE;
   }
   else {
     // Clear goal data
     this->planner_state = NO_GOAL;
 
     // Set state inactive
-    this->pstate.active = 0;
+    this->pstate.status = this->pstate.INACTIVE;
   }
 
   double yaw,pitch,roll;
@@ -753,10 +751,8 @@ WavefrontNode::doOneCycle()
   btMatrix3x3 mat =  global_pose.getBasis();
   mat.getEulerZYX(yaw, pitch, roll);
 
-  this->pstate.active = (this->enable &&
+  this->pstate.status = (this->enable && 
 			 (this->planner_state == PURSUING_GOAL)) ? 1 : 0;
-  this->pstate.valid = (this->plan->path_count > 0) ? 1 : 0;
-  this->pstate.done = (this->planner_state == REACHED_GOAL) ? 1 : 0;
   this->pstate.pos.x = global_pose.getOrigin().x();
   this->pstate.pos.y = global_pose.getOrigin().y();
   this->pstate.pos.th = yaw;
