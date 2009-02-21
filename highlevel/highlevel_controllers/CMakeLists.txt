@@ -41,7 +41,7 @@ rospack_link_boost(move_base_follow thread)
 
 # move_base_topological
 rospack_add_executable(move_base_topological src/move_base_topological.cpp)
-target_link_libraries(move_base_topological highlevel_controllers topological_map)
+target_link_libraries(move_base_topological highlevel_controllers topological_map navfn)
 rospack_link_boost(move_base_topological thread)
 
 # MoveArmEndEffector
