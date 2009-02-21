@@ -362,14 +362,15 @@ void im3DWindow::draw()
       glVertex3f(0, 0, axesLen*20.0);
       glEnd();
 
-#if 0
       // show centerpoint
-      glBegin(GL_LINES);
+      glBegin(GL_QUADS);
       glColor3f(0, 0, 1);
+      float dx = 0.1;
       glVertex3f(centerx, centery, centerz);    
-      glVertex3f(centerx, centery, centerz+1000);
+      glVertex3f(centerx+dx, centery, centerz);
+      glVertex3f(centerx+dx, centery+dx, centerz);
+      glVertex3f(centerx, centery+dx, centerz);
       glEnd();
-#endif
     }
 
 
@@ -418,14 +419,24 @@ int im3DWindow::handle(int event)
 
   case FL_DRAG:
     // mouse drag (while down) event
-    if(moving) {
-      anglex = anglex + (Fl::event_x()-beginx);
-      beginx = Fl::event_x();
-      angley = angley + (Fl::event_y()-beginy);
-      beginy = Fl::event_y();
-      newModel = 1;
-      redraw();
-    }
+    if(moving) 
+      {
+	// find which button is pushed
+	if (Fl::event_state() | FL_BUTTON1) // left button, rotate
+	  {
+	    anglex = anglex + (Fl::event_x()-beginx);
+	    beginx = Fl::event_x();
+	    angley = angley + (Fl::event_y()-beginy);
+	    beginy = Fl::event_y();
+	  }
+	else			// right button, move rotation point along Z
+	  {
+	    centerz = centerz + (Fl::event_y()-beginy);
+	    beginy = Fl::event_y();
+	  }
+	newModel = 1;
+	redraw();
+      }
     return 1;
 
   case FL_MOUSEWHEEL:		// change scale
