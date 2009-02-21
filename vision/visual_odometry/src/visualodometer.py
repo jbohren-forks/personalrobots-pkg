@@ -241,7 +241,7 @@ class FeatureDetectorFast(FeatureDetectorOrdered):
     else:
       barrier = 9
     feat = FAST(frame.rawdata, frame.size[0], frame.size[1], self.thresh, barrier)
-    return [ (x,y) for (x,y,r) in feat if (16 <= x and x <= (640-16) and (16 <= y) and y < (480-16)) ]
+    return [ (x,y) for (x,y,r) in feat if (16 <= x and x <= (frame.size[0]-16) and (16 <= y) and y < (frame.size[1]-16)) ]
 
 class FeatureDetector4x4:
 

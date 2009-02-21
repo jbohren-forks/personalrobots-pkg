@@ -51,7 +51,7 @@ class reader:
         yield cam, dcamImage(msg.left_image), dcamImage(msg.right_image)
 
   def next_from_dir(self):
-    
+
     dc = yaml.load(open("%s/sequence_parameters" % self.sourcename).read())
     cam = camera.DictCamera(dc)
     f = int(dc['FirstFrame'])
@@ -62,9 +62,16 @@ class reader:
       Rname = self.sourcename + "/" + dc['RightFilename'] % f
 
       if not os.access(Lname, os.R_OK) or not os.access(Rname, os.R_OK):
-        break
+        if 'LastFrame' in dc:
+          f += 1
+          continue
+        else:
+          break
       L = Image.open(Lname)
       R = Image.open(Rname)
 
       yield cam, L, R
+
+      if ('LastFrame' in dc) and (f == int(dc['LastFrame'])):
+        break
       f += 1
