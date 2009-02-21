@@ -15,13 +15,6 @@ int32 goal_id
 #Comment for debug
 string comment
 
-
-# Did the controller find a valid path?
-byte valid
-
-# Have we arrived at the goal?
-byte done
-
 # Actual recharge level
 float32 recharge_level
 

@@ -15,10 +15,6 @@ int32 goal_id
 #Comment for debug
 string comment
 
-#Did the planner/controller find a valid way to achieve the goal
-byte valid
-#Did we actually successfully arrive at the goal?
-byte done
 #Current arm configuration
 robot_msgs/JointState[] configuration
 #Goal arm configuration

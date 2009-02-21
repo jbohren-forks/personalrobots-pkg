@@ -201,7 +201,6 @@ void MoveArm::updateGoalMsg()
 {
   lock();
   stateMsg.goal = goalMsg.configuration;
-  stateMsg.valid = false;
   unlock();
 }
 
@@ -303,7 +302,7 @@ bool MoveArm::makePlan()
   if (!ret)
     ROS_ERROR("Service call on plan_kinematic_path_state failed");
   else
-    stateMsg.done = res.value.done;
+    setDone(res.value.done);
 
   ROS_INFO("Plan created.");
 
@@ -334,19 +333,19 @@ bool MoveArm::makePlan()
 
 bool MoveArm::goalReached()
 {
-  return stateMsg.done;
+  return getDone();
 }
 
 bool MoveArm::dispatchCommands()
 {
   puts("in dispatchCommands");
   lock();
-  if (stateMsg.done || !isValid())
+  if (getDone() || !isValid())
     stopArm();
   else if (trajectory_changed_)
     sendArmCommand(current_trajectory_, kinematic_model_);
   unlock();
-  return stateMsg.valid; //Do not change.
+  return isValid(); //Do not change.
 }
 
 void MoveArm::printKinematicPath(robot_msgs::KinematicPath &path)

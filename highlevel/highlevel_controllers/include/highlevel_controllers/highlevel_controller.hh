@@ -70,7 +70,8 @@ public:
    */
   HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
     initialized(false), terminated(false), stateTopic(_stateTopic), 
-    goalTopic(_goalTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), timeout(0, 0) {
+    goalTopic(_goalTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), 
+    timeout(0, 0), done_(false), valid_(false) {
 
     // Obtain the control frequency for this node
     double controller_frequency(10);
@@ -204,7 +205,7 @@ protected:
    * @brief Access for valid status of the controller
    */
   bool isValid() {
-    return this->stateMsg.valid;
+    return valid_;
   }
   /**
    * @brief Access aborted state of the planner.
@@ -229,7 +230,7 @@ protected:
 
     this->state = ACTIVE;
     this->stateMsg.status = this->stateMsg.ACTIVE;
-    this->stateMsg.done = 0;
+    done_ = 0;
 
     handleActivation();
   }
@@ -244,7 +245,7 @@ protected:
     if (this->stateMsg.status == this->stateMsg.ACTIVE) {
       this->stateMsg.status = this->stateMsg.INACTIVE;
     }
-    this->stateMsg.valid = 0;
+    valid_ = 0;
 
     handleDeactivation();
   }
@@ -352,6 +353,28 @@ protected:
   G goalMsg; /*!< Message populated by callback */
   S stateMsg; /*!< Message published. Will be populated in the control loop */
 
+  /**
+   * @brief Setter for state msg done flag
+   */
+  void setDone(bool isDone){
+    done_ = isDone;
+  }
+
+  /**
+   * @brief Get the done flag
+   */
+  bool getDone() {
+    return done_;
+  }
+
+  /**
+   * @brief Setter for state msg valid flag
+   */
+  void setValid(bool isValid){
+    valid_ = isValid;
+  }
+
+
 private:
 
   void goalCallback(){
@@ -452,19 +475,6 @@ private:
     unlock();
   }
 
-  /**
-   * @brief Setter for state msg done flag
-   */
-  void setDone(bool isDone){
-    this->stateMsg.done = isDone;
-  }
-
-  /**
-   * @brief Setter for state msg valid flag
-   */
-  void setValid(bool isValid){
-    this->stateMsg.valid = isValid;
-  }
 
   bool initialized; /*!< Marks if the node has been initialized, and is ready for use. */
   bool terminated; /*!< Marks if the node has been terminated. */
@@ -477,6 +487,8 @@ private:
   boost::thread* plannerThread_; /*!< Thread running the planner loop */
   highlevel_controllers::Ping shutdownMsg_; /*!< For receiving shutdown from executive */
   ros::Duration timeout; /*< The time limit for planning failure. */
+  bool done_; /*< True if the action is done */
+  bool valid_; /*< True if it is valid */
 };
 
 #endif

@@ -16,10 +16,6 @@ int32 goal_id
 #Comment for debug
 string comment
 
-# Did the planner find a valid path?
-byte valid
-# Have we arrived at the goal?
-byte done
 # Current location (m,m,rad)
 deprecated_msgs/Pose2DFloat32 pos
 # Goal location (m,m,rad)
