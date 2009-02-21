@@ -13,7 +13,6 @@ import yaml
 
 import camera
 
-
 class dcamImage:
   def __init__(self, m):
     if hasattr(m, "byte_data"):

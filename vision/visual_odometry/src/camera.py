@@ -111,8 +111,8 @@ class StereoCamera(Camera):
 class DictCamera(Camera):
   def __init__(self, pd):
 
-    Fx = float(pd['F'])
-    Fy = float(pd['F'])
+    Fx = float(pd['Fx'])
+    Fy = float(pd['Fy'])
     Clx = float(pd['Clx'])
     Crx = float(pd['Crx'])
     Cy = float(pd['Cy'])
