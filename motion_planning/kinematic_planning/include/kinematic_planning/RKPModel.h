@@ -67,65 +67,65 @@ namespace kinematic_planning
 		    delete i->second;
 	}
 	
-	void addRRT(std::map<std::string, std::string> &options)
+	void addRRT(const std::map<std::string, std::string> &options)
 	{
-	    RKPPlannerSetup *rrt = new RKPRRTSetup();
-	    if (rrt->setup(dynamic_cast<RKPModelBase*>(this), options))
+	    RKPPlannerSetup *rrt = new RKPRRTSetup(dynamic_cast<RKPModelBase*>(this));
+	    if (rrt->setup(options))
 		planners[rrt->name] = rrt;
 	    else
 		delete rrt;
 	}
 	
-	void addLazyRRT(std::map<std::string, std::string> &options)
+	void addLazyRRT(const std::map<std::string, std::string> &options)
 	{
-	    RKPPlannerSetup *rrt = new RKPLazyRRTSetup();
-	    if (rrt->setup(dynamic_cast<RKPModelBase*>(this), options))
+	    RKPPlannerSetup *rrt = new RKPLazyRRTSetup(dynamic_cast<RKPModelBase*>(this));
+	    if (rrt->setup(options))
 		planners[rrt->name] = rrt;
 	    else
 		delete rrt;
 	}
 	
-	void addEST(std::map<std::string, std::string> &options)
+	void addEST(const std::map<std::string, std::string> &options)
 	{
-	    RKPPlannerSetup *est = new RKPESTSetup();
-	    if (est->setup(dynamic_cast<RKPModelBase*>(this), options))
+	    RKPPlannerSetup *est = new RKPESTSetup(dynamic_cast<RKPModelBase*>(this));
+	    if (est->setup(options))
 		planners[est->name] = est;
 	    else
 		delete est;
 	}
 
-	void addSBL(std::map<std::string, std::string> &options)
+	void addSBL(const std::map<std::string, std::string> &options)
 	{
-	    RKPPlannerSetup *sbl = new RKPSBLSetup();
-	    if (sbl->setup(dynamic_cast<RKPModelBase*>(this), options))
+	    RKPPlannerSetup *sbl = new RKPSBLSetup(dynamic_cast<RKPModelBase*>(this));
+	    if (sbl->setup(options))
 		planners[sbl->name] = sbl;
 	    else
 		delete sbl;
 	}
 
-	void addIKSBL(std::map<std::string, std::string> &options)
+	void addIKSBL(const std::map<std::string, std::string> &options)
 	{
-	    RKPPlannerSetup *sbl = new RKPIKSBLSetup();
-	    if (sbl->setup(dynamic_cast<RKPModelBase*>(this), options))
+	    RKPPlannerSetup *sbl = new RKPIKSBLSetup(dynamic_cast<RKPModelBase*>(this));
+	    if (sbl->setup(options))
 		planners[sbl->name] = sbl;
 	    else
 		delete sbl;
 	}
 		
-	void addKPIECE(std::map<std::string, std::string> &options)
+	void addKPIECE(const std::map<std::string, std::string> &options)
 	{
-	    RKPPlannerSetup *kpiece = new RKPKPIECESetup();
-	    if (kpiece->setup(dynamic_cast<RKPModelBase*>(this), options))
+	    RKPPlannerSetup *kpiece = new RKPKPIECESetup(dynamic_cast<RKPModelBase*>(this));
+	    if (kpiece->setup(options))
 		planners[kpiece->name] = kpiece;
 	    else
 		delete kpiece;
 	}
 
 	
-	void addIKKPIECE(std::map<std::string, std::string> &options)
+	void addIKKPIECE(const std::map<std::string, std::string> &options)
 	{
-	    RKPPlannerSetup *kpiece = new RKPIKKPIECESetup();
-	    if (kpiece->setup(dynamic_cast<RKPModelBase*>(this), options))
+	    RKPPlannerSetup *kpiece = new RKPIKKPIECESetup(dynamic_cast<RKPModelBase*>(this));
+	    if (kpiece->setup(options))
 		planners[kpiece->name] = kpiece;
 	    else
 		delete kpiece;

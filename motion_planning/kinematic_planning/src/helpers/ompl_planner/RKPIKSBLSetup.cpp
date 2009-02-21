@@ -36,7 +36,7 @@
 
 #include "kinematic_planning/ompl_planner/RKPIKSBLSetup.h"
 
-kinematic_planning::RKPIKSBLSetup::RKPIKSBLSetup(void) : RKPPlannerSetup()
+kinematic_planning::RKPIKSBLSetup::RKPIKSBLSetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
     name = "IKSBL";	    
 }
@@ -51,21 +51,26 @@ kinematic_planning::RKPIKSBLSetup::~RKPIKSBLSetup(void)
     }
 }
 
-bool kinematic_planning::RKPIKSBLSetup::setup(RKPModelBase *model, std::map<std::string, std::string> &options)
+bool kinematic_planning::RKPIKSBLSetup::setup(const std::map<std::string, std::string> &options)
 {
-    preSetup(model, options);
+    preSetup(options);
     
     ompl::IKSBL* sbl = new ompl::IKSBL(si);
     mp               = sbl;	
-    
-    if (options.find("range") != options.end())
+
+    if (hasOption(options, "range"))
     {
-	double range = parseDouble(options["range"], sbl->getRange());
-	sbl->setRange(range);
-	ROS_INFO("Range is set to %g", range);
+	sbl->setRange(optionAsDouble(options, "range", sbl->getRange()));
+	ROS_INFO("Range is set to %g", sbl->getRange());
     }
     
-    sbl->setProjectionEvaluator(getProjectionEvaluator(model, options));
+    if (hasOption(options, "ik_range"))
+    {
+	sbl->setIKRange(optionAsDouble(options, "ik_range", sbl->getIKRange()));
+	ROS_INFO("IK range is set to %g", sbl->getIKRange());
+    }
+    
+    sbl->setProjectionEvaluator(getProjectionEvaluator(options));
     
     if (sbl->getProjectionEvaluator() == NULL)
     {
@@ -74,7 +79,7 @@ bool kinematic_planning::RKPIKSBLSetup::setup(RKPModelBase *model, std::map<std:
     }
     else
     {
-	postSetup(model, options);
+	postSetup(options);
 	return true;
     }
 }

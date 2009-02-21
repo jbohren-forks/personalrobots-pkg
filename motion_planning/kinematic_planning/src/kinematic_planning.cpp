@@ -272,6 +272,11 @@ public:
 	m_continueReplanningLock.lock();
 	if (m_currentRequestType != R_NONE)
 	{
+	    if (m_currentRequestType == R_STATE)
+		m_requestState.release();
+	    else
+		m_requestLinkPosition.release();
+	    
 	    /* make sure the working thread knows it is time to stop */
 	    m_currentRequestType = R_NONE;	 
 	    m_collisionMonitorCondition.notify_all();
@@ -288,7 +293,9 @@ public:
 	}
 	
 	m_replanningLock.unlock();
-	ROS_INFO("Replanning stopped");	
+
+	if (stop)
+	    ROS_INFO("Replanning stopped");	
     }
     
     bool stopReplanning(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
@@ -316,6 +323,47 @@ public:
 	    delete m_statusThread;
 	}	
     }
+
+    bool replanToState(robot_srvs::KinematicReplanState::Request &req, robot_srvs::KinematicReplanState::Response &res)
+    {
+	ROS_INFO("Request for replanning to a state");
+	bool st = false;
+	res.id = -1;
+	
+	stopReplanning();
+	
+	if (m_robotState)
+	{	    
+	    currentState(req.value.start_state);
+	    st = m_requestState.configure(m_models, req.value);
+
+	    if (st)
+	    {
+		// start planning thread
+		m_replanningLock.lock();
+		m_currentRequestType = R_STATE;
+		
+		m_currentPlanStatus.id = ++m_replanID;
+		m_currentPlanStatus.valid = 1;
+		m_currentPlanStatus.path.set_states_size(0);
+		m_currentPlanStatus.done = 0;
+		m_currentPlanStatus.approximate = 1;
+		m_currentPlanStatus.distance = -1.0;
+		res.id = m_currentPlanStatus.id;
+		m_statusLock.unlock();	    
+		
+		ROS_INFO("Start replanning with plan id %d", res.id);
+		m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToStateThread, this));
+		m_replanningLock.unlock();
+	    }
+	    else
+		ROS_ERROR("Received invalid request");
+	}
+	else
+	    ROS_ERROR("Current robot state is unknown. Cannot start replanning.");
+	
+	return st;	
+    }
     
     bool replanToPosition(robot_srvs::KinematicReplanLinkPosition::Request &req, robot_srvs::KinematicReplanLinkPosition::Response &res)
     {
@@ -327,26 +375,30 @@ public:
 	
 	if (m_robotState)
 	{
-	    // back up the request
-	    m_currentPlanToPositionRequest = req.value;
-	    
-	    // start planning thread
-	    m_replanningLock.lock();
-	    m_currentRequestType = R_POSITION;
+	    currentState(req.value.start_state);
+	    st = m_requestLinkPosition.configure(m_models, req.value);
 
-	    m_currentPlanStatus.id = ++m_replanID;
-	    m_currentPlanStatus.valid = 1;
-	    m_currentPlanStatus.path.set_states_size(0);
-	    m_currentPlanStatus.done = 0;
-	    m_currentPlanStatus.distance = -1.0;
-	    res.id = m_currentPlanStatus.id;
-	    m_statusLock.unlock();	    
-	    
-	    ROS_INFO("Start replanning with plan id %d", res.id);
-	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToPositionThread, this));
-	    m_replanningLock.unlock();	
-
-	    st = true;
+	    if (st)
+	    {
+		// start planning thread
+		m_replanningLock.lock();
+		m_currentRequestType = R_POSITION;
+		
+		m_currentPlanStatus.id = ++m_replanID;
+		m_currentPlanStatus.valid = 1;
+		m_currentPlanStatus.path.set_states_size(0);
+		m_currentPlanStatus.done = 0;
+		m_currentPlanStatus.approximate = 1;
+		m_currentPlanStatus.distance = -1.0;
+		res.id = m_currentPlanStatus.id;
+		m_statusLock.unlock();	    
+		
+		ROS_INFO("Start replanning with plan id %d", res.id);
+		m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToPositionThread, this));
+		m_replanningLock.unlock();	
+	    }
+	    else
+		ROS_ERROR("Received invalid request");
 	}
 	else
 	    ROS_ERROR("Current robot state is unknown. Cannot start replanning.");
@@ -358,19 +410,26 @@ public:
     {
 	ROS_INFO("Request for planning to a state");
 	bool trivial = false;
+	bool approximate = false;
+	
 	if (req.value.start_state.get_vals_size() == 0)
 	{
 	    currentState(req.value.start_state);
 	    ROS_INFO("Using current state as starting point");
 	}
 	
-	bool result = false;
+	res.value.unsafe = isSafeToPlan(true) ? 0 : 1;	
+	bool result = m_requestStateOpenLoop.configure(m_models, req.value);
+	if (result)
+	{
+	    m_requestStateOpenLoop.execute(res.value.path, res.value.distance, trivial, approximate);
+	    m_requestStateOpenLoop.release();
+	}
 	
-	res.value.unsafe = isSafeToPlan(true) ? 0 : 1;
-	result = m_requestState.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
 	res.value.id = -1;
 	res.value.done = trivial ? 1 : 0;
 	res.value.valid = res.value.path.get_states_size() > 0;
+	res.value.approximate = approximate ? 1 : 0;
 	
 	return result;
     }
@@ -379,21 +438,27 @@ public:
     {	
 	ROS_INFO("Request for planning to a position");
 	bool trivial = false;
+	bool approximate = false;
+	
 	if (req.value.start_state.get_vals_size() == 0)
 	{
 	    currentState(req.value.start_state);
 	    ROS_INFO("Using current state as starting point");
 	}
 	
-	bool result = false;
-	
 	res.value.unsafe = isSafeToPlan(true) ? 0 : 1;
-	result = m_requestLinkPosition.execute(m_models, req.value, res.value.path, res.value.distance, trivial);
-	
+	bool result = m_requestLinkPositionOpenLoop.configure(m_models, req.value);
+	if (result)
+	{
+	    m_requestLinkPositionOpenLoop.execute(res.value.path, res.value.distance, trivial, approximate);
+	    m_requestLinkPositionOpenLoop.release();
+	}
+		
 	res.value.id = -1;
 	res.value.done = trivial ? 1 : 0;
 	res.value.valid = res.value.path.get_states_size() > 0;
-
+	res.value.approximate = approximate ? 1 : 0;
+	
 	return result;
     }
 
@@ -485,15 +550,15 @@ protected:
 		// check if we reached the goal position
 		if (m_currentRequestType == R_STATE)
 		{
-		    currentState(m_currentPlanToStateRequest.start_state);
-		    m_currentPlanStatus.done = m_requestState.isTrivial(m_models, m_currentPlanToStateRequest, &m_currentPlanStatus.distance) ? 1  : 0;
+		    currentState(m_requestState.activeRequest().start_state);
+		    m_currentPlanStatus.done = m_requestState.isTrivial(&m_currentPlanStatus.distance) ? 1  : 0;
 		    issueStop = m_currentPlanStatus.done;
 		}
 		else
 		    if (m_currentRequestType == R_POSITION)
 		    {
-			currentState(m_currentPlanToPositionRequest.start_state);
-			m_currentPlanStatus.done = m_requestLinkPosition.isTrivial(m_models, m_currentPlanToPositionRequest, &m_currentPlanStatus.distance) ? 1 : 0;
+			currentState(m_requestLinkPosition.activeRequest().start_state);
+			m_currentPlanStatus.done = m_requestLinkPosition.isTrivial(&m_currentPlanStatus.distance) ? 1 : 0;
 			issueStop = m_currentPlanStatus.done;
 		    }
 	    }
@@ -536,43 +601,7 @@ protected:
 	    }
 	}
     }
-    
-    bool replanToState(robot_srvs::KinematicReplanState::Request &req, robot_srvs::KinematicReplanState::Response &res)
-    {
-	ROS_INFO("Request for replanning to a state");
-	bool st = false;
-	res.id = -1;
-	
-	stopReplanning();
-	
-	if (m_robotState)
-	{
-	    // back up the request
-	    m_currentPlanToStateRequest = req.value;
-
-	    // start planning thread
-	    m_replanningLock.lock();
-	    m_currentRequestType = R_STATE;
-	    
-	    m_currentPlanStatus.id = ++m_replanID;
-	    m_currentPlanStatus.valid = 1;
-	    m_currentPlanStatus.path.set_states_size(0);
-	    m_currentPlanStatus.done = 0;
-	    m_currentPlanStatus.distance = -1.0;
-	    res.id = m_currentPlanStatus.id;
-	    m_statusLock.unlock();	    
-	    
-	    ROS_INFO("Start replanning with plan id %d", res.id);
-	    m_replanningThread = new boost::thread(boost::bind(&KinematicPlanning::replanToStateThread, this));
-	    m_replanningLock.unlock();
-	    st = true;
-	}
-	else
-	    ROS_ERROR("Current robot state is unknown. Cannot start replanning.");
-	
-	return st;	
-    }
-    
+        
     /** Wait for a change in the environment and recompute the motion plan */
     void replanToStateThread(void)
     {	
@@ -580,6 +609,8 @@ protected:
 	robot_msgs::KinematicPath solution;
 	unsigned int step = 0;
 	bool trivial = false;
+	bool approximate = false;
+	
 	while (m_currentRequestType == R_STATE && !trivial)
 	{    
 	    step++;
@@ -588,16 +619,17 @@ protected:
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
 	    bool safe = isSafeToPlan(true);
-
-	    currentState(m_currentPlanToStateRequest.start_state);
-	    m_currentlyExecutedPathStart = m_currentPlanToStateRequest.start_state;
-	    m_requestState.execute(m_models, m_currentPlanToStateRequest, solution, distance, trivial);
+	    
+	    currentState(m_requestState.activeRequest().start_state);
+	    m_currentlyExecutedPathStart = m_requestState.activeRequest().start_state;
+	    m_requestState.execute(solution, distance, trivial, approximate);
 	    bool foundSolution = solution.get_states_size() > 0;
 	    
 	    m_statusLock.lock();	    
 	    m_currentPlanStatus.path = solution;
 	    m_currentPlanStatus.distance = distance;
 	    m_currentPlanStatus.done = trivial ? 1 : 0;
+	    m_currentPlanStatus.approximate = approximate ? 1 : 0;
 	    m_currentPlanStatus.valid = foundSolution ? 1 : 0;
 	    m_currentPlanStatus.unsafe = safe ? 0 : 1;
 	    m_statusLock.unlock();	    
@@ -626,6 +658,7 @@ protected:
 	robot_msgs::KinematicPath solution;
 	unsigned int step = 0;
 	bool trivial = false;
+	bool approximate = false;
 
 	while (m_currentRequestType == R_POSITION && !trivial)
 	{
@@ -636,15 +669,16 @@ protected:
 	    double distance = 0.0;
 	    bool safe = isSafeToPlan(true);
 	    
-	    currentState(m_currentPlanToPositionRequest.start_state);
-	    m_currentlyExecutedPathStart = m_currentPlanToPositionRequest.start_state;
-	    m_requestLinkPosition.execute(m_models, m_currentPlanToPositionRequest, solution, distance, trivial);
+	    currentState(m_requestLinkPosition.activeRequest().start_state);
+	    m_currentlyExecutedPathStart = m_requestLinkPosition.activeRequest().start_state;
+	    m_requestLinkPosition.execute(solution, distance, trivial, approximate);
 	    bool foundSolution = solution.get_states_size() > 0;
 
 	    m_statusLock.lock();	    
 	    m_currentPlanStatus.path = solution;
 	    m_currentPlanStatus.distance = distance;
 	    m_currentPlanStatus.done = trivial ? 1 : 0;
+	    m_currentPlanStatus.approximate = approximate ? 1 : 0;
 	    m_currentPlanStatus.valid = foundSolution ? 1 : 0;
 	    m_currentPlanStatus.unsafe = safe ? 0 : 1;
 	    m_statusLock.unlock();
@@ -678,14 +712,14 @@ protected:
 	{
 	    if (m_currentRequestType == R_STATE)
 	    {
-		m_currentPlanToStateRequest.start_state = m_currentlyExecutedPathStart;
-		update = !m_requestState.isStillValid(m_models, m_currentPlanToStateRequest, m_currentlyExecutedPath);
+		m_requestState.activeRequest().start_state = m_currentlyExecutedPathStart;
+		update = !m_requestState.isStillValid(m_currentlyExecutedPath);
 	    }
 	    else
 		if (m_currentRequestType == R_POSITION)
 		{
-		    m_currentPlanToPositionRequest.start_state = m_currentlyExecutedPathStart;
-		    update = !m_requestLinkPosition.isStillValid(m_models, m_currentPlanToPositionRequest, m_currentlyExecutedPath);
+		    m_requestLinkPosition.activeRequest().start_state = m_currentlyExecutedPathStart;
+		    update = !m_requestLinkPosition.isStillValid(m_currentlyExecutedPath);
 		} 
 	    
 	    if (update)
@@ -780,6 +814,8 @@ private:
     }
     
     ModelMap                                                        m_models;
+    RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>          m_requestStateOpenLoop;
+    RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>   m_requestLinkPositionOpenLoop;
     RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>          m_requestState;
     RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>   m_requestLinkPosition;
     
@@ -793,8 +829,6 @@ private:
     /*********** DATA USED FOR REPLANNING ONLY ***********/
     
     // currently considered request
-    robot_msgs::KinematicPlanStateRequest                           m_currentPlanToStateRequest;    
-    robot_msgs::KinematicPlanLinkPositionRequest                    m_currentPlanToPositionRequest; 
     int                                                             m_currentRequestType;
     
     // current status of the motion planner

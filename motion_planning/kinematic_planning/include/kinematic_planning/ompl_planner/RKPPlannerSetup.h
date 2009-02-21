@@ -58,22 +58,23 @@ namespace kinematic_planning
     {
     public:
 	
-	RKPPlannerSetup(void);
+	RKPPlannerSetup(RKPModelBase *m);
 	
 	virtual ~RKPPlannerSetup(void);
 	
 	/** For each planner definition, define the set of distance metrics it can use */
 	virtual void setupDistanceEvaluators(void);
 	
-	virtual ompl::ProjectionEvaluator* getProjectionEvaluator(RKPModelBase *model,
-								  const std::map<std::string, std::string> &options) const;
+	virtual ompl::ProjectionEvaluator* getProjectionEvaluator(const std::map<std::string, std::string> &options) const;
 	
-	virtual void preSetup(RKPModelBase *model, std::map<std::string, std::string> &options);
-	virtual void postSetup(RKPModelBase *model, std::map<std::string, std::string> &options);
+	virtual void preSetup(const std::map<std::string, std::string> &options);
+	virtual void postSetup(const std::map<std::string, std::string> &options);
 	
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options) = 0;
+	virtual bool setup(const std::map<std::string, std::string> &options) = 0;
 	
-	std::string                                                            name;	
+	RKPModelBase                                                          *model;
+	
+	std::string                                                            name;
 	ompl::Planner                                                         *mp;
 	ompl::GAIK                                                            *gaik;
 	ompl::SpaceInformationKinematic                                       *si;
@@ -83,7 +84,10 @@ namespace kinematic_planning
 
     protected:
 	
-	double parseDouble(const std::string &value, double def);
+	double parseDouble(const std::string &value, double def) const;
+	bool   hasOption(const std::map<std::string, std::string> &options, const std::string &opt) const;
+	double optionAsDouble(const std::map<std::string, std::string> &options, const std::string &opt, double def) const;
+	std::string optionAsString(const std::map<std::string, std::string> &options, const std::string &opt, const::std::string &def) const;	
     };
 
     

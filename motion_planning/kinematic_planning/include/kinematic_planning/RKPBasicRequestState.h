@@ -49,7 +49,7 @@ namespace kinematic_planning
     template<>
     RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>::RKPBasicRequest(void)
     {
-	type = R_STATE;
+	m_type = R_STATE;
     }
 
     /** Validate request for planning towards a state */
@@ -79,7 +79,7 @@ namespace kinematic_planning
     
     /** Set the goal using a destination state */
     template<>
-    void RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>::setupGoalState(RKPModel *model, RKPPlannerSetup *psetup, robot_msgs::KinematicPlanStateRequest &req)
+    void RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>::setupGoalState(RKPPlannerSetup *psetup, robot_msgs::KinematicPlanStateRequest &req)
     {
 	/* set the goal */
 	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(psetup->si);

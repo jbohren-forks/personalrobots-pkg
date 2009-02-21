@@ -37,7 +37,7 @@
 #include "kinematic_planning/ompl_planner/RKPESTSetup.h"
 
 
-kinematic_planning::RKPESTSetup::RKPESTSetup(void) : RKPPlannerSetup()
+kinematic_planning::RKPESTSetup::RKPESTSetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
     name = "EST";
 }
@@ -52,21 +52,26 @@ kinematic_planning::RKPESTSetup::~RKPESTSetup(void)
     }
 }
 
-bool kinematic_planning::RKPESTSetup::setup(RKPModelBase *model, std::map<std::string, std::string> &options)
+bool kinematic_planning::RKPESTSetup::setup(const std::map<std::string, std::string> &options)
 {
-    preSetup(model, options);
+    preSetup(options);
     
     ompl::EST *est = new ompl::EST(si);
     mp             = est;	
-    
-    if (options.find("range") != options.end())
+
+    if (hasOption(options, "range"))
     {
-	double range = parseDouble(options["range"], est->getRange());
-	est->setRange(range);
-	ROS_INFO("Range is set to %g", range);
+	est->setRange(optionAsDouble(options, "range", est->getRange()));
+	ROS_INFO("Range is set to %g", est->getRange());
     }
-    
-    est->setProjectionEvaluator(getProjectionEvaluator(model, options));
+
+    if (hasOption(options, "goal_bias"))
+    {
+	est->setGoalBias(optionAsDouble(options, "goal_bias", est->getGoalBias()));
+	ROS_INFO("Goal bias is set to %g", est->getGoalBias());
+    }
+        
+    est->setProjectionEvaluator(getProjectionEvaluator(options));
     
     if (est->getProjectionEvaluator() == NULL)
     {
@@ -75,7 +80,7 @@ bool kinematic_planning::RKPESTSetup::setup(RKPModelBase *model, std::map<std::s
     }
     else
     {
-	postSetup(model, options);
+	postSetup(options);
 	return true;
     }
 }

@@ -29,5 +29,9 @@ byte done
 # otherwise, it will be 1
 byte valid
 
+# If the solution only gets close to the goal but does not reach it
+# this is set to 1. Otherwise, it will be set to 0
+byte approximate
+
 # If the data the planner has when planning is stale, set this flag to 1
 byte unsafe

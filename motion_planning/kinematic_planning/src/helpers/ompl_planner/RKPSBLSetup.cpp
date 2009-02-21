@@ -36,7 +36,7 @@
 
 #include "kinematic_planning/ompl_planner/RKPSBLSetup.h"
 
-kinematic_planning::RKPSBLSetup::RKPSBLSetup(void) : RKPPlannerSetup()
+kinematic_planning::RKPSBLSetup::RKPSBLSetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
     name = "SBL";	    
 }
@@ -51,21 +51,20 @@ kinematic_planning::RKPSBLSetup::~RKPSBLSetup(void)
     }
 }
 
-bool kinematic_planning::RKPSBLSetup::setup(RKPModelBase *model, std::map<std::string, std::string> &options)
+bool kinematic_planning::RKPSBLSetup::setup(const std::map<std::string, std::string> &options)
 {
-    preSetup(model, options);
+    preSetup(options);
     
     ompl::SBL *sbl = new ompl::SBL(si);
     mp             = sbl;	
     
-    if (options.find("range") != options.end())
+    if (hasOption(options, "range"))
     {
-	double range = parseDouble(options["range"], sbl->getRange());
-	sbl->setRange(range);
-	ROS_INFO("Range is set to %g", range);
+	sbl->setRange(optionAsDouble(options, "range", sbl->getRange()));
+	ROS_INFO("Range is set to %g", sbl->getRange());
     }
-    
-    sbl->setProjectionEvaluator(getProjectionEvaluator(model, options));
+
+    sbl->setProjectionEvaluator(getProjectionEvaluator(options));
     
     if (sbl->getProjectionEvaluator() == NULL)
     {
@@ -74,7 +73,7 @@ bool kinematic_planning::RKPSBLSetup::setup(RKPModelBase *model, std::map<std::s
     }
     else
     {
-	postSetup(model, options);
+	postSetup(options);
 	return true;
     }
 }

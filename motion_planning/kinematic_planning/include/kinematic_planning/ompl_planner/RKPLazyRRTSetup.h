@@ -47,9 +47,9 @@ namespace kinematic_planning
     {
     public:
 	
-        RKPLazyRRTSetup(void);
+        RKPLazyRRTSetup(RKPModelBase *m);
 	virtual ~RKPLazyRRTSetup(void);
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options);
+	virtual bool setup(const std::map<std::string, std::string> &options);
     };
 }
 

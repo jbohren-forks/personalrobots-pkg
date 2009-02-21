@@ -42,8 +42,9 @@
 #include <cassert>
 #include <vector>
 
-kinematic_planning::RKPPlannerSetup::RKPPlannerSetup(void)
+kinematic_planning::RKPPlannerSetup::RKPPlannerSetup(RKPModelBase *m)
 {
+    model = m;
     mp = NULL;
     gaik = NULL;
     si = NULL;
@@ -75,7 +76,7 @@ void kinematic_planning::RKPPlannerSetup::setupDistanceEvaluators(void)
     sde["L2Square"] = new ompl::SpaceInformationKinematic::StateKinematicL2SquareDistanceEvaluator(si);
 }
 	
-ompl::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProjectionEvaluator(RKPModelBase *model, const std::map<std::string, std::string> &options) const
+ompl::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProjectionEvaluator(const std::map<std::string, std::string> &options) const
 {
     std::map<std::string, std::string>::const_iterator pit = options.find("projection");
     std::map<std::string, std::string>::const_iterator cit = options.find("celldim");
@@ -124,7 +125,7 @@ ompl::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProjectionEva
     return pe;
 }
 
-void kinematic_planning::RKPPlannerSetup::preSetup(RKPModelBase *model, std::map<std::string, std::string> &options)
+void kinematic_planning::RKPPlannerSetup::preSetup(const std::map<std::string, std::string> &options)
 {
     ROS_INFO("Adding %s instance for motion planning: %s", name.c_str(), model->groupName.c_str());
     
@@ -139,14 +140,31 @@ void kinematic_planning::RKPPlannerSetup::preSetup(RKPModelBase *model, std::map
     gaik     = new ompl::GAIK(si);
 }
 
-void kinematic_planning::RKPPlannerSetup::postSetup(RKPModelBase *model, std::map<std::string, std::string> &options)
+void kinematic_planning::RKPPlannerSetup::postSetup(const std::map<std::string, std::string> &options)
 {
     setupDistanceEvaluators();
     si->setup();
     mp->setup();	    
 }
 
-double kinematic_planning::RKPPlannerSetup::parseDouble(const std::string &value, double def)
+bool kinematic_planning::RKPPlannerSetup::hasOption(const std::map<std::string, std::string> &options, const std::string &opt) const
+{
+    return options.find(opt) != options.end();
+}
+
+double kinematic_planning::RKPPlannerSetup::optionAsDouble(const std::map<std::string, std::string> &options, const std::string &opt, double def) const
+{
+    std::map<std::string, std::string>::const_iterator it = options.find(opt);
+    return (it != options.end()) ? parseDouble(it->second, def) : def;
+}
+
+std::string kinematic_planning::RKPPlannerSetup::optionAsString(const std::map<std::string, std::string> &options, const std::string &opt, const::std::string &def) const
+{
+    std::map<std::string, std::string>::const_iterator it = options.find(opt);
+    return (it != options.end()) ? it->second : def;
+}
+
+double kinematic_planning::RKPPlannerSetup::parseDouble(const std::string &value, double def) const
 {
     try
     {

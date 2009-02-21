@@ -37,7 +37,7 @@
 #include "kinematic_planning/ompl_planner/RKPLazyRRTSetup.h"
 #include <ompl/extension/samplingbased/kinematic/extension/rrt/LazyRRT.h>
 
-kinematic_planning::RKPLazyRRTSetup::RKPLazyRRTSetup(void) : RKPPlannerSetup()
+kinematic_planning::RKPLazyRRTSetup::RKPLazyRRTSetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
     name = "LazyRRT";
 }
@@ -46,28 +46,26 @@ kinematic_planning::RKPLazyRRTSetup::~RKPLazyRRTSetup(void)
 {
 }
 
-bool kinematic_planning::RKPLazyRRTSetup::setup(RKPModelBase *model, std::map<std::string, std::string> &options)
+bool kinematic_planning::RKPLazyRRTSetup::setup(const std::map<std::string, std::string> &options)
 {
-    preSetup(model, options);
+    preSetup(options);
     
     ompl::LazyRRT *rrt = new ompl::LazyRRT(si);
-    mp                 = rrt;
-    
-    if (options.find("range") != options.end())
+    mp                 = rrt;    
+
+    if (hasOption(options, "range"))
     {
-	double range = parseDouble(options["range"], rrt->getRange());
-	rrt->setRange(range);
-	ROS_INFO("Range is set to %g", range);
+	rrt->setRange(optionAsDouble(options, "range", rrt->getRange()));
+	ROS_INFO("Range is set to %g", rrt->getRange());
     }
     
-    if (options.find("goal_bias") != options.end())
-    {	
-	double bias = parseDouble(options["goal_bias"], rrt->getGoalBias());
-	rrt->setGoalBias(bias);
-	ROS_INFO("Goal bias is set to %g", bias);
+    if (hasOption(options, "goal_bias"))
+    {
+	rrt->setGoalBias(optionAsDouble(options, "goal_bias", rrt->getGoalBias()));
+	ROS_INFO("Goal bias is set to %g", rrt->getGoalBias());
     }
     
-    postSetup(model, options);
+    postSetup(options);
     
     return true;
 }

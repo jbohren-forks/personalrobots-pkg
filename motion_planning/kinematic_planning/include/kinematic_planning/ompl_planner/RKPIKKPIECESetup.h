@@ -47,9 +47,9 @@ namespace kinematic_planning
     {
     public:
 	
-        RKPIKKPIECESetup(void);
+        RKPIKKPIECESetup(RKPModelBase *m);
 	virtual ~RKPIKKPIECESetup(void);
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options);
+	virtual bool setup(const std::map<std::string, std::string> &options);
 	
     };
 

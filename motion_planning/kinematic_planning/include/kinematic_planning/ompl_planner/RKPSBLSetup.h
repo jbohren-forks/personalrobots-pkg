@@ -47,9 +47,9 @@ namespace kinematic_planning
     {
     public:
 	
-        RKPSBLSetup(void);
+        RKPSBLSetup(RKPModelBase *m);
 	virtual ~RKPSBLSetup(void);
-	virtual bool setup(RKPModelBase *model, std::map<std::string, std::string> &options);
+	virtual bool setup(const std::map<std::string, std::string> &options);
     };
 
 } // kinematic_planning

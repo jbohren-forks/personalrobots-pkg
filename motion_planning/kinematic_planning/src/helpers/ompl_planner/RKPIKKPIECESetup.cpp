@@ -36,7 +36,7 @@
 
 #include "kinematic_planning/ompl_planner/RKPIKKPIECESetup.h"
 
-kinematic_planning::RKPIKKPIECESetup::RKPIKKPIECESetup(void) : RKPPlannerSetup()
+kinematic_planning::RKPIKKPIECESetup::RKPIKKPIECESetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
     name = "IKKPIECE";	    
 }
@@ -51,21 +51,33 @@ kinematic_planning::RKPIKKPIECESetup::~RKPIKKPIECESetup(void)
     }
 }
 
-bool kinematic_planning::RKPIKKPIECESetup::setup(RKPModelBase *model, std::map<std::string, std::string> &options)
+bool kinematic_planning::RKPIKKPIECESetup::setup(const std::map<std::string, std::string> &options)
 {
-    preSetup(model, options);
+    preSetup(options);
     
     ompl::IKKPIECE1* kpiece = new ompl::IKKPIECE1(si);
     mp                      = kpiece;	
+
     
-    if (options.find("range") != options.end())
+    if (hasOption(options, "range"))
     {
-	double range = parseDouble(options["range"], kpiece->getRange());
-	kpiece->setRange(range);
-	ROS_INFO("Range is set to %g", range);
+	kpiece->setRange(optionAsDouble(options, "range", kpiece->getRange()));
+	ROS_INFO("Range is set to %g", kpiece->getRange());
     }
     
-    kpiece->setProjectionEvaluator(getProjectionEvaluator(model, options));
+    if (hasOption(options, "ik_range"))
+    {
+	kpiece->setIKRange(optionAsDouble(options, "ik_range", kpiece->getIKRange()));
+	ROS_INFO("IK range is set to %g", kpiece->getIKRange());
+    }
+    
+    if (hasOption(options, "goal_bias"))
+    {
+	kpiece->setGoalBias(optionAsDouble(options, "goal_bias", kpiece->getGoalBias()));
+	ROS_INFO("Goal bias is set to %g", kpiece->getGoalBias());
+    }
+    
+    kpiece->setProjectionEvaluator(getProjectionEvaluator(options));
     
     if (kpiece->getProjectionEvaluator() == NULL)
     {
@@ -74,7 +86,7 @@ bool kinematic_planning::RKPIKKPIECESetup::setup(RKPModelBase *model, std::map<s
     }
     else
     {
-	postSetup(model, options);
+	postSetup(options);
 	return true;
     }
 }

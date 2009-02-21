@@ -44,7 +44,6 @@
 #include <robot_msgs/PoseConstraint.h>
 
 #include <ros/console.h>
-#include <boost/thread/mutex.hpp>
 #include <iostream>
 #include <sstream>
 
@@ -66,13 +65,143 @@ namespace kinematic_planning
 	
 	RKPBasicRequest(void)
 	{
-	    type = R_NONE;
+	    m_type = R_NONE;
+	    m_activePSetup = NULL;
 	}
 	
 	virtual ~RKPBasicRequest(void)
 	{
 	}
 	
+	int getType(void) const
+	{
+	    return m_type;
+	}
+		
+	/** Set up all the data needed by motion planning based on a request and lock the planner setup
+	 *  using this data */
+	bool configure(ModelMap &models, const _R &req)
+	{
+	    // make sure the same motion planner instance is not used by other calls
+	    m_activeReq = req;
+	    
+	    if (!isRequestValid(models, m_activeReq))
+		return false;
+	    
+	    ROS_INFO("Selected motion planner: '%s'", m_activeReq.params.planner_id.c_str());
+	    	    
+	    /* find the data we need */
+	    RKPModel *m = models[m_activeReq.params.model_id];
+
+	    // lock the model
+	    m->lock.lock();
+	    
+	    // get the planner setup
+	    m_activePSetup = m->planners[m_activeReq.params.planner_id];
+
+	    update();
+	    
+	    /* print some information */
+	    ROS_INFO("=======================================");
+	    std::stringstream ss;
+	    m_activePSetup->si->printSettings(ss);
+	    static_cast<StateValidityPredicate*>(m_activePSetup->si->getStateValidityChecker())->getKinematicConstraintEvaluatorSet().print(ss);
+	    ROS_INFO("%s", ss.str().c_str());
+	    ROS_INFO("=======================================");	
+	    
+	    /* clear memory */
+	    cleanupPlanningData(m_activePSetup);
+	    
+	    return true;
+	}
+
+	void release(void)
+	{
+	    if (m_activePSetup)
+	    {
+		m_activePSetup->model->lock.unlock();
+		m_activePSetup = NULL;
+	    }
+	}
+	
+	bool isActive(void) 
+	{
+	    return m_activePSetup != NULL;
+	}
+	
+	RKPPlannerSetup *activePlannerSetup(void)
+	{
+	    return m_activePSetup;
+	}
+	
+	_R& activeRequest(void)
+	{
+	    return m_activeReq;
+	}
+	
+	bool isStillValid(robot_msgs::KinematicPath &path)
+	{
+	    update();
+	    
+	    /* copy the path msg into a kinematic path structure (ompl style) */
+	    ompl::SpaceInformationKinematic::PathKinematic_t kpath = new ompl::SpaceInformationKinematic::PathKinematic(m_activePSetup->si);
+	    unsigned int dim = m_activePSetup->si->getStateDimension();
+	    for (unsigned int i = 0 ; i < path.states.size() ; ++i)
+	    {
+		ompl::SpaceInformationKinematic::StateKinematic_t kstate = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+		kpath->states.push_back(kstate);
+		for (unsigned int j = 0 ; j < dim ; ++j)
+		    kstate->values[j] = path.states[i].vals[j];
+	    }
+	    
+	    m_activePSetup->model->collisionSpace->lock();
+	    bool valid = m_activePSetup->si->checkPath(kpath);
+	    m_activePSetup->model->collisionSpace->unlock();
+	    
+	    delete kpath;
+	    
+	    /* clear memory */
+	    cleanupPlanningData(m_activePSetup);
+	    
+	    return valid;	    
+	}
+	
+	bool isTrivial(double *distance = NULL)
+	{
+	    update();
+	    
+	    m_activePSetup->model->collisionSpace->lock();
+	    bool trivial = m_activePSetup->mp->isTrivial(NULL, distance);
+	    m_activePSetup->model->collisionSpace->unlock();
+	    
+	    /* clear memory */
+	    cleanupPlanningData(m_activePSetup);
+	    
+	    return trivial;	    
+	}
+	
+	void execute(robot_msgs::KinematicPath &path, double &distance, bool &trivial, bool &approximate)
+	{
+	    update();
+	    
+	    /* compute actual motion plan */
+	    ompl::SpaceInformationKinematic::PathKinematic_t bestPath       = NULL;
+	    double                                           bestDifference = 0.0;	
+	    
+	    m_activePSetup->model->collisionSpace->lock();
+	    trivial = computePlan(m_activePSetup, m_activeReq.times, m_activeReq.allowed_time, m_activeReq.interpolate,
+				  bestPath, bestDifference, approximate);
+	    m_activePSetup->model->collisionSpace->unlock();
+	    
+	    /* fill in the results */
+	    fillSolution(m_activePSetup, bestPath, bestDifference, path, distance);
+	    
+	    /* clear memory */
+	    cleanupPlanningData(m_activePSetup);
+	}
+
+    protected:
+
 	/** Specializations of this class should implement this function */
 	bool isRequestValid(ModelMap &models, _R &req)
 	{
@@ -80,10 +209,23 @@ namespace kinematic_planning
 	}
 	
 	/** Specializations of this class should implement this function */
-	void setupGoalState(RKPModel *model, RKPPlannerSetup *psetup, _R &req)
+	void setupGoalState(RKPPlannerSetup *psetup, _R &req)
 	{
 	}
 	
+	void update(void)
+	{
+	    /* configure state space and starting state */
+	    setupStateSpaceAndStartState(m_activePSetup, m_activeReq.params, m_activeReq.start_state);
+	    
+	    std::vector<robot_msgs::PoseConstraint> cstrs;
+	    m_activeReq.constraints.get_pose_vec(cstrs);
+	    setupPoseConstraints(m_activePSetup, cstrs);
+	    
+	    /* add goal state */
+	    setupGoalState(m_activePSetup, m_activeReq);	    
+	}
+
 	/** Validate common space parameters */
 	bool areSpaceParamsValid(const ModelMap &modelsRef, robot_msgs::KinematicSpaceParameters &params) const
 	{ 
@@ -126,7 +268,7 @@ namespace kinematic_planning
 	}
 	
 	/** Configure the state space for a given set of parameters and set the starting state */
-	void setupStateSpaceAndStartState(RKPModel *model, RKPPlannerSetup *psetup,
+	void setupStateSpaceAndStartState(RKPPlannerSetup *psetup,
 					  robot_msgs::KinematicSpaceParameters &params,
 					  robot_msgs::KinematicState &start_state)
 	{
@@ -144,15 +286,15 @@ namespace kinematic_planning
 	    const unsigned int dim = psetup->si->getStateDimension();
 	    ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
 	    
-	    if (model->groupID >= 0)
+	    if (psetup->model->groupID >= 0)
 	    {
 		/* set the pose of the whole robot */
-		model->kmodel->computeTransforms(&start_state.vals[0]);
-		model->collisionSpace->updateRobotModel(model->collisionSpaceID);
+		psetup->model->kmodel->computeTransforms(&start_state.vals[0]);
+		psetup->model->collisionSpace->updateRobotModel(psetup->model->collisionSpaceID);
 		
 		/* extract the components needed for the start state of the desired group */
 		for (unsigned int i = 0 ; i < dim ; ++i)
-		    start->values[i] = start_state.vals[model->kmodel->getModelInfo().groupStateIndexList[model->groupID][i]];
+		    start->values[i] = start_state.vals[psetup->model->kmodel->getModelInfo().groupStateIndexList[psetup->model->groupID][i]];
 	    }
 	    else
 	    {
@@ -172,7 +314,7 @@ namespace kinematic_planning
 	
 	/** Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
 	bool computePlan(RKPPlannerSetup *psetup, int times, double allowed_time, bool interpolate,
-			 ompl::SpaceInformationKinematic::PathKinematic_t &bestPath, double &bestDifference)
+			 ompl::SpaceInformationKinematic::PathKinematic_t &bestPath, double &bestDifference, bool &approximate)
 	{
 	    
 	    if (times <= 0)
@@ -192,7 +334,8 @@ namespace kinematic_planning
 	    {
 		ROS_INFO("Solution already achieved");
 		bestDifference = t_distance;
-
+		approximate = false;
+		
 		/* we want to maintain the invariant that a path will
 		   at least consist of start & goal states, so we copy
 		   the start state twice */
@@ -238,6 +381,7 @@ namespace kinematic_planning
 				delete bestPath;
 			    bestPath = path;
 			    bestDifference = goal->getDifference();
+			    approximate = goal->isApproximate();
 			    goal->forgetSolutionPath();
 			    ROS_INFO("          Obtained better solution: distance is %f", bestDifference);
 			}
@@ -281,139 +425,12 @@ namespace kinematic_planning
 	    psetup->si->clearGoal();
 	    psetup->si->clearStartStates();	
 	}
-	
-	bool isStillValid(ModelMap &models, _R &req, robot_msgs::KinematicPath &path)
-	{
-	    // make sure the same motion planner instance is not used by other calls
-	    boost::mutex::scoped_lock(m_lock);
-	    
-	    if (!isRequestValid(models, req))
-		return false;
-	    	    
-	    /* find the data we need */
-	    RKPModel             *m = models[req.params.model_id];
-	    RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
-	    
-	    /* configure state space and starting state */
-	    setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
-
-	    std::vector<robot_msgs::PoseConstraint> cstrs;
-	    req.constraints.get_pose_vec(cstrs);
-	    setupPoseConstraints(psetup, cstrs);
-	    
-	    /* add goal state */
-	    setupGoalState(m, psetup, req);
-	    
-	    /* copy the path msg into a kinematic path structure (ompl style) */
-	    ompl::SpaceInformationKinematic::PathKinematic_t kpath = new ompl::SpaceInformationKinematic::PathKinematic(psetup->si);
-	    unsigned int dim = psetup->si->getStateDimension();
-	    for (unsigned int i = 0 ; i < path.states.size() ; ++i)
-	    {
-		ompl::SpaceInformationKinematic::StateKinematic_t kstate = new ompl::SpaceInformationKinematic::StateKinematic(dim);
-		kpath->states.push_back(kstate);
-		for (unsigned int j = 0 ; j < dim ; ++j)
-		    kstate->values[j] = path.states[i].vals[j];
-	    }
-	    
-	    m->collisionSpace->lock();
-	    bool valid = psetup->si->checkPath(kpath);
-	    m->collisionSpace->unlock();
-	    
-	    delete kpath;
-	    
-	    /* clear memory */
-	    cleanupPlanningData(psetup);
-	    
-	    return valid;	    
-	}
-	
-	bool isTrivial(ModelMap &models, _R &req, double *distance = NULL)
-	{
-	    // make sure the same motion planner instance is not used by other calls
-	    boost::mutex::scoped_lock(m_lock);
-	    
-	    if (!isRequestValid(models, req))
-		return false;
-	    	    
-	    /* find the data we need */
-	    RKPModel             *m = models[req.params.model_id];
-	    RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
-	    
-	    /* configure state space and starting state */
-	    setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
-
-	    std::vector<robot_msgs::PoseConstraint> cstrs;
-	    req.constraints.get_pose_vec(cstrs);
-	    setupPoseConstraints(psetup, cstrs);
-	    
-	    /* add goal state */
-	    setupGoalState(m, psetup, req);
-	    
-	    m->collisionSpace->lock();
-	    bool trivial = psetup->mp->isTrivial(NULL, distance);
-	    m->collisionSpace->unlock();
-	    
-	    /* clear memory */
-	    cleanupPlanningData(psetup);
-	    
-	    return trivial;	    
-	}
-	
-	bool execute(ModelMap &models, _R &req, robot_msgs::KinematicPath &path, double &distance, bool &trivial)
-	{
-	    // make sure the same motion planner instance is not used by other calls
-	    boost::mutex::scoped_lock(m_lock);
-	    
-	    if (!isRequestValid(models, req))
-		return false;
-	    
-	    ROS_INFO("Selected motion planner: '%s'", req.params.planner_id.c_str());
-	    
-	    /* find the data we need */
-	    RKPModel             *m = models[req.params.model_id];
-	    RKPPlannerSetup *psetup = m->planners[req.params.planner_id];
-	    
-	    /* configure state space and starting state */
-	    setupStateSpaceAndStartState(m, psetup, req.params, req.start_state);
-	    
-	    std::vector<robot_msgs::PoseConstraint> cstrs;
-	    req.constraints.get_pose_vec(cstrs);
-	    setupPoseConstraints(psetup, cstrs);
-	    
-	    /* add goal state */
-	    setupGoalState(m, psetup, req);
-	    
-	    /* print some information */
-	    ROS_INFO("=======================================");
-	    std::stringstream ss;
-	    psetup->si->printSettings(ss);
-	    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->getKinematicConstraintEvaluatorSet().print(ss);
-	    ROS_INFO("%s", ss.str().c_str());
-	    ROS_INFO("=======================================");	
-	    
-	    /* compute actual motion plan */
-	    ompl::SpaceInformationKinematic::PathKinematic_t bestPath       = NULL;
-	    double                                           bestDifference = 0.0;	
-	    
-	    m->collisionSpace->lock();
-	    trivial = computePlan(psetup, req.times, req.allowed_time, req.interpolate, bestPath, bestDifference);
-	    m->collisionSpace->unlock();
-	    
-	    /* fill in the results */
-	    fillSolution(psetup, bestPath, bestDifference, path, distance);
-	    
-	    /* clear memory */
-	    cleanupPlanningData(psetup);
-	    
-	    return true;
-	}
 
 	// the type of request (unique ID for each type)
-	int type;
+	int              m_type;
 	
-    protected:
-	
-	boost::mutex m_lock;
+	_R               m_activeReq;
+	RKPPlannerSetup *m_activePSetup;
     };
     
 } // kinematic_planning

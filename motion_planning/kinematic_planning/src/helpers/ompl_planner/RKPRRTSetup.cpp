@@ -36,7 +36,7 @@
 
 #include "kinematic_planning/ompl_planner/RKPRRTSetup.h"
 
-kinematic_planning::RKPRRTSetup::RKPRRTSetup(void) : RKPPlannerSetup()
+kinematic_planning::RKPRRTSetup::RKPRRTSetup(RKPModelBase *m) : RKPPlannerSetup(m)
 {
     name = "RRT";
 }
@@ -45,28 +45,26 @@ kinematic_planning::RKPRRTSetup::~RKPRRTSetup(void)
 {
 }
 
-bool kinematic_planning::RKPRRTSetup::setup(RKPModelBase *model, std::map<std::string, std::string> &options)
+bool kinematic_planning::RKPRRTSetup::setup(const std::map<std::string, std::string> &options)
 {
-    preSetup(model, options);
+    preSetup(options);
     
     ompl::RRT *rrt = new ompl::RRT(si);
     mp             = rrt;
     
-    if (options.find("range") != options.end())
+    if (hasOption(options, "range"))
     {
-	double range = parseDouble(options["range"], rrt->getRange());
-	rrt->setRange(range);
-	ROS_INFO("Range is set to %g", range);
+	rrt->setRange(optionAsDouble(options, "range", rrt->getRange()));
+	ROS_INFO("Range is set to %g", rrt->getRange());
     }
     
-    if (options.find("goal_bias") != options.end())
-    {	
-	double bias = parseDouble(options["goal_bias"], rrt->getGoalBias());
-	rrt->setGoalBias(bias);
-	ROS_INFO("Goal bias is set to %g", bias);
+    if (hasOption(options, "goal_bias"))
+    {
+	rrt->setGoalBias(optionAsDouble(options, "goal_bias", rrt->getGoalBias()));
+	ROS_INFO("Goal bias is set to %g", rrt->getGoalBias());
     }
-    
-    postSetup(model, options);
+
+    postSetup(options);
     
     return true;
 }
