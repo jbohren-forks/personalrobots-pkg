@@ -10,8 +10,11 @@ add_definitions(-Wall -O3 -DNDEBUG)
 include_directories(cvblobslib)
 #include_directories(src/keypoint)
 
-rospack_add_executable(outlet_model src/main.cpp src/outlet_model.cpp src/planar.cpp src/learning.cpp src/outlet_tuple.cpp)
-rospack_add_executable(outlet_sample src/sample.cpp src/outlet_model.cpp src/planar.cpp src/outlet_tuple.cpp src/outlet_detector.cpp src/learning.cpp)
+rospack_add_library(outlet src/outlet_model.cpp src/planar.cpp src/outlet_tuple.cpp src/outlet_detector.cpp src/learning.cpp)
+rospack_add_executable(outlet_model src/main.cpp)
+target_link_libraries(outlet_model outlet)
+rospack_add_executable(outlet_sample src/sample.cpp)
+target_link_libraries(outlet_sample outlet)
 add_definitions(-D_OUTLET_HR -D_TUNING -D_VERBOSE -D_USE_OUTLET_TUPLE)
 
 rospack_add_executable(bin/useChessBoard src/useChessBoard.cpp)
