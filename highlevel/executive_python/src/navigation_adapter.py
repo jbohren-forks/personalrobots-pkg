@@ -63,7 +63,7 @@ class NavigationAdapter:
       self.last_plan_time = rospy.get_time()
 
   def active(self):
-    return self.state.active == 1
+    return self.state.status == self.state.ACTIVE
 
   #Have we reached a goal
   def goalReached(self):

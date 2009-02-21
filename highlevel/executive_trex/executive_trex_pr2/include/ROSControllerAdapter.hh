@@ -42,12 +42,12 @@ namespace TREX {
       if(lastUpdated == getCurrentTick() && state != UNDEFINED)
 	return;
 
-      if(stateMsg.active && state != ACTIVE){
+      if(stateMsg.status == stateMsg.ACTIVE && state != ACTIVE){
 	state = ACTIVE;
 	lastUpdated = getCurrentTick();
 	ROS_DEBUG("Received transition to ACTIVE");
       }
-      else if(!stateMsg.active && state != INACTIVE){
+      else if(stateMsg.status != stateMsg.ACTIVE && state != INACTIVE){
 	state = INACTIVE;
 	lastUpdated = getCurrentTick();
 	ROS_DEBUG("Received transition to INACTIVE");
@@ -83,8 +83,8 @@ namespace TREX {
       if(state == INACTIVE){
 	obs = new ObservationByValue(timelineName, inactivePredicate);
 	fillInactiveObservationParameters(obs);
-	obs->push_back("aborted", new BoolDomain(stateMsg.aborted));
-	obs->push_back("preempted", new BoolDomain(stateMsg.preempted));
+	obs->push_back("aborted", new BoolDomain(stateMsg.status == stateMsg.ABORTED));
+	obs->push_back("preempted", new BoolDomain(stateMsg.status == stateMsg.PREEMPTED));
       }
       else {
 	obs = new ObservationByValue(timelineName, activePredicate);
@@ -132,8 +132,7 @@ namespace TREX {
       // synchronizing
       if(!enableController){
 	stateMsg.lock();
-	stateMsg.active = false;
-	stateMsg.preempted = true;
+	stateMsg.status = stateMsg.PREEMPTED;
 	handleCallback();
 	stateMsg.unlock();
       }

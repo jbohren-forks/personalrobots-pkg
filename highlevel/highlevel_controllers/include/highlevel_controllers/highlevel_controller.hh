@@ -172,14 +172,13 @@ public:
 	    ROS_DEBUG("Last plan at %f seconds:", lastPlan.toSec());
 	    ROS_DEBUG("Elapsed time is %f seconds:", elapsed_time.toSec());
 	    if ((elapsed_time > timeout) && timeout.toSec() != 0.0) {
-	      this->stateMsg.aborted = 1;
+	      this->stateMsg.status = this->stateMsg.ABORTED;
 	      ROS_INFO("Controller timed out.");
 	      deactivate();
 	    }
 	    handlePlanningFailure();
 	    unlock();	    
 	  } else {
-	    this->stateMsg.aborted = 0;
 	    lastPlan = ros::Time::now();
 	  }
 	}
@@ -207,19 +206,18 @@ protected:
   bool isValid() {
     return this->stateMsg.valid;
   }
-
   /**
    * @brief Access aborted state of the planner.
    */
   bool isAborted() {
-    return this->stateMsg.aborted;
+    return this->stateMsg.status == this->stateMsg.ABORTED;
   }
 
   /**
    * @brief Access preempted state of the planner.
    */
   bool isPreempted() {
-    return this->stateMsg.preempted;
+    return this->stateMsg.status == this->stateMsg.PREEMPTED;
   }
 
   /**
@@ -230,11 +228,8 @@ protected:
     ROS_INFO("Activating controller with timeout of %f seconds\n", this->goalMsg.timeout);
 
     this->state = ACTIVE;
-    this->stateMsg.active = 1;
-    this->stateMsg.valid = 0;
+    this->stateMsg.status = this->stateMsg.ACTIVE;
     this->stateMsg.done = 0;
-    this->stateMsg.aborted = 0;
-    this->stateMsg.preempted = 0;
 
     handleActivation();
   }
@@ -246,7 +241,9 @@ protected:
     ROS_INFO("Deactivating controller\n");
 
     this->state = INACTIVE;
-    this->stateMsg.active = 0;
+    if (this->stateMsg.status == this->stateMsg.ACTIVE) {
+      this->stateMsg.status = this->stateMsg.INACTIVE;
+    }
     this->stateMsg.valid = 0;
 
     handleDeactivation();
@@ -376,7 +373,7 @@ private:
     }
     else if(state == ACTIVE){
       ROS_INFO("Controller preempted.");
-      this->stateMsg.preempted = 1;
+      this->stateMsg.status = this->stateMsg.PREEMPTED;
       deactivate();
 
       // If we are active, and this is a goal, publish the state message and activate. This allows us

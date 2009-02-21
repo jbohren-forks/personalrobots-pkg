@@ -69,4 +69,4 @@ class RechargeAdapter:
     return self.state.done == 1
 
   def charging(self):
-    return self.state.active == 1
+    return self.state.status == self.state.ACTIVE
