@@ -38,10 +38,10 @@
 #define KINEMATIC_PLANNING_OMPL_PLANNER_RKP_PLANNER_SETUP_
 
 #include "kinematic_planning/RKPModelBase.h"
-#include "kinematic_planning/RKPStateValidator.h"
-#include "kinematic_planning/RKPSpaceInformation.h"
-#include "kinematic_planning/RKPProjectionEvaluators.h"
-#include "kinematic_planning/RKPDistanceEvaluators.h"
+#include "kinematic_planning/ompl_extensions/RKPStateValidator.h"
+#include "kinematic_planning/ompl_extensions/RKPSpaceInformation.h"
+#include "kinematic_planning/ompl_extensions/RKPProjectionEvaluators.h"
+#include "kinematic_planning/ompl_extensions/RKPDistanceEvaluators.h"
 
 #include <ompl/base/Planner.h>
 #include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>

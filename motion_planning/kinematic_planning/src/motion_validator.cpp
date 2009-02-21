@@ -89,8 +89,8 @@ Provides (name/type):
 
 #include <robot_srvs/ValidateKinematicPath.h>
 
-#include "kinematic_planning/RKPStateValidator.h"
-#include "kinematic_planning/RKPSpaceInformation.h"
+#include "kinematic_planning/ompl_extensions/RKPStateValidator.h"
+#include "kinematic_planning/ompl_extensions/RKPSpaceInformation.h"
 
 #include <iostream>
 #include <sstream>
