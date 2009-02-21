@@ -9,8 +9,12 @@ TARBALL_PATCH = gcc43_shared.patch fPIC.patch
 include $(shell rospack find mk)/download_unpack_build.mk
 
 installed: $(SOURCE_DIR)/unpacked Makefile
-	echo "Building FL-ANN..."
-	cd build/ann_1.1.1 && make linux-shared-g++
+	echo "Building ANN..."
+	if test `uname` = Darwin; then \
+	  cd build/ann_1.1.1 && make macosx-g++; \
+	else\
+	  cd build/ann_1.1.1 && make linux-shared-g++; \
+	fi
 	touch installed
 wipe:
 	rm -rf build installed
