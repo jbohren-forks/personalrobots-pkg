@@ -10,6 +10,7 @@ This package contains the C++ library Loki.
 <url>http://loki-lib.sourceforge.net/</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/loki-svn/lib -L${prefix}/loki-svn/lib -lloki" cflags="-I${prefix}/loki-svn/include"/>
+  <cpp os="osx" lflags="${prefix}/loki-svn/lib/libloki.a" cflags="-I${prefix}/loki-svn/include"/>
   <doxymaker external="http://loki-lib.sourceforge.net/html/modules.html"/>
   <status api="10-9-2008" code="10-9-2008" cleared="11-10-2008"/>
 </export>
