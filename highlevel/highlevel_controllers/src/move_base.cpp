@@ -724,12 +724,13 @@ namespace ros {
         tiltScanBuffer_->get_observations(observations);
         lowObstacleBuffer_->get_observations(observations);
         stereoCloudBuffer_->get_observations(observations);
-        unlock();
+	//unlock(); COMMENTED AS PER BUG #971
 
         if(planOk && !controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan, observations)){
           ROS_DEBUG("Velocity Controller could not find a valid trajectory.\n");
           planOk = false;
         }
+	unlock(); //ADDED AS PER BUG #971
         ROS_DEBUG("Cycle Time: %.3f\n", (ros::Time::now() - start).toSec());
 
         if(!planOk){
@@ -925,7 +926,7 @@ namespace ros {
       tiltScanBuffer_->get_observations(observations);
       lowObstacleBuffer_->get_observations(observations);
       stereoCloudBuffer_->get_observations(observations);
-      unlock();
+      //unlock(); COMMENTED AS PER BUG #971
       
       ROS_DEBUG("Applying update with %d observations/n", observations.size());
       // Apply to cost map
@@ -938,7 +939,7 @@ namespace ros {
       // 1. Refresh the local_map_accessor for the controller
       // 2. Refresh the global_map accessor for the planner
       // 3. Publish the local cost map window
-      lock();
+      //lock(); COMMENTED AS PER BUG #971
       local_map_accessor_->refresh();
       global_map_accessor_->refresh();
       publishLocalCostMap();
