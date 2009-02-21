@@ -13,7 +13,7 @@ using namespace std;
 #include <highgui.h>
 #include <ml.h>
 
-#include "keypoint/detector.h"
+#include "star_detector/detector.h"
 
 #include "outlet_model.h"
 #include "learning.h"
@@ -59,7 +59,7 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 #else
 		const int min_size = 1;
 		const int max_size = 10;
-		if(abs(rect.x - 235) < 10 && abs(rect.y - 870) < 10)
+		if(abs(rect.x - 203) < 5 && abs(rect.y - 72) < 5)
 		{
 			int w = 1;
 		}
@@ -151,7 +151,7 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 			continue;
 		}
 #else
-		if(contrast < 1.1f /*|| variation > 0.7f*/ || avg_outside.val[0] < avg_inside*1.1f)
+		if(contrast < 1.1f /*|| variation > 0.7f*/ || avg_outside.val[0] < avg_inside*1.0f)
 		{
 			continue;
 		}
@@ -599,19 +599,48 @@ CvRect outlet_rect(outlet_t outlet)
 	
 }
 
-void detect_outlets(IplImage* src, vector<outlet_feature_t>& features, vector<outlet_t>& outlets, const char* output_path, const char* filename)
+void move_features(vector<outlet_feature_t>& features, CvPoint origin)
+{
+	for(vector<outlet_feature_t>::iterator it = features.begin(); it != features.end(); it++)
+	{
+		it->bbox.x += origin.x;
+		it->bbox.y += origin.y;
+	}
+}
+
+void detect_outlets(IplImage* src, vector<outlet_feature_t>& features, vector<outlet_t>& outlets, 
+					outlet_tuple_t* outlet_tuple, const char* output_path, const char* filename)
 {
 	IplImage* temp = cvCloneImage(src);
 	IplImage* grey = 0;
 	
-	grey = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
+	CvRect roi = outlet_tuple ? outlet_tuple->roi : cvRect(0, 0, src->width, src->height);
+	cvSetImageROI(src, roi);
+	grey = cvCreateImage(cvSize(roi.width, roi.height), IPL_DEPTH_8U, 1);
+#if 0
 	cvCvtColor(src, grey, CV_RGB2GRAY);
+#else
+	cvSetImageCOI(src, 3);
+	cvCopy(src, grey);
+	cvSetImageCOI(src, 0);
+	cvConvertScale(grey, grey, 0.5);
+#endif
+	
 	cvErode(grey, grey);
 	cvDilate(grey, grey);
 
-	IplImage* mask = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
-
-	find_outlet_features_fast(src, features, output_path, filename);
+#if 0
+	cvNamedWindow("1", 1);
+	cvShowImage("1", grey);
+	cvWaitKey(0);
+#endif
+	
+	find_outlet_features_fast(grey, features, output_path, filename);
+	
+	move_features(features, cvPoint(roi.x, roi.y));
+	
+	cvReleaseImage(&grey);
+	cvResetImageROI(src);
 
 #if _PREDICT
 	printf("Filtering keypoints...");
@@ -623,16 +652,29 @@ void detect_outlets(IplImage* src, vector<outlet_feature_t>& features, vector<ou
 #endif //_PREDICT
 
 #if defined(_USE_OUTLET_TUPLE)
-	IplImage* tuple_mask = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
-	CvPoint2D32f centers[4];
-	find_outlet_centroids(src, centers, tuple_mask, output_path, filename);
 //	cvErode(tuple_mask, tuple_mask, 0, 10); // remove feature points on the edges
 	
-	IplImage* distance_map = calc_tuple_distance_map(tuple_mask);
-	filter_features_distance_mask(features, distance_map);
-	
+	if(outlet_tuple)
+	{
+		IplImage* distance_map = calc_tuple_distance_map(outlet_tuple->tuple_mask);
+		filter_features_distance_mask(features, distance_map);
+		cvReleaseImage(&distance_map);
+	}
+		
 #endif //_USE_OUTLET_TUPLE
 	
+#if defined(_VERBOSE)
+	char buf[1024];
+	IplImage* _src = cvCloneImage(src);
+	DrawKeypoints(_src, features);
+	sprintf(buf, "%s/keyout/%s", output_path, filename);
+	cvSaveImage(buf, _src);
+	cvReleaseImage(&_src);
+#endif //_VERBOSE
+
+	grey = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
+	IplImage* mask = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
+	cvCvtColor(src, grey, CV_RGB2GRAY);
 	find_holes(features, outlets, grey, mask, temp);
 	
 #if defined(_PREDICT_OUTLETS)
@@ -646,7 +688,6 @@ void detect_outlets(IplImage* src, vector<outlet_feature_t>& features, vector<ou
 #if defined(_VERBOSE)
 	draw_outlets(temp, outlets);
 
-	char buf[1024];
 	sprintf(buf, "%s/output/%s", output_path, filename);
 	strcpy(buf + strlen(buf) - 3, "jpg"); 
 	cvSaveImage(buf, temp);
@@ -656,24 +697,9 @@ void detect_outlets(IplImage* src, vector<outlet_feature_t>& features, vector<ou
 	cvCopy(src, temp);
 	cvResetImageROI(src);
 	cvResetImageROI(grey);
-	cvCvtColor(src, grey, CV_RGB2GRAY);
-#if 0
-	int ret = select_orient_outlets(grey, outlets, filename);
-	if(ret == 1)
-	{
-		printf("Chessboard found...\n");
-	}
-#endif
 
 #endif // _TUNING
 
-#if defined(_USE_OUTLET_TUPLE)
-	CvPoint2D32f hor_dir = centers[1] - centers[0];
-//	select_orient_outlets(hor_dir, outlets, 4);
-	filter_outlets_tuple(outlets, tuple_mask, hor_dir);
-	
-	cvReleaseImage(&tuple_mask);
-#endif //_USE_OUTLET_TUPLE
 	
 	cvReleaseImage(&temp);
 	cvReleaseImage(&grey);
@@ -1049,7 +1075,7 @@ void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features
 #if _USE_OUTLET_TUPLE
 		cvSetImageCOI(src, 3);
 		cvCopy(src, grey);
-		cvConvertScale(grey, grey, 0.4);
+//		cvConvertScale(grey, grey, 0.4);
 #else
 		cvCvtColor(src, grey, CV_RGB2GRAY);
 #endif
@@ -1058,11 +1084,7 @@ void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features
 	{
 		grey = src;
 	}
-	
-//	cvNamedWindow("1", 1);
-//	cvShowImage("1", grey);
-//	cvWaitKey(0);
-	
+		
 	cvSmooth(grey, grey);
 	
 	IplImage* mask = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
@@ -1074,7 +1096,7 @@ void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features
 	
 	CvMemStorage* storage = cvCreateMemStorage();
 	
-	IplImage* imgholes = cvCloneImage(src);
+	IplImage* imgholes = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 3);
 	for(int coi = 1; coi < 4; coi++)
 	{
 		cvSetImageCOI(imgholes, coi);
@@ -1263,7 +1285,7 @@ int generate_outlet_samples(IplImage* grey, outlet_t outlet, int count, CvMat** 
 		vector<outlet_t> outlets;
 		IplImage* color = cvCreateImage(cvSize(patches[i]->width, patches[i]->height), IPL_DEPTH_8U, 3);
 		cvCvtColor(patches[i], color, CV_GRAY2RGB);
-		detect_outlets(color, features, outlets, filename);
+		detect_outlets(color, features, outlets, 0, 0, filename);
 		if(outlets.size() > 0)
 		{
 			outlet_feature_t feature;
@@ -1317,7 +1339,7 @@ void train_outlet_model(const char* path, const char* config_filename,
 		
 		vector<outlet_feature_t> features;
 		vector<outlet_t> outlets;
-		detect_outlets(src, features, outlets, buf);
+		detect_outlets(src, features, outlets, 0, 0, buf);
 		
 		// now transform outlets into features and calculate labels
 		for(vector<outlet_t>::const_iterator it = outlets.begin(); it != outlets.end(); it++)

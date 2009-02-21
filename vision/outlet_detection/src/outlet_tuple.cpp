@@ -11,6 +11,7 @@
 // Warning: this is research code with poor architecture, performance and no documentation!
 //*****************************************************************************************
 
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -244,8 +245,7 @@ int order_tuple2(vector<outlet_elem_t>& tuple)
 	return 1;
 }
 
-int find_outlet_centroids(IplImage* img, CvPoint2D32f* centers, 
-						  IplImage* outlet_mask, const char* output_path, const char* filename)
+int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const char* output_path, const char* filename)
 {
 	IplImage* grey = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 1);
 	IplImage* binary = cvCloneImage(grey);
@@ -374,7 +374,7 @@ int find_outlet_centroids(IplImage* img, CvPoint2D32f* centers,
 		}
 		
 		// find the tuple
-		found_tuple = find_tuple(tuple_candidates, centers);
+ 		found_tuple = find_tuple(tuple_candidates, outlet_tuple.centers);
 		if(found_tuple == 1)
 		{
 			// found the tuple!
@@ -390,20 +390,28 @@ int find_outlet_centroids(IplImage* img, CvPoint2D32f* centers,
 	if(found_tuple == 1)
 	{
 		// draw the mask
-		if(outlet_mask)
+		if(outlet_tuple.tuple_mask)
 		{
-			cvSetZero(outlet_mask);
+			cvSetZero(outlet_tuple.tuple_mask);
 			for(int i = 0; i < 4; i++)
 			{
-				cvDrawContours(outlet_mask, tuple[i].seq, cvScalar(i + 1), cvScalar(i + 1), 0, CV_FILLED);
+				cvDrawContours(outlet_tuple.tuple_mask, tuple[i].seq, cvScalar(i + 1), cvScalar(i + 1), 0, CV_FILLED);
 			}
 		}
 		
+		// calculate the tuple roi
+		CvRect tuple_roi[4];
+		for(int i = 0; i < 4; i++)
+		{
+			tuple_roi[i] = cvBoundingRect(tuple[i].seq);
+		}
+		calc_bounding_rect(4, tuple_roi, outlet_tuple.roi);
+		
 #if defined(_VERBOSE_TUPLE) || defined(_VERBOSE)
-		cvCircle(img2, cvPoint(centers[0]), 10, CV_RGB(0, 255, 0));
-		cvCircle(img2, cvPoint(centers[1]), 10, CV_RGB(0, 0, 255));			
-		cvCircle(img2, cvPoint(centers[2]), 10, CV_RGB(255, 255, 255));		
-		cvCircle(img2, cvPoint(centers[3]), 10, CV_RGB(0, 255, 255));		
+		cvCircle(img2, cvPoint(outlet_tuple.centers[0]), 10, CV_RGB(0, 255, 0));
+		cvCircle(img2, cvPoint(outlet_tuple.centers[1]), 10, CV_RGB(0, 0, 255));			
+		cvCircle(img2, cvPoint(outlet_tuple.centers[2]), 10, CV_RGB(255, 255, 255));		
+		cvCircle(img2, cvPoint(outlet_tuple.centers[3]), 10, CV_RGB(0, 255, 255));		
 #endif //VERBOSE_TUPLE
 		
 	}
@@ -430,6 +438,24 @@ int find_outlet_centroids(IplImage* img, CvPoint2D32f* centers,
 	
 	return found_tuple;
 	
+}
+
+void calc_bounding_rect(int count, const CvRect* rects, CvRect& bounding_rect)
+{
+	CvPoint tl = cvPoint(INT_MAX, INT_MAX); // top left point
+	CvPoint br = cvPoint(INT_MIN, INT_MIN); //bottom right point
+	for(int i = 0; i < count; i++)
+	{
+		tl.x = MIN(tl.x, rects[i].x);
+		tl.y = MIN(tl.y, rects[i].y);
+		br.x = MAX(br.x, rects[i].x + rects[i].width);
+		br.y = MAX(br.y, rects[i].y + rects[i].height);
+	}
+	
+	bounding_rect.x = tl.x;
+	bounding_rect.y = tl.y;
+	bounding_rect.width = br.x - tl.x;
+	bounding_rect.height = br.y - tl.y;
 }
 
 int find_tuple(vector<outlet_elem_t>& candidates, CvPoint2D32f* centers)
@@ -510,7 +536,7 @@ void map_image_corners(CvSize src_size, CvMat* map_matrix, CvMat* corners, CvMat
 }
 
 //void calc_image_homography(const CvPoint2D32f* centers, CvSize src_size, CvMat** xmap, CvMat** ymap, CvSize* dst_size)
-void calc_image_homography(const CvPoint2D32f* centers, CvSize src_size, CvMat* map_matrix, CvSize* dst_size)
+void calc_outlet_homography(const CvPoint2D32f* centers, CvSize src_size, CvMat* map_matrix, CvSize* dst_size)
 {
 //	CvMat* map_matrix = cvCreateMat(3, 3, CV_32FC1);
 	CvMat* inverse_map_matrix = cvCreateMat(3, 3, CV_32FC1);
@@ -586,8 +612,9 @@ void calc_image_homography(const CvPoint2D32f* centers, CvSize src_size, CvMat* 
 int calc_image_homography(IplImage* src, CvMat* map_matrix, CvSize* dst_size, CvPoint2D32f* hor_dir, CvPoint3D32f* origin, 
 						  CvPoint2D32f* scale, const char* output_path, const char* filename, CvPoint2D32f* _centers)
 {
-	CvPoint2D32f centers[4];
-	int ret = find_outlet_centroids(src, centers, 0, output_path, filename);
+	outlet_tuple_t outlet_tuple;
+	outlet_tuple.tuple_mask = 0;
+	int ret = find_outlet_centroids(src, outlet_tuple, output_path, filename);
 	if(!ret)
 	{
 		printf("Centroids not found\n");
@@ -596,17 +623,24 @@ int calc_image_homography(IplImage* src, CvMat* map_matrix, CvSize* dst_size, Cv
 	
 	if(_centers)
 	{
-		memcpy(_centers, centers, 4*sizeof(CvPoint2D32f));
+		memcpy(_centers, outlet_tuple.centers, 4*sizeof(CvPoint2D32f));
 	}
 	
 	if(hor_dir)
 	{
-		hor_dir->x = centers[1].x - centers[0].x;
-		hor_dir->y = centers[1].y - centers[0].y;
+		hor_dir->x = outlet_tuple.centers[1].x - outlet_tuple.centers[0].x;
+		hor_dir->y = outlet_tuple.centers[1].y - outlet_tuple.centers[0].y;
 	}
 		
-	calc_image_homography(centers, cvSize(src->width, src->height), map_matrix, dst_size);
+	calc_outlet_homography(outlet_tuple.centers, cvSize(src->width, src->height), map_matrix, dst_size);
 	
+	calc_origin_scale(outlet_tuple.centers, map_matrix, origin, scale);
+
+	return 1;
+}
+
+void calc_origin_scale(const CvPoint2D32f* centers, CvMat* map_matrix, CvPoint3D32f* origin, CvPoint2D32f* scale)
+{
 	float scalex, scaley;
 	if(origin)
 	{
@@ -625,7 +659,7 @@ int calc_image_homography(IplImage* src, CvMat* map_matrix, CvSize* dst_size, Cv
 		origin->x = _dst->data.fl[0];
 		origin->y = _dst->data.fl[1];
 		origin->z = 0;
-				
+		
 		scalex = xsize/(_dst->data.fl[2] - _dst->data.fl[0]);
 		scaley = ysize/(_dst->data.fl[5] - _dst->data.fl[3]);
 		
@@ -636,9 +670,7 @@ int calc_image_homography(IplImage* src, CvMat* map_matrix, CvSize* dst_size, Cv
 	if(scale)
 	{
 		*scale = cvPoint2D32f(scalex, scaley);
-	}
-
-	return 1;
+	}	
 }
 
 IplImage* find_templates(IplImage* img, IplImage* templ)

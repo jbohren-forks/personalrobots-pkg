@@ -14,6 +14,16 @@
 #if !defined(_OUTLET_MODEL_H)
 #define _OUTLET_MODEL_H
 
+#include <vector>
+#include <map>
+using namespace std;
+
+#include <cv.h>
+#include <ml.h>
+
+#include "outlet_tuple.h"
+#include "star_detector/detector.h"
+
 typedef struct 
 {
 	CvRect bbox;
@@ -45,8 +55,17 @@ CvRect outlet_rect(outlet_t outlet);
 #define __max MAX 
 #define __min MIN 
 
+// detect_outlet: detects outlets in an image. 
+// Input parameters: 
+//	src: input color image
+//	features: output array of features detected in the image
+//	outlets: output array of outlets detected in the image
+//	outlet_tuple: the optional tuple found in the image. It is used to filter out 
+//		features outside of the tuple mask or close to its boundary.
+//	output_path: path for logging the results
+//	filename: filename for logging the results
 void detect_outlets(IplImage* src, vector<outlet_feature_t>& features, vector<outlet_t>& outlets, 
-					const char* output_path, const char* filename = 0);
+					outlet_tuple_t* outlet_tuple, const char* output_path = 0, const char* filename = 0);
 
 inline void cvRectangle(IplImage* img, CvRect rect, CvScalar color, int thickness)
 {
@@ -100,6 +119,7 @@ inline int is_point_inside_rect(CvRect rect, CvPoint point)
 int is_point_incenter_roi(const vector<CvRect>& rects, CvPoint point);
 
 void DrawKeypoints(IplImage* img, std::vector<Keypoint> keypts);
+void DrawKeypoints(IplImage* img, std::vector<outlet_feature_t> features);
 
 typedef map<string, vector<CvRect> > outlet_roi_t;
 CvMat* vector2mat(const vector<int>& vec);
@@ -154,8 +174,20 @@ int filter_outlets_templmatch(IplImage* src, vector<outlet_t>& outlets, IplImage
 IplImage* calc_tuple_distance_map(IplImage* tuple_mask);
 
 
+// calc_outlet_coords: calculate outlets 3D coordinates in camera coordinate system. The result is stored 
+// in the input vector of outlet_t objects and can be retrieved by looking into outlet_t::coord_hole* fields or 
+// by calling get_outlet_coordinates(...).
+// Input parameters: 
+//	outlets: input vector of outlets. 
+//	map_matrix: homography matrix that maps a camera image into a rectified image.
+//	origin, scale: parameters for calculating 3D coordinates of a point in a rectified image.
+//		Are calculated by calc_origin_scale(...) function.
+//	rotation_vector, translation_vector: vectors for mapping from an outlet coordinate system into 
+//		a camera coordinate system. Are calculated by calc_camera_pose(...).
 int calc_outlet_coords(vector<outlet_t>& outlets, CvMat* map_matrix, CvPoint3D32f origin, CvPoint2D32f scale,
 	CvMat* rotation_vector, CvMat* translation_vector);
+
+
 void calc_outlet_dist_stat(const vector<outlet_t>& outlets, float& mean, float& stddev);
 void calc_outlet_tuple_dist_stat(const vector<outlet_t>& outlets, float& ground_dist_x1, 
 								 float& ground_dist_x2, float& ground_dist_y);
@@ -166,10 +198,18 @@ void filter_features_distance_mask(vector<outlet_feature_t>& features, IplImage*
 
 int find_origin_chessboard(IplImage* src, CvMat* map_matrix, CvPoint3D32f& origin, float bar_length);
 
+// filter_outlet_tuple: enforces one outlet per orange connected component.
+// Input parameters:
+//	outlets: input/output array of outlets
+//	tuple_mask: a tuple mask
+//	hor_dir: the horizontal direction (can be computed as teh difference between two outlet centers)
 void filter_outlets_tuple(vector<outlet_t>& outlets, IplImage* tuple_mask, CvPoint2D32f hor_dir);
 
 // retrieves coordinates of outlet holes in the following order: ground hole, left hole, right hole.
 // the size of points array should be at least 3
 void get_outlet_coordinates(const outlet_t& outlet, CvPoint3D32f* points);
+
+void move_features(vector<outlet_feature_t>& features, CvPoint origin);
+
 
 #endif //_OUTLET_MODEL_H

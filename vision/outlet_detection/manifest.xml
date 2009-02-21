@@ -2,17 +2,20 @@
   <description>
     Outlet detection and localization
   </description>
-  <author>Patrick Mihelich</author>
+  <author>Patrick Mihelich, Victor Eruhimov</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="opencv_latest"/>
   <depend package="rospy"/>
   <depend package="rostest"/>
-  <depend package="fast_detector"/>
+  <depend package="star_detector"/>
+
+  <!--depend package="fast_detector"/>
   <depend package="calonder_descriptor"/>
   <depend package="place_recognition"/>
-  <depend package="matplotlib"/>
+  <depend package="matplotlib"/-->
+
   <export>
     <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lblob"/>
   </export>

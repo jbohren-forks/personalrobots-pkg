@@ -23,7 +23,7 @@ using namespace std;
 #include <ml.h>
 
 #include "learning.h"
-#include "keypoint/detector.h"
+#include "star_detector/detector.h"
 #include "outlet_model.h"
 #include "outlet_tuple.h"
 #include "planar.h"
@@ -190,9 +190,26 @@ int main(int argc,char** argv)
 		
 		std::vector<Keypoint> keypts;
 #if 1
+		outlet_tuple_t outlet_tuple;
+#if defined(_USE_OUTLET_TUPLE)
+		outlet_tuple.tuple_mask = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
+		find_outlet_centroids(src, outlet_tuple, output_path, buf);
+#else
+		outlet_tuple.tuple_mask = 0;
+#endif //_USE_OUTLET_TUPLE
+		
 		vector<outlet_feature_t> features;
-		vector<outlet_t> outlets;
- 		detect_outlets(src, features, outlets, output_path, buf);
+		vector<outlet_t> outlets;		
+ 		detect_outlets(src, features, outlets, &outlet_tuple, output_path, buf);
+		
+
+#if defined(_USE_OUTLET_TUPLE)
+		CvPoint2D32f hor_dir = outlet_tuple.centers[1] - outlet_tuple.centers[0];
+		//	select_orient_outlets(hor_dir, outlets, 4);
+		filter_outlets_tuple(outlets, outlet_tuple.tuple_mask, hor_dir);
+
+		cvReleaseImage(&outlet_tuple.tuple_mask);
+#endif //_USE_OUTLET_TUPLE
 		
 		// filter outlets using template match
 		CvMat* homography = 0;

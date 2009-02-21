@@ -1,1 +1,0 @@
-#define OPTIMIZED_WIDTH 1777
