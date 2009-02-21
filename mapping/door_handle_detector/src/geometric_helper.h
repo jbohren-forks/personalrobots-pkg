@@ -44,6 +44,9 @@
 
 #include <tf/transform_listener.h>
 
+// Include the service call type
+#include "door_handle_detector/DoorDetector.h"
+
 // Point Cloud Mapping includes
 #include <cloud_geometry/angles.h>
 #include <cloud_geometry/areas.h>
@@ -63,6 +66,54 @@
 #include <sample_consensus/lmeds.h>
 #include <sample_consensus/sac_model_plane.h>
 #include <sample_consensus/sac_model_oriented_line.h>
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Transform a given point from its current frame to a given target frame
+  * \param tf a pointer to a TransformListener object
+  * \param target_frame the target frame to transform the point into
+  * \param stamped_in the input point
+  * \param stamped_out the output point
+  */
+inline void
+  transformPoint (tf::TransformListener *tf, const std::string &target_frame,
+                  const tf::Stamped< robot_msgs::Point32 > &stamped_in, tf::Stamped< robot_msgs::Point32 > &stamped_out)
+{
+  tf::Stamped<tf::Point> tmp;
+  tmp.stamp_ = stamped_in.stamp_;
+  tmp.frame_id_ = stamped_in.frame_id_;
+  tmp[0] = stamped_in.x;
+  tmp[1] = stamped_in.y;
+  tmp[2] = stamped_in.z;
+
+  tf->transformPoint (target_frame, tmp, tmp);
+
+  stamped_out.stamp_ = tmp.stamp_;
+  stamped_out.frame_id_ = tmp.frame_id_;
+  stamped_out.x = tmp[0];
+  stamped_out.y = tmp[1];
+  stamped_out.z = tmp[2];
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Transform a value from a source frame to a target frame at a certain moment in time with TF
+  * \param val the value to transform
+  * \param src_frame the source frame to transform the value from
+  * \param tgt_frame the target frame to transform the value into
+  * \param stamp a given time stamp
+  * \param tf a pointer to a TransformListener object
+  */
+inline double
+  transformDoubleValueTF (double val, std::string src_frame, std::string tgt_frame, ros::Time stamp, tf::TransformListener *tf)
+{
+  robot_msgs::Point32 temp;
+  temp.x = temp.y = 0;
+  temp.z = val;
+  tf::Stamped<robot_msgs::Point32> temp_stamped (temp, stamp, src_frame);
+  transformPoint (tf, tgt_frame, temp_stamped, temp_stamped);
+  return (temp_stamped.z);
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Comparison operator for a vector of vectors
@@ -85,6 +136,10 @@ inline double
   double rgb = *(float*)(&res);
   return (rgb);
 }
+
+void obtainCloudIndicesSet (robot_msgs::PointCloud *points, std::vector<int> &indices, door_handle_detector::DoorDetector::Request door_req,
+                            tf::TransformListener *tf, std::string fixed_param_frame, double min_z_bounds, double max_z_bounds, double frame_multiplier);
+
 
 int fitSACOrientedLine (robot_msgs::PointCloud *points, std::vector<int> indices, double dist_thresh,
                         robot_msgs::Point32 *axis, double eps_angle, std::vector<int> &line_inliers);

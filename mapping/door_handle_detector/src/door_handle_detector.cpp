@@ -60,7 +60,7 @@ using namespace robot_msgs;
 class DoorHandleDetector : public ros::Node
 {
 public:
-  
+
     // ROS messages
     PointCloud cloud_in_, cloud_down_;
     PointCloud cloud_annotated_;
@@ -113,60 +113,66 @@ public:
       {
         param ("~fixed_frame", fixed_frame_, string ("odom_combined"));
 
-        param ("~door_min_z", door_min_z_, 0.2);                            // the minimum Z point on the door must be lower than this value
-        param ("~door_min_height", door_min_height_, 1.4);                  // minimum height of a door: 1.4m
-        param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
-        param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
-        param ("~door_max_width", door_max_width_, 1.4);                    // maximum width of a door: 1.4m
-        ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
-                   door_min_height_, door_max_height_, door_min_width_, door_max_width_);
+        // Frame _independent_ parameters (absolute values)
+          param ("~door_min_height", door_min_height_, 1.2);                  // minimum height of a door: 1.2m
+          param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
+          param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
+          param ("~door_max_width", door_max_width_, 1.4);                    // maximum width of a door: 1.4m
+          ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
+                     door_min_height_, door_max_height_, door_min_width_, door_max_width_);
 
-        param ("~handle_max_height", handle_max_height_, 1.41);            // maximum height for a door handle: 1.41m
-        param ("~handle_min_height", handle_min_height_, 0.41);            // minimum height for a door handle: 0.41m
-        param ("~handle_distance_door_max_threshold", handle_distance_door_max_threshold_, 0.15); // maximum distance between the handle and the door
-        param ("~handle_distance_door_min_threshold", handle_distance_door_min_threshold_, 0.02); // minimum distance between the handle and the door
-        param ("~handle_height_threshold", handle_height_threshold_, 0.1); // Additional threshold for filtering large Z clusters (potentially part of the handle)
+          param ("~handle_distance_door_max_threshold", handle_distance_door_max_threshold_, 0.15); // maximum distance between the handle and the door
+          param ("~handle_distance_door_min_threshold", handle_distance_door_min_threshold_, 0.02); // minimum distance between the handle and the door
+          param ("~handle_height_threshold", handle_height_threshold_, 0.1); // Additional threshold for filtering large Z clusters (potentially part of the handle)
 
-        ROS_DEBUG ("Using the following thresholds for handle detection [min height / max height]: %f / %f.", handle_min_height_, handle_max_height_);
+          // This parameter constrains the door polygon to resamble a rectangle,
+          // that is: the two lines parallel (with some angular threshold) to the Z-axis must have some minimal length
+          param ("~rectangle_constrain_edge_height", rectangle_constrain_edge_height_, 0.2);        // each side of the door has to be at least 20 cm
+          param ("~rectangle_constrain_edge_angle", rectangle_constrain_edge_angle_, 20.0);         // maximum angle threshold between a side and the Z-axis: 20 degrees
+          rectangle_constrain_edge_angle_ = cloud_geometry::deg2rad (rectangle_constrain_edge_angle_);
 
-        // This parameter constrains the door polygon to resamble a rectangle,
-        // that is: the two lines parallel (with some angular threshold) to the Z-axis must have some minimal length
-        param ("~rectangle_constrain_edge_height", rectangle_constrain_edge_height_, 0.5);        // each side of the door has to be at least 50 cm
-        param ("~rectangle_constrain_edge_angle", rectangle_constrain_edge_angle_, 20.0);         // maximum angle threshold between a side and the Z-axis: 20 degrees
-        rectangle_constrain_edge_angle_ = cloud_geometry::deg2rad (rectangle_constrain_edge_angle_);
+        // Frame _dependent_ parameters (need to be converted!)
+          param ("~door_min_z", door_min_z_, 0.2);                            // the minimum Z point on the door must be lower than this value
+
+          param ("~handle_min_height", handle_min_height_, 0.41);            // minimum height for a door handle: 0.41m
+          param ("~handle_max_height", handle_max_height_, 1.41);            // maximum height for a door handle: 1.41m
+          ROS_DEBUG ("Using the following thresholds for handle detection [min height / max height]: %f / %f.", handle_min_height_, handle_max_height_);
       }
 
       // ---[ Parameters regarding optimizations / real-time computations
       {
-        param ("~nr_scans", nr_scans_, 2);
-        // Parameters regarding the _fast_ normals/plane computation using a lower quality (downsampled) dataset
-        param ("~downsample_leaf_width", leaf_width_, 0.025);          // 2.5cm radius by default
-        param ("~search_k_closest", k_search_, 10);                    // 10 k-neighbors by default
-        // This should be set to whatever the leaf_width factor is in the downsampler
-        param ("~sac_distance_threshold", sac_distance_threshold_, 0.03); // 3 cm
+        // Frame _independent_ parameters
+          param ("~nr_scans", nr_scans_, 2);
+          // Parameters regarding the _fast_ normals/plane computation using a lower quality (downsampled) dataset
+          param ("~downsample_leaf_width", leaf_width_, 0.025);             // 2.5cm radius by default
+          param ("~search_k_closest", k_search_, 10);                       // 10 k-neighbors by default
+          // This should be set to whatever the leaf_width factor is in the downsampler
+          param ("~sac_distance_threshold", sac_distance_threshold_, 0.03); // 3 cm
 
-        // Parameters regarding the maximum allowed angular difference in normal space for inlier considerations
-        z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
-        param ("~normal_angle_tolerance", normal_angle_tolerance_, 15.0);              // 15 degrees, wrt the Z-axis
-        normal_angle_tolerance_ = cloud_geometry::deg2rad (normal_angle_tolerance_);
+          // Parameters regarding the maximum allowed angular difference in normal space for inlier considerations
+          z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
+          param ("~normal_angle_tolerance", normal_angle_tolerance_, 15.0); // 15 degrees, wrt the Z-axis
+          normal_angle_tolerance_ = cloud_geometry::deg2rad (normal_angle_tolerance_);
 
-        // Parameters regarding the thresholds for Euclidean region growing/clustering
-        param ("~euclidean_cluster_min_pts", euclidean_cluster_min_pts_, 200);                         // 200 points
-        // Difference between normals in degrees for cluster/region growing
-        param ("~euclidean_cluster_angle_tolerance", euclidean_cluster_angle_tolerance_, 30.0);
-        euclidean_cluster_angle_tolerance_ = cloud_geometry::deg2rad (euclidean_cluster_angle_tolerance_);
-        param ("~euclidean_cluster_distance_tolerance", euclidean_cluster_distance_tolerance_, 0.04);  // 4 cm
+          // Parameters regarding the thresholds for Euclidean region growing/clustering
+          param ("~euclidean_cluster_min_pts", euclidean_cluster_min_pts_, 200);                         // 200 points
+          // Difference between normals in degrees for cluster/region growing
+          param ("~euclidean_cluster_angle_tolerance", euclidean_cluster_angle_tolerance_, 30.0);
+          euclidean_cluster_angle_tolerance_ = cloud_geometry::deg2rad (euclidean_cluster_angle_tolerance_);
+          param ("~euclidean_cluster_distance_tolerance", euclidean_cluster_distance_tolerance_, 0.04);  // 4 cm
 
-        // Parameters regarding the thresholds for intensity region growing/clustering
-        param ("~intensity_cluster_min_pts", intensity_cluster_min_pts_, 2);                                                 // 2 points
-        param ("~intensity_cluster_perpendicular_angle_tolerance", intensity_cluster_perpendicular_angle_tolerance_, 5.0);   // 5 degrees
-        intensity_cluster_perpendicular_angle_tolerance_ = cloud_geometry::deg2rad (intensity_cluster_perpendicular_angle_tolerance_);
+          // Parameters regarding the thresholds for intensity region growing/clustering
+          param ("~intensity_cluster_min_pts", intensity_cluster_min_pts_, 2);                                                 // 2 points
+          param ("~intensity_cluster_perpendicular_angle_tolerance", intensity_cluster_perpendicular_angle_tolerance_, 5.0);   // 5 degrees
+          intensity_cluster_perpendicular_angle_tolerance_ = cloud_geometry::deg2rad (intensity_cluster_perpendicular_angle_tolerance_);
 
-        // This describes the size of our 3D bounding box (basically the space where we search for doors),
-        // as a multiplier of the door frame (computed using the two points from the service call) in both X and Y directions
-        param ("~door_frame_multiplier", door_frame_multiplier_, 4);
-        param ("~door_min_z_bounds", door_min_z_bounds_, -0.5);               // restrict the search Z dimension between 0...
-        param ("~door_max_z_bounds", door_max_z_bounds_, 3.5);               // ...and 3.0 m
+          // This describes the size of our 3D bounding box (basically the space where we search for doors),
+          // as a multiplier of the door frame (computed using the two points from the service call) in both X and Y directions
+          param ("~door_frame_multiplier", door_frame_multiplier_, 4);
+
+        // Frame _dependent_ parameters (need to be converted!)
+          param ("~door_min_z_bounds", door_min_z_bounds_, -0.5);               // restrict the search Z dimension between 0...
+          param ("~door_max_z_bounds", door_max_z_bounds_, 3.5);               // ...and 3.0 m
       }
 
 
@@ -218,7 +224,7 @@ public:
                                                                            input_cloud_topic_.c_str (), door_frame_, 1);
       ros::Duration tictoc (0, 10000000);
       // @Wim : why ? :) - this became horribly slow :(
-      while (num_clouds_received_ < nr_scans_)
+      while ((int)num_clouds_received_ < nr_scans_)
         tictoc.sleep ();
       delete message_notifier_;
 
@@ -226,46 +232,15 @@ public:
       cloud_frame_ = cloud_in_.header.frame_id;
       cloud_time_ = cloud_in_.header.stamp;
 
-      // Obtain the bounding box information in the reference frame of the laser scan
-      Point32 minB, maxB;
-      tf::Stamped<Point32> frame_p1 (req.door.frame_p1, cloud_time_, door_frame_);
-      tf::Stamped<Point32> frame_p2 (req.door.frame_p2, cloud_time_, door_frame_);
-      transformPoint (cloud_frame_, frame_p1, frame_p1);
-      transformPoint (cloud_frame_, frame_p2, frame_p2);
-      if (door_frame_multiplier_ == -1)
-      {
-        ROS_INFO ("Door frame multiplier set to -1. Using the entire point cloud data.");
-        cloud_geometry::statistics::getMinMax (&cloud_in_, minB, maxB);
-      }
-      else
-        get3DBounds (&frame_p1, &frame_p2, minB, maxB, door_min_z_bounds_, door_max_z_bounds_, door_frame_multiplier_);
-
-      cout << "Start detecting door at points in frame " << cloud_frame_ << " ";
-      cout << "(" << frame_p1.x << " " << frame_p1.y << ")   ";
-      cout << "(" << frame_p2.x << " " << frame_p2.y << ")" << endl;
-
-
       ros::Time ts;
       ros::Duration duration;
       ts = ros::Time::now ();
-      // We have a pointcloud, estimate the true point bounds
-      vector<int> indices_in_bounds (cloud_in_.pts.size ());
-      int nr_p = 0;
-      for (unsigned int i = 0; i < cloud_in_.pts.size (); i++)
-      {
-        if ((cloud_in_.pts[i].x >= minB.x && cloud_in_.pts[i].x <= maxB.x) &&
-            (cloud_in_.pts[i].y >= minB.y && cloud_in_.pts[i].y <= maxB.y) &&
-            (cloud_in_.pts[i].z >= minB.z && cloud_in_.pts[i].z <= maxB.z))
-        {
-          indices_in_bounds[nr_p] = i;
-          nr_p++;
-        }
-      }
-      indices_in_bounds.resize (nr_p);
 
-      //ROS_DEBUG ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.", minB.x, minB.y, minB.z, maxB.x, maxB.y, maxB.z, indices_in_bounds.size ());
+      // ---[ Optimization: obtain a set of indices from the entire point cloud that we will work with
+      vector<int> indices_in_bounds;
+      obtainCloudIndicesSet (&cloud_in_, indices_in_bounds, req, &tf_, fixed_frame_, door_min_z_bounds_, door_max_z_bounds_, door_frame_multiplier_);
 
-      // Downsample the cloud in the bounding box for faster processing
+      // ---[ Optimization: downsample the cloud in the bounding box for faster processing
       // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
       vector<cloud_geometry::Leaf> leaves;
       try
@@ -286,7 +261,7 @@ public:
       // Get the cloud viewpoint
       getCloudViewPoint (cloud_frame_, viewpoint_cloud_, &tf_);
 
-      // Create Kd-Tree and estimate the point normals
+      // Create Kd-Tree and estimate the point normals in the original point cloud
       estimatePointNormals (&cloud_in_, &indices_in_bounds, &cloud_down_, k_search_, &viewpoint_cloud_);
 
       // Select points whose normals are perpendicular to the Z-axis
@@ -311,11 +286,18 @@ public:
       vector<vector<double> > coeff (clusters.size ()); // Need to save all coefficients for all models
 
       cout << " - Process all clusters (" << clusters.size () << ")" << endl;
-      nr_p = 0;
+      int nr_p = 0;
       vector<int> inliers;
       vector<int> handle_indices;
       vector<double> goodness_factor (clusters.size());
       robot_msgs::Point32 minP, maxP, handle_center;
+
+      // Transform door_min_z_ from the fixed parameter frame (fixed_frame_) into the point cloud frame
+      door_min_z_ = transformDoubleValueTF (door_min_z_, fixed_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
+
+      // Transform min/max height values for the door handle (ADA requirements!)
+      handle_min_height_ = transformDoubleValueTF (handle_min_height_, fixed_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
+      handle_max_height_ = transformDoubleValueTF (handle_max_height_, fixed_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
 
 #pragma omp parallel for schedule(dynamic)
       // Process all clusters
@@ -337,19 +319,18 @@ public:
         if (minP.z > door_min_z_)
         {
           goodness_factor[cc] = 0;
-          //ROS_WARN ("Door candidate rejected because min.Z (%g) is higher than the user specified threshold (%g)!", minP.z, door_min_z_);
+          ROS_WARN ("Door candidate rejected because min.Z (%g) is higher than the user specified threshold (%g)!", minP.z, door_min_z_);
           continue;
         }
 
         // ---[ Get the limits of the two "parallel to the Z-axis" lines defining the door
         double height_df1 = 0.0, height_df2 = 0.0;
-        rectangle_constrain_edge_height_ = 0.2;
         if (!checkDoorEdges (&pmap_.polygons[cc], &z_axis_, rectangle_constrain_edge_height_, rectangle_constrain_edge_angle_,
                              height_df1, height_df2))
         {
           goodness_factor[cc] = 0;
-          //ROS_WARN ("Door candidate rejected because the length of the door edges (%g / %g) is smaller than the user specified threshold (%g)!",
-          //          height_df1, height_df2, rectangle_constrain_edge_height_);
+          ROS_WARN ("Door candidate rejected because the length of the door edges (%g / %g) is smaller than the user specified threshold (%g)!",
+                    height_df1, height_df2, rectangle_constrain_edge_height_);
           continue;
         }
 
@@ -360,8 +341,8 @@ public:
         if (door_frame < door_min_width_ || door_height < door_min_height_ || door_frame > door_max_width_ || door_height > door_max_height_)
         {
           goodness_factor[cc] = 0;
-          //ROS_WARN ("Door candidate rejected because its width/height (%g / %g) is smaller than the user specified threshold (%g / %g -> %g / %g)!",
-          //          door_frame, door_height, door_min_width_, door_min_height_, door_max_width_, door_max_height_);
+          ROS_WARN ("Door candidate rejected because its width/height (%g / %g) is smaller than the user specified threshold (%g / %g -> %g / %g)!",
+                    door_frame, door_height, door_min_width_, door_min_height_, door_max_width_, door_max_height_);
           continue;
         }
         double area = cloud_geometry::areas::compute2DPolygonalArea (pmap_.polygons[cc], coeff[cc]);
@@ -426,12 +407,12 @@ public:
 
       // reply door message in same frame as request door message
       resp.door = req.door;
-      tf::Stamped<Point32> door_p1(minP, cloud_time_, cloud_frame_);
-      tf::Stamped<Point32> door_p2(maxP, cloud_time_, cloud_frame_);
-      tf::Stamped<Point32> handle(handle_center, cloud_time_, cloud_frame_);
-      transformPoint(door_frame_, door_p1, door_p1);
-      transformPoint(door_frame_, door_p2, door_p2);
-      transformPoint(door_frame_, handle, handle);
+      tf::Stamped<Point32> door_p1 (minP, cloud_time_, cloud_frame_);
+      tf::Stamped<Point32> door_p2 (maxP, cloud_time_, cloud_frame_);
+      tf::Stamped<Point32> handle (handle_center, cloud_time_, cloud_frame_);
+      transformPoint (&tf_, door_frame_, door_p1, door_p1);
+      transformPoint (&tf_, door_frame_, door_p2, door_p2);
+      transformPoint (&tf_, door_frame_, handle, handle);
       door_p1.z = minP.z;
       door_p2.z = minP.z;
 
@@ -707,8 +688,7 @@ public:
       publish ("handle_visualization", handle_cloud);
 
       pmap.polygons.push_back (poly_tr);
-      pmap.header.stamp = ros::Time::now ();
-      pmap.header.frame_id = "base_link";
+      pmap.header = points->header;
       publish ("pmap", pmap);
 #endif
     }
@@ -723,28 +703,6 @@ public:
       cloud_in_ = *cloud;
       num_clouds_received_++;
     }
-
-
-  void transformPoint(const std::string &target_frame, const tf::Stamped< robot_msgs::Point32 > &stamped_in, tf::Stamped< robot_msgs::Point32 > &stamped_out)
-  {
-    tf::Stamped<tf::Point> tmp;
-    tmp.stamp_ = stamped_in.stamp_;
-    tmp.frame_id_ = stamped_in.frame_id_;
-    tmp[0] = stamped_in.x;
-    tmp[1] = stamped_in.y;
-    tmp[2] = stamped_in.z;
-
-    tf_.transformPoint(target_frame, tmp, tmp);
-
-    stamped_out.stamp_ = tmp.stamp_;
-    stamped_out.frame_id_ = tmp.frame_id_;
-    stamped_out.x = tmp[0];
-    stamped_out.y = tmp[1];
-    stamped_out.z = tmp[2];
-  }
-
-
-
 
 };
 
