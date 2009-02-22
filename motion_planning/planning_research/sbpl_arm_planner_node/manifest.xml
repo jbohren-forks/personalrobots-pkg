@@ -1,0 +1,20 @@
+<package>
+  <description brief="A node to use the sbpl arm planner for the PR2 arm">
+    
+  </description>
+  <author>Sachin Chitta /sachinc@willowgarage.com</author>
+  <license>BSD</license>
+    <depend package="sbpl" />
+    <depend package="robot_kinematics" />
+    <depend package="wg_robot_description_parser"/>
+    <depend package="roscpp"/>
+    <depend package="std_msgs"/>
+    <depend package="robot_msgs" />
+  <url></url>
+  
+  <export>
+      <cpp cflags="-I${prefix}/src -O3 -g" lflags="-Wl, -rpath,${prefix}/lib -L${prefix}/lib"/>
+  </export>
+  
+</package>
+
