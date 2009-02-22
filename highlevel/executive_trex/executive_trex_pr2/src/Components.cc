@@ -94,14 +94,17 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
 
       // Register topological map constraints
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), executive_trex_pr2::MapConnectorConstraint, "map_connector_constraint", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), executive_trex_pr2::MapGetRegionFromPositionConstraint, "map_get_region_from_position_constraint", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), executive_trex_pr2::MapConnectedConstraint, "map_connected_constraint", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), executive_trex_pr2::MapIsDoorwayConstraint, "map_is_doorway_constraint", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::MapConnectorConstraint, "map_connector", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::MapGetRegionFromPositionConstraint, "map_get_region_from_position", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::MapIsDoorwayConstraint, "map_is_doorway", "Default");
 
-      // Register SOLVER components
+      // Register SOLVER components for topological map.
       EUROPA::SOLVERS::ComponentFactoryMgr* cfm = (EUROPA::SOLVERS::ComponentFactoryMgr*)assembly.getComponent("ComponentFactoryMgr");
       REGISTER_FLAW_FILTER(cfm, executive_trex_pr2::MapConnectorFilter, MapConnectorFilter);
+      REGISTER_FLAW_HANDLER(cfm, executive_trex_pr2::MapConnectorSelector, MapConnectorSelector);
 
       /*
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcArmInverseKinematicsConstraint, "calcArmInverseKinematics", "Default");

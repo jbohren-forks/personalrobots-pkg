@@ -32,9 +32,9 @@ namespace executive_trex_pr2 {
   public:
     
     MapConnectorConstraint(const LabelStr& name,
-			     const LabelStr& propagatorName,
-			     const ConstraintEngineId& constraintEngine,
-			     const std::vector<ConstrainedVariableId>& variables);
+			   const LabelStr& propagatorName,
+			   const ConstraintEngineId& constraintEngine,
+			   const std::vector<ConstrainedVariableId>& variables);
     
     virtual void handleExecute();
     
@@ -63,37 +63,21 @@ namespace executive_trex_pr2 {
   };
 
   /**
-   * @brief A relation: constrain two connection variables so that they share a common region. Propagates when one of 3 is bound.
-   */
-  class MapConnectedConstraint : public Constraint {
-  public:
-    
-    MapConnectedConstraint(const LabelStr& name,
-			     const LabelStr& propagatorName,
-			     const ConstraintEngineId& constraintEngine,
-			     const std::vector<ConstrainedVariableId>& variables);
-    
-    virtual void handleExecute();
-    
-  private:
-    
-  };
-
-  /**
    * @brief A function to query if a region is a doorway
    */
   class MapIsDoorwayConstraint : public Constraint {
   public:
     
     MapIsDoorwayConstraint(const LabelStr& name,
-			      const LabelStr& propagatorName,
-			      const ConstraintEngineId& constraintEngine,
-			      const std::vector<ConstrainedVariableId>& variables);
+			   const LabelStr& propagatorName,
+			   const ConstraintEngineId& constraintEngine,
+			   const std::vector<ConstrainedVariableId>& variables);
     
     virtual void handleExecute();
     
   private:
-    
+    BoolDomain& _result;
+    IntervalIntDomain& _region;
   };
 
   /**
@@ -106,10 +90,14 @@ namespace executive_trex_pr2 {
 
     virtual bool test(const EntityId& entity);
 
-  private:
-    const LabelStr _source;
-    const LabelStr _final;
-    const LabelStr _target;
+  private: 
+    bool noGoodInput(const TokenId& parent_token, const LabelStr& var_name) const;
+
+    const LabelStr _source_x;
+    const LabelStr _source_y;
+    const LabelStr _final_x;
+    const LabelStr _final_y;
+    const LabelStr _target_connector;
   };
 
 
@@ -125,7 +113,9 @@ namespace executive_trex_pr2 {
   private:
     class Choice {
     public:
-      Choice():id(0), cost(0){}
+    Choice():id(0), cost(0){}
+    Choice(unsigned int id_, double cost_):id(id_), cost(cost_) {}
+
       unsigned int id;
       double cost;  
       bool operator<(const MapConnectorSelector::Choice& rhs) const {return cost < rhs.cost;}
@@ -134,8 +124,11 @@ namespace executive_trex_pr2 {
     double gCost(unsigned int from, unsigned int to) const;
     double hCost(unsigned int from, unsigned int to) const;
 
-    const LabelStr _source;
-    const LabelStr _final;
+    const LabelStr _source_x;
+    const LabelStr _source_y;
+    const LabelStr _final_x;
+    const LabelStr _final_y;
+    const LabelStr _target_connector;
     std::list<Choice> _sorted_choices;
     std::list<Choice>::iterator _choice_iterator;
   };
@@ -153,6 +146,26 @@ namespace executive_trex_pr2 {
      * @return NULL if no instance created yet.
      */
     static TopologicalMapAccessor* instance();
+
+    /**
+     * @brief Destructor is virtual for subclasses to over-ride
+     */
+    virtual ~TopologicalMapAccessor();
+
+    /**
+     * @brief The number of meters per cell in the metric representation
+     */
+    double getResolution() const{return _resolution;}
+
+    /**
+     * @brief The number of columns
+     */
+    unsigned int getNumCols() const {return _num_cols;}
+
+    /**
+     * @brief The number of rows
+     */
+    unsigned int getNumRows() const {return _num_rows;}
 
     /**
      * @brief Get a region for a point
@@ -210,16 +223,14 @@ namespace executive_trex_pr2 {
      */
     virtual double hCost(unsigned int connector_id, double to_x, double to_y) = 0;
 
-    virtual ~TopologicalMapAccessor();
-
-    double getResolution() const{return _resolution;}
-
   protected:
-    TopologicalMapAccessor(double resolution);
+    TopologicalMapAccessor(double resolution, unsigned int cols, unsigned int rows);
 
   private:
     static TopologicalMapAccessor* _singleton;
     const double _resolution;
+    const unsigned int _num_cols;
+    const unsigned int _num_rows;
   };
 
   /**

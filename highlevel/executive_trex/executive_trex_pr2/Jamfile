@@ -7,6 +7,7 @@ if ! $(executive_trex_pr2_READY) {
 
  # Input files
  local TestInputs = 
+		[ FDirName $(EXEC_HOME) test pr2.test.nddl ]
 		[ FDirName $(EXEC_HOME) wpc_gazebo.0 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) wpc_gazebo.1 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) nav.0 pr2.exec.nddl ]
@@ -18,6 +19,16 @@ if ! $(executive_trex_pr2_READY) {
 		[ FDirName $(EXEC_HOME) miles.3 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) miles_gazebo.3 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) miles.4 pr2.exec.nddl ]
+		[ FDirName $(EXEC_HOME) sim.0 pr2.exec.nddl ]
+		[ FDirName $(EXEC_HOME) sim.0 pr2.sim.nddl ]
+		[ FDirName $(EXEC_HOME) sim.1 pr2.exec.nddl ]
+		[ FDirName $(EXEC_HOME) sim.1 pr2.sim.nddl ]
+		[ FDirName $(EXEC_HOME) master.0 pr2.master.nddl ]
+		[ FDirName $(EXEC_HOME) master.0 pr2.doorman.nddl ]
+		[ FDirName $(EXEC_HOME) master.0 pr2.driver.nddl ]
+		[ FDirName $(EXEC_HOME) master.0 pr2.recharger.nddl ]
+		[ FDirName $(EXEC_HOME) master.0 pr2.safety.nddl ]
+		[ FDirName $(EXEC_HOME) master.0 pr2.rcs.sim.nddl ]
 	;
 
 	local file ;

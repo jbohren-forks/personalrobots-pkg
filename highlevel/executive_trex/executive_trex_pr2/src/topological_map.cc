@@ -10,17 +10,41 @@ using namespace TREX;
 
 namespace executive_trex_pr2 {
 
-  /*
+  /**
+   * A Default Grid Structure to sue when testing
+   */
+  void setV (topological_map::OccupancyGrid& grid, unsigned r0, unsigned dr, unsigned rmax, unsigned c0, unsigned dc, unsigned cmax, bool val) 
+  {
+    for (unsigned r=r0; r<rmax; r+=dr) {
+      for (unsigned c=c0; c<cmax; c+=dc) {
+	grid[r][c] = val;
+      }
+    }
+  }
 
-  // A function: given an x,y position, bind a region.
-  constraint map_get_region_from_position(region, x, y){ region <: Region && x <: numeric && y <: numeric }
+  // Get a sample grid:
+  // Dimensions: 21 * 24
+  // Resolution: 1
+  static const unsigned int HEIGHT_21(21);
+  static const unsigned int WIDTH_24(24);
+  topological_map::OccupancyGrid& GRID_3_3_ALL_CONNECTED(){
+    static topological_map::OccupancyGrid grid(boost::extents[HEIGHT_21][WIDTH_24]);
+    static bool initialized(false);
+    if(!initialized){
+      setV(grid, 0, 1, HEIGHT_21, 0, 1, WIDTH_24, false);
+      setV(grid, 7, 7, HEIGHT_21, 0, 1, WIDTH_24, true);
+      setV(grid, 0, 1, HEIGHT_21, 8, 8, WIDTH_24, true);
+      setV(grid, 3, 7, HEIGHT_21, 8, 8, WIDTH_24, false);
+      setV(grid, 7, 7, HEIGHT_21, 4, 8, WIDTH_24, false);
+      initialized = true;
+    }
 
-  // A relation: constrain two connection variables so that they share a common region. Propagates when one of 3 is bound.
-  constraint map_connected(connection_a, connection_b, region){ connection_a <: Connector && connection_b <: Connector && region <: Region }
+    return grid;
+  }
 
-  // A function to query if a region is a doorway
-  constraint map_is_doorway(result, region) { result <: bool && region <: Region }
-  */
+// Shared setup for all tests
+  TopologicalMapAdapter* map = new TopologicalMapAdapter(GRID_3_3_ALL_CONNECTED(), 1.0);
+
   //*******************************************************************************************
   MapConnectorConstraint::MapConnectorConstraint(const LabelStr& name,
 						 const LabelStr& propagatorName,
@@ -80,69 +104,100 @@ namespace executive_trex_pr2 {
       unsigned int region_id = TopologicalMapAccessor::instance()->getRegion(_x.getSingletonValue(), _y.getSingletonValue());
       _region.set(region_id);
     }
-  }
-    
-
-  //*******************************************************************************************
-  MapConnectedConstraint::MapConnectedConstraint(const LabelStr& name,
-						 const LabelStr& propagatorName,
-						 const ConstraintEngineId& constraintEngine,
-						 const std::vector<ConstrainedVariableId>& variables)
-    :Constraint(name, propagatorName, constraintEngine, variables){}
-    
-  void MapConnectedConstraint::handleExecute(){}
-    
+  } 
     
   //*******************************************************************************************
   MapIsDoorwayConstraint::MapIsDoorwayConstraint(const LabelStr& name,
 						 const LabelStr& propagatorName,
 						 const ConstraintEngineId& constraintEngine,
 						 const std::vector<ConstrainedVariableId>& variables)
-    :Constraint(name, propagatorName, constraintEngine, variables){}
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _result(static_cast<BoolDomain&>(getCurrentDomain(variables[0]))),
+     _region(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[1]))){
+    checkError(variables.size() == 2, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
     
-  void MapIsDoorwayConstraint::handleExecute(){}
-    
+  void MapIsDoorwayConstraint::handleExecute(){
+    if(_region.isSingleton()){
+      unsigned int region_id = _region.getSingletonValue();
+      bool is_doorway(true);
 
+      // If the region is bogus then this is an inconsistency. Otherwise bind the result
+      if(!TopologicalMapAccessor::instance()->isDoorway(region_id, is_doorway))
+	_region.empty();
+      else
+	_result.set(is_doorway);
+    }
+  }
 
   //*******************************************************************************************
   MapConnectorFilter::MapConnectorFilter(const TiXmlElement& configData)
     : SOLVERS::FlawFilter(configData, true),
-      _source(extractData(configData, "source")),
-      _final(extractData(configData, "final")),
-      _target(extractData(configData, "target")){}
+      _source_x(extractData(configData, "source_x")),
+      _source_y(extractData(configData, "source_y")),
+      _final_x(extractData(configData, "final_x")),
+      _final_y(extractData(configData, "final_y")),
+      _target_connector(extractData(configData, "target_connector")){}
 
   /**
    * The filter will exclude the entity if it is not the target variable of a token with the right structure
    * with all inputs bound so that the selection can be made based on sufficient data
    */
   bool MapConnectorFilter::test(const EntityId& entity){
-    // It should be a variable
+    // It should be a variable. So if it is not, filter it out
     if(!ConstrainedVariableId::convertable(entity))
       return true;
 
     // Its name should match the target, it should be enumerated, and it should not be a singleton.
-    // TODO - It will not be enumerated. We have to filter in the decision point
     ConstrainedVariableId var = (ConstrainedVariableId) entity;
-    if(var->getName() != _target || var->lastDomain().isEnumerated() || var->lastDomain().isSingleton())
+    if(var->getName() != _target_connector || !var->lastDomain().isNumeric()){
+      debugMsg("MapConnectorFilter:test", "Excluding " << var->getName().toString());
       return true;
+    }
 
     // It should have a parent that is a token
     if(var->parent().isNoId() || !TokenId::convertable(var->parent()))
       return true;
-
+    
     TokenId parent = (TokenId) var->parent();
-    ConstrainedVariableId source = parent->getVariable(_source, false);
-    ConstrainedVariableId final = parent->getVariable(_final, false);
-
-    return source.isNoId() || !source->lastDomain().isSingleton() || final.isNoId() || !final->lastDomain().isSingleton();
+    ConstrainedVariableId source_x = parent->getVariable(_source_x, false);
+    ConstrainedVariableId source_y = parent->getVariable(_source_y, false);
+    ConstrainedVariableId final_x = parent->getVariable(_final_x, false);
+    ConstrainedVariableId final_y = parent->getVariable(_final_y, false);
+  
+    return(noGoodInput(parent, _source_x) ||
+	   noGoodInput(parent, _source_y) ||
+	   noGoodInput(parent, _final_x) ||
+	   noGoodInput(parent, _final_y));
   }
 
+  bool MapConnectorFilter::noGoodInput(const TokenId& parent_token, const LabelStr& var_name) const {
+    ConstrainedVariableId var = parent_token->getVariable(var_name, false);
+    bool result = true;
+    if(var.isNoId()){
+      debugMsg("MapConnectorFilter:test", "Excluding because of invalid source:" << var_name.toString());
+    }
+    else if(!var->lastDomain().isSingleton()){
+      debugMsg("MapConnectorFilter:test", 
+	       "Excluding because of unbound inputs on:" << 
+	       var_name.toString() << "[" << var->getKey() << "] with " << var->lastDomain().toString());
+    }
+    else{
+      result = false;
+    }
+
+    return result;
+  }
 
   //*******************************************************************************************
   MapConnectorSelector::MapConnectorSelector(const DbClientId& client, const ConstrainedVariableId& flawedVariable, const TiXmlElement& configData, const LabelStr& explanation)
     : SOLVERS::UnboundVariableDecisionPoint(client, flawedVariable, configData, explanation),
-      _source(extractData(configData, "source")),
-      _final(extractData(configData, "final")){
+      _source_x(extractData(configData, "source_x")),
+      _source_y(extractData(configData, "source_y")),
+      _final_x(extractData(configData, "final_x")),
+      _final_y(extractData(configData, "final_y")),
+      _target_connector(extractData(configData, "target_connector")){
 
     // Verify expected structure for the variable - wrt other token parameters
     checkError(flawedVariable->parent().isId() && TokenId::convertable(flawedVariable->parent()), 
@@ -151,32 +206,65 @@ namespace executive_trex_pr2 {
 
     // Obtain source and final 
     TokenId parent = (TokenId) flawedVariable->parent();
-    ConstrainedVariableId source = parent->getVariable(_source, false);
-    ConstrainedVariableId final = parent->getVariable(_final, false);
+    ConstrainedVariableId source_x = parent->getVariable(_source_x, false);
+    ConstrainedVariableId source_y = parent->getVariable(_source_y, false);
+    ConstrainedVariableId final_x = parent->getVariable(_final_x, false);
+    ConstrainedVariableId final_y = parent->getVariable(_final_y, false);
 
-    // Double check all the inputs
-    checkError(source.isId(), "Bad filter. Invalid source name: " << _source.toString() << " on token " << parent->toString());
-    checkError(final.isId(), "Bad filter. Invalid final name: " << _final.toString() << " on token " << parent->toString());
-    checkError(source->lastDomain().isSingleton(), "Bad Filter. Source is not a singleton: " << source->toString());
-    checkError(final->lastDomain().isSingleton(), "Bad Filter. Final is not a singleton: " << final->toString());
+    // Double check source variables
+    checkError(source_x.isId(), "Bad filter. Invalid source name: " << _source_x.toString() << " on token " << parent->toString());
+    checkError(source_y.isId(), "Bad filter. Invalid source name: " << _source_y.toString() << " on token " << parent->toString());
+    checkError(source_x->lastDomain().isSingleton(), "Bad Filter. Source is not a singleton: " << source_x->toString());
+    checkError(source_y->lastDomain().isSingleton(), "Bad Filter. Source is not a singleton: " << source_y->toString());
 
-    // Compose all the choices.
-    const EnumeratedDomain& dom = static_cast<const EnumeratedDomain&>(flawedVariable->lastDomain());
-    for(std::set<double>::const_iterator it = dom.getValues().begin(); it != dom.getValues().end(); ++it){
-      Choice choice;
-      double value = *it;
-      unsigned int id = (unsigned int) value;
-      checkError(value == id, value << " != " << id);
-      choice.cost = gCost((unsigned int) source->lastDomain().getSingletonValue(), id) + hCost(id, (unsigned int) final->lastDomain().getSingletonValue());
-      choice.id = id;
-      _sorted_choices.push_back(choice);
+    // Double check destination variables
+    checkError(final_x.isId(), "Bad filter. Invalid final name: " << _final_x.toString() << " on token " << parent->toString());
+    checkError(final_y.isId(), "Bad filter. Invalid final name: " << _final_y.toString() << " on token " << parent->toString());
+    checkError(final_x->lastDomain().isSingleton(), "Bad Filter. Final is not a singleton: " << final_x->toString());
+    checkError(final_y->lastDomain().isSingleton(), "Bad Filter. Final is not a singleton: " << final_y->toString());
+
+    // Compose all the choices. 
+    // Given a connector, and a target, generate the choices for all connectors
+    // adjacent to this connector, and order them to minimize cost.
+    double x0, y0, x1, y1;
+    x0 = source_x->lastDomain().getSingletonValue();
+    y0 = source_y->lastDomain().getSingletonValue();
+    x1 = final_x->lastDomain().getSingletonValue();
+    y1 = final_y->lastDomain().getSingletonValue();
+
+    unsigned int this_region = TopologicalMapAccessor::instance()->getRegion(x0, y0);  
+    checkError(this_region > 0, "No region for <" << x0 << ", " << y0 <<">");
+    unsigned int final_region =  TopologicalMapAccessor::instance()->getRegion(x1, y1);
+    checkError(final_region > 0, "No region for <" << x1 << ", " << y1 <<">");
+
+    // Build the set of choices based on all connectors for the current region
+    std::vector<unsigned int> connectors;
+    TopologicalMapAccessor::instance()->getRegionConnectors(this_region, connectors);
+
+    // If the current region and the target region are the same, include the 0 region id, which
+    // indicates we travel within the region
+    if(this_region == final_region)
+      _sorted_choices.push_back(Choice(0, sqrt(pow(x0 - x1, 2) + pow(y0 - y1, 2))));
+
+    // exclude the source connector if there is one
+    unsigned int source_connector = TopologicalMapAccessor::instance()->getConnector(x0, y0);
+
+    // Now iterate over the connectors in this region and compute the heuristic cost estimate
+    for(std::vector<unsigned int>::const_iterator it = connectors.begin(); it != connectors.end(); ++it){
+      unsigned int connector_id = *it;
+      if(connector_id != source_connector){
+	double cost = TopologicalMapAccessor::instance()->gCost(x0, y0, connector_id) + 
+	  TopologicalMapAccessor::instance()->hCost(connector_id, x1, y1);
+
+	_sorted_choices.push_back(Choice(connector_id, cost));
+      }
     }
 
     _sorted_choices.sort();
     _choice_iterator = _sorted_choices.begin();
   }
 
-  bool MapConnectorSelector::hasNext() const { return _choice_iterator == _sorted_choices.end(); }
+  bool MapConnectorSelector::hasNext() const { return _choice_iterator != _sorted_choices.end(); }
 
   double MapConnectorSelector::getNext(){
     MapConnectorSelector::Choice c = *_choice_iterator;
@@ -197,7 +285,8 @@ namespace executive_trex_pr2 {
   /**
    * Topological Map Accessor Implementation. Note that it is basically just an interface.
    */
-  TopologicalMapAccessor::TopologicalMapAccessor(double resolution):_resolution(resolution){
+  TopologicalMapAccessor::TopologicalMapAccessor(double resolution, unsigned int c, unsigned int r)
+    :_resolution(resolution), _num_cols(c), _num_rows(r){
     if(_singleton != NULL)
       delete _singleton;
 
@@ -215,32 +304,9 @@ namespace executive_trex_pr2 {
   /************************************************************************
    * Map Adapter implementation
    ************************************************************************/
-  /*
-    TopologicalMapAdapter::TopologicalMapAdapter(const std::string& Map_file_name, double resolution){
-    try{
-    robot_srvs::StaticMap::Response resp;
-    map_server::loadMapFromFile(&resp, map_file_name.c_str(), resolution, false);
-    topological_map::OccupancyGrid grid(boost::extents[resp.map.width][resp.map.height]);
-    unsigned int id(0);
-    for(unsigned int y = 0; y < resp.map.height; y++){
-    for(unsigned int x = 0; x < resp.map.width; x++){
-    if(resp.map.data[id++] > 0)
-    grid[x][y] = true;
-    else
-    grid[x][y] = false;
-    }
-    }
-
-    _map = topological_map::topologicalMapFromGrid(grid, resolution, 2, 1, 1, 0, "local");
-    }
-    catch(...){
-    ROS_ERROR("Failed to load image from %s", map_file_name.c_str());
-    }
-    }
-  */
 
   TopologicalMapAdapter::TopologicalMapAdapter(const topological_map::OccupancyGrid& grid, double resolution)
-    : TopologicalMapAccessor(resolution){
+    : TopologicalMapAccessor(resolution, topological_map::numCols(grid), topological_map::numRows(grid)){
     _map = topological_map::topologicalMapFromGrid(grid, resolution, 2, 1, 1, 0, "local");
   }
 
