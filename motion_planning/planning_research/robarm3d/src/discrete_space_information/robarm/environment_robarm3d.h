@@ -38,7 +38,7 @@ using namespace KDL;
 #define NUMOFLINKS 7
 #define NUMOFLINKS_DH 8
 
-#define UNIFORM_COST 1	//all the joint actions have the same costs when set
+#define UNIFORM_COST 0      //all the joint actions have the same costs when set
 
 #define INVALID_NUMBER 999
 
@@ -94,7 +94,7 @@ typedef struct ENV_ROBARM_CONFIG
     double BaseZ_m;
 
     //end effector goal position (cell)
-    short unsigned int EndEffGoalX_c;
+    short unsigned int EndEffGoalX_c;   //get rid of this
     short unsigned int EndEffGoalY_c;
     short unsigned int EndEffGoalZ_c;
 
@@ -106,8 +106,16 @@ typedef struct ENV_ROBARM_CONFIG
     //flag determines if the environment has been initialized or not
     bool EnvInitialized;
 
+    //cost of cells on grid of obstacles and close to obstacles
+    char ObstacleCost;
+    char medObstacleCost;
+    char lowObstacleCost;
+
+    int medCostRadius_c;
+    int lowCostRadius_c;
+
     //end effector goal orientation
-    double EndEffGoalOrientation[3][3];
+    double EndEffGoalOrientation[3][3]; //get rid of it
     double GoalOrientationMOE[3][3];
 
     short unsigned int ** EndEffGoals_c;
@@ -164,7 +172,7 @@ typedef struct ENV_ROBARM_CONFIG
     double gripper_orientation_moe; //gripper orientation margin of error
     double grasped_object_length_m;
     double goal_moe_m;
-    double goal_moe_r;
+    bool variable_cell_costs;
 
     //successor actions
     double ** SuccActions;
@@ -321,9 +329,9 @@ private:
     void Create3DStateSpace(State3D**** statespace3D);
     void Delete3DStateSpace(State3D**** statespace3D);
     int XYZTO3DIND(int x, int y, int z);
+    void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned int ** EndEffGoals_c);
     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned  int searchstartx, short unsigned int searchstarty, short unsigned int searchstartz);
 //     void Search3DwithHeap(State3D*** statespace, int* HeurGrid, int searchstartx, int searchstarty, int searchstartz);
-    void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned int ** EndEffGoals_c);
 
     //forward kinematics
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);
