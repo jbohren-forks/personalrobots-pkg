@@ -1,0 +1,11 @@
+#include "rcs.sim.nddl";
+
+// Initialize state variables
+fact(base_state.Holds f0);
+f0.x = 0.0;
+f0.y = 0.0;
+f0.th = 0.0;
+
+// Initialize behaviors
+fact(move_base.Inactive f1);
+fact(recharge_controller.Inactive f2);
