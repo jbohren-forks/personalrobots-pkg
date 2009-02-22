@@ -2,7 +2,7 @@
   <description brief="Robotic Arm Planning Research">
     
   </description>
-  <author>Maxim Likhachev/maximl@seas.upenn.edu</author>
+  <author>Benjamin Cohen/bencohen2@gmail.com  & Maxim Likhachev/maximl@seas.upenn.edu</author>
   <license>BSD</license>
     <depend package="sbpl" />
     <depend package="robot_kinematics" />
