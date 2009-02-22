@@ -7,6 +7,32 @@
 
 const unsigned WIDTH = 640, HEIGHT = 480;
 
+void save_photo(uint8_t *frame)
+{
+  static int image_num = 0;
+  char fnbuf[500];
+  snprintf(fnbuf, sizeof(fnbuf), "image%06d.ppm", image_num++);
+  printf("saving %s\n", fnbuf);
+  FILE *f = fopen(fnbuf, "wb");
+  if (!f)
+  {
+    printf("couldn't open %s\n", fnbuf);
+    return;
+  }
+  uint8_t *bgr = new uint8_t[WIDTH*HEIGHT*3];
+  for (uint32_t y = 0; y < HEIGHT; y++)
+    for (uint32_t x = 0; x < WIDTH; x++)
+    {
+      uint8_t *p = frame + y * WIDTH * 3 + x * 3;
+      uint8_t *q = bgr   + y * WIDTH * 3 + x * 3;
+      q[0] = p[2]; q[1] = p[1]; q[2] = p[0];
+    }
+  fprintf(f, "P6\n%d %d\n255\n", WIDTH, HEIGHT);
+  fwrite(bgr, 1, WIDTH * HEIGHT * 3, f);
+  delete[] bgr;
+  fclose(f);
+}
+
 int main(int argc, char **argv)
 {
   if (argc != 2)
@@ -55,6 +81,7 @@ int main(int argc, char **argv)
           switch(event.key.keysym.sym)
           {
             case SDLK_ESCAPE: done = true; break;
+            case SDLK_SPACE:  save_photo(frame); break;
             default: break;
           }
           break;

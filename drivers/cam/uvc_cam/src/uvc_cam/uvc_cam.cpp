@@ -164,7 +164,7 @@ Cam::Cam(const char *_device, mode_t _mode)
   set_control(9963788, 0); // auto white balance
   set_control(9963802, 1000); // color temperature
   set_control(9963800, 2);  // power line frequency to 60 hz
-  set_control(9963795, 100); // gain
+  set_control(9963795, 200); // gain
   set_control(9963803, 100); // sharpness
   set_control(9963778, 50); // saturation
 /*
