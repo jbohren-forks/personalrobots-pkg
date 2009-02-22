@@ -29,17 +29,3 @@
 
 
 #include "nav.exports.nddl"
-
-/**
- * The Driver handles planar navigation towards a goal. Only addresses base control.
- */
-class Driver extends MoveBehavior {
-
-  Driver(Mode _mode){
-    super(_mode, false);
-  }
-
-  Driver(Mode _mode, int max_duration){
-    super(_mode, max_duration, false);
-  }
-};

@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2008, Willow Garage, Inc.
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <ORGANIZATION> nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// TREX base class declaration and definitions
+#include "TREX.nddl"
+
+// Exports from sub-systems
+#include "rcs.exports.nddl"
+#include "recharger.exports.nddl"
+#include "safety.exports.nddl"
+
+/**
+ * Constrain so that the recharge controller switches between plugging on and unplugging
+ */
+RechargeController::Inactive{
+  // Preceded by an effort to get to a desired pose. This drives regression from the goal for planning
+  // this(start] == Active(x, y, th, recharge_level)
+  if(x){
+    if(y){
+      if(th){
+	met_by(Active p);
+	eq(p.x, x);
+	eq(p.y, y);
+	eq(p.th, th);
+	eq(p.recharge_level, recharge_level);
+
+
+	// Derive the recharge level from battery state configuration
+	BatteryState bs;
+	eq(bs.actual_value, true);
+	eq(recharge_level, bs.recharge_level);
+      }
+    }
+  }
+
+  // Compare values based on base state. We are only reading these values. This is an important idiom
+  // to distinguish inputs evaluated from execution rather than planned for. This could be captured with suitable
+  // syntax in the language to make it more explicit what is going on. All we are really doing here
+  // is binding default values from execution
+  // Holds( desX + [-0.5, 0.5], desY + [-0.5, 0.5], desTh + [-0.5, 0.5]) = baseState(start); 
+  if(start){
+    starts(BaseState.Holds bs);
+    addEq(bs.x, [-0.5, 0.5], x);
+    addEq(bs.y, [-0.5, 0.5], y);
+    addEq(bs.th, [-0.5, 0.5], th);
+  }
+}
+
+RechargeController::Active{
+  // When busy pluging in or unplugging, we require that we are located, and stationary, at the
+  // correct charging station. This is derived by the given parameters
+  // Alternatives:
+  // moveBase[start, end] == Inactive(*, *, *, x, y, th);
+  // contained_by(moveBase.Inactive(*, *, *, x, y, th):
+  any(MoveBase.Inactive mb);
+  eq(mb.desX, x);
+  eq(mb.desY, y);
+  eq(mb.desTh, th);
+  eq(mb.recharging, true);
+  leq(duration, mb.duration);
+  precedes(mb.start, start);
+  precedes(end, mb.end);
+}
+
+/** Allocate Timelines **/
+
+Recharger recharger = new Recharger(Internal);
+
+// RCS timelines
+RechargeController recharge_controller = new RechargeController(External);
+BaseState base_state = new BaseState(External);
+BatteryState battery_state = new BatteryState(External);

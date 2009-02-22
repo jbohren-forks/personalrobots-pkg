@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Willow Garage, Inc.
+ * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -27,5 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+// TREX base class declaration and definitions
+#include "TREX.nddl"
 
-#include "nav.exports.nddl"
+// Exports from sub-systems
+#include "rcs.exports.nddl"
+#include "doorman.exports.nddl"
+#include "safety.exports.nddl"
+
+// Internal
+MoveBehavior doorman = new MoveBehavior(Internal, true);
+
+// Safety
+MobilityStatus mobility_status = new MobilityStatus(External);
+
+// RCS timelines
+MoveBase move_base = new MoveBase(External);
+BaseState base_state = new BaseState(External);

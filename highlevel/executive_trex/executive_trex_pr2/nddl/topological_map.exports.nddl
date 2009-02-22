@@ -3,7 +3,7 @@
  ***********************************************************************/
 
 // Define a MAP_KEY type to give positive integer id's for keys in the topological mapp
-typedef [0 +inf] MAP_KEY;
+typedef int [0 100000] MAP_KEY;
 
 // A 0 key value indicates no key, and thus no map entity
 MAP_KEY NO_KEY = 0;
@@ -13,9 +13,6 @@ constraint map_connector(connection, x, y, th) { connection <: MAP_KEY && x <: n
 
 // A function: given an x,y position, bind a region.
 constraint map_get_region_from_position(region, x, y){ region <: MAP_KEY && x <: numeric && y <: numeric }
-
-// A relation: constrain two connection variables so that they share a common region. Propagates when one of 3 is bound.
-constraint map_connected(connection_a, connection_b, region){ connection_a <: MAP_KEY && connection_b <: MAP_KEY && region <: MAP_KEY }
 
 // A function to query if a region is a doorway
 constraint map_is_doorway(result, region) { result <: bool && region <: MAP_KEY }

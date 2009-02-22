@@ -1,26 +1,12 @@
-/**
- * This is an abstract state variable which reflects if we are 
- * able to do useful work or if we should focus on recharging. Tripping this state variable
- * into a recharging state will lock out other activities from execution until we are able to
- * finish recharging.
- */
-class WorkingStatus extends AgentTimeline {
+class MobilityStatus extends AgentTimeline {
 
-  predicate Holds{bool recharging;}
+  predicate Holds{
+    bool stuck;
+    bool gripper_open;
+    bool arm_stowed;
+  }
 
-  WorkingStatus(Mode _mode){
+  MobilityStatus(Mode _mode){
     super(_mode, "Holds");
   }
 };
-
-WorkingStatus::Holds{
-  // We should toggle between recharging and not recharging
-  // this[end] == Holds(!recharging); 
-  if(end){
-    meets(Holds s);
-    neq(s.recharging, recharging);
-  }
-
-  // By default we are not recharging
-  defaultOnCommit(recharging, false);
-}

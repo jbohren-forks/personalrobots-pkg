@@ -1,5 +1,37 @@
-#include "model.core.nddl"
+/*
+ * Copyright (c) 2008, Willow Garage, Inc.
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <ORGANIZATION> nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
+// TREX base class declaration and definitions
+#include "TREX.nddl"
+
+// Exports from sub-systems
+#include "rcs.exports.nddl"
 
 /**
  * If an active token is dispatched, we start it immediately
@@ -241,36 +273,6 @@ MoveBase::Inactive{
   eq(bs.th, th);
 }
 
-float MAX_CAPACITY; // Maximum energy capacity of all batteries
-float NOMINAL_POWER_CONSUMPTION; // When not plugged in.
-float PLUGGED_IN_POWER_CONSUMPTION; // When plugged in, it should draw this amount
-
-/**
- * Behavior will be started and executed perfectly
- */
-RechargeController::Active{
-  // Forces a fixed duration.
-  eq(duration, 1);
-
-  // Batteries are magically charged at the end
-  meets(Inactive s);
-  eq(s.x, x);
-  eq(s.y, y);
-  eq(s.th, th);
-  eq(s.recharge_level, recharge_level);
-
-  // Fix the battery state at the end
-  ends(BatteryState.Holds bs);
-  float estEnergy, estCapacity, estConsumption;
-  mulEq(recharge_level, MAX_CAPACITY, estEnergy);
-  eq(estCapacity, MAX_CAPACITY);
-  eq(estConsumption, NOMINAL_POWER_CONSUMPTION);
-
-  defaultOnCommit(bs.energy_remaining, estEnergy);
-  defaultOnCommit(bs.energy_capacity, estCapacity);
-  defaultOnCommit(bs.power_consumption, estConsumption);
-}
-
 /**
  * By default it will retain prior values
  */
@@ -282,17 +284,12 @@ BatteryState::Holds{
   eq(duration, 1);
 }
 
-// Base
-BaseState baseState = new BaseState(Internal);
-MoveBase moveBase = new MoveBase(Internal);
-
-// Battery and Plug In Control
-RechargeController rechargeController = new RechargeController(Internal);
-BatteryState batteryState = new BatteryState(Internal, .7, .8);
-
 // Internal Controllers
-BaseController baseController = new BaseController();
+BaseController base_controller = new BaseController();
 
-close();
+// State Variables
+BaseState base_state = new BaseState(Internal);
 
-
+// Behaviors
+MoveBase move_base = new MoveBase(Internal);
+RechargeController recharge_controller = new RechargeController(Internal);

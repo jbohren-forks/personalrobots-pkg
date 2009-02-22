@@ -5,15 +5,15 @@
 #include "TREX.nddl"
 
 // Exports from sub-systems
+#include "rcs.exports.nddl"
 #include "driver.exports.nddl"
 #include "recharger.exports.nddl"
 #include "doorman.exports.nddl"
 #include "safety.exports.nddl"
-
+#include "sim.nddl"
 
 // Internal timelines
-Driver driver = new Driver(Internal);
-DoorMan doorman = new DoorMan(Internal);
+MoveBehavior doorman = new MoveBehavior(Internal, true);
 WorkingStatus working_status = new WorkingStatus(Internal);
 Recharger recharger = new Recharger(Internal);
 
