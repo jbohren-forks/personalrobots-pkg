@@ -49,7 +49,7 @@ public:
   /** \brief Configure the filter chain 
    * This will call configure on all filters which have been added
    * as well as allocate the buffers*/
-  bool configure(unsigned int size, TiXmlDocument doc)
+  bool configure(unsigned int size, TiXmlDocument& doc)
   {
     /*************************** Parse the XML ***********************************/
     TiXmlElement *config = doc.RootElement();
@@ -99,7 +99,6 @@ public:
         }
       }
     }
-
 
 
 

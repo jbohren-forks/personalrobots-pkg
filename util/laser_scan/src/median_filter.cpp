@@ -45,11 +45,14 @@ LaserMedianFilter::LaserMedianFilter():
 bool LaserMedianFilter::configure(const std::string & xml_parameters)
 {
   latest_xml_ = xml_parameters;
+  TiXmlDocument xml_doc;
+  xml_doc.Parse(latest_xml_.c_str());
+
   range_filter_ = new FilterChain<std_vector_float >();
-  range_filter_->configure(num_ranges_, latest_xml_);
+  range_filter_->configure(num_ranges_, xml_doc);
   
   intensity_filter_ = new FilterChain<std_vector_float >();
-  intensity_filter_->configure(num_ranges_, latest_xml_);
+  intensity_filter_->configure(num_ranges_, xml_doc);
 };
 
 LaserMedianFilter::~LaserMedianFilter()
@@ -72,11 +75,14 @@ bool LaserMedianFilter::update(const laser_scan::LaserScan& scan_in, laser_scan:
 
     num_ranges_ = scan_in.get_ranges_size();
     
+    TiXmlDocument xml_doc;
+    xml_doc.Parse(latest_xml_.c_str());
+
     range_filter_ = new FilterChain<std_vector_float >();
-    range_filter_->configure(num_ranges_, latest_xml_);
-    
+    range_filter_->configure(num_ranges_, xml_doc);
+  
     intensity_filter_ = new FilterChain<std_vector_float >();
-    intensity_filter_->configure(num_ranges_, latest_xml_);
+    intensity_filter_->configure(num_ranges_, xml_doc);
     
   }
 
