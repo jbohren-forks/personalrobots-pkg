@@ -5,7 +5,6 @@
   <author>Morgan Quigley</author>
   <license>GPL</license>
   <review status="unreviewed" notes=""/>
-  <depend package="opencv_latest"/>
   <depend package="roscpp"/>
   <depend package="sdlgl"/>
   <export>
