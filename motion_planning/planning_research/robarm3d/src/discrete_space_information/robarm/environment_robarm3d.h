@@ -28,13 +28,6 @@
  */
  
 
-/** \file environment_robarm3d.h Environment class to be used by SPBL for the robot arms.*/
-
-/**
-    @brief TESTING TESTING
-
- */
-
 /**
 
 @mainpage
@@ -127,7 +120,7 @@ typedef struct ENV_ROBARM_CONFIG
     int LowResEnvDepth_c;
 
     //flag determines if the environment has been initialized or not
-    bool EnvInitialized;
+    bool bInitialized;
 
     //cost of cells on grid of obstacles and close to obstacles
     char ObstacleCost;
@@ -190,12 +183,13 @@ typedef struct ENV_ROBARM_CONFIG
     bool enforce_upright_gripper;
     bool checkEndEffGoalOrientation;
     bool object_grasped;
+    bool variable_cell_costs;
     double smoothing_weight;
     double padding;
     double gripper_orientation_moe; //gripper orientation margin of error
     double grasped_object_length_m;
     double goal_moe_m;
-    bool variable_cell_costs;
+
 
     //successor actions
     double ** SuccActions;
@@ -275,9 +269,6 @@ public:
     void SetAllPreds(CMDPSTATE* state);
     void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
     void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
-    void SetEndEffGoal(double* position, int numofpositions);
-    void SetEndEffGoals(double** EndEffGoals, int goal_type, int num_goals);
-    bool SetStartJointConfig(double angles[NUMOFLINKS], bool bRad);
     void StateID2Angles(int stateID, double* angles_r);
 
     int	 SizeofCreatedEnv();
@@ -292,7 +283,39 @@ public:
 
     void InitializeStatistics(FILE* fCfg, int n);
     bool InitializeEnvForStats(const char* sEnvFile,  int cntr);
+
+    //environment related
+    /*!
+    * @brief SetEnvParameter allows you to change parameters before the environment is initialized.
+    * @param parameter name of parameter to change
+    * @param value value to set parameter to
+    */
+    bool SetEnvParameter(char* parameter, double value);
+
+    /*!
+     * @brief Set the starting joint configuration of the manipulator.
+     * @param angles a list of joint angles
+     * @param bRad 0: degrees  1: radians
+    */
+    bool SetStartJointConfig(double angles[NUMOFLINKS], bool bRad);
+    /*!
+     * @brief Set the end effector goals.
+     * @param EndEffGoals a list of n end effector goals (n x 12: {x, y, z, r11, r12, r13, r21, r22, r23, r31, r32, 33})
+     * @param goal_type 0: cartesian  1: joint space (internally converted to cartesian coordinates, does NOT plan to joint space configuration)
+     * @param num_goals number of goals in the list
+     * @param bComputeHeuristic 1: recompute heuristic (needs to be set to 1, if called from outside the class)
+     */
+    void SetEndEffGoals(double** EndEffGoals, int goal_type, int num_goals, bool bComputeHeuristic);
+    /*!
+     * @brief Add obstacles to the environment
+     * @param obstacles a list of cubic obstacles (n x 6: {x_center, y_center, z_center, width, depth, height})
+     * @param num_obstacles number of obstacles in the list
+     */
     void AddObstaclesToEnv(double**obstacles, int numobstacles);
+    /*!
+     * @brief Clear the environment of any obstacles
+     */
+    bool ClearEnv();
 
 private:
 
