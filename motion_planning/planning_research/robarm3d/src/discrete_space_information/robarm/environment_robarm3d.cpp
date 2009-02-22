@@ -2104,6 +2104,7 @@ bool EnvironmentROBARM::InitializeEnvironment()
 /*------------------------------------------------------------------------*/
 EnvironmentROBARM::EnvironmentROBARM()
 {
+    //initializations
     EnvROBARMCfg.use_DH = 1;
     EnvROBARMCfg.enforce_motor_limits = 1;
     EnvROBARMCfg.dijkstra_heuristic = 1;
@@ -2111,7 +2112,7 @@ EnvironmentROBARM::EnvironmentROBARM()
     EnvROBARMCfg.padding = 0.06;
     EnvROBARMCfg.smoothing_weight = 0.0;
     EnvROBARMCfg.use_smooth_actions = 1;
-    EnvROBARMCfg.gripper_orientation_moe =  .0175; // 0.0125;
+    EnvROBARMCfg.gripper_orientation_moe = .0175; // 0.0125;
     EnvROBARMCfg.object_grasped = 0;
     EnvROBARMCfg.grasped_object_length_m = .1;
     EnvROBARMCfg.enforce_upright_gripper = 0;

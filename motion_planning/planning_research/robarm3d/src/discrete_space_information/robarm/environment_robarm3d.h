@@ -26,6 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+ 
+
+/** \file environment_robarm3d.h Environment class to be used by SPBL for the robot arms.*/
+
+/**
+    TESTING TESTING
+
+ */
+
+ 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <robot_kinematics/robot_kinematics.h>
 
@@ -232,8 +242,14 @@ class EnvironmentROBARM: public DiscreteSpaceInformation
 
 public:
 
+    /**
+    * @brief Constructor
+     */
     EnvironmentROBARM();
     ~EnvironmentROBARM(){};
+    /**
+     * @brief Initialization function.
+    */
     bool InitializeEnv(const char* sEnvFile);
     bool InitializeMDPCfg(MDPConfig *MDPCfg);
     int  GetFromToHeuristic(int FromStateID, int ToStateID);
