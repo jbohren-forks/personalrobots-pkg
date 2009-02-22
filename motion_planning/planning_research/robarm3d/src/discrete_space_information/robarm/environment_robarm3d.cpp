@@ -69,7 +69,7 @@ static int num_forwardkinematics = 0;
                         /* State Access Functions */
 /*------------------------------------------------------------------------*/
 /**
- * @brief hash function
+ * @brief hash function (just testing doxygen....)
 */
 static unsigned int inthash(unsigned int key)
 {
@@ -760,23 +760,6 @@ void EnvironmentROBARM::ReadConfiguration(FILE* fCfg)
         //so the goal's location can be calculated after the initialization completes
         EnvROBARMCfg.JointSpaceGoal = 1;
     }
-/*
-    else if(strcmp(sTemp, "endeffectorgoal(meters):") == 0)
-    {
-        //only endeffector is specified
-        fscanf(fCfg, "%s", sTemp);
-        xd = atof(sTemp);
-        fscanf(fCfg, "%s", sTemp);
-        yd = atof(sTemp);
-        fscanf(fCfg, "%s", sTemp);
-        zd = atof(sTemp);
-
-	ContXYZ2Cell(xd,yd,zd, &EnvROBARMCfg.EndEffGoalX_c, &EnvROBARMCfg.EndEffGoalY_c, &EnvROBARMCfg.EndEffGoalZ_c);
-	
-	//set goalangle to invalid number
-        EnvROBARMCfg.LinkGoalAngles_d[0] = INVALID_NUMBER;
-    }
-*/
     else if(strcmp(sTemp, "endeffectorgoal(meters):") == 0)
     {
         fscanf(fCfg, "%s", sTemp);
@@ -1095,59 +1078,51 @@ bool EnvironmentROBARM::SetEnvParameter(char* parameter, double value)
 
     printf("setting parameter %s to %d\n", parameter, value);
 
-    if(strcmp(parameter, "Use_DH_for_FK") == 0)
+    if(strcmp(parameter, "useDHforFK") == 0)
     {
         EnvROBARMCfg.use_DH = value;
     }
-    else if(strcmp(parameter, "Enforce_Motor_Limits") == 0)
+    else if(strcmp(parameter, "enforceMotorLimits") == 0)
     {
         EnvROBARMCfg.enforce_motor_limits = value;
     }
-    else if(strcmp(parameter, "Use_Dijkstra_for_Heuristic") == 0)
+    else if(strcmp(parameter, "useDijkstraHeuristic") == 0)
     {
         EnvROBARMCfg.dijkstra_heuristic = value;
     }
-    else if(strcmp(parameter, "Collision_Checking_on_EndEff_only") == 0)
-    {
-        EnvROBARMCfg.endeff_check_only = value;
-    }
-    else if(strcmp(parameter, "Obstacle_Padding(meters)") == 0)
+    else if(strcmp(parameter, "paddingSize") == 0)
     {
         EnvROBARMCfg.padding = value;
     }
-    else if(strcmp(parameter, "Smoothing_Weight") == 0)
+    else if(strcmp(parameter, "smoothingWeight") == 0)
     {
         EnvROBARMCfg.smoothing_weight = value;
     }
-    else if(strcmp(parameter, "Use_Path_Smoothing") == 0)
+    else if(strcmp(parameter, "usePathSmoothing") == 0)
     {
         EnvROBARMCfg.use_smooth_actions = value;
     }
-    else if(strcmp(parameter, "Keep_Gripper_Upright_for_Whole_Path") == 0)
+    else if(strcmp(parameter, "uprightGripperOnly") == 0)
     {
         EnvROBARMCfg.enforce_upright_gripper = value;
     }
-    else if(strcmp(parameter, "Check_Orientation_of_EndEff_at_Goal") == 0)
+    else if(strcmp(parameter, "use6DOFGoal") == 0)
     {
         EnvROBARMCfg.checkEndEffGoalOrientation = value;
     }
-    else if(strcmp(parameter,"ARAPlanner_Epsilon") == 0)
-    {
-        EnvROBARMCfg.epsilon = value;
-    }
-    else if(strcmp(parameter,"EndEffGoal_MarginOfError(meters)") == 0)
+    else if(strcmp(parameter,"goalPosMOE") == 0)
     {
         EnvROBARMCfg.goal_moe_m = value;
     }
-    else if(strcmp(parameter,"LowRes_Collision_Checking") == 0)
+    else if(strcmp(parameter,"useFastCollisionChecking") == 0)
     {
         EnvROBARMCfg.lowres_collision_checking = value;
     }
-    else if(strcmp(parameter,"MultiRes_Successor_Actions") == 0)
+    else if(strcmp(parameter,"useMultiResActions") == 0)
     {
         EnvROBARMCfg.multires_succ_actions = value;
     }
-    else if(strcmp(parameter,"Increasing_Cell_Costs_Near_Obstacles") == 0)
+    else if(strcmp(parameter,"useHigherCostsNearObstacles") == 0)
     {
         EnvROBARMCfg.variable_cell_costs = value;
     }
@@ -1158,34 +1133,6 @@ bool EnvironmentROBARM::SetEnvParameter(char* parameter, double value)
     }
 
     return true;
-}
-
-bool EnvironmentROBARM::ClearEnv()
-{
-    int x, y, z;
-
-    // set all cells to zero
-    for (x = 0; x < EnvROBARMCfg.EnvWidth_c; x++)
-    {
-        for (y = 0; y < EnvROBARMCfg.EnvHeight_c; y++)
-        {
-            for (z = 0; z < EnvROBARMCfg.EnvDepth_c; z++)
-                EnvROBARMCfg.Grid3D[x][y][z] = 0;
-        }
-    }
-
-    // set all cells to zero in lowres grid
-    if(EnvROBARMCfg.lowres_collision_checking)
-    {
-        for (x = 0; x < EnvROBARMCfg.LowResEnvWidth_c; x++)
-        {
-            for (y = 0; y < EnvROBARMCfg.LowResEnvHeight_c; y++)
-            {
-                for (z = 0; z < EnvROBARMCfg.LowResEnvDepth_c; z++)
-                    EnvROBARMCfg.LowResGrid3D[x][y][z] = 0;
-            }
-        }
-    }
 }
 
 void EnvironmentROBARM::InitializeEnvGrid()
@@ -2945,6 +2892,34 @@ void EnvironmentROBARM::AddObstaclesToEnv(double**obstacles, int numobstacles)
             printf("End Effector Goal(%u %u %u) is invalid after adding obstacles.\n",
                    EnvROBARMCfg.EndEffGoals_c[i][0],EnvROBARMCfg.EndEffGoals_c[i][1],EnvROBARMCfg.EndEffGoals_c[i][2]);
             exit(1);
+        }
+    }
+}
+
+bool EnvironmentROBARM::ClearEnv()
+{
+    int x, y, z;
+
+    // set all cells to zero
+    for (x = 0; x < EnvROBARMCfg.EnvWidth_c; x++)
+    {
+        for (y = 0; y < EnvROBARMCfg.EnvHeight_c; y++)
+        {
+            for (z = 0; z < EnvROBARMCfg.EnvDepth_c; z++)
+                EnvROBARMCfg.Grid3D[x][y][z] = 0;
+        }
+    }
+
+    // set all cells to zero in lowres grid
+    if(EnvROBARMCfg.lowres_collision_checking)
+    {
+        for (x = 0; x < EnvROBARMCfg.LowResEnvWidth_c; x++)
+        {
+            for (y = 0; y < EnvROBARMCfg.LowResEnvHeight_c; y++)
+            {
+                for (z = 0; z < EnvROBARMCfg.LowResEnvDepth_c; z++)
+                    EnvROBARMCfg.LowResGrid3D[x][y][z] = 0;
+            }
         }
     }
 }

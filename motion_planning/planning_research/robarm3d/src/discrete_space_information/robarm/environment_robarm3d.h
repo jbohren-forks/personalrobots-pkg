@@ -244,59 +244,32 @@ typedef struct
     int* Heur;
 }EnvironmentROBARM_t;
 
-//a name class
+
 /**
- * Environment to be used when planning for Robotic Arm using the SBPL.
+ * Environment to be used when planning for a Robotic Arm using the SBPL.
  */
 class EnvironmentROBARM: public DiscreteSpaceInformation 
 {
 public:
 
-    /**
-    * @brief Constructor
-    */
     EnvironmentROBARM();
     ~EnvironmentROBARM(){};
-    /**
-     * @brief Initialization function.
-    */
-    bool InitializeEnv(const char* sEnvFile);
-    bool InitializeMDPCfg(MDPConfig *MDPCfg);
-    int  GetFromToHeuristic(int FromStateID, int ToStateID);
-    int  GetGoalHeuristic(int stateID);
-    int  GetStartHeuristic(int stateID);
-    void SetAllActionsandAllOutcomes(CMDPSTATE* state);
-    void SetAllPreds(CMDPSTATE* state);
-    void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
-    void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
-    void StateID2Angles(int stateID, double* angles_r);
-
-    int	 SizeofCreatedEnv();
-    void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
-    void PrintEnv_Config(FILE* fOut);
-    void PrintHeurGrid();
-
-    void PrintTimeStat(FILE* fOut);
-    void CloseKinNode();
-    void OutputPlanningStats();
-    double GetEpsilon();
-
-    void InitializeStatistics(FILE* fCfg, int n);
-    bool InitializeEnvForStats(const char* sEnvFile,  int cntr);
 
     //environment related
+    bool InitializeEnv(const char* sEnvFile);
+    bool InitializeMDPCfg(MDPConfig *MDPCfg);
     /*!
-    * @brief SetEnvParameter allows you to change parameters before the environment is initialized.
-    * @param parameter name of parameter to change
-    * @param value value to set parameter to
-    */
+     * @brief SetEnvParameter allows you to change parameters before the environment is initialized.
+     * @param parameter name of parameter to change
+     * @param value value to set parameter to
+     */
     bool SetEnvParameter(char* parameter, double value);
 
     /*!
      * @brief Set the starting joint configuration of the manipulator.
      * @param angles a list of joint angles
      * @param bRad 0: degrees  1: radians
-    */
+     */
     bool SetStartJointConfig(double angles[NUMOFLINKS], bool bRad);
     /*!
      * @brief Set the end effector goals.
@@ -316,6 +289,34 @@ public:
      * @brief Clear the environment of any obstacles
      */
     bool ClearEnv();
+
+    //this should be removed  - it returns the planner Epsilon
+    double GetEpsilon();
+
+    //called by SBPL planner
+    int  GetFromToHeuristic(int FromStateID, int ToStateID);
+    int  GetGoalHeuristic(int stateID);
+    int  GetStartHeuristic(int stateID);
+    void SetAllActionsandAllOutcomes(CMDPSTATE* state);
+    void SetAllPreds(CMDPSTATE* state);
+    void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
+    void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
+    void StateID2Angles(int stateID, double* angles_r);
+    int	 SizeofCreatedEnv();
+
+    //printing 
+    void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
+    void PrintEnv_Config(FILE* fOut);
+    void PrintHeurGrid();
+    void PrintTimeStat(FILE* fOut);
+    void OutputPlanningStats();
+
+    //old function - needed when using KDL for collision detection - will eventually be removed
+    void CloseKinNode();
+
+    //used for mass testing - poorly written and should be redone
+    void InitializeStatistics(FILE* fCfg, int n);
+    bool InitializeEnvForStats(const char* sEnvFile,  int cntr);
 
 private:
 
