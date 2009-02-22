@@ -68,6 +68,9 @@ static int num_forwardkinematics = 0;
 /*------------------------------------------------------------------------*/
                         /* State Access Functions */
 /*------------------------------------------------------------------------*/
+/**
+ * @brief hash function
+*/
 static unsigned int inthash(unsigned int key)
 {
   key += (key << 12); 

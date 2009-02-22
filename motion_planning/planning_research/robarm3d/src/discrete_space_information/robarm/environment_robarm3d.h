@@ -31,9 +31,22 @@
 /** \file environment_robarm3d.h Environment class to be used by SPBL for the robot arms.*/
 
 /**
-    TESTING TESTING
+    @brief TESTING TESTING
 
  */
+
+/**
+
+@mainpage
+
+Motion planner for Robotic Arm based on the SBPL. It is capable of finding the shortest path to multiple 6 DoF destinations.
+
+
+@htmlinclude manifest.html
+
+@b robarm3d will be fully integrated with ros....coming soon.
+
+ **/
 
  
 #include <boost/numeric/ublas/matrix.hpp>
@@ -237,14 +250,17 @@ typedef struct
     int* Heur;
 }EnvironmentROBARM_t;
 
+//a name class
+/**
+ * Environment to be used when planning for Robotic Arm using the SBPL.
+ */
 class EnvironmentROBARM: public DiscreteSpaceInformation 
 {
-
 public:
 
     /**
     * @brief Constructor
-     */
+    */
     EnvironmentROBARM();
     ~EnvironmentROBARM(){};
     /**
@@ -281,7 +297,7 @@ public:
 private:
 
     //member data
-    EnvROBARMConfig_t EnvROBARMCfg;
+    EnvROBARMConfig_t EnvROBARMCfg;          /**< environment configuration struct (stores environment details)> */
     EnvironmentROBARM_t EnvROBARM;
 
     //hash table
