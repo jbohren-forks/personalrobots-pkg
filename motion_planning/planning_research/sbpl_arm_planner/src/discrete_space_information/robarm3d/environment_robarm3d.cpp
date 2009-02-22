@@ -2896,7 +2896,7 @@ void EnvironmentROBARM::AddObstaclesToEnv(double**obstacles, int numobstacles)
     }
 }
 
-bool EnvironmentROBARM::ClearEnv()
+void EnvironmentROBARM::ClearEnv()
 {
     int x, y, z;
 

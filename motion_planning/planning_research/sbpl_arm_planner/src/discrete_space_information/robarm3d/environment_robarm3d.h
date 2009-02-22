@@ -288,7 +288,7 @@ public:
     /*!
      * @brief Clear the environment of any obstacles
      */
-    bool ClearEnv();
+    void ClearEnv();
 
     //this should be removed  - it returns the planner Epsilon
     double GetEpsilon();
