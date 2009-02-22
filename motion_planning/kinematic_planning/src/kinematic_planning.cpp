@@ -205,6 +205,7 @@ public:
 	m_currentPlanStatus.id = -1;
 	m_currentPlanStatus.distance = -1.0;
 	m_currentPlanStatus.done = 1;
+	m_currentPlanStatus.approximate = 0;
 	m_currentPlanStatus.valid = 1;
 	m_currentPlanStatus.unsafe = 0;
 	m_currentlyExecutedPath.set_states_size(0);
