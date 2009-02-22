@@ -12,6 +12,6 @@
 <depend package="roscpp"/>
 <depend package="std_msgs"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lorocos-kdl -lrobot_kinematics"/>
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrobot_kinematics"/>
 </export>
 </package>
