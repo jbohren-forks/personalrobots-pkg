@@ -15,7 +15,7 @@
 
   <controller name="l_upper_arm_roll_controller" topic="l_upper_arm_roll_controller" type="JointPositionControllerNode">
     <joint name="l_upper_arm_roll_joint" >
-      <pid p="400" d="4" i="0.1" iClamp="1" />
+      <pid p="40" d=".4" i="0.1" iClamp="1" />
     </joint>
   </controller>
 

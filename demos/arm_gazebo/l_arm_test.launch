@@ -31,8 +31,10 @@
     <!-- for visualization -->
     <!--
     <node pkg="rviz" type="rviz" respawn="false" output="screen" />
-    -->
     <include file="$(find arm_gazebo)/debug_plot.launch"/>
+    <node pkg="arm_gazebo" type="l_arm.py" output="screen"/>
+    -->
+
 
   </group>
 </launch>

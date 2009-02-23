@@ -51,14 +51,14 @@ from pr2_mechanism_controllers.msg import *
 
 PI = 3.14159
 
-CMD_SH_PAN      = 1.0*(PI/4+1.5  ) #range [ PI/4-1.5   PI/4+1.5 ]
-CMD_SH_LFT      = 1.0*(1.5       ) #range [ -0.4       1.5 ]
-CMD_UA_ROL      = 1.0*(-1.55+2.35 ) #range [ 1.55-2.35  1.55+2.35 ]
-CMD_EL_FLX      = 1.0*(0.1       ) #range [ -2.3       0.1 ]
-CMD_FA_ROL      = 1.0*(-0*PI     )   #range [  ]
-CMD_WR_FLX      = 1.0*(2.2       ) #range [ -0.1       2.2 ]
-CMD_WR_ROL      = 1.0*(-0*PI     )   #range [  ]
-CMD_GR_POS      = 1.0*(0.548     ) #range [ 0          0.548 ]
+CMD_SH_PAN      = 0.0*(PI/4+1.5   ) #range [ PI/4-1.5   PI/4+1.5 ]
+CMD_SH_LFT      = 1.0*(1.5        ) #range [ -0.4       1.5 ]
+CMD_UA_ROL      = 1.0*(1.55+2.35 ) #range [ 1.55-2.35  1.55+2.35 ]
+CMD_EL_FLX      = 1.0*(0.1        ) #range [ -2.3       0.1 ]
+CMD_FA_ROL      = 1.0*(-0*PI      ) #range [  ]
+CMD_WR_FLX      = 1.0*(2.2        ) #range [ -0.1       2.2 ]
+CMD_WR_ROL      = 1.0*(-0*PI      ) #range [  ]
+CMD_GR_POS      = 1.0*(0.548      ) #range [ 0          0.548 ]
 
 if __name__ == '__main__':
     pub_l_shoulder_pan   = rospy.Publisher("l_shoulder_pan_controller/set_command", Float64)
