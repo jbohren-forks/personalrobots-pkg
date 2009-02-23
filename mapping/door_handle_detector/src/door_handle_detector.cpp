@@ -110,7 +110,7 @@ public:
     {
       // ---[ Parameters regarding geometric constraints for the door/handle
       {
-        param ("~fixed_frame", fixed_frame_, string ("odom_combined"));
+        param ("~fixed_frame", fixed_frame_, string ("base_footprint"));
 
         // Frame _independent_ parameters (absolute values)
           param ("~door_min_height", door_min_height_, 1.2);                  // minimum height of a door: 1.2m
@@ -134,6 +134,9 @@ public:
           param ("~handle_min_height", handle_min_height_, 0.41);            // minimum height for a door handle: 0.41m
           param ("~handle_max_height", handle_max_height_, 1.41);            // maximum height for a door handle: 1.41m
           ROS_DEBUG ("Using the following thresholds for handle detection [min height / max height]: %f / %f.", handle_min_height_, handle_max_height_);
+
+          param ("~door_min_z_bounds", door_min_z_bounds_, -0.5);               // restrict the search Z dimension between 0...
+          param ("~door_max_z_bounds", door_max_z_bounds_, 3.5);               // ...and 3.0 m
       }
 
       // ---[ Parameters regarding optimizations / real-time computations
@@ -167,9 +170,6 @@ public:
           // as a multiplier of the door frame (computed using the two points from the service call) in both X and Y directions
           param ("~door_frame_multiplier", door_frame_multiplier_, 4);
 
-        // Frame _dependent_ parameters (need to be converted!)
-          param ("~door_min_z_bounds", door_min_z_bounds_, -0.5);               // restrict the search Z dimension between 0...
-          param ("~door_max_z_bounds", door_max_z_bounds_, 3.5);               // ...and 3.0 m
       }
 
 

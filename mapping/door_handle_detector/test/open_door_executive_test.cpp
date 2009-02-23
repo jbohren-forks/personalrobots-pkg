@@ -92,8 +92,40 @@ public:
   ~OpenDoorExecutiveTest()
   {}
   
+
+  // -------------------------
+  bool initialize()
+  // -------------------------
+  {
+    // start arm trajectory controller
+    cout << "trun on moveto controller..." << flush;
+    req_switch.stop_controllers.clear(); 
+    req_switch.start_controllers.clear();     req_switch.start_controllers.push_back("cartesian_trajectory_right");  
+    ros::service::call("switch_controller", req_switch, res_switch);
+    if (!res_switch.ok)
+      return false;
+    cout << "successful" << endl;
+    
+    robot_msgs::PoseStamped init_pose;
+    init_pose.header.frame_id = "base_link";
+    init_pose.pose.position.x = 0.2;
+    init_pose.pose.position.y = 0.0;
+    init_pose.pose.position.z = 0.4;
+    init_pose.pose.orientation.x = 0;
+    init_pose.pose.orientation.y = 0;
+    init_pose.pose.orientation.z = 0;
+    init_pose.pose.orientation.w = 1;	  
+    if (!moveTo(init_pose))
+      return false;
+
+    return true;
+  }
+
   
+
+  // -------------------------
   bool detectDoor(const robot_msgs::Door& door_estimate,  robot_msgs::Door& door_detection)
+  // -------------------------
   {
     // start detection
     req_doordetect.door = door_estimate;
@@ -106,7 +138,9 @@ public:
   }
 
 
+  // -------------------------
   bool graspDoor(const robot_msgs::Door& door)
+  // -------------------------
   {
     robot_msgs::PoseStamped pose_msg;
     Stamped<Pose> pose;
@@ -154,7 +188,10 @@ public:
   }
 
 
+
+  // -------------------------
   bool openDoor()
+  // -------------------------
   {
     cout << "switch from moveto to tff controller..." << flush;
     req_switch.stop_controllers.clear();      req_switch.stop_controllers.push_back("cartesian_trajectory_right");
@@ -163,7 +200,6 @@ public:
     if (!res_switch.ok)
       return false;
     cout << "successful" << endl;
-
 
     // turn handle
     tff_msg_.mode.vel.x = tff_msg_.FORCE;
@@ -213,32 +249,6 @@ public:
     return true;
   }
 
-
-  bool initialize()
-  {
-    // start arm trajectory controller
-    cout << "trun on moveto controller..." << flush;
-    req_switch.stop_controllers.clear(); 
-    req_switch.start_controllers.clear();     req_switch.start_controllers.push_back("cartesian_trajectory_right");  
-    ros::service::call("switch_controller", req_switch, res_switch);
-    if (!res_switch.ok)
-      return false;
-    cout << "successful" << endl;
-    
-    robot_msgs::PoseStamped init_pose;
-    init_pose.header.frame_id = "base_link";
-    init_pose.pose.position.x = 0.2;
-    init_pose.pose.position.y = 0.0;
-    init_pose.pose.position.z = 0.4;
-    init_pose.pose.orientation.x = 0;
-    init_pose.pose.orientation.y = 0;
-    init_pose.pose.orientation.z = 0;
-    init_pose.pose.orientation.w = 1;	  
-    if (!moveTo(init_pose))
-      return false;
-
-    return true;
-  }
 
 
 
