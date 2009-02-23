@@ -2103,28 +2103,28 @@ bool EnvironmentROBARM::InitializeEnvironment()
         coord[i] = 0;
 
     //create the goal state
-    endeff[0] = EnvROBARMCfg.EndEffGoals_c[0][0];
-    endeff[1] = EnvROBARMCfg.EndEffGoals_c[0][1];
-    endeff[2] = EnvROBARMCfg.EndEffGoals_c[0][2];
+//     endeff[0] = EnvROBARMCfg.EndEffGoals_c[0][0];
+//     endeff[1] = EnvROBARMCfg.EndEffGoals_c[0][1];
+//     endeff[2] = EnvROBARMCfg.EndEffGoals_c[0][2];
     EnvROBARM.goalHashEntry = CreateNewHashEntry(coord, NUMOFLINKS, endeff, 0, NULL);
 
-    //check if goal positions are valid
-    for(i = 0; i < EnvROBARMCfg.nEndEffGoals; i++)
-    {
-        if(EnvROBARMCfg.EndEffGoals_c[i][0] >= EnvROBARMCfg.EnvWidth_c ||
-           EnvROBARMCfg.EndEffGoals_c[i][1] >= EnvROBARMCfg.EnvHeight_c ||
-           EnvROBARMCfg.EndEffGoals_c[i][2] >= EnvROBARMCfg.EnvDepth_c)
-        {
-            printf("End effector goal position(%u %u %u) is out of bounds.\n",EnvROBARMCfg.EndEffGoals_c[i][0],EnvROBARMCfg.EndEffGoals_c[i][1],EnvROBARMCfg.EndEffGoals_c[i][2]);
-            return false;
-        }
-
-        if(EnvROBARMCfg.Grid3D[EnvROBARMCfg.EndEffGoals_c[i][0]][EnvROBARMCfg.EndEffGoals_c[i][1]][EnvROBARMCfg.EndEffGoals_c[i][2]] >= EnvROBARMCfg.ObstacleCost)
-        {
-            printf("End effector goal position(%u %u %u) is invalid\n",EnvROBARMCfg.EndEffGoals_c[i][0],EnvROBARMCfg.EndEffGoals_c[i][1],EnvROBARMCfg.EndEffGoals_c[i][2]);
-            exit(1);
-        }
-    }
+//     //check if goal positions are valid
+//     for(i = 0; i < EnvROBARMCfg.nEndEffGoals; i++)
+//     {
+//         if(EnvROBARMCfg.EndEffGoals_c[i][0] >= EnvROBARMCfg.EnvWidth_c ||
+//            EnvROBARMCfg.EndEffGoals_c[i][1] >= EnvROBARMCfg.EnvHeight_c ||
+//            EnvROBARMCfg.EndEffGoals_c[i][2] >= EnvROBARMCfg.EnvDepth_c)
+//         {
+//             printf("End effector goal position(%u %u %u) is out of bounds.\n",EnvROBARMCfg.EndEffGoals_c[i][0],EnvROBARMCfg.EndEffGoals_c[i][1],EnvROBARMCfg.EndEffGoals_c[i][2]);
+//             return false;
+//         }
+// 
+//         if(EnvROBARMCfg.Grid3D[EnvROBARMCfg.EndEffGoals_c[i][0]][EnvROBARMCfg.EndEffGoals_c[i][1]][EnvROBARMCfg.EndEffGoals_c[i][2]] >= EnvROBARMCfg.ObstacleCost)
+//         {
+//             printf("End effector goal position(%u %u %u) is invalid\n",EnvROBARMCfg.EndEffGoals_c[i][0],EnvROBARMCfg.EndEffGoals_c[i][1],EnvROBARMCfg.EndEffGoals_c[i][2]);
+//             exit(1);
+//         }
+//     }
 
     //for now heuristics are not set
     EnvROBARM.Heur = NULL;
@@ -2167,20 +2167,30 @@ EnvironmentROBARM::EnvironmentROBARM()
 
     EnvROBARMCfg.variable_cell_costs = 1;
 
-    //parse the parameter file - temporary
-    char parFile[] = "params.cfg";
-    FILE* fCfg = fopen(parFile, "r");
-    if(fCfg == NULL)
-	printf("ERROR: unable to open %s.....using defaults.\n", parFile);
+    EnvROBARMCfg.CellsPerAction = -1;
 
-    ReadParamsFile(fCfg);
-    fclose(fCfg);
+    //parse the parameter file - temporary
+//     char parFile[] = "params.cfg";
+//     FILE* fCfg = fopen(parFile, "r");
+//     if(fCfg == NULL)
+// 	printf("ERROR: unable to open %s.....using defaults.\n", parFile);
+// 
+//     ReadParamsFile(fCfg);
+//     fclose(fCfg);
 }
 
 bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
 {
+    //parse the parameter file - temporary
+    char parFile[] = "params.cfg";
+    FILE* fCfg = fopen(parFile, "r");
+    if(fCfg == NULL)
+        printf("ERROR: unable to open %s.....using defaults.\n", parFile);
+
+    ReadParamsFile(fCfg);
+    fclose(fCfg);
+
     //parse the configuration file
-    FILE* fCfg;
     fCfg = fopen(sEnvFile, "r");
     if(fCfg == NULL)
     {
@@ -2233,6 +2243,77 @@ bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
     //pre-compute heuristic for new goals
     if(EnvROBARMCfg.dijkstra_heuristic)
         ComputeHeuristicValues();
+
+#if VERBOSE
+    //output environment data
+    PrintConfiguration();
+
+    printf("Use DH Convention for FK: %i\n", EnvROBARMCfg.use_DH);
+    printf("Enforce Motor Limits: %i\n", EnvROBARMCfg.enforce_motor_limits);
+    printf("Use Dijkstra for Heuristic Function: %i\n", EnvROBARMCfg.dijkstra_heuristic);
+    printf("EndEffector Collision Check Only: %i\n", EnvROBARMCfg.endeff_check_only);
+    printf("Smoothness Weight: %.3f\n", EnvROBARMCfg.smoothing_weight);
+    printf("Obstacle Padding(meters): %.2f\n", EnvROBARMCfg.padding);
+    printf("\n");
+
+    //output successor actions
+    OutputActions();
+
+    //output action costs
+    if(EnvROBARMCfg.use_smooth_actions)
+        OutputActionCostTable();
+#endif
+
+    //set Environment is Initialized flag(so fk can be used)
+    EnvROBARMCfg.bInitialized = 1;
+    return true;
+}
+
+bool EnvironmentROBARM::InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg)
+{
+    //parse the parameter file
+    ReadParamsFile(pCfg);
+
+    //parse the environment configuration file
+    ReadConfiguration(eCfg);
+
+    //initialize forward kinematics
+    if (!EnvROBARMCfg.use_DH)
+        //start ros node
+        InitializeKinNode();
+    else
+        //pre-compute DH Transformations
+        ComputeDHTransformations();
+
+    //if goal is in joint space, do the FK on the goal joint angles
+    if(EnvROBARMCfg.JointSpaceGoal)
+    {
+        short unsigned int wrist[3],elbow[3],endeff[3];
+        double goalangles[NUMOFLINKS];
+        double orientation[3][3];
+
+        // convert goal angles to radians
+        for(int i = 0; i < NUMOFLINKS; i++)
+            goalangles[i] = PI_CONST*(EnvROBARMCfg.LinkGoalAngles_d[i]/180.0);
+
+        ComputeEndEffectorPos(goalangles, endeff, wrist, elbow, orientation);
+        EnvROBARMCfg.EndEffGoalX_c = endeff[0];
+        EnvROBARMCfg.EndEffGoalY_c = endeff[1];
+        EnvROBARMCfg.EndEffGoalZ_c = endeff[2];
+    }
+
+    //initialize other parameters of the environment
+    InitializeEnvConfig();
+
+    //initialize Environment
+    if(InitializeEnvironment() == false)
+        return false;
+
+    //pre-compute action-to-action costs
+    ComputeActionCosts();
+
+    //compute the cost per cell to be used by heuristic
+    ComputeCostPerCell();
 
 #if VERBOSE
     //output environment data
@@ -2725,17 +2806,20 @@ bool EnvironmentROBARM::AreEquivalent(int State1ID, int State2ID)
     return true;
 }
 
-void EnvironmentROBARM::SetEndEffGoals(double** EndEffGoals, int goal_type, int num_goals, bool bComputeHeuristic)
+bool EnvironmentROBARM::SetEndEffGoals(double** EndEffGoals, int goal_type, int num_goals, bool bComputeHeuristic)
 {
     //allocate memory
     EnvROBARMCfg.nEndEffGoals = num_goals;
-    EnvROBARMCfg.EndEffGoals_c = new short unsigned int * [num_goals];
-    EnvROBARMCfg.EndEffGoalOrientations = new double * [num_goals];
-    for (int i = 0; i < num_goals; i++)
-    {
-        EnvROBARMCfg.EndEffGoals_c[i] = new short unsigned int [3];
-        EnvROBARMCfg.EndEffGoalOrientations[i] = new double [SIZE_ROTATION_MATRIX];
-    }
+
+    //maybe should have used a vector or some sort of container....this is stupid
+    if(EnvROBARMCfg.EndEffGoals_c == NULL || EnvROBARMCfg.EndEffGoalOrientations)
+        EnvROBARMCfg.EndEffGoals_c = new short unsigned int * [num_goals];
+        EnvROBARMCfg.EndEffGoalOrientations = new double * [num_goals];
+        for (int i = 0; i < num_goals; i++)
+        {
+            EnvROBARMCfg.EndEffGoals_c[i] = new short unsigned int [3];
+            EnvROBARMCfg.EndEffGoalOrientations[i] = new double [SIZE_ROTATION_MATRIX];
+        }
 
     //Goal is in cartesian coordinates in world frame (meters)
     if(goal_type == 0)
@@ -2770,9 +2854,32 @@ void EnvironmentROBARM::SetEndEffGoals(double** EndEffGoals, int goal_type, int 
         printf("[SetEndEffGoal] Invalid type of goal vector.\n");
     }
 
+    //check if goal positions are valid
+    for(int i = 0; i < EnvROBARMCfg.nEndEffGoals; i++)
+    {
+        if(EnvROBARMCfg.EndEffGoals_c[i][0] >= EnvROBARMCfg.EnvWidth_c ||
+           EnvROBARMCfg.EndEffGoals_c[i][1] >= EnvROBARMCfg.EnvHeight_c ||
+           EnvROBARMCfg.EndEffGoals_c[i][2] >= EnvROBARMCfg.EnvDepth_c)
+        {
+            printf("End effector goal position(%u %u %u) is out of bounds.\n",EnvROBARMCfg.EndEffGoals_c[i][0],EnvROBARMCfg.EndEffGoals_c[i][1],EnvROBARMCfg.EndEffGoals_c[i][2]);
+            return false;
+        }
+
+        if(EnvROBARMCfg.Grid3D[EnvROBARMCfg.EndEffGoals_c[i][0]][EnvROBARMCfg.EndEffGoals_c[i][1]][EnvROBARMCfg.EndEffGoals_c[i][2]] >= EnvROBARMCfg.ObstacleCost)
+        {
+            printf("End effector goal position(%u %u %u) is invalid\n",EnvROBARMCfg.EndEffGoals_c[i][0],EnvROBARMCfg.EndEffGoals_c[i][1],EnvROBARMCfg.EndEffGoals_c[i][2]);
+            exit(1);
+        }
+    }
+
+    if(EnvROBARMCfg.cost_per_cell == -1)
+        ComputeCostPerCell();
+
     //pre-compute heuristics with new goal
     if(EnvROBARMCfg.dijkstra_heuristic && bComputeHeuristic)
         ComputeHeuristicValues();
+
+    return true;
 }
 
 bool EnvironmentROBARM::SetStartJointConfig(double angles[NUMOFLINKS], bool bRad)
@@ -2913,25 +3020,30 @@ void EnvironmentROBARM::ClearEnv()
     }
 }
 
-bool EnvironmentROBARM::isPathValid(vector<int> solution_stateIDs_V)
+bool EnvironmentROBARM::isPathValid(double** path, int num_waypoints)
 {
-    double angles[NUMOFLINKS];
-    EnvROBARMHashEntry_t* HashEntry;
-    short unsigned int wrist[3], elbow[3];
+    double angles[NUMOFLINKS], orientation[3][3];
+    short unsigned int endeff[3], wrist[3], elbow[3], coord[NUMOFLINKS];
 
     //loop through each waypoint of the path and check if it's valid
-    for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++)
+    for(int i = 0; i < num_waypoints; i++)
     {
-        HashEntry = EnvROBARM.StateID2CoordTable[solution_stateIDs_V[i]];
-
-        //convert to angles
-        ComputeContAngles(HashEntry->coord, angles);
-
         //compute FK
-        ComputeEndEffectorPos(angles, HashEntry->endeff, wrist, elbow, HashEntry->orientation);
+        ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation);
+
+        for(int k = 0; k < NUMOFLINKS; k++)
+        {
+            angles[k] = path[i][k]*(180.0/PI_CONST);
+
+            if (angles[k] < 0)
+                angles[k] += 360;
+        }
+
+        //compute coords
+        ComputeCoord(angles, coord);
 
         //check if valid
-        if(!IsValidCoord(HashEntry->coord,HashEntry->endeff, wrist, elbow, HashEntry->orientation))
+        if(!IsValidCoord(coord,endeff, wrist, elbow, orientation))
         {
             printf("[isPathValid] Path is invalid.\n");
             return false;

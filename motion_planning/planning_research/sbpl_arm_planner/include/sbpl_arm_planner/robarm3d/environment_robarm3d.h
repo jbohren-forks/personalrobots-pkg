@@ -276,7 +276,7 @@ public:
      * @param num_goals number of goals in the list
      * @param bComputeHeuristic 1: recompute heuristic (needs to be set to 1, if called from outside the class)
      */
-    void SetEndEffGoals(double** EndEffGoals, int goal_type, int num_goals, bool bComputeHeuristic);
+    bool SetEndEffGoals(double** EndEffGoals, int goal_type, int num_goals, bool bComputeHeuristic);
     /*!
      * @brief Add obstacles to the environment
      * @param obstacles a list of cubic obstacles (n x 6: {x_center, y_center, z_center, width, depth, height})
@@ -291,7 +291,13 @@ public:
      * @brief Check if path is valid. 
      * @param solution_stateIDs_V vector of stateIDs returned by planner
      */
-    bool isPathValid(vector<int> solution_stateIDs_V);
+    bool isPathValid(double** path, int num_waypoints);
+    /*!
+     * @brief Initialize the Environment & Arm Planner (using File Pointers)
+     * @param eCfg pointer to file describing the environment
+     * @param pCfg pointer to file with the Arm planner parameters
+     */
+    bool InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg);
 
     //this should be removed  - it returns the planner Epsilon
     double GetEpsilon();

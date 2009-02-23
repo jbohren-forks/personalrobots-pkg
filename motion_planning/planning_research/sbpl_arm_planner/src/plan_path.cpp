@@ -81,10 +81,10 @@ int planrobarm(int argc, char *argv[])
     }
     fclose(fSol);
 
-    if(environment_robarm.isPathValid(solution_stateIDs_V))
-        printf("Path is valid\n");
-    else
-        printf("Path is INVALID\n");
+//     if(environment_robarm.isPathValid(solution_stateIDs_V))
+//         printf("Path is valid\n");
+//     else
+//         printf("Path is INVALID\n");
 
     //to get the trajectory as an array
 //     double angles_r[NUMOFLINKS];

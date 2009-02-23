@@ -1,16 +1,16 @@
 <package>
   <description brief="Robotic Arm Planning Research">
-    
+
   </description>
-  <author>Benjamin Cohen/bencohen2@gmail.com  & Maxim Likhachev/maximl@seas.upenn.edu</author>
+  <author>Benjamin Cohen/bencohen2@gmail.com, Maxim Likhachev/maximl@seas.upenn.edu</author>
   <license>BSD</license>
     <depend package="sbpl" />
     <depend package="robot_kinematics" />
   <url></url>
-  
+
   <export>
       <cpp cflags="-I${prefix}/include -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_arm_planner"/>
   </export>
-  
+
 </package>
 
