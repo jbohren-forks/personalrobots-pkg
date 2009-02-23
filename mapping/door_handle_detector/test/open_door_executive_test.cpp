@@ -59,9 +59,6 @@ private:
   robot_msgs::Door my_door_;
   robot_msgs::TaskFrameFormalism tff_msg_;
 
-  std_srvs::Empty::Request  req_empty;
-  std_srvs::Empty::Response res_empty;
-
   door_handle_detector::DoorDetector::Request  req_doordetect;
   door_handle_detector::DoorDetector::Response res_doordetect;
 
@@ -153,33 +150,12 @@ public:
     publish("gripper_effort/set_command", gripper_msg);
     usleep(1e6 * 4);
 
-    // stop arm trajectory controller
-    cout << "stopping moveto controller..." << flush;
-    if (!ros::service::call("cartesian_trajectory_right/stop", req_empty, res_empty))
-      return false;
-    cout << "successful" << endl;
-
     return true;
   }
 
 
   bool openDoor()
   {
-    /*
-    // stop arm trajectory controller
-    cout << "stopping moveto controller..." << flush;
-    if (!ros::service::call("cartesian_trajectory_right/stop", req_empty, res_empty))
-      return false;
-    cout << "successful" << endl;
-
-
-    // turn on tff controller
-    cout << "starting tff controller..." << flush;
-    if (!ros::service::call("cartesian_tff_right/start", req_empty, res_empty))
-      return false;
-    cout << "successful" << endl;
-    */
-
     cout << "switch from moveto to tff controller..." << flush;
     req_switch.stop_controllers.clear();      req_switch.stop_controllers.push_back("cartesian_trajectory_right");
     req_switch.start_controllers.clear();     req_switch.start_controllers.push_back("cartesian_tff_right");
@@ -226,9 +202,11 @@ public:
     publish("cartesian_tff_right/command", tff_msg_);
     usleep(1e6*15);
 
-    // turn off tff controller
-    cout << "stopping tff controller..." << flush;
-    if (!ros::service::call("cartesian_tff_right/stop", req_empty, res_empty))
+    cout << "trun off tff controller..." << flush;
+    req_switch.stop_controllers.clear();      req_switch.stop_controllers.push_back("cartesian_tff_right");
+    req_switch.start_controllers.clear();  
+    ros::service::call("switch_controller", req_switch, res_switch);
+    if (!res_switch.ok)
       return false;
     cout << "successful" << endl;
 
@@ -239,8 +217,11 @@ public:
   bool initialize()
   {
     // start arm trajectory controller
-    cout << "starting moveto controller..." << flush;
-    if (!ros::service::call("cartesian_trajectory_right/start", req_empty, res_empty))
+    cout << "trun on moveto controller..." << flush;
+    req_switch.stop_controllers.clear(); 
+    req_switch.start_controllers.clear();     req_switch.start_controllers.push_back("cartesian_trajectory_right");  
+    ros::service::call("switch_controller", req_switch, res_switch);
+    if (!res_switch.ok)
       return false;
     cout << "successful" << endl;
     
