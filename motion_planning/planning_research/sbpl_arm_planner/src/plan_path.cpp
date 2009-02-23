@@ -36,6 +36,24 @@ int planrobarm(int argc, char *argv[])
         exit(1);
     }
 
+//     double roll, pitch, yaw;
+//     double Rot[3][3] = {0};
+//     Rot[0][2] = -1;
+//     Rot[1][1] = -1;
+//     Rot[2][0] = 1;
+// 
+// 
+//     environment_robarm.getRPY(Rot, &roll, &pitch, &yaw);
+//     printf("{Rot:  ");
+//     for (int u = 0; u < 3; u++)
+//     {
+//         for(int p = 0; p < 3; p++)
+//             printf("%2.2f  ",Rot[u][p]);
+//     }
+//     printf("Roll:  %3.2f    Pitch:  %3.2f   Yaw:   %3.2f\n", roll, pitch, yaw);
+// 
+//     exit(1);
+
     //plan a path
     clock_t starttime = clock();
 
@@ -55,6 +73,7 @@ int planrobarm(int argc, char *argv[])
         exit(1);
     }
 
+    printf("setting epsilon....\n");
     //set epsilon
     planner.set_initialsolution_eps(environment_robarm.GetEpsilon());
 
@@ -95,7 +114,7 @@ int planrobarm(int argc, char *argv[])
 //             printf("% 0.2f  ",angles_r[p]);
 //         printf("\n");
 //     }
-    
+
 #if !USE_DH
     environment_robarm.CloseKinNode();
 #endif

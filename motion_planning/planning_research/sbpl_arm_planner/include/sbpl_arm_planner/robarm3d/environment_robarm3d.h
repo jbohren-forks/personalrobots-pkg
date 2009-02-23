@@ -137,6 +137,10 @@ typedef struct ENV_ROBARM_CONFIG
     double ** EndEffGoals_m;
     double ** EndEffGoalOrientations;
     int nEndEffGoals;
+    bool bGoalIsSet;
+
+    double ** EndEffGoalRPY;
+    double GoalRPY_MOE[3];
 
     //robot arm dimensions/positions
     double LinkLength_m[NUMOFLINKS];
@@ -327,6 +331,7 @@ public:
     void InitializeStatistics(FILE* fCfg, int n);
     bool InitializeEnvForStats(const char* sEnvFile,  int cntr);
 
+    void getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw);
 private:
 
     //member data
@@ -405,6 +410,7 @@ private:
     void ComputeDHTransformations();
     void ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double *z);
     void ComputeForwardKinematics_DH(double angles[NUMOFLINKS]);
+    
 };
 
 #endif
