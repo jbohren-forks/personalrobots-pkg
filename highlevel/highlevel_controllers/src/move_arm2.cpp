@@ -383,11 +383,13 @@ bool MoveArm::dispatchCommands()
       !new_trajectory_)
   {
     // NOOP
+    ROS_INFO("doing nothing");
   }
   else if(plan_status_.valid && 
           !plan_status_.unsafe &&
           !current_trajectory_.states.empty())
   {
+    ROS_INFO("sending new trajectory");
     sendArmCommand(current_trajectory_, kinematic_model_);
     plan_valid_ = true;
     new_trajectory_ = false;
@@ -414,7 +416,6 @@ bool MoveArm::dispatchCommands()
     plan_valid_ = false;
   }
   plan_status_.unlock();
-
   return plan_valid_;
 }
 
