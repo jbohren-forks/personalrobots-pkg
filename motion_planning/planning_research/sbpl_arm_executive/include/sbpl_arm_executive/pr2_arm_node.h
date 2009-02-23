@@ -53,9 +53,11 @@ namespace pr2_arm_node
 
     public:
 
-      PR2ArmNode(std::string node_name);
+    PR2ArmNode(std::string node_name, std::string arm_name, std::string gripper_name);
 
-      ~PR2ArmNode(){};
+      ~PR2ArmNode();
+
+      bool use_gripper_effort_controller_;
 
       static const double GRIPPER_OPEN  = 0.6;
 
@@ -65,29 +67,35 @@ namespace pr2_arm_node
 
       static const double GRIPPER_CLOSE_EFFORT = 2;
 
-      void getCurrentPosition(const std::string &group_name);
+      std::string arm_name_,gripper_name_;
 
-      void openGripper(const std::string &gripper_name);
+      std::string trajectory_topic_name_,trajectory_query_name_,trajectory_start_name_,effort_controller_command_name_,sbpl_planner_service_name_;
 
-      void closeGripper(const std::string &gripper_name);
+      void getCurrentPosition();
 
-      void openGripperEffort(const std::string &gripper_name);
+      void openGripper();
 
-      void closeGripperEffort(const std::string &gripper_name);
+      void closeGripper();
 
-      void actuateGripper(const std::string &gripper_name, const int &open);
+      void openGripperEffort();
 
-      void actuateGripperEffort(const std::string &gripper_name, const int &open);
+      void closeGripperEffort();
 
-      void goHome(const std::string &arm_name, const std::vector<double> &home_position);
+      void actuateGripper(const int &open);
 
-      bool sendTrajectory(const std::string &group_name, const robot_msgs::JointTraj &traj);
+      void actuateGripperEffort(const int &open);
 
-      bool planSBPLPath(const std::string &arm_name, const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path);
+      void goHome(const std::vector<double> &home_position);
 
-      bool planSBPLPath(const std::string &arm_name, const robot_msgs::JointTrajPoint &joint_start, const robot_msgs::JointTrajPoint &joint_goal, robot_msgs::JointTraj &planned_path);
+      bool sendTrajectory(std::string group_name, const robot_msgs::JointTraj &traj);
 
-      void getCurrentPosition(const std::string &group_name, robot_msgs::JointTrajPoint &current_joint_positions);
+      void sendTrajectoryOnTopic(std::string group_name, const robot_msgs::JointTraj &traj);
+
+      bool planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path);
+
+      bool planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const robot_msgs::JointTrajPoint &joint_goal, robot_msgs::JointTraj &planned_path);
+
+      void getCurrentPosition(robot_msgs::JointTrajPoint &current_joint_positions);
 
       robot_msgs::Pose RPYToTransform(double roll, double pitch, double yaw, double x, double y, double z);
 

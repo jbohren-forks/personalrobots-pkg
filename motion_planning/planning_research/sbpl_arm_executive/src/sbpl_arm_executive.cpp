@@ -37,7 +37,7 @@ class ExecNode : public PR2ArmNode
 
     int state_;
     enum {INITIALIZED, GET_GOAL, PLAN, EXECUTE, DONE, MAX_STATES};
-    ExecNode(std::string node_name):PR2ArmNode(node_name),state_(INITIALIZED){};
+    ExecNode(std::string node_name, std::string arm_name, std::string gripper_name):PR2ArmNode(node_name,arm_name,gripper_name),state_(INITIALIZED){};
 
     robot_msgs::JointTrajPoint current_joint_positions_;
     robot_msgs::JointTraj planned_path_;
@@ -56,7 +56,7 @@ class ExecNode : public PR2ArmNode
         {	  
           case INITIALIZED:
           {
-            goHome("right_arm",home_position);
+            goHome(home_position);
             state_ = GET_GOAL;
             break;
           }
@@ -77,8 +77,8 @@ class ExecNode : public PR2ArmNode
           }
           case PLAN:
           {
-            getCurrentPosition("right_arm",current_joint_positions_);
-            if(planSBPLPath("right_arm",current_joint_positions_,goal_,planned_path_))
+            getCurrentPosition(current_joint_positions_);
+            if(planSBPLPath(current_joint_positions_,goal_,planned_path_))
               state_ = EXECUTE;
             else
               ROS_INFO("Planning failed: Retry");
@@ -86,7 +86,7 @@ class ExecNode : public PR2ArmNode
           }
           case EXECUTE:
           {
-            if(sendTrajectory("right_arm",planned_path_))
+            if(sendTrajectory(arm_name_,planned_path_))
             {
               ROS_INFO("Executed trajectory successfully");
               state_ = GET_GOAL;
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 {
   ros::init(argc,argv); 
 
-  PR2ArmNode node("sbpl_executive");
+  PR2ArmNode node("sbpl_executive","right_arm","right_gripper");
 
   try 
   {

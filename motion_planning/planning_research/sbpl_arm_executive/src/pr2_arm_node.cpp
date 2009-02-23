@@ -31,19 +31,53 @@
 
 using namespace pr2_arm_node;
 
-PR2ArmNode::PR2ArmNode(std::string node_name):ros::Node(node_name),tf_(*this){}
-
-void PR2ArmNode::openGripper(const std::string &gripper_name)
+PR2ArmNode::PR2ArmNode(std::string node_name, std::string arm_name, std::string gripper_name):ros::Node(node_name),tf_(*this)
 {
-  actuateGripper(gripper_name,1);
+//  param<std::string>("~arm_name",arm_name_, "right_arm");
+//  param<std::string>("~gripper_name",arm_name_, "right_gripper");
+  param<std::string>("~arm_trajectory_topic_name",trajectory_topic_name_, "/trajectory_controller/trajectory_command");
+  param<std::string>("~arm_trajectory_service_start",trajectory_start_name_, "/trajectory_controller/TrajectoryStart");
+  param<std::string>("~arm_trajectory_service_query",trajectory_query_name_, "/trajectory_controller/TrajectoryQuery");
+  param<std::string>("~effort_command",effort_controller_command_name_, "/effort_controller/set_command");
+  param<std::string>("~sbpl_planner_service_name",sbpl_planner_service_name_, "/sbpl_planner/plan_path/GetPath");
+
+  param("use_gripper_effort_controller",use_gripper_effort_controller_,true);
+
+  if(use_gripper_effort_controller_)
+  {
+    advertise<std_msgs::Float64>(gripper_name_ + effort_controller_command_name_,1);
+  }
+  else
+  {
+    advertise<robot_msgs::JointTraj>(gripper_name_ + trajectory_topic_name_,1);
+  }
+  advertise<robot_msgs::JointTraj>(arm_name_ + trajectory_topic_name_,1);
 }
 
-void PR2ArmNode::closeGripper(const std::string &gripper_name)
+PR2ArmNode::~PR2ArmNode()
 {
-  actuateGripper(gripper_name,0);
+  if(use_gripper_effort_controller_)
+  {
+    unadvertise(gripper_name_ + effort_controller_command_name_);
+  }
+  else
+  {
+    unadvertise(gripper_name_ + trajectory_topic_name_);
+  }
+  unadvertise(arm_name_ + trajectory_topic_name_);
 }
 
-void PR2ArmNode::actuateGripper(const std::string &gripper_name, const int &open)
+void PR2ArmNode::openGripper()
+{
+  actuateGripper(1);
+}
+
+void PR2ArmNode::closeGripper()
+{
+  actuateGripper(0);
+}
+
+void PR2ArmNode::actuateGripper(const int &open)
 {
   robot_msgs::JointTraj traj;
 
@@ -55,31 +89,31 @@ void PR2ArmNode::actuateGripper(const std::string &gripper_name, const int &open
   else
     traj.points[0].positions[0] = GRIPPER_CLOSE;
 
-  sendTrajectory(gripper_name,traj);
+  sendTrajectory(gripper_name_,traj);
 }
 
-void PR2ArmNode::openGripperEffort(const std::string &gripper_name)
+void PR2ArmNode::openGripperEffort()
 {
-  actuateGripperEffort(gripper_name,1);
+  actuateGripperEffort(1);
 }
 
-void PR2ArmNode::closeGripperEffort(const std::string &gripper_name)
+void PR2ArmNode::closeGripperEffort()
 {
-  actuateGripperEffort(gripper_name,0);
+  actuateGripperEffort(0);
 }
 
-void PR2ArmNode::actuateGripperEffort(const std::string &gripper_name, const int &open)
+void PR2ArmNode::actuateGripperEffort(const int &open)
 {
   std_msgs::Float64 cmd;
-  advertise<std_msgs::Float64>(gripper_name + "_controller/set_command",1);
+  advertise<std_msgs::Float64>(gripper_name_ + effort_controller_command_name_,1);
   if(open)
     cmd.data = GRIPPER_OPEN_EFFORT;
   else
     cmd.data = GRIPPER_CLOSE_EFFORT;      
-  publish(gripper_name + "_controller/set_command",cmd);
+  publish(gripper_name_ + effort_controller_command_name_,cmd);
 }
 
-void PR2ArmNode::goHome(const std::string &arm_name, const std::vector<double> &home_position)
+void PR2ArmNode::goHome(const std::vector<double> &home_position)
 {
   int num_joints = home_position.size();
 
@@ -93,10 +127,10 @@ void PR2ArmNode::goHome(const std::string &arm_name, const std::vector<double> &
     traj.points[0].positions[i] = home_position[i];
   }
 
-  sendTrajectory(arm_name,traj);
+  sendTrajectory(arm_name_,traj);
 }
 
-bool PR2ArmNode::sendTrajectory(const std::string &group_name, const robot_msgs::JointTraj &traj)
+bool PR2ArmNode::sendTrajectory(std::string group_name, const robot_msgs::JointTraj &traj)
 {
   int trajectory_state = -1;
 
@@ -108,14 +142,14 @@ bool PR2ArmNode::sendTrajectory(const std::string &group_name, const robot_msgs:
 
   traj_request.traj = traj;
 
-  if (ros::service::call(group_name + "/trajectory_controller/TrajectoryStart", traj_request, traj_response))
+  if (ros::service::call(group_name + trajectory_start_name_, traj_request, traj_response))
   {
     ROS_INFO("Done");
   }
   query_request.trajectoryid =  traj_response.trajectoryid;
   while(!(trajectory_state == query_response.State_Done || trajectory_state == query_response.State_Failed))
   {
-    if(ros::service::call(group_name + "/trajectory_controller/TrajectoryQuery", query_request, query_response))  
+    if(ros::service::call(group_name + trajectory_query_name_, query_request, query_response))  
     {
       trajectory_state =  query_response.done;
       return true;
@@ -126,9 +160,15 @@ bool PR2ArmNode::sendTrajectory(const std::string &group_name, const robot_msgs:
       return false;
     }
   } 
+  return true;
 }
 
-void PR2ArmNode::getCurrentPosition(const std::string &group_name, robot_msgs::JointTrajPoint &current_joint_positions)
+void PR2ArmNode::sendTrajectoryOnTopic(std::string group_name,const robot_msgs::JointTraj &traj)
+{
+  publish(group_name + trajectory_topic_name_,traj);
+}
+
+void PR2ArmNode::getCurrentPosition(robot_msgs::JointTrajPoint &current_joint_positions)
 {
   int num_joints = 7;
   pr2_mechanism_controllers::TrajectoryQuery::Request  req_traj_query;
@@ -136,7 +176,7 @@ void PR2ArmNode::getCurrentPosition(const std::string &group_name, robot_msgs::J
 
   req_traj_query.trajectoryid = 0;
 
-  if(ros::service::call(group_name + "/trajectory_controller/TrajectoryQuery", req_traj_query, res_traj_query))  
+  if(ros::service::call(arm_name_ + trajectory_query_name_, req_traj_query, res_traj_query))  
   {
     current_joint_positions.set_positions_size(7);
     for(int i=0; i < num_joints; i++)
@@ -151,7 +191,7 @@ void PR2ArmNode::getCurrentPosition(const std::string &group_name, robot_msgs::J
 }
 
 
-bool PR2ArmNode::planSBPLPath(const std::string &arm_name, const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path)
+bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path)
 {
   sbpl_arm_planner_node::PlanPathSrv::Request  request;
   sbpl_arm_planner_node::PlanPathSrv::Response response;
@@ -160,7 +200,7 @@ bool PR2ArmNode::planSBPLPath(const std::string &arm_name, const robot_msgs::Joi
   request.start = joint_start;
   request.cartesian_goals = pose_goals;
 
-  if(ros::service::call(arm_name + "/plan_path/GetPlan",request,response))
+  if(ros::service::call(arm_name_ + sbpl_planner_service_name_,request,response))
   {
     planned_path = response.traj;    
     return true;
@@ -173,7 +213,7 @@ bool PR2ArmNode::planSBPLPath(const std::string &arm_name, const robot_msgs::Joi
 }
 
 
-bool PR2ArmNode::planSBPLPath(const std::string &arm_name, const robot_msgs::JointTrajPoint &joint_start, const robot_msgs::JointTrajPoint &joint_goal, robot_msgs::JointTraj &planned_path)
+bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const robot_msgs::JointTrajPoint &joint_goal, robot_msgs::JointTraj &planned_path)
 {
   sbpl_arm_planner_node::PlanPathSrv::Request  request;
   sbpl_arm_planner_node::PlanPathSrv::Response response;
@@ -182,7 +222,7 @@ bool PR2ArmNode::planSBPLPath(const std::string &arm_name, const robot_msgs::Joi
   request.start = joint_start;
   request.joint_goal = joint_goal;
 
-  if(ros::service::call(arm_name + "/plan_path/GetPlan",request,response))
+  if(ros::service::call(arm_name_ + sbpl_planner_service_name_,request,response))
   {
     planned_path = response.traj;    
     return true;
