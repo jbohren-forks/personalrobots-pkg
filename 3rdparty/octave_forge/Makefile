@@ -32,26 +32,26 @@ installed: Makefile
 miscellaneous:
 	mkdir -p $(BUILD_DIR)
 	@if [ ! -f $(BUILD_DIR)/$(TAR_MISCELLANEOUS) ]; then cd $(BUILD_DIR) && $(HTTP_CMD) $(HTTP_MISCELLANEOUS); fi
-	-if [ ! -d $(BUILD_DIR)/$(DIR_MISCELLANEOUS) ]; then cd $(BUILD_DIR) && $(TAR_CMD) $(TAR_MISCELLANEOUS); fi
-	-cd $(BUILD_DIR)/$(DIR_MISCELLANEOUS) && make && make install
+	if [ ! -d $(BUILD_DIR)/$(DIR_MISCELLANEOUS) ]; then cd $(BUILD_DIR) && $(TAR_CMD) $(TAR_MISCELLANEOUS); fi
+	export MKOCTFILE=mkoctfile && cd $(BUILD_DIR)/$(DIR_MISCELLANEOUS) && make && make install
 
 optim:
 	mkdir -p $(BUILD_DIR)
 	@if [ ! -f $(BUILD_DIR)/$(TAR_OPTIM) ]; then cd $(BUILD_DIR) && $(HTTP_CMD) $(HTTP_OPTIM); fi
-	-if [ ! -d $(BUILD_DIR)/$(DIR_OPTIM) ]; then cd $(BUILD_DIR) && $(TAR_CMD) $(TAR_OPTIM); fi
-	-cd $(BUILD_DIR)/$(DIR_OPTIM) && make && make install
+	if [ ! -d $(BUILD_DIR)/$(DIR_OPTIM) ]; then cd $(BUILD_DIR) && $(TAR_CMD) $(TAR_OPTIM); fi
+	cd $(BUILD_DIR)/$(DIR_OPTIM) && make && make install
 
 signal:
 	mkdir -p $(BUILD_DIR)
 	@if [ ! -f $(BUILD_DIR)/$(TAR_SIGNAL) ]; then cd $(BUILD_DIR) && $(HTTP_CMD) $(HTTP_SIGNAL); fi
-	-if [ ! -d $(BUILD_DIR)/$(DIR_SIGNAL) ]; then cd $(BUILD_DIR) && $(TAR_CMD) $(TAR_SIGNAL); fi
-	-cd $(BUILD_DIR)/$(DIR_SIGNAL) && make && make install
+	if [ ! -d $(BUILD_DIR)/$(DIR_SIGNAL) ]; then cd $(BUILD_DIR) && $(TAR_CMD) $(TAR_SIGNAL); fi
+	cd $(BUILD_DIR)/$(DIR_SIGNAL) && make && make install
 
 specfun:
 	mkdir -p $(BUILD_DIR)
 	@if [ ! -f $(BUILD_DIR)/$(TAR_SPECFUN) ]; then cd $(BUILD_DIR) && $(HTTP_CMD) $(HTTP_SPECFUN); fi
-	-if [ ! -d $(BUILD_DIR)/$(DIR_SPECFUN) ]; then cd $(BUILD_DIR) && $(TAR_CMD) $(TAR_SPECFUN); fi
-	-cd $(BUILD_DIR)/$(DIR_SPECFUN) && make && make install
+	if [ ! -d $(BUILD_DIR)/$(DIR_SPECFUN) ]; then cd $(BUILD_DIR) && $(TAR_CMD) $(TAR_SPECFUN); fi
+	cd $(BUILD_DIR)/$(DIR_SPECFUN) && make && make install
 
 
 clean:
@@ -59,6 +59,7 @@ clean:
 	-cd $(BUILD_DIR)/$(DIR_OPTIM) && make clean
 	-cd $(BUILD_DIR)/$(DIR_SIGNAL) && make clean
 	-cd $(BUILD_DIR)/$(DIR_SPECFUN) && make clean
+	rm -f installed
 
 wipe: clean
 	rm -rf $(BUILD_DIR)
