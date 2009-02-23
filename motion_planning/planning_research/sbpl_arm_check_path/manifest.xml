@@ -12,7 +12,7 @@
   <url></url>
   
   <export>
-      <cpp cflags="-I${prefix}/include -O3 -g" lflags="-Wl, -rpath,${prefix}/lib -L${prefix}/lib"/>
+      <cpp cflags="-I${prefix}/include -O3 -g" />
   </export>
   
 </package>
