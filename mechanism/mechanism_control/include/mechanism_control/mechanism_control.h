@@ -101,7 +101,7 @@ public:
   HardwareInterface *hw_;
 
 private:
-  bool initialized_;
+  bool initialized_, switch_success_;
 
   typedef boost::accumulators::accumulator_set<
     double, boost::accumulators::stats<boost::accumulators::tag::max,

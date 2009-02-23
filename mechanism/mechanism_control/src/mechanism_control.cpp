@@ -164,28 +164,28 @@ void MechanismControl::update()
   if (please_switch_)
   {
     // try to start controllers
-    bool start_success = true;
+    switch_success_ = true;
     for (unsigned int i=0; i<start_request_.size(); i++){
       if (!start_request_[i]->startRequest()){
-        start_success = false;
+        switch_success_ = false;
         break;
       }
     }
 
     // if starting failed, stop them again
-    if (!start_success){
+    if (!switch_success_){
       for (unsigned int i=0; i<start_request_.size(); i++){
         start_request_[i]->stopRequest();
       }
     }
-    start_request_.clear();
-    return;
-
     // stop controllers
-    for (unsigned int i=0; i<stop_request_.size(); i++)
-      stop_request_[i]->stopRequest();
-    stop_request_.clear();
+    else {
+      for (unsigned int i=0; i<stop_request_.size(); i++)
+        stop_request_[i]->stopRequest();
+    }
 
+    start_request_.clear();
+    stop_request_.clear();
     please_switch_ = false;
   }
 }
@@ -234,6 +234,41 @@ bool MechanismControl::killController(const std::string &name)
     return false;
   return true;
 }
+
+
+bool MechanismControl::switchController(const std::vector<std::string>& start_controllers,
+                                        const std::vector<std::string>& stop_controllers)
+{
+  controllers_lock_.lock();
+
+  controller::Controller* ct;
+  // list all controllers to stop
+  for (unsigned int i=0; i<stop_controllers.size(); i++)
+  {
+    ct = getControllerByName(stop_controllers[i]);
+    if (ct != NULL)
+      stop_request_.push_back(ct);
+  }
+
+  // list all controllers to start
+  for (unsigned int i=0; i<start_controllers.size(); i++)
+  {
+    ct = getControllerByName(start_controllers[i]);
+    if (ct != NULL)
+      start_request_.push_back(ct);
+  }
+
+  // start the atomic controller switching
+  please_switch_ = true;
+
+  // wait until switch is finished
+  while (please_switch_)
+    usleep(100);
+
+  controllers_lock_.unlock();
+  return switch_success_;
+}
+
 
 void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
                                          std::vector<AddReq> &add_reqs,
@@ -347,7 +382,6 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
     usleep(1000);
   from.clear();
 }
-
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
