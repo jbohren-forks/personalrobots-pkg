@@ -43,7 +43,6 @@
 #include <costmap_2d/basic_observation_buffer.h>
 
 //Ransac ground filter used to see small obstacles
-#include <ransac_ground_plane_extraction/ransac_ground_plane_extraction.h>
 #include <pr2_msgs/PlaneStamped.h>
 #include <robot_msgs/Point.h>
 #include <robot_msgs/Vector3.h>
@@ -290,7 +289,6 @@ namespace ros {
       bool reset_cost_map_;
 
       //ground plane extraction
-      ransac_ground_plane_extraction::RansacGroundPlaneExtraction ground_plane_extractor_;
       pr2_msgs::PlaneStamped groundPlaneMsg_;
       pr2_msgs::PlaneStamped ground_plane_;
       robot_msgs::PointCloud *filtered_cloud_;
