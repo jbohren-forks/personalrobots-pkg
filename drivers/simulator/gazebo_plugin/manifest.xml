@@ -9,7 +9,6 @@
   <url>http://pr.willowgarage.com/wiki/gazebo_plugin</url>
   <depend package="gazebo"/>
   <depend package="opende"/>
-  <depend package="newmat10"/>
   <depend package="robot_mechanism_controllers"/>
   <depend package="pr2_mechanism_controllers"/>
   <depend package="roscpp"/>
