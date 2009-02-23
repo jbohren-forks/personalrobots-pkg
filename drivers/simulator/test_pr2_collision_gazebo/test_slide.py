@@ -61,7 +61,7 @@ class TestSlide(unittest.TestCase):
         
     def positionInput(self, p3d):
         self.runs = self.runs + 1
-        print " got p3d ", self.runs
+        print "run #", self.runs
         #if (pos.frame == 1):
         print "x ", p3d.pos.position.x
         print "y ", p3d.pos.position.y
@@ -76,17 +76,17 @@ class TestSlide(unittest.TestCase):
             #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(p3d.pos.position.x) + " " + str(p3d.pos.position.y)
             #print "DONE"
             self.hits = self.hits + 1
-            print "Hit goal, " + str(self.hits)
-            if (self.runs < 100 and self.runs > 10):
-                print "Obviously wrong poses!"
+            print "goal hits: " + str(self.hits)
+            print "total runs: " + str(self.runs)
+            if (self.runs > 10 and self.runs < 50):
+                print "Got to goal too quickly! (",self.runs,")"
                 self.success = False
                 self.fail = True
-                #os.system("killall gazebo")
-                
+
             if (self.hits > 200):
                 if (self.runs > 20):
                     self.success = True
-                #os.system("killall gazebo")
+
         
     
     def test_slide(self):
@@ -97,7 +97,6 @@ class TestSlide(unittest.TestCase):
         while not rospy.is_shutdown() and not self.success and not self.fail and time.time() < timeout_t:
             time.sleep(0.1)
         time.sleep(2.0)
-        #os.system("killall gazebo")
         self.assert_(self.success)
         
     
@@ -105,6 +104,5 @@ class TestSlide(unittest.TestCase):
 
 if __name__ == '__main__':
     rostest.run(PKG, sys.argv[0], TestSlide, sys.argv) #, text_mode=True)
-    #os.system("killall gazebo")
 
 
