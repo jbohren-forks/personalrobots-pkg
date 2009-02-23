@@ -61,15 +61,15 @@ class MoveArmAdapter:
     self.state = state
 
     #if we have a valid plan, reset the timeout on planning
-    if self.state.valid == 1:
+    if self.active():
       self.last_plan_time = rospy.get_time()
 
   def active(self):
-    return self.state.active == self.state.ACTIVE
+    return self.state.status == MoveArmState.ACTIVE
 
   #Have we reached a goal
   def goalReached(self):
-    return self.state.done == 1
+    return self.state.status == MoveArmState.INACTIVE
 
   #Send a new goal to the move arm node
   def sendGoal(self, frame, implicit, state, constraints, enable, timeout):

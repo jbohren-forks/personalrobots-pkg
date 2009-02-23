@@ -124,6 +124,7 @@ import roslib
 roslib.load_manifest('executive_python')
 import rospy
 import random
+import sys
 from robot_msgs.msg import VisualizationMarker
 from robot_msgs.msg import AttachedObject, PoseConstraint
 from robot_srvs.srv import FindTable, FindTableRequest, SubtractObjectFromCollisionMap, SubtractObjectFromCollisionMapRequest, RecordStaticMapTrigger, RecordStaticMapTriggerRequest
@@ -213,10 +214,11 @@ class Executive:
     print 'Calling FindTable'
     s = rospy.ServiceProxy('table_object_detector', FindTable)
     resp = s.call(FindTableRequest())
-    print 'Table: %f %f %f %f' % (resp.table.min_x,
-                                  resp.table.max_x,
-                                  resp.table.min_y,
-                                  resp.table.max_y)
+    print 'Table (frame %s): %f %f %f %f' % (resp.table.header.frame_id,
+                                             resp.table.min_x,
+                                             resp.table.max_x,
+                                             resp.table.min_y,
+                                             resp.table.max_y)
     print '%d objects' % len(resp.table.objects)
     for o in resp.table.objects:
       print '  (%f %f %f): %f %f %f' % \
@@ -332,13 +334,13 @@ SubtractObjectFromCollisionMap)
 
   def handleSlowScan(self, t):  
     # Did we start the scan yet?
-    if(self.scan_start_time < 0.0):
-      # Request slow scan & trigger static map recording
-      resp = self.adaptTiltSpeed(self.laser_tilt_profile_period_slow)
-      self.scan_start_time = t
-      if self.first_time:
-        self.recordStaticMap(roslib.rostime.Time().from_seconds(resp.time))
-        self.first_time = False
+    #if(self.scan_start_time < 0.0):
+    #  # Request slow scan & trigger static map recording
+    #  resp = self.adaptTiltSpeed(self.laser_tilt_profile_period_slow)
+    #  self.scan_start_time = t
+    #  if self.first_time:
+    #    self.recordStaticMap(roslib.rostime.Time().from_seconds(resp.time))
+    #    self.first_time = False
 
     #print 'Waiting for slow scan to complete...'
     # Hack
@@ -349,6 +351,7 @@ SubtractObjectFromCollisionMap)
       #self.drawObjectVisMarker(obj)
       if obj == None:
         print 'Error: no object found!'
+        return 'idle'
       else:
         print 'Chose object at (%f %f %f)' % (obj.center.x,
                                               obj.center.y,
@@ -430,7 +433,7 @@ SubtractObjectFromCollisionMap)
         self.state = self.handleDone(t)
       
       else:
-        print 'Invalid state: ' % self.state
+        print 'Invalid state: %s' % (self.state)
         sys.exit(-1)
 
 
