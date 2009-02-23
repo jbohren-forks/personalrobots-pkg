@@ -6,6 +6,9 @@ rospack_add_rostest(test_scan.xml)
 rospack_add_rostest(hztest_pr2_scan.xml)
 
 # below need xvfb-run to test on build machine
-rospack_add_rostest_graphical(test_camera.xml)
-rospack_add_rostest_graphical(hztest_pr2_image.xml)
+# These tests are moved into the future, pending resolution of xvfb issues.
+#rospack_add_rostest_graphical(test_camera.xml)
+rospack_add_rostest_future(test_camera.xml)
+#rospack_add_rostest_graphical(hztest_pr2_image.xml)
+rospack_add_rostest_future(hztest_pr2_image.xml)
 
