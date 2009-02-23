@@ -67,7 +67,7 @@ GRP_CMD_POS     = 0.3
 TARGET_DURATION = 1.0
 ROT_TARGET_TOL      = 0.01  #empirical test result john - 20090110
 POS_TARGET_TOL      = 0.01  #empirical test result john - 20090110
-TEST_TIMEOUT    = 50.0
+TEST_TIMEOUT    = 100.0
 
 # pre-recorded poses for above commands
 TARGET_PALM_TX     = 0.722460856088
