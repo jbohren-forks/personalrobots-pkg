@@ -227,7 +227,7 @@ public:
         tictoc.sleep ();
       delete message_notifier_;
 
-      cout << "request to detect door from " << cloud_in_.points.size() << "points " << endl;
+      //cout << "request to detect door from " << cloud_in_.points.size() << "points " << endl;
 
 
       // cloud frame
