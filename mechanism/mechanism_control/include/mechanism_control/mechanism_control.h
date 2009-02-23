@@ -78,6 +78,8 @@ public:
   bool killController(const std::string &name);
   bool switchController(const std::vector<std::string>& start_controllers,
                         const std::vector<std::string>& stop_controllers);
+
+  // controllers_lock_ must be locked before calling
   controller::Controller* getControllerByName(std::string name);
 
   struct AddReq

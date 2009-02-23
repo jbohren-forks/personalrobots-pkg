@@ -190,6 +190,18 @@ void MechanismControl::update()
   }
 }
 
+controller::Controller* MechanismControl::getControllerByName(std::string name)
+{
+  std::vector<ControllerSpec> &controllers = controllers_lists_[current_controllers_list_];
+  for (size_t i = 0; i < controllers.size(); ++i)
+  {
+    if (controllers[i].name == name)
+      return controllers[i].c.get();
+  }
+  return NULL;
+}
+
+
 void MechanismControl::getControllerNames(std::vector<std::string> &names)
 {
   boost::mutex::scoped_lock guard(controllers_lock_);
