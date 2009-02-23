@@ -18,7 +18,7 @@ int planrobarm(int argc, char *argv[])
     clock_t totaltime = clock();
 
     //Initialize Environment (should be called before initializing anything else)
-    EnvironmentROBARM environment_robarm;
+    EnvironmentROBARM3D environment_robarm;
 
 //NOTE: If you want to set a goal from here, you MUST do it before you run InitializeEnv
 //     environment_robarm.SetEndEffGoal(array, length of array(either 3 or 7));

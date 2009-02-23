@@ -54,7 +54,7 @@ typedef struct {
 //   int IncrE, IncrNE;
 //   int XIndex, YIndex, ZIndex;
 //   int Flipped;
-  
+
   int X1, Y1, Z1;
   int X2, Y2, Z2;
   int XIndex, YIndex, ZIndex;
@@ -73,6 +73,7 @@ typedef struct {
 void DisableMemCheck();
 void EnableMemCheck();
 #endif
+
 void CheckMDP(CMDP* mdp);
 void PrintMatrix(int** matrix, int rows, int cols, FILE* fOut);
 void EvaluatePolicy(CMDP* PolicyMDP, int StartStateID, int GoalStateID,
@@ -80,9 +81,10 @@ void EvaluatePolicy(CMDP* PolicyMDP, int StartStateID, int GoalStateID,
 					int* nMerges, bool *bCycles);
 int ComputeNumofStochasticActions(CMDP* pMDP);
 
-void get_bresenham_parameters(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, bresenham_param_t *params);
-void get_current_point(bresenham_param_t *params, int *x, int *y, int *z);
-int get_next_point(bresenham_param_t *params);
+
+void get_bresenham_parameters3d(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, bresenham_param_t *params);
+void get_current_point3d(bresenham_param_t *params, int *x, int *y, int *z);
+int get_next_point3d(bresenham_param_t *params);
 
 //converts discretized version of angle into continuous (radians)
 //maps 0->0, 1->delta, 2->2*delta, ...

@@ -244,18 +244,18 @@ typedef struct
 
     //any additional variables
     int* Heur;
-}EnvironmentROBARM_t;
+}EnvironmentROBARM3D_t;
 
 
 /**
  * Environment to be used when planning for a Robotic Arm using the SBPL.
  */
-class EnvironmentROBARM: public DiscreteSpaceInformation 
+class EnvironmentROBARM3D: public DiscreteSpaceInformation 
 {
 public:
 
-    EnvironmentROBARM();
-    ~EnvironmentROBARM(){};
+    EnvironmentROBARM3D();
+    ~EnvironmentROBARM3D(){};
 
     //environment related
     bool InitializeEnv(const char* sEnvFile);
@@ -336,7 +336,7 @@ private:
 
     //member data
     EnvROBARMConfig_t EnvROBARMCfg;          /**< environment configuration struct (stores environment details)> */
-    EnvironmentROBARM_t EnvROBARM;
+    EnvironmentROBARM3D_t EnvROBARM;
 
     //hash table
     unsigned int GETHASHBIN(short unsigned int* coord, int numofcoord);

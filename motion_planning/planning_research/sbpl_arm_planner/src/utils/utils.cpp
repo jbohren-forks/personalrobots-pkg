@@ -341,10 +341,9 @@ void EvaluatePolicy(CMDP* PolicyMDP, int StartStateID, int GoalStateID,
 
 
 //figures out which direction the line is going in
-void get_bresenham_parameters(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, bresenham_param_t *params)
+void get_bresenham_parameters3d(int p1x, int p1y, int p1z, int p2x, int p2y, int p2z, bresenham_param_t *params)
 {
 //   params->UsingYIndex = 0;
-    
     params->X1=p1x;
     params->Y1=p1y;
     params->Z1=p1z;
@@ -444,7 +443,7 @@ void get_bresenham_parameters(int p1x, int p1y, int p1z, int p2x, int p2y, int p
 }
 
 
-void get_current_point(bresenham_param_t *params, int *x, int *y, int *z)
+void get_current_point3d(bresenham_param_t *params, int *x, int *y, int *z)
 {
     *x = params->XIndex;
     *y = params->YIndex;
@@ -467,7 +466,7 @@ void get_current_point(bresenham_param_t *params, int *x, int *y, int *z)
 }
 
 
-int get_next_point(bresenham_param_t *params)
+int get_next_point3d(bresenham_param_t *params)
 {
     //check to see if at end of line
     if (params->XIndex == params->X2 && params->YIndex == params->Y2 && params->ZIndex == params->Z2)
