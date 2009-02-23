@@ -161,7 +161,7 @@ namespace cam_bridge
   {
     size_t new_size = arr.layout.dim[0].stride;
 
-    if (*sz < new_size);
+    if (*sz < new_size)
     {
       MEMFREE(*d);
       *d = (uint8_t *)MEMALIGN(new_size);
@@ -174,7 +174,7 @@ namespace cam_bridge
   {
     size_t new_size = arr.layout.dim[0].stride*2;
 
-    if (*sz < new_size);
+    if (*sz < new_size)
     {
       MEMFREE(*d);
       *d = (int16_t *)MEMALIGN(new_size);
