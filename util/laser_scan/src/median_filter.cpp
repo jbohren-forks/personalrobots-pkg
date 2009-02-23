@@ -53,6 +53,8 @@ bool LaserMedianFilter::configure(const std::string & xml_parameters)
   
   intensity_filter_ = new FilterChain<std_vector_float >();
   intensity_filter_->configure(num_ranges_, xml_doc);
+
+  return true;
 };
 
 LaserMedianFilter::~LaserMedianFilter()

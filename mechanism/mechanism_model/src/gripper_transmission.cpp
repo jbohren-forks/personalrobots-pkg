@@ -180,7 +180,7 @@ void GripperTransmission::propagateEffortBackwards(
   for (unsigned int i = 0; i < js.size(); ++i)
   {
     double err = scaled_positions[i] - mean;
-    double pid_effort = pids_[i].updatePid(err, 0.001);
+    /*double pid_effort =*/ pids_[i].updatePid(err, 0.001);
 
     js[i]->commanded_effort_ =
         /*pid_effort / ereductions_[i] + */as[0]->command_.effort_ * ereductions_[i];

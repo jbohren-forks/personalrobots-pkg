@@ -95,7 +95,7 @@ namespace MS_3DMGX2
     //! Maximum bytes allowed to be skipped when seeking a message
     static const int MAX_BYTES_SKIPPED  = 1000;
     //! Number of KF samples to sum over
-    static const int KF_NUM_SUM         = 100;
+    static const unsigned int KF_NUM_SUM= 100;
     //! First KF term
     static const double KF_K_1          = 0.00995031;
     //! Second KF term
