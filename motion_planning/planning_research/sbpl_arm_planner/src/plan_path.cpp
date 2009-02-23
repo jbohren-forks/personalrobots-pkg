@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../headers.h"
+#include <sbpl_arm_planner/headers.h>
 
 #define VERBOSE 1
 #define MAX_RUNTIME 60.0

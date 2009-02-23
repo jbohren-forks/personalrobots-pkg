@@ -26,51 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __HEADERS_H_
-#define __HEADERS_H_
+#ifndef __CONFIG_H_
+#define __CONFIG_H_
 
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <math.h>
-#include <vector>
-#include <queue>
 
-using namespace std;
+//if set, then heuristic is used if available
+#define USE_HEUR 1 
 
-#include "config.h"
+//memory debugging
+#define MEM_CHECK 0
 
-#if MEM_CHECK == 1
-#define _CRTDBG_MAP_ALLOC 
-#define CRTDBG_MAP_ALLOC
-#endif
+//regular debugging
+#define DEBUG 0
 
-#include <stdlib.h> //have to go after the defines above
+//timing debugging
+#define TIME_DEBUG 0
 
-#if MEM_CHECK == 1
-#include <crtdbg.h>
-#endif
+//small epsilon for various floating error checking
+#define ERR_EPS 0.0000001
 
-#include "utils/key.h"
-#include "utils/mdpconfig.h"
-#include "utils/mdp.h"
-#include "planners/planner.h"
-#include "discrete_space_information/environment.h"
-#include "discrete_space_information/robarm3d/environment_robarm3d.h"
-#include "utils/list.h"
-#include "utils/heap.h"
-#include "planners/VI/viplanner.h"
-#include "planners/ARAStar/araplanner.h"
-#include "planners/ADStar/adplanner.h"
-#include "utils/utils.h"
 
-#include <robot_kinematics/robot_kinematics.h>
-#include <unistd.h>
-#include <ros/node.h>
-#include <robot_msgs/JointTraj.h>
 
-using namespace robot_kinematics;
-using namespace KDL;
 
 #endif
 

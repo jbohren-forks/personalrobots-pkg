@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../../headers.h"
+#include <sbpl_arm_planner/headers.h>
 
 #define PI_CONST 3.141592653
 #define DEG2RAD(d) ((d)*(PI_CONST/180.0))
