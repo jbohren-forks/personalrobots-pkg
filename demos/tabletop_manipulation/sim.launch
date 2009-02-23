@@ -4,8 +4,8 @@
   <include file="$(find tabletop_manipulation)/arm.launch"/>
   <include file="$(find tabletop_manipulation)/perception_sim.launch"/>
   <include file="$(find tabletop_manipulation)/planning.launch"/>
-  <include file="$(find tabletop_manipulation)/debug_plot.launch"/>
-  <node pkg="plan_kinematic_path" type="plan_kinematic_path">
+  <!--include file="$(find tabletop_manipulation)/debug_plot.launch"/-->
+  <!--node pkg="plan_kinematic_path" type="plan_kinematic_path">
     <remap from="robot_description" to="robotdesc/pr2"/>
-  </node>
+  </node-->
 </launch>

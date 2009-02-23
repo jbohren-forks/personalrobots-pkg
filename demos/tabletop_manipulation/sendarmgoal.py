@@ -39,31 +39,36 @@ import rospy
 from pr2_msgs.msg import MoveArmGoal, MoveArmState
 from robot_msgs.msg import JointState
 
-def callback(data):
-  print 'Got state: %d:%d:%d:%d:%d'%(data.active,
-                                     data.valid,
-                                     data.done,
-                                     data.aborted,
-                                     data.preempted)
+import sys
 
-def go():
+def callback(data):
+  print 'Got status: %d'%(data.status)
+
+def go(v1, v2):
   pub = rospy.Publisher('right_arm_goal', MoveArmGoal)
   rospy.Subscriber('right_arm_state', MoveArmState, callback)
 
   rospy.init_node('talker', anonymous=True)
   # HACK
-  rospy.sleep(3.0)
+  import time
+  time.sleep(3.0)
 
-  while not rospy.is_shutdown():
-    msg = MoveArmGoal()
-    msg.configuration = []
-    msg.configuration.append(JointState('r_shoulder_pan_joint',-0.5,0.0,0.0,0.0,0))
-    msg.enable = 1
-    msg.timeout = 0.0
+  msg = MoveArmGoal()
+  msg.configuration = []
+  msg.configuration.append(JointState('r_shoulder_lift_joint',v1,0.0,0.0,0.0,0))
+  msg.configuration.append(JointState('r_shoulder_pan_joint',v2,0.0,0.0,0.0,0))
+  msg.enable = 1
+  msg.timeout = 0.0
 
-    pub.publish(msg)
-    print 'Publishing: ' + `msg.configuration`
-    rospy.sleep(3.0)
+  pub.publish(msg)
+  print 'Publishing: ' + `msg.configuration`
 
 if __name__ == '__main__':
-  go()
+  if len(sys.argv) < 3:
+    print 'Using defaults'
+    v1 = -0.5
+    v2 = -1.0
+  else:
+    v1 = float(sys.argv[1])
+    v2 = float(sys.argv[2])
+  go(v1,v2)
