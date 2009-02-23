@@ -572,6 +572,9 @@ bool MechanismControlNode::spawnController(
     config = config->FirstChildElement("controller");
   }
 
+  std::vector<MechanismControl::AddReq> add_reqs;
+  std::vector<MechanismControl::RemoveReq> remove_reqs;
+
   for (; config; config = config->NextSiblingElement("controller"))
   {
     bool ok = true;
@@ -588,15 +591,23 @@ bool MechanismControlNode::spawnController(
     }
     else
     {
-      ok = mc_->spawnController(config->Attribute("type"), config->Attribute("name"), config);
+      int last = add_reqs.size();
+      add_reqs.resize(last + 1);
+      add_reqs[last].type = config->Attribute("type");
+      add_reqs[last].name = config->Attribute("name");
+      add_reqs[last].config = config;
     }
-
-    oks.push_back(ok);
-    names.push_back(config->Attribute("name") ? config->Attribute("name") : "<unnamed>");
   }
 
-  resp.set_ok_vec(oks);
-  resp.set_name_vec(names);
+  mc_->changeControllers(remove_reqs, add_reqs);
+
+  resp.ok.resize(add_reqs.size());
+  resp.name.resize(add_reqs.size());
+  for (size_t i = 0; i < add_reqs.size(); ++i)
+  {
+    resp.name[i] = add_reqs[i].name;
+    resp.ok[i] = add_reqs[i].success;
+  }
 
   return true;
 }
