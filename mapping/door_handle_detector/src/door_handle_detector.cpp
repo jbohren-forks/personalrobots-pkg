@@ -72,7 +72,7 @@ public:
 
     tf::TransformListener tf_;
 
-    string input_cloud_topic_, fixed_frame_, door_frame_, cloud_frame_;
+    string input_cloud_topic_, parameter_frame_, door_frame_, cloud_frame_;
     ros::Time cloud_time_;
     bool publish_debug_;
     unsigned int num_clouds_received_;
@@ -110,7 +110,7 @@ public:
     {
       // ---[ Parameters regarding geometric constraints for the door/handle
       {
-        param ("~fixed_frame", fixed_frame_, string ("base_footprint"));
+        param ("~parameter_frame", parameter_frame_, string ("base_footprint"));
 
         // Frame _independent_ parameters (absolute values)
           param ("~door_min_height", door_min_height_, 1.2);                  // minimum height of a door: 1.2m
@@ -210,6 +210,7 @@ public:
     bool
       detectDoor (door_handle_detector::DoorDetector::Request &req, door_handle_detector::DoorDetector::Response &resp)
     {
+
       updateParametersFromServer ();
 
       // door frame
@@ -221,9 +222,13 @@ public:
                                                                            input_cloud_topic_.c_str (), door_frame_, 1);
       ros::Duration tictoc (0, 10000000);
       // @Wim : why ? :) - this became horribly slow :(
+      // @Radu : the first clould that comes in was created before the service call while the robot was still moving.
       while ((int)num_clouds_received_ < nr_scans_)
         tictoc.sleep ();
       delete message_notifier_;
+
+      cout << "request to detect door from " << cloud_in_.points.size() << "points " << endl;
+
 
       // cloud frame
       cloud_frame_ = cloud_in_.header.frame_id;
@@ -235,7 +240,7 @@ public:
 
       // ---[ Optimization: obtain a set of indices from the entire point cloud that we will work with
       vector<int> indices_in_bounds;
-      obtainCloudIndicesSet (&cloud_in_, indices_in_bounds, req, &tf_, fixed_frame_, door_min_z_bounds_, door_max_z_bounds_, door_frame_multiplier_);
+      obtainCloudIndicesSet (&cloud_in_, indices_in_bounds, req, &tf_, parameter_frame_, door_min_z_bounds_, door_max_z_bounds_, door_frame_multiplier_);
 
       // ---[ Optimization: downsample the cloud in the bounding box for faster processing
       // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
@@ -245,6 +250,7 @@ public:
         Point leaf_width_xyz;
         leaf_width_xyz.x = leaf_width_xyz.y = leaf_width_xyz.z = leaf_width_;
         cloud_geometry::downsamplePointCloud (&cloud_in_, &indices_in_bounds, cloud_down_, leaf_width_xyz, leaves, -1);
+	ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_xyz.x, leaf_width_xyz.y, leaf_width_xyz.z, cloud_down_.pts.size ());
       }
       catch (std::bad_alloc)
       {
@@ -253,7 +259,6 @@ public:
       }
       leaves.resize (0);    // dealloc memory used for the downsampling process
 
-      //ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, cloud_down_.pts.size ());
 
       // Get the cloud viewpoint
       getCloudViewPoint (cloud_frame_, viewpoint_cloud_, &tf_);
@@ -289,12 +294,12 @@ public:
       vector<double> goodness_factor (clusters.size());
       robot_msgs::Point32 minP, maxP, handle_center;
 
-      // Transform door_min_z_ from the fixed parameter frame (fixed_frame_) into the point cloud frame
-      door_min_z_ = transformDoubleValueTF (door_min_z_, fixed_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
+      // Transform door_min_z_ from the parameter parameter frame (parameter_frame_) into the point cloud frame
+      door_min_z_ = transformDoubleValueTF (door_min_z_, parameter_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
 
       // Transform min/max height values for the door handle (ADA requirements!)
-      handle_min_height_ = transformDoubleValueTF (handle_min_height_, fixed_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
-      handle_max_height_ = transformDoubleValueTF (handle_max_height_, fixed_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
+      handle_min_height_ = transformDoubleValueTF (handle_min_height_, parameter_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
+      handle_max_height_ = transformDoubleValueTF (handle_max_height_, parameter_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
 
 #pragma omp parallel for schedule(dynamic)
       // Process all clusters
@@ -639,6 +644,9 @@ public:
       // Calculate the unsigned distance from the point to the plane
       double distance_to_plane = door_coeff->at (0) * handle_center.x + door_coeff->at (1) * handle_center.y +
                                  door_coeff->at (2) * handle_center.z + door_coeff->at (3) * 1;
+
+      cout << "distance from handle to door is " << distance_to_plane << endl;
+
       // Calculate the projection of the point on the plane
       handle_center.x -= distance_to_plane * door_coeff->at (0);
       handle_center.y -= distance_to_plane * door_coeff->at (1);

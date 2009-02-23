@@ -8,7 +8,7 @@
   <param name="/door_handle_detector/door_min_width" value="0.85" />
   <param name="/door_handle_detector/door_max_width" value="1.2" />
 
-  <param name="/door_handle_detector/fixed_frame" value="odom_combined" />
+  <param name="/door_handle_detector/parameter_frame" value="base_footprint" />
 
   <node pkg="door_handle_detector" type="door_handle_detector_node" name="door_handle_detector" output="screen" respawn="true">
     <remap from="full_cloud" to="snapshot_cloud" />

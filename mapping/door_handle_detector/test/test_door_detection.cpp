@@ -121,12 +121,13 @@ class TestDoorDetectionNode : public ros::Node
         return;
       }
       if(detectDoor(door_msg_to_detector_, door_msg_from_detector_))
-      {
+	{
+	  ROS_INFO("Door detected");
         if(detectDoorCheckerboard(door_msg_from_checkerboard_,door_msg_from_checkerboard_))
         {
           if(compareDoorMsgs(door_msg_from_detector_,door_msg_from_checkerboard_,status_string))
           {
-            ROS_INFO("%s",status_string.c_str());
+	    //            ROS_INFO("%s",status_string.c_str());
           }
           else
           {
@@ -206,7 +207,7 @@ class TestDoorDetectionNode : public ros::Node
       }
       else
         print_string += "handle location from the detector does not match handle location from ground truth\n";
-
+      ROS_INFO("%s",print_string.c_str());
       return (door_result);
     }
 
