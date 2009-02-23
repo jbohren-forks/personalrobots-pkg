@@ -11,9 +11,9 @@
   <param name="right_arm/trajectory_controller/r_wrist_flex_joint/goal_reached_threshold" type="double" value="0.1"/>
   <param name="right_arm/trajectory_controller/r_wrist_roll_joint/goal_reached_threshold" type="double" value="0.1"/>
 
-  <node pkg="mechanism_control" type="spawner.py" args="$(find sbpl_arm_executive/launch/xml)/r_arm_trajectory_controller.xml" output="screen"/>
+  <node pkg="mechanism_control" type="spawner.py" args="$(find sbpl_arm_executive)/launch/xml/r_arm_trajectory_controller.xml" output="screen"/>
 
  <!-- Gripper effort controller -->
-  <node pkg="mechanism_control" type="spawner.py" args="$(find sbpl_arm_executive/launch/xml)/r_gripper_effort_controller.xml" output="screen"/>
+  <node pkg="mechanism_control" type="spawner.py" args="$(find sbpl_arm_executive)/launch/xml/r_gripper_effort_controller.xml" output="screen"/>
 
 </launch>

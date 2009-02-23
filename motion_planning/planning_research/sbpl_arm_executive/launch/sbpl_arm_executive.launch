@@ -1,8 +1,5 @@
 <launch>
 
- <include file="$(find sbpl_arm_executive)/launch/arm_trajectory_controller.launch"/>
- <include file="$(find sbpl_arm_executive)/launch/gripper_controller.launch"/>
-
  <include file="$(find sbpl_arm_planner_node)/sbpl_arm_planner_node.launch"/>
 
  <param name="sbpl_exec/arm_trajectory_topic_name" value="/trajectory_controller/trajectory_command"/>
