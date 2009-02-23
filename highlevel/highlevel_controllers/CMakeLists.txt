@@ -18,11 +18,8 @@ target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
 rospack_link_boost(highlevel_controllers thread)
 
 # MoveArm
-# Eventually move_arm2 will replace move_arm
-#rospack_add_executable(move_arm src/move_arm.cpp)
-#rospack_link_boost(move_arm thread)
-rospack_add_executable(move_arm2 src/move_arm2.cpp)
-rospack_link_boost(move_arm2 thread)
+rospack_add_executable(move_arm src/move_arm.cpp)
+rospack_link_boost(move_arm thread)
 
 # move_base_sbpl
 rospack_add_executable(move_base_sbpl src/move_base_sbpl.cpp)

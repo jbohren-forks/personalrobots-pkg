@@ -1,5 +1,5 @@
 /*********************************************************************
-* Software License Agreement (BSD License)
+*  Software License Agreement (BSD License)
 * 
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
@@ -31,6 +31,9 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
+
+/* This is a new version of move_arm, which will eventually replace
+ * move_arm. - BPG */
 
 /**
  * @mainpage
@@ -73,375 +76,450 @@
  **/
 
 #include <highlevel_controllers/highlevel_controller.hh>
-#include <pr2_mechanism_controllers/JointPosCmd.h>
-#include <robot_msgs/MechanismState.h>
+
+// Our interface to the executive
 #include <pr2_msgs/MoveArmState.h>
 #include <pr2_msgs/MoveArmGoal.h>
+
+#include <robot_srvs/KinematicReplanState.h>
 #include <robot_msgs/DisplayKinematicPath.h>
-#include <robot_srvs/NamedKinematicPlanState.h>
-#include <robot_srvs/PlanNames.h>
-#include "tf/transform_listener.h"
+#include <robot_msgs/KinematicPlanStatus.h>
 
-static const unsigned int RIGHT_ARM_JOINTS_BASE_INDEX = 11;
-static const unsigned int LEFT_ARM_JOINTS_BASE_INDEX = 12;
+#include <urdf/URDF.h>
 
-class MoveArm : public HighlevelController<pr2_msgs::MoveArmState, pr2_msgs::MoveArmGoal> {
+#include <std_msgs/Empty.h>
+#include <robot_msgs/JointTraj.h>
+#include <pr2_mechanism_controllers/TrajectoryStart.h>
+#include <pr2_mechanism_controllers/TrajectoryQuery.h>
+#include <pr2_mechanism_controllers/TrajectoryCancel.h>
+
+#include <robot_msgs/MechanismState.h>
+
+#include <planning_models/kinematic.h>
+
+#include <sstream>
+#include <cassert>
+
+#include <tf/transform_listener.h>
+
+class MoveArm : public HighlevelController<pr2_msgs::MoveArmState, 
+                                           pr2_msgs::MoveArmGoal>
+{
 
 public:
 
   /**
    * @brief Constructor
    */
-  MoveArm(const std::string& nodeName, const std::string& stateTopic, const std::string& goalTopic,
-	  const std::string& _armPosTopic, const std::string& _armCmdTopic, const std::string& _kinematicModel);
+  MoveArm(const std::string& node_name, 
+          const std::string& state_topic, 
+          const std::string& goal_topic,
+          const std::string& kinematic_model,
+	  const std::string& controller_topic,
+          const std::string& controller_name);
 
   virtual ~MoveArm();
 
 private:
+  robot_msgs::MechanismState       mechanism_state_msg_;
+  robot_msgs::KinematicPlanStatus  plan_status_;
+  const std::string                kinematic_model_;
+  const std::string                controller_topic_;
+  const std::string                controller_name_;
+  planning_models::KinematicModel* robot_model_;
 
-  /**
-   * @brief Helper Method to obtain the joint value by name
-   * @return true if the joint is present, otherwise false
-   */
-  bool readJointValue(const robot_msgs::MechanismState& mechanismStateMsg, const std::string& name, double& value);
+  int                              plan_id_;
+  bool                             new_goal_;
+  bool                             new_trajectory_;
+  bool                             trajectory_stopped_;
+  bool                             plan_valid_;
+  robot_msgs::KinematicPath        current_trajectory_;
 
-  void handleArmConfigurationCallback();
-  void updateGoalMsg();
-  bool makePlan();
-  bool goalReached();
-  bool dispatchCommands();
-  bool withinBounds(unsigned waypointIndex);
+  // HighlevelController interface that we must implement
+  virtual void updateGoalMsg();
+  virtual bool makePlan();
+  virtual bool goalReached();
+  virtual bool dispatchCommands();
 
-  void setStartState(robot_srvs::NamedKinematicPlanState::Request& req);
-  void setCommandParameters(pr2_mechanism_controllers::JointPosCmd& cmd);
-
-  const std::string armCmdTopic;
-  const std::string kinematicModel;
-  robot_msgs::MechanismState mechanismState;
-  robot_srvs::NamedKinematicPlanState::Response plan;
-  unsigned int currentWaypoint; /*!< The waypoint in the plan that we are targetting */
-  tf::TransformListener tf_; /**< Used to do transforms */
-
-protected:
-  std::vector<std::string> jointNames_; /*< The collection of joint names of interest. Instantiate in the  derived class.*/
+  // Internal helpers
+  void requestStopReplanning(void);
+  void sendArmCommand(robot_msgs::KinematicPath &path, 
+                      const std::string &model);
+  void stopArm(void);
+  void getTrajectoryMsg(robot_msgs::KinematicPath &path, 
+                        robot_msgs::JointTraj &traj);
+  void printKinematicPath(robot_msgs::KinematicPath &path);
+  void mechanismStateCallback();
+  void receiveStatus();
+  void getCurrentStateAsTraj(robot_msgs::JointTraj& traj);
 };
 
-
-bool MoveArm::readJointValue(const robot_msgs::MechanismState& mechanismStateMsg, const std::string& name, double& value){
-  for(unsigned int i = 0; i < mechanismStateMsg.get_joint_states_size(); i++){
-    const std::string& jointName = mechanismStateMsg.joint_states[i].name;
-    if(name == jointName){
-      value = mechanismStateMsg.joint_states[i].position;
-      return true;
-    }
+MoveArm::~MoveArm() {
+  if (robot_model_) {
+    delete robot_model_;
   }
-
-  return false;
 }
 
-static const double L1_JOINT_DIFF_MAX = .12;
+MoveArm::MoveArm(const std::string& node_name, 
+                 const std::string& state_topic, 
+                 const std::string& goal_topic,
+                 const std::string& kinematic_model,
+		 const std::string& controller_topic,
+		 const std::string& controller_name)
+  : HighlevelController<pr2_msgs::MoveArmState, pr2_msgs::MoveArmGoal>(node_name, state_topic, goal_topic),
+    kinematic_model_(kinematic_model),
+    controller_topic_(controller_topic),
+    controller_name_(controller_name),
+    robot_model_(NULL), plan_id_(-1), new_goal_(false), 
+    new_trajectory_(false), trajectory_stopped_(false),
+    plan_valid_(false)
+{
 
-MoveArm::MoveArm(const std::string& nodeName, const std::string& stateTopic, const std::string& goalTopic,
-		 const std::string& armPosTopic, const std::string& _armCmdTopic, const std::string& _kinematicModel)
-  : HighlevelController<pr2_msgs::MoveArmState, pr2_msgs::MoveArmGoal>(nodeName, stateTopic, goalTopic),
-    armCmdTopic(_armCmdTopic), kinematicModel(_kinematicModel), currentWaypoint(0), tf_(*this, true, 10000000000ULL) {
-
-
-  // Advertise for messages to command the arm
-  advertise<pr2_mechanism_controllers::JointPosCmd>(armCmdTopic, QUEUE_MAX());
-
-  // Advertise the display.
-  advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
-
-  // Subscribe to arm configuration messages
-  subscribe(armPosTopic, mechanismState, &MoveArm::handleArmConfigurationCallback, QUEUE_MAX());
-}
-
-MoveArm::~MoveArm(){}
-
-void MoveArm::handleArmConfigurationCallback(){
-  initialize();
-
-  lock();
-
-  // Read available name value pairs
-  std::vector<std::pair< std::string, double> > nameValuePairs;
-  for(std::vector< std::string >::const_iterator it = jointNames_.begin(); it != jointNames_.end(); ++it){
-    double value;
-    const std::string& name = *it;
-    if(readJointValue(mechanismState, name, value))
-      nameValuePairs.push_back(std::pair<std::string, double>(name, value));
+  //Create robot model.
+  std::string model;
+  if (ros::Node::instance()->getParam("robot_description", model))
+  {
+    robot_desc::URDF file;
+    file.loadString(model.c_str());
+    robot_model_ = new planning_models::KinematicModel();
+    robot_model_->setVerbose(false);
+    robot_model_->build(model);
+    // make sure we are in the robot's self frame
+    robot_model_->reduceToRobotFrame();
+    
+    // Say that we're up and ready
+    initialize();
+  }
+  else
+  {
+    ROS_FATAL("Robot model not found! Did you remap robot_description?");
+    ROS_BREAK();
   }
 
-  // Now set the state msg up for publication
-  stateMsg.set_configuration_size(nameValuePairs.size());
-  for(unsigned int i = 0; i < nameValuePairs.size(); i++){
-    stateMsg.configuration[i].name = nameValuePairs[i].first;
-    stateMsg.configuration[i].position = nameValuePairs[i].second;
-  }
 
-  unlock();
+  ros::Node::instance()->subscribe("kinematic_planning_status", 
+                                   plan_status_, 
+                                   &MoveArm::receiveStatus, 
+                                   this,
+                                   1);
+  ros::Node::instance()->subscribe("mechanism_state",
+                                   mechanism_state_msg_,
+                                   &MoveArm::mechanismStateCallback,
+                                   this,
+                                   1);
+  ros::Node::instance()->advertise<robot_msgs::JointTraj>(controller_topic_, 1);
 }
 
-void MoveArm::updateGoalMsg(){
+void MoveArm::receiveStatus(void)
+{
+  if((plan_id_ >= 0) && 
+     (plan_id_ == plan_status_.id) && 
+     !plan_status_.path.states.empty())
+  {
+    current_trajectory_ = plan_status_.path;
+    new_trajectory_ = true;
+  }
+}
+
+void MoveArm::updateGoalMsg()
+{
   lock();
   stateMsg.goal = goalMsg.configuration;
+  new_goal_ = true;
   unlock();
 }
 
-bool MoveArm::makePlan(){
-  std::cout << "Invoking Kinematic Planner\n";
-  //lock();
-  ROS_INFO("Locked");
+void MoveArm::mechanismStateCallback() 
+{
+  stateMsg.lock();
+  unsigned int len = robot_model_->getGroupDimension(robot_model_->getGroupID(kinematic_model_));
+  stateMsg.set_configuration_size(len);
 
-  robot_srvs::PlanNames::Request namesReq;
-  robot_srvs::PlanNames::Response names;
-  ros::service::call("plan_joint_state_names", namesReq, names);
+  std::vector<std::string> joints;
+  robot_model_->getJointsInGroup(joints, robot_model_->getGroupID(kinematic_model_));
 
-  //unsigned int needparams = 0;
-  //for (unsigned int i = 0 ; i < names.get_names_size() && i < names.get_num_values_size() ; ++i) {
-  //std::cout << names.names[i] << " (" << names.num_values[i] << ")\n";
-  // needparams += names.num_values[i];
-  //}
-  //std::cout << "Need " << needparams << " Params\n";
-
-
-
-  robot_srvs::NamedKinematicPlanState::Request req;
-    
-  req.params.model_id = kinematicModel;
-  req.params.distance_metric = "L2Square";
-  req.threshold = 10e-06;
-  req.interpolate = 0;
-  req.times = 1;
-
-
-
-  //Get the pose of the robot:
-  tf::Stamped<tf::Pose> robotPose, globalPose;
-  robotPose.setIdentity();
-  robotPose.frame_id_ = "base_link";
-  robotPose.stamp_ = ros::Time();
-
-  try{
-    tf_.transformPose("/map", robotPose, globalPose);
-  }
-  catch(tf::LookupException& ex) {
-    ROS_INFO("No Transform available Error\n");
-  }
-  catch(tf::ConnectivityException& ex) {
-    ROS_INFO("Connectivity Error\n");
-  }
-  catch(tf::ExtrapolationException& ex) {
-    ROS_INFO("Extrapolation Error\n");
-  }
-
-
-  ROS_INFO("Get the start state.");
-  //initializing full value state
-  req.start_state.set_names_size(names.get_names_size());
-  req.start_state.set_joints_size(names.get_names_size());
-  for (unsigned int i = 0 ; i < req.start_state.get_joints_size() ; ++i) {
-    req.start_state.names[i] = names.names[i];
-    //std::cout << req.start_state.names[i] << ": " << names.num_values[i] << std::endl;
-    req.start_state.joints[i].set_vals_size(names.num_values[i]);
-    if (names.names[i] == "base_joint") {
-      double yaw, pitch, roll;
-      globalPose.getBasis().getEulerZYX(yaw, pitch, roll);
-      std::cout << "Base: " << i << ", " << globalPose.getOrigin().getX() << ", " << globalPose.getOrigin().getY() << ", " << yaw << std::endl;
-      req.start_state.joints[i].vals[0] = globalPose.getOrigin().getX();
-      req.start_state.joints[i].vals[1] = globalPose.getOrigin().getY();
-      req.start_state.joints[i].vals[2] = yaw;
-    } else {
-      for (int k = 0 ; k < names.num_values[i]; k++) {
-	req.start_state.joints[i].vals[k] = 0;
+  unsigned int stateInd = 0;
+  for (unsigned int i = 0; i < joints.size(); i++)
+  {
+    ROS_ASSERT(stateInd < len);
+    if (robot_model_->getJoint(joints[i])->usedParams == 1) {
+      unsigned int ind = 0;
+      while (mechanism_state_msg_.joint_states[ind].name != joints[i] && ind < mechanism_state_msg_.get_joint_states_size())
+      	ind++;
+      
+      if (ind == mechanism_state_msg_.get_joint_states_size())
+      {
+	ROS_ERROR("No joint '%s' in mechanism data.", joints[i].c_str());
+	stateMsg.configuration[stateInd].name = joints[i];
+	stateMsg.configuration[stateInd].position = 0;
       }
+      else
+      {
+	stateMsg.configuration[stateInd].name = joints[i];
+	stateMsg.configuration[stateInd].position = mechanism_state_msg_.joint_states[ind].position;
+      }
+      stateInd++;
+    } else if (robot_model_->getJoint(joints[i])->usedParams != 0) {
+      ROS_ERROR("Joints with more than one param are not supported in movearm.");
     }
   }
-
-  // TODO: Adjust based on parameters for left vs right arms
-
-  // Fill out the start state from current arm configuration
-  setStartState(req);
-
-  // Filling out goal state from data in the goal message
-  ROS_INFO("Set the goal state.");
-  req.goal_state.set_names_size(goalMsg.get_configuration_size());
-  req.goal_state.set_joints_size(goalMsg.get_configuration_size());
-  for(unsigned int i = 0; i<goalMsg.get_configuration_size(); i++) {
-    req.goal_state.names[i] = goalMsg.configuration[i].name;
-    req.goal_state.joints[i].set_vals_size(1); //FIXME: multi-part joints?
-    req.goal_state.joints[i].vals[0] = goalMsg.configuration[i].position;
-    ROS_INFO("Joint: %s = %f", goalMsg.configuration[i].name.c_str(), goalMsg.configuration[i].position);
-  }
-
-
-  req.allowed_time = 10.0;
-  req.params.volumeMin.x = -1.0; req.params.volumeMin.y = -1.0; req.params.volumeMin.z = -1.0;
-  req.params.volumeMax.x = -1.0; req.params.volumeMax.y = -1.0; req.params.volumeMax.z = -1.0;
-
-  // Invoke kinematic motion planner
-  ROS_INFO("Running the service.");
-  ros::service::call("plan_kinematic_path_named", req, plan);
-  unsigned int nstates = plan.path.get_states_size();
-
-  // If all well, then there will be at least 2 states
-  bool foundPlan = (nstates > 0);
-
-  if (foundPlan) {
-    currentWaypoint = 0;
-    std::cout << "Obtained solution path with " << nstates << " states\n";
-  } else {
-    std::cout << "Service 'plan_kinematic_path_named' failed\n";
-  }
-
-  /*robot_msgs::DisplayKinematicPath dpath;
-  dpath.frame_id = "robot";
-  dpath.model_name = req.params.model_id;
-  dpath.start_state = req.start_state;
-  dpath.path = plan.path;
-  publish("display_kinematic_path", dpath);*/
-
-  unlock();
-
-  return foundPlan;
+  stateMsg.unlock();
 }
 
-/**
- * If the current waypoint has been reached then advance to the next.
- * If no new waypoint then return true, otherwise false.
- */
-bool MoveArm::goalReached(){
+void MoveArm::getCurrentStateAsTraj(robot_msgs::JointTraj& traj)
+{
+  mechanism_state_msg_.lock();
 
-  for(unsigned int i = currentWaypoint; i < plan.path.get_states_size(); i++){
-    if(withinBounds(i)){
-      std::cout << "Accomplished waypoint " << i << std::endl;
-      currentWaypoint++;
+  std::vector<std::string> joints;
+  robot_model_->getJointsInGroup(joints, robot_model_->getGroupID(kinematic_model_));
+
+  traj.set_points_size(1);
+  traj.points[0].set_positions_size(joints.size());
+
+  for (unsigned int i = 0; i < joints.size(); i++)
+  {
+    unsigned int j;
+    for (j = 0; j < mechanism_state_msg_.joint_states.size(); j++)
+    {
+      if(mechanism_state_msg_.joint_states[j].name == joints[i])
+        break;
     }
-    else {
-      return false;
-    }
+    ROS_ASSERT(j<mechanism_state_msg_.joint_states.size());
+
+    traj.points[0].positions[i] = mechanism_state_msg_.joint_states[j].position;
   }
 
-  std::cout << "Goal Reached" << std::endl;
-  return true;
+  mechanism_state_msg_.unlock();
 }
 
-/**
- * @brief Iterate over all published joint values we match on
- * @todo Does not handle joints with multiple axes.
- */
-bool MoveArm::withinBounds(unsigned waypointIndex){
-  double sum_joint_diff = 0.0;
-
-  for(unsigned int i=0; i<plan.path.states[waypointIndex].get_joints_size(); i++){
-    double value;
-    if(readJointValue(mechanismState, plan.path.states[waypointIndex].names[i], value))
-       sum_joint_diff += fabs(value - plan.path.states[waypointIndex].joints[i].vals[0]);
-  }
+void stateParamsToMsg(planning_models::KinematicModel::StateParams *state, 
+		      planning_models::KinematicModel* model, 
+		      std::string group, std::vector<double>& conf) {
+  conf.clear();
+  //Copy the stateparams in to the req.
+  state->copyParamsGroup(conf, group);
+}
 
 
-  if(L1_JOINT_DIFF_MAX > sum_joint_diff)
+bool MoveArm::makePlan()
+{
+  if(!new_goal_)
     return true;
 
-  return false;
-}
+  new_goal_ = false;
 
-/**
- * @brief In principle we could be checking the feasibility of the plan here based on a local computation
- */
-bool MoveArm::dispatchCommands(){
-  if(currentWaypoint >= plan.path.get_states_size()){
-    std::cout << "SetStateGoalFromPlan:: trying to set state greater than number of states in path.\n";
-    return false;
-  }
+  ROS_INFO("Starting to plan...");
 
-  pr2_mechanism_controllers::JointPosCmd armCommand;
 
-  setCommandParameters(armCommand);
+  robot_srvs::KinematicReplanState::Request  req;
+  robot_srvs::KinematicReplanState::Response  res;
   
-  std::cout << "Dispatching state for waypoint [" << currentWaypoint << "]: ";
+  req.value.params.model_id = kinematic_model_;
+  req.value.params.distance_metric = "L2Square";
+  //req.value.params.planner_id = "SBL";
+  req.value.params.planner_id = "KPIECE";
+  req.value.threshold = 0.1;
+  req.value.interpolate = 1;
+  req.value.times = 1;
+
+  //Copies in the state.
+  //First create stateparams for the group of intrest.
+  planning_models::KinematicModel::StateParams *state = robot_model_->newStateParams();
+  ROS_ASSERT(state);
+ 
+  // Skip setting the start state, so the planner will use the mech state.
   
-  for(unsigned int i=0; i<plan.path.states[currentWaypoint].get_joints_size(); i++){
-    std::cout << plan.path.states[currentWaypoint].names[i] << " (";
-    for (unsigned int k=0; k<plan.path.states[currentWaypoint].joints[i].get_vals_size(); k++) {
-      std::cout << plan.path.states[currentWaypoint].joints[i].vals[k] << ",";
-    }
-    std::cout << ") ";
+  //Set the goal state.
+  goalMsg.lock();
+  for (unsigned int i = 0; i < goalMsg.configuration.size(); i++) 
+  {
+    planning_models::KinematicModel::Joint* j = robot_model_->getJoint(goalMsg.configuration[i].name);
+    ROS_ASSERT(j);
+    unsigned int axes = j->usedParams;
+    ROS_ASSERT(axes == 1);
+    double* param = new double[axes];
+    param[0] = goalMsg.configuration[i].position;
+    state->setParamsJoint(param, goalMsg.configuration[i].name);
+    delete[] param;
   }
+  goalMsg.unlock();
+  stateParamsToMsg(state, robot_model_, kinematic_model_, req.value.goal_state.vals);
 
-  std::cout << std::endl;
+  //ROS_INFO("Going for:");
+  //state->print();
 
-  publish(armCmdTopic, armCommand);
+    
+  //FIXME: should be something?
+  req.value.allowed_time = 0.5;
+  
+  //req.params.volume* are left empty, because we're not planning for the base.
+
+  bool ret = ros::service::call("replan_kinematic_path_state", req, res);
+  if (!ret)
+  {
+    ROS_ERROR("Service call on plan_kinematic_path_state failed");
+    plan_id_ = -1;
+  }
+  else
+  {
+    plan_id_ = res.id;
+    ROS_INFO("Requested plan, got id %d\n", plan_id_);
+  }
 
   return true;
 }
 
-/**
- * @todo Multi-axis joints.
- */
-void MoveArm::setCommandParameters(pr2_mechanism_controllers::JointPosCmd& armCommand){
-    static const double TOLERANCE(0.05);
-
-    // Set up message size
-    armCommand.set_names_size(plan.path.states[currentWaypoint].get_names_size());
-    armCommand.set_positions_size(plan.path.states[currentWaypoint].get_names_size());
-    armCommand.set_margins_size(plan.path.states[currentWaypoint].get_names_size());
-
-    for(unsigned int i = 0; i < plan.path.states[currentWaypoint].get_names_size(); i++){
-      armCommand.names[i] = plan.path.states[currentWaypoint].names[i];
-      armCommand.positions[i] = plan.path.states[currentWaypoint].joints[i].vals[0];
-      armCommand.margins[i] = TOLERANCE;
-    }
+bool MoveArm::goalReached()
+{
+  return getDone();
 }
 
-void MoveArm::setStartState(robot_srvs::NamedKinematicPlanState::Request& req){
-  for (unsigned int i = 0; i < req.start_state.get_names_size(); i++) {
-    for (unsigned int k = 0; k < mechanismState.get_joint_states_size(); k++) {
-      if (req.start_state.names[i] == mechanismState.joint_states[k].name && req.start_state.names[i] != "base_joint"
-	  && req.start_state.joints[i].get_vals_size() > 0) {
-	//std::cout << req.start_state.names[i] << " (" << i << ") " << mechanismState.joint_states[k].position << std::endl;
-	req.start_state.joints[i].vals[0] = mechanismState.joint_states[k].position;
-      }
+bool MoveArm::dispatchCommands()
+{
+  plan_status_.lock();
+
+  if (plan_id_ < 0 ||
+      plan_status_.id != plan_id_ ||
+      !new_trajectory_)
+  {
+    // NOOP
+    ROS_INFO("doing nothing");
+  }
+  else if(plan_status_.valid && 
+          !plan_status_.unsafe &&
+          !current_trajectory_.states.empty())
+  {
+    ROS_INFO("sending new trajectory");
+    sendArmCommand(current_trajectory_, kinematic_model_);
+    plan_valid_ = true;
+    new_trajectory_ = false;
+  }
+  else if(plan_status_.done)
+  {
+    ROS_INFO("Plan completed.");
+    plan_id_ = -1;
+    trajectory_stopped_ = true;
+    ROS_INFO("Execution is complete");
+    stateMsg.status = pr2_msgs::MoveArmState::INACTIVE;
+    plan_valid_ = true;
+  }
+  else
+  {
+    ROS_INFO("Plan invalid %d %d %d %d %d %d\n",
+             plan_id_ >= 0,
+             plan_status_.id == plan_id_,
+             plan_status_.valid,
+             !plan_status_.unsafe,
+             !current_trajectory_.states.empty(),
+             new_trajectory_ == true);
+    stopArm();
+    plan_valid_ = false;
+  }
+  plan_status_.unlock();
+  return plan_valid_;
+}
+
+void MoveArm::printKinematicPath(robot_msgs::KinematicPath &path)
+{
+  unsigned int nstates = path.get_states_size();    
+  ROS_INFO("Obtained solution path with %u states", nstates);    
+  std::stringstream ss;
+  ss << std::endl;
+  for (unsigned int i = 0 ; i < nstates ; ++i)
+  {
+    for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
+      ss <<  path.states[i].vals[j] << " ";	
+    ss << std::endl;	
+  }    
+  ROS_INFO(ss.str().c_str());
+}
+
+void MoveArm::getTrajectoryMsg(robot_msgs::KinematicPath &path, 
+                               robot_msgs::JointTraj &traj)
+{
+  traj.set_points_size(path.get_states_size());
+  ROS_INFO("ARM:");
+  for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
+  {
+    traj.points[i].set_positions_size(path.states[i].get_vals_size());
+    ROS_INFO("STEP:");
+    for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
+    {
+      traj.points[i].positions[j] = path.states[i].vals[j];
+      ROS_INFO("%f ", path.states[i].vals[j]);
     }
+    traj.points[i].time = 0.0;
+  }	
+}
+
+void MoveArm::sendArmCommand(robot_msgs::KinematicPath &path, 
+                             const std::string &model)
+{
+  ROS_INFO("Sending %d-step trajectory\n", path.states.size());
+  robot_msgs::JointTraj traj;
+  getTrajectoryMsg(path, traj);
+  ros::Node::instance()->publish(controller_topic_, traj);
+  trajectory_stopped_ = false;
+  new_trajectory_ = false;
+}
+
+void MoveArm::stopArm()
+{
+  ROS_INFO("Stopping arm.");
+  if(!trajectory_stopped_)
+  {
+    /*
+    // Send the current state
+    robot_msgs::JointTraj traj;
+    getCurrentStateAsTraj(traj);
+    */
+    
+    // Send an empty trajectory
+    robot_msgs::JointTraj traj;
+    ros::Node::instance()->publish(controller_topic_, traj);
+    trajectory_stopped_ = true;
   }
 }
 
-class MoveRightArm: public MoveArm {
+class MoveRightArm: public MoveArm 
+{
 public:
-  MoveRightArm(): MoveArm("rightArmController", "right_arm_state", "right_arm_goal", "mechanism_state", "right_arm_commands", "pr2::right_arm"){
-    jointNames_.push_back("r_shoulder_pan_joint");
-    jointNames_.push_back("r_shoulder_lift_joint");
-    jointNames_.push_back("r_upper_arm_roll_joint");
-    jointNames_.push_back("r_elbow_flex_joint");
-    jointNames_.push_back("r_forearm_roll_joint");
-    jointNames_.push_back("r_wrist_flex_joint");
-    jointNames_.push_back("r_wrist_roll_joint");
+  MoveRightArm(): MoveArm("right_arm_controller", 
+                          "right_arm_state", 
+                          "right_arm_goal", 
+                          "pr2::right_arm",
+			  "right_arm_trajectory_command",
+                          "right_arm_trajectory_controller")
+  {
   };
 
 protected:
 };
 
-class MoveLeftArm: public MoveArm {
+class MoveLeftArm: public MoveArm 
+{
 public:
-  MoveLeftArm(): MoveArm("leftArmController", "left_arm_state", "left_arm_goal", "mechanism_state", "left_arm_commands", "pr2::left_arm"){
-    // Instantiate joint vector
-    jointNames_.push_back("l_shoulder_pan_joint");
-    jointNames_.push_back("l_shoulder_lift_joint");
-    jointNames_.push_back("l_upper_arm_roll_joint");
-    jointNames_.push_back("l_elbow_flex_joint");
-    jointNames_.push_back("l_forearm_roll_joint");
-    jointNames_.push_back("l_wrist_flex_joint");
-    jointNames_.push_back("l_wrist_roll_joint"); 
+  MoveLeftArm(): MoveArm("left_arm_controller", 
+                         "left_arm_state", 
+                         "left_arm_goal", 
+                         "pr2::left_arm",
+			 "left_arm_trajectory_command",
+                         "left_arm_trajectory_controller")
+  {
   }
 };
+
+void usage(void)
+{
+    std::cout << "Usage: ./move_arm left|right [standard ROS arguments]" << std::endl;
+}
 
 int
 main(int argc, char** argv)
 {
 
-  if(argc != 2){
-    std::cout << "Usage: ./move_arm left|right";
+  if(argc < 2){
+    usage();
     return -1;
   }
 
@@ -451,17 +529,19 @@ main(int argc, char** argv)
   const std::string param = argv[1];
 
   if(param == "left"){
+    ros::Node rosnode("left_arm_controller");
     MoveLeftArm node;
     node.run();
     
   }
   else if(param == "right"){
+    ros::Node rosnode("right_arm_controller");
     MoveRightArm node;
     node.run();
     
   }
   else {
-    std::cout << "Usage: ./move_arm left|right";
+    usage();      
     return -1;
   }
 
