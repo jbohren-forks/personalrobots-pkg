@@ -131,7 +131,6 @@ typedef struct ENV_ROBARM_CONFIG
     int lowCostRadius_c;
 
     //end effector goal orientation
-    double EndEffGoalOrientation[3][3]; //get rid of it
     double GoalOrientationMOE[3][3];
 
     short unsigned int ** EndEffGoals_c;
@@ -189,7 +188,6 @@ typedef struct ENV_ROBARM_CONFIG
     double gripper_orientation_moe; //gripper orientation margin of error
     double grasped_object_length_m;
     double goal_moe_m;
-
 
     //successor actions
     double ** SuccActions;
@@ -289,6 +287,11 @@ public:
      * @brief Clear the environment of any obstacles
      */
     void ClearEnv();
+    /*!
+     * @brief Check if path is valid. 
+     * @param solution_stateIDs_V vector of stateIDs returned by planner
+     */
+    bool isPathValid(vector<int> solution_stateIDs_V);
 
     //this should be removed  - it returns the planner Epsilon
     double GetEpsilon();
@@ -337,7 +340,6 @@ private:
     void InitializeEnvGrid();
     void CreateStartandGoalStates();
     bool InitializeEnvironment();
-    double IsPathFeasible();
     void AddObstacleToGrid(double* obstacle, int type, char*** grid, double gridcell_m);
 
     //coordinate frame/angle functions
@@ -392,7 +394,7 @@ private:
     //forward kinematics
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3]);
-    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3],double desired_orientation[3][3]);
+    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3]);
     void ValidateDH2KinematicsLibrary();
     void ComputeDHTransformations();
     void ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double *z);

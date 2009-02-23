@@ -872,14 +872,6 @@ void EnvironmentROBARM::ReadConfiguration(FILE* fCfg)
     {
         for(x = 0; x < 3; x++)
         {
-//             //a row of the rotation matrix
-//             fscanf(fCfg, "%s", sTemp);
-//             EnvROBARMCfg.EndEffGoalOrientation[x][0] = atof(sTemp);
-//             fscanf(fCfg, "%s", sTemp);
-//             EnvROBARMCfg.EndEffGoalOrientation[x][1] = atof(sTemp);
-//             fscanf(fCfg, "%s", sTemp);
-//             EnvROBARMCfg.EndEffGoalOrientation[x][2] = atof(sTemp);
-
             //acceptable margin of error of that row
             fscanf(fCfg, "%s", sTemp);
             EnvROBARMCfg.GoalOrientationMOE[x][0] = atof(sTemp);
@@ -1076,7 +1068,7 @@ bool EnvironmentROBARM::SetEnvParameter(char* parameter, double value)
         return false;
     }
 
-    printf("setting parameter %s to %d\n", parameter, value);
+    printf("setting parameter %s to %2.1f\n", parameter, value);
 
     if(strcmp(parameter, "useDHforFK") == 0)
     {
@@ -1549,15 +1541,12 @@ void EnvironmentROBARM::AddObstacleToGrid(double* obstacle, int type, char*** gr
 }
 
 //returns 1 if end effector within space, 0 otherwise
-int EnvironmentROBARM::ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3], double desired_orientation[3][3])
+int EnvironmentROBARM::ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3])
 {
     num_forwardkinematics++;
     clock_t currenttime = clock();
     double x,y,z;
     int retval = 1;
-
-    if(desired_orientation == NULL)
-        desired_orientation = EnvROBARMCfg.EndEffGoalOrientation;
 
     //convert angles from positive values in radians (from 0->6.28) to centered around 0 (not really needed)
     for (int i = 0; i < NUMOFLINKS; i++)
@@ -2096,7 +2085,7 @@ bool EnvironmentROBARM::InitializeEnvironment()
 
     ComputeCoord(startangles, coord);
     ComputeContAngles(coord, angles);
-    ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation, EnvROBARMCfg.EndEffGoalOrientation);
+    ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation);
 
     //create the start state
     EnvROBARM.startHashEntry = CreateNewHashEntry(coord, NUMOFLINKS, endeff, 0, orientation);
@@ -2219,7 +2208,7 @@ bool EnvironmentROBARM::InitializeEnv(const char* sEnvFile)
         for(int i = 0; i < NUMOFLINKS; i++)
             goalangles[i] = PI_CONST*(EnvROBARMCfg.LinkGoalAngles_d[i]/180.0);
 
-        ComputeEndEffectorPos(goalangles, endeff, wrist, elbow, orientation, EnvROBARMCfg.EndEffGoalOrientation);
+        ComputeEndEffectorPos(goalangles, endeff, wrist, elbow, orientation);
         EnvROBARMCfg.EndEffGoalX_c = endeff[0];
         EnvROBARMCfg.EndEffGoalY_c = endeff[1];
         EnvROBARMCfg.EndEffGoalZ_c = endeff[2];
@@ -2478,7 +2467,7 @@ void EnvironmentROBARM::PrintSuccGoal(int SourceStateID, int costtogoal, bool bV
             }
 
             ComputeContAngles(succcoord, angles);
-            ComputeEndEffectorPos(angles,endeff,wrist,elbow,orientation,EnvROBARMCfg.EndEffGoalOrientation);
+            ComputeEndEffectorPos(angles,endeff,wrist,elbow,orientation);
 
             //skip invalid successors
             if(!IsValidCoord(succcoord,endeff,wrist,elbow,orientation))
@@ -2592,7 +2581,7 @@ void EnvironmentROBARM::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector
             ComputeContAngles(succcoord, angles);
 
             //get forward kinematics
-            if(ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation, EnvROBARMCfg.EndEffGoalOrientation) == false)
+            if(ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation) == false)
             {
                 continue;
             }
@@ -2822,7 +2811,7 @@ bool EnvironmentROBARM::SetStartJointConfig(double angles[NUMOFLINKS], bool bRad
 
     //compute arm position in environment
     ComputeCoord(startangles, EnvROBARM.startHashEntry->coord);
-    ComputeEndEffectorPos(startangles, EnvROBARM.startHashEntry->endeff,wrist,elbow,EnvROBARM.startHashEntry->orientation,EnvROBARMCfg.EndEffGoalOrientation);
+    ComputeEndEffectorPos(startangles, EnvROBARM.startHashEntry->endeff,wrist,elbow,EnvROBARM.startHashEntry->orientation);
 
     //check if starting position is valid
     if(!IsValidCoord(EnvROBARM.startHashEntry->coord,EnvROBARM.startHashEntry->endeff,wrist,elbow,EnvROBARM.startHashEntry->orientation))
@@ -2876,7 +2865,7 @@ void EnvironmentROBARM::AddObstaclesToEnv(double**obstacles, int numobstacles)
         ComputeHeuristicValues();
 
     ComputeCoord(startangles, EnvROBARM.startHashEntry->coord);
-    ComputeEndEffectorPos(startangles, endeff, wrist, elbow, orientation,EnvROBARMCfg.EndEffGoalOrientation);
+    ComputeEndEffectorPos(startangles, endeff, wrist, elbow, orientation);
 
     //check if the starting position and goal are still valid
     if(!IsValidCoord(EnvROBARM.startHashEntry->coord,EnvROBARM.startHashEntry->endeff,wrist,elbow,EnvROBARM.startHashEntry->orientation))
@@ -2922,6 +2911,33 @@ void EnvironmentROBARM::ClearEnv()
             }
         }
     }
+}
+
+bool EnvironmentROBARM::isPathValid(vector<int> solution_stateIDs_V)
+{
+    double angles[NUMOFLINKS];
+    EnvROBARMHashEntry_t* HashEntry;
+    short unsigned int wrist[3], elbow[3];
+
+    //loop through each waypoint of the path and check if it's valid
+    for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++)
+    {
+        HashEntry = EnvROBARM.StateID2CoordTable[solution_stateIDs_V[i]];
+
+        //convert to angles
+        ComputeContAngles(HashEntry->coord, angles);
+
+        //compute FK
+        ComputeEndEffectorPos(angles, HashEntry->endeff, wrist, elbow, HashEntry->orientation);
+
+        //check if valid
+        if(!IsValidCoord(HashEntry->coord,HashEntry->endeff, wrist, elbow, HashEntry->orientation))
+        {
+            printf("[isPathValid] Path is invalid.\n");
+            return false;
+        }
+    }
+    return true;
 }
 //--------------------------------------------------------------
 
@@ -3155,7 +3171,7 @@ void EnvironmentROBARM::PrintConfiguration()
     for(i = 0; i < NUMOFLINKS; i++)
         start_angles[i] = DEG2RAD(EnvROBARMCfg.LinkStartAngles_d[i]);
 
-    ComputeEndEffectorPos(start_angles, endeff, wrist, elbow,orientation,EnvROBARMCfg.EndEffGoalOrientation);
+    ComputeEndEffectorPos(start_angles, endeff, wrist, elbow,orientation);
     Cell2ContXYZ(elbow[0],elbow[1],elbow[2],&pX, &pY, &pZ);
     printf("Elbow Start:   %i %i %i (cells) --> %.3f %.3f %.3f (meters)\n",elbow[0],elbow[1],elbow[2],pX,pY,pZ);
 
@@ -3224,8 +3240,6 @@ void EnvironmentROBARM::PrintAbridgedConfiguration()
         printf("End Effector Goal:  %i %i %i (cells) --> %.3f %.3f %.3f (meters)\n",EnvROBARMCfg.EndEffGoals_c[i][0], EnvROBARMCfg.EndEffGoals_c[i][1],
                EnvROBARMCfg.EndEffGoals_c[i][2],EnvROBARMCfg.EndEffGoals_m[i][0],EnvROBARMCfg.EndEffGoals_m[i][1],EnvROBARMCfg.EndEffGoals_m[i][2]);
 
-    //output start to goal heuristic cost
-//     printf("start->goal heuristic: %i    euclidean distance: %.2f\n", GetFromToHeuristic(EnvROBARM.startHashEntry->stateID, EnvROBARM.goalHashEntry->stateID),IsPathFeasible());
     printf("\n");
 }
 
@@ -3586,13 +3600,6 @@ void EnvironmentROBARM::ValidateDH2KinematicsLibrary() //very very hackish
     }
 }
 */
-        
-double EnvironmentROBARM::IsPathFeasible() //a dumb function. fix this
-{
-    return (double)sqrt((EnvROBARMCfg.EndEffGoalX_c - EnvROBARMCfg.BaseX_c)*(EnvROBARMCfg.EndEffGoalX_c - EnvROBARMCfg.BaseX_c) +
-                        (EnvROBARMCfg.EndEffGoalY_c - EnvROBARMCfg.BaseY_c)*(EnvROBARMCfg.EndEffGoalY_c - EnvROBARMCfg.BaseY_c) +
-                        (EnvROBARMCfg.EndEffGoalZ_c - EnvROBARMCfg.BaseZ_c)*(EnvROBARMCfg.EndEffGoalZ_c - EnvROBARMCfg.BaseZ_c));
-}
 
 int EnvironmentROBARM::GetEuclideanDistToGoal(short unsigned int* xyz)
 {
