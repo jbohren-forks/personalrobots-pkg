@@ -391,10 +391,12 @@ void ArmTrajectoryControllerNode::getJointTrajectoryThresholds()
 void ArmTrajectoryControllerNode::setTrajectoryCmdFromMsg(robot_msgs::JointTraj traj_msg)
 {
   std::vector<trajectory::Trajectory::TPoint> tp;
-  tp.resize((int)traj_msg.get_points_size()+1);
+  int msg_size = std::max<int>((int)traj_msg.get_points_size(),1);
+
+  tp.resize(msg_size+1);
 
   //set first point in trajectory to current position of the arm
-    tp[0].setDimension((int) c_->dimension_);
+  tp[0].setDimension((int) c_->dimension_);
 
   for(int j=0; j < c_->dimension_; j++)
   {
@@ -402,29 +404,39 @@ void ArmTrajectoryControllerNode::setTrajectoryCmdFromMsg(robot_msgs::JointTraj 
     tp[0].time_ = 0.0;
   }
 
-  if(traj_msg.get_points_size() > 0)
+  if((int)traj_msg.get_points_size() > 0)
   {
-     if((int) traj_msg.points[0].get_positions_size() != (int) c_->dimension_)
-     {
-       ROS_WARN("Dimension of input trajectory = %d does not match number of controlled joints = %d",(int) traj_msg.points[0].get_positions_size(), (int) c_->dimension_);
-        return;
-     }
+    if((int) traj_msg.points[0].get_positions_size() != (int) c_->dimension_)
+    {
+      ROS_WARN("Dimension of input trajectory = %d does not match number of controlled joints = %d",(int) traj_msg.points[0].get_positions_size(), (int) c_->dimension_);
+      return;
+    }
+    else
+    {
+      for(int i=0; i < (int) traj_msg.get_points_size(); i++)
+      {
+        tp[i+1].setDimension((int) c_->dimension_);
+        for(int j=0; j < (int) c_->dimension_; j++)
+        {
+          tp[i+1].q_[j] = traj_msg.points[i].positions[j];
+          tp[i+1].time_ = traj_msg.points[i].time;
+        }
+      }
+    }
   }
   else
   {
     ROS_WARN("Trajectory message has no way points");
-     return;
+    //set second point in trajectory to current position of the arm
+    tp[1].setDimension((int) c_->dimension_);
+
+    for(int j=0; j < c_->dimension_; j++)
+    {
+      tp[1].q_[j] = c_->joint_pd_controllers_[j]->joint_state_->position_;
+      tp[1].time_ = 0.0;
+    }
   }
 
-  for(int i=0; i < (int) traj_msg.get_points_size(); i++)
-  {
-     tp[i+1].setDimension((int) c_->dimension_);
-     for(int j=0; j < (int) c_->dimension_; j++)
-     {
-        tp[i+1].q_[j] = traj_msg.points[i].positions[j];
-        tp[i+1].time_ = traj_msg.points[i].time;
-     }
-  }
   this->c_->setTrajectoryCmd(tp);
 }
 
