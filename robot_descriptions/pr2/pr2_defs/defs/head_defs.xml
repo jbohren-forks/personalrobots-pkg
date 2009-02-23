@@ -121,13 +121,13 @@
   <property name="stereo_center_box_center_offset_z" value="0.05" />
 
   <macro name="stereo_camera" params="name parent *origin">
-    <joint name="${name}_joint" type="fixed" />
-
-    <sensor name="${name}_link" type="camera">
+    
+    <joint name="${name}_fixed_joint" type="fixed" />
+    <link name="${name}_link">
       <parent name="${parent}" />
       <insert_block name="origin" />
-      <joint name="${name}_joint" />
-
+      <joint name="${name}_fixed_joint" />
+      
       <inertial>
         <mass value="0.1" />
         <com xyz="0 0 0" />
@@ -151,10 +151,24 @@
           <box size="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
       </collision>
+      
+    </link>
 
+    <joint name="${name}_optical_fixed_joint" type="fixed" />
+    <sensor name="${name}_optical_link" type="camera">
+      <parent name="${name}_link" />
+      <origin xyz="0 0.045 .0305" rpy="-1.57 0.0 -1.57" />
+      <joint name="${name}_optical_fixed_joint" />
+
+      <collision>
+        <origin xyz="0 0 0 " rpy="0 0 0" />
+        <geometry name="${name}_collision">
+          <box size="0.0 0.0 0.0" />
+        </geometry>
+      </collision>
 
       <map name="sensor" flag="gazebo">
-	<verbatim key="sensor_${name}_camera">
+        <verbatim key="sensor_${name}_camera">
           <sensor:camera name="${name}_l_sensor">
             <imageWidth>640</imageWidth>
             <imageHeight>480</imageHeight>
@@ -164,16 +178,16 @@
             <updateRate>20.0</updateRate>
             <controller:ros_camera name="${name}_l_controller" plugin="libros_camera.so">
               <alwaysOn>true</alwaysOn>
-	      <updateRate>20.0</updateRate>
-	      <topicName>${name}_l/image</topicName>
-	      <frameName>${name}_link</frameName>
-	      <interface:camera name="${name}_l_iface" />
+              <updateRate>20.0</updateRate>
+              <topicName>${name}_l/image</topicName>
+              <frameName>${name}_link</frameName>
+              <interface:camera name="${name}_l_iface" />
             </controller:ros_camera>
           </sensor:camera>
-	</verbatim>
+       	</verbatim>
       </map>
       <map name="sensor" flag="gazebo">
-	<verbatim key="sensor_${name}_ray">
+      	<verbatim key="sensor_${name}_ray">
           <sensor:ray name="${name}_laser">
             <rayCount>10</rayCount>
             <rangeCount>10</rangeCount>
@@ -203,7 +217,7 @@
               <interface:laser name="${name}_laser_iface" />
             </controller:ros_block_laser>
           </sensor:ray>
-	</verbatim>
+      	</verbatim>
       </map>
     </sensor>
   </macro>
@@ -317,12 +331,24 @@
       <origin xyz="0.058 0 0" rpy="0 0 0" />
     </pr2_head_tilt>
 
-    <stereo_camera name="stereo" parent="${name}_tilt_link">
-      <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />
+    <!-- Head plate frame -->
+    <joint name="${name}_plate_fixed_joint" type="fixed" />
+    <link name="${name}_plate_frame">
+      <parent name="${name}_tilt_link" />
+      <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
+      <joint name="${name}_plate_fixed_joint" />
+      <collision>
+        <origin xyz="0 0 0 " rpy="0 0 0" />
+        <geometry name="${name}_plate_frame_collision">
+          <box size="0.0 0.0 0.0" />
+        </geometry>
+      </collision>
+    </link>
+    
+    <stereo_camera name="stereo" parent="${name}_plate_frame">
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
     </stereo_camera>
   </macro>
-
-
 
   <!--                    Calibration                            -->
 
