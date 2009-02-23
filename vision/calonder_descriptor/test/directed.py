@@ -33,7 +33,9 @@ class TestDirected(unittest.TestCase):
       if 0:
         cl1.train(im.tostring(), im.size[0], im.size[1], kp, 50, 10, 100, dim, 0)
       else:
-        filename = '/u/prdata/calonder_trees/current.rtc'
+        #filename = '/u/prdata/calonder_trees/current.rtc'
+        # current.rtc gets downloaded before we run
+        filename = 'current.rtc'
         cl1.read(filename)
 
       dim = cl1.dimension()

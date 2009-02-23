@@ -22,4 +22,21 @@ rospack_add_compile_flags(pycalonder -Wno-missing-field-initializers)
 
 # Commenting out because test is broken by the functions hard-coded to
 # assume d = 176, t = 50
+
+# Download needed data file
+# This code is wrapped up in a new macro, which hasn't yet been merged to
+# the stable branch of ROS.
+#rospack_download_test_data(http://pr.willowgarage.com/data/calonder_descriptor/current.rtc current.rtc)
+
+set(_url http://pr.willowgarage.com/data/calonder_descriptor/current.rtc)
+set(_filename current.rtc)
+find_package(Wget REQUIRED)
+add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/${_filename}
+                   COMMAND ${WGET_EXECUTABLE} -r ${_url} -O ${PROJECT_SOURCE_DIR}/${_filename}
+                   VERBATIM)
+# Create a legal target name, in case the target name has slashes in it
+string(REPLACE "/" "_" _testname download_data_${_filename})
+add_custom_target(${_testname}
+                  DEPENDS ${PROJECT_SOURCE_DIR}/current.rtc)
+add_dependencies(tests ${_testname})
 rospack_add_pyunit(test/directed.py)
