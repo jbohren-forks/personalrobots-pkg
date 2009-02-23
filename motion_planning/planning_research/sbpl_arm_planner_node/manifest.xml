@@ -4,16 +4,15 @@
   </description>
   <author>Sachin Chitta /sachinc@willowgarage.com</author>
   <license>BSD</license>
-    <depend package="sbpl" />
-    <depend package="robot_kinematics" />
-    <depend package="wg_robot_description_parser"/>
     <depend package="roscpp"/>
     <depend package="std_msgs"/>
     <depend package="robot_msgs" />
+    <depend package="sbpl_arm_planner" />
+    <depend package="tf" />
   <url></url>
   
   <export>
-      <cpp cflags="-I${prefix}/src -O3 -g" lflags="-Wl, -rpath,${prefix}/lib -L${prefix}/lib"/>
+      <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp -O3 -g" lflags="-Wl, -rpath,${prefix}/lib -L${prefix}/lib"/>
   </export>
   
 </package>
