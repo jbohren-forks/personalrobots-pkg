@@ -66,6 +66,12 @@ namespace sbpl_arm_planner_node
 
      private:
 
+      double torso_arm_offset_x_;
+
+      double torso_arm_offset_y_;
+
+      double torso_arm_offset_z_;
+
       double allocated_time_;
 
       bool forward_search_;
@@ -86,7 +92,9 @@ namespace sbpl_arm_planner_node
 
       ARAPlanner *planner_;
 
-      FILE *config_fp_;
+      FILE *env_config_fp_;
+
+      FILE *planner_config_fp_;
 
       bool initializePlannerAndEnvironment();
 

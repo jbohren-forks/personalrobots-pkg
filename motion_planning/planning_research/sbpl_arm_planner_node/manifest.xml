@@ -10,9 +10,9 @@
     <depend package="sbpl_arm_planner" />
     <depend package="tf" />
   <url></url>
-  
+
   <export>
-      <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp -O3 -g" lflags="-Wl, -rpath,${prefix}/lib -L${prefix}/lib"/>
+      <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp -O3 -g" />
   </export>
   
 </package>

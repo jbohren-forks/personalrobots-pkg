@@ -38,6 +38,9 @@ SBPLArmPlannerNode::SBPLArmPlannerNode(std::string node_name):ros::Node(node_nam
   param ("~forward_search", forward_search_, true);
   param ("~search_mode", search_mode_, true);
   param ("~num_joints", num_joints_, 7);
+  param ("~torso_arm_offset_x", torso_arm_offset_x_, 0.0);
+  param ("~torso_arm_offset_y", torso_arm_offset_y_, 0.0);
+  param ("~torso_arm_offset_z", torso_arm_offset_z_, 0.0);
   advertiseService(node_name + "/plan_path/GetPlan", &SBPLArmPlannerNode::planPath, this);
   subscribe(collision_map_topic_, collision_map_, &SBPLArmPlannerNode::collisionMapCallback,1);
 
@@ -46,6 +49,7 @@ SBPLArmPlannerNode::SBPLArmPlannerNode(std::string node_name):ros::Node(node_nam
 
 SBPLArmPlannerNode::~SBPLArmPlannerNode()
 {
+  delete planner_;
   unsubscribe(collision_map_topic_);
   unadvertiseService(node_name_ + "/plan_path/GetPlan");
 };
@@ -57,18 +61,25 @@ void PrintUsage(char *argv[])
 
 bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
 {
-  std::string config_string;
-  this->param<std::string>("~sbpl_pr2_arm_config", config_string, " ");
-  config_fp_ = fopen("sbpl_pr2_arm_tmp_config_file.txt","w");
-  fprintf(config_fp_,"%s",config_string.c_str());
+  std::string env_config_string;
+  std::string planner_config_string;
 
-  /* if(!pr2_arm_env_.InitializeEnv(config_fp_))
+  this->param<std::string>("~sbpl_env_config", env_config_string, " ");
+  env_config_fp_ = fopen("sbpl_env_cfg_tmp.txt","w");
+  fprintf(env_config_fp_,"%s",env_config_string.c_str());
+
+  this->param<std::string>("~sbpl_planner_config", planner_config_string, " ");
+  planner_config_fp_ = fopen("sbpl_planner_cfg_tmp.txt","w");
+  fprintf(planner_config_fp_,"%s",planner_config_string.c_str());
+
+  if(!pr2_arm_env_.InitEnvFromFilePtr(env_config_fp_, planner_config_fp_))
   {
-    printf("ERROR: InitializeEnv failed\n");
+    printf("ERROR: InitEnvFromFilePtr failed\n");
     return false;
   }
-  */
-  fclose(config_fp_);
+  
+  fclose(env_config_fp_);
+  fclose(planner_config_fp_);
 
   if(!pr2_arm_env_.InitializeMDPCfg(&mdp_cfg_))  //Initialize MDP Info
   {
@@ -94,9 +105,9 @@ void SBPLArmPlannerNode::collisionMapCallback()
   {
     sbpl_boxes[i] = new double[6];
 
-    sbpl_boxes[i][0] = collision_map_.boxes[i].center.x;
-    sbpl_boxes[i][1] = collision_map_.boxes[i].center.y;
-    sbpl_boxes[i][2] = collision_map_.boxes[i].center.z;
+    sbpl_boxes[i][0] = collision_map_.boxes[i].center.x - torso_arm_offset_x_;
+    sbpl_boxes[i][1] = collision_map_.boxes[i].center.y - torso_arm_offset_y_;
+    sbpl_boxes[i][2] = collision_map_.boxes[i].center.z - torso_arm_offset_z_;
 
     sbpl_boxes[i][0] = collision_map_.boxes[i].extents.x;
     sbpl_boxes[i][1] = collision_map_.boxes[i].extents.y;
@@ -119,6 +130,7 @@ bool SBPLArmPlannerNode::replan(robot_msgs::JointTraj &arm_path)
   vector<int> solution_state_ids_v;
 
   ROS_INFO("Start planning.");
+  planner_->costs_changed();
   b_ret = planner_->replan(allocated_time_, &solution_state_ids_v);
 
   ROS_INFO("Planning completed in %.4f seconds", double(clock()-start_time) / CLOCKS_PER_SEC);
@@ -192,6 +204,12 @@ bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
   }
 
   pr2_arm_env_.SetEndEffGoals(sbpl_goal, 0, num_goals,1);
+
+  for(int i=0; i < num_goals; i++)
+  {
+    delete sbpl_goal[i];
+  }
+  delete sbpl_goal;
 
   if(planner_->set_goal(mdp_cfg_.goalstateid) == 0)
   {

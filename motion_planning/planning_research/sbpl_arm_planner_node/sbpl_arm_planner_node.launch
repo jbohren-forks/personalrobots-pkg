@@ -1,0 +1,20 @@
+<launch>
+
+  <param name="/sbpl/arm/env_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
+  <param name="/sbpl/arm/planner_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
+
+  <param name="sbpl_arm_planner_node/allocated_time" value="1.0" />
+  <param name="sbpl_arm_planner_node/forward_search" value="true" />
+  <param name="sbpl_arm_planner_node/search_mode" value="true" />
+  <param name="sbpl_arm_planner_node/num_joints" value="7" />
+
+  <param name="sbpl_arm_planner_node/torso_arm_offset_x" value="0.0" />
+  <param name="sbpl_arm_planner_node/torso_arm_offset_y" value="0.0" />
+  <param name="sbpl_arm_planner_node/torso_arm_offset_z" value="-0.188" />
+
+  <param name="sbpl_arm_planner_node/sbpl_env_config" value="/sbpl/arm/env_config"/>
+  <param name="sbpl_arm_planner_node/sbpl_planner_config" value="/sbpl/arm/planner_config" />
+
+  <node pkg="sbpl_arm_planner_node" type="sbpl_arm_planner_node" name="sbpl_arm_planner_node" output="screen" respawn="true"/>
+
+</launch>
