@@ -80,6 +80,22 @@ public:
                         const std::vector<std::string>& stop_controllers);
   controller::Controller* getControllerByName(std::string name);
 
+  struct AddReq
+  {
+    std::string name;
+    std::string type;
+    TiXmlElement *config;
+    bool success;  // Response
+  };
+  struct RemoveReq
+  {
+    std::string name;
+    bool success;  // Response
+  };
+  void changeControllers(std::vector<RemoveReq> &remove_reqs,
+                         std::vector<AddReq> &add_reqs,
+                         const int strictness = 0);
+
   mechanism::Robot model_;
   mechanism::RobotState *state_;
   HardwareInterface *hw_;
@@ -87,36 +103,41 @@ public:
 private:
   bool initialized_;
 
-  const static int MAX_NUM_CONTROLLERS = 100;
-  boost::mutex controllers_lock_;
-  controller::Controller* controllers_[MAX_NUM_CONTROLLERS];
-  std::string controller_names_[MAX_NUM_CONTROLLERS];
+  typedef boost::accumulators::accumulator_set<
+    double, boost::accumulators::stats<boost::accumulators::tag::max,
+                                       boost::accumulators::tag::mean,
+                                       boost::accumulators::tag::variance> > TimeStatistics;
+  struct Diagnostics {
+    TimeStatistics acc;
+    double max;
+    boost::circular_buffer<double> max1;
 
-  typedef boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::max, boost::accumulators::tag::mean, boost::accumulators::tag::variance> > TimeStatistics;
-  struct {
-    TimeStatistics acc_;
-    double max_;
-    boost::circular_buffer<double> max1_;
-    struct {
-      TimeStatistics acc_;
-      double max_;
-      boost::circular_buffer<double> max1_;
-    } controllers_[MAX_NUM_CONTROLLERS];
-  } diagnostics_;
+    Diagnostics() : max(0), max1(60) {}
+  };
+
+  enum {EMPTY, INITIALIZED = 1, RUNNING};
+  struct ControllerSpec {
+    std::string name;
+    boost::shared_ptr<controller::Controller> c;
+    int state;
+    boost::shared_ptr<Diagnostics> diagnostics;
+
+    ControllerSpec() : state(EMPTY), diagnostics(new Diagnostics) {}
+    ControllerSpec(const ControllerSpec &spec)
+      : name(spec.name), c(spec.c), state(spec.state), diagnostics(spec.diagnostics) {}
+  };
+
+  boost::mutex controllers_lock_;
+  std::vector<ControllerSpec> controllers_lists_[2];
+  int current_controllers_list_, used_by_realtime_;
+
+  Diagnostics diagnostics_;
   realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
   void publishDiagnostics();
-
-  // Killing a controller:
-  // 1. Non-realtime thread places the index of the controller into please_remove_
-  // 2. Realtime thread moves the controller out of the array and into removed_
-  // 3. Non-realtime thread can now delete the controller
-  // The non-realtime thread will hold controllers_lock_ throughout the process.
-  // please_remove_ must be -1 when not removing
-  int please_remove_;
-  controller::Controller* removed_;
   std::vector<controller::Controller*> start_request_, stop_request_;
   bool please_switch_;
 
+  int loop_count_;
 };
 
 /*

@@ -29,6 +29,7 @@
  */
 
 #include "mechanism_control/mechanism_control.h"
+#include <algorithm>
 #include <boost/thread/thread.hpp>
 #include "ros/console.h"
 
@@ -36,29 +37,15 @@ using namespace mechanism;
 using namespace boost::accumulators;
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
-  state_(NULL), hw_(hw), initialized_(0), publisher_("/diagnostics", 1), please_remove_(-1), removed_(NULL)
+  state_(NULL), hw_(hw), initialized_(0),
+  current_controllers_list_(0), used_by_realtime_(-1), publisher_("/diagnostics", 1),
+  loop_count_(0)
 {
-  memset(controllers_, 0, MAX_NUM_CONTROLLERS * sizeof(void*));
   model_.hw_ = hw;
-
-  diagnostics_.max1_.resize(60);
-  diagnostics_.max_ = 0;
-  for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
-  {
-    diagnostics_.controllers_[i].max1_.resize(60);
-    diagnostics_.controllers_[i].max_ = 0;
-  }
 }
 
 MechanismControl::~MechanismControl()
 {
-  // Destroy all controllers
-  for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
-  {
-    if (controllers_[i] != NULL)
-      delete controllers_[i];
-  }
-
   if (state_)
     delete state_;
 }
@@ -70,15 +57,6 @@ bool MechanismControl::initXml(TiXmlElement* config)
 
   initialized_ = true;
   return true;
-}
-
-controller::Controller* MechanismControl::getControllerByName(std::string name)
-{
-  for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
-    if (controller_names_[i] == name)
-     return controllers_[i];
-
-  return NULL;
 }
 
 #define ADD_STRING_FMT(lab, fmt, ...) \
@@ -93,8 +71,9 @@ void MechanismControl::publishDiagnostics()
 {
   if (publisher_.trylock())
   {
+    std::vector<ControllerSpec> &controllers = controllers_lists_[used_by_realtime_];
     int active = 0;
-    TimeStatistics a;
+    TimeStatistics blank_statistics;
 
     vector<robot_msgs::DiagnosticStatus> statuses;
     vector<robot_msgs::DiagnosticValue> values;
@@ -107,24 +86,35 @@ void MechanismControl::publishDiagnostics()
     status.level = 0;
     status.message = "OK";
 
-    for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
+    for (size_t i = 0; i < controllers.size(); ++i)
     {
-      if (controllers_[i] != NULL)
+      if (controllers[i].state != EMPTY)
       {
         ++active;
-        double m = extract_result<tag::max>(diagnostics_.controllers_[i].acc_);
-        diagnostics_.controllers_[i].max1_.push_back(m);
-        diagnostics_.controllers_[i].max_ = std::max(m, diagnostics_.controllers_[i].max_);
-        ADD_STRING_FMT(controller_names_[i], "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)", mean(diagnostics_.controllers_[i].acc_)*1e6, sqrt(variance(diagnostics_.controllers_[i].acc_))*1e6, m*1e6, *std::max_element(diagnostics_.controllers_[i].max1_.begin(), diagnostics_.controllers_[i].max1_.end())*1e6, diagnostics_.controllers_[i].max_*1e6);
-        /* Clear accumulator */
-        diagnostics_.controllers_[i].acc_ = a;
+        double m = extract_result<tag::max>(controllers[i].diagnostics->acc);
+        controllers[i].diagnostics->max1.push_back(m);
+        controllers[i].diagnostics->max = std::max(m, controllers[i].diagnostics->max);
+        ADD_STRING_FMT(controllers[i].name,
+                       "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)",
+                       mean(controllers[i].diagnostics->acc)*1e6,
+                       sqrt(variance(controllers[i].diagnostics->acc))*1e6,
+                       m*1e6,
+                       *std::max_element(controllers[i].diagnostics->max1.begin(), controllers[i].diagnostics->max1.end())*1e6,
+                       controllers[i].diagnostics->max*1e6);
+
+        controllers[i].diagnostics->acc = blank_statistics;  // clear
       }
     }
 
-    double m = extract_result<tag::max>(diagnostics_.acc_);
-    diagnostics_.max1_.push_back(m);
-    diagnostics_.max_ = std::max(m, diagnostics_.max_);
-    ADD_STRING_FMT("Overall", "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)", mean(diagnostics_.acc_)*1e6, sqrt(variance(diagnostics_.acc_))*1e6, m*1e6, *std::max_element(diagnostics_.max1_.begin(), diagnostics_.max1_.end())*1e6, diagnostics_.max_*1e6);
+    double m = extract_result<tag::max>(diagnostics_.acc);
+    diagnostics_.max1.push_back(m);
+    diagnostics_.max = std::max(m, diagnostics_.max);
+    ADD_STRING_FMT("Overall", "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)",
+                   mean(diagnostics_.acc)*1e6,
+                   sqrt(variance(diagnostics_.acc))*1e6,
+                   m*1e6,
+                   *std::max_element(diagnostics_.max1.begin(), diagnostics_.max1.end())*1e6,
+                   diagnostics_.max*1e6);
     ADD_STRING_FMT("Active controllers", "%d", active);
 
     status.set_values_vec(values);
@@ -133,49 +123,41 @@ void MechanismControl::publishDiagnostics()
     publisher_.msg_.set_status_vec(statuses);
     publisher_.unlockAndPublish();
 
-    /* Clear accumulator */
-    diagnostics_.acc_ = a;
+    diagnostics_.acc = blank_statistics;  // clear
   }
 }
 
 // Must be realtime safe.
 void MechanismControl::update()
 {
-  static int count = 0;
+  used_by_realtime_ = current_controllers_list_;
+  std::vector<ControllerSpec> &controllers = controllers_lists_[used_by_realtime_];
 
   state_->propagateState();
   state_->zeroCommands();
 
   // Update all controllers
   double start_update = realtime_gettime();
-  for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
+  for (size_t i = 0; i < controllers.size(); ++i)
   {
-    if (controllers_[i] != NULL)
+    if (controllers[i].state != EMPTY)
     {
       double start = realtime_gettime();
-      controllers_[i]->updateRequest();
+      controllers[i].c->updateRequest();
       double end = realtime_gettime();
-      diagnostics_.controllers_[i].acc_(end - start);
+      controllers[i].diagnostics->acc(end - start);
     }
   }
   double end_update = realtime_gettime();
-  diagnostics_.acc_(end_update - start_update);
+  diagnostics_.acc(end_update - start_update);
 
   state_->enforceSafety();
   state_->propagateEffort();
 
-  if (++count == 1000)
+  if (++loop_count_ >= 1000)
   {
-    count = 0;
+    loop_count_ = 0;
     publishDiagnostics();
-  }
-
-  // If there's a controller to remove, we take it out of the controllers array.
-  if (please_remove_ >= 0)
-  {
-    removed_ = controllers_[please_remove_];
-    controllers_[please_remove_] = NULL;
-    please_remove_ = -1;
   }
 
   // there are controllers to start/stop
@@ -206,135 +188,166 @@ void MechanismControl::update()
 
     please_switch_ = false;
   }
-
 }
 
-void MechanismControl::getControllerNames(std::vector<std::string> &controllers)
+void MechanismControl::getControllerNames(std::vector<std::string> &names)
 {
-  controllers_lock_.lock();
-  for (int i = 0; i < MAX_NUM_CONTROLLERS; i++)
+  boost::mutex::scoped_lock guard(controllers_lock_);
+  std::vector<ControllerSpec> &controllers = controllers_lists_[current_controllers_list_];
+  for (size_t i = 0; i < controllers.size(); ++i)
   {
-    if (controllers_[i] != NULL)
+    if (controllers[i].state != EMPTY)
     {
-      controllers.push_back(controller_names_[i]);
+      names.push_back(controllers[i].name);
     }
   }
-  controllers_lock_.unlock();
 }
 
 bool MechanismControl::spawnController(const std::string &type,
                                        const std::string &name,
                                        TiXmlElement *config)
 {
-  boost::mutex::scoped_lock lock(controllers_lock_);
+  std::vector<AddReq> add_reqs;
+  std::vector<RemoveReq> remove_reqs;
 
-  if (getControllerByName(name))
-  {
-    ROS_ERROR("A controller with the name %s already exists", name.c_str());
+  add_reqs.resize(1);
+  add_reqs[0].name = name;
+  add_reqs[0].type = type;
+  add_reqs[0].config = config;
+
+  changeControllers(remove_reqs, add_reqs);
+  if (!add_reqs[0].success)
     return false;
-  }
-
-  controller::Controller *c = controller::ControllerFactory::Instance().CreateObject(type);
-  if (c == NULL)
-  {
-    ROS_ERROR("Could spawn controller %s because controller type %s does not exist",
-              name.c_str(), type.c_str());
-    return false;
-  }
-
-  ROS_INFO("Spawning %s", name.c_str());
-
-  if (!c->initXmlRequest(state_, config, name))
-  {
-    delete c;
-    return false;
-  }
-
-  for (int i = 0; i < MAX_NUM_CONTROLLERS; i++)
-  {
-    if (controllers_[i] == NULL)
-    {
-      controllers_[i] = c;
-      controller_names_[i] = name;
-      return true;
-    }
-  }
-
-  ROS_ERROR("No room for new controller: %s", name.c_str());
-  delete c;
-  return false;
+  return true;
 }
 
 bool MechanismControl::killController(const std::string &name)
 {
-  bool found = false;
-  controllers_lock_.lock();
-  removed_ = NULL;
-  for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
+  std::vector<AddReq> add_reqs;
+  std::vector<RemoveReq> remove_reqs;
+
+  remove_reqs.resize(1);
+  remove_reqs[0].name = name;
+
+  changeControllers(remove_reqs, add_reqs);
+  if (!remove_reqs[0].success)
+    return false;
+  return true;
+}
+
+void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
+                                         std::vector<AddReq> &add_reqs,
+                                         const int strictness)
+{
+  for (size_t i = 0; i < remove_reqs.size(); ++i)
+    remove_reqs[i].success = false;
+  for (size_t i = 0; i < add_reqs.size(); ++i)
+    add_reqs[i].success = false;
+
+  boost::mutex::scoped_lock guard(controllers_lock_);
+
+  int free_controllers_list = (current_controllers_list_ + 1) % 2;
+  while (free_controllers_list == used_by_realtime_)
+    usleep(1000);
+  std::vector<ControllerSpec>
+    &from = controllers_lists_[current_controllers_list_],
+    &to = controllers_lists_[free_controllers_list];
+  to.clear();
+
+  // Transfers the running controllers over, skipping the ones to be removed.
+  for (size_t i = 0; i < from.size(); ++i)
   {
-    if (controllers_[i] && controller_names_[i] == name)
+    bool found = false;
+    for (size_t j = 0; j < remove_reqs.size(); ++j)
     {
-      found = true;
-      please_remove_ = i;
-      ROS_INFO("Kill: controller %s found", name.c_str());
-      break;
+      if (from[i].name == remove_reqs[j].name)
+      {
+        remove_reqs[j].success = true;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found)
+      to.push_back(from[i]);
+  }
+
+  // Fails if we could not remove all the controllers
+  if (strictness >= 2)
+  {
+    for (size_t i = 0; i < remove_reqs.size(); ++i)
+    {
+      if (!remove_reqs[i].success)
+        return;
     }
   }
 
-  if (found)
+  // Adds the new controllers
+  std::vector<controller::Controller*> just_added;
+  for (size_t i = 0; i < add_reqs.size(); ++i)
   {
-    while (removed_ == NULL)
-      usleep(10000);
+    // Checks that we're not duplicating controllers
+    bool exists = false;
+    for (size_t j = 0; j < to.size(); ++j)
+    {
+      if (to[j].name == add_reqs[i].name)
+      {
+        exists = true;
+      }
+    }
+    if (exists)
+    {
+      ROS_ERROR("A controller named \"%s\" already exists", add_reqs[i].name.c_str());
+      continue;
+    }
 
-    ROS_INFO("Kill: controller %s removed", name.c_str());
+    // Constructs the controller
+    controller::Controller *c =
+      controller::ControllerFactory::Instance().CreateObject(add_reqs[i].type);
+    if (c == NULL)
+    {
+      ROS_ERROR("Could spawn controller %s because controller type %s does not exist",
+                add_reqs[i].name.c_str(), add_reqs[i].type.c_str());
+      continue;
+    }
+    if (!c->initXmlRequest(state_, add_reqs[i].config, add_reqs[i].name))
+    {
+      delete c;
+      continue;
+    }
 
-    delete removed_;
-    removed_ = NULL;
-
-    ROS_INFO("Kill: controller %s destroyed", name.c_str());
+    // Adds the controller to the new list
+    to.resize(to.size() + 1);
+    to[to.size()-1].name = add_reqs[i].name;
+    to[to.size()-1].c.reset(c);
+    to[to.size()-1].state = INITIALIZED;
+    add_reqs[i].success = true;
+    just_added.push_back(c);
   }
-  else
+
+  // Fails if we could not add all the controllers
+  if (strictness >= 1)
   {
-    ROS_ERROR("Kill failed: no controller named %s exists", name.c_str());
+    for (size_t i = 0; i < add_reqs.size(); ++i)
+    {
+      if (!add_reqs[i].success)
+      {
+        // FAIL
+        to.clear();
+        return;
+      }
+    }
   }
 
-  controllers_lock_.unlock();
-  return found;
+  // Success!  Swaps in the new set of controllers.
+  current_controllers_list_ = free_controllers_list;
+
+  // Destroys the old controllers list when the realtime thread is finished with it.
+  while (used_by_realtime_ != current_controllers_list_)
+    usleep(1000);
+  from.clear();
 }
 
-
-bool MechanismControl::switchController(const std::vector<std::string>& start_controllers,
-                                        const std::vector<std::string>& stop_controllers)
-{
-  controllers_lock_.lock();
-
-  controller::Controller* ct;
-  // list all controllers to stop
-  for (unsigned int i=0; i<stop_controllers.size(); i++)
-  {
-    ct = getControllerByName(stop_controllers[i]);
-    if (ct != NULL)
-        stop_request_.push_back(ct);
-  }
-
-  // list all controllers to start
-  for (unsigned int i=0; i<start_controllers.size(); i++)
-  {
-    ct = getControllerByName(start_controllers[i]);
-    if (ct != NULL)
-        start_request_.push_back(ct);
-  }
-
-  // start the atomic controller switching
-  please_switch_ = true;
-
-  // wait until switch is finished
-  while (please_switch_)
-    usleep(100);
-
-  controllers_lock_.unlock();
-  return true;
-}
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
