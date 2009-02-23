@@ -1,0 +1,18 @@
+<package>
+  <description brief="An executive to test the PR2 arm">
+    
+  </description>
+  <author>Sachin Chitta /sachinc@willowgarage.com</author>
+  <license>BSD</license>
+    <depend package="roscpp"/>
+    <depend package="std_msgs"/>
+    <depend package="robot_msgs" />
+    <depend package="robot_srvs" />
+    <depend package="sbpl_arm_planner_node" />
+    <depend package="sbpl_arm_check_path" />
+    <depend package="pr2_mechanism_controllers" />
+    <depend package="tf" />
+  <url></url>
+  
+</package>
+
