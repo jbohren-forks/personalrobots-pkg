@@ -71,8 +71,8 @@
 class imWindow : public Fl_Window
 {
 public:
-  IMPORT imWindow(int x, int y, int w, int h, char *name = "Image Window");
-  IMPORT imWindow(int w, int h, char *name = "Image Window");
+  IMPORT imWindow(int x, int y, int w, int h, const char *name = "Image Window");
+  IMPORT imWindow(int w, int h, const char *name = "Image Window");
   IMPORT void ClearImage();
   IMPORT void DeleteImage();
   IMPORT void draw();           // drawing routine 
@@ -112,7 +112,7 @@ public:
   // saves to a file sequence, if no arguments are given
   IMPORT void Save(char *fname = NULL, int num = -1);
   int saveNum;
-  char *saveName;		// base file name
+  const char *saveName;		// base file name
 
 private: 
   void drawit();                // draws the pixmap on the screen
@@ -173,7 +173,7 @@ private:
 class imInfoWindow : public Fl_Window
 {
 public:
-  IMPORT imInfoWindow(int, int, char *name = NULL);
+  IMPORT imInfoWindow(int, int, const char *name = NULL);
   IMPORT void Print(char *str, ...);
   IMPORT void Bottom();
   IMPORT bool Save(char *filename); // saves to a named file

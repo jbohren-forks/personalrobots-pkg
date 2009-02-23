@@ -208,8 +208,8 @@ int  PrintMatStr(CvMat *A, char *str);
 imInfoWindow *iwin = NULL;
 calImageWindow * get_current_left_win();
 calImageWindow * get_current_right_win();
-void info_message(char *str, ...);	// print in the info line
-void debug_message(char *str, ...);	// print in the info line and to debug window
+void info_message(const char *str, ...);	// print in the info line
+void debug_message(const char *str, ...);	// print in the info line and to debug window
 videre_proc_mode_t checkProcMode(videre_proc_mode_t mode); // consistent STOC mode
 bool FindCorners(CvPoint2D32f **corners, int *nc, bool *good, IplImage *img);
 dcam::StereoDcam *initcam(uint64_t guid);
@@ -324,6 +324,9 @@ main(int argc, char **argv)	// no arguments
 		    case SIZE_1280x960:
 		      videoMode = VIDERE_STEREO_1280x960;
 		      break;
+                    default:
+                      debug_message("[Dcam] Unexpected format %d\n", videoSize);
+                      break;
 		    }
 		}
 
@@ -603,7 +606,7 @@ checkProcMode(videre_proc_mode_t mode)
 
 // info line only
 void
-info_message(char *str, ...)	// print in the info line
+info_message(const char *str, ...)	// print in the info line
 {
   char buf[1024];
   va_list ptr;
@@ -617,7 +620,7 @@ info_message(char *str, ...)	// print in the info line
 
 // print in message line and on debug window
 void
-debug_message(char *str, ...)	// print in the info line
+debug_message(const char *str, ...)	// print in the info line
 {
   char buf[1024];
   va_list ptr;
@@ -1667,8 +1670,8 @@ void do_stereo_cb(Fl_Light_Button* w, void*)
   int corr   = sp_corr;		// correlation window size
   int tthresh = sp_tthresh;	// texture threshold
   int uthresh = sp_uthresh;	// uniqueness threshold, percent
-  int sdiff  = sp_sdiff;	// speckle parameters: size and difference
-  int ssize  = sp_ssize;
+  //int sdiff  = sp_sdiff;	// speckle parameters: size and difference
+  //int ssize  = sp_ssize;
 
   // allocate buffers
   buf  = (uint8_t *)malloc(yim*dlen*(corr+5)); // local storage for the algorithm
@@ -1987,7 +1990,7 @@ void cal_upload_params_cb(Fl_Button*, void*)
       //   4.x     5+    6+
       //
 
-      char *types;
+      const char *types;
       if (dev->isColor)
 	{
 	  if (fwver < 0x0500 && imver < 6)

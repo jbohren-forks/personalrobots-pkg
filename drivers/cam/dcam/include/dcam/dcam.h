@@ -163,7 +163,7 @@ namespace dcam
   char *getVendor(size_t i);
   char *getModel(size_t i);
   extern dc1394_t *dcRef;	// IEEE 1394 system object
-  char *getModeString(dc1394video_mode_t mode); // Mode string from mode 
+  const char *getModeString(dc1394video_mode_t mode); // Mode string from mode 
 
   class Dcam
   {

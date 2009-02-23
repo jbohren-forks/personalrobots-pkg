@@ -216,7 +216,7 @@ dcam::getVendor(size_t i)
 }
 
 
-static char *modestrings[DC1394_VIDEO_MODE_NUM] =
+static const char *modestrings[DC1394_VIDEO_MODE_NUM] =
   {
     "DC1394_VIDEO_MODE_160x120_YUV444",
     "DC1394_VIDEO_MODE_320x240_YUV422",
@@ -253,7 +253,7 @@ static char *modestrings[DC1394_VIDEO_MODE_NUM] =
   };
 
 // mode strings from mode
-char *
+const char *
 dcam::getModeString(dc1394video_mode_t mode)
 {
   if (mode < DC1394_VIDEO_MODE_MAX)
@@ -1158,12 +1158,12 @@ dcam::Dcam::setMaxAutoVals(int exp, int gain)
 
   uint32_t v;
   if (exp < 1) exp = 1;
-  if (exp > gainMax) exp = gainMax;
+  if (((uint32_t)exp) > gainMax) exp = gainMax;
   v = 0x04BD0000 | exp;
   setRegister(0xFF000, v);
 
   if (gain < 0) gain = 0;
-  if (gain > gainMax) gain = gainMax;
+  if (((uint32_t)gain) > gainMax) gain = gainMax;
   v = 0x04360000 | (gain+16);
   setRegister(0xFF000, v);
 

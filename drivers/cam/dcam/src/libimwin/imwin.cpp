@@ -329,7 +329,7 @@ static unsigned char dmap[768] =
 
 // construct a display window
 
-imWindow::imWindow(int x, int y, int w, int h, char *name)
+imWindow::imWindow(int x, int y, int w, int h, const char *name)
   : Fl_Window(x,y,w,h,name)
 {
   width = dwidth = w;
@@ -354,7 +354,7 @@ imWindow::imWindow(int x, int y, int w, int h, char *name)
   saveBuf = NULL;
 }
 
-imWindow::imWindow(int w, int h, char *name)
+imWindow::imWindow(int w, int h, const char *name)
   : Fl_Window(w,h,name)
 {
   width = dwidth = w;
@@ -865,20 +865,19 @@ imInfoWindow::Save(char *fname)
 
 
 Fl_Menu_Item menuitems[] = {
-  { "&File",              0, 0, 0, FL_SUBMENU },
-  { "&Save File",       FL_CTRL + 's', (Fl_Callback *)save_cb },
+  { "&File",              0, 0, 0, FL_SUBMENU,0,0,0,0 },
+  { "&Save File",       FL_CTRL + 's', (Fl_Callback *)save_cb,0,0,0,0,0,0 },
   //    { "E&xit", FL_CTRL + 'q', (Fl_Callback *)quit_cb, 0 },
-    { 0 },
+    { 0,0,0,0,0,0,0,0,0 },
 
-  { "&Edit", 0, 0, 0, FL_SUBMENU },
-  { "&Copy",       FL_CTRL + 'c', (Fl_Callback *)copy_cb },
-  { 0 },
-
-  { 0 }
+  { "&Edit", 0, 0, 0, FL_SUBMENU,0,0,0,0 },
+  { "&Copy",       FL_CTRL + 'c', (Fl_Callback *)copy_cb,0,0,0,0,0,0 },
+  { 0,0,0,0,0,0,0,0,0 },
+  { 0,0,0,0,0,0,0,0,0 }
 };
 
 
-imInfoWindow::imInfoWindow(int w, int h, char *name)
+imInfoWindow::imInfoWindow(int w, int h, const char *name)
   : Fl_Window(w,h,name)
 {
   dwin = new Fl_Text_Display(0,30,w,h);
