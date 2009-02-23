@@ -6,7 +6,7 @@
 #include <string.h>
 
 
-NavWin::NavWin(int w, int h, char *name)
+NavWin::NavWin(int w, int h, const char *name)
   : Fl_Double_Window(w,h,name)
 {
   nw = w;

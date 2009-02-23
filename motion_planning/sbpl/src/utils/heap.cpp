@@ -29,7 +29,7 @@
 #include "../sbpl/headers.h"
 
 
-void heaperror(char* ErrorString)
+void heaperror(const char* ErrorString)
 {
   //need to send a message from here somehow
 	printf("%s\n", ErrorString);

@@ -18,7 +18,7 @@ class NavWin
   : public Fl_Double_Window
 {
  public:
-  NavWin(int w, int h, char *name);
+  NavWin(int w, int h, const char *name);
   ~NavWin();
   
   int nw,nh;			// width and height of image

@@ -40,7 +40,7 @@ dispPot(NavFn *nav)
 
 
 // <raw> is true for ROS-generated raw cost maps
-COSTTYPE *readPGM(char *fname, int *width, int *height, bool raw = false);
+COSTTYPE *readPGM(const char *fname, int *width, int *height, bool raw = false);
 
 int main(int argc, char **argv)
 {
@@ -240,11 +240,11 @@ void setcostunk(COSTTYPE *cmap, int n, int w)
 #define unknown_gray 0xCC	// seems to be the value of "unknown" in maps
 
 COSTTYPE *
-readPGM(char *fname, int *width, int *height, bool raw)
+readPGM(const char *fname, int *width, int *height, bool raw)
 {
   int fake_argc(1);
-  char * fake_arg("foo");
-  pgm_init(&fake_argc, &fake_arg);
+  char fake_arg[] = "foo";
+  pgm_init(&fake_argc, (char **)&fake_arg);
 
   FILE *pgmfile;
   pgmfile = fopen(fname,"r");

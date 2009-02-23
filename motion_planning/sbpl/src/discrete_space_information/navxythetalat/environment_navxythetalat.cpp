@@ -663,7 +663,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActionswithBaseMotionPrimitive(vector<S
 		sourcepose.theta = DiscTheta2Cont(tind, NAVXYTHETALAT_THETADIRS);
 
 		//iterate over motion primitives
-		for(int aind = 0; aind < motionprimitiveV->size(); aind++)
+		for(size_t aind = 0; aind < motionprimitiveV->size(); aind++)
 		{
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].starttheta = tind;
 			double mp_endx_m = motionprimitiveV->at(aind).intermptV[motionprimitiveV->at(aind).intermptV.size()-1].x;
@@ -859,7 +859,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActionswithCompleteMotionPrimitive(vect
 
 
 	//at this point we don't allow nonuniform number of actions
-	if(motionprimitiveV->size() != (int)(NAVXYTHETALAT_THETADIRS*maxnumofactions))
+	if(motionprimitiveV->size() != (size_t)(NAVXYTHETALAT_THETADIRS*maxnumofactions))
 	{
 		printf("ERROR: nonuniform number of actions is not supported (maxnumofactions=%d while motprims=%d thetas=%d\n",
 				maxnumofactions, motionprimitiveV->size(), NAVXYTHETALAT_THETADIRS);
