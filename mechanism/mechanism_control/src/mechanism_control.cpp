@@ -181,16 +181,28 @@ void MechanismControl::update()
   // there are controllers to start/stop
   if (please_switch_)
   {
-    std_srvs::Empty::Request req;
-    std_srvs::Empty::Request res;
+    // try to start controllers
+    bool start_success = true;
+    for (unsigned int i=0; i<start_request_.size(); i++){
+      if (!start_request_[i]->startRequest()){
+        start_success = false;
+        break;
+      }
+    }
 
-    for (unsigned int i=0; i<stop_request_.size(); i++)
-      stop_request_[i]->stopRequest(req, res);
-    stop_request_.clear();
-
-    for (unsigned int i=0; i<start_request_.size(); i++)
-      start_request_[i]->startRequest(req, res);
+    // if starting failed, stop them again
+    if (!start_success){
+      for (unsigned int i=0; i<start_request_.size(); i++){
+        start_request_[i]->stopRequest();
+      }
+    }
     start_request_.clear();
+    return;
+
+    // stop controllers
+    for (unsigned int i=0; i<stop_request_.size(); i++)
+      stop_request_[i]->stopRequest();
+    stop_request_.clear();
 
     please_switch_ = false;
   }
