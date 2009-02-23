@@ -103,7 +103,6 @@ public:
   enum {CONSTRUCTED, INITIALIZED, RUNNING};
   int state_;
   bool autostart_;
-  std::string controller_name_;
 
   Controller()
   {
@@ -112,11 +111,6 @@ public:
   }
   virtual ~Controller()
   {
-    if (!autostart_){
-      // what if multiple controllers have same name?
-      ros::Node::instance()->unadvertiseService(controller_name_+"/start");
-      ros::Node::instance()->unadvertiseService(controller_name_+"/stop");
-    }
   }
 
   virtual bool start() {return true;};
@@ -131,8 +125,7 @@ public:
       update();
   }
 
-  bool startRequest(std_srvs::Empty::Request &req,
-                    std_srvs::Empty::Request &res)
+  bool startRequest()
   {
     bool ret = false;
 
@@ -145,8 +138,7 @@ public:
   }
 
 
-  bool stopRequest(std_srvs::Empty::Request &req,
-                   std_srvs::Empty::Request &res)
+  bool stopRequest()
 
   {
     bool ret = false;
@@ -165,26 +157,15 @@ public:
       return false;
     else
     {
-      controller_name_ = controller_name;
-
       // initialize
       if (!initXml(robot, config))
         return false;
       state_ = INITIALIZED;
 
-      // autostart
+      // autostart if needed
       ros::Node::instance()->param(controller_name+"/autostart", autostart_, true);
-      std_srvs::Empty::Request req;
-      std_srvs::Empty::Request res;
-      if (autostart_ && !startRequest(req, res))
+      if (autostart_ && !startRequest())
         return false;
-      
-      // what if multiple controllers have same name?
-      if (!autostart_){
-        ros::Node::instance()->advertiseService(controller_name+"/start", &Controller::startRequest, this);
-        ros::Node::instance()->advertiseService(controller_name+"/stop", &Controller::stopRequest, this);
-      }
-
 
       return true;
     }
