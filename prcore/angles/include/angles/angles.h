@@ -124,6 +124,9 @@ namespace angles
    */
   static inline double shortest_angular_distance_complement(double angle)
   {
+    //check input conditions
+    if (angle > 2*M_PI || angle < -2.0*M_PI)
+      angle = fmod(angle, 2.0*M_PI);    
     if(angle < 0)
       return (2*M_PI+angle);
     else
