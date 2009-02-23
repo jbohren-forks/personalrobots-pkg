@@ -1,20 +1,19 @@
 <launch>
 
-  <param name="/sbpl/arm/env_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
-  <param name="/sbpl/arm/planner_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
+  <param name="right_arm/sbpl_planner/env_config" textfile="$(find sbpl_arm_planner)/env_examples/robarm3d/empty.cfg" />
+  <param name="right_arm/sbpl_planner/planner_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
 
-  <param name="sbpl_arm_planner_node/allocated_time" value="1.0" />
-  <param name="sbpl_arm_planner_node/forward_search" value="true" />
-  <param name="sbpl_arm_planner_node/search_mode" value="true" />
-  <param name="sbpl_arm_planner_node/num_joints" value="7" />
+  <param name="right_arm/sbpl_planner/allocated_time" value="1.0" />
+  <param name="right_arm/sbpl_planner/forward_search" value="true" />
+  <param name="right_arm/sbpl_planner/search_mode" value="true" />
+  <param name="right_arm/sbpl_planner/num_joints" value="7" />
 
-  <param name="sbpl_arm_planner_node/torso_arm_offset_x" value="0.0" />
-  <param name="sbpl_arm_planner_node/torso_arm_offset_y" value="0.0" />
-  <param name="sbpl_arm_planner_node/torso_arm_offset_z" value="-0.188" />
+  <param name="right_arm/sbpl_planner/torso_arm_offset_x" value="0.0" />
+  <param name="right_arm/sbpl_planner/torso_arm_offset_y" value="0.0" />
+  <param name="right_arm/sbpl_planner/torso_arm_offset_z" value="-0.188" />
 
-  <param name="sbpl_arm_planner_node/sbpl_env_config" value="/sbpl/arm/env_config"/>
-  <param name="sbpl_arm_planner_node/sbpl_planner_config" value="/sbpl/arm/planner_config" />
+  <param name="right_arm/sbpl_planner/collision_map_topic" value="collision_map" />
 
-  <node pkg="sbpl_arm_planner_node" type="sbpl_arm_planner_node" name="sbpl_arm_planner_node" output="screen" respawn="true"/>
+  <node pkg="sbpl_arm_planner_node" type="sbpl_arm_planner_node" name="right_arm/sbpl_planner" output="screen" respawn="false"/>
 
 </launch>

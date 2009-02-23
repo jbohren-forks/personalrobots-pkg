@@ -41,10 +41,12 @@ SBPLArmPlannerNode::SBPLArmPlannerNode(std::string node_name):ros::Node(node_nam
   param ("~torso_arm_offset_x", torso_arm_offset_x_, 0.0);
   param ("~torso_arm_offset_y", torso_arm_offset_y_, 0.0);
   param ("~torso_arm_offset_z", torso_arm_offset_z_, 0.0);
+  param<std::string>("~collision_map_topic", collision_map_topic_, "collision_map");
   advertiseService(node_name + "/plan_path/GetPlan", &SBPLArmPlannerNode::planPath, this);
   subscribe(collision_map_topic_, collision_map_, &SBPLArmPlannerNode::collisionMapCallback,1);
 
   planner_ = new ARAPlanner(&pr2_arm_env_, forward_search_);
+  initializePlannerAndEnvironment();
 };
 
 SBPLArmPlannerNode::~SBPLArmPlannerNode()
@@ -64,13 +66,27 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
   std::string env_config_string;
   std::string planner_config_string;
 
-  this->param<std::string>("~sbpl_env_config", env_config_string, " ");
-  env_config_fp_ = fopen("sbpl_env_cfg_tmp.txt","w");
+  this->param<std::string>("~env_config", env_config_string, " ");
+  env_config_fp_ = fopen("sbpl_env_cfg_tmp.txt","wt");
   fprintf(env_config_fp_,"%s",env_config_string.c_str());
 
-  this->param<std::string>("~sbpl_planner_config", planner_config_string, " ");
-  planner_config_fp_ = fopen("sbpl_planner_cfg_tmp.txt","w");
+  ROS_INFO("\n\nEnvironment");
+  ROS_INFO("%s",env_config_string.c_str());
+  ROS_INFO("Environment");
+
+  this->param<std::string>("~planner_config", planner_config_string, " ");
+  planner_config_fp_ = fopen("sbpl_planner_cfg_tmp.txt","wt");
   fprintf(planner_config_fp_,"%s",planner_config_string.c_str());
+
+  ROS_INFO("\n\nPlanner");
+  ROS_INFO("%s",planner_config_string.c_str());
+  ROS_INFO("Planner\n");
+
+  fclose(env_config_fp_);
+  fclose(planner_config_fp_);
+
+  env_config_fp_ = fopen("sbpl_env_cfg_tmp.txt","rt");
+  planner_config_fp_ = fopen("sbpl_planner_cfg_tmp.txt","rt");
 
   if(!pr2_arm_env_.InitEnvFromFilePtr(env_config_fp_, planner_config_fp_))
   {
