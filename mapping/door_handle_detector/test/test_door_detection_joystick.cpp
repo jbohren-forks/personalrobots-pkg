@@ -130,10 +130,11 @@ class TestDoorDetectionNode : public PR2ArmNode
       }
       if(joy_msg_.data == std::string("detect_door"))
       {
+        nodHead(1);
         if(detectDoor(door_msg_to_detector_, door_msg_from_detector_))
         {
           ROS_INFO("Door detected");
-          nodHead();
+          nodHead(4);
           if(detectDoorCheckerboard(door_msg_from_checkerboard_,door_msg_from_checkerboard_))
           {
             if(compareDoorMsgs(door_msg_from_detector_,door_msg_from_checkerboard_,status_string))
