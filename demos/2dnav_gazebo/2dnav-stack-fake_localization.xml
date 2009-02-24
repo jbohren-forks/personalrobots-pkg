@@ -57,7 +57,7 @@
     </node>
 
      <!-- For ground plane detection -->
-     <!-- subscribes to full_cloud(remapped by snapshot_cloud) and publishes "cloud_ground_filtered" -->
+     <!-- subscribes to full_cloud and publishes "cloud_ground_filtered" -->
     <param name="sac_ground_removal/sac_min_points_per_model" value="5" />
     <param name="sac_ground_removal/clusters_growing_tolerance" value="0.15" />
     <param name="sac_ground_removal/clusters_min_pts" value="5" />
@@ -66,7 +66,7 @@
     <param name="sac_ground_removal/sac_distance_threshold" value="0.03" />
     
     <node pkg="semantic_point_annotator" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen">
-      <remap from="full_cloud" to="snapshot_cloud" />
+      <remap from="full_cloud" to="robotlinks_cloud_filtered" />
     </node>
 
     <!-- filters shadow from point clouds -->
@@ -84,7 +84,7 @@
          -->
     <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" >-->
     <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen" name="move_base_node">
-      <remap from="tilt_laser_cloud_filtered" to="robotlinks_cloud_filtered"/>
+      <remap from="tilt_laser_cloud_filtered" to="cloud_ground_filtered"/>
       <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
       <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
       <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->

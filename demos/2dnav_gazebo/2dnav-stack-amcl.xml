@@ -48,7 +48,6 @@
       <param name="fixed_frame" type="string" value="odom_combined" />
       <param name="downsample_factor" type="int" value="2" />
     </node>
-
     <!-- at laser_tilt_controller/laser_scanner_signal,
          reads accumulated point cloud from point_cloud_assembler_srv by invoking point_cloud_assembler/build_cloud service call,
          and publishes full_cloud, which is remapped to snapshot_cloud -->
@@ -59,7 +58,7 @@
     </node>
 
      <!-- For ground plane detection -->
-     <!-- subscribes to full_cloud(remapped by snapshot_cloud) and publishes "cloud_ground_filtered" -->
+     <!-- subscribes to full_cloud and publishes "cloud_ground_filtered" -->
     <param name="sac_ground_removal/sac_min_points_per_model" value="5" />
     <param name="sac_ground_removal/clusters_growing_tolerance" value="0.15" />
     <param name="sac_ground_removal/clusters_min_pts" value="5" />
@@ -68,7 +67,7 @@
     <param name="sac_ground_removal/sac_distance_threshold" value="0.03" />
     
     <node pkg="semantic_point_annotator" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen">
-      <remap from="full_cloud" to="snapshot_cloud" />
+      <remap from="full_cloud" to="robotlinks_cloud_filtered" />
     </node>
 
     <!-- filters shadow from point clouds -->
@@ -78,9 +77,15 @@
       <remap from="tilt_scan" to="tilt_scan" />
     </node>
 
+    <!-- move_base* subscribes to tilt_laser_cloud_filtered
+         move_base* subscribes to base_scan
+         move_base* subscribes to dcam/cloud
+         move_base* subscribes to obstacle_cloud
+         move_base* subscribes to odom
+         -->
     <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" >-->
     <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen" name="move_base_node">
-      <remap from="tilt_laser_cloud_filtered" to="robotlinks_cloud_filtered"/>
+      <remap from="tilt_laser_cloud_filtered" to="cloud_ground_filtered"/>
       <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
       <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
       <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
@@ -132,7 +137,7 @@
 
       <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 2 Hz. This is
      way too slow for the real system, but necessary for rosstage, which does not reliably meet a 5Hz update rate. -->
-      <param name="costmap_2d/base_laser_update_rate" value="2.0"/>
+      <param name="costmap_2d/base_laser_update_rate" value="0.0"/>
 
       <!-- Setting these parameters to 0.0 disables the watchdog on them. For stage this is required since we
      are not getting any data -->
@@ -140,6 +145,7 @@
       <param name="costmap_2d/low_obstacle_update_rate" value="0.0"/>
       <param name="costmap_2d/stereo_update_rate" value="0.0"/>
     </node>
+
 
     <param name="recharge/email_addresses" value="johnhsu@willowgarage.com pr2-users@lists.willowgarage.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
