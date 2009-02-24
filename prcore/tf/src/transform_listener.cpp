@@ -31,7 +31,44 @@
 
 #include "tf/transform_listener.h"
 
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/io.hpp>
+
+
 using namespace tf;
+
+/** \brief Convert the transform to a Homogeneous matrix for large operations */
+static boost::numeric::ublas::matrix<double> transformAsMatrix(const Transform& bt)
+{
+  boost::numeric::ublas::matrix<double> outMat(4,4);
+
+  //  double * mat = outMat.Store();
+
+  double mv[12];
+  bt.getBasis().getOpenGLSubMatrix(mv);
+
+  Vector3 origin = bt.getOrigin();
+
+  outMat(0,0)= mv[0];
+  outMat(0,1)  = mv[4];
+  outMat(0,2)  = mv[8];
+  outMat(1,0)  = mv[1];
+  outMat(1,1)  = mv[5];
+  outMat(1,2)  = mv[9];
+  outMat(2,0)  = mv[2];
+  outMat(2,1)  = mv[6];
+  outMat(2,2) = mv[10];
+
+  outMat(3,0)  = outMat(3,1) = outMat(3,2) = 0;
+  outMat(0,3) = origin.x();
+  outMat(1,3) = origin.y();
+  outMat(2,3) = origin.z();
+  outMat(3,3) = 1;
+
+
+  return outMat;
+};
+
 
 void TransformListener::transformQuaternion(const std::string& target_frame,
     const robot_msgs::QuaternionStamped& msg_in,
