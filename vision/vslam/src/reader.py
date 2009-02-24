@@ -20,7 +20,7 @@ class dcamImage:
       self.data = ma.data
     else:
       ma = m.uint8_data # MultiArray
-      self.data = "".join([chr(x) for x in ma.data])
+      self.data = ma.data
     d = ma.layout.dim
     assert d[0].label == "height"
     assert d[1].label == "width"
@@ -36,10 +36,15 @@ class reader:
 
     if os.path.isdir(sourcename):
       self.next = self.next_from_dir
-      print yaml.load
+      self.dc = yaml.load(open("%s/sequence_parameters" % sourcename).read())
+      self.cam = camera.DictCamera(self.dc)
+      self.f = int(self.dc['FirstFrame'])
     else:
       self.next = self.next_from_bag
     self.sourcename = sourcename
+
+  def seek(self, frame):
+    self.f = int(self.dc['FirstFrame']) + frame
 
   def next_from_bag(self):
 
@@ -52,26 +57,23 @@ class reader:
 
   def next_from_dir(self):
 
-    dc = yaml.load(open("%s/sequence_parameters" % self.sourcename).read())
-    cam = camera.DictCamera(dc)
-    f = int(dc['FirstFrame'])
     while True:
       if rospy.is_shutdown():
         break
-      Lname = self.sourcename + "/" + dc['LeftFilename'] % f
-      Rname = self.sourcename + "/" + dc['RightFilename'] % f
+      Lname = self.sourcename + "/" + self.dc['LeftFilename'] % self.f
+      Rname = self.sourcename + "/" + self.dc['RightFilename'] % self.f
 
       if not os.access(Lname, os.R_OK) or not os.access(Rname, os.R_OK):
-        if 'LastFrame' in dc:
-          f += 1
+        if 'LastFrame' in self.dc:
+          self.f += 1
           continue
         else:
           break
       L = Image.open(Lname)
       R = Image.open(Rname)
 
-      yield cam, L, R
+      yield self.cam, L, R
 
-      if ('LastFrame' in dc) and (f == int(dc['LastFrame'])):
+      if ('LastFrame' in self.dc) and (self.f == int(self.dc['LastFrame'])):
         break
-      f += 1
+      self.f += 1
