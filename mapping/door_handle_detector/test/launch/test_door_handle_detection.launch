@@ -2,7 +2,7 @@
 
  <!--param name="use_sim_time" value="true"/-->
 
- <include file="$(find pr2_alpha)/prf.machine"/>
+ <include file="$(find pr2_alpha)/$(env ROBOT).machine"/>
 
 
 
