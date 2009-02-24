@@ -103,7 +103,7 @@ namespace pr2_arm_node
 
       void pointHead(double yaw, double pitch);
 
-      void nodHead();
+      void nodHead(int num_times);
 
       void shakeHead();
 

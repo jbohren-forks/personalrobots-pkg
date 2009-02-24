@@ -81,12 +81,12 @@ void PR2ArmNode::pointHead(double yaw, double pitch)
   sendTrajectory("head",traj);
 }
 
-void PR2ArmNode::nodHead()
+void PR2ArmNode::nodHead(int num_times)
 {
   robot_msgs::JointTraj traj;
   double mult = -1.0;
-  traj.set_points_size(9);
-  for(int i=0; i<8; i++)
+  traj.set_points_size(2*num_times+1);
+  for(int i=0; i<2*num_times; i++)
   {
     traj.points[i].set_positions_size(2);
     traj.points[i].positions[0] = 0.0;
@@ -94,10 +94,10 @@ void PR2ArmNode::nodHead()
     traj.points[i].time = 0.0;
     mult *= -1.0;
   }
-    traj.points[8].set_positions_size(2);
-    traj.points[8].positions[0] = 0.0;
-    traj.points[8].positions[1] = 0.0;
-    traj.points[8].time = 0.0;
+    traj.points[2*num_times].set_positions_size(2);
+    traj.points[2*num_times].positions[0] = 0.0;
+    traj.points[2*num_times].positions[1] = 0.0;
+    traj.points[2*num_times].time = 0.0;
   sendTrajectory("head",traj);
 }
 
