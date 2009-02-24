@@ -132,7 +132,7 @@
 
   <property name="base_size_x" value="0.65" />
   <property name="base_size_y" value="0.65" />
-  <property name="base_size_z" value="0.26" />
+  <property name="base_size_z" value="0.23" />
 
 
   <macro name="pr2_base" params="name *origin">
@@ -192,16 +192,16 @@
     <sensor name="base_laser" type="laser">
       <calibration filename="calib_filename" />
       <parent name="${name}_link" />
-      <origin xyz="0.275 0 0.132" rpy="0 0 0" />
+      <origin xyz="0.275 0 0.252" rpy="0 0 0" />
       <joint name="base_laser_joint" />
       <inertial>
         <mass value="1.0" />
-        <com xyz="0 0 0" />
-        <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        <com xyz="0 0 0.0" />
+        <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1" />
       </inertial>
 
       <visual>
-        <origin xyz="0 0 0.12" rpy="0 0 0" />
+        <origin xyz="0 0 0.0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <elem key="material" value="Gazebo/PioneerBody" />
         </map>
@@ -211,7 +211,7 @@
       </visual>
 
       <collision>
-        <origin xyz="0 0 0.12" rpy="0 0 0" />
+        <origin xyz="0 0 0.0" rpy="0 0 0" />
         <geometry name="base_laser_collision">
           <box size=".001 .001 .001" />
         </geometry>
@@ -223,8 +223,8 @@
             <rayCount>640</rayCount>
             <rangeCount>640</rangeCount>
             <laserCount>1</laserCount>
-            <origin>0.0 0.0 0.17</origin> <!-- FIXME: for verbatim, adjust this number according to base_laser_center_box_center_offset_z -->
-            <displayRays>false</displayRays>
+            <origin>0.0 0.0 0.0</origin>
+            <displayRays>true</displayRays>
 
             <minAngle>-100</minAngle> <!-- scans own arms if -135~+135 -->
             <maxAngle>100</maxAngle>
