@@ -4,7 +4,7 @@ import roslib
 roslib.load_manifest('iir_filters')
 
 import rospy, sys
-from filter_coefficient_server.srv import *
+from iir_filters.srv import *
 
 
 def print_usage(exit_code = 0):

@@ -39,6 +39,6 @@ addpath(fullfile(rosoctpath, 'octave'));
 rosoctpath = strtrim(rosoctpath);
 
 % This adds the service
-rosoct_add_srvs('filter_coefficient_server');
+rosoct_add_srvs('iir_filters');
 
 rosoct('shutdown');

@@ -38,7 +38,7 @@ startup;
 
 rosoct_unadvertise_service('filter_coeffs');
 % Creates the service
-suc = rosoct_advertise_service('filter_coeffs',@filter_coefficient_server_Filter,@filterserv);
+suc = rosoct_advertise_service('filter_coeffs',@iir_filters_Filter,@filterserv);
 
 if( ~suc )
     error('failed to advertise service!');
