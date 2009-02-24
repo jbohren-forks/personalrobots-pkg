@@ -311,7 +311,11 @@ class Skeleton:
 
     return_edges = [ (reversal[a], reversal[b]) for (a,b) in self.edges ]
 
-    return (return_positions, return_edges)
+    if len(self.nodes) > 0:
+      return_loc = reversal[max(self.nodes)]
+    else:
+      return_loc = -1
+    return (return_positions, return_edges, return_loc)
 
     localizations = []
     self.vo.setup_frame(qf)

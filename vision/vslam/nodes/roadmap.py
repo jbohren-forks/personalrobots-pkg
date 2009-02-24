@@ -72,14 +72,11 @@ class RoadmapServer:
 
   def send_map(self):
     p = vslam.msg.Roadmap()
-    (ns,es) = self.skel.localization()
-    print "ns,es", ns, es
+    (ns,es,lo) = self.skel.localization()
+    print "ns,es,lo", ns, es, lo
     p.nodes = [ vslam.msg.Node(x,y,t) for (x,y,t) in ns ]
     p.edges = [ vslam.msg.Edge(a,b) for (a,b) in es ]
-    if len(self.skel.nodes) > 0:
-      p.localization = max(self.skel.nodes)
-    else:
-      p.localization = -1
+    p.localization = lo
     self.pub.publish(p)
 
   def handle_raw_stereo(self, msg):
