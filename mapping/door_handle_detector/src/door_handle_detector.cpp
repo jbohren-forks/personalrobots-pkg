@@ -105,6 +105,11 @@ public:
     double rectangle_constrain_edge_angle_;
 
     int nr_scans_;
+
+    // Intensity threshold
+    double intensity_threshold_;
+
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     DoorHandleDetector () : ros::Node ("door_handle_detector"), message_notifier_(NULL), tf_(*this)
     {
@@ -162,6 +167,7 @@ public:
           param ("~euclidean_cluster_distance_tolerance", euclidean_cluster_distance_tolerance_, 0.04);  // 4 cm
 
           // Parameters regarding the thresholds for intensity region growing/clustering
+          param ("~intensity_threshold", intensity_threshold_, 2000.0);                                                 // 2 points
           param ("~intensity_cluster_min_pts", intensity_cluster_min_pts_, 2);                                                 // 2 points
           param ("~intensity_cluster_perpendicular_angle_tolerance", intensity_cluster_perpendicular_angle_tolerance_, 5.0);   // 5 degrees
           intensity_cluster_perpendicular_angle_tolerance_ = cloud_geometry::deg2rad (intensity_cluster_perpendicular_angle_tolerance_);
@@ -180,6 +186,11 @@ public:
       advertiseService("door_handle_detector", &DoorHandleDetector::detectDoor, this);
 
       advertise<PointCloud>("handle_visualization", 10);
+
+      /** Sachin **/
+      advertise<PointCloud>("intensity_visualization", 10);
+
+
       advertise<PolygonalMap>("pmap", 10);
       if (publish_debug_)
       {
@@ -483,6 +494,9 @@ public:
       Point32 pt;
       vector<robot_msgs::Point32> handle_visualize;
 
+      /** Sachin **/
+      vector<robot_msgs::Point32> intensity_visualize;
+
       vector<int> possible_handle_indices (indices->size ());
       int nr_phi = 0;
       for (unsigned int i = 0; i < indices->size (); i++)
@@ -541,8 +555,26 @@ public:
       }
       possible_handle_indices.resize (nr_phi);    // Resize to the actual value
 
-      // Compute the mean and standard deviation in intensity space
+      //
+      // Don't use statistics here. Just use a threshold, we could learn the threshold on intensity later - Sachin.
+      //
+      int intensity_idx = cloud_geometry::getChannelIndex (points, "intensities");
+      vector<int> handle_indices_clusters (possible_handle_indices.size ());
+
+      int i_threshold_counter = 0;
+      for (unsigned int i = 0; i < possible_handle_indices.size (); i++)
+      {
+        if(points->chan[intensity_idx].vals.at (possible_handle_indices[i]) >= intensity_threshold_)
+          continue;
+        handle_indices_clusters[i_threshold_counter] = possible_handle_indices.at (i);
+        i_threshold_counter++;
+      }
+      handle_indices_clusters.resize(i_threshold_counter);
+
+
       int d_idx = cloud_geometry::getChannelIndex (points, "intensities");
+
+/*      // Compute the mean and standard deviation in intensity space
       vector<int> handle_indices_clusters;
       if (d_idx != -1)
       {
@@ -558,10 +590,20 @@ public:
         return;
       }
 
-      // ---[ Sixth test (intensity)
-      // Split points into clusters
+*/
+
+
+
       vector<vector<int> > clusters;
       findClusters (points, &handle_indices_clusters, euclidean_cluster_distance_tolerance_, clusters,
+                    -1, -1, -1, 0, intensity_cluster_min_pts_);
+      sort (clusters.begin (), clusters.end (), compareRegions);
+      reverse (clusters.begin (), clusters.end ());
+
+      // ---[ Sixth test (intensity)
+      // Split points into clusters
+      //vector<vector<int> > clusters;
+/*      findClusters (points, &handle_indices_clusters, euclidean_cluster_distance_tolerance_, clusters,
                     -1, -1, -1, 0, intensity_cluster_min_pts_);
       sort (clusters.begin (), clusters.end (), compareRegions);
       reverse (clusters.begin (), clusters.end ());
@@ -588,6 +630,16 @@ public:
         }
         clusters[i] = cluster_revised;
       }
+*/
+
+      //for(int i=0; i< (int)clusters.size(); i++)
+      //  ROS_INFO("%d Cluster size: %d",i,(int)clusters[i].size());
+      // Compute the centroid for the remaining handle indices
+      //cloud_geometry::nearest::computeCentroid (points, &handle_indices_clusters, handle_center);
+      //for(int i=0; i< (int)clusters[0].size(); i++)
+      //{
+      //ROS_INFO("Remaining cluster: %f %f %f",points->pts.at(clusters[0][i]).x,points->pts.at(clusters[0][i]).y,points->pts.at(clusters[0][i]).z);
+      //}
 
       // ---[ Seventh test (geometric)
       // Fit the best horizontal line through each cluster
@@ -637,7 +689,8 @@ public:
       for (unsigned int j = 0; j < line_inliers[best_i].size (); j++)
         handle_indices[j] = line_inliers[best_i][j];
 
-      // Compute the centroid for the remaining handle indices
+
+
       cloud_geometry::nearest::computeCentroid (points, &handle_indices, handle_center);
 
       // Calculate the unsigned distance from the point to the plane
@@ -653,6 +706,7 @@ public:
 
 // This needs to be removed
 #if 1
+
       robot_msgs::PointCloud handle_cloud;
       handle_cloud.header = points->header;
       //        handle_indices_clusters = possible_handle_indices;
@@ -672,9 +726,34 @@ public:
 
       publish ("handle_visualization", handle_cloud);
 
+
       pmap.polygons.push_back (poly_tr);
       pmap.header = points->header;
       publish ("pmap", pmap);
+
+      robot_msgs::PointCloud intensity_cloud;
+      int ic_size = 0;
+      intensity_cloud.header = points->header;
+      //        handle_indices_clusters = possible_handle_indices;
+      intensity_cloud.chan.resize (1);
+      intensity_cloud.chan[0].name = "intensities";
+      intensity_cloud.chan[0].vals.resize (possible_handle_indices.size ());
+      intensity_visualize.resize (possible_handle_indices.size ());
+      for (unsigned int i = 0; i < possible_handle_indices.size (); i++)
+      {
+        if(points->chan[d_idx].vals.at (possible_handle_indices[i]) >= intensity_threshold_)
+           continue;
+        intensity_visualize[ic_size].x = points->pts.at (possible_handle_indices[i]).x;
+        intensity_visualize[ic_size].y = points->pts.at (possible_handle_indices[i]).y;
+        intensity_visualize[ic_size].z = points->pts.at (possible_handle_indices[i]).z;
+        intensity_cloud.chan[0].vals[ic_size] = points->chan[d_idx].vals.at (possible_handle_indices[i]);
+        ic_size++;
+      }
+      intensity_visualize.resize(ic_size);
+      intensity_cloud.chan[0].vals.resize(ic_size);
+      intensity_cloud.pts = intensity_visualize;
+
+      publish ("intensity_visualization", intensity_cloud);
 #endif
     }
 
