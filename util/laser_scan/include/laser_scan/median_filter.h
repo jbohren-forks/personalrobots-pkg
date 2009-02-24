@@ -35,6 +35,7 @@
 #include <sstream>
 
 #include "boost/thread/mutex.hpp"
+#include "boost/scoped_ptr.hpp"
 #include "laser_scan/LaserScan.h"
 
 #include "filters/median.h"
@@ -45,16 +46,17 @@
 namespace laser_scan{
 
 /** \brief A class to provide median filtering of laser scans */
-class LaserMedianFilter
+template <typename T>
+class LaserMedianFilter : public filters::FilterBase<T> 
 {
 public:
   /** \brief Constructor
    * \param averaging_length How many scans to average over.
    */
-  LaserMedianFilter();//const std::string & xml_parameters);
+  LaserMedianFilter();
   ~LaserMedianFilter();
 
-  bool configure(const std::string & xml);
+  bool configure(unsigned int number_of_channels, TiXmlElement *config); //const std::string & xml);
 
   /** \brief Update the filter and get the response
    * \param scan_in The new scan to filter
@@ -73,9 +75,77 @@ private:
   filters::FilterChain<std_vector_float > * range_filter_;
   filters::FilterChain<std_vector_float > * intensity_filter_;
 
-  std::string latest_xml_;
+  boost::scoped_ptr<TiXmlElement>  latest_xml_;
 };
+
+typedef laser_scan::LaserScan laser_scan_laser_scan;
+
+ROS_REGISTER_FILTER(LaserMedianFilter, laser_scan_laser_scan);
+
+template <typename T>
+LaserMedianFilter<T>::LaserMedianFilter():
+  num_ranges_(1)
+{
+  
+};
+
+template <typename T>
+bool LaserMedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement * xml_doc)
+{
+  ROS_ASSERT(number_of_channels == 1);
+  latest_xml_.reset( xml_doc->Clone()->ToElement());
+  
+  range_filter_ = new filters::FilterChain<std::vector<float> >();
+  range_filter_->configure(num_ranges_, latest_xml_.get());
+  
+  intensity_filter_ = new filters::FilterChain<std::vector<float> >();
+  intensity_filter_->configure(num_ranges_, latest_xml_.get());
+
+  return true;
+};
+
+template <typename T>
+LaserMedianFilter<T>::~LaserMedianFilter()
+{
+  delete range_filter_;
+  delete intensity_filter_;
+};
+
+template <typename T>
+bool LaserMedianFilter<T>::update(const laser_scan::LaserScan& scan_in, laser_scan::LaserScan& scan_out)
+{
+  boost::mutex::scoped_lock lock(data_lock);
+  scan_out = scan_in; ///Quickly pass through all data \todo don't copy data too
+
+  if (scan_in.get_ranges_size() != num_ranges_) //Reallocating
+  {
+    ROS_INFO("Laser filter clearning and reallocating due to larger scan size");
+    delete range_filter_;
+    delete intensity_filter_;
+
+
+    num_ranges_ = scan_in.get_ranges_size();
+    
+    
+    range_filter_ = new filters::FilterChain<std::vector<float> >();
+    range_filter_->configure(num_ranges_, latest_xml_.get());
+  
+    intensity_filter_ = new filters::FilterChain<std::vector<float> >();
+    intensity_filter_->configure(num_ranges_, latest_xml_.get());
+    
+  }
+
+  /** \todo check for length of intensities too */
+  range_filter_->update(scan_in.ranges, scan_out.ranges);
+  intensity_filter_->update(scan_in.intensities, scan_out.intensities);
+
+
+  return true;
+}
+
 
 
 }
+
+
 #endif //LASER_SCAN_UTILS_LASERSCAN_H

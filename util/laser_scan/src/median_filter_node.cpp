@@ -46,7 +46,11 @@ public:
     node_.advertise<laser_scan::LaserScan>("~output", 1000);
     node_.param("~filters", filter_xml, median_filter_xml);
     printf("Got ~filters as: %s\n", filter_xml.c_str());
-    filter.configure(filter_xml);
+    TiXmlDocument xml_doc;
+    xml_doc.Parse(filter_xml.c_str());
+    TiXmlElement * config = xml_doc.RootElement();
+
+    filter.configure(1, config);
     node_.subscribe("scan_in", msg, &MedianFilterNode::callback,this, 3);
   }
   void callback()
@@ -56,7 +60,7 @@ public:
   }
 
 protected:
-  laser_scan::LaserMedianFilter filter;
+  laser_scan::LaserMedianFilter<laser_scan::LaserScan> filter;
   ros::Node& node_;
 };
 

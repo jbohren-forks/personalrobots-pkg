@@ -49,10 +49,10 @@ public:
   /** \brief Configure the filter chain 
    * This will call configure on all filters which have been added
    * as well as allocate the buffers*/
-  bool configure(unsigned int size, TiXmlDocument& doc)
+  bool configure(unsigned int size, TiXmlElement* config_arg)
   {
     /*************************** Parse the XML ***********************************/
-    TiXmlElement *config = doc.RootElement();
+    TiXmlElement *config = config_arg;
 
     //Verify incoming xml for proper naming and structure    
     if (!config)
@@ -109,7 +109,7 @@ public:
     bool result = true;    
 
        
-    config = doc.RootElement();
+    config = config_arg;
 
     //Step into the filter list if necessary
     if (config->ValueStr() == "filters")

@@ -78,7 +78,8 @@ TEST(FilterChain, configuring){
   //  EXPECT_TRUE(chain.add(median_filter_5));
   TiXmlDocument chain_def = TiXmlDocument();
   chain_def.Parse(median_filter_5.c_str());
-  EXPECT_TRUE(chain.configure(5, chain_def));
+  TiXmlElement * config = chain_def.RootElement();
+  EXPECT_TRUE(chain.configure(5, config));
  
   float input1[] = {1,2,3,4,5};
   float input1a[] = {9,9,9,9,9};//seed w/incorrect values
@@ -104,7 +105,8 @@ TEST(FilterChain, MisconfiguredNumberOfChannels){
   //EXPECT_TRUE(chain.add(median_filter_5));
   TiXmlDocument chain_def = TiXmlDocument();
   chain_def.Parse(median_filter_5.c_str());
-  EXPECT_TRUE(chain.configure(10, chain_def));
+  TiXmlElement * config = chain_def.RootElement();
+  EXPECT_TRUE(chain.configure(10, config));
 
   //  EXPECT_TRUE(chain.configure(10));
 
@@ -127,7 +129,9 @@ TEST(FilterChain, OverlappingNames){
 
   TiXmlDocument chain_def = TiXmlDocument();
   chain_def.Parse(bad_xml.c_str());
-  EXPECT_FALSE(chain.configure(5, chain_def));
+  TiXmlElement * config = chain_def.RootElement();
+
+  EXPECT_FALSE(chain.configure(5, config));
 
 }
 
