@@ -287,10 +287,9 @@ class Skeleton:
           return sum((y - (a*x + b*y + c*z + d)) ** 2)
       sol = [1.0, 1.0, 1.0, 0.0]
       sol = optimize.fmin(rms, sol, args=((x,y,z),))
-
       return sol
 
-    Ns = sorted(self.nodes)
+    Ns = sorted(list(self.nodes))
     poses = [ self.newpose(id) for id in Ns ]
     nodepts = [ p.xform(0,0,0) for p in poses ]
     nodedirs = [ p.xform(0,0,1) for p in poses ]
@@ -311,8 +310,8 @@ class Skeleton:
 
     return_edges = [ (reversal[a], reversal[b]) for (a,b) in self.edges ]
 
-    if len(self.nodes) > 0:
-      return_loc = reversal[max(self.nodes)]
+    if len(Ns) > 0:
+      return_loc = len(Ns) - 1
     else:
       return_loc = -1
     return (return_positions, return_edges, return_loc)
