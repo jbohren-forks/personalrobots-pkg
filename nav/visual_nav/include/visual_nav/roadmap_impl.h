@@ -58,47 +58,23 @@ typedef vector<int> Path; // Note dependency between this and PathPtr
 
 struct NodeInfo
 {
-public:
-  NodeInfo(const Pose pose, const NodeId index) : start_node(false), index(index), pose(pose) {}
-  NodeInfo(const NodeId index) : start_node(true), index(index) {}
-
-  Pose getPose() const { if (start_node) throw StartNodePoseException(); else return pose; }
-
-  // Flag for whether this is the start node (the only one that doesn't have an associated 2d pose)
-  bool start_node;
-
-  NodeId index;
-
-private:
-  // Only meaningful if start_node is false
+  NodeInfo(const Pose pose, const NodeId index) : pose(pose), index(index) {}
   Pose pose;
-
+  NodeId index;
 };
 
-class EdgeInfo
+struct EdgeInfo
 {
-public:
   EdgeInfo(const Pose& p1, const Pose& p2);
-  EdgeInfo(const Transform2D& rel_pose);
-
-  Transform2D getRelPose() const { if (edge_from_start_node) return rel_pose; else throw NonstartRelPoseException(); }
-
-  // Is this an edge from the start node?
-  bool edge_from_start_node;
-  
   double length;
-
-private:
-  // Only meaningful if edge_from_start_node is true
-  Transform2D rel_pose;
 };
+
 
 typedef adjacency_list<listS, listS, undirectedS, NodeInfo, EdgeInfo> RoadmapGraph;
 typedef graph_traits<RoadmapGraph>::vertex_descriptor RoadmapVertex;
 typedef graph_traits<RoadmapGraph>::edge_descriptor RoadmapEdge;
 typedef graph_traits<RoadmapGraph>::adjacency_iterator AdjacencyIterator;
 typedef pair<AdjacencyIterator, AdjacencyIterator> AdjIterPair;
-
 typedef map<NodeId, RoadmapVertex> IdVertexMap;
 
 
@@ -113,12 +89,7 @@ public:
   DijkstraVisitor (const RoadmapVertex& goal) : goal_(goal) {}
   void discover_vertex(const RoadmapVertex& v, const RoadmapGraph& graph) const
   {
-    if (graph[v].start_node) {
-      ROS_DEBUG_NAMED("dijkstra", "Discovering start node %d", graph[v].index);
-    }
-    else {
-      ROS_DEBUG_NAMED("dijkstra", "Discovering vertex %d with coords (%f, %f)", graph[v].index, graph[v].getPose().x, graph[v].getPose().y);
-    }
+    ROS_DEBUG_NAMED("dijkstra", "Discovering vertex %d with coords (%f, %f)", graph[v].index, graph[v].pose.x, graph[v].pose.y);
   }
 private:
   RoadmapVertex goal_;
@@ -136,19 +107,14 @@ public:
   RoadmapImpl();
 
   NodeId addNode (const Pose& pos);
-  void addEdge (const NodeId i, const NodeId j);
-  void addEdgeFromStart (const NodeId i, const Transform2D& relative_pos);
-  PathPtr pathToGoal (const NodeId goal_id);
+  void addEdge (NodeId i, NodeId j);
+  PathPtr pathToGoal (NodeId start_id, NodeId goal_id);
   Pose pathExitPoint (PathPtr p, double r) const;
-  Pose estimatedPose (PathPtr p) const;
-  
-  bool distanceLessThan (const Pose& pose, NodeId id, double r) const;
-
   uint numNodes () const;
-
   Pose nodePose (NodeId i) const;
-
   vector<NodeId> neighbors (NodeId i) const;
+
+  bool distanceLessThan (const Pose& pose, NodeId id, double r) const;
 
 private:
 
@@ -159,7 +125,6 @@ private:
   IdVertexMap id_vertex_map_;
 
   NodeId next_node_id_;
-  NodeId start_node_id_;
 
   RoadmapImpl& operator= (const RoadmapImpl&);
   RoadmapImpl(const RoadmapImpl&);

@@ -7,7 +7,8 @@
 <depend package="rosconsole" />
 <depend package="deprecated_msgs" />
 <depend package="robot_msgs" />
+<depend package="vslam" />
 <export>
-<cpp cflags="-I${prefix}/include"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf" />
+<cpp cflags="-I${prefix}/include" />
 </export>
 </package>

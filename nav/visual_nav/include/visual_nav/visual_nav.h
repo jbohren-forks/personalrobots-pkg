@@ -55,34 +55,27 @@ public:
   VisualNavRoadmap();
   
   /// \post There is a new graph node at \a pose
-  /// \return The id of the new node.  It is guaranteed the id returns 1 the first time, and increases by 1 on each call.
+  /// \return The id of the new node.  It is guaranteed the id returns 0 on the first call to addNode, and increases by 1 on each call.
   NodeId addNode (const Pose& pose);
 
-  /// \post There is a new graph node with pose (\a x, \a y, \a theta)
-  /// \return id of new node.  It is guaranteed the id returns 1 the first time, and increases by 1 on each call.
+  /// \post There is a new graph node at \a x, \a y, \a theta
+  /// \return The id of the new node.  It is guaranteed the id returns 0 on the first call to addNode, and increases by 1 on each call.
   NodeId addNode (double x, double y, double theta=0.0);
+  
 
   /// \post There is an edge between nodes \a i and \a j with no label
   /// \throws UnknownNodeId
   /// \throws SelfEdgeException
   /// \throws ExistingEdgeException
-  /// \throws StartEdgeException
-  void addEdge (const NodeId i, const NodeId j);
-
-  /// \post There is an edge from the start node to node i with the given relative pose
-  void addEdgeFromStart (const NodeId i, const Transform2D& relative_pose);
+  void addEdge (NodeId i, NodeId j);
 
   /// \returns Sequence of NodeId's of positions on path from start node to node \goal
-  PathPtr pathToGoal (const NodeId goal) const;
+  /// \throws NoPathFoundException
+  PathPtr pathToGoal (NodeId start, NodeId goal) const;
 
-  /// \returns First point where path exits a circle of radius \a r around robot
-  /// \throws InsufficientlyLongPathException 
-  /// \throws InvalidPathException
+  /// \returns First point where path leaves a circle of radius \a r around its start
   /// For now, just look at the discrete waypoints on the path rather than interpolating between them to find the exact exit point
   Pose pathExitPoint (PathPtr p, double r) const;
-
-  /// \return estimated current pos in navigation frame given the first node in this path
-  Pose estimatedPose (PathPtr p) const;
 
   /// \return number of nodes
   uint numNodes () const;

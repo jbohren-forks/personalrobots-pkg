@@ -62,11 +62,12 @@ TEST(VisualNav, BasicAPI)
   VisualNavRoadmap r;
   typedef vector<int> Path;
 
+  r.addNode(2,1.2);
   r.addNode(2,6);
   r.addNode(4,3);
   r.addNode(3,-1);
   r.addEdge(2,1);
-  r.addEdgeFromStart(2,Transform2D(2,2));
+  r.addEdge(0,2);
   r.addNode(1,2.5);
   r.addEdge(4,2);
   r.addEdge(1,4);
@@ -74,16 +75,16 @@ TEST(VisualNav, BasicAPI)
   
 
   r.addEdge(1,5);
-  PathPtr path1 = r.pathToGoal(5);
+  PathPtr path1 = r.pathToGoal(0,5);
   int expected_path[4] = {0, 2, 1, 5};
   EXPECT_TRUE(*path1==Path(expected_path, expected_path+4));
   EXPECT_EQ(r.pathExitPoint(path1, .1), Pose(4,3,0));
   EXPECT_EQ(r.pathExitPoint(path1, 2.5), Pose(4,3,0));
   EXPECT_EQ(r.pathExitPoint(path1, 3.0), Pose(2,6,0));
-  EXPECT_EQ(r.pathExitPoint(path1, 5.0), Pose(2,6,0));
+  EXPECT_EQ(r.pathExitPoint(path1, 4.7), Pose(2,6,0));
 
-  r.addEdgeFromStart(4, Transform2D(-1,1));
-  PathPtr path2 = r.pathToGoal(5);
+  r.addEdge(0,4);
+  PathPtr path2 = r.pathToGoal(0,5);
   int expected_path2[4] = {0, 4, 1, 5};
   EXPECT_TRUE(*path2==Path(expected_path2, expected_path2+4));
   EXPECT_EQ(r.pathExitPoint(path2, 1.0), Pose(1,2.5));
@@ -98,7 +99,7 @@ TEST(VisualNav, ReadFromFile)
   RoadmapPtr r = readRoadmapFromFile("test/example_roadmap.dat");
   typedef vector<int> Path;
 
-  PathPtr path2 = r->pathToGoal(5);
+  PathPtr path2 = r->pathToGoal(0,5);
   int expected_path2[4] = {0, 4, 1, 5};
   EXPECT_TRUE(*path2==Path(expected_path2, expected_path2+4));
   EXPECT_EQ(r->pathExitPoint(path2, 1.0), Pose(1,2.5));

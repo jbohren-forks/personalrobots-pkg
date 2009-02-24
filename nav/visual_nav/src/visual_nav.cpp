@@ -77,14 +77,9 @@ inline double relPoseLength (const Transform2D& rel_pose)
   return sqrt(rel_pose.dx*rel_pose.dx+rel_pose.dy*rel_pose.dy);
 }
 
-
-
-EdgeInfo::EdgeInfo(const Pose& p1, const Pose& p2) : edge_from_start_node(false), length(distance(p1,p2))
-{}
-
-EdgeInfo::EdgeInfo(const Transform2D& rel_pose) : edge_from_start_node(true), length(relPoseLength(rel_pose)), rel_pose(rel_pose) 
-{}
-
+EdgeInfo::EdgeInfo (const Pose& p1, const Pose& p2) : length(distance(p1,p2))
+{
+}
 
 
 
@@ -93,16 +88,14 @@ EdgeInfo::EdgeInfo(const Transform2D& rel_pose) : edge_from_start_node(true), le
  * RoadmapImpl ops
  ************************************************************/
 
-VisualNavRoadmap::RoadmapImpl::RoadmapImpl ()
+VisualNavRoadmap::RoadmapImpl::RoadmapImpl() : next_node_id_(0)
 {
-  start_node_id_=0;
-  next_node_id_=1;
-  id_vertex_map_[start_node_id_] = add_vertex(NodeInfo(start_node_id_), graph_);
 }
 
 NodeId VisualNavRoadmap::RoadmapImpl::addNode (const Pose& pose)
 {
   id_vertex_map_[next_node_id_] = add_vertex(NodeInfo(pose, next_node_id_), graph_);
+  ROS_DEBUG_STREAM_NAMED("api", "Added node with pose " << pose << " and id " << next_node_id_);
   return next_node_id_++;
 }
 
@@ -119,35 +112,11 @@ void VisualNavRoadmap::RoadmapImpl::addEdge (const NodeId i, const NodeId j)
   else if (isNeighbor(v, w, graph_)) {
     throw ExistingEdgeException(i,j);
   }
-  else if (i==start_node_id_) {
-    throw StartEdgeException(j);
-  }
-  else if (j==start_node_id_) {
-    throw StartEdgeException(i);
-  }
 
   // Add
-  add_edge (v, w, EdgeInfo(graph_[v].getPose(), graph_[w].getPose()), graph_);
+  add_edge (v, w, EdgeInfo(graph_[v].pose, graph_[w].pose), graph_);
+  ROS_DEBUG_STREAM_NAMED("api", "Added edge between nodes " << i << " and " << j);
 }
-
-void VisualNavRoadmap::RoadmapImpl::addEdgeFromStart (const NodeId i, const Transform2D& rel_pose)
-{
-  // Lookup node
-  RoadmapVertex v = idVertex(i);
-  RoadmapVertex start = idVertex(start_node_id_);
-  
-  // Error checks
-  if (i==start_node_id_) {
-    throw SelfEdgeException(i);
-  }
-  else if (isNeighbor(start, v, graph_)) {
-    throw ExistingEdgeException(start_node_id_, i);
-  }
-
-  // Add
-  add_edge (start, v, EdgeInfo(rel_pose), graph_);
-}
-  
 
 
 struct TransformVertexToId
@@ -157,14 +126,14 @@ struct TransformVertexToId
   const RoadmapGraph& graph;
 };
 
-PathPtr VisualNavRoadmap::RoadmapImpl::pathToGoal (const NodeId goal_id) 
+PathPtr VisualNavRoadmap::RoadmapImpl::pathToGoal (const NodeId start_id, const NodeId goal_id) 
 {
   typedef map<RoadmapVertex, RoadmapVertex> PredecessorMap;
 
   // Set up and call dijkstra_shortest_paths
   // For speed, could add a visitor to dijkstra that terminates when goal is found
   RoadmapVertex goal = idVertex(goal_id);
-  RoadmapVertex start = idVertex(start_node_id_);
+  RoadmapVertex start = idVertex(start_id);
   PredecessorMap predecessor_map;
   associative_property_map<PredecessorMap> adapted_pred_map(predecessor_map);
   dijkstra_shortest_paths(graph_, start, weight_map(get(&EdgeInfo::length, graph_))
@@ -194,40 +163,19 @@ bool VisualNavRoadmap::RoadmapImpl::distanceLessThan (const Pose& pose, NodeId i
 {
   idVertex(id);
   NodeInfo n(graph_[idVertex(id)]);
-  double dist = n.start_node ? 0 : distance(pose, n.getPose());
+  double dist = distance(pose, n.pose);
   ROS_DEBUG_STREAM_NAMED ("path_exit", "Distance to vertex " << id << " is " << dist);
   return dist<r;
 }
 
 
-Pose VisualNavRoadmap::RoadmapImpl::estimatedPose (PathPtr p) const
-{
-  if (p->size()<2) {
-    throw InsufficientlyLongPathException();
-  }
-  NodeId first=(*p)[0];
-  if (first!=0) {
-    throw InvalidPathException(first);
-  }
-
-  RoadmapVertex second=idVertex((*p)[1]);
-  RoadmapEdge edge = getEdgeBetween(idVertex(first), second, graph_);
-  return transform(inverse(graph_[edge].getRelPose()), graph_[second].getPose());
-}
-  
-
-
 Pose VisualNavRoadmap::RoadmapImpl::pathExitPoint (PathPtr p, double r) const
 {
-  Pose start_pose = estimatedPose(p);
-
-  Path::reverse_iterator pos = find_if(p->rbegin(), p->rend(), bind(&VisualNavRoadmap::RoadmapImpl::distanceLessThan, this, start_pose, _1, r));
-  
-  if (pos==p->rbegin()) {
-    throw InsufficientlyLongPathException();
-  }
+  ROS_ASSERT_MSG (p->size()>0, "Tried to find exit point of length-zero path");
+  Pose start_pose = graph_[idVertex(*(p->begin()))].pose;
+  Path::reverse_iterator pos = find_if(p->rbegin()+1, p->rend(), bind(&VisualNavRoadmap::RoadmapImpl::distanceLessThan, this, start_pose, _1, r));
   ROS_ASSERT_MSG (pos!=p->rend(), "Unexpectedly couldn't find any points on path within radius %f", r);
-  return graph_[idVertex(*(--pos))].getPose();
+  return graph_[idVertex(*(--pos))].pose;
 }
 
 
@@ -238,12 +186,25 @@ uint VisualNavRoadmap::RoadmapImpl::numNodes () const
 
 Pose VisualNavRoadmap::RoadmapImpl::nodePose (NodeId i) const
 {
-  return graph_[idVertex(i)].getPose();
+  return graph_[idVertex(i)].pose;
 }
+
+
+
+struct GetVertexId
+{
+  GetVertexId(const RoadmapGraph& graph) : graph(graph) {}
+  NodeId operator() (const RoadmapVertex& v) { return graph[v].index; }
+  const RoadmapGraph& graph;
+};
+
+
 
 vector<NodeId> VisualNavRoadmap::RoadmapImpl::neighbors (NodeId i) const
 {
   vector<NodeId> neighbors;
+  AdjIterPair iters = adjacent_vertices(idVertex(i), graph_);
+  transform (iters.first, iters.second, back_inserter(neighbors), GetVertexId(graph_));
   return neighbors;
 }
 
@@ -280,7 +241,7 @@ NodeId VisualNavRoadmap::addNode (const Pose& pose)
   return roadmap_impl_->addNode(pose);
 }
 
-NodeId VisualNavRoadmap::addNode (double x, double y, double theta)
+NodeId VisualNavRoadmap::addNode (const double x, const double y, const double theta)
 {
   return roadmap_impl_->addNode(Pose(x,y,theta));
 }
@@ -290,24 +251,14 @@ void VisualNavRoadmap::addEdge (const NodeId i, const NodeId j)
   roadmap_impl_->addEdge(i, j);
 }
 
-void VisualNavRoadmap::addEdgeFromStart (const NodeId i, const Transform2D& relative_pose)
+PathPtr VisualNavRoadmap::pathToGoal (const NodeId start_id, const NodeId goal_id) const
 {
-  roadmap_impl_->addEdgeFromStart(i, relative_pose);
+  return roadmap_impl_->pathToGoal(start_id, goal_id);
 }
 
-PathPtr VisualNavRoadmap::pathToGoal (const NodeId goal_id) const
-{
-  return roadmap_impl_->pathToGoal(goal_id);
-}
-
-Pose VisualNavRoadmap::pathExitPoint (PathPtr p, double r) const
+Pose VisualNavRoadmap::pathExitPoint (const PathPtr p, const double r) const
 {
   return roadmap_impl_->pathExitPoint(p,r);
-}
-
-Pose VisualNavRoadmap::estimatedPose (PathPtr p) const
-{
-  return roadmap_impl_->estimatedPose(p);
 }
 
 uint VisualNavRoadmap::numNodes () const
@@ -315,12 +266,12 @@ uint VisualNavRoadmap::numNodes () const
   return roadmap_impl_->numNodes();
 }
 
-Pose VisualNavRoadmap::nodePose (NodeId i) const
+Pose VisualNavRoadmap::nodePose (const NodeId i) const
 {
   return roadmap_impl_->nodePose (i);
 }
 
-vector<NodeId> VisualNavRoadmap::neighbors (NodeId i) const 
+vector<NodeId> VisualNavRoadmap::neighbors (const NodeId i) const 
 {
   return roadmap_impl_->neighbors(i);
 }
@@ -346,28 +297,17 @@ RoadmapPtr readRoadmapFromFile (const string& filename)
     Pose pose;
     uint num_edges;
     stream >> pose;
-    ROS_DEBUG_STREAM_NAMED ("file", " Adding node " << 1+i);
-    ROS_ASSERT(roadmap->addNode(pose)==1+i);
+    ROS_DEBUG_STREAM_NAMED ("file", " Adding node " << i);
+    ROS_ASSERT(roadmap->addNode(pose)==i);
     stream >> num_edges;
     for (uint j=0; j<num_edges; ++j) {
       NodeId neighbor;
       stream >> neighbor;
-      roadmap->addEdge (1+i, neighbor);
-      ROS_DEBUG_STREAM_NAMED ("file", " Adding edge between " << 1+i << " and " << neighbor);
+      roadmap->addEdge (i, neighbor);
+      ROS_DEBUG_STREAM_NAMED ("file", " Adding edge between " << i << " and " << neighbor);
     }
   }
   
-  ROS_DEBUG_NAMED ("file", "Reading edges from start node");
-  uint num_edges_from_start;
-  stream >> num_edges_from_start;
-  for (uint i=0; i<num_edges_from_start; ++i) {
-    uint id;
-    Transform2D relative_pose;
-    stream >> id;
-    stream >> relative_pose;
-    ROS_DEBUG_STREAM_NAMED ("file", "Adding edge to " << id << " with relative pose " << relative_pose);
-    roadmap->addEdgeFromStart (id, relative_pose);
-  }
   ROS_DEBUG_NAMED ("file", "Done reading");
   return roadmap;
 }
