@@ -327,6 +327,8 @@ public:
 
   Vector getNormalOnDoor(const robot_msgs::Door& door)
   {
+    string door_frame = door.header.frame_id;
+
     Vector door1, door2, tmp, normal;
     cout << "door p1 " << door.door_p1.x << " " << door.door_p1.y << " "<< door.door_p1.z << endl;
     cout << "door p2 " << door.door_p2.x << " " << door.door_p2.y << " "<< door.door_p2.z << endl;
@@ -336,21 +338,32 @@ public:
     door2[0] = door.door_p2.x;
     door2[1] = door.door_p2.y;
     door2[2] = 0;
+
+    // calculate normal in base_link_frame
+    door1 = transformToFrame(door_frame, "base_link", door1);
+    door2 = transformToFrame(door_frame, "base_link", door2);
     tmp = (door1 - door2); tmp.Normalize();
     normal = tmp * Vector(0,0,1);
 
     // if normal does not point towards robot, invert normal
-    Stamped<tf::Point> normal_stamped;
-    normal_stamped[0] = normal(0);
-    normal_stamped[1] = normal(1);
-    normal_stamped[2] = normal(2);
-    tf_.transformPoint("base_footprint", normal_stamped, normal_stamped);
-    if (normal_stamped[0] > 0.0)
-      normal = normal * -1.0;
+    if (dot(normal, door1) > 0)
+      normal = normal * -1;
 
-    cout << "normal on door in " << my_door_.header.frame_id << " = " <<  normal[0] << " " << normal[1] << " " << normal[2] << endl;
+    // convert normal to door frame
+    normal = transformToFrame("base_link", door_frame, normal);
+    cout << "normal on door in " << my_door_.header.frame_id << " = " 
+         <<  normal[0] << " " << normal[1] << " " << normal[2] << endl;
 
     return normal;
+  }
+
+
+
+  Vector transformToFrame(const string& frame_start, const string& frame_goal, const Vector& vec)
+  {
+    Stamped<tf::Point> pnt(Point(vec(0), vec(1), vec(2)), Time(), frame_start);
+    tf_.transformPoint(frame_goal, pnt, pnt);
+    return Vector(pnt[0], pnt[1], pnt[2]);
   }
 
 
