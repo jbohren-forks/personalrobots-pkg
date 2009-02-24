@@ -72,7 +72,7 @@ public:
   OpenDoorExecutiveTest(std::string node_name):
     ros::Node(node_name),
     tf_(*this),
-    state_(DETECTING)
+    state_(INITIALIZED)
   {
     // initialize my door
     double tmp; int tmp2;
@@ -98,7 +98,7 @@ public:
   // -------------------------
   {
     // start arm trajectory controller
-    cout << "trun on moveto controller..." << flush;
+    cout << "turn on moveto controller..." << flush;
     req_switch.stop_controllers.clear(); 
     req_switch.start_controllers.clear();     req_switch.start_controllers.push_back("cartesian_trajectory_right");  
     ros::service::call("switch_controller", req_switch, res_switch);
@@ -339,7 +339,16 @@ public:
     tmp = (door1 - door2); tmp.Normalize();
     normal = tmp * Vector(0,0,1);
 
-    cout << "normal on door = " <<  normal[0] << " " << normal[1] << " " << normal[2] << endl;
+    // if normal does not point towards robot, invert normal
+    Stamped<tf::Point> normal_stamped;
+    normal_stamped[0] = normal(0);
+    normal_stamped[1] = normal(1);
+    normal_stamped[2] = normal(2);
+    tf_.transformPoint("base_footprint", normal_stamped, normal_stamped);
+    if (normal_stamped[0] > 0.0)
+      normal = normal * -1.0;
+
+    cout << "normal on door in " << my_door_.header.frame_id << " = " <<  normal[0] << " " << normal[1] << " " << normal[2] << endl;
 
     return normal;
   }
