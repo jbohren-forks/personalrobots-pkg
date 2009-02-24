@@ -160,10 +160,28 @@
       <origin xyz="0 0.045 .0305" rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
       <joint name="${name}_optical_fixed_joint" />
 
+      <inertial>
+        <mass value="0.01" />
+        <com xyz="0 0 0" />
+        <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
+                 iyy="0.001"  iyz="0.0"
+                 izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material" value="Gazebo/Blue" />
+        </map>
+        <geometry name="${name}_optical_fixed_visual">
+          <mesh scale="0.01 0.01 0.01" />
+        </geometry>
+      </visual>
+
       <collision>
-        <origin xyz="0 0 0 " rpy="0 0 0" />
-        <geometry name="${name}_collision">
-          <box size="0.0 0.0 0.0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="${name}_optical_fixed_collision">
+          <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>
 
@@ -337,10 +355,29 @@
       <parent name="${name}_tilt_link" />
       <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />     
       <joint name="${name}_plate_fixed_joint" />
+
+      <inertial>
+        <mass value="0.01" />
+        <com xyz="0 0 0" />
+        <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
+                 iyy="0.001"  iyz="0.0"
+                 izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material" value="Gazebo/Blue" />
+        </map>
+        <geometry name="${name}_plate_frame_visual">
+          <mesh scale="0.01 0.01 0.01" />
+        </geometry>
+      </visual>
+
       <collision>
-        <origin xyz="0 0 0 " rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${name}_plate_frame_collision">
-          <box size="0.0 0.0 0.0" />
+          <box size="0.01 0.01 0.01" />
         </geometry>
       </collision>
     </link>
