@@ -81,13 +81,33 @@
     base_link
   </group>
 
+  <group name="collisions6" flags="self_collision">
+    r_gripper_l_finger_link
+    base_link
+  </group>
+
+  <group name="collisions7" flags="self_collision">
+    r_gripper_r_finger_link
+    base_link
+  </group>
+
+  <group name="collisions8" flags="self_collision">
+    r_gripper_l_finger_tip_link
+    base_link
+  </group>
+
+  <group name="collisions9" flags="self_collision">
+    r_gripper_r_finger_tip_link
+    base_link
+  </group>
+
 <!--
   <group name="collisions6" flags="self_collision">
     l_upper_arm_roll_link
     torso_lift_link
   </group>
 -->
-
+<!--
   <group name="collisions7" flags="self_collision">
     l_elbow_flex_link
     base_link
@@ -107,5 +127,5 @@
     l_wrist_roll_link
     base_link
   </group>
-
+-->
 </robot>
