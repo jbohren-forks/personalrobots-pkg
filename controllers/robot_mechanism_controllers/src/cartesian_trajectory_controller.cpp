@@ -266,8 +266,8 @@ void CartesianTrajectoryControllerNode::update()
 
 
 
-bool CartesianTrajectoryControllerNode::moveTo(robot_mechanism_controllers::MoveToPose::Request &req, 
-                                               robot_mechanism_controllers::MoveToPose::Response &resp)
+bool CartesianTrajectoryControllerNode::moveTo(robot_srvs::MoveToPose::Request &req, 
+                                               robot_srvs::MoveToPose::Response &resp)
 {
   Time start_time = Time().now();
   Duration traject_time = moveTo(req.pose);

@@ -45,7 +45,7 @@
 #include "robot_msgs/PoseStamped.h"
 #include "mechanism_model/controller.h"
 #include "robot_mechanism_controllers/cartesian_pose_controller.h"
-#include "robot_mechanism_controllers/MoveToPose.h"
+#include "robot_srvs/MoveToPose.h"
 
 namespace controller {
 
@@ -102,7 +102,7 @@ class CartesianTrajectoryControllerNode : public Controller
   void update();
   void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
 
-  bool moveTo(robot_mechanism_controllers::MoveToPose::Request &req, robot_mechanism_controllers::MoveToPose::Response &resp);
+  bool moveTo(robot_srvs::MoveToPose::Request &req, robot_srvs::MoveToPose::Response &resp);
 
  private:
   ros::Duration moveTo(robot_msgs::PoseStamped& pose);
