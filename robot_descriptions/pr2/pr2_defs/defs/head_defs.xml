@@ -157,7 +157,7 @@
     <joint name="${name}_optical_fixed_joint" type="fixed" />
     <sensor name="${name}_optical_link" type="camera">
       <parent name="${name}_link" />
-      <origin xyz="0 0.045 .0305" rpy="-1.57 0.0 -1.57" />
+      <origin xyz="0 0.045 .0305" rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
       <joint name="${name}_optical_fixed_joint" />
 
       <collision>
