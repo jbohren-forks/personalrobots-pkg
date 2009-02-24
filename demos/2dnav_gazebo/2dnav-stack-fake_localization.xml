@@ -1,23 +1,19 @@
 <launch>
   <group name="wg">
 
-    <!-- filter out veil effect from range scans -->
-    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="false" output="screen" />
+    <!-- machine tags for sim, be sure to set environment variable ROBOT to sim -->
+    <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
     <!-- publish mapping between odom and base_footprint -->
+    <!-- publishes odom_combined -->
     <param name="robot_pose_ekf/freq" value="30.0"/>
     <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
     <param name="robot_pose_ekf/odom_used" value="true"/>
     <param name="robot_pose_ekf/imu_used" value="true"/>
     <param name="robot_pose_ekf/vo_used" value="false"/>
-
     <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" output="screen"/>
 
-    <!--node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" /-->
-    <!--node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" /-->
-    <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
-
-    <!-- localization settings -->
+    <!-- localization -->
     <param name="pf_odom_frame_id" value="odom_combined"/>
     <node pkg="fake_localization" type="fake_localization" respawn="false" output="screen" />
 
@@ -32,7 +28,8 @@
 
 
 
-    <!-- Run this node if you want to aggregate laser_scans into a point cloud -->
+    <!-- laser scan -->
+    <!-- accumulate tilt_scan and publish by service call point_cloud_assembler_srv/build_cloud -->
     <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler">
       <remap from="scan_in" to="tilt_scan"/>
       <param name="tf_cache_time_secs" type="double" value="10.0" />
@@ -41,13 +38,17 @@
       <param name="fixed_frame" type="string" value="odom_combined" />
     </node>
 
-    <!-- Run this node if you want clouds automatically published during laser shutter messages -->
+    <!-- at laser_tilt_controller/laser_scanner_signal,
+         reads accumulated point cloud from point_cloud_assembler_srv by invoking point_cloud_assembler/build_cloud service call,
+         and publishes full_cloud, which is remapped to snapshot_cloud -->
     <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
       <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
       <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
       <remap from="full_cloud" to="snapshot_cloud" />
     </node>
 
+     <!-- For ground plane detection -->
+     <!-- subscribes to full_cloud(remapped by snapshot_cloud) and publishes "cloud_ground_filtered" -->
     <param name="sac_ground_removal/sac_min_points_per_model" value="5" />
     <param name="sac_ground_removal/clusters_growing_tolerance" value="0.15" />
     <param name="sac_ground_removal/clusters_min_pts" value="5" />
@@ -55,77 +56,86 @@
     <param name="sac_ground_removal/z_threshold" value="0.2" />
     <param name="sac_ground_removal/sac_distance_threshold" value="0.03" />
     
-    <node pkg="semantic_point_annotator" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen" />
+    <node pkg="semantic_point_annotator" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen">
+      <remap from="full_cloud" to="snapshot_cloud" />
+    </node>
 
-    <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
-    <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
-    <param name="move_base/plannerType" value="ARAPlanner"/>
-    <param name="move_base/environmentType" value="2D"/>
-    <param name="move_base/controller_frequency" value="30.0"/>
-    <param name="move_base/planner_frequency" value="0.0"/>
-    <param name="move_base/plannerTimeLimit" value="0.5"/>
-    <param name="move_base/map_update_frequency" value="5.0"/>
-    <param name="/costmap_2d/base_laser_max_range" value="20.0"/>
-    <param name="/costmap_2d/tilt_laser_max_range" value="2.0"/>
-    <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
-    <param name="/costmap_2d/no_information_value" value="255"/>
-    <param name="/costmap_2d/z_threshold_max" value="2.0"/>
-    <param name="/costmap_2d/z_threshold_min" value="0.13"/>
-    <param name="/costmap_2d/freespace_projection_height" value="2.0"/>
-    <param name="/costmap_2d/inflation_radius" value="0.65"/>
-    <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
-    <param name="/costmap_2d/inscribed_radius" value="0.325"/>
-    <param name="/costmap_2d/raytrace_window" value="10.0"/>
-    <param name="/costmap_2d/weight" value="0.1"/>
+    <!-- filters shadow from point clouds -->
+    <!-- subscribes tilt_scan and publishes tilt_laser_cloud_filtered -->
+    <node pkg="laser_scan" type="scan_shadows_filter_node" output="screen"  name="shadow_filter">
+      <remap from="tilt_laser_cloud_filtered" to="tilt_laser_cloud_filtered"/>
+      <remap from="tilt_scan" to="tilt_scan" />
+    </node>
 
-    <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 10 Hz -->
-    <param name="/costmap_2d/base_laser_update_rate" value="2.0"/>
+    <!-- move_base* subscribes to tilt_laser_cloud_filtered
+         move_base* subscribes to base_scan
+         move_base* subscribes to dcam/cloud
+         move_base* subscribes to obstacle_cloud
+         move_base* subscribes to odom
+         -->
+    <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" >-->
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen" name="move_base_node">
+      <remap from="tilt_laser_cloud_filtered" to="robotlinks_cloud_filtered"/>
+      <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
+      <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
+      <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
+      <param name="move_base/plannerType" value="ARAPlanner"/>
+      <param name="move_base/environmentType" value="2D"/>
+      <param name="move_base/controller_frequency" value="30.0"/>
+      <param name="move_base/map_update_frequency" value="2.0"/>
+      <param name="move_base/planner_frequency" value="0.0"/>
+      <param name="move_base/plannerTimeLimit" value="0.5"/>
+      <param name="costmap_2d/base_laser_max_range" value="20.0"/>
+      <param name="costmap_2d/tilt_laser_max_range" value="3.0"/>
+      <param name="costmap_2d/lethal_obstacle_threshold" value="100.0"/>
+      <param name="/costmap_2d/z_threshold_max" value="2.0"/>
+      <param name="/costmap_2d/z_threshold_min" value="0.13"/>
+      <param name="costmap_2d/no_information_value" value="255"/>
+      <param name="costmap_2d/freespace_projection_height" value="2.0"/>
+      <param name="costmap_2d/inflation_radius" value="0.65"/>
+      <param name="costmap_2d/circumscribed_radius" value="0.46"/>
+      <param name="costmap_2d/inscribed_radius" value="0.325"/>
+      <param name="costmap_2d/raytrace_window" value="10.0"/>
+      <param name="costmap_2d/weight" value="0.1"/>
 
-    <!-- Forces a check that we are receiving tilt scans that are correctly up to date at a rate of at least 10 Hz -->
-    <param name="/costmap_2d/tilt_laser_update_rate" value="2.0"/>
 
-    <!-- we don't have stereo data yet -->
-    <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
+      <param name="trajectory_rollout/map_size" value="4.0" />
+      <param name="trajectory_rollout/acc_limit_x" value="2.5" />
+      <param name="trajectory_rollout/acc_limit_y" value="2.5" />
+      <param name="trajectory_rollout/acc_limit_th" value="3.2" />
+      <param name="trajectory_rollout/sim_time" value="1.0" />
+      <param name="trajectory_rollout/sim_granularity" value="0.05" />
+      <param name="trajectory_rollout/vx_samples" value="15" />
+      <param name="trajectory_rollout/vtheta_samples" value="15" />
+      <param name="trajectory_rollout/path_distance_bias" value="0.6" />
+      <param name="trajectory_rollout/goal_distance_bias" value="0.8" />
+      <param name="trajectory_rollout/occdist_scale" value="0.2" />
+      <param name="trajectory_rollout/heading_lookahead" value="0.325" />
+      <param name="trajectory_rollout/oscillation_reset_dist" value="0.05" />
+      <param name="trajectory_rollout/holonomic_robot" value="true" />
+      <param name="trajectory_rollout/max_vel_x" value="0.5" />
+      <param name="trajectory_rollout/min_vel_x" value="0.1" />
+      <param name="trajectory_rollout/max_vel_th" value="1.0" />
+      <param name="trajectory_rollout/min_vel_th" value="-1.0" />
+      <param name="trajectory_rollout/min_in_place_vel_th" value="0.4" />
+      <param name="trajectory_rollout/freespace_model" value="true" />
+      <param name="trajectory_rollout/dwa" value="false" />
+      <param name="trajectory_rollout/simple_attractor" value="false" />
 
-    <!--- Checks for ground plane obstacles -->
-    <param name="/costmap_2d/low_obstacle_update_rate" value="0.2"/>
+      <param name="trajectory_rollout/yaw_goal_tolerance" value=".05" />
+      <param name="trajectory_rollout/xy_goal_tolerance" value=".1" />
 
-    <param name="/trajectory_rollout/map_size" value="4.0" />
-    <param name="/trajectory_rollout/acc_limit_x" value="2.5" />
-    <param name="/trajectory_rollout/acc_limit_y" value="2.5" />
-    <param name="/trajectory_rollout/acc_limit_th" value="3.2" />
-    <param name="/trajectory_rollout/sim_time" value="1.0" />
-    <param name="/trajectory_rollout/sim_granularity" value="0.05" />
-    <param name="/trajectory_rollout/vx_samples" value="15" />
-    <param name="/trajectory_rollout/vtheta_samples" value="15" />
-    <param name="/trajectory_rollout/path_distance_bias" value="0.6" />
-    <param name="/trajectory_rollout/goal_distance_bias" value="0.8" />
-    <param name="/trajectory_rollout/occdist_scale" value="0.2" />
-    <param name="/trajectory_rollout/heading_lookahead" value="0.325" />
-    <param name="/trajectory_rollout/oscillation_reset_dist" value="0.05" />
-    <param name="/trajectory_rollout/holonomic_robot" value="true" />
-    <param name="/trajectory_rollout/max_vel_x" value="0.5" />
-    <param name="/trajectory_rollout/min_vel_x" value="0.1" />
-    <param name="/trajectory_rollout/max_vel_th" value="1.0" />
-    <param name="/trajectory_rollout/min_vel_th" value="-1.0" />
-    <param name="/trajectory_rollout/min_in_place_vel_th" value="0.4" />
-    <param name="/trajectory_rollout/freespace_model" value="true" />
-    <param name="/trajectory_rollout/dwa" value="false" />
-    <param name="/trajectory_rollout/simple_attractor" value="false" />
+      <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 2 Hz. This is
+     way too slow for the real system, but necessary for rosstage, which does not reliably meet a 5Hz update rate. -->
+      <param name="costmap_2d/base_laser_update_rate" value="2.0"/>
 
-    <!-- Setting these parameters to 0.0 disables the watchdo on them. For stage this is required since we are not getting any data -->
-    <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 5 Hz -->
-    <!-- due to sim time wall clock time difference, use .5Hz for now until rostime is organized -->
-    <param name="/costmap_2d/base_laser_update_rate" value="0.0"/> <!-- base_laser -->
-    <param name="/costmap_2d/tilt_laser_update_rate" value="0.0"/> <!-- laser_tilt_link -->
-    <param name="/costmap_2d/stereo_update_rate" value="0.0"/> <!-- stereo_link -->
-    <param name="/costmap_2d/low_obstacle_update_rate" value="0.0"/>  <!-- odom_combined -->
+      <!-- Setting these parameters to 0.0 disables the watchdog on them. For stage this is required since we
+     are not getting any data -->
+      <param name="costmap_2d/tilt_laser_update_rate" value="0.0"/>
+      <param name="costmap_2d/low_obstacle_update_rate" value="0.0"/>
+      <param name="costmap_2d/stereo_update_rate" value="0.0"/>
+    </node>
 
-    <!-- start node to move base -->
-    <!--
-    <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
-    -->
-    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" />
 
     <param name="recharge/email_addresses" value="johnhsu@willowgarage.com pr2-users@lists.willowgarage.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
@@ -143,6 +153,10 @@
 
     <!-- For telling the robot to go charge -->
     <node pkg="highlevel_controllers" type="joy_batt_sender" respawn="true" />
+
+    <!-- filter robot self -->
+    <!-- reads tilt_laser_cloud_filtered and publishes robotlinks_cloud_filtered -->
+    <include file="$(find robot_self_filter)/start_robotlinks_filter.ros.xml"/>
 
   </group>
 </launch>
