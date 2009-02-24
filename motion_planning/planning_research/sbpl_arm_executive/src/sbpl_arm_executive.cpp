@@ -56,23 +56,22 @@ class ExecNode : public PR2ArmNode
         {	  
           case INITIALIZED:
           {
-	    ROS_INFO("Initializing");
+// 	    ROS_INFO("Initializing");
 	    //            goHome(home_position);
             state_ = GET_GOAL;
             break;
           }
           case GET_GOAL:
           {
-	    ROS_INFO("Get goal");
+// 	    ROS_INFO("Get goal");
             if(goal_id_ == 1)
             {
-              goal_[0] = RPYToTransform(0.0,0.0,0.0,0.2, -0.8, 0.8);
-              ROS_INFO("goal: %1.2f %1.2f %1.2f", goal_[0].position.x,goal_[0].position.y,goal_[0].position.z);
+              goal_[0] = RPYToTransform(0.0, 0.0, 0.0, 0.5, .25, 0);
               goal_id_ = 2;
             }
             else
             {
-              goal_[0] = RPYToTransform(0.0,0.0,0.0,0.2, -0.8, 0.8);
+              goal_[0] = RPYToTransform(0.0, 0.0, 0.0, 0.7, -0.4, 0);
               goal_id_ = 1;
             }
             state_ = PLAN;
@@ -103,8 +102,8 @@ class ExecNode : public PR2ArmNode
             break;
           }
 	}
-// 	usleep(10000);
-        sleep(2);
+	usleep(10000);
+//         sleep(1);
       }
     }
 };
