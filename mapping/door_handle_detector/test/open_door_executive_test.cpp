@@ -73,6 +73,7 @@ public:
     ros::Node(node_name),
     tf_(*this),
     state_(INITIALIZED)
+    //state_(DETECTING)
   {
     // initialize my door
     double tmp; int tmp2;
@@ -144,14 +145,19 @@ public:
   {
     robot_msgs::PoseStamped pose_msg;
     Stamped<Pose> pose;
-    pose.frame_id_ = door.header.frame_id;
+    pose.frame_id_ = "odom_combined";
 
+    // get normal and origin in odom_combined frame
     Vector normal = getNormalOnDoor(door);
+    normal = transformVectorToFrame(door.header.frame_id, "odom_combined", normal);
+
     Vector point(door.handle.x, door.handle.y, door.handle.z);
+    point  = transformPointToFrame(door.header.frame_id, "odom_combined", point);
 
     pose.setOrigin( Vector3(point[0], point[1], point[2]) );
     Vector x_axis(1,0,0);
-    double z_angle = acos(dot(-normal, x_axis));
+    double z_angle = acos(dot(normal, x_axis));
+    cout << "dot " << dot(normal, x_axis) << endl;
     cout << "z_angle " << z_angle << endl;
     pose.setRotation( Quaternion(z_angle, 0, M_PI/2.0) ); 
     PoseStampedTFToMsg(pose, pose_msg);
@@ -160,7 +166,7 @@ public:
     usleep(1e6 * 10);
 
     // move in front of door
-    Vector offset = normal * 0.1;
+    Vector offset = normal * -0.15;
     pose_msg.pose.position.x = pose_msg.pose.position.x + offset[0];
     pose_msg.pose.position.y = pose_msg.pose.position.y + offset[1];
     pose_msg.pose.position.z = pose_msg.pose.position.z + offset[2];
@@ -174,15 +180,15 @@ public:
 
     
     // move over door handle
-    pose_msg.pose.position.x = pose_msg.pose.position.x - offset[0];
-    pose_msg.pose.position.y = pose_msg.pose.position.y - offset[1];
-    pose_msg.pose.position.z = pose_msg.pose.position.z - offset[2];
+    pose_msg.pose.position.x = pose_msg.pose.position.x - 1.5*offset[0];
+    pose_msg.pose.position.y = pose_msg.pose.position.y - 1.5*offset[1];
+    pose_msg.pose.position.z = pose_msg.pose.position.z - 1.5*offset[2];
     moveTo(pose_msg);
 
     // close the gripper
     gripper_msg.data = -2.0;
     publish("gripper_effort/set_command", gripper_msg);
-    usleep(1e6 * 4);
+    usleep(1e6 * 7);
 
     return true;
   }
@@ -217,7 +223,7 @@ public:
     tff_msg_.value.rot.z = 0.0;
 
     publish("cartesian_tff_right/command", tff_msg_);
-    usleep(1e6*3);
+    usleep(1e6*6);
 
 
     // open door
@@ -270,7 +276,7 @@ public:
 	case DETECTING:{
           cout << "Detecting door... " << endl;
 	  if (detectDoor(my_door_, my_door_))
-	    state_ = SUCCESS;
+	    state_ = GRASPING;
 	  else
 	    state_ = FAILED;
 	  break;
@@ -278,7 +284,7 @@ public:
 	case GRASPING:{
           cout << "Grasping door... " << endl;
 	  if (graspDoor(my_door_))
-	    state_ = SUCCESS;
+	    state_ = OPENDOOR;
 	  else
 	    state_ = FAILED;
 	  break;
@@ -340,17 +346,17 @@ public:
     door2[2] = 0;
 
     // calculate normal in base_link_frame
-    door1 = transformToFrame(door_frame, "base_link", door1);
-    door2 = transformToFrame(door_frame, "base_link", door2);
+    door1 = transformPointToFrame(door_frame, "base_link", door1);
+    door2 = transformPointToFrame(door_frame, "base_link", door2);
     tmp = (door1 - door2); tmp.Normalize();
     normal = tmp * Vector(0,0,1);
 
-    // if normal does not point towards robot, invert normal
-    if (dot(normal, door1) > 0)
+    // if normal points towards robot, invert normal
+    if (dot(normal, door1) < 0)
       normal = normal * -1;
 
     // convert normal to door frame
-    normal = transformToFrame("base_link", door_frame, normal);
+    normal = transformVectorToFrame("base_link", door_frame, normal);
     cout << "normal on door in " << my_door_.header.frame_id << " = " 
          <<  normal[0] << " " << normal[1] << " " << normal[2] << endl;
 
@@ -359,10 +365,18 @@ public:
 
 
 
-  Vector transformToFrame(const string& frame_start, const string& frame_goal, const Vector& vec)
+  Vector transformPointToFrame(const string& frame_start, const string& frame_goal, const Vector& vec)
   {
     Stamped<tf::Point> pnt(Point(vec(0), vec(1), vec(2)), Time(), frame_start);
     tf_.transformPoint(frame_goal, pnt, pnt);
+    return Vector(pnt[0], pnt[1], pnt[2]);
+  }
+
+
+  Vector transformVectorToFrame(const string& frame_start, const string& frame_goal, const Vector& vec)
+  {
+    Stamped<tf::Point> pnt(Point(vec(0), vec(1), vec(2)), Time(), frame_start);
+    tf_.transformVector(frame_goal, pnt, pnt);
     return Vector(pnt[0], pnt[1], pnt[2]);
   }
 

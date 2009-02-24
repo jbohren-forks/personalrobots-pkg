@@ -5,7 +5,7 @@
 <!-- Cartesian trajectory controller -->
   <param name="cartesian_trajectory_right/autostart" type="bool" value="false" />
   <param name="cartesian_trajectory_right/root_name" type="string" value="torso_lift_link" />
-  <param name="cartesian_trajectory_right/tip_name" type="string" value="r_wrist_roll_link" />
+  <param name="cartesian_trajectory_right/tip_name" type="string" value="r_gripper_tool_frame" />
   <param name="cartesian_trajectory_right/max_vel_trans" value="1.0" />
   <param name="cartesian_trajectory_right/max_vel_rot" value="1.0" />
   <param name="cartesian_trajectory_right/max_acc_trans" value="0.5" />
@@ -30,7 +30,7 @@
 <!-- Cartesian tff controller -->
   <param name="cartesian_tff_right/autostart" type="bool" value="false" />
   <param name="cartesian_tff_right/root_name" type="string" value="torso_lift_link" />
-  <param name="cartesian_tff_right/tip_name" type="string" value="r_wrist_roll_link" />
+  <param name="cartesian_tff_right/tip_name" type="string" value="r_gripper_tool_frame" />
   <param name="cartesian_tff_right/twist_to_wrench_trans" value="10.0" />
   <param name="cartesian_tff_right/twist_to_wrench_rot" value="1.0" />
   <param name="cartesian_tff_right/vel_trans/p" value="2.0" />
