@@ -54,7 +54,7 @@ using namespace KDL;
 #define NUMOFLINKS 7
 #define NUMOFLINKS_DH 8
 
-#define UNIFORM_COST 0      //all the joint actions have the same costs when set
+#define UNIFORM_COST 1      //all the joint actions have the same costs when set
 
 #define INVALID_NUMBER 999
 
