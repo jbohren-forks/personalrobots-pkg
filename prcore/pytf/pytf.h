@@ -53,7 +53,7 @@ public:
    * 
    */
   pyTransformer(bool interpolating = true, 
-              int64_t cache_time = 10LL * 1000000000LL):
+                ros::Duration cache_time = ros::Duration(10.0)):
     tf_(interpolating, cache_time){;};
   virtual ~pyTransformer(void){;};
   
@@ -153,7 +153,7 @@ public:
    * zero if fails to cross */
   int getLatestCommonTime(const std::string& source, const std::string& dest, double time)
   {
-    return tf_.getLatestCommonTime(source, dest, ros::Time().fromSec(time));
+    return tf_.getLatestCommonTime(source, dest, ros::Time().fromSec(time), NULL);
   };
 
 
