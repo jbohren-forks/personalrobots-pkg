@@ -118,11 +118,11 @@ namespace angles
    *
    * \brief returns the angle in [-2*M_PI, 2*M_PI]  going the other way along the unit circle. 
    * \param angle The angle to which you want to turn in the range [-2*M_PI, 2*M_PI] 
-   * E.g. shortest_angular_distance_complement(-M_PI/4) returns 7_M_PI/4
-   * shortest_angular_distance_complement(M_PI/4) returns -7*M_PI/4
+   * E.g. two_pi_complement(-M_PI/4) returns 7_M_PI/4
+   * two_pi_complement(M_PI/4) returns -7*M_PI/4
    *
    */
-  static inline double shortest_angular_distance_complement(double angle)
+  static inline double two_pi_complement(double angle)
   {
     //check input conditions
     if (angle > 2*M_PI || angle < -2.0*M_PI)
@@ -151,8 +151,8 @@ namespace angles
     delta[0] = shortest_angular_distance(from,min_angle);
     delta[1] = shortest_angular_distance(from,max_angle);
 
-    delta[2] = shortest_angular_distance_complement(delta[0]);
-    delta[3] = shortest_angular_distance_complement(delta[1]);
+    delta[2] = two_pi_complement(delta[0]);
+    delta[3] = two_pi_complement(delta[1]);
 
     double delta_min = delta[0];
     double delta_min_2pi = delta[2];
@@ -213,7 +213,7 @@ namespace angles
     double max_delta_to = 2*M_PI;
     bool flag    = find_min_max_delta(from,left_limit,right_limit,min_delta,max_delta);
     double delta = shortest_angular_distance(from,to);
-    double delta_mod_2pi  = shortest_angular_distance_complement(delta);
+    double delta_mod_2pi  = two_pi_complement(delta);
 
 
     if(flag)//from position is within the limits

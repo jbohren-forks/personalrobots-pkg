@@ -167,22 +167,22 @@ TEST(Angles, shortest_angular_distance)
 
 }
 
-TEST(Angles, shortest_angular_distance_complement)
+TEST(Angles, two_pi_complement)
 {
   double epsilon = 1e-9;
-  EXPECT_NEAR(shortest_angular_distance_complement(0), -2*M_PI, epsilon); //Should this be?
-  EXPECT_NEAR(shortest_angular_distance_complement(2*M_PI), 0, epsilon); 
-  EXPECT_NEAR(shortest_angular_distance_complement(-2*M_PI), 0, epsilon); 
-  EXPECT_NEAR(shortest_angular_distance_complement(2*M_PI-epsilon), -epsilon, epsilon); 
-  EXPECT_NEAR(shortest_angular_distance_complement(-2*M_PI+epsilon), epsilon, epsilon); 
-  EXPECT_NEAR(shortest_angular_distance_complement(M_PI/2), -3*M_PI/2, epsilon);
-  EXPECT_NEAR(shortest_angular_distance_complement(M_PI), -M_PI, epsilon);
-  EXPECT_NEAR(shortest_angular_distance_complement(-M_PI), M_PI, epsilon);
-  EXPECT_NEAR(shortest_angular_distance_complement(-M_PI/2), 3*M_PI/2, epsilon);
+  EXPECT_NEAR(two_pi_complement(0), -2*M_PI, epsilon); //Should this be?
+  EXPECT_NEAR(two_pi_complement(2*M_PI), 0, epsilon); 
+  EXPECT_NEAR(two_pi_complement(-2*M_PI), 0, epsilon); 
+  EXPECT_NEAR(two_pi_complement(2*M_PI-epsilon), -epsilon, epsilon); 
+  EXPECT_NEAR(two_pi_complement(-2*M_PI+epsilon), epsilon, epsilon); 
+  EXPECT_NEAR(two_pi_complement(M_PI/2), -3*M_PI/2, epsilon);
+  EXPECT_NEAR(two_pi_complement(M_PI), -M_PI, epsilon);
+  EXPECT_NEAR(two_pi_complement(-M_PI), M_PI, epsilon);
+  EXPECT_NEAR(two_pi_complement(-M_PI/2), 3*M_PI/2, epsilon);
 
-  EXPECT_NEAR(shortest_angular_distance_complement(3*M_PI), -M_PI, epsilon); 
-  EXPECT_NEAR(shortest_angular_distance_complement(-3.0*M_PI), M_PI, epsilon);
-  EXPECT_NEAR(shortest_angular_distance_complement(-5.0*M_PI/2.0), 3*M_PI/2, epsilon);
+  EXPECT_NEAR(two_pi_complement(3*M_PI), -M_PI, epsilon); 
+  EXPECT_NEAR(two_pi_complement(-3.0*M_PI), M_PI, epsilon);
+  EXPECT_NEAR(two_pi_complement(-5.0*M_PI/2.0), 3*M_PI/2, epsilon);
 
 
 
