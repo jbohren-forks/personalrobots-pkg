@@ -72,7 +72,7 @@ public:
   OpenDoorExecutiveTest(std::string node_name):
     ros::Node(node_name),
     tf_(*this),
-    state_(INITIALIZED)
+    state_(DETECTING)
   {
     // initialize my door
     double tmp; int tmp2;
@@ -82,7 +82,7 @@ public:
     param("~/door_frame_p2_y", tmp, 0.5); my_door_.frame_p2.y = tmp;
     param("~/door_hinge" , tmp2, -1); my_door_.hinge = tmp2;
     param("~/door_rot_dir" , tmp2, -1); my_door_.rot_dir = tmp2;
-    my_door_.header.frame_id = "odom_combined";
+    my_door_.header.frame_id = "base_footprint";
 
     advertise<robot_msgs::TaskFrameFormalism>("cartesian_tff_right/command",1);
     advertise<std_msgs::Float64>("gripper_effort/set_command",1);
@@ -270,7 +270,7 @@ public:
 	case DETECTING:{
           cout << "Detecting door... " << endl;
 	  if (detectDoor(my_door_, my_door_))
-	    state_ = GRASPING;
+	    state_ = SUCCESS;
 	  else
 	    state_ = FAILED;
 	  break;

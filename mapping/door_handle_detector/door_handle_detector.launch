@@ -23,16 +23,6 @@
 
 
 <!-- Door detection -->
-  <param name="/door_handle_detector/door_frame_multiplier" value="4" />
-  <param name="/door_handle_detector/nr_scans" value="1" />
-
-  <param name="/door_handle_detector/door_min_height" value="1.1" />
-  <param name="/door_handle_detector/door_max_height" value="3.0" />
-  <param name="/door_handle_detector/door_min_width" value="0.85" />
-  <param name="/door_handle_detector/door_max_width" value="1.2" />
-
-  <node pkg="door_handle_detector" type="door_handle_detector_node" name="door_handle_detector" output="screen" respawn="true">
-    <remap from="full_cloud" to="snapshot_cloud" />
-  </node>
+  <include file="$(find door_handle_detector)/simple_door_handle_detector.launch"/>	
 
 </launch>

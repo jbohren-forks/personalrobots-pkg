@@ -41,27 +41,31 @@ using namespace robot_msgs;
   * \param indices the resultant set of indices
   * \param door_req a door request service containing the X-Y bounds in frame_p1 and frame_p2
   * \param tf a pointer to a TransformListener object
-  * \param fixed_param_frame the TF frame ID in which min_z_bounds and max_z_bounds are given
+  * \param parameter_frame the TF frame ID in which min_z_bounds and max_z_bounds are given
   * \param min_z_bounds restrict the minimum search bounds on Z to this value
   * \param max_z_bounds restrict the maximum search bounds on Z to this value
   * \param frame_multiplier multiply the ||frame_p1-frame_p2|| distance by this number to wrap all possible situations in X-Y
   */
 void
   obtainCloudIndicesSet (robot_msgs::PointCloud *points, vector<int> &indices, door_handle_detector::DoorDetector::Request door_req,
-                         tf::TransformListener *tf, std::string fixed_param_frame,
+                         tf::TransformListener *tf, std::string parameter_frame,
                          double min_z_bounds, double max_z_bounds, double frame_multiplier)
 {
+  // frames used
+  string cloud_frame = points->header.frame_id;
+  string door_frame   = door_req.door.header.frame_id;
+
   // Resize the resultant indices to accomodate all data
   indices.resize (points->pts.size ());
 
   // Transform the X-Y bounds from the door request service into the cloud TF frame
-  tf::Stamped<Point32> frame_p1 (door_req.door.frame_p1, points->header.stamp, door_req.door.header.frame_id);
-  tf::Stamped<Point32> frame_p2 (door_req.door.frame_p2, points->header.stamp, door_req.door.header.frame_id);
-  transformPoint (tf, points->header.frame_id, frame_p1, frame_p1);
-  transformPoint (tf, points->header.frame_id, frame_p2, frame_p2);
+  tf::Stamped<Point32> frame_p1 (door_req.door.frame_p1, points->header.stamp, door_frame);
+  tf::Stamped<Point32> frame_p2 (door_req.door.frame_p2, points->header.stamp, door_frame);
+  transformPoint (tf, cloud_frame, frame_p1, frame_p1);
+  transformPoint (tf, cloud_frame, frame_p2, frame_p2);
 
   ROS_INFO ("Start detecting door at points in frame %s [%g, %g, %g] -> [%g, %g, %g]",
-            points->header.frame_id.c_str (), frame_p1.x, frame_p1.y, frame_p1.z, frame_p2.x, frame_p2.y, frame_p2.z);
+            cloud_frame.c_str (), frame_p1.x, frame_p1.y, frame_p1.z, frame_p2.x, frame_p2.y, frame_p2.z);
 
   // Obtain the bounding box information in the reference frame of the laser scan
   Point32 min_bbox, max_bbox;
@@ -76,11 +80,11 @@ void
   }
   else
   {
-    // Transform the minimum/maximum Z bounds parameters from frame fixed_param_frame to the cloud TF frame
-    min_z_bounds = transformDoubleValueTF (min_z_bounds, fixed_param_frame, points->header.frame_id, points->header.stamp, tf);
-    max_z_bounds = transformDoubleValueTF (max_z_bounds, fixed_param_frame, points->header.frame_id, points->header.stamp, tf);
+    // Transform the minimum/maximum Z bounds parameters from frame parameter_frame to the cloud TF frame
+    min_z_bounds = transformDoubleValueTF (min_z_bounds, parameter_frame, cloud_frame, points->header.stamp, tf);
+    max_z_bounds = transformDoubleValueTF (max_z_bounds, parameter_frame, cloud_frame, points->header.stamp, tf);
     ROS_INFO ("Capping Z-search using the door_min_z_bounds/door_max_z_bounds parameters in frame %s: [%g / %g]",
-              points->header.frame_id.c_str (), min_z_bounds, max_z_bounds);
+              cloud_frame.c_str (), min_z_bounds, max_z_bounds);
 
     // Obtain the actual 3D bounds
     get3DBounds (&frame_p1, &frame_p2, min_bbox, max_bbox, min_z_bounds, max_z_bounds, frame_multiplier);
@@ -100,7 +104,7 @@ void
   }
 
 
-  ROS_DEBUG ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.",
+  ROS_INFO ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.",
              min_bbox.x, min_bbox.y, min_bbox.z, max_bbox.x, max_bbox.y, max_bbox.z, indices.size ());
 }
 

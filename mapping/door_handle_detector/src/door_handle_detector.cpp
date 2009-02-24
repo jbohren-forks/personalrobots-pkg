@@ -210,6 +210,7 @@ public:
     bool
       detectDoor (door_handle_detector::DoorDetector::Request &req, door_handle_detector::DoorDetector::Response &resp)
     {
+      ROS_INFO("Waiting for laser scan to come in");
 
       updateParametersFromServer ();
 
@@ -226,9 +227,7 @@ public:
       while ((int)num_clouds_received_ < nr_scans_)
         tictoc.sleep ();
       delete message_notifier_;
-
-      //cout << "request to detect door from " << cloud_in_.points.size() << "points " << endl;
-
+      ROS_INFO("Try to detect door from %i points", cloud_in_.pts.size());
 
       // cloud frame
       cloud_frame_ = cloud_in_.header.frame_id;
@@ -287,7 +286,7 @@ public:
 
       vector<vector<double> > coeff (clusters.size ()); // Need to save all coefficients for all models
 
-      cout << " - Process all clusters (" << clusters.size () << ")" << endl;
+      ROS_INFO(" - Process all clusters (%i)", clusters.size ());
       int nr_p = 0;
       vector<int> inliers;
       vector<int> handle_indices;
@@ -444,7 +443,7 @@ public:
       }
 #endif
 
-      cout << "Finished detecting door" << endl;
+      ROS_INFO("Finished detecting door");
       return (true);
     }
 
@@ -598,7 +597,7 @@ public:
       robot_msgs::Point32 door_axis = cloud_geometry::cross (door_coeff, &z_axis_);
 
       vector<vector<int> > line_inliers (clusters.size ());
-      std::cout << " - prepare to fit lines in handle clusters..." << std::endl;
+      ROS_INFO(" - prepare to fit lines in handle clusters...");
 #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int)clusters.size (); i++)
       {
@@ -606,7 +605,7 @@ public:
         fitSACOrientedLine (points, clusters[i], 0.05, &door_axis, normal_angle_tolerance_, line_inliers[i]);
 
       }
-      std::cout << " - lines fit" << std::endl;
+      ROS_INFO(" - lines fit");
 
       // Calculate the longest horizontal line
       double best_length = -FLT_MAX;
@@ -645,7 +644,7 @@ public:
       double distance_to_plane = door_coeff->at (0) * handle_center.x + door_coeff->at (1) * handle_center.y +
                                  door_coeff->at (2) * handle_center.z + door_coeff->at (3) * 1;
 
-      cout << "distance from handle to door is " << distance_to_plane << endl;
+      ROS_INFO("distance from handle to door is %f", distance_to_plane);
 
       // Calculate the projection of the point on the plane
       handle_center.x -= distance_to_plane * door_coeff->at (0);
