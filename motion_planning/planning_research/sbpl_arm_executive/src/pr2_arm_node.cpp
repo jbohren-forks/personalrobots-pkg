@@ -84,30 +84,40 @@ void PR2ArmNode::pointHead(double yaw, double pitch)
 void PR2ArmNode::nodHead()
 {
   robot_msgs::JointTraj traj;
-
-  traj.set_points_size(4);
-  for(int i=0; i<4; i++)
+  double mult = -1.0;
+  traj.set_points_size(9);
+  for(int i=0; i<8; i++)
   {
     traj.points[i].set_positions_size(2);
     traj.points[i].positions[0] = 0.0;
-    traj.points[i].positions[1] = pow(-1.0,i)*0.5;
+    traj.points[i].positions[1] = mult*0.3;
     traj.points[i].time = 0.0;
+    mult *= -1.0;
   }
+    traj.points[8].set_positions_size(2);
+    traj.points[8].positions[0] = 0.0;
+    traj.points[8].positions[1] = 0.0;
+    traj.points[8].time = 0.0;
   sendTrajectory("head",traj);
 }
 
 void PR2ArmNode::shakeHead()
 {
   robot_msgs::JointTraj traj;
-
-  traj.set_points_size(4);
-  for(int i=0; i<4; i++)
+  double mult = -1.0;
+  traj.set_points_size(9);
+  for(int i=0; i<8; i++)
   {
     traj.points[i].set_positions_size(2);
-    traj.points[i].positions[0] = pow(-1.0,i)*0.5;
+    traj.points[i].positions[0] = mult*0.5;
     traj.points[i].positions[1] = 0.0;
     traj.points[i].time = 0.0;
+    mult *= -1.0;
   }
+    traj.points[8].set_positions_size(2);
+    traj.points[8].positions[0] = 0.0;
+    traj.points[8].positions[1] = 0.0;
+    traj.points[8].time = 0.0;
   sendTrajectory("head",traj);
 }
 
@@ -299,3 +309,25 @@ robot_msgs::Pose PR2ArmNode::RPYToTransform(double roll, double pitch, double ya
 
   return pose;
 }
+
+void PR2ArmNode::getGraspTrajectory(const robot_msgs::PoseStamped &transform, robot_msgs::JointTraj &traj)
+{
+  pr2_mechanism_controllers::GraspPointSrv::Request  req;
+  pr2_mechanism_controllers::GraspPointSrv::Response res;
+
+  req.transform = transform;
+  req.transform.header.stamp = ros::Time::now();
+
+  if (ros::service::call("/grasp_point_node/SetGraspPoint", req, res))
+  {
+    ROS_INFO("Got grasp trajectory");
+  }
+  else
+  {
+    ROS_ERROR("No grasp trajectory returned");
+    exit(-1);
+  }
+  traj = res.traj;
+
+  return;
+};

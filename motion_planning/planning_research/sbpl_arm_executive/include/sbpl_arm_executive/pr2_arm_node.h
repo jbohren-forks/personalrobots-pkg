@@ -41,6 +41,8 @@
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 
+#include <pr2_mechanism_controllers/GraspPointSrv.h>
+
 #include <sbpl_arm_planner_node/PlanPathSrv.h>
 
 namespace pr2_arm_node
@@ -104,6 +106,8 @@ namespace pr2_arm_node
       void nodHead();
 
       void shakeHead();
+
+      void getGraspTrajectory(const robot_msgs::PoseStamped &transform, robot_msgs::JointTraj &traj);
 
   };
 }
