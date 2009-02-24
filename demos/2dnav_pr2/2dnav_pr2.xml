@@ -70,7 +70,7 @@
     <node pkg="semantic_point_annotator" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen" />
 
     <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" >-->
-    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen">
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen" name="move_base_node">
       <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
       <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
       <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
