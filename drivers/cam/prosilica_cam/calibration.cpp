@@ -4,10 +4,18 @@
 #include <string.h>
 #include <time.h>
 
+//static const int CHESSBOARD_FLAGS = 0;
+//static const int CHESSBOARD_FLAGS = CV_CALIB_CB_ADAPTIVE_THRESH;
+static const int CHESSBOARD_FLAGS = CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE;
+
+static const int SUBPIX_RANGE = 15;
+//static const int SUBPIX_RANGE = 11;
+//static const int SUBPIX_RANGE = 5;
+
 extern "C"
-int cvFindChessboardCorners_Small( const void* arr, CvSize pattern_size,
-                                   CvPoint2D32f* out_corners, int* out_corner_count,
-                                   int flags );
+int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
+                                CvPoint2D32f* out_corners, int* out_corner_count,
+                                int flags );
 
 // example command line (for copy-n-paste):
 // calibration -w 6 -h 8 -s 2 -n 10 -o camera.yml -op -oe [<list_of_views.txt>]
@@ -405,15 +413,14 @@ int main( int argc, char** argv )
             cvFlip( view, view, 0 );
 
         img_size = cvGetSize(view);
-        found = cvFindChessboardCorners_Small( view, board_size,
-            image_points_buf, &count, 0 /*CV_CALIB_CB_ADAPTIVE_THRESH*/);
+        found = cvFindChessboardCorners_ex( view, board_size,
+            image_points_buf, &count, CHESSBOARD_FLAGS);
 
 #if 1
         // improve the found corners' coordinate accuracy
         view_gray = cvCreateImage( cvGetSize(view), 8, 1 );
         cvCvtColor( view, view_gray, CV_BGR2GRAY );
-        //static const int SUBPIX_RANGE = 11;
-        static const int SUBPIX_RANGE = 5;
+        
         cvFindCornerSubPix( view_gray, image_points_buf, count, cvSize(SUBPIX_RANGE,SUBPIX_RANGE),
             cvSize(-1,-1), cvTermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1 ));
         cvReleaseImage( &view_gray );

@@ -200,13 +200,13 @@ icvCalcAffineTranf2D32f(CvPoint2D32f* pts1, CvPoint2D32f* pts2, int count, CvMat
 #endif
 
 CV_IMPL
-int cvFindChessboardCorners_Small( const void* arr, CvSize pattern_size,
-                                   CvPoint2D32f* out_corners, int* out_corner_count,
-                                   int flags )
+int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
+                                CvPoint2D32f* out_corners, int* out_corner_count,
+                                int flags )
 {
     int k = 0;
     const int min_dilations = 0;
-    const int max_dilations = 3;
+    const int max_dilations = 10;
     int found = 0;
     CvMat* norm_img = 0;
     CvMat* thresh_img = 0;
@@ -299,7 +299,7 @@ int cvFindChessboardCorners_Small( const void* arr, CvSize pattern_size,
 
                     // convert to binary
                     cvAdaptiveThreshold( img, thresh_img, 255,
-                        CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, block_size, 0 );
+                        CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, block_size, 4 );
                     if (dilations > 0)
                         cvDilate( thresh_img, thresh_img, 0, dilations-1 );
                 }

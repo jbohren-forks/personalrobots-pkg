@@ -11,7 +11,7 @@
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0011.jpg
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0012.jpg
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0013.jpg
-/u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0014.jpg
+#/u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0014.jpg
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0015.jpg
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0016.jpg
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0017.jpg
@@ -25,7 +25,7 @@
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0025.jpg
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0026.jpg
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0027.jpg
-/u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0028.jpg
+#/u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0028.jpg
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0029.jpg
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0030.jpg
 /u/mihelich/ros/ros-pkg/drivers/cam/prosilica_cam/calib_images/frame0031.jpg
