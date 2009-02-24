@@ -42,46 +42,24 @@
 #include <algorithm>
 #include <robot_msgs/VisualizationMarker.h>
 #include <roslib/Time.h>
-#include <tf/transform_broadcaster.h>
 #include <collision_space/util.h>
 using namespace collision_space;
 
 const int TEST_TIMES  = 3;
 const int TEST_POINTS = 50000;
 
-class TestVM : public ros::Node
+class TestVM
 {
 public:
     
-    TestVM(void) : ros::Node("TVM")
+    TestVM(void) : m_node("TVM")
     {
-        robot_msgs::VisualizationMarker mk;
-	advertise("visualizationMarker", 
-                  mk,
-                  &TestVM::subCb,
-                  10240);	
-	m_tfServer = new tf::TransformBroadcaster(*this);	
+	m_node.advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 10240);
 	m_id = 1;
-        m_connected = false;
     }
 
     virtual ~TestVM(void)
     { 
-	if (m_tfServer)
-	    delete m_tfServer; 
-    }
-    
-    void setupTransforms(void)
-    {
-	m_tm = ros::Time::now();
-	tf::Transform t;
-	t.setIdentity();
-	m_tfServer->sendTransform(tf::Stamped<tf::Transform>(t, m_tm, "base", "map"));
-    }
-
-    void subCb(const ros::PublisherPtr&)
-    {
-	m_connected = true;
     }
     
     void sendPoint(double x, double y, double z)
@@ -90,7 +68,7 @@ public:
 
 	mk.header.stamp = m_tm;
 	
-	mk.header.frame_id = "map";
+	mk.header.frame_id = "base_link";
 
 	mk.id = m_id++;
 	mk.type = robot_msgs::VisualizationMarker::SPHERE;
@@ -112,7 +90,7 @@ public:
 	mk.g = 10;
 	mk.b = 10;
 	
-	publish("visualizationMarker", mk);
+	m_node.publish("visualizationMarker", mk);
     }
 
     void testShape(collision_space::bodies::Shape *s)
@@ -148,7 +126,7 @@ public:
 	s->setScale(0.99);
 	
 	mk.header.stamp = m_tm;	
-	mk.header.frame_id = "map";
+	mk.header.frame_id = "base_link";
 	mk.id = m_id++;
 	
 	mk.action = robot_msgs::VisualizationMarker::ADD;
@@ -183,7 +161,7 @@ public:
 	    mk.yScale = radius[0]*2.0;
 	    mk.zScale = radius[0]*2.0;
 	    
-	    publish("visualizationMarker", mk);
+	    m_node.publish("visualizationMarker", mk);
 	
 	    testShape(s);
 	}
@@ -207,7 +185,7 @@ public:
 	    mk.yScale = dims[1]; // width
 	    mk.zScale = dims[2]; // height
 	    
-	    publish("visualizationMarker", mk);
+	    m_node.publish("visualizationMarker", mk);
 	    
 	    testShape(s);
 	}
@@ -231,7 +209,7 @@ public:
 	    mk.yScale = dims[1] * 2.0; // radius
 	    mk.zScale = dims[0]; //length
 	    
-	    publish("visualizationMarker", mk);
+	    m_node.publish("visualizationMarker", mk);
 	    
 	    testShape(s);
 	}
@@ -239,9 +217,21 @@ public:
 	delete s;
     }
     
-    bool isConnected()
+    void run()
     {
-	return m_connected;
+	ros::Duration d;
+	d.fromSec(2);
+	d.sleep();
+	
+	m_tm = ros::Time::now();
+	
+	testSphere();
+	testBox();
+	testCylinder();
+	
+	m_node.spin();    
+	m_node.shutdown();
+	
     }
     
 protected:
@@ -253,10 +243,10 @@ protected:
 	return (2.0 * drand48() - 1.0) * magnitude;	
     }
     
-    tf::TransformBroadcaster *m_tfServer;
+    ros::Node                 m_node;
     ros::Time                 m_tm;  
     int                       m_id;
-    bool                      m_connected;
+    
 };
 
     
@@ -265,20 +255,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv);
     
     TestVM tvm;
-    ros::Duration d;
-    d.fromSec(0.1);
-
-    while(!tvm.isConnected())
-      d.sleep();
-
-    tvm.setupTransforms();    
+    tvm.run();
     
-    tvm.testSphere();
-    tvm.testBox();
-    tvm.testCylinder();
-    
-    tvm.spin();    
-    tvm.shutdown();
-
     return 0;    
 }
