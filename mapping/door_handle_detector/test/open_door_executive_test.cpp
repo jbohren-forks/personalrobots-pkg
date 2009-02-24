@@ -40,14 +40,13 @@
 #include <door_handle_detector/DoorDetector.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
-#include <robot_mechanism_controllers/cartesian_trajectory_controller.h>
-#include <robot_mechanism_controllers/cartesian_tff_controller.h>
-#include <robot_mechanism_controllers/MoveToPose.h>
+#include <robot_srvs/MoveToPose.h>
 #include <kdl/frames.hpp>
 
 using namespace tf;
 using namespace KDL;
 using namespace ros;
+using namespace std;
 
 class OpenDoorExecutiveTest : public ros::Node
 {
@@ -62,8 +61,8 @@ private:
   door_handle_detector::DoorDetector::Request  req_doordetect;
   door_handle_detector::DoorDetector::Response res_doordetect;
 
-  robot_mechanism_controllers::MoveToPose::Request  req_moveto;
-  robot_mechanism_controllers::MoveToPose::Response res_moveto;
+  robot_srvs::MoveToPose::Request  req_moveto;
+  robot_srvs::MoveToPose::Response res_moveto;
 
   robot_srvs::SwitchController::Request req_switch;
   robot_srvs::SwitchController::Response res_switch;
