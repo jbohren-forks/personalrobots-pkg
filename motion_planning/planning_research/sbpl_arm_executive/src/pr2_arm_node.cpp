@@ -39,7 +39,7 @@ PR2ArmNode::PR2ArmNode(std::string node_name, std::string arm_name, std::string 
   param<std::string>("~arm_trajectory_service_start",trajectory_start_name_, "/trajectory_controller/TrajectoryStart");
   param<std::string>("~arm_trajectory_service_query",trajectory_query_name_, "/trajectory_controller/TrajectoryQuery");
   param<std::string>("~effort_command",effort_controller_command_name_, "/effort_controller/set_command");
-  param<std::string>("~sbpl_planner_service_name",sbpl_planner_service_name_, "/sbpl_planner/plan_path/GetPath");
+  param<std::string>("~sbpl_planner_service_name",sbpl_planner_service_name_, "/sbpl_planner/plan_path/GetPlan");
 
   param("use_gripper_effort_controller",use_gripper_effort_controller_,true);
 
@@ -245,9 +245,13 @@ bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, con
   request.start = joint_start;
   request.cartesian_goals = pose_goals;
 
+  ROS_INFO("goal: %1.2f %1.2f %1.2f\n", request.cartesian_goals[0].position.x,request.cartesian_goals[0].position.y,request.cartesian_goals[0].position.z);
+  ROS_INFO("goal orientation: %1.2f %1.2f %1.2f %1.2f\n", request.cartesian_goals[0].orientation.x, request.cartesian_goals[0].orientation.y, request.cartesian_goals[0].orientation.z, request.cartesian_goals[0].orientation.w);
+ROS_INFO("Calling planner with %s",(arm_name_+sbpl_planner_service_name_).c_str());
+
   if(ros::service::call(arm_name_ + sbpl_planner_service_name_,request,response))
   {
-    planned_path = response.traj;    
+    planned_path = response.traj;
     return true;
   }
   else
@@ -260,6 +264,7 @@ bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, con
 
 bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const robot_msgs::JointTrajPoint &joint_goal, robot_msgs::JointTraj &planned_path)
 {
+  
   sbpl_arm_planner_node::PlanPathSrv::Request  request;
   sbpl_arm_planner_node::PlanPathSrv::Response response;
 
@@ -267,9 +272,10 @@ bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, con
   request.start = joint_start;
   request.joint_goal = joint_goal;
 
+
   if(ros::service::call(arm_name_ + sbpl_planner_service_name_,request,response))
   {
-    planned_path = response.traj;    
+    planned_path = response.traj;
     return true;
   }
   else

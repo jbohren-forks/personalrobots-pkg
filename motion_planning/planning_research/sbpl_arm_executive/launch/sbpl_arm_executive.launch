@@ -5,10 +5,10 @@
  <param name="sbpl_exec/arm_trajectory_topic_name" value="/trajectory_controller/trajectory_command"/>
  <param name="sbpl_exec/arm_trajectory_service_start" value="/trajectory_controller/TrajectoryStart"/>
  <param name="sbpl_exec/arm_trajectory_service_query" value="/trajectory_controller/TrajectoryQuery"/>
- <param name="sbpl_exec/sbpl_planner_service_name" value="/sbpl_planner/plan_path/GetPath"/>
+ <param name="sbpl_exec/sbpl_planner_service_name" value="/sbpl_planner/plan_path/GetPlan"/>
  <param name="sbpl_exec/effort_command" value="/effort_controller/set_command"/>
 
  <!-- Executive -->
   <node pkg="sbpl_arm_executive" type="sbpl_arm_executive" name="sbpl_exec" output="screen"/>
 
-</launch>
+</launch> 

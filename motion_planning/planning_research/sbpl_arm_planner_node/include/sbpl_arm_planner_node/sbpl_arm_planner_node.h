@@ -84,6 +84,8 @@ namespace sbpl_arm_planner_node
 
       std::string node_name_;
 
+      std::string arm_name_;
+      
       robot_msgs::CollisionMap collision_map_;
 
       MDPConfig mdp_cfg_;

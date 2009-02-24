@@ -66,12 +66,13 @@ class ExecNode : public PR2ArmNode
 	    ROS_INFO("Get goal");
             if(goal_id_ == 1)
             {
-              goal_[0] = RPYToTransform(0.0,0.0,0.0,0.75,0.0,1.0);
+              goal_[0] = RPYToTransform(0.0,0.0,0.0,0.2, -0.8, 0.8);
+              ROS_INFO("goal: %1.2f %1.2f %1.2f", goal_[0].position.x,goal_[0].position.y,goal_[0].position.z);
               goal_id_ = 2;
             }
             else
             {
-              goal_[0] = RPYToTransform(0.0,0.0,0.0,0.75,0.0,1.0);
+              goal_[0] = RPYToTransform(0.0,0.0,0.0,0.2, -0.8, 0.8);
               goal_id_ = 1;
             }
             state_ = PLAN;
@@ -102,9 +103,10 @@ class ExecNode : public PR2ArmNode
             break;
           }
 	}
-	usleep(10000);
+// 	usleep(10000);
+        sleep(2);
       }
-    }   
+    }
 };
 
 int main(int argc, char *argv[])

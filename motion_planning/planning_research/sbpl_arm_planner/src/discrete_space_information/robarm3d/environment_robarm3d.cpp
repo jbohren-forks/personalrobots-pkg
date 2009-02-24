@@ -2859,6 +2859,16 @@ bool EnvironmentROBARM3D::AreEquivalent(int State1ID, int State2ID)
 
 bool EnvironmentROBARM3D::SetEndEffGoals(double** EndEffGoals, int goal_type, int num_goals, bool bComputeHeuristic)
 {
+    for(int i = 0; i < num_goals; i++)
+    {
+        printf("goal %i:\n",i);
+        for(int j = 0; j < 12; j++)
+        {
+            printf("%1.2f  ",EndEffGoals[i][j]);
+        }
+        printf("\n");
+    }
+
     if(EnvROBARMCfg.bGoalIsSet)
     {
         //delete the old goal array
@@ -2964,6 +2974,11 @@ bool EnvironmentROBARM3D::SetStartJointConfig(double angles[NUMOFLINKS], bool bR
 {
     double startangles[NUMOFLINKS];
     short unsigned int elbow[3],wrist[3];
+
+    printf("[SetStartJointConfig] start:  ");
+    for(int i = 0; i < NUMOFLINKS; i++)
+        printf("%1.2f  ", angles[i]);
+    printf("\n");
 
     //set initial joint configuration
     if(bRad) //input is in radians

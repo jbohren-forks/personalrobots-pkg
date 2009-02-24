@@ -34,6 +34,7 @@ using namespace sbpl_arm_planner_node;
 
 SBPLArmPlannerNode::SBPLArmPlannerNode(std::string node_name):ros::Node(node_name),node_name_(node_name)
 {
+    param<std::string>("~arm_name", arm_name_, "right_arm");
   param ("~allocated_time", allocated_time_, 1.0);
   param ("~forward_search", forward_search_, true);
   param ("~search_mode", search_mode_, true);
@@ -42,7 +43,7 @@ SBPLArmPlannerNode::SBPLArmPlannerNode(std::string node_name):ros::Node(node_nam
   param ("~torso_arm_offset_y", torso_arm_offset_y_, 0.0);
   param ("~torso_arm_offset_z", torso_arm_offset_z_, 0.0);
   param<std::string>("~collision_map_topic", collision_map_topic_, "collision_map");
-  advertiseService(node_name + "/plan_path/GetPlan", &SBPLArmPlannerNode::planPath, this);
+  advertiseService(arm_name_ + "/sbpl_planner/plan_path/GetPlan", &SBPLArmPlannerNode::planPath, this);
   subscribe(collision_map_topic_, collision_map_, &SBPLArmPlannerNode::collisionMapCallback,1);
 
   planner_ = new ARAPlanner(&pr2_arm_env_, forward_search_);
@@ -53,7 +54,7 @@ SBPLArmPlannerNode::~SBPLArmPlannerNode()
 {
   delete planner_;
   unsubscribe(collision_map_topic_);
-  unadvertiseService(node_name_ + "/plan_path/GetPlan");
+  unadvertiseService(arm_name_ + "/sbpl_planner/plan_path/GetPlan");
 };
 
 void PrintUsage(char *argv[])
@@ -171,15 +172,20 @@ bool SBPLArmPlannerNode::replan(robot_msgs::JointTraj &arm_path)
 
 bool SBPLArmPlannerNode::setStart(const robot_msgs::JointTrajPoint &start)
 {
-  printf("[setStart] Setting start...\n");
   double sbpl_start[num_joints_];
 
   for(int i=0; i< num_joints_; i++)
   {
     sbpl_start[i] = start.positions[i];
   }
+  printf("[setStart] start: %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f", sbpl_start[0],sbpl_start[1],sbpl_start[2],sbpl_start[3],sbpl_start[4],sbpl_start[5],sbpl_start[6]);
+  ROS_INFO("[setStart] start: %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f", sbpl_start[0],sbpl_start[1],sbpl_start[2],sbpl_start[3],sbpl_start[4],sbpl_start[5],sbpl_start[6]);
 
-  pr2_arm_env_.SetStartJointConfig(sbpl_start, true);
+  if(pr2_arm_env_.SetStartJointConfig(sbpl_start, true) == 0)
+  {
+      ROS_ERROR("Environment failed to set start state\n");
+      return false;
+  }
 
   if(planner_->set_start(mdp_cfg_.startstateid) == 0)
   {
@@ -191,7 +197,7 @@ bool SBPLArmPlannerNode::setStart(const robot_msgs::JointTrajPoint &start)
 
 bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
 {
-  printf("[setGoals] Setting goal...\n");
+  ROS_INFO("[setGoals] Setting goal...");
   int num_goals = (int) goals.size();
   tf::Pose tf_pose;
 
@@ -199,7 +205,7 @@ bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
 
   for(int i=0; i<num_goals; i++)
   {
-    sbpl_goal[i] = new double[12];       
+    sbpl_goal[i] = new double[12];
 
     sbpl_goal[i][0] = goals[i].position.x;
     sbpl_goal[i][1] = goals[i].position.y;
@@ -222,6 +228,10 @@ bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
     sbpl_goal[i][11]= m[10];
   }
 
+  ROS_INFO("Goal:  ");
+  for(int k=0; k<12; k++)
+      ROS_INFO("%3.2f  ", sbpl_goal[0][k]);
+
   pr2_arm_env_.SetEndEffGoals(sbpl_goal, 0, num_goals,1);
 
   for(int i=0; i < num_goals; i++)
@@ -240,10 +250,16 @@ bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
 
 bool SBPLArmPlannerNode::planPath(sbpl_arm_planner_node::PlanPathSrv::Request &req, sbpl_arm_planner_node::PlanPathSrv::Response &resp)
 {
-  printf("[planPath] Planning...\n");
+  ROS_INFO("[planPath] Planning...");
+//   ROS_INFO("start: %1.2f %1.2f %1.2f %1.2f %1.2f 1.2f %1.2f\n",req.start.positions[0],req.start.positions[1],req.start.positions[2],req.start.positions[3],req.start.positions[4],req.start.positions[5],req.start.positions[6]);
+  ROS_INFO("goal: %1.2f %1.2f %1.2f", req.cartesian_goals[0].position.x,req.cartesian_goals[0].position.y,req.cartesian_goals[0].position.z);
+  ROS_INFO("goal orientation: %1.2f %1.2f %1.2f %1.2f", req.cartesian_goals[0].orientation.x, req.cartesian_goals[0].orientation.y, req.cartesian_goals[0].orientation.z, req.cartesian_goals[0].orientation.w);
+
+  
   robot_msgs::JointTraj traj; 
   if(setStart(req.start))
   {
+      ROS_INFO("Starting position set in the planner");
     if(setGoals(req.cartesian_goals))
     {
       if(replan(traj))
