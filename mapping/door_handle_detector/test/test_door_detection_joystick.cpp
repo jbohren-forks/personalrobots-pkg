@@ -44,9 +44,12 @@
 #include <door_handle_detector/DoorDetector.h>
 
 #include <sbpl_arm_executive/pr2_arm_node.h>
+#include <kdl/frames.hpp>
 
 #define MIN_DIST_THRESHOLD 0.1
 #define MAX_COMPARE_TIME 20
+
+using namespace KDL;
 
 using namespace checkerboard_detector;
 using namespace tf;
@@ -56,10 +59,6 @@ class TestDoorDetectionNode : public PR2ArmNode
 {
   public:
 
-
-//class TestDoorDetectionNode : public ros::Node
-//{
-//  public:
     std::string frame_id_, joy_topic_;
     std_msgs::String joy_msg_;
     double door_width_;
@@ -70,10 +69,10 @@ class TestDoorDetectionNode : public PR2ArmNode
     robot_msgs::Door door_msg_to_detector_;
 
     TestDoorDetectionNode(std::string node_name, std::string arm_name, std::string gripper_name):PR2ArmNode(node_name,arm_name,gripper_name),tf_(*this, false, ros::Duration(10))
-//    TestDoorDetectionNode(std::string node_name):ros::Node(node_name),tf_(*this, false, ros::Duration(10))
+                         //    TestDoorDetectionNode(std::string node_name):ros::Node(node_name),tf_(*this, false, ros::Duration(10))
     {
       this->param<std::string>("test_door_detection_node/joy_topic",joy_topic_,"annotation_msg");
-      this->param<std::string>("test_door_detection_node/frame_id",frame_id_,"base_link");
+      this->param<std::string>("test_door_detection_node/frame_id",frame_id_,"odom_combined");
 
       double tmp; int tmp2;
       param("~/door_frame_p1_x", tmp, 1.5); door_msg_to_detector_.frame_p1.x = tmp;
@@ -125,36 +124,49 @@ class TestDoorDetectionNode : public PR2ArmNode
     {
       std::string status_string;
       ROS_INFO("Joystick message: %s",joy_msg_.data.c_str());
-      if (joy_msg_.data != std::string("detect_door"))
+      if (joy_msg_.data != std::string("detect_door") && joy_msg_.data != std::string("open_door"))
       { 
         return;
       }
-      if(detectDoor(door_msg_to_detector_, door_msg_from_detector_))
-	{
-	  ROS_INFO("Door detected");
-        nodHead();
-        if(detectDoorCheckerboard(door_msg_from_checkerboard_,door_msg_from_checkerboard_))
+      if(joy_msg_.data == std::string("detect_door"))
+      {
+        if(detectDoor(door_msg_to_detector_, door_msg_from_detector_))
         {
-          if(compareDoorMsgs(door_msg_from_detector_,door_msg_from_checkerboard_,status_string))
+          ROS_INFO("Door detected");
+          nodHead();
+          if(detectDoorCheckerboard(door_msg_from_checkerboard_,door_msg_from_checkerboard_))
           {
-	    //            ROS_INFO("%s",status_string.c_str());
+            if(compareDoorMsgs(door_msg_from_detector_,door_msg_from_checkerboard_,status_string))
+            {
+              //            ROS_INFO("%s",status_string.c_str());
+            }
+            else
+            {
+              ROS_INFO("Failed to match door messages from laser and checkerboard");
+            }
           }
           else
           {
-            ROS_INFO("Failed to match door messages from laser and checkerboard");
+            ROS_WARN("Could not see checkerboard");
           }
         }
         else
         {
-          ROS_WARN("Could not see checkerboard");
+          ROS_ERROR("No door detected");
+          shakeHead();
         }
       }
-      else
+      if(joy_msg_.data == std::string("open_door"))
       {
-        ROS_ERROR("No door detected");
-        shakeHead();
+        robot_msgs::PoseStamped pose_msg;
+        robot_msgs::JointTraj traj;
+
+        pose_msg.pose = RPYToTransform(0.0,0.0,0.0,door_msg_from_detector_.handle.x, door_msg_from_detector_.handle.y, door_msg_from_detector_.handle.z);
+        pose_msg.header.frame_id = door_msg_from_detector_.header.frame_id;
+        getGraspTrajectory(pose_msg,traj);
+        sendTrajectory("right_arm",traj);
       }
-        return;          
+      return;          
     }
 
     double distancePoints(robot_msgs::Point32 p1, robot_msgs::Point32 p2)
