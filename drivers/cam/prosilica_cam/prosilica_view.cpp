@@ -56,7 +56,7 @@ public:
   {
     cvNamedWindow("Prosilica", CV_WINDOW_AUTOSIZE);
 
-    subscribe(mapName("prosilica") + "/image", img_msg_,
+    subscribe(mapName("prosilica") + "/image_rect", img_msg_,
               &ProsilicaView::image_cb, this, 1);
   }
 

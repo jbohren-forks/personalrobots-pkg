@@ -14,12 +14,18 @@ int main(int argc, char** argv)
   assert(fs);
   CvMat* K = (CvMat*)cvReadByName(fs, 0, "camera_matrix");
   CvMat* D = (CvMat*)cvReadByName(fs, 0, "distortion_coefficients");
+  int width = cvReadIntByName(fs, 0, "image_width");
+  int height = cvReadIntByName(fs, 0, "image_height");
   cvReleaseFileStorage(&fs);
 
   // Write to ini file
   FILE* out = fopen(argv[2], "w");
+  fprintf(out, "# Prosilica camera intrinsics\n\n");
+  fprintf(out, "[image]\n\n");
+  fprintf(out, "width\n%d\n\n", width);
+  fprintf(out, "height\n%d\n\n", height);
+  
   fprintf(out, "[prosilica]\n\n");
-
   fprintf(out, "camera matrix\n");
   for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < 3; ++j) {
