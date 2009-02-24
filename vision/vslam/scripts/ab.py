@@ -1,5 +1,5 @@
-import rostools
-rostools.load_manifest('vslam')
+import roslib
+roslib.load_manifest('vslam')
 
 import Image
 from votools import TreeOptimizer3
@@ -27,7 +27,7 @@ vo = VisualOdometer(cam, scavenge = False,
                     inlier_thresh = 99999,
                     position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
 
-dir = "/u/jamesb/ros/ros-pkg/vision/vslam/trial"
+dir = "dump"
 
 f = []
 for i in [ int(a) for a in sys.argv[1:] ]:

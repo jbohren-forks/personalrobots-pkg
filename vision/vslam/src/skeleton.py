@@ -118,7 +118,7 @@ class Skeleton:
 
       # Ignore the node if there are less than node_vist frames since the previous node
       if (this.id - previd) < self.node_vdist:
-        return
+        return False
 
       if connected:
         print "Strong link from %d to %d" % (previd, this.id)

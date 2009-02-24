@@ -86,26 +86,20 @@ def planar(x, y, z):
   return sqrt(sum((y - (a*x + b*z + c)) ** 2) / len(x))
 
 vos = None
-filename = sys.argv[1]
 framecounter = 0
 first_pair = None
 inliers = []
 
-if 0:
-  start,end = 20000,21300
-  skipto = 12634364243
-  start,end = 0,3300
-else:
-  skipto = None
-  start,end = 140,30000
-
-print "starting loop"
-#f = open(filename)
-f = filename
 keys = set()
 
-r = reader(f)
-for cam,l_image,r_image in r.next():
+def playlist(args):
+  for f in args:
+    r = reader(f)
+    for d in r.next():
+      yield d
+    
+for cam,l_image,r_image in playlist(sys.argv[1:]):
+  print framecounter
   if vos == None:
     vos = [
       VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(),
@@ -123,65 +117,34 @@ for cam,l_image,r_image in r.next():
     oe_x = []
     oe_y = []
     oe_home = None
-  print framecounter
-  if framecounter == end:
-    break
-  if start <= framecounter and (framecounter % 1) == 0:
-    for i,vo in enumerate(vos):
-      af = SparseStereoFrame(l_image, r_image)
-      vo.handle_frame(af)
-      # Log keyframes into "pool_loop"
-      if False and not vo.keyframe.id in keys:
-        k = vo.keyframe
-        Image.fromstring("L", (640,480), k.lf.tostring()).save("trial/%06dL.png" % len(keys))
-        Image.fromstring("L", (640,480), k.rf.tostring()).save("trial/%06dR.png" % len(keys))
-        print "saving frame", "id", k.id, "as key", len(keys), "inliers:", k.inl, "keypoints:", len(k.kp2d), len(k.kp)
-        #vo.report_frame(k)
-        keys.add(k.id)
+    connected = True
+  for i,vo in enumerate(vos):
+    af = SparseStereoFrame(l_image, r_image)
+    vo.handle_frame(af)
+    if vo.inl < 10:
+      connected = False
+    # Log keyframes into "pool_loop"
+    if True and not vo.keyframe.id in keys:
+      k = vo.keyframe
+      Image.fromstring("L", (640,480), k.lf.tostring()).save("dump/%06dL.png" % len(keys))
+      Image.fromstring("L", (640,480), k.rf.tostring()).save("dump/%06dR.png" % len(keys))
+      print "saving frame", "id", k.id, "as key", len(keys), "inliers:", k.inl, "keypoints:", len(k.kp2d), len(k.kp)
+      #vo.report_frame(k)
+      keys.add(k.id)
 
-      if i == 0:
-        skel.add(vo.keyframe)
-      x,y,z = vo.pose.xform(0,0,0)
-      trajectory[i].append((x,y,z))
-      vo_x[i].append(x)
-      vo_y[i].append(z)
-      x1,y1,z1 = vo.pose.xform(0,0,1)
-      vo_u[i].append(x1 - x)
-      vo_v[i].append(z1 - z)
-    print framecounter, "kp", len(af.kp), "inliers:", vo.inl
-    inliers.append(vo.inl)
-
-    if False:
-      fig = pylab.figure(figsize=(10,10))
-      colors = [ 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
-      for i in range(len(vos)):
-        xs = numpy.array(vo_x[i])
-        ys = numpy.array(vo_y[i])
-        if 0:
-          xs -= 4.5 * 1e-3
-          fa = -0.06
-        else:
-          fa = 0.0
-        xp = xs * cos(fa) - ys * sin(fa)
-        yp = ys * cos(fa) + xs * sin(fa)
-        pylab.plot(xp, yp, c = colors[i], label = vos[i].name())
-
-      pylab.plot(oe_x, oe_y, c = 'green', label = 'ground truth')
-
-      skel.plot('blue')
-
-      xlim = pylab.xlim()
-      ylim = pylab.ylim()
-      xrange = xlim[1] - xlim[0]
-      yrange = ylim[1] - ylim[0]
-      r = max(xrange, yrange) * 0.75
-      mid = sum(xlim) / 2
-      pylab.xlim(mid - r, mid + r)
-      mid = sum(ylim) / 2
-      pylab.ylim(mid - r, mid + r)
-      pylab.legend()
-      pylab.savefig("foo%06d.png" % framecounter, dpi=100)
-      pylab.close(fig)
+    if i == 0:
+      novel = skel.add(vo.keyframe, connected)
+      if novel:
+        connected = True
+    x,y,z = vo.pose.xform(0,0,0)
+    trajectory[i].append((x,y,z))
+    vo_x[i].append(x)
+    vo_y[i].append(z)
+    x1,y1,z1 = vo.pose.xform(0,0,1)
+    vo_u[i].append(x1 - x)
+    vo_v[i].append(z1 - z)
+  print framecounter, "kp", len(af.kp), "inliers:", vo.inl
+  inliers.append(vo.inl)
 
   framecounter += 1
 
@@ -217,7 +180,7 @@ for vo in vos:
   print
 skel.summarize_timers()
 
-skel.plot('blue')
+skel.plot('blue', True)
 pylab.show()
 sys.exit(0)
 
