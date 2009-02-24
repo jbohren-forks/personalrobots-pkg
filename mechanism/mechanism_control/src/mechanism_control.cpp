@@ -465,6 +465,8 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
   kill_controller_guard_.set("kill_controller");
   node_->advertiseService("switch_controller", &MechanismControlNode::switchController, this);
   switch_controller_guard_.set("switch_controller");
+  node_->advertiseService("kill_and_spawn_controllers", &MechanismControlNode::killAndSpawnControllers, this);
+  kill_and_spawn_controllers_guard_.set("kill_and_spawn_controllers");
 
   return true;
 }
@@ -650,6 +652,80 @@ bool MechanismControlNode::killController(
   robot_srvs::KillController::Response &resp)
 {
   resp.ok = mc_->killController(req.name);
+  return true;
+}
+
+bool MechanismControlNode::killAndSpawnControllers(
+  robot_srvs::KillAndSpawnControllers::Request &req,
+  robot_srvs::KillAndSpawnControllers::Response &resp)
+{
+  std::vector<MechanismControl::AddReq> add_reqs;
+  std::vector<MechanismControl::RemoveReq> remove_reqs;
+
+  TiXmlDocument doc;
+  doc.Parse(req.add_config.c_str());
+
+  TiXmlElement *config = doc.RootElement();
+  if (!config)
+  {
+    ROS_ERROR("The XML given to SpawnController could not be parsed");
+    return false;
+  }
+  if (config->ValueStr() != "controllers" &&
+      config->ValueStr() != "controller")
+  {
+    ROS_ERROR("The XML given to SpawnController must have either \"controller\" or \
+\"controllers\" as the root tag");
+    return false;
+  }
+
+  if (config->ValueStr() == "controllers")
+  {
+    config = config->FirstChildElement("controller");
+  }
+
+  for (; config; config = config->NextSiblingElement("controller"))
+  {
+    bool ok = true;
+
+    if (!config->Attribute("type"))
+    {
+      ROS_ERROR("Could not spawn a controller because no type was given");
+      ok = false;
+    }
+    else if (!config->Attribute("name"))
+    {
+      ROS_ERROR("Could not spawn a controller because no name was given");
+      ok = false;
+    }
+    else
+    {
+      int last = add_reqs.size();
+      add_reqs.resize(last + 1);
+      add_reqs[last].type = config->Attribute("type");
+      add_reqs[last].name = config->Attribute("name");
+      add_reqs[last].config = config;
+    }
+  }
+
+  remove_reqs.resize(req.kill_name.size());
+  for (size_t i = 0; i < req.kill_name.size(); ++i)
+    remove_reqs[i].name = req.kill_name[i];
+
+  mc_->changeControllers(remove_reqs, add_reqs);
+
+  resp.add_ok.resize(add_reqs.size());
+  resp.add_name.resize(add_reqs.size());
+  for (size_t i = 0; i < add_reqs.size(); ++i)
+  {
+    resp.add_name[i] = add_reqs[i].name;
+    resp.add_ok[i] = add_reqs[i].success;
+  }
+
+  resp.kill_ok.resize(remove_reqs.size());
+  for (size_t i = 0; i < remove_reqs.size(); ++i)
+    resp.kill_ok[i] = remove_reqs[i].success;
+
   return true;
 }
 

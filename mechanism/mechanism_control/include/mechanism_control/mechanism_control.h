@@ -56,6 +56,7 @@
 #include <robot_srvs/ListControllers.h>
 #include <robot_srvs/SpawnController.h>
 #include <robot_srvs/KillController.h>
+#include <robot_srvs/KillAndSpawnControllers.h>
 #include <robot_srvs/SwitchController.h>
 #include <robot_msgs/MechanismState.h>
 #include <robot_msgs/DiagnosticMessage.h>
@@ -161,6 +162,8 @@ public:
                        robot_srvs::ListControllers::Response &resp);
   bool spawnController(robot_srvs::SpawnController::Request &req,
                        robot_srvs::SpawnController::Response &resp);
+  bool killAndSpawnControllers(robot_srvs::KillAndSpawnControllers::Request &req,
+                               robot_srvs::KillAndSpawnControllers::Response &resp);
   bool switchController(robot_srvs::SwitchController::Request &req,
                         robot_srvs::SwitchController::Response &resp);
 
@@ -184,7 +187,8 @@ private:
   realtime_tools::RealtimePublisher<tf::tfMessage> transform_publisher_;
 
   AdvertisedServiceGuard list_controllers_guard_, list_controller_types_guard_,
-    spawn_controller_guard_, kill_controller_guard_, switch_controller_guard_;
+    spawn_controller_guard_, kill_controller_guard_, switch_controller_guard_,
+    kill_and_spawn_controllers_guard_;
 };
 
 #endif /* MECHANISM_CONTROL_H */
