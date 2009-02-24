@@ -40,8 +40,12 @@
 #include "image_msgs/CamInfo.h"
 #include "diagnostic_updater/diagnostic_updater.h"
 
+#include <cv.h>
+
 #include <boost/scoped_ptr.hpp>
 #include <boost/bind.hpp>
+#include <boost/tokenizer.hpp>
+#include <string>
 
 #include "prosilica.h"
 #include "prosilica_cam/PolledImage.h"
@@ -57,6 +61,11 @@ private:
   bool running_;
   int count_;
   DiagnosticUpdater<ProsilicaNode> diagnostic_;
+
+  // calibration matrices
+  double D_[5], K_[9], R_[9], P_[12];
+  CvMat Dmat_, Kmat_, Rmat_, Pmat_;
+  bool calibrated_;
 
 public:
   ProsilicaNode() : ros::Node("prosilica"), cam_(NULL),
@@ -157,13 +166,23 @@ public:
       ROS_FATAL("Unknown setting\n");
       shutdown();
     }
+
+    // Try to load intrinsics from on-camera memory
+    loadIntrinsics();
+    if (calibrated_)
+      ROS_FATAL("Loaded intrinsics!");
+    else
+      ROS_FATAL("Failed to load intrinsics!");
     
     // TODO: other params
     // TODO: check any diagnostics?
     
     ROS_INFO("Found camera, guid = %lu\n", guid);
     advertise<image_msgs::Image>("~image", 1);
-    advertise<image_msgs::CamInfo>("~cam_info", 1);
+    if (calibrated_) {
+      advertise<image_msgs::Image>("~image_rect", 1);
+      advertise<image_msgs::CamInfo>("~cam_info", 1);
+    }
   }
 
   ~ProsilicaNode()
@@ -251,12 +270,6 @@ private:
                   "mono", "uint8", frame->ImageBuffer);
         break;
       case ePvFmtBayer8:
-        /*
-        fillImage(image, "image", frame->Height, frame->Width, 1,
-                  bayerPatternString(frame->BayerPattern), "uint8",
-                  frame->ImageBuffer);
-        */
-        
         // Debayer to bgr format so CvBridge can handle it
         image.label = "image";
         image.encoding = "bgr";
@@ -316,28 +329,77 @@ private:
     if (frameToImage(frame, img_))
       publish("~image", img_);
 
-    //cam_info_.header.stamp =
-    cam_info_.height = frame->Height;
-    cam_info_.width = frame->Width;
+    if (calibrated_) {
+      //cam_info_.header.stamp =
+      cam_info_.height = frame->Height;
+      cam_info_.width = frame->Width;
 
-    // TODO: read intrinsics out of camera user memory
-    static const double D[5] = { -0.2991980605722184, -0.1027444035896514,
-                                 5.7068998039573127e-03, -4.6529841471001079e-03, 0 };
-    static const double K[9] = { 3.0829229234340064e+03, 0., 812.2004403609867040,
-                                 0., 3.1068998579451186e+03, 821.9381780675055325,
-                                 0., 0., 1. };
-    static const double R[9] = { 1., 0., 0.,
-                                 0., 1., 0.,
-                                 0., 0., 1. };
-    static const double P[12] = { 3.0829229234340064e+03, 0., 812.2004403609867040, 0.,
-                                  0., 3.1068998579451186e+03, 821.9381780675055325, 0.,
-                                  0., 0., 1., 0. };
-    memcpy((char*)(&cam_info_.D[0]), (char*)D, sizeof(D));
-    memcpy((char*)(&cam_info_.K[0]), (char*)K, sizeof(K));
-    memcpy((char*)(&cam_info_.R[0]), (char*)R, sizeof(R));
-    memcpy((char*)(&cam_info_.P[0]), (char*)P, sizeof(P));
+      memcpy((char*)(&cam_info_.D[0]), (char*)D_, sizeof(D_));
+      memcpy((char*)(&cam_info_.K[0]), (char*)K_, sizeof(K_));
+      memcpy((char*)(&cam_info_.R[0]), (char*)R_, sizeof(R_));
+      memcpy((char*)(&cam_info_.P[0]), (char*)P_, sizeof(P_));
 
-    publish("~cam_info", cam_info_);
+      publish("~cam_info", cam_info_);
+    }
+  }
+
+  void loadIntrinsics()
+  {
+    calibrated_ = false;
+    
+    // Retrieve contents of user memory
+    std::string buffer(prosilica::Camera::USER_MEMORY_SIZE, '\0');
+    cam_->readUserMemory(&buffer[0], prosilica::Camera::USER_MEMORY_SIZE);
+
+    // Separate into lines
+    typedef boost::tokenizer<boost::char_separator<char> > Tok;
+    boost::char_separator<char> sep("\n");
+    Tok tok(buffer, sep);
+
+    // Check "header"
+    Tok::iterator iter = tok.begin();
+    if (*iter != "[prosilica]")
+      return;
+    iter++;
+
+    // Read calibration matrices
+    int items_read = 0;
+    for (Tok::iterator ie = tok.end(); iter != ie; ++iter) {
+      if (*iter == "camera matrix")
+        for (int i = 0; i < 3; ++i) {
+          ++iter;
+          items_read += sscanf(iter->c_str(), "%lf %lf %lf",
+                               &K_[3*i], &K_[3*i+1], &K_[3*i+2]);
+        }
+      else if (*iter == "distortion") {
+        ++iter;
+        items_read += sscanf(iter->c_str(), "%lf %lf %lf %lf %lf",
+                             D_, D_+1, D_+2, D_+3, D_+4);
+      }
+      else if (*iter == "rectification")
+        for (int i = 0; i < 3; ++i) {
+          ++iter;
+          items_read += sscanf(iter->c_str(), "%lf %lf %lf",
+                               &R_[3*i], &R_[3*i+1], &R_[3*i+2]);
+        }
+      else if (*iter == "projection")
+        for (int i = 0; i < 3; ++i) {
+          ++iter;
+          items_read += sscanf(iter->c_str(), "%lf %lf %lf %lf",
+                               &P_[4*i], &P_[4*i+1], &P_[4*i+2], &P_[4*i+3]);
+        }
+    }
+
+    // Check we got everything
+    if (items_read != 9 + 5 + 9 + 12)
+      return;
+
+    cvInitMatHeader(&Kmat_, 3, 3, CV_64FC1, K_);
+    cvInitMatHeader(&Dmat_, 1, 5, CV_64FC1, D_);
+    cvInitMatHeader(&Rmat_, 3, 3, CV_64FC1, R_);
+    cvInitMatHeader(&Pmat_, 3, 4, CV_64FC1, P_);
+
+    calibrated_ = true;
   }
 };
 

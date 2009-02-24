@@ -4,6 +4,11 @@
 #include <string.h>
 #include <time.h>
 
+extern "C"
+int cvFindChessboardCorners_Small( const void* arr, CvSize pattern_size,
+                                   CvPoint2D32f* out_corners, int* out_corner_count,
+                                   int flags );
+
 // example command line (for copy-n-paste):
 // calibration -w 6 -h 8 -s 2 -n 10 -o camera.yml -op -oe [<list_of_views.txt>]
 
@@ -400,14 +405,16 @@ int main( int argc, char** argv )
             cvFlip( view, view, 0 );
 
         img_size = cvGetSize(view);
-        found = cvFindChessboardCorners( view, board_size,
-            image_points_buf, &count, CV_CALIB_CB_ADAPTIVE_THRESH );
+        found = cvFindChessboardCorners_Small( view, board_size,
+            image_points_buf, &count, 0 /*CV_CALIB_CB_ADAPTIVE_THRESH*/);
 
 #if 1
         // improve the found corners' coordinate accuracy
         view_gray = cvCreateImage( cvGetSize(view), 8, 1 );
         cvCvtColor( view, view_gray, CV_BGR2GRAY );
-        cvFindCornerSubPix( view_gray, image_points_buf, count, cvSize(11,11),
+        //static const int SUBPIX_RANGE = 11;
+        static const int SUBPIX_RANGE = 5;
+        cvFindCornerSubPix( view_gray, image_points_buf, count, cvSize(SUBPIX_RANGE,SUBPIX_RANGE),
             cvSize(-1,-1), cvTermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1 ));
         cvReleaseImage( &view_gray );
 #endif
@@ -458,8 +465,8 @@ int main( int argc, char** argv )
         }
 
         cvShowImage( "Image View", view );
-        //key = cvWaitKey(capture ? 50 : 500);
-        key = cvWaitKey(0);
+        key = cvWaitKey(capture ? 50 : 500);
+        //key = cvWaitKey(0);
 
         if( key == 27 )
             break;

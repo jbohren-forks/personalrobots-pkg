@@ -99,7 +99,8 @@ public:
 
   unsigned long guid();
   
-  //! Must have size <= 512.
+  //! Data must have size <= USER_MEMORY_SIZE.
+  static const size_t USER_MEMORY_SIZE = 512;
   void writeUserMemory(const char* data, size_t size);
   void readUserMemory(char* data, size_t size);
   

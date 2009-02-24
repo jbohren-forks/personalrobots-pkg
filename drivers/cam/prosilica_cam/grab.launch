@@ -5,5 +5,5 @@
     <param name="acquisition_mode" type="str" value="Triggered"/>
   </group>
   <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" respawn="false"/>
-  <node name="prosilica_grab" pkg="prosilica_cam" type="prosilica_grab" respawn="false" output="screen"/>
+  <node name="prosilica_grab" pkg="prosilica_cam" type="prosilica_grab" respawn="false" output="screen" cwd="node"/>
 </launch>

@@ -292,7 +292,6 @@ unsigned long Camera::guid()
 }
 
 static const unsigned long USER_ADDRESS = 0x17200;
-static const unsigned long USER_MEMORY_SIZE = 512;
 
 void Camera::writeUserMemory(const char* data, size_t size)
 {
@@ -301,7 +300,7 @@ void Camera::writeUserMemory(const char* data, size_t size)
   unsigned char buffer[USER_MEMORY_SIZE];
   unsigned long written;
   
-  memset(buffer, 0, 512);
+  memset(buffer, 0, USER_MEMORY_SIZE);
   memcpy(buffer, data, size);
   
   CHECK_ERR( PvMemoryWrite(handle_, USER_ADDRESS, USER_MEMORY_SIZE, buffer, &written),
