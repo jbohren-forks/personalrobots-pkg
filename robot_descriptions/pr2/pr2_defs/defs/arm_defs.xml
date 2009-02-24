@@ -34,13 +34,12 @@
 
   <!-- Calibration offsets empirically determined by moving arm in phasespace -->
   <property name="shoulder_pan_cal" value="0.0" />
-  <!-- property name="shoulder_lift_cal" value="0.0" / -->
-  <property name="shoulder_lift_cal" value="0.01071" />
-  <property name="upper_arm_roll_cal" value="0.01204" />
-  <property name="elbow_flex_cal" value="-0.11309" />
-  <property name="forearm_roll_cal" value="0.02141" />
-  <property name="wrist_flex_cal" value="0.04500" />
-  <property name="wrist_roll_cal" value="0.00111" />
+  <property name="shoulder_lift_cal" value="0.0" />
+  <property name="upper_arm_roll_cal" value="0.0" />
+  <property name="elbow_flex_cal" value="0.0" />
+  <property name="forearm_roll_cal" value="0.0" />
+  <property name="wrist_flex_cal" value="0.0" />
+  <property name="wrist_roll_cal" value="0.0" />
 
   <macro name="pr2_shoulder" params="side parent reflect *origin">
 
@@ -179,7 +178,7 @@
     <transmission type="SimpleTransmission" name="${side}_shoulder_lift_trans">
       <actuator name="${side}_shoulder_lift_motor" />
       <joint name="${side}_shoulder_lift_joint" />
-      <mechanicalReduction>57.36</mechanicalReduction>
+      <mechanicalReduction>61.89</mechanicalReduction>
     </transmission>
 
     <!-- Upperarm roll -->
@@ -313,7 +312,7 @@
       <limit min="-2.3" max="0.1" effort="30" velocity="${VELOCITY_LIMIT_SCALE*5.5}"
              k_position="100" k_velocity="3"
              safety_length_min="0.25" safety_length_max="0.1" />
-      <calibration reference_position="${-1.1+elbow_flex_cal}" values="1.5 -1" />
+      <calibration reference_position="-1.1606" values="1.5 -1" />
 
       <joint_properties damping="10.0" />
       <map name="${side}_elbow_flex_joint_ode" flag="gazebo">
