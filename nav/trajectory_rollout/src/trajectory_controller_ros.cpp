@@ -65,36 +65,36 @@ namespace trajectory_rollout {
     tilt_scan_notifier_ = new MessageNotifier<LaserScan>(&tf_, &ros_node,
         boost::bind(&TrajectoryControllerROS::tiltScanCallback, this, _1),
         //"tilt_scan", global_frame_, 50);
-        "base_scan", global_frame_, 50);
+        "tilt_scan", global_frame_, 50);
     
-    ros_node.param("/trajectory_rollout/acc_lim_x", acc_lim_x, 2.5);
-    ros_node.param("/trajectory_rollout/acc_lim_y", acc_lim_y, 2.5);
-    ros_node.param("/trajectory_rollout/acc_lim_th", acc_lim_theta, 3.2);
-    ros_node.param("/trajectory_rollout/sim_time", sim_time, 1.0);
-    ros_node.param("/trajectory_rollout/sim_granularity", sim_granularity, 0.025);
-    ros_node.param("/trajectory_rollout/vx_samples", vx_samples, 20);
-    ros_node.param("/trajectory_rollout/vtheta_samples", vtheta_samples, 20);
-    ros_node.param("/trajectory_rollout/path_distance_bias", pdist_scale, 0.6);
-    ros_node.param("/trajectory_rollout/goal_distance_bias", gdist_scale, 0.8);
-    ros_node.param("/trajectory_rollout/occdist_scale", occdist_scale, 0.2);
-    ros_node.param("/trajectory_rollout/heading_lookahead", heading_lookahead, 0.325);
-    ros_node.param("/trajectory_rollout/oscillation_reset_dist", oscillation_reset_dist, 0.05);
-    ros_node.param("/trajectory_rollout/holonomic_robot", holonomic_robot, true);
-    ros_node.param("/trajectory_rollout/max_vel_x", max_vel_x, 0.5);
-    ros_node.param("/trajectory_rollout/min_vel_x", min_vel_x, 0.1);
-    ros_node.param("/trajectory_rollout/max_vel_th", max_vel_th, 1.0);
-    ros_node.param("/trajectory_rollout/min_vel_th", min_vel_th, -1.0);
-    ros_node.param("/trajectory_rollout/min_in_place_vel_th", min_in_place_vel_th, 0.4);
-    ros_node.param("/trajectory_rollout/freespace_model", freespace_model_, false);
-    ros_node.param("/trajectory_rollout/dwa", dwa, true);
-    ros_node.param("/trajectory_rollout/simple_attractor", simple_attractor, false);
+    ros_node.param("~trajectory_rollout/acc_lim_x", acc_lim_x, 2.5);
+    ros_node.param("~trajectory_rollout/acc_lim_y", acc_lim_y, 2.5);
+    ros_node.param("~trajectory_rollout/acc_lim_th", acc_lim_theta, 3.2);
+    ros_node.param("~trajectory_rollout/sim_time", sim_time, 1.0);
+    ros_node.param("~trajectory_rollout/sim_granularity", sim_granularity, 0.025);
+    ros_node.param("~trajectory_rollout/vx_samples", vx_samples, 20);
+    ros_node.param("~trajectory_rollout/vtheta_samples", vtheta_samples, 20);
+    ros_node.param("~trajectory_rollout/path_distance_bias", pdist_scale, 0.6);
+    ros_node.param("~trajectory_rollout/goal_distance_bias", gdist_scale, 0.8);
+    ros_node.param("~trajectory_rollout/occdist_scale", occdist_scale, 0.2);
+    ros_node.param("~trajectory_rollout/heading_lookahead", heading_lookahead, 0.325);
+    ros_node.param("~trajectory_rollout/oscillation_reset_dist", oscillation_reset_dist, 0.05);
+    ros_node.param("~trajectory_rollout/holonomic_robot", holonomic_robot, true);
+    ros_node.param("~trajectory_rollout/max_vel_x", max_vel_x, 0.5);
+    ros_node.param("~trajectory_rollout/min_vel_x", min_vel_x, 0.1);
+    ros_node.param("~trajectory_rollout/max_vel_th", max_vel_th, 1.0);
+    ros_node.param("~trajectory_rollout/min_vel_th", min_vel_th, -1.0);
+    ros_node.param("~trajectory_rollout/min_in_place_vel_th", min_in_place_vel_th, 0.4);
+    ros_node.param("~trajectory_rollout/freespace_model", freespace_model_, false);
+    ros_node.param("~trajectory_rollout/dwa", dwa, false);
+    ros_node.param("~trajectory_rollout/simple_attractor", simple_attractor, false);
 
     //parameters for using the freespace controller
     double min_pt_separation, max_obstacle_height, grid_resolution;
-    ros_node.param("/trajectory_rollout/point_grid/max_sensor_range", max_sensor_range_, 2.0);
-    ros_node.param("/trajectory_rollout/point_grid/min_pt_separation", min_pt_separation, 0.01);
-    ros_node.param("/trajectory_rollout/point_grid/max_obstacle_height", max_obstacle_height, 2.0);
-    ros_node.param("/trajectory_rollout/point_grid/grid_resolution", grid_resolution, 0.2);
+    ros_node.param("~trajectory_rollout/point_grid/max_sensor_range", max_sensor_range_, 2.0);
+    ros_node.param("~trajectory_rollout/point_grid/min_pt_separation", min_pt_separation, 0.01);
+    ros_node.param("~trajectory_rollout/point_grid/max_obstacle_height", max_obstacle_height, 2.0);
+    ros_node.param("~trajectory_rollout/point_grid/grid_resolution", grid_resolution, 0.2);
 
     if(freespace_model_){
       double origin_x, origin_y;
