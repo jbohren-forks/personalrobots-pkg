@@ -1,6 +1,0 @@
-<launch>
-  <include file="$(find tabletop_manipulation)/laser_sim.launch"/>
-  <include file="$(find tabletop_manipulation)/arm.launch"/>
-  <include file="$(find tabletop_manipulation)/base.launch"/>
-  <node pkg="tabletop_manipulation" type="tuckleftarm.py"/>
-</launch>

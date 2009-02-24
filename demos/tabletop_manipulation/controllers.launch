@@ -1,5 +1,0 @@
-<launch>
-  <include file="$(find tabletop_manipulation)/laser.launch"/>
-  <include file="$(find tabletop_manipulation)/arm.launch"/>
-  <include file="$(find tabletop_manipulation)/base.launch"/>
-</launch>
