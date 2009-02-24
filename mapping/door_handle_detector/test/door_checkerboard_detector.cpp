@@ -55,7 +55,7 @@ class DoorCheckerboardDetectorNode : public ros::Node
     tf::TransformListener tf_; /**< Used to do transforms */
     robot_msgs::Door door_msg_;
 
-  DoorCheckerboardDetectorNode(std::string node_name):ros::Node(node_name),tf_(*this, false, ros::Duration(10))
+    DoorCheckerboardDetectorNode(std::string node_name):ros::Node(node_name),tf_(*this, false, ros::Duration(10))
     {
       this->param<std::string>("door_checkerboard_detector/listen_topic",listen_topic_,"/checkerdetector/ObjectDetection");
       this->param<std::string>("door_checkerboard_detector/publish_topic",publish_topic_,"door_location");
@@ -117,7 +117,6 @@ class DoorCheckerboardDetectorNode : public ros::Node
       resp.door = door_msg_;
       return true;
     }
-
 
     void doorCallback()
     {
