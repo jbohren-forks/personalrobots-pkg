@@ -140,12 +140,12 @@ namespace ros {
 	// gets destructed when we go out of scope, so unlock() gets
 	// called no matter what.
 	sentry<MoveBaseSBPL> guard(this);
-	local_param("planStatsFile", planStatsFile_, string("/tmp/move_base_sbpl.log"));
-	local_param("plannerTimeLimit", plannerTimeLimit_, 10.0);
+	ros::Node::instance()->param("~move_base/planStatsFile", planStatsFile_, string("/tmp/move_base_sbpl.log"));
+	ros::Node::instance()->param("~move_base/plannerTimeLimit", plannerTimeLimit_, 10.0);
 	/*
 	if (0 > plannerTimeLimit_) {
 	  int blah;
-	  local_param("plannerTimeLimit", blah, -1); // parameters are picky about dots
+	  ros::Node::instance()->param("~move_base/plannerTimeLimit", blah, -1); // parameters are picky about dots
 	  if (0 > blah) {
 	    ROS_ERROR("invalid or no %s/plannerTimeLimit specified: %g",
 		      getName().c_str(), plannerTimeLimit_);
@@ -155,7 +155,7 @@ namespace ros {
 	}
 	*/
 	string environmentType;
-	local_param("environmentType", environmentType, string("2D"));
+	ros::Node::instance()->param("~move_base/environmentType", environmentType, string("2D"));
 	
 	boost::shared_ptr<mpglue::CostmapAccessor>
 	  mcm(mpglue::createCostmapAccessor(&getCostMap()));
@@ -169,12 +169,12 @@ namespace ros {
 	  string const prefix("env3d/");
 	  //// ignored by SBPL (at least in r9900).
 	  // double goaltol_x, goaltol_y, goaltol_theta;
-	  // local_param(prefix + "goaltol_x", goaltol_x, 0.3);
-	  // local_param(prefix + "goaltol_y", goaltol_y, 0.3);
-	  // local_param(prefix + "goaltol_theta", goaltol_theta, 30.0);
+	  // ros::Node::instance()->param("~move_base/" + prefix + "goaltol_x", goaltol_x, 0.3);
+	  // ros::Node::instance()->param("~move_base/" + prefix + "goaltol_y", goaltol_y, 0.3);
+	  // ros::Node::instance()->param("~move_base/" + prefix + "goaltol_theta", goaltol_theta, 30.0);
 	  double nominalvel_mpersecs, timetoturn45degsinplace_secs;
-	  local_param(prefix + "nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
-	  local_param(prefix + "timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
+	  ros::Node::instance()->param("~move_base/" + prefix + "nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
+	  ros::Node::instance()->param("~move_base/" + prefix + "timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
 	  // Could also sanity check the other parameters...
 	  env_.reset(mpglue::SBPLEnvironment::create3DKIN(mcm, mit,
 							  getFootprint(), nominalvel_mpersecs,
@@ -188,7 +188,7 @@ namespace ros {
 	
 	static bool const forward_search(false); // could make this configurable...
 	string plannerType;
-	local_param("plannerType", plannerType, string("ARAPlanner"));
+	ros::Node::instance()->param("~move_base/plannerType", plannerType, string("ARAPlanner"));
 	boost::shared_ptr<SBPLPlanner> sbplPlanner;
 	if ("ARAPlanner" == plannerType)
 	  sbplPlanner.reset(new ARAPlanner(env_->getDSI(), forward_search));

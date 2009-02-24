@@ -292,7 +292,6 @@ namespace ros {
       pr2_msgs::PlaneStamped groundPlaneMsg_;
       pr2_msgs::PlaneStamped ground_plane_;
       robot_msgs::PointCloud *filtered_cloud_;
-      double ransac_distance_threshold_;
     };
   }
 }

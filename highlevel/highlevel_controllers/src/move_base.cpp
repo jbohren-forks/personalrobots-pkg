@@ -79,7 +79,7 @@ namespace ros {
       stateMsg.waypoint_idx = -1;
 
       // Update rate for the cost map
-      local_param("map_update_frequency", map_update_frequency_, map_update_frequency_);
+      ros::Node::instance()->param("~move_base/map_update_frequency", map_update_frequency_, map_update_frequency_);
 
       // Costmap parameters
       unsigned char lethalObstacleThreshold(100);
@@ -92,15 +92,12 @@ namespace ros {
       double weight(0.1); // Scale costs down by a factor of 10
       // Which frame is "global"
       ros::Node::instance()->param("/global_frame_id", global_frame_, std::string("/map"));
-      ros::Node::instance()->param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
-      ros::Node::instance()->param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
+      ros::Node::instance()->param("~costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
+      ros::Node::instance()->param("~costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
        
-      //thresholds for ground plane detection
-      ros::Node::instance()->param("/ransac_ground_plane_extraction/distance_threshold", ransac_distance_threshold_, 0.03);
-
       // Unsigned chars cannot be stored in parameter server
       int tmpLethalObstacleThreshold;
-      ros::Node::instance()->param("/costmap_2d/lethal_obstacle_threshold", tmpLethalObstacleThreshold, int(lethalObstacleThreshold));
+      ros::Node::instance()->param("~costmap_2d/lethal_obstacle_threshold", tmpLethalObstacleThreshold, int(lethalObstacleThreshold));
       if (tmpLethalObstacleThreshold > 255)
         tmpLethalObstacleThreshold = 255;
       else if (tmpLethalObstacleThreshold < 0)
@@ -109,7 +106,7 @@ namespace ros {
       lethalObstacleThreshold = tmpLethalObstacleThreshold;
 
       int tmpNoInformation;
-      ros::Node::instance()->param("/costmap_2d/no_information_value", tmpNoInformation, int(noInformation));
+      ros::Node::instance()->param("~costmap_2d/no_information_value", tmpNoInformation, int(noInformation));
       if (tmpNoInformation > 255)
         tmpNoInformation = 255;
       else if (tmpNoInformation < 0)
@@ -117,14 +114,14 @@ namespace ros {
 
       noInformation = tmpNoInformation;
 
-      ros::Node::instance()->param("/costmap_2d/z_threshold_max", maxZ_, maxZ_);
-      ros::Node::instance()->param("/costmap_2d/z_threshold_min", minZ_, minZ_);
-      ros::Node::instance()->param("/costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
-      ros::Node::instance()->param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);
-      ros::Node::instance()->param("/costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
-      ros::Node::instance()->param("/costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
-      ros::Node::instance()->param("/costmap_2d/robot_radius", robotRadius, robotRadius);
-      ros::Node::instance()->param("/costmap_2d/weight", weight, weight);
+      ros::Node::instance()->param("~costmap_2d/z_threshold_max", maxZ_, maxZ_);
+      ros::Node::instance()->param("~costmap_2d/z_threshold_min", minZ_, minZ_);
+      ros::Node::instance()->param("~costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
+      ros::Node::instance()->param("~costmap_2d/inflation_radius", inflationRadius, inflationRadius);
+      ros::Node::instance()->param("~costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
+      ros::Node::instance()->param("~costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
+      ros::Node::instance()->param("~costmap_2d/robot_radius", robotRadius, robotRadius);
+      ros::Node::instance()->param("~costmap_2d/weight", weight, weight);
 
       robotWidth_ = inscribedRadius * 2;
       xy_goal_tolerance_ = robotWidth_ / 2;
@@ -134,26 +131,26 @@ namespace ros {
       double tilt_laser_update_rate(2.0);
       double low_obstacle_update_rate(0.2);
       double stereo_update_rate(2.0);
-      ros::Node::instance()->param("/costmap_2d/base_laser_update_rate", base_laser_update_rate , base_laser_update_rate);
-      ros::Node::instance()->param("/costmap_2d/tilt_laser_update_rate", tilt_laser_update_rate , tilt_laser_update_rate);
-      ros::Node::instance()->param("/costmap_2d/low_obstacle_update_rate", low_obstacle_update_rate , low_obstacle_update_rate);
-      ros::Node::instance()->param("/costmap_2d/stereo_update_rate", stereo_update_rate , stereo_update_rate);
+      ros::Node::instance()->param("~costmap_2d/base_laser_update_rate", base_laser_update_rate , base_laser_update_rate);
+      ros::Node::instance()->param("~costmap_2d/tilt_laser_update_rate", tilt_laser_update_rate , tilt_laser_update_rate);
+      ros::Node::instance()->param("~costmap_2d/low_obstacle_update_rate", low_obstacle_update_rate , low_obstacle_update_rate);
+      ros::Node::instance()->param("~costmap_2d/stereo_update_rate", stereo_update_rate , stereo_update_rate);
       double base_laser_keepalive(0.0);
       double tilt_laser_keepalive(3.0);
       double low_obstacle_keepalive(2.0);
       double stereo_keepalive(0.0);
-      ros::Node::instance()->param("/costmap_2d/base_laser_keepalive", base_laser_keepalive, base_laser_keepalive);
-      ros::Node::instance()->param("/costmap_2d/tilt_laser_keepalive", tilt_laser_keepalive, tilt_laser_keepalive);
-      ros::Node::instance()->param("/costmap_2d/low_obstacle_keepalive", low_obstacle_keepalive, low_obstacle_keepalive);
-      ros::Node::instance()->param("/costmap_2d/stereo_keepalive", stereo_keepalive, stereo_keepalive);
+      ros::Node::instance()->param("~costmap_2d/base_laser_keepalive", base_laser_keepalive, base_laser_keepalive);
+      ros::Node::instance()->param("~costmap_2d/tilt_laser_keepalive", tilt_laser_keepalive, tilt_laser_keepalive);
+      ros::Node::instance()->param("~costmap_2d/low_obstacle_keepalive", low_obstacle_keepalive, low_obstacle_keepalive);
+      ros::Node::instance()->param("~costmap_2d/stereo_keepalive", stereo_keepalive, stereo_keepalive);
 
       //Create robot filter
       std::string robotName = "/robotdesc/pr2";
       double bodypartScale = 2.4;
       bool useFilter = false;
-      ros::Node::instance()->param("/costmap_2d/body_part_scale", bodypartScale, bodypartScale);
-      ros::Node::instance()->param("/costmap_2d/robot_name", robotName, robotName);
-      ros::Node::instance()->param("/costmap_2d/filter_robot_points", useFilter, useFilter);
+      ros::Node::instance()->param("~costmap_2d/body_part_scale", bodypartScale, bodypartScale);
+      ros::Node::instance()->param("~costmap_2d/robot_name", robotName, robotName);
+      ros::Node::instance()->param("~costmap_2d/filter_robot_points", useFilter, useFilter);
       
       if (useFilter) {
 	filter_ = new robot_filter::RobotFilter((ros::Node*)this, robotName, true, bodypartScale);
@@ -205,11 +202,11 @@ namespace ros {
 
       // Now allocate the cost map and its sliding window used by the controller
       double zLB, zUB, raytraceWindow, obstacleRange, rayTraceRange;
-      ros::Node::instance()->param("/costmap_2d/zLB", zLB, 0.15);
-      ros::Node::instance()->param("/costmap_2d/zUB", zUB, 0.25);
-      ros::Node::instance()->param("/costmap_2d/raytrace_window", raytraceWindow, 2.5);
-      ros::Node::instance()->param("/costmap_2d/raytrace_range", rayTraceRange, 10.0);
-      ros::Node::instance()->param("/costmap_2d/obstacle_range", obstacleRange, 10.0);
+      ros::Node::instance()->param("~costmap_2d/zLB", zLB, 0.15);
+      ros::Node::instance()->param("~costmap_2d/zUB", zUB, 0.25);
+      ros::Node::instance()->param("~costmap_2d/raytrace_window", raytraceWindow, 2.5);
+      ros::Node::instance()->param("~costmap_2d/raytrace_range", rayTraceRange, 10.0);
+      ros::Node::instance()->param("~costmap_2d/obstacle_range", obstacleRange, 10.0);
 
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
 			       inputData , resp.map.resolution, 
@@ -229,9 +226,9 @@ namespace ros {
 
       // Allocate Velocity Controller
       double mapSize(2.0);
-      ros::Node::instance()->param("/trajectory_rollout/map_size", mapSize, 2.0);
-      ros::Node::instance()->param("/trajectory_rollout/yaw_goal_tolerance", yaw_goal_tolerance_, yaw_goal_tolerance_);
-      ros::Node::instance()->param("/trajectory_rollout/xy_goal_tolerance", xy_goal_tolerance_, xy_goal_tolerance_);
+      ros::Node::instance()->param("~trajectory_rollout/map_size", mapSize, 2.0);
+      ros::Node::instance()->param("~trajectory_rollout/yaw_goal_tolerance", yaw_goal_tolerance_, yaw_goal_tolerance_);
+      ros::Node::instance()->param("~trajectory_rollout/xy_goal_tolerance", xy_goal_tolerance_, xy_goal_tolerance_);
 
       ROS_ASSERT(mapSize <= costMap_->getWidth());
       ROS_ASSERT(mapSize <= costMap_->getHeight());
@@ -713,9 +710,10 @@ namespace ros {
         currentVel.vel.vy = base_odom_.vel.y;
         currentVel.ang_vel.vz = base_odom_.vel.th;
 
-	ros::Time start = ros::Time::now();
+        ros::Time start = ros::Time::now();
         // Create a window onto the global cost map for the velocity controller
         std::list<deprecated_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
+
 
         lock();
         // Aggregate buffered observations across all sources. Must be thread safe
@@ -724,13 +722,22 @@ namespace ros {
         tiltScanBuffer_->get_observations(observations);
         lowObstacleBuffer_->get_observations(observations);
         stereoCloudBuffer_->get_observations(observations);
-	//unlock(); COMMENTED AS PER BUG #971
 
-        if(planOk && !controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan, observations)){
+        std::vector<robot_msgs::PointCloud> points_storage(observations.size()); //needed to deep copy observations
+        std::vector<costmap_2d::Observation> stored_observations(observations.size());
+
+        //we need to perform a deep copy on the observations to be thread safe
+        for(unsigned int i = 0; i < observations.size(); ++i){
+          points_storage[i] = *(observations[i].cloud_);
+          stored_observations[i] = Observation(observations[i].origin_, &points_storage[i]);
+        }
+
+        unlock();
+
+        if(planOk && !controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan, stored_observations)){
           ROS_DEBUG("Velocity Controller could not find a valid trajectory.\n");
           planOk = false;
         }
-	unlock(); //ADDED AS PER BUG #971
         ROS_DEBUG("Cycle Time: %.3f\n", (ros::Time::now() - start).toSec());
 
         if(!planOk){
@@ -926,7 +933,7 @@ namespace ros {
       tiltScanBuffer_->get_observations(observations);
       lowObstacleBuffer_->get_observations(observations);
       stereoCloudBuffer_->get_observations(observations);
-      //unlock(); COMMENTED AS PER BUG #971
+      unlock();
       
       ROS_DEBUG("Applying update with %d observations/n", observations.size());
       // Apply to cost map
@@ -939,7 +946,7 @@ namespace ros {
       // 1. Refresh the local_map_accessor for the controller
       // 2. Refresh the global_map accessor for the planner
       // 3. Publish the local cost map window
-      //lock(); COMMENTED AS PER BUG #971
+      lock();
       local_map_accessor_->refresh();
       global_map_accessor_->refresh();
       publishLocalCostMap();
