@@ -40,6 +40,8 @@ import getopt
 
 from math import *
 
+from stereo import DenseStereoFrame, SparseStereoFrame
+from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 from skeleton import Skeleton
 import image_msgs.msg
 
@@ -58,24 +60,42 @@ class RoadmapServer:
     self.skel = Skeleton(stereo_cam)
     if len(args) > 1:
       self.skel.load(args[1])
-    self.skel.optimize()
+      self.skel.optimize()
+
+    self.vo = None
+
+    rospy.TopicSub('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo)
     self.pub = rospy.Publisher("/roadmap", vslam.msg.Roadmap)
+
     time.sleep(1)
     self.send_map()
 
   def send_map(self):
     p = vslam.msg.Roadmap()
     (ns,es) = self.skel.localization()
+    print "ns,es", ns, es
     p.nodes = [ vslam.msg.Node(x,y,t) for (x,y,t) in ns ]
     p.edges = [ vslam.msg.Edge(a,b) for (a,b) in es ]
-    p.localization = max(self.skel.nodes)
-    print "publishing message"
+    if len(self.skel.nodes) > 0:
+      p.localization = max(self.skel.nodes)
+    else:
+      p.localization = -1
     self.pub.publish(p)
 
-def handle_raw_stereo(msg):
-  image = msg.uint8_data.data
-  Image.fromstring("RGB", (640,480), image).save("foo-%d.%09d.jpg" % (msg.header.stamp.secs, msg.header.stamp.nsecs))
-  time.sleep(1.0)
+  def handle_raw_stereo(self, msg):
+    size = (msg.left_info.width, msg.left_info.height)
+    if self.vo == None:
+      cam = camera.StereoCamera(msg.right_info)
+      self.vo = VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(),
+                          descriptor_scheme = DescriptorSchemeCalonder(),
+                          inlier_error_threshold = 3.0, sba = None,
+                          inlier_thresh = 100,
+                          position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
+    pair = [Image.fromstring("L", size, i.uint8_data.data) for i in [ msg.left_image, msg.right_image ]]
+    af = SparseStereoFrame(pair[0], pair[1])
+    self.vo.handle_frame(af)
+    if self.skel.add(self.vo.keyframe):
+      self.send_map()
 
 def main(args):
   rms = RoadmapServer(args)

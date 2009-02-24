@@ -111,6 +111,8 @@ class Skeleton:
   def add(self, this, connected = True):
     if len(self.nodes) == 0:
       self.nodes.add(this.id)
+      self.prev_pose = this.pose
+      r = True
     elif not(this.id in self.nodes):
       previd = max(self.nodes)
 
@@ -142,7 +144,11 @@ class Skeleton:
       self.place_ids.append(this.id)
       self.add_links(this.id, far)
 
-    self.prev_pose = this.pose
+      self.prev_pose = this.pose
+      r = True
+    else:
+      r = False
+    return r
 
   def addConstraint(self, prev, this, relpose):
     self.edges.add((prev, this))

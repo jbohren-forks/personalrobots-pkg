@@ -55,17 +55,15 @@ timefig = pylab.figure(1)
 timesub = pylab.subplot(111)
 
 def handle_roadmap(msg):
-  print "recv message"
-  print msg.nodes
-  print msg.edges
-  print
+  pylab.cla()
   pylab.scatter([n.x for n in msg.nodes], [n.y for n in msg.nodes])
   pylab.quiver([ n.x for n in msg.nodes ], [n.y for n in msg.nodes], [ math.cos(n.theta) for n in msg.nodes ], [math.sin(n.theta) for n in msg.nodes])
-  for i,n in enumerate(msg.nodes):
-    pylab.annotate('%d' % i, (n.x, n.y))
-  for e in msg.edges:
-    i0,i1 = e.node0, e.node1
-    pylab.plot([ msg.nodes[i0].x, msg.nodes[i1].x ], [ msg.nodes[i0].y, msg.nodes[i1].y ])
+  if 0:
+    for i,n in enumerate(msg.nodes):
+      pylab.annotate('%d' % i, (n.x, n.y))
+    for e in msg.edges:
+      i0,i1 = e.node0, e.node1
+      pylab.plot([ msg.nodes[i0].x, msg.nodes[i1].x ], [ msg.nodes[i0].y, msg.nodes[i1].y ])
   pylab.draw()
 
 def main(args):
