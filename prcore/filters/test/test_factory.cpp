@@ -62,12 +62,12 @@ ROS_REGISTER_FILTER(TestFilter, std_vector_float)
 
 TEST(FilterChain, configuring)
 {
-  std::string name = filters::getFilterID("TestFilter", "float");
+  std::string name = filters::getFilterID<float>("TestFilter");
   filters::FilterBase<float> * a_filter = filters::FilterFactory<float>::Instance().CreateObject(name);
-  name = filters::getFilterID("TestFilter", "std_vector_float");
+  name = filters::getFilterID<std::vector<float> >("TestFilter");
   filters::FilterBase<std::vector<float> > * a1_filter = filters::FilterFactory<std::vector<float> >::Instance().CreateObject(name);
   //filters::FilterBase<int> * a1_filter = filters::FilterFactory<int>::Instance().CreateObject("TestFilter<int>");
-  name = filters::getFilterID("TestFilter", "double");
+  name = filters::getFilterID<double>("TestFilter");
   filters::FilterBase<double> * b_filter = filters::FilterFactory<double>::Instance().CreateObject(name);
 
   printf("a is of type: %s\na1 is of type: %s\n b is of type: %s \n",

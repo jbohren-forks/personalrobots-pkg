@@ -42,27 +42,10 @@ typedef std::vector<double> std_vector_double;
 namespace filters
 {
 
-std::string getFilterID(const std::string & filter_name, const std::string & typestring)
+template <typename T>
+std::string getFilterID(const std::string & filter_name)
 {
-  if (typestring == "int")
-    return filter_name + "i";
-
-  else if (typestring == "float")
-    return filter_name + "f";
-
-  else if (typestring == "double")
-    return filter_name + "d";
-
-  else if (typestring == "std_vector_float")
-    return filter_name + "St6vectorIfSaIfEE";
-
-  else if (typestring == "std_vector_double")
-    return filter_name + "St6vectorIfSaIdEE";
-
-  else 
-    printf("%s\n", typestring.c_str());
-    ROS_ASSERT(typestring == "NOT A SUPPORTED TYPE");
-  return "";
+  return filter_name + typeid(T).name();
   
 }
 
@@ -101,7 +84,7 @@ class FilterFactory : public Loki::SingletonHolder < Loki::Factory< filters::Fil
 #define ROS_REGISTER_FILTER(c,t) \
   filters::FilterBase<t> * Filters_New_##c##__##t() {return new c< t >;}; \
   bool ROS_FILTER_## c ## _ ## t =                                                    \
-    filters::FilterFactory<t>::Instance().Register(filters::getFilterID(#c , #t ), Filters_New_##c##__##t); 
+    filters::FilterFactory<t>::Instance().Register(filters::getFilterID<t>(std::string(#c)), Filters_New_##c##__##t); 
 ///\todo make this use templating to get the data type, the user doesn't ever set the data type at runtime
 
 }
