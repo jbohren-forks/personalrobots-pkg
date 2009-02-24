@@ -70,7 +70,7 @@ static std::string median_filter_5 = "<filter type=\"MedianFilter\" name=\"media
 TEST(FilterChain, configuring){
   double epsilon = 1e-9;
   printf("Chain test starting\n");
-  filters::FilterChain<std_vector_float > chain;
+  filters::FilterChain<std::vector<float> > chain;
   //filters::FilterChain<float> chain;
 
   // EXPECT_TRUE(chain.add(mean_filter_5));
@@ -97,7 +97,7 @@ TEST(FilterChain, configuring){
 }
 
 TEST(FilterChain, MisconfiguredNumberOfChannels){
-  filters::FilterChain<std_vector_float > chain;
+  filters::FilterChain<std::vector<float> > chain;
 
 
   //  EXPECT_TRUE(chain.add(mean_filter_5));
@@ -120,7 +120,7 @@ TEST(FilterChain, MisconfiguredNumberOfChannels){
 
 }
 TEST(FilterChain, OverlappingNames){
-  filters::FilterChain<std_vector_float > chain;
+  filters::FilterChain<std::vector<float> > chain;
 
 
   std::string bad_xml = "<filters> <filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter><filter type=\"MedianFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter></filters>";

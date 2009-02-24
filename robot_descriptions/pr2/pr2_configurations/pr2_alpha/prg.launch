@@ -1,12 +1,12 @@
 <launch>
   <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
 
-  <machine name="xenomai_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
+  <machine name="realtime_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
 
   <include file="prg.machine" />
 
 <!-- pr2_etherCAT -->
-  <node machine="xenomai_root" pkg="pr2_etherCAT" type="launch" args="-i rteth0 -x /robotdesc/pr2"/>
+  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x /robotdesc/pr2"/>
 
 <!-- PR2 Calibration -->
   <include file="$(find pr2_full)/calibrate.launch" />
@@ -52,7 +52,7 @@
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
 
 <!-- NTP monitoring script Warns to console if sync error -->
-  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prg2" machine="xenomai"/>
+  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prg2" machine="realtime"/>
   <node pkg="ntp_monitor" type="ntp_monitor.py" args="prg2" machine="three"/>
   <node pkg="ntp_monitor" type="ntp_monitor.py" args="prg2" machine="four"/>   
 

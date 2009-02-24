@@ -53,7 +53,7 @@ EthercatDevice *WG014::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   return this;
 }
 
-int WG014::initialize(Actuator *, bool)
+int WG014::initialize(Actuator *, bool, bool)
 {
   ROS_INFO("Device #%02d: WG014 (%#08x)", sh_->get_ring_position(), sh_->get_product_code());
   return 0;

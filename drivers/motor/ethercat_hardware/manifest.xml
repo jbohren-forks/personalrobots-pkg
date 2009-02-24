@@ -13,7 +13,6 @@ Package for creating a hardware interface to the robot using the EtherCAT motor 
 <depend package='loki' />
 <depend package='realtime_tools' />
 <depend package='robot_msgs' />
-<depend package='xenomai' />
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lethercat_hardware -Wl,-rpath,${prefix}/lib"/>
 </export>

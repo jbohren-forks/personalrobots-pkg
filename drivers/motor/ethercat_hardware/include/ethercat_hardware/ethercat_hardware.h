@@ -68,7 +68,7 @@ public:
   /*!
    * \brief Initialize the EtherCAT Master Library.
    */
-  void init(char *interface, bool allow_unprogrammed);
+  void init(char *interface, bool allow_unprogrammed, bool motor_model);
 
   /*!
    * \brief Register actuators with mechanism control

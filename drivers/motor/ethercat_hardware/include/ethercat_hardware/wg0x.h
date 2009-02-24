@@ -39,6 +39,7 @@
 
 #include <realtime_tools/realtime_publisher.h>
 #include <ethercat_hardware/PressureState.h>
+#include <ethercat_hardware/MotorModel.h>
 
 struct WG0XMbxHdr
 {
@@ -203,6 +204,7 @@ public:
     strings_.reserve(10);
     values_.reserve(10);
     reason_ = "OK";
+    level_ = 0;
 
     voltage_error_ = max_voltage_error_ = 0;
     current_error_ = max_current_error_ = 0;
@@ -214,11 +216,12 @@ public:
     drops_ = 0;
     consecutive_drops_ = 0;
     max_consecutive_drops_ = 0;
+    motor_publisher_ = 0;
   }
   ~WG0X();
 
   EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
-  int initialize(Actuator *, bool);
+  int initialize(Actuator *, bool allow_unprogrammed=true, bool motor_model=false);
   void initXml(TiXmlElement *);
 
   void convertCommand(ActuatorCommand &command, unsigned char *buffer);
@@ -291,6 +294,7 @@ private:
   vector<robot_msgs::DiagnosticString> strings_;
   vector<robot_msgs::DiagnosticValue> values_;
   string reason_;
+  int level_;
   double voltage_error_, max_voltage_error_;
   double current_error_, max_current_error_;
   double voltage_estimate_;
@@ -301,6 +305,8 @@ private:
   int drops_;
   int consecutive_drops_;
   int max_consecutive_drops_;
+
+  realtime_tools::RealtimePublisher<ethercat_hardware::MotorModel> *motor_publisher_;
 };
 
 class WG05 : public WG0X

@@ -59,7 +59,7 @@ public:
   virtual ~EthercatDevice() {}
 
   virtual EthercatDevice *configure(int &startAddress, EtherCAT_SlaveHandler *sh) = 0;
-  virtual int initialize(Actuator *, bool allow_unprogrammed=0) = 0;
+  virtual int initialize(Actuator *, bool allow_unprogrammed=0, bool motor_model=0) = 0;
   virtual void initXml(TiXmlElement *) {}
 
   virtual void convertCommand(ActuatorCommand &command, unsigned char *buffer) = 0;

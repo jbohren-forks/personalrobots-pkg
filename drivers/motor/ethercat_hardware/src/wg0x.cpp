@@ -101,6 +101,7 @@ void WG0XMbxCmd::build(unsigned address, unsigned length, bool write_nread, void
 
 WG0X::~WG0X()
 {
+  if (motor_publisher_) delete motor_publisher_;
   delete sh_->get_fmmu_config();
   delete sh_->get_pd_config();
 }
@@ -179,7 +180,7 @@ EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   return this;
 }
 
-int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
+int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_model)
 {
   unsigned int revision = sh_->get_revision();
   unsigned int major = (revision >> 8) & 0xff;
@@ -243,6 +244,8 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
     actuator->name_ = actuator_info_.name_;
     backemf_constant_ = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
     ROS_INFO("            Name: %s", actuator_info_.name_);
+    string topic = "/motor_model/" + string(actuator_info_.name_);
+    motor_publisher_ = motor_model ? new realtime_tools::RealtimePublisher<ethercat_hardware::MotorModel>(topic, 1) : 0;
 #if 0
     ROS_INFO("            major: %d", actuator_info_.major_);              // Major revision
     ROS_INFO("            minor: %d", actuator_info_.minor_);              // Minor revision
@@ -386,13 +389,16 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
 bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigned char *prev_buffer)
 {
   bool rv = true;
-  double expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.encoder_reduction_ * backemf_constant_;
+  WG0XStatus *this_status, *prev_status;
+  double expected_voltage;
+  int level = 0;
+  string reason = "OK";
 
   if (!(state.is_enabled_)) {
     goto end;
   }
 
-  WG0XStatus *this_status, *prev_status;
+  expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.encoder_reduction_ * backemf_constant_;
 
   this_status = (WG0XStatus *)this_buffer;
   prev_status = (WG0XStatus *)prev_buffer;
@@ -411,17 +417,19 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
   if (consecutive_drops_ > 10)
   {
     rv = false;
-    reason_ = "Too many dropped packets";
+    reason = "Too many dropped packets";
+    level = 2;
     goto end;
   }
 
   if (this_status->mode_ & MODE_SAFETY_LOCKOUT)
   {
     rv = false;
-    reason_ = "Safety Lockout";
+    reason = "Safety Lockout";
+    level = 2;
     if (readMailbox(sh_, WG0XConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_)) != 0)
     {
-      reason_ += ": unable to read mailbox too";
+      reason += ": unable to read mailbox too";
     }
     goto end;
   }
@@ -449,22 +457,26 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
       //motor_velocity == 0 -> encoder failure likely
       if (fabs(state.velocity_) < epsilon)
       {
-        reason_ = "Encoder failure likely";
+        reason = "Encoder failure likely";
+        level = 1;
       }
       //measured_current_ ~= 0 -> motor open-circuit likely
       else if (fabs(state.last_measured_current_) < epsilon)
       {
-        reason_ = "Motor open-circuit likely";
+        reason = "Motor open-circuit likely";
+        level = 1;
       }
       //motor_voltage_ ~= 0 -> motor short-circuit likely
       else if (fabs(voltage_estimate_) < epsilon)
       {
-        reason_ = "Motor short-circuit likely";
+        reason = "Motor short-circuit likely";
+        level = 1;
       }
       //else -> current-sense failure likely
       else
       {
-        reason_ = "Current-sense failure likely";
+        reason = "Current-sense failure likely";
+        level = 1;
       }
     }
   }
@@ -479,30 +491,47 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
   current_error_ = fabs(state.last_measured_current_ - last_commanded_current);
 
   max_current_error_ = max(current_error_, max_current_error_);
-#if 0
-  if (current_error_ > 0.1 &&
+
+  if (current_error_ > 0.05 &&
       (last_commanded_current > 0 ?
            prev_status->programmed_pwm_value_ < 8400 :
            prev_status->programmed_pwm_value_ > -8400))
   {
-printf("current_error: %f [%d], cmd: %f, mes: %f,  pwm: %d, %s\n", current_error_, consecutive_current_errors_, last_commanded_current, state.last_measured_current_, prev_status->programmed_pwm_value_, actuator_info_.name_);
+//printf("current_error: %f [%d], cmd: %f, mes: %f,  pwm: %d, %s\n", current_error_, consecutive_current_errors_, last_commanded_current, state.last_measured_current_, prev_status->programmed_pwm_value_, actuator_info_.name_);
     ++consecutive_current_errors_;
-    if (consecutive_current_errors_ > 1000)
+    if (consecutive_current_errors_ > 100)
     {
       //complain and shut down
-      rv = false;
-      reason_ = "Current loop error too large";
+      //rv = false;
+      reason = "Current loop error too large";
+      level = 2;
     }
   }
   else
   {
     consecutive_current_errors_ = 0;
   }
-#endif
 
-  if (rv) reason_ = "OK";
+  if (motor_publisher_ && motor_publisher_->trylock())
+  {
+    motor_publisher_->msg_.measured_current = state.last_measured_current_;
+    motor_publisher_->msg_.commanded_current = last_commanded_current;
+    motor_publisher_->msg_.current_error = current_error_;
+    motor_publisher_->msg_.consecutive_current_errors = consecutive_current_errors_;
+    motor_publisher_->msg_.measured_voltage = voltage_estimate_;
+    motor_publisher_->msg_.expected_voltage = expected_voltage;
+    motor_publisher_->msg_.voltage_error = voltage_error_;
+    motor_publisher_->msg_.consecutive_voltage_errors = consecutive_voltage_errors_;
+    motor_publisher_->unlockAndPublish();
+  }
+
 
 end:
+  if (level_ != 1)
+  {
+    level_ = level;
+    reason_ = reason;
+  }
   return rv;
 }
 
@@ -841,7 +870,7 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   str << "EtherCAT Device (" << actuator_info_.name_ << ")";
   d.name = str.str();
   d.message = reason_;
-  d.level = reason_ == "OK" ? 0 : 2;
+  d.level = level_;
 
   ADD_STRING("Configuration", config_info_.configuration_status_ ? "good" : "error loading configuration");
   ADD_STRING("Name", actuator_info_.name_);

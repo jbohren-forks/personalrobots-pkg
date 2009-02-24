@@ -71,7 +71,7 @@ EthercatHardware::~EthercatHardware()
   publisher_.stop();
 }
 
-void EthercatHardware::init(char *interface, bool allow_unprogrammed)
+void EthercatHardware::init(char *interface, bool allow_unprogrammed, bool motor_model)
 {
   // Initialize network interface
   interface_ = interface;
@@ -81,7 +81,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     ROS_BREAK();
   }
 
-#if 1
+#if 0
   if (set_socket_timeout(ni_, 1000*500))
   {
     ROS_FATAL("Unable to change socket timeout");
@@ -146,6 +146,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     else
     {
       ROS_FATAL("Unable to configure slave #%d, product code: %d, revision: %d", slave, sh->get_product_code(), sh->get_revision());
+      ROS_FATAL("Perhaps you should power-cycle the MCBs");
       ROS_BREAK();
     }
   }
@@ -166,7 +167,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
   // Initialize slaves
   for (unsigned int slave = 0, a = 0; slave < num_slaves_; ++slave)
   {
-    if (slaves_[slave]->initialize(slaves_[slave]->has_actuator_ ? hw_->actuators_[a] : NULL, allow_unprogrammed) < 0)
+    if (slaves_[slave]->initialize(slaves_[slave]->has_actuator_ ? hw_->actuators_[a] : NULL, allow_unprogrammed, motor_model) < 0)
     {
       ROS_FATAL("Unable to initialize slave #%d", slave);
       ROS_BREAK();
@@ -307,6 +308,7 @@ void EthercatHardware::update(bool reset)
   {
     reset_state_ = 2 * num_slaves_;
     halt_motors_ = false;
+    diagnostics_.max_roundtrip_ = 0;
   }
 
   for (unsigned int s = 0, a = 0; s < num_slaves_; ++s)

@@ -41,8 +41,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <native/task.h>
-#include <native/timer.h>
 
 #include <mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
@@ -50,8 +48,15 @@
 
 #include <ros/node.h>
 #include <std_srvs/Empty.h>
+#include <pr2_etherCAT/RealtimeStats.h>
 
 #include <realtime_tools/realtime_publisher.h>
+
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/max.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+using namespace boost::accumulators;
 
 static struct
 {
@@ -61,6 +66,8 @@ static struct
   bool allow_override_;
   bool allow_unprogrammed_;
   bool quiet_;
+  bool motor_model_;
+  bool stats;
 } g_options;
 
 void Usage(string msg = "")
@@ -70,8 +77,10 @@ void Usage(string msg = "")
   fprintf(stderr, "    -i, --interface <interface> Connect to EtherCAT devices on this interface\n");
   fprintf(stderr, "    -x, --xml <file|param>      Load the robot description from this file or parameter name\n");
   fprintf(stderr, "    -u, --allow_unprogrammed    Allow control loop to run with unprogrammed devices\n");
+  fprintf(stderr, "    -m, --motor_model           Publish motor model values\n");
+  fprintf(stderr, "    -s, --stats                 Publish realtime statistics\n");
   fprintf(stderr, "    -q, --quiet                 Don't print warning messages when switching to secondary mode\n");
-  fprintf(stderr, "    -h, --help     Print this message and exit\n");
+  fprintf(stderr, "    -h, --help                  Print this message and exit\n");
   if (msg != "")
   {
     fprintf(stderr, "Error: %s\n", msg.c_str());
@@ -111,9 +120,9 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<robot_msgs::Dia
     for (int i = 0; i < 1000; ++i)
     {
       total_ec += diagnostics.ec[i];
-      max_ec = max(max_ec, diagnostics.ec[i]);
+      max_ec = std::max(max_ec, diagnostics.ec[i]);
       total_mc += diagnostics.mc[i];
-      max_mc = max(max_mc, diagnostics.mc[i]);
+      max_mc = std::max(max_mc, diagnostics.mc[i]);
     }
 
 #define ADD_VALUE(lab, val)                     \
@@ -149,39 +158,28 @@ static void publishDiagnostics(realtime_tools::RealtimePublisher<robot_msgs::Dia
 
 static inline double now()
 {
-  RTIME n;
-  n = rt_timer_read();
-  return double(n) / NSEC_PER_SEC;
+  struct timespec n;
+  clock_gettime(CLOCK_MONOTONIC, &n);
+  return double(n.tv_nsec) / NSEC_PER_SEC + n.tv_sec;
 }
 
-
-static void syncClocks(void *)
-{
-  while (!g_quit)
-  {
-    struct timespec ts;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    ts.tv_sec = tv.tv_sec;
-    ts.tv_nsec = tv.tv_usec * 1000;
-    rt_timer_set(tv.tv_sec * 1000000000LL + tv.tv_usec * 1000LL);
-    usleep(200000);
-  }
-}
-
-
-static RT_TASK clockTask, controlTask;
-
-void controlLoop(void *)
+void *controlLoop(void *)
 {
   realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher("/diagnostics", 2);
+  realtime_tools::RealtimePublisher<pr2_etherCAT::RealtimeStats> *rtpublisher = 0;
+  accumulator_set<double, stats<tag::max, tag::mean> > acc;
+
+  if (g_options.stats)
+  {
+    rtpublisher = new realtime_tools::RealtimePublisher<pr2_etherCAT::RealtimeStats> ("/realtime", 2);
+  }
 
   // Publish one-time before entering real-time to pre-allocate message vectors
   publishDiagnostics(publisher);
 
   // Initialize the hardware interface
   EthercatHardware ec;
-  ec.init(g_options.interface_, g_options.allow_unprogrammed_);
+  ec.init(g_options.interface_, g_options.allow_unprogrammed_, g_options.motor_model_);
 
   // Create mechanism control
   MechanismControl mc(ec.hw_);
@@ -207,13 +205,14 @@ void controlLoop(void *)
       exit(1);
     }
   }
-  urdf::normalizeXml(xml.RootElement());
+  TiXmlElement *root_element = xml.RootElement();
   TiXmlElement *root = xml.FirstChildElement("robot");
-  if (!root)
+  if (!root || !root_element)
   {
-    ROS_FATAL("Could not load the xml file: %s\n", g_options.xml_);
-    exit(1);
+      ROS_FATAL("Could not parse the xml from %s\n", g_options.xml_);
+      exit(1);
   }
+  urdf::normalizeXml(root_element);
 
   // Register actuators with mechanism control
   ec.initXml(root, g_options.allow_override_);
@@ -229,20 +228,24 @@ void controlLoop(void *)
     mc.spawnController(elt->Attribute("type"), elt->Attribute("name"), elt);
   }
 
-  // Switch to hard real-time
-#if defined(__XENO__)
-  rt_task_set_mode(0, T_PRIMARY|T_WARNSW, NULL);
-#endif
+  struct timespec tick;
+  clock_gettime(CLOCK_MONOTONIC, &tick);
+  int period = 1e+6; // 1 ms in nanoseconds
 
-  rt_task_set_periodic(NULL, TM_NOW, 1e+6);
+  // Up priority for this thread
+  struct sched_param thread_param;
+  int policy = SCHED_FIFO;
+  thread_param.sched_priority = sched_get_priority_max(policy);
+  pthread_setschedparam(pthread_self(), policy, &thread_param);
 
   static int count = 0;
   while (!g_quit)
   {
-    rt_task_wait_period(NULL);
     double start = now();
     if (g_reset_motors)
     {
+      accumulator_set<double, stats<tag::max, tag::mean> > zero;
+      acc = zero;
       ec.update(true);
       g_reset_motors = false;
     }
@@ -263,6 +266,28 @@ void controlLoop(void *)
       count = 0;
     }
 
+    tick.tv_nsec += period;
+    while (tick.tv_nsec >= NSEC_PER_SEC)
+    {
+      tick.tv_nsec -= NSEC_PER_SEC;
+      tick.tv_sec++;
+    }
+    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tick, NULL);
+
+    if (rtpublisher)
+    {
+      struct timespec after;
+      clock_gettime(CLOCK_MONOTONIC, &after);
+      double jitter = (after.tv_sec - tick.tv_sec + double(after.tv_nsec-tick.tv_nsec)/1e9)*1e6;
+      acc(jitter);
+      if (rtpublisher->trylock())
+      {
+        rtpublisher->msg_.jitter  = jitter;
+        rtpublisher->msg_.avg_jitter  = extract_result<tag::mean>(acc);
+        rtpublisher->msg_.max_jitter  = extract_result<tag::max>(acc);
+        rtpublisher->unlockAndPublish();
+      }
+    }
   }
 
   /* Shutdown all of the motors on exit */
@@ -273,12 +298,10 @@ void controlLoop(void *)
   }
   ec.update(false);
 
-  // Switch back from hard real-time
-#if defined(__XENO__)
-  rt_task_set_mode(T_PRIMARY,0, NULL);
-#endif
-
   publisher.stop();
+  if (rtpublisher) delete rtpublisher;
+
+  return 0;
 }
 
 void quitRequested(int sig)
@@ -421,6 +444,8 @@ static void cleanupPidFile(void)
 #define CLOCK_PRIO 0
 #define CONTROL_PRIO 0
 
+static pthread_t controlThread;
+static pthread_attr_t controlThreadAttr;
 int main(int argc, char *argv[])
 {
   // Keep the kernel from swapping us out
@@ -441,11 +466,13 @@ int main(int argc, char *argv[])
       {"allow_override", no_argument, 0, 'a'},
       {"allow_unprogrammed", no_argument, 0, 'u'},
       {"quiet", no_argument, 0, 'q'},
+      {"motor_model", no_argument, 0, 'm'},
+      {"stats", no_argument, 0, 's'},
       {"interface", required_argument, 0, 'i'},
       {"xml", required_argument, 0, 'x'},
     };
     int option_index = 0;
-    int c = getopt_long(argc, argv, "ahi:qux:", long_options, &option_index);
+    int c = getopt_long(argc, argv, "ahi:mqsux:", long_options, &option_index);
     if (c == -1) break;
     switch (c)
     {
@@ -458,8 +485,14 @@ int main(int argc, char *argv[])
       case 'u':
         g_options.allow_unprogrammed_ = 1;
         break;
+      case 'm':
+        g_options.motor_model_ = 1;
+        break;
       case 'q':
         g_options.quiet_ = 1;
+        break;
+      case 's':
+        g_options.stats = 1;
         break;
       case 'i':
         g_options.interface_ = optarg;
@@ -495,41 +528,17 @@ int main(int argc, char *argv[])
 
   //Start thread
   int rv;
-
-  if ((rv = rt_task_create(&clockTask, "clockTask", 0, CLOCK_PRIO, 0)) != 0)
+  if ((rv = pthread_create(&controlThread, &controlThreadAttr, controlLoop, 0)) != 0)
   {
-    ROS_FATAL("Unable to create clock synchronization thread: rv = %d\n", rv);
+    ROS_FATAL("Unable to create control thread: rv = %d\n", rv);
     ROS_BREAK();
   }
 
-  if ((rv = rt_task_start(&clockTask, syncClocks, NULL)) != 0)
-  {
-    ROS_FATAL("Unable to start clock synchronization thread: rv = %d\n", rv);
-    ROS_BREAK();
-  }
-
-  if ((rv = rt_task_create(&controlTask, "controlTask", 0, CONTROL_PRIO, T_JOINABLE)) != 0)
-  {
-    ROS_FATAL("Unable to create realtime thread: rv = %d\n", rv);
-    ROS_BREAK();
-  }
-
-  if ((rv = rt_task_start(&controlTask, controlLoop, NULL)) != 0)
-  {
-    ROS_FATAL("Unable to start realtime thread: rv = %d\n", rv);
-    ROS_BREAK();
-  }
-
-  if ((rv = rt_task_join(&controlTask)) != 0)
-  {
-    ROS_FATAL("Unable to join realtime thread: rv = %d\n", rv);
-    ROS_BREAK();
-  }
+  pthread_join(controlThread, 0);
 
   // Cleanup pid file
   cleanupPidFile();
 
-  
   delete node;
 
   return 0;

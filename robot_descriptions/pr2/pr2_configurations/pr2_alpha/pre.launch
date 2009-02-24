@@ -1,15 +1,15 @@
 <launch>
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/prototype1.xacro.xml'" />
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
 
-  <machine name="xenomai_root" user="root" address="pre1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
+  <machine name="realtime_root" user="root" address="pre1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
 
   <include file="pre.machine" />
 
 <!-- pr2_etherCAT -->
-  <node machine="xenomai_root" pkg="pr2_etherCAT" type="launch" args="-i rteth0 -x /robotdesc/pr2"/>
+  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x /robotdesc/pr2"/>
 
 <!-- PR2 Calibration -->
-  <include file="$(find pr2_prototype1)/calibrate.launch" />
+  <include file="$(find pr2_full)/calibrate.launch" />
 
 <!-- Joystick -->
   <param name="joy/deadzone" value="5000"/>
@@ -48,7 +48,7 @@
   <param name="imu/frameid"  type="string" value="imu" />
   <node machine="four" pkg="imu_node" type="imu_node" output="screen"/>
 
-<!-- Stereo cam -->
+<!-- Stereo cam 
   <node machine="four" pkg="dcam" type="stereodcam" name="stereodcam" args="">
   <param name="videre_mode" type="string" value="disparity_raw" />
   <param name="fps"         type="double" value="15.0"/>
@@ -56,12 +56,13 @@
   <param name="do_rectify" type="bool" value="False"/>
   <param name="do_stereo" type="bool" value="False"/>
 </node>
+-->
 
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/pre_runtime_automatic /diagnostics" />
 
 <!-- NTP monitoring script Warns to console if sync error -->
-  <node pkg="ntp_monitor" type="ntp_monitor.py" args="pre2" machine="xenomai"/>
+  <node pkg="ntp_monitor" type="ntp_monitor.py" args="pre2" machine="realtime"/>
   <node pkg="ntp_monitor" type="ntp_monitor.py" args="pre2" machine="three"/>
   <node pkg="ntp_monitor" type="ntp_monitor.py" args="pre2" machine="four"/>
 
