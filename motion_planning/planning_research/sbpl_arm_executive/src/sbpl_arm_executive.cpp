@@ -56,20 +56,22 @@ class ExecNode : public PR2ArmNode
         {	  
           case INITIALIZED:
           {
-            goHome(home_position);
+	    ROS_INFO("Initializing");
+	    //            goHome(home_position);
             state_ = GET_GOAL;
             break;
           }
           case GET_GOAL:
           {
+	    ROS_INFO("Get goal");
             if(goal_id_ == 1)
             {
-              goal_[0] = RPYToTransform(0.0,0.0,-M_PI/4,0.0,0.0,0.0);
+              goal_[0] = RPYToTransform(0.0,0.0,0.0,0.75,0.0,1.0);
               goal_id_ = 2;
             }
             else
             {
-              goal_[0] = RPYToTransform(0.0,0.0,+M_PI/4,0.0,0.0,0.0);
+              goal_[0] = RPYToTransform(0.0,0.0,0.0,0.75,0.0,1.0);
               goal_id_ = 1;
             }
             state_ = PLAN;
@@ -77,7 +79,8 @@ class ExecNode : public PR2ArmNode
           }
           case PLAN:
           {
-            getCurrentPosition(current_joint_positions_);
+	    ROS_INFO("Planning");
+	    getCurrentPosition(current_joint_positions_);
             if(planSBPLPath(current_joint_positions_,goal_,planned_path_))
               state_ = EXECUTE;
             else
@@ -108,7 +111,7 @@ int main(int argc, char *argv[])
 {
   ros::init(argc,argv); 
 
-  PR2ArmNode node("sbpl_executive","right_arm","right_gripper");
+  ExecNode node("sbpl_executive","right_arm","right_gripper");
 
   try 
   {

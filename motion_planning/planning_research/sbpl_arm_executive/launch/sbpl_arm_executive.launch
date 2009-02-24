@@ -1,6 +1,6 @@
 <launch>
 
- <include file="$(find sbpl_arm_planner_node)/sbpl_arm_planner_node.launch"/>
+ <!--include file="$(find sbpl_arm_planner_node)/sbpl_arm_planner_node.launch"/-->
 
  <param name="sbpl_exec/arm_trajectory_topic_name" value="/trajectory_controller/trajectory_command"/>
  <param name="sbpl_exec/arm_trajectory_service_start" value="/trajectory_controller/TrajectoryStart"/>

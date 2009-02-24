@@ -31,7 +31,7 @@
 
 using namespace pr2_arm_node;
 
-PR2ArmNode::PR2ArmNode(std::string node_name, std::string arm_name, std::string gripper_name):ros::Node(node_name),tf_(*this)
+PR2ArmNode::PR2ArmNode(std::string node_name, std::string arm_name, std::string gripper_name):ros::Node(node_name),tf_(*this),arm_name_(arm_name),gripper_name_(gripper_name)
 {
 //  param<std::string>("~arm_name",arm_name_, "right_arm");
 //  param<std::string>("~gripper_name",arm_name_, "right_gripper");
@@ -176,6 +176,7 @@ void PR2ArmNode::getCurrentPosition(robot_msgs::JointTrajPoint &current_joint_po
 
   req_traj_query.trajectoryid = 0;
 
+  ROS_INFO("Calling service with: %s",(arm_name_ + trajectory_query_name_).c_str());
   if(ros::service::call(arm_name_ + trajectory_query_name_, req_traj_query, res_traj_query))  
   {
     current_joint_positions.set_positions_size(7);
