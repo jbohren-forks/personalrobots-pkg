@@ -314,10 +314,10 @@ class TableObjectDetector : public ros::Node
       {
         tf_.transformPoint(global_frame_, minPstamped_local, minPstamped_global);
         tf_.transformPoint(global_frame_, maxPstamped_local, maxPstamped_global);
-        resp.table.min_x = minPstamped_global.point.x; 
-        resp.table.min_y = minPstamped_global.point.y;
-        resp.table.max_x = maxPstamped_global.point.x; 
-        resp.table.max_y = maxPstamped_global.point.y;
+        resp.table.table_min.x = minPstamped_global.point.x; 
+        resp.table.table_min.y = minPstamped_global.point.y;
+        resp.table.table_max.x = maxPstamped_global.point.x; 
+        resp.table.table_max.y = maxPstamped_global.point.y;
       }
       catch (tf::ConnectivityException)
       {
@@ -366,6 +366,7 @@ class TableObjectDetector : public ros::Node
         return false;
       }
 
+      resp.table.table = pmap_.polygons[0];
 
       // Reserve enough space
       if (publish_debug_)
@@ -387,7 +388,7 @@ class TableObjectDetector : public ros::Node
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_INFO ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
-                resp.table.min_x, resp.table.min_y, resp.table.max_x, resp.table.max_y, resp.table.objects.size (), time_spent);
+                resp.table.table_min.x, resp.table.table_min.y, resp.table.table_max.x, resp.table.table_max.y, resp.table.objects.size (), time_spent);
       return (true);
     }
 

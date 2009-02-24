@@ -38,10 +38,18 @@ roslib.load_manifest('tabletop_manipulation')
 import rospy
 from robot_srvs.srv import FindTable, FindTableRequest
 from robot_msgs.msg import Planner2DGoal
+from deprecated_msgs.msg import RobotBase2DOdom
 
-import sys
+import sys, math
+
+robot_pose = None
+
+def odomCallback(msg):
+  global robot_pose
+  robot_pose = msg
 
 def go():
+  rospy.Subscriber('odom', RobotBase2DOdom, odomCallback)
   pub_goal = rospy.Publisher("goal", Planner2DGoal)
   rospy.init_node('test_node', anonymous=True)
 
@@ -52,10 +60,10 @@ def go():
   resp = s.call(FindTableRequest())
   print 'Result:'
   print 'Table (frame %s): %f %f %f %f' % (resp.table.header.frame_id,
-                                           resp.table.min_x,
-                                           resp.table.max_x,
-                                           resp.table.min_y,
-                                           resp.table.max_y)
+                                           resp.table.table_min.x,
+                                           resp.table.table_max.x,
+                                           resp.table.table_min.y,
+                                           resp.table.table_max.y)
   print '%d objects detected on table' % len(resp.table.objects)
   for o in resp.table.objects:
     print '  (%f %f %f): %f %f %f' % \
@@ -64,17 +72,51 @@ def go():
         o.max_bound.y - o.min_bound.y,
         o.max_bound.z - o.min_bound.z)
 
+  global robot_pose
+  print 'robot_pose: ' + `robot_pose`
+  computeApproachPose(robot_pose, resp.table.table,0.5)
 
-  g = Planner2DGoal()
-  g.goal.x = resp.table.min_x - 1.5
-  g.goal.y = resp.table.min_y - 1.5
-  g.goal.th = 0.0
-  g.enable = 1
-  g.header.frame_id = resp.table.header.frame_id
-  g.timeout = 0.0
 
-  print 'Sending the robot to (%f,%f,%f)'%(g.goal.x,g.goal.y,g.goal.th)
-  pub_goal.publish(g)
+def computeApproachPose(pose, poly, d):
+
+  if pose == None:
+    print 'No robot pose!'
+    return
+
+  # Find the two closest vertices
+  min_sqd = [-1.0, -1.0]
+  closestp = [None, None]
+  for p in poly.points:
+    sqd = (pose.pos.x - p.x)*(pose.pos.x - p.x) + \
+          (pose.pos.y - p.y)*(pose.pos.y - p.y)
+    if min_sqd[0] < 0.0 or sqd < min_sqd[0]:
+      min_sqd[0] = sqd
+      closestp[0] = p
+    elif min_sqd[1] < 0.0 or sqd < min_sqd[1]:
+      min_sqd[1] = sqd
+      closestp[1] = p
+
+  if closestp[0] == None or closestp[0] == None:
+    print 'No pair of closest points!'
+    return
+
+  print 'Closest points: (%f,%f,%f),(%f,%f,%f)'%(closestp[0].x,closestp[0].y,closestp[0].z,closestp[1].x,closestp[1].y,closestp[1].z)
+
+
+  #g = Planner2DGoal()
+  #g.goal.x = resp.table.min_x - 1.5
+  #g.goal.y = resp.table.min_y - 1.5
+  #g.goal.th = 0.0
+  #g.enable = 1
+  #g.header.frame_id = resp.table.header.frame_id
+  #g.timeout = 0.0
+
+  #print 'Sending the robot to (%f,%f,%f)'%(g.goal.x,g.goal.y,g.goal.th)
+  #pub_goal.publish(g)
+
+  #print 'Poly:'
+  #for p in resp.table.table.points:
+  #  print '  %f %f %f'%(p.x,p.y,p.z)
 
 if __name__ == '__main__':
   go()
