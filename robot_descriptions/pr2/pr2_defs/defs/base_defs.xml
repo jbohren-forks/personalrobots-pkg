@@ -7,7 +7,7 @@
 
   <property name="caster_wheel_offset_y" value="0.049" /> <!-- from function spreadsheet -->
   <property name="wheel_length" value="0.03" />  <!-- FIXME -->
-  <property name="wheel_radius" value="0.079" />   <!-- mp 20080801 -->
+  <property name="wheel_radius" value="0.074792" />   <!-- This is the 'effective' wheel radius. Wheel radius for uncompressed wheel is 0.079.  mp 20080801 -->
 
 
   <macro name="pr2_wheel" params="suffix parent reflect">
