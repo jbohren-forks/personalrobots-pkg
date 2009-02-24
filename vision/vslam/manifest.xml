@@ -15,4 +15,9 @@
   <sysdepend os="ubuntu" version="8.04-hardy" package="mayavi2"/>
   <sysdepend os="ubuntu" version="8.10-Intrepid" package="mayavi2"/>
   <sysdepend os="ubuntu" version="8.10-Intrepid" package="python-yaml"/>
+
+  <export>
+  <cpp cflags="-I${prefix}/msg/cpp" />
+  </export>
+
 </package>
