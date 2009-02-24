@@ -65,7 +65,7 @@ if __name__ == '__main__':
     pub_r_arm = rospy.Publisher("right_arm_commands", JointPosCmd)
     pub_r_gripper = rospy.Publisher("r_gripper_controller/set_command", Float64)
     rospy.init_node(NAME, anonymous=True)
-    timeout_t = time.time() + 10.0 #publish for 10 seconds then stop
+    timeout_t = time.time() + 20.0 #publish for 20 seconds then stop
     while time.time() < timeout_t:
         pub_l_arm.publish(JointPosCmd(['l_shoulder_pan_joint','l_shoulder_lift_joint','l_upper_arm_roll_joint','l_elbow_flex_joint','l_forearm_roll_joint','l_wrist_flex_joint','l_wrist_roll_joint'],[CMD_POS_1,CMD_POS_2,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
         pub_l_gripper.publish(Float64(CMD_POS_8))
