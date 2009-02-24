@@ -52,6 +52,7 @@ PR2ArmNode::PR2ArmNode(std::string node_name, std::string arm_name, std::string 
     advertise<robot_msgs::JointTraj>(gripper_name_ + trajectory_topic_name_,1);
   }
   advertise<robot_msgs::JointTraj>(arm_name_ + trajectory_topic_name_,1);
+  advertise<robot_msgs::JointTraj>("head" + trajectory_topic_name_,1);
 }
 
 PR2ArmNode::~PR2ArmNode()
@@ -65,6 +66,49 @@ PR2ArmNode::~PR2ArmNode()
     unadvertise(gripper_name_ + trajectory_topic_name_);
   }
   unadvertise(arm_name_ + trajectory_topic_name_);
+}
+
+void PR2ArmNode::pointHead(double yaw, double pitch)
+{
+  robot_msgs::JointTraj traj;
+
+  traj.set_points_size(1);
+  traj.points[0].set_positions_size(2);
+
+  traj.points[0].positions[0] = yaw;
+  traj.points[0].positions[1] = pitch;
+
+  sendTrajectory("head",traj);
+}
+
+void PR2ArmNode::nodHead()
+{
+  robot_msgs::JointTraj traj;
+
+  traj.set_points_size(4);
+  for(int i=0; i<4; i++)
+  {
+    traj.points[i].set_positions_size(2);
+    traj.points[i].positions[0] = 0.0;
+    traj.points[i].positions[1] = pow(-1.0,i)*0.5;
+    traj.points[i].time = 0.0;
+  }
+  sendTrajectory("head",traj);
+}
+
+void PR2ArmNode::shakeHead()
+{
+  robot_msgs::JointTraj traj;
+
+  traj.set_points_size(4);
+  for(int i=0; i<4; i++)
+  {
+    traj.points[i].set_positions_size(2);
+    traj.points[i].positions[0] = pow(-1.0,i)*0.5;
+    traj.points[i].positions[1] = 0.0;
+    traj.points[i].time = 0.0;
+  }
+  sendTrajectory("head",traj);
 }
 
 void PR2ArmNode::openGripper()

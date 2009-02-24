@@ -49,7 +49,7 @@ namespace pr2_arm_node
   {
     private:
 
-    tf::TransformListener tf_; 
+//    tf::TransformListener tf_; 
 
     public:
 
@@ -98,6 +98,12 @@ namespace pr2_arm_node
       void getCurrentPosition(robot_msgs::JointTrajPoint &current_joint_positions);
 
       robot_msgs::Pose RPYToTransform(double roll, double pitch, double yaw, double x, double y, double z);
+
+      void pointHead(double yaw, double pitch);
+
+      void nodHead();
+
+      void shakeHead();
 
   };
 }
