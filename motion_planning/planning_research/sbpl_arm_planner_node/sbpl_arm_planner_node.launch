@@ -1,6 +1,6 @@
 <launch>
 
-  <param name="right_arm/sbpl_planner/env_config" textfile="$(find sbpl_arm_planner)/env_examples/robarm3d/empty.cfg" />
+  <param name="right_arm/sbpl_planner/env_config" textfile="$(find sbpl_arm_planner)/env_examples/robarm3d/r_arm.cfg" />
   <param name="right_arm/sbpl_planner/planner_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
 
   <param name="right_arm/sbpl_planner/allocated_time" value="1.0" />

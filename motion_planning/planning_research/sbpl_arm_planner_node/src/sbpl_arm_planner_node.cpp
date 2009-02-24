@@ -140,6 +140,7 @@ void SBPLArmPlannerNode::collisionMapCallback()
 
 bool SBPLArmPlannerNode::replan(robot_msgs::JointTraj &arm_path)
 {
+  printf("[replan] replanning...\n");
   bool b_ret(false);
   double angles_r[num_joints_];
   clock_t start_time = clock();  //plan a path
@@ -170,6 +171,7 @@ bool SBPLArmPlannerNode::replan(robot_msgs::JointTraj &arm_path)
 
 bool SBPLArmPlannerNode::setStart(const robot_msgs::JointTrajPoint &start)
 {
+  printf("[setStart] Setting start...\n");
   double sbpl_start[num_joints_];
 
   for(int i=0; i< num_joints_; i++)
@@ -189,6 +191,7 @@ bool SBPLArmPlannerNode::setStart(const robot_msgs::JointTrajPoint &start)
 
 bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
 {
+  printf("[setGoals] Setting goal...\n");
   int num_goals = (int) goals.size();
   tf::Pose tf_pose;
 
@@ -237,6 +240,7 @@ bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
 
 bool SBPLArmPlannerNode::planPath(sbpl_arm_planner_node::PlanPathSrv::Request &req, sbpl_arm_planner_node::PlanPathSrv::Response &resp)
 {
+  printf("[planPath] Planning...\n");
   robot_msgs::JointTraj traj; 
   if(setStart(req.start))
   {

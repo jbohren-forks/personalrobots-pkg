@@ -88,7 +88,7 @@ namespace sbpl_arm_planner_node
 
       MDPConfig mdp_cfg_;
 
-      EnvironmentROBARM pr2_arm_env_;
+      EnvironmentROBARM3D pr2_arm_env_;
 
       ARAPlanner *planner_;
 
