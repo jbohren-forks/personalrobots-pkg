@@ -1,2 +1,0 @@
-Depends on deleted package, filter_coefficient_server.  Probably needs to
-be migrated to use iir_filters.
