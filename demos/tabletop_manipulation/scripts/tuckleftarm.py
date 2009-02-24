@@ -40,8 +40,8 @@ from robot_msgs.msg import JointTraj, JointTrajPoint
 
 import sys
 
-def go(positions):
-  pub = rospy.Publisher('left_arm_trajectory_command', JointTraj)
+def go(side, positions):
+  pub = rospy.Publisher(side + '_arm_trajectory_command', JointTraj)
   rospy.init_node('foo')
 
   # HACK
@@ -57,16 +57,22 @@ def go(positions):
 
   pub.publish(msg)
 
-if __name__ == '__main__':
-  if len(sys.argv) < 3:
-    # tuck position for left arm
-    positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0],
-                [0.0,1.57,1.57,-2.25,0.0,0.0,0.0]]
-    #positions = [0.0,0.0,0.0,0.0,0.0,0.0,0.0]
-  else:
-    positions = [[]]
-    for i in range(len(sys.argv)):
-      positions[0].append(float(sys.argv[i]))
+USAGE = 'tuckarm.py {left|right}'
 
-  go(positions)
+if __name__ == '__main__':
+  if len(sys.argv) < 2 or (sys.argv[1] != 'left' and sys.argv[1] != 'right'):
+    print USAGE
+    sys.exit(-1)
+
+  side = sys.argv[1]
+
+  if side == 'left':
+    # tuck traj for left arm
+    positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0],
+                 [0.0,1.57,1.57,-2.25,0.0,0.0,0.0]]
+  else:
+    # tuck traj for right arm
+    positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0],
+                 [0.0,1.57,-1.57,-2.25,0.0,0.0,0.0]]
+  go(side, positions)
 
