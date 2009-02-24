@@ -32,7 +32,7 @@
     <param name="leaf_width_x" type="double" value="0.02" />
     <param name="leaf_width_y" type="double" value="0.02" />
     <param name="leaf_width_z" type="double" value="0.02" />
-    <param name="window_size" type="int" value="20" />
+    <param name="window_size" type="int" value="40" />
     <remap from="full_cloud" to="tilt_laser_cloud" />
   </node>
 </launch>

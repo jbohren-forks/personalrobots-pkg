@@ -36,46 +36,37 @@
 import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
-from robot_srvs.srv import FindTable, FindTableRequest
-from robot_msgs.msg import Planner2DGoal
+from robot_msgs.msg import JointTraj, JointTrajPoint
 
 import sys
 
-def go():
-  pub_goal = rospy.Publisher("goal", Planner2DGoal)
-  rospy.init_node('test_node', anonymous=True)
+def go(positions):
+  pub = rospy.Publisher('left_arm_trajectory_command', JointTraj)
+  rospy.init_node('foo')
 
-  print 'Waiting for table_object_detector service...'
-  rospy.wait_for_service('table_object_detector')
-  print 'Calling table_object_detector service...'
-  s = rospy.ServiceProxy('table_object_detector', FindTable)
-  resp = s.call(FindTableRequest())
-  print 'Result:'
-  print 'Table (frame %s): %f %f %f %f' % (resp.table.header.frame_id,
-                                           resp.table.min_x,
-                                           resp.table.max_x,
-                                           resp.table.min_y,
-                                           resp.table.max_y)
-  print '%d objects detected on table' % len(resp.table.objects)
-  for o in resp.table.objects:
-    print '  (%f %f %f): %f %f %f' % \
-       (o.center.x, o.center.y, o.center.z,
-        o.max_bound.x - o.min_bound.x,
-        o.max_bound.y - o.min_bound.y,
-        o.max_bound.z - o.min_bound.z)
+  # HACK
+  import time
+  time.sleep(3.0)
 
+  msg = JointTraj()
+  msg.points = []
+  for i in range(0,len(positions)):
+    msg.points.append(JointTrajPoint())
+    msg.points[i].positions = positions[i]
+    msg.points[i].time = 0.0
 
-  g = Planner2DGoal()
-  g.goal.x = resp.table.min_x - 1.5
-  g.goal.y = resp.table.min_y - 1.5
-  g.goal.th = 0.0
-  g.enable = 1
-  g.header.frame_id = resp.table.header.frame_id
-  g.timeout = 0.0
-
-  print 'Sending the robot to (%f,%f,%f)'%(g.goal.x,g.goal.y,g.goal.th)
-  pub_goal.publish(g)
+  pub.publish(msg)
 
 if __name__ == '__main__':
-  go()
+  if len(sys.argv) < 3:
+    # tuck position for left arm
+    positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0],
+                [0.0,1.57,1.57,-2.25,0.0,0.0,0.0]]
+    #positions = [0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+  else:
+    positions = [[]]
+    for i in range(len(sys.argv)):
+      positions[0].append(float(sys.argv[i]))
+
+  go(positions)
 
