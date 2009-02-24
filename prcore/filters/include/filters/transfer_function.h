@@ -45,7 +45,7 @@
 namespace filters
 {
 /***************************************************/
-/*! \class TransferFunctionFilter_back
+/*! \class TransferFunctionFilter
     \brief One-dimensional digital filter class.
 
     This class calculates the output for \f$N\f$ one-dimensional
@@ -134,35 +134,39 @@ bool TransferFunctionFilter<T>::configure(unsigned int number_of_channels, TiXml
 {
   // Check if the filter is already configured.
   if (configured_)
+  {
+    ROS_WARN("TransferFunctionFilter is already configured.");
     return false;
+  }
   
   // Parse the name of the filter from the xml.  
   const char *name = config->Attribute("name");
   if (!name)
   {
-    fprintf(stderr, "Error: TransferFunctionFilter was not given a name.\n");
+    ROS_ERROR("TransferFunctionFilter was not given a name.");
     return false;
   }
   name_ = std::string(name);
+  ROS_INFO("Configuring TransferFunctionFilter with name \"%s\".", name_.c_str());
 
   // Parse the params of the filter from the xml.
   TiXmlElement *p = config->FirstChildElement("params");
   if (!p)
   {
-    fprintf(stderr, "Error: TransferFunctionFilter was not given params.\n");
+    ROS_ERROR("TransferFunctionFilter was not given params.");
     return false;
   }
   
   // Parse a and b into a std::vector<double>.
   if (!urdf::queryVectorAttribute(p, "a", &a_))
   {
-    fprintf(stderr, "Error: TransferFunctionFilter, \"%s\", params has no attribute a.\n", name_.c_str());
+    ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute a.", name_.c_str());
     return false;
   }
   
   if (!urdf::queryVectorAttribute(p, "b", &b_))
   {
-    fprintf(stderr, "Error: TransferFunctionFilter, \"%s\", params has no attribute b.\n", name_.c_str());
+    ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute b.", name_.c_str());
     return false;
   }
   
@@ -172,13 +176,15 @@ bool TransferFunctionFilter<T>::configure(unsigned int number_of_channels, TiXml
   // Create the input and output buffers of the correct size.
   T temp;
   temp.resize(number_of_channels);
-  input_buffer_ = new RealtimeVectorCircularBuffer<T>(b_.size(), temp);
-  output_buffer_ = new RealtimeVectorCircularBuffer<T>(a_.size(), temp);
+  input_buffer_ = new RealtimeVectorCircularBuffer<T>(b_.size()-1, temp);
+  output_buffer_ = new RealtimeVectorCircularBuffer<T>(a_.size()-1, temp);
   
   // Prevent divide by zero while normalizing coeffs.
-  //assert(a[0] != 0);  
   if ( a_[0] == 0)
+  {
+    ROS_ERROR("a[0] can not equal 0.");
     return false;
+  }
   
   // Normalize the coeffs by a[0].
   if(a_[0] != 1)
@@ -213,13 +219,13 @@ bool TransferFunctionFilter<T>::update(const T & data_in, T& data_out)
   {
     data_out[i]=b_[0] * current_input[i];
 
-    for (uint32_t row = 0; row < input_buffer_->size(); row++)
+    for (uint32_t row = 1; row <= input_buffer_->size(); row++)
     {
-      (data_out)[i] += b_[row+1] * (*input_buffer_)[row][i];
+      (data_out)[i] += b_[row] * (*input_buffer_)[row-1][i];
     }
-    for (uint32_t row = 0; row < output_buffer_->size(); row++)
+    for (uint32_t row = 1; row <= output_buffer_->size(); row++)
     {
-      (data_out)[i] -= a_[row+1] * (*output_buffer_)[row][i];
+      (data_out)[i] -= a_[row] * (*output_buffer_)[row-1][i];
     }
   }
   input_buffer_->push_front(current_input);
