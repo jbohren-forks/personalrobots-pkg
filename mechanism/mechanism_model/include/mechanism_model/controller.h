@@ -113,9 +113,13 @@ public:
   {
   }
 
-  virtual bool start() {return true;};
+  // The starting method is called by the realtime thread just before
+  // the first call to update.
+  virtual bool starting() { return true; }
+
+  virtual bool start() {return true;}
   virtual void update(void) = 0;
-  virtual bool stop() {return true;};
+  virtual bool stop() {return true;}
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config) = 0;
 
 

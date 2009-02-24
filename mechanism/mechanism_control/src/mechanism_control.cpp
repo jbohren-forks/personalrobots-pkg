@@ -142,6 +142,11 @@ void MechanismControl::update()
   {
     if (controllers[i].state != EMPTY)
     {
+      if (controllers[i].state == INITIALIZED)
+      {
+        controllers[i].state = RUNNING;
+        controllers[i].c->starting();
+      }
       double start = realtime_gettime();
       controllers[i].c->updateRequest();
       double end = realtime_gettime();
