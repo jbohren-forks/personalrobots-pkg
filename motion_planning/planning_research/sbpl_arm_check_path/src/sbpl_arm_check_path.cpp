@@ -67,7 +67,6 @@ bool SBPLArmCheckPath::initializeEnvironment()
     printf("ERROR: InitEnvFromFilePtr failed\n");
     return false;
   }
-  
   fclose(env_config_fp_);
   fclose(planner_config_fp_);
 

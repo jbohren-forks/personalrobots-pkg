@@ -82,7 +82,7 @@ namespace sbpl_arm_check_path
 
       MDPConfig mdp_cfg_;
 
-      EnvironmentROBARM pr2_arm_env_;
+      EnvironmentROBARM3D pr2_arm_env_;
 
       FILE *env_config_fp_;
 
