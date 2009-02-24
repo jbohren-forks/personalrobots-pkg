@@ -31,7 +31,7 @@
 % Original version: Melonee Wise <mwise@willowgarage.com>
 
 % Adds the startup script to the path for roslaunching
-[status,rosoctpath] = system('rospack find filter_coefficient_server');
+[status,rosoctpath] = system('rospack find iir_filters');
 rosoctpath = strtrim(rosoctpath);
 addpath(fullfile(rosoctpath, '/scripts'));
 startup;

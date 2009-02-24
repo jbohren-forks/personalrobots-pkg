@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import roslib
-roslib.load_manifest('filter_coefficient_server')
+roslib.load_manifest('iir_filters')
 
 import rospy, sys
 from filter_coefficient_server.srv import *

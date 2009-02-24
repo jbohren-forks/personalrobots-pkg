@@ -32,7 +32,7 @@
 #include <string>
 #include <vector>
 #include "ros/node.h"
-#include "filter_coefficient_server/Filter.h"
+#include "iir_filters/Filter.h"
 
 class GenFilter 
 {
@@ -42,8 +42,8 @@ public:
   }
   bool call_add(std::string name, std::vector<std::string> args, std::vector<double> &b, std::vector<double> &a)
   {
-    filter_coefficient_server::Filter::Request  req;
-    filter_coefficient_server::Filter::Response res;
+    iir_filters::Filter::Request  req;
+    iir_filters::Filter::Response res;
     req.name = name;
     req.args = args;
     if (ros::service::call("filter_coeffs", req, res))

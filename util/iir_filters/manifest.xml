@@ -1,0 +1,24 @@
+<package>
+<description brief='IIR Filters'>
+
+A library to provide a generic base class for filters as well as 
+implementations of commonly used filters.  
+
+</description>
+<author>Melonee Wise/mwise@willowgarage.com</author>
+<license>BSD</license>
+<review status="API conditionally cleared" notes=""/>
+<url>http://pr.willowgarage.com</url>
+<depend package="rospy"/>
+<depend package="tinyxml"/>
+<depend package="loki" />
+<depend package="wg_robot_description_parser" />
+<depend package="rosconsole" />
+<depend package="filters" />
+<depend package="rosoct" />
+<depend package="octave_forge" />
+<export>
+<cpp cflags="-I${prefix}/srv/cpp"/>
+<cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`"/> 
+</export>
+</package>

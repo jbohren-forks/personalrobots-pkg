@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="iir_filters" type="filter_coeff_server.m"/>
+  <test test-name="test_filter_coeff_srv_working" pkg="iir_filters" type="check_function_calls" time-limit="10.0"/>
+</launch>
+
