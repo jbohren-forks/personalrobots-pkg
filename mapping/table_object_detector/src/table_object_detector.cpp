@@ -98,6 +98,7 @@ class TableObjectDetector : public ros::Node
     tf::TransformListener tf_;
 
     // Parameters
+    string global_frame_;
     double frame_distance_eps_, min_z_bounds_, max_z_bounds_;
     string input_cloud_topic_;
     int k_;
@@ -116,6 +117,7 @@ class TableObjectDetector : public ros::Node
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     TableObjectDetector () : ros::Node ("table_object_detector"), tf_(*this)
     {
+      param("/global_frame_id", global_frame_, std::string("/base_link"));
       param ("~frame_distance_eps", frame_distance_eps_, 0.2);          // Allow 20cm extra space by default
 
       param ("~min_z_bounds", min_z_bounds_, 0.0);                      // restrict the Z dimension between 0
@@ -292,11 +294,37 @@ class TableObjectDetector : public ros::Node
       }
       ROS_DEBUG ("Number of clusters found: %d, largest cluster: %d.", clusters.size (), clusters[c_good].size ());
 
+      // Fill in the header
+      resp.table.header.frame_id = global_frame_;
+      resp.table.header.stamp = cloud_in_.header.stamp;
+
       // Get the table bounds
       robot_msgs::Point32 minP, maxP;
       cloud_geometry::statistics::getMinMax (&cloud_down_, &inliers, minP, maxP);
-      resp.table.min_x = minP.x; resp.table.min_y = minP.y;
-      resp.table.max_x = maxP.x; resp.table.max_y = maxP.y;
+      // Transform to the global frame
+      PointStamped minPstamped_local, maxPstamped_local;
+      minPstamped_local.point.x = minP.x;
+      minPstamped_local.point.y = minP.y;
+      minPstamped_local.header = cloud_in_.header;
+      maxPstamped_local.point.x = maxP.x;
+      maxPstamped_local.point.y = maxP.y;
+      maxPstamped_local.header = cloud_in_.header;
+      PointStamped minPstamped_global, maxPstamped_global;
+      try
+      {
+        tf_.transformPoint(global_frame_, minPstamped_local, minPstamped_global);
+        tf_.transformPoint(global_frame_, maxPstamped_local, maxPstamped_global);
+        resp.table.min_x = minPstamped_global.point.x; 
+        resp.table.min_y = minPstamped_global.point.y;
+        resp.table.max_x = maxPstamped_global.point.x; 
+        resp.table.max_y = maxPstamped_global.point.y;
+      }
+      catch (tf::ConnectivityException)
+      {
+        ROS_ERROR("Failed to transform table bounds from frame %s to frame %s",
+                  cloud_in_.header.frame_id.c_str(), global_frame_.c_str());
+        return false;
+      }
       
       // Get the goal position for the robot base
 //      resp.base_target_pose.x  = ;
@@ -304,13 +332,40 @@ class TableObjectDetector : public ros::Node
 //      resp.base_target_pose.th = ;
 
       // Compute the convex hull
-      pmap_.header = cloud_down_.header;
+      //pmap_.header = cloud_down_.header;
+      pmap_.header.stamp = cloud_down_.header.stamp;
+      pmap_.header.frame_id = global_frame_;
       pmap_.polygons.resize (1);
       cloud_geometry::areas::convexHull2D (&cloud_down_, &inliers, &coeff, pmap_.polygons[0]);
 
       // Find the object clusters supported by the table
       inliers.clear ();
       findObjectClusters (&cloud_in_, &coeff, &pmap_.polygons[0], &minP, &maxP, inliers, resp.table);
+
+      // Transform into the global frame
+      try
+      {
+        PointStamped local, global;
+        local.header = cloud_down_.header;
+        for (unsigned int i = 0; i < pmap_.polygons.size (); i++)
+        {
+          for (unsigned int j = 0; j < pmap_.polygons[i].points.size (); j++)
+          {
+            local.point.x = pmap_.polygons[i].points[j].x;
+            local.point.y = pmap_.polygons[i].points[j].y;
+            tf_.transformPoint(global_frame_, local, global);
+            pmap_.polygons[i].points[j].x = global.point.x;
+            pmap_.polygons[i].points[j].y = global.point.y;
+          }
+        }
+      }
+      catch (tf::ConnectivityException)
+      {
+        ROS_ERROR("Failed to PolygonalMap from frame %s to frame %s",
+                  cloud_down_.header.frame_id.c_str(), global_frame_.c_str());
+        return false;
+      }
+
 
       // Reserve enough space
       if (publish_debug_)
