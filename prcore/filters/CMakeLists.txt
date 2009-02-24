@@ -12,6 +12,6 @@ rospack_add_gtest(transfer_function_test test/test_transfer_function.cpp)
 
 rospack_add_gtest(mean_test test/test_mean.cpp)
 
-rospack_add_gtest(test_factory test/test_factory.cpp)
-rospack_add_gtest(test_chain test/test_chain.cpp)
-rospack_add_gtest(test_realtime_buffer test/test_realtime_circular_buffer.cpp)
+rospack_add_gtest(factory_test test/test_factory.cpp)
+rospack_add_gtest(chain_test test/test_chain.cpp)
+rospack_add_gtest(realtime_buffer_test test/test_realtime_circular_buffer.cpp)
