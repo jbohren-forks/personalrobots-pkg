@@ -31,7 +31,7 @@
 
 using namespace pr2_arm_node;
 
-PR2ArmNode::PR2ArmNode(std::string node_name, std::string arm_name, std::string gripper_name):ros::Node(node_name),tf_(*this),arm_name_(arm_name),gripper_name_(gripper_name)
+PR2ArmNode::PR2ArmNode(std::string node_name, std::string arm_name, std::string gripper_name):ros::Node(node_name),arm_name_(arm_name),gripper_name_(gripper_name)
 {
 //  param<std::string>("~arm_name",arm_name_, "right_arm");
 //  param<std::string>("~gripper_name",arm_name_, "right_gripper");
