@@ -22,6 +22,9 @@ target_link_libraries(door_checkerboard_detector)
 rospack_add_executable(test_door_detection test/test_door_detection.cpp)
 target_link_libraries(test_door_detection)
 
+rospack_add_executable(test_door_detection_joystick test/test_door_detection_joystick.cpp)
+target_link_libraries(test_door_detection_joystick)
+
 # check for OpenMP
 include(CheckIncludeFile)
 include(CheckCXXCompilerFlag)
