@@ -11,11 +11,6 @@
   <depend package="roscpp" />
   <depend package="robot_msgs" />
   <depend package="point_cloud_mapping" />
-
   <depend package="checkerboard_detector" />
-<!--  <depend package="pr2_laser_tilt" />-->
-<!--  <depend package="arm_life_test" />-->
-  <depend package="arm_life_test" />
-  <depend package="robot_mechanism_controllers" />
 
 </package>
