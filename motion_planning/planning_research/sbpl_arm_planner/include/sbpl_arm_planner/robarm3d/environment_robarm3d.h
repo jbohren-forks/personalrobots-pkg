@@ -305,6 +305,7 @@ public:
      * @param pCfg pointer to file with the Arm planner parameters
      */
     bool InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg);
+    bool SetEndEffGoals(double** EndEffGoals, int num_goals);
 //     bool SetEndEffGoals(std::vector < std::vector<double> >* EndEffGoals);
 
     //this should be removed  - it returns the planner Epsilon
@@ -335,7 +336,7 @@ public:
     void InitializeStatistics(FILE* fCfg, int n);
     bool InitializeEnvForStats(const char* sEnvFile,  int cntr);
 
-    void getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw);
+    void getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw, int solution_number);
 private:
 
     //member data

@@ -38,7 +38,7 @@ int planrobarm(int argc, char *argv[])
 
 //     double roll, pitch, yaw;
 //     double Rot[3][3] = {0};
-//     Rot[0][2] = -1;
+//     Rot[0][2] = 1;
 //     Rot[1][1] = -1;
 //     Rot[2][0] = 1;
 // 

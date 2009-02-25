@@ -63,7 +63,7 @@ using namespace std;
 #include "planners/ARAStar/araplanner.h"
 #include "planners/ADStar/adplanner.h"
 #include <sbpl_arm_planner/utils/utils.h>
-
+#include <angles/angles.h>
 #include <robot_kinematics/robot_kinematics.h>
 #include <unistd.h>
 #include <ros/node.h>
