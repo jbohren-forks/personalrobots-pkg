@@ -2,7 +2,8 @@
   <group name="wg">
 
     <!-- machine tags for sim, be sure to set environment variable ROBOT to sim -->
-    <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+    <!--include file="$(find pr2_alpha)/$(env ROBOT).machine" /--> <!-- can't set env for include tags -->
+    <include file="$(find pr2_alpha)/sim.machine" />
 
     <!-- publish mapping between odom and base_footprint -->
     <!-- publishes odom_combined -->
