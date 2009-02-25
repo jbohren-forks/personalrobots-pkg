@@ -53,15 +53,38 @@
   </group>
  
 
-
   <!-- Define groups to check for self collision -->
+  <group name="collisions1" flags="self_collision">
+    r_forearm_link
+    base_link
+  </group>
+  <group name="collisions2" flags="self_collision">
+    r_gripper_palm_link
+    base_link
+  </group>
+  <group name="collisions3" flags="self_collision">
+    r_gripper_l_finger_link
+    base_link
+  </group>
+  <group name="collisions4" flags="self_collision">
+    r_gripper_r_finger_link
+    base_link
+  </group>
+  <group name="collisions5" flags="self_collision">
+    r_gripper_l_finger_tip_link
+    base_link
+  </group>
+  <group name="collisions6" flags="self_collision">
+    r_gripper_r_finger_tip_link
+    base_link
+  </group>
 <!--
   <group name="collisions1" flags="self_collision">
     r_upper_arm_roll_link
     torso_lift_link
   </group>
 -->
-  <group name="collisions2" flags="self_collision">
+<!--  <group name="collisions2" flags="self_collision">
     r_elbow_flex_link
     base_link
   </group>
@@ -79,27 +102,8 @@
   <group name="collisions5" flags="self_collision">
     r_wrist_roll_link
     base_link
-  </group>
-
-  <group name="collisions6" flags="self_collision">
-    r_gripper_l_finger_link
-    base_link
-  </group>
-
-  <group name="collisions7" flags="self_collision">
-    r_gripper_r_finger_link
-    base_link
-  </group>
-
-  <group name="collisions8" flags="self_collision">
-    r_gripper_l_finger_tip_link
-    base_link
-  </group>
-
-  <group name="collisions9" flags="self_collision">
-    r_gripper_r_finger_tip_link
-    base_link
-  </group>
+  </group> 
+-->
 
 <!--
   <group name="collisions6" flags="self_collision">
