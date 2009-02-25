@@ -99,7 +99,7 @@ bool TopologicalMap::MapImpl::isObstacle (const Point2D& p) const
 
 bool TopologicalMap::MapImpl::pointOnMap (const Point2D& p) const
 {
-  return (p.x>=0) && (p.y>=0) && (p.x<=numCols(grid_)*resolution_) && (p.y<=numRows(grid_)*resolution_);
+  return (p.x>=0) && (p.y>=0) && (p.x<numCols(grid_)*resolution_) && (p.y<numRows(grid_)*resolution_);
 }
 
 Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
