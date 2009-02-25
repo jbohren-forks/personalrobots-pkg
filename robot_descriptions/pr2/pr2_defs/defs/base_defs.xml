@@ -224,7 +224,7 @@
             <rangeCount>640</rangeCount>
             <laserCount>1</laserCount>
             <origin>0.0 0.0 0.0</origin>
-            <displayRays>true</displayRays>
+            <displayRays>false</displayRays>
 
             <minAngle>-100</minAngle> <!-- scans own arms if -135~+135 -->
             <maxAngle>100</maxAngle>
