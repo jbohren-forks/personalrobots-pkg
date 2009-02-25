@@ -47,60 +47,59 @@ roslib.load_manifest('rostest')
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
+from robot_msgs.msg import *
 from std_msgs.msg import *
 from pr2_mechanism_controllers.msg import *
 
 TEST_DURATION = 60.0
-COMMAND_INTERVAL = 10.0
+COMMAND_INTERVAL = 5.0
 PI = 3.14159
 
 CMD_SH_PAN_MIN     =  0*(PI/4-1.5)   #range [ PI/4-1.5   PI/4+1.5 ]
 CMD_SH_LFT_MIN     =  -0.4       #range [ -0.4       1.5 ]
 CMD_UA_ROL_MIN     =  1.55-2.35  #range [ 1.55-2.35  1.55+2.35 ]
 CMD_EL_FLX_MIN     =  -2.3       #range [ -2.3       0.1 ]
-CMD_FA_ROL_MIN     =  0*PI         #range [  ]
+CMD_FA_ROL_MIN     =  -0*PI         #range [  ]
 CMD_WR_FLX_MIN     =  -0.1       #range [ -0.1       2.2 ]
-CMD_WR_ROL_MIN     =  0*PI         #range [  ]
+CMD_WR_ROL_MIN     =  -0*PI         #range [  ]
 CMD_GR_POS_MIN     =  0.0        #range [ 0          0.548 ]
 
 CMD_SH_PAN_MAX     =  0*(PI/4+1.5)    #range [ PI/4-1.5   PI/4+1.5 ]
 CMD_SH_LFT_MAX     =  1.5         #range [ -0.4       1.5 ]
 CMD_UA_ROL_MAX     =  1.55+2.35   #range [ 1.55-2.35  1.55+2.35 ]
 CMD_EL_FLX_MAX     =  0.1         #range [ -2.3       0.1 ]
-CMD_FA_ROL_MAX     =  -0*PI         #range [  ]
+CMD_FA_ROL_MAX     =  0*PI         #range [  ]
 CMD_WR_FLX_MAX     =  2.2         #range [ -0.1       2.2 ]
-CMD_WR_ROL_MAX     =  -0*PI         #range [  ]
+CMD_WR_ROL_MAX     =  0*PI         #range [  ]
 CMD_GR_POS_MAX     =  0.548       #range [ 0          0.548 ]
 
+
+p3d_received   = False
+def p3dReceived(stuff):
+    global p3d_received
+    if not p3d_received:
+        p3d_received = True
+
+
 if __name__ == '__main__':
-    pub_l_shoulder_pan   = rospy.Publisher("l_shoulder_pan_controller/set_command", Float64)
-    pub_l_shoulder_lift  = rospy.Publisher("l_shoulder_lift_controller/set_command", Float64)
-    pub_l_upper_arm_roll = rospy.Publisher("l_upper_arm_roll_controller/set_command", Float64)
-    pub_l_elbow_flex     = rospy.Publisher("l_elbow_flex_controller/set_command", Float64)
-    pub_l_elbow_roll     = rospy.Publisher("l_elbow_roll_controller/set_command", Float64)
-    pub_l_wrist_flex     = rospy.Publisher("l_wrist_flex_controller/set_command", Float64)
-    pub_l_wrist_roll     = rospy.Publisher("l_wrist_roll_controller/set_command", Float64)
-    pub_l_gripper        = rospy.Publisher("l_gripper_controller/set_command", Float64)
+    pub_l_arm = rospy.Publisher("left_arm_commands", JointPosCmd)
+    pub_l_gripper = rospy.Publisher("l_gripper_controller/set_command", Float64)
+    rospy.Subscriber("l_gripper_palm_pose_ground_truth", PoseWithRatesStamped, p3dReceived)
     rospy.init_node(NAME, anonymous=True)
+
+
     timeout_t = time.time() + TEST_DURATION
     while time.time() < timeout_t:
-        pub_l_shoulder_pan   .publish(Float64(CMD_SH_PAN_MIN))
-        pub_l_shoulder_lift  .publish(Float64(CMD_SH_LFT_MIN))
-        pub_l_upper_arm_roll .publish(Float64(CMD_UA_ROL_MIN))
-        pub_l_elbow_flex     .publish(Float64(CMD_EL_FLX_MIN))
-        pub_l_elbow_roll     .publish(Float64(CMD_FA_ROL_MIN))
-        pub_l_wrist_flex     .publish(Float64(CMD_WR_FLX_MIN))
-        pub_l_wrist_roll     .publish(Float64(CMD_WR_ROL_MIN))
-        pub_l_gripper        .publish(Float64(CMD_GR_POS_MIN))
-        time.sleep(COMMAND_INTERVAL)
-        pub_l_shoulder_pan   .publish(Float64(CMD_SH_PAN_MAX))
-        pub_l_shoulder_lift  .publish(Float64(CMD_SH_LFT_MAX))
-        pub_l_upper_arm_roll .publish(Float64(CMD_UA_ROL_MAX))
-        pub_l_elbow_flex     .publish(Float64(CMD_EL_FLX_MAX))
-        pub_l_elbow_roll     .publish(Float64(CMD_FA_ROL_MAX))
-        pub_l_wrist_flex     .publish(Float64(CMD_WR_FLX_MAX))
-        pub_l_wrist_roll     .publish(Float64(CMD_WR_ROL_MAX))
-        pub_l_gripper        .publish(Float64(CMD_GR_POS_MAX))
-        time.sleep(COMMAND_INTERVAL)
+    #while not p3d_received:
+
+      pub_l_arm.publish(JointPosCmd(['l_shoulder_pan_joint','l_shoulder_lift_joint','l_upper_arm_roll_joint','l_elbow_flex_joint','l_forearm_roll_joint','l_wrist_flex_joint','l_wrist_roll_joint'],[CMD_SH_PAN_MIN,CMD_SH_LFT_MIN,CMD_UA_ROL_MIN,CMD_EL_FLX_MIN,CMD_FA_ROL_MIN,CMD_WR_FLX_MIN,CMD_WR_ROL_MIN],[0,0,0,0,0,0,0],0))
+      pub_l_gripper.publish(Float64(CMD_GR_POS_MIN))
+
+      time.sleep(COMMAND_INTERVAL)
+
+      pub_l_arm.publish(JointPosCmd(['l_shoulder_pan_joint','l_shoulder_lift_joint','l_upper_arm_roll_joint','l_elbow_flex_joint','l_forearm_roll_joint','l_wrist_flex_joint','l_wrist_roll_joint'],[CMD_SH_PAN_MAX,CMD_SH_LFT_MAX,CMD_UA_ROL_MAX,CMD_EL_FLX_MAX,CMD_FA_ROL_MAX,CMD_WR_FLX_MAX,CMD_WR_ROL_MAX],[0,0,0,0,0,0,0],0))
+      pub_l_gripper.publish(Float64(CMD_GR_POS_MAX))
+
+      time.sleep(COMMAND_INTERVAL)
 
 
