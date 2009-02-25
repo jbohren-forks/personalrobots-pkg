@@ -36,6 +36,7 @@
 #include <robot_msgs/Door.h>
 #include <robot_msgs/TaskFrameFormalism.h>
 #include <robot_msgs/Planner2DGoal.h>
+#include <robot_msgs/Planner2DState.h>
 #include <robot_srvs/SwitchController.h>
 #include <std_msgs/Float64.h>
 #include <door_handle_detector/DoorDetector.h>
@@ -59,10 +60,11 @@ private:
 
   enum {INITIALIZED, DETECTING, GRASPING, OPENDOOR, SUCCESS, FAILED, FINISHED };
   int state_;
-  bool goal_acchieved_;
+  bool planner_running_, planner_finished_;
 
   robot_msgs::Door my_door_;
   robot_msgs::TaskFrameFormalism tff_msg_;
+  robot_msgs::Planner2DState planner_state_;
 
   door_handle_detector::DoorDetector::Request  req_doordetect;
   door_handle_detector::DoorDetector::Response res_doordetect;
@@ -78,7 +80,6 @@ public:
     ros::Node(node_name),
     tf_(*this),
     state_(INITIALIZED)
-    //state_(DETECTING)
   {
     // initialize my door
     double tmp; int tmp2;
@@ -94,7 +95,7 @@ public:
     advertise<std_msgs::Float64>("gripper_effort/set_command",1);
     advertise<robot_msgs::Planner2DGoal>("goal", 10);
 
-    //    subscribe();
+    subscribe("planner_state", planner_state_,  &OpenDoorExecutiveTest::plannerCallback, 1);
   }
   
   
@@ -169,9 +170,9 @@ public:
     robot_pose_msg.goal.x = robot_pos(0);
     robot_pose_msg.goal.y = robot_pos(1);
     robot_pose_msg.goal.th = z_angle;
-    goal_acchieved_ = false;
+    planner_finished_ = false;
     publish("goal", robot_pose_msg);
-    while (!goal_acchieved_)
+    while (!planner_finished_)
       Duration().fromSec(0.1).sleep();
 
     // move gripper in front of door
@@ -391,6 +392,19 @@ public:
     tf_.transformVector(frame_goal, pnt, pnt);
     return Vector(pnt[0], pnt[1], pnt[2]);
   }
+
+  void plannerCallback()
+  {
+    if (planner_state_.status == planner_state_.ACTIVE)
+      planner_running_ = true;
+
+    if (planner_running_ && planner_state_.status == planner_state_.INACTIVE){
+      planner_running_ = false;
+      planner_finished_ = true;
+    }
+  }
+
+
 
 
 }; // class
