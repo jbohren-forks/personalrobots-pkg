@@ -35,6 +35,7 @@
 #include <ros/node.h>
 #include <robot_msgs/Door.h>
 #include <robot_msgs/TaskFrameFormalism.h>
+#include <robot_msgs/Planner2DGoal.h>
 #include <robot_srvs/SwitchController.h>
 #include <std_msgs/Float64.h>
 #include <door_handle_detector/DoorDetector.h>
@@ -48,6 +49,9 @@ using namespace KDL;
 using namespace ros;
 using namespace std;
 
+static const string fixed_frame = "odom_combined";
+
+
 class OpenDoorExecutiveTest : public ros::Node
 {
 private:
@@ -55,6 +59,8 @@ private:
 
   enum {INITIALIZED, DETECTING, GRASPING, OPENDOOR, SUCCESS, FAILED, FINISHED };
   int state_;
+  bool goal_acchieved_;
+
   robot_msgs::Door my_door_;
   robot_msgs::TaskFrameFormalism tff_msg_;
 
@@ -86,6 +92,9 @@ public:
 
     advertise<robot_msgs::TaskFrameFormalism>("cartesian_tff_right/command",1);
     advertise<std_msgs::Float64>("gripper_effort/set_command",1);
+    advertise<robot_msgs::Planner2DGoal>("goal", 10);
+
+    //    subscribe();
   }
   
   
@@ -142,33 +151,38 @@ public:
   bool graspDoor(const robot_msgs::Door& door)
   // -------------------------
   {
-    robot_msgs::PoseStamped pose_msg;
-    Stamped<Pose> pose;
-    pose.frame_id_ = "odom_combined";
-
-    // get normal and origin in odom_combined frame
+    // get orientation in fixed_frame, with X-axis alligned with door normal, and Z-axis up
     Vector normal = getNormalOnDoor(door);
-    normal = transformVectorToFrame(door.header.frame_id, "odom_combined", normal);
+    normal = transformVectorToFrame(door.header.frame_id, fixed_frame, normal);
+    double z_angle = acos(dot(normal, Vector(1,0,0)));
+    Quaternion orientation(z_angle, 0, M_PI/2.0); 
 
-    Vector point(door.handle.x, door.handle.y, door.handle.z);
-    point  = transformPointToFrame(door.header.frame_id, "odom_combined", point);
+    // move the robot in front of the door
+    Vector robot_pos(door.door_p1.x - door.door_p2.x, door.door_p1.y - door.door_p2.y, door.door_p1.z - door.door_p2.z);
+    robot_pos = transformPointToFrame(door.header.frame_id, fixed_frame, robot_pos);
+    robot_pos = robot_pos - 1.0*normal;
 
-    pose.setOrigin( Vector3(point[0], point[1], point[2]) );
-    Vector x_axis(1,0,0);
-    double z_angle = acos(dot(normal, x_axis));
-    cout << "dot " << dot(normal, x_axis) << endl;
-    cout << "z_angle " << z_angle << endl;
-    pose.setRotation( Quaternion(z_angle, 0, M_PI/2.0) ); 
+    robot_msgs::Planner2DGoal robot_pose_msg;
+    robot_pose_msg.header.frame_id = fixed_frame;
+    robot_pose_msg.enable = true;
+    robot_pose_msg.timeout = 1000000;
+    robot_pose_msg.goal.x = robot_pos(0);
+    robot_pose_msg.goal.y = robot_pos(1);
+    robot_pose_msg.goal.th = z_angle;
+    goal_acchieved_ = false;
+    publish("goal", robot_pose_msg);
+    while (!goal_acchieved_)
+      Duration().fromSec(0.1).sleep();
+
+    // move gripper in front of door
+    robot_msgs::PoseStamped pose_msg;
+    Vector handle_pos(door.handle.x, door.handle.y, door.handle.z);
+    handle_pos = transformPointToFrame(door.header.frame_id, fixed_frame, handle_pos);
+    Stamped<Pose> pose(Pose(orientation, Vector3(handle_pos(0), handle_pos(1), handle_pos(2))), Time(), fixed_frame);
     PoseStampedTFToMsg(pose, pose_msg);
-
-    // give some time for manual positioning of robot base
-    usleep(1e6 * 10);
-
-    // move in front of door
-    Vector offset = normal * -0.15;
-    pose_msg.pose.position.x = pose_msg.pose.position.x + offset[0];
-    pose_msg.pose.position.y = pose_msg.pose.position.y + offset[1];
-    pose_msg.pose.position.z = pose_msg.pose.position.z + offset[2];
+    pose_msg.pose.position.x = pose_msg.pose.position.x - 0.15 * normal(0);
+    pose_msg.pose.position.y = pose_msg.pose.position.y - 0.15 * normal(1);
+    pose_msg.pose.position.z = pose_msg.pose.position.z - 0.15 * normal(2);
     moveTo(pose_msg);
 
     // open the gripper
@@ -176,12 +190,11 @@ public:
     gripper_msg.data = 2.0;
     publish("gripper_effort/set_command", gripper_msg);
     usleep(1e6 * 4);
-
     
-    // move over door handle
-    pose_msg.pose.position.x = pose_msg.pose.position.x - 1.5*offset[0];
-    pose_msg.pose.position.y = pose_msg.pose.position.y - 1.5*offset[1];
-    pose_msg.pose.position.z = pose_msg.pose.position.z - 1.5*offset[2];
+    // move gripper over door handle
+    pose_msg.pose.position.x = pose_msg.pose.position.x + 0.2 * normal(0);
+    pose_msg.pose.position.y = pose_msg.pose.position.y + 0.2 * normal(1);
+    pose_msg.pose.position.z = pose_msg.pose.position.z + 0.2 * normal(2);
     moveTo(pose_msg);
 
     // close the gripper
