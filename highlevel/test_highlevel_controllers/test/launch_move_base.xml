@@ -1,11 +1,18 @@
 <launch>
   <group name="wg">  
     <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" output="screen" name="move_base_navfn" >
-      <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
-      <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
-      <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
+
+      <!-- possible values for plannerType:
+           - "ARAPlanner"
+           - "ADPlanner" -->
       <param name="move_base/plannerType" value="ARAPlanner"/>
+      
+      <!-- possible values for environmentType:
+           - "2D" 8-connected 2D planner
+           - "2D16" 16-connected 2D planner
+           - "3DKIN" 2D+orientation planner (I think that's always 8-connected) -->
       <param name="move_base/environmentType" value="2D"/>
+      
       <param name="move_base/controller_frequency" value="20.0"/>
       <param name="move_base/map_update_frequency" value="2.0"/>
       <param name="move_base/planner_frequency" value="0.0"/>
