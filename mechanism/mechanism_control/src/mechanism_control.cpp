@@ -365,7 +365,7 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
       ROS_ERROR("Could spawn controller %s because controller type %s does not exist",
                 add_reqs[i].name.c_str(), add_reqs[i].type.c_str());
       continue;
-    }MONOTONIC
+    }
     timespec init_start, init_end;
     clock_gettime(CLOCK_REALTIME, &init_start);
     bool initialized = c->initXmlRequest(state_, add_reqs[i].config, add_reqs[i].name);
