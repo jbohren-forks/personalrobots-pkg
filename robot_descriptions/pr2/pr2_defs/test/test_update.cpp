@@ -42,13 +42,6 @@ int runExternalProcess(const std::string &executable, const std::string &args)
     return system((executable + " " + args).c_str());
 }
 
-// this test doesn't make sense
-//TEST(URDF, CorrectVersion)
-//{
-//    int result = runExternalProcess("diff", "pr2/pr2.xml pr2/backup/pr2.xml");    
-//    EXPECT_TRUE(result == 0);
-//}
-
 TEST(URDF, CorrectFormat)
 {
     int result = runExternalProcess("`rospack find wg_robot_description_parser`/parse", "`rospack find pr2_defs`/robots/pr2.expanded.xml");
