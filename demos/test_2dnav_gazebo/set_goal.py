@@ -60,6 +60,8 @@ class NavStackTest(unittest.TestCase):
         self.bumped  = False
         self.success = False
 
+        self.publish_goal = True
+
         self.odom_xi = 0
         self.odom_yi = 0
         self.odom_qi = [0,0,0,0]
@@ -157,6 +159,11 @@ class NavStackTest(unittest.TestCase):
         print "robot touched something! ", bumpString.data
         self.bumped = True
     
+    def stateInput(self, state):
+        print "state goal: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
+        if state.goal.x == self.target_x and state.goal.y == self.target_y and state.goal.th == self.target_t:
+          self.publish_goal = False
+    
     def test_set_goal(self):
         print "LNK\n"
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
@@ -165,6 +172,7 @@ class NavStackTest(unittest.TestCase):
         rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
+        rospy.Subscriber("state"                 , Planner2DState      , self.stateInput)
 
         rospy.init_node(NAME, anonymous=True)
 
@@ -228,8 +236,9 @@ class NavStackTest(unittest.TestCase):
             h = rospy.Header();
             h.stamp = rospy.get_rostime();
             h.frame_id = "/map"
-            pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(self.target_x,self.target_y,self.target_t),1,1.0))
-            time.sleep(0.5)
+            if self.publish_goal:
+              pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(self.target_x,self.target_y,self.target_t),1,1.0))
+            time.sleep(1.0)
 
             # compute angular error between deltas in odom and p3d
             # compute delta in odom from initial pose
