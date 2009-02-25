@@ -121,7 +121,7 @@
 #15. Goto (1)
 
 import roslib
-roslib.load_manifest('executive_python')
+roslib.load_manifest('tabletop_manipulation')
 import rospy
 import random
 import sys
@@ -130,10 +130,11 @@ from robot_msgs.msg import AttachedObject, PoseConstraint
 from robot_srvs.srv import FindTable, FindTableRequest, SubtractObjectFromCollisionMap, SubtractObjectFromCollisionMapRequest, RecordStaticMapTrigger, RecordStaticMapTriggerRequest
 from pr2_mechanism_controllers.srv import SetProfile, SetProfileRequest
 from highlevel_controllers.msg import *
-from navigation_adapter import *
-from movearm_adapter import *
+from executive_python.navigation_adapter import *
+from executive_python.movearm_adapter import *
 #from tiltlaser_adapter import *
 #from gripper_adapter import *
+
 
 class Executive:
   def __init__(self, navigator, armigator, cycle_time):
@@ -215,10 +216,10 @@ class Executive:
     s = rospy.ServiceProxy('table_object_detector', FindTable)
     resp = s.call(FindTableRequest())
     print 'Table (frame %s): %f %f %f %f' % (resp.table.header.frame_id,
-                                             resp.table.min_x,
-                                             resp.table.max_x,
-                                             resp.table.min_y,
-                                             resp.table.max_y)
+                                             resp.table.table_min.x,
+                                             resp.table.table_max.x,
+                                             resp.table.table_min.y,
+                                             resp.table.table_max.y)
     print '%d objects' % len(resp.table.objects)
     for o in resp.table.objects:
       print '  (%f %f %f): %f %f %f' % \
@@ -334,13 +335,13 @@ SubtractObjectFromCollisionMap)
 
   def handleSlowScan(self, t):  
     # Did we start the scan yet?
-    #if(self.scan_start_time < 0.0):
-    #  # Request slow scan & trigger static map recording
-    #  resp = self.adaptTiltSpeed(self.laser_tilt_profile_period_slow)
-    #  self.scan_start_time = t
-    #  if self.first_time:
-    #    self.recordStaticMap(roslib.rostime.Time().from_seconds(resp.time))
-    #    self.first_time = False
+    if(self.scan_start_time < 0.0):
+      # Request slow scan & trigger static map recording
+      resp = self.adaptTiltSpeed(self.laser_tilt_profile_period_slow)
+      self.scan_start_time = t
+      if self.first_time:
+        self.recordStaticMap(roslib.rostime.Time().from_seconds(resp.time))
+        self.first_time = False
 
     #print 'Waiting for slow scan to complete...'
     # Hack
@@ -454,7 +455,7 @@ if __name__ == '__main__':
     navigator = NavigationAdapter(30, 300, 'state', 'goal')
     armigator = MoveArmAdapter(30, 30, 'right_arm_state', 'right_arm_goal')
 
-    executive = Executive(navigator, armigator, 1.0)
+    executive = Executive(navigator, armigator, 2.0)
     executive.run()
   except KeyboardInterrupt, e:
     pass
