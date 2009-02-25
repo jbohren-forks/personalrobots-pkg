@@ -90,8 +90,8 @@ public:
   virtual bool configure(unsigned int number_of_channels, TiXmlElement *config);
 
   /** \brief Update the filter and return the data seperately
-   * \param data_in vector<T> with n elements
-   * \param data_out vector<T> with n elements
+   * \param data_in vector<T> with number_of_channels elements
+   * \param data_out vector<T> with number_of_channels elements
    */
   virtual bool update(const T & data_in, T& data_out) ;
   
@@ -100,15 +100,15 @@ public:
 
 protected:
   
-  unsigned int number_of_channels_;
+  unsigned int number_of_channels_;  //The number of inputs filtered.
   
-  RealtimeVectorCircularBuffer<T>* input_buffer_;  
-  RealtimeVectorCircularBuffer<T>* output_buffer_;
+  RealtimeVectorCircularBuffer<T>* input_buffer_; //The input sample history. 
+  RealtimeVectorCircularBuffer<T>* output_buffer_; //The output sample history.
   
-  std::vector<double> a_;   //Transfer functon coefficients (output)
-  std::vector<double> b_;   //Transfer functon coefficients (input)
+  std::vector<double> a_;   //Transfer functon coefficients (output).
+  std::vector<double> b_;   //Transfer functon coefficients (input).
   
-  bool configured_;
+  bool configured_;  //Configuration state.
 
 };
 
@@ -153,7 +153,7 @@ bool TransferFunctionFilter<T>::configure(unsigned int number_of_channels, TiXml
   TiXmlElement *p = config->FirstChildElement("params");
   if (!p)
   {
-    ROS_ERROR("TransferFunctionFilter was not given params.");
+    ROS_ERROR("TransferFunctionFilter, \"%s\", was not given params.", name_.c_str());
     return false;
   }
   
