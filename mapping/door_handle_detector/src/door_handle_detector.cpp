@@ -645,6 +645,7 @@ public:
       if (best_i == -1)
       {
         ROS_ERROR ("All clusters rejected! Should exit here.");
+	return;
       }
 
       handle_indices.resize (line_inliers[best_i].size ());

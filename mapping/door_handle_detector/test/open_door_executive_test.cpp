@@ -79,7 +79,7 @@ public:
   OpenDoorExecutiveTest(std::string node_name):
     ros::Node(node_name),
     tf_(*this),
-    state_(INITIALIZED)
+    state_(DETECTING)
   {
     // initialize my door
     double tmp; int tmp2;
@@ -95,7 +95,7 @@ public:
     advertise<std_msgs::Float64>("gripper_effort/set_command",1);
     advertise<robot_msgs::Planner2DGoal>("goal", 10);
 
-    subscribe("planner_state", planner_state_,  &OpenDoorExecutiveTest::plannerCallback, 1);
+    subscribe("state", planner_state_,  &OpenDoorExecutiveTest::plannerCallback, 1);
   }
   
   
@@ -159,9 +159,11 @@ public:
     Quaternion orientation(z_angle, 0, M_PI/2.0); 
 
     // move the robot in front of the door
-    Vector robot_pos(door.door_p1.x - door.door_p2.x, door.door_p1.y - door.door_p2.y, door.door_p1.z - door.door_p2.z);
+    Vector robot_pos((door.door_p1.x + door.door_p2.x)/2, 
+		     (door.door_p1.y + door.door_p2.y)/2,
+		     (door.door_p1.z + door.door_p2.z)/2);
     robot_pos = transformPointToFrame(door.header.frame_id, fixed_frame, robot_pos);
-    robot_pos = robot_pos - 1.0*normal;
+    robot_pos = robot_pos - 0.7*normal;
 
     robot_msgs::Planner2DGoal robot_pose_msg;
     robot_pose_msg.header.frame_id = fixed_frame;
@@ -172,8 +174,10 @@ public:
     robot_pose_msg.goal.th = z_angle;
     planner_finished_ = false;
     publish("goal", robot_pose_msg);
+    cout << "moving in front of door" << endl;
     while (!planner_finished_)
       Duration().fromSec(0.1).sleep();
+    cout << "arrived in front of door" << endl;
 
     // move gripper in front of door
     robot_msgs::PoseStamped pose_msg;
