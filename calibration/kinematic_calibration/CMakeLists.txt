@@ -22,6 +22,12 @@ rospack_add_executable(sensor_kinematics_grabber src/sensor_kinematics_grabber.c
 target_link_libraries(sensor_kinematics_grabber kinematic_calibration)
 rospack_link_boost(sensor_kinematics_grabber thread)
 
+rospack_add_executable(run_chain_dumper src/run_chain_dumper.cpp)
+target_link_libraries(run_chain_dumper kinematic_calibration)
+rospack_link_boost(run_chain_dumper thread)
+
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
 # ********** Tests **********
 rospack_add_gtest(test/jacobian_unittest test/jacobian_unittest.cpp)
 target_link_libraries(test/jacobian_unittest kinematic_calibration)
