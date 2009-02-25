@@ -177,7 +177,7 @@ bool SBPLArmPlannerNode::setStart(const robot_msgs::JointTrajPoint &start)
   {
     sbpl_start[i] = start.positions[i];
   }
-//   ROS_INFO("[setStart] start: %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f", sbpl_start[0],sbpl_start[1],sbpl_start[2],sbpl_start[3],sbpl_start[4],sbpl_start[5],sbpl_start[6]);
+   ROS_INFO("start: %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f", sbpl_start[0],sbpl_start[1],sbpl_start[2],sbpl_start[3],sbpl_start[4],sbpl_start[5],sbpl_start[6]);
 
   if(pr2_arm_env_.SetStartJointConfig(sbpl_start, true) == 0)
   {
