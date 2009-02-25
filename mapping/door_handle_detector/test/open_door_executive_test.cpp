@@ -50,13 +50,12 @@ using namespace KDL;
 using namespace ros;
 using namespace std;
 
-static const string fixed_frame = "odom_combined";
-
 
 class OpenDoorExecutiveTest : public ros::Node
 {
 private:
   tf::TransformListener tf_; 
+  string fixed_frame_, robot_frame_;
 
   enum {INITIALIZED, DETECTING, GRASPING, OPENDOOR, SUCCESS, FAILED, FINISHED };
   int state_;
@@ -79,7 +78,7 @@ public:
   OpenDoorExecutiveTest(std::string node_name):
     ros::Node(node_name),
     tf_(*this),
-    state_(DETECTING)
+    state_(INITIALIZED)
   {
     // initialize my door
     double tmp; int tmp2;
@@ -94,8 +93,11 @@ public:
     advertise<robot_msgs::TaskFrameFormalism>("cartesian_tff_right/command",1);
     advertise<std_msgs::Float64>("gripper_effort/set_command",1);
     advertise<robot_msgs::Planner2DGoal>("goal", 10);
-
     subscribe("state", planner_state_,  &OpenDoorExecutiveTest::plannerCallback, 1);
+
+    // frames
+    fixed_frame_ = "odom_combined";
+    robot_frame_ = "base_link";
   }
   
   
@@ -110,17 +112,18 @@ public:
     // start arm trajectory controller
     cout << "turn on moveto controller..." << flush;
     req_switch.stop_controllers.clear(); 
-    req_switch.start_controllers.clear();     req_switch.start_controllers.push_back("cartesian_trajectory_right");  
+    req_switch.start_controllers.clear();     
+    req_switch.start_controllers.push_back("cartesian_trajectory_right");  
     ros::service::call("switch_controller", req_switch, res_switch);
     if (!res_switch.ok)
       return false;
     cout << "successful" << endl;
     
     robot_msgs::PoseStamped init_pose;
-    init_pose.header.frame_id = "base_link";
+    init_pose.header.frame_id = robot_frame_;
     init_pose.pose.position.x = 0.2;
     init_pose.pose.position.y = 0.0;
-    init_pose.pose.position.z = 0.4;
+    init_pose.pose.position.z = 0.6;
     init_pose.pose.orientation.x = 0;
     init_pose.pose.orientation.y = 0;
     init_pose.pose.orientation.z = 0;
@@ -152,21 +155,34 @@ public:
   bool graspDoor(const robot_msgs::Door& door)
   // -------------------------
   {
-    // get orientation in fixed_frame, with X-axis alligned with door normal, and Z-axis up
+    // get orientation
     Vector normal = getNormalOnDoor(door);
-    normal = transformVectorToFrame(door.header.frame_id, fixed_frame, normal);
-    double z_angle = acos(dot(normal, Vector(1,0,0)));
-    Quaternion orientation(z_angle, 0, M_PI/2.0); 
+    normal = transformVectorToFrame(door.header.frame_id, fixed_frame_, normal);
+    Vector x_axis(1,0,0);
+    double z_angle = acos(dot(normal, x_axis));
+    cout << "dot " << dot(normal, x_axis) << endl;
+    cout << "z_angle " << z_angle << endl;
 
-    // move the robot in front of the door
+    // get robot position
     Vector robot_pos((door.door_p1.x + door.door_p2.x)/2, 
 		     (door.door_p1.y + door.door_p2.y)/2,
 		     (door.door_p1.z + door.door_p2.z)/2);
-    robot_pos = transformPointToFrame(door.header.frame_id, fixed_frame, robot_pos);
+    robot_pos = transformPointToFrame(door.header.frame_id, fixed_frame_, robot_pos);
     robot_pos = robot_pos - 0.7*normal;
 
+    // get gripper position
+    robot_msgs::PoseStamped gripper_pose_msg;
+    Stamped<Pose> gripper_pose;
+    gripper_pose.frame_id_ = fixed_frame_;
+    Vector point(door.handle.x, door.handle.y, door.handle.z);
+    point  = transformPointToFrame(door.header.frame_id, fixed_frame_, point);
+    gripper_pose.setOrigin( Vector3(point[0], point[1], point[2]) );
+    gripper_pose.setRotation( Quaternion(z_angle, 0, M_PI/2.0) ); 
+    PoseStampedTFToMsg(gripper_pose, gripper_pose_msg);
+
+    // move the robot in front of the door
     robot_msgs::Planner2DGoal robot_pose_msg;
-    robot_pose_msg.header.frame_id = fixed_frame;
+    robot_pose_msg.header.frame_id = fixed_frame_;
     robot_pose_msg.enable = true;
     robot_pose_msg.timeout = 1000000;
     robot_pose_msg.goal.x = robot_pos(0);
@@ -174,21 +190,17 @@ public:
     robot_pose_msg.goal.th = z_angle;
     planner_finished_ = false;
     publish("goal", robot_pose_msg);
-    cout << "moving in front of door" << endl;
+    cout << "moving in front of door...  " << flush;
     while (!planner_finished_)
       Duration().fromSec(0.1).sleep();
     cout << "arrived in front of door" << endl;
 
     // move gripper in front of door
-    robot_msgs::PoseStamped pose_msg;
-    Vector handle_pos(door.handle.x, door.handle.y, door.handle.z);
-    handle_pos = transformPointToFrame(door.header.frame_id, fixed_frame, handle_pos);
-    Stamped<Pose> pose(Pose(orientation, Vector3(handle_pos(0), handle_pos(1), handle_pos(2))), Time(), fixed_frame);
-    PoseStampedTFToMsg(pose, pose_msg);
-    pose_msg.pose.position.x = pose_msg.pose.position.x - 0.15 * normal(0);
-    pose_msg.pose.position.y = pose_msg.pose.position.y - 0.15 * normal(1);
-    pose_msg.pose.position.z = pose_msg.pose.position.z - 0.15 * normal(2);
-    moveTo(pose_msg);
+    Vector offset = normal * -0.15;
+    gripper_pose_msg.pose.position.x = gripper_pose_msg.pose.position.x + offset[0];
+    gripper_pose_msg.pose.position.y = gripper_pose_msg.pose.position.y + offset[1];
+    gripper_pose_msg.pose.position.z = gripper_pose_msg.pose.position.z + offset[2];
+    moveTo(gripper_pose_msg);
 
     // open the gripper
     std_msgs::Float64 gripper_msg;
@@ -197,10 +209,10 @@ public:
     usleep(1e6 * 4);
     
     // move gripper over door handle
-    pose_msg.pose.position.x = pose_msg.pose.position.x + 0.2 * normal(0);
-    pose_msg.pose.position.y = pose_msg.pose.position.y + 0.2 * normal(1);
-    pose_msg.pose.position.z = pose_msg.pose.position.z + 0.2 * normal(2);
-    moveTo(pose_msg);
+    gripper_pose_msg.pose.position.x = gripper_pose_msg.pose.position.x - offset[0];
+    gripper_pose_msg.pose.position.y = gripper_pose_msg.pose.position.y - offset[1];
+    gripper_pose_msg.pose.position.z = gripper_pose_msg.pose.position.z - offset[2];
+    moveTo(gripper_pose_msg);
 
     // close the gripper
     gripper_msg.data = -2.0;
@@ -301,7 +313,7 @@ public:
 	case GRASPING:{
           cout << "Grasping door... " << endl;
 	  if (graspDoor(my_door_))
-	    state_ = OPENDOOR;
+	    state_ = SUCCESS;
 	  else
 	    state_ = FAILED;
 	  break;
@@ -337,7 +349,8 @@ public:
 
     cout << "giving moveto command for time " 
          << pose.header.stamp.toSec() << " and frame " 
-         << pose.header.frame_id << endl;
+         << pose.header.frame_id << " to position " 
+	 << pose.pose.position.x << " " << pose.pose.position.y << " "<< pose.pose.position.z << endl;
     req_moveto.pose = pose;
     if (!ros::service::call("cartesian_trajectory_right/move_to", req_moveto, res_moveto))
       return false;
@@ -363,8 +376,8 @@ public:
     door2[2] = 0;
 
     // calculate normal in base_link_frame
-    door1 = transformPointToFrame(door_frame, "base_link", door1);
-    door2 = transformPointToFrame(door_frame, "base_link", door2);
+    door1 = transformPointToFrame(door_frame, robot_frame_, door1);
+    door2 = transformPointToFrame(door_frame, robot_frame_, door2);
     tmp = (door1 - door2); tmp.Normalize();
     normal = tmp * Vector(0,0,1);
 
@@ -373,7 +386,7 @@ public:
       normal = normal * -1;
 
     // convert normal to door frame
-    normal = transformVectorToFrame("base_link", door_frame, normal);
+    normal = transformVectorToFrame(robot_frame_, door_frame, normal);
     cout << "normal on door in " << my_door_.header.frame_id << " = " 
          <<  normal[0] << " " << normal[1] << " " << normal[2] << endl;
 
@@ -402,14 +415,16 @@ public:
     if (planner_state_.status == planner_state_.ACTIVE)
       planner_running_ = true;
 
+  void plannerCallback()
+  {
+    if (planner_state_.status == planner_state_.ACTIVE)
+      planner_running_ = true;
+
     if (planner_running_ && planner_state_.status == planner_state_.INACTIVE){
       planner_running_ = false;
       planner_finished_ = true;
     }
   }
-
-
-
 
 }; // class
 

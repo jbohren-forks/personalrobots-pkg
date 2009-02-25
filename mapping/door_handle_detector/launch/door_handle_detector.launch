@@ -23,6 +23,6 @@
 
 
 <!-- Door detection -->
-  <include file="$(find door_handle_detector)/simple_door_handle_detector.launch"/>	
+  <include file="$(find door_handle_detector)/launch/simple_door_handle_detector.launch"/>	
 
 </launch>
