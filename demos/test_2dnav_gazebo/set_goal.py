@@ -160,7 +160,8 @@ class NavStackTest(unittest.TestCase):
         self.bumped = True
     
     def stateInput(self, state):
-        print "state goal: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
+        if self.publish_goal:
+          print "state goal: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
         if state.goal.x == self.target_x and state.goal.y == self.target_y and state.goal.th == self.target_t:
           self.publish_goal = False
     
