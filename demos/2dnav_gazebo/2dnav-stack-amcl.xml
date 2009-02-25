@@ -42,7 +42,7 @@
     </node>
     -->
     <!-- accumulate point_cloud_filtered and publish by service call point_cloud_assembler_srv/build_cloud -->
-    <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" output="screen"  name="point_cloud_assembler">
+    <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" output="screen"  name="point_cloud_assembler_filtered">
       <remap from="scan_in" to="robotlinks_cloud_filtered"/>
       <param name="tf_cache_time_secs" type="double" value="10.0" />
       <param name="max_scans" type="int" value="400" />
@@ -51,11 +51,11 @@
     </node>
     <!-- at laser_tilt_controller/laser_scanner_signal,
          reads accumulated point cloud from point_cloud_assembler_srv by invoking point_cloud_assembler/build_cloud service call,
-         and publishes full_cloud, which is remapped to snapshot_cloud -->
-    <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+         and publishes full_cloud, which is remapped to snapshot_cloud_filtered -->
+    <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter_filtered">
       <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
-      <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
-      <remap from="full_cloud" to="snapshot_cloud" />
+      <remap from="build_cloud" to="point_cloud_assembler_filtered/build_cloud" />
+      <remap from="full_cloud" to="snapshot_cloud_filtered" />
     </node>
 
      <!-- For ground plane detection -->
