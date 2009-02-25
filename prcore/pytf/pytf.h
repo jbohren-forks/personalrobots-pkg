@@ -37,6 +37,11 @@
 class pyTransform
 {
 public:
+  pyTransform():qx(0), qy(0), qz(0), qw(1),
+                x(0), y(0), z(0),
+                frame_id("FRAME_ID_UNINITIALIZED"),
+                parent_id("PARENT_ID_UNINITIALIZED"),
+                stamp(0.0) {};
   double qx, qy,qz,qw;
   double x,y,z;
   std::string frame_id;
