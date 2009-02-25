@@ -32,9 +32,11 @@
     <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_default_controller.xml" output="screen"/>
     <!-- need to scan higher and slower -->
     <!-- this was added to door_handle_detector.launch, so I am commenting it out here for now
-    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/laser_tilt_controller.xml" />
     <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 20 .5 .20" />
     -->
+    <!-- Laset tilt controller -->
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/laser_tilt_controller.xml" />
+    <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 20 .75 .25" />
 
     <!-- load door controllers -->
     <node pkg="mechanism_control" type="spawner.py" args="$(find examples_gazebo)/door_defs/controllers_door.xml" respawn="false" output="screen" />
@@ -55,56 +57,16 @@
     <node pkg="rosviz" type="rxplot" args="/r_gripper_l_finger_tip_bumper/force/vector/x /r_gripper_l_finger_tip_bumper/force/vector/y /r_gripper_l_finger_tip_bumper/force/vector/z" respawn="false" output="screen" />
     -->
 
-
-    <!-- Run this node if you want to aggregate laser_scans into a point cloud -->
-    <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler">
-      <remap from="scan_in" to="tilt_scan"/>
-      <param name="tf_cache_time_secs" type="double" value="10.0" />
-      <param name="max_scans" type="int" value="400" />
-      <param name="ignore_laser_skew" type="bool" value="true" />
-      <param name="fixed_frame" type="string" value="odom_combined" />
-    </node>
-    <!-- Run this node if you want clouds automatically published during laser shutter messages -->
-    <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
-      <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
-      <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
-      <remap from="full_cloud" to="snapshot_cloud" />
-    </node>
-
-
-    <!-- robot self filter -->
-    <include file="$(find robot_self_filter)/start_robotlinks_filter.ros.xml" />
-    <!-- filter out veil effect from range scans -->
-    <!-- already in robot_self_filter
-    <param name="/scan_shadows_filter/filter_min_angle" value="10"/>
-    <param name="/scan_shadows_filter/filter_max_angle" value="170"/>
-    <param name="/scan_shadows_filter/filter_window"    value="2"/>
-    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="false" output="screen" />
-    -->
-
-    <!-- door handle finder -->
-    <include file="$(find door_handle_detector)/door_handle_detector.launch" />
+    <!-- Door detection -->
+    <include file="$(find door_handle_detector)/simple_door_handle_detector.launch"/>	
 
     <!-- Tug Arms -->
     <node pkg="pr2_gazebo" type="tuck_arms.py" output="screen"/>
 
-
-    <!-- publish mapping between odom and base_footprint -->
-    <param name="robot_pose_ekf/freq" value="30.0"/>
-    <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
-    <param name="robot_pose_ekf/odom_used" value="true"/>
-    <param name="robot_pose_ekf/imu_used" value="true"/>
-    <param name="robot_pose_ekf/vo_used" value="false"/>
-    <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" output="screen"/>
-
-
+    <!-- load map -->
     <!--node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" /-->
     <!--node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" /-->
     <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
-    <!-- localization settings -->
-    <!--node pkg="fake_localization" type="fake_localization" respawn="false" output="screen" /-->
-
-    <!-- load map -->
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map_blank.png 0.1" respawn="false" output="screen" />
 
     <!-- nav-stack -->
