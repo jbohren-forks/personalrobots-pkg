@@ -35,13 +35,15 @@ static int PRINTF( const char*, ... )
 int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, vector<outlet_t>& outlets,
 	const char* output_path, const char* filename)
 {
-	// correcting for distortion
-	IplImage* _img = cvCloneImage(src);
-	//		int64 _t1 = cvGetTickCount();
-	cvUndistort2(_img, src, intrinsic_matrix, distortion_params);
-	//		int64 _t2 = cvGetTickCount();
-	//		printf("Undistort time elapsed: %f", double(_t2 - _t1)/cvGetTickFrequency()*1e-6);
-	cvReleaseImage(&_img);
+    if (distortion_params) {
+        // correcting for distortion
+        IplImage* _img = cvCloneImage(src);
+        //		int64 _t1 = cvGetTickCount();
+        cvUndistort2(_img, src, intrinsic_matrix, distortion_params);
+        //		int64 _t2 = cvGetTickCount();
+        //		printf("Undistort time elapsed: %f", double(_t2 - _t1)/cvGetTickFrequency()*1e-6);
+        cvReleaseImage(&_img);
+    }
 	
 	outlet_tuple_t outlet_tuple;
 	

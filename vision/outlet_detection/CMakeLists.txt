@@ -17,6 +17,9 @@ rospack_add_executable(outlet_sample src/sample.cpp)
 target_link_libraries(outlet_sample outlet)
 add_definitions(-D_OUTLET_HR -D_TUNING -D_VERBOSE -D_USE_OUTLET_TUPLE)
 
+rospack_add_executable(outlet_node src/outlet_node.cpp)
+target_link_libraries(outlet_node outlet)
+
 rospack_add_executable(bin/useChessBoard src/useChessBoard.cpp)
 rospack_add_executable(bin/templateMatching src/templateMatching.cpp)
 rospack_add_library(blob cvblobslib/Blob.cpp cvblobslib/BlobResult.cpp cvblobslib/BlobExtraction.cpp)

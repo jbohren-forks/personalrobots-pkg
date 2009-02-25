@@ -7,6 +7,8 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="opencv_latest"/>
+  <depend package="image_msgs"/>
+  <depend package="robot_msgs"/>
   <depend package="rospy"/>
   <depend package="rostest"/>
   <depend package="star_detector"/>
