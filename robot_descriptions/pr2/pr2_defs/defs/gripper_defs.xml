@@ -534,9 +534,9 @@
   <!--                    Calibration                            -->
   <macro name="gripper_calibrator" params="side">
     <controller name="cal_${side}_gripper" type="GripperCalibrationControllerNode">
-      <calibrate joint="${side}_gripper_r_finger_joint"
+      <calibrate joint="${side}_gripper_l_finger_joint"
                  actuator="${side}_gripper_motor"
-                 velocity="10" />
+                 velocity="-10" />
       <pid p="15" i="0" d="0" iClamp="0" />
     </controller>
   </macro>
