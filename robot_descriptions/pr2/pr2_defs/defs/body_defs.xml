@@ -28,7 +28,7 @@
 
       <inertial>
         <mass value="36.248046" />
-        <com xyz="0 0 0" />
+        <com xyz="-0.1 0 -0.0885" />
         <inertia ixx="2.771653750257" ixy="0.004284522609" ixz="-0.160418504506"
                  iyy="2.510019507959" iyz="0.029664468704" izz="0.526432355569" />
       </inertial>
@@ -46,7 +46,7 @@
       <collision>
         <origin xyz="-0.1 0 -0.0885" rpy="0 0 0" />
         <geometry name="${name}_collision">
-          <box size="0.432 0.620 0.823" />
+          <box size="0.30 0.620 0.823" />
         </geometry>
       </collision>
       <map name="${name}_sensor" flag="gazebo">
