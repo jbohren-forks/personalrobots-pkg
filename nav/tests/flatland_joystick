@@ -1,5 +1,0 @@
-#!/bin/bash
-xterm -e `rospack find nav_view`/nav_view &
-xterm -e `rospack find joy`/joy &
-xterm -e `rospack find teleop_base`/teleop_base &
-xterm -e `rospack find flatland`/flatland &
