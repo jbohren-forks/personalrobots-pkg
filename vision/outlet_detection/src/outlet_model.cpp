@@ -58,8 +58,8 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 		}
 #else
 		const int min_size = 1;
-		const int max_size = 10;
-		if(abs(rect.x - 203) < 5 && abs(rect.y - 72) < 5)
+		const int max_size = 20;
+		if(abs(rect.x - 49) < 5 && abs(rect.y - 44) < 5)
 		{
 			int w = 1;
 		}
@@ -151,7 +151,7 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 			continue;
 		}
 #else
-		if(contrast < 1.1f /*|| variation > 0.7f*/ || avg_outside.val[0] < avg_inside*1.0f)
+		if(contrast < 1.0f /*|| variation > 0.7f*/ || avg_outside.val[0] < avg_inside*1.0f)
 		{
 			continue;
 		}
@@ -189,7 +189,7 @@ void find_holes(const vector<outlet_feature_t>& holes, vector<outlet_t>& outlets
 	int max_dist_prox = max_dist/2;
 #else
 	const int min_dist = 14;//7;//20;
-	const int max_dist = 60;//30;//100;
+	const int max_dist = 80;//30;//100;
 	const int max_dist_prox = 2*max_dist;
 #endif //_EUROPE
 	
@@ -262,7 +262,7 @@ void find_holes(const vector<outlet_feature_t>& holes, vector<outlet_t>& outlets
 #else
 			const int min_candidates = 100;
 #endif //_USE_OUTLET_TUPLE
-			const int min_ydist = 30;
+			const int min_ydist = 40;
 #endif //_SMALL
 			if(abs(y1 - y2) > min_ydist)
 			{
