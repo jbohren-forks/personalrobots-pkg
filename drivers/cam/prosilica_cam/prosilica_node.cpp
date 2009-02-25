@@ -340,6 +340,7 @@ private:
 
     if (calibrated_) {
       // Rectified image
+      // TODO: only do this if we have subscribers?
       if (img_.encoding == "bgr") {
         setBgrLayout(rect_img_, frame->Width, frame->Height);
         if (img_bridge_.fromImage(img_, "bgr") &&

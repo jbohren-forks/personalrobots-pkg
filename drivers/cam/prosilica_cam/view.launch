@@ -6,5 +6,8 @@
     <param name="acquisition_mode" type="str" value="Continuous"/>
   </group>
   <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" respawn="false" output="screen"/>
-  <node name="prosilica_view" pkg="prosilica_cam" type="prosilica_view" respawn="false" output="screen"/>
+  <node name="prosilica_view" pkg="prosilica_cam" type="prosilica_view" respawn="false" output="screen">
+    <!--remap from="Image" to="/prosilica/image"/-->
+    <remap from="Image" to="/prosilica/image_rect"/>
+  </node>
 </launch>
