@@ -21,7 +21,6 @@
   <depend package="robot_pose_ekf"/>
   <depend package="pr2_gazebo"/>
   <depend package="pr2_prototype1_gazebo"/>
-  <depend package="transformations"/>
   <depend package="point_cloud_assembler"/>
   <depend package="robot_self_filter"/>
   <depend package="rviz"/>
