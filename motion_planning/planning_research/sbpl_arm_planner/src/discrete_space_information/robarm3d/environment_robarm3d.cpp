@@ -781,11 +781,6 @@ void EnvironmentROBARM3D::ReadConfiguration(FILE* fCfg)
                     fscanf(fCfg, "%s", sTemp);
                     EnvROBARMCfg.EndEffGoals_m[i][k] = atof(sTemp);
                 }
-                else
-                {
-                    printf("Fewer goal positions in environment file than stated.\n");
-                    exit(1);
-                }
             }
         }
         else if(strcmp(sTemp, "endeffectorgoal(meters-rpy):") == 0)
@@ -804,11 +799,6 @@ void EnvironmentROBARM3D::ReadConfiguration(FILE* fCfg)
                 {
                     fscanf(fCfg, "%s", sTemp);
                     EnvROBARMCfg.EndEffGoals_m[i][k] = atof(sTemp);
-                }
-                else
-                {
-                    printf("Fewer goal positions in environment file than stated.\n");
-                    exit(1);
                 }
             }
         }
