@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
@@ -193,9 +194,8 @@ bool SBPLArmPlannerNode::setStart(const robot_msgs::JointTrajPoint &start)
   return true;
 }
 
-bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
+/*bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
 {
-//   ROS_INFO("[setGoals] Setting goal...");
   int num_goals = (int) goals.size();
   tf::Pose tf_pose;
 
@@ -226,9 +226,64 @@ bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
     sbpl_goal[i][11]= m[10];
   }
 
-//   ROS_INFO("Goal:  ");
-//   for(int k=0; k<12; k++)
-//       ROS_INFO("%3.2f  ", sbpl_goal[0][k]);
+  pr2_arm_env_.SetEndEffGoals(sbpl_goal, 0, num_goals,1);
+
+  for(int i=0; i < num_goals; i++)
+  {
+    delete sbpl_goal[i];
+  }
+  delete sbpl_goal;
+
+  if(planner_->set_goal(mdp_cfg_.goalstateid) == 0)
+  {
+    ROS_ERROR("Failed to set goal state\n");
+    return false;
+  }
+  return true;
+}
+*/
+
+
+bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
+{
+  double yaw(0.0), pitch(0.0), roll(0.0);
+  int num_goals = (int) goals.size();
+  tf::Pose tf_pose;
+
+  double **sbpl_goal = new double*[num_goals];
+
+  for(int i=0; i<num_goals; i++)
+  {
+    sbpl_goal[i] = new double[6];
+
+    sbpl_goal[i][0] = goals[i].position.x;
+    sbpl_goal[i][1] = goals[i].position.y;
+    sbpl_goal[i][2] = goals[i].position.z;
+
+    tf::PoseMsgToTF(goals[i],tf_pose);
+    btMatrix3x3 mat = tf_pose.getBasis();
+
+    mat.getEulerZYX(yaw,pitch,roll);
+
+    sbpl_goal[i][3] = roll;
+    sbpl_goal[i][4] = pitch;
+    sbpl_goal[i][5] = yaw;
+
+/*  tf_pose.getOpenGLMatrix(m);
+
+    sbpl_goal[i][3]= m[0];
+    sbpl_goal[i][4]= m[4];
+    sbpl_goal[i][5]= m[8];
+
+    sbpl_goal[i][6]= m[1];
+    sbpl_goal[i][7]= m[5];
+    sbpl_goal[i][8]= m[9];
+
+    sbpl_goal[i][9]= m[2];
+    sbpl_goal[i][10]= m[6];
+    sbpl_goal[i][11]= m[10];
+*/
+  }
 
   pr2_arm_env_.SetEndEffGoals(sbpl_goal, 0, num_goals,1);
 
@@ -245,6 +300,7 @@ bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
   }
   return true;
 }
+
 
 bool SBPLArmPlannerNode::planPath(sbpl_arm_planner_node::PlanPathSrv::Request &req, sbpl_arm_planner_node::PlanPathSrv::Response &resp)
 {
