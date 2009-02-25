@@ -43,6 +43,7 @@
 #include <iostream>
 #include <map>
 #include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
 #include <ros/node.h>
 #include <ros/time.h>
 #include <ros/console.h>
@@ -63,10 +64,13 @@ using ros::Node;
 using vslam::Edge;
 using std::map;
 
+namespace po=boost::program_options;
+
 namespace visual_nav
 {
 
 using robot_msgs::VisualizationMarker; // the message class name
+
 
 
 typedef map<int, NodeId> IdMap;
@@ -95,7 +99,7 @@ public:
 private:
 
   /******************************
-   * Nested classes
+   * Internal classes
    ******************************/
 
   // RAII class to encapsulate lock on roadmap message and object, start_id_, and nav_odom_transform_
@@ -149,8 +153,11 @@ private:
   // Send the current map, robot position, and goal to visualizer
   void publishVisualization ();
 
-  // Given goal pose in nav frame, generate a goal message (in odom frame)
-  Planner2DGoal createGoalMessage (const Pose& goal_pose) const;
+  // Publish a sphere for a given pose and color
+  void publishNodeMarker (const Pose& pose, uint r, uint g, uint b);
+
+  // Publish a goal message to the controller
+  void publishGoalMessage (const Pose& goal_pose);
 
   // Update the nav-to-odom transform given the most recent roadmap and odom messages
   void updateOdomTransform ();
@@ -159,6 +166,10 @@ private:
   /// \throws UnknownExternalId
   NodeId getInternalId(uint id);
 
+
+  /******************************
+   * Fields
+   ******************************/
 
   // Node object
   Node node_;
@@ -183,6 +194,9 @@ private:
   // the radius of the window used to find the exit point of the path 
   double exit_point_radius_;
 
+  // The current exit point we're aiming for (in the odom frame)
+  Pose exit_point_;
+
   // Goal node's (external) id
   NodeId goal_id_;
 
@@ -206,8 +220,8 @@ private:
 
 // Constructor
 RosVisualNavigator::RosVisualNavigator (double exit_point_radius, const NodeId goal_id) : 
-  node_("visual_navigator"), roadmap_(new VisualNavRoadmap), map_received_(false), 
-  odom_received_(false), exit_point_radius_(exit_point_radius), goal_id_(goal_id), num_active_markers_(0)
+  node_("visual_navigator"), map_received_(false), odom_received_(false), 
+  exit_point_radius_(exit_point_radius), goal_id_(goal_id), num_active_markers_(0)
 {
 }
 
@@ -238,11 +252,25 @@ void RosVisualNavigator::run ()
     d.sleep();
 
     updateOdomTransform();
-    publishVisualization();
 
-    PathPtr path = roadmap_->pathToGoal(start_id_, goal_id_);
-    Pose exit_point = roadmap_->pathExitPoint(path, exit_point_radius_);
-    node_.publish("goal", createGoalMessage(exit_point));
+    try {
+      PathPtr path = roadmap_->pathToGoal(start_id_, goal_id_);
+      exit_point_ = transform(nav_odom_transform_, roadmap_->pathExitPoint(path, exit_point_radius_));
+      publishGoalMessage(exit_point_);
+
+      publishVisualization();
+    }
+
+    // Ignore goals that don't exist yet (to deal with the case where we start from an empty map and build up)
+    catch (UnknownNodeIdException& r) 
+    {
+      if (r.id == goal_id_) {
+        ROS_INFO_NAMED ("node", "The goal id %u was unknown, so ignoring", r.id);
+      }
+      else {
+        throw;
+      }
+    }
   }
 }
 
@@ -269,13 +297,60 @@ void RosVisualNavigator::roadmapCallback ()
   roadmap_message_.get_nodes_vec(nodes);
   roadmap_message_.get_edges_vec(edges);
 
+  roadmap_ = RoadmapPtr(new VisualNavRoadmap);
+
   for_each (nodes.begin(), nodes.end(), AddNodeToRoadmap(this));
   for_each (edges.begin(), edges.end(), AddEdgeToRoadmap(this));
 
-  ROS_ASSERT (roadmap_message_.localization>=0);
-  start_id_=id_map_[roadmap_message_.localization];
-  map_received_=true;
+  // We're treating loc>=0 as denoting an actual map, loc<0 as initial empty map, and everything else as an error
+  int localization=roadmap_message_.localization;
+  if (localization<0) {
+    ROS_DEBUG_NAMED ("node", "Treating localization %d as denoting empty roadmap", localization);
+  }
+  else {
+    start_id_=id_map_[localization];
+    map_received_=true;
+  }
+}
 
+
+
+
+/************************************************************
+ * internal
+ ************************************************************/
+
+NodeId RosVisualNavigator::getInternalId(const uint id)
+{
+  IdMap::iterator pos = id_map_.find(id);
+  if (pos==id_map_.end()) {
+    throw UnknownExternalId(id);
+  }
+  return pos->second;
+}
+
+
+void RosVisualNavigator::publishGoalMessage (const Pose& pose) 
+{
+  Planner2DGoal m;
+
+  m.goal.x = pose.x;
+  m.goal.y = pose.y;
+  m.goal.th =pose.theta;
+  m.header.frame_id = "odom";
+  m.enable = 1;
+  node_.publish("goal", m);
+}
+
+
+// Update nav_odom_transform_
+void RosVisualNavigator::updateOdomTransform ()
+{
+  RoadmapLock lock(this);
+  ROS_ASSERT (odom_received_&&map_received_);
+
+  Pose odom_pose(odom_message_.pos.x, odom_message_.pos.y, odom_message_.pos.th);
+  nav_odom_transform_ = getTransformBetween(roadmap_->nodePose(start_id_), odom_pose);
 }
 
 
@@ -350,72 +425,38 @@ void RosVisualNavigator::publishVisualization ()
   }
 
   // Publish a marker for current position
-  VisualizationMarker marker;
-  Pose transformed_pose = transform(nav_odom_transform_, roadmap_->nodePose(start_id_));
-  ROS_DEBUG_STREAM_NAMED ("rviz", "Odom coordinates of start are " << transformed_pose);
-  marker.header.frame_id="odom";
-  marker.header.stamp = ros::Time::now();
-  marker.id=num_active_markers_++;
-  marker.type=VisualizationMarker::SPHERE;
-  marker.action=VisualizationMarker::ADD;
-  marker.x=0;
-  marker.y=0;
-  marker.alpha=255;
-  marker.r=255;
-  marker.g=0;
-  marker.b=0;
-  marker.xScale=5;
-  marker.yScale=5;
-  marker.zScale=5;
-  node_.publish("visualizationMarker", marker);
+  publishNodeMarker(transform(nav_odom_transform_, roadmap_->nodePose(start_id_)), 255, 0, 0);
 
+  // Publish one for exit point
+  publishNodeMarker(exit_point_, 0, 255, 0);
+
+  // And one for the goal
+  publishNodeMarker(transform(nav_odom_transform_, roadmap_->nodePose(goal_id_)), 255, 255, 0);
 
   ROS_DEBUG_STREAM_NAMED ("rviz", "Finished publishing roadmap with " << num_active_markers_ << " edges");
 }
 
 
-
-
-
-/************************************************************
- * internal
- ************************************************************/
-
-NodeId RosVisualNavigator::getInternalId(const uint id)
+void RosVisualNavigator::publishNodeMarker (const Pose& pose, const uint r, const uint g, const uint b)
 {
-  IdMap::iterator pos = id_map_.find(id);
-  if (pos==id_map_.end()) {
-    throw UnknownExternalId(id);
-  }
-  return pos->second;
+  VisualizationMarker marker;
+  marker.header.frame_id="odom";
+  marker.header.stamp = ros::Time::now();
+  marker.id=num_active_markers_++;
+  marker.type=VisualizationMarker::SPHERE;
+  marker.action=VisualizationMarker::ADD;
+  marker.x=pose.x;
+  marker.y=pose.y;
+  marker.yaw=pose.theta;
+  marker.alpha=255;
+  marker.r=r;
+  marker.g=g;
+  marker.b=b;
+  marker.xScale=1;
+  marker.yScale=.4;
+  marker.zScale=.2;
+  node_.publish("visualizationMarker", marker);
 }
-
-
-Planner2DGoal RosVisualNavigator::createGoalMessage (const Pose& pose) const
-{
-  Planner2DGoal m;
-  Pose transformed_pose=transform(nav_odom_transform_, pose);
-
-  m.goal.x = transformed_pose.x;
-  m.goal.y = transformed_pose.y;
-  m.goal.th = transformed_pose.theta;
-  m.header.frame_id = "odom";
-  m.enable = 1;
-  return m;
-}
-
-
-// Update nav_odom_transform_
-void RosVisualNavigator::updateOdomTransform ()
-{
-  RoadmapLock lock(this);
-  ROS_ASSERT (odom_received_&&map_received_);
-
-  Pose odom_pose(odom_message_.pos.x, odom_message_.pos.y, odom_message_.pos.th);
-  nav_odom_transform_ = getTransformBetween(roadmap_->nodePose(start_id_), odom_pose);
-}
-
-
 
 
 } // namespace visual_nav
@@ -433,11 +474,29 @@ using visual_nav::RosVisualNavigator;
 
 int main(int argc, char** argv)
 {
+  double radius;
   ros::init (argc, argv);
 
-  // Eventually, parse the command line arguments
+  // Declare the supported options.
+  po::options_description desc("Allowed options");
+  desc.add_options()
+    ("help,h", "produce help message")
+    ("exit_radius,r", po::value<double>(&radius)->default_value(2.0), "exit radius of path");
+  
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+  po::notify(vm);    
 
-  RosVisualNavigator nav(5.0, 5);
+  if (vm.count("help")) {
+    std::cout << desc << "\n";
+    return 1;
+  }
+
+  
+  ROS_DEBUG_NAMED ("node", "Using exit radius %f", radius);
+  
+
+  RosVisualNavigator nav(radius, 2);
 
   nav.setupTopics();
 

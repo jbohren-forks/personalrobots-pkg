@@ -50,57 +50,49 @@ public:
 };
 
 
-class UnknownNodeIdException: public VisualNavException
+struct UnknownNodeIdException: public VisualNavException
 { 
-public:
-  UnknownNodeIdException (const NodeId id) : VisualNavException (format("Unknown node id %1%") %id) {}
+  UnknownNodeIdException (const NodeId id) : VisualNavException (format("Unknown node id %1%") %id), id(id) {}
+  NodeId id;
 };
 
-class ExistingEdgeException: public VisualNavException
+struct ExistingEdgeException: public VisualNavException
 {
-public:
   ExistingEdgeException (const NodeId id1, const NodeId id2) : VisualNavException(format("Already exists an edge between nodes %1% and %2%") % id1 % id2) {}
 };
 
-class SelfEdgeException: public VisualNavException
+struct SelfEdgeException: public VisualNavException
 {
-public:
   SelfEdgeException (const NodeId id) : VisualNavException(format("Attempted to add self-edge to node %1%") % id) {}
 };
 
-class StartEdgeException: public VisualNavException
+struct StartEdgeException: public VisualNavException
 {
-public:
   StartEdgeException (const NodeId id) : VisualNavException(format("Attempted to add edge from start edge to node %1% without specifying an offset") % id) {}
 };
 
-class UnreachableGoalException: public VisualNavException
+struct UnreachableGoalException: public VisualNavException
 {
-public:
   UnreachableGoalException (const NodeId goal_id) : VisualNavException(format("Goal node %1% was unreachable") % goal_id) {}
 };
 
-class StartNodePoseException: public VisualNavException
+struct StartNodePoseException: public VisualNavException
 {
-public:
   StartNodePoseException () : VisualNavException(format("Attempted to access pose of start node")) {}
 };
 
-class NonstartRelPoseException: public VisualNavException
+struct NonstartRelPoseException: public VisualNavException
 {
-public:
   NonstartRelPoseException () : VisualNavException(format("Attempted to access relative pose field of edge not involving start node")) {}
 };
 
-class ReadRoadmapException: public VisualNavException
+struct ReadRoadmapException: public VisualNavException
 {
-public:
   ReadRoadmapException (const string& filename) : VisualNavException (format("Unable to open %1%") % filename) {}
 };
 
-class UnknownExternalId: public VisualNavException
+struct UnknownExternalId: public VisualNavException
 {
-public:
   UnknownExternalId (uint id) : VisualNavException (format("Unknown (external) node id %1%") % id) {}
 };
 

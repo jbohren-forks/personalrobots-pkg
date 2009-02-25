@@ -173,9 +173,17 @@ Pose VisualNavRoadmap::RoadmapImpl::pathExitPoint (PathPtr p, double r) const
 {
   ROS_ASSERT_MSG (p->size()>0, "Tried to find exit point of length-zero path");
   Pose start_pose = graph_[idVertex(*(p->begin()))].pose;
-  Path::reverse_iterator pos = find_if(p->rbegin()+1, p->rend(), bind(&VisualNavRoadmap::RoadmapImpl::distanceLessThan, this, start_pose, _1, r));
-  ROS_ASSERT_MSG (pos!=p->rend(), "Unexpectedly couldn't find any points on path within radius %f", r);
-  return graph_[idVertex(*(--pos))].pose;
+  if (p->size()==1) {
+    return start_pose;
+  }
+  else {
+    for (uint i=0; i<p->size(); i++) {
+      ROS_DEBUG_STREAM_NAMED ("path_exit", "Path node " << i << " is " << (*p)[i]);
+    }
+    Path::reverse_iterator pos = find_if(p->rbegin()+1, p->rend(), bind(&VisualNavRoadmap::RoadmapImpl::distanceLessThan, this, start_pose, _1, r));
+    ROS_ASSERT_MSG (pos!=p->rend(), "Unexpectedly couldn't find any points on path within radius %f", r);
+    return graph_[idVertex(*(--pos))].pose;
+  }
 }
 
 
