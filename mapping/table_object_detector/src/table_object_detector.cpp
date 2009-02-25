@@ -319,7 +319,7 @@ class TableObjectDetector : public ros::Node
         resp.table.table_max.x = maxPstamped_global.point.x; 
         resp.table.table_max.y = maxPstamped_global.point.y;
       }
-      catch (tf::ConnectivityException)
+      catch (tf::TransformException)
       {
         ROS_ERROR("Failed to transform table bounds from frame %s to frame %s",
                   cloud_in_.header.frame_id.c_str(), global_frame_.c_str());
@@ -359,7 +359,7 @@ class TableObjectDetector : public ros::Node
           }
         }
       }
-      catch (tf::ConnectivityException)
+      catch (tf::TransformException)
       {
         ROS_ERROR("Failed to PolygonalMap from frame %s to frame %s",
                   cloud_down_.header.frame_id.c_str(), global_frame_.c_str());
@@ -677,7 +677,7 @@ class TableObjectDetector : public ros::Node
       {
         tf_.transformPoint (cloud->header.frame_id, viewpoint_laser, viewpoint_cloud);
       }
-      catch (tf::ConnectivityException)
+      catch (tf::TransformException)
       {
         viewpoint_cloud.point.x = viewpoint_cloud.point.y = viewpoint_cloud.point.z = 0.0;
       }
