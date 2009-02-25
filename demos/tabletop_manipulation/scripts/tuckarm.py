@@ -39,54 +39,74 @@ import rospy
 from robot_msgs.msg import JointTraj, JointTrajPoint, MechanismState
 
 import sys
+from math import *
 
 class TuckArm:
   def __init__(self, side):
     self.done = False
-    self.tolerance = 0.1
+    self.tolerance = 0.15
     self.side = side
     self.pub = rospy.Publisher(self.side + '_arm_trajectory_command', JointTraj)
     rospy.Subscriber('mechanism_state', MechanismState, self.mechCallback)
     # Ordering
-    self.joint_names = {self.side + '_shoulder_pan_joint' : 0,
-                        self.side + '_shoulder_lift_joint' : 1,
-                        self.side + '_shoulder_roll_joint' : 2,
-                        self.side + '_elbow_flex_joint' : 3,
-                        self.side + '_forearm_flex_joint' : 4,
-                        self.side + '_wrist_flex_joint' : 5,
-                        self.side + '_wrist_roll_joint': 6}
+    self.joint_names = {self.side[0] + '_shoulder_pan_joint' : 0,
+                        self.side[0] + '_shoulder_lift_joint' : 1,
+                        self.side[0] + '_upper_arm_roll_joint' : 2,
+                        self.side[0] + '_elbow_flex_joint' : 3,
+                        self.side[0] + '_forearm_roll_joint' : 4,
+                        self.side[0] + '_wrist_flex_joint' : 5,
+                        self.side[0] + '_wrist_roll_joint': 6}
 
     self.positions = [[],[]]
     # 2-step tuck trajectory, tailored for each arm
     for j in range(0,2):
       for i in range(0,len(self.joint_names)):
         self.positions[j].append(0.0)
-      self.positions[j][self.joint_names[self.side + '_elbow_flex_joint']] = -2.25
+      self.positions[j][self.joint_names[self.side[0] + '_elbow_flex_joint']] = -2.0
 
     if self.side == 'left':
-      self.positions[1][self.joint_names[self.side + '_shoulder_lift_joint']] = 1.57
-      self.positions[1][self.joint_names[self.side + '_shoulder_roll_joint']] = 1.57
+      self.positions[1][self.joint_names[self.side[0] + '_shoulder_lift_joint']] = 1.57
+      self.positions[1][self.joint_names[self.side[0] + '_upper_arm_roll_joint']] = 1.57
     else:
-      self.positions[1][self.joint_names[self.side + '_shoulder_lift_joint']] = 1.57
-      self.positions[1][self.joint_names[self.side + '_shoulder_roll_joint']] = -1.57
+      self.positions[1][self.joint_names[self.side[0] + '_shoulder_lift_joint']] = 1.57
+      self.positions[1][self.joint_names[self.side[0] + '_upper_arm_roll_joint']] = -1.57
 
     print self.positions
+
+  # Surely this stuff exists in Python somewhere...
+  def normalizeAngle(self, a):
+    return atan2(sin(a),cos(a))
+  def shortestAngularDistance(self, a, b):
+    a = self.normalizeAngle(a)
+    b = self.normalizeAngle(b)
+    d1 = a-b
+    d2 = 2*pi - abs(d1)
+    if d1 > 0:
+      d2 *= -1.0
+    if abs(d1) < abs(d2):
+      return d1
+    else:
+      return d2
   
   def mechCallback(self, msg):
-    self.done = True
     for j in self.joint_names:
       found = False
       for mj in msg.joint_states:
         if mj.name == j:
           found = True
-          # TODO: shortest angular distance
-          if (mj.position - self.positions[-1][self.joint_names[j]]) > self.tolerance:
-            done = False
+          diff = self.shortestAngularDistance(mj.position,
+                                              self.positions[-1][self.joint_names[j]])
+          if  diff > self.tolerance:
+            #print '%s: %f - %f = %f'%(j,mj.position,
+            #                          self.positions[-1][self.joint_names[j]],
+            #                          diff)
+            self.done = False
             return
           break
       if not found:
         print "Couldn't find joint %s!"%(j)
         sys.exit(-1)
+    self.done = True  
 
   def tuckArm(self):
     msg = JointTraj()
@@ -97,6 +117,10 @@ class TuckArm:
       msg.points[i].time = 0.0
   
     self.pub.publish(msg)
+
+    while not self.done:
+      print '[TuckArm] Waiting for goal achievement...'
+      rospy.sleep(1.0)
 
 USAGE = 'tuckarm.py {left|right}'
 
@@ -110,6 +134,7 @@ if __name__ == '__main__':
   ta = TuckArm(side)
   rospy.init_node('tuckarm', anonymous=True)
   #HACK
-  rospy.sleep(2.0)
+  import time
+  time.sleep(3.0)
 
   ta.tuckArm()
