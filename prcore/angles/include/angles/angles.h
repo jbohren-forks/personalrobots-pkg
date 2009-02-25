@@ -139,17 +139,17 @@ namespace angles
    * \brief Returns the min and max amount (in radians) that can be moved from "from" angle to "left_limit" and "right_limit".
    * \return returns false if "from" angle does not lie in the interval [left_limit,right_limit]
    * \param from - "from" angle - must lie in [-M_PI, M_PI]
-   * \param min_angle - left limit of valid interval for angular position - must lie in [-M_PI, M_PI], left and right limits are specified on the unit circle w.r.t to a reference pointing inwards
-   * \param max_angle - right limit of valid interval for angular position - must lie in [-M_PI, M_PI], left and right limits are specified on the unit circle w.r.t to a reference pointing inwards 
-   * \param min_delta - minimum (delta) angle (in radians) that can be moved from "from" position before hitting the joint stop
-   * \param max_delta - maximum (delta) angle (in radians) that can be movedd from "from" position before hitting the joint stop
+   * \param left_limit - left limit of valid interval for angular position - must lie in [-M_PI, M_PI], left and right limits are specified on the unit circle w.r.t to a reference pointing inwards
+   * \param right_limit - right limit of valid interval for angular position - must lie in [-M_PI, M_PI], left and right limits are specified on the unit circle w.r.t to a reference pointing inwards 
+   * \param result_min_delta - minimum (delta) angle (in radians) that can be moved from "from" position before hitting the joint stop
+   * \param result_max_delta - maximum (delta) angle (in radians) that can be movedd from "from" position before hitting the joint stop
    */
-  static bool find_min_max_delta(double from, double min_angle, double max_angle, double &result_min_delta, double &result_max_delta)
+  static bool find_min_max_delta(double from, double left_limit, double right_limit, double &result_min_delta, double &result_max_delta)
   {
     double delta[4];
 
-    delta[0] = shortest_angular_distance(from,min_angle);
-    delta[1] = shortest_angular_distance(from,max_angle);
+    delta[0] = shortest_angular_distance(from,left_limit);
+    delta[1] = shortest_angular_distance(from,right_limit);
 
     delta[2] = two_pi_complement(delta[0]);
     delta[3] = two_pi_complement(delta[1]);
@@ -176,7 +176,7 @@ namespace angles
     {
       result_min_delta = delta_max_2pi;
       result_max_delta = delta_min_2pi;
-      if(min_angle == -M_PI && max_angle == M_PI)
+      if(left_limit == -M_PI && right_limit == M_PI)
         return true;
       else
         return false;
