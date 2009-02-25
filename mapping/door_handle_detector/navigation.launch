@@ -1,0 +1,99 @@
+<launch>
+  <group name="wg">
+
+    <param name="/global_frame_id" value="odom_combined_offset"/>
+    <node pkg="tf" type="transform_sender" args="-20 -20 0 0 0 0 odom_combined_offset odom_combined 10"/>
+
+    <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" />
+    <!--node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/laser_tilt_controller.xml" /-->
+    <!--node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 2 .75 .30" /-->
+
+    <param name="axis_vx" value="3" type="int"/>
+    <param name="axis_vy" value="2" type="int"/>
+    <param name="axis_vw" value="0" type="int"/>
+    <param name="pan" value="4" type="int"/>
+    <param name="tilt" value="5" type="int"/>
+    <param name="max_vw" value="1.0" />
+    <param name="max_vx" value="1.0" />
+    <param name="max_vy" value="1.0" />
+    <param name="deadman_button" value="4" type="int"/>
+    <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" respawn="true" machine="four" />
+
+    <!-- Filter for tilt laser shadowing/veiling -->
+    <!--node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" /-->
+
+    <param name="robot_pose_ekf/freq" value="30.0"/>
+    <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
+    <param name="robot_pose_ekf/odom_used" value="true"/>
+    <param name="robot_pose_ekf/imu_used" value="true"/>
+    <param name="robot_pose_ekf/vo_used" value="false"/>
+    
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" machine="four"/>
+
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-empty-0.05.pgm 0.05" respawn="true" machine="four" />
+
+
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen" name="move_base_node">
+      <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
+      <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
+      <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
+      <param name="move_base/plannerType" value="ARAPlanner"/>
+      <param name="move_base/environmentType" value="2D"/>
+      <param name="move_base/controller_frequency" value="30.0"/>
+      <param name="move_base/map_update_frequency" value="2.0"/>
+      <param name="move_base/planner_frequency" value="0.0"/>
+      <param name="move_base/plannerTimeLimit" value="0.5"/>
+      <param name="costmap_2d/base_laser_max_range" value="20.0"/>
+      <param name="costmap_2d/tilt_laser_max_range" value="3.0"/>
+      <param name="costmap_2d/lethal_obstacle_threshold" value="100.0"/>
+      <param name="/costmap_2d/z_threshold_max" value="2.0"/>
+      <param name="/costmap_2d/z_threshold_min" value="0.13"/>
+      <param name="costmap_2d/no_information_value" value="255"/>
+      <param name="costmap_2d/freespace_projection_height" value="2.0"/>
+      <param name="costmap_2d/inflation_radius" value="0.65"/>
+      <param name="costmap_2d/circumscribed_radius" value="0.46"/>
+      <param name="costmap_2d/inscribed_radius" value="0.325"/>
+      <param name="costmap_2d/raytrace_window" value="10.0"/>
+      <param name="costmap_2d/weight" value="0.1"/>
+
+
+      <param name="trajectory_rollout/map_size" value="4.0" />
+      <param name="trajectory_rollout/acc_limit_x" value="2.5" />
+      <param name="trajectory_rollout/acc_limit_y" value="2.5" />
+      <param name="trajectory_rollout/acc_limit_th" value="3.2" />
+      <param name="trajectory_rollout/sim_time" value="1.0" />
+      <param name="trajectory_rollout/sim_granularity" value="0.05" />
+      <param name="trajectory_rollout/vx_samples" value="15" />
+      <param name="trajectory_rollout/vtheta_samples" value="15" />
+      <param name="trajectory_rollout/path_distance_bias" value="0.6" />
+      <param name="trajectory_rollout/goal_distance_bias" value="0.8" />
+      <param name="trajectory_rollout/occdist_scale" value="0.2" />
+      <param name="trajectory_rollout/heading_lookahead" value="0.325" />
+      <param name="trajectory_rollout/oscillation_reset_dist" value="0.05" />
+      <param name="trajectory_rollout/holonomic_robot" value="true" />
+      <param name="trajectory_rollout/max_vel_x" value="0.5" />
+      <param name="trajectory_rollout/min_vel_x" value="0.1" />
+      <param name="trajectory_rollout/max_vel_th" value="1.0" />
+      <param name="trajectory_rollout/min_vel_th" value="-1.0" />
+      <param name="trajectory_rollout/min_in_place_vel_th" value="0.4" />
+      <param name="trajectory_rollout/freespace_model" value="true" />
+      <param name="trajectory_rollout/dwa" value="false" />
+      <param name="trajectory_rollout/simple_attractor" value="false" />
+
+      <param name="trajectory_rollout/yaw_goal_tolerance" value=".05" />
+      <param name="trajectory_rollout/xy_goal_tolerance" value=".1" />
+
+      <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 2 Hz. This is
+     way too slow for the real system, but necessary for rosstage, which does not reliably meet a 5Hz update rate. -->
+      <param name="costmap_2d/base_laser_update_rate" value="2.0"/>
+
+      <!-- Setting these parameters to 0.0 disables the watchdog on them. For stage this is required since we
+     are not getting any data -->
+      <param name="costmap_2d/tilt_laser_update_rate" value="0.0"/>
+      <param name="costmap_2d/low_obstacle_update_rate" value="0.0"/>
+      <param name="costmap_2d/stereo_update_rate" value="0.0"/>
+    </node>
+
+  </group>
+</launch>
