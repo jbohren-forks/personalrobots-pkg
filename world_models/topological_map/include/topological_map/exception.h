@@ -103,6 +103,12 @@ class FileFormatException: public TopologicalMapException
 public: FileFormatException (uint line_num) : TopologicalMapException(format("Ran into trouble parsing line %1% of topological map file") % line_num) {}
 };
 
+/// \brief Exception for not finding a path in the roadmap
+class NoPathFoundException: public TopologicalMapException
+{
+public: NoPathFoundException (ConnectorId i, ConnectorId j) : TopologicalMapException(format("No path found in roadmap between nodes %1% and %2%") % i % j) {}
+};
+
 
 
 } // namespace topological_map

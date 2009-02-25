@@ -39,6 +39,7 @@
 
 #include <topological_map/topological_map_impl.h>
 #include <topological_map/region_graph.h>
+#include <topological_map/roadmap.h>
 #include <algorithm>
 #include <ros/console.h>
 #include <ros/assert.h>
@@ -122,7 +123,7 @@ Point2D TopologicalMap::MapImpl::cellCorner (const Cell2D& cell) const
  ************************************************************/
 
 TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution) : 
-  region_graph_(new RegionGraph), resolution_(resolution), grid_(grid)
+  region_graph_(new RegionGraph), roadmap_(new Roadmap), resolution_(resolution), grid_(grid)
 {
 }
 
@@ -208,8 +209,7 @@ RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int t
   
     Point2D border_point=findBorderPoint(neighbor_finder.cell1, neighbor_finder.cell2);
 
-    connectors_.push_back(border_point);
-    ConnectorId connector_id=connectors_.size();
+    ConnectorId connector_id = roadmap_->addNode(border_point);
     RegionId r1, r2;
     r1 = min(region_id, *iter);
     r2 = max(region_id, *iter);
@@ -260,18 +260,14 @@ RegionId TopologicalMap::MapImpl::containingRegion (const Point2D& p) const
 
 ConnectorId TopologicalMap::MapImpl::pointConnector (const Point2D& p) const
 {
-  vector<Point2D>::const_iterator pos=find(connectors_.begin(), connectors_.end(), p);
-  if (pos==connectors_.end()) {
-    throw UnknownConnectorException(p.x, p.y);
-  }
-  return 1+(pos-connectors_.begin());
+  return roadmap_->pointId(p);
 }
 
 
 
 Point2D TopologicalMap::MapImpl::connectorPosition (const ConnectorId id) const
 {
-  return getConnector(id);
+  return roadmap_->connectorPoint(id);
 }
 
 
@@ -293,26 +289,22 @@ ConnectorId TopologicalMap::MapImpl::connectorBetween (const RegionId r1, const 
   return pos->second;
 }
 
-Point2D TopologicalMap::MapImpl::getConnector(const ConnectorId id) const
-{
-  if (id>connectors_.size() || id<=0) {
-    throw UnknownConnectorIdException(id);
-  }
-  return connectors_[id-1];
-}
+  struct HasId 
+  {
+    HasId(const ConnectorId id) : id(id) {}
+    bool operator() (pair<const RegionPair, ConnectorId> pair) { return pair.second==id; }
+    const ConnectorId id;
+  };
+
 
 RegionPair TopologicalMap::MapImpl::adjacentRegions (const ConnectorId id) const
 {
-  Cell2D cell=containingCell(getConnector(id));
-  RegionId r=containingRegion(cell);
-  RegionIdVector neighbors=this->neighbors(r);
-  for (RegionIdVector::iterator iter=neighbors.begin(); iter!=neighbors.end(); ++iter) {
-    if (connectorBetween(r, *iter)==id) {
-      return RegionPair(r,*iter);
-    }
+  RegionConnectorMap::const_iterator iter = find_if(region_connector_map_.begin(), region_connector_map_.end(), HasId(id));
+  if (iter==region_connector_map_.end()) {
+    ROS_ASSERT("Error finding adjacent pair of regions for connector");
   }
-  ROS_ASSERT("Error finding adjacent pair of regions for connector");
-  return RegionPair(); // to prevent warning
+  
+  return iter->first;
 }
 
 

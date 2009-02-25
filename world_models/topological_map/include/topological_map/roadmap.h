@@ -42,7 +42,7 @@
 #define TOPOLOGICAL_MAP_ROADMAP_H
 
 #include <topological_map/topological_map.h>
-#include <boost/graph/adjacency_graph_list.hpp>
+#include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
 
 namespace topological_map {
@@ -72,6 +72,8 @@ typedef adjacency_list<listS, listS, undirectedS, NodeInfo, EdgeInfo> RoadmapImp
 typedef graph_traits<RoadmapImpl>::vertex_descriptor RoadmapVertex;
 typedef graph_traits<RoadmapImpl>::edge_descriptor RoadmapEdge;
 typedef graph_traits<RoadmapImpl>::adjacency_iterator RoadmapAdjacencyIterator;
+typedef graph_traits<RoadmapImpl>::vertex_iterator VertexIterator;
+typedef map<ConnectorId, RoadmapVertex> ConnectorIdVertexMap;
 
 typedef vector<ConnectorId> ConnectorIdVector;
 
@@ -87,7 +89,10 @@ public:
   void setCost (ConnectorId i, ConnectorId j, double cost);
   void removeNode (ConnectorId i);
 
-  double costBetween (ConnectorId i, ConnectorId j) const;
+  ConnectorId pointId (const Point2D& p) const;
+  Point2D connectorPoint (const ConnectorId id) const;
+
+  double costBetween (ConnectorId i, ConnectorId j);
   ConnectorIdVector shortestPath (ConnectorId i, ConnectorId j);
 
 private:
@@ -101,6 +106,7 @@ private:
   void resetIndices();
 
   ConnectorId next_id_;
+  ConnectorIdVertexMap id_vertex_map_;
   RoadmapImpl graph_;
 
 };

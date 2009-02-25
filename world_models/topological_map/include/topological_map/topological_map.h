@@ -60,6 +60,11 @@ struct Point2D
   double x,y;
 };
 
+ostream& operator<< (ostream& str, const Point2D& p);
+bool operator== (const Point2D& p1, const Point2D& p2);
+
+
+
 
 typedef boost::multi_array<bool, 2> OccupancyGrid;
 typedef OccupancyGrid::size_type occ_grid_size;

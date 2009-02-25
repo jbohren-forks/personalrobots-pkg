@@ -151,7 +151,6 @@ struct RemoveFromMap
   RegionMap& region_map;
 };
 
-/// \todo this doesn't deal with connectors
 void RegionGraph::removeRegion (const RegionId id)
 {
   RegionGraphVertex v=idVertex(id);

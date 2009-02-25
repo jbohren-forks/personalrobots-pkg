@@ -41,6 +41,8 @@ namespace topological_map
 using std::map;
 
 class RegionGraph;
+class Roadmap;
+
 
 typedef map<RegionPair, ConnectorId> RegionConnectorMap;
 
@@ -105,17 +107,15 @@ private:
   MapImpl(const MapImpl&);
   MapImpl& operator= (const MapImpl&);
 
-  Point2D getConnector(const ConnectorId id) const;
   Cell2D containingCell(const Point2D& p) const;
   Point2D cellCorner (const Cell2D& cell) const;
-  ConnectorId cellConnector (const Cell2D& p) const;
   ConnectorId connectorBetween (const RegionId r1, const RegionId r2) const;
   Point2D findBorderPoint(const Cell2D& cell1, const Cell2D& cell2) const;
   bool pointOnMap (const Point2D& p) const;
 
   boost::shared_ptr<RegionGraph> region_graph_;
+  boost::shared_ptr<Roadmap> roadmap_;
 
-  vector<Point2D> connectors_;
   RegionConnectorMap region_connector_map_;
   
   const double resolution_;

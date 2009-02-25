@@ -48,8 +48,18 @@
 namespace topological_map
 {
 
+using boost::tie;
+using std::map;
+
+
+typedef map<RoadmapVertex, double> DistanceMap;
+typedef map<RoadmapVertex, RoadmapVertex> PredecessorMap;
+typedef boost::associative_property_map<DistanceMap> DistancePmap;
+typedef boost::associative_property_map<PredecessorMap> PredecessorPmap;
+
+
 /************************************************************
- * Roadmap modification
+ * Basic ops
  ************************************************************/
 
 ConnectorId Roadmap::addNode (const Point2D& p)
@@ -72,9 +82,63 @@ void Roadmap::removeNode (const ConnectorId i)
 }
 
 
+
+struct CorrespondsToPoint
+{
+  CorrespondsToPoint (const RoadmapImpl& graph, const Point2D& point) : graph(graph), point(point) {}
+  bool operator() (const RoadmapVertex& v) { return graph[v].point==point; }
+  const RoadmapImpl& graph;
+  const Point2D& point;
+};
+
+ConnectorId Roadmap::pointId (const Point2D& p) const
+{
+  VertexIterator iter, end;
+  tie(iter, end) = vertices(graph_);
+  VertexIterator pos = find_if(iter, end, CorrespondsToPoint(graph_, p));
+  if (pos==end) {
+    throw UnknownConnectorException(p.x, p.y);
+  }
+  return graph_[*pos].id;
+}
+
+
+struct CorrespondsToId 
+{
+  CorrespondsToId (const RoadmapImpl& graph, const ConnectorId id) : graph(graph), id(id) {}
+  bool operator() (const RoadmapVertex& v) { return graph[v].id==id; }
+  const RoadmapImpl& graph;
+  const ConnectorId id;
+};
+
+Point2D Roadmap::connectorPoint (const ConnectorId id) const
+{
+  VertexIterator iter, end;
+  tie (iter, end) = vertices(graph_);
+  VertexIterator pos = find_if(iter, end, CorrespondsToId(graph_, id));
+  if (pos==end) {
+    throw UnknownConnectorIdException(id);
+  }
+  return graph_[*pos].point;
+}
+
+
 /************************************************************
  * Shortest paths
  ************************************************************/
+
+
+/// \todo make the dijkstra visitor exit early when goal is discovered
+struct DijkstraVisitor : public boost::default_dijkstra_visitor
+{
+  DijkstraVisitor (const RoadmapVertex& goal) : goal(goal) {}
+  void discover_vertex(const RoadmapVertex& v, const RoadmapImpl& graph) const
+  {
+    ROS_DEBUG_STREAM_NAMED("dijkstra", "Discovering vertex " << graph[v].id << " at point " << graph[v].point);
+  }
+  RoadmapVertex goal;
+};
+
 
 double Roadmap::costBetween (const ConnectorId i, const ConnectorId j)
 {
@@ -82,30 +146,92 @@ double Roadmap::costBetween (const ConnectorId i, const ConnectorId j)
   const RoadmapVertex w = idVertex(j);
 
   resetIndices();
+  DistanceMap distances;
+  PredecessorMap predecessors; // We shouldn't actually need this, but adding it removes a warning about boost/dijkstra_shortest_paths.hpp...
 
-  dijkstra_shortest_paths(graph_, start, weight_map(get(&EdgeInfo::cost, graph_)).
-                          vertex_index_map(get(&NodeInfo::index, graph_)));
-
-  // Need to extract cost
+  dijkstra_shortest_paths(graph_, v, weight_map(get(&EdgeInfo::cost, graph_)).
+                          vertex_index_map(get(&NodeInfo::index, graph_)).
+                          distance_map(DistancePmap(distances)).visitor(DijkstraVisitor(w)).
+                          predecessor_map(PredecessorPmap(predecessors)));
+  ROS_ASSERT_MSG(distances.find(w)!=distances.end(), "Couldn't find vertex %u in returned distance map from Dijkstra", j);
+  return distances[w];
 }
+
+
+struct TransformVertexToId
+{
+  TransformVertexToId(const RoadmapImpl& graph) : graph(graph) {}
+  ConnectorId operator() (const RoadmapVertex& v) { return graph[v].id; }
+  const RoadmapImpl& graph;
+};
+
                          
 ConnectorIdVector Roadmap::shortestPath (const ConnectorId i, const ConnectorId j)
 {
-  // shortest path with pred map
+  const RoadmapVertex v = idVertex(i);
+  const RoadmapVertex w = idVertex(j);
+
+  resetIndices();
+  PredecessorMap predecessors;
+
+  dijkstra_shortest_paths(graph_, v, weight_map(get(&EdgeInfo::cost, graph_)).
+                          vertex_index_map(get(&NodeInfo::index, graph_)).
+                          predecessor_map(PredecessorPmap(predecessors)).
+                          visitor(DijkstraVisitor(w)));
+    
+
+
+  // Extract path from predecessor map
+  vector<RoadmapVertex> reverse_path(1,w);
+  RoadmapVertex current = w;
+
+  while (current!=predecessors[current]) {
+    ROS_DEBUG_NAMED("dijkstra", "Predecessor of %d is %d", graph_[current].id, graph_[predecessors[current]].id);
+    reverse_path.push_back(current=predecessors[current]);
+  }
+  if (current!=v){
+    throw NoPathFoundException(i,j);
+  }
+
+  // Put it in source-to-goal order, replace vertex descriptors with ids, and return
+  ConnectorIdVector path(reverse_path.size());
+  transform(reverse_path.rbegin(), reverse_path.rend(), path.begin(), TransformVertexToId(graph_));
+  return path;
 }
+
 
 
 /************************************************************
  * internal
  ************************************************************/
 
-RoadmapEdge Roadmap::ensureEdge(const RoadmapVertex v, const RoadmapVertex w);
+RoadmapEdge Roadmap::ensureEdge(const RoadmapVertex v, const RoadmapVertex w)
+{
+  pair<RoadmapEdge, bool> p = edge(v,w,graph_);
+  if (!(p.second)) {
+    add_edge(v,w,graph_);
+    p = edge(v,w,graph_);
+    ROS_ASSERT(p.second);
+  }
+  return p.first;
+}
 
-RoadmapVertex Roadmap::idVertex(const ConnectorId i) const;
+RoadmapVertex Roadmap::idVertex(const ConnectorId i) const
+{
+  ConnectorIdVertexMap::const_iterator iter = id_vertex_map_.find(i);
+  if (iter==id_vertex_map_.end()) {
+    throw UnknownConnectorIdException(i);
+  }
+  return iter->second;
+}
 
-void Roadmap::resetIndices();
-
-
+void Roadmap::resetIndices()
+{
+  VertexIterator iter, end;
+  uint ind=0;
+  for (tie(iter,end) = vertices(graph_); iter!=end; ++iter) {
+    graph_[*iter].index=ind++;
+  }
 }
 
 
