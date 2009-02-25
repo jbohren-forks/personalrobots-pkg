@@ -130,29 +130,6 @@ typedef struct ENV_ROBARM_CONFIG
     int medCostRadius_c;
     int lowCostRadius_c;
 
-    //end effector goal orientation
-    double GoalOrientationMOE[3][3];
-
-    short unsigned int ** EndEffGoals_c;
-    double ** EndEffGoals_m;
-    double ** EndEffGoalOrientations;
-    int nEndEffGoals;
-    bool bGoalIsSet;
-
-    double ** EndEffGoalRPY;
-    double GoalRPY_MOE[3];
-
-    //robot arm dimensions/positions
-    double LinkLength_m[NUMOFLINKS];
-    double LinkStartAngles_d[NUMOFLINKS];
-    double LinkGoalAngles_d[NUMOFLINKS];
-
-    //3D grid of world space 
-    char*** Grid3D;
-    char*** LowResGrid3D;
-    double GridCellWidth;           // cells are square (width=height=depth)
-    double LowResGridCellWidth;     // cells are square (width=height=depth)
-
     //DH Parameters
     double DH_alpha[NUMOFLINKS_DH];
     double DH_a[NUMOFLINKS_DH];
@@ -174,6 +151,32 @@ typedef struct ENV_ROBARM_CONFIG
 
     //coords of goal - shouldn't be here
     short unsigned int goalcoords[NUMOFLINKS];
+
+    //robot arm dimensions/positions
+    double LinkLength_m[NUMOFLINKS];
+    double LinkStartAngles_d[NUMOFLINKS];
+    double LinkGoalAngles_d[NUMOFLINKS];
+
+    //starting joint configuration
+    double JointStartConfig_d[NUMOFLINKS];
+
+    //end effector goal orientation
+    double GoalOrientationMOE[3][3];
+
+    short unsigned int ** EndEffGoals_c;
+    double ** EndEffGoals_m;
+    double ** EndEffGoalOrientations;
+    int nEndEffGoals;
+    bool bGoalIsSet;
+
+    double ** EndEffGoalRPY;
+    double GoalRPY_MOE[3];
+
+    //3D grid of world space 
+    char*** Grid3D;
+    char*** LowResGrid3D;
+    double GridCellWidth;           // cells are square (width=height=depth)
+    double LowResGridCellWidth;     // cells are square (width=height=depth)
 
     //options
     bool use_DH;
@@ -302,6 +305,7 @@ public:
      * @param pCfg pointer to file with the Arm planner parameters
      */
     bool InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg);
+//     bool SetEndEffGoals(std::vector < std::vector<double> >* EndEffGoals);
 
     //this should be removed  - it returns the planner Epsilon
     double GetEpsilon();
@@ -362,6 +366,7 @@ private:
     void ContXYZ2Cell(double x, double y, double z, int *pX, int *pY, int *pZ); //temporary
     void ContXYZ2Cell(double* xyz, double gridcellwidth, int dims_c[3], short unsigned int *pXYZ);
     void HighResGrid2LowResGrid(short unsigned int * XYZ_hr, short unsigned int * XYZ_lr);
+    void unsafeContXYZ2Cell(double x, double y, double z, short unsigned int *pX, short unsigned int *pY, short unsigned int *pZ);
 
     //bounds/error checking
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);    
