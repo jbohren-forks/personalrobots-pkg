@@ -45,11 +45,13 @@ class TiltScan:
 
   def tiltScan(self, period, amplitude, offset):
     svcname = self.controller + '/set_profile'
-    print 'Waiting for service ' + svcname
+    print '[TiltScan] Waiting for service ' + svcname
     rospy.wait_for_service(svcname)
     s = rospy.ServiceProxy(svcname, SetProfile)
+    print '[TiltScan] Calling service ' + svcname
+    # profile type 4 is sine
     resp = s.call(SetProfileRequest(0.0, 0.0, 0.0, 0.0, 
-                                    'sine', period, amplitude, offset))
+                                    4, period, amplitude, offset))
         
     if resp:
       # Set the collision_map_buffer's window size accordingly, to remember a
@@ -57,6 +59,7 @@ class TiltScan:
       rospy.client.set_param('collision_map_buffer/window_size', 
                              int(self.laser_buffer_time / (period / 2.0)))
 
+      print '[TiltScan] Waiting for a full sweep at the new speed...'
       # Wait until the laser's swept through most of its period at the new
       # speed
       rospy.sleep(.75 * period)
