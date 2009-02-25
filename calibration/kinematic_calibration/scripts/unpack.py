@@ -46,7 +46,8 @@ class dcamImage:
       self.data = ma.data
     else:
       ma = m.uint8_data # MultiArray
-      self.data = "".join([chr(x) for x in ma.data])
+      #self.data = "".join([chr(x) for x in ma.data])
+      self.data = ma.data
     d = ma.layout.dim
     assert d[0].label == "height"
     assert d[1].label == "width"
