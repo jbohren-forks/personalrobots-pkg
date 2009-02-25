@@ -34,36 +34,14 @@
 #define TOPOLOGICAL_MAP_TOPOLOGICAL_MAP_IMPL_H
 
 #include "topological_map.h"
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
-
 
 namespace topological_map
 {
 
-using boost::listS;
-using boost::undirectedS;
-using boost::adjacency_list;
-using boost::graph_traits;
-using std::pair;
 using std::map;
 
-struct RegionInfo
-{
-  int type;
-  RegionPtr region;
-  RegionId id;
-  
-  RegionInfo ();
-  RegionInfo (const int region_type, const RegionPtr region_cells, const RegionId region_id) :
-    type(region_type), region(region_cells), id(region_id) {}
-};
+class RegionGraph;
 
-typedef adjacency_list<listS, listS, undirectedS, RegionInfo> TopologicalGraph;
-typedef graph_traits<TopologicalGraph>::vertex_descriptor TopologicalGraphVertex;
-typedef graph_traits<TopologicalGraph>::adjacency_iterator AdjacencyIterator;
-typedef map<Cell2D, RegionId> RegionMap;
-typedef map<RegionId, TopologicalGraphVertex> IdVertexMap;
 typedef map<RegionPair, ConnectorId> RegionConnectorMap;
 
 // Implementation details for top map
@@ -72,7 +50,7 @@ class TopologicalMap::MapImpl
 public:
 
   /// Default constructor creates empty graph
-  MapImpl(const OccupancyGrid& grid, double resolution=1.0) : next_id_(1), resolution_(resolution), grid_(grid) {}
+  MapImpl(const OccupancyGrid& grid, double resolution=1.0);
 
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
@@ -127,31 +105,20 @@ private:
   MapImpl(const MapImpl&);
   MapImpl& operator= (const MapImpl&);
 
-  TopologicalGraphVertex idVertex(const RegionId id) const;
-
   Point2D getConnector(const ConnectorId id) const;
-
   Cell2D containingCell(const Point2D& p) const;
   Point2D cellCorner (const Cell2D& cell) const;
   ConnectorId cellConnector (const Cell2D& p) const;
-
   ConnectorId connectorBetween (const RegionId r1, const RegionId r2) const;
-  
-  void connectRegions (const TopologicalGraphVertex& v, const TopologicalGraphVertex& v2);
+  Point2D findBorderPoint(const Cell2D& cell1, const Cell2D& cell2) const;
+  bool pointOnMap (const Point2D& p) const;
 
-  Point2D findBorderPoint(const Cell2D& cell1, const Cell2D& cell2);
+  boost::shared_ptr<RegionGraph> region_graph_;
 
-  IdVertexMap id_vertex_map_;
-  RegionMap region_map_;
-  TopologicalGraph graph_;
-  RegionIdVector regions_;
-  
   vector<Point2D> connectors_;
   RegionConnectorMap region_connector_map_;
   
-  RegionId next_id_;
-
-  double resolution_;
+  const double resolution_;
   const OccupancyGrid& grid_;
 };
 

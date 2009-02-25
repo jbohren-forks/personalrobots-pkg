@@ -38,6 +38,7 @@
  */
 
 #include <topological_map/topological_map_impl.h>
+#include <topological_map/region_graph.h>
 #include <algorithm>
 #include <ros/console.h>
 #include <ros/assert.h>
@@ -58,6 +59,10 @@ using std::max;
 namespace topological_map
 {
 
+/************************************************************
+ * Miscellaneous
+ ************************************************************/
+
 ostream& operator<< (ostream& str, const Point2D& p)
 {
   str << "(" << p.x << ", " << p.y << ")";
@@ -68,8 +73,6 @@ bool operator== (const Point2D& p1, const Point2D& p2)
 {
   return (p1.x==p2.x) && (p1.y==p2.y);
 }
-
-
 
 uint numRows(const OccupancyGrid& grid)
 {
@@ -83,16 +86,169 @@ uint numCols(const OccupancyGrid& grid)
   return dims[1];
 }
 
+
+bool TopologicalMap::MapImpl::isObstacle (const Point2D& p) const
+{
+  if (pointOnMap(p)) {
+    Cell2D cell = containingCell(p);
+    return grid_[cell.r][cell.c];
+  }
+  return false;
+}
+
+bool TopologicalMap::MapImpl::pointOnMap (const Point2D& p) const
+{
+  return (p.x>=0) && (p.y>=0) && (p.x<=numCols(grid_)*resolution_) && (p.y<=numRows(grid_)*resolution_);
+}
+
+Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
+{
+  if (!pointOnMap(p)) {
+    throw UnknownPointException(p.x,p.y);
+  }
+  return Cell2D(floor((float)p.y/resolution_), floor((float)p.x/resolution_));
+}
+
+Point2D TopologicalMap::MapImpl::cellCorner (const Cell2D& cell) const
+{
+  return Point2D(cell.c*resolution_,cell.r*resolution_);
+}
+
+
+
+
+/************************************************************
+ * MapImpl
+ ************************************************************/
+
+TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution) : 
+  region_graph_(new RegionGraph), resolution_(resolution), grid_(grid)
+{
+}
+
+
+/****************************************
+ * RegionGraph const ops
+ ****************************************/
+
 RegionId TopologicalMap::MapImpl::containingRegion (const Cell2D& p) const
 {
-  RegionMap::const_iterator pos=region_map_.find(p);
-  if (pos!=region_map_.end()) {
-    return pos->second;
-  }
-  else {
-    throw UnknownGridCellException(p);
-  }
+  return region_graph_->containingRegion(p);
 }
+
+int TopologicalMap::MapImpl::regionType (const RegionId id) const
+{
+  return region_graph_->regionType(id);
+}
+
+
+RegionIdVector TopologicalMap::MapImpl::neighbors (const RegionId id) const
+{
+  return region_graph_->neighbors(id);
+}
+
+
+
+
+RegionPtr TopologicalMap::MapImpl::regionCells (const RegionId id) const 
+{
+  return region_graph_->regionCells(id);
+}
+
+
+const RegionIdVector& TopologicalMap::MapImpl::allRegions () const
+{
+  return region_graph_->allRegions();
+}
+
+
+
+/****************************************
+ * RegionGraph modification
+ ****************************************/
+
+
+struct NeighborFinder 
+{
+  NeighborFinder (RegionPtr region) : found(false), region(region) {}
+  void operator() (const Cell2D& cell) 
+  {
+    if (!found)
+    { 
+      cell1 = cell;
+      int r=cell1.r;
+      int c=cell1.c;
+      found = (belongs(r+1,c) || belongs(r-1,c) || belongs(r,c+1) || belongs(r,c-1));
+    }
+  }
+
+  bool belongs (int r, int c)
+  {
+    cell2=Cell2D(r,c);
+    return region->find(cell2)!=region->end();
+  }
+    
+  bool found; 
+  RegionPtr region;
+  Cell2D cell1, cell2;
+};
+
+  
+
+RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int type)
+{
+  RegionId region_id = region_graph_->addRegion(region, type);
+  RegionIdVector neighbors = region_graph_->neighbors(region_id);
+
+
+  for (RegionIdVector::iterator iter=neighbors.begin(); iter!=neighbors.end(); ++iter) {
+    
+    NeighborFinder neighbor_finder = for_each(region->begin(), region->end(), NeighborFinder(region_graph_->regionCells(*iter)));
+    ROS_ASSERT (neighbor_finder.found);
+  
+    Point2D border_point=findBorderPoint(neighbor_finder.cell1, neighbor_finder.cell2);
+
+    connectors_.push_back(border_point);
+    ConnectorId connector_id=connectors_.size();
+    RegionId r1, r2;
+    r1 = min(region_id, *iter);
+    r2 = max(region_id, *iter);
+    region_connector_map_[RegionPair(r1,r2)] = connector_id;
+  }
+  return region_id;
+}
+
+
+
+
+/// \todo this doesn't deal with connectors
+void TopologicalMap::MapImpl::removeRegion (const RegionId id)
+{
+  region_graph_->removeRegion(id);
+}
+
+
+
+/****************************************
+ * Connector-related ops
+ ****************************************/
+
+
+
+Point2D TopologicalMap::MapImpl::findBorderPoint(const Cell2D& cell1, const Cell2D& cell2) const
+{
+  ROS_DEBUG_STREAM_NAMED("border_point", "Looking for border point between cells " << cell1 << " and " << cell2);
+  double dy=(cell2.r-cell1.r+1)/2.0;
+  double dx=(cell2.c-cell1.c+1)/2.0;
+  ROS_ASSERT_MSG (((dy==.5)||(dy==0)||(dy==1)) && ((dx==.5)||(dx==0)||(dx==1)), "(%f, %f) was an illegal value in findBorderPoint", dx, dy);
+  Point2D p=cellCorner(cell1);
+  p.y+=dy*resolution_;
+  p.x+=dx*resolution_;
+  ROS_DEBUG_STREAM_NAMED ("border_point", "Border point is " << p);
+  return p;
+}
+  
+
 
 RegionId TopologicalMap::MapImpl::containingRegion (const Point2D& p) const
 {
@@ -118,29 +274,6 @@ Point2D TopologicalMap::MapImpl::connectorPosition (const ConnectorId id) const
   return getConnector(id);
 }
 
-
-int TopologicalMap::MapImpl::regionType (const RegionId id) const
-{
-  return graph_[idVertex(id)].type;
-}
-
-
-// Functor for mapping neighbor vertices to ids
-struct GetNeighborId
-{
-  GetNeighborId(const TopologicalGraph& graph) : g(graph) {}
-  RegionId operator() (const TopologicalGraphVertex& v) { return g[v].id; }
-  const TopologicalGraph& g;
-};
-
-RegionIdVector TopologicalMap::MapImpl::neighbors (const RegionId id) const
-{
-  AdjacencyIterator v, v_end;
-  tie(v,v_end) = adjacent_vertices(idVertex(id), graph_);
-  RegionIdVector neighbors;
-  transform (v, v_end, back_inserter(neighbors), GetNeighborId(graph_));
-  return neighbors;
-}
 
 
 vector<ConnectorId> TopologicalMap::MapImpl::adjacentConnectors (const RegionId id) const
@@ -183,192 +316,9 @@ RegionPair TopologicalMap::MapImpl::adjacentRegions (const ConnectorId id) const
 }
 
 
-bool TopologicalMap::MapImpl::isObstacle (const Point2D& p) const
-{
-  Cell2D cell;
-  try {
-    cell=containingCell(p);
-    RegionId r=containingRegion(cell);
-    ROS_DEBUG_NAMED("obstacle", "not an obstacle as it belongs to region %u", r);
-    return false;
-  }
-  catch (UnknownPointException& e) {
-    ROS_DEBUG_NAMED("obstacle", "not an obstacle as it's off the map");
-    return false;
-  }
-  catch (UnknownGridCellException& e) {
-    ROS_DEBUG_STREAM_NAMED("obstacle", "obstacle as it's on the map at cell " << cell << " but has no region");
-    return true;
-  }
-}
-
-
-RegionPtr TopologicalMap::MapImpl::regionCells (const RegionId id) const 
-{
-  return graph_[idVertex(id)].region;
-}
-
-
-const RegionIdVector& TopologicalMap::MapImpl::allRegions () const
-{
-  return regions_;
-}
-
-
-struct NeighborFinder 
-{
-  NeighborFinder (RegionPtr region) : found(false), region(region) {}
-  void operator() (const Cell2D& cell) 
-  {
-    if (!found)
-    { 
-      cell1 = cell;
-      int r=cell1.r;
-      int c=cell1.c;
-      found = (belongs(r+1,c) || belongs(r-1,c) || belongs(r,c+1) || belongs(r,c-1));
-    }
-  }
-
-  bool belongs (int r, int c)
-  {
-    cell2=Cell2D(r,c);
-    return region->find(cell2)!=region->end();
-  }
-    
-  bool found; 
-  RegionPtr region;
-  Cell2D cell1, cell2;
-};
-
-
-void TopologicalMap::MapImpl::connectRegions (const TopologicalGraphVertex& v, const TopologicalGraphVertex& v2)
-{
-  add_edge (v, v2, graph_);
-  NeighborFinder neighbor_finder = for_each(graph_[v].region->begin(), graph_[v].region->end(), NeighborFinder(graph_[v2].region));
-  ROS_ASSERT (neighbor_finder.found);
-
-  Point2D border_point=findBorderPoint(neighbor_finder.cell1, neighbor_finder.cell2);
-
-  connectors_.push_back(border_point);
-  ConnectorId id=connectors_.size();
-  RegionId r1, r2;
-  r1 = min(graph_[v].id, graph_[v2].id);
-  r2 = max(graph_[v].id, graph_[v2].id);
-  region_connector_map_[RegionPair(r1,r2)] = id;
-}
-
-
-Point2D TopologicalMap::MapImpl::findBorderPoint(const Cell2D& cell1, const Cell2D& cell2)
-{
-  ROS_DEBUG_STREAM_NAMED("border_point", "Looking for border point between cells " << cell1 << " and " << cell2);
-  double dy=(cell2.r-cell1.r+1)/2.0;
-  double dx=(cell2.c-cell1.c+1)/2.0;
-  ROS_ASSERT_MSG (((dy==.5)||(dy==0)||(dy==1)) && ((dx==.5)||(dx==0)||(dx==1)), "(%f, %f) was an illegal value in findBorderPoint", dx, dy);
-  Point2D p=cellCorner(cell1);
-  p.y+=dy*resolution_;
-  p.x+=dx*resolution_;
-  ROS_DEBUG_STREAM_NAMED ("border_point", "Border point is " << p);
-  return p;
-}
-  
-
-  
-
-RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int type)
-{
-
-  // Make sure there's no overlap with existing regions
-  for (Region::iterator region_iter=region->begin(); region_iter!=region->end(); ++region_iter) {
-    if (region_map_.find(*region_iter)!=region_map_.end()) {
-      throw OverlappingRegionException(*region_iter, region_map_.find(*region_iter)->second);
-    }
-  }
-
-  // maintains invariant that regions_ is sorted
-  regions_.push_back(next_id_);
-
-  // Add vertex and edges
-  TopologicalGraphVertex v=add_vertex(RegionInfo(type, region, next_id_), graph_);
-
-  // Neighbors that have been added so far
-  set<TopologicalGraphVertex> seen_neighbors;
-
-  // Update the region index and add edges to neighboring regions if necessary
-  for (Region::iterator region_iter=region->begin(); region_iter!=region->end(); ++region_iter) {
-    region_map_[*region_iter]=next_id_;
-    vector<Cell2D> cell_neighbors=cellNeighbors(*region_iter);
-    for (vector<Cell2D>::iterator neighbor_iter=cell_neighbors.begin(); neighbor_iter!=cell_neighbors.end(); ++neighbor_iter) {
-
-      RegionMap::iterator neighbor_ptr=region_map_.find(*neighbor_iter);
-      if (neighbor_ptr!=region_map_.end() && neighbor_ptr->second!=next_id_) {
-        TopologicalGraphVertex neighbor_vertex=idVertex(neighbor_ptr->second);
-        if (seen_neighbors.find(neighbor_vertex)==seen_neighbors.end()) {
-          seen_neighbors.insert(neighbor_vertex);
-          connectRegions(v, neighbor_vertex);
-        }   
-      }
-    }
-    id_vertex_map_[next_id_]=v; 
-  }
-  
-  return next_id_++;
-}
-
-
-
-struct RemoveFromMap
-{
-  RemoveFromMap(RegionMap& m) : region_map(m) {}
-  void operator() (const Cell2D& c) { region_map.erase(region_map.find(c)); }
-  RegionMap& region_map;
-};
-
-/// \todo this doesn't deal with connectors
-void TopologicalMap::MapImpl::removeRegion (const RegionId id)
-{
-  TopologicalGraphVertex v=idVertex(id);
-
-  // Remove from regions_ and id_vertex_map - we don't do any check as it must exist if we got here without an exception
-  regions_.erase(lower_bound(regions_.begin(), regions_.end(), id));
-  id_vertex_map_.erase(id_vertex_map_.find(id));
-
-  // Remove all cells in this region from the region map
-  for_each(graph_[v].region->begin(), graph_[v].region->end(), RemoveFromMap(region_map_));
-
-  // Remove the vertex
-  clear_vertex(v, graph_);
-  remove_vertex(v, graph_);
-}
-
-
-TopologicalGraphVertex TopologicalMap::MapImpl::idVertex(const RegionId id) const
-{
-  IdVertexMap::const_iterator map_iter=id_vertex_map_.find(id);
-  if (map_iter != id_vertex_map_.end()) {
-    return map_iter->second;
-  }
-  else {
-    throw UnknownRegionException(id);
-  }
-}
-
-Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
-{
-  if ((p.x<0) || (p.y<0) || (p.x>numCols(grid_)*resolution_) || (p.y>numRows(grid_)*resolution_)) {
-    throw UnknownPointException(p.x,p.y);
-  }
-  return Cell2D(floor((float)p.y/resolution_), floor((float)p.x/resolution_));
-}
-
-Point2D TopologicalMap::MapImpl::cellCorner (const Cell2D& cell) const
-{
-  return Point2D(cell.c*resolution_,cell.r*resolution_);
-}
-
-
-
+ 
 /************************************************************
- * Topological graph ops are forwarded to implementation
+ * TopologicalMap ops are forwarded to MapImpl
  ************************************************************/
 
 TopologicalMap::TopologicalMap (const OccupancyGrid& grid, double resolution) : map_impl_(new MapImpl(grid, resolution))
@@ -416,7 +366,6 @@ RegionPair TopologicalMap::adjacentRegions (const ConnectorId id) const
   return map_impl_->adjacentRegions(id);
 }
 
-// Add new vertex with new unique id, and do bookkeeping
 RegionId TopologicalMap::addRegion(const RegionPtr region, const int type) 
 {
   return map_impl_->addRegion(region, type);
