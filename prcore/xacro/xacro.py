@@ -157,7 +157,11 @@ def process_includes(doc, base_dir):
                 filename = os.path.join(base_dir, filename)
             f = None
             try:
-                f = open(filename)
+                try:
+                    f = open(filename)
+                except IOError, e:
+                    print elt
+                    raise XacroException("included file \"%s\" could not be opened: %s" % (filename, str(e)))
                 try:
                     included = parse(f)
                 except Exception, e:

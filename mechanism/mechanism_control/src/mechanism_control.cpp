@@ -365,7 +365,7 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
       ROS_ERROR("Could spawn controller %s because controller type %s does not exist",
                 add_reqs[i].name.c_str(), add_reqs[i].type.c_str());
       continue;
-    }
+    }MONOTONIC
     timespec init_start, init_end;
     clock_gettime(CLOCK_REALTIME, &init_start);
     bool initialized = c->initXmlRequest(state_, add_reqs[i].config, add_reqs[i].name);
@@ -403,11 +403,12 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
   }
 
   // Success!  Swaps in the new set of controllers.
+  int former_current_controllers_list_ = current_controllers_list_;
   current_controllers_list_ = free_controllers_list;
   clock_gettime(CLOCK_REALTIME, &end_time);
 
   // Destroys the old controllers list when the realtime thread is finished with it.
-  while (used_by_realtime_ != current_controllers_list_)
+  while (used_by_realtime_ == former_current_controllers_list_)
     usleep(200);
   from.clear();
 
