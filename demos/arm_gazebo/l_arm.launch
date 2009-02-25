@@ -23,8 +23,8 @@
     <!-- for visualization -->
     <!--
     <node pkg="rviz" type="rviz" respawn="false" output="screen" />
-    <include file="$(find arm_gazebo)/debug_plot.launch"/>
     -->
+    <include file="$(find arm_gazebo)/debug_plot.launch"/>
 
   </group>
 </launch>
