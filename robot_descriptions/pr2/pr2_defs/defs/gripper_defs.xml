@@ -21,6 +21,13 @@
   <property name="finger_tip_mu"              value="50.0" />
   <property name="finger_joint_effort_limit"  value="10.0" />
 
+  <macro name="pr2_finger_limits" params="reflect">
+    <limit effort="100"
+           velocity="0.5" k_velocity="1.0"
+           min="0" max="1.57"
+           safety_length_min="0" safety_length_max="0.01" k_position="1.0" />
+  </macro>
+
   <macro name="pr2_finger" params="prefix parent">
 
     <!-- Finger proximal digit -->
@@ -29,9 +36,7 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.0 -1.0" />
-      <limit effort="${finger_joint_effort_limit}" min="${gripper_min_angle}" max="${gripper_max_angle}"
-             k_position="1.0" k_velocity="1.0" velocity="0.5"
-             safety_length_min="0.001" safety_length_max="0.001" />
+      <pr2_finger_limits reflect="1" />
       <joint_properties damping="${finger_damping}" />
       <map name="${prefix}_l_finger_joint_feedback" flag="gazebo">
         <elem key="provideFeedback" value="true"/>
@@ -105,9 +110,7 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.0 -1.0" />
-      <limit effort="${finger_joint_effort_limit}" min="${-gripper_max_angle}" max="${-gripper_min_angle}"
-             k_position="0" k_velocity="0" velocity="0.0"
-             safety_length_min="0.0" safety_length_max="0.0" />
+      <pr2_finger_limits reflect="1" />
       <joint_properties damping="${finger_damping}" />
       <mimic name="${prefix}_l_finger_joint" mult="${-1}" offset="0"/>
       <map name="${prefix}_r_finger_mimic" flag="gazebo">
@@ -187,9 +190,7 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.0 -1.0" />
-      <limit effort="${finger_joint_effort_limit}" min="${-gripper_max_angle}" max="${-gripper_min_angle}"
-             k_position="0" k_velocity="0" velocity="0.0"
-             safety_length_min="0.0" safety_length_max="0.0" />
+      <pr2_finger_limits reflect="1" />
       <joint_properties damping="${finger_tip_damping}" />
       <mimic name="${prefix}_l_finger_joint" mult="-1" offset="0"/>
       <map name="${prefix}_l_finger_tip_mimic" flag="gazebo">
@@ -269,9 +270,7 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.0 -1.0" />
-      <limit effort="${finger_joint_effort_limit}" min="${gripper_min_angle}" max="${gripper_max_angle}"
-             k_position="0" k_velocity="0" velocity="0.0"
-             safety_length_min="0.0" safety_length_max="0.0" />
+      <pr2_finger_limits reflect="1" />
       <joint_properties damping="${finger_tip_damping}" />
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_r_finger_tip_mimic" flag="gazebo">
