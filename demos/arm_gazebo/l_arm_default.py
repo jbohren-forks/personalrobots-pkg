@@ -55,7 +55,7 @@ TEST_DURATION = 60.0
 COMMAND_INTERVAL = 5.0
 PI = 3.14159
 
-CMD_SH_PAN_MIN     =  0*(PI/4-1.5)   #range [ PI/4-1.5   PI/4+1.5 ]
+CMD_SH_PAN_MIN     =  (PI/4-1.5)   #range [ PI/4-1.5   PI/4+1.5 ]
 CMD_SH_LFT_MIN     =  -0.4       #range [ -0.4       1.5 ]
 CMD_UA_ROL_MIN     =  1.55-2.35  #range [ 1.55-2.35  1.55+2.35 ]
 CMD_EL_FLX_MIN     =  -2.3       #range [ -2.3       0.1 ]
@@ -64,7 +64,7 @@ CMD_WR_FLX_MIN     =  -0.1       #range [ -0.1       2.2 ]
 CMD_WR_ROL_MIN     =  -0*PI         #range [  ]
 CMD_GR_POS_MIN     =  0.0        #range [ 0          0.548 ]
 
-CMD_SH_PAN_MAX     =  0*(PI/4+1.5)    #range [ PI/4-1.5   PI/4+1.5 ]
+CMD_SH_PAN_MAX     =  (PI/4+1.5)    #range [ PI/4-1.5   PI/4+1.5 ]
 CMD_SH_LFT_MAX     =  1.5         #range [ -0.4       1.5 ]
 CMD_UA_ROL_MAX     =  1.55+2.35   #range [ 1.55-2.35  1.55+2.35 ]
 CMD_EL_FLX_MAX     =  0.1         #range [ -2.3       0.1 ]
