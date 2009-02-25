@@ -122,6 +122,8 @@ class TuckArm:
       print '[TuckArm] Waiting for goal achievement...'
       rospy.sleep(1.0)
 
+    return True
+
 USAGE = 'tuckarm.py {left|right}'
 
 if __name__ == '__main__':

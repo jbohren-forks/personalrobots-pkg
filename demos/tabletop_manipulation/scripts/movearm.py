@@ -41,34 +41,60 @@ from robot_msgs.msg import JointState
 
 import sys
 
-def callback(data):
-  print 'Got status: %d'%(data.status)
+class MoveArm:
+  def __init__(self, side):
+    self.side = side
+    self.status = None
+    self.pub = rospy.Publisher(self.side + '_arm_goal', MoveArmGoal)
+    rospy.Subscriber(self.side + '_arm_state', MoveArmState, self.movearmCallback)
 
-def go(v1, v2):
-  pub = rospy.Publisher('right_arm_goal', MoveArmGoal)
-  rospy.Subscriber('right_arm_state', MoveArmState, callback)
+  def movearmCallback(self, msg):
+    #print '[MoveArm] Got status: %d'%(msg.status)
+    self.goal_id = msg.goal_id
+    self.status = msg.status
+
+  def moveArm(self, joints):
+    msg = MoveArmGoal()
+    msg.configuration = []
+    for j in joints:
+      msg.configuration.append(JointState(j,joints[j],0.0,0.0,0.0,0))
+    msg.enable = 1
+    msg.timeout = 0.0
+    self.pub.publish(msg)
+    print '[MoveArm] Sending arm to: ' + `msg.configuration`
+
+    # HACK to get around the lack of proper goal_id support
+    print '[MoveArm] Waiting for goal to be taken up...'
+    rospy.sleep(2.0)
+
+    while self.status == None or self.status == MoveArmState.ACTIVE:
+      print '[MoveArm] Waiting for goal achievement...'
+      rospy.sleep(1.0)
+
+    return self.status == MoveArmState.INACTIVE
+  
+USAGE = 'movearm.py {left|right} <shoulder_lift> <shoulder_pan>'
+if __name__ == '__main__':
+  if len(sys.argv) != 4 or (sys.argv[1] != 'left' and sys.argv[1] != 'right'):
+    print USAGE
+    sys.exit(-1)
+
+  side = sys.argv[1]
+  joints = {} 
+  joints[side[0] + '_shoulder_lift_joint']  = float(sys.argv[2])
+  joints[side[0] + '_shoulder_pan_joint']  = float(sys.argv[3])
+
+  ma = MoveArm(side)
 
   rospy.init_node('talker', anonymous=True)
+
   # HACK
   import time
   time.sleep(3.0)
 
-  msg = MoveArmGoal()
-  msg.configuration = []
-  msg.configuration.append(JointState('r_shoulder_lift_joint',v1,0.0,0.0,0.0,0))
-  msg.configuration.append(JointState('r_shoulder_pan_joint',v2,0.0,0.0,0.0,0))
-  msg.enable = 1
-  msg.timeout = 0.0
+  res = ma.moveArm(joints)
 
-  pub.publish(msg)
-  print 'Publishing: ' + `msg.configuration`
-
-if __name__ == '__main__':
-  if len(sys.argv) < 3:
-    print 'Using defaults'
-    v1 = -0.5
-    v2 = -1.0
+  if res:
+    print 'Success!'
   else:
-    v1 = float(sys.argv[1])
-    v2 = float(sys.argv[2])
-  go(v1,v2)
+    print 'Failure!'
