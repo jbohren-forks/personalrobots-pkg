@@ -53,6 +53,7 @@ from deprecated_msgs.msg import *
 from transformations import *
 from numpy import *
 
+FLOAT_TOL = 0.0001
 
 class NavStackTest(unittest.TestCase):
     def __init__(self, *args):
@@ -161,9 +162,13 @@ class NavStackTest(unittest.TestCase):
     
     def stateInput(self, state):
         if self.publish_goal:
-          print "state goal: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
-        if state.goal.x == self.target_x and state.goal.y == self.target_y and state.goal.th == self.target_t:
-          self.publish_goal = False
+          print "target: ", self.target_x, ",", self.target_y, ",", self.target_t
+          print "state.goal: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
+          if abs(state.goal.x-self.target_x)<FLOAT_TOL and \
+             abs(state.goal.y-self.target_y)<FLOAT_TOL and \
+             abs(state.goal.th-self.target_t)<FLOAT_TOL:
+            print "state goal is published: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
+            self.publish_goal = False
     
     def test_set_goal(self):
         print "LNK\n"
