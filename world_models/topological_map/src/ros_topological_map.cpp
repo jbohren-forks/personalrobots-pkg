@@ -88,11 +88,11 @@ void RosTopologicalMap::loadMap (void)
 
 
 
-RosTopologicalMap::RosTopologicalMap (uint bottleneck_size, uint bottleneck_skip, uint inflation_radius, const string& pgm_output_dir)
+RosTopologicalMap::RosTopologicalMap (uint bottleneck_size, uint bottleneck_width, uint bottleneck_skip, uint inflation_radius, const string& pgm_output_dir)
 {
   loadMap();
-  // For now width=size
-  topological_map_ = topologicalMapFromGrid(occupancy_grid_, 1.0, bottleneck_size, bottleneck_size, bottleneck_skip, inflation_radius, pgm_output_dir);
+
+  topological_map_ = topologicalMapFromGrid(occupancy_grid_, 1.0, bottleneck_size, bottleneck_width, bottleneck_skip, inflation_radius, pgm_output_dir);
 }
 
 
@@ -118,19 +118,21 @@ int main(int argc, char** argv)
 {
   unsigned bottleneck_size=0;
   unsigned bottleneck_skip=1;
+  unsigned bottleneck_width=1;
   unsigned inflation_radius=0;
   char* ppm_output_dir=0;
 
   while (1) {
     static struct option options[] =
       {{"bottleneck-size", required_argument, 0, 'b'},
+       {"bottleneck-width", required_argument, 0, 'w'},
        {"bottleneck-skip", required_argument, 0, 'k'},
        {"inflation-radius", required_argument, 0, 'r'},
        {"ppm-output-dir", required_argument, 0, 'p'},
        {0, 0, 0, 0}};
 
     int option_index=0;
-    int c = getopt_long (argc, argv, "b:k:r:p:", options, &option_index);
+    int c = getopt_long (argc, argv, "b:w:k:r:p:", options, &option_index);
     if (c==-1) {
       break;
     }
@@ -141,6 +143,9 @@ int main(int argc, char** argv)
         break;
       case 'k':
         bottleneck_skip=atoi(optarg);
+        break;
+      case 'w':
+        bottleneck_width=atoi(optarg);
         break;
       case 'r':
         inflation_radius=atoi(optarg);
@@ -160,7 +165,7 @@ int main(int argc, char** argv)
 
   ros::init(argc, argv);
   ros::Node node("ros_topological_map");
-  topological_map::RosTopologicalMap ros_top_map(bottleneck_size, bottleneck_skip, inflation_radius, ppm_output_dir ? string(ppm_output_dir) : string());
+  topological_map::RosTopologicalMap ros_top_map(bottleneck_size, bottleneck_width, bottleneck_skip, inflation_radius, ppm_output_dir ? string(ppm_output_dir) : string());
 
   return 0;
 }

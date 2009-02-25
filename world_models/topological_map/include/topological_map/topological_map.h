@@ -46,6 +46,9 @@ using std::string;
 using std::ostream;
 using std::pair;
 
+
+
+
 typedef unsigned int RegionId;
 typedef unsigned int ConnectorId;
 typedef vector<RegionId> RegionIdVector;
@@ -58,13 +61,24 @@ struct Point2D
 };
 
 
-/// Represents a topological map of a 2-dimensional discrete grid decomposed into regions of various types
+typedef boost::multi_array<bool, 2> OccupancyGrid;
+typedef OccupancyGrid::size_type occ_grid_size;
+
+// Utilities for the occupancy grid
+uint numRows(const OccupancyGrid& grid);
+uint numCols(const OccupancyGrid& grid);
+
+
+
+
+
+/// \brief Represents a topological map of a 2-dimensional discrete grid decomposed into regions of various types, with connectors between them
 class TopologicalMap
 {
 public:
 
   /// Default constructor makes an empty map (see also topologicalMapFromGrid)
-  TopologicalMap(uint num_rows, uint num_cols, double resolution=1.0);
+  TopologicalMap(const OccupancyGrid&, double resolution=1.0);
 
   /// \return Id of region containing a grid cell \a p
   /// \throws UnknownGridCellException
@@ -123,34 +137,46 @@ public:
   /// \todo currently doesn't work properly with connectors
   void removeRegion (const RegionId id);
 
+  /// \post Topological map is written to \a filename in format that can be read back using loadFromFile
+  /// \throws FileOpenException
+  void saveToFile (const string& filename) const;
+
 private:
 
-  /// Avoid client compilation dependency on implementation details
-  class GraphImpl;
-  boost::shared_ptr<GraphImpl> graph_impl_;
-
-  /// Forbid copy and assign
+  // Forbid copy and assign
   TopologicalMap(const TopologicalMap&);
   TopologicalMap& operator= (const TopologicalMap&);
+
+  // Avoid client dependency on implementation classes
+  class MapImpl;
+  boost::shared_ptr<MapImpl> map_impl_;
+
 };
+
+
+
 
 
 /************************************************************
  * Creation
  ************************************************************/
 
- typedef boost::multi_array<bool, 2> OccupancyGrid;
- typedef boost::shared_ptr<TopologicalMap> TopologicalMapPtr;
- typedef OccupancyGrid::size_type occ_grid_size;
+typedef boost::shared_ptr<TopologicalMap> TopologicalMapPtr;
 
- // Utilities for the occupancy grid
- uint numRows(const OccupancyGrid& grid);
- uint numCols(const OccupancyGrid& grid);
+/// \return shared_ptr to a new topological map generated using a bottleneck analysis of \a grid.  The region types of the returned map are either OPEN or DOORWAY
+TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_width, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir);
 
- /// \return shared_ptr to a new topological map generated using a bottleneck analysis of \a grid.  The region types of the returned map are either OPEN or DOORWAY
- TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_width, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir);
+enum RegionType { OPEN, DOORWAY };
 
- enum RegionType { OPEN, DOORWAY };
+/// \return shared_ptr to a topological map loaded from \a filename.  
+/// \throws FileOpenException
+/// \throws FileFormatException
+TopologicalMapPtr loadFromFile (const string& filename);
+
+
+
+
+
 
 
  /************************************************************

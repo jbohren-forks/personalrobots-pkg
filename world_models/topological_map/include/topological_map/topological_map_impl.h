@@ -30,8 +30,8 @@
  * (not meant to be externally included)
  */
 
-#ifndef TOPOLOGICAL_MAP_TOPOLOGICAL_MAP_GRAPH_H
-#define TOPOLOGICAL_MAP_TOPOLOGICAL_MAP_GRAPH_H
+#ifndef TOPOLOGICAL_MAP_TOPOLOGICAL_MAP_IMPL_H
+#define TOPOLOGICAL_MAP_TOPOLOGICAL_MAP_IMPL_H
 
 #include "topological_map.h"
 #include <boost/graph/adjacency_list.hpp>
@@ -64,16 +64,15 @@ typedef graph_traits<TopologicalGraph>::vertex_descriptor TopologicalGraphVertex
 typedef graph_traits<TopologicalGraph>::adjacency_iterator AdjacencyIterator;
 typedef map<Cell2D, RegionId> RegionMap;
 typedef map<RegionId, TopologicalGraphVertex> IdVertexMap;
-typedef map<Cell2D, ConnectorId> CellConnectorMap;
 typedef map<RegionPair, ConnectorId> RegionConnectorMap;
 
 // Implementation details for top map
-class TopologicalMap::GraphImpl
+class TopologicalMap::MapImpl
 {
 public:
 
   /// Default constructor creates empty graph
-  GraphImpl(uint nr, uint nc, double resolution=1.0) : next_id_(1), resolution_(resolution), num_rows_(nr), num_cols_(nc) {}
+  MapImpl(const OccupancyGrid& grid, double resolution=1.0) : next_id_(1), resolution_(resolution), grid_(grid) {}
 
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
@@ -122,40 +121,42 @@ public:
   /// \throws UnknownRegionException
   void removeRegion (const RegionId id);
 
+
 private:
 
-  GraphImpl(const GraphImpl&);
-  GraphImpl& operator= (const GraphImpl&);
+  MapImpl(const MapImpl&);
+  MapImpl& operator= (const MapImpl&);
 
   TopologicalGraphVertex idVertex(const RegionId id) const;
 
-  Cell2D getConnector(const ConnectorId id) const;
+  Point2D getConnector(const ConnectorId id) const;
 
   Cell2D containingCell(const Point2D& p) const;
   Point2D cellCorner (const Cell2D& cell) const;
   ConnectorId cellConnector (const Cell2D& p) const;
-  Cell2D connectorCell (const ConnectorId id) const;
 
   ConnectorId connectorBetween (const RegionId r1, const RegionId r2) const;
   
   void connectRegions (const TopologicalGraphVertex& v, const TopologicalGraphVertex& v2);
 
+  Point2D findBorderPoint(const Cell2D& cell1, const Cell2D& cell2);
+
   IdVertexMap id_vertex_map_;
   RegionMap region_map_;
   TopologicalGraph graph_;
   RegionIdVector regions_;
-  vector<Cell2D> connectors_;
-  CellConnectorMap cell_connector_map_;
+  
+  vector<Point2D> connectors_;
   RegionConnectorMap region_connector_map_;
   
   RegionId next_id_;
 
   double resolution_;
-  uint num_rows_, num_cols_;
+  const OccupancyGrid& grid_;
 };
 
 
   
 } // namespace topological_map
 
-#endif // TOPOLOGICAL_MAP_TOPOLOGICAL_MAP_GRAPH_H
+#endif // TOPOLOGICAL_MAP_TOPOLOGICAL_MAP_IMPL_H

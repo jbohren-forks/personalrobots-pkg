@@ -38,54 +38,69 @@
 namespace topological_map
 {
 
+using boost::format;
+
 /// \brief A base class for all topological_map exceptions_ 
 class TopologicalMapException: public std::runtime_error
 { 
 public:
-  TopologicalMapException(const boost::format& error_string) : std::runtime_error(error_string.str()) {};
+  TopologicalMapException(const format& error_string) : std::runtime_error(error_string.str()) {};
 };
 
 /// \brief Exception denoting unknown grid cell
 class UnknownGridCellException: public TopologicalMapException
 {
 public:
-  UnknownGridCellException(const Cell2D& p) : TopologicalMapException(boost::format("Unknown grid cell %1%") % p) {}
+  UnknownGridCellException(const Cell2D& p) : TopologicalMapException(format("Unknown grid cell %1%") % p) {}
 };
 
 /// \brief Exception denoting unknown 2d point
 class UnknownPointException: public TopologicalMapException
 {
 public:
-  UnknownPointException (const double x, const double y) : TopologicalMapException(boost::format("Illegal 2d point (%1%, %2%)") % x % y) {}
+  UnknownPointException (const double x, const double y) : TopologicalMapException(format("Illegal 2d point (%1%, %2%)") % x % y) {}
 };
 
 /// \brief Exception when trying to add a region containing an existing gridcell
 class OverlappingRegionException: public TopologicalMapException
 {
 public:
-  OverlappingRegionException(const Cell2D& c, const RegionId id) : TopologicalMapException(boost::format("Grid cell %1% already exists in region %2%") % c % id) {}
+  OverlappingRegionException(const Cell2D& c, const RegionId id) : TopologicalMapException(format("Grid cell %1% already exists in region %2%") % c % id) {}
 };
 
 /// \brief Exception for a region id that doesn't exist
 class UnknownRegionException: public TopologicalMapException
 {
 public:
-  UnknownRegionException(const RegionId id) : TopologicalMapException(boost::format("Unknown region id %1%") % id) {}
+  UnknownRegionException(const RegionId id) : TopologicalMapException(format("Unknown region id %1%") % id) {}
 };
 
 /// \brief Exception for unknown connector
 class UnknownConnectorException: public TopologicalMapException
 {
 public:
-  UnknownConnectorException (double x, double y) : TopologicalMapException(boost::format("Unknown connector for point %1%, %2%") % x % y) {}
-  UnknownConnectorException (int r, int c) : TopologicalMapException(boost::format("Unknown connector for cell %1%, %2%") % r % c) {}
+  UnknownConnectorException (double x, double y) : TopologicalMapException(format("Unknown connector for point %1%, %2%") % x % y) {}
+  UnknownConnectorException (int r, int c) : TopologicalMapException(format("Unknown connector for cell %1%, %2%") % r % c) {}
 };
 
 /// \brief Exception for unknown connector id
 class UnknownConnectorIdException: public TopologicalMapException
 {
 public:
-  UnknownConnectorIdException (ConnectorId id) : TopologicalMapException(boost::format("Unknown connector id %1%") % id) {}
+  UnknownConnectorIdException (ConnectorId id) : TopologicalMapException(format("Unknown connector id %1%") % id) {}
+};
+
+
+/// \brief Exception for not being able to open top map file
+class FileOpenException: public TopologicalMapException
+{
+public: FileOpenException (const string& filename) : TopologicalMapException(format("Unable to open file %1%") % filename) {}
+};
+
+/// \brief Exception for not being able to parse top map file
+class FileFormatException: public TopologicalMapException
+{
+public: FileFormatException (uint line_num) : TopologicalMapException(format("Ran into trouble parsing line %1% of topological map file") % line_num) {}
 };
 
 
