@@ -1,8 +1,9 @@
 <package>
 <description brief='IIR Filters'>
 
-A library to provide a generic base class for filters as well as 
-implementations of commonly used filters.  
+iir_filters creates an IIR (infinite impulse response) filter using octave methods 
+(i.e. butter, cheby1, etc.). iir_filters  calculates the coefficients for the <a href="http://pr.willowgarage.com/pr-docs/ros-packages/filters/html/classfilters_1_1TransferFunctionFilter.html">TransferFunctionFilter</a> and constructs
+the approprieate transfer function filter. 
 
 </description>
 <author>Melonee Wise/mwise@willowgarage.com</author>

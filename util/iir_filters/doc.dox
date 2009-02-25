@@ -1,0 +1,71 @@
+/** 
+@mainpage
+@htmlinclude manifest.html
+
+
+\section commandline Command-line tools
+
+\subsection filter_coeff_server
+filter_coeff_server is a standalone service that computes the transfer function coefficients using 
+digital filter functions provided by octave. This service only implements the [b,a]= filter(args)
+methods for each octave function. The coefficients b and a can be used with the <a href="http://pr.willowgarage.com/pr-docs/ros-packages/filters/html/classfilters_1_1TransferFunctionFilter.html">TransferFunctionFilter</a>. <br>
+
+Currently implemeneted filter functions are:<br>
+
+\li <a href="http://octave.sourceforge.net/doc/f/butter.html">butter</a> - 
+Generates a Butterworth filter. Default is a discrete space (Z) filter.
+\li <a href="http://octave.sourceforge.net/doc/f/cheby1.html">cheby1</a> - 
+Generates a Chebyshev type I filter with Rp dB of pass band ripple.
+\li <a href="http://octave.sourceforge.net/doc/f/cheby2.html">cheby2</a> - 
+Generates a Chebyshev type II filter with Rs dB of stop band attenuation.
+\li <a href="http://octave.sourceforge.net/doc/f/ellip.html">ellip</a> - 
+Generate an Elliptic or Cauer filter (discrete).
+
+\verbatim
+$ ./filter_coeff_server.m
+\endverbatim
+
+\par Example
+
+\verbatim
+$ rosrun iir_filters filter_coeff_server.m
+\endverbatim
+
+
+\subsubsection topics ROS services
+
+Advertises to:
+- \b "/filter_coeffs": [iir_filters/Filter] The filter name and args
+
+<hr>
+
+\subsection filter_coeff_client
+filter_coeff_client is an example client that uses the generate_filter_coeffs service. 
+
+\verbatim
+$ ./filter_coeff_client [name args]
+\endverbatim
+
+\par Example
+
+\verbatim
+octave command: [b,a] = butter(n, Wc) low pass filter with cutoff pi*Wc radians
+$ rosrun iir_filters filter_coeff_client butter 2 .1
+
+octave command: [b,a] = butter(n, Wc, 'high') high pass filter with cutoff pi*Wc radians
+$ rosrun iir_filters filter_coeff_client butter 2 .1 high
+
+octave command: [b,a] = butter(n, [Wl, Wh], 'stop') band reject filter with edges pi*Wl and pi*Wh radians
+$ rosrun iir_filters filter_coeff_client butter 2 .1 .5 stop
+\endverbatim
+
+
+\subsubsection topics ROS services
+
+Subscribes to:
+- \b "/filter_coeffs": [iir_filters/Filter] Returns vectors a and b for transfer_function filter
+
+<hr>
+
+
+**/

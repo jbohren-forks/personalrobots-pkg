@@ -49,13 +49,15 @@ namespace iir_filters
 {
 /***************************************************/
 /*! \class IIRFilter
-    \brief One-dimensional digital filter class.
+    \brief One-dimensional IIR filter class.
 
-    This class calculates the output for \f$N\f$ one-dimensional
-    digital filters. Where the input, \f$x\f$, is a (\f$N\f$ x 1) vector
-    of inputs and the output, \f$y\f$, is a (\f$N\f$ x 1) vector of outputs.
-    The filter is described by vectors \f$a\f$ and \f$b\f$ and
-    implemented using the standard difference equation:<br>
+    This class calculates the coefficients for the difference equation 
+    shown below, using octave methods (i.e. butter, cheby1, etc.). Where 
+    the input, \f$x\f$, is a (\f$N\f$ x 1) vector of inputs and the output, 
+    \f$y\f$, is a (\f$N\f$ x 1) vector of outputs. The filter is described 
+    by the arguments of the octave methods (i.e. octave command: 
+    [b,a] = butter(n, Wc)) and implemented using the standard 
+    difference equation:<br>
 
     \f{eqnarray*}
     a[0]*y[n] = b[0]*x[n] &+& b[1]*x[n-1]+ ... + b[n_b]*x[n-n_b]\\
@@ -64,6 +66,7 @@ namespace iir_filters
 
 
     If \f$a[0]\f$ is not equal to 1, the coefficients are normalized by \f$a[0]\f$.
+    
     
     Example xml config:<br>
 
@@ -142,7 +145,10 @@ bool IIRFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *conf
 {
   // Check if the filter is already configured.
   if (configured_)
+  {
+    ROS_WARN("IIRFilter is already configured.");
     return false;
+  }
 
   number_of_channels_=number_of_channels;
       
@@ -150,23 +156,24 @@ bool IIRFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *conf
   const char *name = config->Attribute("name");
   if (!name)
   {
-    fprintf(stderr, "Error: IIRFilter was not given a name.\n");
+    ROS_ERROR("IIRFilter was not given a name.");
     return false;
   }
   name_ = std::string(name);
-
+  ROS_INFO("Configuring IIRFilter with name \"%s\".", name_.c_str());
+  
   // Parse the params of the filter from the xml.
   TiXmlElement *p = config->FirstChildElement("params");
   if (!p)
   {
-    fprintf(stderr, "Error: IIRFilter was not given params.\n");
+    fprintf(stderr, "Error: IIRFilter, \"%s\",  was not given params.", name_.c_str());
     return false;
   }
   
   const char *t = p->Attribute("name");
   if (!t)
   {
-    fprintf(stderr, "Error: IIRFilter, \"%s\", params has no attribute name.\n", name_.c_str());
+    ROS_ERROR("IIRFilter, \"%s\", params has no attribute name.", name_.c_str());
     return false;
   }
   type_=std::string(t);
@@ -174,7 +181,7 @@ bool IIRFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *conf
   const char *s = p->Attribute("args");
   if (!s)
   {
-    fprintf(stderr, "Error: IIRFilter, \"%s\", params has no attribute args.\n", name_.c_str());
+    ROS_ERROR("IIRFilter, \"%s\", params has no attribute args.", name_.c_str());
     return false;
   }
 
@@ -215,7 +222,7 @@ bool IIRFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *conf
   }
   else
   {
-    fprintf(stderr, "Error: IIRFilter, could not get filter coefficients to build filter.\n");
+    ROS_ERROR("IIRFilter, \"%s\", could not get filter coefficients to build filter.", name_.c_str());
     return false;
   }
   
