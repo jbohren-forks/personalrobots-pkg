@@ -69,9 +69,19 @@ class ExecNode : public PR2ArmNode
               goal_[0] = RPYToTransform(0.0, 0.0, 0.0, 0.5, .25, 0);
               goal_id_ = 2;
             }
+            else if(goal_id_ == 2)
+            {
+                goal_[0] = RPYToTransform(0.0, 0.0, 0.0, 0.5, -0.4, -.4);
+                goal_id_ = 3;
+            }
+            else if(goal_id_ == 3)
+            {
+                goal_[0] = RPYToTransform(0.0, 0.0, 0.0, 0.5, 0.6, -.2);
+                goal_id_ = 4;
+            }
             else
             {
-              goal_[0] = RPYToTransform(0.0, 0.0, 0.0, 0.7, -0.4, 0);
+              goal_[0] = RPYToTransform(0.0, 0.0, 0.0, 0.7, -0.5, .2);
               goal_id_ = 1;
             }
             state_ = PLAN;
@@ -98,12 +108,14 @@ class ExecNode : public PR2ArmNode
             {
               ROS_INFO("Trajectory execution unsuccessful");
               state_ = PLAN;
+              exit(1);  //REMOVE THIS ONCE WORKING!!!!
             }
             break;
           }
 	}
 	usleep(10000);
-//         sleep(1);
+//         sleep(.25);
+//         exit(1);
       }
     }
 };

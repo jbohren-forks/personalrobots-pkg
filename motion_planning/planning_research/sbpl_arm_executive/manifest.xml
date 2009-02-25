@@ -15,7 +15,7 @@
   <url></url>
 
   <export>
-      <cpp cflags="-I${prefix}/include -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2_arm_node"/>
+      <cpp cflags="-I${prefix}/include -O0 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2_arm_node"/>
   </export>
   
 </package>
