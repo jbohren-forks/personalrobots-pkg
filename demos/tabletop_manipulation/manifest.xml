@@ -15,4 +15,5 @@
   <depend package="plan_kinematic_path"/>
   <depend package="pr2_msgs"/>
   <depend package="rosviz"/>
+  <depend package="tf"/>
 </package>

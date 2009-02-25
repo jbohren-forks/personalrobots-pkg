@@ -42,11 +42,11 @@ import sys
 
 def go(side, positions):
   pub = rospy.Publisher(side + '_arm_trajectory_command', JointTraj)
-  rospy.init_node('foo')
+  rospy.init_node('tuckarm', anonymous=True)
 
   # HACK
   import time
-  time.sleep(3.0)
+  time.sleep(5.0)
 
   msg = JointTraj()
   msg.points = []

@@ -37,20 +37,35 @@ import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
 from robot_srvs.srv import FindTable, FindTableRequest
-from robot_msgs.msg import Planner2DGoal
-from deprecated_msgs.msg import RobotBase2DOdom
+from robot_msgs.msg import Planner2DGoal, Polygon3D, Point,VisualizationMarker
+from deprecated_msgs.msg import RobotBase2DOdom, Pose2DFloat32
+from tf.msg import tfMessage
 
-import sys, math
+import sys
+from math import *
 
-robot_pose = None
+odom_pose = None
+robot_position = None
+pub_vis = None
+vm = None
+
+def tfCallback(msg):
+  global robot_position
+  if msg.transforms[0].header.frame_id == 'odom_offset' and odom_pose != None:
+    robot_position = Point(odom_pose.pos.x - msg.transforms[0].transform.translation.x,
+                           odom_pose.pos.y - msg.transforms[0].transform.translation.y,0.0)
+
 
 def odomCallback(msg):
-  global robot_pose
-  robot_pose = msg
+  global odom_pose
+  odom_pose = msg
 
 def go():
   rospy.Subscriber('odom', RobotBase2DOdom, odomCallback)
+  rospy.Subscriber('tf_message', tfMessage, tfCallback)
   pub_goal = rospy.Publisher("goal", Planner2DGoal)
+  global pub_vis
+  pub_vis = rospy.Publisher("visualizationMarker", VisualizationMarker)
   rospy.init_node('test_node', anonymous=True)
 
   print 'Waiting for table_object_detector service...'
@@ -72,52 +87,209 @@ def go():
         o.max_bound.y - o.min_bound.y,
         o.max_bound.z - o.min_bound.z)
 
-  global robot_pose
-  print 'robot_pose: ' + `robot_pose`
-  computeApproachPose(robot_pose, resp.table.table,0.5)
+  print 'Poly:'
+  for p in resp.table.table.points:
+    print '  %f %f %f'%(p.x,p.y,p.z)
 
+  global vm
+  vm = VisualizationMarker()
+  vm.header.frame_id = resp.table.header.frame_id
+  vm.z = resp.table.table.points[0].z
 
-def computeApproachPose(pose, poly, d):
+  global robot_position
+  approach_pose = computeApproachPose(robot_position, resp.table.table, 0.5, True)
+
+  # Now stuff it in a message and send it off
+  g = Planner2DGoal()
+  g.goal.x = approach_pose[0]
+  g.goal.y = approach_pose[1]
+  g.goal.th = approach_pose[2]
+  g.enable = 1
+  g.header.frame_id = resp.table.header.frame_id
+  g.timeout = 0.0
+
+  print 'Sending the robot to (%f,%f,%f)'%(g.goal.x,g.goal.y,g.goal.th)
+  pub_goal.publish(g)
+
+  vm.id = 1000
+  vm.type = VisualizationMarker.ARROW
+  vm.action = VisualizationMarker.ADD
+  vm.x = g.goal.x
+  vm.y = g.goal.y
+  #vm.z = 0.0
+  vm.roll = 0.0
+  vm.pitch = 0.0
+  vm.yaw = g.goal.th
+  vm.xScale = 0.5
+  vm.yScale = 0.25
+  vm.zScale = 0.1
+  vm.alpha = 128
+  vm.r = 255
+  vm.g = 0
+  vm.b = 0
+  vm.points = []
+  pub_vis.publish(vm)
+
+def computeApproachPose(pose, poly, d, toward):
 
   if pose == None:
     print 'No robot pose!'
     return
 
   # Find the two closest vertices
+
+  # First find the closest one
   min_sqd = [-1.0, -1.0]
   closestp = [None, None]
   for p in poly.points:
-    sqd = (pose.pos.x - p.x)*(pose.pos.x - p.x) + \
-          (pose.pos.y - p.y)*(pose.pos.y - p.y)
+    sqd = (pose.x - p.x)*(pose.x - p.x) + \
+          (pose.y - p.y)*(pose.y - p.y)
     if min_sqd[0] < 0.0 or sqd < min_sqd[0]:
       min_sqd[0] = sqd
       closestp[0] = p
-    elif min_sqd[1] < 0.0 or sqd < min_sqd[1]:
-      min_sqd[1] = sqd
-      closestp[1] = p
 
-  if closestp[0] == None or closestp[0] == None:
-    print 'No pair of closest points!'
-    return
+  if closestp[0] == None:
+    print 'No closest point!'
 
+  # Now find the second-closest, but require that it be some distance from
+  # the first one
+  for p in poly.points:
+    sqd = (pose.x - p.x)*(pose.x - p.x) + \
+          (pose.y - p.y)*(pose.y - p.y)
+    if min_sqd[1] < 0.0 or sqd < min_sqd[1]:
+      sqd2 = (closestp[0].x - p.x)*(closestp[0].x - p.x) + \
+             (closestp[0].y - p.y)*(closestp[0].y - p.y)
+      if sqd2 > 0.25:
+        min_sqd[1] = sqd
+        closestp[1] = p
+
+  # Also find the farthest, because we'll do a poor-man's point-in-polygon
+  # check
+  farthestp = None
+  maxsqd = -1.0
+  for p in poly.points:
+    sqd = (pose.x - p.x)*(pose.x - p.x) + \
+          (pose.y - p.y)*(pose.y - p.y)
+    if maxsqd < 0.0 or sqd > maxsqd:
+      maxsqd = sqd
+      farthestp = p
+
+  if closestp[1] == None:
+    print 'No second-closest point!'
+
+  print 'Robot pose: (%f,%f)'%(pose.x,pose.y)
   print 'Closest points: (%f,%f,%f),(%f,%f,%f)'%(closestp[0].x,closestp[0].y,closestp[0].z,closestp[1].x,closestp[1].y,closestp[1].z)
 
+  # Find the midpoint of the closest edge
+  midp = Point(closestp[0].x + (closestp[1].x - closestp[0].x)/2.0,
+               closestp[0].y + (closestp[1].y - closestp[0].y)/2.0, 0.0)
 
-  #g = Planner2DGoal()
-  #g.goal.x = resp.table.min_x - 1.5
-  #g.goal.y = resp.table.min_y - 1.5
-  #g.goal.th = 0.0
-  #g.enable = 1
-  #g.header.frame_id = resp.table.header.frame_id
-  #g.timeout = 0.0
+  # The angle of the edge
+  theta = atan2(closestp[1].y-closestp[0].y, closestp[1].x-closestp[0].x)
 
-  #print 'Sending the robot to (%f,%f,%f)'%(g.goal.x,g.goal.y,g.goal.th)
-  #pub_goal.publish(g)
+  # Which direction is toward the robot?
+  theta2 = atan2((farthestp.y-closestp[0].y),(farthestp.x-closestp[0].x))
+  dir = theta2-theta
+  dir = atan2(sin(dir),cos(dir))
+  if dir > 0:
+    phi = theta - pi/2.0
+  else:
+    phi = theta + pi/2.0
 
-  #print 'Poly:'
-  #for p in resp.table.table.points:
-  #  print '  %f %f %f'%(p.x,p.y,p.z)
+  if not toward:
+    phi = phi + pi
+    phi = atan2(sin(phi),cos(phi))
+
+  # Add in standoff distance
+  goalx = midp.x + d * cos(phi)
+  goaly = midp.y + d * sin(phi)
+  # We want to point at the table
+  goala = phi + pi
+  goala = atan2(sin(goala),cos(goala))
+
+  global pub_vis
+  global vm
+  vm.id = 1001
+  vm.type = VisualizationMarker.SPHERE
+  vm.action = VisualizationMarker.ADD
+  vm.x = midp.x
+  vm.y = midp.y
+  #vm.z = 0.0
+  vm.roll = 0.0
+  vm.pitch = 0.0
+  vm.yaw = 0.0
+  vm.xScale = 0.05
+  vm.yScale = 0.05
+  vm.zScale = 0.05
+  vm.alpha = 128
+  vm.r = 0
+  vm.g = 0
+  vm.b = 255
+  vm.points = []
+  pub_vis.publish(vm)
+
+  vm.id = 1002
+  vm.type = VisualizationMarker.SPHERE
+  vm.action = VisualizationMarker.ADD
+  vm.x = closestp[0].x
+  vm.y = closestp[0].y
+  #vm.z = 0.0
+  vm.roll = 0.0
+  vm.pitch = 0.0
+  vm.yaw = 0.0
+  vm.xScale = 0.05
+  vm.yScale = 0.05
+  vm.zScale = 0.05
+  vm.alpha = 128
+  vm.r = 0
+  vm.g = 255
+  vm.b = 0
+  vm.points = []
+  pub_vis.publish(vm)
+
+  vm.id = 1003
+  vm.type = VisualizationMarker.SPHERE
+  vm.action = VisualizationMarker.ADD
+  vm.x = closestp[1].x
+  vm.y = closestp[1].y
+  #vm.z = 0.0
+  vm.roll = 0.0
+  vm.pitch = 0.0
+  vm.yaw = 0.0
+  vm.xScale = 0.05
+  vm.yScale = 0.05
+  vm.zScale = 0.05
+  vm.alpha = 128
+  vm.r = 255
+  vm.g = 0
+  vm.b = 255
+  vm.points = []
+  pub_vis.publish(vm)
+
+  vm.id = 1004
+  vm.type = VisualizationMarker.SPHERE
+  vm.action = VisualizationMarker.ADD
+  vm.x = farthestp.x
+  vm.y = farthestp.y
+  #vm.z = 0.0
+  vm.roll = 0.0
+  vm.pitch = 0.0
+  vm.yaw = 0.0
+  vm.xScale = 0.05
+  vm.yScale = 0.05
+  vm.zScale = 0.05
+  vm.alpha = 128
+  vm.r = 255
+  vm.g = 255
+  vm.b = 255
+  vm.points = []
+  pub_vis.publish(vm)
+
+  print 'midp: %f,%f'%(midp.x,midp.y)
+  print 'theta: %f phi:%f' %(theta*180.0/pi,phi*180.0/pi)
+  print 'Goal: %f,%f,%f'%(goalx, goaly, goala*180.0/pi)
+
+  return (goalx, goaly, goala)
 
 if __name__ == '__main__':
   go()
-
