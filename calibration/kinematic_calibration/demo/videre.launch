@@ -1,0 +1,26 @@
+<launch>
+  <group ns="stereo">
+    <!-- params for the dcam node 
+      -->
+    <param name="videre_mode" type="str" value="rectified"/>
+    <!-- params for the stereo_image_proc node -->
+    <param name="exposure" type="int" value="12"/>
+    <param name="exposure_auto" type="bool" value="false"/>
+
+    <param name="brightness" type="int" value="5"/>
+    <param name="brightness_auto" type="bool" value="false"/>
+
+    <param name="gain" type="int" value="0"/>
+    <param name="gain_auto" type="bool" value="False"/>
+
+    <param name="do_colorize" type="bool" value="False"/>
+    <param name="do_rectify" type="bool" value="False"/>
+    <param name="do_stereo" type="bool" value="False"/>
+    <param name="do_calc_points" type="bool" value="False"/>
+
+    <param name="fps" type="double" value="10" />
+  </group>
+  <node pkg="dcam" type="stereodcam" respawn="false" output="screen"/>
+  <!-- node pkg="stereo_image_proc" type="stereoproc" respawn="false"/ -->
+</launch>
+
