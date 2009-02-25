@@ -97,6 +97,9 @@ protected:
     model.joints_.push_back(quickJoint("bc", tf::Vector3(1,0,0)));
     model.links_.push_back(quickLink("c", "b", "bc", tf::Vector3(1,0,0), tf::Vector3(0,0,0)));
 
+    model.joints_.push_back(quickJoint("bd", tf::Vector3(1,0,0)));
+    model.links_.push_back(quickLink("d", "b", "bd", tf::Vector3(1,0,0), tf::Vector3(-M_PI/2,0,0)));
+
     state.reset(new RobotState(&model, &hw));
   }
 
@@ -110,12 +113,14 @@ protected:
 TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
 {
   Chain chain;
-  EXPECT_TRUE(chain.init(&model, "a", "c"));
+  EXPECT_TRUE(chain.init(&model, "a", "d"));
   EXPECT_EQ(0, chain.link_indices_[0]);
   EXPECT_EQ(1, chain.link_indices_[1]);
-  EXPECT_EQ(2, chain.link_indices_[2]);
+  //EXPECT_EQ(2, chain.link_indices_[2]);
+  EXPECT_EQ(3, chain.link_indices_[2]);
   EXPECT_EQ(0, chain.joint_indices_[0]);
-  EXPECT_EQ(1, chain.joint_indices_[1]);
+  //EXPECT_EQ(1, chain.joint_indices_[1]);
+  EXPECT_EQ(2, chain.joint_indices_[1]);
 
   KDL::Chain kdl;
   chain.toKDL(kdl);
@@ -123,8 +128,10 @@ TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
     cout << "kdl chain contains joint " << chain.getJointName(i) << endl;
 
 
-  ASSERT_EQ(model.links_.size(), kdl.getNrOfSegments());
-  ASSERT_EQ(model.joints_.size(), kdl.getNrOfJoints());
+  //ASSERT_EQ(model.links_.size(), kdl.getNrOfSegments());
+  //ASSERT_EQ(model.joints_.size(), kdl.getNrOfJoints());
+  ASSERT_EQ(3, kdl.getNrOfSegments());
+  ASSERT_EQ(2, kdl.getNrOfJoints());
 
   setJoint(state.get(), 0, M_PI/4);
   setJoint(state.get(), 1, M_PI/4);

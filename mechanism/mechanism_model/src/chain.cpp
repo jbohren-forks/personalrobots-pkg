@@ -167,7 +167,7 @@ void Chain::toKDL(KDL::Chain &chain)
     chain.addSegment(KDL::Segment(kdl_joint, frame /*, inertia, com*/));
 
 
-    continuation = align_next_joint.inverse() * robot_->links_[i+1]->getRotation();
+    continuation = align_next_joint.inverse() * robot_->links_[link_indices_[i+1]]->getRotation();
   }
 
   // Adds the end-effector segment
