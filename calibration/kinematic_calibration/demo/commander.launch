@@ -1,0 +1,20 @@
+<launch>
+  <node pkg="kinematic_calibration" type="arm_commander.py" name="arm_commander" output="screen">
+    <param name="joint_headers" type="string"
+           textfile="$(find kinematic_calibration)/data/joint_names.txt" />
+    <!-- param name="joint_headers" type="string"
+           textfile="/u/vpradeep/datasets/StereoArmRun2Rect/joint_names.txt" /-->
+
+    <param name="joint_commands" type="string"
+           textfile="$(find kinematic_calibration)/data/joint_pos.txt" />
+    <!-- param name="joint_commands" type="string"
+           textfile="/u/vpradeep/datasets/StereoArmRun2Rect/joint_pos.txt" /-->
+
+  </node>
+
+  <node pkg="kinematic_calibration" type="joy_goto_next.py" name="joy_next_traj" output="screen">
+    <remap from="cmd" to="/arm_commander/goto_next" />
+
+  </node>
+
+</launch>
