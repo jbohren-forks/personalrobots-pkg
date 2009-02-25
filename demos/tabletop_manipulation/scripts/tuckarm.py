@@ -36,26 +36,67 @@
 import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
-from robot_msgs.msg import JointTraj, JointTrajPoint
+from robot_msgs.msg import JointTraj, JointTrajPoint, MechanismState
 
 import sys
 
-def go(side, positions):
-  pub = rospy.Publisher(side + '_arm_trajectory_command', JointTraj)
-  rospy.init_node('tuckarm', anonymous=True)
+class TuckArm:
+  def __init__(self, side):
+    self.done = False
+    self.tolerance = 0.1
+    self.side = side
+    self.pub = rospy.Publisher(self.side + '_arm_trajectory_command', JointTraj)
+    rospy.Subscriber('mechanism_state', MechanismState, self.mechCallback)
+    # Ordering
+    self.joint_names = {self.side + '_shoulder_pan_joint' : 0,
+                        self.side + '_shoulder_lift_joint' : 1,
+                        self.side + '_shoulder_roll_joint' : 2,
+                        self.side + '_elbow_flex_joint' : 3,
+                        self.side + '_forearm_flex_joint' : 4,
+                        self.side + '_wrist_flex_joint' : 5,
+                        self.side + '_wrist_roll_joint': 6}
 
-  # HACK
-  import time
-  time.sleep(5.0)
+    self.positions = [[],[]]
+    # 2-step tuck trajectory, tailored for each arm
+    for j in range(0,2):
+      for i in range(0,len(self.joint_names)):
+        self.positions[j].append(0.0)
+      self.positions[j][self.joint_names[self.side + '_elbow_flex_joint']] = -2.25
 
-  msg = JointTraj()
-  msg.points = []
-  for i in range(0,len(positions)):
-    msg.points.append(JointTrajPoint())
-    msg.points[i].positions = positions[i]
-    msg.points[i].time = 0.0
+    if self.side == 'left':
+      self.positions[1][self.joint_names[self.side + '_shoulder_lift_joint']] = 1.57
+      self.positions[1][self.joint_names[self.side + '_shoulder_roll_joint']] = 1.57
+    else:
+      self.positions[1][self.joint_names[self.side + '_shoulder_lift_joint']] = 1.57
+      self.positions[1][self.joint_names[self.side + '_shoulder_roll_joint']] = -1.57
 
-  pub.publish(msg)
+    print self.positions
+  
+  def mechCallback(self, msg):
+    self.done = True
+    for j in self.joint_names:
+      found = False
+      for mj in msg.joint_states:
+        if mj.name == j:
+          found = True
+          # TODO: shortest angular distance
+          if (mj.position - self.positions[-1][self.joint_names[j]]) > self.tolerance:
+            done = False
+            return
+          break
+      if not found:
+        print "Couldn't find joint %s!"%(j)
+        sys.exit(-1)
+
+  def tuckArm(self):
+    msg = JointTraj()
+    msg.points = []
+    for i in range(0,len(self.positions)):
+      msg.points.append(JointTrajPoint())
+      msg.points[i].positions = self.positions[i]
+      msg.points[i].time = 0.0
+  
+    self.pub.publish(msg)
 
 USAGE = 'tuckarm.py {left|right}'
 
@@ -66,13 +107,9 @@ if __name__ == '__main__':
 
   side = sys.argv[1]
 
-  if side == 'left':
-    # tuck traj for left arm
-    positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0],
-                 [0.0,1.57,1.57,-2.25,0.0,0.0,0.0]]
-  else:
-    # tuck traj for right arm
-    positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0],
-                 [0.0,1.57,-1.57,-2.25,0.0,0.0,0.0]]
-  go(side, positions)
+  ta = TuckArm(side)
+  rospy.init_node('tuckarm', anonymous=True)
+  #HACK
+  rospy.sleep(2.0)
 
+  ta.tuckArm()

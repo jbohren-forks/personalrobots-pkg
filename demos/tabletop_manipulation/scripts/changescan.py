@@ -36,55 +36,47 @@
 import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
-from robot_msgs.msg import Planner2DGoal, Planner2DState
+from pr2_mechanism_controllers.srv import SetProfile, SetProfileRequest
 
-class MoveBase:
-  def __init__(self):
-    self.pub_goal = rospy.Publisher("goal", Planner2DGoal)
-    rospy.Subscriber("state", Planner2DState, self.stateCallback)
-    self.goal_id = -1
-    self.status = None
+class TiltScan:
+  def __init__(self, controller, laser_buffer_time):
+    self.controller = controller
+    self.laser_buffer_time = laser_buffer_time
 
-  def stateCallback(self, msg):
-    self.goal_id = msg.goal_id
-    self.status = msg.status
+  def tiltScan(self, period, amplitude, offset):
+    svcname = self.controller + '/set_profile'
+    print 'Waiting for service ' + svcname
+    rospy.wait_for_service(svcname)
+    s = rospy.ServiceProxy(svcname, SetProfile)
+    resp = s.call(SetProfileRequest(0.0, 0.0, 0.0, 0.0, 
+                                    'sine', period, amplitude, offset))
+        
+    if resp:
+      # Set the collision_map_buffer's window size accordingly, to remember a
+      # fixed time window scans.
+      rospy.client.set_param('collision_map_buffer/window_size', 
+                             int(self.laser_buffer_time / (period / 2.0)))
 
-  def moveBase(self, frame, x, y, a):
-    g = Planner2DGoal()
-    g.goal.x = x
-    g.goal.y = y
-    g.goal.th = a
-    g.enable = 1
-    g.header.frame_id = frame
-    g.timeout = 0.0
-    print '[MoveBase] Sending the robot to (%f,%f,%f)'%(g.goal.x,g.goal.y,g.goal.th)
-    self.pub_goal.publish(g)
+      # Wait until the laser's swept through most of its period at the new
+      # speed
+      rospy.sleep(.75 * period)
 
-    # HACK to get around the lack of proper goal_id support
-    print '[MoveBase] Waiting for goal to be taken up...'
-    rospy.sleep(2.0)
-
-    while self.status == None or self.status == Planner2DState.ACTIVE:
-      print '[MoveBase] Waiting for goal achievement...'
-      rospy.sleep(1.0)
-
-    return self.status == Planner2DState.INACTIVE
+    return resp
 
 if __name__ == '__main__':
   import sys
-  if len(sys.argv) != 5:
+  if len(sys.argv) != 4:
     print 'too few args'
     sys.exit(-1)
 
-  frame = sys.argv[1]
-  x = float(sys.argv[2])
-  y = float(sys.argv[3])
-  a = float(sys.argv[4])
-  mb = MoveBase()
+  period = float(sys.argv[1])
+  amplitude = float(sys.argv[2])
+  offset = float(sys.argv[3])
+  ts = TiltScan('laser_tilt_controller', 5.0)
 
   rospy.init_node('move_base', anonymous=True)
 
-  res = mb.moveBase(frame, x, y, a):
+  res = ts.tiltScan(period, amplitude, offset)
 
   if res:
     print 'Success!'

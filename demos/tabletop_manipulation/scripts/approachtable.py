@@ -119,10 +119,10 @@ class ApproachTable:
     self.pub_vis.publish(self.vm)
 
     # Call out to blocking MoveBase
-    self.mb.moveBase(resp.table.header.frame_id,
-                     approach_pose[0],
-                     approach_pose[1],
-                     approach_pose[2])
+    return self.mb.moveBase(resp.table.header.frame_id,
+                            approach_pose[0],
+                            approach_pose[1],
+                            approach_pose[2])
   
   def computeApproachPose(self, pose, poly, d, near):
     if not near:
@@ -291,5 +291,10 @@ if __name__ == '__main__':
 
   rospy.init_node('approach_table', anonymous=True)
 
-  at.approachTable(True)
+  res = at.approachTable(True)
 
+  if res:
+    print 'Success!'
+  else:
+    print 'Failure!'
+    
