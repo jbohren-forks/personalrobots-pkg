@@ -60,7 +60,7 @@ namespace ros {
       local_map_accessor_(NULL),
       baseLaserMaxRange_(10.0),
       tiltLaserMaxRange_(10.0),
-      minZ_(0.02), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0),
+      minZ_(0.10), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0),
       yaw_goal_tolerance_(0.1), xy_goal_tolerance_(robotWidth_ / 2), reset_cost_map_(false)
     {
       // Initialize global pose. Will be set in control loop based on actual data.
