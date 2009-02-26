@@ -3,6 +3,10 @@
 #include <image_msgs/CamInfo.h>
 #include <image_msgs/CvBridge.h>
 #include <robot_msgs/PoseStamped.h>
+#include <prosilica_cam/PolledImage.h>
+
+#include <LinearMath/btVector3.h>
+#include <LinearMath/btMatrix3x3.h>
 
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
@@ -10,13 +14,16 @@
 #include <boost/thread.hpp>
 
 #include "outlet_detector.h"
+//#include "eig3.h"
 
 class OutletDetector : public ros::Node
 {
 private:
   static const char wndname[];
-  
-  image_msgs::Image img_;
+
+  prosilica_cam::PolledImage::Request req_;
+  prosilica_cam::PolledImage::Response res_;
+  image_msgs::Image& img_;
   image_msgs::CamInfo cam_info_;
   image_msgs::CvBridge img_bridge_;
   robot_msgs::PoseStamped pose_;
@@ -25,18 +32,16 @@ private:
   bool display_;
 
 public:
-  OutletDetector() : ros::Node("outlet_detector"), K_(NULL)
+  OutletDetector() : ros::Node("outlet_detector"), img_(res_.image), K_(NULL)
   {
-    param("~display", display_, false);
+    param("display", display_, false);
     if (display_) {
       cvNamedWindow(wndname, CV_WINDOW_AUTOSIZE);
       cvStartWindowThread();
     }
     
-    subscribe(mapName("prosilica") + "/image_rect", img_,
-              &OutletDetector::image_cb, this, 1);
-    subscribe(mapName("prosilica") + "/cam_info", cam_info_,
-              &OutletDetector::caminfo_cb, this, 1);
+    subscribe("Image", img_, &OutletDetector::image_cb, this, 1);
+    subscribe("CamInfo", cam_info_, &OutletDetector::caminfo_cb, this, 1);
     advertise<robot_msgs::PoseStamped>("~outlet_pose", 1);
   }
 
@@ -72,36 +77,72 @@ public:
     std::vector<outlet_t> outlets;
     if (!detect_outlet_tuple(image, K_, NULL, outlets)) {
       ROS_WARN("Failed to detect outlet");
+      if (display_)
+        cvShowImage(wndname, image);
       return;
     }
 
-    CvPoint3D32f holes[12];
-    get_outlet_coordinates(outlets[0], holes);
-    get_outlet_coordinates(outlets[1], holes + 3);
-    get_outlet_coordinates(outlets[2], holes + 6);
-    get_outlet_coordinates(outlets[3], holes + 9);
-
-    // Transform into expected coordinate frame
-    for (CvPoint3D32f* hole = holes; hole != holes + 12; ++hole) {
-      float new_x = hole->z;
-      hole->z = -hole->y;
-      hole->y = -hole->x;
-      hole->x = new_x;
+    // Change representation and coordinate frame
+    btVector3 holes[12];
+    for (int i = 0; i < 4; ++i) {
+      changeAxes(outlets[i].coord_hole_ground, holes[3*i]);
+      changeAxes(outlets[i].coord_hole1, holes[3*i+1]);
+      changeAxes(outlets[i].coord_hole2, holes[3*i+2]);
     }
 
-    // TODO: fit plane to all holes, publish normal
+    // Find normal and right vectors
+    // TODO: fit plane to all holes instead of just 3
+    btVector3 right = (holes[2] - holes[1]).normalized();
+    btVector3 normal = right.cross(holes[2] - holes[0]).normalized();
+    // TODO: right-handed???
+    btVector3 up = right.cross(normal).normalized();
+    btMatrix3x3 rotation;
+    rotation[0] = right;
+    rotation[1] = up;
+    rotation[2] = normal;
+    btQuaternion orientation;
+    rotation.getRotation(orientation);
     
-    //pose_.header.stamp =
-    pose_.pose.position.x = holes[0].x;
-    pose_.pose.position.y = holes[0].y;
-    pose_.pose.position.z = holes[0].z;
+    pose_.header.frame_id = "prosilica_frame";
+    pose_.pose.position.x = holes[0].x();
+    pose_.pose.position.y = holes[0].y();
+    pose_.pose.position.z = holes[0].z();
+    pose_.pose.orientation.x = orientation.x();
+    pose_.pose.orientation.y = orientation.y();
+    pose_.pose.orientation.z = orientation.z();
+    pose_.pose.orientation.w = orientation.w();
 
     publish("~outlet_pose", pose_);
+    ROS_INFO("Ground 0: %.5f %.5f %.5f, Ground 1: %.5f %.5f %.5f",
+             holes[0].x(), holes[0].y(), holes[0].z(),
+             holes[3].x(), holes[3].y(), holes[3].z());
     
     if (display_) {
       draw_outlets(image, outlets);
       cvShowImage(wndname, image);
     }
+  }
+
+  bool spin()
+  {
+    while (ok())
+    {
+      if (cb_mutex_.try_lock()) {
+        req_.timeout_ms = 100;
+        if (!ros::service::call("prosilica/poll", req_, res_))
+          ROS_WARN("Service call failed");
+        cb_mutex_.unlock();
+      }
+      usleep(100000);
+    }
+
+    return true;
+  }
+
+private:
+  static void changeAxes(CvPoint3D32f src, btVector3 &dst)
+  {
+    dst.setValue(src.z, -src.x, -src.y);
   }
 };
 

@@ -9,9 +9,11 @@
   <depend package="opencv_latest"/>
   <depend package="image_msgs"/>
   <depend package="robot_msgs"/>
+  <depend package="prosilica_cam"/>
   <depend package="rospy"/>
   <depend package="rostest"/>
   <depend package="star_detector"/>
+  <depend package="bullet"/>
 
   <!--depend package="fast_detector"/>
   <depend package="calonder_descriptor"/>
