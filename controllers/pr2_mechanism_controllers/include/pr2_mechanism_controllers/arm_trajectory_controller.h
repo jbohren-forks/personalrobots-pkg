@@ -61,6 +61,7 @@
 
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
+#include <pr2_mechanism_controllers/TrajectoryCancel.h>
 
 //Kinematics
 #include <robot_kinematics/robot_kinematics.h>
@@ -217,8 +218,8 @@ namespace controller
     bool queryJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
                            pr2_mechanism_controllers::TrajectoryQuery::Response &resp);
 
-    bool cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
-                            pr2_mechanism_controllers::TrajectoryQuery::Response &resp);
+    bool cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryCancel::Request &req,
+                            pr2_mechanism_controllers::TrajectoryCancel::Response &resp);
 
     void deleteTrajectoryFromQueue(int id);
 

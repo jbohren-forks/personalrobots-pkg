@@ -347,6 +347,7 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
 
    node_->advertiseService(service_prefix_ + "/TrajectoryStart", &ArmTrajectoryControllerNode::setJointTrajSrv, this);
    node_->advertiseService(service_prefix_ + "/TrajectoryQuery", &ArmTrajectoryControllerNode::queryJointTrajSrv, this);
+   node_->advertiseService(service_prefix_ + "/TrajectoryCancel", &ArmTrajectoryControllerNode::cancelJointTrajSrv, this);
 
     topic_name_ptr_ = config->FirstChildElement("listen_topic");
     if(topic_name_ptr_)
@@ -531,8 +532,8 @@ bool ArmTrajectoryControllerNode::queryJointTrajSrv(pr2_mechanism_controllers::T
   return true;
 }
 
-bool ArmTrajectoryControllerNode::cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryQuery::Request &req,
-                                                     pr2_mechanism_controllers::TrajectoryQuery::Response &resp)
+bool ArmTrajectoryControllerNode::cancelJointTrajSrv(pr2_mechanism_controllers::TrajectoryCancel::Request &req,
+                                                     pr2_mechanism_controllers::TrajectoryCancel::Response &resp)
 {
   int status = ArmTrajectoryControllerNode::NUM_STATUS;
 
@@ -548,7 +549,7 @@ bool ArmTrajectoryControllerNode::cancelJointTrajSrv(pr2_mechanism_controllers::
   {
     deleteTrajectoryFromQueue(req.trajectoryid);
   }
-  else if(resp.done == ArmTrajectoryControllerNode::ACTIVE)
+  else if(status == ArmTrajectoryControllerNode::ACTIVE)
   {
     updateTrajectoryQueue(CANCELED);
     // Add two points since every good trajectory must have at least two points, otherwise its just a point :-)
