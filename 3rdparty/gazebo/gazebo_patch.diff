@@ -773,6 +773,61 @@ Index: server/physics/Geom.cc
  
    return NULL;
  }
+Index: server/physics/Joint.hh
+===================================================================
+--- server/physics/Joint.hh	(revision 7168)
++++ server/physics/Joint.hh	(working copy)
+@@ -156,6 +156,8 @@
+     /// Name of this joint
+     private: ParamT<double> *erpP;
+     private: ParamT<double> *cfmP;
++    private: ParamT<double> *stopKpP;
++    private: ParamT<double> *stopKdP;
+     private: ParamT<std::string> *body1NameP;
+     private: ParamT<std::string> *body2NameP;
+     private: ParamT<std::string> *anchorBodyNameP;
+@@ -163,6 +165,41 @@
+     private: ParamT<bool> *provideFeedbackP;
+     private: ParamT<double> *fudgeFactorP;
+ 
++    /// Added for mimicing other joints
++    private: ParamT<std::string> *mimicJointP;
++    private: ParamT<double> *mimicMultP;
++    private: ParamT<double> *mimicOffsetP;
++    private: ParamT<double> *mimicKpP;
++    private: ParamT<double> *mimicKdP;
++    private: ParamT<double> *mimicFMaxP;
++
++    private: Joint *mimicJoint;
++    private: bool enableMimic;
++    private: double mimicMult;
++    private: double mimicOffset;
++    private: double mimicKp;
++    private: double mimicKd;
++    private: double mimicFMax;
++    private: double current_time_mimic, last_time_mimic;
++    private: double current_error_mimic, last_error_mimic;
++
++    private: ParamT<std::string> *latchJointP;
++    private: ParamT<double> *latchAngleP;
++    private: ParamT<double> *doorClosedAngleP;
++    private: ParamT<double> *latchKpP;
++    private: ParamT<double> *latchKdP;
++    private: ParamT<double> *latchFMaxP;
++
++    private: Joint* latchJoint;
++    private: bool enableLatch;
++    private: double latchAngle;
++    private: double doorClosedAngle;
++    private: double latchKp;
++    private: double latchKd;
++    private: double latchFMax;
++    private: double current_time_latch, last_time_latch;
++    private: double current_error_latch, last_error_latch;
++
+     /// Feedback data for this joint
+     private: dJointFeedback *feedback;
+ 
 Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7168)
@@ -1078,7 +1133,7 @@ Index: server/physics/Body.cc
  // Return the ID of this body
  dBodyID Body::GetId() const
  {
-@@ -505,13 +703,57 @@
+@@ -505,13 +703,103 @@
  */
  void Body::UpdateCoM()
  {
@@ -1087,6 +1142,50 @@ Index: server/physics/Body.cc
 +
 +  if (this->customMassMatrix)
 +  {
++  // Old pose for the CoM
++  Pose3d oldPose, newPose, tmpPose;
++
++  // oldPose is the last comPose
++  // newPose is mass CoM
++  oldPose = this->comPose;
++
++  std::cout << " in UpdateCoM, name: " << this->GetName() << std::endl;
++  std::cout << " in UpdateCoM, comPose or oldPose: " << this->comPose << std::endl;
++
++  // New pose for the CoM
++  newPose.pos.x = this->cx;
++  newPose.pos.y = this->cy;
++  newPose.pos.z = this->cz;
++
++  std::map< std::string, Geom* >::iterator giter;
++  // Fixup the poses of the geoms (they are attached to the CoM)
++  for (giter = this->geoms.begin(); giter != this->geoms.end(); giter++)
++  {
++    if (giter->second->IsPlaceable())
++    {
++      // FOR GEOMS:
++      // get pose with comPose set to oldPose
++      this->comPose = oldPose;
++      tmpPose = giter->second->GetPose();
++
++      // get pose with comPose set to newPose
++      this->comPose = newPose;
++      giter->second->SetPose(tmpPose, false);
++    }
++  }
++
++  // FOR BODY: Fixup the pose of the CoM (ODE body)
++  // get pose with comPose set to oldPose
++  this->comPose = oldPose;
++  tmpPose = this->GetPose();
++  // get pose with comPose set to newPose
++  this->comPose = newPose;
++  this->SetPose(tmpPose);
++
++  // Settle on the new CoM pose
++  this->comPose = newPose;
++
++
 +
 +    // comPose is zero in this case, we'll keep cx, cy, cz
 +    this->comPose.Reset();
@@ -1124,6 +1223,8 @@ Index: server/physics/Body.cc
 +    // std::cout << " I[7] " << this->mass.I[7] << std::endl;
 +    // std::cout << " I[8] " << this->mass.I[8] << std::endl;
 +
++
++
 +  }
 +  else
 +  {
@@ -1140,7 +1241,7 @@ Index: server/physics/Body.cc
    // Construct the mass matrix by combining all the geoms
    dMassSetZero( &this->mass );
  
-@@ -521,12 +763,21 @@
+@@ -521,12 +809,21 @@
      if (giter->second->IsPlaceable() && giter->second->GetGeomId())
      {
        dMassAdd( &this->mass, lmass );
@@ -1162,7 +1263,7 @@ Index: server/physics/Body.cc
    if (std::isnan(this->mass.c[0]))
      this->mass.c[0] = 0;
  
-@@ -541,24 +792,37 @@
+@@ -541,24 +838,37 @@
    newPose.pos.y = this->mass.c[1];
    newPose.pos.z = this->mass.c[2];
  
@@ -1205,7 +1306,7 @@ Index: server/physics/Body.cc
  
  
    // Settle on the new CoM pose
-@@ -570,6 +834,8 @@
+@@ -570,6 +880,8 @@
    // Set the mass matrix
    if (this->mass.mass > 0)
      dBodySetMass( this->bodyId, &this->mass );
@@ -1214,61 +1315,6 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-Index: server/physics/Joint.hh
-===================================================================
---- server/physics/Joint.hh	(revision 7168)
-+++ server/physics/Joint.hh	(working copy)
-@@ -156,6 +156,8 @@
-     /// Name of this joint
-     private: ParamT<double> *erpP;
-     private: ParamT<double> *cfmP;
-+    private: ParamT<double> *stopKpP;
-+    private: ParamT<double> *stopKdP;
-     private: ParamT<std::string> *body1NameP;
-     private: ParamT<std::string> *body2NameP;
-     private: ParamT<std::string> *anchorBodyNameP;
-@@ -163,6 +165,41 @@
-     private: ParamT<bool> *provideFeedbackP;
-     private: ParamT<double> *fudgeFactorP;
- 
-+    /// Added for mimicing other joints
-+    private: ParamT<std::string> *mimicJointP;
-+    private: ParamT<double> *mimicMultP;
-+    private: ParamT<double> *mimicOffsetP;
-+    private: ParamT<double> *mimicKpP;
-+    private: ParamT<double> *mimicKdP;
-+    private: ParamT<double> *mimicFMaxP;
-+
-+    private: Joint *mimicJoint;
-+    private: bool enableMimic;
-+    private: double mimicMult;
-+    private: double mimicOffset;
-+    private: double mimicKp;
-+    private: double mimicKd;
-+    private: double mimicFMax;
-+    private: double current_time_mimic, last_time_mimic;
-+    private: double current_error_mimic, last_error_mimic;
-+
-+    private: ParamT<std::string> *latchJointP;
-+    private: ParamT<double> *latchAngleP;
-+    private: ParamT<double> *doorClosedAngleP;
-+    private: ParamT<double> *latchKpP;
-+    private: ParamT<double> *latchKdP;
-+    private: ParamT<double> *latchFMaxP;
-+
-+    private: Joint* latchJoint;
-+    private: bool enableLatch;
-+    private: double latchAngle;
-+    private: double doorClosedAngle;
-+    private: double latchKp;
-+    private: double latchKd;
-+    private: double latchFMax;
-+    private: double current_time_latch, last_time_latch;
-+    private: double current_error_latch, last_error_latch;
-+
-     /// Feedback data for this joint
-     private: dJointFeedback *feedback;
- 
 Index: server/physics/HingeJoint.cc
 ===================================================================
 --- server/physics/HingeJoint.cc	(revision 7168)
