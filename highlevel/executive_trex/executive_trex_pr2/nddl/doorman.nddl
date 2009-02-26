@@ -34,6 +34,7 @@
 #include "rcs.exports.nddl"
 #include "doorman.exports.nddl"
 #include "safety.exports.nddl"
+#include "nav.nddl"
 
 // Internal
 MoveBehavior doorman = new MoveBehavior(Internal, true);

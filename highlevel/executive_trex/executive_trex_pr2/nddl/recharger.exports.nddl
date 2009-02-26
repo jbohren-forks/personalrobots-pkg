@@ -28,3 +28,37 @@ class Recharger extends Behavior {
     super(_mode);
   }
 };
+
+Recharger::Inactive{
+  // Preceded by an effort to get to a desired pose. This drives regression from the goal for planning
+  // this(start] == Active(x, y, th, recharge_level)
+  if(x){
+    if(y){
+      if(th){
+	met_by(Active p);
+	eq(p.x, x);
+	eq(p.y, y);
+	eq(p.th, th);
+	eq(p.recharge_level, recharge_level);
+
+
+	// Derive the recharge level from battery state configuration
+	BatteryState bs;
+	eq(bs.actual_value, true);
+	eq(recharge_level, bs.recharge_level);
+      }
+    }
+  }
+
+  // Compare values based on base state. We are only reading these values. This is an important idiom
+  // to distinguish inputs evaluated from execution rather than planned for. This could be captured with suitable
+  // syntax in the language to make it more explicit what is going on. All we are really doing here
+  // is binding default values from execution
+  // Holds( desX + [-0.5, 0.5], desY + [-0.5, 0.5], desTh + [-0.5, 0.5]) = baseState(start); 
+  if(start){
+    starts(BaseState.Holds bs);
+    addEq(bs.x, [-0.5, 0.5], x);
+    addEq(bs.y, [-0.5, 0.5], y);
+    addEq(bs.th, [-0.5, 0.5], th);
+  }
+}

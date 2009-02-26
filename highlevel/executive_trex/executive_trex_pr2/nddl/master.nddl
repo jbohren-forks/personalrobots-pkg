@@ -96,11 +96,17 @@ class WorkingStatus extends AgentTimeline {
  */
 class Navigator extends Behavior {
 
+  predicate Inactive {
+    Location w;
+    bool recharging;
+  }
+
   /**
    * When active, we are pursuing a waypoint, although we may be pre-empted
    */
   predicate Active{
-    Waypoint w;
+    Location w;
+    bool recharging;
   }
 
   Navigator(){
@@ -141,7 +147,6 @@ class Path extends AgentTimeline {
     // Parameter Constraints based on the topological map
     map_is_doorway(is_doorway, region);
     map_get_region_from_position(region, x, y);
-    map_connector(target_connector, target_x, target_y);
     map_get_region_from_position(final_region, final_x, final_y);
   }
 
@@ -155,15 +160,21 @@ class Path extends AgentTimeline {
  */
 Path::Holds{
   // By default, we should be inactive
-  default(active, false);
+  defaultOnCommit(active, false);
 
   // The predecessor
   met_by(Holds p);
   eq(p.target_x, x);
   eq(p.target_y, y);
 
-  // Control Variable: captures if this is a thru-way (can continue under same navigation mode)
-  bool thru_way;
+  // If the target connector is a NO_KEY, then the target and the final positions are the same
+  if(target_connector == NO_KEY){
+    eq(target_x, final_x);
+    eq(target_y, final_y);
+  }
+  else {
+    map_connector(target_connector, target_x, target_y);
+  }
 
   // If we are inactive, this is not a thru way. Moreover, we can set all target variables
   // to be the same as the start
@@ -172,23 +183,34 @@ Path::Holds{
     any(BaseState.Holds bs);
     precedes(bs.start, start);
     temporalDistance(start, [1 +inf], bs.end);
-    eq(bs.x, x);
-    eq(bs.y, y);
-
-    eq(thru_way, false);
-    eq(x, target_x);
-    eq(y, target_y);
+    defaultOnCommit(x, bs.x);
+    defaultOnCommit(y, bs.y);
     eq(x, final_x);
     eq(y, final_y);
+    eq(target_connector, NO_KEY);
 
-    // We should also be sure that all MoveBehaviors are inactive
+    // We should also be sure that all MoveBehaviors are inactive. We should be careful that
+    // 1. We do not assume we can precisely force the inactive state at the start
+    // 2. We permit that it could already be inactive
+    // 3. We hold it inactive for the remainder
+    // 4. We do not say anything about when it becomes active
+    // behavior(start + [-inf, 2], end) == Inactive
     MoveBehavior behaviors;
     foreach(b in behaviors){
-      contained_by(b.Inactive);
+      any(b.Inactive mb);
+      temporalDistance(start, [-inf, 2], mb.start);
+      precedes(end, mb.end);
     }
   }
 
   if(active == true){
+    // Control Variable: is an end point
+    bool end_point;
+
+    meets(Holds s);
+
+    // Verify region values
+    neq(final_region, 0);
 
     // Successor will be active if the error exceeds our error limit
     float error;
@@ -196,59 +218,58 @@ Path::Holds{
     calcDistance(error, final_x, final_y, target_x, target_y);
     testLT(done, error, POSE_ERROR);
 
-    // Topological map functions and relations
+    // Carry forward parameters to the successor
+    eq(s.x, target_x);
+    eq(s.y, target_y);
+    eq(s.final_x, final_x);
+    eq(s.final_y, final_y);
+    eq(s.final_th, final_th);
 
-    // If the target connector is a NO_KEY, then we are making the last leg. This is basically navigating
-    // off the topological map.
-    if(target_connector == NO_KEY){
-      eq(target_x, final_x);
-      eq(target_y, final_y);
-    }
+    // If we are not done then the successor should be active and must end before the end of the mission. This kind of
+    // end time constraint is something we have to make explicit since there are many cases when such a condition would
+    // not apply. More generally, if active == true than it should fall within the horizon. This is a pattern we can exploit based
+    // on similar motives as those considered by the Behavior semantics for end times wrt the mission end time
+    if(done == false){
+      eq(s.active, true);
+      precedes(s.end, missionEnd);
 
-    // When we know the target_connector, we can extend the path. Note that this is really a form of search control knowlegde.
-    // What we really want to to is define an ordering for resolving the decomposition so we do not generate extra work
-    // until we need. This makes any planner less complicated because it will not spawn spurios successor tokens that
-    // can be mingled with the search
-    if(target_connector){
-
-      // Carry forward parameters to the successor
-      meets(Holds s);
-      eq(s.x, target_x);
-      eq(s.y, target_y);
-      eq(s.final_x, final_x);
-      eq(s.final_y, final_y);
-      eq(s.final_th, final_th);
-
-      // Once we know the kind of region to traverse, we should further decompose to handle the appropriate MoveBehavior
-      if(is_doorway){
-
-	// If we are not done then the successor should be active and must end before the end of the mission
-	if(done == false){
-	  eq(s.active, true);
-	  precedes(s.end, missionEnd);
-	  testEQ(thru_way, is_doorway, s.is_doorway);
-	}
-
-	// If we are done, then:
-	// 1. The target connector id is always 0, indicating it is not a connector.
-	// 2. The region id is the same as the final region id
-	if(done == true){
-	  eq(target_connector, NO_KEY);
-	  eq(region, final_region);
-	  eq(s.active, false);
-	  eq(thru_way, false);
-	}
+      // end_point = is_doorway || s.is_doorway
+      if(is_doorway == true){
+	eq(end_point, true);
+      }
+      else{
+	eq(end_point, s.is_doorway);
       }
     }
 
-    // If this is not a thru way, then we can subgoal moving to this end point.
-    if(thru_way == false){
+    // If we are done, then:
+    // 1. The target connector id is always 0, indicating it is not a connector.
+    if(done == true){
+      eq(target_connector, NO_KEY);
+      eq(s.active, false);
+      eq(end_point, true);
+    }
+
+    // If this is an endpoint then subgoal a behavior to get to the target position. We require that it:
+    // 1. starts before end
+    // 2. ends within a 2 tick window of when we end. This accounts for timing discrepancies between the behavior and the base state observations
+    //    that trigger region transitions
+    if(end_point == true){
       MoveBehavior move_behavior;
       eq(move_behavior.for_doorways, is_doorway);
-      ends(move_behavior.Active mb);
+      any(move_behavior.Active mb);
       eq(mb.x, target_x);
       eq(mb.y, target_y);
       eq(mb.th, 0.0);
+      precedes(0, mb.start);
+      precedes(mb.start, end);
+      temporalDistance(end, [-2, 2], mb.end);
+
+      // If it is a doorway, then we know the motion starts at or after the beginning
+      if(is_doorway == true){
+	precedes(start, mb.start);
+      }
+
       // BUG IN NDDL INTERPRETER FOR THIS PATTERN:
       //eq(mb.object.for_doorways, is_doorway);
       // TO DO - calculate a th that is meaningful for finding a door. We should probably
@@ -322,31 +343,51 @@ class MotionMutex extends AgentTimeline {
   }
 }
 
-/**
- * If the working status indicates that we are recharging, then we better be heading for a charging station
- */
+
 MoveBehavior::Active{
-  contained_by(WorkingStatus.Holds ws);
-  eq(ws.recharging, recharging);
-
-  if(recharging == true){
-    ChargingStation cs;
-    eq(cs.x, x);
-    eq(cs.y, y);
-    eq(cs.th, th);
-  }
-
+  // Only one moving modality at a time
   contained_by(MotionMutex.Using mutex);
   eq(mutex.user, this.object);
 }
 
 
 /**
- * The base state should contain a link to the path to indicate region changes.
+ * The base state should contain a link to the path to indicate changes. Note that there may
+ * be a discrepancy between when we transition a path and when the move behavior terminates. The temporal bounds
+ * here are subtle. We only want to ensure that the start time is contained. If we had used a contained_by relation
+ * then it imposes a precedence constraint between the base state end time and the end time of the path. We do not want
+ * to imply this. This is where a better notation would help:
+ * path(start) == Holds(region(x, y));
+ *
+ * @note: Cannot use the region query since the map used for testing does not respect region mapping
  */
 BaseState::Holds{
-  contained_by(Path.Holds p);
-  map_get_region_from_position(p.region, x, y);
+  any(Path.Holds p);
+  precedes(p.start, start);
+  temporalDistance(start, [1 +inf], p.end);
+
+  if(p.active == true){
+    float distance;
+    bool done;
+    calcDistance(distance, x, y, p.target_x, p.target_y);
+    testLEQ(done, distance, XY_ERROR);
+    if(done == true){
+      concurrent(p.end, end);
+    }
+  }
+
+  //map_get_region_from_position(p.region, x, y);
+  /*
+  int region; // The region containing the current state
+  bool same_region; // Will be true if the path is going thru this region
+  testEQ(same_region, region, p.region);
+  if(same_region == false){
+    int latest_transition;
+    temporalDistance(start, 2, latest_transition);
+    precedes(p.start, latest_transition);
+    precedes(end, p.end);
+  }
+  */
 }
 
 WorkingStatus::Holds{
@@ -361,24 +402,15 @@ WorkingStatus::Holds{
   defaultOnCommit(recharging, false);
 }
 
-
 Recharger::Active{
   contained_by(WorkingStatus.Holds ws);
   eq(ws.recharging, true);
 
-  // When busy pluging in or unplugging, we require that we are located, and stationary, at the
-  // correct charging station. This is derived by the given parameters
-  // Alternatives:
-  // moveBase[start, end] == Inactive(*, *, *, x, y, th);
-  // contained_by(moveBase.Inactive(*, *, *, x, y, th):
-  any(MoveBase.Inactive mb);
-  eq(mb.desX, x);
-  eq(mb.desY, y);
-  eq(mb.desTh, th);
-  eq(mb.recharging, true);
-  leq(duration, mb.duration);
-  precedes(mb.start, start);
-  precedes(end, mb.end);
+  contained_by(Navigator.Inactive n);
+  eq(n.w.x, x);
+  eq(n.w.y, y);
+  eq(n.w.th, th);
+  eq(n.recharging, true);
 }
 
 /**
@@ -395,6 +427,31 @@ BatteryState::Holds {
     temporalDistance(start, [-inf, 1], ws.start); 
     precedes(end, ws.end);
     eq(ws.recharging, true);
+  }
+}
+
+Navigator::Inactive{
+  default(recharging, false);
+
+  met_by(Active p);
+  eq(p.w, w);
+  eq(p.recharging, recharging);
+}
+
+Navigator::Active{
+  default(recharging, false);
+  starts(Path.Holds p);
+  eq(p.final_x, w.x);
+  eq(p.final_y, w.y);
+  eq(p.final_th, w.th);
+
+  contained_by(WorkingStatus.Holds ws);
+  eq(ws.recharging, recharging);
+
+  // If recharging, we should be going to a charging station
+  if(recharging == true){
+    ChargingStation cs;
+    eq(cs, w);
   }
 }
 

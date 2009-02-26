@@ -232,24 +232,33 @@ namespace executive_trex_pr2 {
     x1 = final_x->lastDomain().getSingletonValue();
     y1 = final_y->lastDomain().getSingletonValue();
 
-    unsigned int this_region = TopologicalMapAccessor::instance()->getRegion(x0, y0);  
-    checkError(this_region > 0, "No region for <" << x0 << ", " << y0 <<">");
+    unsigned int this_region =  TopologicalMapAccessor::instance()->getRegion(x0, y0);
+    condDebugMsg(this_region == 0, "MapConnectorSelector", "No region for <" << x0 << ", " << y0 <<">");
     unsigned int final_region =  TopologicalMapAccessor::instance()->getRegion(x1, y1);
-    checkError(final_region > 0, "No region for <" << x1 << ", " << y1 <<">");
-
-    // Build the set of choices based on all connectors for the current region
-    std::vector<unsigned int> connectors;
-    TopologicalMapAccessor::instance()->getRegionConnectors(this_region, connectors);
-
-    // If the current region and the target region are the same, include the 0 region id, which
-    // indicates we travel within the region
-    if(this_region == final_region)
-      _sorted_choices.push_back(Choice(0, sqrt(pow(x0 - x1, 2) + pow(y0 - y1, 2))));
+    condDebugMsg(final_region == 0, "MapConnectorSelector", "No region for <" << x1 << ", " << y1 <<">");
+    std::vector<unsigned int> final_region_connectors;
+    TopologicalMapAccessor::instance()->getRegionConnectors(final_region, final_region_connectors);
 
     // exclude the source connector if there is one
+    bool accessible_directly(false);
+
     unsigned int source_connector = TopologicalMapAccessor::instance()->getConnector(x0, y0);
+    for(unsigned int i = 0; i < final_region_connectors.size(); i++){
+      if(final_region_connectors[i] == source_connector){
+	accessible_directly = true;
+	break;
+      }
+    }
+
+    // If the source point and final point can be connected then we consider an option of going
+    // directly to the point rather than thru a connector. To figure this out we should look the region at
+    // the source connector and see if it is a connector for the final region
+    if(accessible_directly)
+      _sorted_choices.push_back(Choice(0, sqrt(pow(x0 - x1, 2) + pow(y0 - y1, 2))));
 
     // Now iterate over the connectors in this region and compute the heuristic cost estimate
+    std::vector<unsigned int> connectors;
+    TopologicalMapAccessor::instance()->getRegionConnectors(this_region, connectors);
     for(std::vector<unsigned int>::const_iterator it = connectors.begin(); it != connectors.end(); ++it){
       unsigned int connector_id = *it;
       if(connector_id != source_connector){
@@ -262,12 +271,33 @@ namespace executive_trex_pr2 {
 
     _sorted_choices.sort();
     _choice_iterator = _sorted_choices.begin();
+
+    debugMsg("MapConnectorSelector:MapConnectorSelector", 
+	     "Evaluating from <" << x0 << ", " << y0 << "> to <" << x1 << ", " << y1 << ">. " << toString());
+  }
+
+  std::string MapConnectorSelector::toString() const {
+    std::stringstream ss;
+    ss << "Choices are: " << std::endl;
+    for(std::list<Choice>::const_iterator it = _sorted_choices.begin(); it != _sorted_choices.end(); ++it){
+      const Choice& choice = *it;
+      double x, y;
+      TopologicalMapAccessor::instance()->getConnectorPosition(choice.id, x, y);
+
+      if(choice.id == 0)
+	ss << "<0, GOAL, " << choice.cost << ">" << std::endl;
+      else
+	ss << "<" << choice.id << ", (" << x << ", " << y << ") " << choice.cost << ">" << std::endl;
+    }
+
+    return ss.str();
   }
 
   bool MapConnectorSelector::hasNext() const { return _choice_iterator != _sorted_choices.end(); }
 
   double MapConnectorSelector::getNext(){
     MapConnectorSelector::Choice c = *_choice_iterator;
+    debugMsg("MapConnectorSelector::getNext", "Selecting " << c.id << std::endl);
     ++_choice_iterator;
     return c.id;
   }
@@ -308,6 +338,7 @@ namespace executive_trex_pr2 {
   TopologicalMapAdapter::TopologicalMapAdapter(const topological_map::OccupancyGrid& grid, double resolution)
     : TopologicalMapAccessor(resolution, topological_map::numCols(grid), topological_map::numRows(grid)){
     _map = topological_map::topologicalMapFromGrid(grid, resolution, 2, 1, 1, 0, "local");
+    toPostScriptFile();
   }
 
   TopologicalMapAdapter::~TopologicalMapAdapter(){
@@ -391,5 +422,53 @@ namespace executive_trex_pr2 {
   double TopologicalMapAdapter::hCost(unsigned int connector_id, double to_x, double to_y){
     // For now, use g_cost approach
     return gCost(to_x, to_y, connector_id);
+  }
+
+  void TopologicalMapAdapter::toPostScriptFile(){
+    std::ofstream of("topological_map.ps");
+
+    // Print header
+    of << "%%!PS\n";
+    of << "%%%%Creator: Conor McGann (Willow Garage)\n";
+    of << "%%%%EndComments\n";
+
+    of << "2 setlinewidth\n";
+    of << "newpath\n";
+
+    std::vector<unsigned int> regions;
+    std::vector<unsigned int> connectors;
+    unsigned int region_id = 1;
+    while(getRegionConnectors(region_id, connectors)){
+
+      // Set color based on region type
+      bool is_doorway(true);
+      isDoorway(region_id, is_doorway);
+      if(is_doorway){
+	of << "1\t0\t0\tsetrgbcolor\n";
+      }
+      else
+	of << "0\t1\t0\tsetrgbcolor\n";
+
+      for(unsigned int i = 0; i < connectors.size(); i++){
+	double x_i, y_i;
+	getConnectorPosition(connectors[i], x_i, y_i);
+	for(unsigned int j = 0; j < connectors.size(); j++){
+	  double x_j, y_j;
+	  getConnectorPosition(connectors[j], x_j, y_j);
+	  if(i != j){
+	    of << x_i * 10 << "\t" << y_i * 10 << "\tmoveto\n";
+	    of << x_j * 10 << "\t" << y_j * 10<< "\tlineto\n";
+	  }
+	}
+      }
+
+      of << "closepath stroke\n";
+
+      region_id++;
+    }
+
+    // Footer
+    of << "showpage\n%%%%EOF\n";
+    of.close();
   }
 }

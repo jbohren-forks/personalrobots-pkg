@@ -48,8 +48,13 @@ TEST(executive_trex_pr2, map_accessor){
       ASSERT_TRUE(valid);
     }
   }
+}
 
-  // Can we rely on connectors - within what precision?
+TEST(executive_trex_pr2, map_accessor_regression_tests){
+  // Check a point that shoud be in a region.
+  unsigned int region_id = TopologicalMapAccessor::instance()->getRegion(8.5, 0.5);
+  ROS_INFO_COND(region_id == 0, "Should be on the map but isn't with (%f, %f)", 8.5, 0.5);
+  ASSERT_TRUE(region_id > 0 || TopologicalMapAccessor::instance()->isObstacle(8.5, 0.5));
 }
 
 /**

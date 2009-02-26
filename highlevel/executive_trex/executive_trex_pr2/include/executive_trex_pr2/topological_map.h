@@ -111,6 +111,8 @@ namespace executive_trex_pr2 {
     double getNext();
 
   private:
+    std::string toString() const;
+
     class Choice {
     public:
     Choice():id(0), cost(0){}
@@ -262,6 +264,9 @@ namespace executive_trex_pr2 {
     virtual double hCost(unsigned int connector_id, double to_x, double to_y);
 
   private:
+    // Helper method to visualize the grap as a post script file
+    void toPostScriptFile();
+
     topological_map::TopologicalMapPtr _map;
   };
 }

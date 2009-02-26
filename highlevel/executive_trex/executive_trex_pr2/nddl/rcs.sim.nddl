@@ -143,65 +143,32 @@ BaseController::Holds{
 	eq(s.y, y);
 	eq(s.th, th);
 
-	// Compute estimated values for dx, dy, and dth. These will be applied if not over-ridden by some other event.
-	LINEAR_VELOCITY estDX;
-	LINEAR_VELOCITY estDY;
-	LINEAR_VELOCITY estDTH;
-
 	// Bounds on dx, dy, and dth are derived by analyzing the gap
 	float ub_dx, ub_dy, ub_dth;
 	addEq(current.x, ub_dx, x);
 	addEq(current.y, ub_dy, y);
 	addEq(current.th, ub_dth, th);
 
-	// Update estDX
-	bool x_positive;
-	testLEQ(x_positive, 0, ub_dx);
+	// Bind defaults based on linear velocity constraints. These kick in on commit. This pattern allows us to later
+	// apply other methods for binding values that supersede the estimate computed by physics model
+	LINEAR_VELOCITY estDX;
+	LINEAR_VELOCITY estDY;
+	LINEAR_VELOCITY estDTH;
+	defaultOnCommit(estDX, ub_dx);
+	defaultOnCommit(estDY, ub_dy);
+	defaultOnCommit(estDTH, ub_dth);
 
-	if(x_positive == true){
-	  leq(estDX, ub_dx);
+	if(estDX){
+	  defaultOnCommit(dx, estDX);
 	}
 
-	if(x_positive == false){
-	  leq(ub_dx, estDX);
+	if(estDY){
+	  defaultOnCommit(dy, estDY);
 	}
 
-	// Update estDY
-	bool y_positive;
-	testLEQ(y_positive, 0, ub_dy);
-
-	if(y_positive == true){
-	  leq(estDY, ub_dy);
+	if(estDTH){
+	  defaultOnCommit(dth, estDTH);
 	}
-
-	if(y_positive == false){
-	  leq(ub_dy, estDY);
-	}
-
-	// Update estDTH
-	bool th_positive;
-	testLEQ(th_positive, 0, ub_dth);
-
-	if(th_positive == true){
-	  leq(estDTH, ub_dth);
-	}
-
-	if(th_positive == false){
-	  leq(ub_dth, estDTH);
-	}
-
-	// These will not bind until second argument is a singleton
-	// on commit {
-	//            dx = absMax(estDX);
-	//            dy = absMax(estDY);
-	//            dth= absMax(estDTH);
-	// }
-	absMaxOnCommit(estDX);
-	absMaxOnCommit(estDY);
-	absMaxOnCommit(estDTH);
-	defaultOnCommit(dx, estDX);
-	defaultOnCommit(dy, estDY);
-	defaultOnCommit(dth, estDTH);
 
 	// if (abs(dx) >= XY_ERROR || abs(dy) >= XY_ERROR || abs(dth) > THETA_ERROR) then successor is active.
 	// Otherwise, terminate the parent.
@@ -273,6 +240,36 @@ MoveBase::Inactive{
   eq(bs.th, th);
 }
 
+float MAX_CAPACITY; // Maximum energy capacity of all batteries
+float NOMINAL_POWER_CONSUMPTION; // When not plugged in.
+float PLUGGED_IN_POWER_CONSUMPTION; // When plugged in, it should draw this amount
+
+/**
+ * Behavior will be started and executed perfectly
+ */
+RechargeController::Active{
+  // Forces a fixed duration.
+  eq(duration, 1);
+
+  // Batteries are magically charged at the end
+  meets(Inactive s);
+  eq(s.x, x);
+  eq(s.y, y);
+  eq(s.th, th);
+  eq(s.recharge_level, recharge_level);
+
+  // Fix the battery state at the end
+  ends(BatteryState.Holds bs);
+  float estEnergy, estCapacity, estConsumption;
+  mulEq(recharge_level, MAX_CAPACITY, estEnergy);
+  eq(estCapacity, MAX_CAPACITY);
+  eq(estConsumption, NOMINAL_POWER_CONSUMPTION);
+
+  defaultOnCommit(bs.energy_remaining, estEnergy);
+  defaultOnCommit(bs.energy_capacity, estCapacity);
+  defaultOnCommit(bs.power_consumption, estConsumption);
+}
+
 /**
  * By default it will retain prior values
  */
@@ -289,6 +286,7 @@ BaseController base_controller = new BaseController();
 
 // State Variables
 BaseState base_state = new BaseState(Internal);
+BatteryState battery_state = new BatteryState(Internal);
 
 // Behaviors
 MoveBase move_base = new MoveBase(Internal);

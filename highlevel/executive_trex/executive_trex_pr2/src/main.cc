@@ -190,10 +190,10 @@ int main(int argc, char **argv)
 
   int success = 0;
 
-  g_playback = executive_trex_pr2::isArg(argc, argv, "--playback");
+  bool playback = executive_trex_pr2::isArg(argc, argv, "--playback");
 
   try{
-    node = TREX::Executive::request();
+    node = TREX::Executive::request(playback);
     node->run();
   }
   catch(char* e){

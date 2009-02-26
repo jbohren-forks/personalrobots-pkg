@@ -68,10 +68,12 @@ MoveBehavior::Inactive {
   addEq(y, [-1.5, 1.5], des_y);
   addEq(th, [-.25, .25], des_th);
 
-  starts(BaseState.Holds bs);
-  eq(bs.x, x);
-  eq(bs.y, y);
-  eq(bs.th, th);
+  if(start){
+    starts(BaseState.Holds bs);
+    eq(bs.x, x);
+    eq(bs.y, y);
+    eq(bs.th, th);
+  }
 }
 
 MoveBehavior::Active{
