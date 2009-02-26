@@ -531,6 +531,9 @@
           <box size="0.001 0.001 0.001" />
         </geometry>
       </collision>
+      <map name="${side}_gripper_tool_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
     </link>
 
 
