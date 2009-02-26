@@ -55,7 +55,8 @@ namespace trajectory_rollout {
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int vx_samples, vtheta_samples;
     double pdist_scale, gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist;
-    bool holonomic_robot, dwa, simple_attractor;
+    bool holonomic_robot, dwa, simple_attractor, heading_scoring;
+    double heading_scoring_timestep;
     double max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th;
 
     base_scan_notifier_ = new MessageNotifier<LaserScan>(&tf_, &ros_node,
@@ -87,6 +88,8 @@ namespace trajectory_rollout {
     ros_node.param("~trajectory_rollout/min_in_place_vel_th", min_in_place_vel_th, 0.4);
     ros_node.param("~trajectory_rollout/freespace_model", freespace_model_, false);
     ros_node.param("~trajectory_rollout/dwa", dwa, false);
+    ros_node.param("~trajectory_rollout/heading_scoring", heading_scoring, false);
+    ros_node.param("~trajectory_rollout/heading_scoring_timestep", heading_scoring_timestep, 0.1);
     ros_node.param("~trajectory_rollout/simple_attractor", simple_attractor, false);
 
     //parameters for using the freespace controller
@@ -120,7 +123,8 @@ namespace trajectory_rollout {
     tc_ = new TrajectoryController(*world_model_, ma, footprint_spec, inscribed_radius, circumscribed_radius,
         acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity, vx_samples, vtheta_samples, pdist_scale,
         gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, holonomic_robot,
-        max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th, dwa, simple_attractor);
+        max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th,
+        dwa, heading_scoring, heading_scoring_timestep, simple_attractor);
   }
 
   void TrajectoryControllerROS::baseScanCallback(const MessageNotifier<LaserScan>::MessagePtr& message){

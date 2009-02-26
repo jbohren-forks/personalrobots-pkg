@@ -54,7 +54,7 @@ namespace trajectory_rollout{
       bool holonomic_robot,
       double max_vel_x, double min_vel_x,
       double max_vel_th, double min_vel_th, double min_in_place_vel_th,
-      bool dwa, bool simple_attractor,
+      bool dwa, bool heading_scoring, double heading_scoring_timestep, bool simple_attractor,
       vector<double> y_vels)
     : map_(ma.getWidth(), ma.getHeight()), ma_(ma), 
     world_model_(world_model), footprint_spec_(footprint_spec),
@@ -68,7 +68,8 @@ namespace trajectory_rollout{
     oscillation_reset_dist_(oscillation_reset_dist), holonomic_robot_(holonomic_robot),
     max_vel_x_(max_vel_x), min_vel_x_(min_vel_x), 
     max_vel_th_(max_vel_th), min_vel_th_(min_vel_th), min_in_place_vel_th_(min_in_place_vel_th),
-    dwa_(dwa), simple_attractor_(simple_attractor), y_vels_(y_vels)
+    dwa_(dwa), heading_scoring_(heading_scoring), heading_scoring_timestep_(heading_scoring_timestep),
+    simple_attractor_(simple_attractor), y_vels_(y_vels)
   {
     //the robot is not stuck to begin with
     stuck_left = false;
@@ -228,9 +229,14 @@ namespace trajectory_rollout{
     double vmag = sqrt(vx_samp * vx_samp + vy_samp * vy_samp);
 
     //compute the number of steps we must take along this trajectory to be "safe"
-    int num_steps = int(max((vmag * sim_time_) / sim_granularity_, abs(vtheta_samp) / sim_granularity_));
+    int num_steps;
+    if(!heading_scoring_)
+      num_steps = int(max((vmag * sim_time_) / sim_granularity_, abs(vtheta_samp) / sim_granularity_) + 0.5);
+    else
+      num_steps = int(sim_time_ / sim_granularity_ + 0.5);
 
     double dt = sim_time_ / num_steps;
+    double time = 0.0;
 
     //create a potential trajectory
     traj.resetPoints();
@@ -246,6 +252,7 @@ namespace trajectory_rollout{
     double path_dist = 0.0;
     double goal_dist = 0.0;
     double occ_cost = 0.0;
+    double heading_diff = 0.0;
 
     for(int i = 0; i < num_steps; ++i){
       //get map coordinates of a point
@@ -272,8 +279,18 @@ namespace trajectory_rollout{
       double cell_gdist = map_(cell_x, cell_y).goal_dist;
 
       //update path and goal distances
-      path_dist = cell_pdist;
-      goal_dist = cell_gdist;
+      if(!heading_scoring_){
+        path_dist = cell_pdist;
+        goal_dist = cell_gdist;
+      }
+      else if(time >= heading_scoring_timestep_ && time < heading_scoring_timestep_ + dt){
+        heading_diff = headingDiff(cell_x, cell_y, x_i, y_i, theta_i);
+        //update path and goal distances
+        path_dist = cell_pdist;
+        goal_dist = cell_gdist;
+      }
+
+      time += dt;
 
       //do we want to follow blindly
       if(simple_attractor_){
@@ -289,6 +306,7 @@ namespace trajectory_rollout{
           return;
         }
       }
+
 
       //the point is legal... add it to the trajectory
       traj.addPoint(x_i, y_i, theta_i);
@@ -306,9 +324,131 @@ namespace trajectory_rollout{
     }
 
     //ROS_INFO("OccCost: %f", occ_cost);
-    double cost = pdist_scale_ * path_dist + gdist_scale_ * goal_dist + occdist_scale_ * occ_cost;
+    double cost = -1.0;
+    if(!heading_scoring_)
+      cost = pdist_scale_ * path_dist + gdist_scale_ * goal_dist + occdist_scale_ * occ_cost;
+    else
+      cost = occdist_scale_ * occ_cost + heading_diff + gdist_scale_ * goal_dist;
 
     traj.cost_ = cost;
+  }
+
+  double TrajectoryController::headingDiff(int cell_x, int cell_y, double x, double y, double heading){
+    double heading_diff = DBL_MAX;
+    unsigned int goal_cell_x, goal_cell_y;
+    //find a clear line of sight from the robot's cell to a point on the path
+    for(int i = global_plan_.size() - 1; i >=0; --i){
+      if(ma_.WC_MC(global_plan_[i].x, global_plan_[i].y, goal_cell_x, goal_cell_y)){
+        if(lineCost(cell_x, goal_cell_x, cell_y, goal_cell_y) >= 0){
+          double gx, gy;
+          ma_.MC_WC(goal_cell_x, goal_cell_y, gx, gy);
+          double v1_x = gx - x;
+          double v1_y = gy - y;
+          double v2_x = cos(heading);
+          double v2_y = sin(heading);
+
+          double perp_dot = v1_x * v2_y - v1_y * v2_x;
+          double dot = v1_x * v2_x + v1_y * v2_y;
+
+          //get the signed angle
+          double vector_angle = atan2(perp_dot, dot);
+
+          heading_diff = abs(vector_angle);
+          return heading_diff;
+
+        }
+      }
+    }
+    return heading_diff;
+  }
+
+  //calculate the cost of a ray-traced line
+  double TrajectoryController::lineCost(int x0, int x1, 
+      int y0, int y1){
+    //Bresenham Ray-Tracing
+    int deltax = abs(x1 - x0);        // The difference between the x's
+    int deltay = abs(y1 - y0);        // The difference between the y's
+    int x = x0;                       // Start x off at the first pixel
+    int y = y0;                       // Start y off at the first pixel
+
+    int xinc1, xinc2, yinc1, yinc2;
+    int den, num, numadd, numpixels;
+
+    double line_cost = 0.0;
+    double point_cost = -1.0;
+
+    if (x1 >= x0)                 // The x-values are increasing
+    {
+      xinc1 = 1;
+      xinc2 = 1;
+    }
+    else                          // The x-values are decreasing
+    {
+      xinc1 = -1;
+      xinc2 = -1;
+    }
+
+    if (y1 >= y0)                 // The y-values are increasing
+    {
+      yinc1 = 1;
+      yinc2 = 1;
+    }
+    else                          // The y-values are decreasing
+    {
+      yinc1 = -1;
+      yinc2 = -1;
+    }
+
+    if (deltax >= deltay)         // There is at least one x-value for every y-value
+    {
+      xinc1 = 0;                  // Don't change the x when numerator >= denominator
+      yinc2 = 0;                  // Don't change the y for every iteration
+      den = deltax;
+      num = deltax / 2;
+      numadd = deltay;
+      numpixels = deltax;         // There are more x-values than y-values
+    }
+    else                          // There is at least one y-value for every x-value
+    {
+      xinc2 = 0;                  // Don't change the x for every iteration
+      yinc1 = 0;                  // Don't change the y when numerator >= denominator
+      den = deltay;
+      num = deltay / 2;
+      numadd = deltax;
+      numpixels = deltay;         // There are more y-values than x-values
+    }
+
+    for (int curpixel = 0; curpixel <= numpixels; curpixel++)
+    {
+      point_cost = pointCost(x, y); //Score the current point
+
+      if(point_cost < 0)
+        return -1;
+
+      if(line_cost < point_cost)
+        line_cost = point_cost;
+
+      num += numadd;              // Increase the numerator by the top of the fraction
+      if (num >= den)             // Check if numerator >= denominator
+      {
+        num -= den;               // Calculate the new numerator value
+        x += xinc1;               // Change the x as appropriate
+        y += yinc1;               // Change the y as appropriate
+      }
+      x += xinc2;                 // Change the x as appropriate
+      y += yinc2;                 // Change the y as appropriate
+    }
+
+    return line_cost;
+  }
+
+  double TrajectoryController::pointCost(int x, int y){
+    //if the cell is in an obstacle the path is invalid
+    if(ma_.isDefinitelyBlocked(x, y)){
+      return -1;
+    }
+
+    return ma_.getCost(x, y);
   }
 
   void TrajectoryController::updatePlan(const vector<Point2DFloat32>& new_plan){
@@ -327,11 +467,11 @@ namespace trajectory_rollout{
 
     //should we use the dynamic window approach?
     if(dwa_){
-      max_vel_x = min(max_vel_x_, vx + acc_x * sim_time_ * sim_granularity_);
-      min_vel_x = max(min_vel_x_, vx - acc_x * sim_time_ * sim_granularity_);
+      max_vel_x = min(max_vel_x_, vx + acc_x * .1);
+      min_vel_x = max(min_vel_x_, vx - acc_x * .1);
 
-      max_vel_theta = min(max_vel_th_, vtheta + acc_theta * sim_time_ * sim_granularity_);
-      min_vel_theta = max(min_vel_th_, vtheta - acc_theta * sim_time_ * sim_granularity_);
+      max_vel_theta = min(max_vel_th_, vtheta + acc_theta * .1);
+      min_vel_theta = max(min_vel_th_, vtheta - acc_theta * .1);
     }
     else{
       max_vel_x = min(max_vel_x_, vx + acc_x * sim_time_);
@@ -703,16 +843,16 @@ namespace trajectory_rollout{
     printf("%d %d\n", map_.size_x_, map_.size_y_);
     printf("255\n");
     for(int j = map_.size_y_ - 1; j >= 0; --j){
-    for(unsigned int i = 0; i < map_.size_x_; ++i){
-    int g_dist = 255 - int(map_(i, j).goal_dist);
-    int p_dist = 255 - int(map_(i, j).path_dist);
-    if(g_dist < 0)
-    g_dist = 0;
-    if(p_dist < 0)
-    p_dist = 0;
-    printf("%d 0 %d ", g_dist, 0);
-    }
-    printf("\n");
+      for(unsigned int i = 0; i < map_.size_x_; ++i){
+        int g_dist = 255 - int(map_(i, j).goal_dist);
+        int p_dist = 255 - int(map_(i, j).path_dist);
+        if(g_dist < 0)
+          g_dist = 0;
+        if(p_dist < 0)
+          p_dist = 0;
+        printf("%d 0 %d ", g_dist, 0);
+      }
+      printf("\n");
     }
     */
 
