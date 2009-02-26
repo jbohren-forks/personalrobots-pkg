@@ -47,7 +47,8 @@ import sys
 from math import *
 
 class ApproachTable:
-  def __init__(self, mb):
+  def __init__(self, mb, standoff):
+    self.standoff = standoff
     self.mb = mb
     self.odom_pose = None
     self.robot_position = None
@@ -97,7 +98,10 @@ class ApproachTable:
     self.vm.header.frame_id = resp.table.header.frame_id
     self.vm.z = resp.table.table.points[0].z
   
-    approach_pose = self.computeApproachPose(self.robot_position, resp.table.table, 0.5, True)
+    approach_pose = self.computeApproachPose(self.robot_position, resp.table.table, self.standoff, True)
+    
+    if approach_pose == None:
+      return False
   
     self.vm.id = 1000
     self.vm.type = VisualizationMarker.ARROW
@@ -150,6 +154,7 @@ class ApproachTable:
   
     if closestp[0] == None:
       print 'No closest point!'
+      return
   
     # Now find the second-closest, but require that it be some distance from
     # the first one
@@ -162,6 +167,10 @@ class ApproachTable:
         if sqd2 > 0.25:
           min_sqd[1] = sqd
           closestp[1] = p
+
+    if closestp[1] == None:
+      print 'No second-closest point!'
+      return
   
     # Also find the farthest, because we'll do a poor-man's point-in-polygon
     # check
@@ -174,8 +183,9 @@ class ApproachTable:
         maxsqd = sqd
         farthestp = p
   
-    if closestp[1] == None:
-      print 'No second-closest point!'
+    if farthestp == None:
+      print 'No farthest point!'
+      return
   
     print 'Robot pose: (%f,%f)'%(pose.x,pose.y)
     print 'Closest points: (%f,%f,%f),(%f,%f,%f)'%(closestp[0].x,closestp[0].y,closestp[0].z,closestp[1].x,closestp[1].y,closestp[1].z)
@@ -287,7 +297,7 @@ class ApproachTable:
   
 if __name__ == '__main__':
   mb = MoveBase()
-  at = ApproachTable(mb)
+  at = ApproachTable(mb, 0.5)
 
   rospy.init_node('approach_table', anonymous=True)
 

@@ -139,4 +139,9 @@ if __name__ == '__main__':
   import time
   time.sleep(3.0)
 
-  ta.tuckArm()
+  res = ta.tuckArm()
+
+  if res:
+    print 'Success!'
+  else:
+    print 'Failure!'
