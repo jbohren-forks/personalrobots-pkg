@@ -108,6 +108,10 @@ im3DWindow *w3d;		// OpenGL 3D display
 Fl_Window *w3dwin;		// Enclosing window
 
 
+// interval saving
+int isSaving = 0;		// zero interval means don't save, otherwise in seconds
+void save_images(char *fname);	// save helper
+
 #define MAXIMAGES 21
 
 // image storage, need it for undistortions
@@ -226,6 +230,8 @@ main(int argc, char **argv)	// no arguments
   w3d = NULL;			// no OpenGL window yet
   w3dwin = NULL;
   isExit = false;
+  int otime = 0;		// for interval saving
+  int savenum = 0;
 
   // initialize data structures
   for (int i=0; i<MAXIMAGES; i++)
@@ -489,6 +495,19 @@ main(int argc, char **argv)	// no arguments
 		      goodpair[0] = true;
 		      double ee = epi_scanline_error0();
 		      info_message("Epipolar error: %0.2f pixels", ee);
+		    }
+		}
+
+	      if (isSaving)	// save images at intervals
+		{
+		  int ctime = (int)(0.001 * get_ms());
+		  if (ctime > otime+isSaving) // interval exceeded
+		    {
+		      char fname[1024];
+		      sprintf(fname,"im-%06d",savenum);
+		      savenum++;
+		      save_images(fname);
+		      otime = ctime;
 		    }
 		}
 
@@ -1826,7 +1845,8 @@ void cal_capture_cb(Fl_Button*, void*)
 // should save all current possibilities
 //   currently just save grayscale images, if they exist
 
-void cal_save_image_cb(Fl_Button*, void*) 
+void
+cal_save_image_cb(Fl_Button*, void*) 
 {
   if (!dev)
     {
@@ -1838,6 +1858,13 @@ void cal_save_image_cb(Fl_Button*, void*)
   if (fname == NULL)
     return;
 
+  save_images(fname);
+}
+
+
+void 
+save_images(char *fname)
+{
   // find suffix, remove it if there
   int n = strlen(fname);
   int sufn = 0;
