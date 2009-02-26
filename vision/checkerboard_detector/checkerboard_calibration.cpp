@@ -229,7 +229,7 @@ private:
                     cvReleaseMat(&new_image_points);
                     off += _vNumPointsPerImage[i];
                 }
-                err = sqrt(err)/_vAllPoints.size();
+                err = sqrt(err/(double)_vAllPoints.size());
 
                 ROS_INFO("calibration done, reprojection error = %f", (float)err);
                 ROS_INFO("Intrinsic Matrix:");
