@@ -40,7 +40,7 @@ public:
   laser_scan::LaserScan msg;
 
 
-  MedianFilterNode(ros::Node& anode) :  filter(), node_(anode)
+  MedianFilterNode(ros::Node& anode) :  filter_chain_(), node_(anode)
   {
     std::string filter_xml;
     node_.advertise<laser_scan::LaserScan>("~output", 1000);
@@ -50,17 +50,17 @@ public:
     xml_doc.Parse(filter_xml.c_str());
     TiXmlElement * config = xml_doc.RootElement();
 
-    filter.configure(1, config);
+    filter_chain_.configure(1, config);
     node_.subscribe("scan_in", msg, &MedianFilterNode::callback,this, 3);
   }
   void callback()
   {
-    filter.update (msg, msg);
+    filter_chain_.update (msg, msg);
     node_.publish("~output", msg);
   }
 
 protected:
-  laser_scan::LaserMedianFilter<laser_scan::LaserScan> filter;
+  filters::FilterChain<laser_scan::LaserScan> filter_chain_;
   ros::Node& node_;
 };
 

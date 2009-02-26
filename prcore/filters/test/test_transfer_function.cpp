@@ -43,7 +43,7 @@ TEST(TransferFunctionFilter, LowPass)
   doc.Parse("<filter type=\"TransferFunctionFilter\" name=\"transferfunction_test\"> <params a=\"1.0 -0.509525449494429\" b=\" 0.245237275252786 0.245237275252786\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<std::vector<double> > * filter = new TransferFunctionFilter<std::vector<double> > ();
+  FilterBase<double> * filter = new TransferFunctionFilter<double> ();
   filter->configure(1, config );
   
 
@@ -77,7 +77,7 @@ TEST(TransferFunctionFilter, LowPassNonUnity)
   doc.Parse("<filter type=\"TransferFunctionFilter\" name=\"transferfunction_test\"> <params a=\"2.0 -0.509525449494429\" b=\" 0.245237275252786 0.245237275252786\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<std::vector<double> > * filter = new TransferFunctionFilter<std::vector<double> > ();
+  FilterBase<double> * filter = new TransferFunctionFilter<double> ();
   filter->configure(1, config );
     
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
@@ -110,7 +110,7 @@ TEST(TransferFunctionFilter, LowPassMulti)
   doc.Parse("<filter type=\"TransferFunctionFilter\" name=\"transferfunction_test\"> <params a=\"1.0 -1.760041880343169 1.182893262037831 -0.278059917634546\" b=\"0.018098933007514 0.245237275252786 0.054296799022543 0.018098933007514\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<std::vector<double> > * filter = new TransferFunctionFilter<std::vector<double> > ();
+  FilterBase<double> * filter = new TransferFunctionFilter<double> ();
   filter->configure(3, config );
 
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
@@ -169,7 +169,7 @@ TEST(TransferFunctionFilter, LowPassIrrational)
   doc.Parse("<filter type=\"TransferFunctionFilter\" name=\"transferfunction_test\"> <params a=\"1.0 -1.760041880343169 1.182893262037831 \" b=\"0.018098933007514 0.054296799022543 0.054296799022543 0.018098933007514\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<std::vector<double> > * filter = new TransferFunctionFilter<std::vector<double> > ();
+  FilterBase<double> * filter = new TransferFunctionFilter<double> ();
   filter->configure(3, config );
  
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;

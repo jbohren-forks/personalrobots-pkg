@@ -64,7 +64,7 @@ TEST(MedianFilter, ConfirmIdentityNRows)
   doc.Parse("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<std::vector<float> > * filter = new MedianFilter<std_vector_float>();
+  FilterBase<float > * filter = new MedianFilter<float>();
   filter->configure(rows, config );
   
 
@@ -95,7 +95,7 @@ TEST(MedianFilter, ThreeRows)
   doc.Parse("<filter type=\"MedianFilter\" name=\"median_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<std::vector<float> > * filter = new MedianFilter<std_vector_float>();
+  FilterBase<float > * filter = new MedianFilter<float>();
   filter->configure(rows, config );
   
   float input1[] = {0,1,2,3,4};

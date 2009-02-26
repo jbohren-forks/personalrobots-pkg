@@ -63,7 +63,7 @@ TEST(MeanFilter, ConfirmIdentityNRows)
   doc.Parse("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<std::vector<double> > * filter = new MeanFilter<std::vector<double> > ();
+  FilterBase<double > * filter = new MeanFilter<double > ();
   filter->configure(rows, config );
 
   double input1[] = {1,2,3,4,5};
@@ -93,7 +93,7 @@ TEST(MeanFilter, ThreeRows)
   doc.Parse("<filter type=\"MeanFilter\" name=\"mean_test\"> <params number_of_observations=\"5\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
   
-  FilterBase<std::vector<double> > * filter = new MeanFilter<std::vector<double> > ();
+  FilterBase<double > * filter = new MeanFilter<double > ();
   filter->configure(rows, config);
 
   double input1[] = {0,1,2,3,4};

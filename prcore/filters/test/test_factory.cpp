@@ -49,6 +49,11 @@ public:
     printf("Update called\n");
     return true;
   };
+  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)
+  {
+    printf("Update called\n");
+    return true;
+  };
 
 
 
@@ -57,15 +62,15 @@ public:
 ROS_REGISTER_FILTER(TestFilter, double)
 ROS_REGISTER_FILTER(TestFilter, float)
 ROS_REGISTER_FILTER(TestFilter, int)
-ROS_REGISTER_FILTER(TestFilter, std_vector_float)
+
 
 
 TEST(FilterChain, configuring)
 {
   std::string name = filters::getFilterID<float>("TestFilter");
   filters::FilterBase<float> * a_filter = filters::FilterFactory<float>::Instance().CreateObject(name);
-  name = filters::getFilterID<std::vector<float> >("TestFilter");
-  filters::FilterBase<std::vector<float> > * a1_filter = filters::FilterFactory<std::vector<float> >::Instance().CreateObject(name);
+  name = filters::getFilterID<float>("TestFilter");
+  filters::FilterBase<float> * a1_filter = filters::FilterFactory<float>::Instance().CreateObject(name);
   //filters::FilterBase<int> * a1_filter = filters::FilterFactory<int>::Instance().CreateObject("TestFilter<int>");
   name = filters::getFilterID<double>("TestFilter");
   filters::FilterBase<double> * b_filter = filters::FilterFactory<double>::Instance().CreateObject(name);

@@ -104,13 +104,16 @@ public:
    * \param data_out double array with length width
    */
   virtual bool update(const T& data_in, T& data_out);
+  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out);
   
   std::string name_;  //Name of the filter.
 
 protected:
-  T temp_storage_;                       ///< Preallocated storage for the list to sort
-  RealtimeVectorCircularBuffer<T>* data_storage_;                       ///< Storage for data between updates
+  std::vector<T> temp_storage_;                       ///< Preallocated storage for the list to sort
+  RealtimeVectorCircularBuffer<std::vector<T> >* data_storage_;                       ///< Storage for data between updates
   
+  std::vector<T> temp;  //used for preallocation and copying from non vector source
+
 
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
   uint32_t number_of_channels_;           ///< Number of elements per observation
@@ -145,7 +148,7 @@ bool MedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *c
   const char *name = config->Attribute("name");
   if (!name)
   {
-    fprintf(stderr, "Error: TransferFunctionFilter was not given a name.\n");
+    fprintf(stderr, "Error: MedianFilter was not given a name.\n");
     return false;
   }
   name_ = std::string(name);
@@ -154,16 +157,15 @@ bool MedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *c
   TiXmlElement *p = config->FirstChildElement("params");
   if (!p)
   {
-    fprintf(stderr, "Error: TransferFunctionFilter was not given params.\n");
+    fprintf(stderr, "Error: MedianFilter was not given params.\n");
     return false;
   }
   
   number_of_observations_ = atoi(p->Attribute("number_of_observations"));
   number_of_channels_ = number_of_channels;
     
-  T temp;
   temp.resize(number_of_channels_);
-  data_storage_ = new RealtimeVectorCircularBuffer<T>(number_of_observations_, temp);
+  data_storage_ = new RealtimeVectorCircularBuffer<std::vector<T> >(number_of_observations_, temp);
   temp_storage_.resize(number_of_observations_);
   
   configured_ = true;
@@ -171,7 +173,7 @@ bool MedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *c
 };
 
 template <typename T>
-bool MedianFilter<T>::update(const T& data_in, T& data_out)
+bool MedianFilter<T>::update(const std::vector<T>& data_in, std::vector<T>& data_out)
 {
   //  printf("Expecting width %d, got %d and %d\n", width_, data_in.size(),data_out.size());
   if (data_in.size() != number_of_channels_ || data_out.size() != number_of_channels_)
@@ -197,8 +199,35 @@ bool MedianFilter<T>::update(const T& data_in, T& data_out)
   return true;
 };
 
-ROS_REGISTER_FILTER(MedianFilter, std_vector_double)
-ROS_REGISTER_FILTER(MedianFilter, std_vector_float)
+template <typename T>
+bool MedianFilter<T>::update(const T& data_in, T& data_out)
+{
+  //  printf("Expecting width %d, got %d and %d\n", width_, data_in.size(),data_out.size());
+  if (number_of_channels_ != 1)
+    return false;
+  if (!configured_)
+    return false;
+
+  temp[0] = data_in;
+
+  data_storage_->push_back(temp);
+  ///\todo standardize on calling to vector class
+
+  unsigned int length = data_storage_->size();
+ 
+
+  for (uint32_t row = 0; row < length; row ++)
+  {
+    temp_storage_[row] = (*data_storage_)[row][0];
+  }
+  data_out = median(&temp_storage_[0], length);
+
+
+  return true;
+};
+
+ROS_REGISTER_FILTER(MedianFilter, double)
+ROS_REGISTER_FILTER(MedianFilter, float)
 }
 
 

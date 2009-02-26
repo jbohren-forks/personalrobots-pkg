@@ -62,7 +62,7 @@ public:
    * \param scan_in The new scan to filter
    * \param scan_out The filtered scan
    */
-  bool update(const laser_scan::LaserScan& scan_in, laser_scan::LaserScan& scan_out);
+  bool update(const std::vector<laser_scan::LaserScan>& scan_in, std::vector<laser_scan::LaserScan>& scan_out);
 
 
 private:
@@ -72,8 +72,8 @@ private:
   boost::mutex data_lock; /// Protection from multi threaded programs
   laser_scan::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
 
-  filters::FilterChain<std_vector_float > * range_filter_;
-  filters::FilterChain<std_vector_float > * intensity_filter_;
+  filters::FilterChain<float> * range_filter_;
+  filters::FilterChain<float> * intensity_filter_;
 
   boost::scoped_ptr<TiXmlElement>  latest_xml_;
 };
@@ -94,13 +94,16 @@ bool LaserMedianFilter<T>::configure(unsigned int number_of_channels, TiXmlEleme
 {
   ROS_ASSERT(number_of_channels == 1);
   latest_xml_.reset( xml_doc->Clone()->ToElement());
+  TiXmlElement * child = latest_xml_.get()->FirstChild("filters")->ToElement();
+  if (!child)
+    return false;
+  range_filter_ = new filters::FilterChain<float>();
+  if (!range_filter_->configure(num_ranges_, child))
+    return false;
   
-  range_filter_ = new filters::FilterChain<std::vector<float> >();
-  range_filter_->configure(num_ranges_, latest_xml_.get());
-  
-  intensity_filter_ = new filters::FilterChain<std::vector<float> >();
-  intensity_filter_->configure(num_ranges_, latest_xml_.get());
-
+  intensity_filter_ = new filters::FilterChain<float>();
+  if (!intensity_filter_->configure(num_ranges_, child))
+    return false;
   return true;
 };
 
@@ -112,8 +115,16 @@ LaserMedianFilter<T>::~LaserMedianFilter()
 };
 
 template <typename T>
-bool LaserMedianFilter<T>::update(const laser_scan::LaserScan& scan_in, laser_scan::LaserScan& scan_out)
+bool LaserMedianFilter<T>::update(const std::vector<laser_scan::LaserScan>& data_in, std::vector<laser_scan::LaserScan>& data_out)
 {
+  if (data_in.size() != 1 || data_out.size() != 1)
+  {
+    ROS_ERROR("LaserMedianFilter is not vectorized");
+    return false;
+  }
+  const laser_scan::LaserScan & scan_in = data_in[0];
+  laser_scan::LaserScan & scan_out = data_out[0];
+  
   boost::mutex::scoped_lock lock(data_lock);
   scan_out = scan_in; ///Quickly pass through all data \todo don't copy data too
 
@@ -126,12 +137,13 @@ bool LaserMedianFilter<T>::update(const laser_scan::LaserScan& scan_in, laser_sc
 
     num_ranges_ = scan_in.get_ranges_size();
     
-    
-    range_filter_ = new filters::FilterChain<std::vector<float> >();
-    range_filter_->configure(num_ranges_, latest_xml_.get());
+    TiXmlElement * child = latest_xml_.get()->FirstChild("filters")->ToElement();
+
+    range_filter_ = new filters::FilterChain<float>();
+    range_filter_->configure(num_ranges_, child);
   
-    intensity_filter_ = new filters::FilterChain<std::vector<float> >();
-    intensity_filter_->configure(num_ranges_, latest_xml_.get());
+    intensity_filter_ = new filters::FilterChain<float>();
+    intensity_filter_->configure(num_ranges_, child);
     
   }
 

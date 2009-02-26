@@ -64,8 +64,20 @@ public:
 
 
   /** \brief Update the filter and return the data seperately
+   * This is a lazy way to do this and can be overridden in the derived class
    */
-  virtual bool update(const T& data_in, T& data_out)=0;
+  virtual bool update(const T& data_in, T& data_out)
+  {
+    std::vector<T> temp_in(1);
+    std::vector<T> temp_out(1);
+    temp_in[0] = data_in;
+    bool retval =  update(temp_in, temp_out);
+    data_out = temp_out[0];
+    return retval;
+  };
+  /** \brief Update the filter and return the data seperately
+   */
+  virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)=0;
 
   std::string getType() {return typeid(T).name();};
 };
@@ -85,7 +97,6 @@ class FilterFactory : public Loki::SingletonHolder < Loki::Factory< filters::Fil
   filters::FilterBase<t> * Filters_New_##c##__##t() {return new c< t >;}; \
   bool ROS_FILTER_## c ## _ ## t =                                                    \
     filters::FilterFactory<t>::Instance().Register(filters::getFilterID<t>(std::string(#c)), Filters_New_##c##__##t); 
-///\todo make this use templating to get the data type, the user doesn't ever set the data type at runtime
 
 }
 

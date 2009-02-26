@@ -164,6 +164,7 @@ public:
   
   /** \brief process data through each of the filters added sequentially */
   bool update(const T& data_in, T& data_out);
+  bool update(const std::vector<T>& data_in, std::vector<T>& data_out);
 
 
   ~FilterChain()
@@ -175,14 +176,25 @@ public:
 private:
   std::vector<boost::shared_ptr<filters::FilterBase<T> > > reference_pointers_;
 
-  T buffer0_; ///<! A temporary intermediate buffer
-  T buffer1_; ///<! A temporary intermediate buffer
+  std::vector<T> buffer0_; ///<! A temporary intermediate buffer
+  std::vector<T> buffer1_; ///<! A temporary intermediate buffer
   bool configured_; ///<! whether the system is configured  
 
 };
 
 template <typename T>
 bool FilterChain<T>::update (const T& data_in, T& data_out)
+{
+  std::vector<T> temp_in(1);
+  std::vector<T> temp_out(1);
+  temp_in[0] = data_in;
+  bool retval =  update(temp_in, temp_out);
+  data_out = temp_out[0];
+  
+  return retval;
+};
+template <typename T>
+bool FilterChain<T>::update (const std::vector<T>& data_in, std::vector<T>& data_out)
 {
   unsigned int list_size = reference_pointers_.size();
   bool result;

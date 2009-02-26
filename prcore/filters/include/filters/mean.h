@@ -63,17 +63,22 @@ public:
    * \param data_out T array with length width
    */
   virtual bool update( const T & data_in, T& data_out);
+  virtual bool update( const std::vector<T> & data_in, std::vector<T>& data_out);
   
   std::string name_;  //Name of the filter.
 
 protected:
-  RealtimeVectorCircularBuffer<T>* data_storage_; ///< Storage for data between updates
+  RealtimeVectorCircularBuffer<std::vector<T> >* data_storage_; ///< Storage for data between updates
   uint32_t last_updated_row_;                     ///< The last row to have been updated by the filter
+
+  std::vector<T> temp;  //used for preallocation and copying from non vector source
 
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
   uint32_t number_of_channels_;           ///< Number of elements per observation
 
   bool configured_;
+
+  
   
 };
 
@@ -112,9 +117,8 @@ bool MeanFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *con
   number_of_observations_ = atof(p->Attribute("number_of_observations"));
   number_of_channels_ = number_of_channels;
   
-  T temp;
   temp.resize(number_of_channels);
-  data_storage_ = new RealtimeVectorCircularBuffer<T>(number_of_observations_, temp);
+  data_storage_ = new RealtimeVectorCircularBuffer<std::vector<T> >(number_of_observations_, temp);
 
   configured_ = true;
   return true;
@@ -129,6 +133,40 @@ MeanFilter<T>::~MeanFilter()
 
 template <typename T>
 bool MeanFilter<T>::update(const T & data_in, T& data_out)
+{
+  //  ROS_ASSERT(data_in.size() == width_);
+  //ROS_ASSERT(data_out.size() == width_);
+  if (number_of_channels_ != 1)
+    return false;
+
+  temp[0] = data_in;
+
+  //update active row
+  if (last_updated_row_ >= number_of_observations_ - 1)
+    last_updated_row_ = 0;
+  else
+    last_updated_row_++;
+
+  data_storage_->push_back(temp);
+
+
+  unsigned int length = data_storage_->size();
+  
+  //Return each value
+  for (uint32_t i = 0; i < number_of_channels_; i++)
+  {
+    data_out = 0;
+    for (uint32_t row = 0; row < length; row ++)
+    {
+      data_out += data_storage_->at(row)[i];
+    }
+    data_out /= length;
+  }
+
+  return true;
+};
+template <typename T>
+bool MeanFilter<T>::update(const std::vector<T> & data_in, std::vector<T>& data_out)
 {
   //  ROS_ASSERT(data_in.size() == width_);
   //ROS_ASSERT(data_out.size() == width_);
@@ -160,8 +198,8 @@ bool MeanFilter<T>::update(const T & data_in, T& data_out)
   return true;
 };
 
-ROS_REGISTER_FILTER(MeanFilter, std_vector_double)
-ROS_REGISTER_FILTER(MeanFilter, std_vector_float)
+ROS_REGISTER_FILTER(MeanFilter, double)
+ROS_REGISTER_FILTER(MeanFilter, float)
 
 }
 

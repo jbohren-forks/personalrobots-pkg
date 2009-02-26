@@ -94,6 +94,7 @@ public:
    * \param data_out vector<T> with number_of_channels elements
    */
   virtual bool update(const T & data_in, T& data_out) ;
+  virtual bool update(const std::vector<T> & data_in, std::vector<T>& data_out) ;
   
   
   std::string name_;  //Name of the filter.
@@ -102,8 +103,10 @@ protected:
   
   unsigned int number_of_channels_;  //The number of inputs filtered.
   
-  RealtimeVectorCircularBuffer<T>* input_buffer_; //The input sample history. 
-  RealtimeVectorCircularBuffer<T>* output_buffer_; //The output sample history.
+  RealtimeVectorCircularBuffer<std::vector<T> >* input_buffer_; //The input sample history. 
+  RealtimeVectorCircularBuffer<std::vector<T> >* output_buffer_; //The output sample history.
+  
+  std::vector<T>  temp; //used for storage and preallocation
   
   std::vector<double> a_;   //Transfer functon coefficients (output).
   std::vector<double> b_;   //Transfer functon coefficients (input).
@@ -112,8 +115,8 @@ protected:
 
 };
 
-ROS_REGISTER_FILTER(TransferFunctionFilter, std_vector_double)
-ROS_REGISTER_FILTER(TransferFunctionFilter, std_vector_float)
+ROS_REGISTER_FILTER(TransferFunctionFilter, double)
+ROS_REGISTER_FILTER(TransferFunctionFilter, float)
 
 template <typename T>
 TransferFunctionFilter<T>::TransferFunctionFilter():
@@ -174,10 +177,9 @@ bool TransferFunctionFilter<T>::configure(unsigned int number_of_channels, TiXml
   number_of_channels_ = number_of_channels;
   
   // Create the input and output buffers of the correct size.
-  T temp;
   temp.resize(number_of_channels);
-  input_buffer_ = new RealtimeVectorCircularBuffer<T>(b_.size()-1, temp);
-  output_buffer_ = new RealtimeVectorCircularBuffer<T>(a_.size()-1, temp);
+  input_buffer_ = new RealtimeVectorCircularBuffer<std::vector<T> >(b_.size()-1, temp);
+  output_buffer_ = new RealtimeVectorCircularBuffer<std::vector<T> >(a_.size()-1, temp);
   
   // Prevent divide by zero while normalizing coeffs.
   if ( a_[0] == 0)
@@ -209,15 +211,47 @@ template <typename T>
 bool TransferFunctionFilter<T>::update(const T & data_in, T& data_out)
 {
   // Ensure the correct number of inputs
+  if (number_of_channels_ != 1)
+    return false;
+  
+  // Copy data to prevent mutation if in and out are the same ptr
+  temp[0] = data_in;        
+  std::vector<T> temp_in(1);
+  temp_in[0] = data_in;
+  std::vector<T> temp_out(1);
+
+  for (uint32_t i = 0; i < temp_in.size(); i++)
+  {
+    temp_out[i]=(b_[0]) * (temp_in[i]);
+
+    for (uint32_t row = 1; row <= input_buffer_->size(); row++)
+    {
+      (temp_out)[i] += b_[row] * (*input_buffer_)[row-1][i];
+    }
+    for (uint32_t row = 1; row <= output_buffer_->size(); row++)
+    {
+      (temp_out)[i] -= a_[row] * (*output_buffer_)[row-1][i];
+    }
+  }
+  input_buffer_->push_front(temp_in);
+  output_buffer_->push_front(temp_out);
+
+  data_out = temp_out[0];
+  return true;
+}
+template <typename T>
+bool TransferFunctionFilter<T>::update(const std::vector<T>  & data_in, std::vector<T> & data_out)
+{
+  // Ensure the correct number of inputs
   if (data_in.size() != number_of_channels_ || data_out.size() != number_of_channels_ )  
     return false;
   
   // Copy data to prevent mutation if in and out are the same ptr
-  T current_input = data_in;        
+  temp = data_in;        
 
-  for (uint32_t i = 0; i < current_input.size(); i++)
+  for (uint32_t i = 0; i < temp.size(); i++)
   {
-    data_out[i]=b_[0] * current_input[i];
+    data_out[i]=b_[0] * temp[i];
 
     for (uint32_t row = 1; row <= input_buffer_->size(); row++)
     {
@@ -228,7 +262,7 @@ bool TransferFunctionFilter<T>::update(const T & data_in, T& data_out)
       (data_out)[i] -= a_[row] * (*output_buffer_)[row-1][i];
     }
   }
-  input_buffer_->push_front(current_input);
+  input_buffer_->push_front(temp);
   output_buffer_->push_front(data_out);
 
   return true;
