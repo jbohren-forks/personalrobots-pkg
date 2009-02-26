@@ -1,3 +1,4 @@
 robot_msgs/Pose pose
+robot_msgs/JointTrajPoint joint_pos
 ---
 robot_msgs/JointTraj traj
