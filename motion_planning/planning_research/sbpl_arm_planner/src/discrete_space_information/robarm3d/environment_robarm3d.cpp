@@ -2266,9 +2266,9 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
         for(int j = 0; j < 3; j++)
             EnvROBARMCfg.GoalOrientationMOE[i][j] = .02;
 
-    EnvROBARMCfg.GoalRPY_MOE[0] = .35;
-    EnvROBARMCfg.GoalRPY_MOE[1] = .35;
-    EnvROBARMCfg.GoalRPY_MOE[2] = .35;
+    EnvROBARMCfg.GoalRPY_MOE[0] = .2;
+    EnvROBARMCfg.GoalRPY_MOE[1] = .2;
+    EnvROBARMCfg.GoalRPY_MOE[2] = .2;
 
     //default map has 1cm resolution
     EnvROBARMCfg.GridCellWidth = .01;
@@ -2295,13 +2295,6 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
     ContXYZ2Cell(EnvROBARMCfg.BaseX_m, EnvROBARMCfg.BaseY_m, EnvROBARMCfg.BaseZ_m, &(EnvROBARMCfg.BaseX_c), &(EnvROBARMCfg.BaseY_c), &(EnvROBARMCfg.BaseZ_c));
 
     EnvROBARMCfg.nEndEffGoals = 0;
-
-//     for (int i = 0; i < NUMOFLINKS; i++)
-//     {
-//         EnvROBARMCfg.LinkStartAngles_d[i] = -1;
-//         printf("%f  ", EnvROBARMCfg.LinkStartAngles_d[i]);
-//     }
-//     printf("\n");
 }
 
 bool EnvironmentROBARM3D::InitializeEnv(const char* sEnvFile)
@@ -2755,7 +2748,7 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     //check if cell is close to enough to goal to use higher resolution actions
     if(EnvROBARMCfg.multires_succ_actions)
     {
-        if (GetEuclideanDistToGoal((HashEntry->endeff)) <= EnvROBARMCfg.HighResActionsThreshold_c)
+        if (GetDistToClosestGoal((HashEntry->endeff)) <= EnvROBARMCfg.HighResActionsThreshold_c)
         {
             actions_i_max = EnvROBARMCfg.nSuccActions;
         }
@@ -2868,7 +2861,12 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
                             EnvROBARM.goalHashEntry->endeff[1] = EnvROBARMCfg.EndEffGoals_c[k][1];
                             EnvROBARM.goalHashEntry->endeff[2] = EnvROBARMCfg.EndEffGoals_c[k][2];
                             EnvROBARM.goalHashEntry->action = i;
-			   break;
+
+                            printf("goal found -> endeff: (%u %u %u)\n",EnvROBARM.goalHashEntry->endeff[0],EnvROBARM.goalHashEntry->endeff[1],EnvROBARM.goalHashEntry->endeff[2]);
+                            printf("angles: ");
+                            for(int i=0; i<NUMOFLINKS;i++)
+                                printf("%1.3f ",angles[i]);
+                            printf("\n");
                         }
                     }
                     //3DoF goal position
@@ -2885,7 +2883,11 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
                         EnvROBARM.goalHashEntry->endeff[1] = EnvROBARMCfg.EndEffGoals_c[k][1];
                         EnvROBARM.goalHashEntry->endeff[2] = EnvROBARMCfg.EndEffGoals_c[k][2];
                         EnvROBARM.goalHashEntry->action = i;
-			break;
+                        printf("goal found -> endeff: (%u %u %u)\n",EnvROBARM.goalHashEntry->endeff[0],EnvROBARM.goalHashEntry->endeff[1],EnvROBARM.goalHashEntry->endeff[2]);
+                        printf("angles: ");
+                                for(int i=0; i<NUMOFLINKS;i++)
+                                printf("%1.3f ",angles[i]);
+                        printf("\n");
                     }
                 }
             }
@@ -2974,8 +2976,10 @@ bool EnvironmentROBARM3D::SetEndEffGoals(double** EndEffGoals, int goal_type, in
             {
                 delete [] EnvROBARMCfg.EndEffGoals_c[i];
                 delete [] EnvROBARMCfg.EndEffGoalOrientations[i];
+                delete [] EnvROBARMCfg.EndEffGoalRPY[i];
                 delete [] EnvROBARMCfg.EndEffGoals_m[i];
             }
+            delete [] EnvROBARMCfg.EndEffGoalRPY;
             delete [] EnvROBARMCfg.EndEffGoals_c;
             delete [] EnvROBARMCfg.EndEffGoalOrientations;
             delete [] EnvROBARMCfg.EndEffGoals_m;
@@ -2983,6 +2987,7 @@ bool EnvironmentROBARM3D::SetEndEffGoals(double** EndEffGoals, int goal_type, in
             EnvROBARMCfg.EndEffGoals_c = NULL;
             EnvROBARMCfg.EndEffGoalOrientations = NULL;
             EnvROBARMCfg.EndEffGoals_m = NULL;
+            EnvROBARMCfg.EndEffGoalRPY = NULL;
 
 //             EnvROBARM.goalHashEntry = NULL;
             EnvROBARMCfg.bGoalIsSet = false;
@@ -3097,19 +3102,11 @@ bool EnvironmentROBARM3D::SetEndEffGoals(double** EndEffGoals, int goal_type, in
 
     for(int i = 0; i < EnvROBARMCfg.nEndEffGoals; i++)
     {
-        printf("goal %i:  %u %u %u (cells) --> %.2f %.2f %.2f (meters)\n",i,EnvROBARMCfg.EndEffGoals_c[i][0], EnvROBARMCfg.EndEffGoals_c[i][1],
-            EnvROBARMCfg.EndEffGoals_c[i][2],EnvROBARMCfg.EndEffGoals_m[i][0],EnvROBARMCfg.EndEffGoals_m[i][1],EnvROBARMCfg.EndEffGoals_m[i][2]);
+        printf("goal %i:  %u %u %u (cells) --> %.2f %.2f %.2f (meters)  rpy: (%1.2f %1.2f %1.2f)\n",i,EnvROBARMCfg.EndEffGoals_c[i][0], EnvROBARMCfg.EndEffGoals_c[i][1],
+               EnvROBARMCfg.EndEffGoals_c[i][2],EnvROBARMCfg.EndEffGoals_m[i][0],EnvROBARMCfg.EndEffGoals_m[i][1],EnvROBARMCfg.EndEffGoals_m[i][2],EnvROBARMCfg.EndEffGoalRPY[i][0],EnvROBARMCfg.EndEffGoalRPY[i][1],EnvROBARMCfg.EndEffGoalRPY[i][2]);
     }
-
-    for(int i = 0; i < EnvROBARMCfg.nEndEffGoals; i++)
-    {
-        printf("goal orientation %i: ",i);
-        for (int k=0; k <9; k++)
-            printf("%.2f  ",EnvROBARMCfg.EndEffGoalOrientations[i][k]);
-        printf("\n");
-    }
-
     printf("\n\n");
+
     return true;
 }
 
@@ -4205,12 +4202,23 @@ void EnvironmentROBARM3D::ValidateDH2KinematicsLibrary() //very very hackish
 }
 */
 
-int EnvironmentROBARM3D::GetEuclideanDistToGoal(short unsigned int* xyz)
+int EnvironmentROBARM3D::GetDistToClosestGoal(short unsigned int* xyz)
 {
-    return sqrt((EnvROBARMCfg.EndEffGoalX_c - xyz[0])*(EnvROBARMCfg.EndEffGoalX_c - xyz[0]) +
-                (EnvROBARMCfg.EndEffGoalY_c - xyz[1])*(EnvROBARMCfg.EndEffGoalY_c - xyz[1]) +
-                (EnvROBARMCfg.EndEffGoalZ_c - xyz[2])*(EnvROBARMCfg.EndEffGoalZ_c - xyz[2]));
+    int min_dist = 10000000;
+    int dist;
+
+    for(int i=0; i < EnvROBARMCfg.nEndEffGoals;i++)
+    {
+        dist = sqrt((EnvROBARMCfg.EndEffGoals_c[i][0] - xyz[0])*(EnvROBARMCfg.EndEffGoals_c[i][0] - xyz[0]) +
+                (EnvROBARMCfg.EndEffGoals_c[i][1] - xyz[1])*(EnvROBARMCfg.EndEffGoals_c[i][1] - xyz[1]) +
+                (EnvROBARMCfg.EndEffGoals_c[i][2] - xyz[2])*(EnvROBARMCfg.EndEffGoals_c[i][2] - xyz[2]));
+        if(dist < min_dist)
+            min_dist = dist;
+    }
+
+    return min_dist;
 }
+
 //--------------------------------------------------------------
 
 /*------------------------------------------------------------------------*/

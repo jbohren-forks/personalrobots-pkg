@@ -397,7 +397,7 @@ private:
 
     //compute heuristic
     void InitializeKinNode();
-    void getDistancetoGoal(int* HeurGrid, int goalx, int goaly, int goalz);
+    int GetDistToClosestGoal(short unsigned int* xyz);
     void ComputeHeuristicValues();
     void ReInitializeState3D(State3D* state);
     void InitializeState3D(State3D* state, short unsigned int x, short unsigned int y, short unsigned int z);
@@ -416,7 +416,6 @@ private:
     void ComputeDHTransformations();
     void ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double *z);
     void ComputeForwardKinematics_DH(double angles[NUMOFLINKS]);
-    
 };
 
 #endif
