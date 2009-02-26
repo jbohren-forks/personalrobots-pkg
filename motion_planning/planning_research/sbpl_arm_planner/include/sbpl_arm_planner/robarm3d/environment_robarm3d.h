@@ -376,7 +376,7 @@ private:
     bool IsValidCell(int X, int Y, int Z);
     bool IsWithinMapCell(int X, int Y, int Z);
     bool AreEquivalent(int State1ID, int State2ID);
-    int GetEuclideanDistToGoal(short unsigned int* xyz);
+
 
     //cost functions
     int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
@@ -397,6 +397,7 @@ private:
 
     //compute heuristic
     void InitializeKinNode();
+    void getDistancetoGoal(int* HeurGrid, int goalx, int goaly, int goalz);
     int GetDistToClosestGoal(short unsigned int* xyz);
     void ComputeHeuristicValues();
     void ReInitializeState3D(State3D* state);

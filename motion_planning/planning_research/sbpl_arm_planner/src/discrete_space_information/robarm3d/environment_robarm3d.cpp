@@ -2810,27 +2810,9 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
                     if(EnvROBARMCfg.checkEndEffGoalOrientation)
                     {
                         correct_orientation = 0;
-//                         indx = 0;
-//                         for (int x = 0; x < 3; x++)
-//                         {
-//                             for (int y = 0; y < 3; y++)
-//                             {
-//                                 if(fabs(orientation[x][y] - EnvROBARMCfg.EndEffGoalOrientations[k][indx]) > EnvROBARMCfg.GoalOrientationMOE[x][y])
-//                                 {
-//                                     correct_orientation = 0;
-//                                     break;
-//                                 }
-//                                 indx++;
-//                             }
-//                             if(correct_orientation == 0)
-//                                 break;
-//                         }
 
-			//stupid way to check orientation. fix this later
-
-                        // get roll pitch and yaw
+                        // get roll pitch and yaw - solution 1
                         getRPY(orientation, &roll, &pitch, &yaw, 1);
-                        //printf("endeff (%u %u %u) roll: %1.3f  pitch: %1.3f yaw: %1.3f\n",endeff[0],endeff[1],endeff[2],roll,pitch,yaw);
 
                         //compare RPY to goal RPY and see if it is within the MOE 
 		  	if(angles::shortest_angular_distance(roll, EnvROBARMCfg.EndEffGoalRPY[k][0]) < EnvROBARMCfg.GoalRPY_MOE[0] &&
@@ -2838,14 +2820,13 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 			     angles::shortest_angular_distance(yaw, EnvROBARMCfg.EndEffGoalRPY[k][2]) < EnvROBARMCfg.GoalRPY_MOE[2])
                                 correct_orientation = 1;
 
+                        // get roll pitch and yaw - solution 2
                         getRPY(orientation, &roll, &pitch, &yaw, 2);
-                        //printf("endeff (%u %u %u) roll: %1.3f  pitch: %1.3f yaw: %1.3f\n",endeff[0],endeff[1],endeff[2],roll,pitch,yaw);
 
-                          //compare RPY to goal RPY and see if it is within the MOE 
-			  if((angles::shortest_angular_distance(roll, EnvROBARMCfg.EndEffGoalRPY[k][0]) < EnvROBARMCfg.GoalRPY_MOE[0] &&
-			     angles::shortest_angular_distance(pitch, EnvROBARMCfg.EndEffGoalRPY[k][1]) < EnvROBARMCfg.GoalRPY_MOE[1] &&
-			     angles::shortest_angular_distance(yaw, EnvROBARMCfg.EndEffGoalRPY[k][2]) < EnvROBARMCfg.GoalRPY_MOE[2]) ||
-         		     correct_orientation == 1)
+                        //compare RPY to goal RPY and see if it is within the MOE 
+                        if((angles::shortest_angular_distance(roll, EnvROBARMCfg.EndEffGoalRPY[k][0]) < EnvROBARMCfg.GoalRPY_MOE[0] &&
+                            angles::shortest_angular_distance(pitch, EnvROBARMCfg.EndEffGoalRPY[k][1]) < EnvROBARMCfg.GoalRPY_MOE[1] &&
+                            angles::shortest_angular_distance(yaw, EnvROBARMCfg.EndEffGoalRPY[k][2]) < EnvROBARMCfg.GoalRPY_MOE[2]))
                                 correct_orientation = 1;
 
                         if(correct_orientation == 1)
@@ -2862,11 +2843,11 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
                             EnvROBARM.goalHashEntry->endeff[2] = EnvROBARMCfg.EndEffGoals_c[k][2];
                             EnvROBARM.goalHashEntry->action = i;
 
-                            printf("goal found -> endeff: (%u %u %u)\n",EnvROBARM.goalHashEntry->endeff[0],EnvROBARM.goalHashEntry->endeff[1],EnvROBARM.goalHashEntry->endeff[2]);
-                            printf("angles: ");
-                            for(int i=0; i<NUMOFLINKS;i++)
-                                printf("%1.3f ",angles[i]);
-                            printf("\n");
+//                             printf("goal found -> endeff: (%u %u %u)\n",EnvROBARM.goalHashEntry->endeff[0],EnvROBARM.goalHashEntry->endeff[1],EnvROBARM.goalHashEntry->endeff[2]);
+//                             printf("angles: ");
+//                             for(int i=0; i<NUMOFLINKS;i++)
+//                                 printf("%1.3f ",angles[i]);
+//                             printf("\n");
                         }
                     }
                     //3DoF goal position
@@ -2883,11 +2864,11 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
                         EnvROBARM.goalHashEntry->endeff[1] = EnvROBARMCfg.EndEffGoals_c[k][1];
                         EnvROBARM.goalHashEntry->endeff[2] = EnvROBARMCfg.EndEffGoals_c[k][2];
                         EnvROBARM.goalHashEntry->action = i;
-                        printf("goal found -> endeff: (%u %u %u)\n",EnvROBARM.goalHashEntry->endeff[0],EnvROBARM.goalHashEntry->endeff[1],EnvROBARM.goalHashEntry->endeff[2]);
-                        printf("angles: ");
-                                for(int i=0; i<NUMOFLINKS;i++)
-                                printf("%1.3f ",angles[i]);
-                        printf("\n");
+//                         printf("goal found -> endeff: (%u %u %u)\n",EnvROBARM.goalHashEntry->endeff[0],EnvROBARM.goalHashEntry->endeff[1],EnvROBARM.goalHashEntry->endeff[2]);
+//                         printf("angles: ");
+//                                 for(int i=0; i<NUMOFLINKS;i++)
+//                                 printf("%1.3f ",angles[i]);
+//                         printf("\n");
                     }
                 }
             }
@@ -3326,6 +3307,14 @@ void EnvironmentROBARM3D::AddObstaclesToEnv(double**obstacles, int numobstacles)
 
     for(int i = 0; i < numobstacles; i++)
     {
+        //check if obstacle is within the arm's reach
+        //WORKSPACE CHECK IS PR2 SPECIFIC - terrible hack just for testing tonight (2/25/08)
+        if(fabs(obstacles[i][0]) >  1.0 || fabs(obstacles[i][1]) >  1.0 || fabs(obstacles[i][2]) >  1.0)
+        {
+            printf("obstacle (%1.3f %1.3f %1.3f) is out of arm's reach.\n",obstacles[i][0],obstacles[i][1],obstacles[i][2]);
+            continue;
+        }
+
         for(int p = 0; p < 6; p++)
             obs[p] = obstacles[i][p];
 
@@ -3422,72 +3411,7 @@ bool EnvironmentROBARM3D::isPathValid(double** path, int num_waypoints)
     return true;
 }
 
-  /**@brief Get the matrix represented as euler angles around ZYX
- * @param yaw Yaw around X axis
- * @param pitch Pitch around Y axis
- * @param roll around X axis
-   * @param solution_number Which solution of two possible solutions ( 1 or 2) are possible values*/   
- /* void getEulerZYX(btScalar& yaw, btScalar& pitch, btScalar& roll, unsigned int solution_number = 1) const
-{
-    struct Euler{btScalar yaw, pitch, roll;};
-    Euler euler_out;
-    Euler euler_out2; //second solution
-    //get the pointer to the raw data
-   
-    // Check that pitch is not at a singularity
-    if (btFabs(m_el[2].x()) >= 1)
-    {
-        euler_out.yaw = 0;
-        euler_out2.yaw = 0;
-   
-      // From difference of angles formula
-        btScalar delta = btAtan2(m_el[0].x(),m_el[0].z());
-        if (m_el[2].x() > 0)  //gimbal locked up
-        {
-            euler_out.pitch = SIMD_PI / btScalar(2.0);
-            euler_out2.pitch = SIMD_PI / btScalar(2.0);
-            euler_out.roll = euler_out.pitch + delta;
-            euler_out2.roll = euler_out.pitch + delta;
-        }
-        else // gimbal locked down
-        {
-            euler_out.pitch = -SIMD_PI / btScalar(2.0);
-            euler_out2.pitch = -SIMD_PI / btScalar(2.0);
-            euler_out.roll = -euler_out.pitch + delta;
-            euler_out2.roll = -euler_out.pitch + delta;
-        }
-    }
-    else
-    {
-        euler_out.pitch = - btAsin(m_el[2].x());
-        euler_out2.pitch = SIMD_PI - euler_out.pitch;
-   
-        euler_out.roll = btAtan2(m_el[2].y()/btCos(euler_out.pitch),
-                                 m_el[2].z()/btCos(euler_out.pitch));
-        euler_out2.roll = btAtan2(m_el[2].y()/btCos(euler_out2.pitch),
-                                  m_el[2].z()/btCos(euler_out2.pitch));
-   
-        euler_out.yaw = btAtan2(m_el[1].x()/btCos(euler_out.pitch),
-                                m_el[0].x()/btCos(euler_out.pitch));
-        euler_out2.yaw = btAtan2(m_el[1].x()/btCos(euler_out2.pitch),
-                                 m_el[0].x()/btCos(euler_out2.pitch));
-    }
-   
-    if (solution_number == 1)
-    {
-        yaw = euler_out.yaw;
-        pitch = euler_out.pitch;
-        roll = euler_out.roll;
-    }
-    else
-    {
-        yaw = euler_out2.yaw;
-        pitch = euler_out2.pitch;
-        roll = euler_out2.roll;
-    }
-}
-*/
-
+//copied from getEulerZYX() in Bullet physics library
 void EnvironmentROBARM3D::getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw, int solution_number)
 {
     double delta,rpy1[3],rpy2[3];
@@ -3498,6 +3422,7 @@ void EnvironmentROBARM3D::getRPY(double Rot[3][3], double* roll, double* pitch, 
         rpy1[2]  = 0;
         rpy2[2]  = 0;
 
+        // From difference of angles formula
         delta = atan2(Rot[0][0], Rot[2][0]);
         if(Rot[0][2] > 0)   //gimbal locked up
         {
@@ -3543,7 +3468,7 @@ void EnvironmentROBARM3D::getRPY(double Rot[3][3], double* roll, double* pitch, 
     {
         *yaw = rpy2[2];
         *pitch = rpy2[1];
-        *roll = rpy2[0];    
+        *roll = rpy2[0];
     }
 }
 //--------------------------------------------------------------
@@ -3641,10 +3566,14 @@ void EnvironmentROBARM3D::PrintAnglesWithAction(FILE* fOut, EnvROBARMHashEntry_t
     double angles[NUMOFLINKS];
     int dangles[NUMOFLINKS];
     int i;
-   // short unsigned int endeff[3] = {0};  //temporary fix to having start hash entry not always be correct
 
     //convert to angles
     ComputeContAngles(HashEntry->coord, angles);
+
+//     if(bGoal)
+//         ComputeContAngles(EnvROBARMCfg.goalcoords, angles);
+//     else
+//         ComputeContAngles(HashEntry->coord, angles);
 
     //convert to degrees
     if(bVerbose)
@@ -3686,85 +3615,13 @@ void EnvironmentROBARM3D::PrintAnglesWithAction(FILE* fOut, EnvROBARMHashEntry_t
     }
 #endif
 
-//     ComputeEndEffectorPos(angles, endeff);
-
     if(bVerbose)
-//         fprintf(fOut, "  endeff: %-2d %-2d %-2d   action: %d", endeff[0],endeff[1],endeff[2], HashEntry->action);
     	fprintf(fOut, "  endeff: %-2d %-2d %-2d   action: %d", HashEntry->endeff[0],HashEntry->endeff[1],HashEntry->endeff[2], HashEntry->action);
     else
-//         fprintf(fOut, "%-2d %-2d %-2d %-2d", endeff[0],endeff[1],endeff[2],HashEntry->action);
     	fprintf(fOut, "%-2d %-2d %-2d %-2d", HashEntry->endeff[0],HashEntry->endeff[1],HashEntry->endeff[2],HashEntry->action);
 
     fprintf(fOut, "\n");
-
-//     printf("[PrintAnglesWithAction] Exiting...\n");
 }
-
-/*
-void EnvironmentROBARM3D::PrintAnglesWithAction(FILE* fOut, EnvROBARMHashEntry_t* HashEntry, bool bGoal, bool bVerbose, bool bLocal)
-{
-    double angles[NUMOFLINKS];
-    int dangles[NUMOFLINKS];
-    int i;
-
-    if(bGoal)
-        ComputeContAngles(EnvROBARMCfg.goalcoords, angles);
-    else
-        ComputeContAngles(HashEntry->coord, angles);
-
-    if(bVerbose)
-    {
-        for (i = 0; i < NUMOFLINKS; i++)
-        {
-            dangles[i] = angles[i]*(180/PI_CONST) + 0.999999;
-        }
-    }
-
-    if(bVerbose)
-        fprintf(fOut, "angles: ");
-
-#if OUPUT_DEGREES
-    for(i = 0; i < NUMOFLINKS; i++)
-    {
-        if(!bLocal)
-            fprintf(fOut, "%-3i ", dangles[i]);
-        else
-        {
-            if(i > 0)
-                fprintf(fOut, "%-3i ", dangles[i]-dangles[i-1]);
-            else
-                fprintf(fOut, "%-3i ", dangles[i]);
-        }
-    }
-#else
-    for(i = 0; i < NUMOFLINKS; i++)
-    {
-        if(!bLocal)
-            fprintf(fOut, "%-.3f ", angles[i]);
-        else
-        {
-            if(i > 0)
-                fprintf(fOut, "%-.3f ", angles[i]-angles[i-1]);
-            else
-                fprintf(fOut, "%-.3f ", angles[i]);
-        }
-    }
-#endif
-
-    if(bGoal)
-    {
-        HashEntry->endeff[0] = EnvROBARMCfg.EndEffGoalX_c;
-        HashEntry->endeff[1] = EnvROBARMCfg.EndEffGoalY_c;
-        HashEntry->endeff[2] = EnvROBARMCfg.EndEffGoalZ_c;
-    }
-    if(bVerbose)
-        fprintf(fOut, "  endeff: %-2d %-2d %-2d   action: %d", HashEntry->endeff[0],HashEntry->endeff[1],HashEntry->endeff[2], HashEntry->action);
-    else
-        fprintf(fOut, "%-2d %-2d %-2d %-2d", HashEntry->endeff[0],HashEntry->endeff[1],HashEntry->endeff[2],HashEntry->action);
-
-    fprintf(fOut, "\n");
-}
-*/
 
 void EnvironmentROBARM3D::PrintConfiguration()
 {
@@ -4220,132 +4077,3 @@ int EnvironmentROBARM3D::GetDistToClosestGoal(short unsigned int* xyz)
 }
 
 //--------------------------------------------------------------
-
-/*------------------------------------------------------------------------*/
-                        /* For Taking Statistics */
-/*------------------------------------------------------------------------*/
-bool EnvironmentROBARM3D::InitializeEnvForStats(const char* sEnvFile,  int n)
-{
-    // default values - temporary solution
-    EnvROBARMCfg.use_DH = 1;
-    EnvROBARMCfg.enforce_motor_limits = 1;
-    EnvROBARMCfg.dijkstra_heuristic = 1;
-    EnvROBARMCfg.endeff_check_only = 0;
-    EnvROBARMCfg.padding = 0.06;
-    EnvROBARMCfg.smoothing_weight = 0.0;
-    EnvROBARMCfg.use_smooth_actions = 1;
-    EnvROBARMCfg.gripper_orientation_moe =  .018; // 0.0125;
-    EnvROBARMCfg.object_grasped = 0;
-    EnvROBARMCfg.grasped_object_length_m = .1;
-    EnvROBARMCfg.enforce_upright_gripper = 0;
-    EnvROBARMCfg.goal_moe_m = .1;
-    EnvROBARMCfg.JointSpaceGoal = 0;
-//     EnvROBARMCfg.goal_moe_r = .15;
-    EnvROBARMCfg.checkEndEffGoalOrientation = 0;
-
-    //parse the parameter file - temporary
-    char parFile[] = "params.cfg";
-    FILE* fCfg = fopen(parFile, "r");
-    if(fCfg == NULL)
-	printf("ERROR: unable to open %s.....using defaults.\n", parFile);
-
-    ReadParamsFile(fCfg);
-    fclose(fCfg);
-
-    //parse the configuration file
-    fCfg = fopen(sEnvFile, "r");
-    if(fCfg == NULL)
-    {
-	printf("ERROR: unable to open %s\n", sEnvFile);
-	exit(1);
-    }
-    ReadConfiguration(fCfg);
-    fclose(fCfg);
-
-    //read in the starting positions of the joints and the end effector position
-    char statsFile[] = "StatsFile.cfg";
-    fCfg = fopen(statsFile, "r");
-    if(fCfg == NULL)
-    {
-	printf("ERROR: unable to open %s\n", sEnvFile);
-	exit(1);
-    }
-    InitializeStatistics(fCfg, n);
-
-    //initialize forward kinematics
-    if (!EnvROBARMCfg.use_DH)
-        //start ros node
-        InitializeKinNode();
-    else
-        //pre-compute DH Transformations
-        ComputeDHTransformations();
-
-    //initialize other parameters of the environment
-    InitializeEnvConfig();
-
-    //initialize Environment
-    if(InitializeEnvironment() == false)
-        return false;
-
-    //pre-compute action-to-action costs
-    ComputeActionCosts();
-
-    //compute the cost per cell to be used by heuristic
-    ComputeCostPerCell();
-
-    //pre-compute heuristics
-    ComputeHeuristicValues();
-
-#if VERBOSE
-    //output environment data
-//     printf("Start:  ");
-//     for (int k = 0; k < 7; k++)
-//         printf("%.2f  ",EnvROBARMCfg.LinkStartAngles_d[k]);
-//     printf("\n");
-
-    PrintAbridgedConfiguration();
-#endif
-    return true;
-}
-
-void EnvironmentROBARM3D::InitializeStatistics(FILE* fCfg, int n)
-{
-    char sTemp[1024];
-    double x,y,z;
-//     int stop = 0;
-
-//     while(!feof(fCfg) && strlen(sTemp) != 0)
-//     {
-    for(int j = 0; j < 10*(n-1); j++)
-        fscanf(fCfg, "%s", sTemp);
-
-    //parse starting joint angles
-    for (int i = 0; i < NUMOFLINKS; i++)
-    {
-        fscanf(fCfg, "%s", sTemp);
-        EnvROBARMCfg.LinkStartAngles_d[i] = 0;//atof(sTemp);
-    }
-
-    //end effector goal x
-    fscanf(fCfg, "%s", sTemp);
-    x = atof(sTemp);
-    fscanf(fCfg, "%s", sTemp);
-    y = atof(sTemp);
-    fscanf(fCfg, "%s", sTemp);
-    z = atof(sTemp);
-
-
-    ContXYZ2Cell(x, y,z, &EnvROBARMCfg.EndEffGoalX_c, &EnvROBARMCfg.EndEffGoalY_c, &EnvROBARMCfg.EndEffGoalZ_c);
-//     printf("Start: %i %i %i\n",EnvROBARMCfg.EndEffGoalX_c, EnvROBARMCfg.EndEffGoalY_c, EnvROBARMCfg.EndEffGoalZ_c);
-//         if(stop == n)
-//             break;
-//         stop++;
-//     }
-
-//     if(stop != n)
-//     {
-//         printf("StatsFile does not contain the desired amount of lines.\n");
-//         exit(1);
-//     }
-}
-
