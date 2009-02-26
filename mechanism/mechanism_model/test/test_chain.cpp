@@ -97,8 +97,35 @@ protected:
     model.joints_.push_back(quickJoint("bc", tf::Vector3(1,0,0)));
     model.links_.push_back(quickLink("c", "b", "bc", tf::Vector3(1,0,0), tf::Vector3(0,0,0)));
 
+    state.reset(new RobotState(&model, &hw));
+  }
+
+  virtual void TearDown() {}
+
+  Robot model;
+  HardwareInterface hw;
+  boost::scoped_ptr<RobotState> state;
+};
+
+// 4 Links, but not all in the same chain
+class ShortTreeTest : public testing::Test
+{
+protected:
+  ShortTreeTest() : hw(0) {}
+  virtual ~ShortTreeTest() {}
+
+  virtual void SetUp()
+  {
+    model.links_.push_back(quickLink("a", "world", "", tf::Vector3(0,0,0), tf::Vector3(0,0,0)));
+
+    model.joints_.push_back(quickJoint("ab", tf::Vector3(1,-1,0)));
+    model.links_.push_back(quickLink("b", "a", "ab", tf::Vector3(1,0,0), tf::Vector3(0,0,0)));
+
+    model.joints_.push_back(quickJoint("bc", tf::Vector3(1,0,0)));
+    model.links_.push_back(quickLink("c", "b", "bc", tf::Vector3(1,0,0), tf::Vector3(0,0,0)));
+
     model.joints_.push_back(quickJoint("bd", tf::Vector3(1,0,0)));
-    model.links_.push_back(quickLink("d", "b", "bd", tf::Vector3(1,0,0), tf::Vector3(-M_PI/2,0,0)));
+    model.links_.push_back(quickLink("d", "b", "bd", tf::Vector3(1,0,0), tf::Vector3(0,0,0)));
 
     state.reset(new RobotState(&model, &hw));
   }
@@ -113,25 +140,21 @@ protected:
 TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
 {
   Chain chain;
-  EXPECT_TRUE(chain.init(&model, "a", "d"));
+  EXPECT_TRUE(chain.init(&model, "a", "c"));
   EXPECT_EQ(0, chain.link_indices_[0]);
   EXPECT_EQ(1, chain.link_indices_[1]);
-  //EXPECT_EQ(2, chain.link_indices_[2]);
-  EXPECT_EQ(3, chain.link_indices_[2]);
+  EXPECT_EQ(2, chain.link_indices_[2]);
   EXPECT_EQ(0, chain.joint_indices_[0]);
-  //EXPECT_EQ(1, chain.joint_indices_[1]);
-  EXPECT_EQ(2, chain.joint_indices_[1]);
+  EXPECT_EQ(1, chain.joint_indices_[1]);
 
   KDL::Chain kdl;
   chain.toKDL(kdl);
-  for (unsigned int i=0; i<kdl.getNrOfJoints(); i++)
-    cout << "kdl chain contains joint " << chain.getJointName(i) << endl;
+  //for (unsigned int i=0; i<kdl.getNrOfJoints(); i++)
+  //  cout << "kdl chain contains joint " << chain.getJointName(i) << endl;
 
 
-  //ASSERT_EQ(model.links_.size(), kdl.getNrOfSegments());
-  //ASSERT_EQ(model.joints_.size(), kdl.getNrOfJoints());
-  ASSERT_EQ(3, kdl.getNrOfSegments());
-  ASSERT_EQ(2, kdl.getNrOfJoints());
+  ASSERT_EQ(model.links_.size(), kdl.getNrOfSegments());
+  ASSERT_EQ(model.joints_.size(), kdl.getNrOfJoints());
 
   setJoint(state.get(), 0, M_PI/4);
   setJoint(state.get(), 1, M_PI/4);
@@ -164,6 +187,71 @@ TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
     EXPECT_TRANSFORMS_EQ(from_mech, from_kdl) << "...and this was for link " << i;
   }
 }
+
+TEST_F(ShortTreeTest, FKMatchOnTrees)
+{
+  Chain chain;
+  EXPECT_TRUE(chain.init(&model, "a", "d"));
+  EXPECT_EQ(0, chain.link_indices_[0]);
+  EXPECT_EQ(1, chain.link_indices_[1]);
+  EXPECT_EQ(3, chain.link_indices_[2]);
+  EXPECT_EQ(0, chain.joint_indices_[0]);
+  EXPECT_EQ(2, chain.joint_indices_[1]);
+
+  KDL::Chain kdl;
+  chain.toKDL(kdl);
+  //for (unsigned int i=0; i<kdl.getNrOfJoints(); i++)
+  //  cout << "kdl chain contains joint " << chain.getJointName(i) << endl;
+
+
+  ASSERT_EQ(3, kdl.getNrOfSegments());
+  ASSERT_EQ(2, kdl.getNrOfJoints());
+
+  setJoint(state.get(), 0, M_PI/4);
+  setJoint(state.get(), 1, M_PI/4);
+
+  KDL::JntArray jnts(2);
+  chain.getPositions(state->joint_states_, jnts);
+
+
+  // FK with mechanism
+  state->link_states_[0].propagateFK(NULL, NULL);
+  for (unsigned int i = 1; i < state->link_states_.size(); ++i)
+    state->link_states_[i].propagateFK(&state->link_states_[i-1], &state->joint_states_[i-1]);
+
+  // FK with KDL
+  std::vector<KDL::Frame> kdl_frames(model.links_.size());
+  KDL::ChainFkSolverPos_recursive solver(kdl);
+  for (unsigned int i = 0; i<3; ++i)
+    ASSERT_GE(solver.JntToCart(jnts, kdl_frames[i], i+1), 0) << "failed on link " << i;
+
+  // Compares the resulting transforms/frames
+  tf::Transform from_kdl, from_mech ;
+  TransformKDLToTF(kdl_frames[0], from_kdl);
+  from_kdl *= chain.getTransformFromKDL(0);
+
+  from_mech = tf::Transform(state->link_states_[0].abs_orientation_,
+                            state->link_states_[0].abs_position_);
+
+  EXPECT_TRANSFORMS_EQ(from_mech, from_kdl) << "...and this was for link " << 0 ;
+
+  TransformKDLToTF(kdl_frames[1], from_kdl);
+  from_kdl *= chain.getTransformFromKDL(1);
+
+  from_mech = tf::Transform(state->link_states_[1].abs_orientation_,
+                            state->link_states_[1].abs_position_);
+
+  EXPECT_TRANSFORMS_EQ(from_mech, from_kdl) << "...and this was for link " << 1 ;
+
+  TransformKDLToTF(kdl_frames[2], from_kdl);
+  from_kdl *= chain.getTransformFromKDL(2);
+
+  from_mech = tf::Transform(state->link_states_[3].abs_orientation_,
+                            state->link_states_[3].abs_position_);
+
+  EXPECT_TRANSFORMS_EQ(from_mech, from_kdl) << "...and this was for link " << 2 ;
+}
+
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
