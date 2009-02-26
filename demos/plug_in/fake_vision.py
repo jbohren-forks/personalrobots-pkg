@@ -43,7 +43,7 @@ def xyz(x, y, z):
   p.x, p.y, p.z = x, y, z
   return p
 
-def ypr(y, p, r):
+def rpy(y, p, r):
   q = Quaternion()
   cosY = cos(y / 2.)
   sinY = sin(y / 2.)
@@ -61,7 +61,7 @@ def ypr(y, p, r):
 class Tracker:
   def __init__(self, topic, Msg):
     self.sub = rospy.Subscriber(topic, Msg, self.callback)
-    self.msg = Msg()
+    self.msg = None
 
   def callback(self, msg):
     self.msg = msg
@@ -69,25 +69,34 @@ class Tracker:
 mechanism_state = Tracker('/mechanism_state', MechanismState)
 def last_time():
   global mechanism_state
-  return mechanism_state.msg.header.stamp
+  if mechanism_state.msg:
+    return mechanism_state.msg.header.stamp
+  return 0
 
 
-rospy.init_node('plug', anonymous=True)
 
 pub_outlet = rospy.Publisher('/outlet_pose', PoseStamped)
 pub_plug = rospy.Publisher('/plug_pose', PoseStamped)
+rospy.init_node('fake_vision', anonymous=True)
+while last_time() == 0:
+  pass
 def send():
   op = PoseStamped()
   op.header.stamp = last_time()
   op.header.frame_id = 'torso_lift_link'
   op.pose.position = xyz(0.7, -0.4, -0.2)
-  op.pose.orientation = ypr(0,0,0)
+  op.pose.orientation = rpy(0, 0, 0)
 
   pp = PoseStamped()
   pp.header.stamp = last_time()
-  pp.header.frame_id = 'torso_lift_link'
-  pp.pose.position = xyz(0.7, -0.4, -0.2)
-  pp.pose.orientation = ypr(0,0,0)
+  pp.header.frame_id = 'r_gripper_tool_frame'
+  pp.pose.position = xyz(0.0, 0.0, 0.0)
+  pp.pose.orientation = rpy(0,pi/6,0)
 
-  pub_outlet.publish(op)
-  pub_plug.publish(pp)
+  print "Publishing..."
+  for i in range(10):
+    pub_outlet.publish(op)
+    pub_plug.publish(pp)
+    sleep(0.1)
+
+send()

@@ -88,8 +88,8 @@ def main():
     # Sets the tool frame
     rospy.wait_for_service("/%s/set_tool_frame" % CONTROLLER)
     if rospy.is_shutdown(): return
-    #set_tool_frame = rospy.ServiceProxy("/%s/set_tool_frame" % CONTROLLER, SetPoseStamped)
-    # TODO: Actually set the tool frame
+    set_tool_frame = rospy.ServiceProxy("/%s/set_tool_frame" % CONTROLLER, SetPoseStamped)
+    set_tool_frame(plug_pose)
     print "Tool frame set"
 
     # Publishes commands
