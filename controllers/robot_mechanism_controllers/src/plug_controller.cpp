@@ -391,54 +391,27 @@ void PlugControllerNode::update()
 
 void PlugControllerNode::outletPose()
 {
-
-  tf::Stamped<tf::Point> point;
-  point.setX(outlet_pose_msg_.point.x);
-  point.setY(outlet_pose_msg_.point.y);
-  point.setZ(outlet_pose_msg_.point.z);
-  point.stamp_ = ros::Time();
-  point.frame_id_ = outlet_pose_msg_.header.frame_id;
-
-  tf::Stamped<tf::Point> outlet_pt;
-
+  robot_msgs::PoseStamped outlet_in_root_;
   try
   {
-    TF.transformPoint(controller_.root_name_, point, outlet_pt);
+    TF.transformPose(controller_.root_name_, outlet_pose_msg_, outlet_in_root_);
   }
   catch(tf::TransformException& ex)
   {
     ROS_WARN("Transform Exception %s", ex.what());
     return;
   }
+  tf::Pose outlet;
+  tf::PoseMsgToTF(outlet_in_root_.pose, outlet);
 
-  controller_.outlet_pt_(0) = outlet_pt.x();
-  controller_.outlet_pt_(1) = outlet_pt.y();
-  controller_.outlet_pt_(2) = outlet_pt.z();
+  controller_.outlet_pt_(0) = outlet.getOrigin().x();
+  controller_.outlet_pt_(1) = outlet.getOrigin().y();
+  controller_.outlet_pt_(2) = outlet.getOrigin().z();
 
-
-  tf::Stamped<tf::Vector3> vector;
-  vector.setX(outlet_pose_msg_.vector.x);
-  vector.setY(outlet_pose_msg_.vector.y);
-  vector.setZ(outlet_pose_msg_.vector.z);
-  vector.stamp_ = ros::Time();
-  vector.frame_id_ = outlet_pose_msg_.header.frame_id;
-
-  tf::Stamped<tf::Vector3> outlet_norm;
-
-  try
-  {
-    TF.transformVector(controller_.root_name_, vector, outlet_norm);
-  }
-  catch(tf::TransformException& ex)
-  {
-    ROS_WARN("Transform Exception %s", ex.what());
-    return;
-  }
-
-  controller_.outlet_norm_(0) = outlet_norm.x();
-  controller_.outlet_norm_(1) = outlet_norm.y();
-  controller_.outlet_norm_(2) = outlet_norm.z();
-
+  tf::Vector3 norm = quatRotate(outlet.getRotation(), tf::Vector3(1.0, 0.0, 0.0));
+  controller_.outlet_norm_(0) = norm.x();
+  controller_.outlet_norm_(1) = norm.y();
+  controller_.outlet_norm_(2) = norm.z();
 }
 
 void PlugControllerNode::command()

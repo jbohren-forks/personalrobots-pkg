@@ -41,7 +41,7 @@
 #include "kdl/frames.hpp"
 #include "ros/node.h"
 #include "robot_msgs/Wrench.h"
-#include "robot_msgs/OutletPose.h"
+#include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/Transform.h"
 #include "robot_srvs/SetPoseStamped.h"
 
@@ -153,7 +153,7 @@ class PlugControllerNode : public Controller
   AdvertisedServiceGuard guard_set_tool_frame_;
 
   robot_msgs::Wrench wrench_msg_;
-  robot_msgs::OutletPose outlet_pose_msg_;
+  robot_msgs::PoseStamped outlet_pose_msg_;
   unsigned int loop_count_;
 
   tf::TransformListener TF;                    /**< The transform for converting from point to head and tilt frames. */
