@@ -78,8 +78,8 @@ public:
 
   void setToolOffset(const tf::Transform &);
 
+  std::string root_name_;
 
-  const char *root_name_;
   // input of the controller
   KDL::Wrench wrench_desi_;
   Eigen::Matrix<float,6,1> task_wrench_;

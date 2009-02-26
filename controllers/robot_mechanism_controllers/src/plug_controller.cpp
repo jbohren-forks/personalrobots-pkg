@@ -80,9 +80,8 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
   }
 
   // Gets names for the root and tip of the chain
-  root_name_ = chain->Attribute("root");
   const char *tip_name = chain->Attribute("tip");
-  if (!root_name_) {
+  if (!chain->Attribute("root")) {
     ROS_ERROR("Chain element for PlugController must specify the root");
     return false;
   }
@@ -91,6 +90,7 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
     return false;
   }
 
+  root_name_ = chain->Attribute("root");
   if (!chain_.init(robot->model_, root_name_, tip_name))
     return false;
   chain_.toKDL(kdl_chain_);
@@ -102,7 +102,7 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
   node->param("constraint/upper_arm_limit" , upper_arm_limit , -1.52 ) ; /// upper arm pose limit
 
   node->param("constraint/f_r_max"      , f_r_max     , 1000.0) ; /// max radial force of line constraint
-  node->param("constraint/f_pose_max"   , f_pose_max  , 50.0) ; /// max pose force
+  node->param("constraint/f_pose_max"   , f_pose_max  , 40.0) ; /// max pose force
   node->param("constraint/f_limit_max"  , f_limit_max  , 100.0) ; /// max upper arm limit force
   node->param("constraint/upper_arm_dead_zone", upper_arm_dead_zone, 0.05);
 
@@ -317,6 +317,9 @@ void PlugController::setToolOffset(const tf::Transform &tool_offset)
   new_kdl_chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::None), tool_frame));
 
   kdl_chain_ = new_kdl_chain;
+
+  jnt_to_jac_solver_.reset(new ChainJntToJacSolver(kdl_chain_));
+  jnt_to_pose_solver_.reset(new ChainFkSolverPos_recursive(kdl_chain_));
 }
 
 
@@ -412,6 +415,8 @@ void PlugControllerNode::outletPose()
   controller_.outlet_norm_(0) = norm.x();
   controller_.outlet_norm_(1) = norm.y();
   controller_.outlet_norm_(2) = norm.z();
+
+  mechanism::TransformTFToKDL(outlet, controller_.desired_frame_);
 }
 
 void PlugControllerNode::command()
@@ -430,7 +435,15 @@ bool PlugControllerNode::setToolFrame(robot_srvs::SetPoseStamped::Request &req,
                                       robot_srvs::SetPoseStamped::Response &resp)
 {
   robot_msgs::PoseStamped tool_offset_msg;
-  TF.transformPose(controller_.chain_.getLinkName(), req.p, tool_offset_msg);
+  try
+  {
+    TF.transformPose(controller_.chain_.getLinkName(), req.p, tool_offset_msg);
+  }
+  catch(tf::TransformException& ex)
+  {
+    ROS_WARN("Transform Exception %s", ex.what());
+    return true;
+  }
 
   tf::Transform tool_offset;
   tf::PoseMsgToTF(tool_offset_msg.pose, tool_offset);
