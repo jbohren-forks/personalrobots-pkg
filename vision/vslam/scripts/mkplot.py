@@ -96,9 +96,9 @@ def playlist(args):
   for f in args:
     r = reader(f)
     for d in r.next():
-      yield d
+      yield d + (f,)
     
-for cam,l_image,r_image in playlist(sys.argv[1:]):
+for cam,l_image,r_image,label in playlist(sys.argv[1:]):
   print framecounter
   if vos == None:
     vos = [
@@ -117,14 +117,12 @@ for cam,l_image,r_image in playlist(sys.argv[1:]):
     oe_x = []
     oe_y = []
     oe_home = None
-    connected = True
   for i,vo in enumerate(vos):
     af = SparseStereoFrame(l_image, r_image)
     vo.handle_frame(af)
-    if vo.inl < 10:
-      connected = False
+    af.connected = vo.inl > 7
     # Log keyframes into "pool_loop"
-    if True and not vo.keyframe.id in keys:
+    if False and not vo.keyframe.id in keys:
       k = vo.keyframe
       Image.fromstring("L", (640,480), k.lf.tostring()).save("dump/%06dL.png" % len(keys))
       Image.fromstring("L", (640,480), k.rf.tostring()).save("dump/%06dR.png" % len(keys))
@@ -133,9 +131,8 @@ for cam,l_image,r_image in playlist(sys.argv[1:]):
       keys.add(k.id)
 
     if i == 0:
-      novel = skel.add(vo.keyframe, connected)
-      if novel:
-        connected = True
+      skel.setlabel(label)
+      novel = skel.add(vo.keyframe, vo.keyframe.connected)
     x,y,z = vo.pose.xform(0,0,0)
     trajectory[i].append((x,y,z))
     vo_x[i].append(x)
@@ -180,8 +177,11 @@ for vo in vos:
   print
 skel.summarize_timers()
 
-skel.plot('blue', True)
-pylab.show()
+skel.trim()
+print "Saving as mkplot_snap"
+skel.save("mkplot_snap")
+#skel.plot('blue', True)
+#pylab.show()
 sys.exit(0)
 
 colors = [ 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]

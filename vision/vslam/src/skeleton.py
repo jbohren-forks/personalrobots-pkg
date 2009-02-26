@@ -26,7 +26,7 @@ class minimum_frame:
 def mk_covar(xyz, rp, yaw):
   return (1.0 / math.sqrt(xyz),1.0 / math.sqrt(xyz), 1.0 / math.sqrt(xyz), 1.0 / math.sqrt(rp), 1.0 / math.sqrt(rp), 1.0 / math.sqrt(yaw))
 #weak = mk_covar(0.01, 0.0002, 0.002)
-weak = mk_covar(5,3,3)
+weak = mk_covar(9e10,3,3)
 strong = mk_covar(0.0001, 0.000002, 0.00002)
 
 def default_termcrit(count, delta):
@@ -37,6 +37,7 @@ class Skeleton:
   def __init__(self, cam):
     self.nodes = set()
     self.edges = set()
+    self.weak_edges = []
     if 1:
       self.pg = TreeOptimizer3()
     else:
@@ -60,6 +61,8 @@ class Skeleton:
     self.pr_maximum = 15    # How many out of PR's places to consider for GCC
     self.node_vdist = 15    # how many frame to wait to put in a skeleton node
     self.adaptive = False
+    self.label = "no label"
+    self.node_labels = {}
 
     self.timer = {}
     for t in ['toro add', 'toro opt', 'place recognition', 'gcc', 'descriptors']:
@@ -68,6 +71,7 @@ class Skeleton:
   def save(self, basename):
     f = open(basename + ".pickle", "w")
     pickle.dump(self.nodes, f)
+    pickle.dump(self.node_labels, f)
     pickle.dump(self.edges, f)
     pickle.dump(self.place_ids, f)
     pickle.dump(self.node_kp, f)
@@ -75,9 +79,13 @@ class Skeleton:
     f.close()
     self.pg.save(basename + ".toro")
 
+  def setlabel(self, str):
+    self.label = str
+
   def load(self, basename):
     f = open(basename + ".pickle", "r")
     self.nodes = pickle.load(f)
+    self.node_labels = pickle.load(f)
     self.edges = pickle.load(f)
     self.place_ids = pickle.load(f)
     self.node_kp = pickle.load(f)
@@ -97,27 +105,46 @@ class Skeleton:
     if 0:
       self.pg.load(basename + ".toro")
     else:
-      edges = []
+      edges = set()
       for l in open(basename + ".toro"):
         fld = l.split()
         if fld[0] == 'EDGE3':
           flt = [ float(x) for x in fld[3:] ]
           cov = [flt[i] for i in [ 6,12,17,21,24,26 ]]
-          edges.append((int(fld[1]), int(fld[2]), tuple(flt[0:3]), tuple(flt[3:6]), tuple(cov)))
-      for e in sorted(edges):
-        self.pg.addIncrementalEdge(*e)
+          n0 = int(fld[1])
+          n1 = int(fld[2])
+          edges.add((n0, n1, tuple(flt[0:3]), tuple(flt[3:6]), tuple(cov)))
+      reached = set([0])
+      while len(edges) != 0:
+        done = set()
+        for e in edges:
+          if e[0] in reached:
+            self.pg.addIncrementalEdge(*e)
+            reached.add(e[1])
+            done.add(e)
+          elif e[1] in reached:
+            revpose = ~from_xyz_euler(e[2], e[3])
+            self.pg.addIncrementalEdge(e[1], e[0], revpose.xform(0,0,0), revpose.euler(), e[4])
+            reached.add(e[0])
+            done.add(e)
+        edges -= done
+        if done == set():
+          print "Graph has unreachable nodes"
+          print "reached", sorted(reached)
+          print "remaining edges", sorted([e[:2] for e in edges])
+          sys.exit(1)
       #self.pg.save("silly.toro")
 
   def add(self, this, connected = True):
     if len(self.nodes) == 0:
       self.nodes.add(this.id)
-      self.prev_pose = this.pose
+      self.node_labels[this.id] = self.label
       r = True
     elif not(this.id in self.nodes):
       previd = max(self.nodes)
 
       # Ignore the node if there are less than node_vist frames since the previous node
-      if (this.id - previd) < self.node_vdist:
+      if connected and (this.id - previd) < self.node_vdist:
         return False
 
       if connected:
@@ -125,11 +152,13 @@ class Skeleton:
         relpose = ~self.prev_pose * this.pose
         inf = strong
       else:
+        self.weak_edges.append((previd, this.id))
         print "Weak link from %d to %d" % (previd, this.id)
         relpose = Pose(numpy.identity(3), [ 5, 0, 0 ])
         inf = weak
 
       self.nodes.add(this.id)
+      self.node_labels[this.id] = self.label
       self.edges.add( (previd, this.id) )
       self.timer['toro add'].start()
       self.pg.addIncrementalEdge(previd, this.id, relpose.xform(0,0,0), relpose.euler(), inf)
@@ -144,10 +173,13 @@ class Skeleton:
       self.place_ids.append(this.id)
       self.add_links(this.id, far)
 
-      self.prev_pose = this.pose
       r = True
     else:
       r = False
+    if r:
+      self.prev_pose = this.pose
+      #self.prev_frame = this
+
     return r
 
   def addConstraint(self, prev, this, relpose):
@@ -156,7 +188,15 @@ class Skeleton:
     self.pg.addIncrementalEdge(prev, this, relpose.xform(0,0,0), relpose.euler(), strong)
     self.timer['toro add'].stop()
 
+  def trim(self):
+    for e in self.weak_edges:
+      print "Removing weak edge", e
+      self.pg.removeEdge(e[0], e[1])
+    self.edges -= set(self.weak_edges)
+    self.weak_edges = []
+
   def optimize(self):
+
     self.pg.initializeOnlineIterations()
     print "pg.error", self.pg.error()
     for j in range(1):
@@ -266,16 +306,36 @@ class Skeleton:
 
   def plot(self, color, annotate = False):
     pts = dict([ (id,self.newpose(id).xform(0,0,0)) for id in self.nodes ])
-    nodepts = pts.values()
-    pylab.scatter([x for (x,y,z) in nodepts], [z for (x,y,z) in nodepts], c = color, label = 'after SGD')
-    if annotate:
+
+    # uniq_l is unique labels
+    uniq_l = sorted(set(self.node_labels.values()))
+
+    # labs maps labels to sets of points
+    labs = dict([ (l,set([id for (id,lab) in self.node_labels.items() if lab == l])) for l in uniq_l])
+
+    # cols maps labels to colors
+    cols = dict(zip(uniq_l, [ 'green', 'red', 'magenta', 'cyan', 'yellow', 'brown']))
+
+    for lbl in uniq_l:
+      nodepts = [ pts[id] for id in self.nodes if self.node_labels[id] == lbl ]
+      pylab.scatter([x for (x,y,z) in nodepts], [z for (x,y,z) in nodepts], color = cols[lbl], label = lbl)
+    if False:
       for (f,(x,y,z)) in pts.items():
         pylab.annotate('%d' % f, (float(x), float(z)))
+    for f in [ min(ids) for ids in labs.values() ] + [ max(ids) for ids in labs.values() ]:
+      (x,y,z) = pts[f]
+      pylab.annotate('%d' % f, (float(x), float(z)))
 
     for (f0,f1) in self.edges:
       p0 = pts[f0]
       p1 = pts[f1]
-      pylab.plot((p0[0], p1[0]), (p0[2], p1[2]), c = color)
+      p0c = cols[self.node_labels[f0]]
+      p1c = cols[self.node_labels[f1]]
+      if p0c == p1c:
+        color = p0c
+      else:
+        color = 'b:'
+      pylab.plot((p0[0], p1[0]), (p0[2], p1[2]), color)
 
   # returns a summary of the skeleton - intended recipient is planning.
   def localization(self):

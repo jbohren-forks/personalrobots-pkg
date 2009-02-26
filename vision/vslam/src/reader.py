@@ -51,7 +51,7 @@ class reader:
     for topic, msg, t in rosrecord.logplayer(self.sourcename):
       if rospy.is_shutdown():
         break
-      if topic.endswith("dcam/raw_stereo"):
+      if topic.endswith("stereo/raw_stereo"):
         cam = camera.StereoCamera(msg.right_info)
         yield cam, dcamImage(msg.left_image), dcamImage(msg.right_image)
 
