@@ -17,7 +17,8 @@ BULLET_LIBS = $(SVN_DIR)/src/BulletCollision/libBulletCollision.a \
               $(SVN_DIR)/src/LinearMath/libLinearMath.a \
               $(SVN_DIR)/src/BulletSoftBody/libBulletSoftBody.a 
 
-BULLET_INC_DIRS = BulletCollision/CollisionShapes \
+BULLET_INC_DIRS = . \
+				  BulletCollision/CollisionShapes \
                   BulletCollision/BroadphaseCollision \
                   BulletCollision/NarrowPhaseCollision \
                   BulletCollision/CollisionDispatch \
