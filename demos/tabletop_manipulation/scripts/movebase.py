@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
   rospy.init_node('move_base', anonymous=True)
 
-  res = mb.moveBase(frame, x, y, a):
+  res = mb.moveBase(frame, x, y, a)
 
   if res:
     print 'Success!'

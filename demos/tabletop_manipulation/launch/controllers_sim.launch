@@ -3,5 +3,4 @@
   <include file="$(find tabletop_manipulation)/launch/arm.launch"/>
   <include file="$(find tabletop_manipulation)/launch/base.launch"/>
   <node pkg="tabletop_manipulation" type="tuckarm.py" args="left"/>
-  <node pkg="tabletop_manipulation" type="tuckarm.py" args="right"/>
 </launch>

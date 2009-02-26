@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
   # HACK
   import time
-  time.sleep(3.0)
+  time.sleep(2.0)
 
   res = ma.moveArm(joints)
 
