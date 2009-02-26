@@ -32,13 +32,19 @@
 
 
 #include <libKinematics/pr2_ik_node.h>
+#include <angles/angles.h>
 
 LibKinematicsNode::LibKinematicsNode(std::string node_name,std::string arm_name):ros::Node(node_name),arm_name_(arm_name),increment_(0.01),root_x_(0.0),root_y_(0.0), root_z_(0.0)
 {
     advertiseService("perform_pr2_ik", &LibKinematicsNode::processIKRequest); 
+    advertiseService("perform_pr2_ik_closest", &LibKinematicsNode::processIKClosestRequest); 
 };
 
-LibKinematicsNode::~LibKinematicsNode(){};
+LibKinematicsNode::~LibKinematicsNode()
+{
+    unadvertiseService("perform_pr2_ik"); 
+    unadvertiseService("perform_pr2_ik_closest"); 
+};
 
 bool LibKinematicsNode::initializeKinematicModel()
 {
@@ -226,6 +232,98 @@ bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::Request &req, ro
     return true;
   }
   return false;
+}
+
+bool LibKinematicsNode::processIKClosestRequest(robot_srvs::IKService::Request &req, robot_srvs::IKService::Response &resp)
+{
+  robot_msgs::Pose pose;
+  pose = req.pose;
+
+  tf::Pose tf_pose;
+  tf::PoseMsgToTF(pose,tf_pose);
+  int num_joints = req.joint_pos.positions.size();
+
+  if(num_joints != 7)
+  {
+    ROS_ERROR("Request.joint_pos has no joint values: %d",num_joints);
+    return false;
+  }
+
+  std::vector<double> current_joint_pos;
+  current_joint_pos.resize(num_joints);
+
+  for(int i=0; i < num_joints; i++)
+  {
+    current_joint_pos[i] = req.joint_pos.positions[i];
+  }
+
+  double init_solution_t3 = current_joint_pos[2];
+
+  NEWMAT::Matrix g0(4,4);
+  btScalar m[16];
+  tf_pose.getOpenGLMatrix(m);
+
+  //ROS_INFO("computeIKSolution: Input transform");
+  for(int i=0; i < 4; i++)
+  {
+    for(int j=0; j < 4; j++)
+    {
+      g0(j+1,i+1) = m[i*4+j];
+    }
+  }
+
+  g0(1,4) = g0(1,4) - root_x_;
+  g0(2,4) = g0(2,4) - root_y_;
+  g0(3,4) = g0(3,4) - root_z_;
+
+  if(arm_kinematics_->computeIKFast(g0,2,init_solution_t3))
+  {
+
+    resp.traj.set_points_size(1);
+    resp.traj.points[0].set_positions_size(7); 
+    int sol_index = closestJointSolution(current_joint_pos,arm_kinematics_->solution_ik_);
+//    ROS_INFO("sol_index : %d of %d solutions",sol_index,(int) arm_kinematics_->solution_ik_.size());
+    for(int j=0; j < 7; j++)
+    {
+      resp.traj.points[0].positions[j] = arm_kinematics_->solution_ik_[sol_index][j]; 
+    }
+
+    return true;
+  }
+  return false;
+}
+
+
+int LibKinematicsNode::closestJointSolution(const std::vector<double> current_joint_pos, const std::vector<std::vector<double> > new_positions)
+{
+  int num_joints = current_joint_pos.size();
+  std::vector<double> euc_distances;
+
+//  ROS_INFO("Number of solutions: %d",(int)new_positions.size());
+  euc_distances.resize(new_positions.size());
+
+  int sol_index = 0;
+  double sol_min = 0.0;
+
+  for(int i=0; i < (int) new_positions.size(); i++)
+  {
+    euc_distances[i] = 0.0;
+    for(int j=0; j< num_joints; j++)
+    {
+      euc_distances[i] += pow(angles::shortest_angular_distance(new_positions[i][j],current_joint_pos[j]),2);
+    }
+    if(i==0)
+    {
+      sol_min = euc_distances[i];
+    }
+//    ROS_INFO("Euclidean joint distance: %d, %f",i,euc_distances[i]);
+    if(euc_distances[i] < sol_min)
+    {
+      sol_min = euc_distances[i];
+      sol_index = i;
+    }
+  }
+  return sol_index;
 }
 
 

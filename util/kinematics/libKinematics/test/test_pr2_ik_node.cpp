@@ -61,10 +61,23 @@ int main( int argc, char** argv )
   tf::Pose pose(btQuaternion(0,0,0),btVector3(0.75,-0.288,0));
 
   tf::PoseTFToMsg(pose,req.pose);
+  req.joint_pos.set_positions_size(7);
 
-  if (ros::service::call("perform_pr2_ik", req, res))
+  req.joint_pos.positions[0] = 0.0;
+  req.joint_pos.positions[1] = 0.0;
+  req.joint_pos.positions[2] = 0.0;
+  req.joint_pos.positions[3] = 0.0;
+  req.joint_pos.positions[4] = 0.0;
+  req.joint_pos.positions[5] = 0.0;
+  req.joint_pos.positions[6] = 0.0;
+
+  if (ros::service::call("perform_pr2_ik_closest", req, res))
   {
      ROS_INFO("Done");
+     for(int j=0; j < (int) res.traj.points[0].positions.size(); j++)
+     {
+       ROS_INFO("%f ",res.traj.points[0].positions[j]);
+     }
   }
   else
   {

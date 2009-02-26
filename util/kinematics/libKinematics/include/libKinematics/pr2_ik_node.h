@@ -69,7 +69,11 @@ namespace kinematics
 
     bool processIKRequest(robot_srvs::IKService::Request &req, robot_srvs::IKService::Response &resp);
 
+    bool processIKClosestRequest(robot_srvs::IKService::Request &req, robot_srvs::IKService::Response &resp);
+
     private:
+
+    int closestJointSolution(const std::vector<double> current_joint_pos, const std::vector<std::vector<double> > new_positions);
 
     std::string robot_description_model_;
 
