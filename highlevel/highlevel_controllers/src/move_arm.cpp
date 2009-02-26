@@ -111,12 +111,7 @@ public:
   /**
    * @brief Constructor
    */
-  MoveArm(const std::string& node_name, 
-          const std::string& state_topic, 
-          const std::string& goal_topic,
-          const std::string& kinematic_model,
-	  const std::string& controller_topic,
-          const std::string& controller_name);
+  MoveArm(const std::string& side);
 
   virtual ~MoveArm();
 
@@ -129,9 +124,9 @@ private:
   planning_models::KinematicModel* robot_model_;
 
   int                              plan_id_;
+  int                              traj_id_;
   bool                             new_goal_;
   bool                             new_trajectory_;
-  bool                             trajectory_stopped_;
   bool                             plan_valid_;
   robot_msgs::KinematicPath        current_trajectory_;
 
@@ -160,20 +155,20 @@ MoveArm::~MoveArm() {
   }
 }
 
-MoveArm::MoveArm(const std::string& node_name, 
-                 const std::string& state_topic, 
-                 const std::string& goal_topic,
-                 const std::string& kinematic_model,
-		 const std::string& controller_topic,
-		 const std::string& controller_name)
-  : HighlevelController<pr2_msgs::MoveArmState, pr2_msgs::MoveArmGoal>(node_name, state_topic, goal_topic),
-    kinematic_model_(kinematic_model),
-    controller_topic_(controller_topic),
-    controller_name_(controller_name),
-    robot_model_(NULL), plan_id_(-1), new_goal_(false), 
-    new_trajectory_(false), trajectory_stopped_(false),
+MoveArm::MoveArm(const std::string& side)
+  : HighlevelController<pr2_msgs::MoveArmState, pr2_msgs::MoveArmGoal>(side + "_arm_controller", side + "_arm_state", side + "_arm_goal"),
+    kinematic_model_("pr2::" + side + "_arm"),
+    controller_topic_(side + "_arm_trajectory_command"),
+    controller_name_(side + "_arm_trajectory_controller"),
+    robot_model_(NULL), plan_id_(-1), traj_id_(-1), 
+    new_goal_(false), new_trajectory_(false), 
     plan_valid_(false)
 {
+  // Adjust logging level
+  log4cxx::LoggerPtr my_logger = log4cxx::Logger::getLogger(ROSCONSOLE_DEFAULT_NAME);
+  // Set the logger for this package to output all statements
+  my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Debug]);
+  ros::console::notifyLoggerLevelsChanged();
 
   //Create robot model.
   std::string model;
@@ -212,11 +207,15 @@ MoveArm::MoveArm(const std::string& node_name,
 
 void MoveArm::receiveStatus(void)
 {
-  if((plan_id_ >= 0) && 
-     (plan_id_ == plan_status_.id) && 
+  // HACK: sometimes we get the status for the new plan before we receive
+  // the response to the service call that gives us the new plan id.  It
+  // happens that the planner increments the id by 1 with each request.
+  if(((plan_id_ == plan_status_.id) || 
+      (plan_id_ == plan_status_.id + 1)) && 
      !plan_status_.path.states.empty())
   {
     current_trajectory_ = plan_status_.path;
+    ROS_DEBUG("Got new trajectory from planner");
     new_trajectory_ = true;
   }
 }
@@ -225,6 +224,7 @@ void MoveArm::updateGoalMsg()
 {
   lock();
   stateMsg.goal = goalMsg.configuration;
+  ROS_DEBUG("Received new goal");
   new_goal_ = true;
   unlock();
 }
@@ -308,8 +308,7 @@ bool MoveArm::makePlan()
 
   new_goal_ = false;
 
-  ROS_INFO("Starting to plan...");
-
+  ROS_DEBUG("Starting to plan...");
 
   robot_srvs::KinematicReplanState::Request  req;
   robot_srvs::KinematicReplanState::Response  res;
@@ -345,7 +344,7 @@ bool MoveArm::makePlan()
   goalMsg.unlock();
   stateParamsToMsg(state, robot_model_, kinematic_model_, req.value.goal_state.vals);
 
-  //ROS_INFO("Going for:");
+  //ROS_DEBUG("Going for:");
   //state->print();
 
     
@@ -363,7 +362,9 @@ bool MoveArm::makePlan()
   else
   {
     plan_id_ = res.id;
-    ROS_INFO("Requested plan, got id %d\n", plan_id_);
+    ROS_DEBUG("Requested plan, got id %d\n", plan_id_);
+    plan_status_.lock();
+    plan_status_.unlock();
   }
 
   return true;
@@ -376,36 +377,61 @@ bool MoveArm::goalReached()
 
 bool MoveArm::dispatchCommands()
 {
+  // Force replanning if we have a new goal
+  if(new_goal_)
+    return false;
+
   plan_status_.lock();
 
-  if (plan_id_ < 0 ||
-      plan_status_.id != plan_id_ ||
-      !new_trajectory_)
+  // HACK: sometimes we get the status for the new plan before we receive
+  // the response to the service call that gives us the new plan id.  It
+  // happens that the planner increments the id by 1 with each request.
+  if(((plan_status_.id != plan_id_) &&
+      (plan_status_.id != plan_id_ + 1)) ||
+     (traj_id_ < 0 && !new_trajectory_))
   {
     // NOOP
-    ROS_INFO("doing nothing");
+    ROS_DEBUG("Idle");
+  }
+  else if(plan_status_.done || (traj_id_ >= 0 && !new_trajectory_))
+  {
+    bool done = false;
+    if(!plan_status_.done)
+    {
+      ROS_DEBUG("Checking for trajectory completion");
+      pr2_mechanism_controllers::TrajectoryQuery::Request req;
+      pr2_mechanism_controllers::TrajectoryQuery::Response res;
+      req.trajectoryid = traj_id_;
+      if(!ros::service::call(controller_name_ + "/TrajectoryQuery", req, res))
+        ROS_ERROR("Failed to query trajectory completion");
+      else if(res.done == res.State_Done)
+        done = true;
+    }
+    else
+      done = true;
+
+    if(done)
+    {
+      ROS_DEBUG("Plan completed.");
+      plan_id_ = -1;
+      traj_id_ = -1;
+      ROS_DEBUG("Execution is complete");
+      stateMsg.status = pr2_msgs::MoveArmState::INACTIVE;
+      plan_valid_ = true;
+    }
   }
   else if(plan_status_.valid && 
           !plan_status_.unsafe &&
           !current_trajectory_.states.empty())
   {
-    ROS_INFO("sending new trajectory");
+    ROS_DEBUG("sending new trajectory");
     sendArmCommand(current_trajectory_, kinematic_model_);
     plan_valid_ = true;
     new_trajectory_ = false;
   }
-  else if(plan_status_.done)
-  {
-    ROS_INFO("Plan completed.");
-    plan_id_ = -1;
-    trajectory_stopped_ = true;
-    ROS_INFO("Execution is complete");
-    stateMsg.status = pr2_msgs::MoveArmState::INACTIVE;
-    plan_valid_ = true;
-  }
   else
   {
-    ROS_INFO("Plan invalid %d %d %d %d %d %d\n",
+    ROS_DEBUG("Plan invalid %d %d %d %d %d %d\n",
              plan_id_ >= 0,
              plan_status_.id == plan_id_,
              plan_status_.valid,
@@ -416,13 +442,14 @@ bool MoveArm::dispatchCommands()
     plan_valid_ = false;
   }
   plan_status_.unlock();
+
   return plan_valid_;
 }
 
 void MoveArm::printKinematicPath(robot_msgs::KinematicPath &path)
 {
   unsigned int nstates = path.get_states_size();    
-  ROS_INFO("Obtained solution path with %u states", nstates);    
+  ROS_DEBUG("Obtained solution path with %u states", nstates);    
   std::stringstream ss;
   ss << std::endl;
   for (unsigned int i = 0 ; i < nstates ; ++i)
@@ -431,22 +458,22 @@ void MoveArm::printKinematicPath(robot_msgs::KinematicPath &path)
       ss <<  path.states[i].vals[j] << " ";	
     ss << std::endl;	
   }    
-  ROS_INFO(ss.str().c_str());
+  ROS_DEBUG(ss.str().c_str());
 }
 
 void MoveArm::getTrajectoryMsg(robot_msgs::KinematicPath &path, 
                                robot_msgs::JointTraj &traj)
 {
   traj.set_points_size(path.get_states_size());
-  ROS_INFO("ARM:");
+  ROS_DEBUG("ARM:");
   for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
   {
     traj.points[i].set_positions_size(path.states[i].get_vals_size());
-    ROS_INFO("STEP:");
+    ROS_DEBUG("STEP:");
     for (unsigned int j = 0 ; j < path.states[i].get_vals_size() ; ++j)
     {
       traj.points[i].positions[j] = path.states[i].vals[j];
-      ROS_INFO("%f ", path.states[i].vals[j]);
+      ROS_DEBUG("%f ", path.states[i].vals[j]);
     }
     traj.points[i].time = 0.0;
   }	
@@ -455,41 +482,57 @@ void MoveArm::getTrajectoryMsg(robot_msgs::KinematicPath &path,
 void MoveArm::sendArmCommand(robot_msgs::KinematicPath &path, 
                              const std::string &model)
 {
-  ROS_INFO("Sending %d-step trajectory\n", path.states.size());
-  robot_msgs::JointTraj traj;
-  getTrajectoryMsg(path, traj);
-  ros::Node::instance()->publish(controller_topic_, traj);
-  trajectory_stopped_ = false;
+  stopArm();
+  ROS_DEBUG("Sending %d-step trajectory\n", path.states.size());
+  pr2_mechanism_controllers::TrajectoryStart::Request req;
+  pr2_mechanism_controllers::TrajectoryStart::Response res;
+  getTrajectoryMsg(path, req.traj);
+  req.hastiming = 0;
+  req.requesttiming = 0;
+  //ros::Node::instance()->publish(controller_topic_, traj);
+  int new_traj_id_ = -1;
+  if(!ros::service::call(controller_name_ + "/TrajectoryStart", req, res))
+    ROS_ERROR("Failed to start trajectory");
+  else
+    new_traj_id_ = res.trajectoryid;
+
+  traj_id_ = new_traj_id_;
+  ROS_DEBUG("Got new traj_id: %d\n", traj_id_);
   new_trajectory_ = false;
 }
 
 void MoveArm::stopArm()
 {
-  ROS_INFO("Stopping arm.");
+  ROS_DEBUG("Stopping arm.");
+  /*
   if(!trajectory_stopped_)
   {
-    /*
-    // Send the current state
-    robot_msgs::JointTraj traj;
-    getCurrentStateAsTraj(traj);
-    */
-    
     // Send an empty trajectory
     robot_msgs::JointTraj traj;
     ros::Node::instance()->publish(controller_topic_, traj);
     trajectory_stopped_ = true;
+  }
+  */
+
+  // Cancel any pre-existing trajectory
+  if(traj_id_ >= 0)
+  {
+    ROS_DEBUG("Cancelling trajectory %d\n", traj_id_);
+    pr2_mechanism_controllers::TrajectoryCancel::Request cancel;
+    pr2_mechanism_controllers::TrajectoryCancel::Response dummy;
+    cancel.trajectoryid = traj_id_;
+    if(!ros::service::call(controller_name_ + "/TrajectoryCancel", cancel, dummy))
+    {
+      ROS_ERROR("Failed to cancel trajectory %d\n", traj_id_);
+    }
+    traj_id_ = -1;
   }
 }
 
 class MoveRightArm: public MoveArm 
 {
 public:
-  MoveRightArm(): MoveArm("right_arm_controller", 
-                          "right_arm_state", 
-                          "right_arm_goal", 
-                          "pr2::right_arm",
-			  "right_arm_trajectory_command",
-                          "right_arm_trajectory_controller")
+  MoveRightArm(): MoveArm("right")
   {
   };
 
@@ -499,12 +542,7 @@ protected:
 class MoveLeftArm: public MoveArm 
 {
 public:
-  MoveLeftArm(): MoveArm("left_arm_controller", 
-                         "left_arm_state", 
-                         "left_arm_goal", 
-                         "pr2::left_arm",
-			 "left_arm_trajectory_command",
-                         "left_arm_trajectory_controller")
+  MoveLeftArm(): MoveArm("left")
   {
   }
 };
