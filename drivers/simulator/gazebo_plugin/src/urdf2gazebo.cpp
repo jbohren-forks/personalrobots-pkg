@@ -184,6 +184,22 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
         
         /* set body name */
         elem->SetAttribute("name", link->name);
+
+
+        /* set mass properties */
+        addKeyValue(elem, "massMatrix", "true");
+        addKeyValue(elem, "mass", values2str(1, &link->inertial->mass));
+        
+        static const char tagList1[6][4] = {"ixx", "ixy", "ixz", "iyy", "iyz", "izz"};
+        for (int j = 0 ; j < 6 ; ++j)
+            addKeyValue(elem, tagList1[j], values2str(1, link->inertial->inertia + j));
+        
+        static const char tagList2[3][3] = {"cx", "cy", "cz"};
+        for (int j = 0 ; j < 3 ; ++j)
+        {
+            double tmp_value = (link->inertial->com)[j] - 0*(link->collision->xyz)[j];
+            addKeyValue(elem, tagList2[j], values2str(1, &tmp_value));
+        }
         
         /* compute global transform */
         btTransform localTransform;
@@ -204,22 +220,6 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
             /* set transform */
             addKeyValue(geom, "xyz", values2str(3, link->collision->xyz));
             addKeyValue(geom, "rpy", values2str(3, link->collision->rpy, rad2deg));
-            
-            /* set mass properties */
-            addKeyValue(geom, "massMatrix", "true");
-            addKeyValue(geom, "mass", values2str(1, &link->inertial->mass));
-            
-            static const char tagList1[6][4] = {"ixx", "ixy", "ixz", "iyy", "iyz", "izz"};
-            for (int j = 0 ; j < 6 ; ++j)
-                addKeyValue(geom, tagList1[j], values2str(1, link->inertial->inertia + j));
-            
-            static const char tagList2[3][3] = {"cx", "cy", "cz"};
-            for (int j = 0 ; j < 3 ; ++j)
-            {
-                // by doing this we support only 1 geom
-                double tmp_value = (link->inertial->com)[j] - (link->collision->xyz)[j];
-                addKeyValue(geom, tagList2[j], values2str(1, &tmp_value));
-            }
             
             if (link->collision->geometry->type == robot_desc::URDF::Link::Geometry::MESH)
             {  
@@ -347,7 +347,7 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                 for (int j = 0 ; j < 3 ; ++j)
                 {
                     // undo Gazebo's shift of object anchor to geom cg center, stay in body cs
-                    tmpAnchor[j] = (link->joint->anchor)[j] - (link->collision->xyz)[j];
+                    tmpAnchor[j] = (link->joint->anchor)[j] - (link->inertial->com)[j] - 0*(link->collision->xyz)[j];
                 }
                 
                 addKeyValue(joint, "anchorOffset", values2str(3, tmpAnchor));

@@ -185,32 +185,6 @@ Index: libgazebo/gazebo.h
    /// Pointer to the stereo data
    public: StereoCameraData *data;
  };
-Index: server/physics/SphereGeom.cc
-===================================================================
---- server/physics/SphereGeom.cc	(revision 7168)
-+++ server/physics/SphereGeom.cc	(working copy)
-@@ -66,11 +66,18 @@
-   this->radiusP->SetValue( radius );
- 
-   // Initialize box mass matrix
--  dMassSetSphereTotal(&this->mass, this->massP->GetValue(), 
--                      this->radiusP->GetValue());
-+  this->SetGeom( dCreateSphere(0, this->radiusP->GetValue()), true);
- 
-   // Create the sphere geometry
--  this->SetGeom( dCreateSphere(0, this->radiusP->GetValue()), true);
-+  if (this->customMassMatrix)
-+    dMassSetParameters(&this->mass, this->massP->GetValue(),
-+           this->cx, this->cy, this->cz,
-+           this->ixx,this->iyy,this->izz,
-+           this->ixy,this->ixz,this->iyz);
-+  else
-+    dMassSetSphereTotal(&this->mass, this->massP->GetValue(), this->radiusP->GetValue());
-+
-+  
- }
- 
- ////////////////////////////////////////////////////////////////////////////////
 Index: server/physics/MapGeom.hh
 ===================================================================
 --- server/physics/MapGeom.hh	(revision 7168)
@@ -237,42 +211,6 @@ Index: server/physics/MapGeom.hh
  
      private: QuadNode *root;
  
-Index: server/physics/BoxGeom.cc
-===================================================================
---- server/physics/BoxGeom.cc	(revision 7168)
-+++ server/physics/BoxGeom.cc	(working copy)
-@@ -66,9 +66,28 @@
-   this->sizeP->SetValue( size );
- 
-   // Initialize box mass matrix
--  dMassSetBoxTotal(&this->mass, this->massP->GetValue(), 
--      this->sizeP->GetValue().x, this->sizeP->GetValue().y, 
--      this->sizeP->GetValue().z);
-+  // set mass matrix if user provides some info
-+  // pending a tag <massMatrix>true</massMatrix> in geom:
-+  // 
-+  //
-+  // cx,cy,cz passed to ode is actually
-+  // com described by the model subtracted by the position of the collision geometry cg
-+  //
-+  //
-+  if (this->customMassMatrix)
-+    std::cout << " BoxGeom name: " << this->GetName()
-+              << " cxyz " << cx << "," << cy << "," << cz
-+              << std::endl;
-+  if (this->customMassMatrix)
-+    dMassSetParameters(&this->mass, this->massP->GetValue(),
-+           this->cx, this->cy, this->cz,
-+           this->ixx,this->iyy,this->izz,
-+           this->ixy,this->ixz,this->iyz);
-+  else
-+    // Initialize box mass matrix
-+    dMassSetBoxTotal(&this->mass, this->massP->GetValue(), 
-+        this->sizeP->GetValue().x, this->sizeP->GetValue().y, 
-+        this->sizeP->GetValue().z);
- 
- 
-   // Create a box geometry with box mass matrix
 Index: server/physics/Geom.hh
 ===================================================================
 --- server/physics/Geom.hh	(revision 7168)
@@ -295,27 +233,6 @@ Index: server/physics/Geom.hh
    
      /// The body this geom belongs to
      protected: Body *body;
-@@ -188,6 +192,20 @@
-     ///  Mass as a double
-     protected: ParamT<double> *massP;
- 
-+    ///  User specified Mass Matrix
-+    protected: ParamT<bool> *customMassMatrixP;
-+    protected: ParamT<double> *cxP ;
-+    protected: ParamT<double> *cyP ;
-+    protected: ParamT<double> *czP ;
-+    protected: ParamT<double> *ixxP;
-+    protected: ParamT<double> *iyyP;
-+    protected: ParamT<double> *izzP;
-+    protected: ParamT<double> *ixyP;
-+    protected: ParamT<double> *ixzP;
-+    protected: ParamT<double> *iyzP;
-+    protected: bool customMassMatrix;
-+    protected: double cx,cy,cz,ixx,iyy,izz,ixy,ixz,iyz;
-+
-     private: ParamT<Vector3> *xyzP;
-     private: ParamT<Quatern> *rpyP;
- 
 Index: server/physics/PlaneGeom.cc
 ===================================================================
 --- server/physics/PlaneGeom.cc	(revision 7168)
@@ -432,43 +349,30 @@ Index: server/physics/Body.hh
      /// \brief Set the linear velocity of the body
      public: void SetLinearVel(const Vector3 &vel);
    
-@@ -184,6 +200,8 @@
+@@ -184,6 +200,23 @@
    
      private: ParamT<Vector3> *xyzP;
      private: ParamT<Quatern> *rpyP;
 +    private: ParamT<bool> *turnGravityOffP;
 +    private: ParamT<bool> *selfCollideP;
++
++    ///  User specified Mass Matrix
++    protected: ParamT<bool> *customMassMatrixP;
++    protected: ParamT<double> *cxP ;
++    protected: ParamT<double> *cyP ;
++    protected: ParamT<double> *czP ;
++    protected: ParamT<double> *bodyMassP;
++    protected: ParamT<double> *ixxP;
++    protected: ParamT<double> *iyyP;
++    protected: ParamT<double> *izzP;
++    protected: ParamT<double> *ixyP;
++    protected: ParamT<double> *ixzP;
++    protected: ParamT<double> *iyzP;
++    protected: bool customMassMatrix;
++    protected: double cx,cy,cz,bodyMass,ixx,iyy,izz,ixy,ixz,iyz;
    };
    
    /// \}
-Index: server/physics/CylinderGeom.cc
-===================================================================
---- server/physics/CylinderGeom.cc	(revision 7168)
-+++ server/physics/CylinderGeom.cc	(working copy)
-@@ -64,11 +64,21 @@
-   this->sizeP->SetValue( size );
- 
-   // Initialize mass matrix
--  dMassSetCylinderTotal(&this->mass, this->massP->GetValue(), 3, 
--      this->sizeP->GetValue().x, this->sizeP->GetValue().y);
-+  // pending a tag <massMatrix>true</massMatrix> in geom:
-+  if (this->customMassMatrix)
-+    dMassSetParameters(&this->mass, this->massP->GetValue(),
-+           this->cx, this->cy, this->cz,
-+           this->ixx,this->iyy,this->izz,
-+           this->ixy,this->ixz,this->iyz);
-+  else
-+    // Initialize mass matrix
-+    dMassSetCylinderTotal(&this->mass, this->massP->GetValue(), 3, 
-+        this->sizeP->GetValue().x, this->sizeP->GetValue().y);
- 
-   this->SetGeom( dCreateCylinder( 0, this->sizeP->GetValue().x, 
-         this->sizeP->GetValue().y ), true );
-+
-+
- }
- 
- //////////////////////////////////////////////////////////////////////////////
 Index: server/physics/MapGeom.cc
 ===================================================================
 --- server/physics/MapGeom.cc	(revision 7168)
@@ -600,26 +504,7 @@ Index: server/physics/Geom.cc
  
  using namespace gazebo;
  
-@@ -73,6 +74,18 @@
- 
-   this->laserFiducialIdP = new ParamT<int>("laserFiducialId",-1,0);
-   this->laserRetroP = new ParamT<float>("laserRetro",-1,0);
-+
-+  this->customMassMatrixP = new ParamT<bool>("massMatrix",false,0);
-+  this->cxP = new ParamT<double>("cx",0.0,0);
-+  this->cyP = new ParamT<double>("cy",0.0,0);
-+  this->czP = new ParamT<double>("cz",0.0,0);
-+  this->ixxP = new ParamT<double>("ixx",1e-6,0);
-+  this->iyyP = new ParamT<double>("iyy",1e-6,0);
-+  this->izzP = new ParamT<double>("izz",1e-6,0);
-+  this->ixyP = new ParamT<double>("ixy",0.0,0);
-+  this->ixzP = new ParamT<double>("ixz",0.0,0);
-+  this->iyzP = new ParamT<double>("iyz",0.0,0);
-+
-   Param::End();
- }
- 
-@@ -88,17 +101,30 @@
+@@ -88,11 +89,14 @@
    if (this->transId)
      dGeomDestroy(this->transId);
  
@@ -637,23 +522,7 @@ Index: server/physics/Geom.cc
  
    delete this->massP;
    delete this->xyzP;
-   delete this->rpyP;
-   delete this->laserFiducialIdP;
-   delete this->laserRetroP;
-+  delete this->customMassMatrixP;
-+  delete this->cxP ;
-+  delete this->cyP ;
-+  delete this->czP ;
-+  delete this->ixxP;
-+  delete this->iyyP;
-+  delete this->izzP;
-+  delete this->ixyP;
-+  delete this->ixzP;
-+  delete this->iyzP;
- }
- 
- ////////////////////////////////////////////////////////////////////////////////
-@@ -112,6 +138,10 @@
+@@ -112,6 +116,10 @@
    this->typeName = node->GetName();
  
    this->nameP->Load(node);
@@ -664,71 +533,7 @@ Index: server/physics/Geom.cc
    this->massP->Load(node);
    this->xyzP->Load(node);
    this->rpyP->Load(node);
-@@ -123,6 +153,63 @@
-     this->massP->SetValue( 0.001 );
-   }
- 
-+  this->customMassMatrixP->Load(node);
-+  this->cxP ->Load(node);
-+  this->cyP ->Load(node);
-+  this->czP ->Load(node);
-+  this->ixxP->Load(node);
-+  this->iyyP->Load(node);
-+  this->izzP->Load(node);
-+  this->ixyP->Load(node);
-+  this->ixzP->Load(node);
-+  this->iyzP->Load(node);
-+
-+  // option to enter full maxx matrix
-+  this->customMassMatrix = this->customMassMatrixP->GetValue();
-+  this->cx  = this->cxP ->GetValue();
-+  this->cy  = this->cyP ->GetValue();
-+  this->cz  = this->czP ->GetValue();
-+  this->ixx = this->ixxP->GetValue();
-+  this->iyy = this->iyyP->GetValue();
-+  this->izz = this->izzP->GetValue();
-+  this->ixy = this->ixyP->GetValue();
-+  this->ixz = this->ixzP->GetValue();
-+  this->iyz = this->iyzP->GetValue();
-+
-+  // setup this->mass as well
-+  // this->mass.c[0] = this->cx;
-+  // this->mass.c[1] = this->cy;
-+  // this->mass.c[2] = this->cz;
-+
-+  // this->mass.I[0] = this->ixx;
-+  // this->mass.I[1] = this->ixy;
-+  // this->mass.I[2] = this->ixz;
-+
-+  // this->mass.I[3] = this->ixy;
-+  // this->mass.I[4] = this->iyy;
-+  // this->mass.I[5] = this->iyz;
-+
-+  // this->mass.I[6] = this->ixz;
-+  // this->mass.I[7] = this->iyz;
-+  // this->mass.I[8] = this->izz;
-+
-+  // this->mass.I[9] = 1;
-+  // this->mass.I[10] = 1;
-+  // this->mass.I[11] = 1;
-+
-+  // std::cout << " c[0] " << this->mass.c[0] << std::endl;
-+  // std::cout << " c[1] " << this->mass.c[1] << std::endl;
-+  // std::cout << " c[2] " << this->mass.c[2] << std::endl;
-+  // std::cout << " I[0] " << this->mass.I[0] << std::endl;
-+  // std::cout << " I[1] " << this->mass.I[1] << std::endl;
-+  // std::cout << " I[2] " << this->mass.I[2] << std::endl;
-+  // std::cout << " I[3] " << this->mass.I[3] << std::endl;
-+  // std::cout << " I[4] " << this->mass.I[4] << std::endl;
-+  // std::cout << " I[5] " << this->mass.I[5] << std::endl;
-+  // std::cout << " I[6] " << this->mass.I[6] << std::endl;
-+  // std::cout << " I[7] " << this->mass.I[7] << std::endl;
-+  // std::cout << " I[8] " << this->mass.I[8] << std::endl;
-+
-   this->contact->Load(node);
- 
-   this->LoadChild(node);
-@@ -136,13 +223,17 @@
+@@ -136,13 +144,17 @@
  
    // TODO: This should probably be true....but "true" breaks trimesh postions.
    this->SetPose(pose, true);
@@ -752,7 +557,7 @@ Index: server/physics/Geom.cc
    }
  
    /*if (this->IsStatic())
-@@ -159,8 +250,11 @@
+@@ -159,8 +171,11 @@
      Vector3 min(aabb[0], aabb[2], aabb[4]);
      Vector3 max(aabb[1], aabb[3], aabb[5]);
  
@@ -766,7 +571,7 @@ Index: server/physics/Geom.cc
    }
  
    if (this->geomId && dGeomGetClass(this->geomId) != dPlaneClass && 
-@@ -200,10 +294,11 @@
+@@ -200,10 +215,11 @@
    stream << prefix << "  " << *(this->laserFiducialIdP) << "\n";
    stream << prefix << "  " << *(this->laserRetroP) << "\n";
  
@@ -782,7 +587,7 @@ Index: server/physics/Geom.cc
  
    stream << prefix << "</geom:" << this->typeName << ">\n";
  }
-@@ -297,6 +392,11 @@
+@@ -297,6 +313,11 @@
      // Transform into CoM relative Pose
      localPose = pose - this->body->GetCoMPose();
  
@@ -794,7 +599,7 @@ Index: server/physics/Geom.cc
      q[0] = localPose.rot.u;
      q[1] = localPose.rot.x;
      q[2] = localPose.rot.y;
-@@ -307,11 +407,13 @@
+@@ -307,11 +328,13 @@
      dGeomSetPosition(this->geomId, localPose.pos.x, localPose.pos.y, localPose.pos.z);
      dGeomSetQuaternion(this->geomId, q);
  
@@ -809,7 +614,7 @@ Index: server/physics/Geom.cc
      }
    }
  }
-@@ -396,23 +498,24 @@
+@@ -396,23 +419,24 @@
    Pose3d pose;
    dQuaternion q;
    dMatrix3 r;
@@ -838,7 +643,7 @@ Index: server/physics/Geom.cc
    if (dMassCheck(&this->bodyMass))
    {
      dMassRotate(&this->bodyMass, r);
-@@ -454,8 +557,9 @@
+@@ -454,8 +478,9 @@
  /// Set the visibility of the Bounding box of this geometry
  void Geom::ShowBoundingBox(bool show)
  {
@@ -850,7 +655,7 @@ Index: server/physics/Geom.cc
  }
  
  // FIXME: ShowJoints and ShowPhysics will mess with each other and with the user's defined transparency visibility
-@@ -465,20 +569,21 @@
+@@ -465,20 +490,21 @@
  {
    std::vector<OgreVisual*>::iterator iter;
  
@@ -882,7 +687,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -487,26 +592,27 @@
+@@ -487,26 +513,27 @@
  {
    std::vector<OgreVisual*>::iterator iter;
  
@@ -926,7 +731,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -521,15 +627,21 @@
+@@ -521,15 +548,21 @@
  /// Get the number of visuals
  unsigned int Geom::GetVisualCount() const
  {
@@ -950,7 +755,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -538,11 +650,12 @@
+@@ -538,11 +571,12 @@
  {
    std::vector<OgreVisual*>::const_iterator iter;
  
@@ -968,61 +773,6 @@ Index: server/physics/Geom.cc
  
    return NULL;
  }
-Index: server/physics/Joint.hh
-===================================================================
---- server/physics/Joint.hh	(revision 7168)
-+++ server/physics/Joint.hh	(working copy)
-@@ -156,6 +156,8 @@
-     /// Name of this joint
-     private: ParamT<double> *erpP;
-     private: ParamT<double> *cfmP;
-+    private: ParamT<double> *stopKpP;
-+    private: ParamT<double> *stopKdP;
-     private: ParamT<std::string> *body1NameP;
-     private: ParamT<std::string> *body2NameP;
-     private: ParamT<std::string> *anchorBodyNameP;
-@@ -163,6 +165,41 @@
-     private: ParamT<bool> *provideFeedbackP;
-     private: ParamT<double> *fudgeFactorP;
- 
-+    /// Added for mimicing other joints
-+    private: ParamT<std::string> *mimicJointP;
-+    private: ParamT<double> *mimicMultP;
-+    private: ParamT<double> *mimicOffsetP;
-+    private: ParamT<double> *mimicKpP;
-+    private: ParamT<double> *mimicKdP;
-+    private: ParamT<double> *mimicFMaxP;
-+
-+    private: Joint *mimicJoint;
-+    private: bool enableMimic;
-+    private: double mimicMult;
-+    private: double mimicOffset;
-+    private: double mimicKp;
-+    private: double mimicKd;
-+    private: double mimicFMax;
-+    private: double current_time_mimic, last_time_mimic;
-+    private: double current_error_mimic, last_error_mimic;
-+
-+    private: ParamT<std::string> *latchJointP;
-+    private: ParamT<double> *latchAngleP;
-+    private: ParamT<double> *doorClosedAngleP;
-+    private: ParamT<double> *latchKpP;
-+    private: ParamT<double> *latchKdP;
-+    private: ParamT<double> *latchFMaxP;
-+
-+    private: Joint* latchJoint;
-+    private: bool enableLatch;
-+    private: double latchAngle;
-+    private: double doorClosedAngle;
-+    private: double latchKp;
-+    private: double latchKd;
-+    private: double latchFMax;
-+    private: double current_time_latch, last_time_latch;
-+    private: double current_error_latch, last_error_latch;
-+
-     /// Feedback data for this joint
-     private: dJointFeedback *feedback;
- 
 Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7168)
@@ -1043,25 +793,49 @@ Index: server/physics/Body.cc
  using namespace gazebo;
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -70,6 +78,8 @@
+@@ -70,6 +78,21 @@
  
    this->rpyP = new ParamT<Quatern>("rpy", Quatern(), 0);
    this->rpyP->Callback( &Body::SetRotation, this );
 +  this->turnGravityOffP = new ParamT<bool>("turnGravityOff", false, 0);
 +  this->selfCollideP = new ParamT<bool>("selfCollide", false, 0);
++
++  this->customMassMatrixP = new ParamT<bool>("massMatrix",false,0);
++  this->cxP = new ParamT<double>("cx",0.0,0);
++  this->cyP = new ParamT<double>("cy",0.0,0);
++  this->czP = new ParamT<double>("cz",0.0,0);
++  this->bodyMassP = new ParamT<double>("mass",0.001,0);
++  this->ixxP = new ParamT<double>("ixx",1e-6,0);
++  this->iyyP = new ParamT<double>("iyy",1e-6,0);
++  this->izzP = new ParamT<double>("izz",1e-6,0);
++  this->ixyP = new ParamT<double>("ixy",0.0,0);
++  this->ixzP = new ParamT<double>("ixz",0.0,0);
++  this->iyzP = new ParamT<double>("iyz",0.0,0);
++
    Param::End();
  }
  
-@@ -95,6 +105,8 @@
+@@ -95,18 +118,73 @@
  
    delete this->xyzP;
    delete this->rpyP;
 +  delete this->turnGravityOffP;
 +  delete this->selfCollideP;
  
++  delete this->customMassMatrixP;
++  delete this->cxP ;
++  delete this->cyP ;
++  delete this->czP ;
++  delete this->bodyMassP;
++  delete this->ixxP;
++  delete this->iyyP;
++  delete this->izzP;
++  delete this->ixyP;
++  delete this->ixzP;
++  delete this->iyzP;
  }
  
-@@ -102,11 +114,27 @@
+ ////////////////////////////////////////////////////////////////////////////////
  // Load the body based on an XMLConfig node
  void Body::Load(XMLConfigNode *node)
  {
@@ -1078,6 +852,32 @@ Index: server/physics/Body.cc
 +  }
 +
 +
++
++  this->customMassMatrixP->Load(node);
++  this->cxP ->Load(node);
++  this->cyP ->Load(node);
++  this->czP ->Load(node);
++  this->bodyMassP->Load(node);
++  this->ixxP->Load(node);
++  this->iyyP->Load(node);
++  this->izzP->Load(node);
++  this->ixyP->Load(node);
++  this->ixzP->Load(node);
++  this->iyzP->Load(node);
++
++  // option to enter full mass matrix
++  this->customMassMatrix = this->customMassMatrixP->GetValue();
++  this->cx  = this->cxP ->GetValue();
++  this->cy  = this->cyP ->GetValue();
++  this->cz  = this->czP ->GetValue();
++  this->bodyMass = this->bodyMassP->GetValue();
++  this->ixx = this->ixxP->GetValue();
++  this->iyy = this->iyyP->GetValue();
++  this->izz = this->izzP->GetValue();
++  this->ixy = this->ixyP->GetValue();
++  this->ixz = this->ixzP->GetValue();
++  this->iyz = this->iyzP->GetValue();
++
 +  // load child nodes
 +
    XMLConfigNode *childNode;
@@ -1089,7 +889,7 @@ Index: server/physics/Body.cc
    Pose3d initPose;
  
    initPose.pos = **(this->xyzP);
-@@ -134,8 +162,9 @@
+@@ -134,8 +212,9 @@
    }
  
    // If no geoms are attached, then don't let gravity affect the body.
@@ -1100,7 +900,7 @@ Index: server/physics/Body.cc
      this->SetGravityMode(false);
    }
  
-@@ -197,6 +226,13 @@
+@@ -197,6 +276,13 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -1114,7 +914,7 @@ Index: server/physics/Body.cc
  // Initialize the body
  void Body::Init()
  {
-@@ -218,25 +254,53 @@
+@@ -218,25 +304,53 @@
    std::vector< Sensor* >::iterator sensorIter;
    std::map< std::string, Geom* >::iterator geomIter;
  
@@ -1169,7 +969,7 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -329,7 +393,8 @@
+@@ -329,7 +443,8 @@
      dBodySetPosition(this->bodyId, pos.x, pos.y, pos.z);
  
    // Set the position of the scene node
@@ -1179,7 +979,7 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -350,7 +415,8 @@
+@@ -350,7 +465,8 @@
    }
  
    // Set the orientation of the scene node
@@ -1189,7 +989,7 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -404,6 +470,88 @@
+@@ -404,6 +520,88 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -1278,15 +1078,69 @@ Index: server/physics/Body.cc
  // Return the ID of this body
  dBodyID Body::GetId() const
  {
-@@ -506,7 +654,6 @@
+@@ -505,13 +703,57 @@
+ */
  void Body::UpdateCoM()
  {
++  if (!this->bodyId)
++    return;
++
++  if (this->customMassMatrix)
++  {
++
++    // comPose is zero in this case, we'll keep cx, cy, cz
++    this->comPose.Reset();
++
++    this->comPose.pos.x = this->cx;
++    this->comPose.pos.y = this->cy;
++    this->comPose.pos.z = this->cz;
++
++    // setup this->mass as well
++    dMassSetParameters(&this->mass, this->bodyMass,
++                       this->cx, this->cy, this->cz,
++                       //0,0,0,
++                       this->ixx,this->iyy,this->izz,
++                       this->ixy,this->ixz,this->iyz);
++
++    dMassTranslate( &this->mass, -this->cx, -this->cy, -this->cz);
++
++    // dMatrix3 rot;
++    // dMassRotate(&this->mass, rot);
++
++    // Set the mass matrix
++    if (this->mass.mass > 0)
++      dBodySetMass( this->bodyId, &this->mass );
++
++    // std::cout << " c[0] " << this->mass.c[0] << std::endl;
++    // std::cout << " c[1] " << this->mass.c[1] << std::endl;
++    // std::cout << " c[2] " << this->mass.c[2] << std::endl;
++    // std::cout << " I[0] " << this->mass.I[0] << std::endl;
++    // std::cout << " I[1] " << this->mass.I[1] << std::endl;
++    // std::cout << " I[2] " << this->mass.I[2] << std::endl;
++    // std::cout << " I[3] " << this->mass.I[3] << std::endl;
++    // std::cout << " I[4] " << this->mass.I[4] << std::endl;
++    // std::cout << " I[5] " << this->mass.I[5] << std::endl;
++    // std::cout << " I[6] " << this->mass.I[6] << std::endl;
++    // std::cout << " I[7] " << this->mass.I[7] << std::endl;
++    // std::cout << " I[8] " << this->mass.I[8] << std::endl;
++
++  }
++  else
++  {
++
++  // original gazebo subroutine that gathers mass from all geoms and sums into one single mass matrix
++
    const dMass *lmass;
 -  Pose3d oldPose, newPose, pose;
    std::map< std::string, Geom* >::iterator giter;
  
-   if (!this->bodyId)
-@@ -521,12 +668,23 @@
+-  if (!this->bodyId)
+-    return;
+-
+   // Construct the mass matrix by combining all the geoms
+   dMassSetZero( &this->mass );
+ 
+@@ -521,12 +763,21 @@
      if (giter->second->IsPlaceable() && giter->second->GetGeomId())
      {
        dMassAdd( &this->mass, lmass );
@@ -1295,8 +1149,6 @@ Index: server/physics/Body.cc
      }
    }
  
-+  //return; // Stop pose update, we have full com xyz, I control
-+
    // Old pose for the CoM
 +  Pose3d oldPose, newPose, tmpPose;
 +
@@ -1310,7 +1162,7 @@ Index: server/physics/Body.cc
    if (std::isnan(this->mass.c[0]))
      this->mass.c[0] = 0;
  
-@@ -541,24 +699,37 @@
+@@ -541,24 +792,37 @@
    newPose.pos.y = this->mass.c[1];
    newPose.pos.z = this->mass.c[2];
  
@@ -1353,6 +1205,70 @@ Index: server/physics/Body.cc
  
  
    // Settle on the new CoM pose
+@@ -570,6 +834,8 @@
+   // Set the mass matrix
+   if (this->mass.mass > 0)
+     dBodySetMass( this->bodyId, &this->mass );
++  }
++
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+Index: server/physics/Joint.hh
+===================================================================
+--- server/physics/Joint.hh	(revision 7168)
++++ server/physics/Joint.hh	(working copy)
+@@ -156,6 +156,8 @@
+     /// Name of this joint
+     private: ParamT<double> *erpP;
+     private: ParamT<double> *cfmP;
++    private: ParamT<double> *stopKpP;
++    private: ParamT<double> *stopKdP;
+     private: ParamT<std::string> *body1NameP;
+     private: ParamT<std::string> *body2NameP;
+     private: ParamT<std::string> *anchorBodyNameP;
+@@ -163,6 +165,41 @@
+     private: ParamT<bool> *provideFeedbackP;
+     private: ParamT<double> *fudgeFactorP;
+ 
++    /// Added for mimicing other joints
++    private: ParamT<std::string> *mimicJointP;
++    private: ParamT<double> *mimicMultP;
++    private: ParamT<double> *mimicOffsetP;
++    private: ParamT<double> *mimicKpP;
++    private: ParamT<double> *mimicKdP;
++    private: ParamT<double> *mimicFMaxP;
++
++    private: Joint *mimicJoint;
++    private: bool enableMimic;
++    private: double mimicMult;
++    private: double mimicOffset;
++    private: double mimicKp;
++    private: double mimicKd;
++    private: double mimicFMax;
++    private: double current_time_mimic, last_time_mimic;
++    private: double current_error_mimic, last_error_mimic;
++
++    private: ParamT<std::string> *latchJointP;
++    private: ParamT<double> *latchAngleP;
++    private: ParamT<double> *doorClosedAngleP;
++    private: ParamT<double> *latchKpP;
++    private: ParamT<double> *latchKdP;
++    private: ParamT<double> *latchFMaxP;
++
++    private: Joint* latchJoint;
++    private: bool enableLatch;
++    private: double latchAngle;
++    private: double doorClosedAngle;
++    private: double latchKp;
++    private: double latchKd;
++    private: double latchFMax;
++    private: double current_time_latch, last_time_latch;
++    private: double current_error_latch, last_error_latch;
++
+     /// Feedback data for this joint
+     private: dJointFeedback *feedback;
+ 
 Index: server/physics/HingeJoint.cc
 ===================================================================
 --- server/physics/HingeJoint.cc	(revision 7168)
@@ -2027,7 +1943,7 @@ Index: server/physics/TrimeshGeom.cc
  }
  
  //////////////////////////////////////////////////////////////////////////////
-@@ -118,103 +121,115 @@
+@@ -118,103 +121,109 @@
    this->meshNameP->Load(node);
    this->scaleP->Load(node);
  
@@ -2196,13 +2112,7 @@ Index: server/physics/TrimeshGeom.cc
  
 -  memset(this->matrix_dblbuff,0,32*sizeof(dReal));
 -  this->last_matrix_index = 0;
-+    if (this->customMassMatrix)
-+      dMassSetParameters(&this->mass, this->massP->GetValue(),
-+           this->cx, this->cy, this->cz,
-+           this->ixx,this->iyy,this->izz,
-+           this->ixy,this->ixz,this->iyz);
-+    else
-+      dMassSetTrimesh(&this->mass, this->massP->GetValue(), this->geomId);
++    dMassSetTrimesh(&this->mass, this->massP->GetValue(), this->geomId);
 +
 +    // Create the trimesh geometry
 +    this->SetGeom(this->geomId, true);
