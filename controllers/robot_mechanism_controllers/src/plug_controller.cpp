@@ -307,6 +307,18 @@ void PlugController::computeConstraintNullSpace()
 
 }
 
+void PlugController::setToolOffset(const tf::Transform &tool_offset)
+{
+  KDL::Chain new_kdl_chain;
+  chain_.toKDL(new_kdl_chain);
+
+  KDL::Frame tool_frame;
+  mechanism::TransformTFToKDL(tool_offset, tool_frame);
+  new_kdl_chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::None), tool_frame));
+
+  kdl_chain_ = new_kdl_chain;
+}
+
 
 
 ROS_REGISTER_CONTROLLER(PlugControllerNode)
@@ -348,10 +360,12 @@ bool PlugControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *con
                   &PlugControllerNode::outletPose, this, 1);
   guard_outlet_pose_.set(topic_ + "/outlet_pose");
 
-  if (current_frame_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice                                                        
+  if (current_frame_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete current_frame_publisher_ ;
   current_frame_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::Transform> (topic_ + "/transform", 1) ;
 
+  node_->advertiseService(topic_ + "/set_tool_frame", &PlugControllerNode::setToolFrame, this);
+  guard_set_tool_frame_.set(topic_ + "/set_tool_frame");
 
   return true;
 }
@@ -437,6 +451,18 @@ void PlugControllerNode::command()
   controller_.task_wrench_(4) = wrench_msg_.torque.y;
   controller_.task_wrench_(5) = wrench_msg_.torque.z;
 
+}
+
+bool PlugControllerNode::setToolFrame(robot_srvs::SetPoseStamped::Request &req,
+                                      robot_srvs::SetPoseStamped::Response &resp)
+{
+  robot_msgs::PoseStamped tool_offset_msg;
+  TF.transformPose(controller_.chain_.getLinkName(), req.p, tool_offset_msg);
+
+  tf::Transform tool_offset;
+  tf::PoseMsgToTF(tool_offset_msg.pose, tool_offset);
+  controller_.setToolOffset(tool_offset);
+  return true;
 }
 
 }; // namespace

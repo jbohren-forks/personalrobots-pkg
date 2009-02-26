@@ -42,8 +42,8 @@
 #include "ros/node.h"
 #include "robot_msgs/Wrench.h"
 #include "robot_msgs/OutletPose.h"
-
 #include "robot_msgs/Transform.h"
+#include "robot_srvs/SetPoseStamped.h"
 
 #include "misc_utils/subscription_guard.h"
 #include "mechanism_model/controller.h"
@@ -76,6 +76,9 @@ public:
   void computeConstraintJacobian();
   void computeConstraintNullSpace();
 
+  void setToolOffset(const tf::Transform &);
+
+
   const char *root_name_;
   // input of the controller
   KDL::Wrench wrench_desi_;
@@ -86,12 +89,12 @@ public:
   KDL::Frame endeffector_frame_;
   KDL::Frame desired_frame_;
 
+  mechanism::Chain chain_;
+
 private:
 
   mechanism::RobotState *robot_;
 
-  // kdl stuff for kinematics
-  mechanism::Chain chain_;
   KDL::Chain kdl_chain_;
   boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
   boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
@@ -138,20 +141,24 @@ class PlugControllerNode : public Controller
   void command();
   void outletPose();
 
+  bool setToolFrame(robot_srvs::SetPoseStamped::Request &req,
+                    robot_srvs::SetPoseStamped::Response &resp);
+
  private:
   std::string topic_;
   ros::Node *node_;
   PlugController controller_;
   SubscriptionGuard guard_command_;
   SubscriptionGuard guard_outlet_pose_;
+  AdvertisedServiceGuard guard_set_tool_frame_;
 
   robot_msgs::Wrench wrench_msg_;
   robot_msgs::OutletPose outlet_pose_msg_;
   unsigned int loop_count_;
 
   tf::TransformListener TF;                    /**< The transform for converting from point to head and tilt frames. */
-  realtime_tools::RealtimePublisher <robot_msgs::Transform>* current_frame_publisher_; 
-  
+  realtime_tools::RealtimePublisher <robot_msgs::Transform>* current_frame_publisher_;
+
 
 };
 
