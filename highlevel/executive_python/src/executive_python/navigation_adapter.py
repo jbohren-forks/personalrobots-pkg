@@ -59,7 +59,7 @@ class NavigationAdapter:
     self.state = state
 
     #if we have a valid plan, reset the timeout on planning
-    if self.state.valid == 1:
+    if self.state.status == self.state.ACTIVE:
       self.last_plan_time = rospy.get_time()
 
   def active(self):
