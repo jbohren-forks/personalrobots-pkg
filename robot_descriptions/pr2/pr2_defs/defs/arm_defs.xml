@@ -39,7 +39,7 @@
   <property name="elbow_flex_cal" value="0.0" />
   <property name="forearm_roll_cal" value="0.0" />
   <property name="wrist_flex_cal" value="0.0" />
-  <property name="wrist_roll_cal" value="0.0" />
+  <property name="wrist_roll_cal" value="0.4" />
 
   <macro name="pr2_shoulder" params="side parent reflect *origin">
 
