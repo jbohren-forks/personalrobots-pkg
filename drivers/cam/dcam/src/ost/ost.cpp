@@ -1823,6 +1823,9 @@ void cal_capture_cb(Fl_Button*, void*)
 
 
 // save an image
+// should save all current possibilities
+//   currently just save grayscale images, if they exist
+
 void cal_save_image_cb(Fl_Button*, void*) 
 {
   if (!dev)
@@ -1859,9 +1862,6 @@ void cal_save_image_cb(Fl_Button*, void*)
 
   // write left image
   if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
-    cvSetData(im,dev->stIm->imLeft->imRect,w);
-
-  if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
     {
       cvSetData(im,dev->stIm->imLeft->imRect,w);
       strcpy(&fn[sufn],"-LR.png");
@@ -1876,6 +1876,7 @@ void cal_save_image_cb(Fl_Button*, void*)
       debug_message("[oST] Wrote %s", fn);
     }
 
+  // write right image
   if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
     {
       cvSetData(im,dev->stIm->imRight->imRect,w);
