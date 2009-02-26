@@ -223,7 +223,13 @@ Index: server/physics/Geom.hh
  
  #include "Param.hh"
  #include "Entity.hh"
-@@ -162,6 +163,9 @@
+@@ -159,9 +160,15 @@
+     /// \brief Get the model this geom belongs to
+     public: Model *GetModel() const;
+ 
++    /// \brief Set transparency of all visuals
++    public: void SetTransparency(float t);
++
      ///  Contact parameters
      public: ContactParams *contact; 
  
@@ -349,7 +355,17 @@ Index: server/physics/Body.hh
      /// \brief Set the linear velocity of the body
      public: void SetLinearVel(const Vector3 &vel);
    
-@@ -184,6 +200,23 @@
+@@ -164,6 +180,9 @@
+     /// \brief Update the pose of the body
+     private: void UpdatePose();
+  
++    /// \brief Set transparency for all child geometries
++    public: void SetTransparency(float t);
++
+     /// List of geometries attached to this body
+     private: std::map< std::string, Geom* > geoms;
+   
+@@ -184,6 +203,23 @@
    
      private: ParamT<Vector3> *xyzP;
      private: ParamT<Quatern> *rpyP;
@@ -662,7 +678,7 @@ Index: server/physics/Geom.cc
  }
  
  // FIXME: ShowJoints and ShowPhysics will mess with each other and with the user's defined transparency visibility
-@@ -465,20 +497,21 @@
+@@ -465,20 +497,26 @@
  {
    std::vector<OgreVisual*>::iterator iter;
  
@@ -673,28 +689,32 @@ Index: server/physics/Geom.cc
 +    if (show)
      {
 -      (*iter)->SetTransparency(0.6);
-+      for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
-+      {
-+        (*iter)->SetTransparency(0.6);
-+      }
++      this->SetTransparency(0.6);
      }
 -  }
 -  else
 -  {
--    for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
 +    else
++    {
++      this->SetTransparency(0.0);
++    }
++}
++
++void Geom::SetTransparency(float t)
++{
++  std::vector<OgreVisual*>::iterator iter;
++
++  if (Simulator::Instance()->GetRenderEngineEnabled())
+     for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
      {
 -      (*iter)->SetTransparency(0.0);
-+      for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
-+      {
-+        (*iter)->SetTransparency(0.0);
-+      }
++      (*iter)->SetTransparency(t);
      }
 -  }
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -487,26 +520,27 @@
+@@ -487,26 +525,27 @@
  {
    std::vector<OgreVisual*>::iterator iter;
  
@@ -738,7 +758,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -521,15 +555,21 @@
+@@ -521,15 +560,21 @@
  /// Get the number of visuals
  unsigned int Geom::GetVisualCount() const
  {
@@ -762,7 +782,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -538,11 +578,12 @@
+@@ -538,11 +583,12 @@
  {
    std::vector<OgreVisual*>::const_iterator iter;
  
@@ -780,61 +800,6 @@ Index: server/physics/Geom.cc
  
    return NULL;
  }
-Index: server/physics/Joint.hh
-===================================================================
---- server/physics/Joint.hh	(revision 7358)
-+++ server/physics/Joint.hh	(working copy)
-@@ -156,6 +156,8 @@
-     /// Name of this joint
-     private: ParamT<double> *erpP;
-     private: ParamT<double> *cfmP;
-+    private: ParamT<double> *stopKpP;
-+    private: ParamT<double> *stopKdP;
-     private: ParamT<std::string> *body1NameP;
-     private: ParamT<std::string> *body2NameP;
-     private: ParamT<std::string> *anchorBodyNameP;
-@@ -163,6 +165,41 @@
-     private: ParamT<bool> *provideFeedbackP;
-     private: ParamT<double> *fudgeFactorP;
- 
-+    /// Added for mimicing other joints
-+    private: ParamT<std::string> *mimicJointP;
-+    private: ParamT<double> *mimicMultP;
-+    private: ParamT<double> *mimicOffsetP;
-+    private: ParamT<double> *mimicKpP;
-+    private: ParamT<double> *mimicKdP;
-+    private: ParamT<double> *mimicFMaxP;
-+
-+    private: Joint *mimicJoint;
-+    private: bool enableMimic;
-+    private: double mimicMult;
-+    private: double mimicOffset;
-+    private: double mimicKp;
-+    private: double mimicKd;
-+    private: double mimicFMax;
-+    private: double current_time_mimic, last_time_mimic;
-+    private: double current_error_mimic, last_error_mimic;
-+
-+    private: ParamT<std::string> *latchJointP;
-+    private: ParamT<double> *latchAngleP;
-+    private: ParamT<double> *doorClosedAngleP;
-+    private: ParamT<double> *latchKpP;
-+    private: ParamT<double> *latchKdP;
-+    private: ParamT<double> *latchFMaxP;
-+
-+    private: Joint* latchJoint;
-+    private: bool enableLatch;
-+    private: double latchAngle;
-+    private: double doorClosedAngle;
-+    private: double latchKp;
-+    private: double latchKd;
-+    private: double latchFMax;
-+    private: double current_time_latch, last_time_latch;
-+    private: double current_error_latch, last_error_latch;
-+
-     /// Feedback data for this joint
-     private: dJointFeedback *feedback;
- 
 Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7358)
@@ -1322,6 +1287,77 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
+@@ -720,3 +1032,15 @@
+   }
+ }
+  
++void Body::SetTransparency(float t)
++{
++  std::map< std::string, Geom* >::iterator giter;
++  // Fixup the poses of the geoms (they are attached to the CoM)
++  for (giter = this->geoms.begin(); giter != this->geoms.end(); giter++)
++  {
++    giter->second->SetTransparency(t);
++  }
++
++}
++
++
+Index: server/physics/Joint.hh
+===================================================================
+--- server/physics/Joint.hh	(revision 7358)
++++ server/physics/Joint.hh	(working copy)
+@@ -156,6 +156,8 @@
+     /// Name of this joint
+     private: ParamT<double> *erpP;
+     private: ParamT<double> *cfmP;
++    private: ParamT<double> *stopKpP;
++    private: ParamT<double> *stopKdP;
+     private: ParamT<std::string> *body1NameP;
+     private: ParamT<std::string> *body2NameP;
+     private: ParamT<std::string> *anchorBodyNameP;
+@@ -163,6 +165,41 @@
+     private: ParamT<bool> *provideFeedbackP;
+     private: ParamT<double> *fudgeFactorP;
+ 
++    /// Added for mimicing other joints
++    private: ParamT<std::string> *mimicJointP;
++    private: ParamT<double> *mimicMultP;
++    private: ParamT<double> *mimicOffsetP;
++    private: ParamT<double> *mimicKpP;
++    private: ParamT<double> *mimicKdP;
++    private: ParamT<double> *mimicFMaxP;
++
++    private: Joint *mimicJoint;
++    private: bool enableMimic;
++    private: double mimicMult;
++    private: double mimicOffset;
++    private: double mimicKp;
++    private: double mimicKd;
++    private: double mimicFMax;
++    private: double current_time_mimic, last_time_mimic;
++    private: double current_error_mimic, last_error_mimic;
++
++    private: ParamT<std::string> *latchJointP;
++    private: ParamT<double> *latchAngleP;
++    private: ParamT<double> *doorClosedAngleP;
++    private: ParamT<double> *latchKpP;
++    private: ParamT<double> *latchKdP;
++    private: ParamT<double> *latchFMaxP;
++
++    private: Joint* latchJoint;
++    private: bool enableLatch;
++    private: double latchAngle;
++    private: double doorClosedAngle;
++    private: double latchKp;
++    private: double latchKd;
++    private: double latchFMax;
++    private: double current_time_latch, last_time_latch;
++    private: double current_error_latch, last_error_latch;
++
+     /// Feedback data for this joint
+     private: dJointFeedback *feedback;
+ 
 Index: server/physics/HingeJoint.cc
 ===================================================================
 --- server/physics/HingeJoint.cc	(revision 7358)
@@ -2747,6 +2783,37 @@ Index: server/Entity.cc
    World::Instance()->GetPhysicsEngine()->RemoveEntity(this);
  }
  
+@@ -160,13 +164,29 @@
+   Body *body = NULL;
+ 
+   this->selected = s;
++  //std::cout << " SetSelected Entity : " << this->GetName() << " selected(" << s << ")" << std::endl;
+ 
+   for (iter = this->children.begin(); iter != this->children.end(); iter++)
+   {
++    //std::cout << " SetSelected Entity Children: " << (*iter)->GetName() << std::endl;
+     (*iter)->SetSelected(s);
+     body = dynamic_cast<Body*>(*iter);
++
++    //enabling SetEnabled(!s) makes body unstabel upon unselection
++    //if (body)
++    //  body->SetEnabled(!s);
++  }
++}
++
++void Entity::SetTransparency(float t)
++{
++  std::vector< Entity *>::iterator iter;
++  Body *body = NULL;
++  for (iter = this->children.begin(); iter != this->children.end(); iter++)
++  {
++    body = dynamic_cast<Body*>(*iter);
+     if (body)
+-      body->SetEnabled(!s);
++      body->SetTransparency(t);
+   }
+ }
+ 
 Index: server/Simulator.cc
 ===================================================================
 --- server/Simulator.cc	(revision 7358)
@@ -2940,7 +3007,32 @@ Index: server/Simulator.cc
  /// Set the length of time the simulation should run.
  void Simulator::SetTimeout(double time)
  {
-@@ -512,6 +563,34 @@
+@@ -487,17 +538,24 @@
+ /// Set the selected entity
+ void Simulator::SetSelectedEntity( Entity *ent )
+ {
++  // unselect selectedEntity
+   if (this->selectedEntity)
+   {
+     this->selectedEntity->GetVisualNode()->ShowSelectionBox(false);
++    this->selectedEntity->SetTransparency(0.0);
+     this->selectedEntity->SetSelected(false);
++    std::cout << " UnSetSelected Entity : " << this->selectedEntity->GetName() << std::endl;
+   }
+ 
++  // if a different entity is selected, show bounding box and SetSelected(true)
+   if (this->selectedEntity != ent)
+   {
++    // set selected entity to ent
+     this->selectedEntity = ent;
+     this->selectedEntity->GetVisualNode()->ShowSelectionBox(true);
++    this->selectedEntity->SetTransparency(0.6);
+     this->selectedEntity->SetSelected(true);
++    std::cout << " SetSelected Entity : " << this->selectedEntity->GetName() << std::endl;
+   }
+   else
+     this->selectedEntity = NULL;
+@@ -512,6 +570,38 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -2950,14 +3042,18 @@ Index: server/Simulator.cc
 +  if (this->selectedBody)
 +  {
 +    this->selectedBody->GetVisualNode()->ShowSelectionBox(false);
++    this->selectedBody->SetTransparency(0.0);
 +    this->selectedBody->SetSelected(false);
++    std::cout << " UnSetSelected Body : " << this->selectedBody->GetName() << std::endl;
 +  }
 +
 +  if (this->selectedBody != bod)
 +  {
 +    this->selectedBody = bod;
 +    this->selectedBody->GetVisualNode()->ShowSelectionBox(true);
++    this->selectedBody->SetTransparency(0.6);
 +    this->selectedBody->SetSelected(true);
++    std::cout << " SetSelected Body : " << this->selectedBody->GetName() << std::endl;
 +  }
 +  else
 +    this->selectedBody = NULL;
@@ -3286,6 +3382,248 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
+Index: server/gui/GLWindow.hh
+===================================================================
+--- server/gui/GLWindow.hh	(revision 7358)
++++ server/gui/GLWindow.hh	(working copy)
+@@ -139,6 +139,8 @@
+     private: bool middleMousePressed;
+     private: Vector2<int> prevMousePos;
+     private: Vector2<int> mousePos;
++    private: Vector2<int> mouseOriginPos; // for applying external forces
++    private: Vector3 forceVec; // for applying external forces
+     private: std::map<int,int> keys;
+ 
+     private: double lastUpdateTime;
+Index: server/gui/StatusBar.cc
+===================================================================
+--- server/gui/StatusBar.cc	(revision 7358)
++++ server/gui/StatusBar.cc	(working copy)
+@@ -25,6 +25,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <string.h>
+ #include <FL/Fl_Value_Output.H>
+ #include <FL/Fl_Output.H>
+ #include <FL/Fl_Button.H>
+Index: server/gui/GLWindow.cc
+===================================================================
+--- server/gui/GLWindow.cc	(revision 7358)
++++ server/gui/GLWindow.cc	(working copy)
+@@ -35,6 +35,7 @@
+ 
+ #include "Param.hh"
+ #include "Entity.hh"
++#include "Body.hh"
+ #include "OgreCamera.hh"
+ #include "OgreCreator.hh"
+ #include "Simulator.hh"
+@@ -62,9 +63,9 @@
+ {
+   this->end();
+ 
+-  this->moveAmount = 1.0;
++  this->moveAmount = 0.1;
+   this->moveScale = 1;
+-  this->rotateAmount = 0.5;
++  this->rotateAmount = 0.1;
+ 
+   this->directionVec.x = 0;
+   this->directionVec.y = 0;
+@@ -143,6 +144,12 @@
+     this->activeCamera->UpdateCam();
+   else
+     this->userCamera->Update();
++
++  // Body *body = Simulator::Instance()->GetSelectedBody();
++  // if (body)
++  // {
++  //   body->SetForce(this->forceVec);
++  // }
+ }
+ 
+ 
+@@ -204,10 +211,22 @@
+   if (!this->mouseDrag)
+   {
+     Entity *ent = OgreAdaptor::Instance()->GetEntityAt(this->activeCamera, this->mousePos);
++    Body *bod = OgreAdaptor::Instance()->GetBodyAt(this->activeCamera, this->mousePos);
++    switch (Fl::event_button())
++    {
++      case FL_LEFT_MOUSE:
++        if (ent) Simulator::Instance()->SetSelectedEntity( ent );
++        this->mouseOriginPos = Vector2<int>( Fl::event_x(), Fl::event_y() );
++        break;
+ 
+-    if (ent)
+-    {
+-      Simulator::Instance()->SetSelectedEntity( ent );
++      case FL_RIGHT_MOUSE:
++        break;
++
++      case FL_MIDDLE_MOUSE:
++        if (bod) Simulator::Instance()->SetSelectedBody( bod );
++        this->mouseOriginPos = Vector2<int>( Fl::event_x(), Fl::event_y() );
++        this->forceVec = Vector3(0,0,0);
++        break;
+     }
+   }
+ 
+@@ -223,18 +242,59 @@
+     Vector2<int> d = this->mousePos - this->prevMousePos;
+     if (this->leftMousePressed)
+     {
+-      this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
+-      this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
++      Model *model = dynamic_cast<Model*>(Simulator::Instance()->GetSelectedEntity());
++      Body *body = Simulator::Instance()->GetSelectedBody();
++      if (model || body)
++      {
++        if (model)
++        {
++          Pose3d pose = model->GetPose();
++          Vector3 eul = pose.rot.GetAsEuler();
++          eul.x -= d.x * 0.01;
++          eul.y -= d.y * 0.01;
++          pose.rot.SetFromEuler(eul);
++          model->SetPose(pose);
++          std::cout << "set euler angles r(" << eul.x << ") p(" << eul.y << ") to model (" << model->GetName() << ")" << std::endl;
++        }
++        if (body)
++        {
++          Pose3d pose = body->GetPose();
++          Vector3 eul = pose.rot.GetAsEuler();
++          eul.x -= d.x * 0.01;
++          eul.y -= d.y * 0.01;
++          pose.rot.SetFromEuler(eul);
++          body->SetPose(pose);
++          std::cout << "set euler angles r(" << eul.x << ") p(" << eul.y << ") to body (" << body->GetName() << ")" << std::endl;
++        }
++      }
++      else
++      {
++        this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
++        this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
++      }
+     }
+     else if (this->rightMousePressed)
+     {
+       Model *model = dynamic_cast<Model*>(Simulator::Instance()->GetSelectedEntity());
+-      if (model)
++      Body *body = Simulator::Instance()->GetSelectedBody();
++      if (model || body)
+       {
+-        Pose3d pose = model->GetPose();
+-        pose.pos.y -= d.x * 0.05;
+-        pose.pos.x -= d.y * 0.05;
+-        model->SetPose(pose);
++        if (model)
++        {
++          Pose3d pose = model->GetPose();
++          pose.pos.y -= d.x * 0.05;
++          pose.pos.x -= d.y * 0.05;
++          model->SetPose(pose);
++          std::cout << "set pose x(" << pose.pos.x << ") y(" << pose.pos.y << ") to model (" << model->GetName() << ")" << std::endl;
++        }
++        if (body)
++        {
++          Pose3d pose = body->GetPose();
++          pose.pos.y -= d.x * 0.05;
++          pose.pos.x -= d.y * 0.05;
++          body->SetPose(pose);
++          std::cout << "set pose x(" << pose.pos.x << ") y(" << pose.pos.y << ") to body (" << body->GetName() << ")" << std::endl;
++        }
+       }
+       else
+       {
+@@ -246,10 +306,21 @@
+     }
+     else if (this->middleMousePressed)
+     {
+-      Vector2<int> d = this->mousePos - this->prevMousePos;
+-      this->directionVec.x =  d.y * this->moveAmount;
+-      this->directionVec.y =  0;
+-      this->directionVec.z =  0;
++      Body *body = Simulator::Instance()->GetSelectedBody();
++      if (body)
++      {
++        Vector2<int> d = this->mousePos - this->mouseOriginPos;
++        this->forceVec = Vector3(10.0*d.x,  0.0, -10.0*d.y);
++        body->SetForce(this->forceVec);
++        std::cout << "apply force " << this->forceVec << " to body " << body->GetName() << std::endl;
++      }
++      else
++      {
++        Vector2<int> d = this->mousePos - this->prevMousePos;
++        this->directionVec.x =  d.y * this->moveAmount;
++        this->directionVec.y =  0;
++        this->directionVec.z =  0;
++      }
+     }
+   }
+ 
+@@ -261,12 +332,30 @@
+ void GLWindow::HandleMouseWheel(int dx, int dy)
+ {
+   Model *model = dynamic_cast<Model*>(Simulator::Instance()->GetSelectedEntity());
+-  if (model)
++  Body *body = Simulator::Instance()->GetSelectedBody();
++  if (model || body)
+   {
+-    Pose3d pose = model->GetPose();
+-    pose.pos.z += dy * 0.05;
+-    model->SetPose(pose);
++    if (model)
++    {
++      Pose3d pose = model->GetPose();
++      pose.pos.z += dy * 0.05;
++      model->SetPose(pose);
++      std::cout << "set pose z(" << pose.pos.z << ") to model (" << model->GetName() << ")" << std::endl;
++    }
++    if (body)
++    {
++      Pose3d pose = body->GetPose();
++      pose.pos.z += dy * 0.05;
++      body->SetPose(pose);
++      std::cout << "set pose z(" << pose.pos.z << ") to body (" << body->GetName() << ")" << std::endl;
++    }
+   }
++  else if (this->activeCamera && this->activeCamera->GetUserMovable())
++  {
++    this->directionVec.x -=  50.0 * dy * this->moveAmount;
++    this->directionVec.y =  0;
++    this->directionVec.z =  0;
++  }
+ 
+ }
+ 
+@@ -309,6 +398,25 @@
+           this->moveAmount *= 0.5;
+           break;
+ 
++        case XK_j:
++          this->forceVec.z -= 100*this->moveAmount;
++          break;
++        case XK_k:
++          this->forceVec.z += 100*this->moveAmount;
++          break;
++        case XK_h:
++          this->forceVec.y -= 100*this->moveAmount;
++          break;
++        case XK_l:
++          this->forceVec.y += 100*this->moveAmount;
++          break;
++        case XK_x:
++          this->forceVec.x += 100*this->moveAmount;
++          break;
++        case XK_z:
++          this->forceVec.x -= 100*this->moveAmount;
++          break;
++
+         case XK_Up:
+         case XK_w:
+           this->directionVec.x += this->moveAmount;
 Index: server/Model.cc
 ===================================================================
 --- server/Model.cc	(revision 7358)
@@ -3405,183 +3743,6 @@ Index: server/Model.cc
  
  }
  
-Index: server/gui/GLWindow.hh
-===================================================================
---- server/gui/GLWindow.hh	(revision 7358)
-+++ server/gui/GLWindow.hh	(working copy)
-@@ -139,6 +139,8 @@
-     private: bool middleMousePressed;
-     private: Vector2<int> prevMousePos;
-     private: Vector2<int> mousePos;
-+    private: Vector2<int> mouseOriginPos; // for applying external forces
-+    private: Vector3 forceVec; // for applying external forces
-     private: std::map<int,int> keys;
- 
-     private: double lastUpdateTime;
-Index: server/gui/StatusBar.cc
-===================================================================
---- server/gui/StatusBar.cc	(revision 7358)
-+++ server/gui/StatusBar.cc	(working copy)
-@@ -25,6 +25,7 @@
-  */
- 
- #include <stdio.h>
-+#include <string.h>
- #include <FL/Fl_Value_Output.H>
- #include <FL/Fl_Output.H>
- #include <FL/Fl_Button.H>
-Index: server/gui/GLWindow.cc
-===================================================================
---- server/gui/GLWindow.cc	(revision 7358)
-+++ server/gui/GLWindow.cc	(working copy)
-@@ -35,6 +35,7 @@
- 
- #include "Param.hh"
- #include "Entity.hh"
-+#include "Body.hh"
- #include "OgreCamera.hh"
- #include "OgreCreator.hh"
- #include "Simulator.hh"
-@@ -62,9 +63,9 @@
- {
-   this->end();
- 
--  this->moveAmount = 1.0;
-+  this->moveAmount = 0.1;
-   this->moveScale = 1;
--  this->rotateAmount = 0.5;
-+  this->rotateAmount = 0.1;
- 
-   this->directionVec.x = 0;
-   this->directionVec.y = 0;
-@@ -143,6 +144,13 @@
-     this->activeCamera->UpdateCam();
-   else
-     this->userCamera->Update();
-+
-+  Body *body = Simulator::Instance()->GetSelectedBody();
-+  if (body)
-+  {
-+    std::cout << "applied force " << this->forceVec << std::endl;
-+    body->SetForce(this->forceVec);
-+  }
- }
- 
- 
-@@ -204,10 +212,22 @@
-   if (!this->mouseDrag)
-   {
-     Entity *ent = OgreAdaptor::Instance()->GetEntityAt(this->activeCamera, this->mousePos);
-+    Body *bod = OgreAdaptor::Instance()->GetBodyAt(this->activeCamera, this->mousePos);
-+    switch (Fl::event_button())
-+    {
-+      case FL_LEFT_MOUSE:
-+        if (ent) Simulator::Instance()->SetSelectedEntity( ent );
-+        this->mouseOriginPos = Vector2<int>( Fl::event_x(), Fl::event_y() );
-+        break;
- 
--    if (ent)
--    {
--      Simulator::Instance()->SetSelectedEntity( ent );
-+      case FL_RIGHT_MOUSE:
-+        break;
-+
-+      case FL_MIDDLE_MOUSE:
-+        if (bod) Simulator::Instance()->SetSelectedBody( bod );
-+        this->mouseOriginPos = Vector2<int>( Fl::event_x(), Fl::event_y() );
-+        this->forceVec = Vector3(0,0,0);
-+        break;
-     }
-   }
- 
-@@ -223,8 +243,21 @@
-     Vector2<int> d = this->mousePos - this->prevMousePos;
-     if (this->leftMousePressed)
-     {
--      this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
--      this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
-+      Model *model = dynamic_cast<Model*>(Simulator::Instance()->GetSelectedEntity());
-+      if (model)
-+      {
-+        Pose3d pose = model->GetPose();
-+        Vector3 eul = pose.rot.GetAsEuler();
-+        eul.x -= d.x * 0.01;
-+        eul.y -= d.y * 0.01;
-+        pose.rot.SetFromEuler(eul);
-+        model->SetPose(pose);
-+      }
-+      else
-+      {
-+        this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
-+        this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
-+      }
-     }
-     else if (this->rightMousePressed)
-     {
-@@ -246,10 +279,20 @@
-     }
-     else if (this->middleMousePressed)
-     {
--      Vector2<int> d = this->mousePos - this->prevMousePos;
--      this->directionVec.x =  d.y * this->moveAmount;
--      this->directionVec.y =  0;
--      this->directionVec.z =  0;
-+      Body *body = Simulator::Instance()->GetSelectedBody();
-+      if (body)
-+      {
-+        Vector2<int> d = this->mousePos - this->mouseOriginPos;
-+        this->forceVec = Vector3(10.0*d.x,  0.0, -10.0*d.y);
-+        body->SetForce(this->forceVec);
-+      }
-+      else
-+      {
-+        Vector2<int> d = this->mousePos - this->prevMousePos;
-+        this->directionVec.x =  d.y * this->moveAmount;
-+        this->directionVec.y =  0;
-+        this->directionVec.z =  0;
-+      }
-     }
-   }
- 
-@@ -267,6 +310,12 @@
-     pose.pos.z += dy * 0.05;
-     model->SetPose(pose);
-   }
-+  else if (this->activeCamera && this->activeCamera->GetUserMovable())
-+  {
-+    this->directionVec.x -=  50.0 * dy * this->moveAmount;
-+    this->directionVec.y =  0;
-+    this->directionVec.z =  0;
-+  }
- 
- }
- 
-@@ -309,6 +358,25 @@
-           this->moveAmount *= 0.5;
-           break;
- 
-+        case XK_j:
-+          this->forceVec.z -= 100*this->moveAmount;
-+          break;
-+        case XK_k:
-+          this->forceVec.z += 100*this->moveAmount;
-+          break;
-+        case XK_h:
-+          this->forceVec.y -= 100*this->moveAmount;
-+          break;
-+        case XK_l:
-+          this->forceVec.y += 100*this->moveAmount;
-+          break;
-+        case XK_x:
-+          this->forceVec.x += 100*this->moveAmount;
-+          break;
-+        case XK_z:
-+          this->forceVec.x -= 100*this->moveAmount;
-+          break;
-+
-         case XK_Up:
-         case XK_w:
-           this->directionVec.x += this->moveAmount;
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 7358)
@@ -3667,6 +3828,38 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
+Index: server/controllers/factory/Factory.cc
+===================================================================
+--- server/controllers/factory/Factory.cc	(revision 7358)
++++ server/controllers/factory/Factory.cc	(working copy)
+@@ -76,6 +76,8 @@
+ // Initialize the controller
+ void Factory::InitChild()
+ {
++  // initialize newModel to blank
++  strcpy((char*)this->factoryIface->data->newModel,"");
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -83,8 +85,10 @@
+ void Factory::UpdateChild()
+ {
+   // If there is a string, then add the contents to the world
++  this->factoryIface->Lock(1);
+   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
+   {
++    //std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
+     std::string xmlString;
+     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
+ 
+@@ -121,6 +125,7 @@
+ 
+     strcpy((char*)this->factoryIface->data->deleteModel,"");
+   }
++  this->factoryIface->Unlock();
+ 
+ }
+ 
 Index: server/controllers/Controller.cc
 ===================================================================
 --- server/controllers/Controller.cc	(revision 7358)
@@ -3761,38 +3954,6 @@ Index: server/controllers/Controller.cc
    for (iter=this->ifaces.begin(); iter!=this->ifaces.end(); iter++)
    {
      if ((*iter)->GetOpenCount() > 0)
-Index: server/controllers/factory/Factory.cc
-===================================================================
---- server/controllers/factory/Factory.cc	(revision 7358)
-+++ server/controllers/factory/Factory.cc	(working copy)
-@@ -76,6 +76,8 @@
- // Initialize the controller
- void Factory::InitChild()
- {
-+  // initialize newModel to blank
-+  strcpy((char*)this->factoryIface->data->newModel,"");
- }
- 
- ////////////////////////////////////////////////////////////////////////////////
-@@ -83,8 +85,10 @@
- void Factory::UpdateChild()
- {
-   // If there is a string, then add the contents to the world
-+  this->factoryIface->Lock(1);
-   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
-   {
-+    //std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
-     std::string xmlString;
-     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
- 
-@@ -121,6 +125,7 @@
- 
-     strcpy((char*)this->factoryIface->data->deleteModel,"");
-   }
-+  this->factoryIface->Unlock();
- 
- }
- 
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
 --- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7358)
@@ -3812,6 +3973,20 @@ Index: server/controllers/ptz/generic/Generic_PTZ.cc
  
    this->panJoint = NULL;
    this->tiltJoint = NULL;
+Index: server/Entity.hh
+===================================================================
+--- server/Entity.hh	(revision 7358)
++++ server/Entity.hh	(working copy)
+@@ -101,6 +101,9 @@
+     /// \brief Returns true if the entities are the same. Checks only the name
+     public: bool operator==(const Entity &ent) const;
+ 
++    /// \brief Set transparency of all children bodies->geoms
++    public: void SetTransparency(float t);
++
+     /// \brief Parent of this entity
+     protected: Entity *parent;
+   
 Index: server/World.cc
 ===================================================================
 --- server/World.cc	(revision 7358)
