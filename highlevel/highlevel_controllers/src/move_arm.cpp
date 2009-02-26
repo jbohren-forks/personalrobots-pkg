@@ -218,6 +218,9 @@ void MoveArm::receiveStatus(void)
     ROS_DEBUG("Got new trajectory from planner");
     new_trajectory_ = true;
   }
+  else
+    ROS_DEBUG("Got irrelevant status: %d %d %d", 
+              plan_id_, plan_status_.id, plan_status_.path.states.empty());
 }
 
 void MoveArm::updateGoalMsg()
