@@ -12,9 +12,9 @@
   <property name="finger_stop_kp"             value="100000.0" />
   <property name="finger_fudge_factor"        value="1.0" />
 
-  <property name="finger_damping"             value="0.2" />
+  <property name="finger_damping"             value="3.0" />
 
-  <property name="finger_tip_damping"         value="0.001" />
+  <property name="finger_tip_damping"         value="0.01" />
   <property name="finger_tip_kp"              value="10.0" />
   <property name="finger_tip_kd"              value="05.0" />
   <property name="finger_tip_fm"              value="10.0" />
