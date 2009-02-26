@@ -121,7 +121,7 @@ public:
     
     robot_msgs::PoseStamped init_pose;
     init_pose.header.frame_id = robot_frame_;
-    init_pose.pose.position.x = 0.2;
+    init_pose.pose.position.x = 0.4;
     init_pose.pose.position.y = 0.0;
     init_pose.pose.position.z = 0.6;
     init_pose.pose.orientation.x = 0;
@@ -409,11 +409,6 @@ public:
     tf_.transformVector(frame_goal, pnt, pnt);
     return Vector(pnt[0], pnt[1], pnt[2]);
   }
-
-  void plannerCallback()
-  {
-    if (planner_state_.status == planner_state_.ACTIVE)
-      planner_running_ = true;
 
   void plannerCallback()
   {
