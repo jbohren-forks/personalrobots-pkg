@@ -14,6 +14,7 @@
   <depend package="rostest"/>
   <depend package="star_detector"/>
   <depend package="bullet"/>
+  <depend package="tf"/>
 
   <!--depend package="fast_detector"/>
   <depend package="calonder_descriptor"/>

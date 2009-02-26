@@ -4,6 +4,7 @@
 #include <image_msgs/CvBridge.h>
 #include <robot_msgs/PoseStamped.h>
 #include <prosilica_cam/PolledImage.h>
+#include <tf/transform_broadcaster.h>
 
 #include <LinearMath/btVector3.h>
 #include <LinearMath/btMatrix3x3.h>
@@ -27,12 +28,15 @@ private:
   image_msgs::CamInfo cam_info_;
   image_msgs::CvBridge img_bridge_;
   robot_msgs::PoseStamped pose_;
+  tf::TransformBroadcaster tf_broadcaster_;
   CvMat* K_;
   boost::mutex cb_mutex_;
   bool display_;
 
 public:
-  OutletDetector() : ros::Node("outlet_detector"), img_(res_.image), K_(NULL)
+  OutletDetector()
+    : ros::Node("outlet_detector"), img_(res_.image),
+      tf_broadcaster_(*this), K_(NULL)
   {
     param("display", display_, false);
     if (display_) {
@@ -113,6 +117,9 @@ public:
     pose_.pose.orientation.w = orientation.w();
 
     publish("~outlet_pose", pose_);
+    tf_broadcaster_.sendTransform(tf::Transform(orientation, holes[0]),
+                                  ros::Time::now(), "outlet_frame",
+                                  "prosilica_frame");
     ROS_INFO("Ground 0: %.5f %.5f %.5f, Ground 1: %.5f %.5f %.5f",
              holes[0].x(), holes[0].y(), holes[0].z(),
              holes[3].x(), holes[3].y(), holes[3].z());
