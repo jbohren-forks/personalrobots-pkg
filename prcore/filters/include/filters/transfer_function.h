@@ -97,7 +97,6 @@ public:
   virtual bool update(const std::vector<T> & data_in, std::vector<T>& data_out) ;
   
   
-  std::string name_;  //Name of the filter.
 
 protected:
   
@@ -143,33 +142,32 @@ bool TransferFunctionFilter<T>::configure(unsigned int number_of_channels, TiXml
   }
   
   // Parse the name of the filter from the xml.  
-  const char *name = config->Attribute("name");
-  if (!name)
+  if (!FilterBase<T>::setName(config))
   {
     ROS_ERROR("TransferFunctionFilter was not given a name.");
     return false;
   }
-  name_ = std::string(name);
-  ROS_INFO("Configuring TransferFunctionFilter with name \"%s\".", name_.c_str());
+
+  ROS_INFO("Configuring TransferFunctionFilter with name \"%s\".", FilterBase<T>::getName().c_str());
 
   // Parse the params of the filter from the xml.
   TiXmlElement *p = config->FirstChildElement("params");
   if (!p)
   {
-    ROS_ERROR("TransferFunctionFilter, \"%s\", was not given params.", name_.c_str());
+    ROS_ERROR("TransferFunctionFilter, \"%s\", was not given params.", FilterBase<T>::getName().c_str());
     return false;
   }
   
   // Parse a and b into a std::vector<double>.
   if (!urdf::queryVectorAttribute(p, "a", &a_))
   {
-    ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute a.", name_.c_str());
+    ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute a.", FilterBase<T>::getName().c_str());
     return false;
   }
   
   if (!urdf::queryVectorAttribute(p, "b", &b_))
   {
-    ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute b.", name_.c_str());
+    ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute b.", FilterBase<T>::getName().c_str());
     return false;
   }
   

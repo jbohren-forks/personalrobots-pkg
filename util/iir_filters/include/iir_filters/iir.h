@@ -102,8 +102,6 @@ public:
   virtual bool update(const std::vector<T> & data_in, std::vector<T>& data_out) ;
   
   
-  std::string name_;  //Name of the filter.
-
 protected:
   
   unsigned int number_of_channels_;
@@ -153,27 +151,25 @@ bool IIRFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *conf
   number_of_channels_=number_of_channels;
       
   // Parse the name of the filter from the xml.  
-  const char *name = config->Attribute("name");
-  if (!name)
+  if (!filters::FilterBase<T>::setName(config))
   {
     ROS_ERROR("IIRFilter was not given a name.");
     return false;
   }
-  name_ = std::string(name);
-  ROS_INFO("Configuring IIRFilter with name \"%s\".", name_.c_str());
+  ROS_INFO("Configuring IIRFilter with name \"%s\".", filters::FilterBase<T>::getName().c_str());
   
   // Parse the params of the filter from the xml.
   TiXmlElement *p = config->FirstChildElement("params");
   if (!p)
   {
-    fprintf(stderr, "Error: IIRFilter, \"%s\",  was not given params.", name_.c_str());
+    fprintf(stderr, "Error: IIRFilter, \"%s\",  was not given params.", filters::FilterBase<T>::getName().c_str());
     return false;
   }
   
   const char *t = p->Attribute("name");
   if (!t)
   {
-    ROS_ERROR("IIRFilter, \"%s\", params has no attribute name.", name_.c_str());
+    ROS_ERROR("IIRFilter, \"%s\", params has no attribute name.", filters::FilterBase<T>::getName().c_str());
     return false;
   }
   type_=std::string(t);
@@ -181,7 +177,7 @@ bool IIRFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *conf
   const char *s = p->Attribute("args");
   if (!s)
   {
-    ROS_ERROR("IIRFilter, \"%s\", params has no attribute args.", name_.c_str());
+    ROS_ERROR("IIRFilter, \"%s\", params has no attribute args.", filters::FilterBase<T>::getName().c_str());
     return false;
   }
 
@@ -197,7 +193,7 @@ bool IIRFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *conf
   if (ros::service::call("filter_coeffs", req, res))
   {
     std::string xml_str("<filter type=\"TransferFunctionFilter\" name=\"");
-    xml_str.append(name_);
+    xml_str.append(filters::FilterBase<T>::getName());
     xml_str.append("\"> <params a=\"");
     for(uint32_t i=0; i<res.a.size();i++)
     { 
@@ -222,7 +218,7 @@ bool IIRFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *conf
   }
   else
   {
-    ROS_ERROR("IIRFilter, \"%s\", could not get filter coefficients to build filter.", name_.c_str());
+    ROS_ERROR("IIRFilter, \"%s\", could not get filter coefficients to build filter.", filters::FilterBase<T>::getName().c_str());
     return false;
   }
   

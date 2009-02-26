@@ -80,6 +80,18 @@ public:
   virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)=0;
 
   std::string getType() {return typeid(T).name();};
+
+  bool setName(TiXmlElement * config)
+  {  
+    const char *name = config->Attribute("name");
+    if (!name) return false;
+    filter_name_ = std::string(name);
+    return true;
+  };
+  inline const std::string& getName(){return filter_name_;};
+    
+private:
+  std::string filter_name_;
 };
 
 

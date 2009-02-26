@@ -93,10 +93,17 @@ template <typename T>
 bool LaserMedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement * xml_doc)
 {
   ROS_ASSERT(number_of_channels == 1);
+  if (!filters::FilterBase<T>::setName(xml_doc)) 
+  {
+    ROS_ERROR("LaserMedianFilter configured without a name");
+    return false;
+  }
   latest_xml_.reset( xml_doc->Clone()->ToElement());
   TiXmlElement * child = latest_xml_.get()->FirstChild("filters")->ToElement();
   if (!child)
     return false;
+
+
   range_filter_ = new filters::FilterChain<float>();
   if (!range_filter_->configure(num_ranges_, child))
     return false;

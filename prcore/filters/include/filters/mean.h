@@ -65,8 +65,6 @@ public:
   virtual bool update( const T & data_in, T& data_out);
   virtual bool update( const std::vector<T> & data_in, std::vector<T>& data_out);
   
-  std::string name_;  //Name of the filter.
-
 protected:
   RealtimeVectorCircularBuffer<std::vector<T> >* data_storage_; ///< Storage for data between updates
   uint32_t last_updated_row_;                     ///< The last row to have been updated by the filter
@@ -98,13 +96,11 @@ bool MeanFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *con
     return false;
   
   // Parse the name of the filter from the xml.  
-  const char *name = config->Attribute("name");
-  if (!name)
+  if (!FilterBase<T>::setName(config))
   {
     fprintf(stderr, "Error: TransferFunctionFilter was not given a name.\n");
     return false;
   }
-  name_ = std::string(name);
 
   // Parse the params of the filter from the xml.
   TiXmlElement *p = config->FirstChildElement("params");

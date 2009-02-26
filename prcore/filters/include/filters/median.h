@@ -106,8 +106,6 @@ public:
   virtual bool update(const T& data_in, T& data_out);
   virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out);
   
-  std::string name_;  //Name of the filter.
-
 protected:
   std::vector<T> temp_storage_;                       ///< Preallocated storage for the list to sort
   RealtimeVectorCircularBuffer<std::vector<T> >* data_storage_;                       ///< Storage for data between updates
@@ -145,13 +143,11 @@ bool MedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *c
     return false;
     
   // Parse the name of the filter from the xml.  
-  const char *name = config->Attribute("name");
-  if (!name)
+  if (!FilterBase<T>::setName(config))
   {
     fprintf(stderr, "Error: MedianFilter was not given a name.\n");
     return false;
   }
-  name_ = std::string(name);
 
   // Parse the params of the filter from the xml.
   TiXmlElement *p = config->FirstChildElement("params");
