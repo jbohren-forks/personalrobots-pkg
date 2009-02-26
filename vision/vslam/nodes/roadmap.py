@@ -64,11 +64,12 @@ class RoadmapServer:
 
     self.vo = None
 
-    rospy.TopicSub('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
     self.pub = rospy.Publisher("/roadmap", vslam.msg.Roadmap)
 
     time.sleep(1)
     self.send_map()
+
+    rospy.TopicSub('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
 
   def send_map(self):
     p = vslam.msg.Roadmap()
