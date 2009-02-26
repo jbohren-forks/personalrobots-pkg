@@ -166,7 +166,8 @@ class NavStackTest(unittest.TestCase):
           print "state.goal: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
           if abs(state.goal.x-self.target_x)<FLOAT_TOL and \
              abs(state.goal.y-self.target_y)<FLOAT_TOL and \
-             abs(state.goal.th-self.target_t)<FLOAT_TOL:
+             abs(state.goal.th-self.target_t)<FLOAT_TOL and \
+             state.status == 1:
             print "state goal is published: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
             self.publish_goal = False
     
