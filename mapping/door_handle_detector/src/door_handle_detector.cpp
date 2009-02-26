@@ -430,6 +430,7 @@ public:
 
       resp.door.height = fabs (maxP.z - minP.z);
       resp.door.header.frame_id = door_frame_;
+      resp.door.header.stamp = cloud_time_;
       resp.door.door_p1 = door_p1;
       resp.door.door_p2 = door_p2;
       resp.door.handle = handle;

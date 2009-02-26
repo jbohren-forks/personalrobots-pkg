@@ -157,25 +157,24 @@ public:
   {
     // get orientation
     Vector normal = getNormalOnDoor(door);
-    normal = transformVectorToFrame(door.header.frame_id, fixed_frame_, normal);
+    normal = transformVectorToFrame(door.header.frame_id, fixed_frame_, normal, door.header.stamp);
     Vector x_axis(1,0,0);
     double z_angle = acos(dot(normal, x_axis));
-    cout << "dot " << dot(normal, x_axis) << endl;
-    cout << "z_angle " << z_angle << endl;
+    cout << "z_angle in " << fixed_frame_ << " = " << z_angle << endl;
 
     // get robot position
     Vector robot_pos((door.door_p1.x + door.door_p2.x)/2, 
 		     (door.door_p1.y + door.door_p2.y)/2,
 		     (door.door_p1.z + door.door_p2.z)/2);
-    robot_pos = transformPointToFrame(door.header.frame_id, fixed_frame_, robot_pos);
-    robot_pos = robot_pos - 0.7*normal;
+    robot_pos = transformPointToFrame(door.header.frame_id, fixed_frame_, robot_pos, door.header.stamp);
+    robot_pos = robot_pos - (normal * 0.7);
 
     // get gripper position
     robot_msgs::PoseStamped gripper_pose_msg;
     Stamped<Pose> gripper_pose;
     gripper_pose.frame_id_ = fixed_frame_;
     Vector point(door.handle.x, door.handle.y, door.handle.z);
-    point  = transformPointToFrame(door.header.frame_id, fixed_frame_, point);
+    point  = transformPointToFrame(door.header.frame_id, fixed_frame_, point, door.header.stamp);
     gripper_pose.setOrigin( Vector3(point[0], point[1], point[2]) );
     gripper_pose.setRotation( Quaternion(z_angle, 0, M_PI/2.0) ); 
     PoseStampedTFToMsg(gripper_pose, gripper_pose_msg);
@@ -366,8 +365,8 @@ public:
     string door_frame = door.header.frame_id;
 
     Vector door1, door2, tmp, normal;
-    cout << "door p1 " << door.door_p1.x << " " << door.door_p1.y << " "<< door.door_p1.z << endl;
-    cout << "door p2 " << door.door_p2.x << " " << door.door_p2.y << " "<< door.door_p2.z << endl;
+    cout << "door p1 in " << door_frame << " = " << door.door_p1.x << " " << door.door_p1.y << " "<< door.door_p1.z << endl;
+    cout << "door p2 in " << door_frame << " = " << door.door_p2.x << " " << door.door_p2.y << " "<< door.door_p2.z << endl;
     door1[0] = door.door_p1.x;
     door1[1] = door.door_p1.y;
     door1[2] = 0;
@@ -376,8 +375,8 @@ public:
     door2[2] = 0;
 
     // calculate normal in base_link_frame
-    door1 = transformPointToFrame(door_frame, robot_frame_, door1);
-    door2 = transformPointToFrame(door_frame, robot_frame_, door2);
+    door1 = transformPointToFrame(door_frame, robot_frame_, door1, door.header.stamp);
+    door2 = transformPointToFrame(door_frame, robot_frame_, door2, door.header.stamp);
     tmp = (door1 - door2); tmp.Normalize();
     normal = tmp * Vector(0,0,1);
 
@@ -386,7 +385,7 @@ public:
       normal = normal * -1;
 
     // convert normal to door frame
-    normal = transformVectorToFrame(robot_frame_, door_frame, normal);
+    normal = transformVectorToFrame(robot_frame_, door_frame, normal, door.header.stamp);
     cout << "normal on door in " << my_door_.header.frame_id << " = " 
          <<  normal[0] << " " << normal[1] << " " << normal[2] << endl;
 
@@ -395,17 +394,17 @@ public:
 
 
 
-  Vector transformPointToFrame(const string& frame_start, const string& frame_goal, const Vector& vec)
+  Vector transformPointToFrame(const string& frame_start, const string& frame_goal, const Vector& vec, const Time& time)
   {
-    Stamped<tf::Point> pnt(Point(vec(0), vec(1), vec(2)), Time(), frame_start);
+    Stamped<tf::Point> pnt(Point(vec(0), vec(1), vec(2)), time, frame_start);
     tf_.transformPoint(frame_goal, pnt, pnt);
     return Vector(pnt[0], pnt[1], pnt[2]);
   }
 
 
-  Vector transformVectorToFrame(const string& frame_start, const string& frame_goal, const Vector& vec)
+  Vector transformVectorToFrame(const string& frame_start, const string& frame_goal, const Vector& vec, const Time& time)
   {
-    Stamped<tf::Point> pnt(Point(vec(0), vec(1), vec(2)), Time(), frame_start);
+    Stamped<tf::Point> pnt(Point(vec(0), vec(1), vec(2)), time, frame_start);
     tf_.transformVector(frame_goal, pnt, pnt);
     return Vector(pnt[0], pnt[1], pnt[2]);
   }
