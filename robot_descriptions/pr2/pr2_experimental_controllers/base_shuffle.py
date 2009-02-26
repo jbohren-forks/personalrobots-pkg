@@ -86,7 +86,7 @@ def main():
     try:
         while not rospy.is_shutdown():
             # Set velocity 
-            cmd_vel.vel.vy = float(0.5)
+            cmd_vel.vel.vy = float(0.4)
             for i in range(0, num_publishes): # Change to int num_publishes
                 base_vel.publish(cmd_vel)
                 if rospy.is_shutdown():
@@ -96,7 +96,7 @@ def main():
             if rospy.is_shutdown():
                 break
 
-            cmd_vel.vel.vy = float(-0.5)
+            cmd_vel.vel.vy = float(-0.4)
             for i in range(0, num_publishes):
                 base_vel.publish(cmd_vel)
                 if rospy.is_shutdown():
