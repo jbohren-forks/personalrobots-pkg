@@ -1,4 +1,6 @@
+Header header
 robot_msgs/Pose pose
 robot_msgs/JointTrajPoint joint_pos
+duration timeout
 ---
 robot_msgs/JointTraj traj

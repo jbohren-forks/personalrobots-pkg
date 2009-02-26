@@ -34,7 +34,7 @@
 #include <libKinematics/pr2_ik_node.h>
 #include <angles/angles.h>
 
-LibKinematicsNode::LibKinematicsNode(std::string node_name,std::string arm_name):ros::Node(node_name),arm_name_(arm_name),increment_(0.01),root_x_(0.0),root_y_(0.0), root_z_(0.0)
+LibKinematicsNode::LibKinematicsNode(std::string node_name,std::string arm_name):ros::Node(node_name),arm_name_(arm_name),increment_(0.01),root_x_(0.0),root_y_(0.0), root_z_(0.0), tf_(*this)
 {
     advertiseService("perform_pr2_ik", &LibKinematicsNode::processIKRequest); 
     advertiseService("perform_pr2_ik_closest", &LibKinematicsNode::processIKClosestRequest); 
@@ -189,13 +189,54 @@ bool LibKinematicsNode::init()
   return true;
 }
 
+// Transform incoming EE pose to the frame that we're hardwired for,
+// obeying timeout in the request.  Return true on success, false
+// otherwise.
+bool LibKinematicsNode::transformPose(robot_srvs::IKService::Request& req,
+                                      tf::Stamped<tf::Pose>& pose_out)
+{
+  tf::Stamped<tf::Pose> tf_pose_in;
+  tf::PoseMsgToTF(req.pose, tf_pose_in);
+
+  tf_pose_in.stamp_ = req.header.stamp;
+  tf_pose_in.frame_id_ = req.header.frame_id;
+
+  // Transform into the desired frame
+  ros::Time start = ros::Time::now();
+  bool transformed = false;
+  // Heuristically chosen value
+  ros::Duration sleeptime = ros::Duration().fromSec(0.01);
+  while((req.timeout.toSec() == 0.0) ||
+        ((ros::Time::now() - start) < req.timeout))
+  {
+    try
+    {
+      tf_.transformPose(getTargetFrame(), tf_pose_in, pose_out);
+      transformed = true;
+      break;
+    }
+    catch(tf::TransformException e)
+    {
+      // Try, try, again
+      sleeptime.sleep();
+    }
+  }
+
+  return transformed;
+}
+
 bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::Request &req, robot_srvs::IKService::Response &resp)
 {
-  robot_msgs::Pose pose;
-  pose = req.pose;
+  tf::Stamped<tf::Pose> tf_pose;
 
-  tf::Pose tf_pose;
-  tf::PoseMsgToTF(pose,tf_pose);
+  if(!transformPose(req, tf_pose))
+  {
+    ROS_WARN("Failed to transform from %s to %s within timeout (%f)",
+             req.header.frame_id.c_str(), 
+             getTargetFrame().c_str(), 
+             req.timeout.toSec());
+    return false;
+  }
 
   NEWMAT::Matrix g0(4,4);
   btScalar m[16];
@@ -236,11 +277,17 @@ bool LibKinematicsNode::processIKRequest(robot_srvs::IKService::Request &req, ro
 
 bool LibKinematicsNode::processIKClosestRequest(robot_srvs::IKService::Request &req, robot_srvs::IKService::Response &resp)
 {
-  robot_msgs::Pose pose;
-  pose = req.pose;
+  tf::Stamped<tf::Pose> tf_pose;
 
-  tf::Pose tf_pose;
-  tf::PoseMsgToTF(pose,tf_pose);
+  if(!transformPose(req, tf_pose))
+  {
+    ROS_WARN("Failed to transform from %s to %s within timeout (%f)",
+             req.header.frame_id.c_str(), 
+             getTargetFrame().c_str(), 
+             req.timeout.toSec());
+    return false;
+  }
+
   int num_joints = req.joint_pos.positions.size();
 
   if(num_joints != 7)

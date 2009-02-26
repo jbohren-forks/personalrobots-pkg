@@ -39,6 +39,7 @@
 #include <robot_srvs/IKService.h>
 
 #include <tf/tf.h>
+#include <tf/transform_listener.h>
 #include <LinearMath/btTransform.h>
 
 using namespace kinematics;
@@ -66,12 +67,20 @@ namespace kinematics
     bool init();
 
     double init_solution_theta3_;
+    
+    // Transform incoming EE pose to the frame that we're hardwired for,
+    // obeying timeout in the request.  Return true on success, false
+    // otherwise.
+    bool transformPose(robot_srvs::IKService::Request& req,
+                       tf::Stamped<tf::Pose>& pose_out);
 
     bool processIKRequest(robot_srvs::IKService::Request &req, robot_srvs::IKService::Response &resp);
 
     bool processIKClosestRequest(robot_srvs::IKService::Request &req, robot_srvs::IKService::Response &resp);
 
     private:
+
+    static std::string getTargetFrame() { return std::string("torso_link"); }
 
     int closestJointSolution(const std::vector<double> current_joint_pos, const std::vector<std::vector<double> > new_positions);
 
@@ -94,6 +103,8 @@ namespace kinematics
     double root_y_;
 
     double root_z_;
+
+    tf::TransformListener tf_;
 
   };
 }

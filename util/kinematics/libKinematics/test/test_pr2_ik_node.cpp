@@ -58,6 +58,12 @@ int main( int argc, char** argv )
   robot_srvs::IKService::Request  req;
   robot_srvs::IKService::Response res;
 
+  req.header.frame_id = "torso_link";
+  // Timeout is how long we're willing to wait for the transform from
+  // our frame to the ik_node's hardcoded working frame.  0.0 is forever
+  // (dangerous!).
+  req.timeout.fromSec(0.1);
+
   tf::Pose pose(btQuaternion(0,0,0),btVector3(0.75,-0.288,0));
 
   tf::PoseTFToMsg(pose,req.pose);
