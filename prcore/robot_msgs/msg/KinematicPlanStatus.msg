@@ -4,6 +4,9 @@
 # replanning is not active
 int32 id
 
+# If the ID just changed, this value will be 1. Subsequent messages
+# will have the value equal to 0
+byte new_id
 
 # The result of a motion plan: a kinematic path. If the motion plan is
 # not succesful, this path has 0 states. If the motion plan is
@@ -18,7 +21,6 @@ robot_msgs/KinematicPath path
 # it may return a distance larger than the desired threshold. The user may choose to 
 # discard the path
 float64 distance
-
 
 # If the starting state was already in the goal region,
 # this is set to 1. Otherwise, it will be set to 0

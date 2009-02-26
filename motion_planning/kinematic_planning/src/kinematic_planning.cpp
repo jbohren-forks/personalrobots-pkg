@@ -203,6 +203,7 @@ public:
 	m_currentRequestType = R_NONE;
 	
 	m_currentPlanStatus.id = -1;
+	m_currentPlanStatus.new_id = 0;
 	m_currentPlanStatus.distance = -1.0;
 	m_currentPlanStatus.done = 1;
 	m_currentPlanStatus.approximate = 0;
@@ -345,6 +346,7 @@ public:
 		m_currentRequestType = R_STATE;
 		
 		m_currentPlanStatus.id = ++m_replanID;
+		m_currentPlanStatus.new_id = 1;
 		m_currentPlanStatus.valid = 1;
 		m_currentPlanStatus.path.set_states_size(0);
 		m_currentPlanStatus.done = 0;
@@ -386,6 +388,7 @@ public:
 		m_currentRequestType = R_POSITION;
 		
 		m_currentPlanStatus.id = ++m_replanID;
+		m_currentPlanStatus.new_id = 1;
 		m_currentPlanStatus.valid = 1;
 		m_currentPlanStatus.path.set_states_size(0);
 		m_currentPlanStatus.done = 0;
@@ -428,6 +431,7 @@ public:
 	}
 	
 	res.value.id = -1;
+	res.value.new_id = 0;
 	res.value.done = trivial ? 1 : 0;
 	res.value.valid = res.value.path.get_states_size() > 0;
 	res.value.approximate = approximate ? 1 : 0;
@@ -456,6 +460,7 @@ public:
 	}
 		
 	res.value.id = -1;
+	res.value.new_id = 0;
 	res.value.done = trivial ? 1 : 0;
 	res.value.valid = res.value.path.get_states_size() > 0;
 	res.value.approximate = approximate ? 1 : 0;
@@ -589,6 +594,10 @@ protected:
 		if (!m_currentPlanStatus.valid || m_currentPlanStatus.done)
 		    m_currentlyExecutedPath.set_states_size(0);
 	    }
+	    
+	    // make sure new_id becomes 0, if it was 1
+	    if (m_currentPlanStatus.new_id == 1)
+		m_currentPlanStatus.new_id = 0;
 	    
 	    m_statusLock.unlock();
 	    
