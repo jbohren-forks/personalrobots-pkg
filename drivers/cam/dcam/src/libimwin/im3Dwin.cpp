@@ -364,12 +364,12 @@ void im3DWindow::draw()
 
       // show centerpoint
       glBegin(GL_QUADS);
-      glColor3f(0, 0, 1);
-      float dx = 0.1;
-      glVertex3f(centerx, centery, centerz);    
-      glVertex3f(centerx+dx, centery, centerz);
+      glColor3f(1, 1, 0);
+      float dx = 0.02;
+      glVertex3f(centerx-dx, centery-dx, centerz);    
+      glVertex3f(centerx+dx, centery-dx, centerz);
       glVertex3f(centerx+dx, centery+dx, centerz);
-      glVertex3f(centerx, centery+dx, centerz);
+      glVertex3f(centerx-dx, centery+dx, centerz);
       glEnd();
     }
 
@@ -431,7 +431,8 @@ int im3DWindow::handle(int event)
 	  }
 	else			// right button, move rotation point along Z
 	  {
-	    centerz = centerz + (Fl::event_y()-beginy);
+	    sfact = 0.1;
+	    centerz = centerz + sfact*(float)(Fl::event_y()-beginy);
 	    beginy = Fl::event_y();
 	  }
 	newModel = 1;
@@ -441,7 +442,7 @@ int im3DWindow::handle(int event)
 
   case FL_MOUSEWHEEL:		// change scale
     // mouse scroll wheel event
-    sfact = 0.01;
+    sfact = 0.1;
     dy = Fl::event_dy();	// down is positive
     ds =  1.0 + sfact * -(double)dy;
     scale = scale * ds;

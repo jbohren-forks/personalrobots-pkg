@@ -1823,7 +1823,75 @@ void cal_capture_cb(Fl_Button*, void*)
 
 
 // save an image
-void cal_save_image_cb(Fl_Button*, void*) {}
+void cal_save_image_cb(Fl_Button*, void*) 
+{
+  if (!dev)
+    {
+      debug_message("[oST] No open device");
+      return;
+    }
+
+  char *fname = fl_file_chooser("Save images (.png)", "{*.png}", NULL);
+  if (fname == NULL)
+    return;
+
+  // find suffix, remove it if there
+  int n = strlen(fname);
+  int sufn = 0;
+  for (int i=n-1; i>n-6; i--)
+    {
+      if (fname[i] == '.')
+	{
+	  sufn = i;
+	  break;
+	}
+    }
+  
+  char fn[4096];		// filename we want to use
+  strcpy(fn,fname);
+  if (sufn != 0)		// has suffix
+    fn[sufn] = 0;
+  debug_message("[oST] Base name: %s", fn);
+
+  int w = dev->stIm->imWidth;
+  int h = dev->stIm->imHeight;
+  IplImage *im = cvCreateImageHeader(cvSize(w,h),IPL_DEPTH_8U,1); 
+
+  // write left image
+  if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
+    cvSetData(im,dev->stIm->imLeft->imRect,w);
+
+  if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
+    {
+      cvSetData(im,dev->stIm->imLeft->imRect,w);
+      strcpy(&fn[sufn],"-LR.png");
+      cvSaveImage(fn, im);
+      debug_message("[oST] Wrote %s", fn);
+    }
+  if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
+    {
+      cvSetData(im,dev->stIm->imLeft->im,w);
+      strcpy(&fn[sufn],"-L.png");
+      cvSaveImage(fn, im);
+      debug_message("[oST] Wrote %s", fn);
+    }
+
+  if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
+    {
+      cvSetData(im,dev->stIm->imRight->imRect,w);
+      strcpy(&fn[sufn],"-RR.png");
+      cvSaveImage(fn, im);
+      debug_message("[oST] Wrote %s", fn);
+    }
+  if (dev->stIm->imRight->imType != COLOR_CODING_NONE)
+    {
+      cvSetData(im,dev->stIm->imRight->im,w);
+      strcpy(&fn[sufn],"-R.png");
+      cvSaveImage(fn, im);
+      debug_message("[oST] Wrote %s", fn);
+    }
+
+}
 
 // save all calibration images
 // current save to name "cal-XXX"
