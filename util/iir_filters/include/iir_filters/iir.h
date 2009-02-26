@@ -99,7 +99,7 @@ public:
    * \param data_in vector<T> with n elements
    * \param data_out vector<T> with n elements
    */
-  virtual bool update(const T & data_in, T& data_out) ;
+  virtual bool update(const std::vector<T> & data_in, std::vector<T>& data_out) ;
   
   
   std::string name_;  //Name of the filter.
@@ -114,8 +114,8 @@ protected:
   filters::FilterBase<T > * tf_filter_;
 };
 
-ROS_REGISTER_FILTER(IIRFilter, std_vector_double)
-ROS_REGISTER_FILTER(IIRFilter, std_vector_float)
+ROS_REGISTER_FILTER(IIRFilter, double)
+ROS_REGISTER_FILTER(IIRFilter, float)
 
 template <typename T>
 IIRFilter<T>::IIRFilter():
@@ -233,7 +233,7 @@ bool IIRFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *conf
 
 
 template <typename T>
-bool IIRFilter<T>::update(const T& data_in, T& data_out)
+bool IIRFilter<T>::update(const std::vector<T>& data_in, std::vector<T>& data_out)
 {
  
   if (data_in.size() != number_of_channels_ || data_out.size() != number_of_channels_)

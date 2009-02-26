@@ -61,7 +61,7 @@ TEST(IIRFilter, Configure)
   TiXmlDocument doc;
   doc.Parse("<filter type=\"IIRFilter\" name=\"iirfilter_test\"> <params name=\"butter\"args=\"2 .1 high\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
-	filters::FilterBase<std::vector<double> > * filter = new IIRFilter<std::vector<double> > ();
+	filters::FilterBase<double> * filter = new IIRFilter<double> ();
 	EXPECT_TRUE(filter->configure(5,config));
 }
 
@@ -87,7 +87,7 @@ TEST(IIRFilter, LowPass)
   TiXmlDocument doc;
   doc.Parse("<filter type=\"IIRFilter\" name=\"iirfilter_test\"> <params name=\"butter\" args=\"1 .2\"/></filter>"); 
   TiXmlElement *config = doc.RootElement();
-	filters::FilterBase<std::vector<double> > * filter = new IIRFilter<std::vector<double> > ();
+	filters::FilterBase<double> * filter = new IIRFilter<double> ();
 	EXPECT_TRUE(filter->configure(1,config));
 
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
