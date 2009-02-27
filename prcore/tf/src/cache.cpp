@@ -161,7 +161,7 @@ void TimeCache::interpolate(const TransformStorage& one, const TransformStorage&
   btScalar ratio = ((time - one.stamp_).toSec()) / ((two.stamp_ - one.stamp_).toSec());
   
   //Interpolate translation
-  btVector3 v;
+  btVector3 v(0,0,0); //initialzed to fix uninitialized warning, not actually necessary
   v.setInterpolate3(one.getOrigin(), two.getOrigin(), ratio);
   output.setOrigin(v);
   
