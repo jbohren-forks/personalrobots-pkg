@@ -58,8 +58,8 @@ def last_time():
 def main():
     rospy.init_node('plug_in')
 
-    track_outlet_pose = Tracker('/outlet_pose', PoseStamped)
-    track_plug_pose = Tracker('/plug_pose', PoseStamped)
+    track_outlet_pose = Tracker('/outlet_detector/pose', PoseStamped)
+    track_plug_pose = Tracker('/plug_detector/pose', PoseStamped)
 
     # Waits for an estimate of the outlet pose
     print "Waiting for outlet pose..."
