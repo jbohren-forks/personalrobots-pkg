@@ -309,6 +309,12 @@ Duration CartesianTrajectoryControllerNode::moveTo(robot_msgs::PoseStamped& pose
   PoseStampedMsgToTF(pose, pose_stamped);
 
   // convert to reference frame of root link of the controller chain  
+  Duration sleeptime = Duration().fromSec(0.001);
+  Duration timeout = Duration().fromSec(5.0);
+  Time starttime = Time().now();
+  while (!robot_state_.canTransform(root_name_, pose.header.frame_id, pose.header.stamp) && 
+         (Time().now() - starttime) < timeout )
+    sleeptime.sleep();
   robot_state_.transformPose(root_name_, pose_stamped, pose_stamped);
 
   // tell controller where to move to
