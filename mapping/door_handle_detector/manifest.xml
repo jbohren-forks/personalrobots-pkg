@@ -14,6 +14,7 @@
   <depend package="kdl" />
   <depend package="point_cloud_mapping" />
   <depend package="checkerboard_detector" />
+  <depend package="std_msgs" />
   <depend package="sbpl_arm_executive" />
 
 </package>

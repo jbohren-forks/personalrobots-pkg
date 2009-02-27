@@ -39,6 +39,7 @@
 #include <robot_msgs/Planner2DState.h>
 #include <robot_srvs/SwitchController.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/String.h>
 #include <door_handle_detector/DoorDetector.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -56,10 +57,12 @@ class OpenDoorExecutiveTest : public ros::Node
 private:
   tf::TransformListener tf_; 
   string fixed_frame_, robot_frame_;
+  Duration pause_;
+  std_msgs::String joy_msg_;
 
-  enum {INITIALIZED, DETECTING, GRASPING, OPENDOOR, SUCCESS, FAILED, FINISHED };
+  enum {INITIALIZED, WAITING, DETECTING, GRASPING, OPENDOOR, SUCCESS, FAILED};
   int state_;
-  bool planner_running_, planner_finished_;
+  bool planner_running_, planner_finished_, joy_command_;
 
   robot_msgs::Door my_door_;
   robot_msgs::TaskFrameFormalism tff_msg_;
@@ -94,21 +97,14 @@ public:
     advertise<std_msgs::Float64>("gripper_effort/set_command",1);
     advertise<robot_msgs::Planner2DGoal>("goal", 10);
     subscribe("state", planner_state_,  &OpenDoorExecutiveTest::plannerCallback, 1);
+    subscribe("annotation_msg", joy_msg_, &OpenDoorExecutiveTest::joyCallback,1);
 
     // frames
     fixed_frame_ = "odom_combined";
     robot_frame_ = "base_link";
-  }
-  
-  
-  ~OpenDoorExecutiveTest()
-  {}
-  
 
-  // -------------------------
-  bool initialize()
-  // -------------------------
-  {
+    pause_ = Duration().fromSec(6.0);
+
     // start arm trajectory controller
     cout << "turn on moveto controller..." << flush;
     req_switch.stop_controllers.clear(); 
@@ -116,9 +112,34 @@ public:
     req_switch.start_controllers.push_back("cartesian_trajectory_right");  
     ros::service::call("switch_controller", req_switch, res_switch);
     if (!res_switch.ok)
-      return false;
-    cout << "successful" << endl;
-    
+      cout << "failed" << endl;
+    else
+      cout << "successful" << endl;
+  }
+  
+  
+  ~OpenDoorExecutiveTest()
+  {
+    unsubscribe("state");
+    unsubscribe("annotation_msg");
+
+    cout << "stop moveto and tff controllers..." << flush;
+    req_switch.start_controllers.clear();     
+    req_switch.stop_controllers.clear();      
+    req_switch.stop_controllers.push_back("cartesian_tff_right");
+    req_switch.stop_controllers.push_back("cartesian_trajectory_right");
+    ros::service::call("switch_controller", req_switch, res_switch);
+    if (!res_switch.ok)
+      cout << "failed" << endl;
+    else
+      cout << "successful" << endl;
+  }
+  
+
+  // -------------------------
+  bool tuck_arm()
+  // -------------------------
+  {
     robot_msgs::PoseStamped init_pose;
     init_pose.header.frame_id = robot_frame_;
     init_pose.pose.position.x = 0.4;
@@ -155,8 +176,6 @@ public:
   bool graspDoor(const robot_msgs::Door& door)
   // -------------------------
   {
-    Duration pause = Duration().fromSec(6.0);
-
     // get orientation
     Vector normal = getNormalOnDoor(door);
     normal = transformVectorToFrame(door.header.frame_id, fixed_frame_, normal, door.header.stamp);
@@ -207,7 +226,7 @@ public:
     std_msgs::Float64 gripper_msg;
     gripper_msg.data = 2.0;
     publish("gripper_effort/set_command", gripper_msg);
-    pause.sleep();
+    pause_.sleep();
     
     // move gripper over door handle
     gripper_pose_msg.pose.position.x = gripper_pose_msg.pose.position.x - offset[0];
@@ -218,7 +237,19 @@ public:
     // close the gripper
     gripper_msg.data = -2.0;
     publish("gripper_effort/set_command", gripper_msg);
-    pause.sleep();
+    pause_.sleep();
+
+    // open the gripper
+    gripper_msg.data = 2.0;
+    publish("gripper_effort/set_command", gripper_msg);
+    pause_.sleep();
+
+    // move gripper away from the handle
+    gripper_pose_msg.pose.position.x = gripper_pose_msg.pose.position.x + offset[0];
+    gripper_pose_msg.pose.position.y = gripper_pose_msg.pose.position.y + offset[1];
+    gripper_pose_msg.pose.position.z = gripper_pose_msg.pose.position.z + offset[2];
+    moveTo(gripper_pose_msg);
+
 
     return true;
   }
@@ -253,7 +284,7 @@ public:
     tff_msg_.value.rot.z = 0.0;
 
     publish("cartesian_tff_right/command", tff_msg_);
-    usleep(1e6*6);
+    pause_.sleep();
 
 
     // open door
@@ -272,82 +303,79 @@ public:
     tff_msg_.value.rot.z = 0.0;
 
     publish("cartesian_tff_right/command", tff_msg_);
-    usleep(1e6*15);
-
-    cout << "trun off tff controller..." << flush;
-    req_switch.stop_controllers.clear();      req_switch.stop_controllers.push_back("cartesian_tff_right");
-    req_switch.start_controllers.clear();  
-    ros::service::call("switch_controller", req_switch, res_switch);
-    if (!res_switch.ok)
-      return false;
-    cout << "successful" << endl;
+    pause_.sleep();
 
     return true;
   }
 
 
 
-
+  
 
   void spin()
   {
     while (ok()){
-	switch (state_){
-	  
-	case INITIALIZED:{
-          cout << "Initializing door opening... " << endl;
-          usleep(1e6*2);
-          if (initialize())
-	    state_ = DETECTING;
-	  else
-	    state_ = FAILED;
-	  break;
-	}
-	case DETECTING:{
-          cout << "Detecting door... " << endl;
-	  if (detectDoor(my_door_, my_door_))
-	    state_ = GRASPING;
-	  else
-	    state_ = FAILED;
-	  break;
-	}
-	case GRASPING:{
-          cout << "Grasping door... " << endl;
-	  if (graspDoor(my_door_))
-	    state_ = SUCCESS;
-	  else
-	    state_ = FAILED;
-	  break;
-	}
-        case OPENDOOR:{
-          cout << "Opening door... " << endl;
-          if (openDoor())
-	    state_ = SUCCESS;
-	  else
-	    state_ = FAILED;
-          break;
+      switch (state_){
+	
+      case INITIALIZED:{
+        cout << "Tucking away arm... " << endl;
+        if (tuck_arm()){
+          state_ = WAITING;
+          joy_command_ = false;
         }
-        case FAILED:{
-          cout << "FAILED" << endl;
-          state_ = FINISHED;
-          break;
-	}
-        case SUCCESS:{
-          cout << "success" << endl;
-          state_ = FINISHED;
-          break;
-	}
-        case FINISHED: return;
-        }
-        usleep(1e3*100);
+        else
+          state_ = FAILED;
+        break;
       }
+      case WAITING:{
+        cout << "Waiting for joystick command... " << endl;
+        if (joy_command_)
+          state_  = DETECTING;
+        break;
+      }
+      case DETECTING:{
+        cout << "Detecting door... " << endl;
+        if (detectDoor(my_door_, my_door_))
+          state_ = GRASPING;
+        else
+          state_ = FAILED;
+        break;
+      }
+      case GRASPING:{
+        cout << "Grasping door... " << endl;
+        if (graspDoor(my_door_))
+          state_ = SUCCESS;
+        else
+          state_ = FAILED;
+        break;
+      }
+      case OPENDOOR:{
+        cout << "Opening door... " << endl;
+        if (openDoor())
+          state_ = SUCCESS;
+        else
+          state_ = FAILED;
+        break;
+      }
+      case FAILED:{
+        cout << "FAILED" << endl;
+          state_ =INITIALIZED;
+          break;
+      }
+      case SUCCESS:{
+        cout << "success" << endl;
+        state_ = INITIALIZED;
+        break;
+      }
+        pause_.sleep();
+      }
+    }
   }
-
-
+    
   bool moveTo(robot_msgs::PoseStamped& pose)
   {
     pose.header.stamp = Time().now();
-
+    
     cout << "giving moveto command for time " 
          << pose.header.stamp.toSec() << " and frame " 
          << pose.header.frame_id << " to position " 
@@ -356,12 +384,12 @@ public:
     if (!ros::service::call("cartesian_trajectory_right/move_to", req_moveto, res_moveto))
       return false;
     cout << "moveto command finished" << endl; 
-
+    
     return true;
   }
+  
 
-
-
+  
   Vector getNormalOnDoor(const robot_msgs::Door& door)
   {
     string door_frame = door.header.frame_id;
@@ -377,26 +405,26 @@ public:
     door2[0] = door.door_p2.x;
     door2[1] = door.door_p2.y;
     door2[2] = 0;
-
+    
     // calculate normal in base_link_frame
     door1 = transformPointToFrame(door_frame, robot_frame_, door1, door.header.stamp);
     door2 = transformPointToFrame(door_frame, robot_frame_, door2, door.header.stamp);
     tmp = (door1 - door2); tmp.Normalize();
     normal = tmp * Vector(0,0,1);
-
+    
     // if normal points towards robot, invert normal
     if (dot(normal, door1) < 0)
       normal = normal * -1;
-
+    
     // convert normal to door frame
     normal = transformVectorToFrame(robot_frame_, door_frame, normal, door.header.stamp);
     cout << "normal on door in " << my_door_.header.frame_id << " = " 
          <<  normal[0] << " " << normal[1] << " " << normal[2] << endl;
-
+    
     return normal;
   }
-
-
+  
+  
 
   Vector transformPointToFrame(const string& frame_start, const string& frame_goal, const Vector& vec, const Time& time)
   {
@@ -404,15 +432,15 @@ public:
     tf_.transformPoint(frame_goal, pnt, pnt);
     return Vector(pnt[0], pnt[1], pnt[2]);
   }
-
-
+  
+  
   Vector transformVectorToFrame(const string& frame_start, const string& frame_goal, const Vector& vec, const Time& time)
   {
     Stamped<tf::Point> pnt(Point(vec(0), vec(1), vec(2)), time, frame_start);
     tf_.transformVector(frame_goal, pnt, pnt);
     return Vector(pnt[0], pnt[1], pnt[2]);
   }
-
+  
   void plannerCallback()
   {
     if (planner_state_.status == planner_state_.ACTIVE)
@@ -423,6 +451,15 @@ public:
       planner_finished_ = true;
     }
   }
+
+  void joyCallback()
+  {
+    std::string status_string;
+    ROS_INFO("Joystick message: %s",joy_msg_.data.c_str());
+    if (joy_msg_.data == "detect_door")
+      joy_command_ = true;
+  }
+
 
 }; // class
 
