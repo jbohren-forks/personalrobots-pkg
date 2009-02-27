@@ -3,8 +3,8 @@
 <node pkg="teleop_joint_effort" type="teleop_joint_effort.py" output="screen" name="telop_gripper_right">
   <remap from="joy" to="r_pedals"/>
   <param name="joint" value="r_gripper_l_finger_joint"/>
-  <param name="max_effort" value="-1.0"/>
-  <param name="joy_axis" value="0"/>
+  <param name="max_effort" value="-.1"/>
+  <param name="joy_axis" value="1"/>
   <param name="joy_dead_zone" value="0.0"/>
   <param name="offset" type="double" value="-.5" />
 </node>
@@ -12,8 +12,8 @@
 <node pkg="teleop_joint_effort" type="teleop_joint_effort.py" output="screen" name="telop_gripper_left">
   <remap from="joy" to="l_pedals"/>
   <param name="joint" value="l_gripper_l_finger_joint"/>
-  <param name="max_effort" value="-1.0"/>
-  <param name="joy_axis" value="1"/>
+  <param name="max_effort" value="-.1"/>
+  <param name="joy_axis" value="0"/>
   <param name="joy_dead_zone" value="0.0"/>
   <param name="offset" type="double" value="-.5" />
 </node>
