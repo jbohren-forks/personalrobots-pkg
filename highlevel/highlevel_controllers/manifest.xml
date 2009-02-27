@@ -25,6 +25,7 @@
  <depend package="laser_scan" />
  <depend package="costmap_2d"/>
  <depend package="tf"/>
+ <depend package="map_server"/>
  <depend package="sbpl"/>
  <depend package="mpglue"/>
  <depend package="roslib"/>
