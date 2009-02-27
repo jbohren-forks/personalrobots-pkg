@@ -225,7 +225,7 @@ namespace ros {
 
       // Callback messages
       laser_scan::LaserScan baseScanMsg_; /**< Filled by subscriber with new base laser scans */
-      laser_scan::LaserScan tiltScanMsg_; /**< Filled by subscriber with new tilte laser scans */
+      laser_scan::LaserScan tiltScanMsg_; /**< Filled by subscriber with new tilt laser scans */
       robot_msgs::PointCloud tiltCloudMsg_; /**< Filled by subscriber with new tilte laser scans */
       robot_msgs::PointCloud groundPlaneCloudMsg_; /**< Filled by subscriber with point clouds */
       robot_msgs::PointCloud stereoCloudMsg_; /**< Filled by subscriber with point clouds */

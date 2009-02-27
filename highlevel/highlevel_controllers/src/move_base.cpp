@@ -32,6 +32,82 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/**
+ * @mainpage
+ *
+ * @htmlinclude manifest.html
+ *
+ * @b move_base is a highlevel controller for moving the base to a target pose (x, y, theta)
+ *
+ * This node uses a global path planner to plan a path from the current position to the goal. It
+ * uses a local trajectory planner to select trajectories to follow the global plan in light of
+ * local observations and dynamics constraints. Obstacle data is integrated in a cost map which supports
+ * both global and local planning. Subclasses of this node operate with specific global planners.
+ *
+ * <hr>
+ *
+ *  @section usage Usage
+ *  @verbatim
+ *  $ This base class is abstract and must be subclassed for use.
+ *  @endverbatim
+ *
+ * <hr>
+ *
+ * @section topic ROS topics
+ *
+ * Subscribes to (name/type):
+ * - @b "base_scan"/laser_scan::LaserScan : the base laser scan, used for obstacle detection
+ * - @b "tilt_laser_cloud_filtered"/robot_msgs::PointCloud : the tilt laser cloud, used for obstacle detection
+ * - @b "dcam/cloud"/robot_msgs::PointCloud : point clouds from a stereo camera, used for obstacle detection
+ * - @b "ground_plane"/robot_msgs::PointCloud : used to filter out bogus obstacles that are really just ground hits
+ * - @b "obstacle_cloud"/robot_msgs::PointCloud : low obstacles near the ground
+ * - @b "odom"/deprecated_msgs::RobotBase2DOdom : for tracking position
+
+ * Publishes to (name / type):
+ * - @b "raw_obstacles"robot_msgs::Polyline2D : contains all workspace obstacles in a window around the robot
+ * - @b "inflated_obstacles"/robot_msgs::Polyline2D : contains c-space expansion, up to the inscribed radius of the robot
+ * - @b "gui_path"/robot_msgs::Polyline2D : the global path currently being followed
+ * - @b "local_path"/robot_msgs::Polyline2D : the local trajectory currently being followed
+ * - @b "robot_footprint"/robot_msgs::Polyline2D : the footprint of the robot based on current position and orientation
+ * - @b "cmd_vel"/robot_msgs::PoseDot : for dispatching velocity commands to the base controller
+ * - @b "head_controller/head_track_point"/robot_msgs::PointStamped : publishes a local goal to the head controller
+ *  <hr>
+ *
+ * @section parameters ROS parameters (in addition to base class parameters):
+ * - @b "move_base/map_update_frequency" : controls the rate in Hz, for updating the cost map.
+ * - @b "/global_frame_id" : determines the global frame to transform to for input messages
+ * - @b "~costmap_2d/base_laser_max_range" : buonds the range for base laser data
+ * - @b "~costmap_2d/tilt_laser_max_range" : bounds the range for tilt laser data
+ * - @b "~costmap_2d/lethal_obstacle_threshold" : defines a cost value indicating a workspace obstacle
+ * - @b "~costmap_2d/no_information_value" : defines a cost value indicating an unknown cost.
+ * - @b "~costmap_2d/z_threshold_max" : obstacles above this height will be filtered out
+ * - @b "~costmap_2d/z_threshold_min" : obstacles below this point will be filtered out
+ * - @b "~costmap_2d/inflation_radius" : the maximum distance for inflating a cost function from an obstacle
+ * - @b "~costmap_2d/circumscribed_radius" : the smallest radius enclosing the robot footprint
+ * - @b "~costmap_2d/inscribed_radius" : the largest radius fully contained in the robot footprint
+ * - @b "~costmap_2d/robot_radius"
+ * - @b "~costmap_2d/weight" : a multiplier to scale cost values, normalizing them with path length costs.
+ * - @b "~costmap_2d/base_laser_update_rate" : a minimum update rate (Hz) for base laser data
+ * - @b "~costmap_2d/tilt_laser_update_rate" : a minimum update rate (Hz) for tilt laser data
+ * - @b "~costmap_2d/low_obstacle_update_rate" : a minimum update rate (Hz) for low obstacle observations
+ * - @b "~costmap_2d/stereo_update_rate" : a minimum update rate (Hz) for stereo data
+ * - @b "~costmap_2d/base_laser_keepalive" : an upper bound on the lifetime of observations for this buffer (seconds)
+ * - @b "~costmap_2d/tilt_laser_keepalive" : an upper bound on the lifetime of observations for this buffer (seconds)
+ * - @b "~costmap_2d/low_obstacle_keepalive" : an upper bound on the lifetime of observations for this buffer (seconds)
+ * - @b "~costmap_2d/stereo_keepalive" : an upper bound on the lifetime of observations for this buffer (seconds)
+ * - @b "~costmap_2d/body_part_scale"
+ * - @b "~costmap_2d/robot_name"
+ * - @b "~costmap_2d/filter_robot_points" : true if the robot model should be used to filter out its own body.
+ * - @b "~costmap_2d/zLB" : an upper bound on the height of observations used for free space projection
+ * - @b "~costmap_2d/zUB" : a upper bound on the height of observations used for free space projection
+ * - @b "~costmap_2d/raytrace_window" : the size of the window in which free space will be cleared
+ * - @b "~costmap_2d/raytrace_range" : the range after which points will be considered 
+ * - @b "~costmap_2d/obstacle_range" : obstacles outside this range will not be included in the cost map
+ * - @b "~trajectory_rollout/map_size" : the size of the window around the robot for evaluating local trajectories
+ * - @b "~trajectory_rollout/yaw_goal_tolerance" : control parameter for trajectory selection
+ * - @b "~trajectory_rollout/xy_goal_tolerance" : control parameter for trajectory selection
+ * - None
+ **/
 
 #include <highlevel_controllers/move_base.hh>
 #include <robot_msgs/PoseDot.h>
@@ -84,7 +160,6 @@ namespace ros {
       // Costmap parameters
       unsigned char lethalObstacleThreshold(100);
       unsigned char noInformation(CostMap2D::NO_INFORMATION);
-      double freeSpaceProjectionHeight(0.19);
       double inflationRadius(0.55);
       double robotRadius(0.325);
       double circumscribedRadius(0.46);
@@ -116,7 +191,6 @@ namespace ros {
 
       ros::Node::instance()->param("~costmap_2d/z_threshold_max", maxZ_, maxZ_);
       ros::Node::instance()->param("~costmap_2d/z_threshold_min", minZ_, minZ_);
-      ros::Node::instance()->param("~costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
       ros::Node::instance()->param("~costmap_2d/inflation_radius", inflationRadius, inflationRadius);
       ros::Node::instance()->param("~costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
       ros::Node::instance()->param("~costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
