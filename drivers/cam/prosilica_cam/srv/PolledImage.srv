@@ -1,3 +1,4 @@
 int32 timeout_ms
 ---
 image_msgs/Image image
+image_msgs/CamInfo cam_info

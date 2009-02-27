@@ -238,7 +238,7 @@ public:
     
     while (ok())
     {
-      usleep(1000000);
+      usleep(100000);
       diagnostic_.update();
     }
 
@@ -254,10 +254,7 @@ public:
     if (!frame)
       return false;
 
-    // TODO: figure out permanent solution here
-    publishImage(frame);
-    
-    return frameToImage(frame, res.image);
+    return processFrame(frame, img_, res.image, res.cam_info);
   }
 
 private:
@@ -333,39 +330,53 @@ private:
 
     return true;
   }
-  
-  void publishImage(tPvFrame* frame)
+
+  bool processFrame(tPvFrame* frame, image_msgs::Image &img, image_msgs::Image &rect_img,
+                    image_msgs::CamInfo &cam_info)
   {
-    //img_.header.stamp = ros::Time().fromNSec(??);
-    if (frameToImage(frame, img_))
-      publish("~image", img_);
+    if (!frameToImage(frame, img))
+      return false;
 
     if (calibrated_) {
       // Rectified image
       // TODO: only do this if we have subscribers?
-      if (img_.encoding == "bgr") {
-        setBgrLayout(rect_img_, frame->Width, frame->Height);
-        if (img_bridge_.fromImage(img_, "bgr") &&
-            rect_img_bridge_.fromImage(rect_img_, "bgr")) {
+      if (img.encoding == "bgr") {
+        setBgrLayout(rect_img, frame->Width, frame->Height);
+        if (img_bridge_.fromImage(img, "bgr") &&
+            rect_img_bridge_.fromImage(rect_img, "bgr")) {
           cvRemap( img_bridge_.toIpl(), rect_img_bridge_.toIpl(),
                    undistortX_.Ipl(), undistortY_.Ipl(),
                    CV_INTER_LINEAR | CV_WARP_FILL_OUTLIERS );
-          publish("~image_rect", rect_img_);
-        } else
+        } else {
           ROS_WARN("Couldn't rectify frame, failed to convert");
-      } else
-        ROS_WARN("Couldn't rectify frame, unsupported encoding %s", img_.encoding.c_str());
+          return false;
+        }
+      } else {
+        ROS_WARN("Couldn't rectify frame, unsupported encoding %s", img.encoding.c_str());
+        return false;
+      }
       
       // Camera info
-      //cam_info_.header.stamp =
-      cam_info_.height = frame->Height;
-      cam_info_.width = frame->Width;
+      cam_info.height = frame->Height;
+      cam_info.width = frame->Width;
 
-      memcpy((char*)(&cam_info_.D[0]), (char*)D_, sizeof(D_));
-      memcpy((char*)(&cam_info_.K[0]), (char*)K_, sizeof(K_));
-      memcpy((char*)(&cam_info_.R[0]), (char*)R_, sizeof(R_));
-      memcpy((char*)(&cam_info_.P[0]), (char*)P_, sizeof(P_));
+      memcpy((char*)(&cam_info.D[0]), (char*)D_, sizeof(D_));
+      memcpy((char*)(&cam_info.K[0]), (char*)K_, sizeof(K_));
+      memcpy((char*)(&cam_info.R[0]), (char*)R_, sizeof(R_));
+      memcpy((char*)(&cam_info.P[0]), (char*)P_, sizeof(P_));
+    }
 
+    return true;
+  }
+  
+  void publishImage(tPvFrame* frame)
+  {
+    if (!processFrame(frame, img_, rect_img_, cam_info_))
+      return;
+    
+    publish("~image", img_);
+    if (calibrated_) {
+      publish("~image_rect", rect_img_);
       publish("~cam_info", cam_info_);
     }
   }
