@@ -1,4 +1,7 @@
 <launch>
+  <!--
+    Run a PR2 right arm in simulation
+  -->
   <group name="wg">
     <!-- send pr2_r_arm.xml to param server -->
     <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/r_arm.xacro.xml'" />
@@ -16,10 +19,10 @@
 
     <!-- start arm controller -->
     <!--
-    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_default_controller.xml" respawn="false"  />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_cartesian_pos_controller.xml" respawn="false"  />
-    -->
     <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_trajectory_controller.xml" respawn="false"  />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_cartesian_pos_controller.xml" respawn="false"  />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_default_controller.xml" respawn="false"  />
+    -->
 
     <!-- send arm a command -->
     <!-- open gripper .5 radians
@@ -32,8 +35,8 @@
     <!-- for visualization -->
     <!--
     <node pkg="rviz" type="rviz" respawn="false" output="screen" />
-    <include file="$(find arm_gazebo)/debug_plot.launch"/>
     -->
+    <include file="$(find arm_gazebo)/debug_plot.launch"/>
 
   </group>
 </launch>
