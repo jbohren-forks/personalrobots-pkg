@@ -76,6 +76,7 @@ private:
   filters::FilterChain<float> * intensity_filter_;
 
   boost::scoped_ptr<TiXmlElement>  latest_xml_;
+  bool configured_;
 };
 
 typedef laser_scan::LaserScan laser_scan_laser_scan;
@@ -84,7 +85,8 @@ ROS_REGISTER_FILTER(LaserMedianFilter, laser_scan_laser_scan);
 
 template <typename T>
 LaserMedianFilter<T>::LaserMedianFilter():
-  num_ranges_(1)
+  num_ranges_(1),
+  configured_(false)
 {
   
 };
@@ -92,25 +94,32 @@ LaserMedianFilter<T>::LaserMedianFilter():
 template <typename T>
 bool LaserMedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement * xml_doc)
 {
+  configured_ = false; //set to false so if we return early it's not configured
+
   ROS_ASSERT(number_of_channels == 1);
   if (!filters::FilterBase<T>::setName(xml_doc)) 
   {
     ROS_ERROR("LaserMedianFilter configured without a name");
     return false;
   }
-  latest_xml_.reset( xml_doc->Clone()->ToElement());
-  TiXmlElement * child = latest_xml_.get()->FirstChild("filters")->ToElement();
-  if (!child)
+  TiXmlNode * child_node = xml_doc->FirstChild("filters");
+  if (!child_node)
+  {
+    ROS_ERROR("Cannot Configure LaserMedianFilter: Didn't find filters tag within LaserMedianFilter. Filter definitions needed inside for processing range and intensity");
     return false;
-
-
-  range_filter_ = new filters::FilterChain<float>();
-  if (!range_filter_->configure(num_ranges_, child))
-    return false;
+  }
+  TiXmlElement * child = child_node->ToElement();
   
+  latest_xml_.reset( child->Clone()->ToElement());
+  
+  if (range_filter_) delete range_filter_;
+  range_filter_ = new filters::FilterChain<float>();
+  if (!range_filter_->configure(num_ranges_, latest_xml_.get())) return false;
+  
+  if (intensity_filter_) delete intensity_filter_;
   intensity_filter_ = new filters::FilterChain<float>();
-  if (!intensity_filter_->configure(num_ranges_, child))
-    return false;
+  if (!intensity_filter_->configure(num_ranges_, latest_xml_.get())) return false;
+  configured_ = true;
   return true;
 };
 
@@ -124,6 +133,11 @@ LaserMedianFilter<T>::~LaserMedianFilter()
 template <typename T>
 bool LaserMedianFilter<T>::update(const std::vector<laser_scan::LaserScan>& data_in, std::vector<laser_scan::LaserScan>& data_out)
 {
+  if (!configured_) 
+  {
+    ROS_ERROR("LaserMedianFilter not configured");
+    return false;
+  }
   if (data_in.size() != 1 || data_out.size() != 1)
   {
     ROS_ERROR("LaserMedianFilter is not vectorized");
@@ -135,6 +149,7 @@ bool LaserMedianFilter<T>::update(const std::vector<laser_scan::LaserScan>& data
   boost::mutex::scoped_lock lock(data_lock);
   scan_out = scan_in; ///Quickly pass through all data \todo don't copy data too
 
+
   if (scan_in.get_ranges_size() != num_ranges_) //Reallocating
   {
     ROS_INFO("Laser filter clearning and reallocating due to larger scan size");
@@ -144,13 +159,11 @@ bool LaserMedianFilter<T>::update(const std::vector<laser_scan::LaserScan>& data
 
     num_ranges_ = scan_in.get_ranges_size();
     
-    TiXmlElement * child = latest_xml_.get()->FirstChild("filters")->ToElement();
-
     range_filter_ = new filters::FilterChain<float>();
-    range_filter_->configure(num_ranges_, child);
+    if (!range_filter_->configure(num_ranges_, latest_xml_.get())) return false;
   
     intensity_filter_ = new filters::FilterChain<float>();
-    intensity_filter_->configure(num_ranges_, child);
+    if (!intensity_filter_->configure(num_ranges_, latest_xml_.get())) return false;
     
   }
 
