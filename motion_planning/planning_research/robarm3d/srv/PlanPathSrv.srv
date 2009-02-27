@@ -1,4 +1,0 @@
-robot_msgs/JointTrajPoint start
-robot_msgs/Point goal
----
-robot_msgs/JointTraj traj
