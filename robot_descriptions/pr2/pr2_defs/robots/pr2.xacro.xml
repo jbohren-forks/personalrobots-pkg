@@ -55,5 +55,32 @@
   <chain root="torso_lift_link" tip="l_wrist_roll_link" />
   <chain root="torso_lift_link" tip="r_wrist_roll_link" />
 
+  <!-- Proscillica Camera -->
+  <joint name="high_def_fixed_joint" type="fixed" />
+  <link name="high_def_frame">
+    <parent name="head_plate_frame" />
+    <joint name="high_def_fixed_joint" />
+    <origin xyz="0 0.06 0.03" rpy="0 0 0" />
+
+    <inertial>
+    </inertial>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material" value="Gazebo/Blue" />
+      </map>
+      <geometry name="$high_def_visual">
+        <mesh scale="0.1 0.1 0.1" />
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" />
+      <geometry name="high_def_collision">
+        <box size="0.1 0.1 0.1" />
+      </geometry>
+    </collision>
+  </link>
 
 </robot>
