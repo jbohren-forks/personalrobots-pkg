@@ -254,8 +254,10 @@ public:
     if (!frame)
       return false;
 
+    // TODO: figure out permanent solution here
+    publishImage(frame);
+    
     return frameToImage(frame, res.image);
-    // TODO: publish while we're at it?
   }
 
 private:
