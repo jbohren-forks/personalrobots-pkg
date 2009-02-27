@@ -34,11 +34,11 @@ namespace TREX {
     }
 
     void fillRequestParameters(pr2_msgs::MoveArmGoal& goalMsg, const TokenId& goalToken){
-      goalMsg.set_configuration_size(nddlNames().size());
+      goalMsg.set_goal_configuration_size(nddlNames().size());
       for(unsigned int i = 0; i<nddlNames().size(); i++){
 	const IntervalDomain& dom = goalToken->getVariable(nddlNames()[i])->lastDomain();
-	goalMsg.configuration[i].name = rosNames()[i];
-	goalMsg.configuration[i].position = (dom.isSingleton() ? dom.getSingletonValue() : (dom.getUpperBound() + dom.getLowerBound()) / 2);
+	goalMsg.goal_configuration[i].name = rosNames()[i];
+	goalMsg.goal_configuration[i].position = (dom.isSingleton() ? dom.getSingletonValue() : (dom.getUpperBound() + dom.getLowerBound()) / 2);
       }
     }
   };  
