@@ -23,9 +23,16 @@
 
   <macro name="pr2_finger_limits" params="reflect">
     <limit effort="0.5"
-           velocity="0.5" k_velocity="1.0"
+           velocity="0.5" k_velocity="0.5"
            min="0" max="1.57"
-           safety_length_min="0" safety_length_max="0.01" k_position="1.0" />
+           safety_length_min="0" safety_length_max="0.01" k_position="0.5" />
+  </macro>
+
+  <macro name="pr2_finger_limits_negative" params="reflect">
+    <limit effort="0.5"
+           velocity="0.5" k_velocity="0.5"
+           min="-1.57" max="0"
+           safety_length_min="0" safety_length_max="0.01" k_position="0.5" />
   </macro>
 
   <macro name="pr2_finger" params="prefix parent">
@@ -110,7 +117,7 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.0 -1.0" />
-      <pr2_finger_limits reflect="1" />
+      <pr2_finger_limits_negative reflect="1" />
       <joint_properties damping="${finger_damping}" />
       <mimic name="${prefix}_l_finger_joint" mult="${-1}" offset="0"/>
       <map name="${prefix}_r_finger_mimic" flag="gazebo">
@@ -190,7 +197,7 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.0 -1.0" />
-      <pr2_finger_limits reflect="1" />
+      <pr2_finger_limits_negative reflect="1" />
       <joint_properties damping="${finger_tip_damping}" />
       <mimic name="${prefix}_l_finger_joint" mult="-1" offset="0"/>
       <map name="${prefix}_l_finger_tip_mimic" flag="gazebo">
@@ -542,10 +549,10 @@
     <!-- sin(angle*reduction) = motor_encoder * A + B -->
     <transmission type="GripperTransmission" name="${side}_gripper_trans" A="0.0002193927" B="0.530981135">
       <actuator name="${side}_gripper_motor" />
-      <joint name="${side}_gripper_r_finger_joint" preduction="-1.0" ereduction="-6.0" />
+      <joint name="${side}_gripper_r_finger_joint" preduction="1.0" ereduction="6.0" />
       <joint name="${side}_gripper_r_finger_tip_joint" preduction="1.0" ereduction="6.0" />
       <joint name="${side}_gripper_l_finger_joint" preduction="1.0" ereduction="6.0"/>
-      <joint name="${side}_gripper_l_finger_tip_joint" preduction="-1.0" ereduction="-6.0" />
+      <joint name="${side}_gripper_l_finger_tip_joint" preduction="1.0" ereduction="6.0" />
       <pid p="0.01" i="0.001" d="0.005" iClamp="0.005" />
     </transmission>
     <!--
