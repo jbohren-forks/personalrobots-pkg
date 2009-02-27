@@ -690,7 +690,11 @@ namespace ros {
         // The last act will issue stop command
         stopRobot();
 
-        return true;
+        //Make sure that the robot is indeed stopped before returning true
+        if(abs(base_odom_.vel.th) <= 1e-6 && abs(base_odom_.vel.x) <= 1e-6 && abs(base_odom_.vel.y) <= 1e-6)
+          return true;
+
+        return false;
       }
 
       // If we have reached the end of the path then clear the plan
@@ -741,19 +745,8 @@ namespace ros {
         ROS_DEBUG("Moving to desired goal orientation\n");
         cmdVel.vel.vx = 0;
         cmdVel.vel.vy = 0;
-        double ang_diff =  fmod((double)stateMsg.goal.th, 2 * M_PI) - fmod(yaw, 2 * M_PI);
-        if(ang_diff < 0){
-          if(ang_diff < -1.0 * M_PI)
-            cmdVel.ang_vel.vz = .6;
-          else
-            cmdVel.ang_vel.vz = -.6;
-        }
-        else{
-          if(ang_diff > M_PI)
-            cmdVel.ang_vel.vz = -.6;
-          else
-            cmdVel.ang_vel.vz = .6;
-        }
+        double ang_diff = angles::shortest_angular_distance(yaw, stateMsg.goal.th);
+        cmdVel.ang_vel.vz = std::max(.1, ang_diff);
       }
       else {
         // Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
