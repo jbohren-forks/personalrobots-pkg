@@ -154,7 +154,7 @@ public:
     pose_.pose.orientation.y = orientation.y();
     pose_.pose.orientation.z = orientation.z();
     
-    pose_.header.frame_id = "prosilica_frame";
+    pose_.header.frame_id = "high_def_frame";
     publish("pose", pose_);
     /*
     tf_broadcaster_.sendTransform(tf::Transform(orientation, holes[0]),

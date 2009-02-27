@@ -107,7 +107,7 @@ public:
     btQuaternion orientation;
     rotation.getRotation(orientation);
     
-    pose_.header.frame_id = "prosilica_frame";
+    pose_.header.frame_id = "high_def_frame";
     pose_.pose.position.x = holes[0].x();
     pose_.pose.position.y = holes[0].y();
     pose_.pose.position.z = holes[0].z();
@@ -119,7 +119,7 @@ public:
     publish("pose", pose_);
     tf_broadcaster_.sendTransform(tf::Transform(orientation, holes[0]),
                                   ros::Time::now(), "outlet_frame",
-                                  "prosilica_frame");
+                                  "high_def_frame");
     ROS_INFO("Ground 0: %.5f %.5f %.5f, Ground 1: %.5f %.5f %.5f",
              holes[0].x(), holes[0].y(), holes[0].z(),
              holes[3].x(), holes[3].y(), holes[3].z());
@@ -151,7 +151,8 @@ public:
 private:
   static void changeAxes(CvPoint3D32f src, btVector3 &dst)
   {
-    dst.setValue(src.z, -src.x, -src.y);
+    // Scale to meters while we're at it
+    dst.setValue(src.z / 1000.0, -src.x / 1000.0, -src.y / 1000.0);
   }
 };
 
