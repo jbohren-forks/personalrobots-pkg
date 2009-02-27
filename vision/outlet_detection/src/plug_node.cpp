@@ -37,6 +37,7 @@ private:
   robot_msgs::PoseStamped pose_;
   tf::TransformBroadcaster tf_broadcaster_;
   CvMat *K_, *grid_pts_;
+  btQuaternion rotation_;
   boost::mutex cb_mutex_;
   bool display_;
   IplImage* display_img_;
@@ -61,7 +62,12 @@ public:
         cvSetReal2D(grid_pts_, j, 2, 0.0);
         ++j;
       }
-    }        
+    }
+
+    btMatrix3x3 mat( 0,  0,  1,
+                    -1,  0,  0,
+                     0, -1,  0 );
+    mat.getRotation(rotation_);
     
     subscribe("Image", img_, &PlugDetector::image_cb, this, 1);
     subscribe("CamInfo", cam_info_, &PlugDetector::caminfo_cb, this, 1);
@@ -116,10 +122,10 @@ public:
     cvFindCornerSubPix(image, &corners[0], ncorners, cvSize(11,11), cvSize(-1,-1),
                        cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
 
-    double rot[3];
+    double rot[3], trans[3];
     CvMat R3, T3, D, img_pts;
     cvInitMatHeader(&R3, 3, 1, CV_64FC1, rot);
-    cvInitMatHeader(&T3, 3, 1, CV_64FC1, &pose_.pose.position.x);
+    cvInitMatHeader(&T3, 3, 1, CV_64FC1, trans);
     // Assume image already rectified, so distortion coefficients are 0
     double zeros[4] = {0};
     cvInitMatHeader(&D, 1, 4, CV_64FC1, zeros);
@@ -129,23 +135,26 @@ public:
     cvFindExtrinsicCameraParams2(grid_pts_, &img_pts, K_, &D, &R3, &T3);
 
     // Convert from Rodriguez to quaternion
+    btQuaternion orientation;
     double fang = sqrt(rot[0]*rot[0] + rot[1]*rot[1] + rot[2]*rot[2]);
-    if( fang < 1e-6 ) {
-      pose_.pose.orientation.w = 1;
-      pose_.pose.orientation.x = 0;
-      pose_.pose.orientation.y = 0;
-      pose_.pose.orientation.z = 0;
-    }
+    if( fang < 1e-6 )
+      orientation.setValue(0, 0, 0, 1);
     else {
       double fmult = sin(fang/2)/fang;
-      pose_.pose.orientation.w = cos(fang/2);
-      pose_.pose.orientation.x = rot[0]*fmult;
-      pose_.pose.orientation.y = rot[1]*fmult;
-      pose_.pose.orientation.z = rot[2]*fmult;
+      orientation.setValue(rot[0]*fmult, rot[1]*fmult, rot[2]*fmult, cos(fang/2));
     }
+
+    // Rotate into x-forward frame
+    btVector3 position(trans[2], -trans[0], -trans[1]);
+    orientation *= rotation_;
+
+    memcpy(&pose_.pose.position.x, &position[0], 3*sizeof(double));
+    pose_.pose.orientation.w = orientation.w();
+    pose_.pose.orientation.x = orientation.x();
+    pose_.pose.orientation.y = orientation.y();
+    pose_.pose.orientation.z = orientation.z();
     
     pose_.header.frame_id = "prosilica_frame";
-
     publish("pose", pose_);
     /*
     tf_broadcaster_.sendTransform(tf::Transform(orientation, holes[0]),
