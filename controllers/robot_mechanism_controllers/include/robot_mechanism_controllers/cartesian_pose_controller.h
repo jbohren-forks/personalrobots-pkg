@@ -41,7 +41,9 @@
 #include <tf/message_notifier.h>
 #include <ros/node.h>
 #include <robot_msgs/PoseStamped.h>
+#include <robot_msgs/Twist.h>
 #include <mechanism_model/controller.h>
+#include <realtime_tools/realtime_publisher.h>
 #include "robot_mechanism_controllers/cartesian_twist_controller.h"
 
 
@@ -88,6 +90,10 @@ private:
 
   // internal twist controller
   CartesianTwistController twist_controller_;
+
+  // reatltime publisher
+  realtime_tools::RealtimePublisher<robot_msgs::Twist>* error_publisher_;
+  unsigned int loop_count_;
 };
 
 

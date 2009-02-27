@@ -51,7 +51,8 @@ namespace controller {
 CartesianPoseController::CartesianPoseController()
 : node_(ros::Node::instance()),
   robot_state_(NULL),
-  jnt_to_pose_solver_(NULL)
+  jnt_to_pose_solver_(NULL),
+  error_publisher_(NULL)
 {}
 
 CartesianPoseController::~CartesianPoseController()
@@ -88,6 +89,10 @@ bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, con
 
   // initialize twist controller
   twist_controller_.initialize(robot_state_, root_name, tip_name, controller_name_+"/twist");
+
+  // realtime publisher for control error
+  error_publisher_ = new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/error", 1);
+  loop_count_ = 0;
 
   return true;
 }
@@ -129,6 +134,21 @@ void CartesianPoseController::update()
   // send feedback twist and feedforward twist to twist controller
   twist_controller_.twist_desi_ = twist_fb + twist_ff_;
   twist_controller_.update();
+
+  if (++loop_count_ % 10 == 0){
+    if (error_publisher_){
+      if (error_publisher_->trylock()){
+        error_publisher_->msg_.vel.x = twist_error.vel(0);
+        error_publisher_->msg_.vel.y = twist_error.vel(1);
+        error_publisher_->msg_.vel.z = twist_error.vel(2);
+        error_publisher_->msg_.rot.x = twist_error.rot(0);
+	error_publisher_->msg_.rot.y = twist_error.rot(1);
+        error_publisher_->msg_.rot.z = twist_error.rot(2);
+        error_publisher_->unlockAndPublish();
+      }
+    }
+  }
+
 }
 
 
