@@ -39,6 +39,7 @@ using std::cout;
 using std::endl;
 using boost::extents;
 using boost::shared_ptr;
+using boost::tie;
 using topological_map::OccupancyGrid;
 using topological_map::TopologicalMapPtr;
 using topological_map::topologicalMapFromGrid;
@@ -194,6 +195,19 @@ TEST(TopologicalMap, Creation)
   EXPECT_EQ(m->regionType(m->containingRegion(Point2D(.35,.82))), 1);
   EXPECT_TRUE(m->isObstacle(Point2D(2.35,.75)));
   EXPECT_TRUE(!(m->isObstacle(Point2D(2.35,.65))));
+  
+  m->setGoal(Point2D(.35, .82));
+  bool path_found;
+  double d;
+  tie(path_found,d) = m->goalDistance(1);
+  EXPECT_TRUE(path_found);
+  m->setGoal(Point2D(1.1, .2));
+  double d2;
+  tie(path_found, d2) = m->goalDistance(1);
+  EXPECT_TRUE(path_found);
+  d+=d2;
+
+  EXPECT_TRUE ((d>=1.4)&&(d<=3));
 }
 
 int main (int argc, char** argv)

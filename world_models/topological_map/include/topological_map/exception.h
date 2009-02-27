@@ -111,6 +111,11 @@ class NoPathFoundException: public TopologicalMapException
 public: NoPathFoundException (ConnectorId i, ConnectorId j) : TopologicalMapException(format("No path found in roadmap between nodes %1% and %2%") % i % j) {}
 };
 
+/// \brief Exception thrown when calling goalDistance without setting goal
+class GoalNotSetException: public TopologicalMapException
+{
+public: GoalNotSetException() : TopologicalMapException(format("Called goalDistance without setting goal first")) {}
+};
 
 
 } // namespace topological_map

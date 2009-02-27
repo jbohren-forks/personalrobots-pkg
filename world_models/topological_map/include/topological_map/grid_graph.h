@@ -85,6 +85,12 @@ public:
   // Create a graph from an occupancy grid
   GridGraph(const OccupancyGrid& grid);
 
+  // Does the graph contain this cell
+  bool containsCell (const Cell2D& cell) const;
+
+  // Neighbors of a given cell
+  vector<Cell2D> neighbors (const Cell2D& cell) const;
+
   // Add a node.  By default, it will connect to the 4 adjacent neighbor cells (if they exist)
   void addNode (const Cell2D& cell);
 
@@ -99,7 +105,7 @@ public:
 
   // Shortest path query
   // Return values: 1) The path 2) The cost 3) Was a path found?  1) and 2) aren't valid if 3) is false.
-  tuple<GridPath, double, bool> shortestPath (const Cell2D& cell1, const Cell2D& cell2);
+  tuple<bool, double, GridPath> shortestPath (const Cell2D& cell1, const Cell2D& cell2);
 
 private:
 

@@ -37,6 +37,7 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/multi_array.hpp>
+#include <boost/tuple/tuple.hpp>
 
 namespace topological_map
 {
@@ -102,19 +103,19 @@ public:
   /// \return Position of connector \a id
   /// \throws UnknownConnectorException
   /// \throws UnknownGridCellException
-  Point2D connectorPosition (const ConnectorId id) const;
+  Point2D connectorPosition (ConnectorId id) const;
 
   /// \return vector of ids of connectors touching the given region
   /// \throws UnknownRegionException
-  vector<ConnectorId> adjacentConnectors (const RegionId id) const;
+  vector<ConnectorId> adjacentConnectors (RegionId id) const;
 
   /// \return vector (of length 2) of ids of regions touching the given connector
   /// \throws UnknownConnectorException
-  RegionPair adjacentRegions (const ConnectorId id) const;
+  RegionPair adjacentRegions (ConnectorId id) const;
 
   /// \return Type of this region
   /// \throws UnknownRegionException
-  int regionType (const RegionId id) const;
+  int regionType (RegionId id) const;
 
   /// \return Is this point in an obstacle cell?
   /// \throws UnknownPointException
@@ -123,24 +124,33 @@ public:
 
   /// \return Vector of id's of neighboring regions to region \a r
   /// \throws UnknownRegionException
-  RegionIdVector neighbors(const RegionId r) const;
+  RegionIdVector neighbors(RegionId r) const;
 
   /// \return (shared pointer to) set of actual grid cells in the region given \a id
   /// \throws UnknownRegionException
-  RegionPtr regionCells (const RegionId id) const;
+  RegionPtr regionCells (RegionId id) const;
 
   /// \return Vector of all region ids.  This is a reference and may change.
   const RegionIdVector& allRegions() const;
 
+  /// \post Set the goal point (for future distance queries) to be \a p
+  void setGoal (const Point2D& p);
+
+  /// \post Set the goal point (for future distance queries) to be center of \a c
+  void setGoal (const Cell2D& c);
+
+  /// \return 1) true if there exists a path between connector \a id and goal 2) The distance (only valid if 1 is true)
+  pair<bool, double> goalDistance (ConnectorId id) const;
+
   /// \post New region has been added.  Based on cell2d connectivity, the region is connected to existing regions, and connectors are added, as necessary.
   /// \return Id of new region, which will be 1+the highest previously seen region id (or 0)
   /// \throws OverlappingRegionException
-  RegionId addRegion (const RegionPtr region, const int region_type);
+  RegionId addRegion (const RegionPtr region, int region_type);
 
   /// \post Region no longer exists
   /// \throws UnknownRegionException
   /// \todo currently doesn't work properly with connectors
-  void removeRegion (const RegionId id);
+  void removeRegion (RegionId id);
 
   /// \post Topological map is written to \a filename in format that can be read back using loadFromFile
   /// \throws FileOpenException

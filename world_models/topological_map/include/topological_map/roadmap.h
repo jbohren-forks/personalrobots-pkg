@@ -92,7 +92,7 @@ public:
   ConnectorId pointId (const Point2D& p) const;
   Point2D connectorPoint (const ConnectorId id) const;
 
-  double costBetween (ConnectorId i, ConnectorId j);
+  pair<bool, double> costBetween (ConnectorId i, ConnectorId j);
   ConnectorIdVector shortestPath (ConnectorId i, ConnectorId j);
 
 private:

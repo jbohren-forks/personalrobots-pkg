@@ -145,8 +145,9 @@ struct DijkstraVisitor : public boost::default_dijkstra_visitor
 };
 
 
-double Roadmap::costBetween (const ConnectorId i, const ConnectorId j)
+pair<bool, double> Roadmap::costBetween (const ConnectorId i, const ConnectorId j)
 {
+  ROS_DEBUG_STREAM_NAMED ("roadmap_shortest_path", "Looking for shortest path between roadmap nodes " << i << " and " << j);
   const RoadmapVertex v = idVertex(i);
   const RoadmapVertex w = idVertex(j);
 
@@ -158,8 +159,14 @@ double Roadmap::costBetween (const ConnectorId i, const ConnectorId j)
                           vertex_index_map(get(&NodeInfo::index, graph_)).
                           distance_map(DistancePmap(distances)).visitor(DijkstraVisitor(w)).
                           predecessor_map(PredecessorPmap(predecessors)));
-  ROS_ASSERT_MSG(distances.find(w)!=distances.end(), "Couldn't find vertex %u in returned distance map from Dijkstra", j);
-  return distances[w];
+  if (distances.find(w)==distances.end()) {
+    ROS_DEBUG_NAMED ("roadmap_shortest_path", "Path not found");
+    return pair<bool, double>(false, -1);
+  }
+  else {
+    ROS_DEBUG_STREAM_NAMED ("roadmap_shortest_path", "Path found with length " << distances[w]);
+    return pair<bool, double>(true, distances[w]);
+  }
 }
 
 

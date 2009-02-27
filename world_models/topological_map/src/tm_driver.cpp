@@ -44,7 +44,7 @@ using topological_map::OccupancyGrid;
 using topological_map::TopologicalMapPtr;
 using topological_map::topologicalMapFromGrid;
 using topological_map::Point2D;
-
+using topological_map::Cell2D;
 
 void setV (topological_map::OccupancyGrid& grid, cuint r0, cuint dr, cuint rmax, cuint c0, cuint dc, cuint cmax, bool val) 
 {
@@ -76,6 +76,9 @@ int main (int argc, char* argv[])
   TopologicalMapPtr m = topologicalMapFromGrid (grid, 1.0, 2, 1, 1, 0, "local");
 
   cout << *m;
+  m->setGoal(Cell2D(1,12));
+  m->setGoal(Cell2D(0,12));
+  m->setGoal(Cell2D(12,1));
 }
 
   

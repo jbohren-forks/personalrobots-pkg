@@ -41,6 +41,7 @@ namespace topological_map
 
 using std::map;
 using boost::tuple;
+using boost::shared_ptr;
 
 class RegionGraph;
 class Roadmap;
@@ -63,6 +64,7 @@ public:
   /// \return Id of region containing point \a p
   /// \throws UnknownPointException
   RegionId containingRegion (const Point2D& p) const;
+
 
   /// \return Integer representing type of region
   /// \throws UnknownRegionException
@@ -94,6 +96,15 @@ public:
   /// \throws UnknownConnectorException
   RegionPair adjacentRegions (const ConnectorId id) const;
 
+  /// \post Set the goal point (for future distance queries) to be \a p
+  void setGoal (const Point2D& p);
+
+  /// \post Set the goal point (for future distance queries) to be center of \a c
+  void setGoal (const Cell2D& p);
+
+  /// \return 1) true if there exists a path between connector \a id and goal 2) The distance (only valid if 1 is true)
+  pair<bool, double> goalDistance (ConnectorId id) const;
+
   /// \post New region has been added
   /// \return Id of new region
   /// \throws OverlappingRegionException
@@ -104,27 +115,45 @@ public:
   void removeRegion (const RegionId id);
 
 
-private:
+private: 
+
+
+  // During the lifetime of an instance of this class, a temporary node will exist in the connector graph at point p
+  struct TemporaryRoadmapNode {
+    TemporaryRoadmapNode (MapImpl* m, const Point2D& p);
+    ~TemporaryRoadmapNode ();
+    MapImpl* map;
+    const ConnectorId id;
+  };
+  friend struct TemporaryRoadmapNode;
 
   MapImpl(const MapImpl&);
   MapImpl& operator= (const MapImpl&);
 
   Cell2D containingCell(const Point2D& p) const;
   Point2D cellCorner (const Cell2D& cell) const;
+  Point2D cellCenter (const Cell2D& cell) const;
   ConnectorId connectorBetween (const RegionId r1, const RegionId r2) const;
+  tuple<ConnectorId, Cell2D, Cell2D> connectorCellsBetween (const RegionId r1, const RegionId r2) const;
   Point2D findBorderPoint(const Cell2D& cell1, const Cell2D& cell2) const;
   bool pointOnMap (const Point2D& p) const;
 
   const OccupancyGrid& grid_;
 
-  boost::shared_ptr<RegionGraph> region_graph_;
-  boost::shared_ptr<Roadmap> roadmap_;
-  boost::shared_ptr<GridGraph> grid_graph_;
+  shared_ptr<RegionGraph> region_graph_;
+  shared_ptr<Roadmap> roadmap_;
+  shared_ptr<GridGraph> grid_graph_;
 
   RegionConnectorMap region_connector_map_;
+
+  shared_ptr<TemporaryRoadmapNode> goal_;
   
   const double resolution_;
 };
+
+
+    
+
 
 
   
