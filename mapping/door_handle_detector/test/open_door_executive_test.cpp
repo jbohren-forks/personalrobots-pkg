@@ -45,14 +45,15 @@
 #include <tf/transform_listener.h>
 #include <robot_srvs/MoveToPose.h>
 #include <kdl/frames.hpp>
+#include <sbpl_arm_executive/pr2_arm_node.h>
 
 using namespace tf;
 using namespace KDL;
 using namespace ros;
 using namespace std;
+using namespace pr2_arm_node;
 
-
-class OpenDoorExecutiveTest : public ros::Node
+class OpenDoorExecutiveTest : public PR2ArmNode
 {
 private:
   tf::TransformListener tf_; 
@@ -79,7 +80,7 @@ private:
 
 public:
   OpenDoorExecutiveTest(std::string node_name):
-    ros::Node(node_name),
+    PR2ArmNode(node_name, "right_arm", "right_gripper"),
     tf_(*this),
     state_(INITIALIZED)
   {
@@ -329,14 +330,18 @@ public:
       }
       case WAITING:{
         cout << "Waiting for joystick command... " << endl;
-        if (joy_command_)
+        if (joy_command_){
+          nodHead(1);
           state_  = DETECTING;
+        }
         break;
       }
       case DETECTING:{
         cout << "Detecting door... " << endl;
-        if (detectDoor(my_door_, my_door_))
+        if (detectDoor(my_door_, my_door_)){
+          nodHead(4);
           state_ = GRASPING;
+        }
         else
           state_ = FAILED;
         break;
@@ -358,12 +363,14 @@ public:
         break;
       }
       case FAILED:{
+        shakeHead();
         cout << "FAILED" << endl;
-          state_ =INITIALIZED;
-          break;
+        state_ =INITIALIZED;
+        break;
       }
       case SUCCESS:{
         cout << "success" << endl;
+        nodHead(4);
         state_ = INITIALIZED;
         break;
       }
