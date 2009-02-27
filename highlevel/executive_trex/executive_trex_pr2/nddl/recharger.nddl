@@ -36,9 +36,11 @@
 #include "safety.exports.nddl"
 
 /**
- * Constrain so that the recharge controller switches between plugging on and unplugging
+ * For now, the recharger simply delegates to a recharge controller
  */
-RechargeController::Inactive{
+Recharger::Active{
+  ends(RechargeController.Active rc);
+  precedes(start, rc.start);
 }
 
 

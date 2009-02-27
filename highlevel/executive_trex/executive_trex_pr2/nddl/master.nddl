@@ -201,6 +201,9 @@ Path::Holds{
       temporalDistance(start, [-inf, 2], mb.start);
       precedes(end, mb.end);
     }
+
+    // We should always be contained by Navigator.Inactive
+    contained_by(Navigator.Inactive);
   }
 
   if(active == true){
@@ -208,6 +211,7 @@ Path::Holds{
     bool end_point;
 
     meets(Holds s);
+    temporalDistance(s.start, [1, +inf], missionEnd);
 
     // Verify region values
     neq(final_region, 0);
@@ -269,14 +273,6 @@ Path::Holds{
       if(is_doorway == true){
 	precedes(start, mb.start);
       }
-
-      // BUG IN NDDL INTERPRETER FOR THIS PATTERN:
-      //eq(mb.object.for_doorways, is_doorway);
-      // TO DO - calculate a th that is meaningful for finding a door. We should probably
-      // allow that the move base node can be commanded without a theta. We could then begin
-      // by rotating to face the door as we reset the position. For this theta calculation we
-      // need to compute the normal to the door. Thus we need the door! That is data that
-      // shoudl be available in the topological map.
     } 
   }
 }
@@ -299,7 +295,131 @@ class VenusDeMiles extends AgentTimeline {
   }
 };
 
+class MotionMutex extends AgentTimeline {
+  predicate Using{
+    MoveBehavior user;
+  }
+
+  predicate Free{}
+
+  MotionMutex(){
+    super(Internal, "Free");
+  }
+}
+
+MoveBehavior::Active{
+  // Only one moving modality at a time
+  contained_by(MotionMutex.Using mutex);
+  eq(mutex.user, this.object);
+}
+
+/**
+ * The base state should contain a link to the path to indicate changes. Note that there may
+ * be a discrepancy between when we transition a path and when the move behavior terminates. The temporal bounds
+ * here are subtle. We only want to ensure that the start time is contained. If we had used a contained_by relation
+ * then it imposes a precedence constraint between the base state end time and the end time of the path. We do not want
+ * to imply this. This is where a better notation would help:
+ * path(start) == Holds(region(x, y));
+ *
+ * @note: Cannot use the region query since the map used for testing does not respect region mapping
+ */
+BaseState::Holds{
+  any(Path.Holds p);
+  precedes(p.start, start);
+  temporalDistance(start, [1 +inf], p.end);
+
+  if(p.active == true){
+    float distance;
+    bool done;
+    calcDistance(distance, x, y, p.target_x, p.target_y);
+    testLEQ(done, distance, XY_ERROR);
+    if(done == true){
+      concurrent(p.end, end);
+    }
+  }
+}
+
+/**
+ * Each update is monitored and can trigger a transition to recharging
+ */
+BatteryState::Holds {
+  // If below the threshold, transition working status to recharge
+  // if(discharge_limit > (energy_remaining / energy_capacity))
+  //  workingStatus(start+1) == Holds(true);
+  bool mustRecharge;
+  testLEQ(mustRecharge, percentage_remaining, object.discharge_limit);
+  if(mustRecharge == true){
+    any(WorkingStatus.Holds ws);
+    temporalDistance(start, [-inf, 1], ws.start); 
+    precedes(end, ws.end);
+    eq(ws.recharging, true);
+  }
+}
+
+Navigator::Inactive{
+  default(recharging, false);
+
+  if(w){
+    met_by(Active p);
+    eq(p.w, w);
+    eq(p.recharging, recharging);
+  }
+}
+
+Navigator::Active{
+  default(recharging, false);
+
+  starts(Path.Holds p);
+  eq(p.active, true);
+  eq(p.final_x, w.x);
+  eq(p.final_y, w.y);
+  eq(p.final_th, w.th);
+
+  contained_by(WorkingStatus.Holds ws);
+  eq(ws.recharging, recharging);
+
+  // If recharging, we should be going to a charging station
+  if(recharging == true){
+    ChargingStation cs;
+    eq(cs, w);
+  }
+}
+
+/**
+ * A simple iterator pattern - drives subgoaling on the Navigator Timeline
+ */
+VenusDeMiles::Holds{
+  defaultOnCommit(iterationCount, 0);
+  defaultOnCommit(iterationLimit, 0);
+  defaultOnCommit(alwaysBusy, false);
+
+  if(alwaysBusy == true){
+    eq(iterationLimit, 1);
+  }
+
+  bool busy;
+  testLT(busy, 0, iterationLimit);
+  if(busy == true){
+    // Alternatives:
+    // navigator[start + [0, inf], end] = Active(randomSelect(w))
+    randomSelect(w);
+    ends(Navigator.Active n);
+    eq(n.w, w);
+    precedes(start, n.start);
+
+    // Carry forward parameters
+    if(end){
+      meets(Holds s);
+      addEq(iterationCount, 1, s.iterationCount);
+      eq(iterationLimit, s.iterationLimit);
+      eq(alwaysBusy, s.alwaysBusy);
+    }
+  }
+}
+
 WorkingStatus::Holds{
+  // By default we are not recharging
+  defaultOnCommit(recharging, false);
 
   // Do the recharging if appropriate
   if(recharging == true){
@@ -328,78 +448,15 @@ WorkingStatus::Holds{
     eq(rc.th, cs.th);
     temporalDistance(rc.start, WAIT_TIME_AFTER_UNPLUGGING, end);
     precedes(end, rc.end);
-  }
-}
 
-class MotionMutex extends AgentTimeline {
-  predicate Using{
-    MoveBehavior user;
-  }
-
-  predicate Free{}
-
-  MotionMutex(){
-    super(Internal, "Free");
-  }
-}
-
-
-MoveBehavior::Active{
-  // Only one moving modality at a time
-  contained_by(MotionMutex.Using mutex);
-  eq(mutex.user, this.object);
-}
-
-
-/**
- * The base state should contain a link to the path to indicate changes. Note that there may
- * be a discrepancy between when we transition a path and when the move behavior terminates. The temporal bounds
- * here are subtle. We only want to ensure that the start time is contained. If we had used a contained_by relation
- * then it imposes a precedence constraint between the base state end time and the end time of the path. We do not want
- * to imply this. This is where a better notation would help:
- * path(start) == Holds(region(x, y));
- *
- * @note: Cannot use the region query since the map used for testing does not respect region mapping
- */
-BaseState::Holds{
-  any(Path.Holds p);
-  precedes(p.start, start);
-  temporalDistance(start, [1 +inf], p.end);
-
-  if(p.active == true){
-    float distance;
-    bool done;
-    calcDistance(distance, x, y, p.target_x, p.target_y);
-    testLEQ(done, distance, XY_ERROR);
-    if(done == true){
-      concurrent(p.end, end);
+    // Check End Conditions
+    if(rc.end){
+      any(BatteryState.Holds bs_e);
+      eq(bs_e.object.actual_value, true);
+      concurrent(rc.end, bs_e.start);
+      leq(rc.recharge_level, bs_e.percentage_remaining);
     }
   }
-
-  //map_get_region_from_position(p.region, x, y);
-  /*
-  int region; // The region containing the current state
-  bool same_region; // Will be true if the path is going thru this region
-  testEQ(same_region, region, p.region);
-  if(same_region == false){
-    int latest_transition;
-    temporalDistance(start, 2, latest_transition);
-    precedes(p.start, latest_transition);
-    precedes(end, p.end);
-  }
-  */
-}
-
-WorkingStatus::Holds{
-  // We should toggle between recharging and not recharging
-  // this[end] == Holds(!recharging); 
-  if(end){
-    meets(Holds s);
-    neq(s.recharging, recharging);
-  }
-
-  // By default we are not recharging
-  defaultOnCommit(recharging, false);
 }
 
 Recharger::Active{
@@ -411,48 +468,6 @@ Recharger::Active{
   eq(n.w.y, y);
   eq(n.w.th, th);
   eq(n.recharging, true);
-}
-
-/**
- * Each update is monitored and can trigger a transition to recharging
- */
-BatteryState::Holds {
-  // If below the threshold, transition working status to recharge
-  // if(discharge_limit > (energy_remaining / energy_capacity))
-  //  workingStatus(start+1) == Holds(true);
-  bool mustRecharge;
-  testLEQ(mustRecharge, percentage_remaining, object.discharge_limit);
-  if(mustRecharge == true){
-    any(WorkingStatus.Holds ws);
-    temporalDistance(start, [-inf, 1], ws.start); 
-    precedes(end, ws.end);
-    eq(ws.recharging, true);
-  }
-}
-
-Navigator::Inactive{
-  default(recharging, false);
-
-  met_by(Active p);
-  eq(p.w, w);
-  eq(p.recharging, recharging);
-}
-
-Navigator::Active{
-  default(recharging, false);
-  starts(Path.Holds p);
-  eq(p.final_x, w.x);
-  eq(p.final_y, w.y);
-  eq(p.final_th, w.th);
-
-  contained_by(WorkingStatus.Holds ws);
-  eq(ws.recharging, recharging);
-
-  // If recharging, we should be going to a charging station
-  if(recharging == true){
-    ChargingStation cs;
-    eq(cs, w);
-  }
 }
 
 /** Allocate common objects **/
