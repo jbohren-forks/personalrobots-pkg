@@ -24,6 +24,5 @@
   <depend package="imu_node"/>
   <depend package="dcam"/>
   <depend package="robot_pose_ekf"/>
-  <depend package="ntp_monitor"/>
   <depend package="spacenav_node"/>
 </package>

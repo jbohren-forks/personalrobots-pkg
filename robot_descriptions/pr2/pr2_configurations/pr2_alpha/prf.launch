@@ -64,9 +64,9 @@
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prf_runtime_automatic /diagnostics" />
 
 <!-- NTP monitoring script Warns to console if sync error -->
-  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prf2" machine="realtime"/>
-  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prf2" machine="three"/>
-  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prf2" machine="four"/>
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="prf2" machine="realtime"/>
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="prf2" machine="three"/>
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="prf2" machine="four"/>
 
 </launch>
 

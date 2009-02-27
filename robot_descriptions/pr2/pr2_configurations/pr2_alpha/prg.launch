@@ -52,9 +52,9 @@
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
 
 <!-- NTP monitoring script Warns to console if sync error -->
-  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prg2" machine="realtime"/>
-  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prg2" machine="three"/>
-  <node pkg="ntp_monitor" type="ntp_monitor.py" args="prg2" machine="four"/>   
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="prg2" machine="realtime"/>
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="prg2" machine="three"/>
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="prg2" machine="four"/>   
 
 <!-- Stereo cam -->
   <group ns="stereo">
