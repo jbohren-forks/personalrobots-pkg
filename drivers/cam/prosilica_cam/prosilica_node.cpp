@@ -47,6 +47,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/thread.hpp>
 #include <string>
 
 #include "prosilica.h"
@@ -64,6 +65,7 @@ private:
   bool running_;
   int count_;
   DiagnosticUpdater<ProsilicaNode> diagnostic_;
+  boost::mutex grab_mutex_;
 
   // calibration matrices
   double D_[5], K_[9], R_[9], P_[12];
@@ -250,6 +252,8 @@ public:
   bool triggeredGrab(prosilica_cam::PolledImage::Request &req,
                      prosilica_cam::PolledImage::Response &res)
   {
+    // TODO: could return same data for simultaneous requests?
+    boost::mutex::scoped_lock guard(grab_mutex_);
     tPvFrame* frame = cam_->grab(req.timeout_ms);
     if (!frame)
       return false;
