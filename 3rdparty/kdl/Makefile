@@ -14,6 +14,9 @@ installed: wiped
 	-mkdir -p $(SOURCE_DIR)/build
 	cd $(SOURCE_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	cd $(SOURCE_DIR)/build && make $(ROS_PARALLEL_JOBS) && make install
+	if [ `uname` = Darwin ]; then \
+		install_name_tool -id `rospack find kdl`/kdl/lib/liborocos-kdl.0.99.dylib kdl/lib/liborocos-kdl.0.99.dylib; \
+	fi
 	touch installed
 
 wiped: Makefile
