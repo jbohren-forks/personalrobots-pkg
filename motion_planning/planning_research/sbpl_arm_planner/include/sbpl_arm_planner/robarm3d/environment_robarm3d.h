@@ -217,6 +217,9 @@ typedef struct ENV_ROBARM_CONFIG
     //a bad hack
     bool JointSpaceGoal;
 
+    double AngularDist_Weight;
+    double ExpCoefficient;
+    bool angular_dist_cost;
 } EnvROBARMConfig_t;
 
 // hash entry that contains end effector coordinates
@@ -384,6 +387,7 @@ private:
     int GetEdgeCost(int FromStateID, int ToStateID);
     void ComputeActionCosts();
     void ComputeCostPerCell();
+    double getAngularEuclDist(double rpy1[3], double rpy2[3]);
 
     //output
     void PrintHeader(FILE* fOut);
