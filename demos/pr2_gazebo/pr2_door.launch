@@ -31,33 +31,11 @@
     <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/l_arm_default_controller.xml" output="screen"/>
     <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_default_controller.xml" output="screen"/>
 
-    <!-- need to scan higher and slower -->
-    <!-- Laset tilt controller -->
-    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/laser_tilt_controller.xml" />
-    <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 20 .60 .10" /> <!-- updated range to avoid scanning self shoulder -->
-
     <!-- load door controllers -->
     <node pkg="mechanism_control" type="spawner.py" args="$(find examples_gazebo)/door_defs/controllers_door.xml" respawn="false" output="screen" />
     <node pkg="pr2_gazebo" type="set_door.py" output="screen"/>
 
 
-    <!-- aggregate scan lines for door, I could have used snapshot_cloud in 2dnav-stack-fake_localization.xml, but
-         since door bot and pr2 are merged as 1 robot, robotlinks_cloud_filtered has no door in it -->
-    <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler">
-      <remap from="scan_in" to="tilt_scan"/>
-      <param name="tf_cache_time_secs" type="double" value="10.0" />
-      <param name="max_scans" type="int" value="400" />
-      <param name="ignore_laser_skew" type="bool" value="true" />
-      <param name="fixed_frame" type="string" value="odom_combined" />
-    </node>
-    <!-- at laser_tilt_controller/laser_scanner_signal,
-         reads accumulated point cloud from point_cloud_assembler_srv by invoking point_cloud_assembler/build_cloud service call,
-         and publishes full_cloud, which is remapped to snapshot_cloud -->
-    <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
-      <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
-      <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
-      <remap from="full_cloud" to="snapshot_cloud" />
-    </node>
 
     <!-- visualization -->
     <node pkg="rviz" type="rviz" respawn="false" output="screen" />
@@ -76,10 +54,12 @@
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map_blank.png 0.1" respawn="false" output="screen" />
 
     <!-- nav-stack -->
+    <!--
     <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.xml"/>
+    <include file="$(find door_handle_detector)/launch/navigation.launch"/>
+    -->
 
-    <!-- Door detection -->
-    <include file="$(find door_handle_detector)/simple_door_handle_detector.launch"/>	
+
 
   </group>
 </launch>
