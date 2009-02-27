@@ -155,7 +155,7 @@ public:
   bool graspDoor(const robot_msgs::Door& door)
   // -------------------------
   {
-    Duration pause = Duration().fromSec(10.0);
+    Duration pause = Duration().fromSec(6.0);
 
     // get orientation
     Vector normal = getNormalOnDoor(door);
@@ -195,7 +195,6 @@ public:
     while (!planner_finished_)
       Duration().fromSec(0.1).sleep();
     cout << "arrived in front of door" << endl;
-    pause.sleep();
 
     // move gripper in front of door
     Vector offset = normal * -0.15;
