@@ -25,17 +25,17 @@ private:
   prosilica_cam::PolledImage::Request req_;
   prosilica_cam::PolledImage::Response res_;
   image_msgs::Image& img_;
-  image_msgs::CamInfo cam_info_;
+  image_msgs::CamInfo& cam_info_;
   image_msgs::CvBridge img_bridge_;
   robot_msgs::PoseStamped pose_;
   tf::TransformBroadcaster tf_broadcaster_;
   CvMat* K_;
-  boost::mutex cb_mutex_;
+  //boost::mutex cb_mutex_;
   bool display_;
 
 public:
   OutletDetector()
-    : ros::Node("outlet_detector"), img_(res_.image),
+    : ros::Node("outlet_detector"), img_(res_.image), cam_info_(res_.cam_info),
       tf_broadcaster_(*this), K_(NULL)
   {
     param("display", display_, false);
@@ -44,8 +44,8 @@ public:
       cvStartWindowThread();
     }
     
-    subscribe("Image", img_, &OutletDetector::image_cb, this, 1);
-    subscribe("CamInfo", cam_info_, &OutletDetector::caminfo_cb, this, 1);
+    //subscribe("Image", img_, &OutletDetector::image_cb, this, 1);
+    //subscribe("CamInfo", cam_info_, &OutletDetector::caminfo_cb, this, 1);
     advertise<robot_msgs::PoseStamped>("pose", 1);
   }
 
@@ -58,7 +58,7 @@ public:
 
   void caminfo_cb()
   {
-    boost::mutex::scoped_lock lock(cb_mutex_);
+    //boost::mutex::scoped_lock lock(cb_mutex_);
     if (K_ == NULL)
       K_ = cvCreateMat(3, 3, CV_64FC1);
     memcpy((char*)(K_->data.db), (char*)(&cam_info_.K[0]), 9 * sizeof(double));
@@ -66,12 +66,13 @@ public:
 
   void image_cb()
   {
-    boost::mutex::scoped_lock lock(cb_mutex_);
+    //boost::mutex::scoped_lock lock(cb_mutex_);
+    /*
     if (K_ == NULL) {
       ROS_WARN("Need calibration info to process image");
       return;
     }
-
+    */
     if (!img_bridge_.fromImage(img_, "bgr")) {
       ROS_ERROR("Failed to convert image");
       return;
@@ -130,23 +131,23 @@ public:
     }
   }
 
-  /*
   bool spin()
   {
+    // TODO: wait for service to become available
     while (ok())
     {
-      if (cb_mutex_.try_lock()) {
-        req_.timeout_ms = 100;
-        if (!ros::service::call("prosilica/poll", req_, res_))
-          ROS_WARN("Service call failed");
-        cb_mutex_.unlock();
+      req_.timeout_ms = 100;
+      if (ros::service::call("/prosilica/poll", req_, res_)) {
+        caminfo_cb();
+        image_cb();
+      } else {
+        ROS_WARN("Service call failed");
+        usleep(100000);
       }
-      usleep(100000);
     }
 
     return true;
   }
-  */
 
 private:
   static void changeAxes(CvPoint3D32f src, btVector3 &dst)
