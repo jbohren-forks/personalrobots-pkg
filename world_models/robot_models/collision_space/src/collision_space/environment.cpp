@@ -34,7 +34,7 @@
 
 /** \author Ioan Sucan */
 
-#include <collision_space/environment.h>
+#include "collision_space/environment.h"
 
 void collision_space::EnvironmentModel::setVerbose(bool verbose)
 {

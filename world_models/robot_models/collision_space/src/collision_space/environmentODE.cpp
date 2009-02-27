@@ -34,7 +34,7 @@
 
 /** \author Ioan Sucan */
 
-#include <collision_space/environmentODE.h>
+#include "collision_space/environmentODE.h"
 #include <cassert>
 #include <cstdio>
 #include <algorithm>
@@ -447,8 +447,8 @@ void collision_space::EnvironmentModelODE::testCollision(unsigned int model_id, 
 				dSpaceCollide2(g1, g2, data, nearCallbackFn);
 			    
 			    if (cdata->collides && m_verbose)
-				printf("Self-collision between '%s' and '%s'\n",
-				       m_modelsGeom[model_id].linkGeom[vec[j]]->link->name.c_str(), m_modelsGeom[model_id].linkGeom[vec[k]]->link->name.c_str());
+				m_msg.inform("Self-collision between '%s' and '%s'\n",
+					     m_modelsGeom[model_id].linkGeom[vec[j]]->link->name.c_str(), m_modelsGeom[model_id].linkGeom[vec[k]]->link->name.c_str());
 			}
 		}
 	    }
@@ -486,8 +486,8 @@ void collision_space::EnvironmentModelODE::testCollision(unsigned int model_id, 
 			dSpaceCollide2(g1, g2, data, nearCallbackFn);
 		    
 		    if (cdata->collides && m_verbose)
-			printf("Collision between static body and link '%s'\n",
-			       m_modelsGeom[model_id].linkGeom[i]->link->name.c_str());
+			m_msg.inform("Collision between static body and link '%s'\n",
+				     m_modelsGeom[model_id].linkGeom[i]->link->name.c_str());
 		}
 	    }
 	}	
@@ -508,8 +508,8 @@ void collision_space::EnvironmentModelODE::testCollision(unsigned int model_id, 
 		{
 		    m_collide2.collide(m_modelsGeom[model_id].linkGeom[i]->geom[ig], data, nearCallbackFn);
 		    if (cdata->collides && m_verbose)
-			printf("Collision between dynamic body and link '%s'\n",
-			       m_modelsGeom[model_id].linkGeom[i]->link->name.c_str());
+			m_msg.inform("Collision between dynamic body and link '%s'\n",
+				     m_modelsGeom[model_id].linkGeom[i]->link->name.c_str());
 		}
 	    }
     }

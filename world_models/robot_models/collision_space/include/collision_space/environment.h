@@ -37,6 +37,7 @@
 #ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_
 
+#include "collision_space/output.h"
 #include <planning_models/kinematic.h>
 #include <LinearMath/btVector3.h>
 #include <boost/thread/mutex.hpp>
@@ -152,6 +153,7 @@ namespace collision_space
 	boost::mutex                                  m_lock;
 	bool                                          m_selfCollision;
 	bool                                          m_verbose;
+	msg::Interface                                m_msg;
 	
 	/** List of loaded robot models */	
 	std::vector<planning_models::KinematicModel*> m_models;

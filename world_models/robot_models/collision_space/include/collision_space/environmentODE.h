@@ -37,7 +37,7 @@
 #ifndef COLLISION_SPACE_ENVIRONMENT_MODEL_ODE_
 #define COLLISION_SPACE_ENVIRONMENT_MODEL_ODE_
 
-#include <collision_space/environment.h>
+#include "collision_space/environment.h"
 #include <ode/ode.h>
 
 /** @htmlinclude ../../manifest.html
