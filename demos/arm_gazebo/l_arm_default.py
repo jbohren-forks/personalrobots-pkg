@@ -86,7 +86,7 @@ def p3dReceived(stuff):
 if __name__ == '__main__':
     pub_l_arm = rospy.Publisher("left_arm_commands", JointPosCmd)
     pub_l_gripper = rospy.Publisher("l_gripper_controller/set_command", Float64)
-    rospy.Subscriber("l_gripper_palm_pose_ground_truth", PoseWithRatesStamped, p3dReceived)
+    #rospy.Subscriber("l_gripper_palm_pose_ground_truth", PoseWithRatesStamped, p3dReceived)
     rospy.init_node(NAME, anonymous=True)
 
 
