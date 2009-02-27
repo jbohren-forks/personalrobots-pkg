@@ -147,7 +147,7 @@ class Skeleton:
       if connected and (this.id - previd) < self.node_vdist:
         return False
 
-      if connected:
+      if connected and self.prev_pose:
         print "Strong link from %d to %d" % (previd, this.id)
         relpose = ~self.prev_pose * this.pose
         inf = strong
@@ -304,8 +304,13 @@ class Skeleton:
       edges.append((p0, p1))
     return (nodepts, edges)
 
-  def plot(self, color, annotate = False):
-    pts = dict([ (id,self.newpose(id).xform(0,0,0)) for id in self.nodes ])
+  def plot(self, color, annotate = False, theta = 0.0):
+    pts = {}
+    for id in self.nodes:
+      (x,y,z) = self.newpose(id).xform(0,0,0)
+      xp = x * math.cos(theta) - z * math.sin(theta)
+      yp = z * math.cos(theta) + x * math.sin(theta)
+      pts[id] = (xp,yp)
 
     # uniq_l is unique labels
     uniq_l = sorted(set(self.node_labels.values()))
@@ -314,17 +319,22 @@ class Skeleton:
     labs = dict([ (l,set([id for (id,lab) in self.node_labels.items() if lab == l])) for l in uniq_l])
 
     # cols maps labels to colors
-    cols = dict(zip(uniq_l, [ 'green', 'red', 'magenta', 'cyan', 'yellow', 'brown']))
+    if len(uniq_l) > 1:
+      cols = dict(zip(uniq_l, [ 'green', 'red', 'magenta', 'cyan', 'darkorange', 'brown']))
+    else:
+      cols = { uniq_l[0] : color }
 
     for lbl in uniq_l:
       nodepts = [ pts[id] for id in self.nodes if self.node_labels[id] == lbl ]
-      pylab.scatter([x for (x,y,z) in nodepts], [z for (x,y,z) in nodepts], color = cols[lbl], label = lbl)
-    if False:
-      for (f,(x,y,z)) in pts.items():
-        pylab.annotate('%d' % f, (float(x), float(z)))
-    for f in [ min(ids) for ids in labs.values() ] + [ max(ids) for ids in labs.values() ]:
-      (x,y,z) = pts[f]
-      pylab.annotate('%d' % f, (float(x), float(z)))
+      pylab.scatter([x for (x,y) in nodepts], [y for (x,y) in nodepts], s = 1, color = cols[lbl], label = lbl[:1])
+    if annotate:
+      if False:
+        for (f,(x,y)) in pts.items():
+          pylab.annotate('%d' % f, (float(x), float(y)))
+      else:
+        for f in [ min(ids) for ids in labs.values() ] + [ max(ids) for ids in labs.values() ]:
+          (x,y) = pts[f]
+          pylab.annotate('%d' % f, (float(x), float(y)))
 
     for (f0,f1) in self.edges:
       p0 = pts[f0]
@@ -335,7 +345,7 @@ class Skeleton:
         color = p0c
       else:
         color = 'b:'
-      pylab.plot((p0[0], p1[0]), (p0[2], p1[2]), color)
+      pylab.plot((p0[0], p1[0]), (p0[1], p1[1]), color)
 
   # returns a summary of the skeleton - intended recipient is planning.
   def localization(self):

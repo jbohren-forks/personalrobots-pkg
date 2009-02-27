@@ -61,6 +61,9 @@ class RoadmapServer:
     if len(args) > 1:
       self.skel.load(args[1])
       self.skel.optimize()
+      self.startframe = 100000
+    else:
+      self.startframe = 0
 
     self.vo = None
 
@@ -89,6 +92,7 @@ class RoadmapServer:
                           inlier_error_threshold = 3.0, sba = None,
                           inlier_thresh = 100,
                           position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
+      self.vo.num_frames = self.startframe
     pair = [Image.fromstring("L", size, i.uint8_data.data) for i in [ msg.left_image, msg.right_image ]]
     af = SparseStereoFrame(pair[0], pair[1])
     self.vo.handle_frame(af)
