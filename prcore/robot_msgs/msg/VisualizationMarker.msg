@@ -7,8 +7,9 @@ byte ARROW=0
 byte CUBE=1
 byte SPHERE=2
 byte ROBOT=3
-byte LINE_STRIP=4
-byte CYLINDER=5
+byte CYLINDER=4
+byte LINE_STRIP=5
+byte LINE_LIST=6
 
 byte ADD=0
 byte MODIFY=0
@@ -31,5 +32,5 @@ int32 alpha 	# alpha (0-255) (amount of transparency, 255 is opaque)
 int32 r 		# red color value (0-255) (if available)
 int32 g 		# green color value
 int32 b 		# blue color value
-#These are only used if the object type is  LINE_STRIP
+#These are only used if the object type is LINE_STRIP or LINE_LIST
 Point[] points
