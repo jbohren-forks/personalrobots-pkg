@@ -155,6 +155,8 @@ public:
   bool graspDoor(const robot_msgs::Door& door)
   // -------------------------
   {
+    Duration pause = Duration().fromSec(10.0);
+
     // get orientation
     Vector normal = getNormalOnDoor(door);
     normal = transformVectorToFrame(door.header.frame_id, fixed_frame_, normal, door.header.stamp);
@@ -163,9 +165,9 @@ public:
     cout << "z_angle in " << fixed_frame_ << " = " << z_angle << endl;
 
     // get robot position
-    Vector robot_pos((door.door_p1.x + door.door_p2.x)/2, 
-		     (door.door_p1.y + door.door_p2.y)/2,
-		     (door.door_p1.z + door.door_p2.z)/2);
+    Vector robot_pos((door.door_p1.x + door.door_p2.x)/2.0, 
+		     (door.door_p1.y + door.door_p2.y)/2.0,
+		     (door.door_p1.z + door.door_p2.z)/2.0);
     robot_pos = transformPointToFrame(door.header.frame_id, fixed_frame_, robot_pos, door.header.stamp);
     robot_pos = robot_pos - (normal * 0.7);
 
@@ -174,7 +176,7 @@ public:
     Stamped<Pose> gripper_pose;
     gripper_pose.frame_id_ = fixed_frame_;
     Vector point(door.handle.x, door.handle.y, door.handle.z);
-    point  = transformPointToFrame(door.header.frame_id, fixed_frame_, point, door.header.stamp);
+    point = transformPointToFrame(door.header.frame_id, fixed_frame_, point, door.header.stamp);
     gripper_pose.setOrigin( Vector3(point[0], point[1], point[2]) );
     gripper_pose.setRotation( Quaternion(z_angle, 0, M_PI/2.0) ); 
     PoseStampedTFToMsg(gripper_pose, gripper_pose_msg);
@@ -193,6 +195,7 @@ public:
     while (!planner_finished_)
       Duration().fromSec(0.1).sleep();
     cout << "arrived in front of door" << endl;
+    pause.sleep();
 
     // move gripper in front of door
     Vector offset = normal * -0.15;
@@ -205,7 +208,7 @@ public:
     std_msgs::Float64 gripper_msg;
     gripper_msg.data = 2.0;
     publish("gripper_effort/set_command", gripper_msg);
-    usleep(1e6 * 4);
+    pause.sleep();
     
     // move gripper over door handle
     gripper_pose_msg.pose.position.x = gripper_pose_msg.pose.position.x - offset[0];
@@ -216,7 +219,7 @@ public:
     // close the gripper
     gripper_msg.data = -2.0;
     publish("gripper_effort/set_command", gripper_msg);
-    usleep(1e6 * 7);
+    pause.sleep();
 
     return true;
   }
@@ -258,11 +261,11 @@ public:
     tff_msg_.mode.vel.x = tff_msg_.VELOCITY;
     tff_msg_.mode.vel.y = tff_msg_.FORCE;
     tff_msg_.mode.vel.z = tff_msg_.FORCE;
-    tff_msg_.mode.rot.x = tff_msg_.FORCE;
+    tff_msg_.mode.rot.x = tff_msg_.POSITION;
     tff_msg_.mode.rot.y = tff_msg_.FORCE;
     tff_msg_.mode.rot.z = tff_msg_.POSITION;
 
-    tff_msg_.value.vel.x = 0.05;
+    tff_msg_.value.vel.x = 0.15;
     tff_msg_.value.vel.y = 0.0;
     tff_msg_.value.vel.z = 0.0;
     tff_msg_.value.rot.x = 0.0;
@@ -344,7 +347,7 @@ public:
 
   bool moveTo(robot_msgs::PoseStamped& pose)
   {
-    pose.header.stamp = Time().now() - Duration().fromSec(1); 
+    pose.header.stamp = Time().now();
 
     cout << "giving moveto command for time " 
          << pose.header.stamp.toSec() << " and frame " 
@@ -365,8 +368,10 @@ public:
     string door_frame = door.header.frame_id;
 
     Vector door1, door2, tmp, normal;
-    cout << "door p1 in " << door_frame << " = " << door.door_p1.x << " " << door.door_p1.y << " "<< door.door_p1.z << endl;
-    cout << "door p2 in " << door_frame << " = " << door.door_p2.x << " " << door.door_p2.y << " "<< door.door_p2.z << endl;
+    cout << "door p1 in " << door_frame << " = " 
+         << door.door_p1.x << " " << door.door_p1.y << " "<< door.door_p1.z << endl;
+    cout << "door p2 in " << door_frame << " = " 
+         << door.door_p2.x << " " << door.door_p2.y << " "<< door.door_p2.z << endl;
     door1[0] = door.door_p1.x;
     door1[1] = door.door_p1.y;
     door1[2] = 0;
