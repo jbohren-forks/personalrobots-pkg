@@ -37,7 +37,7 @@ import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
 from pr2_msgs.msg import MoveArmGoal, MoveArmState
-from robot_msgs.msg import JointState
+from robot_msgs.msg import JointState, PoseConstraint
 
 import sys
 
@@ -53,15 +53,73 @@ class MoveArm:
     self.goal_id = msg.goal_id
     self.status = msg.status
 
-  def moveArm(self, joints):
+  def moveArmState(self, joints):
     msg = MoveArmGoal()
-    msg.configuration = []
+    msg.implicit_goal = 0
+    msg.goal_configuration = []
+    msg.goal_constraints = []
     for j in joints:
-      msg.configuration.append(JointState(j,joints[j],0.0,0.0,0.0,0))
+      msg.goal_configuration.append(JointState(j,joints[j],0.0,0.0,0.0,0))
     msg.enable = 1
     msg.timeout = 0.0
     self.pub.publish(msg)
-    print '[MoveArm] Sending arm to: ' + `msg.configuration`
+    print '[MoveArm] Sending arm to: ' + `msg.goal_configuration`
+
+    # HACK to get around the lack of proper goal_id support
+    print '[MoveArm] Waiting for goal to be taken up...'
+    rospy.sleep(2.0)
+
+    while self.status == None or self.status == MoveArmState.ACTIVE:
+      print '[MoveArm] Waiting for goal achievement...'
+      rospy.sleep(1.0)
+
+    return self.status == MoveArmState.INACTIVE
+
+  def moveArmEEPose(self, frame, position, orientation):
+    msg = MoveArmGoal()
+    msg.implicit_goal = 1
+
+    msg.goal_configuration = []
+    msg.goal_constraints = []
+
+    if position != None:
+      constraint = PoseConstraint()
+      constraint.type = constraint.POSITION_XYZ
+      constraint.robot_link = self.side[0] + '_gripper_palm_link'
+      constraint.x = position[0]
+      constraint.y = position[1]
+      constraint.z = position[2]
+      # Not used by the move_arm HLC
+      constraint.position_distance = 0.0
+      # Not used by the move_arm HLC
+      constraint.orientation_distance = 0.0
+      # Not used by the move_arm HLC
+      constraint.orientation_importance = 0.0
+      msg.goal_constraints.append(constraint)
+
+    if orientation != None:
+      constraint = PoseConstraint()
+      constraint.type = constraint.ORIENTATION_RPY
+      constraint.robot_link = self.side[0] + '_gripper_palm_link'
+      constraint.roll = orientation[0]
+      constraint.pitch = orientation[1]
+      constraint.yaw = orientation[2]
+      # Not used by the move_arm HLC
+      constraint.position_distance = 0.0
+      # Not used by the move_arm HLC
+      constraint.orientation_distance = 0.0
+      # Not used by the move_arm HLC
+      constraint.orientation_importance = 0.0
+      msg.goal_constraints.append(constraint)
+
+    if len(msg.goal_constraints) == 0:
+      print 'Must provide a position and/or orientation contraint!'
+      return False
+
+    msg.enable = 1
+    msg.timeout = 0.0
+    self.pub.publish(msg)
+    print '[MoveArm] Sending arm EE to: '
 
     # HACK to get around the lack of proper goal_id support
     print '[MoveArm] Waiting for goal to be taken up...'
@@ -92,7 +150,7 @@ if __name__ == '__main__':
   import time
   time.sleep(2.0)
 
-  res = ma.moveArm(joints)
+  res = ma.moveArmState(joints)
 
   if res:
     print 'Success!'

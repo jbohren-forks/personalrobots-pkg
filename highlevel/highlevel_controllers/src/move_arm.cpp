@@ -81,7 +81,13 @@
 #include <pr2_msgs/MoveArmState.h>
 #include <pr2_msgs/MoveArmGoal.h>
 
+// service for (re)planning to a state
 #include <robot_srvs/KinematicReplanState.h>
+// service for (re)planning to a link position
+#include <robot_srvs/KinematicReplanLinkPosition.h>
+// service for getting IK solution for an EE pose
+#include <robot_srvs/IKService.h>
+
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_msgs/KinematicPlanStatus.h>
 
@@ -207,6 +213,8 @@ MoveArm::MoveArm(const std::string& side)
 
 void MoveArm::receiveStatus(void)
 {
+  ROS_DEBUG("Got status: %d %d %d", 
+            plan_id_, plan_status_.id, plan_status_.path.states.empty());
   // HACK: sometimes we get the status for the new plan before we receive
   // the response to the service call that gives us the new plan id.  It
   // happens that the planner increments the id by 1 with each request.
@@ -218,15 +226,12 @@ void MoveArm::receiveStatus(void)
     ROS_DEBUG("Got new trajectory from planner");
     new_trajectory_ = true;
   }
-  else
-    ROS_DEBUG("Got irrelevant status: %d %d %d", 
-              plan_id_, plan_status_.id, plan_status_.path.states.empty());
 }
 
 void MoveArm::updateGoalMsg()
 {
   lock();
-  stateMsg.goal = goalMsg.configuration;
+  stateMsg.goal = goalMsg.goal_configuration;
   ROS_DEBUG("Received new goal");
   new_goal_ = true;
   unlock();
@@ -312,10 +317,12 @@ bool MoveArm::makePlan()
   new_goal_ = false;
 
   ROS_DEBUG("Starting to plan...");
+  
+  goalMsg.lock();
 
   robot_srvs::KinematicReplanState::Request  req;
   robot_srvs::KinematicReplanState::Response  res;
-  
+
   req.value.params.model_id = kinematic_model_;
   req.value.params.distance_metric = "L2Square";
   //req.value.params.planner_id = "SBL";
@@ -328,32 +335,76 @@ bool MoveArm::makePlan()
   //First create stateparams for the group of intrest.
   planning_models::KinematicModel::StateParams *state = robot_model_->newStateParams();
   ROS_ASSERT(state);
- 
+
   // Skip setting the start state, so the planner will use the mech state.
-  
+
+  stateParamsToMsg(state, robot_model_, kinematic_model_, req.value.goal_state.vals);
+
   //Set the goal state.
-  goalMsg.lock();
-  for (unsigned int i = 0; i < goalMsg.configuration.size(); i++) 
+  std::vector<robot_msgs::JointState> goal_configuration;
+  // If it's an implicit goal, first call out to IK to get the
+  // configuration
+  if(goalMsg.implicit_goal)
   {
-    planning_models::KinematicModel::Joint* j = robot_model_->getJoint(goalMsg.configuration[i].name);
+    robot_srvs::IKService::Request  ikreq;
+    robot_srvs::IKService::Response ikres;
+
+    ikreq.header = goalMsg.header;
+    // Timeout is how long we're willing to wait for the transform from
+    // our frame to the ik_node's hardcoded working frame.  0.0 is forever
+    // (dangerous!).
+    ikreq.timeout.fromSec(0.1);
+
+    // Where does the 7 come from?
+    ikreq.joint_pos.set_positions_size(7);
+
+    // Replace with latest mechanism_state data
+    ikreq.joint_pos.positions[0] = 0.0;
+    ikreq.joint_pos.positions[1] = 0.0;
+    ikreq.joint_pos.positions[2] = 0.0;
+    ikreq.joint_pos.positions[3] = 0.0;
+    ikreq.joint_pos.positions[4] = 0.0;
+    ikreq.joint_pos.positions[5] = 0.0;
+    ikreq.joint_pos.positions[6] = 0.0;
+
+    if(ros::service::call("perform_pr2_ik_closest", ikreq, ikres))
+    {
+      for(int j=0; j < (int) ikres.traj.points[0].positions.size(); j++)
+      {
+        // HACK: we're assuming that the ordering of the angles returned by
+        // the IKService is the same as that expected by the planner
+        goal_configuration[j].position = ikres.traj.points[0].positions[j];
+      }
+    }
+    else
+    {
+      ROS_WARN("service call failed");
+    }  
+  }
+  else
+  {
+    goal_configuration = goalMsg.goal_configuration;
+  }
+
+  for (unsigned int i = 0; i < goal_configuration.size(); i++) 
+  {
+    planning_models::KinematicModel::Joint* j = robot_model_->getJoint(goal_configuration[i].name);
     ROS_ASSERT(j);
     unsigned int axes = j->usedParams;
     ROS_ASSERT(axes == 1);
     double* param = new double[axes];
-    param[0] = goalMsg.configuration[i].position;
-    state->setParamsJoint(param, goalMsg.configuration[i].name);
+    param[0] = goalMsg.goal_configuration[i].position;
+    state->setParamsJoint(param, goalMsg.goal_configuration[i].name);
     delete[] param;
   }
-  goalMsg.unlock();
-  stateParamsToMsg(state, robot_model_, kinematic_model_, req.value.goal_state.vals);
 
   //ROS_DEBUG("Going for:");
   //state->print();
 
-    
+
   //FIXME: should be something?
   req.value.allowed_time = 0.5;
-  
+
   //req.params.volume* are left empty, because we're not planning for the base.
 
   bool ret = ros::service::call("replan_kinematic_path_state", req, res);
@@ -369,6 +420,8 @@ bool MoveArm::makePlan()
     plan_status_.lock();
     plan_status_.unlock();
   }
+
+  goalMsg.unlock();
 
   return true;
 }

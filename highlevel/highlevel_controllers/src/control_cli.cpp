@@ -187,19 +187,19 @@ private:
 
       pr2_msgs::MoveArmGoal goalMsg;
       goalMsg.enable = 1;
-      goalMsg.set_configuration_size(names.size());
+      goalMsg.set_goal_configuration_size(names.size());
 
       for (unsigned int i = 0; i < names.size(); i++) {
-	goalMsg.configuration[i].name = names[i];
-	goalMsg.configuration[i].position = 0;
+	goalMsg.goal_configuration[i].name = names[i];
+	goalMsg.goal_configuration[i].position = 0;
       }
 
-      goalMsg.configuration[0].position = -1;
+      goalMsg.goal_configuration[0].position = -1;
 
 
       printf("Publishing:");
       for (unsigned int i = 0; i < names.size(); i++) {
-        printf(" %f", goalMsg.configuration[i].position);
+        printf(" %f", goalMsg.goal_configuration[i].position);
       }
       printf("\n");
 
@@ -218,18 +218,18 @@ private:
 
       pr2_msgs::MoveArmGoal goalMsg;
       goalMsg.enable = 1;
-      goalMsg.set_configuration_size(names.size());
+      goalMsg.set_goal_configuration_size(names.size());
 
       for (unsigned int i = 0; i < names.size(); i++) {
         printf("Enter the angle for joint %s in radians:\n",
                names[i].c_str());
-	goalMsg.configuration[i].name = names[i];
-	goalMsg.configuration[i].position = enterValue(-2 * M_PI, 2 * M_PI);
+	goalMsg.goal_configuration[i].name = names[i];
+	goalMsg.goal_configuration[i].position = enterValue(-2 * M_PI, 2 * M_PI);
 
       }
       printf("Publishing:");
       for (unsigned int i = 0; i < names.size(); i++) {
-        printf(" %f", goalMsg.configuration[i].position);
+        printf(" %f", goalMsg.goal_configuration[i].position);
       }
       printf("\n");
 

@@ -65,9 +65,9 @@ public:
 	ag.enable = 1;
 	ag.timeout = 10.0;
 
-	ag.set_configuration_size(1);
-	ag.configuration[0].name = "r_shoulder_pan_joint";
-	ag.configuration[0].position = -0.5;
+	ag.set_goal_configuration_size(1);
+	ag.goal_configuration[0].name = "r_shoulder_pan_joint";
+	ag.goal_configuration[0].position = -0.5;
 	publish("right_arm_goal", ag);
     }
     
