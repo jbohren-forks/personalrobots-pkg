@@ -32,10 +32,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-## Gazebo tug arms for navigation
+## Run the right arm through its full range of motion a few times.
+## Limits were taken originally from pr2_defs/defs/arm_defs.xml, double check for changes.
+## Works with l_arm_default_controller.xml controllers
 
 PKG = 'arm_gazebo'
-NAME = 'l_arm_setting'
+NAME = 'l_arm_default'
 
 import math
 import roslib
@@ -55,22 +57,22 @@ TEST_DURATION = 60.0
 COMMAND_INTERVAL = 5.0
 PI = 3.14159
 
-CMD_SH_PAN_MIN     =  (PI/4-1.5)   #range [ PI/4-1.5   PI/4+1.5 ]
+CMD_SH_PAN_MIN     =  (PI/4-1.5) #range [ PI/4-1.5   PI/4+1.5 ]
 CMD_SH_LFT_MIN     =  -0.4       #range [ -0.4       1.5 ]
 CMD_UA_ROL_MIN     =  1.55-2.35  #range [ 1.55-2.35  1.55+2.35 ]
 CMD_EL_FLX_MIN     =  -2.3       #range [ -2.3       0.1 ]
-CMD_FA_ROL_MIN     =  -0*PI         #range [  ]
+CMD_FA_ROL_MIN     =  -0.5       #range [  ]
 CMD_WR_FLX_MIN     =  -0.1       #range [ -0.1       2.2 ]
-CMD_WR_ROL_MIN     =  -0*PI         #range [  ]
+CMD_WR_ROL_MIN     =  -0.5       #range [  ]
 CMD_GR_POS_MIN     =  0.0        #range [ 0          0.548 ]
 
-CMD_SH_PAN_MAX     =  (PI/4+1.5)    #range [ PI/4-1.5   PI/4+1.5 ]
+CMD_SH_PAN_MAX     =  (PI/4+1.5)  #range [ PI/4-1.5   PI/4+1.5 ]
 CMD_SH_LFT_MAX     =  1.5         #range [ -0.4       1.5 ]
 CMD_UA_ROL_MAX     =  1.55+2.35   #range [ 1.55-2.35  1.55+2.35 ]
 CMD_EL_FLX_MAX     =  0.1         #range [ -2.3       0.1 ]
-CMD_FA_ROL_MAX     =  0*PI         #range [  ]
+CMD_FA_ROL_MAX     =  0.5         #range [  ]
 CMD_WR_FLX_MAX     =  2.2         #range [ -0.1       2.2 ]
-CMD_WR_ROL_MAX     =  0*PI         #range [  ]
+CMD_WR_ROL_MAX     =  0.5         #range [  ]
 CMD_GR_POS_MAX     =  0.548       #range [ 0          0.548 ]
 
 
@@ -92,14 +94,54 @@ if __name__ == '__main__':
     while time.time() < timeout_t:
     #while not p3d_received:
 
-      pub_l_arm.publish(JointPosCmd(['l_shoulder_pan_joint','l_shoulder_lift_joint','l_upper_arm_roll_joint','l_elbow_flex_joint','l_forearm_roll_joint','l_wrist_flex_joint','l_wrist_roll_joint'],[CMD_SH_PAN_MIN,CMD_SH_LFT_MIN,CMD_UA_ROL_MIN,CMD_EL_FLX_MIN,CMD_FA_ROL_MIN,CMD_WR_FLX_MIN,CMD_WR_ROL_MIN],[0,0,0,0,0,0,0],0))
+      pub_l_arm.publish(JointPosCmd(['l_shoulder_pan_joint',\
+                                     'l_shoulder_lift_joint',\
+                                     'l_upper_arm_roll_joint',\
+                                     'l_elbow_flex_joint',\
+                                     'l_forearm_roll_joint',\
+                                     'l_wrist_flex_joint',\
+                                     'l_wrist_roll_joint'],\
+                                    [CMD_SH_PAN_MIN,\
+                                     CMD_SH_LFT_MIN,\
+                                     CMD_UA_ROL_MIN,\
+                                     CMD_EL_FLX_MIN,\
+                                     CMD_FA_ROL_MIN,\
+                                     CMD_WR_FLX_MIN,\
+                                     CMD_WR_ROL_MIN],\
+                                    [0,\
+                                     0,\
+                                     0,\
+                                     0,\
+                                     0,\
+                                     0,\
+                                     0],\
+                                    0))
       pub_l_gripper.publish(Float64(CMD_GR_POS_MIN))
-
       time.sleep(COMMAND_INTERVAL)
 
-      pub_l_arm.publish(JointPosCmd(['l_shoulder_pan_joint','l_shoulder_lift_joint','l_upper_arm_roll_joint','l_elbow_flex_joint','l_forearm_roll_joint','l_wrist_flex_joint','l_wrist_roll_joint'],[CMD_SH_PAN_MAX,CMD_SH_LFT_MAX,CMD_UA_ROL_MAX,CMD_EL_FLX_MAX,CMD_FA_ROL_MAX,CMD_WR_FLX_MAX,CMD_WR_ROL_MAX],[0,0,0,0,0,0,0],0))
+      pub_l_arm.publish(JointPosCmd(['l_shoulder_pan_joint',\
+                                     'l_shoulder_lift_joint',\
+                                     'l_upper_arm_roll_joint',\
+                                     'l_elbow_flex_joint',\
+                                     'l_forearm_roll_joint',\
+                                     'l_wrist_flex_joint',\
+                                     'l_wrist_roll_joint'],\
+                                    [CMD_SH_PAN_MAX,\
+                                     CMD_SH_LFT_MAX,\
+                                     CMD_UA_ROL_MAX,\
+                                     CMD_EL_FLX_MAX,\
+                                     CMD_FA_ROL_MAX,\
+                                     CMD_WR_FLX_MAX,\
+                                     CMD_WR_ROL_MAX],\
+                                    [0,\
+                                     0,\
+                                     0,\
+                                     0,\
+                                     0,\
+                                     0,\
+                                     0],\
+                                    0))
       pub_l_gripper.publish(Float64(CMD_GR_POS_MAX))
-
       time.sleep(COMMAND_INTERVAL)
 
 
