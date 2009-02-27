@@ -305,7 +305,7 @@ private:
       MessagePtr& message = *it;
 
       // If this message is about to push us past our queue size, erase the oldest message
-      if (message_count_ + 1 > queue_size_)
+      if (queue_size_ != 0 && message_count_ + 1 > queue_size_)
       {
         messages_.pop_front();
         --message_count_;
