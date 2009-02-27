@@ -14,7 +14,7 @@
 <!--   <depend package="bullet"/> -->
   <depend package="opende"/>
   <depend package="std_msgs"/>
-  <depend package="laser_scan"/>
+<!--   <depend package="laser_scan"/> -->
   <depend package="roscpp"/>
   <versioncontrol type="svn" url="https://openrave.svn.sourceforge.net/svnroot/openrave"/>
   <sysdepend os="ubuntu" version="7.04-feisty" package="libglew-dev"/>
