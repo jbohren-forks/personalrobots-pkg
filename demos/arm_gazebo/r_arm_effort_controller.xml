@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<controllers>
+  <!-- right arm -->
+  <controller name="r_shoulder_pan_controller" type="JointEffortControllerNode">
+    <joint name="r_shoulder_pan_joint" />
+  </controller>
+  <controller name="r_shoulder_lift_controller" type="JointEffortControllerNode">
+    <joint name="r_shoulder_lift_joint" />
+  </controller>
+  <controller name="r_upperarm_roll_controller" type="JointEffortControllerNode">
+    <joint name="r_upper_arm_roll_joint" />
+  </controller>
+  <controller name="r_elbow_controller" type="JointEffortControllerNode">
+    <joint name="r_elbow_flex_joint" />
+  </controller>
+  <controller name="r_forearm_roll_controller" type="JointEffortControllerNode">
+    <joint name="r_forearm_roll_joint" />
+  </controller>
+
+  <controller name="r_wrist_flex_controller" type="JointEffortControllerNode">
+    <joint name="r_wrist_flex_joint"/>
+  </controller>
+
+  <controller name="r_wrist_roll_controller" type="JointEffortControllerNode">
+    <joint name="r_wrist_roll_joint"/>
+  </controller>
+
+  <controller name="r_gripper_controller" type="JointEffortControllerNode">
+    <joint name="r_gripper_l_finger_joint"/>
+  </controller>
+</controllers>

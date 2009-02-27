@@ -21,7 +21,7 @@
   <property name="table_y" value="0.0" />
   <property name="table_z" value="0.0" />
 
-  <property name="object_1_x" value="0.96" />
+  <property name="object_1_x" value="0.965" />
   <property name="object_1_y" value="0.0" />
 
   <property name="object_1_height"      value="0.12" />
