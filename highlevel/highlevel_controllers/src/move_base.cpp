@@ -764,7 +764,10 @@ namespace ros {
         while(it != plan_.end()){
           const deprecated_msgs::Pose2DFloat32& w = *it;
           // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
-          if(fabs(global_pose_.getOrigin().x() - w.x) < 2 && fabs(global_pose_.getOrigin().y() - w.y) < 2){
+          double x_diff = global_pose_.getOrigin().x() - w.x;
+          double y_diff = global_pose_.getOrigin().y() - w.y;
+          double distance = sqrt(x_diff * x_diff + y_diff * y_diff);
+          if(distance < 1){
             ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), w.x, w.y);
             break;
           }
@@ -1007,14 +1010,24 @@ namespace ros {
       tiltScanBuffer_->get_observations(observations);
       lowObstacleBuffer_->get_observations(observations);
       stereoCloudBuffer_->get_observations(observations);
+
+      std::vector<robot_msgs::PointCloud> points_storage(observations.size()); //needed to deep copy observations
+      std::vector<costmap_2d::Observation> stored_observations(observations.size());
+
+      //we need to perform a deep copy on the observations to be thread safe
+      for(unsigned int i = 0; i < observations.size(); ++i){
+        points_storage[i] = *(observations[i].cloud_);
+        stored_observations[i] = Observation(observations[i].origin_, &points_storage[i]);
+      }
+
       unlock();
       
-      ROS_DEBUG("Applying update with %d observations/n", observations.size());
+      ROS_DEBUG("Applying update with %d observations/n", stored_observations.size());
       // Apply to cost map
       ros::Time start = ros::Time::now();
-      costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), observations);
+      costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), stored_observations);
       double t_diff = (ros::Time::now() - start).toSec();
-      ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, observations.size());
+      ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, stored_observations.size());
       
       // Finally, we must extract the cost data that we have computed and:
       // 1. Refresh the local_map_accessor for the controller
