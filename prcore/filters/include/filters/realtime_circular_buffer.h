@@ -29,8 +29,8 @@
 
 ///\author Tully Foote tfoote@willowgarage.com
 
-#ifndef REALTIME_VECTOR_CIRCULAR_BUFFER_H_
-#define REALTIME_VECTOR_CIRCULAR_BUFFER_H_
+#ifndef FILTERS_REALTIME_CIRCULAR_BUFFER_H_
+#define FILTERS_REALTIME_CIRCULAR_BUFFER_H_
 
 #include <stdint.h>
 #include <vector>
@@ -44,11 +44,11 @@ namespace filters
 /** \brief A realtime safe circular (ring) buffer.
  */
 template <typename T>
-class RealtimeVectorCircularBuffer
+class RealtimeCircularBuffer
 {
 public:
   
-  RealtimeVectorCircularBuffer(int size, const T& default_val):
+  RealtimeCircularBuffer(int size, const T& default_val):
     counter_(0)
   {
     cb_.set_capacity(size);
@@ -100,4 +100,4 @@ private:
 
 };
 } //namespace filters
-#endif //#ifndef REALTIME_VECTOR_CIRCULAR_BUFFER_H_
+#endif //#ifndef REALTIME_CIRCULAR_BUFFER_H_

@@ -31,7 +31,7 @@
 #include <sys/time.h>
 
 #include <vector>
-#include "filters/realtime_vector_circular_buffer.h"
+#include "filters/realtime_circular_buffer.h"
 
 using namespace filters ;
 
@@ -57,7 +57,7 @@ void generate_rand_vectors(double scale, uint64_t runs, std::vector<double>& xva
 TEST(RealtimeCircularBuffer, InitializationScalar)
 {
   
-  RealtimeVectorCircularBuffer<double> buf(3, 0);
+  RealtimeCircularBuffer<double> buf(3, 0);
   for (unsigned int i = 0; i < buf.size(); i ++)
   {
     EXPECT_EQ(buf[i], 0);
@@ -69,7 +69,7 @@ TEST(RealtimeCircularBuffer, InitializationVector)
   for (unsigned int i = 0; i < 100; i ++)
     init_vector.push_back(i);
   
-  RealtimeVectorCircularBuffer<std::vector<double> > vec_buf(3, init_vector);
+  RealtimeCircularBuffer<std::vector<double> > vec_buf(3, init_vector);
   for (unsigned int i = 0; i < vec_buf.size(); i ++)
   {
     for (unsigned int j = 0; j < 100; j ++)

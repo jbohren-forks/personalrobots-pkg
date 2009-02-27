@@ -37,7 +37,7 @@
 #include "filters/filter_base.h"
 #include "ros/assert.h"
 
-#include "filters/realtime_vector_circular_buffer.h"
+#include "filters/realtime_circular_buffer.h"
 
 namespace filters
 {
@@ -66,7 +66,7 @@ public:
   virtual bool update( const std::vector<T> & data_in, std::vector<T>& data_out);
   
 protected:
-  RealtimeVectorCircularBuffer<std::vector<T> >* data_storage_; ///< Storage for data between updates
+  RealtimeCircularBuffer<std::vector<T> >* data_storage_; ///< Storage for data between updates
   uint32_t last_updated_row_;                     ///< The last row to have been updated by the filter
 
   std::vector<T> temp;  //used for preallocation and copying from non vector source
@@ -114,7 +114,7 @@ bool MeanFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *con
   number_of_channels_ = number_of_channels;
   
   temp.resize(number_of_channels);
-  data_storage_ = new RealtimeVectorCircularBuffer<std::vector<T> >(number_of_observations_, temp);
+  data_storage_ = new RealtimeCircularBuffer<std::vector<T> >(number_of_observations_, temp);
 
   configured_ = true;
   return true;

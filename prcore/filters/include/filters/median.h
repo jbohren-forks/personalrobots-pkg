@@ -34,7 +34,7 @@
 #include <sstream>
 #include "filters/filter_base.h"
 
-#include "filters/realtime_vector_circular_buffer.h"
+#include "filters/realtime_circular_buffer.h"
 
 /*
  * Algorithm from N. Wirth's book, implementation by N. Devillard.
@@ -108,7 +108,7 @@ public:
   
 protected:
   std::vector<T> temp_storage_;                       ///< Preallocated storage for the list to sort
-  RealtimeVectorCircularBuffer<std::vector<T> >* data_storage_;                       ///< Storage for data between updates
+  RealtimeCircularBuffer<std::vector<T> >* data_storage_;                       ///< Storage for data between updates
   
   std::vector<T> temp;  //used for preallocation and copying from non vector source
 
@@ -161,7 +161,7 @@ bool MedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *c
   number_of_channels_ = number_of_channels;
     
   temp.resize(number_of_channels_);
-  data_storage_ = new RealtimeVectorCircularBuffer<std::vector<T> >(number_of_observations_, temp);
+  data_storage_ = new RealtimeCircularBuffer<std::vector<T> >(number_of_observations_, temp);
   temp_storage_.resize(number_of_observations_);
   
   configured_ = true;

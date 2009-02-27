@@ -40,7 +40,7 @@
 
 #include "urdf/parser.h"
 #include "filters/filter_base.h"
-#include "filters/realtime_vector_circular_buffer.h"
+#include "filters/realtime_circular_buffer.h"
 
 namespace filters
 {
@@ -102,8 +102,8 @@ protected:
   
   unsigned int number_of_channels_;  //The number of inputs filtered.
   
-  RealtimeVectorCircularBuffer<std::vector<T> >* input_buffer_; //The input sample history. 
-  RealtimeVectorCircularBuffer<std::vector<T> >* output_buffer_; //The output sample history.
+  RealtimeCircularBuffer<std::vector<T> >* input_buffer_; //The input sample history. 
+  RealtimeCircularBuffer<std::vector<T> >* output_buffer_; //The output sample history.
   
   std::vector<T>  temp; //used for storage and preallocation
   
@@ -176,8 +176,8 @@ bool TransferFunctionFilter<T>::configure(unsigned int number_of_channels, TiXml
   
   // Create the input and output buffers of the correct size.
   temp.resize(number_of_channels);
-  input_buffer_ = new RealtimeVectorCircularBuffer<std::vector<T> >(b_.size()-1, temp);
-  output_buffer_ = new RealtimeVectorCircularBuffer<std::vector<T> >(a_.size()-1, temp);
+  input_buffer_ = new RealtimeCircularBuffer<std::vector<T> >(b_.size()-1, temp);
+  output_buffer_ = new RealtimeCircularBuffer<std::vector<T> >(a_.size()-1, temp);
   
   // Prevent divide by zero while normalizing coeffs.
   if ( a_[0] == 0)
