@@ -10,6 +10,9 @@
   <param name="/door_handle_detector/door_min_width" value="0.85" />
   <param name="/door_handle_detector/door_max_width" value="1.2" />
 
+  <param name="/door_handle_detector/handle_min_height" value="0.7" />
+  <param name="/door_handle_detector/handle_max_height" value="1.1" />	
+
   <node pkg="door_handle_detector" type="door_handle_detector_node" name="door_handle_detector" output="screen" respawn="true">
     <remap from="full_cloud" to="snapshot_cloud" />
   </node>
