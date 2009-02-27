@@ -102,9 +102,10 @@ public:
     // TODO: right-handed???
     btVector3 up = right.cross(normal).normalized();
     btMatrix3x3 rotation;
-    rotation[0] = right;
-    rotation[1] = up;
-    rotation[2] = normal;
+    rotation[1] = -right;
+    rotation[2] = up;
+    rotation[0] = normal;
+    rotation = rotation.transpose();
     btQuaternion orientation;
     rotation.getRotation(orientation);
     
@@ -121,9 +122,12 @@ public:
     tf_broadcaster_.sendTransform(tf::Transform(orientation, holes[0]),
                                   ros::Time::now(), "outlet_frame",
                                   "high_def_frame");
-    ROS_INFO("Ground 0: %.5f %.5f %.5f, Ground 1: %.5f %.5f %.5f",
+    /*
+    ROS_INFO("Hole 0: %.5f %.5f %.5f, Hole 1: %.5f %.5f %.5f, Hole 2: %.5f %.5f %.5f",
              holes[0].x(), holes[0].y(), holes[0].z(),
-             holes[3].x(), holes[3].y(), holes[3].z());
+             holes[1].x(), holes[1].y(), holes[1].z(),
+             holes[2].x(), holes[2].y(), holes[2].z());
+    */
     
     if (display_) {
       draw_outlets(image, outlets);
