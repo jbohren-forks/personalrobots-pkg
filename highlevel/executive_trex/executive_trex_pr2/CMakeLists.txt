@@ -19,7 +19,12 @@ endif(__rospack_err_ignore)
 
 execute_process(
     COMMAND ${PROJECT_SOURCE_DIR}/run-jam
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    RESULT_VARIABLE JAM_RET_VAR)
+ 
+if (JAM_RET_VAR)
+   message(FATAL_ERROR "Jam failed with error code: " ${JAM_RET_VAR})
+endif (JAM_RET_VAR)
 
 
 
