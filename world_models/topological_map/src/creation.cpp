@@ -56,6 +56,7 @@
 #include <limits.h>
 #include <ros/console.h>
 #include <ros/assert.h>
+#include <topological_map/grid_graph.h>
 
 using boost::get;
 using boost::tie;
@@ -84,9 +85,6 @@ namespace topological_map
  * Type defs
  ************************************************************/
 
-typedef adjacency_list<listS, listS, undirectedS, Cell2D> GridGraph;
-typedef graph_traits<GridGraph>::vertex_descriptor GridGraphVertex;
-typedef graph_traits<GridGraph>::adjacency_iterator GridGraphAdjacencyIterator;
 typedef pair<GridGraphAdjacencyIterator, GridGraphAdjacencyIterator> AdjIterPair;
 typedef map<GridGraphVertex, int> VertexIndexMap;
 typedef map<GridGraphVertex, int> VertexCompMap;
@@ -164,7 +162,7 @@ private:
   CellStatusArray cell_status_array_;
 
   // Graph over non-obstacle grid cells
-  GridGraph grid_graph_;
+  Grid grid_graph_;
   VertexIndexMap vertex_index_map_;
   uint num_vertices_;
 
@@ -219,10 +217,10 @@ struct TerminateBfs
 // \todo remove the bfs visitor stuff since hand-implemented bfs below seems faster
 class BfsVisitor : public boost::default_bfs_visitor {
 public:
-  void discover_vertex (const GridGraphVertex& u, const GridGraph& g) const
+  void discover_vertex (const GridGraphVertex& u, const Grid& g) const
   {
-    cuint r = g[u].r;
-    cuint c = g[u].c;
+    cuint r = g[u].cell.r;
+    cuint c = g[u].cell.c;
     ROS_DEBUG_NAMED ("distance_internal", "Discovering %d, %d", r, c);
     
     if ((r == rg_) && (c == cg_)) {
@@ -273,17 +271,17 @@ inline bool BottleneckFinder::distanceWithoutBlockExceeds (cuint top, cuint left
 
     // Termination condition 2
     if (cost >= threshold) {
-      ROS_DEBUG_NAMED ("distance_comp", "Reached cell (%u, %u) at threshold distance %u, so goal not reachable", grid_graph_[v].r, grid_graph_[v].c, threshold);
+      ROS_DEBUG_NAMED ("distance_comp", "Reached cell (%u, %u) at threshold distance %u, so goal not reachable", grid_graph_[v].cell.r, grid_graph_[v].cell.c, threshold);
       connectBlock (top, left, bottom, right);
       return true;
     }
 
-    ROS_DEBUG_NAMED ("distance_internal", "Adding neighbors of (%u, %u)", grid_graph_[v].r, grid_graph_[v].c);
+    ROS_DEBUG_NAMED ("distance_internal", "Adding neighbors of (%u, %u)", grid_graph_[v].cell.r, grid_graph_[v].cell.c);
 
 
     GridGraphAdjacencyIterator iter, end;
     for (tie(iter, end) = adjacent_vertices(v, grid_graph_); iter!=end; ++iter) {
-      const Cell2D c=grid_graph_[*iter];
+      const Cell2D c=grid_graph_[*iter].cell;
 
       // Termination condition 3
       if ((c.r == (int)c2r) && (c.c == (int)c2c)) {
@@ -295,7 +293,7 @@ inline bool BottleneckFinder::distanceWithoutBlockExceeds (cuint top, cuint left
       VertexIntMap::iterator i = costs.find(*iter);
       if (i==costs.end()) {
         costs[*iter] = 1+costs[v];
-        ROS_DEBUG_NAMED ("distance_internal", "Adding (%u, %u) at distance %u", grid_graph_[*iter].r, grid_graph_[*iter].c, 1+costs[v]);
+        ROS_DEBUG_NAMED ("distance_internal", "Adding (%u, %u) at distance %u", grid_graph_[*iter].cell.r, grid_graph_[*iter].cell.c, 1+costs[v]);
         q.push(cellVertex(c));
       }
     }
@@ -374,7 +372,7 @@ void BottleneckFinder::initializeFromGrid ()
       else {
         cell_status_array_[r][c] = cell_stat::FREE;
         Cell2D cell(r,c);
-        GridGraphVertex v = add_vertex (cell, grid_graph_);
+        GridGraphVertex v = add_vertex (CellInfo(cell), grid_graph_);
         ROS_DEBUG_NAMED ("initialize_from_grid", "Adding vertex (%d, %d)", r, c);
         cell_vertex_map_[cell] = v;
         vertex_index_map_[v] = num_vertices_++;
@@ -398,7 +396,7 @@ void BottleneckFinder::initializeFromGrid ()
 
 
 
-bool areNeighbors (const GridGraphVertex& v1, const GridGraphVertex& v2, const GridGraph& g)
+bool areNeighbors (const GridGraphVertex& v1, const GridGraphVertex& v2, const Grid& g)
 {
   AdjIterPair iter_pair = adjacent_vertices(v1,g);
   return (iter_pair.second != find(iter_pair.first, iter_pair.second, v2));
@@ -717,7 +715,7 @@ void BottleneckFinder::findOpenRegions ()
     MutableRegionPtr r(new Region);
     for (VertexCompMap::iterator iter=components.begin(); iter!=components.end(); ++iter) {
       if (iter->second==i) {
-        r->insert(grid_graph_[iter->first]);
+        r->insert(grid_graph_[iter->first].cell);
       }
     }
 

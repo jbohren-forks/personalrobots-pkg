@@ -64,7 +64,9 @@ typedef boost::associative_property_map<PredecessorMap> PredecessorPmap;
 
 ConnectorId Roadmap::addNode (const Point2D& p)
 {
-  add_vertex(NodeInfo(next_id_, p), graph_);
+  RoadmapVertex v=add_vertex(NodeInfo(next_id_, p), graph_);
+  id_vertex_map_[next_id_]=v;
+  ROS_DEBUG_STREAM_NAMED ("roadmap", "Added connector " << next_id_ << " at " << p);
   return next_id_++;
 }
 
@@ -72,6 +74,7 @@ void Roadmap::setCost (const ConnectorId i, const ConnectorId j, double cost)
 {
   const RoadmapEdge e = ensureEdge(idVertex(i),idVertex(j));
   graph_[e].cost = cost;
+  ROS_DEBUG_STREAM_NAMED ("roadmap", "Set cost between connectors " << i << " and " << j << " to " << cost);
 }
 
 void Roadmap::removeNode (const ConnectorId i)
@@ -79,6 +82,8 @@ void Roadmap::removeNode (const ConnectorId i)
   const RoadmapVertex v = idVertex(i);
   clear_vertex(v, graph_);
   remove_vertex(v, graph_);
+  id_vertex_map_.erase(id_vertex_map_.find(i));
+  ROS_DEBUG_STREAM_NAMED ("roadmap", "Removed connector " << i);
 }
 
 

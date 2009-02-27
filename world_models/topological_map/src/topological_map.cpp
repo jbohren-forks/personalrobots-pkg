@@ -39,6 +39,7 @@
 
 #include <topological_map/topological_map_impl.h>
 #include <topological_map/region_graph.h>
+#include <topological_map/grid_graph.h>
 #include <topological_map/roadmap.h>
 #include <algorithm>
 #include <ros/console.h>
@@ -51,6 +52,7 @@ using std::endl;
 using std::ostream;
 
 using boost::tie;
+using boost::make_tuple;
 using std::map;
 using std::vector;
 using std::set;
@@ -105,7 +107,7 @@ bool TopologicalMap::MapImpl::pointOnMap (const Point2D& p) const
 Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
 {
   if (!pointOnMap(p)) {
-    throw UnknownPointException(p.x,p.y);
+    throw UnknownPointException(p.x,p.y,numCols(grid_)*resolution_,numRows(grid_)*resolution_);
   }
   return Cell2D(floor((float)p.y/resolution_), floor((float)p.x/resolution_));
 }
@@ -123,7 +125,7 @@ Point2D TopologicalMap::MapImpl::cellCorner (const Cell2D& cell) const
  ************************************************************/
 
 TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution) : 
-  region_graph_(new RegionGraph), roadmap_(new Roadmap), resolution_(resolution), grid_(grid)
+  grid_(grid), region_graph_(new RegionGraph), roadmap_(new Roadmap), grid_graph_(new GridGraph(grid)), resolution_(resolution)
 {
 }
 
@@ -213,8 +215,52 @@ RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int t
     RegionId r1, r2;
     r1 = min(region_id, *iter);
     r2 = max(region_id, *iter);
-    region_connector_map_[RegionPair(r1,r2)] = connector_id;
+    region_connector_map_[RegionPair(r1,r2)] = make_tuple(connector_id, neighbor_finder.cell1, neighbor_finder.cell2);
   }
+
+  // Compute the distance from the new connector to all connectors touching either of the adjacent regions
+  for (RegionIdVector::iterator iter=neighbors.begin(); iter!=neighbors.end(); ++iter) {
+
+    RegionId r1 = min(region_id, *iter);
+    RegionId r2 = max(region_id, *iter);
+    RegionConnectorMap::iterator rc_pos = region_connector_map_.find(RegionPair(r1,r2));
+    ROS_ASSERT(rc_pos!=region_connector_map_.end());
+    ConnectorId connector_id = rc_pos->second.get<0>();
+    Cell2D cell = rc_pos->second.get<1>();
+
+    for (char first_region=0; first_region<2; ++first_region) {
+      RegionId r = first_region ? r1 : r2;
+
+      
+      RegionIdVector connector_neighbors = region_graph_->neighbors(r);
+      for (RegionIdVector::iterator region_iter=connector_neighbors.begin(); region_iter!=connector_neighbors.end(); ++region_iter) {
+
+        
+        if (r!=*region_iter) {
+          RegionConnectorMap::const_iterator pos = region_connector_map_.find(RegionPair(min(*region_iter,r), max(*region_iter,r)));
+          ROS_ASSERT_MSG(pos!=region_connector_map_.end(), "Failed to find connector between regions %d and %d", r, *region_iter);
+
+          ConnectorId other_connector = pos->second.get<0>();
+
+
+          if (other_connector!=connector_id) {
+            bool found;
+            double distance;
+            GridPath path;
+            tie(path, distance, found) = grid_graph_->shortestPath(cell, pos->second.get<1>());
+            if (found) {
+              roadmap_->setCost(other_connector, connector_id, distance);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Add connector distances
+  
+
+
   return region_id;
 }
 
@@ -286,15 +332,15 @@ ConnectorId TopologicalMap::MapImpl::connectorBetween (const RegionId r1, const 
 {
   RegionConnectorMap::const_iterator pos = region_connector_map_.find(RegionPair(min(r1,r2), max(r1,r2)));
   ROS_ASSERT_MSG(pos!=region_connector_map_.end(), "Failed to find connector between regions %d and %d", r1, r2);
-  return pos->second;
+  return pos->second.get<0>();
 }
 
-  struct HasId 
-  {
-    HasId(const ConnectorId id) : id(id) {}
-    bool operator() (pair<const RegionPair, ConnectorId> pair) { return pair.second==id; }
-    const ConnectorId id;
-  };
+struct HasId 
+{
+  HasId(const ConnectorId id) : id(id) {}
+  bool operator() (pair<const RegionPair, tuple<ConnectorId, Cell2D, Cell2D> > pair) { return pair.second.get<0>()==id; }
+  const ConnectorId id;
+};
 
 
 RegionPair TopologicalMap::MapImpl::adjacentRegions (const ConnectorId id) const

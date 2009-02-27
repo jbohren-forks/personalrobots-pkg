@@ -118,6 +118,7 @@ RegionId RegionGraph::addRegion (const RegionPtr region, const int type)
 
   // Add vertex and edges
   RegionGraphVertex v=add_vertex(RegionInfo(type, region, next_id_), graph_);
+  ROS_DEBUG_STREAM_NAMED ("region_graph", "Added region " << next_id_);
 
   // Neighbors that have been added so far
   set<RegionGraphVertex> seen_neighbors;
@@ -134,12 +135,13 @@ RegionId RegionGraph::addRegion (const RegionPtr region, const int type)
         if (seen_neighbors.find(neighbor_vertex)==seen_neighbors.end()) {
           seen_neighbors.insert(neighbor_vertex);
           add_edge(v, neighbor_vertex, graph_);
+          ROS_DEBUG_STREAM_NAMED ("region_graph", "Added edge between regions " << next_id_ << " and " << graph_[neighbor_vertex].id);
         }   
       }
     }
     id_vertex_map_[next_id_]=v; 
   }
-  
+
   return next_id_++;
 }
 

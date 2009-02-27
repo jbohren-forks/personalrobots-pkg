@@ -76,7 +76,7 @@ TEST(TopologicalMap, BasicAPI)
   
   MutableRegionPtr r1(new Region);
   for (r=2; r<4; r++) {
-    for (c=-1; c<3; c++) {
+    for (c=9; c<13; c++) {
       r1->insert(Cell2D(r,c));
     }
   }
@@ -87,7 +87,7 @@ TEST(TopologicalMap, BasicAPI)
   MutableRegionPtr r2(new Region);
   
   for (r=4; r<8; r++) {
-    for (c=-1; c<2; c++) {
+    for (c=9; c<12; c++) {
       r2->insert(Cell2D(r,c));
     }
   }
@@ -104,7 +104,7 @@ TEST(TopologicalMap, BasicAPI)
 
   MutableRegionPtr r4(new Region);
   for (r=-10; r<10; r++) {
-    for (c=-10; c<10; c++) {
+    for (c=0; c<20; c++) {
       r4->insert(Cell2D(r,c));
     }
   }
@@ -116,8 +116,8 @@ TEST(TopologicalMap, BasicAPI)
   catch (topological_map::OverlappingRegionException& e) {}
 
   MutableRegionPtr r3(new Region);
-  r3->insert(Cell2D(3,3));
-  r3->insert(Cell2D(4,3));
+  r3->insert(Cell2D(3,13));
+  r3->insert(Cell2D(4,13));
   EXPECT_EQ(3u, m.addRegion(r3, 3));
   EXPECT_EQ(3u, m.allRegions().size());
 
@@ -131,9 +131,9 @@ TEST(TopologicalMap, BasicAPI)
   EXPECT_TRUE(isRearrangement(n3, en3, 1u));
   
 
-  EXPECT_EQ(1u, m.containingRegion(Cell2D(3,0)));
-  EXPECT_EQ(3u, m.containingRegion(Cell2D(4,3)));
-  EXPECT_EQ(2u, m.containingRegion(Cell2D(4,-1)));
+  EXPECT_EQ(1u, m.containingRegion(Cell2D(3,10)));
+  EXPECT_EQ(3u, m.containingRegion(Cell2D(4,13)));
+  EXPECT_EQ(2u, m.containingRegion(Cell2D(4,9)));
 
   m.removeRegion(2);
   try {
@@ -151,7 +151,7 @@ TEST(TopologicalMap, BasicAPI)
   EXPECT_TRUE(isRearrangement(n3, en3, 1));
 
   MutableRegionPtr r5(new Region);
-  for (c=-10; c<10; c++) {
+  for (c=0; c<20; c++) {
     r5->insert(Cell2D(5,c));
   }
   EXPECT_EQ(4u, m.addRegion(r5,1));

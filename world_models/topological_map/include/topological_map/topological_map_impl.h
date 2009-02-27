@@ -34,17 +34,19 @@
 #define TOPOLOGICAL_MAP_TOPOLOGICAL_MAP_IMPL_H
 
 #include "topological_map.h"
+#include <boost/tuple/tuple.hpp>
 
 namespace topological_map
 {
 
 using std::map;
+using boost::tuple;
 
 class RegionGraph;
 class Roadmap;
+class GridGraph;
 
-
-typedef map<RegionPair, ConnectorId> RegionConnectorMap;
+typedef map<RegionPair, tuple<ConnectorId,Cell2D,Cell2D> > RegionConnectorMap;
 
 // Implementation details for top map
 class TopologicalMap::MapImpl
@@ -113,13 +115,15 @@ private:
   Point2D findBorderPoint(const Cell2D& cell1, const Cell2D& cell2) const;
   bool pointOnMap (const Point2D& p) const;
 
+  const OccupancyGrid& grid_;
+
   boost::shared_ptr<RegionGraph> region_graph_;
   boost::shared_ptr<Roadmap> roadmap_;
+  boost::shared_ptr<GridGraph> grid_graph_;
 
   RegionConnectorMap region_connector_map_;
   
   const double resolution_;
-  const OccupancyGrid& grid_;
 };
 
 
