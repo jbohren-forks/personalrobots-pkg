@@ -8,6 +8,7 @@
 <depend package="deprecated_msgs" />
 <depend package="robot_msgs" />
 <depend package="vslam" />
+<depend package="tf" />
 <export>
 <cpp cflags="-I${prefix}/include" />
 </export>

@@ -48,12 +48,14 @@
 #include <ros/time.h>
 #include <ros/console.h>
 #include <ros/assert.h>
+#include <tf/transform_listener.h>
 #include <visual_nav/visual_nav.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 #include <robot_msgs/Planner2DGoal.h>
 #include <robot_msgs/VisualizationMarker.h>
 #include <vslam/Roadmap.h>
 #include <visual_nav/exceptions.h>
+
 
 using std::string;
 using robot_msgs::Planner2DGoal;
@@ -93,7 +95,6 @@ public:
   void run();
 
   // Callbacks
-  void odomCallback();
   void roadmapCallback();
 
 private:
@@ -107,11 +108,11 @@ private:
   {
     RoadmapLock (RosVisualNavigator* nav) : nav(nav) 
     { 
-      ROS_DEBUG_NAMED("node", "Acquiring RoadmapLock...");
+      ROS_DEBUG_NAMED("lock", "Acquiring RoadmapLock...");
       nav->roadmap_message_.lock(); 
-      ROS_DEBUG_NAMED("node", "Acquired RoadmapLock"); 
+      ROS_DEBUG_NAMED("lock", "Acquired RoadmapLock"); 
     }
-    ~RoadmapLock () { nav->roadmap_message_.unlock(); ROS_DEBUG_NAMED("node", "Released RoadmapLock"); }
+    ~RoadmapLock () { nav->roadmap_message_.unlock(); ROS_DEBUG_NAMED("lock", "Released RoadmapLock"); }
     RosVisualNavigator* nav;
   };
   friend struct RoadmapLock;
@@ -159,8 +160,8 @@ private:
   // Publish a goal message to the controller
   void publishGoalMessage (const Pose& goal_pose);
 
-  // Update the nav-to-odom transform given the most recent roadmap and odom messages
-  void updateOdomTransform ();
+  // Update the nav-to-odom transform 
+  void updateOdom ();
 
   /// \returns Internally used id corresponding to external (as defined by ros message from vslam) id \a id
   /// \throws UnknownExternalId
@@ -173,6 +174,9 @@ private:
 
   // Node object
   Node node_;
+
+  // Listens to transforms
+  tf::TransformListener tf_;
 
   // Roadmap, and roadmap message used to populate it
   // Access these only in scopes where a RoadmapLock has been declared
@@ -220,7 +224,7 @@ private:
 
 // Constructor
 RosVisualNavigator::RosVisualNavigator (double exit_point_radius, const NodeId goal_id) : 
-  node_("visual_navigator"), map_received_(false), odom_received_(false), 
+  node_("visual_navigator"), tf_(node_), map_received_(false), odom_received_(false), 
   exit_point_radius_(exit_point_radius), goal_id_(goal_id), num_active_markers_(0)
 {
 }
@@ -228,7 +232,6 @@ RosVisualNavigator::RosVisualNavigator (double exit_point_radius, const NodeId g
 
 void RosVisualNavigator::setupTopics ()
 {
-  node_.subscribe("odom", odom_message_, &RosVisualNavigator::odomCallback, this, 1);
   node_.subscribe("roadmap", roadmap_message_, &RosVisualNavigator::roadmapCallback, this, 1);
   node_.advertise<Planner2DGoal>("goal", 1);
   node_.advertise<VisualizationMarker>( "visualizationMarker", 0 );
@@ -237,11 +240,12 @@ void RosVisualNavigator::setupTopics ()
 
 void RosVisualNavigator::run ()
 {
-  Duration d(1);
+  Duration d(2);
 
   // Wait for map and odom messages
   while (!map_received_ || !odom_received_) {
     d.sleep();
+    updateOdom();
     ROS_INFO_COND_NAMED (!map_received_, "node", "Waiting for map message");
     ROS_INFO_COND_NAMED (!odom_received_, "node", "Waiting for odom message");
   }
@@ -250,8 +254,7 @@ void RosVisualNavigator::run ()
   // Main loop: at each iteration, generate a plan to goal and publish exit point
   while (true) {
     d.sleep();
-
-    updateOdomTransform();
+    updateOdom();
 
     try {
       PathPtr path = roadmap_->pathToGoal(start_id_, goal_id_);
@@ -279,12 +282,6 @@ void RosVisualNavigator::run ()
 /************************************************************
  * callbacks
  ************************************************************/
-
-void RosVisualNavigator::odomCallback ()
-{
-  odom_received_=true;
-}
-
 
 void RosVisualNavigator::roadmapCallback ()
 {
@@ -344,16 +341,34 @@ void RosVisualNavigator::publishGoalMessage (const Pose& pose)
 
 
 // Update nav_odom_transform_
-void RosVisualNavigator::updateOdomTransform ()
+void RosVisualNavigator::updateOdom ()
 {
   RoadmapLock lock(this);
-  ROS_ASSERT (odom_received_&&map_received_);
 
-  Pose odom_pose(odom_message_.pos.x, odom_message_.pos.y, odom_message_.pos.th);
-  nav_odom_transform_ = getTransformBetween(roadmap_->nodePose(start_id_), odom_pose);
+  // Use tf to get the odom pose
+  StampedPose identity, odom_pose;
+  identity.setIdentity();
+  identity.frame_id_ = "base_link";
+  identity.stamp_ = ros::Time();
+
+  
+  try {
+    tf_.transformPose("odom", identity, odom_pose);
+    odom_received_=true;
+    
+    // If we have a roadmap as well, figure out the transform between them 
+    if (roadmap_) {
+      nav_odom_transform_ = getTransformBetween(roadmap_->nodePose(start_id_), Pose(odom_pose));
+      ROS_DEBUG_STREAM_NAMED ("transform", "Updating odom pose to " << Pose(odom_pose) << " resulting in nav_odom_transform " << nav_odom_transform_);
+    }
+  }
+  catch (UnknownNodeIdException& e) {
+    ROS_WARN_STREAM_NAMED ("node", "Unexpectedly found that the node id " << e.id << " was unknown in the roadmap, so not updating nav_odom_transform");
+  }
+  catch (tf::TransformException& e) {
+    ROS_INFO_STREAM_NAMED ("node", "Received tf exception " << e.what() << " when attempting to get odom pose, so skipping");
+  }
 }
-
-
 
 
 
@@ -389,6 +404,7 @@ struct PublishGuiEdge
     marker.points[1].x=transformed_pose.x;
     marker.points[1].y=transformed_pose.y;
     Node::instance()->publish("visualizationMarker", marker);
+    ROS_DEBUG_STREAM_NAMED ("rviz", "Published an edge marker with id " << marker.id << " with timestamp " << marker.header.stamp);
   }
 
   RoadmapPtr roadmap;
@@ -456,6 +472,7 @@ void RosVisualNavigator::publishNodeMarker (const Pose& pose, const uint r, cons
   marker.yScale=.4;
   marker.zScale=.2;
   node_.publish("visualizationMarker", marker);
+  ROS_DEBUG_STREAM_NAMED ("rviz", "Just published node marker " << marker.id << " with timestamp " << marker.header.stamp);
 }
 
 

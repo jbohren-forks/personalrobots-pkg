@@ -45,6 +45,18 @@ Pose transform (const Transform2D& trans, const Pose& pose)
   return Pose(pose.x*c - pose.y*s + trans.dx, pose.x*s + pose.y*c + trans.dy, trans.theta+pose.theta);
 }
 
+double getYaw(const StampedPose& tf_pose)
+{
+  double pitch, roll, yaw;
+  tf_pose.getBasis().getEulerZYX(yaw, pitch, roll);
+  return yaw;
+}
+
+Pose::Pose (const StampedPose& tf_pose) : x(tf_pose.getOrigin().x()), y(tf_pose.getOrigin().y()), theta(getYaw(tf_pose))
+{
+}
+
+
 Transform2D getTransformBetween (const Pose& pose1, const Pose& pose2)
 {
   double theta = pose2.theta - pose1.theta;

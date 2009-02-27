@@ -31,6 +31,7 @@
 #define VISUAL_NAV_TRANSFORM_H
 
 #include <iostream>
+#include <tf/transform_datatypes.h>
 
 namespace visual_nav
 {
@@ -38,8 +39,11 @@ namespace visual_nav
 using std::ostream;
 using std::istream;
 
+typedef tf::Stamped<tf::Pose> StampedPose;
+
 struct Pose {
   Pose (double x=0.0, double y=0.0f, double theta=0.0) : x(x), y(y), theta(theta) {}
+  Pose (const StampedPose& tf_pose);
   double x, y, theta;
 };
 
