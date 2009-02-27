@@ -1,51 +1,52 @@
 <?xml version="1.0"?>
 <controllers>
   <!-- left arm array -->
-  <controller name="l_shoulder_pan_controller" topic="l_shoulder_pan_controller" type="JointTestControllerNode">
+  <!--controller name="l_shoulder_pan_controller" topic="l_shoulder_pan_controller" type="JointTestControllerNode"-->
+  <controller name="l_shoulder_pan_controller" topic="l_shoulder_pan_controller" type="JointPositionControllerNode">
     <joint name="l_shoulder_pan_joint" >
-      <pid p="100" d="2" i="0.1" iClamp="1" />
+      <pid p="2.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
 
   <controller name="l_shoulder_lift_controller" topic="l_shoulder_lift_controller" type="JointPositionControllerNode">
     <joint name="l_shoulder_lift_joint" >
-      <pid p="100" d="1.0" i="0.1" iClamp="1" />
+      <pid p="60.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
 
   <controller name="l_upper_arm_roll_controller" topic="l_upper_arm_roll_controller" type="JointPositionControllerNode">
     <joint name="l_upper_arm_roll_joint" >
-      <pid p="40" d=".4" i="0.1" iClamp="1" />
+      <pid p="5.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
 
   <controller name="l_elbow_flex_controller" topic="l_elbow_flex_controller" type="JointPositionControllerNode">
     <joint name="l_elbow_flex_joint" >
-      <pid p="100" d="1" i="0.1" iClamp="1" />
+      <pid p="20.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
 
   <controller name="l_forearm_roll_controller" topic="l_forearm_roll_controller" type="JointPositionControllerNode">
     <joint name="l_forearm_roll_joint" >
-      <pid p="2.0" d="0.01" i="0.1" iClamp="1" />
+      <pid p="4.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
 
   <controller name="l_wrist_flex_controller" topic="l_wrist_flex_controller" type="JointPositionControllerNode">
     <joint name="l_wrist_flex_joint" >
-      <pid p="2" d="0.01" i="0.1" iClamp="1" />
+      <pid p="5.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
 
   <controller name="l_wrist_roll_controller" topic="l_wrist_roll_controller" type="JointPositionControllerNode">
     <joint name="l_wrist_roll_joint" >
-      <pid p="1" d="0.01" i="0.1" iClamp="1" />
+      <pid p="1.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
 
   <controller name="l_gripper_controller" topic="l_gripper_controller" type="JointPositionControllerNode">
     <joint name="l_gripper_l_finger_joint">
-      <pid p="10.0" d="0.0" i="0.01" iClamp="0.1" />
+      <pid p="10.0" d="0.1" i="0.1" iClamp="1" />
     </joint>
   </controller>
 </controllers>
