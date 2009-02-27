@@ -1,0 +1,34 @@
+
+/**
+ * By default it will retain prior values. We will constrain its duration to 1.
+ *
+ * duration = 1;
+ *
+ * on commit {
+ *  default x = previous.x;
+ *  default y = previous.y;
+ *  default th= previous.th;
+ * }
+ */
+BaseState::Holds{
+  met_by(Holds p);
+  defaultOnCommit(x, p.x);
+  defaultOnCommit(y, p.y);
+  defaultOnCommit(th,p.th);
+  eq(duration, 1);
+}
+
+
+// If an active token is dispatched, we start it immediately
+Behavior::Active{
+  addEq(dispatch_time, 1, start);
+}
+
+
+MoveBehavior::Active{
+  ends(BaseState.Holds bs);
+  eq(bs.x, x);
+  eq(bs.y, y);
+  eq(bs.th, th);
+  eq(duration, 3);
+}
