@@ -46,7 +46,7 @@ public:
     
     subscribe("Image", img_, &OutletDetector::image_cb, this, 1);
     subscribe("CamInfo", cam_info_, &OutletDetector::caminfo_cb, this, 1);
-    advertise<robot_msgs::PoseStamped>("~outlet_pose", 1);
+    advertise<robot_msgs::PoseStamped>("pose", 1);
   }
 
   ~OutletDetector()
@@ -116,7 +116,7 @@ public:
     pose_.pose.orientation.z = orientation.z();
     pose_.pose.orientation.w = orientation.w();
 
-    publish("~outlet_pose", pose_);
+    publish("pose", pose_);
     tf_broadcaster_.sendTransform(tf::Transform(orientation, holes[0]),
                                   ros::Time::now(), "outlet_frame",
                                   "prosilica_frame");
@@ -130,6 +130,7 @@ public:
     }
   }
 
+  /*
   bool spin()
   {
     while (ok())
@@ -145,6 +146,7 @@ public:
 
     return true;
   }
+  */
 
 private:
   static void changeAxes(CvPoint3D32f src, btVector3 &dst)
