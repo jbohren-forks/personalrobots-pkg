@@ -11,7 +11,7 @@ image_msg.depth = 'uint8';
 
 if( size(I,3) == 1 )
     image_msg.encoding = 'mono';
-else ( size(I,3) == 3 )
+elseif ( size(I,3) == 3 )
     image_msg.encoding = 'rgb';
 else
     error('unrecognized image format');
