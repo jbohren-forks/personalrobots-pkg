@@ -919,6 +919,7 @@ typedef TreeOptimizer3::Translation Translation;
 typedef TreeOptimizer3::Rotation Rotation;
 typedef TreeOptimizer3::Pose Pose;
 typedef TreeOptimizer3::Vertex Vertex;
+typedef TreeOptimizer3::Edge Edge;
 
 typedef struct {
   PyObject_HEAD
@@ -950,6 +951,19 @@ PyObject *pgrecomputeAllTransformations(PyObject *self, PyObject *args)
 {
   TreeOptimizer3 *to = ((treeoptimizer3_t*)self)->to;
   to->recomputeAllTransformations();
+  Py_RETURN_NONE;
+}
+
+PyObject *pgremoveEdge(PyObject *self, PyObject *args)
+{
+  int i0, i1;
+
+  if (!PyArg_ParseTuple(args, "ii", &i0, &i1))
+    return NULL;
+
+  TreeOptimizer3 *to = ((treeoptimizer3_t*)self)->to;
+  Edge *e = to->edge(i0, i1);
+  to->removeEdge(e);
   Py_RETURN_NONE;
 }
 
@@ -988,11 +1002,8 @@ PyObject *pgaddIncrementalEdge(PyObject *self, PyObject *args)
   inf[4][4] = e;
   inf[5][5] = f;
 
-#if 0
-  to->addIncrementalEdge(i0, i1, t, Information::I(6));
-#else
   to->addIncrementalEdge(i0, i1, t, inf);
-#endif
+
   Py_RETURN_NONE;
 }
 
@@ -1012,6 +1023,10 @@ PyObject *pgvertex(PyObject *self, PyObject *args)
   Pose *pp = &(pv->pose);
   return Py_BuildValue("(ddd)(ddd)", pp->x(), pp->y(), pp->z(), pp->roll(), pp->pitch(), pp->yaw());
 #else
+  if (pv == NULL) {
+    PyErr_SetString(PyExc_TypeError, "no such vertex");
+    return NULL;
+  }
   Pose pp = pv->transformation.toPoseType();
   return Py_BuildValue("(ddd)(ddd)", pp.x(), pp.y(), pp.z(), pp.roll(), pp.pitch(), pp.yaw());
 #endif
@@ -1041,6 +1056,7 @@ static PyMethodDef treeoptimizer3_methods[] = {
   {"save", pgsave, METH_VARARGS},
   {"load", pgload, METH_VARARGS},
   {"addIncrementalEdge", pgaddIncrementalEdge, METH_VARARGS },
+  {"removeEdge", pgremoveEdge, METH_VARARGS },
   {"initializeOnlineIterations", pginitializeOnlineIterations, METH_VARARGS},
   {"error", pgerror, METH_VARARGS},
   {"iterate", pgiterate, METH_VARARGS},

@@ -1,5 +1,5 @@
-import rostools
-rostools.update_path('visual_odometry')
+import roslib
+roslib.update_path('visual_odometry')
 import rostest
 import rospy
 
@@ -48,7 +48,8 @@ vo = VisualOdometer(stereo_cam)
 
 #(f0,f1) = [ ComputedDenseStereoFrame(Image.open("../vslam/kk2/%06dL.png" % i), Image.open("../vslam/kk2/%06dR.png" % i)) for i in [670, 671] ]
 #(f0,f1) = [ ComputedDenseStereoFrame(Image.open("f%d-left.png" % i), Image.open("f%d-right.png" % i)) for i in [0, 1] ]
-(f0,f1) = [ ComputedDenseStereoFrame(Image.open("../vslam/trial/%06dL.png" % i), Image.open("../vslam/trial/%06dR.png" % i)) for i in [276, 278] ]
+d = "/u/jamesb/ros/ros-pkg/vision/vslam/trial"
+(f0,f1) = [ ComputedDenseStereoFrame(Image.open("%s/%06dL.png" % (d,i)), Image.open("%s/%06dR.png" % (d,i))) for i in [276, 278] ]
 #(f0,f1) = [ ComputedDenseStereoFrame(Image.open("../vslam/trial/%06dL.png" % i), Image.open("../vslam/trial/%06dR.png" % i)) for i in [277, 278] ]
 #(f0,f1) = [ ComputedDenseStereoFrame(Image.open("../vslam/trial/%06dL.png" % i), Image.open("../vslam/trial/%06dR.png" % i)) for i in [0, 1] ]
 
@@ -77,7 +78,7 @@ def xform(M, x, y, z):
   return (nx, ny, nz)
 
 def mype(cam, cp1, cp0, pairs):
-  p0 = [ stereo_cam.pix2cam(*p) for p in cp0 ]
+  p0 = [ cam.pix2cam(*p) for p in cp0 ]
   xyz0 = [ p0[i] for (j,i) in pairs ]
 
   x0 = vop.array([ x for (x,y,z) in xyz0 ])
@@ -114,7 +115,7 @@ def mype(cam, cp1, cp0, pairs):
 
     # Check Cont inliers for RT against xyz0 -> uvd0 vs uvd1
     # Takes 15
-    (u0,v0,d0) = stereo_cam.cam2pix(*xform(RT, x0, y0, z0))
+    (u0,v0,d0) = cam.cam2pix(*xform(RT, x0, y0, z0))
     pred_inl = vop.where(vop.maximum(vop.maximum(abs(u0 - u1), abs(v0 - v1)), abs(d0 - d1)) > 3.0, 0.0, 1.0)
     inliers = int(pred_inl.sum())
     if inliers > best[0]:
@@ -186,6 +187,9 @@ img_img(f0, f1, RT).save("pe0.png")
 print "original error", img_rms(f0, f1, RT)
 
 (inliers, (R,T)) = mype(stereo_cam, f0.kp, f1.kp, pairs)
+print (inliers, (R,T))
+sys.exit(0)
+
 R = list(R)
 RT = R[0:3] + [T[0]] + R[3:6] + [T[1]] + R[6:9] + [T[2]]
 img_img(f0, f1, RT).save("pe.png")
