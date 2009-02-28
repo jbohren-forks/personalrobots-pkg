@@ -275,7 +275,7 @@ bool BaseAssemblerSrv<T>::buildCloud(BuildCloud::Request& req, BuildCloud::Respo
   }
   scan_hist_mutex_.unlock() ;
 
-  ROS_INFO("Point Cloud Results: Aggregated from index %u->%u. BufferSize: %u", start_index, past_end_index, scan_hist_.size()) ;
+  ROS_DEBUG("Point Cloud Results: Aggregated from index %u->%u. BufferSize: %u", start_index, past_end_index, scan_hist_.size()) ;
   return true ;
 }
 

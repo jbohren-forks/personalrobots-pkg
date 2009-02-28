@@ -105,7 +105,7 @@ public:
       //printf("PointCloudSnapshotter::Done with service call\n") ;
 
       publish("full_cloud", resp.cloud) ;
-      ROS_INFO("Snapshotter::Published Cloud size=%u", resp.cloud.get_pts_size()) ;
+      ROS_DEBUG("Snapshotter::Published Cloud size=%u", resp.cloud.get_pts_size()) ;
 
       prev_signal_ = cur_signal_ ;
     }
