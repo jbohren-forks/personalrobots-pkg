@@ -75,9 +75,9 @@ void MechanismControl::publishDiagnostics()
     int active = 0;
     TimeStatistics blank_statistics;
 
-    vector<robot_msgs::DiagnosticStatus> statuses;
-    vector<robot_msgs::DiagnosticValue> values;
-    vector<robot_msgs::DiagnosticString> strings;
+    std::vector<robot_msgs::DiagnosticStatus> statuses;
+    std::vector<robot_msgs::DiagnosticValue> values;
+    std::vector<robot_msgs::DiagnosticString> strings;
     robot_msgs::DiagnosticStatus status;
     robot_msgs::DiagnosticValue v;
     robot_msgs::DiagnosticString s;
