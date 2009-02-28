@@ -163,7 +163,7 @@ class NavStackTest(unittest.TestCase):
     def stateInput(self, state):
         if self.publish_goal:
           print "target: ", self.target_x, ",", self.target_y, ",", self.target_t
-          print "state.goal: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
+          print "state.goal: (", state.goal.x, ",", state.goal.y, ",", state.goal.th,") status:",state.status
           if abs(state.goal.x-self.target_x)<FLOAT_TOL and \
              abs(state.goal.y-self.target_y)<FLOAT_TOL and \
              abs(state.goal.th-self.target_t)<FLOAT_TOL and \
