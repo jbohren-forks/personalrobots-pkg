@@ -52,7 +52,6 @@ using namespace KDL;
 #define __ENVIRONMENT_ROBARM_H_
 
 #define NUMOFLINKS 7
-#define NUMOFLINKS_DH 8
 
 #define UNIFORM_COST 1      //all the joint actions have the same costs when set
 
@@ -100,9 +99,9 @@ typedef struct ENV_ROBARM_CONFIG
     int EnvDepth_c;
 
     //fixed location of shoulder base (cells) 
-    int BaseX_c;
-    int BaseY_c;
-    int BaseZ_c;
+    short unsigned int BaseX_c;
+    short unsigned int BaseY_c;
+    short unsigned int BaseZ_c;
 
     //fixed location of shoulder base (meters)
     double BaseX_m;
@@ -131,10 +130,10 @@ typedef struct ENV_ROBARM_CONFIG
     int lowCostRadius_c;
 
     //DH Parameters
-    double DH_alpha[NUMOFLINKS_DH];
-    double DH_a[NUMOFLINKS_DH];
-    double DH_d[NUMOFLINKS_DH];
-    double DH_theta[NUMOFLINKS_DH];
+    double DH_alpha[NUMOFLINKS];
+    double DH_a[NUMOFLINKS];
+    double DH_d[NUMOFLINKS];
+    double DH_theta[NUMOFLINKS];
 
     //Motor Limits
     double PosMotorLimits[NUMOFLINKS];
@@ -158,10 +157,10 @@ typedef struct ENV_ROBARM_CONFIG
     double LinkGoalAngles_d[NUMOFLINKS];
 
     //starting joint configuration
-    double JointStartConfig_d[NUMOFLINKS];
+//     double JointStartConfig_d[NUMOFLINKS];
 
     //end effector goal orientation
-    double GoalOrientationMOE[3][3];
+    double GoalOrientationMOE[3][3];    //eventually remove this
 
     short unsigned int ** EndEffGoals_c;
     double ** EndEffGoals_m;
@@ -206,20 +205,33 @@ typedef struct ENV_ROBARM_CONFIG
     //for precomputing cos/sin & DH matrices 
     double cos_r[360];
     double sin_r[360];
-    double T_DH[4*NUM_TRANS_MATRICES][4][NUMOFLINKS_DH];
+    double T_DH[4*NUM_TRANS_MATRICES][4][NUMOFLINKS];
 
     //cell-to-cell costs
     double CellsPerAction;
     double cost_per_cell;
     double cost_sqrt2_move;
     double cost_sqrt3_move;
+    double cost_per_mm;
+    double cost_per_rad;
 
     //a bad hack
     bool JointSpaceGoal;
 
+    bool dual_heuristics;
+    double uninformative_heur_dist_m;
+    double ApplyRPYCost_m;
     double AngularDist_Weight;
     double ExpCoefficient;
     bool angular_dist_cost;
+
+
+    //joint-space search
+    bool PlanToJointSpaceGoal;
+    double JointSpaceGoalMOE[NUMOFLINKS];
+    double ** JointSpaceGoals;
+    int nJointSpaceGoals;
+
 } EnvROBARMConfig_t;
 
 // hash entry that contains end effector coordinates
@@ -246,7 +258,7 @@ typedef struct
     vector<EnvROBARMHashEntry_t*> StateID2CoordTable;
 
     //transformation matrices
-    double Trans[4][4][NUMOFLINKS_DH];
+    double Trans[4][4][NUMOFLINKS];
 
     //any additional variables
     int* Heur;
@@ -315,9 +327,11 @@ public:
     double GetEpsilon();
 
     //called by SBPL planner
-    int  GetFromToHeuristic(int FromStateID, int ToStateID);
-    int  GetGoalHeuristic(int stateID);
-    int  GetStartHeuristic(int stateID);
+    int GetFromToHeuristic(int FromStateID, int ToStateID);
+    int GetFromToHeuristic(int FromStateID, int ToStateID, double FromRPY[3], double ToRPY[3]);
+    int GetJointSpaceHeuristic(int FromStateID, int ToStateID);
+    int GetGoalHeuristic(int stateID);
+    int GetStartHeuristic(int stateID);
     void SetAllActionsandAllOutcomes(CMDPSTATE* state);
     void SetAllPreds(CMDPSTATE* state);
     void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
@@ -340,6 +354,7 @@ public:
     bool InitializeEnvForStats(const char* sEnvFile,  int cntr);
 
     void getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw, int solution_number);
+
 private:
 
     //member data
@@ -357,7 +372,6 @@ private:
     void ReadConfiguration(FILE* fCfg);
     void InitializeEnvConfig();
     void InitializeEnvGrid();
-    void CreateStartandGoalStates();
     bool InitializeEnvironment();
     void AddObstacleToGrid(double* obstacle, int type, char*** grid, double gridcell_m);
 
@@ -367,10 +381,8 @@ private:
     void ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
     void ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS]);
     void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
-    void ContXYZ2Cell(double x, double y, double z, int *pX, int *pY, int *pZ); //temporary
     void ContXYZ2Cell(double* xyz, double gridcellwidth, int dims_c[3], short unsigned int *pXYZ);
     void HighResGrid2LowResGrid(short unsigned int * XYZ_hr, short unsigned int * XYZ_lr);
-    void unsafeContXYZ2Cell(double x, double y, double z, short unsigned int *pX, short unsigned int *pY, short unsigned int *pZ);
 
     //bounds/error checking
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], short unsigned int endeff_pos[3], short unsigned int wrist_pos[3], short unsigned int elbow_pos[3], double orientation[3][3]);    
@@ -379,7 +391,6 @@ private:
     bool IsValidCell(int X, int Y, int Z);
     bool IsWithinMapCell(int X, int Y, int Z);
     bool AreEquivalent(int State1ID, int State2ID);
-
 
     //cost functions
     int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
@@ -417,10 +428,15 @@ private:
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], double endeff_m[3]);
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3]);
     int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3], double orientation[3][3]);
-    void ValidateDH2KinematicsLibrary();
     void ComputeDHTransformations();
     void ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double *z);
     void ComputeForwardKinematics_DH(double angles[NUMOFLINKS]);
+
+    /* JOINT SPACE PLANNING */
+    void GetJointSpaceSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
+    
+    bool SetJointSpaceGoals(double** JointSpaceGoals, int num_goals);
+
 };
 
 #endif
