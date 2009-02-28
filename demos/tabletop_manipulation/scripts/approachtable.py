@@ -42,24 +42,28 @@ from deprecated_msgs.msg import RobotBase2DOdom
 from tf.msg import tfMessage
 
 from movebase import MoveBase
+from detecttable import DetectTable
+from tiltscan import TiltScan
 
 import sys
 from math import *
 
 class ApproachTable:
-  def __init__(self, mb, standoff):
-    self.standoff = standoff
+  def __init__(self, dt, mb, ts):
+    self.ts = ts
     self.mb = mb
+    self.dt = dt
     self.odom_pose = None
     self.robot_position = None
     self.vm = None
     rospy.Subscriber('odom', RobotBase2DOdom, self.odomCallback)
     rospy.Subscriber('tf_message', tfMessage, self.tfCallback)
     self.pub_vis = rospy.Publisher("visualizationMarker", VisualizationMarker)
+    self.global_frame = rospy.get_param('/global_frame_id')
 
   # Hack to get around the fact that we don't have pytf
   def tfCallback(self,msg):
-    if (msg.transforms[0].header.frame_id == 'odom_offset' and 
+    if (msg.transforms[0].header.frame_id == self.global_frame and 
         self.odom_pose != None):
       self.robot_position = Point((self.odom_pose.pos.x - 
                                    msg.transforms[0].transform.translation.x),
@@ -70,35 +74,21 @@ class ApproachTable:
   def odomCallback(self,msg):
     self.odom_pose = msg
 
-  def approachTable(self, near):
-    print 'Waiting for table_object_detector service...'
-    rospy.wait_for_service('table_object_detector')
-    print 'Calling table_object_detector service...'
-    s = rospy.ServiceProxy('table_object_detector', FindTable)
-    resp = s.call(FindTableRequest())
-    print 'Result:'
-    print 'Table (frame %s): %f %f %f %f' % (resp.table.header.frame_id,
-                                             resp.table.table_min.x,
-                                             resp.table.table_max.x,
-                                             resp.table.table_min.y,
-                                             resp.table.table_max.y)
-    print '%d objects detected on table' % len(resp.table.objects)
-    for o in resp.table.objects:
-      print '  (%f %f %f): %f %f %f' % \
-         (o.center.x, o.center.y, o.center.z,
-          o.max_bound.x - o.min_bound.x,
-          o.max_bound.y - o.min_bound.y,
-          o.max_bound.z - o.min_bound.z)
-  
-    print 'Poly:'
-    for p in resp.table.table.points:
-      print '  %f %f %f'%(p.x,p.y,p.z)
+  def approachTable(self, standoff, near):
+    if not ts.tiltScan(8.0):
+      print '[ApproachTable] Failed to change tilt scan'
+      return False
+      
+    resp = dt.detectTable()
+    if not resp:
+      print '[ApproachTable] Failed to detect table'
+      return False
   
     self.vm = VisualizationMarker()
     self.vm.header.frame_id = resp.table.header.frame_id
     self.vm.z = resp.table.table.points[0].z
   
-    approach_pose = self.computeApproachPose(self.robot_position, resp.table.table, self.standoff, True)
+    approach_pose = self.computeApproachPose(self.robot_position, resp.table.table, standoff, True)
     
     if approach_pose == None:
       return False
@@ -112,7 +102,7 @@ class ApproachTable:
     self.vm.roll = 0.0
     self.vm.pitch = 0.0
     self.vm.yaw = approach_pose[2]
-    self.vm.xScale = 0.5
+    self.vm.xScale = 0.6
     self.vm.yScale = 0.25
     self.vm.zScale = 0.1
     self.vm.alpha = 128
@@ -122,6 +112,9 @@ class ApproachTable:
     self.vm.points = []
     self.pub_vis.publish(self.vm)
 
+    if not ts.tiltScan(2.0):
+      print '[ApproachTable] Failed to change tilt scan'
+      return False
     # Call out to blocking MoveBase
     return self.mb.moveBase(resp.table.header.frame_id,
                             approach_pose[0],
@@ -130,12 +123,12 @@ class ApproachTable:
   
   def computeApproachPose(self, pose, poly, d, near):
     if not near:
-      print 'Far approach not yet implemented'
+      print '[ApproachTable] Far approach not yet implemented'
       sys.exit(-1)
 
   
     if pose == None:
-      print 'No robot pose!'
+      print '[ApproachTable] No robot pose!'
       return
 
     # TODO: implement approaching from the far side (not near)
@@ -153,7 +146,7 @@ class ApproachTable:
         closestp[0] = p
   
     if closestp[0] == None:
-      print 'No closest point!'
+      print '[ApproachTable] No closest point!'
       return
   
     # Now find the second-closest, but require that it be some distance from
@@ -169,7 +162,7 @@ class ApproachTable:
           closestp[1] = p
 
     if closestp[1] == None:
-      print 'No second-closest point!'
+      print '[ApproachTable] No second-closest point!'
       return
   
     # Also find the farthest, because we'll do a poor-man's point-in-polygon
@@ -184,11 +177,11 @@ class ApproachTable:
         farthestp = p
   
     if farthestp == None:
-      print 'No farthest point!'
+      print '[ApproachTable] No farthest point!'
       return
   
-    print 'Robot pose: (%f,%f)'%(pose.x,pose.y)
-    print 'Closest points: (%f,%f,%f),(%f,%f,%f)'%(closestp[0].x,closestp[0].y,closestp[0].z,closestp[1].x,closestp[1].y,closestp[1].z)
+    print '[ApproachTable] Robot pose: (%f,%f)'%(pose.x,pose.y)
+    print '[ApproachTable] Closest points: (%f,%f,%f),(%f,%f,%f)'%(closestp[0].x,closestp[0].y,closestp[0].z,closestp[1].x,closestp[1].y,closestp[1].z)
   
     # Find the midpoint of the closest edge
     midp = Point(closestp[0].x + (closestp[1].x - closestp[0].x)/2.0,
@@ -289,19 +282,25 @@ class ApproachTable:
     self.vm.points = []
     self.pub_vis.publish(self.vm)
   
-    print 'midp: %f,%f'%(midp.x,midp.y)
-    print 'theta: %f phi:%f' %(theta*180.0/pi,phi*180.0/pi)
-    print 'Goal: %f,%f,%f'%(goalx, goaly, goala*180.0/pi)
+    print '[ApproachTable] midp: %f,%f'%(midp.x,midp.y)
+    print '[ApproachTable] theta: %f phi:%f' %(theta*180.0/pi,phi*180.0/pi)
+    print '[ApproachTable] Goal: %f,%f,%f'%(goalx, goaly, goala*180.0/pi)
   
     return (goalx, goaly, goala)
   
 if __name__ == '__main__':
+  ts = TiltScan('laser_tilt_controller', 5.0)
   mb = MoveBase()
-  at = ApproachTable(mb, 0.5)
+  dt = DetectTable()
+  at = ApproachTable(dt, mb, ts)
 
   rospy.init_node('approach_table', anonymous=True)
 
-  res = at.approachTable(True)
+  res = False
+  res = at.approachTable(0.4, True)
+  if not res:
+    if at.approachTable(1.0, True):
+      res = at.approachTable(0.4, True)
 
   if res:
     print 'Success!'

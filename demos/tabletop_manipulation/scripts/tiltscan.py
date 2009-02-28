@@ -42,16 +42,20 @@ class TiltScan:
   def __init__(self, controller, laser_buffer_time):
     self.controller = controller
     self.laser_buffer_time = laser_buffer_time
+    # profile type 4 is sine
+    self.profile = 4
+    self.amplitude = 0.78
+    self.offset = 0.3
 
-  def tiltScan(self, period, amplitude, offset):
+  def tiltScan(self, period):
     svcname = self.controller + '/set_profile'
     print '[TiltScan] Waiting for service ' + svcname
     rospy.wait_for_service(svcname)
     s = rospy.ServiceProxy(svcname, SetProfile)
     print '[TiltScan] Calling service ' + svcname
-    # profile type 4 is sine
     resp = s.call(SetProfileRequest(0.0, 0.0, 0.0, 0.0, 
-                                    4, period, amplitude, offset))
+                                    self.profile, period, 
+                                    self.amplitude, self.offset))
         
     if resp:
       # Set the collision_map_buffer's window size accordingly, to remember a
@@ -68,18 +72,16 @@ class TiltScan:
 
 if __name__ == '__main__':
   import sys
-  if len(sys.argv) != 4:
-    print 'too few args'
+  if len(sys.argv) != 2:
+    print 'wrong # args'
     sys.exit(-1)
 
   period = float(sys.argv[1])
-  amplitude = float(sys.argv[2])
-  offset = float(sys.argv[3])
   ts = TiltScan('laser_tilt_controller', 5.0)
 
   rospy.init_node('move_base', anonymous=True)
 
-  res = ts.tiltScan(period, amplitude, offset)
+  res = ts.tiltScan(period)
 
   if res:
     print 'Success!'
