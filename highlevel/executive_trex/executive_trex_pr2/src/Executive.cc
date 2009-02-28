@@ -75,9 +75,9 @@ namespace TREX {
   /**
    * @brief Singleton accessor
    */
-  ExecutiveId Executive::request(bool playback){
+  ExecutiveId Executive::request(bool playback, bool warp){
     if(s_id == ExecutiveId::noId()){
-      new Executive(playback);
+      new Executive(playback, warp);
     }
     return s_id;
   }
@@ -85,8 +85,8 @@ namespace TREX {
   /**
    * @brief Executive constructor sets up the trex agent instance
    */
-  Executive::Executive(bool playback)
-    : m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(playback)
+  Executive::Executive(bool playback, bool warp)
+    : m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(playback), warp_(warp)
   {
     s_id = m_id;
     m_refCount = 0;
@@ -136,7 +136,7 @@ namespace TREX {
     int finalTick = 1;
     input_xml_root_->Attribute("finalTick", &finalTick);
     if (playback_) {
-      agent_clock_ = new TREX::PlaybackClock((time_limit == 0 ? finalTick : time_limit), input_xml_root_);
+      agent_clock_ = new TREX::PlaybackClock((time_limit == 0 ? finalTick : time_limit), warp, input_xml_root_);
     } else {
       // Allocate a real time clock with 1 second per tick
       agent_clock_ = new TREX::LogClock(1.0);
@@ -189,7 +189,10 @@ namespace TREX {
 	if (((TREX::PlaybackClock*)agent_clock_)->isAtGoalTick()) {
 	  ((TREX::PlaybackClock*)agent_clock_)->consolePopup();
 	}
-	TREX::Agent::instance()->doNext();
+	if (!TREX::Agent::instance()->doNext()) {
+	  std::cout << "Agent has completed its mission." << std::endl;
+	  ((TREX::PlaybackClock*)agent_clock_)->consolePopup();
+	}
       }
     } else {
       try{

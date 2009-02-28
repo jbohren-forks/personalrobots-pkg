@@ -45,7 +45,7 @@ namespace TREX {
    */
   class PlaybackClock: public Clock {
   public:
-    PlaybackClock(unsigned int finalTick, TiXmlElement* root, bool stats = true);
+    PlaybackClock(unsigned int finalTick, bool warp, TiXmlElement* root, bool stats = true);
 
     /**
      * @brief Will idle till this is called.

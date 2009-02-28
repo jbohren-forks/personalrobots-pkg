@@ -56,22 +56,31 @@ namespace TREX {
     return NULL;
   }
 
+  const unsigned int WARP_MAX_GETS = 1024;
 
   /**
    * Playback clock.
    */
-  PlaybackClock::PlaybackClock(unsigned int finalTick, EUROPA::TiXmlElement* root, bool stats)
+  PlaybackClock::PlaybackClock(unsigned int finalTick, bool warp, EUROPA::TiXmlElement* root, bool stats)
     : Clock(0, stats),
       m_gets(0), m_finalTick(finalTick), m_tick(0), m_stopTick(0), m_root(root), m_timedOut(false) {
     if (m_finalTick < 2) { m_finalTick = 100; }
-    m_file = fopen(findFile("clock.log").c_str(), "r");
-    if (!m_file) {
-      std::cerr << "No clock.log file for playback." << std::endl;
-      exit(-1);
+    if (!warp) { //Normal
+      m_file = fopen(findFile("clock.log").c_str(), "r");
+      if (!m_file) {
+	std::cerr << "No clock.log file for playback." << std::endl;
+	exit(-1);
+      }
+    } else { //Warp
+      m_file = NULL;
     }
   }
 
   void PlaybackClock::printHelp() {
+    if (m_file)
+      std::cout << "Normal mode." << std::endl;
+    else
+      std::cout << "Warp mode." << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << " Q :- Quit" << std::endl;
     std::cout << " N :- Next" << std::endl;
@@ -86,12 +95,14 @@ namespace TREX {
   }
 
   void PlaybackClock::consolePopup() {
-    std::string cmdString;
+    std::string cmdString, cmdStringRaw;
     bool cmdValid = false;
     std::cout << "At tick " << m_tick << ", H for help." << std::endl;
     while (!cmdValid) {
       std::cout << "> ";
-      getline(std::cin, cmdString);
+      getline(std::cin, cmdStringRaw);
+      cmdString = cmdStringRaw;
+      std::transform(cmdString.begin(), cmdString.end(), cmdString.begin(), toupper);
       const char cmd = cmdString.length() == 0 ? 0 : cmdString.at(0);
       if (!cmd) {
 	cmdValid = false;
@@ -114,28 +125,27 @@ namespace TREX {
 	    cmdValid = true;
 	    std::cout << "Doing a rewind." << std::endl;
 	    TREX::Agent::terminate();
-	    std::cout << "Terminated" << std::endl;
 	    TREX::Clock::sleep(1);
-	    std::cout << "Slept" << std::endl;
 	    TREX::Agent::reset();
 	    TREX::Agent::cleanupLog();
-	    std::cout << "Reseted" << std::endl;
 
 
 	    m_tick = 0;
-	    fclose(m_file);
-	    m_file = fopen("clock.log", "r");
-	    if (!m_file) {
-	      std::cerr << "No clock.log file for playback." << std::endl;
-	      exit(-1);
+	    if (m_file) { //Normal
+	      fclose(m_file);
+	      m_file = fopen("clock.log", "r");
+	      if (!m_file) {
+		std::cerr << "No clock.log file for playback." << std::endl;
+		exit(-1);
+	      }
+	      fscanf(m_file, "%u\n", &m_gets);
+	    } else { //Warp
+	      m_gets = WARP_MAX_GETS;
 	    }
-	    fscanf(m_file, "%u\n", &m_gets);
 	    
 
 	    TREX::Clock::sleep(1);
-	    std::cout << "Initing" << std::endl;
 	    TREX::Agent::initialize(*m_root, *this);
-	    std::cout << "Done" << std::endl;
 	  } else if (m_tick == m_stopTick) {
 	    cmdValid = false;
 	    std::cout << "Already at that tick." << std::endl;
@@ -145,25 +155,32 @@ namespace TREX {
 	  cmdValid = false;
 	}
       } else if(cmd == 'R' || cmd == 'r'){
+	std::cout << "Reading debug.cfg." << std::endl;
 	std::ifstream config("Debug.cfg");
 	DebugMessage::readConfigFile(config);
 	cmdValid = false;
       } else if(cmdString == "PW"){
+	std::cout << "Enable plan works." << std::endl;
 	DebugMessage::enableMatchingMsgs("", "PlanWorks");
       } else if(cmdString == "EPW"){
+	std::cout << "Disable plan works." << std::endl;
 	DebugMessage::disableMatchingMsgs("", "PlanWorks");
       } else if(cmd == '+'){
-	std::string pattern = cmdString.substr(1);
+	std::string pattern = cmdStringRaw.substr(1);
+	std::cout << "Enable pattern: " << pattern << std::endl;
 	DebugMessage::enableMatchingMsgs("", pattern);
 	cmdValid = false;
       } else if(cmd == '-'){
-	std::string pattern = cmdString.substr(1);
+	std::string pattern = cmdStringRaw.substr(1);
+	std::cout << "Disable pattern: " << pattern << std::endl;
 	DebugMessage::disableMatchingMsgs("", pattern);
 	cmdValid = false;
       } else if(cmd == '!'){
+	std::cout << "Disable all." << std::endl;
 	DebugMessage::disableAll();
 	cmdValid = false;
       } else {
+	std::cout << "Invalid command. Type \"H\" for help." << std::endl;
 	cmdValid = false;
       }
     }
@@ -173,7 +190,10 @@ namespace TREX {
 
 
   void PlaybackClock::start(){
-    fscanf(m_file, "%u\n", &m_gets);
+    if (m_file) //Normal
+      fscanf(m_file, "%u\n", &m_gets);
+    else //Warp
+      m_gets = WARP_MAX_GETS;
     printHelp();
     consolePopup();
   }
@@ -185,7 +205,10 @@ namespace TREX {
     }
 
     while (m_gets == 0 && timeout <= m_finalTick) {
-      fscanf(m_file, "%u\n", &m_gets);
+      if (m_file) 
+	fscanf(m_file, "%u\n", &m_gets);
+      else
+	m_gets = WARP_MAX_GETS;
       timeout++;
       m_tick++;
     }

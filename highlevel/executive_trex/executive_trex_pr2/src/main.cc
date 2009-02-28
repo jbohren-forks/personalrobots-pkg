@@ -185,15 +185,17 @@ int main(int argc, char **argv)
     std::cout << "--help:            Provides this message!\n";
     std::cout << "--playback:        Use if debugging a previous run. Expects an xml observation log file as input named <your_agent_name>.log\n";
     std::cout << "                   and a clock log file names clock.log.\n";
+    std::cout << "--warp:            Use unlimited steps per tick in playback, ignore clock.log.\n";
     return 0;
   }
 
   int success = 0;
 
   bool playback = executive_trex_pr2::isArg(argc, argv, "--playback");
+  bool warp = executive_trex_pr2::isArg(argc, argv, "--warp");
 
   try{
-    node = TREX::Executive::request(playback);
+    node = TREX::Executive::request(playback, warp);
     node->run();
   }
   catch(char* e){

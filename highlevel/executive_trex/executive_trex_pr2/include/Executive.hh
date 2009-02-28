@@ -23,14 +23,14 @@ namespace TREX{
     /**
      * Creates and instance of the singleton and adds a reference.
      */
-    static ExecutiveId request(bool playback = false);
+    static ExecutiveId request(bool playback = false, bool warp = false);
 
     /**
      * Releases a reference to the singleton.
      */
     static void release();
 
-    Executive(bool playback);
+    Executive(bool playback, bool warp);
 
     ~Executive();
 
@@ -80,6 +80,7 @@ namespace TREX{
     TREX::LoggerId logger_; /*!< handles TREX logging */
     TiXmlElement* input_xml_root_; /*!< Root to xml file used by all */
     bool playback_; /*! Will be true if node running off a playback log */
+    bool warp_; /*! Will be true if fast playback */
   };
 }
 
