@@ -39,8 +39,10 @@
 #include "mechanism_model/link.h"
 #include <map>
 #include <string>
+#include <memory>
 #include "mechanism_model/robot.h"
 #include "urdf/parser.h"
+
 
 namespace mechanism {
 
@@ -84,7 +86,7 @@ bool parseOrigin(TiXmlElement *o, tf::Vector3 &xyz_out, tf::Vector3 &rpy_out)
 Geometry *parseGeometry(TiXmlElement *g)
 {
   if (!g) return NULL;
-  auto_ptr<Geometry> geom;
+  std::auto_ptr<Geometry> geom;
 
   TiXmlElement *shape = g->FirstChildElement();
   if (!shape)

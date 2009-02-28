@@ -37,7 +37,6 @@
 #include "mechanism_model/joint.h"
 #include <vector>
 #include "boost/scoped_ptr.hpp"
-#include "libTF/Pose3D.h"
 #include "tf/transform_datatypes.h"
 
 
