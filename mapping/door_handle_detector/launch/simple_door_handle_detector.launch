@@ -1,6 +1,6 @@
 <launch>
 
-  <param name="/door_handle_detector/parameter_frame" type="string" value="base_link" />
+  <param name="/door_handle_detector/parameter_frame" type="string" value="base_footprint" />
 
   <param name="/door_handle_detector/door_frame_multiplier" value="4" />
   <param name="/door_handle_detector/nr_scans" value="1" />
@@ -10,8 +10,8 @@
   <param name="/door_handle_detector/door_min_width" value="0.85" />
   <param name="/door_handle_detector/door_max_width" value="1.2" />
 
-  <param name="/door_handle_detector/handle_min_height" value="0.7" />
-  <param name="/door_handle_detector/handle_max_height" value="1.1" />	
+  <param name="/door_handle_detector/handle_min_height" value="0.4" />
+  <param name="/door_handle_detector/handle_max_height" value="1.4" />	
 
   <node pkg="door_handle_detector" type="door_handle_detector_node" name="door_handle_detector" output="screen" respawn="true">
     <remap from="full_cloud" to="snapshot_cloud" />

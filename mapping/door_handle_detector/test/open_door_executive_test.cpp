@@ -98,7 +98,7 @@ public:
     advertise<std_msgs::Float64>("gripper_effort/set_command",1);
     advertise<robot_msgs::Planner2DGoal>("goal", 10);
     subscribe("state", planner_state_,  &OpenDoorExecutiveTest::plannerCallback, 1);
-    subscribe("annotation_msg", joy_msg_, &OpenDoorExecutiveTest::joyCallback,1);
+    subscribe("/joy_annotator/annotation_msg", joy_msg_, &OpenDoorExecutiveTest::joyCallback,1);
 
     // frames
     fixed_frame_ = "odom_combined";
@@ -141,6 +141,8 @@ public:
   bool tuck_arm()
   // -------------------------
   {
+    pause_.sleep();
+
     robot_msgs::PoseStamped init_pose;
     init_pose.header.frame_id = robot_frame_;
     init_pose.pose.position.x = 0.4;
@@ -181,7 +183,9 @@ public:
     Vector normal = getNormalOnDoor(door);
     normal = transformVectorToFrame(door.header.frame_id, fixed_frame_, normal, door.header.stamp);
     Vector x_axis(1,0,0);
-    double z_angle = acos(dot(normal, x_axis));
+    double dot      = normal(0) * x_axis(0) + normal(1) * x_axis(1);
+    double perp_dot = normal(1) * x_axis(0) - normal(0) * x_axis(1);
+    double z_angle = atan2(perp_dot, dot);
     cout << "z_angle in " << fixed_frame_ << " = " << z_angle << endl;
 
     // get robot position
@@ -261,6 +265,7 @@ public:
   bool openDoor()
   // -------------------------
   {
+    /*
     cout << "switch from moveto to tff controller..." << flush;
     req_switch.stop_controllers.clear();      req_switch.stop_controllers.push_back("cartesian_trajectory_right");
     req_switch.start_controllers.clear();     req_switch.start_controllers.push_back("cartesian_tff_right");
@@ -268,7 +273,7 @@ public:
     if (!res_switch.ok)
       return false;
     cout << "successful" << endl;
-
+    */
     // turn handle
     tff_msg_.mode.vel.x = tff_msg_.FORCE;
     tff_msg_.mode.vel.y = tff_msg_.FORCE;
@@ -322,6 +327,7 @@ public:
         cout << "Tucking away arm... " << endl;
         if (tuck_arm()){
           state_ = WAITING;
+	  cout << "Waiting for joystick command... " << endl;
           joy_command_ = false;
         }
         else
@@ -329,7 +335,6 @@ public:
         break;
       }
       case WAITING:{
-        cout << "Waiting for joystick command... " << endl;
         if (joy_command_){
           nodHead(1);
           state_  = DETECTING;
@@ -461,6 +466,8 @@ public:
 
   void joyCallback()
   {
+    cout << "got joystick message " << joy_msg_.data << endl;
+
     std::string status_string;
     ROS_INFO("Joystick message: %s",joy_msg_.data.c_str());
     if (joy_msg_.data == "detect_door")

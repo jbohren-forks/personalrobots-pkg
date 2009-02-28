@@ -381,41 +381,56 @@ public:
 
       // Check if any cluster respected all our constraints
       if (best_cluster == -1)
-      {
-        ROS_ERROR ("did not find a door");
-        return false;
+	{
+	  ROS_ERROR ("did not find a door");
+	  return false;
+	}
+      else
+	{
+	  ROS_ERROR ("found a door");
+	  ROS_INFO ("Number of points selected: %d.", handle_indices.size ());
+	  if (publish_debug_)
+	    publish ("semantic_polygonal_map", pmap_);
+	}
+
+
+      // get minP and maxP of selected cluster
+      cloud_geometry::statistics::getMinMax (&pmap_.polygons[best_cluster], minP, maxP);
+
+      // Find the handle by performing a composite segmentation in distance and intensity space
+      if (!findDoorHandleIntensity (&cloud_in_, &indices_in_bounds, &coeff[best_cluster], &pmap_.polygons[best_cluster], &viewpoint_cloud_,
+				    handle_indices, handle_center)){
+	ROS_ERROR ("did not find a handle");
+	return false;
       }
       else
-      {
-        // get minP and maxP of selected cluster
-        cloud_geometry::statistics::getMinMax (&pmap_.polygons[best_cluster], minP, maxP);
+	{
+	  ROS_ERROR ("found a handle");
+	  if (publish_debug_)
+	    {
+	      double r, g, b, rgb;
+	      r = g = b = 1.0;
+	      int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
+	      rgb = *(float*)(&res);
+	      
+	      // Mark all the points inside
+	      for (unsigned int k = 0; k < handle_indices.size (); k++)
+		{
+		  cloud_annotated_.pts[nr_p].x = cloud_in_.pts.at (handle_indices[k]).x;
+		  cloud_annotated_.pts[nr_p].y = cloud_in_.pts.at (handle_indices[k]).y;
+		  cloud_annotated_.pts[nr_p].z = cloud_in_.pts.at (handle_indices[k]).z;
+		  cloud_annotated_.chan[0].vals[nr_p] = rgb;
+		  nr_p++;
+		}
+	      cloud_annotated_.pts.resize (nr_p);
+	      cloud_annotated_.chan[0].vals.resize (nr_p);
+	      
+	      publish ("cloud_annotated", cloud_down_);//cloud_annotated_);
+	      
+	    }
+	}
 
-        // Find the handle by performing a composite segmentation in distance and intensity space
-        findDoorHandleIntensity (&cloud_in_, &indices_in_bounds, &coeff[best_cluster], &pmap_.polygons[best_cluster], &viewpoint_cloud_,
-                                 handle_indices, handle_center);
-        ROS_INFO ("Number of points selected: %d.", handle_indices.size ());
-      }
 
-      // This needs to be removed
-#if 1
-      if (publish_debug_)
-      {
-        double r, g, b, rgb;
-        r = g = b = 1.0;
-        int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
-        rgb = *(float*)(&res);
-
-        // Mark all the points inside
-        for (unsigned int k = 0; k < handle_indices.size (); k++)
-        {
-          cloud_annotated_.pts[nr_p].x = cloud_in_.pts.at (handle_indices[k]).x;
-          cloud_annotated_.pts[nr_p].y = cloud_in_.pts.at (handle_indices[k]).y;
-          cloud_annotated_.pts[nr_p].z = cloud_in_.pts.at (handle_indices[k]).z;
-          cloud_annotated_.chan[0].vals[nr_p] = rgb;
-          nr_p++;
-        }
-      }
-#endif
 
       // reply door message in same frame as request door message
       resp.door = req.door;
@@ -443,17 +458,6 @@ public:
                 resp.door.height, resp.door.handle.x, resp.door.handle.y, resp.door.handle.z,
                 duration.toSec ());
 
-// This needs to be removed
-#if 1
-      if (publish_debug_)
-      {
-        cloud_annotated_.pts.resize (nr_p);
-        cloud_annotated_.chan[0].vals.resize (nr_p);
-
-        publish ("cloud_annotated", cloud_down_);//cloud_annotated_);
-        publish ("semantic_polygonal_map", pmap_);
-      }
-#endif
 
       ROS_INFO("Finished detecting door");
       return (true);
@@ -473,7 +477,7 @@ public:
       * \param handle_indices the resultant set of indices describing the door handle
       * \param handle_center the resultant handle center
       */
-    void
+  bool
       findDoorHandleIntensity (PointCloud *points, vector<int> *indices, vector<double> *door_coeff, Polygon3D *door_poly,
                                PointStamped *viewpoint, vector<int> &handle_indices, Point32 &handle_center)
     {
@@ -569,7 +573,7 @@ public:
       if (handle_indices_clusters.size () == 0)
       {
         ROS_WARN ("No handle indices found because: a) no intensities channel present in the data (%d); or b) wrong statistics computed!", d_idx);
-        return;
+        return false;
       }
 
       // ---[ Sixth test (intensity)
@@ -646,7 +650,7 @@ public:
       if (best_i == -1)
       {
         ROS_ERROR ("All clusters rejected! Should exit here.");
-	return;
+	return false;
       }
 
       handle_indices.resize (line_inliers[best_i].size ());
@@ -689,6 +693,8 @@ public:
       pmap.header = points->header;
       publish ("pmap", pmap);
 #endif
+
+      return true;
     }
 
 
