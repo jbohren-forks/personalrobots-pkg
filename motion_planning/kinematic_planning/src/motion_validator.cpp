@@ -155,6 +155,9 @@ public:
 	    const unsigned int dim = model->si->getStateDimension();
 	    ompl::SpaceInformationKinematic::StateKinematic_t state = new ompl::SpaceInformationKinematic::StateKinematic(dim);
 	    
+	    model->collisionSpace->lock();
+	    model->kmodel->lock();
+
 	    if (model->groupID >= 0)
 	    {
 		/* set the pose of the whole robot to the current state */
@@ -179,7 +182,10 @@ public:
 	    ROS_INFO("Validating state for '%s'...", req.model_id.c_str());
 	    
 	    res.valid = model->si->isValid(state) ? 1 : 0;
-	    
+
+	    model->kmodel->unlock();
+	    model->collisionSpace->unlock();
+
 	    ROS_INFO("Result: %d", (int)res.valid);
 	
 	    delete state;
@@ -215,6 +221,9 @@ public:
 	    const unsigned int dim = model->si->getStateDimension();
 	    ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
 
+	    model->collisionSpace->lock();
+	    model->kmodel->lock();
+	    
 	    if (model->groupID >= 0)
 	    {
 		/* set the pose of the whole robot */
@@ -241,7 +250,10 @@ public:
 	    static_cast<StateValidityPredicate*>(model->svc)->setPoseConstraints(cstrs);
 
 	    res.valid = model->si->checkMotionIncremental(start, goal) ? 1 : 0;
-	    
+
+	    model->kmodel->unlock();
+	    model->collisionSpace->unlock();
+
 	    ROS_INFO("Result: %d", (int)res.valid);
 	    
 	    delete start;
