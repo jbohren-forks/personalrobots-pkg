@@ -79,7 +79,7 @@ int main(int argc, char ** argv)
   while(tf_sender.ok())
   {
     tf_sender.send();
-    ROS_INFO("Sending transform from %s with parent %s\n", argv[7], argv[8]);
+    ROS_DEBUG("Sending transform from %s with parent %s\n", argv[7], argv[8]);
     usleep(atoi(argv[9])*1000);
   }
 
