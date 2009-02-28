@@ -98,6 +98,7 @@ def playlist(args):
     for d in r.next():
       yield d + (f,)
     
+inl_history = [0,0]
 for cam,l_image,r_image,label in playlist(sys.argv[1:]):
   print framecounter
   if vos == None:
@@ -120,6 +121,8 @@ for cam,l_image,r_image,label in playlist(sys.argv[1:]):
   for i,vo in enumerate(vos):
     af = SparseStereoFrame(l_image, r_image)
     vo.handle_frame(af)
+    inl_history.append(vo.inl)
+    inl_history = inl_history[-2:]
     af.connected = vo.inl > 7
     # Log keyframes into "pool_loop"
     if False and not vo.keyframe.id in keys:
@@ -130,7 +133,7 @@ for cam,l_image,r_image,label in playlist(sys.argv[1:]):
       #vo.report_frame(k)
       keys.add(k.id)
 
-    if i == 0:
+    if max(inl_history) > 7:
       skel.setlabel(label)
       novel = skel.add(vo.keyframe, vo.keyframe.connected)
     x,y,z = vo.pose.xform(0,0,0)
