@@ -31,7 +31,7 @@ BULLET_INC_DIRS = . \
 		  BulletSoftBody 
 
 installed: $(SVN_DIR) patched
-	cd $(SVN_DIR) && cmake -DCMAKE_INSTALL_PREFIX=$(PWD) .
+	cd $(SVN_DIR) && cmake -DCMAKE_INSTALL_PREFIX=$(PWD) -DCMAKE_CXX_FLAGS=-fPIC .
 	# Bullet appears not be parallel-make safe
 	#cd $(SVN_DIR) && make $(PARALLEL_JOBS) 
 	cd $(SVN_DIR) && make $(BULLET_TARGETS)

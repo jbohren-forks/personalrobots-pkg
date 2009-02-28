@@ -11,7 +11,7 @@
     <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/openrave-config --libs`" cflags="`${prefix}/bin/openrave-config --cflags`"/>
   </export>
   <depend package="soqt"/>
-<!--   <depend package="bullet"/> -->
+  <depend package="bullet"/>
   <depend package="opende"/>
   <depend package="std_msgs"/>
 <!--   <depend package="laser_scan"/> -->
