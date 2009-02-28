@@ -274,7 +274,7 @@ namespace ros {
       void mapUpdateLoop();
       boost::thread *map_update_thread_; /*<! Thread to process laser data and apply to the map */
       bool active_; /*<! Thread control parameter */
-      double map_update_frequency_;
+      double map_update_frequency_, trans_stopped_velocity_, rot_stopped_velocity_, min_abs_theta_vel_;
 
       // Tolerances for determining if goal has been reached
       double yaw_goal_tolerance_;

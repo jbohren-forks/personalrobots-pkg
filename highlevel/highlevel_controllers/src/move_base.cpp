@@ -137,6 +137,7 @@ namespace ros {
       baseLaserMaxRange_(10.0),
       tiltLaserMaxRange_(10.0),
       minZ_(0.10), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0),
+      trans_stopped_velocity_(1e-2), rot_stopped_velocity_(1e-2), min_abs_theta_vel_(0.4),
       yaw_goal_tolerance_(0.1), xy_goal_tolerance_(robotWidth_ / 2), reset_cost_map_(false)
     {
       // Initialize global pose. Will be set in control loop based on actual data.
@@ -156,6 +157,9 @@ namespace ros {
 
       // Update rate for the cost map
       ros::Node::instance()->param("~move_base/map_update_frequency", map_update_frequency_, map_update_frequency_);
+      ros::Node::instance()->param("~move_base/trans_stopped_velocity", trans_stopped_velocity_, trans_stopped_velocity_);
+      ros::Node::instance()->param("~move_base/rot_stopped_velocity", rot_stopped_velocity_, rot_stopped_velocity_);
+      ros::Node::instance()->param("~trajectory_rollout/min_in_place_vel_th", min_abs_theta_vel_, min_abs_theta_vel_);
 
       // Costmap parameters
       unsigned char lethalObstacleThreshold(100);
@@ -691,7 +695,7 @@ namespace ros {
         stopRobot();
 
         //Make sure that the robot is indeed stopped before returning true
-        if(abs(base_odom_.vel.th) <= 1e-6 && abs(base_odom_.vel.x) <= 1e-6 && abs(base_odom_.vel.y) <= 1e-6)
+        if(abs(base_odom_.vel.th) <= rot_stopped_velocity_ && abs(base_odom_.vel.x) <= trans_stopped_velocity_ && abs(base_odom_.vel.y) <= trans_stopped_velocity_)
           return true;
 
         return false;
@@ -746,7 +750,7 @@ namespace ros {
         cmdVel.vel.vx = 0;
         cmdVel.vel.vy = 0;
         double ang_diff = angles::shortest_angular_distance(yaw, stateMsg.goal.th);
-        cmdVel.ang_vel.vz = std::max(.1, ang_diff);
+        cmdVel.ang_vel.vz = ang_diff > 0.0 ? std::max(min_abs_theta_vel_, ang_diff) : std::min(-1.0 * min_abs_theta_vel_, ang_diff);
       }
       else {
         // Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
