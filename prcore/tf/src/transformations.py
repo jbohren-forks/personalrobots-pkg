@@ -29,6 +29,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+# Source: http://lfd.uci.edu/~gohlke/code/transformations.py.html
+
 """Homogeneous Transformation Matrices and Quaternions.
 
 Functions for calculating 4x4 matrices for translating, rotating, mirroring,

@@ -8,7 +8,7 @@
   <depend package="visual_odometry"/>
   <depend package="std_msgs"/>
   <depend package="rospy"/>
-  <depend package="transformations"/>
+  <depend package="tf"/>
   <depend package="toro"/>
   <depend package="image_synthesizer"/>
   <depend package="place_recognition"/>

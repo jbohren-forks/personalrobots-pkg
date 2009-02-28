@@ -20,7 +20,7 @@
   <depend package="vop"/>
   <depend package="rosrecord"/>
   <depend package="calonder_descriptor"/>
-  <depend package="transformations"/>
+  <depend package="tf"/>
   <depend package="toro"/>
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-L${prefix}/lib -lvisual_odometry -Wl,-rpath,${prefix}/lib" />
