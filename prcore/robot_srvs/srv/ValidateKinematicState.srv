@@ -1,0 +1,26 @@
+# This message contains the definition for a request to the state
+# validator
+
+# The model to validate for
+string model_id
+
+# The starting state for the robot. This is either the complete state
+# of the robot, all joint values, everything that needs to be
+# specified to completely define where each part of the robot is in
+# space, or the state of the model. If only the state for the model is
+# specified, the rest of the values are taken from the robot's current
+# state.
+# The meaning for each element in the state vector can be
+# extracted from viewing the output of the robot model construction
+# (the kinematic model constructed from the parsed URDF model) in
+# verbose mode
+robot_msgs/KinematicState state
+
+
+# No state in the produced motion plan will violate these constraints
+robot_msgs/KinematicConstraints constraints
+
+---
+
+# Return true or false, to say if state is valid or not.
+byte valid

@@ -74,8 +74,8 @@ Uses (name/type):
 - None
 
 Provides (name/type):
-- @b "validate_path"/ValidateKinematicPath : given a robot model, starting and goal states, this service computes whether the straight path is valid
-
+- @b "validate_direct_path"/ValidateKinematicPath : given a robot model, starting and goal states, this service computes whether the straight path is valid
+- @b "validate_state"/ValidateKinematicState : given a robot model and a state, this service computes whether the state is valid
 
 <hr>
 
@@ -88,6 +88,7 @@ Provides (name/type):
 #include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
 
 #include <robot_srvs/ValidateKinematicPath.h>
+#include <robot_srvs/ValidateKinematicState.h>
 
 #include "kinematic_planning/ompl_extensions/RKPStateValidator.h"
 #include "kinematic_planning/ompl_extensions/RKPSpaceInformation.h"
@@ -98,8 +99,7 @@ Provides (name/type):
 #include <map>
 using namespace kinematic_planning;
 
-class MotionValidator : public ros::Node,
-			public CollisionSpaceMonitor
+class MotionValidator : public CollisionSpaceMonitor
 {
 public:
     
@@ -124,10 +124,11 @@ public:
 	ompl::SpaceInformation::StateValidityChecker_t svc;
     };    
     
-    MotionValidator(void) : ros::Node("motion_validator"),
-			    CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this))
+    MotionValidator(ros::Node *node) : CollisionSpaceMonitor(node)
     {
-	advertiseService("validate_path", &MotionValidator::validatePath);
+	m_node = node;
+	m_node->advertiseService("validate_direct_path", &MotionValidator::validatePath, this);
+	m_node->advertiseService("validate_state",       &MotionValidator::validateState, this);
     }
     
     /** Free the memory */
@@ -135,6 +136,61 @@ public:
     {
 	for (std::map<std::string, myModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
+    }
+    
+    bool validateState(robot_srvs::ValidateKinematicState::Request &req, robot_srvs::ValidateKinematicState::Response &res)
+    {
+	myModel *model = m_models[req.model_id];
+	if (model)
+	{
+	    if (model->kmodel->getModelInfo().stateDimension != req.state.get_vals_size() && 
+		model->si->getStateDimension() != req.state.get_vals_size())
+	    {
+		ROS_ERROR("Dimension of state expected to be %d or %d but was received as %d", 
+			  model->kmodel->getModelInfo().stateDimension, model->si->getStateDimension(),
+			  req.state.get_vals_size());
+		return false;
+	    }
+	    
+	    const unsigned int dim = model->si->getStateDimension();
+	    ompl::SpaceInformationKinematic::StateKinematic_t state = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+	    
+	    if (model->groupID >= 0)
+	    {
+		/* set the pose of the whole robot to the current state */
+		model->kmodel->computeTransforms(m_robotState->getParams());
+		model->collisionSpace->updateRobotModel(model->collisionSpaceID);
+
+		/* extract the components needed for the start state of the desired group */
+		for (unsigned int i = 0 ; i < dim ; ++i)
+		    state->values[i] = req.state.vals[model->kmodel->getModelInfo().groupStateIndexList[model->groupID][i]];
+	    }
+	    else
+	    {
+		/* the start state is the complete state */
+		for (unsigned int i = 0 ; i < dim ; ++i)
+		    state->values[i] = req.state.vals[i];
+	    }
+	    
+	    std::vector<robot_msgs::PoseConstraint> cstrs;
+	    req.constraints.get_pose_vec(cstrs);
+	    static_cast<StateValidityPredicate*>(model->svc)->setPoseConstraints(cstrs);
+
+	    ROS_INFO("Validating state for '%s'...", req.model_id.c_str());
+	    
+	    res.valid = model->si->isValid(state) ? 1 : 0;
+	    
+	    ROS_INFO("Result: %d", (int)res.valid);
+	
+	    delete state;
+	    
+	    return true;
+	}
+	else
+	{
+	    ROS_ERROR("Model '%s' not known", req.model_id.c_str());
+	    return false;
+	}
     }
     
     bool validatePath(robot_srvs::ValidateKinematicPath::Request &req, robot_srvs::ValidateKinematicPath::Response &res)
@@ -184,7 +240,7 @@ public:
 	    req.constraints.get_pose_vec(cstrs);
 	    static_cast<StateValidityPredicate*>(model->svc)->setPoseConstraints(cstrs);
 
-	    res.valid = model->si->checkMotionIncremental(start, goal);
+	    res.valid = model->si->checkMotionIncremental(start, goal) ? 1 : 0;
 	    
 	    ROS_INFO("Result: %d", (int)res.valid);
 	    
@@ -254,7 +310,7 @@ private:
     }
     
     std::map<std::string, myModel*> m_models;
-
+    ros::Node                      *m_node;
     
 };
 
@@ -262,7 +318,8 @@ int main(int argc, char **argv)
 { 
     ros::init(argc, argv);
     
-    MotionValidator *validator = new MotionValidator();
+    ros::Node *node = new ros::Node("motion_validator");
+    MotionValidator *validator = new MotionValidator(node);
     validator->loadRobotDescription();
     
     std::vector<std::string> mlist;    
@@ -271,13 +328,14 @@ int main(int argc, char **argv)
     for (unsigned int i = 0 ; i < mlist.size() ; ++i)
 	ROS_INFO("  * %s", mlist[i].c_str());
     if (mlist.size() > 0)
-	validator->spin();
+	node->spin();
     else
 	ROS_ERROR("No models defined. Path validation node cannot start.");
     
-    validator->shutdown();
+    node->shutdown();
     
     delete validator;	
-        
+    delete node;
+    
     return 0;    
 }
