@@ -69,9 +69,11 @@ int main(int argc, char ** argv)
       return -1;
     }
 
+  ros::Duration sleeper(atof(argv[9])/1000.0);
+
   TransformSender tf_sender(atof(argv[1]), atof(argv[2]), atof(argv[3]),
                             atof(argv[4]), atof(argv[5]), atof(argv[6]),
-                            ros::Time::now(),
+                            ros::Time::now() + sleeper, //Future dating to allow slower sending w/o timeout
                             argv[7], argv[8]);
 
 
@@ -80,7 +82,7 @@ int main(int argc, char ** argv)
   {
     tf_sender.send();
     ROS_DEBUG("Sending transform from %s with parent %s\n", argv[7], argv[8]);
-    usleep(atoi(argv[9])*1000);
+    sleeper.sleep();
   }
 
   return 0;
