@@ -42,7 +42,7 @@ namespace kinematic_calibration
 class ChainDumper
 {
 public:
-  static bool dumpChain(mechanism::Robot *robot, const std::string &root, const std::string &tip, const string& folder)
+  static bool dumpChain(mechanism::Robot *robot, const std::string &root, const std::string &tip, const std::string& folder)
   {
     mechanism::Chain mech_chain ;
     bool success ;
