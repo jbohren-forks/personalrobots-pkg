@@ -17,7 +17,7 @@
  <depend package="nav_view"/>
  <depend package="rosstage"/>
  <depend package="pr2_gazebo"/>
- <!--depend package="robot_self_filter"/-->
+ <depend package="robot_self_filter"/>
  <depend package="point_cloud_assembler"/>
  <depend package="collision_map"/>
  <depend package="laser_scan"/>
