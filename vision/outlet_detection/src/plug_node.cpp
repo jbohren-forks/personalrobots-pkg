@@ -20,9 +20,14 @@ int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
                                 int flags );
 
 // TODO: make these parameters
+/*
 static const double SQUARE_SIZE = 0.004;
 static const int BOARD_W = 3;
 static const int BOARD_H = 4;
+*/
+static const double SQUARE_SIZE = 0.0215;
+static const int BOARD_W = 6;
+static const int BOARD_H = 9;
 
 class PlugDetector : public ros::Node
 {
@@ -37,8 +42,13 @@ private:
   robot_msgs::PoseStamped pose_;
   tf::TransformBroadcaster tf_broadcaster_;
   CvMat *K_, *grid_pts_;
-  btQuaternion rotation_;
-  //boost::mutex cb_mutex_;
+
+  tf::Transform plug_in_board_, camera_in_cvcam_;
+
+  // DEBUG only
+  tf::Transform chessboard_in_plug_;
+  tf::Transform chessboard_corners_[4];
+  
   bool display_;
   IplImage* display_img_;
 
@@ -57,20 +67,30 @@ public:
     int j = 0;
     for (int y = 0; y < BOARD_H; ++y) {
       for (int x = 0; x < BOARD_W; ++x) {
-        cvSetReal2D(grid_pts_, j, 0, x*SQUARE_SIZE);
-        cvSetReal2D(grid_pts_, j, 1, y*SQUARE_SIZE);
+        cvSetReal2D(grid_pts_, j, 0, -x*SQUARE_SIZE);
+        cvSetReal2D(grid_pts_, j, 1, -y*SQUARE_SIZE);
         cvSetReal2D(grid_pts_, j, 2, 0.0);
         ++j;
       }
     }
 
-    btMatrix3x3 mat( 0,  0,  1,
-                    -1,  0,  0,
-                     0, -1,  0 );
-    mat.getRotation(rotation_);
-    
-    //subscribe("Image", img_, &PlugDetector::image_cb, this, 1);
-    //subscribe("CamInfo", cam_info_, &PlugDetector::caminfo_cb, this, 1);
+    plug_in_board_.getOrigin().setValue(0.0, 0.0, 0.0);
+    //plug_in_board_.getOrigin().setValue(-0.01, 0.003, 0.005);
+    plug_in_board_.getBasis().setValue(0, -1, 0, -1, 0, 0, 0, 0, -1);
+    camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
+    camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
+
+    //chessboard_in_plug_.setIdentity();
+    //chessboard_in_plug_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
+    //chessboard_in_plug_.getOrigin().setValue(-0.01, 0.003, 0.005);
+    //chessboard_in_plug_.getBasis().setEulerYPR(M_PI/2, M_PI, 0);
+
+    for (int i = 0; i < 4; ++i)
+      chessboard_corners_[i].setIdentity();
+    chessboard_corners_[1].getOrigin().setValue((BOARD_W-1)*SQUARE_SIZE, 0.0, 0.0);
+    chessboard_corners_[2].getOrigin().setValue((BOARD_W-1)*SQUARE_SIZE, (BOARD_H-1)*SQUARE_SIZE, 0.0);
+    chessboard_corners_[3].getOrigin().setValue(0.0, (BOARD_H-1)*SQUARE_SIZE, 0.0);
+
     advertise<robot_msgs::PoseStamped>("pose", 1);
   }
 
@@ -85,7 +105,6 @@ public:
 
   void caminfo_cb()
   {
-    //boost::mutex::scoped_lock lock(cb_mutex_);
     if (K_ == NULL)
       K_ = cvCreateMat(3, 3, CV_64FC1);
     memcpy((char*)(K_->data.db), (char*)(&cam_info_.K[0]), 9 * sizeof(double));
@@ -93,14 +112,6 @@ public:
 
   void image_cb()
   {
-    /*
-    boost::mutex::scoped_lock lock(cb_mutex_);
-    if (K_ == NULL) {
-      ROS_WARN("Need calibration info to process image");
-      return;
-    }
-    */
-
     if (!img_bridge_.fromImage(img_, "mono")) {
       ROS_ERROR("Failed to convert image");
       return;
@@ -137,6 +148,14 @@ public:
     cvFindExtrinsicCameraParams2(grid_pts_, &img_pts, K_, &D, &R3, &T3);
 
     // Convert from Rodriguez to quaternion
+    double rot3x3_arr[9];
+    CvMat rot3x3_cv;
+    cvInitMatHeader(&rot3x3_cv, 3, 3, CV_64FC1, rot3x3_arr);
+    cvRodrigues2(&R3, &rot3x3_cv);
+    btMatrix3x3 rot3x3(rot3x3_arr[0], rot3x3_arr[1], rot3x3_arr[2],
+                       rot3x3_arr[3], rot3x3_arr[4], rot3x3_arr[5],
+                       rot3x3_arr[6], rot3x3_arr[7], rot3x3_arr[8]);
+    /*
     btQuaternion orientation;
     double fang = sqrt(rot[0]*rot[0] + rot[1]*rot[1] + rot[2]*rot[2]);
     if( fang < 1e-6 )
@@ -145,7 +164,34 @@ public:
       double fmult = sin(fang/2)/fang;
       orientation.setValue(rot[0]*fmult, rot[1]*fmult, rot[2]*fmult, cos(fang/2));
     }
+    */
 
+    tf::Transform board_in_cvcam(rot3x3, tf::Vector3(trans[0], trans[1], trans[2]));
+    /*
+    tf::Transform corners_in_cv_cam[4];
+    for (int i = 0; i < 4; ++i) {
+      //corners_in_cv_cam[i] = board_in_plug_ * 
+      //corners_in_cv_cam[i] = chessboard_in_plug_ * (chessboard_in_cv_cam * chessboard_corners_[i]);
+      ROS_INFO("Corner %d: %.5f %.5f %.5f", i,
+               corners_in_cv_cam[i].getOrigin().x(),
+               corners_in_cv_cam[i].getOrigin().y(),
+               corners_in_cv_cam[i].getOrigin().z());
+    }
+    tf_broadcaster_.sendTransform(corners_in_cv_cam[0], ros::Time::now(), "corner0_frame", "high_def_frame");
+    tf_broadcaster_.sendTransform(corners_in_cv_cam[1], ros::Time::now(), "corner1_frame", "high_def_frame");
+    tf_broadcaster_.sendTransform(corners_in_cv_cam[2], ros::Time::now(), "corner2_frame", "high_def_frame");
+    tf_broadcaster_.sendTransform(corners_in_cv_cam[3], ros::Time::now(), "corner3_frame", "high_def_frame");
+    */
+
+    //tf::Transform chessboard_in_camera(rot3x3, tf::Vector3(trans[2], -trans[0], -trans[1]));
+    
+    // Plug pose in the camera frame
+    //tf::Transform plug_pose = chessboard_in_camera * chessboard_in_plug_.inverse();
+    tf::Transform plug_in_camera = camera_in_cvcam_ * board_in_cvcam;
+
+    tf::PoseTFToMsg(plug_in_camera, pose_.pose);
+    pose_.header.frame_id = "high_def_frame";
+#if 0    
     // Rotate into x-forward frame
     btVector3 position(trans[2], -trans[0], -trans[1]);
     orientation *= rotation_;
@@ -157,8 +203,9 @@ public:
     pose_.pose.orientation.z = orientation.z();
     
     pose_.header.frame_id = "high_def_frame";
+#endif
     publish("pose", pose_);
-    tf_broadcaster_.sendTransform(tf::Transform(orientation, position),
+    tf_broadcaster_.sendTransform(plug_in_camera,
                                   ros::Time::now(), "plug_frame",
                                   "high_def_frame");
     
