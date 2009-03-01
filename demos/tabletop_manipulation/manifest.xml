@@ -1,6 +1,6 @@
 <package>
-  <description>Tabletop object manipulation demo.</description>
-  <author>Radu Rusu, Ioan Sucan, Brian Gerkey</author>
+  <description>Tools for tabletop object manipulation.</description>
+  <author>Ioan Sucan, Radu Rusu, Brian Gerkey, Sachin Chitta</author>
   <license>BSD</license>
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki</url>
