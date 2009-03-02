@@ -320,7 +320,7 @@ class Skeleton:
 
     # cols maps labels to colors
     if len(uniq_l) > 1:
-      cols = dict(zip(uniq_l, [ 'green', 'red', 'magenta', 'cyan', 'darkorange', 'brown']))
+      cols = dict(zip(uniq_l, [ 'green', 'red', 'magenta', 'cyan', 'darkorange', 'brown', 'darkolivegreen']))
     else:
       cols = { uniq_l[0] : color }
 
@@ -346,6 +346,9 @@ class Skeleton:
       else:
         color = 'b:'
       pylab.plot((p0[0], p1[0]), (p0[1], p1[1]), color)
+
+  def labelization(self):
+    return [ self.node_labels[id] for id in sorted(self.nodes) ]
 
   # returns a summary of the skeleton - intended recipient is planning.
   def localization(self):
