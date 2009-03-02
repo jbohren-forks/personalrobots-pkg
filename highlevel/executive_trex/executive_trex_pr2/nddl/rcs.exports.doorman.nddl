@@ -1,0 +1,223 @@
+/**
+ * This file defines the classes that are specific to the integration with the high level controllers
+ * and state variables of the door domain.
+ */
+
+
+/** CONSTANTS and TYPEDEFS **/
+
+int UNKNOWN = -1;
+
+int FRAME_P1 = 1;
+int FRAME_P2 = 2;
+typedef int [-1, 2] HINGE_FRAME;
+
+int CLOCKWISE = 1;
+int COUNTER_CLOCKWISE = 2;
+typedef int [-1, 2] ROTATION_DIRECTION;
+
+int DOOR_CHECK_INTERVAL = 5; // Wait 5 seconds before checking the doorway is clear again
+
+/**
+ * DoorState is a state variable providing feedback on the perceived state of the door and its related
+ * status flags. Note that if any value is unkown, then we consider we have lost observability of the door.
+ * @see Door.msg
+ */
+class DoorState extends AgentTimeline {
+
+  predicate Holds {
+    // Control variable so we know when we can trust values. It should be published by the door monitor.
+    // We will require that this be false when the doormonitor terminates
+    bool active;
+
+    // Points for the door frame
+    float frame_p1_x;
+    float frame_p1_y;
+    float frame_p1_z;
+    float frame_p2_x;
+    float frame_p2_y;
+    float frame_p2_z;
+
+    // Points for the door
+    float door_p1_x;
+    float door_p1_y;
+    float door_p1_z;
+    float door_p2_x;
+    float door_p2_y;
+    float door_p2_z;
+
+    // Handle data
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+
+    // Commit to unknown values if nothing set
+    defaultOnCommit(hinge, UNKNOWN);
+    defaultOnCommit(rot_dir, UNKNOWN);
+  }
+
+  DoorState(Mode _mode){
+    super(_mode, "Holds");
+  }
+};
+
+/**
+ * Should this be part of the door state?
+ */
+class HandleState extends AgentTimeline {
+
+  predicate Holds {
+    // Control variable so we know when we can trust values.
+    // We will require that this be false when the doormonitor terminates
+    bool active;
+  }
+
+  HandleState(Mode _mode){
+    super(_mode, "Holds");
+  }
+};
+
+
+/**
+ * Behavior empoying arms and base to push the door open without requiring a grasp
+ * on the handle. This will work when the door is reasonably ajar.
+ */
+class OpenDoorWithoutGrasp extends Behavior {
+
+  /**
+   * The parameters here 
+   */
+  predicate Active{
+  }
+  predicate Inactive{
+  }
+
+  OpenDoorWithoutGrasp(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * Behavior to grasp the handle once in a position to do so
+ */
+class GraspHandle extends Behavior {
+
+  /**
+   * The parameters here 
+   */
+  predicate Active{
+  }
+  predicate Inactive{
+  }
+
+  GraspHandle(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * Behavior to twist open the handle, leaving the door unlocked afterwards if successful
+ */
+class TwistHandle extends Behavior {
+
+  /**
+   * The parameters here 
+   */
+  predicate Active{
+  }
+  predicate Inactive{
+  }
+
+  TwistHandle(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
+ */
+class OpenDoorWithGrasp extends Behavior {
+
+  /**
+   * The parameters here 
+   */
+  predicate Active{
+  }
+  predicate Inactive{
+  }
+
+  OpenDoorWithGrasp(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * Behavior to extract the gripper from a grasp on the handle
+ */
+class ReleaseDoor extends Behavior {
+
+  /**
+   * The parameters here 
+   */
+  predicate Active{
+  }
+
+  predicate Inactive{
+  }
+
+  ReleaseDoor(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * This is a sensing action to see if there is a path to the goal.
+ */
+class CheckDoorway extends Behavior {
+
+  /**
+   * The parameters here 
+   */
+  predicate Active{
+    float x; 
+    float y;
+    float th;
+  }
+
+  predicate Inactive{
+    float x; 
+    float y;
+    float th;
+  }
+
+  CheckDoorway(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * DetectDoor is activated to search for the door. It will assume it is in a suitable observation position facing the door
+ */
+class DetectDoor extends Behavior {
+
+  /**
+   * The parameters here can be the expected values for the door state msg?
+   */
+  predicate Active{
+    float x; 
+    float y;
+    float th;
+  }
+
+  predicate Inactive{
+    float x; 
+    float y;
+    float th;
+  }
+
+  DetectDoor(Mode _mode){
+    super(_mode);
+  }
+};
+
+

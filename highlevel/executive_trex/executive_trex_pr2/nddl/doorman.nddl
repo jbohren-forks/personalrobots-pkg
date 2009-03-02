@@ -32,9 +32,213 @@
 
 // Exports from sub-systems
 #include "rcs.exports.nddl"
+#include "rcs.exports.doorman.nddl"
 #include "doorman.exports.nddl"
 #include "safety.exports.nddl"
 #include "nav.nddl"
+
+/**
+ * This is an internal controller which will monitor state variables and HLC status. It can also generate
+ * next steps for this meta level control. This pattern exploits reactive planning based on feedback from the
+ * environment.
+ */
+class DoorController extends AgentTimeline {
+
+  /**
+   * The parameters here 
+   */
+  predicate Holds{
+    bool active;
+
+    bool in_detection_position; // True if far enough from the door to scan effectively. Else false
+    bool in_grasp_position; // True if far enough from the door to scan effectively, Can only be evaluated
+    bool found_door;
+    bool found_handle; // Should Cover this!
+    bool have_handle;
+    bool door_locked;
+    bool doorway_clear;
+    int last_checked_door; // Time for when we last checked the doorway
+  }
+
+  DoorController(Mode _mode){
+    super(_mode);
+  }
+};
+
+
+MoveBehavior::Inactive {
+  contained_by(DoorController.Holds dc);
+  eq(dc.active, false);
+}
+
+MoveBehavior::Active {
+  contains(DoorController.Holds dc);
+
+  // Initialize controller variables
+  eq(dc.active, true);
+  eq(dc.doorway_clear, false);
+  eq(dc.last_checked_door, 0);
+}
+
+/**
+ * This rule fires essentially a TR-style decision tree to select
+ * the next action to take. The action choices are(in reverse order):
+ * - ReleaseDoor
+ * - OpenDoorWithGrasp
+ * - TwistHandle
+ * - GraspHandle
+ * - MoveBase (x 2)
+ * - OpenDoorWithoutGrasp
+ * - DetectDoor
+ * - CheckDoor
+ *
+ * Note the pattern that uses a flexible temporal interval for constraining the relationshop between the
+ * completion time of the selected action, and the end time of this control step. This flexibility accounts for
+ * the fact that an exogenous event can trip the state forcing a planned preemption of the active command, and the
+ * completion of the command should also bring about a completion of the given control step
+ */
+DoorController::Holds {
+  // While this controller is inactive, then the doorman is also inactive
+  if(active == false){
+    contained_by(MoveBehavior.Inactive);
+  }
+
+  // If we are active, then we must evaluate different states based on current base, door , and handle state
+  if(active == true){
+    // Doorman(all) == active   
+    contained_by(MoveBehavior.Active dm);
+
+    // We will assume default values on commitment based on predecessor.
+    met_by(Holds p);
+    defaultOnCommit(in_detection_position, p.in_detection_position);
+    defaultOnCommit(in_grasp_position, p.in_grasp_position);
+    defaultOnCommit(found_door, p.found_door);
+    defaultOnCommit(found_handle, p.found_handle);
+    defaultOnCommit(door_locked, p.door_locked);
+    defaultOnCommit(doorway_clear, p.doorway_clear);
+    defaultOnCommit(last_checked_door, p.last_checked_door);
+
+    // Control flag for successor state
+    bool done;
+    defaultOnCommit(done, false);
+
+    // The successor state active is the negation of done
+    meets(Holds s);
+    neq(s.active, done);
+
+    // Evaluate condition variables based on input states.
+    // BaseState.Holds(start) bs;
+    // DoorState.Holds(start) ds;
+    // HandleState.Holds(start) hs;
+    any(BaseState.Holds bs);
+    precedes(bs.start, start);
+    precedes(start, bs.end);
+
+    int end_bounds;
+    temporalDistance(end, [-1, 1], end_bounds);
+
+    if(doorway_clear == true){
+      
+      if(have_handle == true){
+	// ReleaseDoor[end + [-1, 1]) == Inactive(SUCCESS);
+	any(ReleaseDoor.Inactive cmd);
+	concurrent(cmd.end, end_bounds);
+      }
+
+      // If we do not have the handle then we are clear. Done.
+      if(have_handle == false){
+	eq(done, true);
+      }
+    }
+
+    if(doorway_clear == false){
+
+      // We might want to recheck the doorway. Alternately we could include such an observation in the door
+      // monitoring code.
+      bool recheck_doorway;
+      int elapsed_time_since_last_check;
+      addEq(last_checked_door, elapsed_time_since_last_check, start);
+      testLEQ(recheck_doorway, DOOR_CHECK_INTERVAL, elapsed_time_since_last_check);
+      if(recheck_doorway == true){
+	eq(s.last_checked_door, s.start);
+	any(CheckDoorway.Inactive cmd);
+	concurrent(cmd.end, end_bounds);
+      }
+
+      if(recheck_doorway == false){
+
+	if(have_handle == true) {
+
+	  if(door_locked == false){
+	    // OpenDoorWithGrasp[end_bounds) == Inactive(SUCCESS);
+	    any(OpenDoorWithGrasp.Inactive cmd);
+	    concurrent(cmd.end, end_bounds);
+	  }
+
+	  if(door_locked == true){
+	    // TwistHandle[end_bounds) == Inactive(SUCCESS);
+	    any(TwistHandle.Inactive cmd);
+	    concurrent(cmd.end, end_bounds);
+	  }
+
+	}
+
+	if(have_handle == false){
+
+	  if(found_handle == true){	  
+
+	    if(in_grasp_position == true){
+	      // GraspHandle[end_bounds) == Inactive(SUCCESS);
+	      any(GraspHandle.Inactive cmd);
+	      concurrent(cmd.end, end_bounds);
+	    }
+
+	    if(in_grasp_position == false){
+	      // MoveBase[end_bounds) == Inactive(SUCCESS);
+	      any(MoveBase.Inactive cmd);
+	      concurrent(cmd.end, end_bounds);
+	    }
+
+	  }
+
+	  if(found_handle == false){
+
+	    if(found_door == true){
+
+	      if(door_locked == true){
+		// We are screwed for now.
+		eq(s.active, false);
+	      }
+
+	      if(door_locked == false){
+		// OpenDoorWithoutGrasp[end_bounds) == Inactive(SUCCESS);
+		any(OpenDoorWithoutGrasp.Inactive cmd);
+		concurrent(cmd.end, end_bounds);
+	      }
+
+	    }
+
+	    if(found_door == false){
+	    
+	      if(in_detection_position == true){
+		// DetectDoor[end_bounds) == Inactive(SUCCESS);
+		any(DetectDoor.Inactive cmd);
+		concurrent(cmd.end, end_bounds);
+
+	      }
+
+	      if(in_detection_position == false){
+		// MoveBase[end_bounds) == Inactive(SUCCESS, ...);
+		any(MoveBase.Inactive cmd);
+		concurrent(cmd.end, end_bounds);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+}
 
 // Internal
 MoveBehavior doorman = new MoveBehavior(Internal, true);
@@ -42,6 +246,17 @@ MoveBehavior doorman = new MoveBehavior(Internal, true);
 // Safety
 MobilityStatus mobility_status = new MobilityStatus(External);
 
-// RCS timelines
-MoveBase move_base = new MoveBase(External);
+// External RCS state variables
 BaseState base_state = new BaseState(External);
+HandleState handle_state = new HandleState(External);
+DoorState door_state = new DoorState(External);
+
+// External RCS Highlevel controllers
+MoveBase move_base = new MoveBase(External);
+ReleaseDoor release_door = new ReleaseDoor(External);
+OpenDoorWithGrasp open_door_with_grasp = new OpenDoorWithGrasp(External);
+TwistHandle twist_handle = new TwistHandle(External);
+GraspHandle grasp_handle = new GraspHandle(External);
+OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
+DetectDoor detect_door = new DetectDoor(External);
+CheckDoorway check_door = new CheckDoorway(External);
