@@ -58,7 +58,7 @@
   <review status="3rdparty" notes=""/>
   <url>http://eigen.tuxfamily.org/</url>
   <export>
-    <cpp cflags="-I${prefix}/build/eigen2" lflags="" />
+    <cpp cflags="-I${prefix}/build/eigen-2.0.0" lflags="" />
     <doxymaker external="http://eigen.tuxfamily.org/api/"/>
   </export>
   
