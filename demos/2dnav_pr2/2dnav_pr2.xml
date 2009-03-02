@@ -61,7 +61,7 @@
     </node>
 
     <param name="sac_ground_removal/sac_min_points_per_model" value="5" />
-    <param name="sac_ground_removal/clusters_growing_tolerance" value="0.15" />
+    <param name="sac_ground_removal/clusters_growing_tolerance" value="0.25" />
     <param name="sac_ground_removal/clusters_min_pts" value="5" />
     
     <param name="sac_ground_removal/z_threshold" value="0.2" />
