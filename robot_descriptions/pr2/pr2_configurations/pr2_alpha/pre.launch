@@ -9,7 +9,7 @@
   <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x /robotdesc/pr2"/>
 
 <!-- PR2 Calibration -->
-  <include file="$(find pr2_full)/calibrate.launch" />
+  <include file="$(find pr2_full)/calibrate_arm.launch" />
 
 <!-- Joystick -->
   <param name="joy/deadzone" value="5000"/>
