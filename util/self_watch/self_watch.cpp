@@ -39,16 +39,21 @@
 #include <collision_space/environmentODE.h>
 #include <robot_msgs/MechanismState.h>
    
-class SelfWatch : public ros::Node
+class SelfWatch
 {
 public:
     
-    SelfWatch(void) : ros::Node("self_watch")
+    SelfWatch(void) : m_node("self_watch")
     {
 	setupCollisionSpace();
-	subscribe("mechanism_state", m_mechanismState, &SelfWatch::mechanismStateCallback, this, 1);
+	m_node.subscribe("mechanism_state", m_mechanismState, &SelfWatch::mechanismStateCallback, this, 1);
     }
-        
+    
+    void run(void)
+    {
+	m_node.spin();
+    }
+    
 protected:
     
     void setupCollisionSpace(void)
@@ -58,12 +63,12 @@ protected:
 	m_collisionSpace = NULL;
 	
 	// increase the robot parts by x%, to detect collisions before they happen	
-	param("self_collision_scale_factor", m_scaling, 1.2);
-	param("self_collision_padding", m_padding, 0.05);
+	m_node.param("self_collision_scale_factor", m_scaling, 1.2);
+	m_node.param("self_collision_padding", m_padding, 0.05);
 	
 	// load the string description of the robot 
 	std::string content;
-	if (getParam("robot_description", content))
+	if (m_node.getParam("robot_description", content))
 	{
 	    // parse the description
 	    robot_desc::URDF *file = new robot_desc::URDF();
@@ -199,6 +204,8 @@ protected:
 	}
     }
     
+    ros::Node                                     m_node;
+
     // we don't want to detect a collision after it happened, but this
     // is what collision checkers do, so we scale the robot up by a
     // small factor; when a collision is found between the inflated
@@ -224,10 +231,8 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv);
     
-    SelfWatch sw;
-    
-    sw.spin();
-    
+    SelfWatch sw;    
+    sw.run();    
     
     return 0;
 }
