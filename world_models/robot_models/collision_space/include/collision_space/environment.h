@@ -88,24 +88,22 @@ namespace collision_space
 	    for (unsigned int i = 0 ; i < m_models.size() ; ++i)
 		delete m_models[i];
 	}
-	
-	/** Enable/disable verbosity */
-	void setVerbose(bool verbose);
-		
-	/** Check if a model is in collision */
-	virtual bool isCollision(unsigned int model_id) = 0;
 
-	/** Get the list of contacts (collisions) */
-	virtual bool getCollisionContacts(unsigned int model_id, std::vector<Contact> &contacts, unsigned int max_count = 1) = 0;
+	/**********************************************************************/
+	/* Collision Environment Configuration                                */
+	/**********************************************************************/
 	
-	/** Remove all obstacles from collision model */
-	virtual void clearObstacles(void) = 0;
+	/** Set the status of self collision */
+	void setSelfCollision(bool selfCollision);
 	
-	/** Add a point cloud to the collision space */
-	virtual void addPointCloud(unsigned int n, const double* points) = 0;
+	/** Check if self collision is enabled */
+	bool getSelfCollision(void) const;
+			
+	/** Add a group of links to be checked for self collision */
+	virtual void addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links) = 0;
 
-	/** Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
-	virtual void addStaticPlane(double a, double b, double c, double d) = 0;
+	/** Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
+	virtual int setCollisionCheck(unsigned int model_id, const std::string &link, bool state) = 0;
 
 	/** Add a robot model. Ignore robot links if their name is not
 	    specified in the string vector. The scale argument can be
@@ -120,13 +118,7 @@ namespace collision_space
 
 	/** Update the set of bodies that are attached to the robot (re-creates them) */
 	virtual void updateAttachedBodies(unsigned int model_id) = 0;
-
-	/** Add a group of links to be checked for self collision */
-	virtual void addSelfCollisionGroup(unsigned int model_id, std::vector<std::string> &links) = 0;
-
-	/** Enable/Disable collision checking for specific links. Return the previous value of the state (1 or 0) if succesful; -1 otherwise */
-	virtual int setCollisionCheck(unsigned int model_id, const std::string &link, bool state) = 0;
-
+		
 	/** Get the number of loaded models */
 	unsigned int getModelCount(void) const;
 
@@ -135,18 +127,49 @@ namespace collision_space
 	
 	/** Get the model ID based on the model (robot) name; returns -1 if model not found. */
 	int getModelID(const std::string& robot_name) const;
+
+
+	/**********************************************************************/
+	/* Collision Checking Routines                                        */
+	/**********************************************************************/
 	
+
+	/** Check if a model is in collision */
+	virtual bool isCollision(unsigned int model_id) = 0;
+
+	/** Get the list of contacts (collisions) */
+	virtual bool getCollisionContacts(unsigned int model_id, std::vector<Contact> &contacts, unsigned int max_count = 1) = 0;
+
+	
+	/**********************************************************************/
+	/* Collision Bodies Definition (Dynamic)                              */
+	/**********************************************************************/
+	
+	/** Remove all obstacles from collision model */
+	virtual void clearObstacles(void) = 0;
+	
+	/** Add a point cloud to the collision space */
+	virtual void addPointCloud(unsigned int n, const double* points) = 0;
+
+	/**********************************************************************/
+	/* Collision Bodies Definition (Static)                               */
+	/**********************************************************************/
+	
+	/** Add a plane to the collision space. Equation it satisfies is a*x+b*y+c*z = d*/
+	virtual void addStaticPlane(double a, double b, double c, double d) = 0;
+
+	/**********************************************************************/
+	/* Miscellaneous Routines                                             */
+	/**********************************************************************/
+
 	/** Provide interface to a lock. Use carefully! */
 	void lock(void);
 	
 	/** Provide interface to a lock. Use carefully! */
 	void unlock(void);
 	
-	/** Set the status of self collision */
-	void setSelfCollision(bool selfCollision);
-	
-	/** Check if self collision is enabled */
-	bool getSelfCollision(void) const;
+	/** Enable/disable verbosity */
+	void setVerbose(bool verbose);
 
     protected:
         
