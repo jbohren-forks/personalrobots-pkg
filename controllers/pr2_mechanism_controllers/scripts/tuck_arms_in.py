@@ -108,8 +108,12 @@ def hold_side(side, pan_angle, holding):
     hold_joint("%s_shoulder_pan" % side, 70, 6, 8, 4, holding)
     set_controller("%s_shoulder_pan_controller" % side, float(pan_angle))
 
+obselete = "OBSELETE! Use tuckarm.py instead (has trajectory implementation)!\n"
+
 def main():
     usage = "Usage: tuck_arms_in.py <arms> ; <arms> is \'(r)ight\', \'(l)eft\', or \'(b)oth arms\'"
+
+    print obselete
 
     if len(sys.argv) < 2:
         print usage
