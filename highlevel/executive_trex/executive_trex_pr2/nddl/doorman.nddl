@@ -242,6 +242,7 @@ DoorController::Holds {
 
 // Internal
 MoveBehavior doorman = new MoveBehavior(Internal, true);
+DoorController door_controller = new DoorController(Internal);
 
 // Safety
 MobilityStatus mobility_status = new MobilityStatus(External);

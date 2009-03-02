@@ -29,6 +29,12 @@ if ! $(executive_trex_pr2_READY) {
 		[ FDirName $(EXEC_HOME) master.0 pr2.recharger.nddl ]
 		[ FDirName $(EXEC_HOME) master.0 pr2.safety.nddl ]
 		[ FDirName $(EXEC_HOME) master.0 pr2.rcs.sim.nddl ]
+		[ FDirName $(EXEC_HOME) doorman.0 pr2.master.nddl ]
+		[ FDirName $(EXEC_HOME) doorman.0 pr2.doorman.nddl ]
+		[ FDirName $(EXEC_HOME) doorman.0 pr2.driver.nddl ]
+		[ FDirName $(EXEC_HOME) doorman.0 pr2.recharger.nddl ]
+		[ FDirName $(EXEC_HOME) doorman.0 pr2.safety.nddl ]
+		[ FDirName $(EXEC_HOME) doorman.0 pr2.rcs.sim.nddl ]
 	;
 
 	local file ;

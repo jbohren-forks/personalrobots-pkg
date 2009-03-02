@@ -1,0 +1,16 @@
+#include "rcs.sim.nddl";
+
+// Initialize state variables
+fact(base_state.Holds f0);
+f0.x = 0.0;
+f0.y = 0.0;
+f0.th = 0.0;
+
+fact(battery_state.Holds f1);
+f1.energy_remaining = 100.0;
+f1.energy_capacity = 100.0;
+f1.power_consumption = 100.0;
+
+// Initialize behaviors
+fact(move_base.Inactive);
+fact(recharge_controller.Inactive);

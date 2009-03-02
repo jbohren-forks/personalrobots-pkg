@@ -1,0 +1,11 @@
+#include "master.nddl"
+
+
+/* Waypoints */
+Waypoint w1 = new Waypoint(9.0, 0.5, 0.0);
+Waypoint w2 = new Waypoint(10.0, 10.0 , 2.0);
+
+/* Charging Stations */
+ChargingStation c1 = new ChargingStation(15.0, 15.0, 1.959);
+
+close();

@@ -3,6 +3,17 @@
  * and state variables of the door domain.
  */
 
+/** External Functions to be integrated **/
+
+// Compute the x, y, th base position based on the position and orientation of the door frame. Perhaps
+// we just want to use the 2 points for the door, or door frame. Why can z be greater than 0?
+constraint get_door_detection_base_position(x, y, th, door_x1, door_y1, door_x2, door_y2);
+
+// Given a current position, and a target handle position, compute a goal base position to enable a grasp
+constraint get_door_grasp_base_position(x, y, th, current_x, current_y, handle_x, handle_y, handle_z);
+
+// Given a target handle position, compute a goa
+
 
 /** CONSTANTS and TYPEDEFS **/
 
