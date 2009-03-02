@@ -36,6 +36,8 @@
 
 import roslib
 import rospy
+import rosparam
+
 from robot_msgs.msg import JointTraj, JointTrajPoint
 
 from mechanism_control import mechanism
@@ -62,6 +64,30 @@ USAGE = 'tuckarm.py <arms> ; <arms> is \'(r)ight\', \'(l)eft\', or \'(b)oth\' ar
 
 spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
 
+def set_params_right():
+  rosparam.set_param("right_arm/trajectory_controller/velocity_scaling_factor", 1.0)
+  rosparam.set_param("right_arm/trajectory_controller/trajectory_wait_timeout", 0.25)
+
+  rosparam.set_param("right_arm/trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("right_arm/trajectory_controller/r_shoulder_lift_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("right_arm/trajectory_controller/r_shoulder_roll_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("right_arm/trajectory_controller/r_elbow_flex_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("right_arm/trajectory_controller/r_forearm_roll_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("right_arm/trajectory_controller/r_wrist_flex_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("right_arm/trajectory_controller/r_wrist_roll_joint/goal_reached_threshold", 0.1)
+
+def set_params_left():
+  rosparam.set_param("left_arm/trajectory_controller/velocity_scaling_factor", 1.0)
+  rosparam.set_param("left_arm/trajectory_controller/trajectory_wait_timeout", 0.25)
+
+  rosparam.set_param("left_arm/trajectory_controller/l_shoulder_pan_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("left_arm/trajectory_controller/l_shoulder_lift_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("left_arm/trajectory_controller/l_shoulder_roll_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("left_arm/trajectory_controller/l_elbow_flex_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("left_arm/trajectory_controller/l_forearm_roll_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("left_arm/trajectory_controller/l_wrist_flex_joint/goal_reached_threshold", 0.1)
+  rosparam.set_param("left_arm/trajectory_controller/l_wrist_roll_joint/goal_reached_threshold", 0.1)
+
 
 if __name__ == '__main__':
   if len(sys.argv) < 2):
@@ -73,58 +99,57 @@ if __name__ == '__main__':
   rospy.init_node('tuck_in', anonymous = True)
 
   # Positions order
-  # s. Pan, s. Lift, up roll, elbow flex, elbow roll, wrist flex, wrist roll
+  # s. pan, s. lift, up roll, elbow flex, elbow roll, wrist flex, wrist roll
 
-  # Loads XML files from arm_gazebo demo, may be benifical to relocate files
-  path = roslib.packages.get_pkg_dir('arm_gazebo')
+  path = roslib.packages.get_pkg_dir('sbpl_arm_executive')
 
-  xml_for_left = open(path + '/l_arm_trajectory_controller.xml')
-  xml_for_right = open(path + '/r_arm_trajectory_controller.xml')
+  xml_for_left = open(path + '/launch/xml/l_arm_trajectory_controller.xml')
+  xml_for_right = open(path + '/launch/xml/r_arm_trajectory_controller.xml')
 
   controllers = []
   try:
-      if side == 'l' or side == 'left':
-          # tuck traj for left arm
-          resp = spawn_controller(xml_for_left.read())
-          if ord(resp.ok[0]) != 0:
-              controllers.append(resp.name[0])
+    if side == 'l' or side == 'left':
+      # tuck traj for left arm
+      set_params_left()
+      resp = spawn_controller(xml_for_left.read())
+      if ord(resp.ok[0]) != 0:
+        controllers.append(resp.name[0])
 
-          positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0],
-                       [0.0,1.57,1.57,-2.25,0.0,0.0,0.0]]  
-          go('left', positions)
+      positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,1.57,-2.25,0.0,0.0,0.0]]  
+      go('left', positions)
 
-      elif side == 'r' or side == 'right':
-          # tuck traj for right arm
-          resp = spawn_controller(xml_for_right.read())
-          if ord(resp.ok[0]) != 0:
-              controllers.append(resp.name[0])
+    elif side == 'r' or side == 'right':
+      # tuck traj for right arm
+      set_params_right()
+      resp = spawn_controller(xml_for_right.read())
+      if ord(resp.ok[0]) != 0:
+        controllers.append(resp.name[0])
 
-          positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0],
-                       [0.0,1.57,-1.57,-2.25,0.0,0.0,0.0]]    
-          go('right', positions)
+      positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,-1.57,-2.25,0.0,0.0,0.0]]    
+      go('right', positions)
 
-      elif side == 'b' or side == 'both':
-          # Both arms
-          # Holds left arm up at shoulder lift
-          resp = spawn_controller(xml_for_left.read())
-          if ord(resp.ok[0]) != 0:
-              controllers.append(resp.name[0])
-          resp = spawn_controller(xml_for_right.read())
-          if ord(resp.ok[0]) != 0:
-              controllers.append(resp.name[0]) 
-
-          positions_l = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0],
-                         [0.0,1.1,1.57,-2.25,0.0,0.0,0.0]] 
-          positions_r = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0],
-                         [0.0,1.57,-1.57,-2.25,0.0,0.0,0.0]]
-    
-          go('right', positions_r)
-          time.sleep(1.0)
-          go('left', positions_l)
-      else:
-          print 'Unknown side! Must be l/left, r/right, or b/both!'
-          print USAGE
-          sys.exit(2)
+    elif side == 'b' or side == 'both':
+      # Both arms
+      # Holds left arm up at shoulder lift
+      set_params_left()
+      resp = spawn_controller(xml_for_left.read())
+      if ord(resp.ok[0]) != 0:
+        controllers.append(resp.name[0])
+      set_params_right()
+      resp = spawn_controller(xml_for_right.read())
+      if ord(resp.ok[0]) != 0:
+        controllers.append(resp.name[0]) 
+        
+      positions_l = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.1,1.57,-2.25,0.0,0.0,0.0]] 
+      positions_r = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,-1.57,-2.25,0.0,0.0,0.0]]
+      
+      go('right', positions_r)
+      time.sleep(1.0)
+      go('left', positions_l)
+    else:
+      print 'Unknown side! Must be l/left, r/right, or b/both!'
+      print USAGE
+      sys.exit(2)
   finally:
-      for name in controllers:
-          mechanism.kill_controller(name)
+    for name in controllers:
+      mechanism.kill_controller(name)
