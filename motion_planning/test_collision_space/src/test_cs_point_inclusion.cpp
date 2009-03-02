@@ -42,7 +42,7 @@
 #include <algorithm>
 #include <robot_msgs/VisualizationMarker.h>
 #include <roslib/Time.h>
-#include <collision_space/util.h>
+#include <collision_space/point_inclusion.h>
 using namespace collision_space;
 
 const int TEST_TIMES  = 3;
@@ -93,7 +93,7 @@ public:
 	m_node.publish("visualizationMarker", mk);
     }
 
-    void testShape(collision_space::bodies::Shape *s)
+    void testShape(collision_space::bodies::Body *s)
     {
 	for (int i = 0 ; i < TEST_POINTS ; ++i)
 	{
@@ -106,7 +106,7 @@ public:
 	}
     }
     
-    void setShapeTransformAndMarker(collision_space::bodies::Shape *s,
+    void setShapeTransformAndMarker(collision_space::bodies::Body *s,
 				    robot_msgs::VisualizationMarker &mk)
     {
 	btTransform t;
@@ -147,9 +147,8 @@ public:
     
     void testSphere(void)
     {
-	collision_space::bodies::Shape *s = new collision_space::bodies::Sphere();
-	double radius[1] = {2.0};
-	s->setDimensions(radius);
+	planning_models::shapes::Sphere shape(2.0);	
+	collision_space::bodies::Body *s = new collision_space::bodies::Sphere(&shape);
 
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
@@ -157,9 +156,9 @@ public:
 	    setShapeTransformAndMarker(s, mk);	
 	    
 	    mk.type = robot_msgs::VisualizationMarker::SPHERE;
-	    mk.xScale = radius[0]*2.0;
-	    mk.yScale = radius[0]*2.0;
-	    mk.zScale = radius[0]*2.0;
+	    mk.xScale = shape.radius*2.0;
+	    mk.yScale = shape.radius*2.0;
+	    mk.zScale = shape.radius*2.0;
 	    
 	    m_node.publish("visualizationMarker", mk);
 	
@@ -171,9 +170,8 @@ public:
 
     void testBox(void)
     {
-	collision_space::bodies::Shape *s = new collision_space::bodies::Box();
-	double dims[3] = {2.0, 1.33, 1.5};
-	s->setDimensions(dims);
+	planning_models::shapes::Box shape(2.0, 1.33, 1.5);
+	collision_space::bodies::Body *s = new collision_space::bodies::Box(&shape);
 	
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
@@ -181,9 +179,9 @@ public:
 	    setShapeTransformAndMarker(s, mk);	
 	    
 	    mk.type = robot_msgs::VisualizationMarker::CUBE;
-	    mk.xScale = dims[0]; // length
-	    mk.yScale = dims[1]; // width
-	    mk.zScale = dims[2]; // height
+	    mk.xScale = shape.size[0]; // length
+	    mk.yScale = shape.size[1]; // width
+	    mk.zScale = shape.size[2]; // height
 	    
 	    m_node.publish("visualizationMarker", mk);
 	    
@@ -195,9 +193,8 @@ public:
     
     void testCylinder(void)
     {
-	collision_space::bodies::Shape *s = new collision_space::bodies::Cylinder();
-	double dims[2] = {2.5, 0.5};
-	s->setDimensions(dims);
+	planning_models::shapes::Cylinder shape(0.5, 2.5);
+	collision_space::bodies::Body *s = new collision_space::bodies::Cylinder(&shape);
 	
 	for (int i = 0 ; i < TEST_TIMES ; ++i)
 	{
@@ -205,9 +202,9 @@ public:
 	    setShapeTransformAndMarker(s, mk);	
 	    
 	    mk.type = robot_msgs::VisualizationMarker::CUBE;
-	    mk.xScale = dims[1] * 2.0; // radius
-	    mk.yScale = dims[1] * 2.0; // radius
-	    mk.zScale = dims[0]; //length
+	    mk.xScale = shape.radius * 2.0; // radius
+	    mk.yScale = shape.radius * 2.0; // radius
+	    mk.zScale = shape.length; //length
 	    
 	    m_node.publish("visualizationMarker", mk);
 	    

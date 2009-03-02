@@ -34,14 +34,13 @@
 
 /** \Author Ioan Sucan */
 
-#include <collision_space/util.h>
+#include <collision_space/point_inclusion.h>
 #include <gtest/gtest.h>
 
 TEST(SpherePointContainment, SimpleInside)
 {
-    collision_space::bodies::Shape* sphere = new collision_space::bodies::Sphere();
-    double dims = 1.0;    
-    sphere->setDimensions(&dims);    
+    planning_models::shapes::Sphere shape(1.0);
+    collision_space::bodies::Body* sphere = new collision_space::bodies::Sphere(&shape);
     sphere->setScale(1.05);
     bool contains = sphere->containsPoint(0,0,1.0);
     delete sphere;
@@ -49,10 +48,9 @@ TEST(SpherePointContainment, SimpleInside)
 }
 
 TEST(SpherePointContainment, SimpleOutside)
-{
-    collision_space::bodies::Shape* sphere = new collision_space::bodies::Sphere();
-    double dims = 1.0;    
-    sphere->setDimensions(&dims);    
+{ 
+    planning_models::shapes::Sphere shape(1.0);
+    collision_space::bodies::Body* sphere = new collision_space::bodies::Sphere(&shape);
     sphere->setScale(0.95);
     bool contains = sphere->containsPoint(0,0,1.0);
     delete sphere;
@@ -60,10 +58,9 @@ TEST(SpherePointContainment, SimpleOutside)
 }
 
 TEST(SpherePointContainment, ComplexInside)
-{
-    collision_space::bodies::Shape* sphere = new collision_space::bodies::Sphere();
-    double dims = 1.0;
-    sphere->setDimensions(&dims);
+{ 
+    planning_models::shapes::Sphere shape(1.0);
+    collision_space::bodies::Body* sphere = new collision_space::bodies::Sphere(&shape);
     sphere->setScale(0.95);
     btTransform pose;
     pose.setIdentity();    
@@ -75,10 +72,9 @@ TEST(SpherePointContainment, ComplexInside)
 }
 
 TEST(SpherePointContainment, ComplexOutside)
-{
-    collision_space::bodies::Shape* sphere = new collision_space::bodies::Sphere();
-    double dims = 1.0;
-    sphere->setDimensions(&dims);
+{   
+    planning_models::shapes::Sphere shape(1.0);
+    collision_space::bodies::Body* sphere = new collision_space::bodies::Sphere(&shape);
     sphere->setScale(0.95);
     btTransform pose;
     pose.setIdentity();    
@@ -91,10 +87,9 @@ TEST(SpherePointContainment, ComplexOutside)
 
 
 TEST(BoxPointContainment, SimpleInside)
-{
-    collision_space::bodies::Shape* box = new collision_space::bodies::Box();
-    double dims[3] = {1.0, 2.0, 3.0};    
-    box->setDimensions(dims);
+{    
+    planning_models::shapes::Box shape(1.0, 2.0, 3.0);
+    collision_space::bodies::Body* box = new collision_space::bodies::Box(&shape);
     box->setScale(0.95);
     bool contains = box->containsPoint(0,0,1.0);
     delete box;
@@ -104,9 +99,8 @@ TEST(BoxPointContainment, SimpleInside)
 
 TEST(BoxPointContainment, SimpleOutside)
 {
-    collision_space::bodies::Shape* box = new collision_space::bodies::Box();
-    double dims[3] = {1.0, 2.0, 3.0};    
-    box->setDimensions(dims);
+    planning_models::shapes::Box shape(1.0, 2.0, 3.0);
+    collision_space::bodies::Body* box = new collision_space::bodies::Box(&shape);
     box->setScale(0.95);
     bool contains = box->containsPoint(0,0,3.0);
     delete box;
@@ -115,10 +109,9 @@ TEST(BoxPointContainment, SimpleOutside)
 
 
 TEST(BoxPointContainment, ComplexInside)
-{
-    collision_space::bodies::Shape* box = new collision_space::bodies::Box();
-    double dims[3] = {1.0, 1.0, 1.0};    
-    box->setDimensions(dims);
+{  
+    planning_models::shapes::Box shape(1.0, 1.0, 1.0);
+    collision_space::bodies::Body* box = new collision_space::bodies::Box(&shape);
     box->setScale(1.01);
     btTransform pose;
     pose.setIdentity();    
@@ -133,10 +126,9 @@ TEST(BoxPointContainment, ComplexInside)
 }
 
 TEST(BoxPointContainment, ComplexOutside)
-{
-    collision_space::bodies::Shape* box = new collision_space::bodies::Box();
-    double dims[3] = {1.0, 1.0, 1.0};    
-    box->setDimensions(dims);
+{    
+    planning_models::shapes::Box shape(1.0, 1.0, 1.0);
+    collision_space::bodies::Body* box = new collision_space::bodies::Box(&shape);
     box->setScale(1.01);
     btTransform pose;
     pose.setIdentity();    
@@ -152,9 +144,8 @@ TEST(BoxPointContainment, ComplexOutside)
 
 TEST(CylinderPointContainment, SimpleInside)
 {
-    collision_space::bodies::Shape* cylinder = new collision_space::bodies::Cylinder();
-    double dims[3] = {4.0, 1.0};    
-    cylinder->setDimensions(dims);
+    planning_models::shapes::Cylinder shape(1.0, 4.0);
+    collision_space::bodies::Body* cylinder = new collision_space::bodies::Cylinder(&shape);
     cylinder->setScale(1.05);
     bool contains = cylinder->containsPoint(0, 0, 2.0);
     delete cylinder;
@@ -164,9 +155,8 @@ TEST(CylinderPointContainment, SimpleInside)
 
 TEST(CylinderPointContainment, SimpleOutside)
 {
-    collision_space::bodies::Shape* cylinder = new collision_space::bodies::Cylinder();
-    double dims[3] = {4.0, 1.0};    
-    cylinder->setDimensions(dims);
+    planning_models::shapes::Cylinder shape(1.0, 4.0);
+    collision_space::bodies::Body* cylinder = new collision_space::bodies::Cylinder(&shape);
     cylinder->setScale(0.95);
     bool contains = cylinder->containsPoint(0,0,2.0);
     delete cylinder;

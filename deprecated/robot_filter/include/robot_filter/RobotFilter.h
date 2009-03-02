@@ -35,7 +35,7 @@
 /** \author Ioan Sucan */
 
 
-#include <collision_space/util.h>
+#include <collision_space/point_inclusion.h>
 #include <robot_model/knode.h>
 
 
@@ -73,7 +73,7 @@ namespace robot_filter {
   class RobotFilter {
   private:
     struct RobotPart {
-      collision_space::bodies::Shape        *body;
+      collision_space::bodies::Body         *body;
       planning_models::KinematicModel::Link *link;	
     };
     std::vector<RobotPart>                   m_selfSeeParts;

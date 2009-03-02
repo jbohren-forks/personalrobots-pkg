@@ -34,8 +34,10 @@
 
 /** \author Ioan Sucan */
 
-#ifndef KINEMATIC_ROBOT_MODEL_
-#define KINEMATIC_ROBOT_MODEL_
+#ifndef PLANNING_MODELS_KINEMATIC_ROBOT_MODEL_
+#define PLANNING_MODELS_KINEMATIC_ROBOT_MODEL_
+
+#include "planning_models/shapes.h"
 
 #include <urdf/URDF.h>
 #include <LinearMath/btTransform.h>
@@ -61,64 +63,6 @@ namespace planning_models
     class KinematicModel
     {
     public:
-	
-	/** A basic definition of a shape. Shapes to be centered at origin */
-	class Shape
-	{		    
-	public:	    
-	    Shape(void)
-	    {
-		type = UNKNOWN;
-	    }
-	    
-	    virtual ~Shape(void)
-	    {
-	    }
-	    
-	    enum { UNKNOWN, SPHERE, CYLINDER, BOX } 
-	    type;
-	    
-	};
-	
-	/** Definition of a sphere */
-	class Sphere : public Shape
-	{
-	public:
-	    Sphere(void) : Shape()
-	    {
-		type   = SPHERE;
-		radius = 0.0;
-	    }
-	    
-	    double radius; 
-	};
-	
-	/** Definition of a cylinder */
-	class Cylinder : public Shape
-	{
-	public:
-	    Cylinder(void) : Shape()
-	    {
-		type   = CYLINDER;
-		length = radius = 0.0;
-	    }
-	    
-	    double length, radius; 
-	};
-	
-	/** Definition of a box */
-	class Box : public Shape
-	{
-	public:
-	    Box(void) : Shape()
-	    {
-		type = BOX;
-		size[0] = size[1] = size[2] = 0.0;
-	    }
-	    
-	    /** x, y, z */
-	    double size[3]; 
-	};
 	
 	/** Forward definition of a joint */
 	class Joint;
@@ -299,7 +243,7 @@ namespace planning_models
 	    btTransform         attachTrans;
 
 	    /** The geometry of the attached body */
-	    Shape*              shape;
+	    shapes::Shape*      shape;
 
 	    /** The global transform for this link (computed by forward kinematics) */
 	    btTransform         globalTrans;
@@ -355,7 +299,7 @@ namespace planning_models
 	    btTransform                constGeomTrans;
 	    
 	    /** The geometry of the link */
-	    Shape                     *shape;
+	    shapes::Shape             *shape;
 	    
 	    /** Attached bodies */
 	    std::vector<AttachedBody*> attachedBodies;	    

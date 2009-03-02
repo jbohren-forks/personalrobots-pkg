@@ -268,7 +268,7 @@ void planning_models::KinematicModel::Link::extractInformation(const robot_desc:
     {
     case robot_desc::URDF::Link::Geometry::BOX:
 	{
-	    Box          *box  = new Box();	    
+	    shapes::Box  *box  = new shapes::Box();	    
 	    const double *size = static_cast<const robot_desc::URDF::Link::Geometry::Box*>(urdfLink->collision->geometry->shape)->size;
 	    box->size[0] = size[0];
 	    box->size[1] = size[1];
@@ -278,17 +278,17 @@ void planning_models::KinematicModel::Link::extractInformation(const robot_desc:
 	break;
     case robot_desc::URDF::Link::Geometry::SPHERE:
 	{
-	    Sphere *sphere = new Sphere();
-	    sphere->radius = static_cast<const robot_desc::URDF::Link::Geometry::Sphere*>(urdfLink->collision->geometry->shape)->radius;
-	    shape          = sphere;
+	    shapes::Sphere *sphere = new shapes::Sphere();
+	    sphere->radius         = static_cast<const robot_desc::URDF::Link::Geometry::Sphere*>(urdfLink->collision->geometry->shape)->radius;
+	    shape                  = sphere;
 	}
 	break;
     case robot_desc::URDF::Link::Geometry::CYLINDER:
 	{
-	    Cylinder *cylinder = new Cylinder();
-	    cylinder->length = static_cast<const robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->length;
-	    cylinder->radius = static_cast<const robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->radius;
-	    shape            = cylinder;
+	    shapes::Cylinder *cylinder = new shapes::Cylinder();
+	    cylinder->length           = static_cast<const robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->length;
+	    cylinder->radius           = static_cast<const robot_desc::URDF::Link::Geometry::Cylinder*>(urdfLink->collision->geometry->shape)->radius;
+	    shape                      = cylinder;
 	}	
 	break;
     default:

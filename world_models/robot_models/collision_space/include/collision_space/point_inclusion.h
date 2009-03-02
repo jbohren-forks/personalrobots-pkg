@@ -34,9 +34,10 @@
 
 /** \author Ioan Sucan */
 
-#ifndef COLLISION_SPACE_UTIL_
-#define COLLISION_SPACE_UTIL_
+#ifndef COLLISION_SPACE_POINT_INCLUSION_
+#define COLLISION_SPACE_POINT_INCLUSION_
 
+#include <planning_models/shapes.h>
 #include <LinearMath/btTransform.h>
 #include <cmath>
 
@@ -54,16 +55,17 @@ namespace collision_space
     namespace bodies
     {
 	
-	class Shape
+	class Body
 	{
 	public:
-	    Shape(void)
+	    Body(void)
 	    {
 		m_scale = 1.0;
+		m_padding = 0.0;
 		m_pose.setIdentity();
 	    }
 	    
-	    virtual ~Shape(void)
+	    virtual ~Body(void)
 	    {
 	    }
 	    
@@ -71,6 +73,22 @@ namespace collision_space
 	    {
 		m_scale = scale;
 		updateInternalData();
+	    }
+	    
+	    double getScale(void) const
+	    {
+		return m_scale;
+	    }
+	    
+	    void setPadding(double padd)
+	    {
+		m_padding = padd;
+		updateInternalData();
+	    }
+	    
+	    double getPadding(void) const
+	    {
+		return m_padding;
 	    }
 	    
 	    void setPose(const btTransform &pose)
@@ -84,10 +102,10 @@ namespace collision_space
 		return m_pose;
 	    }
 	    
-	    virtual void setDimensions(const double *dims)
+	    void setDimensions(const planning_models::shapes::Shape *shape)
 	    {
-		useDimensions(dims);
-		updateInternalData();	    
+		useDimensions(shape);
+		updateInternalData();
 	    }
 	    
 	    bool containsPoint(double x, double y, double z) const
@@ -100,18 +118,24 @@ namespace collision_space
 	protected:
 	    
 	    virtual void updateInternalData(void) = 0;
-	    virtual void useDimensions(const double *dims) = 0;
+	    virtual void useDimensions(const planning_models::shapes::Shape *shape) = 0;
 	    
 	    btTransform m_pose;	
-	    double      m_scale;	    
+	    double      m_scale;
+	    double      m_padding;	    
 	};
 	
-	class Sphere : public Shape
+	class Sphere : public Body
 	{
 	public:
-        Sphere(void) : Shape()
+            Sphere(void) : Body()
 	    {
 		m_radius = 0.0;
+	    }
+	    
+	    Sphere(const planning_models::shapes::Shape *shape) : Body()
+	    {
+		setDimensions(shape);
 	    }
 	    
 	    virtual ~Sphere(void)
@@ -125,14 +149,15 @@ namespace collision_space
 	    
 	protected:
 	    
-	    virtual void useDimensions(const double *dims) // radius
+	    virtual void useDimensions(const planning_models::shapes::Shape *shape) // radius
 	    {
-		m_radius = dims[0];
+		m_radius = static_cast<const planning_models::shapes::Sphere*>(shape)->radius;
 	    }
 	    
 	    virtual void updateInternalData(void)
 	    {
-		m_radius2 = m_radius * m_radius * m_scale * m_scale;
+		m_radius2 = m_radius * m_scale + m_padding;
+		m_radius2 = m_radius2 * m_radius2;
 		m_center = m_pose.getOrigin();
 	    }
 	    
@@ -141,12 +166,17 @@ namespace collision_space
 	    double    m_radius2;		    
 	};
         
-	class Cylinder : public Shape
+	class Cylinder : public Body
 	{
 	public:
-        Cylinder(void) : Shape()
+	    Cylinder(void) : Body()
 	    {
 		m_length = m_radius = 0.0;
+	    }
+
+	    Cylinder(const planning_models::shapes::Shape *shape) : Body()
+	    {
+		setDimensions(shape);
 	    }
 	    
 	    virtual ~Cylinder(void)
@@ -175,16 +205,17 @@ namespace collision_space
 	    
 	protected:
 	    
-	    virtual void useDimensions(const double *dims) // (length, radius)
+	    virtual void useDimensions(const planning_models::shapes::Shape *shape) // (length, radius)
 	    {
-		m_length = dims[0];
-		m_radius = dims[1];
+		m_length = static_cast<const planning_models::shapes::Cylinder*>(shape)->length;
+		m_radius = static_cast<const planning_models::shapes::Cylinder*>(shape)->radius;
 	    }
 	    
 	    virtual void updateInternalData(void)
 	    {
-		m_radius2 = m_radius * m_radius * m_scale * m_scale;
-		m_length2 = m_scale * m_length / 2.0;		
+		m_radius2 = m_radius * m_scale + m_padding;
+		m_radius2 = m_radius2 * m_radius2;
+		m_length2 = (m_scale * m_length + m_padding) / 2.0;
 		m_center = m_pose.getOrigin();
 
 		const btMatrix3x3& basis = m_pose.getBasis();
@@ -205,12 +236,17 @@ namespace collision_space
 	};
 	
 	
-	class Box : public Shape
+	class Box : public Body
 	{
 	public: 
-        Box(void) : Shape()
+	    Box(void) : Body()
 	    {
 		m_length = m_width = m_height = 0.0;
+	    }
+	    
+	    Box(const planning_models::shapes::Shape *shape) : Body()
+	    {
+		setDimensions(shape);
 	    }
 	    
 	    virtual ~Box(void)
@@ -240,19 +276,21 @@ namespace collision_space
 	    
 	protected:
 	    
-	    virtual void useDimensions(const double *dims) // (x, y, z) = (length, width, height)
+	    virtual void useDimensions(const planning_models::shapes::Shape *shape) // (x, y, z) = (length, width, height)
 	    {
-		m_length = dims[0];
-		m_width  = dims[1];
-		m_height = dims[2];
+		const double *size = static_cast<const planning_models::shapes::Box*>(shape)->size;
+		m_length = size[0];
+		m_width  = size[1];
+		m_height = size[2];
 	    }
 	    
 	    virtual void updateInternalData(void) 
 	    {
 		double s2 = m_scale / 2.0;
-		m_length2 = m_length * s2;
-		m_width2  = m_width * s2;
-		m_height2 = m_height * s2;
+		double p2 = m_padding / 2.0;
+		m_length2 = m_length * s2 + p2;
+		m_width2  = m_width * s2 + p2;
+		m_height2 = m_height * s2 + p2;
 		
 		m_center  = m_pose.getOrigin();
 		
@@ -274,6 +312,8 @@ namespace collision_space
 	    double    m_width2;
 	    double    m_height2;	
 	};
+	
+	Body* createBodyFromShape(const planning_models::shapes::Shape *shape);
 	
     }
 }

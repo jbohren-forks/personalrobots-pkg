@@ -134,7 +134,7 @@ protected:
 	header.frame_id = link->name;
 	for (unsigned int i = 0 ; i < link->attachedBodies.size() ; ++i)
         {
-            planning_models::KinematicModel::Box *box = dynamic_cast<planning_models::KinematicModel::Box*>(link->attachedBodies[i]->shape);
+            planning_models::shapes::Box *box = dynamic_cast<planning_models::shapes::Box*>(link->attachedBodies[i]->shape);
             if (box)
             {
                 btVector3 &v = link->attachedBodies[i]->attachTrans.getOrigin();

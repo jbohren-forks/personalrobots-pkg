@@ -151,7 +151,7 @@ namespace kinematic_planning
 		    link->attachedBodies[i]->attachTrans.setOrigin(btVector3(centerP.point.x, centerP.point.y, centerP.point.z));
 		    
 		    // this is a HACK! we should have orientation
-		    planning_models::KinematicModel::Box *box = new planning_models::KinematicModel::Box();
+		    planning_models::shapes::Box *box = new planning_models::shapes::Box();
 		    box->size[0] = m_attachedObject.objects[i].max_bound.x - m_attachedObject.objects[i].min_bound.x;
 		    box->size[1] = m_attachedObject.objects[i].max_bound.y - m_attachedObject.objects[i].min_bound.y;
 		    box->size[2] = m_attachedObject.objects[i].max_bound.z - m_attachedObject.objects[i].min_bound.z;
