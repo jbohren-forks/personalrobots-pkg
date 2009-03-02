@@ -278,25 +278,17 @@ bool Chain::getAncestors(mechanism::Robot* robot, const std::string &link_name,
 }
 
 
+int Chain::getJointArrayIndex(unsigned int actuated_joint_i)
+{
+  return joint_indices_[actuated_joint_i];
+}
+
+
 std::string Chain::getJointName(unsigned int actuated_joint_i)
 {
   return robot_->joints_[joint_indices_[actuated_joint_i]]->name_;
 }
 
-int Chain::getJointType(unsigned int actuated_joint_i)
-{
-  return robot_->joints_[joint_indices_[actuated_joint_i]]->type_;
-}
-
-double Chain::getJointLimitMax(unsigned int actuated_joint_i)
-{
-  return robot_->joints_[joint_indices_[actuated_joint_i]]->joint_limit_max_;
-}
-
-double Chain::getJointLimitMin(unsigned int actuated_joint_i)
-{
-  return robot_->joints_[joint_indices_[actuated_joint_i]]->joint_limit_min_;
-}
 
 std::string Chain::getLinkName(int index)
 {
