@@ -70,9 +70,6 @@ int main(int argc, char *argv[])
 //                         {-1,0,0},
 //                         {0,0,1}};
     double roll = 0, pitch = 0, yaw = 0;
-    int solution_number = 1;
-
-
 
     printf("Rotation Matrix: \n");
     for(int x=0; x < 3; x++)

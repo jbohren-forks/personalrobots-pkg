@@ -16,8 +16,7 @@ rospack_add_executable(planPath src/plan_path.cpp
                                 src/discrete_space_information/robarm3d/environment_robarm3d.cpp
                                 src/utils/utils.cpp)
 
-rospack_add_executable(testGetRPY src/test/test_getRPY.cpp)
-
+# rospack_add_executable(testGetRPY src/test/test_getRPY.cpp)
 
 target_link_libraries(planPath sbpl_arm_planner)
 

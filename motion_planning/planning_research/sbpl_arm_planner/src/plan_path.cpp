@@ -20,9 +20,6 @@ int planrobarm(int argc, char *argv[])
     //Initialize Environment (should be called before initializing anything else)
     EnvironmentROBARM3D environment_robarm;
 
-//NOTE: If you want to set a goal from here, you MUST do it before you run InitializeEnv
-//     environment_robarm.SetEndEffGoal(array, length of array(either 3 or 7));
-
     if(!environment_robarm.InitializeEnv(argv[1]))
     {
         printf("ERROR: InitializeEnv failed\n");
@@ -36,23 +33,39 @@ int planrobarm(int argc, char *argv[])
         exit(1);
     }
 
-//     double roll, pitch, yaw;
-//     double Rot[3][3] = {0};
-//     Rot[0][2] = 1;
-//     Rot[1][1] = -1;
-//     Rot[2][0] = 1;
-// 
-// 
-//     environment_robarm.getRPY(Rot, &roll, &pitch, &yaw);
-//     printf("{Rot:  ");
-//     for (int u = 0; u < 3; u++)
-//     {
-//         for(int p = 0; p < 3; p++)
-//             printf("%2.2f  ",Rot[u][p]);
-//     }
-//     printf("Roll:  %3.2f    Pitch:  %3.2f   Yaw:   %3.2f\n", roll, pitch, yaw);
-// 
-//     exit(1);
+    vector <vector <double> > obstacles(3,vector<double>(6));
+
+    obstacles[0][0] = 1.8;
+    obstacles[0][1] = -.3;
+    obstacles[0][2] = -.7;
+    obstacles[0][3] = .1;
+    obstacles[0][4] = .1;
+    obstacles[0][5] = .1;
+
+    obstacles[1][0] = .5;
+    obstacles[1][1] = -.3;
+    obstacles[1][2] = -1.3;
+    obstacles[1][3] = .3;
+    obstacles[1][4] = .3;
+    obstacles[1][5] = .1;
+
+    obstacles[2][0] = .7;
+    obstacles[2][1] = .4;
+    obstacles[2][2] = -.3;
+    obstacles[2][3] = .05;
+    obstacles[2][4] = .2;
+    obstacles[2][5] = .1;
+
+    obstacles.resize(4);
+    obstacles[3].resize(3);
+    obstacles[3][0] = .2;
+    obstacles[3][1] = -.8;
+    obstacles[3][2] = .4;
+//     obstacles[3][3] = .2;
+//     obstacles[3][4] = .2;
+//     obstacles[3][5] = .1;
+
+    environment_robarm.AddObstacles(obstacles);
 
     //plan a path
     clock_t starttime = clock();

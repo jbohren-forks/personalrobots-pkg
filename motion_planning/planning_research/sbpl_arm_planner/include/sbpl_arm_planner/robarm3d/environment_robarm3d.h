@@ -156,6 +156,7 @@ typedef struct ENV_ROBARM_CONFIG
     double LinkStartAngles_d[NUMOFLINKS];
     double LinkGoalAngles_d[NUMOFLINKS];
 
+    int arm_length;
     //starting joint configuration
 //     double JointStartConfig_d[NUMOFLINKS];
 
@@ -164,12 +165,13 @@ typedef struct ENV_ROBARM_CONFIG
 
     short unsigned int ** EndEffGoals_c;
     double ** EndEffGoals_m;
+    double ** EndEffGoalRPY;
+    double GoalRPY_MOE[3];
     double ** EndEffGoalOrientations;
     int nEndEffGoals;
     bool bGoalIsSet;
 
-    double ** EndEffGoalRPY;
-    double GoalRPY_MOE[3];
+
 
     //3D grid of world space 
     char*** Grid3D;
@@ -227,10 +229,16 @@ typedef struct ENV_ROBARM_CONFIG
 
 
     //joint-space search
-    bool PlanToJointSpaceGoal;
+    bool PlanInJointSpace;
     double JointSpaceGoalMOE[NUMOFLINKS];
     double ** JointSpaceGoals;
     int nJointSpaceGoals;
+
+    std::vector < std::vector<double> > cubes;
+
+//     std::vector < std::vector<double> > EndEffGoals_m;
+//     std::vector < std::vector<double> > EndEffGoalsRPY;
+//     std::vector < std::vector<short unsigned int> > EndEffGoals_c;
 
 } EnvROBARMConfig_t;
 
@@ -321,7 +329,6 @@ public:
      */
     bool InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg);
     bool SetEndEffGoals(double** EndEffGoals, int num_goals);
-//     bool SetEndEffGoals(std::vector < std::vector<double> >* EndEffGoals);
 
     //this should be removed  - it returns the planner Epsilon
     double GetEpsilon();
@@ -349,12 +356,10 @@ public:
     //old function - needed when using KDL for collision detection - will eventually be removed
     void CloseKinNode();
 
-    //used for mass testing - poorly written and should be redone
-    void InitializeStatistics(FILE* fCfg, int n);
-    bool InitializeEnvForStats(const char* sEnvFile,  int cntr);
-
+    void AddObstacles(std::vector <std::vector <double> > obstacles);
     void getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw, int solution_number);
-
+//     bool SetEndEffGoals(vector<vector<double> >* EndEffGoals);
+    bool SetJointSpaceGoals(double** JointSpaceGoals, int num_goals);
 private:
 
     //member data
@@ -391,6 +396,7 @@ private:
     bool IsValidCell(int X, int Y, int Z);
     bool IsWithinMapCell(int X, int Y, int Z);
     bool AreEquivalent(int State1ID, int State2ID);
+    bool RemoveGoal(int goal_index);
 
     //cost functions
     int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
@@ -413,13 +419,15 @@ private:
     //compute heuristic
     void InitializeKinNode();
     void getDistancetoGoal(int* HeurGrid, int goalx, int goaly, int goalz);
-    int GetDistToClosestGoal(short unsigned int* xyz);
+    int GetDistToClosestGoal(short unsigned int* xyz, int *goal_num);
+    double GetDistToClosestGoal(double *xyz,int *goal_num);
     void ComputeHeuristicValues();
     void ReInitializeState3D(State3D* state);
     void InitializeState3D(State3D* state, short unsigned int x, short unsigned int y, short unsigned int z);
     void Create3DStateSpace(State3D**** statespace3D);
     void Delete3DStateSpace(State3D**** statespace3D);
     int XYZTO3DIND(int x, int y, int z);
+//     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, std::vector <std::vector<short unsigned int> >* EndEffGoals_c);
     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned int ** EndEffGoals_c);
     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned  int searchstartx, short unsigned int searchstarty, short unsigned int searchstartz);
 //     void Search3DwithHeap(State3D*** statespace, int* HeurGrid, int searchstartx, int searchstarty, int searchstartz);
@@ -434,9 +442,6 @@ private:
 
     /* JOINT SPACE PLANNING */
     void GetJointSpaceSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
-    
-    bool SetJointSpaceGoals(double** JointSpaceGoals, int num_goals);
-
 };
 
 #endif
