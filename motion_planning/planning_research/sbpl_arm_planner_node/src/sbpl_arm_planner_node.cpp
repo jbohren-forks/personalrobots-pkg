@@ -38,6 +38,9 @@ SBPLArmPlannerNode::SBPLArmPlannerNode(std::string node_name):ros::Node(node_nam
     param<std::string>("~arm_name", arm_name_, "right_arm");
   param ("~allocated_time", allocated_time_, 1.0);
   param ("~forward_search", forward_search_, true);
+
+  param ("~use_collision_map",use_collision_map_,false);
+
   param ("~search_mode", search_mode_, true);
   param ("~num_joints", num_joints_, 7);
   param ("~torso_arm_offset_x", torso_arm_offset_x_, 0.0);
@@ -116,28 +119,39 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
 
 void SBPLArmPlannerNode::collisionMapCallback()
 {
-  int num_boxes = (int) collision_map_.boxes.size();
-  double **sbpl_boxes = new double*[num_boxes];
+  if(!use_collision_map_)
+    return;
 
+  int num_boxes = (int) collision_map_.boxes.size();
+  printf("[collisionMapCallback] There are %i boxes.\n",num_boxes);
+
+//   double **sbpl_boxes = new double*[num_boxes];
+  std::vector<std::vector<double> > sbpl_boxes(num_boxes);
   for(int i=0; i < num_boxes; i++)
   {
-    sbpl_boxes[i] = new double[6];
-
+//       printf("[SBPLArmPlannerNode] obstacle %i: %.3f %.3f %.3f %.3f %.3f %.3f\n",i,collision_map_.boxes[i].center.x,collision_map_.boxes[i].center.y,
+//              collision_map_.boxes[i].center.z,collision_map_.boxes[i].extents.x,collision_map_.boxes[i].extents.y,collision_map_.boxes[i].extents.z);
+//     sbpl_boxes[i] = new double[6];
+    sbpl_boxes[i].resize(6);
     sbpl_boxes[i][0] = collision_map_.boxes[i].center.x - torso_arm_offset_x_;
     sbpl_boxes[i][1] = collision_map_.boxes[i].center.y - torso_arm_offset_y_;
     sbpl_boxes[i][2] = collision_map_.boxes[i].center.z - torso_arm_offset_z_;
 
-    sbpl_boxes[i][0] = collision_map_.boxes[i].extents.x;
-    sbpl_boxes[i][1] = collision_map_.boxes[i].extents.y;
-    sbpl_boxes[i][2] = collision_map_.boxes[i].extents.z;
-  }
-  pr2_arm_env_.AddObstaclesToEnv(sbpl_boxes,num_boxes);
+    sbpl_boxes[i][3] = collision_map_.boxes[i].extents.x;
+    sbpl_boxes[i][4] = collision_map_.boxes[i].extents.y;
+    sbpl_boxes[i][5] = collision_map_.boxes[i].extents.z;
 
-  for(int i=0; i < num_boxes; i++)
-  {
-    delete sbpl_boxes[i];
+//     printf("[SBPLArmPlannerNode] obstacle %i: %.3f %.3f %.3f %.3f %.3f %.3f\n",i,sbpl_boxes[i][0],sbpl_boxes[i][1],
+//            sbpl_boxes[i][2],sbpl_boxes[i][3],sbpl_boxes[i][4],sbpl_boxes[i][5]);
   }
-  delete sbpl_boxes;
+  pr2_arm_env_.ClearEnv();
+  pr2_arm_env_.AddObstacles(sbpl_boxes);
+
+//   for(int i=0; i < num_boxes; i++)
+//   {
+//     delete sbpl_boxes[i];
+//   }
+//   delete sbpl_boxes;
 }
 
 bool SBPLArmPlannerNode::replan(robot_msgs::JointTraj &arm_path)
@@ -285,7 +299,7 @@ bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
 */
   }
 
-  pr2_arm_env_.SetEndEffGoals(sbpl_goal, 0, num_goals,1);
+  pr2_arm_env_.SetEndEffGoals(sbpl_goal, num_goals);
 
   for(int i=0; i < num_goals; i++)
   {
@@ -301,17 +315,53 @@ bool SBPLArmPlannerNode::setGoals(const std::vector<robot_msgs::Pose> &goals)
   return true;
 }
 
+bool SBPLArmPlannerNode::setGoals(const robot_msgs::JointTrajPoint &goal_joint_positions_)
+{
+//     int num_goals = (int) goal_joint_positions_.size();
+    int num_goals = 1;
+    double **sbpl_goal = new double*[num_goals];
+
+//     for(int i=0; i<num_goals; i++)
+//     {
+    int i =0;
+        sbpl_goal[i] = new double[7];
+
+        sbpl_goal[i][0] = goal_joint_positions_.positions[0];
+        sbpl_goal[i][1] = goal_joint_positions_.positions[1];
+        sbpl_goal[i][2] = goal_joint_positions_.positions[2];
+        sbpl_goal[i][3] = goal_joint_positions_.positions[3];
+        sbpl_goal[i][4] = goal_joint_positions_.positions[4];
+        sbpl_goal[i][5] = goal_joint_positions_.positions[5];
+        sbpl_goal[i][6] = goal_joint_positions_.positions[6];
+//     }
+
+    pr2_arm_env_.SetJointSpaceGoals(sbpl_goal, num_goals);
+
+    for(int i=0; i < num_goals; i++)
+    {
+        delete sbpl_goal[i];
+    }
+    delete sbpl_goal;
+
+    if(planner_->set_goal(mdp_cfg_.goalstateid) == 0)
+    {
+        ROS_ERROR("Failed to set goal state\n");
+        return false;
+    }
+    return true;
+}
 
 bool SBPLArmPlannerNode::planPath(sbpl_arm_planner_node::PlanPathSrv::Request &req, sbpl_arm_planner_node::PlanPathSrv::Response &resp)
 {
   ROS_INFO("[planPath] Planning...");
-  ROS_INFO("goal: %1.2f %1.2f %1.2f", req.cartesian_goals[0].position.x,req.cartesian_goals[0].position.y,req.cartesian_goals[0].position.z);
-  ROS_INFO("goal orientation: %1.2f %1.2f %1.2f %1.2f", req.cartesian_goals[0].orientation.x, req.cartesian_goals[0].orientation.y, req.cartesian_goals[0].orientation.z, req.cartesian_goals[0].orientation.w);
+//   ROS_INFO("goal: %1.2f %1.2f %1.2f", req.cartesian_goals[0].position.x,req.cartesian_goals[0].position.y,req.cartesian_goals[0].position.z);
+//   ROS_INFO("goal orientation: %1.2f %1.2f %1.2f %1.2f", req.cartesian_goals[0].orientation.x, req.cartesian_goals[0].orientation.y, req.cartesian_goals[0].orientation.z, req.cartesian_goals[0].orientation.w);
 
   robot_msgs::JointTraj traj; 
   if(setStart(req.start))
   {
-    if(setGoals(req.cartesian_goals))
+//     if(setGoals(req.cartesian_goals))
+    if(setGoals(req.joint_goal))
     {
       if(replan(traj))
       {
@@ -335,6 +385,7 @@ bool SBPLArmPlannerNode::planPath(sbpl_arm_planner_node::PlanPathSrv::Request &r
   }
   return false;
 }
+
 
 int main(int argc, char *argv[])
 {
