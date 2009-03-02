@@ -1,11 +1,13 @@
 <launch>
 
   <param name="sac_ground_removal/sac_min_points_per_model" value="5" />
-  <param name="sac_ground_removal/clusters_growing_tolerance" value="0.15" />
+  <param name="sac_ground_removal/clusters_growing_tolerance" value="0.25" />
   <param name="sac_ground_removal/clusters_min_pts" value="5" />
 
   <param name="sac_ground_removal/z_threshold" value="0.2" />
   <param name="sac_ground_removal/sac_distance_threshold" value="0.03" />
 
-  <node pkg="semantic_point_annotator" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen" />
+  <node pkg="semantic_point_annotator" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen">
+    <remap from="full_cloud" to="snapshot_cloud" />
+  </node>
 </launch>
