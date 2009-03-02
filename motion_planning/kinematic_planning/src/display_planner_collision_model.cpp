@@ -93,22 +93,26 @@ Provides (name/type):
 #include <map>
 using namespace kinematic_planning;
 
-class DisplayPlannerCollisionModel : public ros::Node,
-				     public CollisionSpaceMonitor
+class DisplayPlannerCollisionModel : public CollisionSpaceMonitor
 {
 public:
     
-    DisplayPlannerCollisionModel(void) : ros::Node("display_planner_collision_model"),
-					 CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this)),
-					 id_(0)
+    DisplayPlannerCollisionModel(ros::Node *node) : CollisionSpaceMonitor(node)
     {
-	advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 10240);
-
-	advertise<robot_msgs::AttachedObject>("attach_object", 1);
+	id_   = 0;
+	
+	m_node->advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 10240);
+	m_node->advertise<robot_msgs::AttachedObject>("attach_object", 1);
     }
     
     virtual ~DisplayPlannerCollisionModel(void)
     {
+    }
+    
+    void run(void)
+    {
+	loadRobotDescription();
+	m_node->spin();
     }
     
 protected:
@@ -143,7 +147,6 @@ protected:
         }
     }
 
-    
 private:
     
     void sendPoint(double x, double y, double z, double radius, const roslib::Header &header, int color)
@@ -181,10 +184,10 @@ private:
 	    mk.b = 10;
 	}
 	
-	publish("visualizationMarker", mk);
+	m_node->publish("visualizationMarker", mk);
     }
-
-    int id_;
+    
+    int        id_;
     
 };
 
@@ -192,14 +195,9 @@ int main(int argc, char **argv)
 { 
     ros::init(argc, argv);
     
-    DisplayPlannerCollisionModel *disp = new DisplayPlannerCollisionModel();
-    disp->loadRobotDescription();
-    
-    disp->spin();
-    disp->shutdown();
-
-    
-    delete disp;	
+    ros::Node node("display_planner_collision_model");  
+    DisplayPlannerCollisionModel disp(&node);
+    disp.run();
 
     return 0;    
 }

@@ -62,25 +62,23 @@
 
 static const std::string GROUPNAME = "pr2::right_arm";
 
-class PlanKinematicPath : public ros::Node,
-			  public kinematic_planning::KinematicStateMonitor
+class PlanKinematicPath : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    PlanKinematicPath() : ros::Node("plan_kinematic_path"),
-			  kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this))
+    PlanKinematicPath(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
     {
 	plan_id_ = -1;
 	robot_stopped_ = true;
 	
 	// we use the topic for sending commands to the controller, so we need to advertise it
-	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
-	advertise<robot_msgs::PoseStamped>("cartesian_trajectory/command", 1);
+	m_node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
+	m_node->advertise<robot_msgs::PoseStamped>("cartesian_trajectory/command", 1);
 
 	// advertise the topic for displaying kinematic plans
-	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
+	m_node->advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
 
-	subscribe("kinematic_planning_status", plan_status_, &PlanKinematicPath::receiveStatus, this, 1);
+	m_node->subscribe("kinematic_planning_status", plan_status_, &PlanKinematicPath::receiveStatus, this, 1);
     }
         
     void runRightArmToPositionA(void)
@@ -173,11 +171,42 @@ public:
 	ps.pose.orientation.y = 0;
 	ps.pose.orientation.z = 0;
 	ps.pose.orientation.w = 1;
-	publish("cartesian_trajectory/command", ps);
+	m_node->publish("cartesian_trajectory/command", ps);
+    }
+
+    void run(void)
+    {
+	loadRobotDescription();
+	if (loadedRobot())
+	{
+	    ros::Duration d(1.0);
+	    d.sleep();
+	    
+	    while (m_node->ok())
+	    {
+		ros::Duration d(10.0);
+		
+		runRightArmToPositionA();
+		
+		d.sleep();
+		
+		runRightArmToPositionB();
+		
+		d.sleep();
+	    }
+	    
+	    /*	
+		sleep(30);
+		
+		plan->runRightArmToCoordinates();
+	    */
+	    
+	    m_node->spin();
+	}	
     }
     
 protected:
-
+	
     // handle new status message
     void receiveStatus(void)
     {
@@ -279,45 +308,17 @@ protected:
     robot_msgs::KinematicPlanStatus plan_status_;
     int                             plan_id_;
     bool                            robot_stopped_;
-    
+        
 };
 
 
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
+    ros::Node *node = new ros::Node("plan_kinematic_path");
     
-    PlanKinematicPath *plan = new PlanKinematicPath();
-    plan->loadRobotDescription();
-    if (plan->loadedRobot())
-    {
-        ros::Duration d(1.0);
-	d.sleep();
-	
-	while (plan->ok())
-	{
-            ros::Duration d(10.0);
-	    
-	    plan->runRightArmToPositionA();
-	
-            d.sleep();
-	    
-	    plan->runRightArmToPositionB();
-	    
-            d.sleep();
-	}
-	
-	/*	
-	sleep(30);
-	
-	plan->runRightArmToCoordinates();
-	*/
-	
-	plan->spin();
-    }
-    
-    plan->shutdown();
-    delete plan;
-    
+    PlanKinematicPath plan(node);
+    plan.run();
+
     return 0;    
 }

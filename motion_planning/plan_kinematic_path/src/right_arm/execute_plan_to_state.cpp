@@ -67,19 +67,17 @@
 
 static const std::string GROUPNAME = "pr2::right_arm";
     
-class Example : public ros::Node,
-		public kinematic_planning::KinematicStateMonitor
+class Example : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    Example() : ros::Node("example_execute_plan_to_state"),
-		kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this))
+    Example(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
     {
 	// if we use the topic for sending commands to the controller, we need to advertise it
-	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
+	m_node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
 	
 	// advertise the topic for displaying kinematic plans
-	advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
+	m_node->advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
 	
 	// we can send commands to the trajectory controller both by using a topic, and by using services
 	use_topic_ = false;
@@ -155,9 +153,18 @@ public:
 	    ROS_ERROR("Service 'plan_kinematic_path_state' failed");
     }
     
-protected:
+    void run(void)
+    {
+	loadRobotDescription();
+	if (loadedRobot())
+	{
+	    sleep(1);
+	    runExample();
+	}
+	sleep(1);
+    }
 
-    bool use_topic_;
+protected:
 
     // get the current state from the StateParams instance monitored by the KinematicStateMonitor
     void currentState(robot_msgs::KinematicState &state)
@@ -268,25 +275,20 @@ protected:
 	
 	return res.valid;
     }
-    
+
+private:
+
+    bool use_topic_;    
 };
 
 
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
-    
-    Example *plan = new Example();
-    plan->loadRobotDescription();
-    if (plan->loadedRobot())
-    {
-	sleep(1);
-	plan->runExample();
-    }
-    sleep(1);
-    
-    plan->shutdown();
-    delete plan;
+
+    ros::Node node("example_execute_plan_to_state");
+    Example plan(&node);
+    plan.run();
     
     return 0;    
 }

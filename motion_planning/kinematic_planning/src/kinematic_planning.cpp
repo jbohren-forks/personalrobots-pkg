@@ -186,16 +186,14 @@ Provides (name/type):
 
 using namespace kinematic_planning;
 
-class KinematicPlanning : public ros::Node,
-			  public CollisionSpaceMonitor
+class KinematicPlanning : public CollisionSpaceMonitor
 {
 public:
     
-    KinematicPlanning(void) : ros::Node("kinematic_planning"),
-			      CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this))
+    KinematicPlanning(ros::Node *node) : CollisionSpaceMonitor(node)
     {
-	advertiseService("plan_kinematic_path_state",    &KinematicPlanning::planToState);
-	advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
+	m_node->advertiseService("plan_kinematic_path_state",    &KinematicPlanning::planToState, this);
+	m_node->advertiseService("plan_kinematic_path_position", &KinematicPlanning::planToPosition, this);
 	
 	m_replanID = 0;
 	m_replanningThread = NULL;
@@ -211,17 +209,17 @@ public:
 	m_currentPlanStatus.unsafe = 0;
 	m_currentlyExecutedPath.set_states_size(0);
 	
-	advertiseService("replan_kinematic_path_state",    &KinematicPlanning::replanToState);
-	advertiseService("replan_kinematic_path_position", &KinematicPlanning::replanToPosition);
-	advertiseService("replan_force",                   &KinematicPlanning::forceReplanning);
-	advertiseService("replan_stop",                    &KinematicPlanning::stopReplanning);
+	m_node->advertiseService("replan_kinematic_path_state",    &KinematicPlanning::replanToState, this);
+	m_node->advertiseService("replan_kinematic_path_position", &KinematicPlanning::replanToPosition, this);
+	m_node->advertiseService("replan_force",                   &KinematicPlanning::forceReplanning, this);
+	m_node->advertiseService("replan_stop",                    &KinematicPlanning::stopReplanning, this);
 
-	advertise<robot_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
+	m_node->advertise<robot_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
 
 	// determine intervals; a value of 0 means forever
-	param("refresh_interval_collision_map", m_intervalCollisionMap, 3.0);
-	param("refresh_interval_kinematic_state", m_intervalKinematicState, 0.5);
-	param("refresh_interval_base_pose", m_intervalBasePose, 0.5);
+	m_node->param("refresh_interval_collision_map", m_intervalCollisionMap, 3.0);
+	m_node->param("refresh_interval_kinematic_state", m_intervalKinematicState, 0.5);
+	m_node->param("refresh_interval_base_pose", m_intervalBasePose, 0.5);
     }
     
     /** Free the memory */
@@ -231,6 +229,24 @@ public:
 	stopPublishingStatus();
 	for (std::map<std::string, RKPModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
+    }
+    
+    void run(void)
+    {
+	loadRobotDescription();
+        std::vector<std::string> mlist;    
+	knownModels(mlist);
+	ROS_INFO("Known models:");    
+	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
+	    ROS_INFO("  * %s", mlist[i].c_str());    
+	
+	waitForState();
+	startPublishingStatus();
+	
+	if (mlist.size() > 0)
+	    m_node->spin();
+	else
+	    ROS_ERROR("No robot models loaded. OMPL planning node cannot start.");
     }
     
     bool isSafeToPlan(bool report)
@@ -526,7 +542,7 @@ protected:
     void publishStatus(void)
     {
 	double seconds;
-	param("kinematic_planning_status_interval", seconds, 0.02);
+	m_node->param("kinematic_planning_status_interval", seconds, 0.02);
 	ros::Duration duration(seconds);
 	ros::Duration delta(std::min(0.01, seconds));
 	
@@ -576,7 +592,7 @@ protected:
 	    if (m_currentPlanStatus.path.states.empty())
 		m_currentPlanStatus.unsafe = isSafeToPlan(false) ? 0 : 1;
 	    
-	    publish("kinematic_planning_status", m_currentPlanStatus);
+	    m_node->publish("kinematic_planning_status", m_currentPlanStatus);
 	    
 	    // if we are sending a new path, remember it
 	    // we will need to check it for validity when the ma changes
@@ -822,7 +838,7 @@ private:
 	}
 	model->addIKKPIECE(options); 
     }
-    
+
     ModelMap                                                        m_models;
     RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>          m_requestStateOpenLoop;
     RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>   m_requestLinkPositionOpenLoop;
@@ -906,29 +922,13 @@ public:
 int main(int argc, char **argv)
 { 
     ros::init(argc, argv);
+    
     OutputHandlerROScon rosconOutputHandler;	
     ompl::msg::useOutputHandler(&rosconOutputHandler);
     
-    KinematicPlanning *planner = new KinematicPlanning();
-    planner->loadRobotDescription();
+    ros::Node node("ompl_planning");
+    KinematicPlanning planner(&node);
+    planner.run();
     
-    std::vector<std::string> mlist;    
-    planner->knownModels(mlist);
-    ROS_INFO("Known models:");    
-    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
-	ROS_INFO("  * %s", mlist[i].c_str());    
-    
-    planner->waitForState();
-    planner->startPublishingStatus();
-    
-    if (mlist.size() > 0)
-	planner->spin();
-    else
-	ROS_ERROR("No models defined. Kinematic planning node cannot start.");
-    
-    planner->shutdown();
-    
-    delete planner;	
-    
-    return 0;    
+    return 0;
 }

@@ -45,15 +45,13 @@
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 #include <cassert>
     
-class TestExecutionPath : public ros::Node,
-			  public kinematic_planning::KinematicStateMonitor
+class TestExecutionPath : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    TestExecutionPath() : ros::Node("test_kinematic_path"),
-			  kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this))
+    TestExecutionPath(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
     {
-	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
+	m_node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
 	sleep_duration_ = 4;
 	use_topic_ = false;
     }
@@ -104,7 +102,7 @@ public:
 		
 		if (use_topic_)
 		{
-		    publish("right_arm_trajectory_command", traj);
+		    m_node->publish("right_arm_trajectory_command", traj);
 		    sleep(sleep_duration_);
 		}		
 		else
@@ -156,6 +154,17 @@ public:
 	
     }
     
+    void run(void)
+    {
+	loadRobotDescription();
+	if (loadedRobot())
+	{
+	    sleep(1);
+	    testJointLimitsRightArm();
+	}
+	sleep(1);
+    }
+    
 protected:
     
     int  sleep_duration_;
@@ -168,17 +177,9 @@ int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
     
-    TestExecutionPath *plan = new TestExecutionPath();
-    plan->loadRobotDescription();
-    if (plan->loadedRobot())
-    {
-	sleep(2);
-	plan->testJointLimitsRightArm();
-    }
-    sleep(1);
-    
-    plan->shutdown();
-    delete plan;
+    ros::Node node("test_kinematic_path");
+    TestExecutionPath plan(&node);
+    plan.run();
     
     return 0;    
 }

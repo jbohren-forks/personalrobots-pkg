@@ -52,13 +52,11 @@
 
 static const std::string GROUPNAME = "pr2::base";
     
-class Example : public ros::Node,
-		public kinematic_planning::KinematicStateMonitor
+class Example : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    Example() : ros::Node("example_execute_plan_to_state_minimal"),
-		kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this))
+    Example(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
     {
     }
 
@@ -109,27 +107,30 @@ public:
 	else
 	    ROS_ERROR("Service 'plan_kinematic_path_state' failed");
     }
-    
-protected:
 
+    void run(void)
+    {
+	loadRobotDescription();
+	if (loadedRobot())
+	{
+	    sleep(1);
+	    runExample();
+	}
+	sleep(1);
+    }
+    
+private:
+    
 };
 
 
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
-    
-    Example *plan = new Example();
-    plan->loadRobotDescription();
-    if (plan->loadedRobot())
-    {
-	sleep(1);
-	plan->runExample();
-    }
-    sleep(1);
-    
-    plan->shutdown();
-    delete plan;
-    
+
+    ros::Node node("example_execute_plan_to_state_minimal");
+    Example plan(&node);
+    plan.run();
+
     return 0;    
 }

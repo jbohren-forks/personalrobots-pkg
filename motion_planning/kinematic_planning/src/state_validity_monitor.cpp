@@ -94,20 +94,25 @@ Provides (name/type):
 #include <map>
 using namespace kinematic_planning;
 
-class StateValidityMonitor : public ros::Node,
-			     public CollisionSpaceMonitor
+class StateValidityMonitor : public CollisionSpaceMonitor
 {
 public:
     
-    StateValidityMonitor(void) : ros::Node("state_validity_monitor"),
-				 CollisionSpaceMonitor(dynamic_cast<ros::Node*>(this)),
-				 last_(-1)
+    StateValidityMonitor(ros::Node *node) : CollisionSpaceMonitor(node),
+					    last_(-1)
     {
-	advertise<std_msgs::Byte>("state_validity", 1);	
+	m_node->advertise<std_msgs::Byte>("state_validity", 1);	
     }
     
     virtual ~StateValidityMonitor(void)
     {
+    }
+    
+    void run(void)
+    {
+	loadRobotDescription();
+	waitForState();
+	m_node->spin();
     }
     
 protected:
@@ -134,7 +139,7 @@ protected:
 	    if (last_ != msg.data)
 	    {
 		last_ = msg.data;
-		publish("state_validity", msg);		
+		m_node->publish("state_validity", msg);		
 		if (invalid)
 		    ROS_WARN("State is in collision");
 		else
@@ -142,10 +147,10 @@ protected:
 	    }	    
 	}
     }
-
+    
 private:
     
-    int last_;
+    int        last_;
     
 };
 
@@ -153,13 +158,9 @@ int main(int argc, char **argv)
 { 
     ros::init(argc, argv);
     
-    StateValidityMonitor *validator = new StateValidityMonitor();
-    validator->loadRobotDescription();
-    validator->waitForState();
-    validator->spin();
-    validator->shutdown();
-    
-    delete validator;	
+    ros::Node node("state_validity_monitor");
+    StateValidityMonitor validator(&node);
+    validator.run();	
 
     return 0;    
 }

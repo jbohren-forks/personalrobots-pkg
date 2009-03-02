@@ -49,16 +49,14 @@
     
 static const std::string GROUPNAME = "pr2::right_arm";
 
-class Example : public ros::Node,
-		public kinematic_planning::KinematicStateMonitor
+class Example : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    Example() : ros::Node("example_execute_plan_to_state_minimal"),
-		kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this))
+    Example(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
     {
 	// we use the topic for sending commands to the controller, so we need to advertise it
-	advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
+	m_node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
     }
 
     void runExample(void)
@@ -96,6 +94,17 @@ public:
 	    ROS_ERROR("Service 'plan_kinematic_path_state' failed");
     }
     
+    void run(void)
+    {
+	loadRobotDescription();
+	if (loadedRobot())
+	{
+	    sleep(1);
+	    runExample();
+	}
+	sleep(1);
+    }
+    
 protected:
 
     // convert a kinematic path message to a trajectory for the controller
@@ -126,18 +135,10 @@ protected:
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
-    
-    Example *plan = new Example();
-    plan->loadRobotDescription();
-    if (plan->loadedRobot())
-    {
-	sleep(1);
-	plan->runExample();
-    }
-    sleep(1);
-    
-    plan->shutdown();
-    delete plan;
+
+    ros::Node node("example_execute_plan_to_state_minimal");
+    Example plan(&node);
+    plan.run();
     
     return 0;    
 }

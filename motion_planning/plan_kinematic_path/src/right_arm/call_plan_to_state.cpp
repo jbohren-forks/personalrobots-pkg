@@ -46,16 +46,14 @@
 // interface to a high level controller
 #include <pr2_msgs/MoveArmGoal.h>
     
-class Example : public ros::Node,
-		public kinematic_planning::KinematicStateMonitor
+class Example : public kinematic_planning::KinematicStateMonitor
 {
 public:
     
-    Example() : ros::Node("example_call_plan_to_state"),
-		kinematic_planning::KinematicStateMonitor(dynamic_cast<ros::Node*>(this))
+    Example(ros::Node *node) : kinematic_planning::KinematicStateMonitor(node)
     {
 	// we use the topic for sending commands to the controller, so we need to advertise it
-	advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
+	m_node->advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
     }
 
     void runExample(void)
@@ -68,27 +66,30 @@ public:
 	ag.set_goal_configuration_size(1);
 	ag.goal_configuration[0].name = "r_shoulder_pan_joint";
 	ag.goal_configuration[0].position = -0.5;
-	publish("right_arm_goal", ag);
+	m_node->publish("right_arm_goal", ag);
     }
-    
+        
+    void run(void)
+    {
+	loadRobotDescription();
+	if (loadedRobot())
+	{
+	    sleep(1);
+	    runExample();
+	}
+	sleep(1);
+    }
+
 };
 
 
 int main(int argc, char **argv)
 {  
     ros::init(argc, argv);
-    
-    Example *plan = new Example();
-    plan->loadRobotDescription();
-    if (plan->loadedRobot())
-    {
-	sleep(1);
-	plan->runExample();
-    }
-    sleep(1);
-    
-    plan->shutdown();
-    delete plan;
+
+    ros::Node node("example_call_plan_to_state");
+    Example plan(&node);
+    plan.run();
     
     return 0;    
 }

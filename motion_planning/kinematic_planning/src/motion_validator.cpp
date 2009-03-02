@@ -126,7 +126,6 @@ public:
     
     MotionValidator(ros::Node *node) : CollisionSpaceMonitor(node)
     {
-	m_node = node;
 	m_node->advertiseService("validate_direct_path", &MotionValidator::validatePath, this);
 	m_node->advertiseService("validate_state",       &MotionValidator::validateState, this);
     }
@@ -312,6 +311,21 @@ public:
 	    model_ids.push_back(i->first);
     }
     
+    void run(void)
+    {
+	loadRobotDescription();
+	
+	std::vector<std::string> mlist;    
+	knownModels(mlist);
+	ROS_INFO("Known models:");    
+	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
+	    ROS_INFO("  * %s", mlist[i].c_str());
+	if (mlist.size() > 0)
+	    m_node->spin();
+	else
+	    ROS_ERROR("No robot models defined. Path validation node cannot start.");
+    }
+
 private:
     
     void setupModel(myModel *model)
@@ -322,32 +336,17 @@ private:
     }
     
     std::map<std::string, myModel*> m_models;
-    ros::Node                      *m_node;
     
 };
+
 
 int main(int argc, char **argv)
 { 
     ros::init(argc, argv);
     
-    ros::Node *node = new ros::Node("motion_validator");
-    MotionValidator *validator = new MotionValidator(node);
-    validator->loadRobotDescription();
-    
-    std::vector<std::string> mlist;    
-    validator->knownModels(mlist);
-    ROS_INFO("Known models:");    
-    for (unsigned int i = 0 ; i < mlist.size() ; ++i)
-	ROS_INFO("  * %s", mlist[i].c_str());
-    if (mlist.size() > 0)
-	node->spin();
-    else
-	ROS_ERROR("No models defined. Path validation node cannot start.");
-    
-    node->shutdown();
-    
-    delete validator;	
-    delete node;
+    ros::Node node("motion_validator");
+    MotionValidator validator(&node);
+    validator.run();
     
     return 0;    
 }
