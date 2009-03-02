@@ -15,3 +15,6 @@ target_link_libraries(test/test_FK mechanism_model)
 
 rospack_add_gtest(test/test_chain test/test_chain.cpp)
 target_link_libraries(test/test_chain mechanism_model)
+
+rospack_add_gtest_future(test/test_tree test/test_tree.cpp)
+target_link_libraries(test/test_tree mechanism_model)
