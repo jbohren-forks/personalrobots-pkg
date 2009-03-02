@@ -20,15 +20,15 @@ int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
                                 int flags );
 
 // TODO: make these parameters
-/*
+
 static const double SQUARE_SIZE = 0.004;
 static const int BOARD_W = 3;
 static const int BOARD_H = 4;
-*/
+/*
 static const double SQUARE_SIZE = 0.0215;
 static const int BOARD_W = 6;
 static const int BOARD_H = 9;
-
+*/
 class PlugDetector : public ros::Node
 {
 private:
@@ -45,10 +45,6 @@ private:
 
   tf::Transform plug_in_board_, camera_in_cvcam_;
 
-  // DEBUG only
-  tf::Transform chessboard_in_plug_;
-  tf::Transform chessboard_corners_[4];
-  
   bool display_;
   IplImage* display_img_;
 
@@ -76,20 +72,9 @@ public:
 
     plug_in_board_.getOrigin().setValue(0.0, 0.0, 0.0);
     //plug_in_board_.getOrigin().setValue(-0.01, 0.003, 0.005);
-    plug_in_board_.getBasis().setValue(0, -1, 0, -1, 0, 0, 0, 0, -1);
+    plug_in_board_.getBasis().setValue(0, 1, 0, 1, 0, 0, 0, 0, -1);
     camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
     camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
-
-    //chessboard_in_plug_.setIdentity();
-    //chessboard_in_plug_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
-    //chessboard_in_plug_.getOrigin().setValue(-0.01, 0.003, 0.005);
-    //chessboard_in_plug_.getBasis().setEulerYPR(M_PI/2, M_PI, 0);
-
-    for (int i = 0; i < 4; ++i)
-      chessboard_corners_[i].setIdentity();
-    chessboard_corners_[1].getOrigin().setValue((BOARD_W-1)*SQUARE_SIZE, 0.0, 0.0);
-    chessboard_corners_[2].getOrigin().setValue((BOARD_W-1)*SQUARE_SIZE, (BOARD_H-1)*SQUARE_SIZE, 0.0);
-    chessboard_corners_[3].getOrigin().setValue(0.0, (BOARD_H-1)*SQUARE_SIZE, 0.0);
 
     advertise<robot_msgs::PoseStamped>("pose", 1);
   }
@@ -167,43 +152,12 @@ public:
     */
 
     tf::Transform board_in_cvcam(rot3x3, tf::Vector3(trans[0], trans[1], trans[2]));
-    /*
-    tf::Transform corners_in_cv_cam[4];
-    for (int i = 0; i < 4; ++i) {
-      //corners_in_cv_cam[i] = board_in_plug_ * 
-      //corners_in_cv_cam[i] = chessboard_in_plug_ * (chessboard_in_cv_cam * chessboard_corners_[i]);
-      ROS_INFO("Corner %d: %.5f %.5f %.5f", i,
-               corners_in_cv_cam[i].getOrigin().x(),
-               corners_in_cv_cam[i].getOrigin().y(),
-               corners_in_cv_cam[i].getOrigin().z());
-    }
-    tf_broadcaster_.sendTransform(corners_in_cv_cam[0], ros::Time::now(), "corner0_frame", "high_def_frame");
-    tf_broadcaster_.sendTransform(corners_in_cv_cam[1], ros::Time::now(), "corner1_frame", "high_def_frame");
-    tf_broadcaster_.sendTransform(corners_in_cv_cam[2], ros::Time::now(), "corner2_frame", "high_def_frame");
-    tf_broadcaster_.sendTransform(corners_in_cv_cam[3], ros::Time::now(), "corner3_frame", "high_def_frame");
-    */
-
-    //tf::Transform chessboard_in_camera(rot3x3, tf::Vector3(trans[2], -trans[0], -trans[1]));
     
     // Plug pose in the camera frame
-    //tf::Transform plug_pose = chessboard_in_camera * chessboard_in_plug_.inverse();
-    tf::Transform plug_in_camera = camera_in_cvcam_ * board_in_cvcam;
+    tf::Transform plug_in_camera = camera_in_cvcam_ * board_in_cvcam * plug_in_board_;
 
     tf::PoseTFToMsg(plug_in_camera, pose_.pose);
     pose_.header.frame_id = "high_def_frame";
-#if 0    
-    // Rotate into x-forward frame
-    btVector3 position(trans[2], -trans[0], -trans[1]);
-    orientation *= rotation_;
-
-    memcpy(&pose_.pose.position.x, &position[0], 3*sizeof(double));
-    pose_.pose.orientation.w = orientation.w();
-    pose_.pose.orientation.x = orientation.x();
-    pose_.pose.orientation.y = orientation.y();
-    pose_.pose.orientation.z = orientation.z();
-    
-    pose_.header.frame_id = "high_def_frame";
-#endif
     publish("pose", pose_);
     tf_broadcaster_.sendTransform(plug_in_camera,
                                   ros::Time::now(), "plug_frame",

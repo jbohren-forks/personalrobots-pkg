@@ -122,12 +122,12 @@ public:
     tf_broadcaster_.sendTransform(tf::Transform(orientation, holes[0]),
                                   ros::Time::now(), "outlet_frame",
                                   "high_def_frame");
-    /*
+    
     ROS_INFO("Hole 0: %.5f %.5f %.5f, Hole 1: %.5f %.5f %.5f, Hole 2: %.5f %.5f %.5f",
              holes[0].x(), holes[0].y(), holes[0].z(),
              holes[1].x(), holes[1].y(), holes[1].z(),
              holes[2].x(), holes[2].y(), holes[2].z());
-    */
+    
     
     if (display_) {
       draw_outlets(image, outlets);
