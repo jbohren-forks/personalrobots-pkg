@@ -33,6 +33,8 @@
  *********************************************************************/
 #include <joint_qualification_controllers/hysteresis_controller.h>
 
+#define MAX_DATA_POINTS 80000
+
 using namespace std;
 using namespace controller;
 
@@ -42,11 +44,12 @@ HysteresisController::HysteresisController():
   joint_(NULL), robot_(NULL)
 {
   test_data_.test_name ="hysteresis";
-  test_data_.time.resize(80000);
-  test_data_.cmd.resize(80000);
-  test_data_.effort.resize(80000);
-  test_data_.position.resize(80000);
-  test_data_.velocity.resize(80000);
+  test_data_.joint_name = "default joint";
+  test_data_.time.resize(MAX_DATA_POINTS);
+  test_data_.cmd.resize(MAX_DATA_POINTS);
+  test_data_.effort.resize(MAX_DATA_POINTS);
+  test_data_.position.resize(MAX_DATA_POINTS);
+  test_data_.velocity.resize(MAX_DATA_POINTS);
   test_data_.arg_name.resize(4);
   test_data_.arg_name[0]="min_expected_effort";
   test_data_.arg_name[1]="max_expected_effort";
@@ -79,6 +82,8 @@ void HysteresisController::init( double velocity, double max_effort, double max_
     joint_->calibrated_ = true;
 
   }
+
+  test_data_.joint_name = name;
   
   test_data_.arg_value[0]=min_expected_effort;
   test_data_.arg_value[1]=max_expected_effort;
@@ -148,18 +153,24 @@ void HysteresisController::update()
   
   if (state_ == STOPPED || state_ == STARTING || state_ == MOVING)
   {
-    if(state_!=DONE && count_<80000 && loop_count_>1)
+    if(state_!=DONE && count_ < MAX_DATA_POINTS && loop_count_ > 1)
     {
       double cmd;
       velocity_controller_->getCommand(cmd);
       
-      test_data_.time[count_]=time;
-      test_data_.cmd[count_]=cmd;
-      test_data_.effort[count_]=joint_->applied_effort_;
-      test_data_.position[count_]=joint_->position_;
-      test_data_.velocity[count_]=joint_->velocity_;
+      test_data_.time[count_] = time;
+      test_data_.cmd[count_] = cmd;
+      test_data_.effort[count_] = joint_->applied_effort_;
+      test_data_.position[count_] = joint_->position_;
+      test_data_.velocity[count_] = joint_->velocity_;
       count_++;
     }
+  }
+
+  // Stop at max no matter what, like a timeout
+  if (count_ > MAX_DATA_POINTS && state_ != ANALYZING && state_ != DONE) 
+  {
+    state_ = ANALYZING;
   }
 
   switch (state_)
@@ -251,6 +262,7 @@ void HysteresisControllerNode::update()
       {
         robot_srvs::TestData::Request *out = &call_service_.srv_req_;
         out->test_name = c_->test_data_.test_name;
+        out->joint_name = c_->test_data_.joint_name;
         out->time = c_->test_data_.time;
         out->cmd = c_->test_data_.cmd;
         out->effort = c_->test_data_.effort;

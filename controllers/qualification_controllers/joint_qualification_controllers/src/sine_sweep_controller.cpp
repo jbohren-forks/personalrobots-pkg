@@ -34,6 +34,8 @@
 #include <joint_qualification_controllers/sine_sweep_controller.h>
 #include <math.h>
 
+#define MAX_DATA_POINTS 80000
+
 using namespace std;
 using namespace control_toolbox;
 
@@ -44,12 +46,13 @@ ROS_REGISTER_CONTROLLER(SineSweepController)
 SineSweepController::SineSweepController():
 joint_state_(NULL), robot_(NULL)
 {
-  test_data_.test_name ="sinesweep";
-  test_data_.time.resize(80000);
-  test_data_.cmd.resize(80000);
-  test_data_.effort.resize(80000);
-  test_data_.position.resize(80000);
-  test_data_.velocity.resize(80000);
+  test_data_.test_name = "sinesweep";
+  test_data_.joint_name = "default joint";
+  test_data_.time.resize(MAX_DATA_POINTS);
+  test_data_.cmd.resize(MAX_DATA_POINTS);
+  test_data_.effort.resize(MAX_DATA_POINTS);
+  test_data_.position.resize(MAX_DATA_POINTS);
+  test_data_.velocity.resize(MAX_DATA_POINTS);
   test_data_.arg_name.resize(3);
   test_data_.arg_name[0]="first_mode";
   test_data_.arg_name[1]="second_mode";
@@ -77,6 +80,9 @@ void SineSweepController::init(double start_freq, double end_freq, double durati
     joint_state_->calibrated_ = true;
 
   }
+
+  test_data_.joint_name = name;
+  
   sweep_ = new SineSweep;
   sweep_->init(start_freq, end_freq, duration, amplitude);
   test_data_.arg_value[0]=first_mode;
@@ -118,14 +124,14 @@ void SineSweepController::update()
   if((time-initial_time_)<=duration_)
   {
     joint_state_->commanded_effort_ = sweep_->update(time-initial_time_);
-    if (count_<80000 && !done_)
+    if (count_ < MAX_DATA_POINTS && !done_)
     { 
-    test_data_.time[count_]=time;
-    test_data_.cmd[count_]=joint_state_->commanded_effort_;
-    test_data_.effort[count_]=joint_state_->applied_effort_;
-    test_data_.position[count_]=joint_state_->position_;
-    test_data_.velocity[count_]=joint_state_->velocity_;
-    count_++;
+      test_data_.time[count_]=time;
+      test_data_.cmd[count_]=joint_state_->commanded_effort_;
+      test_data_.effort[count_]=joint_state_->applied_effort_;
+      test_data_.position[count_]=joint_state_->position_;
+      test_data_.velocity[count_]=joint_state_->velocity_;
+      count_++;
     }
   }
   else if(!done_)
@@ -183,6 +189,7 @@ void SineSweepControllerNode::update()
       {
         robot_srvs::TestData::Request *out = &call_service_.srv_req_;
         out->test_name = c_->test_data_.test_name;
+        out->joint_name = c_->test_data_.joint_name;
         out->time = c_->test_data_.time;
         out->cmd = c_->test_data_.cmd;
         out->effort = c_->test_data_.effort;

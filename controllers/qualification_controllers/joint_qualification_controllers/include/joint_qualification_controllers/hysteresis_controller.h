@@ -89,7 +89,6 @@ public:
   
   bool done() { return state_ == DONE; }
   
-  ros::Node* node;
   robot_msgs::DiagnosticMessage diagnostic_message_;
   robot_srvs::TestData::Request test_data_;
 
@@ -97,7 +96,7 @@ private:
 
   mechanism::JointState *joint_;                        /**< Joint we're controlling. */
   mechanism::RobotState *robot_;                        /**< Pointer to robot structure. */
-  controller::JointVelocityController *velocity_controller_;    /**< The sine sweep. */
+  controller::JointVelocityController *velocity_controller_;    /**< The velocity controller for the hysteresis test. */
   double velocity_;                                    /**< Torque applied during the test. */
   double max_effort_;
   double initial_time_;                                 /**< Start time of the test. */

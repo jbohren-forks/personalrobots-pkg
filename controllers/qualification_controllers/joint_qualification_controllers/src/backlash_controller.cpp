@@ -42,9 +42,10 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(BacklashController)
 
 BacklashController::BacklashController():
-joint_state_(NULL), robot_(NULL), node(ros::Node::instance())
+joint_state_(NULL), robot_(NULL) 
 {
   test_data_.test_name ="backlash";
+  test_data_.joint_name = "default joint";
   test_data_.time.resize(80000);
   test_data_.cmd.resize(80000);
   test_data_.effort.resize(80000);
@@ -69,9 +70,9 @@ void BacklashController::init(double freq, double duration, double amplitude, do
   assert(robot);
   robot_                  = robot;
   joint_state_            = robot->getJointState(name);
+  test_data_.joint_name   = name;
   freq_                   = freq;
   amplitude_              = amplitude;
-  node->advertise<robot_msgs::TestData>( "/test_data", 0 );
   test_data_.arg_value[0] = error_tolerance;
   duration_               = duration; //in seconds
   initial_time_           = time;     //in seconds
@@ -151,17 +152,14 @@ void BacklashController::analysis()
   test_data_.position.resize(count_);
   test_data_.velocity.resize(count_);
   
-  if ((node = ros::Node::instance()) != NULL)
-  {
-    node->publish("/test_data", test_data_);
-    node->publish("/diagnostics", diagnostic_message_);
-  }
   return;
 }
 
 
+
+
 ROS_REGISTER_CONTROLLER(BacklashControllerNode)
-BacklashControllerNode::BacklashControllerNode()
+BacklashControllerNode::BacklashControllerNode() : data_sent_(false), last_publish_time_(0), call_service_("/test_data"), pub_diagnostics_("/diagnostics", 1)
 {
   c_ = new BacklashController();
 }
@@ -174,14 +172,54 @@ BacklashControllerNode::~BacklashControllerNode()
 void BacklashControllerNode::update()
 {
   c_->update();
+  
+  // Publishes service response
+  if (c_->done())
+  {
+    if(!data_sent_)
+    {
+      if (call_service_.trylock())
+      {
+        robot_srvs::TestData::Request *out = &call_service_.srv_req_;
+        out->test_name = c_->test_data_.test_name;
+        out->joint_name = c_->test_data_.joint_name;
+        out->time = c_->test_data_.time;
+        out->cmd = c_->test_data_.cmd;
+        out->effort = c_->test_data_.effort;
+        out->position = c_->test_data_.position;
+        out->velocity = c_->test_data_.velocity;
+        out->arg_name = c_->test_data_.arg_name;
+        out->arg_value = c_->test_data_.arg_value;
+        call_service_.unlockAndCall();
+        data_sent_ = true;
+      }
+    }
+    if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
+    {
+      if (pub_diagnostics_.trylock())
+      {
+        last_publish_time_ = robot_->hw_->current_time_;
+        
+        robot_msgs::DiagnosticStatus *out = &pub_diagnostics_.msg_.status[0];
+        out->name = c_->diagnostic_message_.status[0].name;
+        out->level = c_->diagnostic_message_.status[0].level;
+        out->message = c_->diagnostic_message_.status[0].message;
+        pub_diagnostics_.unlockAndPublish();
+      }  
+    }
+  }
 }
 
 
 bool BacklashControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  assert(robot);
+  robot_ = robot;
+
   if (!c_->initXml(robot, config))
     return false;
 
+  pub_diagnostics_.msg_.set_status_size(1);
   return true;
 }
 

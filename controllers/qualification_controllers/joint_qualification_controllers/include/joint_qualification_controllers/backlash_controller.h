@@ -36,20 +36,22 @@
 
 /***************************************************/
 /*! \class controller::BacklashController
-    \brief Sine Sweep Controller
+    \brief Backlash Controller
 
-    This class basically applies a sine sweep to the joint.
+    This class attempts to find backlash in joint.
 */
 /***************************************************/
 
-#include <robot_msgs/TestData.h>
+
 #include <ros/node.h>
 #include <math.h>
 #include <robot_msgs/DiagnosticMessage.h>
 #include <realtime_tools/realtime_publisher.h>
+#include <realtime_tools/realtime_srv_call.h>
 #include <mechanism_model/controller.h>
 #include <control_toolbox/sine_sweep.h>
-
+#include <robot_mechanism_controllers/joint_velocity_controller.h>
+#include <robot_srvs/TestData.h>
 
 namespace controller
 {
@@ -70,10 +72,10 @@ public:
 
   /*!
    * \brief Functional way to initialize.
-   * \param start_freq The start value of the sweep (Hz).
-   * \param end_freq  The end value of the sweep (Hz).
+   * \param freq Freq of backlash test (Hz).
    * \param amplitude The amplitude of the sweep (N).
    * \param duration The duration in seconds from start to finish (s).
+   * \param error_tolerance Maximum error permitted
    * \param time The current hardware time.
    * \param *robot The robot that is being controlled.
    */
@@ -83,24 +85,27 @@ public:
   void analysis();
   virtual void update();
 
+  inline bool done() { return done_; }
+
+  robot_msgs::DiagnosticMessage diagnostic_message_;
+  robot_srvs::TestData::Request test_data_;
+
 private:
   mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
   mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
-  double duration_;                         /**< Duration of the sweep. */
-  double initial_time_;                     /**< Start time of the sweep. */
+  double duration_;                         /**< Duration of the test. */
+  double initial_time_;                     /**< Start time of the test. */
   int count_;
   bool done_;
   double last_time_;
   double amplitude_;
   double freq_;
-  ros::Node* node;
-  robot_msgs::DiagnosticMessage diagnostic_message_;
-  robot_msgs::TestData test_data_;
+
 };
 
 /***************************************************/
 /*! \class controller::BacklashControllerNode
-    \brief Sine Sweep Controller ROS Node
+    \brief Backlash Controller ROS Node
 
 */
 /***************************************************/
@@ -116,7 +121,13 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 private:
+  bool data_sent_;
   BacklashController *c_;
+  mechanism::RobotState *robot_;
+  
+  double last_publish_time_;
+  realtime_tools::RealtimeSrvCall<robot_srvs::TestData::Request, robot_srvs::TestData::Response> call_service_;
+  realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> pub_diagnostics_;
 };
 }
 
