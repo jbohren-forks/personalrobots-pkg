@@ -50,7 +50,7 @@ import rospy, rostest
 from std_msgs.msg import *
 from robot_msgs.msg import *
 from deprecated_msgs.msg import *
-from transformations import *
+from tf.transformations import *
 from numpy import *
 
 FLOAT_TOL = 0.0001

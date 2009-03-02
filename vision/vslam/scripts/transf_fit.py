@@ -13,7 +13,7 @@ from scipy.optimize import fmin_powell
 from scipy.optimize import fmin_ncg
 from scipy.optimize import fmin_cg
 from scipy.optimize import leastsq
-import transformations
+from tf import transformations
 from visualodometer import Pose
 
 # go thru both trajectories in time, pick matching points from curve1 that

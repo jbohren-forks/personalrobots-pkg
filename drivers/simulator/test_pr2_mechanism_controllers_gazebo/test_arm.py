@@ -52,7 +52,7 @@ import rospy, rostest
 from std_msgs.msg import *
 from robot_msgs.msg import *
 from pr2_mechanism_controllers.msg import *
-from transformations import *
+from tf.transformations import *
 from numpy import *
 
 

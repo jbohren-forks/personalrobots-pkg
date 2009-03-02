@@ -11,7 +11,7 @@ import operator
 
 from numpy import array
 import numpy
-import transformations
+from tf import transformations
 from transf_fit import *
 # from skeleton import Skeleton
 
