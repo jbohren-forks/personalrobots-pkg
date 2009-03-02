@@ -67,8 +67,8 @@ public:
   void addEfforts(KDL::JntArray&, std::vector<JointState>&);
 
   // return the name of actuated joint i
-  int getJointArrayIndex(unsigned int actuated_joint_i);
-  std::string getJointName(unsigned int actuated_joint_i);
+  Joint *getJoint(unsigned int actuated_joint_i);
+  std::string getJointName(unsigned int actuated_joint_i);  // Deprecated
 
   std::string getLinkName(int index = -1);
 
