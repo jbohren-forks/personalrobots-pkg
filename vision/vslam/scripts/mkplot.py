@@ -92,6 +92,15 @@ inliers = []
 
 keys = set()
 
+import getopt
+
+skel_load_filename = None
+optlist, args = getopt.getopt(sys.argv[1:], "l:")
+print optlist, args
+for o,a in optlist:
+  if o == '-l':
+    skel_load_filename = a
+
 def playlist(args):
   for f in args:
     r = reader(f)
@@ -99,7 +108,7 @@ def playlist(args):
       yield d + (f,)
     
 inl_history = [0,0]
-for cam,l_image,r_image,label in playlist(sys.argv[1:]):
+for cam,l_image,r_image,label in playlist(args):
   print framecounter
   if vos == None:
     vos = [
@@ -115,6 +124,10 @@ for cam,l_image,r_image,label in playlist(sys.argv[1:]):
     vo_v = [ [] for i in vos]
     trajectory = [ [] for i in vos]
     skel = Skeleton(cam)
+    if skel_load_filename:
+      skel.load(skel_load_filename)
+      vos[0].num_frames = max(skel.nodes) + 1
+      framecounter = max(skel.nodes) + 1
     oe_x = []
     oe_y = []
     oe_home = None
@@ -179,6 +192,7 @@ for vo in vos:
   print vo.log_keyframes
   print
 skel.summarize_timers()
+skel.dump_timers('skel_timers.pickle')
 
 skel.trim()
 print "Saving as mkplot_snap"
