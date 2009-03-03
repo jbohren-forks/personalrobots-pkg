@@ -563,6 +563,7 @@ public:
       reverse (clusters.begin (), clusters.end ());
       cout << "found " << clusters.size() << " clusters" << endl;
 
+      // visualize clusters when door handle is not found
       robot_msgs::Point32 center, min_p, max_p;
       handle_visualize.resize (clusters.size () + 2);
       cloud_geometry::statistics::getLargestDiagonalPoints (door_poly, min_p, max_p);
@@ -579,20 +580,22 @@ public:
       std::cout << " - distance to side of door" << std::endl;
       for (unsigned int i = 0; i < clusters.size (); i++)
       {
-        if (clusters[i].size () == 0) continue;
+        if (clusters[i].size () == 0)
+          continue;
 
         // Compute the centroid for the remaining handle indices
         cloud_geometry::nearest::computeCentroid (points, &clusters[i], center);
 
         double d1 = sqrt ( (center.x - min_p.x) * (center.x - min_p.x) + (center.y - min_p.y) * (center.y - min_p.y) );
-        double d2 = sqrt ( (center.x - max_p.x) * (center.x - max_p.x) + (center.y - max_p.y) * (center.y - min_p.y) );
+        double d2 = sqrt ( (center.x - max_p.x) * (center.x - max_p.x) + (center.y - max_p.y) * (center.y - max_p.y) );
         // @Wim: funny thresholds! Don't forget to set them as parameters if they are useful :)
         if (!( (d1 < 0.25 && d1 > 0.03) ||  (d2 < 0.25 && d2 > 0.03))){
           clusters[i].resize(0);
           cout << "  reject cluster " << i << " because min distance to edge of door = " << d1 << "  " << d2 << endl;
         }
+        else
+          cout << "  accept cluster " << i << " because min distance to edge of door = " << d1 << "  " << d2 << endl;
       }
-
 
 
 
@@ -621,7 +624,7 @@ public:
         cloud_geometry::statistics::getLargestDiagonalPoints (points, &line_inliers[i], min_h, max_h);
         double length = sqrt ( (min_h.x - max_h.x) * (min_h.x - max_h.x) + (min_h.y - max_h.y) * (min_h.y - max_h.y) );
         double fit = ((double)(line_inliers[i].size())) / ((double)(clusters[i].size()));
-        double score = fit + 3.0 * length;
+        double score = fit + 3.0 * fabs(length - 0.15);
         cout << "  cluster " << i << " has fit " << fit << " and length " << length << " --> " << score << endl;
 
         if (score > best_score)
@@ -658,43 +661,33 @@ public:
       // Calculate the unsigned distance from the point to the plane
       double distance_to_plane = door_coeff->at (0) * handle_center.x + door_coeff->at (1) * handle_center.y +
                                  door_coeff->at (2) * handle_center.z + door_coeff->at (3) * 1;
-
       cout << "distance to plane = " << distance_to_plane << endl;
 
-      // Calculate the projection of the point on the plane
-      handle_center.x -= distance_to_plane * door_coeff->at (0);
-      handle_center.y -= distance_to_plane * door_coeff->at (1);
-      handle_center.z -= distance_to_plane * door_coeff->at (2);
-
-      /*
-      handle_visualize.resize (1);
-      handle_visualize[0].x = handle_center.x;
-      handle_visualize[0].y = handle_center.y;
-      handle_visualize[0].z = handle_center.z;
+      bool show_cluster = true;
+      if (show_cluster)
+      {
+        handle_visualize.resize (line_inliers[best_i].size());
+        for (unsigned int i=0; i<line_inliers[best_i].size(); i++)
+        {
+          handle_visualize[i].x = points->pts.at (line_inliers[best_i][i]).x;
+          handle_visualize[i].y = points->pts.at (line_inliers[best_i][i]).y;
+          handle_visualize[i].z = points->pts.at (line_inliers[best_i][i]).z;
+        }
+      }
+      else
+      {
+        handle_visualize.resize (1);
+        handle_visualize[0].x = handle_center.x;
+        handle_visualize[0].y = handle_center.y;
+        handle_visualize[0].z = handle_center.z;
+      }
       handle_cloud.pts = handle_visualize;
-      */
       handle_cloud.header = cloud_header_;
       publish ("handle_visualization", handle_cloud);
 
       return (true);
     }
 
-
-
-
-  /**
-   * Check cloud_geometry::projections
-    void projectOntoPlane( vector<double> *plane_coeff, Point32& pnt)
-    {
-      // Calculate the unsigned distance from the point to the plane
-      double distance_to_plane = plane_coeff->at (0) * pnt.x + plane_coeff->at (1) * pnt.y + plane_coeff->at (2) * pnt.z + plane_coeff->at (3) * 1;
-
-      // Calculate the projection of the point on the plane
-      pnt.x -= distance_to_plane * plane_coeff->at (0);
-      pnt.y -= distance_to_plane * plane_coeff->at (1);
-      pnt.z -= distance_to_plane * plane_coeff->at (2);
-    }
-    **/
 
 
 
