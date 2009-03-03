@@ -90,8 +90,7 @@ public:
   ros::Time meas_time_;
 
   Stamped<Point> position_;
-  bool had_two_legs_;
-  mutable float dist_to_person_;
+  float dist_to_person_;
 
   // one leg tracker
   SavedFeature(Stamped<Point> loc, TransformListener& tfl)
@@ -106,7 +105,6 @@ public:
     object_id = "";
     time_ = loc.stamp_;
     meas_time_ = loc.stamp_;
-    had_two_legs_ = false;
 
     tfl_.transformPoint(fixed_frame, loc, loc);
     Stamped<Transform> pose( btTransform(Quaternion(), loc), loc.stamp_, id_, loc.frame_id_);
@@ -292,7 +290,7 @@ public:
 
     // If there's a pair of legs with the right label and within the max dist, return
     // If there's one leg with the right label and within the max dist, 
-    //   find a partner for it from the unlabeled legs.
+    //   find a partner for it from the unlabeled legs whose tracks are reasonably new.
     //   If no partners exist, label just the one leg.
     // If there are no legs with the right label and within the max dist,
     //   find a pair of unlabeled legs and assign them the label.
@@ -315,37 +313,35 @@ public:
       // If this leg belongs to the person...
       if ((*it1)->object_id == people_meas->object_id) 
       {
-	// and their distance is close enough, assign it2 to this leg, and look for a second leg. Otherwise, remove the tracker's label.
+	// and their distance is close enough... 
 	if ((*it1)->dist_to_person_ < max_meas_jump_m)
 	{
+	  // if this is the first leg we've found, assign it to it2. Otherwise, leave it assigned to it1 and break.
 	  if (it2 == end) 
 	    it2 = it1;
 	  else
 	    break;
 	}
+	// Otherwise, remove the tracker's label, it doesn't belong to this person.
 	else{
-          // the two trackers moved apart. This should not happeh
+          // the two trackers moved apart. This should not happen.
 	  (*it1)->object_id = "";
-          (*it1)->had_two_legs_ = false;
         }
       }
     }
     // If we found two legs with the right label and within the max distance, all is good, return.
     if (it1 != end && it2 != end) 
     {
-      // mark that these trackers belong to a pair of legs
-      (*it1)->had_two_legs_ = true;
-      (*it2)->had_two_legs_ = true;
       cout << "Found matching pair. The second distance was " << (*it1)->dist_to_person_ << endl;
       return;
     }
 
 
 
-    // If we found one leg, let's try to find a second leg that 
-    //   * doesn't yet have a label  (=valid precondition)
-    //   * is within the max distance.
-    //   * is less than no_observation_timeout_s old
+    // If we only found one close leg with the right label, let's try to find a second leg that 
+    //   * doesn't yet have a label  (=valid precondition),
+    //   * is within the max distance,
+    //   * is less than no_observation_timeout_s old.
     cout << "Looking for one leg plus one new leg" << endl;
     float dist_between_legs, closest_dist_between_legs;
     if (it2 != end) 
@@ -359,15 +355,16 @@ public:
 	if (it1 == it2)
 	  continue;
 	
-        // check if tracker is not too old: we want a new tracker
-        if ((*it2)->had_two_legs_ && (*it1)->getLifetime() > no_observation_timeout_s)
+        // check if tracker is not too old. Old unassigned trackers are unlikely to be the second leg in a pair.
+        if ((*it1)->getLifetime() > no_observation_timeout_s)
           continue;
 
 	// Get the distance between the two legs
 	tfl_.transformPoint((*it1)->id_, (*it2)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
 	dist_between_legs = dest_loc.length();
 
-	// If this is the closest dist (and within range), and the legs are close together, and unlabeled, mark it.
+	// If this is the closest dist (and within range), and the legs are close together and unlabeled, mark it.
+	// THE FIRST TWO CONDITIONS SHOULD BE MOVED UP, BUT THAT GIVES WEIRD CONSEQUENCES. TRY IT, DEBUG IT.
 	if ( (*it1)->object_id == "" && (*it1)->dist_to_person_ < closest_dist && dist_between_legs < leg_pair_separation_m )
 	{
 	  closest = it1;
@@ -391,7 +388,7 @@ public:
     }
 
     cout << "Looking for a pair of new legs" << endl;
-    // If we didn't find any legs, try to find two unlabeled legs that are close together and close to the tracker.
+    // If we didn't find any legs with this person's label, try to find two unlabeled legs that are close together and close to the tracker.
     it1 = saved_features_.begin();
     it2 = saved_features_.begin();
     closest = saved_features_.end();
@@ -425,7 +422,7 @@ public:
 	tfl_.transformPoint((*it1)->id_, (*it2)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
 	dist_between_legs = dest_loc.length();
 
-	// Ensure that the pair of legs is the closest pair to the tracker, and that the distance between the legs isn't too large.
+	// Ensure that this pair of legs is the closest pair to the tracker, and that the distance between the legs isn't too large.
 	if ( (*it1)->dist_to_person_+(*it2)->dist_to_person_ < closest_pair_dist && dist_between_legs < leg_pair_separation_m ) 
 	{
 	  closest_pair_dist = (*it1)->dist_to_person_+(*it2)->dist_to_person_;
@@ -643,11 +640,11 @@ public:
       pos.pos.x = est.pos_[0];
       pos.pos.y = est.pos_[1];
       pos.pos.z = est.pos_[2];
-      pos.covariance[0] = pow(0.3 / reliability,2);
+      pos.covariance[0] = pow(0.3 / reliability,2.0);
       pos.covariance[1] = 0.0;
       pos.covariance[2] = 0.0;
       pos.covariance[3] = 0.0;
-      pos.covariance[4] = pow(0.3 / reliability,2);
+      pos.covariance[4] = pow(0.3 / reliability,2.0);
       pos.covariance[5] = 0.0;
       pos.covariance[6] = 0.0;
       pos.covariance[7] = 0.0;
