@@ -16,4 +16,5 @@
   <depend package="pr2_alpha"/>
   <depend package="semantic_point_annotator"/>
   <depend package="2dnav_stage"/>
+  <depend package="point_cloud_assembler"/>
 </package>
