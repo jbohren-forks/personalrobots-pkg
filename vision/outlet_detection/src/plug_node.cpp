@@ -63,16 +63,17 @@ public:
     int j = 0;
     for (int y = 0; y < BOARD_H; ++y) {
       for (int x = 0; x < BOARD_W; ++x) {
-        cvSetReal2D(grid_pts_, j, 0, -x*SQUARE_SIZE);
-        cvSetReal2D(grid_pts_, j, 1, -y*SQUARE_SIZE);
+        cvSetReal2D(grid_pts_, j, 0, x*SQUARE_SIZE);
+        cvSetReal2D(grid_pts_, j, 1, y*SQUARE_SIZE);
         cvSetReal2D(grid_pts_, j, 2, 0.0);
         ++j;
       }
     }
 
-    plug_in_board_.getOrigin().setValue(0.0, 0.0, 0.0);
+    //plug_in_board_.getOrigin().setValue(0.0, 0.0, 0.0);
     //plug_in_board_.getOrigin().setValue(-0.01, 0.003, 0.005);
-    plug_in_board_.getBasis().setValue(0, 1, 0, 1, 0, 0, 0, 0, -1);
+    plug_in_board_.getOrigin().setValue(0.003, -0.01, 0.005);
+    plug_in_board_.getBasis().setValue(0, -1, 0, -1, 0, 0, 0, 0, -1);
     camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
     camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
 
@@ -119,7 +120,7 @@ public:
 
     cvFindCornerSubPix(image, &corners[0], ncorners, cvSize(11,11), cvSize(-1,-1),
                        cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
-
+    
     double rot[3], trans[3];
     CvMat R3, T3, D, img_pts;
     cvInitMatHeader(&R3, 3, 1, CV_64FC1, rot);
