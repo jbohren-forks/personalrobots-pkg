@@ -56,7 +56,7 @@ public:
   LaserMedianFilter();
   ~LaserMedianFilter();
 
-  bool configure(unsigned int number_of_channels, TiXmlElement *config); //const std::string & xml);
+  bool configure();
 
   /** \brief Update the filter and get the response
    * \param scan_in The new scan to filter
@@ -76,7 +76,6 @@ private:
   filters::FilterChain<float> * intensity_filter_;
 
   boost::scoped_ptr<TiXmlElement>  latest_xml_;
-  bool configured_;
 };
 
 typedef laser_scan::LaserScan laser_scan_laser_scan;
@@ -85,24 +84,17 @@ ROS_REGISTER_FILTER(LaserMedianFilter, laser_scan_laser_scan);
 
 template <typename T>
 LaserMedianFilter<T>::LaserMedianFilter():
-  num_ranges_(1),
-  configured_(false)
+  num_ranges_(1)
 {
   
 };
 
 template <typename T>
-bool LaserMedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement * xml_doc)
+bool LaserMedianFilter<T>::configure()
 {
-  configured_ = false; //set to false so if we return early it's not configured
+  ROS_ASSERT(this->number_of_channels_ == 1);
 
-  ROS_ASSERT(number_of_channels == 1);
-  if (!filters::FilterBase<T>::setName(xml_doc)) 
-  {
-    ROS_ERROR("LaserMedianFilter configured without a name");
-    return false;
-  }
-  TiXmlNode * child_node = xml_doc->FirstChild("filters");
+  TiXmlNode * child_node = this->raw_xml_.get()->FirstChild("filters");
   if (!child_node)
   {
     ROS_ERROR("Cannot Configure LaserMedianFilter: Didn't find filters tag within LaserMedianFilter. Filter definitions needed inside for processing range and intensity");
@@ -119,7 +111,6 @@ bool LaserMedianFilter<T>::configure(unsigned int number_of_channels, TiXmlEleme
   if (intensity_filter_) delete intensity_filter_;
   intensity_filter_ = new filters::FilterChain<float>();
   if (!intensity_filter_->configure(num_ranges_, latest_xml_.get())) return false;
-  configured_ = true;
   return true;
 };
 
@@ -133,7 +124,7 @@ LaserMedianFilter<T>::~LaserMedianFilter()
 template <typename T>
 bool LaserMedianFilter<T>::update(const std::vector<laser_scan::LaserScan>& data_in, std::vector<laser_scan::LaserScan>& data_out)
 {
-  if (!configured_) 
+  if (!this->configured_) 
   {
     ROS_ERROR("LaserMedianFilter not configured");
     return false;

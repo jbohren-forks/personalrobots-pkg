@@ -89,11 +89,10 @@ public:
    */
   ~IIRFilter();
   
-  /** \brief Configure the filter with the correct number of channels and params.
-   * \param number_of_channels The number of inputs filtered.
-   * \param config The xml that is parsed to configure the filter.
+  /** \brief Configure the filter
+   * The correct number of channels and params have already been loaded.
    */
-  virtual bool configure(unsigned int number_of_channels, TiXmlElement *config);
+  virtual bool configure();
 
   /** \brief Update the filter and return the data seperately
    * \param data_in vector<T> with n elements
@@ -104,11 +103,9 @@ public:
   
 protected:
   
-  unsigned int number_of_channels_;
   ros::Node* node_;
   std::vector<std::string> args_;   //Butterworth args
   std::string type_;
-  bool configured_;
   filters::FilterBase<T > * tf_filter_;
 };
 
@@ -116,9 +113,7 @@ ROS_REGISTER_FILTER(IIRFilter, double)
 ROS_REGISTER_FILTER(IIRFilter, float)
 
 template <typename T>
-IIRFilter<T>::IIRFilter():
-  number_of_channels_(0),
-  configured_(false)
+IIRFilter<T>::IIRFilter()
 {
   tf_filter_ = new filters::TransferFunctionFilter<T > ();
   
@@ -139,56 +134,36 @@ IIRFilter<T>::~IIRFilter()
 };
 
 template <typename T>
-bool IIRFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *config)
+bool IIRFilter<T>::configure()
 {
-  // Check if the filter is already configured.
-  if (configured_)
-  {
-    ROS_WARN("IIRFilter is already configured.");
-    return false;
-  }
-
-  number_of_channels_=number_of_channels;
-      
-  // Parse the name of the filter from the xml.  
-  if (!filters::FilterBase<T>::setName(config))
-  {
-    ROS_ERROR("IIRFilter was not given a name.");
-    return false;
-  }
-  ROS_INFO("Configuring IIRFilter with name \"%s\".", filters::FilterBase<T>::getName().c_str());
-  
   // Parse the params of the filter from the xml.
-  TiXmlElement *p = config->FirstChildElement("params");
-  if (!p)
+
+  std::string type;
+
+  if (!this->getStringParam("name", type, type_))
   {
-    fprintf(stderr, "Error: IIRFilter, \"%s\",  was not given params.", filters::FilterBase<T>::getName().c_str());
-    return false;
-  }
-  
-  const char *t = p->Attribute("name");
-  if (!t)
-  {
-    ROS_ERROR("IIRFilter, \"%s\", params has no attribute name.", filters::FilterBase<T>::getName().c_str());
-    return false;
-  }
-  type_=std::string(t);
-  
-  const char *s = p->Attribute("args");
-  if (!s)
-  {
-    ROS_ERROR("IIRFilter, \"%s\", params has no attribute args.", filters::FilterBase<T>::getName().c_str());
+    ROS_ERROR("IIR filter Needs name args");
     return false;
   }
 
+
+  if (!this->getStringVectorParam("args", args_, args_))
+  {
+    ROS_ERROR("IIR filter Needs param args");
+    return false;
+  }
+  printf("args are \n");
+  for (unsigned int i = 0; i < args_.size(); i++)
+  {
+    printf("iir args[%d] are %s\n", i, args_[i].c_str());
+  }
+  
   TiXmlDocument doc;
   TiXmlElement *transfer_function_config;
-  std::string str = s;
-  boost::split( args_, str, boost::is_any_of(" "));
   iir_filters::Filter::Request  req;
   iir_filters::Filter::Response res;
   
-  req.name = type_;
+  req.name = type;
   req.args = args_;
   if (ros::service::call("filter_coeffs", req, res))
   {
@@ -222,18 +197,19 @@ bool IIRFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *conf
     return false;
   }
   
-  configured_ = tf_filter_->configure(number_of_channels, transfer_function_config);
-
-  return configured_;
+  return tf_filter_->configure(this->number_of_channels_, transfer_function_config);
 };
 
 
 template <typename T>
 bool IIRFilter<T>::update(const std::vector<T>& data_in, std::vector<T>& data_out)
 {
- 
-  if (data_in.size() != number_of_channels_ || data_out.size() != number_of_channels_)
+   // Ensure the correct number of inputs
+  if (data_in.size() != this->number_of_channels_ || data_out.size() != this->number_of_channels_ )  
+  {
+    ROS_ERROR("Number of channels is %d, but data_in.size() = %d and data_out.size() = %d.  They must match", this->number_of_channels_, data_in.size(), data_out.size());
     return false;
+  }
      
   return tf_filter_->update(data_in, data_out);
 }
