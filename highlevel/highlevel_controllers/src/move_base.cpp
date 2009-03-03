@@ -499,7 +499,7 @@ namespace ros {
       // Project laser into point cloud
       robot_msgs::PointCloud local_cloud;
       local_cloud.header = message->header;
-      projector_.projectLaser(*message, local_cloud, baseLaserMaxRange_);
+      projector_.projectLaser(*message, local_cloud, -1.0, true);
       lock();
       baseScanBuffer_->buffer_cloud(local_cloud);
       unlock();
