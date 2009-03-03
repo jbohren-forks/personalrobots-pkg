@@ -14,4 +14,6 @@ target_link_libraries(test/utest image_loader SDL SDL_image)
 rospack_add_executable(test/rtest test/rtest.cpp test/test_constants.cpp)
 rospack_add_gtest_build_flags(test/rtest)
 
+rospack_add_executable(map_saver src/map_saver.cpp)
+
 rospack_add_rostest(test/rtest.xml)
