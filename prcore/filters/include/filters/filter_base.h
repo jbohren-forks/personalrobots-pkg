@@ -61,9 +61,18 @@ template<typename T>
 class FilterBase
 {
 public:
+  /** \brief Default constructor used by Filter Factories
+   */
   FilterBase():number_of_channels_(0), configured_(false){};
+
+  /** \brief Virtual Destructor
+   */
   virtual ~FilterBase(){};
 
+  /** \brief The public method to configure a filter from XML 
+   * \param number_of_channels How many parallel channels the filter will process
+   * \param config The XML to initialize the filter with including name, type, and any parameters
+   */
   bool configure(unsigned int number_of_channels, TiXmlElement *config)
   {
     if (configured_)
@@ -82,7 +91,9 @@ public:
 
 
   /** \brief Update the filter and return the data seperately
-   * This is a lazy way to do this and can be overridden in the derived class
+   * This is an inefficient way to do this and can be overridden in the derived class
+   * \param data_in A reference to the data to be input to the filter
+   * \param data_out A reference to the data output location
    */
   virtual bool update(const T& data_in, T& data_out)
   {
@@ -94,16 +105,32 @@ public:
     return retval;
   };
   /** \brief Update the filter and return the data seperately
+   * \param data_in A reference to the data to be input to the filter
+   * \param data_out A reference to the data output location
+   * This funciton must be implemented in the derived class.
    */
   virtual bool update(const std::vector<T>& data_in, std::vector<T>& data_out)=0;
 
+  /** \brief Get the typeid of the Templated Datatype as a string */
   std::string getType() {return typeid(T).name();};
 
+  /** \brief Get the name of the filter as a string */
   inline const std::string& getName(){return filter_name_;};
 
 
 protected:
 
+  /** \brief Pure virtual function for the sub class to configure the filter
+   * This function must be implemented in the derived class.
+   */
+  virtual bool configure()=0;
+
+
+  /** \brief Get a filter parameter as a string 
+   * \param name The name of the parameter
+   * \param value The string to set with the value
+   * \param default_value The string to set the value to if the parameter of name doesn't exist
+   * \return Whether or not the parameter of name existed */
   bool getStringParam(const std::string& name, std::string& value, const std::string& default_value)
   {
     string_map_t::iterator it = params_.find(name);
@@ -116,6 +143,11 @@ protected:
     return true;
   }
 
+  /** \brief Get a filter parameter as a double
+   * \param name The name of the parameter
+   * \param value The double to set with the value
+   * \param default_value The double to set the value to if the parameter of name doesn't exist
+   * \return Whether or not the parameter of name existed */
   bool getDoubleParam(const std::string&name, double& value, const double& default_value)
   {
     string_map_t::iterator it = params_.find(name);
@@ -127,6 +159,12 @@ protected:
     value = atof(it->second.c_str());
     
   }
+
+  /** \brief Get a filter parameter as a int
+   * \param name The name of the parameter
+   * \param value The int to set with the value
+   * \param default_value The int to set the value to if the parameter of name doesn't exist
+   * \return Whether or not the parameter of name existed */
   bool getIntParam(const std::string&name, int& value, const int& default_value)
   {
     string_map_t::iterator it = params_.find(name);
@@ -138,6 +176,13 @@ protected:
     value = atoi(it->second.c_str());
     return true;
   }
+
+
+  /** \brief Get a filter parameter as a unsigned int
+   * \param name The name of the parameter
+   * \param value The unsignd int to set with the value
+   * \param default_value The unsigned int to set the value to if the parameter of name doesn't exist
+   * \return Whether or not the parameter of name existed */
   bool getUIntParam(const std::string&name, unsigned int& value, const unsigned int& default_value)
   {
     string_map_t::iterator it = params_.find(name);
@@ -150,6 +195,12 @@ protected:
     return true;
   }
   
+
+  /** \brief Get a filter parameter as a std::vector<double>
+   * \param name The name of the parameter
+   * \param value The std::vector<double> to set with the value
+   * \param default_value The std::vector<double> to set the value to if the parameter of name doesn't exist
+   * \return Whether or not the parameter of name existed */
   bool getDoubleVectorParam(const std::string&name, std::vector<double>& value, const std::vector<double>& default_value)
   {
     string_map_t::iterator it = params_.find(name);
@@ -170,6 +221,11 @@ protected:
     return true;
   }
 
+  /** \brief Get a filter parameter as a std::vector<string>
+   * \param name The name of the parameter
+   * \param value The std::vector<sgring> to set with the value
+   * \param default_value The std::vector<string> to set the value to if the parameter of name doesn't exist
+   * \return Whether or not the parameter of name existed */
   bool getStringVectorParam(const std::string&name, std::vector<std::string>& value, const std::vector<std::string>& default_value)
   {
     string_map_t::iterator it = params_.find(name);
@@ -188,20 +244,26 @@ protected:
   }
   
 
-
-  virtual bool configure()=0;
-
-  
+  ///Storage for a pointer to the xml used to configure the filter
+  ///This can be used by advanced filters using more than the param tags
   boost::scoped_ptr<TiXmlElement>  raw_xml_;
+  ///The name of the filter
   std::string filter_name_;
+  ///The type of the filter (Used by FilterChain for Factory construction)
   std::string filter_type_;
+  /// How many parallel inputs for which the filter is to be configured
   unsigned int number_of_channels_;
+  /// Whether the filter has been configured.  
   bool configured_;
 
+  ///Storage of the parsed xml parameters
   string_map_t params_;
 
 private:
-  bool setName(TiXmlElement * config)
+  /**\brief Set the name and type of the filter from XML 
+   * \param config The XML from which to read
+   */
+  bool setNameAndType(TiXmlElement * config)
   {  
     const char *name = config->Attribute("name");
     const char *type = config->Attribute("type");
@@ -221,6 +283,9 @@ private:
     return true;
   };
 
+
+  /** \brief Read in the XML and do basic configuration of FilterBase
+   * \param config The XML to parse */
   bool loadXml(TiXmlElement* config)
   {
     if (!config)
@@ -236,7 +301,7 @@ private:
     //Store a copy of the xml
     raw_xml_.reset(config->Clone()->ToElement());
 
-    if (!setName(config))
+    if (!setNameAndType(config))
     {
       ROS_ERROR("Filter Configured w/o name");
       return false;
@@ -260,7 +325,7 @@ private:
   
 };
 
-
+/**\brief The FilterFactory which generates any type of Filter */
 template <typename T>
 class FilterFactory : public Loki::SingletonHolder < Loki::Factory< filters::FilterBase<T>, std::string >,
                                                      Loki::CreateUsingNew,
@@ -270,7 +335,7 @@ class FilterFactory : public Loki::SingletonHolder < Loki::Factory< filters::Fil
 };
   
 
-
+/** The Macro which makes registering a Filter with it's type easy */
 #define ROS_REGISTER_FILTER(c,t) \
   filters::FilterBase<t> * Filters_New_##c##__##t() {return new c< t >;}; \
   bool ROS_FILTER_## c ## _ ## t =                                                    \
