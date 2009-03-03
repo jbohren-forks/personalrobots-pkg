@@ -71,14 +71,14 @@
         <elem key="material" value="Gazebo/Blue" />
       </map>
       <geometry name="$high_def_visual">
-        <mesh scale="0.1 0.1 0.1" />
+        <mesh scale="0.01 0.01 0.01" />
       </geometry>
     </visual>
 
     <collision>
       <origin xyz="0 0 0" />
       <geometry name="high_def_collision">
-        <box size="0.1 0.1 0.1" />
+        <box size="0.01 0.01 0.01" />
       </geometry>
     </collision>
   </link>
