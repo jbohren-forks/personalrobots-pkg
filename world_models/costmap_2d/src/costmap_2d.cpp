@@ -253,8 +253,12 @@ namespace costmap_2d {
           + (cloud.pts[i].z - obs.origin_.z) * (cloud.pts[i].z - obs.origin_.z);
 
         //Filter out points that are outside of the max range we'll consider
-        if(sq_dist >= sq_obstacle_range_)
+        //It is important to raytrace to these points, however.
+        if(sq_dist >= sq_obstacle_range_){
+          if(in_projection_range(cloud.pts[i].z) && in_projection_range(obs.origin_.z))
+            updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
           continue;
+        }
 
         // Queue cell for cost propagation
         unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
