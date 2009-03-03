@@ -33,7 +33,7 @@
   </node>
 
 <!-- Tilt Laser -->
-  <node  machine="three" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
+  <node  machine="realtime" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="laser_tilt_link" />
     <param name="min_ang_degrees" type="double" value="-70.0" />
