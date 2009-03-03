@@ -406,7 +406,7 @@ public:
 
       // Get the minP and maxP of selected cluster
       //cloud_geometry::statistics::getMinMax (&pmap_.polygons[best_cluster], minP, maxP);
-      cloud_geometry::statistics::getLargestDiagonalPoints (&pmap_.polygons[best_cluster], minP, maxP);
+      cloud_geometry::statistics::getLargestXYPoints (&pmap_.polygons[best_cluster], minP, maxP);
 
       // reply door message in same frame as request door message
       resp.door = req.door;
@@ -566,9 +566,9 @@ public:
       // visualize clusters when door handle is not found
       robot_msgs::Point32 center, min_p, max_p;
       handle_visualize.resize (clusters.size () + 2);
-      cloud_geometry::statistics::getLargestDiagonalPoints (door_poly, min_p, max_p);
-      handle_visualize[0].x = min_p.x; handle_visualize[0].y = min_p.y; handle_visualize[0].z = min_p.z;
-      handle_visualize[1].x = max_p.x; handle_visualize[1].y = max_p.y; handle_visualize[1].z = max_p.z;
+      cloud_geometry::statistics::getLargestXYPoints (door_poly, min_p, max_p);
+      handle_visualize[0].x = min_p.x; handle_visualize[0].y = min_p.y; handle_visualize[0].z = 0;
+      handle_visualize[1].x = max_p.x; handle_visualize[1].y = max_p.y; handle_visualize[1].z = 0;
       for (unsigned int i = 0; i < clusters.size (); i++)
         cloud_geometry::nearest::computeCentroid (points, &clusters[i], handle_visualize[i+2]);
       robot_msgs::PointCloud handle_cloud;
@@ -609,7 +609,7 @@ public:
       for (int i = 0; i < (int)clusters.size (); i++)
       {
         if (clusters[i].size () == 0) continue;
-        fitSACOrientedLine (points, clusters[i], 0.05, &door_axis, normal_angle_tolerance_, line_inliers[i]);
+        fitSACOrientedLine (points, clusters[i], 0.025, &door_axis, normal_angle_tolerance_, line_inliers[i]);
       }
 
       // find the best fit
@@ -621,7 +621,7 @@ public:
 
         robot_msgs::Point32 min_h, max_h;
 // @Wim: double check this
-        cloud_geometry::statistics::getLargestDiagonalPoints (points, &line_inliers[i], min_h, max_h);
+        cloud_geometry::statistics::getLargestXYPoints (points, &line_inliers[i], min_h, max_h);
         double length = sqrt ( (min_h.x - max_h.x) * (min_h.x - max_h.x) + (min_h.y - max_h.y) * (min_h.y - max_h.y) );
         double fit = ((double)(line_inliers[i].size())) / ((double)(clusters[i].size()));
         double score = fit - 3.0 * fabs(length - 0.15);
@@ -647,15 +647,14 @@ public:
 
 
       // compute min, max, and center of best cluster
-      //cloud_geometry::nearest::computeCentroid (points, &line_inliers[best_i], handle_center);
-      robot_msgs::Point32 min_h, max_h;
-// @Wim: double check this
-      cloud_geometry::statistics::getLargestDiagonalPoints (points, &line_inliers[best_i], min_h, max_h);
-      handle_center.x = (min_h.x + max_h.x) / 2.0;
-      handle_center.y = (min_h.y + max_h.y) / 2.0;
-      handle_center.z = (min_h.z + max_h.z) / 2.0;
-      cout << "min_h = " << min_h.x << " " << min_h.y << " "<< min_h.z << endl;
-      cout << "max_h = " << max_h.x << " " << max_h.y << " "<< max_h.z << endl;
+      cloud_geometry::nearest::computeCentroid (points, &line_inliers[best_i], handle_center);
+      //robot_msgs::Point32 min_h, max_h;
+      //cloud_geometry::statistics::getLargestXYPoints (points, &line_inliers[best_i], min_h, max_h);
+      //handle_center.x = (min_h.x + max_h.x) / 2.0;
+      //handle_center.y = (min_h.y + max_h.y) / 2.0;
+      //handle_center.z = (min_h.z + max_h.z) / 2.0;
+      //cout << "min_h = " << min_h.x << " " << min_h.y << " "<< min_h.z << endl;
+      //cout << "max_h = " << max_h.x << " " << max_h.y << " "<< max_h.z << endl;
       cout << "handle_center = " << handle_center.x << " " << handle_center.y << " "<< handle_center.z << endl;
 
       // Calculate the unsigned distance from the point to the plane
