@@ -21,6 +21,6 @@
  <depend package="point_cloud_assembler"/>
  <depend package="collision_map"/>
  <depend package="laser_scan"/>
- <depend package="kinematic_planning"/>
+ <depend package="ompl_planning"/>
  <depend package="robot_pose_ekf"/>
 </package>

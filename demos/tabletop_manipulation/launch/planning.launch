@@ -2,7 +2,7 @@
         <param name="refresh_interval_collision_map" type="double" value="5.0" />
         <param name="refresh_interval_kinematic_state" type="double" value="0.2" />
         <param name="refresh_interval_base_pose" type="double" value="0.2" />
-        <node pkg="kinematic_planning" type="kinematic_planning" args="robot_description:=robotdesc/pr2 collision_map:=collision_map_buffer" respawn="true" output="screen" />
+        <node pkg="ompl_planning" type="motion_planner" args="robot_description:=robotdesc/pr2 collision_map:=collision_map_buffer" respawn="true" output="screen" />
         <!--node pkg="highlevel_controllers" type="move_arm2" args="right">
           <remap from="robot_description" to="robotdesc/pr2"/>
         </node-->

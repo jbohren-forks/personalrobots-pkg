@@ -1,8 +1,0 @@
-
-<launch>
-	<param name="refresh_interval_collision_map" type="double" value="0.0" />
-	<param name="refresh_interval_kinematic_state" type="double" value="0.0" />
-	<param name="refresh_interval_base_pose" type="double" value="0.0" />
-	<node pkg="kinematic_planning" type="kinematic_planning" args="robot_description:=robotdesc/pr2 collision_map:=collision_map_buffer" respawn="true" output="screen" />
-<!--	<node pkg="kinematic_planning" type="motion_validator" args="robot_description:=robotdesc/pr2 collision_map:=collision_map_buffer" respawn="true" /> -->
-</launch>
