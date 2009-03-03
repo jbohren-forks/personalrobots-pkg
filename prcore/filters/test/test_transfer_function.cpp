@@ -44,7 +44,7 @@ TEST(TransferFunctionFilter, LowPass)
   TiXmlElement *config = doc.RootElement();
   
   FilterBase<double> * filter = new TransferFunctionFilter<double> ();
-  filter->configure(1, config );
+  EXPECT_TRUE(filter->configure(1, config ));
   
 
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
@@ -58,13 +58,13 @@ TEST(TransferFunctionFilter, LowPass)
   in6.push_back(5.0);
   in7.push_back(6.0);
   out1.push_back(11.8008);
-  filter->update(in1, in1);
-  filter->update(in2, in2);
-  filter->update(in3, in3);
-  filter->update(in4, in4);
-  filter->update(in5, in5);
-  filter->update(in6, in6);
-  filter->update(in7, in7);
+  EXPECT_TRUE(filter->update(in1, in1));
+  EXPECT_TRUE(filter->update(in2, in2));
+  EXPECT_TRUE(filter->update(in3, in3));
+  EXPECT_TRUE(filter->update(in4, in4));
+  EXPECT_TRUE(filter->update(in5, in5));
+  EXPECT_TRUE(filter->update(in6, in6));
+  EXPECT_TRUE(filter->update(in7, in7));
 
   EXPECT_NEAR(out1[0], in7[0], epsilon);
 }
@@ -78,7 +78,7 @@ TEST(TransferFunctionFilter, LowPassNonUnity)
   TiXmlElement *config = doc.RootElement();
   
   FilterBase<double> * filter = new TransferFunctionFilter<double> ();
-  filter->configure(1, config );
+  EXPECT_TRUE(filter->configure(1, config ));
     
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
   std::vector<double> out1;
@@ -91,13 +91,13 @@ TEST(TransferFunctionFilter, LowPassNonUnity)
   in6.push_back(5.0);
   in7.push_back(6.0);
   out1.push_back(2.4088);
-  filter->update(in1, in1);
-  filter->update(in2, in2);
-  filter->update(in3, in3);
-  filter->update(in4, in4);
-  filter->update(in5, in5);
-  filter->update(in6, in6);
-  filter->update(in7, in7);
+  EXPECT_TRUE(filter->update(in1, in1));
+  EXPECT_TRUE(filter->update(in2, in2));
+  EXPECT_TRUE(filter->update(in3, in3));
+  EXPECT_TRUE(filter->update(in4, in4));
+  EXPECT_TRUE(filter->update(in5, in5));
+  EXPECT_TRUE(filter->update(in6, in6));
+  EXPECT_TRUE(filter->update(in7, in7));
 
   EXPECT_NEAR(out1[0], in7[0], epsilon);
 }
@@ -111,7 +111,7 @@ TEST(TransferFunctionFilter, LowPassMulti)
   TiXmlElement *config = doc.RootElement();
   
   FilterBase<double> * filter = new TransferFunctionFilter<double> ();
-  filter->configure(3, config );
+  EXPECT_TRUE(filter->configure(3, config ));
 
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
   std::vector<double> out1;
@@ -147,13 +147,13 @@ TEST(TransferFunctionFilter, LowPassMulti)
   out1.push_back(60.6216);
   out1.push_back(33.9829);
   out1.push_back(28.1027);
-  filter->update(in1, in1);
-  filter->update(in2, in2);
-  filter->update(in3, in3);
-  filter->update(in4, in4);
-  filter->update(in5, in5);
-  filter->update(in6, in6);
-  filter->update(in7, in7);
+  EXPECT_TRUE(filter->update(in1, in1));
+  EXPECT_TRUE(filter->update(in2, in2));
+  EXPECT_TRUE(filter->update(in3, in3));
+  EXPECT_TRUE(filter->update(in4, in4));
+  EXPECT_TRUE(filter->update(in5, in5));
+  EXPECT_TRUE(filter->update(in6, in6));
+  EXPECT_TRUE(filter->update(in7, in7));
 
   for(unsigned int i=0; i<out1.size(); i++)
   {
@@ -170,7 +170,7 @@ TEST(TransferFunctionFilter, LowPassIrrational)
   TiXmlElement *config = doc.RootElement();
   
   FilterBase<double> * filter = new TransferFunctionFilter<double> ();
-  filter->configure(3, config );
+  EXPECT_TRUE(filter->configure(3, config ));
  
   std::vector<double> in1,in2,in3,in4,in5,in6,in7;
   std::vector<double> out1;
@@ -206,13 +206,13 @@ TEST(TransferFunctionFilter, LowPassIrrational)
   out1.push_back(17.1112);
   out1.push_back(9.0285);
   out1.push_back(8.3102);
-  filter->update(in1, in1);
-  filter->update(in2, in2);
-  filter->update(in3, in3);
-  filter->update(in4, in4);
-  filter->update(in5, in5);
-  filter->update(in6, in6);
-  filter->update(in7, in7);
+  EXPECT_TRUE(filter->update(in1, in1));
+  EXPECT_TRUE(filter->update(in2, in2));
+  EXPECT_TRUE(filter->update(in3, in3));
+  EXPECT_TRUE(filter->update(in4, in4));
+  EXPECT_TRUE(filter->update(in5, in5));
+  EXPECT_TRUE(filter->update(in6, in6));
+  EXPECT_TRUE(filter->update(in7, in7));
 
   for(unsigned int i=0; i<out1.size(); i++)
   {

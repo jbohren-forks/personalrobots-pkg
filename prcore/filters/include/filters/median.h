@@ -97,7 +97,7 @@ public:
    */
   ~MedianFilter();
 
-  virtual bool configure(unsigned int number_of_channels, TiXmlElement *config);
+  virtual bool configure();
 
   /** \brief Update the filter and return the data seperately
    * \param data_in double array with length width
@@ -114,17 +114,12 @@ protected:
 
 
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
-  uint32_t number_of_channels_;           ///< Number of elements per observation
-
-  bool configured_;  ///< Whether the filter has been configured
 
 };
 
 template <typename T>
 MedianFilter<T>::MedianFilter():
-  number_of_observations_(0),
-  number_of_channels_(0),
-  configured_(false)
+  number_of_observations_(0)
 {
   
 };
@@ -137,34 +132,20 @@ MedianFilter<T>::~MedianFilter()
 
 
 template <typename T>
-bool MedianFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *config)
+bool MedianFilter<T>::configure()
 {
-  if (configured_)
-    return false;
-    
-  // Parse the name of the filter from the xml.  
-  if (!FilterBase<T>::setName(config))
-  {
-    fprintf(stderr, "Error: MedianFilter was not given a name.\n");
-    return false;
-  }
-
-  // Parse the params of the filter from the xml.
-  TiXmlElement *p = config->FirstChildElement("params");
-  if (!p)
+  int no_obs;
+  if (!FilterBase<T>::getIntParam(std::string("number_of_observations"), no_obs, 0))
   {
     fprintf(stderr, "Error: MedianFilter was not given params.\n");
     return false;
   }
-  
-  number_of_observations_ = atoi(p->Attribute("number_of_observations"));
-  number_of_channels_ = number_of_channels;
+  number_of_observations_ = no_obs;
     
-  temp.resize(number_of_channels_);
+  temp.resize(this->number_of_channels_);
   data_storage_ = new RealtimeCircularBuffer<std::vector<T> >(number_of_observations_, temp);
   temp_storage_.resize(number_of_observations_);
   
-  configured_ = true;
   return true;
 };
 
@@ -172,9 +153,9 @@ template <typename T>
 bool MedianFilter<T>::update(const std::vector<T>& data_in, std::vector<T>& data_out)
 {
   //  printf("Expecting width %d, got %d and %d\n", width_, data_in.size(),data_out.size());
-  if (data_in.size() != number_of_channels_ || data_out.size() != number_of_channels_)
+  if (data_in.size() != this->number_of_channels_ || data_out.size() != this->number_of_channels_)
     return false;
-  if (!configured_)
+  if (!this->configured_)
     return false;
 
   data_storage_->push_back(data_in);
@@ -183,7 +164,7 @@ bool MedianFilter<T>::update(const std::vector<T>& data_in, std::vector<T>& data
   unsigned int length = data_storage_->size();
  
 
-  for (uint32_t i = 0; i < number_of_channels_; i++)
+  for (uint32_t i = 0; i < this->number_of_channels_; i++)
   {
     for (uint32_t row = 0; row < length; row ++)
     {
@@ -199,9 +180,9 @@ template <typename T>
 bool MedianFilter<T>::update(const T& data_in, T& data_out)
 {
   //  printf("Expecting width %d, got %d and %d\n", width_, data_in.size(),data_out.size());
-  if (number_of_channels_ != 1)
+  if (this->number_of_channels_ != 1)
     return false;
-  if (!configured_)
+  if (!this->configured_)
     return false;
 
   temp[0] = data_in;

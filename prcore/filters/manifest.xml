@@ -11,7 +11,6 @@ implementations of commonly used filters.
 <url>http://pr.willowgarage.com</url>
 <depend package="tinyxml"/>
 <depend package="loki" />
-<depend package="wg_robot_description_parser" />
 <depend package="rosconsole" />
 <export>
 <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`"/> <!-- lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/-->

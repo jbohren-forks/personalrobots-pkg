@@ -40,9 +40,9 @@ public:
   
   ~TestFilter() { printf("Destructor\n");};
 
-  virtual bool configure(unsigned int number_of_channels, TiXmlElement *config) 
+  virtual bool configure() 
   {
-    printf("Configured with %d \n", number_of_channels);
+    printf("Configured with %d \n", this->number_of_channels_);
     
     return true;
   };

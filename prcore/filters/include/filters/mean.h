@@ -56,7 +56,7 @@ public:
    */
   ~MeanFilter();
 
-  virtual bool configure(unsigned int number_of_channels, TiXmlElement *config);
+  virtual bool configure();
 
   /** \brief Update the filter and return the data seperately
    * \param data_in T array with length width
@@ -74,8 +74,6 @@ protected:
   uint32_t number_of_observations_;             ///< Number of observations over which to filter
   uint32_t number_of_channels_;           ///< Number of elements per observation
 
-  bool configured_;
-
   
   
 };
@@ -84,39 +82,23 @@ protected:
 template <typename T>
 MeanFilter<T>::MeanFilter():
   number_of_observations_(0),
-  number_of_channels_(0),
-  configured_(false)
+  number_of_channels_(0)
 {
 }
 
 template <typename T>
-bool MeanFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *config)
+bool MeanFilter<T>::configure()
 {
-  if (configured_)
-    return false;
   
-  // Parse the name of the filter from the xml.  
-  if (!FilterBase<T>::setName(config))
+  if (!FilterBase<T>::getUIntParam("number_of_observations", number_of_observations_, 0))
   {
-    fprintf(stderr, "Error: TransferFunctionFilter was not given a name.\n");
-    return false;
-  }
-
-  // Parse the params of the filter from the xml.
-  TiXmlElement *p = config->FirstChildElement("params");
-  if (!p)
-  {
-    fprintf(stderr, "Error: TransferFunctionFilter was not given params.\n");
+    ROS_ERROR("MeanFilter did not find param number_of_observations");
     return false;
   }
   
-  number_of_observations_ = atof(p->Attribute("number_of_observations"));
-  number_of_channels_ = number_of_channels;
-  
-  temp.resize(number_of_channels);
+  temp.resize(number_of_channels_);
   data_storage_ = new RealtimeCircularBuffer<std::vector<T> >(number_of_observations_, temp);
 
-  configured_ = true;
   return true;
 }
 

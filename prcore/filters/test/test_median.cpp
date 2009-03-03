@@ -31,7 +31,6 @@
 #include <sys/time.h>
 
 #include "filters/median.h"
-#include "filters/mean.h"
 
 using namespace filters ;
 

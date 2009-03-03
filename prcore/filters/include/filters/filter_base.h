@@ -34,13 +34,15 @@
 #include <typeinfo>
 #include <loki/Factory.h>
 #include "ros/assert.h"
+#include "ros/console.h"
 
-typedef std::vector<float> std_vector_float;
-typedef std::vector<double> std_vector_double;
-
+#include "boost/scoped_ptr.hpp"
+#include <boost/algorithm/string.hpp>
 
 namespace filters
 {
+
+typedef std::map<std::string, std::string> string_map_t;
 
 template <typename T>
 std::string getFilterID(const std::string & filter_name)
@@ -50,6 +52,8 @@ std::string getFilterID(const std::string & filter_name)
 }
 
 
+
+
 /** \brief A Base filter class to provide a standard interface for all filters
  *
  */
@@ -57,10 +61,24 @@ template<typename T>
 class FilterBase
 {
 public:
-  FilterBase(){};
+  FilterBase():number_of_channels_(0), configured_(false){};
   virtual ~FilterBase(){};
 
-  virtual bool configure(unsigned int number_of_channels, TiXmlElement *config)=0;
+  bool configure(unsigned int number_of_channels, TiXmlElement *config)
+  {
+    if (configured_)
+    {
+      ROS_WARN("Filter %s of type %s already being reconfigured", filter_name_.c_str(), filter_type_.c_str());
+    };
+    configured_ = false;
+    number_of_channels_ = number_of_channels;
+    bool retval = true;
+
+    retval = retval && loadXml(config);
+    retval = retval && configure();
+    configured_ = retval;
+    return retval;
+  };
 
 
   /** \brief Update the filter and return the data seperately
@@ -81,17 +99,165 @@ public:
 
   std::string getType() {return typeid(T).name();};
 
+  inline const std::string& getName(){return filter_name_;};
+
+
+protected:
+
+  bool getStringParam(const std::string& name, std::string& value, const std::string& default_value)
+  {
+    string_map_t::iterator it = params_.find(name);
+    if (it == params_.end())
+    {
+      value = default_value;
+      return false;
+    }
+    value = it->second;
+    return true;
+  }
+
+  bool getDoubleParam(const std::string&name, double& value, const double& default_value)
+  {
+    string_map_t::iterator it = params_.find(name);
+    if (it == params_.end())
+    {
+      value = default_value;
+      return false;
+    }
+    value = atof(it->second.c_str());
+    
+  }
+  bool getIntParam(const std::string&name, int& value, const int& default_value)
+  {
+    string_map_t::iterator it = params_.find(name);
+    if (it == params_.end())
+    {
+      value = default_value;
+      return false;
+    }
+    value = atoi(it->second.c_str());
+    return true;
+  }
+  bool getUIntParam(const std::string&name, unsigned int& value, const unsigned int& default_value)
+  {
+    string_map_t::iterator it = params_.find(name);
+    if (it == params_.end())
+    {
+      value = default_value;
+      return false;
+    }
+    value = atoi(it->second.c_str());
+    return true;
+  }
+  
+  bool getDoubleVectorParam(const std::string&name, std::vector<double>& value, const std::vector<double>& default_value)
+  {
+    string_map_t::iterator it = params_.find(name);
+    if (it == params_.end())
+    {
+      value = default_value;
+      return false;
+    }
+
+    value.clear();
+    std::vector<std::string> pieces;
+    
+    boost::split( pieces, it->second, boost::is_any_of(" "));
+    for (unsigned int i = 0; i < pieces.size(); ++i)
+      if (pieces[i].size() > 0)
+        value.push_back(atof(pieces[i].c_str()));
+    
+    return true;
+  }
+
+  bool getStringVectorParam(const std::string&name, std::vector<std::string>& value, const std::vector<std::string>& default_value)
+  {
+    string_map_t::iterator it = params_.find(name);
+    if (it == params_.end())
+    {
+      value = default_value;
+      return false;
+    }
+
+    value.clear();
+    std::vector<std::string> pieces;
+    
+    boost::split( pieces, it->second, boost::is_any_of(" "));
+    value = pieces;
+    return true;
+  }
+  
+
+
+  virtual bool configure()=0;
+
+  
+  boost::scoped_ptr<TiXmlElement>  raw_xml_;
+  std::string filter_name_;
+  std::string filter_type_;
+  unsigned int number_of_channels_;
+  bool configured_;
+
+  string_map_t params_;
+
+private:
   bool setName(TiXmlElement * config)
   {  
     const char *name = config->Attribute("name");
-    if (!name) return false;
+    const char *type = config->Attribute("type");
+    if (!name) 
+    {
+      ROS_ERROR("Filter didn't have name defined");
+      return false;
+    }
+    if (!type) 
+    {
+      ROS_ERROR("Filter %s didn't have type defined", name);
+      return false;
+    }
     filter_name_ = std::string(name);
+    filter_type_ = std::string(type);
+    ROS_INFO("Configuring Filter of Type: %s with name %s", type, name);
     return true;
   };
-  inline const std::string& getName(){return filter_name_;};
+
+  bool loadXml(TiXmlElement* config)
+  {
+    if (!config)
+    {
+      ROS_ERROR("Filter Configured w/o xml element");
+      return false;
+    }
     
-private:
-  std::string filter_name_;
+    if (std::string(config->Value()) != std::string("filter"))
+    {
+      ROS_ERROR("Filter not being constructed with filter xml, type is %s", config->Value());
+    }
+    //Store a copy of the xml
+    raw_xml_.reset(config->Clone()->ToElement());
+
+    if (!setName(config))
+    {
+      ROS_ERROR("Filter Configured w/o name");
+      return false;
+    }
+
+    TiXmlElement * params = config->FirstChildElement("params");
+    if (params)
+    {
+      //Load params into map
+      for (TiXmlAttribute * it = params->FirstAttribute(); it; it = it->Next())
+      {
+        ROS_DEBUG("Loading param %s with value %s\n", it->Name(), it->Value());
+        params_[it->Name()] = it->Value();
+      }; 
+      
+    }
+
+    
+    return true;    
+  };
+  
 };
 
 

@@ -38,7 +38,6 @@
 #include <string>
 
 
-#include "urdf/parser.h"
 #include "filters/filter_base.h"
 #include "filters/realtime_circular_buffer.h"
 
@@ -87,7 +86,7 @@ public:
    * \param number_of_channels The number of inputs filtered.
    * \param config The xml that is parsed to configure the filter.
    */
-  virtual bool configure(unsigned int number_of_channels, TiXmlElement *config);
+  virtual bool configure();
 
   /** \brief Update the filter and return the data seperately
    * \param data_in vector<T> with number_of_channels elements
@@ -100,8 +99,6 @@ public:
 
 protected:
   
-  unsigned int number_of_channels_;  //The number of inputs filtered.
-  
   RealtimeCircularBuffer<std::vector<T> >* input_buffer_; //The input sample history. 
   RealtimeCircularBuffer<std::vector<T> >* output_buffer_; //The output sample history.
   
@@ -110,17 +107,13 @@ protected:
   std::vector<double> a_;   //Transfer functon coefficients (output).
   std::vector<double> b_;   //Transfer functon coefficients (input).
   
-  bool configured_;  //Configuration state.
-
 };
 
 ROS_REGISTER_FILTER(TransferFunctionFilter, double)
 ROS_REGISTER_FILTER(TransferFunctionFilter, float)
 
 template <typename T>
-TransferFunctionFilter<T>::TransferFunctionFilter():
-  number_of_channels_(0),
-  configured_(false)
+TransferFunctionFilter<T>::TransferFunctionFilter()
 {
 }
 
@@ -132,50 +125,25 @@ TransferFunctionFilter<T>::~TransferFunctionFilter()
 };
 
 template <typename T>
-bool TransferFunctionFilter<T>::configure(unsigned int number_of_channels, TiXmlElement *config)
+bool TransferFunctionFilter<T>::configure()
 {
-  // Check if the filter is already configured.
-  if (configured_)
-  {
-    ROS_WARN("TransferFunctionFilter is already configured.");
-    return false;
-  }
-  
-  // Parse the name of the filter from the xml.  
-  if (!FilterBase<T>::setName(config))
-  {
-    ROS_ERROR("TransferFunctionFilter was not given a name.");
-    return false;
-  }
-
-  ROS_INFO("Configuring TransferFunctionFilter with name \"%s\".", FilterBase<T>::getName().c_str());
-
-  // Parse the params of the filter from the xml.
-  TiXmlElement *p = config->FirstChildElement("params");
-  if (!p)
-  {
-    ROS_ERROR("TransferFunctionFilter, \"%s\", was not given params.", FilterBase<T>::getName().c_str());
-    return false;
-  }
-  
+  std::vector<double> temp_default;
   // Parse a and b into a std::vector<double>.
-  if (!urdf::queryVectorAttribute(p, "a", &a_))
+  if (!FilterBase<T>::getDoubleVectorParam("a", a_, temp_default))
   {
     ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute a.", FilterBase<T>::getName().c_str());
     return false;
-  }
+  }///\todo check length
   
-  if (!urdf::queryVectorAttribute(p, "b", &b_))
+
+  if (!FilterBase<T>::getDoubleVectorParam("b", b_, temp_default))
   {
     ROS_ERROR("TransferFunctionFilter, \"%s\", params has no attribute b.", FilterBase<T>::getName().c_str());
     return false;
-  }
-  
-  // Get the number of channels.
-  number_of_channels_ = number_of_channels;
-  
+  }///\todo check length
+
   // Create the input and output buffers of the correct size.
-  temp.resize(number_of_channels);
+  temp.resize(this->number_of_channels_);
   input_buffer_ = new RealtimeCircularBuffer<std::vector<T> >(b_.size()-1, temp);
   output_buffer_ = new RealtimeCircularBuffer<std::vector<T> >(a_.size()-1, temp);
   
@@ -200,7 +168,6 @@ bool TransferFunctionFilter<T>::configure(unsigned int number_of_channels, TiXml
     a_[0] = (a_[0] / a_[0]);
   }
   
-  configured_ = true;
   return true;
 };
 
@@ -209,9 +176,11 @@ template <typename T>
 bool TransferFunctionFilter<T>::update(const T & data_in, T& data_out)
 {
   // Ensure the correct number of inputs
-  if (number_of_channels_ != 1)
+  if (this->number_of_channels_ != 1)
+  {
+    ROS_ERROR("Number of channels is %d, to use non vector constructor it must be 1", this->number_of_channels_);
     return false;
-  
+  }  
   // Copy data to prevent mutation if in and out are the same ptr
   temp[0] = data_in;        
   std::vector<T> temp_in(1);
@@ -237,13 +206,17 @@ bool TransferFunctionFilter<T>::update(const T & data_in, T& data_out)
   data_out = temp_out[0];
   return true;
 }
+
 template <typename T>
 bool TransferFunctionFilter<T>::update(const std::vector<T>  & data_in, std::vector<T> & data_out)
 {
+
   // Ensure the correct number of inputs
-  if (data_in.size() != number_of_channels_ || data_out.size() != number_of_channels_ )  
+  if (data_in.size() != this->number_of_channels_ || data_out.size() != this->number_of_channels_ )  
+  {
+    ROS_ERROR("Number of channels is %d, but data_in.size() = %d and data_out.size() = %d.  They must match", this->number_of_channels_, data_in.size(), data_out.size());
     return false;
-  
+  }
   // Copy data to prevent mutation if in and out are the same ptr
   temp = data_in;        
 
