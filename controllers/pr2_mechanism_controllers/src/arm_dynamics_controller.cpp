@@ -313,6 +313,7 @@ bool ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   c_->arm_chain_ = c_->pr2_kin_.getSerialChain(kdl_chain_name.c_str());
   fprintf(stderr,"Got arm chain %s\n",kdl_chain_name.c_str());
   assert(c_->arm_chain_);
+  fprintf(stderr,"Got arm chain: returning from controller.\n");
 
 
     return true;
