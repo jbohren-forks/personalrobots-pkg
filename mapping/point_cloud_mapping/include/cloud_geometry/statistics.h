@@ -43,6 +43,36 @@ namespace cloud_geometry
 
   namespace statistics
   {
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Determine the point indices that form the largest diagonal in a given set of points
+      * \param poly the polygon message
+      * \param min_idx the resultant index of the point with the minimum projection along the given direction
+      * \param max_idx the resultant index of the point with the maximum projection along the given direction
+      */
+    inline void
+      getLargestDiagonalIndices (robot_msgs::Polygon3D *poly, int &min_idx, int &max_idx)
+    {
+      double largest_diagonal = -FLT_MAX;
+      for (unsigned int i = 0; i < poly->points.size (); i++)
+      {
+        for (unsigned int j = i; j < poly->points.size (); j++)
+        {
+          double current_diagonal =
+                                    (poly->points[i].x - poly->points[j].x) * (poly->points[i].x - poly->points[j].x) +
+                                    (poly->points[i].y - poly->points[j].y) * (poly->points[i].y - poly->points[j].y) +
+                                    (poly->points[i].z - poly->points[j].z) * (poly->points[i].z - poly->points[j].z);
+          if (current_diagonal > largest_diagonal)
+          {
+            min_idx = i;
+            max_idx = j;
+            largest_diagonal = current_diagonal;
+          }
+        }
+      }
+
+    }
+
     robot_msgs::Point32 computeMedian (robot_msgs::PointCloud points);
     robot_msgs::Point32 computeMedian (robot_msgs::PointCloud points, std::vector<int> indices);
 
@@ -110,8 +140,8 @@ namespace cloud_geometry
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Determine the minimum and maximum 3D bounding box coordinates for a given point cloud
-      * \param points the point cloud message
+    /** \brief Determine the minimum and maximum 3D bounding box coordinates for a given 3D polygon
+      * \param poly the polygon message
       * \param minP the resultant minimum bounding box coordinates
       * \param maxP the resultant maximum bounding box coordinates
       */
