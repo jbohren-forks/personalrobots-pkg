@@ -405,11 +405,8 @@ public:
 
 
       // Get the minP and maxP of selected cluster
-      int min_idx = -1, max_idx = -1;
       //cloud_geometry::statistics::getMinMax (&pmap_.polygons[best_cluster], minP, maxP);
-      cloud_geometry::statistics::getLargestDiagonalIndices (&pmap_.polygons[best_cluster], min_idx, max_idx);
-      minP = pmap_.polygons[best_cluster].points.at (min_idx);
-      maxP = pmap_.polygons[best_cluster].points.at (max_idx);
+      cloud_geometry::statistics::getLargestDiagonalPoints (&pmap_.polygons[best_cluster], minP, maxP);
 
       // reply door message in same frame as request door message
       resp.door = req.door;
@@ -566,28 +563,17 @@ public:
       reverse (clusters.begin (), clusters.end ());
       cout << "found " << clusters.size() << " clusters" << endl;
 
+      robot_msgs::Point32 center, min_p, max_p;
       handle_visualize.resize (clusters.size () + 2);
-      int min_idx = -1, max_idx = -1;
-      cloud_geometry::statistics::getLargestDiagonalIndices (door_poly, min_idx, max_idx);
-      if (min_idx == -1 || max_idx == -1)
-        ROS_ERROR ("[findDoorHandleIntensity] Something went horribly wrong because we couldn't determine the min/max indices of the largest diagonal for the door frame!");
-
-      handle_visualize[0].x = door_poly->points[min_idx].x;
-      handle_visualize[0].y = door_poly->points[min_idx].y;
-      handle_visualize[0].z = door_poly->points[min_idx].z;
-      handle_visualize[1].x = door_poly->points[max_idx].x;
-      handle_visualize[1].y = door_poly->points[max_idx].y;
-      handle_visualize[1].z = door_poly->points[max_idx].z;
+      cloud_geometry::statistics::getLargestDiagonalPoints (door_poly, min_p, max_p);
+      handle_visualize[0].x = min_p.x; handle_visualize[0].y = min_p.y; handle_visualize[0].z = min_p.z;
+      handle_visualize[1].x = max_p.x; handle_visualize[1].y = max_p.y; handle_visualize[1].z = max_p.z;
       for (unsigned int i = 0; i < clusters.size (); i++)
         cloud_geometry::nearest::computeCentroid (points, &clusters[i], handle_visualize[i+2]);
       robot_msgs::PointCloud handle_cloud;
       handle_cloud.header = cloud_header_;
       handle_cloud.pts = handle_visualize;
 
-
-      robot_msgs::Point32 center, min_p, max_p;
-      min_p = handle_visualize[0];
-      max_p = handle_visualize[1];
       // ---[ Seventh test (geometric)
       // check if the center of the cluster is close to the edges of the door
       std::cout << " - distance to side of door" << std::endl;
@@ -630,10 +616,9 @@ public:
       {
         if (line_inliers[i].size () == 0) continue;
 
-        int min_idx = -1, max_idx = -1;
         robot_msgs::Point32 min_h, max_h;
 // @Wim: double check this
-        cloud_geometry::statistics::getMinMax (points, &line_inliers[i], min_h, max_h);
+        cloud_geometry::statistics::getLargestDiagonalPoints (points, &line_inliers[i], min_h, max_h);
         double length = sqrt ( (min_h.x - max_h.x) * (min_h.x - max_h.x) + (min_h.y - max_h.y) * (min_h.y - max_h.y) );
         double fit = ((double)(line_inliers[i].size())) / ((double)(clusters[i].size()));
         double score = fit + 3.0 * length;
@@ -662,7 +647,7 @@ public:
       //cloud_geometry::nearest::computeCentroid (points, &line_inliers[best_i], handle_center);
       robot_msgs::Point32 min_h, max_h;
 // @Wim: double check this
-      cloud_geometry::statistics::getMinMax (points, &line_inliers[best_i], min_h, max_h);
+      cloud_geometry::statistics::getLargestDiagonalPoints (points, &line_inliers[best_i], min_h, max_h);
       handle_center.x = (min_h.x + max_h.x) / 2.0;
       handle_center.y = (min_h.y + max_h.y) / 2.0;
       handle_center.z = (min_h.z + max_h.z) / 2.0;
