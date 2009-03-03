@@ -624,7 +624,7 @@ public:
         cloud_geometry::statistics::getLargestDiagonalPoints (points, &line_inliers[i], min_h, max_h);
         double length = sqrt ( (min_h.x - max_h.x) * (min_h.x - max_h.x) + (min_h.y - max_h.y) * (min_h.y - max_h.y) );
         double fit = ((double)(line_inliers[i].size())) / ((double)(clusters[i].size()));
-        double score = fit + 3.0 * fabs(length - 0.15);
+        double score = fit - 3.0 * fabs(length - 0.15);
         cout << "  cluster " << i << " has fit " << fit << " and length " << length << " --> " << score << endl;
 
         if (score > best_score)
