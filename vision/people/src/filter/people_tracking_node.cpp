@@ -80,6 +80,7 @@ namespace estimation
     param("~/sys_sigma_vel_x", sys_sigma_.vel_[0], 0.0);
     param("~/sys_sigma_vel_y", sys_sigma_.vel_[1], 0.0);
     param("~/sys_sigma_vel_z", sys_sigma_.vel_[2], 0.0);
+    param("~/follow_one_person", follow_one_person_, false);
 
     // advertise filter output
     advertise<robot_msgs::PositionMeasurement>("people_tracker_filter",10);
@@ -148,8 +149,10 @@ namespace estimation
 	if (dst < closest_tracker_dist) closest_tracker_dist = dst;
       }
       // initialize a new tracker
+      if (follow_one_person_) cout << "Following one person" << endl;
+      if (message->initialization == 1 && ( (!follow_one_person_ && (closest_tracker_dist >= start_distance_min_)) || (follow_one_person_ && trackers_.empty()) ) ) {
       //if (closest_tracker_dist >= start_distance_min_ || message->initialization == 1){
-      if (message->initialization == 1 && trackers_.empty()){
+      //if (message->initialization == 1 && trackers_.empty()){
 	tf::Point pt;
 	tf::PointMsgToTF(message->pos, pt);
 	tf::Stamped<tf::Point> loc(pt, message->header.stamp, message->header.frame_id);

@@ -102,6 +102,9 @@ private:
   robot_msgs::PointCloud  meas_cloud_; 
   unsigned int meas_visualize_counter_;
 
+  // Track only one person who the robot will follow. 
+  bool follow_one_person_;
+
 
 }; // class
 
