@@ -41,13 +41,13 @@ import rosrecord
 
 class dcamImage:
   def __init__(self, m):
-    if hasattr(m, "byte_data"):
-      ma = m.byte_data
-      self.data = ma.data
-    else:
-      ma = m.uint8_data # MultiArray
+    #if hasattr(m, "byte_data"):
+    #  ma = m.byte_data
+    #  self.data = ma.data
+    #else:
+    ma = m.uint8_data # MultiArray
       #self.data = "".join([chr(x) for x in ma.data])
-      self.data = ma.data
+    self.data = ma.data
     d = ma.layout.dim
     assert d[0].label == "height"
     assert d[1].label == "width"
@@ -85,11 +85,20 @@ for topic, msg, t in rosrecord.logplayer(f):
     if start <= framecounter and (framecounter % 1) == 0:
       print framecounter
 
-      left = dcamImage(msg.raw_stereo.left_image) ;
-      right = dcamImage(msg.raw_stereo.right_image) ;
+      if (len(msg.raw_stereo.left_image.uint8_data.layout.dim) >= 2) :
+        left = dcamImage(msg.raw_stereo.left_image) ;
+        Image.fromstring("L", (640,480), left.tostring()).save("unpacked/%06d_L.png" % framecounter)
 
-      Image.fromstring("L", (640,480), left.tostring()).save("unpacked/%06d_L.png" % framecounter)
-      Image.fromstring("L", (640,480), right.tostring()).save("unpacked/%06d_R.png" % framecounter)
+      if (len(msg.raw_stereo.right_image.uint8_data.layout.dim) >= 2) :
+        right = dcamImage(msg.raw_stereo.right_image) ;
+        Image.fromstring("L", (640,480), right.tostring()).save("unpacked/%06d_R.png" % framecounter)
+
+      if (len(msg.image) > 0) :
+        hiRes = dcamImage(msg.image[0]) ;
+        hiResImage = Image.fromstring("RGB", (2448, 2050), hiRes.tostring())
+        r, g, b = hiResImage.split()
+        im = Image.merge("RGB", (b, g, r))
+        im.save("unpacked/%06d_H.png" % framecounter)
 
       file = open("unpacked/%06d_JointNames.txt" % framecounter,"w")
       file.writelines([x.name + '\n' for x in msg.mechanism_state.joint_states])
@@ -109,6 +118,10 @@ for topic, msg, t in rosrecord.logplayer(f):
 
       file = open("unpacked/%06d_R_proj.txt" % framecounter, "w")
       file.writelines(['% 15.10f\n' % x for x in msg.raw_stereo.right_info.P])
+      file.close()
+
+      file = open("unpacked/%06d_H_proj.txt" % framecounter, "w")
+      file.writelines(['% 15.10f\n' % x for x in msg.cam_info[0].P])
       file.close()
 
       framecounter += 1

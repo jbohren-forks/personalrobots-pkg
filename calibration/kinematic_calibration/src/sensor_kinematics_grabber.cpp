@@ -107,7 +107,7 @@ public:
 
   SensorKinematicsGrabber() : ros::Node("grabber"),
                               sync_(this, &SensorKinematicsGrabber::hiResCallback,
-                                    ros::Duration().fromSec(0.1),
+                                    ros::Duration().fromSec(1.1),
                                     &SensorKinematicsGrabber::hiResTimeout)
   {
     capture_count_ = 0 ;
@@ -116,8 +116,8 @@ public:
     subscribe("mechanism_state", mech_state_, &SensorKinematicsGrabber::mechStateCallback, 1) ;
     subscribe("tilt_laser_cloud", laser_cloud_, &SensorKinematicsGrabber::laserCloudCallback, 1) ;
 
-    sync_.subscribe("hires/image", hi_res_image_, 1);
-    sync_.subscribe("hires/cam_info", hi_res_info_, 1);
+    sync_.subscribe("prosilica/image_rect", hi_res_image_, 1);
+    sync_.subscribe("prosilica/cam_info", hi_res_info_, 1);
     sync_.ready() ;
 
     advertise<CalibrationData2>("~calibration_data", 1) ;
@@ -244,6 +244,8 @@ public:
 
     if (hi_res_info_.header.stamp != t)
       printf("Timed out waiting for HiRes Info\n");
+
+    hiResCallback(t) ;
   }
 
   /**
