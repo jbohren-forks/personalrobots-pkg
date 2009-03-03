@@ -483,7 +483,7 @@ namespace trajectory_rollout{
 
 
     //we want to sample the velocity space regularly
-    double dvx = (max_vel_x - min_vel_x) / vx_samples_;
+    double dvx = (max_vel_x - min_vel_x) / (vx_samples_ - 1);
     double dvtheta = (max_vel_theta - min_vel_theta) / (vtheta_samples_ - 1);
 
     double vx_samp = min_vel_x;
