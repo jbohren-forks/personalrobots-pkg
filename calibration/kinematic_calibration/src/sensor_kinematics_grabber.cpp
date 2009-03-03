@@ -39,11 +39,16 @@
 #include "robot_msgs/MechanismState.h"
 #include "robot_msgs/MocapSnapshot.h"
 
+#include "topic_synchronizer.h"
+
 #include "std_msgs/Empty.h"
 #include "robot_msgs/PointCloud.h"
 
 #include "image_msgs/RawStereo.h"
-#include "kinematic_calibration/CalibrationData.h"
+#include "image_msgs/Image.h"
+#include "image_msgs/CamInfo.h"
+
+#include "kinematic_calibration/CalibrationData2.h"
 
 #include <unistd.h>
 #include <termios.h>
@@ -71,6 +76,8 @@ class SensorKinematicsGrabber : public ros::Node
 
 public:
 
+  TopicSynchronizer<SensorKinematicsGrabber> sync_ ;
+
   // Mechanism State Messages
   robot_msgs::MechanismState mech_state_ ;
   robot_msgs::MechanismState safe_mech_state_ ;
@@ -84,6 +91,13 @@ public:
   image_msgs::RawStereo safe_raw_stereo_ ;
   boost::mutex raw_stereo_lock_ ;
 
+  // HiRes Camera messages
+  image_msgs::Image hi_res_image_ ;
+  image_msgs::Image safe_hi_res_image_ ;
+  image_msgs::CamInfo hi_res_info_ ;
+  image_msgs::CamInfo safe_hi_res_info_ ;
+  boost::mutex hi_res_lock_ ;
+
   // Point Cloud Messages
   robot_msgs::PointCloud laser_cloud_ ;
   robot_msgs::PointCloud safe_laser_cloud_ ;
@@ -91,7 +105,10 @@ public:
 
   unsigned int capture_count_ ;
 
-  SensorKinematicsGrabber() : ros::Node("grabber")
+  SensorKinematicsGrabber() : ros::Node("grabber"),
+                              sync_(this, &SensorKinematicsGrabber::hiResCallback,
+                                    ros::Duration().fromSec(0.1),
+                                    &SensorKinematicsGrabber::hiResTimeout)
   {
     capture_count_ = 0 ;
 
@@ -99,7 +116,11 @@ public:
     subscribe("mechanism_state", mech_state_, &SensorKinematicsGrabber::mechStateCallback, 1) ;
     subscribe("tilt_laser_cloud", laser_cloud_, &SensorKinematicsGrabber::laserCloudCallback, 1) ;
 
-    advertise<CalibrationData>("~calibration_data", 1) ;
+    sync_.subscribe("hires/image", hi_res_image_, 1);
+    sync_.subscribe("hires/cam_info", hi_res_info_, 1);
+    sync_.ready() ;
+
+    advertise<CalibrationData2>("~calibration_data", 1) ;
     subscribe("~capture", capture_msg_, &SensorKinematicsGrabber::captureCallback, 1) ;
   }
 
@@ -114,7 +135,7 @@ public:
 
   void captureCallback()
   {
-    CalibrationData all_data ;
+    CalibrationData2 all_data ;
     printf("\n") ;
     capture_count_++ ;
     printf("Capturing Data #%u...\n", capture_count_) ;
@@ -129,6 +150,15 @@ public:
     mech_state_lock_.lock() ;
     all_data.mechanism_state = safe_mech_state_ ;
     mech_state_lock_.unlock() ;
+
+    hi_res_lock_.lock() ;
+    all_data.set_image_size(1) ;
+    all_data.set_cam_info_size(1) ;
+    all_data.image[0] = safe_hi_res_image_ ;
+    all_data.cam_info[0] = safe_hi_res_info_ ;
+    hi_res_lock_.unlock() ;
+
+
 
     displayAllInfo(all_data) ;
 
@@ -199,13 +229,30 @@ public:
     raw_stereo_lock_.unlock() ;
   }
 
+  void hiResCallback(ros::Time t)
+  {
+    hi_res_lock_.lock() ;
+    safe_hi_res_image_ = hi_res_image_ ;
+    safe_hi_res_info_ = hi_res_info_ ;
+    hi_res_lock_.unlock() ;
+  }
+
+  void hiResTimeout(ros::Time t)
+  {
+    if (hi_res_image_.header.stamp != t)
+      printf("Timed out waiting for HiRes Image\n");
+
+    if (hi_res_info_.header.stamp != t)
+      printf("Timed out waiting for HiRes Info\n");
+  }
+
   /**
    * Display some basic information about all the different data types that we
    *  just captured. This lets us check if we're running into any serious
    *  timing issues and if we're actually receiving reasonable data from all of
    *  out sensors.
    */
-  void displayAllInfo(const CalibrationData& data)
+  void displayAllInfo(const CalibrationData2& data)
   {
     ros::Time cur_time = ros::Time::now() ;
 
@@ -216,17 +263,23 @@ public:
       printf("     Left Image:       %lf [NO DATA]\n", lag.toSec()) ;
     else
       printf("     Left Image:       %lf (%u, %u)\n", lag.toSec(), data.raw_stereo.left_image.uint8_data.layout.dim[0].size,
-                                                                       data.raw_stereo.left_image.uint8_data.layout.dim[1].size) ;
+                                                                   data.raw_stereo.left_image.uint8_data.layout.dim[1].size) ;
     if (data.raw_stereo.right_image.uint8_data.layout.get_dim_size() < 2)
       printf("     Right Image:      %lf [NO DATA]\n", lag.toSec()) ;
     else
       printf("     Right Image:      %lf (%u, %u)\n", lag.toSec(), data.raw_stereo.right_image.uint8_data.layout.dim[0].size,
-                                                                       data.raw_stereo.right_image.uint8_data.layout.dim[1].size) ;
+                                                                   data.raw_stereo.right_image.uint8_data.layout.dim[1].size) ;
     if (data.raw_stereo.disparity_image.uint8_data.layout.get_dim_size() < 2)
       printf("     Disparity Image:  %lf [NO DATA]\n", lag.toSec()) ;
     else
       printf("     Disparity Image:  %lf (%u, %u)\n", lag.toSec(), data.raw_stereo.disparity_image.uint8_data.layout.dim[0].size,
-                                                                       data.raw_stereo.disparity_image.uint8_data.layout.dim[1].size) ;
+                                                                   data.raw_stereo.disparity_image.uint8_data.layout.dim[1].size) ;
+    lag = data.image[0].header.stamp-cur_time ;
+    if (data.image[0].uint8_data.layout.get_dim_size() < 2)
+      printf("     HiRes Image:      %lf [NO DATA]\n", lag.toSec()) ;
+    else
+      printf("     HiRes Image:      %lf (%u, %u)\n", lag.toSec(), data.image[0].uint8_data.layout.dim[0].size,
+                                                                   data.image[0].uint8_data.layout.dim[1].size) ;
 
     lag = data.mechanism_state.header.stamp-cur_time ;
     printf("     Mechanism State:  %lf   %u Joints\n", lag.toSec(), data.mechanism_state.get_joint_states_size()) ;
@@ -250,6 +303,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv) ;
   SensorKinematicsGrabber grabber ;
   grabber.spin() ;
-  
+
   return 0 ;
 }
