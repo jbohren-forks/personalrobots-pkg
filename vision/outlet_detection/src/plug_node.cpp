@@ -188,8 +188,10 @@ public:
       if (ros::service::call("/prosilica/poll", req_, res_)) {
         caminfo_cb();
         image_cb();
+        usleep(100000);
       } else {
         ROS_WARN("Service call failed");
+        // TODO: wait for service to be available
         usleep(100000);
       }
     }
