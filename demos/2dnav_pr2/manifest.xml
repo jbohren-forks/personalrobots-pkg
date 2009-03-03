@@ -15,4 +15,5 @@
   <depend package="highlevel_controllers"/>
   <depend package="pr2_alpha"/>
   <depend package="semantic_point_annotator"/>
+  <depend package="2dnav_stage"/>
 </package>
