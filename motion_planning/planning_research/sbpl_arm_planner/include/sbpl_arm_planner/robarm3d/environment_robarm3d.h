@@ -234,7 +234,9 @@ typedef struct ENV_ROBARM_CONFIG
     double ** JointSpaceGoals;
     int nJointSpaceGoals;
 
-    std::vector < std::vector<double> > cubes;
+    std::vector<std::vector<double> > cubes;
+
+//     std::vector<std::vector<double> > bigcubes;
 
 //     std::vector < std::vector<double> > EndEffGoals_m;
 //     std::vector < std::vector<double> > EndEffGoalsRPY;
@@ -360,6 +362,8 @@ public:
     void getRPY(double Rot[3][3], double* roll, double* pitch, double* yaw, int solution_number);
 //     bool SetEndEffGoals(vector<vector<double> >* EndEffGoals);
     bool SetJointSpaceGoals(double** JointSpaceGoals, int num_goals);
+    std::vector<std::vector<double> >* getCollisionMap();
+
 private:
 
     //member data

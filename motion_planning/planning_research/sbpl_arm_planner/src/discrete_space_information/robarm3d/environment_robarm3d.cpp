@@ -778,6 +778,8 @@ void EnvironmentROBARM3D::ReadConfiguration(FILE* fCfg)
         }
         else if(strcmp(sTemp, "endeffectorgoal(meters):") == 0)
         {
+            EnvROBARMCfg.PlanInJointSpace = false;
+
             fscanf(fCfg, "%s", sTemp);
             EnvROBARMCfg.nEndEffGoals = atoi(sTemp);
 
@@ -797,6 +799,8 @@ void EnvironmentROBARM3D::ReadConfiguration(FILE* fCfg)
         }
         else if(strcmp(sTemp, "endeffectorgoal(meters-rot):") == 0)
         {
+            EnvROBARMCfg.PlanInJointSpace = false;
+
             fscanf(fCfg, "%s", sTemp);
             EnvROBARMCfg.nEndEffGoals = atoi(sTemp);
 
@@ -832,7 +836,7 @@ void EnvironmentROBARM3D::ReadConfiguration(FILE* fCfg)
                     EnvROBARMCfg.JointSpaceGoals[i][k] = atof(sTemp);
                 }
             }
-            EnvROBARMCfg.PlanInJointSpace = 1;
+            EnvROBARMCfg.PlanInJointSpace = true;
         }
         else if(strcmp(sTemp, "linktwist(degrees):") == 0)
         {
@@ -1449,7 +1453,7 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
 */
 
 void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** grid, double gridcell_m)
-{
+ {
     int x, y, z, pX_max, pX_min, pY_max, pY_min, pZ_max, pZ_min;
     int padding_c = EnvROBARMCfg.padding*2 / gridcell_m + 0.5;
     short unsigned int obstacle_c[6] = {0};
@@ -1533,13 +1537,29 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
         }
     }
 
-    //outut collision map debugging
-//     extentsX = (pX_max - pX_min)*grid_cell_m;
-//     extentsY = (pY_max - pY_min)*grid_cell_m;
-//     extentsZ = (pZ_max - pZ_min)*grid_cell_m;
-// 
-//     EnvROBARMCfg.cubes.push_back(
-
+    //outut collision map debugging  -inefficient but fine for now!
+    if(EnvROBARMCfg.lowres_collision_checking && gridcell_m == EnvROBARMCfg.LowResGridCellWidth)
+    {
+//         EnvROBARMCfg.bigcubes.resize(EnvROBARMCfg.bigcubes.size()+1);
+//         EnvROBARMCfg.bigcubes.back().resize(6);
+//         EnvROBARMCfg.bigcubes.back()[0] = obstacle[0];
+//         EnvROBARMCfg.bigcubes.back()[1] = obstacle[1];
+//         EnvROBARMCfg.bigcubes.back()[2] = obstacle[2];
+//         EnvROBARMCfg.bigcubes.back()[3] = ((double)pX_max - (double)pX_min)*gridcell_m;
+//         EnvROBARMCfg.bigcubes.back()[4] = ((double)pY_max - (double)pY_min)*gridcell_m;
+//         EnvROBARMCfg.bigcubes.back()[5] = ((double)pZ_max - (double)pZ_min)*gridcell_m;
+//     }
+//     else
+//     {
+        EnvROBARMCfg.cubes.resize(EnvROBARMCfg.cubes.size()+1);
+        EnvROBARMCfg.cubes.back().resize(6);
+        EnvROBARMCfg.cubes.back()[0] = obstacle[0];
+        EnvROBARMCfg.cubes.back()[1] = obstacle[1];
+        EnvROBARMCfg.cubes.back()[2] = obstacle[2];
+        EnvROBARMCfg.cubes.back()[3] = ((double)pX_max - (double)pX_min)*gridcell_m;
+        EnvROBARMCfg.cubes.back()[4] = ((double)pY_max - (double)pY_min)*gridcell_m;
+        EnvROBARMCfg.cubes.back()[5] = ((double)pZ_max - (double)pZ_min)*gridcell_m;
+    }
 
     //variable cell costs
     if(EnvROBARMCfg.variable_cell_costs)
@@ -2388,6 +2408,9 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
 
     //hard coded temporarily (meters)
     EnvROBARMCfg.arm_length = 1.0;
+
+//     EnvROBARMCfg.bigcubes.resize(1,6);
+//     EnvROBARMCfg.cubes.resize(0,6);
 }
 
 bool EnvironmentROBARM3D::InitializeEnv(const char* sEnvFile)
@@ -2642,7 +2665,7 @@ int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID, doub
 #endif
 
     int h = 0,closest_goal;
-    double rdiff,pdiff,/*ydiff,*/ ang_eucl_dist;
+    double /*rdiff,*/ pdiff,ydiff, ang_eucl_dist;
     double edist_to_goal_m;
 
     //get X, Y, Z for the state
@@ -2674,13 +2697,13 @@ int EnvironmentROBARM3D::GetFromToHeuristic(int FromStateID, int ToStateID, doub
         //if close enough to goal, factor in orientation
         if(edist_to_goal_m < EnvROBARMCfg.ApplyRPYCost_m)
         {
-            rdiff = fabs(angles::shortest_angular_distance(FromRPY[0], EnvROBARMCfg.EndEffGoalRPY[closest_goal][0]));
+//             rdiff = fabs(angles::shortest_angular_distance(FromRPY[0], EnvROBARMCfg.EndEffGoalRPY[closest_goal][0]));
             pdiff = fabs(angles::shortest_angular_distance(FromRPY[1], EnvROBARMCfg.EndEffGoalRPY[closest_goal][1]));
-//             ydiff = fabs(angles::shortest_angular_distance(FromRPY[2], EnvROBARMCfg.EndEffGoalRPY[closest_goal][2]));
+            ydiff = fabs(angles::shortest_angular_distance(FromRPY[2], EnvROBARMCfg.EndEffGoalRPY[closest_goal][2]));
 //             ang_eucl_dist = sqrt(rdiff*rdiff + pdiff*pdiff + ydiff*ydiff);
 
             //assume you can fix the roll at the end
-            ang_eucl_dist = sqrt(rdiff*rdiff + pdiff*pdiff);
+            ang_eucl_dist = sqrt(pdiff*pdiff + ydiff*ydiff);
 
             int h_ang_eucl_cost = ang_eucl_dist * EnvROBARMCfg.cost_per_rad/10; //100 is just a weight
 
@@ -3185,6 +3208,9 @@ void EnvironmentROBARM3D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
         return;
     }
 
+    if(!EnvROBARMCfg.bGoalIsSet)
+        return;
+
     short unsigned int succcoord[NUMOFLINKS];
     short unsigned int goal_moe_c = EnvROBARMCfg.goal_moe_m / EnvROBARMCfg.GridCellWidth + .999999;
     short unsigned int k, wrist[3], elbow[3], endeff[3];
@@ -3492,6 +3518,7 @@ bool EnvironmentROBARM3D::AreEquivalent(int State1ID, int State2ID)
 
 bool EnvironmentROBARM3D::SetEndEffGoals(double** EndEffGoals, int goal_type, int num_goals, bool bComputeHeuristic)
 {
+    printf("[SetEndEffGoals] Setting end effector goals...\n");
     //allocate memory
     if(EnvROBARMCfg.nEndEffGoals != num_goals || !EnvROBARMCfg.bGoalIsSet)
     {
@@ -3989,12 +4016,12 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
     //debugging - pr2
     EnvROBARMCfg.arm_length = 1.0;
 
-    for(i = 0; i < obstacles.size(); i++)
+    for(i = 0; i < (int)obstacles.size(); i++)
     {
         //check if obstacle has 6 parameters --> {X,Y,Z,W,H,D}
         if(obstacles[i].size() < 6)
         {
-            printf("[AddObstacles] Obstacle %i has too few parameters.Skipping it.\n",i);
+//             printf("[AddObstacles] Obstacle %i has too few parameters.Skipping it.\n",i);
             continue;
         }
 
@@ -4118,11 +4145,32 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
     //pre-compute heuristics
     if(EnvROBARMCfg.dijkstra_heuristic)
         ComputeHeuristicValues();
+
+    printf("[AddObstacles] %i cubes are in the cube vector\n",EnvROBARMCfg.cubes.size());
+//     printf("[AddObstacles] %i big cubes are in the cube vector\n",EnvROBARMCfg.bigcubes.size());
+}
+
+std::vector<std::vector<double> >* EnvironmentROBARM3D::getCollisionMap()
+{
+//     for(unsigned int i=0; i < EnvROBARMCfg.cubes.size(); i++)
+//     {
+//         printf("[sendCollisionMap] cube %i:, ",i);
+//         for(unsigned int k=0; k < EnvROBARMCfg.cubes[i].size(); k++)
+//             printf("%.3f ",EnvROBARMCfg.cubes[i][k]);
+//         printf("\n");
+//     }
+    return &(EnvROBARMCfg.cubes);
 }
 
 void EnvironmentROBARM3D::ClearEnv()
 {
     int x, y, z;
+
+    printf("[ClearEnv] Clearing environment of all obstacles.\n");
+
+    //clear collision map
+    EnvROBARMCfg.cubes.clear();
+//     EnvROBARMCfg.bigcubes.clear();
 
     // set all cells to zero
     for (x = 0; x < EnvROBARMCfg.EnvWidth_c; x++)
@@ -5141,6 +5189,7 @@ int EnvironmentROBARM3D::GetJointSpaceHeuristic(int FromStateID, int ToStateID)
 
 bool EnvironmentROBARM3D::SetJointSpaceGoals(double** JointSpaceGoals, int num_goals)
 {
+    EnvROBARMCfg.PlanInJointSpace = true;
     int i = 0,k = 0;
     short unsigned  int coord[NUMOFLINKS];
     double angles[NUMOFLINKS], angles_pos[NUMOFLINKS], orientation[3][3];
