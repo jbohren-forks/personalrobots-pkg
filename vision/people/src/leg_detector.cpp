@@ -352,21 +352,20 @@ public:
 
       for (it1 = begin; it1 != end; ++it1) 
       {
-        // do not use the same leg twice
-	if (it1 == it2)
+	// Skip this leg track if:
+	// - you're already using it.
+	// - it already has an id.
+	// - it's too old. Old unassigned trackers are unlikely to be the second leg in a pair.
+	// - it's too far away from the person.
+	if ((it1 == it2) || ((*it1)->object_id != "") ||  ((*it1)->getLifetime() > max_second_leg_age_s) || ((*it1)->dist_to_person_ >= closest_dist) )
 	  continue;
 	
-        // check if tracker is not too old. Old unassigned trackers are unlikely to be the second leg in a pair.
-        if ((*it1)->getLifetime() > max_second_leg_age_s)
-          continue;
-
 	// Get the distance between the two legs
 	tfl_.transformPoint((*it1)->id_, (*it2)->position_.stamp_, (*it2)->position_, fixed_frame, dest_loc);
 	dist_between_legs = dest_loc.length();
 
 	// If this is the closest dist (and within range), and the legs are close together and unlabeled, mark it.
-	// THE FIRST TWO CONDITIONS SHOULD BE MOVED UP, BUT THAT GIVES WEIRD CONSEQUENCES. TRY IT, DEBUG IT.
-	if ( (*it1)->object_id == "" && (*it1)->dist_to_person_ < closest_dist && dist_between_legs < leg_pair_separation_m )
+	if ( dist_between_legs < leg_pair_separation_m )
 	{
 	  closest = it1;
 	  closest_dist = (*it1)->dist_to_person_;
