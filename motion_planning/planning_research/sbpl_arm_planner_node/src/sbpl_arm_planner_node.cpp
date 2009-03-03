@@ -50,6 +50,8 @@ SBPLArmPlannerNode::SBPLArmPlannerNode(std::string node_name):ros::Node(node_nam
   advertiseService(arm_name_ + "/sbpl_planner/plan_path/GetPlan", &SBPLArmPlannerNode::planPath, this);
   subscribe(collision_map_topic_, collision_map_, &SBPLArmPlannerNode::collisionMapCallback,1);
 
+  advertise<robot_msgs::CollisionMap> ("sbpl_collision_map", 1);
+
   planner_ = new ARAPlanner(&pr2_arm_env_, forward_search_);
   initializePlannerAndEnvironment();
 };
@@ -58,6 +60,7 @@ SBPLArmPlannerNode::~SBPLArmPlannerNode()
 {
   delete planner_;
   unsubscribe(collision_map_topic_);
+  unadvertise("sbpl_collision_map");
   unadvertiseService(arm_name_ + "/sbpl_planner/plan_path/GetPlan");
 };
 
@@ -122,16 +125,11 @@ void SBPLArmPlannerNode::collisionMapCallback()
   if(!use_collision_map_)
     return;
 
-  int num_boxes = (int) collision_map_.boxes.size();
-  printf("[collisionMapCallback] There are %i boxes.\n",num_boxes);
+  printf("[collisionMapCallback] There are %i boxes.\n",collision_map_.boxes.size());
 
-//   double **sbpl_boxes = new double*[num_boxes];
-  std::vector<std::vector<double> > sbpl_boxes(num_boxes);
-  for(int i=0; i < num_boxes; i++)
+  std::vector<std::vector<double> > sbpl_boxes(collision_map_.boxes.size());
+  for(unsigned int i=0; i < collision_map_.boxes.size(); i++)
   {
-//       printf("[SBPLArmPlannerNode] obstacle %i: %.3f %.3f %.3f %.3f %.3f %.3f\n",i,collision_map_.boxes[i].center.x,collision_map_.boxes[i].center.y,
-//              collision_map_.boxes[i].center.z,collision_map_.boxes[i].extents.x,collision_map_.boxes[i].extents.y,collision_map_.boxes[i].extents.z);
-//     sbpl_boxes[i] = new double[6];
     sbpl_boxes[i].resize(6);
     sbpl_boxes[i][0] = collision_map_.boxes[i].center.x - torso_arm_offset_x_;
     sbpl_boxes[i][1] = collision_map_.boxes[i].center.y - torso_arm_offset_y_;
@@ -145,13 +143,44 @@ void SBPLArmPlannerNode::collisionMapCallback()
 //            sbpl_boxes[i][2],sbpl_boxes[i][3],sbpl_boxes[i][4],sbpl_boxes[i][5]);
   }
   pr2_arm_env_.ClearEnv();
-  pr2_arm_env_.AddObstacles(sbpl_boxes);
+  pr2_arm_env_.AddObstacles(sbpl_boxes); //TODO: BEN - change AddObstacles to take in a pointer 
 
-//   for(int i=0; i < num_boxes; i++)
-//   {
-//     delete sbpl_boxes[i];
-//   }
-//   delete sbpl_boxes;
+  getSBPLCollisionMap();
+}
+
+void SBPLArmPlannerNode::getSBPLCollisionMap()
+{
+    std::vector<std::vector<double> > sbpl_cubes = (*(pr2_arm_env_.getCollisionMap()));
+
+//     for(unsigned int i=0; i < sbpl_cubes.size(); i++)
+//     {
+//         printf("[getSBPLCollisionMap] cube %i:, ",i);
+//         for(unsigned int k=0; k < sbpl_cubes[i].size(); k++)
+//             printf("%.3f ", sbpl_cubes[i][k]);
+//         printf("\n");
+//     }
+    sbpl_collision_map_.header.frame_id = "base_link";
+    sbpl_collision_map_.header.stamp = ros::Time ();
+
+    sbpl_collision_map_.set_boxes_size(sbpl_cubes.size());
+    for(unsigned int i=0; i < sbpl_cubes.size(); i++)
+    {
+        sbpl_collision_map_.boxes[i].center.x = sbpl_cubes[i][0] + torso_arm_offset_x_;
+        sbpl_collision_map_.boxes[i].center.y = sbpl_cubes[i][1] + torso_arm_offset_y_;
+        sbpl_collision_map_.boxes[i].center.z = sbpl_cubes[i][2] + torso_arm_offset_z_;
+
+        sbpl_collision_map_.boxes[i].extents.x = sbpl_cubes[i][3];
+        sbpl_collision_map_.boxes[i].extents.y = sbpl_cubes[i][4];
+        sbpl_collision_map_.boxes[i].extents.z = sbpl_cubes[i][5];
+
+        sbpl_collision_map_.boxes[i].axis.x = 0.0;
+        sbpl_collision_map_.boxes[i].axis.y = 0.0;
+        sbpl_collision_map_.boxes[i].axis.z = 0.0;
+
+        sbpl_collision_map_.boxes[i].angle = 0.0;
+    }
+
+    publish ("sbpl_collision_map", sbpl_collision_map_);
 }
 
 bool SBPLArmPlannerNode::replan(robot_msgs::JointTraj &arm_path)
@@ -400,7 +429,6 @@ int main(int argc, char *argv[])
   {
     std::cout << e << std::endl;
   }
-  
   return(0);
 }
 

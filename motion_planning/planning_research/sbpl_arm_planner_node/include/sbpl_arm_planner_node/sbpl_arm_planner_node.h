@@ -81,14 +81,16 @@ namespace sbpl_arm_planner_node
       bool use_collision_map_;
 
       int num_joints_;
-    
+
       std::string collision_map_topic_;
 
       std::string node_name_;
 
       std::string arm_name_;
-      
+
       robot_msgs::CollisionMap collision_map_;
+
+      robot_msgs::CollisionMap sbpl_collision_map_;
 
       MDPConfig mdp_cfg_;
 
@@ -108,7 +110,9 @@ namespace sbpl_arm_planner_node
 
       bool setGoals(const robot_msgs::JointTrajPoint &goal_joint_positions_);
 
-    bool replan(robot_msgs::JointTraj &arm_path);
+      bool replan(robot_msgs::JointTraj &arm_path);
+
+      void getSBPLCollisionMap();
 
       void collisionMapCallback();
 
