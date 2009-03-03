@@ -280,8 +280,8 @@ namespace ros {
 
       // Now allocate the cost map and its sliding window used by the controller
       double zLB, zUB, raytraceWindow, obstacleRange, rayTraceRange;
-      ros::Node::instance()->param("~costmap_2d/zLB", zLB, 0.15);
-      ros::Node::instance()->param("~costmap_2d/zUB", zUB, 0.25);
+      ros::Node::instance()->param("~costmap_2d/zLB", zLB, 0.25);
+      ros::Node::instance()->param("~costmap_2d/zUB", zUB, 0.35);
       ros::Node::instance()->param("~costmap_2d/raytrace_window", raytraceWindow, 2.5);
       ros::Node::instance()->param("~costmap_2d/raytrace_range", rayTraceRange, 10.0);
       ros::Node::instance()->param("~costmap_2d/obstacle_range", obstacleRange, 10.0);
