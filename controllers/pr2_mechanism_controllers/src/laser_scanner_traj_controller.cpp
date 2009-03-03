@@ -47,13 +47,11 @@ LaserScannerTrajController::LaserScannerTrajController() : traj_(1)
 {
   tracking_offset_ = 0 ;
   track_link_enabled_ = false ;
-  d_error_filter = NULL ;
 }
 
 LaserScannerTrajController::~LaserScannerTrajController()
 {
-  if (d_error_filter != NULL)
-    delete d_error_filter ;
+
 }
 
 bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
@@ -109,21 +107,15 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
   last_time_ = robot->hw_->current_time_ ;
   last_error_ = 0.0 ;
 
-  // ***** Derivate Error Filter Element *****
-  TiXmlElement *filter_elem = config->FirstChildElement("d_error_filter");
+  // ***** Derivative Error Filter Element *****
+  TiXmlElement *filter_elem = config->FirstChildElement("filter");
   if(!filter_elem)
   {
-    ROS_ERROR("%s:: d_error_filter element not defined inside controller", name_.c_str()) ;
+    ROS_ERROR("%s:: filter element not defined inside controller", name_.c_str()) ;
     return false ;
   }
 
-  double smoothing_factor ;
-  if(filter_elem->QueryDoubleAttribute("smoothing_factor", & smoothing_factor)!=TIXML_SUCCESS)
-  {
-    ROS_ERROR("%s:: Error reading \"smoothing_factor\" element in d_error_filter element", name_.c_str()) ;
-    return false ;
-  }
-  initDErrorFilter(smoothing_factor) ;
+  d_error_filter.FilterBase<double>::configure((unsigned int)1, filter_elem) ;
 
   // ***** Max Rate and Acceleration Elements *****
   TiXmlElement *max_rate_elem = config->FirstChildElement("max_rate") ;
@@ -139,21 +131,6 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
     return false ;
 
   return true ;
-}
-
-void LaserScannerTrajController::initDErrorFilter(double f)
-{
-  vector<double> a ;
-  vector<double> b ;
-  a.resize(2) ;
-  b.resize(1) ;
-  a[0] = 1.0 ;
-  a[1] = - (1.0 - f) ;
-  b[0] = 1.0 ;
-
-  if(d_error_filter == NULL)
-    delete d_error_filter ;
-  d_error_filter = new TransferFunctionFilter<double>(b,a,1) ;
 }
 
 void LaserScannerTrajController::update()
@@ -215,16 +192,13 @@ void LaserScannerTrajController::update()
                                                 error) ;
   double dt = time - last_time_ ;
   double d_error = (error-last_error_)/dt ;
-  vector<double> filtered_d_error ;
-  filtered_d_error.resize(1) ;
+  double filtered_d_error ;
 
-  vector<double> d_error_vec(1,d_error) ;
-
-  d_error_filter->update(&d_error_vec, &filtered_d_error) ;
+  d_error_filter.update(d_error, filtered_d_error) ;
 
   // Add filtering step
   // Update pid with d_error added
-  joint_state_->commanded_effort_ = pid_controller_.updatePid(error, filtered_d_error[0], dt) ;
+  joint_state_->commanded_effort_ = pid_controller_.updatePid(error, filtered_d_error, dt) ;
   last_time_ = time ;
   last_error_ = error ;
 }
@@ -416,6 +390,8 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
   publisher_ = new realtime_tools::RealtimePublisher <pr2_mechanism_controllers::LaserScannerSignal> (service_prefix_ + "/laser_scanner_signal", 1) ;
 
   prev_profile_time_ = 0.0 ;
+
+  ROS_INFO("Successfully spawned %s", service_prefix_.c_str()) ;
 
   return true ;
 }
