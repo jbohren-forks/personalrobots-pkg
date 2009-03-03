@@ -39,6 +39,9 @@
 namespace filters
 {
 
+/** \brief A class which will construct and sequentially call Filters according to xml
+ * This is the primary way in which users are expected to interact with Filters
+ */
 template <typename T>
 class FilterChain
 {
@@ -164,6 +167,7 @@ public:
   
   /** \brief process data through each of the filters added sequentially */
   bool update(const T& data_in, T& data_out);
+  /** \brief process data through each of the filters added sequentially */
   bool update(const std::vector<T>& data_in, std::vector<T>& data_out);
 
 
@@ -174,7 +178,8 @@ public:
   };
 
 private:
-  std::vector<boost::shared_ptr<filters::FilterBase<T> > > reference_pointers_;
+
+  std::vector<boost::shared_ptr<filters::FilterBase<T> > > reference_pointers_;   ///<! A vector of pointers to currently constructed filters
 
   std::vector<T> buffer0_; ///<! A temporary intermediate buffer
   std::vector<T> buffer1_; ///<! A temporary intermediate buffer
