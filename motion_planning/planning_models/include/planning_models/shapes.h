@@ -37,6 +37,8 @@
 #ifndef PLANNING_MODELS_SHAPES_
 #define PLANNING_MODELS_SHAPES_
 
+#include <cstdlib>
+
 namespace planning_models
 {
     
@@ -56,7 +58,7 @@ namespace planning_models
 	    {
 	    }
 	    
-	    enum { UNKNOWN, SPHERE, CYLINDER, BOX } 
+	    enum { UNKNOWN, SPHERE, CYLINDER, BOX, MESH } 
 		type;
 	    
 	};
@@ -120,6 +122,52 @@ namespace planning_models
 	    
 	    /** x, y, z */
 	    double size[3]; 
+	};
+	
+	/** Definition of a mesh */
+	class Mesh : public Shape
+	{
+	public:
+	    Mesh(void) : Shape()
+	    {
+		type = MESH;
+		vertexCount = 0;
+		vertices = NULL;
+		triangleCount = 0;
+		triangles = NULL;
+		normals = NULL;
+	    }
+	    
+	    Mesh(unsigned int vCount, unsigned int tCount) : Shape()
+	    {
+		type = MESH;
+		vertexCount = vCount;
+		vertices = new double[vCount * 3];
+		triangleCount = tCount;
+		triangles = new unsigned int[tCount * 3];
+		normals = new double[tCount * 3];
+	    }
+	    
+	    virtual ~Mesh(void)
+	    {
+		if (vertices)
+		    delete[] vertices;
+		if (triangles)
+		    delete[] triangles;
+		if (normals)
+		    delete[] normals;
+	    }
+	    
+	    unsigned int  vertexCount;       // the number of available vertices
+	    double       *vertices;          // the position for each vertex 
+	                                     // vertex k has values at index (3k, 3k+1, 3k+2) = (x,y,z)
+	    
+	    unsigned int  triangleCount;     // the number of triangles formed with the vertices
+	    unsigned int *triangles;         // the vertex indices for each triangle
+	                                     // triangle k has vertices at index (3k, 3k+1, 3k+2) = (v1, v2, v3)
+	    
+	    double       *normals;           // the normal to each triangle
+	                                     // unit vector represented as (x,y,z) 
 	};
 	
     }

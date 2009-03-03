@@ -38,16 +38,23 @@
 #include <algorithm>
 #include <cmath>
 
-/** Operator for sorting objects by name */
-template<typename T>
-struct SortByName
+namespace planning_models
 {
-    bool operator()(const T *a, const T *b) const
-    {
-	return a->name < b->name;
-    }
-};
     
+    /** Operator for sorting objects by name */
+    template<typename T>
+    struct SortByName
+    {
+	bool operator()(const T *a, const T *b) const
+	{
+	    return a->name < b->name;
+	}
+    };
+    
+    // load a mesh
+    shapes::Mesh* load_binary_stl(const char *filename);
+}
+
 const std::string& planning_models::KinematicModel::getModelName(void) const
 {
     return m_name;
