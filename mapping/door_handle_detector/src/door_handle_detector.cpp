@@ -235,8 +235,6 @@ public:
       message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (&tf_, this,  boost::bind(&DoorHandleDetector::cloud_cb, this, _1),
                                                                            input_cloud_topic_.c_str (), door_frame_, 1);
       ros::Duration tictoc (0, 10000000);
-      // @Wim : why ? :) - this became horribly slow :(
-      // @Radu : the first clould that comes in was created before the service call while the robot was still moving.
       while ((int)num_clouds_received_ < nr_scans_)
         tictoc.sleep ();
       delete message_notifier_;
@@ -263,7 +261,7 @@ public:
         Point leaf_width_xyz;
         leaf_width_xyz.x = leaf_width_xyz.y = leaf_width_xyz.z = leaf_width_;
         cloud_geometry::downsamplePointCloud (&cloud_in_, &indices_in_bounds, cloud_down_, leaf_width_xyz, leaves, -1);
-	ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_xyz.x, leaf_width_xyz.y, leaf_width_xyz.z, cloud_down_.pts.size ());
+        ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_xyz.x, leaf_width_xyz.y, leaf_width_xyz.z, cloud_down_.pts.size ());
       }
       catch (std::bad_alloc)
       {
@@ -407,8 +405,11 @@ public:
 
 
       // Get the minP and maxP of selected cluster
-      ////////////////////////////// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@ WRONG!??!?!?!?!?!?!
-      cloud_geometry::statistics::getMinMax (&pmap_.polygons[best_cluster], minP, maxP);
+      int min_idx = -1, max_idx = -1;
+      //cloud_geometry::statistics::getMinMax (&pmap_.polygons[best_cluster], minP, maxP);
+      cloud_geometry::statistics::getLargestDiagonalIndices (&pmap_.polygons[best_cluster], min_idx, max_idx);
+      minP = pmap_.polygons[best_cluster].points.at (min_idx);
+      maxP = pmap_.polygons[best_cluster].points.at (max_idx);
 
       // reply door message in same frame as request door message
       resp.door = req.door;
@@ -629,12 +630,13 @@ public:
       {
         if (line_inliers[i].size () == 0) continue;
 
-        robot_msgs::Point32 minH, maxH;
+        int min_idx = -1, max_idx = -1;
+        robot_msgs::Point32 min_h, max_h;
 // @Wim: double check this
-        cloud_geometry::statistics::getMinMax (points, &line_inliers[i], minH, maxH);
-        double length = sqrt(pow(minH.x - maxH.x,2) + pow(minH.y-maxH.y,2));
+        cloud_geometry::statistics::getMinMax (points, &line_inliers[i], min_h, max_h);
+        double length = sqrt ( (min_h.x - max_h.x) * (min_h.x - max_h.x) + (min_h.y - max_h.y) * (min_h.y - max_h.y) );
         double fit = ((double)(line_inliers[i].size())) / ((double)(clusters[i].size()));
-        double score = fit + 3.0*length;
+        double score = fit + 3.0 * length;
         cout << "  cluster " << i << " has fit " << fit << " and length " << length << " --> " << score << endl;
 
         if (score > best_score)
@@ -647,7 +649,7 @@ public:
       {
         publish ("handle_visualization", handle_cloud);
         ROS_ERROR ("All clusters rejected! Should exit here.");
-	return false;
+        return (false);
       }
       else
         ROS_INFO("Selecting cluster %i", best_i);
@@ -658,14 +660,14 @@ public:
 
       // compute min, max, and center of best cluster
       //cloud_geometry::nearest::computeCentroid (points, &line_inliers[best_i], handle_center);
-      robot_msgs::Point32 minH, maxH;
+      robot_msgs::Point32 min_h, max_h;
 // @Wim: double check this
-      cloud_geometry::statistics::getMinMax (points, &line_inliers[best_i], minH, maxH);
-      handle_center.x = (minH.x + maxH.x)/2.0;
-      handle_center.y = (minH.y + maxH.y)/2.0;
-      handle_center.z = (minH.z + maxH.z)/2.0;
-      cout << "minH = " << minH.x << " " << minH.y << " "<< minH.z << endl;
-      cout << "maxH = " << maxH.x << " " << maxH.y << " "<< maxH.z << endl;
+      cloud_geometry::statistics::getMinMax (points, &line_inliers[best_i], min_h, max_h);
+      handle_center.x = (min_h.x + max_h.x) / 2.0;
+      handle_center.y = (min_h.y + max_h.y) / 2.0;
+      handle_center.z = (min_h.z + max_h.z) / 2.0;
+      cout << "min_h = " << min_h.x << " " << min_h.y << " "<< min_h.z << endl;
+      cout << "max_h = " << max_h.x << " " << max_h.y << " "<< max_h.z << endl;
       cout << "handle_center = " << handle_center.x << " " << handle_center.y << " "<< handle_center.z << endl;
 
       // Calculate the unsigned distance from the point to the plane
