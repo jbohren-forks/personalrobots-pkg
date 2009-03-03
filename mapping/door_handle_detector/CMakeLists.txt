@@ -16,6 +16,9 @@ target_link_libraries (door_handle_detector_node)
 rospack_add_executable(open_door_executive_test test/open_door_executive_test.cpp)
 target_link_libraries(open_door_executive_test)
 
+rospack_add_executable(trigger test/trigger.cpp)
+target_link_libraries(trigger)
+
 rospack_add_executable(door_checkerboard_detector test/door_checkerboard_detector.cpp)
 target_link_libraries(door_checkerboard_detector)
 
