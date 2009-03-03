@@ -36,7 +36,7 @@ int main(int argc, char** argv)
   ros::init(argc, argv);
   ros::Node n("poll_prosilica_client");
 
-  cvNamedWindow(wndname);
+  cvNamedWindow(wndname, 0); // no autosize
 
   unsigned int index = 0;
   IplImage* display = NULL;

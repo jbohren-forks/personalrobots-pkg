@@ -54,7 +54,7 @@ private:
 public:
   ProsilicaView() : ros::Node("prosilica_view"), image_(NULL)
   {
-    cvNamedWindow("Prosilica", CV_WINDOW_AUTOSIZE);
+    cvNamedWindow("Prosilica", 0); // no autosize
 
     subscribe("Image", img_msg_, &ProsilicaView::image_cb, this, 1);
   }
