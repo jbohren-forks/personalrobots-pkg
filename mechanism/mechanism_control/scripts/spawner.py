@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     spawned = []
     for i in range(len(resp.ok)):
-        if resp.ok[i]:
+        if resp.ok[i] == chr(1):
             spawned.append(resp.name[i])
         else:
             print "Failed to spawn %s" % resp.name[i]

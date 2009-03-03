@@ -358,11 +358,16 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
     }
 
     // Constructs the controller
-    controller::Controller *c =
-      controller::ControllerFactory::Instance().CreateObject(add_reqs[i].type);
+    controller::Controller *c = NULL;
+    try {
+      c = controller::ControllerFactory::Instance().CreateObject(add_reqs[i].type);
+    } catch (Loki::DefaultFactoryError<std::string, controller::Controller>::Exception)
+    {
+      // Do nothing, c is already NULL
+    }
     if (c == NULL)
     {
-      ROS_ERROR("Could spawn controller %s because controller type %s does not exist",
+      ROS_ERROR("Could not spawn controller '%s' because controller type '%s' does not exist",
                 add_reqs[i].name.c_str(), add_reqs[i].type.c_str());
       continue;
     }
