@@ -220,6 +220,71 @@ namespace cloud_geometry
     double computeMedianAbsoluteDeviation (robot_msgs::PointCloud points, double sigma);
     double computeMedianAbsoluteDeviation (robot_msgs::PointCloud points, std::vector<int> indices, double sigma);
 
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Determine the points that form the largest diagonal in a given set of points
+      * \param poly the polygon message
+      * \param minP the resultant minimum point in the set
+      * \param maxP the resultant maximum point in the set
+      */
+    inline void
+      getLargestXYPoints (robot_msgs::Polygon3D *poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+    {
+      double largest_xy = -FLT_MAX;
+      for (unsigned int i = 0; i < poly->points.size (); i++)
+      {
+        for (unsigned int j = i; j < poly->points.size (); j++)
+        {
+          double current_xy = (poly->points[i].x - poly->points[j].x) * (poly->points[i].x - poly->points[j].x) +
+                              (poly->points[i].y - poly->points[j].y) * (poly->points[i].y - poly->points[j].y);
+          if (current_xy > largest_xy)
+          {
+            min_p.x = poly->points[i].x; min_p.y = poly->points[i].y; min_p.z = 0;
+            max_p.x = poly->points[j].x; max_p.y = poly->points[j].y; max_p.z = 0;
+            largest_xy = current_xy;
+          }
+        }
+      }
+    }
+
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Determine the points that form the largest diagonal in a given set of points
+      * \param points the point cloud data message
+      * \param indices the point cloud indices that need to be used
+      * \param minP the resultant minimum point in the set
+      * \param maxP the resultant maximum point in the set
+      */
+    inline void
+      getLargestXYPoints (robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+    {
+      double largest_xy = -FLT_MAX;
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+        for (unsigned int j = i; j < indices->size (); j++)
+        {
+          double current_xy = (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) * 
+                              (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) +
+                              (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y) * 
+                              (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y);
+          if (current_xy > largest_xy )
+          {
+            min_p.x = points->pts.at (indices->at (i)).x; 
+            min_p.y = points->pts.at (indices->at (i)).y; 
+            min_p.z = 0;
+            max_p.x = points->pts.at (indices->at (j)).x; 
+            max_p.y = points->pts.at (indices->at (j)).y; 
+            max_p.z = 0;
+            largest_xy = current_xy;
+          }
+        }
+      }
+    }
+
+
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Compute the centralized moment at a 3D points patch
       * \param points the point cloud data message
