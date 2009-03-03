@@ -25,4 +25,5 @@
   <depend package="dcam"/>
   <depend package="robot_pose_ekf"/>
   <depend package="spacenav_node"/>
+  <depend package="runtime_monitor"/>
 </package>
