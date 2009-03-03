@@ -383,31 +383,32 @@ public:
 
       // Check if any cluster respected all our constraints
       if (best_cluster == -1)
-	{
-	  ROS_ERROR ("did not find a door");
-	  return false;
-	}
+      {
+        ROS_ERROR ("did not find a door");
+        return false;
+      }
       else
-	{
-	  ROS_ERROR ("found a door");
-	  ROS_INFO ("Number of points selected: %d.", handle_indices.size ());
-	  if (publish_debug_)
-	    publish ("semantic_polygonal_map", pmap_);
-	}
-
-
-      // get minP and maxP of selected cluster
-      cloud_geometry::statistics::getMinMax (&pmap_.polygons[best_cluster], minP, maxP);
+      {
+        ROS_ERROR ("found a door");
+        ROS_INFO ("Number of points selected: %d.", handle_indices.size ());
+        if (publish_debug_)
+          publish ("semantic_polygonal_map", pmap_);
+      }
 
       // Find the handle by performing a composite segmentation in distance and intensity space
       if (!findDoorHandleIntensity (&cloud_in_, &indices_in_bounds, &coeff[best_cluster], &pmap_.polygons[best_cluster], &viewpoint_cloud_,
-				    handle_indices, handle_center)){
-	ROS_ERROR ("did not find a handle");
-	return false;
+                                    handle_indices, handle_center))
+      {
+        ROS_ERROR ("did not find a handle");
+        return (false);
       }
       else
         ROS_INFO ("found a handle");
 
+
+      // Get the minP and maxP of selected cluster
+      ////////////////////////////// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@ WRONG!??!?!?!?!?!?!
+      cloud_geometry::statistics::getMinMax (&pmap_.polygons[best_cluster], minP, maxP);
 
       // reply door message in same frame as request door message
       resp.door = req.door;
@@ -451,12 +452,12 @@ public:
       * \param handle_indices the resultant set of indices describing the door handle
       * \param handle_center the resultant handle center
       */
-  bool
+    bool
       findDoorHandleIntensity (PointCloud *points, vector<int> *indices, vector<double> *door_coeff, Polygon3D *door_poly,
                                PointStamped *viewpoint, vector<int> &handle_indices, Point32 &handle_center)
     {
       // Transform the polygon to lie on the X-Y plane (makes all isPointIn2DPolygon computations easier)
-      Polygon3D poly_tr, poly_tr_shrunk;
+      Polygon3D poly_tr;
       Point32 p_tr;
       Eigen::Matrix4d transformation;
       vector<double> z_axis (3, 0); z_axis[2] = 1.0;
@@ -468,9 +469,6 @@ public:
       viewpoint_pt_line[0] = viewpoint->point.x;
       viewpoint_pt_line[1] = viewpoint->point.y;
       viewpoint_pt_line[2] = viewpoint->point.z;
-
-      PolygonalMap pmap;
-      pmap.polygons.push_back (poly_tr);
 
       Point32 pt;
       vector<robot_msgs::Point32> handle_visualize;
@@ -529,7 +527,8 @@ public:
 
 
         // project the point into the door plane
-        projectOntoPlane(door_coeff, points->pts.at (indices->at (i)));
+        //projectOntoPlane(door_coeff, points->pts.at (indices->at (i)));
+        cloud_geometry::projections::pointToPlane (&points->pts.at (indices->at (i)), points->pts.at (indices->at (i)), door_coeff);
 
         // Save the point indices which satisfied all the geometric criteria so far
         possible_handle_indices[nr_phi] = indices->at (i);
@@ -566,16 +565,18 @@ public:
       reverse (clusters.begin (), clusters.end ());
       cout << "found " << clusters.size() << " clusters" << endl;
 
-
       handle_visualize.resize (clusters.size () + 2);
-      robot_msgs::Point32 minP, maxP, center;
-      cloud_geometry::statistics::getMinMax (door_poly, minP, maxP);
-      handle_visualize[0].x = minP.x;
-      handle_visualize[0].y = minP.y;
-      handle_visualize[0].z = minP.z;
-      handle_visualize[1].x = maxP.x;
-      handle_visualize[1].y = maxP.y;
-      handle_visualize[1].z = maxP.z;
+      int min_idx = -1, max_idx = -1;
+      cloud_geometry::statistics::getLargestDiagonalIndices (door_poly, min_idx, max_idx);
+      if (min_idx == -1 || max_idx == -1)
+        ROS_ERROR ("[findDoorHandleIntensity] Something went horribly wrong because we couldn't determine the min/max indices of the largest diagonal for the door frame!");
+
+      handle_visualize[0].x = door_poly->points[min_idx].x;
+      handle_visualize[0].y = door_poly->points[min_idx].y;
+      handle_visualize[0].z = door_poly->points[min_idx].z;
+      handle_visualize[1].x = door_poly->points[max_idx].x;
+      handle_visualize[1].y = door_poly->points[max_idx].y;
+      handle_visualize[1].z = door_poly->points[max_idx].z;
       for (unsigned int i = 0; i < clusters.size (); i++)
         cloud_geometry::nearest::computeCentroid (points, &clusters[i], handle_visualize[i+2]);
       robot_msgs::PointCloud handle_cloud;
@@ -583,6 +584,9 @@ public:
       handle_cloud.pts = handle_visualize;
 
 
+      robot_msgs::Point32 center, min_p, max_p;
+      min_p = handle_visualize[0];
+      max_p = handle_visualize[1];
       // ---[ Seventh test (geometric)
       // check if the center of the cluster is close to the edges of the door
       std::cout << " - distance to side of door" << std::endl;
@@ -593,8 +597,9 @@ public:
         // Compute the centroid for the remaining handle indices
         cloud_geometry::nearest::computeCentroid (points, &clusters[i], center);
 
-        double d1 = sqrt(pow(center.x-minP.x,2) + pow(center.y-minP.y,2));
-        double d2 = sqrt(pow(center.x-maxP.x,2) + pow(center.y-maxP.y,2));
+        double d1 = sqrt ( (center.x - min_p.x) * (center.x - min_p.x) + (center.y - min_p.y) * (center.y - min_p.y) );
+        double d2 = sqrt ( (center.x - max_p.x) * (center.x - max_p.x) + (center.y - max_p.y) * (center.y - min_p.y) );
+        // @Wim: funny thresholds! Don't forget to set them as parameters if they are useful :)
         if (!( (d1 < 0.25 && d1 > 0.03) ||  (d2 < 0.25 && d2 > 0.03))){
           clusters[i].resize(0);
           cout << "  reject cluster " << i << " because min distance to edge of door = " << d1 << "  " << d2 << endl;
@@ -625,6 +630,7 @@ public:
         if (line_inliers[i].size () == 0) continue;
 
         robot_msgs::Point32 minH, maxH;
+// @Wim: double check this
         cloud_geometry::statistics::getMinMax (points, &line_inliers[i], minH, maxH);
         double length = sqrt(pow(minH.x - maxH.x,2) + pow(minH.y-maxH.y,2));
         double fit = ((double)(line_inliers[i].size())) / ((double)(clusters[i].size()));
@@ -653,6 +659,7 @@ public:
       // compute min, max, and center of best cluster
       //cloud_geometry::nearest::computeCentroid (points, &line_inliers[best_i], handle_center);
       robot_msgs::Point32 minH, maxH;
+// @Wim: double check this
       cloud_geometry::statistics::getMinMax (points, &line_inliers[best_i], minH, maxH);
       handle_center.x = (minH.x + maxH.x)/2.0;
       handle_center.y = (minH.y + maxH.y)/2.0;
@@ -679,18 +686,17 @@ public:
       handle_visualize[0].z = handle_center.z;
       handle_cloud.pts = handle_visualize;
       */
+      handle_cloud.header = cloud_header_;
       publish ("handle_visualization", handle_cloud);
 
-      pmap.polygons.push_back (poly_tr);
-      handle_cloud.header = cloud_header_;
-      publish ("pmap", pmap);
-
-      return true;
+      return (true);
     }
 
 
 
 
+  /**
+   * Check cloud_geometry::projections
     void projectOntoPlane( vector<double> *plane_coeff, Point32& pnt)
     {
       // Calculate the unsigned distance from the point to the plane
@@ -701,6 +707,7 @@ public:
       pnt.y -= distance_to_plane * plane_coeff->at (1);
       pnt.z -= distance_to_plane * plane_coeff->at (2);
     }
+    **/
 
 
 
