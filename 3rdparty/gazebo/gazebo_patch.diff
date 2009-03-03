@@ -185,6 +185,29 @@ Index: libgazebo/gazebo.h
    /// Pointer to the stereo data
    public: StereoCameraData *data;
  };
+Index: server/Pose3d.cc
+===================================================================
+--- server/Pose3d.cc	(revision 7358)
++++ server/Pose3d.cc	(working copy)
+@@ -211,3 +211,18 @@
+ 
+   return a;
+ }
++
++Pose3d Pose3d::RotatePositionAboutOrigin(const Quatern &rot) const
++{
++  Pose3d a = *this;
++  a.pos.x =  (1.0 - 2.0*rot.y*rot.y - 2.0*rot.z*rot.z) * this->pos.x
++            +(2.0*(rot.x*rot.y+rot.u*rot.z)          ) * this->pos.y
++            +(2.0*(rot.x*rot.z-rot.u*rot.y)          ) * this->pos.z;
++  a.pos.y =  (2.0*(rot.x*rot.y-rot.u*rot.z)          ) * this->pos.x
++            +(1.0 - 2.0*rot.x*rot.x - 2.0*rot.z*rot.z) * this->pos.y
++            +(2.0*(rot.y*rot.z+rot.u*rot.x)          ) * this->pos.z;
++  a.pos.z =  (2.0*(rot.x*rot.z+rot.u*rot.y)          ) * this->pos.x
++            +(2.0*(rot.y*rot.z-rot.u*rot.x)          ) * this->pos.y
++            +(1.0 - 2.0*rot.x*rot.x - 2.0*rot.y*rot.y) * this->pos.z;
++  return a;
++}
 Index: server/physics/MapGeom.hh
 ===================================================================
 --- server/physics/MapGeom.hh	(revision 7358)
@@ -365,12 +388,14 @@ Index: server/physics/Body.hh
      /// List of geometries attached to this body
      private: std::map< std::string, Geom* > geoms;
    
-@@ -184,6 +203,23 @@
+@@ -184,6 +203,25 @@
    
      private: ParamT<Vector3> *xyzP;
      private: ParamT<Quatern> *rpyP;
 +    private: ParamT<bool> *turnGravityOffP;
 +    private: ParamT<bool> *selfCollideP;
++
++    private: OgreVisual *visual;
 +
 +    ///  User specified Mass Matrix
 +    protected: ParamT<bool> *customMassMatrixP;
@@ -916,7 +941,29 @@ Index: server/physics/Body.cc
    Pose3d initPose;
  
    initPose.pos = **(this->xyzP);
-@@ -134,8 +212,9 @@
+@@ -123,6 +201,21 @@
+     childNode = childNode->GetNextByNSPrefix("geom");
+   }
+ 
++  // Attach mesh for CG visualization
++  /// Add a renderable for something, say CG, make visible in Update()
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++  {
++    if (this->mass.mass > 0.0)
++    {
++      this->visual = new OgreVisual(this->GetModel()->GetVisualNode());
++      this->visual->AttachMesh("body_cg");
++      this->visual->SetVisible(false);
++      this->visual->SetMaterial("Gazebo/Red");
++    }
++  }
++
++
++
+   childNode = node->GetChildByNSPrefix("sensor");
+ 
+   // Load the sensors
+@@ -134,8 +227,9 @@
    }
  
    // If no geoms are attached, then don't let gravity affect the body.
@@ -927,7 +974,7 @@ Index: server/physics/Body.cc
      this->SetGravityMode(false);
    }
  
-@@ -197,6 +276,13 @@
+@@ -197,6 +291,13 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -941,7 +988,7 @@ Index: server/physics/Body.cc
  // Initialize the body
  void Body::Init()
  {
-@@ -218,25 +304,53 @@
+@@ -218,25 +319,76 @@
    std::vector< Sensor* >::iterator sensorIter;
    std::map< std::string, Geom* >::iterator geomIter;
  
@@ -962,7 +1009,30 @@ Index: server/physics/Body.cc
      // Set the pose of the scene node
 -    this->visualNode->SetPose(this->pose);
 +    if (Simulator::Instance()->GetRenderEngineEnabled())
++    {
 +      this->visualNode->SetPose(this->pose);
++
++      if (this->mass.mass > 0.0)
++      {
++        // CG
++        if (this->visual)
++        {
++          this->visual->SetVisible(true);
++
++          // set visual pose of CG (CoM)
++          // comPose is only good for initial pose, to represent dynamically changing CoM, rotate by pose.rot
++          this->visual->SetPose(this->pose + this->comPose.RotatePositionAboutOrigin(this->pose.rot.GetInverse()));
++
++          // if (this->GetName() == std::string("link2"))
++          //   std::cout << this->GetName()
++          //             << " " << this->pose
++          //             << " " << this->comPose
++          //             << " " << this->comPose.RotatePositionAboutOrigin(this->pose.rot.GetInverse())
++          //             << std::endl;
++
++        }
++      }
++    }
    }
  
 +#ifdef TIMING
@@ -996,7 +1066,20 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -329,7 +443,8 @@
+@@ -268,7 +420,11 @@
+ void Body::SetPose(const Pose3d &pose)
+ {
+ 
+-  this->pose = pose;
++  if (std::isnan(pose.pos.x) || std::isnan(pose.pos.y) || std::isnan(pose.pos.z) ||
++      std::isnan(pose.rot.u) || std::isnan(pose.rot.x) || std::isnan(pose.rot.y) || std::isnan(pose.rot.z))
++    std::cout << "trying to SetPose() for Body(" << this->GetName() << ") with some NaN's (" << pose << ")" << std::endl;
++  else
++    this->pose = pose;
+ 
+   if (this->IsStatic())
+   {
+@@ -329,7 +485,8 @@
      dBodySetPosition(this->bodyId, pos.x, pos.y, pos.z);
  
    // Set the position of the scene node
@@ -1006,7 +1089,7 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -350,7 +465,8 @@
+@@ -350,7 +507,8 @@
    }
  
    // Set the orientation of the scene node
@@ -1016,7 +1099,37 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -404,6 +520,88 @@
+@@ -368,6 +526,14 @@
+     pos.x = p[0];
+     pos.y = p[1];
+     pos.z = p[2];
++
++    // check for NaN
++    if (std::isnan(pos.x) || std::isnan(pos.y) || std::isnan(pos.z))
++    {
++      std::cout << "Your simulation has exploded, position of body(" << this->GetName() << ") has NaN(" << pos << ")" << std::endl;
++      //pos = this->pose.pos;
++      assert(0);
++    }
+   }
+   else
+   {
+@@ -394,6 +560,14 @@
+     rot.x = r[1];
+     rot.y = r[2];
+     rot.z = r[3];
++
++    // check for NaN
++    if (std::isnan(rot.u) || std::isnan(rot.x) || std::isnan(rot.y) || std::isnan(rot.z))
++    {
++      std::cout << "Your simulation has exploded, rotation of body(" << this->GetName() << ") has NaN(" << rot << ")" << std::endl;
++      //rot = this->pose.rot;
++      assert(0);
++    }
+   }
+   else
+   {
+@@ -404,6 +578,88 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -1105,7 +1218,7 @@ Index: server/physics/Body.cc
  // Return the ID of this body
  dBodyID Body::GetId() const
  {
-@@ -505,13 +703,103 @@
+@@ -505,13 +761,103 @@
  */
  void Body::UpdateCoM()
  {
@@ -1213,7 +1326,7 @@ Index: server/physics/Body.cc
    // Construct the mass matrix by combining all the geoms
    dMassSetZero( &this->mass );
  
-@@ -521,12 +809,21 @@
+@@ -521,12 +867,21 @@
      if (giter->second->IsPlaceable() && giter->second->GetGeomId())
      {
        dMassAdd( &this->mass, lmass );
@@ -1235,7 +1348,7 @@ Index: server/physics/Body.cc
    if (std::isnan(this->mass.c[0]))
      this->mass.c[0] = 0;
  
-@@ -541,24 +838,37 @@
+@@ -541,24 +896,37 @@
    newPose.pos.y = this->mass.c[1];
    newPose.pos.z = this->mass.c[2];
  
@@ -1278,7 +1391,7 @@ Index: server/physics/Body.cc
  
  
    // Settle on the new CoM pose
-@@ -570,6 +880,8 @@
+@@ -570,6 +938,8 @@
    // Set the mass matrix
    if (this->mass.mass > 0)
      dBodySetMass( this->bodyId, &this->mass );
@@ -1287,7 +1400,7 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -720,3 +1032,15 @@
+@@ -720,3 +1090,15 @@
    }
  }
   
@@ -3007,7 +3120,7 @@ Index: server/Simulator.cc
  /// Set the length of time the simulation should run.
  void Simulator::SetTimeout(double time)
  {
-@@ -487,17 +538,24 @@
+@@ -487,17 +538,36 @@
  /// Set the selected entity
  void Simulator::SetSelectedEntity( Entity *ent )
  {
@@ -3019,6 +3132,15 @@ Index: server/Simulator.cc
      this->selectedEntity->SetSelected(false);
 +    std::cout << " UnSetSelected Entity : " << this->selectedEntity->GetName() << std::endl;
    }
++  // unselect selectedBody
++  if (this->selectedBody)
++  {
++    this->selectedBody->GetVisualNode()->ShowSelectionBox(false);
++    this->selectedBody->SetTransparency(0.0);
++    this->selectedBody->SetSelected(false);
++    std::cout << " UnSetSelected Body : " << this->selectedBody->GetName() << std::endl;
++    this->selectedBody = NULL;
++  }
  
 +  // if a different entity is selected, show bounding box and SetSelected(true)
    if (this->selectedEntity != ent)
@@ -3029,16 +3151,29 @@ Index: server/Simulator.cc
 +    this->selectedEntity->SetTransparency(0.6);
      this->selectedEntity->SetSelected(true);
 +    std::cout << " SetSelected Entity : " << this->selectedEntity->GetName() << std::endl;
++    std::cout << " ------------------------------------------------------- " << std::endl;
++    std::cout << " Drag with left mouse button to rotate in the plane of the camera view port." << std::endl;
++    std::cout << " Drag with right mouse button to reposition object in the plane of the camera view port." << std::endl;
    }
    else
      this->selectedEntity = NULL;
-@@ -512,6 +570,38 @@
+@@ -512,6 +582,51 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
 +/// Set the selected entity
 +void Simulator::SetSelectedBody( Body *bod )
 +{
++  // unselect selectedEntity
++  if (this->selectedEntity)
++  {
++    this->selectedEntity->GetVisualNode()->ShowSelectionBox(false);
++    this->selectedEntity->SetTransparency(0.0);
++    this->selectedEntity->SetSelected(false);
++    std::cout << " UnSetSelected Entity : " << this->selectedEntity->GetName() << std::endl;
++    this->selectedEntity = NULL;
++  }
++  // unselect selectedBody
 +  if (this->selectedBody)
 +  {
 +    this->selectedBody->GetVisualNode()->ShowSelectionBox(false);
@@ -3054,6 +3189,9 @@ Index: server/Simulator.cc
 +    this->selectedBody->SetTransparency(0.6);
 +    this->selectedBody->SetSelected(true);
 +    std::cout << " SetSelected Body : " << this->selectedBody->GetName() << std::endl;
++    std::cout << " ------------------------------------------------------- " << std::endl;
++    std::cout << " Drag with left mouse button to apply torque." << std::endl;
++    std::cout << " Drag with right mouse button to apply force." << std::endl;
 +  }
 +  else
 +    this->selectedBody = NULL;
@@ -3197,6 +3335,67 @@ Index: server/XMLConfig.cc
    }
  }
  
+Index: server/rendering/OgreCamera.cc
+===================================================================
+--- server/rendering/OgreCamera.cc	(revision 7358)
++++ server/rendering/OgreCamera.cc	(working copy)
+@@ -362,10 +362,10 @@
+   if (this->renderTarget)
+     return this->renderTarget->getViewport(0)->getActualWidth();
+   else
+-    return 0;
++    return this->camera->getViewport()->getActualWidth();
++    //return 0;
+ }
+ 
+-
+ ////////////////////////////////////////////////////////////////////////////////
+ /// Get the viewport height in pixels
+ unsigned int OgreCamera::GetViewportHeight() const
+@@ -373,7 +373,8 @@
+   if (this->renderTarget)
+     return this->renderTarget->getViewport(0)->getActualHeight();
+   else
+-    return 0;
++    return this->camera->getViewport()->getActualHeight();
++    //return 0;
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -384,6 +385,33 @@
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
++/// Get the viewport up vector
++Vector3 OgreCamera::GetUp()
++{
++  //std::cout << "ogre cam position " <<  this->camera->getRealPosition() << std::endl;
++  Ogre::Vector3 up = this->camera->getRealUp();
++  //std::cout << "ogre up " <<  up << std::endl;
++  return Vector3(up.x,up.y,up.z);
++}
++
++////////////////////////////////////////////////////////////////////////////////
++/// Get the viewport right vector
++Vector3 OgreCamera::GetRight()
++{
++  Ogre::Vector3 right = this->camera->getRealRight();
++  //std::cout << "ogre right " <<  right << std::endl;
++  return Vector3(right.x,right.y,right.z);
++}
++
++////////////////////////////////////////////////////////////////////////////////
++/// Get the camera position in the world
++Vector3 OgreCamera::GetCameraPosition()
++{
++  Ogre::Vector3 camPos = this->camera->getRealPosition();
++  return Vector3(camPos.x,camPos.y,camPos.z);
++}
++
++////////////////////////////////////////////////////////////////////////////////
+ /// Set whether the user can move the camera via the GUI
+ void OgreCamera::SetUserMovable( bool movable )
+ {
 Index: server/rendering/OgreAdaptor.cc
 ===================================================================
 --- server/rendering/OgreAdaptor.cc	(revision 7358)
@@ -3274,10 +3473,53 @@ Index: server/rendering/OgreAdaptor.cc
  /// Get the desired update rate
  double OgreAdaptor::GetUpdateRate()
  {
+Index: server/rendering/OgreCreator.cc
+===================================================================
+--- server/rendering/OgreCreator.cc	(revision 7358)
++++ server/rendering/OgreCreator.cc	(working copy)
+@@ -68,6 +68,9 @@
+   // Create some basic shapes
+   OgreSimpleShape::CreateSphere("unit_sphere",1.0, 32, 32);
+   OgreSimpleShape::CreateSphere("joint_anchor",0.01, 32, 32);
++  //OgreSimpleShape::CreateSphere("body_cg",0.01, 32, 32);
++  OgreSimpleShape::CreateBox("body_cg", Vector3(0.014,0.014,0.014), 
++                             Vector2<double>(0.014,0.014));
+   OgreSimpleShape::CreateBox("unit_box_U1V1", Vector3(1,1,1), 
+                              Vector2<double>(1,1));
+   OgreSimpleShape::CreateCylinder("unit_cylinder", 0.5, 1.0, 1, 32);
+Index: server/rendering/OgreCamera.hh
+===================================================================
+--- server/rendering/OgreCamera.hh	(revision 7358)
++++ server/rendering/OgreCamera.hh	(working copy)
+@@ -157,6 +157,15 @@
+     /// \brief Get the viewport height in pixels
+     public: unsigned int GetViewportHeight() const;
+ 
++    /// \brief Get the viewport up vector
++    public: Vector3 GetUp();
++
++    /// \brief Get the viewport right vector
++    public: Vector3 GetRight();
++
++    /// \brief Get the camera position in the world
++    public: Vector3 GetCameraPosition();
++
+     /// \brief Get the average FPS
+     public: virtual float GetAvgFPS() { return 0;}
+ 
 Index: server/rendering/OgreVisual.cc
 ===================================================================
 --- server/rendering/OgreVisual.cc	(revision 7358)
 +++ server/rendering/OgreVisual.cc	(working copy)
+@@ -72,7 +72,7 @@
+   this->meshTileP = new ParamT< Vector2<double> >("uvTile", 
+       Vector2<double>(1.0, 1.0), 0 );
+ 
+-  this->materialNameP = new ParamT<std::string>("material",std::string(),0);
++  this->materialNameP = new ParamT<std::string>("material",std::string("Gazebo/White"),0); //default to Gazebo/White
+   this->materialNameP->Callback( &OgreVisual::SetMaterial, this );
+ 
+   this->castShadowsP = new ParamT<bool>("castShadows",true,0);
 @@ -131,6 +131,7 @@
          boost::lexical_cast<std::string>(this->meshTileP->GetValue().x) + "V" +
          boost::lexical_cast<std::string>(this->meshTileP->GetValue().y);
@@ -3286,6 +3528,17 @@ Index: server/rendering/OgreVisual.cc
        if (!this->sceneNode->getCreator()->hasEntity(meshName))
        {
          OgreSimpleShape::CreateBox(meshName, Vector3(1,1,1), **this->meshTileP);
+@@ -365,8 +366,8 @@
+ 
+   if (this->myMaterial.isNull())
+   {
+-    gzmsg(0) << "The visual " << this->sceneNode->getName() << " can't set transparency for this geom without a material\n";
+-
++    gzmsg(0) << "The visual can't set transparency for this geom (" << /*geom name? << */ ") without a material"
++             << " sceneNode(" << this->sceneNode->getName() << ")\n";
+     return;
+   }
+ 
 Index: server/rendering/OgreAdaptor.hh
 ===================================================================
 --- server/rendering/OgreAdaptor.hh	(revision 7358)
@@ -3386,12 +3639,21 @@ Index: server/gui/GLWindow.hh
 ===================================================================
 --- server/gui/GLWindow.hh	(revision 7358)
 +++ server/gui/GLWindow.hh	(working copy)
-@@ -139,6 +139,8 @@
+@@ -40,6 +40,7 @@
+ #include <FL/Fl_Gl_Window.H>
+ 
+ #include "Gui.hh"
++#include "Pose3d.hh"
+ #include "Vector3.hh"
+ #include "Vector2.hh"
+ 
+@@ -139,6 +140,9 @@
      private: bool middleMousePressed;
      private: Vector2<int> prevMousePos;
      private: Vector2<int> mousePos;
 +    private: Vector2<int> mouseOriginPos; // for applying external forces
 +    private: Vector3 forceVec; // for applying external forces
++    private: Vector3 torqueVec; // for applying external forces
      private: std::map<int,int> keys;
  
      private: double lastUpdateTime;
@@ -3431,20 +3693,38 @@ Index: server/gui/GLWindow.cc
  
    this->directionVec.x = 0;
    this->directionVec.y = 0;
-@@ -143,6 +144,12 @@
+@@ -143,6 +144,17 @@
      this->activeCamera->UpdateCam();
    else
      this->userCamera->Update();
 +
-+  // Body *body = Simulator::Instance()->GetSelectedBody();
-+  // if (body)
-+  // {
-+  //   body->SetForce(this->forceVec);
-+  // }
++  // continuously apply force to selected body
++  Body *body = Simulator::Instance()->GetSelectedBody();
++  if (this->rightMousePressed && body)
++  {
++    body->SetForce(this->forceVec);
++  }
++  if (this->leftMousePressed && body)
++  {
++    body->SetTorque(this->torqueVec);
++  }
  }
  
  
-@@ -204,10 +211,22 @@
+@@ -169,10 +181,12 @@
+   {
+     case FL_LEFT_MOUSE:
+       this->leftMousePressed = true;
++      //this->torqueVec = Vector3(0,0,0); // not necessary
+       break;
+ 
+     case FL_RIGHT_MOUSE:
+       this->rightMousePressed = true;
++      //this->forceVec = Vector3(0,0,0); // not necessary
+       break;
+ 
+     case FL_MIDDLE_MOUSE:
+@@ -204,10 +218,21 @@
    if (!this->mouseDrag)
    {
      Entity *ent = OgreAdaptor::Instance()->GetEntityAt(this->activeCamera, this->mousePos);
@@ -3460,18 +3740,27 @@ Index: server/gui/GLWindow.cc
 -    {
 -      Simulator::Instance()->SetSelectedEntity( ent );
 +      case FL_RIGHT_MOUSE:
++        if (bod) Simulator::Instance()->SetSelectedBody( bod );
++        this->mouseOriginPos = Vector2<int>( Fl::event_x(), Fl::event_y() );
 +        break;
 +
 +      case FL_MIDDLE_MOUSE:
-+        if (bod) Simulator::Instance()->SetSelectedBody( bod );
-+        this->mouseOriginPos = Vector2<int>( Fl::event_x(), Fl::event_y() );
-+        this->forceVec = Vector3(0,0,0);
 +        break;
      }
    }
  
-@@ -223,18 +242,59 @@
-     Vector2<int> d = this->mousePos - this->prevMousePos;
+@@ -220,36 +245,158 @@
+ {
+   if (this->activeCamera && this->activeCamera->GetUserMovable())
+   {
+-    Vector2<int> d = this->mousePos - this->prevMousePos;
++    Vector2<int> drag = this->mousePos - this->prevMousePos;
++
++    double vpw        = this->activeCamera->GetViewportWidth();
++    double vph        = this->activeCamera->GetViewportHeight();
++    Vector3 camUp     = this->activeCamera->GetUp();
++    Vector3 camRight  = this->activeCamera->GetRight();
++
      if (this->leftMousePressed)
      {
 -      this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
@@ -3482,29 +3771,51 @@ Index: server/gui/GLWindow.cc
 +      {
 +        if (model)
 +        {
-+          Pose3d pose = model->GetPose();
-+          Vector3 eul = pose.rot.GetAsEuler();
-+          eul.x -= d.x * 0.01;
-+          eul.y -= d.y * 0.01;
-+          pose.rot.SetFromEuler(eul);
-+          model->SetPose(pose);
++          //
++          // interactively change rotation pose to selected item, rotate about axis perpendicular to view port plane
++          //
++          Pose3d modelPose = model->GetPose();
++
++          double distance    = (modelPose.pos - this->activeCamera->GetCameraPosition()).GetLength();
++          double scaleX      = distance * tan (this->activeCamera->GetHFOV().GetAsRadian() / 2.0f ) * 2.0f;
++          double scaleY      = distance * tan (this->activeCamera->GetVFOV().GetAsRadian() / 2.0f ) * 2.0f;
++
++          Vector3 camRay         = camRight.GetCrossProd(camUp); // axis perpendicular to view port plane
++          Quatern yawDragQ; yawDragQ.SetFromAxis(camRay.x,camRay.y,camRay.z,drag.x/vpw*scaleX);
++
++          modelPose.rot = yawDragQ * modelPose.rot;
++          model->SetPose(modelPose);
++          Vector3 eul = modelPose.rot.GetAsEuler();
 +          std::cout << "set euler angles r(" << eul.x << ") p(" << eul.y << ") to model (" << model->GetName() << ")" << std::endl;
 +        }
 +        if (body)
 +        {
-+          Pose3d pose = body->GetPose();
-+          Vector3 eul = pose.rot.GetAsEuler();
-+          eul.x -= d.x * 0.01;
-+          eul.y -= d.y * 0.01;
-+          pose.rot.SetFromEuler(eul);
-+          body->SetPose(pose);
-+          std::cout << "set euler angles r(" << eul.x << ") p(" << eul.y << ") to body (" << body->GetName() << ")" << std::endl;
++          //
++          // interactively set torque selected item
++          //
++          Pose3d bodyPose = body->GetPose();
++
++          double distance    = (bodyPose.pos - this->activeCamera->GetCameraPosition()).GetLength();
++          double scaleX      = distance * tan (this->activeCamera->GetHFOV().GetAsRadian() / 2.0f ) * 2.0f;
++          double scaleY      = distance * tan (this->activeCamera->GetVFOV().GetAsRadian() / 2.0f ) * 2.0f;
++
++          Quatern qUp;    qUp.SetFromAxis(camUp.x,camUp.y,camUp.z,(double)drag.x/vpw*scaleX);
++          Quatern qRight; qRight.SetFromAxis(camRight.x,camRight.y,camRight.z,(double)drag.y/vpw*scaleY);
++          Quatern upRightDragQ   = qUp * qRight;
++
++          double torqueScale = 10000.0;
++          this->torqueVec = upRightDragQ.GetAsEuler()*torqueScale;
++          body->SetTorque(this->torqueVec);
++          std::cout << "set euler torques (" << this->torqueVec << ") to body (" << body->GetName() << ")" << std::endl;
 +        }
 +      }
 +      else
 +      {
-+        this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
-+        this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
++        //
++        // interactively rotate view
++        //
++        this->activeCamera->RotateYaw(DTOR(-drag.x * this->rotateAmount));
++        this->activeCamera->RotatePitch(DTOR(drag.y * this->rotateAmount));
 +      }
      }
      else if (this->rightMousePressed)
@@ -3520,24 +3831,59 @@ Index: server/gui/GLWindow.cc
 -        model->SetPose(pose);
 +        if (model)
 +        {
-+          Pose3d pose = model->GetPose();
-+          pose.pos.y -= d.x * 0.05;
-+          pose.pos.x -= d.y * 0.05;
-+          model->SetPose(pose);
-+          std::cout << "set pose x(" << pose.pos.x << ") y(" << pose.pos.y << ") to model (" << model->GetName() << ")" << std::endl;
++          //
++          // interactively set pose to selected model
++          //
++          Pose3d modelPose = model->GetPose();
++          double distance    = (modelPose.pos - this->activeCamera->GetCameraPosition()).GetLength();
++          double scaleX      = distance * tan (this->activeCamera->GetHFOV().GetAsRadian() / 2.0f ) * 2.0f;
++          double scaleY      = distance * tan (this->activeCamera->GetVFOV().GetAsRadian() / 2.0f ) * 2.0f;
++          Vector3 moveVector = (camRight*drag.x/vpw*scaleX - camUp*drag.y/vph*scaleY);
++          // std::cout << " vpw " << vpw
++          //           << " vph " << vph
++          //           << " distance " << distance
++          //           << " scaleX " << scaleX
++          //           << " scaleY " << scaleY
++          //           << std::endl;
++
++          modelPose.pos += moveVector;
++          model->SetPose(modelPose);
++          std::cout << "set pose (" << modelPose << ") to model (" << model->GetName() << ")" << std::endl;
 +        }
 +        if (body)
 +        {
-+          Pose3d pose = body->GetPose();
-+          pose.pos.y -= d.x * 0.05;
-+          pose.pos.x -= d.y * 0.05;
-+          body->SetPose(pose);
-+          std::cout << "set pose x(" << pose.pos.x << ") y(" << pose.pos.y << ") to body (" << body->GetName() << ")" << std::endl;
++          //
++          // interactively set force to selected body
++          //
++          Pose3d bodyPose = body->GetPose();
++          double distance    = (bodyPose.pos - this->activeCamera->GetCameraPosition()).GetLength();
++          double scaleX      = distance * tan (this->activeCamera->GetHFOV().GetAsRadian() / 2.0f ) * 2.0f;
++          double scaleY      = distance * tan (this->activeCamera->GetVFOV().GetAsRadian() / 2.0f ) * 2.0f;
++          Vector3 moveVector = (camRight*drag.x/vpw*scaleX - camUp*drag.y/vph*scaleY);
++          // std::cout << " vpw " << vpw
++          //           << " vph " << vph
++          //           << " distance " << distance
++          //           << " scaleX " << scaleX
++          //           << " scaleY " << scaleY
++          //           << std::endl;
++
++          double forceScale = 10000.0;
++          this->forceVec  = moveVector*forceScale;
++          std::cout << "set body force to" << this->forceVec << " to body " << body->GetName() << std::endl;
 +        }
        }
        else
        {
-@@ -246,10 +306,21 @@
+-        Vector2<int> d = this->mousePos - this->prevMousePos;
++        //
++        // interactively pan view
++        //
+         this->directionVec.x = 0;
+-        this->directionVec.y =  d.x * this->moveAmount;
+-        this->directionVec.z =  d.y * this->moveAmount;
++        this->directionVec.y =  drag.x * this->moveAmount;
++        this->directionVec.z =  drag.y * this->moveAmount;
+       }
      }
      else if (this->middleMousePressed)
      {
@@ -3548,32 +3894,48 @@ Index: server/gui/GLWindow.cc
 +      Body *body = Simulator::Instance()->GetSelectedBody();
 +      if (body)
 +      {
-+        Vector2<int> d = this->mousePos - this->mouseOriginPos;
-+        this->forceVec = Vector3(10.0*d.x,  0.0, -10.0*d.y);
-+        body->SetForce(this->forceVec);
-+        std::cout << "apply force " << this->forceVec << " to body " << body->GetName() << std::endl;
++        //
++        // interactively set pose to selected body
++        //
++        Pose3d bodyPose = body->GetPose();
++
++        //Vector2<double> ddrag((double)drag.x,(double)drag.y);
++        //if (drag.x*drag.x + drag.y*drag.y > 0)
++        //  ddrag.Normalize();
++        //Vector3 dragVector     = (camRight*ddrag.x - camUp*ddrag.y);
++        //bodyPose.pos += dragVector*0.05;
++
++        double distance    = (bodyPose.pos - this->activeCamera->GetCameraPosition()).GetLength();
++        double scaleX      = distance * tan (this->activeCamera->GetHFOV().GetAsRadian() / 2.0f ) * 2.0f;
++        double scaleY      = distance * tan (this->activeCamera->GetVFOV().GetAsRadian() / 2.0f ) * 2.0f;
++        Vector3 moveVector = (camRight*drag.x/vpw*scaleX - camUp*drag.y/vph*scaleY);
++
++        bodyPose.pos += moveVector;
++        body->SetPose(bodyPose);
++        std::cout << "set pose (" << bodyPose << ") to Body (" << body->GetName() << ")" << std::endl;
 +      }
 +      else
 +      {
-+        Vector2<int> d = this->mousePos - this->prevMousePos;
-+        this->directionVec.x =  d.y * this->moveAmount;
++        this->directionVec.x =  drag.y * this->moveAmount;
 +        this->directionVec.y =  0;
 +        this->directionVec.z =  0;
 +      }
      }
    }
  
-@@ -261,12 +332,30 @@
+@@ -261,12 +408,33 @@
  void GLWindow::HandleMouseWheel(int dx, int dy)
  {
    Model *model = dynamic_cast<Model*>(Simulator::Instance()->GetSelectedEntity());
 -  if (model)
 +  Body *body = Simulator::Instance()->GetSelectedBody();
++
 +  if (model || body)
    {
 -    Pose3d pose = model->GetPose();
 -    pose.pos.z += dy * 0.05;
 -    model->SetPose(pose);
++    // FIXME: old
 +    if (model)
 +    {
 +      Pose3d pose = model->GetPose();
@@ -3581,6 +3943,7 @@ Index: server/gui/GLWindow.cc
 +      model->SetPose(pose);
 +      std::cout << "set pose z(" << pose.pos.z << ") to model (" << model->GetName() << ")" << std::endl;
 +    }
++    // FIXME: old
 +    if (body)
 +    {
 +      Pose3d pose = body->GetPose();
@@ -3598,7 +3961,7 @@ Index: server/gui/GLWindow.cc
  
  }
  
-@@ -309,6 +398,25 @@
+@@ -309,6 +477,25 @@
            this->moveAmount *= 0.5;
            break;
  
@@ -3784,6 +4147,20 @@ Index: server/World.hh
    private: friend class DestroyerT<World>;
    private: friend class SingletonT<World>;
  };
+Index: server/Pose3d.hh
+===================================================================
+--- server/Pose3d.hh	(revision 7358)
++++ server/Pose3d.hh	(working copy)
+@@ -114,6 +114,9 @@
+   /// \brief Reset the pose
+   public: void Reset();
+ 
++  /// \brief Rotate vector part of a pose about the origin
++  public: Pose3d RotatePositionAboutOrigin(const Quatern &rot) const;
++
+   /// \brief The position
+   public: Vector3 pos;
+ 
 Index: server/controllers/Controller.hh
 ===================================================================
 --- server/controllers/Controller.hh	(revision 7358)
