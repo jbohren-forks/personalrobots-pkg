@@ -208,8 +208,13 @@ class Skeleton:
     #self.pg.save("render5.graph")
 
   def newpose(self, id):
-    xyz,euler = self.pg.vertex(id)
-    return from_xyz_euler(xyz, euler)
+    try:
+      xyz,euler = self.pg.vertex(id)
+      p = from_xyz_euler(xyz, euler)
+    except:
+      print "Failed to get vertex", id
+      p = Pose()
+    return p
 
   def place_find(self, lf, descriptors):
     if self.vt:
@@ -336,7 +341,10 @@ class Skeleton:
           (x,y) = pts[f]
           pylab.annotate('%d' % f, (float(x), float(y)))
 
+    ordered = sorted(self.nodes)
     for (f0,f1) in self.edges:
+      # This expression is 1 if the nodes are consecutive
+      abs(ordered.index(f0) - ordered.index(f1))
       p0 = pts[f0]
       p1 = pts[f1]
       p0c = cols[self.node_labels[f0]]
