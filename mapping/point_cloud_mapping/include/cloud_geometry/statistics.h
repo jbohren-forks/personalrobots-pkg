@@ -101,6 +101,35 @@ namespace cloud_geometry
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Determine the point indices that form the largest diagonal in a given set of points
+      * \param points the point cloud data message
+      * \param indices the point cloud indices that need to be used
+      * \param min_idx the resultant index of the 'minimum' point
+      * \param max_idx the resultant index of the 'maximum' point
+      */
+    inline void
+      getLargestDiagonalIndices (robot_msgs::PointCloud *points, std::vector<int> *indices, int &min_idx, int &max_idx)
+    {
+      double largest_diagonal = -FLT_MAX;
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+        for (unsigned int j = i; j < indices->size (); j++)
+        {
+          double current_diagonal =
+                                    (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) * (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) +
+                                    (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y) * (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y) +
+                                    (points->pts.at (indices->at (i)).z - points->pts.at (indices->at (j)).z) * (points->pts.at (indices->at (i)).z - points->pts.at (indices->at (j)).z);
+          if (current_diagonal > largest_diagonal)
+          {
+            min_idx = i;
+            max_idx = j;
+            largest_diagonal = current_diagonal;
+          }
+        }
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Determine the points that form the largest diagonal in a given set of points
       * \param poly the polygon message
       * \param minP the resultant minimum point in the set
@@ -150,6 +179,35 @@ namespace cloud_geometry
           {
             min_p.x = points->pts.at (i).x; min_p.y = points->pts.at (i).y; min_p.z = points->pts.at (i).z;
             max_p.x = points->pts.at (j).x; max_p.y = points->pts.at (j).y; max_p.z = points->pts.at (j).z;
+            largest_diagonal = current_diagonal;
+          }
+        }
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Determine the points that form the largest diagonal in a given set of points
+      * \param points the point cloud data message
+      * \param indices the point cloud indices that need to be used
+      * \param minP the resultant minimum point in the set
+      * \param maxP the resultant maximum point in the set
+      */
+    inline void
+      getLargestDiagonalPoints (robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+    {
+      double largest_diagonal = -FLT_MAX;
+      for (unsigned int i = 0; i < indices->size (); i++)
+      {
+        for (unsigned int j = i; j < indices->size (); j++)
+        {
+          double current_diagonal =
+                                    (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) * (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) +
+                                    (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y) * (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y) +
+                                    (points->pts.at (indices->at (i)).z - points->pts.at (indices->at (j)).z) * (points->pts.at (indices->at (i)).z - points->pts.at (indices->at (j)).z);
+          if (current_diagonal > largest_diagonal)
+          {
+            min_p.x = points->pts.at (indices->at (i)).x; min_p.y = points->pts.at (indices->at (i)).y; min_p.z = points->pts.at (indices->at (i)).z;
+            max_p.x = points->pts.at (indices->at (j)).x; max_p.y = points->pts.at (indices->at (j)).y; max_p.z = points->pts.at (indices->at (j)).z;
             largest_diagonal = current_diagonal;
           }
         }
