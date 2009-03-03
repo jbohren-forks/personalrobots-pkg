@@ -374,7 +374,7 @@ namespace ros {
 				 "tilt_laser_cloud_filtered", global_frame_, 50);
       ros::Node::instance()->subscribe("dcam/cloud",  stereoCloudMsg_, &MoveBase::stereoCloudCallback, this, 1);
       ros::Node::instance()->subscribe("ground_plane",  groundPlaneMsg_, &MoveBase::groundPlaneCallback, this, 1);
-      ros::Node::instance()->subscribe("obstacle_cloud",  groundPlaneCloudMsg_, &MoveBase::groundPlaneCloudCallback, this, 1);
+      ros::Node::instance()->subscribe("cloud_ground_filtered",  groundPlaneCloudMsg_, &MoveBase::groundPlaneCloudCallback, this, 1);
 
       // Subscribe to odometry messages to get global pose
       ros::Node::instance()->subscribe("odom", odomMsg_, &MoveBase::odomCallback, this, 1);
