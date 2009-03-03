@@ -55,7 +55,7 @@ public:
   {
     param("display", display_, false);
     if (display_) {
-      cvNamedWindow(wndname, CV_WINDOW_AUTOSIZE);
+      cvNamedWindow(wndname, 0); // no autosize
       cvStartWindowThread();
     }
 

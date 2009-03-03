@@ -15,7 +15,8 @@
 #include <boost/thread.hpp>
 
 #include "outlet_detector.h"
-//#include "eig3.h"
+
+//#define _OUTLET_INTERACTIVE_CAPTURE
 
 class OutletDetector : public ros::Node
 {
@@ -30,35 +31,37 @@ private:
   robot_msgs::PoseStamped pose_;
   tf::TransformBroadcaster tf_broadcaster_;
   CvMat* K_;
-  //boost::mutex cb_mutex_;
   bool display_;
+  int count_;
+  IplImage* display_image_;
+  bool continue_, failed_;
+  btVector3 holes[12];
+  btVector3 old_holes[12];
 
 public:
   OutletDetector()
     : ros::Node("outlet_detector"), img_(res_.image), cam_info_(res_.cam_info),
-      tf_broadcaster_(*this), K_(NULL)
+      tf_broadcaster_(*this), K_(NULL), count_(0), display_image_(NULL), continue_(false)
   {
     param("display", display_, false);
     if (display_) {
-      cvNamedWindow(wndname, CV_WINDOW_AUTOSIZE);
+      cvNamedWindow(wndname, 0); // no autosize
       cvStartWindowThread();
     }
     
-    //subscribe("Image", img_, &OutletDetector::image_cb, this, 1);
-    //subscribe("CamInfo", cam_info_, &OutletDetector::caminfo_cb, this, 1);
     advertise<robot_msgs::PoseStamped>("pose", 1);
   }
 
   ~OutletDetector()
   {
     cvReleaseMat(&K_);
+    cvReleaseImage(&display_image_);
     if (display_)
       cvDestroyWindow(wndname);
   }
 
   void caminfo_cb()
   {
-    //boost::mutex::scoped_lock lock(cb_mutex_);
     if (K_ == NULL)
       K_ = cvCreateMat(3, 3, CV_64FC1);
     memcpy((char*)(K_->data.db), (char*)(&cam_info_.K[0]), 9 * sizeof(double));
@@ -66,13 +69,6 @@ public:
 
   void image_cb()
   {
-    //boost::mutex::scoped_lock lock(cb_mutex_);
-    /*
-    if (K_ == NULL) {
-      ROS_WARN("Need calibration info to process image");
-      return;
-    }
-    */
     if (!img_bridge_.fromImage(img_, "bgr")) {
       ROS_ERROR("Failed to convert image");
       return;
@@ -82,13 +78,15 @@ public:
     std::vector<outlet_t> outlets;
     if (!detect_outlet_tuple(image, K_, NULL, outlets)) {
       ROS_WARN("Failed to detect outlet");
+      failed_ = true;
       if (display_)
         cvShowImage(wndname, image);
       return;
     }
+    failed_ = false;
 
     // Change representation and coordinate frame
-    btVector3 holes[12];
+    //btVector3 holes[12];
     for (int i = 0; i < 4; ++i) {
       changeAxes(outlets[i].coord_hole_ground, holes[3*i]);
       changeAxes(outlets[i].coord_hole1, holes[3*i+1]);
@@ -130,11 +128,31 @@ public:
     
     
     if (display_) {
+#ifdef _OUTLET_INTERACTIVE_CAPTURE
+      if (!display_image_)
+        display_image_ = cvCloneImage(image);
+      else
+        cvCopy(image, display_image_);
+      draw_outlets(display_image_, outlets);
+      cvShowImage(wndname, display_image_);
+#else
       draw_outlets(image, outlets);
       cvShowImage(wndname, image);
+#endif
     }
   }
 
+  void saveImages()
+  {
+    char buffer[32];
+    snprintf(buffer, 32, "views/V%04d.jpg", count_);
+    cvSaveImage(buffer, img_bridge_.toIpl());
+    printf("Saved %s\n", buffer);
+    snprintf(buffer, 32, "views/out%04d.jpg", count_++);
+    cvSaveImage(buffer, display_image_);
+    printf("Saved %s\n", buffer);
+  }
+  
   bool spin()
   {
     // TODO: wait for service to become available
@@ -144,6 +162,30 @@ public:
       if (ros::service::call("/prosilica/poll", req_, res_)) {
         caminfo_cb();
         image_cb();
+#ifdef _OUTLET_INTERACTIVE_CAPTURE
+        if (continue_) {
+          int i = 0;
+          while (!failed_ && i < 12) {
+            if (holes[i].distance(old_holes[i]) > 0.01)
+              failed_ = true;
+            ++i;
+          }
+
+          if (failed_)
+            continue_ = false;
+        }
+        if (!continue_) {
+          int key = cvWaitKey(0);
+          if (key == 's') {
+            saveImages();
+          } else if (key == 'c') {
+            memcpy(old_holes, holes, sizeof(holes));
+            continue_ = true;
+          } else if (key == 'q') {
+            return true;
+          }
+        }
+#endif
       } else {
         ROS_WARN("Service call failed");
         usleep(100000);
