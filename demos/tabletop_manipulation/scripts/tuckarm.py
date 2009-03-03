@@ -66,10 +66,10 @@ class TuckArm:
 
     if self.side == 'left':
       self.positions[1][self.joint_names[self.side[0] + '_shoulder_lift_joint']] = 1.57
-      self.positions[1][self.joint_names[self.side[0] + '_upper_arm_roll_joint']] = 1.57
+      self.positions[1][self.joint_names[self.side[0] + '_upper_arm_roll_joint']] = 1.3
     else:
       self.positions[1][self.joint_names[self.side[0] + '_shoulder_lift_joint']] = 1.57
-      self.positions[1][self.joint_names[self.side[0] + '_upper_arm_roll_joint']] = -1.57
+      self.positions[1][self.joint_names[self.side[0] + '_upper_arm_roll_joint']] = -1.3
 
     print self.positions
 

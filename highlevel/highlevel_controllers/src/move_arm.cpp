@@ -93,6 +93,8 @@
 
 #include <urdf/URDF.h>
 
+#include <angles/angles.h>
+
 #include <std_msgs/Empty.h>
 #include <robot_msgs/JointTraj.h>
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
@@ -135,6 +137,10 @@ private:
   bool                             new_trajectory_;
   bool                             plan_valid_;
   robot_msgs::KinematicPath        current_trajectory_;
+  double                           angle_tolerance_;
+
+  // HACK: this map should not be necessary
+  std::map<std::string, int> joints_;
 
   // HighlevelController interface that we must implement
   virtual void updateGoalMsg();
@@ -149,10 +155,12 @@ private:
   void stopArm(void);
   void getTrajectoryMsg(robot_msgs::KinematicPath &path, 
                         robot_msgs::JointTraj &traj);
+  void displayKinematicPath(robot_msgs::KinematicPath &path);
   void printKinematicPath(robot_msgs::KinematicPath &path);
   void mechanismStateCallback();
   void receiveStatus();
   void getCurrentStateAsTraj(robot_msgs::JointTraj& traj);
+  bool isTrajectoryDone();
 };
 
 MoveArm::~MoveArm() {
@@ -209,12 +217,25 @@ MoveArm::MoveArm(const std::string& side)
                                    this,
                                    1);
   ros::Node::instance()->advertise<robot_msgs::JointTraj>(controller_topic_, 1);
+  ros::Node::instance()->advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
+
+  // HACK: I can't for the life of me figure out how to determine this ordering
+  // from the model.
+  angle_tolerance_ = 0.1;
+  joints_["r_shoulder_pan_joint"] = 0;
+  joints_["r_shoulder_lift_joint"] = 1;
+  joints_["r_upper_arm_roll_joint"] = 2;
+  joints_["r_elbow_flex_joint"] = 3;
+  joints_["r_forearm_roll_joint"] = 4;
+  joints_["r_wrist_flex_joint"] = 5;
+  joints_["r_wrist_roll_joint"] = 6;
 }
 
 void MoveArm::receiveStatus(void)
 {
-  ROS_DEBUG("Got status: %d %d %d", 
-            plan_id_, plan_status_.id, plan_status_.path.states.empty());
+  //ROS_DEBUG("Got status: %d %d %d %d", 
+            //plan_id_, plan_status_.id, plan_status_.done, 
+            //plan_status_.path.states.empty());
   // HACK: sometimes we get the status for the new plan before we receive
   // the response to the service call that gives us the new plan id.  It
   // happens that the planner increments the id by 1 with each request.
@@ -223,7 +244,8 @@ void MoveArm::receiveStatus(void)
      !plan_status_.path.states.empty())
   {
     current_trajectory_ = plan_status_.path;
-    ROS_DEBUG("Got new trajectory from planner");
+    ROS_DEBUG("Got new trajectory from planner; distance: %.3f",
+              plan_status_.distance);
     new_trajectory_ = true;
   }
 }
@@ -431,6 +453,61 @@ bool MoveArm::goalReached()
   return getDone();
 }
 
+bool MoveArm::isTrajectoryDone()
+{
+  // Assume that plan_status_.lock() was already acquired by the caller
+  bool done = false;
+  //if(!plan_status_.done)
+  //{
+  ROS_DEBUG("Checking for trajectory completion");
+  pr2_mechanism_controllers::TrajectoryQuery::Request req;
+  pr2_mechanism_controllers::TrajectoryQuery::Response res;
+  req.trajectoryid = traj_id_;
+  if(!ros::service::call(controller_name_ + "/TrajectoryQuery", req, res))
+    ROS_ERROR("Failed to query trajectory completion");
+  else if(res.done == res.State_Done)
+    done = true;
+
+  // The trajectory controller often has trouble declaring completion, so
+  // we'll also check directly.
+  if(!done)
+  {
+    done = true;
+    mechanism_state_msg_.lock();
+    for (std::map<std::string,int>::iterator it = joints_.begin();
+         it != joints_.end();
+         ++it)
+    {
+      unsigned int ind = 0;
+      while(mechanism_state_msg_.joint_states[ind].name != it->first && ind < mechanism_state_msg_.get_joint_states_size())
+        ind++;
+      if (ind == mechanism_state_msg_.get_joint_states_size())
+      {
+        ROS_ERROR("No joint '%s' in mechanism data.", it->first.c_str());
+        mechanism_state_msg_.unlock();
+        return false;
+      }
+
+      double diff = angles::shortest_angular_distance(mechanism_state_msg_.joint_states[ind].position,
+                                                      current_trajectory_.states[current_trajectory_.states.size()-1].vals[it->second]);
+      ROS_DEBUG("Joint %s diff: %.3f", it->first.c_str(), diff);
+
+      if(fabs(diff) > angle_tolerance_)
+      {
+        done = false;
+        break;
+      }
+    }
+    mechanism_state_msg_.unlock();
+  }
+
+  //}
+  //else
+  //done = true;
+
+  return done;
+}
+
 bool MoveArm::dispatchCommands()
 {
   // Force replanning if we have a new goal
@@ -451,22 +528,7 @@ bool MoveArm::dispatchCommands()
   }
   else if(plan_status_.done || (traj_id_ >= 0 && !new_trajectory_))
   {
-    bool done = false;
-    if(!plan_status_.done)
-    {
-      ROS_DEBUG("Checking for trajectory completion");
-      pr2_mechanism_controllers::TrajectoryQuery::Request req;
-      pr2_mechanism_controllers::TrajectoryQuery::Response res;
-      req.trajectoryid = traj_id_;
-      if(!ros::service::call(controller_name_ + "/TrajectoryQuery", req, res))
-        ROS_ERROR("Failed to query trajectory completion");
-      else if(res.done == res.State_Done)
-        done = true;
-    }
-    else
-      done = true;
-
-    if(done)
+    if(isTrajectoryDone())
     {
       ROS_DEBUG("Plan completed.");
       plan_id_ = -1;
@@ -478,6 +540,7 @@ bool MoveArm::dispatchCommands()
   }
   else if(plan_status_.valid && 
           !plan_status_.unsafe &&
+          (plan_status_.distance < 0.1) &&
           !current_trajectory_.states.empty())
   {
     ROS_DEBUG("sending new trajectory");
@@ -487,13 +550,7 @@ bool MoveArm::dispatchCommands()
   }
   else
   {
-    ROS_DEBUG("Plan invalid %d %d %d %d %d %d\n",
-             plan_id_ >= 0,
-             plan_status_.id == plan_id_,
-             plan_status_.valid,
-             !plan_status_.unsafe,
-             !current_trajectory_.states.empty(),
-             new_trajectory_ == true);
+    ROS_DEBUG("Plan invalid or unsafe");
     stopArm();
     plan_valid_ = false;
   }
@@ -517,6 +574,16 @@ void MoveArm::printKinematicPath(robot_msgs::KinematicPath &path)
   ROS_DEBUG(ss.str().c_str());
 }
 
+void MoveArm::displayKinematicPath(robot_msgs::KinematicPath &path)
+{
+  robot_msgs::DisplayKinematicPath dpath;
+  dpath.frame_id = "base_link";
+  dpath.model_name = kinematic_model_;
+  //currentState(dpath.start_state);
+  dpath.path = path;
+  ros::Node::instance()->publish("display_kinematic_path", dpath);
+}
+
 void MoveArm::getTrajectoryMsg(robot_msgs::KinematicPath &path, 
                                robot_msgs::JointTraj &traj)
 {
@@ -538,6 +605,7 @@ void MoveArm::getTrajectoryMsg(robot_msgs::KinematicPath &path,
 void MoveArm::sendArmCommand(robot_msgs::KinematicPath &path, 
                              const std::string &model)
 {
+  displayKinematicPath(path);
   stopArm();
   ROS_DEBUG("Sending %d-step trajectory\n", path.states.size());
   pr2_mechanism_controllers::TrajectoryStart::Request req;

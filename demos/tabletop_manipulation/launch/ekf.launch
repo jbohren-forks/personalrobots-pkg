@@ -1,4 +1,5 @@
 <launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
     <param name="robot_pose_ekf/freq" value="30.0"/>
     <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
@@ -6,5 +7,6 @@
     <param name="robot_pose_ekf/imu_used" value="true"/>
     <param name="robot_pose_ekf/vo_used" value="false"/>
     
-    <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf"/>
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf"
+          machine="four"/>
 </launch>

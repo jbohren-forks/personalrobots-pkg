@@ -115,6 +115,7 @@ class ApproachTable:
     if not ts.tiltScan(2.0):
       print '[ApproachTable] Failed to change tilt scan'
       return False
+
     # Call out to blocking MoveBase
     return self.mb.moveBase(resp.table.header.frame_id,
                             approach_pose[0],
@@ -302,8 +303,8 @@ if __name__ == '__main__':
     if at.approachTable(1.0, True):
       res = at.approachTable(0.4, True)
 
-  if res:
-    print 'Success!'
-  else:
+  if not res:
     print 'Failure!'
+  else:
+    print 'Success!'
     

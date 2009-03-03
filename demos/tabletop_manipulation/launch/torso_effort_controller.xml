@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+      
+<controllers>
+ <controller name="torso_lift/effort_controller" type="JointEffortControllerNode">
+    <joint name="torso_lift_joint" />
+  </controller>
+</controllers>
+
+

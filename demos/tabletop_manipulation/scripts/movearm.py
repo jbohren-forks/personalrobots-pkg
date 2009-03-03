@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
   ma = MoveArm(side)
 
-  rospy.init_node('talker', anonymous=True)
+  rospy.init_node('move_arm', anonymous=True)
 
   # HACK
   import time

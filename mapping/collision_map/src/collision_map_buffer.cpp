@@ -524,7 +524,7 @@ class CollisionMapperBuffer : public ros::Node
         return;
       }
 
-      ROS_INFO ("End effector position is: [%f, %f, %f].", ee_global.point.x, ee_global.point.y, ee_global.point.z);
+      ROS_DEBUG ("End effector position is: [%f, %f, %f].", ee_global.point.x, ee_global.point.y, ee_global.point.z);
 
       // Compute the leaves
       vector<Leaf> object_leaves;
@@ -542,7 +542,7 @@ class CollisionMapperBuffer : public ros::Node
     void
       cloud_cb ()
     {
-      ROS_INFO ("Received %u data points.", (unsigned int)cloud_.pts.size ());
+      ROS_DEBUG ("Received %u data points.", (unsigned int)cloud_.pts.size ());
 
       // Get the new parameters from the server
       m_lock_.lock ();
@@ -587,7 +587,7 @@ class CollisionMapperBuffer : public ros::Node
         t2 = ros::Time::now();
         //time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
         time_spent = (t2 - t1).toSec();
-        ROS_INFO ("Static collision map computed in %g seconds. Number of boxes: %u.", time_spent, (unsigned int)static_leaves_.size ());
+        ROS_DEBUG ("Static collision map computed in %g seconds. Number of boxes: %u.", time_spent, (unsigned int)static_leaves_.size ());
 
       }
       else
@@ -639,7 +639,7 @@ class CollisionMapperBuffer : public ros::Node
         t2 = ros::Time::now();
         //time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
         time_spent = (t2 - t1).toSec();
-        ROS_INFO ("Collision map with %u boxes computed in %g seconds. Total maps in the queue %d.",
+        ROS_DEBUG ("Collision map with %u boxes computed in %g seconds. Total maps in the queue %d.",
                   (unsigned int)final_collision_map_.boxes.size (), time_spent, decaying_maps_.size ());
 
         publish ("collision_map_buffer", final_collision_map_);

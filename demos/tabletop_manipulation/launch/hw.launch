@@ -1,0 +1,20 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+  <!--include file="$(find tabletop_manipulation)/launch/teleop.launch"/-->
+
+  <!-- We're working without a map, relying on IMU-corrected wheel odom -->
+  <param name="/global_frame_id" value="odom_combined_offset"/>
+  <node pkg="tf" type="transform_sender" args="-20 -20 0 0 0 0 odom_combined_offset odom_combined 10"/>
+
+  <!-- Everything depends on ekf.launch, because it defines the
+       odom_combined frame -->
+  <include file="$(find tabletop_manipulation)/launch/ekf.launch"/>
+
+  <include file="$(find tabletop_manipulation)/launch/controllers.launch"/>
+  <include file="$(find tabletop_manipulation)/launch/perception.launch"/>
+  <!-- Note that nav.launch requires perception.launch, because the latter
+       runs the filters on the tilt laser scans -->
+  <include file="$(find tabletop_manipulation)/launch/nav.launch"/>
+  <!--include file="$(find tabletop_manipulation)/launch/planning.launch"/-->
+</launch>
