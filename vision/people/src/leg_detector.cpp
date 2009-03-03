@@ -69,6 +69,7 @@ using namespace MatrixWrapper;
 
 
 static const double no_observation_timeout_s = 1.0;
+static const double max_second_leg_age_s     = 2.0;
 static const double max_track_jump_m         = 1.0; 
 static const double max_meas_jump_m          = 0.75; // 1.0
 static const double leg_pair_separation_m    = 1.0;
@@ -341,7 +342,7 @@ public:
     // If we only found one close leg with the right label, let's try to find a second leg that 
     //   * doesn't yet have a label  (=valid precondition),
     //   * is within the max distance,
-    //   * is less than no_observation_timeout_s old.
+    //   * is less than max_second_leg_age_s old.
     cout << "Looking for one leg plus one new leg" << endl;
     float dist_between_legs, closest_dist_between_legs;
     if (it2 != end) 
@@ -356,7 +357,7 @@ public:
 	  continue;
 	
         // check if tracker is not too old. Old unassigned trackers are unlikely to be the second leg in a pair.
-        if ((*it1)->getLifetime() > no_observation_timeout_s)
+        if ((*it1)->getLifetime() > max_second_leg_age_s)
           continue;
 
 	// Get the distance between the two legs
