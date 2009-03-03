@@ -2,7 +2,7 @@ import roslib
 roslib.load_manifest('vslam')
 
 import Image
-from votools import TreeOptimizer3
+from pytoro import TreeOptimizer3
 import place_recognition
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris, from_xyz_euler
 from stereo import SparseStereoFrame
@@ -313,8 +313,11 @@ class Skeleton:
     pts = {}
     for id in self.nodes:
       (x,y,z) = self.newpose(id).xform(0,0,0)
-      xp = x * math.cos(theta) - z * math.sin(theta)
-      yp = z * math.cos(theta) + x * math.sin(theta)
+      if isinstance(theta, float):
+        xp = x * math.cos(theta) - z * math.sin(theta)
+        yp = z * math.cos(theta) + x * math.sin(theta)
+      else:
+        (xp,yp) = theta(x, z)
       pts[id] = (xp,yp)
 
     # uniq_l is unique labels

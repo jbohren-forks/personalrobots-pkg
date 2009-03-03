@@ -9,7 +9,7 @@
   <depend package="std_msgs"/>
   <depend package="rospy"/>
   <depend package="tf"/>
-  <depend package="toro"/>
+  <depend package="pytoro"/>
   <depend package="image_synthesizer"/>
   <depend package="place_recognition"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="mayavi2"/>

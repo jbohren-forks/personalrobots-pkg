@@ -1,0 +1,11 @@
+<package>
+  <description>
+    Python bindings for toro
+  </description>
+  <author>James Bowman</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="toro"/>
+  <depend package="rostest"/>
+  <depend package="rospy"/>
+</package>
