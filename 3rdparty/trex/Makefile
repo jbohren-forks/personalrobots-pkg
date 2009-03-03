@@ -19,6 +19,8 @@ all: installed
 installed: Makefile
 	make trex planworks plasma 
 	./copyIncludes.sh
+	# Super-hack to get around one header name collision
+	cp TREX/agent/base/Clock.hh include
 	touch installed
 
 includes: trex PlanWorks PLASMA
