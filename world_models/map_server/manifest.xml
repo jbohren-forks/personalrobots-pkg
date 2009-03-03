@@ -10,6 +10,7 @@
   <review status="unreviewed" notes="API review in progress (Brian)"/>
   <url>http://pr.willowgarage.com</url>
   <depend package="roscpp"/>
+  <depend package="rospy" />
   <depend package="robot_srvs"/>
   <export>
      <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib `rosboost-cfg --lflags thread`"/>
@@ -18,4 +19,14 @@
   <!-- <depend package="sdl_image"/> -->
   <sysdepend os="ubuntu" version="7.04-feisty" package="libsdl-image1.2-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libsdl-image1.2-dev"/>
+
+  <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
+
+  <sysdepend package="python-yaml" os="ubuntu" version="7.04-feisty"/>
+  <sysdepend package="python-yaml" os="ubuntu" version="7.10-gutsy"/>
+  <sysdepend package="python-yaml" os="ubuntu" version="8.04-hardy"/>
+  <sysdepend package="py25-yaml" os="macports" />
+  <sysdepend package="PyYAML" os="centos" version="5.2"/>
+
 </package>
