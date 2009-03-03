@@ -82,7 +82,7 @@ public:
   OpenDoorExecutiveTest(std::string node_name):
     PR2ArmNode(node_name, "right_arm", "right_gripper"),
     tf_(*this),
-    state_(INITIALIZED)
+    state_(WAITING)
   {
     // initialize my door
     double tmp; int tmp2;

@@ -514,7 +514,7 @@ public:
         // Calculate the distance from the point to the plane
         double distance_to_plane;
         cloud_geometry::projections::pointToPlane (&points->pts.at (indices->at (i)), pt, door_coeff, distance_to_plane);
-        // Is the point close to the door and on the same side as the plane normal ?
+        // Is the point close to the door?
         if (fabs (distance_to_plane) > handle_distance_door_max_threshold_)
           continue;
 
@@ -553,11 +553,21 @@ public:
             )        // Is the viewpoint<->point intersection inside the door ?
           continue;
 
+
+        // project the point into the door plane
+        // -------------------------------------
+        projectOntoPlane(door_coeff, points->pts.at (indices->at (i)));
+        projectOntoPlane(door_coeff, points->pts.at (indices->at (i)));
+
+
+
         // Save the point indices which satisfied all the geometric criteria so far
         possible_handle_indices[nr_phi] = indices->at (i);
         nr_phi++;
-      }
+      } // end loop over points
       possible_handle_indices.resize (nr_phi);    // Resize to the actual value
+
+
 
       // Compute the mean and standard deviation in intensity space
       int d_idx = cloud_geometry::getChannelIndex (points, "intensities");
@@ -584,35 +594,32 @@ public:
       sort (clusters.begin (), clusters.end (), compareRegions);
       reverse (clusters.begin (), clusters.end ());
 
-      for (unsigned int i = 0; i < clusters.size (); i++)
-      {
-        // Need to remove the planar cluster on which the viewpoint <-> cluster_centroid is perpendicular to (intensity artifact)
-        if (checkIfClusterPerpendicular (points, &clusters[i], viewpoint, door_coeff, intensity_cluster_perpendicular_angle_tolerance_))
-        {
-          ROS_WARN ("Cluster %d removed due to perpendicularity condition (viewpoint<->plane) criterion.", i);
-          clusters[i].resize (0);
-        }
 
-        // Remove points lying on the plane
-        int nr_p = 0;
-        vector<int> cluster_revised (clusters[i].size ());
-        for (unsigned int j = 0; j < clusters[i].size (); j++)
-        {
-          if (cloud_geometry::distances::pointToPlaneDistance (&points->pts.at (clusters[i][j]), *door_coeff) > 0.015)
-          {
-            cluster_revised[nr_p] = clusters[i][j];
-            nr_p++;
-          }
-        }
-        cluster_revised.resize (nr_p);
-        clusters[i] = cluster_revised;
-      }
 
       // ---[ Seventh test (geometric)
+      // check if the center of the cluster is close to the edges of the door
+      robot_msgs::Point32 minP, maxP, center;
+      cloud_geometry::statistics::getMinMax (door_poly, minP, maxP);
+      for (unsigned int i = 0; i < clusters.size (); i++)
+      {
+        if (clusters[i].size () == 0) continue;
+
+        // Compute the centroid for the remaining handle indices
+        cloud_geometry::nearest::computeCentroid (points, &clusters[i], center);
+
+        double d1 = sqrt(pow(center.x-minP.x,2) + pow(center.y-minP.y,2));
+        double d2 = sqrt(pow(center.x-maxP.x,2) + pow(center.y-maxP.y,2));
+        if (!( (d1 < 0.25 && d1 > 0.03) ||  (d2 < 0.25 && d2 > 0.03)))
+          clusters[i].resize(0);
+      }
+      std::cout << " - distance to side of door" << std::endl;
+
+
+
+
+      // ---[ Eight test (geometric)
       // Fit the best horizontal line through each cluster
       // Check the elongation of the clusters -- Filter clusters based on min/max Z
-      nr_phi = 0;
-
       robot_msgs::Point32 door_axis = cloud_geometry::cross (door_coeff, &z_axis_);
 
       vector<vector<int> > line_inliers (clusters.size ());
@@ -622,51 +629,57 @@ public:
       {
         if (clusters[i].size () == 0) continue;
         fitSACOrientedLine (points, clusters[i], 0.05, &door_axis, normal_angle_tolerance_, line_inliers[i]);
-
       }
       std::cout << " - lines fit" << std::endl;
 
-      // Calculate the longest horizontal line
-      double best_length = -FLT_MAX;
+      // find the best fit
+      double best_fit = 0;
       int best_i = -1;
-      robot_msgs::Point32 minP, maxP;
       for (unsigned int i = 0; i < clusters.size (); i++)
       {
         if (line_inliers[i].size () == 0) continue;
-        // Compute the min/max from the inlier set
-        cloud_geometry::statistics::getMinMax (points, &line_inliers[i], minP, maxP);
-        double line_length = cloud_geometry::distances::pointToPointDistance (&minP, &maxP);
 
-        ROS_INFO ("Best line fit found for cluster %d (%d points): %g (%d inliers).",
-                  i, clusters[i].size (), line_length, line_inliers[i].size ());
-
-        if (line_length > best_length)
+        double fit = ((double)(line_inliers[i].size())) / ((double)(clusters[i].size()));
+        if (fit > best_fit)
         {
-          best_length = line_length;
-          best_i      = i;
+          best_fit = fit;
+          best_i = i;
         }
       }
-
       if (best_i == -1)
       {
         ROS_ERROR ("All clusters rejected! Should exit here.");
 	return false;
       }
-
+      else
+        ROS_INFO("Selecting cluster %i", best_i);
       handle_indices.resize (line_inliers[best_i].size ());
       for (unsigned int j = 0; j < line_inliers[best_i].size (); j++)
         handle_indices[j] = line_inliers[best_i][j];
 
-      // Compute the centroid for the remaining handle indices
-      cloud_geometry::nearest::computeCentroid (points, &handle_indices, handle_center);
+
+      // compute min, max, and center of best cluster
+      //cloud_geometry::nearest::computeCentroid (points, &line_inliers[best_i], handle_center);
+      robot_msgs::Point32 minH, maxH;
+      cloud_geometry::statistics::getMinMax (points, &line_inliers[best_i], minH, maxH);
+      handle_center.x = (minH.x + maxH.x)/2.0;
+      handle_center.y = (minH.y + maxH.y)/2.0;
+      handle_center.z = (minH.z + maxH.z)/2.0;
+      cout << "minH = " << minH.x << " " << minH.y << " "<< minH.z << endl;
+      cout << "maxH = " << maxH.x << " " << maxH.y << " "<< maxH.z << endl;
+      cout << "handle_center = " << handle_center.x << " " << handle_center.y << " "<< handle_center.z << endl;
 
       // Calculate the unsigned distance from the point to the plane
       double distance_to_plane = door_coeff->at (0) * handle_center.x + door_coeff->at (1) * handle_center.y +
                                  door_coeff->at (2) * handle_center.z + door_coeff->at (3) * 1;
+
+      cout << "distance to plane = " << distance_to_plane << endl;
+
       // Calculate the projection of the point on the plane
       handle_center.x -= distance_to_plane * door_coeff->at (0);
       handle_center.y -= distance_to_plane * door_coeff->at (1);
       handle_center.z -= distance_to_plane * door_coeff->at (2);
+
 
 // This needs to be removed
 #if 1
@@ -675,6 +688,7 @@ public:
       //        handle_indices_clusters = possible_handle_indices;
       handle_cloud.chan.resize (1);
       handle_cloud.chan[0].name = "intensities";
+      /*
       handle_cloud.chan[0].vals.resize (handle_indices.size ());
       handle_visualize.resize (handle_indices.size ());
       for (unsigned int i = 0; i < handle_indices.size (); i++)
@@ -685,6 +699,13 @@ public:
         handle_cloud.chan[0].vals[i] = points->chan[d_idx].vals.at (handle_indices[i]);
       }
       cout << "added " << handle_visualize.size() << " points to visualize in " << handle_cloud.header.frame_id << endl;
+      */
+      handle_visualize.resize (1);
+      handle_cloud.chan[0].vals.resize (1);
+      handle_visualize[0].x = handle_center.x;
+      handle_visualize[0].y = handle_center.y;
+      handle_visualize[0].z = handle_center.z;
+      handle_cloud.chan[0].vals[0] = points->chan[d_idx].vals.at (handle_indices[0]);
       handle_cloud.pts = handle_visualize;
 
       publish ("handle_visualization", handle_cloud);
@@ -699,6 +720,17 @@ public:
 
 
 
+
+    void projectOntoPlane( vector<double> *plane_coeff, Point32& pnt)
+    {
+      // Calculate the unsigned distance from the point to the plane
+      double distance_to_plane = plane_coeff->at (0) * pnt.x + plane_coeff->at (1) * pnt.y + plane_coeff->at (2) * pnt.z + plane_coeff->at (3) * 1;
+
+      // Calculate the projection of the point on the plane
+      pnt.x -= distance_to_plane * plane_coeff->at (0);
+      pnt.y -= distance_to_plane * plane_coeff->at (1);
+      pnt.z -= distance_to_plane * plane_coeff->at (2);
+    }
 
 
 
