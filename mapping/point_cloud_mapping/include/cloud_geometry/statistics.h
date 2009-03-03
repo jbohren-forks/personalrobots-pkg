@@ -47,8 +47,8 @@ namespace cloud_geometry
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Determine the point indices that form the largest diagonal in a given set of points
       * \param poly the polygon message
-      * \param min_idx the resultant index of the point with the minimum projection along the given direction
-      * \param max_idx the resultant index of the point with the maximum projection along the given direction
+      * \param min_idx the resultant index of the 'minimum' point
+      * \param max_idx the resultant index of the 'maximum' point
       */
     inline void
       getLargestDiagonalIndices (robot_msgs::Polygon3D *poly, int &min_idx, int &max_idx)
@@ -70,7 +70,90 @@ namespace cloud_geometry
           }
         }
       }
+    }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Determine the point indices that form the largest diagonal in a given set of points
+      * \param points the point cloud data message
+      * \param min_idx the resultant index of the 'minimum' point
+      * \param max_idx the resultant index of the 'maximum' point
+      */
+    inline void
+      getLargestDiagonalIndices (robot_msgs::PointCloud *points, int &min_idx, int &max_idx)
+    {
+      double largest_diagonal = -FLT_MAX;
+      for (unsigned int i = 0; i < points->pts.size (); i++)
+      {
+        for (unsigned int j = i; j < points->pts.size (); j++)
+        {
+          double current_diagonal =
+                                    (points->pts.at (i).x - points->pts.at (j).x) * (points->pts.at (i).x - points->pts.at (j).x) +
+                                    (points->pts.at (i).y - points->pts.at (j).y) * (points->pts.at (i).y - points->pts.at (j).y) +
+                                    (points->pts.at (i).z - points->pts.at (j).z) * (points->pts.at (i).z - points->pts.at (j).z);
+          if (current_diagonal > largest_diagonal)
+          {
+            min_idx = i;
+            max_idx = j;
+            largest_diagonal = current_diagonal;
+          }
+        }
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Determine the points that form the largest diagonal in a given set of points
+      * \param poly the polygon message
+      * \param minP the resultant minimum point in the set
+      * \param maxP the resultant maximum point in the set
+      */
+    inline void
+      getLargestDiagonalPoints (robot_msgs::Polygon3D *poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+    {
+      double largest_diagonal = -FLT_MAX;
+      for (unsigned int i = 0; i < poly->points.size (); i++)
+      {
+        for (unsigned int j = i; j < poly->points.size (); j++)
+        {
+          double current_diagonal =
+                                    (poly->points[i].x - poly->points[j].x) * (poly->points[i].x - poly->points[j].x) +
+                                    (poly->points[i].y - poly->points[j].y) * (poly->points[i].y - poly->points[j].y) +
+                                    (poly->points[i].z - poly->points[j].z) * (poly->points[i].z - poly->points[j].z);
+          if (current_diagonal > largest_diagonal)
+          {
+            min_p.x = poly->points[i].x; min_p.y = poly->points[i].y; min_p.z = poly->points[i].z;
+            max_p.x = poly->points[j].x; max_p.y = poly->points[j].y; max_p.z = poly->points[j].z;
+            largest_diagonal = current_diagonal;
+          }
+        }
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Determine the points that form the largest diagonal in a given set of points
+      * \param points the point cloud data message
+      * \param minP the resultant minimum point in the set
+      * \param maxP the resultant maximum point in the set
+      */
+    inline void
+      getLargestDiagonalPoints (robot_msgs::PointCloud *points, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+    {
+      double largest_diagonal = -FLT_MAX;
+      for (unsigned int i = 0; i < points->pts.size (); i++)
+      {
+        for (unsigned int j = i; j < points->pts.size (); j++)
+        {
+          double current_diagonal =
+                                    (points->pts.at (i).x - points->pts.at (j).x) * (points->pts.at (i).x - points->pts.at (j).x) +
+                                    (points->pts.at (i).y - points->pts.at (j).y) * (points->pts.at (i).y - points->pts.at (j).y) +
+                                    (points->pts.at (i).z - points->pts.at (j).z) * (points->pts.at (i).z - points->pts.at (j).z);
+          if (current_diagonal > largest_diagonal)
+          {
+            min_p.x = points->pts.at (i).x; min_p.y = points->pts.at (i).y; min_p.z = points->pts.at (i).z;
+            max_p.x = points->pts.at (j).x; max_p.y = points->pts.at (j).y; max_p.z = points->pts.at (j).z;
+            largest_diagonal = current_diagonal;
+          }
+        }
+      }
     }
 
     robot_msgs::Point32 computeMedian (robot_msgs::PointCloud points);
@@ -142,24 +225,24 @@ namespace cloud_geometry
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Determine the minimum and maximum 3D bounding box coordinates for a given 3D polygon
       * \param poly the polygon message
-      * \param minP the resultant minimum bounding box coordinates
-      * \param maxP the resultant maximum bounding box coordinates
+      * \param min_p the resultant minimum bounding box coordinates
+      * \param max_p the resultant maximum bounding box coordinates
       */
     inline void
-      getMinMax (robot_msgs::Polygon3D *poly, robot_msgs::Point32 &minP, robot_msgs::Point32 &maxP)
+      getMinMax (robot_msgs::Polygon3D *poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
     {
-      minP.x = minP.y = minP.z = FLT_MAX;
-      maxP.x = maxP.y = maxP.z = -FLT_MAX;
+      min_p.x = min_p.y = min_p.z = FLT_MAX;
+      max_p.x = max_p.y = max_p.z = -FLT_MAX;
 
       for (unsigned int i = 0; i < poly->points.size (); i++)
       {
-        minP.x = (poly->points[i].x < minP.x) ? poly->points[i].x : minP.x;
-        minP.y = (poly->points[i].y < minP.y) ? poly->points[i].y : minP.y;
-        minP.z = (poly->points[i].z < minP.z) ? poly->points[i].z : minP.z;
+        min_p.x = (poly->points[i].x < min_p.x) ? poly->points[i].x : min_p.x;
+        min_p.y = (poly->points[i].y < min_p.y) ? poly->points[i].y : min_p.y;
+        min_p.z = (poly->points[i].z < min_p.z) ? poly->points[i].z : min_p.z;
 
-        maxP.x = (poly->points[i].x > maxP.x) ? poly->points[i].x : maxP.x;
-        maxP.y = (poly->points[i].y > maxP.y) ? poly->points[i].y : maxP.y;
-        maxP.z = (poly->points[i].z > maxP.z) ? poly->points[i].z : maxP.z;
+        max_p.x = (poly->points[i].x > max_p.x) ? poly->points[i].x : max_p.x;
+        max_p.y = (poly->points[i].y > max_p.y) ? poly->points[i].y : max_p.y;
+        max_p.z = (poly->points[i].z > max_p.z) ? poly->points[i].z : max_p.z;
       }
     }
 
@@ -167,24 +250,24 @@ namespace cloud_geometry
     /** \brief Determine the minimum and maximum 3D bounding box coordinates for a given point cloud, using point indices
       * \param points the point cloud message
       * \param indices the point cloud indices to use
-      * \param minP the resultant minimum bounding box coordinates
-      * \param maxP the resultant maximum bounding box coordinates
+      * \param min_p the resultant minimum bounding box coordinates
+      * \param max_p the resultant maximum bounding box coordinates
       */
     inline void
-      getMinMax (robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::Point32 &minP, robot_msgs::Point32 &maxP)
+      getMinMax (robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
     {
-      minP.x = minP.y = minP.z = FLT_MAX;
-      maxP.x = maxP.y = maxP.z = -FLT_MAX;
+      min_p.x = min_p.y = min_p.z = FLT_MAX;
+      max_p.x = max_p.y = max_p.z = -FLT_MAX;
 
       for (unsigned int i = 0; i < indices->size (); i++)
       {
-        minP.x = (points->pts.at (indices->at (i)).x < minP.x) ? points->pts.at (indices->at (i)).x : minP.x;
-        minP.y = (points->pts.at (indices->at (i)).y < minP.y) ? points->pts.at (indices->at (i)).y : minP.y;
-        minP.z = (points->pts.at (indices->at (i)).z < minP.z) ? points->pts.at (indices->at (i)).z : minP.z;
+        min_p.x = (points->pts.at (indices->at (i)).x < min_p.x) ? points->pts.at (indices->at (i)).x : min_p.x;
+        min_p.y = (points->pts.at (indices->at (i)).y < min_p.y) ? points->pts.at (indices->at (i)).y : min_p.y;
+        min_p.z = (points->pts.at (indices->at (i)).z < min_p.z) ? points->pts.at (indices->at (i)).z : min_p.z;
 
-        maxP.x = (points->pts.at (indices->at (i)).x > maxP.x) ? points->pts.at (indices->at (i)).x : maxP.x;
-        maxP.y = (points->pts.at (indices->at (i)).y > maxP.y) ? points->pts.at (indices->at (i)).y : maxP.y;
-        maxP.z = (points->pts.at (indices->at (i)).z > maxP.z) ? points->pts.at (indices->at (i)).z : maxP.z;
+        max_p.x = (points->pts.at (indices->at (i)).x > max_p.x) ? points->pts.at (indices->at (i)).x : max_p.x;
+        max_p.y = (points->pts.at (indices->at (i)).y > max_p.y) ? points->pts.at (indices->at (i)).y : max_p.y;
+        max_p.z = (points->pts.at (indices->at (i)).z > max_p.z) ? points->pts.at (indices->at (i)).z : max_p.z;
       }
     }
 
