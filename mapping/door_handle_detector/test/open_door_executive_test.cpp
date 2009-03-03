@@ -82,7 +82,7 @@ public:
   OpenDoorExecutiveTest(std::string node_name):
     PR2ArmNode(node_name, "right_arm", "right_gripper"),
     tf_(*this),
-    state_(WAITING)
+    state_(DETECTING)
   {
     // initialize my door
     double tmp; int tmp2;
@@ -345,7 +345,7 @@ public:
         cout << "Detecting door... " << endl;
         if (detectDoor(my_door_, my_door_)){
           nodHead(4);
-          state_ = GRASPING;
+          state_ = SUCCESS;
         }
         else
           state_ = FAILED;

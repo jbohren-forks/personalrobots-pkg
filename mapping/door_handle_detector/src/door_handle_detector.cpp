@@ -43,6 +43,7 @@
 
 // ROS core
 #include <ros/node.h>
+#include <roslib/Header.h>
 #include <robot_msgs/PolygonalMap.h>
 
 // Most of the geometric routines that contribute to the door finding job are located here
@@ -73,6 +74,7 @@ public:
     tf::TransformListener tf_;
 
     string input_cloud_topic_, parameter_frame_, door_frame_, cloud_frame_;
+    roslib::Header cloud_header_;
     ros::Time cloud_time_;
     bool publish_debug_;
     unsigned int num_clouds_received_;
@@ -125,7 +127,7 @@ public:
           ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
                      door_min_height_, door_max_height_, door_min_width_, door_max_width_);
 
-          param ("~handle_distance_door_max_threshold", handle_distance_door_max_threshold_, 0.15); // maximum distance between the handle and the door
+          param ("~handle_distance_door_max_threshold", handle_distance_door_max_threshold_, 0.25); // maximum distance between the handle and the door
 
           // This parameter constrains the door polygon to resamble a rectangle,
           // that is: the two lines parallel (with some angular threshold) to the Z-axis must have some minimal length
@@ -243,6 +245,7 @@ public:
       // cloud frame
       cloud_frame_ = cloud_in_.header.frame_id;
       cloud_time_ = cloud_in_.header.stamp;
+      cloud_header_ = cloud_in_.header;
 
       ros::Time ts;
       ros::Duration duration;
@@ -288,28 +291,27 @@ public:
       reverse (clusters.begin (), clusters.end ());
 
       // Reserve enough space
-      cloud_annotated_.header = cloud_down_.header;
+      cloud_annotated_.header = cloud_header_;
       cloud_annotated_.pts.resize (cloud_in_.pts.size ());
       cloud_annotated_.chan[0].vals.resize (cloud_in_.pts.size ());
 
-      pmap_.header = cloud_down_.header;
+      pmap_.header = cloud_header_;
       pmap_.polygons.resize (clusters.size ());         // Allocate space for the polygonal map
 
       vector<vector<double> > coeff (clusters.size ()); // Need to save all coefficients for all models
 
       ROS_INFO(" - Process all clusters (%i)", clusters.size ());
-      int nr_p = 0;
       vector<int> inliers;
       vector<int> handle_indices;
       vector<double> goodness_factor (clusters.size());
       robot_msgs::Point32 minP, maxP, handle_center;
 
       // Transform door_min_z_ from the parameter parameter frame (parameter_frame_) into the point cloud frame
-      door_min_z_ = transformDoubleValueTF (door_min_z_, parameter_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
+      door_min_z_ = transformDoubleValueTF (door_min_z_, parameter_frame_, cloud_frame_, cloud_time_, &tf_);
 
       // Transform min/max height values for the door handle (ADA requirements!)
-      handle_min_height_ = transformDoubleValueTF (handle_min_height_, parameter_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
-      handle_max_height_ = transformDoubleValueTF (handle_max_height_, parameter_frame_, cloud_in_.header.frame_id, cloud_in_.header.stamp, &tf_);
+      handle_min_height_ = transformDoubleValueTF (handle_min_height_, parameter_frame_, cloud_frame_, cloud_time_, &tf_);
+      handle_max_height_ = transformDoubleValueTF (handle_max_height_, parameter_frame_, cloud_frame_, cloud_time_, &tf_);
 
 #pragma omp parallel for schedule(dynamic)
       // Process all clusters
@@ -404,32 +406,7 @@ public:
 	return false;
       }
       else
-	{
-	  ROS_ERROR ("found a handle");
-	  if (publish_debug_)
-	    {
-	      double r, g, b, rgb;
-	      r = g = b = 1.0;
-	      int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
-	      rgb = *(float*)(&res);
-	      
-	      // Mark all the points inside
-	      for (unsigned int k = 0; k < handle_indices.size (); k++)
-		{
-		  cloud_annotated_.pts[nr_p].x = cloud_in_.pts.at (handle_indices[k]).x;
-		  cloud_annotated_.pts[nr_p].y = cloud_in_.pts.at (handle_indices[k]).y;
-		  cloud_annotated_.pts[nr_p].z = cloud_in_.pts.at (handle_indices[k]).z;
-		  cloud_annotated_.chan[0].vals[nr_p] = rgb;
-		  nr_p++;
-		}
-	      cloud_annotated_.pts.resize (nr_p);
-	      cloud_annotated_.chan[0].vals.resize (nr_p);
-	      
-	      publish ("cloud_annotated", cloud_down_);//cloud_annotated_);
-	      
-	    }
-	}
-
+        ROS_INFO ("found a handle");
 
 
       // reply door message in same frame as request door message
@@ -437,15 +414,12 @@ public:
       tf::Stamped<Point32> door_p1 (minP, cloud_time_, cloud_frame_);
       tf::Stamped<Point32> door_p2 (maxP, cloud_time_, cloud_frame_);
       tf::Stamped<Point32> handle (handle_center, cloud_time_, cloud_frame_);
+      door_p2.z = door_p1.z;
       transformPoint (&tf_, door_frame_, door_p1, door_p1);
       transformPoint (&tf_, door_frame_, door_p2, door_p2);
       transformPoint (&tf_, door_frame_, handle, handle);
-      door_p1.z = minP.z;
-      door_p2.z = minP.z;
-
       resp.door.height = fabs (maxP.z - minP.z);
-      resp.door.header.frame_id = door_frame_;
-      resp.door.header.stamp = cloud_time_;
+      resp.door.header = cloud_header_;
       resp.door.door_p1 = door_p1;
       resp.door.door_p2 = door_p2;
       resp.door.handle = handle;
@@ -555,11 +529,7 @@ public:
 
 
         // project the point into the door plane
-        // -------------------------------------
         projectOntoPlane(door_coeff, points->pts.at (indices->at (i)));
-        projectOntoPlane(door_coeff, points->pts.at (indices->at (i)));
-
-
 
         // Save the point indices which satisfied all the geometric criteria so far
         possible_handle_indices[nr_phi] = indices->at (i);
@@ -578,6 +548,7 @@ public:
         // Select points outside the (mean +/- \alpha_ * stddev) distribution
         selectBestDistributionStatistics (points, &possible_handle_indices, d_idx, handle_indices_clusters);
       }
+      cout << "found " << handle_indices_clusters.size() << " candidate points for clustering" << endl;
 
       // Check if any clusters were found
       if (handle_indices_clusters.size () == 0)
@@ -593,13 +564,28 @@ public:
                     -1, -1, -1, 0, intensity_cluster_min_pts_);
       sort (clusters.begin (), clusters.end (), compareRegions);
       reverse (clusters.begin (), clusters.end ());
+      cout << "found " << clusters.size() << " clusters" << endl;
 
+
+      handle_visualize.resize (clusters.size () + 2);
+      robot_msgs::Point32 minP, maxP, center;
+      cloud_geometry::statistics::getMinMax (door_poly, minP, maxP);
+      handle_visualize[0].x = minP.x;
+      handle_visualize[0].y = minP.y;
+      handle_visualize[0].z = minP.z;
+      handle_visualize[1].x = maxP.x;
+      handle_visualize[1].y = maxP.y;
+      handle_visualize[1].z = maxP.z;
+      for (unsigned int i = 0; i < clusters.size (); i++)
+        cloud_geometry::nearest::computeCentroid (points, &clusters[i], handle_visualize[i+2]);
+      robot_msgs::PointCloud handle_cloud;
+      handle_cloud.header = cloud_header_;
+      handle_cloud.pts = handle_visualize;
 
 
       // ---[ Seventh test (geometric)
       // check if the center of the cluster is close to the edges of the door
-      robot_msgs::Point32 minP, maxP, center;
-      cloud_geometry::statistics::getMinMax (door_poly, minP, maxP);
+      std::cout << " - distance to side of door" << std::endl;
       for (unsigned int i = 0; i < clusters.size (); i++)
       {
         if (clusters[i].size () == 0) continue;
@@ -609,10 +595,11 @@ public:
 
         double d1 = sqrt(pow(center.x-minP.x,2) + pow(center.y-minP.y,2));
         double d2 = sqrt(pow(center.x-maxP.x,2) + pow(center.y-maxP.y,2));
-        if (!( (d1 < 0.25 && d1 > 0.03) ||  (d2 < 0.25 && d2 > 0.03)))
+        if (!( (d1 < 0.25 && d1 > 0.03) ||  (d2 < 0.25 && d2 > 0.03))){
           clusters[i].resize(0);
+          cout << "  reject cluster " << i << " because min distance to edge of door = " << d1 << "  " << d2 << endl;
+        }
       }
-      std::cout << " - distance to side of door" << std::endl;
 
 
 
@@ -620,34 +607,39 @@ public:
       // ---[ Eight test (geometric)
       // Fit the best horizontal line through each cluster
       // Check the elongation of the clusters -- Filter clusters based on min/max Z
+      std::cout << " - lines fit" << std::endl;
       robot_msgs::Point32 door_axis = cloud_geometry::cross (door_coeff, &z_axis_);
-
       vector<vector<int> > line_inliers (clusters.size ());
-      std::cout << " - prepare to fit lines in handle clusters..." << std::endl;
 #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int)clusters.size (); i++)
       {
         if (clusters[i].size () == 0) continue;
         fitSACOrientedLine (points, clusters[i], 0.05, &door_axis, normal_angle_tolerance_, line_inliers[i]);
       }
-      std::cout << " - lines fit" << std::endl;
 
       // find the best fit
-      double best_fit = 0;
+      double best_score = 0;
       int best_i = -1;
       for (unsigned int i = 0; i < clusters.size (); i++)
       {
         if (line_inliers[i].size () == 0) continue;
 
+        robot_msgs::Point32 minH, maxH;
+        cloud_geometry::statistics::getMinMax (points, &line_inliers[i], minH, maxH);
+        double length = sqrt(pow(minH.x - maxH.x,2) + pow(minH.y-maxH.y,2));
         double fit = ((double)(line_inliers[i].size())) / ((double)(clusters[i].size()));
-        if (fit > best_fit)
+        double score = fit + 3.0*length;
+        cout << "  cluster " << i << " has fit " << fit << " and length " << length << " --> " << score << endl;
+
+        if (score > best_score)
         {
-          best_fit = fit;
+          best_score = score;
           best_i = i;
         }
       }
       if (best_i == -1)
       {
+        publish ("handle_visualization", handle_cloud);
         ROS_ERROR ("All clusters rejected! Should exit here.");
 	return false;
       }
@@ -680,40 +672,18 @@ public:
       handle_center.y -= distance_to_plane * door_coeff->at (1);
       handle_center.z -= distance_to_plane * door_coeff->at (2);
 
-
-// This needs to be removed
-#if 1
-      robot_msgs::PointCloud handle_cloud;
-      handle_cloud.header = points->header;
-      //        handle_indices_clusters = possible_handle_indices;
-      handle_cloud.chan.resize (1);
-      handle_cloud.chan[0].name = "intensities";
       /*
-      handle_cloud.chan[0].vals.resize (handle_indices.size ());
-      handle_visualize.resize (handle_indices.size ());
-      for (unsigned int i = 0; i < handle_indices.size (); i++)
-      {
-        handle_visualize[i].x = points->pts.at (handle_indices[i]).x;
-        handle_visualize[i].y = points->pts.at (handle_indices[i]).y;
-        handle_visualize[i].z = points->pts.at (handle_indices[i]).z;
-        handle_cloud.chan[0].vals[i] = points->chan[d_idx].vals.at (handle_indices[i]);
-      }
-      cout << "added " << handle_visualize.size() << " points to visualize in " << handle_cloud.header.frame_id << endl;
-      */
       handle_visualize.resize (1);
-      handle_cloud.chan[0].vals.resize (1);
       handle_visualize[0].x = handle_center.x;
       handle_visualize[0].y = handle_center.y;
       handle_visualize[0].z = handle_center.z;
-      handle_cloud.chan[0].vals[0] = points->chan[d_idx].vals.at (handle_indices[0]);
       handle_cloud.pts = handle_visualize;
-
+      */
       publish ("handle_visualization", handle_cloud);
 
       pmap.polygons.push_back (poly_tr);
-      pmap.header = points->header;
+      handle_cloud.header = cloud_header_;
       publish ("pmap", pmap);
-#endif
 
       return true;
     }
