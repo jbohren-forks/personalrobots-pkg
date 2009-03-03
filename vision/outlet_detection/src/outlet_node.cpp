@@ -43,7 +43,7 @@ public:
     : ros::Node("outlet_detector"), img_(res_.image), cam_info_(res_.cam_info),
       tf_broadcaster_(*this), K_(NULL), count_(0), display_image_(NULL), continue_(false)
   {
-    param("display", display_, false);
+    param("display", display_, true);
     if (display_) {
       cvNamedWindow(wndname, 0); // no autosize
       cvStartWindowThread();
@@ -126,7 +126,6 @@ public:
              holes[1].x(), holes[1].y(), holes[1].z(),
              holes[2].x(), holes[2].y(), holes[2].z());
     
-    
     if (display_) {
 #ifdef _OUTLET_INTERACTIVE_CAPTURE
       if (!display_image_)
@@ -155,13 +154,14 @@ public:
   
   bool spin()
   {
-    // TODO: wait for service to become available
     while (ok())
     {
       req_.timeout_ms = 100;
       if (ros::service::call("/prosilica/poll", req_, res_)) {
         caminfo_cb();
         image_cb();
+        // TODO: figure out what's actually causing banding
+        usleep(100000); // hack to (mostly) get rid of banding
 #ifdef _OUTLET_INTERACTIVE_CAPTURE
         if (continue_) {
           int i = 0;
@@ -188,6 +188,7 @@ public:
 #endif
       } else {
         ROS_WARN("Service call failed");
+        // TODO: wait for service to become available
         usleep(100000);
       }
     }

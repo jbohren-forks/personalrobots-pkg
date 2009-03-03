@@ -7,9 +7,6 @@
 
   <group ns="outlet_detector" clear_params="true">
     <param name="display" type="bool" value="true"/>
-    <node pkg="outlet_detection" type="outlet_node" respawn="false" output="screen" cwd="node">
-      <remap from="Image" to="/prosilica/image_rect"/>
-      <remap from="CamInfo" to="/prosilica/cam_info"/>
-    </node>
+    <node pkg="outlet_detection" type="outlet_node" respawn="false" output="screen" cwd="node"/>
   </group>
 </launch>

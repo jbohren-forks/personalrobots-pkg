@@ -53,7 +53,7 @@ public:
     : ros::Node("plug_detector"), img_(res_.image), cam_info_(res_.cam_info),
       tf_broadcaster_(*this), K_(NULL), display_img_(NULL)
   {
-    param("display", display_, false);
+    param("display", display_, true);
     if (display_) {
       cvNamedWindow(wndname, 0); // no autosize
       cvStartWindowThread();
