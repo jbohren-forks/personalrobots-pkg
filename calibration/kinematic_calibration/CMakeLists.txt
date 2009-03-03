@@ -28,18 +28,4 @@ rospack_link_boost(run_chain_dumper thread)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-# ********** Tests **********
-rospack_add_gtest(jacobian_unittest test/jacobian_unittest.cpp)
-target_link_libraries(jacobian_unittest kinematic_calibration)
-
-rospack_add_gtest(bridge_unittest test/bridge_unittest.cpp)
-target_link_libraries(bridge_unittest kinematic_calibration)
-
-rospack_add_gtest(chain_modifier_unittest test/chain_modifier_unittest.cpp)
-target_link_libraries(chain_modifier_unittest kinematic_calibration)
-
-rospack_add_gtest(error_vec_marker_3d_unittest test/error_vec_marker_3d_unittest.cpp)
-target_link_libraries(error_vec_marker_3d_unittest kinematic_calibration)
-
-rospack_add_gtest(estimator_marker_3d_unittest test/estimator_marker_3d_unittest.cpp)
-target_link_libraries(estimator_marker_3d_unittest kinematic_calibration)
+add_subdirectory(test EXCLUDE_FROM_ALL)
