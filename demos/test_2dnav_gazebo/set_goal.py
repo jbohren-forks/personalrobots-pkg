@@ -55,6 +55,21 @@ from numpy import *
 
 FLOAT_TOL = 0.0001
 
+def normalize_angle_positive(angle):
+    return math.fmod(math.fmod(angle, 2*math.pi) + 2*math.pi, 2*math.pi)
+
+def normalize_angle(angle):
+    anorm = normalize_angle_positive(angle)
+    if anorm > math.pi:
+      anorm -= 2*math.pi
+    return anorm
+
+def shortest_angular_distance(angle_from, angle_to):
+    angle_diff = normalize_angle_positive(angle_to) - normalize_angle_positive(angle_from)
+    if angle_diff > math.pi:
+      angle_diff = -(2*math.pi - angle_diff)
+    return normalize_angle(angle_diff)
+
 class NavStackTest(unittest.TestCase):
     def __init__(self, *args):
         super(NavStackTest, self).__init__(*args)
@@ -166,7 +181,7 @@ class NavStackTest(unittest.TestCase):
           print "state.goal: (", state.goal.x, ",", state.goal.y, ",", state.goal.th,") status:",state.status
           if abs(state.goal.x-self.target_x)<FLOAT_TOL and \
              abs(state.goal.y-self.target_y)<FLOAT_TOL and \
-             abs(state.goal.th-self.target_t)<FLOAT_TOL and \
+             abs(shortest_angular_distance(state.goal.th,self.target_t))<FLOAT_TOL and \
              state.status == 1:
             print "state goal is published: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
             self.publish_goal = False
