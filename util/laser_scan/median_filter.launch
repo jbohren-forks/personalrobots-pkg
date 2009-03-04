@@ -1,5 +1,5 @@
 <launch>
-<node pkg="laser_scan" type="median_node" output="screen" name="laser_filter">
+<node pkg="laser_scan" type="generic_laser_filter_node" output="screen" name="laser_filter">
       <remap from="scan_in" to="base_scan" />
       <param name="filters2" value="hi"/>
       <param name="filters" textfile="$(find laser_scan)/median_filter_5.xml" />
