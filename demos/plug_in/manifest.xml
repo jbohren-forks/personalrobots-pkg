@@ -8,4 +8,5 @@
   <depend package="spacenav_node" />
   <depend package="pr2_etherCAT" />
 	<depend package="joy" />
+  <depend package="outlet_detection" />
 </package>
