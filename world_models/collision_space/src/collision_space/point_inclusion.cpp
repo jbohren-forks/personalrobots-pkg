@@ -37,7 +37,6 @@
 #include "collision_space/point_inclusion.h"
 #include "collision_space/output.h"
 #include <LinearMath/btConvexHull.h>
-#include <LinearMath/btGeometryUtil.h>
 #include <cmath>
 
 
@@ -172,14 +171,16 @@ void collision_space::bodies::Box::updateInternalData(void)
 
 bool collision_space::bodies::ConvexMesh::containsPoint(const btVector3 &p) const
 {
-    btVector3 ip = (m_iPose * p) * m_scale;
-    return btGeometryUtil::isPointInsidePlanes(m_planes, ip, btScalar(m_padding));
+    btVector3 ip = (m_iPose * p) / m_scale;
+    return isPointInsidePlanes(ip);
 }
 
 void collision_space::bodies::ConvexMesh::useDimensions(const planning_models::shapes::Shape *shape)
 {  
     const planning_models::shapes::Mesh *mesh = static_cast<const planning_models::shapes::Mesh*>(shape);
     m_planes.clear();
+    m_triangles.clear();
+    m_vertices.clear();
     
     btVector3 *vertices = new btVector3[mesh->vertexCount];
     for(unsigned int i = 0; i < mesh->vertexCount ; ++i)
@@ -193,9 +194,62 @@ void collision_space::bodies::ConvexMesh::useDimensions(const planning_models::s
     HullResult hr;
     HullLibrary hl;
     if (hl.CreateConvexHull(hd, hr) == QE_OK)
-	btGeometryUtil::getPlaneEquationsFromVertices(hr.m_OutputVertices, m_planes);
+    {
+	MSG.inform("Convex hull has %d(%d) vertices (down from %d), %d faces", hr.m_OutputVertices.size(), hr.mNumOutputVertices, mesh->vertexCount, hr.mNumFaces);
+
+	m_vertices.reserve(hr.m_OutputVertices.size());
+	for (int j = 0 ; j < hr.m_OutputVertices.size() ; ++j)
+	    m_vertices.push_back(hr.m_OutputVertices[j]);
+	
+	m_triangles.reserve(hr.m_Indices.size());
+	for (int j = 0 ; j < hr.m_Indices.size() ; ++j)
+	    m_triangles.push_back(hr.m_Indices[j]);
+	
+	for (unsigned int j = 0 ; j < hr.mNumFaces ; ++j)
+	{
+	    const btVector3 &p1 = hr.m_OutputVertices[hr.m_Indices[j * 3    ]];
+	    const btVector3 &p2 = hr.m_OutputVertices[hr.m_Indices[j * 3 + 1]];
+	    const btVector3 &p3 = hr.m_OutputVertices[hr.m_Indices[j * 3 + 2]];
+	    
+	    btVector3 edge1 = (p2 - p1);
+	    btVector3 edge2 = (p3 - p1);
+	    
+	    edge1.normalize();
+	    edge2.normalize();
+
+	    //	    printf("Edges = (%f, %f, %f) : (%f %f %f)\n", edge1.getX(), edge1.getY(), edge1.getZ(),
+	    //		   edge2.getX(), edge2.getY(), edge2.getZ());
+	    
+	    btVector3 planeNormal = edge1.cross(edge2);
+	    
+	    //	    MSG.inform("dist = %f", planeNormal.length2());
+	    
+	    if (planeNormal.length2() > btScalar(1e-6))
+	    {
+		planeNormal.normalize();
+		btVector4 planeEquation(planeNormal.getX(), planeNormal.getY(), planeNormal.getZ(), -planeNormal.dot(p1));
+
+		unsigned int behindPlane = countVerticesBehindPlane(planeEquation);
+		if (behindPlane > 0)
+		{
+		    btVector4 planeEquation2(-planeEquation.getX(), -planeEquation.getY(), -planeEquation.getZ(), -planeEquation.getW());
+		    unsigned int behindPlane2 = countVerticesBehindPlane(planeEquation2);
+		    if (behindPlane2 < behindPlane)
+		    {
+			planeEquation.setValue(planeEquation2.getX(), planeEquation2.getY(), planeEquation2.getZ(), planeEquation2.getW());
+			behindPlane = behindPlane2;
+		    }
+		}
+		
+		if (behindPlane > 0)
+		    MSG.warn("Approximate plane: %u of %u points are behind the plane", behindPlane, (unsigned int)m_vertices.size());
+		
+		m_planes.push_back(planeEquation);
+	    }
+	}
+    }
     else
-	MSG.error("Unable to compute convex hull");
+	MSG.error("Unable to compute convex hull.");
     
     hl.ReleaseResult(hr);    
     delete[] vertices;
@@ -204,4 +258,30 @@ void collision_space::bodies::ConvexMesh::useDimensions(const planning_models::s
 void collision_space::bodies::ConvexMesh::updateInternalData(void) 
 {
     m_iPose = m_pose.inverse();
+}
+
+bool collision_space::bodies::ConvexMesh::isPointInsidePlanes(const btVector3& point) const
+{
+    unsigned int numplanes = m_planes.size();
+    for (unsigned int i = 0 ; i < numplanes ; ++i)
+    {
+	const btVector4& plane = m_planes[i];
+	btScalar dist = btScalar(plane.dot(point)) + plane.getW() - btScalar(m_padding) - btScalar(1e-6);
+	if (dist > btScalar(0))
+	    return false;
+    }
+    return true;
+}
+
+unsigned int collision_space::bodies::ConvexMesh::countVerticesBehindPlane(const btVector4& planeNormal) const
+{
+    unsigned int numvertices = m_vertices.size();
+    unsigned int result = 0;
+    for (unsigned int i = 0 ; i < numvertices ; ++i)
+    {
+	btScalar dist = btScalar(planeNormal.dot(m_vertices[i])) + btScalar(planeNormal.getW()) - btScalar(1e-6);
+	if (dist > btScalar(0))
+	    result++;
+    }
+    return result;
 }

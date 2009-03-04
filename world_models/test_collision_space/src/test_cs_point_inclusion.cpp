@@ -46,11 +46,12 @@
 using namespace collision_space;
 
 const int TEST_TIMES  = 3;
-const int TEST_POINTS = 50000;
+const int TEST_POINTS = 100;
 
 namespace planning_models
 {
     shapes::Mesh* create_mesh_from_vertices(const std::vector<btVector3> &source);
+    //    shapes::Mesh* create_mesh_from_binary_stl(const char *name);
 }
 
 class TestVM
@@ -86,9 +87,9 @@ public:
 	mk.pitch = 0;
 	mk.yaw = 0;
 	
-	mk.xScale = 0.2;
-	mk.yScale = 0.2;
-	mk.zScale = 0.2;
+	mk.xScale = 0.02;
+	mk.yScale = 0.02;
+	mk.zScale = 0.02;
 		
 	mk.alpha = 255;
 	mk.r = 255;
@@ -128,7 +129,7 @@ public:
 	t.setOrigin(btVector3(btScalar(x), btScalar(y), btScalar(z)));
 	
 	s->setPose(t);
-	s->setScale(0.99);
+	s->setScale(1.0);
 	
 	mk.header.stamp = m_tm;	
 	mk.header.frame_id = "base_link";
@@ -221,18 +222,38 @@ public:
     
     void testConvexMesh(void)
     {
-	std::vector<btVector3> pts(4);
-	pts[0] = btVector3(0,0,1);
-	pts[1] = btVector3(1,0,-0.3);
-	pts[2] = btVector3(-0.5,0.8,-0.3);
-	pts[3] = btVector3(-0.5,-0.8,-0.3);
+	std::vector<btVector3> pts(12);
+	btVector3 v1(0,0,1);
+	btVector3 v2(1,0,-0.3);
+	btVector3 v3(-0.5,0.8,-0.3);
+	btVector3 v4(-0.5,-0.8,-0.3);
+	
+	pts[0] = v1;
+	pts[1] = v2;
+	pts[2] = v3;
 
+	pts[3] = v1;
+	pts[4] = v4;
+	pts[5] = v3;
+
+	pts[6] = v1;
+	pts[7] = v4;
+	pts[8] = v2;
+
+	pts[9] = v4;
+	pts[10] = v2;
+	pts[11] = v3;
+	
+	//	planning_models::shapes::Mesh *shape = planning_models::create_mesh_from_binary_stl("base.stl");
 	planning_models::shapes::Mesh *shape = planning_models::create_mesh_from_vertices(pts);
 	collision_space::bodies::Body *s = new collision_space::bodies::ConvexMesh(shape);
-
-	robot_msgs::VisualizationMarker mk;
-	setShapeTransformAndMarker(s, mk);	
-	testShape(s);
+	
+	for (int i = 0 ; i < TEST_TIMES ; ++i)
+	{
+	    robot_msgs::VisualizationMarker mk;
+	    setShapeTransformAndMarker(s, mk);	
+	    testShape(s);
+	}
 	
 	delete s;
 	delete shape;
@@ -246,10 +267,12 @@ public:
 	
 	m_tm = ros::Time::now();
 	
-	testSphere();
-	testBox();
-	testCylinder();
+	//	testSphere();
+	//	testBox();
+	//	testCylinder();
+	testConvexMesh();
 	
+	ROS_INFO("Idling...");	
 	m_node.spin();    
 	m_node.shutdown();
 	

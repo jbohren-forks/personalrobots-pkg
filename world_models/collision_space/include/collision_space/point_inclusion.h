@@ -39,9 +39,8 @@
 
 #include <planning_models/shapes.h>
 #include <LinearMath/btTransform.h>
-#include <LinearMath/btAlignedObjectArray.h>
 #include <cstdlib>
-
+#include <vector>
 
 /**
    This set of classes allows quickly detecting whether a given point
@@ -254,8 +253,13 @@ namespace collision_space
 	    virtual void useDimensions(const planning_models::shapes::Shape *shape);
 	    virtual void updateInternalData(void);
 	    
-	    btAlignedObjectArray<btVector3> m_planes;
-	    btTransform                     m_iPose;
+	    unsigned int countVerticesBehindPlane(const btVector4& planeNormal) const;
+	    bool isPointInsidePlanes(const btVector3& point) const;
+	    
+	    std::vector<btVector4>    m_planes;
+	    std::vector<btVector3>    m_vertices;
+	    std::vector<unsigned int> m_triangles;
+	    btTransform               m_iPose;
 	};
 	
 	
