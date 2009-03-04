@@ -307,6 +307,8 @@ namespace cloud_geometry
     u (2) /= u_length;
   }
 
+  std::string getAvailableChannels (robot_msgs::PointCloud *cloud);
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Write the point data to screen (stderr)
     * \param p the point
