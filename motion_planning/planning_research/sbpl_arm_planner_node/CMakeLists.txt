@@ -7,3 +7,4 @@ gensrv()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(sbpl_arm_planner_node src/sbpl_arm_planner_node.cpp)
+rospack_add_executable(sbpl_arm_check_path src/sbpl_arm_check_path.cpp)

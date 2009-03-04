@@ -1,0 +1,17 @@
+<launch>
+
+  <param name="right_arm/sbpl_arm_check_path/env_config" textfile="$(find sbpl_arm_planner)/env_examples/robarm3d/empty.cfg" />
+  <param name="right_arm/sbpl_arm_check_path/planner_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
+
+  <param name="right_arm/sbpl_arm_check_path/num_joints" value="7" />
+
+  <param name="right_arm/sbpl_arm_check_path/torso_arm_offset_x" value="0.0" />
+  <param name="right_arm/sbpl_arm_check_path/torso_arm_offset_y" value="0.0" />
+  <param name="right_arm/sbpl_arm_check_path/torso_arm_offset_z" value="-0.188" />
+
+
+  <param name="right_arm/sbpl_arm_check_path/collision_map_topic" value="collision_map" />
+
+  <node pkg="sbpl_arm_planner_node" type="sbpl_arm_check_path" name="right_arm/sbpl_arm_check_path" output="screen" respawn="true"/>
+
+</launch>
