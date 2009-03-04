@@ -252,6 +252,9 @@ public:
   bool triggeredGrab(prosilica_cam::PolledImage::Request &req,
                      prosilica_cam::PolledImage::Response &res)
   {
+    if (mode_ != prosilica::Triggered)
+      return false;
+
     // TODO: could return same data for simultaneous requests?
     boost::mutex::scoped_lock guard(grab_mutex_);
     tPvFrame* frame = cam_->grab(req.timeout_ms);
@@ -375,12 +378,17 @@ private:
   
   void publishImage(tPvFrame* frame)
   {
+    ros::Time time = ros::Time::now();
+    
     if (!processFrame(frame, img_, rect_img_, cam_info_))
       return;
-    
+
+    img_.header.stamp = time;
     publish("~image", img_);
     if (calibrated_) {
+      rect_img_.header.stamp = time;
       publish("~image_rect", rect_img_);
+      cam_info_.header.stamp = time;
       publish("~cam_info", cam_info_);
     }
   }
