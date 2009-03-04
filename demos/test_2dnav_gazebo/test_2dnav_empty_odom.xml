@@ -41,6 +41,6 @@
     <test test-name="2dnav_gazebo_test_2dnav_empty_odom_tpi"      pkg="test_2dnav_gazebo" type="set_goal.py" args=" -x 25.70 -y 25.70 -t  3.1416 -nav_t_tol 0.2 -nav_xy_tol 0.30 -odom_t_tol 0.05 -odom_xy_tol 0.05 -timeout 50 " time-limit="60" /> 
     -->
 
-    <node pkg="rosrecord" type="rosrecord" args="-f foo-build$(optenv BUILD_NUMBER) /odom /cmd_vel"/>
+    <node pkg="rosrecord" type="rosrecord" args="-f 2dnav_empty_odom-build$(optenv BUILD_NUMBER) /odom /cmd_vel"/>
 
 </launch>
