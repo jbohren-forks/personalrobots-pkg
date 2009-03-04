@@ -12,7 +12,6 @@ the approprieate transfer function filter.
 <url>http://pr.willowgarage.com</url>
 <depend package="rospy"/>
 <depend package="tinyxml"/>
-<depend package="loki" />
 <depend package="wg_robot_description_parser" />
 <depend package="rosconsole" />
 <depend package="filters" />
