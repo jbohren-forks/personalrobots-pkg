@@ -10,7 +10,6 @@
   <depend package="amcl_player"/>
   <depend package="fake_localization"/>
   <depend package="wavefront_player"/>
-  <depend package="teleop_base_keyboard"/>
   <depend package="teleop_arm_keyboard"/>
   <depend package="laser_view"/>
   <depend package="pr2_gui"/>

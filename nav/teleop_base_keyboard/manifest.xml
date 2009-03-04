@@ -1,9 +1,0 @@
-<package>
-<description>A ROS node that supports velocity-mode teleoperation of a
-differential drive robot base from keyboard input</description>
-  <author>Brian P. Gerkey</author>
-  <license>BSD</license>
-  <review status="unreviewed" notes=""/>
-  <depend package="roscpp"/>
-  <depend package="robot_msgs"/>
-</package>
