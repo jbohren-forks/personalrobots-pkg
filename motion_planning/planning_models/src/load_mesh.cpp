@@ -185,7 +185,7 @@ namespace planning_models
 	    pos += 4;
 	    
 	    // make sure we have read enough data
-	    if (50 * numTriangles + 84 <= fileSize)
+	    if ((long)(50 * numTriangles + 84) <= fileSize)
 	    {
 		std::vector<btVector3> vertices;
 		
