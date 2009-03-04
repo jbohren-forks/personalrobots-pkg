@@ -543,6 +543,21 @@
       </map>
     </link>
 
+    <map name="sensor" flag="gazebo">
+      <verbatim key="p3d_${side}_gripper_tool_frame">
+        <controller:ros_p3d name="p3d_${side}_gripper_tool_frame_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>100.0</updateRate>
+          <bodyName>${side}_gripper_tool_frame</bodyName>
+          <topicName>${side}_gripper_tool_frame_pose_ground_truth</topicName>
+          <xyzOffsets>0 0 0</xyzOffsets>
+          <rpyOffsets>0 0 0</rpyOffsets>
+          <gaussianNoise>0.0</gaussianNoise>
+          <frameName>map</frameName>
+          <interface:position name="p3d_${side}_gripper_tool_frame_position_iface" />
+        </controller:ros_p3d>
+      </verbatim>
+    </map>
 
     <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm_link" />
 
