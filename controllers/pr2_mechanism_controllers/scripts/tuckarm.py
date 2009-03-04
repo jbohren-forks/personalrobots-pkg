@@ -40,12 +40,9 @@ roslib.load_manifest('mechanism_control')
 roslib.load_manifest('mechanism_bringup')
 
 import rospy
-#import rosparam
 
 from robot_msgs.msg import JointTraj, JointTrajPoint
-
 from mechanism_control import mechanism
-
 from robot_mechanism_controllers.srv import *
 
 import sys
@@ -55,8 +52,7 @@ def go(side, positions):
   pub = rospy.Publisher(side + '_arm/trajectory_controller/trajectory_command', JointTraj)
 
   # HACK
-
-  sleep(2.5)
+  sleep(2)
 
   msg = JointTraj()
   msg.points = []
@@ -70,7 +66,7 @@ def go(side, positions):
 USAGE = 'tuckarm.py <arms> ; <arms> is \'(r)ight\', \'(l)eft\', or \'(b)oth\' arms'
 
 def set_params_right():
-  rospy.set_param("right_arm/trajectory_controller/velocity_scaling_factor", 0.5)
+  rospy.set_param("right_arm/trajectory_controller/velocity_scaling_factor", 0.75)
   rospy.set_param("right_arm/trajectory_controller/trajectory_wait_timeout", 0.25)
 
   rospy.set_param("right_arm/trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold", 0.1)
@@ -82,7 +78,7 @@ def set_params_right():
   rospy.set_param("right_arm/trajectory_controller/r_wrist_roll_joint/goal_reached_threshold", 0.1)
 
 def set_params_left():
-  rospy.set_param("left_arm/trajectory_controller/velocity_scaling_factor", 0.5)
+  rospy.set_param("left_arm/trajectory_controller/velocity_scaling_factor", 0.75)
   rospy.set_param("left_arm/trajectory_controller/trajectory_wait_timeout", 0.25)
 
   rospy.set_param("left_arm/trajectory_controller/l_shoulder_pan_joint/goal_reached_threshold", 0.1)
@@ -104,9 +100,7 @@ if __name__ == '__main__':
   rospy.wait_for_service('spawn_controller')
   rospy.init_node('tuck_in', anonymous = True)
 
-  # Positions order
-  # s. pan, s. lift, up roll, elbow flex, elbow roll, wrist flex, wrist roll
-
+  # Load xml file for arm trajectory controllers
   path = roslib.packages.get_pkg_dir('sbpl_arm_executive')
 
   xml_for_left = open(path + '/launch/xml/l_arm_trajectory_controller.xml')
@@ -118,8 +112,6 @@ if __name__ == '__main__':
       # tuck traj for left arm
       set_params_left()
       mechanism.spawn_controller(xml_for_left.read())
-      #if ord(resp.ok[0]) != 0:
-       # controllers.append(resp.name[0])
       controllers.append('left_arm/trajectory_controller')
 
       positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,1.57,-2.25,0.0,0.0,0.0]]  
@@ -153,7 +145,7 @@ if __name__ == '__main__':
       positions_r = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,-1.57,-2.25,0.0,0.0,0.0]]
       
       go('right', positions_r)
-      sleep(1.0)
+      sleep(0.5)
       go('left', positions_l)
 
       rospy.spin()
