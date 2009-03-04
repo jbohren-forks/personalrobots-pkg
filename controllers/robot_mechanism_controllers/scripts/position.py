@@ -45,19 +45,23 @@ from mechanism_control import mechanism
 from robot_srvs.srv import SpawnController, KillController
 
 
-def xml_for(joint):
+def xml_for(joint, p, i, d, iClamp):
     return "\
 <controller name=\"%s\" type=\"JointPositionControllerNode\">\
   <joint name=\"%s\" >\
-    <pid p=\"2.0\" d=\"0.0\" i=\"0.1\" iClamp=\"0.5\" \>\
+    <pid p=\"%d\" i=\"%d\" d=\"%d\" iClamp=\"%d\" \>\
   </joint>\
-</controller>" % (CONTROLLER_NAME, joint)
+</controller>" % (CONTROLLER_NAME, joint, p, i, d, iClamp)
 
 def main():
-    if len(sys.argv) < 2:
-        print "Usage:  position.py <joint>"
+    if len(sys.argv) < 5:
+        print "Usage:  position.py <joint> <p> <i> <d> <iClamp>"
         sys.exit(1)
     joint = sys.argv[1]
+    p = float(sys.argv[2])
+    i = float(sys.argv[3])
+    d = float(sys.argv[4])
+    iClamp = float(sys.argv[5])
 
     print "initialize node for position control on joint %s" %joint
     rospy.init_node('position', anonymous=True)
@@ -65,9 +69,7 @@ def main():
     spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
     kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
-    print "try to spawn position controller for joint %s" %joint
-    print "using xml %s" %xml_for(joint)
-    resp = spawn_controller(xml_for(joint))
+    resp = spawn_controller(xml_for(joint, p, i, d, iClamp))
     if len(resp.ok) < 1 or not resp.ok[0]:
         print "Failed to spawn position controller"
         sys.exit(1)
