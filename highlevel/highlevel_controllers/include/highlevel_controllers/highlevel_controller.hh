@@ -34,7 +34,8 @@
 
 // Author Conor McGann (mcgann@willowgarage.com)
 
-#ifndef H_HighlevelController
+#ifndef H_highlevel_controller_HighlevelController
+#define H_highlevel_controller_HighlevelController
 
 #include <ros/node.h>
 #include <boost/thread.hpp>
@@ -53,148 +54,6 @@
 template <class S, class G> class HighlevelController {
 public:
 
-  /**
-   * @brief Used to set queue max parameter for subscribe and advertise of ROS topics
-   */
-  static unsigned int QUEUE_MAX(){return 10;}
-
-  /**
-   * @brief Constructor
-   * @param nodeName The name for the node, which will appear in botherder
-   * @param stateTopic The ROS topic on which controller state update messages are published
-   * @param goalTopic The ROS topic on which controller goals are received
-   */
-  HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
-    initialized(false), terminated(false), stateTopic(_stateTopic), 
-    goalTopic(_goalTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), 
-    timeout(0, 0), valid_(false) {
-
-    // Obtain the control frequency for this node
-    double controller_frequency(10);
-    ros::Node::instance()->param("~move_base/controller_frequency", controller_frequency, controller_frequency);
-    ROS_ASSERT(controller_frequency > 0);
-    ROS_INFO("FREQ: %.4f", controller_frequency);
-    controllerCycleTime_ = 1/controller_frequency;
-
-    // Obtain the planner frequency for this node. A negative value means run as fast as possible. A zero value means run
-    // on demand. Otherwise, run at the specified positive frequency
-    double planner_frequency(0.0);
-    ros::Node::instance()->param("~move_base/planner_frequency", planner_frequency, planner_frequency);
-    if(planner_frequency  > 0)
-      plannerCycleTime_ = 1/planner_frequency;
-    else if (planner_frequency < 0)
-      plannerCycleTime_ = -1;
-
-    // Advertize controller state updates - do not want to miss a state transition.
-    ros::Node::instance()->advertise<S>(stateTopic, QUEUE_MAX());
-
-    // Subscribe to controller goal requests. Last request winds. We drop others
-    ros::Node::instance()->subscribe(goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
-
-    // Subscribe to executive shutdown signal
-    ros::Node::instance()->subscribe("highlevel_controllers/shutdown", shutdownMsg_, &HighlevelController<S, G>::shutdownCallback, this, 1);
-
-    // Initially inactive
-    this->stateMsg.status.value = this->stateMsg.status.UNDEFINED;
-
-    deactivate();
-
-    // Start planner loop on a separate thread
-    plannerThread_ = new boost::thread(boost::bind(&HighlevelController<S, G>::plannerLoop, this));
-  }
-
-  virtual ~HighlevelController(){
-    terminate();
-    delete plannerThread_;
-  }
-
-
-  /**
-   * @brief The main run loop of the controller
-   */
-  void run(){
-    while(ros::Node::instance()->ok()  && !isTerminated()) {
-      ros::Time curr = ros::Time::now();
-	
-      // Guard with initialization check to prevent sending bogus state messages.
-      if(isInitialized()){
-	doOneCycle();
-
-	ros::Node::instance()->publish(stateTopic, this->stateMsg);
-      }
- 
-      sleep(curr, controllerCycleTime_);
-    }
-  }
-
-  /**
-   * @brief Test if the HLC has received required inputs allowing it to commence business as usual.
-   * @see initialize()
-   */
-  bool isInitialized() const {
-    return initialized;
-  }
-
-  /**
-   * @brief Call this to permanently decommision the controller
-   */
-  void terminate() {
-    terminated = true;
-  }
-
-  /**
-   * @brief Test if the HLC has been terminated (decommissioned permanently)
-   */
-  bool isTerminated() const {
-    return terminated;
-  }
-
-protected:
-
-  /**
-   * @brief Accessor for state of the controller
-   */
-  bool isActive() {
-    return this->stateMsg.status.value == this->stateMsg.status.ACTIVE;
-  }
-
-  /**
-   * @brief Access for valid status of the controller
-   */
-  bool isValid() {
-    return valid_;
-  }
-  /**
-   * @brief Access aborted state of the planner.
-   */
-  bool isAborted() {
-    return this->stateMsg.status.value == this->stateMsg.status.ABORTED;
-  }
-
-  /**
-   * @brief Access preempted state of the planner.
-   */
-  bool isPreempted() {
-    return this->stateMsg.status.value == this->stateMsg.status.PREEMPTED;
-  }
-
-  /**
-   * @brief Abort the controller. This is the only state transition that can be explicitly initiated
-   * by a derived class. Otherwise the state transitions are governed by implementations of methods
-   * for planning and dispatching commands, and checking of a goal has been reached.
-   */
-  void abort(){
-    ROS_INFO("Aborting controller\n");
-    this->stateMsg.status.value = this->stateMsg.status.ABORTED;
-  }
-
-  /**
-   * @brief Marks the node as initialized. Shoud be called by subclass when expected inbound messages
-   * are received to make sure it only publishes meaningful states
-   */
-  void initialize(){
-    initialized = true;
-  }
 
   /**
    * @brief Subclass will implement this method to update goal data based on new values in goalMsg. Derived class should
@@ -242,6 +101,149 @@ protected:
    */
   virtual void handlePlanningFailure(){}
 
+  virtual ~HighlevelController(){
+    terminate();
+    delete plannerThread_;
+  }
+
+
+  /**
+   * @brief The main run loop of the controller
+   */
+  void run(){
+    while(ros::Node::instance()->ok()  && !isTerminated()) {
+      ros::Time curr = ros::Time::now();
+	
+      // Guard with initialization check to prevent sending bogus state messages.
+      if(isInitialized()){
+	doOneCycle();
+
+	ros::Node::instance()->publish(stateTopic, this->stateMsg);
+      }
+ 
+      sleep(curr, controllerCycleTime_);
+    }
+  }
+
+protected:
+
+  /**
+   * @brief Constructor
+   * @param nodeName The name for the node, which will appear in botherder
+   * @param stateTopic The ROS topic on which controller state update messages are published
+   * @param goalTopic The ROS topic on which controller goals are received
+   */
+  HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
+    initialized(false), terminated(false), stateTopic(_stateTopic), 
+    goalTopic(_goalTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), 
+    timeout(0, 0), valid_(false) {
+
+    // Obtain the control frequency for this node
+    double controller_frequency(10);
+    ros::Node::instance()->param("~move_base/controller_frequency", controller_frequency, controller_frequency);
+    ROS_ASSERT(controller_frequency > 0);
+    ROS_INFO("FREQ: %.4f", controller_frequency);
+    controllerCycleTime_ = 1/controller_frequency;
+
+    // Obtain the planner frequency for this node. A negative value means run as fast as possible. A zero value means run
+    // on demand. Otherwise, run at the specified positive frequency
+    double planner_frequency(0.0);
+    ros::Node::instance()->param("~move_base/planner_frequency", planner_frequency, planner_frequency);
+    if(planner_frequency  > 0)
+      plannerCycleTime_ = 1/planner_frequency;
+    else if (planner_frequency < 0)
+      plannerCycleTime_ = -1;
+
+    // Advertize controller state updates - do not want to miss a state transition.
+    ros::Node::instance()->advertise<S>(stateTopic, QUEUE_MAX());
+
+    // Subscribe to controller goal requests. Last request winds. We drop others
+    ros::Node::instance()->subscribe(goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
+
+    // Subscribe to executive shutdown signal
+    ros::Node::instance()->subscribe("highlevel_controllers/shutdown", shutdownMsg_, &HighlevelController<S, G>::shutdownCallback, this, 1);
+
+    // Initially inactive
+    this->stateMsg.status.value = this->stateMsg.status.UNDEFINED;
+
+    deactivate();
+
+    // Start planner loop on a separate thread
+    plannerThread_ = new boost::thread(boost::bind(&HighlevelController<S, G>::plannerLoop, this));
+  }
+
+  /**
+   * @brief Used to set queue max parameter for subscribe and advertise of ROS topics
+   */
+  static unsigned int QUEUE_MAX(){return 10;}
+
+  /**
+   * @brief Test if the HLC has received required inputs allowing it to commence business as usual.
+   * @see initialize()
+   */
+  bool isInitialized() const {
+    return initialized;
+  }
+
+  /**
+   * @brief Call this to permanently decommision the controller
+   */
+  void terminate() {
+    terminated = true;
+  }
+
+  /**
+   * @brief Test if the HLC has been terminated (decommissioned permanently)
+   */
+  bool isTerminated() const {
+    return terminated;
+  }
+
+  /**
+   * @brief Accessor for state of the controller
+   */
+  bool isActive() {
+    return this->stateMsg.status.value == this->stateMsg.status.ACTIVE;
+  }
+
+  /**
+   * @brief Access for valid status of the controller
+   */
+  bool isValid() {
+    return valid_;
+  }
+  /**
+   * @brief Access aborted state of the planner.
+   */
+  bool isAborted() {
+    return this->stateMsg.status.value == this->stateMsg.status.ABORTED;
+  }
+
+  /**
+   * @brief Access preempted state of the planner.
+   */
+  bool isPreempted() {
+    return this->stateMsg.status.value == this->stateMsg.status.PREEMPTED;
+  }
+
+  /**
+   * @brief Abort the controller. This is the only state transition that can be explicitly initiated
+   * by a derived class. Otherwise the state transitions are governed by implementations of methods
+   * for planning and dispatching commands, and checking of a goal has been reached.
+   */
+  void abort(){
+    ROS_INFO("Aborting controller\n");
+    this->stateMsg.status.value = this->stateMsg.status.ABORTED;
+  }
+
+  /**
+   * @brief Marks the node as initialized. Shoud be called by subclass when expected inbound messages
+   * are received to make sure it only publishes meaningful states
+   */
+  void initialize(){
+    initialized = true;
+  }
+
   /**
    * @brief Aquire node level lock
    */
@@ -283,6 +285,7 @@ protected:
 
 
 private:
+
 
   /**
    * @brief Runs the planning loop. If the node is not initialized or if inactive, then it will do nothing. Otherwise
