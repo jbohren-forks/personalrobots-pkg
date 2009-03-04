@@ -473,6 +473,7 @@ void
   * \param indices a pointer to a set of point cloud indices to test
   * \param inliers the resultant planar inliers
   * \param coeff the resultant plane coefficients
+  * \param viewpoint_cloud a point to the pose where the data was acquired from (for normal flipping)
   * \param dist_thresh the maximum allowed distance threshold of an inlier to the model
   * \param min_pts the minimum number of points allowed as inliers for a plane model
   */
@@ -505,8 +506,9 @@ int
       coeff.resize (0);
       return (-1);
     }
-    inliers = sac->getInliers ();
-    coeff   = sac->computeCoefficients ();
+    sac->computeCoefficients ();          // Compute the model coefficients
+    coeff   = sac->refineCoefficients (); // Refine them using least-squares
+    inliers = model->selectWithinDistance (coeff, dist_thresh);
 
     // Flip plane normal according to the viewpoint information
     Point32 vp_m;
@@ -635,7 +637,8 @@ int
   // Search for the best line
   if (sac->computeModel ())
   {
-    line_inliers = sac->getInliers ();
+    sac->computeCoefficients ();             // Compute the model coefficients
+    line_inliers = model->selectWithinDistance (sac->refineCoefficients (), dist_thresh);
   }
   else
   {

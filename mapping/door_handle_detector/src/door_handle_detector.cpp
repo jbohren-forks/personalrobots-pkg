@@ -113,7 +113,7 @@ public:
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    DoorHandleDetector () : ros::Node ("door_handle_detector"), message_notifier_(NULL), tf_(*this)
+    DoorHandleDetector () : ros::Node ("door_handle_detector"), message_notifier_ (NULL), tf_ (*this)
     {
       // ---[ Parameters regarding geometric constraints for the door/handle
       {
