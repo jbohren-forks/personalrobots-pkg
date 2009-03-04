@@ -244,8 +244,8 @@ namespace sample_consensus
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Recompute the plane coefficients using the given inlier set and return them to the user.
-    * @note: these are the coefficients of the plane model after refinement (eg. after SVD)
+  /** \brief Recompute the line coefficients using the given inlier set and return them to the user.
+    * @note: these are the coefficients of the line model after refinement
     * \param inliers the data inliers found as supporting the model
     */
   std::vector<double>
