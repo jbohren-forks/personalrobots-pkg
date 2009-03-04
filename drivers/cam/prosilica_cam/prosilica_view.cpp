@@ -32,15 +32,12 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "image_msgs/CvBridge.h"
-
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
 #include "ros/node.h"
 #include "image_msgs/Image.h"
-
-#include <boost/thread.hpp>
+#include "image_msgs/CvBridge.h"
 
 class ProsilicaView : public ros::Node
 {
@@ -49,12 +46,11 @@ private:
   image_msgs::CvBridge img_bridge_;
   IplImage* image_;
 
-  boost::mutex cv_mutex_;
-
 public:
   ProsilicaView() : ros::Node("prosilica_view"), image_(NULL)
   {
     cvNamedWindow("Prosilica", 0); // no autosize
+    cvStartWindowThread();
 
     subscribe("Image", img_msg_, &ProsilicaView::image_cb, this, 1);
   }
@@ -66,27 +62,8 @@ public:
 
   void image_cb()
   {
-    boost::lock_guard<boost::mutex> guard(cv_mutex_);
-
     if (img_bridge_.fromImage(img_msg_, "bgr"))
       cvShowImage("Prosilica", img_bridge_.toIpl());
-  }
-  
-  bool spin()
-  {
-    while (ok())
-    {
-      cv_mutex_.lock();
-      int key = cvWaitKey(3);
-      
-      //switch (key) {
-      //}
-
-      cv_mutex_.unlock();
-      usleep(10000);
-    }
-
-    return true;
   }
 };
 
