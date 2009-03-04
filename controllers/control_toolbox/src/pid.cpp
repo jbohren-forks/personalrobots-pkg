@@ -95,7 +95,11 @@ void Pid::setGains(double P, double I, double D, double I1, double I2)
 bool Pid::initParam(const std::string& prefix)
 {
   ros::Node* node = ros::Node::instance();
-  node->param(prefix+"/p", p_gain_, 0.0) ;
+  assert(node);
+  if (!node->getParam(prefix+"/p", p_gain_)) {
+    ROS_ERROR("No p gain specified for pid.  Prefix: %s", prefix.c_str());
+    return false;
+  }
   node->param(prefix+"/i", i_gain_, 0.0) ;
   node->param(prefix+"/d", d_gain_, 0.0) ;
   node->param(prefix+"/i_clamp", i_max_, 0.0) ;
