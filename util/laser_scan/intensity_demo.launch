@@ -1,0 +1,6 @@
+<launch>
+<node pkg="laser_scan" type="median_node" output="screen" name="laser_filter">
+      <remap from="scan_in" to="base_scan" />
+      <param name="filters" textfile="$(find laser_scan)/intensity_demo.filters.xml" />
+</node>
+</launch>

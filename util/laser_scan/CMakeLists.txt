@@ -14,5 +14,3 @@ rospack_add_executable(median_node src/median_filter_node.cpp)
 rospack_add_executable(scan_shadows_filter_node src/scan_shadows_filter.cpp)
 target_link_libraries (scan_shadows_filter_node laser_scan)
 
-rospack_add_executable(scan_intensity_filter src/scan_intensity_filter.cpp)
-target_link_libraries (scan_intensity_filter laser_scan)
