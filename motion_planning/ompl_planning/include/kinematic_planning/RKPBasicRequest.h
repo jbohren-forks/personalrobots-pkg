@@ -358,19 +358,19 @@ namespace kinematic_planning
 		
 		for (int i = 0 ; i < times ; ++i)
 		{
-		    ros::Time startTime = ros::Time::now();
+		    ros::WallTime startTime = ros::WallTime::now();
 		    bool ok = psetup->mp->solve(allowed_time); 
-		    double tsolve = (ros::Time::now() - startTime).toSec();	
+		    double tsolve = (ros::WallTime::now() - startTime).toSec();	
 		    ROS_INFO("%s Motion planner spent %g seconds", (ok ? "[Success]" : "[Failure]"), tsolve);
 		    totalTime += tsolve;
 		    
 		    /* do path smoothing */
 		    if (ok)
 		    {
-			ros::Time startTime = ros::Time::now();
+			ros::WallTime startTime = ros::WallTime::now();
 			ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
 			psetup->smoother->smoothMax(path);
-			double tsmooth = (ros::Time::now() - startTime).toSec();
+			double tsmooth = (ros::WallTime::now() - startTime).toSec();
 			ROS_INFO("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);		    
 			if (interpolate)
 			    psetup->si->interpolatePath(path);

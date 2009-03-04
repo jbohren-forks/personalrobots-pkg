@@ -237,7 +237,7 @@ namespace kinematic_planning
 	    
 	    beforeWorldUpdate();
 	    
-	    ros::Time startTime = ros::Time::now();
+	    ros::WallTime startTime = ros::WallTime::now();
 	    double *data = new double[4 * n];	
 	    for (unsigned int i = 0 ; i < n ; ++i)
 	    {
@@ -256,7 +256,7 @@ namespace kinematic_planning
 	    
 	    delete[] data;
 	    
-	    double tupd = (ros::Time::now() - startTime).toSec();
+	    double tupd = (ros::WallTime::now() - startTime).toSec();
 	    ROS_INFO("Updated world model in %f seconds", tupd);
 	    m_lastMapUpdate = ros::Time::now();
 	    
