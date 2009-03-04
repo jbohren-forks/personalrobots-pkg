@@ -19,12 +19,12 @@ IplImage* callPollProsilica(int timeout)
 {
   req.timeout_ms = timeout;
   if (!ros::service::call("prosilica/poll", req, res)) {
-    ROS_FATAL("Service call failed");
+    ROS_ERROR("Service call failed");
     return NULL;
   }
   
   if (!bridge.fromImage(res.image, "bgr")) {
-    ROS_FATAL("CvBridge::fromImage failed");
+    ROS_ERROR("CvBridge::fromImage failed");
     return NULL;
   }
   
@@ -57,7 +57,7 @@ int main(int argc, char** argv)
         if (display) {
           sprintf(filename, "frame%04u.jpg", index++);
           cvSaveImage( filename, display );
-          ROS_FATAL("Saved image %s\n", filename);
+          ROS_INFO("Saved image %s\n", filename);
         }
         break;
     }
