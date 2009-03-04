@@ -10,7 +10,7 @@ from timer import Timer
 
 import calonder
 
-import pylab, numpy
+import numpy
 import random
 import pickle
 import math
@@ -310,6 +310,7 @@ class Skeleton:
     return (nodepts, edges)
 
   def plot(self, color, annotate = False, theta = 0.0):
+    import pylab
     pts = {}
     for id in self.nodes:
       (x,y,z) = self.newpose(id).xform(0,0,0)
