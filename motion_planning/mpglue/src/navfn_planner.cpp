@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "navfn_planner.h"
-#include "costmap.h"
+#include <mpglue/navfn_planner.h>
+#include <mpglue/costmap.h>
 #include <navfn.h>
 
 namespace mpglue {

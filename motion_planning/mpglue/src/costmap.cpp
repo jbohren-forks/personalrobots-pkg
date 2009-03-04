@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "costmap.h"
+#include <mpglue/costmap.h>
 #include <costmap_2d/obstacle_map_accessor.h>
 #include <sfl/gplan/RWTravmap.hpp>
 #include <sfl/gplan/GridFrame.hpp>

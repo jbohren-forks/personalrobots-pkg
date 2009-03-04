@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "plan.h"
-#include "sbpl_environment.h"
+#include <mpglue/plan.h>
+#include <mpglue/sbpl_environment.h>
 #include <sfl/util/numeric.hpp>
 
 namespace mpglue {

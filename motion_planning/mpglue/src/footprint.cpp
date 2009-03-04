@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "footprint.h"
+#include <mpglue/footprint.h>
 
 namespace mpglue {
   

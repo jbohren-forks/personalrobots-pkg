@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "sbpl_planner.h"
-#include "sbpl_environment.h"
+#include <mpglue/sbpl_planner.h>
+#include <mpglue/sbpl_environment.h>
 #include <sbpl/headers.h>
 #include <sstream>
 

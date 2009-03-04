@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "planner.h"
-#include "costmap.h"
+#include <mpglue/planner.h>
+#include <mpglue/costmap.h>
 #include <sfl/util/strutil.hpp>
 #include <sbpl/headers.h>
 #include <sys/time.h>

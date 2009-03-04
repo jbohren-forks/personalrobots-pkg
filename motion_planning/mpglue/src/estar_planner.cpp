@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "estar_planner.h"
-#include "costmap.h"
+#include <mpglue/estar_planner.h>
+#include <mpglue/costmap.h>
 #include <estar/Facade.hpp>
 #include <estar/Region.hpp>
 #include <sfl/util/numeric.hpp>

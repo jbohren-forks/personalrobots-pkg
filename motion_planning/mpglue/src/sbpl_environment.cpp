@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "sbpl_environment.h"
+#include <mpglue/sbpl_environment.h>
 #include <costmap_2d/costmap_2d.h>
 #include <sbpl/headers.h>
 

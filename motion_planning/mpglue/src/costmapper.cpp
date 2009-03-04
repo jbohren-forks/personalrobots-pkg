@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "costmapper.h"
+#include <mpglue/costmapper.h>
 #include <sfl/gplan/Mapper2d.hpp>
 
 using namespace mpglue;
