@@ -31,10 +31,10 @@ BULLET_INC_DIRS = . \
 		  BulletSoftBody 
 
 installed: $(SVN_DIR) patched
-	cd $(SVN_DIR) && cmake -DCMAKE_INSTALL_PREFIX=$(PWD) -DCMAKE_CXX_FLAGS=-fPIC .
+	cd $(SVN_DIR) && cmake -DCMAKE_INSTALL_PREFIX=$(PWD) -DCMAKE_CXX_FLAGS="-fPIC -DBT_USE_DOUBLE_PRECISION" . 
 	# Bullet appears not be parallel-make safe
 	#cd $(SVN_DIR) && make $(PARALLEL_JOBS) 
-	cd $(SVN_DIR) && make $(BULLET_TARGETS)
+	cd $(SVN_DIR) && make $(BULLET_TARGETS) 
 	# The 'install' target only works with cmake 2.6 for some reason
 	#cd $(SVN_DIR) && make $(PARALLEL_JOBS) install
 	mkdir -p lib
