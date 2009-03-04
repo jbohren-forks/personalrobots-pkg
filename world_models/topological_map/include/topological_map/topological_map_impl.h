@@ -40,6 +40,8 @@ namespace topological_map
 {
 
 using std::map;
+using std::ostream;
+using std::istream;
 using boost::tuple;
 using boost::shared_ptr;
 
@@ -56,6 +58,9 @@ public:
 
   /// Default constructor creates empty graph
   MapImpl(const OccupancyGrid& grid, double resolution=1.0);
+
+  /// Constructor that reads from a stream
+  MapImpl(istream& stream);
 
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
@@ -102,6 +107,9 @@ public:
   /// \post Set the goal point (for future distance queries) to be center of \a c
   void setGoal (const Cell2D& p);
 
+  /// \post Unsets the last set goal point
+  void unsetGoal ();
+
   /// \return 1) true if there exists a path between connector \a id and goal 2) The distance (only valid if 1 is true)
   pair<bool, double> goalDistance (ConnectorId id) const;
 
@@ -114,6 +122,8 @@ public:
   /// \throws UnknownRegionException
   void removeRegion (const RegionId id);
 
+  /// \post map written to stream
+  void writeToStream (ostream& str);
 
 private: 
 

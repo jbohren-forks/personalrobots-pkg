@@ -33,6 +33,7 @@
 #define TOPOLOGICAL_MAP_REGION_GRAPH_H
 
 #include <topological_map/topological_map.h>
+#include <iostream>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
 
@@ -44,6 +45,8 @@ using boost::undirectedS;
 using boost::adjacency_list;
 using boost::graph_traits;
 using std::map;
+using std::istream;
+using std::ostream;
 
 struct RegionInfo
 {
@@ -70,21 +73,27 @@ class RegionGraph
 public:
 
   RegionGraph() : next_id_(1) {}
+  RegionGraph (istream& stream);
+
+  /********************
+   * access
+   ********************/
 
   RegionId containingRegion(const Cell2D& cell) const;
-
   int regionType(RegionId id) const;
-
-  RegionPtr regionCells(RegionId id) const;
-
+  RegionPtr regionCells(RegionId id) const; // Set of cells in region
   RegionIdVector neighbors(RegionId id) const;
-
   const RegionIdVector& allRegions() const;
+  void writeToStream (ostream& stream) const;
 
-  RegionId addRegion (RegionPtr region, int region_type);
 
-  void removeRegion (RegionId id);
+  /********************
+   * modification
+   ********************/
   
+  RegionId addRegion (RegionPtr region, int region_type);
+  void removeRegion (RegionId id);
+
 private:
   
   // Disallow copy and assign
@@ -92,6 +101,8 @@ private:
   RegionGraph& operator= (const RegionGraph&);
 
   RegionGraphVertex idVertex(RegionId id) const;
+
+  void addRegion (RegionPtr region, int region_type, RegionId id);
 
   // Map from region id to graph vertex
   IdVertexMap id_vertex_map_;

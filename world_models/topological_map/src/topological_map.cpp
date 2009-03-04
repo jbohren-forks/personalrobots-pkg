@@ -54,6 +54,8 @@ using std::ostream;
 using boost::tie;
 using boost::make_tuple;
 using boost::tuples::ignore;
+using boost::extents;
+using std::endl;
 using std::map;
 using std::vector;
 using std::set;
@@ -65,7 +67,7 @@ namespace topological_map
 {
 
 /************************************************************
- * Miscellaneous
+ * Utility
  ************************************************************/
 
 ostream& operator<< (ostream& str, const Point2D& p)
@@ -127,14 +129,120 @@ Point2D TopologicalMap::MapImpl::cellCenter (const Cell2D& cell) const
 
 
 
+
 /************************************************************
- * MapImpl
+ * I/o, construction
  ************************************************************/
 
 TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution) : 
   grid_(grid), region_graph_(new RegionGraph), roadmap_(new Roadmap), grid_graph_(new GridGraph(grid)), resolution_(resolution)
 {
 }
+
+
+
+OccupancyGrid readGrid(istream& stream)
+{
+  uint nr, nc;
+  stream >> nr >> nc;
+  OccupancyGrid grid(extents[nr][nc]);
+  for (uint r=0; r<nr; r++) {
+    for (uint c=0; c<nc; c++) {
+      stream >> grid[r][c];
+    }
+  }
+  return grid;
+}
+
+
+void writeGrid (const OccupancyGrid& grid, ostream& stream)
+{
+  stream << endl << numRows(grid) << " " << numCols(grid);
+  for (uint r=0; r<numRows(grid); ++r) {
+    for (uint c=0; c<numCols(grid); ++c) {
+      stream << " " << grid[r][c];
+    }
+  }
+}
+
+
+shared_ptr<RegionGraph> readRegionGraph(istream& stream)
+{
+  return shared_ptr<RegionGraph>(new RegionGraph(stream));
+}
+
+shared_ptr<Roadmap> readRoadmap(istream& stream)
+{
+  return shared_ptr<Roadmap>(new Roadmap(stream));
+}
+
+ 
+double readResolution(istream& stream)
+{
+  double resolution;
+  stream >> resolution;
+  return resolution;
+}
+
+void writeRegionConnectorMap (const RegionConnectorMap& m, ostream& str) 
+{
+  str << endl << m.size();
+  for (RegionConnectorMap::const_iterator iter=m.begin(); iter!=m.end(); ++iter) {
+    str << endl << iter->first.first << " " << iter->first.second;
+    ConnectorId id;
+    Cell2D cell1, cell2;
+    tie(id,cell1,cell2) = iter->second;
+    str << " " << id << " " << cell1.r << " " << cell1.c << " " << cell2.r << " " << cell2.c;
+  }
+}
+
+RegionConnectorMap readRegionConnectorMap (istream& str)
+{
+  RegionConnectorMap m;
+  uint size;
+  str >> size;
+  for (uint i=0; i<size; ++i) {
+    RegionId r1, r2;
+    ConnectorId id;
+    Cell2D cell1, cell2;
+    str >> r1 >> r2 >> id >> cell1.r >> cell1.c >> cell2.r >> cell2.c;
+  }
+  return m;
+}
+
+
+void TopologicalMap::MapImpl::writeToStream (ostream& stream)
+{
+  bool goal_unset = goal_;
+  Point2D goal_point;
+  if (goal_) {
+    // Temporarily unset the goal, as that is not saved
+    goal_point = roadmap_->connectorPoint(goal_->id);
+    goal_ = shared_ptr<TemporaryRoadmapNode>();
+  }
+
+  writeGrid(grid_, stream);
+  region_graph_->writeToStream(stream);
+  roadmap_->writeToStream(stream);
+  writeRegionConnectorMap(region_connector_map_, stream);
+  stream << endl << resolution_;
+
+  // Add the goal back in if necessary
+  if (goal_unset) {
+    setGoal(goal_point);
+  }
+}
+
+TopologicalMap::MapImpl::MapImpl (istream& str) : 
+  grid_(readGrid(str)), region_graph_(readRegionGraph(str)), roadmap_(readRoadmap(str)), grid_graph_(new GridGraph(grid_)), 
+  region_connector_map_(readRegionConnectorMap(str)), resolution_(readResolution(str))
+{
+}
+
+
+
+
+
 
 
 /****************************************
@@ -443,6 +551,12 @@ TopologicalMap::TopologicalMap (const OccupancyGrid& grid, double resolution) : 
 {
 }
 
+
+TopologicalMap::TopologicalMap(istream& str) : map_impl_(new MapImpl(str))
+{
+}
+
+
 RegionId TopologicalMap::containingRegion (const Cell2D& p) const
 {
   return map_impl_->containingRegion(p);
@@ -493,6 +607,7 @@ void TopologicalMap::setGoal (const Cell2D& p)
 {
   map_impl_->setGoal(p);
 }
+
 
 pair<bool, double> TopologicalMap::goalDistance (ConnectorId id) const
 {
@@ -549,6 +664,15 @@ ostream& operator<< (ostream& str, const TopologicalMap& m)
   return str;
 }   
 
+void TopologicalMap::writeToStream (ostream& str) const
+{
+  map_impl_->writeToStream (str);
+}
+
+  
+  
+  
+  
 
 
 

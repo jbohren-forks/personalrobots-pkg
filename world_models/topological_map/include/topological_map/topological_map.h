@@ -45,6 +45,7 @@ namespace topological_map
 using std::vector;
 using std::string;
 using std::ostream;
+using std::istream;
 using std::pair;
 
 
@@ -85,6 +86,14 @@ public:
 
   /// Default constructor makes an empty map (see also topologicalMapFromGrid)
   TopologicalMap(const OccupancyGrid&, double resolution=1.0);
+
+  /// Constructor that reads map from a stream
+  /// \todo identify error conditions
+  TopologicalMap(istream& stream);
+
+  /// \post Topological map is written to \a stream in format that can be read back using the stream constructor.  All state is saved except for the currently set goal.
+  /// \todo Identify error conditions
+  void writeToStream (ostream& stream) const;
 
   /// \return Id of region containing a grid cell \a p
   /// \throws UnknownGridCellException
@@ -152,9 +161,6 @@ public:
   /// \todo currently doesn't work properly with connectors
   void removeRegion (RegionId id);
 
-  /// \post Topological map is written to \a filename in format that can be read back using loadFromFile
-  /// \throws FileOpenException
-  void saveToFile (const string& filename) const;
 
 private:
 
@@ -183,20 +189,11 @@ TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const doubl
 
 enum RegionType { OPEN, DOORWAY };
 
-/// \return shared_ptr to a topological map loaded from \a filename.  
-/// \throws FileOpenException
-/// \throws FileFormatException
-TopologicalMapPtr loadFromFile (const string& filename);
 
 
-
-
-
-
-
- /************************************************************
-  * Debug
-  ************************************************************/
+/************************************************************
+ * Debug
+ ************************************************************/
 
 
  /// \brief Print the topological map in human readable form

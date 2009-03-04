@@ -59,7 +59,7 @@ struct NodeInfo
 {
   NodeInfo(ConnectorId id, const Point2D& point) : id(id), point(point) {}
   ConnectorId id; // Stable id 
-  uint index; // Not stable, but guaranteed to be contiguous (used by dijkstra)
+  uint index; // Not stable; used internally by dijkstra search
   Point2D point;
 };
 
@@ -85,6 +85,10 @@ public:
   
   Roadmap() : next_id_(1) {}
 
+  Roadmap(istream& str);
+
+  void writeToStream (ostream& stream) const;
+
   ConnectorId addNode (const Point2D& p);
   void setCost (ConnectorId i, ConnectorId j, double cost);
   void removeNode (ConnectorId i);
@@ -103,7 +107,9 @@ private:
 
   RoadmapEdge ensureEdge(RoadmapVertex v, RoadmapVertex w);
   RoadmapVertex idVertex(ConnectorId i) const;
+  bool idExists(ConnectorId i) const;
   void resetIndices();
+  void addNode (const Point2D& p, ConnectorId id);
 
   ConnectorId next_id_;
   ConnectorIdVertexMap id_vertex_map_;

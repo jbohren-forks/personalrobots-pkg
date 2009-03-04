@@ -30,6 +30,7 @@
 #include "topological_map/topological_map.h"
 #include "topological_map/exception.h"
 #include <iostream>
+#include <sstream>
 #include <gtest/gtest.h>
 
 using namespace topological_map;
@@ -40,6 +41,7 @@ using std::endl;
 using boost::extents;
 using boost::shared_ptr;
 using boost::tie;
+using std::stringstream;
 using topological_map::OccupancyGrid;
 using topological_map::TopologicalMapPtr;
 using topological_map::topologicalMapFromGrid;
@@ -165,6 +167,19 @@ TEST(TopologicalMap, BasicAPI)
   EXPECT_TRUE(isRearrangement(n3,en32,2));
   EXPECT_TRUE(isRearrangement(n5,en5,1));
   EXPECT_EQ(3u, m.allRegions().size());
+
+  stringstream ss;
+  
+  m.writeToStream(ss);
+
+  TopologicalMap m2(ss);
+  n1=m2.neighbors(1);
+  n3=m2.neighbors(3);
+  n5=m2.neighbors(4);
+  EXPECT_TRUE(isRearrangement(n1,en12,1));
+  EXPECT_TRUE(isRearrangement(n3,en32,2));
+  EXPECT_TRUE(isRearrangement(n5,en5,1));
+  EXPECT_EQ(3u, m2.allRegions().size());
 }
 
 
@@ -208,6 +223,22 @@ TEST(TopologicalMap, Creation)
   d+=d2;
 
   EXPECT_TRUE ((d>=1.4)&&(d<=3));
+
+  // Test serialization/deserialization
+  stringstream ss;
+  m->writeToStream(ss);
+
+  TopologicalMap m2(ss);
+  double d3, d4;
+  m->setGoal(Point2D(.35, .82));
+  tie(path_found,d3) = m->goalDistance(1);
+  EXPECT_TRUE(path_found);
+
+  m->setGoal(Point2D(1.1, .2));
+  tie(path_found, d4) = m->goalDistance(1);
+  EXPECT_TRUE(path_found);
+  EXPECT_TRUE(d==d3+d4);
+  EXPECT_TRUE(d2==d4);
 }
 
 int main (int argc, char** argv)

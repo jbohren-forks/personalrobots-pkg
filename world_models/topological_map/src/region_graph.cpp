@@ -53,6 +53,8 @@ using std::map;
 using std::vector;
 using std::min;
 using std::max;
+//using std::lower_bound;
+//using std::upper_bound;
 
 RegionId RegionGraph::containingRegion (const Cell2D& p) const
 {
@@ -105,6 +107,14 @@ const RegionIdVector& RegionGraph::allRegions () const
 
 RegionId RegionGraph::addRegion (const RegionPtr region, const int type)
 {
+  addRegion (region, type, next_id_);
+  return next_id_++;
+}
+
+void RegionGraph::addRegion (const RegionPtr region, const int type, const RegionId id)
+{
+  ROS_ASSERT_MSG (lower_bound(regions_.begin(), regions_.end(), id) == upper_bound(regions_.begin(), regions_.end(), id),
+                  "Attempted to add region with existing id %u", id);
 
   // Make sure there's no overlap with existing regions
   for (Region::iterator region_iter=region->begin(); region_iter!=region->end(); ++region_iter) {
@@ -113,37 +123,38 @@ RegionId RegionGraph::addRegion (const RegionPtr region, const int type)
     }
   }
 
-  // maintains invariant that regions_ is sorted
-  regions_.push_back(next_id_);
+  // Insert while keeping sorted
+  regions_.insert(upper_bound(regions_.begin(), regions_.end(), id), id);
 
   // Add vertex and edges
-  RegionGraphVertex v=add_vertex(RegionInfo(type, region, next_id_), graph_);
-  ROS_DEBUG_STREAM_NAMED ("region_graph", "Added region " << next_id_);
+  RegionGraphVertex v=add_vertex(RegionInfo(type, region, id), graph_);
+  ROS_DEBUG_STREAM_NAMED ("region_graph", "Added region " << id);
 
   // Neighbors that have been added so far
   set<RegionGraphVertex> seen_neighbors;
 
   // Update the region index and add edges to neighboring regions if necessary
   for (Region::iterator region_iter=region->begin(); region_iter!=region->end(); ++region_iter) {
-    region_map_[*region_iter]=next_id_;
+    region_map_[*region_iter]=id;
     vector<Cell2D> cell_neighbors=cellNeighbors(*region_iter);
     for (vector<Cell2D>::iterator neighbor_iter=cell_neighbors.begin(); neighbor_iter!=cell_neighbors.end(); ++neighbor_iter) {
 
       RegionMap::iterator neighbor_ptr=region_map_.find(*neighbor_iter);
-      if (neighbor_ptr!=region_map_.end() && neighbor_ptr->second!=next_id_) {
+      if (neighbor_ptr!=region_map_.end() && neighbor_ptr->second!=id) {
         RegionGraphVertex neighbor_vertex=idVertex(neighbor_ptr->second);
         if (seen_neighbors.find(neighbor_vertex)==seen_neighbors.end()) {
           seen_neighbors.insert(neighbor_vertex);
           add_edge(v, neighbor_vertex, graph_);
-          ROS_DEBUG_STREAM_NAMED ("region_graph", "Added edge between regions " << next_id_ << " and " << graph_[neighbor_vertex].id);
+          ROS_DEBUG_STREAM_NAMED ("region_graph", "Added edge between regions " << id << " and " << graph_[neighbor_vertex].id);
         }   
       }
     }
-    id_vertex_map_[next_id_]=v; 
+    id_vertex_map_[id]=v; 
   }
-
-  return next_id_++;
 }
+
+
+
 
 
 struct RemoveFromMap
@@ -182,8 +193,40 @@ RegionGraphVertex RegionGraph::idVertex(const RegionId id) const
 }
 
 
+void RegionGraph::writeToStream (ostream& stream) const
+{
+  using std::endl;
+  const RegionIdVector& regions = allRegions();
+  stream << endl << regions.size() << " " << next_id_;
+  for (RegionIdVector::const_iterator iter=regions.begin(); iter!=regions.end(); ++iter) {
+    RegionPtr cells = regionCells(*iter);
+    stream << endl << *iter << " " << regionType(*iter) << " " << cells->size();
+    for (Region::iterator cell=cells->begin(); cell!=cells->end(); ++cell) {
+      stream << " " << cell->r << " " << cell->c;
+    }
+  }
+}
 
 
+RegionGraph::RegionGraph (istream& stream) 
+{
+  uint num_regions;
+  stream >> num_regions >> next_id_;
+  for (uint r=0; r<num_regions; ++r) {
+    uint num_cells;
+    int type;
+    RegionId id;
+    stream >> id >> type >> num_cells;
+    MutableRegionPtr region(new Region);
+    for (uint c=0; c<num_cells; ++c) {
+      Cell2D cell;
+      stream >> cell.r >> cell.c;
+      region->insert(cell);
+    }
+    
+    addRegion(region, type, id);
+  }
+}
 
 
 

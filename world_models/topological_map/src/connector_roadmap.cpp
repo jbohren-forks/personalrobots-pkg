@@ -50,7 +50,7 @@ namespace topological_map
 
 using boost::tie;
 using std::map;
-
+using std::endl;
 
 typedef map<RoadmapVertex, double> DistanceMap;
 typedef map<RoadmapVertex, RoadmapVertex> PredecessorMap;
@@ -64,10 +64,16 @@ typedef boost::associative_property_map<PredecessorMap> PredecessorPmap;
 
 ConnectorId Roadmap::addNode (const Point2D& p)
 {
-  RoadmapVertex v=add_vertex(NodeInfo(next_id_, p), graph_);
-  id_vertex_map_[next_id_]=v;
-  ROS_DEBUG_STREAM_NAMED ("roadmap", "Added connector " << next_id_ << " at " << p);
+  addNode(p, next_id_);
   return next_id_++;
+}
+
+void Roadmap::addNode (const Point2D& p, const ConnectorId id)
+{
+  ROS_ASSERT_MSG (id_vertex_map_.find(id)==id_vertex_map_.end(), "Attempted to add duplicate connector id %u", id);
+  RoadmapVertex v=add_vertex(NodeInfo(id, p), graph_);
+  id_vertex_map_[id]=v;
+  ROS_DEBUG_STREAM_NAMED ("roadmap", "Added connector " << id << " at " << p);
 }
 
 void Roadmap::setCost (const ConnectorId i, const ConnectorId j, double cost)
@@ -212,6 +218,51 @@ ConnectorIdVector Roadmap::shortestPath (const ConnectorId i, const ConnectorId 
 }
 
 
+/************************************************************
+ * i/o
+ ************************************************************/
+
+void Roadmap::writeToStream (ostream& stream) const
+{
+  stream << endl << num_vertices(graph_) << " " << next_id_;
+  VertexIterator iter, end;
+  for (tie(iter, end) = vertices(graph_); iter!=end; ++iter) {
+    RoadmapVertex v=*iter;
+    stream << endl << graph_[v].id << " " << graph_[v].point.x << " " << graph_[v].point.y << " " << out_degree(v, graph_);
+    RoadmapAdjacencyIterator adj_iter, adj_end;
+    for (tie (adj_iter, adj_end) = adjacent_vertices(v, graph_); adj_iter!=adj_end; ++adj_iter) {
+      RoadmapVertex w=*adj_iter;
+      pair<RoadmapEdge, bool> p = edge(v, w, graph_);
+      ROS_ASSERT_MSG(p.second, "Unexpected null edge while writing roadmap");
+      stream << " " << graph_[w].id << " " << graph_[p.first].cost;
+    }
+  }
+}
+
+Roadmap::Roadmap (istream& stream)
+{
+  uint num_nodes;
+  stream >> num_nodes >> next_id_;
+  for (uint n=0; n<num_nodes; ++n) {
+    ConnectorId id;
+    Point2D p;
+    uint num_neighbors;
+    stream >> id >> p.x >> p.y >> num_neighbors;
+    addNode(p, id);
+    for (uint neighbor=0; neighbor<num_neighbors; ++neighbor) {
+      ConnectorId neighbor_id;
+      double cost;
+      stream >> neighbor_id >> cost;
+      // Set the cost only if neighbor already exist in graph
+      if (idExists(neighbor_id)) {
+        setCost(id, neighbor_id, cost);
+      }
+    }
+  }
+}
+
+
+
 
 /************************************************************
  * internal
@@ -228,13 +279,19 @@ RoadmapEdge Roadmap::ensureEdge(const RoadmapVertex v, const RoadmapVertex w)
   return p.first;
 }
 
+bool Roadmap::idExists (const ConnectorId i) const
+{
+  return id_vertex_map_.find(i)!=id_vertex_map_.end();
+}
+
 RoadmapVertex Roadmap::idVertex(const ConnectorId i) const
 {
-  ConnectorIdVertexMap::const_iterator iter = id_vertex_map_.find(i);
-  if (iter==id_vertex_map_.end()) {
+  if (!idExists(i)) {
     throw UnknownConnectorIdException(i);
   }
-  return iter->second;
+  else {
+    return id_vertex_map_.find(i)->second;
+  }
 }
 
 void Roadmap::resetIndices()

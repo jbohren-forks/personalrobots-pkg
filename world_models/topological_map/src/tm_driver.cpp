@@ -79,6 +79,9 @@ int main (int argc, char* argv[])
   m->setGoal(Cell2D(1,12));
   m->setGoal(Cell2D(0,12));
   m->setGoal(Cell2D(12,1));
+
+  std::ofstream str("local/test");
+  m->writeToStream(str);
 }
 
   
