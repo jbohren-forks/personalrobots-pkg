@@ -13,7 +13,7 @@ g0.timeout = 3;
 
 rejectable(moveBase.Inactive c0);
 g0 meets c0;
-eq(c0.aborted, true);
+eq(c0.status, ABORTED);
 assertCompleted(c0.state);
 
 rejectable(moveBase.Active g1);
@@ -24,7 +24,7 @@ g1.timeout = 1;
 
 rejectable(moveBase.Inactive c1);
 g1 meets c1;
-eq(c1.aborted, true);
+eq(c1.status, ABORTED);
 assertCompleted(c1.state);
 
 

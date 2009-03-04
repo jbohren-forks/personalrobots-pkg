@@ -199,6 +199,7 @@ class CheckDoorway extends Behavior {
     float x; 
     float y;
     float th;
+    bool doorway_clear; // True if there is a clear path, otherwise false
   }
 
   CheckDoorway(Mode _mode){
@@ -218,12 +219,16 @@ class DetectDoor extends Behavior {
     float x; 
     float y;
     float th;
+    bool found_door;
+    bool found_handle;
   }
 
   predicate Inactive{
     float x; 
     float y;
     float th;
+    bool found_door;
+    bool found_handle;
   }
 
   DetectDoor(Mode _mode){

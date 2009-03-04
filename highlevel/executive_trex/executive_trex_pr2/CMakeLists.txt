@@ -81,10 +81,4 @@ rospack_add_executable(bin/trexwatchdog src/WatchDog.cc)
 rospack_add_gtest(test/topological_map_tests test/topological_map_tests.cc)
 target_link_libraries(test/topological_map_tests executive_trex_pr2_g)
 
-# Integrated test cases for the nav stack running with the pr2 executive and model.
-rospack_add_rostest_future(wpc.0/test.xml)
-rospack_add_rostest_future(wpc.1/test.xml)
-rospack_add_rostest_future(wpc.2/test.xml)
-rospack_add_rostest_future(miles.0/test.xml)
-
 rospack_add_executable(test/groundtruthtransform test/groundtruthtransform.cpp)

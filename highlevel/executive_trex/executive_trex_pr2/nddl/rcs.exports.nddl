@@ -15,7 +15,7 @@ class BaseState extends AgentTimeline {
 		float y;
 		float th;
 		float accumulatedDistance; // Derived from inputs
-		defaultOnCommit(accumulatedDistance, 0);
+		defaultOnCommit(accumulatedDistance, 0.0);
 	}
 
 	BaseState(Mode _mode){

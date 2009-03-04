@@ -1,0 +1,24 @@
+/**
+ * For now, assume a fixed duration, and always return success. Later, can model
+ * a selection that stochastically selects if the doorway is clear
+ */
+CheckDoorway::Active{
+  eq(duration, 3);
+
+  // Always clear at the end.
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+  eq(s.doorway_clear, true);
+}
+
+// State variables
+HandleState handle_state = new HandleState(Internal);
+DoorState door_state = new DoorState(Internal);
+
+ReleaseDoor release_door = new ReleaseDoor(Internal);
+OpenDoorWithGrasp open_door_with_grasp = new OpenDoorWithGrasp(Internal);
+TwistHandle twist_handle = new TwistHandle(Internal);
+GraspHandle grasp_handle = new GraspHandle(Internal);
+OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
+DetectDoor detect_door = new DetectDoor(Internal);
+CheckDoorway check_door = new CheckDoorway(Internal);

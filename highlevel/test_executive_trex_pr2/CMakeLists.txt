@@ -16,10 +16,10 @@ endif (JAM_RET_VAR)
 #functionality in TREX.
 
 # Integrated test cases for the nav stack running with the pr2 executive and model.
-#rospack_add_rostest(wpc.0/test.xml) #Commented awaiting Conor's fix.
-#rospack_add_rostest(wpc.1/test.xml) #Commented awaiting Conor's fix.
-#rospack_add_rostest(wpc.2/test.xml) #Commented awaiting Conor's fix.
-#rospack_add_rostest(wpc.3/test.xml) #Commented awaiting Conor's fix.
+rospack_add_rostest(wpc.0/test.xml) #Commented awaiting Conor's fix.
+rospack_add_rostest(wpc.1/test.xml) #Commented awaiting Conor's fix.
+rospack_add_rostest(wpc.2/test.xml) #Commented awaiting Conor's fix.
+rospack_add_rostest(wpc.3/test.xml) #Commented awaiting Conor's fix.
 
 
 #rospack_add_rostest_graphical(miles.0/test.xml)

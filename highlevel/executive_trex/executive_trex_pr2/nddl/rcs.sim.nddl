@@ -34,6 +34,10 @@
 #include "rcs.exports.nddl"
 #include "rcs.exports.doorman.nddl"
 
+
+// Include simulation subsystems
+#include "rcs.sim.doorman.nddl"
+
 /**
  * If an active token is dispatched, we start it immediately
  */
@@ -288,16 +292,7 @@ BaseController base_controller = new BaseController();
 // State Variables
 BaseState base_state = new BaseState(Internal);
 BatteryState battery_state = new BatteryState(Internal);
-HandleState handle_state = new HandleState(Internal);
-DoorState door_state = new DoorState(Internal);
 
 // Behaviors
 MoveBase move_base = new MoveBase(Internal);
 RechargeController recharge_controller = new RechargeController(Internal);
-ReleaseDoor release_door = new ReleaseDoor(Internal);
-OpenDoorWithGrasp open_door_with_grasp = new OpenDoorWithGrasp(Internal);
-TwistHandle twist_handle = new TwistHandle(Internal);
-GraspHandle grasp_handle = new GraspHandle(Internal);
-OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
-DetectDoor detect_door = new DetectDoor(Internal);
-CheckDoorway check_door = new CheckDoorway(Internal);
