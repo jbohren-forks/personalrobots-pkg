@@ -186,6 +186,10 @@ class NavStackTest(unittest.TestCase):
             print "state goal is published: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
             self.publish_goal = False
     
+    def cmd_velInput(self, cmd_vel):
+          print "cmd_vel: ", cmd_vel.vel.vx, ",", cmd_vel.vel.vy, ",", cmd_vel.vel.vz \
+                           , cmd_vel.ang_vel.vx, ",", cmd_vel.ang_vel.vy, ",", cmd_vel.ang_vel.vz
+    
     def test_set_goal(self):
         print "LNK\n"
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
@@ -195,6 +199,9 @@ class NavStackTest(unittest.TestCase):
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
         rospy.Subscriber("state"                 , Planner2DState      , self.stateInput)
+
+        # below only for debugging build 303, base not moving
+        rospy.Subscriber("cmd_vel"               , PoseDot             , self.cmd_velInput)
 
         rospy.init_node(NAME, anonymous=True)
 
