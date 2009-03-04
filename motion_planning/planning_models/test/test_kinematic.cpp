@@ -822,6 +822,18 @@ TEST(FK, MoreRobots)
     delete model;
 }
 
+namespace planning_models
+{
+    shapes::Mesh* create_mesh_from_binary_stl(const char *filename);
+}
+
+TEST(Loading, Mesh)
+{
+    planning_models::shapes::Mesh *m = planning_models::create_mesh_from_binary_stl("/home/isucan/base.stl");
+    EXPECT_TRUE(m != NULL);
+    delete m;
+}
+
 int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);

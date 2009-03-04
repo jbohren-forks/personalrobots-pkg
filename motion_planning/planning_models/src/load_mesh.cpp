@@ -34,7 +34,6 @@
 
 #include <cstdio>
 #include <cmath>
-#include <cassert>
 #include <LinearMath/btVector3.h>
 #include <algorithm>
 #include <vector>
@@ -80,9 +79,90 @@ namespace planning_models
 	}
     };
     
-    shapes::Mesh* load_binary_stl(const char *filename)
+    shapes::Mesh* create_mesh_from_vertices(const std::vector<btVector3> &source)
     {
+	if (source.size() < 3)
+	    return NULL;
+	
+	std::set<myVertex, ltVertexValue> vertices;
+	std::vector<unsigned int>         triangles;
+	
+	for (unsigned int i = 0 ; i < source.size() / 3 ; ++i)
+	{
+	    // check if we have new vertices
+	    myVertex vt;
+	    
+	    vt.point = source[3 * i];
+	    std::set<myVertex, ltVertexValue>::iterator p1 = vertices.find(vt);
+	    if (p1 == vertices.end())
+	    {
+		vt.index = vertices.size();
+		vertices.insert(vt);		    
+	    }
+	    else
+		vt.index = p1->index;
+	    triangles.push_back(vt.index);		
+	    
+	    vt.point = source[3 * i + 1];
+	    std::set<myVertex, ltVertexValue>::iterator p2 = vertices.find(vt);
+	    if (p2 == vertices.end())
+	    {
+		vt.index = vertices.size();
+		vertices.insert(vt);		    
+	    }
+	    else
+		vt.index = p2->index;
+	    triangles.push_back(vt.index);		
+	    
+	    vt.point = source[3 * i + 2];
+	    std::set<myVertex, ltVertexValue>::iterator p3 = vertices.find(vt);
+	    if (p3 == vertices.end())
+	    {
+		vt.index = vertices.size();
+		vertices.insert(vt);		    
+	    }
+	    else
+		vt.index = p3->index;
 
+	    triangles.push_back(vt.index);
+	}
+	
+	// sort our vertices
+	std::vector<myVertex> vt;
+	vt.insert(vt.begin(), vertices.begin(), vertices.end());
+	std::sort(vt.begin(), vt.end(), ltVertexIndex());
+	
+	// copy the data to a mesh structure 
+	unsigned int nt = triangles.size() / 3;
+	
+	shapes::Mesh *mesh = new shapes::Mesh(vt.size(), nt);
+	for (unsigned int i = 0 ; i < vt.size() ; ++i)
+	{
+	    mesh->vertices[3 * i    ] = vt[i].point.getX();
+	    mesh->vertices[3 * i + 1] = vt[i].point.getY();
+	    mesh->vertices[3 * i + 2] = vt[i].point.getZ();
+	}
+	
+	std::copy(triangles.begin(), triangles.end(), mesh->triangles);
+	
+	// compute normals 
+	for (unsigned int i = 0 ; i < nt ; ++i)
+	{
+	    btVector3 s1 = vt[triangles[i * 3    ]].point - vt[triangles[i * 3 + 1]].point;
+	    btVector3 s2 = vt[triangles[i * 3 + 1]].point - vt[triangles[i * 3 + 2]].point;
+	    btVector3 normal = s1.cross(s2);
+	    normal.normalize();
+	    mesh->normals[3 * i    ] = normal.getX();
+	    mesh->normals[3 * i + 1] = normal.getY();
+	    mesh->normals[3 * i + 2] = normal.getZ();
+	}
+	
+	return mesh;
+    }
+    
+    shapes::Mesh* create_mesh_from_binary_stl(const char *filename)
+    {
+	
 	FILE* input = fopen(filename, "r");
 	if (!input)
 	    return NULL;
@@ -107,9 +187,7 @@ namespace planning_models
 	    // make sure we have read enough data
 	    if (50 * numTriangles + 84 <= fileSize)
 	    {
-		
-		std::set<myVertex, ltVertexValue> vertices;
-		std::vector<unsigned int>         triangles;
+		std::vector<btVector3> vertices;
 		
 		for (unsigned int currentTriangle = 0 ; currentTriangle < numTriangles ; ++currentTriangle)
 		{
@@ -145,77 +223,14 @@ namespace planning_models
 		    // skip attribute
 		    pos += 2;
 		    
-		    // check if we have new vertices
-		    myVertex vt;
-		    
-		    vt.point = v1;
-		    std::set<myVertex, ltVertexValue>::iterator p1 = vertices.find(vt);
-		    if (p1 == vertices.end())
-		    {
-			vt.index = vertices.size();
-			vertices.insert(vt);		    
-		    }
-		    else
-			vt.index = p1->index;
-		    triangles.push_back(vt.index);		
-		    
-		    vt.point = v2;
-		    std::set<myVertex, ltVertexValue>::iterator p2 = vertices.find(vt);
-		    if (p2 == vertices.end())
-		    {
-			vt.index = vertices.size();
-			vertices.insert(vt);		    
-		    }
-		    else
-			vt.index = p2->index;
-		    triangles.push_back(vt.index);		
-		    
-		    vt.point = v3;
-		    std::set<myVertex, ltVertexValue>::iterator p3 = vertices.find(vt);
-		    if (p3 == vertices.end())
-		    {
-			vt.index = vertices.size();
-			vertices.insert(vt);		    
-		    }
-		    else
-			vt.index = p3->index;
-		    triangles.push_back(vt.index);		
+		    vertices.push_back(v1);
+		    vertices.push_back(v2);
+		    vertices.push_back(v3);
 		}
 		
 		delete[] buffer;
 		
-		// sort our vertices
-		std::vector<myVertex> vt;
-		vt.insert(vt.begin(), vertices.begin(), vertices.end());
-		std::sort(vt.begin(), vt.end(), ltVertexIndex());
-		
-		
-		// copy the data to a mesh structure 
-		unsigned int nt = triangles.size() / 3;
-		
-		shapes::Mesh *mesh = new shapes::Mesh(vt.size(), nt);
-		for (unsigned int i = 0 ; i < vt.size() ; ++i)
-		{
-		    mesh->vertices[3 * i    ] = vt[i].point.getX();
-		    mesh->vertices[3 * i + 1] = vt[i].point.getY();
-		    mesh->vertices[3 * i + 2] = vt[i].point.getZ();
-		}
-		
-		std::copy(triangles.begin(), triangles.end(), mesh->triangles);
-		
-		// compute normals 
-		for (unsigned int i = 0 ; i < nt ; ++i)
-		{
-		    btVector3 s1 = vt[triangles[i * 3    ]].point - vt[triangles[i * 3 + 1]].point;
-		    btVector3 s2 = vt[triangles[i * 3 + 1]].point - vt[triangles[i * 3 + 2]].point;
-		    btVector3 normal = s1.cross(s2);
-		    normal.normalize();
-		    mesh->normals[3 * i    ] = normal.getX();
-		    mesh->normals[3 * i + 1] = normal.getY();
-		    mesh->normals[3 * i + 2] = normal.getZ();
-		}
-		
-		return mesh;
+		return create_mesh_from_vertices(vertices);
 	    }
 	}
 	

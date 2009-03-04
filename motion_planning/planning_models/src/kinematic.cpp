@@ -52,7 +52,7 @@ namespace planning_models
     };
     
     // load a mesh
-    shapes::Mesh* load_binary_stl(const char *filename);
+    shapes::Mesh* create_mesh_from_binary_stl(const char *filename);
 }
 
 const std::string& planning_models::KinematicModel::getModelName(void) const

@@ -39,7 +39,9 @@
 
 #include <planning_models/shapes.h>
 #include <LinearMath/btTransform.h>
-#include <cmath>
+#include <LinearMath/btAlignedObjectArray.h>
+#include <cstdlib>
+
 
 /**
    This set of classes allows quickly detecting whether a given point
@@ -142,24 +144,12 @@ namespace collision_space
 	    {
 	    }
 	    
-	    virtual bool containsPoint(const btVector3 &p) const 
-	    {
-		return (m_center - p).length2() < m_radius2;
-	    }
+	    virtual bool containsPoint(const btVector3 &p) const;
 	    
 	protected:
 	    
-	    virtual void useDimensions(const planning_models::shapes::Shape *shape) // radius
-	    {
-		m_radius = static_cast<const planning_models::shapes::Sphere*>(shape)->radius;
-	    }
-	    
-	    virtual void updateInternalData(void)
-	    {
-		m_radius2 = m_radius * m_scale + m_padding;
-		m_radius2 = m_radius2 * m_radius2;
-		m_center = m_pose.getOrigin();
-	    }
+	    virtual void useDimensions(const planning_models::shapes::Shape *shape);
+	    virtual void updateInternalData(void);
 	    
 	    btVector3 m_center;
 	    double    m_radius;	
@@ -183,47 +173,13 @@ namespace collision_space
 	    {
 	    }
 	    
-	    virtual bool containsPoint(const btVector3 &p) const 
-	    {
-		btVector3 v = p - m_center;		
-		double pH = v.dot(m_normalH);
-		
-		if (fabs(pH) > m_length2)
-		    return false;
-		
-		double pB1 = v.dot(m_normalB1);
-		double remaining = m_radius2 - pB1 * pB1;
-		
-		if (remaining < 0.0)
-		    return false;
-		else
-		{
-		    double pB2 = v.dot(m_normalB2);
-		    return pB2 * pB2 < remaining;
-		}		
-	    }
+	    virtual bool containsPoint(const btVector3 &p) const;
 	    
 	protected:
 	    
-	    virtual void useDimensions(const planning_models::shapes::Shape *shape) // (length, radius)
-	    {
-		m_length = static_cast<const planning_models::shapes::Cylinder*>(shape)->length;
-		m_radius = static_cast<const planning_models::shapes::Cylinder*>(shape)->radius;
-	    }
-	    
-	    virtual void updateInternalData(void)
-	    {
-		m_radius2 = m_radius * m_scale + m_padding;
-		m_radius2 = m_radius2 * m_radius2;
-		m_length2 = (m_scale * m_length + m_padding) / 2.0;
-		m_center = m_pose.getOrigin();
+	    virtual void useDimensions(const planning_models::shapes::Shape *shape);
+	    virtual void updateInternalData(void);
 
-		const btMatrix3x3& basis = m_pose.getBasis();
-		m_normalB1 = basis.getColumn(0);
-		m_normalB2 = basis.getColumn(1);
-		m_normalH  = basis.getColumn(2);
-	    }
-	    
 	    btVector3 m_center;
 	    btVector3 m_normalH;
 	    btVector3 m_normalB1;
@@ -253,52 +209,12 @@ namespace collision_space
 	    {
 	    }
 	    
-	    virtual bool containsPoint(const btVector3 &p) const 
-	    {
-		btVector3 v = p - m_center;
-		double pL = v.dot(m_normalL);
-
-		if (fabs(pL) > m_length2)
-		    return false;
-		
-		double pW = v.dot(m_normalW);
-		
-		if (fabs(pW) > m_width2)
-		    return false;
-		
-		double pH = v.dot(m_normalH);
-		
-		if (fabs(pH) > m_height2)
-		    return false;
-		
-		return true;
-	    }
+	    virtual bool containsPoint(const btVector3 &p) const;
 	    
 	protected:
 	    
-	    virtual void useDimensions(const planning_models::shapes::Shape *shape) // (x, y, z) = (length, width, height)
-	    {
-		const double *size = static_cast<const planning_models::shapes::Box*>(shape)->size;
-		m_length = size[0];
-		m_width  = size[1];
-		m_height = size[2];
-	    }
-	    
-	    virtual void updateInternalData(void) 
-	    {
-		double s2 = m_scale / 2.0;
-		double p2 = m_padding / 2.0;
-		m_length2 = m_length * s2 + p2;
-		m_width2  = m_width * s2 + p2;
-		m_height2 = m_height * s2 + p2;
-		
-		m_center  = m_pose.getOrigin();
-		
-		const btMatrix3x3& basis = m_pose.getBasis();
-		m_normalL = basis.getColumn(0);
-		m_normalW = basis.getColumn(1);
-		m_normalH = basis.getColumn(2);
-	    }
+	    virtual void useDimensions(const planning_models::shapes::Shape *shape); // (x, y, z) = (length, width, height)	    
+	    virtual void updateInternalData(void);
 	    
 	    btVector3 m_center;
 	    btVector3 m_normalL;
@@ -312,6 +228,36 @@ namespace collision_space
 	    double    m_width2;
 	    double    m_height2;	
 	};
+	
+
+	class ConvexMesh : public Body
+	{
+	public:
+	    
+	    ConvexMesh(void) : Body()
+	    {
+	    }
+
+	    ConvexMesh(const planning_models::shapes::Shape *shape) : Body()
+	    {
+		setDimensions(shape);
+	    }
+	    
+	    virtual ~ConvexMesh(void)
+	    {
+	    }
+	    
+	    virtual bool containsPoint(const btVector3 &p) const;
+	    
+	protected:
+	    
+	    virtual void useDimensions(const planning_models::shapes::Shape *shape);
+	    virtual void updateInternalData(void);
+	    
+	    btAlignedObjectArray<btVector3> m_planes;
+	    btTransform                     m_iPose;
+	};
+	
 	
 	Body* createBodyFromShape(const planning_models::shapes::Shape *shape);
 	
