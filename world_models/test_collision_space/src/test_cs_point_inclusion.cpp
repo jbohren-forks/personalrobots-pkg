@@ -48,6 +48,11 @@ using namespace collision_space;
 const int TEST_TIMES  = 3;
 const int TEST_POINTS = 50000;
 
+namespace planning_models
+{
+    shapes::Mesh* create_mesh_from_vertices(const std::vector<btVector3> &source);
+}
+
 class TestVM
 {
 public:
@@ -212,6 +217,25 @@ public:
 	}
 	
 	delete s;
+    }
+    
+    void testConvexMesh(void)
+    {
+	std::vector<btVector3> pts(4);
+	pts[0] = btVector3(0,0,1);
+	pts[1] = btVector3(1,0,-0.3);
+	pts[2] = btVector3(-0.5,0.8,-0.3);
+	pts[3] = btVector3(-0.5,-0.8,-0.3);
+
+	planning_models::shapes::Mesh *shape = planning_models::create_mesh_from_vertices(pts);
+	collision_space::bodies::Body *s = new collision_space::bodies::ConvexMesh(shape);
+
+	robot_msgs::VisualizationMarker mk;
+	setShapeTransformAndMarker(s, mk);	
+	testShape(s);
+	
+	delete s;
+	delete shape;
     }
     
     void run()
