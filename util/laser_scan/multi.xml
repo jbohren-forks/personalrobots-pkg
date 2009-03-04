@@ -1,0 +1,17 @@
+<filters>
+  <filter type="LaserMedianFilter" name="laser_median_test_7_from_file"> 
+    <filters>
+      <filter type="MedianFilter" name="median_test_7_from_file"> 
+	<params number_of_observations="10"/>
+      </filter>
+      <filter type="MedianFilter" name="median_test_7a_from_file"> 
+	<params number_of_observations="10"/>
+      </filter>
+  
+  
+    </filters>
+  </filter>
+  <filter type="LaserScanIntensityFilter" name="intensity"> 
+    <params lower_threshold="7999"/>
+  </filter>
+</filters>

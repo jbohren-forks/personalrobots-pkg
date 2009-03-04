@@ -30,6 +30,7 @@
 #include "ros/node.h"
 #include "laser_scan/LaserScan.h"
 #include "laser_scan/median_filter.h"
+#include "laser_scan/intensity_filter.h"
 
 static std::string median_filter_xml = "<filter type=\"MedianFilter\" name=\"median_test_5\"> <params number_of_observations=\"5\"/></filter>";
 
