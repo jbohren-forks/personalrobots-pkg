@@ -220,23 +220,15 @@ void *controlLoop(void *)
   // Initialize mechanism control from robot description
   mcn.initXml(root);
 
-  // Spawn controllers
-  // TODO what file does this come from?
-  // Can this be pushed down to mechanism control?
-  for (TiXmlElement *elt = root->FirstChildElement("controller"); elt ; elt = elt->NextSiblingElement("controller"))
-  {
-    mc.spawnController(elt->Attribute("type"), elt->Attribute("name"), elt);
-  }
-
-  struct timespec tick;
-  clock_gettime(CLOCK_MONOTONIC, &tick);
-  int period = 1e+6; // 1 ms in nanoseconds
-
-  // Up priority for this thread
+  // Set to realtime scheduler for this thread
   struct sched_param thread_param;
   int policy = SCHED_FIFO;
   thread_param.sched_priority = sched_get_priority_max(policy);
   pthread_setschedparam(pthread_self(), policy, &thread_param);
+
+  struct timespec tick;
+  clock_gettime(CLOCK_MONOTONIC, &tick);
+  int period = 1e+6; // 1 ms in nanoseconds
 
   static int count = 0;
   while (!g_quit)
