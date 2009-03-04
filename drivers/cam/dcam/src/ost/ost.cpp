@@ -109,6 +109,7 @@ Fl_Window *w3dwin;		// Enclosing window
 
 
 // interval saving
+//int isSaving = 60*1;		// zero interval means don't save, otherwise in seconds
 int isSaving = 0;		// zero interval means don't save, otherwise in seconds
 void save_images(char *fname);	// save helper
 
@@ -470,7 +471,7 @@ main(int argc, char **argv)	// no arguments
 		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->imColor, w, h, w, RGB24);
 	      else if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
 		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->im, w, h, w);
-	      
+
 	      if (isTracking)
 		cwin->display2DFeatures(leftcorners[0],nleftcorners[0],goodleft[0]);
 
@@ -978,7 +979,7 @@ cal_load_seq_cb(Fl_Button* b, void* arg)
   if (fname == NULL)
     return;
 
-  debug_message("[oST] File name: %s", fname);
+  debug_message("[OST] File name: %s", fname);
 
   char *lname = NULL, *rname = NULL;
   int seq;
@@ -1848,17 +1849,6 @@ void cal_capture_cb(Fl_Button*, void*)
 void
 cal_save_image_cb(Fl_Button*, void*) 
 {
-  if (!dev)
-    {
-      debug_message("[oST] No open device");
-      return;
-    }
-
-  char *fname = fl_file_chooser("Save images (.png)", "{*.png}", NULL);
-  if (fname == NULL)
-    return;
-
-  save_images(fname);
 }
 
 
@@ -1881,6 +1871,8 @@ save_images(char *fname)
   strcpy(fn,fname);
   if (sufn != 0)		// has suffix
     fn[sufn] = 0;
+  else
+    sufn = n;
   debug_message("[oST] Base name: %s", fn);
 
   int w = dev->stIm->imWidth;
@@ -2715,7 +2707,7 @@ void load_images_cb(Fl_Menu_ *w, void *u)
   if (fname == NULL)
     return;
 
-  printf("File name: %s\n", fname);
+  printf("[OST] File name: %s\n", fname);
 
   char *lname = NULL, *rname = NULL;
   bool ret;
@@ -2730,48 +2722,25 @@ void load_images_cb(Fl_Menu_ *w, void *u)
     }
 }
 
+
+//
+// save all you can
+// 
 void save_images_cb(Fl_Menu_ *w, void *u)
 {
-  char *fname = fl_file_chooser("Save images (png)", NULL, NULL);
+  if (!dev)
+    {
+      debug_message("[oST] No open device");
+      return;
+    }
+
+  char *fname = fl_file_chooser("Save images (.png)", "{*.png}", NULL);
   if (fname == NULL)
     return;
 
-  // strip off image suffix
-  printf("File name: %s\n", fname);
-
-  char *lname = NULL, *rname = NULL, *bname = NULL;
-  int ind = -1;
-  bool ret;
-  ret = parse_filename(fname, &lname, &rname, &ind, &bname);
-
-  char ff[1024];
-
-
-  if (imgs_left[0])
-    {
-      sprintf(ff, "%s-L.png", bname);
-      cvSaveImage(ff, imgs_left[0]);
-      debug_message("Saved %s\n", ff);
-    }
-  if (imgs_right[0])
-    {
-      sprintf(ff, "%s-R.png", bname);
-      cvSaveImage(ff, imgs_right[0]);
-      debug_message("Saved %s\n", ff);
-    }
-  if (rect_left[0])
-    {
-      sprintf(ff, "%s-RL.png", bname);
-      cvSaveImage(ff, rect_left[0]);
-      debug_message("Saved %s\n", ff);
-    }
-  if (rect_right[0])
-    {
-      sprintf(ff, "%s-RR.png", bname);
-      cvSaveImage(ff, rect_right[0]);
-      debug_message("Saved %s\n", ff);
-    }
+  save_images(fname);
 }
+
 
 
 
