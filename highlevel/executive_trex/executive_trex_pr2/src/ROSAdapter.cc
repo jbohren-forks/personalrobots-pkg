@@ -40,13 +40,13 @@ namespace TREX {
 
     registerSubscribers();
 
-    // Wait till we get a message before starting the agent
+    // Wait till we are initialized before moving ahead
     while(!isInitialized() && ros::Node::instance()->ok()){
-      std::cout << "Waiting to connect for " << timelineName << ". If this is taking too long then the expected message is not being published." << std::endl;
+      ROS_INFO("Waiting to connect for %s. If this is taking too long then the expected message is not being published.", timelineName.c_str());
       sleep(1);
     }
 
-    std::cout << "Connection established for " << timelineName << std::endl;
+    ROS_INFO("Connection established for %s", timelineName.c_str());
   }
 
   ROSAdapter::~ROSAdapter() {

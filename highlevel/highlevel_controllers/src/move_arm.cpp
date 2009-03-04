@@ -133,9 +133,7 @@ private:
 
   int                              plan_id_;
   int                              traj_id_;
-  bool                             new_goal_;
   bool                             new_trajectory_;
-  bool                             plan_valid_;
   robot_msgs::KinematicPath        current_trajectory_;
   double                           angle_tolerance_;
 
@@ -175,8 +173,7 @@ MoveArm::MoveArm(const std::string& side)
     controller_topic_(side + "_arm_trajectory_command"),
     controller_name_(side + "_arm_trajectory_controller"),
     robot_model_(NULL), plan_id_(-1), traj_id_(-1), 
-    new_goal_(false), new_trajectory_(false), 
-    plan_valid_(false)
+    new_trajectory_(false)
 {
   // Adjust logging level
   log4cxx::LoggerPtr my_logger = log4cxx::Logger::getLogger(ROSCONSOLE_DEFAULT_NAME);
@@ -255,7 +252,6 @@ void MoveArm::updateGoalMsg()
   lock();
   stateMsg.goal = goalMsg.goal_configuration;
   ROS_DEBUG("Received new goal");
-  new_goal_ = true;
   unlock();
 }
 
@@ -333,13 +329,15 @@ void stateParamsToMsg(planning_models::KinematicModel::StateParams *state,
 
 bool MoveArm::makePlan()
 {
-  if(!new_goal_)
+  // Only want to re-plan if we have not successfully obtained a plan already. Note that this is actually covered in
+  // how the node is configured since it is defined by the timiong of the plan update loop. This node conflates global planning and incremental
+  // replanning.
+  if(isValid())
     return true;
-
-  new_goal_ = false;
 
   ROS_DEBUG("Starting to plan...");
   
+  // CMG: Does this really need to be locked throughout? Just wondering.
   goalMsg.lock();
 
   robot_srvs::KinematicReplanState::Request  req;
@@ -429,28 +427,33 @@ bool MoveArm::makePlan()
 
   //req.params.volume* are left empty, because we're not planning for the base.
 
-  bool ret = ros::service::call("replan_kinematic_path_state", req, res);
-  if (!ret)
-  {
-    ROS_ERROR("Service call on plan_kinematic_path_state failed");
-    plan_id_ = -1;
-  }
-  else
-  {
+  if(ros::service::call("replan_kinematic_path_state", req, res)){
     plan_id_ = res.id;
     ROS_DEBUG("Requested plan, got id %d\n", plan_id_);
     plan_status_.lock();
     plan_status_.unlock();
   }
+  else {
+    ROS_ERROR("Service call on plan_kinematic_path_state failed");
+    plan_id_ = -1;
+  }
 
   goalMsg.unlock();
 
-  return true;
+  return plan_id_ != -1;
 }
 
 bool MoveArm::goalReached()
 {
-  return getDone();
+  plan_status_.lock();
+  // Should never get to call this method if the plan is invalid. See HighlevelController::doOneCycle() for details
+  ROS_ASSERT(plan_status_.id != -1);
+  bool result = plan_status_.done || (!new_trajectory_ && traj_id_ >= 0 && isTrajectoryDone());
+  ROS_DEBUG("Execution is complete");
+  plan_id_ = -1;
+  traj_id_ = -1;
+  plan_status_.unlock();
+  return result;
 }
 
 bool MoveArm::isTrajectoryDone()
@@ -508,35 +511,26 @@ bool MoveArm::isTrajectoryDone()
   return done;
 }
 
+/**
+ * @note This method will not be called if we are done.
+ */
 bool MoveArm::dispatchCommands()
 {
-  // Force replanning if we have a new goal
-  if(new_goal_)
-    return false;
+  bool ok(true);
 
   plan_status_.lock();
 
   // HACK: sometimes we get the status for the new plan before we receive
   // the response to the service call that gives us the new plan id.  It
   // happens that the planner increments the id by 1 with each request.
+  // CMG: Since this cannot be called unless we completed the service call - do we need this?
   if(((plan_status_.id != plan_id_) &&
       (plan_status_.id != plan_id_ + 1)) ||
      (traj_id_ < 0 && !new_trajectory_))
   {
     // NOOP
+    // CMG: Is this a NOOP? We are basically continuing our prior command - no?
     ROS_DEBUG("Idle");
-  }
-  else if(plan_status_.done || (traj_id_ >= 0 && !new_trajectory_))
-  {
-    if(isTrajectoryDone())
-    {
-      ROS_DEBUG("Plan completed.");
-      plan_id_ = -1;
-      traj_id_ = -1;
-      ROS_DEBUG("Execution is complete");
-      stateMsg.status = pr2_msgs::MoveArmState::INACTIVE;
-      plan_valid_ = true;
-    }
   }
   else if(plan_status_.valid && 
           !plan_status_.unsafe &&
@@ -545,18 +539,18 @@ bool MoveArm::dispatchCommands()
   {
     ROS_DEBUG("sending new trajectory");
     sendArmCommand(current_trajectory_, kinematic_model_);
-    plan_valid_ = true;
     new_trajectory_ = false;
   }
   else
   {
     ROS_DEBUG("Plan invalid or unsafe");
     stopArm();
-    plan_valid_ = false;
+    ok = false;
   }
+
   plan_status_.unlock();
 
-  return plan_valid_;
+  return ok;
 }
 
 void MoveArm::printKinematicPath(robot_msgs::KinematicPath &path)

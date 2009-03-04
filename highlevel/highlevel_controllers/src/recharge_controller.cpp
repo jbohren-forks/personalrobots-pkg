@@ -164,9 +164,9 @@ namespace highlevel_controllers {
     // Set to initalized (benign if already true)
     initialize();
 
-    // If the power consumption is positive, then energy is flowing into the battery, so it must be plugged in.
-    if(connected() && !isActive())
-      activate();
+    // If not activated, do nothing
+    if(!isActive())
+      return;
 
     // If connected, we can reset notification to plug in. We also clear it to be releasable, meaning
     if(connected()){

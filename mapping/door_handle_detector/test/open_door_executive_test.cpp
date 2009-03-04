@@ -455,10 +455,10 @@ public:
   
   void plannerCallback()
   {
-    if (planner_state_.status == planner_state_.ACTIVE)
+    if (planner_state_.status.value == planner_state_.status.ACTIVE)
       planner_running_ = true;
 
-    if (planner_running_ && planner_state_.status == planner_state_.INACTIVE){
+    if (planner_running_ && planner_state_.status.value != planner_state_.status.ACTIVE){
       planner_running_ = false;
       planner_finished_ = true;
     }

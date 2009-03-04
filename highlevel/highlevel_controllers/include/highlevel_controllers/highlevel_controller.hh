@@ -48,14 +48,10 @@
  * @brief Abstract base class for a high level controller node which is parameterized by the state update
  * and goal messages exchanged with a client. The controller utilizes a pattern where the controller is tasked with
  * goals, and can transition between an active state (when pursuing a goal), and an inactive state when is its effectively
- * idle and should not be imposing any control. A high level control must also handle goal recalls.
+ * idle and should not be imposing any control. A high level control must also handle goal recalls, which is termed 'preemption'
  */
 template <class S, class G> class HighlevelController {
 public:
-  enum State {
-    INACTIVE = 0,
-    ACTIVE
-  };
 
   /**
    * @brief Used to set queue max parameter for subscribe and advertise of ROS topics
@@ -71,7 +67,7 @@ public:
   HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
     initialized(false), terminated(false), stateTopic(_stateTopic), 
     goalTopic(_goalTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), 
-    timeout(0, 0), done_(false), valid_(false) {
+    timeout(0, 0), valid_(false) {
 
     // Obtain the control frequency for this node
     double controller_frequency(10);
@@ -99,6 +95,8 @@ public:
     ros::Node::instance()->subscribe("highlevel_controllers/shutdown", shutdownMsg_, &HighlevelController<S, G>::shutdownCallback, this, 1);
 
     // Initially inactive
+    this->stateMsg.status.value = this->stateMsg.status.UNDEFINED;
+
     deactivate();
 
     // Start planner loop on a separate thread
@@ -110,21 +108,7 @@ public:
     delete plannerThread_;
   }
 
-  /**
-   * @brief Test if the node has received required inputs allowing it to commence business as usual.
-   * @see initialize()
-   */
-  bool isInitialized() const {
-    return initialized;
-  }
 
-  void terminate() {
-    terminated = true;
-  }
-
-  bool isTerminated() const {
-    return terminated;
-  }
   /**
    * @brief The main run loop of the controller
    */
@@ -144,53 +128,25 @@ public:
   }
 
   /**
-   * @brief Runs the planning loop. If the node is not initialized or if inactive, then it will do nothing. Otherwise
-   * it will call the planner with the given timeout.
+   * @brief Test if the HLC has received required inputs allowing it to commence business as usual.
+   * @see initialize()
    */
-  void plannerLoop(){
-    ros::Time lastPlan = ros::Time::now();
+  bool isInitialized() const {
+    return initialized;
+  }
 
-    while(ros::Node::instance()->ok() && !isTerminated()){
-      ros::Time curr = ros::Time::now();
+  /**
+   * @brief Call this to permanently decommision the controller
+   */
+  void terminate() {
+    terminated = true;
+  }
 
-      // Check for bogus time value and update to correct. This can happen for example where the node starts up
-      // and uses system time but then switches to listen to a time message based on simulated time. Just makes the code robust
-      // to such startup errors. If we do find some other timing anomaly it will correct by recomputing the last planning time.
-      // This has the effect of resetting the timeout monotor but that should only introduce a minor delay
-      if(curr < lastPlan)
-	lastPlan = curr;
-
-      if(isInitialized() && isActive()){
-
-	// If the plannerCycleTime is 0 then we only call the planner when we need to
-	if(plannerCycleTime_ != 0 || !isValid()){
-	  setValid(makePlan());
-	  if(!isValid()){
-	    // Could use a refined locking scheme but for now do not want to delegate that to a derived class
-	    lock();	 
-  
-	    ros::Duration elapsed_time = ros::Time::now() - lastPlan;
-	    ROS_DEBUG("Last current value at %f seconds:", curr.toSec());
-	    ROS_DEBUG("Last plan at %f seconds:", lastPlan.toSec());
-	    ROS_DEBUG("Elapsed time is %f seconds:", elapsed_time.toSec());
-	    if ((elapsed_time > timeout) && timeout.toSec() != 0.0) {
-	      this->stateMsg.status = this->stateMsg.ABORTED;
-	      ROS_INFO("Controller timed out.");
-	      deactivate();
-	    }
-	    handlePlanningFailure();
-	    unlock();	    
-	  } else {
-	    lastPlan = ros::Time::now();
-	  }
-	}
-      }
-
-      if(plannerCycleTime_ >= 0)
-	sleep(curr, std::max(plannerCycleTime_, controllerCycleTime_));
-      else
-	sleep(curr, curr.toSec() + 0.001);
-    }
+  /**
+   * @brief Test if the HLC has been terminated (decommissioned permanently)
+   */
+  bool isTerminated() const {
+    return terminated;
   }
 
 protected:
@@ -199,7 +155,7 @@ protected:
    * @brief Accessor for state of the controller
    */
   bool isActive() {
-    return this->state == ACTIVE;
+    return this->stateMsg.status.value == this->stateMsg.status.ACTIVE;
   }
 
   /**
@@ -212,43 +168,24 @@ protected:
    * @brief Access aborted state of the planner.
    */
   bool isAborted() {
-    return this->stateMsg.status == this->stateMsg.ABORTED;
+    return this->stateMsg.status.value == this->stateMsg.status.ABORTED;
   }
 
   /**
    * @brief Access preempted state of the planner.
    */
   bool isPreempted() {
-    return this->stateMsg.status == this->stateMsg.PREEMPTED;
+    return this->stateMsg.status.value == this->stateMsg.status.PREEMPTED;
   }
 
   /**
-   * @brief Activation of the controller will set the state, the stateMsg but indicate that the
-   * goal has not yet been accomplished and that no plan has been constructed yet.
+   * @brief Abort the controller. This is the only state transition that can be explicitly initiated
+   * by a derived class. Otherwise the state transitions are governed by implementations of methods
+   * for planning and dispatching commands, and checking of a goal has been reached.
    */
-  void activate(){
-    ROS_INFO("Activating controller with timeout of %f seconds\n", this->goalMsg.timeout);
-
-    this->state = ACTIVE;
-    this->stateMsg.status = this->stateMsg.ACTIVE;
-    done_ = 0;
-
-    handleActivation();
-  }
-
-  /**
-   * @brief Deactivation of the controller will set the state to inactive, and clear the valid flag.
-   */
-  void deactivate(){
-    ROS_INFO("Deactivating controller\n");
-
-    this->state = INACTIVE;
-    if (this->stateMsg.status == this->stateMsg.ACTIVE) {
-      this->stateMsg.status = this->stateMsg.INACTIVE;
-    }
-    valid_ = 0;
-
-    handleDeactivation();
+  void abort(){
+    ROS_INFO("Aborting controller\n");
+    this->stateMsg.status.value = this->stateMsg.status.ABORTED;
   }
 
   /**
@@ -258,7 +195,6 @@ protected:
   void initialize(){
     initialized = true;
   }
-
 
   /**
    * @brief Subclass will implement this method to update goal data based on new values in goalMsg. Derived class should
@@ -345,18 +281,56 @@ protected:
   G goalMsg; /*!< Message populated by callback */
   S stateMsg; /*!< Message published. Will be populated in the control loop */
 
-  /**
-   * @brief Setter for state msg done flag
-   */
-  void setDone(bool isDone){
-    done_ = isDone;
-  }
+
+private:
 
   /**
-   * @brief Get the done flag
+   * @brief Runs the planning loop. If the node is not initialized or if inactive, then it will do nothing. Otherwise
+   * it will call the planner with the given timeout.
    */
-  bool getDone() {
-    return done_;
+  void plannerLoop(){
+    ros::Time lastPlan = ros::Time::now();
+
+    while(ros::Node::instance()->ok() && !isTerminated()){
+      ros::Time curr = ros::Time::now();
+
+      // Check for bogus time value and update to correct. This can happen for example where the node starts up
+      // and uses system time but then switches to listen to a time message based on simulated time. Just makes the code robust
+      // to such startup errors. If we do find some other timing anomaly it will correct by recomputing the last planning time.
+      // This has the effect of resetting the timeout monotor but that should only introduce a minor delay
+      if(curr < lastPlan)
+	lastPlan = curr;
+
+      if(isInitialized() && isActive()){
+
+	// If the plannerCycleTime is 0 then we only call the planner when we need to
+	if(plannerCycleTime_ != 0 || !isValid()){
+	  setValid(makePlan());
+	  if(!isValid()){
+	    // Could use a refined locking scheme but for now do not want to delegate that to a derived class
+	    lock();	 
+  
+	    ros::Duration elapsed_time = ros::Time::now() - lastPlan;
+	    ROS_DEBUG("Last current value at %f seconds:", curr.toSec());
+	    ROS_DEBUG("Last plan at %f seconds:", lastPlan.toSec());
+	    ROS_DEBUG("Elapsed time is %f seconds:", elapsed_time.toSec());
+
+	    if ((elapsed_time > timeout) && timeout.toSec() != 0.0)
+	      abort();
+
+	    handlePlanningFailure();
+	    unlock();    
+	  } else {
+	    lastPlan = ros::Time::now();
+	  }
+	}
+      }
+
+      if(plannerCycleTime_ >= 0)
+	sleep(curr, std::max(plannerCycleTime_, controllerCycleTime_));
+      else
+	sleep(curr, curr.toSec() + 0.001);
+    }
   }
 
   /**
@@ -366,8 +340,32 @@ protected:
     valid_ = isValid;
   }
 
+  /**
+   * @brief Activation of the controller will set the state, the stateMsg but indicate that the
+   * goal has not yet been accomplished and that no plan has been constructed yet.
+   */
+  void activate(){
+    ROS_INFO("Activating controller with timeout of %f seconds\n", this->goalMsg.timeout);
 
-private:
+    valid_ = 0;
+    this->stateMsg.status.value = this->stateMsg.status.ACTIVE;
+
+    handleActivation();
+  }
+
+  void preempt(){
+    ROS_INFO("Controller preempted.");
+    this->stateMsg.status.value = this->stateMsg.status.PREEMPTED;
+    deactivate();
+  }
+
+  /**
+   * @brief Deactivation of the controller will set the state to inactive, and clear the valid flag.
+   */
+  void deactivate(){
+    ROS_INFO("Deactivating controller");
+    handleDeactivation();
+  }
 
   void goalCallback(){
     if (goalMsg.timeout < 0) {
@@ -383,17 +381,16 @@ private:
 
     lock();
 
-    if(state == INACTIVE && goalMsg.enable){
+    if(!isActive() && goalMsg.enable){
       activate();
     }
-    else if(state == ACTIVE){
-      ROS_INFO("Controller preempted.");
-      this->stateMsg.status = this->stateMsg.PREEMPTED;
-      deactivate();
+    else if(isActive()){
+      preempt();
 
       // If we are active, and this is a goal, publish the state message and activate. This allows us
       // to over-ride a new goal, but still forces the transition between active and inactive states
       if(goalMsg.enable){
+	ROS_DEBUG("Publishing state %d", stateMsg.status.value);
 	ros::Node::instance()->publish(stateTopic, stateMsg);
 	activate();
       }
@@ -401,7 +398,6 @@ private:
 
     // Call to allow derived class to update goal member variables
     updateGoalMsg();
-
 
     unlock();
   }
@@ -454,14 +450,15 @@ private:
     // when the planner invalidates the plan, which can happen since planning is interleaved.
     if(isActive()){
       if(isValid() && goalReached()){
-	  setDone(true);
-	  deactivate();
-	}
-	else {
-	  // Dispatch plans to accomplish goal, according to the plan. If there is a failure in 
-	  // dispatching, it should return false, which will force re-planning
-	  setValid(dispatchCommands());
-	}
+	ROS_INFO("Success! Goal achieved :)\n");
+	this->stateMsg.status.value = this->stateMsg.status.SUCCESS;
+	deactivate();
+      }
+      else {
+	// Dispatch plans to accomplish goal, according to the plan. If there is a failure in 
+	// dispatching, it should return false, which will force re-planning
+	setValid(dispatchCommands());
+      }
     }
 
     unlock();
@@ -472,14 +469,12 @@ private:
   bool terminated; /*!< Marks if the node has been terminated. */
   const std::string stateTopic; /*!< The topic on which state updates are published */
   const std::string goalTopic; /*!< The topic on which it subscribes for goal requests and recalls */
-  State state; /*!< Tracks the overall state of the controller */
   double controllerCycleTime_; /*!< The duration for each control cycle */
   double plannerCycleTime_; /*!< The duration for each planner cycle. */
   boost::recursive_mutex lock_; /*!< Lock for access to class members in callbacks */
   boost::thread* plannerThread_; /*!< Thread running the planner loop */
   highlevel_controllers::Ping shutdownMsg_; /*!< For receiving shutdown from executive */
   ros::Duration timeout; /*< The time limit for planning failure. */
-  bool done_; /*< True if the action is done */
   bool valid_; /*< True if it is valid */
 };
 

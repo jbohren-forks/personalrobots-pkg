@@ -4,25 +4,16 @@
 #include "ROSAdapter.hh"
 #include "Token.hh"
 #include "TokenVariable.hh"
-#include "BoolDomain.hh"
+#include "SymbolDomain.hh"
 
 namespace TREX {
-
-  /**
-   * @brief The last reported state of the controller
-   */
-  enum ControllerState {
-    UNDEFINED = 0,
-    INACTIVE,
-    ACTIVE
-  };
 
   template <class S, class G> class ROSControllerAdapter: public ROSAdapter {
   public:
 
     ROSControllerAdapter(const LabelStr& agentName, const TiXmlElement& configData)
       : ROSAdapter(agentName, configData, 1), inactivePredicate(timelineType + ".Inactive"), activePredicate(timelineType + ".Active"),
-	state(UNDEFINED), lastPublished(-1), lastUpdated(0), goalTopic(extractData(configData, "goalTopic").toString()) {}
+	is_active(false), lastPublished(-1), lastUpdated(0), goalTopic(extractData(configData, "goalTopic").toString()) {}
 
     virtual ~ROSControllerAdapter(){}
 
@@ -39,28 +30,31 @@ namespace TREX {
 
       // If we have already changed the state in this tick, we do not want to over-ride that. This will ensure we do not miss a state change
       // where the goal to move is accompished almost instantly, for example if the robot is already at the goal.
-      if(lastUpdated == getCurrentTick() && state != UNDEFINED)
+      if(lastUpdated == getCurrentTick())
 	return;
 
-      if(stateMsg.status == stateMsg.ACTIVE && state != ACTIVE){
-	state = ACTIVE;
-	lastUpdated = getCurrentTick();
-	ROS_DEBUG("Received transition to ACTIVE");
+      if( (stateMsg.status.value == stateMsg.status.ACTIVE) && !is_active){
+	ROS_DEBUG("[%s][%d]Received transition to ACTIVE %d", 
+		  nameString().c_str(), getCurrentTick(), stateMsg.status.value);
       }
-      else if(stateMsg.status != stateMsg.ACTIVE && state != INACTIVE){
-	state = INACTIVE;
-	lastUpdated = getCurrentTick();
-	ROS_DEBUG("Received transition to INACTIVE");
+      else if((stateMsg.status.value != stateMsg.status.ACTIVE) && is_active){
+	ROS_DEBUG("[%s][%d]Received transition to INACTIVE", nameString().c_str(), getCurrentTick());
       }
+
+      lastUpdated = getCurrentTick();
     }
 
     void registerSubscribers() {
-      debugMsg("ROS:", "Registering subscriber for " << timelineName << " on topic:" << stateTopic);
+      ROS_INFO("[%s][%d]Registering subscriber for %s on topic: %s", 
+		nameString().c_str(), getCurrentTick(), timelineName.c_str(), stateTopic.c_str());
+
       m_node->registerSubscriber(stateTopic, stateMsg, &TREX::ROSControllerAdapter<S, G>::handleCallback, this, QUEUE_MAX());
     }
 
     void registerPublishers(){
-      debugMsg("ROS:", "Registering publisher for " << timelineName << " on topic:" << goalTopic);
+      ROS_INFO("[%s][%d]Registering publisher for %s on topic: %s", 
+	       nameString().c_str(), getCurrentTick(), timelineName.c_str(), goalTopic.c_str());
+
       m_node->registerPublisher<G>(goalTopic, QUEUE_MAX());
     }
 
@@ -69,26 +63,27 @@ namespace TREX {
       if(((int) lastUpdated) == lastPublished)
 	return NULL;
 
-      // We shuold never be getting an observation when in an undefined state. If we are, it means we failed to
-      // initialize, which will likely be a message subscription error or an absence of an expected publisher
-      // to initialize state.
-      if(state == UNDEFINED){
-	ROS_DEBUG("ROSControllerAdapter <%s> failed to get an observation with no initial state set yet", timelineName.c_str());
-	throw "ROSControllerAdapter: Tried to get an observation on with no initial state set yet.";
-      }
-
       ObservationByValue* obs = NULL;
 
       stateMsg.lock();
-      if(state == INACTIVE){
+
+      ROS_DEBUG("[%s][%d]Checking for new observations. Currently we are %s. Latest observation is %s (%d)",
+		nameString().c_str(),
+		getCurrentTick(),
+		(is_active ? "ACTIVE" : "INACTIVE"),
+		(stateMsg.status.value == stateMsg.status.ACTIVE ? "ACTIVE" : "INACTIVE"),
+		stateMsg.status.value);
+
+      if(stateMsg.status.value != stateMsg.status.ACTIVE && (is_active || (getCurrentTick() == 0))){
 	obs = new ObservationByValue(timelineName, inactivePredicate);
 	fillInactiveObservationParameters(obs);
-	obs->push_back("aborted", new BoolDomain(stateMsg.status == stateMsg.ABORTED));
-	obs->push_back("preempted", new BoolDomain(stateMsg.status == stateMsg.PREEMPTED));
+	obs->push_back("status", getResultStatus(stateMsg).copy());
+	is_active = false;
       }
-      else {
+      else if(stateMsg.status.value == stateMsg.status.ACTIVE && !is_active){
 	obs = new ObservationByValue(timelineName, activePredicate);
 	fillActiveObservationParameters(obs);
+	is_active = true;
       }
       stateMsg.unlock();
 
@@ -96,12 +91,26 @@ namespace TREX {
       return obs;
     }
 
+    const SymbolDomain& getResultStatus(const S& stateMsg){
+      static std::vector<EUROPA::SymbolDomain> RESULT_STATES;
+      if(RESULT_STATES.empty()){
+	RESULT_STATES.push_back(SymbolDomain(LabelStr("UNDEFINED"), "ResultStatus"));
+	RESULT_STATES.push_back(SymbolDomain(LabelStr("SUCCESS"), "ResultStatus"));
+	RESULT_STATES.push_back(SymbolDomain(LabelStr("ABORTED"), "ResultStatus"));
+	RESULT_STATES.push_back(SymbolDomain(LabelStr("PREEMPTED"), "ResultStatus"));
+	RESULT_STATES.push_back(SymbolDomain(LabelStr("ACTIVE"), "ResultStatus"));
+      }
+
+      return RESULT_STATES[stateMsg.status.value];
+    }
+
     /**
      * The goal can be enabled or disabled.
      * The predicate can be active or inactive
      */
     bool dispatchRequest(const TokenId& goal, bool enabled){
-      ROS_DEBUG("Received dispatch request for %s",goal->toString().c_str());
+      ROS_DEBUG("[%s][%d]Received dispatch request for %s",
+		nameString().c_str(), getCurrentTick(), goal->toString().c_str());
 
       bool enableController = enabled;
 
@@ -124,7 +133,10 @@ namespace TREX {
 	  goalMsg.timeout = dom.getSingletonValue();
 	}
       }
-      ROS_DEBUG("[%d}Dispatching %s", getCurrentTick(), goal->toString().c_str());
+
+      ROS_DEBUG("[%s][%d]%s goal %s", 
+		nameString().c_str(), getCurrentTick(), (enableController ? "Dispatching" : "Recalling"), goal->toString().c_str());
+
       m_node->publishMsg<G>(goalTopic, goalMsg);
 
       // Ensure pre-emption is controllable. We do not want to rely on the asynchronous
@@ -132,7 +144,7 @@ namespace TREX {
       // synchronizing
       if(!enableController){
 	stateMsg.lock();
-	stateMsg.status = stateMsg.PREEMPTED;
+	stateMsg.status.value = stateMsg.status.PREEMPTED;
 	handleCallback();
 	stateMsg.unlock();
       }
@@ -149,7 +161,7 @@ namespace TREX {
   private:
     const LabelStr inactivePredicate;
     const LabelStr activePredicate;
-    ControllerState state;
+    bool is_active;
     int lastPublished;
     TICK lastUpdated;
     const std::string goalTopic;
