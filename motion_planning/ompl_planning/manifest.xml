@@ -4,6 +4,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
+  <depend package="roslib" />
   <depend package="rosconsole" />
   <depend package="tf" />
   <depend package="angles" />
