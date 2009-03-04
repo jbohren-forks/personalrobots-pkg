@@ -11,6 +11,9 @@ build: SVN_UP_REVERT_PATCH loki
 .PHONY: loki
 loki: 
 	cd $(SVN_DIR) && make $(ROS_PARALLEL_JOBS)
+	if [ `uname` = Darwin ]; then \
+		install_name_tool -id `rospack find loki`/loki-svn/lib/libloki.0.1.5.dylib loki-svn/lib/libloki.0.1.5.dylib; \
+	fi
 
 clean:
 	-cd $(SVN_DIR) && make clean
