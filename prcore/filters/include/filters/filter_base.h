@@ -157,7 +157,7 @@ protected:
       return false;
     }
     value = atof(it->second.c_str());
-    
+    return true;
   }
 
   /** \brief Get a filter parameter as a int
