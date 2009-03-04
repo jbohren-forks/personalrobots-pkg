@@ -51,7 +51,7 @@
 #include <sample_consensus/msac.h>
 #include <sample_consensus/ransac.h>
 #include <sample_consensus/lmeds.h>
-#include <sample_consensus/sac_model_plane.h>
+#include <sample_consensus/sac_model_line.h>
 
 // Cloud geometry
 #include <cloud_geometry/areas.h>
@@ -59,8 +59,7 @@
 #include <cloud_geometry/distances.h>
 #include <cloud_geometry/nearest.h>
 
-// Kd Tree
-#include <cloud_kdtree/kdtree.h>
+#include <tf/transform_listener.h>
 
 #include <sys/time.h>
 
@@ -74,26 +73,24 @@ class GroundRemoval : public ros::Node
     // ROS messages
     PointCloud cloud_, cloud_noground_;
 
+    tf::TransformListener tf_;
+    PointStamped viewpoint_cloud_;
+
     // Parameters
     double z_threshold_;
     int sac_min_points_per_model_, sac_max_iterations_;
-    double sac_distance_threshold_, sac_probability_;
-
-    double clusters_growing_tolerance_;
-    int clusters_min_pts_;
+    double sac_distance_threshold_;
+    int planar_refine_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    GroundRemoval () : ros::Node ("sac_ground_removal")
+    GroundRemoval () : ros::Node ("sac_ground_removal"), tf_ (*this)
     {
-      param ("~z_threshold", z_threshold_, 0.2);         // 20cm threshold for ground removal
+      param ("~z_threshold", z_threshold_, 0.1);                          // 10cm threshold for ground removal
+      param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);   // 3 cm threshold
 
-      param ("~sac_min_points_per_model", sac_min_points_per_model_, 5);  // 5 points minimum per plane
-      param ("~sac_distance_threshold", sac_distance_threshold_, 0.035);   // 4 cm threshold
-      param ("~sac_max_iterations", sac_max_iterations_, 100);            // maximum 500 iterations
-      param ("~sac_probability", sac_probability_, 0.99);                 // 0.99 probability
-
-      param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.15);   // 0.2 m
-      param ("~clusters_min_pts", clusters_min_pts_, 5);                         // 5 points
+      param ("~planar_refine", planar_refine_, 1);                        // enable a final planar refinement step?
+      param ("~sac_min_points_per_model", sac_min_points_per_model_, 6);  // 6 points minimum per line
+      param ("~sac_max_iterations", sac_max_iterations_, 200);            // maximum 200 iterations
 
       string cloud_topic ("full_cloud");
 
@@ -123,135 +120,124 @@ class GroundRemoval : public ros::Node
       updateParametersFromServer ()
     {
       if (hasParam ("~z_threshold")) getParam ("~z_threshold", z_threshold_);
-      if (hasParam ("~sac_min_points_per_model")) getParam ("~sac_min_points_per_model", sac_min_points_per_model_);
       if (hasParam ("~sac_distance_threshold"))  getParam ("~sac_distance_threshold", sac_distance_threshold_);
-      if (hasParam ("~sac_max_iterations")) getParam ("~sac_max_iterations", sac_max_iterations_);
-      if (hasParam ("~sac_probability"))  getParam ("~sac_probability", sac_probability_);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Decompose a region of space into clusters based on the euclidean distance between points
+    /** \brief Decompose a PointCloud message into LaserScan clusters
       * \param points pointer to the point cloud message
       * \param indices pointer to a list of point indices
-      * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
       * \param clusters the resultant clusters
-      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
+      * \param idx the index of the channel containing the laser scan index
       */
     void
-      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<vector<int> > &clusters,
-                    unsigned int min_pts_per_cluster = 1)
+      splitPointsBasedOnLaserScanIndex (PointCloud *points, vector<int> *indices, vector<vector<int> > &clusters, int idx)
     {
-      // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
-
-      // Create a bool vector of processed point indices, and initialize it to false
-      vector<bool> processed;
-      processed.resize (indices->size (), false);
-
-      vector<int> nn_indices;
+      vector<int> seed_queue;
+      int prev_idx = -1;
       // Process all points in the indices vector
       for (unsigned int i = 0; i < indices->size (); i++)
       {
-        if (processed[i])
-          continue;
+        // Get the current laser scan measurement index
+        int cur_idx = points->chan[idx].vals.at (indices->at (i));
 
-        vector<int> seed_queue;
-        int sq_idx = 0;
-        seed_queue.push_back (i);
-
-        processed[i] = true;
-
-        while (sq_idx < (int)seed_queue.size ())
+        if (cur_idx > prev_idx)   // Still the same laser scan ?
         {
-          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
-          tree->getNeighborsIndices (nn_indices);
-
-          for (unsigned int j = 1; j < nn_indices.size (); j++)
-          {
-            if (!processed.at (nn_indices[j]))
-            {
-              processed[nn_indices[j]] = true;
-              seed_queue.push_back (nn_indices[j]);
-            }
-          }
-
-          sq_idx++;
+          seed_queue.push_back (indices->at (i));
+          prev_idx = cur_idx;
         }
-
-        // If this queue is satisfactory, add to the clusters
-        if (seed_queue.size () >= min_pts_per_cluster)
+        else                      // Have we found a new scan ?
         {
+          prev_idx = -1;
           vector<int> r;
-          //r.indices = seed_queue;
           r.resize (seed_queue.size ());
           for (unsigned int j = 0; j < r.size (); j++)
-            r[j] = indices->at (seed_queue[j]);
+            r[j] = seed_queue[j];
           clusters.push_back (r);
+          seed_queue.resize (0);
         }
       }
-
-      // Destroy the tree
-      delete tree;
+      // Copy the last laser scan as well
+      if (seed_queue.size () > 0)
+      {
+        vector<int> r;
+        r.resize (seed_queue.size ());
+        for (unsigned int j = 0; j < r.size (); j++)
+          r[j] = seed_queue[j];
+        clusters.push_back (r);
+      }
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void
-      fitSACPlane (PointCloud *points, vector<int> *indices, vector<int> &inliers, vector<double> &coeff)
+    /** \brief Find a line model in a point cloud given via a set of point indices with SAmple Consensus methods
+      * \param points the point cloud message
+      * \param indices a pointer to a set of point cloud indices to test
+      * \param inliers the resultant inliers
+      */
+    bool
+      fitSACLine (PointCloud *points, vector<int> *indices, vector<int> &inliers)
     {
-      updateParametersFromServer ();
       if ((int)indices->size () < sac_min_points_per_model_)
-        return;
+        return (false);
 
       // Create and initialize the SAC model
-      sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-      sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, sac_distance_threshold_);
-//      sac->setMaxIterations (sac_max_iterations_);
-//      sac->setProbability (sac_probability_);
+      sample_consensus::SACModelLine *model = new sample_consensus::SACModelLine ();
+      sample_consensus::SAC *sac            = new sample_consensus::RANSAC (model, sac_distance_threshold_);
+      sac->setMaxIterations (sac_max_iterations_);
+      sac->setProbability (0.99);
+
       model->setDataSet (points, *indices);
 
-      // Search for the best plane
+      vector<double> line_coeff;
+      // Search for the best model
       if (sac->computeModel (0))
       {
         // Obtain the inliers and the planar model coefficients
         if ((int)sac->getInliers ().size () < sac_min_points_per_model_)
-          return;
-        inliers = sac->getInliers ();
-        coeff   = sac->computeCoefficients ();
-//        fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", inliers.size (),
-//                 coeff[0], coeff[1], coeff[2], coeff[3]);
+          return (false);
+        //inliers    = sac->getInliers ();
+
+        sac->computeCoefficients ();             // Compute the model coefficients
+        line_coeff = sac->refineCoefficients (); // Refine them using least-squares
+        inliers    = model->selectWithinDistance (line_coeff, sac_distance_threshold_);
 
         // Project the inliers onto the model
-        //model->projectPointsInPlace (sac->getInliers (), coeff[1]);
+        //model->projectPointsInPlace (sac->getInliers (), coeff);
       }
-    }
+      else
+        return (false);
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Obtain a 24-bit RGB coded value from 3 independent <r, g, b> channel values
-      * \param r the red channel value
-      * \param g the green channel value
-      * \param b the blue channel value
-      */
-    double
-      getRGB (float r, float g, float b)
-    {
-      int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
-      double rgb = *(float*)(&res);
-      return (rgb);
+      delete sac;
+      delete model;
+      return (true);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void cloud_cb ()
     {
-      ROS_INFO ("Received %d data points.", cloud_.pts.size ());
+      ROS_INFO ("Received %d data points with %d channels (%s).", cloud_.pts.size (), cloud_.chan.size (), cloud_geometry::getAvailableChannels (&cloud_).c_str ());
+      int idx_idx = cloud_geometry::getChannelIndex (&cloud_, "index");
+      if (idx_idx == -1)
+      {
+        ROS_ERROR ("Channel 'index' missing in input PointCloud message!");
+        return;
+      }
       if (cloud_.pts.size () == 0)
         return;
 
+      updateParametersFromServer ();
       // Copy the header
       cloud_noground_.header = cloud_.header;
 
       timeval t1, t2;
       gettimeofday (&t1, NULL);
+
+      // Get the cloud viewpoint
+      getCloudViewPoint (cloud_.header.frame_id, viewpoint_cloud_, &tf_);
+
+      // Transform z_threshold_ from the parameter parameter frame (parameter_frame_) into the point cloud frame
+      z_threshold_ = transformDoubleValueTF (z_threshold_, "base_link", cloud_.header.frame_id, cloud_.header.stamp, &tf_);
 
       // Select points whose Z dimension is close to the ground (0,0,0 in base_link)
       vector<int> possible_ground_indices (cloud_.pts.size ());
@@ -271,124 +257,108 @@ class GroundRemoval : public ros::Node
       ROS_INFO ("Number of possible ground indices: %d.", possible_ground_indices.size ());
 
       vector<vector<int> > clusters;
-      // Split the Z-parallel points into clusters
-      findClusters (&cloud_, &possible_ground_indices, clusters_growing_tolerance_, clusters, clusters_min_pts_);
+      // Split the points into clusters based on their laser scan information
+      splitPointsBasedOnLaserScanIndex (&cloud_, &possible_ground_indices, clusters, idx_idx);
 
       ROS_INFO ("Number of clusters: %d", clusters.size ());
 
       vector<int> ground_inliers;
-      vector<double> ground_coeff;
       nr_p = 0;
 
-      // Prepare new arrays
-//      cloud_noground_.pts.resize (possible_ground_indices.size ());
-//      cloud_noground_.chan.resize (1);
-//      cloud_noground_.chan[0].name = "rgb";
-//      cloud_noground_.chan[0].vals.resize (possible_ground_indices.size ());
-
-      for (unsigned int cc = 0; cc < clusters.size (); cc++)
+      // Prepare enough space
+      vector<vector<int> > cluster_ground_inliers (clusters.size ());
+      // Parallelize the search
+#pragma omp parallel for schedule(dynamic)
+      for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
-        //ROS_INFO ("Cluster size: %d.", clusters[cc].size ());
-        vector<int> cluster_ground_inliers;
         // Find the dominant plane in the space of possible ground indices
-        fitSACPlane (&cloud_, &clusters[cc], cluster_ground_inliers, ground_coeff);
+        fitSACLine (&cloud_, &clusters[cc], cluster_ground_inliers[cc]);
+      }
 
-/*
-        cerr << ground_coeff[0] << " " << ground_coeff[1] << " " << ground_coeff[2] << " " << ground_coeff[3] << endl;
-
-        if (ground_coeff[2] < 0)
-        {
-          ground_coeff[0] *= -1;
-          ground_coeff[1] *= -1;
-          ground_coeff[2] *= -1;
-          ground_coeff[3] *= -1;
-        }
-
-        nr_p = 0;
-        vector<int> remaining_cluster_ground_indices;
-        sort (clusters[cc].begin (), clusters[cc].end ());
-        sort (cluster_ground_inliers.begin (), cluster_ground_inliers.end ());
-        set_difference (clusters[cc].begin (), clusters[cc].end (), cluster_ground_inliers.begin (), cluster_ground_inliers.end (),
-                        inserter (remaining_cluster_ground_indices, remaining_cluster_ground_indices.begin ()));
-
-        for (unsigned int i = 0; i < remaining_cluster_ground_indices.size (); i++)
-        {
-          Point32 *pt = &cloud_.pts.at (remaining_cluster_ground_indices[i]);
-          double dist = ground_coeff[0] * pt->x + ground_coeff[1] * pt->y + ground_coeff[2] * pt->z + ground_coeff[3];
-          if (dist < 0)
-          {
-            cluster_ground_inliers.push_back (remaining_cluster_ground_indices[i]);
-          }
-
-        }
-*/
-//        nr_p = 0;
-//        cluster_ground_inliers.resize (possible_ground_indices.size ());
-//        for (unsigned int i = 0; i < possible_ground_indices.size (); i++)
-//        {
-//          double dist = cloud_geometry::distances::pointToPlaneDistance (&cloud_.pts.at (possible_ground_indices[i]), ground_coeff);
-//          if (dist < sac_distance_threshold_)
-//          {
-//            cluster_ground_inliers[nr_p] = possible_ground_indices[i];
-//            nr_p++;
-//          }
-//        }
-//        cluster_ground_inliers.resize (nr_p);
-
-//        float r = rand () / (RAND_MAX + 1.0);
-//        float g = rand () / (RAND_MAX + 1.0);
-//        float b = rand () / (RAND_MAX + 1.0);
+      // Copy the line inliers (ground results)
+      for (unsigned int cc = 0; cc < cluster_ground_inliers.size (); cc++)
+      {
+        if (cluster_ground_inliers[cc].size () == 0)
+          ROS_WARN ("Couldn't fit a model for cluster %d (%d points).", cc, clusters[cc].size ());
 
         int cur_size = ground_inliers.size ();
-        ground_inliers.resize (cur_size + cluster_ground_inliers.size ());
-        for (unsigned int i = 0; i < cluster_ground_inliers.size (); i++)
-        {
-          ground_inliers[cur_size + i] = cluster_ground_inliers[i];
-//          ground_inliers.push_back (cluster_ground_inliers[i]);
-//          cloud_noground_.pts[nr_p].x = cloud_.pts.at (ground_inliers[i]).x;
-//          cloud_noground_.pts[nr_p].y = cloud_.pts.at (ground_inliers[i]).y;
-//          cloud_noground_.pts[nr_p].z = cloud_.pts.at (ground_inliers[i]).z;
-//          for (unsigned int d = 0; d < cloud_.chan.size (); d++)
-//            cloud_noground_.chan[d].vals[nr_p] = getRGB (r, g, b);
-//
-//          nr_p++;
-        }
+        ground_inliers.resize (cur_size + cluster_ground_inliers[cc].size ());
+        for (unsigned int i = 0; i < cluster_ground_inliers[cc].size (); i++)
+          ground_inliers[cur_size + i] = cluster_ground_inliers[cc][i];
       }
-      ROS_INFO ("Total number of ground inliers: %d.", ground_inliers.size ());
+      ROS_INFO ("Total number of ground inliers before refinement: %d.", ground_inliers.size ());
 
-/*      cloud_noground_.pts.resize (nr_p);
-      for (unsigned int d = 0; d < cloud_.chan.size (); d++)
-        cloud_noground_.chan[d].vals.resize (nr_p);
-
-      publish ("cloud_ground_filtered", cloud_noground_);
-      return;*/
-
-/*      PointCloud cloud_down;
-      Point leaf_width;
-      leaf_width.x = leaf_width.y = leaf_width.z = 0.06;
-      vector<cloud_geometry::Leaf> leaves;
-      cloud_geometry::downsamplePointCloud (&cloud_, &possible_ground_indices, cloud_down, leaf_width, leaves, -1);
-
-      // Find the dominant plane in the space of possible ground indices
-      vector<int> ground_inliers;
-//      vector<double> ground_coeff;
-      //fitSACPlane (&cloud_, &possible_ground_indices, ground_inliers, ground_coeff);
-      fitSACPlane (&cloud_down, ground_inliers, ground_coeff);
-
-      // Use the plane coefficients to see which points from the original cloud to filter
-      nr_p = 0;
-      ground_inliers.resize (cloud_.pts.size ());
-      for (unsigned int i = 0; i < cloud_.pts.size (); i++)
+      // Do we attempt to do a planar refinement to remove points "below" the plane model found ?
+      if (planar_refine_ > 0)
       {
-        double dist = cloud_geometry::distances::pointToPlaneDistance (&cloud_.pts[i], ground_coeff);
-        if (dist < sac_distance_threshold_)
+        // Get the remaining point indices
+        vector<int> remaining_possible_ground_indices;
+        sort (possible_ground_indices.begin (), possible_ground_indices.end ());
+        sort (ground_inliers.begin (), ground_inliers.end ());
+        set_difference (possible_ground_indices.begin (), possible_ground_indices.end (), ground_inliers.begin (), ground_inliers.end (),
+                        inserter (remaining_possible_ground_indices, remaining_possible_ground_indices.begin ()));
+
+        // Estimate the plane from the line inliers
+        Eigen::Vector4d plane_parameters;
+        double curvature;
+        cloud_geometry::nearest::computeSurfaceNormalCurvature (&cloud_, &ground_inliers, plane_parameters, curvature);
+
+        // Flip plane normal according to the viewpoint information
+        Point32 vp_m;
+        vp_m.x = viewpoint_cloud_.point.x - cloud_.pts.at (ground_inliers[0]).x;
+        vp_m.y = viewpoint_cloud_.point.y - cloud_.pts.at (ground_inliers[0]).y;
+        vp_m.z = viewpoint_cloud_.point.z - cloud_.pts.at (ground_inliers[0]).z;
+
+        // Dot product between the (viewpoint - point) and the plane normal
+        double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
+
+        // Flip the plane normal
+        if (cos_theta < 0)
         {
-          ground_inliers[nr_p] = i;
-          nr_p++;
+          for (int d = 0; d < 3; d++)
+            plane_parameters (d) *= -1;
+          // Hessian form (D = nc . p_plane (centroid here) + p)
+          plane_parameters (3) = -1 * (plane_parameters (0) * cloud_.pts.at (ground_inliers[0]).x +
+                                       plane_parameters (1) * cloud_.pts.at (ground_inliers[0]).y +
+                                       plane_parameters (2) * cloud_.pts.at (ground_inliers[0]).z);
+        }
+
+        // Compute the distance from the remaining points to the model plane, and add to the inliers list if they are below
+        for (unsigned int i = 0; i < remaining_possible_ground_indices.size (); i++)
+        {
+          double distance_to_ground  = cloud_geometry::distances::pointToPlaneDistanceSigned (&cloud_.pts.at (remaining_possible_ground_indices[i]), plane_parameters);
+          if (distance_to_ground > 0)
+            continue;
+          ground_inliers.push_back (remaining_possible_ground_indices[i]);
         }
       }
-      ground_inliers.resize (nr_p);
-*/
+      ROS_INFO ("Total number of ground inliers after refinement: %d.", ground_inliers.size ());
+
+#if DEBUG
+      // Prepare new arrays
+      cloud_noground_.pts.resize (possible_ground_indices.size ());
+      cloud_noground_.chan.resize (1);
+      cloud_noground_.chan[0].name = "rgb";
+      cloud_noground_.chan[0].vals.resize (possible_ground_indices.size ());
+
+      cloud_noground_.pts.resize (ground_inliers.size ());
+      cloud_noground_.chan[0].vals.resize (ground_inliers.size ());
+      float r = rand () / (RAND_MAX + 1.0);
+      float g = rand () / (RAND_MAX + 1.0);
+      float b = rand () / (RAND_MAX + 1.0);
+
+      for (unsigned int i = 0; i < ground_inliers.size (); i++)
+      {
+        cloud_noground_.pts[i].x = cloud_.pts.at (ground_inliers[i]).x;
+        cloud_noground_.pts[i].y = cloud_.pts.at (ground_inliers[i]).y;
+        cloud_noground_.pts[i].z = cloud_.pts.at (ground_inliers[i]).z;
+        cloud_noground_.chan[0].vals[i] = getRGB (r, g, b);
+      }
+      publish ("cloud_ground_filtered", cloud_noground_);
+
+      return;
+#endif
+
       // Get all the non-ground point indices
       vector<int> remaining_indices;
       sort (ground_inliers.begin (), ground_inliers.end ());
@@ -420,6 +390,84 @@ class GroundRemoval : public ros::Node
                 remaining_indices.size (), time_spent);
       publish ("cloud_ground_filtered", cloud_noground_);
     }
+
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the view point from where the scans were taken in the incoming PointCloud message frame
+      * \param cloud_frame the point cloud message TF frame
+      * \param viewpoint_cloud the resultant view point in the incoming cloud frame
+      * \param tf a pointer to a TransformListener object
+      */
+    void
+      getCloudViewPoint (string cloud_frame, PointStamped &viewpoint_cloud, tf::TransformListener *tf)
+    {
+      // Figure out the viewpoint value in the point cloud frame
+      PointStamped viewpoint_laser;
+      viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
+      // Set the viewpoint in the laser coordinate system to 0, 0, 0
+      viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
+
+      try
+      {
+        tf->transformPoint (cloud_frame, viewpoint_laser, viewpoint_cloud);
+        ROS_INFO ("Cloud view point in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
+                  viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
+      }
+      catch (tf::ConnectivityException)
+      {
+        ROS_WARN ("Could not transform a point from frame %s to frame %s!", viewpoint_laser.header.frame_id.c_str (), cloud_frame.c_str ());
+        // Default to 0.05, 0, 0.942768
+        viewpoint_cloud.point.x = 0.05; viewpoint_cloud.point.y = 0.0; viewpoint_cloud.point.z = 0.942768;
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Transform a given point from its current frame to a given target frame
+      * \param tf a pointer to a TransformListener object
+      * \param target_frame the target frame to transform the point into
+      * \param stamped_in the input point
+      * \param stamped_out the output point
+      */
+    inline void
+      transformPoint (tf::TransformListener *tf, const std::string &target_frame,
+                      const tf::Stamped< robot_msgs::Point32 > &stamped_in, tf::Stamped< robot_msgs::Point32 > &stamped_out)
+    {
+      tf::Stamped<tf::Point> tmp;
+      tmp.stamp_ = stamped_in.stamp_;
+      tmp.frame_id_ = stamped_in.frame_id_;
+      tmp[0] = stamped_in.x;
+      tmp[1] = stamped_in.y;
+      tmp[2] = stamped_in.z;
+
+      tf->transformPoint (target_frame, tmp, tmp);
+
+      stamped_out.stamp_ = tmp.stamp_;
+      stamped_out.frame_id_ = tmp.frame_id_;
+      stamped_out.x = tmp[0];
+      stamped_out.y = tmp[1];
+      stamped_out.z = tmp[2];
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Transform a value from a source frame to a target frame at a certain moment in time with TF
+      * \param val the value to transform
+      * \param src_frame the source frame to transform the value from
+      * \param tgt_frame the target frame to transform the value into
+      * \param stamp a given time stamp
+      * \param tf a pointer to a TransformListener object
+      */
+    inline double
+      transformDoubleValueTF (double val, std::string src_frame, std::string tgt_frame, ros::Time stamp, tf::TransformListener *tf)
+    {
+      robot_msgs::Point32 temp;
+      temp.x = temp.y = 0;
+      temp.z = val;
+      tf::Stamped<robot_msgs::Point32> temp_stamped (temp, stamp, src_frame);
+      transformPoint (tf, tgt_frame, temp_stamped, temp_stamped);
+      return (temp_stamped.z);
+    }
+
 };
 
 /* ---[ */
@@ -428,7 +476,9 @@ int
 {
   ros::init (argc, argv);
 
+  // For efficiency considerations please make sure the input PointCloud is in a frame with Z point upwards
   GroundRemoval p;
+
   p.spin ();
 
   return (0);
