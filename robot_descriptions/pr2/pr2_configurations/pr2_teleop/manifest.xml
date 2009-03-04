@@ -8,7 +8,7 @@
   <review status="na" notes=""/>
   
   <depend package="pr2_phase_space" />
-  <depend package="teleop_base_pedals" />
+  <depend package="teleop_base" />
   <depend package="teleop_joint_effort" />
 
 </package>

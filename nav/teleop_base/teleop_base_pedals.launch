@@ -9,5 +9,5 @@
     <param name="dev" value="/dev/input/js1"/>
     <param name="deadzone" value="0"/>
   </node>
-  <node pkg="teleop_base_pedals" type="teleop_base_pedals" output="screen"/>
+  <node pkg="teleop_base" type="teleop_base_pedals" output="screen"/>
 </launch>
