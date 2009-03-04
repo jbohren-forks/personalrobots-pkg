@@ -60,7 +60,6 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 	
 	CvPoint2D32f hor_dir = outlet_tuple.centers[1] - outlet_tuple.centers[0];
 	//	select_orient_outlets(hor_dir, outlets, 4);
-	filter_outlets_tuple(outlets, outlet_tuple.tuple_mask, hor_dir);
 	
 	// filter outlets using template match
 	CvMat* homography = 0;
@@ -70,7 +69,17 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 	homography = cvCreateMat(3, 3, CV_32FC1);
 	calc_outlet_homography(outlet_tuple.centers, homography, 0);
 	calc_origin_scale(outlet_tuple.centers, homography, &origin, &scale);
+
+	CvMat* rotation_vector = cvCreateMat(3, 1, CV_32FC1);
+	CvMat* translation_vector = cvCreateMat(3, 1, CV_32FC1);
+	calc_camera_pose(intrinsic_matrix, 0, outlet_tuple.centers, rotation_vector, translation_vector);
+	calc_outlet_coords(outlets, homography, origin, scale, rotation_vector, translation_vector);
+	cvReleaseMat(&rotation_vector);
+	cvReleaseMat(&translation_vector);
+
+	filter_outlets_size(outlets);
 	
+	filter_outlets_tuple(outlets, outlet_tuple.tuple_mask, hor_dir);
 #if defined(_VERBOSE)
 	IplImage* temp = cvCloneImage(src);
 	draw_outlets(temp, outlets);
@@ -97,11 +106,6 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 	}
 	else
 	{
-		CvMat* rotation_vector = cvCreateMat(3, 1, CV_32FC1);
-		CvMat* translation_vector = cvCreateMat(3, 1, CV_32FC1);
-		calc_camera_pose(intrinsic_matrix, 0, outlet_tuple.centers, rotation_vector, translation_vector);
-		
-		calc_outlet_coords(outlets, homography, origin, scale, rotation_vector, translation_vector);
 
 #if defined(_VERBOSE)
 		float mean, stddev;

@@ -106,7 +106,7 @@ int main(int argc,char** argv)
 		int64 t1 = cvGetTickCount();
 		
 		vector<outlet_t> outlets;
-		int ret = detect_outlet_tuple(src, intrinsic_matrix, distortion_params, outlets, output_path, buf);
+		int ret = detect_outlet_tuple(src, intrinsic_matrix, 0/*distortion_params*/, outlets, output_path, buf);
 		
 #if defined(_VERBOSE)
 		IplImage* temp = cvCloneImage(src);

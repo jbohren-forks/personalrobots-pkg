@@ -152,6 +152,7 @@ void write_pr(const char* pr_filename, const char* image_filename, const outlet_
 void filter_negative_samples(const vector<CvRect>& rects, vector<outlet_feature_t>& keypts, float fraction);
 void calc_contrast_factor(IplImage* grey, CvRect rect, float& contrast, float& variation);
 
+void select_central_outlets(vector<outlet_t>& outlets, int count);
 void select_orient_outlets(CvPoint2D32f orientation, vector<outlet_t>& outlets, int count = 0);
 int select_orient_outlets_ex(IplImage* grey, vector<outlet_t>& outlets, const char* filename = 0);
 
@@ -194,6 +195,8 @@ void calc_outlet_tuple_dist_stat(const vector<outlet_t>& outlets, float& ground_
 
 void filter_features_mask(vector<outlet_feature_t>& features, IplImage* mask);
 void filter_outlets_mask(vector<outlet_t>& outlets, IplImage* mask);
+void filter_outlets_size(vector<outlet_t>& outlets);
+
 void filter_features_distance_mask(vector<outlet_feature_t>& features, IplImage* distance_map);
 
 int find_origin_chessboard(IplImage* src, CvMat* map_matrix, CvPoint3D32f& origin, float bar_length);

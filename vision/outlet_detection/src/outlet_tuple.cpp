@@ -252,7 +252,7 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 	cvCvtColor(img, grey, CV_RGB2GRAY);
 	cvSmooth(grey, grey);
 	cvAdaptiveThreshold(grey, binary, 255, CV_ADAPTIVE_THRESH_MEAN_C, 
-						CV_THRESH_BINARY_INV, 9, 0);
+						CV_THRESH_BINARY_INV, 15, 0);
 	cvErode(binary, binary, 0, 1);
 	cvDilate(binary, binary, 0, 1);
 
@@ -503,7 +503,7 @@ int find_tuple(vector<outlet_elem_t>& candidates, CvPoint2D32f* centers)
 const int outlet_width = 50;
 const int outlet_height = 25;
 
-const float xsize = 44.67f;
+const float xsize = 46.1f;
 const float ysize = 38.7f;
 
 void calc_outlet_homography(const CvPoint2D32f* centers, CvMat* map_matrix, CvMat* inverse_map_matrix)

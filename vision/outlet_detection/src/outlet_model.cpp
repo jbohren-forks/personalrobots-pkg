@@ -59,7 +59,7 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 #else
 		const int min_size = 1;
 		const int max_size = 20;
-		if(abs(rect.x - 49) < 5 && abs(rect.y - 44) < 5)
+		if(abs(rect.x - 56) < 5 && abs(rect.y - 147) < 5)
 		{
 			int w = 1;
 		}
@@ -115,6 +115,11 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 #else
 		CvRect bound = resize_rect(rect, 2.0f);
 #endif //_TUNING
+		
+#if 0
+		// !! this is old contrast calculation that I found unnecessary on 
+		// the latest data (16mm and 5mp)
+		// so this is disabled to save computational time
 		bound = fit_rect(bound, grey);
 		CvScalar avg_outside, std_outside;
 		cvSetImageROI(grey, bound);
@@ -123,6 +128,7 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 		avg_outside.val[0] -= avg_inside;
 		avg_inside /= inner_rect.width*inner_rect.height;
 		avg_outside.val[0] /= bound.width*bound.height;
+#endif
 #endif
 #if 0
 		cvCopy(grey, mask);
@@ -151,7 +157,7 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 			continue;
 		}
 #else
-		if(contrast < 1.0f /*|| variation > 0.7f*/ || avg_outside.val[0] < avg_inside*1.0f)
+		if(contrast < 1.1f)// /*|| variation > 0.7f*/ || avg_outside.val[0] < avg_inside*1.0f)
 		{
 			continue;
 		}
@@ -1107,7 +1113,7 @@ void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features
 #if !defined(_TUNING)
 	for(int thresh = 20; thresh < 170; thresh += 20)
 #else
-	for(int thresh = 0; thresh < 90; thresh += thresh < 20 ? 1 : 5)
+ 	for(int thresh = 0; thresh < 110; thresh += thresh < 20 ? 1 : 5)
 #endif //_TUNING
 		{
 		cvSet(mask_black, cvScalar(255));
@@ -1180,7 +1186,7 @@ void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features
 			{
 				CvRect roi = cvBoundingRect(*it);
 
-				if(abs(roi.x - 200) < 10 && abs(roi.y - 872) < 10)
+				if(abs(roi.x - 56) < 5 && abs(roi.y - 189) < 5)
 				{
 					int w = 1;
 				}
@@ -1427,19 +1433,35 @@ void calc_contrast_factor(IplImage* grey, CvRect rect, float& contrast, float& v
 	I[3] = (unsigned char)grey->imageData[rect.y*grey->widthStep + rect.x + rect.width];
 	int minI = 65535;
 	int maxI = 0;
+	int avgI = 0;
 	for(int i = 0; i < 4; i++) 
 	{
 		minI = MIN(minI, I[i]);
 		maxI = MAX(maxI, I[i]);
+		avgI += I[i];
 	}
+	avgI /= 4;
 
-	contrast = float(minI)/Ic;
+	contrast = float(avgI)/Ic;
 	variation = float(maxI - minI)/maxI;
 }
 
 bool outlet_orient_pred_greater(outlet_t outlet1, outlet_t outlet2)
 {
 	return outlet1.weight_orient > outlet2.weight_orient;
+}
+
+bool outlet_orient_pred_dist_greater(outlet_t outlet1, outlet_t outlet2)
+{
+	return outlet1.feature1.weight + outlet1.feature1.weight > 
+		outlet2.feature1.weight + outlet2.feature2.weight;
+}
+
+void select_central_outlets(vector<outlet_t>& outlets, int count)
+{
+	sort(outlets.begin(), outlets.end(), outlet_orient_pred_dist_greater);
+	count = MIN(count, outlets.size());
+	outlets = vector<outlet_t>(outlets.begin(), outlets.begin() + count);	
 }
 
 void select_orient_outlets(CvPoint2D32f orientation, vector<outlet_t>& outlets, int count)
@@ -1850,13 +1872,19 @@ void filter_features_distance_mask(vector<outlet_feature_t>& features, IplImage*
 	cvMinMaxLoc(distance_map, 0, &dist_max);
 	double dist_min = dist_max*dist_factor;
 	
-	for(vector<outlet_feature_t>::const_iterator it = features.begin(); it != features.end(); it++)
+	for(vector<outlet_feature_t>::iterator it = features.begin(); it != features.end(); it++)
 	{
 		CvPoint center = feature_center(*it);
 		float dist = *((float*)(distance_map->imageData + distance_map->widthStep*center.y) + center.x);
 		if(dist > dist_min)
 		{
+			it->weight = dist;
 			filtered.push_back(*it);
+		}
+		
+		if(abs(center.x - 1816) < 5 && abs(center.y - 421) < 5)
+		{
+			int w = 1;
 		}
 	}
 	
@@ -1902,8 +1930,15 @@ void filter_outlets_tuple(vector<outlet_t>& outlets, IplImage* tuple_mask, CvPoi
 		
 		if(candidates.size() > 0)
 		{
-			select_orient_outlets(hor_dir, candidates, 1);
+#if 0
+			select_orient_outlets(hor_dir, candidates, 2);
+			int idx = candidates[0].feature1.weight + candidates[0].feature2.weight > 
+				candidates[1].feature1.weight + candidates[1].feature2.weight ? 0 : 1;
 			filtered.push_back(candidates[0]);
+#else
+			select_central_outlets(candidates, 1);
+			filtered.push_back(candidates[0]);
+#endif
 		}
 	}
 	
@@ -1915,4 +1950,23 @@ void get_outlet_coordinates(const outlet_t& outlet, CvPoint3D32f* points)
 	points[1] = outlet.coord_hole1;
 	points[2] = outlet.coord_hole2;
 	points[0] = outlet.coord_hole_ground;
+}
+
+void filter_outlets_size(vector<outlet_t>& outlets)
+{
+	const float outlet_length = 12.0f;
+	const float outlet_length_min = outlet_length*0.8f;
+	const float outlet_length_max = outlet_length/0.8f;
+	
+	vector<outlet_t> filtered;
+	for(vector<outlet_t>::const_iterator it = outlets.begin(); it != outlets.end(); it++)
+	{
+		float dist = length(it->coord_hole1 - it->coord_hole2);
+		if(dist > outlet_length_min && dist < outlet_length_max)
+		{
+			filtered.push_back(*it);
+		}
+	}
+	
+	outlets = filtered;
 }
