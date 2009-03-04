@@ -70,6 +70,7 @@ target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
                        src/sample_consensus/rransac.cpp
                        src/sample_consensus/rmsac.cpp
                        src/sample_consensus/sac_model_plane.cpp
+                       src/sample_consensus/sac_model_oriented_plane.cpp
                        src/sample_consensus/sac_model_line.cpp
                        src/sample_consensus/sac_model_oriented_line.cpp
                        src/sample_consensus/sac_model_circle.cpp

@@ -35,6 +35,7 @@
 
 // ROS includes
 #include <robot_msgs/Point32.h>
+#include <Eigen/Core>
 
 namespace cloud_geometry
 {
@@ -56,6 +57,40 @@ namespace cloud_geometry
     double pointToLineDistance (robot_msgs::Point32 p, std::vector<double> line_coefficients);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a point to a plane (signed) defined by ax+by+cz+d=0
+      * \param p a point
+      * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
+      */
+    inline double
+      pointToPlaneDistanceSigned (robot_msgs::Point32 *p, std::vector<double> plane_coefficients)
+    {
+      return (plane_coefficients[0]*p->x + plane_coefficients[1]*p->y + plane_coefficients[2]*p->z + plane_coefficients[3]);
+    }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a point to a plane (signed) defined by ax+by+cz+d=0
+      * \param p a point
+      * \param a the normalized <i>a</i> coefficient of a plane
+      * \param b the normalized <i>b</i> coefficient of a plane
+      * \param c the normalized <i>c</i> coefficient of a plane
+      * \param d the normalized <i>d</i> coefficient of a plane
+      */
+    inline double
+      pointToPlaneDistanceSigned (robot_msgs::Point32 *p, double a, double b, double c, double d)
+    {
+      return (a * p->x + b * p->y + c * p->z + d);
+    }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a point to a plane (signed) defined by ax+by+cz+d=0
+      * \param p a point
+      * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
+      */
+    inline double
+      pointToPlaneDistanceSigned (robot_msgs::Point32 *p, Eigen::Vector4d plane_coefficients)
+    {
+      return ( plane_coefficients (0) * p->x + plane_coefficients (1) * p->y + plane_coefficients (2) * p->z + plane_coefficients (3) );
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Get the distance from a point to a plane (unsigned) defined by ax+by+cz+d=0
       * \param p a point
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
@@ -63,7 +98,7 @@ namespace cloud_geometry
     inline double
       pointToPlaneDistance (robot_msgs::Point32 *p, std::vector<double> plane_coefficients)
     {
-      return (fabs (plane_coefficients[0]*p->x + plane_coefficients[1]*p->y + plane_coefficients[2]*p->z + plane_coefficients[3]));
+      return (fabs (pointToPlaneDistanceSigned (p, plane_coefficients)) );
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Get the distance from a point to a plane (unsigned) defined by ax+by+cz+d=0
@@ -76,7 +111,17 @@ namespace cloud_geometry
     inline double
       pointToPlaneDistance (robot_msgs::Point32 *p, double a, double b, double c, double d)
     {
-      return (fabs (a * p->x + b * p->y + c * p->z + d));
+      return (fabs (pointToPlaneDistance (p, a, b, c, d)) );
+    }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a point to a plane (unsigned) defined by ax+by+cz+d=0
+      * \param p a point
+      * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
+      */
+    inline double
+      pointToPlaneDistance (robot_msgs::Point32 *p, Eigen::Vector4d plane_coefficients)
+    {
+      return ( fabs (pointToPlaneDistance (p, plane_coefficients)) );
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
