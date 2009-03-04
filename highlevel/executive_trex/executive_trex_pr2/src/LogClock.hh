@@ -1,7 +1,7 @@
 #ifndef H_LogClock
 #define H_LogClock
 
-#include "Clock.hh"
+#include "AgentClock.hh"
 #include "XMLUtils.hh"
 #include <pthread.h>
 #include <fstream>

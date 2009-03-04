@@ -19,9 +19,6 @@ all: installed
 installed: Makefile
 	make trex planworks plasma 
 	./copyIncludes.sh
-	# Super-hack to get around one header name collision
-	cp TREX/agent/base/Clock.hh include
-	touch installed
 
 includes: trex PlanWorks PLASMA
 	./copyIncludes.sh
@@ -49,9 +46,9 @@ planworks:
 
 # Get TREX
 trex: plasma
-	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 76 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
-	-if test "-r 76" != "-r `svn info TREX | grep Revision | cut -d " " -f 2,2`"; then \
-	  cd TREX && $(SVN_CMDLINE) up -r 76 ; \
+	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 79 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
+	-if test "-r 79" != "-r `svn info TREX | grep Revision | cut -d " " -f 2,2`"; then \
+	  cd TREX && $(SVN_CMDLINE) up -r 79 ; \
 	fi
 	@if [ ! -d logs ]; then mkdir logs; fi
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi

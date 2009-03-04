@@ -1,4 +1,3 @@
-#include "Clock.hh"
 #include "LogClock.hh"
 #include "Agent.hh"
 #include "LogManager.hh"
