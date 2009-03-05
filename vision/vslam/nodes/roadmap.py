@@ -44,12 +44,14 @@ from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 from skeleton import Skeleton
 import image_msgs.msg
+import deprecated_msgs.msg
 
 import camera
 import rospy
 import Image
 
 import time
+import math
 
 import vslam.msg
 
@@ -99,8 +101,41 @@ class RoadmapServer:
     if self.skel.add(self.vo.keyframe):
       self.send_map()
 
+def dist(a,b):
+  xd = a[0] - b[0]
+  yd = a[1] - b[1]
+  return math.sqrt(xd*xd + yd*yd)
+
+class FakeRoadmapServer:
+
+  def __init__(self, args):
+    rospy.init_node('roadmap_server')
+    self.pub = rospy.Publisher("/roadmap", vslam.msg.Roadmap)
+    rospy.TopicSub('/localizedpose', deprecated_msgs.msg.RobotBase2DOdom, self.handle_localizedpose)
+    self.nodes = []
+
+  def handle_localizedpose(self, msg):
+    print msg.pos.x, msg.pos.y, msg.pos.th
+    n = (msg.pos.x, msg.pos.y, msg.pos.th)
+    if self.nodes == [] or dist(self.nodes[-1], n) > 1.0:
+      self.nodes.append((msg.pos.x, msg.pos.y, msg.pos.th))
+      self.send_map()
+
+  def send_map(self):
+    p = vslam.msg.Roadmap()
+    p.nodes = [ vslam.msg.Node(x,y,t) for (x,y,t) in self.nodes ]
+    es = []
+    for a in range(len(self.nodes)):
+      for b in range(a):
+        if dist(self.nodes[a], self.nodes[b]) < 1.5:
+          es.append((a,b))
+    print len(es), "edges"
+    p.edges = [ vslam.msg.Edge(a,b) for (a,b) in es ]
+    p.localization = len(self.nodes) - 1
+    self.pub.publish(p)
+
 def main(args):
-  rms = RoadmapServer(args)
+  rms = FakeRoadmapServer(args)
   rospy.spin()
 
 if __name__ == '__main__':
