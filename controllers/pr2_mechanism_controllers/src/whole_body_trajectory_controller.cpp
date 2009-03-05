@@ -78,23 +78,22 @@ bool WholeBodyTrajectoryController::initXml(mechanism::RobotState * robot, TiXml
 
       joint = (robot->getJointState(jpc->getJointName()))->joint_;
 
-      joint_type_.push_back(joint->type_);
-
       if(joint)
+      {
         joint_velocity_limits_.push_back(joint->velocity_limit_*velocity_scaling_factor_);
+        joint_type_.push_back(joint->type_);
+      }
+      else
+      {
+        ROS_ERROR("Joint %s not found in class robot",jpc->getJointName().c_str());
+      }
       joint_name_.push_back(std::string(jpc->getJointName()));
+      current_joint_position_.push_back(0.0);
+      current_joint_velocity_.push_back(0.0);
       num_joints++;
     }
     else if(static_cast<std::string>(elt->Attribute("type")) == std::string("BasePIDController"))
     {
-      TiXmlElement *p = elt->FirstChildElement("pid");
-      control_toolbox::Pid pid;
-      if (p)
-        pid.initXml(p);
-      else
-        fprintf(stderr, "BasePIDController's config did not specify the default pid parameters.\n");
-      
-      base_pid_controller_.push_back(pid);
 
       TiXmlElement *pj = elt->FirstChildElement("joint");
       if(pj)
@@ -117,6 +116,16 @@ bool WholeBodyTrajectoryController::initXml(mechanism::RobotState * robot, TiXml
         {
           ROS_ERROR("Unknown type %s for base joint %s",(static_cast<std::string>(pj->Attribute("type"))).c_str(),joint_name.c_str());
         }
+
+        TiXmlElement *p = pj->FirstChildElement("pid");
+        control_toolbox::Pid pid;
+        if (p)
+          pid.initXml(p);
+        else
+          ROS_ERROR("BasePIDController's config did not specify the default pid parameters.\n");
+      
+        base_pid_controller_.push_back(pid);
+
         base_joint_index_.push_back(num_joints);
 
       }
@@ -158,18 +167,14 @@ bool WholeBodyTrajectoryController::initXml(mechanism::RobotState * robot, TiXml
   trajectory_point_.setDimension(num_joints);
   dimension_ = num_joints;
 
-// Add two points since every good trajectory must have at least two points, otherwise its just a point :-)
-  for(int j=0; j < dimension_; j++)
-    trajectory_point_.q_[j] = joint_pv_controllers_[j]->joint_state_->position_;
-  trajectory_point_.time_ = 0.0;
-  trajectory_points_vector.push_back(trajectory_point_);
-
   updateJointValues();
 
   for(int i=0; i < dimension_; i++)
     trajectory_point_.q_[i] = current_joint_position_[i];
 
   trajectory_point_.time_ = 0.0;
+
+  trajectory_points_vector.push_back(trajectory_point_);
   trajectory_points_vector.push_back(trajectory_point_);
 
   joint_trajectory_->autocalc_timing_ = true;
@@ -177,10 +182,14 @@ bool WholeBodyTrajectoryController::initXml(mechanism::RobotState * robot, TiXml
   ROS_INFO("Size of trajectory points vector : %d",trajectory_points_vector.size());
   if(!joint_trajectory_->setTrajectory(trajectory_points_vector))
     ROS_WARN("Trajectory not set correctly");
+  else
+    ROS_INFO("Trajectory set correctly");
 
   trajectory_start_time_ = robot_->hw_->current_time_;
 
   last_time_ = robot_->hw_->current_time_;
+
+  ROS_INFO("Initialized controllers");
 
   return true;
 }
@@ -238,6 +247,7 @@ void WholeBodyTrajectoryController::update(void)
   double sample_time(0.0);
 
   current_time_ = robot_->hw_->current_time_;
+
 
   if(refresh_rt_vals_)
   {
@@ -412,6 +422,8 @@ WholeBodyTrajectoryControllerNode::~WholeBodyTrajectoryControllerNode()
 
 void WholeBodyTrajectoryControllerNode::update()
 {
+  c_->updateJointValues();
+
   if(c_->trajectory_done_)
   {
     updateTrajectoryQueue( WholeBodyTrajectoryControllerNode::DONE);
