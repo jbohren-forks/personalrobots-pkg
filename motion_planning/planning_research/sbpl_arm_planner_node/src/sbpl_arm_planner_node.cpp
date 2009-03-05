@@ -101,7 +101,7 @@ bool SBPLArmPlannerNode::initializePlannerAndEnvironment()
     printf("ERROR: InitEnvFromFilePtr failed\n");
     return false;
   }
-  
+
   fclose(env_config_fp_);
   fclose(planner_config_fp_);
 
@@ -125,7 +125,7 @@ void SBPLArmPlannerNode::collisionMapCallback()
   if(!use_collision_map_)
     return;
 
-  printf("[collisionMapCallback] There are %i boxes.\n",collision_map_.boxes.size());
+//   printf("[collisionMapCallback] collision_map returned %i boxes.\n",collision_map_.boxes.size());
 
   std::vector<std::vector<double> > sbpl_boxes(collision_map_.boxes.size());
   for(unsigned int i=0; i < collision_map_.boxes.size(); i++)
@@ -142,7 +142,7 @@ void SBPLArmPlannerNode::collisionMapCallback()
 //     printf("[SBPLArmPlannerNode] obstacle %i: %.3f %.3f %.3f %.3f %.3f %.3f\n",i,sbpl_boxes[i][0],sbpl_boxes[i][1],
 //            sbpl_boxes[i][2],sbpl_boxes[i][3],sbpl_boxes[i][4],sbpl_boxes[i][5]);
   }
-  pr2_arm_env_.ClearEnv();
+//   pr2_arm_env_.ClearEnv();
   pr2_arm_env_.AddObstacles(sbpl_boxes); //TODO: BEN - change AddObstacles to take in a pointer 
 
   getSBPLCollisionMap();
@@ -159,7 +159,7 @@ void SBPLArmPlannerNode::getSBPLCollisionMap()
 //             printf("%.3f ", sbpl_cubes[i][k]);
 //         printf("\n");
 //     }
-    sbpl_collision_map_.header.frame_id = "base_link";
+    sbpl_collision_map_.header.frame_id = "torso_lift_link";
     sbpl_collision_map_.header.stamp = ros::Time ();
 
     sbpl_collision_map_.set_boxes_size(sbpl_cubes.size());
