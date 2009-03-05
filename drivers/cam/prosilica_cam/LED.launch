@@ -1,6 +1,6 @@
 <launch>
   <group ns="prosilica">
-    <param name="ip_address" type="str" value="169.254.10.28"/>
+    <param name="ip_address" type="str" value="169.254.68.68"/>
     <param name="acquisition_mode" type="str" value="Continuous"/>
     <param name="exposure_auto" type="str" value="Manual"/>
     <param name="exposure" type="int" value="25"/>
