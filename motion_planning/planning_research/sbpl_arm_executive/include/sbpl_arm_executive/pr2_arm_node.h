@@ -69,6 +69,8 @@ namespace pr2_arm_node
 
       static const double GRIPPER_CLOSE_EFFORT = 2;
 
+      double joint_space_goal_[7];
+
       std::string arm_name_,gripper_name_;
 
       std::string trajectory_topic_name_,trajectory_query_name_,trajectory_start_name_,effort_controller_command_name_,sbpl_planner_service_name_;
@@ -95,7 +97,7 @@ namespace pr2_arm_node
 
       bool planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::Pose> &pose_goals, robot_msgs::JointTraj &planned_path);
 
-      bool planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const robot_msgs::JointTrajPoint &joint_goal, robot_msgs::JointTraj &planned_path);
+      bool planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::JointTrajPoint> &joint_goal, robot_msgs::JointTraj &planned_path);
 
       void getCurrentPosition(robot_msgs::JointTrajPoint &current_joint_positions);
 

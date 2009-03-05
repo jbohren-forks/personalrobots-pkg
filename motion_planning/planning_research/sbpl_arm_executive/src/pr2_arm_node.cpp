@@ -40,6 +40,13 @@ PR2ArmNode::PR2ArmNode(std::string node_name, std::string arm_name, std::string 
   param<std::string>("~arm_trajectory_service_query",trajectory_query_name_, "/trajectory_controller/TrajectoryQuery");
   param<std::string>("~effort_command",effort_controller_command_name_, "/effort_controller/set_command");
   param<std::string>("~sbpl_planner_service_name",sbpl_planner_service_name_, "/sbpl_planner/plan_path/GetPlan");
+  param("~shoulder_pan_goal",joint_space_goal_[0],0.0);
+  param("~shoulder_pitch_goal",joint_space_goal_[1],0.0);
+  param("~upperarm_roll_goal",joint_space_goal_[2],0.0);
+  param("~elbow_lift_goal",joint_space_goal_[3],0.0);
+  param("~forearm_roll_goal",joint_space_goal_[4],0.0);
+  param("~wrist_lift_goal",joint_space_goal_[5],0.0);
+  param("~wrist_roll_goal",joint_space_goal_[6],0.0);
 
   param("use_gripper_effort_controller",use_gripper_effort_controller_,true);
 
@@ -270,16 +277,18 @@ bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, con
 }
 
 
-bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const robot_msgs::JointTrajPoint &joint_goal, robot_msgs::JointTraj &planned_path)
+bool PR2ArmNode::planSBPLPath(const robot_msgs::JointTrajPoint &joint_start, const std::vector<robot_msgs::JointTrajPoint> &joint_goal, robot_msgs::JointTraj &planned_path)
 {
-  
+    printf("[PR2ArmNode::planSBPLPath] Planning....\n");
+  int num_joints = 7;
   sbpl_arm_planner_node::PlanPathSrv::Request  request;
   sbpl_arm_planner_node::PlanPathSrv::Response response;
 
   request.type.data = "joint_space";
   request.start = joint_start;
-  request.joint_goal = joint_goal;
-
+  request.joint_goal.set_positions_size(7);
+  for(int i=0; i < num_joints; i++)
+    request.joint_goal.positions[i] = joint_goal[0].positions[i];
 
   if(ros::service::call(arm_name_ + sbpl_planner_service_name_,request,response))
   {
