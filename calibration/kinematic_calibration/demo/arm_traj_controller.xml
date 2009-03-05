@@ -39,7 +39,7 @@
 
     <controller name="r_wrist_flex_controller" type="JointPDController">
       <joint name="r_wrist_flex_joint">
-        <pid p="10" i="0.1" d="0.5" iClamp="10.0" />
+        <pid p="15" i="0.5" d="0.5" iClamp="40.0" />
       </joint>
     </controller>
 
