@@ -347,7 +347,11 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
   node_->param<double>(service_prefix_ + "/velocity_scaling_factor",scale,0.25);
   node_->param<double>(service_prefix_ + "/trajectory_wait_timeout",trajectory_wait_timeout_,10.0);
 
+  ROS_INFO("Trajectory wait timeout scale is %f",scale);
   c_->velocity_scaling_factor_ = std::min(1.0,std::max(0.0,scale));
+
+  ROS_INFO("Velocity scaling factor is %f",c_->velocity_scaling_factor_);
+  ROS_INFO("Trajectory wait timeout is %f",trajectory_wait_timeout_);
 
   if(c_->initXml(robot, config))  // Parses subcontroller configuration
   {
@@ -405,6 +409,7 @@ void ArmTrajectoryControllerNode::getJointTrajectoryThresholds()
   for(int i=0; i< c_->dimension_;i++)
   {
     node_->param<double>(service_prefix_ + "/" + c_->joint_pd_controllers_[i]->getJointName() + "/goal_reached_threshold",c_->goal_reached_threshold_[i],GOAL_REACHED_THRESHOLD);
+    ROS_INFO("Goal distance threshold for %s is %f",c_->joint_pd_controllers_[i]->getJointName().c_str(),c_->goal_reached_threshold_[i]);
   }
 }
 
@@ -668,7 +673,7 @@ void ArmTrajectoryControllerNode::publishDiagnostics()
     robot_msgs::DiagnosticStatus status;
     robot_msgs::DiagnosticValue v;
 
-    status.name = "Arm Trajectory Controller";
+    status.name = service_prefix_;
     status.level = 0;
     status.message = "OK";
 
