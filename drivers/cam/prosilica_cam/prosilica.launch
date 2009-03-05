@@ -1,8 +1,10 @@
 <launch>
   <group ns="prosilica">
     <param name="ip_address" type="str" value="169.254.10.28"/>
-    <!--param name="guid" type="str" value="101551"/-->
     <param name="acquisition_mode" type="str" value="Triggered"/>
+    <param name="exposure_auto" type="str" value="Auto"/>
+    <param name="gain_auto" type="str" value="Auto"/>
+    <param name="whitebal_auto" type="str" value="Auto"/>
   </group>
   <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" respawn="false"/>
 </launch>
