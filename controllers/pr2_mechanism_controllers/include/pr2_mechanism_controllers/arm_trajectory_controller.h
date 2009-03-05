@@ -238,7 +238,7 @@ namespace controller
 
     private:
 
-    void publishDiagnostics(realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> &publisher);
+    void publishDiagnostics();
 
     realtime_tools::RealtimePublisher <robot_msgs::DiagnosticMessage>* diagnostics_publisher_ ;  //!< Publishes controller information
 

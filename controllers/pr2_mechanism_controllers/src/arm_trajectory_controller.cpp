@@ -125,6 +125,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
     ROS_WARN("Trajectory not set correctly");
 
   trajectory_start_time_ = robot_->hw_->current_time_;
+  trajectory_end_time_ = trajectory_start_time_;
 
   return true;
 }
@@ -302,8 +303,9 @@ void ArmTrajectoryControllerNode::update()
 
 
   c_->update();
-
-  publishDiagnostics(*diagnostics_publisher_);
+//  ROS_INFO("Publishing diagnostics");
+  publishDiagnostics();
+//  ROS_INFO("Published diagnostics");
 }
 
 void ArmTrajectoryControllerNode::updateTrajectoryQueue(int last_trajectory_finish_status)
@@ -380,7 +382,7 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
   diagnostics_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::DiagnosticMessage> ("/diagnostics", 2) ;
 
 
-  ROS_INFO("Initialize publisher");
+  ROS_INFO("Initialized publisher");
 
   c_->controller_state_publisher_->msg_.name = std::string(service_prefix_); 
 
@@ -643,10 +645,12 @@ void ArmTrajectoryControllerNode::deleteTrajectoryFromQueue(int id)
 }
 
 
-void ArmTrajectoryControllerNode::publishDiagnostics(realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> &publisher)
+void ArmTrajectoryControllerNode::publishDiagnostics()
 {
-  if(publisher.trylock())
+//  ROS_INFO("Starting diagnostics");
+  if(diagnostics_publisher_->trylock())
   {
+//    ROS_INFO("Started diagnostics");
     robot_msgs::JointCmd cmd;
     cmd.set_names_size(1);
     cmd.set_positions_size(1);
@@ -662,43 +666,64 @@ void ArmTrajectoryControllerNode::publishDiagnostics(realtime_tools::RealtimePub
     status.level = 0;
     status.message = "OK";
 
+//    ROS_INFO("Diagnostics 1");
+
     for(unsigned int i=0; i < c_->joint_pd_controllers_.size(); i++)
     {
       v.label = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Current";
       v.value = c_->joint_pd_controllers_[i]->joint_state_->position_;
       values.push_back(v);
 
+//      ROS_INFO("Diagnostics %d: 1",i);
+
       v.label = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Command";
       c_->joint_pd_controllers_[i]->getCommand(cmd);
       v.value = cmd.positions[0];
       values.push_back(v);
+
+//      ROS_INFO("Diagnostics %d: 2",i);
+
     }
 
-    v.label = "Trajectory id: ";
+    v.label = "Trajectory id";
     v.value = current_trajectory_id_;
     values.push_back(v);
 
-    v.label = "Trajectory Status";
+//    ROS_INFO("Diagnostics 2");
+
+    v.label = "Trajectory Status:: ";
     std::map<int, int>::const_iterator it = joint_trajectory_status_.find((int)current_trajectory_id_);
     if(it == joint_trajectory_status_.end())
+    {
       v.label += "UNKNOWN";
+      v.value = -1;
+    }
     else
+    {
       v.label += JointTrajectoryStatusString[it->second];
-
+      v.value = it->second;
+    }
     values.push_back(v);
+
+//    ROS_INFO("Diagnostics 3");
 
     v.label = "Trajectory Current Time";
     v.value = c_->current_time_-c_->trajectory_start_time_;
     values.push_back(v);
 
+//    ROS_INFO("Diagnostics 4");
+
     v.label = "Trajectory Expected End Time (computed)";
     v.value = c_->trajectory_end_time_-c_->trajectory_start_time_;
     values.push_back(v);
 
+//    ROS_INFO("Diagnostics 5");
+
     status.set_values_vec(values);
     status.set_strings_vec(strings);
     statuses.push_back(status);
-    publisher.msg_.set_status_vec(statuses);
-    publisher.unlockAndPublish();
+    diagnostics_publisher_->msg_.set_status_vec(statuses);
+//    ROS_INFO("Set diagnostics info");
+    diagnostics_publisher_->unlockAndPublish();
   }
 }
