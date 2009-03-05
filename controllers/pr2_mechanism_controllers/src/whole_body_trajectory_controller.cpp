@@ -397,6 +397,7 @@ ROS_REGISTER_CONTROLLER(WholeBodyTrajectoryControllerNode)
 {
   std::cout<<"Controller node created"<<endl;
   c_ = new WholeBodyTrajectoryController();
+  diagnostics_publisher_ = NULL;
 }
 
 WholeBodyTrajectoryControllerNode::~WholeBodyTrajectoryControllerNode()
@@ -411,6 +412,9 @@ WholeBodyTrajectoryControllerNode::~WholeBodyTrajectoryControllerNode()
 
   c_->controller_state_publisher_->stop();
   delete c_->controller_state_publisher_;
+
+  diagnostics_publisher_->stop();
+  delete diagnostics_publisher_;
 
   if(topic_name_ptr_ && topic_name_.c_str())
   {
@@ -434,6 +438,13 @@ void WholeBodyTrajectoryControllerNode::update()
   }
 
   c_->update();
+
+  if((c_->current_time_ - last_diagnostics_publish_time_) > diagnostics_publish_delta_time_)
+  {
+    publishDiagnostics();
+    last_diagnostics_publish_time_ = c_->current_time_;
+  }
+
 }
 
 void WholeBodyTrajectoryControllerNode::updateTrajectoryQueue(int last_trajectory_finish_status)
@@ -504,6 +515,13 @@ bool WholeBodyTrajectoryControllerNode::initXml(mechanism::RobotState * robot, T
     if (c_->controller_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
       delete c_->controller_state_publisher_ ;
     c_->controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::ControllerState> (service_prefix_+"/controller_state", 1) ;
+
+  if (diagnostics_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete diagnostics_publisher_ ;
+  diagnostics_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::DiagnosticMessage> ("/diagnostics", 2) ;
+
+  last_diagnostics_publish_time_ = c_->robot_->hw_->current_time_;
+  node_->param<double>(service_prefix_ + "/diagnostics_publish_delta_time",diagnostics_publish_delta_time_,0.05);
 
     ROS_INFO("Initialize publisher");
 
@@ -765,5 +783,114 @@ void WholeBodyTrajectoryControllerNode::deleteTrajectoryFromQueue(int id)
       joint_trajectory_status_[id] = WholeBodyTrajectoryControllerNode::DELETED;
       break;
     }
+  }
+}
+
+
+void WholeBodyTrajectoryControllerNode::publishDiagnostics()
+{
+//  ROS_INFO("Starting diagnostics");
+  if(diagnostics_publisher_->trylock())
+  {
+//    ROS_INFO("Started diagnostics");
+    robot_msgs::JointCmd cmd;
+    cmd.set_names_size(1);
+    cmd.set_positions_size(1);
+    cmd.set_velocity_size(1);
+
+    vector<robot_msgs::DiagnosticStatus> statuses;
+    vector<robot_msgs::DiagnosticValue> values;
+    vector<robot_msgs::DiagnosticString> strings;
+    robot_msgs::DiagnosticStatus status;
+    robot_msgs::DiagnosticValue v;
+
+    status.name = "Whole Body Trajectory Controller";
+    status.level = 0;
+    status.message = "OK";
+
+//    ROS_INFO("Diagnostics 1");
+
+    for(unsigned int i=0; i < c_->joint_pv_controllers_.size(); i++)
+    {
+      v.label = c_->joint_pv_controllers_[i]->getJointName() + "/Position/Actual";
+      v.value = c_->joint_pv_controllers_[i]->joint_state_->position_;
+      values.push_back(v);
+
+//      ROS_INFO("Diagnostics %d: 1",i);
+
+      v.label = c_->joint_pv_controllers_[i]->getJointName() + "/Position/Command";
+      c_->joint_pv_controllers_[i]->getCommand(cmd);
+      v.value = cmd.positions[0];
+      values.push_back(v);
+
+      v.label = c_->joint_pv_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)";
+      v.value = cmd.positions[0] - c_->joint_pv_controllers_[i]->joint_state_->position_;
+      values.push_back(v);
+
+//      ROS_INFO("Diagnostics %d: 2",i);
+
+    }
+
+
+    for(unsigned int i=0; i < c_->base_pid_controller_.size(); i++)
+    {
+      int joint_index = c_->base_joint_index_[i];
+      v.label = c_->joint_name_[joint_index] + "/Position/Actual";
+      v.value = c_->current_joint_position_[joint_index];
+      values.push_back(v);
+
+//      ROS_INFO("Diagnostics %d: 1",i);
+
+      v.label = c_->joint_name_[joint_index] + "/Position/Command";
+      v.value = c_->joint_cmd_rt_[joint_index];
+      values.push_back(v);
+
+      v.label = c_->joint_name_[joint_index] + "/Position/Error (Command-Actual)";
+      v.value = c_->joint_cmd_rt_[joint_index] - c_->current_joint_position_[joint_index];
+      values.push_back(v);
+
+//      ROS_INFO("Diagnostics %d: 2",i);
+    }
+
+    v.label = "Trajectory id";
+    v.value = current_trajectory_id_;
+    values.push_back(v);
+
+//    ROS_INFO("Diagnostics 2");
+
+    v.label = "Trajectory Status:: ";
+    std::map<int, int>::const_iterator it = joint_trajectory_status_.find((int)current_trajectory_id_);
+    if(it == joint_trajectory_status_.end())
+    {
+      v.label += "UNKNOWN";
+      v.value = -1;
+    }
+    else
+    {
+      v.label += JointTrajectoryStatusString[it->second];
+      v.value = it->second;
+    }
+    values.push_back(v);
+
+//    ROS_INFO("Diagnostics 3");
+
+    v.label = "Trajectory Current Time";
+    v.value = c_->current_time_-c_->trajectory_start_time_;
+    values.push_back(v);
+
+//    ROS_INFO("Diagnostics 4");
+
+    v.label = "Trajectory Expected End Time (computed)";
+    v.value = c_->trajectory_end_time_-c_->trajectory_start_time_;
+    values.push_back(v);
+
+//    ROS_INFO("Diagnostics 5");
+
+    status.set_values_vec(values);
+    status.set_strings_vec(strings);
+    statuses.push_back(status);
+    diagnostics_publisher_->msg_.set_status_vec(statuses);
+//    ROS_INFO("Set diagnostics info");
+    diagnostics_publisher_->unlockAndPublish();
   }
 }

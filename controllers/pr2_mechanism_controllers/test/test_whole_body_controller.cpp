@@ -72,7 +72,7 @@ int main( int argc, char** argv )
   cmd.points[0].positions[4] = 0.0;
   cmd.points[0].positions[5] = 0.0;
   cmd.points[0].positions[6] = 0.0;
-  cmd.points[0].positions[7] = -0.0;
+  cmd.points[0].positions[7] = -2.0;
   cmd.points[0].positions[8] = 0.0;
   cmd.points[0].positions[9] = -0.0;
   cmd.points[0].time = 0.0;

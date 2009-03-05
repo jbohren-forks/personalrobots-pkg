@@ -58,6 +58,7 @@
 
 #include <robot_msgs/JointTraj.h>
 #include <robot_msgs/JointTrajPoint.h>
+#include <robot_msgs/DiagnosticMessage.h>
 
 #include <pr2_mechanism_controllers/TrajectoryStart.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
@@ -79,8 +80,9 @@
 namespace controller
 {
 
-  #define GOAL_REACHED_THRESHOLD 0.01
+  const std::string JointTrajectoryStatusString[7] = {"0 - ACTIVE","1 - DONE","2 - QUEUED","3 - DELETED","4 - FAILED","5 - CANCELED","6 - NUM_STATUS"};
 
+  #define GOAL_REACHED_THRESHOLD 0.01
 
     // comment this out if the controller is not supposed to publish its own max execution time
   #define PUBLISH_MAX_TIME
@@ -257,6 +259,10 @@ namespace controller
 
     private:
 
+    void publishDiagnostics();
+
+    realtime_tools::RealtimePublisher <robot_msgs::DiagnosticMessage>* diagnostics_publisher_ ;  //!< Publishes controller information
+
     /*!
      * \brief mutex lock for setting and getting ros messages
      */
@@ -320,6 +326,10 @@ namespace controller
     };
 
     double trajectory_wait_timeout_;
+
+    double last_diagnostics_publish_time_;
+
+    double diagnostics_publish_delta_time_;
 
   };
 
