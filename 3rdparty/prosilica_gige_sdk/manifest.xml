@@ -11,7 +11,7 @@ Package currently assumes x86 Linux.
 <review status="3rdparty" notes=""/>
 <url>http://www.prosilica.com/support/gige/ge_starter.html</url>
 <export>
-  <cpp lflags="-Wl,-rpath,${prefix}/Prosilica_GigE_SDK/bin-pc/x86 -L${prefix}/Prosilica_GigE_SDK/bin-pc/x86 -lPvAPI" cflags="-I${prefix}/Prosilica_GigE_SDK/inc-pc"/>
+  <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lPvAPI" cflags="-I${prefix}/include"/>
 </export>
 <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
