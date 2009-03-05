@@ -97,9 +97,13 @@ def main():
     print "Starting to publish"
     pub_command = rospy.Publisher("/%s/outlet_pose" % CONTROLLER, PoseStamped)
     msg = PoseStamped()
+    cnt = 0
     while not rospy.is_shutdown():
+        cnt += 1
         outlet_pose.header.stamp = last_time()
         pub_command.publish(outlet_pose)
+        if cnt % 3 == 0:
+            set_tool_frame(track_plug_pose.msg)
         time.sleep(1.0)
 
 if __name__ == '__main__': main()
