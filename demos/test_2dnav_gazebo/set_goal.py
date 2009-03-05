@@ -178,11 +178,11 @@ class NavStackTest(unittest.TestCase):
     def stateInput(self, state):
         if self.publish_goal:
           print "target: ", self.target_x, ",", self.target_y, ",", self.target_t
-          print "state.goal: (", state.goal.x, ",", state.goal.y, ",", state.goal.th,") status:",state.status.value, ":" , state.status.comment
+          print "state.goal: (", state.goal.x, ",", state.goal.y, ",", state.goal.th,") status:",state.status.value, " comment:" , state.status.comment
           if abs(state.goal.x-self.target_x)<FLOAT_TOL and \
              abs(state.goal.y-self.target_y)<FLOAT_TOL and \
              abs(shortest_angular_distance(state.goal.th,self.target_t))<FLOAT_TOL and \
-             state.status.value == 1:
+             ( state.status.value == 1 or state.status.value == 4 ):
             print "state goal is published: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
             self.publish_goal = False
     
