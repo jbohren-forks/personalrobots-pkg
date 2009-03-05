@@ -508,7 +508,8 @@ int
     }
     sac->computeCoefficients ();          // Compute the model coefficients
     coeff   = sac->refineCoefficients (); // Refine them using least-squares
-    inliers = model->selectWithinDistance (coeff, dist_thresh);
+    //inliers = model->selectWithinDistance (coeff, dist_thresh);
+    inliers = sac->getInliers ();
 
     // Flip plane normal according to the viewpoint information
     Point32 vp_m;
@@ -638,7 +639,8 @@ int
   if (sac->computeModel ())
   {
     sac->computeCoefficients ();             // Compute the model coefficients
-    line_inliers = model->selectWithinDistance (sac->refineCoefficients (), dist_thresh);
+    //line_inliers = model->selectWithinDistance (sac->refineCoefficients (), dist_thresh);
+    line_inliers = sac->getInliers ();
   }
   else
   {
