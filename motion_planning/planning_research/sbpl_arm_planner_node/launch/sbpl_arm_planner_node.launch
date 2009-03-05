@@ -3,7 +3,7 @@
   <param name="right_arm/sbpl_planner/env_config" textfile="$(find sbpl_arm_planner)/env_examples/robarm3d/r_arm.cfg" />
   <param name="right_arm/sbpl_planner/planner_config" textfile="$(find sbpl_arm_planner)/params.cfg" />
 
-  <param name="right_arm/sbpl_planner/allocated_time" value="1.0" />
+  <param name="right_arm/sbpl_planner/allocated_time" value="5.0" />
   <param name="right_arm/sbpl_planner/forward_search" value="true" />
   <param name="right_arm/sbpl_planner/search_mode" value="true" />
   <param name="right_arm/sbpl_planner/num_joints" value="7" />

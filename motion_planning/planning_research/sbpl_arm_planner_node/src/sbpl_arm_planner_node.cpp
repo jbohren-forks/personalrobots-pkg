@@ -202,11 +202,17 @@ bool SBPLArmPlannerNode::replan(robot_msgs::JointTraj &arm_path)
     arm_path.set_points_size(solution_state_ids_v.size());
     for(int i = 0; i < (int) solution_state_ids_v.size(); i++)
       arm_path.points[i].set_positions_size(num_joints_);
+    ROS_INFO("Path:");
     for(int i = 0; i < (int) solution_state_ids_v.size(); i++) 
     {
       pr2_arm_env_.StateID2Angles(solution_state_ids_v[i], angles_r);
       for (unsigned int p = 0; p < (unsigned int) num_joints_; p++)
+      {
         arm_path.points[i].positions[p] = angles_r[p];
+      }
+      ROS_INFO("step %d: %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",
+               i,arm_path.points[i].positions[0],arm_path.points[i].positions[1],arm_path.points[i].positions[2],arm_path.points[i].positions[3],
+               arm_path.points[i].positions[4],arm_path.points[i].positions[5],arm_path.points[i].positions[6]);
       arm_path.points[i].time = 0.0;
     }
   }
@@ -386,7 +392,7 @@ bool SBPLArmPlannerNode::planPath(sbpl_arm_planner_node::PlanPathSrv::Request &r
 //   ROS_INFO("goal: %1.2f %1.2f %1.2f", req.cartesian_goals[0].position.x,req.cartesian_goals[0].position.y,req.cartesian_goals[0].position.z);
 //   ROS_INFO("goal orientation: %1.2f %1.2f %1.2f %1.2f", req.cartesian_goals[0].orientation.x, req.cartesian_goals[0].orientation.y, req.cartesian_goals[0].orientation.z, req.cartesian_goals[0].orientation.w);
 
-  robot_msgs::JointTraj traj; 
+  robot_msgs::JointTraj traj;
   if(setStart(req.start))
   {
 //     if(setGoals(req.cartesian_goals))
