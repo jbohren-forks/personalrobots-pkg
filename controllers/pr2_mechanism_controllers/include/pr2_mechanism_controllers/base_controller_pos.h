@@ -69,6 +69,27 @@
 
 namespace controller
 {
+
+
+  /*! \struct
+    \brief This class holds information for a joint control parameter structure.
+   */
+  typedef struct
+  {
+      double p_gain; /** P gain */
+
+      double i_gain; /** I gain */
+
+      double d_gain; /** D gain */
+
+      double windup; /** windup protection value */
+
+      std::string joint_name; /** joint name */
+
+      std::string control_type; /** control type */
+
+  }JointControlParam;
+
   #define KP_SPEED_DEFAULT 100
   #define DEFAULT_WHEEL_RADIUS 0.079
 
