@@ -7,4 +7,4 @@ pytf:
 	g++ -shared pytf_swig_wrap.o $(LFLAGS) -Xlinker -export-dynamic -o _pytf_swig.so
 
 clean:
-	rm -rf *.so *.cxx *.o *.py*
+	rm -rf *.so *.cxx *.o swig_pytf.py*
