@@ -50,10 +50,10 @@
 #define OUTPUT_OBSTACLES 0
 #define VERBOSE 0
 #define OUPUT_DEGREES 0
-#define DEBUG_VALID_COORD 0
+#define DEBUG_VALID_COORD 1
 #define DEBUG_CHECK_GOALRPY 0
 #define DEBUG_JOINTSPACE_PLANNING 0
-#define DEBUG_CHECK_LINE_SEGMENT 0
+#define DEBUG_CHECK_LINE_SEGMENT 1
 
 //for ComputeForwardKinematics_DH - to rotate DH frames to PR2 frames
 #define ELBOW_JOINT 2
@@ -1929,6 +1929,15 @@ int EnvironmentROBARM3D::IsValidLineSegment(short unsigned int x0, short unsigne
     do {
         get_current_point3d(&params, &nX, &nY, &nZ);
 //         printf("point: %d %d %d\n",nX,nY,nZ);
+//         for (int x = nX-10; x < width; x++) 
+//         {
+//             for (int y = nY-10; y < nY+10; y++)
+//                 printf("%d ", Grid3D[x][y][nZ]);
+//             printf("\n");
+//         }
+//         printf("\n");
+
+
         if(Grid3D[nX][nY][nZ] >= EnvROBARMCfg.ObstacleCost)
         {
 #if DEBUG_CHECK_LINE_SEGMENT
@@ -1936,7 +1945,6 @@ int EnvironmentROBARM3D::IsValidLineSegment(short unsigned int x0, short unsigne
             Cell2ContXYZ(nX,nY,nZ,&pX,&pY,&pZ, EnvROBARMCfg.GridCellWidth);
             printf("[IsValidLineSegment] point (%u %u %u cells) %.2f %.2f %.2f (meters) is colliding with an obstacle.\n",nX,nY,nZ,pX,pY,pZ);
 #endif
-
             if(pTestedCells == NULL)
                 return 0;
             else
@@ -2570,7 +2578,7 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
     /* JOINT SPACE PLANNING */
     EnvROBARMCfg.PlanInJointSpace = false;
     for (int i = 0; i < NUMOFLINKS; i++)
-        EnvROBARMCfg.JointSpaceGoalMOE[i] = 0.2;
+        EnvROBARMCfg.JointSpaceGoalMOE[i] = 0.18;
 
     //hard coded temporarily (meters)
     EnvROBARMCfg.arm_length = ARM_WORKSPACE;
@@ -4083,6 +4091,13 @@ void EnvironmentROBARM3D::StateID2Angles(int stateID, double* angles_r)
         if(angles_r[i] >= PI_CONST)
             angles_r[i] = -2.0*PI_CONST + angles_r[i];
     }
+
+    //debugging output
+    double pnt[3] = {0};
+    Cell2ContXYZ(HashEntry->endeff[0],HashEntry->endeff[1],HashEntry->endeff[2],&(pnt[0]),&(pnt[1]),&(pnt[2]));
+    for(int i=0; i < NUMOFLINKS; i++)
+        printf("%.3f ",angles_r[i]);
+    printf("     endeff: %.2f %.2f %.2f\n",pnt[0],pnt[1],pnt[2]);
 }
 
 void EnvironmentROBARM3D::AddObstaclesToEnv(double**obstacles, int numobstacles)
@@ -4212,7 +4227,7 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
     //NOTE insert a mutex around bPlanning
     if(EnvROBARMCfg.bPlanning)
     {
-//         printf("[AddObstacles] Planning...obstacles won't be added to the map.\n");
+        printf("[AddObstacles] Planning...obstacles won't be added to the map.\n");
         return;
     }
 
@@ -5544,17 +5559,17 @@ bool EnvironmentROBARM3D::SetJointSpaceGoals(double** JointSpaceGoals, int num_g
     EnvROBARMCfg.bPlanning = true;
     UpdateEnvironment(); //NOTE: CAN ONLY HANDLE ONE GOAL
 
-    for (int z = 25; z <= 75; z++)
-    {
-        printf("\n[SetJointSpaceGoals] z = %i\n",z);
-        for (int x = EnvROBARMCfg.EnvWidth_c/2; x < EnvROBARMCfg.EnvWidth_c; x++) 
-        {
-            for (int y = 25; y < 75; y++)
-                printf("%d ",EnvROBARMCfg.Grid3D[x][y][z]);
-            printf("\n");
-        }
-        printf("\n");
-    }
+//     for (int z = 25; z <= 75; z++)
+//     {
+//         printf("\n[SetJointSpaceGoals] z = %i\n",z);
+//         for (int x = EnvROBARMCfg.EnvWidth_c/2; x < EnvROBARMCfg.EnvWidth_c; x++) 
+//         {
+//             for (int y = 25; y < 75; y++)
+//                 printf("%d ",EnvROBARMCfg.Grid3D[x][y][z]);
+//             printf("\n");
+//         }
+//         printf("\n");
+//     }
 
     //loop through all the goal positions
     for(i = 0; i < EnvROBARMCfg.nJointSpaceGoals; i++)
