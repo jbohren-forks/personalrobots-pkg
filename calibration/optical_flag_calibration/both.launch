@@ -1,0 +1,7 @@
+<launch>
+
+  <include file="$(find optical_flag_calibration)/controllers.launch" />
+
+  <include file="$(find optical_flag_calibration)/flag_commander.launch" />
+
+</launch>
