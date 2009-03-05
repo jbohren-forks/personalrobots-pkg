@@ -1,0 +1,25 @@
+<package>
+  <description brief='Dynamic Verification Controllers'>
+  </description>
+  <author>Kevin Watts</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="mechanism_model" />
+  <depend package="wg_robot_description_parser" />
+  <depend package="newmat10" />
+  <depend package="realtime_tools" />
+  <depend package="robot_mechanism_controllers" />
+  <depend package="rospy" />
+  <depend package="robot_msgs" />
+  <depend package="robot_srvs" />
+  <url>http://pr.willowgarage.com</url>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="python-wxgtk2.8"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-wxgtk2.8"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libwxgtk2.8-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libwxgtk2.8-dev"/>
+  <repository>http://pr.willowgarage.com/repos</repository>
+  <export>
+    <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ldynamic_verification_controllers'/>
+  </export>
+
+</package>
