@@ -31,10 +31,11 @@
 /**
  * \file
  *
- * Creating a topological map from an occupancy grid
+ * Creating a topological map from an occupancy grid using a bottleneck analysis
  *
  * \author Bhaskara Marthi
  *
+ * \todo this could be made much simpler by just using the GridGraph class
  */
 
 

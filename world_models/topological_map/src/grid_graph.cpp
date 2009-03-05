@@ -30,6 +30,7 @@
 
 #include <topological_map/grid_graph.h>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/graph/connected_components.hpp>
 #include <ros/console.h>
 #include <ros/assert.h>
 
@@ -186,6 +187,23 @@ tuple<bool, double, GridPath> GridGraph::shortestPath (const Cell2D& cell1, cons
   return make_tuple(true, distances[finish], path);
 }
 
+
+/************************************************************
+ * Connected comps
+ ************************************************************/
+
+vector<MutableRegionPtr> GridGraph::connectedComponents ()
+{
+  resetIndices();
+  int num_comps=connected_components(graph_, get(&CellInfo::component, graph_), 
+                                    vertex_index_map(get(&CellInfo::index, graph_)));
+  vector<MutableRegionPtr> regions(num_comps);
+  GridGraphIterator iter, end;
+  for (tie(iter, end) = vertices(graph_); iter!=end; ++iter) {
+    regions[graph_[*iter].component]->insert(graph_[*iter].cell);
+  }
+  return regions;
+}
 
 
 /************************************************************

@@ -63,4 +63,21 @@ vector<Cell2D> cellNeighbors (const Cell2D& p)
   return neighbors;
 }
 
+
+
+Point2D cellCorner (const Cell2D& cell, const double resolution)
+{
+  return Point2D(cell.c*resolution,cell.r*resolution);
+}
+
+Point2D cellCenter (const Cell2D& cell, const double resolution)
+{
+  return Point2D((.5+cell.c)*resolution, (.5+cell.r)*resolution);
+}
+
+Cell2D pointToCell (const Point2D& p, double resolution)
+{
+  return Cell2D(p.y/resolution, p.x/resolution);
+}
+
 } // namespace topological_map

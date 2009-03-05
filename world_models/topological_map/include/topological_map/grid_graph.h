@@ -58,6 +58,7 @@ struct CellInfo
   CellInfo(const Cell2D& cell) : cell(cell) {}
   Cell2D cell;
   uint index;
+  uint component;
 };
 
 struct EdgeCost
@@ -106,6 +107,9 @@ public:
   // Shortest path query
   // Return values: 1) The path 2) The cost 3) Was a path found?  1) and 2) aren't valid if 3) is false.
   tuple<bool, double, GridPath> shortestPath (const Cell2D& cell1, const Cell2D& cell2);
+
+  // Connected components query
+  vector<MutableRegionPtr> connectedComponents ();
 
 private:
 

@@ -116,15 +116,6 @@ Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
   return Cell2D(floor((float)p.y/resolution_), floor((float)p.x/resolution_));
 }
 
-Point2D TopologicalMap::MapImpl::cellCorner (const Cell2D& cell) const
-{
-  return Point2D(cell.c*resolution_,cell.r*resolution_);
-}
-
-Point2D TopologicalMap::MapImpl::cellCenter (const Cell2D& cell) const
-{
-  return Point2D((.5+cell.c)*resolution_, (.5+cell.r)*resolution_);
-}
 
 
 
@@ -218,7 +209,7 @@ void TopologicalMap::MapImpl::writeToStream (ostream& stream)
   if (goal_) {
     // Temporarily unset the goal, as that is not saved
     goal_point = roadmap_->connectorPoint(goal_->id);
-    goal_ = shared_ptr<TemporaryRoadmapNode>();
+    unsetGoal();
   }
 
   writeGrid(grid_, stream);
@@ -401,7 +392,7 @@ Point2D TopologicalMap::MapImpl::findBorderPoint(const Cell2D& cell1, const Cell
   double dy=(cell2.r-cell1.r+1)/2.0;
   double dx=(cell2.c-cell1.c+1)/2.0;
   ROS_ASSERT_MSG (((dy==.5)||(dy==0)||(dy==1)) && ((dx==.5)||(dx==0)||(dx==1)), "(%f, %f) was an illegal value in findBorderPoint", dx, dy);
-  Point2D p=cellCorner(cell1);
+  Point2D p=cellCorner(cell1, resolution_);
   p.y+=dy*resolution_;
   p.x+=dx*resolution_;
   ROS_DEBUG_STREAM_NAMED ("border_point", "Border point is " << p);
@@ -489,16 +480,22 @@ RegionPair TopologicalMap::MapImpl::adjacentRegions (const ConnectorId id) const
 
 void TopologicalMap::MapImpl::setGoal (const Point2D& p)
 {
-  // Remove old goal if it exists
-  goal_ = shared_ptr<TemporaryRoadmapNode>();
+  // Remove old goal if it exists (we could dispense with this - that would just 
+  // mean the new node gets added before the old one is removed)
+  unsetGoal();
 
   // Add new goal
   goal_ = shared_ptr<TemporaryRoadmapNode>(new TemporaryRoadmapNode(this, p));
 }
 
+void TopologicalMap::MapImpl::unsetGoal ()
+{
+  goal_ = shared_ptr<TemporaryRoadmapNode>();
+}
+
 void TopologicalMap::MapImpl::setGoal (const Cell2D& c)
 {
-  setGoal(cellCenter(c));
+  setGoal(cellCenter(c, resolution_));
 }
 
 pair<bool, double> TopologicalMap::MapImpl::goalDistance (ConnectorId id) const

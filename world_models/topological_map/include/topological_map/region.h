@@ -39,6 +39,8 @@
 namespace topological_map
 {
 
+using std::ostream;
+
 struct Cell2D
 {
   int r, c;
@@ -46,7 +48,7 @@ struct Cell2D
   Cell2D(const int row, const int column) : r(row), c(column) {}
 };
 
-std::ostream& operator<< (std::ostream& str, const Cell2D& c);
+ostream& operator<< (ostream& str, const Cell2D& c);
 int operator< (const Cell2D& c, const Cell2D& c2);
 bool operator== (const Cell2D& c, const Cell2D& c2);
 
@@ -61,6 +63,24 @@ typedef boost::shared_ptr<Region> MutableRegionPtr;
 
 /// Convenience
 typedef unsigned int uint;
+
+
+
+
+struct Point2D 
+{
+  Point2D(double x=0.0, double y=0.0) : x(x), y(y) {}
+  double x,y;
+};
+
+bool operator== (const Point2D& p1, const Point2D& p2);
+ostream& operator<< (ostream& str, const Point2D& p);
+
+Point2D cellCorner (const Cell2D& cell, double resolution);
+Point2D cellCenter (const Cell2D& cell, double resolution);
+
+Cell2D pointToCell (const Point2D& p, double resolution);
+
 
 } // namespace topological_map
 

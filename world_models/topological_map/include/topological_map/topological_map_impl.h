@@ -141,8 +141,6 @@ private:
   MapImpl& operator= (const MapImpl&);
 
   Cell2D containingCell(const Point2D& p) const;
-  Point2D cellCorner (const Cell2D& cell) const;
-  Point2D cellCenter (const Cell2D& cell) const;
   ConnectorId connectorBetween (const RegionId r1, const RegionId r2) const;
   tuple<ConnectorId, Cell2D, Cell2D> connectorCellsBetween (const RegionId r1, const RegionId r2) const;
   Point2D findBorderPoint(const Cell2D& cell1, const Cell2D& cell2) const;

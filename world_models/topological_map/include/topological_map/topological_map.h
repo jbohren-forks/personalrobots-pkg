@@ -56,17 +56,6 @@ typedef unsigned int ConnectorId;
 typedef vector<RegionId> RegionIdVector;
 typedef pair<RegionId, RegionId> RegionPair;
 
-struct Point2D 
-{
-  Point2D(double x=0.0, double y=0.0) : x(x), y(y) {}
-  double x,y;
-};
-
-ostream& operator<< (ostream& str, const Point2D& p);
-bool operator== (const Point2D& p1, const Point2D& p2);
-
-
-
 
 typedef boost::multi_array<bool, 2> OccupancyGrid;
 typedef OccupancyGrid::size_type occ_grid_size;
@@ -79,7 +68,13 @@ uint numCols(const OccupancyGrid& grid);
 
 
 
-/// \brief Represents a topological map of a 2-dimensional discrete grid decomposed into regions of various types, with connectors between them
+/// \brief A facade object to the topological map and high-level world model information
+///
+/// The topological map assumes an underlying occupancy grid static map.  It includes
+/// 1) A decomposition of the free cells into regions of various types
+/// 2) A set of connectors, each of which is a 2d point (not cell) on the border between two regions
+/// 3) A roadmap over the connectors
+/// 4) For each region of type doorway, further information about the static/dynamic state of the door (not yet done)
 class TopologicalMap
 {
 public:
@@ -142,10 +137,10 @@ public:
   /// \return Vector of all region ids.  This is a reference and may change.
   const RegionIdVector& allRegions() const;
 
-  /// \post Set the goal point (for future distance queries) to be \a p
+  /// \post Goal point (for future distance queries) is \a p
   void setGoal (const Point2D& p);
 
-  /// \post Set the goal point (for future distance queries) to be center of \a c
+  /// \post Goal point (for future distance queries) is the center of \a c
   void setGoal (const Cell2D& c);
 
   /// \return 1) true if there exists a path between connector \a id and goal 2) The distance (only valid if 1 is true)

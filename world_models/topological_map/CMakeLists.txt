@@ -31,11 +31,15 @@ target_link_libraries(bg_driver topological_map)
 ## Rename once done
 rospack_add_library(topological_graph src/region.cpp src/topological_map.cpp src/creation.cpp src/region_graph.cpp src/connector_roadmap.cpp src/grid_graph.cpp)
 
-rospack_add_executable(ros_topological_map src/ros_topological_map.cpp)
-target_link_libraries(ros_topological_map topological_graph)
+rospack_add_executable(bin/ros_topological_map src/ros_topological_map.cpp)
+target_link_libraries(bin/ros_topological_map topological_graph)
+
+rospack_add_executable(bin/generate_ground_truth_map src/generate_from_ground_truth.cpp)
+target_link_libraries(bin/generate_ground_truth_map topological_graph)
+						     
 
 rospack_add_gtest(test/test_topological_map test/test_topological_map.cpp)
 target_link_libraries(test/test_topological_map topological_graph)
 
-rospack_add_executable(tm_driver src/tm_driver)
-target_link_libraries(tm_driver topological_graph)
+rospack_add_executable(bin/tm_driver src/tm_driver)
+target_link_libraries(bin/tm_driver topological_graph)
