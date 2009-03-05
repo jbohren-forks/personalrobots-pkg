@@ -261,7 +261,10 @@ public:
     if (!frame)
       return false;
 
-    return processFrame(frame, img_, res.image, res.cam_info);
+    if (calibrated_)
+      return processFrame(frame, img_, res.image, res.cam_info);
+    else
+      return processFrame(frame, res.image, img_, res.cam_info);
   }
 
 private:
