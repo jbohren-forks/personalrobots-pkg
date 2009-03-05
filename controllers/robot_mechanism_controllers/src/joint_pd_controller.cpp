@@ -129,7 +129,7 @@ void JointPDController::getCommand(robot_msgs::JointCmd & cmd)
   cmd.names[0]= joint_state_->joint_->name_;
   cmd.positions[0] = command_t_;
   cmd.velocity[0] = command_dot_t_;
-  pthread_mutex_lock(&joint_pd_controller_lock_);
+  pthread_mutex_unlock(&joint_pd_controller_lock_);
 }
 
 void JointPDController::update()
