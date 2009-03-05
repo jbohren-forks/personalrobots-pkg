@@ -54,7 +54,7 @@
 
     <sensor name="${side}_ptz_tilt_link" type="camera">
       <parent name="${side}_ptz_pan_link" />
-      <origin xyz="0.0 ${reflect*0.0} 0.0" rpy="0 0 0"/>
+      <origin xyz="0.0 ${reflect*0.08} 0.0" rpy="0 0 0"/>
       <joint name="${side}_ptz_tilt_joint" />
 
       <inertial>
@@ -71,7 +71,7 @@
 	  <elem key="material" value="Gazebo/Red" />
         </map>
         <geometry name="${side}_ptz_tilt_visual">
-          <mesh filename="ptz_${side}" />
+          <mesh filename="ptz_top_${side}" />
         </geometry>
       </visual>
 
