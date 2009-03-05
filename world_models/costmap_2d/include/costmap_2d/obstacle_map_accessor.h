@@ -104,8 +104,9 @@ namespace costmap_2d {
     }
 
     /**
-     * @brief Function to test if a cell is in difference between the circusmcribed radius
-     * and the inscribed radius. This check is used to efficiently test if a client must lay 
+     * @brief Function to test if a cell is inside the circusmcribed radius
+     * by checking whether its cost is >= getCircumscribedCostLowerBound().
+     * This check is used to efficiently test if a client must lay 
      * down the robot footprint to test for being in collision.
      * @param mx the x map index. mx must bi in [0, width-1]
      * @param my the y map index. my must be in [0, height-1]
@@ -133,7 +134,9 @@ namespace costmap_2d {
     double getResolution() const {return resolution_;}
 
     /**
-     * @brief Sets the bound for testing if in circumscribed circle overflow
+     * @brief Sets the bound for testing if in circumscribed circle
+     * overflow. Used in CostMap2D constructor once it knows that
+     * value, and in CostMapAccessor constructors to initialize it.
      */
     void setCircumscribedCostLowerBound(unsigned char c){
       costLB_ = c;
