@@ -1491,10 +1491,11 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
 {
 
     int x, y, z, pX_max, pX_min, pY_max, pY_min, pZ_max, pZ_min;
-    int padding_c = EnvROBARMCfg.padding*2 / gridcell_m + 0.5;  //why multiplied by 2?
-//     int padding_c = (EnvROBARMCfg.padding / gridcell_m) + 0.5;
-    short unsigned int obstacle_c[6] = {0};
+//     int padding_c = EnvROBARMCfg.padding*2 / gridcell_m + 0.5;  //why multiplied by 2?
+    int padding_c = (EnvROBARMCfg.padding / gridcell_m) + 0.5;
+    short unsigned int obstacle_c[6] = {0}, obs_c[3];
     int dims_c[3] = {EnvROBARMCfg.EnvWidth_c, EnvROBARMCfg.EnvHeight_c, EnvROBARMCfg.EnvDepth_c};
+    double ob[3];
 
     if(gridcell_m == EnvROBARMCfg.LowResGridCellWidth)
     {
@@ -1503,14 +1504,10 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
         dims_c[2] = EnvROBARMCfg.LowResEnvDepth_c;
     }
 
-    short unsigned int obs_c[3];
-
     //cube(meters)
     if (type == 0)
     {
         double obs[3] = {obstacle[0],obstacle[1],obstacle[2]};
-//         short unsigned int obs_c[3];// = {obstacle_c[0], obstacle_c[1], obstacle_c[2]};
-
         ContXYZ2Cell(obs, gridcell_m, dims_c, obs_c);
 
         //get dimensions of obstacles in cells (width,height,depth)
@@ -1564,8 +1561,8 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
     if (pZ_min < 0)
         pZ_min = 0;
 
-    printf("[AddObstacleToGrid] %.2f %.2f %.2f (meters)  -> %d %d %d (cells)\n",obstacle[0],obstacle[1],obstacle[2],obs_c[0],obs_c[1],obs_c[2]);
-    printf("[AddObstacleToGrid] %d %d %d %d %d %d (cells)\n",pX_min,pX_max,pY_min,pY_max,pZ_min,pZ_max);
+//     printf("[AddObstacleToGrid] %.2f %.2f %.2f (meters)  -> %d %d %d (cells)\n",obstacle[0],obstacle[1],obstacle[2],obs_c[0],obs_c[1],obs_c[2]);
+//     printf("[AddObstacleToGrid] %d %d %d %d %d %d (cells)\n",pX_min,pX_max,pY_min,pY_max,pZ_min,pZ_max);
 
     // assign the cells occupying the obstacle to ObstacleCost
 
@@ -1580,10 +1577,9 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
         }
     }
 
-    //outut collision map debugging  -inefficient but fine for now!
-//     if(EnvROBARMCfg.lowres_collision_checking && gridcell_m == EnvROBARMCfg.LowResGridCellWidth)
-//     {
-        double ob[3];
+    //output collision map debugging  - stupid way of doing this but fine for now!
+    if(EnvROBARMCfg.lowres_collision_checking && gridcell_m == EnvROBARMCfg.LowResGridCellWidth)
+    {
         Cell2ContXYZ(obs_c[0],obs_c[1],obs_c[2],&(ob[0]),&(ob[1]),&(ob[2]));
         EnvROBARMCfg.cubes.resize(EnvROBARMCfg.cubes.size()+1);
         EnvROBARMCfg.cubes.back().resize(6);
@@ -1593,7 +1589,19 @@ void EnvironmentROBARM3D::AddObstacleToGrid(double* obstacle, int type, char*** 
         EnvROBARMCfg.cubes.back()[3] = ((double)pX_max - (double)pX_min)*gridcell_m;
         EnvROBARMCfg.cubes.back()[4] = ((double)pY_max - (double)pY_min)*gridcell_m;
         EnvROBARMCfg.cubes.back()[5] = ((double)pZ_max - (double)pZ_min)*gridcell_m;
-//     }
+    }
+    else if(!EnvROBARMCfg.lowres_collision_checking)
+    {
+        Cell2ContXYZ(obs_c[0],obs_c[1],obs_c[2],&(ob[0]),&(ob[1]),&(ob[2]));
+        EnvROBARMCfg.cubes.resize(EnvROBARMCfg.cubes.size()+1);
+        EnvROBARMCfg.cubes.back().resize(6);
+        EnvROBARMCfg.cubes.back()[0] = ob[0];
+        EnvROBARMCfg.cubes.back()[1] = ob[1];
+        EnvROBARMCfg.cubes.back()[2] = ob[2];
+        EnvROBARMCfg.cubes.back()[3] = ((double)pX_max - (double)pX_min)*gridcell_m;
+        EnvROBARMCfg.cubes.back()[4] = ((double)pY_max - (double)pY_min)*gridcell_m;
+        EnvROBARMCfg.cubes.back()[5] = ((double)pZ_max - (double)pZ_min)*gridcell_m;
+    }
 
     //variable cell costs
     if(EnvROBARMCfg.variable_cell_costs)
@@ -1914,13 +1922,13 @@ int EnvironmentROBARM3D::IsValidLineSegment(short unsigned int x0, short unsigne
         return 0;
     }
 
-    printf("xyz1: %d %d %d  --> xyz2: %d %d %d\n",x0,y0,z0,x1,y1,z1);
+//     printf("xyz1: %d %d %d  --> xyz2: %d %d %d\n",x0,y0,z0,x1,y1,z1);
 
     //iterate through the points on the segment
     get_bresenham_parameters3d(x0, y0, z0, x1, y1, z1, &params);
     do {
         get_current_point3d(&params, &nX, &nY, &nZ);
-        printf("point: %d %d %d\n",nX,nY,nZ);
+//         printf("point: %d %d %d\n",nX,nY,nZ);
         if(Grid3D[nX][nY][nZ] >= EnvROBARMCfg.ObstacleCost)
         {
 #if DEBUG_CHECK_LINE_SEGMENT
@@ -2444,7 +2452,7 @@ void EnvironmentROBARM3D::UpdateEnvironment()
 
 void EnvironmentROBARM3D::InitializeEnvConfig()
 {
-	//find the discretization for each angle and store the discretization
+    //find the discretization for each angle and store the discretization
     DiscretizeAngles();
 }
 
@@ -2636,18 +2644,6 @@ bool EnvironmentROBARM3D::InitializeEnv(const char* sEnvFile)
 //     z1 = 4; 
 //     IsValidLineSegment(x0,  y0, z0, x1, y1, z1, EnvROBARMCfg.Grid3D, pTestedCells);
 //     exit(1);
-
-//     double angles[7],orientation[3][3];
-//     angles[0] = 0.0006;
-//     angles[1] = 0.0006;
-//     angles[2] = 0.0013;
-//     angles[3] = 0.00015;
-//     angles[4] = 0.0001;
-//     angles[5] = 0.09969;
-//     angles[6] = 0.000176;
-//     short unsigned int endeff[3], wrist[3], elbow[3];
-// 
-//     ComputeEndEffectorPos(angles,endeff,wrist,elbow,orientation);
 
     //pre-compute action-to-action costs
     ComputeActionCosts();
@@ -4834,11 +4830,6 @@ void EnvironmentROBARM3D::InitializeKinNode() //needed when using kinematic libr
     assert(EnvROBARMCfg.left_arm);
     EnvROBARMCfg.pr2_config = new JntArray(EnvROBARMCfg.left_arm->num_joints_);
 
-//     printf("Node initialized.\n");
-    /*std::string pr2Content;
-    calcFK_armplanner.getParam("robotdesc/pr2",pr2Content);  
-    EnvROBARMCfg.pr2_kin.loadString(pr2Content.c_str());*/
-
     KL_time += clock() - currenttime;
 }
 
@@ -4915,7 +4906,7 @@ void EnvironmentROBARM3D::ComputeForwardKinematics_DH(double angles[NUMOFLINKS])
                             {1, 0, 0, 0},
                             {0, 0, 0, 1}};
 
-    //add any theta offsets to the joint position angles
+    //add any theta offsets to the joint position angles   <--move this into  next loop
     for(x=0; x < NUMOFLINKS; x++)
         theta[x] = angles[x] + EnvROBARMCfg.DH_theta[x];
 
@@ -4966,7 +4957,6 @@ void EnvironmentROBARM3D::ComputeForwardKinematics_DH(double angles[NUMOFLINKS])
                         for (k=0; k<4; k++)
                             sum += EnvROBARM.Trans[x][k][i] * R_elbow[k][y];
 
-//                         EnvROBARM.Trans[x][y][i] = sum;
 //                         printf("%.2f ",sum);
                         temp3[x][y] = sum;
                     }
@@ -4983,8 +4973,7 @@ void EnvironmentROBARM3D::ComputeForwardKinematics_DH(double angles[NUMOFLINKS])
                         sum = 0;
                         for (k=0; k<4; k++)
                             sum += EnvROBARM.Trans[x][k][i] * R_wrist[k][y];
-    
-//                         EnvROBARM.Trans[x][y][i] = sum;
+
 //                         printf("%.2f ",sum);
                         temp5[x][y] = sum;
                     }
@@ -5032,7 +5021,7 @@ void EnvironmentROBARM3D::ComputeForwardKinematics_DH(double angles[NUMOFLINKS])
     }
 }
 
-//uses ros's KL Library
+//uses ros's KDL Library
 void EnvironmentROBARM3D::ComputeForwardKinematics_ROS(double *angles, int f_num, double *x, double *y, double*z)
 {
     Frame f, f2;
@@ -5174,10 +5163,10 @@ void EnvironmentROBARM3D::ComputeCostPerRadian()
     getRPY(orientation,&start_rpy1[0],&start_rpy1[1],&start_rpy1[2],1);
     getRPY(orientation,&start_rpy2[0],&start_rpy2[1],&start_rpy2[2],2);
 
-    printf("\n\n");
-    printf("[ComputeCostPerRadian] start: roll1: %.4f pitch1: %.4f yaw1: %.4f\n", start_rpy1[0],start_rpy1[1],start_rpy1[2]);
-    printf("[ComputeCostPerRadian] start: roll2: %.4f pitch2: %.4f yaw2: %.4f\n", start_rpy2[0],start_rpy2[1],start_rpy2[2]);
-    printf("\n\n");
+//     printf("\n\n");
+//     printf("[ComputeCostPerRadian] start: roll1: %.4f pitch1: %.4f yaw1: %.4f\n", start_rpy1[0],start_rpy1[1],start_rpy1[2]);
+//     printf("[ComputeCostPerRadian] start: roll2: %.4f pitch2: %.4f yaw2: %.4f\n", start_rpy2[0],start_rpy2[1],start_rpy2[2]);
+//     printf("\n\n");
 
     //iterate through all possible actions and find the one with the minimum cost per cell
     for (int i = 0; i < EnvROBARMCfg.nSuccActions; i++)
@@ -5223,8 +5212,8 @@ void EnvironmentROBARM3D::ComputeCostPerRadian()
 //             max_ang_dist = ang_dist4;
 //             largest_action = i;
 //         }
-        printf("[ComputeCostPerRadian] action %i: pitch1: %.4f yaw1: %.4f  pitch2: %.4f yaw2: %.4f\n", i, rpy1[1],rpy2[2],rpy2[1],rpy2[2]);
-        printf("[ComputeCostPerRadian] action %i: ang_dist1: %.4f ang_dist2: %.4f\n", i, ang_dist1,ang_dist2);
+//         printf("[ComputeCostPerRadian] action %i: pitch1: %.4f yaw1: %.4f  pitch2: %.4f yaw2: %.4f\n", i, rpy1[1],rpy2[2],rpy2[1],rpy2[2]);
+//         printf("[ComputeCostPerRadian] action %i: ang_dist1: %.4f ang_dist2: %.4f\n", i, ang_dist1,ang_dist2);
     }
 
     EnvROBARMCfg.cost_per_rad = COSTMULT / max_ang_dist;

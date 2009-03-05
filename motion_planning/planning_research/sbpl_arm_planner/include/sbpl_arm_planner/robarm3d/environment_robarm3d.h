@@ -42,7 +42,7 @@ Motion planner for Robotic Arm based on the SBPL. It is capable of finding the s
  **/
 
  
-#include <boost/numeric/ublas/matrix.hpp>
+// #include <boost/numeric/ublas/matrix.hpp>
 #include <robot_kinematics/robot_kinematics.h>
 
 using namespace robot_kinematics;
