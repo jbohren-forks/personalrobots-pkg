@@ -59,8 +59,7 @@ def main():
     if len(sys.argv) < 2:
         print usage
         sys.exit(1)
-    #distance = sys.argv[1]
-    distance = 0.5
+    distance = float(sys.argv[1])
 
     rospy.wait_for_service('spawn_controller')
     rospy.init_node('shuffle', anonymous=True)
