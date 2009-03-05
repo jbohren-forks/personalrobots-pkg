@@ -54,17 +54,21 @@ namespace sfl {
 namespace mpglue {
   
   typedef ssize_t index_t;
+  typedef int cost_t;
   
+  
+  /**
+     \note There is no getFreespaceCost() because that is implicitly
+     assumed to be zero for all implementations.
+  */
   class CostmapAccessor
   {
   public:
-    typedef int cost_t;
-    
     virtual ~CostmapAccessor() {}
     
-    virtual cost_t getWSpaceObstacleCost() const = 0;
-    virtual cost_t getCSpaceObstacleCost() const = 0;
-    virtual cost_t getFreespaceCost() const = 0;
+    virtual cost_t getLethalCost() const = 0;
+    virtual cost_t getInscribedCost() const = 0;
+    virtual cost_t getPossiblyCircumcribedCost() const = 0;
     
     virtual index_t getXBegin() const = 0;
     virtual index_t getXEnd() const = 0;
@@ -72,14 +76,35 @@ namespace mpglue {
     virtual index_t getYEnd() const = 0;
     
     virtual bool isValidIndex(index_t index_x, index_t index_y) const = 0;
-    virtual bool isWSpaceObstacle(index_t index_x, index_t index_y,
-				  bool out_of_bounds_is_obstacle) const = 0;
-    virtual bool isCSpaceObstacle(index_t index_x, index_t index_y,
-				  bool out_of_bounds_is_obstacle) const = 0;
-    virtual bool isFreespace(index_t index_x, index_t index_y,
-			     bool out_of_bounds_is_freespace) const = 0;
     
+    /** Subclasses should return true and place the cost value in the
+	third parameter, unless the index lies out of bounds, in which
+	case they should return false. */
     virtual bool getCost(index_t index_x, index_t index_y, cost_t * cost) const = 0;
+    
+    /** Default implementation uses getCost() and
+	getLethalCost(). Subclasses can override this with a more
+	efficient method. */
+    virtual bool isLethal(index_t index_x, index_t index_y,
+			  bool out_of_bounds_reply) const;
+    
+    /** Default implementation uses getCost() and
+	getInscribedCost(). Subclasses can override this with a more
+	efficient method. */
+    virtual bool isInscribed(index_t index_x, index_t index_y,
+			     bool out_of_bounds_reply) const;
+    
+    /** Default implementation uses getCost() and
+	getPossiblyCircumcribedCost(). Subclasses can override this
+	with a more efficient method. */
+    virtual bool isPossiblyCircumcribed(index_t index_x, index_t index_y,
+					bool out_of_bounds_reply) const;
+    
+    /** Default implementation uses getCost() and assumes freespace is
+	represented by zero cost values. Subclasses can override this
+	with a more efficient method. */
+    virtual bool isFreespace(index_t index_x, index_t index_y,
+			     bool out_of_bounds_reply) const;
   };
   
   

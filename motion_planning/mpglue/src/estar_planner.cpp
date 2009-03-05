@@ -107,8 +107,8 @@ namespace {
     double const delta;
     
     get_meta(mpglue::CostmapAccessor const & _cm, double _power)
-      : cm(_cm), power(_power), obstcost(cm.getCSpaceObstacleCost()),
-	delta(obstcost - cm.getFreespaceCost()) {}
+      : cm(_cm), power(_power), obstcost(cm.getInscribedCost()),
+	delta(obstcost /* - cm.getFreespaceCost() but that is implicitly always zero */) {}
     
     virtual double operator () (ssize_t ix, ssize_t iy) const {
       int cost;

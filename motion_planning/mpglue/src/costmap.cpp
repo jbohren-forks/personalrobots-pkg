@@ -45,15 +45,14 @@ namespace {
   public:
     cm2dCostmapAccessor(costmap_2d::ObstacleMapAccessor const * cm): cm_(cm) {}
     
-    // interestingly, LETHAL_OBSTACLE = 254 which is *higher* than
-    // INSCRIBED_INFLATED_OBSTACLE = 253, whereas by W-space obstacle
-    // here we mean a value higher than one that is C-space obstacle
-    
-    virtual int getWSpaceObstacleCost() const
+    virtual mpglue::cost_t getLethalCost() const
     { return costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE; }
-    virtual int getCSpaceObstacleCost() const
+    
+    virtual mpglue::cost_t getInscribedCost() const
     { return costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE; }
-    virtual int getFreespaceCost() const { return 0; }
+    
+    virtual mpglue::cost_t getPossiblyCircumcribedCost() const
+    { return cm_->getCircumscribedCostLowerBound(); }
     
     virtual ssize_t getXBegin() const { return 0; }
     virtual ssize_t getXEnd() const { return cm_->getWidth(); }
@@ -64,29 +63,36 @@ namespace {
     { return (index_x >= 0) && (static_cast<size_t>(index_x) < cm_->getWidth())
 	&&   (index_y >= 0) && (static_cast<size_t>(index_y) < cm_->getHeight()); }
     
-    virtual bool isWSpaceObstacle(ssize_t index_x, ssize_t index_y,
-				  bool out_of_bounds_is_obstacle) const {
+    virtual bool isLethal(ssize_t index_x, ssize_t index_y,
+			  bool out_of_bounds_reply) const {
       if (isValidIndex(index_x, index_y))
 	return cm_->getCost(index_x, index_y) >= costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE;
-      return out_of_bounds_is_obstacle;
+      return out_of_bounds_reply;
     }
     
-    virtual bool isCSpaceObstacle(ssize_t index_x, ssize_t index_y,
-				  bool out_of_bounds_is_obstacle) const {
+    virtual bool isInscribed(ssize_t index_x, ssize_t index_y,
+			     bool out_of_bounds_reply) const {
       if (isValidIndex(index_x, index_y))
 	return cm_->getCost(index_x, index_y)
 	  >= costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE;
-      return out_of_bounds_is_obstacle;
+      return out_of_bounds_reply;
+    }
+    
+    virtual bool isPossiblyCircumcribed(ssize_t index_x, ssize_t index_y,
+					bool out_of_bounds_reply) const {
+      if (isValidIndex(index_x, index_y))
+	return cm_->isCircumscribedCell(index_x, index_y);
+      return out_of_bounds_reply;
     }
     
     virtual bool isFreespace(ssize_t index_x, ssize_t index_y,
-			     bool out_of_bounds_is_freespace) const {
+			     bool out_of_bounds_reply) const {
       if (isValidIndex(index_x, index_y))
 	return cm_->getCost(index_x, index_y) == 0;
-      return out_of_bounds_is_freespace;
+      return out_of_bounds_reply;
     }
     
-    virtual bool getCost(ssize_t index_x, ssize_t index_y, int * cost) const {
+    virtual bool getCost(ssize_t index_x, ssize_t index_y, mpglue::cost_t * cost) const {
       if ( ! isValidIndex(index_x, index_y))
 	return false;
       *cost = cm_->getCost(index_x, index_y);
@@ -124,13 +130,22 @@ namespace {
     sfl::RDTravmap const * rdt_;
     int const wobstCost_;
     int const cobstCost_;
+    int const cobstCostMinusOne_;
     
     sflRDTAccessor(sfl::RDTravmap const * rdt)
-      : rdt_(rdt), wobstCost_(rdt->GetObstacle()), cobstCost_(rdt->GetObstacle() + 1) {}
+      : rdt_(rdt),
+	// Beware: W-space means "non-inflated", which is tagged by
+	// making the cost higher than necessary in sfl::Mapper2d.
+	wobstCost_(rdt->GetObstacle() + 1),
+	cobstCost_(rdt->GetObstacle()),
+	// This is a bit of a hack to work around the fact that
+	// sfl::Mapper2d does not distinguish between inscribed and
+	// circumscribed robot radii.
+	cobstCostMinusOne_(rdt->GetObstacle() - 1) {}
     
-    virtual int getWSpaceObstacleCost() const { return wobstCost_; }
-    virtual int getCSpaceObstacleCost() const { return cobstCost_; }
-    virtual int getFreespaceCost() const { return 0; }
+    virtual mpglue::cost_t getLethalCost() const { return wobstCost_; }
+    virtual mpglue::cost_t getInscribedCost() const { return cobstCost_; }
+    virtual mpglue::cost_t getPossiblyCircumcribedCost() const { return cobstCostMinusOne_; }
     
     virtual ssize_t getXBegin() const { return rdt_->GetXBegin(); }
     virtual ssize_t getXEnd() const { return rdt_->GetXEnd(); }
@@ -139,28 +154,48 @@ namespace {
     
     virtual bool isValidIndex(ssize_t index_x, ssize_t index_y) const
     { return rdt_->IsValid(index_x, index_y); }
-    virtual bool isWSpaceObstacle(ssize_t index_x, ssize_t index_y,
-				  bool out_of_bounds_is_obstacle) const {
+    
+    virtual bool isLethal(ssize_t index_x, ssize_t index_y,
+			  bool out_of_bounds_reply) const {
       if (rdt_->IsValid(index_x, index_y))
 	return rdt_->IsWObst(index_x, index_y);
-      return out_of_bounds_is_obstacle;
+      return out_of_bounds_reply;
     }
     
-    virtual bool isCSpaceObstacle(ssize_t index_x, ssize_t index_y,
-				  bool out_of_bounds_is_obstacle) const {
+    virtual bool isInscribed(ssize_t index_x, ssize_t index_y,
+			     bool out_of_bounds_reply) const {
       if (rdt_->IsValid(index_x, index_y))
 	return rdt_->IsObst(index_x, index_y);
-      return out_of_bounds_is_obstacle;
+      return out_of_bounds_reply;
+    }
+    
+    virtual bool isPossiblyCircumcribed(ssize_t index_x, ssize_t index_y,
+					bool out_of_bounds_reply) const {
+      // Problem: sfl::Mapper2d() does not distinguish between
+      // inscribed and circumscribed radii, it simply assumes the
+      // whole robot fits in the radius, period. On the one hand
+      // that's like saying the inscribed radius is the same as the
+      // circumscribed radius, but given that we tend to initialize
+      // sfl::Mapper2d with the inscribed radius as "the" radius, that
+      // does not hold.
+      //
+      // XXXX broken hack...another point to discuss. For the moment
+      // treat it as if obstacle-1 means "between inscribed and
+      // circumscribed" in the sfl::Mapper2d case.
+      int value;
+      if (rdt_->GetValue(index_x, index_y, value))
+	return value >= cobstCostMinusOne_;
+      return out_of_bounds_reply;
     }
     
     virtual bool isFreespace(ssize_t index_x, ssize_t index_y,
-			     bool out_of_bounds_is_freespace) const {
+			     bool out_of_bounds_reply) const {
       if (rdt_->IsValid(index_x, index_y))
 	return rdt_->IsFree(index_x, index_y);
-      return out_of_bounds_is_freespace;
+      return out_of_bounds_reply;
     }
     
-    virtual bool getCost(ssize_t index_x, ssize_t index_y, int * cost) const
+    virtual bool getCost(ssize_t index_x, ssize_t index_y, mpglue::cost_t * cost) const
     { return rdt_->GetValue(index_x, index_y, *cost); }
   };
   
@@ -170,13 +205,15 @@ namespace {
     sfl::TraversabilityMap const * travmap_;
     int const wobstCost_;
     int const cobstCost_;
+    int const cobstCostMinusOne_;
     
     sflTravmapAccessor(sfl::TraversabilityMap const * travmap)
-      : travmap_(travmap), wobstCost_(travmap->obstacle), cobstCost_(travmap->obstacle + 1) {}
+      : travmap_(travmap), wobstCost_(travmap->obstacle + 1), cobstCost_(travmap->obstacle),
+	cobstCostMinusOne_(travmap->obstacle - 1) {}
     
-    virtual int getWSpaceObstacleCost() const { return wobstCost_; }
-    virtual int getCSpaceObstacleCost() const { return cobstCost_; }
-    virtual int getFreespaceCost() const { return 0; }
+    virtual mpglue::cost_t getLethalCost() const { return wobstCost_; }
+    virtual mpglue::cost_t getInscribedCost() const { return cobstCost_; }
+    virtual mpglue::cost_t getPossiblyCircumcribedCost() const { return cobstCostMinusOne_; }
     
     virtual ssize_t getXBegin() const { return travmap_->grid.xbegin(); }
     virtual ssize_t getXEnd() const { return travmap_->grid.xend(); }
@@ -185,28 +222,39 @@ namespace {
     
     virtual bool isValidIndex(ssize_t index_x, ssize_t index_y) const
     { return travmap_->IsValid(index_x, index_y); }
-    virtual bool isWSpaceObstacle(ssize_t index_x, ssize_t index_y,
-				  bool out_of_bounds_is_obstacle) const {
+    
+    virtual bool isLethal(ssize_t index_x, ssize_t index_y,
+			  bool out_of_bounds_reply) const {
       if (travmap_->IsValid(index_x, index_y))
 	return travmap_->IsWObst(index_x, index_y);
-      return out_of_bounds_is_obstacle;
+      return out_of_bounds_reply;
     }
     
-    virtual bool isCSpaceObstacle(ssize_t index_x, ssize_t index_y,
-				  bool out_of_bounds_is_obstacle) const {
+    virtual bool isInscribed(ssize_t index_x, ssize_t index_y,
+			     bool out_of_bounds_reply) const {
       if (travmap_->IsValid(index_x, index_y))
 	return travmap_->IsObst(index_x, index_y);
-      return out_of_bounds_is_obstacle;
+      return out_of_bounds_reply;
+    }
+    
+    virtual bool isPossiblyCircumcribed(ssize_t index_x, ssize_t index_y,
+					bool out_of_bounds_reply) const {
+      // Problem (again): sfl::Mapper2d() does not distinguish between
+      // inscribed and circumscribed radii...
+      int value;
+      if (travmap_->GetValue(index_x, index_y, value))
+	return value >= cobstCostMinusOne_;
+      return out_of_bounds_reply;
     }
     
     virtual bool isFreespace(ssize_t index_x, ssize_t index_y,
-			     bool out_of_bounds_is_freespace) const {
+			     bool out_of_bounds_reply) const {
       if (travmap_->IsValid(index_x, index_y))
 	return travmap_->IsFree(index_x, index_y);
-      return out_of_bounds_is_freespace;
+      return out_of_bounds_reply;
     }
     
-    virtual bool getCost(ssize_t index_x, ssize_t index_y, int * cost) const
+    virtual bool getCost(ssize_t index_x, ssize_t index_y, mpglue::cost_t * cost) const
     { return travmap_->GetValue(index_x, index_y, *cost); }
   };
   
@@ -237,6 +285,50 @@ namespace {
 }
 
 namespace mpglue {
+  
+  bool CostmapAccessor::
+  isLethal(index_t index_x, index_t index_y,
+	   bool out_of_bounds_reply) const
+  {
+    cost_t cost;
+    if ( ! getCost(index_x, index_y, &cost))
+      return out_of_bounds_reply;
+    return cost <= getLethalCost();
+  }
+  
+  
+  bool CostmapAccessor::
+  isInscribed(index_t index_x, index_t index_y,
+	      bool out_of_bounds_reply) const
+  {
+    cost_t cost;
+    if ( ! getCost(index_x, index_y, &cost))
+      return out_of_bounds_reply;
+    return cost <= getInscribedCost();
+  }
+  
+  
+  bool CostmapAccessor::
+  isPossiblyCircumcribed(index_t index_x, index_t index_y,
+			 bool out_of_bounds_reply) const
+  {
+    cost_t cost;
+    if ( ! getCost(index_x, index_y, &cost))
+      return out_of_bounds_reply;
+    return cost <= getPossiblyCircumcribedCost();
+  }
+  
+  
+  bool CostmapAccessor::
+  isFreespace(index_t index_x, index_t index_y,
+	      bool out_of_bounds_reply) const
+  {
+    cost_t cost;
+    if ( ! getCost(index_x, index_y, &cost))
+      return out_of_bounds_reply;
+    return cost == 0;
+  }
+  
   
   CostmapAccessor * createCostmapAccessor(costmap_2d::ObstacleMapAccessor const * cm)
   { return new cm2dCostmapAccessor(cm); }

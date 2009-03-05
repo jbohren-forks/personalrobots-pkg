@@ -227,7 +227,7 @@ namespace mpglue {
       throw runtime_error("mpglue::SBPLEnvironment::create2D(): EnvironmentNAV2D::SetEnvParameter() failed for \"is16connected\"");
     }
     
-    int const obst_cost_thresh(cm->getCSpaceObstacleCost());
+    int const obst_cost_thresh(cm->getInscribedCost());
     
     // good: Take advantage of the fact that InitializeEnv() can take
     // a NULL-pointer as mapdata in order to initialize to all
@@ -269,7 +269,7 @@ namespace mpglue {
 //       throw runtime_error("mpglue::SBPLEnvironment::create3DKIN(): EnvironmentNAV3DKIN::SetEnvParameter() failed for \"is16connected\"");
 //     }
     
-        int const obst_cost_thresh(cm->getWSpaceObstacleCost());
+        int const obst_cost_thresh(cm->getLethalCost());
     vector<sbpl_2Dpt_t> perimeterptsV;
     perimeterptsV.reserve(footprint.size());
     for (size_t ii(0); ii < footprint.size(); ++ii) {

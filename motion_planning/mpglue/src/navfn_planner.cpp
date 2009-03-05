@@ -79,7 +79,7 @@ namespace mpglue {
       COSTTYPE * cm(planner_->costarr);
       for (int iy(0); iy < ny; ++iy)
 	for (int ix(0); ix < nx; ++ix, ++cm) {
-	  if (costmap_->isCSpaceObstacle(ix, iy, false))
+	  if (costmap_->isInscribed(ix, iy, false))
 	    *cm = COST_OBS;
 	  else {
 	    int cost;
