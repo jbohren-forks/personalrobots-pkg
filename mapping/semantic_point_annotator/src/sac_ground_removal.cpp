@@ -216,6 +216,12 @@ class GroundRemoval : public ros::Node
     // Callback
     void cloud_cb ()
     {
+      //check to see if the point cloud is empty
+      if(cloud_.pts.empty()){
+        ROS_WARN("Received an empty point cloud");
+        return;
+      }
+
       ROS_INFO ("Received %d data points with %d channels (%s).", cloud_.pts.size (), cloud_.chan.size (), cloud_geometry::getAvailableChannels (&cloud_).c_str ());
       int idx_idx = cloud_geometry::getChannelIndex (&cloud_, "index");
       if (idx_idx == -1)
@@ -303,33 +309,36 @@ class GroundRemoval : public ros::Node
         double curvature;
         cloud_geometry::nearest::computeSurfaceNormalCurvature (&cloud_, &ground_inliers, plane_parameters, curvature);
 
-        // Flip plane normal according to the viewpoint information
-        Point32 vp_m;
-        vp_m.x = viewpoint_cloud_.point.x - cloud_.pts.at (ground_inliers[0]).x;
-        vp_m.y = viewpoint_cloud_.point.y - cloud_.pts.at (ground_inliers[0]).y;
-        vp_m.z = viewpoint_cloud_.point.z - cloud_.pts.at (ground_inliers[0]).z;
+        //make sure that there are inliers to refine
+        if(!ground_inliers.empty()){
+          // Flip plane normal according to the viewpoint information
+          Point32 vp_m;
+          vp_m.x = viewpoint_cloud_.point.x - cloud_.pts.at (ground_inliers[0]).x;
+          vp_m.y = viewpoint_cloud_.point.y - cloud_.pts.at (ground_inliers[0]).y;
+          vp_m.z = viewpoint_cloud_.point.z - cloud_.pts.at (ground_inliers[0]).z;
 
-        // Dot product between the (viewpoint - point) and the plane normal
-        double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
+          // Dot product between the (viewpoint - point) and the plane normal
+          double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
 
-        // Flip the plane normal
-        if (cos_theta < 0)
-        {
-          for (int d = 0; d < 3; d++)
-            plane_parameters (d) *= -1;
-          // Hessian form (D = nc . p_plane (centroid here) + p)
-          plane_parameters (3) = -1 * (plane_parameters (0) * cloud_.pts.at (ground_inliers[0]).x +
-                                       plane_parameters (1) * cloud_.pts.at (ground_inliers[0]).y +
-                                       plane_parameters (2) * cloud_.pts.at (ground_inliers[0]).z);
-        }
+          // Flip the plane normal
+          if (cos_theta < 0)
+          {
+            for (int d = 0; d < 3; d++)
+              plane_parameters (d) *= -1;
+            // Hessian form (D = nc . p_plane (centroid here) + p)
+            plane_parameters (3) = -1 * (plane_parameters (0) * cloud_.pts.at (ground_inliers[0]).x +
+                plane_parameters (1) * cloud_.pts.at (ground_inliers[0]).y +
+                plane_parameters (2) * cloud_.pts.at (ground_inliers[0]).z);
+          }
 
-        // Compute the distance from the remaining points to the model plane, and add to the inliers list if they are below
-        for (unsigned int i = 0; i < remaining_possible_ground_indices.size (); i++)
-        {
-          double distance_to_ground  = cloud_geometry::distances::pointToPlaneDistanceSigned (&cloud_.pts.at (remaining_possible_ground_indices[i]), plane_parameters);
-          if (distance_to_ground > 0)
-            continue;
-          ground_inliers.push_back (remaining_possible_ground_indices[i]);
+          // Compute the distance from the remaining points to the model plane, and add to the inliers list if they are below
+          for (unsigned int i = 0; i < remaining_possible_ground_indices.size (); i++)
+          {
+            double distance_to_ground  = cloud_geometry::distances::pointToPlaneDistanceSigned (&cloud_.pts.at (remaining_possible_ground_indices[i]), plane_parameters);
+            if (distance_to_ground > 0)
+              continue;
+            ground_inliers.push_back (remaining_possible_ground_indices[i]);
+          }
         }
       }
       ROS_INFO ("Total number of ground inliers after refinement: %d.", ground_inliers.size ());
