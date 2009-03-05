@@ -3,7 +3,7 @@
   <node pkg="mechanism_control" type="spawner.py" args="$(find door_handle_detector)/gripper_effort_right.control" />
 
 <!-- Cartesian trajectory controller -->
-  <param name="cartesian_trajectory_right/autostart" type="bool" value="false" />
+  <param name="cartesian_trajectory_right/autostart" type="bool" value="true" />
   <param name="cartesian_trajectory_right/root_name" type="string" value="torso_lift_link" />
   <param name="cartesian_trajectory_right/tip_name" type="string" value="r_gripper_tool_frame" />
   <param name="cartesian_trajectory_right/max_vel_trans" value="0.1" />
@@ -14,8 +14,8 @@
   <param name="cartesian_trajectory_right/pose/i" value="0.1" />
   <param name="cartesian_trajectory_right/pose/d" value="0.0" />
   <param name="cartesian_trajectory_right/pose/i_clamp" value="0.5" />
-  <param name="cartesian_trajectory_right/pose/twist/ff_trans" value="20.0" />
-  <param name="cartesian_trajectory_right/pose/twist/ff_rot" value="5.0" />
+  <param name="cartesian_trajectory_right/pose/twist/ff_trans" value="0.0" />
+  <param name="cartesian_trajectory_right/pose/twist/ff_rot" value="0.0" />
   <param name="cartesian_trajectory_right/pose/twist/fb_trans/p" value="10.0" />
   <param name="cartesian_trajectory_right/pose/twist/fb_trans/i" value="0.5" />
   <param name="cartesian_trajectory_right/pose/twist/fb_trans/d" value="0.0" />

@@ -58,7 +58,7 @@ class OpenDoorExecutiveTest : public PR2ArmNode
 private:
   tf::TransformListener tf_; 
   string fixed_frame_, robot_frame_;
-  Duration pause_;
+  Duration pause_, polling_;
   std_msgs::String joy_msg_;
 
   enum {INITIALIZED, WAITING, DETECTING, GRASPING, OPENDOOR, SUCCESS, FAILED};
@@ -105,6 +105,7 @@ public:
     robot_frame_ = "base_link";
 
     pause_ = Duration().fromSec(6.0);
+    polling_ = Duration().fromSec(0.01);
 
     // start arm trajectory controller
     cout << "turn on moveto controller..." << flush;
@@ -217,7 +218,7 @@ public:
     publish("goal", robot_pose_msg);
     cout << "moving in front of door...  " << flush;
     while (!planner_finished_)
-      Duration().fromSec(0.1).sleep();
+      polling_.sleep();
     cout << "arrived in front of door" << endl;
 
     // move gripper in front of door
@@ -265,7 +266,6 @@ public:
   bool openDoor()
   // -------------------------
   {
-    /*
     cout << "switch from moveto to tff controller..." << flush;
     req_switch.stop_controllers.clear();      req_switch.stop_controllers.push_back("cartesian_trajectory_right");
     req_switch.start_controllers.clear();     req_switch.start_controllers.push_back("cartesian_tff_right");
@@ -273,7 +273,7 @@ public:
     if (!res_switch.ok)
       return false;
     cout << "successful" << endl;
-    */
+
     // turn handle
     tff_msg_.mode.vel.x = tff_msg_.FORCE;
     tff_msg_.mode.vel.y = tff_msg_.FORCE;

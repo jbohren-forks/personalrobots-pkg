@@ -385,13 +385,10 @@ public:
         ROS_ERROR ("did not find a door");
         return false;
       }
-      else
-      {
-        ROS_ERROR ("found a door");
-        ROS_INFO ("Number of points selected: %d.", handle_indices.size ());
-        if (publish_debug_)
-          publish ("semantic_polygonal_map", pmap_);
-      }
+      ROS_ERROR ("found a door");
+      ROS_INFO ("Number of points selected: %d.", handle_indices.size ());
+      if (publish_debug_)
+	publish ("semantic_polygonal_map", pmap_);
 
       // Find the handle by performing a composite segmentation in distance and intensity space
       if (!findDoorHandleIntensity (&cloud_in_, &indices_in_bounds, &coeff[best_cluster], &pmap_.polygons[best_cluster], &viewpoint_cloud_,
@@ -400,12 +397,10 @@ public:
         ROS_ERROR ("did not find a handle");
         return (false);
       }
-      else
-        ROS_INFO ("found a handle");
+      ROS_ERROR ("found a handle");
 
 
       // Get the minP and maxP of selected cluster
-      //cloud_geometry::statistics::getMinMax (&pmap_.polygons[best_cluster], minP, maxP);
       cloud_geometry::statistics::getLargestXYPoints (&pmap_.polygons[best_cluster], minP, maxP);
 
       // reply door message in same frame as request door message
