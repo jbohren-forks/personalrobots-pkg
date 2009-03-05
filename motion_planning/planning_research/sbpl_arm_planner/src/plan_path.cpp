@@ -33,39 +33,39 @@ int planrobarm(int argc, char *argv[])
         exit(1);
     }
 
-    vector <vector <double> > obstacles(3,vector<double>(6));
+//     vector <vector <double> > obstacles(3,vector<double>(6));
 
-    obstacles[0][0] = 1.8;
-    obstacles[0][1] = -.3;
-    obstacles[0][2] = -.7;
-    obstacles[0][3] = .1;
-    obstacles[0][4] = .1;
-    obstacles[0][5] = .1;
-
-    obstacles[1][0] = .5;
-    obstacles[1][1] = -.3;
-    obstacles[1][2] = -1.3;
-    obstacles[1][3] = .3;
-    obstacles[1][4] = .3;
-    obstacles[1][5] = .1;
-
-    obstacles[2][0] = .7;
-    obstacles[2][1] = .4;
-    obstacles[2][2] = -.3;
-    obstacles[2][3] = .05;
-    obstacles[2][4] = .2;
-    obstacles[2][5] = .1;
-
-    obstacles.resize(4);
-    obstacles[3].resize(3);
-    obstacles[3][0] = .2;
-    obstacles[3][1] = -.8;
-    obstacles[3][2] = .4;
+//     obstacles[0][0] = 1.8;
+//     obstacles[0][1] = -.3;
+//     obstacles[0][2] = -.7;
+//     obstacles[0][3] = .1;
+//     obstacles[0][4] = .1;
+//     obstacles[0][5] = .1;
+// 
+//     obstacles[1][0] = .5;
+//     obstacles[1][1] = -.3;
+//     obstacles[1][2] = -1.3;
+//     obstacles[1][3] = .3;
+//     obstacles[1][4] = .3;
+//     obstacles[1][5] = .1;
+// 
+//     obstacles[2][0] = .7;
+//     obstacles[2][1] = .4;
+//     obstacles[2][2] = -.3;
+//     obstacles[2][3] = .05;
+//     obstacles[2][4] = .2;
+//     obstacles[2][5] = .1;
+// 
+//     obstacles.resize(4);
+//     obstacles[3].resize(3);
+//     obstacles[3][0] = .2;
+//     obstacles[3][1] = -.8;
+//     obstacles[3][2] = .4;
 //     obstacles[3][3] = .2;
 //     obstacles[3][4] = .2;
 //     obstacles[3][5] = .1;
 
-    environment_robarm.AddObstacles(obstacles);
+//     environment_robarm.AddObstacles(obstacles);
 
     //plan a path
     clock_t starttime = clock();

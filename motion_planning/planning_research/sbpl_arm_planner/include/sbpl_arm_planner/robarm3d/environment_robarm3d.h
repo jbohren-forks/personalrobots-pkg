@@ -48,8 +48,8 @@ Motion planner for Robotic Arm based on the SBPL. It is capable of finding the s
 using namespace robot_kinematics;
 using namespace KDL;
 
-#ifndef __ENVIRONMENT_ROBARM_H_
-#define __ENVIRONMENT_ROBARM_H_
+#ifndef __ENVIRONMENT_ROBARM3D_H_
+#define __ENVIRONMENT_ROBARM3D_H_
 
 #define NUMOFLINKS 7
 
@@ -171,13 +171,13 @@ typedef struct ENV_ROBARM_CONFIG
     int nEndEffGoals;
     bool bGoalIsSet;
 
-
-
     //3D grid of world space 
     char*** Grid3D;
     char*** LowResGrid3D;
     double GridCellWidth;           // cells are square (width=height=depth)
     double LowResGridCellWidth;     // cells are square (width=height=depth)
+    char*** Grid3D_temp;
+    char*** LowResGrid3D_temp;
 
     //options
     bool use_DH;
@@ -209,7 +209,7 @@ typedef struct ENV_ROBARM_CONFIG
     double sin_r[360];
     double T_DH[4*NUM_TRANS_MATRICES][4][NUMOFLINKS];
 
-    //cell-to-cell costs
+    //cell-to-cell costs - TODO change then to integers
     double CellsPerAction;
     double cost_per_cell;
     double cost_sqrt2_move;
@@ -219,14 +219,12 @@ typedef struct ENV_ROBARM_CONFIG
 
     //a bad hack
     bool JointSpaceGoal;
-
     bool dual_heuristics;
     double uninformative_heur_dist_m;
     double ApplyRPYCost_m;
     double AngularDist_Weight;
     double ExpCoefficient;
     bool angular_dist_cost;
-
 
     //joint-space search
     bool PlanInJointSpace;
@@ -236,6 +234,7 @@ typedef struct ENV_ROBARM_CONFIG
 
     std::vector<std::vector<double> > cubes;
 
+    bool bPlanning;
 //     std::vector<std::vector<double> > bigcubes;
 
 //     std::vector < std::vector<double> > EndEffGoals_m;
@@ -387,6 +386,7 @@ private:
     //coordinate frame/angle functions
     void DiscretizeAngles();
     void Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ);
+    void Cell2ContXYZ(int x, int y, int z, double *pX, double *pY, double *pZ, double gridcell_m);
     void ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
     void ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS]);
     void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
@@ -401,6 +401,7 @@ private:
     bool IsWithinMapCell(int X, int Y, int Z);
     bool AreEquivalent(int State1ID, int State2ID);
     bool RemoveGoal(int goal_index);
+    void UpdateEnvironment();
 
     //cost functions
     int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
@@ -422,6 +423,7 @@ private:
 
     //compute heuristic
     void InitializeKinNode();
+    void ComputeCostPerRadian();
     void getDistancetoGoal(int* HeurGrid, int goalx, int goaly, int goalz);
     int GetDistToClosestGoal(short unsigned int* xyz, int *goal_num);
     double GetDistToClosestGoal(double *xyz,int *goal_num);
