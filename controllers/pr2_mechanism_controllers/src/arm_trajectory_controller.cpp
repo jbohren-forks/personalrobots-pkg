@@ -262,6 +262,7 @@ ArmTrajectoryControllerNode::ArmTrajectoryControllerNode()
 {
   std::cout<<"Controller node created"<<endl;
   c_ = new ArmTrajectoryController();
+  diagnostics_publisher_ = NULL;
 }
 
 ArmTrajectoryControllerNode::~ArmTrajectoryControllerNode()
@@ -276,6 +277,9 @@ ArmTrajectoryControllerNode::~ArmTrajectoryControllerNode()
 
   c_->controller_state_publisher_->stop();
   delete c_->controller_state_publisher_;
+
+  diagnostics_publisher_->stop();
+  delete diagnostics_publisher_;
 
    if(topic_name_ptr_ && topic_name_.c_str())
   {
@@ -298,6 +302,8 @@ void ArmTrajectoryControllerNode::update()
 
 
   c_->update();
+
+  publishDiagnostics(*diagnostics_publisher_);
 }
 
 void ArmTrajectoryControllerNode::updateTrajectoryQueue(int last_trajectory_finish_status)
@@ -368,6 +374,11 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
   if (c_->controller_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete c_->controller_state_publisher_ ;
   c_->controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::ControllerState> (service_prefix_+"/controller_state", 1) ;
+
+  if (diagnostics_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete diagnostics_publisher_ ;
+  diagnostics_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::DiagnosticMessage> ("/diagnostics", 2) ;
+
 
   ROS_INFO("Initialize publisher");
 
@@ -628,5 +639,66 @@ void ArmTrajectoryControllerNode::deleteTrajectoryFromQueue(int id)
       joint_trajectory_status_[id] = ArmTrajectoryControllerNode::DELETED;
       break;
     }
+  }
+}
+
+
+void ArmTrajectoryControllerNode::publishDiagnostics(realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> &publisher)
+{
+  if(publisher.trylock())
+  {
+    robot_msgs::JointCmd cmd;
+    cmd.set_names_size(1);
+    cmd.set_positions_size(1);
+    cmd.set_velocity_size(1);
+
+    vector<robot_msgs::DiagnosticStatus> statuses;
+    vector<robot_msgs::DiagnosticValue> values;
+    vector<robot_msgs::DiagnosticString> strings;
+    robot_msgs::DiagnosticStatus status;
+    robot_msgs::DiagnosticValue v;
+
+    status.name = "Arm Trajectory Controller";
+    status.level = 0;
+    status.message = "OK";
+
+    for(unsigned int i=0; i < c_->joint_pd_controllers_.size(); i++)
+    {
+      v.label = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Current";
+      v.value = c_->joint_pd_controllers_[i]->joint_state_->position_;
+      values.push_back(v);
+
+      v.label = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Command";
+      c_->joint_pd_controllers_[i]->getCommand(cmd);
+      v.value = cmd.positions[0];
+      values.push_back(v);
+    }
+
+    v.label = "Trajectory id: ";
+    v.value = current_trajectory_id_;
+    values.push_back(v);
+
+    v.label = "Trajectory Status";
+    std::map<int, int>::const_iterator it = joint_trajectory_status_.find((int)current_trajectory_id_);
+    if(it == joint_trajectory_status_.end())
+      v.label += "UNKNOWN";
+    else
+      v.label += JointTrajectoryStatusString[it->second];
+
+    values.push_back(v);
+
+    v.label = "Trajectory Current Time";
+    v.value = c_->current_time_-c_->trajectory_start_time_;
+    values.push_back(v);
+
+    v.label = "Trajectory Expected End Time (computed)";
+    v.value = c_->trajectory_end_time_-c_->trajectory_start_time_;
+    values.push_back(v);
+
+    status.set_values_vec(values);
+    status.set_strings_vec(strings);
+    statuses.push_back(status);
+    publisher.msg_.set_status_vec(statuses);
+    publisher.unlockAndPublish();
   }
 }
