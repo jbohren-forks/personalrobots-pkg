@@ -10,11 +10,11 @@ Package for creating a hardware interface to the robot using the EtherCAT motor 
 <depend package='eml'/>
 <depend package='tinyxml'/>
 <depend package='roscpp' />
-<depend package='loki' />
 <depend package='realtime_tools' />
 <depend package='robot_msgs' />
 <export>
-  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lethercat_hardware -Wl,-rpath,${prefix}/lib"/>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lethercat_hardware -Wl,-rpath,${prefix}/lib -lloki"/>
 </export>
 <repository>http://pr.willowgarage.com/repos</repository>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libloki-dev"/>
 </package>

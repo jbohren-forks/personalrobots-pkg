@@ -6,7 +6,6 @@
 <review status="unreviewed" notes="API review in progress (Eric)"/>
 <depend package="roscpp" />
 <depend package="hardware_interface" />
-<depend package="loki" />
 <depend package="tinyxml" />
 <depend package="wg_robot_description_parser" />
 <depend package="tf" />
@@ -15,6 +14,7 @@
 <depend package="bullet" />
 <url>http://pr.willowgarage.com</url>
 <export>
-  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmechanism_model -Wl,-rpath,${prefix}/lib"/>
+  <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmechanism_model -Wl,-rpath,${prefix}/lib -lloki"/>
 </export>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libloki-dev"/>
 </package>

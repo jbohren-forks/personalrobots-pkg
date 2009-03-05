@@ -10,9 +10,9 @@ implementations of commonly used filters.
 <review status="API conditionally cleared" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="tinyxml"/>
-<depend package="loki" />
 <depend package="rosconsole" />
 <export>
-<cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`"/> <!-- lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/-->
+<cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-lloki"/> <!--lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lfilter"/-->
 </export>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libloki-dev"/>
 </package>
