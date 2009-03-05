@@ -1,0 +1,78 @@
+/**
+   \mainpage
+   
+   \htmlinclude manifest.html
+   
+   \section mpglue Motion Planning "Glue" library
+   
+   The idea behind this library is to provide a uniform interface to
+   all (base-motion costmap-type) planners that are available
+   underneath the ros-pkg/motion_planning hierarchy.  The main (only?)
+   client of this library is the motion planning benchmarking
+   framework in ros-pkg/motion_planning/mpbench.
+   
+   
+   \section costmapspec Cost Map Specification
+   
+   \image html  costmapspec_100dpi.png "The meaning of cell cost values."
+   \image latex costmapspec.pdf        "The meaning of cell cost values." width=0.8\textwidth
+   
+   We define 4 specific symbols for cost map values.
+   
+   - "Lethal" cost means that there is an actual (workspace) obstacle
+     in a cell. So if the robot's center were in that cell, the robot
+     would obviously be in collision.
+     
+   - "Inscribed" cost means that a cell is less than the robot's
+     inscribed radius away from an actual obstacle. So the robot is
+     certainly in collision with some obstacle if the robot center is
+     in a cell that is at or above the inscribed cost.
+     
+   - "Possibly circumscribed" cost is similar to "inscribed", but
+     using the robot's circumscribed radius as cutoff distance. Thus,
+     if the robot center lies in a cell at or above this value, then
+     it depends on the orientation of the robot whether it collides
+     with an obstacle or not. <em>We use the term "possibly" because
+     it might be that it is not really an obstacle cell, but some
+     user-preference, that put that particular cost value into the
+     map.</em>
+     
+   - "Freespace" cost is assumed to be zero, and it means that there
+     is nothing that should keep the robot from going there.
+     
+   The rationale behind these definitions is that we leave it up to
+   planner implementations to care or not about the exact footprint,
+   yet give them enough information that they can incur the cost of
+   tracing out the footprint only in situations where the orientation
+   actually matters.
+   
+   Ideally, <em>soft</em> user preferences should be expressed in the
+   range of costs exluding freespace and "possibly circumscribed",
+   i.e. <code>0 &lt; pref &lt; cost_possibly_circumscribed</code>.
+   
+   
+   \section api High Level Interface
+   
+   - mpglue::CostmapAccessor and mpglue::IndexTransform provide
+     implementation-agnostic access to the costs stored in a cost map.
+     
+   - mpglue::CostmapPlanner and its subclass
+     mpglue::AnytimeCostmapPlanner allow you to use planners while
+     accumulating statistics about their performance, while staying
+     ignorant about the implementation that drives them.
+     
+   - mpglue::Costmapper together with mpglue::ObstacleDelta is a
+     <b>draft</b> API for dealing with processes that create and
+     maintain cost maps.
+
+
+   \section deps Dependencies
+   
+   All dependencies are picked up through the ROS build system, except
+   for an <em>optional</em> inclusion of the E-Star planner on
+   http://estar.sourceforge.net/ which needs to be hooked into the
+   mpglue build process by setting the <code>ROS_ESTAR_DIR</code>
+   environment variable to the installation directory of E-Star (if it
+   is in your default include path, it gets picked up as well though).
+   
+*/
