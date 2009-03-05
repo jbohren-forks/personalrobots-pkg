@@ -306,6 +306,10 @@ namespace controller
 
     double trajectory_wait_timeout_;
 
+    double last_diagnostics_publish_time_;
+
+    double diagnostics_publish_delta_time_;
+
   };
 
 }

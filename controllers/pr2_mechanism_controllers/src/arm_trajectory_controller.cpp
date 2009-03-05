@@ -304,7 +304,11 @@ void ArmTrajectoryControllerNode::update()
 
   c_->update();
 //  ROS_INFO("Publishing diagnostics");
-  publishDiagnostics();
+  if((c_->current_time_ - last_diagnostics_publish_time_) > diagnostics_publish_delta_time_)
+  {
+    publishDiagnostics();
+    last_diagnostics_publish_time_ = c_->current_time_;
+  }
 //  ROS_INFO("Published diagnostics");
 }
 
@@ -381,6 +385,8 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
     delete diagnostics_publisher_ ;
   diagnostics_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::DiagnosticMessage> ("/diagnostics", 2) ;
 
+  last_diagnostics_publish_time_ = c_->robot_->hw_->current_time_;
+  node_->param<double>(service_prefix_ + "/diagnostics_publish_delta_time",diagnostics_publish_delta_time_,0.05);
 
   ROS_INFO("Initialized publisher");
 
@@ -670,7 +676,7 @@ void ArmTrajectoryControllerNode::publishDiagnostics()
 
     for(unsigned int i=0; i < c_->joint_pd_controllers_.size(); i++)
     {
-      v.label = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Current";
+      v.label = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Actual";
       v.value = c_->joint_pd_controllers_[i]->joint_state_->position_;
       values.push_back(v);
 
@@ -679,6 +685,10 @@ void ArmTrajectoryControllerNode::publishDiagnostics()
       v.label = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Command";
       c_->joint_pd_controllers_[i]->getCommand(cmd);
       v.value = cmd.positions[0];
+      values.push_back(v);
+
+      v.label = c_->joint_pd_controllers_[i]->getJointName() + "/Position/Error (Command-Actual)";
+      v.value = cmd.positions[0] - c_->joint_pd_controllers_[i]->joint_state_->position_;
       values.push_back(v);
 
 //      ROS_INFO("Diagnostics %d: 2",i);
