@@ -9,7 +9,14 @@
 
   <group name="base" flags="planning">
     base_link
+
     <map name="SBL" flag="planning">
+      <elem key="projection" value="0 1"/>
+      <elem key="celldim" value="1 1"/>
+      <elem key="range" value="0.5"/>
+    </map>
+
+    <map name="KPIECE" flag="planning">
       <elem key="projection" value="0 1"/>
       <elem key="celldim" value="1 1"/>
       <elem key="range" value="0.5"/>
