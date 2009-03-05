@@ -52,26 +52,6 @@
 namespace controller
 {
 
-  /*! \struct
-    \brief This class holds information for a joint control parameter structure.
-   */
-  typedef struct
-  {
-      double p_gain; /** P gain */
-
-      double i_gain; /** I gain */
-
-      double d_gain; /** D gain */
-
-      double windup; /** windup protection value */
-
-      std::string joint_name; /** joint name */
-
-      std::string control_type; /** control type */
-
-  }JointControlParam;
-
-
 class Controller;
 typedef Loki::SingletonHolder
 <
