@@ -65,16 +65,16 @@ int main( int argc, char** argv )
   for(int i=0; i<num_points; i++)
     cmd.points[i].set_positions_size(num_joints);
 
-  cmd.points[0].positions[0] = 0.5;
-  cmd.points[0].positions[1] = 0.5;
-  cmd.points[0].positions[2] = 0.2;
-  cmd.points[0].positions[3] = -0.5;
-  cmd.points[0].positions[4] = 0.4;
+  cmd.points[0].positions[0] = 0.0;
+  cmd.points[0].positions[1] = 0.0;
+  cmd.points[0].positions[2] = 0.0;
+  cmd.points[0].positions[3] = -0.0;
+  cmd.points[0].positions[4] = 0.0;
   cmd.points[0].positions[5] = 0.0;
   cmd.points[0].positions[6] = 0.0;
-  cmd.points[0].positions[7] = 1.0;
+  cmd.points[0].positions[7] = -0.0;
   cmd.points[0].positions[8] = 0.0;
-  cmd.points[0].positions[9] = 0.0;
+  cmd.points[0].positions[9] = -0.0;
   cmd.points[0].time = 0.0;
 
   node->advertise<robot_msgs::JointTraj>("whole_body/trajectory_controller/trajectory_command",1);
