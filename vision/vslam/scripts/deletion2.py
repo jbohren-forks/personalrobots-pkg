@@ -66,7 +66,7 @@ from matplotlib.patches import Ellipse
 stereo_cam = camera.Camera((389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95))
 bad_vertices = set([ 35437, 35455, 37380, 40122, 40126, 40207, 40229 ])
 
-if 0:
+if 1:
   skel = Skeleton(stereo_cam)
   skel.load("iros2009/mkplot_snap")
   print "skel.nodes:", len(skel.nodes)
