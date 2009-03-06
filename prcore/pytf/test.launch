@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="tf" type="transform_sender" args = "1 2 3 4 5 6 frame parent 9" />
+  <node pkg="pytf" type="test_pytf.py" output="screen"/>
+</launch>

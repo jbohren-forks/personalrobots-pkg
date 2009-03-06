@@ -81,11 +81,25 @@ class TransformListener:
         print "Net:",  net_tr
         return net_tr
 
-    def can_transform(self, target_frame, source_frame, time):
-        return self.transformer(target_frame, source_frame, time.to_seconds())
+    def get_transform_full(self, target_frame, target_time, source_frame, source_time, fixed_frame):
+        ptf = self.transformer.getTransform(target_frame, target_time.to_seconds(), source_frame, source_time.to_seconds(), fixed_frame)
+        quat = numpy.array([ptf.qx, ptf.qy, ptf.qz, ptf.qw],dtype=numpy.float64)
+        rot_mat = transformations.rotation_matrix_from_quaternion(quat)
+        print "Rotation: ", rot_mat
+        trans = numpy.array([ptf.x, ptf.y, ptf.z])
+        trans_mat = transformations.translation_matrix(trans)
+        print "Translation: ", trans_mat
+        net_tr = transformations.concatenate_transforms(trans_mat, rot_mat)
+        print "Net:",  net_tr
+        return net_tr
 
-    def can_transform(self, target_frame, target_time, source_frame, source_time, fixed_frame):
-        return self.transformer(target_frame, target_time.to_seconds(), source_frame, source_time.to_seconds(), fixed_frame)
+    
+
+    def can_transform(self, target_frame, source_frame, time):
+        return self.transformer.canTransform(target_frame, source_frame, time.to_seconds())
+
+    def can_transform_full(self, target_frame, target_time, source_frame, source_time, fixed_frame):
+        return self.transformer.canTransform(target_frame, target_time.to_seconds(), source_frame, source_time.to_seconds(), fixed_frame)
 
     def get_latest_common_time(self, source_frame, target_frame):
         return self.transformer.getLatestCommonTime(source_frame, target_frame)
