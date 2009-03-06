@@ -12,9 +12,9 @@
 <depend package="std_srvs" />
 <depend package="control_toolbox" />
 <depend package="bullet" />
+<depend package="loki" />
 <url>http://pr.willowgarage.com</url>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmechanism_model -Wl,-rpath,${prefix}/lib -lloki"/>
 </export>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libloki-dev"/>
 </package>
