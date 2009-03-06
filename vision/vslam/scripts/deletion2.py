@@ -87,6 +87,7 @@ if 1:
   f.close()
 
 res_views = []
+res_newedges = []
 res_view_nb = []
 res_clusters_nb = []
 
@@ -220,6 +221,7 @@ for kappa in [ 9999,7,5,4,3,2 ]:
   print >>op, "  avg views/nieghborhood", sum(log_numviews) / float(len(log_numviews))
   print >>op, "  avg clusters/neighborhood", sum(log_numclusters) / float(len(log_numclusters))
   res_views.append((len([x for x in existing if x in late])))
+  res_newedges.append(len([e for e in edges if e[0] in late and e[1] in late]))
   res_view_nb.append((sum(log_numviews) / float(len(log_numviews))))
   res_clusters_nb.append((sum(log_numclusters) / float(len(log_numclusters))))
 
@@ -257,6 +259,8 @@ print >>tab, ("""
  $!kappa$ & $!infty $ & 7 & 5 & 4 & 3 & 2 !!
 !hline
  Views & """ + " & ".join([str(x) for x in res_views]) + """ !!
+!hline
+ Edges & """ + " & ".join([str(x) for x in res_newedges]) + """ !!
 !hline
  Views/nb &  """ + prty(res_view_nb) + """ !!
 !hline
