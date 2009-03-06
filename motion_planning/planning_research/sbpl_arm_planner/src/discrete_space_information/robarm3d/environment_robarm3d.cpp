@@ -50,10 +50,10 @@
 #define OUTPUT_OBSTACLES 0
 #define VERBOSE 0
 #define OUPUT_DEGREES 0
-#define DEBUG_VALID_COORD 1
+#define DEBUG_VALID_COORD 0
 #define DEBUG_CHECK_GOALRPY 0
 #define DEBUG_JOINTSPACE_PLANNING 0
-#define DEBUG_CHECK_LINE_SEGMENT 1
+#define DEBUG_CHECK_LINE_SEGMENT 0
 
 //for ComputeForwardKinematics_DH - to rotate DH frames to PR2 frames
 #define ELBOW_JOINT 2

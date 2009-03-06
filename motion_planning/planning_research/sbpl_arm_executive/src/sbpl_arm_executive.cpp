@@ -56,8 +56,8 @@ class ExecNode : public PR2ArmNode
         goal_joint_positions_[0].set_positions_size(7);
 
         //tuck arm
-        goHome(home_position);
-        sleep(20);
+//        goHome(home_position);
+//        sleep(20);
 
         printf("initial movements complete....are you brave enough to continue?\n");
         scanf("%d",&y);
@@ -97,7 +97,7 @@ class ExecNode : public PR2ArmNode
             else
                 ROS_INFO("Could not execute trajectory.");
 
-            sleep(100);
+            sleep(10);
         }
     }
 };
