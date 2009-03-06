@@ -2,15 +2,35 @@
 @mainpage
 @htmlinclude manifest.html
 
+@section filters Filters
+@subsection summary Summary
+The filters library is designed to allow runtime reconfiguration of data processing within C++ code, including processes running in realtime. 
+
+To implement this filters have a standardized interface which allows them to be programatically constructed and used without knowing the exact type of filter. 
+
+@subsection use Intended Use
+The intended use of this library is to allow reconfigurable data processing.  Examples of using the filters for controls are input and output data conditioning for controllers.  If each controller has an input and output filter chain.  By default they will pass through.  However if there is a problem with noise from a sensor a filter can be set in the XML of the launch and relaunched removing the noise.  As long as the filters are realtime safe the filter_chain will also be realtiem safe.  Examples of using the filters for vision algorithms are discarding fringing data from laser scans and classifying points in point clouds.
+
+@subsection chain Filter Chain
+To make constructing and calling a sequence of filters easy filters::FilterChain class was created.  It has the same style of interface, with configure and update as the primary interaction.  Inside the filter chain, on configure() it will construct all the filters designated by the XML, configure the filters, and preallocated intermediate buffers.  And on update() it will sequentially call each filter using the input and intermediate buffers ending with the outputof the last filter in the output buffer. 
+
+@subsection parameters Parameters from XML
+Embedded each filter's XML can be any arbitrary parameters which the filters::FilterBase provides accessors for the derived class.  In addition access to the raw XML is available for advanced users.  For example see the laser_scan::LaserMedianFilter which passes XML through to the filters::MedianFilter which is used internally to process the raw range and intensity readings. 
+
+@subsection requirements Requirements for implementing a filter
+The requirements for making a filter:
+ - A filter must be a templated class (MyFilterType<T>) derived from filters::FilterBase<T>
+ - The filter must implement the methods configure() and update(const std::vector<T>& data_in, std::vector<T>& data_out) and have a default constructor and destructor.
+ - For every valid template value you must call ROS_REGISTER_FILTER(MyFilterType, TemplateType)
+
+
+
+
+
 Here are the filters which are currently implemented:
  \li \ref filters::MedianFilter "MedianFilter"
+ \li \ref filters::MeanFilter "MeanFilter"
  \li \ref filters::TransferFunctionFilter "TransferFunctionFilter"
 
-
- The requirements for creating a filter are:
-
-\li Inherit from FilterBase<T> templating on T
-\li Implement virtual functions configure and update
-\li Declare supported datatypes using ROS_REGISTER_FILTER (if using complicated data type it must be typedefed to one w/o special characters)
 
 **/
