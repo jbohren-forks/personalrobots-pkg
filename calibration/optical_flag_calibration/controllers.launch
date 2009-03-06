@@ -2,17 +2,17 @@
 <launch>
 
 <!-- Arm trajectory controller -->
-  <param name="right_arm_trajectory_controller/velocity_scaling_factor" type="double" value="1"/>
-  <param name="right_arm_trajectory_controller/trajectory_wait_timeout" type="double" value=".25"/>
+  <param name="right_arm_trajectory_controller/velocity_scaling_factor" type="double" value=".1"/>
+  <param name="right_arm_trajectory_controller/trajectory_wait_timeout" type="double" value="3.25"/>
 
-  <param name="right_arm_trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold" type="double" value="0.01"/>
-  <param name="right_arm_trajectory_controller/r_shoulder_lift_joint/goal_reached_threshold" type="double" value="0.01"/>
-  <param name="right_arm_trajectory_controller/r_upper_arm_roll_joint/goal_reached_threshold" type="double" value="0.01"/>
-  <param name="right_arm_trajectory_controller/r_elbow_flex_joint/goal_reached_threshold" type="double" value="0.01"/>
-  <param name="right_arm_trajectory_controller/r_forearm_roll_joint/goal_reached_threshold" type="double" value="0.01"/>
-  <param name="right_arm_trajectory_controller/r_wrist_flex_joint/goal_reached_threshold" type="double" value="0.01"/>
-  <param name="right_arm_trajectory_controller/r_wrist_roll_joint/goal_reached_threshold" type="double" value="0.01"/>
-  <param name="right_arm_trajectory_controller/r_gripper_l_finger_joint/goal_reached_threshold" type="double" value="0.01"/>
+  <param name="right_arm_trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold" type="double" value="0.1"/>
+  <param name="right_arm_trajectory_controller/r_shoulder_lift_joint/goal_reached_threshold" type="double" value="0.3"/>
+  <param name="right_arm_trajectory_controller/r_upper_arm_roll_joint/goal_reached_threshold" type="double" value="0.1"/>
+  <param name="right_arm_trajectory_controller/r_elbow_flex_joint/goal_reached_threshold" type="double" value="0.1"/>
+  <param name="right_arm_trajectory_controller/r_forearm_roll_joint/goal_reached_threshold" type="double" value="0.1"/>
+  <param name="right_arm_trajectory_controller/r_wrist_flex_joint/goal_reached_threshold" type="double" value="0.1"/>
+  <param name="right_arm_trajectory_controller/r_wrist_roll_joint/goal_reached_threshold" type="double" value="0.1"/>
+  <param name="right_arm_trajectory_controller/r_gripper_l_finger_joint/goal_reached_threshold" type="double" value="0.1"/>
 
   <node pkg="mechanism_control" type="spawner.py" args="$(find kinematic_calibration)/demo/arm_traj_controller.xml" output="screen"/>
 
