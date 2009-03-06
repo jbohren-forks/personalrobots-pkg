@@ -60,13 +60,10 @@
       <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     </node>
 
-    <param name="sac_ground_removal/sac_min_points_per_model" value="5" />
-    <param name="sac_ground_removal/clusters_growing_tolerance" value="0.25" />
-    <param name="sac_ground_removal/clusters_min_pts" value="5" />
-    
-    <param name="sac_ground_removal/z_threshold" value="0.2" />
-    <param name="sac_ground_removal/sac_distance_threshold" value="0.03" />
-    
+    <param name="/sac_ground_removal/z_threshold" value="0.1" />
+    <param name="/sac_ground_removal/sac_distance_threshold" value="0.03" />
+    <param name="/sac_ground_removal/planar_refine" value="1" />
+
     <node pkg="semantic_point_annotator" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen" />
 
     <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" >-->
@@ -77,7 +74,7 @@
       <param name="move_base/plannerType" value="ARAPlanner"/>
       <param name="move_base/environmentType" value="2D"/>
       <param name="move_base/controller_frequency" value="30.0"/>
-      <param name="move_base/map_update_frequency" value="2.0"/>
+      <param name="move_base/map_update_frequency" value="3.0"/>
       <param name="move_base/planner_frequency" value="0.0"/>
       <param name="move_base/plannerTimeLimit" value="0.5"/>
       <param name="costmap_2d/base_laser_max_range" value="20.0"/>
