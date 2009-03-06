@@ -4277,7 +4277,7 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
                 AddObstacleToGrid(obs,0, EnvROBARMCfg.LowResGrid3D_temp, EnvROBARMCfg.LowResGridCellWidth);
 //                 AddObstacleToGrid(obs,0, EnvROBARMCfg.LowResGrid3D, EnvROBARMCfg.LowResGridCellWidth);
 
-            EnvROBARMCfg.mCopyingGrid.unlock();
+            EnvROBARMCfg.mGrid.unlock();
 
 //             printf("[AddObstacles] Obstacle %i: (%.2f %.2f %.2f) was added to the environment.\n",i,obs[0],obs[1],obs[2]);
             cubes_added++;
@@ -4402,7 +4402,7 @@ void EnvironmentROBARM3D::ClearEnv()
 
     //if the grid is be used for planning then don't clear the obstacle list being sent to gazebo
 //     EnvROBARMCfg.mPlanningGrid.lock();
-    EnvROBARMCfg.cubes.clear();
+
 //     EnvROBARMCfg.mPlanningGrid.unlock();
 
     //clear collision map
@@ -4413,7 +4413,8 @@ void EnvironmentROBARM3D::ClearEnv()
     EnvROBARMCfg.mCopyingGrid.lock();
     printf("[ClearEnv] Clearing environment of all obstacles.\n");
 
-
+    EnvROBARMCfg.cubes.clear();
+    
 //     if(!EnvROBARMCfg.bPlanning)
 //         EnvROBARMCfg.cubes.clear();
 
@@ -4443,7 +4444,7 @@ void EnvironmentROBARM3D::ClearEnv()
             }
         }
     }
-    EnvROBARMCfg.mCopyingGrid.lock();
+    EnvROBARMCfg.mCopyingGrid.unlock();
 
 //     for (z = 45; z <= 50; z++)
 //     {
