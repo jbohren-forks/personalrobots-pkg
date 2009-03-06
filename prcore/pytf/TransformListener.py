@@ -81,19 +81,25 @@ class TransformListener:
         print "Net:",  net_tr
         return net_tr
 
+    def can_transform(self, target_frame, source_frame, time):
+        return self.transformer(target_frame, source_frame, time.to_seconds())
 
+    def can_transform(self, target_frame, target_time, source_frame, source_time, fixed_frame):
+        return self.transformer(target_frame, target_time.to_seconds(), source_frame, source_time.to_seconds(), fixed_frame)
 
-        
+    def get_latest_common_time(self, source_frame, target_frame):
+        return self.transformer.getLatestCommonTime(source_frame, target_frame)
 
-#rot = transform.transform.rotation
-#quat = numpy.array([rot.x, rot.y, rot.z, rot.w],dtype=numpy.float64)
-#rot_mat = transformations.rotation_matrix_from_quaternion(quat)
-#print "Rotation: ", rot_mat
-#tr = transform.transform.translation
-#trans = numpy.array([tr.x, tr.y, tr.z])
-#trans_mat = transformations.translation_matrix(trans)
-#print "Translation: ", trans_mat
-#print "Net:", transformations.concatenate_transforms(trans_mat, rot_mat)
+    def get_chain_as_string(self, target_frame, target_time, source_frame, source_time, fixed_frame):
+        return self.transformer.chainAsString(target_frame, target_time, source_frame, source_time, fixed_frame)
 
+    def all_frames_as_string(self):
+        return self.transformer.allFramesAsString()
+
+    def all_frames_as_dot(self):
+        return self.transformer.allFramesAsDot()
+
+    def set_extrapolation_limit(self, limit):
+        self.transformer.setExtrapolationLimit(limit.to_seconds())
 
 

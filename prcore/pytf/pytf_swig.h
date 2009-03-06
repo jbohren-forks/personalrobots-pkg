@@ -156,9 +156,11 @@ public:
                        
   /**@brief Return the latest rostime which is common across the spanning set 
    * zero if fails to cross */
-  int getLatestCommonTime(const std::string& source, const std::string& dest, double time)
+  ros::Time getLatestCommonTime(const std::string& source, const std::string& dest)
   {
-    return tf_.getLatestCommonTime(source, dest, ros::Time().fromSec(time), NULL);
+    ros::Time t;
+    tf_.getLatestCommonTime(source, dest, t, NULL);
+    return t;
   };
 
 
