@@ -1,0 +1,6 @@
+rospack_add_executable(prosilica_node prosilica_node.cpp)
+target_link_libraries(prosilica_node prosilica)
+
+rospack_add_executable(prosilica_view prosilica_view.cpp)
+
+rospack_add_executable(prosilica_grab prosilica_grab.cpp)
