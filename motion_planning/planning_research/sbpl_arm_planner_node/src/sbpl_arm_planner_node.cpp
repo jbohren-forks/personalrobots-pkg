@@ -399,7 +399,7 @@ bool SBPLArmPlannerNode::planPath(sbpl_arm_planner_node::PlanPathSrv::Request &r
 //     if(setGoals(req.cartesian_goals))
     if(setGoals(req.joint_goal))
     {
-      nodHead(3);
+//      nodHead(3);
       if(replan(traj))
       {
         ROS_INFO("Planning successful");
