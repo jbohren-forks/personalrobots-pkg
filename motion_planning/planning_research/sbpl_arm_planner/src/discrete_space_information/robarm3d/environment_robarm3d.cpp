@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <boost/thread/mutex.hpp>
 #include <sbpl_arm_planner/headers.h>
 
 #define PI_CONST 3.141592653
@@ -2584,6 +2585,9 @@ EnvironmentROBARM3D::EnvironmentROBARM3D()
     EnvROBARMCfg.arm_length = ARM_WORKSPACE;
 
     EnvROBARMCfg.bPlanning  = false;
+    EnvROBARMCfg.bUpdatePlanningGrid = false;
+    
+    
 //     EnvROBARMCfg.bigcubes.resize(1,6);
 //     EnvROBARMCfg.cubes.resize(0,6);
 }
@@ -2752,7 +2756,8 @@ bool EnvironmentROBARM3D::InitEnvFromFilePtr(FILE* eCfg, FILE* pCfg)
 //     ComputeCostPerRadian();
 
     EnvROBARMCfg.bPlanning = false;
-
+    EnvROBARMCfg.bUpdatePlanningGrid = false;
+        
 #if VERBOSE
     //output environment data
     PrintConfiguration();
@@ -4225,11 +4230,11 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
     double obs[6], angles[NUMOFLINKS], orientation[3][3];
 
     //NOTE insert a mutex around bPlanning
-    if(EnvROBARMCfg.bPlanning)
-    {
-        printf("[AddObstacles] Planning...obstacles won't be added to the map.\n");
-        return;
-    }
+//     if(EnvROBARMCfg.bUpdatePlanningGrid)
+//     {
+//         printf("[AddObstacles] Copying temporary grid to planning grid...obstacles won't be added to the map.\n");
+//         return;
+//     }
 
     for(i = 0; i < (int)obstacles.size(); i++)
     {
@@ -4261,6 +4266,9 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
             for(p = 0; p < 6; p++)
                 obs[p] = obstacles[i][p];
 
+            //wrap mmutexes around the temp grid
+            EnvROBARMCfg.mCopyingGrid.lock();
+
             //NOTE putting new obstacles in the temporary maps
 //             AddObstacleToGrid(obs,0, EnvROBARMCfg.Grid3D, EnvROBARMCfg.GridCellWidth);
             AddObstacleToGrid(obs,0, EnvROBARMCfg.Grid3D_temp, EnvROBARMCfg.GridCellWidth);
@@ -4269,10 +4277,14 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
                 AddObstacleToGrid(obs,0, EnvROBARMCfg.LowResGrid3D_temp, EnvROBARMCfg.LowResGridCellWidth);
 //                 AddObstacleToGrid(obs,0, EnvROBARMCfg.LowResGrid3D, EnvROBARMCfg.LowResGridCellWidth);
 
+            EnvROBARMCfg.mCopyingGrid.unlock();
+
 //             printf("[AddObstacles] Obstacle %i: (%.2f %.2f %.2f) was added to the environment.\n",i,obs[0],obs[1],obs[2]);
             cubes_added++;
         }
     }
+
+
 
     printf("[AddObstacles] %i cubic obstacles were added to the environment.\n",cubes_added);
 
@@ -4388,43 +4400,50 @@ void EnvironmentROBARM3D::ClearEnv()
 {
     int x, y, z;
 
-
+    //if the grid is be used for planning then don't clear the obstacle list being sent to gazebo
+//     EnvROBARMCfg.mPlanningGrid.lock();
+    EnvROBARMCfg.cubes.clear();
+//     EnvROBARMCfg.mPlanningGrid.unlock();
 
     //clear collision map
-    if(!EnvROBARMCfg.bPlanning)
-    {
-        printf("[ClearEnv] Clearing environment of all obstacles.\n");
+//     if(!EnvROBARMCfg.bUpdatePlanningGrid)
+//     {
 
-        EnvROBARMCfg.cubes.clear();
-        // set all cells to zero
-        for (x = 0; x < EnvROBARMCfg.EnvWidth_c; x++)
+    //clear temporary collision map
+    EnvROBARMCfg.mCopyingGrid.lock();
+    printf("[ClearEnv] Clearing environment of all obstacles.\n");
+
+
+//     if(!EnvROBARMCfg.bPlanning)
+//         EnvROBARMCfg.cubes.clear();
+
+    // set all cells to zero
+    for (x = 0; x < EnvROBARMCfg.EnvWidth_c; x++)
+    {
+        for (y = 0; y < EnvROBARMCfg.EnvHeight_c; y++)
         {
-            for (y = 0; y < EnvROBARMCfg.EnvHeight_c; y++)
+            for (z = 0; z < EnvROBARMCfg.EnvDepth_c; z++)
             {
-                for (z = 0; z < EnvROBARMCfg.EnvDepth_c; z++)
-                {
-    //                 EnvROBARMCfg.Grid3D[x][y][z] = 0;
-                    EnvROBARMCfg.Grid3D_temp[x][y][z] = 0;
-                }
+                EnvROBARMCfg.Grid3D_temp[x][y][z] = 0;
             }
         }
+    }
 
-        // set all cells to zero in lowres grid
-        if(EnvROBARMCfg.lowres_collision_checking)
+    // set all cells to zero in lowres grid
+    if(EnvROBARMCfg.lowres_collision_checking)
+    {
+        for (x = 0; x < EnvROBARMCfg.LowResEnvWidth_c; x++)
         {
-            for (x = 0; x < EnvROBARMCfg.LowResEnvWidth_c; x++)
+            for (y = 0; y < EnvROBARMCfg.LowResEnvHeight_c; y++)
             {
-                for (y = 0; y < EnvROBARMCfg.LowResEnvHeight_c; y++)
+                for (z = 0; z < EnvROBARMCfg.LowResEnvDepth_c; z++)
                 {
-                    for (z = 0; z < EnvROBARMCfg.LowResEnvDepth_c; z++)
-                    {
-    //                     EnvROBARMCfg.LowResGrid3D[x][y][z] = 0;
-                        EnvROBARMCfg.LowResGrid3D_temp[x][y][z] = 0;
-                    }
+                    EnvROBARMCfg.LowResGrid3D_temp[x][y][z] = 0;
                 }
             }
         }
     }
+    EnvROBARMCfg.mCopyingGrid.lock();
 
 //     for (z = 45; z <= 50; z++)
 //     {
@@ -5394,6 +5413,10 @@ void EnvironmentROBARM3D::GetJointSpaceSuccs(int SourceStateID, vector<int>* Suc
                 if(at_goal_config)
                 {
                     bSuccisGoal = true;
+
+                    //NOTE: Allow the temporary grids to be updated
+                    EnvROBARMCfg.bPlanning = false;
+
                     // printf("goal succ is generated\n");
                     for (a = 0; a < NUMOFLINKS; a++)
                     {
@@ -5557,8 +5580,11 @@ bool EnvironmentROBARM3D::SetJointSpaceGoals(double** JointSpaceGoals, int num_g
     //copy obstacles from temp map to real map
     printf("[SetJointSpaceGoals] copying temporary map to real one...\n");
     EnvROBARMCfg.bPlanning = true;
-    UpdateEnvironment(); //NOTE: CAN ONLY HANDLE ONE GOAL
+//     EnvROBARMCfg.bUpdatePlanningGrid = true;
 
+    EnvROBARMCfg.mCopyingGrid.lock();
+    UpdateEnvironment();
+    EnvROBARMCfg.mCopyingGrid.unlock();
 //     for (int z = 25; z <= 75; z++)
 //     {
 //         printf("\n[SetJointSpaceGoals] z = %i\n",z);
@@ -5653,6 +5679,7 @@ bool EnvironmentROBARM3D::SetJointSpaceGoals(double** JointSpaceGoals, int num_g
 
     EnvROBARMCfg.bGoalIsSet = true;
 
+//     EnvROBARMCfg.bUpdatePlanningGrid = false;
 
     //temporary debugging output
     double pX,pY,pZ;

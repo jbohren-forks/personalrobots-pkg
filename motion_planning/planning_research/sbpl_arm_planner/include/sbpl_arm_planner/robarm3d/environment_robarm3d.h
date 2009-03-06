@@ -27,6 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
  
+// #include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+// #include <boost/thread/condition.hpp>
 
 /**
 
@@ -235,6 +238,11 @@ typedef struct ENV_ROBARM_CONFIG
     std::vector<std::vector<double> > cubes;
 
     bool bPlanning;
+    bool bUpdatePlanningGrid;
+
+    boost::mutex mCopyingGrid;
+    boost::mutex mPlanning;
+
 //     std::vector<std::vector<double> > bigcubes;
 
 //     std::vector < std::vector<double> > EndEffGoals_m;
