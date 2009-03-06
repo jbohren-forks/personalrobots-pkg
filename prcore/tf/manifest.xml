@@ -1,20 +1,21 @@
 <package>
-<description brief='Transform Library'>
+  <description brief='Transform Library'>
 
-Library for doing transformations.
+    Library for doing transformations.
 
-</description>
-<author>Tully Foote</author>
-<license>BSD</license>
-<review status="API cleared" notes=""/>
-<url>http://pr.willowgarage.com/wiki/tf</url>
-<depend package="robot_msgs"/>
-<depend package="roscpp"/>
-<depend package="rosconsole"/>
-<depend package="bullet"/>
-<depend package="rospy"/>
-<depend package="numpy"/>
-<export>
-<cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf `rosboost-cfg --lflags thread`"/>
-</export>
+  </description>
+  <author>Tully Foote</author>
+  <license>BSD</license>
+  <review status="API cleared" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/tf</url>
+  <depend package="robot_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="rosconsole"/>
+  <depend package="bullet"/>
+  <depend package="rospy"/>
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf `rosboost-cfg --lflags thread`"/>
+  </export>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
+  <sysdepend os="ubuntu" version="7.10-gutsy" package="python-numpy"/>
 </package>
