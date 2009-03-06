@@ -74,11 +74,6 @@ class BatteryNotifier:
   def run(self):
     rospy.spin()
 
-def usage():
-  usage_string = "Battery notifier usage: "
-  usage_string += "\n./battery_notifier notify_limit state_topic [email_addresses] robot_name mail_program"
-  return usage_string
-
 if __name__ == '__main__':
   notifier = BatteryNotifier(0.2, "bogus_battery_state", ["eitan@willowgarage.com"], "pre", "/usr/sbin/sendmail")
   notifier.run()
