@@ -197,7 +197,7 @@ void PlugController::computeConstraintJacobian()
 {
   double time = robot_->model_->hw_->current_time_;
   // Clear force vector
-  double f_r = 0;
+  f_r_ = 0;
   double f_roll = 0;
   double f_pitch = 0;
   double f_yaw = 0;
@@ -226,11 +226,11 @@ void PlugController::computeConstraintJacobian()
   Eigen::Vector3f r_to_line = v.dot(outlet_norm_) * outlet_norm_ - v;
   Eigen::Vector3f other_norm = r_to_line.cross(outlet_norm_);
   other_norm = other_norm.normalized();
-  double dist_to_line = r_to_line.norm();
+  dist_to_line_ = r_to_line.norm();
   r_to_line = r_to_line.normalized();
 
   // update the jacobian for the line constraint
-  if (dist_to_line > 0)
+  if (dist_to_line_ > 0)
   {
     constraint_jac_(0,0) = r_to_line(0);
     constraint_jac_(1,0) = r_to_line(1);
@@ -238,12 +238,12 @@ void PlugController::computeConstraintJacobian()
     constraint_jac_(0,1) = other_norm(0);
     constraint_jac_(1,1) = other_norm(1);
     constraint_jac_(2,1) = other_norm(2);
-    double temp_f_r = line_pid_.updatePid(dist_to_line, time-last_time_);
-    f_r = (temp_f_r < f_r_max) ? temp_f_r:f_r_max; //dist_to_line * f_r_max; 
+    double temp_f_r = line_pid_.updatePid(-dist_to_line_, time-last_time_);
+    f_r_ = (temp_f_r < f_r_max) ? temp_f_r:f_r_max; //dist_to_line * f_r_max; 
   }
   else
   {
-    f_r = 0;
+    f_r_ = 0;
   }
 
   // compute the pose error using a twist
@@ -299,7 +299,7 @@ void PlugController::computeConstraintJacobian()
     joint_constraint_force_(2) = 0;
   }
 
-  constraint_force_(0) = f_r;
+  constraint_force_(0) = f_r_;
   constraint_force_(1) = 0;
   constraint_force_(2) = f_roll;
   constraint_force_(3) = f_pitch;
@@ -340,6 +340,7 @@ PlugControllerNode::PlugControllerNode()
 : node_(ros::Node::instance()), loop_count_(0), TF(*ros::Node::instance(),false,ros::Duration(10.0))
 {
   current_frame_publisher_=NULL;
+  internal_state_publisher_=NULL;
 }
 
 
@@ -347,6 +348,8 @@ PlugControllerNode::~PlugControllerNode()
 {
   current_frame_publisher_->stop();
   delete current_frame_publisher_;
+  internal_state_publisher_->stop();
+  delete internal_state_publisher_;
 }
 
 bool PlugControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
@@ -375,6 +378,10 @@ bool PlugControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *con
   if (current_frame_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete current_frame_publisher_ ;
   current_frame_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::Transform> (topic_ + "/transform", 1) ;
+  
+  if (internal_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete internal_state_publisher_ ;
+  internal_state_publisher_ = new realtime_tools::RealtimePublisher <robot_mechanism_controllers::PlugInternalState> (topic_ + "/internal_state", 1) ;
 
   node_->advertiseService(topic_ + "/set_tool_frame", &PlugControllerNode::setToolFrame, this);
   guard_set_tool_frame_.set(topic_ + "/set_tool_frame");
@@ -396,6 +403,12 @@ void PlugControllerNode::update()
       mechanism::TransformKDLToTF(controller_.endeffector_frame_, transform);
       tf::TransformTFToMsg(transform, current_frame_publisher_->msg_);
       current_frame_publisher_->unlockAndPublish() ;
+     }
+    if (internal_state_publisher_->trylock())
+    {
+      internal_state_publisher_->msg_.line_error = controller_.dist_to_line_;
+      internal_state_publisher_->msg_.line_force_cmd = controller_.f_r_;
+      internal_state_publisher_->unlockAndPublish() ;
      }
   }
 

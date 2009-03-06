@@ -43,6 +43,7 @@
 #include "robot_msgs/Wrench.h"
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/Transform.h"
+#include "robot_mechanism_controllers/PlugInternalState.h"
 #include "robot_srvs/SetPoseStamped.h"
 #include <control_toolbox/pid.h>
 #include "misc_utils/subscription_guard.h"
@@ -91,6 +92,9 @@ public:
 
   mechanism::Chain chain_;
 
+  double dist_to_line_;
+  double f_r_;
+
 private:
 
   mechanism::RobotState *robot_;
@@ -125,6 +129,9 @@ private:
   double f_limit_max;
   double last_time_;
   bool initialized_;
+  
+  
+  
   
   control_toolbox::Pid roll_pid_;       /**< Internal PID controller. */
   control_toolbox::Pid pitch_pid_;       /**< Internal PID controller. */
@@ -163,7 +170,7 @@ class PlugControllerNode : public Controller
 
   tf::TransformListener TF;                    /**< The transform for converting from point to head and tilt frames. */
   realtime_tools::RealtimePublisher <robot_msgs::Transform>* current_frame_publisher_;
-
+  realtime_tools::RealtimePublisher <robot_mechanism_controllers::PlugInternalState>* internal_state_publisher_;
 
 };
 
