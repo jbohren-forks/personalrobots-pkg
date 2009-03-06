@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "prosilica.h"
+#include "prosilica/prosilica.h"
 #include <PvRegIo.h>
 #include <cassert>
 #include <ctime>

@@ -1,4 +1,4 @@
-#include "prosilica.h"
+#include "prosilica/prosilica.h"
 #include <cstdio>
 #include <cassert>
 

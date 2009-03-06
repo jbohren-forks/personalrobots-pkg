@@ -50,7 +50,7 @@
 #include <boost/thread.hpp>
 #include <string>
 
-#include "prosilica.h"
+#include "prosilica/prosilica.h"
 #include "prosilica_cam/PolledImage.h"
 
 // TODO: don't inherit from Node

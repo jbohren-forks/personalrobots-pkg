@@ -9,7 +9,7 @@
   <depend package="image_msgs" />
   <depend package="diagnostic_updater" />
   <export>
-    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lprosilica" cflags="-I${prefix} -I${prefix}/srv/cpp"/>
+    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lprosilica" cflags="-I${prefix}/include -I${prefix}/srv/cpp"/>
   </export>
   <url></url>
 </package>
