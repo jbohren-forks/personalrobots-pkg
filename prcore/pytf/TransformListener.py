@@ -70,11 +70,7 @@ class TransformListener:
 
 
     def get_transform(self, frame_id, parent_id, time):
-        try:
-            ptf = self.transformer.getTransform(frame_id, parent_id, time.to_seconds())
-        except:
-            print "Couldn't transform"
-            return None
+        ptf = self.transformer.getTransform(frame_id, parent_id, time.to_seconds())
         quat = numpy.array([ptf.qx, ptf.qy, ptf.qz, ptf.qw],dtype=numpy.float64)
         rot_mat = transformations.rotation_matrix_from_quaternion(quat)
         print "Rotation: ", rot_mat
