@@ -220,6 +220,8 @@ typedef struct ENV_ROBARM_CONFIG
     double cost_per_mm;
     double cost_per_rad;
 
+    std::vector<std::vector<double> > sbpl_cubes;
+
     //a bad hack
     bool JointSpaceGoal;
     bool dual_heuristics;

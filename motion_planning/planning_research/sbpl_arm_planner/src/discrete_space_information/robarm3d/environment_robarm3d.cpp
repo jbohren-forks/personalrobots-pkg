@@ -4235,56 +4235,66 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
 //         printf("[AddObstacles] Copying temporary grid to planning grid...obstacles won't be added to the map.\n");
 //         return;
 //     }
-
-    for(i = 0; i < (int)obstacles.size(); i++)
+    
+    if(EnvROBARMCfg.mCopyingGrid.try_lock())
     {
-        //check if obstacle has 6 parameters --> {X,Y,Z,W,H,D}
-        if(obstacles[i].size() < 6)
+        printf("[AddObstacles] Grabbed ownership of the grid mutex. Obstacles will be added.\n");
+
+        for(i = 0; i < (int)obstacles.size(); i++)
         {
-//             printf("[AddObstacles] Obstacle %i has too few parameters.Skipping it.\n",i);
-            continue;
+            //check if obstacle has 6 parameters --> {X,Y,Z,W,H,D}
+            if(obstacles[i].size() < 6)
+            {
+    //             printf("[AddObstacles] Obstacle %i has too few parameters.Skipping it.\n",i);
+                continue;
+            }
+
+            //throw out obstacles if they are too small
+            if(obstacles[i][3] <.001 || obstacles[i][4] <.001 || obstacles[i][5] <.001)
+            {
+    //             printf("[AddObstacles] Obstacle %i is too small.Skipping it.\n",i);
+                continue;
+            }
+
+
+            //check if obstacle is within the arm's reach - stupid way of doing this - change it
+            if(EnvROBARMCfg.arm_length < fabs(obstacles[i][0]) - obstacles[i][3] - EnvROBARMCfg.padding ||
+                EnvROBARMCfg.arm_length < fabs(obstacles[i][1]) - obstacles[i][4] - EnvROBARMCfg.padding ||
+                EnvROBARMCfg.arm_length < fabs(obstacles[i][2]) - obstacles[i][5] - EnvROBARMCfg.padding)
+            {
+    //             printf("[AddObstacles] Obstacle %i, centered at (%1.3f %1.3f %1.3f), is out of the arm's workspace.\n",i,obstacles[i][0],obstacles[i][1],obstacles[i][2]);
+                continue;
+            }
+            else
+            {
+                for(p = 0; p < 6; p++)
+                    obs[p] = obstacles[i][p];
+
+                //wrap mmutexes around the temp grid
+//                 EnvROBARMCfg.mCopyingGrid.lock();
+
+                //NOTE putting new obstacles in the temporary maps
+    //             AddObstacleToGrid(obs,0, EnvROBARMCfg.Grid3D, EnvROBARMCfg.GridCellWidth);
+                AddObstacleToGrid(obs,0, EnvROBARMCfg.Grid3D_temp, EnvROBARMCfg.GridCellWidth);
+
+                if(EnvROBARMCfg.lowres_collision_checking)
+                    AddObstacleToGrid(obs,0, EnvROBARMCfg.LowResGrid3D_temp, EnvROBARMCfg.LowResGridCellWidth);
+    //                 AddObstacleToGrid(obs,0, EnvROBARMCfg.LowResGrid3D, EnvROBARMCfg.LowResGridCellWidth);
+
+//                 EnvROBARMCfg.mCopyingGrid.unlock();
+
+    //             printf("[AddObstacles] Obstacle %i: (%.2f %.2f %.2f) was added to the environment.\n",i,obs[0],obs[1],obs[2]);
+                cubes_added++;
+            }
         }
 
-        //throw out obstacles if they are too small
-        if(obstacles[i][3] <.001 || obstacles[i][4] <.001 || obstacles[i][5] <.001)
-        {
-//             printf("[AddObstacles] Obstacle %i is too small.Skipping it.\n",i);
-            continue;
-        }
-
-
-        //check if obstacle is within the arm's reach - stupid way of doing this - change it
-        if(EnvROBARMCfg.arm_length < fabs(obstacles[i][0]) - obstacles[i][3] - EnvROBARMCfg.padding ||
-            EnvROBARMCfg.arm_length < fabs(obstacles[i][1]) - obstacles[i][4] - EnvROBARMCfg.padding ||
-            EnvROBARMCfg.arm_length < fabs(obstacles[i][2]) - obstacles[i][5] - EnvROBARMCfg.padding)
-        {
-//             printf("[AddObstacles] Obstacle %i, centered at (%1.3f %1.3f %1.3f), is out of the arm's workspace.\n",i,obstacles[i][0],obstacles[i][1],obstacles[i][2]);
-            continue;
-        }
-        else
-        {
-            for(p = 0; p < 6; p++)
-                obs[p] = obstacles[i][p];
-
-            //wrap mmutexes around the temp grid
-            EnvROBARMCfg.mCopyingGrid.lock();
-
-            //NOTE putting new obstacles in the temporary maps
-//             AddObstacleToGrid(obs,0, EnvROBARMCfg.Grid3D, EnvROBARMCfg.GridCellWidth);
-            AddObstacleToGrid(obs,0, EnvROBARMCfg.Grid3D_temp, EnvROBARMCfg.GridCellWidth);
-
-            if(EnvROBARMCfg.lowres_collision_checking)
-                AddObstacleToGrid(obs,0, EnvROBARMCfg.LowResGrid3D_temp, EnvROBARMCfg.LowResGridCellWidth);
-//                 AddObstacleToGrid(obs,0, EnvROBARMCfg.LowResGrid3D, EnvROBARMCfg.LowResGridCellWidth);
-
-            EnvROBARMCfg.mCopyingGrid.unlock();
-
-//             printf("[AddObstacles] Obstacle %i: (%.2f %.2f %.2f) was added to the environment.\n",i,obs[0],obs[1],obs[2]);
-            cubes_added++;
-        }
+        EnvROBARMCfg.mCopyingGrid.unlock();
     }
-
-
+    else
+    {
+        printf("[AddObstacles] Tried to get mutex lock but failed. Obstacles were not added.\n");
+        return;
+    }
 
     printf("[AddObstacles] %i cubic obstacles were added to the environment.\n",cubes_added);
 
@@ -4393,7 +4403,19 @@ std::vector<std::vector<double> >* EnvironmentROBARM3D::getCollisionMap()
 //             printf("%.3f ",EnvROBARMCfg.cubes[i][k]);
 //         printf("\n");
 //     }
-    return &(EnvROBARMCfg.cubes);
+    if(EnvROBARMCfg.mCopyingGrid.try_lock())
+    {
+        printf("[getCollisionMap] Acquired mutex...\n");
+
+        EnvROBARMCfg.sbpl_cubes = EnvROBARMCfg.cubes;
+        EnvROBARMCfg.mCopyingGrid.unlock();
+    }
+    else
+    {
+        printf("[getCollisionMap] Could not acquire mutex...\n");
+        
+    }
+    return &(EnvROBARMCfg.sbpl_cubes);
 }
 
 void EnvironmentROBARM3D::ClearEnv()
@@ -4410,42 +4432,50 @@ void EnvironmentROBARM3D::ClearEnv()
 //     {
 
     //clear temporary collision map
-    EnvROBARMCfg.mCopyingGrid.lock();
-    printf("[ClearEnv] Clearing environment of all obstacles.\n");
-
-    EnvROBARMCfg.cubes.clear();
-    
-//     if(!EnvROBARMCfg.bPlanning)
-//         EnvROBARMCfg.cubes.clear();
-
-    // set all cells to zero
-    for (x = 0; x < EnvROBARMCfg.EnvWidth_c; x++)
+    if (EnvROBARMCfg.mCopyingGrid.try_lock())
     {
-        for (y = 0; y < EnvROBARMCfg.EnvHeight_c; y++)
-        {
-            for (z = 0; z < EnvROBARMCfg.EnvDepth_c; z++)
-            {
-                EnvROBARMCfg.Grid3D_temp[x][y][z] = 0;
-            }
-        }
-    }
+        printf("[ClearEnv] Clearing environment of all obstacles.\n");
+ 
+        EnvROBARMCfg.cubes.clear();
 
-    // set all cells to zero in lowres grid
-    if(EnvROBARMCfg.lowres_collision_checking)
-    {
-        for (x = 0; x < EnvROBARMCfg.LowResEnvWidth_c; x++)
+    //     if(!EnvROBARMCfg.bPlanning)
+    //         EnvROBARMCfg.cubes.clear();
+
+        // set all cells to zero
+        for (x = 0; x < EnvROBARMCfg.EnvWidth_c; x++)
         {
-            for (y = 0; y < EnvROBARMCfg.LowResEnvHeight_c; y++)
+            for (y = 0; y < EnvROBARMCfg.EnvHeight_c; y++)
             {
-                for (z = 0; z < EnvROBARMCfg.LowResEnvDepth_c; z++)
+                for (z = 0; z < EnvROBARMCfg.EnvDepth_c; z++)
                 {
-                    EnvROBARMCfg.LowResGrid3D_temp[x][y][z] = 0;
+                    EnvROBARMCfg.Grid3D_temp[x][y][z] = 0;
                 }
             }
         }
-    }
-    EnvROBARMCfg.mCopyingGrid.unlock();
 
+        // set all cells to zero in lowres grid
+        if(EnvROBARMCfg.lowres_collision_checking)
+        {
+            for (x = 0; x < EnvROBARMCfg.LowResEnvWidth_c; x++)
+            {
+                for (y = 0; y < EnvROBARMCfg.LowResEnvHeight_c; y++)
+                {
+                    for (z = 0; z < EnvROBARMCfg.LowResEnvDepth_c; z++)
+                    {
+                        EnvROBARMCfg.LowResGrid3D_temp[x][y][z] = 0;
+                    }
+                }
+            }
+        }
+        EnvROBARMCfg.mCopyingGrid.unlock();
+    }
+    else
+    {
+        printf("[ClearEnv] Tried to get mutex lock but failed. Environment was not cleared.\n");
+        return;
+    }
+
+    printf("[ClearEnv] Exiting...\n");
 //     for (z = 45; z <= 50; z++)
 //     {
 //         printf("\n[ClearEnv] z = %i\n",z);
