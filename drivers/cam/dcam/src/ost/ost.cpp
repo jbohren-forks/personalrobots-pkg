@@ -86,9 +86,10 @@ using namespace std;
 // Calibrate and write out parameters
 //
 
+
+// device
 dcam::StereoDcam *dev = NULL;	// camera object
-int devNum;			// number of devices
-int devIndex;			// camera index in enumeration
+int numDevs;			// number of devices
 bool isVideo;			// true if video streaming
 bool startCam, stopCam;		// camera device stop and start flags
 bool isColor;			// true if color requested
@@ -101,6 +102,10 @@ bool isExit;			// true if we want to exit
 dc1394video_mode_t videoMode;	// current video mode
 dc1394framerate_t videoRate;	// current video rate
 size_coding_t videoSize;	// current video size
+
+// current stereo image data
+StereoData *stIm = NULL;
+bool isRefresh;			// refresh the current stereo image display
 
 // GUI stuff
 stereogui *stg;			// GUI object
@@ -252,8 +257,8 @@ main(int argc, char **argv)	// no arguments
   startCam = false;
   stopCam = false;
   isVideo = false;
-  devIndex = -1;
-  devNum = 0;
+  isRefresh = false;
+  numDevs = 0;
   useSTOC = true;
   isTracking = false;
 
@@ -279,12 +284,12 @@ main(int argc, char **argv)	// no arguments
 
   // get devices
   dcam::init();
-  int devNum = dcam::numCameras();
-  debug_message("[oST] Number of cameras: %d", devNum);
+  numDevs = dcam::numCameras();
+  debug_message("[oST] Number of cameras: %d", numDevs);
 
   // print out GUIDs, vendor, model; set up Video pulldown
   Fl_Choice *devs = stg->cam_select;
-  for (int i=0; i<devNum; i++)
+  for (int i=0; i<numDevs; i++)
     {
       debug_message("[oST] Camera %d GUID: %llx  Vendor: %s  Model: %s", 
 	     i, dcam::getGuid(i), dcam::getVendor(i), dcam::getModel(i));
@@ -292,9 +297,10 @@ main(int argc, char **argv)	// no arguments
       sprintf(buf, "%s %s %llx", dcam::getVendor(i), dcam::getModel(i), dcam::getGuid(i));
       devs->add(buf);
     }
-  if (devNum > 0) 
+  if (numDevs > 0) 
     devs->value(0);
 
+#if 0
   // don't fool around, open the first device
   debug_message("[Dcam] Finding first available camera");
   dev = initcam(dcam::getGuid(0));
@@ -302,6 +308,9 @@ main(int argc, char **argv)	// no arguments
   // set range max value
   dev->setRangeMax(4.0);	// in meters
   dev->setRangeMin(0.5);	// in meters
+#endif
+
+  dev = NULL;
 
   static videre_proc_mode_t pmode = PROC_MODE_NONE;
   videoRate = DC1394_FRAMERATE_30;
@@ -310,7 +319,6 @@ main(int argc, char **argv)	// no arguments
 
   while (fltk_check() && !isExit) // process GUI commands, serve video
     {
-
       // check for video stream commands
       if (startCam)
 	{
@@ -386,137 +394,143 @@ main(int argc, char **argv)	// no arguments
 	{
 	  // check PROC modes, make consistent with requested info
 	  pmode = checkProcMode(pmode);
-
 	  bool ret = dev->getImage(500);
 	  if (ret)
 	    {
-	      int w = dev->stIm->imWidth;
-	      int h = dev->stIm->imHeight;
-
-	      // check processing
-	      if (isRectify)	// rectify images
-		dev->doRectify();
-	      if (isStereo)	// get stereo disparity
-		dev->doDisparity(sp_alg);
-	      if (is3D)		// get 3D points
-		{
-		  dev->doCalcPts();
-		  // check for 3D window
-		  if (!w3d)
-		    {
-		      w3dwin = new Fl_Window(640,480,"3D Display");
-		      w3d = new im3DWindow(10,10,w3dwin->w()-20,w3dwin->h()-20);
-		      w3dwin->end();
-		      w3dwin->resizable(w3d);
-		      w3dwin->show();
-		    }
-		  w3d->DisplayImage(dev->stIm);
-		}
-
-
-	      // check for tracking of chessboard
-	      // first find images and convert into IPL images
-	      // TODO: check header size if IplImage is already created
-	      if (isTracking)
-		{
-		  // set up grayscale image
-		  if (trackImgL == NULL)
-		    {
-		      trackImgL = cvCreateImageHeader(cvSize(w,h),IPL_DEPTH_8U,1); 
-		      trackCornersL = cvCreateImage(cvGetSize(trackImgL), IPL_DEPTH_8U, 3 );
-		    }
-		  if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
-		    cvSetData(trackImgL,dev->stIm->imLeft->imRect,w);
-		  else if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
-		    cvSetData(trackImgL,dev->stIm->imLeft->im,w);
-		  else
-		    isTracking = false;		    
-
-		  if (trackImgR == NULL)
-		    {
-		      trackImgR = cvCreateImageHeader(cvSize(w,h),IPL_DEPTH_8U,1); 
-		      trackCornersR = cvCreateImage(cvGetSize(trackImgR), IPL_DEPTH_8U, 3 );
-		    }
-		  if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
-		    cvSetData(trackImgR,dev->stIm->imRight->imRect,w);
-		  else if (dev->stIm->imRight->imType != COLOR_CODING_NONE)
-		    cvSetData(trackImgR,dev->stIm->imRight->im,w);
-		  else
-		    isTracking = false;
-
-		  if (!isTracking)
-		    {
-		      stg->track_button->value(0);
-		      calImageWindow *cwin;
-		      cwin = stg->mainLeft;
-		      cwin->clear2DFeatures();
-		      cwin = stg->mainRight;
-		      cwin->clear2DFeatures();
-		    }
-		}
-
-	      if (isTracking)
-		{
-		  FindCorners(&leftcorners[0], &nleftcorners[0], &goodleft[0], trackImgL);
-		  FindCorners(&rightcorners[0], &nrightcorners[0], &goodright[0], trackImgR);
-		}
-
-	      // display left image
-	      calImageWindow *cwin = stg->mainLeft;
-	      if (dev->stIm->imLeft->imRectColorType != COLOR_CODING_NONE)
-		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->imRectColor, w, h, w, RGB24);
-	      else if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
-		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->imRect, w, h, w);
-	      else if (dev->stIm->imLeft->imColorType != COLOR_CODING_NONE)
-		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->imColor, w, h, w, RGB24);
-	      else if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
-		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->im, w, h, w);
-
-	      if (isTracking)
-		cwin->display2DFeatures(leftcorners[0],nleftcorners[0],goodleft[0]);
-
-	      // display right image
-	      cwin = stg->mainRight;
-	      if (dev->stIm->hasDisparity)
-		cwin->DisplayImage((unsigned char *)dev->stIm->imDisp, w, h, w, DISPARITY, sp_dlen*16);
-	      else if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
-		cwin->DisplayImage((unsigned char *)dev->stIm->imRight->imRect, w, h, w);
-	      else if (dev->stIm->imRight->imColorType != COLOR_CODING_NONE)
-		cwin->DisplayImage((unsigned char *)dev->stIm->imRight->imColor, w, h, w, RGB24);
-	      else if (dev->stIm->imRight->imType != COLOR_CODING_NONE)
-		cwin->DisplayImage((unsigned char *)dev->stIm->imRight->im, w, h, w);
-
-	      if (isTracking)
-		cwin->display2DFeatures(rightcorners[0],nrightcorners[0],goodright[0]);
-
-	      if (isTracking)
-		{
-		  if (goodright[0] && goodleft[0])
-		    {
-		      goodpair[0] = true;
-		      double ee = epi_scanline_error0();
-		      info_message("Epipolar error: %0.2f pixels", ee);
-		    }
-		}
-
-	      if (isSaving)	// save images at intervals
-		{
-		  int ctime = (int)(0.001 * get_ms());
-		  if (ctime > otime+isSaving) // interval exceeded
-		    {
-		      char fname[1024];
-		      sprintf(fname,"im-%06d",savenum);
-		      savenum++;
-		      save_images(fname);
-		      otime = ctime;
-		    }
-		}
-
+	      stIm = dev->stIm;
+	      isRefresh = true;
 	    }
 	}
-
       else			// no video, yield a little
 	wait_ms(10);
+
+
+      if (isRefresh)
+	{
+	  int w = stIm->imWidth;
+	  int h = stIm->imHeight;
+
+	  // check processing
+	  if (isRectify)	// rectify images
+	    stIm->doRectify();
+	  if (isStereo)	// get stereo disparity
+	    stIm->doDisparity(sp_alg);
+	  if (is3D)		// get 3D points
+	    {
+	      stIm->doCalcPts();
+	      // check for 3D window
+	      if (!w3d)
+		{
+		  w3dwin = new Fl_Window(640,480,"3D Display");
+		  w3d = new im3DWindow(10,10,w3dwin->w()-20,w3dwin->h()-20);
+		  w3dwin->end();
+		  w3dwin->resizable(w3d);
+		  w3dwin->show();
+		}
+	      w3d->DisplayImage(stIm);
+	    }
+
+
+	  // check for tracking of chessboard
+	  // first find images and convert into IPL images
+	  // TODO: check header size if IplImage is already created
+	  if (isTracking)
+	    {
+	      // set up grayscale image
+	      if (trackImgL == NULL)
+		{
+		  trackImgL = cvCreateImageHeader(cvSize(w,h),IPL_DEPTH_8U,1); 
+		  trackCornersL = cvCreateImage(cvGetSize(trackImgL), IPL_DEPTH_8U, 3 );
+		}
+	      if (stIm->imLeft->imRectType != COLOR_CODING_NONE)
+		cvSetData(trackImgL,stIm->imLeft->imRect,w);
+	      else if (stIm->imLeft->imType != COLOR_CODING_NONE)
+		cvSetData(trackImgL,stIm->imLeft->im,w);
+	      else
+		isTracking = false;		    
+
+	      if (trackImgR == NULL)
+		{
+		  trackImgR = cvCreateImageHeader(cvSize(w,h),IPL_DEPTH_8U,1); 
+		  trackCornersR = cvCreateImage(cvGetSize(trackImgR), IPL_DEPTH_8U, 3 );
+		}
+	      if (stIm->imRight->imRectType != COLOR_CODING_NONE)
+		cvSetData(trackImgR,stIm->imRight->imRect,w);
+	      else if (stIm->imRight->imType != COLOR_CODING_NONE)
+		cvSetData(trackImgR,stIm->imRight->im,w);
+	      else
+		isTracking = false;
+
+	      if (!isTracking)
+		{
+		  stg->track_button->value(0);
+		  calImageWindow *cwin;
+		  cwin = stg->mainLeft;
+		  cwin->clear2DFeatures();
+		  cwin = stg->mainRight;
+		  cwin->clear2DFeatures();
+		}
+	    }
+
+	  if (isTracking)
+	    {
+	      FindCorners(&leftcorners[0], &nleftcorners[0], &goodleft[0], trackImgL);
+	      FindCorners(&rightcorners[0], &nrightcorners[0], &goodright[0], trackImgR);
+	    }
+
+	  // display left image
+	  calImageWindow *cwin = stg->mainLeft;
+	  if (stIm->imLeft->imRectColorType != COLOR_CODING_NONE)
+	    cwin->DisplayImage((unsigned char *)stIm->imLeft->imRectColor, w, h, w, RGB24);
+	  else if (stIm->imLeft->imRectType != COLOR_CODING_NONE)
+	    cwin->DisplayImage((unsigned char *)stIm->imLeft->imRect, w, h, w);
+	  else if (stIm->imLeft->imColorType != COLOR_CODING_NONE)
+	    cwin->DisplayImage((unsigned char *)stIm->imLeft->imColor, w, h, w, RGB24);
+	  else if (stIm->imLeft->imType != COLOR_CODING_NONE)
+	    cwin->DisplayImage((unsigned char *)stIm->imLeft->im, w, h, w);
+
+	  if (isTracking)
+	    cwin->display2DFeatures(leftcorners[0],nleftcorners[0],goodleft[0]);
+
+	  // display right image
+	  cwin = stg->mainRight;
+	  if (stIm->hasDisparity)
+	    cwin->DisplayImage((unsigned char *)stIm->imDisp, w, h, w, DISPARITY, sp_dlen*16);
+	  else if (stIm->imRight->imRectType != COLOR_CODING_NONE)
+	    cwin->DisplayImage((unsigned char *)stIm->imRight->imRect, w, h, w);
+	  else if (stIm->imRight->imColorType != COLOR_CODING_NONE)
+	    cwin->DisplayImage((unsigned char *)stIm->imRight->imColor, w, h, w, RGB24);
+	  else if (stIm->imRight->imType != COLOR_CODING_NONE)
+	    cwin->DisplayImage((unsigned char *)stIm->imRight->im, w, h, w);
+
+	  if (isTracking)
+	    cwin->display2DFeatures(rightcorners[0],nrightcorners[0],goodright[0]);
+
+	  if (isTracking)
+	    {
+	      if (goodright[0] && goodleft[0])
+		{
+		  goodpair[0] = true;
+		  double ee = epi_scanline_error0();
+		  info_message("Epipolar error: %0.2f pixels", ee);
+		}
+	    }
+
+	  if (isSaving)	// save images at intervals
+	    {
+	      int ctime = (int)(0.001 * get_ms());
+	      if (ctime > otime+isSaving) // interval exceeded
+		{
+		  char fname[1024];
+		  sprintf(fname,"im-%06d",savenum);
+		  savenum++;
+		  save_images(fname);
+		  otime = ctime;
+		}
+	    }
+
+	}
+
     }
 
   // exiting, turn off camera
@@ -846,11 +860,9 @@ load_left(char *fname)
 
       // do subpixel calculation, if corners have been found
       if (ret)
-	{
-	  cvFindCornerSubPix(img, leftcorners[ind], numc, 
-			     cvSize(5,5),cvSize(-1,-1), 
-			     cvTermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1 ));
-	}
+	cvFindCornerSubPix(img, leftcorners[ind], numc, 
+			   cvSize(5,5),cvSize(-1,-1), 
+			   cvTermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1 ));
 
       // set good/bad image
       goodleft[ind] = ret;
@@ -2720,6 +2732,8 @@ void load_images_cb(Fl_Menu_ *w, void *u)
       load_left(lname);
       load_right(rname);
     }
+
+  isRefresh = true;
 }
 
 
@@ -2852,11 +2866,13 @@ debug_window_cb(Fl_Menu_ *w, void *u)
 void
 video_dev_cb(Fl_Choice *w, void *u)
 {
-  if (devNum > 0)
+  if (numDevs > 0)
     {
-      devIndex = w->value();
+      int devIndex = w->value();
       debug_message("[oST] Camera %d selected", devIndex);
     }
+  else
+    debug_message("[oST] No cameras found");
 }
 
 
@@ -2907,8 +2923,33 @@ video_rate_cb(Fl_Choice *w, void *u)
 void 
 do_video_cb(Fl_Light_Button *w, void*)
 {
-  if (w->value())		// turn it on
-    startCam = true;
+  if (w->value())
+    {
+      // first check for having a device
+      if (numDevs == 0)
+	{
+	  debug_message("[oST] No devices found");
+	  w->value(0);
+	  return;
+	}
+
+      Fl_Choice *devs = stg->cam_select;
+      int devn = devs->value();	// get device number
+
+      debug_message("[oST] Opening camera #%d", devn);
+      try {  dev = initcam(dcam::getGuid(devn)); }
+      catch(dcam::DcamException e) 
+	{ 
+	  debug_message("Can't find or open a camera: %s", e.what());
+	  dev = NULL;		// just in case
+	  return;
+	}
+
+      // set range max value
+      dev->setRangeMax(4.0);	// in meters
+      dev->setRangeMin(0.5);	// in meters
+      startCam = true;
+    }
 
   else				// turn it off
     stopCam = true;
