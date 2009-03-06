@@ -1,22 +1,4 @@
 /**
- * For now, driver and doorman use the same model. This will change when the doorman gets more sophisticated.
- */
-MoveBehavior::Active{
-  ends(MoveBase.Active mb);
-  eq(mb.x, x);
-  eq(mb.y, y);
-  eq(mb.th, th);
-  precedes(start, mb.start);
-
-  if(end){
-    ends(BaseState.Holds bs);
-    float distance;
-    calcDistance(distance, x, y, bs.x, bs.y);
-    leq(distance, XY_ERROR);
-  }
-}
-
-/**
  * Must be in a valid mobility state
  */
 MoveBase::Active{

@@ -34,12 +34,13 @@
 #include "rcs.exports.nddl"
 #include "rcs.exports.doorman.nddl"
 
-
 // Include simulation subsystems
 #include "rcs.sim.doorman.nddl"
 
+
+
 /**
- * If an active token is dispatched, we start it immediately
+ * If an active token is dispatched, we start it immediately.
  */
 Behavior::Active{
   addEq(dispatch_time, 1, start);

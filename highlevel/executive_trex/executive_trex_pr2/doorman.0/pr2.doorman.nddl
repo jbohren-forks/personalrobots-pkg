@@ -1,3 +1,13 @@
 #include "doorman.nddl"
 
 close();
+
+rejectable(doorman.Active g0);
+
+// At the end, we expect the doorway to be clear, and have handle to be false
+// assert(door_controller[g0.end) == Holds(doorway_clear == true, have_handle == false);
+rejectable(door_controller.Holds c0);
+concurrent(c0.start, g0.end);
+eq(c0.doorway_clear, true);
+eq(c0.have_handle, FALSE);
+assertCompleted(c0.state);

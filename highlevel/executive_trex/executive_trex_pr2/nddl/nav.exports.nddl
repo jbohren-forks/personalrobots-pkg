@@ -1,4 +1,3 @@
-
 // Constants for acceptable errors in pose
 float XY_ERROR = 0.5;
 float THETA_ERROR = 0.1;

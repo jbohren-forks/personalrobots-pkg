@@ -311,6 +311,15 @@ MoveBehavior::Active{
   // Only one moving modality at a time
   contained_by(MotionMutex.Using mutex);
   eq(mutex.user, this.object);
+
+  // A precondition is that we start during an active path traverse. Notably, we cannot say anything about the relationship
+  // between this and the target or final destinations, since paths may be merged.
+  if(start){
+    any(Path.Holds p);
+    precedes(p.start, start);
+    temporalDistance(start, [1 +inf], p.end);
+    eq(p.active, true);
+  }
 }
 
 /**

@@ -29,6 +29,8 @@ typedef int [-1, 2] ROTATION_DIRECTION;
 
 int DOOR_CHECK_INTERVAL = 5; // Wait 5 seconds before checking the doorway is clear again
 
+enum MAYBE_TRUE_OR_FALSE {TRUE, FALSE, MAYBE} ;
+
 /**
  * DoorState is a state variable providing feedback on the perceived state of the door and its related
  * status flags. Note that if any value is unkown, then we consider we have lost observability of the door.
@@ -119,6 +121,7 @@ class GraspHandle extends Behavior {
   predicate Active{
   }
   predicate Inactive{
+    MAYBE_TRUE_OR_FALSE have_handle;
   }
 
   GraspHandle(Mode _mode){
@@ -174,6 +177,7 @@ class ReleaseDoor extends Behavior {
   }
 
   predicate Inactive{
+    MAYBE_TRUE_OR_FALSE have_handle;
   }
 
   ReleaseDoor(Mode _mode){

@@ -11,6 +11,15 @@ CheckDoorway::Active{
   eq(s.doorway_clear, true);
 }
 
+ReleaseDoor::Active{
+  eq(duration, 5);
+
+  // Handle always free at the end
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+  eq(s.have_handle, FALSE);
+}
+
 // State variables
 HandleState handle_state = new HandleState(Internal);
 DoorState door_state = new DoorState(Internal);
