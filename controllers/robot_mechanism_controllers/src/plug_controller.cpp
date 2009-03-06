@@ -72,7 +72,9 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot;
-
+  
+  controller_name_ = config->Attribute("name");
+  
   TiXmlElement *chain = config->FirstChildElement("chain");
   if (!chain) {
     ROS_ERROR("PlugController was not given a chain");
@@ -95,17 +97,21 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
     return false;
   chain_.toKDL(kdl_chain_);
 
-  // some parameters
+  // some parametersjoint_constraint_null_space_ =  identity_joint_ - joint_constraint_jac_ * joint_constraint_jac_.transpose();
   ros::Node *node = ros::Node::instance();
   assert(node);
 
-  node->param("constraint/upper_arm_limit" , upper_arm_limit , -1.52 ) ; /// upper arm pose limit
+  node->param(controller_name_+"/upper_arm_limit" , upper_arm_limit , -1.52 ) ; /// upper arm pose limit
 
-  node->param("constraint/f_r_max"      , f_r_max     , 1000.0) ; /// max radial force of line constraint
-  node->param("constraint/f_pose_max"   , f_pose_max  , 40.0) ; /// max pose force
-  node->param("constraint/f_limit_max"  , f_limit_max  , 100.0) ; /// max upper arm limit force
-  node->param("constraint/upper_arm_dead_zone", upper_arm_dead_zone, 0.05);
+  node->param(controller_name_+"/f_r_max"      , f_r_max     , 1000.0) ; /// max radial force of line constraint
+  node->param(controller_name_+"/f_pose_max"   , f_pose_max  , 40.0) ; /// max pose force
+  node->param(controller_name_+"/f_limit_max"  , f_limit_max  , 100.0) ; /// max upper arm limit force
+  node->param(controller_name_+"/upper_arm_dead_zone", upper_arm_dead_zone, 0.05);
 
+  line_pid_.initParam(controller_name_+"/line_pid"); 
+  last_time_ = robot->model_->hw_->current_time_;
+  
+  
   // Constructs solvers and allocates matrices.
   unsigned int num_joints   = kdl_chain_.getNrOfJoints();
   jnt_to_jac_solver_.reset(new ChainJntToJacSolver(kdl_chain_));
@@ -189,6 +195,7 @@ void PlugController::update()
 
 void PlugController::computeConstraintJacobian()
 {
+  double time = robot_->model_->hw_->current_time_;
   // Clear force vector
   double f_r = 0;
   double f_roll = 0;
@@ -231,7 +238,8 @@ void PlugController::computeConstraintJacobian()
     constraint_jac_(0,1) = other_norm(0);
     constraint_jac_(1,1) = other_norm(1);
     constraint_jac_(2,1) = other_norm(2);
-    f_r = dist_to_line * f_r_max; /// @todo: FIXME, replace with some exponential function
+    double temp_f_r = line_pid_.updatePid(dist_to_line, time-last_time_);
+    f_r = (temp_f_r < f_r_max) ? temp_f_r:f_r_max; //dist_to_line * f_r_max; 
   }
   else
   {
@@ -296,6 +304,7 @@ void PlugController::computeConstraintJacobian()
   constraint_force_(2) = f_roll;
   constraint_force_(3) = f_pitch;
   constraint_force_(4) = f_yaw;
+  last_time_ = time;
 }
 
 void PlugController::computeConstraintNullSpace()

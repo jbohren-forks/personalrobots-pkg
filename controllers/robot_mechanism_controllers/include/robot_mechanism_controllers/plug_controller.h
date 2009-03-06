@@ -44,7 +44,7 @@
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/Transform.h"
 #include "robot_srvs/SetPoseStamped.h"
-
+#include <control_toolbox/pid.h>
 #include "misc_utils/subscription_guard.h"
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
@@ -79,7 +79,7 @@ public:
   void setToolOffset(const tf::Transform &);
 
   std::string root_name_;
-
+   
   // input of the controller
   KDL::Wrench wrench_desi_;
   Eigen::Matrix<float,6,1> task_wrench_;
@@ -94,7 +94,7 @@ public:
 private:
 
   mechanism::RobotState *robot_;
-
+  std::string controller_name_;
   KDL::Chain kdl_chain_;
   boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
   boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
@@ -123,8 +123,13 @@ private:
   double f_r_max;
   double f_pose_max;
   double f_limit_max;
-
+  double last_time_;
   bool initialized_;
+  
+  control_toolbox::Pid roll_pid_;       /**< Internal PID controller. */
+  control_toolbox::Pid pitch_pid_;       /**< Internal PID controller. */
+  control_toolbox::Pid yaw_pid_;       /**< Internal PID controller. */
+  control_toolbox::Pid line_pid_;       /**< Internal PID controller. */
 };
 
 
