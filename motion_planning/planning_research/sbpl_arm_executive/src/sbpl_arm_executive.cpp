@@ -35,8 +35,8 @@ class ExecNode : public PR2ArmNode
 {
   public:
 
-      int state_;
-      enum{INITIALIZED};
+    int state_;
+    enum{INITIALIZED};
     ExecNode(std::string node_name, std::string arm_name, std::string gripper_name):PR2ArmNode(node_name,arm_name,gripper_name),state_(INITIALIZED){};
     robot_msgs::JointTrajPoint current_joint_positions_;
     std::vector<robot_msgs::JointTrajPoint> goal_joint_positions_;
@@ -45,11 +45,11 @@ class ExecNode : public PR2ArmNode
 
     void spin()
     {
-        int num_joints = 7; int y;
+        int num_joints = 7; int y, goal_id = 1;
+        double goal1[7] = {0.5, 0, 0, 0, 0, 0.00, 0};
+        double goal2[7] = {-1.75, 0, 0, -0.5, 0, 0.3, 0};
 
-        double g3[7] = {-2, 0, 0, 0, 0, 0.00, 0};
-//       double g3[7] = {joint_space_goal_[0],joint_space_goal_[1],joint_space_goal_[2],joint_space_goal_[3],joint_space_goal_[4],joint_space_goal_[5],joint_space_goal_[6]};
-        double hp[7] = {0, 1.5, 0, 2.3, 3.14, 2.2, 0}; //{0,0.2,0.0,-1.25,0,0,0};
+        double hp[7] = {-1.75, 0, 0, -0.5, 0, 0.3, 0};
         std::vector<double>home_position(hp,hp + sizeof(hp)/sizeof(*hp));
         goal_.resize(1);
         goal_joint_positions_.resize(1);
@@ -59,48 +59,46 @@ class ExecNode : public PR2ArmNode
         goHome(home_position);
         sleep(20);
 
-        //open arm
-        for(int i =0; i < 7; i++)
-            home_position[i] = 0;
-
-        goHome(home_position);
-        sleep(20);
-
-        printf("tucked arms....are you brave enough to continue?\n");
+        printf("initial movements complete....are you brave enough to continue?\n");
         scanf("%d",&y);
 
+        while(ok())
+        {
+            if(goal_id == 1)
+            {
+                for(int i=0; i < num_joints; i++)
+                    goal_joint_positions_[0].positions[i] = goal1[i];
+                goal_id = 2;
+            }
 
-        for(int i=0; i < num_joints; i++)
-            goal_joint_positions_[0].positions[i] = g3[i];
-//         goal_[0] = RPYToTransform(0.5, 0.5, 0.1, .8, -0.2, -0.27);
+            else if(goal_id == 2)
+            {
+                for(int i=0; i < num_joints; i++)
+                    goal_joint_positions_[0].positions[i] = goal2[i];
+                goal_id = 1;
+            }
 
-        ROS_INFO("Planning");
-        ROS_INFO("goal: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n",
-                goal_joint_positions_[0].positions[0],goal_joint_positions_[0].positions[1],goal_joint_positions_[0].positions[2],goal_joint_positions_[0].positions[3],
-                goal_joint_positions_[0].positions[4],goal_joint_positions_[0].positions[5],goal_joint_positions_[0].positions[6]);
+            ROS_INFO("Planning");
+            ROS_INFO("goal: %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n",
+                    goal_joint_positions_[0].positions[0],goal_joint_positions_[0].positions[1],goal_joint_positions_[0].positions[2],goal_joint_positions_[0].positions[3],
+                    goal_joint_positions_[0].positions[4],goal_joint_positions_[0].positions[5],goal_joint_positions_[0].positions[6]);
 
-        //get current configuration
-        getCurrentPosition(current_joint_positions_);
+            //get current configuration
+            getCurrentPosition(current_joint_positions_);
+            //plan joint space path - change this so that it can replan if it doesn't find a path
+            if(planSBPLPath(current_joint_positions_,goal_joint_positions_,planned_path_))
+                ROS_INFO("Planning was a success.\n");
+            else
+                ROS_INFO("Planning failed: Retry");
 
-        //plan xyzrpy path
-//      if(planSBPLPath(current_joint_positions_,goal_,planned_path_))
+            //execute path
+            if(sendTrajectory(arm_name_,planned_path_))
+                ROS_INFO("Executed trajectory successfully");
+            else
+                ROS_INFO("Could not execute trajectory.");
 
-        //plan joint space path - change this so that it can replan if it doesn't find a path
-        if(planSBPLPath(current_joint_positions_,goal_joint_positions_,planned_path_))
-            ROS_INFO("Planning was a success.\n");
-        else
-            ROS_INFO("Planning failed: Retry");
-
-//         printf("planned a path....are you brave enough to continue?\n");
-//         scanf("%d",&y);
-
-        //execute path
-        if(sendTrajectory(arm_name_,planned_path_))
-            ROS_INFO("Executed trajectory successfully");
-        else
-            ROS_INFO("Could not execute trajectory.");
-
-        sleep(100);
+            sleep(100);
+        }
     }
 };
 
