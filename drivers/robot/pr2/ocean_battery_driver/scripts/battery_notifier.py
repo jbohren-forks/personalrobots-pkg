@@ -75,5 +75,5 @@ class BatteryNotifier:
     rospy.spin()
 
 if __name__ == '__main__':
-  notifier = BatteryNotifier(0.2, "bogus_battery_state", ["eitan@willowgarage.com"], "pre", "/usr/sbin/sendmail")
+  notifier = BatteryNotifier(0.2, "battery_state", ["eitan@willowgarage.com"], "pre", "/usr/sbin/sendmail")
   notifier.run()
