@@ -142,7 +142,8 @@ void SBPLArmPlannerNode::collisionMapCallback()
 //     printf("[SBPLArmPlannerNode] obstacle %i: %.3f %.3f %.3f %.3f %.3f %.3f\n",i,sbpl_boxes[i][0],sbpl_boxes[i][1],
 //            sbpl_boxes[i][2],sbpl_boxes[i][3],sbpl_boxes[i][4],sbpl_boxes[i][5]);
   }
-//   pr2_arm_env_.ClearEnv();
+  //NOTE: clear map for dynamic obstacle support
+  pr2_arm_env_.ClearEnv();
   pr2_arm_env_.AddObstacles(sbpl_boxes); //TODO: BEN - change AddObstacles to take in a pointer 
 
   getSBPLCollisionMap();

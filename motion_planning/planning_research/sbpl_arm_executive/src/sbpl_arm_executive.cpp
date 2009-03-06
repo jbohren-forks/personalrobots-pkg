@@ -97,7 +97,7 @@ class ExecNode : public PR2ArmNode
             else
                 ROS_INFO("Could not execute trajectory.");
 
-            sleep(10);
+            sleep(15);
         }
     }
 };
