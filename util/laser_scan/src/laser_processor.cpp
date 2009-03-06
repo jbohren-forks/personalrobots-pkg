@@ -32,13 +32,13 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "laser_processor.h"
+#include "laser_scan/laser_processor.h"
 
 #include <stdexcept>
 
 using namespace ros;
 using namespace std;
-using namespace laser_processor;
+using namespace laser_scan;
 
 Sample* Sample::Extract(int ind, laser_scan::LaserScan& scan)
 {
@@ -124,7 +124,7 @@ void ScanMask::addScan(laser_scan::LaserScan& scan)
              angle_max != scan.angle_max     ||
              size      != scan.ranges.size())
   {
-    throw std::runtime_error("laser_processor::ScanMask::addScan: inconsistantly sized scans added to mask");
+    throw std::runtime_error("laser_scan::ScanMask::addScan: inconsistantly sized scans added to mask");
   }
 
   for (uint32_t i = 0; i < scan.ranges.size(); i++)

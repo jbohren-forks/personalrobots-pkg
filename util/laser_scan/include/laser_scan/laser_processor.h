@@ -39,8 +39,8 @@
 //! A namespace containing the laser processor helper classes
 
 
-#ifndef LASERPROCESSOR_HH
-#define LASERPROCESSOR_HH
+#ifndef LASER_SCAN_LASERPROCESSOR_HH
+#define LASER_SCAN_LASERPROCESSOR_HH
 
 #include <unistd.h>
 #include <math.h>
@@ -58,7 +58,7 @@
 
 #include "tf/transform_datatypes.h"
 
-namespace laser_processor
+namespace laser_scan
 {
   //! A struct representing a single sample from the laser.
   class Sample

@@ -37,7 +37,7 @@
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 
-using namespace laser_processor;
+using namespace laser_scan;
 using namespace std;
 
 vector<float> calcLegFeatures(SampleSet* cluster, laser_scan::LaserScan& scan)

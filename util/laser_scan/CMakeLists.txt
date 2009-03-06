@@ -6,6 +6,9 @@ genmsg()
 
 rospack_add_boost_directories()
 
+#todo integrate this
+rospack_add_library(laser_processor src/laser_processor.cpp)
+
 rospack_add_library(laser_scan src/laser_scan.cc )
 rospack_link_boost(laser_scan thread)
 
