@@ -2424,6 +2424,7 @@ void EnvironmentROBARM3D::UpdateEnvironment()
 {
     int x, y, z;
     int b = 0, c = 0;
+    EnvROBARMCfg.sbpl_cubes = EnvROBARMCfg.cubes;
     for (x = 0; x < EnvROBARMCfg.EnvWidth_c; x++)
     {
         for (y = 0; y < EnvROBARMCfg.EnvHeight_c; y++)
@@ -2455,8 +2456,8 @@ void EnvironmentROBARM3D::UpdateEnvironment()
         }
     }
 
-    printf("[UpdateEnvironment] There are %d obstacle cells in the low resolution planning grid.\n",b);
-    printf("[UpdateEnvironment] There are %d obstacle cells in the high resolution planning grid.\n",c);
+ //   printf("[UpdateEnvironment] There are %d obstacle cells in the low resolution planning grid.\n",b);
+ //   printf("[UpdateEnvironment] There are %d obstacle cells in the high resolution planning grid.\n",c);
 }
 
 void EnvironmentROBARM3D::InitializeEnvConfig()
@@ -4238,7 +4239,7 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
     
     if(EnvROBARMCfg.mCopyingGrid.try_lock())
     {
-        printf("[AddObstacles] Grabbed ownership of the grid mutex. Obstacles will be added.\n");
+//        printf("[AddObstacles] Grabbed ownership of the grid mutex. Obstacles will be added.\n");
 
         for(i = 0; i < (int)obstacles.size(); i++)
         {
@@ -4283,7 +4284,7 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
 
 //                 EnvROBARMCfg.mCopyingGrid.unlock();
 
-    //             printf("[AddObstacles] Obstacle %i: (%.2f %.2f %.2f) was added to the environment.\n",i,obs[0],obs[1],obs[2]);
+ //             printf("[AddObstacles] Obstacle %i: (%.2f %.2f %.2f) was added to the environment.\n",i,obs[0],obs[1],obs[2]);
                 cubes_added++;
             }
         }
@@ -4292,7 +4293,7 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
     }
     else
     {
-        printf("[AddObstacles] Tried to get mutex lock but failed. Obstacles were not added.\n");
+ //       printf("[AddObstacles] Tried to get mutex lock but failed. Obstacles were not added.\n");
         return;
     }
 
@@ -4325,8 +4326,8 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
             //get joint positions of goal configurations
             if(!ComputeEndEffectorPos(angles, endeff, wrist, elbow, orientation))
             {
-                printf("[AddObstacles] goal %i: (%.2f %.2f %.2f %.2f %.2f %.2f %.2f) is out of bounds.\n",
-                       i,angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
+//                printf("[AddObstacles] goal %i: (%.2f %.2f %.2f %.2f %.2f %.2f %.2f) is out of bounds.\n",
+//                       i,angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6]);
                 if(!RemoveGoal(i))
                 {
                     EnvROBARMCfg.bGoalIsSet  = false;
@@ -4390,7 +4391,7 @@ void EnvironmentROBARM3D::AddObstacles(vector<vector <double> > obstacles)
     if(EnvROBARMCfg.dijkstra_heuristic)
         ComputeHeuristicValues();
 
-    printf("[AddObstacles] %i cubes are in the cube vector\n",EnvROBARMCfg.cubes.size());
+//    printf("[AddObstacles] %i cubes are in the cube vector\n",EnvROBARMCfg.cubes.size());
 //     printf("[AddObstacles] %i big cubes are in the cube vector\n",EnvROBARMCfg.bigcubes.size());
 }
 
@@ -4403,18 +4404,18 @@ std::vector<std::vector<double> >* EnvironmentROBARM3D::getCollisionMap()
 //             printf("%.3f ",EnvROBARMCfg.cubes[i][k]);
 //         printf("\n");
 //     }
-    if(EnvROBARMCfg.mCopyingGrid.try_lock())
-    {
-        printf("[getCollisionMap] Acquired mutex...\n");
+//    if(EnvROBARMCfg.mCopyingGrid.try_lock())
+//    {
+//        printf("[getCollisionMap] Acquired mutex...\n");
 
-        EnvROBARMCfg.sbpl_cubes = EnvROBARMCfg.cubes;
-        EnvROBARMCfg.mCopyingGrid.unlock();
-    }
-    else
-    {
-        printf("[getCollisionMap] Could not acquire mutex...\n");
+//        EnvROBARMCfg.sbpl_cubes = EnvROBARMCfg.cubes;
+//        EnvROBARMCfg.mCopyingGrid.unlock();
+//    }
+//    else
+//    {
+ //       printf("[getCollisionMap] Could not acquire mutex...\n");
         
-    }
+ //   }
     return &(EnvROBARMCfg.sbpl_cubes);
 }
 
@@ -4471,11 +4472,11 @@ void EnvironmentROBARM3D::ClearEnv()
     }
     else
     {
-        printf("[ClearEnv] Tried to get mutex lock but failed. Environment was not cleared.\n");
+ //       printf("[ClearEnv] Tried to get mutex lock but failed. Environment was not cleared.\n");
         return;
     }
 
-    printf("[ClearEnv] Exiting...\n");
+ //   printf("[ClearEnv] Exiting...\n");
 //     for (z = 45; z <= 50; z++)
 //     {
 //         printf("\n[ClearEnv] z = %i\n",z);

@@ -10,7 +10,7 @@
   <url></url>
 
   <export>
-      <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags` -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_arm_planner"/>
+      <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_arm_planner"/>
   </export>
 
 </package>

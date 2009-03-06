@@ -46,8 +46,8 @@ class ExecNode : public PR2ArmNode
     void spin()
     {
         int num_joints = 7; int y, goal_id = 1;
-        double goal1[7] = {0.5, 0, 0, 0, 0, 0.00, 0};
-        double goal2[7] = {-1.75, 0, 0, -0.5, 0, 0.3, 0};
+        double goal1[7] = {0.5, 0.2, 0, .0, 0.5, 0.0, 0};
+        double goal2[7] = {-1.75, 0, .5, -0.5, 0, 0.3, 0};
 
         double hp[7] = {-1.75, 0, 0, -0.5, 0, 0.3, 0};
         std::vector<double>home_position(hp,hp + sizeof(hp)/sizeof(*hp));
@@ -97,7 +97,7 @@ class ExecNode : public PR2ArmNode
             else
                 ROS_INFO("Could not execute trajectory.");
 
-            sleep(15);
+            sleep(14);
         }
     }
 };
