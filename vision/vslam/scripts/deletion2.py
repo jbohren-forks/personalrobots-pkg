@@ -68,7 +68,7 @@ bad_vertices = set([ 35437, 35455, 37380, 40122, 40126, 40207, 40229 ])
 
 if 1:
   skel = Skeleton(stereo_cam)
-  skel.load("iros2009/mkplot_snap")
+  skel.load("/wg/wgdata1/vol1/iros2009/mkplot_snap")
   print "skel.nodes:", len(skel.nodes)
   for e in skel.edges:
     if e[0] in bad_vertices or e[1] in bad_vertices:
@@ -226,7 +226,7 @@ for kappa in [ 9999,7,5,4,3,2 ]:
   res_clusters_nb.append((sum(log_numclusters) / float(len(log_numclusters))))
 
   vx = {}
-  for l in open("iros2009/mkplot_snap.toro"):
+  for l in open("/wg/wgdata1/vol1/iros2009/mkplot_snap.toro"):
     l = l.rstrip()
     f = l.split()
     if f[0] == 'VERTEX3':
