@@ -130,6 +130,17 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
   if(max_acc_elem->QueryDoubleAttribute("value", &max_acc_) != TIXML_SUCCESS )
     return false ;
 
+  // Set to hold the current position
+
+  pr2_mechanism_controllers::PeriodicCmd cmd ;
+  cmd.profile = "linear" ;
+  cmd.period = 1.0 ;
+  cmd.amplitude = 0.0 ;
+  cmd.offset = joint_state_->position_ ;
+
+  setPeriodicCmd(cmd) ;
+
+
   return true ;
 }
 
