@@ -65,6 +65,11 @@
     <origin xyz="0 -0.06 0.03" rpy="0 0 0" />
 
     <inertial>
+      <mass value="0.01" />
+      <com xyz="0 0 0" />
+      <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
+               iyy="0.001"  iyz="0.0"
+               izz="0.001" />
     </inertial>
 
     <visual>
@@ -72,7 +77,7 @@
       <map name="gazebo_material" flag="gazebo">
         <elem key="material" value="Gazebo/Blue" />
       </map>
-      <geometry name="$high_def_visual">
+      <geometry name="high_def_visual">
         <mesh scale="0.01 0.01 0.01" />
       </geometry>
     </visual>
