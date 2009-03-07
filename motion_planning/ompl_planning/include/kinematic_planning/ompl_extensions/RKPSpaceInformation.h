@@ -46,10 +46,10 @@ namespace kinematic_planning
 {
     
     /** This class configures an instance of SpaceInformationKinematic with data from a KinematicModel */
-    class SpaceInformationRKPModel : public ompl::SpaceInformationKinematic
+    class SpaceInformationRKPModel : public ompl::sb::SpaceInformationKinematic
     {
     public:
-    SpaceInformationRKPModel(RKPModelBase *model, double divisions = 20.0) : SpaceInformationKinematic()
+        SpaceInformationRKPModel(RKPModelBase *model, double divisions = 20.0) : SpaceInformationKinematic()
 	{	
 	    m_kmodel = model->kmodel;
 	    m_groupID = model->groupID;
@@ -61,8 +61,8 @@ namespace kinematic_planning
 	    
 	    for (unsigned int i = 0 ; i < m_stateDimension ; ++i)
 	    {	
-		if (m_stateComponent[i].type == StateComponent::UNKNOWN)
-		    m_stateComponent[i].type = StateComponent::NORMAL;
+		if (m_stateComponent[i].type == ompl::sb::StateComponent::UNKNOWN)
+		    m_stateComponent[i].type = ompl::sb::StateComponent::NORMAL;
 		int p = m_groupID >= 0 ? m_kmodel->getModelInfo().groupStateIndexList[m_groupID][i] * 2 : i * 2;
 		m_stateComponent[i].minValue   = m_kmodel->getModelInfo().stateBounds[p    ];
 		m_stateComponent[i].maxValue   = m_kmodel->getModelInfo().stateBounds[p + 1];
@@ -72,7 +72,7 @@ namespace kinematic_planning
 		    if (m_kmodel->getModelInfo().floatingJoints[j] == p)
 		    {
 			m_floatingJoints.push_back(i);
-			m_stateComponent[i + 3].type = StateComponent::QUATERNION;
+			m_stateComponent[i + 3].type = ompl::sb::StateComponent::QUATERNION;
 			break;
 		    }
 		

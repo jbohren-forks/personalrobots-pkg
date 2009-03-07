@@ -60,7 +60,7 @@ kinematic_planning::RKPPlannerSetup::~RKPPlannerSetup(void)
 	delete gaik;
     if (svc)
 	delete svc;
-    for (std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator*>::iterator j = sde.begin(); j != sde.end() ; ++j)
+    for (std::map<std::string, ompl::base::StateDistanceEvaluator*>::iterator j = sde.begin(); j != sde.end() ; ++j)
 	if (j->second)
 	    delete j->second;
     if (smoother)
@@ -73,14 +73,14 @@ kinematic_planning::RKPPlannerSetup::~RKPPlannerSetup(void)
 void kinematic_planning::RKPPlannerSetup::setupDistanceEvaluators(void)
 {
     assert(si);
-    sde["L2Square"] = new ompl::SpaceInformationKinematic::StateKinematicL2SquareDistanceEvaluator(si);
+    sde["L2Square"] = new ompl::sb::L2SquareStateDistanceEvaluator(si);
 }
 	
-ompl::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProjectionEvaluator(const std::map<std::string, std::string> &options) const
+ompl::base::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProjectionEvaluator(const std::map<std::string, std::string> &options) const
 {
     std::map<std::string, std::string>::const_iterator pit = options.find("projection");
     std::map<std::string, std::string>::const_iterator cit = options.find("celldim");
-    ompl::ProjectionEvaluator *pe = NULL;
+    ompl::base::ProjectionEvaluator *pe = NULL;
     
     if (pit != options.end() && cit != options.end())
     {
@@ -105,7 +105,7 @@ ompl::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProjectionEva
 		ss >> comp;
 		projection.push_back(comp);
 	    }
-	    pe = new ompl::OrthogonalProjectionEvaluator(projection);
+	    pe = new ompl::sb::OrthogonalProjectionEvaluator(projection);
 	}
 	
 	std::vector<double> cdim;
@@ -133,11 +133,11 @@ void kinematic_planning::RKPPlannerSetup::preSetup(const std::map<std::string, s
     svc      = new StateValidityPredicate(model);
     si->setStateValidityChecker(svc);
     
-    smoother = new ompl::PathSmootherKinematic(si);
+    smoother = new ompl::sb::PathSmootherKinematic(si);
     smoother->setMaxSteps(50);
     smoother->setMaxEmptySteps(4);
 
-    gaik     = new ompl::GAIK(si);
+    gaik     = new ompl::sb::GAIK(si);
 }
 
 void kinematic_planning::RKPPlannerSetup::postSetup(const std::map<std::string, std::string> &options)

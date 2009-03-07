@@ -37,7 +37,8 @@
 #ifndef KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
 #define KINEMATIC_PLANNING_RKP_STATE_VALIDATOR
 
-#include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
+#include <ompl/extension/samplingbased/State.h>
+#include <ompl/base/StateValidityChecker.h>
 #include <planning_models/kinematic.h>
 #include <collision_space/environment.h>
 #include "kinematic_planning/RKPModelBase.h"
@@ -46,18 +47,18 @@
 namespace kinematic_planning
 {
     
-    class StateValidityPredicate : public ompl::SpaceInformation::StateValidityChecker
+    class StateValidityPredicate : public ompl::base::StateValidityChecker
     {
     public:
-        StateValidityPredicate(RKPModelBase *model) : ompl::SpaceInformation::StateValidityChecker()
+        StateValidityPredicate(RKPModelBase *model) : ompl::base::StateValidityChecker()
 	{
 	    m_model = model;
 	}
 	
-	virtual bool operator()(const ompl::SpaceInformation::State_t state) const
+	virtual bool operator()(const ompl::base::State *state) const
 	{
 	    m_model->kmodel->lock();
-	    m_model->kmodel->computeTransformsGroup(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
+	    m_model->kmodel->computeTransformsGroup(static_cast<const ompl::sb::State*>(state)->values, m_model->groupID);
 	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
 	    
 	    bool valid = !m_model->collisionSpace->isCollision(m_model->collisionSpaceID);

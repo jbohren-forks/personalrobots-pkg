@@ -37,18 +37,18 @@
 #ifndef KINEMATIC_PLANNING_RKP_PROJECTION_EVALUATORS
 #define KINEMATIC_PLANNING_RKP_PROJECTION_EVALUATORS
 
-#include <ompl/extension/samplingbased/kinematic/ProjectionEvaluatorKinematic.h>
+#include <ompl/extension/samplingbased/ProjectionEvaluator.h>
 #include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
 #include "kinematic_planning/RKPModelBase.h"
 
 namespace kinematic_planning
 {
 
-    class LinkPositionProjectionEvaluator : public ompl::ProjectionEvaluator
+    class LinkPositionProjectionEvaluator : public ompl::base::ProjectionEvaluator
     {
     public:
 
-        LinkPositionProjectionEvaluator(RKPModelBase *model, const std::string &linkName) : ompl::ProjectionEvaluator()
+        LinkPositionProjectionEvaluator(RKPModelBase *model, const std::string &linkName) : ompl::base::ProjectionEvaluator()
 	{
 	    m_model = model;
 	    m_link  = m_model->kmodel->getLink(linkName);
@@ -61,9 +61,9 @@ namespace kinematic_planning
 	}
 		
 	/** Compute the projection as an array of double values */
-	virtual void operator()(const ompl::SpaceInformation::State *state, double *projection) const
+	virtual void operator()(const ompl::base::State *state, double *projection) const
 	{  
-	    const ompl::SpaceInformationKinematic::StateKinematic *kstate = static_cast<const ompl::SpaceInformationKinematic::StateKinematic*>(state);
+	    const ompl::sb::State *kstate = static_cast<const ompl::sb::State*>(state);
 	    m_model->kmodel->lock();
 	    m_model->kmodel->computeTransformsGroup(kstate->values, m_model->groupID);
 	    const btVector3 &origin = m_link->globalTrans.getOrigin();

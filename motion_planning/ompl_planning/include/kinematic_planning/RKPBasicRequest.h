@@ -144,11 +144,11 @@ namespace kinematic_planning
 	    update();
 	    
 	    /* copy the path msg into a kinematic path structure (ompl style) */
-	    ompl::SpaceInformationKinematic::PathKinematic_t kpath = new ompl::SpaceInformationKinematic::PathKinematic(m_activePSetup->si);
+	    ompl::sb::PathKinematic *kpath = new ompl::sb::PathKinematic(m_activePSetup->si);
 	    unsigned int dim = m_activePSetup->si->getStateDimension();
 	    for (unsigned int i = 0 ; i < path.states.size() ; ++i)
 	    {
-		ompl::SpaceInformationKinematic::StateKinematic_t kstate = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+		ompl::sb::State *kstate = new ompl::sb::State(dim);
 		kpath->states.push_back(kstate);
 		for (unsigned int j = 0 ; j < dim ; ++j)
 		    kstate->values[j] = path.states[i].vals[j];
@@ -185,8 +185,8 @@ namespace kinematic_planning
 	    update();
 	    
 	    /* compute actual motion plan */
-	    ompl::SpaceInformationKinematic::PathKinematic_t bestPath       = NULL;
-	    double                                           bestDifference = 0.0;	
+	    ompl::sb::PathKinematic *bestPath       = NULL;
+	    double                   bestDifference = 0.0;	
 	    
 	    m_activePSetup->model->collisionSpace->lock();
 	    trivial = computePlan(m_activePSetup, m_activeReq.times, m_activeReq.allowed_time, m_activeReq.interpolate,
@@ -284,7 +284,7 @@ namespace kinematic_planning
 	    
 	    /* set the starting state */
 	    const unsigned int dim = psetup->si->getStateDimension();
-	    ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+	    ompl::sb::State *start = new ompl::sb::State(dim);
 	    
 	    if (psetup->model->groupID >= 0)
 	    {
@@ -314,7 +314,7 @@ namespace kinematic_planning
 	
 	/** Compute the actual motion plan. Return true if computed plan was trivial (start state already in goal region) */
 	bool computePlan(RKPPlannerSetup *psetup, int times, double allowed_time, bool interpolate,
-			 ompl::SpaceInformationKinematic::PathKinematic_t &bestPath, double &bestDifference, bool &approximate)
+			 ompl::sb::PathKinematic* &bestPath, double &bestDifference, bool &approximate)
 	{
 	    
 	    if (times <= 0)
@@ -323,8 +323,8 @@ namespace kinematic_planning
 		return false;
 	    }
 
-	    if (dynamic_cast<ompl::SpaceInformationKinematic::GoalRegionKinematic_t>(psetup->si->getGoal()))
-		ROS_INFO("Goal threshold is %g", dynamic_cast<ompl::SpaceInformationKinematic::GoalRegionKinematic_t>(psetup->si->getGoal())->threshold);
+	    if (dynamic_cast<ompl::sb::GoalRegion*>(psetup->si->getGoal()))
+		ROS_INFO("Goal threshold is %g", dynamic_cast<ompl::sb::GoalRegion*>(psetup->si->getGoal())->threshold);
 
 	    unsigned int t_index = 0;
 	    double t_distance = 0.0;
@@ -339,12 +339,12 @@ namespace kinematic_planning
 		/* we want to maintain the invariant that a path will
 		   at least consist of start & goal states, so we copy
 		   the start state twice */
-		bestPath = new ompl::SpaceInformationKinematic::PathKinematic(psetup->si);
+		bestPath = new ompl::sb::PathKinematic(psetup->si);
 		
-		ompl::SpaceInformationKinematic::StateKinematic_t s0 = new ompl::SpaceInformationKinematic::StateKinematic(psetup->si->getStateDimension());
-		ompl::SpaceInformationKinematic::StateKinematic_t s1 = new ompl::SpaceInformationKinematic::StateKinematic(psetup->si->getStateDimension());
-		psetup->si->copyState(s0, static_cast<ompl::SpaceInformationKinematic::StateKinematic_t>(psetup->si->getStartState(t_index)));
-		psetup->si->copyState(s1, static_cast<ompl::SpaceInformationKinematic::StateKinematic_t>(psetup->si->getStartState(t_index)));
+		ompl::sb::State *s0 = new ompl::sb::State(psetup->si->getStateDimension());
+		ompl::sb::State *s1 = new ompl::sb::State(psetup->si->getStateDimension());
+		psetup->si->copyState(s0, static_cast<ompl::sb::State*>(psetup->si->getStartState(t_index)));
+		psetup->si->copyState(s1, static_cast<ompl::sb::State*>(psetup->si->getStartState(t_index)));
 		bestPath->states.push_back(s0);
 		bestPath->states.push_back(s1);
 	    }
@@ -354,7 +354,7 @@ namespace kinematic_planning
 		bestPath = NULL;
 		bestDifference = 0.0;
 		double totalTime = 0.0;
-		ompl::SpaceInformation::Goal_t goal = psetup->si->getGoal();
+		ompl::base::Goal *goal = psetup->si->getGoal();
 		
 		for (int i = 0 ; i < times ; ++i)
 		{
@@ -368,7 +368,7 @@ namespace kinematic_planning
 		    if (ok)
 		    {
 			ros::WallTime startTime = ros::WallTime::now();
-			ompl::SpaceInformationKinematic::PathKinematic_t path = static_cast<ompl::SpaceInformationKinematic::PathKinematic_t>(goal->getSolutionPath());
+			ompl::sb::PathKinematic *path = static_cast<ompl::sb::PathKinematic*>(goal->getSolutionPath());
 			psetup->smoother->smoothMax(path);
 			double tsmooth = (ros::WallTime::now() - startTime).toSec();
 			ROS_INFO("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);		    
@@ -394,7 +394,7 @@ namespace kinematic_planning
 	    return result;
 	}
 	
-	void fillSolution(RKPPlannerSetup *psetup, ompl::SpaceInformationKinematic::PathKinematic_t bestPath, double bestDifference,
+	void fillSolution(RKPPlannerSetup *psetup, ompl::sb::PathKinematic *bestPath, double bestDifference,
 			  robot_msgs::KinematicPath &path, double &distance)
 	{
 	    const unsigned int dim = psetup->si->getStateDimension();

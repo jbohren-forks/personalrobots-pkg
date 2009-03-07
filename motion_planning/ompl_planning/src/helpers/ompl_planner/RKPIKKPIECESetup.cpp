@@ -43,9 +43,9 @@ kinematic_planning::RKPIKKPIECESetup::RKPIKKPIECESetup(RKPModelBase *m) : RKPPla
 
 kinematic_planning::RKPIKKPIECESetup::~RKPIKKPIECESetup(void)
 {
-    if (dynamic_cast<ompl::IKKPIECE1*>(mp))
+    if (dynamic_cast<ompl::sb::IKKPIECE1*>(mp))
     {
-	ompl::ProjectionEvaluator *pe = dynamic_cast<ompl::IKKPIECE1*>(mp)->getProjectionEvaluator();
+	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::sb::IKKPIECE1*>(mp)->getProjectionEvaluator();
 	if (pe)
 	    delete pe;
     }
@@ -55,8 +55,8 @@ bool kinematic_planning::RKPIKKPIECESetup::setup(const std::map<std::string, std
 {
     preSetup(options);
     
-    ompl::IKKPIECE1* kpiece = new ompl::IKKPIECE1(si);
-    mp                      = kpiece;	
+    ompl::sb::IKKPIECE1* kpiece = new ompl::sb::IKKPIECE1(si);
+    mp                          = kpiece;	
 
     
     if (hasOption(options, "range"))

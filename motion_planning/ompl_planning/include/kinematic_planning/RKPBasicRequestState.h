@@ -82,11 +82,11 @@ namespace kinematic_planning
     void RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>::setupGoalState(RKPPlannerSetup *psetup, robot_msgs::KinematicPlanStateRequest &req)
     {
 	/* set the goal */
-	ompl::SpaceInformationKinematic::GoalStateKinematic_t goal = new ompl::SpaceInformationKinematic::GoalStateKinematic(psetup->si);
+	ompl::sb::GoalState *goal = new ompl::sb::GoalState(psetup->si);
 	const unsigned int dim = psetup->si->getStateDimension();
-	goal->state = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+	goal->state = new ompl::sb::State(dim);
 	for (unsigned int i = 0 ; i < dim ; ++i)
-	    goal->state->values[i] = req.goal_state.vals[i];
+	    static_cast<ompl::sb::State*>(goal->state)->values[i] = req.goal_state.vals[i];
 	goal->threshold = req.threshold;
 	psetup->si->setGoal(goal);
     }    

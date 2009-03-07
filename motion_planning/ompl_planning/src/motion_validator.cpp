@@ -120,8 +120,8 @@ public:
 		delete si;
 	}
 	
-	ompl::SpaceInformationKinematic_t              si;
-	ompl::SpaceInformation::StateValidityChecker_t svc;
+	ompl::sb::SpaceInformationKinematic *si;
+	ompl::base::StateValidityChecker    *svc;
     };    
     
     MotionValidator(ros::Node *node) : CollisionSpaceMonitor(node)
@@ -152,7 +152,7 @@ public:
 	    }
 	    
 	    const unsigned int dim = model->si->getStateDimension();
-	    ompl::SpaceInformationKinematic::StateKinematic_t state = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+	    ompl::sb::State *state = new ompl::sb::State(dim);
 	    
 	    model->collisionSpace->lock();
 	    model->kmodel->lock();
@@ -218,7 +218,7 @@ public:
 	    ROS_INFO("Validating direct path for '%s'...", req.model_id.c_str());
 	    
 	    const unsigned int dim = model->si->getStateDimension();
-	    ompl::SpaceInformationKinematic::StateKinematic_t start = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+	    ompl::sb::State *start = new ompl::sb::State(dim);
 
 	    model->collisionSpace->lock();
 	    model->kmodel->lock();
@@ -240,7 +240,7 @@ public:
 		    start->values[i] = req.start_state.vals[i];
 	    }
 	    
-	    ompl::SpaceInformationKinematic::StateKinematic_t goal = new ompl::SpaceInformationKinematic::StateKinematic(dim);
+	    ompl::sb::State *goal = new ompl::sb::State(dim);
 	    for (unsigned int i = 0 ; i < dim ; ++i)
 		goal->values[i] = req.goal_state.vals[i];
 	    

@@ -43,7 +43,7 @@
 #include "kinematic_planning/ompl_extensions/RKPProjectionEvaluators.h"
 #include "kinematic_planning/ompl_extensions/RKPDistanceEvaluators.h"
 
-#include <ompl/base/Planner.h>
+#include <ompl/extension/samplingbased/Planner.h>
 #include <ompl/extension/samplingbased/kinematic/PathSmootherKinematic.h>
 #include <ompl/extension/samplingbased/kinematic/extension/ik/GAIK.h>
 
@@ -65,22 +65,22 @@ namespace kinematic_planning
 	/** For each planner definition, define the set of distance metrics it can use */
 	virtual void setupDistanceEvaluators(void);
 	
-	virtual ompl::ProjectionEvaluator* getProjectionEvaluator(const std::map<std::string, std::string> &options) const;
+	virtual ompl::base::ProjectionEvaluator* getProjectionEvaluator(const std::map<std::string, std::string> &options) const;
 	
 	virtual void preSetup(const std::map<std::string, std::string> &options);
 	virtual void postSetup(const std::map<std::string, std::string> &options);
 	
 	virtual bool setup(const std::map<std::string, std::string> &options) = 0;
 	
-	RKPModelBase                                                          *model;
+	RKPModelBase                                              *model;
 	
-	std::string                                                            name;
-	ompl::Planner                                                         *mp;
-	ompl::GAIK                                                            *gaik;
-	ompl::SpaceInformationKinematic                                       *si;
-	ompl::SpaceInformation::StateValidityChecker                          *svc;
-	std::map<std::string, ompl::SpaceInformation::StateDistanceEvaluator*> sde;
-	ompl::PathSmootherKinematic                                           *smoother;
+	std::string                                                name;
+	ompl::sb::Planner                                         *mp;
+	ompl::sb::GAIK                                            *gaik;
+	ompl::sb::SpaceInformationKinematic                       *si;
+	ompl::base::StateValidityChecker                          *svc;
+	std::map<std::string, ompl::base::StateDistanceEvaluator*> sde;
+	ompl::sb::PathSmootherKinematic                           *smoother;
 
     protected:
 	

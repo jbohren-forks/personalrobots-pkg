@@ -46,11 +46,11 @@ namespace kinematic_planning
 
     static const int R_POSITION = 2; // link position request
     
-    class GoalToPosition : public ompl::SpaceInformationKinematic::GoalRegionKinematic
+    class GoalToPosition : public ompl::sb::GoalRegion
     {
     public:
 	
-        GoalToPosition(ompl::SpaceInformation_t si, RKPModelBase *model, const std::vector<robot_msgs::PoseConstraint> &pc) : ompl::SpaceInformationKinematic::GoalRegionKinematic(si)
+        GoalToPosition(ompl::sb::SpaceInformationKinematic *si, RKPModelBase *model, const std::vector<robot_msgs::PoseConstraint> &pc) : ompl::sb::GoalRegion(si)
 	{
 	    m_model = model;
 	    for (unsigned int i = 0 ; i < pc.size() ; ++i)
@@ -75,15 +75,15 @@ namespace kinematic_planning
 		delete m_pce[i];
 	}
 	
-	virtual double distanceGoal(ompl::SpaceInformationKinematic::StateKinematic_t state) const
+	virtual double distanceGoal(const ompl::base::State *state) const
 	{
-	    return evaluateGoalAux(state, NULL);
+	    return evaluateGoalAux(static_cast<const ompl::sb::State*>(state), NULL);
 	}
 	
-	virtual bool isSatisfied(ompl::SpaceInformation::State_t state, double *dist) const
+	virtual bool isSatisfied(const ompl::base::State *state, double *dist) const
 	{
 	    std::vector<bool> decision;
-	    double d = evaluateGoalAux(static_cast<ompl::SpaceInformationKinematic::StateKinematic_t>(state), &decision);
+	    double d = evaluateGoalAux(static_cast<const ompl::sb::State*>(state), &decision);
 	    if (dist)
 		*dist = d;
 	    
@@ -95,14 +95,14 @@ namespace kinematic_planning
 	
 	virtual void print(std::ostream &out = std::cout) const
 	{
-	    ompl::SpaceInformationKinematic::GoalRegionKinematic::print(out);
+	    ompl::sb::GoalRegion::print(out);
 	    for (unsigned int i = 0 ; i < m_pce.size() ; ++i)
 		m_pce[i]->print(out);
 	}
 	
     protected:
 	
-	double evaluateGoalAux(ompl::SpaceInformationKinematic::StateKinematic_t state, std::vector<bool> *decision) const
+	double evaluateGoalAux(const ompl::sb::State *state, std::vector<bool> *decision) const
 	{
 	    m_model->kmodel->lock();
 	    update(state);
@@ -123,9 +123,9 @@ namespace kinematic_planning
 	    return distance;
 	}
 
-	void update(ompl::SpaceInformationKinematic::StateKinematic_t state) const
+	void update(const ompl::sb::State *state) const
 	{
-	    m_model->kmodel->computeTransformsGroup(static_cast<const ompl::SpaceInformationKinematic::StateKinematic_t>(state)->values, m_model->groupID);
+	    m_model->kmodel->computeTransformsGroup(state->values, m_model->groupID);
 	    m_model->collisionSpace->updateRobotModel(m_model->collisionSpaceID);
 	}    
 	

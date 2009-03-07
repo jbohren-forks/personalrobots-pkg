@@ -50,8 +50,8 @@ bool kinematic_planning::RKPLazyRRTSetup::setup(const std::map<std::string, std:
 {
     preSetup(options);
     
-    ompl::LazyRRT *rrt = new ompl::LazyRRT(si);
-    mp                 = rrt;    
+    ompl::sb::LazyRRT *rrt = new ompl::sb::LazyRRT(si);
+    mp                     = rrt;    
 
     if (hasOption(options, "range"))
     {

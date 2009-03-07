@@ -49,8 +49,8 @@ bool kinematic_planning::RKPRRTSetup::setup(const std::map<std::string, std::str
 {
     preSetup(options);
     
-    ompl::RRT *rrt = new ompl::RRT(si);
-    mp             = rrt;
+    ompl::sb::RRT *rrt = new ompl::sb::RRT(si);
+    mp                 = rrt;
     
     if (hasOption(options, "range"))
     {

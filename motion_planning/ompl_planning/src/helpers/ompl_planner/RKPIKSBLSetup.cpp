@@ -43,9 +43,9 @@ kinematic_planning::RKPIKSBLSetup::RKPIKSBLSetup(RKPModelBase *m) : RKPPlannerSe
 
 kinematic_planning::RKPIKSBLSetup::~RKPIKSBLSetup(void)
 {
-    if (dynamic_cast<ompl::IKSBL*>(mp))
+    if (dynamic_cast<ompl::sb::IKSBL*>(mp))
     {
-	ompl::ProjectionEvaluator *pe = dynamic_cast<ompl::IKSBL*>(mp)->getProjectionEvaluator();
+	ompl::base::ProjectionEvaluator *pe = dynamic_cast<ompl::sb::IKSBL*>(mp)->getProjectionEvaluator();
 	if (pe)
 	    delete pe;
     }
@@ -55,8 +55,8 @@ bool kinematic_planning::RKPIKSBLSetup::setup(const std::map<std::string, std::s
 {
     preSetup(options);
     
-    ompl::IKSBL* sbl = new ompl::IKSBL(si);
-    mp               = sbl;	
+    ompl::sb::IKSBL* sbl = new ompl::sb::IKSBL(si);
+    mp                   = sbl;	
 
     if (hasOption(options, "range"))
     {
