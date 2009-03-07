@@ -107,9 +107,11 @@ private:
     while(1) {
       memset(buff, 0, 256);
       float value = min - 1;
-      fgets(buff, 256, stdin);
+      if (!fgets(buff, 256, stdin)) {
+	printf("Error in fgets.\n");
+      }
       if (buff[0] != '\n') {
-	if (sscanf(buff, "%f", &value) && value < min || value > max) {
+	if (sscanf(buff, "%f", &value) && (value < min || value > max)) {
 	  printf("Please enter a value in the range [%f, %f]\n", min, max);
 	} else {
 	  return value;
