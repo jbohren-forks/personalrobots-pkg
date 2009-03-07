@@ -91,6 +91,7 @@ using namespace std;
 dcam::StereoDcam *dev = NULL;	// camera object
 int numDevs;			// number of devices
 bool isVideo;			// true if video streaming
+int devIndex;			// index of camera, starts at 0
 bool startCam, stopCam;		// camera device stop and start flags
 bool isColor;			// true if color requested
 bool isRectify;			// true if rectification requested
@@ -407,14 +408,19 @@ main(int argc, char **argv)	// no arguments
 
       if (isRefresh)
 	{
+	  isRefresh = false;
 	  int w = stIm->imWidth;
 	  int h = stIm->imHeight;
 
+	  double tt0 = get_ms();
 	  // check processing
 	  if (isRectify)	// rectify images
 	    stIm->doRectify();
 	  if (isStereo)	// get stereo disparity
 	    stIm->doDisparity(sp_alg);
+	  double tt1 = get_ms();
+	  printf("Proc time: %d ms\n", (int)(tt1-tt0));
+
 	  if (is3D)		// get 3D points
 	    {
 	      stIm->doCalcPts();
@@ -2868,8 +2874,8 @@ video_dev_cb(Fl_Choice *w, void *u)
 {
   if (numDevs > 0)
     {
-      int devIndex = w->value();
-      debug_message("[oST] Camera %d selected", devIndex);
+      int devn = w->value();
+      debug_message("[oST] Camera %d selected", devn);
     }
   else
     debug_message("[oST] No cameras found");
@@ -2934,20 +2940,22 @@ do_video_cb(Fl_Light_Button *w, void*)
 	}
 
       Fl_Choice *devs = stg->cam_select;
-      int devn = devs->value();	// get device number
+      if (!dev || devIndex != devs->value()) // have the same device?
+	{
+	  devIndex == devs->value(); // device number
+	  debug_message("[oST] Opening camera #%d", devIndex);
+	  try {  dev = initcam(dcam::getGuid(devIndex)); }
+	  catch(dcam::DcamException e) 
+	    { 
+	      debug_message("Can't find or open a camera: %s", e.what());
+	      dev = NULL;		// just in case
+	      return;
+	    }
 
-      debug_message("[oST] Opening camera #%d", devn);
-      try {  dev = initcam(dcam::getGuid(devn)); }
-      catch(dcam::DcamException e) 
-	{ 
-	  debug_message("Can't find or open a camera: %s", e.what());
-	  dev = NULL;		// just in case
-	  return;
+	  // set range max value
+	  dev->setRangeMax(4.0);	// in meters
+	  dev->setRangeMin(0.5);	// in meters
 	}
-
-      // set range max value
-      dev->setRangeMax(4.0);	// in meters
-      dev->setRangeMin(0.5);	// in meters
       startCam = true;
     }
 
