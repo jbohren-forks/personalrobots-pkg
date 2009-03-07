@@ -40,6 +40,89 @@ import transformations
 import numpy
 
 from tf.msg import tfMessage
+from robot_msgs.msg import TransformStamped
+
+class NumpyTransformStamped:
+    def __init__(self):
+        self.mat = numpy.identity(4, dtype=numpy.float64)
+        self.stamp = rospy.Time()
+        self.frame_id = None
+        self.parent_id = None
+
+    def as_transform_stamped(self):
+        return transform_stamped_from_numpy_transform_stamped(self)
+
+def numpy_transform_stamped_from_transform_stamped(transform):
+    quat = numpy.array([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w],dtype=numpy.float64)
+    rot_mat = transformations.rotation_matrix_from_quaternion(quat)
+    #print "Quat: \n", quat
+    #print "Rotation: \n", rot_mat
+    trans = numpy.array([transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z])
+    trans_mat = transformations.translation_matrix(trans)
+    #print "Trans: \n", trans
+    #print "Translation: \n", trans_mat
+    net_tr = transformations.concatenate_transforms(trans_mat, rot_mat)
+    #print "Net:\n",  net_tr
+    return net_tr
+
+def transform_stamped_from_numpy_transform_stamped(numpy_transform):
+    ts = TransformStamped()
+    ts.header.stamp = numpy_transform.stamp
+    ts.header.frame_id = numpy_transform.frame_id
+    ts.parent_id = numpy_transform.parent_id
+    temp_quat = transformations.quaternion_from_rotation_matrix(numpy_transform.mat)
+    ts.transform.rot.x = temp_quat[0]
+    ts.transform.rot.y = temp_quat[1]
+    ts.transform.rot.z = temp_quat[2]
+    ts.transform.rot.w = temp_quat[3]
+    ###\todo check quaternion order
+    ts.transform.translation.x = numpy_transform.mat[0,3]
+    ts.transform.translation.y = numpy_transform.mat[1,3]
+    ts.transform.translation.z = numpy_transform.mat[2,3]
+    return ts
+
+def transform_stamped_from_py_transform(ptf):
+    ts = TransformStamped()
+    ts.header.stamp = ptf.stamp
+    ts.header.frame_id = ptf.frame_id
+    ts.parent_id = ptf.parent_id
+    ts.transform.rotation.x = ptf.qx
+    ts.transform.rotation.y = ptf.qy
+    ts.transform.rotation.z = ptf.qz
+    ts.transform.rotation.w = ptf.qw
+    ts.transform.translation.x = ptf.x
+    ts.transform.translation.y = ptf.y
+    ts.transform.translation.z = ptf.z
+    return ts
+
+def py_transform_from_transform_stamped(transform):
+    rot = transform.transform.rotation
+    tr = transform.transform.translation
+    ptf = pytf_swig.pyTransform()
+    ptf.qx = rot.x
+    ptf.qy = rot.y
+    ptf.qz = rot.z
+    ptf.qw = rot.w
+    ptf.x  = tr.x
+    ptf.y  = tr.y
+    ptf.z  = tr.z
+    ptf.frame_id = transform.header.frame_id
+    ptf.parent_id = transform.parent_id
+    ptf.stamp = transform.header.stamp.to_seconds()
+    return ptf
+
+class TransformBroadcaster:
+    def __init__(self):
+        print "TransformBroadcaster initing"
+        pub = rospy.Publisher("/tf_message", tfMessage)
+
+    def send_transform(self, transform):
+        msg = tfMessage([transform])
+        pub.publish(msg)
+
+    def send_transforms(self, transforms):
+        msg = tfMessage(transforms)
+        pub.publish(msg)
 
 class TransformListener:
     def __init__(self):
@@ -51,49 +134,23 @@ class TransformListener:
 
     def callback(self, data):
         for transform in data.transforms:
-            print "Got data:", transform.header.frame_id
-            rot = transform.transform.rotation
-            tr = transform.transform.translation
-            ptf = pytf_swig.pyTransform()
-            ptf.qx = rot.x
-            ptf.qy = rot.y
-            ptf.qz = rot.z
-            ptf.qw = rot.w
-            ptf.x  = tr.x
-            ptf.y  = tr.y
-            ptf.z  = tr.z
-            ptf.frame_id = transform.header.frame_id
-            ptf.parent_id = transform.parent_id
-            ptf.stamp = transform.header.stamp.to_seconds()
+            #print "Got data:", transform.header.frame_id
+            self.set_transform(transform)
 
-            self.transformer.setTransform(ptf)
+    def set_transform(self, transform_stamped):
+        ptf = py_transform_from_transform_stamped(transform_stamped)
+        self.transformer.setTransform(ptf)
+    
 
 
     def get_transform(self, frame_id, parent_id, time):
         ptf = self.transformer.getTransform(frame_id, parent_id, time.to_seconds())
-        quat = numpy.array([ptf.qx, ptf.qy, ptf.qz, ptf.qw],dtype=numpy.float64)
-        rot_mat = transformations.rotation_matrix_from_quaternion(quat)
-        print "Rotation: ", rot_mat
-        trans = numpy.array([ptf.x, ptf.y, ptf.z])
-        trans_mat = transformations.translation_matrix(trans)
-        print "Translation: ", trans_mat
-        net_tr = transformations.concatenate_transforms(trans_mat, rot_mat)
-        print "Net:",  net_tr
-        return net_tr
+        return transform_stamped_from_py_transform(ptf)
 
     def get_transform_full(self, target_frame, target_time, source_frame, source_time, fixed_frame):
         ptf = self.transformer.getTransform(target_frame, target_time.to_seconds(), source_frame, source_time.to_seconds(), fixed_frame)
-        quat = numpy.array([ptf.qx, ptf.qy, ptf.qz, ptf.qw],dtype=numpy.float64)
-        rot_mat = transformations.rotation_matrix_from_quaternion(quat)
-        print "Rotation: ", rot_mat
-        trans = numpy.array([ptf.x, ptf.y, ptf.z])
-        trans_mat = transformations.translation_matrix(trans)
-        print "Translation: ", trans_mat
-        net_tr = transformations.concatenate_transforms(trans_mat, rot_mat)
-        print "Net:",  net_tr
-        return net_tr
-
-    
+        return transform_stamped_from_py_transform(ptf)
+            
 
     def can_transform(self, target_frame, source_frame, time):
         return self.transformer.canTransform(target_frame, source_frame, time.to_seconds())

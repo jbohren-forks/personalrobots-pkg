@@ -18,8 +18,9 @@ for i in xrange(1,10):
         print "waiting to try again"
         time.sleep(0.1)
     try:
-        t.get_transform("frame", "parent", current_time)
+        ts = t.get_transform("parent", "frame", current_time)
         print "Successfully transformed"
+        print TransformListener.numpy_transform_stamped_from_transform_stamped(ts)
     except ValueError:
         print "valueerror"
 
