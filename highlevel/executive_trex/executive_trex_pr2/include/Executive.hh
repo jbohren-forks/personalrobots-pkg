@@ -1,3 +1,4 @@
+
 #ifndef H_EXECUTIVE
 #define H_EXECUTIVE
 
@@ -5,7 +6,7 @@
 #include <ros/node.h>
 
 // TREX
-#include "Clock.hh"
+#include "AgentClock.hh"
 #include "Agent.hh"
 #include "Debug.hh"
 #include "LogManager.hh"
