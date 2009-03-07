@@ -3,6 +3,8 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #set(ROS_BUILD_TYPE Release)
 rospack(executive_trex_pr2)
 
+genmsg()
+
 rospack_add_boost_directories()
 
 execute_process(
@@ -29,6 +31,7 @@ endif (JAM_RET_VAR)
 
 
 set(TREX_FILES src/Executive.cc
+	       src/Monitor.cc
 	       src/ROSAdapter.cc 
 	       src/Logger.cc 
                src/LogClock.cc 
