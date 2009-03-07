@@ -3,7 +3,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(robot_mechanism_controllers)
 genmsg()
 gensrv()
-set(_srcs 
+set(_srcs
     src/plug_controller.cpp
     src/cartesian_tff_controller.cpp
     src/cartesian_trajectory_controller.cpp
@@ -23,6 +23,7 @@ set(_srcs
     src/joint_autotuner.cpp
     src/joint_pd_controller.cpp
     src/joint_calibration_controller.cpp
+    src/joint_ud_calibration_controller.cpp
     src/joint_limit_calibration_controller.cpp
     src/joint_blind_calibration_controller.cpp
     src/lqr_controller.cpp

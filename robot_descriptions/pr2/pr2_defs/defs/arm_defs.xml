@@ -706,7 +706,7 @@
 
   <macro name="upper_arm_calibrator" params="side">
     <controller name="${side}_cal_shoulder_pan" topic="${side}_cal_shoulder_pan"
-                type="JointCalibrationControllerNode">
+                type="JointUDCalibrationControllerNode">
       <calibrate joint="${side}_shoulder_pan_joint"
                  actuator="${side}_shoulder_pan_motor"
                  transmission="${side}_shoulder_pan_trans"
@@ -715,7 +715,7 @@
     </controller>
 
     <controller name="cal_shoulder_lift_${side}" topic="cal_shoulder_lift_${side}"
-                type="JointCalibrationControllerNode">
+                type="JointUDCalibrationControllerNode">
       <calibrate joint="${side}_shoulder_lift_joint"
                  actuator="${side}_shoulder_lift_motor"
                  transmission="${side}_shoulder_lift_trans"
@@ -724,7 +724,7 @@
     </controller>
 
     <controller name="cal_${side}_upper_arm_roll" topic="cal_${side}_upper_arm_roll"
-                type="JointCalibrationControllerNode">
+                type="JointUDCalibrationControllerNode">
       <calibrate joint="${side}_upper_arm_roll_joint"
                  actuator="${side}_upper_arm_roll_motor"
                  transmission="${side}_upper_arm_roll_trans"
@@ -733,7 +733,7 @@
     </controller>
 
     <controller name="cal_${side}_elbow_flex" topic="cal_${side}_elbow_flex"
-                type="JointCalibrationControllerNode">
+                type="JointUDCalibrationControllerNode">
       <calibrate joint="${side}_elbow_flex_joint"
                  actuator="${side}_elbow_flex_motor"
                  transmission="${side}_elbow_flex_trans"
@@ -744,7 +744,7 @@
 
 
   <macro name="forearm_calibrator" params="side">
-    <controller name="cal_${side}_forearm_roll" type="JointCalibrationControllerNode">
+    <controller name="cal_${side}_forearm_roll" type="JointUDCalibrationControllerNode">
       <calibrate joint="${side}_forearm_roll_joint"
                  actuator="${side}_forearm_roll_motor"
                  transmission="${side}_forearm_roll_trans"

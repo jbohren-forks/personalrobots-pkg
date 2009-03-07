@@ -111,7 +111,7 @@ def calibrate(config):
 def xml_for_cal(name, velocity, p, i, d, iClamp):
     return '''\
 <controller name=\"cal_%s" topic="cal_%s"\
-type="JointCalibrationControllerNode">\
+type="JointUDCalibrationControllerNode">\
 <calibrate joint="%s_joint"\
 actuator="%s_motor"\
 transmission="%s_trans"\

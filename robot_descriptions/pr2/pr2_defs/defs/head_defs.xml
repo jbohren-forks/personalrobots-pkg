@@ -391,7 +391,7 @@
 
   <macro name="head_calibrator">
     <controller name="cal_head_pan" topic="cal_head_pan"
-                type="JointCalibrationControllerNode">
+                type="JointUDCalibrationControllerNode">
       <calibrate joint="head_pan_joint"
                  actuator="head_pan_motor"
                  transmission="head_pan_trans"
@@ -400,7 +400,7 @@
     </controller>
 
     <controller name="cal_head_tilt" topic="cal_head_tilt"
-                type="JointCalibrationControllerNode">
+                type="JointUDCalibrationControllerNode">
       <calibrate joint="head_tilt_joint"
                  actuator="head_tilt_motor"
                  transmission="head_tilt_trans"
@@ -410,7 +410,7 @@
   </macro>
 
   <macro name="tilting_laser_calibrator" params="name">
-    <controller name="cal_${name}" topic="cal_${name}" type="JointCalibrationControllerNode">
+    <controller name="cal_${name}" topic="cal_${name}" type="JointUDCalibrationControllerNode">
       <calibrate joint="${name}_mount_joint"
                  actuator="${name}_mount_motor"
                  transmission="${name}_mount_trans"
