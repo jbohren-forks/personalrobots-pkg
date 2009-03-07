@@ -250,6 +250,16 @@ for kappa in [ 9999,7,5,4,3,2 ]:
     print >>newtoro, 'EDGE3', map[e[0]], map[e[1]], xyz[0], xyz[1], xyz[2], euler[0], euler[1], euler[2], "100 0 0 0 0 0 100 0 0 0 0 100 0 0 0 707.107 0 0 707.107 0 223.607"
   newtoro.close()
 
+  f = open("deleted_%d.pickle" % kappa, "w")
+  pickle.dump(set([ map[x] for x in existing ]), f)
+  ordered = sorted([ map[id] for id in existing if map[id] in skel.node_kp.keys() ])
+  pickle.dump(dict([(o, skel.node_labels[o]) for o in ordered]), f)
+  pickle.dump([(map[e0], map[e1]) for (e0,e1) in edges], f)
+  pickle.dump(ordered, f)
+  pickle.dump(dict([(o, skel.node_kp[o]) for o in ordered]), f)
+  pickle.dump(dict([(o, skel.node_descriptors[o]) for o in ordered]), f)
+  f.close()
+
 def prty(L):
   return " & ".join(["%.1f" % x for x in L])
 
