@@ -43,8 +43,6 @@ class ExecNode : public PR2ArmNode
     robot_msgs::JointTraj planned_path_;
     std::vector<robot_msgs::Pose> goal_;
 
-    sbpl_arm_planner_node::CheckPathSrv::Request req;
-    sbpl_arm_planner_node::CheckPathSrv::Response resp;
 
     void spin()
     {
@@ -101,16 +99,16 @@ class ExecNode : public PR2ArmNode
                 ROS_INFO("Could not execute trajectory.");
 
             //check for collision
-            while(!at_goal)
-            {
-                for(int i =0; i < planned_path_.size(); i++)
-                {
-                    for (int j=0; j < NUMOFLINKS; j++)
-                    {
-                        req.joint_positions_
-                    {
-                at_goal = checkPath(planned_path_,&resp)
-            }
+	    //            while(!at_goal)
+            //{
+            //    for(int i =0; i < planned_path_.size(); i++)
+            //    {
+            //        for (int j=0; j < NUMOFLINKS; j++)
+            //        {
+            //            req.joint_positions_
+            //        {
+            //    at_goal = checkPath(planned_path_,&resp);
+            //}
         }
     }
 };
