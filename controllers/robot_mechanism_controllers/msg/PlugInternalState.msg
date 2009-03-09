@@ -1,3 +1,9 @@
 float64 line_error
 float64 line_force_cmd
+float64 roll_error
+float64 roll_force_cmd
+float64 pitch_error
+float64 pitch_force_cmd
+float64 yaw_error
+float64 yaw_force_cmd
 
