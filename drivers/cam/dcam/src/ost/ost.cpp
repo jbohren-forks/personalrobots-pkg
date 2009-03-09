@@ -105,7 +105,8 @@ dc1394framerate_t videoRate;	// current video rate
 size_coding_t videoSize;	// current video size
 
 // current stereo image data
-StereoData *stIm = NULL;
+StereoData *stIm = NULL;	// current ptr
+StereoData stImdata;		// real data
 bool isRefresh;			// refresh the current stereo image display
 
 // GUI stuff
@@ -176,8 +177,8 @@ CvMat R_right  = cvMat(3, 3, CV_64F, rr );
 // helpers
 void set_current_tab_index(int ind);
 bool parse_filename(char *fname, char **lbase, char **rbase, int *num, char **bname = NULL);
-int load_left(char *fname);
-int load_right(char *fname);
+int load_left_cal(char *fname);
+int load_right_cal(char *fname);
 
 
 // epipolar checks
@@ -406,7 +407,7 @@ main(int argc, char **argv)	// no arguments
 	wait_ms(10);
 
 
-      if (isRefresh)
+      if (isRefresh & stIm != NULL)
 	{
 	  isRefresh = false;
 	  int w = stIm->imWidth;
@@ -419,7 +420,7 @@ main(int argc, char **argv)	// no arguments
 	  if (isStereo)	// get stereo disparity
 	    stIm->doDisparity(sp_alg);
 	  double tt1 = get_ms();
-	  printf("Proc time: %d ms\n", (int)(tt1-tt0));
+//	  printf("Proc time: %d ms\n", (int)(tt1-tt0));
 
 	  if (is3D)		// get 3D points
 	    {
@@ -819,12 +820,12 @@ cal_load_left_cb(Fl_Button* b, void* arg)
 
   printf("File name: %s\n", fname);
 
-  load_left(fname);
+  load_left_cal(fname);
 }
 
 
 int
-load_left(char *fname)
+load_left_cal(char *fname)
 {
   IplImage *dbg_corners = 0;
 
@@ -892,12 +893,12 @@ cal_load_right_cb(Fl_Button* b, void* arg)
 
   printf("File name: %s\n", fname);
 
-  load_right(fname);
+  load_right_cal(fname);
 }
 
 
 int
-load_right(char *fname)
+load_right_cal(char *fname)
 {
   // get window tab
   int ind = get_current_tab_index();
@@ -970,11 +971,11 @@ void cal_load_cb(Fl_Button*, void*)
   ret = parse_filename(fname, &lname, &rname, NULL);
 
   if (!ret)			// just load left
-    load_left(fname);
+    load_left_cal(lname);
   else
     {
-      load_left(lname);
-      load_right(rname);
+      load_left_cal(lname);
+      load_right_cal(rname);
     }
 }
 
@@ -1005,11 +1006,11 @@ cal_load_seq_cb(Fl_Button* b, void* arg)
   ret = parse_filename(fname, &lname, &rname, &seq);
 
   if (!ret)			// just load left
-    load_left(fname);
+    load_left_cal(lname);
   else if (seq < 0)		// stereo only
     {
-      load_left(lname);
-      load_right(rname);
+      load_left_cal(lname);
+      load_right_cal(rname);
     }
   else if (rname == NULL)	// mono sequence
     {
@@ -1020,7 +1021,7 @@ cal_load_seq_cb(Fl_Button* b, void* arg)
 	  int ret;
 	  set_current_tab_index(ind); 
 	  sprintf(fname,lname,seq); 
-	  ret = load_left(fname);
+	  ret = load_left_cal(fname);
 	  if (ret < 0)
 	    break;
 	  ind++;
@@ -1039,11 +1040,11 @@ cal_load_seq_cb(Fl_Button* b, void* arg)
 	  int ret;
 	  set_current_tab_index(ind); 
 	  sprintf(fname,lname,seq); 
-	  ret = load_left(fname);
+	  ret = load_left_cal(fname);
 	  if (ret < 0)
 	    break;
 	  sprintf(fname,rname,seq);
-	  ret = load_right(fname);
+	  ret = load_right_cal(fname);
 	  if (ret < 0)
 	    break;
 	  ind++;
@@ -2716,6 +2717,67 @@ void cal_window_cb(Fl_Menu_ *w, void *u)
 
 
 //
+// loading images into stIm
+//
+
+int
+load_left(char *fname)
+{
+  IplImage *im;			// OpenCV image
+  im = cvLoadImage(fname);	// load image, could be color
+  if (im == NULL)
+    {
+      debug_message("Can't load file %s\n", fname);
+      return -1;
+    }
+  else
+    {
+      // make grayscale, display
+      IplImage* img=cvCreateImage(cvGetSize(im),IPL_DEPTH_8U,1); 
+      cvConvertImage(im,img);
+      debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
+      stIm = &stImdata;		// set the stereo data ptr
+      stIm->imLeft->imType = COLOR_CODING_MONO8;
+      stIm->imLeft->imColorType = COLOR_CODING_NONE;
+      stIm->imLeft->imRectType = COLOR_CODING_NONE;
+      stIm->imLeft->imRectColorType = COLOR_CODING_NONE;
+      stIm->imLeft->im = (uint8_t *)img->imageData;
+      stIm->imWidth = img->width;
+      stIm->imHeight = img->height;
+      return 0;
+    }
+}
+
+int
+load_right(char *fname)
+{
+  IplImage *im;			// OpenCV image
+  im = cvLoadImage(fname);	// load image, could be color
+  if (im == NULL)
+    {
+      debug_message("Can't load file %s\n", fname);
+      return -1;
+    }
+  else
+    {
+      // make grayscale, display
+      IplImage* img=cvCreateImage(cvGetSize(im),IPL_DEPTH_8U,1); 
+      cvConvertImage(im,img);
+      debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
+      stIm = &stImdata;		// set the stereo data ptr
+      stIm->imRight->imType = COLOR_CODING_MONO8;
+      stIm->imRight->imColorType = COLOR_CODING_NONE;
+      stIm->imRight->imRectType = COLOR_CODING_NONE;
+      stIm->imRight->imRectColorType = COLOR_CODING_NONE;
+      stIm->imRight->im = (uint8_t *)img->imageData;
+      stIm->imWidth = img->width;
+      stIm->imHeight = img->height;
+      return 0;
+    }
+}
+
+
+//
 // Loading and saving stereo images
 //
 
@@ -2732,7 +2794,7 @@ void load_images_cb(Fl_Menu_ *w, void *u)
   ret = parse_filename(fname, &lname, &rname, NULL);
 
   if (!ret)			// just load left
-    load_left(fname);
+    load_left(lname);
   else
     {
       load_left(lname);
