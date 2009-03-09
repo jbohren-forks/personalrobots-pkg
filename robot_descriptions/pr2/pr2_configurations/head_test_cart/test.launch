@@ -8,7 +8,7 @@
   <node pkg="head_test_cart" type="run_head_test.py" />
 
 <!-- pr2_etherCAT -->
-  <node machine="xenomai_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2"/>
+  <node machine="xenomai_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x /robotdesc/pr2"/>
 
 <!-- PR2 Calibration -->
   <include file="$(find head_test_cart)/calibrate.launch"/>
