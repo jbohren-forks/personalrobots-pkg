@@ -196,6 +196,8 @@ public:
     robot_pos = transformPointToFrame(door.header.frame_id, fixed_frame_, robot_pos, door.header.stamp);
     robot_pos = robot_pos - (normal * 0.7);
 
+    cout << "get door in " << door.header.frame_id << " with center " << robot_pos(0) << " " << robot_pos(1) << " " << robot_pos(2) << endl;
+
     // get gripper position
     robot_msgs::PoseStamped gripper_pose_msg;
     Stamped<Pose> gripper_pose;

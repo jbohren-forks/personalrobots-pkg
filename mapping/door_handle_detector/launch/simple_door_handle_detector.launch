@@ -2,12 +2,9 @@
 
   <param name="/door_handle_detector/parameter_frame" type="string" value="base_footprint" />
 
-  <param name="/door_handle_detector/door_frame_multiplier" value="4" />
-  <param name="/door_handle_detector/nr_scans" value="1" />
-
   <param name="/door_handle_detector/door_min_height" value="1.1" />
   <param name="/door_handle_detector/door_max_height" value="3.0" />
-  <param name="/door_handle_detector/door_min_width" value="0.85" />
+  <param name="/door_handle_detector/door_min_width" value="0.75" />
   <param name="/door_handle_detector/door_max_width" value="1.2" />
 
   <param name="/door_handle_detector/handle_min_height" value="0.7" />
