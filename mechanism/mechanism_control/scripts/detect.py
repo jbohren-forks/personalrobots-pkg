@@ -17,7 +17,7 @@ def mycmp(a, b):
 
 def callback(data):
     #stdscr.clear()
-    l = [(x, data.actuator_states[x].encoder_count, data.actuator_states[x].encoder_velocity, data.actuator_states[x].name) for x in xrange(len(data.actuator_states))]
+    l = [(data.actuator_states[x].device_id, data.actuator_states[x].encoder_count, data.actuator_states[x].encoder_velocity, data.actuator_states[x].name) for x in xrange(len(data.actuator_states))]
     m = list(l)
     m.sort(mycmp)
     row = 0

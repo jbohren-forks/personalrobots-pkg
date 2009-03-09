@@ -1,4 +1,5 @@
 string name
+int32 device_id
 int32 encoder_count
 float64 position
 float64 timestamp

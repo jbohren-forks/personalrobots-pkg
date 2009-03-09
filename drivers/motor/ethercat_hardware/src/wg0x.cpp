@@ -361,6 +361,7 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
   prev_status = (WG0XStatus *)prev_buffer;
 
   state.timestamp_ = this_status->timestamp_ / 1e+6;
+  state.device_id_ = sh_->get_ring_position();
   state.encoder_count_ = this_status->encoder_count_;
   state.position_ = double(this_status->encoder_count_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI - state.zero_offset_;
   state.encoder_velocity_ = double(int(this_status->encoder_count_ - prev_status->encoder_count_))

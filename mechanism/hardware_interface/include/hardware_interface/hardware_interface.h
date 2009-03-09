@@ -58,6 +58,7 @@ class ActuatorState{
 public:
   ActuatorState() :
       timestamp_(0),
+      device_id_(0),
       encoder_count_(0),
       position_(0),
       encoder_velocity_(0),
@@ -80,6 +81,8 @@ public:
       zero_offset_(0)
   {}
   double timestamp_;
+
+  int device_id_;
 
   int encoder_count_;
   double position_;

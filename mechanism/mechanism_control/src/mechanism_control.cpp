@@ -507,6 +507,7 @@ void MechanismControlNode::update()
         out->encoder_count = in->encoder_count_;
         out->position = in->position_;
         out->timestamp = in->timestamp_;
+        out->device_id = in->device_id_;
         out->encoder_velocity = in->encoder_velocity_;
         out->velocity = in->velocity_;
         out->calibration_reading = in->calibration_reading_;
