@@ -103,7 +103,7 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 
   node->param(controller_name_+"/upper_arm_limit" , upper_arm_limit , -1.52 ) ; /// upper arm pose limit
 
-  node->param(controller_name_+"/f_r_max"      , f_r_max     , 1000.0) ; /// max radial force of line constraint
+  node->param(controller_name_+"/f_r_max"      , f_r_max     , 150.0) ; /// max radial force of line constraint
   node->param(controller_name_+"/f_pose_max"   , f_pose_max  , 40.0) ; /// max pose force
   node->param(controller_name_+"/f_limit_max"  , f_limit_max  , 100.0) ; /// max upper arm limit force
   node->param(controller_name_+"/upper_arm_dead_zone", upper_arm_dead_zone, 0.05);
