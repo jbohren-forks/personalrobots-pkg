@@ -51,7 +51,7 @@
 #include <mechanism_model/controller.h>
 #include <control_toolbox/sine_sweep.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
-#include <robot_srvs/TestData.h>
+#include <joint_qualification_controllers/TestData.h>
 
 namespace controller
 {
@@ -88,7 +88,7 @@ public:
   inline bool done() { return done_; }
 
   robot_msgs::DiagnosticMessage diagnostic_message_;
-  robot_srvs::TestData::Request test_data_;
+  joint_qualification_controllers::TestData::Request test_data_;
 
 private:
   mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
@@ -126,7 +126,7 @@ private:
   mechanism::RobotState *robot_;
   
   double last_publish_time_;
-  realtime_tools::RealtimeSrvCall<robot_srvs::TestData::Request, robot_srvs::TestData::Response> call_service_;
+  realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response> call_service_;
   realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> pub_diagnostics_;
 };
 }

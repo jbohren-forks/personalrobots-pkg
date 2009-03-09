@@ -48,7 +48,7 @@
 #include <ros/node.h>
 #include <math.h>
 #include <robot_msgs/DiagnosticMessage.h>
-#include <robot_srvs/TestData.h>
+#include <joint_qualification_controllers/TestData.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_srv_call.h>
 #include <mechanism_model/controller.h>
@@ -90,7 +90,7 @@ public:
   bool done() { return state_ == DONE; }
   
   robot_msgs::DiagnosticMessage diagnostic_message_;
-  robot_srvs::TestData::Request test_data_;
+  joint_qualification_controllers::TestData::Request test_data_;
 
 private:
 
@@ -138,7 +138,7 @@ private:
   bool data_sent_;
   
   double last_publish_time_;
-  realtime_tools::RealtimeSrvCall<robot_srvs::TestData::Request, robot_srvs::TestData::Response> call_service_;
+  realtime_tools::RealtimeSrvCall<joint_qualification_controllers::TestData::Request, joint_qualification_controllers::TestData::Response> call_service_;
   realtime_tools::RealtimePublisher<robot_msgs::DiagnosticMessage> pub_diagnostics_;
 };
 }

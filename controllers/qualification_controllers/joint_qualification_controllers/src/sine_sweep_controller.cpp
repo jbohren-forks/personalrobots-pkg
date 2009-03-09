@@ -187,7 +187,7 @@ void SineSweepControllerNode::update()
     {
       if (call_service_.trylock())
       {
-        robot_srvs::TestData::Request *out = &call_service_.srv_req_;
+        joint_qualification_controllers::TestData::Request *out = &call_service_.srv_req_;
         out->test_name = c_->test_data_.test_name;
         out->joint_name = c_->test_data_.joint_name;
         out->time = c_->test_data_.time;
