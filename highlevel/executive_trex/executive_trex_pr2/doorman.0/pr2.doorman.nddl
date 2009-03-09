@@ -2,7 +2,11 @@
 
 close();
 
+// Will be trying to get thru a doorway which will exity at positin <3, 6, 2.0>
 rejectable(doorman.Active g0);
+g0.x = 3.0;
+g0.y = 6.0;
+g0.th = 2.0;
 
 // At the end, we expect the doorway to be clear, and have handle to be false
 // assert(door_controller[g0.end) == Holds(doorway_clear == true, have_handle == false);

@@ -3,18 +3,6 @@
  * and state variables of the door domain.
  */
 
-/** External Functions to be integrated **/
-
-// Compute the x, y, th base position based on the position and orientation of the door frame. Perhaps
-// we just want to use the 2 points for the door, or door frame. Why can z be greater than 0?
-constraint get_door_detection_base_position(x, y, th, door_x1, door_y1, door_x2, door_y2);
-
-// Given a current position, and a target handle position, compute a goal base position to enable a grasp
-constraint get_door_grasp_base_position(x, y, th, current_x, current_y, handle_x, handle_y, handle_z);
-
-// Given a target handle position, compute a goa
-
-
 /** CONSTANTS and TYPEDEFS **/
 
 int UNKNOWN = -1;
@@ -119,6 +107,9 @@ class GraspHandle extends Behavior {
    * The parameters here 
    */
   predicate Active{
+    float x;
+    float y;
+    float z;
   }
   predicate Inactive{
     MAYBE_TRUE_OR_FALSE have_handle;
@@ -140,6 +131,7 @@ class TwistHandle extends Behavior {
   predicate Active{
   }
   predicate Inactive{
+    MAYBE_TRUE_OR_FALSE have_handle;
   }
 
   TwistHandle(Mode _mode){
@@ -158,6 +150,7 @@ class OpenDoorWithGrasp extends Behavior {
   predicate Active{
   }
   predicate Inactive{
+    MAYBE_TRUE_OR_FALSE have_handle;
   }
 
   OpenDoorWithGrasp(Mode _mode){
@@ -204,6 +197,7 @@ class CheckDoorway extends Behavior {
     float y;
     float th;
     bool doorway_clear; // True if there is a clear path, otherwise false
+    bool door_locked; // True if there is a path for a very thin robot - basically a crack in the door
   }
 
   CheckDoorway(Mode _mode){
@@ -238,6 +232,31 @@ class DetectDoor extends Behavior {
   DetectDoor(Mode _mode){
     super(_mode);
   }
+};
+
+/**
+ * NotifyDoorBlocked will just send a message to update the world model that the given door is blocked. We will indicate
+ * the parameters based on the current and target positions
+ */
+class NotifyDoorBlocked extends Behavior {
+
+  /**
+   * The parameters here can be the expected values for the door state msg?
+   */
+  predicate Active{
+    float x1;
+    float y1;
+    float x2;
+    float y2;
+  }
+
+  predicate Inactive{
+  }
+
+  NotifyDoorBlocked(Mode _mode){
+    super(_mode);
+  }
+
 };
 
 

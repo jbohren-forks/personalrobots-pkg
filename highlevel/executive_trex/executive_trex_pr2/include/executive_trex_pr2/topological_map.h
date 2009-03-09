@@ -81,6 +81,68 @@ namespace executive_trex_pr2 {
   };
 
   /**
+   * @brief A function: given 2 points in space, return a door that is in the region traversed by their connecting
+   * line
+   */
+  class MapGetDoorFromPositionConstraint : public Constraint {
+  public:
+    
+    MapGetDoorFromPositionConstraint(const LabelStr& name,
+				     const LabelStr& propagatorName,
+				     const ConstraintEngineId& constraintEngine,
+				     const std::vector<ConstrainedVariableId>& variables);
+    virtual void handleExecute();
+    
+  private:
+    IntervalIntDomain& _door;
+    IntervalDomain& _x1;
+    IntervalDomain& _y1;
+    IntervalDomain& _x2;
+    IntervalDomain& _y2;
+  };
+
+  /**
+   * @brief A function: given a door id, obtain the door frame points from the map
+   */
+  class MapGetDoorDataConstraint : public Constraint {
+  public:
+    
+    MapGetDoorDataConstraint(const LabelStr& name,
+			     const LabelStr& propagatorName,
+			     const ConstraintEngineId& constraintEngine,
+			     const std::vector<ConstrainedVariableId>& variables);
+
+    virtual void handleExecute();
+    
+  private:
+    IntervalDomain& _x1;
+    IntervalDomain& _y1;
+    IntervalDomain& _x2;
+    IntervalDomain& _y2;
+    IntervalIntDomain& _door;
+  };
+
+  /**
+   * @brief A function: given a door id, obtain the door handle information
+   */
+  class MapGetHandlePositionConstraint : public Constraint {
+  public:
+    
+    MapGetHandlePositionConstraint(const LabelStr& name,
+				   const LabelStr& propagatorName,
+				   const ConstraintEngineId& constraintEngine,
+				   const std::vector<ConstrainedVariableId>& variables);
+
+    virtual void handleExecute();
+    
+  private:
+    IntervalDomain& _x;
+    IntervalDomain& _y;
+    IntervalDomain& _z;
+    IntervalIntDomain& _door;
+  };
+
+  /**
    * @brief A filter to exclude variable binding decisions unless they are on a parameter variable
    * of a token for has all required variables, and the source and final destination are already singletons
    */
@@ -200,6 +262,18 @@ namespace executive_trex_pr2 {
     virtual bool getConnectorRegions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b) = 0;
 
     /**
+     * @brief Get the door id given a pair of points
+     * @return 0 if no door found, otherwise the id for a door
+     */
+    virtual unsigned int getDoorFromPosition(double x1, double y1, double x2, double y2) = 0;
+
+    /**
+     * @brief Get the door position information (2 points at its base, given the id
+     * @return true if the door id is valid, otherwise false. If a valid id, then it will fill out point data
+     */
+    virtual bool getDoorData(double& x1, double& y1, double& x2, double& y2, unsigned int door_id) = 0;
+
+    /**
      * @brief Test if a given region is a doorway
      * @param result set to true if a doorway, otherwise false.
      * @return true if it is a valid region, otherwise false
@@ -254,6 +328,10 @@ namespace executive_trex_pr2 {
     virtual bool getRegionConnectors(unsigned int region_id, std::vector<unsigned int>& connectors);
 
     virtual bool getConnectorRegions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b);
+
+    virtual unsigned int getDoorFromPosition(double x1, double y1, double x2, double y2);
+
+    virtual bool getDoorData(double& x1, double& y1, double& x2, double& y2, unsigned int door_id);
 
     virtual bool isDoorway(unsigned int region_id, bool& result);
 

@@ -13,6 +13,7 @@
 #include "OrienteeringSolver.hh"
 
 #include <executive_trex_pr2/topological_map.h>
+#include <executive_trex_pr2/door_domain_constraints.hh>
 
 /*
 #include "CalcCommandConstraint.hh"
@@ -94,13 +95,26 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
 
       // Register topological map constraints
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapConnectorConstraint, "map_connector", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
 			  executive_trex_pr2::MapGetRegionFromPositionConstraint, "map_get_region_from_position", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
 			  executive_trex_pr2::MapIsDoorwayConstraint, "map_is_doorway", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::MapGetDoorFromPositionConstraint, "map_get_door_from_position", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::MapGetDoorFromPositionConstraint, "map_get_door_data", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::MapGetHandlePositionConstraint, "get_handle_position", "Default");
 
+
+      // Register functions for calculations in the door domain
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::GetDoorDetectionBasePositionConstraint, "get_door_detection_base_position", "Default");
+
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::GetDoorGraspBasePositionConstraint, "get_door_grasp_base_position", "Default");
       // Register SOLVER components for topological map.
       EUROPA::SOLVERS::ComponentFactoryMgr* cfm = (EUROPA::SOLVERS::ComponentFactoryMgr*)assembly.getComponent("ComponentFactoryMgr");
       REGISTER_FLAW_FILTER(cfm, executive_trex_pr2::MapConnectorFilter, MapConnectorFilter);

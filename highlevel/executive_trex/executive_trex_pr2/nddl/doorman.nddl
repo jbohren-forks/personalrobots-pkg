@@ -34,8 +34,19 @@
 #include "rcs.exports.nddl"
 #include "rcs.exports.doorman.nddl"
 #include "doorman.exports.nddl"
+#include "topological_map.exports.nddl"
 #include "safety.exports.nddl"
 #include "nav.exports.nddl"
+
+
+/** External Functions to be integrated **/
+
+// Compute the x, y, th base position based on the position and orientation of the door frame. Perhaps
+// we just want to use the 2 points for the door, or door frame. Why can z be greater than 0?
+constraint get_door_detection_base_position(x, y, th, current_x, current_y, current_th, door_x1, door_y1, door_x2, door_y2);
+
+// Given a current position, and a target handle position, compute a goal base position to enable a grasp
+constraint get_door_grasp_base_position(x, y, th,  current_x, current_y, current_th, door_x1, door_y1, door_x2, door_y2);
 
 typedef int [-1, 1] TIME_ERROR_BOUND;
 
@@ -44,6 +55,9 @@ int FORCE_DOOR_CHECK;
 addEq(FORCE_DOOR_CHECK, DOOR_CHECK_INTERVAL, 0);
 
 
+// Error Bounds
+float DETECTION_POSITION_ERROR = 0.1;
+float GRASP_POSITION_ERROR = 0.1;
 /**
  * This is an internal controller which will monitor state variables and HLC status. It can also generate
  * next steps for this meta level control. This pattern exploits reactive planning based on feedback from the
@@ -57,14 +71,17 @@ class DoorController extends AgentTimeline {
   predicate Holds{
     bool active;
 
-    bool in_detection_position; // True if far enough from the door to scan effectively. Else false
-    bool in_grasp_position; // True if far enough from the door to scan effectively, Can only be evaluated
     bool found_door;
     bool found_handle; // Should Cover this!
     MAYBE_TRUE_OR_FALSE have_handle;
     bool door_locked;
     bool doorway_clear;
     int last_checked_door; // Time for when we last checked the doorway
+
+    // Target base pose for getting to on the other side of the doorway.
+    float target_x;
+    float target_y;
+    float target_th;
   }
 
   DoorController(Mode _mode){
@@ -79,19 +96,32 @@ MoveBehavior::Inactive {
     equals(DoorController.Holds dc);
     eq(dc.active, false);
   }
+
+  // If it has been aborted, send an update with current the current current and target positions
+  if(status == ABORTED){
+    any(BaseState.Holds bs);
+    precedes(bs.start, start);
+    temporalDistance(start, [1 +inf], bs.end);
+    starts_before(NotifyDoorBlocked.Active cmd);
+    eq(cmd.x1, bs.x);
+    eq(cmd.y1, bs.y);
+    eq(cmd.x2, des_x);
+    eq(cmd.y2, des_y);
+    precedes(cmd.end, end);
+  }
 }
 
 MoveBehavior::Active {
-  starts(DoorController.Holds dc);
+  starts_before(DoorController.Holds dc);
+  precedes(dc.end, end);
 
   // Initialize controller variables. We begin by assuming the worst. Note that the test for being in detection
   // position is derived from base state data directly and thus not subject to setting as a free control variable
   eq(dc.active, true);
-  eq(dc.in_grasp_position, false);
   eq(dc.found_door, false);
   eq(dc.found_handle, false);
   eq(dc.have_handle, MAYBE);
-  eq(dc.door_locked, false);
+  eq(dc.door_locked, true);
   eq(dc.doorway_clear, false);
   eq(dc.last_checked_door, FORCE_DOOR_CHECK);
 }
@@ -114,16 +144,10 @@ MoveBehavior::Active {
  * completion of the command should also bring about a completion of the given control step
  */
 DoorController::Holds {
+  // We will assume default values on commitment based on predecessor. We really want these values to be bound. These values carry
+  // forward from priors as they are updated by actions and we thus assume inertia
   met_by(Holds p);
-
-  // We will assume default values on commitment based on predecessor. We really want these values to be bound.
-  // It is also pretty clear that we would like an unknown value for these things since we do not want to assume we have the handle.
-  // Of course that suggests that we would explode the state machine, or at least require a representation that would admit a 
-  // disjunction. Maybe we only care to have such a state for have_handle since we want to have the handle to do work but want to
-  // clear it to 
   defaultOnCommit(active, p.active);
-  defaultOnCommit(in_detection_position, p.in_detection_position);
-  defaultOnCommit(in_grasp_position, p.in_grasp_position);
   defaultOnCommit(found_door, p.found_door);
   defaultOnCommit(found_handle, p.found_handle);
   defaultOnCommit(have_handle, p.have_handle);
@@ -138,26 +162,18 @@ DoorController::Holds {
 
   // If we are active, then we must evaluate different states based on current base, door , and handle state
   if(active == true){
+
+    // Local variables, derived from sensors and map
+    MAP_KEY door_id; // The door id for this doorway
+    bool in_detection_position; // True if far enough from the door to scan effectively. Else false
+    bool in_grasp_position; // True if far enough from the door to scan effectively, Can only be evaluated
+
+
     // MoveBehavior(all) == active   
     contained_by(MoveBehavior.Active dm);
-
-    // Evaluate condition variables based on input states.
-    // BaseState.Holds(start) bs;
-    // DoorState.Holds(start) ds;
-    // HandleState.Holds(start) hs;
-    if(start){
-      any(BaseState.Holds bs);
-      precedes(bs.start, start);
-      temporalDistance(start, [1 +inf], bs.end);
-      any(DoorState.Holds ds);
-      precedes(ds.start, start);
-      temporalDistance(start, [1 +inf], ds.end);
-      any(HandleState.Holds hs);
-      precedes(hs.start, start);
-      temporalDistance(start, [1 +inf], hs.end);
-    }
-
-    // @todo Compute if within detection position
+    eq(dm.x, target_x);
+    eq(dm.y, target_y);
+    eq(dm.th, target_th);
 
     // The end bound defined here provides a margin of error around the connection between the end time of the
     // command issued here, and the end time of the control step.
@@ -204,8 +220,7 @@ DoorController::Holds {
 	    starts_before(OpenDoorWithGrasp.Active cmd);
 	    concurrent(cmd.end, end_bounds);
 	  }
-
-	  if(door_locked == true){
+	  else {
 	    // TwistHandle([start, +inf], end_bounds] == Active();
 	    starts_before(TwistHandle.Active cmd);
 	    concurrent(cmd.end, end_bounds);
@@ -213,55 +228,81 @@ DoorController::Holds {
 
 	}
 	else {
+	  // BaseState.Holds bs = base_state(start);
+	  any(BaseState.Holds bs);
+	  precedes(bs.start, start);
+	  temporalDistance(start, [1 +inf], bs.end);
+
+	  // Access the map to get the door given 2 points - where I am and where I am trying to get 2. Both points should be in or very near the
+	  // doorway region
+	  map_get_door_from_position(door_id, bs.x, bs.y, target_x, target_y);
+
+	  // We need door position information here
+	  float x1, y1, x2, y2;
+	  map_get_door_data(x1, y1, x2, y2, door_id);
 
 	  if(found_handle == true){	  
+	    // Are we in a grasp position? Now is a good time to find out. We will query the map. This data will have to be laid out
+	    // in more detail.
+	    float grasp_x, grasp_y, grasp_th;
+	    get_door_grasp_base_position(grasp_x, grasp_y, grasp_th, bs.x, bs.y, bs.th, x1, y1, x2, y2);
+
+	    // @todo We should probably treat position and orientation seperately for tolerances
+	    float distanceAway;
+	    calcDistance(distanceAway, bs.x, bs.y, bs.th, grasp_x, grasp_y, grasp_th);
+	    testLEQ(in_grasp_position, distanceAway, GRASP_POSITION_ERROR);
 
 	    if(in_grasp_position == true){
-	      // GraspHandle([start, +inf], end_bounds] == Active();
+	      // GraspHandle(any, end_bounds] == Active();
 	      starts_before(GraspHandle.Active cmd);
 	      concurrent(cmd.end, end_bounds);
+	      get_handle_position(cmd.x, cmd.y, cmd.z, door_id);
 	    }
-
-	    if(in_grasp_position == false){
-	      // MoveBase([start, +inf], end_bounds] == Active();
+	    else {
+	      // MoveBase(any, end_bounds] == Active();
 	      starts_before(MoveBase.Active cmd);
 	      concurrent(cmd.end, end_bounds);
+	      eq(cmd.x, grasp_x);
+	      eq(cmd.y, grasp_y);
+	      eq(cmd.th, grasp_th);
 	    }
-
 	  }
 
 	  if(found_handle == false){
 
 	    if(found_door == true){
-
 	      // If the door is locked and we cannot find the handle we will abort immediately
 	      if(door_locked == true){
 		meets(MoveBehavior.Inactive mb);
 		eq(mb.status, ABORTED);
 		eq(duration, 1);
 	      }
-
-	      if(door_locked == false){
-		// OpenDoorWithoutGrasp([start, +inf], end_bounds] == Active();
+	      else {
+		// OpenDoorWithoutGrasp(any, end_bounds] == Active();
 		starts_before(OpenDoorWithoutGrasp.Active cmd);
 		concurrent(cmd.end, end_bounds);
 	      }
 
 	    }
+	    else {
+	      float detect_x, detect_y, detect_th;
+	      get_door_detection_base_position(detect_x, detect_y, detect_th, bs.x, bs.y, bs.th, x1, y1, x2, y2);
+	      float distanceAway;
+	      calcDistance(distanceAway, bs.x, bs.y, bs.th, detect_x, detect_y, detect_th);
+	      testLEQ(in_detection_position, distanceAway, DETECTION_POSITION_ERROR);
 
-	    if(found_door == false){
-	    
 	      if(in_detection_position == true){
-		// DetectDoor([start, +inf], end_bounds] == Active();
+		// DetectDoor(any, end_bounds] == Active();
 		starts_before(DetectDoor.Active cmd);
 		concurrent(cmd.end, end_bounds);
-
 	      }
-
-	      if(in_detection_position == false){
-		// MoveBase([start, +inf], end_bounds] == Active( ...);
+	      else {
+		// MoveBase(any, end_bounds] == Active( ...);
 		starts_before(MoveBase.Active cmd);
 		concurrent(cmd.end, end_bounds);
+		eq(cmd.x, detect_x);
+		eq(cmd.y, detect_y);
+		eq(cmd.th, detect_th);
 	      }
 	    }
 	  }
@@ -271,25 +312,13 @@ DoorController::Holds {
   }
 }
 
-CheckDoorway::Inactive{
-
-  // Update door controller with feedback
-  any(DoorController.Holds dc);
-  TIME_ERROR_BOUND error;
-  temporalDistance(dc.start, error, start);
-
-  // If successful it means we were able to execute the check. The result can still be clear or not
-  if(status == SUCCESS){
-    eq(dc.doorway_clear, doorway_clear);
-  }
-  else {
-    eq(dc.doorway_clear, false);
-  }
-}
-
+/************************************************************************
+ * Now we define how highlevel controllers update the door controller by setting
+ * feedback parameters on success or failure
+ ***********************************************************************/
 ReleaseDoor::Inactive{
-
-  // Update door controller with feedback
+  // This is a common pattern for all - to bind to the door controller
+  // DoorController[start + TIME_ERROR_BOUND) dc == Holds;
   any(DoorController.Holds dc);
   TIME_ERROR_BOUND error;
   temporalDistance(dc.start, error, start);
@@ -297,9 +326,68 @@ ReleaseDoor::Inactive{
   // If successful it means we were able to execute the check. The result can still be clear or not
   if(status == SUCCESS){
     eq(dc.have_handle, have_handle);
+    eq(dc.last_checked_door, FORCE_DOOR_CHECK);
   }
-  else {
-    eq(dc.have_handle, MAYBE);
+}
+
+OpenDoorWithGrasp::Inactive{
+  // Update door controller with feedback
+  any(DoorController.Holds dc);
+  TIME_ERROR_BOUND error;
+  temporalDistance(dc.start, error, start);
+
+  // If successful, update the state with feedback. Note that at this point we could
+  // set values for door and handle state. On the other hand, we could also just
+  // start a door detector
+  if(status == SUCCESS){
+    eq(dc.last_checked_door, FORCE_DOOR_CHECK);
+    eq(dc.have_handle, TRUE);
+  }
+}
+
+TwistHandle::Inactive{
+  // Update door controller with feedback
+  any(DoorController.Holds dc);
+  TIME_ERROR_BOUND error;
+  temporalDistance(dc.start, error, start);
+
+  // If successful, update the state with feedback. Note that at this point we could
+  // set values for door and handle state. On the other hand, we could also just
+  // start a door detector
+  if(status == SUCCESS){
+    eq(dc.door_locked, false);
+    eq(dc.have_handle, TRUE);
+    eq(dc.last_checked_door, start);
+  }
+}
+
+
+GraspHandle::Inactive{
+  // Update door controller with feedback
+  any(DoorController.Holds dc);
+  TIME_ERROR_BOUND error;
+  temporalDistance(dc.start, error, start);
+
+  // If successful, update the state with feedback. Note that at this point we could
+  // set values for door and handle state. On the other hand, we could also just
+  // start a door detector
+  if(status == SUCCESS){
+    eq(dc.have_handle, TRUE);
+    eq(dc.last_checked_door, start);
+  }
+}
+
+
+OpenDoorWithoutGrasp::Inactive{
+  // Update door controller with feedback
+  any(DoorController.Holds dc);
+  TIME_ERROR_BOUND error;
+  temporalDistance(dc.start, error, start);
+  
+  // If successful, there is nothing really to do, since it will depend on the CheckDoorway
+  // behavior finding the clear path. What we can do is reset the last checked time to force an immediate recheck
+  if(status == SUCCESS){
+    eq(dc.last_checked_door, FORCE_DOOR_CHECK);
   }
 }
 
@@ -316,35 +404,36 @@ DetectDoor::Inactive{
   if(status == SUCCESS){
     eq(dc.found_door, found_door);
     eq(dc.found_handle, found_handle);
-
-    if(found_door == true){
-      eq(dc.in_detection_position, true);
-    }
-  }
-  else {
-    eq(dc.found_door, false);
-    eq(dc.found_handle, false);
-    eq(dc.in_detection_position, false);
   }
 }
 
 
-OpenDoorWithoutGrasp::Inactive{
+CheckDoorway::Inactive{
+
   // Update door controller with feedback
   any(DoorController.Holds dc);
   TIME_ERROR_BOUND error;
   temporalDistance(dc.start, error, start);
-  
-  // If successful, there is nothing really to do, since it will depend on the CheckDoorway
-  // behavior finding the clear path. What we can do is reset the last checked time to 0
-  if(status == SUCCESS){
-    eq(dc.last_checked_door, 0);
-  }
-  else { // Trigger a reset?
-    eq(dc.found_door, false);
-    eq(dc.found_handle, false);
-    eq(dc.in_detection_position, false);
 
+  // If successful it means we were able to execute the check. The result can still be clear or not
+  if(status == SUCCESS){
+    eq(dc.doorway_clear, doorway_clear);
+    eq(dc.door_locked, door_locked);
+    eq(dc.last_checked_door, start);
+  }
+}
+
+/**
+ * Oncompletion of move base we can indicate we do not have the handle
+ */
+MoveBase::Inactive {
+  // Update door controller with feedback
+  any(DoorController.Holds dc);
+  TIME_ERROR_BOUND error;
+  temporalDistance(dc.start, error, start);
+
+  if(status == SUCCESS){
+    eq(dc.have_handle, FALSE);
   }
 }
 
@@ -357,8 +446,6 @@ MobilityStatus mobility_status = new MobilityStatus(External);
 
 // External RCS state variables
 BaseState base_state = new BaseState(External);
-HandleState handle_state = new HandleState(External);
-DoorState door_state = new DoorState(External);
 
 // External RCS Highlevel controllers
 MoveBase move_base = new MoveBase(External);
@@ -368,4 +455,5 @@ TwistHandle twist_handle = new TwistHandle(External);
 GraspHandle grasp_handle = new GraspHandle(External);
 OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
 DetectDoor detect_door = new DetectDoor(External);
-CheckDoorway check_door = new CheckDoorway(External);
+CheckDoorway check_doorway = new CheckDoorway(External);
+NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);

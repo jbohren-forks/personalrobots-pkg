@@ -165,10 +165,29 @@ TEST(executive_trex_pr2, map_is_doorway_constraint){
   }
 }
 
+/**
+ * Utility to print rows and columns that are in doorways
+ */
+void printDoors(){
+
+  std::ofstream doors("doors.out");
+  for(unsigned int x = 0; x < TopologicalMapAccessor::instance()->getNumCols(); x++) {
+    for(unsigned int y = 0; y < TopologicalMapAccessor::instance()->getNumRows(); y++){
+      unsigned int region_id = TopologicalMapAccessor::instance()->getRegion(x, y);
+      bool is_doorway(false);
+      TopologicalMapAccessor::instance()->isDoorway(region_id, is_doorway);
+      if(is_doorway)
+	doors << "[" << x << ", " << y << "]\n";
+    }
+  }
+}
+
+
 int main(int argc, char** argv){
   srand(NULL);
   std::ofstream debug_file("Debug.log");
   DebugMessage::setStream(debug_file);
   testing::InitGoogleTest(&argc, argv);
+
   return RUN_ALL_TESTS();
 }

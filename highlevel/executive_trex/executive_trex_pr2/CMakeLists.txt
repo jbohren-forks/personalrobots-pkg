@@ -45,7 +45,8 @@ set(TREX_FILES src/Executive.cc
 	       src/EndEffectorControllerAdapter.cc
 	       src/RechargeControllerAdapter.cc
 	       src/BatteryStateAdapter.cc
-	       src/topological_map.cc)
+	       src/topological_map.cc
+	       src/door_domain_constraints.cc)
 
 # trexdebug builds with a large number of run-time error checking running which is expensive
 # but gives good feedback in discovering problems.

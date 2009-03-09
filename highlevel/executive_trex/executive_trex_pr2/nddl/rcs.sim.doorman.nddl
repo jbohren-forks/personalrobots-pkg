@@ -1,18 +1,36 @@
 /**
+ * A simulation control variable governing when the doorway will be clear.
+ */
+class DoorwayClearSV extends AgentTimeline {
+
+  predicate Holds{ 
+    bool value;
+    defaultOnCommit(value, true);
+  }
+
+  DoorwayClearSV(){ super(Internal, "Holds");}
+};
+
+/**
+ * A simulation control variable governing when the doorway will be unlocked
+ */
+class DoorwayLockedSV extends AgentTimeline {
+
+  predicate Holds{ 
+    bool value;
+    defaultOnCommit(value, false);
+  }
+
+  DoorwayLockedSV(){ super(Internal, "Holds");}
+};
+
+/**
  * For now, assume a fixed duration, and always return success. Later, can model
  * a selection that stochastically selects if the doorway is clear
  */
-CheckDoorway::Active{
-  eq(duration, 3);
-
-  // Always clear at the end.
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
-  eq(s.doorway_clear, true);
-}
 
 ReleaseDoor::Active{
-  eq(duration, 5);
+  eq(duration, 1);
 
   // Handle always free at the end
   meets(Inactive s);
@@ -20,14 +38,100 @@ ReleaseDoor::Active{
   eq(s.have_handle, FALSE);
 }
 
-// State variables
-HandleState handle_state = new HandleState(Internal);
-DoorState door_state = new DoorState(Internal);
+/**
+ * Could lose the handle here
+ */
+OpenDoorWithGrasp::Active{
+  eq(duration, 1);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+  eq(s.have_handle, TRUE);
+}
 
+/**
+ * Could lose the handle here
+ */
+TwistHandle::Active{
+  eq(duration, 1);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+  eq(s.have_handle, TRUE);
+}
+
+/**
+ * Grasping the handle will indicate at t he end that it has the handle - for now.
+ */
+GraspHandle::Active{
+  eq(duration, 1);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+  eq(s.have_handle, TRUE);
+}
+
+/**
+ * Should probably include change in base position, and allow for stochastic selection of whether or not we have
+ * the handle anymore
+ */
+OpenDoorWithoutGrasp::Active{
+  eq(duration, 1);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+DetectDoor::Active {
+  eq(duration, 1);
+  // this[end) == Inactive(SUCCESS, true, true);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+  eq(s.found_door, true);
+  eq(s.found_handle, true);
+}
+
+/**
+ * Assume it executes successfully. Leav result status unbound - depends on simulation control variables
+ */
+CheckDoorway::Active{
+  eq(duration, 1);
+
+  // this[end) = Inactive(SUCCESS, dc.value, dl.value);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+/**
+ * Update result parameters accoring to simulation control variables.
+ */
+CheckDoorway::Inactive{
+  // DoorwayClearSV.Holds dc = doorway_cleared_sv(start);
+  any(DoorwayClearSV.Holds dc);
+  precedes(dc.start, start);
+  temporalDistance(start, [1 +inf], dc.end);
+  eq(doorway_clear, dc.value);
+
+  // DoorwayLockedSV.Holds dl = doorway_locked_sv(start);
+  any(DoorwayLockedSV.Holds dl);
+  precedes(dl.start, start);
+  temporalDistance(start, [1 +inf], dl.end);
+  eq(door_locked, dl.value);
+}
+
+NotifyDoorBlocked::Active{
+  eq(duration, 1);
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+// External controllers specific to the door domain
 ReleaseDoor release_door = new ReleaseDoor(Internal);
 OpenDoorWithGrasp open_door_with_grasp = new OpenDoorWithGrasp(Internal);
 TwistHandle twist_handle = new TwistHandle(Internal);
 GraspHandle grasp_handle = new GraspHandle(Internal);
 OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
 DetectDoor detect_door = new DetectDoor(Internal);
-CheckDoorway check_door = new CheckDoorway(Internal);
+CheckDoorway check_doorway = new CheckDoorway(Internal);
+NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(Internal);
+
+
+// Simulation Control Variables
+DoorwayClearSV doorway_clear_sv = new DoorwayClearSV();
+DoorwayLockedSV doorway_locked_sv = new DoorwayLockedSV();

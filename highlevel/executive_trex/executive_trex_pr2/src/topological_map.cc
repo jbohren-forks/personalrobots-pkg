@@ -131,6 +131,101 @@ namespace executive_trex_pr2 {
     }
   }
 
+    
+  //*******************************************************************************************
+  MapGetDoorFromPositionConstraint::MapGetDoorFromPositionConstraint(const LabelStr& name,
+								     const LabelStr& propagatorName,
+								     const ConstraintEngineId& constraintEngine,
+								     const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _door(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))),
+     _x1(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _y1(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
+     _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
+     _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))){
+    checkError(variables.size() == 5, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
+    
+  void MapGetDoorFromPositionConstraint::handleExecute(){
+    if(_x1.isSingleton() && _y1.isSingleton() && _x2.isSingleton() && _y2.isSingleton()){
+      unsigned int door_id = TopologicalMapAccessor::instance()->getDoorFromPosition(_x1.getSingletonValue(),
+										     _y1.getSingletonValue(),
+										     _x2.getSingletonValue(),
+										     _y2.getSingletonValue());
+      _door.set(door_id);
+    }
+  }
+
+
+    
+  //*******************************************************************************************
+  MapGetDoorDataConstraint::MapGetDoorDataConstraint(const LabelStr& name,
+						     const LabelStr& propagatorName,
+						     const ConstraintEngineId& constraintEngine,
+						     const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _x1(static_cast<IntervalDomain&>(getCurrentDomain(variables[0]))),
+     _y1(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
+     _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
+     _door(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[4]))){
+    checkError(variables.size() == 5, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
+
+  void MapGetDoorDataConstraint::handleExecute(){
+    if(_door.isSingleton() && _door.getSingletonValue() > 0){
+      double x1, y1, x2, y2;
+      bool result = TopologicalMapAccessor::instance()->getDoorData(x1, y1, x2, y2, _door.getSingletonValue());
+      
+      // If this was not a valid id for some reason, I am stunned! But we should generate an inconsistency
+      if(!result)
+	_door.empty();
+      else {
+	_x1.set(x1);
+	_y1.set(y1);
+	_x2.set(x2);
+	_y2.set(y2);
+      }
+    }
+  }
+
+
+    
+  //*******************************************************************************************
+  MapGetHandlePositionConstraint::MapGetHandlePositionConstraint(const LabelStr& name,
+								 const LabelStr& propagatorName,
+								 const ConstraintEngineId& constraintEngine,
+								 const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[0]))),
+     _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _z(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
+     _door(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[3]))){
+    checkError(variables.size() == 4, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
+
+  /**
+   * @todo This implementation is bogus. It should be querying other api
+   */
+  void MapGetHandlePositionConstraint::handleExecute(){
+    if(_door.isSingleton() && _door.getSingletonValue() > 0){
+      double x1, y1, x2, y2;
+      bool result = TopologicalMapAccessor::instance()->getDoorData(x1, y1, x2, y2, _door.getSingletonValue());
+      
+      // If this was not a valid id for some reason, I am stunned! But we should generate an inconsistency
+      if(!result)
+	_door.empty();
+      else {
+	_x.set(x1);
+	_y.set(y1);
+	_z.set(1.0);
+      }
+    }
+  }
+
   //*******************************************************************************************
   MapConnectorFilter::MapConnectorFilter(const TiXmlElement& configData)
     : SOLVERS::FlawFilter(configData, true),
@@ -393,6 +488,25 @@ namespace executive_trex_pr2 {
     catch(...){}
     return false;
   }
+
+  /**
+   * @todo Fix to integrate with actual world model data
+   */
+  unsigned int TopologicalMapAdapter::getDoorFromPosition(double x1, double y1, double x2, double y2){
+    return 1;
+  }
+
+  /**
+   * @todo Fix to integrate with actual world model data
+   */
+  bool TopologicalMapAdapter::getDoorData(double& x1, double& y1, double& x2, double& y2, unsigned int door_id){
+    x1 = 2;
+    y1 = 5;
+    x2 = 4;
+    y2 = 5;
+    return true;
+  }
+
 
   bool TopologicalMapAdapter::isDoorway(unsigned int region_id, bool& result){
     try{

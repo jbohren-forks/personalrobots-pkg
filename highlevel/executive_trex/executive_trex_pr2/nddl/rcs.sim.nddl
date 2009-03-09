@@ -229,11 +229,23 @@ BaseState::Holds{
  */
 MoveBase::Active{
   // Activate base controller with goals
+  /*
   starts(BaseController.Holds bc);
   eq(bc.active, true);
   eq(bc.x, x);
   eq(bc.y, y);
   eq(bc.th, th);
+  */
+
+  // For now, assume a constant duration, and write the end bounds thru magic so we are transported
+  // to the target position instantaneouosly
+  eq(duration, 3);
+  if(end){
+    meets(BaseState.Holds bs);
+    eq(bs.x, x);
+    eq(bs.y, y);
+    eq(bs.th, th);
+  }
 }
 
 /**
@@ -288,7 +300,7 @@ BatteryState::Holds{
 }
 
 // Internal Controllers
-BaseController base_controller = new BaseController();
+//BaseController base_controller = new BaseController();
 
 // State Variables
 BaseState base_state = new BaseState(Internal);

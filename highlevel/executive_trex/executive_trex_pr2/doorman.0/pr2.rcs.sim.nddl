@@ -1,9 +1,12 @@
 #include "rcs.sim.nddl";
 
 // Initialize state variables
+
+// The initial base position is going to be <3, 3, 0>. This will be to close to the door to detect it, and facing away from the door.
+// Expect that the robot will have to rotate and translate in order to detect the door.
 fact(base_state.Holds f0);
-f0.x = 0.0;
-f0.y = 0.0;
+f0.x = 3.0;
+f0.y = 3.0;
 f0.th = 0.0;
 
 fact(battery_state.Holds f1);
@@ -14,3 +17,14 @@ f1.power_consumption = 100.0;
 // Initialize behaviors
 fact(move_base.Inactive);
 fact(recharge_controller.Inactive);
+
+// We will make sure that the doorway is not clear until tick 50. This will hold up exit. The default value will kick in to
+// Transition to true.
+fact(doorway_clear_sv.Holds f2);
+f2.end = 50;
+f2.value = false;
+
+// We will make sure that the doorway is not unlocked until tick 20. This will hold up opening the doorway
+fact(doorway_locked_sv.Holds f3);
+f3.end = 20;
+f3.value = true;
