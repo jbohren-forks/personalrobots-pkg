@@ -108,6 +108,9 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
   node->param(controller_name_+"/f_limit_max"  , f_limit_max  , 100.0) ; /// max upper arm limit force
   node->param(controller_name_+"/upper_arm_dead_zone", upper_arm_dead_zone, 0.05);
 
+  roll_pid_.initParam(controller_name_+"/pose_pid"); 
+  pitch_pid_.initParam(controller_name_+"/pose_pid"); 
+  yaw_pid_.initParam(controller_name_+"/pose_pid"); 
   line_pid_.initParam(controller_name_+"/line_pid"); 
   last_time_ = robot->model_->hw_->current_time_;
   
@@ -198,9 +201,9 @@ void PlugController::computeConstraintJacobian()
   double time = robot_->model_->hw_->current_time_;
   // Clear force vector
   f_r_ = 0;
-  double f_roll = 0;
-  double f_pitch = 0;
-  double f_yaw = 0;
+  f_roll_ = 0;
+  f_pitch_ = 0;
+  f_yaw_ = 0;
 
   // this will be computed based on the tool position in space
   constraint_jac_(0,0) = 0; // line constraint
@@ -247,36 +250,39 @@ void PlugController::computeConstraintJacobian()
   }
 
   // compute the pose error using a twist
-  Twist pose_error = diff(endeffector_frame_, desired_frame_);
+  pose_error_ = diff(endeffector_frame_, desired_frame_);
 
   //roll constraint
-  if (fabs(pose_error(3)) > 0)
+  if (fabs(pose_error_(3)) > 0)
   {
-    f_roll = pose_error(3) * f_pose_max; /// @todo: FIXME, replace with some exponential function
+    double temp_f_roll=roll_pid_.updatePid(pose_error_(3), time-last_time_);
+    f_roll_ = (temp_f_roll < f_pose_max) ? temp_f_roll:f_pose_max;//pose_error(3) * f_pose_max; 
   }
   else
   {
-    f_roll = 0;
+    f_roll_ = 0;
   }
 
   //pitch constraint
-  if (fabs(pose_error(4)) > 0)
+  if (fabs(pose_error_(4)) > 0)
   {
-    f_pitch = pose_error(4) * f_pose_max; /// @todo: FIXME, replace with some exponential function
+    double temp_f_pitch=pitch_pid_.updatePid(pose_error_(4), time-last_time_);
+    f_pitch_= (temp_f_pitch < f_pose_max) ? temp_f_pitch:f_pose_max;//f_pitch = pose_error(4) * f_pose_max; 
   }
   else
   {
-    f_pitch = 0;
+    f_pitch_ = 0;
   }
 
   //yaw constraint
-  if (fabs(pose_error(5)) > 0)
+  if (fabs(pose_error_(5)) > 0)
   {
-    f_yaw = pose_error(5) * f_pose_max; /// @todo: FIXME, replace with some exponential function
+    double temp_f_yaw=yaw_pid_.updatePid(pose_error_(5), time-last_time_);
+    f_yaw_ = (temp_f_yaw < f_pose_max) ? temp_f_yaw:f_pose_max;//f_yaw = pose_error(5) * f_pose_max; 
   }
   else
   {
-    f_yaw = 0;
+    f_yaw_ = 0;
   }
 
 
@@ -301,9 +307,9 @@ void PlugController::computeConstraintJacobian()
 
   constraint_force_(0) = f_r_;
   constraint_force_(1) = 0;
-  constraint_force_(2) = f_roll;
-  constraint_force_(3) = f_pitch;
-  constraint_force_(4) = f_yaw;
+  constraint_force_(2) = f_roll_;
+  constraint_force_(3) = f_pitch_;
+  constraint_force_(4) = f_yaw_;
   last_time_ = time;
 }
 
@@ -408,6 +414,12 @@ void PlugControllerNode::update()
     {
       internal_state_publisher_->msg_.line_error = controller_.dist_to_line_;
       internal_state_publisher_->msg_.line_force_cmd = controller_.f_r_;
+      internal_state_publisher_->msg_.roll_error = controller_.pose_error_(3);
+      internal_state_publisher_->msg_.roll_force_cmd = controller_.f_roll_;
+      internal_state_publisher_->msg_.pitch_error = controller_.pose_error_(4);
+      internal_state_publisher_->msg_.pitch_force_cmd = controller_.f_pitch_;
+      internal_state_publisher_->msg_.yaw_error = controller_.pose_error_(5);
+      internal_state_publisher_->msg_.yaw_force_cmd = controller_.f_yaw_;
       internal_state_publisher_->unlockAndPublish() ;
      }
   }

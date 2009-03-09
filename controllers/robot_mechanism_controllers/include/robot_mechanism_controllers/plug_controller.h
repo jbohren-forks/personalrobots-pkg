@@ -94,6 +94,10 @@ public:
 
   double dist_to_line_;
   double f_r_;
+  double f_roll_;
+  double f_pitch_;
+  double f_yaw_;
+  KDL::Twist pose_error_;
 
 private:
 
