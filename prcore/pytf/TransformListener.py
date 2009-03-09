@@ -41,6 +41,7 @@ import numpy
 
 from tf.msg import tfMessage
 from robot_msgs.msg import TransformStamped
+from tf.srv import FrameGraph
 
 class NumpyTransformStamped:
     def __init__(self):
@@ -130,13 +131,16 @@ class TransformListener:
         self.transformer = pytf_swig.pyTransformer()
         #assuming rospy is inited
         rospy.Subscriber("/tf_message", tfMessage, self.callback)
-
+        self.frame_graph_server = rospy.Service('~tf_frames', FrameGraph, self.frame_graph_service)
 
     def callback(self, data):
         for transform in data.transforms:
             #print "Got data:", transform.header.frame_id
             self.set_transform(transform)
 
+    def frame_graph_service(self, req):
+        return FrameGraphResponse(self.all_frames_as_dot())
+        
     def set_transform(self, transform_stamped):
         ptf = py_transform_from_transform_stamped(transform_stamped)
         self.transformer.setTransform(ptf)
