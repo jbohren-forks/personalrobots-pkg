@@ -5,11 +5,12 @@ class DoorwayClearSV extends AgentTimeline {
 
   predicate Holds{ 
     bool value;
-    defaultOnCommit(value, true);
   }
 
   DoorwayClearSV(){ super(Internal, "Holds");}
 };
+
+DoorwayClearSV::Holds{  default(value, true); }
 
 /**
  * A simulation control variable governing when the doorway will be unlocked
@@ -18,11 +19,13 @@ class DoorwayLockedSV extends AgentTimeline {
 
   predicate Holds{ 
     bool value;
-    defaultOnCommit(value, false);
   }
 
   DoorwayLockedSV(){ super(Internal, "Holds");}
 };
+
+
+DoorwayLockedSV::Holds{  default(value, false); }
 
 /**
  * For now, assume a fixed duration, and always return success. Later, can model
@@ -56,6 +59,17 @@ TwistHandle::Active{
   meets(Inactive s);
   eq(s.status, SUCCESS);
   eq(s.have_handle, TRUE);
+}
+
+/**
+ * Read the door locked state based on the simulation control variable
+ */
+TwistHandle::Inactive{
+  // DoorwayLockedSV.Holds dl = doorway_locked_sv(start);
+  any(DoorwayLockedSV.Holds dl);
+  precedes(dl.start, start);
+  temporalDistance(start, [1 +inf], dl.end);
+  eq(door_locked, dl.value);
 }
 
 /**

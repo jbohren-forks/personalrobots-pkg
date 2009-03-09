@@ -132,6 +132,7 @@ class TwistHandle extends Behavior {
   }
   predicate Inactive{
     MAYBE_TRUE_OR_FALSE have_handle;
+    bool door_locked;
   }
 
   TwistHandle(Mode _mode){
@@ -192,11 +193,7 @@ class CheckDoorway extends Behavior {
     float th;
   }
 
-  predicate Inactive{
-    float x; 
-    float y;
-    float th;
-    bool doorway_clear; // True if there is a clear path, otherwise false
+  predicate Inactive{    bool doorway_clear; // True if there is a clear path, otherwise false
     bool door_locked; // True if there is a path for a very thin robot - basically a crack in the door
   }
 

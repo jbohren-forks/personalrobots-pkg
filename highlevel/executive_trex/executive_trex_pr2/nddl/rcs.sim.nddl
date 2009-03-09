@@ -221,7 +221,7 @@ BaseState::Holds{
   defaultOnCommit(x, p.x);
   defaultOnCommit(y, p.y);
   defaultOnCommit(th,p.th);
-  eq(duration, 1);
+  //eq(duration, 1);
 }
 
 /**
@@ -296,7 +296,7 @@ BatteryState::Holds{
   defaultOnCommit(energy_remaining, p.energy_remaining);
   defaultOnCommit(energy_capacity, p.energy_capacity);
   defaultOnCommit(power_consumption, p.power_consumption);
-  eq(duration, 1);
+  //eq(duration, 1);
 }
 
 // Internal Controllers

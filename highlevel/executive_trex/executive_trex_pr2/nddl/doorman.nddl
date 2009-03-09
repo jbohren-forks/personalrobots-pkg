@@ -209,6 +209,9 @@ DoorController::Holds {
       if(recheck_doorway == true){
 	starts_before(CheckDoorway.Active cmd);
 	concurrent(cmd.end, end_bounds);
+	eq(cmd.x, target_x);
+	eq(cmd.y, target_y);
+	eq(cmd.th, target_th);
       }
 
       if(recheck_doorway == false){
@@ -295,6 +298,9 @@ DoorController::Holds {
 		// DetectDoor(any, end_bounds] == Active();
 		starts_before(DetectDoor.Active cmd);
 		concurrent(cmd.end, end_bounds);
+		eq(cmd.x, x1);
+		eq(cmd.y, y1);
+		eq(cmd.th, detect_th);
 	      }
 	      else {
 		// MoveBase(any, end_bounds] == Active( ...);
@@ -327,6 +333,7 @@ ReleaseDoor::Inactive{
   if(status == SUCCESS){
     eq(dc.have_handle, have_handle);
     eq(dc.last_checked_door, FORCE_DOOR_CHECK);
+    concurrent(dc.start, start);
   }
 }
 
@@ -342,6 +349,7 @@ OpenDoorWithGrasp::Inactive{
   if(status == SUCCESS){
     eq(dc.last_checked_door, FORCE_DOOR_CHECK);
     eq(dc.have_handle, TRUE);
+    concurrent(dc.start, start);
   }
 }
 
@@ -355,9 +363,10 @@ TwistHandle::Inactive{
   // set values for door and handle state. On the other hand, we could also just
   // start a door detector
   if(status == SUCCESS){
-    eq(dc.door_locked, false);
+    eq(dc.door_locked, door_locked);
     eq(dc.have_handle, TRUE);
     eq(dc.last_checked_door, start);
+    concurrent(dc.start, start);
   }
 }
 
@@ -374,6 +383,7 @@ GraspHandle::Inactive{
   if(status == SUCCESS){
     eq(dc.have_handle, TRUE);
     eq(dc.last_checked_door, start);
+    concurrent(dc.start, start);
   }
 }
 
@@ -388,6 +398,7 @@ OpenDoorWithoutGrasp::Inactive{
   // behavior finding the clear path. What we can do is reset the last checked time to force an immediate recheck
   if(status == SUCCESS){
     eq(dc.last_checked_door, FORCE_DOOR_CHECK);
+    concurrent(dc.start, start);
   }
 }
 
@@ -404,6 +415,7 @@ DetectDoor::Inactive{
   if(status == SUCCESS){
     eq(dc.found_door, found_door);
     eq(dc.found_handle, found_handle);
+    concurrent(dc.start, start);
   }
 }
 
@@ -420,6 +432,7 @@ CheckDoorway::Inactive{
     eq(dc.doorway_clear, doorway_clear);
     eq(dc.door_locked, door_locked);
     eq(dc.last_checked_door, start);
+    concurrent(dc.start, start);
   }
 }
 
@@ -434,6 +447,7 @@ MoveBase::Inactive {
 
   if(status == SUCCESS){
     eq(dc.have_handle, FALSE);
+    concurrent(dc.start, start);
   }
 }
 
