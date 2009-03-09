@@ -1,0 +1,113 @@
+define block model
+(
+  size3 [0.5 0.5 0.75]
+  gui_nose 0
+)
+
+define topurg laser
+(
+  range_min 0.0
+  range_max 30.0
+  fov 270.25
+  samples 1081
+  # generic model properties
+  color "black"
+  size [ 0.05 0.05 0.1 ]
+)
+
+define pr2 position
+(
+  size3 [0.65 0.65 0.25]
+  origin3 [-0.05 0 0 0]
+  gui_nose 1
+  drive "omni"
+  topurg(pose [0.275 0.000 0.000])
+)
+
+define floorplan model
+(
+  # sombre, sensible, artistic
+  color "gray30"
+
+  # most maps will need a bounding box
+  boundary 1
+
+  gui_nose 0
+  gui_grid 0
+  gui_movemask 0
+  gui_outline 0
+  gripper_return 0
+  fiducial_return 0
+  laser_return 1
+)
+
+# set the resolution of the underlying raytrace model in meters
+resolution 0.02
+
+interval_sim 10  # simulation timestep in milliseconds
+interval_real 10  # real-time interval between simulation updates in milliseconds 
+
+window
+( 
+  size [ 1149.000 858.000 ] 
+  center [1258.990 1598.960] 
+  rotate [ 0.000 -1.560 ]
+  scale 52.306 
+)
+
+# load an environment bitmap
+floorplan
+( 
+  name "willow"
+  bitmap "../maps/willow-maze.pgm"
+  size3 [58.25 47.25 1.0]
+  pose [-23.625 29.125 90.000]
+)
+
+# throw in a robot
+pr2( pose [-34.528 22.035 93.159] name "pr2" color "blue")
+block( pose [-33.474 29.203 180.000] color "red")
+block( pose [-33.463 32.442 180.000] color "red")
+block( pose [-32.513 27.830 180.000] color "red")
+block( pose [-32.543 30.869 180.000] color "red")
+block( pose [-33.098 21.011 180.000] color "red")
+block( pose [-33.465 23.373 180.000] color "red")
+block( pose [-32.516 25.044 180.000] color "red")
+block( pose [-30.945 24.782 180.000] color "red")
+block( pose [-29.337 24.426 180.000] color "red")
+block( pose [-30.336 31.324 180.000] color "red")
+block( pose [-29.102 24.450 180.000] color "red")
+block( pose [-33.595 21.751 180.000] color "red")
+block( pose [-31.815 28.372 180.000] color "red")
+block( pose [-20.520 18.158 180.000] color "red")
+block( pose [-20.145 16.743 180.000] color "red")
+block( pose [-21.266 15.794 180.000] color "red")
+block( pose [-22.727 13.979 180.000] color "red")
+block( pose [-21.317 13.813 180.000] color "red")
+block( pose [-33.559 21.988 180.000] color "red")
+block( pose [-33.132 21.133 180.000] color "red")
+block( pose [-29.450 28.962 180.000] color "red")
+block( pose [-32.479 20.906 180.000] color "red")
+block( pose [-29.990 26.652 180.000] color "red")
+block( pose [-33.213 21.151 180.000] color "red")
+block( pose [-25.896 32.303 180.000] color "red")
+block( pose [-25.877 31.479 180.000] color "red")
+block( pose [-33.327 21.457 180.000] color "red")
+block( pose [-25.860 31.852 180.000] color "red")
+block( pose [-29.119 29.004 180.000] color "red")
+block( pose [-25.978 25.928 180.000] color "red")
+block( pose [-26.162 33.283 180.000] color "red")
+block( pose [-26.241 33.364 180.000] color "red")
+block( pose [-25.868 31.191 180.000] color "red")
+block( pose [-25.930 32.779 180.000] color "red")
+block( pose [-26.827 28.106 180.000] color "red")
+block( pose [-26.946 24.457 180.000] color "red")
+block( pose [-30.308 26.636 180.000] color "red")
+block( pose [-32.565 20.973 180.000] color "red")
+block( pose [-30.974 31.140 180.000] color "red")
+block( pose [-25.925 33.228 180.000] color "red")
+block( pose [-26.006 33.017 180.000] color "red")
+block( pose [-19.892 33.375 180.000] color "red")
+block( pose [-20.329 32.136 180.000] color "red")
+block( pose [-30.020 31.288 180.000] color "red")
+block( pose [-33.458 26.458 180.000] color "red")
