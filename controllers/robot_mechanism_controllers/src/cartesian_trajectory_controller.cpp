@@ -107,9 +107,16 @@ Duration CartesianTrajectoryController::moveTo(const Frame& pose_desi, double du
   // don't do anything when still moving
   if (is_moving_) return Duration().fromSec(0);
 
+  // for debugging purposes only
+  Twist tmp = diff(pose_current_, pose_end_);
+  cout << "pose jump when generating new profile = ";
+  for (unsigned int i=0; i<6; i++)
+    cout << tmp(i) << " ";
+  cout << endl;
+
   // trajectory from pose_begin to pose_end
   pose_end_ = pose_desi;
-  pose_begin_ = getPose();
+  pose_begin_ = pose_current_;
 
   max_duration_ = 0;
   Twist twist_move = diff(pose_begin_, pose_end_);
@@ -171,8 +178,12 @@ void CartesianTrajectoryController::update()
     // still in trajectory
     else{
       // pose
-      Twist twist_begin_current = Twist(Vector(motion_profile_[0].Pos(time_passed_),motion_profile_[1].Pos(time_passed_),motion_profile_[2].Pos(time_passed_)),
-					Vector(motion_profile_[3].Pos(time_passed_),motion_profile_[4].Pos(time_passed_),motion_profile_[5].Pos(time_passed_)) );
+      Twist twist_begin_current = Twist(Vector(motion_profile_[0].Pos(time_passed_),
+					       motion_profile_[1].Pos(time_passed_),
+					       motion_profile_[2].Pos(time_passed_)),
+					Vector(motion_profile_[3].Pos(time_passed_),
+					       motion_profile_[4].Pos(time_passed_),
+					       motion_profile_[5].Pos(time_passed_)) );
       pose_current_ = Frame( pose_begin_.M * Rot( pose_begin_.M.Inverse( twist_begin_current.rot ) ), 
 			     pose_begin_.p + twist_begin_current.vel);
 
