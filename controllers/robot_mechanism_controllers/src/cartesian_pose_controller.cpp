@@ -135,7 +135,7 @@ void CartesianPoseController::update()
   twist_controller_.twist_desi_ = twist_fb + twist_ff_;
   twist_controller_.update();
 
-  if (++loop_count_ % 10 == 0){
+  if (++loop_count_ % 100 == 0){
     if (error_publisher_){
       if (error_publisher_->trylock()){
         error_publisher_->msg_.vel.x = twist_error.vel(0);
