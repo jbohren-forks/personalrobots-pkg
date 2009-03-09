@@ -241,8 +241,9 @@ void PlugController::computeConstraintJacobian()
     constraint_jac_(0,1) = other_norm(0);
     constraint_jac_(1,1) = other_norm(1);
     constraint_jac_(2,1) = other_norm(2);
-    double temp_f_r = line_pid_.updatePid(-dist_to_line_, time-last_time_);
-    f_r_ = (temp_f_r < f_r_max) ? temp_f_r:f_r_max; //dist_to_line * f_r_max; 
+    f_r_ = line_pid_.updatePid(-dist_to_line_, time-last_time_);
+    if (fabs(f_r_) > f_r_max)
+      f_r_ = f_r_max * f_r_ / fabs(f_r_);
   }
   else
   {
@@ -255,8 +256,9 @@ void PlugController::computeConstraintJacobian()
   //roll constraint
   if (fabs(pose_error_(3)) > 0)
   {
-    double temp_f_roll=roll_pid_.updatePid(-pose_error_(3), time-last_time_);
-    f_roll_ = (temp_f_roll < f_pose_max) ? temp_f_roll:f_pose_max;//pose_error(3) * f_pose_max; 
+    f_roll_ = roll_pid_.updatePid(-pose_error_(3), time-last_time_);
+    if (fabs(f_roll_) > f_pose_max)
+      f_roll_ = f_pose_max * f_roll_ / fabs(f_roll_);
   }
   else
   {
@@ -266,8 +268,9 @@ void PlugController::computeConstraintJacobian()
   //pitch constraint
   if (fabs(pose_error_(4)) > 0)
   {
-    double temp_f_pitch=pitch_pid_.updatePid(-pose_error_(4), time-last_time_);
-    f_pitch_= (temp_f_pitch < f_pose_max) ? temp_f_pitch:f_pose_max;//f_pitch = pose_error(4) * f_pose_max; 
+    f_pitch_ = pitch_pid_.updatePid(-pose_error_(4), time-last_time_);
+    if (fabs(f_pitch_) > f_pose_max)
+      f_pitch_ = f_pose_max * f_pitch_ / fabs(f_pitch_);
   }
   else
   {
@@ -277,8 +280,9 @@ void PlugController::computeConstraintJacobian()
   //yaw constraint
   if (fabs(pose_error_(5)) > 0)
   {
-    double temp_f_yaw=yaw_pid_.updatePid(-pose_error_(5), time-last_time_);
-    f_yaw_ = (temp_f_yaw < f_pose_max) ? temp_f_yaw:f_pose_max;//f_yaw = pose_error(5) * f_pose_max; 
+    f_yaw_ = yaw_pid_.updatePid(-pose_error_(5), time-last_time_);
+    if (fabs(f_yaw_) > f_pose_max)
+      f_yaw_ = f_pose_max * f_yaw_ / fabs(f_yaw_);
   }
   else
   {
