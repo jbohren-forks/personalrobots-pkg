@@ -55,7 +55,7 @@ class Executive:
     self.recharger = recharger
     self.cycle_time = cycle_time
     self.state = "nav"
-    self.current_goal = None
+    self.current_goal = self.goals[0]
 
   def legalStates(self):
     return self.navigator.legalState() and self.batt_monitor.legalState() and self.recharger.legalState()
