@@ -38,7 +38,7 @@ namespace costmap_2d {
       return ros::Duration(0, 0);
 
     double period = 1 / rate;
-    return ros::Duration((int) rint(period), (int) rint((period - rint(period)) * pow(10.0, 9.0)));
+    return ros::Duration(period);
   }
 
   ObservationBuffer::ObservationBuffer(const std::string& frame_id, const std::string& global_frame_id, ros::Duration keep_alive, ros::Duration refresh_interval)
@@ -117,10 +117,10 @@ namespace costmap_2d {
       return false;
     }
 
-    bool ok = ((ros::Time::now() - last_updated_) <= refresh_interval_);
+    bool ok = ((ros::Time::now() - last_updated_).toSec() <= refresh_interval_.toSec());
 
     if(!ok){
-      ROS_INFO("Observation Buffer %s is not up to date. It has not been updated for %f seconds.", frame_id_.c_str(), (ros::Time::now() - last_updated_).toSec());
+      ROS_INFO("Observation Buffer %s is not up to date. It has not been updated for %f seconds. It must be updated every %f seconds", frame_id_.c_str(), (ros::Time::now() - last_updated_).toSec(), refresh_interval_.toSec());
     }
 
     return ok;
