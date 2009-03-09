@@ -73,6 +73,13 @@ public:
 		}
 	}
 
+
+  boost::timed_mutex& getMutex() 
+  {
+    if (count_ == expected_count_) //deal with zero length
+      delete lock_;
+    return mutex_;
+  };
 	int count_;
 	int expected_count_;
 
@@ -115,6 +122,13 @@ public:
 		  delete lock_;
 		}
 	}
+
+  boost::timed_mutex& getMutex() 
+  {
+    if (count_ == expected_count_) //deal with zero length
+      delete lock_;
+    return mutex_;
+  };
 
 	T message_;
 
@@ -361,6 +375,102 @@ TEST(MessageNotifier, setTargetFrame)
 
 	EXPECT_EQ(1, n.count_);
 }
+
+TEST(MessageNotifier, setTolerance)
+{
+  ros::Duration offset(0.2);
+	Notification n(0);
+	Notification n1(1);
+	Notification n2(1);
+	Counter<tf::tfMessage> c("tf_message", 1);
+	MessageNotifier<robot_msgs::PointStamped>* notifier = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1);
+	MessageNotifier<robot_msgs::PointStamped>* notifier1 = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n1, _1), "test_message", "frame1", 1);
+	MessageNotifier<robot_msgs::PointStamped>* notifier2 = new MessageNotifier<robot_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n2, _1), "test_message", "frame1", 1);
+	std::auto_ptr<MessageNotifier<robot_msgs::PointStamped> > notifier_ptr(notifier);
+
+        notifier->setTolerance(offset);
+        notifier1->setTolerance(offset);
+        notifier2->setTolerance(offset);
+
+	ros::Duration().fromSec(0.2).sleep();
+
+	ros::Time stamp = ros::Time::now();
+
+	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame2");
+
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
+
+		EXPECT_EQ(true, lock.owns_lock());
+	}
+
+        
+	robot_msgs::PointStamped msg;
+	msg.header.stamp = stamp + offset;
+	msg.header.frame_id = "frame2";
+	g_node->publish("test_message", msg);
+
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(n.getMutex(), xt);
+
+		EXPECT_EQ(true, lock.owns_lock());
+	}
+	EXPECT_EQ(0, n.count_); //No return due to lack of space for offset
+
+	Counter<tf::tfMessage> c2("tf_message", 1);
+
+	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp + offset*1.1, "frame1", "frame2");
+
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(c2.getMutex(), xt);
+
+		EXPECT_EQ(true, lock.owns_lock());
+	}
+
+
+	msg.header.stamp = stamp;
+	msg.header.frame_id = "frame2";
+	g_node->publish("test_message", msg);
+
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(n1.getMutex(), xt);
+
+		EXPECT_EQ(true, lock.owns_lock());
+	}
+	EXPECT_EQ(1, n1.count_); //recieved one callback
+
+	msg.header.stamp = stamp + offset;
+	msg.header.frame_id = "frame2";
+	g_node->publish("test_message", msg);
+
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(n2.mutex_, xt);
+
+		EXPECT_EQ(true, lock.owns_lock());
+	}
+	EXPECT_EQ(1, n2.count_); //recieved 1 first and last are out of range
+}
+
 
 int main(int argc, char** argv)
 {
