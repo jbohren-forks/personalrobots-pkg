@@ -1,9 +1,9 @@
 <launch>
 
   <param name="arm_constraint/line_pid/p" value="700.0" type="double" />
-  <param name="arm_constraint/line_pid/i" value="0.0" type="double" />
+  <param name="arm_constraint/line_pid/i" value="0.5" type="double" />
   <param name="arm_constraint/line_pid/d" value="5.0" type="double" />
-  <param name="arm_constraint/line_pid/i_clamp" value="50.0" type="double" />
+  <param name="arm_constraint/line_pid/i_clamp" value="40.0" type="double" />
 
   <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/controllers.xml" />
 </launch>
