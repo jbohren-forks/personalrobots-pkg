@@ -22,17 +22,20 @@ if [ $? -ne 0 ] ; then
 fi
 
 
-
+# Build function takes:
+# 1. library name
+# 2. jam flags
 function run_jam {
   echo $1
+  echo $2
   if [ `uname` = Darwin ]; then
-    jam $ROS_PARALLEL_JOBS -q $1.dylib
+    jam $2 $ROS_PARALLEL_JOBS -q $1.dylib
   else
-    jam $ROS_PARALLEL_JOBS -q $1.so
+    jam $2 $ROS_PARALLEL_JOBS -q $1.so
   fi
   if [ $? -ne 0 ] ; then
     echo "Jam of $1 failed."
-    exit $2
+    exit $3
   fi
 }
 
@@ -51,8 +54,8 @@ if [ "$1" = "test" ] ; then
   fi
 
 else
-  run_jam "libTREX_g" 1
-  run_jam "libTREX_o" 2
+  run_jam "libTREX_g" " " 1
+  run_jam "libTREX_o" "-sVARIANTS=OPTIMIZED -sLIBRARIES=SHARED" 2
 fi
 
 cd ../
