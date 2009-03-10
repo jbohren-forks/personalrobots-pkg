@@ -90,4 +90,37 @@
     </collision>
   </link>
 
+  <joint name="high_def_optical_fixed_joint" type="fixed" />
+  <link name="high_def_optical_frame">
+    <parent name="high_def_frame" />
+    <joint name="high_def_optical_fixed_joint" />
+    <origin xyz="0.0 0.0 0.0" rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
+
+    <inertial>
+      <mass value="0.01" />
+      <com xyz="0 0 0" />
+      <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
+               iyy="0.001"  iyz="0.0"
+               izz="0.001" />
+    </inertial>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material" value="Gazebo/Blue" />
+      </map>
+      <geometry name="high_def_optical_visual">
+        <mesh scale="0.01 0.01 0.01" />
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" />
+      <geometry name="high_def_optical_collision">
+        <box size="0.01 0.01 0.01" />
+      </geometry>
+    </collision>
+  </link>
+
+
 </robot>
