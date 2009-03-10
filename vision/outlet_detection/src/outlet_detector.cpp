@@ -32,7 +32,8 @@ static int PRINTF( const char*, ... )
 
 #include "highgui.h"
 
-int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, vector<outlet_t>& outlets,
+int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortion_params, 
+	vector<outlet_t>& outlets, outlet_template_t outlet_templ,
 	const char* output_path, const char* filename)
 {
     if (distortion_params) {
@@ -73,7 +74,8 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 	const int iter_count = 3;
 	for(int j = 0; j < iter_count; j++)
 	{
-		calc_outlet_homography(outlet_tuple.centers, homography, inv_homography);
+		calc_outlet_homography(outlet_tuple.centers, homography, 
+							   outlet_templ, inv_homography);
 		
 		float sum_dist = 0;
 		for(int i = 0; i < 4; i++)
@@ -113,15 +115,18 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 	
 	filter_outlets_tuple(outlets, outlet_tuple.tuple_mask, hor_dir);
 #if defined(_VERBOSE)
-	IplImage* temp = cvCloneImage(src);
-	draw_outlets(temp, outlets);
-	
-	char buf[1024];
-	sprintf(buf, "%s/output_filt/%s", output_path, filename);
-	strcpy(buf + strlen(buf) - 3, "jpg"); 
-	cvSaveImage(buf, temp);	
-	
-	cvReleaseImage(&temp);
+	if(output_path && filename)
+	{
+		IplImage* temp = cvCloneImage(src);
+		draw_outlets(temp, outlets);
+		
+		char buf[1024];
+		sprintf(buf, "%s/output_filt/%s", output_path, filename);
+		strcpy(buf + strlen(buf) - 3, "jpg"); 
+		cvSaveImage(buf, temp);	
+		
+		cvReleaseImage(&temp);
+	}
 #endif //_VERBOSE
 	
 	PRINTF(" found %d holes, %d outlets\n", features.size(), outlets.size());

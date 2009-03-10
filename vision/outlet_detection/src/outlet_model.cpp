@@ -671,11 +671,14 @@ void detect_outlets(IplImage* src, vector<outlet_feature_t>& features, vector<ou
 	
 #if defined(_VERBOSE)
 	char buf[1024];
-	IplImage* _src = cvCloneImage(src);
-	DrawKeypoints(_src, features);
-	sprintf(buf, "%s/keyout/%s", output_path, filename);
-	cvSaveImage(buf, _src);
-	cvReleaseImage(&_src);
+	if(output_path && filename)
+	{
+		IplImage* _src = cvCloneImage(src);
+		DrawKeypoints(_src, features);
+		sprintf(buf, "%s/keyout/%s", output_path, filename);
+		cvSaveImage(buf, _src);
+		cvReleaseImage(&_src);
+	}
 #endif //_VERBOSE
 
 	grey = cvCreateImage(cvSize(src->width, src->height), IPL_DEPTH_8U, 1);
@@ -692,11 +695,14 @@ void detect_outlets(IplImage* src, vector<outlet_feature_t>& features, vector<ou
 	
 	
 #if defined(_VERBOSE)
-	draw_outlets(temp, outlets);
-
-	sprintf(buf, "%s/output/%s", output_path, filename);
-	strcpy(buf + strlen(buf) - 3, "jpg"); 
-	cvSaveImage(buf, temp);
+	if(output_path && filename)
+	{
+		draw_outlets(temp, outlets);
+		
+		sprintf(buf, "%s/output/%s", output_path, filename);
+		strcpy(buf + strlen(buf) - 3, "jpg"); 
+		cvSaveImage(buf, temp);
+	}
 #endif //_VERBOSE
 	
 #if defined(_TUNING) && 1
@@ -1237,8 +1243,11 @@ void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features
 	char buf[1024];
 	
 #if defined(_VERBOSE)
-	sprintf(buf, "%s/holes/%s", output_path, filename);
-	cvSaveImage(buf, imgholes);
+	if(output_path && filename)
+	{
+		sprintf(buf, "%s/holes/%s", output_path, filename);
+		cvSaveImage(buf, imgholes);
+	}
 #endif //_VERBOSE
 	
 	if(src->nChannels == 3)

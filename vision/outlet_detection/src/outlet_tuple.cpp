@@ -447,9 +447,12 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 #endif //_VERBOSE_TUPLE
 	
 #if defined(_VERBOSE)
-	char buf[1024];
-	sprintf(buf, "%s/warped/%s", output_path, filename);
-	cvSaveImage(buf, img2);
+	if(output_path && filename)
+	{
+		char buf[1024];
+		sprintf(buf, "%s/warped/%s", output_path, filename);
+		cvSaveImage(buf, img2);
+	}
 #endif //_VERBOSE
 	
 #if defined(_VERBOSE) || defined(_VERBOSE_TUPLE)
@@ -530,14 +533,20 @@ const int outlet_height = 25;
 const float xsize = 46.1f;
 const float ysize = 38.7f;
 
-void calc_outlet_homography(const CvPoint2D32f* centers, CvMat* map_matrix, CvMat* inverse_map_matrix)
+void calc_outlet_homography(const CvPoint2D32f* centers, CvMat* map_matrix, 
+							outlet_template_t templ, CvMat* inverse_map_matrix)
 {
 	CvPoint2D32f rectified[4];
-	
+
+#if 0
 	rectified[0] = centers[0];
 	rectified[1] = cvPoint2D32f(centers[0].x + outlet_width, centers[0].y);
 	rectified[2] = cvPoint2D32f(centers[0].x + outlet_width, centers[0].y + outlet_height);
 	rectified[3] = cvPoint2D32f(centers[0].x, centers[0].y + outlet_height);
+#else
+	memcpy(rectified, templ.get_template(), templ.get_count()*sizeof(CvPoint2D32f));
+#endif
+	
 	cvGetPerspectiveTransform(centers, rectified, map_matrix);
 	
 	if(inverse_map_matrix)
@@ -588,7 +597,7 @@ void calc_outlet_homography(const CvPoint2D32f* centers, CvSize src_size, CvMat*
 {
 //	CvMat* map_matrix = cvCreateMat(3, 3, CV_32FC1);
 	CvMat* inverse_map_matrix = cvCreateMat(3, 3, CV_32FC1);
-	calc_outlet_homography(centers, map_matrix, inverse_map_matrix);
+	calc_outlet_homography(centers, map_matrix, outlet_template_t(), inverse_map_matrix);
 	
 	CvMat* corners = cvCreateMat(1, 4, CV_32FC2);
 	CvMat* dst = cvCreateMat(1, 4, CV_32FC2);
@@ -708,8 +717,12 @@ void calc_origin_scale(const CvPoint2D32f* centers, CvMat* map_matrix, CvPoint3D
 		origin->y = _dst->data.fl[1];
 		origin->z = 0;
 		
+#if 0
 		scalex = xsize/(_dst->data.fl[2] - _dst->data.fl[0]);
 		scaley = ysize/(_dst->data.fl[5] - _dst->data.fl[3]);
+#else
+		scalex = scaley = 1.0f;
+#endif
 		
 		cvReleaseMat(&_src);
 		cvReleaseMat(&_dst);

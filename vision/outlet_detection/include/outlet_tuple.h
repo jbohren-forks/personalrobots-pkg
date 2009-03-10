@@ -64,6 +64,62 @@ struct outlet_tuple_t
 	}
 };
 
+class outlet_template_t
+{
+public:
+	outlet_template_t(int count = 4, const CvPoint2D32f* templ = 0)
+	{
+		initialize(count, templ);
+	};
+	
+	outlet_template_t(const outlet_template_t& outlet_templ)
+	{
+		initialize(outlet_templ.get_count(), outlet_templ.get_template());
+	};
+	
+	~outlet_template_t() 
+	{
+		delete []centers;
+	};
+	
+public:
+	void initialize(int count, const CvPoint2D32f* templ)
+	{
+		outlet_count = count;
+		centers = new CvPoint2D32f[count];
+		if(templ)
+		{
+			memcpy(centers, templ, count*sizeof(CvPoint2D32f));
+		}
+		else
+		{
+			set_default_template();
+		}
+	};
+	
+	int get_count() const
+	{
+		return outlet_count;
+	};
+	
+	const CvPoint2D32f* get_template() const
+	{
+		return centers;
+	};
+	
+	void set_default_template()
+	{
+		centers[0] = cvPoint2D32f(0.0f, 0.0f);
+		centers[1] = cvPoint2D32f(46.0f, 0.0f);
+		centers[2] = cvPoint2D32f(46.15f, 38.7f);
+		centers[3] = cvPoint2D32f(-0.15f, 38.7f);
+	};
+	
+protected:
+	int outlet_count;
+	CvPoint2D32f* centers;
+};
+
 typedef struct 
 {
 	CvPoint2D32f center;
@@ -109,8 +165,11 @@ void calc_origin_scale(const CvPoint2D32f* centers, CvMat* map_matrix, CvPoint3D
 // Input parameters:
 //	centers: outlet centers
 //	map_matrix: output homography matrix (map from a camera image to a rectified image)
+//  templ: outlet template
 //	inverse_map_matrix: optional inverse homography matrix
-void calc_outlet_homography(const CvPoint2D32f* centers, CvMat* map_matrix, CvMat* inverse_map_matrix = 0);
+void calc_outlet_homography(const CvPoint2D32f* centers, CvMat* map_matrix, 
+							outlet_template_t templ = outlet_template_t(), 
+							CvMat* inverse_map_matrix = 0);
 
 void calc_outlet_homography(const CvPoint2D32f* centers, CvSize src_size, CvMat* map_matrix, CvSize* dst_size);
 
