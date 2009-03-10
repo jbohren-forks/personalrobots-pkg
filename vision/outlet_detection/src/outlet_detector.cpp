@@ -67,7 +67,39 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 	CvPoint2D32f scale;
 	
 	homography = cvCreateMat(3, 3, CV_32FC1);
-	calc_outlet_homography(outlet_tuple.centers, homography, 0);
+	CvMat* inv_homography = cvCreateMat(3, 3, CV_32FC1);
+	
+	// test the distance
+	const int iter_count = 3;
+	for(int j = 0; j < iter_count; j++)
+	{
+		calc_outlet_homography(outlet_tuple.centers, homography, inv_homography);
+		
+		float sum_dist = 0;
+		for(int i = 0; i < 4; i++)
+		{
+			vector<CvPoint2D32f> borders;
+			map_vector(outlet_tuple.borders[i], homography, borders);
+			CvPoint2D32f center = calc_center(borders);
+			vector<CvPoint2D32f> temp;
+			temp.push_back(outlet_tuple.centers[i]);
+			map_vector(temp, homography, temp);
+			float dist = length(temp[0] - center);
+			sum_dist += dist;
+						
+			temp.clear();
+			temp.push_back(center);
+			map_vector(temp, inv_homography, temp);
+			outlet_tuple.centers[i] = temp[0];
+		}
+
+#if defined(_VERBOSE)
+		printf("Iteration %d: error %f pixels\n", j, sum_dist/4);
+#endif //_VERBOSE
+		
+	}
+	cvReleaseMat(&inv_homography);
+	
 	calc_origin_scale(outlet_tuple.centers, homography, &origin, &scale);
 
 	CvMat* rotation_vector = cvCreateMat(3, 1, CV_32FC1);

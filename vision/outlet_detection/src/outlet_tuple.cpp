@@ -38,6 +38,21 @@ CvPoint2D32f calc_center(CvSeq* seq)
 	return center;
 }
 
+CvPoint2D32f calc_center(const vector<CvPoint2D32f>& points)
+{
+	CvPoint2D32f center = cvPoint2D32f(0, 0);
+	for(int i = 0; i < points.size(); i++)
+	{
+		center.x += points[i].x;
+		center.y += points[i].y;
+	}
+	
+	center.x /= points.size();
+	center.y /= points.size();
+	
+	return(center);
+}
+
 int find_dir(const CvPoint2D32f* dir, int xsign, int ysign)
 {
 	for(int i = 0; i < 4; i++)
@@ -202,7 +217,6 @@ int find_start_idx3(const vector<outlet_elem_t>& helper_vec)
 	return -1;
 	
 }
-
 
 int order_tuple2(vector<outlet_elem_t>& tuple)
 {
@@ -416,6 +430,16 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 		
 	}
 	
+	// save outlet borders 
+	for(int i = 0; i < 4; i++)
+	{
+		for(int j = 0; j < tuple[i].seq->total; j++)
+		{
+			CvPoint* p = (CvPoint*)cvGetSeqElem(tuple[i].seq, j);
+			outlet_tuple.borders[i].push_back(cvPoint2D32f(p->x, p->y));
+		}
+	}
+	
 #if defined(_VERBOSE_TUPLE)
 	cvNamedWindow("1", 1);
 	cvShowImage("1", img2);
@@ -520,6 +544,30 @@ void calc_outlet_homography(const CvPoint2D32f* centers, CvMat* map_matrix, CvMa
 	{
 		cvGetPerspectiveTransform(rectified, centers, inverse_map_matrix);
 	}
+}
+
+void map_vector(const vector<CvPoint2D32f>& points, CvMat* homography, vector<CvPoint2D32f>& result)
+{
+	int points_count = points.size();
+	CvMat* src = cvCreateMat(1, points_count, CV_32FC2);
+	CvMat* dst = cvCreateMat(1, points_count, CV_32FC2);
+	
+	for(int i = 0; i < points.size(); i++)
+	{
+		src->data.fl[2*i] = points[i].x;
+		src->data.fl[2*i + 1] = points[i].y;
+	}
+	
+	cvPerspectiveTransform(src, dst, homography);
+	
+	result.clear();
+	for(int i = 0; i < points_count; i++)
+	{
+		result.push_back(cvPoint2D32f(dst->data.fl[2*i], dst->data.fl[2*i + 1]));
+	}
+	
+	cvReleaseMat(&src);
+	cvReleaseMat(&dst);
 }
 
 void map_image_corners(CvSize src_size, CvMat* map_matrix, CvMat* corners, CvMat* dst)

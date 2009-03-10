@@ -54,6 +54,7 @@ inline float length(const CvPoint3D32f& p)
 struct outlet_tuple_t
 {
 	CvPoint2D32f centers[4];
+	vector<CvPoint2D32f> borders[4];
 	IplImage* tuple_mask;
 	CvRect roi;
 	
@@ -76,6 +77,10 @@ CvPoint2D32f calc_center(CvSeq* seq);
 int find_dir(const CvPoint2D32f* dir, int xsign, int ysign);
 int order_tuple(CvPoint2D32f* centers);
 int order_tuple2(vector<outlet_elem_t>& tuple);
+
+void map_vector(const vector<CvPoint2D32f>& points, CvMat* homography, vector<CvPoint2D32f>& result);
+CvPoint2D32f calc_center(const vector<CvPoint2D32f>& points);
+
 
 
 // find_outlet_centroids: finds a tuple of 4 orange outlets.
