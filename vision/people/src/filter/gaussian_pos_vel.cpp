@@ -55,6 +55,10 @@ namespace BFL
 
   GaussianPosVel::~GaussianPosVel(){}
 
+  GaussianPosVel* GaussianPosVel::Clone() const
+  {
+    return new GaussianPosVel(mu_, sigma_);
+  }
 
   std::ostream& operator<< (std::ostream& os, const GaussianPosVel& g)
   {

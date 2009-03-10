@@ -125,4 +125,10 @@ namespace BFL
     return sigma;
   }
 
+  GaussianVector* 
+  GaussianVector::Clone() const
+  {
+    return new GaussianVector(mu_, sigma_);
+  }
+
 } // End namespace BFL

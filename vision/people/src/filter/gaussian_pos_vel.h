@@ -59,6 +59,9 @@ namespace BFL
       /// Destructor
       virtual ~GaussianPosVel();
 
+      /// clone function
+      virtual GaussianPosVel* Clone() const;
+
       /// output stream for GaussianPosVel
       friend std::ostream& operator<< (std::ostream& os, const GaussianPosVel& g);
     

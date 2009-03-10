@@ -68,7 +68,7 @@ using namespace BFL;
 using namespace MatrixWrapper;
 
 
-static const double no_observation_timeout_s = 1.0;
+static const double no_observation_timeout_s = 0.5;
 static const double max_second_leg_age_s     = 2.0;
 static const double max_track_jump_m         = 1.0; 
 static const double max_meas_jump_m          = 0.75; // 1.0

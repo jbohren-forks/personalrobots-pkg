@@ -73,6 +73,7 @@ namespace BFL
       virtual tf::Vector3 ExpectedValueGet() const;
       virtual MatrixWrapper::SymmetricMatrix CovarianceGet() const;
 
+      virtual GaussianVector* Clone() const;
     };
 
 } // end namespace
