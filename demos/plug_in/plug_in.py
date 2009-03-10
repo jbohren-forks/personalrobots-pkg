@@ -103,7 +103,14 @@ def main():
         outlet_pose.header.stamp = last_time()
         pub_command.publish(outlet_pose)
         if cnt % 3 == 0:
-            set_tool_frame(track_plug_pose.msg)
+            try:
+                set_tool_frame(track_plug_pose.msg)
+            except rospy.service.ServiceException, ex:
+                print "set_tool frame service went down.  Reconnecting..."
+                rospy.wait_for_service("/%s/set_tool_frame" % CONTROLLER)
+                if rospy.is_shutdown(): return
+                set_tool_frame = rospy.ServiceProxy("/%s/set_tool_frame" % CONTROLLER, SetPoseStamped)
+                print "got it.  Continuing"
         time.sleep(1.0)
 
 if __name__ == '__main__': main()
