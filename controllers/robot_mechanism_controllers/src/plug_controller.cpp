@@ -192,7 +192,10 @@ void PlugController::update()
   JntArray jnt_eff(kdl_chain_.getNrOfJoints());
   for (unsigned int i = 0; i < kdl_chain_.getNrOfJoints(); ++i)
     jnt_eff(i) = joint_constraint_torq_(i) + constraint_torq_(i) + task_torq_(i);
-  chain_.setEfforts(jnt_eff, robot_->joint_states_);
+  if (jnt_eff.rows() != 7)
+    ROS_ERROR("Wrong number of joint effort elements: %d", jnt_eff.rows());
+  else
+    chain_.setEfforts(jnt_eff, robot_->joint_states_);
 }
 
 
