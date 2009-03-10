@@ -1,6 +1,6 @@
 all: installed
 
-SVN_REVISION= -r 30024
+SVN_REVISION= -r 30029
 SVN_DIR = bfl-svn
 SVN_URL = http://svn.mech.kuleuven.be:/repos/orocos/trunk/bfl
 SVN_PATCH = warning.patch
