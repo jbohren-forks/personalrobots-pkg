@@ -60,6 +60,8 @@ def calibrate(config):
     spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
     kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
+    success = True
+
     # Spawns the controllers
     resp = spawn_controller(config)
 
@@ -70,6 +72,7 @@ def calibrate(config):
         for i in range(len(resp.ok)):
             if ord(resp.ok[i]) == 0:
                 print "Failed: %s" % resp.name[i]
+                success = False
             else:
                 launched.append(resp.name[i])
         print "Launched: %s" % ', '.join(launched)
@@ -88,6 +91,8 @@ def calibrate(config):
             sleep(0.5)
     finally:
         [kill_controller(name) for name in launched]
+
+    return success
 
 
 def main():
@@ -111,7 +116,8 @@ def main():
         print "Reading from stdin..."
         xml = sys.stdin.read()
 
-    calibrate(xml)
+    if not calibrate(xml):
+        sys.exit(1)
     print "Calibration complete"
 
 if __name__ == '__main__':
