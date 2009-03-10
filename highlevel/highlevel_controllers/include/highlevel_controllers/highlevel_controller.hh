@@ -136,7 +136,7 @@ protected:
   HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
     initialized(false), terminated(false), stateTopic(_stateTopic), 
     goalTopic(_goalTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), 
-    timeout(0, 0), valid_(false) {
+    lastPlan_(ros::Time::now()), timeout_(0, 0), valid_(false) {
 
     // Obtain the control frequency for this node
     double controller_frequency(10);
@@ -292,40 +292,36 @@ private:
    * it will call the planner with the given timeout.
    */
   void plannerLoop(){
-    ros::Time lastPlan = ros::Time::now();
 
     while(ros::Node::instance()->ok() && !isTerminated()){
       ros::Time curr = ros::Time::now();
-
-      // Check for bogus time value and update to correct. This can happen for example where the node starts up
-      // and uses system time but then switches to listen to a time message based on simulated time. Just makes the code robust
-      // to such startup errors. If we do find some other timing anomaly it will correct by recomputing the last planning time.
-      // This has the effect of resetting the timeout monotor but that should only introduce a minor delay
-      if(curr < lastPlan)
-	lastPlan = curr;
 
       if(isInitialized() && isActive()){
 
 	// If the plannerCycleTime is 0 then we only call the planner when we need to
 	if(plannerCycleTime_ != 0 || !isValid()){
 	  setValid(makePlan());
-	  if(!isValid()){
-	    // Could use a refined locking scheme but for now do not want to delegate that to a derived class
-	    lock();	 
-  
-	    ros::Duration elapsed_time = ros::Time::now() - lastPlan;
-	    ROS_DEBUG("Last current value at %f seconds:", curr.toSec());
-	    ROS_DEBUG("Last plan at %f seconds:", lastPlan.toSec());
-	    ROS_DEBUG("Elapsed time is %f seconds:", elapsed_time.toSec());
 
-	    if ((elapsed_time > timeout) && timeout.toSec() != 0.0)
+	  // Could use a refined locking scheme but for now do not want to delegate that to a derived class
+	  lock();
+
+	  if(!isValid()){
+  
+	    ros::Duration elapsed_time = ros::Time::now() - lastPlan_;
+	    if ((elapsed_time > timeout_) && timeout_.toSec() != 0.0){
+	      ROS_INFO("Last current value at %f seconds:", curr.toSec());
+	      ROS_INFO("Last plan at %f seconds:", lastPlan_.toSec());
+	      ROS_INFO("Elapsed time is %f seconds:", elapsed_time.toSec());
 	      abort();
+	    }
 
 	    handlePlanningFailure();
-	    unlock();    
 	  } else {
-	    lastPlan = ros::Time::now();
+	    // Reset the planning timeout counter
+	    lastPlan_ = ros::Time::now();
 	  }
+
+	  unlock();
 	}
       }
 
@@ -373,9 +369,9 @@ private:
   void goalCallback(){
     if (goalMsg.timeout < 0) {
       ROS_ERROR("Controller was given negative timeout, setting to zero.");
-      timeout = ros::Duration().fromSec(0);
+      timeout_ = ros::Duration().fromSec(0);
     } else {
-      timeout = ros::Duration().fromSec(goalMsg.timeout);
+      timeout_ = ros::Duration().fromSec(goalMsg.timeout);
     }
 
     // Do nothing if not initialized
@@ -383,6 +379,9 @@ private:
       return;
 
     lock();
+
+    // reset the timer on planning delay bound
+    lastPlan_ = ros::Time::now();
 
     if(!isActive() && goalMsg.enable){
       activate();
@@ -401,6 +400,15 @@ private:
 
     // Call to allow derived class to update goal member variables
     updateGoalMsg();
+
+    // Update the state message with suitable data from inputs
+    updateStateMsg();
+
+    // Publish a response reflecting the state for this cycle. The state may change
+    // after this execution, but publishing it here ensures we get a message where the state
+    // is active, even if it transitions in the first cycle to an inactive state. This can occur for
+    // example if the planner returns that there is no plan to be had, for example.
+    ros::Node::instance()->publish(stateTopic, this->stateMsg);
 
     unlock();
   }
@@ -477,7 +485,8 @@ private:
   boost::recursive_mutex lock_; /*!< Lock for access to class members in callbacks */
   boost::thread* plannerThread_; /*!< Thread running the planner loop */
   highlevel_controllers::Ping shutdownMsg_; /*!< For receiving shutdown from executive */
-  ros::Duration timeout; /*< The time limit for planning failure. */
+  ros::Time lastPlan_; /* The last time a plan was computed. Will be cleared with every new goal */
+  ros::Duration timeout_; /*< The time limit for planning failure. */
   bool valid_; /*< True if it is valid */
 };
 
