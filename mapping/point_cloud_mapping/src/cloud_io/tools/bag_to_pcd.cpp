@@ -77,41 +77,6 @@ class BagToPcd: public ros::Node
     virtual ~BagToPcd () { }
 
     ////////////////////////////////////////////////////////////////////////////////
-    /** \brief Dump a point cloud to disk
-     * \param fn the name of the output file
-     * \param cloud the point cloud data message
-     * \param vx the X coordinate of the viewpoint
-     * \param vy the Y coordinate of the viewpoint
-     * \param vz the Z coordinate of the viewpoint
-     */
-    void
-      saveCloud (char *fn, PointCloud cloud, double vx, double vy, double vz)
-    {
-      std::ofstream fs;
-      fs.precision (5);
-      fs.open (fn);
-
-      int nr_pts = cloud.get_pts_size ();
-      int dim    = cloud.get_chan_size ();
-      fs << "# [MetaInfo] Viewpoint " << vx << "," << vy << "," << vz << std::endl;
-      fs << "COLUMNS x y z";
-      for (int d = 0; d < dim; d++)
-        fs << " " << cloud.chan[d].name;
-      fs << std::endl;
-      fs << "POINTS " << nr_pts << std::endl;
-      fs << "DATA ascii" << std::endl;
-
-      for (int i = 0; i < nr_pts; i++)
-      {
-        fs << cloud.pts[i].x << " " << cloud.pts[i].y << " " << cloud.pts[i].z;
-        for (int d = 0; d < dim; d++)
-          fs << " " << cloud.chan[d].vals[i];
-        fs << std::endl;
-      }
-      fs.close ();
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////
     // Callback
     void cloud_cb ()
     {
@@ -151,7 +116,6 @@ class BagToPcd: public ros::Node
           }
           cloud_io::savePCDFile (fn_, cloud_, 5);
         }
-        //saveCloud (fn_, cloud_, pout.point.x, pout.point.y, pout.point.z);
         fprintf (stderr, "Data saved to %s.\n", fn_);
       }
     }
@@ -166,8 +130,6 @@ int
   BagToPcd b;
   b.dump_to_disk_ = true;
   b.spin ();
-
-  
 
   return (0);
 }
