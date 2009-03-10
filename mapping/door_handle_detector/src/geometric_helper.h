@@ -58,7 +58,7 @@
 #include <cloud_geometry/projections.h>
 #include <cloud_geometry/statistics.h>
 #include <cloud_geometry/transforms.h>
-#include <cloud_kdtree/kdtree.h>
+#include <point_cloud_mapping/cloud_kdtree.h>
 // Sample Consensus
 #include <sample_consensus/sac.h>
 #include <sample_consensus/msac.h>

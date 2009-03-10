@@ -60,7 +60,7 @@ histogram and matches it using HIK (the Histogram Intersection Kernel) to a "dat
 #include <cloud_geometry/nearest.h>
 
 #include <point_cloud_mapping/cloud_io.h>
-#include <cloud_kdtree/kdtree.h>
+#include <point_cloud_mapping/cloud_kdtree.h>
 
 #include <sys/time.h>
 

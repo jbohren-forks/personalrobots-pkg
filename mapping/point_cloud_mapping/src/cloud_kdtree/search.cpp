@@ -30,7 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include "cloud_kdtree/kdtree.h"
+#include "point_cloud_mapping/cloud_kdtree.h"
 
 namespace cloud_kdtree
 {

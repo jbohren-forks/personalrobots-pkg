@@ -49,7 +49,7 @@ moment invariants, etc.
 #include <tf/transform_listener.h>
 
 // Cloud kd-tree
-#include <cloud_kdtree/kdtree.h>
+#include <point_cloud_mapping/cloud_kdtree.h>
 
 // Cloud geometry
 #include <cloud_geometry/point.h>

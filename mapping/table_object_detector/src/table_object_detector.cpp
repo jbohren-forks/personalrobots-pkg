@@ -55,7 +55,7 @@
 #include <tf/transform_listener.h>
 
 // Kd Tree
-#include <cloud_kdtree/kdtree.h>
+#include <point_cloud_mapping/cloud_kdtree.h>
 
 // Cloud geometry
 #include <cloud_geometry/angles.h>
