@@ -160,4 +160,4 @@ if __name__ == '__main__':
         try:
           mechanism.kill_controller(name)
         except:
-          # Do nothing
+          pass
