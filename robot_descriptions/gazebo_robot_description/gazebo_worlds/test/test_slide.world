@@ -45,8 +45,8 @@
     <frames>
       <row height="100%">
 	<camera width="100%">
-	  <xyz>-10.6 15.3 27.4</xyz>	
-	  <rpy>0 43.5 -50</rpy>
+	  <xyz>-22.4 1.72 17.21</xyz>	
+	  <rpy>0 20.90 -0.9</rpy>
 	</camera>
       </row>
     </frames>
@@ -206,7 +206,7 @@
         <mu1>0.0</mu1>
         <mu2>0.0</mu2>
         <mesh>default</mesh>
-        <xyz>   1.0    -1.0    9.5</xyz>
+        <xyz>   1.25   -1.0   10.5</xyz>
         <size> 2.5</size>
         <mass> 1.0</mass>
         <visual>
