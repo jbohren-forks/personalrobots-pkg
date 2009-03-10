@@ -1,4 +1,5 @@
 string test_name
+string joint_name
 float32[] time
 float32[] cmd
 float32[] effort
