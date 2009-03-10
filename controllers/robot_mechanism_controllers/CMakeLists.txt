@@ -20,6 +20,7 @@ set(_srcs
     src/cartesian_position_controller.cpp
     src/cartesian_torque_controller.cpp
     src/cartesian_orientation_controller.cpp
+    src/cartesian_hybrid_controller.cpp
     src/joint_autotuner.cpp
     src/joint_pd_controller.cpp
     src/joint_calibration_controller.cpp
