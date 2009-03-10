@@ -59,10 +59,14 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 #else
 		const int min_size = 1;
 		const int max_size = 20;
+		
+#if 0
 		if(abs(rect.x - 56) < 5 && abs(rect.y - 147) < 5)
 		{
 			int w = 1;
 		}
+#endif 
+		
 		if(rect.width < min_size || rect.height < min_size || rect.width > max_size || rect.height > max_size)
 		{
 			continue;
@@ -106,10 +110,17 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 		CvScalar avg_outside, std_outside;
 		cvAvgSdv(grey, &avg_outside, &std_outside, mask);
 #else
+
+#if 0
+		// !! this is old contrast calculation that I found unnecessary on 
+		// the latest data (16mm and 5mp)
+		// so this is disabled to save computational time
 		CvRect inner_rect = resize_rect(rect, 0.75);
 		cvSetImageROI(grey, inner_rect);
 		float avg_inside = cvSum(grey).val[0];
 		cvResetImageROI(grey);
+#endif
+		
 #if !defined(_TUNING)
 		CvRect bound = double_rect(rect);
 #else
@@ -146,7 +157,7 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 #if defined(_EUROPE)
 		const float avg_factor = 1.0f;
 #else
-		const float avg_factor = 1.3f;
+//		const float avg_factor = 1.3f;
 #endif //_EUROPE		
 		
 		float contrast, variation;
@@ -213,10 +224,13 @@ void find_holes(const vector<outlet_feature_t>& holes, vector<outlet_t>& outlets
 		int x1 = rect1.x + rect1.width/2;
 		int y1 = rect1.y + rect1.height/2;
 		
+#if 0
 		if(abs(x1 - 1056) < 10 && abs(y1 - 500) < 10)
 		{
 			int w = 1;
 		}
+#endif
+		
 #if defined(_TUNING)
 		int proximity_thresh = 50;
 		if(x1 < proximity_thresh || y1 < proximity_thresh || 
@@ -235,10 +249,13 @@ void find_holes(const vector<outlet_feature_t>& holes, vector<outlet_t>& outlets
 			int x2 = rect2.x + rect2.width/2;
 			int y2 = rect2.y + rect2.height/2;
 			
+#if 0
 			if(abs(x2 - 1093) < 10 && abs(y2 - 500) < 10)
 			{
 				int w = 1;
 			}
+#endif
+			
 #if defined(_TUNING)
 			int proximity_thresh = 20;
 			if(x2 < proximity_thresh || y2 < proximity_thresh || 
@@ -302,7 +319,7 @@ void find_holes(const vector<outlet_feature_t>& holes, vector<outlet_t>& outlets
 #if defined(_EUROPE)
 		if(proximity_count < 4 && candidates.size() > 0)
 #else
-			for(int i = 0; i < candidates.size(); i++) 
+			for(unsigned int i = 0; i < candidates.size(); i++) 
 #endif
 		{
 #if defined(_EUROPE)
@@ -363,8 +380,6 @@ void find_holes(const vector<outlet_feature_t>& holes, vector<outlet_t>& outlets
 			outlet.feature2 = cand;
 			outlets.push_back(outlet);
 			
-			int val1 = it1 - holes.begin();
-			int val2 = cand_it - holes.begin();
 			references[it1 - holes.begin()].push_back(outlets.size() - 1);
 			references[cand_it - holes.begin()].push_back(outlets.size() - 1);
 		}		
@@ -890,7 +905,7 @@ void extract_intensity_features(IplImage* grey, const vector<outlet_feature_t>& 
 	IplImage* features = cvCreateImage(cvSize(xsize, ysize), IPL_DEPTH_8U, 1);
 	
 	// now extract intensity values and copy them to the matrix
-	for(int r = 0; r < keypts.size(); r++)
+	for(unsigned int r = 0; r < keypts.size(); r++)
 	{
 //		CvPoint center = cvPoint(keypts[r].bbox.x + keypts[r].bbox.width/2, 
 //								 keypts[r].bbox.y + keypts[r].bbox.height/2);
@@ -951,7 +966,7 @@ void extract_intensity_features(IplImage* grey, const vector<outlet_feature_t>& 
 CvMat* vector2mat(const vector<int>& vec)
 {
 	CvMat* mat = cvCreateMat(vec.size(), 1, CV_32SC1);
-	for(int i = 0; i < vec.size(); i++)
+	for(unsigned int i = 0; i < vec.size(); i++)
 	{
 		*(int*)(mat->data.ptr + mat->step*i) = vec[i];
 	}
@@ -998,7 +1013,6 @@ void FilterPoints(IplImage* grey, vector<outlet_feature_t>& keypts, const CvRTre
 void filter_outlets(IplImage* grey, vector<outlet_t>& outlets, CvRTrees* rtrees)
 {
 	vector<outlet_t> filtered_outlets;
-	float max_prob = 0;
 	vector<outlet_t>::const_iterator max_it;
 	for(vector<outlet_t>::const_iterator it = outlets.begin(); it != outlets.end(); it++)
 	{
@@ -1075,7 +1089,6 @@ void keypointarr2outletfarr(const vector<Keypoint>& keypoints, vector<outlet_fea
 void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features, const char* output_path, const char* filename)
 {
 	const float min_intersect = 1;//0.2;
-	const int min_pixel_area = 6;
 	
 	//cvErode(src, src);
 	IplImage* grey = 0;
@@ -1192,10 +1205,12 @@ void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features
 			{
 				CvRect roi = cvBoundingRect(*it);
 
+#if 0
 				if(abs(roi.x - 56) < 5 && abs(roi.y - 189) < 5)
 				{
 					int w = 1;
 				}
+#endif
 
 //				float scale_factor = MAX(2.0f, 2*min_pixel_area/roi.width);
 //				roi = resize_rect(roi, scale_factor);
@@ -1413,7 +1428,7 @@ void filter_negative_samples(const vector<CvRect>& rects, vector<outlet_feature_
 	vector<int> labels;
 	calc_labels(rects, keypts, labels);
 	vector<outlet_feature_t> filtered_keypts;
-	for(int i = 0; i < labels.size(); i++)
+	for(unsigned int i = 0; i < labels.size(); i++)
 	{
 		if(labels[i] == 1 || float(rand())/RAND_MAX < fraction) // leaving fraction negative samples 
 		{
@@ -1469,7 +1484,7 @@ bool outlet_orient_pred_dist_greater(outlet_t outlet1, outlet_t outlet2)
 void select_central_outlets(vector<outlet_t>& outlets, int count)
 {
 	sort(outlets.begin(), outlets.end(), outlet_orient_pred_dist_greater);
-	count = MIN(count, outlets.size());
+	count = MIN(count, (int)outlets.size());
 	outlets = vector<outlet_t>(outlets.begin(), outlets.begin() + count);	
 }
 
@@ -1505,18 +1520,12 @@ void select_orient_outlets(CvPoint2D32f orientation, vector<outlet_t>& outlets, 
 	}
 	
 	sort(outlets.begin(), outlets.end(), outlet_orient_pred_greater);
-	count = MIN(count, outlets.size());
+	count = MIN(count, (int)outlets.size());
 	outlets = vector<outlet_t>(outlets.begin(), outlets.begin() + count);
 }
 
 int select_orient_outlets_ex(IplImage* grey, vector<outlet_t>& outlets, const char* filename)
 {
-	const int board_width = 6;
-	const int board_height = 9;
-	const int corners_count = board_width*board_height;
-	int corners_found = -1;
-	CvPoint2D32f corners[corners_count];
-
 #if 0	
 	cvNamedWindow("1", 1);
 	cvShowImage("1", grey);
@@ -1891,10 +1900,13 @@ void filter_features_distance_mask(vector<outlet_feature_t>& features, IplImage*
 			filtered.push_back(*it);
 		}
 		
+#if 0
 		if(abs(center.x - 1816) < 5 && abs(center.y - 421) < 5)
 		{
 			int w = 1;
 		}
+#endif
+		
 	}
 	
 	features = filtered;
@@ -1929,7 +1941,7 @@ void filter_outlets_tuple(vector<outlet_t>& outlets, IplImage* tuple_mask, CvPoi
 	for(int i = 0; i < 4; i++)
 	{
 		vector<outlet_t> candidates;
-		for(int j = 0; j < outlets.size(); j++)
+		for(unsigned int j = 0; j < outlets.size(); j++)
 		{
 			if(outlets_idx[j] == i + 1)
 			{

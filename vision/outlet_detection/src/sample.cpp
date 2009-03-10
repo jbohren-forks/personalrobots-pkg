@@ -138,7 +138,7 @@ int main(int argc,char** argv)
 			printf("Ground2: (%f, %f, %f)\n", outlets[2].coord_hole_ground.x, outlets[2].coord_hole_ground.y,
 				   outlets[2].coord_hole_ground.z);
 			
-			printf(" found %d outlets\n", outlets.size());
+			printf(" found %d outlets\n", (int)outlets.size());
 #endif
 		}
 		else

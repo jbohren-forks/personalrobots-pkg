@@ -41,7 +41,7 @@ CvPoint2D32f calc_center(CvSeq* seq)
 CvPoint2D32f calc_center(const vector<CvPoint2D32f>& points)
 {
 	CvPoint2D32f center = cvPoint2D32f(0, 0);
-	for(int i = 0; i < points.size(); i++)
+	for(unsigned int i = 0; i < points.size(); i++)
 	{
 		center.x += points[i].x;
 		center.y += points[i].y;
@@ -304,10 +304,12 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 		const int min_width = 5;
 #endif //OUTLET_HR
 		
+#if 0
 		if(abs(rect.x - 1387) < 20 && abs(rect.y - 127) < 20)
 		{
 			int w = 1;
 		}
+#endif
 		
 		if(rect.width < xmin || rect.width > xmax || rect.height < ymin || rect.height > ymax)
 		{
@@ -349,7 +351,7 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 	
 	int found_tuple = 0;
 	vector<outlet_elem_t> tuple;
-	for(int i = 0; i < candidates.size(); i++)
+	for(unsigned int i = 0; i < candidates.size(); i++)
 	{
 		vector<outlet_elem_t> tuple_candidates;
 		outlet_elem_t outlet_elem;
@@ -358,7 +360,7 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 		tuple_candidates.push_back(outlet_elem);
 		
 		CvRect rect1 = cvBoundingRect(candidates[i]);
-		for(int j = 0; j < candidates.size(); j++)
+		for(unsigned int j = 0; j < candidates.size(); j++)
 		{
 			if(j <= i) continue;
 			CvRect rect2 = cvBoundingRect(candidates[j]);
@@ -561,7 +563,7 @@ void map_vector(const vector<CvPoint2D32f>& points, CvMat* homography, vector<Cv
 	CvMat* src = cvCreateMat(1, points_count, CV_32FC2);
 	CvMat* dst = cvCreateMat(1, points_count, CV_32FC2);
 	
-	for(int i = 0; i < points.size(); i++)
+	for(unsigned int i = 0; i < points.size(); i++)
 	{
 		src->data.fl[2*i] = points[i].x;
 		src->data.fl[2*i + 1] = points[i].y;
@@ -604,7 +606,7 @@ void calc_outlet_homography(const CvPoint2D32f* centers, CvSize src_size, CvMat*
 	map_image_corners(src_size, map_matrix, corners, dst);
 
 	float xmin = 1e10, ymin = 1e10, xmax = -1e10, ymax = -1e10;
-	float src_xmin, src_xmax, src_ymin, src_ymax;
+	float src_xmin, src_ymin;
 	for(int i = 0; i < 4; i++)
 	{
 		if(xmin > dst->data.fl[2*i])
@@ -759,7 +761,6 @@ IplImage* find_templates(IplImage* img, IplImage* templ)
 				continue;
 			}
 			
-			int color = (thresh - *(float*)(dist->imageData + r*dist->widthStep + c*sizeof(float)))/(thresh - min_dist)*255;
 //			cvCircle(img, cvPoint(c + templr->width/2, r + templr->height/2), 20, CV_RGB(color, color, 0), 3);
 //			cvRectangle(img, cvPoint(c, r), cvPoint(c + templr->width, r + templr->height), CV_RGB(color, color, 0), 2);
 			cvRectangle(img, cvPoint(c, r), cvPoint(c + templr->width, r + templr->height), CV_RGB(0, 0, 255), 2);

@@ -245,7 +245,7 @@ int main(int argc,char** argv)
 			sprintf(filename, "%s/prec_rec.txt", output_path);
 			write_pr(filename, buf, outlet_roi, outlets);
 		}
-		printf(" found %d holes, %d outlets\n", features.size(), outlets.size());
+		printf(" found %d holes, %d outlets\n", (int)features.size(), (int)outlets.size());
 		
 		outletfarr2keypointarr(features, keypts);
 		
