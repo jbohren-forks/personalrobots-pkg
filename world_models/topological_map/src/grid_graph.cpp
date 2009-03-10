@@ -29,8 +29,11 @@
 
 
 #include <topological_map/grid_graph.h>
+#include <queue>
+#include <boost/graph/astar_search.hpp>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <boost/graph/connected_components.hpp>
+#include <boost/bind.hpp>
 #include <ros/console.h>
 #include <ros/assert.h>
 
@@ -40,7 +43,9 @@ namespace topological_map
 using boost::associative_property_map;
 using boost::make_tuple;
 using boost::tie;
+using boost::bind;
 using std::pair;
+using std::queue;
 
 
 /************************************************************
@@ -83,22 +88,30 @@ void GridGraph::addEdge (const Cell2D& cell1, const Cell2D& cell2)
   GridGraphVertex w=cellVertex(cell2);
   ROS_ASSERT_MSG (!edge(v,w,graph_).second, "Edge already exists between cells");
   add_edge(v,w,EdgeCost(1.0),graph_);
-  ROS_DEBUG_STREAM_NAMED ("grid_graph", "Added grid graph edge between " << cell1 << " and " << cell2);
 }
 
 void GridGraph::removeEdge (const Cell2D& cell1, const Cell2D& cell2)
 {
+  ROS_ASSERT_MSG (containsEdge(cell1, cell2), "Attempted to remove nonexistent edge");
   GridGraphVertex v=cellVertex(cell1);
   GridGraphVertex w=cellVertex(cell2);
-  ROS_ASSERT_MSG (edge(v,w,graph_).second, "Attempted to remove nonexistent edge");
   remove_edge(v,w,graph_);
-  ROS_DEBUG_STREAM_NAMED ("grid_graph", "Removed grid graph edge between " << cell1 << " and " << cell2);
 }
 
 bool GridGraph::containsCell (const Cell2D& cell) const
 {
   CellVertexMap::const_iterator pos = cell_vertex_map_.find(cell);
   return (pos!=cell_vertex_map_.end());
+}
+
+bool GridGraph::containsEdge (const Cell2D& cell1, const Cell2D& cell2) const
+{
+  if (!containsCell(cell1) || !containsCell(cell2)) {
+    return false;
+  }
+  else {
+    return edge(cellVertex(cell1), cellVertex(cell2), graph_).second;
+  }
 }
 
 
@@ -132,59 +145,118 @@ vector<Cell2D> GridGraph::neighbors (const Cell2D& cell) const
  * Shortest paths
  ************************************************************/
 
-/// \todo make the dijkstra visitor exit early when goal is discovered
-struct GridGraphDijkstra : public boost::default_dijkstra_visitor
+struct GraphSearchVisitor : public boost::default_dijkstra_visitor
 {
-  GridGraphDijkstra (const GridGraphVertex& goal) : goal(goal) {}
+  GraphSearchVisitor (const GridGraphVertex& goal) : goal(goal) {}
   void discover_vertex(const GridGraphVertex& v, const Grid& graph) const
   {
     ROS_DEBUG_STREAM_NAMED("dijkstra", "Discovering vertex " << graph[v].cell);
+    if (v==goal) {
+      throw v;
+    }
   }
   GridGraphVertex goal;
 };
 
 
+double gridGraphManhattanDistance (const GridGraphVertex& v1, const GridGraphVertex& v2, const Grid& graph)
+{
+  return abs(graph[v1].cell.r-graph[v2].cell.r)+abs(graph[v1].cell.c-graph[v2].cell.c);
+}
+
+
+// Find shortest path between cells in grid graph
 tuple<bool, double, GridPath> GridGraph::shortestPath (const Cell2D& cell1, const Cell2D& cell2)
 {
   ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Looking for shortest path from " << cell1 << " to " << cell2);
-  typedef map<GridGraphVertex, double> GridDistances;
-  typedef map<GridGraphVertex, GridGraphVertex> GridPreds;
-  GridDistances distances;
-  GridPreds predecessors;
+
+  typedef pair<GridGraphVertex,int> QueueItem;
+  queue<QueueItem> q;
+  set<GridGraphVertex> visited;
+  map<GridGraphVertex,GridGraphVertex> predecessor_map;
+  GridGraphVertex goal=cellVertex(cell2), start=cellVertex(cell1);
+
+  q.push(QueueItem(start,0));
+  visited.insert(start);
+  while (!q.empty()) {
+    GridGraphVertex v;
+    int d;
+    tie(v,d) = q.front();
+    q.pop();
+
+    // If goal is found, extract the path and return
+    if (v==goal) {
+      ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Found path with length " << d);
+      vector<GridGraphVertex> reverse_path(1,goal);
+      GridGraphVertex current=goal;
+      while (current!=start) {
+        ROS_ASSERT(predecessor_map.find(current)!=predecessor_map.end());
+        current = predecessor_map[current];
+        reverse_path.push_back(current);
+      }
+      GridPath path(reverse_path.size());
+      transform(reverse_path.rbegin(), reverse_path.rend(), path.begin(), TransformVertexToCell(graph_));
+      return make_tuple(true, d, path);
+    }
+
+    // Otherwise, add successors to the queue
+    else {
+      GridGraphAdjacencyIterator iter, end;
+      for (tie(iter,end)=adjacent_vertices(v, graph_); iter!=end; iter++) {
+        if (visited.find(*iter)==visited.end()) {
+          q.push(QueueItem(*iter, 1+d));
+          visited.insert(*iter);
+          predecessor_map[*iter]=v;
+        }
+      }
+    }
+  }
+
+
+
+  return make_tuple(false, -1, GridPath());
+        
+      
   
-  GridGraphVertex start = cellVertex(cell1);
-  GridGraphVertex finish = cellVertex(cell2);
+  
+//   typedef map<GridGraphVertex, double> GridDistances;
+//   typedef map<GridGraphVertex, GridGraphVertex> GridPreds;
+//   GridDistances distances;
+//   GridPreds predecessors;
+  
+//   GridGraphVertex start = cellVertex(cell1);
+//   GridGraphVertex finish = cellVertex(cell2);
 
-  resetIndices();
+//   resetIndices();
 
-  dijkstra_shortest_paths (graph_, start, weight_map(get(&EdgeCost::cost, graph_)).
-                           vertex_index_map(get(&CellInfo::index, graph_)).
-                           predecessor_map(associative_property_map<GridPreds>(predecessors)).
-                           distance_map(associative_property_map<GridDistances>(distances)).
-                           visitor(GridGraphDijkstra(finish)));
-                           
+//   try {
+//     dijkstra_shortest_paths (graph_, start,
+//                              weight_map(get(&EdgeCost::cost, graph_)).
+//                              vertex_index_map(get(&CellInfo::index, graph_)).
+//                              predecessor_map(associative_property_map<GridPreds>(predecessors)).
+//                              distance_map(associative_property_map<GridDistances>(distances)).
+//                              visitor(GraphSearchVisitor(finish)));
+//   }
+//   catch (GridGraphVertex& e) {
+//     // Extract path from predecessor map
+//     vector<GridGraphVertex> reverse_path(1,finish);
+//     GridGraphVertex current = finish;
 
+//     while (current!=predecessors[current]) {
+//       reverse_path.push_back(current=predecessors[current]);
+//     }
+//     GridPath path(reverse_path.size());
+//     ROS_ASSERT_MSG (current==start, "Unexpectedly could not find shortest path");
 
-  // Extract path from predecessor map
-  vector<GridGraphVertex> reverse_path(1,finish);
-  GridGraphVertex current = finish;
+//     // Put it in source-to-goal order, replace vertex descriptors with cells, and return
+//     transform(reverse_path.rbegin(), reverse_path.rend(), path.begin(), TransformVertexToCell(graph_));
+//     ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Found path with cost " << distances[finish]);
+//     return make_tuple(true, distances[finish], path);
+//   }
 
-  while (current!=predecessors[current]) {
-    reverse_path.push_back(current=predecessors[current]);
-  }
-
-  GridPath path(reverse_path.size());
-
-  if (current!=start){
-    ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Did not find a path");
-    return make_tuple(false, -1, path);
-  }
-
-  // Put it in source-to-goal order, replace vertex descriptors with cells, and return
-  transform(reverse_path.rbegin(), reverse_path.rend(), path.begin(), TransformVertexToCell(graph_));
-  ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Found path with cost " << distances[finish]);
-
-  return make_tuple(true, distances[finish], path);
+//   // Else, we must not have found a path
+//   ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Did not find a path");
+//   return make_tuple(false, -1, GridPath());
 }
 
 
@@ -192,12 +264,19 @@ tuple<bool, double, GridPath> GridGraph::shortestPath (const Cell2D& cell1, cons
  * Connected comps
  ************************************************************/
 
+MutableRegionPtr makeEmptyRegion()
+{
+  return MutableRegionPtr(new Region);
+}
+
 vector<MutableRegionPtr> GridGraph::connectedComponents ()
 {
   resetIndices();
   int num_comps=connected_components(graph_, get(&CellInfo::component, graph_), 
                                     vertex_index_map(get(&CellInfo::index, graph_)));
   vector<MutableRegionPtr> regions(num_comps);
+  generate(regions.begin(), regions.end(), makeEmptyRegion);
+
   GridGraphIterator iter, end;
   for (tie(iter, end) = vertices(graph_); iter!=end; ++iter) {
     regions[graph_[*iter].component]->insert(graph_[*iter].cell);
@@ -236,15 +315,18 @@ void GridGraph::resetIndices ()
 
 RegionIsolator::RegionIsolator (GridGraph* graph, const Region& region) : graph(graph)
 {  
+  ROS_DEBUG_STREAM_NAMED ("grid_graph", "Temporarily disconnecting region (lexicographically) bounded by " << *(region.begin()) << " and " << *(region.rbegin()));
   for (Region::iterator iter=region.begin(); iter!=region.end(); ++iter) {
-    for (char vertical=0; vertical<2; ++vertical) {
-      for (char multiplier=-1; multiplier<=1; multiplier+=2) {
-        int dr = multiplier * ( vertical ? 1 : 0 );
-        int dc = multiplier * ( vertical ? 0 : 1 );
-        Cell2D neighbor(iter->r+dr, iter->c+dc);
-        if (region.find(neighbor)==region.end() && graph->containsCell(neighbor)) {
-          graph->removeEdge(*iter, neighbor);
-          removed_edges_.push_back(pair<Cell2D, Cell2D>(*iter, neighbor));
+    if (graph->containsCell(*iter)) {
+      for (char vertical=0; vertical<2; ++vertical) {
+        for (char multiplier=-1; multiplier<=1; multiplier+=2) {
+          int dr = multiplier * ( vertical ? 1 : 0 );
+          int dc = multiplier * ( vertical ? 0 : 1 );
+          Cell2D neighbor(iter->r+dr, iter->c+dc);
+          if (region.find(neighbor)==region.end() && graph->containsEdge(*iter, neighbor)) {
+            graph->removeEdge(*iter, neighbor);
+            removed_edges_.push_back(pair<Cell2D, Cell2D>(*iter, neighbor));
+          }
         }
       }
     }
@@ -255,6 +337,7 @@ RegionIsolator::RegionIsolator (GridGraph* graph, const Region& region) : graph(
 
 RegionIsolator::~RegionIsolator ()
 {
+  ROS_DEBUG_STREAM_NAMED ("grid_graph", "Adding back disconnected region");
   for (RemovedEdges::iterator iter=removed_edges_.begin(); iter!=removed_edges_.end(); ++iter) {
     graph->addEdge(iter->first, iter->second);
   }

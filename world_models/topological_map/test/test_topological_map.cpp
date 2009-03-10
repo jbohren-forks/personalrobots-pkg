@@ -222,7 +222,7 @@ TEST(TopologicalMap, Creation)
   EXPECT_TRUE(path_found);
   d+=d2;
 
-  EXPECT_TRUE ((d>=1.4)&&(d<=3));
+  EXPECT_TRUE ((d>=1.2)&&(d<=3));
 
   // Test serialization/deserialization
   stringstream ss;
@@ -237,8 +237,8 @@ TEST(TopologicalMap, Creation)
   m->setGoal(Point2D(1.1, .2));
   tie(path_found, d4) = m->goalDistance(1);
   EXPECT_TRUE(path_found);
-  EXPECT_TRUE(d==d3+d4);
-  EXPECT_TRUE(d2==d4);
+  EXPECT_EQ(d,d3+d4);
+  EXPECT_EQ(d2,d4);
 }
 
 int main (int argc, char** argv)

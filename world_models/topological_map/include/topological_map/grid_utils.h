@@ -27,62 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <topological_map/region.h>
 
-using std::ostream;
-using std::vector;
+#ifndef TOPOLOGICAL_MAP_GRID_UTILS_H
+#define TOPOLOGICAL_MAP_GRID_UTILS_H
+
+#include <topological_map/topological_map.h>
 
 namespace topological_map
 {
 
-ostream& operator<< (ostream& str, const Cell2D& c) 
-{
-  str << "(" << c.r << ", " << c.c << ")";
-  return str;
-}
+OccupancyGrid loadOccupancyGrid (const string& filename);
+OccupancyGrid inflateObstacles (const OccupancyGrid& grid, uint radius);
 
-int operator< (const Cell2D& c, const Cell2D& c2)
-{
-  return (c.r<c2.r) || ((c.r==c2.r) && (c.c<c2.c));
-}
-
-bool operator== (const Cell2D& c, const Cell2D& c2)
-{
-  return (c.r==c2.r) && (c.c==c2.c);
-}
-
-vector<Cell2D> cellNeighbors (const Cell2D& p)
-{
-  int r=p.r;
-  int c=p.c;
-  vector<Cell2D> neighbors(4);
-  neighbors[0]=Cell2D(r-1,c);
-  neighbors[1]=Cell2D(r+1,c);
-  neighbors[2]=Cell2D(r,c-1);
-  neighbors[3]=Cell2D(r,c+1);
-  return neighbors;
-}
+} // namespace 
 
 
-
-Point2D cellCorner (const Cell2D& cell, const double resolution)
-{
-  return Point2D(cell.c*resolution,cell.r*resolution);
-}
-
-Point2D cellCenter (const Cell2D& cell, const double resolution)
-{
-  return Point2D((.5+cell.c)*resolution, (.5+cell.r)*resolution);
-}
-
-Cell2D pointToCell (const Point2D& p, const double resolution)
-{
-  return Cell2D(p.y/resolution, p.x/resolution);
-}
-
-Point2D cellToPoint (const Cell2D& c, const double resolution)
-{
-  return Point2D(c.c*resolution, c.r*resolution);
-}
-
-} // namespace topological_map
+#endif

@@ -34,6 +34,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <set>
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/multi_array.hpp>
@@ -46,6 +47,7 @@ using std::vector;
 using std::string;
 using std::ostream;
 using std::istream;
+using std::set;
 using std::pair;
 
 
@@ -54,8 +56,8 @@ using std::pair;
 typedef unsigned int RegionId;
 typedef unsigned int ConnectorId;
 typedef vector<RegionId> RegionIdVector;
+typedef set<RegionId> RegionIdSet;
 typedef pair<RegionId, RegionId> RegionPair;
-
 
 typedef boost::multi_array<bool, 2> OccupancyGrid;
 typedef OccupancyGrid::size_type occ_grid_size;
@@ -63,9 +65,6 @@ typedef OccupancyGrid::size_type occ_grid_size;
 // Utilities for the occupancy grid
 uint numRows(const OccupancyGrid& grid);
 uint numCols(const OccupancyGrid& grid);
-
-
-
 
 
 /// \brief A facade object to the topological map and high-level world model information
@@ -134,8 +133,8 @@ public:
   /// \throws UnknownRegionException
   RegionPtr regionCells (RegionId id) const;
 
-  /// \return Vector of all region ids.  This is a reference and may change.
-  const RegionIdVector& allRegions() const;
+  /// \return Vector of all region ids.
+  const RegionIdSet& allRegions() const;
 
   /// \post Goal point (for future distance queries) is \a p
   void setGoal (const Point2D& p);
@@ -155,6 +154,9 @@ public:
   /// \throws UnknownRegionException
   /// \todo currently doesn't work properly with connectors
   void removeRegion (RegionId id);
+
+  /// Output a ppm representation of the topological map to \a stream
+  void writePpm (ostream& str) const;
 
 
 private:

@@ -55,6 +55,7 @@ using boost::tie;
 using boost::make_tuple;
 using boost::tuples::ignore;
 using boost::extents;
+using boost::multi_array;
 using std::endl;
 using std::map;
 using std::vector;
@@ -122,14 +123,8 @@ Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
 
 
 /************************************************************
- * I/o, construction
+ * I/o
  ************************************************************/
-
-TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution) : 
-  grid_(grid), region_graph_(new RegionGraph), roadmap_(new Roadmap), grid_graph_(new GridGraph(grid)), resolution_(resolution)
-{
-}
-
 
 
 OccupancyGrid readGrid(istream& stream)
@@ -204,6 +199,7 @@ RegionConnectorMap readRegionConnectorMap (istream& str)
 
 void TopologicalMap::MapImpl::writeToStream (ostream& stream)
 {
+  ROS_INFO ("Writing topological map to stream");
   bool goal_unset = goal_;
   Point2D goal_point;
   if (goal_) {
@@ -222,16 +218,141 @@ void TopologicalMap::MapImpl::writeToStream (ostream& stream)
   if (goal_unset) {
     setGoal(goal_point);
   }
+  ROS_INFO ("Done writing topological map");
 }
 
-TopologicalMap::MapImpl::MapImpl (istream& str) : 
-  grid_(readGrid(str)), region_graph_(readRegionGraph(str)), roadmap_(readRoadmap(str)), grid_graph_(new GridGraph(grid_)), 
-  region_connector_map_(readRegionConnectorMap(str)), resolution_(readResolution(str))
+
+
+
+typedef unsigned char uchar;
+
+struct Color
+{
+  Color(uint r=0, uint g=0, uint b=0) : r(r), g(g), b(b) {}
+  uint r, g, b;
+};
+
+typedef multi_array<Color, 2> ColorArray;
+
+void writeBitmapPpm (const ColorArray& bitmap, ostream& stream)
+{
+  typedef ColorArray::size_type grid_size;
+  const grid_size* dims = bitmap.shape();
+  uint nr=dims[0];
+  uint nc=dims[1];
+  uint pos=0;
+  char* buffer = new char[nr*nc*3];
+  
+  stream << "P6" << endl << nc << " " << nr << endl << "255" << endl;
+  for (uint r=0; r<nr; ++r) {
+    for (uint c=0; c<nc; ++c) {
+      buffer[pos++] = bitmap[r][c].r;
+      buffer[pos++] = bitmap[r][c].g;
+      buffer[pos++] = bitmap[r][c].b;
+    }
+  }
+
+  stream.write(buffer, pos);
+  delete[] buffer;
+}
+
+
+void TopologicalMap::MapImpl::writePpm (ostream& str) const
+{
+  ROS_INFO ("Writing ppm representation of map");
+  Color red(255,0,0);
+  Color black(0,0,0);
+  Color white(255,255,255);
+  Color blue(0,0,255);
+
+  uint num_rows = numRows(grid_);
+  uint num_cols = numCols(grid_);
+
+  multi_array<Color, 2> bitmap(extents[num_rows][num_cols]);
+  
+  for (uint r=0; r<num_rows; ++r) {
+    for (uint c=0; c<num_cols; ++c) {
+      if (grid_[r][c]) {
+        bitmap[r][c] = black;
+      }
+      else {
+        RegionId region = containingRegion(Cell2D(r,c));
+        if (regionType(region) == DOORWAY) {
+          bitmap[r][c] = red;
+        }
+        else {
+          bitmap[r][c] = white;
+        }
+      }
+    }
+  }
+  
+  for (RegionConnectorMap::const_iterator iter = region_connector_map_.begin(); iter!=region_connector_map_.end(); ++iter) {
+    Cell2D cell = iter->second.get<1>();
+    for (int r=cell.r-1; r<=cell.r+1; ++r) {
+      for (int c=cell.c-1; c<=cell.c+1; ++c) {
+        bitmap[r][c] = blue;
+      }
+    }
+  }
+  
+  writeBitmapPpm(bitmap, str);
+  ROS_INFO ("Done writing ppm representation of map");
+}
+
+
+
+/************************************************************
+ * Construction
+ ************************************************************/
+
+ObstacleDistanceArray computeObstacleDistances(const OccupancyGrid& grid)
+{
+  int num_rows = numRows(grid);
+  int num_cols = numCols(grid);
+  ObstacleDistanceArray distances(extents[num_rows][num_cols]);
+  for (int r=0; r<num_rows; ++r) 
+    for (int c=0; c<num_cols; ++c) 
+      distances[r][c] = grid[r][c] ? 0 : (num_rows+1)*(num_cols+1);
+
+  bool done=false;
+  while (!done) {
+    done = true;
+    for (int r=0; r<num_rows; ++r) {
+      for (int c=0; c<num_cols; ++c) {
+        for (uint vertical=0; vertical<2; ++vertical) {
+          for (int mult=-1; mult<=1; mult+=2) {
+            int dr=mult*(vertical ? 1 : 0);
+            int dc=mult*(vertical ? 0 : 1);
+            int r1 = min(num_rows-1, max(0,r+dr));
+            int c1 = min(num_cols-1, max(0,c+dc));
+            if (distances[r1][c1]<distances[r][c]-1) {
+              done=false;
+              distances[r][c] = distances[r1][c1]+1;
+            }
+          }
+        }
+      }
+    }
+  }
+  return distances;
+}
+    
+
+
+TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution) : 
+  grid_(grid), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(new RegionGraph), 
+  roadmap_(new Roadmap), grid_graph_(new GridGraph(grid)), resolution_(resolution)
 {
 }
 
 
-
+TopologicalMap::MapImpl::MapImpl (istream& str) : 
+  grid_(readGrid(str)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(readRegionGraph(str)), 
+  roadmap_(readRoadmap(str)), grid_graph_(new GridGraph(grid_)), region_connector_map_(readRegionConnectorMap(str)), 
+  resolution_(readResolution(str))
+{
+}
 
 
 
@@ -265,7 +386,7 @@ RegionPtr TopologicalMap::MapImpl::regionCells (const RegionId id) const
 }
 
 
-const RegionIdVector& TopologicalMap::MapImpl::allRegions () const
+const RegionIdSet& TopologicalMap::MapImpl::allRegions () const
 {
   return region_graph_->allRegions();
 }
@@ -277,29 +398,38 @@ const RegionIdVector& TopologicalMap::MapImpl::allRegions () const
  ****************************************/
 
 
+// Looks for the best (furthest from obstacles) cell on the border between two regions
 struct NeighborFinder 
 {
-  NeighborFinder (RegionPtr region) : found(false), region(region) {}
+  NeighborFinder (RegionPtr region, const ObstacleDistanceArray& distances) : found(false), region(region), obstacle_distances(distances) {}
   void operator() (const Cell2D& cell) 
   {
-    if (!found)
-    { 
-      cell1 = cell;
-      int r=cell1.r;
-      int c=cell1.c;
-      found = (belongs(r+1,c) || belongs(r-1,c) || belongs(r,c+1) || belongs(r,c-1));
+    int r=cell.r;
+    int c=cell.c;
+    if (!found || obstacle_distances[r][c]>best_distance) {
+      if (belongs(r+1,c)||belongs(r-1,c)||belongs(r,c+1)||belongs(r,c-1)) {
+        found = true;
+        cell1=cell;
+        best_distance=obstacle_distances[r][c];
+      }
     }
   }
 
   bool belongs (int r, int c)
   {
-    cell2=Cell2D(r,c);
-    return region->find(cell2)!=region->end();
+    Cell2D cell(r,c);
+    if (region->find(cell)!=region->end()) {
+      cell2=cell;
+      return true;
+    }
+    return false;
   }
     
   bool found; 
   RegionPtr region;
   Cell2D cell1, cell2;
+  int best_distance;
+  const ObstacleDistanceArray& obstacle_distances;
 };
 
   
@@ -311,8 +441,19 @@ RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int t
 
 
   for (RegionIdVector::iterator iter=neighbors.begin(); iter!=neighbors.end(); ++iter) {
-    
-    NeighborFinder neighbor_finder = for_each(region->begin(), region->end(), NeighborFinder(region_graph_->regionCells(*iter)));
+
+    // Find a neighboring cell.  Iterate over the smaller of the two regions for efficiency.
+    RegionPtr neighbor_region = region_graph_->regionCells(*iter);
+    RegionPtr region1, region2;
+    if (region->size() < neighbor_region->size()) {
+      region1 = region;
+      region2 = neighbor_region;
+      }
+    else {
+      region1 = neighbor_region;
+      region2 = region;
+    }
+    NeighborFinder neighbor_finder = for_each(region1->begin(), region1->end(), NeighborFinder(region2, obstacle_distances_));
     ROS_ASSERT (neighbor_finder.found);
   
     Point2D border_point=findBorderPoint(neighbor_finder.cell1, neighbor_finder.cell2);
@@ -325,35 +466,43 @@ RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int t
   }
 
   // Compute the distance from the new connector to all connectors touching either of the adjacent regions
+  // 1. Loop over neighbors of new region (and corresponding connector)
   for (RegionIdVector::iterator iter=neighbors.begin(); iter!=neighbors.end(); ++iter) {
 
     RegionId r1 = min(region_id, *iter);
     RegionId r2 = max(region_id, *iter);
+
     RegionConnectorMap::iterator rc_pos = region_connector_map_.find(RegionPair(r1,r2));
     ROS_ASSERT(rc_pos!=region_connector_map_.end());
     ConnectorId connector_id = rc_pos->second.get<0>();
     Cell2D cell = rc_pos->second.get<1>();
 
+    // 2. Loop over which of the two adjacent regions to consider
     for (char first_region=0; first_region<2; ++first_region) {
       RegionId r = first_region ? r1 : r2;
-
+      Region connector_region = *(region_graph_->regionCells(r));
+      connector_region.insert(cell);
+      ROS_DEBUG_STREAM_NAMED ("add_region", "Considering connector " << connector_id << " in region " << r);
       
       RegionIdVector connector_neighbors = region_graph_->neighbors(r);
+
+      // 3. Loop over which of the neighboring regions (and corresponding connectors) to find path to
       for (RegionIdVector::iterator region_iter=connector_neighbors.begin(); region_iter!=connector_neighbors.end(); ++region_iter) {
 
-        
+        // Proceed only if the regions and connectors are different
         if (r!=*region_iter) {
-          
           RegionConnectorMap::const_iterator pos = region_connector_map_.find(RegionPair(min(*region_iter,r), max(*region_iter,r)));
           ROS_ASSERT_MSG(pos!=region_connector_map_.end(), "Failed to find connector between regions %d and %d", r, *region_iter);
-
           ConnectorId other_connector = pos->second.get<0>();
 
-
           if (other_connector!=connector_id) {
+            ROS_DEBUG_STREAM_NAMED("add_region", "Considering other connector " << other_connector << " in region " << *region_iter);
+
+            // Compute shortest path
+            Cell2D other_connector_cell=pos->second.get<1>();
             bool found;
             double distance;
-            tie(found, distance, ignore) = grid_graph_->shortestPath(cell, pos->second.get<1>());
+            tie(found, distance, ignore) = grid_graph_->shortestPath(cell, other_connector_cell);
             if (found) {
               roadmap_->setCost(other_connector, connector_id, resolution_*distance);
             }
@@ -362,11 +511,6 @@ RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int t
       }
     }
   }
-
-  // Add connector distances
-  
-
-
   return region_id;
 }
 
@@ -626,7 +770,7 @@ bool TopologicalMap::isObstacle (const Point2D& p) const
   return map_impl_->isObstacle(p);
 }
 
-const RegionIdVector& TopologicalMap::allRegions () const
+const RegionIdSet& TopologicalMap::allRegions () const
 {
   return map_impl_->allRegions();
 }
@@ -640,7 +784,7 @@ RegionPtr TopologicalMap::regionCells (const RegionId id) const
 ostream& operator<< (ostream& str, const TopologicalMap& m)
 {
   str << "Topological map with " << m.allRegions().size() << " regions" << endl;
-  for (RegionIdVector::const_iterator iter=m.allRegions().begin(); iter!=m.allRegions().end(); ++iter) {
+  for (RegionIdSet::const_iterator iter=m.allRegions().begin(); iter!=m.allRegions().end(); ++iter) {
     str << "Region " << *iter << " of type " << m.regionType(*iter) << endl << " Cells: ";
     RegionPtr region = m.regionCells(*iter);
     for (Region::const_iterator cell_iter=region->begin(); cell_iter!=region->end(); ++cell_iter) {
@@ -666,6 +810,10 @@ void TopologicalMap::writeToStream (ostream& str) const
   map_impl_->writeToStream (str);
 }
 
+void TopologicalMap::writePpm (ostream& str) const
+{
+  map_impl_->writePpm(str);
+}
   
   
   

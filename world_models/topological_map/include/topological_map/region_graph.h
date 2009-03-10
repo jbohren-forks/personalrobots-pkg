@@ -34,6 +34,7 @@
 
 #include <topological_map/topological_map.h>
 #include <iostream>
+#include <set>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
 
@@ -44,9 +45,12 @@ using boost::listS;
 using boost::undirectedS;
 using boost::adjacency_list;
 using boost::graph_traits;
+using boost::shared_ptr;
 using std::map;
 using std::istream;
 using std::ostream;
+using std::set;
+
 
 struct RegionInfo
 {
@@ -83,7 +87,7 @@ public:
   int regionType(RegionId id) const;
   RegionPtr regionCells(RegionId id) const; // Set of cells in region
   RegionIdVector neighbors(RegionId id) const;
-  const RegionIdVector& allRegions() const;
+  const RegionIdSet& allRegions() const;
   void writeToStream (ostream& stream) const;
 
 
@@ -114,7 +118,7 @@ private:
   RegionGraphImpl graph_;
 
   // Sorted vector of existing region ids
-  RegionIdVector regions_;
+  set<RegionId> regions_;
 
   // Id of the next region that will be added
   RegionId next_id_;

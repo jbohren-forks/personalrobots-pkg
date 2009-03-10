@@ -58,6 +58,7 @@ void setV (topological_map::OccupancyGrid& grid, cuint r0, cuint dr, cuint rmax,
 
 int main (int argc, char* argv[])
 {
+  
   OccupancyGrid grid(extents[21][24]);
   setV(grid, 0, 1, 21, 0, 1, 24, false);
   setV(grid, 7, 7, 21, 0, 1, 24, true);
@@ -82,6 +83,8 @@ int main (int argc, char* argv[])
 
   std::ofstream str("local/test");
   m->writeToStream(str);
+  std::ofstream str2("local/out.ppm");
+  m->writePpm(str2);
 }
 
   

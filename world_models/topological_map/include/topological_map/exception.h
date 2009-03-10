@@ -117,6 +117,22 @@ class GoalNotSetException: public TopologicalMapException
 public: GoalNotSetException() : TopologicalMapException(format("Called goalDistance without setting goal first")) {}
 };
 
+struct XmlException: public TopologicalMapException
+{
+  XmlException(const string& filename, const char* what) : TopologicalMapException(format("Error reading xml file %1% : %2%") % filename % what) {}
+  XmlException(const string& filename, const format& what) : TopologicalMapException(format("Error reading xml file %1% : %2%") % filename % what) {}
+};
+
+struct XmlRootException: public XmlException
+{
+  XmlRootException(const string& filename, const string& name) : XmlException(filename, format("Root name was %1% instead of doormap") % name) {}
+};
+
+struct GridFileTypeException: public TopologicalMapException
+{
+  GridFileTypeException(const string& type) : TopologicalMapException(format("Type of file was %1% instead of P5") % type) {}
+};
+
 
 } // namespace topological_map
 

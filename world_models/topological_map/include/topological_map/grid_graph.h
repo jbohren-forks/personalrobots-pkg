@@ -56,6 +56,7 @@ using std::vector;
 struct CellInfo
 {
   CellInfo(const Cell2D& cell) : cell(cell) {}
+  CellInfo() : cell(4242, 4242) {} // Shouldn't ever be used, but bundled properties are required to be default constructible
   Cell2D cell;
   uint index;
   uint component;
@@ -88,6 +89,9 @@ public:
 
   // Does the graph contain this cell
   bool containsCell (const Cell2D& cell) const;
+
+  // Does the graph contain edge between these two cells
+  bool containsEdge (const Cell2D& cell, const Cell2D& cell2) const;
 
   // Neighbors of a given cell
   vector<Cell2D> neighbors (const Cell2D& cell) const;

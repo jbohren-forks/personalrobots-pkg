@@ -99,7 +99,7 @@ RegionPtr RegionGraph::regionCells (const RegionId id) const
 
 
 
-const RegionIdVector& RegionGraph::allRegions () const
+const RegionIdSet& RegionGraph::allRegions () const
 {
   return regions_;
 }
@@ -113,8 +113,7 @@ RegionId RegionGraph::addRegion (const RegionPtr region, const int type)
 
 void RegionGraph::addRegion (const RegionPtr region, const int type, const RegionId id)
 {
-  ROS_ASSERT_MSG (lower_bound(regions_.begin(), regions_.end(), id) == upper_bound(regions_.begin(), regions_.end(), id),
-                  "Attempted to add region with existing id %u", id);
+  ROS_ASSERT_MSG (regions_.find(id)==regions_.end(), "Attempted to add region with existing id %u", id);
 
   // Make sure there's no overlap with existing regions
   for (Region::iterator region_iter=region->begin(); region_iter!=region->end(); ++region_iter) {
@@ -123,12 +122,10 @@ void RegionGraph::addRegion (const RegionPtr region, const int type, const Regio
     }
   }
 
-  // Insert while keeping sorted
-  regions_.insert(upper_bound(regions_.begin(), regions_.end(), id), id);
+  regions_.insert(id);
 
   // Add vertex and edges
   RegionGraphVertex v=add_vertex(RegionInfo(type, region, id), graph_);
-  ROS_DEBUG_STREAM_NAMED ("region_graph", "Added region " << id);
 
   // Neighbors that have been added so far
   set<RegionGraphVertex> seen_neighbors;
@@ -151,6 +148,7 @@ void RegionGraph::addRegion (const RegionPtr region, const int type, const Regio
     }
     id_vertex_map_[id]=v; 
   }
+  ROS_DEBUG_STREAM_NAMED ("region_graph", "Added region " << id << " of type " << type << " with " << region->size() << " cells");
 }
 
 
@@ -169,7 +167,7 @@ void RegionGraph::removeRegion (const RegionId id)
   RegionGraphVertex v=idVertex(id);
 
   // Remove from regions_ and id_vertex_map - we don't do any check as it must exist if we got here without an exception
-  regions_.erase(lower_bound(regions_.begin(), regions_.end(), id));
+  regions_.erase(id);
   id_vertex_map_.erase(id_vertex_map_.find(id));
 
   // Remove all cells in this region from the region map
@@ -196,9 +194,9 @@ RegionGraphVertex RegionGraph::idVertex(const RegionId id) const
 void RegionGraph::writeToStream (ostream& stream) const
 {
   using std::endl;
-  const RegionIdVector& regions = allRegions();
+  const RegionIdSet& regions = allRegions();
   stream << endl << regions.size() << " " << next_id_;
-  for (RegionIdVector::const_iterator iter=regions.begin(); iter!=regions.end(); ++iter) {
+  for (RegionIdSet::const_iterator iter=regions.begin(); iter!=regions.end(); ++iter) {
     RegionPtr cells = regionCells(*iter);
     stream << endl << *iter << " " << regionType(*iter) << " " << cells->size();
     for (Region::iterator cell=cells->begin(); cell!=cells->end(); ++cell) {

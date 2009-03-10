@@ -50,6 +50,7 @@ class Roadmap;
 class GridGraph;
 
 typedef map<RegionPair, tuple<ConnectorId,Cell2D,Cell2D> > RegionConnectorMap;
+typedef boost::multi_array<int, 2> ObstacleDistanceArray;
 
 // Implementation details for top map
 class TopologicalMap::MapImpl
@@ -88,8 +89,8 @@ public:
   /// \return Vector of id's of neighboring regions to region \a r
   RegionIdVector neighbors(const RegionId r) const;
 
-  /// \return Vector of all region ids
-  const RegionIdVector& allRegions() const;
+  /// \return Set of all region ids.  
+  const RegionIdSet& allRegions() const;
 
   bool isObstacle (const Point2D& p) const ;
 
@@ -122,8 +123,11 @@ public:
   /// \throws UnknownRegionException
   void removeRegion (const RegionId id);
 
-  /// \post map written to stream
-  void writeToStream (ostream& str);
+  /// write map to \a stream in human-readable form
+  void writeToStream (ostream& stream);
+
+  /// write map in ppm format
+  void writePpm (ostream& str) const;
 
 private: 
 
@@ -147,6 +151,7 @@ private:
   bool pointOnMap (const Point2D& p) const;
 
   const OccupancyGrid& grid_;
+  ObstacleDistanceArray obstacle_distances_;
 
   shared_ptr<RegionGraph> region_graph_;
   shared_ptr<Roadmap> roadmap_;

@@ -27,62 +27,82 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <topological_map/region.h>
 
-using std::ostream;
-using std::vector;
+#include <topological_map/grid_utils.h>
+#include <fstream>
+#include <string>
+#include <algorithm>
+#include <ros/console.h>
+#include <topological_map/exception.h>
 
 namespace topological_map
 {
 
-ostream& operator<< (ostream& str, const Cell2D& c) 
+using std::string;
+using std::max;
+using std::min;
+
+OccupancyGrid loadOccupancyGrid (const string& filename)
 {
-  str << "(" << c.r << ", " << c.c << ")";
-  return str;
+  std::ifstream str(filename.c_str());
+
+  string type;
+  str >> type;
+  if (type!="P5") {
+    throw GridFileTypeException(type);
+  }
+
+  uint width, height, maxgrey;
+  str >> width >> height >> maxgrey;
+  char line[100];
+  str.getline(line, 100);
+  
+  ROS_INFO_STREAM_NAMED ("grid", "Loading " << height << "x" << width << " grid");
+  
+  char* data = new char[width*height];
+  str.read(data, width*height);
+
+  OccupancyGrid grid(boost::extents[height][width]);
+  uint ind=0;
+  for (uint r=0; r<height; ++r) {
+    for (uint c=0; c<width; ++c) {
+      unsigned char val = maxgrey - data[ind++];
+      grid[r][c] = val>(float)maxgrey*.1;
+    }
+  }
+
+  ROS_INFO_NAMED ("grid", "Done loading grid");
+
+  delete[] data;
+  return grid;
 }
 
-int operator< (const Cell2D& c, const Cell2D& c2)
+OccupancyGrid inflateObstacles (const OccupancyGrid& grid, uint radius)
 {
-  return (c.r<c2.r) || ((c.r==c2.r) && (c.c<c2.c));
+  uint nr=numRows(grid);
+  uint nc=numCols(grid);
+  
+  OccupancyGrid new_grid = grid;
+  
+  for (uint r=0; r<nr; ++r) {
+    for (uint c=0; c<nc; ++c) {
+      uint r0 = r>=radius ? r-radius : 0;
+      for (uint r1=r0; (r1<=min(r+radius, nr-1)) && !new_grid[r][c]; ++r1) {
+        uint c0 = c>=radius ? c-radius : 0;
+        for (uint c1=c0; (c1<=min(c+radius, nc-1)) && !new_grid[r][c]; ++c1) {
+          if (grid[r1][c1]) {
+            new_grid[r][c] = true;
+          }
+        }
+      }
+    }
+  }
+
+  return new_grid;
 }
 
-bool operator== (const Cell2D& c, const Cell2D& c2)
-{
-  return (c.r==c2.r) && (c.c==c2.c);
+
+
+
+
 }
-
-vector<Cell2D> cellNeighbors (const Cell2D& p)
-{
-  int r=p.r;
-  int c=p.c;
-  vector<Cell2D> neighbors(4);
-  neighbors[0]=Cell2D(r-1,c);
-  neighbors[1]=Cell2D(r+1,c);
-  neighbors[2]=Cell2D(r,c-1);
-  neighbors[3]=Cell2D(r,c+1);
-  return neighbors;
-}
-
-
-
-Point2D cellCorner (const Cell2D& cell, const double resolution)
-{
-  return Point2D(cell.c*resolution,cell.r*resolution);
-}
-
-Point2D cellCenter (const Cell2D& cell, const double resolution)
-{
-  return Point2D((.5+cell.c)*resolution, (.5+cell.r)*resolution);
-}
-
-Cell2D pointToCell (const Point2D& p, const double resolution)
-{
-  return Cell2D(p.y/resolution, p.x/resolution);
-}
-
-Point2D cellToPoint (const Cell2D& c, const double resolution)
-{
-  return Point2D(c.c*resolution, c.r*resolution);
-}
-
-} // namespace topological_map

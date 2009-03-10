@@ -80,6 +80,12 @@ Point2D cellCorner (const Cell2D& cell, double resolution);
 Point2D cellCenter (const Cell2D& cell, double resolution);
 
 Cell2D pointToCell (const Point2D& p, double resolution);
+Point2D cellToPoint (const Cell2D& c, double resolution);
+
+
+
+
+
 
 
 } // namespace topological_map

@@ -7,6 +7,7 @@
 <depend package="deprecated_msgs" />
 <depend package="robot_srvs" />
 <depend package="rosconsole" />
+<depend package="tinyxml" />
 <depend package="sbpl" />
 <depend package="navfn" />
 <depend package="eigen"/>
