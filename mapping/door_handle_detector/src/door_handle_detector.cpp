@@ -174,12 +174,10 @@ public:
           param ("~intensity_cluster_perpendicular_angle_tolerance", intensity_cluster_perpendicular_angle_tolerance_, 5.0);   // 5 degrees
           intensity_cluster_perpendicular_angle_tolerance_ = cloud_geometry::deg2rad (intensity_cluster_perpendicular_angle_tolerance_);
 
-	  // TODO: this param should be removed
           // This describes the size of our 3D bounding box (basically the space where we search for doors),
           // as a multiplier of the door frame (computed using the two points from the service call) in both X and Y directions
-          //param ("~door_frame_multiplier", door_frame_multiplier_, 4);
-	  door_frame_multiplier_ = 10;
-
+          // -1 means the multiplier is not used
+	  door_frame_multiplier_ = -1;
       }
 
 
