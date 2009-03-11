@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="laser_scan" type="scan_shadows_filter_node" output="screen" name="shadows_filter">
+    <param name="high_fidelity" type="bool" value="false" />
+    <param name="filter_min_angle" type="double" value="20.0" />
+    <param name="filter_max_angle" type="double" value="160.0" />
+    <remap from="tilt_scan" to="base_scan"/>
+  </node>
+</launch>
