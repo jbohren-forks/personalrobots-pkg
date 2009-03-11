@@ -9,6 +9,11 @@ from robot_msgs.msg import Planner2DState
 
 NAME = 'indefinite_nav'
 
+#goals = [
+#[19.25, 26.37, 3.00]
+#[27.760, 33.166, -0.036]
+#  ]
+
 goals = [
  [50.250, 6.863, 3.083], 
  [18.550, 11.762, 2.554],
@@ -26,7 +31,7 @@ first = True
 
 def indefinite_nav():
   def callback(state):
-    send_goal(state.done)
+    send_goal(0)
 
   def send_goal(done):
     global goals
@@ -39,6 +44,7 @@ def indefinite_nav():
       goal.goal.y = goal_pts[1]
       goal.goal.th = goal_pts[2]
       goal.enable = 1
+      goal.timeout = 1000.0
       first = False
       print "New Goal: x: %.2f, y: %.2f, th: %.2f" % (goal.goal.x, goal.goal.y, goal.goal.th)
       pub.publish(goal)
