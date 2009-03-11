@@ -278,7 +278,7 @@ namespace costmap_2d {
     }
 
     //if we are explicitly given our raytracing observation
-    if(raytrace_obs != NULL){
+    if(raytrace_obs != NULL && raytrace_obs->cloud_ != NULL){
       //Ray trace out freespace in the map for each point in our raytrace cloud
       const robot_msgs::PointCloud& raytrace_cloud = *(raytrace_obs->cloud_);
       for(size_t i = 0; i < raytrace_cloud.get_pts_size(); i++) {
