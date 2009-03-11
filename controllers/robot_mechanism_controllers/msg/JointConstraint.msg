@@ -1,0 +1,10 @@
+string id
+string joint_name
+float64 threshold_start
+float64 nullspace_start
+float64 max_constraint_torque
+float64 p
+float64 i
+float64 d
+float64 i_clamp
+byte remove
