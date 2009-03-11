@@ -113,7 +113,6 @@ TEST_F(ShortTreeTest, FKMatchOnTrees)
   // Compares the resulting transforms/frames
   tf::Transform from_kdl, from_mech ;
   TransformKDLToTF(kdl_frames[0], from_kdl);
-  from_kdl *= chain.getTransformFromKDL(0);
 
   from_mech = tf::Transform(state->link_states_[0].abs_orientation_,
                             state->link_states_[0].abs_position_);
@@ -121,7 +120,6 @@ TEST_F(ShortTreeTest, FKMatchOnTrees)
   EXPECT_TRANSFORMS_EQ(from_mech, from_kdl) << "...and this was for link " << 0 ;
 
   TransformKDLToTF(kdl_frames[1], from_kdl);
-  from_kdl *= chain.getTransformFromKDL(1);
 
   from_mech = tf::Transform(state->link_states_[1].abs_orientation_,
                             state->link_states_[1].abs_position_);
@@ -129,7 +127,6 @@ TEST_F(ShortTreeTest, FKMatchOnTrees)
   EXPECT_TRANSFORMS_EQ(from_mech, from_kdl) << "...and this was for link " << 1 ;
 
   TransformKDLToTF(kdl_frames[2], from_kdl);
-  from_kdl *= chain.getTransformFromKDL(2);
 
   from_mech = tf::Transform(state->link_states_[2].abs_orientation_,
                             state->link_states_[2].abs_position_);

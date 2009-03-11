@@ -107,7 +107,6 @@ TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
   {
     tf::Transform from_kdl;
     TransformKDLToTF(kdl_frames[i], from_kdl);
-    from_kdl *= chain.getTransformFromKDL(i);
 
     tf::Transform from_mech(state->link_states_[i].abs_orientation_,
                             state->link_states_[i].abs_position_);
