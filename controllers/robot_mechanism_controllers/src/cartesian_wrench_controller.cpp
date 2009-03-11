@@ -57,9 +57,11 @@ CartesianWrenchController::~CartesianWrenchController()
 
 
 
-bool CartesianWrenchController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string& controller_name)
+bool CartesianWrenchController::initialize(mechanism::RobotState *robot_state, 
+                                           const std::string& root_name, 
+                                           const std::string& tip_name, 
+                                           const std::string& controller_name)
 {
-  cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
   controller_name_ = controller_name;
 
   // test if we got robot pointer
@@ -67,17 +69,16 @@ bool CartesianWrenchController::initialize(mechanism::RobotState *robot_state, c
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!robot_.init(robot_state->model_, root_name, tip_name))
+  if (!chain_.init(robot_state->model_, root_name, tip_name))
     return false;
-  robot_.toKDL(chain_);
+  chain_.toKDL(kdl_chain_);
 
   // create solver
-  num_joints_   = chain_.getNrOfJoints();
-  num_segments_ = chain_.getNrOfSegments();
-  jnt_to_jac_solver_ = new ChainJntToJacSolver(chain_);
+  num_joints_   = kdl_chain_.getNrOfJoints();
+  jnt_to_jac_solver_ = new ChainJntToJacSolver(kdl_chain_);
   jnt_pos_.resize(num_joints_);
   jnt_eff_.resize(num_joints_);
-  jacobian_.resize(num_joints_, num_segments_);
+  jacobian_.resize(num_joints_);
 
   return true;
 }
@@ -96,14 +97,11 @@ bool CartesianWrenchController::start()
 void CartesianWrenchController::update()
 {
   // check if joints are calibrated
-  if (!robot_.allCalibrated(robot_state_->joint_states_))
+  if (!chain_.allCalibrated(robot_state_->joint_states_))
     return;
 
-  // check if joints are calibrated
-  if (!robot_.allCalibrated(robot_state_->joint_states_)) return;
-
   // get joint positions
-  robot_.getPositions(robot_state_->joint_states_, jnt_pos_);
+  chain_.getPositions(robot_state_->joint_states_, jnt_pos_);
 
   // get the chain jacobian
   jnt_to_jac_solver_->JntToJac(jnt_pos_, jacobian_);
@@ -116,7 +114,7 @@ void CartesianWrenchController::update()
   }
 
   // set effort to joints
-  robot_.setEfforts(jnt_eff_, robot_state_->joint_states_);
+  chain_.setEfforts(jnt_eff_, robot_state_->joint_states_);
 }
 
 
@@ -142,17 +140,26 @@ CartesianWrenchControllerNode::~CartesianWrenchControllerNode()
 
 bool CartesianWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // get the controller name
-  controller_name_ = config->Attribute("name");
+  // get the controller name from xml file
+  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
+  if (controller_name_ == ""){
+    ROS_ERROR("CartesianWrenchControllerNode: No controller name given in xml file");
+    return false;
+  }
 
-  // get name of root and tip
-  string root_name, tip_name;
-  node_->param(controller_name_+"/root_name", root_name, string("no_name_given"));
-  node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
+  // get name of root and tip from the parameter server
+  std::string root_name, tip_name;
+  if (!node_->getParam(controller_name_+"/root_name", root_name)){
+    ROS_ERROR("CartesianWrenchControllerNode: No root name found on parameter server");
+    return false;
+  }
+  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+    ROS_ERROR("CartesianWrenchControllerNode: No tip name found on parameter server");
+    return false;
+  }
 
   // initialize wrench controller
-  if (!controller_.initialize(robot, root_name, tip_name, controller_name_))
-    return false;
+  if (!controller_.initialize(robot, root_name, tip_name, controller_name_)) return false;
 
   // subscribe to wrench commands
   node_->subscribe(controller_name_ + "/command", wrench_msg_,

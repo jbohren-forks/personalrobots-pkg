@@ -64,11 +64,11 @@ public:
 private:
   ros::Node* node_;
   std::string controller_name_;
-  unsigned int num_joints_, num_segments_;
+  unsigned int num_joints_;
   mechanism::RobotState *robot_state_;
-  mechanism::Chain robot_;
+  mechanism::Chain chain_;
 
-  KDL::Chain chain_;
+  KDL::Chain kdl_chain_;
   KDL::ChainJntToJacSolver *jnt_to_jac_solver_;
   KDL::JntArray jnt_pos_, jnt_eff_;
   KDL::Jacobian jacobian_;
