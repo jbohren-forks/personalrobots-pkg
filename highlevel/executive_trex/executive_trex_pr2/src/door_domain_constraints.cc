@@ -19,7 +19,7 @@ namespace executive_trex_pr2 {
      _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[8]))),
      _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[9]))){
     checkError(variables.size() == 10, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
-    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
   /**
@@ -49,7 +49,7 @@ namespace executive_trex_pr2 {
      _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[8]))),
      _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[9]))){
     checkError(variables.size() == 10, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
-    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
   /**

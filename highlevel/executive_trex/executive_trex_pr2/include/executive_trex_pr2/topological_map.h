@@ -199,149 +199,110 @@ namespace executive_trex_pr2 {
 
 
   /**
-   * @brief A TopologicalMapAccessor is used to access the data of a topological map. This accessor will
+   * @brief A TopologicalMapAdapter is used to access the data of a topological map. This accessor will
    * be used by the constraints and flaw filter. The accessor is a singleton.
    */
-  class TopologicalMapAccessor {
+  class TopologicalMapAdapter {
   public:
 
     /**
      * @brief Singleton accessor
      * @return NULL if no instance created yet.
      */
-    static TopologicalMapAccessor* instance();
+    static TopologicalMapAdapter* instance();
+
+    /**
+     * @brief Constructor reading in from a serialized file of a prior map
+     */
+    TopologicalMapAdapter(std::istream& in);
+
+    /**
+     * @brief Constructor based on a grid
+     */
+    TopologicalMapAdapter(const topological_map::OccupancyGrid& grid, double resolution);
 
     /**
      * @brief Destructor is virtual for subclasses to over-ride
      */
-    virtual ~TopologicalMapAccessor();
-
-    /**
-     * @brief The number of meters per cell in the metric representation
-     */
-    double getResolution() const{return _resolution;}
-
-    /**
-     * @brief The number of columns
-     */
-    unsigned int getNumCols() const {return _num_cols;}
-
-    /**
-     * @brief The number of rows
-     */
-    unsigned int getNumRows() const {return _num_rows;}
+    virtual ~TopologicalMapAdapter();
 
     /**
      * @brief Get a region for a point
      * @retun 0 if no region found, otherwise the region for the given point
      */
-    virtual unsigned int getRegion(double x, double y) = 0;
+    virtual unsigned int getRegion(double x, double y);
+
+    /**
+     * @brief Get a region for a point
+     * @retun Return the cells for a given region id
+     */
+    virtual topological_map::RegionPtr  getRegionCells(unsigned int region_id);
 
     /**
      * @brief Get a connector for a point
      * @retun 0 if no connector found, otherwise the connector for the given point
      */
-    virtual unsigned int getConnector(double x, double y) = 0;
+    virtual unsigned int getConnector(double x, double y);
 
     /**
      * @brief Get position details for a connector
      * @return true if the given connector id was valid, otherwise false.
      */
-    virtual bool getConnectorPosition(unsigned int connector_id, double& x, double& y) = 0;
+    virtual bool getConnectorPosition(unsigned int connector_id, double& x, double& y);
 
     /**
      * @brief Get the connectors of a particular region
      * @return true if the given region id was valid, otherwose false.
      */
-    virtual bool getRegionConnectors(unsigned int region_id, std::vector<unsigned int>& connectors) = 0;
+    virtual bool getRegionConnectors(unsigned int region_id, std::vector<unsigned int>& connectors);
 
     /**
      * @brief Get the regions of a particular connector
      * @return true if the given connector id was valid, otherwise false.
      */
-    virtual bool getConnectorRegions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b) = 0;
+    virtual bool getConnectorRegions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b);
 
     /**
      * @brief Get the door id given a pair of points
      * @return 0 if no door found, otherwise the id for a door
      */
-    virtual unsigned int getDoorFromPosition(double x1, double y1, double x2, double y2) = 0;
+    virtual unsigned int getDoorFromPosition(double x1, double y1, double x2, double y2);
 
     /**
      * @brief Get the door position information (2 points at its base, given the id
      * @return true if the door id is valid, otherwise false. If a valid id, then it will fill out point data
      */
-    virtual bool getDoorData(double& x1, double& y1, double& x2, double& y2, unsigned int door_id) = 0;
+    virtual bool getDoorData(double& x1, double& y1, double& x2, double& y2, unsigned int door_id);
 
     /**
      * @brief Test if a given region is a doorway
      * @param result set to true if a doorway, otherwise false.
      * @return true if it is a valid region, otherwise false
      */
-    virtual bool isDoorway(unsigned int region_id, bool& result) = 0;
+    virtual bool isDoorway(unsigned int region_id, bool& result);
 
     /**
      * @brief Test if a point is in collision
      * @return true if it is in an obstacle
      */
-    virtual bool isObstacle(double x, double y) = 0;
+    virtual bool isObstacle(double x, double y);
 
     /**
      * @brief Get the cost to go from a given 2D point to a connector. The point must be in a region
      * accessible by the connector
      * @return PLUS_INFINITY if not reachable (e.g. not in the same region or a bad id. Otherwise the cost to get there.
      */
-    virtual double gCost(double from_x, double from_y, unsigned int connector_id) = 0;
+    virtual double gCost(double from_x, double from_y, unsigned int connector_id);
 
     /**
      * @brief Get the cost to go from a given connector, to a final destination given by a point in space
      * @return PLUS_INFINITY if not reachable (e.g. not in the same region or a bad id. Otherwise the cost to get there.
      */
-    virtual double hCost(unsigned int connector_id, double to_x, double to_y) = 0;
-
-  protected:
-    TopologicalMapAccessor(double resolution, unsigned int cols, unsigned int rows);
-
-  private:
-    static TopologicalMapAccessor* _singleton;
-    const double _resolution;
-    const unsigned int _num_cols;
-    const unsigned int _num_rows;
-  };
-
-  /**
-   * @brief This class implements and adapter to the topological map derived from a bottleneck analysis of an occupancy grid
-   */
-  class TopologicalMapAdapter: public TopologicalMapAccessor {
-  public:
-
-    TopologicalMapAdapter(const topological_map::OccupancyGrid& grid, double resolution);
-
-    virtual ~TopologicalMapAdapter();
-
-    virtual unsigned int getRegion(double x, double y);
-
-    virtual unsigned int getConnector(double x, double y);
-
-    virtual bool getConnectorPosition(unsigned int connector_id, double& x, double& y);
-
-    virtual bool getRegionConnectors(unsigned int region_id, std::vector<unsigned int>& connectors);
-
-    virtual bool getConnectorRegions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b);
-
-    virtual unsigned int getDoorFromPosition(double x1, double y1, double x2, double y2);
-
-    virtual bool getDoorData(double& x1, double& y1, double& x2, double& y2, unsigned int door_id);
-
-    virtual bool isDoorway(unsigned int region_id, bool& result);
-
-    virtual bool isObstacle(double x, double y);
-
-    virtual double gCost(double from_x, double from_y, unsigned int connector_id);
-
     virtual double hCost(unsigned int connector_id, double to_x, double to_y);
 
   private:
+    static TopologicalMapAdapter* _singleton;
+
     // Helper method to visualize the grap as a post script file
     void toPostScriptFile();
 

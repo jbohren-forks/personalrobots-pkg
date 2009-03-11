@@ -20,6 +20,71 @@ using namespace EUROPA;
 TREX::Assembly assembly("pr2", "test");
 ConstraintEngineId ce(assembly.getConstraintEngine());
 
+
+
+/**
+ * Utility to print rows and columns that are in doorways
+ */
+void printDoors(std::ostream& os){
+  unsigned int region_id(1);
+  unsigned int door_counter(0);
+
+  bool is_doorway(false);
+  while(TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway)){
+
+    if(is_doorway){
+      door_counter++;
+      os << "Door in region " << region_id << " containing cells:\n";
+      const topological_map::Region& region = *(TopologicalMapAdapter::instance()->getRegionCells(region_id));
+      for(topological_map::Region::const_iterator it = region.begin(); it != region.end(); ++it){
+	const topological_map::Cell2D& cell = *it;
+	os << "  [" << cell.c << ", " << cell.r << "]\n";
+      }
+
+    }
+
+    region_id++;
+  }
+
+  os << door_counter << " doors in all\n";
+}
+
+/**
+ * A Default Grid Structure to use when testing
+ */
+void setV (topological_map::OccupancyGrid& grid, unsigned r0, unsigned dr, unsigned rmax, unsigned c0, unsigned dc, unsigned cmax, bool val) 
+{
+  for (unsigned r=r0; r<rmax; r+=dr) {
+    for (unsigned c=c0; c<cmax; c+=dc) {
+      grid[r][c] = val;
+    }
+  }
+}
+
+// Get a sample grid:
+// Dimensions: 21 * 24
+// Resolution: 1
+static const unsigned int HEIGHT_21(21);
+static const unsigned int WIDTH_24(24);
+static const double RESOLUTION(1.0);
+
+topological_map::OccupancyGrid& GRID_3_3_ALL_CONNECTED(){
+  static topological_map::OccupancyGrid grid(boost::extents[HEIGHT_21][WIDTH_24]);
+  static bool initialized(false);
+  if(!initialized){
+    setV(grid, 0, 1, HEIGHT_21, 0, 1, WIDTH_24, false);
+    setV(grid, 7, 7, HEIGHT_21, 0, 1, WIDTH_24, true);
+    setV(grid, 0, 1, HEIGHT_21, 8, 8, WIDTH_24, true);
+    setV(grid, 3, 7, HEIGHT_21, 8, 8, WIDTH_24, false);
+    setV(grid, 7, 7, HEIGHT_21, 4, 8, WIDTH_24, false);
+    initialized = true;
+  }
+
+  return grid;
+}
+
+// Shared setup for all tests
+
 /**
  * Given a spatial window, pich a random float in that area
  */
@@ -29,21 +94,35 @@ void pickPointInSpace(unsigned int W, unsigned int H, double& x, double& y){
   y = (rand() % H) + mantissa;
 }
 
+
+/**
+ * Test reading a map in from a file
+ */
+/*
+TEST(executive_trex_pr2, map_read_from_file){
+  std::ifstream is("./test/willow.tmap");
+  TopologicalMapAdapter map(is);
+  std::ofstream os("doors.willow.out");
+  printDoors(os);
+}
+*/
 TEST(executive_trex_pr2, map_accessor){
+  TopologicalMapAdapter map(GRID_3_3_ALL_CONNECTED(), RESOLUTION);
+
   // Generate points in the space and make sure we get a region for each point
   for(unsigned int counter = 0; counter < 10000; counter++){
     // Obtain random values for x and y
     double x, y;
-    pickPointInSpace(TopologicalMapAccessor::instance()->getNumCols() + 5, TopologicalMapAccessor::instance()->getNumRows() + 5, x, y);
+    pickPointInSpace(WIDTH_24 + 5, HEIGHT_21 + 5, x, y);
 
-    unsigned int region_id = TopologicalMapAccessor::instance()->getRegion(x, y);
+    unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(x, y);
     if(region_id == 0){
-      bool valid = TopologicalMapAccessor::instance()->isObstacle(x, y) || x >= TopologicalMapAccessor::instance()->getNumCols() || y >= TopologicalMapAccessor::instance()->getNumRows();
+      bool valid = TopologicalMapAdapter::instance()->isObstacle(x, y) || x >= WIDTH_24 || y >= HEIGHT_21;
       ROS_INFO_COND(!valid, "Should be off the map but isn't with (%f, %f)", x, y);
       ASSERT_TRUE(valid);
     }
     else {
-      bool valid = !TopologicalMapAccessor::instance()->isObstacle(x, y) && x < TopologicalMapAccessor::instance()->getNumCols() && y < TopologicalMapAccessor::instance()->getNumRows();
+      bool valid = !TopologicalMapAdapter::instance()->isObstacle(x, y) && x < WIDTH_24 && y < HEIGHT_21;
       ROS_INFO_COND(!valid, "Should be on the map but isn't with (%f, %f)", x, y);
       ASSERT_TRUE(valid);
     }
@@ -51,16 +130,18 @@ TEST(executive_trex_pr2, map_accessor){
 }
 
 TEST(executive_trex_pr2, map_accessor_regression_tests){
+  TopologicalMapAdapter map(GRID_3_3_ALL_CONNECTED(), RESOLUTION);
   // Check a point that shoud be in a region.
-  unsigned int region_id = TopologicalMapAccessor::instance()->getRegion(8.5, 0.5);
+  unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(8.5, 0.5);
   ROS_INFO_COND(region_id == 0, "Should be on the map but isn't with (%f, %f)", 8.5, 0.5);
-  ASSERT_TRUE(region_id > 0 || TopologicalMapAccessor::instance()->isObstacle(8.5, 0.5));
+  ASSERT_TRUE(region_id > 0 || TopologicalMapAdapter::instance()->isObstacle(8.5, 0.5));
 }
 
 /**
  * Tesy the relation for map connector to point
  */
 TEST(executive_trex_pr2, map_connector_constraint){
+  TopologicalMapAdapter map(GRID_3_3_ALL_CONNECTED(), RESOLUTION);
 
   Variable<IntervalIntDomain> v_connector(ce, IntervalIntDomain());
   Variable<IntervalDomain> v_x(ce, IntervalDomain());
@@ -69,9 +150,9 @@ TEST(executive_trex_pr2, map_connector_constraint){
   MapConnectorConstraint::MapConnectorConstraint map_connector("map_connector", "Default", ce, makeScope(v_connector.getId(), v_x.getId(), v_y.getId()));
 
   // Select all the connectors by iterating over numbers that might be
-  for(unsigned int i = 0; i < (TopologicalMapAccessor::instance()->getNumRows() * TopologicalMapAccessor::instance()->getNumCols()); i++){
+  for(unsigned int i = 0; i < (HEIGHT_21 * WIDTH_24); i++){
     double x, y;
-    if(TopologicalMapAccessor::instance()->getConnectorPosition(i, x, y)){
+    if(TopologicalMapAdapter::instance()->getConnectorPosition(i, x, y)){
 
       // Now bind the connector and verify x and y. Going this direction, the relationship can be exact
       v_connector.specify(i);
@@ -96,8 +177,8 @@ TEST(executive_trex_pr2, map_connector_constraint){
       // Conversely, when x and y are outside of the error bound, we should not see a match. So if we bind all
       // then we get an inconsistency
       v_connector.specify(i);
-      v_x.specify(x + TopologicalMapAccessor::instance()->getResolution() * 2);
-      v_y.specify(y + TopologicalMapAccessor::instance()->getResolution() * 2);
+      v_x.specify(x + RESOLUTION * 2);
+      v_y.specify(y + RESOLUTION * 2);
       ASSERT_FALSE(ce->propagate());
       v_connector.reset();
       v_x.reset();
@@ -112,6 +193,7 @@ TEST(executive_trex_pr2, map_connector_constraint){
  * Tes the relation for map connector to point
  */
 TEST(executive_trex_pr2, map_region_from_position_constraint){
+  TopologicalMapAdapter map(GRID_3_3_ALL_CONNECTED(), RESOLUTION);
 
   Variable<IntervalIntDomain> v_region(ce, IntervalIntDomain());
   Variable<IntervalDomain> v_x(ce, IntervalDomain());
@@ -123,8 +205,8 @@ TEST(executive_trex_pr2, map_region_from_position_constraint){
   for(unsigned int counter = 0; counter < 100; counter++){
     // Obtain random values for x and y
     double x, y;
-    pickPointInSpace(TopologicalMapAccessor::instance()->getNumCols() + 5, TopologicalMapAccessor::instance()->getNumRows() + 5, x, y);
-    unsigned int region_id = TopologicalMapAccessor::instance()->getRegion(x, y);
+    pickPointInSpace(WIDTH_24 + 5, HEIGHT_21 + 5, x, y);
+    unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(x, y);
 
     // Now bind x and y - should propagate
     v_x.specify(x);
@@ -141,6 +223,7 @@ TEST(executive_trex_pr2, map_region_from_position_constraint){
  * Test the check for a region being a doorway
  */
 TEST(executive_trex_pr2, map_is_doorway_constraint){
+  TopologicalMapAdapter map(GRID_3_3_ALL_CONNECTED(), RESOLUTION);
 
   Variable<BoolDomain> v_result(ce, IntervalIntDomain());
   Variable<IntervalIntDomain> v_region(ce, IntervalIntDomain());
@@ -148,12 +231,12 @@ TEST(executive_trex_pr2, map_is_doorway_constraint){
   MapIsDoorwayConstraint::MapIsDoorwayConstraint map_is_doorway("map_is_doorway", "Default", ce, makeScope(v_result.getId(), v_region.getId()));
 
   // Select for a bunch of IDS
-  for(unsigned int id = 0; id < (TopologicalMapAccessor::instance()->getNumCols() * TopologicalMapAccessor::instance()->getNumRows()); id++){
+  for(unsigned int id = 0; id < (WIDTH_24 * HEIGHT_21); id++){
 
     // If it is not a region, then binding it should produce an inconsistency
     v_region.specify(id);
     bool is_doorway(true);
-    if(!TopologicalMapAccessor::instance()->isDoorway(id, is_doorway))
+    if(!TopologicalMapAdapter::instance()->isDoorway(id, is_doorway))
       ASSERT_FALSE(ce->propagate());
     else {
       ASSERT_TRUE(ce->propagate());
@@ -166,22 +249,13 @@ TEST(executive_trex_pr2, map_is_doorway_constraint){
 }
 
 /**
- * Utility to print rows and columns that are in doorways
+ * Test reading a map from a grid and writing the doors found
  */
-void printDoors(){
-
-  std::ofstream doors("doors.out");
-  for(unsigned int x = 0; x < TopologicalMapAccessor::instance()->getNumCols(); x++) {
-    for(unsigned int y = 0; y < TopologicalMapAccessor::instance()->getNumRows(); y++){
-      unsigned int region_id = TopologicalMapAccessor::instance()->getRegion(x, y);
-      bool is_doorway(false);
-      TopologicalMapAccessor::instance()->isDoorway(region_id, is_doorway);
-      if(is_doorway)
-	doors << "[" << x << ", " << y << "]\n";
-    }
-  }
+TEST(executive_trex_pr2, map_output_doors){
+  TopologicalMapAdapter map(GRID_3_3_ALL_CONNECTED(), RESOLUTION);
+  std::ofstream os("doors.out");
+  printDoors(os);
 }
-
 
 int main(int argc, char** argv){
   srand(NULL);

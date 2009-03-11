@@ -10,41 +10,6 @@ using namespace TREX;
 
 namespace executive_trex_pr2 {
 
-  /**
-   * A Default Grid Structure to sue when testing
-   */
-  void setV (topological_map::OccupancyGrid& grid, unsigned r0, unsigned dr, unsigned rmax, unsigned c0, unsigned dc, unsigned cmax, bool val) 
-  {
-    for (unsigned r=r0; r<rmax; r+=dr) {
-      for (unsigned c=c0; c<cmax; c+=dc) {
-	grid[r][c] = val;
-      }
-    }
-  }
-
-  // Get a sample grid:
-  // Dimensions: 21 * 24
-  // Resolution: 1
-  static const unsigned int HEIGHT_21(21);
-  static const unsigned int WIDTH_24(24);
-  topological_map::OccupancyGrid& GRID_3_3_ALL_CONNECTED(){
-    static topological_map::OccupancyGrid grid(boost::extents[HEIGHT_21][WIDTH_24]);
-    static bool initialized(false);
-    if(!initialized){
-      setV(grid, 0, 1, HEIGHT_21, 0, 1, WIDTH_24, false);
-      setV(grid, 7, 7, HEIGHT_21, 0, 1, WIDTH_24, true);
-      setV(grid, 0, 1, HEIGHT_21, 8, 8, WIDTH_24, true);
-      setV(grid, 3, 7, HEIGHT_21, 8, 8, WIDTH_24, false);
-      setV(grid, 7, 7, HEIGHT_21, 4, 8, WIDTH_24, false);
-      initialized = true;
-    }
-
-    return grid;
-  }
-
-// Shared setup for all tests
-  TopologicalMapAdapter* map = new TopologicalMapAdapter(GRID_3_3_ALL_CONNECTED(), 1.0);
-
   //*******************************************************************************************
   MapConnectorConstraint::MapConnectorConstraint(const LabelStr& name,
 						 const LabelStr& propagatorName,
@@ -55,7 +20,7 @@ namespace executive_trex_pr2 {
      _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
      _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))){
     checkError(variables.size() == 3, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
-    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
   /**
@@ -68,7 +33,7 @@ namespace executive_trex_pr2 {
       double x, y;
 
       // If we have a pose, bind the variables
-      if(TopologicalMapAccessor::instance()->getConnectorPosition(connector_id, x, y)){
+      if(TopologicalMapAdapter::instance()->getConnectorPosition(connector_id, x, y)){
 	_x.set(x);
 
 	if(!_x.isEmpty()) 
@@ -78,7 +43,7 @@ namespace executive_trex_pr2 {
 
     // If x and y are set, we can bind the connector.
     if(_x.isSingleton() && _y.isSingleton()){
-      unsigned int connector_id = TopologicalMapAccessor::instance()->getConnector(_x.getSingletonValue(), _y.getSingletonValue());
+      unsigned int connector_id = TopologicalMapAdapter::instance()->getConnector(_x.getSingletonValue(), _y.getSingletonValue());
       _connector.set(connector_id);
     }
   }
@@ -93,7 +58,7 @@ namespace executive_trex_pr2 {
      _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
      _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))){
     checkError(variables.size() == 3, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
-    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
   /**
@@ -101,7 +66,7 @@ namespace executive_trex_pr2 {
    */
   void MapGetRegionFromPositionConstraint::handleExecute(){
     if(_x.isSingleton() && _y.isSingleton()){
-      unsigned int region_id = TopologicalMapAccessor::instance()->getRegion(_x.getSingletonValue(), _y.getSingletonValue());
+      unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(_x.getSingletonValue(), _y.getSingletonValue());
       _region.set(region_id);
     }
   } 
@@ -115,7 +80,7 @@ namespace executive_trex_pr2 {
      _result(static_cast<BoolDomain&>(getCurrentDomain(variables[0]))),
      _region(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[1]))){
     checkError(variables.size() == 2, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
-    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
   void MapIsDoorwayConstraint::handleExecute(){
@@ -124,7 +89,7 @@ namespace executive_trex_pr2 {
       bool is_doorway(true);
 
       // If the region is bogus then this is an inconsistency. Otherwise bind the result
-      if(!TopologicalMapAccessor::instance()->isDoorway(region_id, is_doorway))
+      if(!TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway))
 	_region.empty();
       else
 	_result.set(is_doorway);
@@ -144,12 +109,12 @@ namespace executive_trex_pr2 {
      _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
      _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))){
     checkError(variables.size() == 5, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
-    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
   void MapGetDoorFromPositionConstraint::handleExecute(){
     if(_x1.isSingleton() && _y1.isSingleton() && _x2.isSingleton() && _y2.isSingleton()){
-      unsigned int door_id = TopologicalMapAccessor::instance()->getDoorFromPosition(_x1.getSingletonValue(),
+      unsigned int door_id = TopologicalMapAdapter::instance()->getDoorFromPosition(_x1.getSingletonValue(),
 										     _y1.getSingletonValue(),
 										     _x2.getSingletonValue(),
 										     _y2.getSingletonValue());
@@ -171,13 +136,13 @@ namespace executive_trex_pr2 {
      _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
      _door(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[4]))){
     checkError(variables.size() == 5, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
-    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
 
   void MapGetDoorDataConstraint::handleExecute(){
     if(_door.isSingleton() && _door.getSingletonValue() > 0){
       double x1, y1, x2, y2;
-      bool result = TopologicalMapAccessor::instance()->getDoorData(x1, y1, x2, y2, _door.getSingletonValue());
+      bool result = TopologicalMapAdapter::instance()->getDoorData(x1, y1, x2, y2, _door.getSingletonValue());
       
       // If this was not a valid id for some reason, I am stunned! But we should generate an inconsistency
       if(!result)
@@ -204,7 +169,7 @@ namespace executive_trex_pr2 {
      _z(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
      _door(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[3]))){
     checkError(variables.size() == 4, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
-    checkError(TopologicalMapAccessor::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
 
   /**
@@ -213,7 +178,7 @@ namespace executive_trex_pr2 {
   void MapGetHandlePositionConstraint::handleExecute(){
     if(_door.isSingleton() && _door.getSingletonValue() > 0){
       double x1, y1, x2, y2;
-      bool result = TopologicalMapAccessor::instance()->getDoorData(x1, y1, x2, y2, _door.getSingletonValue());
+      bool result = TopologicalMapAdapter::instance()->getDoorData(x1, y1, x2, y2, _door.getSingletonValue());
       
       // If this was not a valid id for some reason, I am stunned! But we should generate an inconsistency
       if(!result)
@@ -327,17 +292,17 @@ namespace executive_trex_pr2 {
     x1 = final_x->lastDomain().getSingletonValue();
     y1 = final_y->lastDomain().getSingletonValue();
 
-    unsigned int this_region =  TopologicalMapAccessor::instance()->getRegion(x0, y0);
+    unsigned int this_region =  TopologicalMapAdapter::instance()->getRegion(x0, y0);
     condDebugMsg(this_region == 0, "MapConnectorSelector", "No region for <" << x0 << ", " << y0 <<">");
-    unsigned int final_region =  TopologicalMapAccessor::instance()->getRegion(x1, y1);
+    unsigned int final_region =  TopologicalMapAdapter::instance()->getRegion(x1, y1);
     condDebugMsg(final_region == 0, "MapConnectorSelector", "No region for <" << x1 << ", " << y1 <<">");
     std::vector<unsigned int> final_region_connectors;
-    TopologicalMapAccessor::instance()->getRegionConnectors(final_region, final_region_connectors);
+    TopologicalMapAdapter::instance()->getRegionConnectors(final_region, final_region_connectors);
 
     // exclude the source connector if there is one
     bool accessible_directly(false);
 
-    unsigned int source_connector = TopologicalMapAccessor::instance()->getConnector(x0, y0);
+    unsigned int source_connector = TopologicalMapAdapter::instance()->getConnector(x0, y0);
     for(unsigned int i = 0; i < final_region_connectors.size(); i++){
       if(final_region_connectors[i] == source_connector){
 	accessible_directly = true;
@@ -353,12 +318,12 @@ namespace executive_trex_pr2 {
 
     // Now iterate over the connectors in this region and compute the heuristic cost estimate
     std::vector<unsigned int> connectors;
-    TopologicalMapAccessor::instance()->getRegionConnectors(this_region, connectors);
+    TopologicalMapAdapter::instance()->getRegionConnectors(this_region, connectors);
     for(std::vector<unsigned int>::const_iterator it = connectors.begin(); it != connectors.end(); ++it){
       unsigned int connector_id = *it;
       if(connector_id != source_connector){
-	double cost = TopologicalMapAccessor::instance()->gCost(x0, y0, connector_id) + 
-	  TopologicalMapAccessor::instance()->hCost(connector_id, x1, y1);
+	double cost = TopologicalMapAdapter::instance()->gCost(x0, y0, connector_id) + 
+	  TopologicalMapAdapter::instance()->hCost(connector_id, x1, y1);
 
 	_sorted_choices.push_back(Choice(connector_id, cost));
       }
@@ -377,7 +342,7 @@ namespace executive_trex_pr2 {
     for(std::list<Choice>::const_iterator it = _sorted_choices.begin(); it != _sorted_choices.end(); ++it){
       const Choice& choice = *it;
       double x, y;
-      TopologicalMapAccessor::instance()->getConnectorPosition(choice.id, x, y);
+      TopologicalMapAdapter::instance()->getConnectorPosition(choice.id, x, y);
 
       if(choice.id == 0)
 	ss << "<0, GOAL, " << choice.cost << ">" << std::endl;
@@ -405,39 +370,42 @@ namespace executive_trex_pr2 {
     return 0;
   }
 
-  TopologicalMapAccessor* TopologicalMapAccessor::_singleton = NULL;
-
-  /**
-   * Topological Map Accessor Implementation. Note that it is basically just an interface.
-   */
-  TopologicalMapAccessor::TopologicalMapAccessor(double resolution, unsigned int c, unsigned int r)
-    :_resolution(resolution), _num_cols(c), _num_rows(r){
-    if(_singleton != NULL)
-      delete _singleton;
-
-    _singleton = this;
-  }
-
-  TopologicalMapAccessor::~TopologicalMapAccessor(){
-    _singleton = NULL;
-  }
-
-  TopologicalMapAccessor* TopologicalMapAccessor::instance(){
-    return _singleton;
-  }
-
   /************************************************************************
    * Map Adapter implementation
    ************************************************************************/
 
-  TopologicalMapAdapter::TopologicalMapAdapter(const topological_map::OccupancyGrid& grid, double resolution)
-    : TopologicalMapAccessor(resolution, topological_map::numCols(grid), topological_map::numRows(grid)){
+  TopologicalMapAdapter* TopologicalMapAdapter::_singleton = NULL;
+
+  TopologicalMapAdapter* TopologicalMapAdapter::instance(){
+    return _singleton;
+  }
+
+  TopologicalMapAdapter::TopologicalMapAdapter(std::istream& in){
+
+    if(_singleton != NULL)
+      delete _singleton;
+
+    _singleton = this;
+
+    _map = topological_map::TopologicalMapPtr(new topological_map::TopologicalMap(in));
+
+    toPostScriptFile();
+  }
+
+  TopologicalMapAdapter::TopologicalMapAdapter(const topological_map::OccupancyGrid& grid, double resolution) {
+
+    if(_singleton != NULL)
+      delete _singleton;
+
+    _singleton = this;
+
     _map = topological_map::topologicalMapFromGrid(grid, resolution, 2, 1, 1, 0, "local");
+
     toPostScriptFile();
   }
 
   TopologicalMapAdapter::~TopologicalMapAdapter(){
-
+    _singleton = NULL;
   }
 
   unsigned int TopologicalMapAdapter::getRegion(double x, double y){
@@ -447,6 +415,10 @@ namespace executive_trex_pr2 {
     }
     catch(...){}
     return result;
+  }
+
+  topological_map::RegionPtr TopologicalMapAdapter::getRegionCells(unsigned int region_id){
+    return _map->regionCells(region_id);
   }
 
   unsigned int TopologicalMapAdapter::getConnector(double x, double y){
