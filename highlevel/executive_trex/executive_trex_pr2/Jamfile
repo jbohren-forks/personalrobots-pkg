@@ -1,46 +1,43 @@
 SubDir executive_trex_pr2 ;
 
-# Enables header scanning of NDDL files
-SEARCH_SOURCE = ./nddl ../../../3rdparty/trex/TREX/agent/base ../../../3rdparty/trex/PLASMA/src/PLASMA/NDDL/base ;
+# The path to search for nddl input files
+SEARCH_SOURCE = $(EXEC_HOME)/nddl $(TREX)/agent/base $(PLASMA)/NDDL/base ;
 
-if ! $(executive_trex_pr2_READY) {
+# Input files
+local TestInputs = 
+	[ FDirName . test pr2.test.nddl ]
+	[ FDirName . wpc_gazebo.0 pr2.exec.nddl ]
+	[ FDirName . wpc_gazebo.1 pr2.exec.nddl ]
+	[ FDirName . nav.0 pr2.exec.nddl ]
+	[ FDirName . arm.0 pr2.exec.nddl ]
+	[ FDirName . arm.1 pr2.exec.nddl ]
+	[ FDirName . arm.2 pr2.exec.nddl ]
+	[ FDirName . miles.1 pr2.exec.nddl ]
+	[ FDirName . miles.2 pr2.exec.nddl ]
+	[ FDirName . miles.3 pr2.exec.nddl ]
+	[ FDirName . miles_gazebo.3 pr2.exec.nddl ]
+	[ FDirName . miles.4 pr2.exec.nddl ]
+	[ FDirName . sim.0 pr2.exec.nddl ]
+	[ FDirName . sim.0 pr2.sim.nddl ]
+	[ FDirName . sim.1 pr2.exec.nddl ]
+	[ FDirName . sim.1 pr2.sim.nddl ]
+	[ FDirName . master.0 pr2.master.nddl ]
+	[ FDirName . master.0 pr2.doorman.nddl ]
+	[ FDirName . master.0 pr2.driver.nddl ]
+	[ FDirName . master.0 pr2.recharger.nddl ]
+	[ FDirName . master.0 pr2.safety.nddl ]
+	[ FDirName . master.0 pr2.rcs.sim.nddl ]
+	[ FDirName . doorman.0 pr2.master.nddl ]
+	[ FDirName . doorman.0 pr2.doorman.nddl ]
+	[ FDirName . doorman.0 pr2.driver.nddl ]
+	[ FDirName . doorman.0 pr2.recharger.nddl ]
+	[ FDirName . doorman.0 pr2.safety.nddl ]
+	[ FDirName . doorman.0 pr2.rcs.sim.nddl ]
+;
 
- # Input files
- local TestInputs = 
-		[ FDirName $(EXEC_HOME) test pr2.test.nddl ]
-		[ FDirName $(EXEC_HOME) wpc_gazebo.0 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) wpc_gazebo.1 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) nav.0 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) arm.0 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) arm.1 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) arm.2 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) miles.1 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) miles.2 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) miles.3 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) miles_gazebo.3 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) miles.4 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) sim.0 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) sim.0 pr2.sim.nddl ]
-		[ FDirName $(EXEC_HOME) sim.1 pr2.exec.nddl ]
-		[ FDirName $(EXEC_HOME) sim.1 pr2.sim.nddl ]
-		[ FDirName $(EXEC_HOME) master.0 pr2.master.nddl ]
-		[ FDirName $(EXEC_HOME) master.0 pr2.doorman.nddl ]
-		[ FDirName $(EXEC_HOME) master.0 pr2.driver.nddl ]
-		[ FDirName $(EXEC_HOME) master.0 pr2.recharger.nddl ]
-		[ FDirName $(EXEC_HOME) master.0 pr2.safety.nddl ]
-		[ FDirName $(EXEC_HOME) master.0 pr2.rcs.sim.nddl ]
-		[ FDirName $(EXEC_HOME) doorman.0 pr2.master.nddl ]
-		[ FDirName $(EXEC_HOME) doorman.0 pr2.doorman.nddl ]
-		[ FDirName $(EXEC_HOME) doorman.0 pr2.driver.nddl ]
-		[ FDirName $(EXEC_HOME) doorman.0 pr2.recharger.nddl ]
-		[ FDirName $(EXEC_HOME) doorman.0 pr2.safety.nddl ]
-		[ FDirName $(EXEC_HOME) doorman.0 pr2.rcs.sim.nddl ]
-	;
-
-	local file ;
- 	for file in [ FGristFiles $(TestInputs) ] {
-  		local xml = $(file:S=.xml:G=) ;
-		LocalDepends exec_inputs : $(xml) ;
-  		NddlParser $(xml) : $(file) ;
- 	}
+local file ;
+for file in [ FGristFiles $(TestInputs) ] {
+    local xml = $(file:S=.xml:G=) ;
+    LocalDepends exec_inputs : $(xml) ;
+    NddlParser $(xml) : $(file) ;
 }

@@ -1,12 +1,5 @@
-{
- # Generated include file to obtain TREX_PKG_ROOT variable binding
- include [ FDirName env.jam ] ;
- PLASMA_HOME = [ FDirName $(TREX_PKG_ROOT) PLASMA ] ;
- PLASMA = [ FDirName $(PLASMA_HOME) src PLASMA ] ;
- TREX = [ FDirName  $(TREX_PKG_ROOT) TREX ] ;
- include [ FDirName $(TREX) Jamfile ] ;
- include [ FDirName $(EXEC_HOME) Jamfile ] ;
- include [ FDirName $(TESTEXEC_HOME) Jamfile ] ;
- test_executive_trex_pr2_READY = TRUE ;
-}
-
+# The Jam build structure is bootstrapped off the location of the trex 3rd party package
+PLASMA_HOME = [ FDirName $(TREX_PKG_ROOT) PLASMA ] ;
+PLASMA = [ FDirName $(PLASMA_HOME) src PLASMA ] ;
+TREX = [ FDirName  $(TREX_PKG_ROOT) TREX ] ;
+include [ FDirName $(TREX) Jamfile ] ;

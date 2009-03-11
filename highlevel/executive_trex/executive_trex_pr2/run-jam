@@ -1,8 +1,0 @@
-#!/bin/bash
-
-
-cd `rospack find executive_trex_pr2`
-PLASMA_HOME=`rospack find trex`/PLASMA/
-
-jam $ROS_PARALLEL_JOBS exec_inputs
-
