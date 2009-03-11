@@ -176,6 +176,7 @@ namespace ros {
       void baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
       void tiltScanCallback();
       void tiltCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message);
+      void baseCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message);
       void groundPlaneCloudCallback();
       void stereoCloudCallback();
       void groundPlaneCallback();
@@ -242,6 +243,7 @@ namespace ros {
       // load specific derived classes. For that we would need a hand-shaking pattern to register subscribers for them
       // with this node
       costmap_2d::BasicObservationBuffer* baseScanBuffer_;
+      costmap_2d::BasicObservationBuffer* baseCloudBuffer_;
       costmap_2d::BasicObservationBuffer* tiltScanBuffer_;
       costmap_2d::BasicObservationBuffer* lowObstacleBuffer_;
       costmap_2d::BasicObservationBuffer* stereoCloudBuffer_;
@@ -283,6 +285,7 @@ namespace ros {
       //Robot filter
       robot_filter::RobotFilter* filter_;
       tf::MessageNotifier<laser_scan::LaserScan>* baseScanNotifier_; 
+      tf::MessageNotifier<robot_msgs::PointCloud>* baseCloudNotifier_; 
       tf::MessageNotifier<robot_msgs::PointCloud>* tiltLaserNotifier_;
 
       //flag for reseting the costmap.

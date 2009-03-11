@@ -243,6 +243,10 @@ namespace ros {
 							       ros::Duration().fromSec(base_laser_keepalive), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(base_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_, filter_);
+      baseCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), global_frame_, tf_, 
+							       ros::Duration().fromSec(base_laser_keepalive), 
+							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(base_laser_update_rate),
+							       inscribedRadius, minZ_, maxZ_, filter_);
       tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), global_frame_, tf_, 
 							       ros::Duration().fromSec(tilt_laser_keepalive), 
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(tilt_laser_update_rate),
@@ -369,6 +373,9 @@ namespace ros {
       baseScanNotifier_ = new tf::MessageNotifier<laser_scan::LaserScan>(&tf_, ros::Node::instance(),  
                                  boost::bind(&MoveBase::baseScanCallback, this, _1), 
                                 "base_scan", global_frame_, 50); 
+      baseCloudNotifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, ros::Node::instance(),  
+                                 boost::bind(&MoveBase::baseCloudCallback, this, _1), 
+                                "base_scan_filtered", global_frame_, 50); 
       tiltLaserNotifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, ros::Node::instance(), 
 				 boost::bind(&MoveBase::tiltCloudCallback, this, _1),
 				 "tilt_laser_cloud_filtered", global_frame_, 50);
@@ -405,6 +412,7 @@ namespace ros {
         delete costMap_;
 
       delete baseScanBuffer_;
+      delete baseCloudBuffer_;
       delete lowObstacleBuffer_;
       delete tiltScanBuffer_;
       delete stereoCloudBuffer_;
@@ -520,6 +528,13 @@ namespace ros {
     {
       lock();
       tiltScanBuffer_->buffer_cloud(*message);
+      unlock();
+    }
+
+    void MoveBase::baseCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message)
+    {
+      lock();
+      baseCloudBuffer_->buffer_cloud(*message);
       unlock();
     }
 
@@ -792,7 +807,12 @@ namespace ros {
         lock();
         // Aggregate buffered observations across all sources. Must be thread safe
         std::vector<costmap_2d::Observation> observations;
-        baseScanBuffer_->get_observations(observations);
+        baseCloudBuffer_->get_observations(observations);
+
+        //if we are not getting filtered base scans... we'll add the base scans as obstacle points
+        if(observations.empty())
+          baseScanBuffer_->get_observations(observations);
+
         tiltScanBuffer_->get_observations(observations);
         lowObstacleBuffer_->get_observations(observations);
         stereoCloudBuffer_->get_observations(observations);
@@ -1002,8 +1022,17 @@ namespace ros {
       
       lock();
       // Aggregate buffered observations across all sources. Must be thread safe
-      std::vector<costmap_2d::Observation> observations;
-      baseScanBuffer_->get_observations(observations);
+      std::vector<costmap_2d::Observation> observations, raytrace_obs;
+      baseCloudBuffer_->get_observations(observations);
+
+      //get the observations from the base scan to use for raytracing
+      baseScanBuffer_->get_observations(raytrace_obs);
+
+      //if we are not getting filtered base scans... we'll add the base scans as obstacle points
+      if(observations.empty())
+        baseScanBuffer_->get_observations(observations);
+
+
       tiltScanBuffer_->get_observations(observations);
       lowObstacleBuffer_->get_observations(observations);
       stereoCloudBuffer_->get_observations(observations);
@@ -1022,7 +1051,10 @@ namespace ros {
       ROS_DEBUG("Applying update with %d observations/n", stored_observations.size());
       // Apply to cost map
       ros::Time start = ros::Time::now();
-      costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), stored_observations);
+      if(raytrace_obs.empty())
+        costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), stored_observations);
+      else
+        costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), stored_observations, &raytrace_obs[0]);
       double t_diff = (ros::Time::now() - start).toSec();
       ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, stored_observations.size());
       
