@@ -1015,7 +1015,7 @@ namespace ros {
     
     void MoveBase::updateCostMap() {
       if (reset_cost_map_) {
-	costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
+        costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
       }
 
       ROS_DEBUG("Starting cost map update/n");
@@ -1051,10 +1051,10 @@ namespace ros {
       ROS_DEBUG("Applying update with %d observations/n", stored_observations.size());
       // Apply to cost map
       ros::Time start = ros::Time::now();
-      if(raytrace_obs.empty())
+      if(raytrace_obs.empty() && raytrace_obs.front().cloud_ != NULL)
         costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), stored_observations);
       else
-        costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), stored_observations, &raytrace_obs[0]);
+        costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), stored_observations, &raytrace_obs.front());
       double t_diff = (ros::Time::now() - start).toSec();
       ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, stored_observations.size());
       
