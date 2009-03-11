@@ -38,7 +38,6 @@
 //
 
 #include "stereolib.h"
-#define inline			// use this for Intel Compiler Debug mode
 #include <stdio.h>
 
 // algorithm requires larger buffers to be passed in

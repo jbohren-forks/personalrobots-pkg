@@ -368,6 +368,18 @@ StereoData::setNumDisp(int val)
 
 
 bool
+StereoData::setCorrSize(int val)
+{
+  val = val | 0x1;		// must be odd
+  if (val < 7) val = 7;
+  if (val > 21) val = 21;
+  corrSize = val;
+  printf("[StereoData] Stereo correlation window size set to %d\n", val);
+  return true;
+}
+
+
+bool
 StereoData::setRangeMax(double val)
 {
   if (val < 0.0) val = 0.0;
@@ -516,7 +528,7 @@ StereoData::doDisparity(stereo_algorithm_t alg)
     imDisp = (int16_t *)MEMALIGN(xim*yim*2);
 
   if (!buf)
-    buf  = (uint8_t *)malloc(yim*2*dlen*(corr+5)); // local storage for the algorithm
+    buf  = (uint8_t *)MEMALIGN(yim*2*dlen*(corr+5)); // local storage for the algorithm
   if (!flim)
     flim = (uint8_t *)MEMALIGN(xim*yim); // feature image
   if (!frim)
