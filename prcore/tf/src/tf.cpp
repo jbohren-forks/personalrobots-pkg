@@ -317,7 +317,7 @@ void Transformer::setExtrapolationLimit(const ros::Duration& distance)
 
 int Transformer::getLatestCommonTime(const std::string& source, const std::string& dest, ros::Time & time, std::string * error_string)
 {
-  time = ros::Time::now();///\todo hack fixme
+  time = ros::Time(UINT_MAX, 999999999);///\todo replace with ros::TIME_MAX when it is merged from stable
   int retval;
   TransformLists lists;
   retval = lookupLists(lookupFrameNumber(dest), ros::Time(), lookupFrameNumber(source), lists, error_string);
