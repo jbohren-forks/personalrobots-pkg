@@ -5,6 +5,8 @@ set(ROS_BUILD_TYPE RelWithDebInfo)
 #set(ROS_BUILD_TYPE Debug)
 rospack(semantic_point_annotator)
 
+rospack_add_boost_directories()
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(semantic_point_annotator_node src/semantic_point_annotator_omp.cpp)
@@ -12,6 +14,9 @@ target_link_libraries(semantic_point_annotator_node)
 
 rospack_add_executable(sac_ground_removal_node src/sac_ground_removal.cpp)
 target_link_libraries(sac_ground_removal_node sample_consensus)
+
+rospack_add_executable(sac_inc_ground_removal_node src/sac_inc_ground_removal.cpp)
+target_link_libraries(sac_inc_ground_removal_node sample_consensus)
 
 # check for OpenMP
 include(CheckIncludeFile)

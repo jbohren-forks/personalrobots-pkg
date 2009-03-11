@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id$
+ * $Id: /sfpersonalrobots/pkg/trunk/mapping/semantic_point_annotator/src/sac_ground_removal.cpp 18948 2009-03-05T01:55:28.328512Z eitanme  $
  *
  */
 
@@ -33,9 +33,9 @@
 
 @htmlinclude manifest.html
 
-\author Radu Bogdan Rusu
+\author Radu Bogdan Rusu, Eitan Marder-Eppstein
 
-@b sac_ground_removal returns a cloud with the ground plane extracted.
+@b sac_inc_ground_removal returns a cloud with the ground plane extracted.
 
  **/
 
@@ -60,20 +60,24 @@
 #include <cloud_geometry/nearest.h>
 
 #include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
 
 #include <sys/time.h>
+
+#include <boost/thread.hpp>
 
 using namespace std;
 using namespace robot_msgs;
 
-class GroundRemoval : public ros::Node
+class IncGroundRemoval : public ros::Node
 {
   public:
 
     // ROS messages
-    PointCloud cloud_, cloud_noground_;
+    PointCloud laser_cloud_, cloud_, cloud_noground_;
 
     tf::TransformListener tf_;
+    tf::MessageNotifier<PointCloud>* cloud_notifier_;
     PointStamped viewpoint_cloud_;
 
     // Parameters
@@ -83,7 +87,7 @@ class GroundRemoval : public ros::Node
     int planar_refine_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    GroundRemoval () : ros::Node ("sac_ground_removal"), tf_ (*this)
+    IncGroundRemoval () : ros::Node ("sac_ground_removal"), tf_ (*this)
     {
       param ("~z_threshold", z_threshold_, 0.1);                          // 10cm threshold for ground removal
       param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);   // 3 cm threshold
@@ -92,7 +96,7 @@ class GroundRemoval : public ros::Node
       param ("~sac_min_points_per_model", sac_min_points_per_model_, 6);  // 6 points minimum per line
       param ("~sac_max_iterations", sac_max_iterations_, 200);            // maximum 200 iterations
 
-      string cloud_topic ("full_cloud");
+      string cloud_topic ("tilt_laser_cloud_filtered");
 
       vector<pair<string, string> > t_list;
       getPublishedTopics (&t_list);
@@ -108,12 +112,14 @@ class GroundRemoval : public ros::Node
       if (!topic_found)
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
-      subscribe (cloud_topic.c_str (), cloud_, &GroundRemoval::cloud_cb, 1);
+      //subscribe (cloud_topic.c_str (), laser_cloud_, &IncGroundRemoval::cloud_cb, 1);
+      cloud_notifier_ = new tf::MessageNotifier<PointCloud>(&tf_, ros::Node::instance(),
+          boost::bind(&IncGroundRemoval::cloud_cb, this, _1), cloud_topic, "odom_combined", 50);
       advertise<PointCloud> ("cloud_ground_filtered", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    virtual ~GroundRemoval () { }
+    virtual ~IncGroundRemoval () { delete cloud_notifier_;}
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
@@ -214,15 +220,24 @@ class GroundRemoval : public ros::Node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
-    void cloud_cb ()
+    void cloud_cb (const tf::MessageNotifier<PointCloud>::MessagePtr& msg)
     {
+      laser_cloud_ = *msg;
       //check to see if the point cloud is empty
-      if(cloud_.pts.empty()){
+      if(laser_cloud_.pts.empty()){
         ROS_WARN("Received an empty point cloud");
         return;
       }
 
-      ROS_INFO ("Received %d data points with %d channels (%s).", cloud_.pts.size (), cloud_.chan.size (), cloud_geometry::getAvailableChannels (&cloud_).c_str ());
+      try{
+        tf_.transformPointCloud("odom_combined", laser_cloud_, cloud_);
+      }
+      catch(tf::TransformException &ex){
+        ROS_ERROR("Can't transform cloud for ground plane detection");
+        return;
+      }
+
+      ROS_DEBUG ("Received %d data points with %d channels (%s).", cloud_.pts.size (), cloud_.chan.size (), cloud_geometry::getAvailableChannels (&cloud_).c_str ());
       int idx_idx = cloud_geometry::getChannelIndex (&cloud_, "index");
       if (idx_idx == -1)
       {
@@ -260,39 +275,17 @@ class GroundRemoval : public ros::Node
       }
       possible_ground_indices.resize (nr_p);
 
-      ROS_INFO ("Number of possible ground indices: %d.", possible_ground_indices.size ());
-
-      vector<vector<int> > clusters;
-      // Split the points into clusters based on their laser scan information
-      splitPointsBasedOnLaserScanIndex (&cloud_, &possible_ground_indices, clusters, idx_idx);
-
-      ROS_INFO ("Number of clusters: %d", clusters.size ());
+      ROS_DEBUG ("Number of possible ground indices: %d.", possible_ground_indices.size ());
 
       vector<int> ground_inliers;
-      nr_p = 0;
 
-      // Prepare enough space
-      vector<vector<int> > cluster_ground_inliers (clusters.size ());
-      // Parallelize the search
-#pragma omp parallel for schedule(dynamic)
-      for (int cc = 0; cc < (int)clusters.size (); cc++)
-      {
-        // Find the dominant plane in the space of possible ground indices
-        fitSACLine (&cloud_, &clusters[cc], cluster_ground_inliers[cc]);
-      }
+      // Find the dominant plane in the space of possible ground indices
+      fitSACLine (&cloud_, &possible_ground_indices, ground_inliers);
 
-      // Copy the line inliers (ground results)
-      for (unsigned int cc = 0; cc < cluster_ground_inliers.size (); cc++)
-      {
-        if (cluster_ground_inliers[cc].size () == 0)
-          ROS_WARN ("Couldn't fit a model for cluster %d (%d points).", cc, clusters[cc].size ());
+      if (ground_inliers.size () == 0)
+        ROS_WARN ("Couldn't fit a model to the scan.");
 
-        int cur_size = ground_inliers.size ();
-        ground_inliers.resize (cur_size + cluster_ground_inliers[cc].size ());
-        for (unsigned int i = 0; i < cluster_ground_inliers[cc].size (); i++)
-          ground_inliers[cur_size + i] = cluster_ground_inliers[cc][i];
-      }
-      ROS_INFO ("Total number of ground inliers before refinement: %d.", ground_inliers.size ());
+      ROS_DEBUG ("Total number of ground inliers before refinement: %d.", ground_inliers.size ());
 
       // Do we attempt to do a planar refinement to remove points "below" the plane model found ?
       if (planar_refine_ > 0)
@@ -341,7 +334,7 @@ class GroundRemoval : public ros::Node
           }
         }
       }
-      ROS_INFO ("Total number of ground inliers after refinement: %d.", ground_inliers.size ());
+      ROS_DEBUG ("Total number of ground inliers after refinement: %d.", ground_inliers.size ());
 
 #if DEBUG
       // Prepare new arrays
@@ -371,7 +364,8 @@ class GroundRemoval : public ros::Node
       // Get all the non-ground point indices
       vector<int> remaining_indices;
       sort (ground_inliers.begin (), ground_inliers.end ());
-      set_difference (all_indices.begin (), all_indices.end (), ground_inliers.begin (), ground_inliers.end (),
+      sort (possible_ground_indices.begin(), possible_ground_indices.end());
+      set_difference (possible_ground_indices.begin (), possible_ground_indices.end (), ground_inliers.begin (), ground_inliers.end (),
                       inserter (remaining_indices, remaining_indices.begin ()));
 
       // Prepare new arrays
@@ -395,7 +389,7 @@ class GroundRemoval : public ros::Node
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Number of points found on ground plane: %d ; remaining: %d (%g seconds).", ground_inliers.size (),
+      ROS_DEBUG ("Number of points found on ground plane: %d ; remaining: %d (%g seconds).", ground_inliers.size (),
                 remaining_indices.size (), time_spent);
       publish ("cloud_ground_filtered", cloud_noground_);
     }
@@ -420,7 +414,7 @@ class GroundRemoval : public ros::Node
       try
       {
         tf->transformPoint (cloud_frame, viewpoint_laser, viewpoint_cloud);
-        ROS_INFO ("Cloud view point in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
+        ROS_DEBUG ("Cloud view point in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
                   viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
       }
       catch (tf::ConnectivityException)
@@ -486,7 +480,7 @@ int
   ros::init (argc, argv);
 
   // For efficiency considerations please make sure the input PointCloud is in a frame with Z point upwards
-  GroundRemoval p;
+  IncGroundRemoval p;
 
   p.spin ();
 
