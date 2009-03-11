@@ -98,14 +98,13 @@ void pickPointInSpace(unsigned int W, unsigned int H, double& x, double& y){
 /**
  * Test reading a map in from a file
  */
-/*
 TEST(executive_trex_pr2, map_read_from_file){
   std::ifstream is("./test/willow.tmap");
   TopologicalMapAdapter map(is);
   std::ofstream os("doors.willow.out");
   printDoors(os);
 }
-*/
+
 TEST(executive_trex_pr2, map_accessor){
   TopologicalMapAdapter map(GRID_3_3_ALL_CONNECTED(), RESOLUTION);
 
