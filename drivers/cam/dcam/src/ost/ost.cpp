@@ -404,8 +404,11 @@ main(int argc, char **argv)	// no arguments
 	    }
 	}
       else			// no video, yield a little
-	wait_ms(10);
-
+	{
+	  wait_ms(10);
+	  if (stIm && isRefresh && !isVideo) // refresh the stereo
+	    stIm->hasDisparity = false;	    
+	}
 
       if (isRefresh & stIm != NULL)
 	{
@@ -1655,9 +1658,6 @@ void do_rectify_cb(Fl_Light_Button* w, void*)
 
 void do_stereo_cb(Fl_Light_Button* w, void*)
 {
-  uint8_t *lim, *rim, *flim, *frim, *buf;
-  int16_t *disp;
-
   // set flag
   if (w->value())
     isStereo = true;
@@ -1671,90 +1671,9 @@ void do_stereo_cb(Fl_Light_Button* w, void*)
   if (isVideo)
     return;
 
-  // get images
-  IplImage *limg = imgs_left[0];
-  IplImage *rimg = imgs_right[0];
-  if (limg == NULL || rimg == NULL)
-    {
-      debug_message("No stereo pair at index %d", 0);
-      return;
-    }
-
-  // rectify if necessary
-
-  double t3a = get_ms();
-  double t3b = get_ms();
-  if (mapx_left != NULL)
-    {
-      if (rect_left[0] == NULL)
-	rect_left[0] = cvCloneImage(imgs_left[0]);
-      cvRemap(imgs_left[0], rect_left[0], mapx_left, mapy_left);
-      if (rect_right[0] == NULL)
-	rect_right[0] = cvCloneImage(imgs_right[0]);
-      cvRemap(imgs_right[0], rect_right[0], mapx_right, mapy_right);
-      limg = rect_left[0];
-      rimg = rect_right[0];
-    }
-
-
-  // variables
-  lim = (uint8_t *)limg->imageData;
-  rim = (uint8_t *)rimg->imageData;
-  int xim = imsize_left.width;
-  int yim = imsize_left.height;
-
-  // some parameters
-  int ftzero = 31;		// max 31 cutoff for prefilter value (31 default)
-  int dlen   = sp_dlen;		// number of disparities
-  int corr   = sp_corr;		// correlation window size
-  int tthresh = sp_tthresh;	// texture threshold
-  int uthresh = sp_uthresh;	// uniqueness threshold, percent
-  //int sdiff  = sp_sdiff;	// speckle parameters: size and difference
-  //int ssize  = sp_ssize;
-
-  // allocate buffers
-  buf  = (uint8_t *)malloc(yim*dlen*(corr+5)); // local storage for the algorithm
-
-#ifdef WIN32
-  flim = (uint8_t *)_aligned_malloc(xim*yim,16); // feature image
-  frim = (uint8_t *)_aligned_malloc(xim*yim,16); // feature image
-  disp = (int16_t *)_aligned_malloc(xim*yim*2,16); // disparity image
-#else
-  flim = (uint8_t *)memalign(16,xim*yim); // feature image
-  frim = (uint8_t *)memalign(16,xim*yim); // feature image
-  disp = (int16_t *)memalign(16,xim*yim*2); // disparity image
-#endif  
-
-  // prefilter
-  double t0 = get_ms();
-  do_prefilter(lim, flim, xim, yim, ftzero, buf);
-  do_prefilter(rim, frim, xim, yim, ftzero, buf);
-  double t1 = get_ms();
-
-  // stereo
-  do_stereo(flim, frim, disp, NULL, xim, yim, 
-	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
-  // speckle filter: TBD
-
-  double t2 = get_ms();
-
-  debug_message("Rectify time:   %0.1f ms", t3b-t3a);
-  debug_message("Prefilter time: %0.1f ms", t1-t0);
-  debug_message("Stereo time:    %0.1f ms", t2-t1);
-
-  // display disparity image
-  calImageWindow *cwin = get_current_right_win();
-  cwin->clear2DFeatures();
-  cwin->DisplayImage((unsigned char *)disp, xim, yim, xim, DISPARITY, dlen*16);
-  
-  // display rectified image
-  if (mapx_left != NULL)
-    {
-      cwin = get_current_left_win();
-      cwin->clear2DFeatures();
-      cwin->DisplayImage((unsigned char *)lim, xim, yim, xim);
-    }
-
+  // check for a loaded file
+  if (isStereo && stIm)
+    isRefresh = true;
 }
 
 
@@ -1777,6 +1696,10 @@ void do_3d_cb(Fl_Light_Button* w, void*)
   // check for video streaming
   if (isVideo)
     return;
+
+  // check for a loaded file
+  if (isStereo && stIm)
+    isRefresh = true;
 }
 
 
@@ -2312,6 +2235,10 @@ disparity_cb(Fl_Counter *w, void *x)
   sp_dlen = (int)w->value();
   if (dev)
     dev->setNumDisp(sp_dlen);
+  if (stIm)
+    stIm->setNumDisp(sp_dlen);
+  isRefresh = true;
+
 }
 
 void
@@ -2320,6 +2247,10 @@ unique_cb(Fl_Counter *w, void *x)
   sp_uthresh = (int)w->value();
   if (dev)
     dev->setUniqueThresh(sp_uthresh);
+  if (stIm)
+    stIm->setUniqueThresh(sp_uthresh);
+  isRefresh = true;
+
 }
 
 void
@@ -2328,6 +2259,10 @@ texture_cb(Fl_Counter *w, void *x)
   sp_tthresh = (int)w->value();
   if (dev)
     dev->setTextureThresh(sp_tthresh);
+  if (stIm)
+    stIm->setTextureThresh(sp_tthresh);
+  isRefresh = true;
+
 }
 
 void
@@ -2336,6 +2271,10 @@ smoothness_cb(Fl_Counter *w, void *x)
   sp_sthresh = (int)w->value();
   if (dev)
     dev->setSmoothnessThresh(sp_sthresh);
+  if (stIm)
+    stIm->setSmoothnessThresh(sp_sthresh);
+  isRefresh = true;
+
 }
 
 void
@@ -2344,6 +2283,10 @@ xoff_cb(Fl_Counter *w, void *x)
   sp_xoff = (int)w->value();
   if (dev)
     dev->setHoropter(sp_xoff);
+  if (stIm)
+    stIm->setHoropter(sp_xoff);
+  isRefresh = true;
+
 }
 
 void
@@ -2362,6 +2305,10 @@ corrsize_cb(Fl_Counter *w, void *x)
   sp_corr = pcorr = c;
   if (dev)
     dev->setCorrsize(sp_corr);
+  if (stIm)
+    stIm->setCorrSize(sp_corr);
+  isRefresh = true;
+
 }
 
 void
@@ -2370,6 +2317,9 @@ speckle_size_cb(Fl_Counter *w, void *x)
   sp_ssize = (int)w->value();
   if (dev)
     dev->setSpeckleSize(sp_ssize);
+  if (stIm)
+    stIm->setSpeckleRegionSize(sp_ssize);
+  isRefresh = true;
 }
 
 void
@@ -2378,6 +2328,10 @@ speckle_diff_cb(Fl_Counter *w, void *x)
   sp_sdiff = (int)w->value();
   if (dev)
     dev->setSpeckleDiff(sp_sdiff);
+  if (stIm)
+    stIm->setSpeckleDiff(sp_sdiff);
+  isRefresh = true;
+
 }
 
 void unique_check_cb(Fl_Light_Button* w, void*)
@@ -2388,8 +2342,11 @@ void unique_check_cb(Fl_Light_Button* w, void*)
   else
     is_unique_check = false;
 
- if (dev)
+  if (dev)
     dev->setUniqueCheck(is_unique_check);
+  if (stIm)
+    stIm->setUniqueCheck(is_unique_check);
+  isRefresh = true;
  }
 
 
@@ -2718,68 +2675,211 @@ void cal_window_cb(Fl_Menu_ *w, void *u)
 
 //
 // loading images into stIm
+// assumes image file names have suffixes -L/-LR/-LC [.png]
 //
 
+uint8_t *
+load_png_grayscale(char *fname, color_coding_t *cc, int *width, int *height, int *size);
+
+
+// returns number of images loaded
+
 int
-load_left(char *fname)
+load_left(char *fname)		// fname is the base name, to be added to
 {
-  IplImage *im;			// OpenCV image
-  im = cvLoadImage(fname);	// load image, could be color
-  if (im == NULL)
+  int w,h,s;
+  color_coding_t cc;
+  char fn[4096];
+  int ret = 0;
+
+  stIm = &stImdata;		// set the stereo data ptr
+  stIm->imLeft->imType = COLOR_CODING_NONE;
+  stIm->imLeft->imColorType = COLOR_CODING_NONE;
+  stIm->imLeft->imRectType = COLOR_CODING_NONE;
+  stIm->imLeft->imRectColorType = COLOR_CODING_NONE;
+
+  sprintf(fn,"%s-L.png",fname);
+  debug_message("[oST] Trying file %s\n", fn);
+  uint8_t *data = load_png_grayscale(fn, &cc, &w, &h, &s);
+  if (data != NULL)
     {
-      debug_message("Can't load file %s\n", fname);
-      return -1;
+      debug_message("Size: %d x %d, cc: %d", w, h, cc);
+      stIm->imLeft->im = data;
+      stIm->imLeft->imType = cc;
+      stIm->imWidth = w;
+      stIm->imHeight = h;
+      ret++;
     }
-  else
+
+  sprintf(fn,"%s-LR.png",fname);
+  data = load_png_grayscale(fn, &cc, &w, &h, &s);
+  if (data != NULL)
     {
-      // make grayscale, display
-      IplImage* img=cvCreateImage(cvGetSize(im),IPL_DEPTH_8U,1); 
-      cvConvertImage(im,img);
-      debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
-      stIm = &stImdata;		// set the stereo data ptr
-      stIm->imLeft->imType = COLOR_CODING_MONO8;
-      stIm->imLeft->imColorType = COLOR_CODING_NONE;
-      stIm->imLeft->imRectType = COLOR_CODING_NONE;
-      stIm->imLeft->imRectColorType = COLOR_CODING_NONE;
-      stIm->imLeft->im = (uint8_t *)img->imageData;
-      stIm->imWidth = img->width;
-      stIm->imHeight = img->height;
-      return 0;
+      debug_message("Size: %d x %d, cc: %d", w, h, cc);
+      stIm->imLeft->imRect = data;
+      stIm->imLeft->imRectType = cc;
+      stIm->imWidth = w;
+      stIm->imHeight = h;
+      ret++;
     }
+
+  return ret;
 }
 
 int
-load_right(char *fname)
+load_right(char *fname)		// fname is the base name, to be added to
 {
-  IplImage *im;			// OpenCV image
-  im = cvLoadImage(fname);	// load image, could be color
-  if (im == NULL)
+  int w,h,s;
+  color_coding_t cc;
+  char fn[4096];
+  int ret = 0;
+
+  stIm = &stImdata;		// set the stereo data ptr
+  stIm->imRight->imType = COLOR_CODING_NONE;
+  stIm->imRight->imColorType = COLOR_CODING_NONE;
+  stIm->imRight->imRectType = COLOR_CODING_NONE;
+  stIm->imRight->imRectColorType = COLOR_CODING_NONE;
+
+  sprintf(fn,"%s-R.png",fname);
+  uint8_t *data = load_png_grayscale(fn, &cc, &w, &h, &s);
+  if (data != NULL)
     {
-      debug_message("Can't load file %s\n", fname);
-      return -1;
+      debug_message("Size: %d x %d, cc: %d", w, h, cc);
+      stIm->imRight->im = data;
+      stIm->imRight->imType = cc;
+      stIm->imWidth = w;
+      stIm->imHeight = h;
+      ret++;
     }
-  else
+
+  sprintf(fn,"%s-RR.png",fname);
+  data = load_png_grayscale(fn, &cc, &w, &h, &s);
+  if (data != NULL)
     {
-      // make grayscale, display
-      IplImage* img=cvCreateImage(cvGetSize(im),IPL_DEPTH_8U,1); 
-      cvConvertImage(im,img);
-      debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
-      stIm = &stImdata;		// set the stereo data ptr
-      stIm->imRight->imType = COLOR_CODING_MONO8;
-      stIm->imRight->imColorType = COLOR_CODING_NONE;
-      stIm->imRight->imRectType = COLOR_CODING_NONE;
-      stIm->imRight->imRectColorType = COLOR_CODING_NONE;
-      stIm->imRight->im = (uint8_t *)img->imageData;
-      stIm->imWidth = img->width;
-      stIm->imHeight = img->height;
-      return 0;
+      debug_message("Size: %d x %d, cc: %d", w, h, cc);
+      stIm->imRight->imRect = data;
+      stIm->imRight->imRectType = cc;
+      stIm->imWidth = w;
+      stIm->imHeight = h;
+      ret++;
     }
+
+  return ret;
 }
+
+
+//
+// parses a file name to see if it is a sequence or stereo pair
+//    or both
+// returns TRUE if so
+// lname is non-null if mono or stereo image is indicated
+// rname is non-null if stereo is indicated
+// num is -1 for no sequence, else sequence start number
+//       
+
+bool
+parseit(char *fname, char **lname, char **rname, int *num, char **bname)
+{
+  if (num)
+    *num = -1;			// default
+  char *lbase = NULL, *rbase = NULL, *base = NULL;
+  if (fname == NULL)
+    return false;
+  int n = strlen(fname);
+  if (n < 5)
+    return false;
+
+  // find suffix
+  int sufn = n;
+  for (int i=n-1; i>n-6; i--)
+    {
+      if (fname[i] == '.')
+	{
+	  sufn = i;
+	  break;
+	}
+    }
+  
+
+  // find start of base file name
+  int basen = 0;
+  for (int i=sufn-1; i>=0; i--)
+    {
+      if (fname[i] == '/')
+	{
+	  basen = i;
+	  break;
+	}
+    }
+  if (basen > 0)		// go to first letter of base name
+    basen++;
+
+
+
+  // check for -L/R type endings
+  int stn = sufn-2;		// start of -L/R
+  int seq = -1;
+
+  if (strncmp(&fname[stn],"-L",2) == 0 || 
+      strncmp(&fname[stn],"-R",2) == 0 || 
+      strncmp(&fname[stn-1],"-LR",3) == 0 || 
+      strncmp(&fname[stn-1],"-RR",3) == 0)
+    {
+      if (strncmp(&fname[stn-1],"-LR",3) == 0 || 
+	  strncmp(&fname[stn-1],"-RR",3) == 0)
+	stn--;
+
+      // check for sequence
+      if (num)
+	seq = parse_sequence(fname,stn,num);
+      if (seq < 0)		// nope
+	{	
+	  // just return stereo names
+	  lbase = new char[n+1];
+	  rbase = new char[n+1];
+	  base = new char[n+1];
+	  strcpy(lbase,fname);
+	  strcpy(rbase,fname);
+	  strcpy(base,fname);
+	  rbase[stn+1] = 'R';
+	  lbase[stn+1] = 'L';
+	  base[stn] = 0;	// base name
+	  debug_message("lbase is [%s]\nrbase is [%s]\n", lbase, rbase);
+	  *lname = lbase;
+	  *rname = rbase;
+	  *bname = base;
+	}
+      else			// yup, add in sequence
+	{
+	  lbase = new char[n-seq+5];
+	  rbase = new char[n-seq+5];
+	  strcpy(lbase,fname);
+	  lbase[stn-seq] = 0;	// terminate before sequence
+	  strcat(lbase,"%0");
+	  sprintf(&lbase[stn-seq+2],"%d",seq);
+	  strcat(lbase,"d-L");
+	  strcat(lbase,&fname[sufn]); // suffix
+	  strcpy(rbase,lbase);
+	  rbase[stn-seq+4+1] = 'R';
+	  debug_message("lbase is [%s]\nrbase is [%s]\n", lbase, rbase);
+	  *lname = lbase;
+	  *rname = rbase;
+	}
+
+      return true;
+    }
+
+  return false;
+}
+
+
 
 
 //
 // Loading and saving stereo images
 //
+
+bool load_params(char *fname);
 
 void load_images_cb(Fl_Menu_ *w, void *u)
 {
@@ -2787,19 +2887,23 @@ void load_images_cb(Fl_Menu_ *w, void *u)
   if (fname == NULL)
     return;
 
-  printf("[OST] File name: %s\n", fname);
+  debug_message("[oST] File name: %s", fname);
 
-  char *lname = NULL, *rname = NULL;
+  char *lname = NULL, *rname = NULL, *bname = NULL;
   bool ret;
-  ret = parse_filename(fname, &lname, &rname, NULL);
+  ret = parseit(fname, &lname, &rname, NULL, &bname);
 
   if (!ret)			// just load left
-    load_left(lname);
+    load_left(bname);
   else
     {
-      load_left(lname);
-      load_right(rname);
+      load_left(bname);
+      load_right(bname);
     }
+
+  char fn[4096];
+  sprintf(fn,"%s.ini",bname);
+  load_params(fn);
 
   isRefresh = true;
 }
@@ -2828,19 +2932,15 @@ void save_images_cb(Fl_Menu_ *w, void *u)
 
 // saving and loading parameters
 
-void load_params_cb(Fl_Menu_ *w, void *u)
+bool
+load_params(char *fname)
 {
-  if (!dev) return;		// no device
-  char *fname = fl_file_chooser("Load params (.ini)", "{*.ini}", NULL);
-  if (fname == NULL)
-    return;
-
   debug_message("[oST] File name: %s", fname);
   FILE *fp = fopen(fname,"r");
   if (fp == NULL)
     {
       debug_message("[oST] Can't read file %s",fname);
-      return;
+      return false;
     }
   
   char bb[4096];
@@ -2851,10 +2951,24 @@ void load_params_cb(Fl_Menu_ *w, void *u)
   if (n > 0)
     {
       bb[n] = 0;
-      dev->stIm->extractParams(bb); // set up parameters
-      dev->putParameters(bb);	// save in device object
+      stIm->extractParams(bb);	// set up parameters
+      if (dev) dev->putParameters(bb);	// save in device object
+      return true;
     }
+  return false;
 }
+
+
+void load_params_cb(Fl_Menu_ *w, void *u)
+{
+  if (!dev) return;		// no device
+  char *fname = fl_file_chooser("Load params (.ini)", "{*.ini}", NULL);
+  if (fname == NULL)
+    return;
+
+  load_params(fname);
+}
+
 
 
 //
@@ -3088,33 +3202,33 @@ do_button(int e, int x, int y, int b, int m, imWindow *w)
       int rval = 0, lval = 0;
       float fx=0, fy=0, fz=0;
       
-      if (dev == NULL)
+      if (stIm == NULL)
         return 1;
       
-      int w = dev->stIm->imWidth;
-      int h = dev->stIm->imHeight;
+      int w = stIm->imWidth;
+      int h = stIm->imHeight;
 
       if (x > w || y > h)
         return 1;
 
-      if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
-	lval = dev->stIm->imLeft->imRect[y*w+x];
-      else if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
-	lval = dev->stIm->imLeft->im[y*w+x];
+      if (stIm->imLeft->imRectType != COLOR_CODING_NONE)
+	lval = stIm->imLeft->imRect[y*w+x];
+      else if (stIm->imLeft->imType != COLOR_CODING_NONE)
+	lval = stIm->imLeft->im[y*w+x];
 
-      if (dev->stIm->flim)
-	lval = (int8_t)dev->stIm->flim[y*w+x] - 31;
+      if (stIm->flim)
+	lval = (int8_t)stIm->flim[y*w+x] - 31;
 
-      if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
-	rval = dev->stIm->imRight->imRect[y*w+x];
-      else if (dev->stIm->imRight->imType != COLOR_CODING_NONE)
-	rval = dev->stIm->imRight->im[y*w+x];
+      if (stIm->imRight->imRectType != COLOR_CODING_NONE)
+	rval = stIm->imRight->imRect[y*w+x];
+      else if (stIm->imRight->imType != COLOR_CODING_NONE)
+	rval = stIm->imRight->im[y*w+x];
 
-      if (dev->stIm->hasDisparity)
+      if (stIm->hasDisparity)
         {
-	  rval = dev->stIm->imDisp[y*w+x];
+	  rval = stIm->imDisp[y*w+x];
           if (rval > 0)     // have a valid disparity
-	    dev->stIm->calcPt(x,y,&fx, &fy, &fz);
+	    stIm->calcPt(x,y,&fx, &fy, &fz);
         }
 
       debug_message("[oST] (%d,%d) [v%d] [dv%d] X%d Y%d Z%d", 

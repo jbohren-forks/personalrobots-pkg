@@ -1,5 +1,5 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0108 
+version 1.0107 
 header_name {stereogui.h} 
 code_name {stereogui.cpp}
 class stereogui {open
@@ -8,10 +8,10 @@ class stereogui {open
   } {
     Fl_Window ost_main {
       label {Open STereo} open
-      xywh {455 285 655 305} type Single labelsize 11 hide
+      xywh {1009 207 1300 545} type Single labelsize 11 hide
     } {
       Fl_Output info_message {
-        xywh {5 275 490 25} box BORDER_BOX color 49 labelsize 11 textsize 11
+        xywh {10 510 490 25} box BORDER_BOX color 49 labelsize 11 textsize 11
       }
       Fl_Menu_Bar {} {
         xywh {0 0 680 20}
@@ -72,29 +72,29 @@ class stereogui {open
           xywh {20 20 30 20}
         }
       }
-      Fl_Group {} {
-        xywh {5 25 645 245}
+      Fl_Group {} {open
+        xywh {5 25 1285 485}
       } {
         Fl_Group {} {open
-          xywh {5 25 320 245}
+          xywh {5 25 640 480}
         } {
           Fl_Box {} {
-            xywh {5 25 320 240} box EMBOSSED_FRAME labeltype NO_LABEL
+            xywh {5 25 640 480} box EMBOSSED_FRAME labeltype NO_LABEL
           }
           Fl_Box mainLeft {
-            xywh {5 25 320 240} labeltype NO_LABEL
+            xywh {5 25 640 480} labeltype NO_LABEL
             code0 {\#include "calwin.h"}
             class calImageWindow
           }
         }
         Fl_Group {} {open
-          xywh {330 25 320 245}
+          xywh {330 25 960 485}
         } {
           Fl_Box {} {
-            xywh {330 25 320 240} box EMBOSSED_FRAME labeltype NO_LABEL
+            xywh {650 25 640 480} box EMBOSSED_FRAME labeltype NO_LABEL
           }
-          Fl_Box mainRight {
-            xywh {330 25 320 240} labeltype NO_LABEL
+          Fl_Box mainRight {selected
+            xywh {650 25 640 480} labeltype NO_LABEL
             code0 {\#include "calwin.h"}
             class calImageWindow
           }
@@ -796,7 +796,7 @@ class stereogui {open
     }
     Fl_Window cal_window {
       label Calibration open
-      xywh {591 314 305 340} type Single visible
+      xywh {591 314 305 340} type Single hide
     } {
       Fl_Group {} {open
         xywh {10 20 160 300}
@@ -852,7 +852,7 @@ class stereogui {open
         Fl_Light_Button track_button {
           label {Track chessboard}
           callback do_track_cb
-          xywh {10 55 100 25} labelsize 11 resizable
+          xywh {10 55 115 25} labelsize 11 resizable
         }
       }
       Fl_Group {} {open
@@ -878,8 +878,8 @@ class stereogui {open
           xywh {230 220 30 20} labelsize 11 align 1 maximum 100 step 1 value 6 textsize 11
         }
       }
-      Fl_Group {} {open selected
-        xywh {120 20 165 290}
+      Fl_Group {} {open
+        xywh {120 20 180 290}
       } {
         Fl_Button calibrate_button {
           label Calibrate
@@ -890,7 +890,7 @@ class stereogui {open
         Fl_Button save_params_button {
           label {Save params}
           callback cal_save_params_cb
-          xywh {220 20 65 25} down_box DOWN_BOX labelsize 11
+          xywh {220 20 80 25} down_box DOWN_BOX labelsize 11
           code0 {o->user_data((void *)this);}
         }
         Fl_Button done_button {
