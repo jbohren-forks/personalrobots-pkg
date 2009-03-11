@@ -55,27 +55,25 @@ class ScanShadowsFilter : public ros::Node
   public:
 
     // ROS related
-    laser_scan::LaserScan tilt_scan_msg_;               // Filled by subscriber with new tilte laser scans
+    laser_scan::LaserScan scan_msg_;               // Filled by subscriber with new laser scans
     laser_scan::LaserProjection projector_; // Used to project laser scans
 
-    double tilt_laser_max_range_;           // Used in laser scan projection
+    double laser_max_range_;           // Used in laser scan projection
     double min_angle_, max_angle_;          // Filter angle threshold
     int window_;
     
     bool high_fidelity_;                    // High fidelity (interpolating time across scan)
+    bool preservative_;                     //keep max range values?
     std::string target_frame_;                   // Target frame for high fidelity result
+    std::string scan_topic_, cloud_topic_;
     
     // TF
     tf::TransformListener* tf_;
 
     ////////////////////////////////////////////////////////////////////////////////
-    ScanShadowsFilter () : ros::Node ("scan_shadows_filter"), tilt_laser_max_range_ (DBL_MAX)
+    ScanShadowsFilter () : ros::Node ("scan_shadows_filter"), laser_max_range_ (DBL_MAX)
     {
       tf_ = new tf::TransformListener(*this, true) ;
-
-      subscribe("tilt_scan",  tilt_scan_msg_,  &ScanShadowsFilter::tiltScanCallback, 10);
-
-      advertise<PointCloud> ("tilt_laser_cloud_filtered", 10);
 
       param ("~filter_min_angle", min_angle_, 10.0);
       param ("~filter_max_angle", max_angle_, 170.0);
@@ -83,6 +81,14 @@ class ScanShadowsFilter : public ros::Node
 
       param ("~high_fidelity", high_fidelity_, false);
       param ("~target_frame", target_frame_, std::string ("base_link"));
+      param ("~preservative", preservative_, false);
+      param ("~scan_topic", scan_topic_, std::string("tilt_scan"));
+      param ("~cloud_topic", cloud_topic_, std::string("tilt_laser_cloud_filtered"));
+      param ("~laser_max_range", laser_max_range_, DBL_MAX);
+
+      subscribe(scan_topic_,  scan_msg_,  &ScanShadowsFilter::tiltScanCallback, 10);
+
+      advertise<PointCloud> (cloud_topic_, 10);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -210,8 +216,8 @@ class ScanShadowsFilter : public ros::Node
       tiltScanCallback ()
     {
       // Project laser into point cloud
-      PointCloud tilt_cloud;
-      int n_scan = tilt_scan_msg_.ranges.size ();      // Save the number of measurements
+      PointCloud scan_cloud;
+      int n_scan = scan_msg_.ranges.size ();      // Save the number of measurements
 
       // Transform into a PointCloud message
       int mask = laser_scan::MASK_INTENSITY | laser_scan::MASK_DISTANCE | laser_scan::MASK_INDEX | laser_scan::MASK_TIMESTAMP;
@@ -220,53 +226,53 @@ class ScanShadowsFilter : public ros::Node
       {
         try
         {
-          projector_.transformLaserScanToPointCloud (target_frame_, tilt_cloud, tilt_scan_msg_, *tf_, mask);
+          projector_.transformLaserScanToPointCloud (target_frame_, scan_cloud, scan_msg_, *tf_, mask);
         }
         catch (tf::TransformException &ex)
         {
           ROS_WARN ("High fidelity enabled, but TF returned a transform exception to frame %s: %s", target_frame_.c_str (), ex.what ());
-          projector_.projectLaser (tilt_scan_msg_, tilt_cloud, tilt_laser_max_range_, false, mask);//, true);
+          projector_.projectLaser (scan_msg_, scan_cloud, laser_max_range_, preservative_, mask);//, true);
         }
       }
       else
       {
-        projector_.projectLaser (tilt_scan_msg_, tilt_cloud, tilt_laser_max_range_, false, mask);//, true);
+        projector_.projectLaser (scan_msg_, scan_cloud, laser_max_range_, preservative_, mask);//, true);
       }
       
 
       /// ---[ Perhaps unnecessary, but find out which channel contains the index
       int c_idx = -1;
-      for (unsigned int d = 0; d < tilt_cloud.get_chan_size (); d++)
+      for (unsigned int d = 0; d < scan_cloud.get_chan_size (); d++)
       {
-        if (tilt_cloud.chan[d].name == "index")
+        if (scan_cloud.chan[d].name == "index")
         {
           c_idx = d;
           break;
         }
       }
-      if (c_idx == -1 || tilt_cloud.chan[c_idx].vals.size () == 0) return;
+      if (c_idx == -1 || scan_cloud.chan[c_idx].vals.size () == 0) return;
       /// ]--
 
       // Prepare the storage for the temporary array ([] and resize are faster than push_back)
-      PointCloud tilt_full_cloud (tilt_cloud);
-      tilt_full_cloud.pts.resize (n_scan);
-      for (unsigned int d = 0; d < tilt_cloud.get_chan_size (); d++)
-        tilt_full_cloud.chan[d].vals.resize (n_scan);
+      PointCloud scan_full_cloud (scan_cloud);
+      scan_full_cloud.pts.resize (n_scan);
+      for (unsigned int d = 0; d < scan_cloud.get_chan_size (); d++)
+        scan_full_cloud.chan[d].vals.resize (n_scan);
 
       // Prepare data storage for the output array ([] and resize are faster than push_back)
-      PointCloud filtered_cloud (tilt_cloud);
+      PointCloud filtered_cloud (scan_cloud);
       filtered_cloud.pts.resize (n_scan);
-      for (unsigned int d = 0; d < tilt_cloud.get_chan_size (); d++)
+      for (unsigned int d = 0; d < scan_cloud.get_chan_size (); d++)
         filtered_cloud.chan[d].vals.resize  (n_scan);
 
       // Construct a complete laser cloud resembling the original LaserScan (0..LASER_MAX measurements)
-      constructCompleteLaserScanCloud (c_idx, tilt_cloud, tilt_full_cloud);
+      constructCompleteLaserScanCloud (c_idx, scan_cloud, scan_full_cloud);
 
       // Filter points
-      filterShadowPoints (tilt_full_cloud, filtered_cloud);
+      filterShadowPoints (scan_full_cloud, filtered_cloud);
 
       // Set timestamp/frameid and publish
-      publish ("tilt_laser_cloud_filtered", filtered_cloud);
+      publish (cloud_topic_, filtered_cloud);
     }
 
 } ;
