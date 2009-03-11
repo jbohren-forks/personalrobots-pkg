@@ -1,0 +1,6 @@
+<launch>
+  <param name="arm_constraint/root_name" value="torso_lift_link" type="string" />
+  <param name="arm_constraint/tip_name" value="r_gripper_tool_frame" type="string" />
+	
+  <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/constraint.xml" />
+</launch>
