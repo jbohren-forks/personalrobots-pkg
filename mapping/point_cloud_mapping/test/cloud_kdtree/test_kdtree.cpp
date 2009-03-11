@@ -33,7 +33,7 @@
 #include <gtest/gtest.h>
 #include "robot_msgs/PointCloud.h"
 
-#include "cloud_kdtree/kdtree.h"
+#include "point_cloud_mapping/cloud_kdtree.h"
 
 #include "bunny_model.h"      // Import the Stanford bunny model
 
