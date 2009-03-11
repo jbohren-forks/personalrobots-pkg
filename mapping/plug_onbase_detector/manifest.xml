@@ -1,0 +1,16 @@
+<package>
+  <description>
+    A node which detects the pose of the stowed plug on top of the robot base.
+  </description>
+
+  <author>Radu Bogdan Rusu, Melonee Wise</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="point_cloud_mapping" />
+  <depend package="robot_msgs" />
+
+</package>
