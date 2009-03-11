@@ -207,7 +207,6 @@ RegionConnectorMap readRegionConnectorMap (istream& str)
     ConnectorId id;
     Cell2D cell1, cell2;
     str >> r1 >> r2 >> id >> cell1.r >> cell1.c >> cell2.r >> cell2.c;
-    ROS_INFO_STREAM ("rcmap entry: " << r1 << " " << r2 << " " << id);
     m[RegionPair(r1,r2)] = make_tuple(id,cell1,cell2);
   }
   ROS_DEBUG_NAMED ("io", "Done reading region connector map");
