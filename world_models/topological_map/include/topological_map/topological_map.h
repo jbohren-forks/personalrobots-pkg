@@ -133,17 +133,11 @@ public:
   /// \throws UnknownRegionException
   RegionPtr regionCells (RegionId id) const;
 
-  /// \return Vector of all region ids.
+  /// \return Set of all region ids.
   const RegionIdSet& allRegions() const;
 
-  /// \post Goal point (for future distance queries) is \a p
-  void setGoal (const Point2D& p);
-
-  /// \post Goal point (for future distance queries) is the center of \a c
-  void setGoal (const Cell2D& c);
-
-  /// \return 1) true if there exists a path between connector \a id and goal 2) The distance (only valid if 1 is true)
-  pair<bool, double> goalDistance (ConnectorId id) const;
+  /// \return 1) true if there exists a path between these two points 2) the distance (only valid if 1 is true)
+  pair<bool, double> distanceBetween (const Point2D& p1, const Point2D& p2);
 
   /// \post New region has been added.  Based on cell2d connectivity, the region is connected to existing regions, and connectors are added, as necessary.
   /// \return Id of new region, which will be 1+the highest previously seen region id (or 0)

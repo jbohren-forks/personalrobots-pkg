@@ -85,7 +85,7 @@ public:
   GridGraph() {}
 
   // Create a graph from an occupancy grid
-  GridGraph(const OccupancyGrid& grid);
+  GridGraph(boost::shared_ptr<OccupancyGrid> grid);
 
   // Does the graph contain this cell
   bool containsCell (const Cell2D& cell) const;

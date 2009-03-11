@@ -200,7 +200,8 @@ struct AddRegions
 
 TopologicalMapPtr groundTruthTopologicalMap (const OccupancyGrid& grid, const vector<DoorInfo>& door_info, const double resolution, const double width)
 {
-  GridGraph g(grid);
+  shared_ptr<OccupancyGrid> grid_ptr(new OccupancyGrid(grid));
+  GridGraph g(grid_ptr);
   
   vector<RegionPtr> door_regions(door_info.size());
   transform(door_info.begin(), door_info.end(), door_regions.begin(), GetDoorCells(resolution, width));

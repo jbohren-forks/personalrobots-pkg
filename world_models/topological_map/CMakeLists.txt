@@ -8,8 +8,8 @@ rospack_add_boost_directories()
 set(ROS_COMPILE_FLAGS "-O3 " ${ROS_COMPILE_FLAGS})
 
 #uncomment for profiling/gdb
-#set(ROS_COMPILE_FLAGS "-g -pg " ${ROS_COMPILE_FLAGS})
-#set(ROS_LINK_FLAGS "-g -pg " ${ROS_LINK_FLAGS})
+set(ROS_COMPILE_FLAGS "-g -pg " ${ROS_COMPILE_FLAGS})
+set(ROS_LINK_FLAGS "-g -pg " ${ROS_LINK_FLAGS})
 
 
 ## Old version

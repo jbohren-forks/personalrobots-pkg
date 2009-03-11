@@ -357,7 +357,7 @@ void BottleneckFinder::initializeFromGrid ()
   uint threshold = inflation_radius_*inflation_radius_;
 
   for (uint r=0; r<num_rows_; ++r) {
-    ROS_INFO_COND_NAMED (!(r%100), "initialize_from_grid", "Row %u", r);
+    ROS_INFO_COND_NAMED (!(1+r%1000), "initialize_from_grid", "Row %u", r);
     for (uint c=0; c<num_cols_; ++c) {
       bool found_obstacle=false;
       for (uint r2 = inflation_radius_<=r ? r-inflation_radius_ : 0; r2<=r+inflation_radius_ && !found_obstacle; r2++) {

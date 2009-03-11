@@ -51,6 +51,7 @@ class GridGraph;
 
 typedef map<RegionPair, tuple<ConnectorId,Cell2D,Cell2D> > RegionConnectorMap;
 typedef boost::multi_array<int, 2> ObstacleDistanceArray;
+typedef shared_ptr<OccupancyGrid> GridPtr;
 
 // Implementation details for top map
 class TopologicalMap::MapImpl
@@ -114,6 +115,9 @@ public:
   /// \return 1) true if there exists a path between connector \a id and goal 2) The distance (only valid if 1 is true)
   pair<bool, double> goalDistance (ConnectorId id) const;
 
+  /// \return 1) true if there exists a path between these two points 2) the distance (only valid if 1 is true)
+  pair<bool, double> getDistance (const Point2D& p1, const Point2D& p2);
+
   /// \post New region has been added
   /// \return Id of new region
   /// \throws OverlappingRegionException
@@ -129,6 +133,9 @@ public:
   /// write map in ppm format
   void writePpm (ostream& str) const;
 
+  uint nc () const;
+  uint nr () const;
+
 private: 
 
 
@@ -140,6 +147,7 @@ private:
     const ConnectorId id;
   };
   friend struct TemporaryRoadmapNode;
+  typedef shared_ptr<TemporaryRoadmapNode> TempNodePtr;
 
   MapImpl(const MapImpl&);
   MapImpl& operator= (const MapImpl&);
@@ -150,7 +158,7 @@ private:
   Point2D findBorderPoint(const Cell2D& cell1, const Cell2D& cell2) const;
   bool pointOnMap (const Point2D& p) const;
 
-  const OccupancyGrid& grid_;
+  GridPtr grid_;
   ObstacleDistanceArray obstacle_distances_;
 
   shared_ptr<RegionGraph> region_graph_;
@@ -162,6 +170,7 @@ private:
   shared_ptr<TemporaryRoadmapNode> goal_;
   
   const double resolution_;
+
 };
 
 

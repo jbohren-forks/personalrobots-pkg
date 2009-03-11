@@ -44,6 +44,7 @@ using boost::associative_property_map;
 using boost::make_tuple;
 using boost::tie;
 using boost::bind;
+using boost::shared_ptr;
 using std::pair;
 using std::queue;
 
@@ -52,11 +53,11 @@ using std::queue;
  * basic
  ************************************************************/
 
-GridGraph::GridGraph(const OccupancyGrid& grid)
+GridGraph::GridGraph(shared_ptr<OccupancyGrid> grid)
 {
-  for (uint r=0; r<numRows(grid); ++r) {
-    for (uint c=0; c<numCols(grid); ++c) {
-      if (!grid[r][c]) {
+  for (uint r=0; r<numRows(*grid); ++r) {
+    for (uint c=0; c<numCols(*grid); ++c) {
+      if (!(*grid)[r][c]) {
         addNode(Cell2D(r,c));
       }
     }

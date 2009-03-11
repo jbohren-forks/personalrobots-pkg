@@ -94,25 +94,35 @@ uint numCols(const OccupancyGrid& grid)
   return dims[1];
 }
 
+uint TopologicalMap::MapImpl::nr () const
+{
+  return numRows(*grid_);
+}
+
+uint TopologicalMap::MapImpl::nc () const
+{
+  return numCols(*grid_);
+}
+
 
 bool TopologicalMap::MapImpl::isObstacle (const Point2D& p) const
 {
   if (pointOnMap(p)) {
     Cell2D cell = containingCell(p);
-    return grid_[cell.r][cell.c];
+    return (*grid_)[cell.r][cell.c];
   }
   return false;
 }
 
 bool TopologicalMap::MapImpl::pointOnMap (const Point2D& p) const
 {
-  return (p.x>=0) && (p.y>=0) && (p.x<numCols(grid_)*resolution_) && (p.y<numRows(grid_)*resolution_);
+  return (p.x>=0) && (p.y>=0) && (p.x<numCols(*grid_)*resolution_) && (p.y<numRows(*grid_)*resolution_);
 }
 
 Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
 {
   if (!pointOnMap(p)) {
-    throw UnknownPointException(p.x,p.y,numCols(grid_)*resolution_,numRows(grid_)*resolution_);
+    throw UnknownPointException(p.x,p.y,numCols(*grid_)*resolution_,numRows(*grid_)*resolution_);
   }
   return Cell2D(floor((float)p.y/resolution_), floor((float)p.x/resolution_));
 }
@@ -127,26 +137,27 @@ Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
  ************************************************************/
 
 
-OccupancyGrid readGrid(istream& stream)
+GridPtr readGrid(istream& stream)
 {
   uint nr, nc;
   stream >> nr >> nc;
-  OccupancyGrid grid(extents[nr][nc]);
+  GridPtr grid(new OccupancyGrid(extents[nr][nc]));
   for (uint r=0; r<nr; r++) {
     for (uint c=0; c<nc; c++) {
-      stream >> grid[r][c];
+      stream >> (*grid)[r][c];
     }
   }
   return grid;
 }
 
 
-void writeGrid (const OccupancyGrid& grid, ostream& stream)
+void writeGrid (GridPtr grid, ostream& stream)
 {
-  stream << endl << numRows(grid) << " " << numCols(grid);
-  for (uint r=0; r<numRows(grid); ++r) {
-    for (uint c=0; c<numCols(grid); ++c) {
-      stream << " " << grid[r][c];
+  ROS_DEBUG_NAMED ("io", "Writing %ux%u grid", numRows(*grid), numCols(*grid));
+  stream << endl << numRows(*grid) << " " << numCols(*grid);
+  for (uint r=0; r<numRows(*grid); ++r) {
+    for (uint c=0; c<numCols(*grid); ++c) {
+      stream << " " << (*grid)[r][c];
     }
   }
 }
@@ -154,11 +165,13 @@ void writeGrid (const OccupancyGrid& grid, ostream& stream)
 
 shared_ptr<RegionGraph> readRegionGraph(istream& stream)
 {
+  ROS_DEBUG_NAMED ("io", "Reading region graph");
   return shared_ptr<RegionGraph>(new RegionGraph(stream));
 }
 
 shared_ptr<Roadmap> readRoadmap(istream& stream)
 {
+  ROS_DEBUG_NAMED ("io", "Reading roadmap");
   return shared_ptr<Roadmap>(new Roadmap(stream));
 }
 
@@ -167,6 +180,7 @@ double readResolution(istream& stream)
 {
   double resolution;
   stream >> resolution;
+  ROS_DEBUG_NAMED ("io", "Read resolution %f", resolution);
   return resolution;
 }
 
@@ -184,6 +198,7 @@ void writeRegionConnectorMap (const RegionConnectorMap& m, ostream& str)
 
 RegionConnectorMap readRegionConnectorMap (istream& str)
 {
+  ROS_DEBUG_NAMED ("io", "Reading region connector map");
   RegionConnectorMap m;
   uint size;
   str >> size;
@@ -192,7 +207,10 @@ RegionConnectorMap readRegionConnectorMap (istream& str)
     ConnectorId id;
     Cell2D cell1, cell2;
     str >> r1 >> r2 >> id >> cell1.r >> cell1.c >> cell2.r >> cell2.c;
+    ROS_INFO_STREAM ("rcmap entry: " << r1 << " " << r2 << " " << id);
+    m[RegionPair(r1,r2)] = make_tuple(id,cell1,cell2);
   }
+  ROS_DEBUG_NAMED ("io", "Done reading region connector map");
   return m;
 }
 
@@ -200,6 +218,7 @@ RegionConnectorMap readRegionConnectorMap (istream& str)
 void TopologicalMap::MapImpl::writeToStream (ostream& stream)
 {
   ROS_INFO ("Writing topological map to stream");
+  ROS_INFO ("Grid size is %ux%u", numRows(*grid_), numCols(*grid_));
   bool goal_unset = goal_;
   Point2D goal_point;
   if (goal_) {
@@ -265,14 +284,14 @@ void TopologicalMap::MapImpl::writePpm (ostream& str) const
   Color white(255,255,255);
   Color blue(0,0,255);
 
-  uint num_rows = numRows(grid_);
-  uint num_cols = numCols(grid_);
+  uint num_rows = numRows(*grid_);
+  uint num_cols = numCols(*grid_);
 
   multi_array<Color, 2> bitmap(extents[num_rows][num_cols]);
   
   for (uint r=0; r<num_rows; ++r) {
     for (uint c=0; c<num_cols; ++c) {
-      if (grid_[r][c]) {
+      if ((*grid_)[r][c]) {
         bitmap[r][c] = black;
       }
       else {
@@ -306,14 +325,14 @@ void TopologicalMap::MapImpl::writePpm (ostream& str) const
  * Construction
  ************************************************************/
 
-ObstacleDistanceArray computeObstacleDistances(const OccupancyGrid& grid)
+ObstacleDistanceArray computeObstacleDistances(GridPtr grid)
 {
-  int num_rows = numRows(grid);
-  int num_cols = numCols(grid);
+  int num_rows = numRows(*grid);
+  int num_cols = numCols(*grid);
   ObstacleDistanceArray distances(extents[num_rows][num_cols]);
   for (int r=0; r<num_rows; ++r) 
     for (int c=0; c<num_cols; ++c) 
-      distances[r][c] = grid[r][c] ? 0 : (num_rows+1)*(num_cols+1);
+      distances[r][c] = (*grid)[r][c] ? 0 : (num_rows+1)*(num_cols+1);
 
   bool done=false;
   while (!done) {
@@ -339,13 +358,11 @@ ObstacleDistanceArray computeObstacleDistances(const OccupancyGrid& grid)
 }
     
 
-
 TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution) : 
-  grid_(grid), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(new RegionGraph), 
-  roadmap_(new Roadmap), grid_graph_(new GridGraph(grid)), resolution_(resolution)
+  grid_(new OccupancyGrid(grid)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(new RegionGraph), 
+  roadmap_(new Roadmap), grid_graph_(new GridGraph(grid_)), resolution_(resolution)
 {
 }
-
 
 TopologicalMap::MapImpl::MapImpl (istream& str) : 
   grid_(readGrid(str)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(readRegionGraph(str)), 
@@ -353,7 +370,6 @@ TopologicalMap::MapImpl::MapImpl (istream& str) :
   resolution_(readResolution(str))
 {
 }
-
 
 
 
@@ -629,12 +645,12 @@ void TopologicalMap::MapImpl::setGoal (const Point2D& p)
   unsetGoal();
 
   // Add new goal
-  goal_ = shared_ptr<TemporaryRoadmapNode>(new TemporaryRoadmapNode(this, p));
+  goal_ = TempNodePtr(new TemporaryRoadmapNode(this, p));
 }
 
 void TopologicalMap::MapImpl::unsetGoal ()
 {
-  goal_ = shared_ptr<TemporaryRoadmapNode>();
+  goal_ = TempNodePtr();
 }
 
 void TopologicalMap::MapImpl::setGoal (const Cell2D& c)
@@ -648,6 +664,14 @@ pair<bool, double> TopologicalMap::MapImpl::goalDistance (ConnectorId id) const
     throw GoalNotSetException();
   }    
   return roadmap_->costBetween(id, goal_->id);
+}
+
+
+pair<bool, double> TopologicalMap::MapImpl::getDistance (const Point2D& p1, const Point2D& p2)
+{
+  TemporaryRoadmapNode start(this, p1);
+  TemporaryRoadmapNode goal(this, p2);
+  return roadmap_->costBetween(start.id, goal.id);
 }
 
 
@@ -739,21 +763,11 @@ RegionPair TopologicalMap::adjacentRegions (const ConnectorId id) const
   return map_impl_->adjacentRegions(id);
 }
 
-void TopologicalMap::setGoal (const Point2D& p)
+pair<bool, double> TopologicalMap::distanceBetween (const Point2D& p1, const Point2D& p2)
 {
-  map_impl_->setGoal(p);
+  return map_impl_->getDistance(p1,p2);
 }
 
-void TopologicalMap::setGoal (const Cell2D& p)
-{
-  map_impl_->setGoal(p);
-}
-
-
-pair<bool, double> TopologicalMap::goalDistance (ConnectorId id) const
-{
-  return map_impl_->goalDistance(id);
-}
 
 RegionId TopologicalMap::addRegion(const RegionPtr region, const int type) 
 {

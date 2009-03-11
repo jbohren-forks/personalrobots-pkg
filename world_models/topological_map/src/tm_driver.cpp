@@ -39,7 +39,9 @@ typedef const uint cuint;
 
 using std::cout;
 using std::endl;
+using std::ifstream;
 using boost::extents;
+namespace tmap=topological_map;
 using topological_map::OccupancyGrid;
 using topological_map::TopologicalMapPtr;
 using topological_map::topologicalMapFromGrid;
@@ -58,33 +60,11 @@ void setV (topological_map::OccupancyGrid& grid, cuint r0, cuint dr, cuint rmax,
 
 int main (int argc, char* argv[])
 {
-  
-  OccupancyGrid grid(extents[21][24]);
-  setV(grid, 0, 1, 21, 0, 1, 24, false);
-  setV(grid, 7, 7, 21, 0, 1, 24, true);
-  setV(grid, 0, 1, 21, 8, 8, 24, true);
-  setV(grid, 3, 7, 21, 8, 8, 24, false);
-  setV(grid, 7, 7, 21, 4, 8, 24, false);
-  
-  for (uint r=0; r<21; r++) {
-    for (uint c=0; c<24; c++) {
-      if (grid[r][c]) cout << "X"; else cout << ".";
-    }
-    cout << endl;
-  }
-  
 
-  TopologicalMapPtr m = topologicalMapFromGrid (grid, 1.0, 2, 1, 1, 0, "local");
-
-  cout << *m;
-  m->setGoal(Cell2D(1,12));
-  m->setGoal(Cell2D(0,12));
-  m->setGoal(Cell2D(12,1));
-
-  std::ofstream str("local/test");
-  m->writeToStream(str);
-  std::ofstream str2("local/out.ppm");
-  m->writePpm(str2);
+  std::ifstream str3("/u/bhaskara/local/top/willow.tmap");
+  tmap::TopologicalMap m2(str3);
+  std::ofstream str4("/u/bhaskara/local/top/willow2.tmap");
+  m2.writeToStream(str4);
 }
 
   

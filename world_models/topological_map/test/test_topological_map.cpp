@@ -210,15 +210,14 @@ TEST(TopologicalMap, Creation)
   EXPECT_EQ(m->regionType(m->containingRegion(Point2D(.35,.82))), 1);
   EXPECT_TRUE(m->isObstacle(Point2D(2.35,.75)));
   EXPECT_TRUE(!(m->isObstacle(Point2D(2.35,.65))));
-  
-  m->setGoal(Point2D(.35, .82));
+
+  Point2D pos=m->connectorPosition(1);
   bool path_found;
   double d;
-  tie(path_found,d) = m->goalDistance(1);
+  tie(path_found,d) = m->distanceBetween(pos,Point2D(.35, .82));
   EXPECT_TRUE(path_found);
-  m->setGoal(Point2D(1.1, .2));
   double d2;
-  tie(path_found, d2) = m->goalDistance(1);
+  tie(path_found, d2) = m->distanceBetween(pos,Point2D(1.1,.2));
   EXPECT_TRUE(path_found);
   d+=d2;
 
@@ -230,12 +229,10 @@ TEST(TopologicalMap, Creation)
 
   TopologicalMap m2(ss);
   double d3, d4;
-  m->setGoal(Point2D(.35, .82));
-  tie(path_found,d3) = m->goalDistance(1);
+  tie(path_found,d3) = m2.distanceBetween(Point2D(.35,.82), pos);
   EXPECT_TRUE(path_found);
 
-  m->setGoal(Point2D(1.1, .2));
-  tie(path_found, d4) = m->goalDistance(1);
+  tie(path_found, d4) = m2.distanceBetween(Point2D(1.1,.2), pos);
   EXPECT_TRUE(path_found);
   EXPECT_EQ(d,d3+d4);
   EXPECT_EQ(d2,d4);
