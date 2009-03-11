@@ -14,6 +14,7 @@
   <depend package="trajectory_rollout"/>
   <depend package="highlevel_controllers"/>
   <depend package="pr2_alpha"/>
+  <depend package="pr2_experimental_controllers"/>
   <depend package="semantic_point_annotator"/>
   <depend package="2dnav_stage"/>
   <depend package="point_cloud_assembler"/>

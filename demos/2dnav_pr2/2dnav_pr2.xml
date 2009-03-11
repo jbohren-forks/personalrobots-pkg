@@ -2,9 +2,9 @@
   <group name="wg">
     <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
     <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/laser_tilt_controller.xml" />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
     <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" />
-    <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_tilt_controller sine 2 .75 .30" />
+    <node pkg="pr2_mechanism_controllers" type="send_periodic_cmd.py" args="laser_tilt_controller linear 2 .65 .25" />
     <!--<node pkg="mechanism_control" type="spawner.py" args="$(find 2dnav_pr2)/torso_controller.xml" />
     <node pkg="2dnav_pr2" type="spine_levitation.py" />-->
 
@@ -20,7 +20,16 @@
     <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" respawn="true" machine="four" />
 
     <!-- Filter for tilt laser shadowing/veiling -->
-    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" />
+    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="tilt_shadow_filter">
+      <param name="scan_topic" value="tilt_scan" />
+      <param name="cloud_topic" value="tilt_laser_cloud_filtered" />
+    </node>
+    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="base_shadow_filter" >
+      <param name="scan_topic" value="base_scan" />
+      <param name="cloud_topic" value="base_scan_filtered" />
+      <param name="preservative" value="true" />
+      <param name="laser_max_range" value="30.0" />
+    </node>
 
     <param name="robot_pose_ekf/freq" value="30.0"/>
     <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
@@ -60,11 +69,13 @@
       <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     </node>
 
-    <param name="/sac_ground_removal/z_threshold" value="0.1" />
-    <param name="/sac_ground_removal/sac_distance_threshold" value="0.03" />
-    <param name="/sac_ground_removal/planar_refine" value="1" />
 
-    <node pkg="semantic_point_annotator" type="sac_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen" />
+    <node pkg="semantic_point_annotator" type="sac_inc_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen" >
+      <param name="z_threshold" value="0.1" />
+      <param name="sac_min_points_per_model" value="6" />
+      <param name="sac_distance_threshold" value="0.03" />
+      <param name="planar_refine" value="1" />
+    </node>
 
     <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" >-->
     <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen" name="move_base_node">
@@ -74,7 +85,7 @@
       <param name="move_base/plannerType" value="ARAPlanner"/>
       <param name="move_base/environmentType" value="2D"/>
       <param name="move_base/controller_frequency" value="30.0"/>
-      <param name="move_base/map_update_frequency" value="3.0"/>
+      <param name="move_base/map_update_frequency" value="2.0"/>
       <param name="move_base/planner_frequency" value="0.0"/>
       <param name="move_base/plannerTimeLimit" value="0.5"/>
       <param name="costmap_2d/base_laser_max_range" value="20.0"/>
@@ -89,29 +100,33 @@
       <param name="costmap_2d/inscribed_radius" value="0.325"/>
       <param name="costmap_2d/raytrace_window" value="10.0"/>
       <param name="costmap_2d/weight" value="0.1"/>
+      <param name="costmap_2d/zLB" value="0.25"/>
+      <param name="costmap_2d/zUB" value="0.35"/>
 
 
       <param name="trajectory_rollout/map_size" value="4.0" />
       <param name="trajectory_rollout/acc_limit_x" value="2.5" />
       <param name="trajectory_rollout/acc_limit_y" value="2.5" />
       <param name="trajectory_rollout/acc_limit_th" value="3.2" />
-      <param name="trajectory_rollout/sim_time" value="1.0" />
+      <param name="trajectory_rollout/sim_time" value="1.7" />
       <param name="trajectory_rollout/sim_granularity" value="0.05" />
       <param name="trajectory_rollout/vx_samples" value="15" />
-      <param name="trajectory_rollout/vtheta_samples" value="15" />
+      <param name="trajectory_rollout/vtheta_samples" value="20" />
       <param name="trajectory_rollout/path_distance_bias" value="0.6" />
       <param name="trajectory_rollout/goal_distance_bias" value="0.8" />
       <param name="trajectory_rollout/occdist_scale" value="0.2" />
       <param name="trajectory_rollout/heading_lookahead" value="0.325" />
       <param name="trajectory_rollout/oscillation_reset_dist" value="0.05" />
       <param name="trajectory_rollout/holonomic_robot" value="true" />
-      <param name="trajectory_rollout/max_vel_x" value="0.5" />
+      <param name="trajectory_rollout/max_vel_x" value="0.65" />
       <param name="trajectory_rollout/min_vel_x" value="0.1" />
       <param name="trajectory_rollout/max_vel_th" value="1.0" />
       <param name="trajectory_rollout/min_vel_th" value="-1.0" />
       <param name="trajectory_rollout/min_in_place_vel_th" value="0.4" />
       <param name="trajectory_rollout/freespace_model" value="true" />
       <param name="trajectory_rollout/dwa" value="false" />
+      <param name="trajectory_rollout/heading_scoring" value="false" />
+      <param name="trajectory_rollout/heading_scoring_timestep" value="0.8" />
       <param name="trajectory_rollout/simple_attractor" value="false" />
 
       <param name="trajectory_rollout/yaw_goal_tolerance" value=".05" />
