@@ -41,7 +41,7 @@ import numpy
 
 from tf.msg import tfMessage
 from robot_msgs.msg import TransformStamped
-from tf.srv import FrameGraph
+from tf.srv import FrameGraph,FrameGraphResponse
 
 class NumpyTransformStamped:
     def __init__(self):

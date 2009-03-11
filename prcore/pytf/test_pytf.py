@@ -7,6 +7,8 @@ import time
 import rospy
 print "Starting"
 
+from tf.srv import FrameGraph, FrameGraphRequest
+
 rospy.init_node("pylistener")
 t = TransformListener.TransformListener()
 
@@ -24,4 +26,7 @@ for i in xrange(1,10):
     except ValueError:
         print "valueerror"
 
+frames_sp = rospy.ServiceProxy("~tf_frames", FrameGraph)
+resp = frames_sp.call(FrameGraphRequest())
+print resp.dot_graph
 print "Done"

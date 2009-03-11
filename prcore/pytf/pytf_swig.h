@@ -34,6 +34,7 @@
 
 #include "tf/tf.h"
 
+/**\brief The swig interface data type */
 class pyTransform
 {
 public:
@@ -65,6 +66,8 @@ public:
   /** \brief Clear all data */
   void clear() {tf_.clear();};
 
+  /** \brief Set a transform
+   * Set a transform in the local library */
   void setTransform(const pyTransform& transform)
   {
     tf_.setTransform(tf::Stamped<btTransform>(btTransform(btQuaternion(transform.qx,
