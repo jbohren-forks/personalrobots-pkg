@@ -37,12 +37,13 @@ Index: libgazebo/SConscript
 ===================================================================
 --- libgazebo/SConscript	(revision 7358)
 +++ libgazebo/SConscript	(working copy)
-@@ -20,6 +20,8 @@
+@@ -20,6 +20,9 @@
  # setup a special build environment for libgazebo. Do this so we can control
  # what libgazebo depends upon
  #
-+#  CC = '/opt/intel/cc/10.1.008/bin/icpc',
++#  CC = '/opt/intel/cc/10.1.008/bin/icc',
 +#  CXX = '/opt/intel/cc/10.1.008/bin/icpc',
++#  LD = '/opt/intel/cc/10.1.008/bin/xild',
  env = Environment (
    CC = 'g++',
    CCFLAGS = Split ('-pthread -pipe  -W -Wall -O2'),
@@ -50,10 +51,13 @@ Index: libgazebo/Iface.cc
 ===================================================================
 --- libgazebo/Iface.cc	(revision 7358)
 +++ libgazebo/Iface.cc	(working copy)
-@@ -264,6 +264,12 @@
+@@ -264,6 +264,15 @@
  
    // Open the mmap file
    this->mmapFd = open(this->filename.c_str(), O_RDWR);
++
++  // this patch is needed so Gazebo sits and waits for Iface to open when
++  // spawning robot dynamically
 +  while (this->mmapFd <= 0)
 +  {
 +    this->mmapFd = open(this->filename.c_str(), O_RDWR);
@@ -81,7 +85,7 @@ Index: libgazebo/gazebo.h
    /// Commaned range count
    public: int cmd_range_count;
 +
-+  /// Is laser stream opened?
++  /// Is laser stream opened?  if unopened, skip sensor update to save cpu
 +  public: bool opened;
 +  
  };
@@ -117,7 +121,7 @@ Index: libgazebo/gazebo.h
  
    /// String describing the model to be initiated
 -  public: uint8_t newModel[4096];
-+  public: uint8_t newModel[409600];
++  public: uint8_t newModel[409600]; // spawning pr2 model requires larger buffer
  
    /// Delete a model by name
    public: uint8_t deleteModel[512];
@@ -125,7 +129,7 @@ Index: libgazebo/gazebo.h
    /// position / speed comand
    public: unsigned int joint_mode[GAZEBO_ACTARRAY_MAX_NUM_ACTUATORS];
    
-+  /// Is camera stream opened?
++  /// Is camera stream opened? if unopened, skip sensor update to save cpu
 +  public: bool opened;
 +  
  };
@@ -189,11 +193,13 @@ Index: server/Pose3d.cc
 ===================================================================
 --- server/Pose3d.cc	(revision 7358)
 +++ server/Pose3d.cc	(working copy)
-@@ -211,3 +211,18 @@
+@@ -211,3 +211,20 @@
  
    return a;
  }
 +
++//////////////////////////////////////////////////////////////////////////////
++// Rotate a vector by a quaternion, added for computing CG location for the Body
 +Pose3d Pose3d::RotatePositionAboutOrigin(const Quatern &rot) const
 +{
 +  Pose3d a = *this;
@@ -212,11 +218,12 @@ Index: server/physics/MapGeom.hh
 ===================================================================
 --- server/physics/MapGeom.hh	(revision 7358)
 +++ server/physics/MapGeom.hh	(working copy)
-@@ -27,7 +27,10 @@
+@@ -27,7 +27,11 @@
  #ifndef MAPGEOM_HH
  #define MAPGEOM_HH
  
 -#include <Ogre.h>
++//switch to using opencv so we can run headless with map
 +//#include <Ogre.h>
 +#include <cv.h>
 +#include <highgui.h>
@@ -224,12 +231,12 @@ Index: server/physics/MapGeom.hh
  #include <deque>
  
  #include "Vector2.hh"
-@@ -141,7 +144,8 @@
+@@ -141,7 +145,8 @@
  
      private: ParamT<double> *wallHeightP;
  
 -    private: Ogre::Image mapImage;
-+    //private: Ogre::Image mapImage;
++    //private: Ogre::Image mapImage; //switch to using opencv so we can run headless with map
 +    private: IplImage* img;
  
      private: QuadNode *root;
@@ -238,15 +245,7 @@ Index: server/physics/Geom.hh
 ===================================================================
 --- server/physics/Geom.hh	(revision 7358)
 +++ server/physics/Geom.hh	(working copy)
-@@ -28,6 +28,7 @@
- #define GEOM_HH
- 
- #include <ode/ode.h>
-+#include <vector>
- 
- #include "Param.hh"
- #include "Entity.hh"
-@@ -159,9 +160,15 @@
+@@ -159,9 +159,14 @@
      /// \brief Get the model this geom belongs to
      public: Model *GetModel() const;
  
@@ -256,8 +255,7 @@ Index: server/physics/Geom.hh
      ///  Contact parameters
      public: ContactParams *contact; 
  
-+    ///  Contact parameters
-+    //public: std::vector<dJointID> cID; 
++    ///  Save Contact Joint ID
 +    public: dJointID cID; 
    
      /// The body this geom belongs to
@@ -388,14 +386,15 @@ Index: server/physics/Body.hh
      /// List of geometries attached to this body
      private: std::map< std::string, Geom* > geoms;
    
-@@ -184,6 +203,25 @@
+@@ -184,6 +203,26 @@
    
      private: ParamT<Vector3> *xyzP;
      private: ParamT<Quatern> *rpyP;
++
 +    private: ParamT<bool> *turnGravityOffP;
 +    private: ParamT<bool> *selfCollideP;
 +
-+    private: OgreVisual *visual;
++    private: OgreVisual *cg_visual;
 +
 +    ///  User specified Mass Matrix
 +    protected: ParamT<bool> *customMassMatrixP;
@@ -414,16 +413,33 @@ Index: server/physics/Body.hh
    };
    
    /// \}
+Index: server/physics/PhysicsEngine.hh
+===================================================================
+--- server/physics/PhysicsEngine.hh	(revision 7358)
++++ server/physics/PhysicsEngine.hh	(working copy)
+@@ -89,8 +89,11 @@
+     /// \brief Initialize the physics engine
+     public: virtual void Init() = 0;
+   
++    /// \brief Update the physics engine collision
++    public: virtual void UpdateCollision() = 0;
++
+     /// \brief Update the physics engine
+-    public: virtual void Update() = 0;
++    public: virtual void UpdatePhysics() = 0;
+   
+     /// \brief Finilize the physics engine
+     public: virtual void Fini() = 0;
 Index: server/physics/MapGeom.cc
 ===================================================================
 --- server/physics/MapGeom.cc	(revision 7358)
 +++ server/physics/MapGeom.cc	(working copy)
-@@ -25,16 +25,16 @@
+@@ -25,16 +25,15 @@
   */
  
  #include <ode/ode.h>
 -#include <Ogre.h>
-+//#include <Ogre.h>
++//#include <Ogre.h> // switch to opencv so we can run headless
  #include <iostream>
  #include <string.h>
  #include <math.h>
@@ -431,31 +447,32 @@ Index: server/physics/MapGeom.cc
  #include "BoxGeom.hh"
  #include "GazeboError.hh"
 -#include "OgreAdaptor.hh"
-+//#include "OgreAdaptor.hh"
++//#include "OgreAdaptor.hh" // switch to opencv so we can run headless
  #include "Simulator.hh"
 -#include "OgreAdaptor.hh"
-+//#include "OgreAdaptor.hh"
  #include "OgreVisual.hh"
  #include "Global.hh"
  #include "Body.hh"
-@@ -88,9 +88,9 @@
+@@ -88,9 +87,9 @@
  /// Load the heightmap
  void MapGeom::LoadChild(XMLConfigNode *node)
  {
 -  OgreAdaptor *ogreAdaptor;
-+  //OgreAdaptor *ogreAdaptor;
++  //OgreAdaptor *ogreAdaptor;  // switch to opencv so we can run headless
  
 -  ogreAdaptor = Simulator::Instance()->GetRenderEngine();
-+  //ogreAdaptor = Simulator::Instance()->GetRenderEngine();
++  //ogreAdaptor = Simulator::Instance()->GetRenderEngine();  // switch to opencv so we can run headless
  
    std::string imageFilename = node->GetString("image","",1);
  
-@@ -107,13 +107,24 @@
+@@ -106,14 +105,25 @@
+   if (this->thresholdP->GetValue() <=0) this->thresholdP->SetValue(200);
    if (this->wallHeightP->GetValue() <= 0) this->wallHeightP->SetValue( 1.0 );
  
-   // Load the image 
+-  // Load the image 
 -  this->mapImage.load(imageFilename,
 -                Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
++  // Load the image   // switch to opencv so we can run headless
 +  //this->mapImage.load(imageFilename,
 +  //              Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
 +  char *gazebo_resource_path = getenv("GAZEBO_RESOURCE_PATH");
@@ -479,7 +496,7 @@ Index: server/physics/MapGeom.cc
  
    this->BuildTree(this->root);
  
-@@ -126,7 +137,8 @@
+@@ -126,7 +136,8 @@
  
    this->CreateBoxes(this->root);
  
@@ -489,7 +506,7 @@ Index: server/physics/MapGeom.cc
  }
  
  
-@@ -307,7 +319,9 @@
+@@ -307,7 +318,9 @@
  
    int diff = labs(freePixels - occPixels);
  
@@ -500,16 +517,16 @@ Index: server/physics/MapGeom.cc
    {
      float newX, newY;
      float newW, newH;
-@@ -353,7 +367,7 @@
+@@ -353,7 +366,7 @@
          newY += ceil(newH);
      }
  
 -    node->occupied = true;
-+    node->occupied = false;
++    node->occupied = false; // bug fix, better map fit
      node->leaf = false;
    }
    else if (occPixels == 0)
-@@ -376,7 +390,8 @@
+@@ -376,7 +389,8 @@
                                   unsigned int &freePixels, 
                                   unsigned int &occPixels )
  {
@@ -519,7 +536,7 @@ Index: server/physics/MapGeom.cc
    unsigned char v;
    unsigned int x,y;
  
-@@ -386,8 +401,11 @@
+@@ -386,8 +400,11 @@
    {
      for (x = xStart; x < xStart + width; x++)
      {
@@ -563,18 +580,16 @@ Index: server/physics/Geom.cc
  
    delete this->massP;
    delete this->xyzP;
-@@ -112,6 +116,10 @@
+@@ -112,6 +116,8 @@
    this->typeName = node->GetName();
  
    this->nameP->Load(node);
 +  this->SetName(this->nameP->GetValue());
-+  //std::cout << " load geom: " << this->typeName << " " << this->GetName() << std::endl;
-+
 +  this->nameP->Load(node);
    this->massP->Load(node);
    this->xyzP->Load(node);
    this->rpyP->Load(node);
-@@ -136,13 +144,17 @@
+@@ -136,13 +142,17 @@
  
    // TODO: This should probably be true....but "true" breaks trimesh postions.
    this->SetPose(pose, true);
@@ -598,7 +613,7 @@ Index: server/physics/Geom.cc
    }
  
    /*if (this->IsStatic())
-@@ -159,8 +171,16 @@
+@@ -159,8 +169,16 @@
      Vector3 min(aabb[0], aabb[2], aabb[4]);
      Vector3 max(aabb[1], aabb[3], aabb[5]);
  
@@ -617,7 +632,7 @@ Index: server/physics/Geom.cc
    }
  
    if (this->geomId && dGeomGetClass(this->geomId) != dPlaneClass && 
-@@ -200,10 +220,11 @@
+@@ -200,10 +218,11 @@
    stream << prefix << "  " << *(this->laserFiducialIdP) << "\n";
    stream << prefix << "  " << *(this->laserRetroP) << "\n";
  
@@ -633,19 +648,7 @@ Index: server/physics/Geom.cc
  
    stream << prefix << "</geom:" << this->typeName << ">\n";
  }
-@@ -297,6 +318,11 @@
-     // Transform into CoM relative Pose
-     localPose = pose - this->body->GetCoMPose();
- 
-+    std::cout << " geom name: " << this->GetName() << std::endl;
-+    std::cout << " in SetPose, pose: " << pose << std::endl;
-+    std::cout << " in SetPose, GetCoMPose returns: " << this->body->GetCoMPose() << std::endl;
-+    std::cout << " in SetPose, localPose: " << localPose << std::endl;
-+
-     q[0] = localPose.rot.u;
-     q[1] = localPose.rot.x;
-     q[2] = localPose.rot.y;
-@@ -307,11 +333,15 @@
+@@ -307,11 +326,15 @@
      dGeomSetPosition(this->geomId, localPose.pos.x, localPose.pos.y, localPose.pos.z);
      dGeomSetQuaternion(this->geomId, q);
  
@@ -662,7 +665,7 @@ Index: server/physics/Geom.cc
      }
    }
  }
-@@ -396,23 +426,24 @@
+@@ -396,23 +419,24 @@
    Pose3d pose;
    dQuaternion q;
    dMatrix3 r;
@@ -691,7 +694,7 @@ Index: server/physics/Geom.cc
    if (dMassCheck(&this->bodyMass))
    {
      dMassRotate(&this->bodyMass, r);
-@@ -454,8 +485,9 @@
+@@ -454,8 +478,9 @@
  /// Set the visibility of the Bounding box of this geometry
  void Geom::ShowBoundingBox(bool show)
  {
@@ -703,7 +706,7 @@ Index: server/physics/Geom.cc
  }
  
  // FIXME: ShowJoints and ShowPhysics will mess with each other and with the user's defined transparency visibility
-@@ -465,20 +497,26 @@
+@@ -465,20 +490,28 @@
  {
    std::vector<OgreVisual*>::iterator iter;
  
@@ -725,6 +728,8 @@ Index: server/physics/Geom.cc
 +    }
 +}
 +
++////////////////////////////////////////////////////////////////////////////////
++/// Set transparency for visuals of this Geom
 +void Geom::SetTransparency(float t)
 +{
 +  std::vector<OgreVisual*>::iterator iter;
@@ -739,7 +744,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -487,26 +525,27 @@
+@@ -487,26 +520,27 @@
  {
    std::vector<OgreVisual*>::iterator iter;
  
@@ -783,7 +788,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -521,15 +560,21 @@
+@@ -521,15 +555,21 @@
  /// Get the number of visuals
  unsigned int Geom::GetVisualCount() const
  {
@@ -807,7 +812,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -538,11 +583,12 @@
+@@ -538,11 +578,12 @@
  {
    std::vector<OgreVisual*>::const_iterator iter;
  
@@ -845,13 +850,14 @@ Index: server/physics/Body.cc
  using namespace gazebo;
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -70,6 +78,21 @@
+@@ -70,6 +78,22 @@
  
    this->rpyP = new ParamT<Quatern>("rpy", Quatern(), 0);
    this->rpyP->Callback( &Body::SetRotation, this );
-+  this->turnGravityOffP = new ParamT<bool>("turnGravityOff", false, 0);
-+  this->selfCollideP = new ParamT<bool>("selfCollide", false, 0);
++  this->turnGravityOffP = new ParamT<bool>("turnGravityOff", false, 0);  // option to turn gravity off for individual body
++  this->selfCollideP = new ParamT<bool>("selfCollide", false, 0);  // option to make body collide with bodies of the same parent
 +
++  // User can specify mass/inertia property for the body
 +  this->customMassMatrixP = new ParamT<bool>("massMatrix",false,0);
 +  this->cxP = new ParamT<double>("cx",0.0,0);
 +  this->cyP = new ParamT<double>("cy",0.0,0);
@@ -867,7 +873,7 @@ Index: server/physics/Body.cc
    Param::End();
  }
  
-@@ -95,18 +118,73 @@
+@@ -95,24 +119,74 @@
  
    delete this->xyzP;
    delete this->rpyP;
@@ -894,7 +900,6 @@ Index: server/physics/Body.cc
 +
 +  // before loading child geometry, we have to figure out of selfCollide is true
 +  // and modify parent class Entity so this body has its own spaceId
-+
 +  this->selfCollideP->Load(node);
 +  if (this->selfCollideP->GetValue())
 +  {
@@ -903,8 +908,8 @@ Index: server/physics/Body.cc
 +    this->spaceId = dSimpleSpaceCreate( pe->spaceId);
 +  }
 +
-+
-+
++  // option to enter full mass matrix
++  // load custom inertia matrix for the body
 +  this->customMassMatrixP->Load(node);
 +  this->cxP ->Load(node);
 +  this->cyP ->Load(node);
@@ -917,7 +922,6 @@ Index: server/physics/Body.cc
 +  this->ixzP->Load(node);
 +  this->iyzP->Load(node);
 +
-+  // option to enter full mass matrix
 +  this->customMassMatrix = this->customMassMatrixP->GetValue();
 +  this->cx  = this->cxP ->GetValue();
 +  this->cy  = this->cyP ->GetValue();
@@ -930,8 +934,6 @@ Index: server/physics/Body.cc
 +  this->ixz = this->ixzP->GetValue();
 +  this->iyz = this->iyzP->GetValue();
 +
-+  // load child nodes
-+
    XMLConfigNode *childNode;
  
    this->nameP->Load(node);
@@ -941,20 +943,26 @@ Index: server/physics/Body.cc
    Pose3d initPose;
  
    initPose.pos = **(this->xyzP);
-@@ -123,6 +201,21 @@
+   initPose.rot = **(this->rpyP);
+ 
+-
+   childNode = node->GetChildByNSPrefix("geom");
+ 
+   // Load the geometries
+@@ -123,6 +197,21 @@
      childNode = childNode->GetNextByNSPrefix("geom");
    }
  
-+  // Attach mesh for CG visualization
-+  /// Add a renderable for something, say CG, make visible in Update()
++  /// Attach mesh for CG visualization
++  /// Add a renderable visual for CG, make visible in Update()
 +  if (Simulator::Instance()->GetRenderEngineEnabled())
 +  {
 +    if (this->mass.mass > 0.0)
 +    {
-+      this->visual = new OgreVisual(this->GetModel()->GetVisualNode());
-+      this->visual->AttachMesh("body_cg");
-+      this->visual->SetVisible(false);
-+      this->visual->SetMaterial("Gazebo/Red");
++      this->cg_visual = new OgreVisual(this->GetModel()->GetVisualNode());
++      this->cg_visual->AttachMesh("body_cg");
++      this->cg_visual->SetVisible(false);
++      this->cg_visual->SetMaterial("Gazebo/Red");
 +    }
 +  }
 +
@@ -963,22 +971,22 @@ Index: server/physics/Body.cc
    childNode = node->GetChildByNSPrefix("sensor");
  
    // Load the sensors
-@@ -134,8 +227,9 @@
+@@ -134,8 +223,9 @@
    }
  
    // If no geoms are attached, then don't let gravity affect the body.
 -  if (this->geoms.size()==0)
-+  if (this->turnGravityOffP->GetValue() || this->geoms.size()==0)
++  if (this->geoms.size()==0 || this->turnGravityOffP->GetValue())
    {
 +    std::cout << "setting gravity to zero for: " << this->nameP->GetValue() << std::endl;
      this->SetGravityMode(false);
    }
  
-@@ -197,6 +291,13 @@
+@@ -197,6 +287,13 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-+// Self-Collision Option
++// Return Self-Collision Setting
 +bool Body::GetSelfCollide()
 +{
 +  return this->selfCollideP->GetValue();
@@ -988,7 +996,7 @@ Index: server/physics/Body.cc
  // Initialize the body
  void Body::Init()
  {
-@@ -218,25 +319,76 @@
+@@ -218,25 +315,68 @@
    std::vector< Sensor* >::iterator sensorIter;
    std::map< std::string, Geom* >::iterator geomIter;
  
@@ -1014,22 +1022,14 @@ Index: server/physics/Body.cc
 +
 +      if (this->mass.mass > 0.0)
 +      {
-+        // CG
-+        if (this->visual)
++        // Visualization of Body CG
++        if (this->cg_visual)
 +        {
-+          this->visual->SetVisible(true);
++          this->cg_visual->SetVisible(true);
 +
 +          // set visual pose of CG (CoM)
 +          // comPose is only good for initial pose, to represent dynamically changing CoM, rotate by pose.rot
-+          this->visual->SetPose(this->pose + this->comPose.RotatePositionAboutOrigin(this->pose.rot.GetInverse()));
-+
-+          // if (this->GetName() == std::string("link2"))
-+          //   std::cout << this->GetName()
-+          //             << " " << this->pose
-+          //             << " " << this->comPose
-+          //             << " " << this->comPose.RotatePositionAboutOrigin(this->pose.rot.GetInverse())
-+          //             << std::endl;
-+
++          this->cg_visual->SetPose(this->pose + this->comPose.RotatePositionAboutOrigin(this->pose.rot.GetInverse()));
 +        }
 +      }
 +    }
@@ -1059,18 +1059,19 @@ Index: server/physics/Body.cc
 +
 +#ifdef TIMING
 +  double tmpT5 = Simulator::Instance()->GetWallTime();
-+  std::cout << "               Sensor Update DT (" << tmpT5-tmpT4 << ")" << std::endl;
++  std::cout << "               ALL Sensors Update DT (" << tmpT5-tmpT4 << ")" << std::endl;
 +  std::cout << "               Body::Update Total DT (" << tmpT5-tmpT1 << ")" << std::endl;
 +#endif
 +
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -268,7 +420,11 @@
+@@ -268,7 +408,12 @@
  void Body::SetPose(const Pose3d &pose)
  {
  
 -  this->pose = pose;
++  // check if pose is NaN, if so, constraint solver likely blew up
 +  if (std::isnan(pose.pos.x) || std::isnan(pose.pos.y) || std::isnan(pose.pos.z) ||
 +      std::isnan(pose.rot.u) || std::isnan(pose.rot.x) || std::isnan(pose.rot.y) || std::isnan(pose.rot.z))
 +    std::cout << "trying to SetPose() for Body(" << this->GetName() << ") with some NaN's (" << pose << ")" << std::endl;
@@ -1079,7 +1080,7 @@ Index: server/physics/Body.cc
  
    if (this->IsStatic())
    {
-@@ -329,7 +485,8 @@
+@@ -329,7 +474,8 @@
      dBodySetPosition(this->bodyId, pos.x, pos.y, pos.z);
  
    // Set the position of the scene node
@@ -1089,7 +1090,7 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -350,7 +507,8 @@
+@@ -350,7 +496,8 @@
    }
  
    // Set the orientation of the scene node
@@ -1099,7 +1100,7 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -368,6 +526,14 @@
+@@ -368,6 +515,14 @@
      pos.x = p[0];
      pos.y = p[1];
      pos.z = p[2];
@@ -1114,7 +1115,7 @@ Index: server/physics/Body.cc
    }
    else
    {
-@@ -394,6 +560,14 @@
+@@ -394,6 +549,14 @@
      rot.x = r[1];
      rot.y = r[2];
      rot.z = r[3];
@@ -1129,7 +1130,7 @@ Index: server/physics/Body.cc
    }
    else
    {
-@@ -404,6 +578,88 @@
+@@ -404,6 +567,88 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -1218,57 +1219,68 @@ Index: server/physics/Body.cc
  // Return the ID of this body
  dBodyID Body::GetId() const
  {
-@@ -505,13 +761,103 @@
+@@ -447,7 +692,7 @@
+   }
+   else if (node->GetName() == "map")
+   {
+-    //this->SetStatic(true);
++    this->SetStatic(true);
+     geom = new MapGeom(this);
+   }
+   else
+@@ -505,13 +750,103 @@
  */
  void Body::UpdateCoM()
  {
 +  if (!this->bodyId)
 +    return;
 +
++  // user can specify custom mass matrix or alternatively, UpdateCoM will calculate CoM for
++  // combined mass of all children geometries.
 +  if (this->customMassMatrix)
 +  {
-+  // Old pose for the CoM
-+  Pose3d oldPose, newPose, tmpPose;
++    // Old pose for the CoM
++    Pose3d oldPose, newPose, tmpPose;
 +
-+  // oldPose is the last comPose
-+  // newPose is mass CoM
-+  oldPose = this->comPose;
++    // oldPose is the last comPose
++    // newPose is mass CoM
++    oldPose = this->comPose;
 +
-+  std::cout << " in UpdateCoM, name: " << this->GetName() << std::endl;
-+  std::cout << " in UpdateCoM, comPose or oldPose: " << this->comPose << std::endl;
++    std::cout << " in UpdateCoM, name: " << this->GetName() << std::endl;
++    std::cout << " in UpdateCoM, comPose or oldPose: " << this->comPose << std::endl;
 +
-+  // New pose for the CoM
-+  newPose.pos.x = this->cx;
-+  newPose.pos.y = this->cy;
-+  newPose.pos.z = this->cz;
++    // New pose for the CoM
++    newPose.pos.x = this->cx;
++    newPose.pos.y = this->cy;
++    newPose.pos.z = this->cz;
 +
-+  std::map< std::string, Geom* >::iterator giter;
-+  // Fixup the poses of the geoms (they are attached to the CoM)
-+  for (giter = this->geoms.begin(); giter != this->geoms.end(); giter++)
-+  {
-+    if (giter->second->IsPlaceable())
++    std::map< std::string, Geom* >::iterator giter;
++    // Fixup the poses of the geoms (they are attached to the CoM)
++    for (giter = this->geoms.begin(); giter != this->geoms.end(); giter++)
 +    {
-+      // FOR GEOMS:
-+      // get pose with comPose set to oldPose
-+      this->comPose = oldPose;
-+      tmpPose = giter->second->GetPose();
++      if (giter->second->IsPlaceable())
++      {
++        // FOR GEOMS:
++        // get pose with comPose set to oldPose
++        this->comPose = oldPose;
++        tmpPose = giter->second->GetPose();
 +
-+      // get pose with comPose set to newPose
-+      this->comPose = newPose;
-+      giter->second->SetPose(tmpPose, false);
++        // get pose with comPose set to newPose
++        this->comPose = newPose;
++        giter->second->SetPose(tmpPose, false);
++      }
 +    }
-+  }
 +
-+  // FOR BODY: Fixup the pose of the CoM (ODE body)
-+  // get pose with comPose set to oldPose
-+  this->comPose = oldPose;
-+  tmpPose = this->GetPose();
-+  // get pose with comPose set to newPose
-+  this->comPose = newPose;
-+  this->SetPose(tmpPose);
++    // FOR BODY: Fixup the pose of the CoM (ODE body)
++    // get pose with comPose set to oldPose
++    this->comPose = oldPose;
++    tmpPose = this->GetPose();
++    // get pose with comPose set to newPose
++    this->comPose = newPose;
++    this->SetPose(tmpPose);
 +
-+  // Settle on the new CoM pose
-+  this->comPose = newPose;
++    // Settle on the new CoM pose
++    this->comPose = newPose;
 +
 +
 +
@@ -1308,8 +1320,6 @@ Index: server/physics/Body.cc
 +    // std::cout << " I[7] " << this->mass.I[7] << std::endl;
 +    // std::cout << " I[8] " << this->mass.I[8] << std::endl;
 +
-+
-+
 +  }
 +  else
 +  {
@@ -1326,13 +1336,7 @@ Index: server/physics/Body.cc
    // Construct the mass matrix by combining all the geoms
    dMassSetZero( &this->mass );
  
-@@ -521,12 +867,21 @@
-     if (giter->second->IsPlaceable() && giter->second->GetGeomId())
-     {
-       dMassAdd( &this->mass, lmass );
-+      std::cout << " in UpdateCoM, mass : " << giter->second->GetName() << ":" << this->mass.c[0] <<","<<this->mass.c[1]<<","<<this->mass.c[2] << std::endl;
-+      std::cout << " in UpdateCoM, lmass : " << giter->second->GetName() << ":" << lmass->c[0] <<","<<lmass->c[1]<<","<<lmass->c[2] << std::endl;
-     }
+@@ -525,6 +860,10 @@
    }
  
    // Old pose for the CoM
@@ -1342,21 +1346,8 @@ Index: server/physics/Body.cc
 +  // newPose is mass CoM
    oldPose = this->comPose;
  
-+  std::cout << " in UpdateCoM, name: " << this->GetName() << std::endl;
-+  std::cout << " in UpdateCoM, comPose or oldPose: " << this->comPose << std::endl;
-+
    if (std::isnan(this->mass.c[0]))
-     this->mass.c[0] = 0;
- 
-@@ -541,24 +896,37 @@
-   newPose.pos.y = this->mass.c[1];
-   newPose.pos.z = this->mass.c[2];
- 
-+  std::cout << " in UpdateCoM, mass : " << this->mass.c[0] <<","<<this->mass.c[1]<<","<<this->mass.c[2] << std::endl;
-+  std::cout << " in UpdateCoM, newPose : " << newPose << std::endl;
-+
-   // Fixup the poses of the geoms (they are attached to the CoM)
-   for (giter = this->geoms.begin(); giter != this->geoms.end(); giter++)
+@@ -546,19 +885,24 @@
    {
      if (giter->second->IsPlaceable())
      {
@@ -1373,25 +1364,21 @@ Index: server/physics/Body.cc
      }
    }
  
-+  std::cout << " in UpdateCoM, new comPose should be same as newPose : " << this->comPose << std::endl;
- 
+-
 -  // Fixup the pose of the CoM (ODE body)
 +  // FOR BODY: Fixup the pose of the CoM (ODE body)
 +  // get pose with comPose set to oldPose
    this->comPose = oldPose;
 -  pose = this->GetPose();
 +  tmpPose = this->GetPose();
-+  std::cout << " in UpdateCoM, tmpPose: " << tmpPose << std::endl;
 +  // get pose with comPose set to newPose
-+  std::cout << " in UpdateCoM, GetPose with comPose=oldPose: " << this->GetPose() << std::endl;
    this->comPose = newPose;
 -  this->SetPose(pose);
-+  std::cout << " in UpdateCoM, GetPose with comPose=newPose: " << this->GetPose() << std::endl;
 +  this->SetPose(tmpPose);
  
  
    // Settle on the new CoM pose
-@@ -570,6 +938,8 @@
+@@ -570,6 +914,8 @@
    // Set the mass matrix
    if (this->mass.mass > 0)
      dBodySetMass( this->bodyId, &this->mass );
@@ -1400,10 +1387,14 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -720,3 +1090,15 @@
+@@ -719,4 +1065,18 @@
+     return NULL;
    }
  }
-  
+- 
++
++////////////////////////////////////////////////////////////////////////////////
++/// Set transparency of the Body (children Geoms and Visuals)
 +void Body::SetTransparency(float t)
 +{
 +  std::map< std::string, Geom* >::iterator giter;
@@ -1424,12 +1415,12 @@ Index: server/physics/Joint.hh
      /// Name of this joint
      private: ParamT<double> *erpP;
      private: ParamT<double> *cfmP;
-+    private: ParamT<double> *stopKpP;
-+    private: ParamT<double> *stopKdP;
++    private: ParamT<double> *stopKpP; // joint limit Kp setting
++    private: ParamT<double> *stopKdP; // joint limit Kd setting
      private: ParamT<std::string> *body1NameP;
      private: ParamT<std::string> *body2NameP;
      private: ParamT<std::string> *anchorBodyNameP;
-@@ -163,6 +165,41 @@
+@@ -163,6 +165,43 @@
      private: ParamT<bool> *provideFeedbackP;
      private: ParamT<double> *fudgeFactorP;
  
@@ -1451,6 +1442,8 @@ Index: server/physics/Joint.hh
 +    private: double current_time_mimic, last_time_mimic;
 +    private: double current_error_mimic, last_error_mimic;
 +
++    // FIXME: latch is a total hack for door simulation, I need to figure a cleaner way to implement this function
++    //        works for now.
 +    private: ParamT<std::string> *latchJointP;
 +    private: ParamT<double> *latchAngleP;
 +    private: ParamT<double> *doorClosedAngleP;
@@ -1488,17 +1481,23 @@ Index: server/physics/ContactParams.cc
 ===================================================================
 --- server/physics/ContactParams.cc	(revision 7358)
 +++ server/physics/ContactParams.cc	(working copy)
-@@ -37,8 +37,8 @@
+@@ -35,11 +35,11 @@
+ // Default constructor
+ ContactParams::ContactParams()
  {
-   this->kp = 10000.0; //dInfinity;
-   this->kd = 0;
+-  this->kp = 10000.0; //dInfinity;
+-  this->kd = 0;
 -  this->bounce = 0.1;
 -  this->bounceVel = 0.1;
-+  this->bounce = 0.0;
-+  this->bounceVel = 0.0;
-   this->softCfm = 0.01;
+-  this->softCfm = 0.01;
++  this->kp = 100000000.0; //dInfinity; // make stiffer
++  this->kd = 1.0; // more damping for constraints
++  this->bounce = 0.0; // try not to bounce off each others, coefficient of restitution
++  this->bounceVel = 10.0; // minimum velocity before bounce is applied
++  this->softCfm = 0.01; // not used
  
    this->mu1 = dInfinity;
+   this->mu2 = dInfinity;
 Index: server/physics/RayGeom.cc
 ===================================================================
 --- server/physics/RayGeom.cc	(revision 7358)
@@ -1587,7 +1586,30 @@ Index: server/physics/ode/ODEPhysics.hh
 ===================================================================
 --- server/physics/ode/ODEPhysics.hh	(revision 7358)
 +++ server/physics/ode/ODEPhysics.hh	(working copy)
-@@ -126,13 +126,16 @@
+@@ -32,6 +32,9 @@
+ #include "Param.hh"
+ #include "PhysicsEngine.hh"
+ 
++#include <boost/thread/thread.hpp>
++#include <boost/thread/mutex.hpp>
++
+ namespace gazebo
+ {
+   class SphereGeom;
+@@ -98,8 +101,11 @@
+   /// \brief Initialize the ODE engine
+   public: virtual void Init();
+ 
++  /// \brief Update the ODE collision
++  public: virtual void UpdateCollision();
++
+   /// \brief Update the ODE engine
+-  public: virtual void Update();
++  public: virtual void UpdatePhysics();
+ 
+   /// \brief Finilize the ODE engine
+   public: virtual void Fini();
+@@ -126,13 +132,16 @@
    private: dWorldID worldId;
  
    /// \brief Top-level space for all sub-spaces/geoms
@@ -1656,7 +1678,7 @@ Index: server/physics/ode/ODEPhysics.cc
    stream << prefix << "</physics:ode>\n";
  }
  
-@@ -126,20 +138,38 @@
+@@ -126,20 +138,48 @@
    dWorldSetGravity(this->worldId, g.x, g.y, g.z);
    dWorldSetCFM(this->worldId, this->globalCFMP->GetValue());
    dWorldSetERP(this->worldId, this->globalERPP->GetValue());
@@ -1666,8 +1688,10 @@ Index: server/physics/ode/ODEPhysics.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
- // Update the ODE engine
- void ODEPhysics::Update()
+-// Update the ODE engine
+-void ODEPhysics::Update()
++// Update the ODE collisions, create joints
++void ODEPhysics::UpdateCollision()
  {
 +#ifdef TIMING
 +  double tmpT1 = Simulator::Instance()->GetWallTime();
@@ -1676,9 +1700,19 @@ Index: server/physics/ode/ODEPhysics.cc
    // Do collision detection; this will add contacts to the contact group
    dSpaceCollide( this->spaceId, this, CollisionCallback );
  
++  //usleep(1000000);
 +#ifdef TIMING
 +  double tmpT2 = Simulator::Instance()->GetWallTime();
 +  std::cout << "      Collision DT (" << tmpT2-tmpT1 << ")" << std::endl;
++#endif
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// Update the ODE engine
++void ODEPhysics::UpdatePhysics()
++{
++#ifdef TIMING
++  double tmpT1 = Simulator::Instance()->GetWallTime();
 +#endif
 +
    // Update the dynamical model
@@ -1691,14 +1725,14 @@ Index: server/physics/ode/ODEPhysics.cc
  
 +#ifdef TIMING
 +  double tmpT3 = Simulator::Instance()->GetWallTime();
-+  std::cout << "      ODE step DT (" << tmpT3-tmpT2 << ")" << std::endl;
-+  std::cout << "  Physics Total DT (" << tmpT3-tmpT1 << ")" << std::endl;
++  std::cout << "      ODE step DT (" << tmpT3-tmpT1 << ")" << std::endl;
++  //std::cout << "  Physics Total DT (" << tmpT3-tmpT1 << ")" << std::endl;
 +#endif
 +
    // Very important to clear out the contact group
    dJointGroupEmpty( this->contactGroup );
  
-@@ -263,18 +293,19 @@
+@@ -263,18 +303,19 @@
            continue;
  
          contact.geom = contactGeoms[i];
@@ -1708,9 +1742,10 @@ Index: server/physics/ode/ODEPhysics.cc
 +        //contact.surface.mode = dContactSlip1 | dContactSlip2 | 
 +        //                       dContactSoftERP | dContactSoftCFM |  
 +        //                       dContactBounce | dContactMu2 | dContactApprox1;
-+        contact.surface.mode = dContactApprox1 | dContactBounce;
++        contact.surface.mode = dContactSoftERP | dContactSoftCFM | dContactApprox1;
++        // with dContactSoftERP | dContactSoftCFM the test_pr2_collision overshoots the cup
  
- 
+-
          // Compute the CFM and ERP by assuming the two bodies form a
          // spring-damper system.
          h = self->stepTimeP->GetValue();
@@ -1723,14 +1758,12 @@ Index: server/physics/ode/ODEPhysics.cc
  
          contact.surface.mu = MIN(geom1->contact->mu1, geom2->contact->mu1);
          contact.surface.mu2 = MIN(geom1->contact->mu2, geom2->contact->mu2);
-@@ -290,6 +321,13 @@
+@@ -290,6 +331,11 @@
          dJointID c = dJointCreateContact (self->worldId,
                                            self->contactGroup, &contact);
  
-+        // create a list of "dJointID *c" in Geom, so we can do a
++        // save "dJointID *c" in Geom, so we can do a
 +        // dJointFeedback *jft = dJointGetFeedback( c[i] ) later
-+        //geom1->cID.push_back(c);
-+        //geom2->cID.push_back(c);
 +        geom1->cID = c;
 +        geom2->cID = c;
 +
@@ -2793,16 +2826,17 @@ Index: server/sensors/Sensor.cc
 ===================================================================
 --- server/sensors/Sensor.cc	(revision 7358)
 +++ server/sensors/Sensor.cc	(working copy)
-@@ -33,6 +33,8 @@
+@@ -33,6 +33,9 @@
  #include "ControllerFactory.hh"
  #include "Simulator.hh"
  #include "Sensor.hh"
 +#include "Simulator.hh"
 +#include "PhysicsEngine.hh"
++#include "Global.hh"
  
  using namespace gazebo;
  
-@@ -71,6 +73,14 @@
+@@ -71,6 +74,14 @@
  
    this->LoadController( node->GetChildByNSPrefix("controller") );
    this->LoadChild(node);
@@ -2817,11 +2851,18 @@ Index: server/sensors/Sensor.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -104,12 +114,14 @@
+@@ -104,14 +115,29 @@
  /// Update the sensor
  void Sensor::Update()
  {
 -  if (this->lastUpdate + this->updatePeriod <= Simulator::Instance()->GetSimTime())
++
++#ifdef TIMING
++  double tmpT4 = Simulator::Instance()->GetWallTime();
++#endif
++
++
++
 +  double physics_dt = World::Instance()->GetPhysicsEngine()->GetStepTime();
 +  if (round((Simulator::Instance()->GetSimTime()-this->lastUpdate-this->updatePeriod)/physics_dt) >= 0)
    {
@@ -2832,8 +2873,16 @@ Index: server/sensors/Sensor.cc
 +  // update any controllers that are children of sensors, e.g. ros_bumper
    if (this->controller)
      this->controller->Update();
++
++#ifdef TIMING
++  double tmpT5 = Simulator::Instance()->GetWallTime();
++  std::cout << "               Sensor::Update (" << this->GetName() << ") dt (" << tmpT5-tmpT4 << ")" << std::endl;
++#endif
++
  }
-@@ -185,4 +197,11 @@
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -185,4 +211,11 @@
    this->active = value;
  }
  
@@ -2845,6 +2894,49 @@ Index: server/sensors/Sensor.cc
 +}
  
 +
+Index: server/Model.hh
+===================================================================
+--- server/Model.hh	(revision 7358)
++++ server/Model.hh	(working copy)
+@@ -39,6 +39,10 @@
+ #include "Entity.hh"
+ #include "gazebo.h"
+ 
++#include <boost/thread/mutex.hpp>
++#include <boost/bind.hpp>
++#include <boost/thread/thread.hpp>
++#include <boost/thread/condition.hpp>
+ 
+ namespace gazebo
+ {
+@@ -160,6 +164,9 @@
+   
+     /// \brief Load a renderable model (like a light source).
+     private: void LoadRenderable(XMLConfigNode *node);
++
++    /// \brief threaded flag set?
++    private: bool IsThreaded();
+   
+     /// \brief Type of the model (such as Pioneer2DX, or SimpleSolid)
+     private: std::string type;
+@@ -193,8 +200,8 @@
+     private: ParamT<Quatern> *rpyP;
+     private: ParamT<std::string> *parentBodyNameP;
+     private: ParamT<std::string> *myBodyNameP;
++    private: ParamT<bool> *threadP;
+ 
+-
+     // Name of a light (if the model is renderable:light)
+     private: std::string lightName;
+ 
+@@ -202,6 +209,7 @@
+       private: PyObject *pModule;
+       private: PyObject *pFuncUpdate;
+     */
++
+   };
+   /// \}
+ }
 Index: server/Global.hh
 ===================================================================
 --- server/Global.hh	(revision 7358)
@@ -3249,7 +3341,22 @@ Index: server/main.cc
        case 'p':
          optPhysicsEnabled = false;
          break;
-@@ -260,6 +266,7 @@
+@@ -247,6 +253,14 @@
+ int main(int argc, char **argv)
+ {
+ 
++
++  // force a cpu affinity for CPU 0, this slow down sim by about 4X
++  // cpu_set_t cpuSet;
++  // CPU_ZERO(&cpuSet);
++  // CPU_SET(0, &cpuSet);
++  // sched_setaffinity( 0, sizeof(cpuSet), &cpuSet);
++
++
+   //Application Setup
+   if (ParseArgs(argc, argv) != 0)
+     return -1;
+@@ -260,6 +274,7 @@
    }
  
    gazebo::Simulator::Instance()->SetGuiEnabled( optGuiEnabled );
@@ -3635,6 +3742,192 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
+Index: server/Model.cc
+===================================================================
+--- server/Model.cc	(revision 7358)
++++ server/Model.cc	(working copy)
+@@ -46,7 +46,12 @@
+ #include "ControllerFactory.hh"
+ #include "IfaceFactory.hh"
+ #include "Model.hh"
++#include "Simulator.hh"
+ 
++#ifdef TIMING
++#include "Simulator.hh"// for timing
++#endif
++
+ using namespace gazebo;
+ 
+ uint Model::lightNumber = 0;
+@@ -68,6 +73,8 @@
+ 
+   this->rpyP = new ParamT<Quatern>("rpy", Quatern(1,0,0,0), 0);
+   this->rpyP->Callback( &Model::SetRotation, this);
++
++  this->threadP = new ParamT<bool>("model_thread",false,0);
+   Param::End();
+ 
+   this->parentBodyNameP = NULL;
+@@ -101,8 +108,14 @@
+   }
+   this->controllers.clear();
+ 
++  GZ_DELETE(this->xyzP);
++  GZ_DELETE(this->rpyP);
++
+   GZ_DELETE(this->parentBodyNameP);
+   GZ_DELETE(this->myBodyNameP);
++
++  GZ_DELETE(this->threadP);
++
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -118,6 +131,7 @@
+   this->canonicalBodyNameP->Load(node);
+   this->xyzP->Load(node);
+   this->rpyP->Load(node);
++  this->threadP->Load(node);
+ 
+   this->xmlNode = node;
+   this->type=node->GetName();
+@@ -127,7 +141,10 @@
+   if (this->type == "physical")
+     this->LoadPhysical(node);
+   else if (this->type == "renderable")
+-    this->LoadRenderable(node);
++  {
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      this->LoadRenderable(node);
++  }
+   else if (this->type != "empty")
+   {
+     gzthrow("Invalid model type[" + this->type + "]\n");
+@@ -172,8 +189,6 @@
+   // Record the model's initial pose (for reseting)
+   this->SetInitPose(pose);
+ 
+-  return 0;
+-
+   // Get the name of the python module
+   /*this->pName.reset(PyString_FromString(node->GetString("python","",0).c_str()));
+   //this->pName.reset(PyString_FromString("pioneer2dx"));
+@@ -193,6 +208,9 @@
+       this->pFuncUpdate = NULL;
+   }
+   */
++
++  return 0;
++
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -255,10 +273,11 @@
+   }
+   else
+   {
+-    if (!this->lightName.empty())
+-    {
+-      OgreCreator::SaveLight(p, this->lightName, stream);
+-    }
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      if (!this->lightName.empty())
++      {
++        OgreCreator::SaveLight(p, this->lightName, stream);
++      }
+   }
+ 
+   if (this->parentBodyNameP && this->myBodyNameP)
+@@ -316,6 +335,10 @@
+ 
+   Pose3d bodyPose, newPose, oldPose;
+ 
++#ifdef TIMING
++  double tmpT1 = Simulator::Instance()->GetWallTime();
++#endif
++
+   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
+   {
+     if (bodyIter->second)
+@@ -324,6 +347,11 @@
+     }
+   }
+ 
++#ifdef TIMING
++  double tmpT2 = Simulator::Instance()->GetWallTime();
++  std::cout << "      ALL Bodies DT (" << this->GetName() << ") (" << tmpT2-tmpT1 << ")" << std::endl;
++#endif
++
+   for (contIter=this->controllers.begin();
+        contIter!=this->controllers.end(); contIter++)
+   {
+@@ -332,6 +360,11 @@
+       contIter->second->Update();
+   }
+ 
++#ifdef TIMING
++  double tmpT3 = Simulator::Instance()->GetWallTime();
++  std::cout << "      ALL Controllers DT (" << this->GetName() << ") (" << tmpT3-tmpT2 << ")" << std::endl;
++#endif
++
+   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
+   {
+     jointIter->second->Update();
+@@ -350,9 +383,26 @@
+     this->rpyP->SetValue(this->pose.rot);
+   }
+ 
++#ifdef TIMING
++  double tmpT4 = Simulator::Instance()->GetWallTime();
++  std::cout << "      ALL Joints/canonical body (" << this->GetName() << ") DT (" << tmpT4-tmpT3 << ")" << std::endl;
++#endif
++
++
++#ifdef TIMING
++  int update_error = this->UpdateChild();
++  double tmpT5 = Simulator::Instance()->GetWallTime();
++  std::cout << "      ALL child (" << this->GetName() << ") update DT (" << tmpT5-tmpT4 << ")" << std::endl;
++  std::cout << "      Models::Update() (" << this->GetName() << ") Total DT (" << tmpT5-tmpT1 << ")" << std::endl;
++  return update_error;
++#else
+   return this->UpdateChild();
++#endif
++
++
+ }
+ 
++
+ ////////////////////////////////////////////////////////////////////////////////
+ // Finalize the model
+ int Model::Fini()
+@@ -730,10 +780,11 @@
+   body->SetPose(Pose3d());
+   this->bodies[body->GetName()] = body;
+ 
+-  if ((childNode = node->GetChild("light")))
+-  {
+-    this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
+-  }
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if ((childNode = node->GetChild("light")))
++    {
++      this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
++    }
+ 
+ }
+ 
+@@ -779,3 +830,11 @@
+   }
+ 
+ }
++
++////////////////////////////////////////////////////////////////////////////////
++// Load a physical model
++bool Model::IsThreaded()
++{
++  return this->threadP->GetValue();
++}
++
 Index: server/gui/GLWindow.hh
 ===================================================================
 --- server/gui/GLWindow.hh	(revision 7358)
@@ -3987,125 +4280,6 @@ Index: server/gui/GLWindow.cc
          case XK_Up:
          case XK_w:
            this->directionVec.x += this->moveAmount;
-Index: server/Model.cc
-===================================================================
---- server/Model.cc	(revision 7358)
-+++ server/Model.cc	(working copy)
-@@ -46,7 +46,12 @@
- #include "ControllerFactory.hh"
- #include "IfaceFactory.hh"
- #include "Model.hh"
-+#include "Simulator.hh"
- 
-+#ifdef TIMING
-+#include "Simulator.hh"// for timing
-+#endif
-+
- using namespace gazebo;
- 
- uint Model::lightNumber = 0;
-@@ -127,7 +132,10 @@
-   if (this->type == "physical")
-     this->LoadPhysical(node);
-   else if (this->type == "renderable")
--    this->LoadRenderable(node);
-+  {
-+    if (Simulator::Instance()->GetRenderEngineEnabled())
-+      this->LoadRenderable(node);
-+  }
-   else if (this->type != "empty")
-   {
-     gzthrow("Invalid model type[" + this->type + "]\n");
-@@ -255,10 +263,11 @@
-   }
-   else
-   {
--    if (!this->lightName.empty())
--    {
--      OgreCreator::SaveLight(p, this->lightName, stream);
--    }
-+    if (Simulator::Instance()->GetRenderEngineEnabled())
-+      if (!this->lightName.empty())
-+      {
-+        OgreCreator::SaveLight(p, this->lightName, stream);
-+      }
-   }
- 
-   if (this->parentBodyNameP && this->myBodyNameP)
-@@ -305,7 +314,7 @@
- 
-   return this->InitChild();
- }
--
-+  
- ////////////////////////////////////////////////////////////////////////////////
- // Update the model
- int Model::Update()
-@@ -316,6 +325,11 @@
- 
-   Pose3d bodyPose, newPose, oldPose;
- 
-+#ifdef TIMING
-+  double tmpT1 = Simulator::Instance()->GetWallTime();
-+  std::cout << "  Model Name (" << this->GetName() << ")" << std::endl;
-+#endif
-+
-   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
-   {
-     if (bodyIter->second)
-@@ -324,6 +338,11 @@
-     }
-   }
- 
-+#ifdef TIMING
-+  double tmpT2 = Simulator::Instance()->GetWallTime();
-+  std::cout << "      ALL Bodies DT (" << tmpT2-tmpT1 << ")" << std::endl;
-+#endif
-+
-   for (contIter=this->controllers.begin();
-        contIter!=this->controllers.end(); contIter++)
-   {
-@@ -332,6 +351,11 @@
-       contIter->second->Update();
-   }
- 
-+#ifdef TIMING
-+  double tmpT3 = Simulator::Instance()->GetWallTime();
-+  std::cout << "      ALL Controllers DT (" << tmpT3-tmpT2 << ")" << std::endl;
-+#endif
-+
-   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
-   {
-     jointIter->second->Update();
-@@ -350,6 +374,12 @@
-     this->rpyP->SetValue(this->pose.rot);
-   }
- 
-+#ifdef TIMING
-+  double tmpT4 = Simulator::Instance()->GetWallTime();
-+  std::cout << "      ALL Joints/canonical body DT (" << tmpT4-tmpT3 << ")" << std::endl;
-+  std::cout << "      Models::Update() Total DT (" << tmpT4-tmpT1 << ")" << std::endl;
-+#endif
-+
-   return this->UpdateChild();
- }
- 
-@@ -730,10 +760,11 @@
-   body->SetPose(Pose3d());
-   this->bodies[body->GetName()] = body;
- 
--  if ((childNode = node->GetChild("light")))
--  {
--    this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
--  }
-+  if (Simulator::Instance()->GetRenderEngineEnabled())
-+    if ((childNode = node->GetChild("light")))
-+    {
-+      this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
-+    }
- 
- }
- 
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 7358)
@@ -4137,7 +4311,7 @@ Index: server/World.hh
    /// \brief Load all entities
    /// \param node XMLConfg node pointer
    /// \param parent Parent of the model to load
-@@ -186,6 +206,9 @@
+@@ -186,8 +206,12 @@
    /// Simulation interface
    private: SimulationIface *simIface;
  
@@ -4146,7 +4320,10 @@ Index: server/World.hh
 +
    private: friend class DestroyerT<World>;
    private: friend class SingletonT<World>;
++
  };
+ 
+ 
 Index: server/Pose3d.hh
 ===================================================================
 --- server/Pose3d.hh	(revision 7358)
@@ -4205,38 +4382,6 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-Index: server/controllers/factory/Factory.cc
-===================================================================
---- server/controllers/factory/Factory.cc	(revision 7358)
-+++ server/controllers/factory/Factory.cc	(working copy)
-@@ -76,6 +76,8 @@
- // Initialize the controller
- void Factory::InitChild()
- {
-+  // initialize newModel to blank
-+  strcpy((char*)this->factoryIface->data->newModel,"");
- }
- 
- ////////////////////////////////////////////////////////////////////////////////
-@@ -83,8 +85,10 @@
- void Factory::UpdateChild()
- {
-   // If there is a string, then add the contents to the world
-+  this->factoryIface->Lock(1);
-   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
-   {
-+    //std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
-     std::string xmlString;
-     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
- 
-@@ -121,6 +125,7 @@
- 
-     strcpy((char*)this->factoryIface->data->deleteModel,"");
-   }
-+  this->factoryIface->Unlock();
- 
- }
- 
 Index: server/controllers/Controller.cc
 ===================================================================
 --- server/controllers/Controller.cc	(revision 7358)
@@ -4286,7 +4431,7 @@ Index: server/controllers/Controller.cc
  
    childNode = node->GetChildByNSPrefix("interface");
  
-@@ -178,12 +189,31 @@
+@@ -178,12 +189,30 @@
  /// Update the controller. Called every cycle.
  void Controller::Update()
  {
@@ -4314,13 +4459,12 @@ Index: server/controllers/Controller.cc
        lastUpdate = Simulator::Instance()->GetSimTime();
 +#ifdef TIMING
 +      double tmpT2 = Simulator::Instance()->GetWallTime();
-+      std::cout << "           Controller Name (" << this->GetName() << ")" << std::endl;
-+      std::cout << "               UpdateChild dt (" << tmpT2-tmpT1 << ")" << std::endl;
++      std::cout << "           Controller::Update() Name (" << this->GetName() << ") dt (" << tmpT2-tmpT1 << ")" << std::endl;
 +#endif
      }
    }
  }
-@@ -210,6 +240,10 @@
+@@ -210,6 +239,10 @@
  {
    std::vector<Iface*>::const_iterator iter;
  
@@ -4331,6 +4475,38 @@ Index: server/controllers/Controller.cc
    for (iter=this->ifaces.begin(); iter!=this->ifaces.end(); iter++)
    {
      if ((*iter)->GetOpenCount() > 0)
+Index: server/controllers/factory/Factory.cc
+===================================================================
+--- server/controllers/factory/Factory.cc	(revision 7358)
++++ server/controllers/factory/Factory.cc	(working copy)
+@@ -76,6 +76,8 @@
+ // Initialize the controller
+ void Factory::InitChild()
+ {
++  // initialize newModel to blank
++  strcpy((char*)this->factoryIface->data->newModel,"");
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -83,8 +85,10 @@
+ void Factory::UpdateChild()
+ {
+   // If there is a string, then add the contents to the world
++  this->factoryIface->Lock(1);
+   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
+   {
++    //std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
+     std::string xmlString;
+     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
+ 
+@@ -121,6 +125,7 @@
+ 
+     strcpy((char*)this->factoryIface->data->deleteModel,"");
+   }
++  this->factoryIface->Unlock();
+ 
+ }
+ 
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
 --- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7358)
@@ -4376,17 +4552,18 @@ Index: server/World.cc
  
  #include "Global.hh"
  #include "GazeboError.hh"
-@@ -57,6 +58,9 @@
+@@ -57,6 +58,10 @@
    this->server = NULL;
    this->simIface = NULL;
  
 +  this->simTime = 0.0;
 +  this->pauseTime = 0.0;
 +  this->startTime = 0.0;
++
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -172,6 +176,7 @@
+@@ -172,6 +177,7 @@
  
    this->physicsEngine->Init();
  
@@ -4394,9 +4571,12 @@ Index: server/World.cc
    this->toAddModels.clear();
    this->toDeleteModels.clear();
  
-@@ -185,6 +190,12 @@
-   std::vector< Model* >::iterator miter;
-   std::vector< Model* >::iterator miter2;
+@@ -182,10 +188,15 @@
+ // Update the world
+ int World::Update()
+ {
+-  std::vector< Model* >::iterator miter;
+-  std::vector< Model* >::iterator miter2;
  
 +  this->simTime += this->physicsEngine->GetStepTime();
 +
@@ -4405,9 +4585,11 @@ Index: server/World.cc
 +#endif
 +
    // Update all the models
++  std::vector< Model* >::iterator miter;
    for (miter=this->models.begin(); miter!=this->models.end(); miter++)
    {
-@@ -194,14 +205,33 @@
+     if (*miter)
+@@ -194,14 +205,47 @@
      }
    }
  
@@ -4415,45 +4597,61 @@ Index: server/World.cc
 +  double tmpT2 = this->GetWallTime();
 +  std::cout << " World::Update() ALL Models update DT(" << tmpT2-tmpT1 << ")" << std::endl;
 +#endif
++// if using threads, the sim time is actually a bit slower,
++// with pr2_wg, the collision time is roughly 1ms, so is the time it takes to setup a new thread
++// models update takes about 1.7ms, not much gain here by making them into 2 threads.
 +
    if (!Simulator::Instance()->IsPaused() &&
         Simulator::Instance()->GetPhysicsEnabled())
    {
-     this->physicsEngine->Update();
+-    this->physicsEngine->Update();
++    this->physicsEngine->UpdateCollision();
    }
+ 
++#ifdef TIMING
++  double tmpT3 = this->GetWallTime();
++  std::cout << " World::Update() Collision DT(" << tmpT3-tmpT2 << ")" << std::endl;
++#endif
++
++  if (!Simulator::Instance()->IsPaused() &&
++       Simulator::Instance()->GetPhysicsEnabled())
++  {
++    this->physicsEngine->UpdatePhysics();
++  }
 +  else
 +  {
 +    this->pauseTime += this->physicsEngine->GetStepTime();
 +  }
- 
++
 +#ifdef TIMING
-+  double tmpT3 = this->GetWallTime();
-+  std::cout << " World::Update() Physics engine DT(" << tmpT3-tmpT2 << ")" << std::endl;
++  double tmpT4 = this->GetWallTime();
++  std::cout << " World::Update() Physics engine DT(" << tmpT4-tmpT3 << ")" << std::endl;
 +#endif
 +
    this->UpdateSimulationIface();
  
 +#ifdef TIMING
-+  double tmpT4 = this->GetWallTime();
-+  std::cout << " World::Update() Iface DT(" << tmpT4-tmpT3 << ")" << std::endl;
++  double tmpT5 = this->GetWallTime();
++  std::cout << " World::Update() Iface DT(" << tmpT5-tmpT4 << ")" << std::endl;
 +#endif
 +
    // Copy the newly created models into the main model vector
    std::copy(this->toAddModels.begin(), this->toAddModels.end(),
              std::back_inserter(this->models));
-@@ -219,6 +249,11 @@
+@@ -219,6 +263,12 @@
  
    this->toDeleteModels.clear();
  
 +#ifdef TIMING
-+  double tmpT5 = this->GetWallTime();
-+  std::cout << " World::Update() add/del models dt(" << tmpT5-tmpT4 << ")" << std::endl;
++  double tmpT6 = this->GetWallTime();
++  std::cout << " World::Update() add/del models dt(" << tmpT6-tmpT5 << ")" << std::endl;
 +#endif
++
 +
    return 0;
  }
  
-@@ -273,6 +308,41 @@
+@@ -273,6 +323,41 @@
    return this->physicsEngine;
  }
  
@@ -4563,12 +4761,14 @@ Index: SConstruct
  OGRE_VERSION = '= 1.4.9'
  ODE_VERSION = '>= 0.10.1'
  
-@@ -21,20 +21,26 @@
+@@ -21,20 +21,29 @@
  opts.Add('destdir', 'The root directory to install into. Useful mainly for binary package building', '/')
  opts.Add('mode','Defines how Gazebo will be built, options available: optimized, profile, debug','debug')
  opts.Add('with_audio','Builds support for 3d sound. Options available: no, yes ', 'no')
 +opts.Add('boost_lflags','boost link flags', '')
 +opts.Add('boost_cflags','boost compile flags', '')
++opts.Add('intel_lflags','intel link flags', '')
++opts.Add('intel_cflags','intel compile flags', '')
  
  #
  # 3rd party packages
@@ -4589,10 +4789,11 @@ Index: SConstruct
  #
 +#  CC = '/opt/intel/cc/10.1.008/bin/icc',
 +#  CXX = '/opt/intel/cc/10.1.008/bin/icpc',
++#  LD = '/opt/intel/cc/10.1.008/bin/xild',
  env = Environment (
    CC = 'g++',
  
-@@ -61,7 +67,7 @@
+@@ -61,7 +70,7 @@
    LIBPATH=Split('#libgazebo'),
      
    #LIBS=Split('gazebo boost_python')
@@ -4601,12 +4802,15 @@ Index: SConstruct
    LINKFLAGS=Split('-export-dynamic'),
  
    TARFLAGS = '-c -z',
-@@ -70,6 +76,16 @@
+@@ -70,6 +79,19 @@
    options=opts
  )
  
 +env['CCFLAGS']   +=   Split(env['boost_cflags'])
 +env['LINKFLAGS'] +=   Split(env['boost_lflags'])
++
++env['CCFLAGS']   +=   Split(env['intel_cflags'])
++env['LINKFLAGS'] +=   Split(env['intel_lflags'])
 +
 +# Do not use boost_signals if boost_lflags are specified
 +if not env['boost_lflags']:
@@ -4618,7 +4822,7 @@ Index: SConstruct
  Help(opts.GenerateHelpText(env))
  
  if env['destdir'] != '/':
-@@ -86,7 +102,7 @@
+@@ -86,7 +108,7 @@
  rcconfig = env.RCConfig(target='gazeborc', source=Value(install_prefix))
  
  # DEFAULT list of subdirectories to build
@@ -4627,7 +4831,7 @@ Index: SConstruct
  
  # Set the compile mode
  if env['mode'] == 'debug':
-@@ -154,9 +170,10 @@
+@@ -154,9 +176,10 @@
          Exit(1)
  
  # Check for trimesh support in ODE

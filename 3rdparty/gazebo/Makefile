@@ -7,7 +7,6 @@ SVN_REVISION = -r 7358
 SVN_PATCH = gazebo_patch.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
-
 OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
 FI_PKG = $(shell rospack find freeimage)/freeimage/lib/pkgconfig
@@ -21,6 +20,14 @@ TESTROOT = $(shell rospack find gazebo)/test-gazebo
 
 BOOST_CFLAGS = $(shell rosboost-cfg --cflags)
 BOOST_LFLAGS = $(shell rosboost-cfg --lflags signals,thread)
+
+# these flags used to build opende
+# ipo seems to break ogre and opende, use ip instead
+#INTEL_OPTIONS = CC='/opt/intel/cc/10.1.008/bin/icc' CXX='/opt/intel/cc/10.1.008/bin/icpc' LD='/opt/intel/cc/10.1.008/bin/xild'
+INTEL_C_FLAGS     =  -march=core2 -msse3 -ip  -no-prec-div         -parallel -O3 -fPIC -I$(ROOT)/include
+INTEL_C_FLAGS_OMP =  -march=core2 -msse3 -ip  -no-prec-div -openmp -parallel -O3 -fPIC -I$(ROOT)/include
+INTEL_LD_FLAGS     = -Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread -lintlc
+INTEL_LD_FLAGS_OMP = -Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread -lintlc -lompstub -liomp5 -lomp_db
 
 build: SVN_UP_REVERT_PATCH gazebo
 
