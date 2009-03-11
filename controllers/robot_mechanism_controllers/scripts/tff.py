@@ -36,7 +36,7 @@ import sys
 from std_msgs.msg import *
 from robot_msgs.msg import *
 
-pub = rospy.Publisher('/cartesian_tff/command', TaskFrameFormalism)
+pub = rospy.Publisher('/cartesian_tff_right/command', TaskFrameFormalism)
 
 def p(mx, vx, my, vy, mz, vz, mxx, vxx, myy, vyy, mzz, vzz):
   m = TaskFrameFormalism()

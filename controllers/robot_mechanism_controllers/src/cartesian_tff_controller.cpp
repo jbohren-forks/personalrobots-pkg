@@ -136,6 +136,7 @@ bool CartesianTFFController::start()
 
   // set initial position, twist
   FrameVel frame_twist; 
+  robot_.getVelocities(robot_state_->joint_states_, jnt_posvel_);
   jnt_to_twist_solver_->JntToCart(jnt_posvel_, frame_twist);
   pose_meas_old_ = frame_twist.value();
   position_ = Twist::Zero();
