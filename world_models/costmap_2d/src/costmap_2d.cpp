@@ -72,15 +72,15 @@ namespace costmap_2d {
   CostMap2D::CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data,
       double resolution, unsigned char threshold, double maxZ, double zLB, double zUB,
       double inflationRadius,	double circumscribedRadius, double inscribedRadius, double weight, 
-		       double  obstacleRange, double raytraceRange, double raytraceWindow)
+      double  obstacleRange, double raytraceRange, double raytraceWindow)
     : ObstacleMapAccessor(0, 0, width, height, resolution),
-      maxZ_(maxZ), zLB_(zLB), zUB_(zUB),
-      inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
-      circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
-      inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
-      weight_(std::max(0.0, std::min(weight, 1.0))), raytraceWindow_(raytraceWindow),
-      sq_obstacle_range_(obstacleRange * obstacleRange), sq_raytrace_range_((raytraceRange / resolution) * (raytraceRange / resolution)), 
-      staticData_(NULL), xy_markers_(NULL), kernelWidth_((circumscribedRadius_ * 2) + 1), kernelData_(NULL), raytraceCells_ (raytraceWindow_ / resolution)
+    maxZ_(maxZ), zLB_(zLB), zUB_(zUB),
+    inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
+    circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
+    inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
+    weight_(std::max(0.0, std::min(weight, 1.0))), raytraceWindow_(raytraceWindow),
+    sq_obstacle_range_(obstacleRange * obstacleRange), sq_raytrace_range_((raytraceRange / resolution) * (raytraceRange / resolution)), 
+    staticData_(NULL), xy_markers_(NULL), kernelWidth_((circumscribedRadius_ * 2) + 1), kernelData_(NULL), raytraceCells_ (raytraceWindow_ / resolution)
   {
     if(weight != weight_){
       ROS_INFO("Warning - input weight %f is invalid and has been set to %f\n", weight, weight_);
@@ -115,7 +115,7 @@ namespace costmap_2d {
 
         // If the source value is greater than the threshold but less than the NO_INFORMATION LIMIT
         // then set it to the threshold. 
-	// Workaround for miletone 1. We treat no information as a lethal obstacle.
+        // Workaround for miletone 1. We treat no information as a lethal obstacle.
         if (/*costData_[ind] != NO_INFORMATION &&  */costData_[ind] >= threshold)
           costData_[ind] = LETHAL_OBSTACLE;
 
@@ -164,9 +164,9 @@ namespace costmap_2d {
     const unsigned int originY = (my < circumscribedRadius_) ? 0 : std::min(height_ - kernelWidth_ - 1, my - circumscribedRadius_);
     for (unsigned int i = 0; i < kernelWidth_; i++){
       for(unsigned int j = 0; j < kernelWidth_; j++){
-	unsigned int kernelIndex = (j * kernelWidth_) + i;
-	unsigned int costMapIndex = (originY + j) * width_ + originX + i;
-	kernelData_[kernelIndex] = costData_[costMapIndex];
+        unsigned int kernelIndex = (j * kernelWidth_) + i;
+        unsigned int costMapIndex = (originY + j) * width_ + originX + i;
+        kernelData_[kernelIndex] = costData_[costMapIndex];
       }
     }
 
@@ -176,9 +176,9 @@ namespace costmap_2d {
     // Now repeat the iteration over the kernel, but this time write the data back
     for (unsigned int i = 0; i < kernelWidth_; i++){
       for(unsigned int j = 0; j < kernelWidth_; j++){
-	unsigned int kernelIndex = (j * kernelWidth_) + i;
-	unsigned int costMapIndex = (originY + j) * width_ + originX + i;
-	costData_[costMapIndex] = std::min(costData_[costMapIndex], kernelData_[kernelIndex]);
+        unsigned int kernelIndex = (j * kernelWidth_) + i;
+        unsigned int costMapIndex = (originY + j) * width_ + originX + i;
+        costData_[costMapIndex] = std::min(costData_[costMapIndex], kernelData_[kernelIndex]);
       }
     }
   }
@@ -227,7 +227,7 @@ namespace costmap_2d {
    * @brief Update the cost map based on aggregate observations
    * @todo Deprecate use of wx and wy here
    */
-  void CostMap2D::updateDynamicObstacles(double wx, double wy, const std::vector<Observation>& observations)
+  void CostMap2D::updateDynamicObstacles(double wx, double wy, const std::vector<Observation>& observations, const Observation* raytrace_obs)
   {
     // Revert to initial state
     memset(xy_markers_, 0, width_ * height_ * sizeof(bool));
@@ -255,7 +255,7 @@ namespace costmap_2d {
         //Filter out points that are outside of the max range we'll consider
         //It is important to raytrace to these points, however.
         if(sq_dist >= sq_obstacle_range_){
-          if(in_projection_range(cloud.pts[i].z) && in_projection_range(obs.origin_.z))
+          if(raytrace_obs == NULL && in_projection_range(cloud.pts[i].z) && in_projection_range(obs.origin_.z))
             updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
           continue;
         }
@@ -272,8 +272,17 @@ namespace costmap_2d {
         IND_MC(ind, mx, my);
         enqueue(ind, mx, my);
 
-        if(in_projection_range(cloud.pts[i].z) && in_projection_range(obs.origin_.z))
-	  updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
+        if(raytrace_obs == NULL && in_projection_range(cloud.pts[i].z) && in_projection_range(obs.origin_.z))
+          updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
+      }
+    }
+
+    //if we are explicitly given our raytracing observation
+    if(raytrace_obs != NULL){
+      //Ray trace out freespace in the map for each point in our raytrace cloud
+      const robot_msgs::PointCloud& raytrace_cloud = *(raytrace_obs->cloud_);
+      for(size_t i = 0; i < raytrace_cloud.get_pts_size(); i++) {
+        updateFreeSpace(raytrace_obs->origin_, raytrace_cloud.pts[i].x, raytrace_cloud.pts[i].y);
       }
     }
 
@@ -284,14 +293,14 @@ namespace costmap_2d {
     /*for(std::vector<Observation>::const_iterator it = observations.begin(); it!= observations.end(); ++it){
       const Observation& obs = *it;
       if(!in_projection_range(obs.origin_.z))
-        continue;
+      continue;
 
       const robot_msgs::PointCloud& cloud = *(obs.cloud_);
       for(size_t i = 0; i < cloud.get_pts_size(); i++) {
-        if(!in_projection_range(cloud.pts[i].z))
-          continue;
+      if(!in_projection_range(cloud.pts[i].z))
+      continue;
 
-        updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
+      updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
       }
       }*/
 
@@ -303,27 +312,27 @@ namespace costmap_2d {
     // correctly repropagate effects of obstacles outside the window which impinge the window.
     unsigned int rayStartX = 0, rayStartY = 0, rayEndX = 0, rayEndY = 0;
     WC_MC(computeWX(*this, raytraceWindow_ + inflationRadius_ * getResolution() * 2, robotX_, robotY_), 
-	  computeWY(*this, raytraceWindow_ + inflationRadius_ * getResolution() * 2, robotX_, robotY_), rayStartX, rayStartY);
+        computeWY(*this, raytraceWindow_ + inflationRadius_ * getResolution() * 2, robotX_, robotY_), rayStartX, rayStartY);
     rayEndX = rayStartX + raytraceCells_ + inflationRadius_ * 2;
     rayEndY = rayStartY + raytraceCells_ + inflationRadius_ * 2;
 
     unsigned int clearStartX = 0, clearStartY = 0, clearEndX = 0, clearEndY = 0;
     WC_MC(computeWX(*this, raytraceWindow_, robotX_, robotY_), 
-	  computeWY(*this, raytraceWindow_, robotX_, robotY_), clearStartX, clearStartY);
+        computeWY(*this, raytraceWindow_, robotX_, robotY_), clearStartX, clearStartY);
     clearEndX = clearStartX + raytraceCells_;
     clearEndY = clearStartY + raytraceCells_;
 
     for (unsigned int x = rayStartX; x < rayEndX; x++) {
       for (unsigned int y = rayStartY; y < rayEndY; y++) {
-	unsigned int ind = MC_IND(x, y);
+        unsigned int ind = MC_IND(x, y);
 
-	if (costData_[ind] == LETHAL_OBSTACLE && !marked(ind)) {
-	  enqueue(ind, x, y);
-	  
-	}
-	if (x > clearStartX && x < clearEndX && y > clearStartY && y < clearEndY) {
-	  costData_[ind] = 0;
-	}
+        if (costData_[ind] == LETHAL_OBSTACLE && !marked(ind)) {
+          enqueue(ind, x, y);
+
+        }
+        if (x > clearStartX && x < clearEndX && y > clearStartY && y < clearEndY) {
+          costData_[ind] = 0;
+        }
       }
     }
 
@@ -459,7 +468,7 @@ namespace costmap_2d {
     //Static Ray trace zone.
     unsigned int rayStartX = 0, rayStartY = 0, rayEndX = 0, rayEndY = 0;
     WC_MC(computeWX(*this, raytraceWindow_, robotX_, robotY_), 
-	  computeWY(*this, raytraceWindow_, robotX_, robotY_), rayStartX, rayStartY);
+        computeWY(*this, raytraceWindow_, robotX_, robotY_), rayStartX, rayStartY);
     rayEndX = rayStartX + raytraceCells_;
     rayEndY = rayStartY + raytraceCells_;
 
@@ -498,31 +507,31 @@ namespace costmap_2d {
 
   CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double maxSize, double poseX, double poseY)
     : ObstacleMapAccessor(computeWX(costMap, maxSize, poseX, poseY),
-			  computeWY(costMap, maxSize, poseX, poseY), 
-			  computeSize(maxSize, costMap.getResolution()), 
-			  computeSize(maxSize, costMap.getResolution()), 
-			  costMap.getResolution()), 
-      costMap_(costMap), maxSize_(maxSize){
+        computeWY(costMap, maxSize, poseX, poseY), 
+        computeSize(maxSize, costMap.getResolution()), 
+        computeSize(maxSize, costMap.getResolution()), 
+        costMap.getResolution()), 
+    costMap_(costMap), maxSize_(maxSize){
 
-    setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());
+      setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());
 
-    // Set robot position
-    updateForRobotPosition(poseX, poseY);
+      // Set robot position
+      updateForRobotPosition(poseX, poseY);
 
-    ROS_DEBUG_NAMED("costmap_2d", "Creating Local %d X %d Map\n", getWidth(), getHeight());
-  }
+      ROS_DEBUG_NAMED("costmap_2d", "Creating Local %d X %d Map\n", getWidth(), getHeight());
+    }
 
   CostMapAccessor::CostMapAccessor(const CostMap2D& costMap)
     : ObstacleMapAccessor(0.0, 0.0, costMap.getWidth(), costMap.getHeight(),  costMap.getResolution()), 
-      costMap_(costMap), maxSize_(0.0), mx_0_(0), my_0_(0){
+    costMap_(costMap), maxSize_(0.0), mx_0_(0), my_0_(0){
 
-    setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());
+      setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());
 
-    // Set values from source
-    refresh();
+      // Set values from source
+      refresh();
 
-    ROS_DEBUG_NAMED("costmap_2d", "Creating Local %d X %d Map\n", getWidth(), getHeight());
-  }
+      ROS_DEBUG_NAMED("costmap_2d", "Creating Local %d X %d Map\n", getWidth(), getHeight());
+    }
 
   void CostMapAccessor::getCostmapDimensions(unsigned int& width, unsigned int& height) const{
     width = costMap_.getWidth();
