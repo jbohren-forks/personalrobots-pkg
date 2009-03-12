@@ -104,7 +104,7 @@ public:
     fixed_frame_ = "odom_combined";
     robot_frame_ = "base_link";
 
-    pause_ = Duration().fromSec(6.0);
+    pause_ = Duration().fromSec(4.0);
     polling_ = Duration().fromSec(0.01);
 
     // start arm trajectory controller
@@ -223,17 +223,17 @@ public:
       polling_.sleep();
     cout << "arrived in front of door" << endl;
 
+    // open the gripper
+    std_msgs::Float64 gripper_msg;
+    gripper_msg.data = 2.0;
+    publish("gripper_effort/set_command", gripper_msg);
+
     // move gripper in front of door
     Vector offset = normal * -0.15;
     gripper_pose_msg.pose.position.x = gripper_pose_msg.pose.position.x + offset[0];
     gripper_pose_msg.pose.position.y = gripper_pose_msg.pose.position.y + offset[1];
     gripper_pose_msg.pose.position.z = gripper_pose_msg.pose.position.z + offset[2];
     moveTo(gripper_pose_msg);
-
-    // open the gripper
-    std_msgs::Float64 gripper_msg;
-    gripper_msg.data = 2.0;
-    publish("gripper_effort/set_command", gripper_msg);
     pause_.sleep();
     
     // move gripper over door handle
@@ -246,70 +246,6 @@ public:
     gripper_msg.data = -2.0;
     publish("gripper_effort/set_command", gripper_msg);
     pause_.sleep();
-
-    // open the gripper
-    gripper_msg.data = 2.0;
-    publish("gripper_effort/set_command", gripper_msg);
-    pause_.sleep();
-
-    // move gripper away from the handle
-    gripper_pose_msg.pose.position.x = gripper_pose_msg.pose.position.x + offset[0];
-    gripper_pose_msg.pose.position.y = gripper_pose_msg.pose.position.y + offset[1];
-    gripper_pose_msg.pose.position.z = gripper_pose_msg.pose.position.z + offset[2];
-    moveTo(gripper_pose_msg);
-
-
-    return true;
-  }
-
-
-  // -------------------------
-  bool moveThroughDoor(const robot_msgs::Door& door)
-  // -------------------------
-  {
-    // get orientation
-    Vector normal = getNormalOnDoor(door);
-    normal = transformVectorToFrame(door.header.frame_id, fixed_frame_, normal, door.header.stamp);
-    Vector x_axis(1,0,0);
-    double dot      = normal(0) * x_axis(0) + normal(1) * x_axis(1);
-    double perp_dot = normal(1) * x_axis(0) - normal(0) * x_axis(1);
-    double z_angle = atan2(perp_dot, dot);
-    cout << "z_angle in " << fixed_frame_ << " = " << z_angle << endl;
-
-    // get robot position
-    Vector robot_pos((door.door_p1.x + door.door_p2.x)/2.0, 
-		     (door.door_p1.y + door.door_p2.y)/2.0,
-		     (door.door_p1.z + door.door_p2.z)/2.0);
-    robot_pos = transformPointToFrame(door.header.frame_id, fixed_frame_, robot_pos, door.header.stamp);
-    robot_pos = robot_pos + (normal * 0.7);
-
-    cout << "Moving to" << robot_pos(0) << " " << robot_pos(1) << " " << robot_pos(2) << "in frame: " << door.header.frame_id << endl;
-
-    // get gripper position
-    robot_msgs::PoseStamped gripper_pose_msg;
-    Stamped<Pose> gripper_pose;
-    gripper_pose.frame_id_ = fixed_frame_;
-    Vector point(door.handle.x, door.handle.y, door.handle.z);
-    point = transformPointToFrame(door.header.frame_id, fixed_frame_, point, door.header.stamp);
-    gripper_pose.setOrigin( Vector3(point[0], point[1], point[2]) );
-    gripper_pose.setRotation( Quaternion(z_angle, 0, M_PI/2.0) ); 
-    PoseStampedTFToMsg(gripper_pose, gripper_pose_msg);
-
-    // move the robot in front of the door
-    robot_msgs::Planner2DGoal robot_pose_msg;
-    robot_pose_msg.header.frame_id = fixed_frame_;
-    robot_pose_msg.enable = true;
-    robot_pose_msg.timeout = 1000000;
-    robot_pose_msg.goal.x = robot_pos(0);
-    robot_pose_msg.goal.y = robot_pos(1);
-    robot_pose_msg.goal.th = z_angle;
-    planner_finished_ = false;
-    publish("goal", robot_pose_msg);
-    cout << "moving through door...  " << flush;
-    while (!planner_finished_)
-      polling_.sleep();
-    cout << "Moved in front of door" << endl;
-
 
     return true;
   }
@@ -337,9 +273,9 @@ public:
     tff_msg_.mode.rot.z = tff_msg_.POSITION;
 
     tff_msg_.value.vel.x = 0.0;
-    tff_msg_.value.vel.y = -20.0;
+    tff_msg_.value.vel.y = 0.0;
     tff_msg_.value.vel.z = 0.0;
-    tff_msg_.value.rot.x = -0.5;
+    tff_msg_.value.rot.x = -1.5;
     tff_msg_.value.rot.y = 0.0;
     tff_msg_.value.rot.z = 0.0;
 
@@ -353,9 +289,9 @@ public:
     tff_msg_.mode.vel.z = tff_msg_.FORCE;
     tff_msg_.mode.rot.x = tff_msg_.POSITION;
     tff_msg_.mode.rot.y = tff_msg_.FORCE;
-    tff_msg_.mode.rot.z = tff_msg_.POSITION;
+    tff_msg_.mode.rot.z = tff_msg_.FORCE;
 
-    tff_msg_.value.vel.x = 0.15;
+    tff_msg_.value.vel.x = 0.45;
     tff_msg_.value.vel.y = 0.0;
     tff_msg_.value.vel.z = 0.0;
     tff_msg_.value.rot.x = 0.0;
@@ -415,8 +351,7 @@ public:
       }
       case OPENDOOR:{
         cout << "Opening door... " << endl;
-        openDoor();
-        if (moveThroughDoor(my_door_))
+        if (openDoor())
           state_ = SUCCESS;
         else
           state_ = FAILED;
