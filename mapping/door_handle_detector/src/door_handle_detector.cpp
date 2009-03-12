@@ -365,11 +365,13 @@ public:
         goodness_factor[cc] *= (area / (door_frame * door_height));
 
 
-	// ---[ Compute the distance from the door to the prior of the door
-	double door_distance = fmax(0.001, fmin(dist_xy(req.door.door_p1, minP), 
-						fmin(dist_xy(req.door.door_p1, maxP), 
-						     fmin(dist_xy(req.door.door_p2, minP), dist_xy(req.door.door_p2, maxP)))));
-	goodness_factor[cc] /= door_distance;
+       // ---[ Compute the distance from the door to the prior of the door
+       double door_distance = fmax (0.001, 
+                                    fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p1, &minP), 
+                                          fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p1, &maxP),
+                                                fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &minP), 
+                                                      cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &maxP)))));
+       goodness_factor[cc] /= door_distance;
 
       } // loop over clusters
 
@@ -727,7 +729,6 @@ public:
       cloud_in_ = *cloud;
       num_clouds_received_++;
     }
-
 
   double dist_xy(const Point32& p1, const Point32& p2)
   {
