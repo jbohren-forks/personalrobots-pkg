@@ -134,7 +134,7 @@ void JointChainConstraintController::update()
   for (unsigned int i = 0; i < num_joints_; ++i)
   {
     jnt_eff_(i) = joint_constraint_torque_(i) + task_torque_(i);
-    printf("effort:%lf\n",jnt_eff_(i));
+    //printf("effort:%lf\n",jnt_eff_(i));
   }
   // set effort to joints
   mechanism_chain_.setEfforts(jnt_eff_, robot_state_->joint_states_);
