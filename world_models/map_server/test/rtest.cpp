@@ -34,6 +34,9 @@
 #include <ros/node.h>
 #include <robot_srvs/StaticMap.h>
 
+// Just for testing gtest linkage issues
+#include <robot_msgs/ControllerStatus.h>
+
 #include "test_constants.h"
 
 int g_argc;
@@ -63,6 +66,15 @@ class MapClientTest : public testing::Test
  * the loaded image matches the known dimensions of the map.  */
 TEST_F(MapClientTest, retrieve_valid_bmp)
 {
+  // Just for testing gtest linkage issues
+  
+  // This line doesn't work:
+  //ASSERT_EQ(robot_msgs::ControllerStatus::UNDEFINED, 0);
+
+  // These lines do work:
+  int8_t undefined = robot_msgs::ControllerStatus::UNDEFINED;
+  ASSERT_EQ(undefined, 0);
+
   try
   {
     robot_srvs::StaticMap::Request  req;
