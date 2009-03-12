@@ -58,6 +58,7 @@ public:
   ~ProsilicaView()
   {
     cvReleaseImage(&image_);
+    cvDestroyWindow("Prosilica");
   }
 
   void image_cb()
