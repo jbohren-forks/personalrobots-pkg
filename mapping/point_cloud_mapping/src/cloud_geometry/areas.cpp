@@ -30,11 +30,11 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include <cloud_geometry/point.h>
-#include <cloud_geometry/areas.h>
-#include <cloud_geometry/distances.h>
-#include <cloud_geometry/transforms.h>
-#include <cloud_geometry/intersections.h>
+#include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/areas.h>
+#include <point_cloud_mapping/geometry/distances.h>
+#include <point_cloud_mapping/geometry/transforms.h>
+#include <point_cloud_mapping/geometry/intersections.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>

@@ -30,8 +30,8 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include <cloud_geometry/point.h>
-#include <cloud_geometry/projections.h>
+#include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/projections.h>
 
 namespace cloud_geometry
 {

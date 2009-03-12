@@ -58,13 +58,13 @@
 #include <point_cloud_mapping/cloud_kdtree.h>
 
 // Cloud geometry
-#include <cloud_geometry/angles.h>
-#include <cloud_geometry/areas.h>
-#include <cloud_geometry/point.h>
-#include <cloud_geometry/distances.h>
-#include <cloud_geometry/nearest.h>
-#include <cloud_geometry/transforms.h>
-#include <cloud_geometry/statistics.h>
+#include <point_cloud_mapping/geometry/angles.h>
+#include <point_cloud_mapping/geometry/areas.h>
+#include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/distances.h>
+#include <point_cloud_mapping/geometry/nearest.h>
+#include <point_cloud_mapping/geometry/transforms.h>
+#include <point_cloud_mapping/geometry/statistics.h>
 
 #include <sys/time.h>
 

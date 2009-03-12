@@ -34,8 +34,8 @@
   */
 
 #include <sample_consensus/sac_model_line.h>
-#include <cloud_geometry/point.h>
-#include <cloud_geometry/nearest.h>
+#include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/nearest.h>
 
 namespace sample_consensus
 {

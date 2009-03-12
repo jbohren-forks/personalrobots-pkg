@@ -54,7 +54,7 @@ sizes.
 #include <robot_msgs/PointCloud.h>
 
 #include <Eigen/Core>
-#include <cloud_geometry/transforms.h>
+#include <point_cloud_mapping/geometry/transforms.h>
 
 #include <boost/thread/mutex.hpp>
 

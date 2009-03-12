@@ -49,8 +49,8 @@ dimension, orientation) useful for collision detection.
 #include <robot_msgs/VisualizationMarker.h>
 
 #include <Eigen/Core>
-#include <cloud_geometry/point.h>
-#include <cloud_geometry/transforms.h>
+#include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/transforms.h>
 
 #include <boost/thread/mutex.hpp>
 
@@ -225,10 +225,10 @@ class CollisionMapperBuffer : public ros::Node
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Compute a CollisionMap from a Leaf vector.
-      * \param leaves the Leaf vector 
+      * \param leaves the Leaf vector
       * \param cmap the resultant collision map
       */
-    void 
+    void
       computeCollisionMapFromLeaves (vector<Leaf> *leaves, CollisionMap &cmap)
     {
       cmap.boxes.resize (leaves->size ());
@@ -258,7 +258,7 @@ class CollisionMapperBuffer : public ros::Node
       * \param leaves the resultant Leaf vector
       * \param centers a resultant PointCloud message containing the centers of the leaves
       */
-    void 
+    void
       computeLeaves (PointCloud *points, vector<Leaf> &leaves, PointCloud &centers)
     {
       PointStamped base_origin, torso_lift_origin;
@@ -420,7 +420,7 @@ class CollisionMapperBuffer : public ros::Node
       }
       catch (tf::ExtrapolationException)
       {
-	ROS_ERROR("Extrapolation exception from %s to %s.", tgt_frame.c_str(), src.header.frame_id.c_str());
+        ROS_ERROR("Extrapolation exception from %s to %s.", tgt_frame.c_str(), src.header.frame_id.c_str());
       }
 
       center.x = tgt.point.x; center.y = tgt.point.y; center.z = tgt.point.z;
@@ -437,7 +437,7 @@ class CollisionMapperBuffer : public ros::Node
       }
       catch (tf::ExtrapolationException)
       {
-	ROS_ERROR("Extrapolation exception from %s to %s.", tgt_frame.c_str(), src.header.frame_id.c_str());
+        ROS_ERROR("Extrapolation exception from %s to %s.", tgt_frame.c_str(), src.header.frame_id.c_str());
       }
 
       center.x += tgt.point.x; center.y += tgt.point.y; center.z += tgt.point.z;
@@ -474,7 +474,7 @@ class CollisionMapperBuffer : public ros::Node
       }
       catch (tf::ExtrapolationException)
       {
-	ROS_ERROR("Extrapolation exception from %s to %s.", target_frame.c_str(), points->header.frame_id.c_str());
+        ROS_ERROR("Extrapolation exception from %s to %s.", target_frame.c_str(), points->header.frame_id.c_str());
       }
 
       vector<int> object_indices (points_tgt.pts.size ());
@@ -566,13 +566,13 @@ class CollisionMapperBuffer : public ros::Node
       // Static map acquisition has been triggered via the service call
       if (acquire_static_map_)
       {
-        // Do not compute any collision maps until we receive a cloud with a higher timestamp 
+        // Do not compute any collision maps until we receive a cloud with a higher timestamp
         if (cloud_.header.stamp < acquire_static_map_time_)
           return;
 
         // Compute the static collision map
         //gettimeofday (&t1, NULL);
-        t1 = ros::Time::now();
+        t1 = ros::Time::now ();
 
         // We do not subtract anything when we compute the static map
         PointCloud centers;
@@ -584,9 +584,9 @@ class CollisionMapperBuffer : public ros::Node
         static_map_lock_.unlock ();
 
         //gettimeofday (&t2, NULL);
-        t2 = ros::Time::now();
+        t2 = ros::Time::now ();
         //time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-        time_spent = (t2 - t1).toSec();
+        time_spent = (t2 - t1).toSec ();
         ROS_DEBUG ("Static collision map computed in %g seconds. Number of boxes: %u.", time_spent, (unsigned int)static_leaves_.size ());
 
       }
@@ -595,7 +595,7 @@ class CollisionMapperBuffer : public ros::Node
         vector<Leaf> model_reunion;
         // Rotate N maps in the queue
         //gettimeofday (&t1, NULL);
-        t1 = ros::Time::now();
+        t1 = ros::Time::now ();
 
         // Compute the leaves for the current dataset
         PointCloud centers;
@@ -636,9 +636,9 @@ class CollisionMapperBuffer : public ros::Node
         computeCollisionMapFromLeaves (&model_reunion, final_collision_map_);
 
         //gettimeofday (&t2, NULL);
-        t2 = ros::Time::now();
+        t2 = ros::Time::now ();
         //time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-        time_spent = (t2 - t1).toSec();
+        time_spent = (t2 - t1).toSec ();
         ROS_DEBUG ("Collision map with %u boxes computed in %g seconds. Total maps in the queue %d.",
                   (unsigned int)final_collision_map_.boxes.size (), time_spent, decaying_maps_.size ());
 
@@ -729,7 +729,7 @@ int
 */
   p.spin ();
 
-  
+
   return (0);
 }
 /* ]--- */

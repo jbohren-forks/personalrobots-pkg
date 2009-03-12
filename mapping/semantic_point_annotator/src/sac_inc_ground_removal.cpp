@@ -54,10 +54,10 @@
 #include <sample_consensus/sac_model_line.h>
 
 // Cloud geometry
-#include <cloud_geometry/areas.h>
-#include <cloud_geometry/point.h>
-#include <cloud_geometry/distances.h>
-#include <cloud_geometry/nearest.h>
+#include <point_cloud_mapping/geometry/areas.h>
+#include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/distances.h>
+#include <point_cloud_mapping/geometry/nearest.h>
 
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>

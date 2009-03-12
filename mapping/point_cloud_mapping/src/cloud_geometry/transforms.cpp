@@ -30,8 +30,8 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include <cloud_geometry/angles.h>
-#include <cloud_geometry/transforms.h>
+#include <point_cloud_mapping/geometry/angles.h>
+#include <point_cloud_mapping/geometry/transforms.h>
 
 namespace cloud_geometry
 {

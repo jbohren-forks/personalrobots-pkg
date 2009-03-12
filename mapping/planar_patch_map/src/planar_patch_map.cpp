@@ -53,10 +53,10 @@
 #include <sample_consensus/sac_model_plane.h>
 
 // Cloud geometry
-#include <cloud_geometry/point.h>
-#include <cloud_geometry/areas.h>
-#include <cloud_geometry/nearest.h>
-#include <cloud_geometry/intersections.h>
+#include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/areas.h>
+#include <point_cloud_mapping/geometry/nearest.h>
+#include <point_cloud_mapping/geometry/intersections.h>
 
 // Cloud Octree
 #include <point_cloud_mapping/cloud_octree.h>

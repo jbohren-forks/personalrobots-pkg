@@ -30,10 +30,10 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include <cloud_geometry/angles.h>
-#include <cloud_geometry/nearest.h>
-#include <cloud_geometry/point.h>
-#include <cloud_geometry/statistics.h>
+#include <point_cloud_mapping/geometry/angles.h>
+#include <point_cloud_mapping/geometry/nearest.h>
+#include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/statistics.h>
 
 namespace cloud_geometry
 {

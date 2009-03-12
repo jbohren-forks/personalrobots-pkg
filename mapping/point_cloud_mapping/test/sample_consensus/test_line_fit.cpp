@@ -33,7 +33,7 @@
 #include <gtest/gtest.h>
 #include <robot_msgs/PointCloud.h>
 
-#include <cloud_geometry/point.h>
+#include <point_cloud_mapping/geometry/point.h>
 #include <sample_consensus/sac.h>
 #include <sample_consensus/lmeds.h>
 #include <sample_consensus/ransac.h>

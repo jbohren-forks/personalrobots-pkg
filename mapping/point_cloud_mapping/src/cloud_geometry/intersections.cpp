@@ -30,9 +30,9 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include "cloud_geometry/point.h"
-#include "cloud_geometry/intersections.h"
-#include "cloud_geometry/distances.h"
+#include "point_cloud_mapping/geometry/point.h"
+#include "point_cloud_mapping/geometry/intersections.h"
+#include "point_cloud_mapping/geometry/distances.h"
 
 #include <cfloat>
 

@@ -32,8 +32,8 @@
 
 #include <algorithm>
 #include <cfloat>
-#include <cloud_geometry/point.h>
-#include <cloud_geometry/statistics.h>
+#include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/statistics.h>
 
 namespace cloud_geometry
 {

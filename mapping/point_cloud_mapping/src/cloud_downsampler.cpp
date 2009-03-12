@@ -46,7 +46,7 @@
 #include <robot_msgs/PointCloud.h>
 
 // Cloud geometry
-#include <cloud_geometry/point.h>
+#include <point_cloud_mapping/geometry/point.h>
 
 #include <sys/time.h>
 

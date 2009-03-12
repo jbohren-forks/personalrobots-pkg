@@ -33,7 +33,7 @@
 #include <cfloat>
 #include <limits>
 #include <sample_consensus/mlesac.h>
-#include <cloud_geometry/statistics.h>
+#include <point_cloud_mapping/geometry/statistics.h>
 
 namespace sample_consensus
 {
