@@ -54,6 +54,8 @@
 
 #include <tf/message_notifier.h>
 
+#include <robot_msgs/Vector3.h>
+#include <robot_msgs/Vector3Stamped.h>
 
 using namespace std;
 using namespace robot_msgs;
@@ -189,6 +191,9 @@ public:
 
       advertise<PointCloud>("handle_visualization", 10);
 
+      advertise<Door>("door_detector/door_msg", 1);
+
+
       /** Sachin **/
       advertise<PointCloud>("intensity_visualization", 10);
 
@@ -205,7 +210,10 @@ public:
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    virtual ~DoorHandleDetector () { }
+    virtual ~DoorHandleDetector () 
+    {      
+      unadvertise("door_detector/door_msg");
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
@@ -424,6 +432,18 @@ public:
       tf::Stamped<Point32> door_p1 (minP, cloud_time_, cloud_frame_);
       tf::Stamped<Point32> door_p2 (maxP, cloud_time_, cloud_frame_);
       tf::Stamped<Point32> handle (handle_center, cloud_time_, cloud_frame_);
+
+      Vector3 normal;
+      normal.x = coeff[best_cluster][0];
+      normal.y = coeff[best_cluster][1];
+      normal.z = coeff[best_cluster][2];
+      Vector3Stamped normal_stamped;
+      normal_stamped.vector = normal;
+      normal_stamped.header.stamp = cloud_time_;
+      normal_stamped.header.frame_id =  cloud_frame_;
+      Vector3Stamped normal_transformed;
+      tf_.transformVector(door_frame_,normal_stamped, normal_transformed);
+
       door_p2.z = door_p1.z;
       transformPoint (&tf_, door_frame_, door_p1, door_p1);
       transformPoint (&tf_, door_frame_, door_p2, door_p2);
@@ -436,12 +456,29 @@ public:
       resp.door.handle = handle;
       resp.door.height = fabs (maxP.z - minP.z);
 
+      resp.door.normal = normal_transformed.vector;
+      Polygon3D polygon_transformed;
+      polygon_transformed.set_points_size((int) pmap_.polygons[best_cluster].points.size());
+
+      for(int i=0; i < (int) pmap_.polygons[best_cluster].points.size(); i++)
+      {
+        tf::Stamped<Point32> p1(pmap_.polygons[best_cluster].points[i], cloud_time_, cloud_frame_);
+        transformPoint (&tf_, door_frame_, p1, p1);
+        polygon_transformed.points[i] = p1;
+      }
+
+
+      resp.door.door_boundary = polygon_transformed;
+
       duration = ros::Time::now () - ts;
       ROS_INFO ("Door found. Result in frame %s \n  P1 = [%f, %f, %f]. P2 = [%f, %f, %f]. \n  Height = %f. \n  Handle = [%f, %f, %f]. \n  Total time: %f.",
                 resp.door.header.frame_id.c_str (),
                 resp.door.door_p1.x, resp.door.door_p1.y, resp.door.door_p1.z, resp.door.door_p2.x, resp.door.door_p2.y, resp.door.door_p2.z,
                 resp.door.height, resp.door.handle.x, resp.door.handle.y, resp.door.handle.z,
                 duration.toSec ());
+
+
+      publish("door_detector/door_msg", resp.door);
 
 
       ROS_INFO("Finished detecting door");
