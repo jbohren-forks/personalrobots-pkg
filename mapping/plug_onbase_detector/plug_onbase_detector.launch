@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="plug_onbase_detector" type="plug_onbase_detector_node" name="plug_onbase_detector_node" output="screen" respawn="true">
+<!--    <remap from="snapshot_cloud" to="full_cloud" />-->
+  </node>
+</launch>
