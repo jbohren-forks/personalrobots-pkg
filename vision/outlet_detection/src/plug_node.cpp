@@ -19,16 +19,10 @@ int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
                                 CvPoint2D32f* out_corners, int* out_corner_count,
                                 int flags );
 
-// TODO: make these parameters
-
-static const double SQUARE_SIZE = 0.004;
-static const int BOARD_W = 3;
-static const int BOARD_H = 4;
-/*
 static const double SQUARE_SIZE = 0.0215;
 static const int BOARD_W = 6;
 static const int BOARD_H = 9;
-*/
+
 class PlugDetector : public ros::Node
 {
 private:
@@ -41,6 +35,7 @@ private:
   image_msgs::CvBridge img_bridge_;
   robot_msgs::PoseStamped pose_;
   tf::TransformBroadcaster tf_broadcaster_;
+  int board_w_, board_h_;
   CvMat *K_, *grid_pts_;
 
   tf::Transform plug_in_board_, camera_in_cvcam_;
@@ -53,18 +48,34 @@ public:
     : ros::Node("plug_detector"), img_(res_.image), cam_info_(res_.cam_info),
       tf_broadcaster_(*this), K_(NULL), display_img_(NULL)
   {
+    double square_size;
+    if (!getParam("square_size", square_size)) {
+      ROS_FATAL("Square size unspecified");
+      shutdown();
+    }
+
+    if (!getParam("board_width", board_w_)) {
+      ROS_FATAL("Board width unspecified");
+      shutdown();
+    }
+
+    if (!getParam("board_height", board_h_)) {
+      ROS_FATAL("Board height unspecified");
+      shutdown();
+    }
+    
     param("display", display_, true);
     if (display_) {
       cvNamedWindow(wndname, 0); // no autosize
       cvStartWindowThread();
     }
 
-    grid_pts_ = cvCreateMat(BOARD_W * BOARD_H, 3, CV_64FC1);
+    grid_pts_ = cvCreateMat(board_w_ * board_h_, 3, CV_64FC1);
     int j = 0;
-    for (int y = 0; y < BOARD_H; ++y) {
-      for (int x = 0; x < BOARD_W; ++x) {
-        cvSetReal2D(grid_pts_, j, 0, x*SQUARE_SIZE);
-        cvSetReal2D(grid_pts_, j, 1, y*SQUARE_SIZE);
+    for (int y = 0; y < board_h_; ++y) {
+      for (int x = 0; x < board_w_; ++x) {
+        cvSetReal2D(grid_pts_, j, 0, x*square_size);
+        cvSetReal2D(grid_pts_, j, 1, y*square_size);
         cvSetReal2D(grid_pts_, j, 2, 0.0);
         ++j;
       }
@@ -105,8 +116,8 @@ public:
 
     IplImage* image = img_bridge_.toIpl();
     int ncorners;
-    std::vector<CvPoint2D32f> corners(BOARD_W * BOARD_H);
-    int found = cvFindChessboardCorners_ex(image, cvSize(BOARD_W, BOARD_H),
+    std::vector<CvPoint2D32f> corners(board_w_ * board_h_);
+    int found = cvFindChessboardCorners_ex(image, cvSize(board_w_, board_h_),
                                            &corners[0], &ncorners,
                                            CV_CALIB_CB_ADAPTIVE_THRESH);
     if (!found) {
@@ -174,7 +185,7 @@ public:
         display_img_ = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 3);
       }
       cvCvtColor(image, display_img_, CV_GRAY2BGR);
-      cvDrawChessboardCorners(display_img_, cvSize(BOARD_W, BOARD_H),
+      cvDrawChessboardCorners(display_img_, cvSize(board_w_, board_h_),
                               &corners[0], ncorners, 1);      
       cvShowImage(wndname, display_img_);
     }

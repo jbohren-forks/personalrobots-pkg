@@ -15,11 +15,11 @@
   <depend package="star_detector"/>
   <depend package="bullet"/>
   <depend package="tf"/>
+  <depend package="matplotlib"/>
 
   <!--depend package="fast_detector"/>
   <depend package="calonder_descriptor"/>
-  <depend package="place_recognition"/>
-  <depend package="matplotlib"/-->
+  <depend package="place_recognition"/-->
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -loutlet -lblob"/>

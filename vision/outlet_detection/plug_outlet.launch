@@ -1,6 +1,9 @@
 <launch>
   <group ns="plug_detector" clear_params="true">
     <param name="display" type="bool" value="false"/>
+    <param name="square_size" type="double" value="0.0042"/>
+    <param name="board_width" type="int" value="3"/>
+    <param name="board_height" type="int" value="4"/>
     <node pkg="outlet_detection" type="plug_node" respawn="false" output="screen"/>
   </group>
 

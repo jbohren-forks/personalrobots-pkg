@@ -94,15 +94,14 @@ public:
     }
 
     // Find normal and right vectors
-    // TODO: fit plane to all holes instead of just 3
+    // TODO: fit plane to all holes instead of just 3?
     btVector3 right = (holes[2] - holes[1]).normalized();
     btVector3 normal = right.cross(holes[2] - holes[0]).normalized();
-    // TODO: right-handed???
     btVector3 up = right.cross(normal).normalized();
     btMatrix3x3 rotation;
-    rotation[1] = -right;
-    rotation[2] = up;
-    rotation[0] = normal;
+    rotation[0] = normal; // x
+    rotation[1] = -right; // y
+    rotation[2] = up;     // z
     rotation = rotation.transpose();
     btQuaternion orientation;
     rotation.getRotation(orientation);
@@ -121,10 +120,16 @@ public:
                                   ros::Time::now(), "outlet_frame",
                                   "high_def_frame");
     
-    ROS_INFO("Hole 0: %.5f %.5f %.5f, Hole 1: %.5f %.5f %.5f, Hole 2: %.5f %.5f %.5f",
+    ROS_INFO("Ground TL: %.5f %.5f %.5f, Ground TR: %.5f %.5f %.5f, "
+             "Ground BR: %.5f %.5f %.5f, Ground BL: %.5f %.5f %.5f",
              holes[0].x(), holes[0].y(), holes[0].z(),
-             holes[1].x(), holes[1].y(), holes[1].z(),
-             holes[2].x(), holes[2].y(), holes[2].z());
+             holes[3].x(), holes[3].y(), holes[3].z(),
+             holes[6].x(), holes[6].y(), holes[6].z(),
+             holes[9].x(), holes[9].y(), holes[9].z());
+    ROS_INFO("Ground hole distances:\n\td(TL,TR) = %.2fmm\n"
+             "\td(BL,BR) = %.2fmm\n\td(TL,BR) = %.2fmm\n\td(BL,TR) = %.2fmm",
+             1000*holes[0].distance(holes[3]), 1000*holes[6].distance(holes[9]),
+             1000*holes[0].distance(holes[6]), 1000*holes[3].distance(holes[9]));
     
     if (display_) {
 #ifdef _OUTLET_INTERACTIVE_CAPTURE
