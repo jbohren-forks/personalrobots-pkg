@@ -12,7 +12,6 @@
   <depend package="image_msgs" />
   <depend package="newmat10"/>
   <depend package="pr2_mechanism_controllers" />
-  <depend package="topic_synchronizer" />
   
   # For Scripts
   <depend package="rosrecord" />
