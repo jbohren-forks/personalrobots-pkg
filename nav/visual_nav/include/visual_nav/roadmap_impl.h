@@ -112,7 +112,8 @@ public:
   Pose pathExitPoint (PathPtr p, double r) const;
   uint numNodes () const;
   Pose nodePose (NodeId i) const;
-  vector<NodeId> neighbors (NodeId i) const;
+  NodeVector neighbors (NodeId i) const;
+  NodeVector nodes () const;
 
   bool distanceLessThan (const Pose& pose, NodeId id, double r) const;
 
@@ -125,6 +126,8 @@ private:
   IdVertexMap id_vertex_map_;
 
   NodeId next_node_id_;
+  
+  NodeVector nodes_;
 
   RoadmapImpl& operator= (const RoadmapImpl&);
   RoadmapImpl(const RoadmapImpl&);

@@ -27,6 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+/**
+ * \file
+ *
+ * Utilities for 2d poses and transforms
+ *
+ * \todo Might be simpler to just use the ros message types
+ *
+ */
+
+
 #ifndef VISUAL_NAV_TRANSFORM_H
 #define VISUAL_NAV_TRANSFORM_H
 
@@ -51,6 +62,7 @@ bool operator== (const Pose& p1, const Pose& p2);
 
 struct Transform2D {
   Transform2D(double dx=0.0, double dy=0.0, double theta=0.0) : dx(dx), dy(dy), theta(theta) {}
+  tf::Transform convertToTf() const;
   double dx, dy, theta;
 };
 

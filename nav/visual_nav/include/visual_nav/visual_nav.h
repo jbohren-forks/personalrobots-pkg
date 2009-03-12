@@ -45,6 +45,8 @@ using std::string;
 /// Id's of nodes in the roadmap
 typedef int NodeId;
 
+typedef vector<NodeId> NodeVector;
+
 typedef shared_ptr<vector<NodeId> > PathPtr;
 
 /// Represents the roadmap produced by visual odometry, with the localization info incorporated
@@ -86,7 +88,10 @@ public:
 
   /// \return vector of neighbors of node \a i
   /// \throws UnknownNodeId
-  vector<NodeId> neighbors (NodeId i) const;
+  NodeVector neighbors (NodeId i) const;
+
+  /// \return Vector of node ids in graph.
+  NodeVector nodes () const;
 
 private:
 

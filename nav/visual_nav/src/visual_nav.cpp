@@ -95,6 +95,7 @@ VisualNavRoadmap::RoadmapImpl::RoadmapImpl() : next_node_id_(0)
 NodeId VisualNavRoadmap::RoadmapImpl::addNode (const Pose& pose)
 {
   id_vertex_map_[next_node_id_] = add_vertex(NodeInfo(pose, next_node_id_), graph_);
+  nodes_.push_back(next_node_id_);
   ROS_DEBUG_STREAM_NAMED("api", "Added node with pose " << pose << " and id " << next_node_id_);
   return next_node_id_++;
 }
@@ -208,7 +209,7 @@ struct GetVertexId
 
 
 
-vector<NodeId> VisualNavRoadmap::RoadmapImpl::neighbors (NodeId i) const
+NodeVector VisualNavRoadmap::RoadmapImpl::neighbors (NodeId i) const
 {
   vector<NodeId> neighbors;
   AdjIterPair iters = adjacent_vertices(idVertex(i), graph_);
@@ -216,6 +217,10 @@ vector<NodeId> VisualNavRoadmap::RoadmapImpl::neighbors (NodeId i) const
   return neighbors;
 }
 
+NodeVector VisualNavRoadmap::RoadmapImpl::nodes () const
+{
+  return nodes_;
+}
 
 
 /************************************************************
@@ -279,9 +284,14 @@ Pose VisualNavRoadmap::nodePose (const NodeId i) const
   return roadmap_impl_->nodePose (i);
 }
 
-vector<NodeId> VisualNavRoadmap::neighbors (const NodeId i) const 
+NodeVector VisualNavRoadmap::neighbors (const NodeId i) const 
 {
   return roadmap_impl_->neighbors(i);
+}
+
+NodeVector VisualNavRoadmap::nodes () const
+{
+  return roadmap_impl_->nodes();
 }
 
 

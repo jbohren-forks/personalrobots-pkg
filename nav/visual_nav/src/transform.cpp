@@ -57,6 +57,11 @@ Pose::Pose (const StampedPose& tf_pose) : x(tf_pose.getOrigin().x()), y(tf_pose.
 }
 
 
+tf::Transform Transform2D::convertToTf() const
+{
+  return tf::Transform(tf::Quaternion(theta, 0, 0), tf::Point(dx, dy, 0));
+}
+
 Transform2D getTransformBetween (const Pose& pose1, const Pose& pose2)
 {
   double theta = pose2.theta - pose1.theta;
