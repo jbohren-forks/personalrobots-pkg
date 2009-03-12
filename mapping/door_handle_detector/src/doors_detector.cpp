@@ -343,6 +343,10 @@ class DoorDetector
         resp.doors[nr_d].door_p2 = door_p2;
 
         resp.doors[nr_d].height = fabs (max_p.z - min_p.z);
+        resp.doors[nr_d].door_boundary = pmap_.polygons[cc];
+        resp.doors[nr_d].normal.x      = coeff[cc][0];
+        resp.doors[nr_d].normal.y      = coeff[cc][1];
+        resp.doors[nr_d].normal.z      = coeff[cc][2];
 
         nr_d++;
       }
