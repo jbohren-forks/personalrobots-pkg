@@ -43,6 +43,72 @@ namespace cloud_geometry
   namespace distances
   {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the squared distance from a 2D point to another 2D point in the XY plane
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointXYDistanceSqr (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2)
+    {
+      return ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) );
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a 2D point to another 2D point in the XY plane
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointXYDistance (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2)
+    {
+      return ( sqrt (pointToPointXYDistanceSqr (p1, p2) ));
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the squared distance from a 2D point to another 2D point in the XZ plane
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointXZDistanceSqr (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2)
+    {
+      return ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->z - p2->z) * (p1->z - p2->z) );
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a 2D point to another 2D point in the XZ plane
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointXZDistance (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2)
+    {
+      return ( sqrt (pointToPointXZDistanceSqr (p1, p2) ));
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the squared distance from a 2D point to another 2D point in the YZ plane
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointYZDistanceSqr (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2)
+    {
+      return ( (p1->y - p2->y) * (p1->y - p2->y) + (p1->z - p2->z) * (p1->z - p2->z) );
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a 2D point to another 2D point in the YZ plane
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointYZDistance (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2)
+    {
+      return ( sqrt (pointToPointYZDistanceSqr (p1, p2) ));
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Get the squared distance from a 3D point to another 3D point
       * \param p1 the first point
       * \param p2 the second point
