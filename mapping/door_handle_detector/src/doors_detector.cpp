@@ -77,7 +77,6 @@ class DoorDetector
     string input_cloud_topic_, parameter_frame_, door_frame_, cloud_frame_;
     roslib::Header cloud_header_;
     ros::Time cloud_time_;
-    bool publish_debug_;
     unsigned int num_clouds_received_;
 
     // Parameters regarding geometric constraints for the door/handle
@@ -147,13 +146,10 @@ class DoorDetector
 
 
       // Temporary parameters
-      node_.param ("~publish_debug", publish_debug_, true);
-
       node_.param ("~input_cloud_topic", input_cloud_topic_, string ("snapshot_cloud"));
       node_.advertiseService ("doors_detector", &DoorDetector::detectDoor, this);
 
-      if (publish_debug_)
-        node_.advertise<PolygonalMap> ("door_frame", 1);
+      node_.advertise<PolygonalMap> ("~door_frames", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -372,10 +368,7 @@ class DoorDetector
       }
       ROS_INFO ("  Total time: %g.", duration.toSec ());
 
-      if (publish_debug_)
-      {
-        node_.publish ("door_frame", pmap_);
-      }
+      node_.publish ("~door_frames", pmap_);
 
       ROS_INFO ("Finished detecting door");
       return (true);
