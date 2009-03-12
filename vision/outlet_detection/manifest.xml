@@ -15,8 +15,11 @@
   <depend package="star_detector"/>
   <depend package="bullet"/>
   <depend package="tf"/>
-  <depend package="matplotlib"/>
 
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib" />
+  <sysdepend os="ubuntu" version="7.10-gutsy" package="python-matplotlib" />
+  <sysdepend os="centos" version="5.2" package="python-matplotlib" />
+  
   <!--depend package="fast_detector"/>
   <depend package="calonder_descriptor"/>
   <depend package="place_recognition"/-->
