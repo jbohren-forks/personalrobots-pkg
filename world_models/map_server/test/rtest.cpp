@@ -34,8 +34,10 @@
 #include <ros/node.h>
 #include <robot_srvs/StaticMap.h>
 
-// Just for testing gtest linkage issues
+// GTEST: Just for testing gtest linkage issues
 #include <robot_msgs/ControllerStatus.h>
+// This line allows the line below that doesn't work to work
+//extern const int8_t robot_msgs::ControllerStatus::UNDEFINED;
 
 #include "test_constants.h"
 
@@ -66,11 +68,9 @@ class MapClientTest : public testing::Test
  * the loaded image matches the known dimensions of the map.  */
 TEST_F(MapClientTest, retrieve_valid_bmp)
 {
-  // Just for testing gtest linkage issues
-  
-  // This line doesn't work:
+  // GTEST: Just for testing gtest linkage issues
+  // This line doesn't work without the extern from above:
   //ASSERT_EQ(robot_msgs::ControllerStatus::UNDEFINED, 0);
-
   // These lines do work:
   int8_t undefined = robot_msgs::ControllerStatus::UNDEFINED;
   ASSERT_EQ(undefined, 0);
