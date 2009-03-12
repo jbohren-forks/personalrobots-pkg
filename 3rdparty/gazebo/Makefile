@@ -38,6 +38,7 @@ gazebo: $(SVN_DIR)
 	scons $(JOBC) $(ROS_PARALLEL_JOBS) mode=optimized prefix=$(ROOT) boost_cflags="$(BOOST_CFLAGS)" boost_lflags="$(BOOST_LFLAGS)"
 	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
 	scons $(JOBC) $(ROS_PARALLEL_JOBS) mode=optimized prefix=$(ROOT) boost_cflags="$(BOOST_CFLAGS)" boost_lflags="$(BOOST_LFLAGS)" install
+	-cd $(SVN_DIR) && rm -f gazebo;
 	touch gazebo
 
 ROOT_ORIG = $(shell rospack find gazebo)/gazebo-original
