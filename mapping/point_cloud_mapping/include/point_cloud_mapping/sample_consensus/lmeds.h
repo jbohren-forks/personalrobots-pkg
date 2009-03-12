@@ -33,8 +33,8 @@
 #ifndef _SAMPLE_CONSENSUS_LMEDS_H_
 #define _SAMPLE_CONSENSUS_LMEDS_H_
 
-#include "sample_consensus/sac.h"
-#include "sample_consensus/sac_model.h"
+#include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/sac_model.h>
 
 namespace sample_consensus
 {

@@ -32,7 +32,7 @@
 
 #include <cfloat>
 #include <limits>
-#include <sample_consensus/msac.h>
+#include <point_cloud_mapping/sample_consensus/msac.h>
 
 namespace sample_consensus
 {

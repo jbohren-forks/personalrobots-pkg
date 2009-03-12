@@ -49,9 +49,9 @@ histogram and matches it using HIK (the Histogram Intersection Kernel) to a "dat
 #include <robot_msgs/PolygonalMap.h>
 
 // Sample Consensus
-#include <sample_consensus/sac.h>
-#include <sample_consensus/msac.h>
-#include <sample_consensus/sac_model_plane.h>
+#include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/msac.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/areas.h>

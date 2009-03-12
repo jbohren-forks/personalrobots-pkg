@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -30,53 +30,50 @@
 
 /** \author Radu Bogdan Rusu */
 
-#ifndef _SAMPLE_CONSENSUS_SACMODELLINE_H_
-#define _SAMPLE_CONSENSUS_SACMODELLINE_H_
+#ifndef _SAMPLE_CONSENSUS_SACMODELORIENTEDLINE_H_
+#define _SAMPLE_CONSENSUS_SACMODELORIENTEDLINE_H_
 
-#include <sample_consensus/sac_model.h>
-#include <sample_consensus/model_types.h>
-
-/** \brief Define the maximum number of iterations for selecting 2 unique points */
-#define MAX_ITERATIONS_UNIQUE 1000
+#include <robot_msgs/Point32.h>
+#include <point_cloud_mapping/sample_consensus/sac_model.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_line.h>
+#include <point_cloud_mapping/sample_consensus/model_types.h>
 
 namespace sample_consensus
 {
-  /** \brief A Sample Consensus Model class for 3D line segmentation.
+  /** \brief A Sample Consensus Model class for oriented 3D line segmentation.
     */
-  class SACModelLine : public SACModel
+  class SACModelOrientedLine : public SACModelLine
   {
     public:
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Constructor for base SACModelLine. */
-      SACModelLine () { }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Destructor for base SACModelLine. */
-      virtual ~SACModelLine () { }
-
-      virtual std::vector<int> getSamples (int &iterations);
-
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Test whether the given model coefficients are valid given the input point cloud data.
-        * \param model_coefficients the model coefficients that need to be tested
-        * \todo implement this
+      /** \brief Set the axis along which we need to search for a line
+        * \param ax a pointer to the axis
         */
-      bool testModelCoefficients (std::vector<double> model_coefficients) { return true; }
+      void
+        setAxis (robot_msgs::Point32 *ax)
+      {
+        this->axis_.x = ax->x;
+        this->axis_.y = ax->y;
+        this->axis_.z = ax->z;
+      }
 
-      virtual bool computeModelCoefficients (std::vector<int> indices);
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Set the angle epsilon (delta) threshold
+        * \param ea the maximum allowed threshold between the line direction and the given axis
+        */
+      void setEpsAngle (double ea) { this->eps_angle_ = ea; } 
 
-      virtual std::vector<double> refitModel (std::vector<int> inliers);
       virtual std::vector<double> getDistancesToModel (std::vector<double> model_coefficients);
       virtual std::vector<int>    selectWithinDistance (std::vector<double> model_coefficients, double threshold);
 
-      virtual robot_msgs::PointCloud projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients);
-
-      virtual void projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients);
-      virtual bool doSamplesVerifyModel (std::set<int> indices, double threshold);
-
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Return an unique id for this model (SACMODEL_LINE). */
-      virtual int getModelType () { return (SACMODEL_LINE); }
+      /** \brief Return an unique id for this model (SACMODEL_ORIENTED_LINE). */
+      virtual int getModelType () { return (SACMODEL_ORIENTED_LINE); }
+
+    protected:
+      robot_msgs::Point32 axis_;
+      double eps_angle_;
   };
 }
 

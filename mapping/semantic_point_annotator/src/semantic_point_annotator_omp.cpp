@@ -47,9 +47,9 @@
 #include <robot_msgs/PolygonalMap.h>
 
 // Sample Consensus
-#include <sample_consensus/sac.h>
-#include <sample_consensus/msac.h>
-#include <sample_consensus/sac_model_plane.h>
+#include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/msac.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
 #include <tf/transform_listener.h>
 

@@ -30,7 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include <sample_consensus/sac_model_sphere.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_sphere.h>
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <Eigen/LU>
 

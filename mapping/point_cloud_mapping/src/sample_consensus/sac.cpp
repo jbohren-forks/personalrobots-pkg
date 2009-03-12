@@ -30,7 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include <sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/sac.h>
 
 using namespace sample_consensus;
 

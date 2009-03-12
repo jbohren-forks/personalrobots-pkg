@@ -34,15 +34,15 @@
 #include <robot_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/geometry/point.h>
-#include <sample_consensus/sac.h>
-#include <sample_consensus/lmeds.h>
-#include <sample_consensus/ransac.h>
-#include <sample_consensus/rransac.h>
-#include <sample_consensus/msac.h>
-#include <sample_consensus/rmsac.h>
-#include <sample_consensus/mlesac.h>
-#include <sample_consensus/sac_model.h>
-#include <sample_consensus/sac_model_line.h>
+#include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/lmeds.h>
+#include <point_cloud_mapping/sample_consensus/ransac.h>
+#include <point_cloud_mapping/sample_consensus/rransac.h>
+#include <point_cloud_mapping/sample_consensus/msac.h>
+#include <point_cloud_mapping/sample_consensus/rmsac.h>
+#include <point_cloud_mapping/sample_consensus/mlesac.h>
+#include <point_cloud_mapping/sample_consensus/sac_model.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_line.h>
 
 using namespace sample_consensus;
 

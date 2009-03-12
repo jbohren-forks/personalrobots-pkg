@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <stdlib.h>
-#include <sample_consensus/sac_model_cylinder.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_cylinder.h>
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/distances.h>
 

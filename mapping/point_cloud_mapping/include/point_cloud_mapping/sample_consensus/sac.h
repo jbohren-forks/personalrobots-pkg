@@ -37,7 +37,7 @@
 #include <robot_msgs/PointCloud.h>  // ROS point cloud type
 
 #include <stdlib.h>
-#include "sample_consensus/sac_model.h"
+#include <point_cloud_mapping/sample_consensus/sac_model.h>
 
 namespace sample_consensus
 {

@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: /sfpersonalrobots/pkg/trunk/mapping/semantic_point_annotator/src/sac_ground_removal.cpp 18948 2009-03-05T01:55:28.328512Z eitanme  $
+ * $Id$
  *
  */
 
@@ -47,11 +47,11 @@
 #include <robot_msgs/PolygonalMap.h>
 
 // Sample Consensus
-#include <sample_consensus/sac.h>
-#include <sample_consensus/msac.h>
-#include <sample_consensus/ransac.h>
-#include <sample_consensus/lmeds.h>
-#include <sample_consensus/sac_model_line.h>
+#include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/msac.h>
+#include <point_cloud_mapping/sample_consensus/ransac.h>
+#include <point_cloud_mapping/sample_consensus/lmeds.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_line.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/areas.h>

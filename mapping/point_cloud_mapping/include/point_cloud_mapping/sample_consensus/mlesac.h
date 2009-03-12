@@ -30,24 +30,29 @@
 
 /** \author Radu Bogdan Rusu */
 
-#ifndef _SAMPLE_CONSENSUS_MSAC_H_
-#define _SAMPLE_CONSENSUS_MSAC_H_
+#ifndef _SAMPLE_CONSENSUS_MLESAC_H_
+#define _SAMPLE_CONSENSUS_MLESAC_H_
 
-#include "sample_consensus/sac.h"
-#include "sample_consensus/sac_model.h"
+#include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/sac_model.h>
 
 namespace sample_consensus
 {
-  class MSAC : public SAC
+  class MLESAC : public SAC
   {
     public:
 
-      MSAC (SACModel* model);
-      MSAC (SACModel* model, double threshold);
+      MLESAC (SACModel* model);
+      MLESAC (SACModel* model, double threshold);
 
-      virtual ~MSAC () { }
+      virtual ~MLESAC () { }
 
       bool computeModel (int debug = 0);
+
+    private:
+      /** \brief Maximum number of EM (Expectation Maximization) iterations */
+      int iterations_EM_;
+      double sigma_;
   };
 }
 

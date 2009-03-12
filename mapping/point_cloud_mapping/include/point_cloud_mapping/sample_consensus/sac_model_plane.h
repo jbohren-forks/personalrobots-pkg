@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -24,56 +24,59 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: sac_model_oriented_plane.h 10961 2009-02-11 00:20:50Z tfoote $
+ * $Id$
  *
  */
 
 /** \author Radu Bogdan Rusu */
 
-#ifndef _SAMPLE_CONSENSUS_SACMODELORIENTEDPLANE_H_
-#define _SAMPLE_CONSENSUS_SACMODELORIENTEDPLANE_H_
+#ifndef _SAMPLE_CONSENSUS_SACMODELPLANE_H_
+#define _SAMPLE_CONSENSUS_SACMODELPLANE_H_
 
-#include <robot_msgs/Point32.h>
-#include <sample_consensus/sac_model.h>
-#include <sample_consensus/sac_model_plane.h>
-#include <sample_consensus/model_types.h>
+#include <point_cloud_mapping/sample_consensus/sac_model.h>
+#include <point_cloud_mapping/sample_consensus/model_types.h>
+
+/** \brief Define the maximum number of iterations for collinearity checks */
+#define MAX_ITERATIONS_COLLINEAR 1000
 
 namespace sample_consensus
 {
-  /** \brief A Sample Consensus Model class for oriented 3D plane segmentation.
+  /** \brief A Sample Consensus Model class for 3D plane segmentation.
     */
-  class SACModelOrientedPlane : public SACModelPlane
+  class SACModelPlane : public SACModel
   {
     public:
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Constructor for base SACModelPlane. */
+      SACModelPlane () { }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Set the axis along which we need to search for a plane perpendicular to
-        * \param ax a pointer to the axis
-        */
-      void
-        setAxis (robot_msgs::Point32 *ax)
-      {
-        this->axis_.x = ax->x;
-        this->axis_.y = ax->y;
-        this->axis_.z = ax->z;
-      }
+      /** \brief Destructor for base SACModelPlane. */
+      virtual ~SACModelPlane () { }
+
+      virtual std::vector<int> getSamples (int &iterations);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Set the angle epsilon (delta) threshold
-        * \param ea the maximum allowed threshold between the plane normal and the given axis
+      /** \brief Test whether the given model coefficients are valid given the input point cloud data.
+        * \param model_coefficients the model coefficients that need to be tested
+        * \todo implement this
         */
-      void setEpsAngle (double ea) { this->eps_angle_ = ea; } 
+      bool testModelCoefficients (std::vector<double> model_coefficients) { return true; }
 
+      virtual bool computeModelCoefficients (std::vector<int> indices);
+
+      virtual std::vector<double> refitModel (std::vector<int> inliers);
       virtual std::vector<double> getDistancesToModel (std::vector<double> model_coefficients);
       virtual std::vector<int>    selectWithinDistance (std::vector<double> model_coefficients, double threshold);
 
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Return an unique id for this model (SACMODEL_ORIENTED_PLANE). */
-      virtual int getModelType () { return (SACMODEL_ORIENTED_PLANE); }
+      virtual robot_msgs::PointCloud projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients);
 
-    protected:
-      robot_msgs::Point32 axis_;
-      double eps_angle_;
+      virtual void projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients);
+      virtual bool doSamplesVerifyModel (std::set<int> indices, double threshold);
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Return an unique id for this model (SACMODEL_PLANE). */
+      virtual int getModelType () { return (SACMODEL_PLANE); }
   };
 }
 

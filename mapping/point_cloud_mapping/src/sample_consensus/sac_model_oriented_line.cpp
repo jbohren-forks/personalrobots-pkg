@@ -33,7 +33,7 @@
   * \todo Change the internal representation of the line model from 2 points to 1 point + direction.
   */
 
-#include <sample_consensus/sac_model_oriented_line.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_oriented_line.h>
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/nearest.h>

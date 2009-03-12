@@ -53,12 +53,12 @@
 #include <robot_msgs/VisualizationMarker.h>
 
 // Sample Consensus
-#include <sample_consensus/sac.h>
-#include <sample_consensus/msac.h>
-#include <sample_consensus/ransac.h>
-#include <sample_consensus/lmeds.h>
-#include <sample_consensus/sac_model_line.h>
-#include <sample_consensus/sac_model_plane.h>
+#include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/msac.h>
+#include <point_cloud_mapping/sample_consensus/ransac.h>
+#include <point_cloud_mapping/sample_consensus/lmeds.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_line.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/areas.h>

@@ -30,29 +30,29 @@
 
 /** \author Radu Bogdan Rusu */
 
-#ifndef _SAMPLE_CONSENSUS_SACMODELPLANE_H_
-#define _SAMPLE_CONSENSUS_SACMODELPLANE_H_
+#ifndef _SAMPLE_CONSENSUS_SACMODELLINE_H_
+#define _SAMPLE_CONSENSUS_SACMODELLINE_H_
 
-#include <sample_consensus/sac_model.h>
-#include <sample_consensus/model_types.h>
+#include <point_cloud_mapping/sample_consensus/sac_model.h>
+#include <point_cloud_mapping/sample_consensus/model_types.h>
 
-/** \brief Define the maximum number of iterations for collinearity checks */
-#define MAX_ITERATIONS_COLLINEAR 1000
+/** \brief Define the maximum number of iterations for selecting 2 unique points */
+#define MAX_ITERATIONS_UNIQUE 1000
 
 namespace sample_consensus
 {
-  /** \brief A Sample Consensus Model class for 3D plane segmentation.
+  /** \brief A Sample Consensus Model class for 3D line segmentation.
     */
-  class SACModelPlane : public SACModel
+  class SACModelLine : public SACModel
   {
     public:
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Constructor for base SACModelPlane. */
-      SACModelPlane () { }
+      /** \brief Constructor for base SACModelLine. */
+      SACModelLine () { }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Destructor for base SACModelPlane. */
-      virtual ~SACModelPlane () { }
+      /** \brief Destructor for base SACModelLine. */
+      virtual ~SACModelLine () { }
 
       virtual std::vector<int> getSamples (int &iterations);
 
@@ -75,8 +75,8 @@ namespace sample_consensus
       virtual bool doSamplesVerifyModel (std::set<int> indices, double threshold);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Return an unique id for this model (SACMODEL_PLANE). */
-      virtual int getModelType () { return (SACMODEL_PLANE); }
+      /** \brief Return an unique id for this model (SACMODEL_LINE). */
+      virtual int getModelType () { return (SACMODEL_LINE); }
   };
 }
 

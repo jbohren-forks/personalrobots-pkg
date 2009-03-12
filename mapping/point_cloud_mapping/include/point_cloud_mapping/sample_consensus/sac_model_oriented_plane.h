@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -24,59 +24,56 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id$
+ * $Id: sac_model_oriented_plane.h 10961 2009-02-11 00:20:50Z tfoote $
  *
  */
 
 /** \author Radu Bogdan Rusu */
 
-#ifndef _SAMPLE_CONSENSUS_SACMODELSPHERE_H_
-#define _SAMPLE_CONSENSUS_SACMODELSPHERE_H_
+#ifndef _SAMPLE_CONSENSUS_SACMODELORIENTEDPLANE_H_
+#define _SAMPLE_CONSENSUS_SACMODELORIENTEDPLANE_H_
 
-#include <sample_consensus/sac_model.h>
-#include <sample_consensus/model_types.h>
-
-/** \brief Define the maximum number of iterations for collinearity checks */
-#define MAX_ITERATIONS_COLLINEAR 1000
+#include <robot_msgs/Point32.h>
+#include <point_cloud_mapping/sample_consensus/sac_model.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
+#include <point_cloud_mapping/sample_consensus/model_types.h>
 
 namespace sample_consensus
 {
-  /** \brief A Sample Consensus Model class for sphere segmentation.
+  /** \brief A Sample Consensus Model class for oriented 3D plane segmentation.
     */
-  class SACModelSphere : public SACModel
+  class SACModelOrientedPlane : public SACModelPlane
   {
     public:
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Constructor for base SACModelSphere. */
-      SACModelSphere () { }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Destructor for base SACModelSphere. */
-      virtual ~SACModelSphere () { }
-
-      virtual std::vector<int> getSamples (int &iterations);
-
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Test whether the given model coefficients are valid given the input point cloud data.
-        * \param model_coefficients the model coefficients that need to be tested
-        * \todo implement this
+      /** \brief Set the axis along which we need to search for a plane perpendicular to
+        * \param ax a pointer to the axis
         */
-      bool testModelCoefficients (std::vector<double> model_coefficients) { return true; }
+      void
+        setAxis (robot_msgs::Point32 *ax)
+      {
+        this->axis_.x = ax->x;
+        this->axis_.y = ax->y;
+        this->axis_.z = ax->z;
+      }
 
-      virtual bool computeModelCoefficients (std::vector<int> indices);
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /** \brief Set the angle epsilon (delta) threshold
+        * \param ea the maximum allowed threshold between the plane normal and the given axis
+        */
+      void setEpsAngle (double ea) { this->eps_angle_ = ea; } 
 
-      virtual std::vector<double> refitModel (std::vector<int> inliers);
       virtual std::vector<double> getDistancesToModel (std::vector<double> model_coefficients);
       virtual std::vector<int>    selectWithinDistance (std::vector<double> model_coefficients, double threshold);
 
-      virtual robot_msgs::PointCloud projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients);
-
-      virtual void projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients);
-      virtual bool doSamplesVerifyModel (std::set<int> indices, double threshold);
-
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Return an unique id for this model (SACMODEL_SPHERE). */
-      virtual int getModelType () { return (SACMODEL_SPHERE); }
+      /** \brief Return an unique id for this model (SACMODEL_ORIENTED_PLANE). */
+      virtual int getModelType () { return (SACMODEL_ORIENTED_PLANE); }
+
+    protected:
+      robot_msgs::Point32 axis_;
+      double eps_angle_;
   };
 }
 

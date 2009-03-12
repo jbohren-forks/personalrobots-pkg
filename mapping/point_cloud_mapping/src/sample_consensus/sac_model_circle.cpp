@@ -30,7 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include <sample_consensus/sac_model_circle.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_circle.h>
 #include <point_cloud_mapping/geometry/nearest.h>
 
 namespace sample_consensus

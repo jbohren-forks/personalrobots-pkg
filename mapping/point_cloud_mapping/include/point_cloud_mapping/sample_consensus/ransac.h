@@ -30,30 +30,24 @@
 
 /** \author Radu Bogdan Rusu */
 
-#ifndef _SAMPLE_CONSENSUS_RRANSAC_H_
-#define _SAMPLE_CONSENSUS_RRANSAC_H_
+#ifndef _SAMPLE_CONSENSUS_RANSAC_H_
+#define _SAMPLE_CONSENSUS_RANSAC_H_
 
-#include "sample_consensus/sac.h"
-#include "sample_consensus/sac_model.h"
+#include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/sac_model.h>
 
 namespace sample_consensus
 {
-  class RRANSAC : public SAC
+  class RANSAC : public SAC
   {
     public:
 
-      RRANSAC (SACModel* model);
-      RRANSAC (SACModel* model, double threshold);
+      RANSAC (SACModel* model);
+      RANSAC (SACModel* model, double threshold);
 
-      virtual ~RRANSAC () { }
+      virtual ~RANSAC () { }
 
       bool computeModel (int debug = 0);
-
-      void setFractionNrPretest (int nr_pretest);
-
-    private:
-      /** \brief Number of samples to randomly pre-test, in percents. */
-      int fraction_nr_pretest_;
   };
 }
 

@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: plug_onbase_detector.cpp 12352 2009-03-10 21:02:02Z veedee $
+ * $Id$
  *
  */
 
@@ -47,9 +47,9 @@
 #include <robot_msgs/PolygonalMap.h>
 
 // Sample Consensus
-#include <sample_consensus/sac.h>
-#include <sample_consensus/ransac.h>
-#include <sample_consensus/sac_model_plane.h>
+#include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/ransac.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
 #include <tf/transform_listener.h>
 
@@ -66,9 +66,9 @@
 #include <point_cloud_mapping/geometry/statistics.h>
 
 // Sample Consensus
-#include <sample_consensus/sac.h>
-#include <sample_consensus/ransac.h>
-#include <sample_consensus/sac_model_plane.h>
+#include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/ransac.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
 #include <sys/time.h>
 
