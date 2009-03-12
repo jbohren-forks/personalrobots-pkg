@@ -323,7 +323,7 @@ public:
         goodness_factor[cc] = 1;
 
         // Find the best plane in this cluster
-        fitSACPlane (cloud_down_, clusters[cc], inliers, coeff[cc], &viewpoint_cloud_, euclidean_cluster_min_pts_, sac_distance_threshold_);
+        fitSACPlane (cloud_down_, clusters[cc], inliers, coeff[cc], &viewpoint_cloud_, sac_distance_threshold_, euclidean_cluster_min_pts_);
 
         // Compute the convex hull
         cloud_geometry::areas::convexHull2D (&cloud_down_, &inliers, &coeff[cc], pmap_.polygons[cc]);
