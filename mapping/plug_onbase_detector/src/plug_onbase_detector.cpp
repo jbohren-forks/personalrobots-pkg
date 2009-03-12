@@ -259,10 +259,8 @@ class PlugOnBaseDetector
 
       if (publish_debug_)
       {
-        node_.advertise<PointCloud> ("~cloud_annotated", 1);
-
         ROS_INFO ("Debug publishing enabled with %d points.", cloud_annotated_.pts.size ());
-        node_.publish ("~cloud_annotated", cloud_annotated_);
+        node_.publish ("~plug_stow_cloud_debug", cloud_annotated_);
       }
 
       t2 = ros::Time::now ();
