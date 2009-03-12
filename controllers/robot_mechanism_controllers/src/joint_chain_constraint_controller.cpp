@@ -83,6 +83,8 @@ bool JointChainConstraintController::initialize(mechanism::RobotState *robot_sta
   jnt_eff_.resize(num_joints_);
   chain_kdl_jacobian_.resize(num_joints_, num_segments_);
   
+  task_wrench_.setZero();
+  
   // create the required matrices
   joint_constraint_torque_ = Eigen::MatrixXf::Zero(num_joints_, 1);
   // TODO: make sure to change this in the future to have mixed constraint conditions on joints
@@ -130,8 +132,10 @@ void JointChainConstraintController::update()
   task_torque_ = joint_constraint_null_space_ * chain_eigen_jacobian_.transpose() * task_wrench_;
   
   for (unsigned int i = 0; i < num_joints_; ++i)
+  {
     jnt_eff_(i) = joint_constraint_torque_(i) + task_torque_(i);
-  
+    printf("effort:%lf\n",jnt_eff_(i));
+  }
   // set effort to joints
   mechanism_chain_.setEfforts(jnt_eff_, robot_state_->joint_states_);
 }
@@ -226,6 +230,7 @@ void JointChainConstraintController::computeConstraintNullSpace()
 {
   // Compute generalized inverse, this is the transpose as long as the constraints are
   // orthonormal to eachother. Will replace with QR method later.
+  joint_constraint_null_space_.setZero();
   joint_constraint_null_space_ =  identity_ - joint_constraint_jacobian_ * joint_constraint_jacobian_.transpose();
 
 }
