@@ -120,7 +120,7 @@ public:
         // Frame _independent_ parameters (absolute values)
           param ("~door_min_height", door_min_height_, 1.2);                  // minimum height of a door: 1.2m
           param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
-          param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
+          param ("~door_min_width", door_min_width_, 0.7);                    // minimum width of a door: 0.7m
           param ("~door_max_width", door_max_width_, 1.4);                    // maximum width of a door: 1.4m
           ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
                      door_min_height_, door_max_height_, door_min_width_, door_max_width_);
