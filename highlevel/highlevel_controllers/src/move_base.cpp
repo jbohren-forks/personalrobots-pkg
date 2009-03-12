@@ -1051,7 +1051,7 @@ namespace ros {
       ROS_DEBUG("Applying update with %d observations/n", stored_observations.size());
       // Apply to cost map
       ros::Time start = ros::Time::now();
-      if(raytrace_obs.empty() && raytrace_obs.front().cloud_ != NULL)
+      if(raytrace_obs.empty() || raytrace_obs.front().cloud_ == NULL)
         costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), stored_observations);
       else
         costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), stored_observations, &raytrace_obs.front());
