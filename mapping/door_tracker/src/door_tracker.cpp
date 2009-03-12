@@ -75,6 +75,14 @@
 using namespace std;
 using namespace robot_msgs;
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Comparison operator for a vector of vectors
+inline bool compareRegions (const std::vector<int> &a, const std::vector<int> &b)
+{
+  return (a.size () < b.size ());
+}
+
+
 class DoorTracker
 {
   public:
@@ -89,13 +97,17 @@ class DoorTracker
 
     robot_msgs::Door door_msg_;
 
+    robot_msgs::Door door_msg_in_;
+
+    boost::mutex door_msg_mutex_ ;
+
     /********** Parameters that need to be gotten from the param server *******/
     std::string door_msg_topic_, base_laser_topic_;
     int sac_min_points_per_model_;
     double sac_distance_threshold_;
     double eps_angle_, frame_multiplier_;
     int sac_min_points_left_;
-
+    double door_min_width_, door_max_width_;
 
     DoorTracker():message_notifier_(NULL)
     {
@@ -104,11 +116,14 @@ class DoorTracker
       node_->param<std::string>("~p_door_msg_topic_", door_msg_topic_, "door_message");                              // 10 degrees
       node_->param<std::string>("~p_base_laser_topic_", base_laser_topic_, "base_scan");                              // 10 degrees
 
-      node_->param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 10);  // 100 points at high resolution
+      node_->param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  // 100 points at high resolution
       node_->param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm 
       node_->param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
       node_->param ("~p_frame_multiplier_", frame_multiplier_,1.0);
       node_->param ("~p_sac_min_points_left", sac_min_points_left_, 10);
+      node_->param ("~p_door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
+      node_->param ("~p_door_max_width", door_max_width_, 1.4);                    // maximum width of a door: 1.4m
+
       eps_angle_ = cloud_geometry::deg2rad (eps_angle_);                      // convert to radians
 
       double tmp; int tmp2;
@@ -120,21 +135,25 @@ class DoorTracker
       node_->param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
       door_msg_.header.frame_id = "base_footprint";
 
-      node_->subscribe(base_laser_topic_,cloud_, &DoorTracker::laserCallBack,this,1);
-      node_->subscribe(door_msg_topic_,door_msg_, &DoorTracker::doorMsgCallBack,this,1);
+//      node_->subscribe(base_laser_topic_,cloud_, &DoorTracker::laserCallBack,this,1);
+      node_->subscribe(door_msg_topic_,door_msg_in_, &DoorTracker::doorMsgCallBack,this,1);
       node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+
+      message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (tf_, node_,  boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_.c_str (), door_msg_.header.frame_id, 1);
     };
 
     ~DoorTracker()
     {
-      node_->unsubscribe(base_laser_topic_,&DoorTracker::laserCallBack,this);
+//      node_->unsubscribe(base_laser_topic_,&DoorTracker::laserCallBack,this);
       node_->unsubscribe(door_msg_topic_,&DoorTracker::doorMsgCallBack,this);
       node_->unadvertise("visualizationMarker");
+      delete message_notifier_;
     }
 
-    void laserCallBack()
+    void laserCallBack(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
     {
-      ROS_INFO("Received a point cloud with %d points",(int) cloud_.pts.size());
+      cloud_ = *cloud;
+      ROS_INFO("Received a point cloud with %d points in frame: %s",(int) cloud_.pts.size(),cloud_.header.frame_id.c_str());
       if(cloud_.pts.empty())
       {
         ROS_WARN("Received an empty point cloud");
@@ -162,7 +181,7 @@ class DoorTracker
 
       fitSACLines(&cloud_,indices,inliers,coeff,line_segment_min,line_segment_max);
 
-      //Publish all the lines as visualization markers
+/*      //Publish all the lines as visualization markers
       for(unsigned int i=0; i < inliers.size(); i++)
       {
         robot_msgs::VisualizationMarker marker;
@@ -171,13 +190,13 @@ class DoorTracker
         marker.id = i;
         marker.type = robot_msgs::VisualizationMarker::LINE_STRIP;
         marker.action = robot_msgs::VisualizationMarker::ADD;
-        marker.x = 1;
-        marker.y = 0;
-        marker.z = 0;
+        marker.x = 0.0;
+        marker.y = 0.0;
+        marker.z = 0.0;
         marker.yaw = 0.0;
         marker.pitch = 0.0;
         marker.roll = 0.0;
-        marker.xScale = 1;
+        marker.xScale = 0.01;
         marker.yScale = 0.1;
         marker.zScale = 0.1;
         marker.alpha = 255;
@@ -196,11 +215,73 @@ class DoorTracker
 
         node_->publish( "visualizationMarker", marker );
       }
-    }// Take all the lines and find the door
+*/
+      // Take all the lines and find the door 
+
+
+/*      //Rule 1 - choose a line with a width approximately equal to the door width
+      for(unsigned int i=0; i < inliers.size(); i++)
+      {
+       double door_frame_width = sqrt ( (line_segment_max[i].x - line_segment_min[i].x) * (line_segment_max[i].x - line_segment_min[i].x) + (line_segment_max[i].y -  line_segment_min[i].y) * (line_segment_max[i].y -  line_segment_min[i].y) );
+       if(door_frame_width < door_min_width_ || door_frame_width > door_max_width_)
+       {
+         inliers[i].resize(0);
+         ROS_WARN("This candidate line has the wrong width: %f which is outside the (min,max) limits: (%f,%f)",door_frame_width,door_min_width_,door_max_width_);
+       } 
+      }
+*/
+      int inliers_size_max = 0;
+      int inliers_size_max_index = -1;
+      for(unsigned int i=0; i < inliers.size(); i++)
+      {
+        if((int) inliers[i].size() > inliers_size_max)
+        {
+          inliers_size_max = (int) inliers[i].size();
+          inliers_size_max_index = i;
+        }
+      }
+      if(inliers_size_max_index > -1)
+      {
+        robot_msgs::VisualizationMarker marker;
+        marker.header.frame_id = cloud_.header.frame_id;
+        marker.header.stamp = ros::Time((uint64_t)0ULL);
+        marker.id = 0;
+        marker.type = robot_msgs::VisualizationMarker::LINE_STRIP;
+        marker.action = robot_msgs::VisualizationMarker::ADD;
+        marker.x = 0.0;
+        marker.y = 0.0;
+        marker.z = 0.0;
+        marker.yaw = 0.0;
+        marker.pitch = 0.0;
+        marker.roll = 0.0;
+        marker.xScale = 0.01;
+        marker.yScale = 0.1;
+        marker.zScale = 0.1;
+        marker.alpha = 255;
+        marker.r = 0;
+        marker.g = 0;
+        marker.b = 255;
+        marker.set_points_size(2);
+
+        marker.points[0].x = line_segment_min[inliers_size_max_index].x;
+        marker.points[0].y = line_segment_min[inliers_size_max_index].y;
+        marker.points[0].z = line_segment_min[inliers_size_max_index].z;
+
+        marker.points[1].x = line_segment_max[inliers_size_max_index].x;
+        marker.points[1].y = line_segment_max[inliers_size_max_index].y;
+        marker.points[1].z = line_segment_max[inliers_size_max_index].z;
+        ROS_INFO("Door found at: p1: %f %f %f, p2: %f %f %f",marker.points[0].x,marker.points[0].y,marker.points[0].z,marker.points[1].x,marker.points[1].y,marker.points[1].z);
+
+        node_->publish( "visualizationMarker", marker );
+      }
+    }
 
 
     void doorMsgCallBack()
     {
+      door_msg_mutex_.lock();
+      door_msg_ = door_msg_in_;
+      door_msg_mutex_.unlock();
       //populate the door message
     }
 
@@ -215,11 +296,14 @@ class DoorTracker
       sample_consensus::SAC *sac            = new sample_consensus::MSAC (model, sac_distance_threshold_);
       sac->setMaxIterations (100);
       sac->setProbability (0.95);
-      model->setDataSet (points, indices);
 
       //First find points close to the door frame and neglect points that are far away 
       vector<int> possible_door_points;
+      door_msg_mutex_.lock();
       obtainCloudIndicesSet(points,possible_door_points,door_msg_,tf_,frame_multiplier_);
+      door_msg_mutex_.unlock();
+
+      model->setDataSet (points, possible_door_points);
 
       // Now find the best fit line to this set of points and a corresponding set of inliers
       // Prepare enough space
