@@ -45,11 +45,12 @@ import time
 import rospy, rostest
 from robot_msgs.msg import *
 
-TEST_DURATION = 50.0
+TEST_DURATION = 90.0
 TARGET_X = -5.4 + 25.65 #contains offset specified in P3D for base, alternatively, use the gripper roll ground truths
 TARGET_Y = 0.0 + 25.65 #contains offset specified in P3D for base, alternatively, use the gripper roll ground truths
 TARGET_Z = 3.8
 TARGET_RAD = 4.5
+CUP_HEIGHT = 4.0
 
 class TestSlide(unittest.TestCase):
     def __init__(self, *args):
@@ -71,8 +72,8 @@ class TestSlide(unittest.TestCase):
         dz = p3d.pos.position.z - TARGET_Z
         d = math.sqrt((dx * dx) + (dy * dy)) #+ (dz * dz))
         print "Error: " + str(dx) + " " + str(dy) + " " + str(dz)
-        #print "D: " + str(dx) + " " + str(dy) + " " + str(dz) + " " + str(d) + " < " + str(TARGET_RAD * TARGET_RAD)
-        if (d < TARGET_RAD):
+        print "D: dx:" + str(dx) + " dy:" + str(dy) + " dz:" + str(dz) + " d:" + str(d) + " : " + str(TARGET_RAD)
+        if (d < TARGET_RAD and abs(dz) < CUP_HEIGHT):
             #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(p3d.pos.position.x) + " " + str(p3d.pos.position.y)
             #print "DONE"
             self.hits = self.hits + 1

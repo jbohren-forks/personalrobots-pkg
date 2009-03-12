@@ -60,7 +60,7 @@
     </sky>
     <gazeboPath>media</gazeboPath>
     <grid>false</grid>
-    <maxUpdateRate>100</maxUpdateRate>
+    <maxUpdateRate>0.001</maxUpdateRate>
   </rendering:ogre>
 
 
