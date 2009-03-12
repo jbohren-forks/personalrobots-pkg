@@ -83,10 +83,6 @@ class DoorDetector
     // Parameters regarding geometric constraints for the door/handle
     double door_min_height_, door_min_width_, door_max_height_, door_max_width_, door_min_z_;
 
-    // Parameters regarding the size of the 3D bounding box where we will conduct the search for a door/handle
-    double door_min_z_bounds_, door_max_z_bounds_;
-    int door_frame_multiplier_;
-
     // Parameters regarding the _fast_ normals/plane computation using a lower quality (downsampled) dataset
     double leaf_width_;
     double sac_distance_threshold_;
@@ -125,12 +121,6 @@ class DoorDetector
 
           // Frame _dependent_ parameters (need to be converted!)
           node_.param ("~door_min_z", door_min_z_, 0.1);                            // the minimum Z point on the door must be lower than this value
-
-          // TODO: remove this parameters
-          //param ("~door_min_z_bounds", door_min_z_bounds_, -0.5);
-          //param ("~door_max_z_bounds", door_max_z_bounds_, 3.5);
-          door_min_z_bounds_ = -1.0;
-          door_max_z_bounds_ = 4.0;
       }
 
       // ---[ Parameters regarding optimizations / real-time computations
