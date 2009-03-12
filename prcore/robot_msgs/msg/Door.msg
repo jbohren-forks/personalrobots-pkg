@@ -7,3 +7,5 @@ robot_msgs/Point32 handle    ## Position of the door handle w.r.t a frame define
 float32 height
 int32 hinge              ## is the hinge at frame_p1 (=1), frame_p2 (=2) or unknown (=-1)
 int32 rot_dir            ## does the door rotate open clockwise (=1), counterclockwise (=2), or unknown (=-1)
+
+float32 weight               ## Given some perception algorithm, how sure are we that this is a good candidate
