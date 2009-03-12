@@ -11,6 +11,10 @@ include $(shell rospack find mk)/download_unpack_build.mk
 installed: wiped $(SOURCE_DIR)/unpacked
 	cp Makefile.common $(SOURCE_DIR)
 	cd $(SOURCE_DIR)/src && make install
+	if [ `uname` = Darwin ]; then \
+		install_name_tool -id `rospack find loki`/build/lib/libloki.0.1.7.dylib build/lib/libloki.0.1.7.dylib; \
+	fi
+
 	touch installed
 
 wiped: Makefile
