@@ -1,7 +1,7 @@
 all: installed
 
 TARBALL = build/loki-0.1.7.tar.bz2
-TARBALL_URL = http://downloads.sourceforge.net/loki-lib/loki-0.1.7.tar.bz2
+TARBALL_URL = http://pr.willowgarage.com/downloads/loki-0.1.7.tar.bz2
 UNPACK_CMD  = tar xj --exclude=doc --exclude=test -f
 SOURCE_DIR  = build/loki-0.1.7
 
