@@ -59,7 +59,7 @@
 #include <cloud_geometry/intersections.h>
 
 // Cloud Octree
-#include <cloud_octree/octree.h>
+#include <point_cloud_mapping/cloud_octree.h>
 
 #include <sys/time.h>
 

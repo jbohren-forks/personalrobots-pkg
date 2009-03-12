@@ -32,7 +32,7 @@
 
 /** \author Matei Ciocarlie and Radu Bogdan Rusu */
 
-#include <cloud_octree/octree_node.h>
+#include <point_cloud_mapping/octree_node.h>
 #include <string.h>
 #include <vector>
 

@@ -39,8 +39,8 @@
 #include <assert.h>
 #include <list>
 #include <set>
-#include <cloud_octree/octree_node.h>
-#include <cloud_octree/octree_index.h>
+#include <point_cloud_mapping/octree_node.h>
+#include <point_cloud_mapping/octree_index.h>
 // #include <scan_utils/OctreeMsg.h>
 #include <math.h>
 
