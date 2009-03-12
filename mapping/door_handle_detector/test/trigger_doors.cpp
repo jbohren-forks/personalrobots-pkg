@@ -30,59 +30,62 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
+ *
+ * $Id$
+ *
  *********************************************************************/
 
 #include <ros/node.h>
 #include <robot_msgs/Door.h>
-#include <door_handle_detector/DoorDetector.h>
+#include <door_handle_detector/DoorsDetector.h>
 
 using namespace ros;
 using namespace std;
 
-class TriggerDoorDetection: public Node
+class TriggerDoorsDetection
 {
-private:
-  robot_msgs::Door my_door_;
-  door_handle_detector::DoorDetector::Request  req_doordetect;
-  door_handle_detector::DoorDetector::Response res_doordetect;
+  private:
+    robot_msgs::Door my_door_;
+    door_handle_detector::DoorsDetector::Request req_doorsdetect;
+    door_handle_detector::DoorsDetector::Response res_doorsdetect;
+    ros::Node& node_;
 
+  public:
+    TriggerDoorsDetection (ros::Node& anode) : node_ (anode)
+    {
+      // initialize my door
+      double tmp;
+      int tmp2;
+      node_.param ("~/door_frame_p1_x", tmp, 1.5);
+      my_door_.frame_p1.x = tmp;
+      node_.param ("~/door_frame_p1_y", tmp, -0.5);
+      my_door_.frame_p1.y = tmp;
+      node_.param ("~/door_frame_p2_x", tmp, 1.5);
+      my_door_.frame_p2.x = tmp;
+      node_.param ("~/door_frame_p2_y", tmp, 0.5);
+      my_door_.frame_p2.y = tmp;
+      node_.param ("~/door_hinge", tmp2, -1);
+      my_door_.hinge = tmp2;
+      node_.param ("~/door_rot_dir", tmp2, -1);
+      my_door_.rot_dir = tmp2;
+      my_door_.header.frame_id = "base_footprint";
 
-public:
-  TriggerDoorDetection(std::string node_name): Node(node_name)
-  {
-    // initialize my door
-    double tmp; int tmp2;
-    param("~/door_frame_p1_x", tmp, 1.5); my_door_.frame_p1.x = tmp;
-    param("~/door_frame_p1_y", tmp, -0.5); my_door_.frame_p1.y = tmp;
-    param("~/door_frame_p2_x", tmp, 1.5); my_door_.frame_p2.x = tmp;
-    param("~/door_frame_p2_y", tmp, 0.5); my_door_.frame_p2.y = tmp;
-    param("~/door_hinge" , tmp2, -1); my_door_.hinge = tmp2;
-    param("~/door_rot_dir" , tmp2, -1); my_door_.rot_dir = tmp2;
-    my_door_.header.frame_id = "base_footprint";
-
-    req_doordetect.door = my_door_;
-    ros::service::call("door_handle_detector", req_doordetect, res_doordetect);
-  }
-
-  ~TriggerDoorDetection()
-  {
-  }
-
-}; // class
-
-
-
-
+      req_doorsdetect.door = my_door_;
+      ros::service::call ("doors_detector", req_doorsdetect, res_doorsdetect);
+    }
+};                              // class
 
 // -----------------------------------
 //              MAIN
 // -----------------------------------
 
-int main(int argc, char** argv)
+int
+  main (int argc, char **argv)
 {
-  ros::init(argc,argv); 
+  ros::init (argc, argv);
 
-  TriggerDoorDetection executive("open_door_executive_test");
+  ros::Node ros_node ("open_doors_executive_test");
+  TriggerDoorsDetection executive (ros_node);
 
-  return 0;
+  return (0);
 }

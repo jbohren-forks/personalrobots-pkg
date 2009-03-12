@@ -141,8 +141,8 @@ public:
           ROS_DEBUG ("Using the following thresholds for handle detection [min height / max height]: %f / %f.", handle_min_height_, handle_max_height_);
 
 	  // TODO: remove this parameters
-          //param ("~door_min_z_bounds", door_min_z_bounds_, -0.5);              
-          //param ("~door_max_z_bounds", door_max_z_bounds_, 3.5);               
+          //param ("~door_min_z_bounds", door_min_z_bounds_, -0.5);
+          //param ("~door_max_z_bounds", door_max_z_bounds_, 3.5);
 	  door_min_z_bounds_ = -1.0;
 	  door_max_z_bounds_ = 4.0;
       }
@@ -366,10 +366,10 @@ public:
 
 
        // ---[ Compute the distance from the door to the prior of the door
-       double door_distance = fmax (0.001, 
-                                    fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p1, &minP), 
+       double door_distance = fmax (0.001,
+                                    fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p1, &minP),
                                           fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p1, &maxP),
-                                                fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &minP), 
+                                                fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &minP),
                                                       cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &maxP)))));
        goodness_factor[cc] /= door_distance;
 
@@ -404,7 +404,7 @@ public:
       ROS_ERROR ("found a door");
       ROS_INFO ("Number of points selected: %d.", handle_indices.size ());
       if (publish_debug_)
-	publish ("semantic_polygonal_map", pmap_);
+        publish ("semantic_polygonal_map", pmap_);
 
       // Find the handle by performing a composite segmentation in distance and intensity space
       if (!findDoorHandleIntensity (&cloud_in_, &indices_in_bounds, &coeff[best_cluster], &pmap_.polygons[best_cluster], &viewpoint_cloud_,
@@ -493,9 +493,9 @@ public:
       {
         // ---[ First test (geometric)
         // Remove all points that are too close to the edge of the door
-        double d1 = sqrt ( pow(points->pts.at (indices->at (i)).x - min_d.x,2) + 
+        double d1 = sqrt ( pow(points->pts.at (indices->at (i)).x - min_d.x,2) +
                            pow(points->pts.at (indices->at (i)).y - min_d.y,2));
-        double d2 = sqrt ( pow(points->pts.at (indices->at (i)).x - max_d.x,2) + 
+        double d2 = sqrt ( pow(points->pts.at (indices->at (i)).x - max_d.x,2) +
                            pow(points->pts.at (indices->at (i)).y - max_d.y,2));
         if (d1 < 0.02 || d2 < 0.02)
           continue;

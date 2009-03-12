@@ -50,7 +50,7 @@
 #include "geometric_helper.h"
 
 // Include the service call type
-#include "door_handle_detector/DoorDetector.h"
+#include "door_handle_detector/DoorsDetector.h"
 
 #include <tf/message_notifier.h>
 
@@ -58,13 +58,14 @@
 using namespace std;
 using namespace robot_msgs;
 
-class DoorDetector : public ros::Node
+class DoorDetector
 {
-public:
+  protected:
+    ros::Node& node_;
 
+  public:
     // ROS messages
-    PointCloud cloud_in_, cloud_down_;
-    PointCloud cloud_annotated_;
+    PointCloud cloud_in_;
     Point32 z_axis_;
     PolygonalMap pmap_;
     tf::MessageNotifier<robot_msgs::PointCloud>*  message_notifier_;
@@ -79,10 +80,8 @@ public:
     bool publish_debug_;
     unsigned int num_clouds_received_;
 
-
     // Parameters regarding geometric constraints for the door/handle
     double door_min_height_, door_min_width_, door_max_height_, door_max_width_, door_min_z_;
-    double handle_distance_door_max_threshold_, handle_max_height_, handle_min_height_;
 
     // Parameters regarding the size of the 3D bounding box where we will conduct the search for a door/handle
     double door_min_z_bounds_, door_max_z_bounds_;
@@ -98,51 +97,38 @@ public:
     double euclidean_cluster_angle_tolerance_, euclidean_cluster_distance_tolerance_;
     int euclidean_cluster_min_pts_;
 
-    // Parameters for the intensity clustering/cluster rejection
-    double intensity_cluster_perpendicular_angle_tolerance_;
-    int intensity_cluster_min_pts_;
-
     // Parameters for "rectangularity" constraints
     double rectangle_constrain_edge_height_;
     double rectangle_constrain_edge_angle_;
 
-    // Intensity threshold
-    double intensity_threshold_;
-
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    DoorDetector () : ros::Node ("doors_detector"), message_notifier_ (NULL), tf_ (*this)
+    DoorDetector (ros::Node& anode) : node_ (anode), message_notifier_ (NULL), tf_ (anode)
     {
       // ---[ Parameters regarding geometric constraints for the door/handle
       {
-        param ("~parameter_frame", parameter_frame_, string ("base_footprint"));
+          node_.param ("~parameter_frame", parameter_frame_, string ("base_footprint"));
 
         // Frame _independent_ parameters (absolute values)
-          param ("~door_min_height", door_min_height_, 1.2);                  // minimum height of a door: 1.2m
-          param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
-          param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
-          param ("~door_max_width", door_max_width_, 1.4);                    // maximum width of a door: 1.4m
+          node_.param ("~door_min_height", door_min_height_, 1.2);                  // minimum height of a door: 1.2m
+          node_.param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
+          node_.param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
+          node_.param ("~door_max_width", door_max_width_, 1.4);                    // maximum width of a door: 1.4m
           ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
                      door_min_height_, door_max_height_, door_min_width_, door_max_width_);
 
-          param ("~handle_distance_door_max_threshold", handle_distance_door_max_threshold_, 0.25); // maximum distance between the handle and the door
-
           // This parameter constrains the door polygon to resamble a rectangle,
           // that is: the two lines parallel (with some angular threshold) to the Z-axis must have some minimal length
-          param ("~rectangle_constrain_edge_height", rectangle_constrain_edge_height_, 0.2);        // each side of the door has to be at least 20 cm
-          param ("~rectangle_constrain_edge_angle", rectangle_constrain_edge_angle_, 20.0);         // maximum angle threshold between a side and the Z-axis: 20 degrees
+          node_.param ("~rectangle_constrain_edge_height", rectangle_constrain_edge_height_, 0.2);        // each side of the door has to be at least 20 cm
+          node_.param ("~rectangle_constrain_edge_angle", rectangle_constrain_edge_angle_, 20.0);         // maximum angle threshold between a side and the Z-axis: 20 degrees
           rectangle_constrain_edge_angle_ = cloud_geometry::deg2rad (rectangle_constrain_edge_angle_);
 
 	  // Frame _dependent_ parameters (need to be converted!)
-          param ("~door_min_z", door_min_z_, 0.1);                            // the minimum Z point on the door must be lower than this value
-
-          param ("~handle_min_height", handle_min_height_, 0.41);            // minimum height for a door handle: 0.41m
-          param ("~handle_max_height", handle_max_height_, 1.41);            // maximum height for a door handle: 1.41m
-          ROS_DEBUG ("Using the following thresholds for handle detection [min height / max height]: %f / %f.", handle_min_height_, handle_max_height_);
+          node_.param ("~door_min_z", door_min_z_, 0.1);                            // the minimum Z point on the door must be lower than this value
 
 	  // TODO: remove this parameters
-          //param ("~door_min_z_bounds", door_min_z_bounds_, -0.5);              
-          //param ("~door_max_z_bounds", door_max_z_bounds_, 3.5);               
+          //param ("~door_min_z_bounds", door_min_z_bounds_, -0.5);
+          //param ("~door_max_z_bounds", door_max_z_bounds_, 3.5);
 	  door_min_z_bounds_ = -1.0;
 	  door_max_z_bounds_ = 4.0;
       }
@@ -151,98 +137,59 @@ public:
       {
         // Frame _independent_ parameters
           // Parameters regarding the _fast_ normals/plane computation using a lower quality (downsampled) dataset
-          param ("~downsample_leaf_width", leaf_width_, 0.025);             // 2.5cm radius by default
-          param ("~search_k_closest", k_search_, 10);                       // 10 k-neighbors by default
+          node_.param ("~downsample_leaf_width", leaf_width_, 0.025);             // 2.5cm radius by default
+          node_.param ("~search_k_closest", k_search_, 10);                       // 10 k-neighbors by default
           // This should be set to whatever the leaf_width factor is in the downsampler
-          param ("~sac_distance_threshold", sac_distance_threshold_, 0.03); // 3 cm
+          node_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03); // 3 cm
 
           // Parameters regarding the maximum allowed angular difference in normal space for inlier considerations
           z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
-          param ("~normal_angle_tolerance", normal_angle_tolerance_, 15.0); // 15 degrees, wrt the Z-axis
+          node_.param ("~normal_angle_tolerance", normal_angle_tolerance_, 15.0); // 15 degrees, wrt the Z-axis
           normal_angle_tolerance_ = cloud_geometry::deg2rad (normal_angle_tolerance_);
 
           // Parameters regarding the thresholds for Euclidean region growing/clustering
-          param ("~euclidean_cluster_min_pts", euclidean_cluster_min_pts_, 200);                         // 200 points
+          node_.param ("~euclidean_cluster_min_pts", euclidean_cluster_min_pts_, 200);                         // 200 points
           // Difference between normals in degrees for cluster/region growing
-          param ("~euclidean_cluster_angle_tolerance", euclidean_cluster_angle_tolerance_, 30.0);
+          node_.param ("~euclidean_cluster_angle_tolerance", euclidean_cluster_angle_tolerance_, 30.0);
           euclidean_cluster_angle_tolerance_ = cloud_geometry::deg2rad (euclidean_cluster_angle_tolerance_);
-          param ("~euclidean_cluster_distance_tolerance", euclidean_cluster_distance_tolerance_, 0.04);  // 4 cm
-
-          // Parameters regarding the thresholds for intensity region growing/clustering
-          param ("~intensity_threshold", intensity_threshold_, 2000.0);                                                 // 2 points
-          param ("~intensity_cluster_min_pts", intensity_cluster_min_pts_, 2);                                                 // 2 points
-          param ("~intensity_cluster_perpendicular_angle_tolerance", intensity_cluster_perpendicular_angle_tolerance_, 5.0);   // 5 degrees
-          intensity_cluster_perpendicular_angle_tolerance_ = cloud_geometry::deg2rad (intensity_cluster_perpendicular_angle_tolerance_);
-
-          // This describes the size of our 3D bounding box (basically the space where we search for doors),
-          // as a multiplier of the door frame (computed using the two points from the service call) in both X and Y directions
-          // -1 means the multiplier is not used
-	  door_frame_multiplier_ = -1;
+          node_.param ("~euclidean_cluster_distance_tolerance", euclidean_cluster_distance_tolerance_, 0.04);  // 4 cm
       }
 
 
       // Temporary parameters
-      param ("~publish_debug", publish_debug_, true);
+      node_.param ("~publish_debug", publish_debug_, true);
 
-      param ("~input_cloud_topic", input_cloud_topic_, string ("full_cloud"));
-      advertiseService("doors_detector", &DoorDetector::detectDoor, this);
+      node_.param ("~input_cloud_topic", input_cloud_topic_, string ("snapshot_cloud"));
+      node_.advertiseService ("doors_detector", &DoorDetector::detectDoor, this);
 
-      advertise<PointCloud>("handle_visualization", 10);
-
-      /** Sachin **/
-      advertise<PointCloud>("intensity_visualization", 10);
-
-
-      advertise<PolygonalMap>("pmap", 10);
       if (publish_debug_)
-      {
-        advertise<PolygonalMap> ("semantic_polygonal_map", 1);
-        advertise<PointCloud> ("cloud_annotated", 1);
-
-        cloud_annotated_.chan.resize (1);
-        cloud_annotated_.chan[0].name = "rgb";
-      }
+        node_.advertise<PolygonalMap> ("door_frame", 1);
     }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    virtual ~DoorDetector () { }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void
-      updateParametersFromServer ()
-    {
-      if (hasParam ("~input_cloud_topic"))
-        getParam ("~input_cloud_topic", input_cloud_topic_);
-      // \NOTE to Wim : Perhaps we need to read the other parameters from the server here ?
-    }
-
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief This is the main service callback: it gets called whenever a request to find a new door is given     */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
-      detectDoor (door_handle_detector::DoorDetector::Request &req, door_handle_detector::DoorDetector::Response &resp)
+      detectDoor (door_handle_detector::DoorsDetector::Request &req, door_handle_detector::DoorsDetector::Response &resp)
     {
-      ros::Time start_time = ros::Time::now();
-      ros::Duration delay = ros::Duration().fromSec(25);
-      cout << "start time " << start_time.toSec() << endl;
+      ros::Time start_time = ros::Time::now ();
+      ros::Duration delay = ros::Duration().fromSec (25);
+      cout << "start time " << start_time.toSec () << endl;
       cout << "Waiting for laser scan to come in newer than " << (start_time + delay).toSec() << endl;
-
-      updateParametersFromServer ();
 
       // door frame
       door_frame_ = req.door.header.frame_id;
 
       // receive a new laser scan
       num_clouds_received_ = 0;
-      message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (&tf_, this,  boost::bind(&DoorDetector::cloud_cb, this, _1),
+      message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (&tf_, &node_,  boost::bind (&DoorDetector::cloud_cb, this, _1),
                                                                            input_cloud_topic_.c_str (), door_frame_, 1);
-      ros::Duration tictoc = ros::Duration().fromSec(1.0);
-      while ((int)num_clouds_received_ < 1 || (cloud_in_.header.stamp < (start_time + delay))){
+      ros::Duration tictoc = ros::Duration().fromSec (1.0);
+      while ((int)num_clouds_received_ < 1 )//|| (cloud_in_.header.stamp < (start_time + delay)))
         tictoc.sleep ();
-      }
       delete message_notifier_;
-      ROS_INFO("Try to detect door from %i points", cloud_in_.pts.size());
+
+      ROS_INFO ("Try to detect door from %i points", cloud_in_.pts.size());
 
       // cloud frame
       cloud_frame_ = cloud_in_.header.frame_id;
@@ -253,18 +200,15 @@ public:
       ros::Duration duration;
       ts = ros::Time::now ();
 
-      // ---[ Optimization: obtain a set of indices from the entire point cloud that we will work with
-      vector<int> indices_in_bounds;
-      obtainCloudIndicesSet (&cloud_in_, indices_in_bounds, req, &tf_, parameter_frame_, door_min_z_bounds_, door_max_z_bounds_, door_frame_multiplier_);
-
       // ---[ Optimization: downsample the cloud in the bounding box for faster processing
       // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
+      PointCloud cloud_down_;
       vector<cloud_geometry::Leaf> leaves;
       try
       {
         Point leaf_width_xyz;
         leaf_width_xyz.x = leaf_width_xyz.y = leaf_width_xyz.z = leaf_width_;
-        cloud_geometry::downsamplePointCloud (&cloud_in_, &indices_in_bounds, cloud_down_, leaf_width_xyz, leaves, -1);
+        cloud_geometry::downsamplePointCloud (&cloud_in_, cloud_down_, leaf_width_xyz, leaves, -1);
         ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_xyz.x, leaf_width_xyz.y, leaf_width_xyz.z, cloud_down_.pts.size ());
       }
       catch (std::bad_alloc)
@@ -279,7 +223,7 @@ public:
       getCloudViewPoint (cloud_frame_, viewpoint_cloud_, &tf_);
 
       // Create Kd-Tree and estimate the point normals in the original point cloud
-      estimatePointNormals (&cloud_in_, &indices_in_bounds, &cloud_down_, k_search_, &viewpoint_cloud_);
+      estimatePointNormals (&cloud_in_, &cloud_down_, k_search_, &viewpoint_cloud_);
 
       // Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_xy;
@@ -292,28 +236,19 @@ public:
       sort (clusters.begin (), clusters.end (), compareRegions);
       reverse (clusters.begin (), clusters.end ());
 
-      // Reserve enough space
-      cloud_annotated_.header = cloud_header_;
-      cloud_annotated_.pts.resize (cloud_in_.pts.size ());
-      cloud_annotated_.chan[0].vals.resize (cloud_in_.pts.size ());
-
+      vector<vector<double> > coeff (clusters.size ()); // Need to save all coefficients for all models
       pmap_.header = cloud_header_;
       pmap_.polygons.resize (clusters.size ());         // Allocate space for the polygonal map
 
-      vector<vector<double> > coeff (clusters.size ()); // Need to save all coefficients for all models
-
-      ROS_INFO(" - Process all clusters (%i)", clusters.size ());
+      ROS_INFO (" - Process all clusters (%i)", clusters.size ());
       vector<int> inliers;
       vector<int> handle_indices;
       vector<double> goodness_factor (clusters.size());
-      robot_msgs::Point32 minP, maxP, handle_center;
+      robot_msgs::Point32 min_p, max_p, handle_center;
 
       // Transform door_min_z_ from the parameter parameter frame (parameter_frame_) into the point cloud frame
       door_min_z_ = transformDoubleValueTF (door_min_z_, parameter_frame_, cloud_frame_, cloud_time_, &tf_);
 
-      // Transform min/max height values for the door handle (ADA requirements!)
-      handle_min_height_ = transformDoubleValueTF (handle_min_height_, parameter_frame_, cloud_frame_, cloud_time_, &tf_);
-      handle_max_height_ = transformDoubleValueTF (handle_max_height_, parameter_frame_, cloud_frame_, cloud_time_, &tf_);
 
 #pragma omp parallel for schedule(dynamic)
       // Process all clusters
@@ -323,19 +258,23 @@ public:
         goodness_factor[cc] = 1;
 
         // Find the best plane in this cluster
-        fitSACPlane (cloud_down_, clusters[cc], inliers, coeff[cc], &viewpoint_cloud_, sac_distance_threshold_, euclidean_cluster_min_pts_);
+        if (!fitSACPlane (cloud_down_, clusters[cc], inliers, coeff[cc], &viewpoint_cloud_, sac_distance_threshold_, euclidean_cluster_min_pts_))
+        {
+          goodness_factor[cc] = 0;
+          continue;
+        }
 
         // Compute the convex hull
         cloud_geometry::areas::convexHull2D (&cloud_down_, &inliers, &coeff[cc], pmap_.polygons[cc]);
 
         // Filter the region based on its height and width
-        cloud_geometry::statistics::getMinMax (&pmap_.polygons[cc], minP, maxP);
+        cloud_geometry::statistics::getMinMax (&pmap_.polygons[cc], min_p, max_p);
 
-        // ---[ Quick test for minP.z (!)
-        if (minP.z > door_min_z_)
+        // ---[ Quick test for min_p.z (!)
+        if (min_p.z > door_min_z_)
         {
           goodness_factor[cc] = 0;
-          ROS_WARN ("Door candidate rejected because min.Z (%g) is higher than the user specified threshold (%g)!", minP.z, door_min_z_);
+          ROS_DEBUG ("[WARN] Door candidate rejected because min.Z (%g) is higher than the user specified threshold (%g)!", min_p.z, door_min_z_);
           continue;
         }
 
@@ -345,105 +284,110 @@ public:
                              height_df1, height_df2))
         {
           goodness_factor[cc] = 0;
-          ROS_WARN ("Door candidate rejected because the length of the door edges (%g / %g) is smaller than the user specified threshold (%g)!",
-                    height_df1, height_df2, rectangle_constrain_edge_height_);
+          ROS_DEBUG ("[WARN] Door candidate rejected because the length of the door edges (%g / %g) is smaller than the user specified threshold (%g)!",
+                     height_df1, height_df2, rectangle_constrain_edge_height_);
           continue;
         }
 
         // ---[ Compute the door width and height
-        double door_frame = sqrt ( (maxP.x - minP.x) * (maxP.x - minP.x) + (maxP.y - minP.y) * (maxP.y - minP.y) );
-        double door_height = fabs (maxP.z - minP.z);
+        double door_frame = sqrt ( (max_p.x - min_p.x) * (max_p.x - min_p.x) + (max_p.y - min_p.y) * (max_p.y - min_p.y) );
+        double door_height = fabs (max_p.z - min_p.z);
         // Adapt the goodness factor for each cluster
         if (door_frame < door_min_width_ || door_height < door_min_height_ || door_frame > door_max_width_ || door_height > door_max_height_)
         {
           goodness_factor[cc] = 0;
-          ROS_WARN ("Door candidate rejected because its width/height (%g / %g) is smaller than the user specified threshold (%g / %g -> %g / %g)!",
-                    door_frame, door_height, door_min_width_, door_min_height_, door_max_width_, door_max_height_);
+          ROS_DEBUG ("[WARN] Door candidate rejected because its width/height (%g / %g) is smaller than the user specified threshold (%g / %g -> %g / %g)!",
+                     door_frame, door_height, door_min_width_, door_min_height_, door_max_width_, door_max_height_);
           continue;
         }
         double area = cloud_geometry::areas::compute2DPolygonalArea (pmap_.polygons[cc], coeff[cc]);
         goodness_factor[cc] *= (area / (door_frame * door_height));
 
-
-       // ---[ Compute the distance from the door to the prior of the door
-       double door_distance = fmax (0.001, 
-                                    fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p1, &minP), 
-                                          fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p1, &maxP),
-                                                fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &minP), 
-                                                      cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &maxP)))));
-       goodness_factor[cc] /= door_distance;
+        // ---[ Compute the distance from the door to the prior of the door
+        double door_distance = fmax (0.001,
+                                     fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p1, &min_p),
+                                           fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p1, &max_p),
+                                                 fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &min_p),
+                                                       cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &max_p)))));
+        goodness_factor[cc] /= door_distance;
       } // loop over clusters
 
 
-
-      // Find the best cluster
-      double best_goodness_factor = 0;
-      int best_cluster = -1;
+      // Count the number of remaining clusters with non-null goodness factor
+      int doors_found_cnt = 0;
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
-        if (goodness_factor[cc] > best_goodness_factor)
-        {
-          best_goodness_factor = goodness_factor[cc];
-          best_cluster = cc;
-        }
-      }
-      // Resize all the "bad" polygons
-      for (int cc = 0; cc < (int)clusters.size (); cc++)
-      {
-        if (cc != best_cluster)
+        if (goodness_factor[cc] != 0)
+          doors_found_cnt++;
+        else
           pmap_.polygons[cc].points.resize (0);
       }
 
-      // Check if any cluster respected all our constraints
-      if (best_cluster == -1)
+      ROS_INFO (" - Found %d / %d potential door candidates.", doors_found_cnt, clusters.size ());
+      resp.doors.resize (doors_found_cnt);
+
+      // Copy all clusters
+      int nr_d = 0;
+      for (int cc = 0; cc < (int)clusters.size (); cc++)
+      {
+        if (goodness_factor[cc] == 0)
+          continue;
+
+        // Save the weight (we need to reorder at the end)
+        resp.doors[nr_d].weight = goodness_factor[cc];
+
+        // Get the min_p and max_p of selected cluster
+        cloud_geometry::statistics::getLargestXYPoints (&pmap_.polygons[cc], min_p, max_p);
+
+        // Transform the requested door frame parameters into the cloud frame id
+        tf::Stamped<Point32> door_p1 (min_p, cloud_time_, cloud_frame_);
+        tf::Stamped<Point32> door_p2 (max_p, cloud_time_, cloud_frame_);
+
+        door_p2.z = door_p1.z;
+        transformPoint (&tf_, door_frame_, door_p1, door_p1);
+        transformPoint (&tf_, door_frame_, door_p2, door_p2);
+
+        // Reply doors message in same frame as request doors message
+        resp.doors[nr_d].header.frame_id = req.door.header.frame_id;
+
+        resp.doors[nr_d].height = fabs (max_p.z - min_p.z);
+        resp.doors[nr_d].header.stamp = cloud_time_;
+        resp.doors[nr_d].header.frame_id = door_frame_;
+        resp.doors[nr_d].door_p1 = door_p1;
+        resp.doors[nr_d].door_p2 = door_p2;
+
+        resp.doors[nr_d].height = fabs (max_p.z - min_p.z);
+
+        nr_d++;
+      }
+
+      // Check if any cluster respected all our constraints (i.e., has a goodness_factor > 0)
+      if (nr_d == 0)
       {
         ROS_ERROR ("did not find a door");
-        return false;
-      }
-      ROS_ERROR ("found a door");
-      ROS_INFO ("Number of points selected: %d.", handle_indices.size ());
-      if (publish_debug_)
-	publish ("semantic_polygonal_map", pmap_);
-
-      // Find the handle by performing a composite segmentation in distance and intensity space
-      if (!findDoorHandleIntensity (&cloud_in_, &indices_in_bounds, &coeff[best_cluster], &pmap_.polygons[best_cluster], &viewpoint_cloud_,
-                                    handle_indices, handle_center))
-      {
-        ROS_ERROR ("did not find a handle");
         return (false);
       }
-      ROS_ERROR ("found a handle");
 
-
-      // Get the minP and maxP of selected cluster
-      cloud_geometry::statistics::getLargestXYPoints (&pmap_.polygons[best_cluster], minP, maxP);
-
-      // reply door message in same frame as request door message
-      resp.door = req.door;
-      tf::Stamped<Point32> door_p1 (minP, cloud_time_, cloud_frame_);
-      tf::Stamped<Point32> door_p2 (maxP, cloud_time_, cloud_frame_);
-      tf::Stamped<Point32> handle (handle_center, cloud_time_, cloud_frame_);
-      door_p2.z = door_p1.z;
-      transformPoint (&tf_, door_frame_, door_p1, door_p1);
-      transformPoint (&tf_, door_frame_, door_p2, door_p2);
-      transformPoint (&tf_, door_frame_, handle, handle);
-      resp.door.height = fabs (maxP.z - minP.z);
-      resp.door.header.stamp = cloud_time_;
-      resp.door.header.frame_id = door_frame_;
-      resp.door.door_p1 = door_p1;
-      resp.door.door_p2 = door_p2;
-      resp.door.handle = handle;
-      resp.door.height = fabs (maxP.z - minP.z);
+      // Order the results based on the weight (e.g. goodness factor)
+      sort (resp.doors.begin (), resp.doors.end (), compareDoorsWeight);
+      reverse (resp.doors.begin (), resp.doors.end ());
 
       duration = ros::Time::now () - ts;
-      ROS_INFO ("Door found. Result in frame %s \n  P1 = [%f, %f, %f]. P2 = [%f, %f, %f]. \n  Height = %f. \n  Handle = [%f, %f, %f]. \n  Total time: %f.",
-                resp.door.header.frame_id.c_str (),
-                resp.door.door_p1.x, resp.door.door_p1.y, resp.door.door_p1.z, resp.door.door_p2.x, resp.door.door_p2.y, resp.door.door_p2.z,
-                resp.door.height, resp.door.handle.x, resp.door.handle.y, resp.door.handle.z,
-                duration.toSec ());
+      ROS_INFO ("Door(s) found and ordered by weight. Result in frame %s", resp.doors[0].header.frame_id.c_str ());
+      for (int cd = 0; cd < nr_d; cd++)
+      {
+        ROS_INFO ("  %d -> P1 = [%g, %g, %g]. P2 = [%g, %g, %g]. Height = %g. Weight = %g.", cd,
+                  resp.doors[cd].door_p1.x, resp.doors[cd].door_p1.y, resp.doors[cd].door_p1.z, resp.doors[cd].door_p2.x, resp.doors[cd].door_p2.y, resp.doors[cd].door_p2.z,
+                  resp.doors[cd].height, resp.doors[cd].weight);
+      }
+      ROS_INFO ("  Total time: %g.", duration.toSec ());
 
+      if (publish_debug_)
+      {
+        node_.publish ("door_frame", pmap_);
+      }
 
-      ROS_INFO("Finished detecting door");
+      ROS_INFO ("Finished detecting door");
       return (true);
     }
 
@@ -466,11 +410,11 @@ int
 {
   ros::init (argc, argv);
 
-  DoorDetector p;
+  ros::Node ros_node ("doors_detector_node");
 
-  p.spin ();
+  DoorDetector p (ros_node);
+  ros_node.spin ();
 
-  p.shutdown ();
   return (0);
 }
 /* ]--- */

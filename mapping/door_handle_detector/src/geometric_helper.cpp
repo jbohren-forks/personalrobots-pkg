@@ -477,7 +477,7 @@ void
   * \param dist_thresh the maximum allowed distance threshold of an inlier to the model
   * \param min_pts the minimum number of points allowed as inliers for a plane model
   */
-int
+bool
   fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
                robot_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts)
 {
@@ -485,13 +485,13 @@ int
   {
     inliers.resize (0);
     coeff.resize (0);
-    return (-1);
+    return (false);
   }
 
   // Create and initialize the SAC model
   sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-  //sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
-  sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
+  sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+  //sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
   sac->setMaxIterations (500);
   model->setDataSet (&points, indices);
 
@@ -504,12 +504,12 @@ int
       //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
       inliers.resize (0);
       coeff.resize (0);
-      return (-1);
+      return (false);
     }
     sac->computeCoefficients ();          // Compute the model coefficients
     coeff   = sac->refineCoefficients (); // Refine them using least-squares
-    //inliers = model->selectWithinDistance (coeff, dist_thresh);
-    inliers = sac->getInliers ();
+    inliers = model->selectWithinDistance (coeff, dist_thresh);
+    //inliers = sac->getInliers ();
 
     // Flip plane normal according to the viewpoint information
     Point32 vp_m;
@@ -537,11 +537,76 @@ int
   else
   {
     ROS_ERROR ("Could not compute a plane model.");
-    return (-1);
+    return (false);
   }
   delete sac;
   delete model;
-  return (0);
+  return (true);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Estimate point normals for a given point cloud message (in place)
+  * \param points the original point cloud message
+  * \param point_indices only use these point indices
+  * \param points_down the downsampled point cloud message
+  * \param k the number of nearest neighbors to search for
+  * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
+  */
+void
+  estimatePointNormals (PointCloud *points, vector<int> *point_indices, PointCloud *points_down, int k, PointStamped *viewpoint_cloud)
+{
+  // Reserve space for 4 channels: nx, ny, nz, curvature
+  points_down->chan.resize (4);
+  points_down->chan[0].name = "nx";
+  points_down->chan[1].name = "ny";
+  points_down->chan[2].name = "nz";
+  points_down->chan[3].name = "curvature";
+  for (unsigned int d = 0; d < points_down->chan.size (); d++)
+    points_down->chan[d].vals.resize (points_down->pts.size ());
+
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (points);
+
+  // Allocate enough space for point indices
+  vector<vector<int> > points_k_indices (points_down->pts.size ());
+  vector<double> distances (points->pts.size ());
+
+  // Get the nearest neighbors for all the point indices in the bounds
+  for (int i = 0; i < (int)points_down->pts.size (); i++)
+  {
+    //kdtree->nearestKSearch (i, k, points_k_indices[i], distances);
+    kdtree->radiusSearch (&points_down->pts[i], 0.035, points_k_indices[i], distances);
+  }
+
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < (int)points_down->pts.size (); i++)
+  {
+    // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+    Eigen::Vector4d plane_parameters;
+    double curvature;
+    cloud_geometry::nearest::computeSurfaceNormalCurvature (points, &points_k_indices[i], plane_parameters, curvature);
+
+    // See if we need to flip any plane normals
+    Point32 vp_m;
+    vp_m.x = viewpoint_cloud->point.x - points_down->pts[i].x;
+    vp_m.y = viewpoint_cloud->point.y - points_down->pts[i].y;
+    vp_m.z = viewpoint_cloud->point.z - points_down->pts[i].z;
+
+    // Dot product between the (viewpoint - point) and the plane normal
+    double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
+
+    // Flip the plane normal
+    if (cos_theta < 0)
+    {
+      for (int d = 0; d < 3; d++)
+        plane_parameters (d) *= -1;
+    }
+    points_down->chan[0].vals[i] = plane_parameters (0);
+    points_down->chan[1].vals[i] = plane_parameters (1);
+    points_down->chan[2].vals[i] = plane_parameters (2);
+    points_down->chan[3].vals[i] = fabs (plane_parameters (3));
+  }
+  // Delete the kd-tree
+  delete kdtree;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -552,7 +617,7 @@ int
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (PointCloud *points, vector<int> *point_indices, PointCloud *points_down, int k, PointStamped *viewpoint_cloud)
+  estimatePointNormals (PointCloud *points, PointCloud *points_down, int k, PointStamped *viewpoint_cloud)
 {
   // Reserve space for 4 channels: nx, ny, nz, curvature
   points_down->chan.resize (4);

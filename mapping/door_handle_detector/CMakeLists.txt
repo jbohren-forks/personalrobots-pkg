@@ -13,17 +13,20 @@ rospack_add_executable (door_handle_detector_node
                        )
 target_link_libraries (door_handle_detector_node)
 
-#rospack_add_executable (doors_detector_node
-#                        src/geometric_helper.cpp
-#                        src/door_handle_detector.cpp
-#                       )
-#target_link_libraries (doors_detector_node)
+rospack_add_executable (doors_detector_node
+                        src/geometric_helper.cpp
+                        src/doors_detector.cpp
+                       )
+target_link_libraries (doors_detector_node)
 
 rospack_add_executable(open_door_executive_test test/open_door_executive_test.cpp)
 target_link_libraries(open_door_executive_test)
 
 rospack_add_executable(trigger test/trigger.cpp)
 target_link_libraries(trigger)
+
+rospack_add_executable(trigger_doors test/trigger_doors.cpp)
+target_link_libraries(trigger_doors)
 
 rospack_add_executable(door_checkerboard_detector test/door_checkerboard_detector.cpp)
 target_link_libraries(door_checkerboard_detector)
@@ -57,7 +60,7 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   if( HAVE_OPENMP AND HAS_GOMP_LIB )
     add_definitions("-fopenmp")
     target_link_libraries(door_handle_detector_node gomp)
-#    target_link_libraries(doors_detector_node gomp)
+    target_link_libraries(doors_detector_node gomp)
     set(OPENMP_LFLAGS "-lgomp")
   endif( HAVE_OPENMP AND HAS_GOMP_LIB )
 endif( WIN32 )

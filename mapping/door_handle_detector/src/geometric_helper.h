@@ -124,6 +124,13 @@ inline bool
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Comparison operator for a vector of vectors
+inline bool
+  compareDoorsWeight (const robot_msgs::Door &a, const robot_msgs::Door &b)
+{
+  return (a.weight < b.weight);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Obtain a 24-bit RGB coded value from 3 independent <r, g, b> channel values
   * \param r the red channel value
   * \param g the green channel value
@@ -159,9 +166,10 @@ bool checkIfClusterPerpendicular (robot_msgs::PointCloud *points, std::vector<in
 void findClusters (robot_msgs::PointCloud *points, std::vector<int> *indices, double tolerance, std::vector<std::vector<int> > &clusters,
                    int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster = 1);
 
-int fitSACPlane (robot_msgs::PointCloud &points, std::vector<int> indices, std::vector<int> &inliers, std::vector<double> &coeff,
-                 robot_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts);
+bool fitSACPlane (robot_msgs::PointCloud &points, std::vector<int> indices, std::vector<int> &inliers, std::vector<double> &coeff,
+                  robot_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts);
 
 void estimatePointNormals (robot_msgs::PointCloud *points, std::vector<int> *point_indices, robot_msgs::PointCloud *points_down, int k, robot_msgs::PointStamped *viewpoint_cloud);
+void estimatePointNormals (robot_msgs::PointCloud *points, robot_msgs::PointCloud *points_down, int k, robot_msgs::PointStamped *viewpoint_cloud);
 
 #endif
