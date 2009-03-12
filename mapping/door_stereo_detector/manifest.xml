@@ -1,0 +1,18 @@
+<package>
+  <description>
+    A node which finds doors and handles from stereo.
+  </description>
+
+  <author>Marius Muja, Sachin Chitta</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="robot_msgs" />
+  <depend package="robot_srvs" />
+  <depend package="kdl" />
+  <depend package="point_cloud_mapping" />
+  <depend package="std_msgs" />
+
+</package>
