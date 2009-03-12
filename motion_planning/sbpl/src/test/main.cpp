@@ -278,7 +278,7 @@ int planxythetalat(int argc, char *argv[])
 {
 
 	int bRet = 0;
-	double allocated_time_secs = 60; //in seconds
+	double allocated_time_secs = 5; //in seconds
 	MDPConfig MDPCfg;
 	bool bsearchuntilfirstsolution = false;
 
@@ -302,10 +302,10 @@ int planxythetalat(int argc, char *argv[])
 	
 
 	//clear perimeter
-	perimeterptsV.clear();
-	pt_m.x = 0.0;
-	pt_m.y = 0.0;
-	perimeterptsV.push_back(pt_m);
+	//perimeterptsV.clear();
+	//pt_m.x = 0.0;
+	//pt_m.y = 0.0;
+	//perimeterptsV.push_back(pt_m);
 
 	//Initialize Environment (should be called before initializing anything else)
 	EnvironmentNAVXYTHETALAT environment_navxythetalat;
@@ -680,7 +680,7 @@ int planandnavigate3dkin(int argc, char *argv[])
     FILE* fSol = fopen("sol.txt", "w");
     //int dx[8] = {-1, -1, -1,  0,  0,  1,  1,  1};
     //int dy[8] = {-1,  0,  1, -1,  1, -1,  0,  1};
-	bool bPrint = false, bPrintMap = false;
+	bool bPrint = true, bPrintMap = true;
 	int x,y;
 	vector<int> preds_of_changededgesIDV;
 	vector<nav2dcell_t> changedcellsV;
@@ -719,7 +719,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 
 	//set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
 	sbpl_2Dpt_t pt_m;
-	double side = 0.6;
+	double side = 0.1;
 	pt_m.x = -side;
 	pt_m.y = -side;
 	perimeterptsV.push_back(pt_m);
@@ -1058,7 +1058,7 @@ int main(int argc, char *argv[])
 
     //2D planning
     //plan2d(argc, argv);
-    planandnavigate2d(argc, argv);
+    //planandnavigate2d(argc, argv);
 
     //3D planning
     //plan3dkin(argc, argv);
@@ -1067,7 +1067,7 @@ int main(int argc, char *argv[])
     //planandnavigate3dkin(argc, argv);
 
     //xytheta planning
-	//planxythetalat(argc, argv);
+	planxythetalat(argc, argv);
 
     //robotarm planning
     //planrobarm(argc, argv);

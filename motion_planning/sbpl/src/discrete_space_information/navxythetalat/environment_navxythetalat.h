@@ -33,14 +33,14 @@
 //eight-connected grid
 #define NAVXYTHETALAT_DXYWIDTH 8
 
-#define ENVNAVXYTHETALAT_DEFAULTOBSTHRESH 253	//see explanation of the value below
+#define ENVNAVXYTHETALAT_DEFAULTOBSTHRESH 254	//see explanation of the value below
 
 
 //definition of theta orientations
 //0 - is aligned with X-axis in the positive direction (1,0 in polar coordinates)
 //theta increases as we go counterclockwise
 //number of theta values - should be power of 2
-#define NAVXYTHETALAT_THETADIRS 32 
+#define NAVXYTHETALAT_THETADIRS 16
 
 //number of actions per x,y,theta state
 #define NAVXYTHETALAT_DEFAULT_ACTIONWIDTH 5 //decrease, increase, same angle while moving plus decrease, increase angle while standing.
