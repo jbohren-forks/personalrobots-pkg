@@ -429,18 +429,17 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 		cvCircle(img2, cvPoint(outlet_tuple.centers[2]), 10, CV_RGB(255, 255, 255));		
 		cvCircle(img2, cvPoint(outlet_tuple.centers[3]), 10, CV_RGB(0, 255, 255));		
 #endif //VERBOSE_TUPLE
-		
-	}
 	
-	// save outlet borders 
-	for(int i = 0; i < 4; i++)
-	{
-		for(int j = 0; j < tuple[i].seq->total; j++)
-		{
-			CvPoint* p = (CvPoint*)cvGetSeqElem(tuple[i].seq, j);
-			outlet_tuple.borders[i].push_back(cvPoint2D32f(p->x, p->y));
-		}
-	}
+        // save outlet borders 
+        for(int i = 0; i < 4; i++)
+        {
+            for(int j = 0; j < tuple[i].seq->total; j++)
+            {
+                CvPoint* p = (CvPoint*)cvGetSeqElem(tuple[i].seq, j);
+                outlet_tuple.borders[i].push_back(cvPoint2D32f(p->x, p->y));
+            }
+        }
+    }
 	
 #if defined(_VERBOSE_TUPLE)
 	cvNamedWindow("1", 1);
