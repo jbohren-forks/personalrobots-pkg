@@ -263,6 +263,58 @@ public:
   }
 
 
+  // -------------------------
+  bool moveThroughDoor(const robot_msgs::Door& door)
+  // -------------------------
+  {
+    // get orientation
+    Vector normal = getNormalOnDoor(door);
+    normal = transformVectorToFrame(door.header.frame_id, fixed_frame_, normal, door.header.stamp);
+    Vector x_axis(1,0,0);
+    double dot      = normal(0) * x_axis(0) + normal(1) * x_axis(1);
+    double perp_dot = normal(1) * x_axis(0) - normal(0) * x_axis(1);
+    double z_angle = atan2(perp_dot, dot);
+    cout << "z_angle in " << fixed_frame_ << " = " << z_angle << endl;
+
+    // get robot position
+    Vector robot_pos((door.door_p1.x + door.door_p2.x)/2.0, 
+		     (door.door_p1.y + door.door_p2.y)/2.0,
+		     (door.door_p1.z + door.door_p2.z)/2.0);
+    robot_pos = transformPointToFrame(door.header.frame_id, fixed_frame_, robot_pos, door.header.stamp);
+    robot_pos = robot_pos + (normal * 0.7);
+
+    cout << "Moving to" << robot_pos(0) << " " << robot_pos(1) << " " << robot_pos(2) << "in frame: " << door.header.frame_id << endl;
+
+    // get gripper position
+    robot_msgs::PoseStamped gripper_pose_msg;
+    Stamped<Pose> gripper_pose;
+    gripper_pose.frame_id_ = fixed_frame_;
+    Vector point(door.handle.x, door.handle.y, door.handle.z);
+    point = transformPointToFrame(door.header.frame_id, fixed_frame_, point, door.header.stamp);
+    gripper_pose.setOrigin( Vector3(point[0], point[1], point[2]) );
+    gripper_pose.setRotation( Quaternion(z_angle, 0, M_PI/2.0) ); 
+    PoseStampedTFToMsg(gripper_pose, gripper_pose_msg);
+
+    // move the robot in front of the door
+    robot_msgs::Planner2DGoal robot_pose_msg;
+    robot_pose_msg.header.frame_id = fixed_frame_;
+    robot_pose_msg.enable = true;
+    robot_pose_msg.timeout = 1000000;
+    robot_pose_msg.goal.x = robot_pos(0);
+    robot_pose_msg.goal.y = robot_pos(1);
+    robot_pose_msg.goal.th = z_angle;
+    planner_finished_ = false;
+    publish("goal", robot_pose_msg);
+    cout << "moving through door...  " << flush;
+    while (!planner_finished_)
+      polling_.sleep();
+    cout << "Moved in front of door" << endl;
+
+
+    return true;
+  }
+
+
 
   // -------------------------
   bool openDoor()
@@ -311,7 +363,7 @@ public:
     tff_msg_.value.rot.z = 0.0;
 
     publish("cartesian_tff_right/command", tff_msg_);
-    pause_.sleep();
+//    pause_.sleep();
 
     return true;
   }
@@ -363,7 +415,8 @@ public:
       }
       case OPENDOOR:{
         cout << "Opening door... " << endl;
-        if (openDoor())
+        openDoor();
+        if (moveThroughDoor(my_door_))
           state_ = SUCCESS;
         else
           state_ = FAILED;
