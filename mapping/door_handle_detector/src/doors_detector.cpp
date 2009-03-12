@@ -112,7 +112,7 @@ class DoorDetector
         // Frame _independent_ parameters (absolute values)
           node_.param ("~door_min_height", door_min_height_, 1.2);                  // minimum height of a door: 1.2m
           node_.param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
-          node_.param ("~door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
+          node_.param ("~door_min_width", door_min_width_, 0.7);                    // minimum width of a door: 0.7m
           node_.param ("~door_max_width", door_max_width_, 1.4);                    // maximum width of a door: 1.4m
           ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
                      door_min_height_, door_max_height_, door_min_width_, door_max_width_);
@@ -123,14 +123,14 @@ class DoorDetector
           node_.param ("~rectangle_constrain_edge_angle", rectangle_constrain_edge_angle_, 20.0);         // maximum angle threshold between a side and the Z-axis: 20 degrees
           rectangle_constrain_edge_angle_ = cloud_geometry::deg2rad (rectangle_constrain_edge_angle_);
 
-	  // Frame _dependent_ parameters (need to be converted!)
+          // Frame _dependent_ parameters (need to be converted!)
           node_.param ("~door_min_z", door_min_z_, 0.1);                            // the minimum Z point on the door must be lower than this value
 
-	  // TODO: remove this parameters
+          // TODO: remove this parameters
           //param ("~door_min_z_bounds", door_min_z_bounds_, -0.5);
           //param ("~door_max_z_bounds", door_max_z_bounds_, 3.5);
-	  door_min_z_bounds_ = -1.0;
-	  door_max_z_bounds_ = 4.0;
+          door_min_z_bounds_ = -1.0;
+          door_max_z_bounds_ = 4.0;
       }
 
       // ---[ Parameters regarding optimizations / real-time computations
@@ -274,7 +274,7 @@ class DoorDetector
         if (min_p.z > door_min_z_)
         {
           goodness_factor[cc] = 0;
-          ROS_DEBUG ("[WARN] Door candidate rejected because min.Z (%g) is higher than the user specified threshold (%g)!", min_p.z, door_min_z_);
+          ROS_WARN ("[WARN] Door candidate rejected because min.Z (%g) is higher than the user specified threshold (%g)!", min_p.z, door_min_z_);
           continue;
         }
 
@@ -296,7 +296,7 @@ class DoorDetector
         if (door_frame < door_min_width_ || door_height < door_min_height_ || door_frame > door_max_width_ || door_height > door_max_height_)
         {
           goodness_factor[cc] = 0;
-          ROS_DEBUG ("[WARN] Door candidate rejected because its width/height (%g / %g) is smaller than the user specified threshold (%g / %g -> %g / %g)!",
+          ROS_WARN ("[WARN] Door candidate rejected because its width/height (%g / %g) is smaller than the user specified threshold (%g / %g -> %g / %g)!",
                      door_frame, door_height, door_min_width_, door_min_height_, door_max_width_, door_max_height_);
           continue;
         }

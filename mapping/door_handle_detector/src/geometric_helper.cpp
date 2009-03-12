@@ -490,8 +490,8 @@ bool
 
   // Create and initialize the SAC model
   sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-  sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
-  //sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
+//  sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+  sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
   sac->setMaxIterations (500);
   model->setDataSet (&points, indices);
 
