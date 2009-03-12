@@ -2,13 +2,34 @@
  * @author Conor McGann
  */
 #include <executive_trex_pr2/topological_map.h>
+#include <ros/console.h>
 #include "ConstrainedVariable.hh"
 #include "Token.hh"
+#include "StringDomain.hh"
 
 using namespace EUROPA;
 using namespace TREX;
 
 namespace executive_trex_pr2 {
+
+  //*******************************************************************************************
+  MapInitializeFromFileConstraint::MapInitializeFromFileConstraint(const LabelStr& name,
+								   const LabelStr& propagatorName,
+								   const ConstraintEngineId& constraintEngine,
+								   const std::vector<ConstrainedVariableId>& variables)
+    : Constraint(name, propagatorName, constraintEngine, variables), _map(NULL){
+    checkError(variables.size() == 1, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    const StringDomain& dom = static_cast<const StringDomain&>(getCurrentDomain(variables[0]));
+    checkError(dom.isSingleton(), dom.toString() << " is not a singleton when it should be.");
+    const LabelStr fileName = dom.getSingletonValue();
+    std::ifstream is(fileName.c_str());
+    ROS_INFO("Loading the topological map from file");
+    _map = new TopologicalMapAdapter(is);
+  }
+
+  MapInitializeFromFileConstraint::~MapInitializeFromFileConstraint(){
+    delete _map;
+  }
 
   //*******************************************************************************************
   MapConnectorConstraint::MapConnectorConstraint(const LabelStr& name,
@@ -28,6 +49,7 @@ namespace executive_trex_pr2 {
    * We can also bind the value for the connector id based on x and y inputs. This enforces the full relation.
    */
   void MapConnectorConstraint::handleExecute(){
+    debugMsg("map:connector",  "BEFORE: " << toString());
     if(_connector.isSingleton()){
       unsigned int connector_id = (unsigned int) _connector.getSingletonValue();
       double x, y;
@@ -46,6 +68,7 @@ namespace executive_trex_pr2 {
       unsigned int connector_id = TopologicalMapAdapter::instance()->getConnector(_x.getSingletonValue(), _y.getSingletonValue());
       _connector.set(connector_id);
     }
+    debugMsg("map:get_connector",  "AFTER: " << toString());
   }
 
   //*******************************************************************************************
@@ -65,10 +88,21 @@ namespace executive_trex_pr2 {
    * If the position is bound, we can make a region query. The result should be intersected on the domain.
    */
   void MapGetRegionFromPositionConstraint::handleExecute(){
-    if(_x.isSingleton() && _y.isSingleton()){
-      unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(_x.getSingletonValue(), _y.getSingletonValue());
-      _region.set(region_id);
-    }
+    if(!_x.isSingleton() || !_y.isSingleton())
+      return;
+
+    debugMsg("map:get_region_from_position",  "BEFORE: " << toString());
+
+    double x = _x.getSingletonValue();
+    double y = _y.getSingletonValue();
+
+    unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(x, y);
+    _region.set(region_id);
+
+    debugMsg("map:get_region_from_position",  "AFTER: " << toString());
+
+    condDebugMsg(_region.isEmpty(), "map:get_region_from_position", 
+		 "isObstacle(" << x << ", " << y << ") == " << (TopologicalMapAdapter::instance()->isObstacle(x, y) ? "TRUE" : "FALSE"));
   } 
     
   //*******************************************************************************************
@@ -84,16 +118,19 @@ namespace executive_trex_pr2 {
   }
     
   void MapIsDoorwayConstraint::handleExecute(){
-    if(_region.isSingleton()){
-      unsigned int region_id = _region.getSingletonValue();
-      bool is_doorway(true);
+    // If inputs are not bound, return
+    if(!_region.isSingleton())
+      return;
 
-      // If the region is bogus then this is an inconsistency. Otherwise bind the result
-      if(!TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway))
-	_region.empty();
-      else
-	_result.set(is_doorway);
-    }
+    debugMsg("map:is_doorway",  "BEFORE: " << toString());
+
+    unsigned int region_id = _region.getSingletonValue();
+    bool is_doorway(true);
+
+    TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway);
+    _result.set(is_doorway);
+
+    debugMsg("map:is_doorway",  "AFTER: " << toString());
   }
 
     
@@ -113,6 +150,7 @@ namespace executive_trex_pr2 {
   }
     
   void MapGetDoorFromPositionConstraint::handleExecute(){
+    debugMsg("map:get_door_from_position",  "BEFORE: " << toString());
     if(_x1.isSingleton() && _y1.isSingleton() && _x2.isSingleton() && _y2.isSingleton()){
       unsigned int door_id = TopologicalMapAdapter::instance()->getDoorFromPosition(_x1.getSingletonValue(),
 										     _y1.getSingletonValue(),
@@ -120,6 +158,7 @@ namespace executive_trex_pr2 {
 										     _y2.getSingletonValue());
       _door.set(door_id);
     }
+    debugMsg("map:get_door_from_position",  "AFTER: " << toString());
   }
 
 
@@ -140,6 +179,8 @@ namespace executive_trex_pr2 {
   }
 
   void MapGetDoorDataConstraint::handleExecute(){
+    debugMsg("map:get_door_data",  "BEFORE: " << toString());
+
     if(_door.isSingleton() && _door.getSingletonValue() > 0){
       double x1, y1, x2, y2;
       bool result = TopologicalMapAdapter::instance()->getDoorData(x1, y1, x2, y2, _door.getSingletonValue());
@@ -154,6 +195,8 @@ namespace executive_trex_pr2 {
 	_y2.set(y2);
       }
     }
+
+    debugMsg("map:get_door_data",  "AFTER: " << toString());
   }
 
 
@@ -176,6 +219,8 @@ namespace executive_trex_pr2 {
    * @todo This implementation is bogus. It should be querying other api
    */
   void MapGetHandlePositionConstraint::handleExecute(){
+    debugMsg("map:get_handle_position",  "BEFORE: " << toString());
+
     if(_door.isSingleton() && _door.getSingletonValue() > 0){
       double x1, y1, x2, y2;
       bool result = TopologicalMapAdapter::instance()->getDoorData(x1, y1, x2, y2, _door.getSingletonValue());
@@ -189,6 +234,8 @@ namespace executive_trex_pr2 {
 	_z.set(1.0);
       }
     }
+
+    debugMsg("map:get_handle_position",  "BEFORE: " << toString());
   }
 
   //*******************************************************************************************
@@ -389,7 +436,14 @@ namespace executive_trex_pr2 {
 
     _map = topological_map::TopologicalMapPtr(new topological_map::TopologicalMap(in));
 
-    toPostScriptFile();
+    debugMsg("map:initialization", toPPM());
+  }
+
+  std::string TopologicalMapAdapter::toPPM(){
+    std::ofstream of("topological_map.ppm");
+    _map->writePpm(of);
+
+    return "Output map in local directory: topological_map.ppm";
   }
 
   TopologicalMapAdapter::TopologicalMapAdapter(const topological_map::OccupancyGrid& grid, double resolution) {
@@ -487,6 +541,7 @@ namespace executive_trex_pr2 {
       return true;
     }
     catch(...){}
+    result = false;
     return false;
   }
 

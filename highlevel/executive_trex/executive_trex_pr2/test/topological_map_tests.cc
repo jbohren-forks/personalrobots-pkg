@@ -103,6 +103,13 @@ TEST(executive_trex_pr2, map_read_from_file){
   TopologicalMapAdapter map(is);
   std::ofstream os("doors.willow.out");
   printDoors(os);
+
+
+  // Here is a set of points that should be OK
+  ASSERT_EQ(map.isObstacle(19.45, 18.3), false);
+  ASSERT_EQ(map.isObstacle(16.5, 18.85), false);
+  ASSERT_EQ(map.isObstacle(15.0, 22.15), false);
+  ASSERT_EQ(map.isObstacle(21.15, 15.25), false);
 }
 
 TEST(executive_trex_pr2, map_accessor){
@@ -232,11 +239,10 @@ TEST(executive_trex_pr2, map_is_doorway_constraint){
   // Select for a bunch of IDS
   for(unsigned int id = 0; id < (WIDTH_24 * HEIGHT_21); id++){
 
-    // If it is not a region, then binding it should produce an inconsistency
     v_region.specify(id);
     bool is_doorway(true);
     if(!TopologicalMapAdapter::instance()->isDoorway(id, is_doorway))
-      ASSERT_FALSE(ce->propagate());
+      ASSERT_FALSE(is_doorway);
     else {
       ASSERT_TRUE(ce->propagate());
       ASSERT_TRUE(v_result.derivedDomain().isSingleton());

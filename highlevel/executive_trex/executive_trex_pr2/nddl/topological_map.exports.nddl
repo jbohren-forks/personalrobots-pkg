@@ -8,6 +8,9 @@ typedef int [0 100000] MAP_KEY;
 // A 0 key value indicates no key, and thus no map entity
 MAP_KEY NO_KEY = 0;
 
+// A function that will be executed to load the topological map
+constraint map_initialize_from_file(fileName) { fileName <: string }
+
 // A relation: given a connector, bind the x, y the values. Given x, and y, bind the connector
 constraint map_connector(connection_id, x, y, th) { connection_id <: MAP_KEY && x <: numeric && y <: numeric && th <: numeric }
 

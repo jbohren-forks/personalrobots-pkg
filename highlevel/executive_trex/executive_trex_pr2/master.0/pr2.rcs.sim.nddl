@@ -2,9 +2,9 @@
 
 // Initialize state variables
 fact(base_state.Holds f0);
-f0.x = 0.0;
-f0.y = 0.0;
-f0.th = 0.0;
+f0.x = 15.0;
+f0.y = 25.2;
+f0.th = 0.5;
 
 fact(battery_state.Holds f1);
 f1.energy_remaining = 100.0;

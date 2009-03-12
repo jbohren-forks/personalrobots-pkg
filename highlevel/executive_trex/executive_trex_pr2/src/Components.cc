@@ -96,6 +96,8 @@ namespace TREX{
 
       // Register topological map constraints
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
+			  executive_trex_pr2::MapInitializeFromFileConstraint, "map_initialize_from_file", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapConnectorConstraint, "map_connector", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
 			  executive_trex_pr2::MapGetRegionFromPositionConstraint, "map_get_region_from_position", "Default");
@@ -104,9 +106,9 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
 			  executive_trex_pr2::MapGetDoorFromPositionConstraint, "map_get_door_from_position", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
-			  executive_trex_pr2::MapGetDoorFromPositionConstraint, "map_get_door_data", "Default");
+			  executive_trex_pr2::MapGetDoorDataConstraint, "map_get_door_data", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
-			  executive_trex_pr2::MapGetHandlePositionConstraint, "get_handle_position", "Default");
+			  executive_trex_pr2::MapGetHandlePositionConstraint, "map_get_handle_position", "Default");
 
 
       // Register functions for calculations in the door domain

@@ -3,3 +3,30 @@ PLASMA_HOME = [ FDirName $(TREX_PKG_ROOT) PLASMA ] ;
 PLASMA = [ FDirName $(PLASMA_HOME) src PLASMA ] ;
 TREX = [ FDirName  $(TREX_PKG_ROOT) TREX ] ;
 include [ FDirName $(TREX) Jamfile ] ;
+
+# Enables header scanning of NDDL files
+SEARCH_SOURCE = $(EXEC_HOME)/nddl $(TREX)/agent/base $(PLASMA_HOME)/src/PLASMA/NDDL/base ;
+
+# Input files
+local ExecInputs = 
+	[ FDirName . wpc.0 pr2.exec.nddl ]
+	[ FDirName . wpc.1 pr2.exec.nddl ]
+	[ FDirName . wpc.2 pr2.exec.nddl ]
+	[ FDirName . wpc.3 pr2.exec.nddl ]
+	[ FDirName . wpc_gazebo.0 pr2.exec.nddl ]
+	[ FDirName . wpc_gazebo.1 pr2.exec.nddl ]
+	[ FDirName . miles.0 pr2.exec.nddl ]
+	[ FDirName . miles.2 pr2.exec.nddl ]
+	[ FDirName . miles.4 pr2.exec.nddl ]
+	[ FDirName . arm.0 pr2.exec.nddl ]
+	[ FDirName . arm.1 pr2.exec.nddl ]
+	[ FDirName . arm.2 pr2.exec.nddl ]
+	[ FDirName . nav.0 pr2.exec.nddl ]
+;
+
+local file ;
+for file in [ FGristFiles $(ExecInputs) ] {
+       local xml = $(file:S=.xml:G=) ;
+       LocalDepends exec_inputs : $(xml) ;
+       NddlParser $(xml) : $(file) ;
+}

@@ -1,0 +1,14 @@
+<package>
+  <description brief="This package contains core interfaces for robot actions"/>
+ <author>Conor McGann</author>
+ <license>BSD</license>
+ <review status="unreviewed" notes=""/>
+ <url>http://pr.willowgarage.com</url>
+
+ <depend package="roscpp"/>
+ <depend package="std_msgs"/>
+
+ <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+ </export>
+</package>

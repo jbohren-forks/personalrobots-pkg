@@ -1,14 +1,17 @@
 #include "master.nddl"
 
-
 /* Waypoints */
-Waypoint w1 = new Waypoint(9.0, 0.5, 0.0);
-Waypoint w2 = new Waypoint(10.0, 10.0 , 2.0);
+Waypoint w0 = new Waypoint(19.45, 18.3, 0.0);
+Waypoint w1 = new Waypoint(16.50, 18.85, 0.0);
+Waypoint w2 = new Waypoint(15.0, 22.15, 0.0);
 
 /* Charging Stations */
-ChargingStation c1 = new ChargingStation(15.0, 15.0, 1.959);
+ChargingStation c1 = new ChargingStation(21.15, 15.25, 0.0); // Outside Eitan's office
 
 close();
 
+// Loads the map from file
+map_initialize_from_file("../test/willow.tmap");
+
 rejectable(Navigator.Active g0);
-g0.w = w1;
+g0.w = w0;

@@ -244,7 +244,7 @@ DoorController::Holds {
 	  float x1, y1, x2, y2;
 	  map_get_door_data(x1, y1, x2, y2, door_id);
 
-	  if(found_handle == true){	  
+	  if(found_handle == true){
 	    // Are we in a grasp position? Now is a good time to find out. We will query the map. This data will have to be laid out
 	    // in more detail.
 	    float grasp_x, grasp_y, grasp_th;

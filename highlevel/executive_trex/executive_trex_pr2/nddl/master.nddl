@@ -378,6 +378,11 @@ Navigator::Inactive{
 Navigator::Active{
   default(recharging, false);
 
+  // It must be a valid region (i.e. not an obstacle)
+  MAP_KEY target_region;
+  map_get_region_from_position(target_region, w.x, w.y);
+  neq(target_region, NO_KEY);
+
   starts(Path.Holds p);
   eq(p.active, true);
   eq(p.final_x, w.x);
@@ -410,7 +415,7 @@ VenusDeMiles::Holds{
   testLT(busy, 0, iterationLimit);
   if(busy == true){
     // Alternatives:
-    // navigator[start + [0, inf], end] = Active(randomSelect(w))
+    // navigator[any, end] = Active(randomSelect(w))
     randomSelect(w);
     ends(Navigator.Active n);
     eq(n.w, w);

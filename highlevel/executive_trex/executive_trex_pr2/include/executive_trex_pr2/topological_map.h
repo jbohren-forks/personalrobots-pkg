@@ -25,6 +25,28 @@ using namespace TREX;
 
 namespace executive_trex_pr2 {
   
+  class TopologicalMapAdapter;
+
+  /**
+   * @brief A procedure to load a topological map from a file
+   */
+  class MapInitializeFromFileConstraint  : public Constraint {
+  public:
+    
+    MapInitializeFromFileConstraint(const LabelStr& name,
+				    const LabelStr& propagatorName,
+				    const ConstraintEngineId& constraintEngine,
+				    const std::vector<ConstrainedVariableId>& variables);
+    
+    virtual void handleExecute(){}
+
+    virtual ~MapInitializeFromFileConstraint();
+
+  private:
+
+    TopologicalMapAdapter* _map;
+  };
+
   /**
    * @brief A relation: given a connector, bind the x, y the values. Given x, and y, bind the connector
    */
@@ -303,8 +325,11 @@ namespace executive_trex_pr2 {
   private:
     static TopologicalMapAdapter* _singleton;
 
-    // Helper method to visualize the grap as a post script file
+    // Helper method to visualize the graph as a post script file
     void toPostScriptFile();
+
+    // Helper method to visualize as a ppm
+    std::string toPPM();
 
     topological_map::TopologicalMapPtr _map;
   };
