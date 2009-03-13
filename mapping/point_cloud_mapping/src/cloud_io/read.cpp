@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2008-2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -39,12 +39,11 @@ namespace cloud_io
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Load point cloud data from a PCD file containing n-D points.
   * Returns -1 on error, 0 on success.
-  * \note Only ASCII files are currently supported
   * \note All lines besides:
   * - the ones beginning with # (treated as comments)
   * - COLUMNS ...
   * - POINTS ...
-  * - DATA ...
+  * - DATA ascii/binary
   * ...are intepreted as data points.
   * \param file_name the name of the file to load
   * \param points the resulting point array
@@ -52,6 +51,7 @@ namespace cloud_io
   int
     loadPCDFile (const char* file_name, robot_msgs::PointCloud &points)
   {
+    bool binary_data = false;
     int nr_points = 0;
     std::ifstream fs;
     std::string line;
@@ -70,7 +70,7 @@ namespace cloud_io
         continue;
 
       std::vector<std::string> st;
-      boost::split (st, line, boost::is_any_of(" "));
+      boost::split (st, line, boost::is_any_of (" "));
 
       std::string line_type = st.at (0);
 
@@ -87,7 +87,7 @@ namespace cloud_io
           std::string col_type = st.at (i + 4);
           points.chan[i].name = col_type;
         }
-        
+
         continue;
       }
       // Get the number of points
@@ -104,7 +104,14 @@ namespace cloud_io
 
       // Check DATA type
       if (line_type.substr (0, 4) == "DATA")
+      {
+        if (st.at (1).substr (0, 6) == "binary")
+        {
+          binary_data = true;
+          break;
+        }
         continue;
+      }
 
       // Nothing of the above? We must have points then
       // Convert the first token to float and use it as the first point coordinate
@@ -126,9 +133,58 @@ namespace cloud_io
     // Close file
     fs.close ();
 
-    if (idx != nr_points)
+    /// ---[ Binary mode only
+    /// We must re-open the file and read with mmap () for binary
+    if (binary_data)
     {
-      fprintf (stderr, "Warning! Number of points read (%d) is different than expected (%d)\n", idx, nr_points);
+      // Open for reading
+      int fd = open (file_name, O_RDONLY);
+      if (fd == -1)
+        return (-1);
+
+      // Compute how much a point (with it's N-dimensions) occupies in terms of bytes
+      int point_size = sizeof (float) * (points.chan.size () + 3);
+
+      // Prepare the map
+      char *map = (char*)mmap (0, points.pts.size () * point_size, PROT_READ, MAP_SHARED, fd, getpagesize ());
+      if (map == MAP_FAILED)
+      {
+        close (fd);
+        return (-1);
+      }
+
+      // Read the data
+      for (unsigned int i = 0; i < points.pts.size (); i++)
+      {
+        int idx_j = 0;
+
+        // Copy the x-y-z point coordinates
+        memcpy (&points.pts[i].x, (char*)&map[i * point_size + idx_j], sizeof (float));
+        idx_j += sizeof (float);
+        memcpy (&points.pts[i].y, (char*)&map[i * point_size + idx_j], sizeof (float));
+        idx_j += sizeof (float);
+        memcpy (&points.pts[i].z, (char*)&map[i * point_size + idx_j], sizeof (float));
+        idx_j += sizeof (float);
+
+        for (unsigned int j = 0; j < points.chan.size (); j++)
+        {
+          memcpy (&points.chan[j].vals[i], (char*)&map[i * point_size + idx_j], sizeof (float));
+          idx_j += sizeof (float);
+        }
+      }
+
+      // Unmap the pages of memory
+      if (munmap (map, points.pts.size () * point_size) == -1)
+      {
+        close (fd);
+        return (-1);
+      }
+      close (fd);
+    }
+
+    if ( (idx != nr_points) && (!binary_data) )
+    {
+      ROS_ERROR ("Warning! Number of points read (%d) is different than expected (%d)", idx, nr_points);
       return (-1);
     }
 
