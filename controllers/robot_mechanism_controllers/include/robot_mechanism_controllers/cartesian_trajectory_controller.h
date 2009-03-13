@@ -60,6 +60,7 @@ public:
   bool start();
   void update();
   ros::Duration moveTo(const KDL::Frame& pose_desi, double duration=0);
+  bool isMoving() {return is_moving_; };
 
 private:
   KDL::Frame getPose();

@@ -177,7 +177,7 @@ void JointChainConstraintController::computeConstraintTorques()
     }
 
     // check the sign of the constraint
-    double sign = ((*it).threshold_start_ - (*it).nullspace_start_)/fabs((*it).threshold_start_ - (*it).nullspace_start_);
+    double sign = -((*it).threshold_start_ - (*it).nullspace_start_)/fabs((*it).threshold_start_ - (*it).nullspace_start_);
     
     (*it).joint_error_ = error;
     
