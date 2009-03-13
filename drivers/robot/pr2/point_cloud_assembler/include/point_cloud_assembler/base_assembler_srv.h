@@ -58,6 +58,7 @@ namespace point_cloud_assembler
  *
  * Reads the following parameters from the parameter server
  *  - \b "~tf_cache_time_secs" (double) - The cache time (in seconds) to holds past transforms
+ *  - \b "~tf_tolerance_secs (double) - The time (in seconds) to wait after the transform for scan_in is available.
  *  - \b "~max_scans" (unsigned int) - The number of scans to store in the assembler's history, until they're thrown away
  *  - \b "~fixed_frame" (string) - The frame to which received data should immeadiately be transformed to
  *  - \b "~downsampling_factor" (int) - Specifies how often to sample from a scan. 1 preserves all the data. 3 keeps only 1/3 of the points.
@@ -128,6 +129,7 @@ BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::Node(
   param("~tf_cache_time_secs", tf_cache_time_secs, 10.0) ;
   if (tf_cache_time_secs < 0)
     ROS_ERROR("Parameter tf_cache_time_secs<0 (%f)", tf_cache_time_secs) ;
+
   tf_ = new tf::TransformListener(*this, true, ros::Duration(tf_cache_time_secs)) ;
   ROS_INFO("TF Cache Time: %f Seconds", tf_cache_time_secs) ;
 
@@ -150,7 +152,7 @@ BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::Node(
   if (fixed_frame_ == "ERROR_NO_NAME")
     ROS_ERROR("Need to set parameter fixed_frame") ;
 
-  // ***** Set fixed_frame *****
+  // ***** Set downsample_factor *****
   int tmp_downsample_factor ;
   param("~downsample_factor", tmp_downsample_factor, 1) ;
   if (tmp_downsample_factor < 1)
@@ -164,8 +166,17 @@ BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::Node(
   // ***** Start Services *****
   advertiseService(getName()+"/build_cloud", &BaseAssemblerSrv<T>::buildCloud, this, 0) ;
 
+  // **** Get the TF Notifier Tolerance ****
+  double tf_tolerance_secs ;
+  param("~tf_tolerance_secs", tf_tolerance_secs, 0.0) ;
+  if (tf_tolerance_secs < 0)
+    ROS_ERROR("Parameter tf_tolerance_secs<0 (%f)", tf_tolerance_secs) ;
+  ROS_INFO("tf Tolerance: %f seconds", tf_tolerance_secs) ;
+
   // ***** Start Listening to Data *****
   scan_notifier_ = new tf::MessageNotifier<T>(tf_, this, boost::bind(&BaseAssemblerSrv<T>::scansCallback, this, _1), "scan_in", fixed_frame_, 10) ;
+  scan_notifier_->setTolerance(ros::Duration(tf_tolerance_secs)) ;
+
 }
 
 template <class T>
