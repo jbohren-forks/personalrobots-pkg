@@ -199,10 +199,10 @@ struct AddRegions
 
 
 TopologicalMapPtr groundTruthTopologicalMap (const OccupancyGrid& grid, const vector<DoorInfo>& door_info, 
-                                             const double resolution, const double obstacle_cost, const double width)
+                                             const double resolution, const double width)
 {
   shared_ptr<OccupancyGrid> grid_ptr(new OccupancyGrid(grid));
-  GridGraph g(grid_ptr, obstacle_cost);
+  GridGraph g(grid_ptr);
   
   vector<RegionPtr> door_regions(door_info.size());
   transform(door_info.begin(), door_info.end(), door_regions.begin(), GetDoorCells(resolution, width));
@@ -215,7 +215,7 @@ TopologicalMapPtr groundTruthTopologicalMap (const OccupancyGrid& grid, const ve
   vector<MutableRegionPtr> comps = g.connectedComponents();
 
   ROS_DEBUG_NAMED("ground_truth_map", "Done looking for connected components\nCreating map from grid");
-  TopologicalMapPtr map(new TopologicalMap(grid, resolution, obstacle_cost));
+  TopologicalMapPtr map(new TopologicalMap(grid, resolution));
   
   ROS_DEBUG_NAMED("ground_truth_map", "Done creating map from grid\nAdding door regions");
   for_each (comps.begin(), comps.end(), AddRegions(map, door_regions));
@@ -279,7 +279,6 @@ int main(int argc, char** argv)
   string static_map_file("");
   double resolution(-1), width(-1);
   unsigned inflation_radius = 0;
-  double obstacle_cost(-1);
 
 
   // Declare the supported options.
@@ -287,7 +286,6 @@ int main(int argc, char** argv)
   desc.add_options()
     ("help,h", "produce help message")
     ("resolution,r", po::value<double>(&resolution), "Resolution of grid.  Required.")
-    ("obstacle_cost,c", po::value<double>(&obstacle_cost), "Cost of moving through obstacle cells.  Required.")
     ("inflation_radius,i", po::value<unsigned>(&inflation_radius), "Inflation radius of obstacles (in gridcells).  Defaults to 0.")
     ("width,w", po::value<double>(&width), "Width of doors in metres.  Required.")
     ("static_map_file,m", po::value<string>(&static_map_file), "pgm file containing the static map.  Required.")
@@ -298,8 +296,7 @@ int main(int argc, char** argv)
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);    
 
-  if (vm.count("help") || !vm.count("door_file") || !vm.count("resolution") || !vm.count("static_map_file")
-      || !vm.count("width") || !vm.count("obstacle_cost")) {
+  if (vm.count("help") || !vm.count("door_file") || !vm.count("resolution") || !vm.count("static_map_file") || !vm.count("width")) {
     std::cout << desc;
     return 1;
   }
@@ -307,7 +304,7 @@ int main(int argc, char** argv)
   vector<tmap::DoorInfo> doors = tmap::loadFromFile(door_file, resolution);
   tmap::OccupancyGrid grid = tmap::loadOccupancyGrid(static_map_file);
   grid = tmap::inflateObstacles(grid, inflation_radius);
-  tmap::TopologicalMapPtr tmap = groundTruthTopologicalMap(grid, doors, resolution, obstacle_cost, width);
+  tmap::TopologicalMapPtr tmap = groundTruthTopologicalMap(grid, doors, resolution, width);
 
   if (vm.count("ppm_output_file")) {
     ofstream stream(ppm_file.c_str());

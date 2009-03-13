@@ -113,7 +113,7 @@ typedef vector<Block> Blocks;
 class BottleneckFinder
 {
 public:
-  BottleneckFinder(const OccupancyGrid& g, double resolution, double obstacle_cost, uint size, uint width, uint skip, uint r, const string& dir);
+  BottleneckFinder(const OccupancyGrid& g, double resolution, uint size, uint width, uint skip, uint r, const string& dir);
 
   void initializeFromGrid();
   void findBottlenecks();
@@ -195,10 +195,10 @@ const GridGraphVertex& BottleneckFinder::cellVertex (const int r, const int c)
   return cellVertex(Cell2D(r,c));
 }
 
-BottleneckFinder::BottleneckFinder(const OccupancyGrid& g, const double resolution, const double obstacle_cost, const uint size, 
+BottleneckFinder::BottleneckFinder(const OccupancyGrid& g, const double resolution, const uint size, 
                                    const uint width, const uint skip, const uint r, const string& dir) :
   grid_(g), bottleneck_size_(size), bottleneck_width_(width), bottleneck_skip_(skip), inflation_radius_(r), ppm_output_dir_(dir), 
-  num_rows_(numRows(g)), num_cols_(numCols(g)), num_vertices_(0), topological_map_(new TopologicalMap(g, resolution, obstacle_cost))
+  num_rows_(numRows(g)), num_cols_(numCols(g)), num_vertices_(0), topological_map_(new TopologicalMap(g, resolution))
 {
   ROS_ASSERT_MSG (max(num_rows_, num_cols_)<INT_MAX/2, "Grid size is %ux%u, which is too large to work given INT_MAX=%d", num_rows_, num_cols_, INT_MAX);
 }
@@ -747,9 +747,9 @@ void BottleneckFinder::findOpenRegions ()
    ************************************************************/
 
 
-TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const double obstacle_cost, const uint bottleneck_size, const uint bottleneck_width, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir)
+TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_width, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir)
   {
-    BottleneckFinder b(grid, resolution, obstacle_cost, bottleneck_size, bottleneck_width, bottleneck_skip, inflation_radius, ppm_output_dir);
+    BottleneckFinder b(grid, resolution, bottleneck_size, bottleneck_width, bottleneck_skip, inflation_radius, ppm_output_dir);
     b.initializeFromGrid();
     b.findBottlenecks();
     b.findOpenRegions();

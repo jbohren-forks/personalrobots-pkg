@@ -84,8 +84,8 @@ public:
   // Create an empty graph.  
   GridGraph() {}
 
-  // Create a graph from an occupancy grid.  Edges between non-obstacle vertices have cost 1.0, and others have cost obstacle_cost;
-  GridGraph(boost::shared_ptr<OccupancyGrid> grid, double obstacle_cost);
+  // Create a graph from an occupancy grid.  
+  GridGraph(boost::shared_ptr<OccupancyGrid> grid);
 
   // Does the graph contain this cell
   bool containsCell (const Cell2D& cell) const;

@@ -59,7 +59,7 @@ class TopologicalMap::MapImpl
 public:
 
   /// Default constructor creates empty graph
-  MapImpl(const OccupancyGrid& grid, double resolution, double obstacle_cost);
+  MapImpl(const OccupancyGrid& grid, double resolution);
 
   /// Constructor that reads from a stream
   MapImpl(istream& stream);
@@ -172,7 +172,6 @@ private:
   shared_ptr<RegionGraph> region_graph_;
   shared_ptr<Roadmap> roadmap_;
 
-  double obstacle_cost_;
   shared_ptr<GridGraph> grid_graph_;
 
   RegionConnectorMap region_connector_map_;

@@ -54,28 +54,31 @@ using std::queue;
  * basic
  ************************************************************/
 
-GridGraph::GridGraph(shared_ptr<OccupancyGrid> grid, const double obstacle_cost)
+GridGraph::GridGraph(shared_ptr<OccupancyGrid> grid)
 {
   for (uint r=0; r<numRows(*grid); ++r) {
     for (uint c=0; c<numCols(*grid); ++c) {
-      
-      // Add node
-      Cell2D cell(r,c);
-      ROS_ASSERT_MSG (cell_vertex_map_.find(cell)==cell_vertex_map_.end(), "Cell %d, %d already exists", cell.r, cell.c);
-      GridGraphVertex v = add_vertex(CellInfo(cell), graph_);
-      cell_vertex_map_[cell]=v;
 
-      // Add edges
-      for (char vertical=0; vertical<2; ++vertical) {
-        for (char multiplier=-1; multiplier<=1; multiplier+=2) {
-          char dr = multiplier * (vertical ? 1 : 0);
-          char dc = multiplier * (vertical ? 0 : 1);
-          int r2=cell.r+dr, c2=cell.c+dc;
-          Cell2D neighbor(r2,c2);
-          CellVertexMap::iterator iter = cell_vertex_map_.find(neighbor);
-          if (iter!=cell_vertex_map_.end()) {
-            double cost = (*grid)[r][c] || (*grid)[r2][c2] ? obstacle_cost : 1.0;
-            addEdge(cell,neighbor,cost);
+      // skip obstacle cells
+      if (!(*grid)[r][c]) {
+      
+        // Add node
+        Cell2D cell(r,c);
+        ROS_ASSERT_MSG (cell_vertex_map_.find(cell)==cell_vertex_map_.end(), "Cell %d, %d already exists", cell.r, cell.c);
+        GridGraphVertex v = add_vertex(CellInfo(cell), graph_);
+        cell_vertex_map_[cell]=v;
+
+        // Add edges
+        for (char vertical=0; vertical<2; ++vertical) {
+          for (char multiplier=-1; multiplier<=1; multiplier+=2) {
+            char dr = multiplier * (vertical ? 1 : 0);
+            char dc = multiplier * (vertical ? 0 : 1);
+            int r2=cell.r+dr, c2=cell.c+dc;
+            Cell2D neighbor(r2,c2);
+            CellVertexMap::iterator iter = cell_vertex_map_.find(neighbor);
+            if (iter!=cell_vertex_map_.end()) {
+              addEdge(cell,neighbor,1.0);
+            }
           }
         }
       }
@@ -281,44 +284,44 @@ tuple<bool, double, GridPath> GridGraph::shortestPath (const Cell2D& cell1, cons
       
   
   
-//   typedef map<GridGraphVertex, double> GridDistances;
-//   typedef map<GridGraphVertex, GridGraphVertex> GridPreds;
-//   GridDistances distances;
-//   GridPreds predecessors;
+  //   typedef map<GridGraphVertex, double> GridDistances;
+  //   typedef map<GridGraphVertex, GridGraphVertex> GridPreds;
+  //   GridDistances distances;
+  //   GridPreds predecessors;
   
-//   GridGraphVertex start = cellVertex(cell1);
-//   GridGraphVertex finish = cellVertex(cell2);
+  //   GridGraphVertex start = cellVertex(cell1);
+  //   GridGraphVertex finish = cellVertex(cell2);
 
-//   resetIndices();
+  //   resetIndices();
 
-//   try {
-//     dijkstra_shortest_paths (graph_, start,
-//                              weight_map(get(&EdgeCost::cost, graph_)).
-//                              vertex_index_map(get(&CellInfo::index, graph_)).
-//                              predecessor_map(associative_property_map<GridPreds>(predecessors)).
-//                              distance_map(associative_property_map<GridDistances>(distances)).
-//                              visitor(GraphSearchVisitor(finish)));
-//   }
-//   catch (GridGraphVertex& e) {
-//     // Extract path from predecessor map
-//     vector<GridGraphVertex> reverse_path(1,finish);
-//     GridGraphVertex current = finish;
+  //   try {
+  //     dijkstra_shortest_paths (graph_, start,
+  //                              weight_map(get(&EdgeCost::cost, graph_)).
+  //                              vertex_index_map(get(&CellInfo::index, graph_)).
+  //                              predecessor_map(associative_property_map<GridPreds>(predecessors)).
+  //                              distance_map(associative_property_map<GridDistances>(distances)).
+  //                              visitor(GraphSearchVisitor(finish)));
+  //   }
+  //   catch (GridGraphVertex& e) {
+  //     // Extract path from predecessor map
+  //     vector<GridGraphVertex> reverse_path(1,finish);
+  //     GridGraphVertex current = finish;
 
-//     while (current!=predecessors[current]) {
-//       reverse_path.push_back(current=predecessors[current]);
-//     }
-//     GridPath path(reverse_path.size());
-//     ROS_ASSERT_MSG (current==start, "Unexpectedly could not find shortest path");
+  //     while (current!=predecessors[current]) {
+  //       reverse_path.push_back(current=predecessors[current]);
+  //     }
+  //     GridPath path(reverse_path.size());
+  //     ROS_ASSERT_MSG (current==start, "Unexpectedly could not find shortest path");
 
-//     // Put it in source-to-goal order, replace vertex descriptors with cells, and return
-//     transform(reverse_path.rbegin(), reverse_path.rend(), path.begin(), TransformVertexToCell(graph_));
-//     ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Found path with cost " << distances[finish]);
-//     return make_tuple(true, distances[finish], path);
-//   }
+  //     // Put it in source-to-goal order, replace vertex descriptors with cells, and return
+  //     transform(reverse_path.rbegin(), reverse_path.rend(), path.begin(), TransformVertexToCell(graph_));
+  //     ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Found path with cost " << distances[finish]);
+  //     return make_tuple(true, distances[finish], path);
+  //   }
 
-//   // Else, we must not have found a path
-//   ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Did not find a path");
-//   return make_tuple(false, -1, GridPath());
+  //   // Else, we must not have found a path
+  //   ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Did not find a path");
+  //   return make_tuple(false, -1, GridPath());
 }
 
 
@@ -335,7 +338,7 @@ vector<MutableRegionPtr> GridGraph::connectedComponents ()
 {
   resetIndices();
   int num_comps=connected_components(graph_, get(&CellInfo::component, graph_), 
-                                    vertex_index_map(get(&CellInfo::index, graph_)));
+                                     vertex_index_map(get(&CellInfo::index, graph_)));
   vector<MutableRegionPtr> regions(num_comps);
   generate(regions.begin(), regions.end(), makeEmptyRegion);
 
