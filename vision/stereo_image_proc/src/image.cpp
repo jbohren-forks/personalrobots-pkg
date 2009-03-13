@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -68,7 +68,7 @@ ImageData::ImageData()
   imRectType = COLOR_CODING_NONE;
   imRectSize = 0;
   imRectColorType = COLOR_CODING_NONE;
-  imRectColorSize = 0;  
+  imRectColorSize = 0;
   params = NULL;
 
   // color conversion
@@ -124,7 +124,7 @@ ImageData::releaseBuffers()
   imRectType = COLOR_CODING_NONE;
   imRectSize = 0;
   imRectColorType = COLOR_CODING_NONE;
-  imRectColorSize = 0;  
+  imRectColorSize = 0;
 
   if (rMapxy)
     cvReleaseMat(&rMapxy);
@@ -163,7 +163,7 @@ ImageData::initRectify(bool force)
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
       CV_MAT_ELEM(*rR, double, i, j) = R[i*3+j];
-  
+
   for (int i=0; i<5; i++)
     CV_MAT_ELEM(*rD, double, i, 0) = D[i];
 
@@ -221,13 +221,13 @@ ImageData::doRectify()
 	  imRect = (uint8_t *)MEMALIGN(imSize);
 	}
 
-      // set up images 
+      // set up images
       imRectType = imType;
       cvInitImageHeader(srcIm, size, IPL_DEPTH_8U, 1);
       cvInitImageHeader(dstIm, size, IPL_DEPTH_8U, 1);
       cvSetData(srcIm, im, imWidth);
       cvSetData(dstIm, imRect, imWidth);
-      
+
       //      cvRemap(srcIm,dstIm,rMapxy,rMapa);
       cvRemap(srcIm,dstIm,mx,my);
     }
@@ -244,13 +244,13 @@ ImageData::doRectify()
 	  imRectColor = (uint8_t *)MEMALIGN(imSize);
 	}
 
-      // set up images 
+      // set up images
       imRectColorType = imColorType;
       cvInitImageHeader(srcIm, size, IPL_DEPTH_8U, 3);
       cvInitImageHeader(dstIm, size, IPL_DEPTH_8U, 3);
       cvSetData(srcIm, imColor, imWidth*3);
       cvSetData(dstIm, imRectColor, imWidth*3);
-      
+
       //      cvRemap(srcIm,dstIm,rMapxy,rMapa);
       cvRemap(srcIm,dstIm,mx,my);
     }
@@ -301,6 +301,7 @@ StereoData::StereoData()
   // point array/vector
   numPts = 0;
   imPts = NULL;
+  imCoords = NULL;
   imPtsColor = NULL;
   isPtArray = false;
   imPtsSize = 0;
@@ -430,6 +431,7 @@ StereoData::releaseBuffers()
   imDispSize = 0;
   hasDisparity = false;
   MEMFREE(imPts);
+  MEMFREE(imCoords);
   imPtsSize = 0;
   numPts = 0;
   imLeft->releaseBuffers();
@@ -488,7 +490,7 @@ StereoData::doBayerMono()
 // includes post-filtering
 //
 
-bool 
+bool
 StereoData::doDisparity(stereo_algorithm_t alg)
 {
   uint8_t *lim, *rim;
@@ -520,7 +522,7 @@ StereoData::doDisparity(stereo_algorithm_t alg)
   int sthresh = smoothThresh;
   bool unique_c = unique_check;
 
- // printf("Unique check: %d\r", unique_check);	
+ // printf("Unique check: %d\r", unique_check);
 
  // allocate buffers
   // TODO: make these consistent with current values
@@ -539,28 +541,28 @@ StereoData::doDisparity(stereo_algorithm_t alg)
   do_prefilter(rim, frim, xim, yim, ftzero, buf);
 
 switch(alg){
-	case NORMAL_ALGORITHM:  
-  		do_stereo(flim, frim, imDisp, NULL, xim, yim, 
+	case NORMAL_ALGORITHM:
+  		do_stereo(flim, frim, imDisp, NULL, xim, yim,
 	    	ftzero, corr, corr, dlen, tthresh, uthresh, buf);
 	break;
 	case SCANLINE_ALGORITHM:
-		do_stereo_so(flim, frim, imDisp, xim, yim, 
+		do_stereo_so(flim, frim, imDisp, xim, yim,
 	    	ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
 	break;
 	case DP_ALGORITHM:
-		do_stereo_dp(flim, frim, imDisp, xim, yim, 
+		do_stereo_dp(flim, frim, imDisp, xim, yim,
 	    	ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
 	break;
 	case MW_ALGORITHM:
-		do_stereo_mw(flim, frim, imDisp, xim, yim, 
+		do_stereo_mw(flim, frim, imDisp, xim, yim,
 		   ftzero, corr, corr, dlen, tthresh, uthresh, unique_c);
 	break;
 	case LS_ALGORITHM:
-		do_stereo_ls(flim, frim, imDisp, xim, yim, 
+		do_stereo_ls(flim, frim, imDisp, xim, yim,
 		    ftzero, corr, corr, dlen, tthresh, uthresh, sthresh, unique_c);
 	break;
 	case NCC_ALGORITHM:
-		do_stereo_ncc(flim, frim, imDisp, xim, yim, 
+		do_stereo_ncc(flim, frim, imDisp, xim, yim,
 	    	ftzero, corr, corr, dlen, tthresh, uthresh, unique_c);
 	break;
 
@@ -569,7 +571,7 @@ switch(alg){
 }
 
 
- 
+
   hasDisparity = true;
 
   doSpeckle();
@@ -583,7 +585,7 @@ switch(alg){
 // useful for STOC processing, where it's not done on-camera
 //
 
-bool 
+bool
 StereoData::doSpeckle()
 {
   if (!hasDisparity) return false;
@@ -599,7 +601,7 @@ StereoData::doSpeckle()
 	lbuf = (uint32_t *)malloc(xim*yim*sizeof(uint32_t)); // local storage for the algorithm
       if (!wbuf)
 	wbuf = (uint32_t *)malloc(xim*yim*sizeof(uint32_t)); // local storage for the algorithm
-      do_speckle(imDisp, 0, xim, yim, speckleDiff, speckleRegionSize, 
+      do_speckle(imDisp, 0, xim, yim, speckleDiff, speckleRegionSize,
 		 lbuf, wbuf, rbuf);
     }
   return true;
@@ -644,7 +646,7 @@ void extract(std::string& data, std::string section, std::string param, T& t)
     }
 }
 
-void extract(std::string& data, std::string section, 
+void extract(std::string& data, std::string section,
 		  std::string param, double *m, int n)
 {
   size_t found = data.find(section);
@@ -694,11 +696,14 @@ StereoData::doCalcPts()
       MEMFREE(imPts);
       imPtsSize = 4*w*h*sizeof(float);
       imPts = (float *)MEMALIGN(imPtsSize);
+      MEMFREE(imCoords);
+      imCoords = (int *)MEMALIGN(2*w*h*sizeof(int));
       MEMFREE(imPtsColor);
       imPtsColor = (uint8_t *)MEMALIGN(3*w*h);
     }
 
   float *pt;
+  int *pcoord;
   int y = iy;
   float cx = (float)RP[3];
   float cy = (float)RP[7];
@@ -706,7 +711,8 @@ StereoData::doCalcPts()
   float itx = (float)RP[14];
   itx *= 1.0 / (float)dpp; // adjust for subpixel interpolation
   pt = imPts;
-      
+  pcoord = imCoords;
+
   // set up range max/min disparity
   if (rangeMax > 0.0)
     {
@@ -726,7 +732,7 @@ StereoData::doCalcPts()
 
       for (int i=0; i<iw; i++, x++, p++)
 	{
-	  if (*p > dmax && *p < dmin) 
+	  if (*p > dmax && *p < dmin)
 	    {
 	      float ax = (float)x + cx;
 	      float ay = (float)y + cy;
@@ -734,6 +740,9 @@ StereoData::doCalcPts()
 	      *pt++ = ax*aw;	// X
 	      *pt++ = ay*aw;	// Y
 	      *pt++ = f*aw;	// Z
+	      // store point image coordinates
+	      *pcoord++ = x;
+	      *pcoord++ = y;
 	      numPts++;
 	    }
 	}
@@ -751,7 +760,7 @@ StereoData::doCalcPts()
 
 	  for (int i=0; i<iw; i++, x++, p++, pc+=3)
 	    {
-	      if (*p > dmax && *p < dmin) 
+	      if (*p > dmax && *p < dmin)
 		{
 		  *pcout++ = *pc;
 		  *pcout++ = *(pc+1);
@@ -772,7 +781,7 @@ StereoData::doCalcPts()
 
 	  for (int i=0; i<iw; i++, p++, pc++)
 	    {
-	      if (*p > dmax && *p < dmin) 
+	      if (*p > dmax && *p < dmin)
 		{
 		  *pcout++ = *pc;
 		  *pcout++ = *pc;
@@ -796,7 +805,7 @@ StereoData::doCalcPts()
 
 
 bool
-StereoData::calcPt(int x, int y, float *fx, float *fy, float *fz) 
+StereoData::calcPt(int x, int y, float *fx, float *fy, float *fz)
 {
   doDisparity();
   if (!hasDisparity)
@@ -810,7 +819,7 @@ StereoData::calcPt(int x, int y, float *fx, float *fy, float *fz)
 
   int16_t *p = imDisp + x + y*imWidth;
 
-  if (*p > 0) 
+  if (*p > 0)
     {
       float ax = (float)x + cx;
       float ay = (float)y + cy;
@@ -865,7 +874,7 @@ StereoData::extractParams(char *ps, bool store)
       extract(params, "[left camera]", "fy", imLeft->K[4]);
       extract(params, "[left camera]", "Cx", imLeft->K[2]);
       extract(params, "[left camera]", "Cy", imLeft->K[5]);
-      imLeft->K[8] = 1.0;	  
+      imLeft->K[8] = 1.0;
 
       for (int i=0; i<5; i++) imLeft->D[i] = 0.0; // distortion params
       extract(params, "[left camera]", "kappa1", imLeft->D[0]);
@@ -877,7 +886,7 @@ StereoData::extractParams(char *ps, bool store)
       pp = (double *)imLeft->R; // rectification matrix
       for (int i=0; i<9; i++) pp[i] = 0.0;
       extract(params, "[left camera]", "rect",  pp, 9);
-	  
+
       pp = (double *)imLeft->P; // projection matrix
       for (int i=0; i<12; i++) pp[i] = 0.0;
       extract(params, "[left camera]", "proj",  pp, 12);
@@ -890,7 +899,7 @@ StereoData::extractParams(char *ps, bool store)
       extract(params, "[right camera]", "fy", imRight->K[4]);
       extract(params, "[right camera]", "Cx", imRight->K[2]);
       extract(params, "[right camera]", "Cy", imRight->K[5]);
-      imRight->K[8] = 1.0;	  
+      imRight->K[8] = 1.0;
 
       for (int i=0; i<5; i++) imRight->D[i] = 0.0; // distortion params
       extract(params, "[right camera]", "kappa1", imRight->D[0]);
@@ -902,7 +911,7 @@ StereoData::extractParams(char *ps, bool store)
       pp = (double *)imRight->R; // rectification matrix
       for (int i=0; i<9; i++) pp[i] = 0.0;
       extract(params, "[right camera]", "rect",  pp, 9);
-	  
+
       pp = (double *)imRight->P; // projection matrix
       for (int i=0; i<12; i++) pp[i] = 0.0;
       extract(params, "[right camera]", "proj",  pp, 12);
@@ -913,10 +922,10 @@ StereoData::extractParams(char *ps, bool store)
       for (int i=0; i<3; i++) Om[i] = 0.0;
       extract(params, "[external]", "Tx", T[0]);
       extract(params, "[external]", "Ty", T[1]);
-      extract(params, "[external]", "Tz", T[2]);  
+      extract(params, "[external]", "Tz", T[2]);
       extract(params, "[external]", "Rx", Om[0]);
       extract(params, "[external]", "Ry", Om[1]);
-      extract(params, "[external]", "Rz", Om[2]);  
+      extract(params, "[external]", "Rz", Om[2]);
 
       T[0] *= .001;
       T[1] *= .001;
@@ -940,7 +949,7 @@ StereoData::extractParams(char *ps, bool store)
       pp = (double *)imLeft->R; // rectification matrix
       for (int i=0; i<9; i++) pp[i] = 0.0;
       extract(params, "[left camera]", "rectification",  imLeft->R, 9);
-	  
+
       pp = (double *)imLeft->P; // projection matrix
       for (int i=0; i<12; i++) pp[i] = 0.0;
       extract(params, "[left camera]", "projection",  imLeft->P, 12);
@@ -955,7 +964,7 @@ StereoData::extractParams(char *ps, bool store)
       pp = (double *)imRight->R; // rectification matrix
       for (int i=0; i<9; i++) pp[i] = 0.0;
       extract(params, "[right camera]", "rectification",  pp, 9);
-	  
+
       pp = (double *)imRight->P; // projection matrix
       for (int i=0; i<12; i++) pp[i] = 0.0;
       extract(params, "[right camera]", "projection",  pp, 12);
@@ -971,7 +980,7 @@ StereoData::extractParams(char *ps, bool store)
 
   // disparity resolution
   extract(params, "[stereo]", "dpp", dpp);
-  PRINTF("[dcam] Disparity resolution: 1/%d pixel\n", dpp);  
+  PRINTF("[dcam] Disparity resolution: 1/%d pixel\n", dpp);
   extract(params, "[stereo]", "corrxsize", corrSize);
   PRINTF("[dcam] Correlation window: %d\n", corrSize);
   extract(params, "[stereo]", "convx", filterSize);
@@ -1003,7 +1012,7 @@ StereoData::extractParams(char *ps, bool store)
       PRINTF("\n");
     }
   PRINTF("\n");
-	  
+
   PRINTF("[dcam] Left projection matrix\n");
   for (int i=0; i<3; i++)
     {
@@ -1014,7 +1023,7 @@ StereoData::extractParams(char *ps, bool store)
   PRINTF("\n");
 
   // check for camera matrix
-  if (imLeft->K[0] == 0.0) 
+  if (imLeft->K[0] == 0.0)
     hasRectification = false;
   else
     {
@@ -1046,7 +1055,7 @@ StereoData::extractParams(char *ps, bool store)
       PRINTF("\n");
     }
   PRINTF("\n");
-	  
+
   PRINTF("[dcam] Right projection matrix\n");
   for (int i=0; i<3; i++)
     {
@@ -1061,7 +1070,7 @@ StereoData::extractParams(char *ps, bool store)
   // first column
   RP[0] = 1.0;
   RP[4] = RP[8] = RP[12] = 0.0;
-  
+
   // second column
   RP[5] = 1.0;
   RP[1] = RP[9] = RP[13] = 0.0;
@@ -1100,7 +1109,7 @@ StereoData::extractParams(char *ps, bool store)
 
 
   // check for camera matrix
-  if (imRight->K[0] == 0.0) 
+  if (imRight->K[0] == 0.0)
     hasRectification = false;
   else
     {
@@ -1110,7 +1119,7 @@ StereoData::extractParams(char *ps, bool store)
 }
 
 
-// 
+//
 // Create parameters string and save it in the imLeft->params location
 //
 
@@ -1157,7 +1166,7 @@ StereoData::createParams(bool store)
   n += sprintf(str,"# oST version %d.%d parameters\n\n", OST_MAJORVERSION, OST_MINORVERSION);
 
   // stereo params
-  n += sprintf(&str[n],"\n[stereo]\n");  
+  n += sprintf(&str[n],"\n[stereo]\n");
   n += sprintf(&str[n],"\nndisp    ");
   n += PrintStr(numDisp,&str[n]);
   n += sprintf(&str[n],"\ndpp      ");
@@ -1178,7 +1187,7 @@ StereoData::createParams(bool store)
 
   // left camera
   n += sprintf(&str[n],"\n[left camera]\n");
-  
+
   n += sprintf(&str[n],"\ncamera matrix\n");
   n += PrintMatStr(imLeft->K,3,3,&str[n]);
 
@@ -1189,7 +1198,7 @@ StereoData::createParams(bool store)
   n += PrintMatStr(imLeft->R,3,3,&str[n]);
 
   n += sprintf(&str[n],"\nprojection\n");
-  n += PrintMatStr(imLeft->P,3,4,&str[n]);    
+  n += PrintMatStr(imLeft->P,3,4,&str[n]);
 
   // right camera
   n += sprintf(&str[n],"\n[right camera]\n");
@@ -1203,7 +1212,7 @@ StereoData::createParams(bool store)
   n += PrintMatStr(imRight->R,3,3,&str[n]);
 
   n += sprintf(&str[n],"\nprojection\n");
-  n += PrintMatStr(imRight->P,3,4,&str[n]);    
+  n += PrintMatStr(imRight->P,3,4,&str[n]);
 
   str[n] = 0;			// just in case
 
@@ -1263,7 +1272,7 @@ ImageData::doBayerColorRGB()
 }
 
 
-void 
+void
 ImageData::doBayerMono()
 {
 
@@ -1294,7 +1303,7 @@ ImageData::doBayerMono()
 // converts to RGB
 
 void
-ImageData::convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm, 
+ImageData::convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 				    int width, int height, color_conversion_t colorAlg)
 {
   uint8_t *s;
@@ -1317,7 +1326,7 @@ ImageData::convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 	  for (j=0; j<width; j+=2, cd+=6, md+=2)
 	    {
 	      *md = *(cd+1) = *s++;	// green pixel
-	      *(cd+3+0) = *s++;	// red pixel          
+	      *(cd+3+0) = *s++;	// red pixel
 	      *(cd+0) = AVG(*(cd+3+0), *(cd-3+0)); // interpolated red pixel
 	      if (i > 1)
 		{
@@ -1325,10 +1334,10 @@ ImageData::convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 		  *(cd-pp+3+0) = AVG(*(cd-pp2+3+0), *(cd+3+0)); // interpolated red pixel
 		  *(md-ll) = *(cd-pp+1) = ((int)*(cd+1) + (int)*(cd-pp-3+1) + (int)*(cd-pp+3+1) + (int)*(cd-pp2+1)) >> 2;
 		}
-	    }		  	
+	    }
 
 	  // blue line (BGBG...)
-	  *(cd+2) = *s;		// blue pixel          
+	  *(cd+2) = *s;		// blue pixel
 	  for (j=0; j<width-2; j+=2, cd+=6, md+=2)
 	    {
 	      s++;
@@ -1341,7 +1350,7 @@ ImageData::convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 		  *(cd-pp+3+2) = AVG(*(cd-pp2+3+2), *(cd+3+2)); // interpolated blue pixel
 		  *(md-ll+1) = *(cd-pp+3+1) = ((int)*(cd+3+1) + (int)*(cd-pp+1) + (int)*(cd-pp+6+1) + (int)*(cd-pp2+3+1)) >> 2;
 		}
-	    }		  	
+	    }
 	  // last pixels
 	  s++;
 	  *(md+1) = *(cd+3+1) = *s++;      // green pixel
@@ -1400,7 +1409,7 @@ ImageData::convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 
 	      ww = 2*(int)*(cd+1) + (a + b);
 	      if (ww < 0) ww = 0;
-	      *(cd+0) = ww>>1;	// interpolated red pixel 
+	      *(cd+0) = ww>>1;	// interpolated red pixel
 
 	      ww = 2*(int)*(cd-pp+3+1) + (a + c);
 	      if (ww < 0) ww = 0;
@@ -1448,7 +1457,7 @@ ImageData::convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 
 	      ww = 2*(int)*(cd+1) + (a + b);
 	      if (ww < 0) ww = 0;
-	      *(cd+2) = ww>>1;	// interpolated blue pixel 
+	      *(cd+2) = ww>>1;	// interpolated blue pixel
 
 	      ww = 2*(int)*(cd-pp+3+1) + (a + c);
 	      if (ww < 0) ww = 0;
@@ -1479,7 +1488,7 @@ ImageData::convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 // converts to monochrome
 
 void
-ImageData::convertBayerRGGBMono(uint8_t *src, uint8_t *dstm, 
+ImageData::convertBayerRGGBMono(uint8_t *src, uint8_t *dstm,
 				int width, int height, color_conversion_t colorAlg)
 {
   uint8_t *s;
@@ -1499,10 +1508,10 @@ ImageData::convertBayerRGGBMono(uint8_t *src, uint8_t *dstm,
 	  for (j=0; j<width; j+=2, md+=2)
 	    {
 	      *md = *s++;	// green pixel
-	      s++;	// red pixel          
+	      s++;	// red pixel
 	      if (i > 1)
 		*(md-ll) = ((int)*(md) + (int)*(md-ll-1) + (int)*(md-ll+1) + (int)*(md-ll2)) >> 2;
-	    }		  	
+	    }
 
 	  // blue line (BGBG...)
 	  for (j=0; j<width-2; j+=2, md+=2)
@@ -1511,7 +1520,7 @@ ImageData::convertBayerRGGBMono(uint8_t *src, uint8_t *dstm,
 	      *(md+1) = *s++; // green pixel
 	      if (i > 1)
 		*(md-ll+1) = ((int)*(md+1) + (int)*(md-ll) + (int)*(md-ll+2) + (int)*(md-ll2+1)) >> 2;
-	    }		  	
+	    }
 	  // last pixels
 	  s++;
 	  *(md+1) = *s++;	// green pixel

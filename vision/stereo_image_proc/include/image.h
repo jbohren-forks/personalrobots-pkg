@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -122,7 +122,7 @@ typedef enum
   MW_ALGORITHM,
   LS_ALGORITHM,
   NCC_ALGORITHM
-} stereo_algorithm_t; 
+} stereo_algorithm_t;
 
 
 namespace cam
@@ -173,7 +173,7 @@ namespace cam
     double D[5];		// distortion: k1, k2, t1, t2, k3
     double K[9];		// original camera matrix
     double R[9];		// rectification matrix
-    double P[12];		// projection/camera matrix 
+    double P[12];		// projection/camera matrix
 
     // raw parameter string
     char *params;		// on-camera parameters
@@ -210,9 +210,9 @@ namespace cam
   private:
     // various color converters
     void convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
-				  int width, int height, color_conversion_t colorAlg); 
-    void convertBayerRGGBMono(uint8_t *src, uint8_t *dstm, 
-				  int width, int height, color_conversion_t colorAlg); 
+				  int width, int height, color_conversion_t colorAlg);
+    void convertBayerRGGBMono(uint8_t *src, uint8_t *dstm,
+				  int width, int height, color_conversion_t colorAlg);
   };
 
 
@@ -250,7 +250,7 @@ namespace cam
     // Color conversion:
     void doBayerColorRGB();
     void doBayerMono();
-      
+
     // disparity and rectification functions
     bool doRectify();		// rectify images
     bool doDisparity(stereo_algorithm_t alg=NORMAL_ALGORITHM); // calculate disparity image
@@ -267,6 +267,7 @@ namespace cam
 
     // point cloud data
     float *imPts;		// points, 3xN floats for vector version
+    int *imCoords;		// image coordinates of the point cloud points, 2xN ints
     uint8_t *imPtsColor;	// color vector corresponding to points, RGB
     size_t imPtsSize;		// size of array in bytes, for storage manipulation
     int numPts;			// number of points in array
@@ -292,7 +293,7 @@ namespace cam
     int corrSize;		// correlation window size, assumed square
     int filterSize;		// size of prefilter window, assumed square (0 if none)
     int horOffset;		// horopter offset
-    
+
     // filter thresholds
     int textureThresh;		// percent
     int uniqueThresh;		// percent
@@ -301,7 +302,7 @@ namespace cam
     int speckleRegionSize;	// minimum size of region to be not a speckle
     double rangeMax;		// max Z value returned in pt cloud
     double rangeMin;		// max Z value returned in pt cloud
-    bool unique_check;    
+    bool unique_check;
 
     bool setTextureThresh(int thresh);
     bool setUniqueThresh(int thresh);
@@ -319,7 +320,7 @@ namespace cam
     uint8_t *rbuf;
     uint32_t *lbuf, *wbuf;
 
-  }; 
+  };
 
 }
 

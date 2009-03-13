@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -58,6 +58,7 @@ class StereoProc : public ros::Node
   bool do_rectify_;
   bool do_stereo_;
   bool do_calc_points_;
+  bool do_keep_coords_;
 
   image_msgs::RawStereo    raw_stereo_;
 
@@ -90,17 +91,22 @@ public:
     param(stereo_name_ + std::string("do_colorize"), do_colorize_, false);
 
     param(stereo_name_ + std::string("do_rectify"), do_rectify_, false);
-    
+
     param(stereo_name_ + std::string("do_stereo"), do_stereo_, false);
-    
+
     param(stereo_name_ + std::string("do_calc_points"), do_calc_points_, false);
-    
+
+    param(stereo_name_ + std::string("do_keep_coords"), do_keep_coords_, false);
+
+    if (do_keep_coords_) {
+    	ROS_INFO("I'm keeping the image coordonate in the point cloud\n");
+    }
     // Must do stereo if calculating points
     do_stereo_ = do_stereo_ || do_calc_points_;
-    
+
     // Must rectify if doing stereo
     do_rectify_ = do_rectify_ || do_stereo_;
-    
+
     stdata_ = new cam::StereoData;
 
     stdata_->setUniqueThresh(36);
@@ -146,7 +152,7 @@ public:
 
     advertiseCam();
     publishCam();
-    
+
     count_++;
   }
 
@@ -155,7 +161,7 @@ public:
   {
     publishImages(stereo_name_ + std::string("left/"), stdata_->imLeft);
     publishImages(stereo_name_ + std::string("right/"), stdata_->imRight);
-      
+
     if (stdata_->hasDisparity)
     {
       disparity_info_.header.stamp = raw_stereo_.header.stamp;
@@ -197,10 +203,21 @@ public:
       cloud_.header.stamp = raw_stereo_.header.stamp;
       cloud_.header.frame_id = raw_stereo_.header.frame_id;
       cloud_.pts.resize(stdata_->numPts);
-      cloud_.chan.resize(1);
+      if (do_keep_coords_) {
+    	  cloud_.chan.resize(3);
+      }
+      else {
+    	  cloud_.chan.resize(1);
+      }
       cloud_.chan[0].name = "rgb";
       cloud_.chan[0].vals.resize(stdata_->numPts);
-        
+      if (do_keep_coords_) {
+          cloud_.chan[1].name = "x";
+          cloud_.chan[1].vals.resize(stdata_->numPts);
+          cloud_.chan[2].name = "y";
+          cloud_.chan[2].vals.resize(stdata_->numPts);
+      }
+
       for (int i = 0; i < stdata_->numPts; i++)
       {
         cloud_.pts[i].y = -stdata_->imPts[3*i + 0];
@@ -212,6 +229,10 @@ public:
       {
         int rgb = (stdata_->imPtsColor[3*i] << 16) | (stdata_->imPtsColor[3*i + 1] << 8) | stdata_->imPtsColor[3*i + 2];
         cloud_.chan[0].vals[i] = *(float*)(&rgb);
+        if (do_keep_coords_) {
+        	cloud_.chan[1].vals[i] = stdata_->imCoords[2*i+0];
+        	cloud_.chan[2].vals[i] = stdata_->imCoords[2*i+1];
+        }
       }
 
       publish(stereo_name_ + std::string("cloud"), cloud_);
@@ -343,13 +364,13 @@ public:
 
     advertiseImages(stereo_name_ + std::string("left/"), stdata_->imLeft);
     advertiseImages(stereo_name_ + std::string("right/"), stdata_->imRight);
-    
+
     if (stdata_->hasDisparity)
     {
       advertise<image_msgs::DisparityInfo>(stereo_name_ + std::string("disparity_info"), 1);
       advertise<image_msgs::Image>(stereo_name_ + std::string("disparity"), 1);
     }
-    
+
     if (do_calc_points_)
       advertise<robot_msgs::PointCloud>(stereo_name_ + std::string("cloud"),1);
   }
@@ -406,7 +427,7 @@ int main(int argc, char **argv)
 
   sp.spin();
 
-  
+
   return 0;
 }
 
