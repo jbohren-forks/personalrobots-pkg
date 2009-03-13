@@ -41,7 +41,6 @@ import math
 import roslib
 roslib.load_manifest(PKG)
 roslib.load_manifest('rostest')
-roslib.load_manifest('numpy')
 
 
 import sys, unittest
