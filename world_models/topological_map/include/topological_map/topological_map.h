@@ -139,6 +139,10 @@ public:
   /// \return 1) true if there exists a path between these two points 2) the distance (only valid if 1 is true)
   pair<bool, double> distanceBetween (const Point2D& p1, const Point2D& p2);
 
+  /// \return A vector of pairs.  There's one pair per connector in the containing region of p1, consisting of that connector's id 
+  /// and the cost of the best path from p1 to p2 through that id
+  vector<pair<ConnectorId, double> > connectorCosts (const Point2D& p1, const Point2D& p2);
+
   /// \post New region has been added.  Based on cell2d connectivity, the region is connected to existing regions, and connectors are added, as necessary.
   /// \return Id of new region, which will be 1+the highest previously seen region id (or 0)
   /// \throws OverlappingRegionException

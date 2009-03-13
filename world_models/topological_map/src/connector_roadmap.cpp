@@ -139,16 +139,41 @@ Point2D Roadmap::connectorPoint (const ConnectorId id) const
  ************************************************************/
 
 
-/// \todo make the dijkstra visitor exit early when goal is discovered
 struct DijkstraVisitor : public boost::default_dijkstra_visitor
 {
-  DijkstraVisitor (const RoadmapVertex& goal) : goal(goal) {}
+  DijkstraVisitor () {}
   void discover_vertex(const RoadmapVertex& v, const RoadmapImpl& graph) const
   {
     ROS_DEBUG_STREAM_NAMED("dijkstra", "Discovering vertex " << graph[v].id << " at point " << graph[v].point);
   }
-  RoadmapVertex goal;
 };
+
+
+ConnectorCosts Roadmap::connectorCosts (const ConnectorId i, const ConnectorId j)
+{
+  ROS_DEBUG_STREAM_NAMED ("roadmap_shortest_path", "Looking for connector costs between " << i << " and " << j);
+  const RoadmapVertex v=idVertex(i);
+  const RoadmapVertex w=idVertex(j);
+  resetIndices();
+  DistanceMap distances;
+  ConnectorCosts costs;
+  
+  dijkstra_shortest_paths(graph_, w, weight_map(get(&EdgeInfo::cost, graph_)).
+                          vertex_index_map(get(&NodeInfo::index, graph_)).
+                          distance_map(DistancePmap(distances)).visitor(DijkstraVisitor()));
+  
+  RoadmapAdjacencyIterator adj_iter, adj_end;
+  for (tie(adj_iter, adj_end)=adjacent_vertices(v, graph_); adj_iter!=adj_end; ++adj_iter) {
+    DistanceMap::iterator pos = distances.find(*adj_iter);
+    if (pos!=distances.end()) {
+      ConnectorId id = graph_[*adj_iter].id;
+      double edge_cost = graph_[edge(*adj_iter, v, graph_).first].cost;
+      ROS_DEBUG_STREAM_NAMED ("roadmap_shortest_path", " Connector " << id << " has cost " << edge_cost+pos->second << "=" << edge_cost << "+" << pos->second);
+      costs.push_back(ConnectorCost(id, edge_cost+pos->second));
+    }
+  }
+  return costs;
+}
 
 
 pair<bool, double> Roadmap::costBetween (const ConnectorId i, const ConnectorId j)
@@ -163,7 +188,7 @@ pair<bool, double> Roadmap::costBetween (const ConnectorId i, const ConnectorId 
 
   dijkstra_shortest_paths(graph_, v, weight_map(get(&EdgeInfo::cost, graph_)).
                           vertex_index_map(get(&NodeInfo::index, graph_)).
-                          distance_map(DistancePmap(distances)).visitor(DijkstraVisitor(w)).
+                          distance_map(DistancePmap(distances)).visitor(DijkstraVisitor()).
                           predecessor_map(PredecessorPmap(predecessors)));
   if (distances.find(w)==distances.end()) {
     ROS_DEBUG_NAMED ("roadmap_shortest_path", "Path not found");
@@ -195,7 +220,7 @@ ConnectorIdVector Roadmap::shortestPath (const ConnectorId i, const ConnectorId 
   dijkstra_shortest_paths(graph_, v, weight_map(get(&EdgeInfo::cost, graph_)).
                           vertex_index_map(get(&NodeInfo::index, graph_)).
                           predecessor_map(PredecessorPmap(predecessors)).
-                          visitor(DijkstraVisitor(w)));
+                          visitor(DijkstraVisitor()));
     
 
 

@@ -277,7 +277,7 @@ int main(int argc, char** argv)
   string top_map_file("");
   string static_map_file("");
   double resolution(-1), width(-1);
-  uint inflation_radius = 0;
+  unsigned inflation_radius = 0;
 
 
   // Declare the supported options.
@@ -285,7 +285,7 @@ int main(int argc, char** argv)
   desc.add_options()
     ("help,h", "produce help message")
     ("resolution,r", po::value<double>(&resolution), "Resolution of grid.  Required.")
-    ("inflation_radius,i", po::value<uint>(&inflation_radius), "Inflation radius of obstacles (in gridcells).  Defaults to 0.")
+    ("inflation_radius,i", po::value<unsigned>(&inflation_radius), "Inflation radius of obstacles (in gridcells).  Defaults to 0.")
     ("width,w", po::value<double>(&width), "Width of doors in metres.  Required.")
     ("static_map_file,m", po::value<string>(&static_map_file), "pgm file containing the static map.  Required.")
     ("ppm_output_file,p", po::value<string>(&ppm_file), "Name of .ppm output file.")

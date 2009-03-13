@@ -84,13 +84,14 @@ int main (int argc, char* argv[])
   m->writeToStream(str);
   std::ofstream str2("local/out.ppm");
   m->writePpm(str2);
+  m->connectorCosts(Point2D(1,1), Point2D(10,10));
 
-  std::ifstream str3("local/willow.tmap");
-  tmap::TopologicalMap m2(str3);
-  std::ofstream str4("local/willow2.tmap");
-  m2.writeToStream(str4);
-  std::ofstream str5("local/willow2.ppm");
-  m2.writePpm(str5);
+//   std::ifstream str3("local/willow.tmap");
+//   tmap::TopologicalMap m2(str3);
+//   std::ofstream str4("local/willow2.tmap");
+//   m2.writeToStream(str4);
+//   std::ofstream str5("local/willow2.ppm");
+//   m2.writePpm(str5);
 }
 
   

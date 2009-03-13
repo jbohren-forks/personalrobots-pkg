@@ -112,13 +112,17 @@ public:
   // Return values: 1) The path 2) The cost 3) Was a path found?  1) and 2) aren't valid if 3) is false.
   tuple<bool, double, GridPath> shortestPath (const Cell2D& cell1, const Cell2D& cell2);
 
+  // Costs from a given source to a vector of destinations
+  vector<pair<bool, double> > singleSourceCosts (const Cell2D& source, const vector<Cell2D>& dests);
+
   // Connected components query
   vector<MutableRegionPtr> connectedComponents ();
+
+  GridGraphVertex cellVertex(const Cell2D& cell) const;
 
 private:
 
   void resetIndices();
-  GridGraphVertex cellVertex(const Cell2D& cell) const;
   
   Grid graph_;
   CellVertexMap cell_vertex_map_;

@@ -236,6 +236,15 @@ TEST(TopologicalMap, Creation)
   EXPECT_TRUE(path_found);
   EXPECT_EQ(d,d3+d4);
   EXPECT_EQ(d2,d4);
+
+  typedef pair<ConnectorId, double> ConnectorCost;
+  vector<ConnectorCost> costs=m2.connectorCosts(Point2D(.1,.1), Point2D(1,1));
+  EXPECT_TRUE(costs.size()>=2);
+  EXPECT_TRUE(costs.size()<=4);
+  EXPECT_TRUE(costs[0].second > 1.5);
+  EXPECT_TRUE(costs[1].second > 1.5);
+  EXPECT_TRUE(costs[0].second < 3);
+  EXPECT_TRUE(costs[1].second < 3);
 }
 
 int main (int argc, char** argv)

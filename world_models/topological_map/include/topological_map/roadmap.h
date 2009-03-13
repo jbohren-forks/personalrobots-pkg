@@ -74,6 +74,8 @@ typedef graph_traits<RoadmapImpl>::edge_descriptor RoadmapEdge;
 typedef graph_traits<RoadmapImpl>::adjacency_iterator RoadmapAdjacencyIterator;
 typedef graph_traits<RoadmapImpl>::vertex_iterator VertexIterator;
 typedef map<ConnectorId, RoadmapVertex> ConnectorIdVertexMap;
+typedef pair<ConnectorId, double> ConnectorCost;
+typedef vector<ConnectorCost> ConnectorCosts;
 
 typedef vector<ConnectorId> ConnectorIdVector;
 
@@ -98,6 +100,7 @@ public:
 
   pair<bool, double> costBetween (ConnectorId i, ConnectorId j);
   ConnectorIdVector shortestPath (ConnectorId i, ConnectorId j);
+  ConnectorCosts connectorCosts (const ConnectorId i, const ConnectorId j);
 
 private:
 

@@ -148,22 +148,77 @@ vector<Cell2D> GridGraph::neighbors (const Cell2D& cell) const
 
 struct GraphSearchVisitor : public boost::default_dijkstra_visitor
 {
-  GraphSearchVisitor (const GridGraphVertex& goal) : goal(goal) {}
   void discover_vertex(const GridGraphVertex& v, const Grid& graph) const
   {
     ROS_DEBUG_STREAM_NAMED("dijkstra", "Discovering vertex " << graph[v].cell);
-    if (v==goal) {
-      throw v;
-    }
   }
-  GridGraphVertex goal;
 };
 
+typedef map<GridGraphVertex, double> GridDistances;
+typedef pair<bool, double> ReachableCost;
+typedef vector<ReachableCost> ReachableCostVector;
 
-double gridGraphManhattanDistance (const GridGraphVertex& v1, const GridGraphVertex& v2, const Grid& graph)
+ReachableCost extractCost (const GridGraph* g, const GridDistances& distances, const Cell2D& cell)
 {
-  return abs(graph[v1].cell.r-graph[v2].cell.r)+abs(graph[v1].cell.c-graph[v2].cell.c);
+  GridDistances::const_iterator iter=distances.find(g->cellVertex(cell));
+  if (iter==distances.end()) {
+    return ReachableCost(false,-1);
+  }
+  else {
+    return ReachableCost(true, iter->second);
+  }
 }
+
+ReachableCostVector GridGraph::singleSourceCosts (const Cell2D& source, const vector<Cell2D>& dests)
+{
+  GridDistances distances;
+  GridGraphVertex start = cellVertex(source);
+
+  resetIndices();
+  ROS_DEBUG_NAMED ("grid_graph_shortest_path", "Computing single source costs");
+
+
+  boost::dijkstra_shortest_paths (graph_, start,
+                                  weight_map(get(&EdgeCost::cost, graph_)).
+                                  vertex_index_map(get(&CellInfo::index, graph_)).
+                                  distance_map(associative_property_map<GridDistances>(distances)).
+                                  visitor(GraphSearchVisitor()));
+
+   
+  ReachableCostVector v(dests.size());
+  transform (dests.begin(), dests.end(), v.begin(), bind(extractCost, this, distances, _1));
+  for (uint i=0; i<dests.size(); ++i) {
+    ROS_DEBUG_STREAM_NAMED ("grid_graph_shortest_path", " connector " << dests[i] << " ; cost " << v[i].second);
+  }
+  ROS_DEBUG_NAMED ("grid_graph_shortest_path", "Done computing single source costs");
+  return v;
+}
+
+   
+
+
+//   catch (GridGraphVertex& e) {
+//     // Extract path from predecessor map
+//     vector<GridGraphVertex> reverse_path(1,finish);
+//     GridGraphVertex current = finish;
+
+//     while (current!=predecessors[current]) {
+//       reverse_path.push_back(current=predecessors[current]);
+//     }
+//     GridPath path(reverse_path.size());
+//     ROS_ASSERT_MSG (current==start, "Unexpectedly could not find shortest path");
+
+//     // Put it in source-to-goal order, replace vertex descriptors with cells, and return
+//     transform(reverse_path.rbegin(), reverse_path.rend(), path.begin(), TransformVertexToCell(graph_));
+//     ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Found path with cost " << distances[finish]);
+//     return make_tuple(true, distances[finish], path);
+//   }
+
+//   // Else, we must not have found a path
+//   ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Did not find a path");
+//   return make_tuple(false, -1, GridPath());
+  
+
 
 
 // Find shortest path between cells in grid graph

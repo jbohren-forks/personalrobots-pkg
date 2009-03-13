@@ -67,6 +67,8 @@ using std::max;
 namespace topological_map
 {
 
+typedef pair<bool, double> ReachableCost;
+
 /************************************************************
  * Utility
  ************************************************************/
@@ -94,16 +96,6 @@ uint numCols(const OccupancyGrid& grid)
   return dims[1];
 }
 
-uint TopologicalMap::MapImpl::nr () const
-{
-  return numRows(*grid_);
-}
-
-uint TopologicalMap::MapImpl::nc () const
-{
-  return numCols(*grid_);
-}
-
 
 bool TopologicalMap::MapImpl::isObstacle (const Point2D& p) const
 {
@@ -126,7 +118,6 @@ Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
   }
   return Cell2D(floor((float)p.y/resolution_), floor((float)p.x/resolution_));
 }
-
 
 
 
@@ -216,8 +207,7 @@ RegionConnectorMap readRegionConnectorMap (istream& str)
 
 void TopologicalMap::MapImpl::writeToStream (ostream& stream)
 {
-  ROS_INFO ("Writing topological map to stream");
-  ROS_INFO ("Grid size is %ux%u", numRows(*grid_), numCols(*grid_));
+  ROS_INFO ("Writing topological map of %ux%u grid to stream", numRows(*grid_), numCols(*grid_));
   bool goal_unset = goal_;
   Point2D goal_point;
   if (goal_) {
@@ -413,6 +403,16 @@ const RegionIdSet& TopologicalMap::MapImpl::allRegions () const
  ****************************************/
 
 
+
+/// \todo this doesn't deal with connectors
+void TopologicalMap::MapImpl::removeRegion (const RegionId id)
+{
+  region_graph_->removeRegion(id);
+}
+
+
+
+
 // Looks for the best (furthest from obstacles) cell on the border between two regions
 struct NeighborFinder 
 {
@@ -447,8 +447,6 @@ struct NeighborFinder
   const ObstacleDistanceArray& obstacle_distances;
 };
 
-  
-
 RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int type)
 {
   RegionId region_id = region_graph_->addRegion(region, type);
@@ -470,7 +468,7 @@ RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int t
     }
     NeighborFinder neighbor_finder = for_each(region1->begin(), region1->end(), NeighborFinder(region2, obstacle_distances_));
     ROS_ASSERT (neighbor_finder.found);
-  
+
     Point2D border_point=findBorderPoint(neighbor_finder.cell1, neighbor_finder.cell2);
 
     ConnectorId connector_id = roadmap_->addNode(border_point);
@@ -531,15 +529,6 @@ RegionId TopologicalMap::MapImpl::addRegion (const RegionPtr region, const int t
 
 
 
-
-/// \todo this doesn't deal with connectors
-void TopologicalMap::MapImpl::removeRegion (const RegionId id)
-{
-  region_graph_->removeRegion(id);
-}
-
-
-
 /****************************************
  * Connector-related ops
  ****************************************/
@@ -586,11 +575,24 @@ vector<ConnectorId> TopologicalMap::MapImpl::adjacentConnectors (const RegionId 
 {
   RegionIdVector neighbors = this->neighbors(id);
   vector<ConnectorId> connectors(neighbors.size());
-  for (uint i=0; i<neighbors.size(); i++) {
+  for (uint i=0; i<neighbors.size(); ++i) {
     connectors[i] = connectorBetween(id, neighbors[i]);
   }
   return connectors;
 }
+
+typedef tuple<ConnectorId, Cell2D, Cell2D> ConnectorDesc;
+
+vector<ConnectorDesc> TopologicalMap::MapImpl::adjacentConnectorCells (const RegionId id) const
+{
+  RegionIdVector neighbors = this->neighbors(id);
+  vector<ConnectorDesc> descs(neighbors.size());
+  for (uint i=0; i<neighbors.size(); ++i) {
+    descs[i] = connectorCellsBetween(id, neighbors[i]);
+  }
+  return descs;
+}
+  
 
 ConnectorId TopologicalMap::MapImpl::connectorBetween (const RegionId r1, const RegionId r2) const
 {
@@ -599,7 +601,7 @@ ConnectorId TopologicalMap::MapImpl::connectorBetween (const RegionId r1, const 
   return pos->second.get<0>();
 }
 
-tuple<ConnectorId, Cell2D, Cell2D> TopologicalMap::MapImpl::connectorCellsBetween (RegionId r1, RegionId r2) const
+ConnectorDesc TopologicalMap::MapImpl::connectorCellsBetween (RegionId r1, RegionId r2) const
 {
   RegionConnectorMap::const_iterator pos = region_connector_map_.find(RegionPair(min(r1, r2), max(r1,r2)));
   ROS_ASSERT_MSG(pos!=region_connector_map_.end(), "Failed to find connector between regions %u and %u", r1, r2);
@@ -620,7 +622,7 @@ tuple<ConnectorId, Cell2D, Cell2D> TopologicalMap::MapImpl::connectorCellsBetwee
 struct HasId 
 {
   HasId(const ConnectorId id) : id(id) {}
-  bool operator() (pair<const RegionPair, tuple<ConnectorId, Cell2D, Cell2D> > pair) { return pair.second.get<0>()==id; }
+  bool operator() (pair<const RegionPair, ConnectorDesc> pair) { return pair.second.get<0>()==id; }
   const ConnectorId id;
 };
 
@@ -657,7 +659,7 @@ void TopologicalMap::MapImpl::setGoal (const Cell2D& c)
   setGoal(cellCenter(c, resolution_));
 }
 
-pair<bool, double> TopologicalMap::MapImpl::goalDistance (ConnectorId id) const
+ReachableCost TopologicalMap::MapImpl::goalDistance (ConnectorId id) const
 {
   if (!goal_) {
     throw GoalNotSetException();
@@ -666,13 +668,29 @@ pair<bool, double> TopologicalMap::MapImpl::goalDistance (ConnectorId id) const
 }
 
 
-pair<bool, double> TopologicalMap::MapImpl::getDistance (const Point2D& p1, const Point2D& p2)
+ReachableCost TopologicalMap::MapImpl::getDistance (const Point2D& p1, const Point2D& p2)
 {
   TemporaryRoadmapNode start(this, p1);
   TemporaryRoadmapNode goal(this, p2);
   return roadmap_->costBetween(start.id, goal.id);
 }
 
+vector<pair<ConnectorId, double> > TopologicalMap::MapImpl::connectorCosts (const Point2D& p1, const Point2D& p2)
+{
+  TemporaryRoadmapNode start(this, p1);
+  TemporaryRoadmapNode goal(this, p2);
+  return roadmap_->connectorCosts(start.id, goal.id);
+}
+
+ConnectorId getId (const ConnectorDesc& desc)
+{
+  return desc.get<0>();
+}
+
+Cell2D getCell (const ConnectorDesc& desc)
+{
+  return desc.get<1>();
+}
 
 TopologicalMap::MapImpl::TemporaryRoadmapNode::TemporaryRoadmapNode (TopologicalMap::MapImpl* m, const Point2D& p)
   : map(m), id(m->roadmap_->addNode(p))
@@ -684,21 +702,19 @@ TopologicalMap::MapImpl::TemporaryRoadmapNode::TemporaryRoadmapNode (Topological
   // When computing distances, we need to separate this region from the rest of the graph
   RegionIsolator i(m->grid_graph_.get(), *(m->regionCells(r)));
 
-  RegionIdVector neighbors = m->region_graph_->neighbors(r);
-  for (RegionIdVector::iterator iter = neighbors.begin(); iter!=neighbors.end(); ++iter) {
-    ConnectorId connector;
-    Cell2D connector_cell;
-    tie(connector, connector_cell, ignore) = m->connectorCellsBetween(r, *iter);
-    ROS_DEBUG_STREAM_NAMED ("temp_node", "Considering connector " << connector << " at " << connector_cell);
+  vector<ConnectorDesc> connector_descs = m->adjacentConnectorCells(r);
+  vector<ConnectorId> connector_ids(connector_descs.size());
+  vector<Cell2D> connector_cells(connector_descs.size());
+  transform(connector_descs.begin(), connector_descs.end(), connector_ids.begin(), getId);
+  transform(connector_descs.begin(), connector_descs.end(), connector_cells.begin(), getCell);
 
-    bool path_found;
-    double cost;
-    tie(path_found, cost, ignore) = m->grid_graph_->shortestPath(cell, connector_cell);
-    if (path_found) {
-      m->roadmap_->setCost(id, connector, m->resolution_*cost);
-    }
-  }
+  vector<ReachableCost> costs = m->grid_graph_->singleSourceCosts(cell, connector_cells);
+
+  for (uint i=0; i<connector_ids.size(); ++i) 
+    if (costs[i].first) 
+      m->roadmap_->setCost(id, connector_ids[i], m->resolution_*costs[i].second);
 }
+
 
 TopologicalMap::MapImpl::TemporaryRoadmapNode::~TemporaryRoadmapNode ()
 {
@@ -762,11 +778,16 @@ RegionPair TopologicalMap::adjacentRegions (const ConnectorId id) const
   return map_impl_->adjacentRegions(id);
 }
 
-pair<bool, double> TopologicalMap::distanceBetween (const Point2D& p1, const Point2D& p2)
+ReachableCost TopologicalMap::distanceBetween (const Point2D& p1, const Point2D& p2)
 {
   return map_impl_->getDistance(p1,p2);
 }
 
+vector<pair<ConnectorId, double> > TopologicalMap::connectorCosts (const Point2D& p1, const Point2D& p2)
+{
+
+  return map_impl_->connectorCosts(p1,p2);
+}
 
 RegionId TopologicalMap::addRegion(const RegionPtr region, const int type) 
 {

@@ -99,6 +99,10 @@ public:
   /// \throws UnknownRegionException
   vector<ConnectorId> adjacentConnectors (const RegionId id) const;
 
+  /// \return vector of descriptions of connector cells adjacent to region \a id
+  /// \throws UnknownRegionException
+  vector<tuple<ConnectorId, Cell2D, Cell2D> > TopologicalMap::MapImpl::adjacentConnectorCells (const RegionId id) const;
+
   /// \return pair of ids of regions touching the given connector
   /// \throws UnknownConnectorException
   RegionPair adjacentRegions (const ConnectorId id) const;
@@ -118,6 +122,10 @@ public:
   /// \return 1) true if there exists a path between these two points 2) the distance (only valid if 1 is true)
   pair<bool, double> getDistance (const Point2D& p1, const Point2D& p2);
 
+  /// \return A vector of pairs.  There's one pair per connector in the containing region of p1, consisting of that connector's id 
+  /// and the cost of the best path from p1 to p2 through that id
+  vector<pair<ConnectorId, double> > connectorCosts (const Point2D& p1, const Point2D& p2);
+
   /// \post New region has been added
   /// \return Id of new region
   /// \throws OverlappingRegionException
@@ -133,8 +141,8 @@ public:
   /// write map in ppm format
   void writePpm (ostream& str) const;
 
-  uint nc () const;
-  uint nr () const;
+  // Return cell corresponding to a given connector id and region
+  Cell2D connectorCell (ConnectorId id, RegionId r) const;
 
 private: 
 
