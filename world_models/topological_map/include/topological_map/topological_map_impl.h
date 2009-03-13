@@ -101,7 +101,7 @@ public:
 
   /// \return vector of descriptions of connector cells adjacent to region \a id
   /// \throws UnknownRegionException
-  vector<tuple<ConnectorId, Cell2D, Cell2D> > TopologicalMap::MapImpl::adjacentConnectorCells (const RegionId id) const;
+  vector<tuple<ConnectorId, Cell2D, Cell2D> > adjacentConnectorCells (const RegionId id) const;
 
   /// \return pair of ids of regions touching the given connector
   /// \throws UnknownConnectorException
