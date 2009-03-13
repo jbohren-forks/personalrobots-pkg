@@ -234,12 +234,11 @@ public:
     gripper_pose_msg.pose.position.y = gripper_pose_msg.pose.position.y + offset[1];
     gripper_pose_msg.pose.position.z = gripper_pose_msg.pose.position.z + offset[2];
     moveTo(gripper_pose_msg);
-    pause_.sleep();
     
     // move gripper over door handle
-    gripper_pose_msg.pose.position.x = gripper_pose_msg.pose.position.x - offset[0];
-    gripper_pose_msg.pose.position.y = gripper_pose_msg.pose.position.y - offset[1];
-    gripper_pose_msg.pose.position.z = gripper_pose_msg.pose.position.z - offset[2];
+    gripper_pose_msg.pose.position.x = gripper_pose_msg.pose.position.x - 1.5*offset[0];
+    gripper_pose_msg.pose.position.y = gripper_pose_msg.pose.position.y - 1.5*offset[1];
+    gripper_pose_msg.pose.position.z = gripper_pose_msg.pose.position.z - 1.5*offset[2];
     moveTo(gripper_pose_msg);
 
     // close the gripper
@@ -257,8 +256,10 @@ public:
   // -------------------------
   {
     cout << "switch from moveto to tff controller..." << flush;
-    req_switch.stop_controllers.clear();      req_switch.stop_controllers.push_back("cartesian_trajectory_right");
-    req_switch.start_controllers.clear();     req_switch.start_controllers.push_back("cartesian_tff_right");
+    req_switch.stop_controllers.clear();      
+    req_switch.start_controllers.clear();     
+    req_switch.stop_controllers.push_back("cartesian_trajectory_right");
+    req_switch.start_controllers.push_back("cartesian_tff_right");
     ros::service::call("switch_controller", req_switch, res_switch);
     if (!res_switch.ok)
       return false;
@@ -275,7 +276,7 @@ public:
     tff_msg_.value.vel.x = 0.0;
     tff_msg_.value.vel.y = 0.0;
     tff_msg_.value.vel.z = 0.0;
-    tff_msg_.value.rot.x = -1.5;
+    tff_msg_.value.rot.x = -1.0;
     tff_msg_.value.rot.y = 0.0;
     tff_msg_.value.rot.z = 0.0;
 
@@ -291,7 +292,7 @@ public:
     tff_msg_.mode.rot.y = tff_msg_.FORCE;
     tff_msg_.mode.rot.z = tff_msg_.FORCE;
 
-    tff_msg_.value.vel.x = 0.45;
+    tff_msg_.value.vel.x = 0.25;
     tff_msg_.value.vel.y = 0.0;
     tff_msg_.value.vel.z = 0.0;
     tff_msg_.value.rot.x = 0.0;
@@ -299,7 +300,14 @@ public:
     tff_msg_.value.rot.z = 0.0;
 
     publish("cartesian_tff_right/command", tff_msg_);
-//    pause_.sleep();
+    pause_.sleep();
+    publish("cartesian_tff_right/command", tff_msg_);
+    pause_.sleep();
+    publish("cartesian_tff_right/command", tff_msg_);
+    pause_.sleep();
+    pause_.sleep();
+    pause_.sleep();
+
 
     return true;
   }
@@ -344,7 +352,7 @@ public:
       case GRASPING:{
         cout << "Grasping door... " << endl;
         if (graspDoor(my_door_))
-          state_ = SUCCESS;
+          state_ = OPENDOOR;
         else
           state_ = FAILED;
         break;
