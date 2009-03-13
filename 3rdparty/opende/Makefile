@@ -2,7 +2,7 @@
 WITH_DRAWSTUFF = yes
 
 CFG_OPTIONS = --with-arch=nocona --enable-release --disable-asserts --with-pic #--enable-double-precision
-SVN_REVISION = -r 1651
+SVN_REVISION = -r 1657
 
 SVN_PATCH = opende_patch.diff
 
@@ -10,19 +10,31 @@ ifeq ($(WITH_DRAWSTUFF), yes)
 CFG_OPTIONS += --with-drawstuff=X11
 endif
 
-all: installed
+all: build
+
+ROOT = $(shell rospack find opende)/opende
 
 SVN_DIR = opende-svn
 SVN_URL = https://opende.svn.sourceforge.net/svnroot/opende/trunk 
 include $(shell rospack find mk)/svn_checkout.mk
 
-CONFIGURE_FLAGS = $(CFG_OPTIONS) CXXFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include'
-#CONFIGURE_FLAGS = $(CFG_OPTIONS) CC='/opt/intel/cc/10.1.008/bin/icc' CXX='/opt/intel/cc/10.1.008/bin/icpc' LD='/opt/intel/cc/10.1.008/bin/xild' CXXFLAGS='-march=core2 -xT -parallel -O3 -fPIC -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-march=core2 -xT -parallel -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include' LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib -L/opt/intel/cc/10.1.008/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread'
-#CONFIGURE_FLAGS = $(CFG_OPTIONS) CC='/opt/intel/cc/10.1.008/bin/icc' CXX='/opt/intel/cc/10.1.008/bin/icpc' LD='/opt/intel/cc/10.1.008/bin/xild' CXXFLAGS='-march=core2 -xT -msse3 -openmp -parallel -O3 -fPIC -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-march=core2 -xT -msse3 -openmp -parallel -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include' LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib -L/opt/intel/cc/10.1.008/lib -lomp_db -lguide -lcxaguard -limf -lsvml -lompstub -lirc -liomp5 -lintlc -pthread'
+#ipo breaks build, e.g.  ipo: warning #11043: unresolved dsPrint, change to ip
+INTEL_OPTIONS = CC='/opt/intel/cc/10.1.008/bin/icc' CXX='/opt/intel/cc/10.1.008/bin/icpc' LD='/opt/intel/cc/10.1.008/bin/xild'
+INTEL_C_FLAGS     =  CXXFLAGS='-march=core2 -msse3 -ip  -no-prec-div         -parallel -O3 -fPIC -I$(ROOT)/include' CFLAGS='-march=core2 -msse3 -ip  -no-prec-div         -parallel -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include'
+INTEL_C_FLAGS_OMP =  CXXFLAGS='-march=core2 -msse3 -ip  -no-prec-div -openmp -parallel -O3 -fPIC -I$(ROOT)/include' CFLAGS='-march=core2 -msse3 -ip  -no-prec-div -openmp -parallel -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include'
 
-ROOT = $(shell rospack find opende)/opende
+INTEL_LD_FLAGS     =  LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread -lintlc'
+INTEL_LD_FLAGS_OMP =  LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib,-rpath,$(ROOT)/lib -L/opt/intel/cc/10.1.008/lib -L$(ROOT)/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread -lintlc -lompstub -liomp5 -lomp_db'
 
-installed: $(SVN_DIR) patched
+GCC_FLAGS     = CXXFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include' CFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include' LDFLAGS='-L$(ROOT)/lib'
+
+#CONFIGURE_FLAGS = $(CFG_OPTIONS) $(INTEL_OPTIONS) $(INTEL_C_FLAGS) $(INTEL_LD_FLAGS)
+CONFIGURE_FLAGS = $(CFG_OPTIONS) $(GCC_FLAGS)
+
+
+build: SVN_UP_REVERT_PATCH opende
+
+opende: $(SVN_DIR) patched
 	cd $(SVN_DIR) && sh ./autogen.sh
 	cd $(SVN_DIR) && ./configure --prefix=$(ROOT) --with-trimesh=opcode --enable-new-trimesh --enable-shared $(CONFIGURE_FLAGS)
 	cd $(SVN_DIR) && make $(ROS_PARALLEL_JOBS)

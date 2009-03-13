@@ -1,8 +1,17 @@
 Index: ode/src/quickstep.cpp
 ===================================================================
---- ode/src/quickstep.cpp	(revision 1651)
+--- ode/src/quickstep.cpp	(revision 1657)
 +++ ode/src/quickstep.cpp	(working copy)
-@@ -66,6 +66,9 @@
+@@ -33,6 +33,8 @@
+ #include "lcp.h"
+ #include "util.h"
+ 
++#include <iostream>
++
+ #define ALLOCA dALLOCA16
+ 
+ typedef const dReal *dRealPtr;
+@@ -66,6 +68,9 @@
  
  #define RANDOMLY_REORDER_CONSTRAINTS 1
  
@@ -12,3 +21,74 @@ Index: ode/src/quickstep.cpp
  //****************************************************************************
  // special matrix multipliers
  
+@@ -142,7 +147,7 @@
+ 
+ 
+ // compute out = inv(M)*J'*in.
+-#if 0
++#if WARM_STARTING
+ static void multiply_invM_JT (int m, int nb, dRealMutablePtr iMJ, int *jb,
+ 	dRealMutablePtr in, dRealMutablePtr out)
+ {
+@@ -760,6 +765,61 @@
+ 		dRealAllocaArray (cforce,nb*6);
+ 		SOR_LCP (m,nb,J,jb,body,invI,lambda,cforce,rhs,lo,hi,cfm,findex,&world->qs);
+ 
++#ifdef TIMING
++		std::cout << " m: total constraint dimention " << m
++		          << " nb: number of bounded variables " << nb
++		          << " nub: number of unbounded variables " << nb
++		          << " jb: array of body numbers for each joint row " << jb
++		          << " lo " << lo
++		          << " hi " << hi
++		          << " findex " << findex
++                          << std::endl;
++
++                FILE* fJ = fopen("/tmp/J.mat","a");
++		//std::cout << " J " << J << std::endl;
++                dPrintMatrix(J,m,12,"%10.4f",fJ);
++                fclose(fJ);
++
++                FILE* finvI = fopen("/tmp/invI.mat","a");
++		//std::cout << " invI " << invI << std::endl;
++                dPrintMatrix(invI,3*nb,4,"%10.4f",finvI); // 3x4 matrices stacked vertically, nb matrices.
++                fclose(finvI);
++
++                FILE* flambda = fopen("/tmp/lambda.mat","a");
++		//std::cout << " lambda " << lambda << std::endl;
++                dPrintMatrix(lambda,1,m,"%10.4f",flambda); // 3x4 matrices stacked vertically, nb matrices.
++                fclose(flambda);
++
++                FILE* fcforce = fopen("/tmp/cforce.mat","a");
++		//std::cout << " cforce " << cforce << std::endl;
++                dPrintMatrix(cforce,nb,6,"%10.4f",fcforce); // 3x4 matrices stacked vertically, nb matrices.
++                fclose(fcforce);
++
++                FILE* frhs = fopen("/tmp/rhs.mat","a");
++		//std::cout << " rhs " << rhs << std::endl;
++                dPrintMatrix(rhs,1,m,"%10.4f",frhs); // 3x4 matrices stacked vertically, nb matrices.
++                fclose(frhs);
++
++                // constraint forc mixing vector
++                FILE* flo = fopen("/tmp/lo.mat","a");
++		//std::cout << " lo " << lo << std::endl;
++                dPrintMatrix(lo,1,m,"%10.4f",flo); // 3x4 matrices stacked vertically, nb matrices.
++                fclose(flo);
++
++                // constraint forc mixing vector
++                FILE* fhi = fopen("/tmp/hi.mat","a");
++		//std::cout << " hi " << hi << std::endl;
++                dPrintMatrix(hi,1,m,"%10.4f",fhi); // 3x4 matrices stacked vertically, nb matrices.
++                fclose(fhi);
++
++                // constraint forc mixing vector
++                FILE* fcfm = fopen("/tmp/cfm.mat","a");
++		//std::cout << " cfm " << cfm << std::endl;
++                dPrintMatrix(cfm,1,m,"%10.4f",fcfm); // 3x4 matrices stacked vertically, nb matrices.
++                fclose(fcfm);
++#endif
++
++
+ #ifdef WARM_STARTING
+ 		// save lambda for the next iteration
+ 		//@@@ note that this doesn't work for contact joints yet, as they are
