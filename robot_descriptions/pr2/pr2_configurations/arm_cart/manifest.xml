@@ -14,6 +14,5 @@
   <depend package="pr2_etherCAT"/>
   <depend package="pr2_power_board"/>
   <depend package="joy"/>
-  <depend package="rosrecord"/>
 
 </package>

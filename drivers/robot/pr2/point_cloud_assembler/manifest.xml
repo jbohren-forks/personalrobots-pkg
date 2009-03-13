@@ -16,6 +16,5 @@
   # For Testing
   <depend package="rostest"/>
   <depend package="gtest"/>
-  <depend package="rosrecord" />
 </package>
 
