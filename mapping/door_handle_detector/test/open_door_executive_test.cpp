@@ -273,10 +273,10 @@ public:
     tff_msg_.mode.rot.y = tff_msg_.FORCE;
     tff_msg_.mode.rot.z = tff_msg_.POSITION;
 
-    tff_msg_.value.vel.x = 0.0;
+    tff_msg_.value.vel.x = 10.0;
     tff_msg_.value.vel.y = 0.0;
     tff_msg_.value.vel.z = 0.0;
-    tff_msg_.value.rot.x = -1.0;
+    tff_msg_.value.rot.x = -1.5;
     tff_msg_.value.rot.y = 0.0;
     tff_msg_.value.rot.z = 0.0;
 
@@ -301,13 +301,46 @@ public:
 
     publish("cartesian_tff_right/command", tff_msg_);
     pause_.sleep();
-    publish("cartesian_tff_right/command", tff_msg_);
-    pause_.sleep();
-    publish("cartesian_tff_right/command", tff_msg_);
     pause_.sleep();
     pause_.sleep();
     pause_.sleep();
 
+    // finish
+    tff_msg_.mode.vel.x = tff_msg_.FORCE;
+    tff_msg_.mode.vel.y = tff_msg_.FORCE;
+    tff_msg_.mode.vel.z = tff_msg_.FORCE;
+    tff_msg_.mode.rot.x = tff_msg_.FORCE;
+    tff_msg_.mode.rot.y = tff_msg_.FORCE;
+    tff_msg_.mode.rot.z = tff_msg_.FORCE;
+
+    tff_msg_.value.vel.x = 0.0;
+    tff_msg_.value.vel.y = 0.0;
+    tff_msg_.value.vel.z = 0.0;
+    tff_msg_.value.rot.x = 0.0;
+    tff_msg_.value.rot.y = 0.0;
+    tff_msg_.value.rot.z = 0.0;
+
+    publish("cartesian_tff_right/command", tff_msg_);
+
+
+    // open/close the gripper
+    std_msgs::Float64 gripper_msg;
+    gripper_msg.data = 2.0;
+    publish("gripper_effort/set_command", gripper_msg);
+    pause_.sleep();
+    gripper_msg.data = -2.0;
+    publish("gripper_effort/set_command", gripper_msg);
+
+
+    cout << "switch from tff to moveto controller..." << flush;
+    req_switch.stop_controllers.clear();      
+    req_switch.start_controllers.clear();     
+    req_switch.stop_controllers.push_back("cartesian_tff_right");
+    req_switch.start_controllers.push_back("cartesian_trajectory_right");
+    ros::service::call("switch_controller", req_switch, res_switch);
+    if (!res_switch.ok)
+      return false;
+    cout << "successful" << endl;
 
     return true;
   }
