@@ -66,14 +66,11 @@ while (size != len(files)):
     for f in newfiles:
         indir = False
         for dir in directories:
-            if (os.path.exists(os.path.join(dir, f))):
-                if (indir):
-                    print "FAILURE: file", f, "exists in ", indir, " and ", dir
-                    sys.exit(3)
+            if (os.path.exists(os.path.join(dir, f)) and not indir):
                 indir = dir
         if (not indir):
             print "FAILURE: could not find include file", f
-            sys.exit(4)
+            sys.exit(3)
         ff = os.path.join(indir, f)
         if (ff not in files):
             files.append(ff)
