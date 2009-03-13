@@ -23,13 +23,16 @@ for a in sys.argv[1:]:
         else:
             print "Reject argument:", a
             help = True
-    else:
+    elif(a.strip() != ""):
         file = os.path.join(my_dir, a)
         if (file not in files):
             files.append(file)
         
 
-if (len(files) != 1):
+if (len(files) != 1 or help):
+    if (not help):
+        print "There are ", len(files), " files, there can only be one."
+    print "Args:", sys.argv
     print "Help for", sys.argv[0]
     print "A script to scan nddl files for dependencies."
     print "  Usage:", sys.argv[0], " <file> <option 1> <option 2> <option 3> <option 4> .. <option N>"
@@ -41,6 +44,11 @@ if (len(files) != 1):
 
 
   
+if (debug):
+    print "Directories:"
+    for dir in directories:
+        print dir
+
 size = 0
   
 #Do this until all the files have been proscessed.
@@ -76,12 +84,7 @@ while (size != len(files)):
             files.append(ff)
         
 
-
-
 if (debug):
-    print "Directories:"
-    for dir in directories:
-        print dir
     print "Files:"
 
 for file in files:
