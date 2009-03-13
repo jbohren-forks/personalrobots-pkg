@@ -14,7 +14,6 @@
   <depend package="wavefront_player"/>
   <depend package="teleop_base"/>
   <depend package="teleop_arm_keyboard"/>
-  <depend package="laser_view"/>
   <depend package="pr2_gui"/>
   <depend package="highlevel_controllers"/>
   <depend package="executive_trex_pr2"/>
