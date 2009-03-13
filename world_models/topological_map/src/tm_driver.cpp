@@ -76,7 +76,7 @@ int main (int argc, char* argv[])
   }
   
 
-  TopologicalMapPtr m = topologicalMapFromGrid (grid, 1.0, 2, 1, 1, 0, "local");
+  TopologicalMapPtr m = topologicalMapFromGrid (grid, 1.0, 100.0, 2, 1, 1, 0, "local");
 
   cout << *m;
 

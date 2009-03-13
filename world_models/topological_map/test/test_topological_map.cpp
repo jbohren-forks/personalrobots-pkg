@@ -71,7 +71,7 @@ bool isRearrangement (RegionIdVector v, RegionId* a, unsigned int k)
 TEST(TopologicalMap, BasicAPI)
 {
   OccupancyGrid grid(boost::extents[100][100]);
-  TopologicalMap m(grid);
+  TopologicalMap m(grid, 1.0, 10.0);
   unsigned int s=m.allRegions().size();
   int r, c;
 
@@ -203,7 +203,7 @@ TEST(TopologicalMap, Creation)
   setV(grid, 7, 7, 21, 4, 8, 24, false);
   
 
-  TopologicalMapPtr m = topologicalMapFromGrid (grid, 0.1, 2, 1, 1, 0, "local");
+  TopologicalMapPtr m = topologicalMapFromGrid (grid, 0.1, 1000.0, 2, 1, 1, 0, "local");
 
   EXPECT_EQ(m->allRegions().size(), 45u);
   EXPECT_EQ(m->regionType(m->containingRegion(Cell2D(1,1))), 0);

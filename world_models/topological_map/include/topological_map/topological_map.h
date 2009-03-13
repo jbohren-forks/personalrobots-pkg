@@ -79,7 +79,7 @@ class TopologicalMap
 public:
 
   /// Default constructor makes an empty map (see also topologicalMapFromGrid)
-  TopologicalMap(const OccupancyGrid&, double resolution=1.0);
+  TopologicalMap(const OccupancyGrid&, double resolution, double obstacle_cost);
 
   /// Constructor that reads map from a stream
   /// \todo identify error conditions
@@ -180,7 +180,8 @@ private:
 typedef boost::shared_ptr<TopologicalMap> TopologicalMapPtr;
 
 /// \return shared_ptr to a new topological map generated using a bottleneck analysis of \a grid.  The region types of the returned map are either OPEN or DOORWAY
-TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, const double resolution, const uint bottleneck_size, const uint bottleneck_width, const uint bottleneck_skip, const uint inflation_radius, const string& ppm_output_dir);
+TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, double resolution, double obstacle_cost, uint bottleneck_size, uint bottleneck_width, 
+                                          uint bottleneck_skip, uint inflation_radius, const string& ppm_output_dir);
 
 enum RegionType { OPEN, DOORWAY };
 

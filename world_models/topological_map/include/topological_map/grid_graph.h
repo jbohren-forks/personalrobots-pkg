@@ -84,26 +84,26 @@ public:
   // Create an empty graph.  
   GridGraph() {}
 
-  // Create a graph from an occupancy grid
-  GridGraph(boost::shared_ptr<OccupancyGrid> grid);
+  // Create a graph from an occupancy grid.  Edges between non-obstacle vertices have cost 1.0, and others have cost obstacle_cost;
+  GridGraph(boost::shared_ptr<OccupancyGrid> grid, double obstacle_cost);
 
   // Does the graph contain this cell
   bool containsCell (const Cell2D& cell) const;
 
   // Does the graph contain edge between these two cells
   bool containsEdge (const Cell2D& cell, const Cell2D& cell2) const;
+  
+  // Return cost of edge between two cells (assert if there isn't one)
+  double costBetween (const Cell2D& cell1, const Cell2D& cell2) const;
 
   // Neighbors of a given cell
   vector<Cell2D> neighbors (const Cell2D& cell) const;
-
-  // Add a node.  By default, it will connect to the 4 adjacent neighbor cells (if they exist)
-  void addNode (const Cell2D& cell);
 
   // Remove edge
   void removeEdge (const Cell2D& cell1, const Cell2D& cell2);
 
   // Add edge
-  void addEdge (const Cell2D& cell1, const Cell2D& cell2);
+  void addEdge (const Cell2D& cell1, const Cell2D& cell2, double cost);
 
   // set costmap.  Array element i,j corresponds to cell with row i, column j
   void setCostmap (multi_array<double, 2> costmap);
@@ -129,7 +129,7 @@ private:
 
 };
 
-  
+
 // Internally used class
 // Declaring an instance of this will temporarily sever the given region from the rest of the graph
 // until the instance goes out of scope
@@ -139,7 +139,8 @@ public:
   RegionIsolator (GridGraph* graph, const Region& region);
   ~RegionIsolator();
 private:
-  typedef vector<pair<Cell2D, Cell2D> > RemovedEdges;
+  typedef tuple<Cell2D, Cell2D, double> RemovedEdge;
+  typedef vector<RemovedEdge> RemovedEdges;
   RemovedEdges removed_edges_;
   GridGraph* graph;
 };

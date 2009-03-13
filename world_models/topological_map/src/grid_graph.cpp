@@ -45,6 +45,7 @@ using boost::make_tuple;
 using boost::tie;
 using boost::bind;
 using boost::shared_ptr;
+using boost::edge;
 using std::pair;
 using std::queue;
 
@@ -53,42 +54,41 @@ using std::queue;
  * basic
  ************************************************************/
 
-GridGraph::GridGraph(shared_ptr<OccupancyGrid> grid)
+GridGraph::GridGraph(shared_ptr<OccupancyGrid> grid, const double obstacle_cost)
 {
   for (uint r=0; r<numRows(*grid); ++r) {
     for (uint c=0; c<numCols(*grid); ++c) {
-      if (!(*grid)[r][c]) {
-        addNode(Cell2D(r,c));
+      
+      // Add node
+      Cell2D cell(r,c);
+      ROS_ASSERT_MSG (cell_vertex_map_.find(cell)==cell_vertex_map_.end(), "Cell %d, %d already exists", cell.r, cell.c);
+      GridGraphVertex v = add_vertex(CellInfo(cell), graph_);
+      cell_vertex_map_[cell]=v;
+
+      // Add edges
+      for (char vertical=0; vertical<2; ++vertical) {
+        for (char multiplier=-1; multiplier<=1; multiplier+=2) {
+          char dr = multiplier * (vertical ? 1 : 0);
+          char dc = multiplier * (vertical ? 0 : 1);
+          int r2=cell.r+dr, c2=cell.c+dc;
+          Cell2D neighbor(r2,c2);
+          CellVertexMap::iterator iter = cell_vertex_map_.find(neighbor);
+          if (iter!=cell_vertex_map_.end()) {
+            double cost = (*grid)[r][c] || (*grid)[r2][c2] ? obstacle_cost : 1.0;
+            addEdge(cell,neighbor,cost);
+          }
+        }
       }
     }
   }
 }
 
-void GridGraph::addNode (const Cell2D& cell)
+void GridGraph::addEdge (const Cell2D& cell1, const Cell2D& cell2, const double cost)
 {
-  ROS_ASSERT_MSG (cell_vertex_map_.find(cell)==cell_vertex_map_.end(), "Cell %d, %d already exists", cell.r, cell.c);
-  
-  GridGraphVertex v = add_vertex(CellInfo(cell), graph_);
-  cell_vertex_map_[cell]=v;
-  for (char vertical=0; vertical<2; ++vertical) {
-    for (char multiplier=-1; multiplier<=1; multiplier+=2) {
-      char dr = multiplier * (vertical ? 1 : 0);
-      char dc = multiplier * (vertical ? 0 : 1);
-      Cell2D neighbor(cell.r+dr,cell.c+dc);
-      CellVertexMap::iterator iter = cell_vertex_map_.find(neighbor);
-      if (iter!=cell_vertex_map_.end()) {
-        addEdge(cell,neighbor);
-      }
-    }
-  }
-}
-
-void GridGraph::addEdge (const Cell2D& cell1, const Cell2D& cell2)
-{
-  GridGraphVertex v=cellVertex(cell1);
-  GridGraphVertex w=cellVertex(cell2);
+  const GridGraphVertex v=cellVertex(cell1);
+  const GridGraphVertex w=cellVertex(cell2);
   ROS_ASSERT_MSG (!edge(v,w,graph_).second, "Edge already exists between cells");
-  add_edge(v,w,EdgeCost(1.0),graph_);
+  add_edge(v,w,EdgeCost(cost),graph_);
 }
 
 void GridGraph::removeEdge (const Cell2D& cell1, const Cell2D& cell2)
@@ -113,6 +113,12 @@ bool GridGraph::containsEdge (const Cell2D& cell1, const Cell2D& cell2) const
   else {
     return edge(cellVertex(cell1), cellVertex(cell2), graph_).second;
   }
+}
+
+double GridGraph::costBetween (const Cell2D& cell1, const Cell2D& cell2) const
+{
+  ROS_ASSERT(containsEdge(cell1, cell2));
+  return graph_[edge(cellVertex(cell1), cellVertex(cell2), graph_).first].cost;
 }
 
 
@@ -368,7 +374,6 @@ void GridGraph::resetIndices ()
  * Isolate region
  ************************************************************/
 
-
 RegionIsolator::RegionIsolator (GridGraph* graph, const Region& region) : graph(graph)
 {  
   ROS_DEBUG_STREAM_NAMED ("grid_graph", "Temporarily disconnecting region (lexicographically) bounded by " << *(region.begin()) << " and " << *(region.rbegin()));
@@ -380,8 +385,9 @@ RegionIsolator::RegionIsolator (GridGraph* graph, const Region& region) : graph(
           int dc = multiplier * ( vertical ? 0 : 1 );
           Cell2D neighbor(iter->r+dr, iter->c+dc);
           if (region.find(neighbor)==region.end() && graph->containsEdge(*iter, neighbor)) {
+            double cost = graph->costBetween(*iter, neighbor);
             graph->removeEdge(*iter, neighbor);
-            removed_edges_.push_back(pair<Cell2D, Cell2D>(*iter, neighbor));
+            removed_edges_.push_back(RemovedEdge(*iter, neighbor, cost));
           }
         }
       }
@@ -390,12 +396,11 @@ RegionIsolator::RegionIsolator (GridGraph* graph, const Region& region) : graph(
 }
 
 
-
 RegionIsolator::~RegionIsolator ()
 {
   ROS_DEBUG_STREAM_NAMED ("grid_graph", "Adding back disconnected region");
   for (RemovedEdges::iterator iter=removed_edges_.begin(); iter!=removed_edges_.end(); ++iter) {
-    graph->addEdge(iter->first, iter->second);
+    graph->addEdge(iter->get<0>(), iter->get<1>(), iter->get<2>());
   }
 }
 

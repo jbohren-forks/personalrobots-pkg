@@ -175,6 +175,13 @@ double readResolution(istream& stream)
   return resolution;
 }
 
+double readObstacleCost(istream& stream)
+{
+  double cost;
+  stream >> cost;
+  return cost;
+}
+
 void writeRegionConnectorMap (const RegionConnectorMap& m, ostream& str) 
 {
   str << endl << m.size();
@@ -219,6 +226,7 @@ void TopologicalMap::MapImpl::writeToStream (ostream& stream)
   writeGrid(grid_, stream);
   region_graph_->writeToStream(stream);
   roadmap_->writeToStream(stream);
+  stream << endl << obstacle_cost_;
   writeRegionConnectorMap(region_connector_map_, stream);
   stream << endl << resolution_;
 
@@ -347,16 +355,16 @@ ObstacleDistanceArray computeObstacleDistances(GridPtr grid)
 }
     
 
-TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution) : 
+TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution, double obstacle_cost) : 
   grid_(new OccupancyGrid(grid)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(new RegionGraph), 
-  roadmap_(new Roadmap), grid_graph_(new GridGraph(grid_)), resolution_(resolution)
+  roadmap_(new Roadmap), obstacle_cost_(obstacle_cost), grid_graph_(new GridGraph(grid_, obstacle_cost_)), resolution_(resolution)
 {
 }
 
 TopologicalMap::MapImpl::MapImpl (istream& str) : 
   grid_(readGrid(str)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(readRegionGraph(str)), 
-  roadmap_(readRoadmap(str)), grid_graph_(new GridGraph(grid_)), region_connector_map_(readRegionConnectorMap(str)), 
-  resolution_(readResolution(str))
+  roadmap_(readRoadmap(str)), obstacle_cost_(readObstacleCost(str)), grid_graph_(new GridGraph(grid_, obstacle_cost_)), 
+  region_connector_map_(readRegionConnectorMap(str)), resolution_(readResolution(str))
 {
 }
 
@@ -727,7 +735,7 @@ TopologicalMap::MapImpl::TemporaryRoadmapNode::~TemporaryRoadmapNode ()
  * TopologicalMap ops are forwarded to MapImpl
  ************************************************************/
 
-TopologicalMap::TopologicalMap (const OccupancyGrid& grid, double resolution) : map_impl_(new MapImpl(grid, resolution))
+TopologicalMap::TopologicalMap (const OccupancyGrid& grid, double resolution, double obstacle_cost) : map_impl_(new MapImpl(grid, resolution, obstacle_cost))
 {
 }
 
