@@ -1,0 +1,86 @@
+#!/usr/bin/python
+
+# Header scanner...
+import sys, os
+
+my_dir = os.getcwd()
+files = []
+debug = False
+directories = [my_dir]
+
+for a in sys.argv:
+    if (a[0] == "-"):
+        if (a[1] == "I"):
+            file = os.path.join(my_dir, a[2:])
+            if (file not in files):
+                files.append(file)
+        elif(a[1] == "D"):
+            dir = os.path.abspath(a[2:])
+            if (dir not in directories):
+                directories.append(dir)
+        elif(a[1] == "B"):
+            debug = True
+            print "DEBUG ON, WD:", my_dir
+        else:
+            print "Reject argument:", a
+          
+size = 0
+  
+#Do this until all the files have been proscessed.
+while (size != len(files)):
+    if (debug):
+        print "Size:", size, "Files:", len(files)
+    size = len(files)
+    newfiles = []
+    for file in files:
+        try:
+            fp = open(file, "r")
+            for linedirty in fp:
+                line = linedirty.strip()
+                if (line[0:len("#include")] == "#include"):
+                    start = line.index("\"")
+                    end = line.index("\"", start + 1)
+                    newfiles.append(line[start + 1:end])
+            fp.close()
+        except:
+            print "FAILURE: could not open", file
+            sys.exit(1)
+    
+    for f in newfiles:
+        indir = False
+        for dir in directories:
+            if (os.path.exists(os.path.join(dir, f))):
+                if (indir):
+                    print "FAILURE: file", f, "exists in ", indir, " and ", dir
+                    sys.exit(2)
+                indir = dir
+        if (not indir):
+            print "FAILURE: could not find include file", f
+            sys.exit(3)
+        ff = os.path.join(indir, f)
+        if (ff not in files):
+            files.append(ff)
+        
+
+
+
+if (debug):
+    print "Directories:"
+    for dir in directories:
+        print dir
+    print "Files:"
+
+for file in files:
+    print file
+
+
+
+
+
+
+
+
+
+
+
+
