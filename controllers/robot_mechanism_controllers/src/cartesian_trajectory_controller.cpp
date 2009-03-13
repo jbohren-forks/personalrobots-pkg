@@ -280,14 +280,13 @@ void CartesianTrajectoryControllerNode::update()
 bool CartesianTrajectoryControllerNode::moveTo(robot_srvs::MoveToPose::Request &req, 
                                                robot_srvs::MoveToPose::Response &resp)
 {
-  Time start_time = Time().now();
   Duration traject_time = moveTo(req.pose);
   Duration sleep_time = Duration().fromSec(0.01);
 
   if (traject_time == Duration().fromSec(0))
     return false;
 
-  while (Time().now() < start_time + traject_time)
+  while (controller_.isMoving())
     sleep_time.sleep();
 
   return true;
