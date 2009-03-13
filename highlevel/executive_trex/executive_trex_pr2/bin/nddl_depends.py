@@ -7,14 +7,13 @@ my_dir = os.getcwd()
 files = []
 debug = False
 directories = [my_dir]
+help = False
 
-for a in sys.argv:
-    if (a[0] == "-"):
-        if (a[1] == "I"):
-            file = os.path.join(my_dir, a[2:])
-            if (file not in files):
-                files.append(file)
-        elif(a[1] == "D"):
+for a in sys.argv[1:]:
+    if (a == "--help" or a == "-help" or a == "-h"):
+        help = True
+    elif (a[0] == "-"):
+        if(a[1] == "I"):
             dir = os.path.abspath(a[2:])
             if (dir not in directories):
                 directories.append(dir)
@@ -23,7 +22,25 @@ for a in sys.argv:
             print "DEBUG ON, WD:", my_dir
         else:
             print "Reject argument:", a
-          
+            help = True
+    else:
+        file = os.path.join(my_dir, a)
+        if (file not in files):
+            files.append(file)
+        
+
+if (len(files) != 1):
+    print "Help for", sys.argv[0]
+    print "A script to scan nddl files for dependencies."
+    print "  Usage:", sys.argv[0], " <file> <option 1> <option 2> <option 3> <option 4> .. <option N>"
+    print "Where <file> is an nddl file."
+    print "<option> is one of:"
+    print "  -I<dir>: Include directory <dir>."
+    print "  -B: Turn on debug prints and print working directory."
+    sys.exit(1)
+
+
+  
 size = 0
   
 #Do this until all the files have been proscessed.
@@ -44,7 +61,7 @@ while (size != len(files)):
             fp.close()
         except:
             print "FAILURE: could not open", file
-            sys.exit(1)
+            sys.exit(2)
     
     for f in newfiles:
         indir = False
@@ -52,11 +69,11 @@ while (size != len(files)):
             if (os.path.exists(os.path.join(dir, f))):
                 if (indir):
                     print "FAILURE: file", f, "exists in ", indir, " and ", dir
-                    sys.exit(2)
+                    sys.exit(3)
                 indir = dir
         if (not indir):
             print "FAILURE: could not find include file", f
-            sys.exit(3)
+            sys.exit(4)
         ff = os.path.join(indir, f)
         if (ff not in files):
             files.append(ff)
