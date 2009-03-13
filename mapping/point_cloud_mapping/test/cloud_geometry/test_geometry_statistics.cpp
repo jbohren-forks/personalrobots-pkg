@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2008-2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id$
+ * $Id: test_geometry.cpp 12438 2009-03-12 08:59:30Z veedee $
  *
  */
 
@@ -33,27 +33,11 @@
 #include <gtest/gtest.h>
 #include <robot_msgs/PointCloud.h>
 
-#include <point_cloud_mapping/cloud_io.h>
+#include <point_cloud_mapping/geometry/statistics.h>
 
-using namespace cloud_io;
+using namespace cloud_geometry::statistics;
 
-TEST (CloudIO, Read)
-{
-  robot_msgs::PointCloud points;
-  // Please make sure that this file exists, otherwise the test will fail.
-  int res = loadPCDFile ("./test/cloud_io/bun0.pcd", points);
-  EXPECT_EQ (res, 0);
-  EXPECT_EQ ((int)points.pts.size (), 397);
-  EXPECT_NEAR (points.pts[0].x, 0.0054216, 1e-5);
-  EXPECT_NEAR (points.pts[0].y, 0.11349, 1e-5);
-  EXPECT_NEAR (points.pts[0].z, 0.040749, 1e-5);
-  
-  EXPECT_NEAR (points.pts[points.pts.size () - 1].x, -0.07793, 1e-5);
-  EXPECT_NEAR (points.pts[points.pts.size () - 1].y, 0.17516, 1e-5);
-  EXPECT_NEAR (points.pts[points.pts.size () - 1].z, -0.0444, 1e-5);
-}
-
-TEST (CloudIO, Write)
+TEST (Geom, Statistics)
 {
   robot_msgs::PointCloud points;
   points.pts.resize (18);
@@ -76,24 +60,6 @@ TEST (CloudIO, Write)
   points.pts[15].x = 2.412231; points.pts[15].y = -4.190918; points.pts[15].z = 0;
   points.pts[16].x = 2.691027; points.pts[16].y = -4.049060; points.pts[16].z = 0;
   points.pts[17].x = 2;        points.pts[17].y = -3;        points.pts[17].z = 0;
-
-  // Make sure we have permissions to write there
-  int res = savePCDFile ("/tmp/test_cloud_io.pcd", &points, 10);
-  EXPECT_EQ (res, 0);
-  points.pts.clear ();
-  
-  // Please make sure that this file exists, otherwise the test will fail.
-  res = loadPCDFile ("/tmp/test_cloud_io.pcd", points);
-  EXPECT_EQ (res, 0);
-  EXPECT_EQ ((int)points.pts.size (), 18);
-  
-  EXPECT_NEAR (points.pts[0].x, 3.587751, 1e-5);
-  EXPECT_NEAR (points.pts[0].y, -4.190982, 1e-5);
-  EXPECT_NEAR (points.pts[0].z, 0, 1e-5);
-  
-  EXPECT_NEAR (points.pts[points.pts.size () - 1].x, 2, 1e-5);
-  EXPECT_NEAR (points.pts[points.pts.size () - 1].y, -3, 1e-5);
-  EXPECT_NEAR (points.pts[points.pts.size () - 1].z, 0, 1e-5);
 }
 
 /* ---[ */

@@ -38,14 +38,67 @@
 
 #include <vector>
 #include <fstream>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 namespace cloud_io
 {
-  int loadPCDFile (const char* fileName, robot_msgs::PointCloud &points);
+  int loadPCDFile (const char* file_name, robot_msgs::PointCloud &points);
 
-  int savePCDFile (const char* fileName, robot_msgs::PointCloud points, int precision);
+  int savePCDFile (const char* file_name, robot_msgs::PointCloud *points, bool binary_mode = false);
 
-  int getIndex (robot_msgs::PointCloud points, std::string value);
+  int savePCDFileASCII (const char* file_name, robot_msgs::PointCloud *points, int precision);
+  int savePCDFileBinary (const char* file_name, robot_msgs::PointCloud *points);
+
+  int getIndex (robot_msgs::PointCloud *points, std::string value);
+
+  std::string addCurrentHeader (robot_msgs::PointCloud *points, bool binary_type);
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Create the PCD header comments */
+  inline std::string
+    createNewHeader ()
+  {
+    return std::string (
+      "# .PCD v0.3 - Point Cloud Data file format\n"
+      "#\n"
+      "# Column legend:\n"
+      "#   x,  y,  z - 3d point coordinates\n"
+      "#   r,  g,  b - RGB point color information\n"
+      "#\n"
+      "# DATA specifies whether points are stored in binary format or ascii text. Header must be page aligned (4096 on most systems)\n#\n");
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Create shorter PCD header comments */
+  inline std::string
+    createNewHeaderShort ()
+  {
+    return std::string (
+      "# .PCD v0.3 - Point Cloud Data file format\n"
+      "#\n");
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Get the available point cloud channels as a space separated string
+    * \param points a pointer to the PointCloud message
+    */
+  inline std::string
+    getAvailableDimensions (robot_msgs::PointCloud *points)
+  {
+    std::string result = "x y z";
+    unsigned int i;
+    for (i = 0; i < points->chan.size (); i++)
+    {
+      if (points->chan[i].vals.size () == 0)
+        continue;
+
+      result = result + " " + points->chan[i].name;
+    }
+    return (result);
+  }
 
 }
 #endif

@@ -114,7 +114,7 @@ class BagToPcd: public ros::Node
             cloud_.chan[cloud_.chan.size () - 2].vals[i] = pout.point.y;
             cloud_.chan[cloud_.chan.size () - 1].vals[i] = pout.point.z;
           }
-          cloud_io::savePCDFile (fn_, cloud_, 5);
+          cloud_io::savePCDFile (fn_, &cloud_, 5);
         }
         fprintf (stderr, "Data saved to %s.\n", fn_);
       }
