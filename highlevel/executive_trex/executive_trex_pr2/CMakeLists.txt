@@ -3,9 +3,17 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #set(ROS_BUILD_TYPE Release)
 rospack(executive_trex_pr2)
 
+
 genmsg()
 
 rospack_add_boost_directories()
+
+#Will replace jam...
+#include(NDDL.cmake)
+#rospack_add_nddl("arm.0/pr2.exec.nddl")
+#Add other files here once it starts working.
+
+
 
 ################################################################################
 # This whole section could be included. It is used for building jam targets
@@ -27,7 +35,7 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 if(__rospack_err_ignore)
-  message(FATAL_ERROR, "Failed to invoke rospack to find trex")
+  message(FATAL_ERROR "Failed to invoke rospack to find trex")
 endif(__rospack_err_ignore)
 
 execute_process(

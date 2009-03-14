@@ -13,4 +13,7 @@
   <depend package="deprecated_msgs" />
 
   <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
+  <export>
+    <nddl iflags="-I${prefix}/nddl -I${prefix}"/>
+  </export>
 </package>

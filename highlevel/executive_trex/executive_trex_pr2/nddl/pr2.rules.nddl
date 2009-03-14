@@ -28,6 +28,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+You need this if you are building with cmake.
+#include "pr2.declarations.nddl"
+*/
+
 BaseState::Holds{
   defaultOnCommit(accumulatedDistance, 0.0);
   if(end){
