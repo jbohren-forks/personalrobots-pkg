@@ -15,6 +15,7 @@ system.
 <export>
   <cpp lflags="-Xlinker -rpath ${prefix}/PLASMA/build/lib -L${prefix}/PLASMA/build/lib" 
        cflags="-I${prefix}/include/TREX -I${prefix}/include/PLASMA -I${prefix}/include/PlanWorks"/>
+  <nddl iflags="-I${prefix}/TREX/agent/base"/>
   <doxymaker external="https://babelfish.arc.nasa.gov/trac/europa/wiki"/>
 </export>
 <versioncontrol type="svn" url="http://europa-pso.googlecode.com/svn/PLASMA/trunk"/>
