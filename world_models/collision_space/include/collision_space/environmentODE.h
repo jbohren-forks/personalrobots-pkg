@@ -51,16 +51,9 @@ namespace collision_space
     {
     public:
 		
-        EnvironmentModelODE(bool performODEinit = true) : EnvironmentModel()
+        EnvironmentModelODE(void) : EnvironmentModel()
 	{
-	    static bool initODE = true;
-	    if (initODE)
-	    {
-		if (performODEinit)
-		    dInitODE();
-		initODE = false;
-	    }
-	    
+	    dInitODE2(0);
 	    m_space = dHashSpaceCreate(0);
 	    m_spaceBasicGeoms = dHashSpaceCreate(0);
 	}
@@ -68,6 +61,7 @@ namespace collision_space
 	virtual ~EnvironmentModelODE(void)
 	{
 	    freeMemory();
+	    dCloseODE();
 	}
 	
 	/** The space ID for the objects that can be changed in the

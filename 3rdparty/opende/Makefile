@@ -2,7 +2,7 @@
 WITH_DRAWSTUFF = yes
 
 CFG_OPTIONS = --with-arch=nocona --enable-release --disable-asserts --with-pic #--enable-double-precision
-SVN_REVISION = -r 1657
+SVN_REVISION = -r 1658
 
 SVN_PATCH = opende_patch.diff
 
