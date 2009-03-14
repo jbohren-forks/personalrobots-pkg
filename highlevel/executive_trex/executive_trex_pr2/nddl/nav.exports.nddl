@@ -68,7 +68,10 @@ MoveBehavior::Inactive {
   addEq(th, [-.25, .25], des_th);
 
   if(start){
-    starts(BaseState.Holds bs);
+    // BaseState(start) == Holds(x, y, th);
+    any(BaseState.Holds bs);
+    precedes(bs.start, start);
+    temporalDistance(start, [1 +inf], bs.end);
     eq(bs.x, x);
     eq(bs.y, y);
     eq(bs.th, th);

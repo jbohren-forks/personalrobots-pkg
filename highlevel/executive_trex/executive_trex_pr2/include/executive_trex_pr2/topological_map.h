@@ -27,6 +27,20 @@ namespace executive_trex_pr2 {
   
   class TopologicalMapAdapter;
 
+
+  /**
+   * @brief Simple container class for a connection cost pair
+   */
+  class ConnectionCostPair {
+  public:
+    ConnectionCostPair():id(0), cost(0){}
+    ConnectionCostPair(unsigned int id_, double cost_):id(id_), cost(cost_) {}
+
+    unsigned int id;
+    double cost;  
+    bool operator<(const ConnectionCostPair& rhs) const {return cost < rhs.cost;}
+  };
+
   /**
    * @brief A procedure to load a topological map from a file
    */
@@ -197,26 +211,13 @@ namespace executive_trex_pr2 {
   private:
     std::string toString() const;
 
-    class Choice {
-    public:
-    Choice():id(0), cost(0){}
-    Choice(unsigned int id_, double cost_):id(id_), cost(cost_) {}
-
-      unsigned int id;
-      double cost;  
-      bool operator<(const MapConnectorSelector::Choice& rhs) const {return cost < rhs.cost;}
-    };
-
-    double gCost(unsigned int from, unsigned int to) const;
-    double hCost(unsigned int from, unsigned int to) const;
-
     const LabelStr _source_x;
     const LabelStr _source_y;
     const LabelStr _final_x;
     const LabelStr _final_y;
     const LabelStr _target_connector;
-    std::list<Choice> _sorted_choices;
-    std::list<Choice>::iterator _choice_iterator;
+    std::list<ConnectionCostPair> _sorted_choices;
+    std::list<ConnectionCostPair>::iterator _choice_iterator;
   };
 
 
@@ -310,17 +311,21 @@ namespace executive_trex_pr2 {
     virtual bool isObstacle(double x, double y);
 
     /**
-     * @brief Get the cost to go from a given 2D point to a connector. The point must be in a region
-     * accessible by the connector
+     * @brief Get the cost to go from one 2D point to another.
      * @return PLUS_INFINITY if not reachable (e.g. not in the same region or a bad id. Otherwise the cost to get there.
      */
-    virtual double gCost(double from_x, double from_y, unsigned int connector_id);
+    virtual double cost(double from_x, double from_y, double to_x, double to_y);
 
     /**
-     * @brief Get the cost to go from a given connector, to a final destination given by a point in space
-     * @return PLUS_INFINITY if not reachable (e.g. not in the same region or a bad id. Otherwise the cost to get there.
+     * @brief Get the to travel between a point and a connector
+     * @return PLUS_INFINITY if not reachable or a bad connctor id
      */
-    virtual double hCost(unsigned int connector_id, double to_x, double to_y);
+    virtual double cost(double to_x, double to_y, unsigned int connector_id);
+
+    /**
+     * @broef Query for local connectors with costs to goal data as well
+     */
+    virtual void getLocalConnectionsForGoal(std::list<ConnectionCostPair>& results, double x0, double y0, double x1, double y1);
 
   private:
     static TopologicalMapAdapter* _singleton;

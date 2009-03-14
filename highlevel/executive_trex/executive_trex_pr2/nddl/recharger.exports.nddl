@@ -54,9 +54,12 @@ Recharger::Inactive{
   // to distinguish inputs evaluated from execution rather than planned for. This could be captured with suitable
   // syntax in the language to make it more explicit what is going on. All we are really doing here
   // is binding default values from execution
-  // Holds( desX + [-0.5, 0.5], desY + [-0.5, 0.5], desTh + [-0.5, 0.5]) = baseState(start); 
+  // Holds( des_x + [-0.5, 0.5], des_y + [-0.5, 0.5], des_th + [-0.5, 0.5]) = baseState(start); 
   if(start){
     starts(BaseState.Holds bs);
+    defaultOnCommit(x, bs.x);
+    defaultOnCommit(y, bs.y);
+    defaultOnCommit(th, bs.th);
     addEq(bs.x, [-0.5, 0.5], x);
     addEq(bs.y, [-0.5, 0.5], y);
     addEq(bs.th, [-0.5, 0.5], th);

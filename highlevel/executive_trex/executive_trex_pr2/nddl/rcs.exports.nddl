@@ -85,9 +85,9 @@ class MoveBase extends Behavior {
     float x;
     float y;
     float th;
-    float desX;
-    float desY;
-    float desTh;
+    float des_x;
+    float des_y;
+    float des_th;
     bool recharging;
   }
 

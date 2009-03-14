@@ -240,19 +240,17 @@ MoveBase::Active{
   // For now, assume a constant duration, and write the end bounds thru magic so we are transported
   // to the target position instantaneouosly
   eq(duration, 3);
-  if(end){
-    meets(BaseState.Holds bs);
-    eq(bs.x, x);
-    eq(bs.y, y);
-    eq(bs.th, th);
-  }
+  meets(BaseState.Holds bs);
+  eq(bs.x, x);
+  eq(bs.y, y);
+  eq(bs.th, th);
 }
 
-/**
- *
- */
 MoveBase::Inactive{
-  starts(BaseState.Holds bs);
+  // BaseState(start) == Holds(x, y, th);
+  any(BaseState.Holds bs);
+  precedes(bs.start, start);
+  temporalDistance(start, [1 +inf], bs.end);
   eq(bs.x, x);
   eq(bs.y, y);
   eq(bs.th, th);

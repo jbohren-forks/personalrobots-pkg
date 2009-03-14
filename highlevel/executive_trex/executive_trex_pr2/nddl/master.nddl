@@ -124,7 +124,7 @@ class Path extends AgentTimeline {
     // Activation status
     bool active;
 
-    // Source pose
+    // Source position
     float x;
     float y;
 
@@ -132,10 +132,9 @@ class Path extends AgentTimeline {
     MAP_KEY region;
     bool is_doorway;
 
-    // Target pose
+    // Target position
     float target_x;
     float target_y;
-    float target_th;
     MAP_KEY target_connector;
 
     // Final pose
@@ -338,6 +337,10 @@ BaseState::Holds{
   temporalDistance(start, [1 +inf], p.end);
 
   if(p.active == true){
+    int region;
+    map_get_region_from_position(region, x, y);
+    eq(region, p.region);
+    /*
     float distance;
     bool done;
     calcDistance(distance, x, y, p.target_x, p.target_y);
@@ -345,6 +348,7 @@ BaseState::Holds{
     if(done == true){
       concurrent(p.end, end);
     }
+    */
   }
 }
 

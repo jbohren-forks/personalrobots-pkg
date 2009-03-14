@@ -339,55 +339,19 @@ namespace executive_trex_pr2 {
     x1 = final_x->lastDomain().getSingletonValue();
     y1 = final_y->lastDomain().getSingletonValue();
 
-    unsigned int this_region =  TopologicalMapAdapter::instance()->getRegion(x0, y0);
-    condDebugMsg(this_region == 0, "MapConnectorSelector", "No region for <" << x0 << ", " << y0 <<">");
-    unsigned int final_region =  TopologicalMapAdapter::instance()->getRegion(x1, y1);
-    condDebugMsg(final_region == 0, "MapConnectorSelector", "No region for <" << x1 << ", " << y1 <<">");
-    std::vector<unsigned int> final_region_connectors;
-    TopologicalMapAdapter::instance()->getRegionConnectors(final_region, final_region_connectors);
-
-    // exclude the source connector if there is one
-    bool accessible_directly(false);
-
-    unsigned int source_connector = TopologicalMapAdapter::instance()->getConnector(x0, y0);
-    for(unsigned int i = 0; i < final_region_connectors.size(); i++){
-      if(final_region_connectors[i] == source_connector){
-	accessible_directly = true;
-	break;
-      }
-    }
-
-    // If the source point and final point can be connected then we consider an option of going
-    // directly to the point rather than thru a connector. To figure this out we should look the region at
-    // the source connector and see if it is a connector for the final region
-    if(accessible_directly)
-      _sorted_choices.push_back(Choice(0, sqrt(pow(x0 - x1, 2) + pow(y0 - y1, 2))));
-
-    // Now iterate over the connectors in this region and compute the heuristic cost estimate
-    std::vector<unsigned int> connectors;
-    TopologicalMapAdapter::instance()->getRegionConnectors(this_region, connectors);
-    for(std::vector<unsigned int>::const_iterator it = connectors.begin(); it != connectors.end(); ++it){
-      unsigned int connector_id = *it;
-      if(connector_id != source_connector){
-	double cost = TopologicalMapAdapter::instance()->gCost(x0, y0, connector_id) + 
-	  TopologicalMapAdapter::instance()->hCost(connector_id, x1, y1);
-
-	_sorted_choices.push_back(Choice(connector_id, cost));
-      }
-    }
+    TopologicalMapAdapter::instance()->getLocalConnectionsForGoal(_sorted_choices, x0, y0, x1, y1);
 
     _sorted_choices.sort();
     _choice_iterator = _sorted_choices.begin();
 
-    debugMsg("MapConnectorSelector:MapConnectorSelector", 
-	     "Evaluating from <" << x0 << ", " << y0 << "> to <" << x1 << ", " << y1 << ">. " << toString());
+    debugMsg("map", "Evaluating from <" << x0 << ", " << y0 << "> to <" << x1 << ", " << y1 << ">. " << toString());
   }
 
   std::string MapConnectorSelector::toString() const {
     std::stringstream ss;
     ss << "Choices are: " << std::endl;
-    for(std::list<Choice>::const_iterator it = _sorted_choices.begin(); it != _sorted_choices.end(); ++it){
-      const Choice& choice = *it;
+    for(std::list<ConnectionCostPair>::const_iterator it = _sorted_choices.begin(); it != _sorted_choices.end(); ++it){
+      const ConnectionCostPair& choice = *it;
       double x, y;
       TopologicalMapAdapter::instance()->getConnectorPosition(choice.id, x, y);
 
@@ -403,18 +367,10 @@ namespace executive_trex_pr2 {
   bool MapConnectorSelector::hasNext() const { return _choice_iterator != _sorted_choices.end(); }
 
   double MapConnectorSelector::getNext(){
-    MapConnectorSelector::Choice c = *_choice_iterator;
+    ConnectionCostPair c = *_choice_iterator;
     debugMsg("MapConnectorSelector::getNext", "Selecting " << c.id << std::endl);
     ++_choice_iterator;
     return c.id;
-  }
-
-  double MapConnectorSelector::gCost(unsigned int from, unsigned int to) const{
-    return 0;
-  }
-
-  double MapConnectorSelector::hCost(unsigned int from, unsigned int to) const{
-    return 0;
   }
 
   /************************************************************************
@@ -549,20 +505,60 @@ namespace executive_trex_pr2 {
     return _map->isObstacle(topological_map::Point2D(x, y));
   }
 
-  double TopologicalMapAdapter::gCost(double from_x, double from_y, unsigned int connector_id){
+
+  double TopologicalMapAdapter::cost(double from_x, double from_y, double to_x, double to_y){
+
+    // Obtain the distance point to point
+    return sqrt(pow(from_x - to_x, 2) + pow(from_y - to_y, 2));
+
+    /*
+    std::pair<bool, double> result = _map->distanceBetween(topological_map::Point2D(from_x, from_y), topological_map::Point2D(to_x, to_y));
+
+    // If there is no path then return infinint
+    if(!result.first)
+      return PLUS_INFINITY;
+
+
+    // Otherwise we return the euclidean distance between source and target
+    return result.second;
+    */
+  }
+
+  double TopologicalMapAdapter::cost(double from_x, double from_y, unsigned int connector_id){
     double x(0), y(0);
 
     // If there is no connector for this id then we have an infinite cost
     if(!getConnectorPosition(connector_id, x, y))
       return PLUS_INFINITY;
 
-    // Otherwise we return the euclidean distance between source and target
-    return sqrt(pow(from_x - x, 2) + pow(from_y - y, 2));
+    return cost(from_x, from_y, x, y);
   }
 
-  double TopologicalMapAdapter::hCost(unsigned int connector_id, double to_x, double to_y){
-    // For now, use g_cost approach
-    return gCost(to_x, to_y, connector_id);
+  void TopologicalMapAdapter::getLocalConnectionsForGoal(std::list<ConnectionCostPair>& results, double x0, double y0, double x1, double y1){
+    unsigned int this_region =  TopologicalMapAdapter::instance()->getRegion(x0, y0);
+    condDebugMsg(this_region == 0, "map", "No region for <" << x0 << ", " << y0 <<">");
+    unsigned int final_region =  TopologicalMapAdapter::instance()->getRegion(x1, y1);
+    condDebugMsg(final_region == 0, "map", "No region for <" << x1 << ", " << y1 <<">");
+
+    // If the source point and final point can be connected then we consider an option of going
+    // directly to the point rather than thru a connector. To figure this out we should look the region at
+    // the source connector and see if it is a connector for the final region
+    if(this_region == final_region)
+      results.push_back(ConnectionCostPair(0, cost(x0, y0, x1, y1)));
+
+    // Now iterate over the connectors in this region and compute the heuristic cost estimate. We exclude the source connector
+    // since we have just arrived here
+    std::vector<unsigned int> final_region_connectors;
+    getRegionConnectors(final_region, final_region_connectors);
+    unsigned int source_connector = getConnector(x0, y0);
+    std::vector<unsigned int> connectors;
+    getRegionConnectors(this_region, connectors);
+    for(std::vector<unsigned int>::const_iterator it = connectors.begin(); it != connectors.end(); ++it){
+      unsigned int connector_id = *it;
+      if(connector_id != source_connector){
+	results.push_back(ConnectionCostPair(connector_id, cost(x0, y0, connector_id) + cost(x1, y1, connector_id)));
+      }
+    }
   }
 
   void TopologicalMapAdapter::toPostScriptFile(){

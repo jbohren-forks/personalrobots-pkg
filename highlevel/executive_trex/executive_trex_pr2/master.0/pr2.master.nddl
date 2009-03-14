@@ -15,3 +15,12 @@ map_initialize_from_file("../test/willow.tmap");
 
 rejectable(Navigator.Active g0);
 g0.w = w0;
+
+// Add condition check for test case
+// assert path[g0.end) == Holds(false, w0.x + [-0.5, 0.05], w0.y + [-0.5, 0.05], ?)
+rejectable(path.Holds c0);
+concurrent(g0.end, c0.start);
+eq(c0.active, false);
+addEq(w0.x, [-0.5, 0.05], c0.x);
+addEq(w0.y, [-0.5, 0.05], c0.y);
+assertCompleted(c0.state);

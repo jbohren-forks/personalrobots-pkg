@@ -36,7 +36,7 @@
 #include "doorman.exports.nddl"
 #include "topological_map.exports.nddl"
 #include "safety.exports.nddl"
-#include "nav.exports.nddl"
+#include "nav.nddl"
 
 
 /** External Functions to be integrated **/
@@ -85,7 +85,7 @@ class DoorController extends AgentTimeline {
   }
 
   DoorController(Mode _mode){
-    super(_mode);
+    super(_mode, "Holds");
   }
 };
 
@@ -219,12 +219,12 @@ DoorController::Holds {
 	if(have_handle == TRUE) {
 
 	  if(door_locked == false){
-	    // OpenDoorWithGrasp([start, +inf], end_bounds] == Active();
+	    // OpenDoorWithGrasp(any, end_bounds] == Active();
 	    starts_before(OpenDoorWithGrasp.Active cmd);
 	    concurrent(cmd.end, end_bounds);
 	  }
 	  else {
-	    // TwistHandle([start, +inf], end_bounds] == Active();
+	    // TwistHandle(any, end_bounds] == Active();
 	    starts_before(TwistHandle.Active cmd);
 	    concurrent(cmd.end, end_bounds);
 	  }
@@ -259,7 +259,7 @@ DoorController::Holds {
 	      // GraspHandle(any, end_bounds] == Active();
 	      starts_before(GraspHandle.Active cmd);
 	      concurrent(cmd.end, end_bounds);
-	      get_handle_position(cmd.x, cmd.y, cmd.z, door_id);
+	      map_get_handle_position(cmd.x, cmd.y, cmd.z, door_id);
 	    }
 	    else {
 	      // MoveBase(any, end_bounds] == Active();
@@ -303,7 +303,7 @@ DoorController::Holds {
 		eq(cmd.th, detect_th);
 	      }
 	      else {
-		// MoveBase(any, end_bounds] == Active( ...);
+		// MoveBase(any, end_bounds] == Active(detect_x, detect_y, detect_th);
 		starts_before(MoveBase.Active cmd);
 		concurrent(cmd.end, end_bounds);
 		eq(cmd.x, detect_x);
@@ -323,14 +323,14 @@ DoorController::Holds {
  * feedback parameters on success or failure
  ***********************************************************************/
 ReleaseDoor::Inactive{
-  // This is a common pattern for all - to bind to the door controller
-  // DoorController[start + TIME_ERROR_BOUND) dc == Holds;
-  any(DoorController.Holds dc);
-  TIME_ERROR_BOUND error;
-  temporalDistance(dc.start, error, start);
 
   // If successful it means we were able to execute the check. The result can still be clear or not
   if(status == SUCCESS){
+    // This is a common pattern for all - to bind to the door controller
+    // DoorController[start + TIME_ERROR_BOUND) dc == Holds;
+    any(DoorController.Holds dc);
+    TIME_ERROR_BOUND error;
+    temporalDistance(dc.start, error, start);
     eq(dc.have_handle, have_handle);
     eq(dc.last_checked_door, FORCE_DOOR_CHECK);
     concurrent(dc.start, start);
@@ -338,15 +338,15 @@ ReleaseDoor::Inactive{
 }
 
 OpenDoorWithGrasp::Inactive{
-  // Update door controller with feedback
-  any(DoorController.Holds dc);
-  TIME_ERROR_BOUND error;
-  temporalDistance(dc.start, error, start);
 
   // If successful, update the state with feedback. Note that at this point we could
   // set values for door and handle state. On the other hand, we could also just
   // start a door detector
   if(status == SUCCESS){
+    // Update door controller with feedback
+    any(DoorController.Holds dc);
+    TIME_ERROR_BOUND error;
+    temporalDistance(dc.start, error, start);
     eq(dc.last_checked_door, FORCE_DOOR_CHECK);
     eq(dc.have_handle, TRUE);
     concurrent(dc.start, start);
@@ -354,15 +354,15 @@ OpenDoorWithGrasp::Inactive{
 }
 
 TwistHandle::Inactive{
-  // Update door controller with feedback
-  any(DoorController.Holds dc);
-  TIME_ERROR_BOUND error;
-  temporalDistance(dc.start, error, start);
-
   // If successful, update the state with feedback. Note that at this point we could
   // set values for door and handle state. On the other hand, we could also just
   // start a door detector
   if(status == SUCCESS){
+    // Update door controller with feedback
+    any(DoorController.Holds dc);
+    TIME_ERROR_BOUND error;
+    temporalDistance(dc.start, error, start);
+
     eq(dc.door_locked, door_locked);
     eq(dc.have_handle, TRUE);
     eq(dc.last_checked_door, start);
@@ -372,15 +372,15 @@ TwistHandle::Inactive{
 
 
 GraspHandle::Inactive{
-  // Update door controller with feedback
-  any(DoorController.Holds dc);
-  TIME_ERROR_BOUND error;
-  temporalDistance(dc.start, error, start);
 
   // If successful, update the state with feedback. Note that at this point we could
   // set values for door and handle state. On the other hand, we could also just
   // start a door detector
   if(status == SUCCESS){
+    // Update door controller with feedback
+    any(DoorController.Holds dc);
+    TIME_ERROR_BOUND error;
+    temporalDistance(dc.start, error, start);
     eq(dc.have_handle, TRUE);
     eq(dc.last_checked_door, start);
     concurrent(dc.start, start);
@@ -389,14 +389,14 @@ GraspHandle::Inactive{
 
 
 OpenDoorWithoutGrasp::Inactive{
-  // Update door controller with feedback
-  any(DoorController.Holds dc);
-  TIME_ERROR_BOUND error;
-  temporalDistance(dc.start, error, start);
   
   // If successful, there is nothing really to do, since it will depend on the CheckDoorway
   // behavior finding the clear path. What we can do is reset the last checked time to force an immediate recheck
   if(status == SUCCESS){
+    // Update door controller with feedback
+    any(DoorController.Holds dc);
+    TIME_ERROR_BOUND error;
+    temporalDistance(dc.start, error, start);
     eq(dc.last_checked_door, FORCE_DOOR_CHECK);
     concurrent(dc.start, start);
   }
@@ -404,15 +404,15 @@ OpenDoorWithoutGrasp::Inactive{
 
 DetectDoor::Inactive{
 
-  // Update door controller with feedback
-  any(DoorController.Holds dc);
-  TIME_ERROR_BOUND error;
-  temporalDistance(dc.start, error, start);
-
   // If successful, update the state with feedback. Note that at this point we could
   // set values for door and handle state. On the other hand, we could also just
   // start a door detector
   if(status == SUCCESS){
+
+    // Update door controller with feedback
+    any(DoorController.Holds dc);
+    TIME_ERROR_BOUND error;
+    temporalDistance(dc.start, error, start);
     eq(dc.found_door, found_door);
     eq(dc.found_handle, found_handle);
     concurrent(dc.start, start);
@@ -422,33 +422,18 @@ DetectDoor::Inactive{
 
 CheckDoorway::Inactive{
 
-  // Update door controller with feedback
-  any(DoorController.Holds dc);
-  TIME_ERROR_BOUND error;
-  temporalDistance(dc.start, error, start);
-
   // If successful it means we were able to execute the check. The result can still be clear or not
   if(status == SUCCESS){
+
+    // Update door controller with feedback
+    any(DoorController.Holds dc);
+    TIME_ERROR_BOUND error;
+    temporalDistance(dc.start, error, start);
     eq(dc.doorway_clear, doorway_clear);
     eq(dc.door_locked, door_locked);
     eq(dc.last_checked_door, start);
     concurrent(dc.start, start);
-  }
-}
-
-/**
- * Oncompletion of move base we can indicate we do not have the handle
- */
-MoveBase::Inactive {
-  // Update door controller with feedback
-  any(DoorController.Holds dc);
-  TIME_ERROR_BOUND error;
-  temporalDistance(dc.start, error, start);
-
-  if(status == SUCCESS){
-    eq(dc.have_handle, FALSE);
-    concurrent(dc.start, start);
-  }
+  } 
 }
 
 // Internal

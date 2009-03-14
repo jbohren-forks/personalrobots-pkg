@@ -2,6 +2,10 @@
 
 close();
 
+
+// Loads the map from file
+map_initialize_from_file("../test/willow.tmap");
+
 // Will be trying to get thru a doorway which will exity at positin <3, 6, 2.0>
 rejectable(doorman.Active g0);
 g0.x = 3.0;
