@@ -122,12 +122,12 @@ public:
   #define TIMER_FREQ 300000.0
   #define CAPTURE_FEQ_SECS  (15.0*TIMER_FREQ)
 
-    mydir = "../ros-pkg/vision/stereo_capture/data/";
-    XXX = "001";
-    SR = "R";
-    NP = "N";
-    m = "1";
-    prompt_ = "Input code for objects: ";
+    mydir = "../ros-pkg/vision/stereo_capture/data/"; //The base runs in ~/ros
+    XXX = "001"; //My ID
+    SR = "R";    //Simulated or Real
+    NP = "N";    //Natural or Painted
+    m = "1";     //Object letter code
+    prompt_ = "Input code for objects: "; //Prompt the user
   
     fileNum = 0;
  
@@ -284,6 +284,7 @@ void image_cb_all(ros::Time t)
 		  cvShowImage("disparity", disp);
 		  cvReleaseImage(&disp);
     }
+	//THIS IS CAPTURE WHEN THE TEXTURE LIGHT IS ALWAYS ON
      if( always_on_capture && capture )//&& (lastDisparity != NULL)) 
       {
         cout << "w store..." << endl;
@@ -307,9 +308,10 @@ void image_cb_all(ros::Time t)
 		always_on_capture = false;
 		cout << "fileNum = " << fileNum << " !!!!!!!! you can move !!!!!!!!!!!!!" << endl;
       }  
+//	THIS IS THE ALTERNATING CAPTURE HANDLER
     if((!sync_capture) && capture && (lastDisparity != NULL) && !always_on_capture) //Look here to save the non texture disparity image
       {
-        cout << "Shouldn't get here" << endl;
+        cout << "Alternating capture" << endl;
 		stringstream ss1,ss1jpg, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
 		sprintf(fileNumString,"%.4d",fileNum);
 		fileName = mydir + XXX + "." + fileNumString + "." + SR + "." + NP + "." + m;
@@ -333,6 +335,7 @@ void image_cb_all(ros::Time t)
 		capture = false;
 		cout << "!!!!!!!!!!!!!!!!!!! move move move !!!!!!!!!!!!!!!!!!!!!" << endl;
       }
+// THIS IS CAPTURE WHEN TEXTURE IS NEVER ON
     if(captureNoTex && !always_on_capture)
     {
 		stringstream ss1,ss1jpg, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
@@ -424,9 +427,12 @@ void image_cb_all(ros::Time t)
       if(key == 27) //ESC
       	break;
       
+	  string myprompt_ = "foo";
       switch (key) {
       case 'c':         //With textured light
       	if(!captureNoTexByTime)  {
+      		m = "";
+      		m = cvGetString(prompt_, m);  //GET USER LABEL FOR SCENE ...
 	        capture = true;
 	        captureNoTex = false;
 	        sync_capture = 2;
@@ -451,9 +457,16 @@ void image_cb_all(ros::Time t)
  			always_on_capture = false;
 			sync_capture = 0;
          break;
+	  case 'i':  //Init file name string
+			myprompt_ = "Input your ID (0-999) (return or ESC to keep the default):";
+			XXX = cvGetString(myprompt_,XXX);
+			myprompt_ = "N for natural object, P for painted (ESC or Ret to keep default):";
+			NP = cvGetString(myprompt_,NP);
+		break;
       case 'h':
          printf(
                 "\nCapture images and point clouds to /data directory\n"
+				"\ti -- Init file name string XXX, N\n"
                 "\tc -- Capture if projected light is running\n"
                 "\tC -- Timed capture toggel if projected light is running\n"
                 "\t  ** Watch out, textured capture waits for no, light, light before writing out images **\n"
