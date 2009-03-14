@@ -13,7 +13,7 @@
     <remap from="base_pose_gazebo_ground_truth" to="base_pose_ground_truth"/>
     <param name="max_publish_frequency" value="20.0"/>
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
-    <!--node pkg="nav_view" type="nav_view" respawn="false"/-->
+    <!--<node pkg="nav_view" type="nav_view" respawn="false"/>-->
 
     <!-- Controller for MoveBase -->
     <include file="$(find test_highlevel_controllers)/test/launch_move_base.xml"/>
@@ -31,7 +31,11 @@
     <node pkg="highlevel_controllers" type="cli" respawn="false"/>
 
     <!-- Common parameter settings /-->
-    <param name="/trex/ping_frequency" value="1"/>
+    <param name="/trex/ping_frequency" value="1"/> 
+
+
+    <node pkg="rosrecord" type="rosrecord" args="-f trex_wpc_test" />
+
   </group>
 </launch>
 

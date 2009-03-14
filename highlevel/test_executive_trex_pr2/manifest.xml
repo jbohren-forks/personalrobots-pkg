@@ -23,4 +23,8 @@
  <depend package="laser_scan"/>
  <depend package="ompl_planning"/>
  <depend package="robot_pose_ekf"/>
+
+
+ <!--Temp Addition for testing bug -->
+ <depend package="rosrecord"/>
 </package>
