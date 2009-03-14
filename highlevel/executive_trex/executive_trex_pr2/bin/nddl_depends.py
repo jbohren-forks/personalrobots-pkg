@@ -24,7 +24,10 @@ for a in sys.argv[1:]:
             print "Reject argument:", a
             help = True
     elif(a.strip() != ""):
-        file = os.path.join(my_dir, a)
+        if (os.path.isabs(a)):
+            file = a
+        else:
+            file = os.path.join(my_dir, a)
         if (file not in files):
             files.append(file)
         
