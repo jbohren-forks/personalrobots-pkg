@@ -546,6 +546,16 @@ namespace executive_trex_pr2 {
     if(this_region == final_region)
       results.push_back(ConnectionCostPair(0, cost(x0, y0, x1, y1)));
 
+    const topological_map::Point2D source_point(x0, y0);
+    const topological_map::Point2D target_point(x1, y1);
+    std::vector< std::pair<topological_map::ConnectorId, double> > connector_cost_pairs = _map->connectorCosts(source_point, target_point);
+    for(std::vector< std::pair<topological_map::ConnectorId, double> >::const_iterator it = connector_cost_pairs.begin();
+	it != connector_cost_pairs.end(); ++it){
+
+      results.push_back(ConnectionCostPair(it->first, it->second));
+    }
+
+    /*
     // Now iterate over the connectors in this region and compute the heuristic cost estimate. We exclude the source connector
     // since we have just arrived here
     std::vector<unsigned int> final_region_connectors;
@@ -559,6 +569,7 @@ namespace executive_trex_pr2 {
 	results.push_back(ConnectionCostPair(connector_id, cost(x0, y0, connector_id) + cost(x1, y1, connector_id)));
       }
     }
+    */
   }
 
   void TopologicalMapAdapter::toPostScriptFile(){
