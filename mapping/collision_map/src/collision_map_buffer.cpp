@@ -91,8 +91,11 @@ bool
     return (false);
 }
 
-class CollisionMapperBuffer : public ros::Node
+class CollisionMapperBuffer
 {
+  protected:
+    ros::Node& node_;
+
   public:
 
     // ROS messages
@@ -127,25 +130,25 @@ class CollisionMapperBuffer : public ros::Node
     int m_id_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CollisionMapperBuffer () : ros::Node ("collision_map_buffer"), tf_(*this)
+    CollisionMapperBuffer (ros::Node& anode) : node_ (anode),  tf_ (anode)
     {
-      param ("~leaf_width_x", leaf_width_.x, 0.02);       // 2cm diameter by default
-      param ("~leaf_width_y", leaf_width_.y, 0.02);       // 2cm diameter by default
-      param ("~leaf_width_z", leaf_width_.z, 0.02);       // 2cm diameter by default
+      node_.param ("~leaf_width_x", leaf_width_.x, 0.02);       // 2cm diameter by default
+      node_.param ("~leaf_width_y", leaf_width_.y, 0.02);       // 2cm diameter by default
+      node_.param ("~leaf_width_z", leaf_width_.z, 0.02);       // 2cm diameter by default
 
-      param ("~robot_max_x", robot_max_.x, 1.5);           // 1.5m radius by default
-      param ("~robot_max_y", robot_max_.y, 1.5);           // 1.5m radius by default
-      param ("~robot_max_z", robot_max_.z, 1.5);           // 1.5m radius by default
+      node_.param ("~robot_max_x", robot_max_.x, 1.5);           // 1.5m radius by default
+      node_.param ("~robot_max_y", robot_max_.y, 1.5);           // 1.5m radius by default
+      node_.param ("~robot_max_z", robot_max_.z, 1.5);           // 1.5m radius by default
 
-      param ("~min_nr_points", min_nr_points_, 1);         // Need at least 1 point per box to consider it "occupied"
+      node_.param ("~min_nr_points", min_nr_points_, 1);         // Need at least 1 point per box to consider it "occupied"
 
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
       ROS_INFO ("Using a maximum bounding box around the robot of size: %g,%g,%g.", robot_max_.x, robot_max_.y, robot_max_.z);
 
-      param ("~window_size", window_size_, 5);             // Use the latest 5 collision maps + static by default
+      node_.param ("~window_size", window_size_, 5);             // Use the latest 5 collision maps + static by default
 
-      param ("~end_effector_frame_l", end_effector_frame_l_, string ("r_gripper_l_fingertip_link"));     // The frame of the end effector (used for object subtraction)
-      param ("~end_effector_frame_r", end_effector_frame_r_, string ("r_gripper_r_fingertip_link"));     // The frame of the end effector (used for object subtraction)
+      node_.param ("~end_effector_frame_l", end_effector_frame_l_, string ("r_gripper_l_fingertip_link"));     // The frame of the end effector (used for object subtraction)
+      node_.param ("~end_effector_frame_r", end_effector_frame_r_, string ("r_gripper_r_fingertip_link"));     // The frame of the end effector (used for object subtraction)
 
       // Square the limits (simplified point distances below)
       robot_max_.x = robot_max_.x * robot_max_.x;
@@ -157,24 +160,24 @@ class CollisionMapperBuffer : public ros::Node
       string cloud_topic ("full_cloud");
 
       vector<pair<string, string> > t_list;
-      getPublishedTopics (&t_list);
+      node_.getPublishedTopics (&t_list);
       bool topic_found = false;
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
-        if (it->first.find (mapName(cloud_topic)) != string::npos)
+        if (it->first.find (node_.mapName (cloud_topic)) != string::npos)
         {
           topic_found = true;
           break;
         }
       }
       if (!topic_found)
-        ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", mapName(cloud_topic).c_str ());
+        ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", node_.mapName (cloud_topic).c_str ());
 
-      subscribe (cloud_topic.c_str (), cloud_, &CollisionMapperBuffer::cloud_cb, 1);
-      advertise<CollisionMap> ("collision_map_buffer", 1);
+      node_.subscribe (cloud_topic, cloud_, &CollisionMapperBuffer::cloud_cb, this, 1);
+      node_.advertise<CollisionMap> ("collision_map_buffer", 1);
 
-      advertiseService ("~record_static_map", &CollisionMapperBuffer::getStaticMap, this);
-      advertiseService ("~subtract_object", &CollisionMapperBuffer::subtractObject, this);
+      node_.advertiseService ("~record_static_map", &CollisionMapperBuffer::getStaticMap, this);
+      node_.advertiseService ("~subtract_object", &CollisionMapperBuffer::subtractObject, this);
 
       // Gripper orientation/position
       gripper_orientation_link_.pose.orientation.x = 0.0;
@@ -184,7 +187,7 @@ class CollisionMapperBuffer : public ros::Node
       subtract_object_ = false;
 
       m_id_ = 0;
-      advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 100);
+      node_.advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 100);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -194,32 +197,32 @@ class CollisionMapperBuffer : public ros::Node
     void
       updateParametersFromServer ()
     {
-      if (hasParam ("~leaf_width_x")) getParam ("~leaf_width_x", leaf_width_.x);
-      if (hasParam ("~leaf_width_y")) getParam ("~leaf_width_y", leaf_width_.y);
-      if (hasParam ("~leaf_width_z")) getParam ("~leaf_width_z", leaf_width_.z);
+      if (node_.hasParam ("~leaf_width_x")) node_.getParam ("~leaf_width_x", leaf_width_.x);
+      if (node_.hasParam ("~leaf_width_y")) node_.getParam ("~leaf_width_y", leaf_width_.y);
+      if (node_.hasParam ("~leaf_width_z")) node_.getParam ("~leaf_width_z", leaf_width_.z);
 
-      if (hasParam ("~window_size")) getParam ("~window_size", window_size_);
+      if (node_.hasParam ("~window_size")) node_.getParam ("~window_size", window_size_);
 
-      if (hasParam ("~robot_max_x"))
+      if (node_.hasParam ("~robot_max_x"))
       {
         double rx;
-        getParam ("~robot_max_x", rx);
+        node_.getParam ("~robot_max_x", rx);
         robot_max_.x = rx * rx;
       }
-      if (hasParam ("~robot_max_y"))
+      if (node_.hasParam ("~robot_max_y"))
       {
         double ry;
-        getParam ("~robot_max_y", ry);
+        node_.getParam ("~robot_max_y", ry);
         robot_max_.y = ry * ry;
       }
-      if (hasParam ("~robot_max_z"))
+      if (node_.hasParam ("~robot_max_z"))
       {
         double rz;
-        getParam ("~robot_max_z", rz);
+        node_.getParam ("~robot_max_z", rz);
         robot_max_.z = rz * rz;
       }
 
-      if (hasParam ("~min_nr_points")) getParam ("~min_nr_points", min_nr_points_);
+      if (node_.hasParam ("~min_nr_points")) node_.getParam ("~min_nr_points", min_nr_points_);
     }
 
 
@@ -391,7 +394,7 @@ class CollisionMapperBuffer : public ros::Node
       mk.g = 10;
       mk.b = 10;
 
-      publish ("visualizationMarker", mk);
+      node_.publish ("visualizationMarker", mk);
     }
 
 
@@ -642,7 +645,7 @@ class CollisionMapperBuffer : public ros::Node
         ROS_DEBUG ("Collision map with %u boxes computed in %g seconds. Total maps in the queue %d.",
                   (unsigned int)final_collision_map_.boxes.size (), time_spent, decaying_maps_.size ());
 
-        publish ("collision_map_buffer", final_collision_map_);
+        node_.publish ("collision_map_buffer", final_collision_map_);
       }
     }
 
@@ -707,7 +710,9 @@ int
 {
   ros::init (argc, argv);
 
-  CollisionMapperBuffer p;
+  ros::Node ros_node ("collision_map_buffer");
+
+  CollisionMapperBuffer p (ros_node);
 
 //   RecordStaticMapTrigger::Request req;
 //   RecordStaticMapTrigger::Response resp;
@@ -727,8 +732,7 @@ int
   SubtractObjectFromCollisionMap::Response resp;
   ros::service::call ("~subtract_object", req, resp);
 */
-  p.spin ();
-
+  ros_node.spin ();
 
   return (0);
 }

@@ -92,8 +92,10 @@ bool
     return (false);
 }
 
-class CollisionMapper : public ros::Node
+class CollisionMapper
 {
+  protected:
+    ros::Node& node_;
   public:
 
     // ROS messages
@@ -110,28 +112,28 @@ class CollisionMapper : public ros::Node
     bool only_updates_, subtract_object_;
 
     int min_nr_points_;
-    
+
     boost::mutex m_lock_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CollisionMapper () : ros::Node ("collision_map"), tf_(*this)
+    CollisionMapper (ros::Node& anode) : node_ (anode),  tf_ (anode)
     {
-      param ("~leaf_width_x", leaf_width_.x, 0.015);       // 2.5cm diameter by default
-      param ("~leaf_width_y", leaf_width_.y, 0.015);       // 2.5cm diameter by default
-      param ("~leaf_width_z", leaf_width_.z, 0.015);       // 2.5cm diameter by default
+      node_.param ("~leaf_width_x", leaf_width_.x, 0.015);       // 2.5cm diameter by default
+      node_.param ("~leaf_width_y", leaf_width_.y, 0.015);       // 2.5cm diameter by default
+      node_.param ("~leaf_width_z", leaf_width_.z, 0.015);       // 2.5cm diameter by default
 
-      param ("~robot_max_x", robot_max_.x, 1.5);           // 1.5m radius by default
-      param ("~robot_max_y", robot_max_.y, 1.5);           // 1.5m radius by default
-      param ("~robot_max_z", robot_max_.z, 1.5);           // 1.5m radius by default
+      node_.param ("~robot_max_x", robot_max_.x, 1.5);           // 1.5m radius by default
+      node_.param ("~robot_max_y", robot_max_.y, 1.5);           // 1.5m radius by default
+      node_.param ("~robot_max_z", robot_max_.z, 1.5);           // 1.5m radius by default
 
-      param ("~min_nr_points", min_nr_points_, 1);         // Need at least 1 point per box to consider it "occupied"
-      
-      param ("~only_updates", only_updates_, false);       // Send the entire map or just incremental updates from the past state
-      param ("~subtract_object", subtract_object_, false); // Subtract an OBB received via the collision_subtract_object topic
-      
+      node_.param ("~min_nr_points", min_nr_points_, 1);         // Need at least 1 point per box to consider it "occupied"
+
+      node_.param ("~only_updates", only_updates_, false);       // Send the entire map or just incremental updates from the past state
+      node_.param ("~subtract_object", subtract_object_, false); // Subtract an OBB received via the collision_subtract_object topic
+
       if (subtract_object_)
-        subscribe ("collision_subtract_object", box_sub_obj_, &CollisionMapper::subtract_cb, 1);
-        
+        node_.subscribe ("collision_subtract_object", box_sub_obj_, &CollisionMapper::subtract_cb, this, 1);
+
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
       ROS_INFO ("Using a maximum bounding box around the robot of size: %g,%g,%g.", robot_max_.x, robot_max_.y, robot_max_.z);
 
@@ -143,7 +145,7 @@ class CollisionMapper : public ros::Node
       string cloud_topic ("tilt_laser_cloud");
 
       vector<pair<string, string> > t_list;
-      getPublishedTopics (&t_list);
+      node_.getPublishedTopics (&t_list);
       bool topic_found = false;
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
@@ -156,8 +158,8 @@ class CollisionMapper : public ros::Node
       if (!topic_found)
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
-      subscribe (cloud_topic.c_str (), cloud_, &CollisionMapper::cloud_cb, 1);
-      advertise<CollisionMap> ("collision_map", 1);
+      node_.subscribe (cloud_topic, cloud_, &CollisionMapper::cloud_cb, this, 1);
+      node_.advertise<CollisionMap> ("collision_map", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -167,35 +169,35 @@ class CollisionMapper : public ros::Node
     void
       updateParametersFromServer ()
     {
-      if (hasParam ("~leaf_width_x")) getParam ("~leaf_width_x", leaf_width_.x);
-      if (hasParam ("~leaf_width_y")) getParam ("~leaf_width_y", leaf_width_.y);
-      if (hasParam ("~leaf_width_z")) getParam ("~leaf_width_z", leaf_width_.z);
+      if (node_.hasParam ("~leaf_width_x")) node_.getParam ("~leaf_width_x", leaf_width_.x);
+      if (node_.hasParam ("~leaf_width_y")) node_.getParam ("~leaf_width_y", leaf_width_.y);
+      if (node_.hasParam ("~leaf_width_z")) node_.getParam ("~leaf_width_z", leaf_width_.z);
 
-      if (hasParam ("~robot_max_x"))
+      if (node_.hasParam ("~robot_max_x"))
       {
         double rx;
-        getParam ("~robot_max_x", rx);
+        node_.getParam ("~robot_max_x", rx);
         robot_max_.x = rx * rx;
       }
-      if (hasParam ("~robot_max_y"))
+      if (node_.hasParam ("~robot_max_y"))
       {
         double ry;
-        getParam ("~robot_max_y", ry);
+        node_.getParam ("~robot_max_y", ry);
         robot_max_.y = ry * ry;
       }
-      if (hasParam ("~robot_max_z"))
+      if (node_.hasParam ("~robot_max_z"))
       {
         double rz;
-        getParam ("~robot_max_z", rz);
+        node_.getParam ("~robot_max_z", rz);
         robot_max_.z = rz * rz;
       }
 
-      if (hasParam ("~min_nr_points")) getParam ("~min_nr_points", min_nr_points_);
-      if (hasParam ("~only_updates")) getParam ("~only_updates", only_updates_);
+      if (node_.hasParam ("~min_nr_points")) node_.getParam ("~min_nr_points", min_nr_points_);
+      if (node_.hasParam ("~only_updates"))  node_.getParam ("~only_updates", only_updates_);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void 
+    void
       computeCollisionMap (PointCloud *points, vector<Leaf> &leaves, CollisionMap &cmap)
     {
       // Copy the header (and implicitly the frame_id)
@@ -247,10 +249,10 @@ class CollisionMapper : public ros::Node
         }
       }
       indices.resize (nr_p);
-      
+
       // Compute the minimum and maximum bounding box values
       Point32 minB, maxB, divB;
-      
+
       minB.x = (int)(floor (minP.x / leaf_width_.x));
       maxB.x = (int)(floor (maxP.x / leaf_width_.x));
 
@@ -310,7 +312,7 @@ class CollisionMapper : public ros::Node
         }
       }
       cmap.boxes.resize (nr_c);
-        
+
       sort (leaves.begin (), leaves.end (), compareLeaf);
     }
 
@@ -343,7 +345,7 @@ class CollisionMapper : public ros::Node
       }
       map.boxes.resize (nr_c);
     }
-      
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void
@@ -358,10 +360,10 @@ class CollisionMapper : public ros::Node
       //timeval t1, t2;
       ros::Time t1, t2;
       double time_spent;
-      
+
       // @bogus message for Tully - Radu discussion next week
       ROS_WARN ("Did you transform your points into the map frame today?");
-            
+
       //gettimeofday (&t1, NULL);
       t1 = ros::Time::now();
       // If we're only interested in doing map updates
@@ -371,7 +373,7 @@ class CollisionMapper : public ros::Node
         vector<Leaf> new_leaves;
 
         computeCollisionMap (&cloud_, new_leaves, new_c_map);
-        
+
         c_map_.header = cloud_.header;
         c_map_.boxes.resize (max (new_leaves.size (), leaves_.size ()));
 
@@ -385,16 +387,16 @@ class CollisionMapper : public ros::Node
         computeCollisionMap (&cloud_, leaves_, c_map_);
         m_lock_.unlock ();
       }
-      
+
       //gettimeofday (&t2, NULL);
       t2 = ros::Time::now();
       //time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       time_spent = (t2 - t1).toSec();
       ROS_INFO ("Collision map computed in %g seconds. Number of boxes: %u.", time_spent, (unsigned int)c_map_.boxes.size ());
 
-      publish ("collision_map", c_map_);
+      node_.publish ("collision_map", c_map_);
     }
-    
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     inline void
       getRotatedBoxBounds (OrientedBoundingBox *box, Eigen::Matrix3d rotation, Eigen::Vector3d &minB, Eigen::Vector3d &maxB)
@@ -407,11 +409,11 @@ class CollisionMapper : public ros::Node
       maxB (0) = box->center.x + box->extents.x;
       maxB (1) = box->center.y + box->extents.y;
       maxB (2) = box->center.z + box->extents.z;
-      
+
       minB = rotation * minB;
       maxB = rotation * maxB;
     }
-    
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
       isBoxInsideBounds (Point32 *center, Point32 *extents, Eigen::Vector3d minB, Eigen::Vector3d maxB)
@@ -444,7 +446,7 @@ class CollisionMapper : public ros::Node
       // (ce_x, ce_y, cez);
       if ( (ce_x >= minB (0) && ce_x <= maxB (0)) && (ce_y >= minB (1) && ce_y <= maxB (1)) && (cez >= minB (2) && cez <= maxB (2)) )
         return (true);
-        
+
       return (false);
     }
 
@@ -462,10 +464,10 @@ class CollisionMapper : public ros::Node
       // Get the inverse rotation matrix from the axis-angle
       Eigen::Matrix3d rot_mat;
       cloud_geometry::transforms::convertAxisAngleToRotationMatrix (box_sub_obj_.axis, -box_sub_obj_.angle, rot_mat);
-      
+
       Eigen::Vector3d minB, maxB;
       getRotatedBoxBounds (&box_sub_obj_, rot_mat, minB, maxB);
-      
+
       m_lock_.lock ();
       updateParametersFromServer ();
       m_lock_.unlock ();
@@ -473,10 +475,10 @@ class CollisionMapper : public ros::Node
       //timeval t1, t2;
       ros::Time t1, t2;
       double time_spent;
-      
+
       //gettimeofday (&t1, NULL);
       t1 = ros::Time::now();
-      
+
       // Subtract the received oriented bounding box
       m_lock_.lock ();
       Point32 center, extents;
@@ -494,20 +496,20 @@ class CollisionMapper : public ros::Node
             center.x = (leaves_[cl].i_ + 1) * leaf_width_.x - extents.x;
             center.y = (leaves_[cl].j_ + 1) * leaf_width_.y - extents.y;
             center.z = (leaves_[cl].k_ + 1) * leaf_width_.z - extents.z;
-            
+
             bool inside = isBoxInsideBounds (&center, &extents, minB, maxB);
-            
+
             if (inside)
             {
               // Invalidate this leaf
               leaves_[cl].nr_points_ = 0;
             }
           }
-          
+
         }
       }
       m_lock_.unlock ();
-      
+
       //gettimeofday (&t2, NULL);
       t2 = ros::Time::now();
       //time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
@@ -522,10 +524,11 @@ int
 {
   ros::init (argc, argv);
 
-  CollisionMapper p;
-  p.spin ();
+  ros::Node ros_node ("collision_map");
 
-  
+  CollisionMapper p (ros_node);
+  ros_node.spin ();
+
   return (0);
 }
 /* ]--- */
