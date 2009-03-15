@@ -66,8 +66,10 @@
 using namespace std;
 using namespace robot_msgs;
 
-class PlanarPatchMap: public ros::Node
+class PlanarPatchMap
 {
+  protected:
+    ros::Node& node_;
   public:
 
     // ROS messages
@@ -82,26 +84,26 @@ class PlanarPatchMap: public ros::Node
     double d_min_, d_max_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    PlanarPatchMap () : ros::Node ("planar_patch_map_omp")
+    PlanarPatchMap (ros::Node& anode) : node_ (anode)
     {
-      param ("~sac_min_points_per_cell", sac_min_points_per_cell_, 6);
+      node_.param ("~sac_min_points_per_cell", sac_min_points_per_cell_, 6);
 
-      param ("~distance_min", d_min_, 0.10);
-      param ("~distance_max", d_max_, 10.0);
+      node_.param ("~distance_min", d_min_, 0.10);
+      node_.param ("~distance_max", d_max_, 10.0);
 
       string cloud_topic ("tilt_laser_cloud");
 
       vector<pair<string, string> > t_list;
-      getPublishedTopics (&t_list);
+      node_.getPublishedTopics (&t_list);
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
         if (it->first.find (cloud_topic) == string::npos)
           ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
       }
 
-      subscribe (cloud_topic.c_str (), cloud_, &PlanarPatchMap::cloud_cb, 1);
+      node_.subscribe (cloud_topic, cloud_, &PlanarPatchMap::cloud_cb, this, 1);
 
-      advertise<PolygonalMap> ("planar_map", 1);
+      node_.advertise<PolygonalMap> ("planar_map", 1);
 
       leaf_width_ = 0.2f;
 //      octree_ = new cloud_octree::Octree (0.0f, 0.0f, 0.0f, leaf_width_, leaf_width_, leaf_width_, 0);
@@ -203,7 +205,7 @@ class PlanarPatchMap: public ros::Node
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_INFO ("Polygonal map created in %g seconds.", time_spent);
       pmap.header = cloud_.header;
-      publish ("planar_map", pmap);
+      node_.publish ("planar_map", pmap);
 
       if (octree_)
         delete octree_;
@@ -216,10 +218,10 @@ int
 {
   ros::init (argc, argv);
 
-  PlanarPatchMap p;
-  p.spin ();
+  ros::Node ros_node ("planar_patch_map_node");
 
-  
+  PlanarPatchMap p (ros_node);
+  ros_node.spin ();
 
   return (0);
 }
