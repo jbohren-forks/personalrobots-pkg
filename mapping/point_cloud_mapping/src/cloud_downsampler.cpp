@@ -53,8 +53,11 @@
 using namespace std;
 using namespace robot_msgs;
 
-class CloudDownsampler : public ros::Node
+class CloudDownsampler
 {
+  protected:
+    ros::Node& node_;
+
   public:
 
     // ROS messages
@@ -67,28 +70,28 @@ class CloudDownsampler : public ros::Node
     double cut_distance_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CloudDownsampler () : ros::Node ("cloud_downsampler")
+    CloudDownsampler (ros::Node& anode) : node_ (anode)
     {
-      param ("~leaf_width_x", leaf_width_.x, 0.025);      // 2.5cm radius by default
-      param ("~leaf_width_y", leaf_width_.y, 0.025);      // 2.5cm radius by default
-      param ("~leaf_width_z", leaf_width_.z, 0.025);      // 2.5cm radius by default
+      node_.param ("~leaf_width_x", leaf_width_.x, 0.025);      // 2.5cm radius by default
+      node_.param ("~leaf_width_y", leaf_width_.y, 0.025);      // 2.5cm radius by default
+      node_.param ("~leaf_width_z", leaf_width_.z, 0.025);      // 2.5cm radius by default
 
       ROS_INFO ("Using a default leaf of size: %g,%g,%g.", leaf_width_.x, leaf_width_.y, leaf_width_.z);
 
-      param ("~cut_distance", cut_distance_, 10.0);         // 10m by default
+      node_.param ("~cut_distance", cut_distance_, 10.0);         // 10m by default
 
       string cloud_topic ("tilt_laser_cloud");
 
       vector<pair<string, string> > t_list;
-      getPublishedTopics (&t_list);
+      node_.getPublishedTopics (&t_list);
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
         if (it->first.find (cloud_topic) == string::npos)
           ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
       }
 
-      subscribe (cloud_topic.c_str (), cloud_, &CloudDownsampler::cloud_cb, 1);
-      advertise<PointCloud> ("cloud_downsampled", 1);
+      node_.subscribe (cloud_topic, cloud_, &CloudDownsampler::cloud_cb, this, 1);
+      node_.advertise<PointCloud> ("cloud_downsampled", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -112,7 +115,7 @@ class CloudDownsampler : public ros::Node
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_INFO ("Cloud downsampled in %g seconds. Number of points left: %d.", time_spent, cloud_down_.pts.size ());
 
-      publish ("cloud_downsampled", cloud_down_);
+      node_.publish ("cloud_downsampled", cloud_down_);
     }
 };
 
@@ -122,10 +125,11 @@ int
 {
   ros::init (argc, argv);
 
-  CloudDownsampler p;
-  p.spin ();
+  ros::Node ros_node ("cloud_downsampler_node");
 
-  
+  CloudDownsampler p (ros_node);
+  ros_node.spin ();
+
   return (0);
 }
 /* ]--- */

@@ -63,8 +63,11 @@ moment invariants, etc.
 using namespace std;
 using namespace robot_msgs;
 
-class NormalEstimation : public ros::Node
+class NormalEstimation
 {
+  protected:
+    ros::Node& node_;
+
   public:
 
     // ROS messages
@@ -89,17 +92,17 @@ class NormalEstimation : public ros::Node
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    NormalEstimation () : ros::Node ("normal_estimation"), tf_(*this)
+    NormalEstimation (ros::Node& anode) : node_ (anode),  tf_ (anode)
     {
-      param ("~search_radius", radius_, 0.02);      // 2cm radius by default
-      param ("~search_k_closest", k_, 25);          // 25 k-neighbors by default
-      param ("~compute_moments", compute_moments_, false);  // Do not compute moment invariants by default
+      node_.param ("~search_radius", radius_, 0.02);      // 2cm radius by default
+      node_.param ("~search_k_closest", k_, 25);          // 25 k-neighbors by default
+      node_.param ("~compute_moments", compute_moments_, false);  // Do not compute moment invariants by default
 
-      param ("~downsample", downsample_, 1);                        // Downsample cloud before normal estimation
-      param ("~downsample_leaf_width_x", leaf_width_.x, 0.05);      // 2cm radius by default
-      param ("~downsample_leaf_width_y", leaf_width_.y, 0.05);      // 2cm radius by default
-      param ("~downsample_leaf_width_z", leaf_width_.z, 0.05);      // 2cm radius by default
-      param ("~cut_distance", cut_distance_, 10.0);   // 10m by default
+      node_.param ("~downsample", downsample_, 1);                        // Downsample cloud before normal estimation
+      node_.param ("~downsample_leaf_width_x", leaf_width_.x, 0.05);      // 2cm radius by default
+      node_.param ("~downsample_leaf_width_y", leaf_width_.y, 0.05);      // 2cm radius by default
+      node_.param ("~downsample_leaf_width_z", leaf_width_.z, 0.05);      // 2cm radius by default
+      node_.param ("~cut_distance", cut_distance_, 10.0);   // 10m by default
 
       if (downsample_ != 0)
         k_ = 10;          // Reduce the size of K significantly
@@ -107,7 +110,7 @@ class NormalEstimation : public ros::Node
       string cloud_topic ("tilt_laser_cloud");
 
       vector<pair<string, string> > t_list;
-      getPublishedTopics (&t_list);
+      node_.getPublishedTopics (&t_list);
       bool topic_found = false;
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
@@ -120,8 +123,8 @@ class NormalEstimation : public ros::Node
       if (!topic_found)
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
-      subscribe (cloud_topic.c_str (), cloud_, &NormalEstimation::cloud_cb, 1);
-      advertise<PointCloud> ("cloud_normals", 1);
+      node_.subscribe (cloud_topic, cloud_, &NormalEstimation::cloud_cb, this, 1);
+      node_.advertise<PointCloud> ("cloud_normals", 1);
 
 #ifdef DEBUG
       cloud_normals_.chan.resize (1);
@@ -136,19 +139,19 @@ class NormalEstimation : public ros::Node
     void
       updateParametersFromServer ()
     {
-      if (hasParam ("~downsample")) getParam ("~downsample", downsample_);
+      if (node_.hasParam ("~downsample")) node_.getParam ("~downsample", downsample_);
       if (downsample_ != 0)
         k_ = 10;
       else
         k_ = 25;
 
-      if (hasParam ("~downsample_leaf_width_x")) getParam ("~downsample_leaf_width_x", leaf_width_.x);
-      if (hasParam ("~downsample_leaf_width_y")) getParam ("~downsample_leaf_width_y", leaf_width_.y);
-      if (hasParam ("~downsample_leaf_width_z")) getParam ("~downsample_leaf_width_z", leaf_width_.z);
+      if (node_.hasParam ("~downsample_leaf_width_x")) node_.getParam ("~downsample_leaf_width_x", leaf_width_.x);
+      if (node_.hasParam ("~downsample_leaf_width_y")) node_.getParam ("~downsample_leaf_width_y", leaf_width_.y);
+      if (node_.hasParam ("~downsample_leaf_width_z")) node_.getParam ("~downsample_leaf_width_z", leaf_width_.z);
 
-      if (hasParam ("~cut_distance"))
+      if (node_.hasParam ("~cut_distance"))
       {
-        getParam ("~cut_distance", cut_distance_);
+        node_.getParam ("~cut_distance", cut_distance_);
         leaves_.resize (0);
         ROS_INFO ("Done clearing leaves.");
       }
@@ -278,7 +281,7 @@ class NormalEstimation : public ros::Node
         Eigen::Vector4d plane_parameters;
         double curvature, j1, j2, j3;
         cloud_geometry::nearest::computeSurfaceNormalCurvature (&cloud_normals_, &points_indices_[i], plane_parameters, curvature);
-        
+
         if (compute_moments_)
           cloud_geometry::nearest::computeMomentInvariants (&cloud_normals_, &points_indices_[i], j1, j2, j3);
 
@@ -321,7 +324,7 @@ class NormalEstimation : public ros::Node
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_INFO ("Local features estimated in %g seconds.", time_spent);
 
-      publish ("cloud_normals", cloud_normals_);
+      node_.publish ("cloud_normals", cloud_normals_);
 
       delete kdtree_;
     }
@@ -333,10 +336,11 @@ int
 {
   ros::init (argc, argv);
 
-  NormalEstimation p;
-  p.spin ();
+  ros::Node ros_node ("normal_estimation_node");
 
-  
+  NormalEstimation p (ros_node);
+  ros_node.spin ();
+
   return (0);
 }
 /* ]--- */
