@@ -68,6 +68,7 @@
 // Sample Consensus
 #include <point_cloud_mapping/sample_consensus/sac.h>
 #include <point_cloud_mapping/sample_consensus/ransac.h>
+#include <point_cloud_mapping/sample_consensus/lmeds.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
 #include <sys/time.h>
@@ -96,7 +97,7 @@ class PlugOnBaseDetector
   public:
 
     // ROS messages
-    PointCloud cloud_;
+    PointCloud cloud_, cloud_tr_;
     PointCloud cloud_annotated_;
     PlugStow p_stow_;
 
@@ -104,25 +105,24 @@ class PlugOnBaseDetector
     tf::TransformListener tf_;
 
     int publish_debug_;
-    string param_frame_;
     double sac_distance_threshold_;
     double base_z_min_, base_xy_max_, base_plane_height_;
     
     
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    PlugOnBaseDetector (ros::Node& anode) : node_ (anode), m_addresses("mwise@willowgarage.com"), m_stowSubject("Robot Lost it's Plug"), 
-      m_stowBody("Hello, could you please help me find my plug?\nThanks, PR2"), m_mailClient("mailx -s"), tf_(anode)
+    PlugOnBaseDetector (ros::Node& anode) : node_ (anode), m_addresses ("mwise@willowgarage.com"), m_stowSubject ("Robot Lost it's Plug"), 
+      m_stowBody ("Hello, could you please help me find my plug?\nThanks, PR2"), m_mailClient ("mailx -s"), tf_ (anode)
     {
       node_.param ("~publish_debug", publish_debug_, 1);
       node_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.02);     // 2 cm
 
       // Simple constraints for the robot's base on Z (minimum) and X (maximum) - These should never be changed in theory on the PR2
-      node_.param ("~param_frame_id", param_frame_, string ("/base_link"));
-      node_.param ("~base_z_min_abs", base_z_min_, .25);                     // ignore all points on Z below this value
+      // NOTE: All parameters are given in base_link. Use TF to convert them to different frames!
+      node_.param ("~base_z_min_abs", base_z_min_, .2);                     // ignore all points on Z below this value
+      node_.param ("~base_plane_height_rel", base_plane_height_, .15);      // ignore all points on Z above base_z_min_ + this value
 
-      node_.param ("~base_xy_max_rel", base_xy_max_, .3);                    // specifies the maximum X-Y distance between 0,0,0 and a point
+      node_.param ("~base_xy_max_rel", base_xy_max_, .29);                  // specifies the maximum X-Y distance between 0,0,0 and a point
       base_xy_max_ *= base_xy_max_;
-      node_.param ("~base_plane_height_rel", base_plane_height_, .1);        // ignore all points on Z above base_z_min_ + this value
 
 
       node_.param("recharge/email_addresses", m_addresses, m_addresses);
@@ -168,33 +168,33 @@ class PlugOnBaseDetector
       callback ()
     {
       ROS_INFO ("Received %u data points in frame %s.", (unsigned int)cloud_.pts.size (), cloud_.header.frame_id.c_str ());
+
+      if (cloud_.header.frame_id != "base_link")
+      {
+        ROS_WARN ("Transforming cloud into base_link for easier processing. This can be fixed later.");
+        try
+        {
+          tf_.transformPointCloud ("base_link", cloud_, cloud_tr_);
+        }
+        catch (tf::ExtrapolationException e)
+        {
+          ROS_ERROR ("Cannot transform point cloud dataset from %s to base_link. Reason: %s", cloud_.header.frame_id.c_str (), e.what ());
+          return;
+        }
+      }
+
       ros::Time t1, t2;
       t1 = ros::Time::now ();
 
-      // Transform the threshold absolute values to the frame of the cloud
-      double base_z_min = base_z_min_;
-      Point32 base_origin_p;
-      base_origin_p.x = base_origin_p.y = base_origin_p.z = 0.0;
-      tf::Stamped<Point32> base_origin (base_origin_p, cloud_.header.stamp, param_frame_);
-      try
-      {
-        base_z_min = transformZValueTF (base_z_min_, param_frame_, cloud_.header.frame_id, cloud_.header.stamp, &tf_);
-        transformPoint (&tf_, cloud_.header.frame_id, base_origin, base_origin);
-      }
-      catch (tf::ExtrapolationException e)
-      {
-        ROS_ERROR ("Cannot transform values from %s to %s. Reason: %s", param_frame_.c_str (), cloud_.header.frame_id.c_str (), e.what ());
-      }
-
       // Trim the point cloud to the base of the robot + base_plane_height
-      vector<int> indices_in_bounds (cloud_.pts.size ());
+      vector<int> indices_in_bounds (cloud_tr_.pts.size ());
       int nr_p = 0;
-      for (unsigned int i = 0; i < cloud_.pts.size (); i++)
+      for (unsigned int i = 0; i < cloud_tr_.pts.size (); i++)
       {
-        if (cloud_.pts[i].z >= base_z_min  && cloud_.pts[i].z <= (base_z_min + base_plane_height_))
+        if (cloud_tr_.pts[i].z >= base_z_min_  && cloud_tr_.pts[i].z <= (base_z_min_ + base_plane_height_))
         {
-          double dist = (base_origin.x - cloud_.pts[i].x) * (base_origin.x - cloud_.pts[i].x) +
-                        (base_origin.y - cloud_.pts[i].y) * (base_origin.y - cloud_.pts[i].y);
+          double dist = (cloud_.pts[i].x) * (cloud_.pts[i].x) +
+                        (cloud_.pts[i].y) * (cloud_.pts[i].y);
           if (dist < base_xy_max_)
           {
             indices_in_bounds[nr_p] = i;
@@ -204,14 +204,20 @@ class PlugOnBaseDetector
       }
       indices_in_bounds.resize (nr_p);
 
-
       // Get the cloud viewpoint
-      getCloudViewPoint (cloud_.header.frame_id, viewpoint_cloud_, &tf_);
+      getCloudViewPoint (cloud_tr_.header.frame_id, viewpoint_cloud_, &tf_);
 
       // Find the base plane
       vector<int> inliers;
       vector<double> coeff;
-      fitSACPlane (cloud_, indices_in_bounds, inliers, coeff, &viewpoint_cloud_, sac_distance_threshold_, 100);
+      fitSACPlane (cloud_tr_, indices_in_bounds, inliers, coeff, &viewpoint_cloud_, sac_distance_threshold_, 100);
+
+      // Remove points below the plane
+      for (unsigned int i = 0; i < indices_in_bounds.size (); i++)
+      {
+        if (cloud_geometry::distances::pointToPlaneDistanceSigned (&cloud_tr_.pts[indices_in_bounds.at (i)], coeff) < 0)
+          inliers.push_back (indices_in_bounds.at (i));
+      }
 
       // Get the remaining points
       vector<int> remaining_indices;
@@ -223,14 +229,19 @@ class PlugOnBaseDetector
 
       // Find the object clusters supported by it
       vector<vector<int> > object_clusters;
-      findClusters (&cloud_, &remaining_indices, 0.01, object_clusters, 10);
-      ROS_INFO ("Number of remaining clusters on base: %d.", object_clusters.size ());
+      findClusters (&cloud_, &remaining_indices, 0.01, object_clusters, 5);
 
+      if (object_clusters.size () != 0)
+        ROS_INFO ("Number of remaining clusters on base: %d. Selecting the largest cluster with %d points as the plug candidate.", object_clusters.size (), object_clusters[0].size ());
+
+//#define DEBUG 1
+#if DEBUG
       // Print the cluster dimensions on screen
       for (unsigned int i = 0; i < object_clusters.size (); i++)
       {
         ROS_INFO ("   Cluster %d has %d points.", i, object_clusters[i].size ());
       }
+#endif
 
       if (object_clusters.size () == 0)       // Nothing left ?
       {
@@ -251,33 +262,43 @@ class PlugOnBaseDetector
 
       if (publish_debug_)
       {
-        //indices_in_bounds = inliers;
         cloud_annotated_.header = cloud_.header;
-        cloud_annotated_.pts.resize (1); cloud_annotated_.chan[0].vals.resize (1);
-        cloud_annotated_.pts[0].x = p_stow_.plug_centroid.x;
-        cloud_annotated_.pts[0].y = p_stow_.plug_centroid.y;
-        cloud_annotated_.pts[0].z = p_stow_.plug_centroid.z;
-        cloud_annotated_.chan[0].vals[0] = 255;
-        //cloud_annotated_.pts.resize (indices_in_bounds.size ());
-        //cloud_annotated_.chan[0].vals.resize (indices_in_bounds.size ());
-        //for (unsigned int i = 0; i < indices_in_bounds.size (); i++)
-        //{
-          //cloud_annotated_.pts[i].x = cloud_.pts[indices_in_bounds.at (i)].x;
-          //cloud_annotated_.pts[i].y = cloud_.pts[indices_in_bounds.at (i)].y;
-          //cloud_annotated_.pts[i].z = cloud_.pts[indices_in_bounds.at (i)].z;
-          //cloud_annotated_.chan[0].vals[i] = i;
-        //}
-      }
+#if DEBUG
+//        indices_in_bounds = inliers;
+        indices_in_bounds = remaining_indices;
+        cloud_annotated_.pts.resize (indices_in_bounds.size ());
+        cloud_annotated_.chan[0].vals.resize (indices_in_bounds.size ());
+        for (unsigned int i = 0; i < indices_in_bounds.size (); i++)
+        {
+          cloud_annotated_.pts[i].x = cloud_.pts[indices_in_bounds.at (i)].x;
+          cloud_annotated_.pts[i].y = cloud_.pts[indices_in_bounds.at (i)].y;
+          cloud_annotated_.pts[i].z = cloud_.pts[indices_in_bounds.at (i)].z;
+          cloud_annotated_.chan[0].vals[i] = 0;
+        }
+#endif
+        if (p_stow_.stowed)
+        {
+          cloud_annotated_.pts.resize (1); cloud_annotated_.chan[0].vals.resize (1);
+          cloud_annotated_.pts[0].x = p_stow_.plug_centroid.x;
+          cloud_annotated_.pts[0].y = p_stow_.plug_centroid.y;
+          cloud_annotated_.pts[0].z = p_stow_.plug_centroid.z;
+          cloud_annotated_.chan[0].vals[0] = 255;
+          ROS_INFO ("Debug publishing enabled with %d points.", cloud_annotated_.pts.size ());
+        }
+        else
+        {
+          cloud_annotated_.pts.resize (0); cloud_annotated_.chan[0].vals.resize (0);
+        }
 
-      if (publish_debug_)
-      {
-        ROS_INFO ("Debug publishing enabled with %d points.", cloud_annotated_.pts.size ());
         node_.publish ("~plug_stow_cloud_debug", cloud_annotated_);
       }
 
       t2 = ros::Time::now ();
       double time_spent = (t2 - t1).toSec ();
-      ROS_INFO ("Plug pose estimated in %g seconds.", time_spent);
+      if (p_stow_.stowed)
+        ROS_INFO ("Plug pose estimated in %g seconds.", time_spent);
+      else
+        ROS_INFO ("No plug found after %g seconds spent.", time_spent);
 
       node_.publish ("~plug_stow_info", p_stow_);
     }
@@ -374,8 +395,8 @@ class PlugOnBaseDetector
 
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
-      sac->setMaxIterations (500);
+      sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
+      //sac->setMaxIterations (500);
       model->setDataSet (&points, indices);
 
       // Search for the best plane
@@ -410,8 +431,8 @@ class PlugOnBaseDetector
           // Hessian form (D = nc . p_plane (centroid here) + p)
           coeff[3] = -1 * (coeff[0] * points.pts.at (inliers[0]).x + coeff[1] * points.pts.at (inliers[0]).y + coeff[2] * points.pts.at (inliers[0]).z);
         }
-        ROS_INFO ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
-                  coeff[0], coeff[1], coeff[2], coeff[3]);
+        //ROS_INFO ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
+        //          coeff[0], coeff[1], coeff[2], coeff[3]);
       }
       else
       {
@@ -441,8 +462,8 @@ class PlugOnBaseDetector
       try
       {
         tf->transformPoint (cloud_frame, viewpoint_laser, viewpoint_cloud);
-        ROS_INFO ("Cloud view point in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
-                  viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
+        //ROS_INFO ("Cloud view point in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
+        //          viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
       }
       catch (tf::ConnectivityException)
       {
@@ -498,32 +519,33 @@ class PlugOnBaseDetector
       return (temp_stamped.z);
     }
     
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void 
-      sendMail() 
+      sendMail ()
     {
       std::string subject = "Error: bad mail.", body = "Bad, bug in onbase detector.";
       subject = m_stowSubject;
       body = m_stowBody;
      
       
-      ROS_INFO("Sending mail...\n");
+      ROS_INFO ("Sending mail...\n");
       std::string command = "echo \"";
       command += body + "\" | " + m_mailClient + " \"";
       command += subject + "\" \"";
-      for (unsigned int i = 0; i <  m_addresses.length(); i++) 
+      for (unsigned int i = 0; i <  m_addresses.length (); i++) 
       {
         if (m_addresses[i] == ' ') 
         {
-	        command += "\" \"";
+          command += "\" \"";
         } 
         else 
         {
-	        command += m_addresses[i];
+          command += m_addresses[i];
         }
       }
       command += "\"";
-      system(command.c_str());
-      ROS_INFO("Mail command sent: %s\n", command.c_str());
+      system (command.c_str());
+      ROS_INFO ("Mail command sent: %s\n", command.c_str ());
     }
 
 };
