@@ -69,8 +69,11 @@
 using namespace std;
 using namespace robot_msgs;
 
-class IncGroundRemoval : public ros::Node
+class IncGroundRemoval
 {
+  protected:
+    ros::Node& node_;
+
   public:
 
     // ROS messages
@@ -87,19 +90,19 @@ class IncGroundRemoval : public ros::Node
     int planar_refine_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    IncGroundRemoval () : ros::Node ("sac_ground_removal"), tf_ (*this)
+    IncGroundRemoval (ros::Node& anode) : node_ (anode), tf_ (anode)
     {
-      param ("~z_threshold", z_threshold_, 0.1);                          // 10cm threshold for ground removal
-      param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);   // 3 cm threshold
+      node_.param ("~z_threshold", z_threshold_, 0.1);                          // 10cm threshold for ground removal
+      node_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);   // 3 cm threshold
 
-      param ("~planar_refine", planar_refine_, 1);                        // enable a final planar refinement step?
-      param ("~sac_min_points_per_model", sac_min_points_per_model_, 6);  // 6 points minimum per line
-      param ("~sac_max_iterations", sac_max_iterations_, 200);            // maximum 200 iterations
+      node_.param ("~planar_refine", planar_refine_, 1);                        // enable a final planar refinement step?
+      node_.param ("~sac_min_points_per_model", sac_min_points_per_model_, 6);  // 6 points minimum per line
+      node_.param ("~sac_max_iterations", sac_max_iterations_, 200);            // maximum 200 iterations
 
       string cloud_topic ("tilt_laser_cloud_filtered");
 
       vector<pair<string, string> > t_list;
-      getPublishedTopics (&t_list);
+      node_.getPublishedTopics (&t_list);
       bool topic_found = false;
       for (vector<pair<string, string> >::iterator it = t_list.begin (); it != t_list.end (); it++)
       {
@@ -113,20 +116,20 @@ class IncGroundRemoval : public ros::Node
         ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", cloud_topic.c_str ());
 
       //subscribe (cloud_topic.c_str (), laser_cloud_, &IncGroundRemoval::cloud_cb, 1);
-      cloud_notifier_ = new tf::MessageNotifier<PointCloud>(&tf_, ros::Node::instance(),
-          boost::bind(&IncGroundRemoval::cloud_cb, this, _1), cloud_topic, "odom_combined", 50);
-      advertise<PointCloud> ("cloud_ground_filtered", 1);
+      cloud_notifier_ = new tf::MessageNotifier<PointCloud> (&tf_, ros::Node::instance (),
+                        boost::bind (&IncGroundRemoval::cloud_cb, this, _1), cloud_topic, "odom_combined", 50);
+      node_.advertise<PointCloud> ("cloud_ground_filtered", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    virtual ~IncGroundRemoval () { delete cloud_notifier_;}
+    virtual ~IncGroundRemoval () { delete cloud_notifier_; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
       updateParametersFromServer ()
     {
-      if (hasParam ("~z_threshold")) getParam ("~z_threshold", z_threshold_);
-      if (hasParam ("~sac_distance_threshold"))  getParam ("~sac_distance_threshold", sac_distance_threshold_);
+      if (node_.hasParam ("~z_threshold")) node_.getParam ("~z_threshold", z_threshold_);
+      if (node_.hasParam ("~sac_distance_threshold"))  node_.getParam ("~sac_distance_threshold", sac_distance_threshold_);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -356,7 +359,7 @@ class IncGroundRemoval : public ros::Node
         cloud_noground_.pts[i].z = cloud_.pts.at (ground_inliers[i]).z;
         cloud_noground_.chan[0].vals[i] = getRGB (r, g, b);
       }
-      publish ("cloud_ground_filtered", cloud_noground_);
+      node_.publish ("cloud_ground_filtered", cloud_noground_);
 
       return;
 #endif
@@ -391,7 +394,7 @@ class IncGroundRemoval : public ros::Node
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_DEBUG ("Number of points found on ground plane: %d ; remaining: %d (%g seconds).", ground_inliers.size (),
                 remaining_indices.size (), time_spent);
-      publish ("cloud_ground_filtered", cloud_noground_);
+      node_.publish ("cloud_ground_filtered", cloud_noground_);
     }
 
 
@@ -479,10 +482,11 @@ int
 {
   ros::init (argc, argv);
 
-  // For efficiency considerations please make sure the input PointCloud is in a frame with Z point upwards
-  IncGroundRemoval p;
+  ros::Node ros_node ("sac_ground_removal");
 
-  p.spin ();
+  // For efficiency considerations please make sure the input PointCloud is in a frame with Z point upwards
+  IncGroundRemoval p (ros_node);
+  ros_node.spin ();
 
   return (0);
 }

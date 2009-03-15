@@ -64,8 +64,11 @@
 using namespace std;
 using namespace robot_msgs;
 
-class SemanticPointAnnotator : public ros::Node
+class SemanticPointAnnotator
 {
+  protected:
+    ros::Node& node_;
+
   public:
 
     // ROS messages
@@ -82,23 +85,23 @@ class SemanticPointAnnotator : public ros::Node
     double rule_table_min_, rule_table_max_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    SemanticPointAnnotator () : ros::Node ("semantic_point_annotator"), tf_(*this)
+    SemanticPointAnnotator (ros::Node& anode) : node_ (anode), tf_ (anode)
     {
-      param ("~rule_floor", rule_floor_, 0.1);           // Rule for FLOOR
-      param ("~rule_ceiling", rule_ceiling_, 2.0);       // Rule for CEILING
-      param ("~rule_table_min", rule_table_min_, 0.5);   // Rule for MIN TABLE
-      param ("~rule_table_max", rule_table_max_, 1.5);   // Rule for MIN TABLE
-      param ("~rule_wall", rule_wall_, 2.0);             // Rule for WALL
+      node_.param ("~rule_floor", rule_floor_, 0.1);           // Rule for FLOOR
+      node_.param ("~rule_ceiling", rule_ceiling_, 2.0);       // Rule for CEILING
+      node_.param ("~rule_table_min", rule_table_min_, 0.5);   // Rule for MIN TABLE
+      node_.param ("~rule_table_max", rule_table_max_, 1.5);   // Rule for MIN TABLE
+      node_.param ("~rule_wall", rule_wall_, 2.0);             // Rule for WALL
 
-      param ("~p_sac_min_points_left", sac_min_points_left_, 500);
-      param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 100);  // 100 points at high resolution
-      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm 
-      param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
+      node_.param ("~p_sac_min_points_left", sac_min_points_left_, 500);
+      node_.param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 100);  // 100 points at high resolution
+      node_.param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
+      node_.param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
       eps_angle_ = cloud_geometry::deg2rad (eps_angle_);                      // convert to radians
 
-      subscribe ("cloud_normals", cloud_, &SemanticPointAnnotator::cloud_cb, 1);
+      node_.subscribe ("cloud_normals", cloud_, &SemanticPointAnnotator::cloud_cb, this, 1);
 
-      advertise<PointCloud> ("cloud_annotated", 1);
+      node_.advertise<PointCloud> ("cloud_annotated", 1);
 
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
 
@@ -108,9 +111,6 @@ class SemanticPointAnnotator : public ros::Node
       cloud_annotated_.chan[1].name = "g";
       cloud_annotated_.chan[2].name = "b";
     }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    virtual ~SemanticPointAnnotator () { }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
@@ -280,7 +280,7 @@ class SemanticPointAnnotator : public ros::Node
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_INFO ("Number of points with normals approximately parallel to the Z axis: %d (%g seconds).", z_axis_indices.size (), time_spent);
 
-      publish ("cloud_annotated", cloud_annotated_);
+      node_.publish ("cloud_annotated", cloud_annotated_);
     }
 };
 
@@ -290,10 +290,10 @@ int
 {
   ros::init (argc, argv);
 
-  SemanticPointAnnotator p;
-  p.spin ();
+  ros::Node ros_node ("semantic_point_annotator");
 
-  
+  SemanticPointAnnotator p (ros_node);
+  ros_node.spin ();
 
   return (0);
 }
