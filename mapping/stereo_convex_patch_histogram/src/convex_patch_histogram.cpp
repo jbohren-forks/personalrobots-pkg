@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: convex_patch_histogram.cpp 9113 2009-01-09 05:37:03Z veedee $
+ * $Id$
  *
  */
 
