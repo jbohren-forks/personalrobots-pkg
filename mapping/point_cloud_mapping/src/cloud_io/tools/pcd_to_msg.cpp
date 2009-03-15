@@ -52,8 +52,10 @@
 
 using namespace std;
 
-class PCDGenerator: public ros::Node
+class PCDGenerator
 {
+  protected:
+    ros::Node& node_;
   public:
 
     // ROS messages
@@ -61,18 +63,14 @@ class PCDGenerator: public ros::Node
 
     std::string file_name_;
 
-    PCDGenerator () : ros::Node ("pcd_generator")
+    PCDGenerator (ros::Node& anode) : node_ (anode)
     {
       // Maximum number of outgoing messages to be queued for delivery to subscribers = 1
       string cloud_topic ("cloud_pcd");
-      advertise<robot_msgs::PointCloud>(cloud_topic.c_str (), 1);
+      node_.advertise<robot_msgs::PointCloud> (cloud_topic.c_str (), 1);
       ROS_INFO ("Publishing data on topic %s.", cloud_topic.c_str ());
     }
 
-    ~PCDGenerator ()
-    {
-    }
-    
     ////////////////////////////////////////////////////////////////////////////////
     // Start
     int
@@ -87,14 +85,14 @@ class PCDGenerator: public ros::Node
     // Spin (!)
     bool spin ()
     {
-      while (ok ())
+      while (node_.ok ())
       {
         usleep (1000000);
 
-        publish ("cloud_pcd", msg_cloud_);
+        node_.publish ("cloud_pcd", msg_cloud_);
       }
 
-      return true;
+      return (true);
     }
 
   
@@ -112,13 +110,13 @@ int
   
   ros::init (argc, argv);
 
-  PCDGenerator c;
+  ros::Node ros_node ("pcd_generator");
+  
+  PCDGenerator c (ros_node);
   c.file_name_ = std::string (argv[1]);
 
   c.start ();
   c.spin ();
-
-  
 
   return (0);
 }

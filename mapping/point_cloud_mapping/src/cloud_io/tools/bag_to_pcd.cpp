@@ -53,8 +53,11 @@
 
 using namespace robot_msgs;
 
-class BagToPcd: public ros::Node
+class BagToPcd
 {
+  protected:
+    ros::Node& node_;
+
   public:
 
     // ROS messages
@@ -68,13 +71,10 @@ class BagToPcd: public ros::Node
 
 
     ////////////////////////////////////////////////////////////////////////////////
-    BagToPcd () : ros::Node ("bag_pcd"), dump_to_disk_(false), tf_(*this)
+    BagToPcd (ros::Node& anode) : node_ (anode), dump_to_disk_ (false), tf_ (anode)
     {
-      subscribe ("tilt_laser_cloud", cloud_, &BagToPcd::cloud_cb, 1);
+      node_.subscribe ("tilt_laser_cloud", cloud_, &BagToPcd::cloud_cb, this, 1);
     }
-
-    ////////////////////////////////////////////////////////////////////////////////
-    virtual ~BagToPcd () { }
 
     ////////////////////////////////////////////////////////////////////////////////
     // Callback
@@ -127,9 +127,11 @@ int
 {
   ros::init (argc, argv);
 
-  BagToPcd b;
+  ros::Node ros_node ("bag_pcd");
+  BagToPcd b (ros_node);
   b.dump_to_disk_ = true;
-  b.spin ();
+
+  ros_node.spin ();
 
   return (0);
 }
