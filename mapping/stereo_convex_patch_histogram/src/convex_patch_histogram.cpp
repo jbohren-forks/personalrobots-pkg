@@ -67,8 +67,10 @@ histogram and matches it using HIK (the Histogram Intersection Kernel) to a "dat
 using namespace std;
 using namespace robot_msgs;
 
-class ConvexPatchHistogram : public ros::Node
+class ConvexPatchHistogram
 {
+  protected:
+    ros::Node& node_;
   public:
 
     // ROS messages
@@ -80,18 +82,15 @@ class ConvexPatchHistogram : public ros::Node
     double sac_distance_threshold_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    ConvexPatchHistogram () : ros::Node ("convex_patch_histogram")
+    ConvexPatchHistogram (ros::Node& anode) : node_ (anode)
     {
-      param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.025);     // 3 cm
+      node_.param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.025);     // 3 cm
 
-      subscribe ("cloud_pcd", cloud_, &ConvexPatchHistogram::cloud_cb, 1);
-      subscribe ("cloud_textured", cloud_textured_, &ConvexPatchHistogram::cloud_cb, 1);
+      node_.subscribe ("cloud_pcd", cloud_, &ConvexPatchHistogram::cloud_cb, this, 1);
+      node_.subscribe ("cloud_textured", cloud_textured_, &ConvexPatchHistogram::cloud_cb, this, 1);
 
-      advertise<PointCloud> ("cloud_annotated", 1);
+      node_.advertise<PointCloud> ("cloud_annotated", 1);
     }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    virtual ~ConvexPatchHistogram () { }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
@@ -293,7 +292,7 @@ class ConvexPatchHistogram : public ros::Node
       }
 
       cloud_annotated_.pts.resize (nr_p);
-      publish ("cloud_annotated", cloud_annotated_);
+      node_.publish ("cloud_annotated", cloud_annotated_);
     }
 };
 
@@ -303,12 +302,11 @@ int
 {
   ros::init (argc, argv);
 
-  ConvexPatchHistogram p;
+  ros::Node ros_node ("convex_patch_histogram_node");
+  ConvexPatchHistogram p (ros_node);
   //p.src_normal_   = string (argv[1]); //string ("/work/data/WG/Stereo2/pcd_clouds/stereoImage_C22.pcd");
   //p.src_textured_ = string (argv[2]); //string ( "/work/data/WG/Stereo2/pcd_clouds/stereoImage_CnoTex22.pcd");
-  p.spin ();
-
-  
+  ros_node.spin ();
 
   return (0);
 }
