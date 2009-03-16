@@ -1,2 +1,0 @@
-#!/bin/bash
-./move_robot_deg 120 30 195 135 180

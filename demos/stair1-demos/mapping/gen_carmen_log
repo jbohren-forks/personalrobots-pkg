@@ -1,2 +1,0 @@
-#!/bin/bash
-`rospack find logsetta`/bin/genlog_carmen $1/odom.bag $1/scan.bag

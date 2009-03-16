@@ -1,3 +1,0 @@
-#!/bin/bash
-`rospack find gmapping`/gmapping-svn/bin/gfs2log firstpass.gfs secondpass.gfs
-`rospack find gmapping`/gmapping-svn/bin/gfs_nogui -filename secondpass.gfs -outfilename secondpass-out.gfs

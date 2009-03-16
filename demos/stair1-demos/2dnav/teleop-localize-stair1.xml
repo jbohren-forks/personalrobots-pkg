@@ -1,9 +1,0 @@
-<launch>
-  <node pkg="map_server" type="map_server" args="$(find stair1-demos)/2dnav/gates_a_bigger.png 0.05" respawn="false"/>
-  <node pkg="joy" type="joy"/>
-  <node pkg="sicktoolbox_wrapper" type="sicklms"/>
-  <node pkg="segway_apox" type="segway_apox"/>
-  <node pkg="teleop_base" type="teleop_base"/>
-  <node pkg="amcl_player" type="amcl_player" respawn="false" />
-</launch>
-

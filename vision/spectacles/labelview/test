@@ -1,2 +1,0 @@
-#!/bin/bash
-./labelview ~/stair/data/borg/labels/borg.xml ~/stair/data/borg/undistorted_images/*.jpg

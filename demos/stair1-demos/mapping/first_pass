@@ -1,2 +1,0 @@
-#!/bin/sh
-`rospack find gmapping`/gmapping-svn/bin/gfs_simplegui -patchDelta 0.05 -filename carmen.txt -outfilename firstpass.gfs

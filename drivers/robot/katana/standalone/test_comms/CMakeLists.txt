@@ -1,2 +1,0 @@
-rospack_add_executable(test_comms test_comms.cpp)
-target_link_libraries(test_comms katana)

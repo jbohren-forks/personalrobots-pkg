@@ -1,9 +1,0 @@
-This directory has demos that will only run on the stair1 robot. 
-
-They should be tweakable to run on other similarly-equipped robots:
-
-SICK LMS291 laser scanner, forward-facing
-Segway mobile base with casters (any differential-drive system would do)
-Katana 6M-180 manipulator
-A few cameras
-

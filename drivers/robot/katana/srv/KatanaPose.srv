@@ -1,9 +1,0 @@
-robot_msgs/Point pose  ## todo look at using robot_msgs/Pose for all 6 dof
-float32 phi
-float32 theta
-float32 psi
----
-robot_msgs/Point pose
-float32 phi
-float32 theta
-float32 psi

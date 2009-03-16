@@ -1,6 +1,0 @@
-<launch>
-  <node pkg="joy" type="joy"/>
-  <node pkg="segway_apox" type="segway_apox"/>
-  <node pkg="teleop_base" type="teleop_base"/>
-</launch>
-

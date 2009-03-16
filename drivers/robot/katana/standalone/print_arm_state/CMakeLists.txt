@@ -1,2 +1,0 @@
-rospack_add_executable(print_arm_state print_arm_state.cpp)
-target_link_libraries(print_arm_state katana)

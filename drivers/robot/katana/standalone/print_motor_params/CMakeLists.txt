@@ -1,2 +1,0 @@
-rospack_add_executable(print_motor_params print_motor_params.cpp)
-target_link_libraries(print_motor_params katana)

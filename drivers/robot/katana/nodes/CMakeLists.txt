@@ -1,2 +1,0 @@
-add_subdirectory(katana_client)
-add_subdirectory(katana_server)

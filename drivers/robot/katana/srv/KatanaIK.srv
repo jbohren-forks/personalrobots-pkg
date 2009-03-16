@@ -1,6 +1,0 @@
-robot_msgs/Point pose  ##I highly recommend a PoseStamped for this message
-float32 theta
-float32 psi
-float32 max_theta_dev
----
-ArmCSpace solution

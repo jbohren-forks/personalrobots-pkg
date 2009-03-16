@@ -1,2 +1,0 @@
-rospack_add_executable(get_joint_solution get_joint_solution.cpp)
-target_link_libraries(get_joint_solution katana)

@@ -1,2 +1,0 @@
-rospack_add_executable(move_gripper_position move_gripper_position.cpp)
-target_link_libraries(move_gripper_position katana)

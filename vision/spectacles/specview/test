@@ -1,3 +1,0 @@
-#!/bin/bash
-#./specview ~/stair/data/borg/undistorted_images/2008-05-14-12-08-31.jpg ~/stair/data/borg/reconstructed/2008-05-14-12-08-31.reconstructed
-./specview ~/stair/data/borg/undistorted_images/2008-05-14-12-08-31.jpg raw.txt

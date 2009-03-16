@@ -1,2 +1,0 @@
-rospack_add_executable(motor_power motor_power.cpp)
-target_link_libraries(motor_power katana)

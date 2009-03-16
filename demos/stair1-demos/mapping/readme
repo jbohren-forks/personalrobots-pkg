@@ -1,8 +1,0 @@
-run gen_carmen_log first, giving it the name of a directory containing you scan.bag and odom.bag ROS dumps of a laser and odometry stream.
-
-then run first_pass
-
-then run second_pass
-
-then run make_map
-
