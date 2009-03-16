@@ -165,12 +165,30 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed, bool motor
   hw_->current_time_ = realtime_gettime();
 
   // Initialize slaves
+  set<string> actuator_names;
   for (unsigned int slave = 0, a = 0; slave < num_slaves_; ++slave)
   {
     if (slaves_[slave]->initialize(slaves_[slave]->has_actuator_ ? hw_->actuators_[a] : NULL, allow_unprogrammed, motor_model) < 0)
     {
       ROS_FATAL("Unable to initialize slave #%d", slave);
       ROS_BREAK();
+    }
+
+    // Check for duplicate actuator names
+    if (slaves_[slave]->has_actuator_)
+    {
+      if (!actuator_names.insert(hw_->actuators_[a]->name_).second)
+      {
+        if (allow_unprogrammed)
+        {
+          ROS_WARN("Device #%02d: actuator name already in use: '%s'", a, hw_->actuators_[a]->name_.c_str());
+        }
+        else
+        {
+          ROS_FATAL("Device #%02d: actuator name already in use: '%s'", a, hw_->actuators_[a]->name_.c_str());
+          ROS_BREAK();
+        }
+      }
     }
     a += slaves_[slave]->has_actuator_;
   }
