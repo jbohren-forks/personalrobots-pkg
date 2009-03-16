@@ -51,7 +51,7 @@ namespace robot_actions {
 
     /**
      * @brief This method is called on receipt of a new goal. The derived class will implement this method to 
-     * pursue the goal.
+     * pursue the goal. The actor we be activated as soon as notifyActivated is called on the actioncontainer.
      * @param Goal The goal to accomplish.
      * @see notifyActivated
      */
@@ -59,10 +59,10 @@ namespace robot_actions {
 
     /**
      * @brief This method is called to preempt execution of a goal. The derived class must terminate all activiity
-     * pursuing an active goal. As soon as we return from this call, the actor will be deactivated.
+     * pursuing an active goal. The actor will be deactivated as soon as notifyPreempted is called on the actioncontainer.
      * @see notifyPreempted
      */
-    virtual void preempt(){}
+    virtual void preempt() = 0;
 
     /**
      * @brief A query to retrieve current state of execution, and offer an opportunity to publish specific 
