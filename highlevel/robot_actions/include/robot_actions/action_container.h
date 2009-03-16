@@ -34,75 +34,52 @@
 
 // Author Conor McGann (mcgann@willowgarage.com)
 
-#ifndef H_robot_actions_Action
-#define H_robot_actions_Action
+#ifndef H_robot_actions_ActionContainer
+#define H_robot_actions_ActionContainer
 
-#include <robot_actions/action_container.h>
+#include <robot_actions/ActionStatus.h>
+#include <boost/thread.hpp>
+#include <ros/node.h>
+#include <ros/console.h>
+#include <boost/thread.hpp>
 
 namespace robot_actions {
 
   /**
-   * @brief Abstract base class for a durative, preemptable action.
-   * @see ActionContainer Used to connnect the action to its execution context
+   * @brief This class defines a call back interface for actions executing in some container context.
    */
-  template <class Goal, class Feedback> class Action {
+  template <class Feedback> class ActionContainer {
 
   public:
 
     /**
-     * @brief This method is called on receipt of a new goal. The derived class will implement this method to 
-     * pursue the goal.
-     * @param Goal The goal to accomplish.
-     * @see notifyActivated
+     * @brief A client will call this method when it has been activated successfully
+     * @param Feedback to provide in the state update
      */
-    virtual void activate(const Goal& goalMsg) = 0;
+    virtual void notifyActivated(const Feedback& feedback_msg) = 0;
 
     /**
-     * @brief This method is called to preempt execution of a goal. The derived class must terminate all activiity
-     * pursuing an active goal. As soon as we return from this call, the actor will be deactivated.
-     * @see notifyPreempted
+     * @brief A client will call this method when it has completed successfully.
+     * @param Feedback to provide in the state update
      */
-    virtual void preempt(){}
+    virtual void notifyCompleted(const Feedback& feedback_msg) = 0;
 
     /**
-     * @brief A query to retrieve current state of execution, and offer an opportunity to publish specific 
-     * feedback parameters
+     * @brief A client will call this method when it has aborted of its own volition
+     * @param Feedback to provide in the state update
      */
-    virtual void updateStatus(Feedback& feedback_msg) = 0;
+    virtual void notifyAborted(const Feedback& feedback_msg) = 0;
 
     /**
-     * @brief Accessor for the action name
+     * @brief A client will call this method when it has successfully been preempted
+     * @param Feedback to provide in the state update
      */
-    const std::string& getName() const { return _name; }
+    virtual void notifyPreempted(const Feedback& feedback_msg) = 0;
 
-    /**
-     * @brief Connect the action to its container for posting status updates
-     * @see getContainer
-     */
-    void connect(ActionContainer<Feedback>* container){
-      _container = container;
-    }
-
-    ActionContainer<Feedback>& getContainer() {
-      return *_container;
-    }
 
   protected:
 
-    /**
-     * @brief Constructor
-     * @param container The callback interface handle to notify changes in activation status
-     */
-  Action( const std::string& name)
-    : _name(name), _container(NULL) {}
-
-    virtual ~Action(){}
-
-  private:
-
-    const std::string _name; /*!< Name for the action */
-
-    ActionContainer<Feedback>* _container; /*!< Holds the callback interface to notify changes in activation status */
+    virtual ~ActionContainer(){}
   };
 
 }

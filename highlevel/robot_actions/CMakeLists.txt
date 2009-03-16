@@ -9,8 +9,6 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 add_definitions(-Wall)
 rospack(robot_actions)
 
-rospack_add_boost_directories()
-
 genmsg()
 
 # Unit Tests
