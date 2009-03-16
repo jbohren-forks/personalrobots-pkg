@@ -101,7 +101,7 @@ class CloudDownsampler
     // Callback
     void cloud_cb ()
     {
-      ROS_INFO ("Received %d data points.", cloud_.pts.size ());
+      ROS_INFO ("Received %d data points.", (int)cloud_.pts.size ());
       if (cloud_.pts.size () == 0)
         return;
 
@@ -113,7 +113,7 @@ class CloudDownsampler
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Cloud downsampled in %g seconds. Number of points left: %d.", time_spent, cloud_down_.pts.size ());
+      ROS_INFO ("Cloud downsampled in %g seconds. Number of points left: %d.", time_spent, (int)cloud_down_.pts.size ());
 
       node_.publish ("cloud_downsampled", cloud_down_);
     }

@@ -163,7 +163,7 @@ class NormalEstimation
     {
       updateParametersFromServer ();
 
-      ROS_INFO ("Received %d data points.", cloud_.pts.size ());
+      ROS_INFO ("Received %d data points.", (int)cloud_.pts.size ());
       if (cloud_.pts.size () == 0)
         return;
 
@@ -201,7 +201,7 @@ class NormalEstimation
 
         gettimeofday (&t2, NULL);
         time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-        ROS_INFO ("Downsampling enabled. Number of points left: %d in %g seconds.", cloud_down_.pts.size (), time_spent);
+        ROS_INFO ("Downsampling enabled. Number of points left: %d in %g seconds.", (int)cloud_down_.pts.size (), time_spent);
       }
 
       // Resize

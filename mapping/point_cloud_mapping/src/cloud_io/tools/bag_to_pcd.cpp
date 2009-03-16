@@ -93,7 +93,7 @@ class BagToPcd
         ROS_ERROR ("TF::ConectivityException caught while trying to transform a point from frame %s into %s!", cloud_.header.frame_id.c_str (), pin.header.frame_id.c_str ());
       }
 
-      fprintf (stderr, "Received %d data points. Viewpoint is <%.3f, %.3f, %.3f>\n", cloud_.pts.size (), pout.point.x, pout.point.y, pout.point.z);
+      fprintf (stderr, "Received %d data points. Viewpoint is <%.3f, %.3f, %.3f>\n", (int)cloud_.pts.size (), pout.point.x, pout.point.y, pout.point.z);
 
       double c_time = cloud_.header.stamp.sec * 1e3 + cloud_.header.stamp.nsec;
       sprintf (fn_, "%.0f.pcd", c_time);
