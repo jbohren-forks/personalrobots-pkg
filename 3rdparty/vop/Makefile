@@ -1,8 +1,8 @@
 all: vop
 
-TARBALL     = build/vop-1.0.tar.gz
-TARBALL_URL = http://www.excamera.com/files/vop-1.0.tar.gz
-SOURCE_DIR  = build/vop-1.0
+TARBALL     = build/vop-1.1.tar.gz
+TARBALL_URL = http://www.excamera.com/files/vop-1.1.tar.gz
+SOURCE_DIR  = build/vop-1.1
 UNPACK_CMD  = tar xzf
 include $(shell rospack find mk)/download_unpack_build.mk
 
