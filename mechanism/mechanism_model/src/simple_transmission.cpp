@@ -51,7 +51,7 @@ bool SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
   const char *joint_name = jel ? jel->Attribute("name") : NULL;
   if (!joint_name || robot->getJointIndex(joint_name) < 0)
   {
-    fprintf(stderr, "SimpleTransmission could not find joint named \"%s\"\n", joint_name);
+    ROS_WARN("SimpleTransmission could not find joint named \"%s\"", joint_name);
     return false;
   }
   joint_names_.push_back(joint_name);
@@ -61,7 +61,7 @@ bool SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
   Actuator *a;
   if (!actuator_name || (a = robot->getActuator(actuator_name)) == NULL )
   {
-    fprintf(stderr, "SimpleTransmission could not find actuator named \"%s\"\n", actuator_name);
+    ROS_WARN("SimpleTransmission could not find actuator named \"%s\"", actuator_name);
     return false;
   }
   a->command_.enable_ = true;

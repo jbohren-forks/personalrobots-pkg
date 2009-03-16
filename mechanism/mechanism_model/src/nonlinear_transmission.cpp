@@ -41,7 +41,7 @@ void NonlinearTransmission::initXml(TiXmlElement *elt, Robot *robot)
   joint_ = joint_name ? joint->getJoint(joint_name) : NULL;
   if(!joint_)
   {
-    fprintf(stderr, "NonlinearTransmission could not find joint named \"%s\"\n", joint_name);
+    ROS_WARN("NonlinearTransmission could not find joint named \"%s\"", joint_name);
   }
 
   TiXmlElement *jel = elt->FirstChildElement("joint");
@@ -49,7 +49,7 @@ void NonlinearTransmission::initXml(TiXmlElement *elt, Robot *robot)
   joint_ = joint_name ? joint->getJoint(joint_name) : NULL;
   if(!joint_)
   {
-    fprintf(stderr, "NonlinearTransmission could not find joint named \"%s\"\n", joint_name);
+    ROS_WARN("NonlinearTransmission could not find joint named \"%s\"", joint_name);
   }
 }
 

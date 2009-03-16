@@ -55,7 +55,7 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
   const char *actuator_name = ael ? ael->Attribute("name") : NULL;
   if (!actuator_name || !robot->getActuator(actuator_name))
   {
-    fprintf(stderr, "GripperTransmission could not find actuator named \"%s\"\n", actuator_name);
+    ROS_WARN("GripperTransmission could not find actuator named \"%s\"", actuator_name);
     return false;
   }
   robot->getActuator(actuator_name)->command_.enable_ = true;
@@ -66,7 +66,7 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     const char *joint_name = j->Attribute("name");
     if (!joint_name || !robot->getJoint(joint_name))
     {
-      fprintf(stderr, "GripperTransmission could not find joint named \"%s\"\n", joint_name);
+      ROS_WARN("GripperTransmission could not find joint named \"%s\"", joint_name);
       return false;
     }
     joint_names_.push_back(joint_name);
@@ -74,7 +74,7 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     const char *joint_pred = j->Attribute("preduction");
     if (!joint_pred)
     {
-      fprintf(stderr, "GripperTransmission's joint \"%s\" was not given a reduction.\n", joint_name);
+      ROS_WARN("GripperTransmission's joint \"%s\" was not given a reduction.", joint_name);
       return false;
     }
     preductions_.push_back(atof(joint_pred));
@@ -82,7 +82,7 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     const char *joint_ered = j->Attribute("ereduction");
     if (!joint_ered)
     {
-      fprintf(stderr, "GripperTransmission's joint \"%s\" was not given a reduction.\n", joint_name);
+      ROS_WARN("GripperTransmission's joint \"%s\" was not given a reduction.", joint_name);
       return false;
     }
     ereductions_.push_back(atof(joint_ered));

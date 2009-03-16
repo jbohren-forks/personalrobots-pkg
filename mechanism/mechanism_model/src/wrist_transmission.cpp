@@ -53,7 +53,7 @@ bool WristTransmission::initXml(TiXmlElement *elt, Robot *robot)
   Actuator *a;
   if (!actuator_name || (a = robot->getActuator(actuator_name)) == NULL )
   {
-    fprintf(stderr, "WristTransmission could not find actuator named \"%s\"\n", actuator_name);
+    ROS_WARN("WristTransmission could not find actuator named \"%s\"", actuator_name);
     return false;
   }
   a->command_.enable_ = true;
@@ -63,7 +63,7 @@ bool WristTransmission::initXml(TiXmlElement *elt, Robot *robot)
   actuator_name = ael ? ael->Attribute("name") : NULL;
   if (!actuator_name || (a = robot->getActuator(actuator_name)) == NULL )
   {
-    fprintf(stderr, "WristTransmission could not find actuator named \"%s\"\n", actuator_name);
+    ROS_WARN("WristTransmission could not find actuator named \"%s\"", actuator_name);
     return false;
   }
   a->command_.enable_ = true;
@@ -73,14 +73,14 @@ bool WristTransmission::initXml(TiXmlElement *elt, Robot *robot)
   const char *joint_name = j->Attribute("name");
   if (!joint_name || !robot->getJoint(joint_name))
   {
-    fprintf(stderr, "WristTransmission could not find joint named \"%s\"\n", joint_name);
+    ROS_WARN("WristTransmission could not find joint named \"%s\"", joint_name);
     return false;
   }
   joint_names_.push_back(joint_name);
   const char *joint_red = j->Attribute("mechanicalReduction");
   if (!joint_red)
   {
-    fprintf(stderr, "WristTransmission's joint \"%s\" was not given a reduction.\n", joint_name);
+    ROS_WARN("WristTransmission's joint \"%s\" was not given a reduction.", joint_name);
     return false;
   }
   mechanical_reduction_.push_back(atof(joint_red));
@@ -89,14 +89,14 @@ bool WristTransmission::initXml(TiXmlElement *elt, Robot *robot)
   joint_name = j->Attribute("name");
   if (!joint_name || !robot->getJoint(joint_name))
   {
-    fprintf(stderr, "WristTransmission could not find joint named \"%s\"\n", joint_name);
+    ROS_WARN("WristTransmission could not find joint named \"%s\"", joint_name);
     return false;
   }
   joint_names_.push_back(joint_name);
   joint_red = j->Attribute("mechanicalReduction");
   if (!joint_red)
   {
-    fprintf(stderr, "WristTransmission's joint \"%s\" was not given a reduction.\n", joint_name);
+    ROS_WARN("WristTransmission's joint \"%s\" was not given a reduction.", joint_name);
     return false;
   }
   mechanical_reduction_.push_back(atof(joint_red));
