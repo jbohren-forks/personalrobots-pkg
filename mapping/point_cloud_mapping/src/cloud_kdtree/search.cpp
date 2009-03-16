@@ -139,6 +139,20 @@ namespace cloud_kdtree
     return (true);
   }
 
+  bool
+    KdTree::nearestKSearch (robot_msgs::Point32 *p_q, int k, std::vector<int> &indices, std::vector<double> &distances)
+  {
+    ANNpoint p = annAllocPt (3);
+    p[0] = p_q->x; p[1] = p_q->y; p[2] = p_q->z;
+#ifdef USE_ANN
+    ann_kd_tree_->annkSearch (p, k, &indices[0], &distances[0], epsilon_);
+#else
+    fprintf (stderr, "FL-ANN version is not implemented yet !");
+#endif
+    annDeallocPt (p);
+    return (true);
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Search for all the nearest neighbors of the query point in a given radius.
     * \param p_idx the given query point index
