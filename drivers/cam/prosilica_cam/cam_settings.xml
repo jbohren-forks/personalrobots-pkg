@@ -1,0 +1,12 @@
+<launch>
+  <param name="ip_address" type="str" value="169.254.68.68"/>
+  <param name="exposure_auto" type="str" value="Auto"/>
+  <param name="gain_auto" type="str" value="Auto"/>
+  <!--
+  <param name="exposure_auto" type="str" value="Manual"/>
+  <param name="exposure" type="int" value="20000"/>
+  <param name="gain_auto" type="str" value="Manual"/>
+  <param name="gain" type="int" value="0"/>
+  -->
+  <param name="whitebal_auto" type="str" value="Auto"/>
+</launch>
