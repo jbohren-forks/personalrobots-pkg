@@ -12,4 +12,6 @@ rospack(robot_actions)
 genmsg()
 
 # Unit Tests
-rospack_add_gtest(test/utest test/utest.cc)
+rospack_add_executable(test/utest EXCLUDE_FROM_ALL test/utest.cc)
+rospack_add_gtest_build_flags(test/utest)
+rospack_add_rostest(test/test.xml)
