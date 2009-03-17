@@ -39,7 +39,7 @@
 
 using namespace KDL;
 
-static const bool use_constraint_controller = false
+static const bool use_constraint_controller = false;
 
 
 namespace controller {
