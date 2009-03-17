@@ -990,7 +990,7 @@ class stereogui {open
         Fl_Counter {} {
           label {Window:}
           callback corrsize_cb
-          xywh {75 60 55 20} type Simple labelsize 11 align 4 minimum 7 maximum 21 step 1 value 15
+          xywh {75 60 55 20} type Simple labelsize 11 align 4 minimum 5 maximum 23 step 1 value 15
         }
         Fl_Counter {} {
           label {X off:}

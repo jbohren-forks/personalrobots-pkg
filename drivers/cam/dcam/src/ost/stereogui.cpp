@@ -1244,8 +1244,8 @@ stereogui::stereogui() {
       { Fl_Counter* o = new Fl_Counter(75, 60, 55, 20, "Window:");
         o->type(1);
         o->labelsize(11);
-        o->minimum(7);
-        o->maximum(21);
+        o->minimum(5);
+        o->maximum(23);
         o->step(1);
         o->value(15);
         o->callback((Fl_Callback*)corrsize_cb);

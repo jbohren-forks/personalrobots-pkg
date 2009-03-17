@@ -423,7 +423,7 @@ main(int argc, char **argv)	// no arguments
 	  if (isStereo)	// get stereo disparity
 	    stIm->doDisparity(sp_alg);
 	  double tt1 = get_ms();
-//	  printf("Proc time: %d ms\n", (int)(tt1-tt0));
+	  //	  printf("Proc time: %d ms\n", (int)(tt1-tt0));
 
 	  if (is3D)		// get 3D points
 	    {
@@ -1626,6 +1626,7 @@ check_stereo_buttons()
       isRectify = true;
       stg->rectify_button->value(true);
     }
+  isRefresh = true;
 }
 
 //
@@ -1648,6 +1649,7 @@ void do_rectify_cb(Fl_Light_Button* w, void*)
   if (isVideo)
     return;
 
+  isRefresh = true;
 }
 
 //
@@ -2226,6 +2228,7 @@ stereo_algorithm_cb(Fl_Choice *w, void *u)
       sp_alg = NCC_ALGORITHM;    
      // printf("MW algorithm\n");
     }
+ isRefresh = true;
 }
 
 
@@ -2706,20 +2709,19 @@ load_left(char *fname)		// fname is the base name, to be added to
       debug_message("Size: %d x %d, cc: %d", w, h, cc);
       stIm->imLeft->im = data;
       stIm->imLeft->imType = cc;
-      stIm->imWidth = w;
-      stIm->imHeight = h;
+      stIm->setSize(w,h);
       ret++;
     }
 
   sprintf(fn,"%s-LR.png",fname);
+  debug_message("[oST] Trying file %s\n", fn);
   data = load_png_grayscale(fn, &cc, &w, &h, &s);
   if (data != NULL)
     {
       debug_message("Size: %d x %d, cc: %d", w, h, cc);
       stIm->imLeft->imRect = data;
       stIm->imLeft->imRectType = cc;
-      stIm->imWidth = w;
-      stIm->imHeight = h;
+      stIm->setSize(w,h);
       ret++;
     }
 
@@ -2747,8 +2749,7 @@ load_right(char *fname)		// fname is the base name, to be added to
       debug_message("Size: %d x %d, cc: %d", w, h, cc);
       stIm->imRight->im = data;
       stIm->imRight->imType = cc;
-      stIm->imWidth = w;
-      stIm->imHeight = h;
+      stIm->setSize(w,h);
       ret++;
     }
 
@@ -2759,8 +2760,7 @@ load_right(char *fname)		// fname is the base name, to be added to
       debug_message("Size: %d x %d, cc: %d", w, h, cc);
       stIm->imRight->imRect = data;
       stIm->imRight->imRectType = cc;
-      stIm->imWidth = w;
-      stIm->imHeight = h;
+      stIm->setSize(w,h);
       ret++;
     }
 
