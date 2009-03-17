@@ -35,6 +35,7 @@
 
 // ROS includes
 #include <robot_msgs/Point32.h>
+#include <robot_msgs/Polygon3D.h>
 
 namespace cloud_geometry
 {
@@ -59,6 +60,20 @@ namespace cloud_geometry
       q.x = p->x - distance * plane_coefficients->at (0);
       q.y = p->y - distance * plane_coefficients->at (1);
       q.z = p->z - distance * plane_coefficients->at (2);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Project a set of points onto a plane defined by ax+by+cz+d=0
+      * \param p the points to project
+      * \param q the resultant projected points
+      * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
+      */
+    inline void
+      pointsToPlane (robot_msgs::Polygon3D *p, robot_msgs::Polygon3D &q, std::vector<double> *plane_coefficients)
+    {
+      q.points.resize (p->points.size ());
+      for (unsigned int i = 0; i < p->points.size (); i++)
+        pointToPlane (&p->points[i], q.points[i], plane_coefficients);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
