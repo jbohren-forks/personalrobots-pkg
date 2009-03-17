@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<controllers>
+  <controller name="head/trajectory_controller" type="ArmTrajectoryControllerNode">
+    <listen_topic name="head/trajectory_controller/trajectory_command" />
+    <kinematics>
+      <elem key="kdl_chain_name">head</elem>
+    </kinematics>
+    <map name="controller_param">
+      <elem key="kdl_chain_name">head</elem>
+    </map>
+    <controller name="head_pan_controller" topic="head_pan_controller" type="JointPDController">
+      <joint name="head_pan_joint" >
+        <pid p="5.0" d="0.5" i="12.0" iClamp="0.5" />
+      </joint>
+    </controller>
+    <controller name="head_tilt_controller" topic="r_shoulder_pitch_controller" type="JointPDController">
+      <joint name="head_tilt_joint" >
+        <pid p="8.0" d="0.5" i="2.0" iClamp="0.1" />
+      </joint>
+    </controller>
+    <trajectory interpolation="cubic" />
+  </controller>
+</controllers>

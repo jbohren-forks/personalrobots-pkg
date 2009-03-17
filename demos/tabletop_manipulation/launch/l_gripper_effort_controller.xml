@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+      
+<controllers>
+ <controller name="left_gripper/effort_controller" type="JointEffortControllerNode">
+    <joint name="l_gripper_l_finger_joint" />
+  </controller>
+</controllers>
+
