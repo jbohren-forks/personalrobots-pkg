@@ -40,6 +40,7 @@
 #include "realtime_tools/realtime_publisher.h"
 #include "control_toolbox/pid.h"
 #include "robot_msgs/VisualizationMarker.h"
+#include "angles/angles.h"
 
 namespace controller {
 
@@ -122,6 +123,9 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
   for (size_t i = 3; i < 6; ++i)
     twist_pids_[i] = temp_pid;
 
+  if (!node->getParam(name + "/initial_mode", initial_mode_))
+    initial_mode_ = robot_msgs::TaskFrameFormalism::FORCE;
+
   // Default commands
 
   task_frame_offset_ = KDL::Frame::Identity();
@@ -162,15 +166,18 @@ void CartesianHybridController::update()
   {
     twist_desi_[i] = 0;
     wrench_desi_[i] = 0;
+    pose_desi_[i] = 0;
 
     double setpoint = setpoint_[i];
     switch(mode_[i])
     {
     case robot_msgs::TaskFrameFormalism::POSITION:
+      pose_desi_[i] = setpoint;
       if (i < 3) // Translational position
         setpoint = pose_pids_[i].updatePid(tool.p.p[i] - setpoint, dt);
       else // Rotational position
-        setpoint = pose_pids_[i].updatePid(rpy[i - 3] - setpoint, dt);
+        //setpoint = pose_pids_[i].updatePid(angles::shortest_angular_distance(rpy[i - 3], setpoint), dt);
+        setpoint = pose_pids_[i].updatePid(angles::shortest_angular_distance(setpoint, rpy[i - 3]), dt);
     case robot_msgs::TaskFrameFormalism::VELOCITY:
       twist_desi_[i] = setpoint;
       setpoint = twist_pids_[i].updatePid(tool.GetTwist()[i] - setpoint, dt);
@@ -208,11 +215,45 @@ void CartesianHybridController::update()
 
 bool CartesianHybridController::starting()
 {
-  for (size_t i = 0; i < 6; ++i)
+  task_frame_offset_ = KDL::Frame::Identity();
+  tool_frame_offset_ = KDL::Frame::Identity();
+
+
+  switch(initial_mode_)
   {
-    mode_[i] = robot_msgs::TaskFrameFormalism::FORCE;
-    setpoint_[i] = 0.0;
+  case robot_msgs::TaskFrameFormalism::POSITION: {
+    // Finds the starting pose/twist
+    KDL::JntArrayVel jnt_vel(kdl_chain_.getNrOfJoints());
+    chain_.getVelocities(robot_->joint_states_, jnt_vel);
+    KDL::FrameVel frame;
+    KDL::ChainFkSolverVel_recursive fkvel_solver(kdl_chain_);
+    fkvel_solver.JntToCart(jnt_vel, frame);
+
+    for (size_t i = 0; i < 6; ++i) {
+      mode_[i] = initial_mode_;
+    }
+    for (size_t i = 0; i < 3; ++i) {
+      setpoint_[i] = frame.p.p[i];
+    }
+    frame.M.R.GetRPY(setpoint_[3], setpoint_[4], setpoint_[5]);
+    break;
   }
+  case robot_msgs::TaskFrameFormalism::VELOCITY:
+    for (size_t i = 0; i < 6; ++i) {
+      mode_[i] = initial_mode_;
+      setpoint_[i] = 0.0;
+    }
+    break;
+  case robot_msgs::TaskFrameFormalism::FORCE:
+    for (size_t i = 0; i < 6; ++i) {
+      mode_[i] = initial_mode_;
+      setpoint_[i] = 0.0;
+    }
+    break;
+  default:
+    return false;
+  }
+
   return true;
 }
 
@@ -241,10 +282,14 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 
   ros::Node *node = ros::Node::instance();
 
-  node->subscribe(name_ + "/command", command_msg_, &CartesianHybridControllerNode::command, this, 1);
+  task_frame_name_ = c_.chain_.getLinkName(0);
+
+  node->subscribe(name_ + "/command", command_msg_, &CartesianHybridControllerNode::command, this, 5);
   node->advertiseService(name_ + "/set_tool_frame", &CartesianHybridControllerNode::setToolFrame, this);
 
   pub_state_.reset(new realtime_tools::RealtimePublisher<robot_msgs::CartesianState>(name_ + "/state", 1));
+  pub_tf_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("/tf_message", 5));
+  pub_tf_->msg_.transforms.resize(1);
 
   return true;
 
@@ -252,6 +297,8 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 
 void CartesianHybridControllerNode::update()
 {
+
+  KDL::Twist last_pose_desi = c_.pose_desi_;
   KDL::Twist last_twist_desi = c_.twist_desi_;
   KDL::Wrench last_wrench_desi = c_.wrench_desi_;
 
@@ -262,12 +309,25 @@ void CartesianHybridControllerNode::update()
     if (pub_state_->trylock())
     {
       pub_state_->msg_.header.frame_id = "TODO___THE_TASK_FRAME";
-      TransformKDLToMsg(c_.pose_meas_, pub_state_->msg_.last_pose_meas);
+      TransformKDLToMsg(c_.pose_meas_, pub_state_->msg_.last_pose_meas.pose);
+      pub_state_->msg_.last_pose_meas.header.frame_id = task_frame_name_;
+      pub_state_->msg_.last_pose_meas.header.stamp = ros::Time(c_.last_time_);
+      TwistKDLToMsg(last_pose_desi, pub_state_->msg_.last_pose_desi);
       TwistKDLToMsg(c_.twist_meas_, pub_state_->msg_.last_twist_meas);
       TwistKDLToMsg(last_twist_desi, pub_state_->msg_.last_twist_desi);
       WrenchKDLToMsg(last_wrench_desi, pub_state_->msg_.last_wrench_desi);
 
       pub_state_->unlockAndPublish();
+    }
+    if (pub_tf_->trylock())
+    {
+      //pub_tf_->msg_.transforms[0].header.stamp.fromSec();
+      pub_tf_->msg_.transforms[0].header.frame_id = name_ + "/tool_frame";
+      pub_tf_->msg_.transforms[0].parent_id = c_.chain_.getLinkName();
+      tf::Transform t;
+      mechanism::TransformKDLToTF(c_.tool_frame_offset_, t);
+      tf::TransformTFToMsg(t, pub_tf_->msg_.transforms[0].transform);
+      pub_tf_->unlockAndPublish();
     }
   }
 }
@@ -318,8 +378,16 @@ bool CartesianHybridControllerNode::setToolFrame(
 
 void CartesianHybridControllerNode::command()
 {
+  task_frame_name_ = command_msg_.header.frame_id;
   tf::Stamped<tf::Transform> task_frame;
+
   try {
+    ROS_INFO("Waiting on transform (%.3lf vs %.3lf)", command_msg_.header.stamp.toSec(), ros::Time::now().toSec());
+    while (!TF.canTransform(c_.chain_.getLinkName(0), command_msg_.header.frame_id, command_msg_.header.stamp))
+    {
+      usleep(10000);
+    }
+    ROS_INFO("Got transform.");
     TF.lookupTransform(c_.chain_.getLinkName(0), command_msg_.header.frame_id, command_msg_.header.stamp,
                        task_frame);
   }

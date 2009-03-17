@@ -56,6 +56,7 @@ public:
   virtual void update(void);
   virtual bool starting();
 
+  KDL::Twist pose_desi_;
   KDL::Twist twist_desi_;
   KDL::Wrench wrench_desi_;
   KDL::Frame pose_meas_;
@@ -75,6 +76,8 @@ public:
   KDL::Chain kdl_chain_;
   mechanism::RobotState *robot_;
   double last_time_;
+
+  int initial_mode_;
 };
 
 class CartesianHybridControllerNode : public Controller
@@ -100,8 +103,11 @@ private:
   ros::Node *node_;
   robot_msgs::TaskFrameFormalism command_msg_;
 
+  std::string task_frame_name_;
+
   unsigned int loop_count_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::CartesianState> > pub_state_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > pub_tf_;
 };
 
 }

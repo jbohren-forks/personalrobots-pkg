@@ -27,9 +27,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import roslib
-roslib.load_manifest('pr2_mechanism_controllers')
-roslib.load_manifest('std_msgs')
-roslib.load_manifest('rospy')
+roslib.load_manifest('plug_in')
 
 import rospy
 from std_msgs.msg import *
@@ -37,24 +35,17 @@ from robot_msgs.msg import *
 from tf.msg import tfMessage
 from math import *
 from time import sleep
+import tf.transformations
+
 
 def xyz(x, y, z):
   p = Point()
   p.x, p.y, p.z = x, y, z
   return p
 
-def rpy(y, p, r):
-  q = Quaternion()
-  cosY = cos(y / 2.)
-  sinY = sin(y / 2.)
-  cosP = cos(p / 2.)
-  sinP = sin(p / 2.)
-  cosR = cos(r / 2.)
-  sinR = sin(r / 2.)
-  q.x = cosR*cosP*cosY + sinR*sinP*sinY
-  q.y = sinR*cosP*cosY + cosR*sinP*sinY
-  q.z = cosR*sinP*cosY + sinR*cosP*sinY
-  q.w = cosR*cosP*sinY + sinR*sinP*cosY
+def rpy(r, p, y):
+  a = tf.transformations.quaternion_from_euler(r, p, y, "rzyx")
+  q = Quaternion(a[0], a[1], a[2], a[3])
   return q
 
 
@@ -68,6 +59,7 @@ class Tracker:
 
 mechanism_state = Tracker('/mechanism_state', MechanismState)
 def last_time():
+  return rospy.rostime.get_rostime()
   global mechanism_state
   if mechanism_state.msg:
     return mechanism_state.msg.header.stamp
@@ -75,23 +67,23 @@ def last_time():
 
 
 
-pub_outlet = rospy.Publisher('/outlet_pose', PoseStamped)
-pub_plug = rospy.Publisher('/plug_pose', PoseStamped)
+pub_outlet = rospy.Publisher('/outlet_detector/pose', PoseStamped)
+pub_plug = rospy.Publisher('/plug_detector/pose', PoseStamped)
 rospy.init_node('fake_vision', anonymous=True)
-while last_time() == 0:
-  pass
+sleep(0.2)
+
 def send():
   op = PoseStamped()
   op.header.stamp = last_time()
   op.header.frame_id = 'torso_lift_link'
-  op.pose.position = xyz(0.7, -0.4, -0.2)
+  op.pose.position = xyz(0.7, -0.4, -0.4)
   op.pose.orientation = rpy(0, 0, 0)
 
   pp = PoseStamped()
   pp.header.stamp = last_time()
   pp.header.frame_id = 'r_gripper_tool_frame'
   pp.pose.position = xyz(0.0, 0.0, 0.0)
-  pp.pose.orientation = rpy(0,pi/6,0)
+  pp.pose.orientation = rpy(0,-pi/6,0)
 
   print "Publishing..."
   for i in range(10):
