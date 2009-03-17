@@ -63,7 +63,7 @@ public:
       ROS_FATAL("Board height unspecified");
       shutdown();
     }
-    
+
     param("display", display_, true);
     if (display_) {
       cvNamedWindow(wndname, 0); // no autosize
@@ -131,7 +131,7 @@ public:
 
     cvFindCornerSubPix(image, &corners[0], ncorners, cvSize(11,11), cvSize(-1,-1),
                        cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
-    
+
     double rot[3], trans[3];
     CvMat R3, T3, D, img_pts;
     cvInitMatHeader(&R3, 3, 1, CV_64FC1, rot);
@@ -164,20 +164,21 @@ public:
     */
 
     tf::Transform board_in_cvcam(rot3x3, tf::Vector3(trans[0], trans[1], trans[2]));
-    
+
     // Plug pose in the camera frame
     tf::Transform plug_in_camera = camera_in_cvcam_ * board_in_cvcam * plug_in_board_;
 
     tf::PoseTFToMsg(plug_in_camera, pose_.pose);
     pose_.header.frame_id = "high_def_frame";
+    pose_.header.stamp = img_.header.stamp;
     publish("pose", pose_);
     tf_broadcaster_.sendTransform(plug_in_camera,
                                   ros::Time::now(), "plug_frame",
                                   "high_def_frame");
-    
+
     ROS_INFO("Plug: %.5f %.5f %.5f", pose_.pose.position.x,
              pose_.pose.position.y, pose_.pose.position.z);
-    
+
     if (display_) {
       if (!display_img_ || display_img_->width != image->width ||
           display_img_->height != image->height) {
@@ -186,7 +187,7 @@ public:
       }
       cvCvtColor(image, display_img_, CV_GRAY2BGR);
       cvDrawChessboardCorners(display_img_, cvSize(board_w_, board_h_),
-                              &corners[0], ncorners, 1);      
+                              &corners[0], ncorners, 1);
       cvShowImage(wndname, display_img_);
     }
   }
