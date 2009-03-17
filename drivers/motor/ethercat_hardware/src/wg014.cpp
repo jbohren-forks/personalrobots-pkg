@@ -58,6 +58,14 @@ int WG014::initialize(Actuator *, bool, bool)
   ROS_INFO("Device #%02d: WG014 (%#08x)", sh_->get_ring_position(), sh_->get_product_code());
   return 0;
 }
+#define ADD_STRING_FMT(lab, fmt, ...) \
+  s.label = (lab); \
+  { char buf[1024]; \
+    snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
+    s.value = buf; \
+  } \
+  strings.push_back(s)
+
 void WG014::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *)
 {
   vector<robot_msgs::DiagnosticString> strings;
@@ -71,11 +79,8 @@ void WG014::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *)
   d.message = "OK";
   d.level = 0;
 
-  s.label = "Product code";
-  str.str("");
-  str << "WG014 (" << sh_->get_product_code() << ")";
-  s.value = str.str();
-  strings.push_back(s);
+  ADD_STRING_FMT("Product code", "WG014 (%d)", sh_->get_product_code());
+  ADD_STRING_FMT("Serial Number", "%d-%05d-%05d", sh_->get_product_code()/ 100000 , sh_->get_product_code() % 100000, sh_->get_serial());
 
   d.set_strings_vec(strings);
   d.set_values_vec(values);
