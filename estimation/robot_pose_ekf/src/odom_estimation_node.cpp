@@ -151,12 +151,17 @@ namespace estimation
     odom_time_  = Time::now();
     odom_meas_  = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
     
+    // multiplier to scale covariance
     double norm = sqrt(pow(odom_.vel.x,2) + pow(odom_.vel.y,2) + pow(odom_.vel.th,2));
+    // when the base is not moving, odom is very reliable
     if (norm < EPS) 
       odom_multiplier_ = 0.00001;
-    else
-      odom_multiplier_ = 1;
-    
+    // the smaller the residual, the more reliable odom
+    else{
+      // TODO: REMOVE THIS WHEN TESTED
+      odom_.residual = 1.0;
+      odom_multiplier_ = fmax(0.00001, fmin(1.0, odom_.residual));
+    }
     my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_multiplier_);
     
     // activate odom
@@ -245,7 +250,7 @@ namespace estimation
     // vo measurement as base transform
     Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
     my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"),
-			      21.0-(min(200.0,(double)vo_.inliers)/10));
+			      21.0-(min(200.0,(double)vo_.inliers)/10)); // the more inliers, the more reliable the vo
     
     // activate vo
     if (!vo_active_) {
