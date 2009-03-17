@@ -262,3 +262,28 @@ class RechargeController extends Behavior {
     super(_mode);
   }
 };
+
+/**
+ * MailSender is used to send an email message
+ */
+class MailSender extends Behavior {
+  string mail_client; // e.g. mailx -s
+
+  predicate Inactive{}
+
+  predicate Active{
+    string to;
+    string cc;
+    string subject;
+    string body;
+  }
+
+  MailSender( Mode _mode){
+    mail_client = "mailx -s";
+  }
+
+  MailSender(string _mail_client, Mode _mode){
+    super(mode);
+    mail_client = _mail_client;
+  }
+};

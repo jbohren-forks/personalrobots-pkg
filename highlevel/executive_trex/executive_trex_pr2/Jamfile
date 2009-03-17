@@ -33,6 +33,9 @@ local TestInputs =
 	[ FDirName . doorman.0 pr2.recharger.nddl ]
 	[ FDirName . doorman.0 pr2.safety.nddl ]
 	[ FDirName . doorman.0 pr2.rcs.sim.nddl ]
+	[ FDirName . plugs.0 pr2.recharger.nddl ]
+	[ FDirName . plugs.0 pr2.safety.nddl ]
+	[ FDirName . plugs.0 pr2.rcs.sim.nddl ]
 ;
 
 local file ;

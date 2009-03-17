@@ -52,3 +52,4 @@ Recharger recharger = new Recharger(Internal);
 RechargeController recharge_controller = new RechargeController(External);
 BaseState base_state = new BaseState(External);
 BatteryState battery_state = new BatteryState(External);
+MailSender mail_sender = new MailSender("mailx -s", External);
