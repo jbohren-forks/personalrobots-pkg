@@ -31,7 +31,7 @@ def move(positions):
   
 def set_params():
   rospy.set_param("right_arm/trajectory_controller/velocity_scaling_factor", 0.75)
-  rospy.set_param("right_arm/trajectory_controller/trajectory_wait_timeout", 0.25)
+  rospy.set_param("right_arm/trajectory_controller/trajectory_wait_timeout", 0.1)
 
   rospy.set_param("right_arm/trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold", 0.1)
   rospy.set_param("right_arm/trajectory_controller/r_shoulder_lift_joint/goal_reached_threshold", 0.1)
@@ -67,8 +67,6 @@ if __name__ == '__main__':
                  
     positions = [positions[i] for i in range(len(positions)) if i % 1 == 0]
     print len(positions)
-
-                 
     move(positions)
 
     rospy.spin()
