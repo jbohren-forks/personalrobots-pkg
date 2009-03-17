@@ -47,9 +47,9 @@ stereo_cam = camera.Camera((389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95))
 vo = VisualOdometer(stereo_cam)
 
 #(f0,f1) = [ ComputedDenseStereoFrame(Image.open("../vslam/kk2/%06dL.png" % i), Image.open("../vslam/kk2/%06dR.png" % i)) for i in [670, 671] ]
-#(f0,f1) = [ ComputedDenseStereoFrame(Image.open("f%d-left.png" % i), Image.open("f%d-right.png" % i)) for i in [0, 1] ]
+(f0,f1) = [ ComputedDenseStereoFrame(Image.open("f%d-left.png" % i), Image.open("f%d-right.png" % i)) for i in [0, 1] ]
 d = "/u/jamesb/ros/ros-pkg/vision/vslam/trial"
-(f0,f1) = [ ComputedDenseStereoFrame(Image.open("%s/%06dL.png" % (d,i)), Image.open("%s/%06dR.png" % (d,i))) for i in [276, 278] ]
+#(f0,f1) = [ ComputedDenseStereoFrame(Image.open("%s/%06dL.png" % (d,i)), Image.open("%s/%06dR.png" % (d,i))) for i in [276, 278] ]
 #(f0,f1) = [ ComputedDenseStereoFrame(Image.open("../vslam/trial/%06dL.png" % i), Image.open("../vslam/trial/%06dR.png" % i)) for i in [277, 278] ]
 #(f0,f1) = [ ComputedDenseStereoFrame(Image.open("../vslam/trial/%06dL.png" % i), Image.open("../vslam/trial/%06dR.png" % i)) for i in [0, 1] ]
 
@@ -61,75 +61,6 @@ vo.process_frame(f1)
 
 pairs = vo.temporal_match(f0, f1)
 r = vo.pe.estimate(f1.kp, f0.kp, [ (b,a) for (a,b) in pairs ], False)
-
-ransac_size = 100
-picks = [ random.sample(range(len(pairs)), 3) for i in range(ransac_size) ]
-
-def vop3(L):
-  x0 = vop.array([ x for (x,_,_) in L ])
-  y0 = vop.array([ y for (_,y,_) in L ])
-  z0 = vop.array([ z for (_,_,z) in L ])
-  return (x0, y0, z0)
-  
-def xform(M, x, y, z):
-  nx = vop.mad(M[0], x, vop.mad(M[1], y, vop.mad(M[2], z, M[3])))
-  ny = vop.mad(M[4], x, vop.mad(M[5], y, vop.mad(M[6], z, M[7])))
-  nz = vop.mad(M[8], x, vop.mad(M[9], y, vop.mad(M[10], z, M[11])))
-  return (nx, ny, nz)
-
-def mype(cam, cp1, cp0, pairs):
-  p0 = [ cam.pix2cam(*p) for p in cp0 ]
-  xyz0 = [ p0[i] for (j,i) in pairs ]
-
-  x0 = vop.array([ x for (x,y,z) in xyz0 ])
-  y0 = vop.array([ y for (x,y,z) in xyz0 ])
-  z0 = vop.array([ z for (x,y,z) in xyz0 ])
-
-  uvd1 = [ cp1[j] for (j,i) in pairs ]
-  u1 = vop.array([ u for (u,v,d) in uvd1 ])
-  v1 = vop.array([ v for (u,v,d) in uvd1 ])
-  d1 = vop.array([ d for (u,v,d) in uvd1 ])
-
-  (p0_x, p0_y, p0_z) = stereo_cam.pix2cam(*vop3(cp0))
-  (p1_x, p1_y, p1_z) = stereo_cam.pix2cam(*vop3(cp1))
-
-  best = (0, None)
-
-  for ransac in range(ransac_size):
-    #triple = random.sample(pairs, 3)
-    triple = [pairs[i] for i in picks[ransac]]
-
-    # Takes 3ms
-    p0x = [ p0_x[i] for (_,i) in triple ]
-    p0y = [ p0_y[i] for (_,i) in triple ]
-    p0z = [ p0_z[i] for (_,i) in triple ]
-    p0s = p0x+p0y+p0z
-    p1x = [ p1_x[i] for (i,_) in triple ]
-    p1y = [ p1_y[i] for (i,_) in triple ]
-    p1z = [ p1_z[i] for (i,_) in triple ]
-    p1s = p1x+p1y+p1z
-
-    # Takes 3ms
-    R,T,RT = votools.SVD(p0s, p1s)
-
-
-    # Check Cont inliers for RT against xyz0 -> uvd0 vs uvd1
-    # Takes 15
-    (u0,v0,d0) = cam.cam2pix(*xform(RT, x0, y0, z0))
-    pred_inl = vop.where(vop.maximum(vop.maximum(abs(u0 - u1), abs(v0 - v1)), abs(d0 - d1)) > 3.0, 0.0, 1.0)
-    inliers = int(pred_inl.sum())
-    if inliers > best[0]:
-      best = (inliers, (R,T))
-  return best
-
-
-  if 0:
-    import pylab
-    pylab.scatter(g_inl, g_rms)
-    for i in range(len(g_inl)):
-      pylab.annotate('%d' % i, (g_inl[i], g_rms[i]))
-    pylab.show()
-
 
 def img_err(f0, f1, RT):
   # Each point in f1's point cloud, compute xyz
@@ -177,7 +108,7 @@ if 1:
   started = time.time()
   niters = 10
   for i in range(niters):
-    r = vo.pe.estimate(f1.kp, f0.kp, [ (b,a) for (a,b) in pairs ], True)
+    r = vo.pe.estimate(f1.kp, f0.kp, [ (b,a) for (a,b) in pairs ], False)
   print "Original took", 1e3 * (time.time() - started) / niters, "ms"
 print "original", r
 (inl, R,T) = r
@@ -186,8 +117,14 @@ RT = R[0:3] + [T[0]] + R[3:6] + [T[1]] + R[6:9] + [T[2]]
 img_img(f0, f1, RT).save("pe0.png")
 print "original error", img_rms(f0, f1, RT)
 
-(inliers, (R,T)) = mype(stereo_cam, f0.kp, f1.kp, pairs)
-print (inliers, (R,T))
+(inliers, pose) = mype(stereo_cam, f0.kp, f1.kp, pairs)
+print (inliers, pose)
+
+niters = 100
+started = time.time()
+for i in range(niters):
+  mype(stereo_cam, f0.kp, f1.kp, pairs)
+print "Took", 1e3 * (time.time() - started) / niters, "ms"
 sys.exit(0)
 
 R = list(R)
@@ -251,9 +188,3 @@ print "error improved from", myfunc(p0, f0, f1)[0], "to", myfunc(plsq[0], f0, f1
 
 img_img(f0, f1, p_to_rt(plsq[0])).save("pe1.png")
 
-sys.exit(0)
-niters = 10
-started = time.time()
-for i in range(niters):
-  mype(stereo_cam, f0.kp, f1.kp, pairs)
-print "Took", 1e3 * (time.time() - started) / niters, "ms"
