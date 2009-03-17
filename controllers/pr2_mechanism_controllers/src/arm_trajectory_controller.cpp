@@ -467,7 +467,7 @@ void ArmTrajectoryControllerNode::setTrajectoryCmdFromMsg(robot_msgs::JointTraj 
 
 void ArmTrajectoryControllerNode::CmdTrajectoryReceived()
 {
-
+  ROS_INFO("Trajectory controller:: Cmd received");
   this->ros_lock_.lock();
   setTrajectoryCmdFromMsg(traj_msg_);
   this->ros_lock_.unlock();

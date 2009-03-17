@@ -584,6 +584,8 @@ void BaseController::setOdomMessage(deprecated_msgs::RobotBase2DOdom &odom_msg_)
   odom_msg_.vel.x  = base_odom_velocity_.x;
   odom_msg_.vel.y  = base_odom_velocity_.y;
   odom_msg_.vel.th = base_odom_velocity_.z;
+
+  odom_msg_.residual = odometry_residual_max_;
 }
 
 
