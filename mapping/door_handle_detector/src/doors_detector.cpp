@@ -96,6 +96,8 @@ class DoorDetector
     double rectangle_constrain_edge_height_;
     double rectangle_constrain_edge_angle_;
 
+    double maximum_search_radius_;
+
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     DoorDetector (ros::Node& anode) : node_ (anode), message_notifier_ (NULL), tf_ (anode)
@@ -112,10 +114,14 @@ class DoorDetector
           ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
                      door_min_height_, door_max_height_, door_min_width_, door_max_width_);
 
+          // NOTE: it makes _absolutely_ no sense to search for information far away from the robot as the data is incredibly sparse !
+          node_.param ("~maximum_search_radius", maximum_search_radius_, 10.0);     // only consider points closer than this value to the robot
+          maximum_search_radius_ *= maximum_search_radius_;                         // squared for faster processing
+
           // This parameter constrains the door polygon to resamble a rectangle,
           // that is: the two lines parallel (with some angular threshold) to the Z-axis must have some minimal length
-          node_.param ("~rectangle_constrain_edge_height", rectangle_constrain_edge_height_, 0.2);        // each side of the door has to be at least 20 cm
-          node_.param ("~rectangle_constrain_edge_angle", rectangle_constrain_edge_angle_, 20.0);         // maximum angle threshold between a side and the Z-axis: 20 degrees
+          node_.param ("~rectangle_constrain_edge_height", rectangle_constrain_edge_height_, 0.4);        // each side of the door has to be at least 40 cm
+          node_.param ("~rectangle_constrain_edge_angle", rectangle_constrain_edge_angle_, 15.0);         // maximum angle threshold between a side and the Z-axis: 15 degrees
           rectangle_constrain_edge_angle_ = cloud_geometry::deg2rad (rectangle_constrain_edge_angle_);
 
           // Frame _dependent_ parameters (need to be converted!)
@@ -123,25 +129,18 @@ class DoorDetector
       }
 
       // ---[ Parameters regarding optimizations / real-time computations
-      {
-        // Frame _independent_ parameters
-          // This should be set to whatever the leaf_width factor is in the downsampler
-          node_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03); // 3 cm
-
-          // Parameters regarding the thresholds for Euclidean region growing/clustering
-          node_.param ("~euclidean_cluster_min_pts", euclidean_cluster_min_pts_, 200);                         // 200 points
-          // Difference between normals in degrees for cluster/region growing
-          node_.param ("~euclidean_cluster_angle_tolerance", euclidean_cluster_angle_tolerance_, 30.0);
-          euclidean_cluster_angle_tolerance_ = cloud_geometry::deg2rad (euclidean_cluster_angle_tolerance_);
-          node_.param ("~euclidean_cluster_distance_tolerance", euclidean_cluster_distance_tolerance_, 0.04);  // 4 cm
-      }
-
-      // Fixed (expert) parameters
       leaf_width_ = 0.03;              // 2.5cm box size by default
       k_search_   = 10;                // 10 k-neighbors by default
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
 
-      normal_angle_tolerance_ = cloud_geometry::deg2rad (1.0); // Maximum angular difference in normal space for inliers wrt the Z-axis
+      normal_angle_tolerance_ = cloud_geometry::deg2rad (5.0); // Maximum angular difference in normal space for inliers wrt the Z-axis
+      // Parameters regarding the thresholds for Euclidean region growing/clustering
+      euclidean_cluster_angle_tolerance_    = cloud_geometry::deg2rad (10.0);
+      euclidean_cluster_min_pts_            = 500;                // 500 points
+      euclidean_cluster_distance_tolerance_ = 0.04;               // 4 cm
+
+      // This should be set to whatever the leaf_width * 1.5 factor is in the downsampler
+      sac_distance_threshold_ = leaf_width_ * 1.5;            // 4.5 cm by default
 
       // Temporary parameters
       node_.param ("~input_cloud_topic", input_cloud_topic_, string ("snapshot_cloud"));
@@ -188,7 +187,18 @@ class DoorDetector
       ros::Duration duration;
       ts = ros::Time::now ();
 
+      // Get the cloud viewpoint
+      getCloudViewPoint (cloud_frame_, viewpoint_cloud_, &tf_);
+
       // ---[ Optimization: downsample the cloud in the bounding box for faster processing
+//      maximum_search_radius_
+//      vector<int> indices_in_bounds;
+//      for (unsigned int i = 0; i < cloud_in.pts.size (); i++)
+//      {
+//cloud_geometry::distances::pointToPointDistanceSqr ()
+//      }
+//      obtainCloudIndicesSet (&cloud_in_, indices_in_bounds, req, &tf_, parameter_frame_, door_min_z_bounds_, door_max_z_bounds_, door_frame_multiplier_);
+
       // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
       PointCloud cloud_down_;
       vector<cloud_geometry::Leaf> leaves;
@@ -197,6 +207,7 @@ class DoorDetector
         Point leaf_width_xyz;
         leaf_width_xyz.x = leaf_width_xyz.y = leaf_width_xyz.z = leaf_width_;
         cloud_geometry::downsamplePointCloud (&cloud_in_, cloud_down_, leaf_width_xyz, leaves, -1);
+        //cloud_geometry::downsamplePointCloud (&cloud_in_, &indices_in_bounds, cloud_down_, leaf_width_xyz, leaves, -1);
         ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_xyz.x, leaf_width_xyz.y, leaf_width_xyz.z, cloud_down_.pts.size ());
       }
       catch (std::bad_alloc)
@@ -206,14 +217,10 @@ class DoorDetector
       }
       leaves.resize (0);    // dealloc memory used for the downsampling process
 
-      // Get the cloud viewpoint
-      getCloudViewPoint (cloud_frame_, viewpoint_cloud_, &tf_);
-
-
       sendMarker (viewpoint_cloud_.point.x, viewpoint_cloud_.point.y, viewpoint_cloud_.point.z, cloud_frame_, &node_);
 
       // Create Kd-Tree and estimate the point normals in the original point cloud
-      estimatePointNormals (cloud_in_, cloud_down_, k_search_, viewpoint_cloud_);
+      //estimatePointNormals (cloud_in_, cloud_down_, k_search_, viewpoint_cloud_);
 
       // Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_xy;
