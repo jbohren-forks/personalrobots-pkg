@@ -3,7 +3,7 @@
     classes and functions for converting from disparity space to Cartesion space, to synthesize
     image from 3d point cloud, to compute spatial masks.
   </description>
-  <author>Jindong (JD) Chen</author>
+  <author>Jindong (JD) Chen, modified by Gary Bradski (x,y) index to (X,Y,Z)</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>

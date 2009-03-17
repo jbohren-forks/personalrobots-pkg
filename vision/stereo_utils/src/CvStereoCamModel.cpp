@@ -190,7 +190,7 @@ void CvStereoCamModel::dispToCart(const IplImage *Id, IplImage *Ixyz) const {
   __END__
 }
 
-//Id accepts ROI which then applies to the other images
+// Disparity image Id accepts ROI which then applies to the other images
 void CvStereoCamModel::disp8UToCart32F(const IplImage *Id, float ZnearMM,
     float ZfarMM, IplImage *Iz, IplImage *Ix, IplImage *Iy) const {
   __BEGIN__

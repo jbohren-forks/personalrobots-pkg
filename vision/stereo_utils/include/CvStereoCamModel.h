@@ -129,10 +129,27 @@ public:
     /// Output 3D image. Ixyz has to be 32F
 		IplImage *Ixyz) const;
 
-  /// MUCH FASTER CONVERSION OF POINTS AND PUTTING THEM INTO X, Y, and Z images.
-	///Id is single channel 8U disparity (it accepts an ROI and if so will use that on all the images
-	///ZnearMM, ZfarMM -- Near and far thresholds for depth to convert
-	///Ix, Iy, Iz are single channel 32F images which will contain the results  All images must be same size
+ 
+	
+  /**
+   * \brief Convert disparity image to (x,y) index of real world (X,Y,Z) points.
+   * An object of this class is not usable unless it is constructed
+   * by constructor that takes camera parameters, or after the first call
+   * of one of the overloaded method of setCameraParams.
+   * -- All images must be of the same size.
+   *  @param Id - 8U single channel disparity image
+   *  Obtained from prior stereo processing
+   *  @param ZnearMM -- Zero out depths in mm closer than this
+   *  Should be greater than zero and less than ZfarMM
+   *  @param ZfarMM -- Zero out depths in mm further than this
+   *  Should be greater than ZnearMM
+   *  @param Iz -- resulting floating point image of depth values in mm
+   *  zero values mean impossible values.  Single channel 32F
+   *  @param Ix -- resulting floating point image of x world values in mm
+   *  Single channel 32F image
+   *  @param Iy -- resulting floating point image of y world values in mm
+   *  Single channel 32F image
+   */
 	void disp8UToCart32F(const IplImage *Id, float ZnearMM, float ZfarMM, IplImage *Iz, IplImage *Ix, IplImage *Iy) const;
 
 
