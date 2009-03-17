@@ -14,7 +14,6 @@ set(ROS_LINK_FLAGS "-g -pg " ${ROS_LINK_FLAGS})
 
 ## Old version
 rospack_add_library(topological_map src/bottleneck_graph.cpp src/roadmap.cpp src/gridcell.cpp)
-target_link_libraries(topological_map navfn)
 
 rospack_add_executable(ros_topological_planner src/ros_topological_planner.cpp)
 target_link_libraries(ros_topological_planner topological_map)
