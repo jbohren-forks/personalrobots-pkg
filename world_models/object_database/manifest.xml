@@ -6,6 +6,6 @@
 <depend package="roscpp" />
 <depend package="rosconsole" />
 <export>
-<cpp cflags="-I${prefix}/include"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf" />
+<cpp cflags="-I${prefix}/include"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lobject_database" />
 </export>
 </package>
