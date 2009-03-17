@@ -203,6 +203,39 @@ namespace cloud_geometry
     * \param p2 the second point/vector
     */
   inline double
+    dot (robot_msgs::Point *p1, robot_msgs::Point *p2)
+  {
+    return (p1->x * p2->x + p1->y * p2->y + p1->z * p2->z);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the dot product between two points (vectors).
+    * \param p1 the first point/vector
+    * \param p2 the second point/vector
+    */
+  inline double
+    dot (robot_msgs::Point32 *p1, robot_msgs::Point *p2)
+  {
+    return (p1->x * p2->x + p1->y * p2->y + p1->z * p2->z);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the dot product between two points (vectors).
+    * \param p1 the first point/vector
+    * \param p2 the second point/vector
+    */
+  inline double
+    dot (robot_msgs::Point *p1, robot_msgs::Point32 *p2)
+  {
+    return (p1->x * p2->x + p1->y * p2->y + p1->z * p2->z);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the dot product between two points (vectors).
+    * \param p1 the first point/vector
+    * \param p2 the second point/vector
+    */
+  inline double
     dot (std::vector<double> *p1, std::vector<double> *p2)
   {
     return (p1->at (0) * p2->at (0) + p1->at (1) * p2->at (1) + p1->at (2) * p2->at (2));

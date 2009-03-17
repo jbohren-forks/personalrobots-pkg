@@ -34,6 +34,7 @@
 #define _CLOUD_GEOMETRY_ANGLES_H_
 
 // ROS includes
+#include <robot_msgs/Point.h>
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
@@ -87,6 +88,69 @@ namespace cloud_geometry
       */
     inline double
       getAngle3D (robot_msgs::Point32 *v1, robot_msgs::Point32 *v2)
+    {
+      // Compute the vectors norms
+      double norm_v1 = (v1->x * v1->x) + (v1->y * v1->y) + (v1->z * v1->z);
+      double norm_v2 = (v2->x * v2->x) + (v2->y * v2->y) + (v2->z * v2->z);
+
+      // Compute the actual angle
+      double rad = acos ( cloud_geometry::dot (v1, v2) / sqrt (norm_v1 * norm_v2) );
+
+      // Check against NaN
+      if (std::isnan (rad))
+        ROS_ERROR ("[cloud_geometry::angles::getAngle3D] got a NaN angle!");
+      return (rad);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the smallest angle between two vectors in the [ 0, PI ) interval in 3D.
+      * \param v1 the first 3D vector
+      * \param v2 the second 3D vector
+      */
+    inline double
+      getAngle3D (robot_msgs::Point *v1, robot_msgs::Point *v2)
+    {
+      // Compute the vectors norms
+      double norm_v1 = (v1->x * v1->x) + (v1->y * v1->y) + (v1->z * v1->z);
+      double norm_v2 = (v2->x * v2->x) + (v2->y * v2->y) + (v2->z * v2->z);
+
+      // Compute the actual angle
+      double rad = acos ( cloud_geometry::dot (v1, v2) / sqrt (norm_v1 * norm_v2) );
+
+      // Check against NaN
+      if (std::isnan (rad))
+        ROS_ERROR ("[cloud_geometry::angles::getAngle3D] got a NaN angle!");
+      return (rad);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the smallest angle between two vectors in the [ 0, PI ) interval in 3D.
+      * \param v1 the first 3D vector
+      * \param v2 the second 3D vector
+      */
+    inline double
+      getAngle3D (robot_msgs::Point32 *v1, robot_msgs::Point *v2)
+    {
+      // Compute the vectors norms
+      double norm_v1 = (v1->x * v1->x) + (v1->y * v1->y) + (v1->z * v1->z);
+      double norm_v2 = (v2->x * v2->x) + (v2->y * v2->y) + (v2->z * v2->z);
+
+      // Compute the actual angle
+      double rad = acos ( cloud_geometry::dot (v1, v2) / sqrt (norm_v1 * norm_v2) );
+
+      // Check against NaN
+      if (std::isnan (rad))
+        ROS_ERROR ("[cloud_geometry::angles::getAngle3D] got a NaN angle!");
+      return (rad);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the smallest angle between two vectors in the [ 0, PI ) interval in 3D.
+      * \param v1 the first 3D vector
+      * \param v2 the second 3D vector
+      */
+    inline double
+      getAngle3D (robot_msgs::Point *v1, robot_msgs::Point32 *v2)
     {
       // Compute the vectors norms
       double norm_v1 = (v1->x * v1->x) + (v1->y * v1->y) + (v1->z * v1->z);
