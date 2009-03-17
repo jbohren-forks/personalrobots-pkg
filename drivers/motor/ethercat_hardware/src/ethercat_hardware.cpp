@@ -50,15 +50,20 @@ EthercatHardware::EthercatHardware() :
 
 EthercatHardware::~EthercatHardware()
 {
-  if (ni_)
-  {
-    close_socket(ni_);
-  }
   if (slaves_)
   {
     for (uint32_t i = 0; i < num_slaves_; ++i)
+    {
+      EC_FixedStationAddress fsa(i + 1);
+      EtherCAT_SlaveHandler *sh = em_->get_slave_handler(fsa);
+      if (sh) sh->to_state(EC_PREOP_STATE);
       delete slaves_[i];
+    }
     delete[] slaves_;
+  }
+  if (ni_)
+  {
+    close_socket(ni_);
   }
   if (buffers_)
   {
