@@ -41,6 +41,7 @@
 #include <robot_msgs/Polygon3D.h>
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/PointStamped.h>
+#include <robot_msgs/VisualizationMarker.h>
 
 #include <tf/transform_listener.h>
 
@@ -144,6 +145,39 @@ inline double
   return (rgb);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Send a sphere vizualization marker
+  * \param point the point to send
+  * \param frame_id the frame
+  * \param node a pointer to the node structure
+  * \param radius an optional radius for the sphere marker (2cm by default)
+  */
+inline void
+  sendMarker (float px, float py, float pz, std::string frame_id, ros::Node *anode, double radius = 0.03)
+{
+  robot_msgs::VisualizationMarker mk;
+  mk.header.stamp = ros::Time::now ();
+
+  mk.header.frame_id = frame_id;
+
+  mk.id = 1;
+  mk.type = robot_msgs::VisualizationMarker::SPHERE;
+  mk.action = robot_msgs::VisualizationMarker::ADD;
+  mk.x = px;
+  mk.y = py;
+  mk.z = pz;
+
+  mk.roll = mk.pitch = mk.yaw = 0;
+  mk.xScale = mk.yScale = mk.zScale = radius * 2.0;
+
+  mk.alpha = 255;
+  mk.r = 255;
+  mk.g = 10;
+  mk.b = 10;
+
+  anode->publish ("visualizationMarker", mk);
+}
+
 void obtainCloudIndicesSet (robot_msgs::PointCloud *points, std::vector<int> &indices, door_handle_detector::DoorDetector::Request door_req,
                             tf::TransformListener *tf, std::string fixed_param_frame, double min_z_bounds, double max_z_bounds, double frame_multiplier);
 
@@ -170,6 +204,7 @@ bool fitSACPlane (robot_msgs::PointCloud &points, std::vector<int> indices, std:
                   robot_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts);
 
 void estimatePointNormals (robot_msgs::PointCloud *points, std::vector<int> *point_indices, robot_msgs::PointCloud *points_down, int k, robot_msgs::PointStamped *viewpoint_cloud);
+//void estimatePointNormals (robot_msgs::PointCloud points, robot_msgs::PointCloud &points_down, int k, robot_msgs::PointStamped viewpoint_cloud);
 void estimatePointNormals (robot_msgs::PointCloud *points, robot_msgs::PointCloud *points_down, int k, robot_msgs::PointStamped *viewpoint_cloud);
 
 #endif
