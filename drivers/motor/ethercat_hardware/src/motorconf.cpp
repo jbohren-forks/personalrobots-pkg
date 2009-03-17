@@ -64,7 +64,7 @@ void init(char *interface)
   // Initialize network interface
   if ((ni = init_ec(interface)) == NULL)
   {
-    fprintf(stderr, "Unable to initialize interface: %s", interface);
+    fprintf(stderr, "Unable to initialize interface: %s\n", interface);
     exit(-1);
   }
 
@@ -73,14 +73,14 @@ void init(char *interface)
   EtherCAT_AL *al;
   if ((al = EtherCAT_AL::instance()) == NULL)
   {
-    fprintf(stderr, "Unable to initialize Application Layer (AL): %p", al);
+    fprintf(stderr, "Unable to initialize Application Layer (AL): %p\n", al);
     exit(-1);
   }
 
   uint32_t num_slaves = al->get_num_slaves();
   if (num_slaves == 0)
   {
-    fprintf(stderr, "Unable to locate any slaves");
+    fprintf(stderr, "Unable to locate any slaves\n");
     exit(-1);
   }
 
@@ -238,10 +238,16 @@ void parseConfig(TiXmlElement *config)
 
 int main(int argc, char *argv[])
 {
+  // Must run as root
+  if (geteuid() != 0)
+  {
+    fprintf(stderr, "You must run as root!\n");
+    exit(-1);
+  }
+
   // Keep the kernel from swapping us out
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
-  //
   // Parse options
   g_options.program_name_ = argv[0];
   g_options.device_ = -1;
@@ -297,7 +303,6 @@ int main(int argc, char *argv[])
   string filename = "actuators.conf";
   if (g_options.actuators_ != "")
     filename = g_options.actuators_;
-  printf("Filename: %s\nWith:%s\n",filename.c_str(), g_options.actuators_.c_str());
   TiXmlDocument xml(filename);
 
   if (xml.LoadFile())

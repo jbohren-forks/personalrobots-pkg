@@ -440,6 +440,13 @@ static pthread_t controlThread;
 static pthread_attr_t controlThreadAttr;
 int main(int argc, char *argv[])
 {
+  // Must run as root
+  if (geteuid() != 0)
+  {
+    fprintf(stderr, "You must run as root!\n");
+    exit(-1);
+  }
+
   // Keep the kernel from swapping us out
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
