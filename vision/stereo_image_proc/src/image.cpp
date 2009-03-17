@@ -217,7 +217,7 @@ ImageData::doRectify()
       if (imRectSize < imSize)
 	{
 	  MEMFREE(imRect);
-	  imSize = imWidth*imHeight;
+	  imRectSize = imWidth*imHeight;
 	  imRect = (uint8_t *)MEMALIGN(imSize);
 	}
 
@@ -228,8 +228,8 @@ ImageData::doRectify()
       cvSetData(srcIm, im, imWidth);
       cvSetData(dstIm, imRect, imWidth);
 
-      //      cvRemap(srcIm,dstIm,rMapxy,rMapa);
-      cvRemap(srcIm,dstIm,mx,my);
+      cvRemap(srcIm,dstIm,rMapxy,rMapa);
+      //      cvRemap(srcIm,dstIm,mx,my);
     }
 
   // rectify color image
@@ -240,7 +240,7 @@ ImageData::doRectify()
       if (imRectColorSize < imColorSize)
 	{
 	  MEMFREE(imRectColor);
-	  imSize = imWidth*imHeight*3;
+	  imRectColorSize = imWidth*imHeight*3;
 	  imRectColor = (uint8_t *)MEMALIGN(imSize);
 	}
 
@@ -251,8 +251,8 @@ ImageData::doRectify()
       cvSetData(srcIm, imColor, imWidth*3);
       cvSetData(dstIm, imRectColor, imWidth*3);
 
-      //      cvRemap(srcIm,dstIm,rMapxy,rMapa);
-      cvRemap(srcIm,dstIm,mx,my);
+      cvRemap(srcIm,dstIm,rMapxy,rMapa);
+      //      cvRemap(srcIm,dstIm,mx,my);
     }
   return true;
 }
@@ -363,7 +363,7 @@ StereoData::setNumDisp(int val)
   if (val < 0) val = 0;
   if (val > 256) val = 256;
   numDisp = val;
-  printf("[StereoData] Num disp set to %d\n", val);
+  PRINTF("[StereoData] Num disp set to %d\n", val);
   return true;
 }
 
@@ -372,10 +372,10 @@ bool
 StereoData::setCorrSize(int val)
 {
   val = val | 0x1;		// must be odd
-  if (val < 7) val = 7;
-  if (val > 21) val = 21;
+  if (val < 5) val = 5;
+  if (val > 23) val = 23;
   corrSize = val;
-  printf("[StereoData] Stereo correlation window size set to %d\n", val);
+  PRINTF("[StereoData] Stereo correlation window size set to %d\n", val);
   return true;
 }
 
@@ -448,8 +448,10 @@ StereoData::setSize(int width, int height)
   imHeight = height;
   imLeft->imWidth = width;
   imLeft->imHeight = height;
+  imLeft->imSize = width*height;
   imRight->imWidth = width;
   imRight->imHeight = height;
+  imRight->imSize = width*height;
 }
 
 
@@ -567,7 +569,7 @@ switch(alg){
 	break;
 
 	default:
-	printf("No algorithm has been selected..sorry!\n");
+	PRINTF("No algorithm has been selected..sorry!\n");
 }
 
 
@@ -860,7 +862,7 @@ StereoData::extractParams(char *ps, bool store)
       imLeft->params = bb;
     }
 
-  printf("\n\n  [extractParams] Parameters:\n\n");
+  PRINTF("\n\n[extractParams] Parameters:\n\n");
 
   if (strncmp(ps,"# SVS",5)==0) // SVS-type parameters
     {
@@ -1024,7 +1026,10 @@ StereoData::extractParams(char *ps, bool store)
 
   // check for camera matrix
   if (imLeft->K[0] == 0.0)
-    hasRectification = false;
+    {
+      hasRectification = false;
+      PRINTF("[dcam] No rectification\n\n");
+    }
   else
     {
       hasRectification = true;
@@ -1115,6 +1120,7 @@ StereoData::extractParams(char *ps, bool store)
     {
       imRight->hasRectification = true;
       imRight->initRect = false; // haven't initialized arrays, wait for image size
+      PRINTF("[dcam] Has rectification\n\n");
     }
 }
 
