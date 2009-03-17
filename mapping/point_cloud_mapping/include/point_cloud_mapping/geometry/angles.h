@@ -82,6 +82,29 @@ namespace cloud_geometry
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Compute the angle in the [ 0, 2*PI ) interval of a point (direction) with a reference (0, 0) in 2D.
+      * \param x the X coordinate of the 2D point
+      * \param y the Y coordinate of the 2D point
+      */
+    inline double
+      getAngle2D (double x, double y)
+    {
+      double rad;
+      if (x == 0)
+        rad = (y < 0) ? -M_PI / 2.0 : M_PI / 2.0;
+      else
+      {
+        rad = atan (y / x);
+        if (x < 0)
+          rad += M_PI;
+      }
+      if (rad < 0)
+        rad += 2 * M_PI;
+
+      return (rad);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Compute the smallest angle between two vectors in the [ 0, PI ) interval in 3D.
       * \param v1 the first 3D vector
       * \param v2 the second 3D vector
