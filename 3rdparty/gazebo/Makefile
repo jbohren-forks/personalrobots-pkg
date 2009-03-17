@@ -3,7 +3,7 @@ all: build
 SVN_DIR = gazebo-svn-ogre-v1.4.9
 #SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/branches/ogre-1.4.9
-SVN_REVISION = -r 7358
+SVN_REVISION = -r 7524
 SVN_PATCH = gazebo_patch.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
