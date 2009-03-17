@@ -42,6 +42,7 @@ namespace controller {
 
 
 JointChainConstraintController::JointChainConstraintController() :
+  node_(ros::Node::instance()),
   list_size_(0),
   robot_state_(NULL),
   jnt_to_jac_solver_(NULL),
@@ -77,13 +78,12 @@ bool JointChainConstraintController::initialize(mechanism::RobotState *robot_sta
 
   // create solver
   num_joints_   = kdl_chain_.getNrOfJoints();
-  num_segments_ = kdl_chain_.getNrOfSegments();
   jnt_to_jac_solver_ = new ChainJntToJacSolver(kdl_chain_);
   jnt_pos_.resize(num_joints_);
   jnt_eff_.resize(num_joints_);
-  chain_kdl_jacobian_.resize(num_joints_, num_segments_);
+  chain_kdl_jacobian_.resize(num_joints_);
   
-  task_wrench_.setZero();
+  wrench_desired_ = Wrench::Zero();
   
   // create the required matrices
   joint_constraint_torque_ = Eigen::MatrixXf::Zero(num_joints_, 1);
@@ -94,8 +94,15 @@ bool JointChainConstraintController::initialize(mechanism::RobotState *robot_sta
   identity_ = Eigen::MatrixXf::Identity(num_joints_, num_joints_);
   chain_eigen_jacobian_ = Eigen::MatrixXf::Zero(6, num_joints_);
   last_time_ = robot_state->hw_->current_time_;
+
+  // advertise service
+  node_->advertiseService(controller_name_ + "/add_constraints", &JointChainConstraintController::addConstraint, this);
+  change_constraints_guard_.set(controller_name_ + "/add_constraints");	   
+
   return true;
 }
+
+
 
 void JointChainConstraintController::update()
 {
@@ -129,6 +136,8 @@ void JointChainConstraintController::update()
   computeConstraintNullSpace();
   
   // compute the task torque on the joints 
+  for (unsigned int i=0; i<6; i++)
+    task_wrench_(i) = wrench_desired_(i);
   task_torque_ = joint_constraint_null_space_ * chain_eigen_jacobian_.transpose() * task_wrench_;
   
   for (unsigned int i = 0; i < num_joints_; ++i)
@@ -236,6 +245,55 @@ void JointChainConstraintController::computeConstraintNullSpace()
 }
 
 
+bool JointChainConstraintController::addConstraint(robot_mechanism_controllers::ChangeConstraints::Request &req, 
+                                                   robot_mechanism_controllers::ChangeConstraints::Response &resp)
+{
+  ConstraintState temp;
+  bool found = false;
+  
+  for(unsigned int i =0; i < num_joints_; i++)
+  {
+    std::string name = mechanism_chain_.getJoint(i)->name_;
+    printf("Checking joint %s\n", name.c_str());
+    if(req.constraint.joint_name == name)
+    {
+      temp.joint_chain_index_ = i;
+      temp.joint_ = mechanism_chain_.getJoint(i);
+      found = true;
+      break;
+    }
+  }
+  
+  if (!found) {
+    ROS_ERROR("Unable to find joint with ID: \"%s\"", req.constraint.joint_name.c_str());
+    resp.add_ok = 0;
+    return false;
+  }
+
+  temp.pid_.initPid(req.constraint.p,req.constraint.i,req.constraint.d,req.constraint.i_clamp, -req.constraint.i_clamp);
+  
+  temp.id_ = req.constraint.id;
+  temp.joint_name_ = req.constraint.joint_name;
+  temp.threshold_start_ = req.constraint.threshold_start;
+  temp.nullspace_start_ = req.constraint.nullspace_start;
+  temp.max_constraint_torque_ = req.constraint.max_constraint_torque;
+  temp.remove_ = false;
+  temp.joint_error_ = 0;
+  
+  constraint_list_.push_back(temp);
+  list_size_++;
+  ROS_INFO("Added constraint on \"%s\" with ID: \"%s\".", req.constraint.joint_name.c_str(),req.constraint.id.c_str());
+  
+  resp.add_ok = 1;
+  return true;
+
+}
+
+
+
+
+
+
 ROS_REGISTER_CONTROLLER(JointChainConstraintControllerNode)
 
 JointChainConstraintControllerNode::JointChainConstraintControllerNode()
@@ -266,12 +324,11 @@ bool JointChainConstraintControllerNode::initXml(mechanism::RobotState *robot, T
     ROS_ERROR( "Failed to initialize JointChainConstraintController,\"%s\".", controller_name_.c_str());
     return false;
   }
+
   // subscribe to wrench commands
   node_->subscribe(controller_name_ + "/command", wrench_msg_,
 		   &JointChainConstraintControllerNode::command, this, 1);
 	
-	node_->advertiseService(controller_name_ + "/add_constraints", &JointChainConstraintControllerNode::addConstraint, this);
-  change_constraints_guard_.set(controller_name_ + "/add_constraints");	   
 
   return true;
 }
@@ -286,57 +343,12 @@ void JointChainConstraintControllerNode::update()
 void JointChainConstraintControllerNode::command()
 {
   // convert to wrench command
-  controller_.task_wrench_(0) = wrench_msg_.force.x;
-  controller_.task_wrench_(1) = wrench_msg_.force.y;
-  controller_.task_wrench_(2) = wrench_msg_.force.z;
-  controller_.task_wrench_(3) = wrench_msg_.torque.x;
-  controller_.task_wrench_(4) = wrench_msg_.torque.y;
-  controller_.task_wrench_(5) = wrench_msg_.torque.z;
-}
-
-
-bool JointChainConstraintControllerNode::addConstraint(robot_mechanism_controllers::ChangeConstraints::Request &req, robot_mechanism_controllers::ChangeConstraints::Response &resp)
-{
-  
-  ConstraintState temp;
-  bool found = false;
-  
-  for(unsigned int i =0; i < controller_.num_joints_; i++)
-  {
-    std::string name = controller_.mechanism_chain_.getJoint(i)->name_;
-    printf("Checking joint %s\n", name.c_str());
-    if(req.constraint.joint_name == name)
-    {
-      temp.joint_chain_index_ = i;
-      temp.joint_ = controller_.mechanism_chain_.getJoint(i);
-      found = true;
-      break;
-    }
-  }
-  
-  if (!found) {
-    ROS_ERROR("Unable to find joint with ID: \"%s\"", req.constraint.joint_name.c_str());
-    resp.add_ok = 0;
-    return false;
-  }
-
-  temp.pid_.initPid(req.constraint.p,req.constraint.i,req.constraint.d,req.constraint.i_clamp, -req.constraint.i_clamp);
-  
-  temp.id_ = req.constraint.id;
-  temp.joint_name_ = req.constraint.joint_name;
-  temp.threshold_start_ = req.constraint.threshold_start;
-  temp.nullspace_start_ = req.constraint.nullspace_start;
-  temp.max_constraint_torque_ = req.constraint.max_constraint_torque;
-  temp.remove_ = false;
-  temp.joint_error_ = 0;
-  
-  controller_.constraint_list_.push_back(temp);
-  controller_.list_size_++;
-  ROS_INFO("Added constraint on \"%s\" with ID: \"%s\".", req.constraint.joint_name.c_str(),req.constraint.id.c_str());
-  
-  resp.add_ok = 1;
-  return true;
-
+  controller_.wrench_desired_(0) = wrench_msg_.force.x;
+  controller_.wrench_desired_(1) = wrench_msg_.force.y;
+  controller_.wrench_desired_(2) = wrench_msg_.force.z;
+  controller_.wrench_desired_(3) = wrench_msg_.torque.x;
+  controller_.wrench_desired_(4) = wrench_msg_.torque.y;
+  controller_.wrench_desired_(5) = wrench_msg_.torque.z;
 }
 
 

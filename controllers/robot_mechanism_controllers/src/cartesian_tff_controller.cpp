@@ -39,6 +39,8 @@
 
 using namespace KDL;
 
+static const bool use_constraint_controller = false
+
 
 namespace controller {
 
@@ -109,8 +111,12 @@ bool CartesianTFFController::initialize(mechanism::RobotState *robot_state, cons
 
   fprintf(stderr, "pid controllers created\n");
 
-  // create wrench controller
-  wrench_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
+  // create wrench/constraint controller
+  if (use_constraint_controller)
+    constraint_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
+  else
+    wrench_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
+
 
   return true;
 }
@@ -141,7 +147,11 @@ bool CartesianTFFController::start()
   pose_meas_old_ = frame_twist.value();
   position_ = Twist::Zero();
 
-  return wrench_controller_.start();
+  if (use_constraint_controller)
+    //return constraint_controller_.start();
+    return true;
+  else
+    return wrench_controller_.start();
 }
 
 
@@ -177,8 +187,14 @@ void CartesianTFFController::update()
   }
   
   // send wrench to wrench controller
-  wrench_controller_.wrench_desi_ = (pose_meas_.M * wrench_desi_);
-  wrench_controller_.update();
+  if (use_constraint_controller){
+    constraint_controller_.wrench_desired_ = (pose_meas_.M * wrench_desi_);
+    constraint_controller_.update();
+  }
+  else{
+    wrench_controller_.wrench_desi_ = (pose_meas_.M * wrench_desi_);
+    wrench_controller_.update();
+  }
 }
 
 

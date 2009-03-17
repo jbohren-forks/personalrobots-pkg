@@ -112,25 +112,26 @@ public:
 
   void update();
   
+  // input of the controller
+  KDL::Wrench wrench_desired_;
+  
+
+private:
   void computeConstraintTorques();
   void computeConstraintJacobian();
   void computeConstraintNullSpace();
-  void changeConstraints(const std::vector<robot_mechanism_controllers::JointConstraint> &add_reqs, const std::vector<std::string> &remove_reqs);
+  bool addConstraint(robot_mechanism_controllers::ChangeConstraints::Request &req,
+                     robot_mechanism_controllers::ChangeConstraints::Response &resp);
 
-  // input of the controller
+  ros::Node* node_;
   Eigen::Matrix<float,6,1> task_wrench_;
   std::list<ConstraintState> constraint_list_;
   int list_size_;
   unsigned int num_joints_;
   mechanism::Chain mechanism_chain_;
-  
-
-private:
 
   std::string controller_name_;
-  unsigned int num_segments_;
   mechanism::RobotState *robot_state_;
-  
 
   KDL::Chain kdl_chain_;
   KDL::ChainJntToJacSolver *jnt_to_jac_solver_;
@@ -150,6 +151,7 @@ private:
   
   bool initialized_;
 
+  AdvertisedServiceGuard change_constraints_guard_;
   
 };
 
@@ -164,11 +166,10 @@ class JointChainConstraintControllerNode : public Controller
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
-  void command();
-  bool addConstraint(robot_mechanism_controllers::ChangeConstraints::Request &req,
-                     robot_mechanism_controllers::ChangeConstraints::Response &resp);
 
  private:
+  void command();
+
   ros::Node* node_;
   std::string controller_name_;
   JointChainConstraintController controller_;
@@ -176,7 +177,6 @@ class JointChainConstraintControllerNode : public Controller
 
   robot_msgs::Wrench wrench_msg_;
 
-  AdvertisedServiceGuard change_constraints_guard_;
   
 };
 

@@ -43,6 +43,7 @@
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
 #include "robot_mechanism_controllers/cartesian_wrench_controller.h"
+#include "robot_mechanism_controllers/joint_chain_constraint_controller.h"
 #include "joy/Joy.h"
 #include <control_toolbox/pid.h>
 
@@ -95,6 +96,7 @@ private:
 
   // internal wrench controller
   CartesianWrenchController wrench_controller_;
+  JointChainConstraintController constraint_controller_;
 
   unsigned int counter;
 };
