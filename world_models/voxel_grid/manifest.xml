@@ -5,6 +5,6 @@ representation of voxels</description>
 <license>BSD</license>
 <depend package="rosconsole"/>
 <export>
-  <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
+  <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lvoxel_grid"/>
 </export>
 </package>

@@ -109,6 +109,18 @@ bool VoxelGrid::getVoxelColumn(unsigned int x, unsigned int y)
   return data[y * size_x + x] > 0;
 }
 
+unsigned int VoxelGrid::sizeX(){
+  return size_x;
+}
+
+unsigned int VoxelGrid::sizeY(){
+  return size_y;
+}
+
+unsigned int VoxelGrid::sizeZ(){
+  return size_z;
+}
+
 void VoxelGrid::printVoxelGrid(){
   for(unsigned int z = 0; z < size_z; z++){
     printf("Layer z = %d:\n",z);
@@ -133,8 +145,8 @@ void VoxelGrid::printColumnGrid(){
 
 int main(int argc, char *argv[]){
   printf("Initializing voxel grid.\n");
-  //int size_x = 50, size_y = 10, size_z = 5;
-  int size_x = 1000, size_y = 1000, size_z = 5;
+  int size_x = 50, size_y = 10, size_z = 5;
+  //int size_x = 1000, size_y = 1000, size_z = 5;
   VoxelGrid *v = new VoxelGrid(size_x, size_y, size_z);
 
   unsigned char *costMap = new unsigned char[size_x * size_y]; //initialize cost map
@@ -182,6 +194,7 @@ int main(int argc, char *argv[]){
 
   //Visualize the output
   /*
+  */
   v->printVoxelGrid();
   v->printColumnGrid();
 
@@ -191,5 +204,4 @@ int main(int argc, char *argv[]){
       printf((costMap[y * size_x + x] > 0 ? "#" : " "));
     }printf("|\n");
   }
-  */
 }

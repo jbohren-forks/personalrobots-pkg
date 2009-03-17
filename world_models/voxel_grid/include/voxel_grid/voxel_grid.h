@@ -86,6 +86,13 @@ public:
       cost_map[index] = 0;
   }
 
+  inline bool occupiedColumn(int x, int y){
+    int index = y * size_x + x;
+    if(data[index] == 0)
+      return false;
+    return true;
+  }
+
   void markVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1);
   void clearVoxelLine(unsigned int x0, unsigned int y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1);
   void clearVoxelLineInMap(unsigned int x0, unsigned int y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned char *map_2d);
@@ -95,6 +102,9 @@ public:
 
   void printVoxelGrid();
   void printColumnGrid();
+  unsigned int sizeX();
+  unsigned int sizeY();
+  unsigned int sizeZ();
 
 private:
 
