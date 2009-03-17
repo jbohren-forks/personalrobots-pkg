@@ -298,7 +298,7 @@
       <axis xyz="0 1 0" />
       <limit min="-0.55" max="1.047" effort="12.21"
              velocity="100" k_velocity="1.5"
-             safety_length_min="0.1" safety_length_max="0.1" k_position="100" />
+             safety_length_min="0.02" safety_length_max="0.1" k_position="100" />
       <calibration reference_position="-0.195" values="0 0" />
       <joint_properties damping="1.0" />
     </joint>
