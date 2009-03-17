@@ -20,8 +20,6 @@ list (APPEND MPGLUE_SRCS
       src/sbpl_environment.cpp
       src/plan.cpp)
 
-list (APPEND MPGLUE_LIBS costmap_2d costmap_2d sunflower navfn)
-
 set (ROS_ESTAR_DIR $ENV{ROS_ESTAR_DIR})
 if (ROS_ESTAR_DIR)
   message (STATUS "ROS_ESTAR_DIR is ${ROS_ESTAR_DIR}")
