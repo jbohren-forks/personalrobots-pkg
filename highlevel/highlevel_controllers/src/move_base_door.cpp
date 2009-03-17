@@ -86,20 +86,20 @@ namespace ros
 
         MoveBaseDoor();
 
+        virtual ~MoveBaseDoor();
+
       private:
 
         /**
          * @brief Builds a plan from current state to goal state
          */
-        virtual bool makePlan();
-
         virtual bool dispatchCommands();
+
+        virtual bool makePlan();
 
         void checkTrajectory(const robot_msgs::JointTraj& trajectory, robot_msgs::JointTraj &return_trajectory);
 
         bool computeOrientedFootprint(double x_i, double y_i, double th_i, const std::vector<deprecated_msgs::Point2DFloat32>& footprint_spec, std::vector<deprecated_msgs::Point2DFloat32>& oriented_footprint);
-
-        NavFn planner_;
 
         trajectory_rollout::CostmapModel *cost_map_model_;
 
@@ -122,7 +122,7 @@ namespace ros
     
     
     MoveBaseDoor::MoveBaseDoor()
-      : MoveBase(), planner_(getCostMap().getWidth(), getCostMap().getHeight()), goal_x_(0.0), goal_y_(0.0), goal_theta_(0.0)
+      : MoveBase(), goal_x_(0.0), goal_y_(0.0), goal_theta_(0.0)
     {
       initialize();
       cost_map_model_ = new trajectory_rollout::CostmapModel(*costMap_);
@@ -131,6 +131,11 @@ namespace ros
       ros::Node::instance()->param("~costmap_2d/circumscribed_radius", circumscribed_radius_, 0.46);
       ros::Node::instance()->param("~costmap_2d/inscribed_radius", inscribed_radius_, 0.325);
    }
+
+    bool MoveBaseDoor::makePlan()
+    {
+
+    }
 
     bool MoveBaseDoor::computeOrientedFootprint(double x_i, double y_i, double theta_i, const std::vector<deprecated_msgs::Point2DFloat32>& footprint_spec, std::vector<deprecated_msgs::Point2DFloat32>& oriented_footprint)
     {
@@ -185,61 +190,59 @@ namespace ros
       }
     };
 
-    bool MoveBaseDoor::dispatchCommands()
-    {
-      ros::Node::instance()->publish(base_trajectory_controller_topic_,valid_path_);         
-        return true;
+    MoveBaseDoor::~MoveBaseDoor(){
     }
 
-    bool MoveBaseDoor::makePlan()
+    bool MoveBaseDoor::dispatchCommands()
     {
       ROS_DEBUG("Planning for new goal...\n");
       robot_msgs::JointTraj valid_path;
-      try {        
-	stateMsg.lock();
-        current_x_ = stateMsg.pos.x;
-        current_y_ = stateMsg.pos.y;
-        current_theta_ = stateMsg.pos.th;
+      stateMsg.lock();
+      current_x_ = stateMsg.pos.x;
+      current_y_ = stateMsg.pos.y;
+      current_theta_ = stateMsg.pos.th;
 
-        goal_x_ = stateMsg.goal.x;
-        goal_y_ = stateMsg.goal.y;
-        goal_theta_ = stateMsg.goal.th;
-        stateMsg.unlock();
+      goal_x_ = stateMsg.goal.x;
+      goal_y_ = stateMsg.goal.y;
+      goal_theta_ = stateMsg.goal.th;
+      stateMsg.unlock();
 
-        // For now plan is a straight line with waypoints about 2.5 cm apart
-        double dist = sqrt( pow(goal_x_-current_x_,2) + pow(goal_y_-current_y_,2));        
-        int num_intervals = std::min<int>(1,(int) dist/dist_waypoints_max_);
-        int num_path_points = num_intervals + 1;
+      // For now plan is a straight line with waypoints about 2.5 cm apart
+      double dist = sqrt( pow(goal_x_-current_x_,2) + pow(goal_y_-current_y_,2));        
+      int num_intervals = std::min<int>(1,(int) dist/dist_waypoints_max_);
+      int num_path_points = num_intervals + 1;
 
-        path_.set_points_size(num_path_points);
+      path_.set_points_size(num_path_points);
 
-        for(int i=0; i< num_intervals; i++)
-        {
-          path_.points[i].set_positions_size(3);
-          path_.points[i].positions[0] = current_x_ + (double) i * (goal_x_-current_x_)/num_intervals ;
-          path_.points[i].positions[1] = current_y_ + (double) i * (goal_y_-current_y_)/num_intervals ;
-          path_.points[i].positions[2] = angles::normalize_angle(current_theta_ + (double) i * angles::normalize_angle(goal_theta_-current_theta_)/num_intervals) ;
-          path_.points[i].time = 0.0;
-        }
-
-        path_.points[num_intervals].set_positions_size(3);
-        path_.points[num_intervals].positions[0] = goal_x_;
-        path_.points[num_intervals].positions[1] = goal_y_;
-        path_.points[num_intervals].positions[2] = goal_theta_;
-
-        checkTrajectory(path_,valid_path_);
-        dispatchCommands();
-
-        return true;
-
-      }
-      catch (std::runtime_error const & ee) {
-        ROS_ERROR("runtime_error in makePlan(): %s\n", ee.what());
+      for(int i=0; i< num_intervals; i++)
+      {
+        path_.points[i].set_positions_size(3);
+        path_.points[i].positions[0] = current_x_ + (double) i * (goal_x_-current_x_)/num_intervals ;
+        path_.points[i].positions[1] = current_y_ + (double) i * (goal_y_-current_y_)/num_intervals ;
+        path_.points[i].positions[2] = angles::normalize_angle(current_theta_ + (double) i * angles::normalize_angle(goal_theta_-current_theta_)/num_intervals) ;
+        path_.points[i].time = 0.0;
       }
 
-      return false;
+      path_.points[num_intervals].set_positions_size(3);
+      path_.points[num_intervals].positions[0] = goal_x_;
+      path_.points[num_intervals].positions[1] = goal_y_;
+      path_.points[num_intervals].positions[2] = goal_theta_;
+
+      checkTrajectory(path_,valid_path_);
+      // First criteria is that we have had a sufficiently recent sensor update to trust perception and that we have a valid plan. This latter
+      // case is important since we can end up with an active controller that becomes invalid through the planner looking ahead. 
+      // We want to be able to stop the robot in that case
+      bool planOk = checkWatchDog();
+
+      if(!planOk)
+      {
+        ROS_ERROR("MoveBaseDoor: Plan not ok");
+        return false;
+      }
+
+      ros::Node::instance()->publish(base_trajectory_controller_topic_,valid_path_);         
+      return true;
     }
-
   }
 }
 
