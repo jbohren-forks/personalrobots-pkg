@@ -125,6 +125,19 @@ typedef enum
 } stereo_algorithm_t;
 
 
+//
+// structured points in a 4xN point array
+//
+
+typedef struct
+{
+  float X;
+  float Y;
+  float Z;
+  int32_t A;			// 0 for undefined point, otherwise arbitrary index
+} pt_xyza_t;
+
+
 namespace cam
 {
 
@@ -149,6 +162,7 @@ namespace cam
     // these can be NULL if no data is present
     // the Type info is COLOR_CODING_NONE if the data is not current
     // the Size info gives the buffer size, for allocation logic
+    // NOTE: all data buffers should be 16-byte aligned
     uint8_t *imRaw;		// raw image
     color_coding_t imRawType;	// type of raw data
     size_t imRawSize;
@@ -227,7 +241,7 @@ namespace cam
     // image parameters
     int imWidth;
     int imHeight;
-    void setSize(int width, int height); // sets individual image sizes
+    void setSize(int width, int height); // sets individual image sizes too
 
     // left and right image data
     ImageData *imLeft;
@@ -266,7 +280,9 @@ namespace cam
     void setDispOffsets();	// reset them, based on stereo processing params
 
     // point cloud data
-    float *imPts;		// points, 3xN floats for vector version
+    // NOTE: imPts buffer should be 16-byte aligned
+    // imPts elements will have the form of a pt_xyza_t for a pt array
+    float *imPts;		// points, 3xN floats for vector version, 4xN for array version
     int *imCoords;		// image coordinates of the point cloud points, 2xN ints
     uint8_t *imPtsColor;	// color vector corresponding to points, RGB
     size_t imPtsSize;		// size of array in bytes, for storage manipulation
@@ -319,6 +335,35 @@ namespace cam
     // buffers for speckle filter
     uint8_t *rbuf;
     uint32_t *lbuf, *wbuf;
+
+  };
+
+
+  //
+  // Plane finding class
+  //
+
+  class FindPlanes
+  {
+  public:
+    FindPlanes();
+    ~FindPlanes();
+
+    // put points
+    // skip interval is decimation for speed
+    void SetPointCloud(pt_xyza_t *pts, int n, int skip=1);
+
+    // find a plane, return its parameters and (decimated) inlier count
+    int FindPlane(float *pparams, float thresh, int tries);
+
+    // set all plane inliers to an index
+    void IndexPlane(int ind, float thresh, float *pparams);
+
+  private:
+    pt_xyza_t *pts3d;		// input vector of points
+    int n_pts3d;		// number of points
+    pt_xyza_t *pts3d_dec;	// decimated points
+    int n_pts3d_dec;
 
   };
 
