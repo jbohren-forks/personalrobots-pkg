@@ -31,15 +31,18 @@
 // Author: Stuart Glaser
 
 #include "ros/node.h"
+#include "boost/scoped_ptr.hpp"
 #include "mechanism_model/controller.h"
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
 #include "mechanism_model/chain.h"
 #include "control_toolbox/pid.h"
 #include <tf/transform_listener.h>
+#include "realtime_tools/realtime_publisher.h"
 
 #include "robot_srvs/SetPoseStamped.h"
 #include "robot_msgs/TaskFrameFormalism.h"
+#include "robot_msgs/CartesianState.h"
 
 namespace controller {
 
@@ -96,6 +99,9 @@ private:
   CartesianHybridController c_;
   ros::Node *node_;
   robot_msgs::TaskFrameFormalism command_msg_;
+
+  unsigned int loop_count_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::CartesianState> > pub_state_;
 };
 
 }

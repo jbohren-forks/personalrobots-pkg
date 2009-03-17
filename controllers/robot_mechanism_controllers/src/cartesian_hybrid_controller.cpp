@@ -43,6 +43,33 @@
 
 namespace controller {
 
+void TransformKDLToMsg(const KDL::Frame &k, robot_msgs::Pose &m)
+{
+  tf::Transform tf;
+  mechanism::TransformKDLToTF(k, tf);
+  tf::PoseTFToMsg(tf, m);
+}
+
+void TwistKDLToMsg(const KDL::Twist &k, robot_msgs::Twist &m)
+{
+  m.vel.x = k.vel.x();
+  m.vel.y = k.vel.y();
+  m.vel.z = k.vel.z();
+  m.rot.x = k.rot.x();
+  m.rot.y = k.rot.y();
+  m.rot.z = k.rot.z();
+}
+
+void WrenchKDLToMsg(const KDL::Wrench &k, robot_msgs::Wrench &m)
+{
+  m.force.x = k.force.x();
+  m.force.y = k.force.y();
+  m.force.z = k.force.z();
+  m.torque.x = k.torque.x();
+  m.torque.y = k.torque.y();
+  m.torque.z = k.torque.z();
+}
+
 CartesianHybridController::CartesianHybridController()
   : robot_(NULL), last_time_(0)
 {
@@ -192,7 +219,7 @@ bool CartesianHybridController::starting()
 ROS_REGISTER_CONTROLLER(CartesianHybridControllerNode)
 
 CartesianHybridControllerNode::CartesianHybridControllerNode()
-: TF(*ros::Node::instance(), false, ros::Duration(10.0))
+: TF(*ros::Node::instance(), false, ros::Duration(10.0)), loop_count_(0)
 {
 }
 
@@ -217,13 +244,32 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   node->subscribe(name_ + "/command", command_msg_, &CartesianHybridControllerNode::command, this, 1);
   node->advertiseService(name_ + "/set_tool_frame", &CartesianHybridControllerNode::setToolFrame, this);
 
+  pub_state_.reset(new realtime_tools::RealtimePublisher<robot_msgs::CartesianState>(name_ + "/state", 1));
+
   return true;
 
 }
 
 void CartesianHybridControllerNode::update()
 {
+  KDL::Twist last_twist_desi = c_.twist_desi_;
+  KDL::Wrench last_wrench_desi = c_.wrench_desi_;
+
   c_.update();
+
+  if (++loop_count_ % 10 == 0)
+  {
+    if (pub_state_->trylock())
+    {
+      pub_state_->msg_.header.frame_id = "TODO___THE_TASK_FRAME";
+      TransformKDLToMsg(c_.pose_meas_, pub_state_->msg_.last_pose_meas);
+      TwistKDLToMsg(c_.twist_meas_, pub_state_->msg_.last_twist_meas);
+      TwistKDLToMsg(last_twist_desi, pub_state_->msg_.last_twist_desi);
+      WrenchKDLToMsg(last_wrench_desi, pub_state_->msg_.last_wrench_desi);
+
+      pub_state_->unlockAndPublish();
+    }
+  }
 }
 
 bool CartesianHybridControllerNode::setTaskFrame(
