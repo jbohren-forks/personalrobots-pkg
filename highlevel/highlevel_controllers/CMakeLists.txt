@@ -14,7 +14,6 @@ genmsg()
 
 # Library
 rospack_add_library(highlevel_controllers src/move_base.cpp)
-target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
 rospack_link_boost(highlevel_controllers thread)
 
 # MoveArm
@@ -23,12 +22,12 @@ rospack_link_boost(move_arm thread)
 
 # move_base_sbpl
 rospack_add_executable(move_base_sbpl src/move_base_sbpl.cpp)
-target_link_libraries(move_base_sbpl highlevel_controllers mpglue)
+target_link_libraries(move_base_sbpl highlevel_controllers)
 rospack_link_boost(move_base_sbpl thread)
 
 # move_base_navfn
 rospack_add_executable(move_base_navfn src/move_base_navfn.cpp)
-target_link_libraries(move_base_navfn highlevel_controllers navfn)
+target_link_libraries(move_base_navfn highlevel_controllers)
 rospack_link_boost(move_base_navfn thread)
 
 # move_base_follow
@@ -38,7 +37,7 @@ rospack_link_boost(move_base_follow thread)
 
 # move_base_topological
 rospack_add_executable(move_base_topological src/move_base_topological.cpp)
-target_link_libraries(move_base_topological highlevel_controllers topological_map navfn)
+target_link_libraries(move_base_topological highlevel_controllers)
 rospack_link_boost(move_base_topological thread)
 
 # MoveArmEndEffector
