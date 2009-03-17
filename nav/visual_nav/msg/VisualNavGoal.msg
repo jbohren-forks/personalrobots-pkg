@@ -1,2 +1,2 @@
-# Goal node id for visual nav
+# Goal node id for visual nav.  -1 means no goal.
 int32 goal

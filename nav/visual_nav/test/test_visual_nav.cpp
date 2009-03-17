@@ -57,15 +57,26 @@ TEST(VisualNav, Transforms)
 }
 
 
+bool scanContains (const PointSet& scan, const Point2D& p)
+{
+  cout << "scanContains result is " << (scan.find(p)!=scan.end()) << endl;
+  return scan.find(p)!=scan.end();
+}
+
 TEST(VisualNav, BasicAPI)
 {
   VisualNavRoadmap r;
   typedef vector<int> Path;
 
-  r.addNode(2,1.2);
-  r.addNode(2,6);
+  NodeId first = r.addNode(2,1.2);
+  NodeId second = r.addNode(2,6);
   r.addNode(4,3);
   r.addNode(3,-1);
+
+  PointSet points = r.overlayScans();
+  EXPECT_EQ(0u, points.size());
+  
+
   r.addEdge(2,1);
   r.addEdge(0,2);
   r.addNode(1,2.5);
@@ -89,6 +100,22 @@ TEST(VisualNav, BasicAPI)
   EXPECT_TRUE(*path2==Path(expected_path2, expected_path2+4));
   EXPECT_EQ(r.pathExitPoint(path2, 1.0), Pose(1,2.5));
   EXPECT_EQ(r.pathExitPoint(path2, 2.0), Pose(2,6));
+
+  PointSet scan1, scan2;
+  scan1.insert(Point2D(1,2));
+  scan1.insert(Point2D(3,4));
+  scan2.insert(Point2D(5,6));
+  r.attachScan(first, scan1, Pose(1,2.2));
+  r.attachScan(second, scan2, Pose(0,0));
+
+  PointSet scan = r.overlayScans();
+
+  EXPECT_EQ(3u, scan.size());
+  EXPECT_EQ(Point2D(2.0,1.0), *(scan.begin()));
+  PointSet::iterator iter=scan.begin();
+  EXPECT_EQ(*(iter++), Point2D(2.0,1.0));
+  EXPECT_EQ(*(iter++), Point2D(4,3));
+  EXPECT_EQ(*(iter++), Point2D(7,12));
 }
 
 

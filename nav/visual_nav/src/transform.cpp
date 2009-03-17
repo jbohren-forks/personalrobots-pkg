@@ -45,6 +45,14 @@ Pose transform (const Transform2D& trans, const Pose& pose)
   return Pose(pose.x*c - pose.y*s + trans.dx, pose.x*s + pose.y*c + trans.dy, trans.theta+pose.theta);
 }
 
+Point2D transform (const Transform2D& trans, const Point2D& p)
+{
+  double c=cos(trans.theta);
+  double s=sin(trans.theta);
+
+  return Point2D(p.x*c - p.y*s + trans.dx, p.x*s + p.y*c + trans.dy);
+}
+
 double getYaw(const StampedPose& tf_pose)
 {
   double pitch, roll, yaw;
@@ -79,7 +87,17 @@ Transform2D inverse (const Transform2D& trans)
 
   return Transform2D (-c*trans.dx - s*trans.dy, s*trans.dx - c*trans.dy, -trans.theta);
 }
-  
+
+bool operator< (const Point2D& p1, const Point2D& p2)
+{
+  return (p1.x < p2.x) || ((p1.x==p2.x)&&(p1.y<p2.y));
+}  
+
+bool operator== (const Point2D& p1, const Point2D& p2)
+{
+  bool result=abs(p1.x-p2.x)<TOL && abs(p1.y-p2.y)<TOL;
+  return result;
+}
 
 ostream& operator<< (ostream& str, const Pose& c)
 {
@@ -93,6 +111,13 @@ ostream& operator<< (ostream& str, const Transform2D& c)
   return str;
 }
 
+ostream& operator<< (ostream& str, const Point2D& p)
+{
+  str << "(" << p.x << ", " << p.y << ")";
+  return str;
+}
+
+
 istream& operator>> (istream& str, Pose& p)
 {
   str >> p.x >> p.y >> p.theta;
@@ -105,12 +130,15 @@ istream& operator>> (istream& str, Transform2D& trans)
   return str;
 }
 
-
+istream& operator>> (istream& str, const Point2D& p)
+{
+  str >> p.x >> p.y;
+  return str;
+}
 
 bool operator== (const Pose& p1, const Pose& p2)
 {
   const double pi=3.14159265;
-  const double TOL=1e-8;
   double intpart;
   return (abs(p1.x-p2.x)<TOL) && (abs(p1.y-p2.y)<TOL) && (modf((p1.theta-p2.theta)/(2*pi), &intpart)<TOL);
 }

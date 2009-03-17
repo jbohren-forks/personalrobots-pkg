@@ -5,8 +5,8 @@
 <review status="unreviewed" notes=""/>
 <depend package="roscpp" />
 <depend package="rosconsole" />
-<depend package="deprecated_msgs" />
 <depend package="robot_msgs" />
+<depend package="deprecated_msgs" />
 <depend package="vslam" />
 <depend package="rviz" />
 <depend package="tf" />

@@ -119,6 +119,22 @@ void VisualNavRoadmap::RoadmapImpl::addEdge (const NodeId i, const NodeId j)
   ROS_DEBUG_STREAM_NAMED("api", "Added edge between nodes " << i << " and " << j);
 }
 
+inline Point2D transformPoint (const Transform2D& trans, const Point2D& p)
+{
+  return transform(trans,p);
+}
+
+void VisualNavRoadmap::RoadmapImpl::attachScan (const NodeId i, const PointSet& scan, const Pose& pose_when_scanned)
+{
+  RoadmapVertex v = idVertex(i);
+  Transform2D trans = getTransformBetween(pose_when_scanned, graph_[v].pose);
+  node_scans_[v] = PointSet();
+  std::transform (scan.begin(), scan.end(), inserter(node_scans_[v], node_scans_[v].begin()), bind(transformPoint, trans, _1));
+  ROS_DEBUG_STREAM_NAMED ("scans", "Point " << *(scan.begin()) << " was scanned from pose " << pose_when_scanned
+                          << " and node's current pose is " << graph_[v].pose << " so point's now at " << *(node_scans_[v].begin()));
+}
+
+
 
 struct TransformVertexToId
 {
@@ -185,6 +201,19 @@ Pose VisualNavRoadmap::RoadmapImpl::pathExitPoint (PathPtr p, double r) const
     ROS_ASSERT_MSG (pos!=p->rend(), "Unexpectedly couldn't find any points on path within radius %f", r);
     return graph_[idVertex(*(--pos))].pose;
   }
+}
+
+
+void addToSet (PointSet* scans, const pair<RoadmapVertex, PointSet>& e)
+{
+  copy(e.second.begin(), e.second.end(), inserter(*scans, scans->begin()));
+}
+
+PointSet VisualNavRoadmap::RoadmapImpl::overlayScans () const
+{
+  PointSet overlaid_scans;
+  for_each (node_scans_.begin(), node_scans_.end(), bind(addToSet, &overlaid_scans, _1));
+  return overlaid_scans;
 }
 
 
@@ -264,6 +293,11 @@ void VisualNavRoadmap::addEdge (const NodeId i, const NodeId j)
   roadmap_impl_->addEdge(i, j);
 }
 
+void VisualNavRoadmap::attachScan (const NodeId i, const PointSet& scan, const Pose& pose_when_scanned)
+{
+  roadmap_impl_->attachScan (i, scan, pose_when_scanned);
+}  
+
 PathPtr VisualNavRoadmap::pathToGoal (const NodeId start_id, const NodeId goal_id) const
 {
   return roadmap_impl_->pathToGoal(start_id, goal_id);
@@ -272,6 +306,11 @@ PathPtr VisualNavRoadmap::pathToGoal (const NodeId start_id, const NodeId goal_i
 Pose VisualNavRoadmap::pathExitPoint (const PathPtr p, const double r) const
 {
   return roadmap_impl_->pathExitPoint(p,r);
+}
+
+PointSet VisualNavRoadmap::overlayScans() const
+{
+  return roadmap_impl_->overlayScans();
 }
 
 uint VisualNavRoadmap::numNodes () const

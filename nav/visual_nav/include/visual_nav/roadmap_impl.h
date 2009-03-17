@@ -76,6 +76,7 @@ typedef graph_traits<RoadmapGraph>::edge_descriptor RoadmapEdge;
 typedef graph_traits<RoadmapGraph>::adjacency_iterator AdjacencyIterator;
 typedef pair<AdjacencyIterator, AdjacencyIterator> AdjIterPair;
 typedef map<NodeId, RoadmapVertex> IdVertexMap;
+typedef map<RoadmapVertex, PointSet> NodeScanMap;
 
 
 /************************************************************
@@ -108,8 +109,10 @@ public:
 
   NodeId addNode (const Pose& pos);
   void addEdge (NodeId i, NodeId j);
+  void attachScan (NodeId i, const PointSet& scan, const Pose& pose_when_scanned);
   PathPtr pathToGoal (NodeId start_id, NodeId goal_id);
   Pose pathExitPoint (PathPtr p, double r) const;
+  PointSet overlayScans() const;
   uint numNodes () const;
   Pose nodePose (NodeId i) const;
   NodeVector neighbors (NodeId i) const;
@@ -129,6 +132,8 @@ private:
   
   NodeVector nodes_;
 
+  NodeScanMap node_scans_;
+  
   RoadmapImpl& operator= (const RoadmapImpl&);
   RoadmapImpl(const RoadmapImpl&);
 };

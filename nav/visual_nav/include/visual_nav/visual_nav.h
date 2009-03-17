@@ -27,11 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * \file 
+ *
+ * Defines the basic VisualNavRoadmap data structure
+ * 
+ * \author Bhaskara Marthi
+ *
+ *
+ */
+
 #ifndef VISUAL_NAV_VISUAL_NAV_H
 #define VISUAL_NAV_VISUAL_NAV_H
 
 #include <vector>
 #include <string>
+#include <set>
 #include <boost/shared_ptr.hpp>
 #include <visual_nav/transform.h>
 
@@ -41,13 +52,15 @@ namespace visual_nav
 using boost::shared_ptr;
 using std::vector;
 using std::string;
+using std::set;
 
 /// Id's of nodes in the roadmap
 typedef int NodeId;
 
 typedef vector<NodeId> NodeVector;
-
 typedef shared_ptr<vector<NodeId> > PathPtr;
+typedef set<Point2D> PointSet;
+
 
 /// Represents the roadmap produced by visual odometry, with the localization info incorporated
 class VisualNavRoadmap
@@ -63,13 +76,18 @@ public:
   /// \post There is a new graph node at \a x, \a y, \a theta
   /// \return The id of the new node.  It is guaranteed the id returns 0 on the first call to addNode, and increases by 1 on each call.
   NodeId addNode (double x, double y, double theta=0.0);
-  
 
   /// \post There is an edge between nodes \a i and \a j with no label
   /// \throws UnknownNodeId
   /// \throws SelfEdgeException
   /// \throws ExistingEdgeException
   void addEdge (NodeId i, NodeId j);
+
+  /// \post \a scan is attached to node \a i.  Any existing scan is overwritten.
+  /// \param scan A vector of points
+  /// \param pose_when_scanned The pose in the vslam frame when this scan was taken: used to infer the transform that is applied to \a scan
+  /// \throws UnknownNodeId
+  void attachScan (NodeId i, const PointSet& scan, const Pose& pose_when_scanned);
 
   /// \returns Sequence of NodeId's of positions on path from start node to node \goal
   /// \throws NoPathFoundException
@@ -78,6 +96,9 @@ public:
   /// \returns First point where path leaves a circle of radius \a r around its start
   /// For now, just look at the discrete waypoints on the path rather than interpolating between them to find the exact exit point
   Pose pathExitPoint (PathPtr p, double r) const;
+
+  /// \returns PointSet that combines the scans attached to each node in the roadmap
+  PointSet overlayScans() const;
 
   /// \return number of nodes
   uint numNodes () const;
