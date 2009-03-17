@@ -35,6 +35,7 @@
 
 // ROS includes
 #include <robot_msgs/Point32.h>
+#include <robot_msgs/Point.h>
 #include <Eigen/Core>
 
 namespace cloud_geometry
@@ -126,6 +127,72 @@ namespace cloud_geometry
       */
     inline double
       pointToPointDistance (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2)
+    {
+      return (sqrt (pointToPointDistanceSqr (p1, p2) ));
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the squared distance from a 3D point to another 3D point
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointDistanceSqr (robot_msgs::Point *p1, robot_msgs::Point *p2)
+    {
+      return ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) + (p1->z - p2->z) * (p1->z - p2->z) );
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a 3D point to another 3D point
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointDistance (robot_msgs::Point *p1, robot_msgs::Point *p2)
+    {
+      return (sqrt (pointToPointDistanceSqr (p1, p2) ));
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the squared distance from a 3D point to another 3D point
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointDistanceSqr (robot_msgs::Point32 *p1, robot_msgs::Point *p2)
+    {
+      return ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) + (p1->z - p2->z) * (p1->z - p2->z) );
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a 3D point to another 3D point
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointDistance (robot_msgs::Point32 *p1, robot_msgs::Point *p2)
+    {
+      return (sqrt (pointToPointDistanceSqr (p1, p2) ));
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the squared distance from a 3D point to another 3D point
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointDistanceSqr (robot_msgs::Point *p1, robot_msgs::Point32 *p2)
+    {
+      return ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) + (p1->z - p2->z) * (p1->z - p2->z) );
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a 3D point to another 3D point
+      * \param p1 the first point
+      * \param p2 the second point
+      */
+    inline double
+      pointToPointDistance (robot_msgs::Point *p1, robot_msgs::Point32 *p2)
     {
       return (sqrt (pointToPointDistanceSqr (p1, p2) ));
     }
