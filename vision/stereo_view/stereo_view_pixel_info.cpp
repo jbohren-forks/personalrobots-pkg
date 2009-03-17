@@ -260,7 +260,7 @@ public:
     mcbparams_.limage = 0;
 
 
-    if (lbridge.fromImage(limage, "bgr"))
+    if (lbridge.fromImage(limage, "bgr")) //LEFT IMAGE PROCESSING
     {
       if (calib_color_)
       {
@@ -269,7 +269,7 @@ public:
         lcal.correctColor(lbridge.toIpl(), lcalimage, true, recompand_, COLOR_CAL_BGR);
 
       } else { 
-	lcalimage = lbridge.toIpl();
+			lcalimage = lbridge.toIpl();
       }
       mcbparams_.limage = lcalimage;
 
@@ -277,19 +277,19 @@ public:
       // Draw the lines on the image.
       map<string,image_msgs::ColoredLines>::iterator it;
       for (it = map_cls.begin(); it != map_cls.end(); it++) {
-	for (uint il=0; il<it->second.lines.size(); il++) {
-	  cvLine(lcalimage, 
-		 cvPoint(it->second.lines[il].x0,it->second.lines[il].y0),
-		 cvPoint(it->second.lines[il].x1,it->second.lines[il].y1), 
-		 cvScalar(it->second.lines[il].b,it->second.lines[il].g,it->second.lines[il].r),3);
-	}
+			for (uint il=0; il<it->second.lines.size(); il++) {
+			  cvLine(lcalimage, 
+				 cvPoint(it->second.lines[il].x0,it->second.lines[il].y0),
+				 cvPoint(it->second.lines[il].x1,it->second.lines[il].y1), 
+				 cvScalar(it->second.lines[il].b,it->second.lines[il].g,it->second.lines[il].r),3);
+			}
       }
       linelock.unlock();
       
       cvShowImage("left", lcalimage);
-    }  
+    }  //end left image
 
-    if (dbridge.fromImage(dimage))
+    if (dbridge.fromImage(dimage)) //DISPARITY
     {
       // Disparity has to be scaled to be be nicely displayable
       mcbparams_.disp = NULL;
@@ -300,9 +300,9 @@ public:
       mcbparams_.dispinfo = &dispinfo;
       mcbparams_.stinfo = &stinfo;
       mcbparams_.rcaminfo = &rcaminfo;
-    }
+    } //END DISPARITY
 
-    if (rbridge.fromImage(rimage, "bgr"))
+    if (rbridge.fromImage(rimage, "bgr")) //RIGHT IMAGE
     {
       if (calib_color_)
       {
