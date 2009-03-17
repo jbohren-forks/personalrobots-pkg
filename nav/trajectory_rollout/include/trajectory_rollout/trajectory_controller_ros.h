@@ -43,6 +43,7 @@
 #include <trajectory_rollout/world_model.h>
 #include <trajectory_rollout/point_grid.h>
 #include <trajectory_rollout/costmap_model.h>
+#include <trajectory_rollout/voxel_grid_model.h>
 #include <trajectory_rollout/trajectory_controller.h>
 
 #include <trajectory_rollout/planar_laser_scan.h>
@@ -135,6 +136,7 @@ namespace trajectory_rollout {
       boost::recursive_mutex lock_; ///< @brief A lock for accessing data in callbacks safely
       PlanarLaserScan base_scan_; ///< @breif Storage for the last scan the base laser took... used for clearing free-space in front of the robot
       PointGrid* point_grid_; ///< @brief If using a freespace grid... we want to access it
+      VoxelGridModel* voxel_grid_; ///< @brief If using a voxel grid... we want to access it
       bool freespace_model_;  ///< @brief Keep track of whether we are using a freespace controller or not
       double max_sensor_range_; ///< @brief Keep track of the effective maximum range of our sensors
       std::vector<deprecated_msgs::Point2DFloat32> risk_poly_;

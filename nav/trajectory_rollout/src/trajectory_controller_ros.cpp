@@ -120,6 +120,18 @@ namespace trajectory_rollout {
       ROS_INFO("Costmap\n");
     }
 
+    /* For testing the voxel grid world model 
+    double origin_x, origin_y;
+    ma.getOriginInWorldCoordinates(origin_x, origin_y);
+    unsigned int cmap_width, cmap_height;
+    ma.getCostmapDimensions(cmap_width, cmap_height);
+    voxel_grid_ = new VoxelGridModel(cmap_width, cmap_height, 5, grid_resolution, .4,
+        origin_x, origin_y, 0.0, max_obstacle_height, max_sensor_range_);
+    world_model_ = voxel_grid_;
+    ROS_INFO("Voxel Grid Origin: (%.4f, %.4f), Width: %.4f, Height: %.4f\n", origin_x, origin_y, cmap_width * ma.getResolution(), cmap_height * ma.getResolution());
+    ros_node.advertise<PointCloud>("point_grid", 1);
+    */
+
     tc_ = new TrajectoryController(*world_model_, ma, footprint_spec, inscribed_radius, circumscribed_radius,
         acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity, vx_samples, vtheta_samples, pdist_scale,
         gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, holonomic_robot,
@@ -337,6 +349,13 @@ namespace trajectory_rollout {
       PointCloud grid_cloud;
       grid_cloud.header.frame_id = global_frame_;
       point_grid_->getPoints(grid_cloud);
+      ros::Node::instance()->publish("point_grid", grid_cloud);
+    }
+
+    if(voxel_grid_ != NULL){
+      PointCloud grid_cloud;
+      grid_cloud.header.frame_id = global_frame_;
+      voxel_grid_->getPoints(grid_cloud);
       ros::Node::instance()->publish("point_grid", grid_cloud);
     }
     */
