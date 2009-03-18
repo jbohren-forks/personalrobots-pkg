@@ -4,6 +4,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 set(ROS_BUILD_TYPE RelWithDebInfo)
 rospack(door_handle_detector)
 gensrv()
+genmsg()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
@@ -26,6 +27,9 @@ target_link_libraries (door_handle_detector_node)
 #                       )
 #target_link_libraries (handle_detector_node)
 # ]---
+
+rospack_add_executable(door_domain_executive_interface src/door_domain_executive_interface.cpp)
+target_link_libraries(door_domain_executive_interface)
 
 rospack_add_executable(open_door_executive_test test/open_door_executive_test.cpp)
 target_link_libraries(open_door_executive_test)
