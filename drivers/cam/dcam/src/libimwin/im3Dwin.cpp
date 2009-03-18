@@ -182,12 +182,15 @@ bool im3DWindow::calcCenterZ(StereoData *stIm, int nh)
 // to display a 3D rendering of the stereo image
 //
 
+#define COLOR_TABLE_SIZE 4
+static float colorTableR[COLOR_TABLE_SIZE] = {0.1, 0.2, 0.3, 0.4};
+static float colorTableG[COLOR_TABLE_SIZE] = {0.4, 0.3, 0.2, 0.1};
+static float colorTableB[COLOR_TABLE_SIZE] = {0.1, 0.4, 0.2, 0.3};
+
 void im3DWindow::DisplayImage(StereoData *stIm)
 {
   int w, h;
   int ip = 0;
-  float *pts;
-  uint8_t *cc; 
 
   w = stIm->imWidth;
   h = stIm->imHeight;
@@ -213,14 +216,13 @@ void im3DWindow::DisplayImage(StereoData *stIm)
       colorListB = new GLfloat[bufsize];
     }
  
-  cc = stIm->imPtsColor;
-  pts = stIm->imPts;
-
   maxx = maxy = maxz = -1000;
   minx = miny = minz = 1000;
 
   if (stIm->isPtArray == false)	// just a vector 3xN of points
     {
+      float *pts = stIm->imPts;
+      uint8_t *cc = stIm->imPtsColor;
       for (int i=0; i<numPoints; i++)
 	{
 	  pointListX[ip] = *pts++;
@@ -235,6 +237,32 @@ void im3DWindow::DisplayImage(StereoData *stIm)
 
   else				// array of points, corresponding to image
     {
+      pt_xyza_t *ppts = (pt_xyza_t *)stIm->imPts;
+      uint8_t *im = stIm->imLeft->imRect;
+      for (int i=0; i<numPoints; i++, ppts++, im++)
+	{
+	  int ind = ppts->A;
+	  if (ind >= 0)
+	    {
+	      pointListX[ip] = ppts->X;
+	      pointListY[ip] = ppts->Y;
+	      pointListZ[ip] = ppts->Z;
+	      if (ind == 0)	// no planar group index
+		{
+		  colorListR[ip] = gammaTable[*im];
+		  colorListG[ip] = gammaTable[*im];
+		  colorListB[ip] = gammaTable[*im];
+		}
+	      else
+		{
+		  if (ind >= COLOR_TABLE_SIZE) ind = 1;
+		  colorListR[ip] = colorTableR[ind];
+		  colorListG[ip] = colorTableG[ind];
+		  colorListB[ip] = colorTableB[ind];
+		}
+	      ip++;
+	    }
+	}
     }
 
   numPoints = ip;

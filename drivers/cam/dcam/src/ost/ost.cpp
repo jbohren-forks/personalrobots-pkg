@@ -97,6 +97,7 @@ bool isColor;			// true if color requested
 bool isRectify;			// true if rectification requested
 bool isStereo;			// true if stereo requested
 bool is3D;			// true if 3D points requested
+bool isPlanar;			// true if plane extraction requested
 bool useSTOC;			// true if we want to use STOC processing
 bool isTracking;		// true if we want to track the chessboard live
 bool isExit;			// true if we want to exit
@@ -108,6 +109,11 @@ size_coding_t videoSize;	// current video size
 StereoData *stIm = NULL;	// current ptr
 StereoData stImdata;		// real data
 bool isRefresh;			// refresh the current stereo image display
+
+// plane object and parameters
+FindPlanes planeObj;
+float planeParams[4];
+float planeThresh = 0.01;	// 1 cm inlier threshold
 
 // GUI stuff
 stereogui *stg;			// GUI object
@@ -412,22 +418,46 @@ main(int argc, char **argv)	// no arguments
 
       if (isRefresh & stIm != NULL)
 	{
+	  double tt0,tt1;
+
 	  isRefresh = false;
 	  int w = stIm->imWidth;
 	  int h = stIm->imHeight;
 
-	  double tt0 = get_ms();
+	  tt0 = get_ms();
 	  // check processing
 	  if (isRectify)	// rectify images
 	    stIm->doRectify();
 	  if (isStereo)	// get stereo disparity
 	    stIm->doDisparity(sp_alg);
-	  double tt1 = get_ms();
-	  //	  printf("Proc time: %d ms\n", (int)(tt1-tt0));
+	  tt1 = get_ms();
+	  printf("Stereo time: %d ms\n", (int)(tt1-tt0));
 
 	  if (is3D)		// get 3D points
 	    {
-	      stIm->doCalcPts();
+	      tt0 = get_ms();
+	      stIm->doCalcPts(true); // make it an array
+	      tt1 = get_ms();
+	      printf("3D time: %d ms\n", (int)(tt1-tt0));
+
+	      // check for extracting a plane or planes
+	      isPlanar = true;
+	      if (isPlanar)
+		{
+		  int n,nn;
+		  tt0 = get_ms();
+		  planeObj.SetPointCloud(stIm->imPtArray(), stIm->numPts, 10);
+		  n = planeObj.FindPlane(planeParams, planeThresh, 50);
+		  nn = planeObj.IndexPlane(1, planeThresh, planeParams);
+		  planeObj.SetPointCloud(stIm->imPtArray(), stIm->numPts, 10);
+		  planeObj.FindPlane(planeParams, planeThresh, 50);
+		  planeObj.IndexPlane(2, planeThresh, planeParams);
+		  tt1 = get_ms();
+		  printf("Planar time: %d ms\n", (int)(tt1-tt0));
+		  printf("Found plane %f %f %f %f with %d/%d inliers\n", 
+			 planeParams[0], planeParams[1], planeParams[2], planeParams[3], n, nn);
+		}
+
 	      // check for 3D window
 	      if (!w3d)
 		{
@@ -3118,7 +3148,7 @@ do_video_cb(Fl_Light_Button *w, void*)
       Fl_Choice *devs = stg->cam_select;
       if (!dev || devIndex != devs->value()) // have the same device?
 	{
-	  devIndex == devs->value(); // device number
+	  devIndex = devs->value(); // device number
 	  debug_message("[oST] Opening camera #%d", devIndex);
 	  try {  dev = initcam(dcam::getGuid(devIndex)); }
 	  catch(dcam::DcamException e) 
