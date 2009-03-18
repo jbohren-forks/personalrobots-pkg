@@ -124,25 +124,28 @@ namespace ros
     MoveBaseDoor::MoveBaseDoor()
       : MoveBase(), goal_x_(0.0), goal_y_(0.0), goal_theta_(0.0)
     {
-      initialize();
       cost_map_model_ = new trajectory_rollout::CostmapModel(*costMap_);
       ros::Node::instance()->param<std::string>("~move_base_door/trajectory_control_topic",base_trajectory_controller_topic_,"base/trajectory_controller/trajectory_command");
       ros::Node::instance()->advertise<robot_msgs::JointTraj>(base_trajectory_controller_topic_,1);
       ros::Node::instance()->param("~costmap_2d/circumscribed_radius", circumscribed_radius_, 0.46);
       ros::Node::instance()->param("~costmap_2d/inscribed_radius", inscribed_radius_, 0.325);
+      ROS_INFO("Initialized move base door");
+      initialize();
    }
 
     bool MoveBaseDoor::makePlan()
     {
-
+      ROS_INFO("Making the plan");
     }
 
     bool MoveBaseDoor::computeOrientedFootprint(double x_i, double y_i, double theta_i, const std::vector<deprecated_msgs::Point2DFloat32>& footprint_spec, std::vector<deprecated_msgs::Point2DFloat32>& oriented_footprint)
     {
       //if we have no footprint... do nothing
       if(footprint_spec.size() < 3)
+      {
+        ROS_ERROR("No footprint available");
         return -1.0;
-
+      }
       //build the oriented footprint
       double cos_th = cos(theta_i);
       double sin_th = sin(theta_i);
@@ -177,7 +180,7 @@ namespace ros
         else
         {
           int last_valid_point = std::max<int>(i-2,0);
-          if(last_valid_point == 0)
+          if(last_valid_point > 0)
           {
             return_trajectory.points.resize(last_valid_point+1);
           }
@@ -190,12 +193,13 @@ namespace ros
       }
     };
 
-    MoveBaseDoor::~MoveBaseDoor(){
+    MoveBaseDoor::~MoveBaseDoor()
+    {
     }
 
     bool MoveBaseDoor::dispatchCommands()
     {
-      ROS_DEBUG("Planning for new goal...\n");
+      ROS_INFO("Planning for new goal...\n");
       robot_msgs::JointTraj valid_path;
       stateMsg.lock();
       current_x_ = stateMsg.pos.x;
@@ -207,9 +211,11 @@ namespace ros
       goal_theta_ = stateMsg.goal.th;
       stateMsg.unlock();
 
+      ROS_INFO("Current position: %f %f %f, goal position: %f %f %f",current_x_,current_y_,current_theta_,goal_x_,goal_y_,goal_theta_);
+
       // For now plan is a straight line with waypoints about 2.5 cm apart
       double dist = sqrt( pow(goal_x_-current_x_,2) + pow(goal_y_-current_y_,2));        
-      int num_intervals = std::min<int>(1,(int) dist/dist_waypoints_max_);
+      int num_intervals = std::max<int>(1,(int) dist/dist_waypoints_max_);
       int num_path_points = num_intervals + 1;
 
       path_.set_points_size(num_path_points);
