@@ -70,7 +70,7 @@ RosCamera::RosCamera(Entity *parent)
     // this only works for a single camera.
     ros::init(argc,argv);
     rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node in camera \n");
+    ROS_DEBUG("Starting node in camera");
   }
 
   // set buffer size
@@ -102,7 +102,7 @@ void RosCamera::LoadChild(XMLConfigNode *node)
   this->topicName = node->GetString("topicName","default_ros_camera",0); //read from xml file
   this->frameName = node->GetString("frameName","default_ros_camera",0); //read from xml file
 
-  std::cout << "================= " << this->topicName << std::endl;
+  ROS_DEBUG("================= %s", this->topicName.c_str());
   rosnode->advertise<deprecated_msgs::Image>(this->topicName,1);
 }
 

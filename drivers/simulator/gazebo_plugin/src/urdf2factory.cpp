@@ -123,7 +123,7 @@ int main(int argc, char **argv)
     ROS_INFO("-------------------- starting node for pr2 param server factory \n");
     std::string xml_content;
     rosnode->getParam(argv[1],xml_content);
-    ROS_INFO("robotdesc/pr2 content\n%s\n",xml_content.c_str());
+    ROS_DEBUG("%s content\n%s\n", argv[1], xml_content.c_str());
 
     // Parse URDF from param server
     bool enforce_limits = true;
@@ -177,7 +177,7 @@ int main(int argc, char **argv)
     }
 
     //std::cout << " ------------------- xml ------------------- " << std::endl;
-    ROS_INFO("converted to gazebo format\n%s\n",xml_string.c_str());
+    ROS_DEBUG("converted to gazebo format\n%s\n",xml_string.c_str());
     //std::cout << " ------------------- xml ------------------- " << std::endl;
 
     factoryIface->Lock(1);

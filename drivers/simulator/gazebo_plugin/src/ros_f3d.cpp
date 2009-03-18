@@ -62,7 +62,7 @@ RosF3D::RosF3D(Entity *parent )
     // this only works for a single camera.
     ros::init(argc,argv);
     rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node in RosF3D \n");
+    ROS_DEBUG("Starting node in RosF3D");
   }
 }
 
@@ -83,7 +83,7 @@ void RosF3D::LoadChild(XMLConfigNode *node)
   this->topicName = node->GetString("topicName", "", 1);
   this->frameName = node->GetString("frameName", "", 1);
 
-  std::cout << "==== topic name for RosF3D ======== " << this->topicName << std::endl;
+  ROS_DEBUG("==== topic name for RosF3D ======== %s", this->topicName.c_str());
   rosnode->advertise<robot_msgs::Vector3Stamped>(this->topicName,10);
 }
 

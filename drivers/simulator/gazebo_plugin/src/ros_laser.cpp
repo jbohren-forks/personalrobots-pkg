@@ -66,7 +66,7 @@ RosLaser::RosLaser(Entity *parent)
     // start a ros node if none exist
     ros::init(argc,argv);
     rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node in laser \n");
+    ROS_DEBUG("Starting node in laser");
   }
 }
 
@@ -81,7 +81,7 @@ RosLaser::~RosLaser()
 void RosLaser::LoadChild(XMLConfigNode *node)
 {
   this->topicName = node->GetString("topicName","default_ros_laser",0); //read from xml file
-  std::cout << "================= " << this->topicName <<  std::endl;
+  ROS_DEBUG("================= %s", this->topicName.c_str());
   rosnode->advertise<laser_scan::LaserScan>(this->topicName,10);
   this->frameName = node->GetString("frameName","default_ros_laser",0); //read from xml file
   this->gaussianNoise = node->GetDouble("gaussianNoise",0.0,0); //read from xml file

@@ -75,7 +75,7 @@ RosPTZ::RosPTZ(Entity *parent)
     // this only works for a single camera.
     ros::init(argc,argv);
     rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node in camera \n");
+    ROS_DEBUG("Starting node in camera");
   }
 
 }
@@ -121,8 +121,8 @@ void RosPTZ::LoadChild(XMLConfigNode *node)
   this->panFrameName = this->panJointNameP->GetValue();
   this->tiltFrameName = this->tiltJointNameP->GetValue();
 
-  std::cout << " publishing state topic for ptz " << this->stateTopicName << std::endl;
-  std::cout << " subscribing command topic for ptz " << this->commandTopicName << std::endl;
+  ROS_DEBUG(" publishing state topic for ptz %s", this->stateTopicName.c_str());
+  ROS_DEBUG(" subscribing command topic for ptz %s", this->commandTopicName.c_str());
 
   rosnode->advertise<axis_cam::PTZActuatorState>(this->stateTopicName,10);
   rosnode->subscribe( commandTopicName, PTZControlMessage, &RosPTZ::PTZCommandReceived,this,10);

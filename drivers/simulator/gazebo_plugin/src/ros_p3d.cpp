@@ -59,7 +59,7 @@ RosP3D::RosP3D(Entity *parent )
     // this only works for a single camera.
     ros::init(argc,argv);
     rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node in RosP3D \n");
+    ROS_DEBUG("Starting node in RosP3D");
   }
 }
 
@@ -87,7 +87,7 @@ void RosP3D::LoadChild(XMLConfigNode *node)
   this->rpyOffsets    = node->GetVector3("rpyOffsets", Vector3(0,0,0));
   this->gaussianNoise = node->GetDouble("gaussianNoise",0.0,0); //read from xml file
 
-  std::cout << "==== topic name for RosP3D ======== " << this->topicName << std::endl;
+  ROS_DEBUG("==== topic name for RosP3D ======== %s", this->topicName.c_str());
   if (this->topicName != "")
     rosnode->advertise<robot_msgs::PoseWithRatesStamped>(this->topicName,10);
 }

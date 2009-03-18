@@ -63,7 +63,7 @@ namespace gazebo {
       // this only works for a single camera.
       ros::init(argc,argv);
       rosnode_ = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-      printf("-------------------- starting node in P3D \n");
+      ROS_DEBUG("Starting node in P3D");
     }
   }
 
@@ -161,7 +161,7 @@ namespace gazebo {
 
   void GazeboBattery::FiniChild()
   {
-    std::cout << "--------------- calling FiniChild in GazeboBattery --------------------" << std::endl;
+    ROS_DEBUG("Calling FiniChild in GazeboBattery");
 
     rosnode_->unadvertise(this->stateTopicName_);
     //rosnode_->unadvertise(this->diagnosticMessageTopicName_);

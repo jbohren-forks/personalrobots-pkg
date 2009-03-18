@@ -69,7 +69,7 @@ GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
     // this only works for a single camera.
     ros::init(argc,argv);
     rosnode_ = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node in Gazebo Mechanism Control \n");
+    ROS_DEBUG("Starting node in Gazebo Mechanism Control");
   }
 
   if (getenv("CHECK_SPEEDUP"))
@@ -111,7 +111,7 @@ void GazeboMechanismControl::LoadChild(XMLConfigNode *node)
     }
     else
     {
-      fprintf(stderr, "WARNING (gazebo_mechanism_control): A joint named \"%s\" is not part of Mechanism Controlled joints.\n", joint_name.c_str());
+      ROS_WARN("A joint named \"%s\" is not part of Mechanism Controlled joints.\n", joint_name.c_str());
       joints_.push_back(NULL);
     }
 
@@ -184,9 +184,9 @@ void GazeboMechanismControl::UpdateChild()
   catch (const char* c)
   {
     if (strcmp(c,"dividebyzero")==0)
-      std::cout << "WARNING:pid controller reports divide by zero error" << std::endl;
+      ROS_WARN("pid controller reports divide by zero error");
     else
-      std::cout << "unknown const char* exception: " << c << std::endl;
+      ROS_WARN("unknown const char* exception: %s", c);
   }
 
   //--------------------------------------------------
@@ -226,7 +226,7 @@ void GazeboMechanismControl::UpdateChild()
 
 void GazeboMechanismControl::FiniChild()
 {
-  std::cout << "--------------- calling FiniChild in GazeboMechanismControl --------------------" << std::endl;
+  ROS_DEBUG("Calling FiniChild in GazeboMechanismControl");
 
   hw_.~HardwareInterface();
   mc_.~MechanismControl();
@@ -246,19 +246,19 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
   // wait for robotdesc/pr2 on param server
   while(tmp_param_string.empty())
   {
-    std::cout << "WARNING: gazebo mechanism control plugin is waiting for " << this->robotParam << " in param server.  run merge/roslaunch send.xml or similar." << std::endl;
+    ROS_WARN("gazebo mechanism control plugin is waiting for %s in param server.  run merge/roslaunch send.xml or similar.", this->robotParam.c_str());
     this->rosnode_->getParam(this->robotParam,tmp_param_string);
     usleep(100000);
   }
 
-  std::cout << "gazebo mechanism control got pr2.xml from param server, parsing it..." << std::endl;
+  ROS_INFO("gazebo mechanism control got pr2.xml from param server, parsing it...");
   //std::cout << tmp_param_string << std::endl;
 
   // initialize TiXmlDocument doc with a string
   TiXmlDocument doc;
   if (!doc.Parse(tmp_param_string.c_str()))
   {
-    fprintf(stderr, "Error: Could not load the gazebo mechanism_control plugin's configuration file: %s\n",
+    ROS_ERROR("Could not load the gazebo mechanism_control plugin's configuration file: %s\n",
             tmp_param_string.c_str());
     abort();
   }

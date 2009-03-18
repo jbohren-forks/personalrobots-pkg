@@ -56,7 +56,7 @@ RosTime::RosTime(Entity *parent)
       // this only works for a single camera.
       ros::init(argc,argv);
       rosnode_ = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-      printf("-------------------- starting node in RosTime \n");
+      ROS_DEBUG("Starting node in RosTime");
     }
 
     // for rostime

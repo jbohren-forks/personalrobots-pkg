@@ -106,7 +106,7 @@ bool Joint::initXml(TiXmlElement *elt)
   const char *name = elt->Attribute("name");
   if (!name)
   {
-    fprintf(stderr, "Error: unnamed joint found\n");
+    ROS_ERROR("unnamed joint found\n");
     return false;
   }
   name_ = name;
@@ -114,7 +114,7 @@ bool Joint::initXml(TiXmlElement *elt)
   const char *type = elt->Attribute("type");
   if (!type)
   {
-    fprintf(stderr, "Error: Joint \"%s\" has no type.\n", name_.c_str());
+    ROS_ERROR("Joint \"%s\" has no type.\n", name_.c_str());
     return false;
   }
   type_ = g_type_map[type];
@@ -125,13 +125,13 @@ bool Joint::initXml(TiXmlElement *elt)
     limits = elt->FirstChildElement("limit");
     if (!limits)
     {
-      fprintf(stderr, "Error: Joint \"%s\" has no limits specified.\n", name_.c_str());
+      ROS_ERROR("Joint \"%s\" has no limits specified.\n", name_.c_str());
       return false;
     }
 
     if (limits->QueryDoubleAttribute("effort", &effort_limit_) != TIXML_SUCCESS)
     {
-      fprintf(stderr, "Error: no effort limit specified for joint \"%s\"\n", name_.c_str());
+      ROS_ERROR("no effort limit specified for joint \"%s\"\n", name_.c_str());
       return false;
     }
 
@@ -141,7 +141,7 @@ bool Joint::initXml(TiXmlElement *elt)
     {
       if (limits->QueryDoubleAttribute("k_velocity", &k_velocity_limit_) != TIXML_SUCCESS)
       {
-        fprintf(stderr, "No k_velocity for joint %s\n", name_.c_str());
+        ROS_ERROR("No k_velocity for joint %s\n", name_.c_str());
         return false;
       }
     }
@@ -151,7 +151,7 @@ bool Joint::initXml(TiXmlElement *elt)
     if(calibration)
     {
       if(calibration->QueryDoubleAttribute("reference_position", &reference_position_) == TIXML_SUCCESS)
-        std::cout<<"Found reference point at "<<reference_position_<<std::endl;
+        ROS_DEBUG_STREAM("Found reference point at " <<reference_position_<<std::endl);
     }
 
 
@@ -164,18 +164,18 @@ bool Joint::initXml(TiXmlElement *elt)
     }
     else if (min_ret == TIXML_NO_ATTRIBUTE || max_ret == TIXML_NO_ATTRIBUTE)
     {
-      fprintf(stderr, "Error: no min and max limits specified for joint \"%s\"\n", name_.c_str());
+      ROS_ERROR("Error: no min and max limits specified for joint \"%s\"\n", name_.c_str());
       return false;
     }
 
     if (type_ == JOINT_ROTARY || type_ == JOINT_PRISMATIC)
     {
       if (limits->QueryDoubleAttribute("k_position", &k_position_limit_) != TIXML_SUCCESS)
-        fprintf(stderr, "No k_position for joint %s\n", name_.c_str());
+        ROS_DEBUG("No k_position for joint %s\n", name_.c_str());
       if (limits->QueryDoubleAttribute("safety_length_min", &safety_length_min_) != TIXML_SUCCESS)
-        fprintf(stderr, "No safety_length_min_ for joint %s\n", name_.c_str());
+        ROS_DEBUG("No safety_length_min_ for joint %s\n", name_.c_str());
       if (limits->QueryDoubleAttribute("safety_length_max", &safety_length_max_) != TIXML_SUCCESS)
-        fprintf(stderr, "No safety_lenght_max_ for joint %s\n", name_.c_str());
+        ROS_DEBUG("No safety_lenght_max_ for joint %s\n", name_.c_str());
 
       has_safety_limits_ = true;
     }
@@ -186,16 +186,16 @@ bool Joint::initXml(TiXmlElement *elt)
   TiXmlElement *prop_el = elt->FirstChildElement("joint_properties");
   if (!prop_el)
   {
-    fprintf(stderr, "Warning: Joint \"%s\" did not specify any joint properties, default to 0.\n", name_.c_str());
+    ROS_WARN("Joint \"%s\" did not specify any joint properties, default to 0.\n", name_.c_str());
     joint_damping_coefficient_ = 0.0;
     joint_friction_coefficient_ = 0.0;
   }
   else
   {
     if (prop_el->QueryDoubleAttribute("damping", &joint_damping_coefficient_) != TIXML_SUCCESS)
-      fprintf(stderr,"damping is not specified\n");
+      ROS_DEBUG("damping is not specified\n");
     if (prop_el->QueryDoubleAttribute("friction", &joint_friction_coefficient_) != TIXML_SUCCESS)
-      fprintf(stderr,"friction is not specified\n");
+      ROS_DEBUG("friction is not specified\n");
   }
 
   if (type_ == JOINT_ROTARY || type_ == JOINT_CONTINUOUS || type_ == JOINT_PRISMATIC)
@@ -204,14 +204,14 @@ bool Joint::initXml(TiXmlElement *elt)
     TiXmlElement *axis_el = elt->FirstChildElement("axis");
     if (!axis_el)
     {
-      fprintf(stderr, "Error: Joint \"%s\" did not specify an axis\n", name_.c_str());
+      ROS_ERROR("Joint \"%s\" did not specify an axis\n", name_.c_str());
       return false;
     }
     std::vector<double> axis_pieces;
     urdf::queryVectorAttribute(axis_el, "xyz", &axis_pieces);
     if (axis_pieces.size() != 3)
     {
-      fprintf(stderr, "Error: The axis for joint \"%s\" must have 3 value\n", name_.c_str());
+      ROS_ERROR("The axis for joint \"%s\" must have 3 value\n", name_.c_str());
       return false;
     }
     axis_[0] = axis_pieces[0];

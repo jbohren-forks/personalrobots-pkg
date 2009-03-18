@@ -62,7 +62,7 @@ RosBumper::RosBumper(Entity *parent )
     // this only works for a single camera.
     ros::init(argc,argv);
     rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node in bumper \n");
+    ROS_INFO("Starting node in bumper");
   }
 
 }
@@ -80,7 +80,9 @@ void RosBumper::LoadChild(XMLConfigNode *node)
 {
   this->bumperTopicNameP->Load(node);
   this->bumperTopicName = this->bumperTopicNameP->GetValue();
-  std::cout << " publishing contact/collisions to topic name: " << this->bumperTopicName << std::endl;
+  ROS_DEBUG("publishing contact/collisions to topic name: %s", 
+           this->bumperTopicName.c_str());
+  //std::cout << " publishing contact/collisions to topic name: " << this->bumperTopicName << std::endl;
 
   rosnode->advertise<std_msgs::String>(this->bumperTopicName+std::string("/info"),100);
   rosnode->advertise<robot_msgs::Vector3Stamped>(this->bumperTopicName+std::string("/force"),100);

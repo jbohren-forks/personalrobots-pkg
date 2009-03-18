@@ -100,7 +100,7 @@ void RosJointForce::UpdateChild()
   // // on each jointed object, respectively. These vectors have 4 elements: x,y,z
   // // and a fourth one. So we transmit 4 dReals per vector.
   int data_count = n_joints*4*4*sizeof(dReal);
-  std::cout << "data_count:" << data_count << std::endl;
+  ROS_DEBUG("data_count: %d", data_count);
 
   double data[1000];
 
@@ -115,7 +115,7 @@ void RosJointForce::UpdateChild()
     memcpy(data + (i*4 + 3)*4*sizeof(dReal), this->jointfeedbacks[i]->t2, 4*sizeof(dReal));
 
   }
-  std::cout << " data: " << data << std::endl;
+  ROS_DEBUG_STREAM(" data: " << data << std::endl);
   // this->myIface->Unlock();
 }
 

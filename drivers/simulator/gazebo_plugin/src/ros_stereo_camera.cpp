@@ -65,7 +65,7 @@ RosStereoCamera::RosStereoCamera(Entity *parent)
     // this only works for a single camera.
     ros::init(argc,argv);
     rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node in stereo camera \n");
+    ROS_DEBUG("Starting node in stereo camera");
   }
 }
 
@@ -110,7 +110,7 @@ void RosStereoCamera::LoadChild(XMLConfigNode *node)
   this->leftFrameName = node->GetString("leftFrameName","default_ros_stereocamera_left_frame",0); //read from xml file
   this->rightFrameName = node->GetString("rightFrameName","default_ros_stereocamera_right_frame",0); //read from xml file
 
-  std::cout << "================= " << this->leftCloudTopicName << std::endl;
+  ROS_DEBUG("================= %s", this->leftCloudTopicName.c_str());
   rosnode->advertise<robot_msgs::PointCloud>(this->leftCloudTopicName, 1);
   rosnode->advertise<robot_msgs::PointCloud>(this->rightCloudTopicName, 1);
   rosnode->advertise<deprecated_msgs::Image>(this->leftTopicName, 1);
@@ -228,7 +228,7 @@ void RosStereoCamera::PutStereoData()
     this->leftCloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  stereo_data->head.time - this->leftCloudMsg.header.stamp.sec) );
     this->leftCloudMsg.set_pts_size(sizeFloat);
     this->leftCloudMsg.set_chan_size(sizeFloat);
-    std::cout << " stereo size " << sizeFloat << std::endl;
+    ROS_DEBUG(" stereo size %d", sizeFloat);
 
     // which way first?
     for (unsigned int c=0; c< stereo_data->width; c++)
