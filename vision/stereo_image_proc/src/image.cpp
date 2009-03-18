@@ -375,7 +375,8 @@ StereoData::setCorrSize(int val)
   if (val < 5) val = 5;
   if (val > 23) val = 23;
   corrSize = val;
-  PRINTF("[StereoData] Stereo correlation window size set to %d\n", val);
+  //  PRINTF("[StereoData] Stereo correlation window size set to %d\n", val);
+  setDispOffsets();
   return true;
 }
 
@@ -518,16 +519,16 @@ StereoData::doDisparity(stereo_algorithm_t alg)
 
   // some parameters
   int ftzero = 31;		// max 31 cutoff for prefilter value (31 default)
-  int dlen   = numDisp;	// number of disparities
+  int dlen   = numDisp;		// number of disparities
   int corr   = corrSize;	// correlation window size
-  int tthresh = textureThresh; // texture threshold
-  int uthresh = uniqueThresh; // uniqueness threshold, percent
+  int tthresh = textureThresh;	// texture threshold
+  int uthresh = uniqueThresh;	// uniqueness threshold, percent
   int sthresh = smoothThresh;
   bool unique_c = unique_check;
 
- // printf("Unique check: %d\r", unique_check);
+  // printf("Unique check: %d\r", unique_check);
 
- // allocate buffers
+  // allocate buffers
   // TODO: make these consistent with current values
   if (!imDisp)
     imDisp = (int16_t *)MEMALIGN(xim*yim*2);
@@ -539,10 +540,15 @@ StereoData::doDisparity(stereo_algorithm_t alg)
   if (!frim)
     frim = (uint8_t *)MEMALIGN(xim*yim); // feature image
 
- // prefilter
+  // prefilter
   do_prefilter(lim, flim, xim, yim, ftzero, buf);
   do_prefilter(rim, frim, xim, yim, ftzero, buf);
 
+  // clear disparity buffer - do we need to do this???
+  memset(imDisp, 0, xim*yim*sizeof(int16_t));
+
+
+  // use appropriate algorithm
   switch(alg){
 	case NORMAL_ALGORITHM:
   		do_stereo(flim, frim, imDisp, NULL, xim, yim,
@@ -672,13 +678,13 @@ void extract(std::string& data, std::string section,
 
 //
 // Conversion to 3D points
-// Convert to vector or image array of pts
+// Convert to vector or image array of pts, depending on isArray arg
 // Should we do disparity automatically here?
 //
 
 
 bool
-StereoData::doCalcPts()
+StereoData::doCalcPts(bool isArray)
 {
   numPts = 0;
   doDisparity();
@@ -694,18 +700,31 @@ StereoData::doCalcPts()
   int dmax = 0;
   int dmin = 0x7fff;
 
+  if (isArray)			// don't need these for arrays
+    {
+      isPtArray = true;
+      MEMFREE(imCoords);
+      MEMFREE(imPtsColor);
+    }
+  else
+    isPtArray = false;
+
   if (imPtsSize < 4*w*h*sizeof(float))
     {
       MEMFREE(imPts);
       imPtsSize = 4*w*h*sizeof(float);
       imPts = (float *)MEMALIGN(imPtsSize);
       MEMFREE(imCoords);
-      imCoords = (int *)MEMALIGN(2*w*h*sizeof(int));
       MEMFREE(imPtsColor);
-      imPtsColor = (uint8_t *)MEMALIGN(3*w*h);
+      if (!isArray)
+	{
+	  imPtsColor = (uint8_t *)MEMALIGN(3*w*h);
+	  imCoords = (int *)MEMALIGN(2*w*h*sizeof(int));
+	}
     }
 
-  float *pt;
+  float *pt = imPts;
+  pt_xyza_t *ppt = (pt_xyza_t *)imPts;
   int *pcoord;
   int y = iy;
   float cx = (float)RP[3];
@@ -713,7 +732,6 @@ StereoData::doCalcPts()
   float f  = (float)RP[11];
   float itx = (float)RP[14];
   itx *= 1.0 / (float)dpp; // adjust for subpixel interpolation
-  pt = imPts;
   pcoord = imCoords;
 
   // set up range max/min disparity
@@ -728,28 +746,59 @@ StereoData::doCalcPts()
       dmin = (int)dm;
     }
 
-  for (int j=0; j<ih; j++, y++)
-    {
-      int x = ix;
-      int16_t *p = imDisp + x + y*w;
 
-      for (int i=0; i<iw; i++, x++, p++)
+  if (isArray)			// make an array of pts
+    {
+      numPts = w*h;
+      for (int j=0; j<h; j++)
 	{
-	  if (*p > dmax && *p < dmin)
+	  int16_t *p = imDisp + j*w;
+
+	  for (int i=0; i<w; i++, p++, ppt++)
 	    {
-	      float ax = (float)x + cx;
-	      float ay = (float)y + cy;
-	      float aw = 1.0 / (itx * (float)*p);
-	      *pt++ = ax*aw;	// X
-	      *pt++ = ay*aw;	// Y
-	      *pt++ = f*aw;	// Z
-	      // store point image coordinates
-	      *pcoord++ = x;
-	      *pcoord++ = y;
-	      numPts++;
+	      if (*p > dmax && *p < dmin)
+		{
+		  float ax = (float)i + cx;
+		  float ay = (float)j + cy;
+		  float aw = 1.0 / (itx * (float)*p);
+		  ppt->X = ax*aw; // X
+		  ppt->Y = ay*aw; // Y
+		  ppt->Z = f*aw; // Z
+		  ppt->A = 0;
+		}
+	      else
+		ppt->A = -1;	// invalid point
 	    }
 	}
     }
+  else				// make a vector of pts
+    {
+      for (int j=0; j<ih; j++, y++)
+	{
+	  int x = ix;
+	  int16_t *p = imDisp + x + y*w;
+
+	  for (int i=0; i<iw; i++, x++, p++)
+	    {
+	      if (*p > dmax && *p < dmin)
+		{
+		  float ax = (float)x + cx;
+		  float ay = (float)y + cy;
+		  float aw = 1.0 / (itx * (float)*p);
+		  *pt++ = ax*aw;	// X
+		  *pt++ = ay*aw;	// Y
+		  *pt++ = f*aw;	// Z
+		  // store point image coordinates
+		  *pcoord++ = x;
+		  *pcoord++ = y;
+		  numPts++;
+		}
+	    }
+	}
+    }
+
+
+  if (isArray) return true;
 
   if (imLeft->imRectColorType != COLOR_CODING_NONE) // ok, have color
     {

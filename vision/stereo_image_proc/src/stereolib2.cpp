@@ -1231,6 +1231,9 @@ unsigned char *R = rim;
 //temp variables
 int x,y,d,i,j;
 
+// offset disparity image by prefilter kernel
+disp += w*(YKERN-1)/2 + (XKERN-1)/2;
+
 //FILTERS
 // int *min_scores = (int *)malloc(w * sizeof(int ));
  int ratio_filter = 1000-ufilter_thresh;
@@ -1277,7 +1280,7 @@ for(x=maxdisp+r+1; x<w-r; x++){
 unsigned char *lp, *rp, *lpp, *rpp;
 int ind1 = r+r+maxdisp;
 //OTHER ROWS
-for(y=r+1; y<h-r; y++){
+for(y=r+1; y<h-r-YKERN/2; y++){
 	
 	//first position
 	for(d=0; d<maxdisp; d++){
@@ -1294,7 +1297,7 @@ for(y=r+1; y<h-r; y++){
 		Vn[i] = Vn[i] + (R[ (y+r)*w+i]*R[ (y+r)*w+i]) - (R[ (y-r-1)*w+i]*R[ (y-r-1)*w+i]);
 		normR[r] += Vn[i];				
 	}
-	for(x=r+1; x<w-r; x++){
+	for(x=r+1; x<w-r-XKERN/2; x++){
 		Vn[x+r] = Vn[x+r] + (R[(y+r)*w + x+r]*R[ (y+r)*w + x+r]) - (R[ (y-r-1)*w+ x+r]*R[ (y-r-1)*w+ x+r]);
 		normR[x] = normR[x-1] + Vn[x+r] - Vn[x-r-1];
 	}
@@ -1305,7 +1308,7 @@ for(y=r+1; y<h-r; y++){
 	lpp = (unsigned char *) L + (y-r-1)*w + ind1;
 	rpp = (unsigned char *) R + (y-r-1)*w + ind1;
 
-	for(x=maxdisp+r+1; x<w-r; x++){
+	for(x=maxdisp+r+1; x<w-r-XKERN/2; x++){
 		ncc_max = 0.0;
 		
 		lp++;

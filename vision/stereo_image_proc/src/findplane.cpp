@@ -175,6 +175,10 @@ FindPlanes::~FindPlanes()
 void
 FindPlanes::SetPointCloud(pt_xyza_t *pts, int n, int skip)
 {
+  // set points
+  pts3d = pts;
+  n_pts3d = n;
+
   // check buffer
   if (n > n_pts3d_dec)
     {
@@ -187,12 +191,12 @@ FindPlanes::SetPointCloud(pt_xyza_t *pts, int n, int skip)
   pt_xyza_t *dpts = pts3d_dec;
   for (int i=0; i<n; i+=skip, pts+=skip)
     {
-      if (pts->A > 0)		// have a valid point
+      if (pts->A == 0)		// have a valid point
 	{
 	  dpts->X = pts->X;
 	  dpts->Y = pts->Y;
 	  dpts->Z = pts->Z;
-	  dpts->A = 1.0;
+	  dpts->A = 0;
 	  dpts++;
 	  n_pts3d_dec++;
 	}
@@ -211,6 +215,9 @@ FindPlanes::FindPlane(float *pparams, float thresh, int tries)
 {
   int num = 0;			// number of inliers
   float params[4];
+
+  if (n_pts3d_dec < 10) return 0;
+
   for (int i=0; i<tries; i++)
     {
       plane_hyp(pts3d_dec, n_pts3d_dec, params);
@@ -229,17 +236,23 @@ FindPlanes::FindPlane(float *pparams, float thresh, int tries)
 // index a plane that has been found
 //
 
-void
+int
 FindPlanes::IndexPlane(int ind, float thresh, float *pparams)
 {
+  int tot = 0;
   float tt = thresh*thresh;
   pt_xyza_t *pts = pts3d;
-  if (!pts) return;
+  if (!pts) return 0;
 
   for (int i=0; i<n_pts3d; i++, pts++)
     {
+      if (pts->A != 0) continue; // either bad point, or already indexed
       float dist = pparams[0]*pts->X + pparams[1]*pts->Y + pparams[2]*pts->Z + pparams[3];
       if (dist*dist < tt)	// inlier
-	{}
+	{
+	  pts->A = ind;
+	  tot++;
+	}
     }
+  return tot;
 }

@@ -134,7 +134,7 @@ typedef struct
   float X;
   float Y;
   float Z;
-  int32_t A;			// 0 for undefined point, otherwise arbitrary index
+  int32_t A;			// negative for undefined point, otherwise arbitrary index
 } pt_xyza_t;
 
 
@@ -269,7 +269,7 @@ namespace cam
     bool doRectify();		// rectify images
     bool doDisparity(stereo_algorithm_t alg=NORMAL_ALGORITHM); // calculate disparity image
     bool doSpeckle();		// speckle filter post-processing, automatically applied by doDisparity
-    bool doCalcPts();		// calculate 3D points
+    bool doCalcPts(bool isArray = false); // calculate 3D points
     bool calcPt(int x, int y, float *fx, float *fy, float *fz); // single point
     bool setRangeMax(double thresh);
     bool setRangeMin(double thresh);
@@ -283,11 +283,13 @@ namespace cam
     // NOTE: imPts buffer should be 16-byte aligned
     // imPts elements will have the form of a pt_xyza_t for a pt array
     float *imPts;		// points, 3xN floats for vector version, 4xN for array version
+                                // for isPtArray = true, these next two are not needed
     int *imCoords;		// image coordinates of the point cloud points, 2xN ints
     uint8_t *imPtsColor;	// color vector corresponding to points, RGB
     size_t imPtsSize;		// size of array in bytes, for storage manipulation
     int numPts;			// number of points in array
     bool isPtArray;		// true if the points are an image array, z=0.0 for no point
+    pt_xyza_t *imPtArray() { return (pt_xyza_t *)imPts; } 
 
     // external parameters for undistorted images
     double T[3];		// pose of right camera in left camera coords
@@ -356,8 +358,9 @@ namespace cam
     // find a plane, return its parameters and (decimated) inlier count
     int FindPlane(float *pparams, float thresh, int tries);
 
-    // set all plane inliers to an index
-    void IndexPlane(int ind, float thresh, float *pparams);
+    // set all plane inliers to an index, return number found
+    // also resets decimated point cloud
+    int IndexPlane(int ind, float thresh, float *pparams);
 
   private:
     pt_xyza_t *pts3d;		// input vector of points
