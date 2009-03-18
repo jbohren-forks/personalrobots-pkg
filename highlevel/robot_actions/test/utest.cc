@@ -1,5 +1,6 @@
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
+#include <robot_actions/message_adapter.h>
 #include <robot_actions/ActionStatus.h>
 #include <robot_actions/RechargeGoal.h>
 #include <robot_actions/RechargeState.h>
@@ -80,6 +81,11 @@ TEST(robot_actions, basic_compilation){
   robot_actions::ActionRunner<RechargeGoal, RechargeState, RechargeGoal> runner(a);
   runner.initialize();
   runner.terminate();
+
+  robot_actions::MessageAdapter<RechargeGoal, RechargeState, RechargeGoal> adapter(a);
+  adapter.initialize();
+  adapter.update();
+  adapter.terminate();
 }
 
 
