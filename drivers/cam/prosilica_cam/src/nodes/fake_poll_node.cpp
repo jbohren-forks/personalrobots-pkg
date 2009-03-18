@@ -11,8 +11,6 @@
 #include <cstdio>
 #include <cassert>
 
-static const char INTRINSICS_FILE[] = "intrinsics.yml";
-
 class FakePublisher
 {
 private:
@@ -21,12 +19,13 @@ private:
   CvMat *K_, *D_;
 
 public:
-  FakePublisher(const std::vector<std::string> &files)
-    : files_(files), current_iter_(files_.begin()), end_iter_(files_.end()),
+  FakePublisher(const std::string &intrinsics_file,
+                const std::vector<std::string> &image_files)
+    : files_(image_files), current_iter_(files_.begin()), end_iter_(files_.end()),
       K_(NULL), D_(NULL)
   {
     // Read camera matrix and distortion from YML file
-    CvFileStorage* fs = cvOpenFileStorage(INTRINSICS_FILE, 0, CV_STORAGE_READ);
+    CvFileStorage* fs = cvOpenFileStorage(intrinsics_file.c_str(), 0, CV_STORAGE_READ);
     assert(fs);
     K_ = (CvMat*)cvReadByName(fs, 0, "camera_matrix");
     D_ = (CvMat*)cvReadByName(fs, 0, "distortion_coefficients");
@@ -72,15 +71,15 @@ public:
 int main(int argc, char** argv)
 {
   std::vector<std::string> files;
-  files.reserve(argc - 1);
-  for (int i = 1; i < argc; ++i) {
+  files.reserve(argc - 2);
+  for (int i = 2; i < argc; ++i) {
     //printf("File name: %s\n", argv[i]);
     files.push_back( argv[i] );
   }
   
   ros::init(argc, argv);
   ros::Node n("fake_publisher");
-  FakePublisher fp(files);
+  FakePublisher fp(argv[1], files);
   
   n.spin();
 
