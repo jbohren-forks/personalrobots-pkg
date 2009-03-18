@@ -27,7 +27,7 @@ private:
   }
 
   virtual void handlePreempt(){
-    notifyPreempted();
+    notifyPreempted(f);
   }
 
   RechargeGoal f;

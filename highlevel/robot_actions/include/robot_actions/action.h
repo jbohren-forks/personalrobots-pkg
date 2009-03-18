@@ -109,9 +109,13 @@ namespace robot_actions {
      * @brief A call made periodically to provide an opportunity to execute. 
      */
     void execute(){
-      _callback(_status, _goal, _feedback);
+
+      // Allow for action to update
       if(isActive())
 	handleExecute();
+
+      // Always post a state update
+      _callback(_status, _goal, _feedback);
     }
 
     /**
@@ -152,7 +156,8 @@ namespace robot_actions {
      * @brief An action will call this method when it has aborted of its own volition
      * @param Feedback to provide in the state update
      */
-    void notifyAborted(){
+    void notifyAborted(const Feedback& feedback){
+      _feedback = feedback;
       _status.value = ActionStatus::ABORTED;
       _callback(_status, _goal, _feedback);
     }
@@ -161,7 +166,8 @@ namespace robot_actions {
      * @brief An action will call this method when it has successfully been preempted
      * @param Feedback to provide in the state update
      */
-    void notifyPreempted(){
+    void notifyPreempted(const Feedback& feedback){
+      _feedback = feedback;
       _status.value = ActionStatus::PREEMPTED;
       _callback(_status, _goal, _feedback);
     }
