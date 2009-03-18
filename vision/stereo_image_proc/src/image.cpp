@@ -441,6 +441,7 @@ StereoData::releaseBuffers()
 
 
 // image size
+// needs to deal with buffers
 void
 StereoData::setSize(int width, int height)
 {
@@ -448,10 +449,10 @@ StereoData::setSize(int width, int height)
   imHeight = height;
   imLeft->imWidth = width;
   imLeft->imHeight = height;
-  imLeft->imSize = width*height;
+  //  imLeft->imSize = width*height;
   imRight->imWidth = width;
   imRight->imHeight = height;
-  imRight->imSize = width*height;
+  //  imRight->imSize = width*height;
 }
 
 
@@ -542,7 +543,7 @@ StereoData::doDisparity(stereo_algorithm_t alg)
   do_prefilter(lim, flim, xim, yim, ftzero, buf);
   do_prefilter(rim, frim, xim, yim, ftzero, buf);
 
-switch(alg){
+  switch(alg){
 	case NORMAL_ALGORITHM:
   		do_stereo(flim, frim, imDisp, NULL, xim, yim,
 	    	ftzero, corr, corr, dlen, tthresh, uthresh, buf);
@@ -570,7 +571,7 @@ switch(alg){
 
 	default:
 	PRINTF("No algorithm has been selected..sorry!\n");
-}
+  }
 
 
 

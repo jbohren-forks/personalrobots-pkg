@@ -95,8 +95,8 @@ rand_pt(pt_xyza_t *pts, int n)
 //   that are not collinear
 // n is size of array
 // always assume array elements are valid
-void
 
+void
 plane_hyp(pt_xyza_t *pts, int n, float *pparams)
 {
   pt_xyza_t *pp1, *pp2, *pp3;
@@ -168,3 +168,78 @@ FindPlanes::~FindPlanes()
 }
 
 
+//
+// point cloud setup
+//
+
+void
+FindPlanes::SetPointCloud(pt_xyza_t *pts, int n, int skip)
+{
+  // check buffer
+  if (n > n_pts3d_dec)
+    {
+      if (pts3d_dec) MEMFREE(pts3d_dec);
+      pts3d_dec = (pt_xyza_t *)MEMALIGN(n*sizeof(pt_xyza_t));
+    }
+  
+  // set up buffer
+  n_pts3d_dec = 0;
+  pt_xyza_t *dpts = pts3d_dec;
+  for (int i=0; i<n; i+=skip, pts+=skip)
+    {
+      if (pts->A > 0)		// have a valid point
+	{
+	  dpts->X = pts->X;
+	  dpts->Y = pts->Y;
+	  dpts->Z = pts->Z;
+	  dpts->A = 1.0;
+	  dpts++;
+	  n_pts3d_dec++;
+	}
+    }
+}
+
+
+
+//
+// main function
+// returns plane parameters and number of inliers (decimated)
+//
+
+int
+FindPlanes::FindPlane(float *pparams, float thresh, int tries)
+{
+  int num = 0;			// number of inliers
+  float params[4];
+  for (int i=0; i<tries; i++)
+    {
+      plane_hyp(pts3d_dec, n_pts3d_dec, params);
+      int n = num_inliers(pts3d_dec, n_pts3d_dec, params, thresh);
+      if (n > num)		// check if more inliers
+	{
+	  num = n;
+	  for (int j=0; j<4; j++) pparams[j] = params[j];
+	}
+    }
+  return num;
+}
+
+
+//
+// index a plane that has been found
+//
+
+void
+FindPlanes::IndexPlane(int ind, float thresh, float *pparams)
+{
+  float tt = thresh*thresh;
+  pt_xyza_t *pts = pts3d;
+  if (!pts) return;
+
+  for (int i=0; i<n_pts3d; i++, pts++)
+    {
+      float dist = pparams[0]*pts->X + pparams[1]*pts->Y + pparams[2]*pts->Z + pparams[3];
+      if (dist*dist < tt)	// inlier
+	{}
+    }
+}

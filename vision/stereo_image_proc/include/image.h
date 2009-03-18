@@ -364,7 +364,6 @@ namespace cam
     int n_pts3d;		// number of points
     pt_xyza_t *pts3d_dec;	// decimated points
     int n_pts3d_dec;
-
   };
 
 }
