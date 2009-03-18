@@ -24,6 +24,7 @@ plug_location = Point()
 def get_location(data):
     global found_count, centroid_x, centroid_y, plug_location
     if (data.stowed == 1):
+      print "found plug\n"    
       found_count=found_count+1
       centroid_x.append(data.plug_centroid.x)
       centroid_y.append(data.plug_centroid.y)
@@ -53,7 +54,7 @@ def move(positions):
   
   try:
     move_arm = rospy.ServiceProxy('right_arm/trajectory_controller/TrajectoryStart', TrajectoryStart)
-    resp1 = move_arm(srv_msg)
+    resp1 = move_arm(traj,0,0)
     return resp1.trajectoryid
   except rospy.ServiceException, e:
     print "Service call failed: %s"%e
@@ -96,10 +97,13 @@ if __name__ == '__main__':
     
     rospy.wait_for_service('right_arm/trajectory_controller/TrajectoryStart')
 
-    traj_id = move(positions)
+    traj_id = move(positions_unfold)
     is_traj_done = rospy.ServiceProxy('right_arm/trajectory_controller/TrajectoryQuery', TrajectoryQuery)
-    
-    while(is_traj_done(traj_id)!=1)
+    resp =is_traj_done(traj_id)   
+   
+    while(resp.done>0):
+      resp=is_traj_done(traj_id)
+      print resp.done
       sleep(.5)
     
     #now collect data
@@ -107,16 +111,19 @@ if __name__ == '__main__':
     print "collecting data" 
     rospy.Subscriber("/plug_onbase_detector_node/plug_stow_info", PlugStow, get_location)
     global plug_found
-    while(!plug_found)
+    while(not plug_found):
       sleep(.5)
 
     
     positions_reach = [[-1.94218984843, 1.11597858279, -0.972790862418, -2.05406188637, 1.13866187982, 1.98224613965, 0.138829401448],
                  [-0.588178005201, 1.02579336793, -1.83716985184, -2.05579901252, 2.47973068494, 1.29075854416, 0.0628192819417]]  
                  
-    traj_id = move(positions)                
-    while(is_traj_done(traj_id)!=1)
+    traj_id = move(positions_reach)                
+    while(resp.done>0):
+      resp=is_traj_done(traj_id)
+      print resp.done
       sleep(.5)
+
     
     #now pick up plug  
 
