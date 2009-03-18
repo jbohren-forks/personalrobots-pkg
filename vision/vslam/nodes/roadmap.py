@@ -119,10 +119,11 @@ class FakeRoadmapServer:
     n = (msg.pos.x, msg.pos.y, msg.pos.th)
     if self.nodes == [] or (dist(self.nodes[-1], n) > 1.0) or (abs(self.nodes[-1][2] - n[2]) > (2.0 * pi / 180)):
       self.nodes.append((msg.pos.x, msg.pos.y, msg.pos.th))
-      self.send_map()
+      self.send_map(msg.header.stamp)
 
-  def send_map(self):
+  def send_map(self, stamp):
     p = vslam.msg.Roadmap()
+    p.header.stamp = stamp
     p.nodes = [ vslam.msg.Node(x,y,t) for (x,y,t) in self.nodes ]
     es = []
     for a in range(len(self.nodes)):
