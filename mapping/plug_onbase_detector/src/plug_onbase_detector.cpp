@@ -110,8 +110,7 @@ class PlugOnBaseDetector
     
     
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    PlugOnBaseDetector (ros::Node& anode) : node_ (anode), m_addresses ("mwise@willowgarage.com"), m_stowSubject ("Robot Lost it's Plug"), 
-      m_stowBody ("Hello, could you please help me find my plug?\nThanks, PR2"), m_mailClient ("mailx -s"), tf_ (anode)
+    PlugOnBaseDetector (ros::Node& anode) : node_ (anode), tf_ (anode)
     {
       node_.param ("~publish_debug", publish_debug_, 1);
       node_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.02);     // 2 cm
@@ -124,11 +123,6 @@ class PlugOnBaseDetector
       node_.param ("~base_xy_max_rel", base_xy_max_, .29);                  // specifies the maximum X-Y distance between 0,0,0 and a point
       base_xy_max_ *= base_xy_max_;
 
-
-      node_.param("recharge/email_addresses", m_addresses, m_addresses);
-      node_.param("recharge/subject_stow", m_stowSubject, m_stowSubject);
-      node_.param("recharge/body_stow", m_stowBody, m_stowBody);
-      node_.param("recharge/mail_client", m_mailClient,  m_mailClient);
 
 
       // Check to see if the default/given topic exists in the list of published topics on the server yet, and issue a warning otherwise
@@ -246,7 +240,7 @@ class PlugOnBaseDetector
       if (object_clusters.size () == 0)       // Nothing left ?
       {
         p_stow_.stowed = false;
-        sendMail();
+
       }
       else
       {
@@ -520,33 +514,7 @@ class PlugOnBaseDetector
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void 
-      sendMail ()
-    {
-      std::string subject = "Error: bad mail.", body = "Bad, bug in onbase detector.";
-      subject = m_stowSubject;
-      body = m_stowBody;
-     
-      
-      ROS_INFO ("Sending mail...\n");
-      std::string command = "echo \"";
-      command += body + "\" | " + m_mailClient + " \"";
-      command += subject + "\" \"";
-      for (unsigned int i = 0; i <  m_addresses.length (); i++) 
-      {
-        if (m_addresses[i] == ' ') 
-        {
-          command += "\" \"";
-        } 
-        else 
-        {
-          command += m_addresses[i];
-        }
-      }
-      command += "\"";
-      system (command.c_str());
-      ROS_INFO ("Mail command sent: %s\n", command.c_str ());
-    }
+    
 
 };
 
