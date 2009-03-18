@@ -26,9 +26,9 @@ includes: trex PlanWorks PLASMA
 
 # GET plasma
 plasma:
-	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5274 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
-	-if test "-r 5274" != "-r `svn info PLASMA | grep Revision | cut -d " " -f 2,2`"; then \
-	  cd PLASMA && $(SVN_CMDLINE) up -r 5274 ; \
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5289 https://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
+	-if test "-r 5289" != "-r `svn info PLASMA | grep Revision | cut -d " " -f 2,2`"; then \
+	  cd PLASMA && $(SVN_CMDLINE) up -r 5289 ; \
 	fi
 
 #install the patch
@@ -39,16 +39,16 @@ plasma:
 
 # GET PlanWorks
 planworks:
-	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 5117 http://europa-pso.googlecode.com/svn/PlanWorks/trunk PlanWorks; fi ;
+	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 5117 https://europa-pso.googlecode.com/svn/PlanWorks/trunk PlanWorks; fi ;
 	-if test "-r 5117" != "-r `svn info PlanWorks | grep Revision | cut -d " " -f 2,2`"; then \
 	  cd PlanWorks && $(SVN_CMDLINE) up -r 5117; \
         fi
 
 # Get TREX
 trex: plasma
-	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 82 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
-	-if test "-r 82" != "-r `svn info TREX | grep Revision | cut -d " " -f 2,2`"; then \
-	  cd TREX && $(SVN_CMDLINE) up -r 82 ; \
+	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 86 https://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
+	-if test "-r 86" != "-r `svn info TREX | grep Revision | cut -d " " -f 2,2`"; then \
+	  cd TREX && $(SVN_CMDLINE) up -r 86 ; \
 	fi
 	@if [ ! -d logs ]; then mkdir logs; fi
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
