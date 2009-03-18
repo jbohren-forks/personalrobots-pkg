@@ -97,9 +97,11 @@ namespace ros
 
         virtual bool makePlan();
 
-        void checkTrajectory(const robot_msgs::JointTraj& trajectory, robot_msgs::JointTraj &return_trajectory);
+        void checkTrajectory(const robot_msgs::JointTraj& trajectory, robot_msgs::JointTraj &return_trajectory, std::string trajectory_frame_id, std::string map_frame_id);
 
         bool computeOrientedFootprint(double x_i, double y_i, double th_i, const std::vector<deprecated_msgs::Point2DFloat32>& footprint_spec, std::vector<deprecated_msgs::Point2DFloat32>& oriented_footprint);
+
+        void transform2DPose(const double &x, const double &y, const double &th, const std::string original_frame_id, const std::string &transform_frame_id, double &return_x, double &return_y, double &return_theta);
 
         trajectory_rollout::CostmapModel *cost_map_model_;
 
@@ -115,6 +117,8 @@ namespace ros
 
         std::string base_trajectory_controller_topic_;
 
+        std::string base_trajectory_controller_frame_id_;
+
         double circumscribed_radius_;
 
         double inscribed_radius_;
@@ -122,13 +126,15 @@ namespace ros
     
     
     MoveBaseDoor::MoveBaseDoor()
-      : MoveBase(), goal_x_(0.0), goal_y_(0.0), goal_theta_(0.0)
+      : MoveBase(), goal_x_(0.0), goal_y_(0.0), goal_theta_(0.0), dist_waypoints_max_(0.025)
     {
       cost_map_model_ = new trajectory_rollout::CostmapModel(*costMap_);
       ros::Node::instance()->param<std::string>("~move_base_door/trajectory_control_topic",base_trajectory_controller_topic_,"base/trajectory_controller/trajectory_command");
+      ros::Node::instance()->param<std::string>("~move_base_door/base_trajectory_controller_frame_id",base_trajectory_controller_frame_id_,"odom_combined");
       ros::Node::instance()->advertise<robot_msgs::JointTraj>(base_trajectory_controller_topic_,1);
       ros::Node::instance()->param("~costmap_2d/circumscribed_radius", circumscribed_radius_, 0.46);
       ros::Node::instance()->param("~costmap_2d/inscribed_radius", inscribed_radius_, 0.325);
+      ros::Node::instance()->param("~move_base_door/dist_waypoints_max", dist_waypoints_max_, 0.325);
       ROS_INFO("Initialized move base door");
       initialize();
    }
@@ -136,6 +142,7 @@ namespace ros
     bool MoveBaseDoor::makePlan()
     {
       ROS_INFO("Making the plan");
+      return true;
     }
 
     bool MoveBaseDoor::computeOrientedFootprint(double x_i, double y_i, double theta_i, const std::vector<deprecated_msgs::Point2DFloat32>& footprint_spec, std::vector<deprecated_msgs::Point2DFloat32>& oriented_footprint)
@@ -158,27 +165,39 @@ namespace ros
       return true;
     }
 
-    void MoveBaseDoor::checkTrajectory(const robot_msgs::JointTraj& trajectory, robot_msgs::JointTraj &return_trajectory)
+    void MoveBaseDoor::checkTrajectory(const robot_msgs::JointTraj& trajectory, robot_msgs::JointTraj &return_trajectory, std::string trajectory_frame_id, std::string map_frame_id)
     {
       double theta;
       return_trajectory = trajectory;
       deprecated_msgs::Point2DFloat32 position;
-      std::vector<deprecated_msgs::Point2DFloat32> oriented_footprint;
 
       for(int i=0; i < (int) trajectory.points.size(); i++)
       {
+        double x, y;
+        std::vector<deprecated_msgs::Point2DFloat32> oriented_footprint;
+/*
         position.x  = trajectory.points[i].positions[0];
         position.y  = trajectory.points[i].positions[1];
         theta = trajectory.points[i].positions[2];
+*/
+        transform2DPose(trajectory.points[i].positions[0], trajectory.points[i].positions[1],  trajectory.points[i].positions[2], trajectory_frame_id, map_frame_id, x, y, theta);
+
+        position.x = x;
+        position.y = y;
 
         computeOrientedFootprint(position.x,position.y,theta, footprint_, oriented_footprint);
 
-        if(cost_map_model_->footprintCost(position, oriented_footprint, inscribed_radius_, circumscribed_radius_) > 0)
+        if(cost_map_model_->footprintCost(position, oriented_footprint, inscribed_radius_, circumscribed_radius_) >= 0)
         {
+          ROS_INFO("Point %d: position: %f, %f, %f is not in collision",i,position.x,position.y,theta);
           continue;
         }
         else
         {
+          ROS_INFO("Point %d: position: %f, %f, %f is in collision",i,position.x,position.y,theta);
+          ROS_INFO("Radius inscribed: %f, circumscribed: %f",inscribed_radius_, circumscribed_radius_);
+          for(int j=0; j < (int) oriented_footprint.size(); j++)
+            ROS_INFO("Footprint point: %d is : %f,%f",j,oriented_footprint[j].x,oriented_footprint[j].y);
           int last_valid_point = std::max<int>(i-2,0);
           if(last_valid_point > 0)
           {
@@ -197,27 +216,58 @@ namespace ros
     {
     }
 
+    void MoveBaseDoor::transform2DPose(const double &x, const double &y, const double &th, const std::string original_frame_id, const std::string &transform_frame_id, double &return_x, double &return_y, double &return_theta)
+    {
+      tf::Stamped<tf::Pose> pose;
+      btQuaternion qt;
+      qt.setEulerZYX(th, 0, 0);
+      pose.setData(btTransform(qt, btVector3(x, y, 0)));
+      pose.frame_id_ = original_frame_id;
+      pose.stamp_ = ros::Time();
+
+      tf::Stamped<tf::Pose> transformed_pose;
+/*      transformed_pose.setIdentity();
+      transformed_pose.frame_id_ = base_trajectory_controller_frame_id_;
+      transformed_pose.stamp_ = ros::Time();
+*/
+      try{
+        tf_.transformPose(transform_frame_id, pose, transformed_pose);
+      }
+      catch(tf::LookupException& ex) {
+        ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      }
+      catch(tf::ConnectivityException& ex) {
+        ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      }
+      catch(tf::ExtrapolationException& ex) {
+        ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      }
+
+      return_x = transformed_pose.getOrigin().x();
+      return_y = transformed_pose.getOrigin().y();
+      double uselessPitch, uselessRoll, yaw;
+      transformed_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+      return_theta = (double)yaw;      
+    };
+
     bool MoveBaseDoor::dispatchCommands()
     {
       ROS_INFO("Planning for new goal...\n");
       robot_msgs::JointTraj valid_path;
       stateMsg.lock();
-      current_x_ = stateMsg.pos.x;
-      current_y_ = stateMsg.pos.y;
-      current_theta_ = stateMsg.pos.th;
-
-      goal_x_ = stateMsg.goal.x;
-      goal_y_ = stateMsg.goal.y;
-      goal_theta_ = stateMsg.goal.th;
+      transform2DPose(stateMsg.pos.x,stateMsg.pos.y,stateMsg.pos.th,global_frame_, base_trajectory_controller_frame_id_,current_x_,current_y_,current_theta_);
+      transform2DPose(stateMsg.goal.x,stateMsg.goal.y,stateMsg.goal.th,global_frame_, base_trajectory_controller_frame_id_,goal_x_,goal_y_,goal_theta_);
+      ROS_INFO("Current position: in frame %s, %f %f %f, goal position: %f %f %f", global_frame_.c_str(),stateMsg.pos.x,stateMsg.pos.y,stateMsg.pos.th,stateMsg.goal.x,stateMsg.goal.y,stateMsg.goal.th);
       stateMsg.unlock();
 
-      ROS_INFO("Current position: %f %f %f, goal position: %f %f %f",current_x_,current_y_,current_theta_,goal_x_,goal_y_,goal_theta_);
+      ROS_INFO("Current position: in frame %s, %f %f %f, goal position: %f %f %f", base_trajectory_controller_frame_id_.c_str(),current_x_,current_y_,current_theta_,goal_x_,goal_y_,goal_theta_);
 
       // For now plan is a straight line with waypoints about 2.5 cm apart
       double dist = sqrt( pow(goal_x_-current_x_,2) + pow(goal_y_-current_y_,2));        
       int num_intervals = std::max<int>(1,(int) dist/dist_waypoints_max_);
       int num_path_points = num_intervals + 1;
 
+      ROS_INFO("Num of intervals for the path is %d", num_intervals);
       path_.set_points_size(num_path_points);
 
       for(int i=0; i< num_intervals; i++)
@@ -234,7 +284,7 @@ namespace ros
       path_.points[num_intervals].positions[1] = goal_y_;
       path_.points[num_intervals].positions[2] = goal_theta_;
 
-      checkTrajectory(path_,valid_path_);
+      checkTrajectory(path_,valid_path_,base_trajectory_controller_frame_id_,global_frame_);
       // First criteria is that we have had a sufficiently recent sensor update to trust perception and that we have a valid plan. This latter
       // case is important since we can end up with an active controller that becomes invalid through the planner looking ahead. 
       // We want to be able to stop the robot in that case
@@ -245,7 +295,7 @@ namespace ros
         ROS_ERROR("MoveBaseDoor: Plan not ok");
         return false;
       }
-
+      ROS_INFO("Publishing trajectory on topic: %s with %d points",base_trajectory_controller_topic_.c_str(),valid_path_.points.size());
       ros::Node::instance()->publish(base_trajectory_controller_topic_,valid_path_);         
       return true;
     }
