@@ -37,7 +37,7 @@
 #ifndef H_robot_actions_ActionRunner
 #define H_robot_actions_ActionRunner
 
-#include <robot_actions/action_container.h>
+#include <robot_actions/action.h>
 #include <robot_actions/ActionStatus.h>
 #include <boost/thread.hpp>
 #include <ros/node.h>
@@ -61,8 +61,9 @@ namespace robot_actions {
    *
    * An instance of this class will subscribe to a goal and preemption message, and will publish a state message.
    * @todo Check proper values for QUEUE_MAX
+   * @todo Modify this so an action connector can be used for the call backs and stick them on a stack so we can iterate over them with a single thread.
    */
-  template <class Goal, class State, class Feedback> class ActionRunner : public ActionContainer<Feedback> {
+  template <class Goal, class State, class Feedback> class ActionRunner {
 
   public:
 
@@ -75,7 +76,7 @@ namespace robot_actions {
     : _action(action), _initialized(false), _terminated(false), _update_rate(10), _update_thread(NULL), _update_topic(_action.getName() + "/state_update") {
 
       // Connect the action to this container
-      _action.connect(this);
+      _action.connect(boost::bind(&ActionRunner<Goal, State, Feedback>::notify, this, _1, _2, _3));
 
       // Obtain paramaters from the param server
       ros::Node::instance()->param(_action.getName() + "/update_rate", _update_rate, _update_rate);
@@ -102,6 +103,8 @@ namespace robot_actions {
       delete _update_thread;
     }
 
+    void notify(const ActionStatus&, const Goal&, const Feedback&){}
+
     /**
      * @brief Call when ready to run the node
      */
@@ -121,9 +124,8 @@ namespace robot_actions {
 
       _terminated = true;
 
-      // If action is active then preempt it.
-      if(isActive())
-	_action.preempt();
+      // Preempt all actions
+      _action.preempt();
 
       // We must wait till it becomes inactive, and terminates the thread loop
       _update_thread->join();
@@ -135,13 +137,6 @@ namespace robot_actions {
      */
     bool isInitialized() const {
       return _initialized;
-    }
-
-    /**
-     * @brief Test if the action is active in pursuit f a goal
-     */
-    bool isActive() const {
-      return this->_state_msg.status.value == this->_state_msg.status.ACTIVE;
     }
 
     /**
@@ -166,7 +161,7 @@ namespace robot_actions {
      * @brief A sublcass will call this method when it has completed successfully.
      * @param Feedback to provide in the state update
      */
-    virtual void notifyCompleted(const Feedback& feedback_msg){
+    virtual void notifySucceded(const Feedback& feedback_msg){
       ROS_INFO("Completed %s", _action.getName().c_str());
       publishUpdate(feedback_msg, this->_state_msg.status.SUCCESS);
     }
@@ -197,11 +192,10 @@ namespace robot_actions {
   private:
 
     /**
-     * @brief Handle a new request. Will ignore the request if the action is currently active. Delegates to subclass for details.
+     * @brief Handle a new request.
      */
     void requestHandler(){
-      if(isInitialized() && !isTerminated() && !isActive()){
-	_state_msg.goal = _request_msg;
+      if(isInitialized() && !isTerminated()){
 	_action.activate(_request_msg);
       }
     }
@@ -210,7 +204,7 @@ namespace robot_actions {
      * @brief Handle a premption. Will ignore the request unless the action is currently active. Delegates to subclass for details.
      */
     void premptionHandler(){
-      if(isInitialized() && isActive())
+      if(isInitialized())
 	_action.preempt();
     }
 
@@ -221,22 +215,23 @@ namespace robot_actions {
     
       while(ros::Node::instance()->ok()) {
 
-	// If we have been terminated and we have transitioned into an inactive state, then we can quit
-	if(isTerminated() && !isActive())
-	  break;
-
 	ros::Time curr = ros::Time::now();
 	
 	// Guard with initialization check to prevent sending bogus state messages.
 	if(isInitialized()){
 
-	  // Only look for a state update if the action is active.
-	  if(this->_state_msg.status.value == this->_state_msg.status.ACTIVE)
-	    _action.updateStatus(_state_msg.feedback);
+	  // Update the action status
+	  _action.updateStatus();
 
-	  ros::Node::instance()->publish(_update_topic, this->_state_msg);
+	  State state_msg;
+	  _action.getState(state_msg.status, state_msg.goal, state_msg.feedback);
+	  ros::Node::instance()->publish(_update_topic, state_msg);
+
+	  if(isTerminated() && state_msg.status.value != ActionStatus::ACTIVE)
+	    break;
 	}
  
+
 	sleep(curr, 1 / _update_rate);
       }
 

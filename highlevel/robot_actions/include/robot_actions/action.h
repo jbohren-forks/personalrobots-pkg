@@ -37,17 +37,61 @@
 #ifndef H_robot_actions_Action
 #define H_robot_actions_Action
 
-#include <robot_actions/action_container.h>
+#include <robot_actions/ActionStatus.h>
+#include <boost/bind.hpp>
 
 namespace robot_actions {
 
   /**
    * @brief Abstract base class for a durative, preemptable action.
-   * @see ActionContainer Used to connnect the action to its execution context
    */
-  template <class Goal, class Feedback> class Action {
+  template<class Goal, class Feedback> class Action {
+
+  protected:
+
+
+    /**
+     * @brief This method is called on receipt of a new goal. The derived class will implement this method to 
+     * pursue the goal.
+     * @param Goal The goal to accomplish.
+     * @see notifyActivated
+     */
+    virtual void handleActivate(const Goal& goalMsg) = 0;
+
+    /**
+     * @brief This method is called to preempt execution of a goal. The derived class must terminate all activiity
+     * pursuing an active goal. As soon as we return from this call, the actor will be deactivated.
+     * @see notifyPreempted
+     */
+    virtual void handlePreempt() = 0;
+
+    /**
+     * @brief A query to retrieve current state of execution, and offer an opportunity to publish specific 
+     * feedback parameters
+     */
+    virtual void updateStatus(Feedback& feedback) = 0;
+
 
   public:
+
+    /**
+     * @brief Accessor for state
+     */
+    void getState(ActionStatus& status, Goal& goal, Feedback& feedback){
+      status = _status;
+      goal = _goal;
+      feedback = _feedback;
+    }
+
+    /**
+     * @brief Accessor for the current goal
+     */
+    const Goal& getGoal() const { return _goal; }
+
+    /**
+     * @brief Accessor for the current feedback state
+     */
+    const Feedback& getFeedback() const { return _feedback; }
 
     /**
      * @brief This method is called on receipt of a new goal. The derived class will implement this method to 
@@ -55,20 +99,31 @@ namespace robot_actions {
      * @param Goal The goal to accomplish.
      * @see notifyActivated
      */
-    virtual void activate(const Goal& goalMsg) = 0;
+    void activate(const Goal& goal){
+      if(!isActive()){
+	_goal = goal;
+	handleActivate(_goal);
+      }
+    }
 
     /**
      * @brief This method is called to preempt execution of a goal. The derived class must terminate all activiity
      * pursuing an active goal. The actor will be deactivated as soon as notifyPreempted is called on the actioncontainer.
      * @see notifyPreempted
      */
-    virtual void preempt() = 0;
+    void preempt(){
+      if(isActive())
+	handlePreempt();
+    }
 
     /**
      * @brief A query to retrieve current state of execution, and offer an opportunity to publish specific 
      * feedback parameters
      */
-    virtual void updateStatus(Feedback& feedback_msg) = 0;
+    void updateStatus(){
+      updateStatus(_feedback);
+      _callback(_status, _goal, _feedback);
+    }
 
     /**
      * @brief Accessor for the action name
@@ -76,33 +131,75 @@ namespace robot_actions {
     const std::string& getName() const { return _name; }
 
     /**
-     * @brief Connect the action to its container for posting status updates
-     * @see getContainer
+     * @brief Connect the action to a container for handling outbound messages
+     * @todo Implement with a functor object and bost bind perhaps
      */
-    void connect(ActionContainer<Feedback>* container){
-      _container = container;
-    }
-
-    ActionContainer<Feedback>& getContainer() {
-      return *_container;
-    }
+    void connect(const boost::function< void(const ActionStatus&, const Goal&, const Feedback&) >& callback){ _callback = callback; }
 
   protected:
 
+    /** The notification methods below are used by derived action classes to generate state transition events **/
+
+    /**
+     * @brief An action will call this method when it has been activated successfully
+     * @param Feedback to provide in the state update
+     */
+    void notifyActivated(const Feedback& feedback){
+      _feedback = feedback;
+      _status.value = ActionStatus::ACTIVE;
+      _callback(_status, _goal, _feedback);
+    }
+
+    /**
+     * @brief An action will call this method when it has completed successfully.
+     * @param Feedback to provide in the state update
+     */
+    void notifySucceeded(const Feedback& feedback){
+      _feedback = feedback;
+      _status.value = ActionStatus::SUCCESS;
+      _callback(_status, _goal, _feedback);
+    }
+
+    /**
+     * @brief An action will call this method when it has aborted of its own volition
+     * @param Feedback to provide in the state update
+     */
+    void notifyAborted(const Feedback& feedback){
+      _feedback = feedback;
+      _status.value = ActionStatus::ABORTED;
+      _callback(_status, _goal, _feedback);
+    }
+
+    /**
+     * @brief An action will call this method when it has successfully been preempted
+     * @param Feedback to provide in the state update
+     */
+    void notifyPreempted(const Feedback& feedback){
+      _feedback = feedback;
+      _status.value = ActionStatus::PREEMPTED;
+      _callback(_status, _goal, _feedback);
+    }
+
     /**
      * @brief Constructor
-     * @param container The callback interface handle to notify changes in activation status
+     * @param name The action name
      */
-  Action( const std::string& name)
-    : _name(name), _container(NULL) {}
+  Action(const std::string& name)
+    : _name(name) { _status.value = ActionStatus::UNDEFINED; }
 
     virtual ~Action(){}
 
   private:
 
-    const std::string _name; /*!< Name for the action */
+    bool isActive() const {
+      return _status.value == ActionStatus::ACTIVE;
+    }
 
-    ActionContainer<Feedback>* _container; /*!< Holds the callback interface to notify changes in activation status */
+    const std::string _name; /*!< Name for the action */
+    boost::function< void(const ActionStatus&, const Goal&, const Feedback&) > _callback; /*!< Callback function for sending updates */
+    ActionStatus _status;
+    Goal _goal;
+    Feedback _feedback;
   };
 
 }
