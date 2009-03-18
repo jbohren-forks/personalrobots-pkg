@@ -288,9 +288,9 @@ public:
     tff_msg_.mode.vel.x = tff_msg_.VELOCITY;
     tff_msg_.mode.vel.y = tff_msg_.FORCE;
     tff_msg_.mode.vel.z = tff_msg_.FORCE;
-    tff_msg_.mode.rot.x = tff_msg_.POSITION;
+    tff_msg_.mode.rot.x = tff_msg_.FORCE;
     tff_msg_.mode.rot.y = tff_msg_.FORCE;
-    tff_msg_.mode.rot.z = tff_msg_.FORCE;
+    tff_msg_.mode.rot.z = tff_msg_.POSITION;
 
     tff_msg_.value.vel.x = 0.25;
     tff_msg_.value.vel.y = 0.0;
