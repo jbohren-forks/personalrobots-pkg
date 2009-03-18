@@ -112,80 +112,80 @@ public:
    * TransformReference::MaxDepthException
    */
   void lookupTransform(const std::string& target_frame, const std::string& source_frame, 
-                       const ros::Time& time, Stamped<btTransform>& transform);
+                       const ros::Time& time, Stamped<btTransform>& transform) const;
   //time traveling version
   void lookupTransform(const std::string& target_frame, const ros::Time& target_time, 
                        const std::string& source_frame, const ros::Time& source_time, 
-                       const std::string& fixed_frame, Stamped<btTransform>& transform);  
+                       const std::string& fixed_frame, Stamped<btTransform>& transform) const;  
   
   bool canTransform(const std::string& target_frame, const std::string& source_frame, 
-                       const ros::Time& time);
+                       const ros::Time& time) const;
   //time traveling version
   bool canTransform(const std::string& target_frame, const ros::Time& target_time, 
                        const std::string& source_frame, const ros::Time& source_time, 
-                       const std::string& fixed_frame);  
+                       const std::string& fixed_frame) const;  
 
   /**@brief Return the latest rostime which is common across the spanning set 
    * zero if fails to cross */
-  int getLatestCommonTime(const std::string& source, const std::string& dest, ros::Time& time, std::string * error_string);
+  int getLatestCommonTime(const std::string& source, const std::string& dest, ros::Time& time, std::string * error_string) const;
 
 
   /** \brief Transform a Stamped Quaternion into the target frame */
-  void transformQuaternion(const std::string& target_frame, const Stamped<tf::Quaternion>& stamped_in, Stamped<tf::Quaternion>& stamped_out);
+  void transformQuaternion(const std::string& target_frame, const Stamped<tf::Quaternion>& stamped_in, Stamped<tf::Quaternion>& stamped_out) const;
   /** \brief Transform a Stamped Vector3 into the target frame */
-  void transformVector(const std::string& target_frame, const Stamped<tf::Vector3>& stamped_in, Stamped<tf::Vector3>& stamped_out);
+  void transformVector(const std::string& target_frame, const Stamped<tf::Vector3>& stamped_in, Stamped<tf::Vector3>& stamped_out) const;
   /** \brief Transform a Stamped Point into the target frame */
-  void transformPoint(const std::string& target_frame, const Stamped<tf::Point>& stamped_in, Stamped<tf::Point>& stamped_out);
+  void transformPoint(const std::string& target_frame, const Stamped<tf::Point>& stamped_in, Stamped<tf::Point>& stamped_out) const;
   /** \brief Transform a Stamped Pose into the target frame */
-  void transformPose(const std::string& target_frame, const Stamped<tf::Pose>& stamped_in, Stamped<tf::Pose>& stamped_out);
+  void transformPose(const std::string& target_frame, const Stamped<tf::Pose>& stamped_in, Stamped<tf::Pose>& stamped_out) const;
 
   /** \brief Transform a Stamped Quaternion into the target frame */
   void transformQuaternion(const std::string& target_frame, const ros::Time& target_time, 
                            const Stamped<tf::Quaternion>& stamped_in, 
                            const std::string& fixed_frame, 
-                           Stamped<tf::Quaternion>& stamped_out);
+                           Stamped<tf::Quaternion>& stamped_out) const;
   /** \brief Transform a Stamped Vector3 into the target frame */
   void transformVector(const std::string& target_frame, const ros::Time& target_time, 
                        const Stamped<tf::Vector3>& stamped_in, 
                        const std::string& fixed_frame, 
-                       Stamped<tf::Vector3>& stamped_out);
+                       Stamped<tf::Vector3>& stamped_out) const;
   /** \brief Transform a Stamped Point into the target frame 
    * \todo document*/
   void transformPoint(const std::string& target_frame, const ros::Time& target_time, 
                       const Stamped<tf::Point>& stamped_in, 
                       const std::string& fixed_frame, 
-                      Stamped<tf::Point>& stamped_out);
+                      Stamped<tf::Point>& stamped_out) const;
   /** \brief Transform a Stamped Pose into the target frame 
    * \todo document*/
   void transformPose(const std::string& target_frame, const ros::Time& target_time, 
                      const Stamped<tf::Pose>& stamped_in, 
                      const std::string& fixed_frame,
-                     Stamped<tf::Pose>& stamped_out);
+                     Stamped<tf::Pose>& stamped_out) const;
 
   /** \brief Debugging function that will print the spanning chain of transforms.
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
    * TransformReference::MaxDepthException
    */
-  std::string chainAsString(const std::string & target_frame, ros::Time target_time, const std::string & source_frame, ros::Time source_time, const std::string & fixed_frame);
+  std::string chainAsString(const std::string & target_frame, ros::Time target_time, const std::string & source_frame, ros::Time source_time, const std::string & fixed_frame) const;
 
   /** \brief A way to see what frames have been cached 
    * Useful for debugging 
    */
-  std::string allFramesAsString();
+  std::string allFramesAsString() const;
 
   /** \brief A way to see what frames have been cached 
    * Useful for debugging 
    */
-  std::string allFramesAsDot();
+  std::string allFramesAsDot() const;
 
   /** \brief A way to get a std::vector of available frame ids */
-  void getFrameStrings(std::vector<std::string>& ids);
+  void getFrameStrings(std::vector<std::string>& ids) const;
 
   /**@brief Fill the parent of a frame.  
    * @param frame_id The frame id of the frame in question
    * @param parent The reference to the string to fill the parent
    * Returns true unless "NO_PARENT" */
-  bool getParent(const std::string& frame_id, ros::Time time, std::string& parent);
+  bool getParent(const std::string& frame_id, ros::Time time, std::string& parent) const;
 
   /**@brief Set the distance which tf is allow to extrapolate
    * \param distance How far to extrapolate before throwing an exception
@@ -238,14 +238,14 @@ protected:
    * This is an internal function which will get the pointer to the frame associated with the frame id
    * Possible Exception: TransformReference::LookupException
    */
-  TimeCache* getFrame(unsigned int frame_number);
+  TimeCache* getFrame(unsigned int frame_number) const;
 
   /// String to number for frame lookup with dynamic allocation of new frames
-  unsigned int lookupFrameNumber(const std::string& frameid_str)
+  unsigned int lookupFrameNumber(const std::string& frameid_str) const
   {
     unsigned int retval = 0;
     boost::mutex::scoped_lock(frame_mutex_);
-    std::map<std::string, unsigned int>::iterator map_it = frameIDs_.find(frameid_str);
+    std::map<std::string, unsigned int>::const_iterator map_it = frameIDs_.find(frameid_str);
     if (map_it == frameIDs_.end())
     {
       std::stringstream ss;
@@ -253,7 +253,7 @@ protected:
       throw tf::LookupException(ss.str());
     }
     else
-      retval = frameIDs_[frameid_str];
+      retval = map_it->second;
     return retval;
   };
 
@@ -275,7 +275,7 @@ protected:
     return retval;
   };
   ///Number to string frame lookup may throw LookupException if number invalid
-  std::string lookupFrameString(unsigned int frame_id_num)
+  std::string lookupFrameString(unsigned int frame_id_num) const
   {
     if (frame_id_num >= frameIDs_reverse.size())
     {
@@ -290,12 +290,12 @@ protected:
 
 
   /** Find the list of connected frames necessary to connect two different frames */
-  int lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame, TransformLists & lists, std::string* error_string);
+  int lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame, TransformLists & lists, std::string* error_string) const;
 
-  bool test_extrapolation(const ros::Time& target_time, const TransformLists& t_lists, std::string * error_string);
+  bool test_extrapolation(const ros::Time& target_time, const TransformLists& t_lists, std::string * error_string) const;
   
   /** Compute the transform based on the list of frames */
-  btTransform computeTransformFromList(const TransformLists & list);
+  btTransform computeTransformFromList(const TransformLists & list) const;
 
 };
 

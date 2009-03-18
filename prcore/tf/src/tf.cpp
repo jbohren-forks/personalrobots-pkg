@@ -118,7 +118,7 @@ void Transformer::setTransform(const Stamped<btTransform>& transform)
 
 
 void Transformer::lookupTransform(const std::string& target_frame, const std::string& source_frame,
-                     const ros::Time& time, Stamped<btTransform>& transform)
+                     const ros::Time& time, Stamped<btTransform>& transform) const
 {
   std::string mapped_target_frame = remap(tf_prefix_, target_frame);
   std::string mapped_source_frame = remap(tf_prefix_, source_frame);
@@ -164,7 +164,7 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
 };
 
 void Transformer::lookupTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
-                     const ros::Time& source_time, const std::string& fixed_frame, Stamped<btTransform>& transform)
+                     const ros::Time& source_time, const std::string& fixed_frame, Stamped<btTransform>& transform) const
 {
   std::string mapped_target_frame = remap(tf_prefix_, target_frame);
   std::string mapped_source_frame = remap(tf_prefix_, source_frame);
@@ -245,7 +245,7 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
 
 };
 bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
-                     const ros::Time& time)
+                     const ros::Time& time) const
 {
   std::string mapped_target_frame = remap(tf_prefix_, target_frame);
   std::string mapped_source_frame = remap(tf_prefix_, source_frame);
@@ -285,7 +285,7 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
 };
 
 bool Transformer::canTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
-                     const ros::Time& source_time, const std::string& fixed_frame)
+                     const ros::Time& source_time, const std::string& fixed_frame) const
 {
   std::string mapped_target_frame = remap(tf_prefix_, target_frame);
   std::string mapped_source_frame = remap(tf_prefix_, source_frame);
@@ -343,7 +343,7 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
   return true;
 };
 
-bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::string& parent)
+bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::string& parent) const
 {
 
   tf::TimeCache* cache;
@@ -364,12 +364,12 @@ bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::st
 
 };
 
-void Transformer::setExtrapolationLimit(const ros::Duration& distance)
+void Transformer::setExtrapolationLimit(const ros::Duration& distance) 
 {
   max_extrapolation_distance_ = distance;
 }
 
-int Transformer::getLatestCommonTime(const std::string& source, const std::string& dest, ros::Time & time, std::string * error_string)
+int Transformer::getLatestCommonTime(const std::string& source, const std::string& dest, ros::Time & time, std::string * error_string) const
 {
   time = ros::Time(UINT_MAX, 999999999);///\todo replace with ros::TIME_MAX when it is merged from stable
   int retval;
@@ -406,7 +406,7 @@ int Transformer::getLatestCommonTime(const std::string& source, const std::strin
 
 
 
-int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame, TransformLists& lists, std::string * error_string)
+int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame, TransformLists& lists, std::string * error_string) const
 {
   /*  timeval tempt;
   gettimeofday(&tempt,NULL);
@@ -637,7 +637,7 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
   }
 
 
-bool Transformer::test_extrapolation(const ros::Time& target_time, const TransformLists& lists, std::string * error_string)
+bool Transformer::test_extrapolation(const ros::Time& target_time, const TransformLists& lists, std::string * error_string) const
 {
   bool retval = false;
   std::stringstream ss;
@@ -725,7 +725,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
 }
 
 
-btTransform Transformer::computeTransformFromList(const TransformLists & lists)
+btTransform Transformer::computeTransformFromList(const TransformLists & lists) const
 {
   btTransform retTrans;
   retTrans.setIdentity();
@@ -743,7 +743,7 @@ btTransform Transformer::computeTransformFromList(const TransformLists & lists)
 }
 
 
-std::string Transformer::chainAsString(const std::string & target_frame, ros::Time target_time, const std::string & source_frame, ros::Time source_time, const std::string& fixed_frame)
+std::string Transformer::chainAsString(const std::string & target_frame, ros::Time target_time, const std::string & source_frame, ros::Time source_time, const std::string& fixed_frame) const
 {
   std::string error_string;
   std::stringstream mstream;
@@ -774,7 +774,7 @@ std::string Transformer::chainAsString(const std::string & target_frame, ros::Ti
   return mstream.str();
 }
 
-std::string Transformer::allFramesAsString()
+std::string Transformer::allFramesAsString() const
 {
   std::stringstream mstream;
   boost::mutex::scoped_lock(frame_mutex_);
@@ -798,7 +798,7 @@ std::string Transformer::allFramesAsString()
   return mstream.str();
 }
 
-std::string Transformer::allFramesAsDot()
+std::string Transformer::allFramesAsDot() const
 {
   std::stringstream mstream;
   mstream << "digraph G {" << std::endl;
@@ -825,7 +825,7 @@ std::string Transformer::allFramesAsDot()
   return mstream.str();
 }
 
-void Transformer::getFrameStrings(std::vector<std::string> & vec)
+void Transformer::getFrameStrings(std::vector<std::string> & vec) const
 {
   vec.clear();
 
@@ -841,7 +841,7 @@ void Transformer::getFrameStrings(std::vector<std::string> & vec)
   return;
 }
 
-tf::TimeCache* Transformer::getFrame(unsigned int frame_id)
+tf::TimeCache* Transformer::getFrame(unsigned int frame_id) const
 {
   if (frame_id == 0) /// @todo check larger values too
     return NULL;
@@ -850,7 +850,7 @@ tf::TimeCache* Transformer::getFrame(unsigned int frame_id)
 };
 
 
-void Transformer::transformQuaternion(const std::string& target_frame, const Stamped<Quaternion>& stamped_in, Stamped<Quaternion>& stamped_out)
+void Transformer::transformQuaternion(const std::string& target_frame, const Stamped<Quaternion>& stamped_in, Stamped<Quaternion>& stamped_out) const
 {
   Stamped<Transform> transform;
   lookupTransform(target_frame, stamped_in.frame_id_, stamped_in.stamp_, transform);
@@ -863,7 +863,7 @@ void Transformer::transformQuaternion(const std::string& target_frame, const Sta
 
 void Transformer::transformVector(const std::string& target_frame,
                                   const Stamped<tf::Vector3>& stamped_in,
-                                  Stamped<tf::Vector3>& stamped_out)
+                                  Stamped<tf::Vector3>& stamped_out) const
 {
   Stamped<Transform> transform;
   lookupTransform(target_frame, stamped_in.frame_id_, stamped_in.stamp_, transform);
@@ -879,7 +879,7 @@ void Transformer::transformVector(const std::string& target_frame,
 };
 
 
-void Transformer::transformPoint(const std::string& target_frame, const Stamped<Point>& stamped_in, Stamped<Point>& stamped_out)
+void Transformer::transformPoint(const std::string& target_frame, const Stamped<Point>& stamped_in, Stamped<Point>& stamped_out) const
 {
   Stamped<Transform> transform;
   lookupTransform(target_frame, stamped_in.frame_id_, stamped_in.stamp_, transform);
@@ -890,7 +890,7 @@ void Transformer::transformPoint(const std::string& target_frame, const Stamped<
   stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
 
-void Transformer::transformPose(const std::string& target_frame, const Stamped<Pose>& stamped_in, Stamped<Pose>& stamped_out)
+void Transformer::transformPose(const std::string& target_frame, const Stamped<Pose>& stamped_in, Stamped<Pose>& stamped_out) const
 {
   Stamped<Transform> transform;
   lookupTransform(target_frame, stamped_in.frame_id_, stamped_in.stamp_, transform);
@@ -905,7 +905,7 @@ void Transformer::transformPose(const std::string& target_frame, const Stamped<P
 void Transformer::transformQuaternion(const std::string& target_frame, const ros::Time& target_time,
                                       const Stamped<Quaternion>& stamped_in,
                                       const std::string& fixed_frame,
-                                      Stamped<Quaternion>& stamped_out)
+                                      Stamped<Quaternion>& stamped_out) const
 {
   Stamped<Transform> transform;
   lookupTransform(target_frame, target_time,
@@ -921,7 +921,7 @@ void Transformer::transformQuaternion(const std::string& target_frame, const ros
 void Transformer::transformVector(const std::string& target_frame, const ros::Time& target_time,
                                   const Stamped<Vector3>& stamped_in,
                                   const std::string& fixed_frame,
-                                  Stamped<Vector3>& stamped_out)
+                                  Stamped<Vector3>& stamped_out) const
 {
   Stamped<Transform> transform;
   lookupTransform(target_frame, target_time,
@@ -942,7 +942,7 @@ void Transformer::transformVector(const std::string& target_frame, const ros::Ti
 void Transformer::transformPoint(const std::string& target_frame, const ros::Time& target_time,
                                  const Stamped<Point>& stamped_in,
                                  const std::string& fixed_frame,
-                                 Stamped<Point>& stamped_out)
+                                 Stamped<Point>& stamped_out) const
 {
   Stamped<Transform> transform;
   lookupTransform(target_frame, target_time,
@@ -958,7 +958,7 @@ void Transformer::transformPoint(const std::string& target_frame, const ros::Tim
 void Transformer::transformPose(const std::string& target_frame, const ros::Time& target_time,
                                 const Stamped<Pose>& stamped_in,
                                 const std::string& fixed_frame,
-                                Stamped<Pose>& stamped_out)
+                                Stamped<Pose>& stamped_out) const
 {
   Stamped<Transform> transform;
   lookupTransform(target_frame, target_time,
