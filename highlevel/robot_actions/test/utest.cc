@@ -22,16 +22,12 @@ public:
 private:
 
   /** Super class methods **/
-  virtual void handleActivate(const RechargeGoal& goal){
-    notifyActivated(f);
+  virtual void handleActivate(const RechargeGoal&){
+    notifyActivated();
   }
 
   virtual void handlePreempt(){
-    notifyPreempted(f);
-  }
-
-  virtual void updateStatus(RechargeGoal& feedback){
-    feedback = f;
+    notifyPreempted();
   }
 
   RechargeGoal f;
@@ -79,9 +75,10 @@ TEST(robot_actions, action_with_simple_container){
 
   // Message adapter connects an action to a ros message context
   robot_actions::MessageAdapter<RechargeGoal, RechargeState, RechargeGoal> adapter(a);
-  adapter.initialize();
-  adapter.update();
-  adapter.terminate();
+  robot_actions::AbstractAdapter& abstract_adapter(adapter); 
+  abstract_adapter.initialize();
+  abstract_adapter.execute();
+  abstract_adapter.terminate();
 }
 
 /**

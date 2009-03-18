@@ -81,7 +81,7 @@ namespace robot_actions {
 	  AbstractAdapter* adapter = *it;
 
 	  if(!isTerminated()){
-	    adapter->updateStatus();
+	    adapter->execute();
 	  }
 	  else if(adapter->isOk()){
 	    done = false;

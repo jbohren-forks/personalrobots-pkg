@@ -74,7 +74,7 @@ namespace robot_actions {
     /**
      * @brief Provide an implementation that updates the status
      */
-    virtual void updateStatus() = 0;
+    virtual void execute() = 0;
 
 
   protected:
@@ -167,9 +167,9 @@ namespace robot_actions {
 	_action.preempt();
     }
 
-    virtual void updateStatus() {
+    virtual void execute() {
       if(isOk())
-	_action.updateStatus();
+	_action.execute();
     }
     
     /** DATA MEMBERS **/

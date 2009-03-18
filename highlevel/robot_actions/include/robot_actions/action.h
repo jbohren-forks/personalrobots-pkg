@@ -66,22 +66,11 @@ namespace robot_actions {
     virtual void handlePreempt() = 0;
 
     /**
-     * @brief A query to retrieve current state of execution, and offer an opportunity to publish specific 
-     * feedback parameters
+     * @brief A method call periodically - can be used for control loop based implementation. By default a no-op
      */
-    virtual void updateStatus(Feedback& feedback) = 0;
-
+    virtual void handleExecute(){}
 
   public:
-
-    /**
-     * @brief Accessor for state
-     */
-    void getState(ActionStatus& status, Goal& goal, Feedback& feedback){
-      status = _status;
-      goal = _goal;
-      feedback = _feedback;
-    }
 
     /**
      * @brief Accessor for the current goal
@@ -117,12 +106,12 @@ namespace robot_actions {
     }
 
     /**
-     * @brief A query to retrieve current state of execution, and offer an opportunity to publish specific 
-     * feedback parameters
+     * @brief A call made periodically to provide an opportunity to execute. 
      */
-    void updateStatus(){
-      updateStatus(_feedback);
+    void execute(){
       _callback(_status, _goal, _feedback);
+      if(isActive())
+	handleExecute();
     }
 
     /**
@@ -144,8 +133,7 @@ namespace robot_actions {
      * @brief An action will call this method when it has been activated successfully
      * @param Feedback to provide in the state update
      */
-    void notifyActivated(const Feedback& feedback){
-      _feedback = feedback;
+    void notifyActivated(){
       _status.value = ActionStatus::ACTIVE;
       _callback(_status, _goal, _feedback);
     }
@@ -164,8 +152,7 @@ namespace robot_actions {
      * @brief An action will call this method when it has aborted of its own volition
      * @param Feedback to provide in the state update
      */
-    void notifyAborted(const Feedback& feedback){
-      _feedback = feedback;
+    void notifyAborted(){
       _status.value = ActionStatus::ABORTED;
       _callback(_status, _goal, _feedback);
     }
@@ -174,8 +161,7 @@ namespace robot_actions {
      * @brief An action will call this method when it has successfully been preempted
      * @param Feedback to provide in the state update
      */
-    void notifyPreempted(const Feedback& feedback){
-      _feedback = feedback;
+    void notifyPreempted(){
       _status.value = ActionStatus::PREEMPTED;
       _callback(_status, _goal, _feedback);
     }
@@ -190,6 +176,7 @@ namespace robot_actions {
     virtual ~Action(){}
 
   private:
+
 
     bool isActive() const {
       return _status.value == ActionStatus::ACTIVE;
