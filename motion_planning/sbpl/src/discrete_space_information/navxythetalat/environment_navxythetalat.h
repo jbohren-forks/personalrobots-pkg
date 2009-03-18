@@ -33,7 +33,7 @@
 //eight-connected grid
 #define NAVXYTHETALAT_DXYWIDTH 8
 
-#define ENVNAVXYTHETALAT_DEFAULTOBSTHRESH 254	//see explanation of the value below
+#define ENVNAVXYTHETALAT_DEFAULTOBSTHRESH 253	//see explanation of the value below
 
 
 //definition of theta orientations
@@ -191,6 +191,7 @@ public:
     int SetGoal(double x, double y, double theta);
     bool UpdateCost(int x, int y, unsigned char newcost);
 	void GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV);
+	void GetSuccsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *succs_of_changededgesIDV);
 
 
 	void GetCoordFromState(int stateID, int& x, int& y, int& theta) const;
