@@ -248,6 +248,23 @@ protected:
     std::map<std::string, unsigned int>::iterator map_it = frameIDs_.find(frameid_str);
     if (map_it == frameIDs_.end())
     {
+      std::stringstream ss;
+      ss << "Frame id " << frameid_str << " does not exist!";
+      throw tf::LookupException(ss.str());
+    }
+    else
+      retval = frameIDs_[frameid_str];
+    return retval;
+  };
+
+  /// String to number for frame lookup with dynamic allocation of new frames
+  unsigned int lookupOrInsertFrameNumber(const std::string& frameid_str)
+  {
+    unsigned int retval = 0;
+    boost::mutex::scoped_lock(frame_mutex_);
+    std::map<std::string, unsigned int>::iterator map_it = frameIDs_.find(frameid_str);
+    if (map_it == frameIDs_.end())
+    {
       retval = frames_.size();
       frameIDs_[frameid_str] = retval;
       frames_.push_back( new TimeCache(interpolating, cache_time, max_extrapolation_distance_));
@@ -257,7 +274,6 @@ protected:
       retval = frameIDs_[frameid_str];
     return retval;
   };
-
   ///Number to string frame lookup may throw LookupException if number invalid
   std::string lookupFrameString(unsigned int frame_id_num)
   {

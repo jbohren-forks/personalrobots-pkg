@@ -130,7 +130,7 @@ TEST(tf, TransformTransformToOwnFrame)
     pitchvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     rollvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
 
-    Stamped<btTransform> tranStamped(btTransform(btQuaternion(yawvalues[i],pitchvalues[i],rollvalues[i]), btVector3(xvalues[i],yvalues[i],zvalues[i])), ros::Time().fromNSec(10 + i), "child", "my_parent");
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(yawvalues[i],pitchvalues[i],rollvalues[i]), btVector3(xvalues[i],yvalues[i],zvalues[i])), ros::Time().fromNSec(10 + i), "child", "parent");
     mTR.setTransform(tranStamped);
 
   }
@@ -848,9 +848,9 @@ TEST(tf, Exceptions)
    mTR.transformPose("parent",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time().fromNSec(10000000) , "me"), outpose);
    EXPECT_FALSE("ConnectivityException Not Thrown");   
  }
- catch ( tf::ConnectivityException &ex)
+ catch ( tf::LookupException &ex)
  {
-   EXPECT_TRUE("Connectivity Exception Caught");
+   EXPECT_TRUE("Lookupgh Exception Caught");
  }
  catch (tf::TransformException& ex)
  {
@@ -1127,7 +1127,7 @@ TEST(tf, getLatestCommonTime)
   EXPECT_EQ(t, ros::Time().fromNSec(1000));
 
   //no connection
-  mTR.getLatestCommonTime("a", "not valid", t, NULL);
+  EXPECT_EQ(tf::LOOKUP_ERROR, mTR.getLatestCommonTime("a", "not valid", t, NULL));
   EXPECT_EQ(t, ros::Time());
 
   //testing with update
