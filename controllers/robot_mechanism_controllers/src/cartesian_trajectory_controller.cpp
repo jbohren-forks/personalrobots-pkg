@@ -102,19 +102,13 @@ bool CartesianTrajectoryController::initialize(mechanism::RobotState *robot_stat
 
 
 
-Duration CartesianTrajectoryController::moveTo(const Frame& pose_desi, double duration)
+bool CartesianTrajectoryController::moveTo(const Frame& pose_desi, double duration)
 {
   // don't do anything when still moving
-  if (is_moving_) return Duration().fromSec(0);
-
-  // for debugging purposes only
-  Twist tmp = diff(pose_current_, pose_end_);
-  cout << "pose jump when generating new profile = ";
-  for (unsigned int i=0; i<6; i++)
-    cout << tmp(i) << " ";
-  cout << endl;
+  if (is_moving_) return false;
 
   // trajectory from pose_begin to pose_end
+  request_preempt_ = false;
   pose_end_ = pose_desi;
   pose_begin_ = pose_current_;
 
@@ -136,7 +130,7 @@ Duration CartesianTrajectoryController::moveTo(const Frame& pose_desi, double du
   time_passed_ = 0;
   is_moving_ = true;
 
-  return Duration().fromSec(max_duration_);
+  return true;
 }
 
 
@@ -152,9 +146,11 @@ bool CartesianTrajectoryController::start()
 
   // start not moving
   is_moving_ = false;
+  request_preempt_ = false;
 
   return pose_controller_.start();
 }
+
 
 
 
@@ -164,6 +160,12 @@ void CartesianTrajectoryController::update()
   double time = robot_state_->hw_->current_time_;
   double dt = time - last_time_;
   last_time_ = time;
+
+  // preempt trajectory
+  if (request_preempt_){
+    twist_current_ = Twist::Zero();
+    is_moving_ = false;
+  }
 
   // if we are moving
   if (is_moving_){
@@ -280,12 +282,30 @@ void CartesianTrajectoryControllerNode::update()
 bool CartesianTrajectoryControllerNode::moveTo(robot_srvs::MoveToPose::Request &req, 
                                                robot_srvs::MoveToPose::Response &resp)
 {
-  Duration traject_time = moveTo(req.pose);
-  Duration sleep_time = Duration().fromSec(0.01);
-
-  if (traject_time == Duration().fromSec(0))
+  if (!moveTo(req.pose))
     return false;
 
+  while (controller_.isMoving())
+    Duration().fromSec(0.01).sleep();
+
+  if (controller_.isPreempted())
+    return false;
+  else
+    return true;
+}
+
+
+bool CartesianTrajectoryControllerNode::preempt(std_srvs::Empty::Request &req, 
+                                                std_srvs::Empty::Response &resp)
+{
+  // you can only preempt is the robot is moving
+  if (!controller_.isMoving())
+    return false;
+
+  controller_.preempt();
+
+  // wait for robot to stop moving
+  Duration sleep_time = Duration().fromSec(0.01);
   while (controller_.isMoving())
     sleep_time.sleep();
 
@@ -312,7 +332,7 @@ void CartesianTrajectoryControllerNode::command(const MessageNotifier<robot_msgs
 // ----------------------------------
 // helper functions
 // ----------------------------------
-Duration CartesianTrajectoryControllerNode::moveTo(robot_msgs::PoseStamped& pose)
+bool CartesianTrajectoryControllerNode::moveTo(robot_msgs::PoseStamped& pose)
 {
   // convert message to transform
   Stamped<Pose> pose_stamped;

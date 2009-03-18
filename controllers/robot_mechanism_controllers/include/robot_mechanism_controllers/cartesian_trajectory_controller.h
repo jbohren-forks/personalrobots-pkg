@@ -41,11 +41,12 @@
 #include <kdl/velocityprofile_trap.hpp>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
-#include "ros/node.h"
-#include "robot_msgs/PoseStamped.h"
-#include "mechanism_model/controller.h"
-#include "robot_mechanism_controllers/cartesian_pose_controller.h"
-#include "robot_srvs/MoveToPose.h"
+#include <ros/node.h>
+#include <robot_msgs/PoseStamped.h>
+#include <mechanism_model/controller.h>
+#include <robot_mechanism_controllers/cartesian_pose_controller.h>
+#include <robot_srvs/MoveToPose.h>
+#include <std_srvs/Empty.h>
 
 namespace controller {
 
@@ -59,8 +60,11 @@ public:
   bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name, const string controller_name);
   bool start();
   void update();
-  ros::Duration moveTo(const KDL::Frame& pose_desi, double duration=0);
+  bool moveTo(const KDL::Frame& pose_desi, double duration=0);
   bool isMoving() {return is_moving_; };
+  bool isPreempted() {return request_preempt_;};
+  void preempt() {request_preempt_ = true;};
+
 
 private:
   KDL::Frame getPose();
@@ -69,7 +73,7 @@ private:
   std::string controller_name_;
   unsigned int  num_joints_, num_segments_;
   double last_time_, time_started_, time_passed_, max_duration_;
-  bool is_moving_;
+  bool is_moving_, request_preempt_;
   KDL::Frame pose_begin_, pose_end_, pose_current_;
   KDL::Twist twist_current_;
 
@@ -105,8 +109,10 @@ class CartesianTrajectoryControllerNode : public Controller
 
   bool moveTo(robot_srvs::MoveToPose::Request &req, robot_srvs::MoveToPose::Response &resp);
 
+  bool preempt(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp);
+
  private:
-  ros::Duration moveTo(robot_msgs::PoseStamped& pose);
+  bool moveTo(robot_msgs::PoseStamped& pose);
   void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
 
   ros::Node* node_;
