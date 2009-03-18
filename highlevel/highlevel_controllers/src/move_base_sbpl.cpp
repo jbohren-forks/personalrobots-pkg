@@ -163,7 +163,7 @@ namespace ros {
 	
 	if ("2D" == environmentType)
 	  env_.reset(mpglue::SBPLEnvironment::create2D(mcm, mit, false));
-	if ("2D16" == environmentType)
+	else if ("2D16" == environmentType)
 	  env_.reset(mpglue::SBPLEnvironment::create2D(mcm, mit, true));
 	else if ("3DKIN" == environmentType) {
 	  string const prefix("env3d/");
