@@ -26,9 +26,9 @@ includes: trex PlanWorks PLASMA
 
 # GET plasma
 plasma:
-	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5289 https://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
-	-if test "-r 5289" != "-r `svn info PLASMA | grep Revision | cut -d " " -f 2,2`"; then \
-	  cd PLASMA && $(SVN_CMDLINE) up -r 5289 ; \
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5291 https://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
+	-if test "-r 5291" != "-r `svn info PLASMA | grep Revision | cut -d " " -f 2,2`"; then \
+	  cd PLASMA && $(SVN_CMDLINE) up -r 5291 ; \
 	fi
 
 #install the patch
