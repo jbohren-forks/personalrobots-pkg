@@ -446,9 +446,11 @@ main(int argc, char **argv)	// no arguments
 		{
 		  int n,nn;
 		  tt0 = get_ms();
+		  // get first largest plane
 		  planeObj.SetPointCloud(stIm->imPtArray(), stIm->numPts, 10);
 		  n = planeObj.FindPlane(planeParams, planeThresh, 50);
 		  nn = planeObj.IndexPlane(1, planeThresh, planeParams);
+		  // get second largest plane
 		  planeObj.SetPointCloud(stIm->imPtArray(), stIm->numPts, 10);
 		  planeObj.FindPlane(planeParams, planeThresh, 50);
 		  planeObj.IndexPlane(2, planeThresh, planeParams);
