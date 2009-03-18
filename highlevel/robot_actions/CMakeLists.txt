@@ -11,7 +11,12 @@ rospack(robot_actions)
 
 genmsg()
 
+#Add library
+rospack_add_library(robot_actions src/action_runner.cpp)
+rospack_link_boost(robot_actions thread)
+
 # Unit Tests
-rospack_add_executable(test/utest EXCLUDE_FROM_ALL test/utest.cc)
+rospack_add_executable(test/utest test/utest.cc)
+target_link_libraries(test/utest  robot_actions)
 rospack_add_gtest_build_flags(test/utest)
 rospack_add_rostest(test/test.xml)

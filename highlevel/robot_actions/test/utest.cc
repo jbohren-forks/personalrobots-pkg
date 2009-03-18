@@ -66,8 +66,7 @@ const int8_t robot_actions::ActionStatus::ACTIVE;
 /**
  * Test - just exercises compilation and demonstrates use
  */
-TEST(robot_actions, basic_compilation){
-  // To get around a macro induced linker issue
+TEST(robot_actions, action_with_simple_container){
   MyAction a;
   MySimpleContainer c(a);
   RechargeGoal g;
@@ -78,16 +77,31 @@ TEST(robot_actions, basic_compilation){
   a.preempt();
   ASSERT_EQ(c._status.value, foo.PREEMPTED);
 
-  robot_actions::ActionRunner<RechargeGoal, RechargeState, RechargeGoal> runner(a);
-  runner.initialize();
-  runner.terminate();
-
+  // Message adapter connects an action to a ros message context
   robot_actions::MessageAdapter<RechargeGoal, RechargeState, RechargeGoal> adapter(a);
   adapter.initialize();
   adapter.update();
   adapter.terminate();
 }
 
+/**
+ * Test - Here is an examnple using an action runner. 
+ */
+TEST(robot_actions, action_with_action_runner){
+  // First allocate it with an update rate of 10 Hz
+  robot_actions::ActionRunner runner(10.0);
+
+  // Now connect actions
+  MyAction a, b;
+  runner.connect<RechargeGoal, RechargeState, RechargeGoal>(a);
+  runner.connect<RechargeGoal, RechargeState, RechargeGoal>(b);
+
+  // Now run it.
+  runner.run();
+
+  ros::Duration duration(5);
+  duration.sleep();
+}
 
 int main(int argc, char** argv){  
   ros::init(argc, argv);
