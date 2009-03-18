@@ -1215,6 +1215,30 @@ TEST(tf, RepeatedTimes)
 
 }
 
+TEST(tf, frameExists)
+{
+  Transformer mTR;
+
+  EXPECT_FALSE(mTR.frameExists("b"));;
+  EXPECT_FALSE(mTR.frameExists("parent"));
+  EXPECT_FALSE(mTR.frameExists("other"));
+  EXPECT_FALSE(mTR.frameExists("frame"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,0,0), btVector3(0,0,0)), ros::Time().fromNSec(4000), "b",  "parent"));
+
+  EXPECT_TRUE(mTR.frameExists("b"));
+  EXPECT_TRUE(mTR.frameExists("parent"));
+  EXPECT_FALSE(mTR.frameExists("other"));
+  EXPECT_FALSE(mTR.frameExists("frame"));
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,1,0), btVector3(0,0,0)), ros::Time().fromNSec(4000), "other",  "frame"));
+
+  EXPECT_TRUE(mTR.frameExists("b"));
+  EXPECT_TRUE(mTR.frameExists("parent"));
+  EXPECT_TRUE(mTR.frameExists("other"));
+  EXPECT_TRUE(mTR.frameExists("frame"));
+  
+
+}
 TEST(tf, remap)
 {
   //no prefix
