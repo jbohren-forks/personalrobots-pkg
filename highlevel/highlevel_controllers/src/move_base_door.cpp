@@ -97,6 +97,8 @@ namespace ros
 
         virtual bool makePlan();
 
+        virtual bool goalReached();
+
         void checkTrajectory(const robot_msgs::JointTraj& trajectory, robot_msgs::JointTraj &return_trajectory, std::string trajectory_frame_id, std::string map_frame_id);
 
         bool computeOrientedFootprint(double x_i, double y_i, double th_i, const std::vector<deprecated_msgs::Point2DFloat32>& footprint_spec, std::vector<deprecated_msgs::Point2DFloat32>& oriented_footprint);
@@ -134,7 +136,7 @@ namespace ros
       ros::Node::instance()->advertise<robot_msgs::JointTraj>(base_trajectory_controller_topic_,1);
       ros::Node::instance()->param("~costmap_2d/circumscribed_radius", circumscribed_radius_, 0.46);
       ros::Node::instance()->param("~costmap_2d/inscribed_radius", inscribed_radius_, 0.325);
-      ros::Node::instance()->param("~move_base_door/dist_waypoints_max", dist_waypoints_max_, 0.325);
+      ros::Node::instance()->param("~move_base_door/dist_waypoints_max", dist_waypoints_max_, 0.025);
       ROS_INFO("Initialized move base door");
       initialize();
    }
@@ -163,6 +165,12 @@ namespace ros
         oriented_footprint.push_back(new_pt);
       }
       return true;
+    }
+
+    bool MoveBaseDoor::goalReached()
+    {
+
+      return false;
     }
 
     void MoveBaseDoor::checkTrajectory(const robot_msgs::JointTraj& trajectory, robot_msgs::JointTraj &return_trajectory, std::string trajectory_frame_id, std::string map_frame_id)
@@ -198,7 +206,7 @@ namespace ros
           ROS_INFO("Radius inscribed: %f, circumscribed: %f",inscribed_radius_, circumscribed_radius_);
           for(int j=0; j < (int) oriented_footprint.size(); j++)
             ROS_INFO("Footprint point: %d is : %f,%f",j,oriented_footprint[j].x,oriented_footprint[j].y);
-          int last_valid_point = std::max<int>(i-2,0);
+          int last_valid_point = std::max<int>(i-10,0);
           if(last_valid_point > 0)
           {
             return_trajectory.points.resize(last_valid_point+1);
