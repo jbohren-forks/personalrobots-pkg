@@ -182,7 +182,7 @@ namespace sample_consensus
     {
       // double k = (DOT_PROD_3D (points[i], p21) - dotA_B) / dotB_B;
       double k = ( cloud_->pts.at (inliers.at (i)).x * p21.x + cloud_->pts.at (inliers.at (i)).y * p21.y + cloud_->pts.at (inliers.at (i)).z * p21.z -
-                   model_coefficients_[0] * p21.x + model_coefficients_[1] * p21.y + model_coefficients_[2] * p21.z
+                   (model_coefficients_[0] * p21.x + model_coefficients_[1] * p21.y + model_coefficients_[2] * p21.z)
                  ) / (p21.x * p21.x + p21.y * p21.y + p21.z * p21.z);
       // Calculate the projection of the point on the line (pointProj = A + k * B)
       projected_cloud.pts[i].x = model_coefficients_.at (0) + k * p21.x;
@@ -214,7 +214,7 @@ namespace sample_consensus
     {
       // double k = (DOT_PROD_3D (points[i], p21) - dotA_B) / dotB_B;
       double k = ( cloud_->pts.at (inliers.at (i)).x * p21.x + cloud_->pts.at (inliers.at (i)).y * p21.y + cloud_->pts.at (inliers.at (i)).z * p21.z -
-                   model_coefficients_[0] * p21.x + model_coefficients_[1] * p21.y + model_coefficients_[2] * p21.z
+                   (model_coefficients_[0] * p21.x + model_coefficients_[1] * p21.y + model_coefficients_[2] * p21.z)
                  ) / (p21.x * p21.x + p21.y * p21.y + p21.z * p21.z);
       // Calculate the projection of the point on the line (pointProj = A + k * B)
       cloud_->pts.at (inliers.at (i)).x = model_coefficients_.at (0) + k * p21.x;
