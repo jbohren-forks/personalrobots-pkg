@@ -118,8 +118,8 @@ namespace mpbench {
   drawLine(size_t episode_id, bool add,
 	   double x0, double y0, double x1, double y1)
   {
-    if (verbose_os_)
-      *verbose_os_ << "World::drawLine(" << episode_id << "  " << sfl::to_string(add)
+    if (debug_os_)
+      *debug_os_ << "World::drawLine(" << episode_id << "  " << sfl::to_string(add)
 		   << "  " << x0 << "  " << y0 << "  " << x1 << "  " << y1 << ")\n" << flush;
     
     obstupdate wu(*getObstdelta(episode_id), add, debug_os_);
@@ -143,8 +143,8 @@ namespace mpbench {
   drawPoint(size_t episode_id, bool add,
 	    double xx, double yy)
   {
-    if (verbose_os_)
-      *verbose_os_ << "World::drawPoint(" << episode_id << "  " << sfl::to_string(add)
+    if (debug_os_)
+      *debug_os_ << "World::drawPoint(" << episode_id << "  " << sfl::to_string(add)
 		   << "  " << xx << "  " << yy << ")\n" << flush;
     
     shared_ptr<mpglue::ObstacleDelta> obstd(getObstdelta(episode_id));

@@ -1,0 +1,33 @@
+<setup>
+  
+  <defaults>
+    <start>
+      <from_scratch>true</from_scratch>
+      <use_initial_solution>false</use_initial_solution>
+      <allow_iteration>false</allow_iteration>
+      <alloc_time>inf</alloc_time>
+    </start>
+    <goal>
+      <tolerance>0.3  4</tolerance>
+    </goal>
+  </defaults>
+  
+  <task>
+    <description>out of the office</description>
+    <goal>
+      <pose>5.5  2.5   0.00</pose>
+    </goal>
+    <start>
+      <pose>4.0  2.5   3.14</pose>
+    </start>
+    <start>
+      <pose>3.0  2.6   1.55</pose>
+    </start>
+    <start>
+      <pose>2.4  3.75 -0.78</pose>
+    </start>
+    <start>
+      <pose>2.6  3.85  2.28</pose>
+    </start>
+  </task>
+</setup>

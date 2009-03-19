@@ -147,9 +147,6 @@ namespace mpbench {
     double costmap_circumscribed_radius; /**< radius [m] of "non-lethal" inflation */
     double costmap_inflation_radius; /**< distance [m] of freespace cells from obstacles */
     int costmap_obstacle_cost;
-    
-    unsigned int pgm_obstacle_gray;
-    bool pgm_invert_gray;
   };
   
   typedef std::vector<boost::shared_ptr<episode::taskspec> > tasklist_t;

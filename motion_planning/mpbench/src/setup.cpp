@@ -519,9 +519,7 @@ namespace mpbench {
        << prefix << "costmap_inscribed_radius:     " << costmap_inscribed_radius << "\n"
        << prefix << "costmap_circumscribed_radius: " << costmap_circumscribed_radius << "\n"
        << prefix << "costmap_inflation_radius:     " << costmap_inflation_radius << "\n"
-       << prefix << "costmap_obstacle_cost:        " << costmap_obstacle_cost << "\n"
-       << prefix << "pgm_obstacle_gray:            " << pgm_obstacle_gray << "\n"
-       << prefix << "pgm_invert_gray:              " << pgm_invert_gray << "\n";
+       << prefix << "costmap_obstacle_cost:        " << costmap_obstacle_cost << "\n";
   }
   
   
@@ -686,21 +684,21 @@ namespace mpbench {
       shared_ptr<mpglue::SBPLEnvironment> sbpl_environment;
       if ("2d" == envstr) {
 	if (verbose_os_)
-	  *verbose_os_ << "  creating 8-connected 2DEnvironment\n" << flush;
+	  *verbose_os_ << "  creating 8-connected 2D Environment\n" << flush;
 	sbpl_environment.reset(mpglue::SBPLEnvironment::create2D(world->getCostmap(task_id),
 								 world->getIndexTransform(),
 								 false));
       }
       else if ("2d16" == envstr) {
 	if (verbose_os_)
-	  *verbose_os_ << "  creating 16-connected 2DEnvironment\n" << flush;
+	  *verbose_os_ << "  creating 16-connected 2D Environment\n" << flush;
 	sbpl_environment.reset(mpglue::SBPLEnvironment::create2D(world->getCostmap(task_id),
 								 world->getIndexTransform(),
 								 true));
       }
       else if ("3dkin" == envstr) {
 	if (verbose_os_)
-	  *verbose_os_ << "  creating 3DKINEnvironment\n" << flush;
+	  *verbose_os_ << "  creating 3DKIN Environment\n" << flush;
 	double const
 	  timetoturn45degsinplace_secs(45.0 * M_PI / 180.0 / opt_.robot_nominal_rotation_speed);
 	sbpl_environment.
@@ -710,6 +708,24 @@ namespace mpbench {
 						     opt_.robot_nominal_forward_speed,
 						     timetoturn45degsinplace_secs,
 						     verbose_os_));
+      }
+      else if ("xythetalat" == envstr) {
+	if (verbose_os_)
+	  *verbose_os_ << "  creating XYTHETALAT Environment\n" << flush;
+	double const
+	  timetoturn45degsinplace_secs(45.0 * M_PI / 180.0 / opt_.robot_nominal_rotation_speed);
+	string mprim_filename("data/pr2.mprim");
+	sfl::token_to(opt_.planner_tok, 2, mprim_filename);
+	if (verbose_os_)
+	  *verbose_os_ << "  motion primitive file: " << mprim_filename << "\n" << flush;	
+	sbpl_environment.
+	  reset(mpglue::SBPLEnvironment::createXYThetaLattice(world->getCostmap(task_id),
+							      world->getIndexTransform(),
+							      getFootprint(),
+							      opt_.robot_nominal_forward_speed,
+							      timetoturn45degsinplace_secs,
+							      mprim_filename,
+							      verbose_os_));
       }
       else
 	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
@@ -784,9 +800,7 @@ namespace mpbench {
       costmap_inscribed_radius(0.325),
       costmap_circumscribed_radius(0.46),
       costmap_inflation_radius(0.55),
-      costmap_obstacle_cost(costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE),
-      pgm_obstacle_gray(64),
-      pgm_invert_gray(true)
+      costmap_obstacle_cost(costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE)
   {
     sfl::tokenize(world_spec, ':', world_tok);
     sfl::tokenize(planner_spec, ':', planner_tok);
@@ -821,31 +835,36 @@ namespace mpbench {
   {
     if ( ! title.empty())
       os << title << "\n";
-    os << prefix << "available world specs:\n"
+    os << prefix << "\navailable world specs:\n"
        << prefix << "  hc  : name [: door_width [: hall_width ]]\n"
        << prefix << "        name can be dots, square, office1, cubicle, cubcile2, cubicle3\n"
        << prefix << "        door_width and hall_width are in meters (default 1.2 and 3)\n"
-       << prefix << "  pgm : pgm_filename [: xml_filename ]\n"
+       << prefix << "  pgm : obst_gray : pgm_filename [: xml_filename ]\n"
+       << prefix << "        obst_gray is the gray level at which obstacles get inserted\n"
+       << prefix << "            default is 64, use negative numbers to invert the scale\n"
        << prefix << "        xml_filename is optional, but needed to define tasks etc\n"
        << prefix << "  xml : xml_filename\n"
-       << prefix << "available planner specs (can use registered aliases instead):\n"
+       << prefix << "\navailable planner specs (can use registered aliases instead):\n"
        << prefix << "  NavFn [: int | dsc ]\n"
        << prefix << "        int = interpolate path (default)\n"
        << prefix << "        dsc = use discretized path instead\n"
-       << prefix << "  ADStar | ARAStar [: 2d | 3dkin [: bwd | fwd ]]\n"
+       << prefix << "  ADStar | ARAStar [: 2d | 3dkin | xythetalat [: custom [: bwd | fwd ]]]\n"
        << prefix << "        2d = use 2D environment (default)\n"
        << prefix << "        3dkin = use 3DKIN environment\n"
+       << prefix << "        xythetalat = use XYTHETALAT environment\n"
+       << prefix << "        custom = uses by XYTHETALAT to specify the motion primitive file\n"
+       << prefix << "                 defaults to data/pr2.mprim\n"
        << prefix << "        bwd = use backward search (default)\n"
        << prefix << "        fwd = use forward search\n"
        << prefix << "  EStar\n"
        << prefix << "        (no further options yet)\n"
-       << prefix << "available robot specs:\n"
+       << prefix << "\navailable robot specs:\n"
        << prefix << "  pr2 [: inscribed [: circumscribed [: fwd_speed [: rot_speed ]]]]\n"
        << prefix << "        inscribed radius (millimeters), default 325mm\n"
        << prefix << "        circumscribed radius (millimeters), default 460mm\n"
        << prefix << "        nominal forward speed (millimeters per second), default 600mm/s\n"
        << prefix << "        nominal rotation speed (milliradians per second), default 600mrad/s\n"
-       << prefix << "available costmap specs:\n"
+       << prefix << "\navailable costmap specs:\n"
        << prefix << "  sfl | ros [: resolution [: inscribed [: circumscribed [: inflation ]]]]\n"
        << prefix << "        all lengths and radii in millimeters\n"
        << prefix << "        defaults: resol. 50mm, inscr. 325mm, circ. 460mm, infl. 550mm\n";
@@ -921,30 +940,45 @@ namespace {
     
 #else // MPBENCH_HAVE_NETPGM
     
-    if (opt.world_tok.size() < 2) {
+    if (opt.world_tok.size() < 3) {
       ostringstream os;
-      os << "createNetPGMBenchmark(): no PGM filename in world spec \"" << opt.world_spec << "\"";
+      os << "createNetPGMBenchmark(): no PGM gray level and filename in world spec \""
+	 << opt.world_spec << "\"";
       if (verbose_os)
 	*verbose_os << "ERROR in " << os.str() << "\n";
       throw runtime_error(os.str());
     }
     
-    FILE * pgmfile(fopen(opt.world_tok[1].c_str(), "rb"));
+    unsigned int pgm_obstacle_gray(64);
+    bool pgm_invert_gray(true);
+    int obst_gray;
+    if (sfl::token_to(opt.world_tok, 1, obst_gray)) {
+      if (0 > obst_gray) {
+	pgm_invert_gray = false;
+	obst_gray = -obst_gray;
+      }
+      if (numeric_limits<gray>::max() <= obst_gray)
+	pgm_obstacle_gray = numeric_limits<gray>::max();
+      else
+	pgm_obstacle_gray = obst_gray;
+    }
+    
+    FILE * pgmfile(fopen(opt.world_tok[2].c_str(), "rb"));
     if ( ! pgmfile) {
       ostringstream os;
-      os << "createNetPGMBenchmark(): fopen(" << opt.world_tok[1] << "): " << strerror(errno);
+      os << "createNetPGMBenchmark(): fopen(" << opt.world_tok[2] << "): " << strerror(errno);
       if (verbose_os)
 	*verbose_os << "ERROR in " << os.str() << "\n";
       throw runtime_error(os.str());
     }
     bench = new mpbench::Setup(opt, verbose_os, debug_os);
     if (verbose_os)
-      *verbose_os << "createNetPGMBenchmark(): translating PGM file " << opt.world_tok[1] << "\n";
-    readNetPGM(*bench, pgmfile, opt.pgm_obstacle_gray, opt.pgm_invert_gray,
+      *verbose_os << "createNetPGMBenchmark(): translating PGM file " << opt.world_tok[2] << "\n";
+    readNetPGM(*bench, pgmfile, pgm_obstacle_gray, pgm_invert_gray,
 	       opt.costmap_resolution);
     
-    if (opt.world_tok.size() > 2)
-      readXML(opt.world_tok[2], bench, verbose_os, debug_os);
+    if (opt.world_tok.size() > 3)
+      readXML(opt.world_tok[3], bench, verbose_os, debug_os);
     
 #endif // MPBENCH_HAVE_NETPGM
     

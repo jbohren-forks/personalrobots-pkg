@@ -473,6 +473,8 @@ namespace {
 	    goal.tol_xy,
 	    goal.tol_xy,
 	    36, 1);
+    glRotated(180 * goal.pth / M_PI, 0, 0, 1);
+    drawFootprint();
     glPopMatrix();
     
     if (plan) {
