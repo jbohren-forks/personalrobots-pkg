@@ -524,9 +524,7 @@ namespace {
   {
     if ( ! env_->IsWithinMapCell(ix, iy))
       return costmap_2d::CostMap2D::NO_INFORMATION;
-    if (env_->IsObstacle(ix, iy))
-      return costmap_2d::CostMap2D::LETHAL_OBSTACLE;
-    return 0;
+    return env_->GetMapCost(ix, iy);
   }
   
   
