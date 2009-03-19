@@ -94,6 +94,14 @@ namespace mpglue {
 					 double timetoturn45degsinplace_secs,
 					 std::ostream * dbgos) throw(std::exception);
     
+    static SBPLEnvironment * createXYThetaLattice(boost::shared_ptr<CostmapAccessor const> cm,
+						  boost::shared_ptr<IndexTransform const> it,
+						  footprint_t const & footprint,
+						  double nominalvel_mpersecs,
+						  double timetoturn45degsinplace_secs,
+						  std::string const & motor_primitive_filename,
+						  std::ostream * dbgos) throw(std::exception);
+    
     virtual DiscreteSpaceInformation * getDSI() = 0;
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg) = 0;
     

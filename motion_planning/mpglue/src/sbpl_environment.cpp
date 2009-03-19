@@ -82,6 +82,9 @@ namespace {
   };
   
   
+  /**
+     Wraps an EnvironmentNAV2D instance, which it deletes in the destructor.
+  */
   class SBPLEnvironment2D
     : public SBPLEnvironment
   {
@@ -114,40 +117,105 @@ namespace {
   };
   
   
-  /** Wraps an EnvironmentNAV3DKIN instance (which it construct and owns
-      for you). */
-  class SBPLEnvironment3DKIN
+  /** Wraps an instance of DiscreteSpaceInformation which conforms to
+      the EnvironmentNAV3DKIN interface. Currently, that's
+      EnvironmentNAV3DKIN and EnvironmentNAVXYTHETALAT. The
+      DiscreteSpaceInformation instance gets deleted in the destructor
+      of this wrapper. */
+  template<class DSIsubclass>
+  class SBPLEnvironmentDSI
     : public SBPLEnvironment
   {
   public:
-    SBPLEnvironment3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
-			 boost::shared_ptr<IndexTransform const> it,
-			 EnvironmentNAV3DKIN * env,
-			 footprint_t const & footprint,
-			 double nominalvel_mpersecs,
-			 double timetoturn45degsinplace_secs);
-    virtual ~SBPLEnvironment3DKIN();
+    SBPLEnvironmentDSI(boost::shared_ptr<CostmapAccessor const> cm,
+		       boost::shared_ptr<IndexTransform const> it,
+		       DSIsubclass * env,
+		       footprint_t const & footprint,
+		       double nominalvel_mpersecs,
+		       double timetoturn45degsinplace_secs)
+      : SBPLEnvironment(cm, it), env_(env) {}
     
-    virtual DiscreteSpaceInformation * getDSI();
-    virtual bool InitializeMDPCfg(MDPConfig *MDPCfg);
+    virtual ~SBPLEnvironmentDSI()
+    { delete env_; }
     
-    virtual bool IsWithinMapCell(int ix, int iy) const;
-    virtual unsigned char GetMapCost(int ix, int iy) const;
-    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false) const;
-    virtual int SetStart(double px, double py, double pth);
-    virtual int SetGoal(double px, double py, double pth);
-    virtual void SetGoalTolerance(double tol_xy, double tol_th);
-    virtual deprecated_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
-    virtual int GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const;
+    virtual DiscreteSpaceInformation * getDSI()
+    { return env_; }
+    
+    virtual bool InitializeMDPCfg(MDPConfig *MDPCfg)
+    { return env_->InitializeMDPCfg(MDPCfg); }
+    
+    virtual bool IsWithinMapCell(int ix, int iy) const
+    { return env_->IsWithinMapCell(ix, iy); }
+    
+    virtual unsigned char GetMapCost(int ix, int iy) const
+    {
+      if ( ! env_->IsWithinMapCell(ix, iy))
+	return costmap_2d::CostMap2D::NO_INFORMATION;
+      return env_->GetMapCost(ix, iy);
+    }
+    
+    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false) const
+    {
+      if ( ! env_->IsWithinMapCell(ix, iy))
+	return outside_map_is_obstacle;
+      return env_->IsObstacle(ix, iy);
+    }
+    
+    virtual int SetStart(double px, double py, double pth)
+    { return env_->SetStart(px, py, pth); }
+    
+    virtual int SetGoal(double px, double py, double pth)
+    { return env_->SetGoal(px, py, pth); }
+
+    virtual void SetGoalTolerance(double tol_xy, double tol_th)
+    { env_->SetGoalTolerance(tol_xy, tol_xy, tol_th); }
+    
+    virtual deprecated_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state)
+    {
+      if (0 > stateID)
+	throw invalid_state("SBPLEnvironmentDSI::GetPoseFromState()", stateID);
+      int ix, iy, ith;
+      env_->GetCoordFromState(stateID, ix, iy, ith);
+      // we know stateID is valid, thus we can ignore the
+      // PoseDiscToCont() retval
+      double px, py, pth;
+      env_->PoseDiscToCont(ix, iy, ith, px, py, pth);
+      deprecated_msgs::Pose2DFloat32 pose;
+      pose.x = px;
+      pose.y = py;
+      pose.th = pth;
+      return pose;
+    }
+    
+    virtual int GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const
+    {
+      int ix, iy, ith;
+      if ( ! env_->PoseContToDisc(pose.x, pose.y, pose.th, ix, iy, ith))
+	return -1;
+      return env_->GetStateFromCoord(ix, iy, ith);
+    }
     
   protected:
-    virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
-    virtual StateChangeQuery const * createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const;
+
+    /** \todo The check IsWithinMapCell() should be done inside
+	EnvironmentNAV3DKIN::UpdateCost() or whatever subclass we are
+	dealing with here. */
+    virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost)
+    {
+      if ( ! env_->IsWithinMapCell(ix, iy))
+	return false;
+      return env_->UpdateCost(ix, iy, newcost);
+    }
+    
+    virtual StateChangeQuery const *
+    createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const
+    { return new myStateChangeQuery<DSIsubclass>(env_, changedcellsV); }
+    
     
     /** \note This is mutable because GetStateFromPose() can
-	conceivable change the underlying EnvironmentNAV3DKIN, which we
+	conceivable change the underlying DSIsubclass, which we
 	don't care about here. */
-    mutable EnvironmentNAV3DKIN * env_;
+    mutable DSIsubclass * env_;
   };
   
 }
@@ -264,12 +332,8 @@ namespace mpglue {
 	      ostream * dbgos) throw(std::exception)
   {
     EnvironmentNAV3DKIN * env(new EnvironmentNAV3DKIN());
-//     if ((is16connected) && ( ! env->SetEnvParameter("is16connected", 1))) {
-//       delete env;
-//       throw runtime_error("mpglue::SBPLEnvironment::create3DKIN(): EnvironmentNAV3DKIN::SetEnvParameter() failed for \"is16connected\"");
-//     }
     
-        int const obst_cost_thresh(cm->getLethalCost());
+    int const obst_cost_thresh(cm->getLethalCost());
     vector<sbpl_2Dpt_t> perimeterptsV;
     perimeterptsV.reserve(footprint.size());
     for (size_t ii(0); ii < footprint.size(); ++ii) {
@@ -280,7 +344,7 @@ namespace mpglue {
     }
     
     if (dbgos) {
-      *dbgos << "mpglue::SBPLEnvironment3DKIN:\n"
+      *dbgos << "mpglue::SBPLEnvironment:create3DKIN()\n"
 	     << "  perimeterptsV =\n";
       for (vector<sbpl_2Dpt_t>::const_iterator ip(perimeterptsV.begin());
 	   ip != perimeterptsV.end(); ++ip)
@@ -312,8 +376,85 @@ namespace mpglue {
 	  env->UpdateCost(ix, iy, cost);
       }
     
-    return new SBPLEnvironment3DKIN(cm, it, env, footprint,
-				    nominalvel_mpersecs, timetoturn45degsinplace_secs);
+    return new SBPLEnvironmentDSI<EnvironmentNAV3DKIN>(cm, it, env, footprint,
+						       nominalvel_mpersecs,
+						       timetoturn45degsinplace_secs);
+  }
+  
+  
+  /**
+     \todo Hardcoded goal tolerance: 0.1 meters in X and Y, 22.5 degrees in Theta.
+  */
+  SBPLEnvironment * SBPLEnvironment::
+  createXYThetaLattice(boost::shared_ptr<CostmapAccessor const> cm,
+		       boost::shared_ptr<IndexTransform const> it,
+		       footprint_t const & footprint,
+		       double nominalvel_mpersecs,
+		       double timetoturn45degsinplace_secs,
+		       std::string const & motor_primitive_filename,
+		       std::ostream * dbgos) throw(std::exception)
+  {
+    EnvironmentNAVXYTHETALAT * env(new EnvironmentNAVXYTHETALAT());
+    
+    int const obst_cost_thresh(cm->getLethalCost());
+    vector<sbpl_2Dpt_t> perimeterptsV;
+    perimeterptsV.reserve(footprint.size());
+    for (size_t ii(0); ii < footprint.size(); ++ii) {
+      sbpl_2Dpt_t pt;
+      pt.x = footprint[ii].x;
+      pt.y = footprint[ii].y;
+      perimeterptsV.push_back(pt);
+    }
+    
+    static double const goaltol_x(0.1);
+    static double const goaltol_y(0.1);
+    static double const goaltol_theta(22.5 * M_PI / 180.0);
+    
+    if (dbgos) {
+      *dbgos << "mpglue::SBPLEnvironment:createXYThetaLattice():\n"
+	     << "  motor_primitive_filename = " << motor_primitive_filename << "\n"
+	     << "  perimeterptsV =\n";
+      for (vector<sbpl_2Dpt_t>::const_iterator ip(perimeterptsV.begin());
+	   ip != perimeterptsV.end(); ++ip)
+	*dbgos << "    " << ip->x << "\t" << ip->y << "\n";
+      *dbgos << "  goaltol_x = " << goaltol_x << "\n"
+	     << "  goaltol_y = " << goaltol_y << "\n"
+	     << "  goaltol_theta = " << goaltol_theta << " rad = "
+	     << goaltol_theta * 180.0 / M_PI << " deg\n"
+	     << "  nominalvel_mpersecs = " << nominalvel_mpersecs << "\n"
+	     << "  timetoturn45degsinplace_secs = " << timetoturn45degsinplace_secs << "\n"
+	     << "  obst_cost_thresh = " << obst_cost_thresh << "\n" << flush;
+    }
+    
+    // good: Take advantage of the fact that InitializeEnv() can take
+    // a NULL-pointer as mapdata in order to initialize to all
+    // freespace.
+    //
+    // bad: Most costmaps do not support negative grid indices, so the
+    // generic CostmapAccessor::getXBegin() and getYBegin() are ignored
+    // and simply assumed to always return 0 (which they won't if we
+    // use growable costmaps).
+    env->InitializeEnv(cm->getXEnd(), // width
+		       cm->getYEnd(), // height
+		       0,	// mapdata
+		       0, 0, 0, // start (x, y, theta)
+		       0, 0, 0,	// goal (x, y, theta)
+		       goaltol_x, goaltol_y, goaltol_theta,
+		       perimeterptsV, it->getResolution(), nominalvel_mpersecs,
+		       timetoturn45degsinplace_secs, obst_cost_thresh,
+		       motor_primitive_filename.c_str());
+    
+    // as above, assume getXBegin() and getYBegin() are always zero
+    for (ssize_t ix(0); ix < cm->getXEnd(); ++ix)
+      for (ssize_t iy(0); iy < cm->getYEnd(); ++iy) {
+	int cost;
+	if (cm->getCost(ix, iy, &cost))	// "always" succeeds though
+	  env->UpdateCost(ix, iy, cost);
+      }
+    
+    return new SBPLEnvironmentDSI<EnvironmentNAVXYTHETALAT>(cm, it, env, footprint,
+							    nominalvel_mpersecs,
+							    timetoturn45degsinplace_secs);
   }
   
 }
@@ -447,146 +588,6 @@ namespace {
     if ( ! env_->IsWithinMapCell(ix, iy))
       return -1;
     return env_->GetStateFromCoord(ix, iy);
-  }
-  
-  
-  SBPLEnvironment3DKIN::
-  SBPLEnvironment3DKIN(boost::shared_ptr<CostmapAccessor const> cm,
-		       boost::shared_ptr<IndexTransform const> it,
-		       EnvironmentNAV3DKIN * env,
-		       footprint_t const & footprint,
-		       double nominalvel_mpersecs,
-		       double timetoturn45degsinplace_secs)
-    : SBPLEnvironment(cm, it),
-      env_(env)
-  {
-  }
-  
-  
-  SBPLEnvironment3DKIN::
-  ~SBPLEnvironment3DKIN()
-  {
-    delete env_;
-  }
-  
-  
-  DiscreteSpaceInformation * SBPLEnvironment3DKIN::
-  getDSI()
-  {
-    return env_;
-  }
-  
-  
-  bool SBPLEnvironment3DKIN::
-  InitializeMDPCfg(MDPConfig *MDPCfg)
-  {
-    return env_->InitializeMDPCfg(MDPCfg);
-  }
-  
-  
-  bool SBPLEnvironment3DKIN::
-  IsWithinMapCell(int ix, int iy) const
-  {
-    return env_->IsWithinMapCell(ix, iy);
-  }
-  
-  
-  /**
-     \note Remapping the cost to binary obstacle info {0,1} actually
-     confuses the check for actually changed costs in the
-     SBPLEnvironment::UpdateCost() method. However, this is bound
-     to change as soon as the 3DKIN environment starts dealing with
-     uniform obstacle costs.
-  */
-  bool SBPLEnvironment3DKIN::
-  DoUpdateCost(int ix, int iy, unsigned char newcost)
-  {
-    if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV3DKIN::UpdateCost()
-      return false;
-    return env_->UpdateCost(ix, iy, newcost);
-
-    //// previously, we had just on/off obstacle information
-    //     if (obst_cost_thresh_ <= newcost)
-    //       return env_->UpdateCost(ix, iy, 1);
-    //     return env_->UpdateCost(ix, iy, 0);
-  }
-  
-  
-  StateChangeQuery const * SBPLEnvironment3DKIN::
-  createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const
-  {
-    return new myStateChangeQuery<EnvironmentNAV3DKIN>(env_, changedcellsV);
-  }
-  
-  
-  unsigned char SBPLEnvironment3DKIN::
-  GetMapCost(int ix, int iy) const
-  {
-    if ( ! env_->IsWithinMapCell(ix, iy))
-      return costmap_2d::CostMap2D::NO_INFORMATION;
-    return env_->GetMapCost(ix, iy);
-  }
-  
-  
-  bool SBPLEnvironment3DKIN::
-  IsObstacle(int ix, int iy, bool outside_map_is_obstacle) const
-  {
-    if ( ! env_->IsWithinMapCell(ix, iy))
-      return outside_map_is_obstacle;
-    return env_->IsObstacle(ix, iy);
-  }
-  
-  
-  int SBPLEnvironment3DKIN::
-  SetStart(double px, double py, double pth)
-  {
-    // assume global and map frame are the same
-    return env_->SetStart(px, py, pth);
-  }
-  
-  
-  int SBPLEnvironment3DKIN::
-  SetGoal(double px, double py, double pth)
-  {
-    // assume global and map frame are the same
-    return env_->SetGoal(px, py, pth);
-  }
-  
-  
-  void SBPLEnvironment3DKIN::
-  SetGoalTolerance(double tol_xy, double tol_th)
-  {
-    env_->SetGoalTolerance(tol_xy, tol_xy, tol_th);
-  }
-  
-  
-  deprecated_msgs::Pose2DFloat32 SBPLEnvironment3DKIN::
-  GetPoseFromState(int stateID) const
-    throw(invalid_state)
-  {
-    if (0 > stateID)
-      throw invalid_state("SBPLEnvironment3D::GetPoseFromState()", stateID);
-    int ix, iy, ith;
-    env_->GetCoordFromState(stateID, ix, iy, ith);
-    // we know stateID is valid, thus we can ignore the
-    // PoseDiscToCont() retval
-    double px, py, pth;
-    env_->PoseDiscToCont(ix, iy, ith, px, py, pth);
-    deprecated_msgs::Pose2DFloat32 pose;
-    pose.x = px;
-    pose.y = py;
-    pose.th = pth;
-    return pose;
-  }
-  
-  
-  int SBPLEnvironment3DKIN::
-  GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const
-  {
-    int ix, iy, ith;
-    if ( ! env_->PoseContToDisc(pose.x, pose.y, pose.th, ix, iy, ith))
-      return -1;
-    return env_->GetStateFromCoord(ix, iy, ith);
   }
   
 }
