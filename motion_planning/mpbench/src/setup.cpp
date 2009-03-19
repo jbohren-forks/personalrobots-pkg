@@ -736,8 +736,10 @@ namespace mpbench {
 			    + "): failed to create SBPLEnvironment from \""
 			    + envstr + "\"");
       
+      // token index 2 is "custom", read for lattice planner elsewhere
+      
       string dirstr("bwd");
-      sfl::token_to(opt_.planner_tok, 2, dirstr);
+      sfl::token_to(opt_.planner_tok, 3, dirstr);
       bool forwardsearch(false);
       if ("fwd" == dirstr) {
 	if (verbose_os_)
