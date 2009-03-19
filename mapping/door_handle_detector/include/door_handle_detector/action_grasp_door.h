@@ -32,37 +32,50 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <door_handle_detector/executive_functions.h>
+
+/* Author: Wim Meeusen */
+
+#ifndef ACTION_GRASP_DOOR_H
+#define ACTION_GRASP_DOOR_H
+
+
+#include <ros/node.h>
+#include <robot_msgs/Door.h>
+#include <std_msgs/Float64.h>
+#include <std_msgs/String.h>
+#include <std_srvs/Empty.h>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <robot_srvs/MoveToPose.h>
 #include <kdl/frames.hpp>
+#include <robot_actions/action.h>
 
-using namespace KDL;
-using namespace ros;
-using namespace std;
-using namespace tf;
+namespace door_handle_detector{
 
-
-
-
-// calculate the robot pose in front of the door
-Stamped<Pose> getGraspPose(const robot_msgs::Door& door)
+class GraspDoorAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
 {
-  Vector normal(door.normal.x, door.normal.y, door.normal.z);
-  Vector x_axis(1,0,0);
-  double dot      = normal(0) * x_axis(0) + normal(1) * x_axis(1);
-  double perp_dot = normal(1) * x_axis(0) - normal(0) * x_axis(1);
-  double z_angle = atan2(perp_dot, dot);
+public:
+  GraspDoorAction();
+  ~GraspDoorAction();
 
-  Vector center((door.door_p1.x + door.door_p2.x)/2.0, 
-                (door.door_p1.y + door.door_p2.y)/2.0,
-                (door.door_p1.z + door.door_p2.z)/2.0);
-  Vector robot_pos = center - (normal * 0.7);
+  virtual void handleActivate(const robot_msgs::Door& door);
+  virtual void handlePreempt();
 
-  Stamped<Pose> robot_pose;
-  robot_pose.frame_id_ = door.header.frame_id;
-  robot_pose.setOrigin( Vector3(robot_pos(0), robot_pos(1), robot_pos(2)));
-  robot_pose.setRotation( Quaternion(z_angle, 0, 0) ); 
 
-  return robot_pose;  
+private:
+  // get angle between the door normal and the x-axis
+  double getDoorAngle(const robot_msgs::Door& door);
+
+  ros::Node* node_;
+
+  bool request_preempt_;
+  tf::TransformListener tf_; 
+
+  std_srvs::Empty::Request  req_empty;
+  std_srvs::Empty::Response res_empty;
+  robot_srvs::MoveToPose::Request  req_moveto;
+  robot_srvs::MoveToPose::Response res_moveto;
+};
+
 }
-
-
+#endif

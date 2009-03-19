@@ -30,7 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include "geometric_helper.h"
+#include <door_handle_detector/geometric_helper.h>
 
 using namespace std;
 using namespace robot_msgs;

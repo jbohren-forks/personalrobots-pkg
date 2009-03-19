@@ -32,37 +32,19 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <door_handle_detector/executive_functions.h>
-#include <kdl/frames.hpp>
+#ifndef EXECUTIVE_FUNCTIONS_H
+#define EXECUTIVE_FUNCTIONS_H
 
-using namespace KDL;
-using namespace ros;
-using namespace std;
-using namespace tf;
+#include <robot_msgs/Door.h>
+#include <tf/tf.h>
 
 
+// calculate the robot pose in front of the door, form where it can grasp the door
+tf::Stamped<tf::Pose> getGraspPose(const robot_msgs::Door& door);
+
+// calculate the robot pose in front of the door, from where it can detect the door
+tf::Stamped<tf::Pose> getDetectPose(const robot_msgs::Door& door);
 
 
-// calculate the robot pose in front of the door
-Stamped<Pose> getGraspPose(const robot_msgs::Door& door)
-{
-  Vector normal(door.normal.x, door.normal.y, door.normal.z);
-  Vector x_axis(1,0,0);
-  double dot      = normal(0) * x_axis(0) + normal(1) * x_axis(1);
-  double perp_dot = normal(1) * x_axis(0) - normal(0) * x_axis(1);
-  double z_angle = atan2(perp_dot, dot);
 
-  Vector center((door.door_p1.x + door.door_p2.x)/2.0, 
-                (door.door_p1.y + door.door_p2.y)/2.0,
-                (door.door_p1.z + door.door_p2.z)/2.0);
-  Vector robot_pos = center - (normal * 0.7);
-
-  Stamped<Pose> robot_pose;
-  robot_pose.frame_id_ = door.header.frame_id;
-  robot_pose.setOrigin( Vector3(robot_pos(0), robot_pos(1), robot_pos(2)));
-  robot_pose.setRotation( Quaternion(z_angle, 0, 0) ); 
-
-  return robot_pose;  
-}
-
-
+#endif

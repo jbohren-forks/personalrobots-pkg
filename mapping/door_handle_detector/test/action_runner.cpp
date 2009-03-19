@@ -32,37 +32,37 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <door_handle_detector/executive_functions.h>
-#include <kdl/frames.hpp>
+#include <robot_msgs/Door.h>
+#include <door_handle_detector/action_detect_door.h>
+#include <door_handle_detector/action_grasp_door.h>
+#include <door_handle_detector/action_open_door.h>
+#include <door_handle_detector/DetectDoorActionStatus.h>
+#include <door_handle_detector/GraspDoorActionStatus.h>
+#include <door_handle_detector/OpenDoorActionStatus.h>
+#include <robot_actions/action.h>
+#include <robot_actions/action_runner.h>
 
-using namespace KDL;
-using namespace ros;
-using namespace std;
-using namespace tf;
+using namespace door_handle_detector;
 
 
+// -----------------------------------
+//              MAIN
+// -----------------------------------
 
-
-// calculate the robot pose in front of the door
-Stamped<Pose> getGraspPose(const robot_msgs::Door& door)
+int main(int argc, char** argv)
 {
-  Vector normal(door.normal.x, door.normal.y, door.normal.z);
-  Vector x_axis(1,0,0);
-  double dot      = normal(0) * x_axis(0) + normal(1) * x_axis(1);
-  double perp_dot = normal(1) * x_axis(0) - normal(0) * x_axis(1);
-  double z_angle = atan2(perp_dot, dot);
+  ros::init(argc,argv); 
 
-  Vector center((door.door_p1.x + door.door_p2.x)/2.0, 
-                (door.door_p1.y + door.door_p2.y)/2.0,
-                (door.door_p1.z + door.door_p2.z)/2.0);
-  Vector robot_pos = center - (normal * 0.7);
+  DetectDoorAction detect;
+  GraspDoorAction grasp;
+  OpenDoorAction open;
 
-  Stamped<Pose> robot_pose;
-  robot_pose.frame_id_ = door.header.frame_id;
-  robot_pose.setOrigin( Vector3(robot_pos(0), robot_pos(1), robot_pos(2)));
-  robot_pose.setRotation( Quaternion(z_angle, 0, 0) ); 
+  robot_actions::ActionRunner runner(10.0);
+  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(detect);
+  runner.connect<robot_msgs::Door, door_handle_detector::GraspDoorActionStatus, robot_msgs::Door>(grasp);
+  runner.connect<robot_msgs::Door, door_handle_detector::OpenDoorActionStatus, robot_msgs::Door>(open);
 
-  return robot_pose;  
+  runner.run();
+
+  return 0;
 }
-
-

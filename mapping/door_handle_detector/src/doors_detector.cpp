@@ -47,7 +47,7 @@
 #include <robot_msgs/PolygonalMap.h>
 
 // Most of the geometric routines that contribute to the door finding job are located here
-#include "geometric_helper.h"
+#include <door_handle_detector/geometric_helper.h>
 
 // Include the service call type
 #include "door_handle_detector/DoorsDetector.h"

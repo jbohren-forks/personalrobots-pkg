@@ -32,16 +32,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <ros/node.h>
-#include <robot_msgs/Door.h>
-#include <door_handle_detector/DetectDoorActionStatus.h>
-#include <door_handle_detector/DoorDetector.h>
-#include <robot_actions/action.h>
-#include <robot_actions/action_runner.h>
-
+#include <door_handle_detector/action_detect_door.h>
 
 using namespace ros;
 using namespace std;
+using namespace door_handle_detector;
 
 
 static const string fixed_frame = "odom_combined";
@@ -49,52 +44,28 @@ static const string fixed_frame = "odom_combined";
 
 
 
-//-------------------------------------------------------
-class DetectDoorAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
-//-------------------------------------------------------
+DetectDoorAction::DetectDoorAction(): 
+  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_door_action") 
+{};
+
+
+DetectDoorAction::~DetectDoorAction(){};
+
+
+
+void DetectDoorAction::handleActivate(const robot_msgs::Door& door)
 {
-public:
-  DetectDoorAction(): robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_door_action") {};
-  ~DetectDoorAction(){};
-
-  virtual void handleActivate(const robot_msgs::Door& door)
-  {
-    notifyActivated();
-
-    req_doordetect.door = door;
-    if (ros::service::call("door_handle_detector", req_doordetect, res_doordetect)){
-      notifySucceeded(res_doordetect.door);
-    }
-    notifyAborted(door);
+  notifyActivated();
+  
+  req_doordetect.door = door;
+  if (ros::service::call("door_handle_detector", req_doordetect, res_doordetect)){
+    notifySucceeded(res_doordetect.door);
   }
-
-  virtual void handlePreempt(){};
-
-
-
-private:
-  door_handle_detector::DoorDetector::Request  req_doordetect;
-  door_handle_detector::DoorDetector::Response res_doordetect;
-};
-
-
-
-
-
-
-// -----------------------------------
-//              MAIN
-// -----------------------------------
-
-int main(int argc, char** argv)
-{
-  ros::init(argc,argv); 
-
-  DetectDoorAction detect;
-
-  robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(detect);
-  runner.run();
-
-  return 0;
+  notifyAborted(door);
 }
+
+
+
+void DetectDoorAction::handlePreempt()
+{};
+

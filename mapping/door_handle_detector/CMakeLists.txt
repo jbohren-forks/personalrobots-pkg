@@ -30,14 +30,11 @@ target_link_libraries (door_handle_detector_node)
 
 rospack_add_library(executive_functions src/executive_functions.cpp)
 
-rospack_add_executable(action_detect_door src/action_detect_door.cpp)
-target_link_libraries(action_detect_door)
-
-rospack_add_executable(action_grasp_door src/action_grasp_door.cpp)
-target_link_libraries(action_grasp_door)
-
-rospack_add_executable(action_open_door src/action_open_door.cpp)
-target_link_libraries(action_open_door)
+rospack_add_executable(action_runner src/action_detect_door.cpp 
+				     src/action_grasp_door.cpp 
+				     src/action_open_door.cpp 
+				     test/action_runner.cpp)
+target_link_libraries (action_runner)
 
 rospack_add_executable(open_door_executive_test test/open_door_executive_test.cpp)
 target_link_libraries(open_door_executive_test)
