@@ -37,7 +37,7 @@
   <depend package="eigen" />
   <depend package="tf" />
   <depend package="ANN" />
-<--  <depend package="FLANN" />-->
+<!--  <depend package="FLANN" />-->
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcloud_geometry -lcloud_io -lsample_consensus -lcloud_kdtree -lcloud_octree" />
