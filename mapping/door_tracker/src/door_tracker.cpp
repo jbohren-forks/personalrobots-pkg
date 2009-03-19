@@ -70,6 +70,8 @@
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
 
+#include <angles/angles.h>
+
 #include <sys/time.h>
 
 using namespace std;
@@ -124,7 +126,7 @@ class DoorTracker
       node_->param ("~p_door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
       node_->param ("~p_door_max_width", door_max_width_, 1.4);                    // maximum width of a door: 1.4m
 
-      eps_angle_ = cloud_geometry::deg2rad (eps_angle_);                      // convert to radians
+      eps_angle_ = angles::from_degrees (eps_angle_);                      // convert to radians
 
       double tmp; int tmp2;
       node_->param("~p_door_frame_p1_x", tmp, 1.5); door_msg_.frame_p1.x = tmp;
