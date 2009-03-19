@@ -46,22 +46,99 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
+//#include "ros/node.h"
+//#include "image_msgs/StereoInfo.h"
+//#include "image_msgs/DisparityInfo.h"
+//#include "image_msgs/Image.h"
+
+
 #include "ros/node.h"
-#include "image_msgs/StereoInfo.h"
 #include "image_msgs/DisparityInfo.h"
+#include "image_msgs/StereoInfo.h"
 #include "image_msgs/Image.h"
+#include "image_msgs/CamInfo.h"
+#include "image_msgs/ColoredLines.h"
+#include "image_msgs/ColoredLine.h"
+
+//#include "CvStereoCamModel.h"
+
 #include "robot_msgs/PointCloud.h"
 #include "std_msgs/UInt8.h" //for projector status
 #include <string>
 
+
+//  to get and use camera info ...
+//#include "image_msgs/CamInfo.h"
+//#include "CvStereoCamModel.h"
+// ... //
+
 #include "color_calib.h"
-
 #include "topic_synchronizer.h"
-
 #include <boost/thread.hpp>
+
+//DEFINES
+ // For image type captured
+#define GOT_LEFT_NO_TEXTURE 1
+#define GOT_RIGHT_NO_TEXTURE 2
+#define GOT_LEFT_TEXTURE 4
+#define GOT_RIGHT_TEXTURE 8
+#define GOT_D 16
+#define GOT_d 32
+
 
 using namespace std;
 
+boost::mutex g_cv_mutex;
+
+struct MouseCallbackParams {
+  vector<float> *W;
+  int width,height;
+  int x,y;
+  int draw_count;
+};
+
+/*!
+ * \brief Click on a point in the left image to get 2d, color and 3d information.
+ *
+ *
+ * Click on a point in the left image to 
+ * 1) Draw a red dot;
+ * 2) Get the (x,y,z) value in the stereo frame (the vision-version of x,y,z with z pointing forwards.)
+ */
+void on_mouse(int event, int x, int y, int flags, void *params) {
+	MouseCallbackParams* p = (MouseCallbackParams *)params;
+	float X,Y,Z,A;
+	int width,height;
+	 switch(event) {
+
+	  case CV_EVENT_MOUSEMOVE:
+		 break;
+
+	  case CV_EVENT_LBUTTONUP:
+		 g_cv_mutex.lock(); 
+		 width = p->width;
+		 height = p->height;
+		 if((int)((*(p->W)).size()) == width*height*4){
+		 	 int idx = (y*width + x)*4;
+		 	 X =(*(p->W))[idx++];
+		 	 Y =(*(p->W))[idx++];
+		 	 Z =(*(p->W))[idx++];	
+		 	 A	=(*(p->W))[idx];		 		 	 
+			 p->x = x;
+			 p->y = y;
+			 p->draw_count = 200;
+			 printf("Stereo (%d,%d): (%f, %f, %f)A:%f\n", x,y,X,Y,Z,A);		
+		 }
+		 else
+		 	printf("Stereo ... nothing to report\n");    	    
+		 g_cv_mutex.unlock();
+		 break;
+		 
+	  default:
+		 break;
+	 }
+}    
+    
 class StereoView : public ros::Node
 {
 public:
@@ -75,29 +152,37 @@ public:
   image_msgs::CvBridge lbridge;
   image_msgs::CvBridge rbridge;
   image_msgs::CvBridge dbridge;
+  image_msgs::CamInfo rcaminfo; /**< Right camera info msg. */
 
-  robot_msgs::PointCloud cloud,cloudNoTex;
+  robot_msgs::PointCloud cloud, cloudIsTex, cloudNoTex;
 
   color_calib::Calibration lcal;
   color_calib::Calibration rcal;
 
   IplImage* lcalimage;
   IplImage* rcalimage;
-  IplImage* lastDisparity;
-  IplImage* lastScaledDisparity;
-  IplImage* lastLeft;
-  IplImage* lastRight;
-  IplImage* lastNonTexDisp; //This is the disparity from the non-textured light
   
-
+  IplImage* disparityIsTextured;
+  IplImage* leftTextured;
+  IplImage* rightTextured;
+  IplImage* leftNotTextured;
+  IplImage* rightNotTextured;
+  IplImage* disparityNotTextured; //This is the disparity from the non-textured light
+  vector<float> W;  				/**< Will hold the world X,Y,Z,A points for each pixel in order. */
+//  CvStereoCamModel* cam_model;  /**< Camera model so we can convert disparity to depth. */
+//  bool init_cam_model;          /**< triggers initialization of camera model. */
+//  float ZnearMM, ZfarMM; 			/**< Ignore depths closer, further than this. */
+  MouseCallbackParams mcbparams;
+  
   TopicSynchronizer<StereoView> sync;
-
+  int capture_type;   //Uses the GOT_ defines above
   bool capture;      //Capture stereo with and without texture
   bool captureNoTex; //Capture stereo without texture
   bool captureByTime;     //Capture after a given delay with texture
   bool captureNoTexByTime; //Capture after a given delay without texture
-  int sync_capture;           //In capture with textured light, make sure we've seen a no texture, then texture display before saving data
   bool always_on_capture;
+  
+  int projStatus,projStatusPrev,projStatusCount;
 
   std_msgs::UInt8 projector_status;
   clock_t trigger;
@@ -106,13 +191,16 @@ public:
 
   string fileName;
   char fileNumString[20];
-  string mydir,XXX,SR,NP,m,prompt_;
+  string mydir,DESC,m,prompt_; //SR,NP,
   unsigned int fileNum;
 
   StereoView() : ros::Node("stereo_view"), 
-                 lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL), lastDisparity(NULL), lastScaledDisparity(NULL), lastNonTexDisp(NULL), 
-                 lastLeft(NULL), lastRight(NULL), sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
-		 capture(false), captureNoTex(false), captureByTime(false), captureNoTexByTime(false), sync_capture(0), always_on_capture(false)
+                 lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL), disparityIsTextured(NULL), disparityNotTextured(NULL), 
+                 leftTextured(NULL), rightTextured(NULL), leftNotTextured(NULL), rightNotTextured(NULL), 
+                 sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
+                 projStatus(0), projStatusPrev(0), projStatusCount(0), 
+		 capture(false), captureNoTex(false), captureByTime(false), captureNoTexByTime(false), 
+		 capture_type(0), always_on_capture(false)
 
   {
     //param("~file_name", fileName, "stereoImage");  //Base string to use, images will be [base][L/R/D].jpg (left, right, disparity)
@@ -123,9 +211,9 @@ public:
   #define CAPTURE_FEQ_SECS  (15.0*TIMER_FREQ)
 
     mydir = "../ros-pkg/vision/stereo_capture/data/"; //The base runs in ~/ros
-    XXX = "001"; //My ID
-    SR = "R";    //Simulated or Real
-    NP = "N";    //Natural or Painted
+    DESC = "cups"; //Default data description
+//    SR = "R";    //Simulated or Real
+//    NP = "N";    //Natural or Painted
     m = "1";     //Object letter code
     prompt_ = "Input code for objects: "; //Prompt the user
   
@@ -135,6 +223,13 @@ public:
     
 
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
+    mcbparams.W = &W;
+    mcbparams.width = 1;
+    mcbparams.height = 2;
+    mcbparams.x = 0;
+    mcbparams.y = 0;
+    mcbparams.draw_count = 0;
+    cvSetMouseCallback("left", on_mouse, &mcbparams);
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 
@@ -145,16 +240,13 @@ public:
     std::list<std::string> right_list;
     right_list.push_back(std::string("stereo/right/image_rect_color"));
     right_list.push_back(std::string("stereo/right/image_rect"));
-
     sync.subscribe(left_list,  limage, 1);
     sync.subscribe(right_list, rimage, 1);
-
     sync.subscribe("stereo/disparity", dimage, 1);
     sync.subscribe("stereo/stereo_info", stinfo, 1);
     sync.subscribe("stereo/disparity_info", dispinfo, 1);
-
     sync.subscribe("stereo/cloud", cloud, 1);
-
+    sync.subscribe("stereo/right/cam_info", rcaminfo, 1);
     sync.ready();
 
     subscribe("projector_status", projector_status, &StereoView::projector_status_change, 1);
@@ -166,16 +258,24 @@ public:
       cvReleaseImage(&lcalimage);
     if (rcalimage)
       cvReleaseImage(&rcalimage);
-    if (lastDisparity)
-      cvReleaseImage(&lastDisparity);
-    if (lastScaledDisparity)
-      cvReleaseImage(&lastScaledDisparity);
-    if (lastLeft)
-      cvReleaseImage(&lastLeft);
-    if (lastRight)
-      cvReleaseImage(&lastRight);
-    if(lastNonTexDisp)
-      cvReleaseImage(&lastNonTexDisp);
+    if (disparityIsTextured)
+      cvReleaseImage(&disparityIsTextured);
+    if (leftTextured)
+      cvReleaseImage(&leftTextured);
+    if (rightTextured)
+      cvReleaseImage(&rightNotTextured);
+    if (leftNotTextured)
+      cvReleaseImage(&leftNotTextured);
+    if (rightNotTextured)
+      cvReleaseImage(&rightTextured);
+    if(disparityNotTextured)
+      cvReleaseImage(&disparityNotTextured);
+ //   if(cam_model){
+ //   	delete cam_model;
+ //   	cvReleaseImage(&IZ);
+ //   	cvReleaseImage(&IX);
+ //   	cvReleaseImage(&IY);
+ //   }
   }
 
 //=========== Get text input from user ===========//
@@ -229,33 +329,78 @@ std::string cvGetString(std::string prompt, std::string init)
     //Nothing to see here, move along
   }
 
+//These defines simply are a count to de-bounce the projector on/off message since it's not always exactly sync'd
+#define PROJCOUNT 30
+#define PROJGREEN 27
+#define PROJRED 26
 void image_cb_all(ros::Time t)
 {
-    cv_mutex.lock();
-
-    cout<<"Project status is: "<<(int)projector_status.data<<endl;
-
+	
+   cv_mutex.lock();
+	string greenstr = " ";
+	//Track state change
+	projStatus = (int)projector_status.data;
+	if(projStatus != projStatusPrev){
+		projStatusCount = PROJCOUNT; //Up to 30 fps count down, though really usually ~7
+	}
+	projStatusPrev = projStatus;
+	if((PROJGREEN >= projStatusCount) && (projStatusCount > PROJRED))	 greenstr = "   (debounced)";
+	cout << "projector: " << projStatus << greenstr << endl;
+	
     if (lbridge.fromImage(limage, "bgr"))
     {
-      if((!projector_status.data) || always_on_capture)
+		if((PROJGREEN >= projStatusCount) && (projStatusCount > PROJRED))
+		{    
+		   if((!projector_status.data)) //Texture is off
+				{
+		  			if(leftNotTextured != NULL)
+			 			cvReleaseImage(&leftNotTextured);
+		  			leftNotTextured = cvCloneImage(lbridge.toIpl());
+					if(capture || captureNoTex)
+						capture_type |= GOT_LEFT_NO_TEXTURE;
+				}
+			else // (projector_status.data) //Texture is on
 			{
-	  			if(lastLeft != NULL)
-	    			cvReleaseImage(&lastLeft);
-	  			lastLeft = cvCloneImage(lbridge.toIpl());
-	  			if(sync_capture == 2) sync_capture = 1;
+				if(leftTextured != NULL)
+		 			cvReleaseImage(&leftTextured);
+				leftTextured = cvCloneImage(lbridge.toIpl());
+				if(capture || captureNoTex)
+					capture_type |= GOT_LEFT_TEXTURE;
 			}      
-      cvShowImage("left", lbridge.toIpl());
+ 		}
+ 		if(leftTextured && mcbparams.draw_count)
+ 		{
+ 		   int dc = mcbparams.draw_count;
+ 			cvCircle(leftTextured, cvPoint(mcbparams.x,mcbparams.y), 2, cvScalar(dc,dc,dc), 4);
+    		cvShowImage("left",leftTextured);
+    		mcbparams.draw_count -= 100;
+    		if(mcbparams.draw_count < 0) mcbparams.draw_count = 0;
+    	}
+    	else 
+	     	cvShowImage("left", lbridge.toIpl());
     }
 
     if (rbridge.fromImage(rimage, "bgr"))
     {
-      if((!projector_status.data)||always_on_capture)
-	  {
-		  if(lastRight != NULL)
-			cvReleaseImage(&lastRight);
-
-		  lastRight = cvCloneImage(rbridge.toIpl());
-	  }
+		if((PROJGREEN >= projStatusCount) && (projStatusCount > PROJRED))
+		{      
+			  if((!projector_status.data)) //Texture if off
+			  {
+				  if(rightNotTextured != NULL)
+					cvReleaseImage(&rightNotTextured);
+				  rightNotTextured = cvCloneImage(rbridge.toIpl());
+	 			  if(capture || captureNoTex)
+					capture_type |= GOT_RIGHT_NO_TEXTURE;
+			  }
+			  else //Texture is on
+			  {
+				  if(rightTextured != NULL)
+					  cvReleaseImage(&rightTextured);
+				  rightTextured = cvCloneImage(rbridge.toIpl());
+				  if(capture || captureNoTex)
+					  capture_type |= GOT_RIGHT_TEXTURE;
+			  }	  
+		}
       cvShowImage("right", rbridge.toIpl());
     }
 
@@ -263,107 +408,127 @@ void image_cb_all(ros::Time t)
     {
       IplImage* disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
       cvCvtScale(dbridge.toIpl(), disp, 4.0/dispinfo.dpp);
-
-	   if(projector_status.data)
-		{
-		  if(sync_capture == 1) sync_capture = 0;
-		  if(lastDisparity != NULL)
-			cvReleaseImage(&lastDisparity);
-		  lastDisparity = cvCloneImage(dbridge.toIpl());
-
-		  if(lastScaledDisparity != NULL)
-			cvReleaseImage(&lastScaledDisparity);	  
-		  lastScaledDisparity = cvCloneImage(disp);
-		} else //Save non textured light disparity too
+		if((PROJGREEN >= projStatusCount) && (projStatusCount > PROJRED))
+		{   
+/*		   if(init_cam_model)
+		   {
+		      printf("cam_model initialized! *********************************************\n");
+				cam_model = new CvStereoCamModel(rcaminfo.P[0], rcaminfo.P[5], 
+											-(rcaminfo.P[3])/(rcaminfo.P[0]), 
+											rcaminfo.P[2], rcaminfo.P[2], 
+											rcaminfo.P[6], 1.0/dispinfo.dpp);
+				IZ  = cvCreateImage( cvGetSize(disp), IPL_DEPTH_32F, 3 );
+				IX = cvCloneImage(IZ);
+				IY = cvCloneImage(IZ);
+		   	init_cam_model = false;
+		   }   
+*/			if(projector_status.data)
+			{
+			  if(disparityIsTextured != NULL)
+				cvReleaseImage(&disparityIsTextured);	  
+			  disparityIsTextured = cvCloneImage(disp);
+			  cloudIsTex = cloud;
+			  if(capture || captureNoTex)
+				  capture_type |= GOT_D;
+			} 
+			else //Save non textured light disparity too
 			{ 
-			  if(lastNonTexDisp != NULL)
-				cvReleaseImage(&lastNonTexDisp);
-			  lastNonTexDisp = cvCloneImage(disp);
+			  if(disparityNotTextured != NULL)
+				cvReleaseImage(&disparityNotTextured);
+			  disparityNotTextured = cvCloneImage(disp);
 			  cloudNoTex = cloud;
-		   }
-		  cvShowImage("disparity", disp);
-		  cvReleaseImage(&disp);
+			  if(capture || captureNoTex)
+				  capture_type |= GOT_d;
+			}
+ 		}
+// 		if(cam_model) cam_model->dispToCart(disp,IZ);//disp8UToCart32F(disp, ZnearMM, ZfarMM, IZ, IX, IY);
+	mcbparams.width = disp->width;
+    mcbparams.height = disp->height;
+      point_cloud_to_xyVector(cloud, W, disp->width, disp->height );
+		cvShowImage("disparity", disp);
+		cvReleaseImage(&disp);
     }
 	//THIS IS CAPTURE WHEN THE TEXTURE LIGHT IS ALWAYS ON
-     if( always_on_capture && capture )//&& (lastDisparity != NULL)) 
+     if( always_on_capture && capture && (capture_type == (GOT_LEFT_TEXTURE+GOT_RIGHT_TEXTURE+GOT_D)))
       {
-        cout << "w store..." << endl;
-		stringstream ss1,ss1jpg, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
-		sprintf(fileNumString,"%.4d",fileNum);
-		fileName = mydir + XXX + "." + fileNumString + "." + SR + "." + NP + "." + m;
-		ss1jpg<<fileName<<".L"<<".jpg";
-		ss1<<fileName<<".L"<<".png";
-		ss2<<fileName<<".R"<<".png";
-		ss3<<fileName<<".D"<<".png";
-	//	ss4<<fileName<<".D"<<fileNum<<".u16";
-        sscloud<<fileName<<".C"<<".txt";
-		cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss1jpg.str()<<" "<<ss2.str()<<" "<<ss3.str()<<" "<< sscloud.str() << endl;
-		cvSaveImage(ss1.str().c_str(), lastLeft);
-		cvSaveImage(ss2.str().c_str(), lastRight);
-		cvSaveImage(ss3.str().c_str(), lastScaledDisparity);
-	//	cvSave(ss4.str().c_str(), lastDisparity);
-        write_out_point_cloud(sscloud.str(),cloud);
-		fileNum++;
-		capture = false;
-		always_on_capture = false;
-		cout << "fileNum = " << fileNum << " !!!!!!!! you can move !!!!!!!!!!!!!" << endl;
+         cout << "w store..." << endl;
+			stringstream ss1,ss1jpg, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
+			sprintf(fileNumString,"%.4d",fileNum);
+			fileName = mydir + DESC + "." + fileNumString + "." + m; //+ SR + "." + NP + "."
+			ss1jpg<<fileName<<".L"<<".jpg";
+			ss1<<fileName<<".L"<<".png";
+			ss2<<fileName<<".R"<<".png";
+			ss3<<fileName<<".D"<<".png";
+		//	ss4<<fileName<<".D"<<fileNum<<".u16";
+		   sscloud<<fileName<<".C"<<".txt";
+			cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss1jpg.str()<<" "<<ss2.str()<<" "<<ss3.str()<<" "<< sscloud.str() << endl;
+			cvSaveImage(ss1.str().c_str(), leftTextured);
+			cvSaveImage(ss2.str().c_str(), rightTextured);
+			cvSaveImage(ss3.str().c_str(), disparityIsTextured);
+		   write_out_point_cloud(sscloud.str(),cloudIsTex);
+			fileNum++;
+			capture = false;
+			always_on_capture = false;
+			capture_type = 0;
+			cout << "fileNum = " << fileNum << " !!!!!!!! always on can move !!!!!!!!!!!!!" << endl;
       }  
 //	THIS IS THE ALTERNATING CAPTURE HANDLER
-    if((!sync_capture) && capture && (lastDisparity != NULL) && !always_on_capture) //Look here to save the non texture disparity image
+    if( capture && (!always_on_capture) && (capture_type == (GOT_LEFT_NO_TEXTURE+GOT_RIGHT_NO_TEXTURE+GOT_LEFT_TEXTURE+GOT_RIGHT_TEXTURE+GOT_D+GOT_d))) //Look here to save the non texture disparity image
       {
-        cout << "Alternating capture" << endl;
-		stringstream ss1,ss1jpg, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
-		sprintf(fileNumString,"%.4d",fileNum);
-		fileName = mydir + XXX + "." + fileNumString + "." + SR + "." + NP + "." + m;
-		ss1jpg<<fileName<<".L"<<".jpg";
-		ss1<<fileName<<".L"<<".png";
-		ss2<<fileName<<".R"<<".png";
-		ss3<<fileName<<".D"<<".png";
-	//	ss4<<fileName<<".D"<<fileNum<<".u16";
-        ss5<<fileName<<".d"<<".png";
-        sscloud<<fileName<<".C"<<".txt";
-        sscloudNoTex<<fileName<<".CnoTex"<<".txt";
-		cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss1jpg.str()<<" "<<ss2.str()<<" "<<ss3.str()<<" "<< ss5.str() << endl;
-		cvSaveImage(ss1.str().c_str(), lastLeft);
-		cvSaveImage(ss2.str().c_str(), lastRight);
-		cvSaveImage(ss3.str().c_str(), lastScaledDisparity);
-	//	cvSave(ss4.str().c_str(), lastDisparity);
-        cvSaveImage(ss5.str().c_str(),lastNonTexDisp);
-        write_out_point_cloud(sscloud.str(),cloud);
-        write_out_point_cloud(sscloudNoTex.str(),cloudNoTex);
-		fileNum++;
-		capture = false;
-		cout << "!!!!!!!!!!!!!!!!!!! move move move !!!!!!!!!!!!!!!!!!!!!" << endl;
+         cout << "Alternating capture" << endl;
+			stringstream ss1,ss1jpg, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex, ss_l,ss_r;
+			sprintf(fileNumString,"%.4d",fileNum);
+			fileName = mydir + DESC + "." + fileNumString + "." + m;//+ SR + "." + NP + "." 
+			ss1jpg<<fileName<<".l"<<".jpg";
+			ss1<<fileName<<".L"<<".png"; //left image texture
+			ss_l<<fileName<<".l"<<".png"; //left image no texure
+			ss2<<fileName<<".R"<<".png"; //right image texture
+			ss_r<<fileName<<".r"<<".png"; //right image no texture
+			ss3<<fileName<<".D"<<".png";
+		//	ss4<<fileName<<".D"<<fileNum<<".u16";
+		   ss5<<fileName<<".d"<<".png";
+		   sscloud<<fileName<<".C"<<".txt";
+		   sscloudNoTex<<fileName<<".CnoTex"<<".txt";
+			cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss1jpg.str()<<" "<<ss_l.str()<<" "<<ss2.str()<<" "<<ss_r.str()<<" "<<ss3.str()<<" "<< ss5.str() << endl;
+			cout<<"  .L, .R, .D => with texture, .l, .r, .d => without texture\n"<< endl;
+			cvSaveImage(ss1.str().c_str(), leftTextured);
+			cvSaveImage(ss_l.str().c_str(),leftNotTextured);
+			cvSaveImage(ss2.str().c_str(), rightTextured);
+			cvSaveImage(ss_r.str().c_str(),rightNotTextured);
+			cvSaveImage(ss3.str().c_str(), disparityIsTextured);
+		   cvSaveImage(ss5.str().c_str(),disparityNotTextured);
+		   write_out_point_cloud(sscloud.str(),cloudIsTex);
+		   write_out_point_cloud(sscloudNoTex.str(),cloudNoTex);
+			fileNum++;
+			capture = false;
+			capture_type = 0;
+			cout << "!!!!!!!!!!!!!!!!!!! alternate move move !!!!!!!!!!!!!!!!!!!!!" << endl;
       }
 // THIS IS CAPTURE WHEN TEXTURE IS NEVER ON
-    if(captureNoTex && !always_on_capture)
+    if(captureNoTex && (!always_on_capture) && (capture_type == (GOT_LEFT_NO_TEXTURE+GOT_RIGHT_NO_TEXTURE+GOT_d)))
     {
-		stringstream ss1,ss1jpg, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
-		sprintf(fileNumString,"%.4d",fileNum);
-		fileName = mydir + XXX + "." + fileNumString + "." + SR + "." + NP + "." + m;
-		ss1jpg<<fileName<<".L"<<".jpg";
-		ss1<<fileName<<".L"<<".png";
-		ss2<<fileName<<".R"<<".png";
-        ss5<<fileName<<".d"<<".png";
-        sscloudNoTex<<fileName<<".CnoTex"<<".txt";
-		cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss1jpg.str()<<" "<<ss2.str()<<" "<< ss5.str() << endl;
-/*		cout << "special save ../ros-pkg/vision/stereo_capture/data/foo.png" << endl;
-	IplImage *I;	
-	I = cvCreateImage(cvSize(200,100), 8, 3);
-	cvSaveImage("../ros-pkg/vision/stereo_capture/data/foo.png",I);
-	cvReleaseImage(&I);
-	printf("Done saving image ../ros-pkg/vision/stereo_capture/data/foo.png\n");		
-*/		
-		cvSaveImage(ss1.str().c_str(), lbridge.toIpl());
-		cvSaveImage(ss2.str().c_str(), rbridge.toIpl());
-        cvSaveImage(ss5.str().c_str(),lastNonTexDisp);
-        write_out_point_cloud(sscloudNoTex.str(),cloudNoTex);
-		fileNum++;
-		captureNoTex = false;
+			stringstream ss1,ss1jpg, ss2, ss3, ss4, ss5, sscloud, sscloudNoTex;
+			sprintf(fileNumString,"%.4d",fileNum);
+			fileName = mydir + DESC + "." + fileNumString + "." + m;// + SR + "." + NP + "."
+			ss1jpg<<fileName<<".L"<<".jpg";
+			ss1<<fileName<<".L"<<".png";
+			ss2<<fileName<<".R"<<".png";
+		   ss5<<fileName<<".d"<<".png";
+		   sscloudNoTex<<fileName<<".CnoTex"<<".txt";
+			cout<<"Saving images "<<fileName<<" "<<ss1.str()<<" "<<ss1jpg.str()<<" "<<ss2.str()<<" "<< ss5.str() << endl;
+			cvSaveImage(ss1.str().c_str(), leftNotTextured);
+			cvSaveImage(ss2.str().c_str(), rightNotTextured);
+		   cvSaveImage(ss5.str().c_str(),disparityNotTextured);
+		   write_out_point_cloud(sscloudNoTex.str(),cloudNoTex);
+			fileNum++;
+			captureNoTex = false;
+			capture_type = 0;
+			cout <<"!!!!!!!!!!!!!!! no texture move move !!!!!!!!!!!!!!" << endl;
     }
-
+    //State transition
+	 projStatusCount -= 1;
+	 if(projStatusCount < 0) projStatusCount = 0;
     cv_mutex.unlock();
-
   }
 
 
@@ -377,28 +542,93 @@ void image_cb_all(ros::Time t)
     b = (rgb & 0xff) / 255.0f;
   }
   
+  /** \brief Writes out point cloud: X,Y,Z,r,g,b or X,Y,Z,r,g,b,img(x),img(y) if stereo/do_keep_coords launch param is true */
   void write_out_point_cloud(string file_name,  robot_msgs::PointCloud &cloud_ )
   {
     int c_idx = -1;
+    int cx_idx = -1, cy_idx = -1;
     for (unsigned int d = 0; d < cloud_.chan.size (); d++)
     {
       if (cloud_.chan[d].name == "rgb")
         c_idx = d;
+      if (cloud_.chan[d].name == "x")
+       cx_idx = d;
+      if (cloud_.chan[d].name == "y")
+       cy_idx = d;
     }
-    
-    
+     
     ofstream fout(file_name.c_str());
 
     float r = 0.0, g = 0.0, b = 0.0;
-    
-    for (unsigned int i=0; i<cloud_.pts.size(); i++)
-    {
-      if (c_idx != -1)
-        transformRGB (cloud_.chan[c_idx].vals[i], r, g, b);
-      fout << cloud_.pts[i].x << " " << cloud_.pts[i].y << " " << cloud_.pts[i].z << " " << r << " " << g << " " << b << endl;
-    }
+    int x,y;
+    if((cx_idx >= 0)&&(cy_idx >=0)){
+		 for (unsigned int i=0; i<cloud_.pts.size(); i++)
+		 {
+		   if (c_idx != -1){
+		     transformRGB (cloud_.chan[c_idx].vals[i], r, g, b);
+		     x = (int)(cloud_.chan[cx_idx].vals[i]);
+		     y = (int)(cloud_.chan[cy_idx].vals[i]);
+		   }
+		   fout << cloud_.pts[i].x << " " << cloud_.pts[i].y << " " << cloud_.pts[i].z << " " << r << " " << g << " " << b << " " << x << " " << y << endl;
+		 }
+	 }
+    else{
+		for (unsigned int i=0; i<cloud_.pts.size(); i++)
+		 {
+		   if (c_idx != -1)
+		     transformRGB (cloud_.chan[c_idx].vals[i], r, g, b);
+		   fout << cloud_.pts[i].x << " " << cloud_.pts[i].y << " " << cloud_.pts[i].z << " " << r << " " << g << " " << b << endl;
+		 }   
+	 } 
     fout.close();
   }
+
+  /** \brief Puts point cloud into 32F vector(width,height) of X, Y, Z and A assuming stereo/do_keep_coords launch param is true */
+  void point_cloud_to_xyVector(robot_msgs::PointCloud &cloud_, vector<float> &W, int width, int height )
+  {
+    int c_idx = -1;
+    int cx_idx = -1, cy_idx = -1;
+    int sizeW = (int)W.size();
+    int maxElems = 4*width*height;
+    if(sizeW != maxElems)
+    {
+    	printf("WARNING: W.size()[%d] in point_cloud_to_xyVector mismatch with width(%d)*height(%d)*4 [%d], resizing\n",  
+    	       sizeW,width,height,maxElems);
+    	W.resize(maxElems);
+    }
+    W.assign(maxElems,-1.0); //Clear 
+    //FIND THE CORRECT CHANNEL INDICES
+    for (unsigned int d = 0; d < cloud_.chan.size (); d++)
+    {
+      if (cloud_.chan[d].name == "rgb")
+        c_idx = d;
+      if (cloud_.chan[d].name == "x")
+       cx_idx = d;
+      if (cloud_.chan[d].name == "y")
+       cy_idx = d;
+    }  
+    //MAKE SURE WE ACTUALL FOUND THE CHANNELS
+    if((cx_idx < 0)||(cy_idx < 0)||(c_idx < 0)) //If we don't have the right point cloud, give up
+    {
+    	printf("WARNING: Point cloud doesn't have image x,y coordinates. Set stereo/do_keep_coords in the launch file, RETURN\n");
+    	return;  
+    }
+	//FILL W
+    int x,y,idx;
+	 for (unsigned int i=0; i<cloud_.pts.size(); i++)
+	 {
+	     x = (int)(cloud_.chan[cx_idx].vals[i]);
+	     y = (int)(cloud_.chan[cy_idx].vals[i]);
+	     idx = (width*y + x)*4;
+	     W[idx++] = cloud_.pts[i].x;
+	     W[idx++] = cloud_.pts[i].y;
+	     W[idx++] = cloud_.pts[i].z;
+	     W[idx++] = 0.0;
+	 }
+  }
+
+
+
 
   void image_cb_timeout(ros::Time t)
   {
@@ -429,13 +659,14 @@ void image_cb_all(ros::Time t)
       
 	  string myprompt_ = "foo";
       switch (key) {
-      case 'c':         //With textured light
+      case 'c':         //With alternating textured light
       	if(!captureNoTexByTime)  {
       		m = "";
       		m = cvGetString(prompt_, m);  //GET USER LABEL FOR SCENE ...
 	        capture = true;
 	        captureNoTex = false;
-	        sync_capture = 2;
+			capture_type = 0;
+			cout <<"db capture on! " << endl;
 		}
  			always_on_capture = false;
         break;
@@ -446,30 +677,29 @@ void image_cb_all(ros::Time t)
 			captureByTime = false;
 			capture = true;
 			captureNoTex = false;
-			sync_capture = 0;
 			always_on_capture = true;
+			capture_type = 0;
         break;
       case 's':         //Without textured light
 			if(!captureByTime) {
 			    captureNoTex = true;
 			    capture = false;
 			}
+			capture_type = 0;
  			always_on_capture = false;
-			sync_capture = 0;
          break;
 	  case 'i':  //Init file name string
-			myprompt_ = "Input your ID (0-999) (return or ESC to keep the default):";
-			XXX = cvGetString(myprompt_,XXX);
-			myprompt_ = "N for natural object, P for painted (ESC or Ret to keep default):";
-			NP = cvGetString(myprompt_,NP);
+			myprompt_ = "Input data description (return or ESC to keep the default):";
+			DESC = cvGetString(myprompt_,DESC);
+//			myprompt_ = "N for natural object, P for painted (ESC or Ret to keep default):";
+//			NP = cvGetString(myprompt_,NP);
 		break;
       case 'h':
          printf(
                 "\nCapture images and point clouds to /data directory\n"
-				"\ti -- Init file name string XXX, N\n"
-                "\tc -- Capture if projected light is running\n"
-                "\tC -- Timed capture toggel if projected light is running\n"
-                "\t  ** Watch out, textured capture waits for no, light, light before writing out images **\n"
+		 		    "\ti -- Init file name string DESC (data description), N\n"
+                "\tc -- Capture if projected light is alternating on and off\n"
+                "\tC -- Timed capture toggel if projected light is alternating on and off\n"
                 "\ts -- Capture (save) if *not* running projected light\n"
                 "\tS -- Timed caputre if *not* running projected light\n"
                 "\tw -- Write when textured light is always on\n\n"
@@ -497,9 +727,9 @@ void image_cb_all(ros::Time t)
       	if(timenow > trigger)
       	{
       		capture = true;
-      		sync_capture = 2;
       		captureNoTex = false;
       		trigger = timenow + CAPTURE_FEQ_SECS;
+			capture_type = 0;
       		cout << "CaptureByTime Tigger = " <<  setprecision(10) << (float)timenow << endl;
       	}
       }
@@ -511,6 +741,7 @@ void image_cb_all(ros::Time t)
       		captureNoTex = true;
       		capture = false;
       		trigger = timenow + CAPTURE_FEQ_SECS;
+			capture_type = 0;
       		cout << "CaptureNoTexByTime Tigger = " <<  setprecision(10) << (float)timenow << endl;
       	}
       }

@@ -4,6 +4,8 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(stereo_capture)
 
 rospack_add_executable(stereo_capture src/stereo_capture.cpp)
+rospack_add_executable(skindetector src/skindetector.cpp src/cvadaptiveskindetector.cpp)
 rospack_add_executable(project_light src/project_light.cpp)
 rospack_add_executable(FindOutlet src/FindOutlet.cpp)
 rospack_add_executable(RectifyOutlets src/RectifyOutlets.cpp src/outlet_tuple.cpp)
+

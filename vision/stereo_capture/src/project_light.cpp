@@ -83,7 +83,7 @@ public:
 	
     LightProjector() : ros::Node("light_projector"), alt2_on1_off0(2), _offset(-180), _range(400), _block_size(4), _ramp(false), ffactor(1.0)
     {
-      param("~frequency", frequency, 0.5);
+      param("~frequency", frequency, 1.0);
       cout << "frequency = " << frequency << endl;
       advertise<std_msgs::UInt8>("projector_status", 10);
     }
@@ -158,7 +158,7 @@ public:
 	  		alt2_on1_off0 = 2;
 	  		ffactor = 1.0;
 	  		break;
-//void grayscale_rbp(IplImage *rbp, int offset = 0, int range = 128, int block_size = BLOCK_SIZE, bool ramp = false){
+//void grayscale_rbp(IplImage *rbp, int offset = 0, int range = 128, int block_size = BLOCK_SIZE, bool ramp = false)
 		case 'o':
 			_offset -= 10;
 			if(_offset < -255) _offset = -255;
@@ -185,13 +185,13 @@ public:
 			break;
 		case 'b':
 			_block_size -= 2;
-			if(_block_size < 0) _block_size = 2;
+			if(_block_size <= 0) _block_size = 2;
 			printf("New Pattern: offset(%d), range(%d), block_size(%d), ramp(%d)\n",_offset,_range,_block_size,_ramp);
 			grayscale_rbp(Rbp, _offset, _range, _block_size, _ramp);
 			break;
 		case 'B':
 			_block_size += 2;
-			if(_block_size > 500) _block_size = 60;
+			if(_block_size > 80) _block_size = 80;
 			printf("New Pattern: offset(%d), range(%d), block_size(%d), ramp(%d)\n",_offset,_range,_block_size,_ramp);
 			grayscale_rbp(Rbp, _offset, _range, _block_size, _ramp);
 			break;
@@ -203,7 +203,7 @@ public:
 			
 	  }
 
-	  
+	  //IF PRODUCING ALTERNATING RANDOM IMAGE OR BLACK SCREEN
 	  if(alt2_on1_off0 == 2)
 	  {  
 		  if(!BlankScreen){
@@ -213,16 +213,18 @@ public:
 			 cvShowImage("RBP Projector", BlankImage); //This won't show until function exit
 		  }
 		}
+		//IF ALWAYS ON
 		else if(alt2_on1_off0 == 1) {
 			cvShowImage("RBP Projector", Rbp);
 			BlankScreen = 1;
 		}
+		//ELSE ALWAYS OFF
 		else { //alt2_on1_off0 == 0
 			cvShowImage("RBP Projector", BlankImage);
 			BlankScreen = 0;
 		}
 	  
-	  usleep(1000000.0/(frequency*ffactor));	      
+	  usleep(1000000.0/(frequency*ffactor));	      //FREQUENCY CONVERTS TO SECONDS, FFACTOR SCALES THAT. DURATION OF FLASH
 	  if(alt2_on1_off0 == 2) BlankScreen = !BlankScreen;
 	  status_out.data = (int)BlankScreen;
 	  publish("projector_status", status_out);
