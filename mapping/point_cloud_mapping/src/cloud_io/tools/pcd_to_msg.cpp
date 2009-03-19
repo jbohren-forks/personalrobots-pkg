@@ -61,14 +61,14 @@ class PCDGenerator
     // ROS messages
     robot_msgs::PointCloud msg_cloud_;
 
-    std::string file_name_;
+    string file_name_, cloud_topic_;
 
     PCDGenerator (ros::Node& anode) : node_ (anode)
     {
       // Maximum number of outgoing messages to be queued for delivery to subscribers = 1
-      string cloud_topic ("cloud_pcd");
-      node_.advertise<robot_msgs::PointCloud> (cloud_topic.c_str (), 1);
-      ROS_INFO ("Publishing data on topic %s.", cloud_topic.c_str ());
+      cloud_topic_ = "cloud_pcd";
+      node_.advertise<robot_msgs::PointCloud> (cloud_topic_.c_str (), 1);
+      ROS_INFO ("Publishing data on topic %s.", cloud_topic_.c_str ());
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -76,7 +76,8 @@ class PCDGenerator
     int
       start ()
     {
-      cloud_io::loadPCDFile (file_name_.c_str (), msg_cloud_);
+      if (file_name_ == "" || cloud_io::loadPCDFile (file_name_.c_str (), msg_cloud_) == -1)
+        return (-1);
       msg_cloud_.header.frame_id = "base_link";
       return (0);
     }
@@ -102,7 +103,7 @@ class PCDGenerator
 int
   main (int argc, char** argv)
 {
-  if (argc < 1)
+  if (argc < 2)
   {
     ROS_ERROR ("Need one PCD file as parameter!");
     return (-1);
@@ -113,9 +114,14 @@ int
   ros::Node ros_node ("pcd_generator");
   
   PCDGenerator c (ros_node);
-  c.file_name_ = std::string (argv[1]);
+  c.file_name_ = string (argv[1]);
+  ROS_INFO ("Loading file %s...", c.file_name_.c_str ());
 
-  c.start ();
+  if (c.start () == -1)
+  {
+    ROS_ERROR ("Could not load file. Exiting.");
+    return (-1);
+  }
   c.spin ();
 
   return (0);

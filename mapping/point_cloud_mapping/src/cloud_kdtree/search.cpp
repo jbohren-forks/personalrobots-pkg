@@ -191,7 +191,7 @@ namespace cloud_kdtree
     p[0] = p_q->x; p[1] = p_q->y; p[2] = p_q->z;
 #ifdef USE_ANN
     neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius * radius, 0, &indices[0], &distances[0], epsilon_);
-    if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
+    if (neighbors_in_radius_  > max_nn) neighbors_in_radius_ = max_nn;
     indices.resize (neighbors_in_radius_);
     distances.resize (neighbors_in_radius_);
     ann_kd_tree_->annkFRSearch (p, radius * radius, neighbors_in_radius_, &indices[0], &distances[0], epsilon_);

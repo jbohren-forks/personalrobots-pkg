@@ -68,12 +68,14 @@ class BagToPcd
     bool dump_to_disk_;
 
     tf::TransformListener tf_;
-
+    std::string cloud_topic_;
 
     ////////////////////////////////////////////////////////////////////////////////
     BagToPcd (ros::Node& anode) : node_ (anode), dump_to_disk_ (false), tf_ (anode)
     {
-      node_.subscribe ("tilt_laser_cloud", cloud_, &BagToPcd::cloud_cb, this, 1);
+      cloud_topic_ = "tilt_laser_cloud";
+      node_.subscribe (cloud_topic_, cloud_, &BagToPcd::cloud_cb, this, 1);
+      ROS_INFO ("Listening for incoming data on topic %s", cloud_topic_.c_str ());
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -136,4 +138,3 @@ int
   return (0);
 }
 /* ]--- */
-
