@@ -47,6 +47,25 @@ rospy.wait_for_service('spawn_controller')
 spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
 kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
+spawned = []
+prev_handler = None
+
+def shutdown(sig, stackframe):
+    global spawned
+    for name in spawned:
+        for i in range(3):
+            try:
+                rospy.logout("Trying to kill %s" % name)
+                kill_controller(name)
+                rospy.logout("Succeeded in killing %s" % name)
+                break
+            except rospy.service.ServiceException:
+                raise
+                rospy.logerr("ServiceException while killing %s" % name)
+    # We're shutdown.  Now invoke rospy's handler for full cleanup.
+    if prev_handler is not None:
+        prev_handler(signal.SIGINT,None)
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print_usage()
@@ -58,13 +77,12 @@ if __name__ == '__main__':
 
     # Override rospy's signal handling.  We'll invoke rospy's handler after
     # we're done shutting down.
-    #import signal
-    #prev_handler = signal.getsignal(signal.SIGINT)
-    #signal.signal(signal.SIGINT, signal.SIG_DFL)
+    import signal
+    prev_handler = signal.getsignal(signal.SIGINT)
+    signal.signal(signal.SIGINT, shutdown)
 
     resp = spawn_controller(xml)
 
-    spawned = []
     for i in range(len(resp.ok)):
         if resp.ok[i] == chr(1):
             spawned.append(resp.name[i])
@@ -72,20 +90,4 @@ if __name__ == '__main__':
             print "Failed to spawn %s" % resp.name[i]
     print "Spawned controllers: %s" % ', '.join(spawned)
 
-    try:
-        while not rospy.is_shutdown():
-            rospy.spin()
-    finally:
-        for name in spawned:
-            for i in range(3):
-                try:
-                    rospy.logout("Trying to kill %s" % name)
-                    kill_controller(name)
-                    rospy.logout("Succeeded in killing %s" % name)
-                    break
-                except rospy.service.ServiceException:
-                    raise
-                    rospy.logerr("ServiceException while killing %s" % name)
-        # We're shutdown.  Now invoke rospy's handler for full cleanup.
-        #if prev_handler is not None:
-        #    prev_handler(signal.SIGINT,None)
+    rospy.spin()
