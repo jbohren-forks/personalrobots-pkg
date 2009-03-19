@@ -37,6 +37,8 @@
 #include <gazebo/HingeJoint.hh>
 #include <gazebo/SliderJoint.hh>
 
+#include "ros/console.h"
+
 using namespace gazebo;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("ros_joint_force", RosJointForce);
@@ -95,7 +97,7 @@ void RosJointForce::InitChild()
 void RosJointForce::UpdateChild()
 {
   // this->myIface->Lock(1);
-  double current_time = Simulator::Instance()->GetSimTime();
+  //double current_time = Simulator::Instance()->GetSimTime();
   // // Let me explain this number: each joint reports 4 vectors: Force and torque
   // // on each jointed object, respectively. These vectors have 4 elements: x,y,z
   // // and a fourth one. So we transmit 4 dReals per vector.
