@@ -52,6 +52,7 @@
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
 #include <tf/transform_listener.h>
+#include <angles/angles.h>
 
 // Kd Tree
 #include <point_cloud_mapping/cloud_kdtree.h>
@@ -114,7 +115,7 @@ class SemanticPointAnnotator
       node_.param ("~region_growing_tolerance", region_growing_tolerance_, 0.25);  // 10 cm
 
       node_.param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
-      region_angle_threshold_ = cloud_geometry::deg2rad (region_angle_threshold_); // convert to radians
+      region_angle_threshold_ = angles::from_degrees (region_angle_threshold_); // convert to radians
 
       node_.param ("~p_sac_min_points_left", sac_min_points_left_, 10);
       node_.param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 10);   // 50 points at high resolution
@@ -131,12 +132,12 @@ class SemanticPointAnnotator
       if (polygonal_map_)
         node_.advertise<PolygonalMap> ("semantic_polygonal_map", 1);
 
-      eps_angle_ = cloud_geometry::deg2rad (eps_angle_);                // convert to radians
+      eps_angle_ = angles::from_degrees (eps_angle_);                // convert to radians
 
       if (concave_)
         ROS_INFO ("Concave hulls enabled. Angle threshold set to %g.", boundary_angle_threshold_);
 
-      boundary_angle_threshold_ = cloud_geometry::deg2rad (boundary_angle_threshold_);  // convert to radians
+      boundary_angle_threshold_ = angles::from_degrees (boundary_angle_threshold_);  // convert to radians
 
       string cloud_topic ("cloud_normals");
 

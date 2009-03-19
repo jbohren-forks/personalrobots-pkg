@@ -52,12 +52,14 @@
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
 #include <tf/transform_listener.h>
+#include <angles/angles.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/areas.h>
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/distances.h>
 #include <point_cloud_mapping/geometry/nearest.h>
+#include <point_cloud_mapping/geometry/statistics.h>
 
 #include <sys/time.h>
 
@@ -97,7 +99,7 @@ class SemanticPointAnnotator
       node_.param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 100);  // 100 points at high resolution
       node_.param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
       node_.param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
-      eps_angle_ = cloud_geometry::deg2rad (eps_angle_);                      // convert to radians
+      eps_angle_ = angles::from_degrees (eps_angle_);                               // convert to radians
 
       node_.subscribe ("cloud_normals", cloud_, &SemanticPointAnnotator::cloud_cb, this, 1);
 
@@ -157,7 +159,6 @@ class SemanticPointAnnotator
       PointStamped base_link_origin, map_origin;
       base_link_origin.point.x = base_link_origin.point.y = base_link_origin.point.z = 0.0;
       base_link_origin.header.frame_id = "base_link";
-      base_link_origin.header.stamp = 0;
 
       tf_.transformPoint ("base_link", base_link_origin, map_origin);
 
@@ -180,8 +181,8 @@ class SemanticPointAnnotator
 
       // Select points whose normals are parallel with the Z-axis
       vector<int> z_axis_indices, xy_axis_indices;
-      cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, z_axis_indices);
-      cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_, nx, ny, nz, eps_angle_, z_axis_, xy_axis_indices);
+      cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_, nx, ny, nz, eps_angle_, &z_axis_, z_axis_indices);
+      cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_, nx, ny, nz, eps_angle_, &z_axis_, xy_axis_indices);
 
       // Find the dominant planes
       vector<vector<int> > inliers_parallel, inliers_perpendicular;
@@ -248,7 +249,7 @@ class SemanticPointAnnotator
       {
         // Get the minimum and maximum bounds of the plane
         Point32 minP, maxP;
-        cloud_geometry::getMinMax (cloud_, inliers_perpendicular[i], minP, maxP);
+        cloud_geometry::statistics::getMinMax (&cloud_, &inliers_perpendicular[i], minP, maxP);
 
         double r, g, b;
         r = g = b = 1.0;
