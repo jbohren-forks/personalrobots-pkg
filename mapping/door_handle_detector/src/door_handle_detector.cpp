@@ -54,6 +54,8 @@
 
 #include <tf/message_notifier.h>
 
+#include <angles/angles.h>
+
 #include <robot_msgs/Vector3.h>
 #include <robot_msgs/Vector3Stamped.h>
 
@@ -133,7 +135,7 @@ public:
           // that is: the two lines parallel (with some angular threshold) to the Z-axis must have some minimal length
           param ("~rectangle_constrain_edge_height", rectangle_constrain_edge_height_, 0.2);        // each side of the door has to be at least 20 cm
           param ("~rectangle_constrain_edge_angle", rectangle_constrain_edge_angle_, 20.0);         // maximum angle threshold between a side and the Z-axis: 20 degrees
-          rectangle_constrain_edge_angle_ = cloud_geometry::deg2rad (rectangle_constrain_edge_angle_);
+          rectangle_constrain_edge_angle_ = angles::from_degrees (rectangle_constrain_edge_angle_);
 
 	  // Frame _dependent_ parameters (need to be converted!)
           param ("~door_min_z", door_min_z_, 0.1);                            // the minimum Z point on the door must be lower than this value
@@ -161,20 +163,20 @@ public:
           // Parameters regarding the maximum allowed angular difference in normal space for inlier considerations
           z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
           param ("~normal_angle_tolerance", normal_angle_tolerance_, 15.0); // 15 degrees, wrt the Z-axis
-          normal_angle_tolerance_ = cloud_geometry::deg2rad (normal_angle_tolerance_);
+          normal_angle_tolerance_ = angles::from_degrees (normal_angle_tolerance_);
 
           // Parameters regarding the thresholds for Euclidean region growing/clustering
           param ("~euclidean_cluster_min_pts", euclidean_cluster_min_pts_, 200);                         // 200 points
           // Difference between normals in degrees for cluster/region growing
           param ("~euclidean_cluster_angle_tolerance", euclidean_cluster_angle_tolerance_, 30.0);
-          euclidean_cluster_angle_tolerance_ = cloud_geometry::deg2rad (euclidean_cluster_angle_tolerance_);
+          euclidean_cluster_angle_tolerance_ = angles::from_degrees (euclidean_cluster_angle_tolerance_);
           param ("~euclidean_cluster_distance_tolerance", euclidean_cluster_distance_tolerance_, 0.04);  // 4 cm
 
           // Parameters regarding the thresholds for intensity region growing/clustering
           param ("~intensity_threshold", intensity_threshold_, 2000.0);                                                 // 2 points
           param ("~intensity_cluster_min_pts", intensity_cluster_min_pts_, 2);                                                 // 2 points
           param ("~intensity_cluster_perpendicular_angle_tolerance", intensity_cluster_perpendicular_angle_tolerance_, 5.0);   // 5 degrees
-          intensity_cluster_perpendicular_angle_tolerance_ = cloud_geometry::deg2rad (intensity_cluster_perpendicular_angle_tolerance_);
+          intensity_cluster_perpendicular_angle_tolerance_ = angles::from_degrees (intensity_cluster_perpendicular_angle_tolerance_);
 
           // This describes the size of our 3D bounding box (basically the space where we search for doors),
           // as a multiplier of the door frame (computed using the two points from the service call) in both X and Y directions
@@ -210,8 +212,8 @@ public:
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    virtual ~DoorHandleDetector () 
-    {      
+    virtual ~DoorHandleDetector ()
+    {
       unadvertise("door_detector/door_msg");
     }
 
