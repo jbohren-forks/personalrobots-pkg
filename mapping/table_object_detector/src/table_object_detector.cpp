@@ -53,6 +53,7 @@
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
 #include <tf/transform_listener.h>
+#include <angles/angles.h>
 
 // Kd Tree
 #include <point_cloud_mapping/cloud_kdtree.h>
@@ -132,10 +133,10 @@ class TableObjectDetector
 
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
       node_.param ("~normal_eps_angle_", eps_angle_, 15.0);                   // 15 degrees
-      eps_angle_ = cloud_geometry::deg2rad (eps_angle_);                // convert to radians
+      eps_angle_ = angles::from_degrees (eps_angle_);                         // convert to radians
 
       node_.param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
-      region_angle_threshold_ = cloud_geometry::deg2rad (region_angle_threshold_); // convert to radians
+      region_angle_threshold_ = angles::from_degrees (region_angle_threshold_); // convert to radians
 
       node_.param ("~clusters_growing_tolerance", clusters_growing_tolerance_, 0.5);   // 0.5 m
       node_.param ("~clusters_min_pts", clusters_min_pts_, 10);                        // 10 points
@@ -273,12 +274,12 @@ class TableObjectDetector
       vector<double> coeff, z_coeff (3);
       z_coeff[0] = z_axis_.x; z_coeff[1] = z_axis_.y; z_coeff[2] = z_axis_.z;
       int c_good = -1;
-      double eps_angle_deg = cloud_geometry::rad2deg (eps_angle_);
+      double eps_angle_deg = angles::to_degrees (eps_angle_);
       for (int i = clusters.size () - 1; i >= 0; i--)
       {
         // Find the best plane in this cluster
         fitSACPlane (&cloud_down_, &clusters[i], inliers, coeff);
-        double angle = cloud_geometry::rad2deg (cloud_geometry::angles::getAngleBetweenPlanes (coeff, z_coeff));
+        double angle = angles::to_degrees (cloud_geometry::angles::getAngleBetweenPlanes (coeff, z_coeff));
         if ( fabs (angle) < eps_angle_deg || fabs (180.0 - angle) < eps_angle_deg )
         {
           c_good = i;
