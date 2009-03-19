@@ -71,6 +71,8 @@
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
 
+#include <angles/angles.h>
+
 #include <sys/time.h>
 
 using namespace std;
@@ -134,7 +136,7 @@ class DoorStereo
       node_->param ("~p_door_axis_z", tmp_axis, 1.0);                    // maximum width of a door: 1.4m
       axis_.z = tmp_axis;
 
-      eps_angle_ = cloud_geometry::deg2rad (eps_angle_);                      // convert to radians
+      eps_angle_ = angles::from_degrees (eps_angle_);                    // convert to radians
       /*
       double tmp; int tmp2;
       node_->param("~p_door_frame_p1_x", tmp, 1.5); door_msg_.frame_p1.x = tmp;
