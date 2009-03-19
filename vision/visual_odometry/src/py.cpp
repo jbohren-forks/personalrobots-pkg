@@ -970,13 +970,12 @@ bool estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *R, CvMat *T)
 
 static void unpackL(double *dst, PyObject *src)
 {
-  PyObject *iterator = PyObject_GetIter(src);
-  PyObject *d;
-  assert(iterator != NULL);
-  size_t i = 0;
-  while ((d = PyIter_Next(iterator)) != NULL) {
-    dst[i++] = PyFloat_AsDouble(d);
+  PyObject *sf = PySequence_Fast(src, "not iterable");
+  Py_ssize_t i = 0;
+  for (i = 0; i < PySequence_Fast_GET_SIZE(sf); i++) {
+    dst[i] = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(sf, i));
   }
+  Py_DECREF(sf);
 }
 
 PyObject *SVD(PyObject *self, PyObject *args)
@@ -1003,6 +1002,71 @@ PyObject *SVD(PyObject *self, PyObject *args)
     );
 }
 
+
+static bool doLevMarq(
+    const CvMat& uvds0Inlier, const CvMat& uvds1Inlier,
+    const CvMat& CartToDisp,  const CvMat& DispToCart,
+    CvMat& rot, CvMat& shift) {
+
+  // nonlinear optimization by Levenberg-Marquardt
+  int numInliers = uvds0Inlier.rows;
+  cv::willow::LevMarqTransformDispSpace levMarq(&DispToCart, &CartToDisp, numInliers);
+
+  double param[6];
+
+  //initialize the parameters
+  levMarq.rotAndShiftMatsToParams(rot, shift, param);
+
+  levMarq.optimize(&uvds0Inlier, &uvds1Inlier, param);
+
+  levMarq.paramsToRotAndShiftMats(param, rot, shift);
+  return true;
+}
+
+PyObject *polish(PyObject *self, PyObject *args)
+{
+  PyObject *pUvds0Inlier, *pUvds1Inlier, *pCartToDisp, *pDispToCart, *pR, *pS;
+  if (!PyArg_ParseTuple(args, "OOOOOO", &pUvds0Inlier, &pUvds1Inlier, &pCartToDisp, &pDispToCart, &pR, &pS))
+    return NULL;
+
+  double _R[9], _T[3];
+  unpackL(_R, pR);
+  CvMat R = cvMat(3, 3, CV_64FC1, _R);
+  unpackL(_T, pS);
+  CvMat T = cvMat(3, 1, CV_64FC1, _T);
+  double _pCartToDisp[16];
+  unpackL(_pCartToDisp, pCartToDisp);
+  CvMat CartToDisp = cvMat(4, 4, CV_64FC1, _pCartToDisp);
+  double _pDispToCart[16];
+  unpackL(_pDispToCart, pDispToCart);
+  CvMat DispToCart = cvMat(4, 4, CV_64FC1, _pDispToCart);
+
+  Py_ssize_t i;
+  PyObject *sf;
+
+  sf = PySequence_Fast(pUvds0Inlier, "uvds0Inlier");
+  double _uvds0Inlier[3 * PySequence_Fast_GET_SIZE(sf)];
+  for (i = 0; i < PySequence_Fast_GET_SIZE(sf); i++) {
+    unpackL(_uvds0Inlier + 3 * i, PySequence_Fast_GET_ITEM(sf, i));
+  }
+  CvMat uvds0Inlier = cvMat(PySequence_Fast_GET_SIZE(sf), 3, CV_64FC1, _uvds0Inlier);
+  Py_DECREF(sf);
+
+  sf = PySequence_Fast(pUvds1Inlier, "uvds1Inlier");
+  double _uvds1Inlier[3 * PySequence_Fast_GET_SIZE(sf)];
+  for (i = 0; i < PySequence_Fast_GET_SIZE(sf); i++) {
+    unpackL(_uvds1Inlier + 3 * i, PySequence_Fast_GET_ITEM(sf, i));
+  }
+  CvMat uvds1Inlier = cvMat(PySequence_Fast_GET_SIZE(sf), 3, CV_64FC1, _uvds1Inlier);
+  Py_DECREF(sf);
+
+  doLevMarq(uvds0Inlier, uvds1Inlier, CartToDisp, DispToCart, R, T);
+
+  return Py_BuildValue("(ddddddddd)(ddd)",
+    _R[0],_R[1],_R[2],_R[3],_R[4],_R[5],_R[6],_R[7],_R[8],
+    _T[0],_T[1],_T[2]);
+}
+
 /************************************************************************/
 
 static PyMethodDef methods[] = {
@@ -1017,6 +1081,7 @@ static PyMethodDef methods[] = {
   {"frame_pose", frame_pose, METH_VARARGS},
   {"imWindow", mkimWindow, METH_VARARGS},
   {"SVD", SVD, METH_VARARGS},
+  {"polish", polish, METH_VARARGS},
 
   {"pose_estimator", pose_estimator, METH_VARARGS},
   {NULL, NULL, NULL},

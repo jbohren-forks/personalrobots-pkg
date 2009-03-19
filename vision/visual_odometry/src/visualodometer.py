@@ -218,7 +218,7 @@ class FeatureDetectorOrdered:
     if (len(features) < 100) and (self.thresh <= self.threshrange[0]):
       features = self.get_features(frame, target_points, True)
 
-    # Try to be a bit adaptive for next time
+    # Try to be a bit more adaptive for next time
     if len(features) > (target_points * 2):
       self.thresh *= 2
     if len(features) < (target_points * 1.25):
@@ -382,6 +382,8 @@ class Track:
     self.lastpt = p1
     self.sba_track.extend(p1id, p1)
 
+import pe
+
 class VisualOdometer:
 
   def __init__(self, cam, **kwargs):
@@ -389,7 +391,10 @@ class VisualOdometer:
     self.timer = {}
     for t in ['feature', 'disparity', 'descriptor_collection', 'temporal_match', 'solve', 'tracks', 'sba' ]:
       self.timer[t] = Timer()
-    self.pe = VO.pose_estimator(*self.cam.params)
+
+    #self.pe = VO.pose_estimator(*self.cam.params)
+    self.pe = pe.PoseEstimator(*self.cam.params)
+
     self.prev_frame = None
     self.pose = Pose()
     self.inl = 0
@@ -655,7 +660,7 @@ class VisualOdometer:
 
   def sba_add_frame(self, frame):
     self.posechain.append((frame,VO.frame_pose(frame.id, frame.pose.tolist())))
-    
+
   def sba_handle_frame(self, frame):
     self.timer['sba'].start()
 

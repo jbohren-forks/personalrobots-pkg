@@ -185,11 +185,11 @@ class TestDirected(unittest.TestCase):
           return [i or sub for i in L]
         (inliers, rot, shift) = vo.solve(sanify(kps[i0],(0,0,0)), sanify(kps[i1],(0,0,0)), pairs)
         self.assert_(inliers != 0)
-        self.assertAlmostEqual(shift[0], 0.0, 3)
-        self.assertAlmostEqual(shift[1], 0.0, 3)
-        self.assertAlmostEqual(shift[2], 0.0, 3)
+        self.assertAlmostEqual(shift[0], 0.0, 2)
+        self.assertAlmostEqual(shift[1], 0.0, 2)
+        self.assertAlmostEqual(shift[2], 0.0, 2)
         for (et, at) in zip(rot, expected_rot):
-          self.assertAlmostEqual(et, at, 3)
+          self.assertAlmostEqual(et, at, 2)
 
   def xtest_sim(self):
     # Test process with one 'ideal' camera, one real-world Videre
@@ -317,7 +317,7 @@ class TestDirected(unittest.TestCase):
       actual_shift = sqrt(shift[0]*shift[0] + shift[1]*shift[1] + shift[2]*shift[2])
 
       # Should be able to estimate camera shift to nearest thousandth of mm
-      self.assertAlmostEqual(actual_shift, expected_shift, 3)
+      self.assertAlmostEqual(actual_shift, expected_shift, 2)
 
   def xtest_image_pan(self):
     cam = camera.Camera((1.0, 1.0, 89.23, 320., 320., 240.0))

@@ -44,8 +44,6 @@ if 0:
 
 stereo_cam = camera.Camera((389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95))
 
-vo = VisualOdometer(stereo_cam)
-
 #(f0,f1) = [ ComputedDenseStereoFrame(Image.open("../vslam/kk2/%06dL.png" % i), Image.open("../vslam/kk2/%06dR.png" % i)) for i in [670, 671] ]
 (f0,f1) = [ ComputedDenseStereoFrame(Image.open("f%d-left.png" % i), Image.open("f%d-right.png" % i)) for i in [0, 1] ]
 d = "/u/jamesb/ros/ros-pkg/vision/vslam/trial"
@@ -56,11 +54,18 @@ d = "/u/jamesb/ros/ros-pkg/vision/vslam/trial"
 chipsize = (640,480)
 factor = 640 / chipsize[0]
 
+vo = VisualOdometer(stereo_cam)
 vo.process_frame(f0)
 vo.process_frame(f1)
 
 pairs = vo.temporal_match(f0, f1)
-r = vo.pe.estimate(f1.kp, f0.kp, [ (b,a) for (a,b) in pairs ], False)
+pairs = [ (b,a) for (a,b) in pairs ]
+
+def xform(M, x, y, z):
+  nx = vop.mad(M[0], x, vop.mad(M[1], y, vop.mad(M[2], z, M[3])))
+  ny = vop.mad(M[4], x, vop.mad(M[5], y, vop.mad(M[6], z, M[7])))
+  nz = vop.mad(M[8], x, vop.mad(M[9], y, vop.mad(M[10], z, M[11])))
+  return (nx, ny, nz)
 
 def img_err(f0, f1, RT):
   # Each point in f1's point cloud, compute xyz
@@ -105,26 +110,33 @@ def img_img(f0, f1, RT):
 
 
 if 1:
+  originalpe = votools.pose_estimator(*stereo_cam.params)
   started = time.time()
   niters = 10
   for i in range(niters):
-    r = vo.pe.estimate(f1.kp, f0.kp, [ (b,a) for (a,b) in pairs ], False)
+    r = originalpe.estimate(f1.kp, f0.kp, pairs, True)
   print "Original took", 1e3 * (time.time() - started) / niters, "ms"
 print "original", r
 (inl, R,T) = r
-R = list(R)
-RT = R[0:3] + [T[0]] + R[3:6] + [T[1]] + R[6:9] + [T[2]]
-img_img(f0, f1, RT).save("pe0.png")
-print "original error", img_rms(f0, f1, RT)
+if 0:
+  R = list(R)
+  RT = R[0:3] + [T[0]] + R[3:6] + [T[1]] + R[6:9] + [T[2]]
+  img_img(f0, f1, RT).save("pe0.png")
+  print "original error", img_rms(f0, f1, RT)
 
-(inliers, pose) = mype(stereo_cam, f0.kp, f1.kp, pairs)
-print (inliers, pose)
+import pe
+PE = pe.PoseEstimator()
 
-niters = 100
+(inliers, R,T) = PE.estimateC(stereo_cam, f0.kp, stereo_cam, f1.kp, pairs)
+print (inliers, R,T)
+
+niters = 1000
 started = time.time()
 for i in range(niters):
-  mype(stereo_cam, f0.kp, f1.kp, pairs)
+  #print i
+  PE.estimateC(stereo_cam, f0.kp, stereo_cam, f1.kp, pairs)
 print "Took", 1e3 * (time.time() - started) / niters, "ms"
+#time.sleep(10000)
 sys.exit(0)
 
 R = list(R)

@@ -36,6 +36,29 @@ class Camera:
       [ 0, 0, 1 / Tx, 0 ]
     ])
 
+  def __cmp__(self, other):
+    return cmp(self.params, other.params)
+
+  # Used as input to the LevMarq optimizer.
+  def cart_to_disp(self):
+    (Fx, Fy, Tx, Clx, Crx, Cy) = self.params
+    return [
+      Fx,   0,    Clx,              0,
+      0,    Fy,   Cy,               0,
+      0,    0,    (Clx-Crx),        Fx*Tx,
+      0,    0,    1,                0
+    ]
+
+  # Used as input to the LevMarq optimizer.
+  def disp_to_cart(self):
+    (Fx, Fy, Tx, Clx, Crx, Cy) = self.params
+    return [
+      1./Fx,    0,          0,           -Clx/Fx,
+      0,   	1./Fy,        0,           -Cy/Fy,
+      0,         0,          0,                1,
+      0,         0,      1./(Tx*Fx),    -(Clx-Crx)/(Fx*Tx)
+    ]
+
   def pix2cam(self, u, v, d):
     """ takes pixel space u,v,d and returns camera space X,Y,Z """
     if 0:
@@ -69,13 +92,14 @@ class Camera:
 
       xr = Fx * X + Crx * Z + (Fx * -Tx)
       rw = 1.0 / w
-      return ((xl * rw, y * rw), (xr * rw, y * rw))
+      y_rw = y * rw
+      return ((xl * rw, y_rw), (xr * rw, y_rw))
 
   def cam2pix(self, X, Y, Z):
     """ takes camera space (X,Y,Z) and returns the pixel space (x,y,d) for left camera"""
     ((xl,yl), (xr,yr)) = self.cam2pixLR(X, Y, Z)
     return (xl, yl, xl - xr)
-    
+
 class VidereCamera(Camera):
   def __init__(self, config_str):
     section = ""
@@ -101,11 +125,11 @@ class VidereCamera(Camera):
 class StereoCamera(Camera):
   def __init__(self, right_cam_info_msg):
     matrix = numpy.array(right_cam_info_msg.P).reshape((3,4))
-    Fx = matrix[0][0]
-    Fy = matrix[1][1]
-    Cx = matrix[0][2]
-    Cy = matrix[1][2]
-    Tx = -matrix[0][3] / Fx
+    Fx = float(matrix[0][0])
+    Fy = float(matrix[1][1])
+    Cx = float(matrix[0][2])
+    Cy = float(matrix[1][2])
+    Tx = float(-matrix[0][3] / Fx)
     Camera.__init__(self, (Fx, Fy, Tx, Cx, Cx, Cy))
 
 class DictCamera(Camera):

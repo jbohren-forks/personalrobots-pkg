@@ -14,8 +14,6 @@ rospack_add_library(votools_py src/py.cpp src/Cv3DPoseEstimateStereo.cpp src/CvM
 
 set_target_properties(votools_py PROPERTIES OUTPUT_NAME votools PREFIX "")
 rospack_add_compile_flags(votools_py -g -O3 -Wno-missing-field-initializers -march=pentium3 -msse3)
-#rospack_add_compile_flags(votools_py -O3 -DNDEBUG -Wno-missing-field-initializers )
-#rospack_add_compile_flags(votools_py -O3 -DNDEBUG -Wno-missing-field-initializers -march=pentium3 -msse3)
 target_link_libraries(votools_py fltk)
 
 # a non-ros testing program
