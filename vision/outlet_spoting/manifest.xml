@@ -1,0 +1,16 @@
+<package>
+  <description>
+  An node for spotting power outlets from far away using stereo information.
+  </description>
+  <author>Marius Muja, Gary Bradski</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="opencv_latest"/>
+  <depend package="std_msgs"/>
+  <depend package="robot_msgs"/>
+  <depend package="image_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="topic_synchronizer"/>
+  <depend package="stereo_utils"/>
+  <depend package="point_cloud_mapping"/>
+</package>

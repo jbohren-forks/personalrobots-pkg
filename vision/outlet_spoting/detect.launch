@@ -1,0 +1,28 @@
+
+<launch>
+   <!-- videre_mode should be one of the following:
+         disparity:     Disparity and rectification done on chip.
+                        Provides: Disparity and left mono image
+         disparity_raw: Disparity done on chip (debayer and rectification in software).
+                        Provides: disparity and left color image.
+         none:          No stereo on chip (all processing done in software).
+                        Provides: all 3 images available
+         rectified:     Rectification on chip
+                        Provides: all 3 images available but no color
+          -->
+  <param name="stereo/videre_mode" type="str" value="none"/>
+  <param name="stereo/do_colorize" type="bool" value="True"/>
+  <param name="stereo/do_rectify" type="bool" value="True"/>
+  <param name="stereo/do_stereo" type="bool" value="True"/>
+  <param name="stereo/do_calc_points" type="bool" value="True"/>
+  <param name="stereo/horopter"  value="128"/>
+  <param name="stereo/ndisp"  value="128"/>
+  <param name="stereo/gain" type="int" value="10"/>
+  <param name="stereo/exposure" type="int" value="100"/>
+    
+
+  <node pkg="dcam" type="stereodcam" respawn="false"/>
+  <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
+  <node pkg="outlet_spotting" name="outlet_spotting" type="outlet_spotting" respawn="false" output="screen"/>
+</launch>
+
