@@ -161,7 +161,7 @@ namespace estimation
       // residu=0.05 --> multiplier=1.0     residu=0.2 --> multiplier=20.0
       odom_multiplier = ((odom_.residual-0.05)*(19.0/0.15))+1.0; 
     odom_multiplier = fmax(0.00001, fmin(100.0, odom_multiplier));
-    cout << "odom_multiplier = " << odom_multiplier << endl;
+    //cout << "odom_multiplier = " << odom_multiplier << endl;
     my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_multiplier);
     
     // activate odom
@@ -252,7 +252,7 @@ namespace estimation
     // inliers=200+ --> multiplier=1        inliers=100 --> multiplier=11      inliers=10 --> multiplier=20
     double vo_multiplier = 21.0-(min(200.0,(double)vo_.inliers)/10.0);
     vo_multiplier = fmax(0.00001, fmin(100.0, vo_multiplier));
-    cout << "vo_multiplier = " << vo_multiplier << endl;
+    //cout << "vo_multiplier = " << vo_multiplier << endl;
     Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
     my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"),
 			      vo_multiplier);
