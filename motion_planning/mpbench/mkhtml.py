@@ -9,7 +9,7 @@ if 0 != foo[0]:
 mpbench = "%s/mpbenchmark" % foo[1]
 
 worldspec = []
-worldspec.append("pgm:../data/willow-clip0-r50.pgm:../data/willow-clip0-r50-a.xml")
+worldspec.append("pgm::../data/willow-clip0-r50.pgm:../data/willow-clip0-r50-a.xml")
 
 plannerspec = []
 plannerspec.append("ad:3dkin")
@@ -71,6 +71,12 @@ for cmidx in [0, 1]:
             print >>out, '   </tr><tr>'
             print >>out, '    <td colspan="3"><a href="' + basename + '.png">'
             print >>out, '     <img src="small-' + basename + '.png" alt="screenshot"></a></td>'
+            print >>out, '   </tr><tr>'
+            print >>out, '    <td colspan="3">'
+            summary = open(basename + '.html')
+            for line in summary:
+                print >>out, '     ', line
+            print >>out, '    </td>'
             print >>out, '   </tr></table></td>'
     print >>out, ' </tr>'
 print >>out, '</table></body></html>'
