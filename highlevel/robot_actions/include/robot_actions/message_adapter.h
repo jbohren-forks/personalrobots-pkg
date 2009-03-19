@@ -55,7 +55,7 @@ namespace robot_actions {
     /**
      * @brief Check if OK
      */
-    bool isOk() const { return _initialized && ! _terminated; }
+    bool isOk() const { return _initialized && !_terminated; }
 
     /**
      * @brief Call when ready to run the node
@@ -113,7 +113,7 @@ namespace robot_actions {
      * via ROS paramaters
      */
   MessageAdapter(Action<Goal, Feedback>& action)
-    : _action(action), _update_topic(_action.getName() + "/state_update") {
+    : _action(action), _update_topic(_action.getName() + "/feedback") {
 
       // Connect the action to this container
       _action.connect(boost::bind(&MessageAdapter<Goal, State, Feedback>::notify, this, _1, _2, _3));
@@ -130,15 +130,12 @@ namespace robot_actions {
 
     // Call back invoked from the action. Packages up as a state message and ships
     void notify(const ActionStatus& status, const Goal& goal, const Feedback& feedback){
+      ROS_DEBUG("Call back called to publish %s for %s", _update_topic.c_str(), _action.getName().c_str());
       State state_msg;
       state_msg.status = status;
       state_msg.goal = goal;
       state_msg.feedback = feedback;
       ros::Node::instance()->publish(_update_topic, state_msg);
-    }
-
-    void update() {
-      _action.updateStatus();
     }
 
   protected:

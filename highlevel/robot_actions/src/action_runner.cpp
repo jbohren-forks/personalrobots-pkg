@@ -66,7 +66,16 @@ namespace robot_actions {
     return _terminated;
   }
 
-  void ActionRunner::run(){_initialized = true;}
+  void ActionRunner::run(){
+    // Initialize all actions
+    for(std::vector<AbstractAdapter*>::const_iterator it = _adapters.begin(); it != _adapters.end(); ++it){
+      AbstractAdapter* adapter = *it;
+      adapter->initialize();
+    }
+
+    // Mark ready to run
+    _initialized = true;
+  }
 
   void ActionRunner::updateLoop(){
     
@@ -76,6 +85,8 @@ namespace robot_actions {
 
       if(_initialized){
 
+	ROS_DEBUG("Executing action runner update loop");
+ 
 	// Iterate through adapters to ping each one for an update
 	for(std::vector<AbstractAdapter*>::const_iterator it = _adapters.begin(); it != _adapters.end(); ++it){
 	  AbstractAdapter* adapter = *it;
@@ -89,10 +100,15 @@ namespace robot_actions {
 	  }
 	}
       }
-      
+      else {
+	ROS_DEBUG("Action Runner pending initialization");
+      }
+
       // If we are terminated and done then we can quit the thread
-      if(isTerminated() && done)
+      if(isTerminated() && done){
+	ROS_DEBUG("Terminating action runner update loop");
 	break;
+      }
 
       sleep(curr, 1 / _update_rate);
     }

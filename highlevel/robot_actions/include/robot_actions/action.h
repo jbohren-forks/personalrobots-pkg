@@ -49,7 +49,6 @@ namespace robot_actions {
 
   protected:
 
-
     /**
      * @brief This method is called on receipt of a new goal. The derived class will implement this method to 
      * pursue the goal.
@@ -138,8 +137,12 @@ namespace robot_actions {
      * @param Feedback to provide in the state update
      */
     void notifyActivated(){
-      _status.value = ActionStatus::ACTIVE;
-      _callback(_status, _goal, _feedback);
+      _status.lock();
+      if(!isActive()){
+	_status.value = ActionStatus::ACTIVE;
+	_callback(_status, _goal, _feedback);
+      }
+      _status.unlock();
     }
 
     /**
@@ -147,9 +150,7 @@ namespace robot_actions {
      * @param Feedback to provide in the state update
      */
     void notifySucceeded(const Feedback& feedback){
-      _feedback = feedback;
-      _status.value = ActionStatus::SUCCESS;
-      _callback(_status, _goal, _feedback);
+      handleDeactivation(feedback, ActionStatus::SUCCESS);
     }
 
     /**
@@ -157,9 +158,7 @@ namespace robot_actions {
      * @param Feedback to provide in the state update
      */
     void notifyAborted(const Feedback& feedback){
-      _feedback = feedback;
-      _status.value = ActionStatus::ABORTED;
-      _callback(_status, _goal, _feedback);
+      handleDeactivation(feedback, ActionStatus::ABORTED);
     }
 
     /**
@@ -167,9 +166,7 @@ namespace robot_actions {
      * @param Feedback to provide in the state update
      */
     void notifyPreempted(const Feedback& feedback){
-      _feedback = feedback;
-      _status.value = ActionStatus::PREEMPTED;
-      _callback(_status, _goal, _feedback);
+      handleDeactivation(feedback, ActionStatus::PREEMPTED);
     }
 
     /**
@@ -183,9 +180,19 @@ namespace robot_actions {
 
   private:
 
-
     bool isActive() const {
       return _status.value == ActionStatus::ACTIVE;
+    }
+
+    void handleDeactivation(const Feedback& feedback, int8_t status_flag){
+      // Only do work if we are active. Need to lock protect this
+      _status.lock();
+      if(isActive()){
+	_feedback = feedback;
+	_status.value = status_flag;
+	_callback(_status, _goal, _feedback);
+      }
+      _status.unlock();
     }
 
     const std::string _name; /*!< Name for the action */
