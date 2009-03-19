@@ -1,5 +1,5 @@
 <package>
-  <description brief="FL-ANN">
+  <description brief="FLANN">
 
     FLANN is a library for performing fast approximate nearest neighbor
     searches in high dimensional spaces. It contains a collection of
