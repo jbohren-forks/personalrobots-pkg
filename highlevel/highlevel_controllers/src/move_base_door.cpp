@@ -124,7 +124,9 @@ namespace ros
         double circumscribed_radius_;
 
         double inscribed_radius_;
-    };
+
+        std::vector<deprecated_msgs::Point2DFloat32> footprint_wo_nose_;
+   };
     
     
     MoveBaseDoor::MoveBaseDoor()
@@ -138,6 +140,8 @@ namespace ros
       ros::Node::instance()->param("~costmap_2d/inscribed_radius", inscribed_radius_, 0.325);
       ros::Node::instance()->param("~move_base_door/dist_waypoints_max", dist_waypoints_max_, 0.025);
       ROS_INFO("Initialized move base door");
+      footprint_wo_nose_ = footprint_;
+      footprint_wo_nose_.pop_back();
       initialize();
    }
 
