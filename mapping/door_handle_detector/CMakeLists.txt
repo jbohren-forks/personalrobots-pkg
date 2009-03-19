@@ -28,6 +28,8 @@ target_link_libraries (door_handle_detector_node)
 #target_link_libraries (handle_detector_node)
 # ]---
 
+rospack_add_library(executive_functions src/executive_functions.cpp)
+
 rospack_add_executable(action_detect_door src/action_detect_door.cpp)
 target_link_libraries(action_detect_door)
 

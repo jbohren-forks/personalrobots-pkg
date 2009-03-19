@@ -19,4 +19,10 @@
   <depend package="std_msgs" />
   <depend package="sbpl_arm_executive" />
 
+
+ <export>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib  -lexecutive_functions"/>
+ </export>
+
+
 </package>
