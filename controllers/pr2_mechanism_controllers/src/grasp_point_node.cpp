@@ -36,7 +36,7 @@
 
 using namespace grasp_point_node;
 
-GraspPointNode::GraspPointNode(std::string node_name):ros::Node(node_name),tf_(*this, true, 10000000000ULL)
+GraspPointNode::GraspPointNode(std::string node_name):ros::Node(node_name),tf_(*this, true, ros::Duration(10))
 {
   service_prefix_ = node_name;
 }
@@ -92,7 +92,7 @@ int GraspPointNode::initializeKinematicModel()
   std::vector<robot_desc::URDF::Group*> groups;
 
 
-  (ros::g_node)->getParam(robot_description_model_,xml_content);
+  (ros::g_node)->getParam("robotdesc/pr2",xml_content);
 
   // wait for robotdesc/pr2 on param server
   while(!urdf_model_.loadString(xml_content.c_str()))
@@ -116,7 +116,7 @@ int GraspPointNode::initializeKinematicModel()
   }
 
   if(!group_index) 
-    return -1;
+    return false;
 
   if((int) groups[group_index]->linkRoots.size() != 1)
   {
@@ -125,17 +125,30 @@ int GraspPointNode::initializeKinematicModel()
   }
 
   robot_desc::URDF::Link *link_current = groups[group_index]->linkRoots[0];
-  root_link_name_ = link_current->name;
+
+  root_x_ = link_current->xyz[0];
+  root_y_ = link_current->xyz[1];
+  root_z_ = link_current->xyz[2];
+
+  root_link_name_ = link_current->parent->name;
   joint_type.resize(NUM_JOINTS);
 
   min_joint_limits.resize(NUM_JOINTS);
   max_joint_limits.resize(NUM_JOINTS);
   angle_multipliers.resize(NUM_JOINTS);
-  for(int i=0; i<NUM_JOINTS; i++)
+//  for(int i=0; i<NUM_JOINTS; i++)
+  int joint_counter = 0;
+  while(joint_counter < NUM_JOINTS)
   {
+    if(link_current->joint->type == robot_desc::URDF::Link::Joint::FIXED)
+    {
+      link_current = findNextLinkInGroup(link_current, groups[group_index]);
+      continue;
+    }
+
     aj << fabs(link_current->joint->axis[0]) << fabs(link_current->joint->axis[1]) << fabs(link_current->joint->axis[2]);
     axis.push_back(aj);
-    if(i > 0)
+    if(joint_counter > 0)
     {
       an(1,1) = an(1,1) + link_current->xyz[0];
       an(2,1) = an(2,1) + link_current->xyz[1];
@@ -148,24 +161,25 @@ int GraspPointNode::initializeKinematicModel()
       an(3,1) = 0.0;
     }
     anchor.push_back(an);   
-    min_joint_limits[i] = link_current->joint->limit[0];
-    max_joint_limits[i] = link_current->joint->limit[1];
-    angle_multipliers[i] = link_current->joint->axis[0]*fabs(link_current->joint->axis[0]) +  link_current->joint->axis[1]*fabs(link_current->joint->axis[1]) +  link_current->joint->axis[2]*fabs(link_current->joint->axis[2]);
+    min_joint_limits[joint_counter] = link_current->joint->limit[0];
+    max_joint_limits[joint_counter] = link_current->joint->limit[1];
+    angle_multipliers[joint_counter] = link_current->joint->axis[0]*fabs(link_current->joint->axis[0]) +  link_current->joint->axis[1]*fabs(link_current->joint->axis[1]) +  link_current->joint->axis[2]*fabs(link_current->joint->axis[2]);
     ROS_INFO("Adding joint %s\naxis: %f %f %f\nanchor: %f %f %f",link_current->joint->name.c_str(),link_current->joint->axis[0],link_current->joint->axis[1],link_current->joint->axis[2],an(1,1),an(2,1),an(3,1));
-    if(min_joint_limits[i] == 0.0 && max_joint_limits[i] == 0.0)
+    if(min_joint_limits[joint_counter] == 0.0 && max_joint_limits[joint_counter] == 0.0)
     {
       ROS_INFO("Continuous joint");
-      min_joint_limits[i] = -M_PI;
-      max_joint_limits[i] = M_PI;
+      min_joint_limits[joint_counter] = -M_PI;
+      max_joint_limits[joint_counter] = M_PI;
     }
-    if(i==2)
+    if(joint_counter==2)
     {
-      init_solution_theta3_ = (min_joint_limits[i]+max_joint_limits[i])/2.0;
+      init_solution_theta3_ = 0.0;//(min_joint_limits[joint_counter]+max_joint_limits[joint_counter])/2.0;
       ROS_INFO("Initial guess for inverse kinematics: %f",init_solution_theta3_);
     }
-    ROS_INFO("Joint limits %f, %f\n",min_joint_limits[i],max_joint_limits[i]);
+    ROS_INFO("Joint limits %f, %f\n",min_joint_limits[joint_counter],max_joint_limits[joint_counter]);
 
     link_current = findNextLinkInGroup(link_current, groups[group_index]);
+    joint_counter++;
   }
 
   for(int i=0; i < 7; i++)
@@ -175,7 +189,7 @@ int GraspPointNode::initializeKinematicModel()
   arm_kinematics_->SetJointLimits(min_joint_limits,max_joint_limits);
   arm_kinematics_->increment_ = increment_;
   arm_kinematics_->setAngleMultipliers(angle_multipliers);
-  return 1;
+  return true;
 }
 
 bool GraspPointNode::computeIKSolution(const tf::Pose &pose,std::vector<double> &soln)
@@ -192,6 +206,11 @@ bool GraspPointNode::computeIKSolution(const tf::Pose &pose,std::vector<double> 
       g0(j+1,i+1) = m[i*4+j];
     }
   }
+
+  g0(1,4) = g0(1,4) - root_x_;
+  g0(2,4) = g0(2,4) - root_y_;
+  g0(3,4) = g0(3,4) - root_z_;
+
   std::cout << g0 << endl;
 
   if(arm_kinematics_->computeIKFast(g0,2,init_solution_theta3_))
@@ -246,7 +265,7 @@ bool GraspPointNode::processGraspPointService(pr2_mechanism_controllers::GraspPo
   robot_msgs::PoseStamped grasp_point_requested = req.transform;
   tf::Pose grasp_point;
 
-  grasp_point_requested.header.stamp = ros::Time::now();
+  grasp_point_requested.header.stamp = req.transform.header.stamp;
 
   ROS_INFO("Joint::%s %s", req.transform.header.frame_id.c_str(),root_link_name_.c_str());
   if(std::string(req.transform.header.frame_id) == root_link_name_)

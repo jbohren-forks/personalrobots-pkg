@@ -307,6 +307,11 @@ void WholeBodyTrajectoryController::update(void)
 void WholeBodyTrajectoryController::updateBaseController(double time)
 {
   double cmd[3] = {0.0,0.0,0.0};
+  double theta  = 0.0;
+
+  if(base_pid_controller_.size() < 3)
+    return;
+
   for(unsigned int i=0; i< base_pid_controller_.size(); i++)
   {
     int joint_index = base_joint_index_[i];
@@ -322,9 +327,18 @@ void WholeBodyTrajectoryController::updateBaseController(double time)
     error_dot = current_joint_velocity_[joint_index] - joint_cmd_dot_rt_[joint_index];      
     cmd[i] = base_pid_controller_[i].updatePid(error, error_dot, time - last_time_);
     cmd[i] += joint_cmd_dot_rt_[joint_index];
+    if(i == 2)
+      theta = current_joint_position_[joint_index];
   }
 
-  base_controller_node_.setCommand(cmd[0],cmd[1],cmd[2]);
+  //Transform the cmd back into the base frame
+  double vx = cmd[0]*cos(theta) + cmd[1]*sin(theta);
+  double vy = -cmd[0]*sin(theta) + cmd[1]*cos(theta);
+  double vw = cmd[2];
+
+  base_controller_node_.setCommand(vx,vy,vw);
+//  base_controller_node_.setCommand(0.0,0.0,0.0);
+
 }
 
 
