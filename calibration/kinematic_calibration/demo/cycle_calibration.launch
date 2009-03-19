@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="kinematic_calibration" type="cycle_calibration.py"
+        args="$(find kinematic_calibration)/demo/arm_calibration.xml"
+        output="screen" />
+</launch>
