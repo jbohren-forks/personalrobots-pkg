@@ -12,8 +12,8 @@
       <elem key="kp_caster_steer">1</elem>
       <elem key="timeout">0.2</elem>
 
-      <elem key="max_x_dot">1</elem>
-      <elem key="max_y_dot">1</elem>
+      <elem key="max_x_dot">0.7</elem>
+      <elem key="max_y_dot">0.7</elem>
       <elem key="max_yaw_dot">1</elem>
 
       <elem key="max_x_accel">2.0</elem>
@@ -97,7 +97,7 @@
     </controller>
 
     <controller name="base_w_controller" type="BasePIDController">
-      <joint name="base_y" limit="1.0" type="ROTARY_CONTINUOUS">
+      <joint name="base_theta" limit="1.0" type="ROTARY_CONTINUOUS">
         <pid p="0.0" d="0.0" i="0.0" iClamp="0.0" />
       </joint>
     </controller>
