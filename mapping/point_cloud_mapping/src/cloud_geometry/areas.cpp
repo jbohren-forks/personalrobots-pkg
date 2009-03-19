@@ -155,14 +155,14 @@ namespace cloud_geometry
       centroid (1) /= epoints.size ();
 
       // Push projected centered 2d points
-      std::vector<deprecated_msgs::Point2DFloat32> epoints_demean (epoints.size ());
+      std::vector<robot_msgs::Point32> epoints_demean (epoints.size ());
       for (unsigned int cp = 0; cp < indices->size (); cp++)
       {
         epoints_demean[cp].x = epoints[cp](k1) - centroid (0);
         epoints_demean[cp].y = epoints[cp](k2) - centroid (1);
       }
 
-      std::sort (epoints_demean.begin (), epoints_demean.end (), comparePoint2DFloat32);
+      std::sort (epoints_demean.begin (), epoints_demean.end (), comparePoint2D);
 
       robot_msgs::Polyline2D hull_2d;
       convexHull2D (epoints_demean, hull_2d);
@@ -213,7 +213,7 @@ namespace cloud_geometry
       * \param hull the resultant 2D convex hull model as a \a Polyline2D
       */
     void
-      convexHull2D (std::vector<deprecated_msgs::Point2DFloat32> points, robot_msgs::Polyline2D &hull)
+      convexHull2D (std::vector<robot_msgs::Point32> points, robot_msgs::Polyline2D &hull)
     {
       int nr_points = points.size ();
       hull.points.resize (nr_points + 1);

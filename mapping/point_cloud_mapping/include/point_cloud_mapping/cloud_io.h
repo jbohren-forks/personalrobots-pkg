@@ -39,8 +39,6 @@
 #include <vector>
 #include <fstream>
 #include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 
 namespace cloud_io

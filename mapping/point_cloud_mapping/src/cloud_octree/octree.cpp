@@ -52,7 +52,9 @@ namespace cloud_octree
   {
     root_ = new Branch ();
     setCenter (cx, cy, cz);
-    assert (max_depth >= 0);
+    {
+      //assert (max_depth >= 0);
+    }
     if (max_depth == 0)
     {
       max_depth = 1;

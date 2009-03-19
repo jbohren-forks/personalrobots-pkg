@@ -36,13 +36,12 @@
 #define _CLOUD_OCTREE_OCTREE_H_
 
 #include <iostream>
-#include <assert.h>
 #include <list>
 #include <set>
+#include <cmath>
 #include <point_cloud_mapping/octree_node.h>
 #include <point_cloud_mapping/octree_index.h>
 // #include <scan_utils/OctreeMsg.h>
-#include <math.h>
 
 namespace cloud_octree
 {

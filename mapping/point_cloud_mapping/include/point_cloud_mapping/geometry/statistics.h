@@ -37,7 +37,7 @@
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/Polygon3D.h>
-#include <float.h>
+#include <cfloat>
 
 namespace cloud_geometry
 {

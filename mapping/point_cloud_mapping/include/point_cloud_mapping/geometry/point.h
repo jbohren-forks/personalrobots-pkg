@@ -38,7 +38,6 @@
 #include <robot_msgs/Polygon3D.h>
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/Point.h>
-#include <math.h>
 
 #include <Eigen/Core>
 
