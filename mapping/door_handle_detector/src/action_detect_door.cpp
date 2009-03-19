@@ -34,36 +34,67 @@
 
 #include <ros/node.h>
 #include <robot_msgs/Door.h>
-#include <kdl/frames.hpp>
+#include <door_handle_detector/DetectDoorActionStatus.h>
+#include <door_handle_detector/DoorDetector.h>
+#include <robot_actions/action.h>
+#include <robot_actions/action_runner.h>
 
 
-using namespace KDL;
 using namespace ros;
 using namespace std;
 
 
+static const string fixed_frame = "odom_combined";
 
 
-// calculate the robot pose in front of the door
-Stamped<Pose> getGraspPose(const robot_msgs::Door& door)
+
+
+//-------------------------------------------------------
+class DetectDoorAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
+//-------------------------------------------------------
 {
-  Vector normal(door.normal.x, door.normal.y, door.normal.z);
-  Vector x_axis(1,0,0);
-  double dot      = normal(0) * x_axis(0) + normal(1) * x_axis(1);
-  double perp_dot = normal(1) * x_axis(0) - normal(0) * x_axis(1);
-  double z_angle = atan2(perp_dot, dot);
+public:
+  DetectDoorAction(): robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_door_action") {};
+  ~DetectDoorAction(){};
 
-  Vector center((door.door_p1.x + door.door_p2.x)/2.0, 
-                (door.door_p1.y + door.door_p2.y)/2.0,
-                (door.door_p1.z + door.door_p2.z)/2.0);
-  Vector robot_pos = center - (normal * 0.7);
+  virtual void handleActivate(const robot_msgs::Door& door)
+  {
+    notifyActivated();
 
-  Stamped<Pose> robot_pose;
-  robot_pose.frame_id_ = door.header.frame_id;
-  robot_pose.setOrigin( Vector3(robot_pos(0), robot_pos(1), robot_pos(2)));
-  robot_pose.setRotation( Quaternion(z_angle, 0, 0) ); 
+    req_doordetect.door = door;
+    if (ros::service::call("door_handle_detector", req_doordetect, res_doordetect)){
+      notifySucceeded(res_doordetect.door);
+    }
+    notifyAborted(door);
+  }
 
-  return robot_pose;  
+  virtual void handlePreempt(){};
+
+
+
+private:
+  door_handle_detector::DoorDetector::Request  req_doordetect;
+  door_handle_detector::DoorDetector::Response res_doordetect;
+};
+
+
+
+
+
+
+// -----------------------------------
+//              MAIN
+// -----------------------------------
+
+int main(int argc, char** argv)
+{
+  ros::init(argc,argv); 
+
+  DetectDoorAction detect;
+
+  robot_actions::ActionRunner runner(10.0);
+  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(detect);
+  runner.run();
+
+  return 0;
 }
-
-
