@@ -37,7 +37,7 @@ target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
   target_link_libraries (bin/cloudmsg_to_screen cloud_io)
 
   rospack_add_executable (bin/bag_to_pcd_node src/cloud_io/tools/bag_to_pcd.cpp)
-  target_link_libraries (bin/bag_to_pcd_node cloud_io)
+  target_link_libraries (bin/bag_to_pcd_node cloud_io cloud_geometry)
 
   rospack_add_executable (bin/pcd_to_msg_node src/cloud_io/tools/pcd_to_msg.cpp)
   target_link_libraries (bin/pcd_to_msg_node cloud_io)

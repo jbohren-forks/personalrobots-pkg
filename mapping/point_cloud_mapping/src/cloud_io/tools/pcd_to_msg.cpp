@@ -68,7 +68,7 @@ class PCDGenerator
       // Maximum number of outgoing messages to be queued for delivery to subscribers = 1
       cloud_topic_ = "cloud_pcd";
       node_.advertise<robot_msgs::PointCloud> (cloud_topic_.c_str (), 1);
-      ROS_INFO ("Publishing data on topic %s.", cloud_topic_.c_str ());
+      ROS_INFO ("Publishing data on topic %s.", node_.mapName (cloud_topic_).c_str ());
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -90,6 +90,8 @@ class PCDGenerator
       {
         usleep (1000000);
 
+        ROS_INFO ("Publishing data (%d points) on topic %s.", msg_cloud_.pts.size (), node_.mapName (cloud_topic_).c_str ());
+        msg_cloud_.header.stamp = ros::Time::now ();
         node_.publish ("cloud_pcd", msg_cloud_);
       }
 

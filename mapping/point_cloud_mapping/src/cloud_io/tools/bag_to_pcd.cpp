@@ -50,6 +50,7 @@
 #include <robot_msgs/PointCloud.h>
 
 #include <point_cloud_mapping/cloud_io.h>
+#include <point_cloud_mapping/geometry/point.h>
 
 using namespace robot_msgs;
 
@@ -75,7 +76,7 @@ class BagToPcd
     {
       cloud_topic_ = "tilt_laser_cloud";
       node_.subscribe (cloud_topic_, cloud_, &BagToPcd::cloud_cb, this, 1);
-      ROS_INFO ("Listening for incoming data on topic %s", cloud_topic_.c_str ());
+      ROS_INFO ("Listening for incoming data on topic %s", node_.mapName (cloud_topic_).c_str ());
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -94,8 +95,8 @@ class BagToPcd
       {
         ROS_ERROR ("TF::ConectivityException caught while trying to transform a point from frame %s into %s!", cloud_.header.frame_id.c_str (), pin.header.frame_id.c_str ());
       }
-
-      fprintf (stderr, "Received %d data points. Viewpoint is <%.3f, %.3f, %.3f>\n", (int)cloud_.pts.size (), pout.point.x, pout.point.y, pout.point.z);
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s). Viewpoint is <%.3f, %.3f, %.3f>", cloud_.pts.size (), cloud_.header.frame_id.c_str (),
+                cloud_.chan.size (), cloud_geometry::getAvailableChannels (&cloud_).c_str (), pout.point.x, pout.point.y, pout.point.z);
 
       double c_time = cloud_.header.stamp.sec * 1e3 + cloud_.header.stamp.nsec;
       sprintf (fn_, "%.0f.pcd", c_time);
@@ -118,7 +119,7 @@ class BagToPcd
           }
           cloud_io::savePCDFile (fn_, &cloud_, 5);
         }
-        fprintf (stderr, "Data saved to %s.\n", fn_);
+        ROS_INFO ("Data saved to %s (%f).", fn_, c_time);
       }
     }
 };
