@@ -1,3 +1,4 @@
+
 /*********************************************************************
  * Software License Agreement (BSD License)
  * 
@@ -113,6 +114,8 @@ namespace ros
 
         double dist_waypoints_max_;
 
+        double dist_rot_waypoints_max_;
+
         robot_msgs::JointTraj path_;
 
         robot_msgs::JointTraj valid_path_;
@@ -135,6 +138,9 @@ namespace ros
       cost_map_model_ = new trajectory_rollout::CostmapModel(*costMap_);
       ros::Node::instance()->param<std::string>("~move_base_door/trajectory_control_topic",base_trajectory_controller_topic_,"base/trajectory_controller/trajectory_command");
       ros::Node::instance()->param<std::string>("~move_base_door/base_trajectory_controller_frame_id",base_trajectory_controller_frame_id_,"odom_combined");
+
+      ros::Node::instance()->param<double>("~move_base_door/dist_rot_waypoints_max", dist_rot_waypoints_max_,0.05);
+
       ros::Node::instance()->advertise<robot_msgs::JointTraj>(base_trajectory_controller_topic_,1);
       ros::Node::instance()->param("~costmap_2d/circumscribed_radius", circumscribed_radius_, 0.46);
       ros::Node::instance()->param("~costmap_2d/inscribed_radius", inscribed_radius_, 0.325);
@@ -197,7 +203,7 @@ namespace ros
         position.x = x;
         position.y = y;
 
-        computeOrientedFootprint(position.x,position.y,theta, footprint_, oriented_footprint);
+        computeOrientedFootprint(position.x,position.y,theta, footprint_wo_nose_, oriented_footprint);
 
         if(cost_map_model_->footprintCost(position, oriented_footprint, inscribed_radius_, circumscribed_radius_) >= 0)
         {
@@ -275,10 +281,17 @@ namespace ros
       ROS_INFO("Current position: in frame %s, %f %f %f, goal position: %f %f %f", base_trajectory_controller_frame_id_.c_str(),current_x_,current_y_,current_theta_,goal_x_,goal_y_,goal_theta_);
 
       // For now plan is a straight line with waypoints about 2.5 cm apart
-      double dist = sqrt( pow(goal_x_-current_x_,2) + pow(goal_y_-current_y_,2));        
-      int num_intervals = std::max<int>(1,(int) dist/dist_waypoints_max_);
-      int num_path_points = num_intervals + 1;
+      double dist_trans = sqrt( pow(goal_x_-current_x_,2) + pow(goal_y_-current_y_,2));        
+      double dist_rot = fabs(angles::normalize_angle(goal_theta_-current_theta_));
 
+      int num_intervals = std::max<int>(1,(int) (dist_trans/dist_waypoints_max_));
+      num_intervals = std::max<int> (num_intervals, (int) (dist_rot/dist_rot_waypoints_max_));
+
+      int num_path_points = num_intervals + 1;
+      double path_theta = atan2(goal_y_-current_y_,goal_x_-current_x_);
+
+      ROS_INFO("Path orientation is: %f",path_theta);
+ 
       ROS_INFO("Num of intervals for the path is %d", num_intervals);
       path_.set_points_size(num_path_points);
 
@@ -287,7 +300,7 @@ namespace ros
         path_.points[i].set_positions_size(3);
         path_.points[i].positions[0] = current_x_ + (double) i * (goal_x_-current_x_)/num_intervals ;
         path_.points[i].positions[1] = current_y_ + (double) i * (goal_y_-current_y_)/num_intervals ;
-        path_.points[i].positions[2] = angles::normalize_angle(current_theta_ + (double) i * angles::normalize_angle(goal_theta_-current_theta_)/num_intervals) ;
+        path_.points[i].positions[2] = angles::normalize_angle(current_theta_ + (double) i * angles::normalize_angle(goal_theta_-current_theta_)/num_intervals);
         path_.points[i].time = 0.0;
       }
 
