@@ -186,7 +186,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
   unsigned int major = (revision >> 8) & 0xff;
   unsigned int minor = revision & 0xff;
 
-  ROS_INFO("Device #%02d: WG0%d (%#08x) Firmware Revision %d.%02d, PCB Revision %c.%02d", sh_->get_ring_position(),
+  ROS_DEBUG("Device #%02d: WG0%d (%#08x) Firmware Revision %d.%02d, PCB Revision %c.%02d", sh_->get_ring_position(),
          sh_->get_product_code() == WG05::PRODUCT_CODE ? 5 : 6,
          sh_->get_product_code(), major, minor,
          'A' + ((revision >> 24) & 0xff) - 1, (revision >> 16) & 0xff);
@@ -216,7 +216,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
     ROS_BREAK();
     return -1;
   }
-  ROS_INFO("            Serial #: %05d", config_info_.device_serial_number_);
+  ROS_DEBUG("            Serial #: %05d", config_info_.device_serial_number_);
 
   if (readEeprom(sh_) < 0)
   {
@@ -243,22 +243,22 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_mod
 
     actuator->name_ = actuator_info_.name_;
     backemf_constant_ = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
-    ROS_INFO("            Name: %s", actuator_info_.name_);
+    ROS_DEBUG("            Name: %s", actuator_info_.name_);
     string topic = "/motor_model/" + string(actuator_info_.name_);
     motor_publisher_ = motor_model ? new realtime_tools::RealtimePublisher<ethercat_hardware::MotorModel>(topic, 1) : 0;
 #if 0
-    ROS_INFO("            major: %d", actuator_info_.major_);              // Major revision
-    ROS_INFO("            minor: %d", actuator_info_.minor_);              // Minor revision
-    ROS_INFO("            id: %d", actuator_info_.id_);                 // Actuator ID
-    ROS_INFO("            robot: %s", actuator_info_.robot_name_);         // Robot name
-    ROS_INFO("            motor: %s", actuator_info_.motor_make_);         // Motor manufacturer
-    ROS_INFO("            motor: %s", actuator_info_.motor_model_);        // Motor model #
-    ROS_INFO("            max: %f", actuator_info_.max_current_);          // Maximum current
-    ROS_INFO("            speed: %f", actuator_info_.speed_constant_);       // Speed constant
-    ROS_INFO("            resistance: %f", actuator_info_.resistance_);           // Resistance
-    ROS_INFO("            motor torque: %f", actuator_info_.motor_torque_constant_); // Motor torque constant
-    ROS_INFO("            encoder reduction: %f", actuator_info_.encoder_reduction_);    // Reduction and sign between motor and encoder
-    ROS_INFO("            pulses per revolution: %d", actuator_info_.pulses_per_revolution_); // # of encoder ticks per revolution
+    ROS_DEBUG("            major: %d", actuator_info_.major_);              // Major revision
+    ROS_DEBUG("            minor: %d", actuator_info_.minor_);              // Minor revision
+    ROS_DEBUG("            id: %d", actuator_info_.id_);                 // Actuator ID
+    ROS_DEBUG("            robot: %s", actuator_info_.robot_name_);         // Robot name
+    ROS_DEBUG("            motor: %s", actuator_info_.motor_make_);         // Motor manufacturer
+    ROS_DEBUG("            motor: %s", actuator_info_.motor_model_);        // Motor model #
+    ROS_DEBUG("            max: %f", actuator_info_.max_current_);          // Maximum current
+    ROS_DEBUG("            speed: %f", actuator_info_.speed_constant_);       // Speed constant
+    ROS_DEBUG("            resistance: %f", actuator_info_.resistance_);           // Resistance
+    ROS_DEBUG("            motor torque: %f", actuator_info_.motor_torque_constant_); // Motor torque constant
+    ROS_DEBUG("            encoder reduction: %f", actuator_info_.encoder_reduction_);    // Reduction and sign between motor and encoder
+    ROS_DEBUG("            pulses per revolution: %d", actuator_info_.pulses_per_revolution_); // # of encoder ticks per revolution
 #endif
   }
   else if (allow_unprogrammed)

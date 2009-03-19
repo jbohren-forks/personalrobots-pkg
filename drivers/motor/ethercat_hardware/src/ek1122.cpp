@@ -49,7 +49,7 @@ EthercatDevice *EK1122::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 
 int EK1122::initialize(Actuator *, bool, bool)
 {
-  ROS_INFO("Device #%02d: EK1122 (%#08x)", sh_->get_ring_position(), sh_->get_product_code());
+  ROS_DEBUG("Device #%02d: EK1122 (%#08x)", sh_->get_ring_position(), sh_->get_product_code());
   return 0;
 }
 void EK1122::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *)

@@ -55,7 +55,7 @@ EthercatDevice *WG014::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 
 int WG014::initialize(Actuator *, bool, bool)
 {
-  ROS_INFO("Device #%02d: WG014 (%#08x)", sh_->get_ring_position(), sh_->get_product_code());
+  ROS_DEBUG("Device #%02d: WG014 (%#08x)", sh_->get_ring_position(), sh_->get_product_code());
   return 0;
 }
 #define ADD_STRING_FMT(lab, fmt, ...) \
