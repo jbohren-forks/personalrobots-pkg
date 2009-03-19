@@ -1,13 +1,13 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of the Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -101,7 +101,7 @@
  * - @b "~costmap_2d/zLB" : an upper bound on the height of observations used for free space projection
  * - @b "~costmap_2d/zUB" : a upper bound on the height of observations used for free space projection
  * - @b "~costmap_2d/raytrace_window" : the size of the window in which free space will be cleared
- * - @b "~costmap_2d/raytrace_range" : the range after which points will be considered 
+ * - @b "~costmap_2d/raytrace_range" : the range after which points will be considered
  * - @b "~costmap_2d/obstacle_range" : obstacles outside this range will not be included in the cost map
  * - @b "~trajectory_rollout/map_size" : the size of the window around the robot for evaluating local trajectories
  * - @b "~trajectory_rollout/yaw_goal_tolerance" : control parameter for trajectory selection
@@ -173,7 +173,7 @@ namespace ros {
       ros::Node::instance()->param("/global_frame_id", global_frame_, std::string("/map"));
       ros::Node::instance()->param("~costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
       ros::Node::instance()->param("~costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
-       
+
       // Unsigned chars cannot be stored in parameter server
       int tmpLethalObstacleThreshold;
       ros::Node::instance()->param("~costmap_2d/lethal_obstacle_threshold", tmpLethalObstacleThreshold, int(lethalObstacleThreshold));
@@ -204,7 +204,7 @@ namespace ros {
       robotWidth_ = inscribedRadius * 2;
       xy_goal_tolerance_ = robotWidth_ / 2;
 
-      // Obtain parameters for sensors and allocate observation buffers accordingly. Rates are in Hz. 
+      // Obtain parameters for sensors and allocate observation buffers accordingly. Rates are in Hz.
       double base_laser_update_rate(2.0);
       double tilt_laser_update_rate(2.0);
       double low_obstacle_update_rate(0.2);
@@ -229,7 +229,7 @@ namespace ros {
       ros::Node::instance()->param("~costmap_2d/body_part_scale", bodypartScale, bodypartScale);
       ros::Node::instance()->param("~costmap_2d/robot_name", robotName, robotName);
       ros::Node::instance()->param("~costmap_2d/filter_robot_points", useFilter, useFilter);
-      
+
       if (useFilter) {
 	filter_ = new robot_filter::RobotFilter((ros::Node*)this, robotName, true, bodypartScale);
 	filter_->loadRobotDescription();
@@ -239,24 +239,24 @@ namespace ros {
       }
 
       // Then allocate observation buffers
-      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), global_frame_, tf_, 
-							       ros::Duration().fromSec(base_laser_keepalive), 
+      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), global_frame_, tf_,
+							       ros::Duration().fromSec(base_laser_keepalive),
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(base_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_, filter_);
-      baseCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), global_frame_, tf_, 
-							       ros::Duration().fromSec(base_laser_keepalive), 
+      baseCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), global_frame_, tf_,
+							       ros::Duration().fromSec(base_laser_keepalive),
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(base_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_, filter_);
-      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), global_frame_, tf_, 
-							       ros::Duration().fromSec(tilt_laser_keepalive), 
+      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), global_frame_, tf_,
+							       ros::Duration().fromSec(tilt_laser_keepalive),
 							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(tilt_laser_update_rate),
 							       inscribedRadius, minZ_, maxZ_, filter_);
-      lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), global_frame_, tf_, 
-								  ros::Duration().fromSec(low_obstacle_keepalive), 
+      lowObstacleBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("odom_combined"), global_frame_, tf_,
+								  ros::Duration().fromSec(low_obstacle_keepalive),
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(low_obstacle_update_rate),
 								  inscribedRadius, -10.0, maxZ_, filter_);
-      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo_link"), global_frame_, tf_, 
-								  ros::Duration().fromSec(stereo_keepalive), 
+      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo_link"), global_frame_, tf_,
+								  ros::Duration().fromSec(stereo_keepalive),
 								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(stereo_update_rate),
 								  inscribedRadius, minZ_, maxZ_, filter_);
 
@@ -291,9 +291,9 @@ namespace ros {
       ros::Node::instance()->param("~costmap_2d/obstacle_range", obstacleRange, 10.0);
 
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
-			       inputData , resp.map.resolution, 
+			       inputData , resp.map.resolution,
 			       lethalObstacleThreshold, maxZ_, zLB, zUB,
-			       inflationRadius, circumscribedRadius, inscribedRadius, weight, 
+			       inflationRadius, circumscribedRadius, inscribedRadius, weight,
 			       obstacleRange, rayTraceRange, raytraceWindow);
 
       // set up costmap service response
@@ -339,7 +339,7 @@ namespace ros {
       pt.y = 0;
       footprint_.push_back(pt);
 
-      controller_ = new trajectory_rollout::TrajectoryControllerROS(*ros::Node::instance(), tf_, global_frame_, *local_map_accessor_, 
+      controller_ = new trajectory_rollout::TrajectoryControllerROS(*ros::Node::instance(), tf_, global_frame_, *local_map_accessor_,
           footprint_, inscribedRadius, circumscribedRadius);
 
       // Advertize messages to publish cost map updates
@@ -370,13 +370,13 @@ namespace ros {
       // The cost map is populated with either laser scans in the case that we are unable to use a
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
       // point clouds
-      baseScanNotifier_ = new tf::MessageNotifier<laser_scan::LaserScan>(&tf_, ros::Node::instance(),  
-                                 boost::bind(&MoveBase::baseScanCallback, this, _1), 
-                                "base_scan", global_frame_, 50); 
-      baseCloudNotifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, ros::Node::instance(),  
-                                 boost::bind(&MoveBase::baseCloudCallback, this, _1), 
-                                "base_scan_filtered", global_frame_, 50); 
-      tiltLaserNotifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, ros::Node::instance(), 
+      baseScanNotifier_ = new tf::MessageNotifier<laser_scan::LaserScan>(&tf_, ros::Node::instance(),
+                                 boost::bind(&MoveBase::baseScanCallback, this, _1),
+                                "base_scan", global_frame_, 50);
+      baseCloudNotifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, ros::Node::instance(),
+                                 boost::bind(&MoveBase::baseCloudCallback, this, _1),
+                                "base_scan_filtered", global_frame_, 50);
+      tiltLaserNotifier_ = new tf::MessageNotifier<robot_msgs::PointCloud>(&tf_, ros::Node::instance(),
 				 boost::bind(&MoveBase::tiltCloudCallback, this, _1),
 				 "tilt_laser_cloud_filtered", global_frame_, 50);
       ros::Node::instance()->subscribe("dcam/cloud",  stereoCloudMsg_, &MoveBase::stereoCloudCallback, this, 1);
@@ -403,7 +403,7 @@ namespace ros {
 
       if(local_map_accessor_ != NULL)
         delete local_map_accessor_;
- 
+
       if(global_map_accessor_ != NULL)
         delete global_map_accessor_;
 
@@ -421,7 +421,7 @@ namespace ros {
       delete tiltLaserNotifier_;
     }
 
-    void MoveBase::updateGlobalPose(){ 
+    void MoveBase::updateGlobalPose(){
       tf::Stamped<tf::Pose> robotPose;
       robotPose.setIdentity();
       robotPose.frame_id_ = "base_link";
@@ -494,7 +494,7 @@ namespace ros {
       // Get the current robot pose in the map frame
       updateGlobalPose();
 
-      // Assign state data 
+      // Assign state data
       stateMsg.pos.x = global_pose_.getOrigin().x();
       stateMsg.pos.y = global_pose_.getOrigin().y();
       double uselessPitch, uselessRoll, yaw;
@@ -572,7 +572,7 @@ namespace ros {
       try
       {
         tf::Stamped<btVector3> v_in(btVector3(odomMsg_.vel.x, odomMsg_.vel.y, 0), ros::Time(), odomMsg_.header.frame_id), v_out;
-        tf_.transformVector("base_link", ros::Time(), v_in, odomMsg_.header.frame_id, v_out);	 
+        tf_.transformVector("base_link", ros::Time(), v_in, odomMsg_.header.frame_id, v_out);
         base_odom_.vel.x = v_in.x();
         base_odom_.vel.y = v_in.y();
         base_odom_.vel.th = odomMsg_.vel.th;
@@ -647,6 +647,7 @@ namespace ros {
     void MoveBase::publishFootprint(double x, double y, double th){
       std::vector<deprecated_msgs::Point2DFloat32> footprint = controller_->drawFootprint(x, y, th);
       robot_msgs::Polyline2D footprint_msg;
+      footprint_msg.header.frame_id = global_frame_;
       footprint_msg.set_points_size(footprint.size());
       footprint_msg.color.r = 1.0;
       footprint_msg.color.g = 0;
@@ -661,6 +662,7 @@ namespace ros {
 
     void MoveBase::publishPath(bool isGlobal, const std::list<deprecated_msgs::Pose2DFloat32>& path) {
       robot_msgs::Polyline2D guiPathMsg;
+      guiPathMsg.header.frame_id = global_frame_;
       guiPathMsg.set_points_size(path.size());
 
       unsigned int i = 0;
@@ -699,7 +701,7 @@ namespace ros {
       // and we have stopped the robot, then we are done
       double uselessPitch, uselessRoll, yaw;
       global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
-      if(plan_.empty() && 
+      if(plan_.empty() &&
           fabs(angles::shortest_angular_distance(yaw , stateMsg.goal.th)) < this->yaw_goal_tolerance_){ /// @todo: this is still wrong, should use bt or similar to check shortest angular distance of roll/pitch/yaw.
 
         ROS_DEBUG("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
@@ -736,7 +738,7 @@ namespace ros {
     bool MoveBase::checkWatchDog() const {
       bool ok =  baseScanBuffer_->isCurrent() && tiltScanBuffer_->isCurrent() && stereoCloudBuffer_->isCurrent() && lowObstacleBuffer_->isCurrent();
 
-      if(!ok) 
+      if(!ok)
         ROS_INFO("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
 
       return ok;
@@ -747,14 +749,14 @@ namespace ros {
      * at least, this leads to poor performance since planning ks slow (seconds) and thus the robot stops alot. If we leave the
      * velocity controller flexibility to work around the path in collision then that seems to work better. Note that this is still
      * sensitive to the goal (exit point of the path in the window) being in collision which would require an alternate metric
-     * to allow more flexibility to get near the goal - essentially treating the goal as a waypoint. 
+     * to allow more flexibility to get near the goal - essentially treating the goal as a waypoint.
      */
     bool MoveBase::dispatchCommands(){
       // First criteria is that we have had a sufficiently recent sensor update to trust perception and that we have a valid plan. This latter
-      // case is important since we can end up with an active controller that becomes invalid through the planner looking ahead. 
+      // case is important since we can end up with an active controller that becomes invalid through the planner looking ahead.
       // We want to be able to stop the robot in that case
       bool planOk = checkWatchDog() && isValid();
-      robot_msgs::PoseDot cmdVel; // Commanded velocities      
+      robot_msgs::PoseDot cmdVel; // Commanded velocities
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
@@ -903,6 +905,7 @@ namespace ros {
 
       // First publish raw obstacles in red
       robot_msgs::Polyline2D pointCloudMsg;
+      pointCloudMsg.header.frame_id = global_frame_;
       unsigned int pointCount = rawObstacles.size();
       pointCloudMsg.set_points_size(pointCount);
       pointCloudMsg.color.a = 0.0;
@@ -915,8 +918,8 @@ namespace ros {
         pointCloudMsg.points[i].y = rawObstacles[i].second;
       }
 
-      if (!ros::Node::instance()->ok()) { 
-	return; 
+      if (!ros::Node::instance()->ok()) {
+	return;
       }
       ros::Node::instance()->publish("raw_obstacles", pointCloudMsg);
 
@@ -933,8 +936,8 @@ namespace ros {
         pointCloudMsg.points[i].y = inflatedObstacles[i].second;
       }
 
-      if (!ros::Node::instance()->ok()) { 
-	return; 
+      if (!ros::Node::instance()->ok()) {
+	return;
       }
       ros::Node::instance()->publish("inflated_obstacles", pointCloudMsg);
     }
@@ -968,6 +971,7 @@ namespace ros {
 
       // First publish raw obstacles in red
       robot_msgs::Polyline2D pointCloudMsg;
+      pointCloudMsg.header.frame_id = global_frame_;
       unsigned int pointCount = rawObstacles.size();
       pointCloudMsg.set_points_size(pointCount);
       pointCloudMsg.color.a = 0.0;
@@ -1014,14 +1018,14 @@ namespace ros {
     MoveBase::footprint_t const & MoveBase::getFootprint() const{
       return footprint_;
     }
-    
+
     void MoveBase::updateCostMap() {
       if (reset_cost_map_) {
         costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
       }
 
       ROS_DEBUG("Starting cost map update/n");
-      
+
       lock();
       // Aggregate buffered observations across all sources. Must be thread safe
       std::vector<costmap_2d::Observation> observations, raytrace_obs;
@@ -1049,7 +1053,7 @@ namespace ros {
       }
 
       unlock();
-      
+
       ROS_DEBUG("Applying update with %d observations/n", stored_observations.size());
       // Apply to cost map
       ros::Time start = ros::Time::now();
@@ -1059,7 +1063,7 @@ namespace ros {
         costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), stored_observations, &raytrace_obs.front());
       double t_diff = (ros::Time::now() - start).toSec();
       ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, stored_observations.size());
-      
+
       // Finally, we must extract the cost data that we have computed and:
       // 1. Refresh the local_map_accessor for the controller
       // 2. Refresh the global_map accessor for the planner

@@ -38,12 +38,12 @@ using namespace std;
 using namespace trajectory_rollout;
 
 namespace trajectory_rollout{
-  GovernorNode::GovernorNode(std::vector<deprecated_msgs::Point2DFloat32> footprint_spec) : 
-    ros::Node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
-    tf_(*this, true, ros::Duration(10)), 
+  GovernorNode::GovernorNode(std::vector<deprecated_msgs::Point2DFloat32> footprint_spec) :
+    ros::Node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y),
+    tf_(*this, true, ros::Duration(10)),
     ma_(map_, OUTER_RADIUS),
     cm_(ma_),
-    tc_(cm_, ma_, footprint_spec, ROBOT_SIDE_RADIUS, OUTER_RADIUS, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, 
+    tc_(cm_, ma_, footprint_spec, ROBOT_SIDE_RADIUS, OUTER_RADIUS, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA,
         SIM_TIME, SIM_RES, VEL_SAMPLES, VEL_SAMPLES, PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE),
     cycle_time_(0.1)
   {
@@ -151,6 +151,7 @@ namespace trajectory_rollout{
     printf("Robot Vel - vx: %.2f, vy: %.2f, vth: %.2f\n", robot_vel.getOrigin().getX(), robot_vel.getOrigin().getY(), yaw);
 
     if(path.cost_ >= 0){
+      path_msg.header.frame_id = "/map";
       //let's print debug output to the screen
       path_msg.set_points_size(path.getPointsSize());
       path_msg.color.r = 0;
@@ -163,12 +164,12 @@ namespace trajectory_rollout{
       for(unsigned int i = 0; i < path.getPointsSize(); ++i){
         double pt_x, pt_y, pt_th;
         path.getPoint(i, pt_x, pt_y, pt_th);
-        path_msg.points[i].x = pt_x; 
+        path_msg.points[i].x = pt_x;
         path_msg.points[i].y = pt_y;
 
         //so we can draw the footprint on the map
         if(i == 0){
-          x = pt_x; 
+          x = pt_x;
           y = pt_y;
           th = pt_th;
         }
@@ -178,6 +179,7 @@ namespace trajectory_rollout{
 
       vector<deprecated_msgs::Point2DFloat32> footprint = tc_.drawFootprint(x, y, th);
       //let's also draw the footprint of the robot for the last point on the selected trajectory
+      footprint_msg.header.frame_id = "/map";
       footprint_msg.set_points_size(footprint.size());
       footprint_msg.color.r = 1.0;
       footprint_msg.color.g = 0;
@@ -238,7 +240,7 @@ int main(int argc, char** argv){
   pt.x = -1 * ROBOT_FRONT_RADIUS;
   pt.y = ROBOT_SIDE_RADIUS;
   footprint_spec.push_back(pt);
-  
+
   GovernorNode gn(footprint_spec);
 
   ros::Time start;
@@ -256,6 +258,6 @@ int main(int argc, char** argv){
     //printf("Cycle Time: %.2f\n", t_diff);
   }
 
-  
+
   return(0);
 }
