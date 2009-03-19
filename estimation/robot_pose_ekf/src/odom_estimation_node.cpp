@@ -109,12 +109,12 @@ namespace estimation
 
 #ifdef __EKF_DEBUG_FILE__
     // open files for debugging
-    odom_file_.open("odom_file.txt");
-    imu_file_.open("imu_file.txt");
-    vo_file_.open("vo_file.txt");
-    corr_file_.open("corr_file.txt");
-    time_file_.open("time_file.txt");
-    extra_file_.open("extra_file.txt");
+    odom_file_.open("/tmp/odom_file.txt");
+    imu_file_.open("/tmp/imu_file.txt");
+    vo_file_.open("/tmp/vo_file.txt");
+    corr_file_.open("/tmp/corr_file.txt");
+    time_file_.open("/tmp/time_file.txt");
+    extra_file_.open("/tmp/extra_file.txt");
 #endif
   };
 
@@ -152,17 +152,17 @@ namespace estimation
     odom_meas_  = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
     
     // multiplier to scale covariance
-    double norm = sqrt(pow(odom_.vel.x,2) + pow(odom_.vel.y,2) + pow(odom_.vel.th,2));
-    // when the base is not moving, odom is very reliable
-    if (norm < EPS) 
-      odom_multiplier_ = 0.00001;
     // the smaller the residual, the more reliable odom
-    else{
-      // TODO: REMOVE THIS WHEN TESTED
-      odom_.residual = 1.0;
-      odom_multiplier_ = fmax(0.00001, fmin(1.0, odom_.residual));
-    }
-    my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_multiplier_);
+    double odom_multiplier;
+    if (odom_.residual < 0.05)
+      // residu=0.00001 --> multiplier=0.00001     residu=0.05 --> multiplier=1.0
+      odom_multiplier = ((odom_.residual-0.00001)*(0.99999/0.04999))+0.00001;  
+    else
+      // residu=0.05 --> multiplier=1.0     residu=0.2 --> multiplier=20.0
+      odom_multiplier = ((odom_.residual-0.05)*(19.0/0.15))+1.0; 
+    odom_multiplier = fmax(0.00001, fmin(100.0, odom_multiplier));
+    cout << "odom_multiplier = " << odom_multiplier << endl;
+    my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_multiplier);
     
     // activate odom
     if (!odom_active_) {
@@ -248,9 +248,14 @@ namespace estimation
       base_vo_init_ = camera_base_.inverse() * vo_camera_.inverse() * vo_meas_.inverse();
     }
     // vo measurement as base transform
+    // the more inliers, the more reliable the vo
+    // inliers=200+ --> multiplier=1        inliers=100 --> multiplier=11      inliers=10 --> multiplier=20
+    double vo_multiplier = 21.0-(min(200.0,(double)vo_.inliers)/10.0);
+    vo_multiplier = fmax(0.00001, fmin(100.0, vo_multiplier));
+    cout << "vo_multiplier = " << vo_multiplier << endl;
     Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
     my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"),
-			      21.0-(min(200.0,(double)vo_.inliers)/10)); // the more inliers, the more reliable the vo
+			      vo_multiplier);
     
     // activate vo
     if (!vo_active_) {

@@ -116,7 +116,7 @@ private:
   bool vel_active_, odom_active_, imu_active_, vo_active_;
   bool odom_used_, imu_used_, vo_used_;
   bool odom_initializing_, imu_initializing_, vo_initializing_;
-  double freq_, timeout_, odom_multiplier_;
+  double freq_, timeout_;
 
   // mutex
   boost::mutex odom_mutex_, imu_mutex_, vo_mutex_, vel_mutex_;

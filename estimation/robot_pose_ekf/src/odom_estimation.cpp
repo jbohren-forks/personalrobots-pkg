@@ -86,9 +86,9 @@ namespace estimation
     // create MEASUREMENT MODEL IMU
     ColumnVector measNoiseImu_Mu(3);  measNoiseImu_Mu = 0;
     SymmetricMatrix measNoiseImu_Cov(3);  measNoiseImu_Cov = 0;
-    measNoiseImu_Cov(1,1) = pow(0.0003,2);  // = 0.02 degrees / sec
-    measNoiseImu_Cov(2,2) = pow(0.0003,2);  // = 0.02 degrees / sec
-    measNoiseImu_Cov(3,3) = pow(0.0003,2);  // = 0.02 degrees / sec
+    measNoiseImu_Cov(1,1) = pow(0.00017,2);  // = 0.01 degrees / sec
+    measNoiseImu_Cov(2,2) = pow(0.00017,2);  // = 0.01 degrees / sec
+    measNoiseImu_Cov(3,3) = pow(0.00017,2);  // = 0.01 degrees / sec
     imu_covariance_ = measNoiseImu_Cov;
     Gaussian measurement_Uncertainty_Imu(measNoiseImu_Mu, measNoiseImu_Cov);
     Matrix Himu(3,6);  Himu = 0;
