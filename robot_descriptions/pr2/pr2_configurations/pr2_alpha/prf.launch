@@ -1,15 +1,8 @@
 <launch>
   <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
 
-  <machine name="realtime_root" user="root" address="prf1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
-
   <include file="prf.machine" />
-
-<!-- pr2_etherCAT -->
-  <node machine="realtime_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x /robotdesc/pr2"/>
-
-<!-- PR2 Calibration -->
-  <include file="$(find pr2_full)/calibrate.launch" />
+  <include file="$(find pr2_alpha)/prf_ethercat_reset.launch" />
 
 <!-- Joystick -->
   <param name="joy/deadzone" value="5000"/>
