@@ -371,7 +371,7 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                         }
                         if (*lowstop < -(M_PI*0.9))
                         {
-                          ROS_WARN("urdf2gazebo: limiting lowStop to >= -(M_PI*0.9) degrees");
+                          ROS_WARN("urdf2gazebo: limiting lowStop to >= -(180*0.9) degrees");
                           *lowstop = -(M_PI*0.9);
                         }
                         if (*highstop < 0)
@@ -381,7 +381,7 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                         }
                         if (*highstop > (M_PI*0.9))
                         {
-                          ROS_WARN("urdf2gazebo: limiting highStop to <= (M_PI*0.9) degrees");
+                          ROS_WARN("urdf2gazebo: limiting highStop to <= (180*0.9) degrees");
                           *highstop = (M_PI*0.9);
                         }
                         addKeyValue(joint, "lowStop",  values2str(1, link->joint->limit    , rad2deg));
