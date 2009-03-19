@@ -241,26 +241,6 @@ namespace cloud_geometry
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Convert an angle from degrees to radians
-    * \param angle the angle in degrees to convert
-    */
-  inline double
-    deg2rad (double angle)
-  {
-    return (angle * M_PI / 180.0);
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief Convert an angle from radians to degrees
-    * \param angle the angle in radians to convert
-    */
-  inline double
-    rad2deg (double angle)
-  {
-    return (angle * 180.0 / M_PI);
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Normalize a point.
     * \param p the point/vector to normalize
     * \param q the resulted normalized point/vector

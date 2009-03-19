@@ -16,7 +16,7 @@
     - cloud_octree: a library for 3D spatial decomposition of PointCloud messages using octree data structures.
 
     - sample_consensus: a library for SAmple Consensus (SAC) like methods (RANSAC, MSAC, MLESAC, etc,) and geometric shape
-                        models
+                        models (planes, cylinders, cones, torii, lines, spheres, etc)
 
    The list of nodes includes:
 
