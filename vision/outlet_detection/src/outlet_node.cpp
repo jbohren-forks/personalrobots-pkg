@@ -13,6 +13,10 @@
 #include <opencv/highgui.h>
 
 #include <boost/thread.hpp>
+#include <boost/foreach.hpp>
+
+#include <Eigen/Core>
+#include <Eigen/QR>
 
 #include "outlet_detector.h"
 
@@ -41,7 +45,8 @@ private:
 public:
   OutletDetector()
     : ros::Node("outlet_detector"), img_(res_.image), cam_info_(res_.cam_info),
-      tf_broadcaster_(*this), K_(NULL), count_(0), display_image_(NULL), continue_(false)
+      tf_broadcaster_(*this), K_(NULL), count_(0), display_image_(NULL),
+      continue_(false)
   {
     param("display", display_, true);
     if (display_) {
@@ -64,7 +69,7 @@ public:
   {
     if (K_ == NULL)
       K_ = cvCreateMat(3, 3, CV_64FC1);
-    memcpy((char*)(K_->data.db), (char*)(&cam_info_.K[0]), 9 * sizeof(double));
+    memcpy(K_->data.db, &cam_info_.K[0], 9 * sizeof(double));
   }
 
   void image_cb()
@@ -94,9 +99,15 @@ public:
     }
 
     // Find normal and right vectors
-    // TODO: fit plane to all holes instead of just 3?
-    btVector3 right = (holes[2] - holes[1]).normalized();
-    btVector3 normal = right.cross(holes[2] - holes[0]).normalized();
+    //btVector3 right = (holes[2] - holes[1]).normalized();
+    //btVector3 normal = right.cross(holes[2] - holes[0]).normalized();
+    btVector3 right = ((holes[3] - holes[0]).normalized() +
+                       (holes[4] - holes[1]).normalized() +
+                       (holes[5] - holes[2]).normalized() +
+                       (holes[6] - holes[9]).normalized() +
+                       (holes[7] - holes[10]).normalized() +
+                       (holes[8] - holes[11]).normalized()) /= 6.0;
+    btVector3 normal = fitPlane(holes, 12);
     btVector3 up = right.cross(normal).normalized();
     btMatrix3x3 rotation;
     rotation[0] = normal; // x
@@ -206,6 +217,49 @@ private:
   {
     // Scale to meters while we're at it
     dst.setValue(src.z / 1000.0, -src.x / 1000.0, -src.y / 1000.0);
+  }
+
+  // TODO: does fitHyperplane in <Eigen/LeastSquares> basically do this?
+  static btVector3 fitPlane(btVector3 *holes, int num_holes)
+  {
+    // Compute centroid
+    btVector3 centroid(0.0, 0.0, 0.0);
+    for (int i = 0; i < num_holes; ++i)
+      centroid += holes[i];
+    double scaling = 1.0 / num_holes;
+    centroid *= scaling;
+
+    // Compute moments
+    double sumXX = 0.0, sumXY = 0.0, sumXZ = 0.0;
+    double sumYY = 0.0, sumYZ = 0.0, sumZZ = 0.0;
+    for (int i = 0; i < num_holes; ++i) {
+      btVector3 diff = holes[i] - centroid;
+      sumXX += diff.x()*diff.x();
+      sumXY += diff.x()*diff.y();
+      sumXZ += diff.x()*diff.z();
+      sumYY += diff.y()*diff.y();
+      sumYZ += diff.y()*diff.z();
+      sumZZ += diff.z()*diff.z();
+    }
+    sumXX *= scaling;
+    sumXY *= scaling;
+    sumXZ *= scaling;
+    sumYY *= scaling;
+    sumYZ *= scaling;
+    sumZZ *= scaling;
+
+    // Fill 3x3 symmetric matrix
+    Eigen::Matrix3d mat;
+    mat << sumXX, sumXY, sumXZ,
+           sumXY, sumYY, sumYZ,
+           sumXZ, sumYZ, sumZZ;
+
+    // Normal is the eigenvector with the smallest eigenvalue
+    typedef Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> Solver;
+    Solver solver(mat);
+    Eigen::Vector3d normal = solver.eigenvectors().col(0);
+
+    return btVector3(normal.x(), normal.y(), normal.z());
   }
 };
 

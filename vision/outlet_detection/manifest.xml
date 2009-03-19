@@ -15,6 +15,7 @@
   <depend package="star_detector"/>
   <depend package="bullet"/>
   <depend package="tf"/>
+  <depend package="eigen"/>
 
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib" />
   <sysdepend os="ubuntu" version="7.10-gutsy" package="python-matplotlib" />
