@@ -50,6 +50,10 @@ rospack_add_executable(joy_batt_sender src/joy_batt_sender.cpp)
 # PlugIn and Unplug
 rospack_add_executable(recharge_controller src/recharge_controller.cpp)
 
+# General container of little actions
+rospack_add_executable(action_container src/action_container.cpp)
+target_link_libraries(action_container robot_actions)
+
 #CLI
 # Disabled, pending update to new message formats
 rospack_add_executable(cli src/control_cli.cpp)

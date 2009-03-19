@@ -1,5 +1,7 @@
 <launch>
   <master auto="start"/>
+  <node pkg="highlevel_controllers" type="action_container" respawn="false" />
+
   <param name="/trex/input_file" value="m2.recharger.sim.cfg"/>
   <param name="/trex/path" value="$(find executive_trex_pr2)/cfg:$(find executive_trex_pr2)/plugs.0:$(find executive_trex_pr2)/cfg"/>
   <param name="/trex/time_limit" value="40"/>

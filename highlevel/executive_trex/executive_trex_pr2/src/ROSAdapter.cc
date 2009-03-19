@@ -16,6 +16,18 @@ namespace TREX {
       timelineName(extractData(configData, "timelineName").toString()),
       timelineType(extractData(configData, "timelineType").toString()), 
       stateTopic(extractData(configData, "stateTopic").toString()){
+    commonInit(configData);
+  }
+
+  ROSAdapter::ROSAdapter(const LabelStr& agentName, const TiXmlElement& configData, TICK lookAhead, const std::string& state_topic)
+    : Adapter(agentName, configData, lookAhead, 0, 1), m_initialized(false),
+      timelineName(extractData(configData, "timelineName").toString()),
+      timelineType(extractData(configData, "timelineType").toString()), 
+      stateTopic(timelineName + state_topic){
+    commonInit(configData);
+  }
+
+  void ROSAdapter::commonInit(const TiXmlElement& configData){
     m_node = Executive::request();
 
     // Iterate over child xml nodes and look for nodes of type Param to populate the nddl to ros mappings

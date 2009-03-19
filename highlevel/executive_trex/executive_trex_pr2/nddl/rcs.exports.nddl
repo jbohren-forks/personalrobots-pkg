@@ -263,27 +263,20 @@ class RechargeController extends Behavior {
   }
 };
 
-/**
- * MailSender is used to send an email message
- */
-class MailSender extends Behavior {
-  string mail_client; // e.g. mailx -s
+class ShellCommand extends Behavior {
 
-  predicate Inactive{}
+  predicate Inactive{
+    string response;
+    defaultOnCommit(response, "NULL");
+  }
 
   predicate Active{
-    string to;
-    string cc;
-    string subject;
-    string body;
+    string request;
   }
 
-  MailSender( Mode _mode){
-    mail_client = "mailx -s";
-  }
-
-  MailSender(string _mail_client, Mode _mode){
-    super(mode);
-    mail_client = _mail_client;
+  ShellCommand(Mode _mode){
+    super(_mode);
   }
 };
+
+ShellCommand::Active{ default(request, "NULL"); }

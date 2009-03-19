@@ -18,7 +18,7 @@
  <depend package="deprecated_msgs"/>
  <depend package="robot_msgs"/>
  <depend package="robot_srvs"/>
- <!--depend package="std_srvs"/ Trying to remove Tully-->
+ <depend package="robot_actions"/>
  <depend package="pr2_mechanism_controllers"/>
  <depend package="pr2_msgs"/>
  <depend package="trajectory_rollout"/>

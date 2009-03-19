@@ -9,6 +9,7 @@ namespace TREX {
   class ROSAdapter: public Adapter {
   public:
     ROSAdapter(const LabelStr& agentName, const TiXmlElement& configData, TICK lookAhead);
+    ROSAdapter(const LabelStr& agentName, const TiXmlElement& configData, TICK lookAhead, const std::string& state_topic);
 
     virtual ~ROSAdapter();
 
@@ -26,6 +27,8 @@ namespace TREX {
     bool handleRequest(const TokenId& goal);
 
     void handleRecall(const TokenId& goal);
+
+    void commonInit(const TiXmlElement& configData);
 
     std::vector<std::string> nddlNames_;
     std::vector<std::string> rosNames_;
