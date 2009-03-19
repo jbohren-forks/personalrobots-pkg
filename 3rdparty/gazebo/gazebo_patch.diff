@@ -1,103 +1,6 @@
-Index: SConstruct
-===================================================================
---- SConstruct	(revision 7358)
-+++ SConstruct	(working copy)
-@@ -5,7 +5,7 @@
- 
- exec(open('build.py'))
- 
--PKG_CONFIG_VERSION = '0.23'
-+PKG_CONFIG_VERSION = '0.21'
- OGRE_VERSION = '= 1.4.9'
- ODE_VERSION = '>= 0.10.1'
- 
-@@ -21,20 +21,29 @@
- opts.Add('destdir', 'The root directory to install into. Useful mainly for binary package building', '/')
- opts.Add('mode','Defines how Gazebo will be built, options available: optimized, profile, debug','debug')
- opts.Add('with_audio','Builds support for 3d sound. Options available: no, yes ', 'no')
-+opts.Add('boost_lflags','boost link flags', '')
-+opts.Add('boost_cflags','boost compile flags', '')
-+opts.Add('intel_lflags','intel link flags', '')
-+opts.Add('intel_cflags','intel compile flags', '')
- 
- #
- # 3rd party packages
- #
- parseConfigs=['pkg-config --cflags --libs OGRE',
-+              'pkg-config --cflags --libs freeimage', 
-+              'ode-config --cflags --libs', 
-               'xml2-config --cflags --libs', 
--      	      'ode-config --cflags --libs',
-               'fltk-config --cflags --libs --ldflags --use-gl --use-images',
--              'pkg-config --cflags --libs xft'
-+              'pkg-config --cflags --libs xft',
-+              'pkg-config --cflags --libs opencv'
-               ]
- 
- #
- # setup the build environment
- #
-+#  CC = '/opt/intel/cc/10.1.008/bin/icc',
-+#  CXX = '/opt/intel/cc/10.1.008/bin/icpc',
-+#  LD = '/opt/intel/cc/10.1.008/bin/xild',
- env = Environment (
-   CC = 'g++',
- 
-@@ -61,7 +70,7 @@
-   LIBPATH=Split('#libgazebo'),
-     
-   #LIBS=Split('gazebo boost_python')
--  LIBS=Split('gazebo boost_signals'),
-+  LIBS=Split('gazebo'),
-   LINKFLAGS=Split('-export-dynamic'),
- 
-   TARFLAGS = '-c -z',
-@@ -70,6 +79,19 @@
-   options=opts
- )
- 
-+env['CCFLAGS']   +=   Split(env['boost_cflags'])
-+env['LINKFLAGS'] +=   Split(env['boost_lflags'])
-+
-+env['CCFLAGS']   +=   Split(env['intel_cflags'])
-+env['LINKFLAGS'] +=   Split(env['intel_lflags'])
-+
-+# Do not use boost_signals if boost_lflags are specified
-+if not env['boost_lflags']:
-+  print "Using boost_signals"
-+  env['LIBS'] += ['boost_signals']
-+else:
-+  print "Using boost_lflags:",env['boost_lflags']
-+
- Help(opts.GenerateHelpText(env))
- 
- if env['destdir'] != '/':
-@@ -86,7 +108,7 @@
- rcconfig = env.RCConfig(target='gazeborc', source=Value(install_prefix))
- 
- # DEFAULT list of subdirectories to build
--subdirs = ['libgazebo','server', 'player']
-+subdirs = ['libgazebo','server']
- 
- # Set the compile mode
- if env['mode'] == 'debug':
-@@ -154,9 +176,10 @@
-         Exit(1)
- 
- # Check for trimesh support in ODE
--if not conf.CheckODELib():
--  print '  Error: ODE not compiled with trimesh support.'
--  Exit(1)
-+if not env.GetOption('clean'):
-+  if not conf.CheckODELib():
-+    print '  Error: ODE not compiled with trimesh support.'
-+    Exit(1)
- 
- env = conf.Finish()
- 
 Index: libgazebo/gazebo.h
 ===================================================================
---- libgazebo/gazebo.h	(revision 7358)
+--- libgazebo/gazebo.h	(revision 7524)
 +++ libgazebo/gazebo.h	(working copy)
 @@ -556,7 +556,7 @@
  
@@ -210,7 +113,7 @@ Index: libgazebo/gazebo.h
  };
 Index: server/physics/MapGeom.hh
 ===================================================================
---- server/physics/MapGeom.hh	(revision 7358)
+--- server/physics/MapGeom.hh	(revision 7524)
 +++ server/physics/MapGeom.hh	(working copy)
 @@ -27,7 +27,11 @@
  #ifndef MAPGEOM_HH
@@ -237,7 +140,7 @@ Index: server/physics/MapGeom.hh
  
 Index: server/physics/MapGeom.cc
 ===================================================================
---- server/physics/MapGeom.cc	(revision 7358)
+--- server/physics/MapGeom.cc	(revision 7524)
 +++ server/physics/MapGeom.cc	(working copy)
 @@ -25,16 +25,15 @@
   */
@@ -355,271 +258,9 @@ Index: server/physics/MapGeom.cc
        if (this->negativeP->GetValue())
          v = 255 - v;
  
-Index: server/Global.hh
-===================================================================
---- server/Global.hh	(revision 7358)
-+++ server/Global.hh	(working copy)
-@@ -88,4 +88,7 @@
- 
- #define GZ_DELETE(p) { if(p) { delete (p);  (p)=NULL; } }
- 
-+// Timing Debug
-+//#define TIMING
-+
- #endif
-Index: server/Model.hh
-===================================================================
---- server/Model.hh	(revision 7358)
-+++ server/Model.hh	(working copy)
-@@ -39,6 +39,10 @@
- #include "Entity.hh"
- #include "gazebo.h"
- 
-+#include <boost/thread/mutex.hpp>
-+#include <boost/bind.hpp>
-+#include <boost/thread/thread.hpp>
-+#include <boost/thread/condition.hpp>
- 
- namespace gazebo
- {
-@@ -160,6 +164,9 @@
-   
-     /// \brief Load a renderable model (like a light source).
-     private: void LoadRenderable(XMLConfigNode *node);
-+
-+    /// \brief threaded flag set?
-+    private: bool IsThreaded();
-   
-     /// \brief Type of the model (such as Pioneer2DX, or SimpleSolid)
-     private: std::string type;
-@@ -193,8 +200,8 @@
-     private: ParamT<Quatern> *rpyP;
-     private: ParamT<std::string> *parentBodyNameP;
-     private: ParamT<std::string> *myBodyNameP;
-+    private: ParamT<bool> *threadP;
- 
--
-     // Name of a light (if the model is renderable:light)
-     private: std::string lightName;
- 
-@@ -202,6 +209,7 @@
-       private: PyObject *pModule;
-       private: PyObject *pFuncUpdate;
-     */
-+
-   };
-   /// \}
- }
-Index: server/Model.cc
-===================================================================
---- server/Model.cc	(revision 7358)
-+++ server/Model.cc	(working copy)
-@@ -46,7 +46,12 @@
- #include "ControllerFactory.hh"
- #include "IfaceFactory.hh"
- #include "Model.hh"
-+#include "Simulator.hh"
- 
-+#ifdef TIMING
-+#include "Simulator.hh"// for timing
-+#endif
-+
- using namespace gazebo;
- 
- uint Model::lightNumber = 0;
-@@ -68,6 +73,8 @@
- 
-   this->rpyP = new ParamT<Quatern>("rpy", Quatern(1,0,0,0), 0);
-   this->rpyP->Callback( &Model::SetRotation, this);
-+
-+  this->threadP = new ParamT<bool>("model_thread",false,0);
-   Param::End();
- 
-   this->parentBodyNameP = NULL;
-@@ -101,8 +108,14 @@
-   }
-   this->controllers.clear();
- 
-+  GZ_DELETE(this->xyzP);
-+  GZ_DELETE(this->rpyP);
-+
-   GZ_DELETE(this->parentBodyNameP);
-   GZ_DELETE(this->myBodyNameP);
-+
-+  GZ_DELETE(this->threadP);
-+
- }
- 
- ////////////////////////////////////////////////////////////////////////////////
-@@ -118,6 +131,7 @@
-   this->canonicalBodyNameP->Load(node);
-   this->xyzP->Load(node);
-   this->rpyP->Load(node);
-+  this->threadP->Load(node);
- 
-   this->xmlNode = node;
-   this->type=node->GetName();
-@@ -127,7 +141,10 @@
-   if (this->type == "physical")
-     this->LoadPhysical(node);
-   else if (this->type == "renderable")
--    this->LoadRenderable(node);
-+  {
-+    if (Simulator::Instance()->GetRenderEngineEnabled())
-+      this->LoadRenderable(node);
-+  }
-   else if (this->type != "empty")
-   {
-     gzthrow("Invalid model type[" + this->type + "]\n");
-@@ -172,8 +189,6 @@
-   // Record the model's initial pose (for reseting)
-   this->SetInitPose(pose);
- 
--  return 0;
--
-   // Get the name of the python module
-   /*this->pName.reset(PyString_FromString(node->GetString("python","",0).c_str()));
-   //this->pName.reset(PyString_FromString("pioneer2dx"));
-@@ -193,6 +208,9 @@
-       this->pFuncUpdate = NULL;
-   }
-   */
-+
-+  return 0;
-+
- }
- 
- ////////////////////////////////////////////////////////////////////////////////
-@@ -255,10 +273,11 @@
-   }
-   else
-   {
--    if (!this->lightName.empty())
--    {
--      OgreCreator::SaveLight(p, this->lightName, stream);
--    }
-+    if (Simulator::Instance()->GetRenderEngineEnabled())
-+      if (!this->lightName.empty())
-+      {
-+        OgreCreator::SaveLight(p, this->lightName, stream);
-+      }
-   }
- 
-   if (this->parentBodyNameP && this->myBodyNameP)
-@@ -316,6 +335,10 @@
- 
-   Pose3d bodyPose, newPose, oldPose;
- 
-+#ifdef TIMING
-+  double tmpT1 = Simulator::Instance()->GetWallTime();
-+#endif
-+
-   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
-   {
-     if (bodyIter->second)
-@@ -324,6 +347,11 @@
-     }
-   }
- 
-+#ifdef TIMING
-+  double tmpT2 = Simulator::Instance()->GetWallTime();
-+  std::cout << "      ALL Bodies DT (" << this->GetName() << ") (" << tmpT2-tmpT1 << ")" << std::endl;
-+#endif
-+
-   for (contIter=this->controllers.begin();
-        contIter!=this->controllers.end(); contIter++)
-   {
-@@ -332,6 +360,11 @@
-       contIter->second->Update();
-   }
- 
-+#ifdef TIMING
-+  double tmpT3 = Simulator::Instance()->GetWallTime();
-+  std::cout << "      ALL Controllers DT (" << this->GetName() << ") (" << tmpT3-tmpT2 << ")" << std::endl;
-+#endif
-+
-   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
-   {
-     jointIter->second->Update();
-@@ -350,9 +383,26 @@
-     this->rpyP->SetValue(this->pose.rot);
-   }
- 
-+#ifdef TIMING
-+  double tmpT4 = Simulator::Instance()->GetWallTime();
-+  std::cout << "      ALL Joints/canonical body (" << this->GetName() << ") DT (" << tmpT4-tmpT3 << ")" << std::endl;
-+#endif
-+
-+
-+#ifdef TIMING
-+  int update_error = this->UpdateChild();
-+  double tmpT5 = Simulator::Instance()->GetWallTime();
-+  std::cout << "      ALL child (" << this->GetName() << ") update DT (" << tmpT5-tmpT4 << ")" << std::endl;
-+  std::cout << "      Models::Update() (" << this->GetName() << ") Total DT (" << tmpT5-tmpT1 << ")" << std::endl;
-+  return update_error;
-+#else
-   return this->UpdateChild();
-+#endif
-+
-+
- }
- 
-+
- ////////////////////////////////////////////////////////////////////////////////
- // Finalize the model
- int Model::Fini()
-@@ -730,10 +780,11 @@
-   body->SetPose(Pose3d());
-   this->bodies[body->GetName()] = body;
- 
--  if ((childNode = node->GetChild("light")))
--  {
--    this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
--  }
-+  if (Simulator::Instance()->GetRenderEngineEnabled())
-+    if ((childNode = node->GetChild("light")))
-+    {
-+      this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
-+    }
- 
- }
- 
-@@ -779,3 +830,11 @@
-   }
- 
- }
-+
-+////////////////////////////////////////////////////////////////////////////////
-+// Load a physical model
-+bool Model::IsThreaded()
-+{
-+  return this->threadP->GetValue();
-+}
-+
-Index: server/physics/ContactParams.cc
-===================================================================
---- server/physics/ContactParams.cc	(revision 7358)
-+++ server/physics/ContactParams.cc	(working copy)
-@@ -35,11 +35,11 @@
- // Default constructor
- ContactParams::ContactParams()
- {
--  this->kp = 10000.0; //dInfinity;
--  this->kd = 0;
--  this->bounce = 0.1;
--  this->bounceVel = 0.1;
--  this->softCfm = 0.01;
-+  this->kp = 100000000.0; //dInfinity; // make stiffer
-+  this->kd = 1.0; // more damping for constraints
-+  this->bounce = 0.0; // try not to bounce off each others, coefficient of restitution
-+  this->bounceVel = 10.0; // minimum velocity before bounce is applied
-+  this->softCfm = 0.01; // not used
- 
-   this->mu1 = dInfinity;
-   this->mu2 = dInfinity;
 Index: server/physics/Joint.hh
 ===================================================================
---- server/physics/Joint.hh	(revision 7358)
+--- server/physics/Joint.hh	(revision 7524)
 +++ server/physics/Joint.hh	(working copy)
 @@ -156,6 +156,8 @@
      /// Name of this joint
@@ -674,9 +315,30 @@ Index: server/physics/Joint.hh
      /// Feedback data for this joint
      private: dJointFeedback *feedback;
  
+Index: server/physics/ContactParams.cc
+===================================================================
+--- server/physics/ContactParams.cc	(revision 7524)
++++ server/physics/ContactParams.cc	(working copy)
+@@ -35,11 +35,11 @@
+ // Default constructor
+ ContactParams::ContactParams()
+ {
+-  this->kp = 10000.0; //dInfinity;
+-  this->kd = 0;
+-  this->bounce = 0.1;
+-  this->bounceVel = 0.1;
+-  this->softCfm = 0.01;
++  this->kp = 100000000.0; //dInfinity; // make stiffer
++  this->kd = 1.0; // more damping for constraints
++  this->bounce = 0.0; // try not to bounce off each others, coefficient of restitution
++  this->bounceVel = 10.0; // minimum velocity before bounce is applied
++  this->softCfm = 0.01; // not used
+ 
+   this->mu1 = dInfinity;
+   this->mu2 = dInfinity;
 Index: server/physics/Joint.cc
 ===================================================================
---- server/physics/Joint.cc	(revision 7358)
+--- server/physics/Joint.cc	(revision 7524)
 +++ server/physics/Joint.cc	(working copy)
 @@ -30,6 +30,9 @@
  #include "Model.hh"
@@ -1010,3 +672,341 @@ Index: server/physics/Joint.cc
  }
  
  //////////////////////////////////////////////////////////////////////////////
+Index: server/Model.hh
+===================================================================
+--- server/Model.hh	(revision 7524)
++++ server/Model.hh	(working copy)
+@@ -39,6 +39,10 @@
+ #include "Entity.hh"
+ #include "gazebo.h"
+ 
++#include <boost/thread/mutex.hpp>
++#include <boost/bind.hpp>
++#include <boost/thread/thread.hpp>
++#include <boost/thread/condition.hpp>
+ 
+ namespace gazebo
+ {
+@@ -160,6 +164,9 @@
+   
+     /// \brief Load a renderable model (like a light source).
+     private: void LoadRenderable(XMLConfigNode *node);
++
++    /// \brief threaded flag set?
++    private: bool IsThreaded();
+   
+     /// \brief Type of the model (such as Pioneer2DX, or SimpleSolid)
+     private: std::string type;
+@@ -193,8 +200,8 @@
+     private: ParamT<Quatern> *rpyP;
+     private: ParamT<std::string> *parentBodyNameP;
+     private: ParamT<std::string> *myBodyNameP;
++    private: ParamT<bool> *threadP;
+ 
+-
+     // Name of a light (if the model is renderable:light)
+     private: std::string lightName;
+ 
+@@ -202,6 +209,7 @@
+       private: PyObject *pModule;
+       private: PyObject *pFuncUpdate;
+     */
++
+   };
+   /// \}
+ }
+Index: server/Global.hh
+===================================================================
+--- server/Global.hh	(revision 7524)
++++ server/Global.hh	(working copy)
+@@ -88,4 +88,7 @@
+ 
+ #define GZ_DELETE(p) { if(p) { delete (p);  (p)=NULL; } }
+ 
++// Timing Debug
++//#define TIMING
++
+ #endif
+Index: server/Model.cc
+===================================================================
+--- server/Model.cc	(revision 7524)
++++ server/Model.cc	(working copy)
+@@ -46,7 +46,12 @@
+ #include "ControllerFactory.hh"
+ #include "IfaceFactory.hh"
+ #include "Model.hh"
++#include "Simulator.hh"
+ 
++#ifdef TIMING
++#include "Simulator.hh"// for timing
++#endif
++
+ using namespace gazebo;
+ 
+ uint Model::lightNumber = 0;
+@@ -68,6 +73,8 @@
+ 
+   this->rpyP = new ParamT<Quatern>("rpy", Quatern(1,0,0,0), 0);
+   this->rpyP->Callback( &Model::SetRotation, this);
++
++  this->threadP = new ParamT<bool>("model_thread",false,0);
+   Param::End();
+ 
+   this->parentBodyNameP = NULL;
+@@ -101,8 +108,14 @@
+   }
+   this->controllers.clear();
+ 
++  GZ_DELETE(this->xyzP);
++  GZ_DELETE(this->rpyP);
++
+   GZ_DELETE(this->parentBodyNameP);
+   GZ_DELETE(this->myBodyNameP);
++
++  GZ_DELETE(this->threadP);
++
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -118,6 +131,7 @@
+   this->canonicalBodyNameP->Load(node);
+   this->xyzP->Load(node);
+   this->rpyP->Load(node);
++  this->threadP->Load(node);
+ 
+   this->xmlNode = node;
+   this->type=node->GetName();
+@@ -127,7 +141,10 @@
+   if (this->type == "physical")
+     this->LoadPhysical(node);
+   else if (this->type == "renderable")
+-    this->LoadRenderable(node);
++  {
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      this->LoadRenderable(node);
++  }
+   else if (this->type != "empty")
+   {
+     gzthrow("Invalid model type[" + this->type + "]\n");
+@@ -172,8 +189,6 @@
+   // Record the model's initial pose (for reseting)
+   this->SetInitPose(pose);
+ 
+-  return 0;
+-
+   // Get the name of the python module
+   /*this->pName.reset(PyString_FromString(node->GetString("python","",0).c_str()));
+   //this->pName.reset(PyString_FromString("pioneer2dx"));
+@@ -193,6 +208,9 @@
+       this->pFuncUpdate = NULL;
+   }
+   */
++
++  return 0;
++
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -255,10 +273,11 @@
+   }
+   else
+   {
+-    if (!this->lightName.empty())
+-    {
+-      OgreCreator::SaveLight(p, this->lightName, stream);
+-    }
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      if (!this->lightName.empty())
++      {
++        OgreCreator::SaveLight(p, this->lightName, stream);
++      }
+   }
+ 
+   if (this->parentBodyNameP && this->myBodyNameP)
+@@ -316,6 +335,10 @@
+ 
+   Pose3d bodyPose, newPose, oldPose;
+ 
++#ifdef TIMING
++  double tmpT1 = Simulator::Instance()->GetWallTime();
++#endif
++
+   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
+   {
+     if (bodyIter->second)
+@@ -324,6 +347,11 @@
+     }
+   }
+ 
++#ifdef TIMING
++  double tmpT2 = Simulator::Instance()->GetWallTime();
++  std::cout << "      ALL Bodies DT (" << this->GetName() << ") (" << tmpT2-tmpT1 << ")" << std::endl;
++#endif
++
+   for (contIter=this->controllers.begin();
+        contIter!=this->controllers.end(); contIter++)
+   {
+@@ -332,6 +360,11 @@
+       contIter->second->Update();
+   }
+ 
++#ifdef TIMING
++  double tmpT3 = Simulator::Instance()->GetWallTime();
++  std::cout << "      ALL Controllers DT (" << this->GetName() << ") (" << tmpT3-tmpT2 << ")" << std::endl;
++#endif
++
+   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
+   {
+     jointIter->second->Update();
+@@ -350,9 +383,26 @@
+     this->rpyP->SetValue(this->pose.rot);
+   }
+ 
++#ifdef TIMING
++  double tmpT4 = Simulator::Instance()->GetWallTime();
++  std::cout << "      ALL Joints/canonical body (" << this->GetName() << ") DT (" << tmpT4-tmpT3 << ")" << std::endl;
++#endif
++
++
++#ifdef TIMING
++  int update_error = this->UpdateChild();
++  double tmpT5 = Simulator::Instance()->GetWallTime();
++  std::cout << "      ALL child (" << this->GetName() << ") update DT (" << tmpT5-tmpT4 << ")" << std::endl;
++  std::cout << "      Models::Update() (" << this->GetName() << ") Total DT (" << tmpT5-tmpT1 << ")" << std::endl;
++  return update_error;
++#else
+   return this->UpdateChild();
++#endif
++
++
+ }
+ 
++
+ ////////////////////////////////////////////////////////////////////////////////
+ // Finalize the model
+ int Model::Fini()
+@@ -730,10 +780,11 @@
+   body->SetPose(Pose3d());
+   this->bodies[body->GetName()] = body;
+ 
+-  if ((childNode = node->GetChild("light")))
+-  {
+-    this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
+-  }
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if ((childNode = node->GetChild("light")))
++    {
++      this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
++    }
+ 
+ }
+ 
+@@ -779,3 +830,11 @@
+   }
+ 
+ }
++
++////////////////////////////////////////////////////////////////////////////////
++// Load a physical model
++bool Model::IsThreaded()
++{
++  return this->threadP->GetValue();
++}
++
+Index: SConstruct
+===================================================================
+--- SConstruct	(revision 7524)
++++ SConstruct	(working copy)
+@@ -5,7 +5,7 @@
+ 
+ exec(open('build.py'))
+ 
+-PKG_CONFIG_VERSION = '0.23'
++PKG_CONFIG_VERSION = '0.21'
+ OGRE_VERSION = '= 1.4.9'
+ ODE_VERSION = '>= 0.10.1'
+ 
+@@ -21,20 +21,29 @@
+ opts.Add('destdir', 'The root directory to install into. Useful mainly for binary package building', '/')
+ opts.Add('mode','Defines how Gazebo will be built, options available: optimized, profile, debug','debug')
+ opts.Add('with_audio','Builds support for 3d sound. Options available: no, yes ', 'no')
++opts.Add('boost_lflags','boost link flags', '')
++opts.Add('boost_cflags','boost compile flags', '')
++opts.Add('intel_lflags','intel link flags', '')
++opts.Add('intel_cflags','intel compile flags', '')
+ 
+ #
+ # 3rd party packages
+ #
+ parseConfigs=['pkg-config --cflags --libs OGRE',
++              'pkg-config --cflags --libs freeimage', 
++              'ode-config --cflags --libs', 
+               'xml2-config --cflags --libs', 
+-      	      'ode-config --cflags --libs',
+               'fltk-config --cflags --libs --ldflags --use-gl --use-images',
+-              'pkg-config --cflags --libs xft'
++              'pkg-config --cflags --libs xft',
++              'pkg-config --cflags --libs opencv'
+               ]
+ 
+ #
+ # setup the build environment
+ #
++#  CC = '/opt/intel/cc/10.1.008/bin/icc',
++#  CXX = '/opt/intel/cc/10.1.008/bin/icpc',
++#  LD = '/opt/intel/cc/10.1.008/bin/xild',
+ env = Environment (
+   CC = 'g++',
+ 
+@@ -61,7 +70,7 @@
+   LIBPATH=Split('#libgazebo'),
+     
+   #LIBS=Split('gazebo boost_python')
+-  LIBS=Split('gazebo boost_signals'),
++  LIBS=Split('gazebo'),
+   LINKFLAGS=Split('-export-dynamic'),
+ 
+   TARFLAGS = '-c -z',
+@@ -70,6 +79,19 @@
+   options=opts
+ )
+ 
++env['CCFLAGS']   +=   Split(env['boost_cflags'])
++env['LINKFLAGS'] +=   Split(env['boost_lflags'])
++
++env['CCFLAGS']   +=   Split(env['intel_cflags'])
++env['LINKFLAGS'] +=   Split(env['intel_lflags'])
++
++# Do not use boost_signals if boost_lflags are specified
++if not env['boost_lflags']:
++  print "Using boost_signals"
++  env['LIBS'] += ['boost_signals']
++else:
++  print "Using boost_lflags:",env['boost_lflags']
++
+ Help(opts.GenerateHelpText(env))
+ 
+ if env['destdir'] != '/':
+@@ -86,7 +108,7 @@
+ rcconfig = env.RCConfig(target='gazeborc', source=Value(install_prefix))
+ 
+ # DEFAULT list of subdirectories to build
+-subdirs = ['libgazebo','server', 'player']
++subdirs = ['libgazebo','server']
+ 
+ # Set the compile mode
+ if env['mode'] == 'debug':
+@@ -154,9 +176,10 @@
+         Exit(1)
+ 
+ # Check for trimesh support in ODE
+-if not conf.CheckODELib():
+-  print '  Error: ODE not compiled with trimesh support.'
+-  Exit(1)
++if not env.GetOption('clean'):
++  if not conf.CheckODELib():
++    print '  Error: ODE not compiled with trimesh support.'
++    Exit(1)
+ 
+ env = conf.Finish()
+ 
