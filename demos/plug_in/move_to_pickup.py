@@ -61,17 +61,21 @@ def move(positions):
 
 def pickup():
   pub = rospy.Publisher('/cartesian_pose/command', PoseStamped)
+  sleep(2)
   m = PoseStamped()
-  m.header.frame_id = 'torso_lift_link'
+  m.header.frame_id = 'base_link'
   m.header.stamp = rospy.get_rostime()
-  m.pose.position.x = .25#plug_location.x
-  m.pose.position.y = .25#plug_location.y
-  m.pose.position.z = 0.45
+  m.pose.position.x = plug_location.x-.04 #0.19
+  m.pose.position.y = plug_location.y+.02 #0.04
+  m.pose.position.z = 0.26
   m.pose.orientation.x = 0.57
   m.pose.orientation.y = 0.65
   m.pose.orientation.z = -0.30
   m.pose.orientation.w = 0.38
-  pub.publish(m)
+  print "sending pickup command"
+  for i in range (0,10):
+    print "sending"
+    pub.publish(m)
   
 
 def set_params():
@@ -86,24 +90,24 @@ def set_params():
   rospy.set_param("right_arm/trajectory_controller/r_wrist_flex_joint/goal_reached_threshold", 0.1)
   rospy.set_param("right_arm/trajectory_controller/r_wrist_roll_joint/goal_reached_threshold", 0.1)  
   
-  rospy.set_param("cartesian_pose/root_name", "torso_lift_link")
-  rospy.set_param("cartesian_pose/tip_name", "r_gripper_tool_frame")
-  rospy.set_param("cartesian_pose/p","20.0")
-  rospy.set_param("cartesian_pose/i","0.1")
-  rospy.set_param("cartesian_pose/d","0.0")
-  rospy.set_param("cartesian_pose/i_clamp","0.5")
+  rospy.set_param("cartesian_pose/root_name", 'torso_lift_link')
+  rospy.set_param("cartesian_pose/tip_name", 'r_gripper_tool_frame')
+  rospy.set_param("cartesian_pose/p",16.0)
+  rospy.set_param("cartesian_pose/i",4.0)
+  rospy.set_param("cartesian_pose/d",0.0)
+  rospy.set_param("cartesian_pose/i_clamp",3.0)
 
 
-  rospy.set_param("cartesian_pose/twist/ff_trans","20.0")
-  rospy.set_param("cartesian_pose/twist/ff_rot","5.0")
-  rospy.set_param("cartesian_pose/twist/fb_trans/p","20.0")
-  rospy.set_param("cartesian_pose/twist/fb_trans/i","0.5")
-  rospy.set_param("cartesian_pose/twist/fb_trans/d","0.0" )
-  rospy.set_param("cartesian_pose/twist/fb_trans/i_clamp","1.0")
-  rospy.set_param("cartesian_pose/twist/fb_rot/p","1.5")
-  rospy.set_param("cartesian_pose/twist/fb_rot/i","0.1")
-  rospy.set_param("cartesian_pose/twist/fb_rot/d","0.0")
-  rospy.set_param("cartesian_pose/twist/fb_rot/i_clamp","0.2")
+  rospy.set_param("cartesian_pose/twist/ff_trans", 20.0)
+  rospy.set_param("cartesian_pose/twist/ff_rot", 5.0)
+  rospy.set_param("cartesian_pose/twist/fb_trans/p", 20.0)
+  rospy.set_param("cartesian_pose/twist/fb_trans/i", 0.5)
+  rospy.set_param("cartesian_pose/twist/fb_trans/d", 0.0 )
+  rospy.set_param("cartesian_pose/twist/fb_trans/i_clamp", 1.0)
+  rospy.set_param("cartesian_pose/twist/fb_rot/p", 1.5 )
+  rospy.set_param("cartesian_pose/twist/fb_rot/i", 0.1)
+  rospy.set_param("cartesian_pose/twist/fb_rot/d", 0.0)
+  rospy.set_param("cartesian_pose/twist/fb_rot/i_clamp", 0.2)
   
 if __name__ == '__main__':
   
@@ -145,27 +149,29 @@ if __name__ == '__main__':
     
     print "collecting data" 
     rospy.Subscriber("/plug_onbase_detector_node/plug_stow_info", PlugStow, get_location)
-    
-    #while(plug_not_found):
-    #  print "plug not found\n"
-    #  sleep(.5)
+  
+  #  while(plug_not_found):
+  #    print "plug not found\n"
+  #    sleep(.5)
 
     print "picking up plug"
-    positions_reach = [[-1.94218984843, 1.11597858279, -0.972790862418, -2.05406188637, 1.13866187982, 1.98224613965, 0.138829401448],
-                 [-0.588178005201, 1.02579336793, -1.83716985184, -2.05579901252, 2.47973068494, 1.29075854416, 0.0628192819417]]  
+    positions_reach =[[-1.95437620372, 1.1029499495, -1.18591881732, -2.05724661765, 1.04622224946, 1.89800972255, 0.504874075412],
+[-0.955012169549, 1.18865128408, -2.13192469091, -2.02395169966, 2.59542484058, 0.715958820011, 2.8143286509]]  
                  
     traj_id2 = move(positions_reach)
     resp2 = is_traj_done(traj_id2)                
     while(resp2.done==0):
       resp2=is_traj_done(traj_id2)
       sleep(.5)
+    sys.exit(0)
 
-    sleep(5)
+    sleep(1)
     #now pick up plug  
     mechanism.kill_controller('right_arm/trajectory_controller')
     mechanism.spawn_controller(xml_for_pose.read())
+    controllers.append('cartesian_pose')
     print "picking up plug"
-    #pickup()
+    pickup()
     
     rospy.spin()
     

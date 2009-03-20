@@ -4,6 +4,12 @@
   <license>BSD</license>
   <review status="na" notes=""/>
 
+
+  <depend package="pr2_mechanism_controllers" />
+  <depend package="mechanism_control" />
+  <depend package="mechanism_bringup" />
+
+
   <depend package="robot_mechanism_controllers" />
   <depend package="spacenav_node" />
   <depend package="pr2_etherCAT" />
