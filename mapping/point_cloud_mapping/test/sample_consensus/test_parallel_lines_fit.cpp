@@ -48,6 +48,7 @@
 
 using namespace sample_consensus;
 
+/*
 TEST(LMedS, SACModelParallelLines)
 {
   robot_msgs::PointCloud points;
@@ -115,6 +116,7 @@ TEST(LMedS, SACModelParallelLines)
   delete sac;
   delete model;
 }
+*/
 
 TEST (RANSAC, SACModelParallelLines)
 {
