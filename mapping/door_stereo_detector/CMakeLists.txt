@@ -8,7 +8,6 @@ gensrv()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable (door_stereo_node src/door_stereo_detector.cpp)
-target_link_libraries (door_stereo_node)
 
 # check for OpenMP
 include(CheckIncludeFile)

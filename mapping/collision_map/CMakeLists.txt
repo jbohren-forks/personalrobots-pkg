@@ -78,7 +78,4 @@ endif()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(collision_map_node src/collision_map.cpp)
-target_link_libraries(collision_map_node)
-
 rospack_add_executable(collision_map_buffer_node src/collision_map_buffer.cpp)
-target_link_libraries(collision_map_buffer_node)

@@ -7,10 +7,7 @@ rospack(planar_patch_map)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(planar_patch_map_node src/planar_patch_map.cpp)
-target_link_libraries(planar_patch_map_node)
-
 rospack_add_executable(planar_patch_map_omp_node src/planar_patch_map_omp.cpp)
-target_link_libraries(planar_patch_map_omp_node)
 
 # check for OpenMP
 include(CheckIncludeFile)

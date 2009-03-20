@@ -8,7 +8,6 @@ gensrv()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable (door_tracker_node src/door_tracker.cpp)
-target_link_libraries (door_tracker_node)
 
 # check for OpenMP
 include(CheckIncludeFile)

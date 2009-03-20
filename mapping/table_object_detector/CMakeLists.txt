@@ -7,7 +7,6 @@ rospack(table_object_detector)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(table_object_detector_node src/table_object_detector.cpp)
-target_link_libraries(table_object_detector_node)
 
 # check for OpenMP
 include(CheckIncludeFile)

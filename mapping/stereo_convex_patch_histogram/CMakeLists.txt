@@ -7,4 +7,3 @@ rospack(stereo_convex_patch_histogram)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(convex_patch_histogram_node src/convex_patch_histogram.cpp)
-target_link_libraries(convex_patch_histogram_node)
