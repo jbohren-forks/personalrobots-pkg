@@ -157,7 +157,8 @@
     <joint name="${name}_optical_fixed_joint" type="fixed" />
     <sensor name="${name}_optical_frame" type="camera">
       <parent name="${name}_link" />
-      <origin xyz="0 0.045 .0305" rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
+      <origin xyz="${cal_stereo_x}            ${0.045+cal_stereo_y}   ${.0305+cal_stereo_z}"
+              rpy="${-M_PI/2+cal_stereo_roll} ${0.0+cal_stereo_pitch} ${-M_PI/2+cal_stereo_yaw}" />
       <joint name="${name}_optical_fixed_joint" />
 
       <inertial>
@@ -249,7 +250,7 @@
              effort="2.645"
              velocity="100" k_velocity="1.5"
              safety_length_min="0.15" safety_length_max="0.15" k_position="100" />
-      <calibration reference_position="-2.79" values="0 0" />
+      <calibration reference_position="${-2.79+cal_head_pan_flag}" values="0 0" />
       <joint_properties damping="1.0" />
     </joint>
 
@@ -299,7 +300,7 @@
       <limit min="-0.55" max="1.047" effort="12.21"
              velocity="100" k_velocity="1.5"
              safety_length_min="0.02" safety_length_max="0.1" k_position="100" />
-      <calibration reference_position="-0.195" values="0 0" />
+      <calibration reference_position="${-0.195+cal_head_tilt_flag}" values="0 0" />
       <joint_properties damping="1.0" />
     </joint>
 
@@ -382,9 +383,6 @@
       </collision>
     </link>
     
-    <stereo_camera name="stereo" parent="${name}_plate_frame">
-      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-    </stereo_camera>
   </macro>
 
   <!--                    Calibration                            -->

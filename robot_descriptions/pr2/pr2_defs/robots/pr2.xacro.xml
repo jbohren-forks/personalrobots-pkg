@@ -1,22 +1,24 @@
 <?xml version="1.0"?>
 <robot name="pr2">
-
+  
+  <!-- Include file with calibration parameters -->
+  <include filename="$(find pr2_defs)/calibration/default_cal.xml" />
+  
   <!-- declare the path where all models/textures/materials are stored -->
   <resource location="$(find pr2_defs)/meshes"/>
-
+  
   <include filename="$(find pr2_defs)/defs/arm_defs.xml" />
   <include filename="$(find pr2_defs)/defs/gripper_defs.xml" />
   <include filename="$(find pr2_defs)/defs/head_defs.xml" />
   <include filename="$(find pr2_defs)/defs/body_defs.xml" />
   <include filename="$(find pr2_defs)/defs/base_defs.xml" />
   <include filename="$(find pr2_defs)/defs/ptz_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/prosilica_defs.xml" />
   <include filename="$(find pr2_defs)/defs/gazebo_defs.xml" />
-
 
   <pr2_base name="base" >
     <origin xyz="0 0 0.051" rpy="0 0 0" /> <!-- 5.1cm is the height of the base when wheels contact ground -->
   </pr2_base>
-
 
   <pr2_torso name="torso_lift" parent="base_link">
     <origin xyz="-0.05 0 0.739675" rpy="0 0 0" />
@@ -27,6 +29,16 @@
     <origin xyz="0 0 0.3915" rpy="0 0 0" />
   </pr2_head>
 
+  <!-- Proscilica Camera -->
+  <prosilica_cam name="high_def" parent="head_plate_frame">
+    <origin xyz="0 0.0275 0.025" rpy="0 0 0" />        
+  </prosilica_cam>
+
+  <!-- Stereocam -->
+  <stereo_camera name="stereo" parent="head_plate_frame">
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+  </stereo_camera>
+    
   <pr2_tilting_laser name="laser_tilt" parent="torso_lift_link">
     <!--origin xyz="0.1 0 0.19525" rpy="0 0 0" /-->
     <origin xyz="0.1 0 0.235" rpy="0 0 0" />
@@ -56,71 +68,5 @@
   <!-- Kinematic chains -->
   <chain root="torso_lift_link" tip="l_wrist_roll_link" />
   <chain root="torso_lift_link" tip="r_wrist_roll_link" />
-
-  <!-- Proscillica Camera -->
-  <joint name="high_def_fixed_joint" type="fixed" />
-  <link name="high_def_frame">
-    <parent name="head_plate_frame" />
-    <joint name="high_def_fixed_joint" />
-    <origin xyz="0 0.0275 0.025" rpy="0 0 0" />
-
-    <inertial>
-      <mass value="0.01" />
-      <com xyz="0 0 0" />
-      <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
-               iyy="0.001"  iyz="0.0"
-               izz="0.001" />
-    </inertial>
-
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Blue" />
-      </map>
-      <geometry name="high_def_visual">
-        <mesh scale="0.01 0.01 0.01" />
-      </geometry>
-    </visual>
-
-    <collision>
-      <origin xyz="0 0 0" />
-      <geometry name="high_def_collision">
-        <box size="0.01 0.01 0.01" />
-      </geometry>
-    </collision>
-  </link>
-
-  <joint name="high_def_optical_fixed_joint" type="fixed" />
-  <link name="high_def_optical_frame">
-    <parent name="high_def_frame" />
-    <joint name="high_def_optical_fixed_joint" />
-    <origin xyz="0.0 0.0 0.0" rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
-
-    <inertial>
-      <mass value="0.01" />
-      <com xyz="0 0 0" />
-      <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
-               iyy="0.001"  iyz="0.0"
-               izz="0.001" />
-    </inertial>
-
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Blue" />
-      </map>
-      <geometry name="high_def_optical_visual">
-        <mesh scale="0.01 0.01 0.01" />
-      </geometry>
-    </visual>
-
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
-      <geometry name="high_def_optical_collision">
-        <box size="0.01 0.01 0.01" />
-      </geometry>
-    </collision>
-  </link>
-
 
 </robot>
