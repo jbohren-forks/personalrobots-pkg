@@ -76,6 +76,8 @@ class TriggerHandleDetection
       req_doorsdetect.door = my_door_;
       ros::service::call ("doors_detector", req_doorsdetect, res_doorsdetect);
       
+      if (res_doorsdetect.doors.size () < 1)
+        return;
       // A list of doors was detected. Start searching for a handle in the door with the largest weight.
       my_door_ = res_doorsdetect.doors[0];
       my_door_.header.frame_id = "base_footprint";
