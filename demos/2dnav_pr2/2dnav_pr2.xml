@@ -123,7 +123,7 @@
       <param name="trajectory_rollout/max_vel_th" value="1.0" />
       <param name="trajectory_rollout/min_vel_th" value="-1.0" />
       <param name="trajectory_rollout/min_in_place_vel_th" value="0.4" />
-      <param name="trajectory_rollout/freespace_model" value="true" />
+      <param name="trajectory_rollout/world_model" value="freespace" />
       <param name="trajectory_rollout/dwa" value="false" />
       <param name="trajectory_rollout/heading_scoring" value="false" />
       <param name="trajectory_rollout/heading_scoring_timestep" value="0.8" />
@@ -138,6 +138,7 @@
 
       <!-- Setting these parameters to 0.0 disables the watchdog on them. For stage this is required since we
      are not getting any data -->
+      <param name="costmap_2d/tilt_laser_keepalive" value="2.0" />
       <param name="costmap_2d/tilt_laser_update_rate" value="2.0"/>
       <param name="costmap_2d/low_obstacle_update_rate" value="0.2"/>
       <param name="costmap_2d/stereo_update_rate" value="0.0"/>

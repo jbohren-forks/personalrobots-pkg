@@ -66,6 +66,7 @@ def parse_dir(directory):
   tot_time = 0.0
   tot_rads = 0.0
   files = glob.glob(directory + "*.bag")
+  print len(files)
   for file in files:
     print file
     stats = parse(file)
