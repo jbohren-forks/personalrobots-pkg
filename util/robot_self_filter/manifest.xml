@@ -7,7 +7,6 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/robot_self_filter</url>
   <depend package="robot_msgs"/>
-  <depend package="laser_scan"/>
   <depend package="tf"/>
 
   <!-- openrave is necessary for getting the geometry of the links of the robot.

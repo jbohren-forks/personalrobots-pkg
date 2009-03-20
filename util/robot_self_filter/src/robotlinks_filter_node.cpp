@@ -32,6 +32,7 @@
 #include <ros/node.h>
 #include <robot_msgs/PointCloud.h>
 #include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
 
 #include <openrave-core.h>
 
@@ -96,7 +97,7 @@ public:
     };
 
     RobotLinksFilter(const string& robotname, dReal convexpadding, bool bAccurateTiming) : _robotname(robotname), _convexpadding(convexpadding), _bAccurateTiming(bAccurateTiming)
-    {
+            {
         if( InitRobotLinksFromOpenRAVE(robotname) ) {
             double tf_cache_time_secs;
             s_pmasternode->param("~tf_cache_time_secs", tf_cache_time_secs, 10.0);
@@ -115,11 +116,19 @@ public:
             extrap_limit.fromSec(tf_extrap_limit_secs);
             _tf->setExtrapolationLimit(extrap_limit);
             ROS_INFO("RobotLinksFilter: tf extrapolation Limit: %f Seconds", tf_extrap_limit_secs);
+            _pointcloudnotifier = 
+                    new tf::MessageNotifier<robot_msgs::PointCloud>
+                    (_tf.get(), ros::Node::instance(),  
+                     boost::bind(&RobotLinksFilter::PointCloudCallback, 
+                                 this, _1), 
+                     "tilt_laser_cloud_filtered", "base_link",
+                     50);
+            ROS_ASSERT(_pointcloudnotifier);
         }
         else
             ROS_ERROR("failed to init robot %s", robotname.c_str());
 
-        s_pmasternode->subscribe("tilt_laser_cloud_filtered", _pointcloudin,  &RobotLinksFilter::PointCloudCallback, this, 2);
+        //s_pmasternode->subscribe("tilt_laser_cloud_filtered", _pointcloudin,  &RobotLinksFilter::PointCloudCallback, this, 2);
         s_pmasternode->advertise<robot_msgs::PointCloud> ("robotlinks_cloud_filtered", 10);
     }
     virtual ~RobotLinksFilter()
@@ -128,6 +137,9 @@ public:
             s_pmasternode->unsubscribe("tilt_laser_cloud_filtered");
             s_pmasternode->unadvertise("robotlinks_cloud_filtered");
         }
+
+        if( _pointcloudnotifier)
+          delete _pointcloudnotifier;
     }
 
     bool InitRobotLinksFromOpenRAVE(const string& robotname)
@@ -189,33 +201,33 @@ public:
 
 private:
 
-    void PointCloudCallback()
+    void PointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& _pointcloudin)
     {
         if( _vLinkHulls.size() == 0 || !_tf) {
             // just pass the data
-            s_pmasternode->publish("robotlinks_cloud_filtered",_pointcloudin);
+            s_pmasternode->publish("robotlinks_cloud_filtered",*_pointcloudin);
             return;
         }
 
-        if( _pointcloudin.pts.size() == 0 )
+        if( _pointcloudin->pts.size() == 0 )
             return;
 
         ros::Time stampprocess = ros::Time::now();
 
         if( _bAccurateTiming )
-            PruneWithAccurateTiming(_pointcloudin, _vlaserpoints);
+            PruneWithAccurateTiming(*_pointcloudin, _vlaserpoints);
         else
-            PruneWithSimpleTiming(_pointcloudin, _vlaserpoints);
+            PruneWithSimpleTiming(*_pointcloudin, _vlaserpoints);
 
         int totalpoints = 0;
         FOREACH(itpoint, _vlaserpoints)
             totalpoints += itpoint->inside==0;
 
-        _pointcloudout.header = _pointcloudin.header;
+        _pointcloudout.header = _pointcloudin->header;
         _pointcloudout.set_pts_size(totalpoints);
-        _pointcloudout.set_chan_size(_pointcloudin.chan.size());
-        for(int ichan = 0; ichan < (int)_pointcloudin.chan.size(); ++ichan) {
-            _pointcloudout.chan[ichan].name = _pointcloudin.chan[ichan].name;
+        _pointcloudout.set_chan_size(_pointcloudin->chan.size());
+        for(int ichan = 0; ichan < (int)_pointcloudin->chan.size(); ++ichan) {
+            _pointcloudout.chan[ichan].name = _pointcloudin->chan[ichan].name;
             _pointcloudout.chan[ichan].set_vals_size(totalpoints);
         }
 
@@ -223,9 +235,9 @@ private:
             if( _vlaserpoints[oldindex].inside )
                 continue;
 
-            _pointcloudout.pts[newindex] = _pointcloudin.pts[oldindex];
-            for(int ichan = 0; ichan < (int)_pointcloudin.chan.size(); ++ichan)
-                _pointcloudout.chan[ichan].vals[newindex] = _pointcloudin.chan[ichan].vals[oldindex];
+            _pointcloudout.pts[newindex] = _pointcloudin->pts[oldindex];
+            for(int ichan = 0; ichan < (int)_pointcloudin->chan.size(); ++ichan)
+                _pointcloudout.chan[ichan].vals[newindex] = _pointcloudin->chan[ichan].vals[oldindex];
             ++newindex;
         }
 
@@ -422,11 +434,13 @@ private:
 
     vector<LINK> _vLinkHulls;
     boost::shared_ptr<tf::TransformListener> _tf;
-    robot_msgs::PointCloud _pointcloudin, _pointcloudout;
+    //robot_msgs::PointCloud _pointcloudin, _pointcloudout;
+    robot_msgs::PointCloud _pointcloudout;
     vector<LASERPOINT> _vlaserpoints;
     string _robotname;
     dReal _convexpadding;
     bool _bAccurateTiming; ///< if true, will interpolate the convex hulls for every time stamp
+    tf::MessageNotifier<robot_msgs::PointCloud>* _pointcloudnotifier;
 };
 
 int main(int argc, char ** argv)
