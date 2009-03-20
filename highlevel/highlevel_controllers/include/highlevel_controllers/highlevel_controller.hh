@@ -142,7 +142,7 @@ protected:
     double controller_frequency(10);
     ros::Node::instance()->param("~move_base/controller_frequency", controller_frequency, controller_frequency);
     ROS_ASSERT(controller_frequency > 0);
-    ROS_INFO("FREQ: %.4f", controller_frequency);
+    ROS_DEBUG("FREQ: %.4f", controller_frequency);
     controllerCycleTime_ = 1/controller_frequency;
 
     // Obtain the planner frequency for this node. A negative value means run as fast as possible. A zero value means run
@@ -309,9 +309,9 @@ private:
   
 	    ros::Duration elapsed_time = ros::Time::now() - lastPlan_;
 	    if ((elapsed_time > timeout_) && timeout_.toSec() != 0.0){
-	      ROS_INFO("Last current value at %f seconds:", curr.toSec());
-	      ROS_INFO("Last plan at %f seconds:", lastPlan_.toSec());
-	      ROS_INFO("Elapsed time is %f seconds:", elapsed_time.toSec());
+	      ROS_DEBUG("Last current value at %f seconds:", curr.toSec());
+	      ROS_DEBUG("Last plan at %f seconds:", lastPlan_.toSec());
+	      ROS_DEBUG("Elapsed time is %f seconds:", elapsed_time.toSec());
 	      abort();
 	    }
 
