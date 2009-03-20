@@ -3,6 +3,26 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(test_executive_trex_pr2)
 
 
+find_ros_package(executive_trex_pr2)
+include(${executive_trex_pr2_PACKAGE_PATH}/NDDL.cmake)
+
+
+
+rospack_add_nddl("wpc.0/pr2.exec.nddl")
+rospack_add_nddl("wpc.1/pr2.exec.nddl")
+rospack_add_nddl("wpc.2/pr2.exec.nddl")
+rospack_add_nddl("wpc.3/pr2.exec.nddl")
+rospack_add_nddl("wpc_gazebo.0/pr2.exec.nddl")
+rospack_add_nddl("wpc_gazebo.1/pr2.exec.nddl")
+rospack_add_nddl("miles.0/pr2.exec.nddl")
+rospack_add_nddl("miles.2/pr2.exec.nddl")
+rospack_add_nddl("miles.4/pr2.exec.nddl")
+rospack_add_nddl("arm.0/pr2.exec.nddl")
+rospack_add_nddl("arm.1/pr2.exec.nddl")
+rospack_add_nddl("arm.2/pr2.exec.nddl")
+rospack_add_nddl("nav.0/pr2.exec.nddl")
+
+
 ################################################################################
 # This whole section could be included. It is used for building jam targets
 ################################################################################
@@ -26,10 +46,10 @@ if(__rospack_err_ignore)
   message(FATAL_ERROR, "Failed to invoke rospack to find trex")
 endif(__rospack_err_ignore)
 
-execute_process(
-    COMMAND jam ${ROS_PARALLEL_JOBS} -sTREX_PKG_ROOT=${trex_dir} -sEXEC_HOME=${exec_dir} exec_inputs
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    RESULT_VARIABLE JAM_RET_VAR)
+#execute_process(
+#    COMMAND jam ${ROS_PARALLEL_JOBS} -sTREX_PKG_ROOT=${trex_dir} -sEXEC_HOME=${exec_dir} exec_inputs
+#    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+#    RESULT_VARIABLE JAM_RET_VAR)
  
 if (JAM_RET_VAR)
    message(FATAL_ERROR "Jam failed with error code: " ${JAM_RET_VAR} ". If jam is not installed, you will need it. Try 'apt-get install jam'.")

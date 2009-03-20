@@ -9,8 +9,39 @@ genmsg()
 rospack_add_boost_directories()
 
 #Will replace jam...
-#include(NDDL.cmake)
-#rospack_add_nddl("arm.0/pr2.exec.nddl")
+include(NDDL.cmake)
+rospack_add_nddl("test/pr2.test.nddl")
+rospack_add_nddl("wpc_gazebo.0/pr2.exec.nddl")
+rospack_add_nddl("wpc_gazebo.1/pr2.exec.nddl")
+rospack_add_nddl("nav.0/pr2.exec.nddl")
+rospack_add_nddl("arm.0/pr2.exec.nddl")
+rospack_add_nddl("arm.1/pr2.exec.nddl")
+rospack_add_nddl("arm.2/pr2.exec.nddl")
+rospack_add_nddl("miles.1/pr2.exec.nddl")
+rospack_add_nddl("miles.2/pr2.exec.nddl")
+rospack_add_nddl("miles.3/pr2.exec.nddl")
+rospack_add_nddl("miles_gazebo.3/pr2.exec.nddl")
+rospack_add_nddl("miles.4/pr2.exec.nddl")
+rospack_add_nddl("sim.0/pr2.exec.nddl")
+rospack_add_nddl("sim.0/pr2.sim.nddl")
+rospack_add_nddl("sim.1/pr2.exec.nddl")
+rospack_add_nddl("sim.1/pr2.sim.nddl")
+rospack_add_nddl("master.0/pr2.master.nddl")
+rospack_add_nddl("master.0/pr2.doorman.nddl")
+rospack_add_nddl("master.0/pr2.driver.nddl")
+rospack_add_nddl("master.0/pr2.recharger.nddl")
+rospack_add_nddl("master.0/pr2.safety.nddl")
+rospack_add_nddl("master.0/pr2.rcs.sim.nddl")
+rospack_add_nddl("doorman.0/pr2.master.nddl")
+rospack_add_nddl("doorman.0/pr2.doorman.nddl")
+rospack_add_nddl("doorman.0/pr2.driver.nddl")
+rospack_add_nddl("doorman.0/pr2.recharger.nddl")
+rospack_add_nddl("doorman.0/pr2.safety.nddl")
+rospack_add_nddl("doorman.0/pr2.rcs.sim.nddl")
+rospack_add_nddl("plugs.0/pr2.recharger.nddl")
+rospack_add_nddl("plugs.0/pr2.safety.nddl")
+rospack_add_nddl("plugs.0/pr2.rcs.sim.nddl")
+
 #Add other files here once it starts working.
 
 
@@ -38,10 +69,10 @@ if(__rospack_err_ignore)
   message(FATAL_ERROR "Failed to invoke rospack to find trex")
 endif(__rospack_err_ignore)
 
-execute_process(
-    COMMAND jam ${ROS_PARALLEL_JOBS} -sTREX_PKG_ROOT=${trex_dir} -sEXEC_HOME=${exec_dir} exec_inputs
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    RESULT_VARIABLE JAM_RET_VAR)
+#execute_process(
+#    COMMAND jam ${ROS_PARALLEL_JOBS} -sTREX_PKG_ROOT=${trex_dir} -sEXEC_HOME=${exec_dir} exec_inputs
+#    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+#    RESULT_VARIABLE JAM_RET_VAR)
  
 if (JAM_RET_VAR)
    message(FATAL_ERROR "Jam failed with error code: " ${JAM_RET_VAR} ". If jam is not installed, you will need it. Try 'apt-get install jam'.")

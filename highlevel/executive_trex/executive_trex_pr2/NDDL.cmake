@@ -2,32 +2,28 @@
 
 
 #Set the prefix
-_rospack_invoke(${PROJECT_NAME} ${_prefix} ROSPACK_NDDL_PATH export --lang=nddl --attrib=iflags)
-set(ROSPACK_NDDL_PATH ${${_prefix}_ROSPACK_NDDL_PATH})
+if(NOT ROSPACK_NDDL_PATH)
+    _rospack_invoke(${PROJECT_NAME} ${_prefix} ROSPACK_NDDL_PATH export --lang=nddl --attrib=iflags)
+    set(ROSPACK_NDDL_PATH ${${_prefix}_ROSPACK_NDDL_PATH})
+endif(NOT ROSPACK_NDDL_PATH)
 
+#Adds an nddl directory. You should probably look at using the manifest if you are doing this.
 macro(rospack_add_nddl_directory dir)
-    if("${filein}" MATCHES "^/")
+    if("${filein}" MATCHES "[ ]^/")
         set(ROSPACK_NDDL_PATH -I${dir} " " ${ROSPACK_NDDL_PATH})
-    else("${filein}" MATCHES "^/")
+    else("${filein}" MATCHES "[ ]^/")
         set(ROSPACK_NDDL_PATH -I${CMAKE_CURRENT_SOURCE_DIR}/${dir} " " ${ROSPACK_NDDL_PATH})
-    endif("${filein}" MATCHES "^/")
+    endif("${filein}" MATCHES "[ ]^/")
 endmacro(rospack_add_nddl_directory)
 
 
 #Get the dependencies of a nddl file.
-macro(nddl_depends filein)
+macro(nddl_depends file)
     find_ros_package(executive_trex_pr2)
 
-    #If it is absolute, do nothing. Otherwise, add the current source dir.
-    if("${filein}" MATCHES "^/")
-        set(file ${filein})
-    else("${filein}" MATCHES "^/")
-        set(file ${CMAKE_CURRENT_SOURCE_DIR}/${filein})
-    endif("${filein}" MATCHES "^/")
-    
     #Execute the script to get dependencies.
     execute_process(
-        COMMAND ${executive_trex_pr2_PACKAGE_PATH}/bin/nddl_depends.py " " ${file} " " ${ROSPACK_NDDL_PATH}
+        COMMAND ${executive_trex_pr2_PACKAGE_PATH}/bin/nddl_depends.py "-S${CMAKE_CURRENT_SOURCE_DIR}" " " ${file} " " ${ROSPACK_NDDL_PATH}
 	ERROR_VARIABLE nddl_depends_error
         RESULT_VARIABLE nddl_depends_failed
 	OUTPUT_VARIABLE nddl_files
@@ -40,13 +36,26 @@ macro(nddl_depends filein)
        message("STDERR:\n" ${nddl_depends_error})
        message(ARGS: ${executive_trex_pr2_PACKAGE_PATH}/bin/nddl_depends.py " " ${file} " " ${ROSPACK_NDDL_PATH})
        message("end")
-       message(FATAL_ERROR "Failed to get NDDL deps")
+       message(FATAL_ERROR "Failed to get NDDL deps for ${file}")
     endif(nddl_depends_failed)
+    #message(${file} "\n" ${nddl_files} "\n")
 endmacro(nddl_depends)
+
+
+if(NOT NDDL_FILES_CREATED)
+    set(NDDL_FILES_CREATED "YES")
+    add_custom_target(NDDL_FILES ALL)
+endif(NOT NDDL_FILES_CREATED)
+
+
 
 #Add an nddl file to the build
 macro(rospack_add_nddl file)
+
+    #Get the dependecies of the NDDL
     nddl_depends(${file})
+
+    #Get the NDDL compilier's package.
     find_ros_package(trex)
     
     #Write nddl cfg.
@@ -59,57 +68,27 @@ macro(rospack_add_nddl file)
 	       "</configuration>\n")
 
 
-
+    #Convert to a list for cmake
     string(REPLACE "\n" ";" nddl_deps ${nddl_files})
 
-    #Iterate over the dependencies of this file, adding each.
-    foreach(sfile ${nddl_deps})
-        #message(${sfile})
-	
-	#Get the dependencies of this file. Note that there is no way to have a dependency here that is not in nddl_deps
-        nddl_depends(${sfile})
-
-	#Replace the newlines with ; for cmake, and add "xml" to the end of every file name.
-	set(nddl_files_pure ${nddl_files})
-
-	if(nddl_files)
-	    string(REPLACE "${sfile}\n" "" nddl_files ${nddl_files})
-	endif(nddl_files)
-	if(nddl_files)
-	    string(REPLACE "${sfile}" "" nddl_files ${nddl_files})
-	endif(nddl_files)
-	if(nddl_files)
-            string(REPLACE "\n" ".xml;" nddl_files ${nddl_files})
-	endif(nddl_files)
-	if(nddl_files)
-            set(nddl_files "${nddl_files}.xml")
-	endif(nddl_files)
-
-	#foreach(dfile ${nddl_files})
-	#    message("\t"${dfile})
-	#endforeach(dfile)
+    #Name the XML
+    string(REPLACE ".nddl" ".xml" nddl_dependency_xml ${file})
 
 
-        string(REPLACE "\n" ";" nddl_files_pure ${nddl_files_pure})
-        set(nddl_files "${nddl_files};${nddl_files_pure}")
+    #Run the parser.
+    add_custom_command(OUTPUT ${nddl_dependency_xml}
+                       COMMAND java -jar ${trex_PACKAGE_PATH}/PLASMA/build/lib/nddl.jar --NddlParser -C "${CMAKE_CURRENT_SOURCE_DIR}" --config "temp_nddl_gen.cfg" ${file}
+	               WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                       DEPENDS ${nddl_deps})
 
-	#Run the NDDL parse.
-        add_custom_command(OUTPUT ${sfile}.xml
-		          COMMAND pwd
-			  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                          COMMAND java -jar ${trex_PACKAGE_PATH}/PLASMA/build/lib/nddl.jar --NddlParser -C "${CMAKE_CURRENT_SOURCE_DIR}" --config "temp_nddl_gen.cfg" ${sfile}
-			  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                          DEPENDS ${nddl_files})
 
-	#Create the target. Need to remove and \n or / in its name.
-	string(REPLACE "\n" "" sfiletarg ${sfile})
-	string(REPLACE "/" "_" sfiletarg ${sfiletarg})
-  	add_custom_target(${sfiletarg} ALL
-        		 DEPENDS ${sfile}.xml ${sfile})
-        #message(${sfile} "   ->   " ${sfiletarg})
-    endforeach(sfile)
+
+
+    #Create the target.
+    string(REPLACE "\n" "" nddl_dependency_targ ${file})
+    string(REPLACE "/" "_" nddl_dependency_targ ${nddl_dependency_targ})
+    add_custom_target(${nddl_dependency_targ}
+                      DEPENDS ${nddl_dependency_xml})
+    add_dependencies(NDDL_FILES ${nddl_dependency_targ})
 endmacro(rospack_add_nddl)
-
-
-
 
