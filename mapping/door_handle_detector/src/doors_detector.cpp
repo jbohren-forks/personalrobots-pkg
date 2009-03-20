@@ -37,6 +37,8 @@
 
 @b doors_detector detects and returns a list of door _candidates_ (no magic here!) from 3D point cloud data acquired using a tilting laser sensor.
 
+This node should replace the older door_handle_detector node (which will be obsolete by the time this is finished).
+
 \note Assumes the door frame points are given in the same coordinate system as the incoming point cloud message!
 
  **/
@@ -53,10 +55,13 @@
 #include "door_handle_detector/DoorsDetector.h"
 
 #include <tf/message_notifier.h>
+#include <angles/angles.h>
 
 
 using namespace std;
 using namespace robot_msgs;
+
+#define DEBUG 1
 
 class DoorDetector
 {
@@ -95,8 +100,11 @@ class DoorDetector
     double rectangle_constrain_edge_angle_;
 
     // Prune door candidates
+    double minimum_region_density_;
     double maximum_search_radius_, maximum_search_radius_limit_, maximum_scan_angle_limit_;
+    double minimum_z_, maximum_z_;;
 
+    int global_marker_id_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     DoorDetector (ros::Node& anode) : node_ (anode), message_notifier_ (NULL), tf_ (anode)
@@ -105,7 +113,6 @@ class DoorDetector
       {
           node_.param ("~parameter_frame", parameter_frame_, string ("base_footprint"));
 
-        // Frame _independent_ parameters (absolute values)
           node_.param ("~door_min_height", door_min_height_, 1.2);                  // minimum height of a door: 1.2m
           node_.param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
           node_.param ("~door_min_width", door_min_width_, 0.7);                    // minimum width of a door: 0.7m
@@ -118,17 +125,14 @@ class DoorDetector
           maximum_search_radius_ *= maximum_search_radius_;                        // squared for faster processing
 
           // Heuristically discard all door candidates which have their polygonal bounds at angles larger than this value with the viewpoint
-          node_.param ("~maximum_scan_angle", maximum_scan_angle_limit_, 140.0);
-          maximum_scan_angle_limit_ = cloud_geometry::deg2rad (maximum_scan_angle_limit_);
+          node_.param ("~maximum_scan_angle", maximum_scan_angle_limit_, 70.0);
+          maximum_scan_angle_limit_ = angles::from_degrees (maximum_scan_angle_limit_);
 
           // This parameter constrains the door polygon to resamble a rectangle,
           // that is: the two lines parallel (with some angular threshold) to the Z-axis must have some minimal length
           node_.param ("~rectangle_constrain_edge_height", rectangle_constrain_edge_height_, 0.4);        // each side of the door has to be at least 40 cm
-          node_.param ("~rectangle_constrain_edge_angle", rectangle_constrain_edge_angle_, 15.0);         // maximum angle threshold between a side and the Z-axis: 15 degrees
-          rectangle_constrain_edge_angle_ = cloud_geometry::deg2rad (rectangle_constrain_edge_angle_);
-
-          // Frame _dependent_ parameters (need to be converted!)
-          node_.param ("~door_min_z", door_min_z_, 0.1);                            // the minimum Z point on the door must be lower than this value
+          node_.param ("~rectangle_constrain_edge_angle", rectangle_constrain_edge_angle_, 10.0);         // maximum angle threshold between a side and the Z-axis: 10 degrees
+          rectangle_constrain_edge_angle_ = angles::from_degrees (rectangle_constrain_edge_angle_);
       }
 
       // ---[ Parameters regarding optimizations / real-time computations
@@ -137,26 +141,39 @@ class DoorDetector
       x_axis_.x = 1; x_axis_.y = 0; x_axis_.z = 0;
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
 
-      normal_angle_tolerance_ = cloud_geometry::deg2rad (10.0); // Maximum angular difference in normal space for inliers wrt the Z-axis
+      minimum_z_ = 0.05;               // We don't care about points below 5cm in the 'base_footprint' TF frame
+      maximum_z_ = 2.7;                // We don't care about points above 2.7m in the 'base_footprint' TF frame
+
+      normal_angle_tolerance_ = angles::from_degrees (15.0); // Maximum angular difference in normal space for inliers wrt the Z-axis
       // Parameters regarding the thresholds for Euclidean region growing/clustering
-      euclidean_cluster_angle_tolerance_    = cloud_geometry::deg2rad (10.0);
-      euclidean_cluster_min_pts_            = 500;                // 500 points
+      euclidean_cluster_angle_tolerance_    = angles::from_degrees (25.0);
+      euclidean_cluster_min_pts_            = 1000;               // 1000 points
       euclidean_cluster_distance_tolerance_ = 0.05;               // 5 cm
 
       // This should be set to whatever the leaf_width * 2 factor is in the downsampler
       sac_distance_threshold_ = leaf_width_ * 2;                  // 4 cm by default
 
+      // The minimum Z point on the door must be lower than this value
+      door_min_z_ = 0.35;
+
       // Heuristically discard all door candidates which have their polygonal bounds at distances more than this value
       maximum_search_radius_limit_ = maximum_search_radius_ - 0.2;
 
+
+      // Estimate the minimum region point density in 1 square meter
+      minimum_region_density_ = (1 / leaf_width_) * (1 / leaf_width_) * 2.0 / 3.0;
+
+
       // Temporary parameters
-      node_.param ("~input_cloud_topic", input_cloud_topic_, string ("snapshot_cloud"));
+      node_.param ("~input_cloud_topic", input_cloud_topic_, string ("/snapshot_cloud"));
       node_.advertiseService ("doors_detector", &DoorDetector::detectDoor, this);
       node_.advertise<robot_msgs::VisualizationMarker> ("visualizationMarker", 100);
 
       node_.advertise<PolygonalMap> ("~door_frames", 1);
       node_.advertise<PointCloud> ("~door_regions", 1);
       cloud_regions_.chan.resize (1); cloud_regions_.chan[0].name = "rgb";
+
+      global_marker_id_ = 1;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -168,7 +185,7 @@ class DoorDetector
       ros::Time start_time = ros::Time::now ();
       ros::Duration delay = ros::Duration().fromSec (25);
       cout << "start time " << start_time.toSec () << endl;
-      cout << "Waiting for laser scan to come in newer than " << (start_time + delay).toSec() << endl;
+      ROS_INFO ("Waiting for PointCloud newer than %f on topic %s.", (start_time + delay).toSec (), node_.mapName (input_cloud_topic_).c_str ());
 
       // door frame
       door_frame_ = req.door.header.frame_id;
@@ -176,8 +193,8 @@ class DoorDetector
       // receive a new laser scan
       num_clouds_received_ = 0;
       message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (&tf_, &node_,  boost::bind (&DoorDetector::cloud_cb, this, _1),
-                                                                           input_cloud_topic_.c_str (), door_frame_, 1);
-      ros::Duration tictoc = ros::Duration().fromSec (1.0);
+                                                                           input_cloud_topic_, door_frame_, 1);
+      ros::Duration tictoc = ros::Duration ().fromSec (1.0);
       while ((int)num_clouds_received_ < 1)//|| (cloud_in_.header.stamp < (start_time + delay)))
         tictoc.sleep ();
       delete message_notifier_;
@@ -211,7 +228,7 @@ class DoorDetector
       for (unsigned int i = 0; i < cloud_tr_.pts.size (); i++)
       {
         double dist = cloud_geometry::distances::pointToPointDistanceSqr (&viewpoint_cloud_.point, &cloud_tr_.pts[i]);
-        if (dist < maximum_search_radius_)
+        if (dist < maximum_search_radius_ && cloud_tr_.pts[i].z > minimum_z_ && cloud_tr_.pts[i].z < maximum_z_)
           indices_in_bounds[nr_p++] = i;
       }
       indices_in_bounds.resize (nr_p);
@@ -234,33 +251,14 @@ class DoorDetector
       leaves.resize (0);    // dealloc memory used for the downsampling process
 
 #if DEBUG
-      sendMarker (viewpoint_cloud_.point.x, viewpoint_cloud_.point.y, viewpoint_cloud_.point.z, parameter_frame_, &node_);
+      sendMarker (viewpoint_cloud_.point.x, viewpoint_cloud_.point.y, viewpoint_cloud_.point.z, parameter_frame_, &node_, global_marker_id_, 0, 0, 0);
 #endif
       // Create Kd-Tree and estimate the point normals in the original point cloud
-      estimatePointNormals (cloud_tr_, cloud_down_, k_search_, viewpoint_cloud_);
+      estimatePointNormals (&cloud_tr_, &indices_in_bounds, cloud_down_, k_search_, &viewpoint_cloud_);
 
       // Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_xy;
       cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_down_, 0, 1, 2, normal_angle_tolerance_, &z_axis_, indices_xy);
-
-      // Output the point regions
-      cloud_regions_.header = cloud_down_.header;
-      cloud_regions_.pts.resize (0);
-      cloud_regions_.chan[0].vals.resize (0);
-//      for (unsigned int cc = 0; cc < clusters.size (); cc++)
-//      {
-        float r = rand () / (RAND_MAX + 1.0);
-        float g = rand () / (RAND_MAX + 1.0);
-        float b = rand () / (RAND_MAX + 1.0);
-//        for (unsigned int j = 0; j< clusters[cc].size (); j++)
-        for (unsigned int j = 0; j < indices_xy.size (); j++)
-        {
-          //cloud_regions_.pts.push_back (cloud_down_.pts[clusters[cc][j]]);
-          cloud_regions_.pts.push_back (cloud_down_.pts[indices_xy[j]]);
-          cloud_regions_.chan[0].vals.push_back (getRGB (r, g, b));
-        }
-//      }
-      node_.publish ("~door_regions", cloud_regions_);
 
       // Split the Z-perpendicular points into clusters
       vector<vector<int> > clusters;
@@ -269,32 +267,60 @@ class DoorDetector
       sort (clusters.begin (), clusters.end (), compareRegions);
       reverse (clusters.begin (), clusters.end ());
 
+      if (clusters.size () == 0)
+      {
+        ROS_ERROR ("did not find a door");
+        node_.publish ("~door_frames", pmap_);
+        return (false);
+      }
+
+      // Output the point regions
+      cloud_regions_.header = cloud_down_.header;
+      cloud_regions_.pts.resize (0);
+      cloud_regions_.chan[0].vals.resize (0);
+      for (unsigned int cc = 0; cc < clusters.size (); cc++)
+      {
+        float r = rand () / (RAND_MAX + 1.0);
+        float g = rand () / (RAND_MAX + 1.0);
+        float b = rand () / (RAND_MAX + 1.0);
+        for (unsigned int j = 0; j < clusters[cc].size (); j++)
+//        for (unsigned int j = 0; j < indices_xy.size (); j++)
+        {
+          cloud_regions_.pts.push_back (cloud_down_.pts[clusters[cc][j]]);
+//          cloud_regions_.pts.push_back (cloud_down_.pts[indices_xy[j]]);
+          cloud_regions_.chan[0].vals.push_back (getRGB (r, g, b));
+        }
+      }
+      node_.publish ("~door_regions", cloud_regions_);
+
+
       vector<vector<double> > coeff (clusters.size ()); // Need to save all coefficients for all models
       pmap_.header = cloud_down_.header;
       pmap_.polygons.resize (clusters.size ());         // Allocate space for the polygonal map
 
       ROS_INFO (" - Process all clusters (%i)", clusters.size ());
-      vector<int> inliers;
-      vector<int> handle_indices;
       vector<double> goodness_factor (clusters.size());
-      robot_msgs::Point32 min_p, max_p, handle_center;
 
 #pragma omp parallel for schedule(dynamic)
-      // Process all clusters
+      // Process all clusters in parallel
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
+        bool bad_candidate = false;
         // initial goodness factor
         goodness_factor[cc] = 1;
 
         // Find the best plane in this cluster
+        vector<int> inliers;
         if (!fitSACPlane (cloud_down_, clusters[cc], inliers, coeff[cc], &viewpoint_cloud_, sac_distance_threshold_, euclidean_cluster_min_pts_))
         {
           goodness_factor[cc] = 0;
+          ROS_DEBUG ("R: Could not find planar model for cluster %d (%d hull points, %d points).", cc, pmap_.polygons[cc].points.size (), inliers.size ());
           continue;
         }
 
         if (inliers.size () == 0)
         {
+          ROS_DEBUG ("R: Could not find planar model for cluster %d (%d hull points, %d points).", cc, pmap_.polygons[cc].points.size (), inliers.size ());
           goodness_factor[cc] = 0;
           continue;
         }
@@ -306,36 +332,55 @@ class DoorDetector
         for (int i = 0; i < (int)pmap_.polygons[cc].points.size (); i++)
         {
           double dist = cloud_geometry::distances::pointToPointDistanceSqr (&viewpoint_cloud_.point, &pmap_.polygons[cc].points[i]);
-          if (dist > maximum_search_radius_limit_)
-          {
-            goodness_factor[cc] = 0;
-            ROS_DEBUG ("[WARN] Door candidate rejected because the polygonal bounds are near the edges of the cloud!");
-            break;
-          }
+          if (dist < maximum_search_radius_limit_)
+            continue;
+
+          goodness_factor[cc] = 0;
+          ROS_DEBUG ("R: Door candidate (%d, %d hull points, %d points) rejected because the bounds (distance = %g) are near the edges of the cloud!",
+                     cc, pmap_.polygons[cc].points.size (), inliers.size (), dist);
+          bad_candidate = true;
+          break;
         }
+        if (bad_candidate) continue;
 
         // ---[ If any of the points on the hull are near/outside the imposed "maximum scan angle to viewpoint" limit, discard the candidate
-        // Select points which are acquired at in a horizontal (Z perpendicular) angle of 120 degrees (-60; +60)
+        // Select points which are acquired at in a horizontal (Z perpendicular) angle of 140 degrees (-70; +70) by default
         for (int i = 0; i < (int)pmap_.polygons[cc].points.size (); i++)
         {
           // Get the angle with the X axis (0->2pi)
-          double angle = cloud_geometry::angles::getAngle2D (pmap_.polygons[cc].points[i].x, pmap_.polygons[cc].points[i].y) + M_PI / 2.0;
-          if ( (angle > maximum_scan_angle_limit_) || (angle < (M_PI - maximum_scan_angle_limit_)) )
-          {
-            goodness_factor[cc] = 0;
-            ROS_DEBUG ("[WARN] Door candidate rejected because the polygonal bounds are near the edges of the cloud!");
-            break;
-          }
+          double angle = cloud_geometry::angles::getAngle2D (pmap_.polygons[cc].points[i].x, pmap_.polygons[cc].points[i].y);
+          if (angle > M_PI / 2.0) angle -= 2*M_PI;
+          if (fabs (angle) < maximum_scan_angle_limit_)
+            continue;
+
+          goodness_factor[cc] = 0;
+#if DEBUG
+          Point32 centroid;
+          cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
+          sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 255, 0, 0);
+#endif
+          ROS_DEBUG ("R: Door candidate (%d, %d hull points, %d points) rejected because the bounds (angle = %g, %d, <%g,%g>) are near the edges of the cloud!",
+                    cc, pmap_.polygons[cc].points.size (), inliers.size (), angles::to_degrees (angle), i, pmap_.polygons[cc].points[i].x, pmap_.polygons[cc].points[i].y);
+          bad_candidate = true;
+          break;
         }
+        if (bad_candidate) continue;
 
         // Filter the region based on its height and width
+        robot_msgs::Point32 min_p, max_p;
         cloud_geometry::statistics::getMinMax (&pmap_.polygons[cc], min_p, max_p);
 
         // ---[ Quick test for min_p.z (!)
         if (min_p.z > door_min_z_)
         {
           goodness_factor[cc] = 0;
-          ROS_DEBUG ("[WARN] Door candidate rejected because min.Z (%g) is higher than the user specified threshold (%g)!", min_p.z, door_min_z_);
+#if DEBUG
+          Point32 centroid;
+          cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
+          sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 0, 255, 0);
+#endif
+          ROS_DEBUG ("R: Door candidate (%d, %d hull points, %d points) rejected because min.Z (%g) > than (%g)!",
+                     cc, pmap_.polygons[cc].points.size (), inliers.size (), min_p.z, door_min_z_);
           continue;
         }
 
@@ -345,8 +390,8 @@ class DoorDetector
                              height_df1, height_df2))
         {
           goodness_factor[cc] = 0;
-          ROS_DEBUG ("[WARN] Door candidate rejected because the length of the door edges (%g / %g) is smaller than the user specified threshold (%g)!",
-                     height_df1, height_df2, rectangle_constrain_edge_height_);
+          ROS_DEBUG ("R: Door candidate (%d, %d hull points, %d points) rejected because the length of the door edges (%g / %g) < than %g!",
+                    cc, pmap_.polygons[cc].points.size (), inliers.size (), height_df1, height_df2, rectangle_constrain_edge_height_);
           continue;
         }
 
@@ -357,11 +402,33 @@ class DoorDetector
         if (door_frame < door_min_width_ || door_height < door_min_height_ || door_frame > door_max_width_ || door_height > door_max_height_)
         {
           goodness_factor[cc] = 0;
-          ROS_DEBUG ("[WARN] Door candidate rejected because its width/height (%g / %g) is smaller than the user specified threshold (%g / %g -> %g / %g)!",
-                     door_frame, door_height, door_min_width_, door_min_height_, door_max_width_, door_max_height_);
+#if DEBUG
+          Point32 centroid;
+          cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
+          sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 0, 0, 255);
+#endif
+          ROS_DEBUG ("R: Door candidate (%d, %d hull points, %d points) rejected because of bad width/height (%g < %g < %g / %g < %g < %g).",
+                     cc, pmap_.polygons[cc].points.size (), inliers.size (), door_min_width_, door_frame, door_min_height_, door_max_width_, door_height, door_max_height_);
           continue;
         }
         double area = cloud_geometry::areas::compute2DPolygonalArea (pmap_.polygons[cc], coeff[cc]);
+
+        double density = (double)inliers.size () / area;        // Compute the average point density
+
+        // ---[ Check the average point density
+        if (density < minimum_region_density_)
+        {
+          goodness_factor[cc] = 0;
+#if DEBUG
+          Point32 centroid;
+          cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
+          sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 255, 255, 255);
+#endif
+          ROS_DEBUG ("R: Door candidate (%d, %d hull points, %d points) rejected because the average point density (%g) < than %g.",
+                      cc, pmap_.polygons[cc].points.size (), inliers.size (), density, minimum_region_density_);
+          continue;
+        }
+
         goodness_factor[cc] *= (area / (door_frame * door_height));
 
         // ---[ Compute the distance from the door to the prior of the door
@@ -371,6 +438,8 @@ class DoorDetector
                                                  fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &min_p),
                                                        cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &max_p)))));
         goodness_factor[cc] /= door_distance;
+        ROS_WARN ("A: Door candidate (%d, %d hull points, %d points) accepted with: average point density (%g), area (%g), width (%g), height (%g).",
+                    cc, pmap_.polygons[cc].points.size (), inliers.size (), density, area, door_frame, door_height);
       } // loop over clusters
 
 
@@ -409,6 +478,7 @@ class DoorDetector
           }
         }
       }
+      //node_.publish ("~door_frames", pmap_);
 
       // Count the number of remaining clusters with non-null goodness factor
       int doors_found_cnt = 0;
@@ -425,6 +495,7 @@ class DoorDetector
 
       // Copy all clusters
       int nr_d = 0;
+      robot_msgs::Point32 min_p, max_p;
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
         if (goodness_factor[cc] == 0)
@@ -459,6 +530,7 @@ class DoorDetector
       if (nr_d == 0)
       {
         ROS_ERROR ("did not find a door");
+        node_.publish ("~door_frames", pmap_);
         return (false);
       }
 
@@ -481,13 +553,15 @@ class DoorDetector
       node_.publish ("~door_frames", pmap_);
 
       ROS_INFO ("Finished detecting door");
+
       return (true);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Main point cloud callback.                                                                           */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    void cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
+    void
+      cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
     {
       cloud_orig_ = *cloud;
       ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", cloud_orig_.pts.size (), cloud_orig_.header.frame_id.c_str (),

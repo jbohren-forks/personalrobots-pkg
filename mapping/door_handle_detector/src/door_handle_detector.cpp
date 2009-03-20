@@ -289,7 +289,7 @@ public:
       getCloudViewPoint (cloud_frame_, viewpoint_cloud_, &tf_);
 
       // Create Kd-Tree and estimate the point normals in the original point cloud
-      estimatePointNormals (&cloud_in_, &indices_in_bounds, &cloud_down_, k_search_, &viewpoint_cloud_);
+      estimatePointNormals (&cloud_in_, &indices_in_bounds, cloud_down_, k_search_, &viewpoint_cloud_);
 
       // Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_xy;

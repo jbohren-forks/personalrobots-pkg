@@ -136,7 +136,6 @@ bool
         inliers_right.push_back (i);
     }
   }
-//  std::cerr << "Inliers: " << inliers_left.size () << " " << inliers_right.size () << " " << poly->points.size () << std::endl;
 
   door_frame1 = door_frame2 = 0.0;
   robot_msgs::Point32 line_dir;
@@ -196,11 +195,8 @@ bool
     }
   }
 
-  if (door_frame1 < min_height || door_frame2 < min_height)
+  if (door_frame1 < min_height || door_frame2 < min_height || fabs (door_frame2 - door_frame1) > 2 * min (door_frame1, door_frame2))
     return (false);
-  //new_points.push_back (poly->points[inliers_left[0]]);
-  //poly->points.push_back (centroid);
-//  poly->points = new_points;
   return (true);
 }
 
@@ -300,7 +296,7 @@ void
   for (double alpha = 0; alpha < 7; alpha += .1)
   {
     cloud_geometry::statistics::selectPointsOutsideDistribution (points, indices, d_idx, mean, stddev, alpha,
-                                                     inliers);
+                                                                 inliers);
     alpha_vals[nr_a] = inliers.size ();
     //ROS_INFO ("Number of points for %g: %d.", alpha, alpha_vals[nr_a]);
     nr_a++;
@@ -375,6 +371,7 @@ bool
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Decompose a region of space into clusters based on the euclidean distance between points, and the normal
   * angular deviation
+  * \NOTE: assumes normalized point normals !
   * \param points pointer to the point cloud message
   * \param indices pointer to a list of point indices
   * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
@@ -393,13 +390,14 @@ void
   // Create a tree for these points
   cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
 
+  int nr_points = indices->size ();
   // Create a bool vector of processed point indices, and initialize it to false
   vector<bool> processed;
-  processed.resize (indices->size (), false);
+  processed.resize (nr_points, false);
 
   vector<int> nn_indices;
   // Process all points in the indices vector
-  for (unsigned int i = 0; i < indices->size (); i++)
+  for (int i = 0; i < nr_points; i++)
   {
     if (processed[i])
       continue;
@@ -408,43 +406,47 @@ void
     int sq_idx = 0;
     seed_queue.push_back (i);
 
-    double norm_a = 0.0;
-    if (nx_idx != -1)         // If we use normal indices...
-      norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
-                     points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
-                     points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
+//    double norm_a = 0.0;
+//    if (nx_idx != -1)         // If we use normal indices...
+//      norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
+//                     points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
+//                     points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
 
     processed[i] = true;
 
     while (sq_idx < (int)seed_queue.size ())
     {
+      // Search for sq_idx
       tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
       tree->getNeighborsIndices (nn_indices);
 
-      for (unsigned int j = 1; j < nn_indices.size (); j++)
+      for (unsigned int j = 1; j < nn_indices.size (); j++)       // nn_indices[0] should be sq_idx
       {
-        if (!processed.at (nn_indices[j]))
+        if (processed.at (nn_indices[j]))                         // Has this point been processed before ?
+          continue;
+
+        processed[nn_indices[j]] = true;
+        if (nx_idx != -1)                                         // Are point normals present ?
         {
-          if (nx_idx != -1)         // If we use normal indices...
-          {
-            double norm_b = sqrt (points->chan[nx_idx].vals[indices->at (nn_indices[j])] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-                                  points->chan[ny_idx].vals[indices->at (nn_indices[j])] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-                                  points->chan[nz_idx].vals[indices->at (nn_indices[j])] * points->chan[nz_idx].vals[indices->at (nn_indices[j])]);
-            // [-1;1]
-            double dot_p = points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-                           points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-                           points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (nn_indices[j])];
-            if ( acos (dot_p / (norm_a * norm_b)) < eps_angle)
-            {
-              processed[nn_indices[j]] = true;
-              seed_queue.push_back (nn_indices[j]);
-            }
-          }
-          else
+//          double norm_b = sqrt (points->chan[nx_idx].vals[indices->at (nn_indices[j])] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
+//                                points->chan[ny_idx].vals[indices->at (nn_indices[j])] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
+//                                points->chan[nz_idx].vals[indices->at (nn_indices[j])] * points->chan[nz_idx].vals[indices->at (nn_indices[j])]);
+          // [-1;1]
+          double dot_p = points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
+                         points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
+                         points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (nn_indices[j])];
+//          if ( acos (dot_p / (norm_a * norm_b)) < eps_angle)
+          if ( fabs (acos (dot_p)) < eps_angle )
           {
             processed[nn_indices[j]] = true;
             seed_queue.push_back (nn_indices[j]);
           }
+        }
+        // If normal information is not present, perform a simple Euclidean clustering
+        else
+        {
+          processed[nn_indices[j]] = true;
+          seed_queue.push_back (nn_indices[j]);
         }
       }
 
@@ -490,8 +492,8 @@ bool
 
   // Create and initialize the SAC model
   sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-//  sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
-  sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
+  sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+  //sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
   sac->setMaxIterations (500);
   model->setDataSet (&points, indices);
 
@@ -553,43 +555,46 @@ bool
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (PointCloud *points, vector<int> *point_indices, PointCloud *points_down, int k, PointStamped *viewpoint_cloud)
+  estimatePointNormals (PointCloud *points, vector<int> *point_indices, PointCloud &points_down, int k, PointStamped *viewpoint_cloud)
 {
   // Reserve space for 4 channels: nx, ny, nz, curvature
-  points_down->chan.resize (4);
-  points_down->chan[0].name = "nx";
-  points_down->chan[1].name = "ny";
-  points_down->chan[2].name = "nz";
-  points_down->chan[3].name = "curvature";
-  for (unsigned int d = 0; d < points_down->chan.size (); d++)
-    points_down->chan[d].vals.resize (points_down->pts.size ());
+  points_down.chan.resize (4);
+  points_down.chan[0].name = "nx";
+  points_down.chan[1].name = "ny";
+  points_down.chan[2].name = "nz";
+  points_down.chan[3].name = "curvature";
+  for (unsigned int d = 0; d < points_down.chan.size (); d++)
+    points_down.chan[d].vals.resize (points_down.pts.size ());
 
-  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (points);
+  // Create a Kd-Tree for the original cloud
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (points, point_indices);
 
   // Allocate enough space for point indices
-  vector<vector<int> > points_k_indices (points_down->pts.size ());
+  vector<vector<int> > points_k_indices (points_down.pts.size ());
   vector<double> distances (points->pts.size ());
 
   // Get the nearest neighbors for all the point indices in the bounds
-  for (int i = 0; i < (int)points_down->pts.size (); i++)
+  for (int i = 0; i < (int)points_down.pts.size (); i++)
   {
     //kdtree->nearestKSearch (i, k, points_k_indices[i], distances);
-    kdtree->radiusSearch (&points_down->pts[i], 0.035, points_k_indices[i], distances);
+    kdtree->radiusSearch (&points_down.pts[i], 0.025, points_k_indices[i], distances);
   }
 
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int)points_down->pts.size (); i++)
+  for (int i = 0; i < (int)points_down.pts.size (); i++)
   {
     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
     Eigen::Vector4d plane_parameters;
     double curvature;
+    for (int j = 0; j < (int)points_k_indices[i].size (); j++)
+      points_k_indices[i][j] = point_indices->at (points_k_indices[i][j]);
     cloud_geometry::nearest::computeSurfaceNormalCurvature (points, &points_k_indices[i], plane_parameters, curvature);
 
     // See if we need to flip any plane normals
     Point32 vp_m;
-    vp_m.x = viewpoint_cloud->point.x - points_down->pts[i].x;
-    vp_m.y = viewpoint_cloud->point.y - points_down->pts[i].y;
-    vp_m.z = viewpoint_cloud->point.z - points_down->pts[i].z;
+    vp_m.x = viewpoint_cloud->point.x - points_down.pts[i].x;
+    vp_m.y = viewpoint_cloud->point.y - points_down.pts[i].y;
+    vp_m.z = viewpoint_cloud->point.z - points_down.pts[i].z;
 
     // Dot product between the (viewpoint - point) and the plane normal
     double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
@@ -600,10 +605,10 @@ void
       for (int d = 0; d < 3; d++)
         plane_parameters (d) *= -1;
     }
-    points_down->chan[0].vals[i] = plane_parameters (0);
-    points_down->chan[1].vals[i] = plane_parameters (1);
-    points_down->chan[2].vals[i] = plane_parameters (2);
-    points_down->chan[3].vals[i] = fabs (plane_parameters (3));
+    points_down.chan[0].vals[i] = plane_parameters (0);
+    points_down.chan[1].vals[i] = plane_parameters (1);
+    points_down.chan[2].vals[i] = plane_parameters (2);
+    points_down.chan[3].vals[i] = fabs (plane_parameters (3));
   }
   // Delete the kd-tree
   delete kdtree;
@@ -617,32 +622,35 @@ void
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (PointCloud *points, PointCloud *points_down, int k, PointStamped *viewpoint_cloud)
+  estimatePointNormals (PointCloud *points, PointCloud &points_down, int k, PointStamped *viewpoint_cloud)
 {
+  int nr_points = points_down.pts.size ();
   // Reserve space for 4 channels: nx, ny, nz, curvature
-  points_down->chan.resize (4);
-  points_down->chan[0].name = "nx";
-  points_down->chan[1].name = "ny";
-  points_down->chan[2].name = "nz";
-  points_down->chan[3].name = "curvature";
-  for (unsigned int d = 0; d < points_down->chan.size (); d++)
-    points_down->chan[d].vals.resize (points_down->pts.size ());
+  points_down.chan.resize (4);
+  points_down.chan[0].name = "nx";
+  points_down.chan[1].name = "ny";
+  points_down.chan[2].name = "nz";
+  points_down.chan[3].name = "curvature";
+  for (unsigned int d = 0; d < points_down.chan.size (); d++)
+    points_down.chan[d].vals.resize (nr_points);
 
   cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (points);
 
   // Allocate enough space for point indices
-  vector<vector<int> > points_k_indices (points_down->pts.size ());
+  vector<vector<int> > points_k_indices (nr_points);
   vector<double> distances (points->pts.size ());
 
   // Get the nearest neighbors for all the point indices in the bounds
-  for (int i = 0; i < (int)points_down->pts.size (); i++)
+  for (int i = 0; i < nr_points; i++)
   {
-    //kdtree->nearestKSearch (i, k, points_k_indices[i], distances);
-    kdtree->radiusSearch (&points_down->pts[i], 0.035, points_k_indices[i], distances);
+    //points_k_indices[i].resize (k);
+    //kdtree->nearestKSearch (&points_down.pts[i], k, points_k_indices[i], distances);
+    //kdtree->radiusSearch (&points_down.pts[i], 0.05, points_k_indices[i], distances);
+    kdtree->radiusSearch (&points_down.pts[i], 0.025, points_k_indices[i], distances);
   }
 
-#pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int)points_down->pts.size (); i++)
+//#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < nr_points; i++)
   {
     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
     Eigen::Vector4d plane_parameters;
@@ -651,9 +659,9 @@ void
 
     // See if we need to flip any plane normals
     Point32 vp_m;
-    vp_m.x = viewpoint_cloud->point.x - points_down->pts[i].x;
-    vp_m.y = viewpoint_cloud->point.y - points_down->pts[i].y;
-    vp_m.z = viewpoint_cloud->point.z - points_down->pts[i].z;
+    vp_m.x = viewpoint_cloud->point.x - points_down.pts[i].x;
+    vp_m.y = viewpoint_cloud->point.y - points_down.pts[i].y;
+    vp_m.z = viewpoint_cloud->point.z - points_down.pts[i].z;
 
     // Dot product between the (viewpoint - point) and the plane normal
     double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
@@ -664,10 +672,10 @@ void
       for (int d = 0; d < 3; d++)
         plane_parameters (d) *= -1;
     }
-    points_down->chan[0].vals[i] = plane_parameters (0);
-    points_down->chan[1].vals[i] = plane_parameters (1);
-    points_down->chan[2].vals[i] = plane_parameters (2);
-    points_down->chan[3].vals[i] = fabs (plane_parameters (3));
+    points_down.chan[0].vals[i] = plane_parameters (0);
+    points_down.chan[1].vals[i] = plane_parameters (1);
+    points_down.chan[2].vals[i] = plane_parameters (2);
+    points_down.chan[3].vals[i] = fabs (plane_parameters (3));
   }
   // Delete the kd-tree
   delete kdtree;

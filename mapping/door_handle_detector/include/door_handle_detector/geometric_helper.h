@@ -153,14 +153,15 @@ inline double
   * \param radius an optional radius for the sphere marker (2cm by default)
   */
 inline void
-  sendMarker (float px, float py, float pz, std::string frame_id, ros::Node *anode, double radius = 0.03)
+  sendMarker (float px, float py, float pz, std::string frame_id, ros::Node *anode, int &id,
+              int r, int g, int b, double radius = 0.03)
 {
   robot_msgs::VisualizationMarker mk;
   mk.header.stamp = ros::Time::now ();
 
   mk.header.frame_id = frame_id;
 
-  mk.id = 1;
+  mk.id = id++;
   mk.type = robot_msgs::VisualizationMarker::SPHERE;
   mk.action = robot_msgs::VisualizationMarker::ADD;
   mk.x = px;
@@ -171,9 +172,9 @@ inline void
   mk.xScale = mk.yScale = mk.zScale = radius * 2.0;
 
   mk.alpha = 255;
-  mk.r = 255;
-  mk.g = 10;
-  mk.b = 10;
+  mk.r = r;
+  mk.g = g;
+  mk.b = b;
 
   anode->publish ("visualizationMarker", mk);
 }
@@ -203,8 +204,8 @@ void findClusters (robot_msgs::PointCloud *points, std::vector<int> *indices, do
 bool fitSACPlane (robot_msgs::PointCloud &points, std::vector<int> indices, std::vector<int> &inliers, std::vector<double> &coeff,
                   robot_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts);
 
-void estimatePointNormals (robot_msgs::PointCloud *points, std::vector<int> *point_indices, robot_msgs::PointCloud *points_down, int k, robot_msgs::PointStamped *viewpoint_cloud);
+void estimatePointNormals (robot_msgs::PointCloud *points, std::vector<int> *point_indices, robot_msgs::PointCloud &points_down, int k, robot_msgs::PointStamped *viewpoint_cloud);
 //void estimatePointNormals (robot_msgs::PointCloud points, robot_msgs::PointCloud &points_down, int k, robot_msgs::PointStamped viewpoint_cloud);
-void estimatePointNormals (robot_msgs::PointCloud *points, robot_msgs::PointCloud *points_down, int k, robot_msgs::PointStamped *viewpoint_cloud);
+void estimatePointNormals (robot_msgs::PointCloud *points, robot_msgs::PointCloud &points_down, int k, robot_msgs::PointStamped *viewpoint_cloud);
 
 #endif
