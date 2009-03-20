@@ -377,7 +377,7 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
     clock_gettime(CLOCK_REALTIME, &init_end);
     double duration = 1.0e3 * (init_end.tv_sec - init_start.tv_sec) +
       double(init_end.tv_nsec)/1.0e6 - double(init_start.tv_nsec)/1.0e6;
-    ROS_INFO("  Initialized %s in %.3lf ms", add_reqs[i].name.c_str(), duration);
+    ROS_DEBUG("  Initialized %s in %.3lf ms", add_reqs[i].name.c_str(), duration);
     if (!initialized)
     {
       delete c;
@@ -419,7 +419,7 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
 
   double duration = 1.0e3 * (end_time.tv_sec - start_time.tv_sec) +
     double(end_time.tv_nsec)/1.0e6 - double(start_time.tv_nsec)/1.0e6;
-  ROS_INFO("Controller replacement took %.3lf ms", duration);
+  ROS_DEBUG("Controller replacement took %.3lf ms", duration);
 }
 
 

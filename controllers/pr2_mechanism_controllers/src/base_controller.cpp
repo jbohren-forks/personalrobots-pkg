@@ -213,7 +213,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
   // wait for robotdesc/pr2 on param server
   while(!urdf_model_.loadString(xml_content.c_str()))
   {
-    ROS_INFO("WARNING: base controller is waiting for robotdesc/pr2 in param server.  run roslaunch send.xml or similar.");
+    ROS_WARN("base controller is waiting for robotdesc/pr2 in param server.  run roslaunch send.xml or similar.");
     (ros::g_node)->getParam("robotdesc/pr2",xml_content);
     usleep(100000);
   }
@@ -322,7 +322,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
 bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
 
-  ROS_INFO("BaseController:: name: %s",config->Attribute("name")); 
+  ROS_DEBUG("BaseController:: name: %s",config->Attribute("name")); 
   TiXmlElement *elt = config->FirstChildElement("controller");
   std::vector<JointControlParam> jcp_vec;
   JointControlParam jcp;
@@ -336,8 +336,8 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
     jcp.joint_name = jnt->Attribute("name");
     jcp_vec.push_back(jcp);
 
-    ROS_INFO("BaseController:: joint name: %s",jcp.joint_name.c_str()); 
-    ROS_INFO("BaseController:: controller type: %s\n",jcp.control_type.c_str()); 
+    ROS_DEBUG("BaseController:: joint name: %s",jcp.joint_name.c_str()); 
+    ROS_DEBUG("BaseController:: controller type: %s\n",jcp.control_type.c_str()); 
 
     elt = elt->NextSiblingElement("controller");
   }
@@ -372,15 +372,15 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
 
   max_trans_vel_magnitude_  = fabs(max_vel_.x);
  
-  ROS_INFO("BaseController:: kp_speed %f",kp_speed_);
-  ROS_INFO("BaseController:: kp_caster_steer  %f",caster_steer_vel_gain_);
-  ROS_INFO("BaseController:: timeout %f",timeout_);
-  ROS_INFO("BaseController:: max_x_dot %f",(max_vel_.x));
-  ROS_INFO("BaseController:: max_y_dot %f",(max_vel_.y));
-  ROS_INFO("BaseController:: max_yaw_dot %f",(max_vel_.z));
-  ROS_INFO("BaseController:: max_x_accel %f",(max_accel_.x));
-  ROS_INFO("BaseController:: max_y_accel %f",(max_accel_.y));
-  ROS_INFO("BaseController:: max_yaw_accel %f",(max_accel_.z));
+  ROS_DEBUG("BaseController:: kp_speed %f",kp_speed_);
+  ROS_DEBUG("BaseController:: kp_caster_steer  %f",caster_steer_vel_gain_);
+  ROS_DEBUG("BaseController:: timeout %f",timeout_);
+  ROS_DEBUG("BaseController:: max_x_dot %f",(max_vel_.x));
+  ROS_DEBUG("BaseController:: max_y_dot %f",(max_vel_.y));
+  ROS_DEBUG("BaseController:: max_yaw_dot %f",(max_vel_.z));
+  ROS_DEBUG("BaseController:: max_x_accel %f",(max_accel_.x));
+  ROS_DEBUG("BaseController:: max_y_accel %f",(max_accel_.y));
+  ROS_DEBUG("BaseController:: max_yaw_accel %f",(max_accel_.z));
 
   init(jcp_vec,robot_state);
 

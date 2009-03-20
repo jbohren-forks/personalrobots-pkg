@@ -70,7 +70,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
   {
     JointPDController * jpc = new JointPDController();
 //    std::cout<<elt->Attribute("type")<<elt->Attribute("name")<<std::endl;
-    ROS_INFO("Joint Position Controller: %s , %s",(elt->Attribute("type")),(elt->Attribute("name")));
+    ROS_DEBUG("Joint Position Controller: %s , %s",(elt->Attribute("type")),(elt->Attribute("name")));
     assert(static_cast<std::string>(elt->Attribute("type")) == std::string("JointPDController"));
 
     joint_pd_controllers_.push_back(jpc);
@@ -93,7 +93,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
   else
   {
     trajectory_type_ = std::string(elt->Attribute("interpolation"));
-    ROS_INFO("ArmTrajectoryController:: interpolation type:: %s",trajectory_type_.c_str());
+    ROS_DEBUG("ArmTrajectoryController:: interpolation type:: %s",trajectory_type_.c_str());
   }
   joint_cmd_rt_.resize(joint_pd_controllers_.size());
   joint_cmd_dot_rt_.resize(joint_pd_controllers_.size());
@@ -120,7 +120,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
 
   joint_trajectory_->autocalc_timing_ = true;
 
-  ROS_INFO("Size of trajectory points vector : %d",trajectory_points_vector.size());
+  ROS_DEBUG("Size of trajectory points vector : %d",trajectory_points_vector.size());
   if(!joint_trajectory_->setTrajectory(trajectory_points_vector))
     ROS_WARN("Trajectory not set correctly");
 
@@ -261,7 +261,7 @@ ROS_REGISTER_CONTROLLER(ArmTrajectoryControllerNode)
 ArmTrajectoryControllerNode::ArmTrajectoryControllerNode()
   : Controller(), node_(ros::Node::instance()), request_trajectory_id_(1), current_trajectory_id_(0), trajectory_wait_timeout_(10.0)
 {
-  std::cout<<"Controller node created"<<endl;
+  ROS_DEBUG("Controller node created");
   c_ = new ArmTrajectoryController();
   diagnostics_publisher_ = NULL;
 }
@@ -284,7 +284,7 @@ ArmTrajectoryControllerNode::~ArmTrajectoryControllerNode()
 
    if(topic_name_ptr_ && topic_name_.c_str())
   {
-    std::cout << "unsub arm controller" << topic_name_ << std::endl;
+    ROS_DEBUG("unsub arm controller %s", topic_name_.c_str());
     node_->unsubscribe(topic_name_);
   }
   delete c_;
@@ -341,17 +341,17 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
 {
   ROS_INFO("Loading ArmTrajectoryControllerNode.");
   service_prefix_ = config->Attribute("name");
-  ROS_INFO("The service_prefix_ is %s",service_prefix_.c_str());
+  ROS_DEBUG("The service_prefix_ is %s",service_prefix_.c_str());
 
   double scale;
   node_->param<double>(service_prefix_ + "/velocity_scaling_factor",scale,0.25);
   node_->param<double>(service_prefix_ + "/trajectory_wait_timeout",trajectory_wait_timeout_,10.0);
 
-  ROS_INFO("Trajectory wait timeout scale is %f",scale);
+  ROS_DEBUG("Trajectory wait timeout scale is %f",scale);
   c_->velocity_scaling_factor_ = std::min(1.0,std::max(0.0,scale));
 
-  ROS_INFO("Velocity scaling factor is %f",c_->velocity_scaling_factor_);
-  ROS_INFO("Trajectory wait timeout is %f",trajectory_wait_timeout_);
+  ROS_DEBUG("Velocity scaling factor is %f",c_->velocity_scaling_factor_);
+  ROS_DEBUG("Trajectory wait timeout is %f",trajectory_wait_timeout_);
 
   if(c_->initXml(robot, config))  // Parses subcontroller configuration
   {
@@ -371,11 +371,11 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
       topic_name_= topic_name_ptr_->Attribute("name");
       if(!topic_name_.c_str())
       {
-        std::cout<<" A listen _topic is present in the xml file but no name is specified\n";
+        ROS_ERROR(" A listen _topic is present in the xml file but no name is specified");
         return false;
       }
       node_->subscribe(topic_name_, traj_msg_, &ArmTrajectoryControllerNode::CmdTrajectoryReceived, this, 1);
-      ROS_INFO("Listening to topic: %s",topic_name_.c_str());
+      ROS_DEBUG("Listening to topic: %s",topic_name_.c_str());
     }
 
     getJointTrajectoryThresholds();
@@ -392,14 +392,14 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
   last_diagnostics_publish_time_ = c_->robot_->hw_->current_time_;
   node_->param<double>(service_prefix_ + "/diagnostics_publish_delta_time",diagnostics_publish_delta_time_,0.05);
 
-  ROS_INFO("Initialized publisher");
+  ROS_DEBUG("Initialized publisher");
 
   c_->controller_state_publisher_->msg_.name = std::string(service_prefix_); 
 
     ROS_INFO("Initialized controller");
     return true;
   }
-  ROS_INFO("Could not initialize controller");
+  ROS_ERROR("Could not initialize controller");
   return false;
 }
 
@@ -409,7 +409,7 @@ void ArmTrajectoryControllerNode::getJointTrajectoryThresholds()
   for(int i=0; i< c_->dimension_;i++)
   {
     node_->param<double>(service_prefix_ + "/" + c_->joint_pd_controllers_[i]->getJointName() + "/goal_reached_threshold",c_->goal_reached_threshold_[i],GOAL_REACHED_THRESHOLD);
-    ROS_INFO("Goal distance threshold for %s is %f",c_->joint_pd_controllers_[i]->getJointName().c_str(),c_->goal_reached_threshold_[i]);
+    ROS_DEBUG("Goal distance threshold for %s is %f",c_->joint_pd_controllers_[i]->getJointName().c_str(),c_->goal_reached_threshold_[i]);
   }
 }
 
@@ -467,7 +467,7 @@ void ArmTrajectoryControllerNode::setTrajectoryCmdFromMsg(robot_msgs::JointTraj 
 
 void ArmTrajectoryControllerNode::CmdTrajectoryReceived()
 {
-  ROS_INFO("Trajectory controller:: Cmd received");
+  ROS_DEBUG("Trajectory controller:: Cmd received");
   this->ros_lock_.lock();
   setTrajectoryCmdFromMsg(traj_msg_);
   this->ros_lock_.unlock();

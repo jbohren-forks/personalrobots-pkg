@@ -579,17 +579,15 @@ namespace ros {
       }
       catch(tf::LookupException& ex)
       {
-        puts("no odom->base Tx yet");
-        ROS_DEBUG("%s\n", ex.what());
+        ROS_DEBUG("No odom->base Tx yet: %s", ex.what());
       }
       catch(tf::ConnectivityException& ex)
       {
-        puts("no odom->base Tx yet");
-        ROS_DEBUG("%s\n", ex.what());
+        ROS_DEBUG("No odom->base Tx yet: %s\n", ex.what());
       }
       catch(tf::ExtrapolationException& ex)
       {
-        puts("Extrapolation exception");
+        ROS_DEBUG("Extrapolation exception");
       }
 
       base_odom_.unlock();
