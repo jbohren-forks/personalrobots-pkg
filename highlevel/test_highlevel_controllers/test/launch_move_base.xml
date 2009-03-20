@@ -26,31 +26,36 @@
       <param name="costmap_2d/inflation_radius" value="0.55"/>
       <param name="costmap_2d/circumscribed_radius" value="0.46"/>
       <param name="costmap_2d/inscribed_radius" value="0.325"/>
-      <param name="costmap_2d/raytrace_window" value="4.0"/>
+      <param name="costmap_2d/raytrace_window" value="10.0"/>
+      <param name="costmap_2d/raytrace_range" value="10.0"/>
       <param name="costmap_2d/weight" value="0.1"/>
+      <param name="costmap_2d/zLB" value="0.10"/>
+      <param name="costmap_2d/zUB" value="0.30"/>
 
 
       <param name="trajectory_rollout/map_size" value="4.0" />
       <param name="trajectory_rollout/acc_limit_x" value="2.5" />
       <param name="trajectory_rollout/acc_limit_y" value="2.5" />
       <param name="trajectory_rollout/acc_limit_th" value="3.2" />
-      <param name="trajectory_rollout/sim_time" value="1.0" />
+      <param name="trajectory_rollout/sim_time" value="1.7" />
       <param name="trajectory_rollout/sim_granularity" value="0.05" />
-      <param name="trajectory_rollout/vx_samples" value="15" />
-      <param name="trajectory_rollout/vtheta_samples" value="15" />
+      <param name="trajectory_rollout/vx_samples" value="3" />
+      <param name="trajectory_rollout/vtheta_samples" value="20" />
       <param name="trajectory_rollout/path_distance_bias" value="0.6" />
       <param name="trajectory_rollout/goal_distance_bias" value="0.8" />
       <param name="trajectory_rollout/occdist_scale" value="0.2" />
       <param name="trajectory_rollout/heading_lookahead" value="0.325" />
       <param name="trajectory_rollout/oscillation_reset_dist" value="0.05" />
       <param name="trajectory_rollout/holonomic_robot" value="true" />
-      <param name="trajectory_rollout/max_vel_x" value="1.0" />
+      <param name="trajectory_rollout/max_vel_x" value="0.65" />
       <param name="trajectory_rollout/min_vel_x" value="0.1" />
       <param name="trajectory_rollout/max_vel_th" value="1.0" />
       <param name="trajectory_rollout/min_vel_th" value="-1.0" />
       <param name="trajectory_rollout/min_in_place_vel_th" value="0.4" />
-      <param name="trajectory_rollout/freespace_model" value="true" />
-      <param name="trajectory_rollout/dwa" value="false" />
+      <param name="trajectory_rollout/world_model" value="freespace" />
+      <param name="trajectory_rollout/dwa" value="true" />
+      <param name="trajectory_rollout/heading_scoring" value="false" />
+      <param name="trajectory_rollout/heading_scoring_timestep" value="0.8" />
       <param name="trajectory_rollout/simple_attractor" value="false" />
 
       <param name="trajectory_rollout/yaw_goal_tolerance" value=".05" />

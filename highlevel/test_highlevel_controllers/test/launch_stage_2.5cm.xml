@@ -2,7 +2,7 @@
   <master auto="start"/>
   <group name="wg">
     <node pkg="rosstage" type="rosstage" name="rosstage" args="-g $(find 2dnav_stage)/worlds/willow-pr2-2.5cm.world" respawn="false" >
-      <param name="base_watchdog_timeout" value="0.1"/>
+      <param name="base_watchdog_timeout" value="0.5"/>
     </node>
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.025.pgm 0.025" respawn="false" />
 
