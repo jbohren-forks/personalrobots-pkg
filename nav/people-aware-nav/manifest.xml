@@ -1,0 +1,7 @@
+<package>
+<description>Navigation that takes people into account</description>
+<author>Bhaskara Marthi, Caroline Pantofaru, Leila Takayama</author>
+<license>BSD</license>
+<review status="unreviewed" notes=""/>
+<depend package="roslisp" />
+</package>
