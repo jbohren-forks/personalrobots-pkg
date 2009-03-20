@@ -50,8 +50,8 @@
         <elem key="initialAngle" value="${gripper_min_angle}"/>
       </map>
       <map name="${prefix}_l_finger_joint_ode" flag="gazebo">
-        <elem key="stopKd" value="finger_stop_kd" />
-        <elem key="stopKp" value="finger_stop_kp" />
+        <elem key="stopKd" value="${finger_stop_kd}" />
+        <elem key="stopKp" value="${finger_stop_kp}" />
         <elem key="fudgeFactor" value="${finger_fudge_factor}" />
       </map>
     </joint>
@@ -130,8 +130,8 @@
         <elem key="initialAngle" value="${-gripper_min_angle}"/>
       </map>
       <map name="${prefix}_r_finger_joint_ode" flag="gazebo">
-        <elem key="stopKd" value="finger_stop_kd" />
-        <elem key="stopKp" value="finger_stop_kp" />
+        <elem key="stopKd" value="${finger_stop_kd}" />
+        <elem key="stopKp" value="${finger_stop_kp}" />
         <elem key="fudgeFactor" value="${finger_fudge_factor}" />
       </map>
     </joint>
@@ -210,8 +210,8 @@
         <elem key="initialAngle" value="${-gripper_min_angle}"/>
       </map>
       <map name="${prefix}_l_finger_tip_joint_ode" flag="gazebo">
-        <elem key="stopKd" value="finger_stop_kd" />
-        <elem key="stopKp" value="finger_stop_kp" />
+        <elem key="stopKd" value="${finger_stop_kd}" />
+        <elem key="stopKp" value="${finger_stop_kp}" />
         <elem key="fudgeFactor" value="${finger_fudge_factor}" />
       </map>
     </joint>
@@ -290,8 +290,8 @@
         <elem key="initialAngle" value="${gripper_min_angle}"/>
       </map>
       <map name="${prefix}_r_finger_tip_joint_ode" flag="gazebo">
-        <elem key="stopKd" value="finger_stop_kd" />
-        <elem key="stopKp" value="finger_stop_kp" />
+        <elem key="stopKd" value="${finger_stop_kd}" />
+        <elem key="stopKp" value="${finger_stop_kp}" />
         <elem key="fudgeFactor" value="${finger_fudge_factor}" />
       </map>
     </joint>
