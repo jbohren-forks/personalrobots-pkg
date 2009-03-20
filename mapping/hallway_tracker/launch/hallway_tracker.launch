@@ -1,0 +1,11 @@
+<launch>
+  <node pkg="hallway_tracker" type="hallway_tracker_node" output="screen" name="hallway_tracker_node">
+    <param name="p_base_laser_topic" type="string" value="base_scan" />
+    <param name="p_fixed_frame" type="string" value="odom_combined" />
+    <param name="p_max_point_dist_m" type="double" value="5.0" />
+    <param name="p_sac_min_points_per_model" type="int" value="50" />
+    <param name="p_sac_distance_threshold" type="double" value="0.03" />
+    <param name="p_min_hallway_width_m" type="double" value="1.0" />
+    <param name="p_max_hallway_width_m" type="double" value="4.0" />
+  </node>
+</launch>
