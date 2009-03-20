@@ -29,7 +29,6 @@
  * $Id$
  *
  */
- 
 
 /** \author Caroline Pantofaru */
 
@@ -101,15 +100,15 @@ namespace sample_consensus
 
       if (sqr_distance1 < sqr_distance2)
       {
-	(*closest_line)[i] = 0;
-	(*closest_dist)[i] = sqrt (sqr_distance1 / l_sqr_length);
+        (*closest_line)[i] = 0;
+        (*closest_dist)[i] = sqrt (sqr_distance1 / l_sqr_length);
       }
       else
       {
-	(*closest_line)[i] = 1;
-	(*closest_dist)[i] = sqrt (sqr_distance2 / l_sqr_length);
+        (*closest_line)[i] = 1;
+        (*closest_dist)[i] = sqrt (sqr_distance2 / l_sqr_length);
       }
-    }     
+    }
   }
 
   void
@@ -141,16 +140,16 @@ namespace sample_consensus
 
       if (sqr_distance1 < sqr_distance2)
       {
-	(*closest_line)[i] = 0;
-	(*closest_dist)[i] = sqrt (sqr_distance1 / l_sqr_length);
+        (*closest_line)[i] = 0;
+        (*closest_dist)[i] = sqrt (sqr_distance1 / l_sqr_length);
       }
       else
       {
-	(*closest_line)[i] = 1;
-	(*closest_dist)[i] = sqrt (sqr_distance2 / l_sqr_length);
+        (*closest_line)[i] = 1;
+        (*closest_dist)[i] = sqrt (sqr_distance2 / l_sqr_length);
       }
       ++i;
-    }     
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -172,7 +171,7 @@ namespace sample_consensus
     // Get two other points that are different and are not colinear.
     int iter = 0;
     int total_points = 1;
-    
+
     double sqr_min_line_sep_m = min_line_sep_m_ * min_line_sep_m_;
     double sqr_max_line_sep_m = max_line_sep_m_ * max_line_sep_m_;	
     double sqr_distance;
@@ -193,27 +192,27 @@ namespace sample_consensus
       // If we already have this point, continue looking.
       if ( (random_idx[total_points] == random_idx[0]) || ((total_points==2) && random_idx[total_points] == random_idx[1]) )
       {
-	continue;
+        continue;
       }
       // If this is the 3rd point and it's colinear with the other two, or not within the distance bounds, continue looking.
       // Try all combinations of the 3 pts into ((l1,l2),p)
       if (total_points == 2)
       {
 
-	r1 = 0;
-	for (r0 =0; r0 < 3; r0++)
-	{
-	  r1 = (r0+1)%3;
-	  r2 = (r1+1)%3;
-	  sqr_distance = pointToLineSquareDistance (cloud_->pts[random_idx[r0]], cloud_->pts[random_idx[r1]], cloud_->pts[random_idx[r2]]); 
+        r1 = 0;
+        for (r0 = 0; r0 < 3; r0++)
+        {
+          r1 = (r0+1)%3;
+          r2 = (r1+1)%3;
+          sqr_distance = pointToLineSquareDistance (cloud_->pts[random_idx[r0]], cloud_->pts[random_idx[r1]], cloud_->pts[random_idx[r2]]); 
 
-	  if (sqr_distance == 0.0 || sqr_distance < sqr_min_line_sep_m || sqr_distance > sqr_max_line_sep_m)
-	    continue;
+          if (sqr_distance == 0.0 || sqr_distance < sqr_min_line_sep_m || sqr_distance > sqr_max_line_sep_m)
+            continue;
 
-	  break;
-	}
-	if (r0 == 3) 
-	  continue;
+          break;
+        }
+        if (r0 == 3) 
+          continue;
       }
 
       // This point is ok.
@@ -221,7 +220,7 @@ namespace sample_consensus
     }
 
     iterations += iter-1;
-    
+
     std::vector<int> random_idx_final (3);
     random_idx_final[0] = random_idx[r0];
     random_idx_final[1] = random_idx[r1];
@@ -251,7 +250,7 @@ namespace sample_consensus
     for (unsigned int i = 0; i < closest_dist.size (); i++)
     {
       if (closest_dist[i] < threshold)
-	inliers.push_back (indices_[i]);
+        inliers.push_back (indices_[i]);
     }
     return (inliers);
   }
@@ -310,20 +309,20 @@ namespace sample_consensus
       double mx,my,mz;
       if (closest_line[i] == 0)
       {
-	mx = model_coefficients[0];
-	my = model_coefficients[1];
-	mz = model_coefficients[2];
+        mx = model_coefficients[0];
+        my = model_coefficients[1];
+        mz = model_coefficients[2];
       }
       else
       {
-	mx = model_coefficients[6];
-	my = model_coefficients[7];
-	mz = model_coefficients[8];
+        mx = model_coefficients[6];
+        my = model_coefficients[7];
+        mz = model_coefficients[8];
       }
       double k = (
-		  ( cloud_->pts[inliers[i]].x * l1.x + cloud_->pts[inliers[i]].y * l1.y + cloud_->pts[inliers[i]].z * l1.z ) -
-		  ( mx * l1.x + my * l1.y + mz * l1.z )  
-		  ) / l_sqr_length;
+                  ( cloud_->pts[inliers[i]].x * l1.x + cloud_->pts[inliers[i]].y * l1.y + cloud_->pts[inliers[i]].z * l1.z ) -
+                  ( mx * l1.x + my * l1.y + mz * l1.z )
+                 ) / l_sqr_length;
       // Calculate the projection of the point on the line (pointProj = A + k * B)
       projected_cloud.pts[i].x = mx + k * l1.x;
       projected_cloud.pts[i].y = my + k * l1.y;
@@ -362,20 +361,20 @@ namespace sample_consensus
       double mx,my,mz;
       if (closest_line[i] == 0)
       {
-	mx = model_coefficients[0];
-	my = model_coefficients[1];
-	mz = model_coefficients[2];
+        mx = model_coefficients[0];
+        my = model_coefficients[1];
+        mz = model_coefficients[2];
       }
       else
       {
-	mx = model_coefficients[6];
-	my = model_coefficients[7];
-	mz = model_coefficients[8];
+        mx = model_coefficients[6];
+        my = model_coefficients[7];
+        mz = model_coefficients[8];
       }
       double k = (
-		  ( cloud_->pts[inliers[i]].x * l1.x + cloud_->pts[inliers[i]].y * l1.y + cloud_->pts[inliers[i]].z * l1.z ) -
-		  ( mx * l1.x + my * l1.y + mz * l1.z )
-		  ) / l_sqr_length;
+                  ( cloud_->pts[inliers[i]].x * l1.x + cloud_->pts[inliers[i]].y * l1.y + cloud_->pts[inliers[i]].z * l1.z ) -
+                  ( mx * l1.x + my * l1.y + mz * l1.z )
+                 ) / l_sqr_length;
       // Calculate the projection of the point on the line (pointProj = A + k * B)
       cloud_->pts[inliers[i]].x = mx + k * l1.x;
       cloud_->pts[inliers[i]].y = my + k * l1.y;
