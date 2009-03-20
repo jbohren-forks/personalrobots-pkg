@@ -102,12 +102,12 @@ namespace kinematic_planning
 	    update();
 	    
 	    /* print some information */
-	    ROS_INFO("=======================================");
+	    ROS_DEBUG("=======================================");
 	    std::stringstream ss;
 	    m_activePSetup->si->printSettings(ss);
 	    static_cast<StateValidityPredicate*>(m_activePSetup->si->getStateValidityChecker())->getKinematicConstraintEvaluatorSet().print(ss);
-	    ROS_INFO("%s", ss.str().c_str());
-	    ROS_INFO("=======================================");	
+	    ROS_DEBUG("%s", ss.str().c_str());
+	    ROS_DEBUG("=======================================");	
 	    
 	    /* clear memory */
 	    cleanupPlanningData(m_activePSetup);
@@ -324,7 +324,7 @@ namespace kinematic_planning
 	    }
 
 	    if (dynamic_cast<ompl::sb::GoalRegion*>(psetup->si->getGoal()))
-		ROS_INFO("Goal threshold is %g", dynamic_cast<ompl::sb::GoalRegion*>(psetup->si->getGoal())->threshold);
+		ROS_DEBUG("Goal threshold is %g", dynamic_cast<ompl::sb::GoalRegion*>(psetup->si->getGoal())->threshold);
 
 	    unsigned int t_index = 0;
 	    double t_distance = 0.0;
@@ -361,7 +361,7 @@ namespace kinematic_planning
 		    ros::WallTime startTime = ros::WallTime::now();
 		    bool ok = psetup->mp->solve(allowed_time); 
 		    double tsolve = (ros::WallTime::now() - startTime).toSec();	
-		    ROS_INFO("%s Motion planner spent %g seconds", (ok ? "[Success]" : "[Failure]"), tsolve);
+		    ROS_DEBUG("%s Motion planner spent %g seconds", (ok ? "[Success]" : "[Failure]"), tsolve);
 		    totalTime += tsolve;
 		    
 		    /* do path smoothing */
@@ -371,7 +371,7 @@ namespace kinematic_planning
 			ompl::sb::PathKinematic *path = static_cast<ompl::sb::PathKinematic*>(goal->getSolutionPath());
 			psetup->smoother->smoothMax(path);
 			double tsmooth = (ros::WallTime::now() - startTime).toSec();
-			ROS_INFO("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);		    
+			ROS_DEBUG("          Smoother spent %g seconds (%g seconds in total)", tsmooth, tsmooth + tsolve);		    
 			if (interpolate)
 			    psetup->si->interpolatePath(path);
 			if (bestPath == NULL || bestDifference > goal->getDifference() || 
@@ -383,13 +383,13 @@ namespace kinematic_planning
 			    bestDifference = goal->getDifference();
 			    approximate = goal->isApproximate();
 			    goal->forgetSolutionPath();
-			    ROS_INFO("          Obtained better solution: distance is %f", bestDifference);
+			    ROS_DEBUG("          Obtained better solution: distance is %f", bestDifference);
 			}
 		    }
 		    psetup->mp->clear();	    
 		}
 		
-		ROS_INFO("Total planning time: %g; Average planning time: %g", totalTime, (totalTime / (double)times));
+		ROS_DEBUG("Total planning time: %g; Average planning time: %g", totalTime, (totalTime / (double)times));
 	    }
 	    return result;
 	}

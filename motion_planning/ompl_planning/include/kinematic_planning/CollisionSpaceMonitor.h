@@ -233,7 +233,7 @@ namespace kinematic_planning
 	void collisionMapCallback(void)
 	{
 	    unsigned int n = m_collisionMap.get_boxes_size();
-	    ROS_INFO("Received %u points (collision map)", n);
+	    ROS_DEBUG("Received %u points (collision map)", n);
 	    
 	    beforeWorldUpdate();
 	    
@@ -257,7 +257,7 @@ namespace kinematic_planning
 	    delete[] data;
 	    
 	    double tupd = (ros::WallTime::now() - startTime).toSec();
-	    ROS_INFO("Updated world model in %f seconds", tupd);
+	    ROS_DEBUG("Updated world model in %f seconds", tupd);
 	    m_lastMapUpdate = ros::Time::now();
 	    
 	    afterWorldUpdate();
