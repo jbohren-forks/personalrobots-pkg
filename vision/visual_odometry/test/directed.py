@@ -32,6 +32,9 @@ import numpy.linalg
 import cairo
 import array
 
+from pe import PoseEstimator
+from raytracer import object, sphere, isphere, render_stereo_scene, ray_camera, vec3, shadeLitCloud
+
 def rotation(angle, x, y, z):
   return numpy.array([
     [ 1 + (1-cos(angle))*(x*x-1)         ,    -z*sin(angle)+(1-cos(angle))*x*y   ,    y*sin(angle)+(1-cos(angle))*x*z  ],
@@ -373,10 +376,39 @@ class TestDirected(unittest.TestCase):
         draw.line([ (2*x,2*y+1), (2*x-2*d,2*y+1) ], fill = (0,0,255))
       #scribble.save('out.png')
 
+  def test_pe(self):
+    random.seed(0)
+    cloud = [ (4 * (random.random() - 0.5), 4 * (random.random() - 0.5), 4 * (random.random() - 0.5)) for i in range(20) ]
+    vo = VisualOdometer(camera.Camera((389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95)))
+    stereo_cam = {}
+    af = {}
+    for i in range(5):
+      stereo_cam[i] = camera.Camera((389.0, 389.0, .080 + .010 * i, 323.42, 323.42, 274.95))
+      desired_pose = Pose()
+      cam = ray_camera(desired_pose, stereo_cam[i])
+      imL = Image.new("RGB", (640,480))
+      imR = Image.new("RGB", (640,480))
+      scene = []
+      scene += [object(isphere(vec3(0,0,0), 1000), shadeLitCloud, {'scale':0.001})]
+      scene += [object(isphere(vec3(x,y,z+6), 0.3), shadeLitCloud, {'scale':3}) for (x,y,z) in cloud]
+      imL,imR = [ im.convert("L") for im in [imL,imR] ]
+      render_stereo_scene(imL, imR, None, cam, scene, 0)
+      af[i] = SparseStereoFrame(imL, imR)
+      vo.process_frame(af[i])
+    pe = PoseEstimator()
+    for i1 in range(5):
+      for i0 in range(5):
+        pairs = vo.temporal_match(af[i1], af[i0])
+        res = pe.estimateC(stereo_cam[i0], af[i0].kp, stereo_cam[i1], af[i1].kp, pairs, False)
+        x,y,z = res[2]
+        self.assertAlmostEqual(x,0,0)
+        self.assertAlmostEqual(y,0,0)
+        self.assertAlmostEqual(z,0,0)
 
 if __name__ == '__main__':
+  if 1:
     rostest.unitrun('visual_odometry', 'directed', TestDirected)
-    if 0:
-        suite = unittest.TestSuite()
-        suite.addTest(TestDirected('test_sim'))
-        unittest.TextTestRunner(verbosity=2).run(suite)
+  else:
+    suite = unittest.TestSuite()
+    suite.addTest(TestDirected('test_pe'))
+    unittest.TextTestRunner(verbosity=2).run(suite)
