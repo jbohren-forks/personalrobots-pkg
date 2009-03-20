@@ -61,7 +61,7 @@ This node should replace the older door_handle_detector node (which will be obso
 using namespace std;
 using namespace robot_msgs;
 
-#define DEBUG 1
+#define DEBUG_FAILURES 0
 
 class DoorDetector
 {
@@ -71,7 +71,7 @@ class DoorDetector
   public:
     // ROS messages
     PointCloud cloud_orig_, cloud_tr_, cloud_regions_;
-    Point32 x_axis_, z_axis_;
+    Point32 z_axis_;
     PolygonalMap pmap_;
     tf::MessageNotifier<robot_msgs::PointCloud>*  message_notifier_;
 
@@ -138,7 +138,6 @@ class DoorDetector
       // ---[ Parameters regarding optimizations / real-time computations
       leaf_width_ = 0.02;              // 2cm box size by default
       k_search_   = 10;                // 10 k-neighbors by default
-      x_axis_.x = 1; x_axis_.y = 0; x_axis_.z = 0;
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
 
       minimum_z_ = 0.05;               // We don't care about points below 5cm in the 'base_footprint' TF frame
@@ -183,11 +182,11 @@ class DoorDetector
       detectDoor (door_handle_detector::DoorsDetector::Request &req, door_handle_detector::DoorsDetector::Response &resp)
     {
       ros::Time start_time = ros::Time::now ();
-      ros::Duration delay = ros::Duration().fromSec (25);
+      ros::Duration delay = ros::Duration ().fromSec (25);
       cout << "start time " << start_time.toSec () << endl;
       ROS_INFO ("Waiting for PointCloud newer than %f on topic %s.", (start_time + delay).toSec (), node_.mapName (input_cloud_topic_).c_str ());
 
-      // door frame
+      // Door TF frame
       door_frame_ = req.door.header.frame_id;
 
       // receive a new laser scan
@@ -195,7 +194,7 @@ class DoorDetector
       message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (&tf_, &node_,  boost::bind (&DoorDetector::cloud_cb, this, _1),
                                                                            input_cloud_topic_, door_frame_, 1);
       ros::Duration tictoc = ros::Duration ().fromSec (1.0);
-      while ((int)num_clouds_received_ < 1)//|| (cloud_in_.header.stamp < (start_time + delay)))
+      while ((int)num_clouds_received_ < 1)// || (cloud_orig_.header.stamp < (start_time + delay)))
         tictoc.sleep ();
       delete message_notifier_;
 
@@ -250,7 +249,7 @@ class DoorDetector
       }
       leaves.resize (0);    // dealloc memory used for the downsampling process
 
-#if DEBUG
+#if DEBUG_FAILURES
       sendMarker (viewpoint_cloud_.point.x, viewpoint_cloud_.point.y, viewpoint_cloud_.point.z, parameter_frame_, &node_, global_marker_id_, 0, 0, 0);
 #endif
       // Create Kd-Tree and estimate the point normals in the original point cloud
@@ -352,7 +351,7 @@ class DoorDetector
             continue;
 
           goodness_factor[cc] = 0;
-#if DEBUG
+#if DEBUG_FAILURES
           Point32 centroid;
           cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
           sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 255, 0, 0);
@@ -372,7 +371,7 @@ class DoorDetector
         if (min_p.z > door_min_z_)
         {
           goodness_factor[cc] = 0;
-#if DEBUG
+#if DEBUG_FAILURES
           Point32 centroid;
           cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
           sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 0, 255, 0);
@@ -400,7 +399,7 @@ class DoorDetector
         if (door_frame < door_min_width_ || door_height < door_min_height_ || door_frame > door_max_width_ || door_height > door_max_height_)
         {
           goodness_factor[cc] = 0;
-#if DEBUG
+#if DEBUG_FAILURES
           Point32 centroid;
           cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
           sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 0, 0, 255);
@@ -417,7 +416,7 @@ class DoorDetector
         if (density < minimum_region_density_)
         {
           goodness_factor[cc] = 0;
-#if DEBUG
+#if DEBUG_FAILURES
           Point32 centroid;
           cloud_geometry::nearest::computeCentroid (&pmap_.polygons[cc], centroid);
           sendMarker (centroid.x, centroid.y, centroid.z, parameter_frame_, &node_, global_marker_id_, 255, 255, 255);
