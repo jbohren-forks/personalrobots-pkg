@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
- *
+ * Copyright (c) 2009, Willow Garage, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -11,6 +10,9 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -24,11 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: sac_model_line.h 12438 2009-03-12 08:59:30Z veedee $
+ * $Id$
  *
  */
-
-/** \author Radu Bogdan Rusu */
+ 
+/** \author Caroline Pantofaru */
 
 #ifndef _SAMPLE_CONSENSUS_SACMODELPARALLELLINES_H_
 #define _SAMPLE_CONSENSUS_SACMODELPARALLELLINES_H_
@@ -48,10 +50,11 @@ namespace sample_consensus
     public:
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Constructor for base SACModelLine. */
-    SACModelParallelLines (double min_line_sep_m, double max_line_sep_m) { 
-      min_line_sep_m_ = min_line_sep_m;
-      max_line_sep_m_ = max_line_sep_m;
-    }
+      SACModelParallelLines (double min_line_sep_m, double max_line_sep_m)
+      { 
+        min_line_sep_m_ = min_line_sep_m;
+        max_line_sep_m_ = max_line_sep_m;
+      }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Destructor for base SACModelLine. */
@@ -78,14 +81,14 @@ namespace sample_consensus
       virtual bool doSamplesVerifyModel (std::set<int> indices, double threshold);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Return an unique id for this model (SACMODEL_LINE). */
+      /** \brief Return an unique id for this model (SACMODEL_PARALLEL_LINES). */
       virtual int getModelType () { return (SACMODEL_PARALLEL_LINES); }
 
-      void closestLine(std::vector<int> indices, std::vector<double> model_coefficients, 
-		       std::vector<int> *closest_line, std::vector<double> *closest_dist); 
-      void closestLine(std::set<int> indices, std::vector<double> model_coefficients, 
-		       std::vector<int> *closest_line, std::vector<double> *closest_dist);
-      double pointToLineSquareDistance(robot_msgs::Point32 line_point1, robot_msgs::Point32 line_point2, robot_msgs::Point32 point);
+      void closestLine (std::vector<int> indices, std::vector<double> model_coefficients, 
+		        std::vector<int> *closest_line, std::vector<double> *closest_dist); 
+      void closestLine (std::set<int> indices, std::vector<double> model_coefficients, 
+		        std::vector<int> *closest_line, std::vector<double> *closest_dist);
+      double pointToLineSquareDistance (robot_msgs::Point32 line_point1, robot_msgs::Point32 line_point2, robot_msgs::Point32 point);
 
       double min_line_sep_m_;
       double max_line_sep_m_;

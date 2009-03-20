@@ -1,35 +1,37 @@
-//Software License Agreement (BSD License)
+/*
+ * Copyright (c) 2009, Willow Garage, Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * $Id$
+ *
+ */
+ 
 
-//Copyright (c) 2008, Willow Garage, Inc.
-//All rights reserved.
-//
-//Redistribution and use in source and binary forms, with or without
-//modification, are permitted provided that the following conditions
-//are met:
-//
-// * Redistributions of source code must retain the above copyright
-//   notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above
-//   copyright notice, this list of conditions and the following
-//   disclaimer in the documentation and/or other materials provided
-//   with the distribution.
-// * Neither the name of Willow Garage, Inc. nor the names of its
-//   contributors may be used to endorse or promote products derived
-//   from this software without specific prior written permission.
-//
-//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-//"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-//LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-//FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-//COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-//BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-//LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-//CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-//LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-//ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-//POSSIBILITY OF SUCH DAMAGE.
-
+/** \author Caroline Pantofaru */
 
 #include <point_cloud_mapping/sample_consensus/sac_model_parallel_lines.h>
 #include <point_cloud_mapping/geometry/point.h>
@@ -48,7 +50,7 @@ namespace sample_consensus
    * \param point The point
    */
   double
-  SACModelParallelLines::pointToLineSquareDistance(robot_msgs::Point32 line_point1, robot_msgs::Point32 line_point2, robot_msgs::Point32 point) 
+    SACModelParallelLines::pointToLineSquareDistance (robot_msgs::Point32 line_point1, robot_msgs::Point32 line_point2, robot_msgs::Point32 point) 
   {
     robot_msgs::Point32 v12, v1p;
     v12.x = line_point2.x - line_point1.x;
@@ -57,9 +59,9 @@ namespace sample_consensus
     v1p.x = point.x - line_point1.x;
     v1p.y = point.y - line_point1.y;
     v1p.z = point.z - line_point1.z;
-    robot_msgs::Point32 c = cloud_geometry::cross(&v12, &v1p);
+    robot_msgs::Point32 c = cloud_geometry::cross (&v12, &v1p);
     double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (v12.x * v12.x + v12.y * v12.y + v12.z * v12.z);
-    return sqr_distance;
+    return (sqr_distance);
   }
 
 
@@ -72,16 +74,18 @@ namespace sample_consensus
    * \param closest_dist The distance from each point to its closest line.
    */
   void
-  SACModelParallelLines::closestLine(std::vector<int> indices, std::vector<double> model_coefficients, std::vector<int> *closest_line, std::vector<double> *closest_dist)
+    SACModelParallelLines::closestLine (std::vector<int> indices, std::vector<double> model_coefficients, 
+                                        std::vector<int> *closest_line, std::vector<double> *closest_dist)
   {
-    int end = indices.size();
+    int end = indices.size ();
     robot_msgs::Point32 d1, d2, l1, c1, c2;
     l1.x = model_coefficients[3] - model_coefficients[0];
     l1.y = model_coefficients[4] - model_coefficients[1];
     l1.z = model_coefficients[5] - model_coefficients[2];
     double l_sqr_length = (l1.x * l1.x + l1.y * l1.y + l1.z * l1.z);
     double sqr_distance1, sqr_distance2;
-    for (int i = 0; i < end; i++ ) {
+    for (int i = 0; i < end; i++)
+    {
       // Calculate the distance from the point to both lines
       d1.x = cloud_->pts[indices[i]].x - model_coefficients[0];
       d1.y = cloud_->pts[indices[i]].y - model_coefficients[1];
@@ -95,29 +99,33 @@ namespace sample_consensus
       c2 = cloud_geometry::cross (&l1, &d2);
       sqr_distance2 = (c2.x * c2.x + c2.y * c2.y + c2.z * c2.z);
 
-      if (sqr_distance1 < sqr_distance2) {
+      if (sqr_distance1 < sqr_distance2)
+      {
 	(*closest_line)[i] = 0;
-	(*closest_dist)[i] = sqrt(sqr_distance1 / l_sqr_length);
+	(*closest_dist)[i] = sqrt (sqr_distance1 / l_sqr_length);
       }
-      else{
+      else
+      {
 	(*closest_line)[i] = 1;
-	(*closest_dist)[i] = sqrt(sqr_distance2 / l_sqr_length);
+	(*closest_dist)[i] = sqrt (sqr_distance2 / l_sqr_length);
       }
     }     
   }
 
   void
-  SACModelParallelLines::closestLine(std::set<int> indices, std::vector<double> model_coefficients, std::vector<int> *closest_line, std::vector<double> *closest_dist)
+    SACModelParallelLines::closestLine (std::set<int> indices, std::vector<double> model_coefficients, 
+                                        std::vector<int> *closest_line, std::vector<double> *closest_dist)
   {
-    std::set<int>::iterator end = indices.end();
+    std::set<int>::iterator end = indices.end ();
     robot_msgs::Point32 d1, d2, l1, c1, c2;
     l1.x = model_coefficients[3] - model_coefficients[0];
     l1.y = model_coefficients[4] - model_coefficients[1];
     l1.z = model_coefficients[5] - model_coefficients[2];
     double l_sqr_length = (l1.x * l1.x + l1.y * l1.y + l1.z * l1.z);
     double sqr_distance1, sqr_distance2;
-    int i=0;
-    for (std::set<int>::iterator it = indices.begin(); it != end; ++it ) {
+    int i = 0;
+    for (std::set<int>::iterator it = indices.begin (); it != end; ++it)
+    {
       // Calculate the distance from the point to the line
       d1.x = cloud_->pts[*it].x - model_coefficients[0];
       d1.y = cloud_->pts[*it].y - model_coefficients[1];
@@ -131,13 +139,15 @@ namespace sample_consensus
       c2 = cloud_geometry::cross (&l1, &d2);
       sqr_distance2 = (c2.x * c2.x + c2.y * c2.y + c2.z * c2.z);
 
-      if (sqr_distance1 < sqr_distance2) {
+      if (sqr_distance1 < sqr_distance2)
+      {
 	(*closest_line)[i] = 0;
-	(*closest_dist)[i] = sqrt(sqr_distance1 / l_sqr_length);
+	(*closest_dist)[i] = sqrt (sqr_distance1 / l_sqr_length);
       }
-      else{
+      else
+      {
 	(*closest_line)[i] = 1;
-	(*closest_dist)[i] = sqrt(sqr_distance2 / l_sqr_length);
+	(*closest_dist)[i] = sqrt (sqr_distance2 / l_sqr_length);
       }
       ++i;
     }     
@@ -149,10 +159,10 @@ namespace sample_consensus
     * \note Ensures that the 3 points are unique and not co-linear.
     */
   std::vector<int>
-  SACModelParallelLines::getSamples (int &iterations)
+    SACModelParallelLines::getSamples (int &iterations)
   {
-    std::vector<int> random_idx(3);
-    double trand = indices_.size()/(RAND_MAX + 1.0);
+    std::vector<int> random_idx (3);
+    double trand = indices_.size () / (RAND_MAX + 1.0);
 
     // Get a random number between 1 and max_indices
     int idx = (int)(rand()*trand);
@@ -166,9 +176,10 @@ namespace sample_consensus
     double sqr_min_line_sep_m = min_line_sep_m_ * min_line_sep_m_;
     double sqr_max_line_sep_m = max_line_sep_m_ * max_line_sep_m_;	
     double sqr_distance;
-    int r0=0, r1=1, r2=2;
+    int r0 = 0, r1 = 1, r2 = 2;
 
-    while (total_points < 3) {
+    while (total_points < 3)
+    {
       iter++;
 
       if (iter > MAX_ITERATIONS_UNIQUE)
@@ -177,21 +188,24 @@ namespace sample_consensus
         break;
       }
 
-      idx = (int)(rand()*trand);
+      idx = (int)(rand ()*trand);
       random_idx[total_points] = indices_[idx];
       // If we already have this point, continue looking.
-      if ( (random_idx[total_points] == random_idx[0]) || ((total_points==2) && random_idx[total_points] == random_idx[1]) ) {
+      if ( (random_idx[total_points] == random_idx[0]) || ((total_points==2) && random_idx[total_points] == random_idx[1]) )
+      {
 	continue;
       }
       // If this is the 3rd point and it's colinear with the other two, or not within the distance bounds, continue looking.
       // Try all combinations of the 3 pts into ((l1,l2),p)
-      if (total_points == 2) {
+      if (total_points == 2)
+      {
 
 	r1 = 0;
-	for (r0 =0; r0 < 3; r0++) {
+	for (r0 =0; r0 < 3; r0++)
+	{
 	  r1 = (r0+1)%3;
 	  r2 = (r1+1)%3;
-	  sqr_distance = pointToLineSquareDistance(cloud_->pts[random_idx[r0]], cloud_->pts[random_idx[r1]], cloud_->pts[random_idx[r2]]); 
+	  sqr_distance = pointToLineSquareDistance (cloud_->pts[random_idx[r0]], cloud_->pts[random_idx[r1]], cloud_->pts[random_idx[r2]]); 
 
 	  if (sqr_distance == 0.0 || sqr_distance < sqr_min_line_sep_m || sqr_distance > sqr_max_line_sep_m)
 	    continue;
@@ -208,12 +222,11 @@ namespace sample_consensus
 
     iterations += iter-1;
     
-    std::vector<int> random_idx_final(3);
+    std::vector<int> random_idx_final (3);
     random_idx_final[0] = random_idx[r0];
     random_idx_final[1] = random_idx[r1];
     random_idx_final[2] = random_idx[r2];
-    return random_idx_final;
-
+    return (random_idx_final);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -230,12 +243,13 @@ namespace sample_consensus
     std::vector<int> inliers;
 
     // Get all of the point-to-closest-line distances.
-    std::vector<int> closest_line(indices_.size());
-    std::vector<double> closest_dist(indices_.size());
-    closestLine(indices_, model_coefficients, &closest_line, &closest_dist);
+    std::vector<int> closest_line (indices_.size ());
+    std::vector<double> closest_dist (indices_.size ());
+    closestLine (indices_, model_coefficients, &closest_line, &closest_dist);
 
     // Find the inliers
-    for (unsigned int i=0; i<closest_dist.size(); i++) {
+    for (unsigned int i = 0; i < closest_dist.size (); i++)
+    {
       if (closest_dist[i] < threshold)
 	inliers.push_back (indices_[i]);
     }
@@ -251,12 +265,12 @@ namespace sample_consensus
   {
     std::vector<double> distances (indices_.size ());
 
-    std::vector<int> closest_line(indices_.size());
-    std::vector<double> closest_dist(indices_.size());
+    std::vector<int> closest_line (indices_.size ());
+    std::vector<double> closest_dist (indices_.size ());
 
-    closestLine(indices_, model_coefficients, &closest_line, &closest_dist);
+    closestLine (indices_, model_coefficients, &closest_line, &closest_dist);
 
-    return closest_dist;
+    return (closest_dist);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -269,20 +283,20 @@ namespace sample_consensus
   {
     robot_msgs::PointCloud projected_cloud;
     // Allocate enough space
-    projected_cloud.pts.resize(inliers.size());
+    projected_cloud.pts.resize (inliers.size ());
 
     // Create the channels
-    projected_cloud.set_chan_size(cloud_->get_chan_size());
-    for (unsigned int d = 0; d < projected_cloud.get_chan_size(); d++)
+    projected_cloud.set_chan_size (cloud_->get_chan_size ());
+    for (unsigned int d = 0; d < projected_cloud.get_chan_size (); d++)
     {
       projected_cloud.chan[d].name = cloud_->chan[d].name;
-      projected_cloud.chan[d].vals.resize(inliers.size());
+      projected_cloud.chan[d].vals.resize (inliers.size ());
     }
 
     // Compute the closest distances from the pts to the lines.
-    std::vector<int> closest_line(inliers.size());
-    std::vector<double> closest_dist(inliers.size());
-    closestLine(inliers, model_coefficients, &closest_line, &closest_dist);
+    std::vector<int> closest_line (inliers.size ());
+    std::vector<double> closest_dist (inliers.size ());
+    closestLine (inliers, model_coefficients, &closest_line, &closest_dist);
 
     robot_msgs::Point32 l1;
     l1.x = model_coefficients[3] - model_coefficients[0];
@@ -294,12 +308,14 @@ namespace sample_consensus
     for (unsigned int i = 0; i < inliers.size (); i++)
     {
       double mx,my,mz;
-      if (closest_line[i] == 0) {
+      if (closest_line[i] == 0)
+      {
 	mx = model_coefficients[0];
 	my = model_coefficients[1];
 	mz = model_coefficients[2];
       }
-      else {
+      else
+      {
 	mx = model_coefficients[6];
 	my = model_coefficients[7];
 	mz = model_coefficients[8];
@@ -330,9 +346,9 @@ namespace sample_consensus
   {
 
     // Compute the closest distances from the pts to the lines.
-    std::vector<int> closest_line(inliers.size());
-    std::vector<double> closest_dist(inliers.size());
-    closestLine(inliers, model_coefficients, &closest_line, &closest_dist);
+    std::vector<int> closest_line (inliers.size ());
+    std::vector<double> closest_dist (inliers.size ());
+    closestLine (inliers, model_coefficients, &closest_line, &closest_dist);
 
     robot_msgs::Point32 l1;
     l1.x = model_coefficients[3] - model_coefficients[0];
@@ -344,12 +360,14 @@ namespace sample_consensus
     for (unsigned int i = 0; i < inliers.size(); i++)
     {
       double mx,my,mz;
-      if (closest_line[i] == 0) {
+      if (closest_line[i] == 0)
+      {
 	mx = model_coefficients[0];
 	my = model_coefficients[1];
 	mz = model_coefficients[2];
       }
-      else {
+      else
+      {
 	mx = model_coefficients[6];
 	my = model_coefficients[7];
 	mz = model_coefficients[8];
@@ -374,7 +392,7 @@ namespace sample_consensus
   bool
     SACModelParallelLines::computeModelCoefficients (std::vector<int> indices)
   {
-    model_coefficients_.resize(9);
+    model_coefficients_.resize (9);
     model_coefficients_[0] = cloud_->pts[indices[0]].x;
     model_coefficients_[1] = cloud_->pts[indices[0]].y;
     model_coefficients_[2] = cloud_->pts[indices[0]].z;
@@ -389,7 +407,6 @@ namespace sample_consensus
   }
 
 
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Recompute the parallel lines coefficients using the given inlier set and return them to the user.
     * @note: These are the coefficients of the line model after refinement.
@@ -398,49 +415,51 @@ namespace sample_consensus
   std::vector<double>
     SACModelParallelLines::refitModel (std::vector<int> inliers)
   {
-
-
     if (inliers.size () == 0)
       return (model_coefficients_);
 
     // Get the distances from the inliers to their closest line
-    std::vector<int> closest_line(inliers.size());
-    std::vector<double> closest_dist(inliers.size());
-    closestLine(inliers, model_coefficients_, &closest_line, &closest_dist);
+    std::vector<int> closest_line (inliers.size ());
+    std::vector<double> closest_dist (inliers.size ());
+    closestLine (inliers, model_coefficients_, &closest_line, &closest_dist);
 
-    std::vector<double> refit_coefficients(9);
+    std::vector<double> refit_coefficients (9);
 
     // Compute the centroids of the two sets of samples
     robot_msgs::Point32 centroid1, centroid2, centroid;
     std::vector<int> inliers1, inliers2;
-    int end = inliers.size();
-    for (int i=0; i < end; ++i) {
-      (closest_line[i] == 0) ? inliers1.push_back(inliers[i]) : inliers2.push_back(inliers[i]);
+    int end = inliers.size ();
+    for (int i=0; i < end; ++i)
+    {
+      (closest_line[i] == 0) ? inliers1.push_back (inliers[i]) : inliers2.push_back (inliers[i]);
     }
-    cloud_geometry::nearest::computeCentroid(cloud_, &inliers1, centroid1);
-    cloud_geometry::nearest::computeCentroid(cloud_, &inliers2, centroid2);
+    cloud_geometry::nearest::computeCentroid (cloud_, &inliers1, centroid1);
+    cloud_geometry::nearest::computeCentroid (cloud_, &inliers2, centroid2);
 
     // Remove the centroids from the two sets of inlier samples to center everything at (0,0)
     robot_msgs::PointCloud zero_cloud;
-    zero_cloud.pts.resize(inliers.size());
+    zero_cloud.pts.resize (inliers.size ());
     robot_msgs::Point32 tpoint;
-    for (unsigned int i=0; i< inliers1.size(); i++) {
+    for (unsigned int i = 0; i < inliers1.size (); i++)
+    {
       tpoint.x = cloud_->pts[inliers1[i]].x - centroid1.x;
       tpoint.y = cloud_->pts[inliers1[i]].y - centroid1.y;
       tpoint.z = cloud_->pts[inliers1[i]].z - centroid1.z;
-      zero_cloud.pts.push_back(tpoint);
+      zero_cloud.pts.push_back (tpoint);
     }
-    for (unsigned int i=0; i< inliers2.size(); i++) {
+    for (unsigned int i = 0; i < inliers2.size (); i++)
+    {
       tpoint.x = cloud_->pts[inliers2[i]].x - centroid2.x;
       tpoint.y = cloud_->pts[inliers2[i]].y - centroid2.y;
       tpoint.z = cloud_->pts[inliers2[i]].z - centroid2.z;
-      zero_cloud.pts.push_back(tpoint);
+      zero_cloud.pts.push_back (tpoint);
     }
 
     // Compute the 3x3 covariance matrix
     Eigen::Matrix3d covariance_matrix;
-    std::vector<int> zero_inliers(zero_cloud.pts.size());
-    for (unsigned int i=0; i<zero_cloud.pts.size(); i++) {
+    std::vector<int> zero_inliers (zero_cloud.pts.size ());
+    for (unsigned int i = 0; i < zero_cloud.pts.size (); i++)
+    {
       zero_inliers[i] = i;
     }
     cloud_geometry::nearest::computeCovarianceMatrix (&zero_cloud, &zero_inliers, covariance_matrix, centroid);
@@ -457,15 +476,15 @@ namespace sample_consensus
     refit_coefficients[8] = centroid2.z;
 
     // Extract the eigenvalues and eigenvectors
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> ei_symm(covariance_matrix);
-    Eigen::Vector3d eigen_values  = ei_symm.eigenvalues();
-    Eigen::Matrix3d eigen_vectors = ei_symm.eigenvectors();
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> ei_symm (covariance_matrix);
+    Eigen::Vector3d eigen_values  = ei_symm.eigenvalues ();
+    Eigen::Matrix3d eigen_vectors = ei_symm.eigenvectors ();
 
     refit_coefficients[3] = eigen_vectors(0, 2) + refit_coefficients[0];
     refit_coefficients[4] = eigen_vectors(1, 2) + refit_coefficients[1];
     refit_coefficients[5] = eigen_vectors(2, 2) + refit_coefficients[2];
 
-    return refit_coefficients;
+    return (refit_coefficients);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -476,20 +495,16 @@ namespace sample_consensus
   bool
     SACModelParallelLines::doSamplesVerifyModel (std::set<int> indices, double threshold)
   {
+    std::vector<int> closest_line (indices.size ());
+    std::vector<double> closest_dist (indices.size ());
+    closestLine (indices, model_coefficients_, &closest_line, &closest_dist);
 
-    std::vector<int> closest_line(indices.size());
-    std::vector<double> closest_dist(indices.size());
-    closestLine(indices, model_coefficients_, &closest_line, &closest_dist);
-
-    for (unsigned int i=0; i<closest_dist.size(); ++i) 
+    for (unsigned int i = 0; i < closest_dist.size (); ++i) 
     {
       if (closest_dist[i] > threshold)
         return (false);
     }
     return (true);
   }
-
-  
-
 }
 
