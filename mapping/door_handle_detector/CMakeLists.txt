@@ -12,20 +12,17 @@ rospack_add_executable (door_handle_detector_node
                         src/geometric_helper.cpp
                         src/door_handle_detector.cpp
                        )
-target_link_libraries (door_handle_detector_node)
 
 # ---[ New and improved door and handle detection
 rospack_add_executable (doors_detector_node
                         src/geometric_helper.cpp
                         src/doors_detector.cpp
                        )
-target_link_libraries (doors_detector_node)
 
 #rospack_add_executable (handle_detector_node
 #                        src/geometric_helper.cpp
 #                        src/handle_detector.cpp
 #                       )
-#target_link_libraries (handle_detector_node)
 # ]---
 
 rospack_add_library(executive_functions src/executive_functions.cpp)
@@ -34,25 +31,18 @@ rospack_add_executable(action_runner src/action_detect_door.cpp
 				     src/action_grasp_door.cpp 
 				     src/action_open_door.cpp 
 				     test/action_runner.cpp)
-target_link_libraries (action_runner)
 
 rospack_add_executable(open_door_executive_test test/open_door_executive_test.cpp)
-target_link_libraries(open_door_executive_test)
 
 rospack_add_executable(trigger test/trigger.cpp)
-target_link_libraries(trigger)
 
 rospack_add_executable(trigger_doors test/trigger_doors.cpp)
-target_link_libraries(trigger_doors)
 
 rospack_add_executable(door_checkerboard_detector test/door_checkerboard_detector.cpp)
-target_link_libraries(door_checkerboard_detector)
 
 rospack_add_executable(test_door_detection test/test_door_detection.cpp)
-target_link_libraries(test_door_detection)
 
 rospack_add_executable(test_door_detection_joystick test/test_door_detection_joystick.cpp)
-target_link_libraries(test_door_detection_joystick)
 
 # check for OpenMP
 include(CheckIncludeFile)
