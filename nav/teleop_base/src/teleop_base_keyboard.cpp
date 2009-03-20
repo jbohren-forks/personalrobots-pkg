@@ -103,22 +103,22 @@ double max_turn = 60.0*M_PI/180.0; // rad/second
 bool always_command = false;
 
 
-class TBK_Node : public ros::Node
+class TBK_Node
 {
   private:
     robot_msgs::PoseDot cmdvel;
 
   public:
-    TBK_Node() : ros::Node("tbk")
+    TBK_Node()
     {
-      advertise<robot_msgs::PoseDot>("cmd_vel",1);
+      ros::Node::instance()->advertise<robot_msgs::PoseDot>("cmd_vel",1);
     }
     ~TBK_Node() { }
     void keyboardLoop();
     void stopRobot()
     {
       cmdvel.vel.vx = cmdvel.ang_vel.vz = 0.0;
-      publish("cmd_vel", cmdvel);
+      ros::Node::instance()->publish("cmd_vel", cmdvel);
     }
 };
 
@@ -139,7 +139,7 @@ int
 main(int argc, char** argv)
 {
   ros::init(argc,argv);
-
+  ros::Node n("tbk");
   tbk = new TBK_Node();
 
   signal(SIGINT,quit);
@@ -280,7 +280,7 @@ TBK_Node::keyboardLoop()
       cmdvel.vel.vx = speed * max_tv;
       cmdvel.ang_vel.vz = turn * max_rv;
 
-      publish("cmd_vel",cmdvel);
+      ros::Node::instance()->publish("cmd_vel",cmdvel);
     }
   }
 }
