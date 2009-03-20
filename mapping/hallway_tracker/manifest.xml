@@ -1,0 +1,18 @@
+<package>
+  <description>
+    A node which finds the two parallel walls in a hallway.
+  </description>
+
+  <author>Caroline Pantofaru</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental"/>
+
+  <depend package="roscpp" />
+  <depend package="robot_msgs" />
+  <depend package="robot_srvs" />
+  <depend package="kdl" />
+  <depend package="point_cloud_mapping" />
+  <depend package="std_msgs" />
+  <depend package="laser_scan" />
+</package>
