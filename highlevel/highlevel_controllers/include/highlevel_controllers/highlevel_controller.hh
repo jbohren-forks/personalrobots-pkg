@@ -344,7 +344,7 @@ private:
    * goal has not yet been accomplished and that no plan has been constructed yet.
    */
   void activate(){
-    ROS_INFO("Activating controller with timeout of %f seconds\n", this->goalMsg.timeout);
+    ROS_DEBUG("Activating controller with timeout of %f seconds\n", this->goalMsg.timeout);
 
     valid_ = 0;
     this->stateMsg.status.value = this->stateMsg.status.ACTIVE;
@@ -353,7 +353,7 @@ private:
   }
 
   void preempt(){
-    ROS_INFO("Controller preempted.");
+    ROS_DEBUG("Controller preempted.");
     this->stateMsg.status.value = this->stateMsg.status.PREEMPTED;
     deactivate();
   }
@@ -362,7 +362,7 @@ private:
    * @brief Deactivation of the controller will set the state to inactive, and clear the valid flag.
    */
   void deactivate(){
-    ROS_INFO("Deactivating controller");
+    ROS_DEBUG("Deactivating controller");
     handleDeactivation();
   }
 
@@ -461,7 +461,7 @@ private:
     // when the planner invalidates the plan, which can happen since planning is interleaved.
     if(isActive()){
       if(isValid() && goalReached()){
-	ROS_INFO("Success! Goal achieved :)\n");
+	ROS_DEBUG("Success! Goal achieved :)\n");
 	this->stateMsg.status.value = this->stateMsg.status.SUCCESS;
 	deactivate();
       }

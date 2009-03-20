@@ -264,14 +264,14 @@ namespace ros {
       // get map via RPC
       robot_srvs::StaticMap::Request  req;
       robot_srvs::StaticMap::Response resp;
-      ROS_INFO("Requesting the map...\n");
+      ROS_DEBUG("Requesting the map...\n");
       while(!ros::service::call("static_map", req, resp))
       {
-        ROS_INFO("Request failed; trying again...\n");
+        ROS_INFO("Map Request failed; trying again...\n");
         usleep(1000000);
       }
 
-      ROS_INFO("Received a %d X %d map at %f m/pix\n",
+      ROS_DEBUG("Received a %d X %d map at %f m/pix\n",
           resp.map.width, resp.map.height, resp.map.resolution);
 
       // We are treating cells with no information as lethal obstacles based on the input data. This is not ideal but
