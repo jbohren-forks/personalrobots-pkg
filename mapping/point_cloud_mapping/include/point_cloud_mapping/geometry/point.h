@@ -38,6 +38,7 @@
 #include <robot_msgs/Polygon3D.h>
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/Point.h>
+#include <robot_msgs/Vector3.h>
 
 #include <Eigen/Core>
 
@@ -235,6 +236,39 @@ namespace cloud_geometry
     * \param p2 the second point/vector
     */
   inline double
+    dot (robot_msgs::Point32 *p1, robot_msgs::Vector3 *p2)
+  {
+    return (p1->x * p2->x + p1->y * p2->y + p1->z * p2->z);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the dot product between two points (vectors).
+    * \param p1 the first point/vector
+    * \param p2 the second point/vector
+    */
+  inline double
+    dot (robot_msgs::Vector3 *p1, robot_msgs::Point32 *p2)
+  {
+    return (p1->x * p2->x + p1->y * p2->y + p1->z * p2->z);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the dot product between two points (vectors).
+    * \param p1 the first point/vector
+    * \param p2 the second point/vector
+    */
+  inline double
+    dot (robot_msgs::Vector3 *p1, robot_msgs::Vector3 *p2)
+  {
+    return (p1->x * p2->x + p1->y * p2->y + p1->z * p2->z);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the dot product between two points (vectors).
+    * \param p1 the first point/vector
+    * \param p2 the second point/vector
+    */
+  inline double
     dot (std::vector<double> *p1, std::vector<double> *p2)
   {
     return (p1->at (0) * p2->at (0) + p1->at (1) * p2->at (1) + p1->at (2) * p2->at (2));
@@ -329,6 +363,13 @@ namespace cloud_geometry
     cerr_p (robot_msgs::Point32 p)
   {
     std::cerr << p.x << " " << p.y << " " << p.z << std::endl;
+  }
+  inline void
+    cerr_p (std::vector<double> p)
+  {
+    for (unsigned int i = 0; i < p.size () - 1; i++)
+      std::cerr << p[i] << " ";
+    std::cerr << p[p.size () - 1] << std::endl;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
