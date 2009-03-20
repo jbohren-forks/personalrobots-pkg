@@ -53,6 +53,7 @@
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
 #include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
 #include <angles/angles.h>
 
 // Kd Tree
@@ -189,7 +190,12 @@ class TableObjectDetector
 
       // Subscribe to a point cloud topic
       need_cloud_data_ = true;
-      node_.subscribe (input_cloud_topic_, cloud_in_, &TableObjectDetector::cloud_cb, this, 1);
+      tf::MessageNotifier<robot_msgs::PointCloud> 
+              _pointcloudnotifier(&tf_, ros::Node::instance(),  
+                                  boost::bind(&TableObjectDetector::cloud_cb, 
+                                              this, _1), 
+                                  input_cloud_topic_, global_frame_, 50);
+      //node_.subscribe (input_cloud_topic_, cloud_in_, &TableObjectDetector::cloud_cb, this, 1);
 
       // Wait until the scan is ready, sleep for 10ms
       ros::Duration tictoc (0, 10000000);
@@ -459,8 +465,9 @@ class TableObjectDetector
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
-    void cloud_cb ()
+    void cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& pc)
     {
+      cloud_in_ = *pc;
       need_cloud_data_ = false;
     }
 
