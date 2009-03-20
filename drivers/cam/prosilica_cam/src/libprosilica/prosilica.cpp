@@ -140,6 +140,10 @@ void Camera::setup()
   PvAttrUint32Get(handle_, "PacketSize", &maxPacketSize);
   PvCaptureAdjustPacketSize(handle_, maxPacketSize);
 
+  // capture whole frame by default
+  setBinning();
+  setRoiToWholeFrame();
+  
   // query for attributes (TODO: more)
   CHECK_ERR( PvAttrUint32Get(handle_, "TotalBytesPerFrame", &frameSize_),
              "Unable to retrieve frame size" );
@@ -281,6 +285,44 @@ void Camera::setWhiteBalance(unsigned int blue, unsigned int red, AutoSetting is
     CHECK_ERR( PvAttrUint32Set(handle_, "WhitebalValueRed", red),
                "Couldn't set white balance red value" );
   }
+}
+
+void Camera::setRoi(unsigned int x, unsigned int y,
+                    unsigned int width, unsigned int height)
+{
+  CHECK_ERR( PvAttrUint32Set(handle_, "RegionX", x),
+             "Couldn't set region x (left edge)" );
+  CHECK_ERR( PvAttrUint32Set(handle_, "RegionY", y),
+             "Couldn't set region y (top edge)" );
+  CHECK_ERR( PvAttrUint32Set(handle_, "Width", width),
+             "Couldn't set region width" );
+  CHECK_ERR( PvAttrUint32Set(handle_, "Height", height),
+             "Couldn't set region height" );
+}
+
+void Camera::setRoiToWholeFrame()
+{
+  tPvUint32 min_val, max_val;
+  CHECK_ERR( PvAttrUint32Set(handle_, "RegionX", 0),
+             "Couldn't set region x (left edge)" );
+  CHECK_ERR( PvAttrUint32Set(handle_, "RegionY", 0),
+             "Couldn't set region y (top edge)" );
+  CHECK_ERR( PvAttrRangeUint32(handle_, "Width", &min_val, &max_val),
+             "Couldn't get range of Width attribute" );
+  CHECK_ERR( PvAttrUint32Set(handle_, "Width", max_val),
+             "Couldn't set region width" );
+  CHECK_ERR( PvAttrRangeUint32(handle_, "Height", &min_val, &max_val),
+             "Couldn't get range of Height attribute" );
+  CHECK_ERR( PvAttrUint32Set(handle_, "Height", max_val),
+             "Couldn't set region height" );
+}
+
+void Camera::setBinning(unsigned int binning_x, unsigned int binning_y)
+{
+  CHECK_ERR( PvAttrUint32Set(handle_, "BinningX", binning_x),
+             "Couldn't set horizontal binning" );
+  CHECK_ERR( PvAttrUint32Set(handle_, "BinningY", binning_y),
+             "Couldn't set vertical binning" );
 }
 
 unsigned long Camera::guid()

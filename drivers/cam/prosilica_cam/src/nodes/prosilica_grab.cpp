@@ -57,7 +57,7 @@ int main(int argc, char** argv)
         if (display) {
           sprintf(filename, "frame%04u.jpg", index++);
           cvSaveImage( filename, display );
-          ROS_INFO("Saved image %s\n", filename);
+          ROS_INFO("Saved image %s", filename);
         }
         break;
     }

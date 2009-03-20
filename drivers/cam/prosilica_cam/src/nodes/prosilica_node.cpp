@@ -71,6 +71,8 @@ private:
   double D_[5], K_[9], R_[9], P_[12];
   CvMat Dmat_, Kmat_, Rmat_, Pmat_;
   cv::WImageBuffer1_f undistortX_, undistortY_;
+  cv::WImageBuffer1_f roiUndistortX_, roiUndistortY_;
+  unsigned int region_x_, region_y_;
   bool calibrated_;
 
 public:
@@ -182,7 +184,8 @@ public:
       ROS_INFO("Loaded intrinsics from camera");
     else
       ROS_WARN("Failed to load intrinsics from camera");
-    
+
+    cam_->setRoiToWholeFrame();
     // TODO: other params
     // TODO: check any diagnostics?
     
@@ -255,8 +258,14 @@ public:
     if (mode_ != prosilica::Triggered)
       return false;
 
-    // TODO: could return same data for simultaneous requests?
+    // TODO: need/don't need my own lock here?
     boost::mutex::scoped_lock guard(grab_mutex_);
+    if (req.region_x || req.region_y || req.width || req.height) {
+      cam_->setRoi(req.region_x, req.region_y, req.width, req.height);
+    } else {
+      cam_->setRoiToWholeFrame();
+    }
+
     tPvFrame* frame = cam_->grab(req.timeout_ms);
     if (!frame)
       return false;
@@ -295,7 +304,7 @@ private:
   
   static bool frameToImage(tPvFrame* frame, image_msgs::Image &image)
   {
-    // NOTE: 16-bit formats and Yuv444 not supported yet
+    // NOTE: 16-bit formats and Yuv444 not supported
     switch (frame->Format)
     {
       case ePvFmtMono8:
@@ -341,6 +350,59 @@ private:
     return true;
   }
 
+  bool rectifyFrame(tPvFrame* frame, image_msgs::Image &img, image_msgs::Image &rect_img)
+  {
+    // Currently assume BGR format so bridge.toIpl() image points to msg data buffer
+    if (img.encoding != "bgr") {
+      ROS_WARN("Couldn't rectify frame, unsupported encoding %s", img.encoding.c_str());
+      return false;
+    }
+    
+    // Prepare image buffer
+    setBgrLayout(rect_img, frame->Width, frame->Height);
+    if (!img_bridge_.fromImage(img, "bgr") ||
+        !rect_img_bridge_.fromImage(rect_img, "bgr")) {
+      ROS_WARN("Couldn't rectify frame, failed to convert");
+      return false;
+    }
+    IplImage *xMap = NULL, *yMap = NULL;
+
+    // If whole frame captured, use the full undistort maps
+    if (frame->Width  == (unsigned long)undistortX_.Width() &&
+        frame->Height == (unsigned long)undistortX_.Height()) {
+      assert(frame->RegionX == 0 && frame->RegionY == 0);
+      xMap = undistortX_.Ipl();
+      yMap = undistortY_.Ipl();
+    }
+    // Try to reuse cached ROI undistort maps
+    else if (!roiUndistortX_.IsNull() && !roiUndistortY_.IsNull() &&
+             frame->Width  == (unsigned long)roiUndistortX_.Width() &&
+             frame->Height == (unsigned long)roiUndistortX_.Height() &&
+             frame->RegionX == region_x_ && frame->RegionY == region_y_) {
+      xMap = roiUndistortX_.Ipl();
+      yMap = roiUndistortY_.Ipl();
+    }
+    // Compute new ROI undistort maps
+    else {
+      region_x_ = frame->RegionX;
+      region_y_ = frame->RegionY;
+      roiUndistortX_.Allocate(frame->Width, frame->Height);
+      cvSubS(undistortX_.View(region_x_, region_y_, frame->Width, frame->Height).Ipl(),
+             cvScalar(region_x_), roiUndistortX_.Ipl());
+      roiUndistortY_.Allocate(frame->Width, frame->Height);
+      cvSubS(undistortY_.View(region_x_, region_y_, frame->Width, frame->Height).Ipl(),
+             cvScalar(region_y_), roiUndistortY_.Ipl());
+
+      xMap = roiUndistortX_.Ipl();
+      yMap = roiUndistortY_.Ipl();
+    }
+
+    // Rectify image
+    cvRemap( img_bridge_.toIpl(), rect_img_bridge_.toIpl(),
+             xMap, yMap, CV_INTER_LINEAR | CV_WARP_FILL_OUTLIERS );
+    return true;
+  }
+  
   bool processFrame(tPvFrame* frame, image_msgs::Image &img, image_msgs::Image &rect_img,
                     image_msgs::CamInfo &cam_info)
   {
@@ -348,23 +410,8 @@ private:
       return false;
 
     if (calibrated_) {
-      // Rectified image
-      // TODO: only do this if we have subscribers?
-      if (img.encoding == "bgr") {
-        setBgrLayout(rect_img, frame->Width, frame->Height);
-        if (img_bridge_.fromImage(img, "bgr") &&
-            rect_img_bridge_.fromImage(rect_img, "bgr")) {
-          cvRemap( img_bridge_.toIpl(), rect_img_bridge_.toIpl(),
-                   undistortX_.Ipl(), undistortY_.Ipl(),
-                   CV_INTER_LINEAR | CV_WARP_FILL_OUTLIERS );
-        } else {
-          ROS_WARN("Couldn't rectify frame, failed to convert");
-          return false;
-        }
-      } else {
-        ROS_WARN("Couldn't rectify frame, unsupported encoding %s", img.encoding.c_str());
+      if (!rectifyFrame(frame, img, rect_img))
         return false;
-      }
       
       // Camera info
       cam_info.height = frame->Height;

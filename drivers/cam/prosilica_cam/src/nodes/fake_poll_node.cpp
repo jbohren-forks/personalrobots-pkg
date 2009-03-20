@@ -70,6 +70,11 @@ public:
 
 int main(int argc, char** argv)
 {
+  if (argc < 2) {
+    printf("Usage: %s intrinsics.yml [FILES]\n", argv[0]);
+    return 0;
+  }
+  
   std::vector<std::string> files;
   files.reserve(argc - 2);
   for (int i = 2; i < argc; ++i) {

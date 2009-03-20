@@ -1,4 +1,8 @@
-int32 timeout_ms
+uint32 timeout_ms
+uint32 region_x
+uint32 region_y
+uint32 width
+uint32 height
 ---
 image_msgs/Image image
 image_msgs/CamInfo cam_info

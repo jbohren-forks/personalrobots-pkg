@@ -97,9 +97,16 @@ public:
   void setWhiteBalance(unsigned int blue, unsigned int red,
                        AutoSetting isauto = Manual);
 
+  void setRoi(unsigned int x, unsigned int y,
+              unsigned int width, unsigned int height);
+  void setRoiToWholeFrame();
+  void setBinning(unsigned int binning_x = 1, unsigned int binning_y = 1);
+
+  // TODO: general get/setAttribute (templates?)
+  
   unsigned long guid();
   
-  //! Data must have size <= USER_MEMORY_SIZE.
+  //! Data must have size <= USER_MEMORY_SIZE bytes.
   static const size_t USER_MEMORY_SIZE = 512;
   void writeUserMemory(const char* data, size_t size);
   void readUserMemory(char* data, size_t size);
