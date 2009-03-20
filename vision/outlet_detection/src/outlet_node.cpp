@@ -13,7 +13,6 @@
 #include <opencv/highgui.h>
 
 #include <boost/thread.hpp>
-#include <boost/foreach.hpp>
 
 #include <Eigen/Core>
 #include <Eigen/QR>
@@ -82,7 +81,7 @@ public:
     IplImage* image = img_bridge_.toIpl();
     std::vector<outlet_t> outlets;
     if (!detect_outlet_tuple(image, K_, NULL, outlets)) {
-      ROS_WARN("Failed to detect outlet");
+      //ROS_WARN("Failed to detect outlet");
       failed_ = true;
       if (display_)
         cvShowImage(wndname, image);
@@ -130,7 +129,8 @@ public:
     tf_broadcaster_.sendTransform(tf::Transform(orientation, holes[0]),
                                   ros::Time::now(), "outlet_frame",
                                   "high_def_frame");
-    
+
+    /*
     ROS_INFO("Ground TL: %.5f %.5f %.5f, Ground TR: %.5f %.5f %.5f, "
              "Ground BR: %.5f %.5f %.5f, Ground BL: %.5f %.5f %.5f",
              holes[0].x(), holes[0].y(), holes[0].z(),
@@ -141,6 +141,7 @@ public:
              "\td(BL,BR) = %.2fmm\n\td(TL,BR) = %.2fmm\n\td(BL,TR) = %.2fmm",
              1000*holes[0].distance(holes[3]), 1000*holes[6].distance(holes[9]),
              1000*holes[0].distance(holes[6]), 1000*holes[3].distance(holes[9]));
+    */
     
     if (display_) {
 #ifdef _OUTLET_INTERACTIVE_CAPTURE
@@ -203,7 +204,7 @@ public:
         }
 #endif
       } else {
-        ROS_WARN("Service call failed");
+        //ROS_WARN("Service call failed");
         // TODO: wait for service to become available
         usleep(100000);
       }
@@ -248,15 +249,14 @@ private:
     sumYZ *= scaling;
     sumZZ *= scaling;
 
-    // Fill 3x3 symmetric matrix
+    // Fill covariance matrix
     Eigen::Matrix3d mat;
     mat << sumXX, sumXY, sumXZ,
            sumXY, sumYY, sumYZ,
            sumXZ, sumYZ, sumZZ;
 
     // Normal is the eigenvector with the smallest eigenvalue
-    typedef Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> Solver;
-    Solver solver(mat);
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(mat);
     Eigen::Vector3d normal = solver.eigenvectors().col(0);
 
     return btVector3(normal.x(), normal.y(), normal.z());

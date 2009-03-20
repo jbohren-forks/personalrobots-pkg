@@ -19,10 +19,6 @@ int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
                                 CvPoint2D32f* out_corners, int* out_corner_count,
                                 int flags );
 
-static const double SQUARE_SIZE = 0.0215;
-static const int BOARD_W = 6;
-static const int BOARD_H = 9;
-
 class PlugDetector : public ros::Node
 {
 private:
@@ -81,8 +77,6 @@ public:
       }
     }
 
-    //plug_in_board_.getOrigin().setValue(0.0, 0.0, 0.0);
-    //plug_in_board_.getOrigin().setValue(-0.01, 0.003, 0.005);
     plug_in_board_.getOrigin().setValue(0.003, -0.01, 0.005);
     plug_in_board_.getBasis().setValue(0, -1, 0, -1, 0, 0, 0, 0, -1);
     camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
@@ -121,7 +115,7 @@ public:
                                            &corners[0], &ncorners,
                                            CV_CALIB_CB_ADAPTIVE_THRESH);
     if (!found) {
-      ROS_WARN("Failed to detect plug, found %d corners", ncorners);
+      //ROS_WARN("Failed to detect plug, found %d corners", ncorners);
       if (display_) {
         // TODO: draw
         cvShowImage(wndname, image);
@@ -152,16 +146,6 @@ public:
     btMatrix3x3 rot3x3(rot3x3_arr[0], rot3x3_arr[1], rot3x3_arr[2],
                        rot3x3_arr[3], rot3x3_arr[4], rot3x3_arr[5],
                        rot3x3_arr[6], rot3x3_arr[7], rot3x3_arr[8]);
-    /*
-    btQuaternion orientation;
-    double fang = sqrt(rot[0]*rot[0] + rot[1]*rot[1] + rot[2]*rot[2]);
-    if( fang < 1e-6 )
-      orientation.setValue(0, 0, 0, 1);
-    else {
-      double fmult = sin(fang/2)/fang;
-      orientation.setValue(rot[0]*fmult, rot[1]*fmult, rot[2]*fmult, cos(fang/2));
-    }
-    */
 
     tf::Transform board_in_cvcam(rot3x3, tf::Vector3(trans[0], trans[1], trans[2]));
 
@@ -176,8 +160,10 @@ public:
                                   ros::Time::now(), "plug_frame",
                                   "high_def_frame");
 
+    /*
     ROS_INFO("Plug: %.5f %.5f %.5f", pose_.pose.position.x,
              pose_.pose.position.y, pose_.pose.position.z);
+    */
 
     if (display_) {
       if (!display_img_ || display_img_->width != image->width ||
@@ -202,7 +188,7 @@ public:
         image_cb();
         usleep(100000);
       } else {
-        ROS_WARN("Service call failed");
+        //ROS_WARN("Service call failed");
         // TODO: wait for service to be available
         usleep(100000);
       }
