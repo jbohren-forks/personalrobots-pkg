@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: doors_detector.cpp 9895 2009-01-21 21:05:27Z tfoote $
+ * $Id$
  *
  */
 
