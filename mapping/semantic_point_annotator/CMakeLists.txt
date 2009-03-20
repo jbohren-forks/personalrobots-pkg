@@ -13,10 +13,10 @@ rospack_add_executable(semantic_point_annotator_node src/semantic_point_annotato
 target_link_libraries(semantic_point_annotator_node)
 
 rospack_add_executable(sac_ground_removal_node src/sac_ground_removal.cpp)
-target_link_libraries(sac_ground_removal_node sample_consensus)
+target_link_libraries(sac_ground_removal_node)
 
 rospack_add_executable(sac_inc_ground_removal_node src/sac_inc_ground_removal.cpp)
-target_link_libraries(sac_inc_ground_removal_node sample_consensus)
+target_link_libraries(sac_inc_ground_removal_node)
 
 # check for OpenMP
 include(CheckIncludeFile)
