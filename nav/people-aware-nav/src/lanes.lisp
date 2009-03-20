@@ -12,6 +12,40 @@
 
 (defparameter *robot-radius* .32 "Circumscribed radius of robot in metres")
 (defparameter *wall-buffer* .2 "Additional buffer distance that we'd like to keep from wall")
+(defvar *original-goal*)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Main
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defun main ()
+  (with-ros-node ("lane-changer")
+
+    ;; 1. setup
+    (subscribe "corridor")
+    (subscribe "person")
+    (subscribe "state" "robot_msgs/Planner2DState" (add-to-queue move-base-responses))
+    (advertise "goal")
+
+    ;; 2. executive
+    (let ((move-base-responses (make-queue 1))
+	  (ecase (controller-result *original-goal* "goal" move-base-responses)
+	    (succeeded (print "done!"))
+	    (aborted 
+	     (ecase (controller-result (waiting-pose current-pose corridor-width) "goal" move-base-responses)
+	       (aborted (print "Could not move to waiting position --- failing!"))
+	       (succeeded (wait-for-person-to-move)
+			  (ecase (controller-result *original-goal* "goal" move-base-responses)
+			    (succeeded (print "done!"))
+			    (aborted (print "Failed even after lane-change.")))))))))))
+
+      
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Internal
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (defun corridor-info (p1 p2 p3)
@@ -29,3 +63,12 @@
     
     
     
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Communication with highlevel controllers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun controller-result (goal-pos topic response-queue)
+  (publish topic (make-instance '<Planner2DGoal> :position goal-pos))
+  (dequeue-wait response-queue))
+    
+  
