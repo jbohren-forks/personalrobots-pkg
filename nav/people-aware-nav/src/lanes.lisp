@@ -26,20 +26,18 @@
     ;; 1. setup
     (subscribe "corridor")
     (subscribe "person")
-    (subscribe "state" "robot_msgs/Planner2DState" (add-to-queue move-base-responses))
-    (advertise "goal")
 
     ;; 2. executive
-    (let ((move-base-responses (make-queue 1))
-	  (ecase (controller-result *original-goal* "goal" move-base-responses)
-	    (succeeded (print "done!"))
-	    (aborted 
-	     (ecase (controller-result (waiting-pose current-pose corridor-width) "goal" move-base-responses)
-	       (aborted (print "Could not move to waiting position --- failing!"))
-	       (succeeded (wait-for-person-to-move)
-			  (ecase (controller-result *original-goal* "goal" move-base-responses)
-			    (succeeded (print "done!"))
-			    (aborted (print "Failed even after lane-change.")))))))))))
+    (with-highlevel-controller (move-base "state" "robot_msgs/Planner2DState" "goal" "robot_msgs/Planner2DGoal")
+      (ecase (controller-result move-base (goal-message *original-goal*))
+	(succeeded (print "done!"))
+	(aborted 
+	 (ecase (controller-result move-base (goal-message (waiting-pose current-pose corridor-width)))
+	   (aborted (print "Could not move to waiting position --- failing!"))
+	   (succeeded (wait-for-person-to-move)
+		      (ecase (controller-result move-base (goal-message *original-goal*))
+			(succeeded (print "done!"))
+			(aborted (print "Failed even after lane-change."))))))))))
 
       
 
@@ -66,6 +64,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Communication with highlevel controllers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmacro with-highlevel-controller ((name state-topic state-type goal-topic goal-type) &body body)
+  `(let ((,state-message-queue (make-queue)))
+     (subscribe state-topic state-type (add-to-queue ,state-message-queue))
+     (advertise goal-topic goal-type)
+     ;; not quite right
+     (flet ((controller-result (name message)
+	      (controller-result message goal-topic state-message-queue)))
+       ,@body)))
+
 
 (defun controller-result (goal-pos topic response-queue)
   (publish topic (make-instance '<Planner2DGoal> :position goal-pos))
