@@ -441,7 +441,7 @@ main(int argc, char **argv)	// no arguments
 	      printf("3D time: %d ms\n", (int)(tt1-tt0));
 
 	      // check for extracting a plane or planes
-	      isPlanar = true;
+	      isPlanar = false;
 	      if (isPlanar)
 		{
 		  int n,nn;
