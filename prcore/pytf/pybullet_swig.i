@@ -10,7 +10,7 @@
 %include "LinearMath/btScalar.h"
 %include "LinearMath/btMinMax.h"
 
-%include "LinearMath/btVector3.h"
-%include "LinearMath/btMatrix3x3.h"
-%include "LinearMath/btTransform.h"
+%include "pybtVector3.h"
+%include "pybtMatrix3x3.h"
+%include "pybtTransform.h"
 
