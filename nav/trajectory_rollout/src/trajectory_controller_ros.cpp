@@ -51,13 +51,15 @@ namespace trajectory_rollout {
       string global_frame,
       const costmap_2d::CostMapAccessor& ma, 
       std::vector<deprecated_msgs::Point2DFloat32> footprint_spec, double inscribed_radius, double circumscribed_radius) 
-    : world_model_(NULL), tc_(NULL), base_scan_notifier_(NULL), tf_(tf), global_frame_(global_frame), point_grid_(NULL){
+    : world_model_(NULL), tc_(NULL), base_scan_notifier_(NULL), tf_(tf), global_frame_(global_frame), laser_scans_(2), 
+    point_grid_(NULL), voxel_grid_(NULL){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int vx_samples, vtheta_samples;
     double pdist_scale, gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist;
     bool holonomic_robot, dwa, simple_attractor, heading_scoring;
     double heading_scoring_timestep;
     double max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th;
+    string world_model_type;
 
     base_scan_notifier_ = new MessageNotifier<LaserScan>(&tf_, &ros_node,
         boost::bind(&TrajectoryControllerROS::baseScanCallback, this, _1),
@@ -86,7 +88,7 @@ namespace trajectory_rollout {
     ros_node.param("~trajectory_rollout/max_vel_th", max_vel_th, 1.0);
     ros_node.param("~trajectory_rollout/min_vel_th", min_vel_th, -1.0);
     ros_node.param("~trajectory_rollout/min_in_place_vel_th", min_in_place_vel_th, 0.4);
-    ros_node.param("~trajectory_rollout/freespace_model", freespace_model_, false);
+    ros_node.param("~trajectory_rollout/world_model", world_model_type, string("freespace"));
     ros_node.param("~trajectory_rollout/dwa", dwa, false);
     ros_node.param("~trajectory_rollout/heading_scoring", heading_scoring, false);
     ros_node.param("~trajectory_rollout/heading_scoring_timestep", heading_scoring_timestep, 0.1);
@@ -99,7 +101,7 @@ namespace trajectory_rollout {
     ros_node.param("~trajectory_rollout/point_grid/max_obstacle_height", max_obstacle_height, 2.0);
     ros_node.param("~trajectory_rollout/point_grid/grid_resolution", grid_resolution, 0.2);
 
-    if(freespace_model_){
+    if(world_model_type == "freespace"){
       double origin_x, origin_y;
       ma.getOriginInWorldCoordinates(origin_x, origin_y);
       Point2DFloat32 origin;
@@ -115,22 +117,22 @@ namespace trajectory_rollout {
       ros_node.advertise<PointCloud>("point_grid", 1);
       */
     }
+    else if(world_model_type == "voxel"){
+      double origin_x, origin_y;
+      ma.getOriginInWorldCoordinates(origin_x, origin_y);
+      unsigned int cmap_width, cmap_height;
+      ma.getCostmapDimensions(cmap_width, cmap_height);
+      voxel_grid_ = new VoxelGridModel(cmap_width, cmap_height, 10, ma.getResolution(), max_obstacle_height / 10,
+          origin_x, origin_y, 0.0, max_obstacle_height, max_sensor_range_);
+      world_model_ = voxel_grid_;
+      /*For Debugging
+      ros_node.advertise<PointCloud>("point_grid", 1);
+      */
+    }
     else{
       world_model_ = new CostmapModel(ma); 
       ROS_INFO("Costmap\n");
     }
-
-    /* For testing the voxel grid world model 
-    double origin_x, origin_y;
-    ma.getOriginInWorldCoordinates(origin_x, origin_y);
-    unsigned int cmap_width, cmap_height;
-    ma.getCostmapDimensions(cmap_width, cmap_height);
-    voxel_grid_ = new VoxelGridModel(cmap_width, cmap_height, 5, grid_resolution, .4,
-        origin_x, origin_y, 0.0, max_obstacle_height, max_sensor_range_);
-    world_model_ = voxel_grid_;
-    ROS_INFO("Voxel Grid Origin: (%.4f, %.4f), Width: %.4f, Height: %.4f\n", origin_x, origin_y, cmap_width * ma.getResolution(), cmap_height * ma.getResolution());
-    ros_node.advertise<PointCloud>("point_grid", 1);
-    */
 
     tc_ = new TrajectoryController(*world_model_, ma, footprint_spec, inscribed_radius, circumscribed_radius,
         acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity, vx_samples, vtheta_samples, pdist_scale,
@@ -148,21 +150,21 @@ namespace trajectory_rollout {
     Stamped<btVector3> global_origin;
 
     lock_.lock();
-    base_scan_.angle_min = message->angle_min;
-    base_scan_.angle_max = message->angle_max;
-    base_scan_.angle_increment = message->angle_increment;
+    laser_scans_[0].angle_min = message->angle_min;
+    laser_scans_[0].angle_max = message->angle_max;
+    laser_scans_[0].angle_increment = message->angle_increment;
 
     //we know the transform is available from the laser frame to the global frame 
     try{
       //transform the origin for the sensor
       Stamped<btVector3> local_origin(btVector3(0, 0, 0), base_cloud.header.stamp, base_cloud.header.frame_id);
       tf_.transformPoint(global_frame_, local_origin, global_origin);
-      base_scan_.origin.x = global_origin.getX();
-      base_scan_.origin.y = global_origin.getY();
-      base_scan_.origin.z = global_origin.getZ();
+      laser_scans_[0].origin.x = global_origin.getX();
+      laser_scans_[0].origin.y = global_origin.getY();
+      laser_scans_[0].origin.z = global_origin.getZ();
 
       //transform the point cloud
-      tf_.transformPointCloud(global_frame_, base_cloud, base_scan_.cloud);
+      tf_.transformPointCloud(global_frame_, base_cloud, laser_scans_[0].cloud);
     }
     catch(tf::TransformException& ex){
       ROS_ERROR("TF Exception that should never happen %s", ex.what());
@@ -178,79 +180,29 @@ namespace trajectory_rollout {
     //we want all values... even those out of range
     projector_.projectLaser(*message, tilt_cloud, -1.0, true);
     Stamped<btVector3> global_origin;
-    PointCloud global_cloud;
+
+    lock_.lock();
+    laser_scans_[1].angle_min = message->angle_min;
+    laser_scans_[1].angle_max = message->angle_max;
+    laser_scans_[1].angle_increment = message->angle_increment;
 
     //we know the transform is available from the laser frame to the global frame 
     try{
       //transform the origin for the sensor
       Stamped<btVector3> local_origin(btVector3(0, 0, 0), tilt_cloud.header.stamp, tilt_cloud.header.frame_id);
       tf_.transformPoint(global_frame_, local_origin, global_origin);
-
+      laser_scans_[1].origin.x = global_origin.getX();
+      laser_scans_[1].origin.y = global_origin.getY();
+      laser_scans_[1].origin.z = global_origin.getZ();
 
       //transform the point cloud
-      tf_.transformPointCloud(global_frame_, tilt_cloud, global_cloud);
+      tf_.transformPointCloud(global_frame_, tilt_cloud, laser_scans_[1].cloud);
     }
     catch(tf::TransformException& ex){
       ROS_ERROR("TF Exception that should never happen %s", ex.what());
       return;
     }
-
-    lock_.lock();
-    //now we want to create a polygonal approximation of the scan
-    risk_poly_.clear();
-    //for now... let's just make a triangle with the origin and the extreme points
-    Point2DFloat32 pt;
-    pt.x = global_origin.getX();
-    pt.y = global_origin.getY();
-    risk_poly_.push_back(pt);
-
-    double x = global_cloud.pts[global_cloud.pts.size() - 1].x - global_origin.getX();
-    double y = global_cloud.pts[global_cloud.pts.size() - 1].y - global_origin.getY();
-    double length = sqrt(x*x + y*y);
-    x = max_sensor_range_ * (x / length); 
-    y = max_sensor_range_ * (y / length); 
-    pt.x = x + global_origin.getX();
-    pt.y = y + global_origin.getY();
-    risk_poly_.push_back(pt);
-
-    x = global_cloud.pts[3 * global_cloud.pts.size() / 4].x - global_origin.getX();
-    y = global_cloud.pts[3 * global_cloud.pts.size() / 4].y - global_origin.getY();
-    length = sqrt(x*x + y*y);
-    x = max_sensor_range_ * (x / length); 
-    y = max_sensor_range_ * (y / length); 
-    pt.x = x + global_origin.getX();
-    pt.y = y + global_origin.getY();
-    risk_poly_.push_back(pt);
-
-    x = global_cloud.pts[global_cloud.pts.size() / 2].x - global_origin.getX();
-    y = global_cloud.pts[global_cloud.pts.size() / 2].y - global_origin.getY();
-    length = sqrt(x*x + y*y);
-    x = max_sensor_range_ * (x / length); 
-    y = max_sensor_range_ * (y / length); 
-    pt.x = x + global_origin.getX();
-    pt.y = y + global_origin.getY();
-    risk_poly_.push_back(pt);
-
-    x = global_cloud.pts[global_cloud.pts.size() / 4].x - global_origin.getX();
-    y = global_cloud.pts[global_cloud.pts.size() / 4].y - global_origin.getY();
-    length = sqrt(x*x + y*y);
-    x = max_sensor_range_ * (x / length); 
-    y = max_sensor_range_ * (y / length); 
-    pt.x = x + global_origin.getX();
-    pt.y = y + global_origin.getY();
-    risk_poly_.push_back(pt);
-
-    x = global_cloud.pts[0].x - global_origin.getX();
-    y = global_cloud.pts[0].y - global_origin.getY();
-    length = sqrt(x*x + y*y);
-    x = max_sensor_range_ * (x / length); 
-    y = max_sensor_range_ * (y / length); 
-    pt.x = x + global_origin.getX();
-    pt.y = y + global_origin.getY();
-    risk_poly_.push_back(pt);
-
     lock_.unlock();
-
   }
 
   TrajectoryControllerROS::~TrajectoryControllerROS(){
@@ -309,7 +261,7 @@ namespace trajectory_rollout {
 
     lock_.lock();
     //compute what trajectory to drive along
-    Trajectory path = tc_->findBestPath(global_pose, robot_vel, drive_cmds, observations, base_scan_, risk_poly_);
+    Trajectory path = tc_->findBestPath(global_pose, robot_vel, drive_cmds, observations, laser_scans_);
     lock_.unlock();
 
     /* For timing uncomment

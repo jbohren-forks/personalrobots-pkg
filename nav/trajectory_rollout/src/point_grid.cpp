@@ -102,7 +102,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
 
     //if there are no points in the circumscribed square... we don't have to check against the footprint
     if(points_.empty())
-      return riskAreaPercent(risk_poly_, footprint);
+      return 1.0;
 
     //compute the half-width of the inner square from the inscribed radius of the robot
     double inner_square_radius = sqrt((inscribed_radius * inscribed_radius) / 2.0);
@@ -137,7 +137,7 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     }
 
     //if we get through all the points and none of them are in the footprint it's legal
-    return riskAreaPercent(risk_poly_, footprint);
+    return 1.0;
   }
 
   bool PointGrid::ptInPolygon(const Point32& pt, const vector<Point2DFloat32>& poly){
@@ -357,18 +357,12 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
   }
 
   void PointGrid::updateWorld(const vector<Point2DFloat32>& footprint, 
-      const vector<Observation>& observations, const PlanarLaserScan& laser_scan,
-      vector<Point2DFloat32> risk_poly){
-    //update the risk polygon
-    risk_poly_ = risk_poly;
+      const vector<Observation>& observations, const vector<PlanarLaserScan>& laser_scans){
+    //for our 2D point grid we only remove freespace based on the first laser scan
+    if(laser_scans.empty())
+      return;
 
-    //printPSHeader();
-    //printPolygonPS(risk_poly, 0.1);
-    //riskAreaPercent(risk_poly, footprint);
-    //printPSFooter();
-
-    //remove points in the laser scan boundry
-    removePointsInScanBoundry(laser_scan);
+    removePointsInScanBoundry(laser_scans[0]);
 
     //iterate through all observations and update the grid
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
@@ -557,68 +551,6 @@ PointGrid::PointGrid(double size_x, double size_y, double resolution, deprecated
     result.y = (a1 * c2 - a2 * c1) / det;
   }
 
-  //Sutherland-Hodgeman Clipping... TODO: could do this more efficiently with O'Rouke's method... o(n + m) vs o(nm)
-  void PointGrid::clipPolygonPlane(vector<Point2DFloat32>& poly, const Point2DFloat32& p1, const Point2DFloat32& p2){
-    new_poly_two_.clear();
-    const Point2DFloat32* s = &poly[poly.size() - 1];
-    Point2DFloat32 new_vertex;
-    for(unsigned int i = 0; i < poly.size(); ++i){
-      const Point2DFloat32* p = &poly[i];
-      //if the p is inside the clip plane
-      if(orient(p1, p2, *p) <= 0){
-        //if s is not inside the clip plane
-        if(orient(p1, p2, *s) > 0){
-          //add the intersection point of the plane with sp to the polygon
-          intersectionPoint(*p, *s, p1, p2, new_vertex);
-          new_poly_two_.push_back(new_vertex);
-        }
-        //also add p to the polygon
-        new_poly_two_.push_back(*p);
-      }
-      //if s is inside the clipping plane
-      else if(orient(p1, p2, *s) <= 0){
-        //add the intersection point of the plane with sp to the polygon
-        intersectionPoint(*p, *s, p1, p2, new_vertex);
-        new_poly_two_.push_back(new_vertex);
-      }
-      s = p;
-    }
-    poly = new_poly_two_;
-  }
-
-  double PointGrid::riskAreaPercent(const vector<Point2DFloat32>& poly, const vector<Point2DFloat32>& clip){
-    return 1.0;
-    new_poly_one_ = poly;
-    //will be at most n + m points in new polygon
-    new_poly_two_.resize(poly.size() + clip.size());
-    const Point2DFloat32* p1 = &clip[clip.size() - 1];
-    for(unsigned int i = 0; i < clip.size(); ++i){
-      const Point2DFloat32* p2 = &clip[i];
-      clipPolygonPlane(new_poly_one_, *p1, *p2);
-      p1 = p2;
-    }
-
-    double old_area = polygonArea(poly);
-    double new_area = old_area - polygonArea(new_poly_one_);
-    //printPolygonPS(poly, 0.1);
-    //printPolygonPS(new_poly_one_, 0.3);
-    return new_area / old_area;
-  }
-
-  double PointGrid::polygonArea(const vector<Point2DFloat32>& poly){
-    double area = 0.0;
-    unsigned int j = 0;
-    for(unsigned int i = 0; i < poly.size(); ++i){
-      j++;
-      if(j == poly.size())
-        j = 0;
-      area += (poly[i].x + poly[j].x) * (poly[i].y - poly[j].y);
-    }
-    area *= 0.5;
-    return (area < 0.0 ? -1.0 * area : area);
-  }
-
-
 };
 
 
@@ -732,12 +664,12 @@ int main(int argc, char** argv){
   printf("%%Insertion Time: %.9f \n", t_diff);
 
   vector<Observation> obs;
-  PlanarLaserScan scan;
+  vector<PlanarLaserScan> scan;
 
   gettimeofday(&start, NULL);
-  pg.updateWorld(footprint, obs, scan, footprint2);
+  pg.updateWorld(footprint, obs, scan);
   double legal = pg.footprintCost(pt, footprint, 0.0, .95);
-  pg.updateWorld(footprint, obs, scan, footprint);
+  pg.updateWorld(footprint, obs, scan);
   double legal2 = pg.footprintCost(pt, footprint, 0.0, .95);
   gettimeofday(&end, NULL);
   start_t = start.tv_sec + double(start.tv_usec) / 1e6;

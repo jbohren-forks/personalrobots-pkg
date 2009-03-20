@@ -92,12 +92,10 @@ namespace trajectory_rollout {
        * @brief  The costmap already keeps track of world observations, so for this world model this method does nothing
        * @param footprint The footprint of the robot in its current location
        * @param observations The observations from various sensors 
-       * @param laser_scan The scan used to clear freespace
-       * @param  risk_poly The specification of the polygon to check the footprint against
+       * @param laser_scan The scans used to clear freespace
        */
       virtual void updateWorld(const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
-          const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan,
-          std::vector<deprecated_msgs::Point2DFloat32> risk_poly);
+          const std::vector<costmap_2d::Observation>& observations, const std::vector<PlanarLaserScan>& laser_scans);
 
       void getPoints(robot_msgs::PointCloud& cloud);
 
@@ -152,8 +150,8 @@ namespace trajectory_rollout {
         wy = origin_y_ + (my + 0.5) * xy_resolution_;
       }
 
-      inline double sqDist(double x0, double y0, double z0, double x1, double y1, double z1){
-        return (x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) + (z1 - z0) * (z1 - z0);
+      inline double dist(double x0, double y0, double z0, double x1, double y1, double z1){
+        return sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) + (z1 - z0) * (z1 - z0));
       }
 
       inline void insert(robot_msgs::Point32 pt){

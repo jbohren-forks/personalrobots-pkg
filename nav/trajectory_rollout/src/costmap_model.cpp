@@ -59,12 +59,12 @@ namespace trajectory_rollout {
     if(circumscribed_radius == inscribed_radius){
       if(ma_.isDefinitelyBlocked(cell_x, cell_y))
         return -1.0;
-      return 0.0;
+      return 1.0;
     }
 
     //for non-circular robots... we can still save time by checking if the circumscribed circle is clear of obstacles
     if(!ma_.isCircumscribedCell(cell_x, cell_y))
-      return 0.0;
+      return 1.0;
 
     //now we really have to lay down the footprint in the costmap grid
     unsigned int x0, x1, y0, y1;
@@ -102,7 +102,7 @@ namespace trajectory_rollout {
       return -1.0;
 
     //if all line costs are legal... then we can return that the footprint is legal
-    return 0.0;
+    return 1.0;
   }
 
   //calculate the cost of a ray-traced line

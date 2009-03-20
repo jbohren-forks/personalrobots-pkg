@@ -54,12 +54,10 @@ namespace trajectory_rollout {
        * @brief  Subclass will implement this method to insert observations from sensors into its world model
        * @param footprint The footprint of the robot in its current location
        * @param observations The observations from various sensors 
-       * @param laser_scan The planar scan used to clear freespace
-       * @param  risk_poly The specification of the polygon to check the footprint against
+       * @param laser_scans The planar laser scans used to clear freespace
        */
       virtual void updateWorld(const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
-          const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan,
-          std::vector<deprecated_msgs::Point2DFloat32> risk_poly) = 0;
+          const std::vector<costmap_2d::Observation>& observations, const std::vector<PlanarLaserScan>& laser_scans) = 0;
 
       /**
        * @brief  Subclass will implement this method to check a footprint at a given position and orientation for legality in the world

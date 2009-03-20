@@ -97,12 +97,10 @@ namespace trajectory_rollout {
        * @brief  Inserts observations from sensors into the point grid
        * @param footprint The footprint of the robot in its current location
        * @param observations The observations from various sensors 
-       * @param laser_scan The laser scan used to clear freespace
-       * @param  risk_poly The specification of the polygon to check the footprint against
+       * @param laser_scans The laser scans used to clear freespace (the point grid only uses the first scan which is assumed to be the base laser)
        */
       virtual void updateWorld(const std::vector<deprecated_msgs::Point2DFloat32>& footprint, 
-          const std::vector<costmap_2d::Observation>& observations, const PlanarLaserScan& laser_scan,
-          std::vector<deprecated_msgs::Point2DFloat32> risk_poly);
+          const std::vector<costmap_2d::Observation>& observations, const std::vector<PlanarLaserScan>& laser_scans);
 
       /**
        * @brief  Convert from world coordinates to grid coordinates
@@ -271,31 +269,6 @@ namespace trajectory_rollout {
           deprecated_msgs::Point2DFloat32& result);
 
       /**
-       * @brief  Clip a polygon by a plane
-       * @param poly The polygon to clip... will be set to the resulting polygon
-       * @param p1 The first point defining the plane line
-       * @param p2 The second point defining the plane line
-       */
-      void clipPolygonPlane(std::vector<deprecated_msgs::Point2DFloat32>& poly, 
-          const deprecated_msgs::Point2DFloat32& p1, const deprecated_msgs::Point2DFloat32& p2);
-
-      /**
-       * @brief  Compute the area of the polygon that lies outside the bounds of the clipping polygon
-       * @param  poly The polygon to calculate difference in area
-       * @param  clip The polygon to use to clip
-       * @return The percent area of the first polygon that lies outside the second
-       */
-      double riskAreaPercent(const std::vector<deprecated_msgs::Point2DFloat32>& poly, 
-          const std::vector<deprecated_msgs::Point2DFloat32>& clip);
-
-      /**
-       * @brief  Compute the area of a polygon
-       * @param poly The polygon 
-       * @return The area of the polygon
-       */
-      double polygonArea(const std::vector<deprecated_msgs::Point2DFloat32>& poly);
-
-      /**
        * @brief  Check if a point is in a polygon
        * @param pt The point to be checked 
        * @param poly The polygon to check against
@@ -361,9 +334,6 @@ namespace trajectory_rollout {
       double sq_obstacle_range_;  ///< @brief The square distance at which we no longer add obstacles to the grid
       double sq_min_separation_;  ///< @brief The minimum square distance required between points in the grid
       std::vector< std::list<robot_msgs::Point32>* > points_;  ///< @brief The lists of points returned by a range search, made a member to save on memory allocation
-      std::vector<deprecated_msgs::Point2DFloat32> risk_poly_; ///< @brief Risk polygon
-      std::vector<deprecated_msgs::Point2DFloat32> new_poly_one_; ///< @brief Storage for risk polygon computations
-      std::vector<deprecated_msgs::Point2DFloat32> new_poly_two_; ///< @brief Storage for risk polygon computations 
   };
 };
 #endif

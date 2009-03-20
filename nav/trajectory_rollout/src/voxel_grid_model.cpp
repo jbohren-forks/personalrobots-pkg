@@ -174,7 +174,7 @@ namespace trajectory_rollout {
 
   double VoxelGridModel::pointCost(int x, int y){
     //if the cell is in an obstacle the path is invalid
-    if(obstacle_grid_.occupiedColumn(x, y)){
+    if(obstacle_grid_.getVoxelColumn(x, y)){
       return -1;
     }
 
@@ -182,11 +182,11 @@ namespace trajectory_rollout {
   }
 
   void VoxelGridModel::updateWorld(const vector<Point2DFloat32>& footprint, 
-      const vector<Observation>& observations, const PlanarLaserScan& laser_scan,
-      vector<Point2DFloat32> risk_poly){
+      const vector<Observation>& observations, const vector<PlanarLaserScan>& laser_scans){
 
     //remove points in the laser scan boundry
-    removePointsInScanBoundry(laser_scan, 10.0);
+    for(unsigned int i = 0; i < laser_scans.size(); ++i)
+      removePointsInScanBoundry(laser_scans[i], 10.0);
 
     //iterate through all observations and update the grid
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
@@ -218,22 +218,52 @@ namespace trajectory_rollout {
     if(laser_scan.cloud.pts.size() == 0)
       return;
 
-    double sq_raytrace_range = raytrace_range * raytrace_range;
-
     unsigned int sensor_x, sensor_y, sensor_z;
+    double ox = laser_scan.origin.x;
+    double oy = laser_scan.origin.y;
+    double oz = laser_scan.origin.z;
     
-    if(!worldToMap3D(laser_scan.origin.x, laser_scan.origin.y, laser_scan.origin.z, sensor_x, sensor_y, sensor_z))
+    if(!worldToMap3D(ox, oy, oz, sensor_x, sensor_y, sensor_z))
       return;
 
     for(unsigned int i = 0; i < laser_scan.cloud.pts.size(); ++i){
+      double wpx = laser_scan.cloud.pts[i].x;
+      double wpy = laser_scan.cloud.pts[i].y;
+      double wpz = laser_scan.cloud.pts[i].z;
+
+      double distance = dist(ox, oy, oz, wpx, wpy, wpz);
+      double scaling_fact = raytrace_range / distance;
+      //scaling_fact = scaling_fact > 1 ? 1 : scaling_fact;
+      scaling_fact = 1.0;
+      wpx = scaling_fact * (wpx - ox) + ox;
+      wpy = scaling_fact * (wpy - oy) + oy;
+      wpz = scaling_fact * (wpz - oz) + oz;
+
+      //we can only raytrace to a maximum z height
+      if(wpz >= max_z_){
+        //we know we want the vector's z value to be max_z
+        double a = wpx - ox;
+        double b = wpy - oy;
+        double c = wpz - oz;
+        double t = (max_z_ - .01 - oz) / c;
+        wpx = ox + a * t;
+        wpy = oy + b * t;
+        wpz = oz + c * t;
+      }
+      //and we can only raytrace down to the floor
+      else if(wpz < 0.0){
+        //we know we want the vector's z value to be 0.0
+        double a = wpx - ox;
+        double b = wpy - oy;
+        double c = wpz - oz;
+        double t = (0.0 - oz) / c;
+        wpx = ox + a * t;
+        wpy = oy + b * t;
+        wpz = oz + c * t;
+      }
+
       unsigned int point_x, point_y, point_z;
-      if(worldToMap3D(laser_scan.origin.x, laser_scan.origin.y, laser_scan.origin.z, point_x, point_y, point_z)){
-        double sq_distance = sqDist(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
-        double scaling_fact = sq_raytrace_range / sq_distance;
-        scaling_fact = scaling_fact > 1 ? 1 : scaling_fact;
-        point_x = int(scaling_fact * point_x);
-        point_y = int(scaling_fact * point_y);
-        point_z = int(scaling_fact * point_z);
+      if(worldToMap3D(wpx, wpy, wpz, point_x, point_y, point_z)){
         obstacle_grid_.clearVoxelLine(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
       }
     }
@@ -242,14 +272,16 @@ namespace trajectory_rollout {
   void VoxelGridModel::getPoints(PointCloud& cloud){
     for(unsigned int i = 0; i < obstacle_grid_.sizeX(); ++i){
       for(unsigned int j = 0; j < obstacle_grid_.sizeY(); ++j){
-        if(obstacle_grid_.occupiedColumn(i, j)){
-          double wx, wy;
-          mapToWorld2D(i, j, wx, wy);
-          Point32 pt;
-          pt.x = wx;
-          pt.y = wy;
-          pt.z = 0.0;
-          cloud.pts.push_back(pt);
+        for(unsigned int k = 0; k < obstacle_grid_.sizeZ(); ++k){
+          if(obstacle_grid_.getVoxel(i, j, k)){
+            double wx, wy, wz;
+            mapToWorld3D(i, j, k, wx, wy, wz);
+            Point32 pt;
+            pt.x = wx;
+            pt.y = wy;
+            pt.z = wz;
+            cloud.pts.push_back(pt);
+          }
         }
       }
     }

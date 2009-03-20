@@ -127,15 +127,13 @@ namespace trajectory_rollout {
        * @param global_vel The current velocity of the robot in world space
        * @param drive_velocities Will be set to velocities to send to the robot base
        * @param observations A vector of updates from the robot's sensors in world space, is sometimes unused depending on the model
-       * @param base_scan The latest base scan taken... used to clear freespace in front of the robot depending on the model
-       * @param risk_poly The polygon to score the footprint of the robot against
+       * @param laser_scans The latest scans taken... used to clear freespace in front of the robot depending on the model
        * @return The selected path or trajectory
        */
       Trajectory findBestPath(tf::Stamped<tf::Pose> global_pose, tf::Stamped<tf::Pose> global_vel,
           tf::Stamped<tf::Pose>& drive_velocities, 
           std::vector<costmap_2d::Observation> observations = std::vector<costmap_2d::Observation>(0),
-          PlanarLaserScan base_scan = PlanarLaserScan(), 
-          std::vector<deprecated_msgs::Point2DFloat32> risk_poly = std::vector<deprecated_msgs::Point2DFloat32>(0));
+          std::vector<PlanarLaserScan> laser_scans = std::vector<PlanarLaserScan>(0));
 
       /**
        * @brief  Update the plan that the controller is following

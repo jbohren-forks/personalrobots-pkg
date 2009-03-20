@@ -788,7 +788,7 @@ namespace trajectory_rollout{
   //given the current state of the robot, find a good trajectory
   Trajectory TrajectoryController::findBestPath(tf::Stamped<tf::Pose> global_pose, tf::Stamped<tf::Pose> global_vel, 
       tf::Stamped<tf::Pose>& drive_velocities, vector<costmap_2d::Observation> observations,
-      PlanarLaserScan base_scan, vector<Point2DFloat32> risk_poly){
+      vector<PlanarLaserScan> laser_scans){
 
     double uselessPitch, uselessRoll, yaw, velYaw;
     global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
@@ -814,7 +814,7 @@ namespace trajectory_rollout{
     }
 
     //update the point grid with new observations
-    world_model_.updateWorld(oriented_footprint, observations, base_scan, risk_poly);
+    world_model_.updateWorld(oriented_footprint, observations, laser_scans);
 
     //reset the map for new operations
     map_.resetPathDist();

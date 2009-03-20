@@ -134,12 +134,11 @@ namespace trajectory_rollout {
       std::string global_frame_; ///< @brief The frame in which the controller will run
       laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
       boost::recursive_mutex lock_; ///< @brief A lock for accessing data in callbacks safely
-      PlanarLaserScan base_scan_; ///< @breif Storage for the last scan the base laser took... used for clearing free-space in front of the robot
+      std::vector<PlanarLaserScan> laser_scans_; ///< @breif Storage for the last scan the lasers took... used for clearing free-space in front of the robot
       PointGrid* point_grid_; ///< @brief If using a freespace grid... we want to access it
       VoxelGridModel* voxel_grid_; ///< @brief If using a voxel grid... we want to access it
       bool freespace_model_;  ///< @brief Keep track of whether we are using a freespace controller or not
       double max_sensor_range_; ///< @brief Keep track of the effective maximum range of our sensors
-      std::vector<deprecated_msgs::Point2DFloat32> risk_poly_;
   };
 
 };
