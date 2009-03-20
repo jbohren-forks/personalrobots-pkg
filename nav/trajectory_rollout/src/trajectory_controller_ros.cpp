@@ -112,7 +112,7 @@ namespace trajectory_rollout {
       point_grid_ = new PointGrid(cmap_width * ma.getResolution(), cmap_height * ma.getResolution(), grid_resolution, 
           origin, max_obstacle_height, max_sensor_range_, min_pt_separation);
       world_model_ = point_grid_;
-      ROS_INFO("Freespace Origin: (%.4f, %.4f), Width: %.4f, Height: %.4f\n", origin.x, origin.y, cmap_width * ma.getResolution(), cmap_height * ma.getResolution());
+      ROS_DEBUG("Freespace Origin: (%.4f, %.4f), Width: %.4f, Height: %.4f\n", origin.x, origin.y, cmap_width * ma.getResolution(), cmap_height * ma.getResolution());
       /*For Debugging
       ros_node.advertise<PointCloud>("point_grid", 1);
       */
