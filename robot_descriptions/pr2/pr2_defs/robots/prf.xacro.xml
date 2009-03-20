@@ -2,7 +2,7 @@
 <robot name="pr2">
   
   <!-- Include file with calibration parameters -->
-  <include filename="$(find pr2_defs)/calibration/default_cal.xml" />
+  <include filename="$(find pr2_defs)/calibration/prf_cal.xml" />
   
   <!-- declare the path where all models/textures/materials are stored -->
   <resource location="$(find pr2_defs)/meshes"/>
@@ -32,12 +32,12 @@
 
   <!-- Proscilica Camera -->
   <prosilica_cam name="high_def" parent="head_plate_frame">
-    <origin xyz="0 0.0275 0.025" rpy="0 0 0" />        
+    <origin xyz="0 0.07 0.025" rpy="0 0 0" />        
   </prosilica_cam>
 
   <!-- Stereocam -->
   <stereo_camera name="stereo" parent="head_plate_frame">
-    <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+    <origin xyz="0.0 -0.0254 0.0" rpy="0 0 0" />
   </stereo_camera>
     
   <pr2_tilting_laser name="laser_tilt" parent="torso_lift_link">
