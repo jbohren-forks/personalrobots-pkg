@@ -113,7 +113,7 @@ namespace costmap_2d {
     }
 
     if (!received_obseration_) {
-      ROS_INFO("Observation Buffer %s is not up to date, because it has never received a message.", frame_id_.c_str());
+      ROS_WARN("Observation Buffer %s is not up to date, because it has never received a message.", frame_id_.c_str());
       return false;
     }
 

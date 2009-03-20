@@ -7,15 +7,15 @@ genmsg()
 rospack_add_boost_directories()
 
 rospack_add_library(costmap_2d src/costmap_2d.cpp 
-			       src/obstacle_map_accessor.cc 
-			       src/observation_buffer.cc
-			       src/basic_observation_buffer.cc)
+			       src/obstacle_map_accessor.cpp 
+			       src/observation_buffer.cpp
+			       src/basic_observation_buffer.cpp)
 rospack_link_boost(costmap_2d thread)
 
 # Test target for module tests to be included in gtest regression test harness
-rospack_add_gtest(utest src/test/module-tests.cc)
+rospack_add_gtest(utest src/test/module-tests.cpp)
 target_link_libraries(utest costmap_2d)
 
 # Target for benchmarking the costmap
-rospack_add_executable(benchmark src/test/benchmark.cc )
+rospack_add_executable(benchmark src/test/benchmark.cpp )
 target_link_libraries(benchmark costmap_2d)
