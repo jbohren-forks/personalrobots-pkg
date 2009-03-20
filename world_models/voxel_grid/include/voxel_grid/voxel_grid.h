@@ -86,13 +86,6 @@ public:
       cost_map[index] = 0;
   }
 
-  inline bool occupiedColumn(int x, int y){
-    int index = y * size_x + x;
-    if(data[index] == 0)
-      return false;
-    return true;
-  }
-
   void markVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1);
   void clearVoxelLine(unsigned int x0, unsigned int y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1);
   void clearVoxelLineInMap(unsigned int x0, unsigned int y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned char *map_2d);
@@ -228,7 +221,7 @@ private:
   class GridOffset {
     public:
       GridOffset(unsigned int &offset) : offset_(offset) {}
-      inline void operator()(unsigned int offset_val){
+      inline void operator()(int offset_val){
         offset_ += offset_val;
       }
     private:
@@ -238,7 +231,7 @@ private:
   class ZOffset {
     public:
       ZOffset(unsigned int &z_mask) : z_mask_(z_mask) {}
-      inline void operator()(unsigned int offset_val){
+      inline void operator()(int offset_val){
         offset_val > 0 ? z_mask_ <<= 1 : z_mask_ >>= 1;
       }
     private:
