@@ -470,7 +470,7 @@ public:
       }
 
 
-      resp.door.door_boundary = polygon_transformed;
+      //resp.door.door_boundary = polygon_transformed; -> gone from Door.msg
 
       duration = ros::Time::now () - ts;
       ROS_INFO ("Door found. Result in frame %s \n  P1 = [%f, %f, %f]. P2 = [%f, %f, %f]. \n  Height = %f. \n  Handle = [%f, %f, %f]. \n  Total time: %f.",
