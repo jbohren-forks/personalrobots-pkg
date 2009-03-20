@@ -236,9 +236,9 @@ public:
 	loadRobotDescription();
         std::vector<std::string> mlist;    
 	knownModels(mlist);
-	ROS_INFO("Known models:");    
+	ROS_DEBUG("Known models:");    
 	for (unsigned int i = 0 ; i < mlist.size() ; ++i)
-	    ROS_INFO("  * %s", mlist[i].c_str());    
+	    ROS_DEBUG("  * %s", mlist[i].c_str());    
 	
 	waitForState();
 	startPublishingStatus();
@@ -489,11 +489,11 @@ public:
 	CollisionSpaceMonitor::setRobotDescription(file);	
 	defaultPosition();
 	
-	ROS_INFO("=======================================");	
+	ROS_DEBUG("=======================================");	
 	std::stringstream ss;
 	m_kmodel->printModelInfo(ss);
-	ROS_INFO("%s", ss.str().c_str());	
-	ROS_INFO("=======================================");
+	ROS_DEBUG("%s", ss.str().c_str());	
+	ROS_DEBUG("=======================================");
 
 	/* set the data for the model */
 	RKPModel *model = new RKPModel();
@@ -640,7 +640,7 @@ protected:
 	while (m_currentRequestType == R_STATE && !trivial)
 	{    
 	    step++;
-	    ROS_INFO("Replanning step %d", step);
+	    ROS_DEBUG("Replanning step %d", step);
 	    boost::mutex::scoped_lock lock(m_continueReplanningLock);
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
@@ -689,7 +689,7 @@ protected:
 	while (m_currentRequestType == R_POSITION && !trivial)
 	{
 	    step++;
-	    ROS_INFO("Replanning step %d", step);
+	    ROS_DEBUG("Replanning step %d", step);
 	    boost::mutex::scoped_lock lock(m_continueReplanningLock);
 	    m_collisionMonitorChange = false;
 	    double distance = 0.0;
@@ -756,7 +756,7 @@ protected:
 		m_currentPlanStatus.valid = 0;
 	    }
 	    else
-		ROS_INFO("Currently executed path is still valid");
+		ROS_DEBUG("Currently executed path is still valid");
 	}
 	else
 	    if (!m_currentPlanStatus.valid)

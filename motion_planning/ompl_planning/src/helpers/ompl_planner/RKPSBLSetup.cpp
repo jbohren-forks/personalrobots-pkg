@@ -61,7 +61,7 @@ bool kinematic_planning::RKPSBLSetup::setup(const std::map<std::string, std::str
     if (hasOption(options, "range"))
     {
 	sbl->setRange(optionAsDouble(options, "range", sbl->getRange()));
-	ROS_INFO("Range is set to %g", sbl->getRange());
+	ROS_DEBUG("Range is set to %g", sbl->getRange());
     }
 
     sbl->setProjectionEvaluator(getProjectionEvaluator(options));

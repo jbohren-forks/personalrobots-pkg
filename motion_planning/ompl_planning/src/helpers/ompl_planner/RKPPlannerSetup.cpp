@@ -118,8 +118,8 @@ ompl::base::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProject
 	}
 	
 	pe->setCellDimensions(cdim);
-	ROS_INFO("Projection is set to %s", proj.c_str());
-	ROS_INFO("Cell dimensions set to %s", celldim.c_str());
+	ROS_DEBUG("Projection is set to %s", proj.c_str());
+	ROS_DEBUG("Cell dimensions set to %s", celldim.c_str());
     }
     
     return pe;
@@ -127,7 +127,7 @@ ompl::base::ProjectionEvaluator* kinematic_planning::RKPPlannerSetup::getProject
 
 void kinematic_planning::RKPPlannerSetup::preSetup(const std::map<std::string, std::string> &options)
 {
-    ROS_INFO("Adding %s instance for motion planning: %s", name.c_str(), model->groupName.c_str());
+    ROS_DEBUG("Adding %s instance for motion planning: %s", name.c_str(), model->groupName.c_str());
     
     si       = new SpaceInformationRKPModel(model);
     svc      = new StateValidityPredicate(model);

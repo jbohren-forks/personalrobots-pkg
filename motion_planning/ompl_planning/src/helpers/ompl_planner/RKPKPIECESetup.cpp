@@ -61,13 +61,13 @@ bool kinematic_planning::RKPKPIECESetup::setup(const std::map<std::string, std::
     if (hasOption(options, "range"))
     {
 	kpiece->setRange(optionAsDouble(options, "range", kpiece->getRange()));
-	ROS_INFO("Range is set to %g", kpiece->getRange());
+	ROS_DEBUG("Range is set to %g", kpiece->getRange());
     }
     
     if (hasOption(options, "goal_bias"))
     {
 	kpiece->setGoalBias(optionAsDouble(options, "goal_bias", kpiece->getGoalBias()));
-	ROS_INFO("Goal bias is set to %g", kpiece->getGoalBias());
+	ROS_DEBUG("Goal bias is set to %g", kpiece->getGoalBias());
     }
     
     kpiece->setProjectionEvaluator(getProjectionEvaluator(options));

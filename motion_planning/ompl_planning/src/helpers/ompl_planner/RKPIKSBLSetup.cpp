@@ -61,13 +61,13 @@ bool kinematic_planning::RKPIKSBLSetup::setup(const std::map<std::string, std::s
     if (hasOption(options, "range"))
     {
 	sbl->setRange(optionAsDouble(options, "range", sbl->getRange()));
-	ROS_INFO("Range is set to %g", sbl->getRange());
+	ROS_DEBUG("Range is set to %g", sbl->getRange());
     }
     
     if (hasOption(options, "ik_range"))
     {
 	sbl->setIKRange(optionAsDouble(options, "ik_range", sbl->getIKRange()));
-	ROS_INFO("IK range is set to %g", sbl->getIKRange());
+	ROS_DEBUG("IK range is set to %g", sbl->getIKRange());
     }
     
     sbl->setProjectionEvaluator(getProjectionEvaluator(options));

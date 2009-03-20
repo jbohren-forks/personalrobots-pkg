@@ -56,13 +56,13 @@ bool kinematic_planning::RKPLazyRRTSetup::setup(const std::map<std::string, std:
     if (hasOption(options, "range"))
     {
 	rrt->setRange(optionAsDouble(options, "range", rrt->getRange()));
-	ROS_INFO("Range is set to %g", rrt->getRange());
+	ROS_DEBUG("Range is set to %g", rrt->getRange());
     }
     
     if (hasOption(options, "goal_bias"))
     {
 	rrt->setGoalBias(optionAsDouble(options, "goal_bias", rrt->getGoalBias()));
-	ROS_INFO("Goal bias is set to %g", rrt->getGoalBias());
+	ROS_DEBUG("Goal bias is set to %g", rrt->getGoalBias());
     }
     
     postSetup(options);
