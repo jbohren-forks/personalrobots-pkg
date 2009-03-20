@@ -81,6 +81,7 @@ class ScanShadowsFilter : public FilterBase<T>
       return false;
     }
 
+    return true;
   }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -148,7 +149,6 @@ class ScanShadowsFilter : public FilterBase<T>
     scan_out = scan_in;
 
     // For each point in the current line scan
-      int n_pts_filtered = 0;
       for (unsigned int i = 0; i < scan_in.ranges.size (); i++)
       {
         for (int y = -window_; y < window_ + 1; y++)
@@ -164,7 +164,7 @@ class ScanShadowsFilter : public FilterBase<T>
             scan_out.ranges[i] = -1.0; //Failed test so set the ranges to invalid value
         }
       }
-      
+      return true;
     }
 
     ////////////////////////////////////////////////////////////////////////////////
