@@ -1,0 +1,14 @@
+<package>
+  <description brief="Sets stereo camera parameters">
+     This is a small GUI for setting teh stereo camera parameters.
+  </description>
+  <author>Marius Muja</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com</url>
+  <depend package="rospy"/>
+  <depend package="rostest"/>  
+  <depend package="std_srvs"/>
+  <depend package="std_msgs"/>
+</package>
+
