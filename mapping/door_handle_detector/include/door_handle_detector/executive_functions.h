@@ -39,12 +39,8 @@
 #include <tf/tf.h>
 
 
-// calculate the robot pose in front of the door, form where it can grasp the door
-tf::Stamped<tf::Pose> getGraspPose(const robot_msgs::Door& door);
-
-// calculate the robot pose in front of the door, from where it can detect the door
-tf::Stamped<tf::Pose> getDetectPose(const robot_msgs::Door& door);
-
+// calculate the robot pose in front of the door
+tf::Stamped<tf::Pose> getRobotPose(const robot_msgs::Door& door, double dist);
 
 
 #endif
