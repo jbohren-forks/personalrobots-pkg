@@ -27,7 +27,7 @@
     </visual>
 
     <collision>
-      <origin xyz="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry name="${name}_collision">
         <box size="0.01 0.01 0.01" />
       </geometry>
@@ -50,7 +50,7 @@
     </inertial>
 
     <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <map name="gazebo_material" flag="gazebo">
         <elem key="material" value="Gazebo/Blue" />
       </map>
@@ -60,7 +60,7 @@
     </visual>
 
     <collision>
-      <origin xyz="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry name="${name}_optical_collision">
         <box size="0.01 0.01 0.01" />
       </geometry>
