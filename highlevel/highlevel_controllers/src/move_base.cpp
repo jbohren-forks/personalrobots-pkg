@@ -737,7 +737,7 @@ namespace ros {
       bool ok =  baseScanBuffer_->isCurrent() && tiltScanBuffer_->isCurrent() && stereoCloudBuffer_->isCurrent() && lowObstacleBuffer_->isCurrent();
 
       if(!ok)
-        ROS_INFO("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
+        ROS_WARN("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
 
       return ok;
     }
@@ -761,7 +761,7 @@ namespace ros {
       if(planOk && plan_.empty()){
         double uselessPitch, uselessRoll, yaw;
         global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
-        ROS_INFO("Moving to desired goal orientation\n");
+        ROS_DEBUG("Moving to desired goal orientation\n");
         cmdVel.vel.vx = 0;
         cmdVel.vel.vy = 0;
         double ang_diff = angles::shortest_angular_distance(yaw, stateMsg.goal.th);
@@ -804,7 +804,7 @@ namespace ros {
         std::list<deprecated_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
 
 
-        ROS_INFO("getting observations.\n");
+        ROS_DEBUG("getting observations.\n");
         lock();
         // Aggregate buffered observations across all sources. Must be thread safe
         std::vector<costmap_2d::Observation> observations;
@@ -833,7 +833,7 @@ namespace ros {
           ROS_DEBUG("Velocity Controller could not find a valid trajectory.\n");
           planOk = false;
         }
-        ROS_INFO("Cycle Time: %.3f planOk(%d)\n", (ros::Time::now() - start).toSec(),planOk);
+        ROS_DEBUG("Cycle Time: %.3f planOk(%d)\n", (ros::Time::now() - start).toSec(),planOk);
 
         if(!planOk){
           // Zero out the velocities
@@ -846,7 +846,7 @@ namespace ros {
         }
       }
 
-      ROS_INFO("publishing cmd_vel %f %f %f\n", cmdVel.vel.vx, cmdVel.vel.vy, cmdVel.ang_vel.vz);
+      ROS_DEBUG("publishing cmd_vel %f %f %f\n", cmdVel.vel.vx, cmdVel.vel.vy, cmdVel.ang_vel.vz);
       ros::Node::instance()->publish("cmd_vel", cmdVel);
       double uselessPitch, uselessRoll, yaw;
       global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
