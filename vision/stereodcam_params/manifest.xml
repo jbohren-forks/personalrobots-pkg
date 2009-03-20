@@ -1,6 +1,6 @@
 <package>
   <description brief="Sets stereo camera parameters">
-     This is a small GUI for setting teh stereo camera parameters.
+     This is a small GUI for setting the stereo camera parameters.
   </description>
   <author>Marius Muja</author>
   <license>BSD</license>
