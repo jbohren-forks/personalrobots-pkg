@@ -20,6 +20,8 @@ for a in sys.argv[1:]:
         elif(a[1] == "B"):
             debug = True
             print "DEBUG ON, WD:", my_dir
+        elif(a[1] == "S"):
+             my_dir = a[2:]
         else:
             print "Reject argument:", a
             help = True
@@ -43,6 +45,7 @@ if (len(files) != 1 or help):
     print "<option> is one of:"
     print "  -I<dir>: Include directory <dir>."
     print "  -B: Turn on debug prints and print working directory."
+    print "  -S: Current source directory."
     sys.exit(1)
 
 
@@ -91,7 +94,7 @@ if (debug):
     print "Files:"
 
 for file in files:
-    print file
+    print os.path.normpath(file)
 
 
 
