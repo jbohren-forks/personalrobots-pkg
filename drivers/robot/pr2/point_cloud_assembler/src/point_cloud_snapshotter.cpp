@@ -53,7 +53,7 @@ using namespace robot_msgs ;
 namespace point_cloud_assembler
 {
 
-class PointCloudSnapshotter : public ros::Node
+class PointCloudSnapshotter
 {
 
 public:
@@ -64,21 +64,22 @@ public:
   bool first_time_ ;
 
   std::string fixed_frame_ ;
+  ros::Node node_;
 
-  PointCloudSnapshotter() : ros::Node("point_cloud_snapshotter")
+  PointCloudSnapshotter() : node_("point_cloud_snapshotter")
   {
     prev_signal_.header.stamp.fromNSec(0) ;
 
-    advertise<PointCloud> ("full_cloud", 1) ;
-    subscribe("laser_scanner_signal", cur_signal_, &PointCloudSnapshotter::scannerSignalCallback, 40) ;
+    ros::Node::instance()->advertise<PointCloud> ("full_cloud", 1) ;
+    ros::Node::instance()->subscribe("laser_scanner_signal", cur_signal_, &PointCloudSnapshotter::scannerSignalCallback, this, 40) ;
 
     first_time_ = true ;
   }
 
   ~PointCloudSnapshotter()
   {
-    unsubscribe("laser_scanner_signal") ;
-    unadvertise("full_cloud") ;
+    ros::Node::instance()->unsubscribe("laser_scanner_signal") ;
+    ros::Node::instance()->unadvertise("full_cloud") ;
   }
 
   void scannerSignalCallback()
@@ -104,7 +105,7 @@ public:
       ros::service::call("build_cloud", req, resp) ;
       //printf("PointCloudSnapshotter::Done with service call\n") ;
 
-      publish("full_cloud", resp.cloud) ;
+      ros::Node::instance()->publish("full_cloud", resp.cloud) ;
       ROS_DEBUG("Snapshotter::Published Cloud size=%u", resp.cloud.get_pts_size()) ;
 
       prev_signal_ = cur_signal_ ;
@@ -120,7 +121,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   PointCloudSnapshotter snapshotter ;
-  snapshotter.spin();
+  ros::Node::instance()->spin();
   
   return 0;
 }

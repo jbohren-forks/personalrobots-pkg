@@ -62,7 +62,7 @@ public:
   LaserScanAssemblerSrv() : BaseAssemblerSrv<laser_scan::LaserScan>("laser_scan_assembler")
   {
     // ***** Set Laser Projection Method *****
-    param("~ignore_laser_skew", ignore_laser_skew_, true) ;
+    ros::Node::instance()->param("~ignore_laser_skew", ignore_laser_skew_, true) ;
   }
 
   ~LaserScanAssemblerSrv()
@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   LaserScanAssemblerSrv pc_assembler;
-  pc_assembler.spin();
+  ros::Node::instance()->spin();
   
   return 0;
 }

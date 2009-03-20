@@ -68,7 +68,7 @@ namespace point_cloud_assembler
  *              end time and returns the aggregated data as a point cloud
  */
 template<class T>
-class BaseAssemblerSrv : public ros::Node
+class BaseAssemblerSrv
 {
 public:
   BaseAssemblerSrv(const std::string& node_name) ;
@@ -92,6 +92,7 @@ public:
 
 protected:
   tf::TransformListener* tf_ ;
+  ros::Node node_ ;
 
 private:
   //! \brief Callback function for every time we receive a new scan
@@ -122,21 +123,21 @@ private:
 } ;
 
 template <class T>
-BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::Node(node_name)
+BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : node_(node_name)
 {
   // **** Initialize TransformListener ****
   double tf_cache_time_secs ;
-  param("~tf_cache_time_secs", tf_cache_time_secs, 10.0) ;
+  ros::Node::instance()->param("~tf_cache_time_secs", tf_cache_time_secs, 10.0) ;
   if (tf_cache_time_secs < 0)
     ROS_ERROR("Parameter tf_cache_time_secs<0 (%f)", tf_cache_time_secs) ;
 
-  tf_ = new tf::TransformListener(*this, true, ros::Duration(tf_cache_time_secs)) ;
+  tf_ = new tf::TransformListener(*ros::Node::instance(), true, ros::Duration(tf_cache_time_secs)) ;
   ROS_INFO("TF Cache Time: %f Seconds", tf_cache_time_secs) ;
 
   // ***** Set max_scans *****
   const int default_max_scans = 400 ;
   int tmp_max_scans ;
-  param("~max_scans", tmp_max_scans, default_max_scans) ;
+  ros::Node::instance()->param("~max_scans", tmp_max_scans, default_max_scans) ;
   if (tmp_max_scans < 0)
   {
     ROS_ERROR("Parameter max_scans<0 (%i)", tmp_max_scans) ;
@@ -147,14 +148,14 @@ BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::Node(
   total_pts_ = 0 ;    // We're always going to start with no points in our history
 
   // ***** Set fixed_frame *****
-  param("~fixed_frame", fixed_frame_, std::string("ERROR_NO_NAME")) ;
+  ros::Node::instance()->param("~fixed_frame", fixed_frame_, std::string("ERROR_NO_NAME")) ;
   ROS_INFO("Fixed Frame: %s", fixed_frame_.c_str()) ;
   if (fixed_frame_ == "ERROR_NO_NAME")
     ROS_ERROR("Need to set parameter fixed_frame") ;
 
   // ***** Set downsample_factor *****
   int tmp_downsample_factor ;
-  param("~downsample_factor", tmp_downsample_factor, 1) ;
+  ros::Node::instance()->param("~downsample_factor", tmp_downsample_factor, 1) ;
   if (tmp_downsample_factor < 1)
   {
     ROS_ERROR("Parameter downsample_factor<1: %i", tmp_downsample_factor) ;
@@ -164,17 +165,17 @@ BaseAssemblerSrv<T>::BaseAssemblerSrv(const std::string& node_name) : ros::Node(
   ROS_INFO("Downsample Factor: %u", downsample_factor_) ;
 
   // ***** Start Services *****
-  advertiseService(getName()+"/build_cloud", &BaseAssemblerSrv<T>::buildCloud, this, 0) ;
+  ros::Node::instance()->advertiseService(ros::Node::instance()->getName()+"/build_cloud", &BaseAssemblerSrv<T>::buildCloud, this, 0) ;
 
   // **** Get the TF Notifier Tolerance ****
   double tf_tolerance_secs ;
-  param("~tf_tolerance_secs", tf_tolerance_secs, 0.0) ;
+  ros::Node::instance()->param("~tf_tolerance_secs", tf_tolerance_secs, 0.0) ;
   if (tf_tolerance_secs < 0)
     ROS_ERROR("Parameter tf_tolerance_secs<0 (%f)", tf_tolerance_secs) ;
   ROS_INFO("tf Tolerance: %f seconds", tf_tolerance_secs) ;
 
   // ***** Start Listening to Data *****
-  scan_notifier_ = new tf::MessageNotifier<T>(tf_, this, boost::bind(&BaseAssemblerSrv<T>::scansCallback, this, _1), "scan_in", fixed_frame_, 10) ;
+  scan_notifier_ = new tf::MessageNotifier<T>(tf_, ros::Node::instance(), boost::bind(&BaseAssemblerSrv<T>::scansCallback, this, _1), "scan_in", fixed_frame_, 10) ;
   scan_notifier_->setTolerance(ros::Duration(tf_tolerance_secs)) ;
 
 }
@@ -183,7 +184,7 @@ template <class T>
 BaseAssemblerSrv<T>::~BaseAssemblerSrv()
 {
   delete scan_notifier_ ;
-  unadvertiseService(getName()+"/build_cloud") ;
+  ros::Node::instance()->unadvertiseService(ros::Node::instance()->getName()+"/build_cloud") ;
   delete tf_ ;
 }
 
