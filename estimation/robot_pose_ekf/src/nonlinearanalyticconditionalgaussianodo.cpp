@@ -15,7 +15,7 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 //
 
-#include "nonlinearanalyticconditionalgaussianodo.h"
+#include <robot_pose_ekf/nonlinearanalyticconditionalgaussianodo.h>
 #include <wrappers/rng/rng.h> // Wrapper around several rng
                               // libraries
 #define NUMCONDARGUMENTS_MOBILE 2

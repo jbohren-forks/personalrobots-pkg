@@ -10,7 +10,7 @@
 
 <node pkg="rosrecord" type="rosplay" args="$(find robot_pose_ekf)/test/ekf_test.bag" />
 
-<test test-name="test_ekf" pkg="robot_pose_ekf" type="test_ekf" output="screen"/>
+<test test-name="test_robot_pose_ekf" pkg="robot_pose_ekf" type="test_robot_pose_ekf" output="screen"/>
 
 
 </launch>

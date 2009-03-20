@@ -3,6 +3,8 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(robot_pose_ekf)
 genmsg()
 
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
 rospack_add_boost_directories()
 
 rospack_add_executable(robot_pose_ekf 
@@ -11,11 +13,11 @@ rospack_add_executable(robot_pose_ekf
                        src/odom_estimation_node.cpp)
 rospack_link_boost(robot_pose_ekf thread)
 
-rospack_add_executable(test/test_ekf 
-                       test/test_ekf.cpp)
-rospack_link_boost(test/test_ekf thread)
+rospack_add_executable(test_robot_pose_ekf 
+                       test/test_robot_pose_ekf.cpp)
+rospack_link_boost(test_robot_pose_ekf thread)
 
-rospack_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_ekf.launch)
+rospack_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_robot_pose_ekf.launch)
 
 # Download needed data file
 # This code is wrapped up in a new macro, which hasn't yet been merged to

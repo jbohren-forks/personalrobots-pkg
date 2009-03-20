@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "odom_estimation.h"
+#include <robot_pose_ekf/odom_estimation.h>
 
 using namespace MatrixWrapper;
 using namespace BFL;

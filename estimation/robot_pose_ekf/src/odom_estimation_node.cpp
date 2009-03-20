@@ -33,7 +33,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "odom_estimation_node.h"
+#include <robot_pose_ekf/odom_estimation_node.h>
 
 
 using namespace MatrixWrapper;
@@ -46,7 +46,7 @@ static const double EPS = 1e-5;
 static const string publish_name = "odom_combined";
 
 
-//#define __EKF_DEBUG_FILE__
+#define __EKF_DEBUG_FILE__
 
 namespace estimation
 {
@@ -161,6 +161,7 @@ namespace estimation
       // residu=0.05 --> multiplier=1.0     residu=0.2 --> multiplier=20.0
       odom_multiplier = ((odom_.residual-0.05)*(19.0/0.15))+1.0; 
     odom_multiplier = fmax(0.00001, fmin(100.0, odom_multiplier));
+    odom_multiplier *= 2.0;
     //cout << "odom_multiplier = " << odom_multiplier << endl;
     my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_multiplier);
     
@@ -252,6 +253,7 @@ namespace estimation
     // inliers=200+ --> multiplier=1        inliers=100 --> multiplier=11      inliers=10 --> multiplier=20
     double vo_multiplier = 21.0-(min(200.0,(double)vo_.inliers)/10.0);
     vo_multiplier = fmax(0.00001, fmin(100.0, vo_multiplier));
+    vo_multiplier /= 2.0;
     //cout << "vo_multiplier = " << vo_multiplier << endl;
     Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
     my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"),
@@ -370,10 +372,15 @@ namespace estimation
 
 	  
 	// initialize filer with odometry frame
-	if ( odom_active_ && !my_filter_.isInitialized()){
-	  my_filter_.initialize(odom_meas_, odom_stamp_);
+	//if ( odom_active_ && !my_filter_.isInitialized()){
+	//  my_filter_.initialize(odom_meas_, odom_stamp_);
+	//  ROS_INFO((node_name_+"  Fiter initialized").c_str());
+	//}
+	if ( vo_active_ && !my_filter_.isInitialized()){
+	  my_filter_.initialize(vo_meas_, vo_stamp_);
 	  ROS_INFO((node_name_+"  Fiter initialized").c_str());
 	}
+
       }
       vo_lock.unlock();  imu_lock.unlock();  odom_lock.unlock();
       
