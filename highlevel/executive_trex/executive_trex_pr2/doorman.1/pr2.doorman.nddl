@@ -1,0 +1,51 @@
+#include "doorman.nddl"
+#include "topological_map.exports.nddl";
+
+// Loads the map from file
+map_initialize_from_file("../test/willow.tmap");
+
+close();
+
+// For the doorway integration test we will:
+// 1. Give it an initial position for the door state
+// 2. Select the base position to detect from
+// 3. Select the base position to grasp from
+rejectable(MoveBase.Active cmd_go_to_detection_position);
+rejectable(DetectDoor.Active cmd_detect_door);
+rejectable(MoveBase.Active cmd_go_to_grasp_position);
+rejectable(GraspHandle.Active cmd_grasp_handle);
+rejectable(OpenDoorWithGrasp.Active cmd_open_door);
+
+// Sequence the goals
+cmd_go_to_detection_position before cmd_detect_door;
+cmd_detect_door before cmd_go_to_grasp_position;
+cmd_go_to_grasp_position before cmd_grasp_handle;
+cmd_grasp_handle before cmd_open_door;
+
+// Obtain the detection base location based on the door data obtained from detection
+get_door_detection_base_position(cmd_go_to_detection_position.x, cmd_go_to_detection_position.y, cmd_go_to_detection_position.th,
+				 cmd_detect_door.door_p1_x, cmd_detect_door.door_p1_y, cmd_detect_door.door_p2_x, cmd_detect_door.door_p2_y);
+
+// Obtain the grasp base location based on the door data obtained from detection
+get_door_grasp_base_position(cmd_go_to_grasp_position.x, cmd_go_to_grasp_position.y, cmd_go_to_grasp_position.th,
+			     cmd_detect_door.door_p1_x, cmd_detect_door.door_p1_y, cmd_detect_door.door_p2_x, cmd_detect_door.door_p2_y);
+
+
+
+/*
+// Will be trying to get thru a doorway which will exity at positin <3, 6, 2.0>
+rejectable(doorman.Active g0);
+g0.x = 3.0;
+g0.y = 6.0;
+g0.th = 2.0;
+
+// At the end, we expect the doorway to be clear, and have handle to be false
+// assert(door_controller[g0.end) == Holds(doorway_clear == true, have_handle == false);
+rejectable(door_controller.Holds c0);
+concurrent(c0.start, g0.end);
+eq(c0.doorway_clear, true);
+eq(c0.have_handle, FALSE);
+assertCompleted(c0.state);
+*/
+
+
