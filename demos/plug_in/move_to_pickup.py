@@ -7,7 +7,7 @@ roslib.load_manifest('mechanism_bringup')
 import numpy
 import rospy
 
-from robot_msgs.msg import JointTraj, JointTrajPoint, PlugStow, Point
+from robot_msgs.msg import JointTraj, JointTrajPoint, PlugStow, Point, PoseStamped
 from mechanism_control import mechanism
 from robot_mechanism_controllers.srv import *
 from pr2_mechanism_controllers.srv import *
@@ -15,28 +15,27 @@ from pr2_mechanism_controllers.srv import *
 import sys
 from time import sleep
 
-plug_found = False
+plug_not_found = True
 found_count = 0
 centroid_x =[]
 centroid_y =[]
 plug_location = Point()
 
 def get_location(data):
-    global found_count, centroid_x, centroid_y, plug_location
-    if (data.stowed == 1):
-      print "found plug\n"    
+    global found_count, centroid_x, centroid_y, plug_location, plug_not_found
+    if (data.stowed == 1): 
       found_count=found_count+1
       centroid_x.append(data.plug_centroid.x)
       centroid_y.append(data.plug_centroid.y)
 
-    if(found_count > 10):
+    if(found_count > 3):
      x=numpy.array(centroid_x)
      y=numpy.array(centroid_y)
      if (x.std()<0.1 and y.std()<0.1):
-      plug_found =True
+      plug_not_found = False
       plug_location.x = x.mean()
       plug_location.y = y.mean()
-      print "found plug at x:%f y:%f\n", (plug_location.x, plug_location.y)
+      print "found plug at x:%s y:%s\n", (plug_location.x, plug_location.y)
      
 def move(positions):
  
@@ -55,10 +54,25 @@ def move(positions):
   try:
     move_arm = rospy.ServiceProxy('right_arm/trajectory_controller/TrajectoryStart', TrajectoryStart)
     resp1 = move_arm(traj,0,0)
+    print resp1.trajectoryid
     return resp1.trajectoryid
   except rospy.ServiceException, e:
     print "Service call failed: %s"%e
 
+def pickup():
+  pub = rospy.Publisher('/cartesian_pose/command', PoseStamped)
+  m = PoseStamped()
+  m.header.frame_id = 'torso_lift_link'
+  m.header.stamp = rospy.get_rostime()
+  m.pose.position.x = .25#plug_location.x
+  m.pose.position.y = .25#plug_location.y
+  m.pose.position.z = 0.45
+  m.pose.orientation.x = 0.57
+  m.pose.orientation.y = 0.65
+  m.pose.orientation.z = -0.30
+  m.pose.orientation.w = 0.38
+  pub.publish(m)
+  
 
 def set_params():
   rospy.set_param("right_arm/trajectory_controller/velocity_scaling_factor", 0.75)
@@ -72,21 +86,42 @@ def set_params():
   rospy.set_param("right_arm/trajectory_controller/r_wrist_flex_joint/goal_reached_threshold", 0.1)
   rospy.set_param("right_arm/trajectory_controller/r_wrist_roll_joint/goal_reached_threshold", 0.1)  
   
-if __name__ == '__main__':
+  rospy.set_param("cartesian_pose/root_name", "torso_lift_link")
+  rospy.set_param("cartesian_pose/tip_name", "r_gripper_tool_frame")
+  rospy.set_param("cartesian_pose/p","20.0")
+  rospy.set_param("cartesian_pose/i","0.1")
+  rospy.set_param("cartesian_pose/d","0.0")
+  rospy.set_param("cartesian_pose/i_clamp","0.5")
 
+
+  rospy.set_param("cartesian_pose/twist/ff_trans","20.0")
+  rospy.set_param("cartesian_pose/twist/ff_rot","5.0")
+  rospy.set_param("cartesian_pose/twist/fb_trans/p","20.0")
+  rospy.set_param("cartesian_pose/twist/fb_trans/i","0.5")
+  rospy.set_param("cartesian_pose/twist/fb_trans/d","0.0" )
+  rospy.set_param("cartesian_pose/twist/fb_trans/i_clamp","1.0")
+  rospy.set_param("cartesian_pose/twist/fb_rot/p","1.5")
+  rospy.set_param("cartesian_pose/twist/fb_rot/i","0.1")
+  rospy.set_param("cartesian_pose/twist/fb_rot/d","0.0")
+  rospy.set_param("cartesian_pose/twist/fb_rot/i_clamp","0.2")
+  
+if __name__ == '__main__':
+  
   rospy.wait_for_service('spawn_controller')
   rospy.init_node('move_to_pickup', anonymous = True)
 
   # Load xml file for arm trajectory controllers
   path = roslib.packages.get_pkg_dir('sbpl_arm_executive')
-  xml_for_right = open(path + '/launch/xml/r_arm_trajectory_controller.xml')
+  xml_for_traj = open(path + '/launch/xml/r_arm_trajectory_controller.xml')
+  path = roslib.packages.get_pkg_dir('arm_life_test')
+  xml_for_pose = open(path + '/cartesian_pose.xml')
 
   controllers = []
   try:
 
     # tuck traj for left arm
     set_params()
-    mechanism.spawn_controller(xml_for_right.read())
+    mechanism.spawn_controller(xml_for_traj.read())
     controllers.append('right_arm/trajectory_controller')
 
     positions_unfold = [[-0.0118545903883, 1.40015507128, -1.49991771552, -1.94172772826, 0.0131312866653, 0.0962640845608, -0.00644695174672],
@@ -101,7 +136,7 @@ if __name__ == '__main__':
     is_traj_done = rospy.ServiceProxy('right_arm/trajectory_controller/TrajectoryQuery', TrajectoryQuery)
     resp =is_traj_done(traj_id)   
    
-    while(resp.done>0):
+    while(resp.done==0):
       resp=is_traj_done(traj_id)
       print resp.done
       sleep(.5)
@@ -110,24 +145,27 @@ if __name__ == '__main__':
     
     print "collecting data" 
     rospy.Subscriber("/plug_onbase_detector_node/plug_stow_info", PlugStow, get_location)
-    global plug_found
-    while(not plug_found):
-      sleep(.5)
-
     
+    #while(plug_not_found):
+    #  print "plug not found\n"
+    #  sleep(.5)
+
+    print "picking up plug"
     positions_reach = [[-1.94218984843, 1.11597858279, -0.972790862418, -2.05406188637, 1.13866187982, 1.98224613965, 0.138829401448],
                  [-0.588178005201, 1.02579336793, -1.83716985184, -2.05579901252, 2.47973068494, 1.29075854416, 0.0628192819417]]  
                  
-    traj_id = move(positions_reach)                
-    while(resp.done>0):
-      resp=is_traj_done(traj_id)
-      print resp.done
+    traj_id2 = move(positions_reach)
+    resp2 = is_traj_done(traj_id2)                
+    while(resp2.done==0):
+      resp2=is_traj_done(traj_id2)
       sleep(.5)
 
-    
+    sleep(5)
     #now pick up plug  
-
+    mechanism.kill_controller('right_arm/trajectory_controller')
+    mechanism.spawn_controller(xml_for_pose.read())
     print "picking up plug"
+    #pickup()
     
     rospy.spin()
     
