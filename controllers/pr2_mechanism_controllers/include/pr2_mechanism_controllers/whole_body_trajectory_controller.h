@@ -83,7 +83,7 @@ namespace controller
   const std::string JointTrajectoryStatusString[7] = {"0 - ACTIVE","1 - DONE","2 - QUEUED","3 - DELETED","4 - FAILED","5 - CANCELED","6 - NUM_STATUS"};
 
   #define GOAL_REACHED_THRESHOLD 0.01
-
+  #define MAX_ALLOWABLE_JOINT_ERROR_THRESHOLD 0.2
     // comment this out if the controller is not supposed to publish its own max execution time
   #define PUBLISH_MAX_TIME
 
@@ -143,6 +143,10 @@ namespace controller
 
     std::vector<double> current_joint_velocity_;
 
+    std::vector<double> joint_errors_;
+
+    std::vector<double> max_allowable_joint_errors_;
+
     controller::BaseControllerNode base_controller_node_;
 
     std::vector<JointPDController *> joint_pv_controllers_;
@@ -165,7 +169,15 @@ namespace controller
 
     bool reachedGoalPosition(std::vector<double> joint_cmd);
 
+    bool errorsWithinThreshold();
+
+    void computeJointErrors();
+
     int getJointControllerPosByName(std::string name);
+
+    void checkWatchDog(double current_time);
+
+    void stopMotion();
 
     // Indicates if goals_ and error_margins_ should be copied into goals_rt_ and error_margins_rt_
     bool refresh_rt_vals_;
@@ -195,6 +207,12 @@ namespace controller
     realtime_tools::RealtimePublisher <robot_msgs::ControllerState>* controller_state_publisher_ ;  //!< Publishes controller information
 
     double max_update_time_;
+
+    double last_update_time_;
+
+    double max_allowed_update_time_;
+
+    bool watch_dog_active_;
   };
 
 /** @class WholeBodyTrajectoryControllerNode

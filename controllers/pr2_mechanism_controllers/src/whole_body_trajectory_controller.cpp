@@ -90,6 +90,7 @@ bool WholeBodyTrajectoryController::initXml(mechanism::RobotState * robot, TiXml
       joint_name_.push_back(std::string(jpc->getJointName()));
       current_joint_position_.push_back(0.0);
       current_joint_velocity_.push_back(0.0);
+      joint_errors_.push_back(0.0);
       num_joints++;
     }
     else if(static_cast<std::string>(elt->Attribute("type")) == std::string("BasePIDController"))
@@ -131,7 +132,7 @@ bool WholeBodyTrajectoryController::initXml(mechanism::RobotState * robot, TiXml
       }
       current_joint_position_.push_back(0.0);
       current_joint_velocity_.push_back(0.0);
-
+      joint_errors_.push_back(0.0);
       num_joints++;
     }
     else if(static_cast<std::string>(elt->Attribute("type")) == std::string("BaseControllerNode"))
@@ -163,6 +164,7 @@ bool WholeBodyTrajectoryController::initXml(mechanism::RobotState * robot, TiXml
 
   joint_trajectory_->setMaxRates(joint_velocity_limits_);
   joint_trajectory_->setInterpolationMethod(trajectory_type_);
+  joint_trajectory_->setJointWraps(base_joint_index_[2]);
 
   trajectory_point_.setDimension(num_joints);
   dimension_ = num_joints;
@@ -188,6 +190,9 @@ bool WholeBodyTrajectoryController::initXml(mechanism::RobotState * robot, TiXml
   trajectory_start_time_ = robot_->hw_->current_time_;
 
   last_time_ = robot_->hw_->current_time_;
+
+  watch_dog_active_ = false;
+  last_update_time_ = robot_->hw_->current_time_;
 
   ROS_INFO("Initialized controllers");
 
@@ -237,6 +242,88 @@ int WholeBodyTrajectoryController::getJointControllerPosByName(std::string name)
   return -1;
 }
 
+bool WholeBodyTrajectoryController::errorsWithinThreshold()
+{
+  for(int i=0; i < dimension_; i++)
+  {
+    if(fabs(joint_errors_[i]) > max_allowable_joint_errors_[i])
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+void WholeBodyTrajectoryController::computeJointErrors()
+{
+  for(unsigned int i=0; i < joint_pv_controllers_.size(); i++)
+  {
+    if(joint_type_[i] == mechanism::JOINT_CONTINUOUS || joint_type_[i] == mechanism::JOINT_ROTARY)
+    {
+      joint_errors_[i] = angles::shortest_angular_distance(joint_cmd_rt_[i], current_joint_position_[i]);
+    }
+    else //prismatic
+    {
+      joint_errors_[i] = current_joint_position_[i] - joint_cmd_rt_[i];
+    }
+  }
+
+  for(unsigned int i=0; i < base_pid_controller_.size(); i++)
+  {
+    int joint_index = base_joint_index_[i];
+    joint_errors_[joint_index] = joint_cmd_rt_[joint_index] - current_joint_position_[joint_index];
+  }
+}
+
+
+void WholeBodyTrajectoryController::checkWatchDog(double current_time)
+{
+  if(current_time - last_update_time_ < max_allowed_update_time_ && errorsWithinThreshold())
+  {
+    if(watch_dog_active_)
+    {
+      watch_dog_active_ = false;
+    }
+  }
+  else
+  {
+    if(!watch_dog_active_)
+    {
+      watch_dog_active_ = true;
+      stopMotion();
+    }
+  }
+}
+
+void WholeBodyTrajectoryController::stopMotion()
+{
+  std::vector<trajectory::Trajectory::TPoint> tp;
+  int msg_size = 1;
+
+  tp.resize(msg_size+1);
+
+  //set first point in trajectory to current position of the arm
+  tp[0].setDimension((int) dimension_);
+
+  for(int j=0; j < dimension_; j++)
+  {
+    tp[0].q_[j] = current_joint_position_[j];
+    tp[0].time_ = 0.0;
+  }
+  ROS_WARN("Trajectory message has no way points");
+  //set second point in trajectory to current position of the arm
+  tp[1].setDimension((int) dimension_);
+
+  for(int j=0; j < dimension_; j++)
+  {
+    tp[1].q_[j] = current_joint_position_[j];
+    tp[1].time_ = 0.0;
+  }
+  setTrajectoryCmd(tp);
+  base_controller_node_.setCommand(0.0,0.0,0.0);
+
+}
+
 void WholeBodyTrajectoryController::update(void)
 {
 
@@ -248,6 +335,7 @@ void WholeBodyTrajectoryController::update(void)
 
   current_time_ = robot_->hw_->current_time_;
 
+  checkWatchDog(current_time_);
 
   if(refresh_rt_vals_)
   {
@@ -267,7 +355,7 @@ void WholeBodyTrajectoryController::update(void)
     {
       joint_cmd_rt_[i] = trajectory_point_.q_[i];
       joint_cmd_dot_rt_[i] = trajectory_point_.qdot_[i];
-//      cout << " " << joint_cmd_rt_[i];
+//      ROS_INFO("Cmd: %f %f",joint_cmd_rt_[i],joint_cmd_dot_rt_[i]);
     }
 //    cout << endl;
     arm_controller_lock_.unlock();
@@ -286,9 +374,9 @@ void WholeBodyTrajectoryController::update(void)
   for(unsigned int i=0;i<joint_pv_controllers_.size();++i)
     joint_pv_controllers_[i]->setCommand(joint_cmd_rt_[i],joint_cmd_dot_rt_[i]);
 
-  updateJointControllers();
-
   updateBaseController(current_time_);
+
+  updateJointControllers();
 
 #ifdef PUBLISH_MAX_TIME
   double end_time = realtime_gettime();
@@ -328,7 +416,9 @@ void WholeBodyTrajectoryController::updateBaseController(double time)
     cmd[i] = base_pid_controller_[i].updatePid(error, error_dot, time - last_time_);
     cmd[i] += joint_cmd_dot_rt_[joint_index];
     if(i == 2)
+    {
       theta = current_joint_position_[joint_index];
+    }
   }
 
   //Transform the cmd back into the base frame
@@ -495,6 +585,7 @@ bool WholeBodyTrajectoryControllerNode::initXml(mechanism::RobotState * robot, T
   double scale;
   node_->param<double>(service_prefix_ + "/velocity_scaling_factor",scale,0.25);
   node_->param<double>(service_prefix_ + "/trajectory_wait_timeout",trajectory_wait_timeout_,10.0);
+  node_->param<double>(service_prefix_ + "/trajectory_update_timeout",c_->max_allowed_update_time_,0.2);
 
   c_->velocity_scaling_factor_ = std::min(1.0,std::max(0.0,scale));
 
@@ -551,9 +642,11 @@ bool WholeBodyTrajectoryControllerNode::initXml(mechanism::RobotState * robot, T
 void WholeBodyTrajectoryControllerNode::getJointTrajectoryThresholds()
 {
   c_->goal_reached_threshold_.resize(c_->dimension_);
+  c_->max_allowable_joint_errors_.resize(c_->dimension_);
   for(int i=0; i< c_->dimension_;i++)
   {
     node_->param<double>(service_prefix_ + "/" + c_->joint_name_[i] + "/goal_reached_threshold",c_->goal_reached_threshold_[i],GOAL_REACHED_THRESHOLD);
+    node_->param<double>(service_prefix_ + "/" + c_->joint_name_[i] + "/joint_error_threshold",c_->max_allowable_joint_errors_[i],MAX_ALLOWABLE_JOINT_ERROR_THRESHOLD);
   }
 }
 
@@ -613,6 +706,7 @@ void WholeBodyTrajectoryControllerNode::CmdTrajectoryReceived()
 {
 
   this->ros_lock_.lock();
+  c_->last_update_time_ = c_->current_time_;
   setTrajectoryCmdFromMsg(traj_msg_);
   this->ros_lock_.unlock();
 }

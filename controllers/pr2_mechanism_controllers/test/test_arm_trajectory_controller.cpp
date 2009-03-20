@@ -58,12 +58,18 @@ int main( int argc, char** argv )
   robot_msgs::JointTraj cmd;
 
   int num_points = 3;
-  int num_joints = 7;
+  int num_joints = 14;
 
   cmd.set_points_size(num_points);
 
   for(int i=0; i<num_points; i++)
+  {
     cmd.points[i].set_positions_size(num_joints);
+    for(int j=0; j < num_joints; j++)
+    {
+      cmd.points[i].positions[j] = 0.0;
+    }
+  }
 
 /*
   cmd.points[0].positions[0] = 0.0;
@@ -103,23 +109,11 @@ int main( int argc, char** argv )
   cmd.points[2].positions[6] = 0.0;
   cmd.points[2].time = 0.0;
 
-  node->advertise<robot_msgs::JointTraj>("arm_trajectory_command",1);
-  node->advertise<robot_msgs::JointTraj>("left_arm_trajectory_controller/arm_trajectory_command",1);
-  node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_controller/arm_trajectory_command",1);
-  sleep(1);
-  node->publish("arm_trajectory_command",cmd);
-  node->publish("left_arm_trajectory_controller/arm_trajectory_command",cmd);
-  node->publish("right_arm_trajectory_controller/arm_trajectory_command",cmd);
+  node->advertise<robot_msgs::JointTraj>("/arm/trajectory_controller/arm_trajectory_command",1);
+  node->publish("/arm/trajectory_controller/arm_trajectory_command",cmd);
   sleep(4);
 
   ros::Time start_time = ros::Time::now();
   ros::Duration sleep_time = ros::Duration().fromSec(0.01);
-
-/*  while(!done)
-  {
-    ros::Duration delta_time = ros::Time::now() - start_time;
-    sleep_time.sleep();
-  }
-*/
   
 }

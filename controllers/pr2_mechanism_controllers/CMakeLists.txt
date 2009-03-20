@@ -43,7 +43,7 @@ rospack_add_executable(testOdom EXCLUDE_FROM_ALL test/test_odom.cpp)
 rospack_declare_test(testOdom)
 target_link_libraries(testOdom pr2_mechanism_controllers)
 
-rospack_add_executable(testTraj EXCLUDE_FROM_ALL test/test_arm_trajectory_controller.cpp)
+rospack_add_executable(testTraj test/test_arm_trajectory_controller.cpp)
 rospack_declare_test(testTraj)
 target_link_libraries(testTraj pr2_mechanism_controllers)
 
