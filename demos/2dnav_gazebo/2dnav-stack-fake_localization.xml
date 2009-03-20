@@ -127,7 +127,7 @@
       <param name="trajectory_rollout/max_vel_th" value="1.0" />
       <param name="trajectory_rollout/min_vel_th" value="-1.0" />
       <param name="trajectory_rollout/min_in_place_vel_th" value="0.4" />
-      <param name="trajectory_rollout/freespace_model" value="true" />
+      <param name="trajectory_rollout/world_model" value="freespace" />
       <param name="trajectory_rollout/dwa" value="false" />
       <param name="trajectory_rollout/simple_attractor" value="false" />
 
