@@ -76,9 +76,9 @@ create_nav_plan_astar(COSTTYPE *costmap, int nx, int ny,
   int len = nav->calcPath(nplan);
 
   if (len > 0)			// found plan
-    ROS_INFO("[NavFn] Path found, %d steps\n", len);
+    ROS_DEBUG("[NavFn] Path found, %d steps\n", len);
   else
-    ROS_INFO("[NavFn] No path found\n");
+    ROS_DEBUG("[NavFn] No path found\n");
 
   if (len > 0)
     {
@@ -168,7 +168,7 @@ NavFn::setGoal(int *g)
 {
   goal[0] = g[0];
   goal[1] = g[1];
-  ROS_INFO("[NavFn] Setting goal to %d,%d\n", goal[0], goal[1]);
+  ROS_DEBUG("[NavFn] Setting goal to %d,%d\n", goal[0], goal[1]);
 }
 
 void
@@ -176,7 +176,7 @@ NavFn::setStart(int *g)
 {
   start[0] = g[0];
   start[1] = g[1];
-  ROS_INFO("[NavFn] Setting start to %d,%d\n", start[0], start[1]);
+  ROS_DEBUG("[NavFn] Setting start to %d,%d\n", start[0], start[1]);
 }
 
 //
@@ -186,7 +186,7 @@ NavFn::setStart(int *g)
 void
 NavFn::setNavArr(int xs, int ys)
 {
-  ROS_INFO("[NavFn] Array is %d x %d\n", xs, ys);
+  ROS_DEBUG("[NavFn] Array is %d x %d\n", xs, ys);
 
   nx = xs;
   ny = ys;
@@ -288,12 +288,12 @@ NavFn::calcNavFnAstar()
 
   if (len > 0)			// found plan
     {
-      ROS_INFO("[NavFn] Path found, %d steps\n", len);
+      ROS_DEBUG("[NavFn] Path found, %d steps\n", len);
       return true;
     }
   else
     {
-      ROS_INFO("[NavFn] No path found\n");
+      ROS_DEBUG("[NavFn] No path found\n");
       return false;
     }
 }
@@ -663,7 +663,7 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
 	  break;
     }
 
-  ROS_INFO("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
+  ROS_DEBUG("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
 	       cycle,nc,(int)((nc*100.0)/(ns-nobs)),nwv);
 
   if (cycle < cycles) return true; // finished up here
@@ -748,7 +748,7 @@ NavFn::propNavFnAstar(int cycles)
 
   last_path_cost_ = potarr[startCell];
 
-  ROS_INFO("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
+  ROS_DEBUG("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
 	       cycle,nc,(int)((nc*100.0)/(ns-nobs)),nwv);
 
 
@@ -806,7 +806,7 @@ NavFn::calcPath(int n, int *st)
 
       if (stc < nx || stc > ns-nx) // would be out of bounds
 	{
-	  ROS_INFO("[PathCalc] Out of bounds\n");
+	  ROS_DEBUG("[PathCalc] Out of bounds\n");
 	  return 0;
 	}
 
@@ -839,7 +839,7 @@ NavFn::calcPath(int n, int *st)
       // check for zero gradient, failed
       if (x == 0.0 && y == 0.0)
 	{
-	  ROS_INFO("[PathCalc] Zero gradient\n");	  
+	  ROS_DEBUG("[PathCalc] Zero gradient\n");	  
 	  return 0;
 	}
 
