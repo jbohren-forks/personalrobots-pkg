@@ -50,7 +50,7 @@ using namespace robot_msgs;
 
 /** @b ScanShadowsFilter is a simple node that filters shadow points in a laser scan line and publishes the results in a cloud.
  */
-class ScanShadowsFilter : public ros::Node
+class ScanShadowsFilter
 {
   public:
 
@@ -71,24 +71,24 @@ class ScanShadowsFilter : public ros::Node
     tf::TransformListener* tf_;
 
     ////////////////////////////////////////////////////////////////////////////////
-    ScanShadowsFilter () : ros::Node ("scan_shadows_filter"), laser_max_range_ (DBL_MAX)
+    ScanShadowsFilter () : laser_max_range_ (DBL_MAX)
     {
-      tf_ = new tf::TransformListener(*this, true) ;
+      tf_ = new tf::TransformListener(*ros::Node::instance(), true) ;
 
-      param ("~filter_min_angle", min_angle_, 10.0);
-      param ("~filter_max_angle", max_angle_, 170.0);
-      param ("~filter_window", window_, 2);
+      ros::Node::instance()->param ("~filter_min_angle", min_angle_, 10.0);
+      ros::Node::instance()->param ("~filter_max_angle", max_angle_, 170.0);
+      ros::Node::instance()->param ("~filter_window", window_, 2);
 
-      param ("~high_fidelity", high_fidelity_, false);
-      param ("~target_frame", target_frame_, std::string ("base_link"));
-      param ("~preservative", preservative_, false);
-      param ("~scan_topic", scan_topic_, std::string("tilt_scan"));
-      param ("~cloud_topic", cloud_topic_, std::string("tilt_laser_cloud_filtered"));
-      param ("~laser_max_range", laser_max_range_, DBL_MAX);
+      ros::Node::instance()->param ("~high_fidelity", high_fidelity_, false);
+      ros::Node::instance()->param ("~target_frame", target_frame_, std::string ("base_link"));
+      ros::Node::instance()->param ("~preservative", preservative_, false);
+      ros::Node::instance()->param ("~scan_topic", scan_topic_, std::string("tilt_scan"));
+      ros::Node::instance()->param ("~cloud_topic", cloud_topic_, std::string("tilt_laser_cloud_filtered"));
+      ros::Node::instance()->param ("~laser_max_range", laser_max_range_, DBL_MAX);
 
-      subscribe(scan_topic_,  scan_msg_,  &ScanShadowsFilter::tiltScanCallback, 10);
+      ros::Node::instance()->subscribe(scan_topic_,  scan_msg_,  &ScanShadowsFilter::tiltScanCallback, this, 10);
 
-      advertise<PointCloud> (cloud_topic_, 10);
+      ros::Node::instance()->advertise<PointCloud> (cloud_topic_, 10);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -272,7 +272,7 @@ class ScanShadowsFilter : public ros::Node
       filterShadowPoints (scan_full_cloud, filtered_cloud);
 
       // Set timestamp/frameid and publish
-      publish (cloud_topic_, filtered_cloud);
+      ros::Node::instance()->publish (cloud_topic_, filtered_cloud);
     }
 
 } ;
@@ -282,9 +282,9 @@ int
   main (int argc, char** argv)
 {
   ros::init (argc, argv);
-
+  ros::Node n("scan_shadows_filter");
   ScanShadowsFilter f;
-  f.spin ();
+  n.spin ();
 
   
 
