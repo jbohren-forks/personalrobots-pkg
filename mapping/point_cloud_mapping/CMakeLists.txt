@@ -77,15 +77,18 @@ target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
                        src/sample_consensus/sac_model_circle.cpp
                        src/sample_consensus/sac_model_sphere.cpp
                        src/sample_consensus/sac_model_cylinder.cpp
+                       src/sample_consensus/sac_model_parallel_lines.cpp
                       )
   target_link_libraries(sample_consensus cloud_geometry)
   rospack_add_gtest (bin/test_sample_consensus_line_fit test/sample_consensus/test_line_fit.cpp)
+  rospack_add_gtest (bin/test_sample_consensus_parallel_lines_fit test/sample_consensus/test_parallel_lines_fit.cpp)
   rospack_add_gtest (bin/test_sample_consensus_plane_fit test/sample_consensus/test_plane_fit.cpp)
   rospack_add_gtest (bin/test_sample_consensus_circle_fit test/sample_consensus/test_circle_fit.cpp)
   rospack_add_gtest (bin/test_sample_consensus_sphere_fit test/sample_consensus/test_sphere_fit.cpp)
   rospack_add_gtest (bin/test_sample_consensus_cylinder_fit test/sample_consensus/test_cylinder_fit.cpp)
 
   target_link_libraries (bin/test_sample_consensus_line_fit sample_consensus cloud_geometry)
+  target_link_libraries (bin/test_sample_consensus_parallel_lines_fit sample_consensus cloud_geometry)
   target_link_libraries (bin/test_sample_consensus_plane_fit sample_consensus cloud_geometry)
   target_link_libraries (bin/test_sample_consensus_circle_fit sample_consensus cloud_geometry)
   target_link_libraries (bin/test_sample_consensus_sphere_fit sample_consensus cloud_geometry)
