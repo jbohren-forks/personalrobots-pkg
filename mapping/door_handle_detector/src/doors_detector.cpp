@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -284,10 +284,8 @@ class DoorDetector
         float g = rand () / (RAND_MAX + 1.0);
         float b = rand () / (RAND_MAX + 1.0);
         for (unsigned int j = 0; j < clusters[cc].size (); j++)
-//        for (unsigned int j = 0; j < indices_xy.size (); j++)
         {
           cloud_regions_.pts.push_back (cloud_down_.pts[clusters[cc][j]]);
-//          cloud_regions_.pts.push_back (cloud_down_.pts[indices_xy[j]]);
           cloud_regions_.chan[0].vals.push_back (getRGB (r, g, b));
         }
       }
@@ -478,7 +476,6 @@ class DoorDetector
           }
         }
       }
-      //node_.publish ("~door_frames", pmap_);
 
       // Count the number of remaining clusters with non-null goodness factor
       int doors_found_cnt = 0;
