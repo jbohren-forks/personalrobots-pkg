@@ -167,7 +167,7 @@ bool Link::initXml(TiXmlElement *config, Robot *robot)
     visual_.reset(new Visual);
     if (!visual_->initXml(v))
     {
-      ROS_ERROR("Could not parse visual element for link \"%s\"", name_.c_str());
+      ROS_DEBUG/*ERROR*/("Could not parse visual element for link \"%s\"", name_.c_str());
       visual_.reset();
     }
   }
@@ -253,7 +253,7 @@ bool Visual::initXml(TiXmlElement *config)
   geometry_.reset(parseGeometry(geom));
   if (!geometry_)
   {
-    ROS_ERROR("Malformed geometry for Visual element");
+    ROS_DEBUG/*ERROR*/("Malformed geometry for Visual element");
     return false;
   }
 
@@ -339,7 +339,7 @@ bool Mesh::initXml(TiXmlElement *c)
 {
   if (!c->Attribute("filename"))
   {
-    ROS_ERROR("Mesh must contain a filename attribute");
+    ROS_DEBUG/*ERROR*/("Mesh must contain a filename attribute");
     return false;
   }
 
