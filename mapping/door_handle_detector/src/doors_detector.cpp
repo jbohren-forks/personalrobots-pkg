@@ -292,7 +292,7 @@ class DoorDetector
 
 
       vector<vector<double> > coeff (clusters.size ()); // Need to save all coefficients for all models
-      pmap_.header = cloud_down_.header;
+      pmap_.header = cloud_tr_.header;
       pmap_.polygons.resize (clusters.size ());         // Allocate space for the polygonal map
 
       ROS_INFO (" - Process all clusters (%i)", clusters.size ());
@@ -514,11 +514,16 @@ class DoorDetector
         resp.doors[nr_d].normal.x      = coeff[cc][0];
         resp.doors[nr_d].normal.y      = coeff[cc][1];
         resp.doors[nr_d].normal.z      = coeff[cc][2];
+        resp.doors[nr_d].plane_d       = coeff[cc][3];
 
         // Need min/max Z
         cloud_geometry::statistics::getMinMax (&pmap_.polygons[cc], min_p, max_p);
         resp.doors[nr_d].height = fabs (max_p.z - min_p.z);
-
+        resp.doors[nr_d].width  = sqrt ((resp.doors[nr_d].door_p1.x - resp.doors[nr_d].door_p2.x) *
+                                        (resp.doors[nr_d].door_p1.x - resp.doors[nr_d].door_p2.x) +
+                                        (resp.doors[nr_d].door_p1.y - resp.doors[nr_d].door_p2.y) *
+                                        (resp.doors[nr_d].door_p1.y - resp.doors[nr_d].door_p2.y)
+                                       );
         nr_d++;
       }
 
@@ -540,15 +545,13 @@ class DoorDetector
       {
         ROS_INFO ("  %d -> P1 = [%g, %g, %g]. P2 = [%g, %g, %g]. Width = %g. Height = %g. Weight = %g.", cd,
                   resp.doors[cd].door_p1.x, resp.doors[cd].door_p1.y, resp.doors[cd].door_p1.z, resp.doors[cd].door_p2.x, resp.doors[cd].door_p2.y, resp.doors[cd].door_p2.z,
-                  sqrt ( (resp.doors[cd].door_p1.x - resp.doors[cd].door_p2.x) * (resp.doors[cd].door_p1.x - resp.doors[cd].door_p2.x) +
-                         (resp.doors[cd].door_p1.y - resp.doors[cd].door_p2.y) * (resp.doors[cd].door_p1.y - resp.doors[cd].door_p2.y) ),
-                  resp.doors[cd].height, resp.doors[cd].weight);
+                  resp.doors[cd].width, resp.doors[cd].height, resp.doors[cd].weight);
       }
       ROS_INFO ("  Total time: %g.", duration.toSec ());
 
       node_.publish ("~door_frames", pmap_);
 
-      ROS_INFO ("Finished detecting door");
+      ROS_INFO ("Finished detecting door.");
 
       return (true);
     }
