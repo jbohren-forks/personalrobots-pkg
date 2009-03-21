@@ -30,8 +30,8 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include "point_cloud_mapping/geometry/point.h"
-#include "point_cloud_mapping/geometry/distances.h"
+#include <point_cloud_mapping/geometry/point.h>
+#include <point_cloud_mapping/geometry/distances.h>
 
 namespace cloud_geometry
 {

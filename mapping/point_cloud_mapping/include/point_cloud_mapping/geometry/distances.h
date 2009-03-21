@@ -325,6 +325,58 @@ namespace cloud_geometry
       line_b[2] = line_a[2];
     }
 
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a point to a 3D Polygon
+      * \param p a point
+      * \param poly the polygon
+      */
+    inline double
+      pointToPolygonDistance (robot_msgs::Point32 *p, robot_msgs::Polygon3D *poly)
+    {
+      double min_distance = FLT_MAX;
+      robot_msgs::Point32 dir, p_t;
+      // Treat the polygon as a set of 3D lines, and compute the distance from the point to each line
+      unsigned int i = 0;
+      for (i = 0; i < poly->points.size () - 1; i++)
+      {
+        // Compute the direction
+        dir.x = poly->points[i + 1].x - poly->points[i].x;
+        dir.y = poly->points[i + 1].y - poly->points[i].y;
+        dir.z = poly->points[i + 1].z - poly->points[i].z;
+
+        // Calculate the distance from the point to the line
+        // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
+        p_t.x = poly->points[i + 1].x - p->x;
+        p_t.y = poly->points[i + 1].y - p->y;
+        p_t.z = poly->points[i + 1].z - p->z;
+
+        robot_msgs::Point32 c = cross (&p_t, &dir);
+        double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+        if (sqr_distance < min_distance)
+          min_distance = sqr_distance;
+      }
+
+      // ---[ Check the [i-1 -> 0] line too
+      // Compute the direction
+      dir.x = poly->points[i].x - poly->points[0].x;
+      dir.y = poly->points[i].y - poly->points[0].y;
+      dir.z = poly->points[i].z - poly->points[0].z;
+
+      // Calculate the distance from the point to the line
+      // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
+      p_t.x = poly->points[i].x - p->x;
+      p_t.y = poly->points[i].y - p->y;
+      p_t.z = poly->points[i].z - p->z;
+
+      robot_msgs::Point32 c = cross (&p_t, &dir);
+      double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+      if (sqr_distance < min_distance)
+        min_distance = sqr_distance;
+
+      return (sqrt (min_distance));
+    }
+
   }
 }
 
