@@ -347,20 +347,20 @@ def render_stereo_scene(imL, imR, imD, cam, scene, time, noise = 0.0):
     for x in range(0, im.size[0], tilexd):
         xs_dict[x] = duplicate(array(x1d.tolist()[x:x+tilexd]), tileyd)
 
-    for side in range(2):
-      for y in range(0, im.size[1], tileyd):
-          ys = replicate(array(y1d.tolist()[y:y+tileyd]), tilexd)
-          for x in range(0, im.size[0], tilexd):
-              xs = xs_dict[x]
+    for y in range(0, im.size[1], tileyd):
+        ys = replicate(array(y1d.tolist()[y:y+tileyd]), tilexd)
+        for x in range(0, im.size[0], tilexd):
+            xs = xs_dict[x]
 
+            for side in range(2):
               ray = cam.genray(xs, ys, time, side)
               (objects_in_tile, final, final_d) = raytrace(ray, scene, noise)
 
               tup = tuple([ Image.fromstring("L", (tilexd, tileyd), color2string(chan, tilesz)) for chan in final.channels()])
               tile = Image.merge("RGB", tup)
               [imL,imR][side].paste(tile, (x,y))
-              
-              if side == 0:
+
+              if imD and (side == 0):
                 imD[0].paste(Image.fromstring("F", (tilexd, tileyd), final_d.x.toraw()), (x,y))
                 imD[1].paste(Image.fromstring("F", (tilexd, tileyd), final_d.y.toraw()), (x,y))
                 imD[2].paste(Image.fromstring("F", (tilexd, tileyd), final_d.z.toraw()), (x,y))
@@ -529,6 +529,7 @@ def shadeCloud(p, n, o, r, args):
     #p = vec3(floor(p.x), floor(p.y), floor(p.z))
     t = clamp(0.5 + noise(p) + noise(p*4) * 0.5, 0, 1)
     return color(t,t,t)
+
     t = 0.0
     for i in range(10):
         pow = 1 << i
@@ -539,7 +540,7 @@ def shadeCloud(p, n, o, r, args):
 
 def shadeLitCloud(p, n, o, r, args):
     diffcol = shadeCloud(p, n, o, r, args)
-    i = maximum(0.3, n.dot(vec3(0,-1,-1).normalize()))
+    i = maximum(0.6, n.dot(vec3(0,-.707,.707)))
     return diffcol * i
 
 class object:
