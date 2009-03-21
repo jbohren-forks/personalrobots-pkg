@@ -137,6 +137,8 @@ namespace controller
 
     std::vector<double> joint_cmd_dot_rt_;
 
+    std::vector<int> joint_type_;
+
     mechanism::Robot* robot_;
 
     void updateJointControllers(void);
