@@ -80,8 +80,49 @@ namespace cloud_geometry
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Obtain a 4x4 rigid transformation matrix (with translation)
+      * \param plane_a the normalized coefficients of the first plane
+      * \param plane_b the normalized coefficients of the second plane
+      * \param tx the desired translation on x-axis
+      * \param ty the desired translation on y-axis
+      * \param tz the desired translation on z-axis
+      * \param transformation the resultant transformation matrix
+      */
+    void
+      getPlaneToPlaneTransformation (std::vector<double> plane_a, robot_msgs::Point32 *plane_b,
+                                     float tx, float ty, float tz, Eigen::Matrix4d &transformation)
+    {
+      double angle = cloud_geometry::angles::getAngleBetweenPlanes (plane_a, plane_b);
+      // Compute the rotation axis R = Nplane x (0, 0, 1)
+      robot_msgs::Point32 r_axis;
+      r_axis.x = plane_a[1]*plane_b->z - plane_a[2]*plane_b->y;
+      r_axis.y = plane_a[2]*plane_b->x - plane_a[0]*plane_b->z;
+      r_axis.z = plane_a[0]*plane_b->y - plane_a[1]*plane_b->x;
+
+      if (r_axis.z < 0)
+        angle = -angle;
+
+      // Build a normalized quaternion
+      double s = sin (0.5 * angle) / sqrt (r_axis.x * r_axis.x + r_axis.y * r_axis.y + r_axis.z * r_axis.z);
+      double x = r_axis.x * s;
+      double y = r_axis.y * s;
+      double z = r_axis.z * s;
+      double w = cos (0.5 * angle);
+
+      // Convert the quaternion to a 3x3 matrix
+      double ww = w * w; double xx = x * x; double yy = y * y; double zz = z * z;
+      double wx = w * x; double wy = w * y; double wz = w * z;
+      double xy = x * y; double xz = x * z; double yz = y * z;
+
+      transformation (0, 0) = xx - yy - zz + ww; transformation (0, 1) = 2*(xy - wz);       transformation (0, 2) = 2*(xz + wy);       transformation (0, 3) = tx;
+      transformation (1, 0) = 2*(xy + wz);       transformation (1, 1) = -xx + yy -zz + ww; transformation (1, 2) = 2*(yz - wx);       transformation (1, 3) = ty;
+      transformation (2, 0) = 2*(xz - wy);       transformation (2, 1) = 2*(yz + wx);       transformation (2, 2) = -xx -yy + zz + ww; transformation (2, 3) = tz;
+      transformation (3, 0) = 0;                 transformation (3, 1) = 0;                 transformation (3, 2) = 0;                 transformation (3, 3) = 1;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Convert an axis-angle representation to a 3x3 rotation matrix
-      * \note The formula is given by: A = I * cos (th) + ( 1 - cos (th) ) * axis * axis' - E * sin (th), where 
+      * \note The formula is given by: A = I * cos (th) + ( 1 - cos (th) ) * axis * axis' - E * sin (th), where
       * E = [0 -axis.z axis.y; axis.z 0 -axis.x; -axis.y axis.x 0]
       * \param axis the axis
       * \param angle the angle
@@ -112,6 +153,6 @@ namespace cloud_geometry
       rotation (2, 1) = a_yz + s_x;
       rotation (2, 2) = cos_a + axis.z * axis.z * cos_a_m;
     }
-    
+
   }
 }

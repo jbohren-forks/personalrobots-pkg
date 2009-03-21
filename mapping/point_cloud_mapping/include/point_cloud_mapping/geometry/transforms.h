@@ -46,6 +46,8 @@ namespace cloud_geometry
 
     void getPlaneToPlaneTransformation (std::vector<double> plane_a, std::vector<double> plane_b, float tx, float ty, float tz,
                                         Eigen::Matrix4d &transformation);
+    void getPlaneToPlaneTransformation (std::vector<double> plane_a, robot_msgs::Point32 *plane_b, float tx, float ty, float tz,
+                                        Eigen::Matrix4d &transformation);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Transform a 3D point using a given 4x4 rigid transformation

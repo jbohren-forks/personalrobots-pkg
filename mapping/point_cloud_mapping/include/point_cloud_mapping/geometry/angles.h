@@ -60,6 +60,39 @@ namespace cloud_geometry
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the angle between two planes
+      * \param plane_a the normalized coefficients of the first plane
+      * \param plane_b the normalized coefficients of the second plane
+      */
+    inline double
+      getAngleBetweenPlanes (robot_msgs::Point32 *plane_a, robot_msgs::Point32 *plane_b)
+    {
+      return (acos (plane_a->x * plane_b->x + plane_a->y * plane_b->y + plane_a->z * plane_b->z));
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the angle between two planes
+      * \param plane_a the normalized coefficients of the first plane
+      * \param plane_b the normalized coefficients of the second plane
+      */
+    inline double
+      getAngleBetweenPlanes (robot_msgs::Point32 *plane_a, std::vector<double> plane_b)
+    {
+      return (acos (plane_a->x * plane_b[0] + plane_a->y * plane_b[1] + plane_a->z * plane_b[2]));
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the angle between two planes
+      * \param plane_a the normalized coefficients of the first plane
+      * \param plane_b the normalized coefficients of the second plane
+      */
+    inline double
+      getAngleBetweenPlanes (std::vector<double> plane_a, robot_msgs::Point32 *plane_b)
+    {
+      return (acos (plane_a[0] * plane_b->x + plane_a[1] * plane_b->y + plane_a[2] * plane_b->z));
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Compute the angle in the [ 0, 2*PI ) interval of a point (direction) with a reference (0, 0) in 2D.
       * \param point a 2D point
       */
