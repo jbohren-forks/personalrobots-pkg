@@ -22,5 +22,6 @@
   <node pkg="dcam" type="stereodcam" respawn="false"/>
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
   <node name="stereo_capture" pkg="stereo_capture" type="stereo_capture" respawn="false" output="screen"/>
+  <node name="stereodcam_params" pkg="stereodcam_params" type="stereodcam_params" />
 </launch>
 
