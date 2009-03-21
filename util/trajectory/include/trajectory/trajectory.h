@@ -209,6 +209,8 @@ namespace trajectory
 
     int write(std::string filename, double dT);
 
+    void setJointWraps(int index);
+
     protected:
 
     std::string interp_method_; /** string representation of interpolation method */
@@ -238,6 +240,8 @@ namespace trajectory
     std::vector<double> max_rate_;/** vector of max rates on the n DOFs of the trajectory */
 
     std::vector<double> max_acc_;/** vector of max accelerations on the n DOFs of the trajectory */
+
+    std::vector<bool> joint_wraps_; /** boolean specifying if the joint wraps */
 
     /*!
       \brief calculate the coefficients for interpolation between trajectory points
@@ -323,7 +327,7 @@ namespace trajectory
     */
     inline int findTrajectorySegment(double time);
 
-    double calculateMinTimeCubic(double q0, double q1, double v0, double v1, double vmax);
+    double calculateMinTimeCubic(double q0, double q1, double v0, double v1, double vmax, int index);
 
     /*!
       \brief calculate minimum time for a trajectory segment using a linear interpolation
@@ -339,11 +343,13 @@ namespace trajectory
     */
     double calculateMinimumTimeLSPB(const TPoint &start, const TPoint &end);
 
-    double calculateMinTimeLSPB(double q0, double q1, double vmax, double amax);
+    double calculateMinTimeLSPB(double q0, double q1, double vmax, double amax, int index);
 
     double calculateMinimumTimeCubic(const TPoint &start, const TPoint &end);
 
     double blendTime(double aa,double bb,double cc);
+
+    double jointDiff(double from, double to, int index);
 
   };
 }

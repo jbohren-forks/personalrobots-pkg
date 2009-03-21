@@ -30,12 +30,13 @@
 /** \author Sachin Chitta */
 
 #include "trajectory/trajectory.h"
+#include <angles/angles.h>
 #include <cstdlib>
 
 #define MAX_ALLOWABLE_TIME 1.0e8
 #define EPS_TRAJECTORY 1.0e-8
 
-#define MAX_NUM_POINTS 200
+#define MAX_NUM_POINTS 500
 #define MAX_COEFF_SIZE 5
 
 using namespace trajectory;
@@ -55,6 +56,7 @@ void Trajectory::init(int num_points, int dimension)
   max_limit_.resize(dimension);
   max_rate_.resize(dimension);
   max_acc_.resize(dimension);
+  joint_wraps_.resize(dimension);
   for(int i=0; i<num_points; i++)
   {
     tp_[i].setDimension(dimension);
@@ -65,6 +67,10 @@ void Trajectory::init(int num_points, int dimension)
     tc_[i].coeff_.resize(dimension);
     for(int j=0; j < dimension; j++)
       tc_[i].coeff_[j].resize(MAX_COEFF_SIZE);
+  }
+  for(int i=0; i < dimension; i++)
+  {
+    joint_wraps_[i] = false;
   }
 }
 
@@ -144,6 +150,21 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
   parameterize();
   return 1;
 }  
+
+void Trajectory::setJointWraps(int index)
+{
+  if(index > dimension_)
+    ROS_ERROR("Index exceeds number of joints");
+  joint_wraps_[index] = true;
+}
+
+double Trajectory::jointDiff(double from, double to, int index)
+{
+  if(joint_wraps_[index])
+    return angles::shortest_angular_distance(from,to);
+  else
+    return (to-from);
+}
 
 int Trajectory::setTrajectory(const std::vector<double> &p, const std::vector<double> &time, int numPoints)
 {
@@ -387,7 +408,8 @@ int Trajectory::minimizeSegmentTimesWithLinearInterpolation()
     for(int j=0; j < dimension_; j++)
     {
       temp[0] = tp_[i-1].q_[j];
-      temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc_[i-1].duration_;  
+//      temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc_[i-1].duration_;  
+      temp[1] = jointDiff(tp_[i-1].q_[j],tp_[i].q_[j],j)/tc_[i-1].duration_;  
 
       tc_[i-1].coeff_[j][0] = temp[0];
       tc_[i-1].coeff_[j][1] = temp[1];
@@ -431,10 +453,13 @@ int Trajectory::minimizeSegmentTimesWithCubicInterpolation()
 
     for(int j=0; j < dimension_; j++)
     {
+      double diff = jointDiff(tp_[i-1].q_[j],tp_[i].q_[j],j);
       temp[0] = tp_[i-1].q_[j];
       temp[1] = tp_[i-1].qdot_[j];
-      temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(tc_[i-1].duration_*tc_[i-1].duration_);
-      temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
+//      temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(tc_[i-1].duration_*tc_[i-1].duration_);
+//      temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
+      temp[2] = (3*diff-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(tc_[i-1].duration_*tc_[i-1].duration_);
+      temp[3] = (2*diff+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
 
       tc_[i-1].coeff_[j][0] = temp[0];
       tc_[i-1].coeff_[j][1] = temp[1];
@@ -480,11 +505,14 @@ int Trajectory::minimizeSegmentTimesWithBlendedLinearInterpolation()
     tc_[i-1].duration_ = dT;
     for(int j=0; j < dimension_; j++)
     {
-       if(tp_[i].q_[j]-tp_[i-1].q_[j] > 0)
+      double diff = jointDiff(tp_[i-1].q_[j],tp_[i].q_[j],j);
+//       if(tp_[i].q_[j]-tp_[i-1].q_[j] > 0)
+      if(diff > 0)
           acc = max_acc_[j];
        else
           acc = -max_acc_[j];
-      tb =  blendTime(acc,-acc*tc_[i-1].duration_,tp_[i].q_[j]-tp_[i-1].q_[j]);
+//      tb =  blendTime(acc,-acc*tc_[i-1].duration_,tp_[i].q_[j]-tp_[i-1].q_[j]);
+      tb =  blendTime(acc,-acc*tc_[i-1].duration_,diff);
 
       temp[0] = tp_[i-1].q_[j];
       temp[1] = 0;
@@ -532,6 +560,10 @@ void Trajectory::sampleLinear(TPoint &tp, double time, const TCoeff &tc, double 
 //    ROS_INFO("Coeffs: %f %f", tc.coeff_[i][0], tc.coeff_[i][1]);
     tp.q_[i]    =  tc.coeff_[i][0] + segment_time * tc.coeff_[i][1];
     tp.qdot_[i] =  tc.coeff_[i][1];
+
+    if(joint_wraps_[i])
+      tp.q_[i] = angles::normalize_angle(tp.q_[i]);
+
   }
   tp.time_ = time;
   tp.dimension_ = dimension_;
@@ -566,6 +598,9 @@ void Trajectory::sampleBlendedLinear(TPoint &tp, double time, const TCoeff &tc, 
       tp.q_[i] = tc.coeff_[i][0] +  v0 * taccend + 0.5 * acc * taccend * taccend + acc * taccend * dT;
       tp.qdot_[i] = acc * taccend;
     }
+
+    if(joint_wraps_[i])
+      tp.q_[i] = angles::normalize_angle(tp.q_[i]);
   }
   tp.time_ = time;
   tp.dimension_ = dimension_;
@@ -579,6 +614,10 @@ void Trajectory::sampleCubic(TPoint &tp, double time, const TCoeff &tc, double s
   {
     tp.q_[i]    = tc.coeff_[i][0] + segment_time * tc.coeff_[i][1] + segment_time*segment_time*tc.coeff_[i][2] + segment_time*segment_time*segment_time*tc.coeff_[i][3];
     tp.qdot_[i] = tc.coeff_[i][1] + 2*segment_time*tc.coeff_[i][2] + 3*segment_time*segment_time*tc.coeff_[i][3];
+
+    if(joint_wraps_[i])
+      tp.q_[i] = angles::normalize_angle(tp.q_[i]);
+
   }
   tp.time_ = time;
   tp.dimension_ = dimension_;
@@ -636,8 +675,10 @@ double Trajectory::calculateMinimumTimeLinear(const TPoint &start, const TPoint 
 
   for(int i = 0; i < start.dimension_; i++)
   {
+    double diff = jointDiff(start.q_[i],end.q_[i],i);
     if(max_rate_[i] > 0)
-      minJointTime = fabs(end.q_[i]-start.q_[i]) / max_rate_[i];
+//      minJointTime = fabs(end.q_[i]-start.q_[i]) / max_rate_[i];
+        minJointTime = fabs(diff) / max_rate_[i];
     else
       minJointTime = MAX_ALLOWABLE_TIME;
 
@@ -657,7 +698,7 @@ double Trajectory::calculateMinimumTimeCubic(const TPoint &start, const TPoint &
   for(int i = 0; i < start.dimension_; i++)
   {
     if(max_rate_[i] > 0)
-      minJointTime = calculateMinTimeCubic(start.q_[i],end.q_[i],start.qdot_[i],end.qdot_[i],max_rate_[i]);
+      minJointTime = calculateMinTimeCubic(start.q_[i],end.q_[i],start.qdot_[i],end.qdot_[i],max_rate_[i],i);
     else
       minJointTime = MAX_ALLOWABLE_TIME;
 
@@ -670,10 +711,12 @@ double Trajectory::calculateMinimumTimeCubic(const TPoint &start, const TPoint &
   return minTime;
 }
 
-double Trajectory::calculateMinTimeCubic(double q0, double q1, double v0, double v1, double vmax)
+double Trajectory::calculateMinTimeCubic(double q0, double q1, double v0, double v1, double vmax, int index)
 {
   double t1(MAX_ALLOWABLE_TIME), t2(MAX_ALLOWABLE_TIME), result(MAX_ALLOWABLE_TIME);
-  double dq = q1 - q0;
+//  double dq = q1 - q0;
+  double dq = jointDiff(q0,q1,index);
+
   double v(0.0);
   if(dq > 0)
      v = vmax;
@@ -716,7 +759,7 @@ double Trajectory::calculateMinimumTimeLSPB(const TPoint &start, const TPoint &e
   for(int i = 0; i < start.dimension_; i++)
   {
     if(max_rate_[i] > 0)
-      minJointTime = calculateMinTimeLSPB(start.q_[i],end.q_[i],max_rate_[i],max_acc_[i]);
+      minJointTime = calculateMinTimeLSPB(start.q_[i],end.q_[i],max_rate_[i],max_acc_[i],i);
     else
       minJointTime = MAX_ALLOWABLE_TIME;
 
@@ -728,16 +771,18 @@ double Trajectory::calculateMinimumTimeLSPB(const TPoint &start, const TPoint &e
   return minTime;
 }
 
-double Trajectory::calculateMinTimeLSPB(double q0, double q1, double vmax, double amax)
+double Trajectory::calculateMinTimeLSPB(double q0, double q1, double vmax, double amax, int index)
 {
-  double tb = std::min(fabs(vmax/amax),sqrt(fabs(q1-q0)/amax));
+  double diff = jointDiff(q0,q1,index);
+
+  double tb = std::min(fabs(vmax/amax),sqrt(fabs(diff)/amax));
   double acc(0);
-  if((q1-q0)>0)
+  if(diff>0)
     acc = amax;
   else
     acc = -amax;
   double dist_tb = acc*tb*tb;
-  double ts = (q1-q0 - dist_tb)/(acc*tb);
+  double ts = (diff - dist_tb)/(acc*tb);
   if(ts < 0)
     ts = 0;
   return (2*tb+ts);
@@ -805,7 +850,7 @@ int Trajectory::parameterizeLinear()
     for(int j=0; j < dimension_; j++)
     {
       temp[0] = tp_[i-1].q_[j];
-      temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc_[i-1].duration_;  
+      temp[1] = jointDiff(tp_[i-1].q_[j],tp_[i].q_[j],j)/tc_[i-1].duration_;  
       if(std::isnan(temp[1]))
         {
          temp[1] = 0.0;
@@ -834,6 +879,7 @@ int Trajectory::parameterizeLinear()
   }
   return 1;
 }
+
 
 
 int Trajectory::parameterizeCubic()
@@ -875,10 +921,11 @@ int Trajectory::parameterizeCubic()
 
     for(int j=0; j < dimension_; j++)
     {
+      double diff  = jointDiff(tp_[i-1].q_[j],tp_[i].q_[j],j);
       temp[0] = tp_[i-1].q_[j];
       temp[1] = tp_[i-1].qdot_[j];
-      temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(tc_[i-1].duration_*tc_[i-1].duration_);
-      temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
+      temp[2] = (3*diff-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(tc_[i-1].duration_*tc_[i-1].duration_);
+      temp[3] = (2*diff+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
       if(std::isnan(temp[2]))
         temp[2] = 0.0;
       if(std::isnan(temp[3]))
@@ -942,12 +989,13 @@ int Trajectory::parameterizeBlendedLinear()
 
     for(int j=0; j < dimension_; j++)
     {
-       if(tp_[i].q_[j]-tp_[i-1].q_[j] > 0)
+      double diff  = jointDiff(tp_[i-1].q_[j],tp_[i].q_[j],j);
+       if(diff > 0)
           acc = max_acc_[j];
        else
           acc = -max_acc_[j];
 
-      tb =  blendTime(acc,-acc*tc_[i-1].duration_,tp_[i].q_[j]-tp_[i-1].q_[j]);
+      tb =  blendTime(acc,-acc*tc_[i-1].duration_,diff);
 
       temp[0] = tp_[i-1].q_[j];
       temp[1] = 0;
