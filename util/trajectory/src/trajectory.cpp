@@ -107,6 +107,15 @@ int Trajectory::setTrajectory(const std::vector<TPoint>& tp)
   {
 //    tp_[i].setDimension(dimension_);
     tp_[i] = tp[i];
+
+    for(int j=0; j<dimension_; j++)
+    {
+      if(joint_wraps_[j])
+      {
+//        ROS_INFO("Wrapping joint angle for joint: %d",j);
+        tp_[i].q_[j] = angles::normalize_angle(tp_[i].q_[j]);
+      }
+    }
 //    ROS_INFO("Input point: %d is ",i);
 //    for(int j=0; j < dimension_; j++)
 //      ROS_INFO("%f ",tp_[i].q_[j]);
@@ -154,16 +163,25 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
 void Trajectory::setJointWraps(int index)
 {
   if(index > dimension_)
+  {
     ROS_ERROR("Index exceeds number of joints");
+    return;
+  }
   joint_wraps_[index] = true;
 }
 
 double Trajectory::jointDiff(double from, double to, int index)
 {
   if(joint_wraps_[index])
+  {
+//    ROS_INFO("Returning shortest angular difference from: %f and to: %f",from,to);
     return angles::shortest_angular_distance(from,to);
+  }
   else
+  {
+//    ROS_INFO("Returning angular difference from: %f and to: %f",from,to);
     return (to-from);
+  }
 }
 
 int Trajectory::setTrajectory(const std::vector<double> &p, const std::vector<double> &time, int numPoints)
@@ -459,7 +477,7 @@ int Trajectory::minimizeSegmentTimesWithCubicInterpolation()
 //      temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(tc_[i-1].duration_*tc_[i-1].duration_);
 //      temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
       temp[2] = (3*diff-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(tc_[i-1].duration_*tc_[i-1].duration_);
-      temp[3] = (2*diff+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
+      temp[3] = (-2*diff+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
 
       tc_[i-1].coeff_[j][0] = temp[0];
       tc_[i-1].coeff_[j][1] = temp[1];
@@ -925,7 +943,7 @@ int Trajectory::parameterizeCubic()
       temp[0] = tp_[i-1].q_[j];
       temp[1] = tp_[i-1].qdot_[j];
       temp[2] = (3*diff-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(tc_[i-1].duration_*tc_[i-1].duration_);
-      temp[3] = (2*diff+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
+      temp[3] = (-2*diff+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc_[i-1].duration_)/(pow(tc_[i-1].duration_,3));
       if(std::isnan(temp[2]))
         temp[2] = 0.0;
       if(std::isnan(temp[3]))
