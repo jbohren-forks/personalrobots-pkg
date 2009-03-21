@@ -35,6 +35,7 @@
 // Original version: Sachin Chitta <sachinc@willowgarage.com>
 
 #include "pr2_mechanism_controllers/arm_trajectory_controller.h"
+#include "angles/angles.h"
 
 using namespace controller;
 using namespace std;
@@ -79,12 +80,16 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
 
     joint = (robot->getJointState(jpc->getJointName()))->joint_;
     if(joint)
+    {
       joint_velocity_limits_.push_back(joint->velocity_limit_*velocity_scaling_factor_);
+      joint_type_.push_back(joint->type_);
+      if(joint->type_ == mechanism::JOINT_CONTINUOUS)
+        ROS_INFO("Pushing back joint of type: continuous joint: %s",joint->name_.c_str()); 
+    }
 
     elt = elt->NextSiblingElement("controller");
   }
 
-  ROS_INFO("ArmTrajectoryController:: Done loading controllers");
 
   elt = config->FirstChildElement("trajectory");
 
@@ -106,6 +111,13 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
   trajectory_point_.setDimension((int) joint_pd_controllers_.size());
   dimension_ = (int) joint_pd_controllers_.size();
 
+  for(int i=0; i < dimension_; i++)
+  {
+    if(joint_type_[i] == mechanism::JOINT_CONTINUOUS)
+    {
+      joint_trajectory_->setJointWraps(i);
+    }
+  }
 
 // Add two points since every good trajectory must have at least two points, otherwise its just a point :-)
   for(int j=0; j < dimension_; j++)
@@ -126,6 +138,8 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
 
   trajectory_start_time_ = robot_->hw_->current_time_;
   trajectory_end_time_ = trajectory_start_time_;
+
+  ROS_INFO("ArmTrajectoryController:: Done loading controller");
 
   return true;
 }
@@ -242,7 +256,14 @@ bool ArmTrajectoryController::reachedGoalPosition(std::vector<double> joint_cmd)
   bool return_val = true;
   double error(0.0);
   for(unsigned int i=0;i< (unsigned int) dimension_;++i){
+   if(joint_type_[i] == mechanism::JOINT_CONTINUOUS)
+   {
+     error = fabs(angles::shortest_angular_distance(joint_pd_controllers_[i]->joint_state_->position_,joint_cmd[i]));
+   }
+   else
+   {
     error = fabs(joint_pd_controllers_[i]->joint_state_->position_ - joint_cmd[i]);
+   }
     return_val = return_val && (error <= goal_reached_threshold_[i]);
   }
   return return_val;
