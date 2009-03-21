@@ -1,0 +1,15 @@
+<package>
+  <description brief="Doorway Planning Research">
+
+  </description>
+  <author>Maxim Likhachev/maximl@seas.upenn.edu, Sachin Chitta/schitta@willowgarage.com</author>
+  <license>BSD</license>
+    <depend package="sbpl" />
+  <url></url>
+
+  <export>
+      <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_door_planner"/>
+  </export>
+
+</package>
+
