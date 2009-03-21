@@ -100,11 +100,17 @@ namespace ros
 
         virtual bool goalReached();
 
+        virtual void handleDeactivation();
+
+        void stopTrajectoryControl();
+
         void checkTrajectory(const robot_msgs::JointTraj& trajectory, robot_msgs::JointTraj &return_trajectory, std::string trajectory_frame_id, std::string map_frame_id);
 
         bool computeOrientedFootprint(double x_i, double y_i, double th_i, const std::vector<deprecated_msgs::Point2DFloat32>& footprint_spec, std::vector<deprecated_msgs::Point2DFloat32>& oriented_footprint);
 
         void transform2DPose(const double &x, const double &y, const double &th, const std::string original_frame_id, const std::string &transform_frame_id, double &return_x, double &return_y, double &return_theta);
+
+        bool goalWithinTolerance();
 
         trajectory_rollout::CostmapModel *cost_map_model_;
 
@@ -120,6 +126,8 @@ namespace ros
 
         robot_msgs::JointTraj valid_path_;
 
+        robot_msgs::JointTraj empty_path_;
+
         std::string base_trajectory_controller_topic_;
 
         std::string base_trajectory_controller_frame_id_;
@@ -132,8 +140,7 @@ namespace ros
    };
     
     
-    MoveBaseDoor::MoveBaseDoor()
-      : MoveBase(), goal_x_(0.0), goal_y_(0.0), goal_theta_(0.0), dist_waypoints_max_(0.025)
+    MoveBaseDoor::MoveBaseDoor() : MoveBase(), goal_x_(0.0), goal_y_(0.0), goal_theta_(0.0), dist_waypoints_max_(0.025)
     {
       cost_map_model_ = new trajectory_rollout::CostmapModel(*costMap_);
       ros::Node::instance()->param<std::string>("~move_base_door/trajectory_control_topic",base_trajectory_controller_topic_,"base/trajectory_controller/trajectory_command");
@@ -179,9 +186,27 @@ namespace ros
 
     bool MoveBaseDoor::goalReached()
     {
+      return goalWithinTolerance();
+    }
 
+
+    bool MoveBaseDoor::goalWithinTolerance()
+    {
+      double uselessPitch, uselessRoll, yaw;
+      global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+
+      double dist_trans = sqrt(pow(global_pose_.getOrigin().x()-stateMsg.goal.x,2) + pow(global_pose_.getOrigin().y()-stateMsg.goal.y,2));        
+      double dist_rot = fabs(angles::normalize_angle(yaw-stateMsg.goal.th));
+
+      if(dist_rot < yaw_goal_tolerance_ && dist_trans < xy_goal_tolerance_)
+      { 
+        ros::Node::instance()->publish(base_trajectory_controller_topic_,empty_path_);         
+        ROS_DEBUG("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
+        return true;
+      }
       return false;
     }
+
 
     void MoveBaseDoor::checkTrajectory(const robot_msgs::JointTraj& trajectory, robot_msgs::JointTraj &return_trajectory, std::string trajectory_frame_id, std::string map_frame_id)
     {
@@ -198,7 +223,8 @@ namespace ros
         position.y  = trajectory.points[i].positions[1];
         theta = trajectory.points[i].positions[2];
 */
-        transform2DPose(trajectory.points[i].positions[0], trajectory.points[i].positions[1],  trajectory.points[i].positions[2], trajectory_frame_id, map_frame_id, x, y, theta);
+
+        transform2DPose(trajectory.points[i].positions[0], trajectory.points[i].positions[1], trajectory.points[i].positions[2], trajectory_frame_id, map_frame_id, x, y, theta);
 
         position.x = x;
         position.y = y;
@@ -207,6 +233,7 @@ namespace ros
 
         if(cost_map_model_->footprintCost(position, oriented_footprint, inscribed_radius_, circumscribed_radius_) >= 0)
         {
+          return_trajectory.points[i].positions[2] = trajectory.points[i].positions[2];
           ROS_INFO("Point %d: position: %f, %f, %f is not in collision",i,position.x,position.y,theta);
           continue;
         }
@@ -268,6 +295,15 @@ namespace ros
       return_theta = (double)yaw;      
     };
 
+    void MoveBaseDoor::handleDeactivation(){
+      stopTrajectoryControl();
+    }
+
+    void MoveBaseDoor::stopTrajectoryControl(){
+      ROS_DEBUG("Stopping the robot now!\n");
+      ros::Node::instance()->publish(base_trajectory_controller_topic_,empty_path_);         
+    }
+
     bool MoveBaseDoor::dispatchCommands()
     {
       ROS_INFO("Planning for new goal...\n");
@@ -300,7 +336,7 @@ namespace ros
         path_.points[i].set_positions_size(3);
         path_.points[i].positions[0] = current_x_ + (double) i * (goal_x_-current_x_)/num_intervals ;
         path_.points[i].positions[1] = current_y_ + (double) i * (goal_y_-current_y_)/num_intervals ;
-        path_.points[i].positions[2] = angles::normalize_angle(current_theta_ + (double) i * angles::normalize_angle(goal_theta_-current_theta_)/num_intervals);
+        path_.points[i].positions[2] =  angles::normalize_angle(current_theta_ + (double) i * angles::normalize_angle(goal_theta_-current_theta_)/num_intervals);
         path_.points[i].time = 0.0;
       }
 
@@ -321,7 +357,10 @@ namespace ros
         return false;
       }
       ROS_INFO("Publishing trajectory on topic: %s with %d points",base_trajectory_controller_topic_.c_str(),valid_path_.points.size());
-      ros::Node::instance()->publish(base_trajectory_controller_topic_,valid_path_);         
+      if(!goalWithinTolerance())
+        ros::Node::instance()->publish(base_trajectory_controller_topic_,valid_path_);         
+      else
+        ros::Node::instance()->publish(base_trajectory_controller_topic_,empty_path_);         
       return true;
     }
   }
