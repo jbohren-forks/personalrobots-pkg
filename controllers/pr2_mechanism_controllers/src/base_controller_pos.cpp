@@ -1187,7 +1187,7 @@ bool BaseControllerPosNode::initXml(mechanism::RobotState *robot_state, TiXmlEle
 void BaseControllerPosNode::CmdBaseVelReceived()
 {
   this->ros_lock_.lock();
-  this->setCommand(baseVelMsg.vel.vx,baseVelMsg.vel.vy,baseVelMsg.vel.vz);
+  this->setCommand(baseVelMsg.vel.vx,baseVelMsg.vel.vy,baseVelMsg.ang_vel.vz);
   this->ros_lock_.unlock();
 }
 
