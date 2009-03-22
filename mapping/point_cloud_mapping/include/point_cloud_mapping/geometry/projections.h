@@ -99,6 +99,7 @@ namespace cloud_geometry
     inline void
       pointsToPlane (robot_msgs::PointCloud *p, std::vector<int> *indices, robot_msgs::PointCloud &q, std::vector<double> *plane_coefficients)
     {
+      q.points.resize (indices->size ());
       for (unsigned int i = 0; i < indices->size (); i++)
         pointToPlane (&p->pts[indices->at (i)], q.pts[i], plane_coefficients);
     }
