@@ -1,8 +1,10 @@
 Header header
+# Status
 ActionStatus status
 
-# Goal parameters
-RechargeGoal goal
+# Goal is empty
+std_msgs/Empty goal
 
 # Feedback parameters - same structure as goal
-RechargeGoal feedback
+# Feedback is empt
+std_msgs/Empty feedback

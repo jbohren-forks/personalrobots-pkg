@@ -8,3 +8,7 @@ float64 recharge_level
 
 # The pose at which to recharge
 robot_msgs/Pose pose
+
+# Will be getting rid of this
+byte enable
+float64 timeout
