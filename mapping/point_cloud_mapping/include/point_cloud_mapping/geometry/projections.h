@@ -90,6 +90,20 @@ namespace cloud_geometry
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Project a set of points (in place) onto a plane defined by ax+by+cz+d=0
+      * \param p the point cloud to project (in place)
+      * \param indices use only these point indices from the given cloud
+      * \param q the resultant projected points
+      * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
+      */
+    inline void
+      pointsToPlane (robot_msgs::PointCloud *p, std::vector<int> *indices, robot_msgs::PointCloud &q, std::vector<double> *plane_coefficients)
+    {
+      for (unsigned int i = 0; i < indices->size (); i++)
+        pointToPlane (&p->pts[indices->at (i)], q.pts[i], plane_coefficients);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Project a point onto a plane defined by ax+by+cz+d=0, and return the point to plane distance
       * \param p the point to project
       * \param q the resultant projected point

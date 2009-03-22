@@ -327,12 +327,12 @@ namespace cloud_geometry
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Get the distance from a point to a 3D Polygon
+    /** \brief Get the squared distance from a point to a 3D Polygon
       * \param p a point
       * \param poly the polygon
       */
     inline double
-      pointToPolygonDistance (robot_msgs::Point32 *p, robot_msgs::Polygon3D *poly)
+      pointToPolygonDistanceSqr (robot_msgs::Point32 *p, robot_msgs::Polygon3D *poly)
     {
       double min_distance = FLT_MAX;
       robot_msgs::Point32 dir, p_t;
@@ -374,9 +374,19 @@ namespace cloud_geometry
       if (sqr_distance < min_distance)
         min_distance = sqr_distance;
 
-      return (sqrt (min_distance));
+      return (min_distance);
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the distance from a point to a 3D Polygon
+      * \param p a point
+      * \param poly the polygon
+      */
+    inline double
+      pointToPolygonDistance (robot_msgs::Point32 *p, robot_msgs::Polygon3D *poly)
+    {
+      return (sqrt (pointToPolygonDistanceSqr (p, poly)));
+    }
   }
 }
 
