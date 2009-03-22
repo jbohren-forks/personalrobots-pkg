@@ -68,7 +68,9 @@ bad_vertices = set([ 35437, 35455, 37380, 40122, 40126, 40207, 40229 ])
 
 if 1:
   skel = Skeleton(stereo_cam)
-  skel.load("/wg/wgdata1/vol1/iros2009/mkplot_snap")
+  filename = "/wg/wgdata1/vol1/iros2009/mkplot_snap"
+  filename = "ABCDEFG"
+  skel.load(filename)
   print "skel.nodes:", len(skel.nodes)
   for e in skel.edges:
     if e[0] in bad_vertices or e[1] in bad_vertices:
@@ -92,7 +94,7 @@ res_view_nb = []
 res_clusters_nb = []
 
 op = open("1", "w")
-for kappa in [ 9999,7,5,4,3,2 ]:
+for kappa in [2]: # [ 9999,7,5,4,3,2 ]:
 
   print "Starting kappa", kappa
 
@@ -102,7 +104,7 @@ for kappa in [ 9999,7,5,4,3,2 ]:
   labels = pickle.load(f)
   f.close()
 
-  existing = set([pos[i] for i in range(len(labels)) if "/bag" in labels[i]])
+  existing = set([pos[i] for i in range(len(labels)) if not "G" in labels[i]])
   late = set(pos) - existing
 
   edges = set(edges)
@@ -119,7 +121,8 @@ for kappa in [ 9999,7,5,4,3,2 ]:
   def is_connected(i0, i1):
     return (i0,i1) in edges or (i1,i0) in edges
 
-  ts = dict([(a,a) for a in range(len(existing))])
+  ts = dict([(a,a) for a in range(len(pos))])
+  ts[0] = 999999999
 
   log_numviews = []
   log_numclusters = []
@@ -139,6 +142,7 @@ for kappa in [ 9999,7,5,4,3,2 ]:
       while True:
         neighbors = set([ i1 for i1 in existing if is_near(id, i1) ])
         nviews = len(neighbors)
+        print "neighbors", neighbors
         oldest = min([ (ts[x],x) for x in neighbors ])[1]
         ne = set([e for e in edges if e[0] in neighbors and e[1] in neighbors])
         print ne
@@ -165,6 +169,7 @@ for kappa in [ 9999,7,5,4,3,2 ]:
         bigclusters = [ cl for cl in clusters if len(cl) > 1 ]
         if len(bigclusters) > 0:
           # delete the oldest exemplar among these clusters
+          print "big kill:", sum([ [ (ts[x],x) for x in cl ] for cl in bigclusters ], [])
           kill =  min(sum([ [ (ts[x],x) for x in cl ] for cl in bigclusters ], []))[1]
           log_numclusters.append(len(clusters))
         else:
@@ -202,11 +207,14 @@ for kappa in [ 9999,7,5,4,3,2 ]:
 
         # Compute new edges (ne)
         ne = set()
+        print "adj", adj
         for ei0 in adj:
           for ei1 in (adj - set([ei0])):
+            print "Consider %d,%d  %d,%d,%d" % (ei0, ei1, (ei0<ei1), (not (ei0,ei1) in edges), (not (ei1,ei0) in edges))
             if (ei0<ei1) and (not (ei0,ei1) in edges) and (not (ei1,ei0) in edges):
               ne.add((ei0,ei1))
         print "ne length", len(ne)
+        sys.exit(1)
         if len(ne) > 90:
           print
           print "adj", adj
@@ -252,12 +260,13 @@ for kappa in [ 9999,7,5,4,3,2 ]:
 
   f = open("deleted_%d.pickle" % kappa, "w")
   pickle.dump(set([ map[x] for x in existing ]), f)
-  ordered = sorted([ map[id] for id in existing if map[id] in skel.node_kp.keys() ])
-  pickle.dump(dict([(o, skel.node_labels[o]) for o in ordered]), f)
+  ordered = [0] + sorted([ map[id] for id in existing if map[id] in skel.node_kp.keys() ])
+  print "ordered", ordered
+  pickle.dump(dict([(o, skel.node_labels[o]) for o in ordered if o in skel.node_labels]), f)
   pickle.dump([(map[e0], map[e1]) for (e0,e1) in edges], f)
-  pickle.dump(ordered, f)
-  pickle.dump(dict([(o, skel.node_kp[o]) for o in ordered]), f)
-  pickle.dump(dict([(o, skel.node_descriptors[o]) for o in ordered]), f)
+  pickle.dump(ordered[1:], f)    # place_ids
+  pickle.dump(dict([(o, skel.node_kp[o]) for o in ordered if o in skel.node_kp]), f)
+  pickle.dump(dict([(o, skel.node_descriptors[o]) for o in ordered if o in skel.node_descriptors]), f)
   f.close()
 
 def prty(L):
@@ -281,51 +290,3 @@ print >>tab, ("""
 
 """).replace('!', '\\')
 
-sys.exit(0)
-
-fig = pylab.figure(figsize=(20,5), linewidth = 0.0)
-
-print late
-gn = pos[:1162]
-ge = [(i0,i1) for (i0,i1) in edges if (i0 < 1162) and (i1 < 1162)]
-
-timestamps = dict([(i,i) for i in range(len(gn))])
-deleted = set()
-def dist(n0, n1):
-  xd = n0[0] - n1[0]
-  yd = n0[1] - n1[1]
-  return sqrt(xd*xd + yd*yd)
-
-for i in range(4):
-  s = fig.add_subplot(1,4,1+i)
-  s.set_position( [ 0.25 * i, 0.0, 0.25, 1.00 ] )
-
-  id = 1162 + i
-  neighbors = set([j for j in range(len(gn)) if dist(pos[id], gn[j]) < 0.5]) - deleted
-  gn += [pos[id]]
-  el = Ellipse((pos[id][0],pos[id][1]), 1.0, 1.0, facecolor='#f0f0f0', zorder = 0)
-  s.add_artist(el)
-  el.set_clip_box(s.bbox)
-
-  for i0,i1 in edges:
-    if i0 < len(ge) and i1 < len(ge) and not i0 in deleted and not i1 in deleted:
-      pylab.plot([pos[i0][0], pos[i1][0]], [pos[i0][1], pos[i1][1]], color='lightblue', zorder = 1)
-  todraw = set(range(len(gn))) - deleted
-  pylab.scatter([pos[i][0] for i in todraw], [pos[i][1] for i in todraw], c=[i for i in todraw], zorder = 10)
-
-  todel = min(neighbors)
-  pylab.scatter([pos[todel][0]], [pos[todel][1]], c='black', marker = 'x', zorder = 11, s = 400)
-  print len(neighbors), "deleting", todel
-  deleted.add(todel)
-
-  #pylab.scatter([x for (x,y,r) in late], [y for (x,y,r) in late], c='g', zorder = 10)
-  #for p in late:
-  #  pylab.annotate('%d' % pos.index(p), (p[0], p[1]))
-
-  pylab.xlim(-18,-16)
-  pylab.ylim(-1.5,0.5)
-  s.set_yticklabels([])
-  s.set_xticklabels([])
-
-pylab.savefig("deletion.eps")
-pylab.show()

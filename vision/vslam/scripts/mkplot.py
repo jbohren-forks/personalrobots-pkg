@@ -106,7 +106,7 @@ def playlist(args):
     r = reader(f)
     for d in r.next():
       yield d + (f,)
-    
+
 inl_history = [0,0]
 for cam,l_image,r_image,label in playlist(args):
   print framecounter
@@ -156,6 +156,10 @@ for cam,l_image,r_image,label in playlist(args):
     x1,y1,z1 = vo.pose.xform(0,0,1)
     vo_u[i].append(x1 - x)
     vo_v[i].append(z1 - z)
+
+    if len(skel.nodes) > 1771:
+      break
+
   print framecounter, "kp", len(af.kp), "inliers:", vo.inl
   inliers.append(vo.inl)
 

@@ -2,7 +2,6 @@ import roslib
 roslib.load_manifest('vslam')
 import rostest
 import rospy
-from votools import TreeOptimizer3
 import place_recognition
 
 import Image
@@ -147,7 +146,6 @@ print "Took", took, "so", 1000*took / i, "ms/frame"
 skel.optimize()
 
 skel.save("saved-skel400")
-sys.exit(0)
 
 skel = Skeleton(stereo_cam)
 skel.load("saved-skel")

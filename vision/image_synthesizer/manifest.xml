@@ -8,7 +8,7 @@
   <depend package="vop"/>
   <depend package="rospy"/>
   <depend package="rostest"/>
-  <depend package="visual_odometry"/>
+  <depend package="stereo_utils"/>
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
 </package>
