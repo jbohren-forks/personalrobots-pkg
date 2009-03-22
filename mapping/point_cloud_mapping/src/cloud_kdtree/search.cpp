@@ -102,13 +102,11 @@ namespace cloud_kdtree
   {
 #ifdef USE_ANN
     ann_kd_tree_->annkSearch (points_[p_idx], k, nn_idx_, nn_dists_, epsilon_);
-//     std::cerr << points_[p_idx][0] << " " << points_[p_idx][1] << " " << points_[p_idx][2] << std::endl;
 #else
     ANNpoint p = annAllocPt (3);
     p[0] = points_[p_idx * dim_ * sizeof (float) + 0];
     p[1] = points_[p_idx * dim_ * sizeof (float) + 1];
     p[2] = points_[p_idx * dim_ * sizeof (float) + 2];
-//     std::cerr << p[0] << " " << p[1] << " " << p[2] << std::endl;
     flann_find_nearest_neighbors_index (index_id_, p, 1, nn_idx_, nn_dists_, k, flann_param_.checks, &flann_param_);
     annDeallocPt (p);
 #endif
@@ -131,6 +129,8 @@ namespace cloud_kdtree
   bool
     KdTree::nearestKSearch (int p_idx, int k, std::vector<int> &indices, std::vector<double> &distances)
   {
+    indices.resize (k);
+    distances.resize (k);
 #ifdef USE_ANN
     ann_kd_tree_->annkSearch (points_[p_idx], k, &indices[0], &distances[0], epsilon_);
 #else
@@ -142,6 +142,8 @@ namespace cloud_kdtree
   bool
     KdTree::nearestKSearch (robot_msgs::Point32 *p_q, int k, std::vector<int> &indices, std::vector<double> &distances)
   {
+    indices.resize (k);
+    distances.resize (k);
     ANNpoint p = annAllocPt (3);
     p[0] = p_q->x; p[1] = p_q->y; p[2] = p_q->z;
 #ifdef USE_ANN
@@ -164,12 +166,16 @@ namespace cloud_kdtree
   bool
     KdTree::radiusSearch (int p_idx, double radius, std::vector<int> &indices, std::vector<double> &distances, int max_nn)
   {
+    radius *= radius;
 #ifdef USE_ANN
-    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (points_[p_idx], radius * radius, 0, &indices[0], &distances[0], epsilon_);
+    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (points_[p_idx], radius, 0, NULL, NULL, epsilon_);
+    // No neighbors found ? Return false
+    if (neighbors_in_radius_ == 0)
+      return (false);
     if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
     indices.resize (neighbors_in_radius_);
     distances.resize (neighbors_in_radius_);
-    ann_kd_tree_->annkFRSearch (points_[p_idx], radius * radius, neighbors_in_radius_, &indices[0], &distances[0], epsilon_);
+    ann_kd_tree_->annkFRSearch (points_[p_idx], radius, neighbors_in_radius_, &indices[0], &distances[0], epsilon_);
 #else
     fprintf (stderr, "FL-ANN version is not implemented yet !");
 #endif
@@ -189,12 +195,19 @@ namespace cloud_kdtree
   {
     ANNpoint p = annAllocPt (3);
     p[0] = p_q->x; p[1] = p_q->y; p[2] = p_q->z;
+    radius *= radius;
 #ifdef USE_ANN
-    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius * radius, 0, &indices[0], &distances[0], epsilon_);
+    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius, 0, NULL, NULL, epsilon_);
+    // No neighbors found ? Return false
+    if (neighbors_in_radius_ == 0)
+    {
+      annDeallocPt (p);
+      return (false);
+    }
     if (neighbors_in_radius_  > max_nn) neighbors_in_radius_ = max_nn;
     indices.resize (neighbors_in_radius_);
     distances.resize (neighbors_in_radius_);
-    ann_kd_tree_->annkFRSearch (p, radius * radius, neighbors_in_radius_, &indices[0], &distances[0], epsilon_);
+    ann_kd_tree_->annkFRSearch (p, radius, neighbors_in_radius_, &indices[0], &distances[0], epsilon_);
 #else
     fprintf (stderr, "FL-ANN version is not implemented yet !");
 #endif
@@ -217,10 +230,17 @@ namespace cloud_kdtree
     ANNpoint p = annAllocPt (3);
     p[0] = p_q->x; p[1] = p_q->y; p[2] = p_q->z;
 
+    radius *= radius;
 #ifdef USE_ANN
-    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius * radius, 0, nn_idx_, nn_dists_, epsilon_);
+    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius, 0, NULL, NULL, epsilon_);
+    // No neighbors found ? Return false
+    if (neighbors_in_radius_ == 0)
+    {
+      annDeallocPt (p);
+      return (false);
+    }
     if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
-    ann_kd_tree_->annkFRSearch (p, radius * radius, neighbors_in_radius_, nn_idx_, nn_dists_, epsilon_);
+    ann_kd_tree_->annkFRSearch (p, radius, neighbors_in_radius_, nn_idx_, nn_dists_, epsilon_);
 #else
     flann_radius_search (index_id_, p, nn_idx_, nn_dists_, nr_points_, radius, flann_param_.checks, &flann_param_);
 //LIBSPEC int flann_radius_search(FLANN_INDEX index_ptr, /* the index */
@@ -260,10 +280,17 @@ namespace cloud_kdtree
     for (int d = 0; d < dim_ - 3; d++)
       p[d + 3] = points->chan[d].vals.at (index);
 
+    radius *= radius;
 #ifdef USE_ANN
-    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius * radius, 0, nn_idx_, nn_dists_, epsilon_);
+    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius, 0, NULL, NULL, epsilon_);
+    // No neighbors found ? Return false
+    if (neighbors_in_radius_ == 0)
+    {
+      annDeallocPt (p);
+      return (false);
+    }
     if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
-    ann_kd_tree_->annkFRSearch (p, radius * radius, neighbors_in_radius_, nn_idx_, nn_dists_, epsilon_);
+    ann_kd_tree_->annkFRSearch (p, radius, neighbors_in_radius_, nn_idx_, nn_dists_, epsilon_);
 #else
     flann_radius_search (index_id_, p, nn_idx_, nn_dists_, nr_points_, radius, flann_param_.checks, &flann_param_);
 #endif
@@ -283,9 +310,13 @@ namespace cloud_kdtree
   void
     KdTree::radiusSearch (unsigned int index, double radius, int max_nn)
   {
-    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (points_[index], radius * radius, 0, nn_idx_, nn_dists_, epsilon_);
+    radius *= radius;
+    neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (points_[index], radius, 0, NULL, NULL, epsilon_);
+    // No neighbors found ? Return false
+    if (neighbors_in_radius_ == 0)
+      return;
     if (neighbors_in_radius_  > max_nn) neighbors_in_radius_  = max_nn;
-    ann_kd_tree_->annkFRSearch (points_[index], radius * radius, neighbors_in_radius_, nn_idx_, nn_dists_, epsilon_);
+    ann_kd_tree_->annkFRSearch (points_[index], radius, neighbors_in_radius_, nn_idx_, nn_dists_, epsilon_);
 
     last_call_type_ = RADIUS_SEARCH;
   }

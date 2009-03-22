@@ -85,7 +85,7 @@ namespace cloud_kdtree
       {
         epsilon_     = 0.0;   // default error bound value
         dim_         = 3;     // default number of dimensions (3 = xyz)
-        bucket_size_ = 30;    // default bucket size value
+        bucket_size_ = std::min (30, (int)points->pts.size ());    // default bucket size value
 
         // Allocate enough data
         nr_points_ = convertCloudToArray (points, points_);
@@ -124,7 +124,7 @@ namespace cloud_kdtree
       {
         epsilon_     = 0.0;   // default error bound value
         dim_         = 3;     // default number of dimensions (3 = xyz)
-        bucket_size_ = 30;    // default bucket size value
+        bucket_size_ = std::min (30, (int)indices->size ());    // default bucket size value
 
         // Allocate enough data
         nr_points_ = convertCloudToArray (points, indices, points_);
@@ -151,7 +151,8 @@ namespace cloud_kdtree
         */
       KdTree (robot_msgs::PointCloud *points, int dim)
       {
-        dim_       = 3 + dim;     // default number of dimensions (3 = xyz) + the extra channels
+        dim_         = 3 + dim;     // default number of dimensions (3 = xyz) + the extra channels
+        bucket_size_ = std::min (30, (int)points->pts.size ());    // default bucket size value
 
         // Allocate enough data
         nr_points_ = convertCloudToArray (points, dim, points_);
@@ -182,7 +183,7 @@ namespace cloud_kdtree
       {
         epsilon_     = 0.0;                        // default error bound value
         dim_         = 3 + dimensions.size ();     // default number of dimensions (3 = xyz)
-        bucket_size_ = 30;                         // default bucket size value
+        bucket_size_ = std::min (30, (int)indices->size ());  // default bucket size value
 
         // Allocate enough data
         nr_points_ = convertCloudToArray (points, indices, dimensions, points_);
