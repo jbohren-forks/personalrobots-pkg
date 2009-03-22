@@ -435,8 +435,8 @@ class DoorDetector
                                                  fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &min_p),
                                                        cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &max_p)))));
         goodness_factor[cc] /= door_distance;
-        ROS_WARN ("A: Door candidate (%d, %d hull points, %d points) accepted with: average point density (%g), area (%g), width (%g), height (%g).",
-                    cc, pmap_.polygons[cc].points.size (), inliers.size (), density, area, door_frame, door_height);
+        ROS_WARN ("A: Door candidate (%d, %d hull points, %d points) accepted with: average point density (%g), area (%g), width (%g), height (%g).\n Planar coefficients: [%g %g %g %g]",
+                    cc, pmap_.polygons[cc].points.size (), inliers.size (), density, area, door_frame, door_height, coeff[cc][0], coeff[cc][1], coeff[cc][2], coeff[cc][3]);
       } // loop over clusters
 
 
@@ -538,10 +538,10 @@ class DoorDetector
       {
         ROS_INFO ("  %d -> P1 = [%g, %g, %g]. P2 = [%g, %g, %g]. Width = %g. Height = %g. Weight = %g.", cd,
                   resp.doors[cd].door_p1.x, resp.doors[cd].door_p1.y, resp.doors[cd].door_p1.z, resp.doors[cd].door_p2.x, resp.doors[cd].door_p2.y, resp.doors[cd].door_p2.z,
-                  sqrt ((resp.doors[nr_d].door_p1.x - resp.doors[nr_d].door_p2.x) *
-                        (resp.doors[nr_d].door_p1.x - resp.doors[nr_d].door_p2.x) +
-                        (resp.doors[nr_d].door_p1.y - resp.doors[nr_d].door_p2.y) *
-                        (resp.doors[nr_d].door_p1.y - resp.doors[nr_d].door_p2.y)
+                  sqrt ((resp.doors[cd].door_p1.x - resp.doors[cd].door_p2.x) *
+                        (resp.doors[cd].door_p1.x - resp.doors[cd].door_p2.x) +
+                        (resp.doors[cd].door_p1.y - resp.doors[cd].door_p2.y) *
+                        (resp.doors[cd].door_p1.y - resp.doors[cd].door_p2.y)
                        ), resp.doors[cd].height, resp.doors[cd].weight);
       }
       ROS_INFO ("  Total time: %g.", duration.toSec ());

@@ -329,6 +329,80 @@ void
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Get the best dual distribution statistics (mean and standard deviation) and select the inliers based on
+  * them in a given channel space (specified by the d_idx index)
+  * \param points a pointer to the point cloud message
+  * \param indices a pointer to a set of point cloud indices to test
+  * \param d_idx_1 the first dimension/channel index to test
+  * \param d_idx_2 the second dimension/channel index to test
+  * \param inliers the resultant inliers
+  */
+void
+  selectBestDualDistributionStatistics (PointCloud *points, vector<int> *indices, int d_idx_1, int d_idx_2,
+                                        vector<int> &inliers)
+{
+  vector<int> inliers_1, inliers_2;
+  double mean_1, stddev_1, mean_2, stddev_2;
+  // Compute the mean and standard deviation of the distribution in the first dimension space
+  cloud_geometry::statistics::getChannelMeanStd (points, indices, d_idx_1, mean_1, stddev_1);
+  // Compute the mean and standard deviation of the distribution in the second dimension space
+  cloud_geometry::statistics::getChannelMeanStd (points, indices, d_idx_2, mean_2, stddev_2);
+
+  // (Chebyshev's inequality: at least 98% of the values are within 7 standard deviations from the mean)
+  vector<int> alpha_vals_1 (71), alpha_vals_2 (71);
+  int nr_a = 0;
+  for (double alpha = 0; alpha < 7; alpha += .1)
+  {
+    cloud_geometry::statistics::selectPointsOutsideDistribution (points, indices, d_idx_1, mean_1, stddev_1, alpha,
+                                                                 inliers_1);
+    cloud_geometry::statistics::selectPointsOutsideDistribution (points, indices, d_idx_2, mean_2, stddev_2, alpha,
+                                                                 inliers_2);
+    alpha_vals_1[nr_a] = inliers_1.size ();
+    alpha_vals_2[nr_a] = inliers_2.size ();
+    nr_a++;
+  }
+  alpha_vals_1.resize (nr_a);
+  alpha_vals_2.resize (nr_a);
+
+  // Compute the trimean of the distribution
+  double trimean_1, trimean_2;
+  cloud_geometry::statistics::getTrimean (alpha_vals_1, trimean_1);
+  cloud_geometry::statistics::getTrimean (alpha_vals_2, trimean_2);
+
+  // Iterate over the list of alpha values to find the best one
+  int best_i_1 = 0, best_i_2 = 0;
+  double best_alpha_1 = DBL_MAX, best_alpha_2 = DBL_MAX;
+  for (unsigned int i = 0; i < alpha_vals_1.size (); i++)
+  {
+    double c_val_1 = fabs ((double)alpha_vals_1[i] - trimean_1);
+    if (c_val_1 < best_alpha_1)       // Whenever we hit the same value, exit
+    {
+      best_alpha_1 = c_val_1;
+      best_i_1     = i;
+    }
+    double c_val_2 = fabs ((double)alpha_vals_2[i] - trimean_2);
+    if (c_val_2 < best_alpha_2)       // Whenever we hit the same value, exit
+    {
+      best_alpha_2 = c_val_2;
+      best_i_2     = 2;
+    }
+  }
+
+  best_alpha_1 = best_i_1 / 10.0;
+  best_alpha_2 = best_i_2 / 10.0;
+  //ROS_INFO ("Best alpha selected: %d / %d / %g", best_i, alpha_vals[best_i], best_alpha);
+
+  // Select the inliers of the channel based on the best_alpha value
+  cloud_geometry::statistics::selectPointsOutsideDistribution (points, indices, d_idx_1, mean_1, stddev_1, best_alpha_1, inliers_1);
+  cloud_geometry::statistics::selectPointsOutsideDistribution (points, indices, d_idx_2, mean_2, stddev_2, best_alpha_2, inliers_2);
+
+  // Intersect the two inlier sets
+  sort (inliers_1.begin (), inliers_1.end ());
+  sort (inliers_2.begin (), inliers_2.end ());
+  set_intersection (inliers_1.begin (), inliers_1.end (), inliers_2.begin (), inliers_2.end (), inserter (inliers, inliers.begin ()));
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Test whether the given point indices are roughly sampled at the viewpoint <-> plane perpendicular
   * \param points a pointer to the point cloud message
   * \param indices a pointer to a set of point cloud indices to test
@@ -456,11 +530,13 @@ void
     // If this queue is satisfactory, add to the clusters
     if (seed_queue.size () >= min_pts_per_cluster)
     {
-      vector<int> r;
-      //r.indices = seed_queue;
-      r.resize (seed_queue.size ());
-      for (unsigned int j = 0; j < r.size (); j++)
+      vector<int> r (seed_queue.size ());
+      for (unsigned int j = 0; j < seed_queue.size (); j++)
         r[j] = indices->at (seed_queue[j]);
+
+      sort (r.begin (), r.end ());
+      r.erase (unique (r.begin (), r.end ()), r.end ());
+
       clusters.push_back (r);
     }
   }
@@ -541,6 +617,8 @@ bool
     ROS_ERROR ("Could not compute a plane model.");
     return (false);
   }
+  sort (inliers.begin (), inliers.end ());
+
   delete sac;
   delete model;
   return (true);
@@ -562,7 +640,7 @@ void
   points_down.chan[0].name = "nx";
   points_down.chan[1].name = "ny";
   points_down.chan[2].name = "nz";
-  points_down.chan[3].name = "curvature";
+  points_down.chan[3].name = "curvatures";
   for (unsigned int d = 0; d < points_down.chan.size (); d++)
     points_down.chan[d].vals.resize (points_down.pts.size ());
 
@@ -617,6 +695,76 @@ void
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Estimate point normals for a given point cloud message (in place)
   * \param points the original point cloud message
+  * \param point_indices only use these point indices
+  * \param k the number of nearest neighbors to search for
+  * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
+  */
+void
+  estimatePointNormals (PointCloud *points, vector<int> *point_indices, int k, PointStamped *viewpoint_cloud)
+{
+  int old_channel_size = points->chan.size ();
+  // Reserve space for 4 channels: nx, ny, nz, curvature
+  points->chan.resize (old_channel_size + 4);
+  points->chan[old_channel_size + 0].name = "nx";
+  points->chan[old_channel_size + 1].name = "ny";
+  points->chan[old_channel_size + 2].name = "nz";
+  points->chan[old_channel_size + 3].name = "curvatures";
+  for (unsigned int d = old_channel_size; d < points->chan.size (); d++)
+    points->chan[d].vals.resize (points->pts.size ());
+
+  // Create a Kd-Tree for the original cloud
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (points, point_indices);
+
+  // Allocate enough space for point indices
+  vector<vector<int> > points_k_indices (point_indices->size ());
+  vector<double> distances (point_indices->size ());
+
+  // Get the nearest neighbors for all the point indices in the bounds
+  for (unsigned int i = 0; i < point_indices->size (); i++)
+  {
+    //kdtree->nearestKSearch (i, k, points_k_indices[i], distances);
+    kdtree->radiusSearch (&points->pts[point_indices->at (i)], 0.025, points_k_indices[i], distances);
+  }
+
+#pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < (int)point_indices->size (); i++)
+  {
+    // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+    Eigen::Vector4d plane_parameters;
+    double curvature;
+
+    for (int j = 0; j < (int)points_k_indices[i].size (); j++)
+      points_k_indices[i][j] = point_indices->at (points_k_indices[i][j]);
+
+    cloud_geometry::nearest::computeSurfaceNormalCurvature (points, &points_k_indices[i], plane_parameters, curvature);
+
+    // See if we need to flip any plane normals
+    Point32 vp_m;
+    vp_m.x = viewpoint_cloud->point.x - points->pts[point_indices->at (i)].x;
+    vp_m.y = viewpoint_cloud->point.y - points->pts[point_indices->at (i)].y;
+    vp_m.z = viewpoint_cloud->point.z - points->pts[point_indices->at (i)].z;
+
+    // Dot product between the (viewpoint - point) and the plane normal
+    double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
+
+    // Flip the plane normal
+    if (cos_theta < 0)
+    {
+      for (int d = 0; d < 3; d++)
+        plane_parameters (d) *= -1;
+    }
+    points->chan[old_channel_size + 0].vals[point_indices->at (i)] = plane_parameters (0);
+    points->chan[old_channel_size + 1].vals[point_indices->at (i)] = plane_parameters (1);
+    points->chan[old_channel_size + 2].vals[point_indices->at (i)] = plane_parameters (2);
+    points->chan[old_channel_size + 3].vals[point_indices->at (i)] = fabs (plane_parameters (3));
+  }
+  // Delete the kd-tree
+  delete kdtree;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Estimate point normals for a given point cloud message (in place)
+  * \param points the original point cloud message
   * \param points_down the downsampled point cloud message
   * \param k the number of nearest neighbors to search for
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
@@ -630,7 +778,7 @@ void
   points_down.chan[0].name = "nx";
   points_down.chan[1].name = "ny";
   points_down.chan[2].name = "nz";
-  points_down.chan[3].name = "curvature";
+  points_down.chan[3].name = "curvatures";
   for (unsigned int d = 0; d < points_down.chan.size (); d++)
     points_down.chan[d].vals.resize (nr_points);
 
@@ -694,7 +842,7 @@ int
   fitSACOrientedLine (robot_msgs::PointCloud *points, std::vector<int> indices,
                       double dist_thresh, robot_msgs::Point32 *axis, double eps_angle, std::vector<int> &line_inliers)
 {
-  if (indices.size () < 5)
+  if (indices.size () < 2)
   {
     line_inliers.resize (0);
     return (-1);
@@ -702,7 +850,7 @@ int
 
   // Create and initialize the SAC model
   sample_consensus::SACModelOrientedLine *model = new sample_consensus::SACModelOrientedLine ();
-  sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+  sample_consensus::SAC *sac                    = new sample_consensus::RANSAC (model, dist_thresh);
   sac->setMaxIterations (100);
   model->setDataSet (points, indices);
   model->setAxis (axis);
@@ -720,8 +868,101 @@ int
     ROS_ERROR ("Could not compute an oriented line model.");
     return (-1);
   }
+
+  sort (line_inliers.begin (), line_inliers.end ());
   delete sac;
   delete model;
   return (0);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Finds the best oriented line in points with respect to a given axis and return the point inliers.
+  * \param points a pointer to the point cloud message
+  * \param dist_thresh maximum allowed distance threshold of an inlier point to the line model
+  * \param axis the axis to check against
+  * \param eps_angle maximum angular line deviation from the axis (in radians)
+  * \param line_inliers the resultant point inliers
+  */
+int
+  fitSACOrientedLine (robot_msgs::PointCloud *points,
+                      double dist_thresh, robot_msgs::Point32 *axis, double eps_angle, std::vector<int> &line_inliers)
+{
+  if (points->pts.size () < 2)
+  {
+    line_inliers.resize (0);
+    return (-1);
+  }
+
+  // Create and initialize the SAC model
+  sample_consensus::SACModelOrientedLine *model = new sample_consensus::SACModelOrientedLine ();
+  sample_consensus::SAC *sac                    = new sample_consensus::RANSAC (model, dist_thresh);
+  sac->setMaxIterations (100);
+  model->setDataSet (points);
+  model->setAxis (axis);
+  model->setEpsAngle (eps_angle);
+
+  // Search for the best line
+  if (sac->computeModel ())
+  {
+    sac->computeCoefficients ();             // Compute the model coefficients
+    line_inliers = sac->getInliers ();
+  }
+  else
+  {
+    ROS_ERROR ("Could not compute an oriented line model.");
+    return (-1);
+  }
+  sort (line_inliers.begin (), line_inliers.end ());
+  delete sac;
+  delete model;
+  return (0);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Grows the current euclidean cluster with other points outside the plane
+  * \param points a pointer to the point cloud message
+  * \param indices the point cloud indices to use
+  * \param cluster the point cloud cluster to grow
+  * \param inliers the resultant point inliers
+  * \param dist_thresh the distance threshold used
+  */
+void
+  growCurrentCluster (robot_msgs::PointCloud *points, std::vector<int> *indices, std::vector<int> *cluster,
+                      std::vector<int> &inliers, double dist_thresh)
+{
+  // Copy the cluster
+  inliers.resize (cluster->size ());
+  for (unsigned int i = 0; i < cluster->size (); i++)
+    inliers[i] = cluster->at (i);
+
+  if (indices->size () < 2)
+  {
+    ROS_WARN ("[growCurrentCluster] Less than 2 points found in this cluster. Exiting...");
+    return;
+  }
+  ROS_DEBUG ("[growCurrentCluster] Creating Kd-Tree with %d points for a %d-points cluster.", indices->size (), cluster->size ());
+
+  // Create a Kd-Tree for the original cloud
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (points, indices);
+
+  // Get the nearest neighbors for all the point indices in the bounds
+  for (unsigned int i = 0; i < cluster->size (); i++)
+  {
+    vector<int> points_k_indices;
+    vector<double> distances;
+
+    kdtree->radiusSearch (&points->pts[cluster->at (i)], dist_thresh, points_k_indices, distances);
+    // Copy the inliers
+    if (points_k_indices.size () == 0)
+      continue;
+    int old_size = inliers.size ();
+    inliers.resize (old_size + points_k_indices.size ());
+    for (unsigned int j = 0; j < points_k_indices.size (); j++)
+      inliers[old_size + j] = indices->at (points_k_indices[j]);
+  }
+  sort (inliers.begin (), inliers.end ());
+  inliers.erase (unique (inliers.begin (), inliers.end ()), inliers.end ());
+
+  // Delete the kd-tree
+  delete kdtree;
+}

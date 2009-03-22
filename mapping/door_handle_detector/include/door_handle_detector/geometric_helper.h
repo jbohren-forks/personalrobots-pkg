@@ -183,8 +183,8 @@ void obtainCloudIndicesSet (robot_msgs::PointCloud *points, std::vector<int> &in
                             tf::TransformListener *tf, std::string fixed_param_frame, double min_z_bounds, double max_z_bounds, double frame_multiplier);
 
 
-int fitSACOrientedLine (robot_msgs::PointCloud *points, std::vector<int> indices, double dist_thresh,
-                        robot_msgs::Point32 *axis, double eps_angle, std::vector<int> &line_inliers);
+int fitSACOrientedLine (robot_msgs::PointCloud *points, std::vector<int> indices, double dist_thresh, robot_msgs::Point32 *axis, double eps_angle, std::vector<int> &line_inliers);
+int fitSACOrientedLine (robot_msgs::PointCloud *points, double dist_thresh, robot_msgs::Point32 *axis, double eps_angle, std::vector<int> &line_inliers);
 
 void get3DBounds (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2, robot_msgs::Point32 &min_b, robot_msgs::Point32 &max_b,
                   double min_z_bounds, double max_z_bounds, int multiplier);
@@ -195,6 +195,7 @@ bool checkDoorEdges (robot_msgs::Polygon3D *poly, robot_msgs::Point32 *z_axis, d
                      double &door_frame1, double &door_frame2);
 
 void selectBestDistributionStatistics (robot_msgs::PointCloud *points, std::vector<int> *indices, int d_idx, std::vector<int> &inliers);
+void selectBestDualDistributionStatistics (robot_msgs::PointCloud *points, std::vector<int> *indices, int d_idx_1, int d_idx_2, std::vector<int> &inliers);
 
 bool checkIfClusterPerpendicular (robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::PointStamped *viewpoint,
                                   std::vector<double> *coeff, double eps_angle);
@@ -207,5 +208,10 @@ bool fitSACPlane (robot_msgs::PointCloud &points, std::vector<int> indices, std:
 void estimatePointNormals (robot_msgs::PointCloud *points, std::vector<int> *point_indices, robot_msgs::PointCloud &points_down, int k, robot_msgs::PointStamped *viewpoint_cloud);
 //void estimatePointNormals (robot_msgs::PointCloud points, robot_msgs::PointCloud &points_down, int k, robot_msgs::PointStamped viewpoint_cloud);
 void estimatePointNormals (robot_msgs::PointCloud *points, robot_msgs::PointCloud &points_down, int k, robot_msgs::PointStamped *viewpoint_cloud);
+
+void estimatePointNormals (robot_msgs::PointCloud *points, std::vector<int> *point_indices, int k, robot_msgs::PointStamped *viewpoint_cloud);
+
+void growCurrentCluster (robot_msgs::PointCloud *points, std::vector<int> *indices, std::vector<int> *cluster,
+                         std::vector<int> &inliers, double dist_thresh);
 
 #endif
