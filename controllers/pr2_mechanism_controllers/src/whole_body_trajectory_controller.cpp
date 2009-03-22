@@ -107,10 +107,12 @@ bool WholeBodyTrajectoryController::initXml(mechanism::RobotState * robot, TiXml
 
         if(static_cast<std::string>(pj->Attribute("type")) == std::string("ROTARY_CONTINUOUS"))
         {
+          ROS_INFO("Adding joint %s with type: ROTARY_CONTINUOUS",joint_name.c_str());
           joint_type_.push_back(mechanism::JOINT_CONTINUOUS);
         }
         else if(static_cast<std::string>(pj->Attribute("type")) == std::string("PRISMATIC_CONTINUOUS"))
         {
+          ROS_INFO("Adding joint %s with type: PRISMATIC_CONTINUOUS",joint_name.c_str());
           joint_type_.push_back(mechanism::JOINT_PRISMATIC);
         }
         else
@@ -585,7 +587,7 @@ bool WholeBodyTrajectoryControllerNode::initXml(mechanism::RobotState * robot, T
   double scale;
   node_->param<double>(service_prefix_ + "/velocity_scaling_factor",scale,0.25);
   node_->param<double>(service_prefix_ + "/trajectory_wait_timeout",trajectory_wait_timeout_,10.0);
-  node_->param<double>(service_prefix_ + "/trajectory_update_timeout",c_->max_allowed_update_time_,0.2);
+  node_->param<double>(service_prefix_ + "/trajectory_update_timeout",c_->max_allowed_update_time_,0.1);
 
   c_->velocity_scaling_factor_ = std::min(1.0,std::max(0.0,scale));
 
