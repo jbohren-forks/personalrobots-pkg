@@ -1,11 +1,11 @@
 <filters>
-  <filter type="LaserMedianFilter" name="median_test_7_from_filea"> <params number_of_observations="7"/>
+  <filter type="LaserMedianFilter" name="median_test_7_from_filea"> 
     <filters>
       <filter type="MedianFilter" name="median_test_7_from_fileb"> 
-	<params number_of_observations="10"/>
+	<params number_of_observations="7"/>
       </filter>
       <filter type="MedianFilter" name="median_test_7a_from_filec"> 
-	<params number_of_observations="10"/>
+	<params number_of_observations="7"/>
       </filter>
       
       
