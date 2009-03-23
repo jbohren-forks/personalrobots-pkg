@@ -445,7 +445,8 @@ void People::faceDetectionThread(uint i) {
     }
 
     // Find the faces using OpenCV's haar cascade object detector.
-    CvSeq *face_seq = cvHaarDetectObjects(cv_image_gray_, cascades_[i], storages_[i], 1.2, 2, CV_HAAR_DO_CANNY_PRUNING);
+    int this_min_face_size = (int)(floor(cam_model_->getDeltaU(FACE_SIZE_MIN_M, MAX_Z_M)));
+    CvSeq *face_seq = cvHaarDetectObjects(cv_image_gray_, cascades_[i], storages_[i], 1.2, 2, CV_HAAR_DO_CANNY_PRUNING, cvSize(this_min_face_size,this_min_face_size));
 
     // Filter the faces using depth information, if available. Currently checks that the actual face size is within the given limits.
     CvScalar color = cvScalar(0,255,0);

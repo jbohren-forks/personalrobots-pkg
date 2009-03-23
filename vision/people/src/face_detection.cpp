@@ -220,7 +220,7 @@ public:
    * If unsynced stereo msgs are received, do nothing. 
    */
   void image_cb_timeout(ros::Time t) {
-    cout << "In timeout" << endl;
+    //cout << "In timeout" << endl;
   }
 
   /*! 
@@ -263,7 +263,6 @@ public:
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/(double)dispinfo_.dpp);
  
     im_size = cvGetSize(cv_image_left_);
-    printf("detecting faces\n");
     gettimeofday(&timeofday,NULL);
     ros::Time starttdetect = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
 
@@ -271,7 +270,7 @@ public:
     gettimeofday(&timeofday,NULL);
     ros::Time endtdetect = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
     ros::Duration diffdetect = endtdetect - starttdetect;
-    printf("Detection duration = %fsec\n", diffdetect.toSec());
+    //printf("Detection duration = %fsec\n", diffdetect.toSec());
 
     image_msgs::ColoredLines all_cls;
     vector<image_msgs::ColoredLine> lines;   
@@ -450,7 +449,7 @@ public:
     gettimeofday(&timeofday,NULL);
     ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
     ros::Duration diff = endt-startt;
-    printf("Image callback duration = %fsec\n", diff.toSec());
+    //printf("Image callback duration = %fsec\n", diff.toSec());
   }
 
 
