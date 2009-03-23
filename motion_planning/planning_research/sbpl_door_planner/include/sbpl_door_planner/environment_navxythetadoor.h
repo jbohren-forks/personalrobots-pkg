@@ -35,9 +35,20 @@
 
 class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
 {
-public:
+ public:
     EnvironmentNAVXYTHETADOOR() {};
     ~EnvironmentNAVXYTHETADOOR() {};
+
+ protected:
+
+	virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
+
+    //returns possible doorangle and associated costs (costs are used as multipliers, cost = 0 will be used as a
+    //a multiplication factor of 1 (no penalty). Infinite cost should be indicated by INFINITECOST, or better if not
+    //returned at all as a possible doorangle.
+    void GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldrobotpose3D, vector<int>* doorangleV, 
+                            vector<int>* dooranglecostV);
+
 };
 
 #endif

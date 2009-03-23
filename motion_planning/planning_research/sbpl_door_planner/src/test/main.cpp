@@ -49,8 +49,8 @@ int planxythetadoor(int argc, char *argv[])
     //set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
     vector<sbpl_2Dpt_t> perimeterptsV;
     sbpl_2Dpt_t pt_m;
-    double halfwidth = 0.08; //0.3;
-    double halflength = 0.1; //0.45;
+    double halfwidth = 0.03;    //0.08; //0.3;
+    double halflength = 0.025;  //0.1; //0.45;
     pt_m.x = -halflength;
     pt_m.y = -halfwidth;
     perimeterptsV.push_back(pt_m);
