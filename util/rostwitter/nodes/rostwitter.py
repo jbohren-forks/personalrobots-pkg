@@ -53,7 +53,7 @@ class Twitter:
   def __init__(self, twitId = None, twitPass = None):
     if twitId == None:
       host = gethostname()
-      twitId = "wg_%s" % host
+      twitId = "wg_%s" % host[:3]
     if twitPass == None:
       twitPass = passes[twitId]
     self.api = twitter.Api(username=twitId, password=twitPass)
