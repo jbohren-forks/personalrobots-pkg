@@ -151,12 +151,12 @@ if __name__ == '__main__':
     # tuck traj for left arm
     set_params()
     mechanism.spawn_controller(xml_for_gripper.read())    
-    controllers.append('gripper_position_controller')
+#    controllers.append('gripper_position_controller')
     pub = rospy.Publisher("/gripper_position_controller/set_command", Float64)
     sleep(2)
     pub.publish(Float64(0.8))
     mechanism.spawn_controller(xml_for_traj.read())
-    controllers.append('right_arm/trajectory_controller')
+#    controllers.append('right_arm/trajectory_controller')
 
     positions_unfold = [[-0.0118545903883, 1.40015507128, -1.49991771552, -1.94172772826, 0.0131312866653, 0.0962640845608, -0.00644695174672],
                  [-2.04879973213, 1.11987025248, -1.07494474299, -2.05521997047, 1.03679317578, 1.66637122973, 0.151969101557]]  
