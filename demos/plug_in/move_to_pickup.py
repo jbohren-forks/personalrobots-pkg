@@ -195,7 +195,7 @@ if __name__ == '__main__':
       sleep(.5)
     #sys.exit(0)
 
-    sleep(2)
+    #sleep(1)
     #now pick up plug  
     resp = kill_and_spawn(pose_config, ['right_arm/trajectory_controller'])
     #mechanism.kill_controller('right_arm/trajectory_controller')
