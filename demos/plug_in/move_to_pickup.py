@@ -61,8 +61,8 @@ def pickup():
   m0 = PoseStamped()
   m0.header.frame_id = 'base_link'
   m0.header.stamp = rospy.get_rostime()
-  m0.pose.position.x = 0.19#plug_location.x-0.04 #0.19
-  m0.pose.position.y = 0.04#plug_location.y+0.02 #0.04
+  m0.pose.position.x = plug_location.x-0.04 #0.19
+  m0.pose.position.y = plug_location.y+0.02 #0.04
   m0.pose.position.z = 0.5
   m0.pose.orientation.x = -0.19
   m0.pose.orientation.y = 0.13
@@ -72,8 +72,8 @@ def pickup():
   m1 = PoseStamped()
   m1.header.frame_id = 'base_link'
   m1.header.stamp = rospy.get_rostime()
-  m1.pose.position.x = 0.19#plug_location.x-0.04 #0.19
-  m1.pose.position.y = 0.04#plug_location.y+0.02 #0.04
+  m1.pose.position.x = plug_location.x-0.04 #0.19
+  m1.pose.position.y = plug_location.y+0.02 #0.04
   m1.pose.position.z = 0.23
   m1.pose.orientation.x = -0.19
   m1.pose.orientation.y = 0.13
