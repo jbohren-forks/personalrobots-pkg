@@ -94,7 +94,7 @@ public:
   // For debugging
   void printLinkTree();
 
-  const std::string& getResourceLocation() { return resource_location_; }
+  const std::string& getResourceLocation() const { return resource_location_; }
 };
 
 class RobotState
