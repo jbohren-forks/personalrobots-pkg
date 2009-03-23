@@ -190,7 +190,7 @@ void CartesianHybridController::update()
 
   // Computes the rotational error
   KDL::Vector rot_error =
-    diff(KDL::Rotation::EulerZYX(
+    diff(KDL::Rotation::RPY(
            mode_[3] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[3] : 0.0,
            mode_[4] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[4] : 0.0,
            mode_[5] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[5] : 0.0),
@@ -228,8 +228,7 @@ void CartesianHybridController::update()
       else { // Rotational position
         wrench_desi_[i] = pose_pids_[i].updatePid(rot_error[i - 3], twist_meas_filtered[i], dt);
       }
-      //if ((int(time*10.0) % 10) == 0)
-        ROS_ERROR("rot_error = %.3lf, %.3lf, %.3lf", rot_error(0), rot_error(1), rot_error(2));
+
       break;
     case robot_msgs::TaskFrameFormalism::VELOCITY:
       twist_desi_[i] = setpoint_[i];
