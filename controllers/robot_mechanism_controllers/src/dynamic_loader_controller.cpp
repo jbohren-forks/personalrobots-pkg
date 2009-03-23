@@ -37,12 +37,7 @@
 #include <iostream>
 
 #include <boost/foreach.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/device/file_descriptor.hpp>
-
 #include <boost/algorithm/string/trim.hpp>
-
-using namespace boost::iostreams;
 
 namespace controller {
 

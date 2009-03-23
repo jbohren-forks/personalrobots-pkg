@@ -36,7 +36,5 @@ set(_srcs
 if(NOT APPLE)
  set(_srcs ${_srcs} src/endeffector_constraint_controller.cpp)
 endif(NOT APPLE)
-rospack_add_boost_directories()
 rospack_add_library(robot_mechanism_controllers ${_srcs})
 target_link_libraries(robot_mechanism_controllers ltdl)
-rospack_link_boost(robot_mechanism_controllers iostreams)
