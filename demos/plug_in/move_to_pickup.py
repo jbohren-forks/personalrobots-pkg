@@ -11,6 +11,8 @@ from robot_msgs.msg import JointTraj, JointTrajPoint, PlugStow, Point, PoseStamp
 from mechanism_control import mechanism
 from robot_mechanism_controllers.srv import *
 from pr2_mechanism_controllers.srv import *
+from robot_msgs.msg import *
+from robot_srvs.srv import *
 
 import sys
 from time import sleep
@@ -46,11 +48,6 @@ def move(positions):
     traj.points[i].positions = positions[i]
     traj.points[i].time = 0.0
 
-  srv_msg = TrajectoryStart()
-  srv_msg.traj = traj
-  srv_msg.hastiming = 0
-  srv_msg.requesttiming = 0
-  
   try:
     move_arm = rospy.ServiceProxy('right_arm/trajectory_controller/TrajectoryStart', TrajectoryStart)
     resp1 = move_arm(traj,0,0)
@@ -60,22 +57,37 @@ def move(positions):
     print "Service call failed: %s"%e
 
 def pickup():
-  pub = rospy.Publisher('/cartesian_pose/command', PoseStamped)
-  sleep(2)
-  m = PoseStamped()
-  m.header.frame_id = 'base_link'
-  m.header.stamp = rospy.get_rostime()
-  m.pose.position.x = plug_location.x-.04 #0.19
-  m.pose.position.y = plug_location.y+.02 #0.04
-  m.pose.position.z = 0.26
-  m.pose.orientation.x = 0.57
-  m.pose.orientation.y = 0.65
-  m.pose.orientation.z = -0.30
-  m.pose.orientation.w = 0.38
+  
+  m0 = PoseStamped()
+  m0.header.frame_id = 'base_link'
+  m0.header.stamp = rospy.get_rostime()
+  m0.pose.position.x = 0.19#plug_location.x-0.04 #0.19
+  m0.pose.position.y = 0.04#plug_location.y+0.02 #0.04
+  m0.pose.position.z = 0.5
+  m0.pose.orientation.x = -0.19
+  m0.pose.orientation.y = 0.13
+  m0.pose.orientation.z = 0.68
+  m0.pose.orientation.w = 0.68
+  
+  m1 = PoseStamped()
+  m1.header.frame_id = 'base_link'
+  m1.header.stamp = rospy.get_rostime()
+  m1.pose.position.x = 0.19#plug_location.x-0.04 #0.19
+  m1.pose.position.y = 0.04#plug_location.y+0.02 #0.04
+  m1.pose.position.z = 0.26
+  m1.pose.orientation.x = -0.19
+  m1.pose.orientation.y = 0.13
+  m1.pose.orientation.z = 0.68
+  m1.pose.orientation.w = 0.68
+  
   print "sending pickup command"
-  for i in range (0,10):
-    print "sending"
-    pub.publish(m)
+  try:
+    move_arm = rospy.ServiceProxy('cartesian_trajectory_right/move_to', MoveToPose)
+    move_arm(m0)
+    move_arm(m1)
+    return 
+  except rospy.ServiceException, e:
+    print "Service call failed: %s"%e
   
 
 def set_params():
@@ -90,35 +102,45 @@ def set_params():
   rospy.set_param("right_arm/trajectory_controller/r_wrist_flex_joint/goal_reached_threshold", 0.1)
   rospy.set_param("right_arm/trajectory_controller/r_wrist_roll_joint/goal_reached_threshold", 0.1)  
   
-  rospy.set_param("cartesian_pose/root_name", 'torso_lift_link')
-  rospy.set_param("cartesian_pose/tip_name", 'r_gripper_tool_frame')
-  rospy.set_param("cartesian_pose/p",16.0)
-  rospy.set_param("cartesian_pose/i",4.0)
-  rospy.set_param("cartesian_pose/d",0.0)
-  rospy.set_param("cartesian_pose/i_clamp",3.0)
+  #Cartesian trajectory controller
+  rospy.set_param("cartesian_trajectory_right/autostart", 'true')
+  
+  rospy.set_param("cartesian_trajectory_right/root_name", 'torso_lift_link')
+  rospy.set_param("cartesian_trajectory_right/tip_name", 'r_gripper_tool_frame')
+  
+  rospy.set_param("cartesian_trajectory_right/pose/p",20.0)
+  rospy.set_param("cartesian_trajectory_right/pose/i",0.1)
+  rospy.set_param("cartesian_trajectory_right/pose/d",0.0)
+  rospy.set_param("cartesian_trajectory_right/pose/i_clamp",0.5)
+
+  rospy.set_param("cartesian_trajectory_right/max_vel_trans", 0.5)
+  rospy.set_param("cartesian_trajectory_right/max_vel_rot", 1.0)
+  rospy.set_param("cartesian_trajectory_right/max_acc_trans", 0.5)
+  rospy.set_param("cartesian_trajectory_right/max_acc_rot", 0.8)
 
 
-  rospy.set_param("cartesian_pose/twist/ff_trans", 20.0)
-  rospy.set_param("cartesian_pose/twist/ff_rot", 5.0)
-  rospy.set_param("cartesian_pose/twist/fb_trans/p", 20.0)
-  rospy.set_param("cartesian_pose/twist/fb_trans/i", 0.5)
-  rospy.set_param("cartesian_pose/twist/fb_trans/d", 0.0 )
-  rospy.set_param("cartesian_pose/twist/fb_trans/i_clamp", 1.0)
-  rospy.set_param("cartesian_pose/twist/fb_rot/p", 1.5 )
-  rospy.set_param("cartesian_pose/twist/fb_rot/i", 0.1)
-  rospy.set_param("cartesian_pose/twist/fb_rot/d", 0.0)
-  rospy.set_param("cartesian_pose/twist/fb_rot/i_clamp", 0.2)
+  rospy.set_param("cartesian_trajectory_right/pose/twist/ff_trans", 20.0)
+  rospy.set_param("cartesian_trajectory_right/pose/twist/ff_rot", 5.0)
+  rospy.set_param("cartesian_trajectory_right/pose/twist/fb_trans/p", 20.0)
+  rospy.set_param("cartesian_trajectory_right/pose/twist/fb_trans/i", 0.5)
+  rospy.set_param("cartesian_trajectory_right/pose/twist/fb_trans/d", 0.0 )
+  rospy.set_param("cartesian_trajectory_right/pose/twist/fb_trans/i_clamp", 1.0)
+  rospy.set_param("cartesian_trajectory_right/pose/twist/fb_rot/p", 1.5 )
+  rospy.set_param("cartesian_trajectory_right/pose/twist/fb_rot/i", 0.1)
+  rospy.set_param("cartesian_trajectory_right/pose/twist/fb_rot/d", 0.0)
+  rospy.set_param("cartesian_trajectory_right/pose/twist/fb_rot/i_clamp", 0.2)
   
 if __name__ == '__main__':
   
   rospy.wait_for_service('spawn_controller')
   rospy.init_node('move_to_pickup', anonymous = True)
-
+  rospy.wait_for_service('kill_and_spawn_controllers')
+  kill_and_spawn = rospy.ServiceProxy('kill_and_spawn_controllers', KillAndSpawnControllers) 
   # Load xml file for arm trajectory controllers
   path = roslib.packages.get_pkg_dir('sbpl_arm_executive')
   xml_for_traj = open(path + '/launch/xml/r_arm_trajectory_controller.xml')
-  path = roslib.packages.get_pkg_dir('arm_life_test')
-  xml_for_pose = open(path + '/cartesian_pose.xml')
+  pose_config = '<controller type="CartesianTrajectoryControllerNode" name="cartesian_trajectory_right"/>'
+  
 
   controllers = []
   try:
@@ -150,9 +172,9 @@ if __name__ == '__main__':
     print "collecting data" 
     rospy.Subscriber("/plug_onbase_detector_node/plug_stow_info", PlugStow, get_location)
   
-  #  while(plug_not_found):
-  #    print "plug not found\n"
-  #    sleep(.5)
+    while(plug_not_found):
+      print "plug not found\n"
+      sleep(.5)
 
     print "picking up plug"
     positions_reach =[[-1.95437620372, 1.1029499495, -1.18591881732, -2.05724661765, 1.04622224946, 1.89800972255, 0.504874075412],
@@ -163,12 +185,13 @@ if __name__ == '__main__':
     while(resp2.done==0):
       resp2=is_traj_done(traj_id2)
       sleep(.5)
-    sys.exit(0)
+    #sys.exit(0)
 
-    sleep(1)
+    sleep(10)
     #now pick up plug  
-    mechanism.kill_controller('right_arm/trajectory_controller')
-    mechanism.spawn_controller(xml_for_pose.read())
+    resp = kill_and_spawn(pose_config, ['right_arm/trajectory_controller'])
+    #mechanism.kill_controller('right_arm/trajectory_controller')
+    #mechanism.spawn_controller(xml_for_pose.read())
     controllers.append('cartesian_pose')
     print "picking up plug"
     pickup()
