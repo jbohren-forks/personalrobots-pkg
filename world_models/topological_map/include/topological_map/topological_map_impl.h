@@ -44,12 +44,16 @@ using std::ostream;
 using std::istream;
 using boost::tuple;
 using boost::shared_ptr;
+using robot_msgs::Door;
 
 class RegionGraph;
 class Roadmap;
 class GridGraph;
+struct DoorInfo;
 
 typedef map<RegionPair, tuple<ConnectorId,Cell2D,Cell2D> > RegionConnectorMap;
+typedef shared_ptr<DoorInfo> DoorInfoPtr;
+typedef map<RegionId, DoorInfoPtr> RegionDoorMap;
 typedef boost::multi_array<int, 2> ObstacleDistanceArray;
 typedef shared_ptr<OccupancyGrid> GridPtr;
 
@@ -72,10 +76,19 @@ public:
   /// \throws UnknownPointException
   RegionId containingRegion (const Point2D& p) const;
 
-
   /// \return Integer representing type of region
   /// \throws UnknownRegionException
   int regionType(const RegionId id) const;
+
+  /// \return Door message corresponding to region
+  /// \throws UnknownRegionException
+  /// \throws NoDoorInRegionException
+  Door regionDoor (RegionId id) const;
+
+  /// \post Door info for region \a id has been updated to take \a msg into account.  If there's no door, one will be added, else the existing one will be updated.
+  /// \throws UnknownRegionException
+  /// \throws NotDoorwayRegionException
+  void observeDoorMessage (RegionId id, const Door& msg);
 
   /// \return set of cells in region given id
   /// \throws UnknownRegionException
@@ -175,6 +188,8 @@ private:
   shared_ptr<GridGraph> grid_graph_;
 
   RegionConnectorMap region_connector_map_;
+
+  RegionDoorMap region_door_map_;
 
   shared_ptr<TemporaryRoadmapNode> goal_;
   

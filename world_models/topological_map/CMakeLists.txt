@@ -28,7 +28,7 @@ target_link_libraries(bg_driver topological_map)
 
 ## New version
 ## Rename once done
-rospack_add_library(topological_graph src/region.cpp src/topological_map.cpp src/creation.cpp src/region_graph.cpp src/connector_roadmap.cpp src/grid_graph.cpp src/grid_utils.cpp)
+rospack_add_library(topological_graph src/region.cpp src/topological_map.cpp src/creation.cpp src/region_graph.cpp src/connector_roadmap.cpp src/grid_graph.cpp src/grid_utils.cpp src/door_info.cpp)
 
 rospack_add_executable(bin/ros_topological_map src/ros_topological_map.cpp)
 target_link_libraries(bin/ros_topological_map topological_graph)

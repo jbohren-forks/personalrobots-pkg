@@ -41,6 +41,7 @@
 #include <topological_map/region_graph.h>
 #include <topological_map/grid_graph.h>
 #include <topological_map/roadmap.h>
+#include <topological_map/door_info.h>
 #include <algorithm>
 #include <ros/console.h>
 #include <ros/assert.h>
@@ -205,6 +206,31 @@ RegionConnectorMap readRegionConnectorMap (istream& str)
   return m;
 }
 
+RegionDoorMap readRegionDoorMap (istream& str)
+{
+  ROS_DEBUG_NAMED ("io", "Reading region door map");
+  RegionDoorMap m;
+  uint size;
+  str >> size;
+  for (uint i=0; i<size; ++i) {
+    RegionId id;
+    str >> id;
+    m[id] = DoorInfoPtr(new DoorInfo(str));
+  }
+  return m;
+}
+
+void writeRegionDoorMap (const RegionDoorMap& m, ostream& str)
+{
+  str << endl << m.size();
+  for (RegionDoorMap::const_iterator iter=m.begin(); iter!=m.end(); ++iter) {
+    str << endl << iter->first;
+    iter->second->writeToStream(str);
+  }
+}
+    
+    
+
 
 void TopologicalMap::MapImpl::writeToStream (ostream& stream)
 {
@@ -221,6 +247,7 @@ void TopologicalMap::MapImpl::writeToStream (ostream& stream)
   region_graph_->writeToStream(stream);
   roadmap_->writeToStream(stream);
   writeRegionConnectorMap(region_connector_map_, stream);
+  writeRegionDoorMap(region_door_map_, stream);
   stream << endl << resolution_;
 
   // Add the goal back in if necessary
@@ -357,7 +384,7 @@ TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution) :
 TopologicalMap::MapImpl::MapImpl (istream& str) : 
   grid_(readGrid(str)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(readRegionGraph(str)), 
   roadmap_(readRoadmap(str)), grid_graph_(new GridGraph(grid_)),
-  region_connector_map_(readRegionConnectorMap(str)), resolution_(readResolution(str))
+  region_connector_map_(readRegionConnectorMap(str)), region_door_map_(readRegionDoorMap(str)), resolution_(readResolution(str))
 {
 }
 
@@ -377,13 +404,35 @@ int TopologicalMap::MapImpl::regionType (const RegionId id) const
   return region_graph_->regionType(id);
 }
 
+Door TopologicalMap::MapImpl::regionDoor (RegionId id) const
+{
+  if (region_graph_->regionType(id)!=DOORWAY) {
+    throw NoDoorInRegionException(id);
+  }
+  RegionDoorMap::const_iterator iter = region_door_map_.find(id);
+  ROS_ASSERT_MSG (iter!=region_door_map_.end(), "Unexpectedly could not find door info for region %u", id);
+  return iter->second->getDoorMessage();
+}
+
+void TopologicalMap::MapImpl::observeDoorMessage (RegionId id, const Door& msg)
+{
+  if (region_graph_->regionType(id)!=DOORWAY) {
+    throw NotDoorwayRegionException(id);
+  }
+  RegionDoorMap::iterator iter = region_door_map_.find(id);
+  if (iter==region_door_map_.end()) {
+    region_door_map_[id] = DoorInfoPtr(new DoorInfo());
+    region_door_map_[id]->observeDoorMessage(msg);
+  }
+  else {
+    iter->second->observeDoorMessage(msg);
+  }
+}
 
 RegionIdVector TopologicalMap::MapImpl::neighbors (const RegionId id) const
 {
   return region_graph_->neighbors(id);
 }
-
-
 
 
 RegionPtr TopologicalMap::MapImpl::regionCells (const RegionId id) const 
@@ -732,11 +781,9 @@ TopologicalMap::TopologicalMap (const OccupancyGrid& grid, double resolution) : 
 {
 }
 
-
 TopologicalMap::TopologicalMap(istream& str) : map_impl_(new MapImpl(str))
 {
 }
-
 
 RegionId TopologicalMap::containingRegion (const Cell2D& p) const
 {
@@ -751,6 +798,16 @@ RegionId TopologicalMap::containingRegion (const Point2D& p) const
 int TopologicalMap::regionType (const RegionId id) const
 {
   return map_impl_->regionType(id);
+}
+
+Door TopologicalMap::regionDoor (RegionId id) const
+{
+  return map_impl_->regionDoor(id);
+}
+
+void TopologicalMap::observeDoorMessage (RegionId id, const Door& msg)
+{
+  map_impl_->observeDoorMessage(id,msg);
 }
 
 

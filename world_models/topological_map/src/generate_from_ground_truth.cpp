@@ -59,6 +59,7 @@ using std::string;
 using std::vector;
 using boost::tie;
 using boost::shared_ptr;
+using robot_msgs::Door;
 
 namespace topological_map
 {
@@ -138,9 +139,9 @@ RegionPtr getDoorCells (const Point2D& p1, const Point2D& p2, double width, doub
 }
 
 
-struct DoorInfo
+struct DoorFramePoints
 {
-  DoorInfo (const Point2D& p1, const Point2D& p2) : p1(p1), p2(p2) {}
+  DoorFramePoints (const Point2D& p1, const Point2D& p2) : p1(p1), p2(p2) {}
   Point2D p1, p2;
 };  
 
@@ -149,7 +150,7 @@ struct DoorInfo
 struct GetDoorCells
 {
   GetDoorCells (double resolution, double width) : resolution(resolution), width(width) {}
-  RegionPtr operator() (const DoorInfo& d) { return getDoorCells(d.p1, d.p2, width, LENGTH_ERROR_THRESHOLD, resolution); }
+  RegionPtr operator() (const DoorFramePoints& d) { return getDoorCells(d.p1, d.p2, width, LENGTH_ERROR_THRESHOLD, resolution); }
   const double resolution, width;
 };
 
@@ -181,30 +182,71 @@ struct Contains
 };
 
 
+
+Door initialDoorEstimate (const DoorFramePoints& frame_points)
+{
+  Door msg;
+  msg.frame_p1.x = frame_points.p1.x;
+  msg.frame_p1.y = frame_points.p1.y;
+  msg.frame_p1.z = 0.0;
+  msg.frame_p2.x = frame_points.p2.x;
+  msg.frame_p2.y = frame_points.p2.y;
+  msg.frame_p2.z = 0.0;
+
+  msg.door_p1.x = frame_points.p1.x;
+  msg.door_p1.y = frame_points.p1.y;
+  msg.door_p1.z = 0.0;
+  msg.door_p2.x = frame_points.p2.x;
+  msg.door_p2.y = frame_points.p2.y;
+  msg.door_p2.z = 0.0;
+
+  msg.handle.x = .6;
+  msg.handle.y = 0;
+  msg.handle.z = 1.0;
+
+  msg.hinge = -1;
+  msg.rot_dir = -1;
+  return msg;
+}
+
+typedef vector<RegionPtr> DoorRegionVector;
+typedef vector<DoorFramePoints> DoorFrameVector;
+
 struct AddRegions
 {
-  AddRegions (TopologicalMapPtr map, const vector<RegionPtr>& door_regions) : map(map), door_regions(door_regions) {}
+  AddRegions (TopologicalMapPtr map, const DoorRegionVector& door_regions, const DoorFrameVector& door_info) : 
+    map(map), door_regions(door_regions), door_info(door_info) {}
+
   void operator() (RegionPtr region)
   {
     if (!region->empty()) {
       Cell2D cell = *(region->begin());
-      RegionType type = find_if(door_regions.begin(), door_regions.end(), Contains(cell))==door_regions.end() ? OPEN : DOORWAY;
-      map->addRegion(region, type);
+      DoorRegionVector::const_iterator pos = find_if(door_regions.begin(), door_regions.end(), Contains(cell));
+      RegionType type = pos==door_regions.end() ? OPEN : DOORWAY;
+      RegionId id = map->addRegion(region, type);
+      if (type == DOORWAY) {
+        DoorFramePoints frame_points = door_info[pos-door_regions.begin()];
+        map->observeDoorMessage(id, initialDoorEstimate(frame_points));
+        Door msg = map->regionDoor(id);
+        ROS_DEBUG_NAMED ("door_info", "Added door info for region %u at %f, %f and %f, %f", 
+                         id, msg.frame_p1.x, msg.frame_p1.y, msg.frame_p2.x, msg.frame_p2.y);
+      }
     }
   }
 
   TopologicalMapPtr map;
-  const vector<RegionPtr>& door_regions;
+  const DoorRegionVector& door_regions;
+  const DoorFrameVector& door_info;
 };
 
 
-TopologicalMapPtr groundTruthTopologicalMap (const OccupancyGrid& grid, const vector<DoorInfo>& door_info, 
+TopologicalMapPtr groundTruthTopologicalMap (const OccupancyGrid& grid, const DoorFrameVector& door_info, 
                                              const double resolution, const double width)
 {
   shared_ptr<OccupancyGrid> grid_ptr(new OccupancyGrid(grid));
   GridGraph g(grid_ptr);
   
-  vector<RegionPtr> door_regions(door_info.size());
+  DoorRegionVector door_regions(door_info.size());
   transform(door_info.begin(), door_info.end(), door_regions.begin(), GetDoorCells(resolution, width));
   
   // This will cause the doors to be severed from the rest of the grid for the rest of this scope
@@ -214,17 +256,17 @@ TopologicalMapPtr groundTruthTopologicalMap (const OccupancyGrid& grid, const ve
   ROS_DEBUG_NAMED("ground_truth_map", "Looking for connected components");
   vector<MutableRegionPtr> comps = g.connectedComponents();
 
-  ROS_DEBUG_NAMED("ground_truth_map", "Done looking for connected components\nCreating map from grid");
+  ROS_DEBUG_STREAM_NAMED("ground_truth_map", "Found " << comps.size() << " connected components. Creating map from grid");
   TopologicalMapPtr map(new TopologicalMap(grid, resolution));
   
-  ROS_DEBUG_NAMED("ground_truth_map", "Done creating map from grid\nAdding door regions");
-  for_each (comps.begin(), comps.end(), AddRegions(map, door_regions));
+  ROS_DEBUG_NAMED("ground_truth_map", "Done creating map from grid.  Adding door regions");
+  for_each (comps.begin(), comps.end(), AddRegions(map, door_regions, door_info));
 
   return map;
 }
 
 
-vector<DoorInfo> loadFromFile (const string& filename, const double resolution) 
+DoorFrameVector loadDoorsFromFile (const string& filename, const double resolution) 
 {
   TiXmlDocument doc(filename);
   if (!doc.LoadFile()) {
@@ -238,7 +280,7 @@ vector<DoorInfo> loadFromFile (const string& filename, const double resolution)
   }
 
   TiXmlElement* next_door;
-  vector<DoorInfo> doors;
+  DoorFrameVector doors;
   for (next_door=root.FirstChild().Element(); next_door; next_door=next_door->NextSiblingElement()) {
     TiXmlHandle door_handle(next_door); 
 
@@ -253,7 +295,7 @@ vector<DoorInfo> loadFromFile (const string& filename, const double resolution)
     Point2D p1 = cellToPoint(Cell2D(r1,c1), resolution);
     Point2D p2 = cellToPoint(Cell2D(r2,c2), resolution);
     
-    doors.push_back(DoorInfo(p1,p2));
+    doors.push_back(DoorFramePoints(p1,p2));
   }
   
   return doors;
@@ -301,7 +343,7 @@ int main(int argc, char** argv)
     return 1;
   }
   
-  vector<tmap::DoorInfo> doors = tmap::loadFromFile(door_file, resolution);
+  tmap::DoorFrameVector doors = tmap::loadDoorsFromFile(door_file, resolution);
   tmap::OccupancyGrid grid = tmap::loadOccupancyGrid(static_map_file);
   grid = tmap::inflateObstacles(grid, inflation_radius);
   tmap::TopologicalMapPtr tmap = groundTruthTopologicalMap(grid, doors, resolution, width);

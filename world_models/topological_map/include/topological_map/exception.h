@@ -133,6 +133,15 @@ struct GridFileTypeException: public TopologicalMapException
   GridFileTypeException(const string& type) : TopologicalMapException(format("Type of file was %1% instead of P5") % type) {}
 };
 
+struct NoDoorInRegionException: public TopologicalMapException
+{
+  NoDoorInRegionException (const RegionId id) : TopologicalMapException(format("No door in region %1%") % id) {}
+};
+
+struct NotDoorwayRegionException: public TopologicalMapException
+{
+  NotDoorwayRegionException (const RegionId id) : TopologicalMapException (format("Can't add door to non-doorway region %1%") % id) {}
+};
 
 } // namespace topological_map
 

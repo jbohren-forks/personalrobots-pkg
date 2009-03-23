@@ -39,6 +39,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/multi_array.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <robot_msgs/Door.h>
 
 namespace topological_map
 {
@@ -119,6 +120,15 @@ public:
   /// \return Type of this region
   /// \throws UnknownRegionException
   int regionType (RegionId id) const;
+
+  /// \return Info about door in region \a id stored in a Door message object
+  /// \throws UnknownRegionException
+  robot_msgs::Door regionDoor (RegionId id) const;
+
+  /// \post Door info for region \a id has been updated to take \a msg into account.  If there's no door, one will be added, else the existing one will be updated.
+  /// \throws UnknownRegionException
+  /// \throws NotDoorwayRegionException
+  void observeDoorMessage (RegionId id, const robot_msgs::Door& msg);
 
   /// \return Is this point in an obstacle cell?
   /// \throws UnknownPointException

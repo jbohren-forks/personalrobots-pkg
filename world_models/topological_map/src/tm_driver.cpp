@@ -86,6 +86,13 @@ int main (int argc, char* argv[])
   m->writePpm(str2);
   m->connectorCosts(Point2D(1,1), Point2D(10,10));
 
+  std::ifstream str3("local/gen.out");
+  topological_map::TopologicalMap m3(str3);
+
+  robot_msgs::Door d = m3.regionDoor(43);
+  std::cout << "Door at " << d.frame_p1.x << ", " << d.frame_p1.y << " and " << d.frame_p2.x << ", " << d.frame_p2.y;
+  
+
 //   std::ifstream str3("local/willow.tmap");
 //   tmap::TopologicalMap m2(str3);
 //   std::ofstream str4("local/willow2.tmap");
