@@ -38,7 +38,6 @@ ReleaseDoor::Active{
   // Handle always free at the end
   meets(Inactive s);
   eq(s.status, SUCCESS);
-  eq(s.have_handle, FALSE);
 }
 
 /**
@@ -48,28 +47,6 @@ OpenDoorWithGrasp::Active{
   eq(duration, 1);
   meets(Inactive s);
   eq(s.status, SUCCESS);
-  eq(s.have_handle, TRUE);
-}
-
-/**
- * Could lose the handle here
- */
-TwistHandle::Active{
-  eq(duration, 1);
-  meets(Inactive s);
-  eq(s.status, SUCCESS);
-  eq(s.have_handle, TRUE);
-}
-
-/**
- * Read the door locked state based on the simulation control variable
- */
-TwistHandle::Inactive{
-  // DoorwayLockedSV.Holds dl = doorway_locked_sv(start);
-  any(DoorwayLockedSV.Holds dl);
-  precedes(dl.start, start);
-  temporalDistance(start, [1 +inf], dl.end);
-  eq(door_locked, dl.value);
 }
 
 /**
@@ -79,7 +56,6 @@ GraspHandle::Active{
   eq(duration, 1);
   meets(Inactive s);
   eq(s.status, SUCCESS);
-  eq(s.have_handle, TRUE);
 }
 
 /**
@@ -97,8 +73,6 @@ DetectDoor::Active {
   // this[end) == Inactive(SUCCESS, true, true);
   meets(Inactive s);
   eq(s.status, SUCCESS);
-  eq(s.found_door, true);
-  eq(s.found_handle, true);
 }
 
 /**
@@ -126,7 +100,7 @@ CheckDoorway::Inactive{
   any(DoorwayLockedSV.Holds dl);
   precedes(dl.start, start);
   temporalDistance(start, [1 +inf], dl.end);
-  eq(door_locked, dl.value);
+  eq(door_latched, dl.value);
 }
 
 NotifyDoorBlocked::Active{
@@ -138,7 +112,6 @@ NotifyDoorBlocked::Active{
 // External controllers specific to the door domain
 ReleaseDoor release_door = new ReleaseDoor(Internal);
 OpenDoorWithGrasp open_door_with_grasp = new OpenDoorWithGrasp(Internal);
-TwistHandle twist_handle = new TwistHandle(Internal);
 GraspHandle grasp_handle = new GraspHandle(Internal);
 OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
 DetectDoor detect_door = new DetectDoor(Internal);

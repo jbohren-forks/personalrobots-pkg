@@ -1,10 +1,10 @@
 Header header
+
 # Status
 ActionStatus status
 
-# Goal is empty
-std_msgs/Empty goal
+# Target mimimum percentage recharge to achieve
+std_msgs/Float32 goal
 
-# Feedback parameters - same structure as goal
-# Feedback is empt
-std_msgs/Empty feedback
+# Actual recharge level
+std_msgs/Float32 feedback

@@ -65,21 +65,11 @@ namespace robot_actions {
     virtual void handlePreempt() = 0;
 
     /**
-     * @brief A method call periodically - can be used for control loop based implementation. By default a no-op
+     * @brief A method call periodically - allows the action to provide intermediate feedback.
      */
-    virtual void handleExecute(){}
+    virtual void handleUpdate(Feedback& feedback){}
 
   public:
-
-    /**
-     * @brief Accessor for the current goal
-     */
-    const Goal& getGoal() const { return _goal; }
-
-    /**
-     * @brief Accessor for the current feedback state
-     */
-    const Feedback& getFeedback() const { return _feedback; }
 
     /**
      * @brief This method is called on receipt of a new goal. The derived class will implement this method to 
@@ -88,6 +78,8 @@ namespace robot_actions {
      * @see notifyActivated
      */
     void activate(const Goal& goal){
+      ROS_DEBUG("%s received request to activate.", getName().c_str());
+
       if(!isActive()){
 	_goal = goal;
 	handleActivate(_goal);
@@ -100,6 +92,7 @@ namespace robot_actions {
      * @see notifyPreempted
      */
     void preempt(){
+      ROS_DEBUG("%s received request to preempt.", getName().c_str());
       if(isActive())
 	handlePreempt();
     }
@@ -107,11 +100,11 @@ namespace robot_actions {
     /**
      * @brief A call made periodically to provide an opportunity to execute. 
      */
-    void execute(){
+    void update(){
 
       // Allow for action to update
       if(isActive())
-	handleExecute();
+	handleUpdate(_feedback);
 
       // Always post a state update
       _callback(_status, _goal, _feedback);
@@ -137,6 +130,8 @@ namespace robot_actions {
      * @param Feedback to provide in the state update
      */
     void notifyActivated(){
+      ROS_DEBUG("%s activated.", getName().c_str());
+
       _status.lock();
       if(!isActive()){
 	_status.value = ActionStatus::ACTIVE;
@@ -150,6 +145,7 @@ namespace robot_actions {
      * @param Feedback to provide in the state update
      */
     void notifySucceeded(const Feedback& feedback){
+      ROS_DEBUG("%s completed successfully.", getName().c_str());
       handleDeactivation(feedback, ActionStatus::SUCCESS);
     }
 
@@ -158,6 +154,7 @@ namespace robot_actions {
      * @param Feedback to provide in the state update
      */
     void notifyAborted(const Feedback& feedback){
+      ROS_DEBUG("%s aborted.", getName().c_str());
       handleDeactivation(feedback, ActionStatus::ABORTED);
     }
 
@@ -166,6 +163,7 @@ namespace robot_actions {
      * @param Feedback to provide in the state update
      */
     void notifyPreempted(const Feedback& feedback){
+      ROS_DEBUG("%s preempted.", getName().c_str());
       handleDeactivation(feedback, ActionStatus::PREEMPTED);
     }
 
@@ -173,16 +171,21 @@ namespace robot_actions {
      * @brief Constructor
      * @param name The action name
      */
-  Action(const std::string& name)
-    : _name(name) { _status.value = ActionStatus::UNDEFINED; }
+    Action(const std::string& name)
+    : _name(name) {
+      _status.value = ActionStatus::UNDEFINED; 
+    }
 
     virtual ~Action(){}
 
-  private:
-
+    /**
+     * @brief True if the action is active, false otherwise
+     */
     bool isActive() const {
       return _status.value == ActionStatus::ACTIVE;
     }
+
+  private:
 
     void handleDeactivation(const Feedback& feedback, int8_t status_flag){
       // Only do work if we are active. Need to lock protect this

@@ -74,7 +74,7 @@ namespace robot_actions {
     /**
      * @brief Provide an implementation that updates the status
      */
-    virtual void execute() = 0;
+    virtual void update() = 0;
 
 
   protected:
@@ -109,7 +109,7 @@ namespace robot_actions {
 
     /**
      * @brief Constructor
-     * @param actionName The name for the action. This is used to scope the request, premption and notify topics. All other parameters are obtained
+     * @param actionName The name for the action. This is used to scope the request, preemption and notify topics. All other parameters are obtained
      * via ROS paramaters
      */
   MessageAdapter(Action<Goal, Feedback>& action)
@@ -124,8 +124,8 @@ namespace robot_actions {
       // Subscribe to goal requests. 
       ros::Node::instance()->subscribe(_action.getName() + "/activate", _request_msg, &MessageAdapter<Goal, State, Feedback>::requestHandler,  this, 1);
 
-      // Subscribe to goal premptions.
-      ros::Node::instance()->subscribe(_action.getName() + "/preempt", _premption_msg, &MessageAdapter<Goal, State, Feedback>::premptionHandler,  this, 1);
+      // Subscribe to goal preemptions.
+      ros::Node::instance()->subscribe(_action.getName() + "/preempt", _preemption_msg, &MessageAdapter<Goal, State, Feedback>::preemptionHandler,  this, 1);
     }
 
     // Call back invoked from the action. Packages up as a state message and ships
@@ -157,23 +157,23 @@ namespace robot_actions {
     }
 
     /**
-     * @brief Handle a premption. Will ignore the request unless the action is currently active. Delegates to subclass for details.
+     * @brief Handle a preemption. Will ignore the request unless the action is currently active. Delegates to subclass for details.
      */
-    void premptionHandler(){
+    void preemptionHandler(){
       if(isOk())
 	_action.preempt();
     }
 
-    virtual void execute() {
+    virtual void update() {
       if(isOk())
-	_action.execute();
+	_action.update();
     }
     
     /** DATA MEMBERS **/
     Action<Goal, Feedback>& _action; /*! The action to do the real work */
     const std::string _update_topic;
     Goal _request_msg; /*!< Message populated by handler for a request */
-    Goal _premption_msg; /*!< Message pupulated by handler for a premption */
+    Goal _preemption_msg; /*!< Message pupulated by handler for a preemption */
     State _state_msg; /*!< Message published. */
   };
 

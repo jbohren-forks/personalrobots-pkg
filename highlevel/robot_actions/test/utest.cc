@@ -2,27 +2,27 @@
 #include <robot_actions/action_runner.h>
 #include <robot_actions/message_adapter.h>
 #include <robot_actions/ActionStatus.h>
-#include <robot_actions/RechargeGoal.h>
+#include <std_msgs/Float32.h>
 #include <robot_actions/RechargeState.h>
 #include <gtest/gtest.h>
 
 using namespace robot_actions;
-
+using namespace std_msgs;
 
 /**
  * This is a really simple example of an action implementation which does no real work
  * but invokes the callback methods on the container as appropriate. The option is there for
  * an implementation to do more work before declaring the appropriate state transition.
  */
-class MyAction: public robot_actions::Action<RechargeGoal, RechargeGoal> {
+class MyAction: public robot_actions::Action<Float32, Float32> {
 public:
 
-  MyAction(): robot_actions::Action<RechargeGoal, RechargeGoal>("my_action") {}
+  MyAction(): robot_actions::Action<Float32, Float32>("my_action") {}
 
 private:
 
   /** Super class methods **/
-  virtual void handleActivate(const RechargeGoal&){
+  virtual void handleActivate(const Float32&){
     notifyActivated();
   }
 
@@ -30,7 +30,7 @@ private:
     notifyPreempted(f);
   }
 
-  RechargeGoal f;
+  Float32 f;
 };
 
 /**
@@ -39,7 +39,7 @@ private:
 class MySimpleContainer {
 public:
 
-  void notify(const ActionStatus& status, const RechargeGoal&, const RechargeGoal&){
+  void notify(const ActionStatus& status, const Float32&, const Float32&){
     _status = status;
   }
 
@@ -65,7 +65,7 @@ const int8_t robot_actions::ActionStatus::ACTIVE;
 TEST(robot_actions, action_with_simple_container){
   MyAction a;
   MySimpleContainer c(a);
-  RechargeGoal g;
+  Float32 g;
   a.activate(g);
   robot_actions::ActionStatus foo;
 
@@ -74,10 +74,10 @@ TEST(robot_actions, action_with_simple_container){
   ASSERT_EQ(c._status.value, foo.PREEMPTED);
 
   // Message adapter connects an action to a ros message context
-  robot_actions::MessageAdapter<RechargeGoal, RechargeState, RechargeGoal> adapter(a);
+  robot_actions::MessageAdapter<Float32, RechargeState, Float32> adapter(a);
   robot_actions::AbstractAdapter& abstract_adapter(adapter); 
   abstract_adapter.initialize();
-  abstract_adapter.execute();
+  abstract_adapter.update();
   abstract_adapter.terminate();
 }
 
@@ -90,8 +90,8 @@ TEST(robot_actions, action_with_action_runner){
 
   // Now connect actions
   MyAction a, b;
-  runner.connect<RechargeGoal, RechargeState, RechargeGoal>(a);
-  runner.connect<RechargeGoal, RechargeState, RechargeGoal>(b);
+  runner.connect<Float32, RechargeState, Float32>(a);
+  runner.connect<Float32, RechargeState, Float32>(b);
 
   // Now run it.
   runner.run();

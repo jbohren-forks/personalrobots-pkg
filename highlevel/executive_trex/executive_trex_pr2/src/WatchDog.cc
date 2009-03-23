@@ -1,5 +1,5 @@
 #include <ros/node.h>
-#include <highlevel_controllers/Ping.h>
+#include <std_msgs/Empty.h>
 #include <sys/time.h>
 
 namespace TREX{
@@ -8,15 +8,15 @@ namespace TREX{
   public:
     Watchdog(): ros::Node("trex_watch_dog"), watchdogOK_(true), watchdogTimeLimit_(1.0){
       param("trex/ping_frequency", watchdogTimeLimit_, watchdogTimeLimit_);
-      subscribe<highlevel_controllers::Ping>("trex/ping", pingMsg_, &Watchdog::pingCallback, 1);
-      advertise<highlevel_controllers::Ping>("highlevel_controllers/shutdown", 1);
+      subscribe<std_msgs::Empty>("trex/ping", pingMsg_, &Watchdog::pingCallback, 1);
+      advertise<std_msgs::Empty>("robot_actions/shutdown", 1);
     }
 
     void run(){
       while(true){
 	if(!watchdogOK_){
-	  highlevel_controllers::Ping shutdownMsg;
-	  publish("highlevel_controllers/shutdown", shutdownMsg);
+	  std_msgs::Empty shutdownMsg;
+	  publish("robot_actions/shutdown", shutdownMsg);
 	}
 
 	watchdogOK_ = false;
@@ -34,7 +34,7 @@ namespace TREX{
   private:
     bool watchdogOK_;
     double watchdogTimeLimit_;
-    highlevel_controllers::Ping pingMsg_;
+    std_msgs::Empty pingMsg_;
   };
 
 }

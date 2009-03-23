@@ -11,14 +11,11 @@ namespace executive_trex_pr2 {
      _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[0]))),
      _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
      _th(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
-     _current_x(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
-     _current_y(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))),
-     _current_th(static_cast<IntervalDomain&>(getCurrentDomain(variables[5]))),
-     _x1(static_cast<IntervalDomain&>(getCurrentDomain(variables[6]))),
-     _y1(static_cast<IntervalDomain&>(getCurrentDomain(variables[7]))),
-     _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[8]))),
-     _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[9]))){
-    checkError(variables.size() == 10, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+     _x1(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
+     _y1(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))),
+     _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[5]))),
+     _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[6]))){
+    checkError(variables.size() == 7, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
     checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
@@ -41,14 +38,11 @@ namespace executive_trex_pr2 {
      _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[0]))),
      _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
      _th(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
-     _current_x(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
-     _current_y(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))),
-     _current_th(static_cast<IntervalDomain&>(getCurrentDomain(variables[5]))),
-     _x1(static_cast<IntervalDomain&>(getCurrentDomain(variables[6]))),
-     _y1(static_cast<IntervalDomain&>(getCurrentDomain(variables[7]))),
-     _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[8]))),
-     _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[9]))){
-    checkError(variables.size() == 10, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+     _x1(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
+     _y1(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))),
+     _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[5]))),
+     _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[6]))){
+    checkError(variables.size() == 7, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
     checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     

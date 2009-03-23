@@ -43,7 +43,7 @@
 #include <math.h>
 #include <iostream>
 #include <sstream>
-#include <highlevel_controllers/Ping.h>
+#include <std_msgs/Empty.h>
 
 /**
  * @brief Abstract base class for a high level controller node which is parameterized by the state update
@@ -484,7 +484,7 @@ private:
   double plannerCycleTime_; /*!< The duration for each planner cycle. */
   boost::recursive_mutex lock_; /*!< Lock for access to class members in callbacks */
   boost::thread* plannerThread_; /*!< Thread running the planner loop */
-  highlevel_controllers::Ping shutdownMsg_; /*!< For receiving shutdown from executive */
+  std_msgs::Empty shutdownMsg_; /*!< For receiving shutdown from executive */
   ros::Time lastPlan_; /* The last time a plan was computed. Will be cleared with every new goal */
   ros::Duration timeout_; /*< The time limit for planning failure. */
   bool valid_; /*< True if it is valid */

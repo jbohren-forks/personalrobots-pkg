@@ -311,3 +311,4 @@ BatteryState battery_state = new BatteryState(Internal);
 // Behaviors
 MoveBase move_base = new MoveBase(Internal);
 RechargeController recharge_controller = new RechargeController(Internal);
+ShellCommand shell_command = new ShellCommand(Internal);

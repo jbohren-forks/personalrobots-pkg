@@ -62,58 +62,74 @@ class DoorState extends AgentTimeline {
   }
 };
 
-/**
- * Should this be part of the door state?
- */
-class HandleState extends AgentTimeline {
-
-  predicate Holds {
-    // Control variable so we know when we can trust values.
-    // We will require that this be false when the doormonitor terminates
-    bool active;
-  }
-
-  HandleState(Mode _mode){
-    super(_mode, "Holds");
-  }
-};
-
-
-/**
- * Behavior empoying arms and base to push the door open without requiring a grasp
- * on the handle. This will work when the door is reasonably ajar.
- */
-class OpenDoorWithoutGrasp extends Behavior {
+class DoorManipulationBehavior extends Behavior {
 
   /**
    * The parameters here 
    */
   predicate Active{
-  }
-  predicate Inactive{
+    // Points for the door frame
+    float frame_p1_x;
+    float frame_p1_y;
+    float frame_p1_z;
+    float frame_p2_x;
+    float frame_p2_y;
+    float frame_p2_z;
+
+    // Points for the door
+    float door_p1_x;
+    float door_p1_y;
+    float door_p1_z;
+    float door_p2_x;
+    float door_p2_y;
+    float door_p2_z;
+
+    // Handle data
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
   }
 
-  OpenDoorWithoutGrasp(Mode _mode){
+  predicate Inactive{
+    // Points for the door frame
+    float frame_p1_x;
+    float frame_p1_y;
+    float frame_p1_z;
+    float frame_p2_x;
+    float frame_p2_y;
+    float frame_p2_z;
+
+    // Points for the door
+    float door_p1_x;
+    float door_p1_y;
+    float door_p1_z;
+    float door_p2_x;
+    float door_p2_y;
+    float door_p2_z;
+
+    // Handle data
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+
+    // Commit to unknown values if nothing set
+    defaultOnCommit(hinge, UNKNOWN);
+    defaultOnCommit(rot_dir, UNKNOWN);
+  }
+
+  DoorManipulationBehavior(Mode _mode){
     super(_mode);
   }
-};
+}
 
 /**
  * Behavior to grasp the handle once in a position to do so
  */
-class GraspHandle extends Behavior {
+class GraspHandle extends DoorManipulationBehavior {
 
-  /**
-   * The parameters here 
-   */
-  predicate Active{
-    float x;
-    float y;
-    float z;
-  }
-  predicate Inactive{
-    MAYBE_TRUE_OR_FALSE have_handle;
-  }
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
 
   GraspHandle(Mode _mode){
     super(_mode);
@@ -121,38 +137,13 @@ class GraspHandle extends Behavior {
 };
 
 /**
- * Behavior to twist open the handle, leaving the door unlocked afterwards if successful
- */
-class TwistHandle extends Behavior {
-
-  /**
-   * The parameters here 
-   */
-  predicate Active{
-  }
-  predicate Inactive{
-    MAYBE_TRUE_OR_FALSE have_handle;
-    bool door_locked;
-  }
-
-  TwistHandle(Mode _mode){
-    super(_mode);
-  }
-};
-
-/**
  * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
  */
-class OpenDoorWithGrasp extends Behavior {
+class OpenDoorWithGrasp extends DoorManipulationBehavior {
 
-  /**
-   * The parameters here 
-   */
-  predicate Active{
-  }
-  predicate Inactive{
-    MAYBE_TRUE_OR_FALSE have_handle;
-  }
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
 
   OpenDoorWithGrasp(Mode _mode){
     super(_mode);
@@ -160,19 +151,27 @@ class OpenDoorWithGrasp extends Behavior {
 };
 
 /**
+ * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
+ */
+class OpenDoorWithoutGrasp extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  OpenDoorWithoutGrasp(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
  * Behavior to extract the gripper from a grasp on the handle
  */
-class ReleaseDoor extends Behavior {
+class ReleaseDoor extends DoorManipulationBehavior {
 
-  /**
-   * The parameters here 
-   */
-  predicate Active{
-  }
-
-  predicate Inactive{
-    MAYBE_TRUE_OR_FALSE have_handle;
-  }
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
 
   ReleaseDoor(Mode _mode){
     super(_mode);
@@ -194,7 +193,7 @@ class CheckDoorway extends Behavior {
   }
 
   predicate Inactive{    bool doorway_clear; // True if there is a clear path, otherwise false
-    bool door_locked; // True if there is a path for a very thin robot - basically a crack in the door
+    bool door_latched; // True if there is a path for a very thin robot - basically a crack in the door
   }
 
   CheckDoorway(Mode _mode){
@@ -205,26 +204,11 @@ class CheckDoorway extends Behavior {
 /**
  * DetectDoor is activated to search for the door. It will assume it is in a suitable observation position facing the door
  */
-class DetectDoor extends Behavior {
+class DetectDoor extends DoorManipulationBehavior {
 
-  /**
-   * The parameters here can be the expected values for the door state msg?
-   */
-  predicate Active{
-    float x; 
-    float y;
-    float th;
-    bool found_door;
-    bool found_handle;
-  }
-
-  predicate Inactive{
-    float x; 
-    float y;
-    float th;
-    bool found_door;
-    bool found_handle;
-  }
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
 
   DetectDoor(Mode _mode){
     super(_mode);
@@ -235,20 +219,11 @@ class DetectDoor extends Behavior {
  * NotifyDoorBlocked will just send a message to update the world model that the given door is blocked. We will indicate
  * the parameters based on the current and target positions
  */
-class NotifyDoorBlocked extends Behavior {
+class NotifyDoorBlocked extends DoorManipulationBehavior {
 
-  /**
-   * The parameters here can be the expected values for the door state msg?
-   */
-  predicate Active{
-    float x1;
-    float y1;
-    float x2;
-    float y2;
-  }
-
-  predicate Inactive{
-  }
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
 
   NotifyDoorBlocked(Mode _mode){
     super(_mode);

@@ -31,9 +31,6 @@ namespace executive_trex_pr2 {
     IntervalDomain& _x;
     IntervalDomain& _y;
     IntervalDomain& _th;
-    IntervalDomain& _current_x;
-    IntervalDomain& _current_y;
-    IntervalDomain& _current_th;
     IntervalDomain& _x1;
     IntervalDomain& _y1;
     IntervalDomain& _x2;
@@ -57,9 +54,6 @@ namespace executive_trex_pr2 {
     IntervalDomain& _x;
     IntervalDomain& _y;
     IntervalDomain& _th;
-    IntervalDomain& _current_x;
-    IntervalDomain& _current_y;
-    IntervalDomain& _current_th;
     IntervalDomain& _x1;
     IntervalDomain& _y1;
     IntervalDomain& _x2;

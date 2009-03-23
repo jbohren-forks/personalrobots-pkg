@@ -45,38 +45,6 @@ typedef int [0 5] PRIORITY;
 int WAIT_TIME_AFTER_UNPLUGGING = 5; 
 
 /**
- * A predefined location to go to
- */
-class Location {
-  float x;
-  float y;
-  float th;
-
-  Location(float x_, float y_, float th_){
-    x = x_;
-    y = y_;
-    th = th_;
-  }
-};
-
-/**
- * The x, y, and theta values for a charging station. These describe the
- * target base pose for the robot when recharging.
- */
-class ChargingStation extends Location {
-  ChargingStation(float x, float y, float th){
-    super(x, y, th);
-  }
-};
-
-class Waypoint extends Location {
-  Waypoint(float x, float y, float th){
-    super(x, y, th);
-  }
-};
-
-
-/**
  * This is an abstract state variable which reflects if we are 
  * able to do useful work or if we should focus on recharging. Tripping this state variable
  * into a recharging state will lock out other activities from execution until we are able to

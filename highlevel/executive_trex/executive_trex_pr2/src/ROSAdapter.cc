@@ -28,6 +28,7 @@ namespace TREX {
   }
 
   void ROSAdapter::commonInit(const TiXmlElement& configData){
+    ROS_DEBUG("Adapter constructed for %s", timelineName.c_str());
     m_node = Executive::request();
 
     // Iterate over child xml nodes and look for nodes of type Param to populate the nddl to ros mappings
@@ -46,6 +47,8 @@ namespace TREX {
   }
 
   void ROSAdapter::handleInit(TICK initialTick, const std::map<double, ServerId>& serversByTimeline, const ObserverId& observer){
+    ROS_INFO("Trying to initialize %s.", timelineName.c_str());
+
     TREX::Adapter::handleInit(initialTick, serversByTimeline, observer);
 
     registerPublishers();

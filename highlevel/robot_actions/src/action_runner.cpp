@@ -85,14 +85,12 @@ namespace robot_actions {
 
       if(_initialized){
 
-	ROS_DEBUG("Executing action runner update loop");
- 
 	// Iterate through adapters to ping each one for an update
 	for(std::vector<AbstractAdapter*>::const_iterator it = _adapters.begin(); it != _adapters.end(); ++it){
 	  AbstractAdapter* adapter = *it;
 
 	  if(!isTerminated()){
-	    adapter->execute();
+	    adapter->update();
 	  }
 	  else if(adapter->isOk()){
 	    done = false;

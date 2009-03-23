@@ -64,22 +64,22 @@
  * - None
  **/
 
-#include <highlevel_controllers/highlevel_controller.hh>
-#include <highlevel_controllers/RechargeGoal.h>
-#include <highlevel_controllers/RechargeState.h>
+#include <robot_actions/action.h>
+#include <robot_actions/action_runner.h>
+#include <robot_actions/RechargeState.h>
 #include <robot_msgs/BatteryState.h>
 #include <cstdlib>
 
 namespace highlevel_controllers {
 
-  class RechargeController : public HighlevelController<RechargeState, RechargeGoal> {
+  class RechargeController : public robot_actions::Action<std_msgs::Float32, std_msgs::Float32> {
 
   public:
 
     /**
      * @brief Constructor
      */
-    RechargeController(const std::string& stateTopic, const std::string& goalTopic);
+    RechargeController(const std::string& name);
 
     virtual ~RechargeController();
 
@@ -87,32 +87,41 @@ namespace highlevel_controllers {
   private:
     enum MailType {UNPLUG, PLUG};
 
+
     /**
-     * HighlevelController interface
+     * @brief Will update goal data.
      */
-    virtual void updateGoalMsg();
-    virtual void updateStateMsg();
-    virtual bool makePlan();
-    virtual bool goalReached();
-    virtual bool dispatchCommands();
+    virtual void handleActivate(const std_msgs::Float32& goalMsg);
+
+    /**
+     * @brief Immediate preemption
+     */
+    virtual void handlePreempt(){
+      notifyPreempted(_recharge_level);
+    }
+
+    /**
+     * @brief Will do what dispatch commands used to to
+     */
+    virtual void handleUpdate(std_msgs::Float32& feedback);
 
     void batteryStateCallback();
 
     void sendMail(MailType type);
-    bool charged() const;
+    bool charged();
     bool connected() const;
 
     // Mail parameters
     std::string m_addresses, m_pluginSubject, m_unplugSubject, m_pluginBody, m_unplugBody, m_mailClient;
-    
+    std_msgs::Float32 _recharge_level;
     robot_msgs::BatteryState batteryStateMsg_;
     bool pluginNotified_;
     bool unplugNotified_;
     unsigned int connectionCount_; // Use to make sure we connect to a socket at least once. Handly for forcing a rest
   };
 
-  RechargeController::RechargeController(const std::string& stateTopic, const std::string& goalTopic)
-    : HighlevelController<RechargeState, RechargeGoal>("recharge_controller", stateTopic, goalTopic),
+  RechargeController::RechargeController(const std::string& name)
+    : robot_actions::Action<std_msgs::Float32, std_msgs::Float32>(name),
       m_addresses("mcgann@willowgarage.com"), m_pluginSubject("Robot Needs to Be Plugged In"), 
       m_unplugSubject("Robot Needs to Be Unplugged"), m_pluginBody("Hello, could you please plug me in?\nThanks, PR2"),
       m_unplugBody("Hello, could you please unplug me?\nThanks, PR2"), m_mailClient("mailx -s"),
@@ -151,18 +160,11 @@ namespace highlevel_controllers {
 
     // We will listen to battery state messages to monitor for transitions. We only care about the latest one
     ros::Node::instance()->subscribe("battery_state", batteryStateMsg_, &RechargeController::batteryStateCallback, this, 1);
-
-    lock();
-    stateMsg.recharge_level = 0.0;
-    stateMsg.goal_recharge_level = 0.0;
-    unlock();
   }
 
   RechargeController::~RechargeController(){}
 
   void RechargeController::batteryStateCallback(){
-    // Set to initalized (benign if already true)
-    initialize();
 
     // If not activated, do nothing
     if(!isActive())
@@ -205,49 +207,40 @@ namespace highlevel_controllers {
     ROS_INFO("Mail command sent: %s\n", command.c_str());
   }
   
-  void RechargeController::updateGoalMsg(){
-    stateMsg.lock();
-    stateMsg.goal_recharge_level = goalMsg.recharge_level;
+  void RechargeController::handleActivate(const std_msgs::Float32& goalMsg){
+    _recharge_level.lock();
+    _recharge_level = goalMsg;
     pluginNotified_ = false;
     unplugNotified_ = false;
     connectionCount_ = 0;
-    stateMsg.unlock();
+    _recharge_level.unlock();
+
+    notifyActivated();
   }
 
-  void RechargeController::updateStateMsg(){
+  void RechargeController::handleUpdate(std_msgs::Float32& feedback){
+
+    if(!connected() && charged() && connectionCount_ > 0)
+      notifySucceeded(_recharge_level);
+    else {
+      if(!connected() && (connectionCount_ == 0 || !charged()) && !pluginNotified_){
+	sendMail(PLUG);
+	pluginNotified_ = true;
+	ROS_DEBUG("Requested help to plug in.");
+      }
+      else if(charged() && connected() && !unplugNotified_){
+	sendMail(UNPLUG);
+	unplugNotified_ = true;
+	ROS_DEBUG("Requested help to unplug.");
+      }
+    }
+  }
+
+  bool RechargeController::charged() {
     batteryStateMsg_.lock();
-    stateMsg.recharge_level = (batteryStateMsg_.energy_remaining / batteryStateMsg_.energy_capacity);
+    bool result = (batteryStateMsg_.energy_remaining / batteryStateMsg_.energy_capacity);
     batteryStateMsg_.unlock();
-  }
-
-  bool RechargeController::makePlan(){ return true; }
-
-  /**
-   * @brief When the state machine has transitioned back into an inactive state, we think we are done
-   */
-  bool RechargeController::goalReached(){return !connected() && charged() && connectionCount_ > 0;}
-
-  /**
-   * @brief Commands involve sending mail to plug and unplug, as well as waiting to charge.
-   */
-  bool RechargeController::dispatchCommands(){
-
-    if(!connected() && (connectionCount_ == 0 || !charged()) && !pluginNotified_){
-      sendMail(PLUG);
-      pluginNotified_ = true;
-      ROS_DEBUG("Requested help to plug in.");
-    }
-    else if(charged() && connected() && !unplugNotified_){
-      sendMail(UNPLUG);
-      unplugNotified_ = true;
-      ROS_DEBUG("Requested help to unplug.");
-    }
-
-    return true;
-  }
-
-  bool RechargeController::charged() const{
-    return stateMsg.recharge_level >= stateMsg.goal_recharge_level;
+    return result;
   }
 
   /**
@@ -262,16 +255,19 @@ int
 main(int argc, char** argv)
 {
   ros::init(argc,argv);
-  ros::Node rosnode("recharge_controller");
-  try{
-    highlevel_controllers::RechargeController node("recharge_state", "recharge_goal");
-    node.run();
-  }
-  catch(...){
-    ROS_DEBUG("Caught expection running node. Cleaning up.\n");
-  }
 
-  
+  ros::Node node("highlevel_controller/rechargeController");
+
+  // Allocate an action runner with an update rate of 10 Hz
+  robot_actions::ActionRunner runner(10.0);
+
+  highlevel_controllers::RechargeController recharge_controller("rechargeController");
+
+  runner.connect<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32>(recharge_controller);
+
+  runner.run();
+
+  node.spin();
 
   return(0);
 }

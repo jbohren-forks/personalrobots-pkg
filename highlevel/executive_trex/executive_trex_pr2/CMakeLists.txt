@@ -38,14 +38,15 @@ rospack_add_nddl("doorman.0/pr2.driver.nddl")
 rospack_add_nddl("doorman.0/pr2.recharger.nddl")
 rospack_add_nddl("doorman.0/pr2.safety.nddl")
 rospack_add_nddl("doorman.0/pr2.rcs.sim.nddl")
+rospack_add_nddl("doorman.1/pr2.master.nddl")
+rospack_add_nddl("doorman.1/pr2.doorman.nddl")
+rospack_add_nddl("doorman.1/pr2.driver.nddl")
+rospack_add_nddl("doorman.1/pr2.recharger.nddl")
+rospack_add_nddl("doorman.1/pr2.safety.nddl")
+rospack_add_nddl("doorman.1/pr2.rcs.sim.nddl")
 rospack_add_nddl("plugs.0/pr2.recharger.nddl")
 rospack_add_nddl("plugs.0/pr2.safety.nddl")
 rospack_add_nddl("plugs.0/pr2.rcs.sim.nddl")
-
-#Add other files here once it starts working.
-
-
-
 
 set(TREX_FILES src/Executive.cc
 	       src/Monitor.cc
@@ -64,7 +65,7 @@ set(TREX_FILES src/Executive.cc
 	       src/BatteryStateAdapter.cc
 	       src/topological_map.cc
 	       src/door_domain_constraints.cc
-	       src/shell_command_adapter.cc)
+	       src/adapters.cc)
 
 # trexdebug builds with a large number of run-time error checking running which is expensive
 # but gives good feedback in discovering problems.
@@ -74,6 +75,7 @@ rospack_add_executable(bin/trexdebug src/main.cc)
 target_link_libraries(bin/trexdebug executive_trex_pr2_g )
 rospack_link_boost(bin/trexdebug thread)
 rospack_add_gtest_build_flags(bin/trexdebug)
+
 # rospack_add_gtest_build_flags excludes the target from all, on the
 # assumption that it's only used as a unit test.  In this case that's not
 # true
@@ -103,4 +105,7 @@ rospack_add_executable(bin/trexwatchdog src/WatchDog.cc)
 rospack_add_gtest(test/topological_map_tests test/topological_map_tests.cc)
 target_link_libraries(test/topological_map_tests executive_trex_pr2_g)
 
-rospack_add_executable(test/groundtruthtransform test/groundtruthtransform.cpp)
+# stub_ros__container impements stub state publishers and actions to allow easy testing of the ROS adapters for the model
+rospack_add_executable(bin/stub_ros_container src/stub_ros_container.cc)
+
+#rospack_add_executable(test/groundtruthtransform test/groundtruthtransform.cpp)

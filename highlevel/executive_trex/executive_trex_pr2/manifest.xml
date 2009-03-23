@@ -6,14 +6,15 @@
   <depend package="trex" />
   <depend package="roscpp"/>
   <depend package="rosconsole"/>
-  <depend package="rospy" />
-  <depend package="highlevel_controllers" />
   <depend package="topological_map" />
+  <depend package="robot_actions" />
+  <depend package="pr2_msgs" />
+  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
   <depend package="gtest" />
-  <depend package="deprecated_msgs" />
 
-  <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
   <export>
     <nddl iflags="-I${prefix}/nddl -I${prefix}"/>
   </export>
+
 </package>

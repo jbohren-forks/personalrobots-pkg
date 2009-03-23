@@ -106,7 +106,6 @@ Publishes to (name/type):
 #include "Utilities.hh"
 
 // Requirements for watchdog
-#include <highlevel_controllers/Ping.h>
 #include <sys/time.h>
 #include <boost/thread.hpp>
 

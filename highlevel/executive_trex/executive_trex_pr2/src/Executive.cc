@@ -52,7 +52,7 @@
 #include "Utilities.hh"
 
 // Requirements for watchdog
-#include <highlevel_controllers/Ping.h>
+#include <std_msgs/Empty.h>
 #include <sys/time.h>
 #include <boost/thread.hpp>
 
@@ -146,7 +146,7 @@ namespace TREX {
     TREX::Agent::initialize(*input_xml_root_, *agent_clock_, time_limit);
 
     // Set up  watchdog thread message generation
-    ros::Node::instance()->ros::Node::advertise<highlevel_controllers::Ping>("trex/ping", 1);
+    ros::Node::instance()->ros::Node::advertise<std_msgs::Empty>("trex/ping", 1);
     new boost::thread(boost::bind(&Executive::watchDogLoop, this));
 
     ROS_INFO("Executive created.\n");
@@ -208,7 +208,7 @@ namespace TREX {
   }
 
   void Executive::watchDogLoop(){
-    highlevel_controllers::Ping pingMsg;
+    std_msgs::Empty pingMsg;
     while(!Agent::terminated()){
       ros::Node::instance()->publish("trex/ping", pingMsg);
       usleep((unsigned int) rint(watchDogCycleTime_ * 1e6));

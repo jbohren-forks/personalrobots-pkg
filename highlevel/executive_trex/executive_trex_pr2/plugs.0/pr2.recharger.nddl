@@ -3,5 +3,5 @@
 close();
 
 rejectable(shell_command.Active g0);
-//eq(g0.request, "echo \"Body\" | mailx -s \"Subject\" \"mcgann@willowgarage.com\""); 
-eq(g0.request, "touch ThisFile"); 
+eq(g0.request, "echo \"Body\" | mailx -s \"Subject\" \"mcgann@willowgarage.com\""); 
+//eq(g0.request, "touch ThisFile"); 
