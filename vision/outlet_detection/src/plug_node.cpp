@@ -14,6 +14,8 @@
 
 #include <boost/thread.hpp>
 
+#include "outlet_detector.h" // TODO: get rid of this
+
 extern "C"
 int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
                                 CvPoint2D32f* out_corners, int* out_corner_count,
@@ -36,6 +38,12 @@ private:
 
   tf::Transform plug_in_board_, camera_in_cvcam_;
 
+  // TODO: policy to project from current gripper location
+  enum { WholeFrame, LastImageLocation } roi_policy_;
+  int frame_w_, frame_h_;
+  static const float RESIZE_FACTOR_FAILED = 1.2f;
+  static const float RESIZE_FACTOR_FOUND = 3.0f;
+  
   bool display_;
   IplImage* display_img_;
 
@@ -59,6 +67,21 @@ public:
       ROS_FATAL("Board height unspecified");
       shutdown();
     }
+
+    std::string policy;
+    param("roi_policy", policy, std::string("WholeFrame"));
+    if (policy == std::string("WholeFrame"))
+      roi_policy_ = WholeFrame;
+    else if (policy == std::string("LastImageLocation"))
+      roi_policy_ = LastImageLocation;
+    else {
+      ROS_FATAL("Unknown ROI policy setting");
+      shutdown();
+    }
+    frame_w_ = 2448; // TODO: actually get these values from somewhere
+    frame_h_ = 2050;
+
+    req_.timeout_ms = 100;
 
     param("display", display_, true);
     if (display_) {
@@ -116,8 +139,17 @@ public:
                                            CV_CALIB_CB_ADAPTIVE_THRESH);
     if (!found) {
       //ROS_WARN("Failed to detect plug, found %d corners", ncorners);
+
+      // Expand ROI for next image
+      if (roi_policy_ == LastImageLocation) {
+        CvRect outlet_roi = cvRect(req_.region_x, req_.region_y,
+                                   req_.width, req_.height);
+        outlet_roi = fitToFrame(resize_rect(outlet_roi, RESIZE_FACTOR_FAILED));
+        setRoi(outlet_roi);
+      }
+      
       if (display_) {
-        // TODO: draw
+        // TODO: draw found corners
         cvShowImage(wndname, image);
       }
       return;
@@ -160,6 +192,28 @@ public:
                                   ros::Time::now(), "plug_frame",
                                   "high_def_frame");
 
+    // Calculate ROI for next image request
+    if (roi_policy_ == LastImageLocation) {
+      CvPoint2D32f board_corners[4];
+      board_corners[0] = corners[0];
+      board_corners[1] = corners[board_w_ - 1];
+      board_corners[2] = corners[(board_h_ - 1) * board_w_];
+      board_corners[3] = corners[corners.size() - 1];
+      float min_x = frame_w_, min_y = frame_h_, max_x = 0, max_y = 0;
+      for (int i = 0; i < 4; ++i) {
+        min_x = std::min(min_x, board_corners[i].x);
+        min_y = std::min(min_y, board_corners[i].y);
+        max_x = std::max(max_x, board_corners[i].x);
+        max_y = std::max(max_y, board_corners[i].y);
+      }
+      CvRect outlet_roi = cvRect(min_x + 0.5f, min_y + 0.5f,
+                                 max_x - min_x + 0.5f, max_y - min_y + 0.5f);
+      outlet_roi.x += req_.region_x;
+      outlet_roi.y += req_.region_y;
+      outlet_roi = fitToFrame(resize_rect(outlet_roi, RESIZE_FACTOR_FOUND));
+      setRoi(outlet_roi);
+    }
+
     /*
     ROS_INFO("Plug: %.5f %.5f %.5f", pose_.pose.position.x,
              pose_.pose.position.y, pose_.pose.position.z);
@@ -182,7 +236,6 @@ public:
   {
     while (ok())
     {
-      req_.timeout_ms = 100;
       if (ros::service::call("/prosilica/poll", req_, res_)) {
         caminfo_cb();
         image_cb();
@@ -195,6 +248,25 @@ public:
     }
 
     return true;
+  }
+
+private:
+  CvRect fitToFrame(CvRect roi)
+  {
+    CvRect fit;
+    fit.x = std::max(roi.x, 0);
+    fit.y = std::max(roi.y, 0);
+    fit.width = std::min(roi.x + roi.width, frame_w_) - fit.x;
+    fit.height = std::min(roi.y + roi.height, frame_h_) - fit.y;
+    return fit;
+  }
+
+  inline void setRoi(CvRect roi)
+  {
+    req_.region_x = roi.x;
+    req_.region_y = roi.y;
+    req_.width = roi.width;
+    req_.height = roi.height;
   }
 };
 

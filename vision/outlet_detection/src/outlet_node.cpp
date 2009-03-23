@@ -41,6 +41,11 @@ private:
   btVector3 holes[12];
   btVector3 old_holes[12];
 
+  // TODO: policies to listen from far outlet detection, last 3d location?
+  enum { WholeFrame, LastImageLocation } roi_policy_;
+  int frame_w_, frame_h_;
+  static const float RESIZE_FACTOR = 1.2f;
+
 public:
   OutletDetector()
     : ros::Node("outlet_detector"), img_(res_.image), cam_info_(res_.cam_info),
@@ -48,6 +53,22 @@ public:
       continue_(false)
   {
     param("display", display_, true);
+
+    std::string policy;
+    param("roi_policy", policy, std::string("WholeFrame"));
+    if (policy == std::string("WholeFrame"))
+      roi_policy_ = WholeFrame;
+    else if (policy == std::string("LastImageLocation"))
+      roi_policy_ = LastImageLocation;
+    else {
+      ROS_FATAL("Unknown ROI policy setting");
+      shutdown();
+    }
+    frame_w_ = 2448; // TODO: actually get these values from somewhere
+    frame_h_ = 2050;
+
+    req_.timeout_ms = 100;
+
     if (display_) {
       cvNamedWindow(wndname, 0); // no autosize
       cvStartWindowThread();
@@ -83,6 +104,15 @@ public:
     if (!detect_outlet_tuple(image, K_, NULL, outlets)) {
       //ROS_WARN("Failed to detect outlet");
       failed_ = true;
+
+      // Expand ROI for next image
+      if (roi_policy_ == LastImageLocation) {
+        CvRect outlet_roi = cvRect(req_.region_x, req_.region_y,
+                                   req_.width, req_.height);
+        outlet_roi = fitToFrame(resize_rect(outlet_roi, RESIZE_FACTOR));
+        setRoi(outlet_roi);
+      }
+      
       if (display_)
         cvShowImage(wndname, image);
       return;
@@ -130,6 +160,18 @@ public:
                                   ros::Time::now(), "outlet_frame",
                                   "high_def_frame");
 
+    // Calculate ROI for next image request
+    if (roi_policy_ == LastImageLocation) {
+      CvRect tuple_roi[4];
+      for (int i = 0; i < 4; i++)
+        tuple_roi[i] = outlet_rect(outlets[i]);
+      CvRect outlet_roi;
+      calc_bounding_rect(4, tuple_roi, outlet_roi);
+      outlet_roi.x += req_.region_x;
+      outlet_roi.y += req_.region_y;
+      outlet_roi = fitToFrame(resize_rect(outlet_roi, RESIZE_FACTOR));
+      setRoi(outlet_roi);
+    }
     /*
     ROS_INFO("Ground TL: %.5f %.5f %.5f, Ground TR: %.5f %.5f %.5f, "
              "Ground BR: %.5f %.5f %.5f, Ground BL: %.5f %.5f %.5f",
@@ -137,6 +179,7 @@ public:
              holes[3].x(), holes[3].y(), holes[3].z(),
              holes[6].x(), holes[6].y(), holes[6].z(),
              holes[9].x(), holes[9].y(), holes[9].z());
+    
     ROS_INFO("Ground hole distances:\n\td(TL,TR) = %.2fmm\n"
              "\td(BL,BR) = %.2fmm\n\td(TL,BR) = %.2fmm\n\td(BL,TR) = %.2fmm",
              1000*holes[0].distance(holes[3]), 1000*holes[6].distance(holes[9]),
@@ -173,7 +216,6 @@ public:
   {
     while (ok())
     {
-      req_.timeout_ms = 100;
       if (ros::service::call("/prosilica/poll", req_, res_)) {
         caminfo_cb();
         image_cb();
@@ -260,6 +302,24 @@ private:
     Eigen::Vector3d normal = solver.eigenvectors().col(0);
 
     return btVector3(normal.x(), normal.y(), normal.z());
+  }
+
+  CvRect fitToFrame(CvRect roi)
+  {
+    CvRect fit;
+    fit.x = std::max(roi.x, 0);
+    fit.y = std::max(roi.y, 0);
+    fit.width = std::min(roi.x + roi.width, frame_w_) - fit.x;
+    fit.height = std::min(roi.y + roi.height, frame_h_) - fit.y;
+    return fit;
+  }
+
+  inline void setRoi(CvRect roi)
+  {
+    req_.region_x = roi.x;
+    req_.region_y = roi.y;
+    req_.width = roi.width;
+    req_.height = roi.height;
   }
 };
 
