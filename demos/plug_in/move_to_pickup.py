@@ -11,7 +11,7 @@ from robot_msgs.msg import JointTraj, JointTrajPoint, PlugStow, Point, PoseStamp
 from mechanism_control import mechanism
 from robot_mechanism_controllers.srv import *
 from pr2_mechanism_controllers.srv import *
-from robot_msgs.msg import *
+from std_msgs.msg import *
 from robot_srvs.srv import *
 
 import sys
@@ -74,7 +74,7 @@ def pickup():
   m1.header.stamp = rospy.get_rostime()
   m1.pose.position.x = 0.19#plug_location.x-0.04 #0.19
   m1.pose.position.y = 0.04#plug_location.y+0.02 #0.04
-  m1.pose.position.z = 0.26
+  m1.pose.position.z = 0.23
   m1.pose.orientation.x = -0.19
   m1.pose.orientation.y = 0.13
   m1.pose.orientation.z = 0.68
@@ -139,6 +139,9 @@ if __name__ == '__main__':
   # Load xml file for arm trajectory controllers
   path = roslib.packages.get_pkg_dir('sbpl_arm_executive')
   xml_for_traj = open(path + '/launch/xml/r_arm_trajectory_controller.xml')
+  path = roslib.packages.get_pkg_dir('plug_in')
+  xml_for_gripper = open(path + '/gripper_controller.xml')
+
   pose_config = '<controller type="CartesianTrajectoryControllerNode" name="cartesian_trajectory_right"/>'
   
 
@@ -147,6 +150,11 @@ if __name__ == '__main__':
 
     # tuck traj for left arm
     set_params()
+    mechanism.spawn_controller(xml_for_gripper.read())    
+    controllers.append('gripper_position_controller')
+    pub = rospy.Publisher("/gripper_position_controller/set_command", Float64)
+    sleep(2)
+    pub.publish(Float64(0.8))
     mechanism.spawn_controller(xml_for_traj.read())
     controllers.append('right_arm/trajectory_controller')
 
@@ -187,14 +195,15 @@ if __name__ == '__main__':
       sleep(.5)
     #sys.exit(0)
 
-    sleep(10)
+    sleep(2)
     #now pick up plug  
     resp = kill_and_spawn(pose_config, ['right_arm/trajectory_controller'])
     #mechanism.kill_controller('right_arm/trajectory_controller')
     #mechanism.spawn_controller(xml_for_pose.read())
-    controllers.append('cartesian_pose')
+    controllers.append('cartesian_trajectory_right')
     print "picking up plug"
     pickup()
+    pub.publish(Float64(0.6))
     
     rospy.spin()
     
