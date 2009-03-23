@@ -122,7 +122,7 @@ def calibrate(config):
 #
 def xml_for_cal(name, velocity, p, i, d, iClamp):
     return """
-<controller name="cal_%s" topic="cal_%s" type="JointCalibrationControllerNode">
+<controller name="cal_%s" topic="cal_%s" type="JointUDCalibrationControllerNode">
 <calibrate joint="%s_joint" actuator="%s_motor"
 transmission="%s_trans" velocity="%d" />
 <pid p="%d" i="%d" d="%d" iClamp="%d" />
@@ -183,6 +183,15 @@ if __name__ == '__main__':
     
     # Wrist and forearm calibrated with forearm_calibrator in arm_defs.xml
         
+    print "Calibrating shoulder pan" 
+    calibrate(xml_for_cal("r_shoulder_pan", 1.0, 7, 0.5, 0, 1.0))
+    hold_joint("r_shoulder_pan", 60, 10, 5, 4, holding)
+    set_controller("r_shoulder_pan_controller", float(-0.7))
+
+    calibrate(xml_for_cal("l_shoulder_pan", 1.0, 7, 0.5, 0, 1.0))
+    hold_joint("l_shoulder_pan", 60, 10, 5, 4, holding)
+    set_controller("l_shoulder_pan_controller", float(0.7))
+
     print "Calibrating elbow flex"
     calibrate(xml_for_cal("r_elbow_flex", -1.0, 6, 0.2, 0, 1) + "\n" + xml_for_cal("l_elbow_flex", -1.0, 6, 0.2, 0, 1))
     hold_joint("r_elbow_flex", 100, 20, 10, 2, holding)
@@ -213,14 +222,7 @@ if __name__ == '__main__':
     set_controller("r_shoulder_lift_controller", float(3.0))
     set_controller("l_shoulder_lift_controller", float(3.0))
 
-    print "Calibrating shoulder pan" 
-    calibrate(xml_for_cal("r_shoulder_pan", 1.0, 7, 0.5, 0, 1.0))
-    hold_joint("r_shoulder_pan", 60, 10, 5, 4, holding)
-    set_controller("r_shoulder_pan_controller", float(-0.5))
 
-    calibrate(xml_for_cal("l_shoulder_pan", 1.0, 7, 0.5, 0, 1.0))
-    hold_joint("l_shoulder_pan", 60, 10, 5, 4, holding)
-    set_controller("l_shoulder_pan_controller", float(0.5))
 
     sleep(0.5)
     print "Calibrating rest of robot"
