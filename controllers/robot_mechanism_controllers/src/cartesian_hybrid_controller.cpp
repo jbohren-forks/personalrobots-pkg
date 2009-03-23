@@ -108,20 +108,25 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
 
   control_toolbox::Pid temp_pid;
 
-  if (!temp_pid.initParam(name + "/fb_pose"))
+  if (!temp_pid.initParam(name + "/pose/fb_trans"))
     return false;
-  for (size_t i = 0; i < 6; ++i)
+  for (size_t i = 0; i < 3; ++i)
     pose_pids_[i] = temp_pid;
 
-  if (!temp_pid.initParam(name + "/fb_trans_vel"))
+  if (!temp_pid.initParam(name + "/pose/fb_rot"))
+    return false;
+  for (size_t i = 0; i < 3; ++i)
+    pose_pids_[i+3] = temp_pid;
+
+  if (!temp_pid.initParam(name + "/twist/fb_trans"))
     return false;
   for (size_t i = 0; i < 3; ++i)
     twist_pids_[i] = temp_pid;
 
-  if (!temp_pid.initParam(name + "/fb_rot_vel"))
+  if (!temp_pid.initParam(name + "/twist/fb_rot"))
     return false;
-  for (size_t i = 3; i < 6; ++i)
-    twist_pids_[i] = temp_pid;
+  for (size_t i = 0; i < 3; ++i)
+    twist_pids_[i+3] = temp_pid;
 
   if (!node->getParam(name + "/initial_mode", initial_mode_))
     initial_mode_ = robot_msgs::TaskFrameFormalism::FORCE;
@@ -158,9 +163,12 @@ void CartesianHybridController::update()
 
   // Computes the desired wrench from the command
 
-  // Caches the roll/pitch/yaw of the tool
-  double rpy[3];
-  tool.M.R.GetRPY(rpy[0], rpy[1], rpy[2]);
+  // Computes the rotational error
+  KDL::Vector rot_error_ = diff(KDL::Rotation::EulerZYX(
+                                  mode_[3] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[3] : 0.0,
+                                  mode_[4] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[4] : 0.0,
+                                  mode_[5] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[5] : 0.0),
+                                tool.M.R);
 
   for (int i = 0; i < 6; ++i)
   {
@@ -168,21 +176,24 @@ void CartesianHybridController::update()
     wrench_desi_[i] = 0;
     pose_desi_[i] = 0;
 
-    double setpoint = setpoint_[i];
+    //double setpoint = setpoint_[i];
     switch(mode_[i])
     {
     case robot_msgs::TaskFrameFormalism::POSITION:
-      pose_desi_[i] = setpoint;
-      if (i < 3) // Translational position
-        setpoint = pose_pids_[i].updatePid(tool.p.p[i] - setpoint, dt);
-      else // Rotational position
-        //setpoint = pose_pids_[i].updatePid(angles::shortest_angular_distance(rpy[i - 3], setpoint), dt);
-        setpoint = pose_pids_[i].updatePid(angles::shortest_angular_distance(setpoint, rpy[i - 3]), dt);
+      pose_desi_[i] = setpoint_[i];
+      if (i < 3) { // Translational position
+        wrench_desi_[i] = pose_pids_[i].updatePid(tool.p.p[i] - setpoint_[i], -tool.GetTwist()[i], dt);
+      }
+      else { // Rotational position
+        wrench_desi_[i] = pose_pids_[i].updatePid(rot_error_[i - 3], dt);
+      }
+      break;
     case robot_msgs::TaskFrameFormalism::VELOCITY:
-      twist_desi_[i] = setpoint;
-      setpoint = twist_pids_[i].updatePid(tool.GetTwist()[i] - setpoint, dt);
+      twist_desi_[i] = setpoint_[i];
+      wrench_desi_[i] = twist_pids_[i].updatePid(tool.GetTwist()[i] - setpoint_[i], dt);
+      break;
     case robot_msgs::TaskFrameFormalism::FORCE:
-      wrench_desi_[i] = setpoint;
+      wrench_desi_[i] = setpoint_[i];
       break;
     default:
       abort();
