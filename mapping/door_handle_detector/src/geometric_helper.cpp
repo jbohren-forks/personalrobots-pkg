@@ -348,6 +348,9 @@ void
   // Compute the mean and standard deviation of the distribution in the second dimension space
   cloud_geometry::statistics::getChannelMeanStd (points, indices, d_idx_2, mean_2, stddev_2);
 
+  //for (int i = 0; i < indices->size (); i++)
+  //  std::cout << points->chan[d_idx_1].vals[indices->at (i)] << " " << points->chan[d_idx_2].vals[indices->at (i)] << std::endl;
+
   // (Chebyshev's inequality: at least 98% of the values are within 7 standard deviations from the mean)
   vector<int> alpha_vals_1 (71), alpha_vals_2 (71);
   int nr_a = 0;
@@ -363,6 +366,10 @@ void
   }
   alpha_vals_1.resize (nr_a);
   alpha_vals_2.resize (nr_a);
+
+  //std::cout << "---------------------------" << endl;
+  //for (int i = 0; i < alpha_vals_1.size (); i++)
+  //  std::cout  << alpha_vals_1[i] << " " << alpha_vals_2[i] << std::endl;
 
   // Compute the trimean of the distribution
   double trimean_1, trimean_2;
@@ -686,7 +693,7 @@ void
     points_down.chan[0].vals[i] = plane_parameters (0);
     points_down.chan[1].vals[i] = plane_parameters (1);
     points_down.chan[2].vals[i] = plane_parameters (2);
-    points_down.chan[3].vals[i] = fabs (plane_parameters (3));
+    points_down.chan[3].vals[i] = curvature;//fabs (plane_parameters (3));
   }
   // Delete the kd-tree
   delete kdtree;
@@ -756,7 +763,7 @@ void
     points->chan[old_channel_size + 0].vals[point_indices->at (i)] = plane_parameters (0);
     points->chan[old_channel_size + 1].vals[point_indices->at (i)] = plane_parameters (1);
     points->chan[old_channel_size + 2].vals[point_indices->at (i)] = plane_parameters (2);
-    points->chan[old_channel_size + 3].vals[point_indices->at (i)] = fabs (plane_parameters (3));
+    points->chan[old_channel_size + 3].vals[point_indices->at (i)] = curvature; //fabs (plane_parameters (3));
   }
   // Delete the kd-tree
   delete kdtree;
@@ -823,7 +830,7 @@ void
     points_down.chan[0].vals[i] = plane_parameters (0);
     points_down.chan[1].vals[i] = plane_parameters (1);
     points_down.chan[2].vals[i] = plane_parameters (2);
-    points_down.chan[3].vals[i] = fabs (plane_parameters (3));
+    points_down.chan[3].vals[i] = curvature;//fabs (plane_parameters (3));
   }
   // Delete the kd-tree
   delete kdtree;
