@@ -39,6 +39,7 @@
 #include "control_toolbox/pid.h"
 #include <tf/transform_listener.h>
 #include "realtime_tools/realtime_publisher.h"
+#include "filters/filter_chain.h"
 
 #include "robot_srvs/SetPoseStamped.h"
 #include "robot_msgs/TaskFrameFormalism.h"
@@ -78,6 +79,9 @@ public:
   double last_time_;
 
   int initial_mode_;
+
+  bool use_filter_;
+  filters::FilterChain<double> twist_filter_;
 };
 
 class CartesianHybridControllerNode : public Controller

@@ -72,7 +72,7 @@ void WrenchKDLToMsg(const KDL::Wrench &k, robot_msgs::Wrench &m)
 }
 
 CartesianHybridController::CartesianHybridController()
-  : robot_(NULL), last_time_(0)
+  : robot_(NULL), last_time_(0), use_filter_(false)
 {
 }
 
@@ -128,6 +128,31 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
   for (size_t i = 0; i < 3; ++i)
     twist_pids_[i+3] = temp_pid;
 
+  // Filter
+
+  if (node->hasParam(name + "/twist_filter"))
+  {
+    use_filter_ = true;
+    std::string filter_xml;
+    node->getParam(name + "/twist_filter", filter_xml);
+
+    TiXmlDocument doc;
+    doc.Parse(filter_xml.c_str());
+    if (!doc.RootElement())
+    {
+      ROS_ERROR("%s: Could not parse twist_filter xml", name.c_str());
+      return false;
+    }
+
+    if (!twist_filter_.configure(6, doc.RootElement()))
+      return false;
+    ROS_INFO("%s: Successfully configured twist_filter", name.c_str());
+  }
+  else
+    use_filter_ = false;
+
+  // Initial mode
+
   if (!node->getParam(name + "/initial_mode", initial_mode_))
     initial_mode_ = robot_msgs::TaskFrameFormalism::FORCE;
 
@@ -164,11 +189,28 @@ void CartesianHybridController::update()
   // Computes the desired wrench from the command
 
   // Computes the rotational error
-  KDL::Vector rot_error_ = diff(KDL::Rotation::EulerZYX(
-                                  mode_[3] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[3] : 0.0,
-                                  mode_[4] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[4] : 0.0,
-                                  mode_[5] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[5] : 0.0),
-                                tool.M.R);
+  KDL::Vector rot_error =
+    diff(KDL::Rotation::EulerZYX(
+           mode_[3] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[3] : 0.0,
+           mode_[4] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[4] : 0.0,
+           mode_[5] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[5] : 0.0),
+         tool.M.R);
+
+  // Computes the filtered twist
+  KDL::Twist twist_meas_filtered;
+  if (use_filter_)
+  {
+    std::vector<double> tmp_twist(6);
+    for (size_t i = 0; i < 6; ++i)
+      tmp_twist[i] = twist_meas_[i];
+    twist_filter_.update(tmp_twist, tmp_twist);
+    for (size_t i = 0; i < 6; ++i)
+      twist_meas_filtered[i] = tmp_twist[i];
+  }
+  else
+  {
+    twist_meas_filtered = twist_meas_;
+  }
 
   for (int i = 0; i < 6; ++i)
   {
@@ -176,17 +218,18 @@ void CartesianHybridController::update()
     wrench_desi_[i] = 0;
     pose_desi_[i] = 0;
 
-    //double setpoint = setpoint_[i];
     switch(mode_[i])
     {
     case robot_msgs::TaskFrameFormalism::POSITION:
       pose_desi_[i] = setpoint_[i];
       if (i < 3) { // Translational position
-        wrench_desi_[i] = pose_pids_[i].updatePid(tool.p.p[i] - setpoint_[i], -tool.GetTwist()[i], dt);
+        wrench_desi_[i] = pose_pids_[i].updatePid(tool.p.p[i] - setpoint_[i], twist_meas_filtered[i], dt);
       }
       else { // Rotational position
-        wrench_desi_[i] = pose_pids_[i].updatePid(rot_error_[i - 3], dt);
+        wrench_desi_[i] = pose_pids_[i].updatePid(rot_error[i - 3], twist_meas_filtered[i], dt);
       }
+      //if ((int(time*10.0) % 10) == 0)
+        ROS_ERROR("rot_error = %.3lf, %.3lf, %.3lf", rot_error(0), rot_error(1), rot_error(2));
       break;
     case robot_msgs::TaskFrameFormalism::VELOCITY:
       twist_desi_[i] = setpoint_[i];
@@ -247,6 +290,10 @@ bool CartesianHybridController::starting()
       setpoint_[i] = frame.p.p[i];
     }
     frame.M.R.GetRPY(setpoint_[3], setpoint_[4], setpoint_[5]);
+
+    ROS_INFO("Starting pose: (%.2lf, %.2lf, %.2lf)  (%.3lf, %.3lf, %.3lf)",
+             setpoint_[0], setpoint_[1], setpoint_[2],
+             setpoint_[3], setpoint_[4], setpoint_[5]);
     break;
   }
   case robot_msgs::TaskFrameFormalism::VELOCITY:
