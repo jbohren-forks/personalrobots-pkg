@@ -1,6 +1,6 @@
 <launch>
   <group ns="prosilica">
-    <include file="cam_settings.xml"/>
+    <include file="$(find prosilica_cam)/cam_settings.xml"/>
     <param name="acquisition_mode" type="str" value="Triggered"/>
   </group>
   <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="false"/>
