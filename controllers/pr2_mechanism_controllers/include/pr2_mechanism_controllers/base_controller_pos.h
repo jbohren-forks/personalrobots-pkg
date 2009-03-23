@@ -300,6 +300,10 @@ namespace controller
 
     private:
 
+    double max_acceleration_;
+
+    double max_dirn_change_rate_;
+
     std::vector<double> odometry_residuals_vector_;
 
     bool new_cmd_available_; /** true when new command received by node */

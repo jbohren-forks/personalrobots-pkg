@@ -63,6 +63,9 @@ BaseControllerPos::BaseControllerPos() : num_wheels_(0), num_casters_(0)
    max_accel_.y = 0.1;
    max_accel_.z = 0.1;
 
+   max_acceleration_ = 15.0;
+   max_dirn_change_rate_ = 15.0;
+
    cmd_vel_.x = 0;
    cmd_vel_.y = 0;
    cmd_vel_.z = 0;
@@ -82,6 +85,8 @@ BaseControllerPos::BaseControllerPos() : num_wheels_(0), num_casters_(0)
 
    cmd_vel_trajectory_ = new trajectory::Trajectory(4);
 
+   cmd_vel_trajectory_->autocalc_timing_ = true;
+
    cmd_vel_points_.resize(2);
    for(int i=0; i< 2; i++)
    {
@@ -90,6 +95,7 @@ BaseControllerPos::BaseControllerPos() : num_wheels_(0), num_casters_(0)
       cmd_vel_points_[i].time_ = 0.0;
    }
    cmd_vel_trajectory_->setTrajectory(cmd_vel_points_);
+
    current_vel_point_.setDimension(4);
 
    kp_speed_ = KP_SPEED_DEFAULT;
@@ -305,6 +311,9 @@ bool BaseControllerPos::initXml(mechanism::RobotState *robot_state, TiXmlElement
   addParamToMap("max_y_accel",&(max_accel_.y));
   addParamToMap("max_yaw_accel",&(max_accel_.z));
 
+  addParamToMap("max_accel",&(max_acceleration_));
+  addParamToMap("max_dirn_change_rate",&(max_dirn_change_rate_));
+
   elt = config->FirstChildElement("map");
 
   while(elt)
@@ -323,6 +332,17 @@ bool BaseControllerPos::initXml(mechanism::RobotState *robot_state, TiXmlElement
   }
 
 
+   std::vector<double> velocity_limits;
+   velocity_limits.push_back(max_dirn_change_rate_);
+   velocity_limits.push_back(max_dirn_change_rate_);
+   velocity_limits.push_back(max_dirn_change_rate_);
+   velocity_limits.push_back(max_acceleration_);
+
+  cmd_vel_trajectory_->setMaxRates(velocity_limits);
+  cmd_vel_trajectory_->setInterpolationMethod("linear");
+
+
+
   ROS_INFO("BaseControllerPos:: kp_speed %f",kp_speed_);
   ROS_INFO("BaseControllerPos:: kp_caster_steer  %f",caster_steer_vel_gain_);
   ROS_INFO("BaseControllerPos:: timeout %f",timeout_);
@@ -332,6 +352,8 @@ bool BaseControllerPos::initXml(mechanism::RobotState *robot_state, TiXmlElement
   ROS_INFO("BaseControllerPos:: max_x_accel %f",(max_accel_.x));
   ROS_INFO("BaseControllerPos:: max_y_accel %f",(max_accel_.y));
   ROS_INFO("BaseControllerPos:: max_yaw_accel %f",(max_accel_.z));
+  ROS_INFO("BaseControllerPos:: max_dirn_change_rate %f",(max_dirn_change_rate_));
+  ROS_INFO("BaseControllerPos:: max_accel %f",(max_acceleration_));
 
   init(jcp_vec,robot_state);
 
@@ -480,7 +502,7 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
    double new_cmd_mag = sqrt(new_cmd.x*new_cmd.x+new_cmd.y*new_cmd.y+new_cmd.z*new_cmd.z);
    libTF::Vector new_vel_direction;
    double dot_direction(0), delta_direction(0), delta_direction_m_pi(0);
-
+   double epsilon_direction_difference(0.2);
    if(max_rate.x > EPS)
       dt_min_x = fabs(new_cmd.x-cmd_vel_.x)/max_rate.x;
    if(max_rate.y > EPS)
@@ -499,6 +521,8 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
    cmd_vel_points_[0].q_[3] = cmd_vel_magnitude_;
    cmd_vel_points_[0].time_ = 0.0;
 
+
+
    if(new_cmd_mag > EPS)
    {
       new_vel_direction.x = new_cmd.x/new_cmd_mag;
@@ -515,6 +539,13 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
        new_vel_direction.z = -new_vel_direction.z;
        new_cmd_mag = new_cmd.x*new_vel_direction.x + new_cmd.y*new_vel_direction.y + new_cmd.z*new_vel_direction.z;
      } 
+     if(fabs(cmd_vel_magnitude_) < EPS)
+     {
+       if(fabs(new_vel_direction.x - cmd_vel_direction_.x) > epsilon_direction_difference || fabs(new_vel_direction.y - cmd_vel_direction_.y) >  epsilon_direction_difference  || fabs(new_vel_direction.z - cmd_vel_direction_.z) >  epsilon_direction_difference)
+       {
+         new_cmd_mag = 0.0;
+       }
+     }
    }
    else
    {
@@ -528,7 +559,8 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
    cmd_vel_points_[1].q_[1] = new_vel_direction.y;
    cmd_vel_points_[1].q_[2] = new_vel_direction.z;
    cmd_vel_points_[1].q_[3] = new_cmd_mag;
-   cmd_vel_points_[1].time_ = dt;
+//   cmd_vel_points_[1].time_ = dt;
+   cmd_vel_points_[1].time_ = 0.0;
 
    cmd_vel_trajectory_->setTrajectory(cmd_vel_points_);
 
