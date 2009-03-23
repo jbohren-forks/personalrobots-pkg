@@ -321,6 +321,12 @@ public:
 };
 
 %extend btVector3 {
+  char * __str__()
+  {
+    static char temp[256];
+    sprintf(temp, "[%f, %f, %f]", self->getX(), self->getY(), self->getZ());
+    return &temp[0];
+  }
 
 /**@brief Return the sum of two vectors (Point symantics)*/
 SIMD_FORCE_INLINE btVector3 
