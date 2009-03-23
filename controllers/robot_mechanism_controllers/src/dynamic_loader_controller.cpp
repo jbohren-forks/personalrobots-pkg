@@ -41,19 +41,19 @@
 
 namespace controller {
 
-ROS_REGISTER_CONTROLLER(DynamicLoaderControllerNode)
+ROS_REGISTER_CONTROLLER(DynamicLoaderController)
 
-DynamicLoaderControllerNode::DynamicLoaderControllerNode() : handle_(0)
+DynamicLoaderController::DynamicLoaderController() : handle_(0)
 {
 }
 
-DynamicLoaderControllerNode::~DynamicLoaderControllerNode()
+DynamicLoaderController::~DynamicLoaderController()
 {
   // Shutdown controller cleanly
-  boost::thread killThread(boost::bind(DynamicLoaderControllerNode::unloadLibrary, names_, handle_));
+  boost::thread killThread(boost::bind(DynamicLoaderController::unloadLibrary, names_, handle_));
 }
 
-void DynamicLoaderControllerNode::unloadLibrary(std::vector<std::string> names, lt_dlhandle handle)
+void DynamicLoaderController::unloadLibrary(std::vector<std::string> names, lt_dlhandle handle)
 {
   robot_srvs::KillController::Request req;
   robot_srvs::KillController::Response resp;
@@ -67,7 +67,7 @@ void DynamicLoaderControllerNode::unloadLibrary(std::vector<std::string> names, 
   lt_dlclose(handle);
 }
 
-void DynamicLoaderControllerNode::loadLibrary(std::string &xml)
+void DynamicLoaderController::loadLibrary(std::string &xml)
 {
   robot_srvs::SpawnController::Request req;
   robot_srvs::SpawnController::Response resp;
@@ -81,17 +81,17 @@ void DynamicLoaderControllerNode::loadLibrary(std::string &xml)
   }
 }
 
-bool DynamicLoaderControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool DynamicLoaderController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   std::string package = config->Attribute("package") ? config->Attribute("package") : "";
   if (package == "") {
-    ROS_ERROR("No package given to DynamicLoaderControllerNode");
+    ROS_ERROR("No package given to DynamicLoaderController");
     return false;
   }
 
   std::string lib = config->Attribute("lib") ? config->Attribute("lib") : "";
   if (lib == "") {
-    ROS_ERROR("No lib given to DynamicLoaderControllerNode");
+    ROS_ERROR("No lib given to DynamicLoaderController");
     return false;
   }
 
@@ -126,13 +126,13 @@ bool DynamicLoaderControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   if (controller) {
     std::stringstream str;
     str << *controller;
-    boost::thread spawnThread(boost::bind(&DynamicLoaderControllerNode::loadLibrary, this, str.str()));
+    boost::thread spawnThread(boost::bind(&DynamicLoaderController::loadLibrary, this, str.str()));
   }
 
   return true;
 }
 
-void DynamicLoaderControllerNode::update()
+void DynamicLoaderController::update()
 {
 }
 

@@ -39,14 +39,64 @@
 
 namespace controller {
 
+/***************************************************/
+/*! \class controller::DynamicLoaderController
+    \brief Dynamic Loader
 
-class DynamicLoaderControllerNode :  public Controller
+    This class implements a pseudo-controller that can dynamically
+    load a package's shared object and instantiate controllers from
+    that shared object.
+
+    When the DynamicLoaderController is killed, it shuts down the
+    controllers that it started and unloads the shared object.
+
+    Example configuration:
+    <pre>
+      <controller name="dynamic_loader" type="DynamicLoaderController"
+                  package="my_controllers" lib="libmy_controllers">
+
+        <controllers>
+
+          <controller type="MyController" name="my_controller1">
+            <joint name="joint_to_control" />
+          </controller><br>
+
+          <controller type="MyController" name="my_controller2">
+            <joint name="another_joint_to_control" />
+          </controller><br>
+
+        </controllers>
+
+      </controller>
+    </pre>
+
+    The above example creates an instance of the DynamicLoaderController
+    that loads the shared object libmy_controllers.so from the
+    my_controllers package.  It then instantiates two controllers,
+    my_controller1 and my_controller2, from that shared object.
+    When the DynamicLoaderController is killed, it will kill the two
+    controllers it started and unload the libmy_controllers.so shared object.
+
+*/
+/***************************************************/
+
+class DynamicLoaderController :  public Controller
 {
 public:
-  DynamicLoaderControllerNode();
-  ~DynamicLoaderControllerNode();
+  DynamicLoaderController();
+  ~DynamicLoaderController();
 
+   /*!
+   * \brief Specifies the package and shared object to load.
+   * \param *robot The robot (not used by this controller).
+   * \param *config The XML configuration for this controller
+   */
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+
+   /*!
+   * \brief This function is called in the control loop.  For this
+   * pseudo-controller, the update function is a noop.
+   */
   void update();
 
 private:
@@ -56,7 +106,6 @@ private:
   void loadLibrary(std::string& xml);
   static void unloadLibrary(std::vector<std::string> names, lt_dlhandle handle);
 };
-
 
 }
 
