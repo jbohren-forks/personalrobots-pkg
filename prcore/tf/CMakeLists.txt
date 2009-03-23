@@ -11,6 +11,9 @@ gensrv()
 rospack_add_library(tf src/tf.cpp src/transform_listener.cpp src/cache.cpp src/message_notifier.cpp)
 rospack_link_boost(tf thread)
 
+rospack_add_executable(tf_echo src/tf_echo.cpp)
+target_link_libraries(tf_echo tf)
+
 rospack_add_executable(simpletest simpletest.cpp)
 target_link_libraries(simpletest tf)
 #rospack_add_executable(testtf src/test/testtf.cc)
