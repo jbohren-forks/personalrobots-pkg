@@ -77,6 +77,7 @@ public:
   std::vector<Transmission*> transmissions_;
   std::vector<Joint*> joints_;
   std::vector<Link*> links_;
+  std::string resource_location_;
 
   // All return -1 on failure.
   int getJointIndex(const std::string &name);
@@ -92,6 +93,8 @@ public:
 
   // For debugging
   void printLinkTree();
+
+  const std::string& getResourceLocation() { return resource_location_; }
 };
 
 class RobotState

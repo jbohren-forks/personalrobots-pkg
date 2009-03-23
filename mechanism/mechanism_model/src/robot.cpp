@@ -90,6 +90,17 @@ bool Robot::initXml(TiXmlElement *root)
       delete link;
   }
 
+  // Grab the resource location
+  xit = root->FirstChildElement("resource");
+  if (xit)
+  {
+    const char *loc = xit->Attribute("location");
+    if (loc)
+    {
+      resource_location_ = loc;
+    }
+  }
+
   /// @todo add checks here to see if MCN is setup correctly, or have a good viewer
 
   return true;
