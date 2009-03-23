@@ -85,15 +85,15 @@ void init()
 {
   CHECK_ERR( PvInitialize(), "Failed to initialize Prosilica API" );
 
+  // Spend up to 1s trying to find a camera. Finding no camera is not
+  // an error; the user may still be able open one by IP address.
   for (int tries = 0; tries < 5; ++tries)
   {
     cameraNum = PvCameraList(cameraList, MAX_CAMERA_LIST, NULL);
     if (cameraNum)
       return;
-    usleep(1000000);
+    usleep(200000);
   }
-
-  //throw ProsilicaException("Timed out looking for a camera");
   
   // TODO: Callbacks for add/remove camera?
 }
@@ -339,12 +339,10 @@ void Camera::writeUserMemory(const char* data, size_t size)
 {
   assert(size <= USER_MEMORY_SIZE);
 
-  unsigned char buffer[USER_MEMORY_SIZE];
-  unsigned long written;
-  
-  memset(buffer, 0, USER_MEMORY_SIZE);
+  unsigned char buffer[USER_MEMORY_SIZE] = {0};
   memcpy(buffer, data, size);
-  
+
+  unsigned long written;
   CHECK_ERR( PvMemoryWrite(handle_, USER_ADDRESS, USER_MEMORY_SIZE, buffer, &written),
              "Couldn't write to user memory" );
 }

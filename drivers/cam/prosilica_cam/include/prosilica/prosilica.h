@@ -75,7 +75,7 @@ enum AutoSetting
 class Camera
 {
 public:
-  static const size_t DEFAULT_BUFFER_SIZE = 8;
+  static const size_t DEFAULT_BUFFER_SIZE = 4;
   
   Camera(unsigned long guid, size_t bufferSize = DEFAULT_BUFFER_SIZE);
   Camera(const char* ip_address, size_t bufferSize = DEFAULT_BUFFER_SIZE);

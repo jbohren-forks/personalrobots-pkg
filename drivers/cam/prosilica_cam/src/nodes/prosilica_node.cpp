@@ -421,6 +421,13 @@ private:
       memcpy((char*)(&cam_info.K[0]), (char*)K_, sizeof(K_));
       memcpy((char*)(&cam_info.R[0]), (char*)R_, sizeof(R_));
       memcpy((char*)(&cam_info.P[0]), (char*)P_, sizeof(P_));
+
+      // If using ROI, need to translate principal point
+      if (frame->RegionX != 0 || frame->RegionY != 0) {
+        cam_info.K[2] -= frame->RegionX; //cx
+        cam_info.K[5] -= frame->RegionY; //cy
+        // TODO: cam_info.P
+      }
     }
 
     return true;
