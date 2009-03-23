@@ -100,8 +100,10 @@ public:
       }
     }
 
-    plug_in_board_.getOrigin().setValue(0.003, -0.01, 0.005);
-    plug_in_board_.getBasis().setValue(0, -1, 0, -1, 0, 0, 0, 0, -1);
+    //plug_in_board_.getOrigin().setValue(0.003, -0.01, 0.005);
+    //plug_in_board_.getBasis().setValue(0, -1, 0, -1, 0, 0, 0, 0, -1);
+    plug_in_board_.getOrigin().setValue(0.00398, -0.01252, 0.00659);
+    plug_in_board_.setRotation(btQuaternion(-0.70607, 0.70787, 0.01876, -0.00651));
     camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
     camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
 
@@ -183,6 +185,7 @@ public:
 
     // Plug pose in the camera frame
     tf::Transform plug_in_camera = camera_in_cvcam_ * board_in_cvcam * plug_in_board_;
+    //tf::Transform plug_in_camera = board_in_cvcam; // for calibration only!!
 
     tf::PoseTFToMsg(plug_in_camera, pose_.pose);
     pose_.header.frame_id = "high_def_frame";
@@ -213,12 +216,10 @@ public:
       outlet_roi = fitToFrame(resize_rect(outlet_roi, RESIZE_FACTOR_FOUND));
       setRoi(outlet_roi);
     }
-
     /*
     ROS_INFO("Plug: %.5f %.5f %.5f", pose_.pose.position.x,
              pose_.pose.position.y, pose_.pose.position.z);
     */
-
     if (display_) {
       if (!display_img_ || display_img_->width != image->width ||
           display_img_->height != image->height) {

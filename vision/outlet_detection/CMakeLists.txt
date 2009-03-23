@@ -23,6 +23,8 @@ target_link_libraries(outlet_node outlet)
 
 rospack_add_executable(plug_node src/plug_node.cpp src/cvcalibinit.cpp)
 
+#rospack_add_executable(calibrate_plug src/calibrate_plug.cpp)
+
 #rospack_add_executable(bin/useChessBoard src/useChessBoard.cpp)
 #rospack_add_executable(bin/templateMatching src/templateMatching.cpp)
 #rospack_add_library(blob cvblobslib/Blob.cpp cvblobslib/BlobResult.cpp cvblobslib/BlobExtraction.cpp)
