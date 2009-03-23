@@ -245,8 +245,11 @@ public:
   */
   bool PoseDiscToCont(int ix, int iy, int ith,
 		      double &px, double &py, double &pth) const;
-  
- private:
+
+ protected:
+
+  virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
+
 
 	//member data
 	EnvNAVXYTHETALATConfig_t EnvNAVXYTHETALATCfg;
@@ -295,7 +298,6 @@ public:
 	void CalculateFootprintForPose(EnvNAVXYTHETALAT3Dpt_t pose, vector<sbpl_2Dcell_t>* footprint);
 	void RemoveSourceFootprint(EnvNAVXYTHETALAT3Dpt_t sourcepose, vector<sbpl_2Dcell_t>* footprint);
 
-	int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
 	void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<EnvNAVXYTHETALATAction_t*>* actionindV=NULL);
 
 	double EuclideanDistance_m(int X1, int Y1, int X2, int Y2);

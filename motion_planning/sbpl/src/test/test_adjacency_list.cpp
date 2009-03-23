@@ -7,7 +7,7 @@ struct Point2D
 {
   Point2D(int newX, int newY) : x(newX), y(newY) {}
 
-  int heuristicDistanceTo (const Point2D& p) { int dx=p.x-x; int dy=p.y-y; int dist=(sqrt(dx*dx+dy*dy));  return dist; }
+  int heuristicDistanceTo (const Point2D& p) { int dx=p.x-x; int dy=p.y-y; int dist=((int)sqrt(dx*dx+dy*dy));  return dist; }
 
   int x;
   int y;
