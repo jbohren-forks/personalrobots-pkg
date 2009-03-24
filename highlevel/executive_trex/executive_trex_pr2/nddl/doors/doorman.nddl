@@ -1,0 +1,6 @@
+#include "doors/imports.nddl"
+
+// Internal
+MoveBehavior doorman = new MoveBehavior(Internal, true);
+DoorController door_controller = new DoorController(Internal);
+DoorState door_state = new DoorState(Internal);

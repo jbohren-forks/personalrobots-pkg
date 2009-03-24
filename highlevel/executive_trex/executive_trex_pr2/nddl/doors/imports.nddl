@@ -1,0 +1,23 @@
+// Subsystems
+#include "TREX.nddl"
+#include "rcs/nav/exports.nddl"
+#include "rcs/doors/exports.nddl"
+#include "safety/exports.nddl"
+#include "nav/nav.nddl"
+#include "world_model/topological_map.nddl"
+
+// Safety
+MobilityStatus mobility_status = new MobilityStatus(External);
+
+// External RCS state variables
+BaseState base_state = new BaseState(External);
+
+// External RCS Highlevel controllers
+MoveBase move_base = new MoveBase(External);
+ReleaseDoor release_door = new ReleaseDoor(External);
+OpenDoorWithGrasp open_door = new OpenDoorWithGrasp(External);
+GraspHandle grasp_handle = new GraspHandle(External);
+OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
+DetectDoor detect_door = new DetectDoor(External);
+CheckDoorway check_doorway = new CheckDoorway(External);
+NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
