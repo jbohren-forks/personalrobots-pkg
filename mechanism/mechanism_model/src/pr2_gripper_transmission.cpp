@@ -121,17 +121,17 @@ void PR2GripperTransmission::propagatePosition(
   // below transforms from encoder value to gap size, based on 090224_link_data.xls provided by Functions Engineering
   //
   double actuator_angle = as[0]->state_.position_ * gap_mechanical_reduction_; // motor revs
-  double arg            = (coef_a*coef_a+coef_b*coef_b-pow(L0+actuator_angle*screw_reduction/gear_ratio,2))/(2.0*coef_a*coef_b);
-  double theta          = angles::from_degrees(theta0 - phi0) + acos(arg);
-  double gap_size_mm    = t0 + coef_r * ( sin(theta) - sin(theta0) ); // in mm
-  double gap_size       = gap_size_mm * mm2m; // in meters
+  double arg            = (coef_a_*coef_a_+coef_b_*coef_b_-pow(L0_+actuator_angle*screw_reduction_/gear_ratio_,2))/(2.0*coef_a_*coef_b_);
+  double theta          = angles::from_degrees(theta0_ - phi0_) + acos(arg);
+  double gap_size_mm    = t0_ + coef_r_ * ( sin(theta) - sin(theta0_) ); // in mm
+  double gap_size       = gap_size_mm * mm2m_; // in meters
 
   //
   // based on similar transforms, get the velocity of the gripper gap size based on encoder velocity
   //
   double actuator_velocity   = as[0]->state_.velocity_ * gap_mechanical_reduction_; // revs per sec
-  double arg_dot             = -(L0 * screw_reduction)/(gear_ratio*coef_a*coef_b) // d(arg)/d(actuator_angle)
-                               -screw_reduction*actuator_angle*pow(screw_reduction/gear_ratio,2);
+  double arg_dot             = -(L0_ * screw_reduction_)/(gear_ratio_*coef_a_*coef_b_) // d(arg)/d(actuator_angle)
+                               -screw_reduction_*actuator_angle*pow(screw_reduction_/gear_ratio_,2);
   double theta_dot           = -1.0/sqrt(1.0-pow(arg,2)) * arg_dot; // derivative of acos
   double gap_velocity        = actuator_velocity * theta_dot;
 
@@ -160,7 +160,7 @@ void PR2GripperTransmission::propagatePosition(
       if (it != passive_joints_.end())
       {
         // assign passive joints
-        js[i]->position_       = theta - theta0 ;
+        js[i]->position_       = theta - theta0_ ;
         js[i]->velocity_       = theta_dot      ;
         js[i]->applied_effort_ = theta_effort      ;
         std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " is a passive joint " << std::endl;
@@ -210,10 +210,10 @@ void PR2GripperTransmission::propagatePositionBackwards(
   double avg_joint_torque = mean_joint_torque / count;
 
   // now do the difficult reverse transform
-  double theta          = theta0 + avg_joint_angle; // should we filter this value?
-  double arg            = sqrt(2.0*coef_a*coef_b*cos(theta-theta0+phi0)+coef_h*coef_h-coef_a*coef_a-coef_b*coef_b);
-  double actuator_angle = -gear_ratio/screw_reduction * ( L0 + arg );
-  double dMR_dtheta     =   gear_ratio / (2.0 * screw_reduction) / arg * 2.0 * coef_a * coef_b * sin(theta + phi0 - theta0);
+  double theta          = theta0_ + avg_joint_angle; // should we filter this value?
+  double arg            = sqrt(2.0*coef_a_*coef_b_*cos(theta-theta0_+phi0_)+coef_h_*coef_h_-coef_a_*coef_a_-coef_b_*coef_b_);
+  double actuator_angle = -gear_ratio_/screw_reduction_ * ( L0_ + arg );
+  double dMR_dtheta     =  gear_ratio_/(2.0 * screw_reduction_) / arg * 2.0 * coef_a_ * coef_b_ * sin(theta + phi0_ - theta0_);
 
   as[0]->state_.position_             = actuator_angle                / gap_mechanical_reduction_;
   as[0]->state_.velocity_             = avg_joint_rate   * dMR_dtheta / gap_mechanical_reduction_;
@@ -250,9 +250,9 @@ void PR2GripperTransmission::propagateEffort(
   double avg_joint_angle  = mean_joint_angle  / count;
 
   // now do the difficult reverse transform
-  double theta          = theta0 + avg_joint_angle; // should we filter this value?
-  double arg            = sqrt(2.0*coef_a*coef_b*cos(theta-theta0+phi0)+coef_h*coef_h-coef_a*coef_a-coef_b*coef_b);
-  double dMR_dtheta     =   gear_ratio / (2.0 * screw_reduction) / arg * 2.0 * coef_a * coef_b * sin(theta + phi0 - theta0);
+  double theta          = theta0_ + avg_joint_angle; // should we filter this value?
+  double arg            = sqrt(2.0*coef_a_*coef_b_*cos(theta-theta0_+phi0_)+coef_h_*coef_h_-coef_a_*coef_a_-coef_b_*coef_b_);
+  double dMR_dtheta     = gear_ratio_/(2.0 * screw_reduction_) / arg * 2.0 * coef_a_ * coef_b_ * sin(theta + phi0_ - theta0_);
 
 
   // get the gap commanded effort
@@ -280,17 +280,17 @@ void PR2GripperTransmission::propagateEffortBackwards(
   // below transforms from encoder value to gap size, based on 090224_link_data.xls provided by Functions Engineering
   //
   double actuator_angle = as[0]->state_.position_ * gap_mechanical_reduction_; // motor revs
-  double arg            = (coef_a*coef_a+coef_b*coef_b-pow(L0+actuator_angle*screw_reduction/gear_ratio,2))/(2.0*coef_a*coef_b);
-  double theta          = angles::from_degrees(theta0 - phi0) + acos(arg);
-  double gap_size_mm    = t0 + coef_r * ( sin(theta) - sin(theta0) ); // in mm
-  double gap_size       = gap_size_mm * mm2m; // in meters
+  double arg            = (coef_a_*coef_a_+coef_b_*coef_b_-pow(L0_+actuator_angle*screw_reduction_/gear_ratio_,2))/(2.0*coef_a_*coef_b_);
+  double theta          = angles::from_degrees(theta0_ - phi0_) + acos(arg);
+  double gap_size_mm    = t0_ + coef_r_ * ( sin(theta) - sin(theta0_) ); // in mm
+  double gap_size       = gap_size_mm * mm2m_; // in meters
 
   //
   // based on similar transforms, get the velocity of the gripper gap size based on encoder velocity
   //
   double actuator_velocity   = as[0]->state_.velocity_ * gap_mechanical_reduction_; // revs per sec
-  double arg_dot             = -(L0 * screw_reduction)/(gear_ratio*coef_a*coef_b) // d(arg)/d(actuator_angle)
-                               -screw_reduction*actuator_angle*pow(screw_reduction/gear_ratio,2);
+  double arg_dot             = -(L0_ * screw_reduction_)/(gear_ratio_*coef_a_*coef_b_) // d(arg)/d(actuator_angle)
+                               -screw_reduction_*actuator_angle*pow(screw_reduction_/gear_ratio_,2);
   double theta_dot           = -1.0/sqrt(1.0-pow(arg,2)) * arg_dot; // derivative of acos
   double gap_velocity        = actuator_velocity * theta_dot;
 
