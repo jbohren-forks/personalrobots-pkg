@@ -29,7 +29,7 @@
  */
 
 /*
-  \author Radu Bogdan Rusu <rusu@cs.tum.edu>
+  \author Radu Bogdan Rusu <rusu@cs.tum.edu> Tully Foote <tfoote@willowgarage.com>
 
 
 */

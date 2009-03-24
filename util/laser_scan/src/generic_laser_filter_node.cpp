@@ -47,7 +47,7 @@ public:
     std::string filter_xml;
     node_.advertise<laser_scan::LaserScan>("~output", 1000);
     node_.param("~filters", filter_xml, median_filter_xml);
-    printf("Got ~filters as: %s\n", filter_xml.c_str());
+    ROS_INFO("Got ~filters as: %s\n", filter_xml.c_str());
     TiXmlDocument xml_doc;
     xml_doc.Parse(filter_xml.c_str());
     TiXmlElement * config = xml_doc.RootElement();
