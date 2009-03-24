@@ -14,7 +14,7 @@
   <depend package="gtest" />
 
   <export>
-    <nddl iflags="-I${prefix}/nddl -I${prefix}"/>
+    <nddl iflags="-I${prefix}/nddl -I${prefix}/deprecated -I${prefix}"/>
   </export>
 
 </package>
