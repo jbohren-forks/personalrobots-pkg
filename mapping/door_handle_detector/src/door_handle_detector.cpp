@@ -215,6 +215,7 @@ public:
     virtual ~DoorHandleDetector ()
     {
       unadvertise("door_detector/door_msg");
+      advertiseService("door_handle_detector");
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -233,15 +234,14 @@ public:
     bool
       detectDoor (door_handle_detector::DoorDetector::Request &req, door_handle_detector::DoorDetector::Response &resp)
     {
-      ros::Time start_time = ros::Time::now();
-      ros::Duration delay = ros::Duration().fromSec(25);
-      cout << "start time " << start_time.toSec() << endl;
-      cout << "Waiting for laser scan to come in newer than " << (start_time + delay).toSec() << endl;
-
       updateParametersFromServer ();
 
-      // door frame
-      door_frame_ = req.door.header.frame_id;
+      // get a point cloud
+      ros::Time start_time = ros::Time::now();
+
+
+
+
 
       // receive a new laser scan
       num_clouds_received_ = 0;
@@ -254,10 +254,11 @@ public:
       delete message_notifier_;
       ROS_INFO("Try to detect door from %i points", cloud_in_.pts.size());
 
-      // cloud frame
+      // frames
       cloud_frame_ = cloud_in_.header.frame_id;
       cloud_time_ = cloud_in_.header.stamp;
       cloud_header_ = cloud_in_.header;
+      door_frame_ = req.door.header.frame_id;
 
       ros::Time ts;
       ros::Duration duration;
