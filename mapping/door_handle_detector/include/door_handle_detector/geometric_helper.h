@@ -77,7 +77,7 @@
   * \param stamped_out the output point
   */
 inline void
-  transformPoint (tf::TransformListener *tf, const std::string &target_frame,
+  transformPoint (const tf::TransformListener *tf, const std::string &target_frame,
                   const tf::Stamped< robot_msgs::Point32 > &stamped_in, tf::Stamped< robot_msgs::Point32 > &stamped_out)
 {
   tf::Stamped<tf::Point> tmp;
@@ -189,9 +189,9 @@ int fitSACOrientedLine (robot_msgs::PointCloud *points, double dist_thresh, robo
 void get3DBounds (robot_msgs::Point32 *p1, robot_msgs::Point32 *p2, robot_msgs::Point32 &min_b, robot_msgs::Point32 &max_b,
                   double min_z_bounds, double max_z_bounds, int multiplier);
 
-void getCloudViewPoint (std::string cloud_frame, robot_msgs::PointStamped &viewpoint_cloud, tf::TransformListener *tf);
+void getCloudViewPoint (const std::string cloud_frame, robot_msgs::PointStamped &viewpoint_cloud, const tf::TransformListener *tf);
 
-bool checkDoorEdges (robot_msgs::Polygon3D *poly, robot_msgs::Point32 *z_axis, double min_height, double eps_angle,
+bool checkDoorEdges (const robot_msgs::Polygon3D *poly, const robot_msgs::Point32 *z_axis, double min_height, double eps_angle,
                      double &door_frame1, double &door_frame2);
 
 void selectBestDistributionStatistics (robot_msgs::PointCloud *points, std::vector<int> *indices, int d_idx, std::vector<int> &inliers);

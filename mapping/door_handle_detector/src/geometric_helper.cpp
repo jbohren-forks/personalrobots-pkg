@@ -110,7 +110,7 @@ void
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool
-  checkDoorEdges (robot_msgs::Polygon3D *poly, robot_msgs::Point32 *z_axis, double min_height, double eps_angle,
+  checkDoorEdges (const robot_msgs::Polygon3D *poly, const robot_msgs::Point32 *z_axis, double min_height, double eps_angle,
                   double &door_frame1, double &door_frame2)
 {
   // Compute the centroid of the polygon
@@ -252,7 +252,7 @@ void
   * \param tf a pointer to a TransformListener object
   */
 void
-  getCloudViewPoint (string cloud_frame, PointStamped &viewpoint_cloud, tf::TransformListener *tf)
+  getCloudViewPoint (const string cloud_frame, PointStamped &viewpoint_cloud, const tf::TransformListener *tf)
 {
   // Figure out the viewpoint value in the point cloud frame
   PointStamped viewpoint_laser;
