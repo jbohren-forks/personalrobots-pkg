@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import roslib
-roslib.load_manifest('rostwitter')
+roslib.load_manifest('twitterros')
 
 import rospy
 import std_msgs.msg
