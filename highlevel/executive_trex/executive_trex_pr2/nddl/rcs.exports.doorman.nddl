@@ -51,10 +51,6 @@ class DoorState extends AgentTimeline {
     float height;
     HINGE_FRAME hinge;
     ROTATION_DIRECTION rot_dir;
-
-    // Commit to unknown values if nothing set
-    defaultOnCommit(hinge, UNKNOWN);
-    defaultOnCommit(rot_dir, UNKNOWN);
   }
 
   DoorState(Mode _mode){
@@ -192,7 +188,8 @@ class CheckDoorway extends Behavior {
     float th;
   }
 
-  predicate Inactive{    bool doorway_clear; // True if there is a clear path, otherwise false
+  predicate Inactive{    
+    bool doorway_clear; // True if there is a clear path, otherwise false
     bool door_latched; // True if there is a path for a very thin robot - basically a crack in the door
   }
 

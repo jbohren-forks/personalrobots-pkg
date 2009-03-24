@@ -58,6 +58,7 @@ addEq(FORCE_DOOR_CHECK, DOOR_CHECK_INTERVAL, 0);
 // Error Bounds
 float DETECTION_POSITION_ERROR = 0.1;
 float GRASP_POSITION_ERROR = 0.1;
+
 /**
  * This is an internal controller which will monitor state variables and HLC status. It can also generate
  * next steps for this meta level control. This pattern exploits reactive planning based on feedback from the
@@ -163,7 +164,6 @@ DoorController::Holds {
     bool in_detection_position; // True if far enough from the door to scan effectively. Else false
     bool in_grasp_position; // True if far enough from the door to scan effectively, Can only be evaluated
 
-
     // MoveBehavior(all) == active   
     contained_by(MoveBehavior.Active dm);
     eq(dm.x, target_x);
@@ -234,7 +234,7 @@ DoorController::Holds {
 	    // Are we in a grasp position? Now is a good time to find out. We will query the map. This data will have to be laid out
 	    // in more detail.
 	    float grasp_x, grasp_y, grasp_th;
-	    get_door_grasp_base_position(grasp_x, grasp_y, grasp_th, bs.x, bs.y, bs.th, x1, y1, x2, y2);
+	    get_door_grasp_base_position(grasp_x, grasp_y, grasp_th, x1, y1, x2, y2);
 
 	    // @todo We should probably treat position and orientation seperately for tolerances
 	    float distanceAway;
@@ -274,7 +274,7 @@ DoorController::Holds {
 	    }
 	    else {
 	      float detect_x, detect_y, detect_th;
-	      get_door_detection_base_position(detect_x, detect_y, detect_th, bs.x, bs.y, bs.th, x1, y1, x2, y2);
+	      get_door_detection_base_position(detect_x, detect_y, detect_th, x1, y1, x2, y2);
 	      float distanceAway;
 	      calcDistance(distanceAway, bs.x, bs.y, bs.th, detect_x, detect_y, detect_th);
 	      testLEQ(in_detection_position, distanceAway, DETECTION_POSITION_ERROR);
@@ -302,35 +302,78 @@ DoorController::Holds {
 
 
 /************************************************************************
- * Now we define how highlevel controllers update the door controller by setting
+ * Now we define how actions update the door controller by setting
  * feedback parameters on success or failure
  ***********************************************************************/
 
-DoorManipulationBehavior::Active{
-  // DoorState(all) == Holds(?, door_data);
-  contained_by(DoorState.Holds ds);
-  eq(ds.active, true);
+DoorState::Holds{
+  met_by(Holds p);
+
+  // Commit to unknown values if nothing set
+  defaultOnCommit(hinge, UNKNOWN);
+  defaultOnCommit(rot_dir, UNKNOWN);
+
+  // Active status
+  defaultOnCommit(active, p.active);
 
   // Points for the door frame. 
-  eq(frame_p1_x, ds.frame_p1_x);
-  eq(frame_p1_y, ds.frame_p1_y);
-  eq(frame_p1_z, ds.frame_p1_z);
-  eq(frame_p2_z, ds.frame_p2_x);
-  eq(frame_p2_z, ds.frame_p2_y);
-  eq(frame_p2_z, ds.frame_p2_z);
+  defaultOnCommit(frame_p1_x, p.frame_p1_x);
+  defaultOnCommit(frame_p1_y, p.frame_p1_y);
+  defaultOnCommit(frame_p1_z, p.frame_p1_z);
+  defaultOnCommit(frame_p2_z, p.frame_p2_x);
+  defaultOnCommit(frame_p2_z, p.frame_p2_y);
+  defaultOnCommit(frame_p2_z, p.frame_p2_z);
 
   // Points for th door
-  eq(door_p1_x, ds.door_p1_x);
-  eq(door_p1_y, ds.door_p1_y);
-  eq(door_p1_z, ds.door_p1_z);
-  eq(door_p2_z, ds.door_p2_x);
-  eq(door_p2_z, ds.door_p2_y);
-  eq(door_p2_z, ds.door_p2_z);
+  defaultOnCommit(door_p1_x, p.door_p1_x);
+  defaultOnCommit(door_p1_y, p.door_p1_y);
+  defaultOnCommit(door_p1_z, p.door_p1_z);
+  defaultOnCommit(door_p2_z, p.door_p2_x);
+  defaultOnCommit(door_p2_z, p.door_p2_y);
+  defaultOnCommit(door_p2_z, p.door_p2_z);
 
   // Handle data
-  eq(height, ds.height);
-  eq(hinge, ds.hinge);
-  eq(rot_dir, ds.rot_dir);
+  defaultOnCommit(height, p.height);
+  defaultOnCommit(hinge, p.hinge);
+  defaultOnCommit(rot_dir, p.rot_dir);
+}
+
+// Derive input bounds form the behavior
+DoorManipulationBehavior::Active{
+  // DoorController(start) == Holds(dc);
+  any(DoorController.Holds dc);
+  precedes(dc.start, start);
+  temporalDistance(start, [1 +inf] dc.end);
+
+  if(dc.active == true){
+    // Update the door state with feedback I would really like to be able to say:
+    // eq(door_data, ds.door_data)
+    // and have that be the same as an iterative eq() over the components of a variable structure.
+    // DoorState(all) == Holds(true, door_data);
+    contained_by(DoorState.Holds ds);
+    eq(ds.active, true);
+
+    // Points for the door frame. 
+    eq(frame_p1_x, ds.frame_p1_x);
+    eq(frame_p1_y, ds.frame_p1_y);
+    eq(frame_p1_z, ds.frame_p1_z);
+    eq(frame_p2_z, ds.frame_p2_x);
+    eq(frame_p2_z, ds.frame_p2_y);
+    eq(frame_p2_z, ds.frame_p2_z);
+
+    // Points for th door
+    eq(door_p1_x, ds.door_p1_x);
+    eq(door_p1_y, ds.door_p1_y);
+    eq(door_p1_z, ds.door_p1_z);
+    eq(door_p2_z, ds.door_p2_x);
+    eq(door_p2_z, ds.door_p2_y);
+    eq(door_p2_z, ds.door_p2_z);
+
+    // Handle data
+    eq(height, ds.height);
+    eq(hinge, ds.hinge);
+    eq(rot_dir, ds.rot_dir);
+  }
 }
 
 DoorManipulationBehavior::Inactive{
@@ -393,7 +436,6 @@ OpenDoorWithGrasp::Inactive{
     temporalDistance(dc.start, error, start);
     eq(dc.last_checked_door, FORCE_DOOR_CHECK);
     eq(dc.have_handle, TRUE);
-    eq(dc.doorway_clear, true);
     concurrent(dc.start, start);
   }
 }

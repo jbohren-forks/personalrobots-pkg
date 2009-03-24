@@ -76,7 +76,7 @@ DetectDoor::Active {
 }
 
 /**
- * Assume it executes successfully. Leav result status unbound - depends on simulation control variables
+ * Assume it executes successfully. Leave result status unbound - depends on simulation control variables
  */
 CheckDoorway::Active{
   eq(duration, 1);
@@ -111,7 +111,7 @@ NotifyDoorBlocked::Active{
 
 // External controllers specific to the door domain
 ReleaseDoor release_door = new ReleaseDoor(Internal);
-OpenDoorWithGrasp open_door_with_grasp = new OpenDoorWithGrasp(Internal);
+OpenDoorWithGrasp open_door = new OpenDoorWithGrasp(Internal);
 GraspHandle grasp_handle = new GraspHandle(Internal);
 OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
 DetectDoor detect_door = new DetectDoor(Internal);
