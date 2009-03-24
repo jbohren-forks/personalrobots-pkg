@@ -1,0 +1,64 @@
+/**
+ * @author Conor McGann
+ * @brief Declares and Defines actions for testing the door domain at a pretty low level
+ * @requires world_model
+ */
+class DoorActions extends AgentActions{
+
+  /**
+   * @brief A script to open the door, with no branching
+   * @param DoorState a door message
+   */
+  predicate OpenDoor{
+
+    // Points for the door frame
+    float frame_p1_x;
+    float frame_p1_y;
+    float frame_p1_z;
+    float frame_p2_x;
+    float frame_p2_y;
+    float frame_p2_z;
+
+    // Points for the door
+    float door_p1_x;
+    float door_p1_y;
+    float door_p1_z;
+    float door_p2_x;
+    float door_p2_y;
+    float door_p2_z;
+
+    // Handle data
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+  }
+};
+
+DoorActions::OpenDoor{
+
+  // First we get to the door detection position. For that we need to extract the appropriate base position
+  contained_by(MoveBase.Active cmd_move_to_detect);
+
+  // Obtain the detection base location based on the door data obtained from detection
+  get_door_detection_base_position(cmd_move_to_detect.x, cmd_move_to_detect.y, cmd_move_to_detect.th,
+				   door_p1_x, door_p1_y, door_p2_x, door_p2_y);
+
+
+  /*
+  contained_by(DetectDoor.Inactive cmd_detect_door);
+  contained_by(MoveBase.Inactive cmd_go_to_grasp_position);
+  contained_by(GraspHandle.Inactive cmd_grasp_handle);
+  contained_by(OpenDoorWithGrasp.Inactive cmd_open_door);
+
+  // Sequence the goals
+  cmd_go_to_detection_position before cmd_detect_door;
+  cmd_detect_door before cmd_go_to_grasp_position;
+  cmd_go_to_grasp_position before cmd_grasp_handle;
+  cmd_grasp_handle before cmd_open_door;
+
+  // Obtain the grasp base location based on the door data obtained from detection
+  get_door_grasp_base_position(cmd_go_to_grasp_position.x, cmd_go_to_grasp_position.y, cmd_go_to_grasp_position.th,
+			       cmd_detect_door.door_p1_x, cmd_detect_door.door_p1_y, cmd_detect_door.door_p2_x, cmd_detect_door.door_p2_y);
+  */
+
+}
