@@ -113,7 +113,7 @@ public:
       Duration().fromSec(0.05).sleep();
     }
     Time end_time = laser_time_;
-    ROS_INFO("Point cloud srv: received point cloud");
+    ROS_INFO("Point cloud srv: generated point cloud");
 
 
     // get a point cloud from the point cloud assembler
@@ -121,17 +121,18 @@ public:
     BuildCloud::Response assembler_res ;
     assembler_req.begin = begin_time;
     assembler_req.end   = end_time;
-    ros::service::call("gbuild_cloud", assembler_req, assembler_res) ;
+    if (!ros::service::call("point_cloud_assembler/build_cloud", assembler_req, assembler_res))
+      ROS_ERROR("Point cloud srv: error receiving point cloud from point cloud assembler");
+    else
+    ROS_INFO("Point cloud srv: received point cloud from point cloud assembler");
 
     res.cloud = assembler_res.cloud;
-
     return true;
   }
 
 
   void scannerSignalCallback()
   {
-    cout << "Point cloud srv: laser scan signal received: " << laser_scanner_signal_.signal << endl;
     boost::mutex::scoped_lock laser_lock(laser_mutex_);
     // note time when tilt laser is pointing down
     if (laser_scanner_signal_.signal == 0){
