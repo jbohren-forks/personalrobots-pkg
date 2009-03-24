@@ -1,0 +1,8 @@
+<launch>
+
+  <include file="$(find prosilica_cam)/prosilica.launch" />
+  <include file="$(find outlet_detection)/plug_outlet.launch" />
+
+  <node pkg="plug_in" type="outlet_pose_filter.py" respawn="true" />
+
+</launch>
