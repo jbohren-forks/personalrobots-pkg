@@ -6,5 +6,4 @@
   <url>http://pr.willowgarage.com/wiki/Simulator</url>
   <depend package="gazebo_plugin"/>
   <depend package="teleop_arm_keyboard"/>
-  <depend package="pr2_gui"/>
 </package>
