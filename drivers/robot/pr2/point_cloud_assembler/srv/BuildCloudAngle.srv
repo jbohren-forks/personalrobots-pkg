@@ -1,0 +1,5 @@
+float64 angle_begin
+float64 angle_end
+float64 duration
+---
+robot_msgs/PointCloud cloud
