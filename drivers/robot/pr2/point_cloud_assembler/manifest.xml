@@ -12,9 +12,14 @@
   <depend package="laser_scan"/>
   <depend package="tf"/>
   <depend package="pr2_mechanism_controllers"/>
-  
+
   # For Testing
   <depend package="rostest"/>
   <depend package="gtest"/>
+
+ <export>
+    <cpp cflags="-I${prefix}/srv/cpp -I${prefix}/include" />
+ </export>
+
 </package>
 
