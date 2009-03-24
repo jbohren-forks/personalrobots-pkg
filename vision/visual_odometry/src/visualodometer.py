@@ -81,6 +81,9 @@ class Pose:
     r.M = numpy.linalg.inv(self.M)
     return r
 
+  def __repr__(self):
+    return str(self.M)
+
   def concatenate(self, P):
     r = Pose()
     r.M = numpy.dot(self.M, P.M)
@@ -301,20 +304,24 @@ class DescriptorScheme:
   def name(self):
     return self.__class__.__name__
 
-  def match(self, af0, af1):
-    if af0.kp == [] or af1.kp == []:
+  def match0(self, af0kp, af0descriptors, af1kp, af1descriptors):
+
+    if af0kp == [] or af1kp == []:
       return []
-    Xs = vop.array([k[0] for k in af1.kp])
-    Ys = vop.array([k[1] for k in af1.kp])
+    Xs = vop.array([k[0] for k in af1kp])
+    Ys = vop.array([k[1] for k in af1kp])
     pairs = []
-    for (i,(ki,di)) in enumerate(zip(af0.kp,af0.descriptors)):
+    for (i,(ki,di)) in enumerate(zip(af0kp, af0descriptors)):
       predX = (abs(Xs - ki[0]) < 64)
       predY = (abs(Ys - ki[1]) < 32)
       hits = vop.where(predX & predY, 1, 0).tostring()
-      best = self.search(di, af1, hits)
+      best = self.search(di, af1descriptors, hits)
       if best != None:
         pairs.append((i, best[0], best[1]))
     return pairs
+
+  def match(self, af0, af1):
+    return self.match0(af0.kp, af0.descriptors, af1.kp, af1.descriptors)
 
 class DescriptorSchemeSAD(DescriptorScheme):
 
@@ -323,10 +330,9 @@ class DescriptorSchemeSAD(DescriptorScheme):
       frame.lgrad = " " * (frame.size[0] * frame.size[1])
       VO.ost_do_prefilter_norm(frame.rawdata, frame.lgrad, frame.size[0], frame.size[1], 31, scratch)
     frame.descriptors = [ VO.grab_16x16(frame.lgrad, frame.size[0], p[0]-7, p[1]-7) for p in frame.kp ]
-    frame.matcher = None
 
-  def search(self, di, af1, hits):
-      i = VO.sad_search(di, af1.descriptors, hits)
+  def search(self, di, descriptors, hits):
+      i = VO.sad_search(di, descriptors, hits)
       if i == None:
         return None
       else:
@@ -344,22 +350,20 @@ class DescriptorSchemeCalonder(DescriptorScheme):
 
   def collect(self, frame):
     im = Image.fromstring("L", frame.size, frame.rawdata)
-    frame.matcher = calonder.BruteForceMatcher(self.cl.dimension())
     if 0:
       frame.descriptors = []
       for (x,y,d) in frame.kp:
         patch = im.crop((x-16,y-16,x+16,y+16))
         sig = self.cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
         frame.descriptors.append(sig)
-        frame.matcher.addSignature(sig)
     else:
       frame.descriptors = self.cl.getSignatures(im, [ (x,y) for (x,y,d) in frame.kp ])
-      for sig in frame.descriptors:
-        frame.matcher.addSignature(sig)
 
-  def search(self, di, af1, hits):
-    match = af1.matcher.findMatch(di, hits)
-    return match
+  def search(self, di, descriptors, hits):
+    matcher = calonder.BruteForceMatcher(self.cl.dimension())
+    for sig in descriptors:
+      matcher.addSignature(sig)
+    return matcher.findMatch(di, hits)
 
 uniq_track_id = 100
 
@@ -381,6 +385,27 @@ class Track:
     self.id.append(p1id)
     self.lastpt = p1
     self.sba_track.extend(p1id, p1)
+
+class FrameAnalyzer:
+  def __init__(self, **kwargs):
+    self.feature_detector = kwargs.get('feature_detector', FeatureDetectorFast())
+    self.targetkp = kwargs.get('targetkp', 300)
+  def analyze(self, f):
+    kp2d = self.feature_detector.detect(frame, self.targetkp)
+    disparities = [frame.lookup_disparity(x,y) for (x,y) in frame.kp2d]
+    kp = [ (x,y,z) for ((x,y),z) in zip(frame.kp2d, disparities) if z]
+    return (kp, descriptors)
+
+def temporal_match(self, af0, af1, want_distances = False):
+  """
+  Match features between two frames.  Returns a list of pairs of
+  indices into the features in the two frames, and optionally a distance
+  value for each pair, if want_distances in True.
+  """
+  pairs = self.descriptor_scheme.match(af0, af1)
+  if not want_distances:
+    pairs = [(a,b) for (a,b,d) in pairs]
+  return pairs
 
 import pe
 
