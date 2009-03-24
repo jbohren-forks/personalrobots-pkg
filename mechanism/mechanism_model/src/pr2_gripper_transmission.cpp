@@ -138,8 +138,8 @@ void PR2GripperTransmission::propagatePosition(
   //
   // get the effort at the gripper gap based on torque at the motor
   //
-  double actuator_effort     = as[0]->state_.last_measured_effort_ * gap_mechanical_reduction_;
-  double gap_effort          = actuator_effort   * theta_dot;
+  double theta_effort        = as[0]->state_.last_measured_effort_ * gap_mechanical_reduction_;
+  double gap_effort          = theta_effort      * theta_dot;
 
 
   // assign joint states
@@ -151,27 +151,23 @@ void PR2GripperTransmission::propagatePosition(
       js[i]->position_       = gap_size;
       js[i]->velocity_       = gap_velocity;
       js[i]->applied_effort_ = gap_effort;
-        std::cout << " js[" << "]:" << js[i]->joint_->name_ << " is a gap joint " << std::endl;
+        std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " is a gap joint " << std::endl;
     }
     else
     {
       // find the passive joint name
-      std::vector<std::string>::iterator it = passive_joints_.find(js[i]->joint_->name_);
+      std::vector<std::string>::iterator it = std::find(passive_joints_.begin(),passive_joints_.end(),js[i]->joint_->name_);
       if (it != passive_joints_.end())
       {
         // assign passive joints
-        double theta           = as[0]->state_.position_            ;
-        double theta_dot       = as[0]->state_.velocity_            ;
-        double joint_effort    = as[0]->state_.last_measured_effort_;
-
         js[i]->position_       = theta - theta0 ;
         js[i]->velocity_       = theta_dot      ;
-        js[i]->applied_effort_ = actuator_effort;
-        std::cout << " js[" << "]:" << js[i]->joint_->name_ << " is a passive joint " << std::endl;
+        js[i]->applied_effort_ = theta_effort      ;
+        std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " is a passive joint " << std::endl;
       }
       else
       {
-        std::cout << " js[" << "]:" << js[i]->joint_->name_ << " not a gap nor passive joint " << std::endl;
+        std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " not a gap nor passive joint " << std::endl;
       }
     }
   }
@@ -193,19 +189,19 @@ void PR2GripperTransmission::propagatePositionBackwards(
   for (unsigned int i = 0; i < js.size(); ++i)
   {
     // find the passive joint name
-    std::vector<std::string>::iterator it = passive_joints_.find(js[i]->joint_->name_);
+    std::vector<std::string>::iterator it = std::find(passive_joints_.begin(),passive_joints_.end(),js[i]->joint_->name_);
     if (it != passive_joints_.end())
     {
       // assign passive joints
-      mean_joint_angle    += js[i]->state_.position_            ;
-      mean_joint_rate     += js[i]->state_.velocity_            ;
-      mean_joint_torque   += js[i]->state_.last_measured_effort_;
+      mean_joint_angle    += js[i]->position_      ;
+      mean_joint_rate     += js[i]->velocity_      ;
+      mean_joint_torque   += js[i]->applied_effort_;
       count++;
-      std::cout << " js[" << "]:" << js[i]->joint_->name_ << " is a passive joint, prop pos backwards " << std::endl;
+      std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " is a passive joint, prop pos backwards " << std::endl;
     }
     else
     {
-      std::cout << " js" << js[i]->joint_->name_ << " not a passive joint " << std::endl;
+      std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " not a passive joint " << std::endl;
     }
   }
   
@@ -217,7 +213,7 @@ void PR2GripperTransmission::propagatePositionBackwards(
   double theta          = theta0 + avg_joint_angle; // should we filter this value?
   double arg            = sqrt(2.0*coef_a*coef_b*cos(theta-theta0+phi0)+coef_h*coef_h-coef_a*coef_a-coef_b*coef_b);
   double actuator_angle = -gear_ratio/screw_reduction * ( L0 + arg );
-  double dMR_dtheta     =   gear_ratio / (2.0 * screw_reduction) / arg * 2.0 * coef_a * coef_b * sin(thteta + phi0 - theta0);
+  double dMR_dtheta     =   gear_ratio / (2.0 * screw_reduction) / arg * 2.0 * coef_a * coef_b * sin(theta + phi0 - theta0);
 
   as[0]->state_.position_             = actuator_angle                / gap_mechanical_reduction_;
   as[0]->state_.velocity_             = avg_joint_rate   * dMR_dtheta / gap_mechanical_reduction_;
@@ -228,38 +224,109 @@ void PR2GripperTransmission::propagateEffort(
   std::vector<JointState*>& js, std::vector<Actuator*>& as)
 {
   ROS_ASSERT(as.size() == 1);
-  ROS_ASSERT(js.size() == mechanical_reductions_.size());
+  ROS_ASSERT(js.size() == passive_joints_.size() + 1);
 
-  double strongest = 0.0;
+  // obtain the physical location of passive joints in sim, and average them, need this to compute dMR/dtheta
+  double mean_joint_angle  = 0.0;
+  double count             = 0;
+
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    if (fabs(js[i]->commanded_effort_ / (mechanical_reductions_[i])) > fabs(strongest))
-      strongest = js[i]->commanded_effort_ / mechanical_reductions_[i];
+    // find the passive joint name
+    std::vector<std::string>::iterator it = std::find(passive_joints_.begin(),passive_joints_.end(),js[i]->joint_->name_);
+    if (it != passive_joints_.end())
+    {
+      // assign passive joints
+      mean_joint_angle    += js[i]->position_            ;
+      count++;
+      std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " is a passive joint, prop pos backwards " << std::endl;
+    }
+    else
+    {
+      std::cout << " js" << js[i]->joint_->name_ << " not a passive joint " << std::endl;
+    }
   }
   
-  as[0]->command_.effort_ = strongest;
+  double avg_joint_angle  = mean_joint_angle  / count;
+
+  // now do the difficult reverse transform
+  double theta          = theta0 + avg_joint_angle; // should we filter this value?
+  double arg            = sqrt(2.0*coef_a*coef_b*cos(theta-theta0+phi0)+coef_h*coef_h-coef_a*coef_a-coef_b*coef_b);
+  double dMR_dtheta     =   gear_ratio / (2.0 * screw_reduction) / arg * 2.0 * coef_a * coef_b * sin(theta + phi0 - theta0);
+
+
+  // get the gap commanded effort
+  double gap_commanded_effort = 0.0;
+  for (unsigned int i = 0; i < js.size(); ++i)
+  {
+    if (js[i]->joint_->name_ == gap_joint_name_)
+    {
+      gap_commanded_effort = js[i]->commanded_effort_ / gap_mechanical_reduction_;
+      break; // better be just one of these, need to check
+    }
+  }
+
+  // assign avctuator commanded effort 
+  as[0]->command_.effort_ = gap_commanded_effort * dMR_dtheta / gap_mechanical_reduction_;
 }
 
 void PR2GripperTransmission::propagateEffortBackwards(
   std::vector<Actuator*>& as, std::vector<JointState*>& js)
 {
   ROS_ASSERT(as.size() == 1);
-  ROS_ASSERT(js.size() == mechanical_reductions_.size());
-  ROS_ASSERT(js.size() == mechanical_reductions_.size());
+  ROS_ASSERT(js.size() == passive_joints_.size() + 1);
 
-  std::vector<double> scaled_positions(js.size());
-  for (unsigned int i = 0; i < js.size(); ++i)
-    scaled_positions[i] = (sin(js[i]->position_ * mechanical_reductions_[i])-B_)/A_;
+  //
+  // below transforms from encoder value to gap size, based on 090224_link_data.xls provided by Functions Engineering
+  //
+  double actuator_angle = as[0]->state_.position_ * gap_mechanical_reduction_; // motor revs
+  double arg            = (coef_a*coef_a+coef_b*coef_b-pow(L0+actuator_angle*screw_reduction/gear_ratio,2))/(2.0*coef_a*coef_b);
+  double theta          = angles::from_degrees(theta0 - phi0) + acos(arg);
+  double gap_size_mm    = t0 + coef_r * ( sin(theta) - sin(theta0) ); // in mm
+  double gap_size       = gap_size_mm * mm2m; // in meters
 
-  double mean = std::accumulate(scaled_positions.begin(), scaled_positions.end(), 0.0)
-    / scaled_positions.size();
+  //
+  // based on similar transforms, get the velocity of the gripper gap size based on encoder velocity
+  //
+  double actuator_velocity   = as[0]->state_.velocity_ * gap_mechanical_reduction_; // revs per sec
+  double arg_dot             = -(L0 * screw_reduction)/(gear_ratio*coef_a*coef_b) // d(arg)/d(actuator_angle)
+                               -screw_reduction*actuator_angle*pow(screw_reduction/gear_ratio,2);
+  double theta_dot           = -1.0/sqrt(1.0-pow(arg,2)) * arg_dot; // derivative of acos
+  double gap_velocity        = actuator_velocity * theta_dot;
 
+  //
+  // get the effort at the gripper gap based on torque at the motor
+  //
+  double theta_effort        = as[0]->command_.effort_ * gap_mechanical_reduction_;
+  double gap_effort          = theta_effort      * theta_dot;
+
+
+  // assign joint states
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    double err = scaled_positions[i] - mean;
-    js[i]->commanded_effort_ =
-        /*pid_effort / mechanical_reductions_[i] + */as[0]->command_.effort_ * mechanical_reductions_[i];
+    if (js[i]->joint_->name_ == gap_joint_name_)
+    {
+      // assign gap joint
+      js[i]->commanded_effort_ = gap_effort;
+      std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " is a gap joint " << std::endl;
+    }
+    else
+    {
+      // find the passive joint name
+      std::vector<std::string>::iterator it = std::find(passive_joints_.begin(),passive_joints_.end(),js[i]->joint_->name_);
+      if (it != passive_joints_.end())
+      {
+        // assign passive joints
+        js[i]->commanded_effort_ = theta_effort   ;
+        std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " is a passive joint " << std::endl;
+      }
+      else
+      {
+        std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " not a gap nor passive joint " << std::endl;
+      }
+    }
   }
+
 }
 
 } // namespace mechanism

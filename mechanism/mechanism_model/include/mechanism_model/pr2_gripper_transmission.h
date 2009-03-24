@@ -82,17 +82,17 @@ private:
   // FIXME:  some of these are included implicitly in the code for now, if performance does not suffer,
   // replace all constants with below.
   //
-  static double t0                  = -0.19543;
-  static double theta0              = 2.97571;
-  static double phi0                = 29.98717;
-  static double gear_ratio          = 729.0/25.0;
-  static double screw_reduction     = 2.0;
-  static double L0                  = 34.70821;
-  static double coef_h              = 5.200;
-  static double coef_a              = 67.56801;
-  static double coef_b              = 48.97193;
-  static double coef_r              = 91.50000;
-  static double mm2m                = 1000.000;
+  static const double t0                  = -0.19543;
+  static const double theta0              = 2.97571;
+  static const double phi0                = 29.98717;
+  static const double gear_ratio          = 729.0/25.0;
+  static const double screw_reduction     = 2.0;
+  static const double L0                  = 34.70821;
+  static const double coef_h              = 5.200;
+  static const double coef_a              = 67.56801;
+  static const double coef_b              = 48.97193;
+  static const double coef_r              = 91.50000;
+  static const double mm2m                = 1000.000;
 
 };
 
