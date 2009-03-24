@@ -1,0 +1,231 @@
+/**
+ * This file defines the classes that are specific to the integration with the high level controllers
+ * and state variables of the door domain.
+ */
+
+/** CONSTANTS and TYPEDEFS **/
+
+int UNKNOWN = -1;
+
+int FRAME_P1 = 1;
+int FRAME_P2 = 2;
+typedef int [-1, 2] HINGE_FRAME;
+
+int CLOCKWISE = 1;
+int COUNTER_CLOCKWISE = 2;
+typedef int [-1, 2] ROTATION_DIRECTION;
+
+int DOOR_CHECK_INTERVAL = 5; // Wait 5 seconds before checking the doorway is clear again
+
+enum MAYBE_TRUE_OR_FALSE {TRUE, FALSE, MAYBE} ;
+
+/**
+ * DoorState is a state variable providing feedback on the perceived state of the door and its related
+ * status flags. Note that if any value is unkown, then we consider we have lost observability of the door.
+ * @see Door.msg
+ */
+class DoorState extends AgentTimeline {
+
+  predicate Holds {
+    // Control variable so we know when we can trust values. It should be published by the door monitor.
+    // We will require that this be false when the doormonitor terminates
+    bool active;
+
+    // Points for the door frame
+    float frame_p1_x;
+    float frame_p1_y;
+    float frame_p1_z;
+    float frame_p2_x;
+    float frame_p2_y;
+    float frame_p2_z;
+
+    // Points for the door
+    float door_p1_x;
+    float door_p1_y;
+    float door_p1_z;
+    float door_p2_x;
+    float door_p2_y;
+    float door_p2_z;
+
+    // Handle data
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+  }
+
+  DoorState(Mode _mode){
+    super(_mode, "Holds");
+  }
+};
+
+class DoorManipulationBehavior extends Behavior {
+
+  /**
+   * The parameters here 
+   */
+  predicate Active{
+    // Points for the door frame
+    float frame_p1_x;
+    float frame_p1_y;
+    float frame_p1_z;
+    float frame_p2_x;
+    float frame_p2_y;
+    float frame_p2_z;
+
+    // Points for the door
+    float door_p1_x;
+    float door_p1_y;
+    float door_p1_z;
+    float door_p2_x;
+    float door_p2_y;
+    float door_p2_z;
+
+    // Handle data
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+  }
+
+  predicate Inactive{
+    // Points for the door frame
+    float frame_p1_x;
+    float frame_p1_y;
+    float frame_p1_z;
+    float frame_p2_x;
+    float frame_p2_y;
+    float frame_p2_z;
+
+    // Points for the door
+    float door_p1_x;
+    float door_p1_y;
+    float door_p1_z;
+    float door_p2_x;
+    float door_p2_y;
+    float door_p2_z;
+
+    // Handle data
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+
+    // Commit to unknown values if nothing set
+    defaultOnCommit(hinge, UNKNOWN);
+    defaultOnCommit(rot_dir, UNKNOWN);
+  }
+
+  DoorManipulationBehavior(Mode _mode){
+    super(_mode);
+  }
+}
+
+/**
+ * Behavior to grasp the handle once in a position to do so
+ */
+class GraspHandle extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  GraspHandle(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
+ */
+class OpenDoorWithGrasp extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  OpenDoorWithGrasp(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
+ */
+class OpenDoorWithoutGrasp extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  OpenDoorWithoutGrasp(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * Behavior to extract the gripper from a grasp on the handle
+ */
+class ReleaseDoor extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  ReleaseDoor(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * This is a sensing action to see if there is a path to the goal.
+ */
+class CheckDoorway extends Behavior {
+
+  /**
+   * The parameters here 
+   */
+  predicate Active{
+    float x; 
+    float y;
+    float th;
+  }
+
+  predicate Inactive{    
+    bool doorway_clear; // True if there is a clear path, otherwise false
+    bool door_latched; // True if there is a path for a very thin robot - basically a crack in the door
+  }
+
+  CheckDoorway(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * DetectDoor is activated to search for the door. It will assume it is in a suitable observation position facing the door
+ */
+class DetectDoor extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  DetectDoor(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
+ * NotifyDoorBlocked will just send a message to update the world model that the given door is blocked. We will indicate
+ * the parameters based on the current and target positions
+ */
+class NotifyDoorBlocked extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  NotifyDoorBlocked(Mode _mode){
+    super(_mode);
+  }
+
+};
+
+

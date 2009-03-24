@@ -1,0 +1,12 @@
+class MobilityStatus extends AgentTimeline {
+
+  predicate Holds{
+    bool stuck;
+    bool gripper_open;
+    bool arm_stowed;
+  }
+
+  MobilityStatus(Mode _mode){
+    super(_mode, "Holds");
+  }
+};

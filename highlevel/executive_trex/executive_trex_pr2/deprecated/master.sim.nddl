@@ -1,0 +1,20 @@
+/**
+ * Simulation model for the master reactor
+ */
+
+#include "TREX.nddl"
+
+// Exports from sub-systems
+#include "rcs.exports.nddl"
+#include "driver.exports.nddl"
+#include "recharger.exports.nddl"
+#include "doorman.exports.nddl"
+#include "safety.exports.nddl"
+#include "sim.nddl"
+
+// Internal timelines
+MoveBehavior doorman = new MoveBehavior(Internal, true);
+WorkingStatus working_status = new WorkingStatus(Internal);
+Recharger recharger = new Recharger(Internal);
+
+close();

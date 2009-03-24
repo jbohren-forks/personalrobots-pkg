@@ -1,0 +1,83 @@
+// Constants for acceptable errors in pose
+float XY_ERROR = 0.5;
+float THETA_ERROR = 0.1;
+float POSE_ERROR = 0.1;
+
+/**
+ * The MoveBehavior is an abstract class that handles navigation towards a goal. A mode paramter
+ * will be used to indicate the type of concrete class to use.
+ */
+
+enum NavigationMode {
+  Driver,
+  DoorMan
+};
+
+class MoveBehavior extends Behavior {
+  bool for_doorways;
+
+  predicate Inactive{
+    float x;
+    float y;
+    float th;
+    float des_x;
+    float des_y;
+    float des_th;
+    bool recharging;
+  }
+
+  // Parameters to get to the target
+  predicate Active {
+    float x;
+    float y;
+    float th;
+    bool recharging;
+  }
+
+  MoveBehavior(Mode _mode, bool _for_doorways){
+    super(_mode);
+    for_doorways = _for_doorways;
+  }
+
+  MoveBehavior(Mode _mode, int max_duration, bool _for_doorways){
+    super(_mode, max_duration);
+    for_doorways = _for_doorways;
+  }
+};
+
+MoveBehavior::Inactive {
+  default(recharging, false);
+
+  // If desired values are set, then they are used to bind parameters of the
+  // predecessor to accomplish the desired position.
+  if(des_x){
+    if(des_y) {
+      if(des_th) {
+	met_by(Active p);
+	eq(p.x, des_x);
+	eq(p.y, des_y);
+	eq(p.th, des_th);
+	eq(p.recharging, recharging);
+      }
+    }
+  }
+
+  // Require actual and desired values to be within some tolerance
+  addEq(x, [-1.5, 1.5], des_x);
+  addEq(y, [-1.5, 1.5], des_y);
+  addEq(th, [-.25, .25], des_th);
+
+  if(start){
+    // BaseState(start) == Holds(x, y, th);
+    any(BaseState.Holds bs);
+    precedes(bs.start, start);
+    temporalDistance(start, [1 +inf], bs.end);
+    eq(bs.x, x);
+    eq(bs.y, y);
+    eq(bs.th, th);
+  }
+}
+
+MoveBehavior::Active{
+ default(th, 0.0);
+}

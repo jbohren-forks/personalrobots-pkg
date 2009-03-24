@@ -1,0 +1,63 @@
+/***********************************************************************
+ * External functions and relations for working with the topological map
+ ***********************************************************************/
+
+// Define a MAP_KEY type to give positive integer id's for keys in the topological mapp
+typedef int [0 100000] MAP_KEY;
+
+// A 0 key value indicates no key, and thus no map entity
+MAP_KEY NO_KEY = 0;
+
+// A function that will be executed to load the topological map
+constraint map_initialize_from_file(fileName) { fileName <: string }
+
+// A relation: given a connector, bind the x, y the values. Given x, and y, bind the connector
+constraint map_connector(connection_id, x, y, th) { connection_id <: MAP_KEY && x <: numeric && y <: numeric && th <: numeric }
+
+// A function: given an x,y position, bind a region.
+constraint map_get_region_from_position(region_id, x, y){ region_id <: MAP_KEY && x <: numeric && y <: numeric }
+
+// A function to query if a region is a doorway
+constraint map_is_doorway(result, region_id) { result <: bool && region_id <: MAP_KEY }
+
+// A function to get a doorway id given a pair of points.
+constraint map_get_door_from_position(door_id, x1, y1, x2, y2) { door_id <: MAP_KEY && x1 <: numeric && y1 <: numeric && x2 <: numeric && y2 <: numeric}
+
+// A function to get door data given a door id
+constraint map_get_door_data(x1, y1, x2, y2, door_id) { x1 <: numeric && y1 <: numeric && x2 <: numeric && y2 <: numeric && door_id <: MAP_KEY}
+
+/***********************************************************************
+ * Types related to a semantic view of the map
+ ***********************************************************************/
+
+/**
+ * A predefined location to go to
+ */
+class Location {
+  float x;
+  float y;
+  float th;
+
+  Location(float x_, float y_, float th_){
+    x = x_;
+    y = y_;
+    th = th_;
+  }
+};
+
+class Waypoint extends Location {
+  Waypoint(float x, float y, float th){
+    super(x, y, th);
+  }
+};
+
+
+/**
+ * The x, y, and theta values for a charging station. These describe the
+ * target base pose for the robot when recharging.
+ */
+class ChargingStation extends Location {
+  ChargingStation(float x, float y, float th){
+    super(x, y, th);
+  }
+};

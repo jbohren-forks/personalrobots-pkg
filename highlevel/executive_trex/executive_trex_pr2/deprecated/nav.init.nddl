@@ -1,0 +1,11 @@
+#include "pr2.nddl"
+
+/* Internal Timelines */
+
+/* External Timelines */
+
+// Base
+BaseState baseState = new BaseState(External);
+MoveBase moveBase = new MoveBase(External);
+
+close();
