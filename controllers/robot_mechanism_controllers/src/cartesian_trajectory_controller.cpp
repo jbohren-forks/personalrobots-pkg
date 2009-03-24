@@ -186,7 +186,7 @@ void CartesianTrajectoryController::update()
 					Vector(motion_profile_[3].Pos(time_passed_),
 					       motion_profile_[4].Pos(time_passed_),
 					       motion_profile_[5].Pos(time_passed_)) );
-      pose_current_ = Frame( pose_begin_.M * Rot( pose_begin_.M.Inverse( twist_begin_current.rot ) ), 
+      pose_current_ = Frame( pose_begin_.M * Rot( pose_begin_.M.Inverse( twist_begin_current.rot ) ),
 			     pose_begin_.p + twist_begin_current.vel);
 
       // twist
@@ -251,12 +251,12 @@ bool CartesianTrajectoryControllerNode::initXml(mechanism::RobotState *robot, Ti
   node_->param(controller_name_+"/root_name", root_name_, string("no_root_name_given"));
   node_->param(controller_name_+"/tip_name", tip_name, string("no_tip_name_given"));
 
-  // initialize controller  
+  // initialize controller
   if (!controller_.initialize(robot, root_name_, tip_name, controller_name_))
     return false;
 
   // subscribe to pose commands
-  command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&robot_state_, node_,  
+  command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&robot_state_, node_,
 								 boost::bind(&CartesianTrajectoryControllerNode::command, this, _1),
 								 controller_name_ + "/command", root_name_, 1);
 
@@ -279,7 +279,7 @@ void CartesianTrajectoryControllerNode::update()
 
 
 
-bool CartesianTrajectoryControllerNode::moveTo(robot_srvs::MoveToPose::Request &req, 
+bool CartesianTrajectoryControllerNode::moveTo(robot_srvs::MoveToPose::Request &req,
                                                robot_srvs::MoveToPose::Response &resp)
 {
   if (!moveTo(req.pose))
@@ -295,7 +295,7 @@ bool CartesianTrajectoryControllerNode::moveTo(robot_srvs::MoveToPose::Request &
 }
 
 
-bool CartesianTrajectoryControllerNode::preempt(std_srvs::Empty::Request &req, 
+bool CartesianTrajectoryControllerNode::preempt(std_srvs::Empty::Request &req,
                                                 std_srvs::Empty::Response &resp)
 {
   // you can only preempt is the robot is moving
@@ -338,14 +338,22 @@ bool CartesianTrajectoryControllerNode::moveTo(robot_msgs::PoseStamped& pose)
   Stamped<Pose> pose_stamped;
   PoseStampedMsgToTF(pose, pose_stamped);
 
-  // convert to reference frame of root link of the controller chain  
+  // convert to reference frame of root link of the controller chain
   Duration sleeptime = Duration().fromSec(0.001);
   Duration timeout = Duration().fromSec(5.0);
   Time starttime = Time().now();
-  while (!robot_state_.canTransform(root_name_, pose.header.frame_id, pose.header.stamp) && 
-         (Time().now() - starttime) < timeout )
-    sleeptime.sleep();
-  robot_state_.transformPose(root_name_, pose_stamped, pose_stamped);
+  try
+  {
+    while (!robot_state_.canTransform(root_name_, pose.header.frame_id, pose.header.stamp) &&
+           (Time().now() - starttime) < timeout )
+      sleeptime.sleep();
+    robot_state_.transformPose(root_name_, pose_stamped, pose_stamped);
+  }
+  catch (const tf::TransformException &ex)
+  {
+    ROS_ERROR("Transform exception: %s", ex.what());
+    return false;
+  }
 
   // tell controller where to move to
   Frame pose_desi;
