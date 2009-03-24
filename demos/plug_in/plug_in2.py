@@ -113,25 +113,59 @@ def main():
 
     ######  Stages the plug
 
-    # Spawns the pose controller
-    print "Spawning the pose controller"
-    pose_config = '<controller name="arm_pose" type="CartesianPoseControllerNode" />'
-    resp = kill_and_spawn(pose_config, [])
-    if len(resp.add_name) == 0 or not resp.add_ok[0]:
-        raise "Failed to spawn the pose controller"
+    if False:
 
-    # Commands the hand to near the outlet
-    print "Staging the plug"
-    staging_pose = PoseStamped()
-    staging_pose.header.frame_id = 'outlet_pose'
-    staging_pose.pose.position = xyz(-0.12, 0.0, 0.0)
-    staging_pose.pose.orientation = rpy(0,0,0)
-    pub_pose = rospy.Publisher('/arm_pose/command', PoseStamped)
-    for i in range(50):
-        staging_pose.header.stamp = last_time() - rospy.rostime.Duration(-0.2)
-        pub_pose.publish(staging_pose)
-        time.sleep(0.1)
-    time.sleep(2)
+        # Spawns the pose controller
+        print "Spawning the pose controller"
+        pose_config = '<controller name="arm_pose" type="CartesianPoseControllerNode" />'
+        resp = kill_and_spawn(pose_config, [])
+        if len(resp.add_name) == 0 or not resp.add_ok[0]:
+            raise "Failed to spawn the pose controller"
+
+        # Commands the hand to near the outlet
+        print "Staging the plug"
+        staging_pose = PoseStamped()
+        staging_pose.header.frame_id = 'outlet_pose'
+        staging_pose.pose.position = xyz(-0.12, 0.0, 0.0)
+        staging_pose.pose.orientation = rpy(0,0,0)
+        pub_pose = rospy.Publisher('/arm_pose/command', PoseStamped)
+        for i in range(50):
+            staging_pose.header.stamp = last_time() - rospy.rostime.Duration(-0.2)
+            pub_pose.publish(staging_pose)
+            time.sleep(0.1)
+        time.sleep(2)
+
+    else:
+        # trajectory controller is already spawned
+
+        p_up = PoseStamped()
+        p_up.header.frame_id = 'base_link'
+        p_up.header.stamp = rospy.get_rostime()
+        p_up.pose.position = xyz(0.19, 0.04, 0.5)
+        p_up.pose.orientation = Quaternion(-0.19, 0.13, 0.68, 0.68)
+
+        p_face = PoseStamped()
+        p_face.header.frame_id = 'base_link'
+        p_face.header.stamp = rospy.get_rostime()
+        p_face.pose.position = xyz(0.33, -0.09, 0.37)
+        p_face.pose.orientation = Quaternion(-0.04, 0.26, -0.00, 0.96)
+
+        p_stage = PoseStamped()
+        p_stage.header.frame_id = 'outlet_pose'
+        p_stage.header.stamp = rospy.get_rostime()
+        p_stage.pose.position = xyz(-0.12, 0.0, 0.0)
+        p_stage.pose.orientation = rpy(0,0.3,0)
+
+        try:
+            print "Waiting for the trajectory controller"
+            move_arm = rospy.ServiceProxy('cartesian_trajectory_right/move_to', MoveToPose)
+            print "Staging the plug"
+            move_arm(p_up)
+            move_arm(p_face)
+            move_arm(p_stage)
+        except rospy.ServiceException, e:
+            print "move_to service failed: %s" % e
+
 
     ######  Finds an initial estimate of the plug pose
 
@@ -159,7 +193,7 @@ def main():
         rospy.set_param("/arm_constraint/pose_pid/i_clamp", 10.0)
         rospy.set_param("/arm_constraint/f_r_max", 150.0)
         constraint_config = open('controllers.xml').read()
-        resp = kill_and_spawn(constraint_config, ['arm_pose'])
+        resp = kill_and_spawn(constraint_config, ['cartesian_trajectory_right', 'arm_pose'])
         if len(resp.add_name) == 0 or not resp.add_ok[0]:
             raise "Failed to spawn the constraint controller"
 
@@ -208,7 +242,7 @@ def main():
         #rospy.set_param("/arm_hybrid/fb_rot_vel/d", 0.0)
         #rospy.set_param("/arm_hybrid/fb_rot_vel/i_clamp", 0.4)
         hybrid_config = '<controller name="arm_hybrid" type="CartesianHybridControllerNode" />'
-        resp = kill_and_spawn(hybrid_config, ['arm_pose'])
+        resp = kill_and_spawn(hybrid_config, ['cartesian_trajectory_right', 'arm_pose'])
         if len(resp.add_name) == 0 or not resp.add_ok[0]:
             raise "Failed to spawn the hybrid controller"
 
