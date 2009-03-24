@@ -54,7 +54,7 @@ namespace cloud_geometry
       * \param plane_b the normalized coefficients of the second plane
       */
     inline double
-      getAngleBetweenPlanes (std::vector<double> plane_a, std::vector<double> plane_b)
+      getAngleBetweenPlanes (const std::vector<double>& plane_a, const std::vector<double>& plane_b)
     {
       return (acos (plane_a[0] * plane_b[0] + plane_a[1] * plane_b[1] + plane_a[2] * plane_b[2]));
     }
@@ -65,7 +65,7 @@ namespace cloud_geometry
       * \param plane_b the normalized coefficients of the second plane
       */
     inline double
-      getAngleBetweenPlanes (robot_msgs::Point32 *plane_a, robot_msgs::Point32 *plane_b)
+      getAngleBetweenPlanes (const robot_msgs::Point32 *plane_a, const robot_msgs::Point32 *plane_b)
     {
       return (acos (plane_a->x * plane_b->x + plane_a->y * plane_b->y + plane_a->z * plane_b->z));
     }
@@ -76,7 +76,7 @@ namespace cloud_geometry
       * \param plane_b the normalized coefficients of the second plane
       */
     inline double
-      getAngleBetweenPlanes (robot_msgs::Point32 *plane_a, std::vector<double> plane_b)
+      getAngleBetweenPlanes (const robot_msgs::Point32 *plane_a, const std::vector<double> plane_b)
     {
       return (acos (plane_a->x * plane_b[0] + plane_a->y * plane_b[1] + plane_a->z * plane_b[2]));
     }
@@ -87,7 +87,7 @@ namespace cloud_geometry
       * \param plane_b the normalized coefficients of the second plane
       */
     inline double
-      getAngleBetweenPlanes (std::vector<double> plane_a, robot_msgs::Point32 *plane_b)
+      getAngleBetweenPlanes (const std::vector<double> plane_a, const robot_msgs::Point32 *plane_b)
     {
       return (acos (plane_a[0] * plane_b->x + plane_a[1] * plane_b->y + plane_a[2] * plane_b->z));
     }
@@ -97,7 +97,7 @@ namespace cloud_geometry
       * \param point a 2D point
       */
     inline double
-      getAngle2D (double point[2])
+      getAngle2D (const double point[2])
     {
       double rad;
       if (point[0] == 0)
@@ -143,7 +143,7 @@ namespace cloud_geometry
       * \param v2 the second 3D vector
       */
     inline double
-      getAngle3D (robot_msgs::Point32 *v1, robot_msgs::Point32 *v2)
+      getAngle3D (const robot_msgs::Point32 *v1, const robot_msgs::Point32 *v2)
     {
       // Compute the vectors norms
       double norm_v1 = (v1->x * v1->x) + (v1->y * v1->y) + (v1->z * v1->z);
@@ -164,7 +164,7 @@ namespace cloud_geometry
       * \param v2 the second 3D vector
       */
     inline double
-      getAngle3D (robot_msgs::Point *v1, robot_msgs::Point *v2)
+      getAngle3D (const robot_msgs::Point *v1, const robot_msgs::Point *v2)
     {
       // Compute the vectors norms
       double norm_v1 = (v1->x * v1->x) + (v1->y * v1->y) + (v1->z * v1->z);
@@ -185,7 +185,7 @@ namespace cloud_geometry
       * \param v2 the second 3D vector
       */
     inline double
-      getAngle3D (robot_msgs::Point32 *v1, robot_msgs::Point *v2)
+      getAngle3D (const robot_msgs::Point32 *v1, const robot_msgs::Point *v2)
     {
       // Compute the vectors norms
       double norm_v1 = (v1->x * v1->x) + (v1->y * v1->y) + (v1->z * v1->z);
@@ -206,7 +206,7 @@ namespace cloud_geometry
       * \param v2 the second 3D vector
       */
     inline double
-      getAngle3D (robot_msgs::Point *v1, robot_msgs::Point32 *v2)
+      getAngle3D (const robot_msgs::Point *v1, const robot_msgs::Point32 *v2)
     {
       // Compute the vectors norms
       double norm_v1 = (v1->x * v1->x) + (v1->y * v1->y) + (v1->z * v1->z);

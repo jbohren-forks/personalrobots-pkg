@@ -53,7 +53,7 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     inline void
-      computeCentroid (robot_msgs::PointCloud *points, robot_msgs::Point32 &centroid)
+      computeCentroid (const robot_msgs::PointCloud *points, robot_msgs::Point32 &centroid)
     {
       centroid.x = centroid.y = centroid.z = 0;
       // For each point in the cloud
@@ -76,7 +76,7 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     inline void
-      computeCentroid (robot_msgs::Polygon3D *poly, robot_msgs::Point32 &centroid)
+      computeCentroid (const robot_msgs::Polygon3D *poly, robot_msgs::Point32 &centroid)
     {
       centroid.x = centroid.y = centroid.z = 0;
       // For each point in the cloud
@@ -99,7 +99,7 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     inline void
-      computeCentroid (robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::Point32 &centroid)
+      computeCentroid (const robot_msgs::PointCloud *points, const std::vector<int> *indices, robot_msgs::Point32 &centroid)
     {
       centroid.x = centroid.y = centroid.z = 0;
       // For each point in the cloud
@@ -122,7 +122,7 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     inline void
-      computeCentroid (robot_msgs::PointCloud *points, std::vector<int> *indices, std::vector<double> &centroid)
+      computeCentroid (const robot_msgs::PointCloud *points, const std::vector<int> *indices, std::vector<double> &centroid)
     {
       centroid.resize (3);
       centroid[0] = centroid[1] = centroid[2] = 0;
@@ -147,7 +147,7 @@ namespace cloud_geometry
       * \param centroid the computed centroid
       */
     inline void
-      computeCovarianceMatrix (robot_msgs::PointCloud *points, Eigen::Matrix3d &covariance_matrix, robot_msgs::Point32 &centroid)
+      computeCovarianceMatrix (const robot_msgs::PointCloud *points, Eigen::Matrix3d &covariance_matrix, robot_msgs::Point32 &centroid)
     {
       computeCentroid (points, centroid);
 
@@ -178,7 +178,7 @@ namespace cloud_geometry
       * \param covariance_matrix the 3x3 covariance matrix
       */
     inline void
-      computeCovarianceMatrix (robot_msgs::PointCloud *points, Eigen::Matrix3d &covariance_matrix)
+      computeCovarianceMatrix (const robot_msgs::PointCloud *points, Eigen::Matrix3d &covariance_matrix)
     {
       robot_msgs::Point32 centroid;
       computeCovarianceMatrix (points, covariance_matrix, centroid);
@@ -194,7 +194,7 @@ namespace cloud_geometry
       * \param centroid the computed centroid
       */
     inline void
-      computeCovarianceMatrix (robot_msgs::PointCloud *points, std::vector<int> *indices, Eigen::Matrix3d &covariance_matrix, robot_msgs::Point32 &centroid)
+      computeCovarianceMatrix (const robot_msgs::PointCloud *points, const std::vector<int> *indices, Eigen::Matrix3d &covariance_matrix, robot_msgs::Point32 &centroid)
     {
       computeCentroid (points, indices, centroid);
 
@@ -225,23 +225,23 @@ namespace cloud_geometry
       * \param covariance_matrix the 3x3 covariance matrix
       */
     inline void
-      computeCovarianceMatrix (robot_msgs::PointCloud *points, std::vector<int> *indices, Eigen::Matrix3d &covariance_matrix)
+      computeCovarianceMatrix (const robot_msgs::PointCloud *points, const std::vector<int> *indices, Eigen::Matrix3d &covariance_matrix)
     {
       robot_msgs::Point32 centroid;
       computeCovarianceMatrix (points, indices, covariance_matrix, centroid);
     }
 
 
-    void computeCentroid (robot_msgs::PointCloud *points, robot_msgs::PointCloud &centroid);
-    void computeCentroid (robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::PointCloud &centroid);
+    void computeCentroid (const robot_msgs::PointCloud *points, robot_msgs::PointCloud &centroid);
+    void computeCentroid (const robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::PointCloud &centroid);
 
-    void computeSurfaceNormalCurvature (robot_msgs::PointCloud *points, Eigen::Vector4d &plane_parameters, double &curvature);
-    void computeSurfaceNormalCurvature (robot_msgs::PointCloud *points, std::vector<int> *indices, Eigen::Vector4d &plane_parameters, double &curvature);
+    void computeSurfaceNormalCurvature (const robot_msgs::PointCloud *points, Eigen::Vector4d &plane_parameters, double &curvature);
+    void computeSurfaceNormalCurvature (const robot_msgs::PointCloud *points, const std::vector<int> *indices, Eigen::Vector4d &plane_parameters, double &curvature);
 
-    void computeMomentInvariants (robot_msgs::PointCloud *points, double &j1, double &j2, double &j3);
-    void computeMomentInvariants (robot_msgs::PointCloud *points, std::vector<int> *indices, double &j1, double &j2, double &j3);
+    void computeMomentInvariants (const robot_msgs::PointCloud *points, double &j1, double &j2, double &j3);
+    void computeMomentInvariants (const robot_msgs::PointCloud *points, const std::vector<int> *indices, double &j1, double &j2, double &j3);
 
-    bool isBoundaryPoint (robot_msgs::PointCloud *points, int q_idx, std::vector<int> *neighbors, Eigen::Vector3d u, Eigen::Vector3d v, double angle_threshold = M_PI / 2.0);
+    bool isBoundaryPoint (const robot_msgs::PointCloud *points, int q_idx, const std::vector<int> *neighbors, const Eigen::Vector3d& u, const Eigen::Vector3d& v, double angle_threshold = M_PI / 2.0);
   }
 }
 
