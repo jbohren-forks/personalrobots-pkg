@@ -13,8 +13,11 @@
   <depend package="robot_mechanism_controllers" />
   <depend package="spacenav_node" />
   <depend package="pr2_etherCAT" />
-	<depend package="joy" />
+  <depend package="joy" />
   <depend package="outlet_detection" />
+  <depend package="point_cloud_assembler" />
+  <depend package="pr2_experimental_controllers" />
+  <depend package="plug_onbase_detector" />
  
   <depend package="tf" />
 </package>
