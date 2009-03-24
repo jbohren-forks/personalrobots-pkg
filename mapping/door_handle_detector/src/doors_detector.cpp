@@ -52,7 +52,7 @@ This node should replace the older door_handle_detector node (which will be obso
 #include <door_handle_detector/geometric_helper.h>
 
 // Include the service call type
-#include "door_handle_detector/DoorsDetector.h"
+#include <door_handle_detector/DoorsDetector.h>
 
 #include <tf/message_notifier.h>
 #include <angles/angles.h>
@@ -69,18 +69,18 @@ class DoorDetector
     ros::Node& node_;
 
   public:
-    // ROS messages
-    PointCloud cloud_orig_, cloud_tr_, cloud_regions_;
-    Point32 z_axis_;
-    PolygonalMap pmap_;
-    tf::MessageNotifier<robot_msgs::PointCloud>*  message_notifier_;
+    // parameters for callback function
+    PointCloud pointcloud_;  
+    string input_cloud_topic_;
+    unsigned int num_clouds_received_;
 
-    PointStamped viewpoint_cloud_;
+
+    Point32 z_axis_;
+
 
     tf::TransformListener tf_;
 
-    string input_cloud_topic_, parameter_frame_, door_frame_;
-    unsigned int num_clouds_received_;
+    string parameter_frame_;
 
     // Parameters regarding geometric constraints for the door/handle
     double door_min_height_, door_min_width_, door_max_height_, door_max_width_, door_min_z_;
@@ -107,7 +107,7 @@ class DoorDetector
     int global_marker_id_;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    DoorDetector (ros::Node& anode) : node_ (anode), message_notifier_ (NULL), tf_ (anode)
+    DoorDetector (ros::Node& anode) : node_ (anode), tf_ (anode)
     {
       // ---[ Parameters regarding geometric constraints for the door/handle
       {
@@ -165,82 +165,64 @@ class DoorDetector
 
       // Temporary parameters
       node_.param ("~input_cloud_topic", input_cloud_topic_, string ("/snapshot_cloud"));
-      node_.advertiseService ("doors_detector", &DoorDetector::detectDoor, this);
+      node_.advertiseService ("doors_detector", &DoorDetector::detectDoorSrv, this);
       node_.advertise<robot_msgs::VisualizationMarker> ("visualizationMarker", 100);
 
       node_.advertise<PolygonalMap> ("~door_frames", 1);
       node_.advertise<PointCloud> ("~door_regions", 1);
-      cloud_regions_.chan.resize (1); cloud_regions_.chan[0].name = "rgb";
 
       global_marker_id_ = 1;
     }
 
+
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief This is the main service callback: it gets called whenever a request to find a new door is given     */
+    /** \brief This is the main door detectoin function */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    bool
-      detectDoor (door_handle_detector::DoorsDetector::Request &req, door_handle_detector::DoorsDetector::Response &resp)
+    bool detectDoors(const robot_msgs::Door& door, PointCloud pointcloud, std::vector<robot_msgs::Door>& result) const
     {
-      ros::Time start_time = ros::Time::now ();
-      ros::Duration delay = ros::Duration ().fromSec (25);
-      cout << "start time " << start_time.toSec () << endl;
-      ROS_INFO ("Waiting for PointCloud newer than %f on topic %s.", (start_time + delay).toSec (), node_.mapName (input_cloud_topic_).c_str ());
-
-      // Door TF frame
-      door_frame_ = req.door.header.frame_id;
-
-      // receive a new laser scan
-      num_clouds_received_ = 0;
-      message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (&tf_, &node_,  boost::bind (&DoorDetector::cloud_cb, this, _1),
-                                                                           input_cloud_topic_, door_frame_, 1);
-      ros::Duration tictoc = ros::Duration ().fromSec (1.0);
-      while ((int)num_clouds_received_ < 1)// || (cloud_orig_.header.stamp < (start_time + delay)))
-        tictoc.sleep ();
-      delete message_notifier_;
-
       ros::Time ts;
       ros::Duration duration;
       ts = ros::Time::now ();
 
       // New strategy: transform the PCD (Point Cloud Data) into the parameter_frame, and work there
-      if (parameter_frame_ != cloud_orig_.header.frame_id)
+      if (parameter_frame_ != pointcloud.header.frame_id)
       {
         try
         {
-          tf_.transformPointCloud (parameter_frame_, cloud_orig_, cloud_tr_);
+          tf_.transformPointCloud (parameter_frame_, pointcloud, pointcloud);
         }
         catch (tf::ConnectivityException e)
         {
-          ROS_ERROR ("Could not transform point cloud from frame %s to frame %s.", cloud_orig_.header.frame_id.c_str (), parameter_frame_.c_str ());
+          ROS_ERROR ("Could not transform point cloud from frame %s to frame %s.", pointcloud.header.frame_id.c_str (), parameter_frame_.c_str ());
         }
       }
-      else
-        cloud_tr_ = cloud_orig_;            // This can be replaced by modifying TF to copy (point to) the data
 
       // Get the cloud viewpoint in the parameter frame
+      PointStamped viewpoint_cloud_;
       getCloudViewPoint (parameter_frame_, viewpoint_cloud_, &tf_);
 
       // ---[ Optimization: select a subset of the points for faster processing
       // Select points whose distances are up to Xm from the robot
       int nr_p = 0;
-      vector<int> indices_in_bounds (cloud_tr_.pts.size ());
-      for (unsigned int i = 0; i < cloud_tr_.pts.size (); i++)
+      vector<int> indices_in_bounds (pointcloud.pts.size ());
+      for (unsigned int i = 0; i < pointcloud.pts.size (); i++)
       {
-        double dist = cloud_geometry::distances::pointToPointDistanceSqr (&viewpoint_cloud_.point, &cloud_tr_.pts[i]);
-        if (dist < maximum_search_radius_ && cloud_tr_.pts[i].z > minimum_z_ && cloud_tr_.pts[i].z < maximum_z_)
+        double dist = cloud_geometry::distances::pointToPointDistanceSqr (&viewpoint_cloud_.point, &pointcloud.pts[i]);
+        if (dist < maximum_search_radius_ && pointcloud.pts[i].z > minimum_z_ && pointcloud.pts[i].z < maximum_z_)
           indices_in_bounds[nr_p++] = i;
       }
       indices_in_bounds.resize (nr_p);
 
       // NOTE: <leaves_> gets allocated internally in downsamplePointCloud() and is not deallocated on exit
-      PointCloud cloud_down_;
+      PointCloud cloud_down;
       vector<cloud_geometry::Leaf> leaves;
       try
       {
         Point leaf_width_xyz;
         leaf_width_xyz.x = leaf_width_xyz.y = leaf_width_xyz.z = leaf_width_;
-        cloud_geometry::downsamplePointCloud (&cloud_tr_, &indices_in_bounds, cloud_down_, leaf_width_xyz, leaves, -1);
-        ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_xyz.x, leaf_width_xyz.y, leaf_width_xyz.z, cloud_down_.pts.size ());
+        cloud_geometry::downsamplePointCloud (&pointcloud, &indices_in_bounds, cloud_down, leaf_width_xyz, leaves, -1);
+        ROS_INFO ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_xyz.x, leaf_width_xyz.y, leaf_width_xyz.z, cloud_down.pts.size ());
       }
       catch (std::bad_alloc)
       {
@@ -253,19 +235,20 @@ class DoorDetector
       sendMarker (viewpoint_cloud_.point.x, viewpoint_cloud_.point.y, viewpoint_cloud_.point.z, parameter_frame_, &node_, global_marker_id_, 0, 0, 0);
 #endif
       // Create Kd-Tree and estimate the point normals in the original point cloud
-      estimatePointNormals (&cloud_tr_, &indices_in_bounds, cloud_down_, k_search_, &viewpoint_cloud_);
+      estimatePointNormals (&pointcloud, &indices_in_bounds, cloud_down, k_search_, &viewpoint_cloud_);
 
       // Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_xy;
-      cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_down_, 0, 1, 2, normal_angle_tolerance_, &z_axis_, indices_xy);
+      cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_down, 0, 1, 2, normal_angle_tolerance_, &z_axis_, indices_xy);
 
       // Split the Z-perpendicular points into clusters
       vector<vector<int> > clusters;
-      findClusters (&cloud_down_, &indices_xy, euclidean_cluster_distance_tolerance_, clusters, 0, 1, 2,
+      findClusters (&cloud_down, &indices_xy, euclidean_cluster_distance_tolerance_, clusters, 0, 1, 2,
                     euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
       sort (clusters.begin (), clusters.end (), compareRegions);
       reverse (clusters.begin (), clusters.end ());
 
+      PolygonalMap pmap_;
       if (clusters.size () == 0)
       {
         ROS_ERROR ("did not find a door");
@@ -274,9 +257,12 @@ class DoorDetector
       }
 
       // Output the point regions
-      cloud_regions_.header = cloud_down_.header;
-      cloud_regions_.pts.resize (0);
-      cloud_regions_.chan[0].vals.resize (0);
+      PointCloud cloud_regions;
+      cloud_regions.chan.resize (1); 
+      cloud_regions.chan[0].name = "rgb";
+      cloud_regions.header = cloud_down.header;
+      cloud_regions.pts.resize (0);
+      cloud_regions.chan[0].vals.resize (0);
       for (unsigned int cc = 0; cc < clusters.size (); cc++)
       {
         float r = rand () / (RAND_MAX + 1.0);
@@ -284,15 +270,15 @@ class DoorDetector
         float b = rand () / (RAND_MAX + 1.0);
         for (unsigned int j = 0; j < clusters[cc].size (); j++)
         {
-          cloud_regions_.pts.push_back (cloud_down_.pts[clusters[cc][j]]);
-          cloud_regions_.chan[0].vals.push_back (getRGB (r, g, b));
+          cloud_regions.pts.push_back (cloud_down.pts[clusters[cc][j]]);
+          cloud_regions.chan[0].vals.push_back (getRGB (r, g, b));
         }
       }
-      node_.publish ("~door_regions", cloud_regions_);
+      node_.publish ("~door_regions", cloud_regions);
 
 
       vector<vector<double> > coeff (clusters.size ()); // Need to save all coefficients for all models
-      pmap_.header = cloud_tr_.header;
+      pmap_.header = pointcloud.header;
       pmap_.polygons.resize (clusters.size ());         // Allocate space for the polygonal map
 
       ROS_INFO (" - Process all clusters (%i)", clusters.size ());
@@ -308,7 +294,7 @@ class DoorDetector
 
         // Find the best plane in this cluster
         vector<int> inliers;
-        if (!fitSACPlane (cloud_down_, clusters[cc], inliers, coeff[cc], &viewpoint_cloud_, sac_distance_threshold_, euclidean_cluster_min_pts_))
+        if (!fitSACPlane (cloud_down, clusters[cc], inliers, coeff[cc], &viewpoint_cloud_, sac_distance_threshold_, euclidean_cluster_min_pts_))
         {
           goodness_factor[cc] = 0;
           ROS_DEBUG ("R: Could not find planar model for cluster %d (%d hull points, %d points).", cc, pmap_.polygons[cc].points.size (), inliers.size ());
@@ -323,7 +309,7 @@ class DoorDetector
         }
 
         // Compute the convex hull
-        cloud_geometry::areas::convexHull2D (&cloud_down_, &inliers, &coeff[cc], pmap_.polygons[cc]);
+        cloud_geometry::areas::convexHull2D (&cloud_down, &inliers, &coeff[cc], pmap_.polygons[cc]);
 
         // ---[ If any of the points on the hull are near/outside the imposed "maximum search radius to viewpoint" limit, discard the candidate
         for (int i = 0; i < (int)pmap_.polygons[cc].points.size (); i++)
@@ -430,10 +416,10 @@ class DoorDetector
 
         // ---[ Compute the distance from the door to the prior of the door
         double door_distance = fmax (0.001,
-                                     fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p1, &min_p),
-                                           fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p1, &max_p),
-                                                 fmin (cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &min_p),
-                                                       cloud_geometry::distances::pointToPointXYDistance (&req.door.door_p2, &max_p)))));
+                                     fmin (cloud_geometry::distances::pointToPointXYDistance (&door.door_p1, &min_p),
+                                           fmin (cloud_geometry::distances::pointToPointXYDistance (&door.door_p1, &max_p),
+                                                 fmin (cloud_geometry::distances::pointToPointXYDistance (&door.door_p2, &min_p),
+                                                       cloud_geometry::distances::pointToPointXYDistance (&door.door_p2, &max_p)))));
         goodness_factor[cc] /= door_distance;
         ROS_WARN ("A: Door candidate (%d, %d hull points, %d points) accepted with: average point density (%g), area (%g), width (%g), height (%g).\n Planar coefficients: [%g %g %g %g]",
                     cc, pmap_.polygons[cc].points.size (), inliers.size (), density, area, door_frame, door_height, coeff[cc][0], coeff[cc][1], coeff[cc][2], coeff[cc][3]);
@@ -487,7 +473,7 @@ class DoorDetector
       }
 
       ROS_INFO (" - Found %d / %d potential door candidates.", doors_found_cnt, clusters.size ());
-      resp.doors.resize (doors_found_cnt);
+      result.resize(doors_found_cnt);
 
       // Copy all clusters
       int nr_d = 0;
@@ -498,25 +484,24 @@ class DoorDetector
           continue;
 
         // Save the weight (we need to reorder at the end)
-        resp.doors[nr_d].weight = goodness_factor[cc];
+        result[nr_d].weight = goodness_factor[cc];
 
         // Get the min_p and max_p of selected cluster
         cloud_geometry::statistics::getLargestXYPoints (&pmap_.polygons[cc], min_p, max_p);
 
+        // @RADU: The doors that are detected are all in the parameter frame, not in the door frame
         // Reply doors message in same frame as request doors message
-        resp.doors[nr_d].header.frame_id = req.door.header.frame_id;
+        result[nr_d].header.frame_id = door.header.frame_id;
+        result[nr_d].door_p1 = min_p;
+        result[nr_d].door_p2 = max_p;
 
-        resp.doors[nr_d].header.frame_id = door_frame_;
-        resp.doors[nr_d].door_p1 = min_p;
-        resp.doors[nr_d].door_p2 = max_p;
-
-        resp.doors[nr_d].normal.x      = coeff[cc][0];
-        resp.doors[nr_d].normal.y      = coeff[cc][1];
-        resp.doors[nr_d].normal.z      = coeff[cc][2];
+        result[nr_d].normal.x      = coeff[cc][0];
+        result[nr_d].normal.y      = coeff[cc][1];
+        result[nr_d].normal.z      = coeff[cc][2];
 
         // Need min/max Z
         cloud_geometry::statistics::getMinMax (&pmap_.polygons[cc], min_p, max_p);
-        resp.doors[nr_d].height = fabs (max_p.z - min_p.z);
+        result[nr_d].height = fabs (max_p.z - min_p.z);
         nr_d++;
       }
 
@@ -529,20 +514,20 @@ class DoorDetector
       }
 
       // Order the results based on the weight (e.g. goodness factor)
-      sort (resp.doors.begin (), resp.doors.end (), compareDoorsWeight);
-      reverse (resp.doors.begin (), resp.doors.end ());
+      sort (result.begin (), result.end (), compareDoorsWeight);
+      reverse (result.begin (), result.end ());
 
       duration = ros::Time::now () - ts;
-      ROS_INFO ("Door(s) found and ordered by weight. Result in frame %s", resp.doors[0].header.frame_id.c_str ());
+      ROS_INFO ("Door(s) found and ordered by weight. Result in frame %s", result[0].header.frame_id.c_str ());
       for (int cd = 0; cd < nr_d; cd++)
       {
         ROS_INFO ("  %d -> P1 = [%g, %g, %g]. P2 = [%g, %g, %g]. Width = %g. Height = %g. Weight = %g.", cd,
-                  resp.doors[cd].door_p1.x, resp.doors[cd].door_p1.y, resp.doors[cd].door_p1.z, resp.doors[cd].door_p2.x, resp.doors[cd].door_p2.y, resp.doors[cd].door_p2.z,
-                  sqrt ((resp.doors[cd].door_p1.x - resp.doors[cd].door_p2.x) *
-                        (resp.doors[cd].door_p1.x - resp.doors[cd].door_p2.x) +
-                        (resp.doors[cd].door_p1.y - resp.doors[cd].door_p2.y) *
-                        (resp.doors[cd].door_p1.y - resp.doors[cd].door_p2.y)
-                       ), resp.doors[cd].height, resp.doors[cd].weight);
+                  result[cd].door_p1.x, result[cd].door_p1.y, result[cd].door_p1.z, result[cd].door_p2.x, result[cd].door_p2.y, result[cd].door_p2.z,
+                  sqrt ((result[cd].door_p1.x - result[cd].door_p2.x) *
+                        (result[cd].door_p1.x - result[cd].door_p2.x) +
+                        (result[cd].door_p1.y - result[cd].door_p2.y) *
+                        (result[cd].door_p1.y - result[cd].door_p2.y)
+                       ), result[cd].height, result[cd].weight);
       }
       ROS_INFO ("  Total time: %g.", duration.toSec ());
 
@@ -550,8 +535,33 @@ class DoorDetector
 
       ROS_INFO ("Finished detecting door.");
 
-      return (true);
+      return true;
     }
+
+
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Service call to detect doors*/
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    bool
+      detectDoorSrv (door_handle_detector::DoorsDetector::Request &req, door_handle_detector::DoorsDetector::Response &resp)
+    {
+      // receive a new laser scan
+      num_clouds_received_ = 0;
+      tf::MessageNotifier<robot_msgs::PointCloud>* message_notifier =
+        new tf::MessageNotifier<robot_msgs::PointCloud> (&tf_, &node_,  boost::bind (&DoorDetector::cloud_cb, this, _1),
+                                                         input_cloud_topic_, parameter_frame_, 1);
+      ros::Duration tictoc = ros::Duration ().fromSec (0.1);
+      while ((int)num_clouds_received_ < 1)
+        tictoc.sleep ();
+      delete message_notifier;
+
+      return detectDoors(req.door, pointcloud_, resp.doors);
+    }
+
+
+
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Main point cloud callback.                                                                           */
@@ -559,9 +569,9 @@ class DoorDetector
     void
       cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
     {
-      cloud_orig_ = *cloud;
-      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", cloud_orig_.pts.size (), cloud_orig_.header.frame_id.c_str (),
-                cloud_orig_.chan.size (), cloud_geometry::getAvailableChannels (&cloud_orig_).c_str ());
+      pointcloud_ = *cloud;
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", pointcloud_.pts.size (), pointcloud_.header.frame_id.c_str (),
+                pointcloud_.chan.size (), cloud_geometry::getAvailableChannels (&pointcloud_).c_str ());
       num_clouds_received_++;
     }
 };
