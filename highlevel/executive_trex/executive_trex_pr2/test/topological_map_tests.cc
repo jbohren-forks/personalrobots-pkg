@@ -7,6 +7,7 @@
  */
 
 #include <ros/console.h>
+#include <robot_msgs/Door.h>
 #include <executive_trex_pr2/topological_map.h>
 #include <set>
 #include <gtest/gtest.h>
@@ -99,7 +100,7 @@ void pickPointInSpace(unsigned int W, unsigned int H, double& x, double& y){
  * Test reading a map in from a file
  */
 TEST(executive_trex_pr2, map_read_from_file){
-  std::ifstream is("./test/willow.tmap");
+  std::ifstream is("test/willow.tmap");
   TopologicalMapAdapter map(is);
   std::ofstream os("doors.willow.out");
   printDoors(os);
@@ -113,6 +114,9 @@ TEST(executive_trex_pr2, map_read_from_file){
 
   // Points that are ligitimately obstacles
   ASSERT_EQ(map.isObstacle(15.0, 25.2), true);
+
+  robot_msgs::Door door_state;
+  ASSERT_EQ(TopologicalMapAdapter::instance()->getDoorState(206, door_state), true);
 }
 
 TEST(executive_trex_pr2, map_accessor){
