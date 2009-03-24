@@ -1,0 +1,6 @@
+<filters>
+  <filter type="ScanShadowsFilter" name="shadows">
+    <params min_angle="10" max_angle="170" window="1"/>
+  </filter>
+
+</filters>
