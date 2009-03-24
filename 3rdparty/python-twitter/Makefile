@@ -8,7 +8,8 @@ include $(shell rospack find mk)/svn_checkout.mk
 SOURCE_DIR = python-twitter_svn
 
 python-twitter: $(SOURCE_DIR)
-	cd $(SOURCE_DIR) && python setup.py build && python setup.py install --prefix ../src
+	mkdir -p src/lib/python2.5/site-packages
+	cd $(SOURCE_DIR) && python setup.py build && PYTHONPATH=${PYTHONPATH}:${PWD}/src/lib/python2.5/site-packages/ python setup.py install --prefix ../src
 	mv src/lib/python2.5/site-packages/* src
 	rm -rf src/lib
 	touch python-twitter
