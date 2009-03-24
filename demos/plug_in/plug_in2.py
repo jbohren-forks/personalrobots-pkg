@@ -80,7 +80,23 @@ def main():
     if rospy.is_shutdown(): sys.exit(0)
 
     # Bring down all possible controllers, just in case
+    print "Bringing down old controllers"
     kill_and_spawn('<controllers></controllers>', ['arm_pose', CONTROLLER, 'arm_hybrid'])
+
+    rospy.set_param("/arm_pose/p", 15.0)
+    rospy.set_param("/arm_pose/i", 0.2)
+    rospy.set_param("/arm_pose/d", 0.0)
+    rospy.set_param("/arm_pose/i_clamp", 0.5)
+    rospy.set_param("/arm_pose/root_name", "torso_lift_link")
+    rospy.set_param("/arm_pose/tip_name", "r_gripper_tool_frame")
+    rospy.set_param("/arm_pose/twist/fb_trans/p", 15.0)
+    rospy.set_param("/arm_pose/twist/fb_trans/i", 0.5)
+    rospy.set_param("/arm_pose/twist/fb_trans/d", 0.0)
+    rospy.set_param("/arm_pose/twist/fb_trans/i_clamp", 1.0)
+    rospy.set_param("/arm_pose/twist/fb_rot/p", 1.0)
+    rospy.set_param("/arm_pose/twist/fb_rot/i", 0.1)
+    rospy.set_param("/arm_pose/twist/fb_rot/d", 0.0)
+    rospy.set_param("/arm_pose/twist/fb_rot/i_clamp", 0.2)
 
     ######  Finds the outlet
 
@@ -99,20 +115,6 @@ def main():
 
     # Spawns the pose controller
     print "Spawning the pose controller"
-    rospy.set_param("/arm_pose/p", 15.0)
-    rospy.set_param("/arm_pose/i", 0.2)
-    rospy.set_param("/arm_pose/d", 0.0)
-    rospy.set_param("/arm_pose/i_clamp", 0.5)
-    rospy.set_param("/arm_pose/root_name", "torso_lift_link")
-    rospy.set_param("/arm_pose/tip_name", "r_gripper_tool_frame")
-    rospy.set_param("/arm_pose/twist/fb_trans/p", 15.0)
-    rospy.set_param("/arm_pose/twist/fb_trans/i", 0.5)
-    rospy.set_param("/arm_pose/twist/fb_trans/d", 0.0)
-    rospy.set_param("/arm_pose/twist/fb_trans/i_clamp", 1.0)
-    rospy.set_param("/arm_pose/twist/fb_rot/p", 1.0)
-    rospy.set_param("/arm_pose/twist/fb_rot/i", 0.1)
-    rospy.set_param("/arm_pose/twist/fb_rot/d", 0.0)
-    rospy.set_param("/arm_pose/twist/fb_rot/i_clamp", 0.2)
     pose_config = '<controller name="arm_pose" type="CartesianPoseControllerNode" />'
     resp = kill_and_spawn(pose_config, [])
     if len(resp.add_name) == 0 or not resp.add_ok[0]:
@@ -122,14 +124,14 @@ def main():
     print "Staging the plug"
     staging_pose = PoseStamped()
     staging_pose.header.frame_id = 'outlet_pose'
-    staging_pose.pose.position = xyz(-0.1, 0.0, 0.0)
+    staging_pose.pose.position = xyz(-0.12, 0.0, 0.0)
     staging_pose.pose.orientation = rpy(0,0,0)
     pub_pose = rospy.Publisher('/arm_pose/command', PoseStamped)
     for i in range(50):
-        staging_pose.header.stamp = last_time()
+        staging_pose.header.stamp = last_time() - rospy.rostime.Duration(-0.2)
         pub_pose.publish(staging_pose)
         time.sleep(0.1)
-    time.sleep(1)
+    time.sleep(2)
 
     ######  Finds an initial estimate of the plug pose
 
@@ -193,18 +195,18 @@ def main():
         rospy.set_param("/arm_hybrid/initial_mode", 3)
         rospy.set_param("/arm_hybrid/root_link", "torso_lift_link")
         rospy.set_param("/arm_hybrid/tip_link", "r_gripper_tool_frame")
-        rospy.set_param("/arm_hybrid/fb_pose/p", 30.0)#20.0)
-        rospy.set_param("/arm_hybrid/fb_pose/i", 4.0)
-        rospy.set_param("/arm_hybrid/fb_pose/d", 0.0)
-        rospy.set_param("/arm_hybrid/fb_pose/i_clamp", 2.0)
-        rospy.set_param("/arm_hybrid/fb_trans_vel/p", 15.0)
-        rospy.set_param("/arm_hybrid/fb_trans_vel/i", 1.5)
-        rospy.set_param("/arm_hybrid/fb_trans_vel/d", 0.0)
-        rospy.set_param("/arm_hybrid/fb_trans_vel/i_clamp", 6.0)
-        rospy.set_param("/arm_hybrid/fb_rot_vel/p", 1.2)
-        rospy.set_param("/arm_hybrid/fb_rot_vel/i", 0.2)
-        rospy.set_param("/arm_hybrid/fb_rot_vel/d", 0.0)
-        rospy.set_param("/arm_hybrid/fb_rot_vel/i_clamp", 0.4)
+        #rospy.set_param("/arm_hybrid/fb_pose/p", 30.0)#20.0)
+        #rospy.set_param("/arm_hybrid/fb_pose/i", 4.0)
+        #rospy.set_param("/arm_hybrid/fb_pose/d", 0.0)
+        #rospy.set_param("/arm_hybrid/fb_pose/i_clamp", 2.0)
+        #rospy.set_param("/arm_hybrid/fb_trans_vel/p", 15.0)
+        #rospy.set_param("/arm_hybrid/fb_trans_vel/i", 1.5)
+        #rospy.set_param("/arm_hybrid/fb_trans_vel/d", 0.0)
+        #rospy.set_param("/arm_hybrid/fb_trans_vel/i_clamp", 6.0)
+        #rospy.set_param("/arm_hybrid/fb_rot_vel/p", 1.2)
+        #rospy.set_param("/arm_hybrid/fb_rot_vel/i", 0.2)
+        #rospy.set_param("/arm_hybrid/fb_rot_vel/d", 0.0)
+        #rospy.set_param("/arm_hybrid/fb_rot_vel/i_clamp", 0.4)
         hybrid_config = '<controller name="arm_hybrid" type="CartesianHybridControllerNode" />'
         resp = kill_and_spawn(hybrid_config, ['arm_pose'])
         if len(resp.add_name) == 0 or not resp.add_ok[0]:

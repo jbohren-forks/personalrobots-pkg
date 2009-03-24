@@ -36,10 +36,16 @@
 #include "robot_msgs/CartesianState.h"
 #include "robot_msgs/TaskFrameFormalism.h"
 
+const double MIN_STANDOFF = 0.035;
+
 enum {MEASURING, MOVING, PUSHING, FORCING};
 int g_state = MEASURING;
 
-ros::Time g_started_pushing, g_started_forcing;
+ros::Time g_started_pushing = ros::Time::now(),
+  g_started_forcing = ros::Time::now(),
+  g_stopped_forcing = ros::Time::now();
+
+tf::MessageNotifier<robot_msgs::PoseStamped> *g_mn = NULL;
 
 bool g_settled = false;
 robot_msgs::CartesianState g_hybrid_state;
@@ -59,12 +65,14 @@ void hybrid_state_cb()
   {
     printf("Settled\n");
     g_settled = true;
+    //g_mn->clear();
   }
   if (g_settled && speed > 0.5)
   {
     printf("Moving again\n");
     g_settled = false;
   }
+  //g_settled = true;
 }
 
 boost::scoped_ptr<tf::TransformListener> TF;
@@ -77,6 +85,11 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
     return;
   }
 
+  if (msg->header.stamp < g_stopped_forcing + ros::Duration(5.0)) {
+    printf("too soon after forcing\n");
+    return;
+  }
+
   // Both are transforms from the outlet to the estimated plug pose
   robot_msgs::PoseStamped viz_offset_msg;
   tf::Stamped<tf::Transform> mech_offset;
@@ -86,7 +99,8 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
   }
   catch(tf::TransformException &ex)
   {
-    printf("FAIL: %s\n", ex.what());
+    //printf("FAIL: %s\n", ex.what());
+    printf("FAIL: transform exception\n");
     return;
   }
 
@@ -94,12 +108,14 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
   tf::PoseMsgToTF(viz_offset_msg.pose, viz_offset);
 
   // The standoff is at least half the current distance
-  double standoff = std::max(0.03, viz_offset.getOrigin().length() / 2.0);
+  static double last_standoff = 1.0e10;
+  double standoff = std::max(MIN_STANDOFF, viz_offset.getOrigin().length()  * 2.5/4.0);
 
   // Computes the offset for movement
   tf::Pose viz_offset_desi, mech_offset_desi;
   viz_offset_desi.setIdentity();
   viz_offset_desi.getOrigin().setX(-standoff);
+  viz_offset_desi.getOrigin().setZ(-0.004);
   //mech_offset_desi = mech_offset + (viz_offset_desi - viz_offset);
   //mech_offset_desi = mech_offset * viz_offset.inverse() * viz_offset_desi;
   mech_offset_desi = viz_offset.inverse() * viz_offset_desi * mech_offset;
@@ -107,6 +123,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
 
   switch (g_state) {
   case MEASURING: {
+    printf(">\n");
     printf("standoff = %.3lf\n", standoff);
     printf("Mech offset: (% .3lf, % .3lf, % .3lf)  <% .2lf, % .2lf, % .2lf, % .2lf>\n",
            mech_offset.getOrigin().x(),
@@ -133,6 +150,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
            mech_offset_desi.getRotation().z(),
            mech_offset_desi.getRotation().w());
 
+
     if (viz_offset.getOrigin().length() > 0.5 ||
         viz_offset.getRotation().getAngle() > (M_PI/4.0))
     {
@@ -143,9 +161,10 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
 
     // TODO: check (mechanism) velocities and throw out measurements taken while moving
 
-    double error = sqrt(pow(viz_offset.getOrigin().y(), 2) + pow(viz_offset.getOrigin().z(), 2));
+    double error = sqrt(pow(viz_offset.getOrigin().y() - viz_offset_desi.getOrigin().y(), 2) +
+                        pow(viz_offset.getOrigin().z() - viz_offset_desi.getOrigin().z(), 2));
     printf("error = %0.6lf\n", error);
-    if (error < 0.002)
+    if (error < 0.002 && last_standoff < MIN_STANDOFF + 0.002)
     {
       printf("enter PUSHING\n");
       g_state = PUSHING;
@@ -159,7 +178,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
       tff.mode.rot.x = 3;
       tff.mode.rot.y = 3;
       tff.mode.rot.z = 3;
-      tff.value.vel.x = 0.6;
+      tff.value.vel.x = 0.3;
       tff.value.vel.y = mech_offset_desi.getOrigin().y();
       tff.value.vel.z = mech_offset_desi.getOrigin().z();
       mech_offset_desi.getBasis().getEulerZYX(tff.value.rot.z, tff.value.rot.y, tff.value.rot.x);
@@ -199,9 +218,11 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
     // - Push until we stop making forward progress
     // - Verify that we are in the outlet
     // But for now, we just make sure we've gone for a few seconds
-    if (g_started_pushing + ros::Duration(3.0) > ros::Time::now())
+    printf("Done pushing if %.6lf > %.6lf\n",
+           (g_started_pushing + ros::Duration(5.0)).toSec(), ros::Time::now().toSec());
+    if (g_started_pushing + ros::Duration(5.0) < ros::Time::now())
     {
-      if (true) // if (in_outlet)
+      if (false) // if (in_outlet)
       {
         printf("enter FORCING\n");
         g_state = FORCING;
@@ -243,10 +264,12 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
         tff.mode.rot.y = 3;
         tff.mode.rot.z = 3;
         tff.value.vel.x = mech_offset.getOrigin().x() - 0.05;  // backs off 5cm
-        tff.value.vel.y = mech_offset.getOrigin().y();
-        tff.value.vel.z = mech_offset.getOrigin().z();
+        tff.value.vel.y = mech_offset.getOrigin().y() + 0.007;
+        tff.value.vel.z = mech_offset.getOrigin().z() - 0.008;
         mech_offset.getBasis().getEulerZYX(tff.value.rot.z, tff.value.rot.y, tff.value.rot.x);
         ros::Node::instance()->publish("/arm_hybrid/command", tff);
+        g_stopped_forcing = ros::Time::now();
+        last_standoff = 0.05;
       }
     }
 
@@ -274,6 +297,8 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
       tff.value.vel.z = mech_offset.getOrigin().z();
       mech_offset.getBasis().getEulerZYX(tff.value.rot.z, tff.value.rot.y, tff.value.rot.x);
       ros::Node::instance()->publish("/arm_hybrid/command", tff);
+      g_stopped_forcing = ros::Time::now();
+      last_standoff = 0.05;
     }
 
 
@@ -281,6 +306,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
   }
   }
 
+  last_standoff = standoff;
 }
 
 
@@ -297,7 +323,8 @@ int main(int argc, char** argv)
   node.subscribe("/arm_hybrid/state", g_hybrid_state, hybrid_state_cb, 2);
   //node.subscribe("/plug_detector/pose", g_plug, plug_cb, 2);
   tf::MessageNotifier<robot_msgs::PoseStamped> mn(
-    TF.get(), &node, plug_cb, "/plug_detector/pose", "outlet_pose", 5);
+    TF.get(), &node, plug_cb, "/plug_detector/pose", "outlet_pose", 100);
+  g_mn = &mn;
   node.spin();
 
   return 0;
