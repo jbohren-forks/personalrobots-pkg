@@ -119,7 +119,7 @@ public:
     }
     failed_ = false;
 
-    // Change representation and coordinate frame
+    // Change data representation and coordinate frame
     //btVector3 holes[12];
     for (int i = 0; i < 4; ++i) {
       changeAxes(outlets[i].coord_hole_ground, holes[3*i]);
@@ -127,9 +127,7 @@ public:
       changeAxes(outlets[i].coord_hole2, holes[3*i+2]);
     }
 
-    // Find normal and right vectors
-    //btVector3 right = (holes[2] - holes[1]).normalized();
-    //btVector3 normal = right.cross(holes[2] - holes[0]).normalized();
+    // Fit normal and right vectors to 12 socket holes
     btVector3 right = ((holes[3] - holes[0]).normalized() +
                        (holes[4] - holes[1]).normalized() +
                        (holes[5] - holes[2]).normalized() +
@@ -137,6 +135,8 @@ public:
                        (holes[7] - holes[10]).normalized() +
                        (holes[8] - holes[11]).normalized()) /= 6.0;
     btVector3 normal = fitPlane(holes, 12);
+
+    // Compute full pose
     btVector3 up = right.cross(normal).normalized();
     btMatrix3x3 rotation;
     rotation[0] = normal; // x
@@ -145,20 +145,15 @@ public:
     rotation = rotation.transpose();
     btQuaternion orientation;
     rotation.getRotation(orientation);
+    tf::Transform outlet_pose(orientation, holes[0]);
     
+    // Publish to topic and TF
+    tf::PoseTFToMsg(outlet_pose, pose_.pose);
     pose_.header.frame_id = "high_def_frame";
-    pose_.pose.position.x = holes[0].x();
-    pose_.pose.position.y = holes[0].y();
-    pose_.pose.position.z = holes[0].z();
-    pose_.pose.orientation.x = orientation.x();
-    pose_.pose.orientation.y = orientation.y();
-    pose_.pose.orientation.z = orientation.z();
-    pose_.pose.orientation.w = orientation.w();
-
+    pose_.header.stamp = img_.header.stamp;
     publish("pose", pose_);
-    tf_broadcaster_.sendTransform(tf::Transform(orientation, holes[0]),
-                                  ros::Time::now(), "outlet_frame",
-                                  "high_def_frame");
+    tf_broadcaster_.sendTransform(outlet_pose, ros::Time::now(),
+                                  "outlet_frame", "high_def_frame");
 
     // Calculate ROI for next image request
     if (roi_policy_ == LastImageLocation) {
