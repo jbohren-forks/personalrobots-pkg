@@ -12,20 +12,20 @@ rospack_add_boost_directories()
 include(NDDL.cmake)
 
 # Generics
-rospack_add_nddl("test/model_tests/pr2.master.nddl")
-rospack_add_nddl("test/model_tests/pr2.doorman.nddl")
-rospack_add_nddl("test/model_tests/pr2.driver.nddl")
-rospack_add_nddl("test/model_tests/pr2.recharger.nddl")
-rospack_add_nddl("test/model_tests/pr2.safety.nddl")
-rospack_add_nddl("test/model_tests/pr2.rcs.sim.nddl")
+#rospack_add_nddl("test/model_tests/pr2.master.nddl")
+#rospack_add_nddl("test/model_tests/pr2.doorman.nddl")
+#rospack_add_nddl("test/model_tests/pr2.driver.nddl")
+#rospack_add_nddl("test/model_tests/pr2.recharger.nddl")
+#rospack_add_nddl("test/model_tests/pr2.safety.nddl")
+#rospack_add_nddl("test/model_tests/pr2.rcs.sim.nddl")
 
 # Variant for basic door controller test
-rospack_add_nddl("test/model_tests/doorman/test_basic_controller/pr2.doorman.nddl")
-rospack_add_nddl("test/model_tests/doorman/test_basic_controller/pr2.rcs.sim.nddl")
+#rospack_add_nddl("test/model_tests/doorman/test_basic_controller/pr2.doorman.nddl")
+#rospack_add_nddl("test/model_tests/doorman/test_basic_controller/pr2.rcs.sim.nddl")
 
 # Variant for basic message flow with action adapters
-rospack_add_nddl("test/model_tests/doorman/test_basic_message_flow/pr2.doorman.nddl")
-rospack_add_nddl("test/model_tests/doorman/test_basic_message_flow/pr2.rcs.sim.nddl")
+#rospack_add_nddl("test/model_tests/doorman/test_basic_message_flow/pr2.doorman.nddl")
+#rospack_add_nddl("test/model_tests/doorman/test_basic_message_flow/pr2.rcs.sim.nddl")
 
 #rospack_add_nddl("test/pr2.test.nddl")
 #rospack_add_nddl("wpc_gazebo.0/pr2.exec.nddl")
