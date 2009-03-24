@@ -96,11 +96,13 @@ namespace TREX {
     std::string input_file;
     std::string path;
     int time_limit(0);
+    std::string start_dir;
     std::string log_dir;
     ros::Node::instance()->param("/trex/ping_frequency", ping_frequency, ping_frequency);
     ros::Node::instance()->param("/trex/input_file", input_file, input_file);
     ros::Node::instance()->param("/trex/path", path, path);
     ros::Node::instance()->param("/trex/time_limit", time_limit, time_limit);
+    ros::Node::instance()->param("/trex/start_dir", start_dir, start_dir);
     ros::Node::instance()->param("/trex/log_dir", log_dir, log_dir);
 
     // Bind the watchdog loop sleep time from input controller frequency
@@ -109,6 +111,7 @@ namespace TREX {
 
     // Bind TREX environment variables
     setenv("TREX_PATH", path.c_str(), 1);
+    setenv("TREX_START_DIR", start_dir.c_str(), 1);
     setenv("TREX_LOG_DIR", log_dir.c_str(), 1);
 
 
@@ -126,11 +129,17 @@ namespace TREX {
     // Read input XML configuration data
     input_xml_root_ = TREX::LogManager::initXml( TREX::findFile(input_file) );
 
-    // This initialization looks after registration of factories required for TREX plug-ins
-    TREX::initROSExecutive(playback_);
+    // Read debug configuration information if available
+    std::string debug_config_file = TREX::findFile("Debug.cfg");
+    std::ifstream debug_config_stream(debug_config_file.c_str());
+    if(debug_config_stream.good())
+      DebugMessage::readConfigFile(debug_config_stream);
 
     // Redirect debug output
     DebugMessage::setStream(debug_file_);
+
+    // This initialization looks after registration of factories required for TREX plug-ins
+    TREX::initROSExecutive(playback_);
 
     // Set up the clock
     int finalTick = 1;

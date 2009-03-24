@@ -117,65 +117,23 @@ namespace executive_trex_pr2 {
   };
 
   /**
-   * @brief A function: given 2 points in space, return a door that is in the region traversed by their connecting
-   * line
+   * @brief A function: given a door id, obtain all door data
    */
-  class MapGetDoorFromPositionConstraint : public Constraint {
+  class MapGetDoorStateConstraint : public Constraint {
   public:
     
-    MapGetDoorFromPositionConstraint(const LabelStr& name,
-				     const LabelStr& propagatorName,
-				     const ConstraintEngineId& constraintEngine,
-				     const std::vector<ConstrainedVariableId>& variables);
-    virtual void handleExecute();
-    
-  private:
-    IntervalIntDomain& _door;
-    IntervalDomain& _x1;
-    IntervalDomain& _y1;
-    IntervalDomain& _x2;
-    IntervalDomain& _y2;
-  };
-
-  /**
-   * @brief A function: given a door id, obtain the door frame points from the map
-   */
-  class MapGetDoorDataConstraint : public Constraint {
-  public:
-    
-    MapGetDoorDataConstraint(const LabelStr& name,
-			     const LabelStr& propagatorName,
-			     const ConstraintEngineId& constraintEngine,
-			     const std::vector<ConstrainedVariableId>& variables);
+    MapGetDoorStateConstraint(const LabelStr& name,
+			      const LabelStr& propagatorName,
+			      const ConstraintEngineId& constraintEngine,
+			      const std::vector<ConstrainedVariableId>& variables);
 
     virtual void handleExecute();
     
   private:
-    IntervalDomain& _x1;
-    IntervalDomain& _y1;
-    IntervalDomain& _x2;
-    IntervalDomain& _y2;
-    IntervalIntDomain& _door;
-  };
+    bool apply(double value, const char* param_name);
 
-  /**
-   * @brief A function: given a door id, obtain the door handle information
-   */
-  class MapGetHandlePositionConstraint : public Constraint {
-  public:
-    
-    MapGetHandlePositionConstraint(const LabelStr& name,
-				   const LabelStr& propagatorName,
-				   const ConstraintEngineId& constraintEngine,
-				   const std::vector<ConstrainedVariableId>& variables);
-
-    virtual void handleExecute();
-    
-  private:
-    IntervalDomain& _x;
-    IntervalDomain& _y;
-    IntervalDomain& _z;
-    IntervalIntDomain& _door;
+    TokenId _token_id;
+    IntervalIntDomain& _door_id;
   };
 
   /**
@@ -219,7 +177,6 @@ namespace executive_trex_pr2 {
     std::list<ConnectionCostPair> _sorted_choices;
     std::list<ConnectionCostPair>::iterator _choice_iterator;
   };
-
 
   /**
    * @brief A TopologicalMapAdapter is used to access the data of a topological map. This accessor will
@@ -286,16 +243,10 @@ namespace executive_trex_pr2 {
     virtual bool getConnectorRegions(unsigned int connector_id, unsigned int& region_a, unsigned int& region_b);
 
     /**
-     * @brief Get the door id given a pair of points
-     * @return 0 if no door found, otherwise the id for a door
-     */
-    virtual unsigned int getDoorFromPosition(double x1, double y1, double x2, double y2);
-
-    /**
      * @brief Get the door position information (2 points at its base, given the id
-     * @return true if the door id is valid, otherwise false. If a valid id, then it will fill out point data
+     * @return true if the door id is a valid doorway, otherwise false. If a valid id, then it will the door message
      */
-    virtual bool getDoorData(double& x1, double& y1, double& x2, double& y2, unsigned int door_id);
+    virtual bool getDoorState(unsigned int doorway_id, robot_msgs::Door& door_state);
 
     /**
      * @brief Test if a given region is a doorway

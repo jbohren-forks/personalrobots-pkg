@@ -82,7 +82,6 @@ namespace TREX {
     target = value;
   }
 
-  
   /**
    * @brief bind a door message based on the token
    *
@@ -107,8 +106,6 @@ namespace TREX {
    * HINGE_FRAME hinge;
    * ROTATION_DIRECTION rot_dir;
    */
-
-  // Write Token to Door message
   void write(const TokenId& token, robot_msgs::Door& msg){
     // Frame Data
     write("frame_p1_x", token, msg.frame_p1.x);

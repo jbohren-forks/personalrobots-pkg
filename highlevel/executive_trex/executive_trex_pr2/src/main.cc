@@ -178,6 +178,7 @@ int main(int argc, char **argv)
     std::cout << "* trex/input_file: An xml file that defines the agent control configuration.\n";
     std::cout << "* trex/path:       A search path for locating input files. This should include a location for\n";
     std::cout << "                   the input configuration file, as well as locations for agent initialization files (nddl files)\n";
+    std::cout << "* trex/start_dir   A directory from which to start the search for in put files";
     std::cout << "* trex/log_dir:    An output directory for TREX log files.\n";
     std::cout << "\n";
     std::cout << "Usage: trexfast  [--help | --playback]\n";

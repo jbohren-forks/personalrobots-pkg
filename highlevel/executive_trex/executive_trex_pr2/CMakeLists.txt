@@ -11,7 +11,11 @@ rospack_add_boost_directories()
 #Will replace jam...
 include(NDDL.cmake)
 
-# Generics
+# Door Tests
+rospack_add_nddl("test/doors/pr2.rcs.sim.nddl")
+rospack_add_nddl("test/doors/pr2.safety.nddl")
+rospack_add_nddl("test/doors/pr2.doorman.nddl")
+
 #rospack_add_nddl("test/model_tests/pr2.master.nddl")
 #rospack_add_nddl("test/model_tests/pr2.doorman.nddl")
 #rospack_add_nddl("test/model_tests/pr2.driver.nddl")

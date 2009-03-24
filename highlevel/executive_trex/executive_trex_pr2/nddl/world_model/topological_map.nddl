@@ -20,11 +20,9 @@ constraint map_get_region_from_position(region_id, x, y){ region_id <: MAP_KEY &
 // A function to query if a region is a doorway
 constraint map_is_doorway(result, region_id) { result <: bool && region_id <: MAP_KEY }
 
-// A function to get a doorway id given a pair of points.
-constraint map_get_door_from_position(door_id, x1, y1, x2, y2) { door_id <: MAP_KEY && x1 <: numeric && y1 <: numeric && x2 <: numeric && y2 <: numeric}
-
-// A function to get door data given a door id
-constraint map_get_door_data(x1, y1, x2, y2, door_id) { x1 <: numeric && y1 <: numeric && x2 <: numeric && y2 <: numeric && door_id <: MAP_KEY}
+// A function to get all door state data (a full door message) and fill it into the parameters if a token. If I had structured
+// data types I would not have to do it like this!
+constraint get_door_state(state, door_id) {state <: TokenStates && door_id <: MAP_KEY}
 
 /***********************************************************************
  * Types related to a semantic view of the map
