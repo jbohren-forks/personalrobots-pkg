@@ -4,6 +4,7 @@ rospack(mechanism_model)
 rospack_add_library( mechanism_model
   src/simple_transmission.cpp
   src/gripper_transmission.cpp
+  src/pr2_gripper_transmission.cpp
   src/joint.cpp
   src/robot.cpp
   src/link.cpp
