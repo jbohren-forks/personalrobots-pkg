@@ -227,7 +227,7 @@ double LaserScannerTrajController::getProfileDuration()
   return traj_duration_ ;
 }
 
-void LaserScannerTrajController::setTrajectory(const std::vector<trajectory::Trajectory::TPoint>& traj_points, double max_rate, double max_acc, std::string interp)
+bool LaserScannerTrajController::setTrajectory(const std::vector<trajectory::Trajectory::TPoint>& traj_points, double max_rate, double max_acc, std::string interp)
 {
   while (!traj_lock_.try_lock())
     usleep(100) ;
@@ -248,9 +248,11 @@ void LaserScannerTrajController::setTrajectory(const std::vector<trajectory::Tra
   traj_duration_ = traj_.getTotalTime() ;
 
   traj_lock_.unlock() ;
+
+  return true;
 }
 
-void LaserScannerTrajController::setPeriodicCmd(const pr2_mechanism_controllers::PeriodicCmd& cmd)
+bool LaserScannerTrajController::setPeriodicCmd(const pr2_mechanism_controllers::PeriodicCmd& cmd)
 {
   if (cmd.profile == "linear" ||
       cmd.profile == "blended_linear")
@@ -276,16 +278,23 @@ void LaserScannerTrajController::setPeriodicCmd(const pr2_mechanism_controllers:
     cur_point.time_ = cmd.period ;
     tpoints.push_back(cur_point) ;
 
-    setTrajectory(tpoints, max_rate_, max_acc_, cmd.profile) ;
-    ROS_INFO("LaserScannerTrajController: Periodic Command set") ;
+    if (!setTrajectory(tpoints, max_rate_, max_acc_, cmd.profile)){
+      ROS_ERROR("Failed to set tilt laser scanner trajectory.") ;
+      return false;
+    }
+    else{
+      ROS_INFO("LaserScannerTrajController: Periodic Command set") ;
+      return true;
+    }
   }
   else
   {
     ROS_WARN("Unknown Periodic Trajectory Type. Not setting command.") ;
+    return false;
   }
 }
 
-void LaserScannerTrajController::setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd)
+bool LaserScannerTrajController::setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd)
 {
   while (!track_link_lock_.try_lock())
     usleep(100) ;
@@ -317,6 +326,8 @@ void LaserScannerTrajController::setTrackLinkCmd(const pr2_mechanism_controllers
   }
 
   track_link_lock_.unlock() ;
+
+  return track_link_enabled_;
 }
 
 
@@ -331,6 +342,8 @@ LaserScannerTrajControllerNode::~LaserScannerTrajControllerNode()
 {
   node_->unsubscribe(service_prefix_ + "/set_periodic_cmd") ;
   node_->unsubscribe(service_prefix_ + "/set_track_link_cmd") ;
+
+  node_->unadvertiseService(service_prefix_ + "/set_periodic_cmd");
 
   publisher_->stop() ;
 
@@ -396,6 +409,8 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
   node_->subscribe(service_prefix_ + "/set_periodic_cmd", cmd_, &LaserScannerTrajControllerNode::setPeriodicCmd, this, 1) ;
   node_->subscribe(service_prefix_ + "/set_track_link_cmd", track_link_cmd_, &LaserScannerTrajControllerNode::setTrackLinkCmd, this, 1) ;
 
+  node_->advertiseService(service_prefix_ + "/set_periodic_cmd", &LaserScannerTrajControllerNode::setPeriodicSrv, this);
+
   if (publisher_ != NULL)               // Make sure that we don't memory leak if initXml gets called twice
     delete publisher_ ;
   publisher_ = new realtime_tools::RealtimePublisher <pr2_mechanism_controllers::LaserScannerSignal> (service_prefix_ + "/laser_scanner_signal", 1) ;
@@ -407,6 +422,19 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
   return true ;
 }
 
+bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_mechanism_controllers::SetPeriodicCmd::Request &req, 
+                                                    pr2_mechanism_controllers::SetPeriodicCmd::Response &res)
+{
+  cout << "laser scanner controller: set periodic command" << endl;
+
+  if (!c_.setPeriodicCmd(req.command))
+    return false;
+  else{
+    res.start_time = ros::Time::now();
+    return true;
+  }
+}
+
 void LaserScannerTrajControllerNode::setPeriodicCmd()
 {
   c_.setPeriodicCmd(cmd_) ;
@@ -416,3 +444,4 @@ void LaserScannerTrajControllerNode::setTrackLinkCmd()
 {
   c_.setTrackLinkCmd(track_link_cmd_) ;
 }
+

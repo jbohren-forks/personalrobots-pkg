@@ -53,6 +53,7 @@
 #include <robot_mechanism_controllers/SetCommand.h>
 #include <robot_mechanism_controllers/GetCommand.h>
 #include <pr2_mechanism_controllers/SetProfile.h>
+#include <pr2_mechanism_controllers/SetPeriodicCmd.h>
 
 #include "boost/thread/mutex.hpp"
 #include "trajectory/trajectory.h"
@@ -70,11 +71,11 @@ public:
 
   virtual void update() ;
 
-  void setPeriodicCmd(const pr2_mechanism_controllers::PeriodicCmd& cmd) ;
+  bool setPeriodicCmd(const pr2_mechanism_controllers::PeriodicCmd& cmd) ;
 
-  void setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd) ;
+  bool setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd) ;
 
-  void setTrajectory(const std::vector<trajectory::Trajectory::TPoint>& traj_points,
+  bool setTrajectory(const std::vector<trajectory::Trajectory::TPoint>& traj_points,
                      double max_rate, double max_acc, std::string interp ) ;
 
   //! \brief Returns what time we're currently at in the profile being executed
@@ -131,6 +132,8 @@ public:
   // Message Callbacks
   void setPeriodicCmd() ;
   void setTrackLinkCmd() ;
+  bool setPeriodicSrv(pr2_mechanism_controllers::SetPeriodicCmd::Request &req, 
+                      pr2_mechanism_controllers::SetPeriodicCmd::Response &res);
 
 private:
   ros::Node *node_ ;
