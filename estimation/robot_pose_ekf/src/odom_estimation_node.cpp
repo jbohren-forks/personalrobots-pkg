@@ -372,14 +372,14 @@ namespace estimation
 
 	  
 	// initialize filer with odometry frame
-	//if ( odom_active_ && !my_filter_.isInitialized()){
-	//  my_filter_.initialize(odom_meas_, odom_stamp_);
-	//  ROS_INFO((node_name_+"  Fiter initialized").c_str());
-	//}
-	if ( vo_active_ && !my_filter_.isInitialized()){
-	  my_filter_.initialize(vo_meas_, vo_stamp_);
+	if ( odom_active_ && !my_filter_.isInitialized()){
+	  my_filter_.initialize(odom_meas_, odom_stamp_);
 	  ROS_INFO((node_name_+"  Fiter initialized").c_str());
 	}
+	//if ( vo_active_ && !my_filter_.isInitialized()){
+	//  my_filter_.initialize(vo_meas_, vo_stamp_);
+	//  ROS_INFO((node_name_+"  Fiter initialized").c_str());
+	//}
 
       }
       vo_lock.unlock();  imu_lock.unlock();  odom_lock.unlock();
