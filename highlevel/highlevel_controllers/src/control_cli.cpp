@@ -38,7 +38,7 @@
 #include <ros/node.h>
 #include <pr2_msgs/MoveArmGoal.h>
 #include <robot_msgs/MechanismState.h>
-#include <highlevel_controllers/RechargeGoal.h>
+#include <std_msgs/Float32.h>
 #include <robot_srvs/PlanNames.h>
 #include <robot_msgs/BatteryState.h>
 #include <boost/thread.hpp>
@@ -52,7 +52,7 @@ public:
     dead = false;
     ros::Node::instance()->advertise<pr2_msgs::MoveArmGoal>("left_arm_goal", 1);
     ros::Node::instance()->advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
-    ros::Node::instance()->advertise<highlevel_controllers::RechargeGoal>("recharge_goal", 1);
+    ros::Node::instance()->advertise<std_msgs::Float32>("recharge_goal", 1);
     ros::Node::instance()->advertise<robot_msgs::BatteryState>("bogus_battery_state", 1);
     ros::Node::instance()->advertise<robot_msgs::MechanismState>("mechanism_state", 1);
 
@@ -149,9 +149,8 @@ private:
       recharge_level = enterValue(0, 1);
       recharge_level = std::max(0.0, std::min(recharge_level, 1.0));
       printf("Sending recharge goal:%f\n", recharge_level);
-      highlevel_controllers::RechargeGoal goal;
-      goal.enable = 1;
-      goal.recharge_level = recharge_level;
+      std_msgs::Float32 goal;
+      goal.data = recharge_level;
       ros::Node::instance()->publish("recharge_goal", goal);
     } else if (c == 'I') {
       robot_msgs::MechanismState mechanismState;
