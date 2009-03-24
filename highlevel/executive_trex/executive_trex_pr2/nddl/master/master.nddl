@@ -1,0 +1,473 @@
+/*
+ * Copyright (c) 2008, Willow Garage, Inc.
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <ORGANIZATION> nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// TREX base class declaration and definitions
+#include "TREX.nddl"
+
+// Exports from sub-systems
+#include "rcs.exports.nddl"
+#include "driver.exports.nddl"
+#include "recharger.exports.nddl"
+#include "doorman.exports.nddl"
+#include "safety.exports.nddl"
+#include "topological_map.exports.nddl"
+
+// Priority for goals
+typedef int [0 5] PRIORITY;
+
+// Constaint for time delay before resuming work after unplugging
+int WAIT_TIME_AFTER_UNPLUGGING = 5; 
+
+/**
+ * This is an abstract state variable which reflects if we are 
+ * able to do useful work or if we should focus on recharging. Tripping this state variable
+ * into a recharging state will lock out other activities from execution until we are able to
+ * finish recharging.
+ */
+class WorkingStatus extends AgentTimeline {
+
+  predicate Holds{bool recharging;}
+
+  WorkingStatus(){
+    super(Internal, "Holds");
+  }
+};
+
+/**
+ * The Navigator turns a single navigation goal into a path over a topological map
+ */
+class Navigator extends Behavior {
+
+  predicate Inactive {
+    Location w;
+    bool recharging;
+  }
+
+  /**
+   * When active, we are pursuing a waypoint, although we may be pre-empted
+   */
+  predicate Active{
+    Location w;
+    bool recharging;
+  }
+
+  Navigator(){
+    super(Internal, "Inactive");
+  }
+};
+
+class Path extends AgentTimeline {
+
+  /**
+   * Extends over a traverse that is contained across a single region of the topological map.
+   * This traverse is en-route to some final destination.
+   */
+  predicate Holds{
+    // Activation status
+    bool active;
+
+    // Source position
+    float x;
+    float y;
+
+    // The region we are traversing
+    MAP_KEY region;
+    bool is_doorway;
+
+    // Target position
+    float target_x;
+    float target_y;
+    MAP_KEY target_connector;
+
+    // Final pose
+    float final_x;
+    float final_y;
+    float final_th;
+    MAP_KEY final_region;
+
+    // Parameter Constraints based on the topological map
+    map_is_doorway(is_doorway, region);
+    map_get_region_from_position(region, x, y);
+    map_get_region_from_position(final_region, final_x, final_y);
+  }
+
+  Path(){
+    super(Internal, "Holds");
+  }
+};
+
+/**
+ * Rules for Path Handling
+ */
+Path::Holds{
+  // By default, we should be inactive
+  defaultOnCommit(active, false);
+
+  // The predecessor
+  met_by(Holds p);
+  eq(p.target_x, x);
+  eq(p.target_y, y);
+
+  // If the target connector is a NO_KEY, then the target and the final positions are the same
+  if(target_connector == NO_KEY){
+    eq(target_x, final_x);
+    eq(target_y, final_y);
+  }
+  else {
+    map_connector(target_connector, target_x, target_y);
+  }
+
+  // If we are inactive, this is not a thru way. Moreover, we can set all target variables
+  // to be the same as the start
+  // BaseState(start) == Holds(x, y)
+  if(active == false){
+    any(BaseState.Holds bs);
+    precedes(bs.start, start);
+    temporalDistance(start, [1 +inf], bs.end);
+    defaultOnCommit(x, bs.x);
+    defaultOnCommit(y, bs.y);
+    eq(x, final_x);
+    eq(y, final_y);
+    eq(target_connector, NO_KEY);
+
+    // We should also be sure that all MoveBehaviors are inactive. We should be careful that
+    // 1. We do not assume we can precisely force the inactive state at the start
+    // 2. We permit that it could already be inactive
+    // 3. We hold it inactive for the remainder
+    // 4. We do not say anything about when it becomes active
+    // behavior(start + [-inf, 2], end) == Inactive
+    MoveBehavior behaviors;
+    foreach(b in behaviors){
+      any(b.Inactive mb);
+      temporalDistance(start, [-inf, 2], mb.start);
+      precedes(end, mb.end);
+    }
+
+    // We should always be contained by Navigator.Inactive
+    contained_by(Navigator.Inactive);
+  }
+
+  if(active == true){
+    // Control Variable: is an end point
+    bool end_point;
+
+    meets(Holds s);
+    temporalDistance(s.start, [1, +inf], missionEnd);
+
+    // Verify region values
+    neq(final_region, 0);
+
+    // Successor will be active if the error exceeds our error limit
+    float error;
+    bool done;
+    calcDistance(error, final_x, final_y, target_x, target_y);
+    testLT(done, error, POSE_ERROR);
+
+    // Carry forward parameters to the successor
+    eq(s.x, target_x);
+    eq(s.y, target_y);
+    eq(s.final_x, final_x);
+    eq(s.final_y, final_y);
+    eq(s.final_th, final_th);
+
+    // If we are not done then the successor should be active and must end before the end of the mission. This kind of
+    // end time constraint is something we have to make explicit since there are many cases when such a condition would
+    // not apply. More generally, if active == true than it should fall within the horizon. This is a pattern we can exploit based
+    // on similar motives as those considered by the Behavior semantics for end times wrt the mission end time
+    if(done == false){
+      eq(s.active, true);
+      precedes(s.end, missionEnd);
+
+      // end_point = is_doorway || s.is_doorway
+      if(is_doorway == true){
+	eq(end_point, true);
+      }
+      else{
+	eq(end_point, s.is_doorway);
+      }
+    }
+
+    // If we are done, then:
+    // 1. The target connector id is always 0, indicating it is not a connector.
+    if(done == true){
+      eq(target_connector, NO_KEY);
+      eq(s.active, false);
+      eq(end_point, true);
+    }
+
+    // If this is an endpoint then subgoal a behavior to get to the target position. We require that it:
+    // 1. starts before end
+    // 2. ends within a 2 tick window of when we end. This accounts for timing discrepancies between the behavior and the base state observations
+    //    that trigger region transitions
+    if(end_point == true){
+      MoveBehavior move_behavior;
+      eq(move_behavior.for_doorways, is_doorway);
+      any(move_behavior.Active mb);
+      eq(mb.x, target_x);
+      eq(mb.y, target_y);
+      eq(mb.th, 0.0);
+      precedes(0, mb.start);
+      precedes(mb.start, end);
+      temporalDistance(end, [-2, 2], mb.end);
+
+      // If it is a doorway, then we know the motion starts at or after the beginning
+      if(is_doorway == true){
+	precedes(start, mb.start);
+      }
+    } 
+  }
+}
+
+/**
+ * A top level timeline that will drive navigation goals until a target iteration count is reached. It can
+ * also be used where it is always busy, in which case it just runs forever.
+ */
+class VenusDeMiles extends AgentTimeline {
+
+  predicate Holds{
+    int iterationCount; // Current iteration count
+    int iterationLimit; // Iteration Limit (when done)
+    bool alwaysBusy; // When true, keep going
+    Waypoint w; // Way point to achieve
+  }
+
+  VenusDeMiles(){
+    super(Internal, "Holds");
+  }
+};
+
+class MotionMutex extends AgentTimeline {
+  predicate Using{
+    MoveBehavior user;
+  }
+
+  predicate Free{}
+
+  MotionMutex(){
+    super(Internal, "Free");
+  }
+}
+
+MoveBehavior::Active{
+  // Only one moving modality at a time
+  contained_by(MotionMutex.Using mutex);
+  eq(mutex.user, this.object);
+
+  // A precondition is that we start during an active path traverse. Notably, we cannot say anything about the relationship
+  // between this and the target or final destinations, since paths may be merged.
+  if(start){
+    any(Path.Holds p);
+    precedes(p.start, start);
+    temporalDistance(start, [1 +inf], p.end);
+    eq(p.active, true);
+  }
+}
+
+/**
+ * The base state should contain a link to the path to indicate changes. Note that there may
+ * be a discrepancy between when we transition a path and when the move behavior terminates. The temporal bounds
+ * here are subtle. We only want to ensure that the start time is contained. If we had used a contained_by relation
+ * then it imposes a precedence constraint between the base state end time and the end time of the path. We do not want
+ * to imply this. This is where a better notation would help:
+ * path(start) == Holds(region(x, y));
+ *
+ * @note: Cannot use the region query since the map used for testing does not respect region mapping
+ */
+BaseState::Holds{
+  any(Path.Holds p);
+  precedes(p.start, start);
+  temporalDistance(start, [1 +inf], p.end);
+
+  if(p.active == true){
+    int region;
+    map_get_region_from_position(region, x, y);
+    eq(region, p.region);
+    /*
+    float distance;
+    bool done;
+    calcDistance(distance, x, y, p.target_x, p.target_y);
+    testLEQ(done, distance, XY_ERROR);
+    if(done == true){
+      concurrent(p.end, end);
+    }
+    */
+  }
+}
+
+/**
+ * Each update is monitored and can trigger a transition to recharging
+ */
+BatteryState::Holds {
+  // If below the threshold, transition working status to recharge
+  // if(discharge_limit > (energy_remaining / energy_capacity))
+  //  workingStatus(start+1) == Holds(true);
+  bool mustRecharge;
+  testLEQ(mustRecharge, percentage_remaining, object.discharge_limit);
+  if(mustRecharge == true){
+    any(WorkingStatus.Holds ws);
+    temporalDistance(start, [-inf, 1], ws.start); 
+    precedes(end, ws.end);
+    eq(ws.recharging, true);
+  }
+}
+
+Navigator::Inactive{
+  default(recharging, false);
+
+  if(w){
+    met_by(Active p);
+    eq(p.w, w);
+    eq(p.recharging, recharging);
+  }
+}
+
+Navigator::Active{
+  default(recharging, false);
+
+  // It must be a valid region (i.e. not an obstacle)
+  MAP_KEY target_region;
+  map_get_region_from_position(target_region, w.x, w.y);
+  neq(target_region, NO_KEY);
+
+  starts(Path.Holds p);
+  eq(p.active, true);
+  eq(p.final_x, w.x);
+  eq(p.final_y, w.y);
+  eq(p.final_th, w.th);
+
+  contained_by(WorkingStatus.Holds ws);
+  eq(ws.recharging, recharging);
+
+  // If recharging, we should be going to a charging station
+  if(recharging == true){
+    ChargingStation cs;
+    eq(cs, w);
+  }
+}
+
+/**
+ * A simple iterator pattern - drives subgoaling on the Navigator Timeline
+ */
+VenusDeMiles::Holds{
+  defaultOnCommit(iterationCount, 0);
+  defaultOnCommit(iterationLimit, 0);
+  defaultOnCommit(alwaysBusy, false);
+
+  if(alwaysBusy == true){
+    eq(iterationLimit, 1);
+  }
+
+  bool busy;
+  testLT(busy, 0, iterationLimit);
+  if(busy == true){
+    // Alternatives:
+    // navigator[any, end] = Active(randomSelect(w))
+    randomSelect(w);
+    ends(Navigator.Active n);
+    eq(n.w, w);
+    precedes(start, n.start);
+
+    // Carry forward parameters
+    if(end){
+      meets(Holds s);
+      addEq(iterationCount, 1, s.iterationCount);
+      eq(iterationLimit, s.iterationLimit);
+      eq(alwaysBusy, s.alwaysBusy);
+    }
+  }
+}
+
+WorkingStatus::Holds{
+  // By default we are not recharging
+  defaultOnCommit(recharging, false);
+
+  // Do the recharging if appropriate
+  if(recharging == true){
+    // Selection of a charging station can happen in principle in a number of ways. The ideal scenario is that actual obstacle data
+    // is used as a constraint on the available charging station. This could occur where we would say something like:
+    //   collissionFree(cs);
+    // However, no such integration is available and it is an open question how to interpret that constraint given a temporal
+    // context.
+    //
+    // We can select from the available set via the planner. This would allow branching over the decision. This could yield a very
+    // high branching factor.
+    // We can pick the nearest available - which is simple and efficient. However, it may force a situation where we  re-commit to an
+    // unreachable location. This would look like what we had implemented before:
+    //   met_by(BaseState.Holds bs);
+    //   nearestReachableLocation(bs.x, bs.y, cs);
+    //
+    // Instead we will use the randomSelect again, and revisit this later
+    ChargingStation cs;
+    randomSelect(cs);
+
+    // allow a delay after recharging before releasing the robot. Also require that we remain 
+    // with the recharger inactive when we get back to work
+    any(Recharger.Inactive rc);
+    eq(rc.x, cs.x);
+    eq(rc.y, cs.y);
+    eq(rc.th, cs.th);
+    temporalDistance(rc.start, WAIT_TIME_AFTER_UNPLUGGING, end);
+    precedes(end, rc.end);
+
+    // Check End Conditions
+    if(rc.end){
+      any(BatteryState.Holds bs_e);
+      eq(bs_e.object.actual_value, true);
+      concurrent(rc.end, bs_e.start);
+      leq(rc.recharge_level, bs_e.percentage_remaining);
+    }
+  }
+}
+
+Recharger::Active{
+  contained_by(WorkingStatus.Holds ws);
+  eq(ws.recharging, true);
+
+  contained_by(Navigator.Inactive n);
+  eq(n.w.x, x);
+  eq(n.w.y, y);
+  eq(n.w.th, th);
+  eq(n.recharging, true);
+}
+
+/** Allocate common objects **/
+
+// Internal timelines
+MotionMutex motion_mutex = new MotionMutex();
+VenusDeMiles venus_de_miles = new VenusDeMiles();
+Navigator navigator = new Navigator();
+Path path = new Path();
+WorkingStatus working_status = new WorkingStatus();
+
+// External timelines
+MoveBehavior driver = new MoveBehavior(External, false);
+MoveBehavior doorman = new MoveBehavior(External, true);
+Recharger recharger = new Recharger(External);
+BaseState base_state = new BaseState(External);
+BatteryState battery_state = new BatteryState(External);
