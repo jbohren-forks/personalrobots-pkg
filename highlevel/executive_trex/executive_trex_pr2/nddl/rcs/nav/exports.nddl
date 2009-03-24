@@ -1,0 +1,57 @@
+
+
+float BASE_POSITION_ERROR = 1.0;
+float ANGLE_ERROR = 0.2;
+
+typedef float [0.0 1.0] UNIT_FLOAT;
+
+
+/**
+ * BaseState will capture position and orientation.
+ */
+class BaseState extends AgentTimeline {
+	predicate Holds{
+		float x;
+		float y;
+		float th;
+		float accumulatedDistance; // Derived from inputs
+		defaultOnCommit(accumulatedDistance, 0.0);
+	}
+
+	BaseState(Mode _mode){
+		super(_mode, "Holds", true);
+	}
+};
+
+/**
+ * MoveBase behavior will handle active control of vehicle to accomplish 
+ * a waypoint. This maps to the wave front player in the 2D nav stack.
+ */
+class MoveBase extends Behavior {
+
+  predicate Inactive{
+    float x;
+    float y;
+    float th;
+    float des_x;
+    float des_y;
+    float des_th;
+    bool recharging;
+  }
+
+  // Parameters to get to the target
+  predicate Active {
+    float x;
+    float y;
+    float th;
+    bool recharging;
+  }
+
+  MoveBase(Mode _mode){
+    super(_mode);
+  }
+
+  MoveBase(Mode _mode, int max_duration_){
+    super(_mode, max_duration_);
+  }
+};
