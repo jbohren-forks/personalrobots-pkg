@@ -161,7 +161,7 @@ class PlugOnBaseDetector
     void
       callback ()
     {
-      ROS_INFO ("Received %u data points in frame %s.", (unsigned int)cloud_.pts.size (), cloud_.header.frame_id.c_str ());
+      ROS_DEBUG ("Received %u data points in frame %s.", (unsigned int)cloud_.pts.size (), cloud_.header.frame_id.c_str ());
 
       if (cloud_.header.frame_id != "base_link")
       {
