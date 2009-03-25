@@ -59,22 +59,22 @@ def move(positions):
 def pickup():
 
   m0 = PoseStamped()
-  m0.header.frame_id = 'base_link'
+  m0.header.frame_id = 'torso_lift_link'#'base_link'
   m0.header.stamp = rospy.get_rostime()
-  m0.pose.position.x = plug_location.x-0.04 #0.19
+  m0.pose.position.x = plug_location.x#-0.045 #0.19
   m0.pose.position.y = plug_location.y #+0.02 #0.04
-  m0.pose.position.z = 0.5
+  m0.pose.position.z = -0.4#0.4
   m0.pose.orientation.x = -0.19
   m0.pose.orientation.y = 0.13
   m0.pose.orientation.z = 0.68
   m0.pose.orientation.w = 0.68
 
   m1 = PoseStamped()
-  m1.header.frame_id = 'base_link'
+  m1.header.frame_id = 'torso_lift_link'#'base_link'
   m1.header.stamp = rospy.get_rostime()
-  m1.pose.position.x = plug_location.x-0.04 #0.19
+  m1.pose.position.x = plug_location.x#-0.04 #0.19
   m1.pose.position.y = plug_location.y #+0.02 #0.04
-  m1.pose.position.z = 0.20 #0.23
+  m1.pose.position.z = -0.55#0.20 #0.23
   m1.pose.orientation.x = -0.19
   m1.pose.orientation.y = 0.13
   m1.pose.orientation.z = 0.68
@@ -177,7 +177,7 @@ if __name__ == '__main__':
 
     while(resp.done==0):
       resp=is_traj_done(traj_id)
-      print resp.done
+#      print resp.done
       sleep(.5)
 
     #now collect data
