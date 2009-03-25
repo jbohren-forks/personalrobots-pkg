@@ -167,15 +167,18 @@ namespace executive_trex_pr2 {
 	 !apply(door_state.frame_p2.x, "frame_p2_x") ||
 	 !apply(door_state.frame_p2.y, "frame_p2_y") ||
 	 !apply(door_state.frame_p2.z, "frame_p2_z") ||
+	 !apply(door_state.height, "height") ||
+	 !apply(door_state.hinge, "hinge") ||
+	 !apply(door_state.rot_dir, "rot_dir") ||
 	 !apply(door_state.door_p1.x, "door_p1_x") ||
 	 !apply(door_state.door_p1.y, "door_p1_y") ||
 	 !apply(door_state.door_p1.z, "door_p1_z") ||
 	 !apply(door_state.door_p2.x, "door_p2_x") ||
 	 !apply(door_state.door_p2.y, "door_p2_y") ||
 	 !apply(door_state.door_p2.z, "door_p2_z") ||
-	 !apply(door_state.height, "height") ||
-	 !apply(door_state.hinge, "hinge") ||
-	 !apply(door_state.rot_dir, "rot_dir")){
+	 !apply(door_state.handle.x, "handle_x") ||
+	 !apply(door_state.handle.y, "handle_y") ||
+	 !apply(door_state.handle.z, "handle_z")) {
       }
     }
       
@@ -192,7 +195,7 @@ namespace executive_trex_pr2 {
     AbstractDomain& dom = getCurrentDomain(var);
     ROS_ASSERT(dom.isNumeric());
     dom.set(value);
-    return dom.isEmpty();
+    return !dom.isEmpty();
   }
 
   //*******************************************************************************************

@@ -24,6 +24,15 @@ int DOOR_CHECK_INTERVAL = 5; // Wait 5 seconds before checking the doorway is cl
 
 enum MAYBE_TRUE_OR_FALSE {TRUE, FALSE, MAYBE} ;
 
+
+/**
+ * @brief Obtain the base position a given distance normal to the door frame. Need the current position?
+ */
+constraint  door_get_robot_pose_for_door(x, y, th, door_p1_x, door_p1_y, door_p2_x, door_p2_y, distance){
+  x <: numeric && y <: x && th <: x && 
+    door_p1_x <: x && door_p1_y <: x && door_p2_x <: x && door_p2_y <: x && distance <: x
+}
+
 /**
  * DoorState is a state variable providing feedback on the perceived state of the door and its related
  * status flags. Note that if any value is unkown, then we consider we have lost observability of the door.
@@ -44,6 +53,12 @@ class DoorState extends AgentTimeline {
     float frame_p2_y;
     float frame_p2_z;
 
+
+    // Additional Frame information
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+
     // Points for the door
     float door_p1_x;
     float door_p1_y;
@@ -53,9 +68,9 @@ class DoorState extends AgentTimeline {
     float door_p2_z;
 
     // Handle data
-    float height;
-    HINGE_FRAME hinge;
-    ROTATION_DIRECTION rot_dir;
+    float handle_x;
+    float handle_y;
+    float handle_z;
   }
 
   DoorState(Mode _mode){
@@ -77,6 +92,11 @@ class DoorManipulationBehavior extends Behavior {
     float frame_p2_y;
     float frame_p2_z;
 
+    // Additional Frame information
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+
     // Points for the door
     float door_p1_x;
     float door_p1_y;
@@ -86,9 +106,9 @@ class DoorManipulationBehavior extends Behavior {
     float door_p2_z;
 
     // Handle data
-    float height;
-    HINGE_FRAME hinge;
-    ROTATION_DIRECTION rot_dir;
+    float handle_x;
+    float handle_y;
+    float handle_z;
   }
 
   predicate Inactive{
@@ -100,6 +120,12 @@ class DoorManipulationBehavior extends Behavior {
     float frame_p2_y;
     float frame_p2_z;
 
+
+    // Additional Frame information
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+
     // Points for the door
     float door_p1_x;
     float door_p1_y;
@@ -109,9 +135,9 @@ class DoorManipulationBehavior extends Behavior {
     float door_p2_z;
 
     // Handle data
-    float height;
-    HINGE_FRAME hinge;
-    ROTATION_DIRECTION rot_dir;
+    float handle_x;
+    float handle_y;
+    float handle_z;
 
     // Commit to unknown values if nothing set
     defaultOnCommit(hinge, UNKNOWN);
@@ -122,6 +148,15 @@ class DoorManipulationBehavior extends Behavior {
     super(_mode);
   }
 }
+
+/*
+DoorManipulationBehavior::Inactive {
+  if(status == SUCCESS){
+    met_by(Active p);
+    set_state(p.state, this.state);
+  }
+}
+*/
 
 /**
  * Behavior to grasp the handle once in a position to do so

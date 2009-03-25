@@ -2,6 +2,7 @@
 
 namespace executive_trex_pr2 {
 
+
   //*******************************************************************************************
   GetRobotPoseForDoorConstraint::GetRobotPoseForDoorConstraint(const LabelStr& name,
 						 const LabelStr& propagatorName,

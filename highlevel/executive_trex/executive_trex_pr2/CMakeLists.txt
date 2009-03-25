@@ -14,7 +14,7 @@ include(NDDL.cmake)
 # Door Tests
 rospack_add_nddl("test/doors/pr2.rcs.sim.nddl")
 rospack_add_nddl("test/doors/pr2.safety.nddl")
-rospack_add_nddl("test/doors/pr2.doorman.nddl")
+rospack_add_nddl("test/doors/with_map/pr2.doorman.nddl")
 
 #rospack_add_nddl("test/model_tests/pr2.master.nddl")
 #rospack_add_nddl("test/model_tests/pr2.doorman.nddl")

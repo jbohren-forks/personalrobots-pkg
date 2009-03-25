@@ -22,7 +22,7 @@ constraint map_is_doorway(result, region_id) { result <: bool && region_id <: MA
 
 // A function to get all door state data (a full door message) and fill it into the parameters if a token. If I had structured
 // data types I would not have to do it like this!
-constraint get_door_state(state, door_id) {state <: TokenStates && door_id <: MAP_KEY}
+constraint map_get_door_state(state, door_id) {state <: TokenStates && door_id <: MAP_KEY}
 
 /***********************************************************************
  * Types related to a semantic view of the map

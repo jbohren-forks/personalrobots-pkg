@@ -93,6 +93,11 @@ namespace TREX {
    * float frame_p2_y;
    * float frame_p2_z;
    *
+   * // Handle data
+   * float height;
+   * HINGE_FRAME hinge;
+   * ROTATION_DIRECTION rot_dir;
+   *
    * // Points for the door
    * float door_p1_x;
    * float door_p1_y;
@@ -101,10 +106,10 @@ namespace TREX {
    * float door_p2_y;
    * float door_p2_z;
    *
-   * // Handle data
-   * float height;
-   * HINGE_FRAME hinge;
-   * ROTATION_DIRECTION rot_dir;
+   * // Handle Data
+   * float handle_x
+   * float handle_y
+   * float handle_z
    */
   void write(const TokenId& token, robot_msgs::Door& msg){
     // Frame Data
@@ -114,6 +119,9 @@ namespace TREX {
     write("frame_p2_x", token, msg.frame_p2.x);
     write("frame_p2_y", token, msg.frame_p2.y);
     write("frame_p2_z", token, msg.frame_p2.z);
+    write("height", token, msg.height);
+    write("hinge", token, msg.hinge);
+    write("rot_dir", token, msg.rot_dir);
 
     // Door Data
     write("door_p1_x", token, msg.door_p1.x);
@@ -124,9 +132,9 @@ namespace TREX {
     write("door_p2_z", token, msg.door_p2.z);
 
     // Handle Data
-    write("height", token, msg.height);
-    write("hinge", token, msg.hinge);
-    write("rot_dir", token, msg.rot_dir);
+    write("handle_x", token, msg.handle.x);
+    write("handle_y", token, msg.handle.y);
+    write("handle_z", token, msg.handle.z);
   }
 
   // Bind intervals to the singleton, or the domain midpoint
@@ -144,6 +152,9 @@ namespace TREX {
     read("frame_p2_x", obs, msg.frame_p2.x);
     read("frame_p2_y", obs, msg.frame_p2.y);
     read("frame_p2_z", obs, msg.frame_p2.z);
+    read("height", obs, msg.height);
+    read("hinge", obs, msg.hinge);
+    read("rot_dir", obs, msg.rot_dir);
 
     // Door Data
     read("door_p1_x", obs, msg.door_p1.x);
@@ -154,9 +165,9 @@ namespace TREX {
     read("door_p2_z", obs, msg.door_p2.z);
 
     // Handle Data
-    read("height", obs, msg.height);
-    read("hinge", obs, msg.hinge);
-    read("rot_dir", obs, msg.rot_dir);
+    read("handle_x", obs, msg.handle.x);
+    read("handle_y", obs, msg.handle.y);
+    read("handle_z", obs, msg.handle.z);
   }
 
 

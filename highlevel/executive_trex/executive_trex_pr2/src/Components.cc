@@ -11,7 +11,7 @@
 #include "CalcAngleDiffConstraint.hh"
 #include "CalcDistanceConstraint.hh"
 #include "OrienteeringSolver.hh"
-
+#include "Utilities.hh"
 #include <executive_trex_pr2/topological_map.h>
 #include <executive_trex_pr2/door_domain_constraints.hh>
 
@@ -37,6 +37,18 @@ namespace TREX{
     exit(0);
   }
 
+  class GetStateConstraint: public Constraint{
+  public:
+    GetStateConstraint(const LabelStr& name,
+		       const LabelStr& propagatorName,
+		       const ConstraintEngineId& constraintEngine,
+		       const std::vector<ConstrainedVariableId>& variables);
+
+  private:
+    void handleExecute();
+    const TokenId _target_token;
+    const TokenId _source_token;
+  };
 
   class FloorFunction: public Constraint{
   public:
@@ -93,6 +105,7 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::NearestLocation, "nearestReachableLocation", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::RandomSelection, "randomSelect", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::GetStateConstraint, "set_state", "Default");
 
       // Register topological map constraints
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
@@ -140,6 +153,40 @@ namespace TREX{
   void initROSExecutive(bool playback){
     initTREX();
     ROS_SCHEMA = new ROSSchema(playback);
+  }
+
+
+  //*******************************************************************************************
+  GetStateConstraint::GetStateConstraint(const LabelStr& name,
+					 const LabelStr& propagatorName,
+					 const ConstraintEngineId& constraintEngine,
+					 const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables), 
+     _target_token(TREX::getParentToken(variables[0])), 
+     _source_token(TREX::getParentToken(variables[1])){
+    checkError(variables.size() == 2, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+  }
+	 
+  /**
+   * If the position is bound, we can make a region query. The result should be intersected on the domain.
+   * @todo Integarte proper code from Wim. Also assumes good data
+   */
+  void GetStateConstraint::handleExecute(){
+    debugMsg("trex:propagation:get_state",  "BEFORE: " << toString());
+
+    // Iterate over all parameters of the source token. Any with a name match will be intersected
+    std::vector<ConstrainedVariableId>::const_iterator it = _source_token->parameters().begin();
+    while (it != _source_token->parameters().end()){
+      ConstrainedVariableId v_source = *it;
+      ConstrainedVariableId v_target = _target_token->getVariable(v_source->getName());
+      if(v_target.isId()){
+	AbstractDomain& target_dom = getCurrentDomain(v_target);
+	if(target_dom.intersect(v_source->lastDomain()) && target_dom.isEmpty())
+	  return;
+      }
+      ++it;
+    }
+    debugMsg("trex:propagation:get_state",  "AFTER: " << toString());
   }
 
   FloorFunction::FloorFunction(const LabelStr& name,

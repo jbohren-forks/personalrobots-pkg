@@ -50,20 +50,17 @@ DoorActions::OpenDoorById{
   neq(doorway_id, NO_KEY);
 
   // Here is the basic sequence. First introduce the components
-  any(MoveBase.Inactive cmd_move_to_detect);
-  any(DetectDoor.Inactive cmd_detect_door);
-  any(MoveBase.Inactive cmd_go_to_grasp_position);
-  any(GraspHandle.Inactive cmd_grasp_handle);
-  any(OpenDoorWithGrasp.Inactive cmd_open_door);
+  contains(MoveBase.Active cmd_move_to_detect);
+  contains(DetectDoor.Active cmd_detect_door);
+  contains(MoveBase.Active cmd_go_to_grasp_position);
+  contains(GraspHandle.Active cmd_grasp_handle);
+  contains(OpenDoorWithGrasp.Active cmd_open_door);
 
   // Impose ordering constraints
-  precedes(start, cmd_move_to_detect.start);
-  precedes(cmd_move_to_detect.start, cmd_detect_door.start);
-  precedes(cmd_detect_door.start, cmd_go_to_grasp_position.start);
-  precedes(cmd_go_to_grasp_position.start, cmd_grasp_handle.start);
-  precedes(cmd_grasp_handle.start, cmd_open_door.start);
-  precedes(cmd_open_door.start, end);
-
+  cmd_move_to_detect before cmd_detect_door;
+  cmd_detect_door before cmd_go_to_grasp_position;
+  cmd_go_to_grasp_position before cmd_grasp_handle;
+  cmd_grasp_handle before cmd_open_door;
 
   // Require that all actions are successul. If one fails, they all fail.
   eq(SUCCESS, 
@@ -117,9 +114,9 @@ DoorActions::OpenDoorByDoorState{
      cmd_open_door.status);
 
   // Flow feedback from one to another. Seeded by input parameters
-  set_door_state(cmd_detect_door.state, this.state);
-  set_door_state(cmd_grasp_handle.state, cmd_detect_door.state);
-  set_door_state(cmd_open_door.state, cmd_grasp_handle.state);
+  get_state(cmd_detect_door.state, this.state);
+  get_state(cmd_grasp_handle.state, cmd_detect_door.state);
+  get_state(cmd_open_door.state, cmd_grasp_handle.state);
 
 
   // Obtain the detection base location based on the door data from this initial state value

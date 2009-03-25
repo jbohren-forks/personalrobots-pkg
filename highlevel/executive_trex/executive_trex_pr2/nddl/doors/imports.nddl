@@ -1,10 +1,13 @@
 // Subsystems
 #include "TREX.nddl"
+#include "constraints.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/doors/exports.nddl"
 #include "safety/exports.nddl"
 #include "nav/nav.nddl"
 #include "world_model/topological_map.nddl"
+
+// Register constraints for interacting with door domain
 
 // Safety
 MobilityStatus mobility_status = new MobilityStatus(External);
