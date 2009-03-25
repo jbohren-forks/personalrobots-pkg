@@ -63,7 +63,7 @@ bool PR2GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
       ROS_WARN("PR2GripperTransmission could not find joint named \"%s\"", joint_name);
       return false;
     }
-    gap_joint_name_ = std::string("joint_name");
+    gap_joint_ = std::string("joint_name");
     joint_names_.push_back(joint_name);
 
     // get the mechanical reduction
@@ -145,7 +145,7 @@ void PR2GripperTransmission::propagatePosition(
   // assign joint states
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    if (js[i]->joint_->name_ == gap_joint_name_)
+    if (js[i]->joint_->name_ == gap_joint_)
     {
       // assign gap joint
       js[i]->position_       = gap_size;
@@ -260,7 +260,7 @@ void PR2GripperTransmission::propagateEffort(
   double gap_commanded_effort = 0.0;
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    if (js[i]->joint_->name_ == gap_joint_name_)
+    if (js[i]->joint_->name_ == gap_joint_)
     {
       gap_commanded_effort = js[i]->commanded_effort_ / gap_mechanical_reduction_;
       break; // better be just one of these, need to check
@@ -305,7 +305,7 @@ void PR2GripperTransmission::propagateEffortBackwards(
   // assign joint states
   for (unsigned int i = 0; i < js.size(); ++i)
   {
-    if (js[i]->joint_->name_ == gap_joint_name_)
+    if (js[i]->joint_->name_ == gap_joint_)
     {
       // assign gap joint
       js[i]->commanded_effort_ = gap_effort;

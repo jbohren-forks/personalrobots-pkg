@@ -29,14 +29,15 @@
 
 /*
  * <transmission type="PR2GripperTransmission" name="gripper_l_transmission">
- *   <actuator name="gripper_l_motor" />
- *   <joint name="gripper_l_upper1_joint" reduction="4" />
- *   <joint name="gripper_l_lower1_joint" reduction="-4" />
- *   <joint name="gripper_l_upper2_joint" reduction="-8" />
- *   <joint name="gripper_l_lower2_joint" reduction="8" />
+ *   <actuator       name="l_gripper_motor" />
+ *   <gap_joint      name="l_gripper_joint"              mechanical_reduction="1.0" A="0.05"  B="1.0"  C="0.0" />
+ *   <passive_joint  name="l_gripper_l_finger_joint"     />
+ *   <passive_joint  name="l_gripper_r_finger_joint"     />
+ *   <passive_joint  name="l_gripper_r_finger_tip_joint" />
+ *   <passive_joint  name="l_gripper_l_finger_tip_joint" />
  * </transmission>
  *
- * Author: Stuart Glaser
+ * Author: John Hsu
  */
 
 #ifndef GRIPPER_TRANSMISSION_H
@@ -62,7 +63,7 @@ public:
   void propagateEffort(std::vector<JointState*>&, std::vector<Actuator*>&);
   void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&);
 
-  std::string gap_joint_name_;
+  std::string gap_joint_;
   //
   // per Functions Engineering doc, 090224_link_data.xml,
   // here, gap_mechanical_reduction_ transforms FROM ENCODER VALUE TO MOTOR REVOLUTIONS
@@ -78,9 +79,6 @@ private:
   //
   // SOME CONSTANTS
   // the default theta0 when gap size is 0 is needed to assign passive joint angles
-  //
-  // FIXME:  some of these are included implicitly in the code for now, if performance does not suffer,
-  // replace all constants with below.
   //
   static const double t0_                  = -0.19543;
   static const double theta0_              = 2.97571;
