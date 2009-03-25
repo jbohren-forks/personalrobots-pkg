@@ -524,8 +524,11 @@ class VisualOdometer:
     return r
 
   def mkpose(self, rot, shift):
-    r33 = numpy.mat(numpy.array(rot).reshape(3,3))
-    return Pose(r33, numpy.array(shift))
+    if not rot:
+      return Pose()
+    else:
+      r33 = numpy.mat(numpy.array(rot).reshape(3,3))
+      return Pose(r33, numpy.array(shift))
 
     #pr = Pose(r33, numpy.array([0,0,0]))
     #ps = Pose(numpy.mat([[1,0,0],[0,1,0],[0,0,1]]), numpy.array(shift))
