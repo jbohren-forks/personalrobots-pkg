@@ -69,6 +69,7 @@
 
 #include <robot_msgs/JointTraj.h>
 #include <angles/angles.h>
+#include <robot_msgs/Polyline2D.h>
 
 using namespace costmap_2d;
 using namespace deprecated_msgs;
@@ -112,7 +113,11 @@ namespace ros
 
         bool goalWithinTolerance();
 
+        void publishTraj(robot_msgs::JointTraj &traj, std::string path_type, std::string publish_frame_id);
+
         trajectory_rollout::CostmapModel *cost_map_model_;
+
+        trajectory_rollout::PointGrid *point_grid_model_;
 
         double goal_x_, goal_y_, goal_theta_;
 
@@ -149,6 +154,23 @@ namespace ros
     MoveBaseDoor::MoveBaseDoor() : MoveBase(), goal_x_(0.0), goal_y_(0.0), goal_theta_(0.0), dist_waypoints_max_(0.025), first_time_(true),goal_id_(0),new_goal_(true)
     {
       cost_map_model_ = new trajectory_rollout::CostmapModel(*costMap_);
+
+      double min_pt_separation, max_obstacle_height, grid_resolution, max_sensor_range;
+      ros::Node::instance()->param("~move_base_door/point_grid/max_sensor_range", max_sensor_range, 2.0);
+      ros::Node::instance()->param("~move_base_door/point_grid/min_pt_separation", min_pt_separation, 0.01);
+      ros::Node::instance()->param("~move_base_door/point_grid/max_obstacle_height", max_obstacle_height, 2.0);
+      ros::Node::instance()->param("~move_base_door/point_grid/grid_resolution", grid_resolution, 0.2);
+
+      double origin_x, origin_y;
+      global_map_accessor_->getOriginInWorldCoordinates(origin_x, origin_y);
+      Point2DFloat32 origin;
+      origin.x = origin_x;
+      origin.y = origin_y;
+      unsigned int cmap_width, cmap_height;
+      global_map_accessor_->getCostmapDimensions(cmap_width, cmap_height);
+      point_grid_model_ = new trajectory_rollout::PointGrid(cmap_width * global_map_accessor_->getResolution(), cmap_height * global_map_accessor_->getResolution(), grid_resolution,origin, max_obstacle_height, max_sensor_range, min_pt_separation);
+
+//      point_grid_model_ = new trajectory_rollout::PointGrid(*costMap_);
       ros::Node::instance()->param<std::string>("~move_base_door/trajectory_control_topic",base_trajectory_controller_topic_,"base/trajectory_controller/trajectory_command");
       ros::Node::instance()->param<std::string>("~move_base_door/base_trajectory_controller_frame_id",base_trajectory_controller_frame_id_,"odom");
 
@@ -160,7 +182,7 @@ namespace ros
       ros::Node::instance()->param("~move_base_door/dist_waypoints_max", dist_waypoints_max_, 0.025);
       ROS_INFO("Initialized move base door");
       footprint_wo_nose_ = footprint_;
-      footprint_wo_nose_.pop_back();
+//      footprint_wo_nose_.pop_back();
       initialize();
    }
 
@@ -247,6 +269,7 @@ namespace ros
         computeOrientedFootprint(position.x,position.y,theta, footprint_wo_nose_, oriented_footprint);
 
         if(cost_map_model_->footprintCost(position, oriented_footprint, inscribed_radius_, circumscribed_radius_) >= 0)
+//        if(point_grid_model_->footprintCost(position, oriented_footprint, inscribed_radius_, circumscribed_radius_) >= 0)
         {
           return_trajectory.points[i].positions[2] = trajectory.points[i].positions[2];
           ROS_DEBUG("Point %d: position: %f, %f, %f is not in collision",i,position.x,position.y,theta);
@@ -258,7 +281,7 @@ namespace ros
           ROS_DEBUG("Radius inscribed: %f, circumscribed: %f",inscribed_radius_, circumscribed_radius_);
           for(int j=0; j < (int) oriented_footprint.size(); j++)
             ROS_INFO("Footprint point: %d is : %f,%f",j,oriented_footprint[j].x,oriented_footprint[j].y);
-          int last_valid_point = std::max<int>(i-10,0);
+          int last_valid_point = std::max<int>(i-4,0);
           if(last_valid_point > 0)
           {
             return_trajectory.points.resize(last_valid_point+1);
@@ -271,6 +294,35 @@ namespace ros
         }       
       }
     };
+
+    void MoveBaseDoor::publishTraj(robot_msgs::JointTraj &traj, std::string path_type, std::string publish_frame_id) 
+    {
+      robot_msgs::Polyline2D gui_path_msg;
+      gui_path_msg.header.frame_id = publish_frame_id;
+      gui_path_msg.set_points_size(traj.points.size());
+      for(int i=0; i< (int) traj.points.size(); i++)
+      {
+        gui_path_msg.points[i].x = traj.points[i].positions[0];
+        gui_path_msg.points[i].y = traj.points[i].positions[1];
+      }
+
+      if(path_type == std::string("full path"))
+      {
+        gui_path_msg.color.r = 0;
+        gui_path_msg.color.g = 1.0;
+        gui_path_msg.color.b = 0;
+        gui_path_msg.color.a = 0;
+        ros::Node::instance()->publish("gui_path", gui_path_msg);
+      }
+      else if(path_type == std::string("valid path"))
+      {
+        gui_path_msg.color.r = 1.0;
+        gui_path_msg.color.g = 0.0;
+        gui_path_msg.color.b = 0;
+        gui_path_msg.color.a = 0;
+        ros::Node::instance()->publish("gui_path", gui_path_msg);
+      }
+    }
 
     MoveBaseDoor::~MoveBaseDoor()
     {
@@ -321,11 +373,11 @@ namespace ros
 
     bool MoveBaseDoor::dispatchCommands()
     {
-
       if(new_goal_)
       {
         new_goal_ = false;
       }
+
 //      if(!first_time_)
 //        return true;
       first_time_ = false;
@@ -335,6 +387,7 @@ namespace ros
       transform2DPose(stateMsg.pos.x,stateMsg.pos.y,stateMsg.pos.th,global_frame_, base_trajectory_controller_frame_id_,current_x_,current_y_,current_theta_);
       transform2DPose(stateMsg.goal.x,stateMsg.goal.y,stateMsg.goal.th,global_frame_, base_trajectory_controller_frame_id_,goal_x_,goal_y_,goal_theta_);
       ROS_INFO("Current position: in frame %s, %f %f %f, goal (id: %d) position: %f %f %f", global_frame_.c_str(),stateMsg.pos.x,stateMsg.pos.y,stateMsg.pos.th,goal_id_,stateMsg.goal.x,stateMsg.goal.y,stateMsg.goal.th);
+      publishFootprint(stateMsg.pos.x, stateMsg.pos.y, stateMsg.pos.th);
       stateMsg.unlock();
 
       ROS_INFO("Current position: in frame %s, %f %f %f, goal (id: %d) position: %f %f %f", base_trajectory_controller_frame_id_.c_str(),current_x_,current_y_,current_theta_,goal_id_,goal_x_,goal_y_,goal_theta_);
@@ -376,7 +429,12 @@ namespace ros
         ROS_ERROR("MoveBaseDoor: Plan not ok");
         return false;
       }
+      publishTraj(valid_path_, std::string("valid path"), base_trajectory_controller_frame_id_);
+
       ROS_DEBUG("Publishing trajectory on topic: %s with %d points",base_trajectory_controller_topic_.c_str(),valid_path_.points.size());
+
+      //costMap_->revertToStaticMap(stateMsg.pos.x,stateMsg.pos.y);
+
       if(!goalWithinTolerance())
         ros::Node::instance()->publish(base_trajectory_controller_topic_,valid_path_);         
       else
