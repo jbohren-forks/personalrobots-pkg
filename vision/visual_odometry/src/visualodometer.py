@@ -394,7 +394,7 @@ class FrameAnalyzer:
     kp2d = self.feature_detector.detect(frame, self.targetkp)
     disparities = [frame.lookup_disparity(x,y) for (x,y) in frame.kp2d]
     kp = [ (x,y,z) for ((x,y),z) in zip(frame.kp2d, disparities) if z]
-    return (kp, descriptors)
+    return kp
 
 def temporal_match(self, af0, af1, want_distances = False):
   """
