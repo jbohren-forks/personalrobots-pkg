@@ -77,6 +77,7 @@ static string costmap_spec;
 static string robot_spec;
 static string geometry;
 static bool websiteMode;
+static string customBaseFilename;
 
 static shared_ptr<Setup> setup;
 static shared_ptr<ResultCollection> result_collection;
@@ -99,7 +100,7 @@ int main(int argc, char ** argv)
   create_setup();
   run_tasks();
   print_summary();
-  print_gnuplot();
+  ////  print_gnuplot();
   {
     string filename(baseFilename() + ".result.xml");
     ofstream os(filename.c_str());
@@ -155,6 +156,7 @@ void usage(ostream & os)
      << "   -r  <spec>  robot specification string (default " << d_robot_spec << ")\n"
      << "   -c  <spec>  costmap specification string (default " << d_costmap_spec << ")\n"
      << "   -g  <spec>  GLUT window size (default " << d_geometry << ")\n"
+     << "   -x  <fname> set custom base filename\n"
      << "   -X          dump filename base to stdout (use as last option)\n"
      << "   -W          run in website generation mode\n";
   SetupOptions::help(os, "help on setup options:", "  ");
@@ -174,7 +176,9 @@ static string summarizeOptions()
 
 std::string baseFilename()
 {
-  return "mpbench-" + summarizeOptions();
+  if (customBaseFilename.empty())
+    return "mpbench-" + summarizeOptions();
+  return customBaseFilename;
 }
 
 
@@ -216,6 +220,7 @@ void parse_options(int argc, char ** argv)
   costmap_spec = d_costmap_spec;
   geometry = d_geometry;
   websiteMode = false;
+  customBaseFilename = "";
   
   for (int ii(1); ii < argc; ++ii) {
     if ((strlen(argv[ii]) < 2) || ('-' != argv[ii][0])) {
@@ -282,6 +287,16 @@ void parse_options(int argc, char ** argv)
  	  exit(EXIT_FAILURE);
  	}
 	geometry = argv[ii];
+ 	break;
+	
+      case 'x':
+	++ii;
+ 	if (ii >= argc) {
+ 	  warnx("-x requires filename argument");
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	customBaseFilename = argv[ii];
  	break;
 	
       case 'X':
@@ -518,7 +533,7 @@ void print_summary()
 	 << "    plan length [m]:           " << lplan << " / " << lplan / n_success << "\n"
 	 << "    plan angle change [deg]:   " << rplan << " / " << rplan / n_success << "\n";
   if (websiteMode) {
-    string foo("mpbench-" + summarizeOptions() + ".html");
+    string foo(baseFilename() + ".html");
     ofstream os(foo.c_str());
     if (os)
       os << "<table border=\"1\" cellpadding=\"2\">\n"
