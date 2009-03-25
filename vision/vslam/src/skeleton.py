@@ -16,11 +16,10 @@ import pickle
 import math
 
 class minimum_frame:
-  def __init__(self, id, kp, descriptors, matcher):
+  def __init__(self, id, kp, descriptors):
     self.id = id
     self.kp = kp
     self.descriptors = descriptors
-    self.matcher = matcher
     assert len(kp) == len(descriptors)
 
 def mk_covar(xyz, rp, yaw):
@@ -55,7 +54,6 @@ class Skeleton:
 
     self.node_kp = {}
     self.node_descriptors = {}
-    self.node_matcher = {}
 
     self.termcrit = default_termcrit
     self.pr_maximum = 15    # How many out of PR's places to consider for GCC
@@ -97,7 +95,6 @@ class Skeleton:
       ma = calonder.BruteForceMatcher(self.vo.descriptor_scheme.cl.dimension())
       for sig in self.node_descriptors[id]:
         ma.addSignature(sig)
-      self.node_matcher[id] = ma
 
     for id in self.place_ids:
       self.vt.add(None, self.node_descriptors[id])
@@ -263,7 +260,7 @@ class Skeleton:
     print
 
   def my_frame(self, id):
-    return minimum_frame(id, self.node_kp[id], self.node_descriptors[id], self.node_matcher[id])
+    return minimum_frame(id, self.node_kp[id], self.node_descriptors[id])
 
   def xmemoize_node_kp_d(self, af):
     self.timer['descriptors'].start()
@@ -272,7 +269,6 @@ class Skeleton:
       self.vo.setup_frame(nf)
       self.node_kp[af.id] = nf.kp
       self.node_descriptors[af.id] = nf.descriptors
-      self.node_matcher[af.id] = nf.matcher
 
       if 0:
         pylab.imshow(numpy.fromstring(af.lf.tostring(), numpy.uint8).reshape(480,640), cmap=pylab.cm.gray)
@@ -286,7 +282,6 @@ class Skeleton:
     if not (af.id in self.node_kp):
       self.node_kp[af.id] = af.kp
       self.node_descriptors[af.id] = af.descriptors
-      self.node_matcher[af.id] = af.matcher
     self.timer['descriptors'].stop()
 
   def PE(self, af0, af1):
