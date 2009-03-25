@@ -153,18 +153,18 @@ void PR2GripperTransmission::propagatePosition(
       js[i]->position_       = gap_size;
       js[i]->velocity_       = gap_velocity;
       js[i]->applied_effort_ = gap_effort;
-        std::cout << "gap joint propagatePosition js[" << i << "]:" << js[i]->joint_->name_
-                  << " encoder_value:" << encoder_value
-                  << " encoder_value_dot:" << encoder_value_dot
-                  << " theta_effort:" << theta_effort
-                  << " gap_size:" << gap_size
-                  << " gap_velocity:" << gap_velocity
-                  << " gap_effort:" << gap_effort
-                  << " arg:" << arg
-                  << " theta:" << theta
-                  << " arg_dot:" << arg_dot
-                  << " theta_dot:" << theta_dot
-                  << std::endl;
+      // std::cout << "gap joint propagatePosition js[" << i << "]:" << js[i]->joint_->name_
+      //           << " encoder_value:" << encoder_value
+      //           << " encoder_value_dot:" << encoder_value_dot
+      //           << " theta_effort:" << theta_effort
+      //           << " gap_size:" << gap_size
+      //           << " gap_velocity:" << gap_velocity
+      //           << " gap_effort:" << gap_effort
+      //           << " arg:" << arg
+      //           << " theta:" << theta
+      //           << " arg_dot:" << arg_dot
+      //           << " theta_dot:" << theta_dot
+      //           << std::endl;
     }
     else
     {
@@ -176,16 +176,16 @@ void PR2GripperTransmission::propagatePosition(
         js[i]->position_       = theta - angles::from_degrees(theta0_) ;
         js[i]->velocity_       = theta_dot      ;
         js[i]->applied_effort_ = theta_effort      ;
-        std::cout << "passive joint propagatePosition js[" << i << "]:" << js[i]->joint_->name_
-                  << " arg:" << arg
-                  << " theta:" << theta
-                  << " theta_dot:" << theta_dot
-                  << " theta_effort:" << theta_effort
-                  << std::endl;
+        // std::cout << "passive joint propagatePosition js[" << i << "]:" << js[i]->joint_->name_
+        //           << " arg:" << arg
+        //           << " theta:" << theta
+        //           << " theta_dot:" << theta_dot
+        //           << " theta_effort:" << theta_effort
+        //           << std::endl;
       }
       else
       {
-        std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " not a gap nor passive joint " << std::endl;
+        // std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " not a gap nor passive joint " << std::endl;
       }
     }
   }
@@ -217,16 +217,16 @@ void PR2GripperTransmission::propagatePositionBackwards(
       mean_joint_rate     += js[i]->velocity_      ;
       mean_joint_torque   += js[i]->applied_effort_;
       count++;
-      std::cout << "passive joint propagatePositionBackwards js[" << i << "]:" << js[i]->joint_->name_
-                << " mean_joint_angle:" << mean_joint_angle / count
-                << " mean_joint_rate:" << mean_joint_rate / count
-                << " mean_joint_torque:" << mean_joint_torque / count
-                << " count:" << count
-                << std::endl;
+      // std::cout << "passive joint propagatePositionBackwards js[" << i << "]:" << js[i]->joint_->name_
+      //           << " mean_joint_angle:" << mean_joint_angle / count
+      //           << " mean_joint_rate:" << mean_joint_rate / count
+      //           << " mean_joint_torque:" << mean_joint_torque / count
+      //           << " count:" << count
+      //           << std::endl;
     }
     else
     {
-      std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " not a passive joint " << std::endl;
+      // std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " not a passive joint " << std::endl;
     }
   }
   
@@ -242,16 +242,16 @@ void PR2GripperTransmission::propagatePositionBackwards(
   double dMR_dtheta_mm  = -gear_ratio_/(2.0 * screw_reduction_) / arg
                           * 2.0 * coef_a_ * coef_b_ * sin(theta + angles::from_degrees(phi0_) - angles::from_degrees(theta0_));
   double dMR_dtheta     = dMR_dtheta_mm / mm2m_;
-  std::cout << "    "
-            << " avg_joint_angle:" << avg_joint_angle
-            << " avg_joint_rate:" << avg_joint_rate
-            << " avg_joint_torque:" << avg_joint_torque
-            << " theta:" << theta
-            << " arg:" << arg
-            << " encoder_value:" << encoder_value
-            << " dMR_dtheta:" << dMR_dtheta
-            << std::endl;
-  //std::cout << "check nan" << (-2.0*coef_a_*coef_b_*cos(theta-angles::from_degrees(theta0_)+angles::from_degrees(phi0_))-coef_h_*coef_h_+coef_a_*coef_a_+coef_b_*coef_b_) << " cos of:" << (theta-angles::from_degrees(theta0_)+angles::from_degrees(phi0_)) << std::endl;
+  // std::cout << "    "
+  //           << " avg_joint_angle:" << avg_joint_angle
+  //           << " avg_joint_rate:" << avg_joint_rate
+  //           << " avg_joint_torque:" << avg_joint_torque
+  //           << " theta:" << theta
+  //           << " arg:" << arg
+  //           << " encoder_value:" << encoder_value
+  //           << " dMR_dtheta:" << dMR_dtheta
+  //           << std::endl;
+  // std::cout << "check nan" << (-2.0*coef_a_*coef_b_*cos(theta-angles::from_degrees(theta0_)+angles::from_degrees(phi0_))-coef_h_*coef_h_+coef_a_*coef_a_+coef_b_*coef_b_) << " cos of:" << (theta-angles::from_degrees(theta0_)+angles::from_degrees(phi0_)) << std::endl;
 
   as[0]->state_.position_             = encoder_value                 / gap_mechanical_reduction_;
   as[0]->state_.velocity_             = avg_joint_rate   * dMR_dtheta / gap_mechanical_reduction_;
@@ -277,14 +277,14 @@ void PR2GripperTransmission::propagateEffort(
       // assign passive joints
       mean_joint_angle    += angles::shortest_angular_distance(mean_joint_angle,js[i]->position_) + mean_joint_angle;
       count++;
-      std::cout << "passive joint propagateEffort js[" << i << "]:" << js[i]->joint_->name_
-                << " mean_joint_angle:" << mean_joint_angle / count
-                << " count:" << count
-                << std::endl;
+      // std::cout << "passive joint propagateEffort js[" << i << "]:" << js[i]->joint_->name_
+      //           << " mean_joint_angle:" << mean_joint_angle / count
+      //           << " count:" << count
+      //           << std::endl;
     }
     else
     {
-      std::cout << " js" << js[i]->joint_->name_ << " not a passive joint " << std::endl;
+      // std::cout << " js" << js[i]->joint_->name_ << " not a passive joint " << std::endl;
     }
   }
   
@@ -298,12 +298,12 @@ void PR2GripperTransmission::propagateEffort(
                           * 2.0 * coef_a_ * coef_b_ * sin(theta + angles::from_degrees(phi0_) - angles::from_degrees(theta0_));
   double dMR_dtheta     = dMR_dtheta_mm / mm2m_;
 
-  std::cout << "    "
-            << " avg_joint_angle:" << avg_joint_angle
-            << " theta:" << theta
-            << " arg:" << arg
-            << " dMR_dtheta:" << dMR_dtheta
-            << std::endl;
+  // std::cout << "    "
+  //           << " avg_joint_angle:" << avg_joint_angle
+  //           << " theta:" << theta
+  //           << " arg:" << arg
+  //           << " dMR_dtheta:" << dMR_dtheta
+  //           << std::endl;
 
   // get the gap commanded effort
   double gap_commanded_effort = 0.0;
@@ -332,12 +332,10 @@ void PR2GripperTransmission::propagateEffortBackwards(
   double encoder_value  = as[0]->state_.position_ * gap_mechanical_reduction_; // motor revs
   double arg            = (coef_a_*coef_a_+coef_b_*coef_b_-pow(L0_+encoder_value*screw_reduction_/gear_ratio_,2))/(2.0*coef_a_*coef_b_);
   arg = arg < -1.0 ? -1.0 : arg > 1.0 ? 1.0 : arg;
-  double theta          = angles::from_degrees(angles::from_degrees(theta0_) - angles::from_degrees(phi0_)) + acos(arg);
 
   //
   // based on similar transforms, get the velocity of the gripper gap size based on encoder velocity
   //
-  double encoder_value_dot   = as[0]->state_.velocity_ * gap_mechanical_reduction_; // revs per sec
   double arg_dot_mm          = -(L0_ * screw_reduction_)/(gear_ratio_*coef_a_*coef_b_) // d(arg)/d(encoder_value)
                                -screw_reduction_*encoder_value*pow(screw_reduction_/gear_ratio_,2);
   double arg_dot             = arg_dot_mm / mm2m_;
@@ -357,16 +355,14 @@ void PR2GripperTransmission::propagateEffortBackwards(
     {
       // assign gap joint
       js[i]->commanded_effort_ = gap_effort;
-        std::cout << "gap joint propagateEffortBackwards js[" << i << "]:" << js[i]->joint_->name_
-                  << " encoder_value:" << encoder_value
-                  << " arg:" << arg
-                  << " theta:" << theta
-                  << " encoder_value_dot:" << encoder_value_dot
-                  << " arg_dot:" << arg_dot
-                  << " theta_dot:" << theta_dot
-                  << " theta_effort:" << theta_effort
-                  << " gap_effort:" << gap_effort
-                  << std::endl;
+        // std::cout << "gap joint propagateEffortBackwards js[" << i << "]:" << js[i]->joint_->name_
+        //           << " encoder_value:" << encoder_value
+        //           << " arg:" << arg
+        //           << " arg_dot:" << arg_dot
+        //           << " theta_dot:" << theta_dot
+        //           << " theta_effort:" << theta_effort
+        //           << " gap_effort:" << gap_effort
+        //           << std::endl;
     }
     else
     {
@@ -376,13 +372,13 @@ void PR2GripperTransmission::propagateEffortBackwards(
       {
         // assign passive joints
         js[i]->commanded_effort_ = theta_effort   ;
-        std::cout << "passive joint propagateEffortBackwards js[" << i << "]:" << js[i]->joint_->name_
-                  << " theta_effort:" << theta_effort
-                  << std::endl;
+        // std::cout << "passive joint propagateEffortBackwards js[" << i << "]:" << js[i]->joint_->name_
+        //           << " theta_effort:" << theta_effort
+        //           << std::endl;
       }
       else
       {
-        std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " not a gap nor passive joint " << std::endl;
+        // std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " not a gap nor passive joint " << std::endl;
       }
     }
   }
