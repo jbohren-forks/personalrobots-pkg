@@ -221,7 +221,7 @@ private:
 	// vertical -- This is a return that tells whether something is on a wall (descending disparities) or not.
 	// minDisparity -- disregard disparities less than this
 	//
-	double disparitySTD(IplImage *Id, CvRect &R, bool &vertical, double& meanDisparity, double minDisparity = 0.5 )
+	double disparitySTD(IplImage *Id, CvRect &R, double& meanDisparity, double minDisparity = 0.5 )
 	{
 		int ws = Id->widthStep;
 		unsigned char *p = (unsigned char *)(Id->imageData);
@@ -235,12 +235,6 @@ private:
 		double val;
 		int cnt = 0;
 		//For vertical objects, Disparities should decrease from top to bottom, measure that
-		double AvgTopDisp = 0.0;
-		double AvgBotDisp = 0.0;
-		int top_cnt = 0;
-		int bot_cnt = 0;
-		bool top = true;
-		int halfwayY = rh/2;
 		for(int Y=0; Y<rh; ++Y)
 		{
 			for(int X=0; X<rw; X++, p+=nchan)
@@ -248,36 +242,16 @@ private:
 				val = (double)*p;
 				if(val < minDisparity)
 					continue;
-				if(top){
-					AvgTopDisp += val;
-					top_cnt++;
-				}
-				else {
-					AvgBotDisp += val;
-					bot_cnt++;
-				}
 				mean += val;
 				var += val*val;
 				cnt++;
 			}
 			p+=ws-(rw*nchan);
-			if(Y >= halfwayY)
-				top = false;
 		}
 		if(cnt == 0) //Error condition, no disparities, return impossible variance
 		{
-			vertical = false;
 			return 10000000.0;
 		}
-		//FIND OUT IF THE OBJECT IS VERTICAL (Descending disparities) OR NOT:
-		if(top_cnt == 0) top_cnt = 1;
-		if(bot_cnt == 0) bot_cnt = 1;
-		AvgTopDisp = AvgTopDisp/(double)top_cnt;
-		AvgBotDisp = AvgBotDisp/(double)bot_cnt;
-		if(AvgTopDisp >= AvgBotDisp)
-			vertical = true;
-		else
-			vertical = false;
 		//DO THE VARIANCE MATH
 		mean = mean/(double)cnt;
 		var = (var/(double)cnt) - mean*mean;
@@ -354,14 +328,8 @@ private:
 		cvResetImageROI(disp);
 		cvSetImageCOI(disp,0);
 
-		bool vertical;
 		double mean;
-		double sdv = disparitySTD(disp, r, vertical, mean);
-
-		if (sdv<1) {
-			ROS_INFO("Too flat, discarding");
-			return false;
-		}
+		disparitySTD(disp, r, mean);
 
 		if (cnt<nz_fraction*r.width*r.height) {
 //			ROS_INFO("Too few pixels in the disparity, discarding");
@@ -369,6 +337,26 @@ private:
 		}
 
 		robot_msgs::PointCloud pc = filterPointCloud(r);
+		CvScalar plane = estimatePlaneLS(pc);
+		cnt = 0;
+		double sum = 0;
+		double max_dist = 0;
+		for (size_t i = 0; i<pc.pts.size();++i) {
+			robot_msgs::Point32 p = pc.pts[i];
+			double dist = fabs(plane.val[0]*p.x+plane.val[1]*p.y+plane.val[2]*p.z+plane.val[3]);
+			max_dist = max(max_dist,dist);
+			sum += dist;
+			cnt++;
+		}
+		sum /= cnt;
+
+		printf("Average distance to plane: %f, max: %f\n", sum, max_dist);
+
+		if (max_dist>0.1 || sum<0.005) {
+//			cvRectangle(left, cvPoint(r.x,r.y), cvPoint(r.x+r.width, r.y+r.height), CV_RGB(0,0,255));
+			return false;
+		}
+
 
 		double dx, dy;
 		robot_msgs::Point p;
@@ -389,10 +377,10 @@ private:
 
 		tf_->transformPoint("base_link", pin, pout);
 
-		printf("r: (%d, %d, %d, %d), sdv: %f, dx: %f, dy: %f, x: %f, y: %f, z: %f\n", r.x, r.y, r.width, r.height, sdv, dx, dy,
-					pout.point.x, pout.point.y, pout.point.z);
+//		printf("r: (%d, %d, %d, %d), sdv: %f, dx: %f, dy: %f, x: %f, y: %f, z: %f\n", r.x, r.y, r.width, r.height, sdv, dx, dy,
+//					pout.point.x, pout.point.y, pout.point.z);
 
-		if (pout.point.z>0.9) {
+		if (pout.point.z>0.9 || pout.point.z<0.7) {
 			ROS_INFO("Too high, discarding");
 			return false;
 
@@ -426,6 +414,8 @@ private:
 
         publish( "visualizationMarker", marker );
 
+
+
 		return true;
 	}
 
@@ -456,7 +446,7 @@ private:
 	            	cvRectangle(left, cvPoint(r->x,r->y), cvPoint(r->x+r->width, r->y+r->height), CV_RGB(0,255,0));
 	            }
 	            else {
-	            	cvRectangle(left, cvPoint(r->x,r->y), cvPoint(r->x+r->width, r->y+r->height), CV_RGB(255,0,0));
+//	            	cvRectangle(left, cvPoint(r->x,r->y), cvPoint(r->x+r->width, r->y+r->height), CV_RGB(255,0,0));
 	            }
 	        }
 	    }
