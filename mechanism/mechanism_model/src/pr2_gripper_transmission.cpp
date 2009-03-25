@@ -236,7 +236,7 @@ void PR2GripperTransmission::propagatePositionBackwards(
   double theta          = angles::from_degrees(theta0_) + avg_joint_angle; // should we filter this value?
   double arg            = sqrt(-2.0*coef_a_*coef_b_*cos(theta-angles::from_degrees(theta0_)+angles::from_degrees(phi0_))
                                -coef_h_*coef_h_+coef_a_*coef_a_+coef_b_*coef_b_);
-  double encoder_value  = -gear_ratio_/screw_reduction_ * ( L0_ + arg );
+  double encoder_value  =  gear_ratio_/screw_reduction_ * ( arg - L0_ );
   double dMR_dtheta_mm  = -gear_ratio_/(2.0 * screw_reduction_) / arg
                           * 2.0 * coef_a_ * coef_b_ * sin(theta + angles::from_degrees(phi0_) - angles::from_degrees(theta0_));
   double dMR_dtheta     = dMR_dtheta_mm / mm2m_;
