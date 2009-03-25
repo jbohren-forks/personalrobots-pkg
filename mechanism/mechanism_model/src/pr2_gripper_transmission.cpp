@@ -63,7 +63,7 @@ bool PR2GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
       ROS_WARN("PR2GripperTransmission could not find joint named \"%s\"", joint_name);
       return false;
     }
-    gap_joint_ = std::string("joint_name");
+    gap_joint_ = std::string(joint_name);
     joint_names_.push_back(joint_name);
 
     // get the mechanical reduction
