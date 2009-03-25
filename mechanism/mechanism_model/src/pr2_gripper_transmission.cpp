@@ -212,7 +212,8 @@ void PR2GripperTransmission::propagatePositionBackwards(
   // now do the difficult reverse transform
   double theta          = theta0_ + avg_joint_angle; // should we filter this value?
   double arg            = sqrt(2.0*coef_a_*coef_b_*cos(theta-theta0_+phi0_)+coef_h_*coef_h_-coef_a_*coef_a_-coef_b_*coef_b_);
-  double actuator_angle = -gear_ratio_/screw_reduction_ * ( L0_ + arg );
+  //double actuator_angle = -gear_ratio_/screw_reduction_ * ( L0_ + arg );   // FIXME: why should line below work and not this one?
+  double actuator_angle = -1.0*gear_ratio_/screw_reduction_ * ( L0_ + arg ); 
   double dMR_dtheta     =  gear_ratio_/(2.0 * screw_reduction_) / arg * 2.0 * coef_a_ * coef_b_ * sin(theta + phi0_ - theta0_);
 
   as[0]->state_.position_             = actuator_angle                / gap_mechanical_reduction_;
