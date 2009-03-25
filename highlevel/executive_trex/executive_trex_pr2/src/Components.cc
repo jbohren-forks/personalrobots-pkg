@@ -105,7 +105,7 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::NearestLocation, "nearestReachableLocation", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::RandomSelection, "randomSelect", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::GetStateConstraint, "set_state", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::GetStateConstraint, "get_state", "Default");
 
       // Register topological map constraints
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),

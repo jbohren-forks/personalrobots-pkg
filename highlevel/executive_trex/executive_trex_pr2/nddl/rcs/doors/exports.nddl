@@ -149,15 +149,6 @@ class DoorManipulationBehavior extends Behavior {
   }
 }
 
-/*
-DoorManipulationBehavior::Inactive {
-  if(status == SUCCESS){
-    met_by(Active p);
-    set_state(p.state, this.state);
-  }
-}
-*/
-
 /**
  * Behavior to grasp the handle once in a position to do so
  */
