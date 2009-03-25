@@ -33,7 +33,7 @@
 //eight-connected grid
 #define NAVXYTHETALAT_DXYWIDTH 8
 
-#define ENVNAVXYTHETALAT_DEFAULTOBSTHRESH 253	//see explanation of the value below
+#define ENVNAVXYTHETALAT_DEFAULTOBSTHRESH 254	//see explanation of the value below
 
 
 //definition of theta orientations
@@ -108,6 +108,8 @@ typedef struct
 	int startstateid;
 	int goalstateid;
 
+	bool bInitialized;
+
 	//hash table of size x_size*y_size. Maps from coords to stateId	
 	int HashTableSize;
 	vector<EnvNAVXYTHETALATHashEntry_t*>* Coord2StateIDHashTable;
@@ -116,6 +118,7 @@ typedef struct
 	vector<EnvNAVXYTHETALATHashEntry_t*> StateID2CoordTable;
 
 	//any additional variables
+
 
 }EnvironmentNAVXYTHETALAT_t;
 
@@ -136,6 +139,14 @@ typedef struct ENV_NAVXYTHETALAT_CONFIG
 	//the default is defined above
 	unsigned char obsthresh; 
 
+	//the value at which and above which until obsthresh (not including it) cells have the nearest obstacle at distance smaller than or equal to 
+	//the inner circle of the robot. In other words, the robot is definitely colliding with the obstacle, independently of its orientation
+	unsigned char cost_inscribed_thresh; 
+
+	//the value at which and above which until cost_inscribed_thresh (not including it) cells 
+	//**may** have a nearest osbtacle within the distance that is in between the robot inner circle and the robot outer circle
+	//any cost below this value means that the robot will NOT collide with any obstacle, independently of its orientation
+	unsigned char cost_possibly_circumscribed_thresh; 
 
 	double nominalvel_mpersecs;
 	double timetoturn45degsinplace_secs;
@@ -165,6 +176,7 @@ public:
 
 	bool InitializeEnv(const char* sEnvFile, const vector<sbpl_2Dpt_t>& perimeterptsV, const char* sMotPrimFile);	
 	bool InitializeEnv(const char* sEnvFile);
+	virtual bool SetEnvParameter(const char* parameter, int value);
 	bool InitializeMDPCfg(MDPConfig *MDPCfg);
 	int  GetFromToHeuristic(int FromStateID, int ToStateID);
 	int  GetGoalHeuristic(int stateID);
@@ -202,7 +214,7 @@ public:
 	void ConvertStateIDPathintoXYThetaPath(vector<int>* stateIDPath, vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath); 
 
 	bool IsObstacle(int x, int y);
-	bool IsValidConfiguration(int X, int Y, int Theta);
+	inline bool IsValidConfiguration(int X, int Y, int Theta);
 
 	void GetEnvParms(int *size_x, int *size_y, double* startx, double* starty, double* starttheta, double* goalx, double* goaly, double* goaltheta,
 			double* cellsize_m, double* nominalvel_mpersecs, double* timetoturn45degsinplace_secs, unsigned char* obsthresh, vector<SBPL_xytheta_mprimitive>* motionprimitiveV);

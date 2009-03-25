@@ -200,16 +200,17 @@ bool SBPL2DGridSearch::search(unsigned char** Grid2D, unsigned char obsthresh, i
 		return false;
 	}
 
-    // initialize the start state
+    // initialize the start and goal states
     searchExpState = &searchStates2D_[startX_][startY_];
     initializeSearchState2D(searchExpState);
+    initializeSearchState2D(&searchStates2D_[goalx_c][goaly_c]);
+    SBPL_2DGridSearchState* search2DGoalState = &searchStates2D_[goalx_c][goaly_c];
+
+	//seed the search
 	searchExpState->g = 0;
 	key.key[0] = searchExpState->g + SBPL_2DGRIDSEARCH_HEUR2D(startX_,startY_);
 	OPEN2D_->insertheap(searchExpState, key);
     
-    //initialize the goal state
-    initializeSearchState2D(&searchStates2D_[goalx_c][goaly_c]);
-    SBPL_2DGridSearchState* search2DGoalState = &searchStates2D_[goalx_c][goaly_c];
 
 	//set the termination condition
 	float term_factor = 0.0;

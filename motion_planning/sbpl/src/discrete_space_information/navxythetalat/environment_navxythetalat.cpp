@@ -40,10 +40,13 @@ static clock_t time_getsuccs = 0;
 EnvironmentNAVXYTHETALAT::EnvironmentNAVXYTHETALAT()
 {
 	EnvNAVXYTHETALATCfg.obsthresh = ENVNAVXYTHETALAT_DEFAULTOBSTHRESH;
+	EnvNAVXYTHETALATCfg.cost_inscribed_thresh = EnvNAVXYTHETALATCfg.obsthresh; //the value that pretty much makes it disabled
+	EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh = 0; //the value that pretty much makes it disabled
 
 	grid2Dsearch = NULL;
 	bNeedtoRecomputeStartHeuristics = true;
 
+	EnvNAVXYTHETALAT.bInitialized = false;
 
 	EnvNAVXYTHETALATCfg.actionwidth = NAVXYTHETALAT_DEFAULT_ACTIONWIDTH;
 }
@@ -1146,7 +1149,7 @@ EnvNAVXYTHETALATHashEntry_t* EnvironmentNAVXYTHETALAT::CreateNewHashEntry(int X,
 	return HashEntry;
 }
 
-bool EnvironmentNAVXYTHETALAT::IsValidCell(int X, int Y)
+inline bool EnvironmentNAVXYTHETALAT::IsValidCell(int X, int Y)
 {
 	return (X >= 0 && X < EnvNAVXYTHETALATCfg.EnvWidth_c && 
 		Y >= 0 && Y < EnvNAVXYTHETALATCfg.EnvHeight_c && 
@@ -1212,7 +1215,7 @@ int EnvironmentNAVXYTHETALAT::GetActionCost(int SourceX, int SourceY, int Source
 			return INFINITECOST;
 
 		if(EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y] > currentmaxcost)
-			currentmaxcost = EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y];
+			currentmaxcost = EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y]; //TODO - debugmax - need to iterate over discretized center cells and compute cost based on them
 	}
 
 	//to ensure consistency of h2D:
@@ -1246,6 +1249,10 @@ void EnvironmentNAVXYTHETALAT::InitializeEnvironment()
 	//create goal state 
 	HashEntry = CreateNewHashEntry(EnvNAVXYTHETALATCfg.EndX_c, EnvNAVXYTHETALATCfg.EndY_c, EnvNAVXYTHETALATCfg.EndTheta);
 	EnvNAVXYTHETALAT.goalstateid = HashEntry->stateID;
+
+	//initialized
+	EnvNAVXYTHETALAT.bInitialized = true;
+
 }
 
 double EnvironmentNAVXYTHETALAT::EuclideanDistance_m(int X1, int Y1, int X2, int Y2)
@@ -1672,7 +1679,7 @@ int EnvironmentNAVXYTHETALAT::GetStartHeuristic(int stateID)
 
 	if(bNeedtoRecomputeStartHeuristics)
 	{
-		grid2Dsearch->search(EnvNAVXYTHETALATCfg.Grid2D, EnvNAVXYTHETALATCfg.obsthresh, 
+		grid2Dsearch->search(EnvNAVXYTHETALATCfg.Grid2D, EnvNAVXYTHETALATCfg.cost_inscribed_thresh, 
 			EnvNAVXYTHETALATCfg.StartX_c, EnvNAVXYTHETALATCfg.StartY_c, EnvNAVXYTHETALATCfg.EndX_c, EnvNAVXYTHETALATCfg.EndY_c, 
 			SBPL_2DGRIDSEARCH_TERM_CONDITION_ALLCELLS);
 		bNeedtoRecomputeStartHeuristics = false;
@@ -2243,8 +2250,6 @@ void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* st
 
 #if DEBUG
 		GetCoordFromState(sourceID, sourcex_c, sourcey_c, sourcetheta_c);
-		if(sourcex_c == 404 && sourcey_c == 16 && sourcetheta_c == 31)
-			printf("problem\n"); //TODO
 #endif
 
 
@@ -2320,5 +2325,42 @@ void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* st
 	}
 }
 
+bool EnvironmentNAVXYTHETALAT::SetEnvParameter(const char* parameter, int value)
+{
+
+	if(EnvNAVXYTHETALAT.bInitialized == true)
+	{
+		printf("ERROR: all parameters must be set before initialization of the environment\n");
+		return false;
+	}
+
+	printf("setting parameter %s to %d\n", parameter, value);
+
+	if(strcmp(parameter, "cost_inscribed") == 0)
+	{
+		if(value < 0 || value > 255)
+		{
+			printf("ERROR: invalid value %d for parameter %s\n");
+			return false;
+		}
+		EnvNAVXYTHETALATCfg.cost_inscribed_thresh = (unsigned char)value;
+	}
+	else if(strcmp(parameter, "cost_possibly_circumscribed") == 0)
+	{
+		if(value < 0 || value > 255)
+		{
+			printf("ERROR: invalid value %d for parameter %s\n");
+			return false;
+		}
+		EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh = (unsigned char)value;
+	}
+	else
+	{
+		printf("ERROR: invalid parameter %s\n", parameter);
+		return false;
+	}
+
+	return true;
+}
 
 //------------------------------------------------------------------------------

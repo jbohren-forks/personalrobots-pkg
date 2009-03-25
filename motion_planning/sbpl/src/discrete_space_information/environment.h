@@ -58,6 +58,14 @@ public:
 	virtual void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL) = 0;
 	virtual void PrintEnv_Config(FILE* fOut) = 0;
 
+	virtual bool SetEnvParameter(const char* parameter, int value)
+	{
+		printf("ERROR: Environment has no parameters that can be set via SetEnvParameter function\n");
+		return false;
+	}
+
+
+
     //destructor
   virtual ~DiscreteSpaceInformation(){
     for(unsigned int i = 0; i < StateID2IndexMapping.size(); ++i){

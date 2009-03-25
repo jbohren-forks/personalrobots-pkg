@@ -278,7 +278,7 @@ int planxythetalat(int argc, char *argv[])
 {
 
 	int bRet = 0;
-	double allocated_time_secs = 5; //in seconds
+	double allocated_time_secs = 10; //in seconds
 	MDPConfig MDPCfg;
 	bool bsearchuntilfirstsolution = false;
 
@@ -309,7 +309,14 @@ int planxythetalat(int argc, char *argv[])
 
 	//Initialize Environment (should be called before initializing anything else)
 	EnvironmentNAVXYTHETALAT environment_navxythetalat;
-	
+
+	if(!environment_navxythetalat.SetEnvParameter("cost_inscribed", 253)) //TODO - debugmax - should be part of environment file
+	{
+		printf("ERROR: failed to set parameters\n");
+		exit(1);
+	}
+
+
 	if(argc == 3)
 	{
 		if(!environment_navxythetalat.InitializeEnv(argv[1], perimeterptsV, argv[2]))
