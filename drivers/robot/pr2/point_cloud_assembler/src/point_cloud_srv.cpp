@@ -113,18 +113,17 @@ public:
       Duration().fromSec(0.05).sleep();
     }
     Time end_time = laser_time_;
-    ROS_INFO("Point cloud srv: generated point cloud");
-
+    ROS_INFO("Point cloud srv: generated point cloud from time %f to %f", begin_time.toSec(), end_time.toSec());
 
     // get a point cloud from the point cloud assembler
     BuildCloud::Request assembler_req ;
     BuildCloud::Response assembler_res ;
     assembler_req.begin = begin_time;
     assembler_req.end   = end_time;
-    if (!ros::service::call("point_cloud_assembler/build_cloud", assembler_req, assembler_res))
+    if (!ros::service::call("laser_scan_assembler/build_cloud", assembler_req, assembler_res))
       ROS_ERROR("Point cloud srv: error receiving point cloud from point cloud assembler");
     else
-    ROS_INFO("Point cloud srv: received point cloud from point cloud assembler");
+      ROS_INFO("Point cloud srv: received point cloud of size %i from point cloud assembler", assembler_res.cloud.pts.size());
 
     res.cloud = assembler_res.cloud;
     return true;
