@@ -46,9 +46,9 @@ planworks:
 
 # Get TREX
 trex: plasma
-	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 91 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
-	-if test "-r 91" != "-r `svn info TREX | grep Revision | cut -d " " -f 2,2`"; then \
-	  cd TREX && $(SVN_CMDLINE) up -r 91 ; \
+	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 93 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
+	-if test "-r 93" != "-r `svn info TREX | grep Revision | cut -d " " -f 2,2`"; then \
+	  cd TREX && $(SVN_CMDLINE) up -r 93 ; \
 	fi
 	@if [ ! -d logs ]; then mkdir logs; fi
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
