@@ -90,7 +90,7 @@ class PlugOnBaseDetector
 {
   protected:
     ros::Node& node_;
-    
+
     // Mail parameters
     std::string m_addresses, m_stowSubject, m_stowBody, m_mailClient;
 
@@ -107,8 +107,8 @@ class PlugOnBaseDetector
     int publish_debug_;
     double sac_distance_threshold_;
     double base_z_min_, base_xy_max_, base_plane_height_;
-    
-    
+
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     PlugOnBaseDetector (ros::Node& anode) : node_ (anode), tf_ (anode)
     {
@@ -139,7 +139,7 @@ class PlugOnBaseDetector
         }
       }
       if (!topic_found)
-        ROS_WARN ("Trying to subscribe to %s, but the topic doesn't exist!", node_.mapName (cloud_topic).c_str ());
+        ROS_DEBUG ("Trying to subscribe to %s, but the topic doesn't exist!", node_.mapName (cloud_topic).c_str ());
 
       // Subscribe to the topic
       node_.subscribe (cloud_topic, cloud_, &PlugOnBaseDetector::callback, this, 1);
@@ -165,7 +165,7 @@ class PlugOnBaseDetector
 
       if (cloud_.header.frame_id != "base_link")
       {
-        ROS_WARN ("Transforming cloud into base_link for easier processing. This can be fixed later.");
+        ROS_DEBUG ("Transforming cloud into base_link for easier processing. This can be fixed later.");
         try
         {
           tf_.transformPointCloud ("base_link", cloud_, cloud_tr_);
@@ -226,14 +226,14 @@ class PlugOnBaseDetector
       findClusters (&cloud_, &remaining_indices, 0.01, object_clusters, 5);
 
       if (object_clusters.size () != 0)
-        ROS_INFO ("Number of remaining clusters on base: %d. Selecting the largest cluster with %d points as the plug candidate.", object_clusters.size (), object_clusters[0].size ());
+        ROS_DEBUG ("Number of remaining clusters on base: %d. Selecting the largest cluster with %d points as the plug candidate.", object_clusters.size (), object_clusters[0].size ());
 
 //#define DEBUG 1
 #if DEBUG
       // Print the cluster dimensions on screen
       for (unsigned int i = 0; i < object_clusters.size (); i++)
       {
-        ROS_INFO ("   Cluster %d has %d points.", i, object_clusters[i].size ());
+        ROS_DEBUG ("   Cluster %d has %d points.", i, object_clusters[i].size ());
       }
 #endif
 
@@ -290,9 +290,9 @@ class PlugOnBaseDetector
       t2 = ros::Time::now ();
       double time_spent = (t2 - t1).toSec ();
       if (p_stow_.stowed)
-        ROS_INFO ("Plug pose estimated in %g seconds.", time_spent);
+        ROS_DEBUG ("Plug pose estimated in %g seconds.", time_spent);
       else
-        ROS_INFO ("No plug found after %g seconds spent.", time_spent);
+        ROS_DEBUG ("No plug found after %g seconds spent.", time_spent);
 
       node_.publish ("~plug_stow_info", p_stow_);
     }
@@ -512,9 +512,9 @@ class PlugOnBaseDetector
       transformPoint (tf, tgt_frame, temp_stamped, temp_stamped);
       return (temp_stamped.z);
     }
-    
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
 
 };
 
