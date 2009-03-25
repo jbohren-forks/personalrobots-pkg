@@ -407,10 +407,12 @@ int TopologicalMap::MapImpl::regionType (const RegionId id) const
 Door TopologicalMap::MapImpl::regionDoor (RegionId id) const
 {
   if (region_graph_->regionType(id)!=DOORWAY) {
-    throw NoDoorInRegionException(id);
+    throw NotDoorwayRegionException(id);
   }
   RegionDoorMap::const_iterator iter = region_door_map_.find(id);
-  ROS_ASSERT_MSG (iter!=region_door_map_.end(), "Unexpectedly could not find door info for region %u", id);
+  if (iter==region_door_map_.end()) {
+    throw NoDoorInRegionException(id);
+  }
   return iter->second->getDoorMessage();
 }
 

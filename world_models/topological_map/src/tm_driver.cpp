@@ -86,10 +86,10 @@ int main (int argc, char* argv[])
   m->writePpm(str2);
   m->connectorCosts(Point2D(1,1), Point2D(10,10));
 
-  std::ifstream str3("local/gen.out");
+  std::ifstream str3("/u/bhaskara/2009/march/22/willow.tmap");
   topological_map::TopologicalMap m3(str3);
 
-  robot_msgs::Door d = m3.regionDoor(43);
+  robot_msgs::Door d = m3.regionDoor(206);
   std::cout << "Door at " << d.frame_p1.x << ", " << d.frame_p1.y << " and " << d.frame_p2.x << ", " << d.frame_p2.y;
   
 
