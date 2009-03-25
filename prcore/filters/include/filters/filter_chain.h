@@ -104,7 +104,6 @@ public:
     }
 
 
-
     /********************** Do the allocation *********************/
     buffer0_.resize(size);
     buffer1_.resize(size);
@@ -151,6 +150,18 @@ public:
       configured_ = true;
     }
     return result;
+  };
+
+  /**@brief Configure the filter from xml stored on the parameter server
+   * This is simply a convienience function for this is the recommended way to setup filters*/
+  bool configureFromXMLString(unsigned int size, std::string filter_xml)
+  {
+    TiXmlDocument xml_doc;
+    xml_doc.Parse(filter_xml.c_str());
+    TiXmlElement * config = xml_doc.RootElement();
+      
+    return this->configure(1, config);
+
   };
 
 

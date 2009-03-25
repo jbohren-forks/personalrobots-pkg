@@ -44,15 +44,13 @@ public:
 
   MedianFilterNode(ros::Node& anode) :  filter_chain_(), node_(anode)
   {
-    std::string filter_xml;
     node_.advertise<laser_scan::LaserScan>("~output", 1000);
-    node_.param("~filters", filter_xml, median_filter_xml);
-    ROS_INFO("Got ~filters as: %s\n", filter_xml.c_str());
-    TiXmlDocument xml_doc;
-    xml_doc.Parse(filter_xml.c_str());
-    TiXmlElement * config = xml_doc.RootElement();
 
-    filter_chain_.configure(1, config);
+    std::string filter_xml;
+    node_.param("~filters", filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
+    ROS_INFO("Got parameter'~filters' as: %s\n", filter_xml.c_str());
+    
+    filter_chain_.configureFromXMLString(1, filter_xml);
     node_.subscribe("scan_in", msg, &MedianFilterNode::callback,this, 3);
   }
   void callback()
