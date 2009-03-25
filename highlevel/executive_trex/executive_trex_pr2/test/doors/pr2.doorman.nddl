@@ -4,10 +4,9 @@
  * - Door domain actions
  * - Door domain constraints
  */
-
 #include "doors/imports.nddl"
+#include "doors/actions.nddl"
 #include "world_model/topological_map.nddl"
-#include "test/doors/actions.nddl"
 
 DoorActions door_actions = new DoorActions();
 
@@ -19,10 +18,10 @@ close();
 map_initialize_from_file("willow.tmap");
 
 // The goal is to execute an OpenDoor action, where we give it the door data
-rejectable(door_actions.OpenDoor cmd_open_door);
+rejectable(door_actions.OpenDoorById cmd_open_door);
 
 // Get the door id based on position data
-map_get_region_from_position(cmd_open_door.door_id, sachins_doorway.x, sachins_doorway.y);
+map_get_region_from_position(cmd_open_door.doorway_id, sachins_doorway.x, sachins_doorway.y);
 
 
 

@@ -109,10 +109,8 @@ namespace TREX{
 
       // Register functions for calculations in the door domain
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
-			  executive_trex_pr2::GetDoorDetectionBasePositionConstraint, "get_door_detection_base_position", "Default");
+			  executive_trex_pr2::GetRobotPoseForDoorConstraint, "door_get_robot_pose_for_door", "Default");
 
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
-			  executive_trex_pr2::GetDoorGraspBasePositionConstraint, "get_door_grasp_base_position", "Default");
       // Register SOLVER components for topological map.
       EUROPA::SOLVERS::ComponentFactoryMgr* cfm = (EUROPA::SOLVERS::ComponentFactoryMgr*)assembly.getComponent("ComponentFactoryMgr");
       REGISTER_FLAW_FILTER(cfm, executive_trex_pr2::MapConnectorFilter, MapConnectorFilter);

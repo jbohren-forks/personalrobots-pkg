@@ -4,6 +4,7 @@
 #include <executive_trex_pr2/topological_map.h>
 #include <ros/console.h>
 #include <robot_msgs/Door.h>
+#include <robot_msgs/Pose.h>
 #include "ConstrainedVariable.hh"
 #include "Utilities.hh"
 #include "Token.hh"

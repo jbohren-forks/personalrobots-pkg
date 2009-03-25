@@ -17,13 +17,13 @@ namespace executive_trex_pr2 {
   /**
    * @brief A function to compute the base position. Can be derived from the door detection code which already implemented this.
    */
-  class GetDoorDetectionBasePositionConstraint : public Constraint {
+  class GetRobotPoseForDoorConstraint : public Constraint {
   public:
     
-    GetDoorDetectionBasePositionConstraint(const LabelStr& name,
-					   const LabelStr& propagatorName,
-					   const ConstraintEngineId& constraintEngine,
-					   const std::vector<ConstrainedVariableId>& variables);
+    GetRobotPoseForDoorConstraint(const LabelStr& name,
+				  const LabelStr& propagatorName,
+				  const ConstraintEngineId& constraintEngine,
+				  const std::vector<ConstrainedVariableId>& variables);
 
     virtual void handleExecute();
     
@@ -35,29 +35,7 @@ namespace executive_trex_pr2 {
     IntervalDomain& _y1;
     IntervalDomain& _x2;
     IntervalDomain& _y2;
-  };
-
-  /**
-   * @brief A function to compute the base position. Can be derived from the door detection code which already implemented this.
-   */
-  class GetDoorGraspBasePositionConstraint : public Constraint {
-  public:
-    
-    GetDoorGraspBasePositionConstraint(const LabelStr& name,
-				       const LabelStr& propagatorName,
-				       const ConstraintEngineId& constraintEngine,
-				       const std::vector<ConstrainedVariableId>& variables);
-
-    virtual void handleExecute();
-    
-  private:
-    IntervalDomain& _x;
-    IntervalDomain& _y;
-    IntervalDomain& _th;
-    IntervalDomain& _x1;
-    IntervalDomain& _y1;
-    IntervalDomain& _x2;
-    IntervalDomain& _y2;
+    IntervalDomain& _range;
   };
 
 }
