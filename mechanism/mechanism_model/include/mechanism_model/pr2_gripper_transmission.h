@@ -94,6 +94,18 @@ private:
 
 };
 
+extern const double PR2GripperTransmission::t0_              ;
+extern const double PR2GripperTransmission::theta0_          ;
+extern const double PR2GripperTransmission::phi0_            ;
+extern const double PR2GripperTransmission::gear_ratio_      ;
+extern const double PR2GripperTransmission::screw_reduction_ ;
+extern const double PR2GripperTransmission::L0_              ;
+extern const double PR2GripperTransmission::coef_h_          ;
+extern const double PR2GripperTransmission::coef_a_          ;
+extern const double PR2GripperTransmission::coef_b_          ;
+extern const double PR2GripperTransmission::coef_r_          ;
+extern const double PR2GripperTransmission::mm2m_            ;
+
 } // namespace mechanism
 
 #endif
