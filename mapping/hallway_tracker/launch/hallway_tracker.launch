@@ -7,5 +7,6 @@
     <param name="p_sac_distance_threshold" type="double" value="0.03" />
     <param name="p_min_hallway_width_m" type="double" value="1.0" />
     <param name="p_max_hallway_width_m" type="double" value="4.0" />
+    <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />  
   </node>
 </launch>

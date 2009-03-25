@@ -79,6 +79,9 @@
 #include <laser_scan/laser_scan.h>
 
 
+//Filters
+#include "filters/filter_chain.h"
+#include "laser_scan/scan_shadows_filter.h"
 
 using namespace std;
 using namespace robot_msgs;
@@ -101,6 +104,7 @@ public:
 
   tf::TransformListener *tf_;
   tf::MessageNotifier<laser_scan::LaserScan>* message_notifier_;
+  filters::FilterChain<laser_scan::LaserScan> filter_chain_;
 
   /********** Parameters from the param server *******/
   std::string base_laser_topic_; // Topic for the laser scan message.
@@ -110,6 +114,8 @@ public:
   std::string fixed_frame_; // Frame to work in.
   double min_hallway_width_m_, max_hallway_width_m_; // Minimum and maximum hallway widths.
   double max_point_dist_m_; // Max distance from the robot of points in the model.
+
+
 
   HallwayTracker():message_notifier_(NULL)
   {
@@ -127,6 +133,17 @@ public:
     node_->param("~p_max_point_dist_m", max_point_dist_m_, 5.0);
 
     //eps_angle_ = cloud_geometry::deg2rad (eps_angle_);                      // convert to radians
+
+    //Laser Scan Filtering
+    std::string filter_xml;
+    node_->param("~filters", filter_xml,std::string("<filters><!--NO Filters defined--></filters>"));
+    //ROS_INFO("Got ~filters as: %s\n", filter_xml.c_str());
+    TiXmlDocument xml_doc;
+    xml_doc.Parse(filter_xml.c_str());
+    TiXmlElement * config = xml_doc.RootElement();
+
+    filter_chain_.configure(1, config);
+
 
     // Visualization: 
     // The visualization markers are the two lines. The start/end points are arbitrary.
@@ -153,10 +170,13 @@ public:
    */
   void laserCallBack(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& scan_msg)
   {
+    laser_scan::LaserScan filtered_scan;
+    filter_chain_.update (*scan_msg, filtered_scan);
+
 
     // Transform into a PointCloud message
     int mask = laser_scan::MASK_INTENSITY | laser_scan::MASK_DISTANCE | laser_scan::MASK_INDEX | laser_scan::MASK_TIMESTAMP;
-    projector_.transformLaserScanToPointCloud(fixed_frame_, cloud_, *scan_msg, *tf_, mask);
+    projector_.transformLaserScanToPointCloud(fixed_frame_, cloud_, filtered_scan, *tf_, mask);
 
     // Check that the cloud is large enough.
     if(cloud_.pts.empty())
