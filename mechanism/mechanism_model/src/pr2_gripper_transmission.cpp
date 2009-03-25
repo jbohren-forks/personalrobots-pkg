@@ -206,19 +206,21 @@ void PR2GripperTransmission::propagatePositionBackwards(
 
   for (unsigned int i = 0; i < js.size(); ++i)
   {
+    // find encoder value based on joint position, this really is just based on the single
+    // physical joint with the encoder mounted on it.
     // find the passive joint name
     std::vector<std::string>::iterator it = std::find(passive_joints_.begin(),passive_joints_.end(),js[i]->joint_->name_);
     if (it != passive_joints_.end())
     {
       // assign passive joints
-      mean_joint_angle    += js[i]->position_      ;
+      mean_joint_angle    += angles::shortest_angular_distance(mean_joint_angle,js[i]->position_) + mean_joint_angle;
       mean_joint_rate     += js[i]->velocity_      ;
       mean_joint_torque   += js[i]->applied_effort_;
       count++;
       std::cout << "passive joint propagatePositionBackwards js[" << i << "]:" << js[i]->joint_->name_
-                << " mean_joint_angle:" << mean_joint_angle
-                << " mean_joint_rate:" << mean_joint_rate
-                << " mean_joint_torque:" << mean_joint_torque
+                << " mean_joint_angle:" << mean_joint_angle / count
+                << " mean_joint_rate:" << mean_joint_rate / count
+                << " mean_joint_torque:" << mean_joint_torque / count
                 << " count:" << count
                 << std::endl;
     }
@@ -273,10 +275,10 @@ void PR2GripperTransmission::propagateEffort(
     if (it != passive_joints_.end())
     {
       // assign passive joints
-      mean_joint_angle    += js[i]->position_            ;
+      mean_joint_angle    += angles::shortest_angular_distance(mean_joint_angle,js[i]->position_) + mean_joint_angle;
       count++;
       std::cout << "passive joint propagateEffort js[" << i << "]:" << js[i]->joint_->name_
-                << " mean_joint_angle:" << mean_joint_angle
+                << " mean_joint_angle:" << mean_joint_angle / count
                 << " count:" << count
                 << std::endl;
     }
