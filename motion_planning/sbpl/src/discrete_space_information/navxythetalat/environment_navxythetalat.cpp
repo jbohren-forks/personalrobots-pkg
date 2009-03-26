@@ -1242,7 +1242,7 @@ int EnvironmentNAVXYTHETALAT::GetActionCost(int SourceX, int SourceY, int Source
 
 
 	//check collisions that for the particular footprint orientation along the action
-	if(EnvNAVXYTHETALATCfg.FootprintPolygon.size() > 1 && (int)maxcellcost > EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh)
+	if(EnvNAVXYTHETALATCfg.FootprintPolygon.size() > 1 && (int)maxcellcost >= EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh)
 	{
 		checks++;
 
