@@ -98,11 +98,6 @@ class DoorStereo
 
     tf::MessageNotifier<robot_msgs::PointCloud>* message_notifier_;
 
-    robot_msgs::Door door_msg_;
-
-    robot_msgs::Door door_msg_in_;
-
-    boost::mutex door_msg_mutex_ ;
 
     /********** Parameters that need to be gotten from the param server *******/
     std::string door_msg_topic_, stereo_cloud_topic_;
@@ -147,8 +142,6 @@ class DoorStereo
       node_->param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
       door_msg_.header.frame_id = "base_footprint";
       */
-//      node_->subscribe(stereo_cloud_topic_,cloud_, &DoorStereo::stereoCloudCallBack,this,1);
-      node_->subscribe(door_msg_topic_,door_msg_in_, &DoorStereo::doorMsgCallBack,this,1);
       node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
 
       message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (tf_, node_,  boost::bind(&DoorStereo::stereoCloudCallBack, this, _1), stereo_cloud_topic_.c_str (), "stereo_link", 1);
@@ -156,7 +149,6 @@ class DoorStereo
 
     ~DoorStereo()
     {
-      node_->unsubscribe(door_msg_topic_,&DoorStereo::doorMsgCallBack,this);
       node_->unadvertise("visualizationMarker");
       delete message_notifier_;
     }
@@ -228,15 +220,6 @@ class DoorStereo
       }
    }
 
-
-    void doorMsgCallBack()
-    {
-      door_msg_mutex_.lock();
-      door_msg_ = door_msg_in_;
-      door_msg_mutex_.unlock();
-      //populate the door message
-    }
-
     void fitSACLines(PointCloud *points, vector<int> indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff, vector<Point32> &line_segment_min, vector<Point32> &line_segment_max)
     {
       Point32 minP, maxP;
@@ -267,6 +250,42 @@ class DoorStereo
        axis_point_32.z = axis_transformed.vector.z;
 
        ROS_INFO("Transformed axis: %f %f %f",axis_point_32.x,axis_point_32.y,axis_point_32.z);
+
+
+       // visualize the axis
+       {
+    	   robot_msgs::VisualizationMarker marker;
+    	   marker.header.frame_id = cloud_.header.frame_id;
+    	   marker.header.stamp = ros::Time((uint64_t)0ULL);
+    	   marker.id = 100001;
+    	   marker.type = robot_msgs::VisualizationMarker::LINE_STRIP;
+    	   marker.action = robot_msgs::VisualizationMarker::ADD;
+    	   marker.x = 0.0;
+    	   marker.y = 0.0;
+    	   marker.z = 0.0;
+    	   marker.yaw = 0.0;
+    	   marker.pitch = 0.0;
+    	   marker.roll = 0.0;
+    	   marker.xScale = 0.01;
+    	   marker.yScale = 0.1;
+    	   marker.zScale = 0.1;
+    	   marker.alpha = 255;
+    	   marker.r = 0;
+    	   marker.g = 255;
+    	   marker.b = 0;
+    	   marker.set_points_size(2);
+
+    	   marker.points[0].x = 0;
+    	   marker.points[0].y = 0;
+    	   marker.points[0].z = 0;
+
+    	   marker.points[1].x = axis_transformed.vector.x;
+    	   marker.points[1].y = axis_transformed.vector.y;
+    	   marker.points[1].z = axis_transformed.vector.z;
+
+    	   node_->publish( "visualizationMarker", marker );
+       }
+
 
        model->setAxis (&axis_point_32);
        model->setEpsAngle (eps_angle_);

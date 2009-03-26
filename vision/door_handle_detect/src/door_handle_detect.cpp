@@ -654,6 +654,7 @@ private:
 			tf_->transformPointCloud("base_link", cloud, base_cloud);
 		}
 		catch(tf::ExtrapolationException& ex) {
+			tf_->clear();
 			ROS_WARN("TF exception: %s", ex.what());
 	    }
 
