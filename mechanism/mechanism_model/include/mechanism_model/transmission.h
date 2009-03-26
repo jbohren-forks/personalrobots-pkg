@@ -83,6 +83,11 @@ public:
   virtual void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&) = 0;
 
   std::string name_;
+
+  // Specifies the names of the actuators and joints that this
+  // transmission uses.  In the propagate* methods, the order of
+  // actuators and joints in the parameters matches the order in
+  // actuator_names_ and in joint_names_.
   std::vector<std::string> actuator_names_;
   std::vector<std::string> joint_names_;
 };
