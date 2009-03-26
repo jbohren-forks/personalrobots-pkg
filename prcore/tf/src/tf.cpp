@@ -244,8 +244,25 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
   transform.frame_id_ = target_frame;
 
 };
+
+
+
 bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
                                const ros::Time& time, ros::Duration timeout) const
+{
+  ros::Time start_time = ros::Time::now();
+  while (!canTransform(target_frame, source_frame, time))
+  {
+    if ((ros::Time::now() - start_time) >= timeout)
+      return false;
+    ros::Duration().fromSec(0.01).sleep();
+  }
+  return true;
+}
+
+
+bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
+                               const ros::Time& time) const
 {
   std::string mapped_target_frame = remap(tf_prefix_, target_frame);
   std::string mapped_source_frame = remap(tf_prefix_, source_frame);
@@ -276,15 +293,9 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
     }
   }
 
-  if (time == ros::Time())
-    return true;
-
-  ros::Time start_time = ros::Time::now();
-  while (test_extrapolation(time, t_list, NULL))
+  if (time != ros::Time() && test_extrapolation(time, t_list, NULL))
   {
-    if ((ros::Time::now() - start_time) >= timeout)
-      return false;
-    ros::Duration().fromSec(0.01).sleep();
+    return false;
   }
 
   return true;
