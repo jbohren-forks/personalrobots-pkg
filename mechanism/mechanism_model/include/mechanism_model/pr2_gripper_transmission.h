@@ -76,6 +76,13 @@ public:
 private:
   double A_, B_, C_ ; // gripper angle = reduction*acos(A*motor+B)
 
+  /// \brief compute gap position, velocity and applied effort from actuator states
+  void computeGapStates(std::vector<Actuator*>& as, std::vector<JointState*>& js,
+                        double MR,double MR_dot,double JT,
+                        double &theta,double &dtheta_dMR,double &gap_size,double &gap_velocity,double &gap_effort);
+  void inverseGapStates(std::vector<Actuator*>& as, std::vector<JointState*>& js,
+                        double theta,double &MR, double &dMR_dtheta);
+
   //
   // SOME CONSTANTS
   // the default theta0 when gap size is 0 is needed to assign passive joint angles
