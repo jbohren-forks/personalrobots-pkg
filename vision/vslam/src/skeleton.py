@@ -332,7 +332,7 @@ class Skeleton:
       nodepts = [ pts[id] for id in self.nodes if self.node_labels[id] == lbl ]
       pylab.scatter([x for (x,y) in nodepts], [y for (x,y) in nodepts], s = 1, color = cols[lbl], label = lbl[:1])
     if annotate:
-      if False:
+      if True:
         for (f,(x,y)) in pts.items():
           pylab.annotate('%d' % f, (float(x), float(y)))
       else:
