@@ -3,7 +3,7 @@
 </description>
 <author>Sachin Chitta sachinc@willowgarage.com</author>
 <license>BSD</license>
-<review status="unreviewed" notes=""/>
+<review status="deprecated" notes="To be integrated as a kdl solver(Sachin)"/>
 <url>http://pr.willowgarage.com</url>
 <depend package="newmat10"/>
 <depend package="angles"/>
