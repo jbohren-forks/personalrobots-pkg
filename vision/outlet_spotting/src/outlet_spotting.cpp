@@ -55,7 +55,7 @@
 #include "image_msgs/Image.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
-#include "robot_msgs/OrientedBoundingBox.h"
+#include "robot_msgs/BoundingBoxStamped.h"
 #include "std_msgs/UInt8.h" //for projector status
 
 
@@ -89,7 +89,7 @@ public:
 
 	robot_msgs::PointCloud cloud;
 
-	robot_msgs::OrientedBoundingBox outlet_bbox;
+	robot_msgs::BoundingBoxStamped outlet_bbox;
 
 	IplImage* left;
 //	IplImage* right;''
@@ -142,7 +142,7 @@ public:
 
 		sync.ready();
 
-		advertise<OrientedBoundingBox>("stereo/outlet_bbox",1);
+		advertise<BoundingBoxStamped>("stereo/outlet_bbox",1);
 	}
 
 	~OutletSpotting()
@@ -547,6 +547,10 @@ public:
 //		}
 
 
+		//publish bounding_box
+		outlet_bbox.header.frame_id = cloud.header.frame_id;
+		outlet_bbox.header.stamp = cloud.header.stamp;
+
 		outlet_bbox.center.x = (bb_min.x+bb_max.x)/2;
 		outlet_bbox.center.y = (bb_min.y+bb_max.y)/2;
 		outlet_bbox.center.z = (bb_min.z+bb_max.z)/2;
@@ -554,8 +558,6 @@ public:
 		outlet_bbox.extents.x = (bb_max.x-bb_min.x)/2;
 		outlet_bbox.extents.y = (bb_max.y-bb_min.y)/2;
 		outlet_bbox.extents.z = (bb_max.z-bb_min.z)/2;
-
-		outlet_bbox.angle = 0;
 
 		publish("stereo/outlet_bbox", outlet_bbox);
 

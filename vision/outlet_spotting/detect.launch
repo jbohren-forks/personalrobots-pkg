@@ -23,6 +23,8 @@
 
   <node pkg="dcam" type="stereodcam" respawn="false"/>
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
-  <node pkg="outlet_spotting" name="outlet_spotting" type="outlet_spotting" respawn="false" output="screen"/>
+  <node pkg="outlet_spotting" name="outlet_spotting" type="outlet_spotting" respawn="false" output="screen">
+    <param name="display" type="bool" value="True"/>
+    </node>
 </launch>
 
