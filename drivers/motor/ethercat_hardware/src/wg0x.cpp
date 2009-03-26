@@ -423,15 +423,17 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
     goto end;
   }
 
-  if (this_status->mode_ & MODE_SAFETY_LOCKOUT)
+  // Only read config info mailbox when we transition in/out of safety lockout
+  if (bool(this_status->mode_ & MODE_SAFETY_LOCKOUT) != in_lockout_)
+  {
+      readMailbox(sh_, WG0XConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_));
+  }
+  in_lockout_ = bool(this_status->mode_ & MODE_SAFETY_LOCKOUT);
+  if (in_lockout_)
   {
     rv = false;
     reason = "Safety Lockout";
     level = 2;
-    if (readMailbox(sh_, WG0XConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_)) != 0)
-    {
-      reason += ": unable to read mailbox too";
-    }
     goto end;
   }
 

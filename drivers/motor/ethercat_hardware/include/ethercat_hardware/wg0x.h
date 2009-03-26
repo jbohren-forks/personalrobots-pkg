@@ -216,6 +216,7 @@ public:
     drops_ = 0;
     consecutive_drops_ = 0;
     max_consecutive_drops_ = 0;
+    in_lockout_ = false;
     motor_publisher_ = 0;
   }
   ~WG0X();
@@ -305,6 +306,7 @@ private:
   int drops_;
   int consecutive_drops_;
   int max_consecutive_drops_;
+  bool in_lockout_;
 
   realtime_tools::RealtimePublisher<ethercat_hardware::MotorModel> *motor_publisher_;
 };
