@@ -1,8 +1,0 @@
-Broken build
-https://prdev.willowgarage.com/trac/personalrobots/ticket/1099
-
-Linking CXX executable ../bin/planDoorPath
-CMakeFiles/planDoorPath.dir/src/discrete_space_information/navxythetadoor/environment_navxythetadoor.o: In function `EnvironmentNAVXYTHETADOOR::GetActionCost(int, int, int, EnvNAVXYTHETALATAction_t*)':
-/home/tfoote/pkg/motion_planning/planning_research/sbpl_door_planner/src/discrete_space_information/navxythetadoor/environment_navxythetadoor.cpp:46: undefined reference to `EnvironmentNAVXYTHETALAT::IsValidCell(int, int)'
-/home/tfoote/pkg/motion_planning/planning_research/sbpl_door_planner/src/discrete_space_information/navxythetadoor/environment_navxythetadoor.cpp:102: undefined reference to `EnvironmentNAVXYTHETALAT::IsValidCell(int, int)'
-/home/tfoote/pkg/motion_planning/planning_research/sbpl_door_planner/src/discrete_space_information/navxythetadoor/environment_navxythetadoor.cpp:111: undefined reference to `EnvironmentNAVXYTHETALAT::IsValidCell(int, int)'
