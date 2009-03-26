@@ -1166,7 +1166,7 @@ EnvNAVXYTHETALATHashEntry_t* EnvironmentNAVXYTHETALAT::CreateNewHashEntry(int X,
 	return HashEntry;
 }
 
-inline bool EnvironmentNAVXYTHETALAT::IsValidCell(int X, int Y)
+bool EnvironmentNAVXYTHETALAT::IsValidCell(int X, int Y)
 {
 	return (X >= 0 && X < EnvNAVXYTHETALATCfg.EnvWidth_c && 
 		Y >= 0 && Y < EnvNAVXYTHETALATCfg.EnvHeight_c && 
