@@ -41,6 +41,9 @@ constraint  door_get_robot_pose_for_door(x, y, th, door_p1_x, door_p1_y, door_p2
 class DoorState extends AgentTimeline {
 
   predicate Holds {
+    // Must store the frame that this data is in
+    string frame_id;
+
     // Control variable so we know when we can trust values. It should be published by the door monitor.
     // We will require that this be false when the doormonitor terminates
     bool active;
@@ -78,7 +81,7 @@ class DoorState extends AgentTimeline {
   }
 };
 
-class DoorManipulationBehavior extends Behavior {
+class DoorManipulationBehavior extends ROSAction {
 
   /**
    * The parameters here 
@@ -208,7 +211,7 @@ class ReleaseDoor extends DoorManipulationBehavior {
 /**
  * This is a sensing action to see if there is a path to the goal.
  */
-class CheckDoorway extends Behavior {
+class CheckDoorway extends ROSAction {
 
   /**
    * The parameters here 

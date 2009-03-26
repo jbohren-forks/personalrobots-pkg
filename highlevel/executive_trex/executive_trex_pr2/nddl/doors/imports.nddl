@@ -1,6 +1,7 @@
 // Subsystems
 #include "TREX.nddl"
 #include "constraints.nddl"
+#include "rcs/exports.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/doors/exports.nddl"
 #include "safety/exports.nddl"

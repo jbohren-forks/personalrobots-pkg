@@ -31,6 +31,7 @@
 #include "TREX.nddl"
 
 // Exports from sub-systems
+#include "rcs/exports.nddl"
 #include "rcs/doors/exports.nddl"
 
 /**

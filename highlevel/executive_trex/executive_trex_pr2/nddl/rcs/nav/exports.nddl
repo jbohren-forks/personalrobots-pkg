@@ -27,7 +27,7 @@ class BaseState extends AgentTimeline {
  * MoveBase behavior will handle active control of vehicle to accomplish 
  * a waypoint. This maps to the wave front player in the 2D nav stack.
  */
-class MoveBase extends Behavior {
+class MoveBase extends ROSAction {
 
   predicate Inactive{
     float x;
