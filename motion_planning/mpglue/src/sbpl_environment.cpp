@@ -35,6 +35,7 @@
 #include <mpglue/sbpl_environment.h>
 #include <costmap_2d/costmap_2d.h>
 #include <sbpl/headers.h>
+#include <sfl/util/strutil.hpp>
 
 using namespace mpglue;
 using namespace std;
@@ -395,6 +396,18 @@ namespace mpglue {
 		       std::ostream * dbgos) throw(std::exception)
   {
     EnvironmentNAVXYTHETALAT * env(new EnvironmentNAVXYTHETALAT());
+    if ( ! env->SetEnvParameter("cost_inscribed", cm->getInscribedCost())) {
+      delete env;
+      throw runtime_error("mpglue::SBPLEnvironment::createXYThetaLattice():"
+			  " EnvironmentNAVXYTHETALAT::SetEnvParameter(\"cost_inscribed\", "
+			  + sfl::to_string(cm->getInscribedCost()) + ") failed");
+    }
+    if ( ! env->SetEnvParameter("cost_possibly_circumscribed", cm->getPossiblyCircumcribedCost())) {
+      delete env;
+      throw runtime_error("mpglue::SBPLEnvironment::createXYThetaLattice():"
+			  " EnvironmentNAVXYTHETALAT::SetEnvParameter(\"cost_possibly_circumscribed\", "
+			  + sfl::to_string(cm->getPossiblyCircumcribedCost()) + ") failed");
+    }
     
     int const obst_cost_thresh(cm->getLethalCost());
     vector<sbpl_2Dpt_t> perimeterptsV;

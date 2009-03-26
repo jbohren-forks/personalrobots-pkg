@@ -47,14 +47,17 @@ namespace {
     mutable shared_ptr<sfl::RDTravmap> rdt_;
     mutable shared_ptr<mpglue::CostmapAccessor> cma_;
     mutable shared_ptr<mpglue::IndexTransform> idxt_;
+    int const possibly_circumscribed_cost_;
     
-    sflCostmapper(shared_ptr<sfl::Mapper2d> m2d): m2d_(m2d) {}
+    sflCostmapper(shared_ptr<sfl::Mapper2d> m2d,
+		  int possibly_circumscribed_cost)
+      : m2d_(m2d), possibly_circumscribed_cost_(possibly_circumscribed_cost) {}
     
     virtual boost::shared_ptr<mpglue::CostmapAccessor const> getAccessor() const
     {
       if ( ! cma_) {
 	rdt_ = m2d_->CreateRDTravmap();
-	cma_.reset(mpglue::createCostmapAccessor(rdt_.get()));
+	cma_.reset(mpglue::createCostmapAccessor(rdt_.get(), possibly_circumscribed_cost_));
       }
       return cma_;
     }
@@ -105,9 +108,10 @@ namespace {
 
 namespace mpglue {
   
-  shared_ptr<Costmapper> createCostmapper(shared_ptr<sfl::Mapper2d> m2d)
+  shared_ptr<Costmapper> createCostmapper(shared_ptr<sfl::Mapper2d> m2d,
+					  int possibly_circumscribed_cost)
   {
-    shared_ptr<Costmapper> foo(new sflCostmapper(m2d));
+    shared_ptr<Costmapper> foo(new sflCostmapper(m2d, possibly_circumscribed_cost));
     return foo;
   }
 

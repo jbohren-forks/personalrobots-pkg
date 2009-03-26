@@ -138,10 +138,15 @@ namespace mpglue {
   
   
   CostmapAccessor * createCostmapAccessor(costmap_2d::ObstacleMapAccessor const * cm);
-  CostmapAccessor * createCostmapAccessor(sfl::RDTravmap const * rdt);
-  CostmapAccessor * createCostmapAccessor(sfl::TraversabilityMap const * rdt);
+
+  CostmapAccessor * createCostmapAccessor(sfl::RDTravmap const * rdt,
+					  int possibly_circumscribed_cost);
+
+  CostmapAccessor * createCostmapAccessor(sfl::TraversabilityMap const * rdt,
+					  int possibly_circumscribed_cost);
   
   IndexTransform * createIndexTransform(costmap_2d::ObstacleMapAccessor const * cm);
+
   IndexTransform * createIndexTransform(sfl::GridFrame const * gf);
   
 }

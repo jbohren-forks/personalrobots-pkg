@@ -82,7 +82,7 @@ for iplanner in xrange(len(plannerspec)):
                     print >>out, '  <td>mpbenchmark failed with code %d, see <a href="%s">console output</a></td>' % (retcode, conslogname)
                 else:
                     print >>out, '  <td><table border="0" cellpadding="1">'
-                    print >>out, '   <tr><td colspan="3">./mpbenchmark' + args + '</td></tr>'
+                    print >>out, '   <tr><td colspan="3">./mpbenchmark ' + args + '</td></tr>'
                     print >>out, '   <tr>'
                     print >>out, '    <td><a href="' + basename + '.txt">log</a></td>'
                     print >>out, '    <td><a href="' + conslogname + '">console</a></td>'

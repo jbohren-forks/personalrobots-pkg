@@ -124,7 +124,8 @@ namespace mpglue {
   };
   
   
-  boost::shared_ptr<Costmapper> createCostmapper(boost::shared_ptr<sfl::Mapper2d> m2d);
+  boost::shared_ptr<Costmapper> createCostmapper(boost::shared_ptr<sfl::Mapper2d> m2d,
+						 int possibly_circumscribed_cost);
   
 }
 

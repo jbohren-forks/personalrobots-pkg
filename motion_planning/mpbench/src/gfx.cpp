@@ -198,7 +198,7 @@ namespace {
     virtual double GetTheta() const { return 0; }
     virtual double GetDelta() const { return gframe.Delta(); }
     virtual sfl::GridFrame const * GetGridFrame() { return &gframe; }
-    virtual int GetObstacle() const { return costmap->getLethalCost(); }
+    virtual int GetObstacle() const { return costmap->getInscribedCost(); }
     virtual int GetFreespace() const { return 0; }
     virtual ssize_t GetXBegin() const { return costmap->getXBegin(); }
     virtual ssize_t GetXEnd() const { return costmap->getXEnd(); }

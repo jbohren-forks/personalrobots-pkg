@@ -240,7 +240,7 @@ namespace mpbench {
 		   << " (currently hardcoded to sfl::Mapper2d)\n";
     boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
       growstrategy(new sfl::Mapper2d::always_grow());
-    double const buffer_zone(opt_.costmap_circumscribed_radius - opt_.costmap_inscribed_radius);
+    double const buffer_zone(opt_.costmap_inflation_radius - opt_.costmap_inscribed_radius);
     double const padding_factor(0);
     shared_ptr<sfl::Mapper2d> m2d(new sfl::Mapper2d(gridframe_,
 						    0, 0, // grid_xbegin, grid_xend
@@ -252,11 +252,12 @@ namespace mpbench {
 						    opt_.costmap_obstacle_cost,
 						    // costmap_2d seems to use
 						    // a quadratic decay in r7215
-						    sfl::exponential_travmap_cost_decay(2),
+						    shared_ptr<sfl::exponential_travmap_cost_decay>(new sfl::exponential_travmap_cost_decay(2)),
 						    "m2d",
 						    sfl::RWlock::Create("m2d"),
 						    growstrategy));
-    cm = mpglue::createCostmapper(m2d);
+    
+    cm = mpglue::createCostmapper(m2d, m2d->ComputeCost(opt_.costmap_circumscribed_radius));
     
     return cm;
   }
