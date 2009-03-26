@@ -130,7 +130,7 @@ namespace TREX {
     input_xml_root_ = TREX::LogManager::initXml( TREX::findFile(input_file) );
 
     // Read debug configuration information if available
-    std::string debug_config_file = TREX::findFile("Debug.cfg");
+    std::string debug_config_file = TREX::findFile("debug.cfg");
     std::ifstream debug_config_stream(debug_config_file.c_str());
     if(debug_config_stream.good())
       DebugMessage::readConfigFile(debug_config_stream);
