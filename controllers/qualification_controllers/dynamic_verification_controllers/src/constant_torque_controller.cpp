@@ -205,6 +205,7 @@ void ConstantTorqueControllerNode::update()
       {
         robot_srvs::DynamicResponseData::Request *out = &call_service_.srv_req_;
         out->test_name = c_->dynamic_data_.test_name;
+        out->joint_name = c_->dynamic_data_.joint_name;
         out->time = c_->dynamic_data_.time;
         out->cmd = c_->dynamic_data_.cmd;
         out->effort = c_->dynamic_data_.effort;
