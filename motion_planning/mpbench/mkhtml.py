@@ -33,7 +33,11 @@ costmapspec = []
 costmapexpl = []
 costmapspec.append("sfl:25:325:460:550")
 costmapexpl.append("fully inflated")
-costmapspec.append("sfl:25:1:2:3")
+costmapspec.append("sfl:25:325:460:460")
+costmapexpl.append("inflated to circumscribed")
+costmapspec.append("sfl:25:325:325:325")
+costmapexpl.append("inflated to inscribed")
+costmapspec.append("sfl:25:0:0:0")
 costmapexpl.append("point obstacles")
 
 out = open("index.html", 'w')
