@@ -78,6 +78,8 @@ typedef struct
 	vector<sbpl_2Dcell_t> intersectingcellsV;
 	//start at 0,0,starttheta and end at endcell in continuous domain with half-bin less to account for 0,0 start
 	vector<EnvNAVXYTHETALAT3Dpt_t> intermptV;
+	//start at 0,0,starttheta and end at endcell in discrete domain
+	vector<EnvNAVXYTHETALAT3Dcell_t> interm3DcellsV;
 } EnvNAVXYTHETALATAction_t;
 
 
@@ -146,7 +148,7 @@ typedef struct ENV_NAVXYTHETALAT_CONFIG
 	//the value at which and above which until cost_inscribed_thresh (not including it) cells 
 	//**may** have a nearest osbtacle within the distance that is in between the robot inner circle and the robot outer circle
 	//any cost below this value means that the robot will NOT collide with any obstacle, independently of its orientation
-	unsigned char cost_possibly_circumscribed_thresh; 
+	int cost_possibly_circumscribed_thresh; //it has to be integer, because -1 means that it is not provided.
 
 	double nominalvel_mpersecs;
 	double timetoturn45degsinplace_secs;

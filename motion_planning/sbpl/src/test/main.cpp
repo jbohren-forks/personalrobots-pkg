@@ -315,6 +315,11 @@ int planxythetalat(int argc, char *argv[])
 		printf("ERROR: failed to set parameters\n");
 		exit(1);
 	}
+	if(!environment_navxythetalat.SetEnvParameter("cost_possibly_circumscribed", 128)) 
+	{
+		printf("ERROR: failed to set parameters\n");
+		exit(1);
+	}
 
 
 	if(argc == 3)

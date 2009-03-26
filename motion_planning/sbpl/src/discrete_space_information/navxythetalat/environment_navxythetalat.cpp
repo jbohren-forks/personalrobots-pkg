@@ -36,12 +36,15 @@ static clock_t time_createhash = 0;
 static clock_t time_getsuccs = 0;
 #endif
 
+static long int checks = 0; //TODO-debugmax
+
+
 //-----------------constructors/destructors-------------------------------
 EnvironmentNAVXYTHETALAT::EnvironmentNAVXYTHETALAT()
 {
 	EnvNAVXYTHETALATCfg.obsthresh = ENVNAVXYTHETALAT_DEFAULTOBSTHRESH;
 	EnvNAVXYTHETALATCfg.cost_inscribed_thresh = EnvNAVXYTHETALATCfg.obsthresh; //the value that pretty much makes it disabled
-	EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh = 0; //the value that pretty much makes it disabled
+	EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh = -1; //the value that pretty much makes it disabled
 
 	grid2Dsearch = NULL;
 	bNeedtoRecomputeStartHeuristics = true;
@@ -694,6 +697,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActionswithBaseMotionPrimitive(vector<S
 			//compute and store interm points as well as intersecting cells
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
+			EnvNAVXYTHETALAT3Dcell_t previnterm3Dcell;
 			for (int pind = 0; pind < (int)motionprimitiveV->at(aind).intermptV.size(); pind++)
 			{
 				EnvNAVXYTHETALAT3Dpt_t intermpt = motionprimitiveV->at(aind).intermptV[pind];
@@ -714,6 +718,19 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActionswithBaseMotionPrimitive(vector<S
 				pose.x += sourcepose.x;
 				pose.y += sourcepose.y;
 				CalculateFootprintForPose(pose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
+
+				//now also store the intermediate discretized cell if not there already
+				EnvNAVXYTHETALAT3Dcell_t interm3Dcell;
+				interm3Dcell.x = CONTXY2DISC(pose.x, EnvNAVXYTHETALATCfg.cellsize_m);
+				interm3Dcell.y = CONTXY2DISC(pose.y, EnvNAVXYTHETALATCfg.cellsize_m);
+				interm3Dcell.theta = ContTheta2Disc(pose.theta, NAVXYTHETALAT_THETADIRS); 
+				if(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].interm3DcellsV.size() == 0 || 
+					previnterm3Dcell.theta != interm3Dcell.theta || previnterm3Dcell.x != interm3Dcell.x || previnterm3Dcell.y != interm3Dcell.y)
+				{
+					EnvNAVXYTHETALATCfg.ActionsV[tind][aind].interm3DcellsV.push_back(interm3Dcell);
+				}
+				previnterm3Dcell = interm3Dcell;
+
 			}
 
 			//now remove the source footprint
@@ -1196,33 +1213,58 @@ bool EnvironmentNAVXYTHETALAT::IsValidConfiguration(int X, int Y, int Theta)
 int EnvironmentNAVXYTHETALAT::GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action)
 {
 	sbpl_2Dcell_t cell;
+	EnvNAVXYTHETALAT3Dcell_t interm3Dcell;
+	int i;
 
 	//TODO - go over bounding box (minpt and maxpt) to test validity and skip testing boundaries below, also order intersect cells so that the four farthest pts go first
 	
 	if(!IsValidCell(SourceX, SourceY))
 		return INFINITECOST;
+	if(!IsValidCell(SourceX + action->dX, SourceY + action->dY))
+		return INFINITECOST;
 
-	int currentmaxcost = 0;
-	for(int i = 0; i < (int)action->intersectingcellsV.size(); i++) 
+	//need to iterate over discretized center cells and compute cost based on them
+	unsigned char maxcellcost = 0;
+	for(i = 0; i < (int)action->interm3DcellsV.size(); i++)
 	{
-		//get the cell in the map
-		cell = action->intersectingcellsV.at(i);
-		cell.x = cell.x + SourceX;
-		cell.y = cell.y + SourceY;
+		interm3Dcell = action->interm3DcellsV.at(i);
 		
-		//check validity
-		if(!IsValidCell(cell.x, cell.y))
+		if(interm3Dcell.x < 0 || interm3Dcell.x >= EnvNAVXYTHETALATCfg.EnvWidth_c ||
+			interm3Dcell.y < 0 || interm3Dcell.y >= EnvNAVXYTHETALATCfg.EnvHeight_c)
 			return INFINITECOST;
 
-		if(EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y] > currentmaxcost)
-			currentmaxcost = EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y]; //TODO - debugmax - need to iterate over discretized center cells and compute cost based on them
+		maxcellcost = __max(maxcellcost, EnvNAVXYTHETALATCfg.Grid2D[interm3Dcell.x][interm3Dcell.y]);
+
+		//check that the robot is NOT in the cell at which there is no valid orientation
+		if(maxcellcost >= EnvNAVXYTHETALATCfg.cost_inscribed_thresh)
+			return INFINITECOST;
+	}
+
+
+	//check collisions that for the particular footprint orientation along the action
+	if(EnvNAVXYTHETALATCfg.FootprintPolygon.size() > 1 && (int)maxcellcost > EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh)
+	{
+		checks++;
+
+		for(i = 0; i < (int)action->intersectingcellsV.size(); i++) 
+		{
+			//get the cell in the map
+			cell = action->intersectingcellsV.at(i);
+			cell.x = cell.x + SourceX;
+			cell.y = cell.y + SourceY;
+			
+			//check validity
+			if(!IsValidCell(cell.x, cell.y))
+				return INFINITECOST;
+
+			//if(EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y] > currentmaxcost) //cost computation changed: cost = max(cost of centers of the robot along action)
+			//	currentmaxcost = EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y];	//intersecting cells are only used for collision checking
+		}
 	}
 
 	//to ensure consistency of h2D:
-	currentmaxcost = __max(currentmaxcost, EnvNAVXYTHETALATCfg.Grid2D[SourceX][SourceY]);
-	if(!IsValidCell(SourceX + action->dX, SourceY + action->dY))
-		return INFINITECOST;
-	currentmaxcost = __max(currentmaxcost, EnvNAVXYTHETALATCfg.Grid2D[SourceX + action->dX][SourceY + action->dY]);
+	maxcellcost = __max(maxcellcost, EnvNAVXYTHETALATCfg.Grid2D[SourceX][SourceY]);
+	int currentmaxcost = (int)__max(maxcellcost, EnvNAVXYTHETALATCfg.Grid2D[SourceX + action->dX][SourceY + action->dY]);
 
 
 	return action->cost*(currentmaxcost+1); //use cell cost as multiplicative factor
@@ -2237,6 +2279,8 @@ void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* st
 	int targetx_c, targety_c, targettheta_c;
 	int sourcex_c, sourcey_c, sourcetheta_c;
 
+	printf("checks=%d\n", checks);
+
 	xythetaPath->clear();
 
 #if DEBUG
@@ -2352,7 +2396,7 @@ bool EnvironmentNAVXYTHETALAT::SetEnvParameter(const char* parameter, int value)
 			printf("ERROR: invalid value %d for parameter %s\n");
 			return false;
 		}
-		EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh = (unsigned char)value;
+		EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh = value;
 	}
 	else
 	{
