@@ -40,6 +40,7 @@
 #include "ROSStateAdapter.hh"
 #include "StringDomain.hh"
 #include "Token.hh"
+#include "Debug.hh"
 #include <std_msgs/String.h>
 #include <std_msgs/Empty.h>
 #include <robot_actions/ShellCommandState.h>
@@ -60,13 +61,15 @@ namespace TREX {
 
   // bind a string
   void write(const StringDomain& dom, std_msgs::String& msg){
-      msg.data = (dom.isSingleton() ? LabelStr(dom.getSingletonValue()).toString() : "");
+    msg.data = (dom.isSingleton() ? LabelStr(dom.getSingletonValue()).toString() : "");
+    condDebugMsg(!dom.isSingleton(), "trex:warning:dispatching", "Reducing unbound paramater " << dom.toString() << " to ''");
   }
 
   // Bind intervals to the singleton, or the domain midpoint
   template <class T>
   void write(const AbstractDomain& dom, T& target){
     double value = (dom.isSingleton() ? dom.getSingletonValue() : (dom.getLowerBound() + dom.getUpperBound() / 2) );
+    condDebugMsg(!dom.isSingleton(), "trex:warning:dispatching", "Reducing unbound paramater " << dom.toString() << " to " << value);
     target = static_cast<T>(value);
   }
 
