@@ -120,7 +120,7 @@ void PR2GripperTransmission::propagatePosition(
   //
   // below transforms from encoder value to gap size, based on 090224_link_data.xls provided by Functions Engineering
   //
-  double encoder_value  = as[0]->state_.position_ * gap_mechanical_reduction_; // motor revs
+  double encoder_value  = as[0]->state_.position_ / gap_mechanical_reduction_; // motor revs
   double arg            = (coef_a_*coef_a_+coef_b_*coef_b_-pow(L0_+encoder_value*screw_reduction_/gear_ratio_,2))/(2.0*coef_a_*coef_b_);
   arg = arg < -1.0 ? -1.0 : arg > 1.0 ? 1.0 : arg;
   double theta          = angles::from_degrees(angles::from_degrees(theta0_) - angles::from_degrees(phi0_)) + acos(arg);
@@ -130,7 +130,7 @@ void PR2GripperTransmission::propagatePosition(
   //
   // based on similar transforms, get the velocity of the gripper gap size based on encoder velocity
   //
-  double encoder_value_dot   = as[0]->state_.velocity_ * gap_mechanical_reduction_; // revs per sec
+  double encoder_value_dot   = as[0]->state_.velocity_ / gap_mechanical_reduction_; // revs per sec
   double arg_dot_mm          = -(L0_ * screw_reduction_)/(gear_ratio_*coef_a_*coef_b_) // d(arg)/d(encoder_value)
                                -screw_reduction_*encoder_value*pow(screw_reduction_/gear_ratio_,2);
   double arg_dot             = arg_dot_mm / mm2m_;
@@ -140,7 +140,7 @@ void PR2GripperTransmission::propagatePosition(
   //
   // get the effort at the gripper gap based on torque at the motor
   //
-  double theta_effort        = as[0]->state_.last_measured_effort_ * gap_mechanical_reduction_;
+  double theta_effort        = as[0]->state_.last_measured_effort_ / gap_mechanical_reduction_;
   double gap_effort          = theta_effort      * theta_dot;
 
 
@@ -253,9 +253,9 @@ void PR2GripperTransmission::propagatePositionBackwards(
   //           << std::endl;
   // std::cout << "check nan" << (-2.0*coef_a_*coef_b_*cos(theta-angles::from_degrees(theta0_)+angles::from_degrees(phi0_))-coef_h_*coef_h_+coef_a_*coef_a_+coef_b_*coef_b_) << " cos of:" << (theta-angles::from_degrees(theta0_)+angles::from_degrees(phi0_)) << std::endl;
 
-  as[0]->state_.position_             = encoder_value                 / gap_mechanical_reduction_;
-  as[0]->state_.velocity_             = avg_joint_rate   * dMR_dtheta / gap_mechanical_reduction_;
-  as[0]->state_.last_measured_effort_ = avg_joint_torque * dMR_dtheta / gap_mechanical_reduction_;
+  as[0]->state_.position_             = encoder_value                 * gap_mechanical_reduction_;
+  as[0]->state_.velocity_             = avg_joint_rate   * dMR_dtheta * gap_mechanical_reduction_;
+  as[0]->state_.last_measured_effort_ = avg_joint_torque * dMR_dtheta * gap_mechanical_reduction_;
 }
 
 void PR2GripperTransmission::propagateEffort(
@@ -311,13 +311,13 @@ void PR2GripperTransmission::propagateEffort(
   {
     if (js[i]->joint_->name_ == gap_joint_)
     {
-      gap_commanded_effort = js[i]->commanded_effort_ / gap_mechanical_reduction_;
+      gap_commanded_effort = js[i]->commanded_effort_ * gap_mechanical_reduction_;
       break; // better be just one of these, need to check
     }
   }
 
   // assign avctuator commanded effort 
-  as[0]->command_.effort_ = gap_commanded_effort * dMR_dtheta / gap_mechanical_reduction_;
+  as[0]->command_.effort_ = gap_commanded_effort * dMR_dtheta * gap_mechanical_reduction_;
 }
 
 void PR2GripperTransmission::propagateEffortBackwards(
@@ -329,7 +329,7 @@ void PR2GripperTransmission::propagateEffortBackwards(
   //
   // below transforms from encoder value to gap size, based on 090224_link_data.xls provided by Functions Engineering
   //
-  double encoder_value  = as[0]->state_.position_ * gap_mechanical_reduction_; // motor revs
+  double encoder_value  = as[0]->state_.position_ / gap_mechanical_reduction_; // motor revs
   double arg            = (coef_a_*coef_a_+coef_b_*coef_b_-pow(L0_+encoder_value*screw_reduction_/gear_ratio_,2))/(2.0*coef_a_*coef_b_);
   arg = arg < -1.0 ? -1.0 : arg > 1.0 ? 1.0 : arg;
 
@@ -344,9 +344,8 @@ void PR2GripperTransmission::propagateEffortBackwards(
   //
   // get the effort at the gripper gap based on torque at the motor
   //
-  double theta_effort        = as[0]->command_.effort_ * gap_mechanical_reduction_;
+  double theta_effort        = as[0]->command_.effort_ / gap_mechanical_reduction_;
   double gap_effort          = theta_effort      * theta_dot;
-
 
   // assign joint states
   for (unsigned int i = 0; i < js.size(); ++i)
@@ -370,8 +369,20 @@ void PR2GripperTransmission::propagateEffortBackwards(
       std::vector<std::string>::iterator it = std::find(passive_joints_.begin(),passive_joints_.end(),js[i]->joint_->name_);
       if (it != passive_joints_.end())
       {
-        // assign passive joints
-        js[i]->commanded_effort_ = theta_effort   ;
+        // enforce all gripper positions based on gap position
+        // check to see how off each finger link is
+
+        // get individual passive joint error
+        double passive_joint_angle = angles::shortest_angular_distance(angles::from_degrees(theta0_),js[i]->position_)+angles::from_degrees(theta0_);
+        // now do the difficult reverse transform
+        double theta               = angles::from_degrees(theta0_) + passive_joint_angle;
+        double arg                 = sqrt(-2.0*coef_a_*coef_b_*cos(theta-angles::from_degrees(theta0_)+angles::from_degrees(phi0_))
+                                     -coef_h_*coef_h_+coef_a_*coef_a_+coef_b_*coef_b_);
+        double encoder_value       =  gear_ratio_/screw_reduction_ * ( arg - L0_ );
+        double state_position_     =  encoder_value * gap_mechanical_reduction_;
+        double mimic_err           = state_position_ - as[0]->state_.position_;
+        // assign passive joints efforts
+        js[i]->commanded_effort_ = theta_effort - 0.01*mimic_err; //FIXME: coefficients are hack, use pid
         // std::cout << "passive joint propagateEffortBackwards js[" << i << "]:" << js[i]->joint_->name_
         //           << " theta_effort:" << theta_effort
         //           << std::endl;
