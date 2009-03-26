@@ -75,6 +75,10 @@ class Handler(xml.sax.ContentHandler):
             self.active = True
     
     def endDocument(self):
+        self.datafile.flush()
+        self.datafile.close()
+        self.datafile = None
+        
         gnuplot = subprocess.Popen("/usr/bin/gnuplot", bufsize=1, stdin=subprocess.PIPE)
         print >>gnuplot.stdin, 'set terminal png large'
         
@@ -156,7 +160,11 @@ class Handler(xml.sax.ContentHandler):
             print >>gnuplot.stdin, 'set xlabel "iteration [#]"'
             print >>gnuplot.stdin, 'set ylabel "expands [1/s]"'
             print >>gnuplot.stdin, 'plot "%s" using ($0):($10)/($1) notitle with linespoints' % (self.datapath)
-            
+
+# how to send a "Control-D" to a subprocess?
+#        gnuplot.flush()
+#        gnuplot.close()
+        
     def dumpEpisode(self):
         print >>self.datafile, '\n\n#episode %d' % self.episode
         print >>self.datafile, '# abs_actual_time\tabs_cumul_time\trel_actual_time\trel_cumul_time\tabs_plan_length\tabs_plan_rotation\trel_plan_length\trel_plan_rotation\tn_expands'
