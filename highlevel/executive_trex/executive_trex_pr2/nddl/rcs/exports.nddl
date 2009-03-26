@@ -1,0 +1,22 @@
+/**
+ * Defines core interfaces for ROS integration
+ */
+
+/**
+ * Augments predicates with a frame_id
+ */
+class ROSAction extends Behavior {
+
+  predicate Active{
+    string frame_id;
+  }
+
+  predicate Inactive {
+    string frame_id;
+  }
+
+  ROSAction(Mode _mode){
+    super(_mode);
+  }
+
+}
