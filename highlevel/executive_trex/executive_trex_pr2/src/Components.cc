@@ -46,8 +46,24 @@ namespace TREX{
 
   private:
     void handleExecute();
+    std::string toString() const;
+
     const TokenId _target_token;
     const TokenId _source_token;
+  };
+
+  class AllBoundsSetConstraint: public Constraint{
+  public:
+    AllBoundsSetConstraint(const LabelStr& name,
+			   const LabelStr& propagatorName,
+			   const ConstraintEngineId& constraintEngine,
+			   const std::vector<ConstrainedVariableId>& variables);
+
+  private:
+    void handleExecute();
+    std::string toString() const;
+
+    const TokenId _token;
   };
 
   class FloorFunction: public Constraint{
@@ -106,6 +122,7 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::RandomSelection, "randomSelect", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::GetStateConstraint, "get_state", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::AllBoundsSetConstraint, "all_bounds_set", "Default");
 
       // Register topological map constraints
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
@@ -172,6 +189,7 @@ namespace TREX{
    * @todo Integarte proper code from Wim. Also assumes good data
    */
   void GetStateConstraint::handleExecute(){
+
     debugMsg("trex:propagation:get_state",  "BEFORE: " << toString());
 
     // Iterate over all parameters of the source token. Any with a name match will be intersected
@@ -181,14 +199,77 @@ namespace TREX{
       ConstrainedVariableId v_target = _target_token->getVariable(v_source->getName());
       if(v_target.isId()){
 	AbstractDomain& target_dom = getCurrentDomain(v_target);
-	if(target_dom.intersect(v_source->lastDomain()) && target_dom.isEmpty())
+	if(target_dom.intersect(v_source->lastDomain()) && target_dom.isEmpty()){
 	  return;
+	}
       }
       ++it;
     }
+
     debugMsg("trex:propagation:get_state",  "AFTER: " << toString());
   }
 
+  std::string GetStateConstraint::toString() const {
+    std::stringstream sstr;
+
+    sstr << Entity::toString() << std::endl;
+
+    std::vector<ConstrainedVariableId>::const_iterator it = _source_token->parameters().begin();
+    unsigned int i = 0;
+    while (it != _source_token->parameters().end()){
+      ConstrainedVariableId v_source = *it;
+      ConstrainedVariableId v_target = _target_token->getVariable(v_source->getName());
+      if(v_target.isId())
+	sstr << " ARG[" << i++ << "]:" << v_target->toLongString() << std::endl;
+      ++it;
+    }
+
+    return sstr.str();
+  }
+
+  //*******************************************************************************************
+  AllBoundsSetConstraint::AllBoundsSetConstraint(const LabelStr& name,
+					 const LabelStr& propagatorName,
+					 const ConstraintEngineId& constraintEngine,
+					 const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables), 
+     _token(TREX::getParentToken(variables[0])){
+    checkError(variables.size() == 1, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+  }
+	 
+  /**
+   * Will fire if any bounds are not singletons
+   */
+  void AllBoundsSetConstraint::handleExecute(){
+    debugMsg("trex:propagation:all_bounds_set",  "BEFORE: " << toString());
+
+    // Iterate over all parameters of the source token. Any with a name match will be intersected
+    for(std::vector<ConstrainedVariableId>::const_iterator it = _token->parameters().begin(); it != _token->parameters().end(); ++it){
+      ConstrainedVariableId v = *it;
+      if(!v->lastDomain().isSingleton()){
+	debugMsg("trex:warning:propagation:all_bounds_set",  "Required parameter is unbound:" << v->toLongString());
+	getCurrentDomain(v).empty();
+	return;
+      }
+    }
+
+    debugMsg("trex:propagation:all_bounds_set",  "AFTER: " << toString());
+  }
+
+  std::string AllBoundsSetConstraint::toString() const {
+    std::stringstream sstr;
+
+    sstr << Entity::toString() << std::endl;
+
+    unsigned int i = 0;
+    for(std::vector<ConstrainedVariableId>::const_iterator it = _token->parameters().begin(); it != _token->parameters().end(); ++it){
+      ConstrainedVariableId v = *it;
+      sstr << " ARG[" << i++ << "]:" << v->toLongString() << std::endl;
+    }
+
+    return sstr.str();
+  }
+  //*******************************************************************************************
   FloorFunction::FloorFunction(const LabelStr& name,
 		     const LabelStr& propagatorName,
 		     const ConstraintEngineId& constraintEngine,
@@ -224,6 +305,8 @@ namespace TREX{
     unsigned int iterations = 0;
     double minDistance = PLUS_INFINITY;
 
+    debugMsg("trex:propagation:world_model:nearest_location",  "BEFORE: " << toString());
+
     if(m_x.isSingleton() && m_y.isSingleton()){
       std::list<ObjectId> locations = m_location.makeObjectList();      
       ObjectId nearestLocation = locations.front();
@@ -250,7 +333,8 @@ namespace TREX{
       m_location.set(nearestLocation);
     }
 
-    debugMsg("NearestLocation:handleExecute", "After " << iterations << " iterations, found a charging station within " << minDistance << " meters.");
+    debugMsg("trex:propagation:world_model:nearest_location",  "AFTER: " << toString() 
+	      <<  std::endl << std::endl << "After " << iterations << " iterations, found a location within " << minDistance << " meters.");
   }
 
 
@@ -260,6 +344,7 @@ namespace TREX{
 				   const std::vector<ConstrainedVariableId>& variables)
     : Constraint(name, propagatorName, constraintEngine, variables),
       m_target(getCurrentDomain(variables[0])){
+
     static bool initialized(false);
     checkError(variables.size() == 1, "Invalid Arg Count: " << variables.size());
 
@@ -274,6 +359,9 @@ namespace TREX{
    * Randomly choose a value from the propagated domain
    */
   void RandomSelection::handleExecute() {
+
+    debugMsg("trex:propagation:random_select",  "BEFORE: " << toString());
+
     if(m_target.isEnumerated()){
       std::list<double> values;
       m_target.getValues(values);
@@ -293,5 +381,7 @@ namespace TREX{
     else {// Do something
       m_target.set(m_target.getLowerBound());
     }
+
+    debugMsg("trex:propagation:random_select",  "AFTER: " << toString());
   }
 }

@@ -90,6 +90,9 @@ DoorActions::OpenDoorById{
 }
 
 DoorActions::OpenDoorByDoorState{
+  // This action requires all bounds to be set
+  all_bounds_set(this.state);
+
   // Here is the basic sequence. First introduce the components	
   contains(MoveBase.Active cmd_move_to_detect);
   contains(DetectDoor.Active cmd_detect_door);
