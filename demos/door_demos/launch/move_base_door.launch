@@ -9,7 +9,7 @@
       <param name="move_base/plannerType" value="ARAPlanner"/>
       <param name="move_base/environmentType" value="2D"/>
       <param name="move_base/controller_frequency" value="10.0"/>
-      <param name="move_base/map_update_frequency" value="2.0"/>
+      <param name="move_base/map_update_frequency" value="10.0"/>
       <param name="move_base/planner_frequency" value="0.0"/>
       <param name="move_base/plannerTimeLimit" value="0.5"/>
       <param name="costmap_2d/base_laser_max_range" value="20.0"/>
@@ -19,10 +19,10 @@
       <param name="costmap_2d/z_threshold_min" value="0.13"/>
       <param name="costmap_2d/no_information_value" value="255"/>
       <param name="costmap_2d/freespace_projection_height" value="2.0"/>
-      <param name="costmap_2d/inflation_radius" value="0.65"/>
+      <param name="costmap_2d/inflation_radius" value="0.46"/>
       <param name="costmap_2d/circumscribed_radius" value="0.46"/>
-      <param name="costmap_2d/inscribed_radius" value="0.325"/>
-      <param name="costmap_2d/raytrace_window" value="10.0"/>
+      <param name="costmap_2d/inscribed_radius" value="0.305"/>
+      <param name="costmap_2d/raytrace_window" value="4.0"/>
       <param name="costmap_2d/weight" value="0.1"/>
 
 

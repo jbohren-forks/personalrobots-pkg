@@ -102,7 +102,7 @@
       </joint>
     </controller>
 
-    <trajectory interpolation="cubic" />
+    <trajectory interpolation="linear" />
 
   </controller> <!-- End whole body trajectory controller -->
 
