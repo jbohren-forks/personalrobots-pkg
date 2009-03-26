@@ -78,27 +78,28 @@ private:
 
   /// \brief compute gap position, velocity and applied effort from actuator states
   void computeGapStates(std::vector<Actuator*>& as, std::vector<JointState*>& js,
-                        double MR,double MR_dot,double JT,
-                        double &theta,double &dtheta_dMR,double &gap_size,double &gap_velocity,double &gap_effort);
+                        double MR,double MR_dot,double MT,
+                        double &theta,double &dtheta_dMR,double &dt_dtheta,double &dt_dMR,double &gap_size,double &gap_velocity,double &gap_effort);
   void inverseGapStates(std::vector<Actuator*>& as, std::vector<JointState*>& js,
-                        double theta,double &MR, double &dMR_dtheta);
+                        double theta,double &MR, double &dMR_dtheta,double &dtheta_dt,double &dMR_dt);
 
   //
   // SOME CONSTANTS
   // the default theta0 when gap size is 0 is needed to assign passive joint angles
   //
-  static const double t0_                  = -0.19543;
   static const double theta0_              = 2.97571;
   static const double phi0_                = 29.98717;
   static const double gear_ratio_          = 29.16; //729.0/25.0;
-  static const double screw_reduction_     = 2.0;
-  static const double L0_                  = 34.70821;
-  static const double coef_h_              = 5.200;
-  static const double coef_a_              = 67.56801;
-  static const double coef_b_              = 48.97193;
-  static const double coef_r_              = 91.50000;
-  static const double mm2m_                = 1000.000;
+  // convert below from mm to meters
+  static const double t0_                  = 0.0; //-0.19543/1000.0;
+  static const double screw_reduction_     = 2.0/1000.0;
+  static const double L0_                  = 34.70821/1000.0;
+  static const double coef_h_              = 5.200/1000.0;
+  static const double coef_a_              = 67.56801/1000.0;
+  static const double coef_b_              = 48.97193/1000.0;
+  static const double coef_r_              = 91.50000/1000.0;
 
+#define TOL 0.00001   // limit for denominators
 };
 
 extern const double PR2GripperTransmission::t0_              ;
@@ -111,7 +112,6 @@ extern const double PR2GripperTransmission::coef_h_          ;
 extern const double PR2GripperTransmission::coef_a_          ;
 extern const double PR2GripperTransmission::coef_b_          ;
 extern const double PR2GripperTransmission::coef_r_          ;
-extern const double PR2GripperTransmission::mm2m_            ;
 
 } // namespace mechanism
 
