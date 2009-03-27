@@ -61,24 +61,26 @@ DetectDoorAction::~DetectDoorAction(){};
 
 void DetectDoorAction::handleActivate(const robot_msgs::Door& door)
 {
+  ROS_INFO("DectectDoorAction: handle activate");
   request_preempt_ = false;
   notifyActivated();
 
   // check where robot is relative to door
-    if (!tf_.canTransform("base_footprint", "laser_tilt_link", ros::Time(), ros::Duration().fromSec(5.0)))
-      ROS_ERROR("TriggerDoorsScan: constructor failed");
-    tf::Stamped<tf::Transform> tilt_stage;
-    tf_.lookupTransform("base_footprint", "laser_tilt_link", ros::Time(), tilt_stage);
-    double laser_height = tilt_stage.getOrigin()[2];
-    tf::Stamped<tf::Vector3> doorpoint(tf::Vector3((door.door_p1.x+door.door_p2.x)/2.0,
-                                                   (door.door_p1.y+door.door_p2.y)/2.0,
-                                                   (door.door_p1.z+door.door_p2.z)/2.0),
-                                       ros::Time(), door.header.frame_id);
-    if (!tf_.canTransform("base_footprint", doorpoint.frame_id_, ros::Time(), ros::Duration().fromSec(5.0)))
-      ROS_ERROR("TriggerDoorsScan: constructor failed");
-    tf_.transformPoint("base_footprint", doorpoint, doorpoint);
-    double dist = doorpoint[0];
-    double door_height = 2.3;
+  if (!tf_.canTransform("base_footprint", "laser_tilt_link", ros::Time(), ros::Duration().fromSec(5.0)))
+    ROS_ERROR("DetectDoorAction: error getting transform");
+  tf::Stamped<tf::Transform> tilt_stage;
+  tf_.lookupTransform("base_footprint", "laser_tilt_link", ros::Time(), tilt_stage);
+  ROS_INFO("DectectDoorAction: handle activate");
+  double laser_height = tilt_stage.getOrigin()[2];
+  tf::Stamped<tf::Vector3> doorpoint(tf::Vector3((door.frame_p1.x+door.frame_p2.x)/2.0,
+						 (door.frame_p1.y+door.frame_p2.y)/2.0,
+						 (door.frame_p1.z+door.frame_p2.z)/2.0),
+				     ros::Time(), door.header.frame_id);
+  if (!tf_.canTransform("base_footprint", doorpoint.frame_id_, ros::Time(), ros::Duration().fromSec(5.0)))
+    ROS_ERROR("DetectDoorAction: error getting transform");
+  tf_.transformPoint("base_footprint", doorpoint, doorpoint);
+  double dist = doorpoint[0];
+  double door_height = 2.3;
   ROS_INFO("DectectDoorAction: tilt laser is at height %f, and door at distance %f", laser_height, dist);
   
   // gets a point cloud from the point_cloud_srv
@@ -88,8 +90,11 @@ void DetectDoorAction::handleActivate(const robot_msgs::Door& door)
   req_pointcloud.angle_begin = -atan2(door_height - laser_height, dist);
   req_pointcloud.angle_end = atan2(laser_height, dist);
   req_pointcloud.duration = 10.0;
-  if (!ros::service::call("point_cloud_srv/single_sweep_cloud", req_pointcloud, res_pointcloud))
+  if (!ros::service::call("point_cloud_srv/single_sweep_cloud", req_pointcloud, res_pointcloud)){
+    ROS_ERROR("DetectDoorAction: failed to get point cloud for door detection");
     notifyAborted(door);
+    return;
+  }
 
   // detect door
   ROS_INFO("DectectDoorAction: detect the door");
@@ -97,8 +102,12 @@ void DetectDoorAction::handleActivate(const robot_msgs::Door& door)
   door_handle_detector::DoorsDetectorCloud::Response res_doordetect;
   req_doordetect.door = door;
   req_doordetect.cloud = res_pointcloud.cloud;
-  if (!ros::service::call("doors_detector_cloud", req_doordetect, res_doordetect))
+  if (!ros::service::call("doors_detector_cloud", req_doordetect, res_doordetect)){
+    ROS_ERROR("DetectDoorAction: failed to detect a door");
     notifyAborted(door);
+    return;
+  }
+
   notifySucceeded(res_doordetect.doors[0]);
 }
 
