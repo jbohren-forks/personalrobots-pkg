@@ -1,7 +1,5 @@
 <launch>
 
-  <machine name="realtime_root" user="root" address="prf1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>     
-
   <include file="$(find pr2_alpha)/prf.machine" />
 
 <!-- pr2_etherCAT -->
