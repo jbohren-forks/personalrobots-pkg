@@ -69,8 +69,8 @@ int
   door_handle_detector::DetectDoorAction detector(node);
   robot_actions::ActionRunner runner(10.0);
   runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(detector);
-
   runner.run();
+
   detector.handleActivate(my_door_);
 
   return (0);

@@ -57,15 +57,15 @@ int main(int argc, char** argv)
   ros::Node node("name");
 
   DetectDoorAction detect(node);
-  GraspDoorAction grasp;
-  OpenDoorAction open;
+  //GraspDoorAction grasp;
+  //OpenDoorAction open;
 
   robot_actions::ActionRunner runner(10.0);
   runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(detect);
-  runner.connect<robot_msgs::Door, door_handle_detector::GraspDoorActionStatus, robot_msgs::Door>(grasp);
-  runner.connect<robot_msgs::Door, door_handle_detector::OpenDoorActionStatus, robot_msgs::Door>(open);
+  //runner.connect<robot_msgs::Door, door_handle_detector::GraspDoorActionStatus, robot_msgs::Door>(grasp);
+  //runner.connect<robot_msgs::Door, door_handle_detector::OpenDoorActionStatus, robot_msgs::Door>(open);
 
   runner.run();
-
+  node.spin();
   return 0;
 }
