@@ -96,8 +96,6 @@ public:
 
   bool setTaskFrame(robot_srvs::SetPoseStamped::Request &req,
                     robot_srvs::SetPoseStamped::Response &resp);
-  bool setToolFrame(robot_srvs::SetPoseStamped::Request &req,
-                    robot_srvs::SetPoseStamped::Response &resp);
   void command();
 
 private:

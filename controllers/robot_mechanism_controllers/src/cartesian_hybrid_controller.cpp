@@ -156,6 +156,34 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
   if (!node->getParam(name + "/initial_mode", initial_mode_))
     initial_mode_ = robot_msgs::TaskFrameFormalism::FORCE;
 
+  // Tool frame
+
+  if (node->hasParam(name + "/tool_frame"))
+  {
+    if (!node->getParam(name + "/tool_frame/translation/x", tool_frame_offset_.p[0]) ||
+        !node->getParam(name + "/tool_frame/translation/y", tool_frame_offset_.p[1]) ||
+        !node->getParam(name + "/tool_frame/translation/z", tool_frame_offset_.p[2]))
+    {
+      ROS_ERROR("Tool frame was missing elements of the translation");
+      return false;
+    }
+    tf::Quaternion q;
+    if (!node->getParam(name + "/tool_frame/rotation/x", q[0]) ||
+        !node->getParam(name + "/tool_frame/rotation/y", q[1]) ||
+        !node->getParam(name + "/tool_frame/rotation/z", q[2]) ||
+        !node->getParam(name + "/tool_frame/rotation/w", q[3]))
+    {
+      ROS_ERROR("Tool frame was missing elements of the rotation");
+      return false;
+    }
+    tool_frame_offset_.M = KDL::Rotation::Quaternion(q[0], q[1], q[2], q[3]);
+  }
+  else
+  {
+    ROS_DEBUG("No tool frame specified");
+    tool_frame_offset_ = KDL::Frame::Identity();
+  }
+
   // Default commands
 
   task_frame_offset_ = KDL::Frame::Identity();
@@ -342,7 +370,6 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   task_frame_name_ = c_.chain_.getLinkName(0);
 
   node->subscribe(name_ + "/command", command_msg_, &CartesianHybridControllerNode::command, this, 5);
-  node->advertiseService(name_ + "/set_tool_frame", &CartesianHybridControllerNode::setToolFrame, this);
 
   pub_state_.reset(new realtime_tools::RealtimePublisher<robot_msgs::CartesianState>(name_ + "/state", 1));
   pub_tf_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("/tf_message", 5));
@@ -407,28 +434,6 @@ bool CartesianHybridControllerNode::setTaskFrame(
   tf::Transform offset;
   tf::PoseMsgToTF(offset_msg.pose, offset);
   mechanism::TransformTFToKDL(offset, c_.task_frame_offset_);
-
-  return true;
-}
-
-bool CartesianHybridControllerNode::setToolFrame(
-  robot_srvs::SetPoseStamped::Request &req,
-  robot_srvs::SetPoseStamped::Response &resp)
-{
-  robot_msgs::PoseStamped offset_msg;
-  try
-  {
-    TF.transformPose(c_.chain_.getLinkName(), req.p, offset_msg);
-  }
-  catch(tf::TransformException& ex)
-  {
-    ROS_WARN("Transform Exception %s", ex.what());
-    return true;
-  }
-
-  tf::Transform offset;
-  tf::PoseMsgToTF(offset_msg.pose, offset);
-  mechanism::TransformTFToKDL(offset, c_.tool_frame_offset_);
 
   return true;
 }
