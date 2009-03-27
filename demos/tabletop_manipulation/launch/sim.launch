@@ -2,9 +2,10 @@
   <param name="/use_sim_time" type="bool" value="1"/>
   <param name="/global_frame_id" value="odom_offset"/>
   <node pkg="tf" type="transform_sender" args="-20 -20 0 0 0 0 odom_offset odom 10"/>
+
   <include file="$(find tabletop_manipulation)/launch/gazebo.launch"/>
   <include file="$(find tabletop_manipulation)/launch/controllers_sim.launch"/>
   <include file="$(find tabletop_manipulation)/launch/nav_sim.launch"/>
   <include file="$(find tabletop_manipulation)/launch/perception_sim.launch"/>
-  <include file="$(find tabletop_manipulation)/launch/planning.launch"/>
+  <!--include file="$(find tabletop_manipulation)/launch/planning.launch"/-->
 </launch>

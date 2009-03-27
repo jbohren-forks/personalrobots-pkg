@@ -37,7 +37,7 @@ import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
 from pr2_msgs.msg import MoveArmGoal, MoveArmState
-from robot_msgs.msg import JointState, PoseConstraint
+from robot_msgs.msg import JointState, PoseConstraint, ControllerStatus
 
 import sys
 
@@ -50,7 +50,6 @@ class MoveArm:
 
   def movearmCallback(self, msg):
     #print '[MoveArm] Got status: %d'%(msg.status)
-    self.goal_id = msg.goal_id
     self.status = msg.status
 
   def moveArmState(self, joints):
@@ -69,11 +68,11 @@ class MoveArm:
     print '[MoveArm] Waiting for goal to be taken up...'
     rospy.sleep(2.0)
 
-    while self.status == None or self.status == MoveArmState.ACTIVE:
+    while self.status == None or self.status.value == ControllerStatus.ACTIVE:
       print '[MoveArm] Waiting for goal achievement...'
       rospy.sleep(1.0)
 
-    return self.status == MoveArmState.INACTIVE
+    return self.status.value == ControllerStatus.SUCCESS
 
   def moveArmEEPose(self, frame, position, orientation):
     msg = MoveArmGoal()
@@ -125,11 +124,11 @@ class MoveArm:
     print '[MoveArm] Waiting for goal to be taken up...'
     rospy.sleep(2.0)
 
-    while self.status == None or self.status == MoveArmState.ACTIVE:
+    while self.status == None or self.status.value == ControllerStatus.ACTIVE:
       print '[MoveArm] Waiting for goal achievement...'
       rospy.sleep(1.0)
 
-    return self.status == MoveArmState.INACTIVE
+    return self.status.value == ControllerStatus.SUCCESS
   
 USAGE = 'movearm.py {left|right} <shoulder_lift> <shoulder_pan>'
 if __name__ == '__main__':

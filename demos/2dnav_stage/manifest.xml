@@ -8,7 +8,7 @@
   <depend package="nav_view_sdl"/>
   <depend package="amcl_player"/>
   <depend package="fake_localization"/>
-  <depend package="rosstage"/>
+  <depend package="stage"/>
   <depend package="map_server"/>
   <depend package="wavefront_player"/>
   <depend package="highlevel_controllers"/>

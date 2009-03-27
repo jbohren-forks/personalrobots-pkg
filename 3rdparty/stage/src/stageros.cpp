@@ -1,5 +1,5 @@
 /*
- *  rosstage
+ *  stageros
  *  Copyright (c) 2008, Willow Garage, Inc.
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -23,14 +23,14 @@
 
 @htmlinclude manifest.html
 
-@b rosstage wraps the Stage 2-D multi-robot simulator, via @b libstage.
+@b stageros wraps the Stage 2-D multi-robot simulator, via @b libstage.
 
 For detailed documentation,
 consult the <a href="http://playerstage.sourceforge.net/doc/stage-cvs">Stage manual</a>.
 
 This node finds the first Stage model of type @b laser, and the first model
 of type @b position, and maps these models to the ROS topics given below.
-If a laser and a position model are not found, rosstage exits.
+If a laser and a position model are not found, stageros exits.
 
 @todo Define a more general method for mapping Stage models onto ROS topics
 / services.  Something like the Player/Stage model, in which a Player .cfg
@@ -41,7 +41,7 @@ way to go.  The same technique can be used for rosgazebo.
 
 @section usage Usage
 @verbatim
-$ rosstage <world> [standard ROS args]
+$ stageros <world> [standard ROS args]
 @endverbatim
 
 @param world The Stage .world file to load.
@@ -49,7 +49,7 @@ $ rosstage <world> [standard ROS args]
 @par Example
 
 @verbatim
-$ rosstage willow-erratic.world
+$ stageros willow-erratic.world
 @endverbatim
 
 <hr>
@@ -97,7 +97,7 @@ Publishes to (name / type):
 
 #include "tf/transform_broadcaster.h"
 
-#define USAGE "rosstage <worldfile>"
+#define USAGE "stageros <worldfile>"
 #define ODOM "odom"
 #define BASE_SCAN "base_scan"
 #define BASE_POSE_GROUND_TRUTH "base_pose_ground_truth"
@@ -160,7 +160,7 @@ class StageNode : public ros::Node
     Stg::StgWorld* world;
 };
 
-// since rosstage is single-threaded, this is OK. revisit if that changes!
+// since stageros is single-threaded, this is OK. revisit if that changes!
 const char *
 StageNode::mapName(const char *name, size_t robotID)
 {
@@ -199,7 +199,7 @@ StageNode::cmdvelReceived()
 }
 
 StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
-  ros::Node("rosstage"),
+  ros::Node("stageros"),
   tf(*this)
 {
   this->sim_time.fromSec(0.0);

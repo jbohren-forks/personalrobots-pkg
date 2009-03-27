@@ -1,7 +1,7 @@
 <launch>
 
   <group name="wg">
-    <node pkg="rosstage" type="rosstage" args="$(find 2dnav_stage)/worlds/willow-gps-pr2-5cm.world" respawn="false" output="screen"/>
+    <node pkg="stage" type="stageros" args="$(find 2dnav_stage)/worlds/willow-gps-pr2-5cm.world" respawn="false" output="screen"/>
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-empty-0.05.pgm 0.05" respawn="false" output="screen"/>
     <param name="robot_radius" value="0.325"/>
     <!-- node pkg="wavefront_player" type="wavefront_player" respawn="false" output="screen">

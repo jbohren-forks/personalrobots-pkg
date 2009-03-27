@@ -32,7 +32,7 @@
     <param name="move_base/planner_frequency"                  value="0"/>
     <param name="move_base/plannerTimeLimit"                   value="@PLANNER_TIME@"/>
     
-    <node pkg="rosstage" type="rosstage" respawn="false"
+    <node pkg="stage" type="stageros" respawn="false"
 	  args="$(find 2dnav_stage)/worlds/@STAGE_WORLD_FILE@" />
     
     <node pkg="map_server" type="map_server" respawn="false"

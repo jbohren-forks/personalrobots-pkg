@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PKGS="rosstage map_server fake_localization bullet nav_view"
+PKGS="stage map_server fake_localization bullet nav_view"
 
 echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" | tee -a build_for_stage.log
 date | tee -a build_for_stage.log

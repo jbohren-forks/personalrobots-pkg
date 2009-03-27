@@ -36,17 +36,15 @@
 import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
-from robot_msgs.msg import Planner2DGoal, Planner2DState
+from robot_msgs.msg import Planner2DGoal, Planner2DState, ControllerStatus
 
 class MoveBase:
   def __init__(self):
     self.pub_goal = rospy.Publisher("goal", Planner2DGoal)
     rospy.Subscriber("state", Planner2DState, self.stateCallback)
-    self.goal_id = -1
     self.status = None
 
   def stateCallback(self, msg):
-    self.goal_id = msg.goal_id
     self.status = msg.status
 
   def moveBase(self, frame, x, y, a):
@@ -64,11 +62,11 @@ class MoveBase:
     print '[MoveBase] Waiting for goal to be taken up...'
     rospy.sleep(2.0)
 
-    while self.status == None or self.status == Planner2DState.ACTIVE:
+    while self.status == None or self.status.value == ControllerStatus.ACTIVE:
       print '[MoveBase] Waiting for goal achievement...'
       rospy.sleep(1.0)
 
-    return self.status == Planner2DState.INACTIVE
+    return self.status.value == ControllerStatus.SUCCESS
 
 if __name__ == '__main__':
   import sys
