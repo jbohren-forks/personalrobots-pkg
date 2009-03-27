@@ -49,7 +49,7 @@ namespace cloud_geometry
       * \param line holder for the computed line coefficients (point, direction)
       */
     bool
-      planeWithPlaneIntersection (std::vector<double> plane_a, std::vector<double> plane_b,
+      planeWithPlaneIntersection (const std::vector<double> &plane_a, const std::vector<double> &plane_b,
                                   std::vector<double> &line)
     {
       line.resize (6);
@@ -93,10 +93,10 @@ namespace cloud_geometry
       * \param point holder for the computed 3D point
       */
     bool
-      lineWithPlaneIntersection (std::vector<double> *plane, std::vector<double> *line, robot_msgs::Point32 &point)
+      lineWithPlaneIntersection (const std::vector<double> &plane, const std::vector<double> &line, robot_msgs::Point32 &point)
     {
       // line Direction * plane Normal
-      double dn = line->at (3) * plane->at (0) + line->at (4) * plane->at (1) + line->at (5) * plane->at (2);
+      double dn = line.at (3) * plane.at (0) + line.at (4) * plane.at (1) + line.at (5) * plane.at (2);
       // Check for parallelism
       if (fabs (dn) < 1e-7)
         return (false);
@@ -104,15 +104,15 @@ namespace cloud_geometry
       // Get a point on the plane
       // w = P0 - V0
       double w[3];
-      w[0] = line->at (0) + (plane->at (3) * plane->at (0));
-      w[1] = line->at (1) + (plane->at (3) * plane->at (1));
-      w[2] = line->at (2) + (plane->at (3) * plane->at (2));
+      w[0] = line.at (0) + (plane.at (3) * plane.at (0));
+      w[1] = line.at (1) + (plane.at (3) * plane.at (1));
+      w[2] = line.at (2) + (plane.at (3) * plane.at (2));
 
       // point = P1 - (P0 - P1) . (d + n . P1) / [(P0-P1) . n];
-      double u = (plane->at (0) * w[0] + plane->at (1) * w[1] + plane->at (2) * w[2]) / dn;
-      point.x = line->at (0) - u * line->at (3);
-      point.y = line->at (1) - u * line->at (4);
-      point.z = line->at (2) - u * line->at (5);
+      double u = (plane.at (0) * w[0] + plane.at (1) * w[1] + plane.at (2) * w[2]) / dn;
+      point.x = line.at (0) - u * line.at (3);
+      point.y = line.at (1) - u * line.at (4);
+      point.z = line.at (2) - u * line.at (5);
       return (true);
     }
 
@@ -124,7 +124,7 @@ namespace cloud_geometry
       * \param sqr_eps maximum allowable squared distance to the true solution
       */
     bool
-      lineWithLineIntersection (std::vector<double> line_a, std::vector<double> line_b, robot_msgs::Point32 &point,
+      lineWithLineIntersection (const std::vector<double> &line_a, const std::vector<double> &line_b, robot_msgs::Point32 &point,
                                 double sqr_eps)
     {
       std::vector<double> segment;
@@ -151,7 +151,7 @@ namespace cloud_geometry
       * \param polygon the resulting polygon
       */
     bool
-      planeWithCubeIntersection (std::vector<double> plane, std::vector<double> cube, robot_msgs::Polygon3D &polygon)
+      planeWithCubeIntersection (const std::vector<double> &plane, const std::vector<double> &cube, robot_msgs::Polygon3D &polygon)
     {
       double width[3];
       for (int d = 0; d < 3; d++)
@@ -239,7 +239,7 @@ namespace cloud_geometry
       * \param cube the 6 bounds of the cube
       */
     bool
-      lineToBoxIntersection (std::vector<double> line, std::vector<double> cube)
+      lineToBoxIntersection (const std::vector<double> &line, const std::vector<double> &cube)
     {
       const int _right = 0, _left = 1, _middle = 2;
       bool inside = true;   // start by assuming that the line origin is inside the box
@@ -309,7 +309,7 @@ namespace cloud_geometry
       * \param circle the coefficients of the circle (center, radius)
       */
     bool
-      lineToCircleIntersection (std::vector<double> line, std::vector<double> circle)
+      lineToCircleIntersection (const std::vector<double> &line, const std::vector<double> &circle)
     {
       double u = ((circle.at (0) - line[0]) * (line[3] - line[0]) +
                   (circle.at (1) - line[1]) * (line[4] - line[1]) +

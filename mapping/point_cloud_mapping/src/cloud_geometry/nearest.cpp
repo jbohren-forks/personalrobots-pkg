@@ -47,34 +47,34 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     void
-      computeCentroid (const robot_msgs::PointCloud *points, robot_msgs::PointCloud &centroid)
+      computeCentroid (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &centroid)
     {
       // Prepare the data output
       centroid.pts.resize (1);
       centroid.pts[0].x = centroid.pts[0].y = centroid.pts[0].z = 0;
-      centroid.chan.resize (points->get_chan_size ());
-      for (unsigned int d = 0; d < points->get_chan_size (); d++)
+      centroid.chan.resize (points.get_chan_size ());
+      for (unsigned int d = 0; d < points.get_chan_size (); d++)
       {
-        centroid.chan[d].name = points->chan[d].name;
+        centroid.chan[d].name = points.chan[d].name;
         centroid.chan[d].vals.resize (1);
       }
 
       // For each point in the cloud
-      for (unsigned int i = 0; i < points->get_pts_size (); i++)
+      for (unsigned int i = 0; i < points.get_pts_size (); i++)
       {
-        centroid.pts[0].x += points->pts[i].x;
-        centroid.pts[0].y += points->pts[i].y;
-        centroid.pts[0].z += points->pts[i].z;
+        centroid.pts[0].x += points.pts[i].x;
+        centroid.pts[0].y += points.pts[i].y;
+        centroid.pts[0].z += points.pts[i].z;
 
-        for (unsigned int d = 0; d < points->get_chan_size (); d++)
-          centroid.chan[d].vals[0] += points->chan[d].vals[i];
+        for (unsigned int d = 0; d < points.get_chan_size (); d++)
+          centroid.chan[d].vals[0] += points.chan[d].vals[i];
       }
 
-      centroid.pts[0].x /= points->get_pts_size ();
-      centroid.pts[0].y /= points->get_pts_size ();
-      centroid.pts[0].z /= points->get_pts_size ();
-      for (unsigned int d = 0; d < points->get_chan_size (); d++)
-        centroid.chan[d].vals[0] /= points->get_pts_size ();
+      centroid.pts[0].x /= points.get_pts_size ();
+      centroid.pts[0].y /= points.get_pts_size ();
+      centroid.pts[0].z /= points.get_pts_size ();
+      for (unsigned int d = 0; d < points.get_chan_size (); d++)
+        centroid.chan[d].vals[0] /= points.get_pts_size ();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -84,34 +84,34 @@ namespace cloud_geometry
       * \param centroid the output centroid
       */
     void
-      computeCentroid (const robot_msgs::PointCloud *points, const std::vector<int> *indices, robot_msgs::PointCloud &centroid)
+      computeCentroid (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::PointCloud &centroid)
     {
       // Prepare the data output
       centroid.pts.resize (1);
       centroid.pts[0].x = centroid.pts[0].y = centroid.pts[0].z = 0;
-      centroid.chan.resize (points->get_chan_size ());
-      for (unsigned int d = 0; d < points->get_chan_size (); d++)
+      centroid.chan.resize (points.get_chan_size ());
+      for (unsigned int d = 0; d < points.get_chan_size (); d++)
       {
-        centroid.chan[d].name = points->chan[d].name;
+        centroid.chan[d].name = points.chan[d].name;
         centroid.chan[d].vals.resize (1);
       }
 
       // For each point in the cloud
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
-        centroid.pts[0].x += points->pts.at (indices->at (i)).x;
-        centroid.pts[0].y += points->pts.at (indices->at (i)).y;
-        centroid.pts[0].z += points->pts.at (indices->at (i)).z;
+        centroid.pts[0].x += points.pts.at (indices.at (i)).x;
+        centroid.pts[0].y += points.pts.at (indices.at (i)).y;
+        centroid.pts[0].z += points.pts.at (indices.at (i)).z;
 
-        for (unsigned int d = 0; d < points->get_chan_size (); d++)
-          centroid.chan[d].vals[0] += points->chan[d].vals.at (indices->at (i));
+        for (unsigned int d = 0; d < points.get_chan_size (); d++)
+          centroid.chan[d].vals[0] += points.chan[d].vals.at (indices.at (i));
       }
 
-      centroid.pts[0].x /= indices->size ();
-      centroid.pts[0].y /= indices->size ();
-      centroid.pts[0].z /= indices->size ();
-      for (unsigned int d = 0; d < points->get_chan_size (); d++)
-        centroid.chan[d].vals[0] /= indices->size ();
+      centroid.pts[0].x /= indices.size ();
+      centroid.pts[0].y /= indices.size ();
+      centroid.pts[0].z /= indices.size ();
+      for (unsigned int d = 0; d < points.get_chan_size (); d++)
+        centroid.chan[d].vals[0] /= indices.size ();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -125,7 +125,7 @@ namespace cloud_geometry
       * \f]
       */
     void
-      computeSurfaceNormalCurvature (const robot_msgs::PointCloud *points, Eigen::Vector4d &plane_parameters, double &curvature)
+      computeSurfaceNormalCurvature (const robot_msgs::PointCloud &points, Eigen::Vector4d &plane_parameters, double &curvature)
     {
       robot_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
@@ -165,7 +165,7 @@ namespace cloud_geometry
       * \f]
       */
     void
-      computeSurfaceNormalCurvature (const robot_msgs::PointCloud *points, const std::vector<int> *indices, Eigen::Vector4d &plane_parameters, double &curvature)
+      computeSurfaceNormalCurvature (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature)
     {
       robot_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
@@ -201,7 +201,7 @@ namespace cloud_geometry
       * \param j3 the third moment invariant
       */
     void
-      computeMomentInvariants (const robot_msgs::PointCloud *points, double &j1, double &j2, double &j3)
+      computeMomentInvariants (const robot_msgs::PointCloud &points, double &j1, double &j2, double &j3)
     {
       // Compute the centroid
       robot_msgs::Point32 centroid;
@@ -209,20 +209,20 @@ namespace cloud_geometry
 
       // Demean the pointset
       robot_msgs::PointCloud points_c;
-      points_c.pts.resize (points->pts.size ());
-      for (unsigned int i = 0; i < points->pts.size (); i++)
+      points_c.pts.resize (points.pts.size ());
+      for (unsigned int i = 0; i < points.pts.size (); i++)
       {
-        points_c.pts[i].x = points->pts[i].x - centroid.x;
-        points_c.pts[i].y = points->pts[i].y - centroid.y;
-        points_c.pts[i].z = points->pts[i].z - centroid.z;
+        points_c.pts[i].x = points.pts[i].x - centroid.x;
+        points_c.pts[i].y = points.pts[i].y - centroid.y;
+        points_c.pts[i].z = points.pts[i].z - centroid.z;
       }
 
-      double mu200 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 2.0, 0.0, 0.0);
-      double mu020 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 2.0, 0.0);
-      double mu002 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 0.0, 2.0);
-      double mu110 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 1.0, 1.0, 0.0);
-      double mu101 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 1.0, 0.0, 1.0);
-      double mu011 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 1.0, 1.0);
+      double mu200 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 2.0, 0.0, 0.0);
+      double mu020 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 0.0, 2.0, 0.0);
+      double mu002 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 0.0, 0.0, 2.0);
+      double mu110 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 1.0, 1.0, 0.0);
+      double mu101 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 1.0, 0.0, 1.0);
+      double mu011 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 0.0, 1.0, 1.0);
 
       j1 = mu200 + mu020 + mu002;
       j2 = mu200*mu020 + mu200*mu002 + mu020*mu002 - mu110*mu110 - mu101*mu101 - mu011*mu011;
@@ -238,7 +238,7 @@ namespace cloud_geometry
       * \param j3 the third moment invariant
       */
     void
-      computeMomentInvariants (const robot_msgs::PointCloud *points, const std::vector<int> *indices, double &j1, double &j2, double &j3)
+      computeMomentInvariants (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double &j1, double &j2, double &j3)
     {
       // Compute the centroid
       robot_msgs::Point32 centroid;
@@ -246,20 +246,20 @@ namespace cloud_geometry
 
       // Demean the pointset
       robot_msgs::PointCloud points_c;
-      points_c.pts.resize (indices->size ());
-      for (unsigned int i = 0; i < indices->size (); i++)
+      points_c.pts.resize (indices.size ());
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
-        points_c.pts[i].x = points->pts.at (indices->at (i)).x - centroid.x;
-        points_c.pts[i].y = points->pts.at (indices->at (i)).y - centroid.y;
-        points_c.pts[i].z = points->pts.at (indices->at (i)).z - centroid.z;
+        points_c.pts[i].x = points.pts.at (indices.at (i)).x - centroid.x;
+        points_c.pts[i].y = points.pts.at (indices.at (i)).y - centroid.y;
+        points_c.pts[i].z = points.pts.at (indices.at (i)).z - centroid.z;
       }
 
-      double mu200 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 2.0, 0.0, 0.0);
-      double mu020 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 2.0, 0.0);
-      double mu002 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 0.0, 2.0);
-      double mu110 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 1.0, 1.0, 0.0);
-      double mu101 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 1.0, 0.0, 1.0);
-      double mu011 = cloud_geometry::statistics::computeCentralizedMoment (&points_c, 0.0, 1.0, 1.0);
+      double mu200 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 2.0, 0.0, 0.0);
+      double mu020 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 0.0, 2.0, 0.0);
+      double mu002 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 0.0, 0.0, 2.0);
+      double mu110 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 1.0, 1.0, 0.0);
+      double mu101 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 1.0, 0.0, 1.0);
+      double mu011 = cloud_geometry::statistics::computeCentralizedMoment (points_c, 0.0, 1.0, 1.0);
 
       j1 = mu200 + mu020 + mu002;
       j2 = mu200*mu020 + mu200*mu002 + mu020*mu002 - mu110*mu110 - mu101*mu101 - mu011*mu011;
@@ -277,36 +277,36 @@ namespace cloud_geometry
       * \param angle_threshold the threshold angle (default $\pi / 2.0$)
       */
     bool
-      isBoundaryPoint (const robot_msgs::PointCloud *points, int q_idx, const std::vector<int> *neighbors,
+      isBoundaryPoint (const robot_msgs::PointCloud &points, int q_idx, const std::vector<int> &neighbors,
                        const Eigen::Vector3d& u, const Eigen::Vector3d& v, double angle_threshold)
     {
-      if (neighbors->size () < 3)
+      if (neighbors.size () < 3)
         return (false);
       double uvn_nn[2];
       // Compute the angles between each neighbouring point and the query point itself
-      std::vector<double> angles (neighbors->size () - 1);
-      for (unsigned int i = 0; i < neighbors->size () - 1; i++)
+      std::vector<double> angles (neighbors.size () - 1);
+      for (unsigned int i = 0; i < neighbors.size () - 1; i++)
       {
-        uvn_nn[0] = (points->pts.at (neighbors->at (i+1)).x - points->pts.at (q_idx).x) * u (0) +
-                    (points->pts.at (neighbors->at (i+1)).y - points->pts.at (q_idx).y) * u (1) +
-                    (points->pts.at (neighbors->at (i+1)).z - points->pts.at (q_idx).z) * u (2);
-        uvn_nn[1] = (points->pts.at (neighbors->at (i+1)).x - points->pts.at (q_idx).x) * v (0) +
-                    (points->pts.at (neighbors->at (i+1)).y - points->pts.at (q_idx).y) * v (1) +
-                    (points->pts.at (neighbors->at (i+1)).z - points->pts.at (q_idx).z) * v (2);
+        uvn_nn[0] = (points.pts.at (neighbors.at (i+1)).x - points.pts.at (q_idx).x) * u (0) +
+                    (points.pts.at (neighbors.at (i+1)).y - points.pts.at (q_idx).y) * u (1) +
+                    (points.pts.at (neighbors.at (i+1)).z - points.pts.at (q_idx).z) * u (2);
+        uvn_nn[1] = (points.pts.at (neighbors.at (i+1)).x - points.pts.at (q_idx).x) * v (0) +
+                    (points.pts.at (neighbors.at (i+1)).y - points.pts.at (q_idx).y) * v (1) +
+                    (points.pts.at (neighbors.at (i+1)).z - points.pts.at (q_idx).z) * v (2);
         angles[i] = cloud_geometry::angles::getAngle2D (uvn_nn);
       }
       sort (angles.begin (), angles.end ());
 
       // Compute the maximal angle difference between two consecutive angles
       double max_dif = DBL_MIN, dif;
-      for (unsigned int i = 0; i < neighbors->size () - 2; i++)
+      for (unsigned int i = 0; i < neighbors.size () - 2; i++)
       {
         dif = angles[i + 1] - angles[i];
         if (max_dif < dif)
           max_dif = dif;
       }
       // Get the angle difference between the last and the first
-      dif = 2 * M_PI - angles[neighbors->size () - 2] + angles[0];
+      dif = 2 * M_PI - angles[neighbors.size () - 2] + angles[0];
       if (max_dif < dif)
         max_dif = dif;
 

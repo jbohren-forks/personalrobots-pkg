@@ -61,18 +61,18 @@ namespace sample_consensus
         * \param model_coefficients the model coefficients that need to be tested
         * \todo implement this
         */
-      bool testModelCoefficients (std::vector<double> model_coefficients) { return true; }
+      bool testModelCoefficients (const std::vector<double> &model_coefficients) { return true; }
 
-      virtual bool computeModelCoefficients (std::vector<int> indices);
+      virtual bool computeModelCoefficients (const std::vector<int> &indices);
 
-      virtual std::vector<double> refitModel (std::vector<int> inliers);
-      virtual std::vector<double> getDistancesToModel (std::vector<double> model_coefficients);
-      virtual std::vector<int>    selectWithinDistance (std::vector<double> model_coefficients, double threshold);
+      virtual std::vector<double> refitModel (const std::vector<int> &inliers);
+      virtual std::vector<double> getDistancesToModel (const std::vector<double> &model_coefficients);
+      virtual std::vector<int>    selectWithinDistance (const std::vector<double> &model_coefficients, double threshold);
 
-      virtual robot_msgs::PointCloud projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients);
+      virtual robot_msgs::PointCloud projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients);
 
-      virtual void projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients);
-      virtual bool doSamplesVerifyModel (std::set<int> indices, double threshold);
+      virtual void projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients);
+      virtual bool doSamplesVerifyModel (const std::set<int> &indices, double threshold);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Return an unique id for this model (SACMODEL_SPHERE). */

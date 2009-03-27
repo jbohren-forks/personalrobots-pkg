@@ -122,11 +122,11 @@ namespace sample_consensus
     * ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
   std::vector<int>
-    SACModelSphere::selectWithinDistance (std::vector<double> model_coefficients, double threshold)
+    SACModelSphere::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
   {
     std::vector<int> inliers;
 
-    // Iterate through the 3d points and calculate the distances from them to the sphere 
+    // Iterate through the 3d points and calculate the distances from them to the sphere
     for (unsigned int i = 0; i < indices_.size (); i++)
     {
       // Calculate the distance from the point to the sphere as the difference between
@@ -152,7 +152,7 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a sphere model that we need to compute distances to
     */
   std::vector<double>
-    SACModelSphere::getDistancesToModel (std::vector<double> model_coefficients)
+    SACModelSphere::getDistancesToModel (const std::vector<double> &model_coefficients)
   {
     std::vector<double> distances (indices_.size ());
 
@@ -180,7 +180,7 @@ namespace sample_consensus
     * \todo implement this.
     */
   robot_msgs::PointCloud
-    SACModelSphere::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelSphere::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
     std::cerr << "[SACModelSphere::projecPoints] Not implemented yet." << std::endl;
     return (*cloud_);
@@ -193,7 +193,7 @@ namespace sample_consensus
     * \todo implement this.
     */
   void
-    SACModelSphere::projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelSphere::projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
     std::cerr << "[SACModelSphere::projecPointsInPlace] Not implemented yet." << std::endl;
   }
@@ -204,7 +204,7 @@ namespace sample_consensus
     * \param indices the point indices found as possible good candidates for creating a valid model
     */
   bool
-    SACModelSphere::computeModelCoefficients (std::vector<int> indices)
+    SACModelSphere::computeModelCoefficients (const std::vector<int> &indices)
   {
     model_coefficients_.resize (4);
 
@@ -268,7 +268,7 @@ namespace sample_consensus
     * \param inliers the data inliers found as supporting the model
     */
   std::vector<double>
-    SACModelSphere::refitModel (std::vector<int> inliers)
+    SACModelSphere::refitModel (const std::vector<int> &inliers)
   {
     if (inliers.size () == 0)
     {
@@ -277,16 +277,16 @@ namespace sample_consensus
     }
 
 /*    LMStrucData data;
-    
+
     data.points  = points;
     data.samples = samples;
-    
+
     double *x (new double[samples.size ()]);
-    for (unsigned int i = 0; i < samples.size (); i++) 
+    for (unsigned int i = 0; i < samples.size (); i++)
       x[i] = 0;
-    
+
     // I: minim. options [\tau, \epsilon1, \epsilon2, \epsilon3]. Respectively the scale factor for initial \mu,
-    // stopping thresholds for ||J^T e||_inf, ||Dp||_2 and ||e||_2. Set to NULL for defaults to be used    
+    // stopping thresholds for ||J^T e||_inf, ||Dp||_2 and ||e||_2. Set to NULL for defaults to be used
     double opts[LM_OPTS_SZ], info[LM_INFO_SZ];
     opts[0] = LM_INIT_MU;
     opts[1] = 1E-15;
@@ -308,7 +308,7 @@ namespace sample_consensus
     // Radius
     p[3] = bestCoefficients[3];
 
-    // double *work,  // I: pointer to working memory, allocated internally if NULL. 
+    // double *work,  // I: pointer to working memory, allocated internally if NULL.
     // If !=NULL, it is assumed to point to a memory chunk at least LM_DER_WORKSZ(m, n)*sizeof(double) bytes long
     // double *covar, // O: Covariance matrix corresponding to LS solution; Assumed to point to a mxm matrix. Set to NULL if not needed.
     // void *adata)   // I: pointer to possibly needed additional data, passed uninterpreted to func & jacf. Set to NULL if not needed
@@ -318,7 +318,7 @@ namespace sample_consensus
     printf ("Levenberg-Marquardt returned %d in %g iter, reason %g\nSolution: ", ret, info[5], info[6]);
     for (int i = 0; i < 4; ++i)
       printf ("%.7g ", p[i]);
-    
+
     printf ("\n\nMinimization info:\n");
     for (int i = 0; i < LM_INFO_SZ; ++i)
       printf ("%g ", info[i]);
@@ -344,7 +344,7 @@ namespace sample_consensus
     * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
     */
   bool
-    SACModelSphere::doSamplesVerifyModel (std::set<int> indices, double threshold)
+    SACModelSphere::doSamplesVerifyModel (const std::set<int> &indices, double threshold)
   {
     for (std::set<int>::iterator it = indices.begin (); it != indices.end (); ++it)
       // Calculate the distance from the point to the sphere as the difference between

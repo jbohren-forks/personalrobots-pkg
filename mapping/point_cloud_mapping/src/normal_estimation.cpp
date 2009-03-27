@@ -189,14 +189,14 @@ class NormalEstimation
       if (downsample_ != 0)
       {
         gettimeofday (&t1, NULL);
-        int d_idx = cloud_geometry::getChannelIndex (&cloud_, "distances");
+        int d_idx = cloud_geometry::getChannelIndex (cloud_, "distances");
         try
         {
-          cloud_geometry::downsamplePointCloud (&cloud_, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
+          cloud_geometry::downsamplePointCloud (cloud_, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
         }
         catch (std::bad_alloc)
         {
-//          cloud_geometry::downsamplePointCloudSet (&cloud_, cloud_down_, leaf_width_, d_idx, cut_distance_);
+//          cloud_geometry::downsamplePointCloudSet (cloud_, cloud_down_, leaf_width_, d_idx, cut_distance_);
         }
 
         gettimeofday (&t2, NULL);
@@ -280,10 +280,10 @@ class NormalEstimation
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c), and moment invariants (j1, j2, j3)
         Eigen::Vector4d plane_parameters;
         double curvature, j1, j2, j3;
-        cloud_geometry::nearest::computeSurfaceNormalCurvature (&cloud_normals_, &points_indices_[i], plane_parameters, curvature);
+        cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud_normals_, points_indices_[i], plane_parameters, curvature);
 
         if (compute_moments_)
-          cloud_geometry::nearest::computeMomentInvariants (&cloud_normals_, &points_indices_[i], j1, j2, j3);
+          cloud_geometry::nearest::computeMomentInvariants (cloud_normals_, points_indices_[i], j1, j2, j3);
 
         // See if we need to flip any plane normals
         Point32 vp_m;

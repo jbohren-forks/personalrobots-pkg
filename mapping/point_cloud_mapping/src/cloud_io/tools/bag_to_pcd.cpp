@@ -95,8 +95,8 @@ class BagToPcd
       {
         ROS_ERROR ("TF::ConectivityException caught while trying to transform a point from frame %s into %s!", cloud_.header.frame_id.c_str (), pin.header.frame_id.c_str ());
       }
-      ROS_INFO ("Received %d data points in frame %s with %d channels (%s). Viewpoint is <%.3f, %.3f, %.3f>", cloud_.pts.size (), cloud_.header.frame_id.c_str (),
-                cloud_.chan.size (), cloud_geometry::getAvailableChannels (&cloud_).c_str (), pout.point.x, pout.point.y, pout.point.z);
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s). Viewpoint is <%.3f, %.3f, %.3f>", (int)cloud_.pts.size (), cloud_.header.frame_id.c_str (),
+                (int)cloud_.chan.size (), cloud_geometry::getAvailableChannels (cloud_).c_str (), pout.point.x, pout.point.y, pout.point.z);
 
       double c_time = cloud_.header.stamp.sec * 1e3 + cloud_.header.stamp.nsec;
       sprintf (fn_, "%.0f.pcd", c_time);
@@ -117,7 +117,7 @@ class BagToPcd
             cloud_.chan[cloud_.chan.size () - 2].vals[i] = pout.point.y;
             cloud_.chan[cloud_.chan.size () - 1].vals[i] = pout.point.z;
           }
-          cloud_io::savePCDFile (fn_, &cloud_, 5);
+          cloud_io::savePCDFile (fn_, cloud_, 5);
         }
         ROS_INFO ("Data saved to %s (%f).", fn_, c_time);
       }

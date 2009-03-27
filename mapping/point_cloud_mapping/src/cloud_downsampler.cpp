@@ -108,8 +108,8 @@ class CloudDownsampler
       timeval t1, t2;
       gettimeofday (&t1, NULL);
 
-      int d_idx = cloud_geometry::getChannelIndex (&cloud_, "distances");
-      cloud_geometry::downsamplePointCloud (&cloud_, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
+      int d_idx = cloud_geometry::getChannelIndex (cloud_, "distances");
+      cloud_geometry::downsamplePointCloud (cloud_, cloud_down_, leaf_width_, leaves_, d_idx, cut_distance_);
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);

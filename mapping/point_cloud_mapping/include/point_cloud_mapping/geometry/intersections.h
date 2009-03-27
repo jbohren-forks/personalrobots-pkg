@@ -43,12 +43,11 @@ namespace cloud_geometry
   namespace intersections
   {
 
-    bool planeWithPlaneIntersection (std::vector<double> plane_a, std::vector<double> plane_b, std::vector<double> &line);
-    bool lineWithPlaneIntersection (std::vector<double> *plane, std::vector<double> *line, robot_msgs::Point32 &point);
-    bool lineWithLineIntersection (std::vector<double> line_a, std::vector<double> line_b, robot_msgs::Point32 &point, double sqr_eps);
-    bool planeWithCubeIntersection (std::vector<double> plane, std::vector<double> cube, robot_msgs::Polygon3D &polygon);
-    bool lineToBoxIntersection (std::vector<double> line, std::vector<double> cube);
-
+    bool planeWithPlaneIntersection (const std::vector<double> &plane_a, const std::vector<double> &plane_b, std::vector<double> &line);
+    bool lineWithPlaneIntersection (const std::vector<double> &plane, const std::vector<double> &line, robot_msgs::Point32 &point);
+    bool lineWithLineIntersection (const std::vector<double> &line_a, const std::vector<double> &line_b, robot_msgs::Point32 &point, double sqr_eps);
+    bool planeWithCubeIntersection (const std::vector<double> &plane, const std::vector<double> &cube, robot_msgs::Polygon3D &polygon);
+    bool lineToBoxIntersection (const std::vector<double> &line, const std::vector<double> &cube);
   }
 }
 

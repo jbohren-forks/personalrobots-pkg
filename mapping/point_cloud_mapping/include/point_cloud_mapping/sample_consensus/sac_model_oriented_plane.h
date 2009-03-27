@@ -51,21 +51,21 @@ namespace sample_consensus
         * \param ax a pointer to the axis
         */
       void
-        setAxis (robot_msgs::Point32 *ax)
+        setAxis (const robot_msgs::Point32 &ax)
       {
-        this->axis_.x = ax->x;
-        this->axis_.y = ax->y;
-        this->axis_.z = ax->z;
+        this->axis_.x = ax.x;
+        this->axis_.y = ax.y;
+        this->axis_.z = ax.z;
       }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Set the angle epsilon (delta) threshold
         * \param ea the maximum allowed threshold between the plane normal and the given axis
         */
-      void setEpsAngle (double ea) { this->eps_angle_ = ea; } 
+      void setEpsAngle (double ea) { this->eps_angle_ = ea; }
 
-      virtual std::vector<double> getDistancesToModel (std::vector<double> model_coefficients);
-      virtual std::vector<int>    selectWithinDistance (std::vector<double> model_coefficients, double threshold);
+      virtual std::vector<double> getDistancesToModel (const std::vector<double> &model_coefficients);
+      virtual std::vector<int>    selectWithinDistance (const std::vector<double> &model_coefficients, double threshold);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Return an unique id for this model (SACMODEL_ORIENTED_PLANE). */

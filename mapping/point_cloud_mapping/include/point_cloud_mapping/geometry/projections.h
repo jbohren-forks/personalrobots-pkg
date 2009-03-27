@@ -50,16 +50,16 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline void
-      pointToPlane (robot_msgs::Point32 *p, robot_msgs::Point32 &q, std::vector<double> *plane_coefficients)
+      pointToPlane (const robot_msgs::Point32 &p, robot_msgs::Point32 &q, const std::vector<double> &plane_coefficients)
     {
-      double distance = plane_coefficients->at (0) * p->x +
-                        plane_coefficients->at (1) * p->y +
-                        plane_coefficients->at (2) * p->z +
-                        plane_coefficients->at (3);
+      double distance = plane_coefficients.at (0) * p.x +
+                        plane_coefficients.at (1) * p.y +
+                        plane_coefficients.at (2) * p.z +
+                        plane_coefficients.at (3);
       // Calculate the projection of the point on the plane
-      q.x = p->x - distance * plane_coefficients->at (0);
-      q.y = p->y - distance * plane_coefficients->at (1);
-      q.z = p->z - distance * plane_coefficients->at (2);
+      q.x = p.x - distance * plane_coefficients.at (0);
+      q.y = p.y - distance * plane_coefficients.at (1);
+      q.z = p.z - distance * plane_coefficients.at (2);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,11 +69,11 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline void
-      pointsToPlane (robot_msgs::Polygon3D *p, robot_msgs::Polygon3D &q, std::vector<double> *plane_coefficients)
+      pointsToPlane (const robot_msgs::Polygon3D &p, robot_msgs::Polygon3D &q, const std::vector<double> &plane_coefficients)
     {
-      q.points.resize (p->points.size ());
-      for (unsigned int i = 0; i < p->points.size (); i++)
-        pointToPlane (&p->points[i], q.points[i], plane_coefficients);
+      q.points.resize (p.points.size ());
+      for (unsigned int i = 0; i < p.points.size (); i++)
+        pointToPlane (p.points[i], q.points[i], plane_coefficients);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,25 +83,25 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline void
-      pointsToPlane (robot_msgs::PointCloud *p, std::vector<int> *indices, std::vector<double> *plane_coefficients)
+      pointsToPlane (robot_msgs::PointCloud &p, const std::vector<int> &indices, const std::vector<double> &plane_coefficients)
     {
-      for (unsigned int i = 0; i < indices->size (); i++)
-        pointToPlane (&p->pts[indices->at (i)], p->pts[indices->at (i)], plane_coefficients);
+      for (unsigned int i = 0; i < indices.size (); i++)
+        pointToPlane (p.pts[indices.at (i)], p.pts[indices.at (i)], plane_coefficients);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Project a set of points (in place) onto a plane defined by ax+by+cz+d=0
-      * \param p the point cloud to project (in place)
+    /** \brief Project a set of points onto a plane defined by ax+by+cz+d=0
+      * \param p the point cloud to project
       * \param indices use only these point indices from the given cloud
       * \param q the resultant projected points
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline void
-      pointsToPlane (robot_msgs::PointCloud *p, std::vector<int> *indices, robot_msgs::PointCloud &q, std::vector<double> *plane_coefficients)
+      pointsToPlane (const robot_msgs::PointCloud &p, const std::vector<int> &indices, robot_msgs::PointCloud &q, const std::vector<double> &plane_coefficients)
     {
-      q.pts.resize (indices->size ());
-      for (unsigned int i = 0; i < indices->size (); i++)
-        pointToPlane (&p->pts[indices->at (i)], q.pts[i], plane_coefficients);
+      q.pts.resize (indices.size ());
+      for (unsigned int i = 0; i < indices.size (); i++)
+        pointToPlane (p.pts[indices.at (i)], q.pts[i], plane_coefficients);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -112,17 +112,17 @@ namespace cloud_geometry
       * \param distance the computed distance from p to the plane
       */
     inline void
-      pointToPlane (robot_msgs::Point32 *p, robot_msgs::Point32 &q, std::vector<double> *plane_coefficients,
+      pointToPlane (const robot_msgs::Point32 &p, robot_msgs::Point32 &q, const std::vector<double> &plane_coefficients,
                     double &distance)
     {
-      distance = plane_coefficients->at (0) * p->x +
-                 plane_coefficients->at (1) * p->y +
-                 plane_coefficients->at (2) * p->z +
-                 plane_coefficients->at (3);
+      distance = plane_coefficients.at (0) * p.x +
+                 plane_coefficients.at (1) * p.y +
+                 plane_coefficients.at (2) * p.z +
+                 plane_coefficients.at (3);
       // Calculate the projection of the point on the plane
-      q.x = p->x - distance * plane_coefficients->at (0);
-      q.y = p->y - distance * plane_coefficients->at (1);
-      q.z = p->z - distance * plane_coefficients->at (2);
+      q.x = p.x - distance * plane_coefficients.at (0);
+      q.y = p.y - distance * plane_coefficients.at (1);
+      q.z = p.z - distance * plane_coefficients.at (2);
     }
 
   }

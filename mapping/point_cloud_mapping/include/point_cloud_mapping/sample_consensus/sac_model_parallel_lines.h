@@ -29,7 +29,7 @@
  * $Id$
  *
  */
- 
+
 /** \author Caroline Pantofaru */
 
 #ifndef _SAMPLE_CONSENSUS_SACMODELPARALLELLINES_H_
@@ -51,7 +51,7 @@ namespace sample_consensus
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Constructor for base SACModelLine. */
       SACModelParallelLines (double min_line_sep_m, double max_line_sep_m)
-      { 
+      {
         min_line_sep_m_ = min_line_sep_m;
         max_line_sep_m_ = max_line_sep_m;
       }
@@ -67,28 +67,28 @@ namespace sample_consensus
         * \param model_coefficients the model coefficients that need to be tested
         * \todo implement this
         */
-      bool testModelCoefficients (std::vector<double> model_coefficients) { return true; }
+      bool testModelCoefficients (const std::vector<double> &model_coefficients) { return true; }
 
-      virtual bool computeModelCoefficients (std::vector<int> indices);
+      virtual bool computeModelCoefficients (const std::vector<int> &indices);
 
-      virtual std::vector<double> refitModel (std::vector<int> inliers);
-      virtual std::vector<double> getDistancesToModel (std::vector<double> model_coefficients);
-      virtual std::vector<int>    selectWithinDistance (std::vector<double> model_coefficients, double threshold);
+      virtual std::vector<double> refitModel (const std::vector<int> &inliers);
+      virtual std::vector<double> getDistancesToModel (const std::vector<double> &model_coefficients);
+      virtual std::vector<int>    selectWithinDistance (const std::vector<double> &model_coefficients, double threshold);
 
-      virtual robot_msgs::PointCloud projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients);
+      virtual robot_msgs::PointCloud projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients);
 
-      virtual void projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients);
-      virtual bool doSamplesVerifyModel (std::set<int> indices, double threshold);
+      virtual void projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients);
+      virtual bool doSamplesVerifyModel (const std::set<int> &indices, double threshold);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Return an unique id for this model (SACMODEL_PARALLEL_LINES). */
       virtual int getModelType () { return (SACMODEL_PARALLEL_LINES); }
 
-      void closestLine (std::vector<int> indices, std::vector<double> model_coefficients, 
-		        std::vector<int> *closest_line, std::vector<double> *closest_dist); 
-      void closestLine (std::set<int> indices, std::vector<double> model_coefficients, 
+      void closestLine (const std::vector<int> &indices, const std::vector<double> &model_coefficients,
 		        std::vector<int> *closest_line, std::vector<double> *closest_dist);
-      double pointToLineSquareDistance (robot_msgs::Point32 line_point1, robot_msgs::Point32 line_point2, robot_msgs::Point32 point);
+      void closestLine (const std::set<int> &indices, const std::vector<double> &model_coefficients,
+		        std::vector<int> *closest_line, std::vector<double> *closest_dist);
+      double pointToLineSquareDistance (const robot_msgs::Point32 &line_point1, const robot_msgs::Point32 &line_point2, const robot_msgs::Point32 &point);
 
       double min_line_sep_m_;
       double max_line_sep_m_;

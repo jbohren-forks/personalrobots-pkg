@@ -209,7 +209,7 @@ class PlugOnBaseDetector
       // Remove points below the plane
       for (unsigned int i = 0; i < indices_in_bounds.size (); i++)
       {
-        if (cloud_geometry::distances::pointToPlaneDistanceSigned (&cloud_tr_.pts[indices_in_bounds.at (i)], coeff) < 0)
+        if (cloud_geometry::distances::pointToPlaneDistanceSigned (cloud_tr_.pts[indices_in_bounds.at (i)], coeff) < 0)
           inliers.push_back (indices_in_bounds.at (i));
       }
 
@@ -226,7 +226,7 @@ class PlugOnBaseDetector
       findClusters (&cloud_, &remaining_indices, 0.01, object_clusters, 5);
 
       if (object_clusters.size () != 0)
-        ROS_DEBUG ("Number of remaining clusters on base: %d. Selecting the largest cluster with %d points as the plug candidate.", object_clusters.size (), object_clusters[0].size ());
+        ROS_DEBUG ("Number of remaining clusters on base: %d. Selecting the largest cluster with %d points as the plug candidate.", (int)object_clusters.size (), (int)object_clusters[0].size ());
 
 //#define DEBUG 1
 #if DEBUG
@@ -247,7 +247,7 @@ class PlugOnBaseDetector
         // Assume the largest one is the one we're interested in for now
         // NOTE: This is not the final version of the code ! We're still doing tests !
         Point32 minP, maxP;
-        cloud_geometry::statistics::getMinMax (&cloud_, &object_clusters[0], minP, maxP);
+        cloud_geometry::statistics::getMinMax (cloud_, object_clusters[0], minP, maxP);
         p_stow_.stowed = true;
         p_stow_.plug_centroid.x =  ( maxP.x + minP.x ) / 2.0;
         p_stow_.plug_centroid.y =  ( maxP.y + minP.y ) / 2.0;
@@ -277,7 +277,7 @@ class PlugOnBaseDetector
           cloud_annotated_.pts[0].y = p_stow_.plug_centroid.y;
           cloud_annotated_.pts[0].z = p_stow_.plug_centroid.z;
           cloud_annotated_.chan[0].vals[0] = 255;
-          ROS_INFO ("Debug publishing enabled with %d points.", cloud_annotated_.pts.size ());
+          ROS_INFO ("Debug publishing enabled with %d points.", (int)cloud_annotated_.pts.size ());
         }
         else
         {

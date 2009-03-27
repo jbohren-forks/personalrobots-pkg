@@ -44,10 +44,10 @@ namespace cloud_geometry
     * \param channel_name the string defining the channel name
     */
   int
-    getChannelIndex (const robot_msgs::PointCloud *points, std::string channel_name)
+    getChannelIndex (const robot_msgs::PointCloud &points, std::string channel_name)
   {
-    for (unsigned int d = 0; d < points->chan.size (); d++)
-      if (points->chan[d].name == channel_name)
+    for (unsigned int d = 0; d < points.chan.size (); d++)
+      if (points.chan[d].name == channel_name)
         return (d);
     return (-1);
   }
@@ -57,16 +57,16 @@ namespace cloud_geometry
     * \param cloud the point cloud data message
     */
   std::string
-    getAvailableChannels (const robot_msgs::PointCloud *cloud)
+    getAvailableChannels (const robot_msgs::PointCloud &cloud)
   {
     std::string result;
     unsigned int i;
-    for (i = 0; i < cloud->chan.size () - 1; i++)
+    for (i = 0; i < cloud.chan.size () - 1; i++)
     {
-      std::string index = cloud->chan[i].name + " ";
+      std::string index = cloud.chan[i].name + " ";
       result += index;
     }
-    std::string index = cloud->chan[i].name;
+    std::string index = cloud.chan[i].name;
     result += index;
     return (result);
   }
@@ -82,18 +82,18 @@ namespace cloud_geometry
     * \param indices the resultant indices
     */
   void
-    getPointIndicesAxisParallelNormals (const  robot_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
-                                        const robot_msgs::Point32 *axis, std::vector<int> &indices)
+    getPointIndicesAxisParallelNormals (const robot_msgs::PointCloud &points, int nx, int ny, int nz, double eps_angle,
+                                        const robot_msgs::Point32 &axis, std::vector<int> &indices)
   {
     // Check all points
-    for (unsigned int i = 0; i < points->pts.size (); i++)
+    for (unsigned int i = 0; i < points.pts.size (); i++)
     {
       robot_msgs::Point32 p;
-      p.x = points->chan[nx].vals[i];
-      p.y = points->chan[ny].vals[i];
-      p.z = points->chan[nz].vals[i];
+      p.x = points.chan[nx].vals[i];
+      p.y = points.chan[ny].vals[i];
+      p.z = points.chan[nz].vals[i];
       // Compute the angle between their normal and the given axis
-      double angle = acos (dot (&p, axis));
+      double angle = acos (dot (p, axis));
       if ( (angle < eps_angle) || ( (M_PI - angle) < eps_angle ) )
         indices.push_back (i);
     }
@@ -110,18 +110,18 @@ namespace cloud_geometry
     * \param indices the resultant indices
     */
   void
-    getPointIndicesAxisPerpendicularNormals (const robot_msgs::PointCloud *points, int nx, int ny, int nz, double eps_angle,
-                                             const robot_msgs::Point32 *axis, std::vector<int> &indices)
+    getPointIndicesAxisPerpendicularNormals (const robot_msgs::PointCloud &points, int nx, int ny, int nz, double eps_angle,
+                                             const robot_msgs::Point32 &axis, std::vector<int> &indices)
   {
     // Check all points
-    for (unsigned int i = 0; i < points->pts.size (); i++)
+    for (unsigned int i = 0; i < points.pts.size (); i++)
     {
       robot_msgs::Point32 p;
-      p.x = points->chan[nx].vals[i];
-      p.y = points->chan[ny].vals[i];
-      p.z = points->chan[nz].vals[i];
+      p.x = points.chan[nx].vals[i];
+      p.y = points.chan[ny].vals[i];
+      p.z = points.chan[nz].vals[i];
       // Compute the angle between their normal and the given axis
-      double angle = acos (dot (&p, axis));
+      double angle = acos (dot (p, axis));
       if (fabs (M_PI / 2.0 - angle) < eps_angle)
         indices.push_back (i);
     }
@@ -137,14 +137,14 @@ namespace cloud_geometry
     * \param cut_distance the maximum admissible distance of a point from the viewpoint (default: FLT_MAX)
     */
   void
-    downsamplePointCloud (const robot_msgs::PointCloud *points, const std::vector<int> *indices, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
+    downsamplePointCloud (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
                           std::vector<Leaf> &leaves, int d_idx, double cut_distance)
   {
     if (d_idx == -1)
       cut_distance = DBL_MAX;
     // Copy the header (and thus the frame_id) + allocate enough space for points
-    points_down.header = points->header;
-    points_down.pts.resize (points->pts.size ());
+    points_down.header = points.header;
+    points_down.pts.resize (points.pts.size ());
 
     robot_msgs::Point32 minP, maxP, minB, maxB, divB;
     cloud_geometry::statistics::getMinMax (points, indices, minP, maxP, d_idx, cut_distance);
@@ -187,19 +187,19 @@ namespace cloud_geometry
     }
 
     // First pass: go over all points and insert them into the right leaf
-    for (unsigned int cp = 0; cp < indices->size (); cp++)
+    for (unsigned int cp = 0; cp < indices.size (); cp++)
     {
-      if (d_idx != -1 && points->chan[d_idx].vals[indices->at (cp)] > cut_distance)        // Use a threshold for cutting out points which are too far away
+      if (d_idx != -1 && points.chan[d_idx].vals[indices.at (cp)] > cut_distance)        // Use a threshold for cutting out points which are too far away
         continue;
 
-      int i = (int)(floor (points->pts[indices->at (cp)].x / leaf_size.x));
-      int j = (int)(floor (points->pts[indices->at (cp)].y / leaf_size.y));
-      int k = (int)(floor (points->pts[indices->at (cp)].z / leaf_size.z));
+      int i = (int)(floor (points.pts[indices.at (cp)].x / leaf_size.x));
+      int j = (int)(floor (points.pts[indices.at (cp)].y / leaf_size.y));
+      int k = (int)(floor (points.pts[indices.at (cp)].z / leaf_size.z));
 
       int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
-      leaves[idx].centroid_x += points->pts[indices->at (cp)].x;
-      leaves[idx].centroid_y += points->pts[indices->at (cp)].y;
-      leaves[idx].centroid_z += points->pts[indices->at (cp)].z;
+      leaves[idx].centroid_x += points.pts[indices.at (cp)].x;
+      leaves[idx].centroid_y += points.pts[indices.at (cp)].y;
+      leaves[idx].centroid_z += points.pts[indices.at (cp)].z;
       leaves[idx].nr_points++;
     }
 
@@ -229,14 +229,14 @@ namespace cloud_geometry
     * \param cut_distance the maximum admissible distance of a point from the viewpoint (default: FLT_MAX)
     */
   void
-    downsamplePointCloud (const robot_msgs::PointCloud *points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
+    downsamplePointCloud (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size,
                           std::vector<Leaf> &leaves, int d_idx, double cut_distance)
   {
     if (d_idx == -1)
       cut_distance = DBL_MAX;
     // Copy the header (and thus the frame_id) + allocate enough space for points
-    points_down.header = points->header;
-    points_down.pts.resize (points->pts.size ());
+    points_down.header = points.header;
+    points_down.pts.resize (points.pts.size ());
 
     robot_msgs::Point32 minP, maxP, minB, maxB, divB;
     cloud_geometry::statistics::getMinMax (points, minP, maxP, d_idx, cut_distance);
@@ -279,19 +279,19 @@ namespace cloud_geometry
     }
 
     // First pass: go over all points and insert them into the right leaf
-    for (unsigned int cp = 0; cp < points->pts.size (); cp++)
+    for (unsigned int cp = 0; cp < points.pts.size (); cp++)
     {
-      if (d_idx != -1 && points->chan[d_idx].vals[cp] > cut_distance)        // Use a threshold for cutting out points which are too far away
+      if (d_idx != -1 && points.chan[d_idx].vals[cp] > cut_distance)        // Use a threshold for cutting out points which are too far away
         continue;
 
-      int i = (int)(floor (points->pts[cp].x / leaf_size.x));
-      int j = (int)(floor (points->pts[cp].y / leaf_size.y));
-      int k = (int)(floor (points->pts[cp].z / leaf_size.z));
+      int i = (int)(floor (points.pts[cp].x / leaf_size.x));
+      int j = (int)(floor (points.pts[cp].y / leaf_size.y));
+      int k = (int)(floor (points.pts[cp].z / leaf_size.z));
 
       int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
-      leaves[idx].centroid_x += points->pts[cp].x;
-      leaves[idx].centroid_y += points->pts[cp].y;
-      leaves[idx].centroid_z += points->pts[cp].z;
+      leaves[idx].centroid_x += points.pts[cp].x;
+      leaves[idx].centroid_y += points.pts[cp].y;
+      leaves[idx].centroid_z += points.pts[cp].z;
       leaves[idx].nr_points++;
     }
 
@@ -318,7 +318,7 @@ namespace cloud_geometry
     * \param leaf_size the voxel leaf dimensions
     */
   void
-    downsamplePointCloud (const robot_msgs::PointCloud *points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size)
+    downsamplePointCloud (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_down, robot_msgs::Point leaf_size)
   {
     std::vector<Leaf> leaves;
     downsamplePointCloud (points, points_down, leaf_size, leaves, -1);

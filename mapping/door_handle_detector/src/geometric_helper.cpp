@@ -47,20 +47,20 @@ using namespace robot_msgs;
   * \param frame_multiplier multiply the ||frame_p1-frame_p2|| distance by this number to wrap all possible situations in X-Y
   */
 void
-obtainCloudIndicesSet (robot_msgs::PointCloud *points, vector<int> &indices, robot_msgs::Door& door,
+  obtainCloudIndicesSet (const robot_msgs::PointCloud &points, vector<int> &indices, robot_msgs::Door& door,
                          tf::TransformListener *tf, std::string parameter_frame,
                          double min_z_bounds, double max_z_bounds, double frame_multiplier)
 {
   // frames used
-  string cloud_frame = points->header.frame_id;
-  string door_frame   = door.header.frame_id;
+  string cloud_frame = points.header.frame_id;
+  string door_frame  = door.header.frame_id;
 
   // Resize the resultant indices to accomodate all data
-  indices.resize (points->pts.size ());
+  indices.resize (points.pts.size ());
 
   // Transform the X-Y bounds from the door request service into the cloud TF frame
-  tf::Stamped<Point32> frame_p1 (door.frame_p1, points->header.stamp, door_frame);
-  tf::Stamped<Point32> frame_p2 (door.frame_p2, points->header.stamp, door_frame);
+  tf::Stamped<Point32> frame_p1 (door.frame_p1, points.header.stamp, door_frame);
+  tf::Stamped<Point32> frame_p2 (door.frame_p2, points.header.stamp, door_frame);
   transformPoint (tf, cloud_frame, frame_p1, frame_p1);
   transformPoint (tf, cloud_frame, frame_p2, frame_p2);
 
@@ -75,14 +75,14 @@ obtainCloudIndicesSet (robot_msgs::PointCloud *points, vector<int> &indices, rob
     ROS_INFO ("Door frame multiplier set to -1. Using the entire point cloud data.");
     // Use the complete bounds of the point cloud
     cloud_geometry::statistics::getMinMax (points, min_bbox, max_bbox);
-    for (unsigned int i = 0; i < points->pts.size (); i++)
+    for (unsigned int i = 0; i < points.pts.size (); i++)
       indices[i] = i;
   }
   else
   {
     // Transform the minimum/maximum Z bounds parameters from frame parameter_frame to the cloud TF frame
-    min_z_bounds = transformDoubleValueTF (min_z_bounds, parameter_frame, cloud_frame, points->header.stamp, tf);
-    max_z_bounds = transformDoubleValueTF (max_z_bounds, parameter_frame, cloud_frame, points->header.stamp, tf);
+    min_z_bounds = transformDoubleValueTF (min_z_bounds, parameter_frame, cloud_frame, points.header.stamp, tf);
+    max_z_bounds = transformDoubleValueTF (max_z_bounds, parameter_frame, cloud_frame, points.header.stamp, tf);
     ROS_INFO ("Capping Z-search using the door_min_z_bounds/door_max_z_bounds parameters in frame %s: [%g / %g]",
               cloud_frame.c_str (), min_z_bounds, max_z_bounds);
 
@@ -90,11 +90,11 @@ obtainCloudIndicesSet (robot_msgs::PointCloud *points, vector<int> &indices, rob
     get3DBounds (&frame_p1, &frame_p2, min_bbox, max_bbox, min_z_bounds, max_z_bounds, frame_multiplier);
 
     int nr_p = 0;
-    for (unsigned int i = 0; i < points->pts.size (); i++)
+    for (unsigned int i = 0; i < points.pts.size (); i++)
     {
-      if ((points->pts[i].x >= min_bbox.x && points->pts[i].x <= max_bbox.x) &&
-          (points->pts[i].y >= min_bbox.y && points->pts[i].y <= max_bbox.y) &&
-          (points->pts[i].z >= min_bbox.z && points->pts[i].z <= max_bbox.z))
+      if ((points.pts[i].x >= min_bbox.x && points.pts[i].x <= max_bbox.x) &&
+          (points.pts[i].y >= min_bbox.y && points.pts[i].y <= max_bbox.y) &&
+          (points.pts[i].z >= min_bbox.z && points.pts[i].z <= max_bbox.z))
       {
         indices[nr_p] = i;
         nr_p++;
@@ -105,12 +105,12 @@ obtainCloudIndicesSet (robot_msgs::PointCloud *points, vector<int> &indices, rob
 
 
   ROS_INFO ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.",
-             min_bbox.x, min_bbox.y, min_bbox.z, max_bbox.x, max_bbox.y, max_bbox.z, indices.size ());
+             min_bbox.x, min_bbox.y, min_bbox.z, max_bbox.x, max_bbox.y, max_bbox.z, (int)indices.size ());
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool
-  checkDoorEdges (const robot_msgs::Polygon3D *poly, const robot_msgs::Point32 *z_axis, double min_height, double eps_angle,
+  checkDoorEdges (const robot_msgs::Polygon3D &poly, const robot_msgs::Point32 &z_axis, double min_height, double eps_angle,
                   double &door_frame1, double &door_frame2)
 {
   // Compute the centroid of the polygon
@@ -119,18 +119,18 @@ bool
 
   // Divide into left and right
   std::vector<int> inliers_left, inliers_right;
-  for (unsigned int i = 0; i < poly->points.size (); i++)
+  for (unsigned int i = 0; i < poly.points.size (); i++)
   {
-    if (poly->points[i].x < centroid.x)
+    if (poly.points[i].x < centroid.x)
     {
-      if (poly->points[i].y < centroid.y)
+      if (poly.points[i].y < centroid.y)
         inliers_left.push_back (i);
       else
         inliers_right.push_back (i);
     }
     else
     {
-      if (poly->points[i].y < centroid.y)
+      if (poly.points[i].y < centroid.y)
         inliers_left.push_back (i);
       else
         inliers_right.push_back (i);
@@ -144,27 +144,27 @@ bool
   for (unsigned int i = 0; i < inliers_left.size () - 1; i++)
   {
     // Check if the points are equal
-    if (cloud_geometry::checkPointEqual (&poly->points.at (inliers_left[i]), &poly->points.at (inliers_left[i+1])))
+    if (cloud_geometry::checkPointEqual (poly.points.at (inliers_left[i]), poly.points.at (inliers_left[i+1])))
       continue;
     // Check if there is a jump in the order of the points on the convex hull
     if (fabs (inliers_left[i] - inliers_left[i+1]) > 1)
       continue;
 
     // Get the line direction between points i and i+1
-    line_dir.x = poly->points.at (inliers_left[i]).x - poly->points.at (inliers_left[i+1]).x;
-    line_dir.y = poly->points.at (inliers_left[i]).y - poly->points.at (inliers_left[i+1]).y;
-    line_dir.z = poly->points.at (inliers_left[i]).z - poly->points.at (inliers_left[i+1]).z;
+    line_dir.x = poly.points.at (inliers_left[i]).x - poly.points.at (inliers_left[i+1]).x;
+    line_dir.y = poly.points.at (inliers_left[i]).y - poly.points.at (inliers_left[i+1]).y;
+    line_dir.z = poly.points.at (inliers_left[i]).z - poly.points.at (inliers_left[i+1]).z;
 
     // Compute the angle between this direction and the Z axis
-    double angle = cloud_geometry::angles::getAngle3D (&line_dir, z_axis);
+    double angle = cloud_geometry::angles::getAngle3D (line_dir, z_axis);
     if ( (angle < eps_angle) || ( (M_PI - angle) < eps_angle ) )
     {
       // Compute the length of the line
-      double line_length = cloud_geometry::distances::pointToPointDistance (&poly->points.at (inliers_left[i]), &poly->points.at (inliers_left[i+1]));
+      double line_length = cloud_geometry::distances::pointToPointDistance (poly.points.at (inliers_left[i]), poly.points.at (inliers_left[i+1]));
       door_frame1 += line_length;
 
-      new_points.push_back (poly->points.at (inliers_left[i]));
-      new_points.push_back (poly->points.at (inliers_left[i+1]));
+      new_points.push_back (poly.points.at (inliers_left[i]));
+      new_points.push_back (poly.points.at (inliers_left[i+1]));
     }
   }
 
@@ -172,26 +172,26 @@ bool
   for (unsigned int i = 0; i < inliers_right.size () - 1; i++)
   {
     // Check if the points are equal
-    if (cloud_geometry::checkPointEqual (&poly->points.at (inliers_right[i]), &poly->points.at (inliers_right[i+1])))
+    if (cloud_geometry::checkPointEqual (poly.points.at (inliers_right[i]), poly.points.at (inliers_right[i+1])))
       continue;
     // Check if there is a jump in the order of the points on the convex hull
     if (fabs (inliers_right[i] - inliers_right[i+1]) > 1)
       continue;
     // Get the line direction between points i and i+1
-    line_dir.x = poly->points.at (inliers_right[i]).x - poly->points.at (inliers_right[i+1]).x;
-    line_dir.y = poly->points.at (inliers_right[i]).y - poly->points.at (inliers_right[i+1]).y;
-    line_dir.z = poly->points.at (inliers_right[i]).z - poly->points.at (inliers_right[i+1]).z;
+    line_dir.x = poly.points.at (inliers_right[i]).x - poly.points.at (inliers_right[i+1]).x;
+    line_dir.y = poly.points.at (inliers_right[i]).y - poly.points.at (inliers_right[i+1]).y;
+    line_dir.z = poly.points.at (inliers_right[i]).z - poly.points.at (inliers_right[i+1]).z;
 
     // Compute the angle between this direction and the Z axis
-    double angle = cloud_geometry::angles::getAngle3D (&line_dir, z_axis);
+    double angle = cloud_geometry::angles::getAngle3D (line_dir, z_axis);
     if ( (angle < eps_angle) || ( (M_PI - angle) < eps_angle ) )
     {
       // Compute the length of the line
-      double line_length = cloud_geometry::distances::pointToPointDistance (&poly->points.at (inliers_right[i]), &poly->points.at (inliers_right[i+1]));
+      double line_length = cloud_geometry::distances::pointToPointDistance (poly.points.at (inliers_right[i]), poly.points.at (inliers_right[i+1]));
       door_frame2 += line_length;
 
-      new_points.push_back (poly->points.at (inliers_right[i]));
-      new_points.push_back (poly->points.at (inliers_right[i+1]));
+      new_points.push_back (poly.points.at (inliers_right[i]));
+      new_points.push_back (poly.points.at (inliers_right[i+1]));
     }
   }
 
@@ -283,7 +283,7 @@ void
   * \param inliers the resultant inliers
   */
 void
-  selectBestDistributionStatistics (PointCloud *points, vector<int> *indices, int d_idx, vector<int> &inliers)
+  selectBestDistributionStatistics (const PointCloud &points, const vector<int> &indices, int d_idx, vector<int> &inliers)
 {
   double mean, stddev;
   // Compute the mean and standard deviation of the distribution
@@ -338,7 +338,7 @@ void
   * \param inliers the resultant inliers
   */
 void
-  selectBestDualDistributionStatistics (PointCloud *points, vector<int> *indices, int d_idx_1, int d_idx_2,
+  selectBestDualDistributionStatistics (const PointCloud &points, const vector<int> &indices, int d_idx_1, int d_idx_2,
                                         vector<int> &inliers)
 {
   vector<int> inliers_1, inliers_2;
@@ -418,7 +418,7 @@ void
   * \param eps_angle a maximum allowed angular threshold
   */
 bool
-  checkIfClusterPerpendicular (PointCloud *points, vector<int> *indices, PointStamped *viewpoint,
+  checkIfClusterPerpendicular (const PointCloud &points, const vector<int> &indices, PointStamped *viewpoint,
                                vector<double> *coeff, double eps_angle)
 {
   // Compute the centroid of the cluster
@@ -443,7 +443,7 @@ bool
   // Compute the angle between the Z-axis and the newly created line direction
 //  double angle = acos (cloud_geometry::dot (&centroid, &z_axis));//coeff));
 //  if (fabs (M_PI / 2.0 - angle) < eps_angle)
-  double angle = cloud_geometry::angles::getAngle3D (&centroid, &normal);
+  double angle = cloud_geometry::angles::getAngle3D (centroid, normal);
   if ( (angle < eps_angle) || ( (M_PI - angle) < eps_angle ) )
     return (true);
   return (false);
@@ -464,14 +464,14 @@ bool
   * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
   */
 void
-  findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<vector<int> > &clusters,
+  findClusters (PointCloud &points, vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                 int nx_idx, int ny_idx, int nz_idx,
                 double eps_angle, unsigned int min_pts_per_cluster)
 {
   // Create a tree for these points
-  cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+  cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (&points, &indices);
 
-  int nr_points = indices->size ();
+  int nr_points = indices.size ();
   // Create a bool vector of processed point indices, and initialize it to false
   vector<bool> processed;
   processed.resize (nr_points, false);
@@ -509,13 +509,13 @@ void
         processed[nn_indices[j]] = true;
         if (nx_idx != -1)                                         // Are point normals present ?
         {
-//          double norm_b = sqrt (points->chan[nx_idx].vals[indices->at (nn_indices[j])] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-//                                points->chan[ny_idx].vals[indices->at (nn_indices[j])] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-//                                points->chan[nz_idx].vals[indices->at (nn_indices[j])] * points->chan[nz_idx].vals[indices->at (nn_indices[j])]);
+//          double norm_b = sqrt (points.chan[nx_idx].vals[indices.at (nn_indices[j])] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
+//                                points.chan[ny_idx].vals[indices.at (nn_indices[j])] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
+//                                points.chan[nz_idx].vals[indices.at (nn_indices[j])] * points.chan[nz_idx].vals[indices.at (nn_indices[j])]);
           // [-1;1]
-          double dot_p = points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-                         points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-                         points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (nn_indices[j])];
+          double dot_p = points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
+                         points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
+                         points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (nn_indices[j])];
 //          if ( acos (dot_p / (norm_a * norm_b)) < eps_angle)
           if ( fabs (acos (dot_p)) < eps_angle )
           {
@@ -539,7 +539,7 @@ void
     {
       vector<int> r (seed_queue.size ());
       for (unsigned int j = 0; j < seed_queue.size (); j++)
-        r[j] = indices->at (seed_queue[j]);
+        r[j] = indices.at (seed_queue[j]);
 
       sort (r.begin (), r.end ());
       r.erase (unique (r.begin (), r.end ()), r.end ());
@@ -640,7 +640,7 @@ bool
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (PointCloud *points, vector<int> *point_indices, PointCloud &points_down, int k, PointStamped *viewpoint_cloud)
+  estimatePointNormals (PointCloud &points, vector<int> &point_indices, PointCloud &points_down, int k, PointStamped *viewpoint_cloud)
 {
   // Reserve space for 4 channels: nx, ny, nz, curvature
   points_down.chan.resize (4);
@@ -652,11 +652,11 @@ void
     points_down.chan[d].vals.resize (points_down.pts.size ());
 
   // Create a Kd-Tree for the original cloud
-  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (points, point_indices);
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (&points, &point_indices);
 
   // Allocate enough space for point indices
   vector<vector<int> > points_k_indices (points_down.pts.size ());
-  vector<double> distances (points->pts.size ());
+  vector<double> distances (points.pts.size ());
 
   // Get the nearest neighbors for all the point indices in the bounds
   for (int i = 0; i < (int)points_down.pts.size (); i++)
@@ -672,8 +672,8 @@ void
     Eigen::Vector4d plane_parameters;
     double curvature;
     for (int j = 0; j < (int)points_k_indices[i].size (); j++)
-      points_k_indices[i][j] = point_indices->at (points_k_indices[i][j]);
-    cloud_geometry::nearest::computeSurfaceNormalCurvature (points, &points_k_indices[i], plane_parameters, curvature);
+      points_k_indices[i][j] = point_indices.at (points_k_indices[i][j]);
+    cloud_geometry::nearest::computeSurfaceNormalCurvature (points, points_k_indices[i], plane_parameters, curvature);
 
     // See if we need to flip any plane normals
     Point32 vp_m;
@@ -707,49 +707,49 @@ void
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (PointCloud *points, vector<int> *point_indices, int k, PointStamped *viewpoint_cloud)
+  estimatePointNormals (PointCloud &points, vector<int> &point_indices, int k, PointStamped *viewpoint_cloud)
 {
-  int old_channel_size = points->chan.size ();
+  int old_channel_size = points.chan.size ();
   // Reserve space for 4 channels: nx, ny, nz, curvature
-  points->chan.resize (old_channel_size + 4);
-  points->chan[old_channel_size + 0].name = "nx";
-  points->chan[old_channel_size + 1].name = "ny";
-  points->chan[old_channel_size + 2].name = "nz";
-  points->chan[old_channel_size + 3].name = "curvatures";
-  for (unsigned int d = old_channel_size; d < points->chan.size (); d++)
-    points->chan[d].vals.resize (points->pts.size ());
+  points.chan.resize (old_channel_size + 4);
+  points.chan[old_channel_size + 0].name = "nx";
+  points.chan[old_channel_size + 1].name = "ny";
+  points.chan[old_channel_size + 2].name = "nz";
+  points.chan[old_channel_size + 3].name = "curvatures";
+  for (unsigned int d = old_channel_size; d < points.chan.size (); d++)
+    points.chan[d].vals.resize (points.pts.size ());
 
   // Create a Kd-Tree for the original cloud
-  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (points, point_indices);
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (&points, &point_indices);
 
   // Allocate enough space for point indices
-  vector<vector<int> > points_k_indices (point_indices->size ());
-  vector<double> distances (point_indices->size ());
+  vector<vector<int> > points_k_indices (point_indices.size ());
+  vector<double> distances (point_indices.size ());
 
   // Get the nearest neighbors for all the point indices in the bounds
-  for (unsigned int i = 0; i < point_indices->size (); i++)
+  for (unsigned int i = 0; i < point_indices.size (); i++)
   {
     //kdtree->nearestKSearch (i, k, points_k_indices[i], distances);
-    kdtree->radiusSearch (&points->pts[point_indices->at (i)], 0.025, points_k_indices[i], distances);
+    kdtree->radiusSearch (&points.pts[point_indices.at (i)], 0.025, points_k_indices[i], distances);
   }
 
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int)point_indices->size (); i++)
+  for (int i = 0; i < (int)point_indices.size (); i++)
   {
     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
     Eigen::Vector4d plane_parameters;
     double curvature;
 
     for (int j = 0; j < (int)points_k_indices[i].size (); j++)
-      points_k_indices[i][j] = point_indices->at (points_k_indices[i][j]);
+      points_k_indices[i][j] = point_indices.at (points_k_indices[i][j]);
 
-    cloud_geometry::nearest::computeSurfaceNormalCurvature (points, &points_k_indices[i], plane_parameters, curvature);
+    cloud_geometry::nearest::computeSurfaceNormalCurvature (points, points_k_indices[i], plane_parameters, curvature);
 
     // See if we need to flip any plane normals
     Point32 vp_m;
-    vp_m.x = viewpoint_cloud->point.x - points->pts[point_indices->at (i)].x;
-    vp_m.y = viewpoint_cloud->point.y - points->pts[point_indices->at (i)].y;
-    vp_m.z = viewpoint_cloud->point.z - points->pts[point_indices->at (i)].z;
+    vp_m.x = viewpoint_cloud->point.x - points.pts[point_indices.at (i)].x;
+    vp_m.y = viewpoint_cloud->point.y - points.pts[point_indices.at (i)].y;
+    vp_m.z = viewpoint_cloud->point.z - points.pts[point_indices.at (i)].z;
 
     // Dot product between the (viewpoint - point) and the plane normal
     double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
@@ -760,10 +760,10 @@ void
       for (int d = 0; d < 3; d++)
         plane_parameters (d) *= -1;
     }
-    points->chan[old_channel_size + 0].vals[point_indices->at (i)] = plane_parameters (0);
-    points->chan[old_channel_size + 1].vals[point_indices->at (i)] = plane_parameters (1);
-    points->chan[old_channel_size + 2].vals[point_indices->at (i)] = plane_parameters (2);
-    points->chan[old_channel_size + 3].vals[point_indices->at (i)] = curvature; //fabs (plane_parameters (3));
+    points.chan[old_channel_size + 0].vals[point_indices.at (i)] = plane_parameters (0);
+    points.chan[old_channel_size + 1].vals[point_indices.at (i)] = plane_parameters (1);
+    points.chan[old_channel_size + 2].vals[point_indices.at (i)] = plane_parameters (2);
+    points.chan[old_channel_size + 3].vals[point_indices.at (i)] = curvature; //fabs (plane_parameters (3));
   }
   // Delete the kd-tree
   delete kdtree;
@@ -777,7 +777,7 @@ void
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (PointCloud *points, PointCloud &points_down, int k, PointStamped *viewpoint_cloud)
+  estimatePointNormals (PointCloud &points, PointCloud &points_down, int k, PointStamped *viewpoint_cloud)
 {
   int nr_points = points_down.pts.size ();
   // Reserve space for 4 channels: nx, ny, nz, curvature
@@ -789,11 +789,11 @@ void
   for (unsigned int d = 0; d < points_down.chan.size (); d++)
     points_down.chan[d].vals.resize (nr_points);
 
-  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (points);
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (&points);
 
   // Allocate enough space for point indices
   vector<vector<int> > points_k_indices (nr_points);
-  vector<double> distances (points->pts.size ());
+  vector<double> distances (points.pts.size ());
 
   // Get the nearest neighbors for all the point indices in the bounds
   for (int i = 0; i < nr_points; i++)
@@ -810,7 +810,7 @@ void
     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
     Eigen::Vector4d plane_parameters;
     double curvature;
-    cloud_geometry::nearest::computeSurfaceNormalCurvature (points, &points_k_indices[i], plane_parameters, curvature);
+    cloud_geometry::nearest::computeSurfaceNormalCurvature (points, points_k_indices[i], plane_parameters, curvature);
 
     // See if we need to flip any plane normals
     Point32 vp_m;
@@ -846,8 +846,8 @@ void
   * \param line_inliers the resultant point inliers
   */
 int
-  fitSACOrientedLine (robot_msgs::PointCloud *points, std::vector<int> indices,
-                      double dist_thresh, robot_msgs::Point32 *axis, double eps_angle, std::vector<int> &line_inliers)
+  fitSACOrientedLine (robot_msgs::PointCloud &points, const std::vector<int> &indices,
+                      double dist_thresh, const robot_msgs::Point32 &axis, double eps_angle, std::vector<int> &line_inliers)
 {
   if (indices.size () < 2)
   {
@@ -859,7 +859,7 @@ int
   sample_consensus::SACModelOrientedLine *model = new sample_consensus::SACModelOrientedLine ();
   sample_consensus::SAC *sac                    = new sample_consensus::RANSAC (model, dist_thresh);
   sac->setMaxIterations (100);
-  model->setDataSet (points, indices);
+  model->setDataSet (&points, indices);
   model->setAxis (axis);
   model->setEpsAngle (eps_angle);
 
@@ -891,10 +891,10 @@ int
   * \param line_inliers the resultant point inliers
   */
 int
-  fitSACOrientedLine (robot_msgs::PointCloud *points,
-                      double dist_thresh, robot_msgs::Point32 *axis, double eps_angle, std::vector<int> &line_inliers)
+  fitSACOrientedLine (robot_msgs::PointCloud &points,
+                      double dist_thresh, const robot_msgs::Point32 &axis, double eps_angle, std::vector<int> &line_inliers)
 {
-  if (points->pts.size () < 2)
+  if (points.pts.size () < 2)
   {
     line_inliers.resize (0);
     return (-1);
@@ -904,7 +904,7 @@ int
   sample_consensus::SACModelOrientedLine *model = new sample_consensus::SACModelOrientedLine ();
   sample_consensus::SAC *sac                    = new sample_consensus::RANSAC (model, dist_thresh);
   sac->setMaxIterations (100);
-  model->setDataSet (points);
+  model->setDataSet (&points);
   model->setAxis (axis);
   model->setEpsAngle (eps_angle);
 
@@ -934,38 +934,38 @@ int
   * \param dist_thresh the distance threshold used
   */
 void
-  growCurrentCluster (robot_msgs::PointCloud *points, std::vector<int> *indices, std::vector<int> *cluster,
+  growCurrentCluster (robot_msgs::PointCloud &points, std::vector<int> &indices, const std::vector<int> &cluster,
                       std::vector<int> &inliers, double dist_thresh)
 {
   // Copy the cluster
-  inliers.resize (cluster->size ());
-  for (unsigned int i = 0; i < cluster->size (); i++)
-    inliers[i] = cluster->at (i);
+  inliers.resize (cluster.size ());
+  for (unsigned int i = 0; i < cluster.size (); i++)
+    inliers[i] = cluster.at (i);
 
-  if (indices->size () < 2)
+  if (indices.size () < 2)
   {
     ROS_WARN ("[growCurrentCluster] Less than 2 points found in this cluster. Exiting...");
     return;
   }
-  ROS_DEBUG ("[growCurrentCluster] Creating Kd-Tree with %d points for a %d-points cluster.", indices->size (), cluster->size ());
+  ROS_DEBUG ("[growCurrentCluster] Creating Kd-Tree with %d points for a %d-points cluster.", (int)indices.size (), (int)cluster.size ());
 
   // Create a Kd-Tree for the original cloud
-  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (points, indices);
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (&points, &indices);
 
   // Get the nearest neighbors for all the point indices in the bounds
-  for (unsigned int i = 0; i < cluster->size (); i++)
+  for (unsigned int i = 0; i < cluster.size (); i++)
   {
     vector<int> points_k_indices;
     vector<double> distances;
 
-    kdtree->radiusSearch (&points->pts[cluster->at (i)], dist_thresh, points_k_indices, distances);
+    kdtree->radiusSearch (&points.pts[cluster.at (i)], dist_thresh, points_k_indices, distances);
     // Copy the inliers
     if (points_k_indices.size () == 0)
       continue;
     int old_size = inliers.size ();
     inliers.resize (old_size + points_k_indices.size ());
     for (unsigned int j = 0; j < points_k_indices.size (); j++)
-      inliers[old_size + j] = indices->at (points_k_indices[j]);
+      inliers[old_size + j] = indices.at (points_k_indices[j]);
   }
   sort (inliers.begin (), inliers.end ());
   inliers.erase (unique (inliers.begin (), inliers.end ()), inliers.end ());

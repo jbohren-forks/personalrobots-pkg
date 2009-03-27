@@ -107,7 +107,7 @@ class ConvexPatchHistogram
         // Obtain the inliers and the planar model coefficients
         inliers = sac->getInliers ();
         coeff = sac->computeCoefficients ();
-        ROS_INFO ("The best plane model found is supported by %d inliers: [%g, %g, %g, %g]", inliers.size (),
+        ROS_INFO ("The best plane model found is supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (),
                   coeff[0], coeff[1], coeff[2], coeff[3]);
 
         // Project the inliers onto the model
@@ -129,7 +129,7 @@ class ConvexPatchHistogram
       for (unsigned int i = 0; i < indices.size (); i++)
       {
         // Compute a distance from each point to the plane
-        double distance = cloud_geometry::distances::pointToPlaneDistance (&points->pts[i], coeff);
+        double distance = cloud_geometry::distances::pointToPlaneDistance (points->pts[i], coeff);
         if (distance < 3 * sac_distance_threshold_)
         {
           indices[nr_p] = i;
@@ -235,10 +235,10 @@ class ConvexPatchHistogram
       cloud_annotated_.header = cloud_textured_.header;
       cloud_annotated_.pts.resize (cloud_.pts.size ());
 
-      ROS_INFO ("Received %d data points.", cloud_.pts.size ());
-      ROS_INFO ("Received %d data points.", cloud_textured_.pts.size ());
+      ROS_INFO ("Received %d data points.", (int)cloud_.pts.size ());
+      ROS_INFO ("Received %d data points.", (int)cloud_textured_.pts.size ());
 
-      int c_idx = cloud_geometry::getChannelIndex (&cloud_, "r");
+      int c_idx = cloud_geometry::getChannelIndex (cloud_, "r");
 
       timeval t1, t2;
       gettimeofday (&t1, NULL);
@@ -260,7 +260,7 @@ class ConvexPatchHistogram
 
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Found %d cluster regions in %g seconds.", clusters.size (), time_spent);
+      ROS_INFO ("Found %d cluster regions in %g seconds.", (int)clusters.size (), time_spent);
 
       int nr_p = 0;
       vector<double> histogram;
@@ -268,7 +268,7 @@ class ConvexPatchHistogram
       Polygon3D poly;
       for (unsigned int cc = 0; cc < clusters.size (); cc++)
       {
-        cloud_geometry::areas::convexHull2D (&cloud_, &clusters[cc], &coeff, poly);
+        cloud_geometry::areas::convexHull2D (cloud_, clusters[cc], coeff, poly);
         double area = cloud_geometry::areas::compute2DPolygonalArea (poly, coeff);
         ROS_INFO ("Cluster %d has an estimated area of %g.", cc, area);
 

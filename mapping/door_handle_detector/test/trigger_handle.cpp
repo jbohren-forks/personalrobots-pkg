@@ -1,13 +1,13 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -74,20 +74,20 @@ class TriggerHandleDetection
 
       req_doorsdetect.door = my_door_;
       ros::service::call ("doors_detector", req_doorsdetect, res_doorsdetect);
-      
+
       if (res_doorsdetect.doors.size () < 1)
         return;
-        
-      ROS_INFO ("%d candidate doors returned. Selecting the best one with:\nP1 = [%g, %g, %g]. P2 = [%g, %g, %g]. Width = %g. Height = %g. Weight = %g.", 
-                res_doorsdetect.doors.size (),
+
+      ROS_INFO ("%d candidate doors returned. Selecting the best one with:\nP1 = [%g, %g, %g]. P2 = [%g, %g, %g]. Width = %g. Height = %g. Weight = %g.",
+                (int)res_doorsdetect.doors.size (),
                 res_doorsdetect.doors[0].door_p1.x, res_doorsdetect.doors[0].door_p1.y, res_doorsdetect.doors[0].door_p1.z,
                 res_doorsdetect.doors[0].door_p2.x, res_doorsdetect.doors[0].door_p2.y, res_doorsdetect.doors[0].door_p2.z,
-                sqrt ( (res_doorsdetect.doors[0].door_p1.x - res_doorsdetect.doors[0].door_p2.x) * 
+                sqrt ( (res_doorsdetect.doors[0].door_p1.x - res_doorsdetect.doors[0].door_p2.x) *
                        (res_doorsdetect.doors[0].door_p1.x - res_doorsdetect.doors[0].door_p2.x) +
-                       (res_doorsdetect.doors[0].door_p1.y - res_doorsdetect.doors[0].door_p2.y) * 
+                       (res_doorsdetect.doors[0].door_p1.y - res_doorsdetect.doors[0].door_p2.y) *
                        (res_doorsdetect.doors[0].door_p1.y - res_doorsdetect.doors[0].door_p2.y) ),
                 res_doorsdetect.doors[0].height, res_doorsdetect.doors[0].weight);
-                                                                                             
+
       // A list of doors was detected. Start searching for a handle in the door with the largest weight.
       my_door_ = res_doorsdetect.doors[0];
       my_door_.header.frame_id = "base_footprint";

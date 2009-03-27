@@ -45,7 +45,7 @@ namespace sample_consensus
     * ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
   std::vector<int>
-    SACModelOrientedPlane::selectWithinDistance (std::vector<double> model_coefficients, double threshold)
+    SACModelOrientedPlane::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
   {
     std::vector<int> inliers;
 
@@ -55,7 +55,7 @@ namespace sample_consensus
     n.y = model_coefficients.at (1);
     n.z = model_coefficients.at (2);
 
-    double angle_error = cloud_geometry::angles::getAngle3D (&axis_, &n);
+    double angle_error = cloud_geometry::angles::getAngle3D (axis_, n);
 
     // Check whether the current plane model satisfies our angle threshold criterion with respect to the given axis
     if ( (angle_error > eps_angle_) && ( (M_PI - angle_error) > eps_angle_ ) )
@@ -81,7 +81,7 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a plane model that we need to compute distances to
     */
   std::vector<double>
-    SACModelOrientedPlane::getDistancesToModel (std::vector<double> model_coefficients)
+    SACModelOrientedPlane::getDistancesToModel (const std::vector<double> &model_coefficients)
   {
     std::vector<double> distances (indices_.size ());
 
@@ -91,7 +91,7 @@ namespace sample_consensus
     n.y = model_coefficients.at (1);
     n.z = model_coefficients.at (2);
 
-    double angle_error = cloud_geometry::angles::getAngle3D (&axis_, &n);
+    double angle_error = cloud_geometry::angles::getAngle3D (axis_, n);
 
     // Check whether the current plane model satisfies our angle threshold criterion with respect to the given axis
     if ( (angle_error > eps_angle_) && ( (M_PI - angle_error) > eps_angle_ ) )

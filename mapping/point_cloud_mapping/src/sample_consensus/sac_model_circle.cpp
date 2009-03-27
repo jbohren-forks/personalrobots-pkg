@@ -107,14 +107,14 @@ namespace sample_consensus
     * ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
   std::vector<int>
-    SACModelCircle2D::selectWithinDistance (std::vector<double> model_coefficients, double threshold)
+    SACModelCircle2D::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
   {
     std::vector<int> inliers;
 
     // Iterate through the 3d points and calculate the distances from them to the circle
     for (unsigned int i = 0; i < indices_.size (); i++)
     {
-      // Calculate the distance from the point to the circle as the difference between 
+      // Calculate the distance from the point to the circle as the difference between
       //dist(point,circle_origin) and circle_radius
       double distance_to_circle = fabs (sqrt (
                                               ( cloud_->pts.at (indices_[i]).x - model_coefficients.at (0) ) *
@@ -135,13 +135,13 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a 2D circle model that we need to compute distances to
     */
   std::vector<double>
-    SACModelCircle2D::getDistancesToModel (std::vector<double> model_coefficients)
+    SACModelCircle2D::getDistancesToModel (const std::vector<double> &model_coefficients)
   {
     std::vector<double> distances (indices_.size ());
 
     // Iterate through the 3d points and calculate the distances from them to the circle
     for (unsigned int i = 0; i < indices_.size (); i++)
-      // Calculate the distance from the point to the circle as the difference between 
+      // Calculate the distance from the point to the circle as the difference between
       //dist(point,circle_origin) and circle_radius
       distances[i] = fabs (sqrt (
                                  ( cloud_->pts.at (indices_[i]).x - model_coefficients.at (0) ) *
@@ -160,7 +160,7 @@ namespace sample_consensus
     * \todo implement this.
     */
   robot_msgs::PointCloud
-    SACModelCircle2D::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelCircle2D::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
     std::cerr << "[SACModelCircle2D::projecPoints] Not implemented yet." << std::endl;
     return (*cloud_);
@@ -173,7 +173,7 @@ namespace sample_consensus
     * \todo implement this.
     */
   void
-    SACModelCircle2D::projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelCircle2D::projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
     std::cerr << "[SACModelCircle2D::projecPointsInPlace] Not implemented yet." << std::endl;
   }
@@ -184,7 +184,7 @@ namespace sample_consensus
     * \param indices the point indices found as possible good candidates for creating a valid model
     */
   bool
-    SACModelCircle2D::computeModelCoefficients (std::vector<int> indices)
+    SACModelCircle2D::computeModelCoefficients (const std::vector<int> &indices)
   {
     model_coefficients_.resize (3);
 
@@ -221,7 +221,7 @@ namespace sample_consensus
     * \param inliers the data inliers found as supporting the model
     */
   std::vector<double>
-    SACModelCircle2D::refitModel (std::vector<int> inliers)
+    SACModelCircle2D::refitModel (const std::vector<int> &inliers)
   {
     if (inliers.size () == 0)
     {
@@ -242,7 +242,7 @@ namespace sample_consensus
     * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
     */
   bool
-    SACModelCircle2D::doSamplesVerifyModel (std::set<int> indices, double threshold)
+    SACModelCircle2D::doSamplesVerifyModel (const std::set<int> &indices, double threshold)
   {
     // Iterate through the 3d points and calculate the distances from them to the circle
     for (std::set<int>::iterator it = indices.begin (); it != indices.end (); ++it)

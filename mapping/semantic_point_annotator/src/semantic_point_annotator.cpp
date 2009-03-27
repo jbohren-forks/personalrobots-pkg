@@ -36,6 +36,7 @@
 \author Radu Bogdan Rusu
 
 @b semantic_point_annotator annotates 3D point clouds with semantic labels.
+(obsolete - should be removed soon.)
 
  **/
 

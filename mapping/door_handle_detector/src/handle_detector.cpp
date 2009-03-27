@@ -195,20 +195,20 @@ class HandleDetector
       coeff[0] = req.door.normal.x;
       coeff[1] = req.door.normal.y;
       coeff[2] = req.door.normal.z;
-      coeff[3] = - cloud_geometry::dot (&req.door.normal, &pt);
+      coeff[3] = - cloud_geometry::dot (req.door.normal, pt);
 
       // ---[ Optimization: select a subset of the points for faster processing
       // Select points close to the door plane (assumes door did not move since detection !)
       int nr_p = 0;
       vector<int> indices_in_bounds (cloud_tr_.pts.size ());
-      double dist_p1p2 = cloud_geometry::distances::pointToPointXYDistanceSqr (&req.door.door_p1, &req.door.door_p2);
+      double dist_p1p2 = cloud_geometry::distances::pointToPointXYDistanceSqr (req.door.door_p1, req.door.door_p2);
       for (int i = cloud_tr_.pts.size () - 1; i >= 0; --i)
       {
         if (cloud_tr_.pts[i].z > handle_min_height_ && cloud_tr_.pts[i].z < handle_max_height_ &&
-            cloud_geometry::distances::pointToPlaneDistance (&cloud_tr_.pts[i], coeff) < handle_distance_door_max_threshold_)
+            cloud_geometry::distances::pointToPlaneDistance (cloud_tr_.pts[i], coeff) < handle_distance_door_max_threshold_)
         {
-          double dist_p1 = cloud_geometry::distances::pointToPointXYDistanceSqr (&cloud_tr_.pts[i], &req.door.door_p1);
-          double dist_p2 = cloud_geometry::distances::pointToPointXYDistanceSqr (&cloud_tr_.pts[i], &req.door.door_p2);
+          double dist_p1 = cloud_geometry::distances::pointToPointXYDistanceSqr (cloud_tr_.pts[i], req.door.door_p1);
+          double dist_p2 = cloud_geometry::distances::pointToPointXYDistanceSqr (cloud_tr_.pts[i], req.door.door_p2);
           if (dist_p1 < dist_p1p2 && dist_p1 > distance_from_door_margin_ && dist_p2 < dist_p1p2 && dist_p2 > distance_from_door_margin_)
           {
             indices_in_bounds[nr_p] = i;
@@ -228,33 +228,33 @@ class HandleDetector
       }
       // Compute the convex hull of the door
       robot_msgs::Polygon3D polygon, polygon_tr;
-      cloud_geometry::areas::convexHull2D (&cloud_tr_, &inliers, &coeff, polygon);
+      cloud_geometry::areas::convexHull2D (cloud_tr_, inliers, coeff, polygon);
 
       // Create a polygonal representation on the X-Y plane (makes all isPointIn2DPolygon computations easier)
       Eigen::Matrix4d transformation;
-      cloud_geometry::transforms::getPlaneToPlaneTransformation (coeff, &z_axis_, 0, 0, 0, transformation);
-      cloud_geometry::transforms::transformPoints (&polygon.points, polygon_tr.points, transformation);
+      cloud_geometry::transforms::getPlaneToPlaneTransformation (coeff, z_axis_, 0, 0, 0, transformation);
+      cloud_geometry::transforms::transformPoints (polygon.points, polygon_tr.points, transformation);
 
       // Get the outliers (we'll need them later)
-      getDoorOutliers (&indices_in_bounds, &inliers, &coeff, &polygon, &polygon_tr, transformation, outliers);
+      getDoorOutliers (indices_in_bounds, inliers, coeff, polygon, polygon_tr, transformation, outliers);
 
       // Get the handle candidates including the door itself
       vector<int> handle_indices;
-      getHandleCandidates (&indices_in_bounds, &coeff, &polygon, &polygon_tr, transformation, handle_indices);
+      getHandleCandidates (indices_in_bounds, coeff, polygon, polygon_tr, transformation, handle_indices);
 
       // Create Kd-Tree and estimate the point normals in the original point cloud for the points left
-      estimatePointNormals (&cloud_tr_, &handle_indices, k_search_, &viewpoint_cloud_);
+      estimatePointNormals (cloud_tr_, handle_indices, k_search_, &viewpoint_cloud_);
 
       // Find the handle by performing a composite segmentation in distance and intensity space for all points left
       // Select points outside the (mean +/- \alpha_ * stddev) distribution
-      int curvature_idx = cloud_geometry::getChannelIndex (&cloud_tr_, "curvatures");
-      int intensity_idx = cloud_geometry::getChannelIndex (&cloud_tr_, "intensities");
+      int curvature_idx = cloud_geometry::getChannelIndex (cloud_tr_, "curvatures");
+      int intensity_idx = cloud_geometry::getChannelIndex (cloud_tr_, "intensities");
       if (intensity_idx == -1 || curvature_idx == -1)
       {
         ROS_ERROR ("Intensity (and/or curvature) channels not present in the point cloud! Exiting...");
         return (false);
       }
-      selectBestDualDistributionStatistics (&cloud_tr_, &handle_indices, curvature_idx, intensity_idx, tmp_indices);
+      selectBestDualDistributionStatistics (cloud_tr_, handle_indices, curvature_idx, intensity_idx, tmp_indices);
       // Check if any points were returned
       if (tmp_indices.size () == 0)
       {
@@ -262,19 +262,19 @@ class HandleDetector
         return (false);
       }
       handle_indices = tmp_indices;
-      ROS_DEBUG ("Number of candidate points for clustering in the dual intensity-curvature space: %d.", handle_indices.size ());
+      ROS_DEBUG ("Number of candidate points for clustering in the dual intensity-curvature space: %d.", (int)handle_indices.size ());
 
       // Refine the remaining handle indices using the door outliers
-      ROS_DEBUG (" -- handle indices before refinement: %d.", handle_indices.size ());
-      robot_msgs::Point32 door_axis = cloud_geometry::cross (&coeff, &z_axis_);
-      refineHandleCandidatesWithDoorOutliers (handle_indices, &outliers, &polygon, &coeff, &door_axis);
-      ROS_DEBUG (" -- handle indices after refinement: %d.", handle_indices.size ());
+      ROS_DEBUG (" -- handle indices before refinement: %d.", (int)handle_indices.size ());
+      robot_msgs::Point32 door_axis = cloud_geometry::cross (coeff, z_axis_);
+      refineHandleCandidatesWithDoorOutliers (handle_indices, outliers, polygon, coeff, door_axis);
+      ROS_DEBUG (" -- handle indices after refinement: %d.", (int)handle_indices.size ());
 
       duration = ros::Time::now () - ts;
 
       // Assemble the reply
       robot_msgs::Point32 min_h, max_h, handle_center;
-      cloud_geometry::statistics::getLargestDiagonalPoints (&cloud_tr_, &handle_indices, min_h, max_h);
+      cloud_geometry::statistics::getLargestDiagonalPoints (cloud_tr_, handle_indices, min_h, max_h);
       handle_center.x = (min_h.x + max_h.x) / 2.0;
       handle_center.y = (min_h.y + max_h.y) / 2.0;
       handle_center.z = (min_h.z + max_h.z) / 2.0;
@@ -364,13 +364,13 @@ class HandleDetector
       *       distance_from_door_margin_, euclidean_cluster_distance_tolerance_, euclidean_cluster_min_pts_
       */
     void
-      refineHandleCandidatesWithDoorOutliers (vector<int> &handle_indices, vector<int> *outliers, Polygon3D *polygon,
-                                              vector<double> *coeff, Point32 *door_axis)
+      refineHandleCandidatesWithDoorOutliers (vector<int> &handle_indices, vector<int> &outliers, const Polygon3D &polygon,
+                                              const vector<double> &coeff, const Point32 &door_axis)
     {
       // Split the remaining candidates into into clusters and remove solitary points (< euclidean_cluster_min_pts_)
       vector<vector<int> > clusters;
-      findClusters (&cloud_tr_, &handle_indices, euclidean_cluster_distance_tolerance_, clusters, -1, -1, -1, 0, euclidean_cluster_min_pts_);
-      ROS_DEBUG ("Number of clusters for the handle candidate points: %d.", clusters.size ());
+      findClusters (cloud_tr_, handle_indices, euclidean_cluster_distance_tolerance_, clusters, -1, -1, -1, 0, euclidean_cluster_min_pts_);
+      ROS_DEBUG ("Number of clusters for the handle candidate points: %d.", (int)clusters.size ());
 
       // Copy the clusters back to the indices
       handle_indices.resize (0);
@@ -390,17 +390,17 @@ class HandleDetector
       {
         // One method to prune point clusters would be to fit vertical lines (Z parallel) and remove their inliers
 #if 0
-        //fitSACOrientedLine (&cloud_tr_, clusters[i], sac_distance_threshold_, &z_axis_, euclidean_cluster_angle_tolerance_, line_inliers[i]);
+        //fitSACOrientedLine (cloud_tr_, clusters[i], sac_distance_threshold_, &z_axis_, euclidean_cluster_angle_tolerance_, line_inliers[i]);
         //set_difference (clusters[i].begin (), clusters[i].end (), line_inliers[i].begin (), line_inliers[i].end (),
         //                inserter (remaining_clusters[i], remaining_clusters[i].begin ()));
 #endif
         // Grow the current cluster using the door outliers
-        growCurrentCluster (&cloud_tr_, outliers, &clusters[i], inliers[i], 2 * euclidean_cluster_distance_tolerance_);
+        growCurrentCluster (cloud_tr_, outliers, clusters[i], inliers[i], 2 * euclidean_cluster_distance_tolerance_);
 
         PointCloud tmp_cloud;
-        cloud_geometry::projections::pointsToPlane  (&cloud_tr_, &inliers[i], tmp_cloud, coeff);
+        cloud_geometry::projections::pointsToPlane  (cloud_tr_, inliers[i], tmp_cloud, coeff);
         // Fit the best horizontal line through each cluster
-        fitSACOrientedLine (&tmp_cloud, sac_distance_threshold_ * 2, door_axis, euclidean_cluster_angle_tolerance_, line_inliers[i]);
+        fitSACOrientedLine (tmp_cloud, sac_distance_threshold_ * 2, door_axis, euclidean_cluster_angle_tolerance_, line_inliers[i]);
         for (unsigned int j = 0; j < line_inliers[i].size (); j++)
           line_inliers[i][j] = inliers[i][line_inliers[i][j]];
       }
@@ -414,13 +414,13 @@ class HandleDetector
           continue;
 
         robot_msgs::Point32 min_h, max_h;
-        cloud_geometry::statistics::getLargestXYPoints (&cloud_tr_, &line_inliers[i], min_h, max_h);
+        cloud_geometry::statistics::getLargestXYPoints (cloud_tr_, line_inliers[i], min_h, max_h);
 
         double length = sqrt ( (min_h.x - max_h.x) * (min_h.x - max_h.x) + (min_h.y - max_h.y) * (min_h.y - max_h.y) );
         double fit = ((double)(line_inliers[i].size())) / ((double)(inliers[i].size()));
         double score = fit - 3.0 * fabs (length - 0.15);
 
-        ROS_INFO ("  Handle line cluster %d with %d inliers, has fit %g and length %g  --> %g.", i, line_inliers[i].size (), fit, length, score);
+        ROS_INFO ("  Handle line cluster %d with %d inliers, has fit %g and length %g  --> %g.", i, (int)line_inliers[i].size (), fit, length, score);
 
         if (score > best_score)
         {
@@ -480,11 +480,12 @@ class HandleDetector
       *       cloud_tr_, viewpoint_cloud_
       */
     void
-      getHandleCandidates (vector<int> *indices, vector<double> *coeff, Polygon3D *polygon,  Polygon3D *polygon_tr, Eigen::Matrix4d transformation,
+      getHandleCandidates (const vector<int> &indices, const vector<double> &coeff,
+                           const Polygon3D &polygon, const Polygon3D &polygon_tr, Eigen::Matrix4d transformation,
                            vector<int> &handle_indices)
     {
       // Check the points in bounds for extra geometric constraints
-      handle_indices.resize (indices->size ());
+      handle_indices.resize (indices.size ());
 
       // Install the basis for a viewpoint -> point line
       vector<double> viewpoint_pt_line (6);
@@ -496,25 +497,25 @@ class HandleDetector
       Point32 tmp_p;              // Used as a temporary point
       int nr_p = 0;
       Point32 pt;
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
         // Transform the point onto X-Y for faster checking inside the polygonal bounds
         double distance_to_plane;
-        cloud_geometry::projections::pointToPlane (&cloud_tr_.pts.at (indices->at (i)), pt, coeff, distance_to_plane);
+        cloud_geometry::projections::pointToPlane (cloud_tr_.pts.at (indices.at (i)), pt, coeff, distance_to_plane);
         if (distance_to_plane < 0)
           continue;
-        cloud_geometry::transforms::transformPoint (&pt, tmp_p, transformation);
+        cloud_geometry::transforms::transformPoint (pt, tmp_p, transformation);
         if (!cloud_geometry::areas::isPointIn2DPolygon (tmp_p, polygon_tr))        // Is the point's projection inside the door ?
           continue;
 
         // Close to the edges (3D)
-        if (cloud_geometry::distances::pointToPolygonDistanceSqr (&tmp_p, polygon_tr) < distance_from_door_margin_)
+        if (cloud_geometry::distances::pointToPolygonDistanceSqr (tmp_p, polygon_tr) < distance_from_door_margin_)
           continue;
 
         // Check whether the line viewpoint->point intersects the polygon
-        viewpoint_pt_line[3] = cloud_tr_.pts.at (indices->at (i)).x - viewpoint_cloud_.point.x;
-        viewpoint_pt_line[4] = cloud_tr_.pts.at (indices->at (i)).y - viewpoint_cloud_.point.y;
-        viewpoint_pt_line[5] = cloud_tr_.pts.at (indices->at (i)).z - viewpoint_cloud_.point.z;
+        viewpoint_pt_line[3] = cloud_tr_.pts.at (indices.at (i)).x - viewpoint_cloud_.point.x;
+        viewpoint_pt_line[4] = cloud_tr_.pts.at (indices.at (i)).y - viewpoint_cloud_.point.y;
+        viewpoint_pt_line[5] = cloud_tr_.pts.at (indices.at (i)).z - viewpoint_cloud_.point.z;
         // Normalize direction
         double n_norm = sqrt (viewpoint_pt_line[3] * viewpoint_pt_line[3] +
                               viewpoint_pt_line[4] * viewpoint_pt_line[4] +
@@ -525,19 +526,19 @@ class HandleDetector
 
         // Check for the actual intersection
         Point32 viewpoint_door_intersection;
-        if (!cloud_geometry::intersections::lineWithPlaneIntersection (coeff, &viewpoint_pt_line, viewpoint_door_intersection))
+        if (!cloud_geometry::intersections::lineWithPlaneIntersection (coeff, viewpoint_pt_line, viewpoint_door_intersection))
         {
           ROS_WARN ("Line and plane are parallel (no intersections found between the line and the plane).");
           continue;
         }
         // Transform the point onto X-Y for faster checking inside the polygonal bounds
-        cloud_geometry::projections::pointToPlane (&viewpoint_door_intersection, pt, coeff);
-        cloud_geometry::transforms::transformPoint (&pt, tmp_p, transformation);
+        cloud_geometry::projections::pointToPlane (viewpoint_door_intersection, pt, coeff);
+        cloud_geometry::transforms::transformPoint (pt, tmp_p, transformation);
         if (!cloud_geometry::areas::isPointIn2DPolygon (tmp_p, polygon_tr))    // Is the viewpoint<->point intersection inside the door ?
           continue;
 
         // Save the point indices which satisfied all the geometric criteria so far
-        handle_indices[nr_p++] = indices->at (i);
+        handle_indices[nr_p++] = indices.at (i);
       } // end loop over points
       handle_indices.resize (nr_p);    // Resize to the actual value
     }
@@ -560,13 +561,13 @@ class HandleDetector
       *       distance_from_door_margin_, euclidean_cluster_distance_tolerance_, euclidean_cluster_min_pts_
       */
     void
-      getDoorOutliers (vector<int> *indices, vector<int> *inliers,
-                       vector<double> *coeff, Polygon3D *polygon, Polygon3D *polygon_tr, Eigen::Matrix4d transformation,
+      getDoorOutliers (const vector<int> &indices, const vector<int> &inliers,
+                       const vector<double> &coeff, const Polygon3D &polygon, const Polygon3D &polygon_tr, Eigen::Matrix4d transformation,
                        vector<int> &outliers)
     {
       vector<int> tmp_indices;    // Used as a temporary indices array
       Point32 tmp_p;              // Used as a temporary point
-      set_difference (indices->begin (), indices->end (), inliers->begin (), inliers->end (),
+      set_difference (indices.begin (), indices.end (), inliers.begin (), inliers.end (),
                       inserter (outliers, outliers.begin ()));
 
 #if 0
@@ -583,15 +584,15 @@ class HandleDetector
       {
         // Compute a projection on the plane
         double distance_to_plane;
-        cloud_geometry::projections::pointToPlane (&cloud_tr_.pts.at (outliers[i]), pt, coeff, distance_to_plane);
+        cloud_geometry::projections::pointToPlane (cloud_tr_.pts.at (outliers[i]), pt, coeff, distance_to_plane);
         if (distance_to_plane < 0)
           continue;
-        cloud_geometry::transforms::transformPoint (&pt, tmp_p, transformation);
+        cloud_geometry::transforms::transformPoint (pt, tmp_p, transformation);
         if (!cloud_geometry::areas::isPointIn2DPolygon (tmp_p, polygon_tr))        // Is the point's projection inside the door ?
           continue;
 
         // Remove outliers around the door margin (close to the edges)
-        if (cloud_geometry::distances::pointToPolygonDistanceSqr (&tmp_p, polygon_tr) < distance_from_door_margin_)
+        if (cloud_geometry::distances::pointToPolygonDistanceSqr (tmp_p, polygon_tr) < distance_from_door_margin_)
           continue;
 
 #if 0
@@ -608,7 +609,7 @@ class HandleDetector
 //        viewpoint_pt_line[5] /= n_norm;
 //
 //        // Compute the angle between the normal of the plane and the ray we cast
-//        double angle = acos (viewpoint_pt_line[3] * coeff->at (0) + viewpoint_pt_line[4] * coeff->at (1) + viewpoint_pt_line[5] * coeff->at (2));
+//        double angle = acos (viewpoint_pt_line[3] * coeff.at (0) + viewpoint_pt_line[4] * coeff.at (1) + viewpoint_pt_line[5] * coeff.at (2));
 //        if (fabs (M_PI / 2.0 - angle) < euclidean_cluster_angle_tolerance_)
 //          continue;                                                                   // Don't check if ~ perpendicular
 //
@@ -637,7 +638,7 @@ class HandleDetector
       vector<vector<int> > clusters;
       if (outliers.size () > 0)
       {
-        findClusters (&cloud_tr_, &outliers, euclidean_cluster_distance_tolerance_, clusters, -1, -1, -1, 0, euclidean_cluster_min_pts_);
+        findClusters (cloud_tr_, outliers, euclidean_cluster_distance_tolerance_, clusters, -1, -1, -1, 0, euclidean_cluster_min_pts_);
         outliers.resize (0);
         for (unsigned int i = 0; i < clusters.size (); i++)
         {
@@ -658,8 +659,8 @@ class HandleDetector
       cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
     {
       cloud_orig_ = *cloud;
-      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", cloud_orig_.pts.size (), cloud_orig_.header.frame_id.c_str (),
-                cloud_orig_.chan.size (), cloud_geometry::getAvailableChannels (&cloud_orig_).c_str ());
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_orig_.pts.size (), cloud_orig_.header.frame_id.c_str (),
+                (int)cloud_orig_.chan.size (), cloud_geometry::getAvailableChannels (cloud_orig_).c_str ());
       num_clouds_received_++;
     }
 };

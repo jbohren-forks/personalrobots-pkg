@@ -49,7 +49,7 @@ namespace sample_consensus
    * \param point The point
    */
   double
-    SACModelParallelLines::pointToLineSquareDistance (robot_msgs::Point32 line_point1, robot_msgs::Point32 line_point2, robot_msgs::Point32 point) 
+    SACModelParallelLines::pointToLineSquareDistance (const robot_msgs::Point32 &line_point1, const robot_msgs::Point32 &line_point2, const robot_msgs::Point32 &point)
   {
     robot_msgs::Point32 v12, v1p;
     v12.x = line_point2.x - line_point1.x;
@@ -58,7 +58,7 @@ namespace sample_consensus
     v1p.x = point.x - line_point1.x;
     v1p.y = point.y - line_point1.y;
     v1p.z = point.z - line_point1.z;
-    robot_msgs::Point32 c = cloud_geometry::cross (&v12, &v1p);
+    robot_msgs::Point32 c = cloud_geometry::cross (v12, v1p);
     double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (v12.x * v12.x + v12.y * v12.y + v12.z * v12.z);
     return (sqr_distance);
   }
@@ -73,7 +73,7 @@ namespace sample_consensus
    * \param closest_dist The distance from each point to its closest line.
    */
   void
-    SACModelParallelLines::closestLine (std::vector<int> indices, std::vector<double> model_coefficients, 
+    SACModelParallelLines::closestLine (const std::vector<int> &indices, const std::vector<double> &model_coefficients,
                                         std::vector<int> *closest_line, std::vector<double> *closest_dist)
   {
     int end = indices.size ();
@@ -93,9 +93,9 @@ namespace sample_consensus
       d2.y = cloud_->pts[indices[i]].y - model_coefficients[7];
       d2.z = cloud_->pts[indices[i]].z - model_coefficients[8];
 
-      c1 = cloud_geometry::cross (&l1, &d1);
+      c1 = cloud_geometry::cross (l1, d1);
       sqr_distance1 = (c1.x * c1.x + c1.y * c1.y + c1.z * c1.z);
-      c2 = cloud_geometry::cross (&l1, &d2);
+      c2 = cloud_geometry::cross (l1, d2);
       sqr_distance2 = (c2.x * c2.x + c2.y * c2.y + c2.z * c2.z);
 
       if (sqr_distance1 < sqr_distance2)
@@ -112,7 +112,7 @@ namespace sample_consensus
   }
 
   void
-    SACModelParallelLines::closestLine (std::set<int> indices, std::vector<double> model_coefficients, 
+    SACModelParallelLines::closestLine (const std::set<int> &indices, const std::vector<double> &model_coefficients,
                                         std::vector<int> *closest_line, std::vector<double> *closest_dist)
   {
     std::set<int>::iterator end = indices.end ();
@@ -133,9 +133,9 @@ namespace sample_consensus
       d2.y = cloud_->pts[*it].y - model_coefficients[7];
       d2.z = cloud_->pts[*it].z - model_coefficients[8];
 
-      c1 = cloud_geometry::cross (&l1, &d1);
+      c1 = cloud_geometry::cross (l1, d1);
       sqr_distance1 = (c1.x * c1.x + c1.y * c1.y + c1.z * c1.z);
-      c2 = cloud_geometry::cross (&l1, &d2);
+      c2 = cloud_geometry::cross (l1, d2);
       sqr_distance2 = (c2.x * c2.x + c2.y * c2.y + c2.z * c2.z);
 
       if (sqr_distance1 < sqr_distance2)
@@ -173,7 +173,7 @@ namespace sample_consensus
     int total_points = 1;
 
     double sqr_min_line_sep_m = min_line_sep_m_ * min_line_sep_m_;
-    double sqr_max_line_sep_m = max_line_sep_m_ * max_line_sep_m_;	
+    double sqr_max_line_sep_m = max_line_sep_m_ * max_line_sep_m_;
     double sqr_distance;
     int r0 = 0, r1 = 1, r2 = 2;
 
@@ -204,14 +204,14 @@ namespace sample_consensus
         {
           r1 = (r0+1)%3;
           r2 = (r1+1)%3;
-          sqr_distance = pointToLineSquareDistance (cloud_->pts[random_idx[r0]], cloud_->pts[random_idx[r1]], cloud_->pts[random_idx[r2]]); 
+          sqr_distance = pointToLineSquareDistance (cloud_->pts[random_idx[r0]], cloud_->pts[random_idx[r1]], cloud_->pts[random_idx[r2]]);
 
           if (sqr_distance == 0.0 || sqr_distance < sqr_min_line_sep_m || sqr_distance > sqr_max_line_sep_m)
             continue;
 
           break;
         }
-        if (r0 == 3) 
+        if (r0 == 3)
           continue;
       }
 
@@ -231,12 +231,12 @@ namespace sample_consensus
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Select all the points which respect the given model coefficients as inliers.
     * \param model_coefficients The coefficients of the parallel lines model.
-    * \param threshold The maximum distance from an inlier to its closest line. 
+    * \param threshold The maximum distance from an inlier to its closest line.
     * \note: To get the refined inliers of a model, use:
     * refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
   std::vector<int>
-    SACModelParallelLines::selectWithinDistance (std::vector<double> model_coefficients, double threshold)
+    SACModelParallelLines::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
   {
 
     std::vector<int> inliers;
@@ -260,7 +260,7 @@ namespace sample_consensus
     * \param model_coefficients The coefficients of a line model that we need to compute distances to. The order is (point on line 1, another point on line 1, point on line 2).
     */
   std::vector<double>
-    SACModelParallelLines::getDistancesToModel (std::vector<double> model_coefficients)
+    SACModelParallelLines::getDistancesToModel (const std::vector<double> &model_coefficients)
   {
     std::vector<double> distances (indices_.size ());
 
@@ -278,7 +278,7 @@ namespace sample_consensus
     * \param model_coefficients The coefficients of the parallel lines model.
     */
   robot_msgs::PointCloud
-    SACModelParallelLines::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelParallelLines::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
     robot_msgs::PointCloud projected_cloud;
     // Allocate enough space
@@ -341,7 +341,7 @@ namespace sample_consensus
     * \param model_coefficients The coefficients of the parallel lines model.
     */
   void
-    SACModelParallelLines::projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelParallelLines::projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
 
     // Compute the closest distances from the pts to the lines.
@@ -389,7 +389,7 @@ namespace sample_consensus
     * \param indices The point indices found as possible good candidates for creating a valid model.
     */
   bool
-    SACModelParallelLines::computeModelCoefficients (std::vector<int> indices)
+    SACModelParallelLines::computeModelCoefficients (const std::vector<int> &indices)
   {
     model_coefficients_.resize (9);
     model_coefficients_[0] = cloud_->pts[indices[0]].x;
@@ -412,7 +412,7 @@ namespace sample_consensus
     * \param inliers The data inliers found as supporting the model.
     */
   std::vector<double>
-    SACModelParallelLines::refitModel (std::vector<int> inliers)
+    SACModelParallelLines::refitModel (const std::vector<int> &inliers)
   {
     if (inliers.size () == 0)
       return (model_coefficients_);
@@ -432,8 +432,8 @@ namespace sample_consensus
     {
       (closest_line[i] == 0) ? inliers1.push_back (inliers[i]) : inliers2.push_back (inliers[i]);
     }
-    cloud_geometry::nearest::computeCentroid (cloud_, &inliers1, centroid1);
-    cloud_geometry::nearest::computeCentroid (cloud_, &inliers2, centroid2);
+    cloud_geometry::nearest::computeCentroid (*cloud_, inliers1, centroid1);
+    cloud_geometry::nearest::computeCentroid (*cloud_, inliers2, centroid2);
 
     // Remove the centroids from the two sets of inlier samples to center everything at (0,0)
     robot_msgs::PointCloud zero_cloud;
@@ -461,10 +461,10 @@ namespace sample_consensus
     {
       zero_inliers[i] = i;
     }
-    cloud_geometry::nearest::computeCovarianceMatrix (&zero_cloud, &zero_inliers, covariance_matrix, centroid);
+    cloud_geometry::nearest::computeCovarianceMatrix (zero_cloud, zero_inliers, covariance_matrix, centroid);
 
-    // Be careful about the new centroids! I'm using centroid 1 and 2 b/c there is no guarantee that there are the same number 
-    // of points on both lines. Originally, for the 1-line case, this was set to the refit centroid from the covariance matrix. 
+    // Be careful about the new centroids! I'm using centroid 1 and 2 b/c there is no guarantee that there are the same number
+    // of points on both lines. Originally, for the 1-line case, this was set to the refit centroid from the covariance matrix.
 
     refit_coefficients[0] = centroid1.x;
     refit_coefficients[1] = centroid1.y;
@@ -492,13 +492,13 @@ namespace sample_consensus
     * \param threshold A maximum admissible distance threshold for determining the inliers from the outliers.
     */
   bool
-    SACModelParallelLines::doSamplesVerifyModel (std::set<int> indices, double threshold)
+    SACModelParallelLines::doSamplesVerifyModel (const std::set<int> &indices, double threshold)
   {
     std::vector<int> closest_line (indices.size ());
     std::vector<double> closest_dist (indices.size ());
     closestLine (indices, model_coefficients_, &closest_line, &closest_dist);
 
-    for (unsigned int i = 0; i < closest_dist.size (); ++i) 
+    for (unsigned int i = 0; i < closest_dist.size (); ++i)
     {
       if (closest_dist[i] > threshold)
         return (false);

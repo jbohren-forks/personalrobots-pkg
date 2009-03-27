@@ -45,26 +45,26 @@ int
     fprintf (stderr, "Error. No command line argument(s) specified. Syntax is: %s <input.pcd>\n", argv[0]);
     return (-1);
   }
-  
+
   robot_msgs::PointCloud points;
   int res = cloud_io::loadPCDFile (argv[1], points);
-  
+
   if (res != 0)
   {
     fprintf (stderr, "Error loading %s.\n", argv[1]);
     return (-1);
   }
-  
+
   fprintf (stdout, "robot_msgs::PointCloud points;\n");
-  fprintf (stdout, "points.pts.resize (%i);\n", points.pts.size ());
+  fprintf (stdout, "points.pts.resize (%i);\n", (int)points.pts.size ());
 
   if (points.chan.size () > 0)
   {
-    fprintf (stdout, "points.chan.resize (%i);\n", points.chan.size ());
+    fprintf (stdout, "points.chan.resize (%i);\n", (int)points.chan.size ());
     for (unsigned int d = 0; d < points.chan.size (); d++)
     {
       fprintf (stdout, "points.chan[%i].name = %s;\n", d, points.chan[d].name.c_str ());
-      fprintf (stdout, "points.chan[%i].vals.resize (%i);", d, points.chan.size ());
+      fprintf (stdout, "points.chan[%i].vals.resize (%i);", d, (int)points.chan.size ());
     }
   }
 

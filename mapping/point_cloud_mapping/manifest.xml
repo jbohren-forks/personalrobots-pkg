@@ -35,6 +35,7 @@
   <depend package="roscpp" />
   <depend package="robot_msgs" />
   <depend package="eigen" />
+  <depend package="cminpack" />
   <depend package="tf" />
   <depend package="ANN" />
   <depend package="FLANN" />

@@ -190,10 +190,10 @@ class TableObjectDetector
 
       // Subscribe to a point cloud topic
       need_cloud_data_ = true;
-      tf::MessageNotifier<robot_msgs::PointCloud> 
-              _pointcloudnotifier(&tf_, ros::Node::instance(),  
-                                  boost::bind(&TableObjectDetector::cloud_cb, 
-                                              this, _1), 
+      tf::MessageNotifier<robot_msgs::PointCloud>
+              _pointcloudnotifier(&tf_, ros::Node::instance(),
+                                  boost::bind(&TableObjectDetector::cloud_cb,
+                                              this, _1),
                                   input_cloud_topic_, global_frame_, 50);
       //node_.subscribe (input_cloud_topic_, cloud_in_, &TableObjectDetector::cloud_cb, this, 1);
 
@@ -225,7 +225,7 @@ class TableObjectDetector
       vector<cloud_geometry::Leaf> leaves;
       try
       {
-        cloud_geometry::downsamplePointCloud (&cloud_in_, &indices_in_bounds, cloud_down_, leaf_width_, leaves, -1);
+        cloud_geometry::downsamplePointCloud (cloud_in_, indices_in_bounds, cloud_down_, leaf_width_, leaves, -1);
       }
       catch (std::bad_alloc)
       {
@@ -233,7 +233,7 @@ class TableObjectDetector
         return (false);
       }
 
-      ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, cloud_down_.pts.size ());
+      ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, (int)cloud_down_.pts.size ());
 
       // Reserve space for 4 channels: nx, ny, nz, curvature
       cloud_down_.chan.resize (4);     // Allocate 7 more channels
@@ -249,7 +249,7 @@ class TableObjectDetector
 
       // ---[ Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_z;
-      cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_down_, 0, 1, 2, eps_angle_, &z_axis_, indices_z);
+      cloud_geometry::getPointIndicesAxisParallelNormals (cloud_down_, 0, 1, 2, eps_angle_, z_axis_, indices_z);
 
 /*      indices_z.resize (cloud_down_.pts.size ());
       for (unsigned int i = 0; i < cloud_down_.pts.size (); i++)
@@ -268,11 +268,11 @@ class TableObjectDetector
         publish ("cloud_annotated", cloud_annotated_);
 
         return (true);*/
-      ROS_DEBUG ("Number of points with normals parallel to Z: %d.", indices_z.size ());
+      ROS_DEBUG ("Number of points with normals parallel to Z: %d.", (int)indices_z.size ());
 
       vector<vector<int> > clusters;
       // Split the Z-parallel points into clusters
-      findClusters (&cloud_down_, &indices_z, clusters_growing_tolerance_, clusters, 0, 1, 2, clusters_min_pts_);
+      findClusters (cloud_down_, indices_z, clusters_growing_tolerance_, clusters, 0, 1, 2, clusters_min_pts_);
 
       sort (clusters.begin (), clusters.end (), compareRegions);
 
@@ -298,7 +298,7 @@ class TableObjectDetector
         ROS_WARN ("No table found");
         return (false);
       }
-      ROS_DEBUG ("Number of clusters found: %d, largest cluster: %d.", clusters.size (), clusters[c_good].size ());
+      ROS_DEBUG ("Number of clusters found: %d, largest cluster: %d.", (int)clusters.size (), (int)clusters[c_good].size ());
 
       // Fill in the header
       resp.table.header.frame_id = global_frame_;
@@ -306,7 +306,7 @@ class TableObjectDetector
 
       // Get the table bounds
       robot_msgs::Point32 minP, maxP;
-      cloud_geometry::statistics::getMinMax (&cloud_down_, &inliers, minP, maxP);
+      cloud_geometry::statistics::getMinMax (cloud_down_, inliers, minP, maxP);
       // Transform to the global frame
       PointStamped minPstamped_local, maxPstamped_local;
       minPstamped_local.point.x = minP.x;
@@ -342,11 +342,11 @@ class TableObjectDetector
       pmap_.header.stamp = cloud_down_.header.stamp;
       pmap_.header.frame_id = global_frame_;
       pmap_.polygons.resize (1);
-      cloud_geometry::areas::convexHull2D (&cloud_down_, &inliers, &coeff, pmap_.polygons[0]);
+      cloud_geometry::areas::convexHull2D (cloud_down_, inliers, coeff, pmap_.polygons[0]);
 
       // Find the object clusters supported by the table
       inliers.clear ();
-      findObjectClusters (&cloud_in_, &coeff, &pmap_.polygons[0], &minP, &maxP, inliers, resp.table);
+      findObjectClusters (cloud_in_, coeff, pmap_.polygons[0], minP, maxP, inliers, resp.table);
 
       // Transform into the global frame
       try
@@ -394,37 +394,38 @@ class TableObjectDetector
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_INFO ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
-                resp.table.table_min.x, resp.table.table_min.y, resp.table.table_max.x, resp.table.table_max.y, resp.table.objects.size (), time_spent);
+                resp.table.table_min.x, resp.table.table_min.y, resp.table.table_max.x, resp.table.table_max.y, (int)resp.table.objects.size (), time_spent);
       return (true);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      findObjectClusters (PointCloud *points, vector<double> *coeff, Polygon3D *poly, Point32 *minP, Point32 *maxP,
+      findObjectClusters (PointCloud &points, const vector<double> &coeff, const Polygon3D &poly,
+                          const Point32 &minP, const Point32 &maxP,
                           vector<int> &object_indices, Table &table)
     {
       int nr_p = 0;
       Point32 pt;
-      object_indices.resize (points->pts.size ());
-      for (unsigned int i = 0; i < points->pts.size (); i++)
+      object_indices.resize (points.pts.size ());
+      for (unsigned int i = 0; i < points.pts.size (); i++)
       {
         // Select all the points in the given bounds
-        if ( points->pts.at (i).x > minP->x &&
-             points->pts.at (i).x < maxP->x &&
-             points->pts.at (i).y > minP->y &&
-             points->pts.at (i).y < maxP->y &&
-             points->pts.at (i).z > (maxP->z + delta_z_)
+        if ( points.pts.at (i).x > minP.x &&
+             points.pts.at (i).x < maxP.x &&
+             points.pts.at (i).y > minP.y &&
+             points.pts.at (i).y < maxP.y &&
+             points.pts.at (i).z > (maxP.z + delta_z_)
            )
         {
           // Calculate the distance from the point to the plane
-          double distance_to_plane = coeff->at (0) * points->pts.at (i).x +
-                                     coeff->at (1) * points->pts.at (i).y +
-                                     coeff->at (2) * points->pts.at (i).z +
-                                     coeff->at (3) * 1;
+          double distance_to_plane = coeff.at (0) * points.pts.at (i).x +
+                                     coeff.at (1) * points.pts.at (i).y +
+                                     coeff.at (2) * points.pts.at (i).z +
+                                     coeff.at (3) * 1;
           // Calculate the projection of the point on the plane
-          pt.x = points->pts.at (i).x - distance_to_plane * coeff->at (0);
-          pt.y = points->pts.at (i).y - distance_to_plane * coeff->at (1);
-          pt.z = points->pts.at (i).z - distance_to_plane * coeff->at (2);
+          pt.x = points.pts.at (i).x - distance_to_plane * coeff.at (0);
+          pt.y = points.pts.at (i).y - distance_to_plane * coeff.at (1);
+          pt.z = points.pts.at (i).z - distance_to_plane * coeff.at (2);
 
           if (cloud_geometry::areas::isPointIn2DPolygon (pt, poly))
           {
@@ -438,7 +439,7 @@ class TableObjectDetector
       // Find the clusters
       nr_p = 0;
       vector<vector<int> > object_clusters;
-      findClusters (points, &object_indices, object_cluster_tolerance_, object_clusters, min_points_per_object_);
+      findClusters (points, object_indices, object_cluster_tolerance_, object_clusters, min_points_per_object_);
 
       robot_msgs::Point32 minPCluster, maxPCluster;
       table.objects.resize (object_clusters.size ());
@@ -447,8 +448,8 @@ class TableObjectDetector
         vector<int> object_idx = object_clusters.at (i);
 
         // Check whether this object cluster is supported by the table or just flying through thin air
-        cloud_geometry::statistics::getMinMax (points, &object_idx, minPCluster, maxPCluster);
-        if (minPCluster.z > (maxP->z + object_min_distance_from_table_) )
+        cloud_geometry::statistics::getMinMax (points, object_idx, minPCluster, maxPCluster);
+        if (minPCluster.z > (maxP.z + object_min_distance_from_table_) )
             continue;
 
         // Process this cluster and extract the centroid and the bounds
@@ -457,8 +458,8 @@ class TableObjectDetector
           object_indices[nr_p] = object_idx.at (j);
           nr_p++;
         }
-        cloud_geometry::statistics::getMinMax (points, &object_idx, table.objects[i].min_bound, table.objects[i].max_bound);
-        cloud_geometry::nearest::computeCentroid (points, &object_idx, table.objects[i].center);
+        cloud_geometry::statistics::getMinMax (points, object_idx, table.objects[i].min_bound, table.objects[i].max_bound);
+        cloud_geometry::nearest::computeCentroid (points, object_idx, table.objects[i].center);
       }
       object_indices.resize (nr_p);
     }
@@ -480,20 +481,20 @@ class TableObjectDetector
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<vector<int> > &clusters,
+      findClusters (PointCloud &points, vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                     int nx_idx, int ny_idx, int nz_idx,
                     unsigned int min_pts_per_cluster = 1)
     {
       // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (&points, &indices);
 
       // Create a bool vector of processed point indices, and initialize it to false
       vector<bool> processed;
-      processed.resize (indices->size (), false);
+      processed.resize (indices.size (), false);
 
       vector<int> nn_indices;
       // Process all points in the indices vector
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
         if (processed[i])
           continue;
@@ -502,9 +503,9 @@ class TableObjectDetector
         int sq_idx = 0;
         seed_queue.push_back (i);
 
-        double norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
-                              points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
-                              points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
+        double norm_a = sqrt (points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (i)] +
+                              points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (i)] +
+                              points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (i)]);
 
         processed[i] = true;
 
@@ -517,13 +518,13 @@ class TableObjectDetector
           {
             if (!processed.at (nn_indices[j]))
             {
-              double norm_b = sqrt (points->chan[nx_idx].vals[indices->at (nn_indices[j])] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-                                    points->chan[ny_idx].vals[indices->at (nn_indices[j])] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-                                    points->chan[nz_idx].vals[indices->at (nn_indices[j])] * points->chan[nz_idx].vals[indices->at (nn_indices[j])]);
+              double norm_b = sqrt (points.chan[nx_idx].vals[indices.at (nn_indices[j])] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
+                                    points.chan[ny_idx].vals[indices.at (nn_indices[j])] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
+                                    points.chan[nz_idx].vals[indices.at (nn_indices[j])] * points.chan[nz_idx].vals[indices.at (nn_indices[j])]);
               // [-1;1]
-              double dot_p = points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-                             points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-                             points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (nn_indices[j])];
+              double dot_p = points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
+                             points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
+                             points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (nn_indices[j])];
               if ( acos (dot_p / (norm_a * norm_b)) < region_angle_threshold_)
               {
                 processed[nn_indices[j]] = true;
@@ -542,7 +543,7 @@ class TableObjectDetector
           //r.indices = seed_queue;
           r.resize (seed_queue.size ());
           for (unsigned int j = 0; j < r.size (); j++)
-            r[j] = indices->at (seed_queue[j]);
+            r[j] = indices.at (seed_queue[j]);
           clusters.push_back (r);
         }
       }
@@ -560,19 +561,19 @@ class TableObjectDetector
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<vector<int> > &clusters,
+      findClusters (PointCloud &points, vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                     unsigned int min_pts_per_cluster = 1)
     {
       // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (&points, &indices);
 
       // Create a bool vector of processed point indices, and initialize it to false
       vector<bool> processed;
-      processed.resize (indices->size (), false);
+      processed.resize (indices.size (), false);
 
       vector<int> nn_indices;
       // Process all points in the indices vector
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
         if (processed[i])
           continue;
@@ -607,7 +608,7 @@ class TableObjectDetector
           //r.indices = seed_queue;
           r.resize (seed_queue.size ());
           for (unsigned int j = 0; j < r.size (); j++)
-            r[j] = indices->at (seed_queue[j]);
+            r[j] = indices.at (seed_queue[j]);
           clusters.push_back (r);
         }
       }
@@ -695,7 +696,7 @@ class TableObjectDetector
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
         Eigen::Vector4d plane_parameters;
         double curvature;
-        cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud, &points_k_indices[i], plane_parameters, curvature);
+        cloud_geometry::nearest::computeSurfaceNormalCurvature (*cloud, points_k_indices[i], plane_parameters, curvature);
 
         // See if we need to flip any plane normals
         Point32 vp_m;

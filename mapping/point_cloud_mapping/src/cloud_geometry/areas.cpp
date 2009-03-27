@@ -53,7 +53,7 @@ namespace cloud_geometry
       * \param normal the plane normal
       */
     double
-      compute2DPolygonalArea (robot_msgs::PointCloud points, std::vector<double> normal)
+      compute2DPolygonalArea (const robot_msgs::PointCloud &points, const std::vector<double> &normal)
     {
       int k0, k1, k2;
 
@@ -88,7 +88,7 @@ namespace cloud_geometry
       * \param normal the plane normal
       */
     double
-      compute2DPolygonalArea (robot_msgs::Polygon3D polygon, std::vector<double> normal)
+      compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon, const std::vector<double> &normal)
     {
       int k0, k1, k2;
 
@@ -125,22 +125,23 @@ namespace cloud_geometry
       * \param hull the resultant convex hull model as a \a Polygon3D
       */
     void
-      convexHull2D (robot_msgs::PointCloud *points, std::vector<int> *indices, std::vector<double> *coeff, robot_msgs::Polygon3D &hull)
+      convexHull2D (const robot_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff,
+                    robot_msgs::Polygon3D &hull)
     {
       // Copy the point data to a local Eigen::Matrix. This is slow and should be replaced by extending robot_msgs::Point32
       // to allow []/() accessors.
-      std::vector<Eigen::Vector3f> epoints (indices->size ());
-      for (unsigned int cp = 0; cp < indices->size (); cp++)
+      std::vector<Eigen::Vector3f> epoints (indices.size ());
+      for (unsigned int cp = 0; cp < indices.size (); cp++)
       {
-        epoints[cp](0) = points->pts[indices->at (cp)].x;
-        epoints[cp](1) = points->pts[indices->at (cp)].y;
-        epoints[cp](2) = points->pts[indices->at (cp)].z;
+        epoints[cp](0) = points.pts[indices.at (cp)].x;
+        epoints[cp](1) = points.pts[indices.at (cp)].y;
+        epoints[cp](2) = points.pts[indices.at (cp)].z;
       }
 
       // Determine the best plane to project points onto
       int k0, k1, k2;
-      k0 = (fabs (coeff->at (0) ) > fabs (coeff->at (1))) ? 0  : 1;
-      k0 = (fabs (coeff->at (k0)) > fabs (coeff->at (2))) ? k0 : 2;
+      k0 = (fabs (coeff.at (0) ) > fabs (coeff.at (1))) ? 0  : 1;
+      k0 = (fabs (coeff.at (k0)) > fabs (coeff.at (2))) ? k0 : 2;
       k1 = (k0 + 1) % 3;
       k2 = (k0 + 2) % 3;
 
@@ -156,7 +157,7 @@ namespace cloud_geometry
 
       // Push projected centered 2d points
       std::vector<robot_msgs::Point32> epoints_demean (epoints.size ());
-      for (unsigned int cp = 0; cp < indices->size (); cp++)
+      for (unsigned int cp = 0; cp < indices.size (); cp++)
       {
         epoints_demean[cp].x = epoints[cp](k1) - centroid (0);
         epoints_demean[cp].y = epoints[cp](k2) - centroid (1);
@@ -183,7 +184,7 @@ namespace cloud_geometry
 
         p3 = p1.cross (p2);
 
-        bool direction = (p3 (k0) * coeff->at (k0) > 0);
+        bool direction = (p3 (k0) * coeff.at (k0) > 0);
 
         // Create the Polygon3D object
         hull.points.resize (nr_points_hull);
@@ -195,7 +196,7 @@ namespace cloud_geometry
           Eigen::Vector3f pt;
           pt (k1) = hull_2d.points[cp].x + centroid (0);
           pt (k2) = hull_2d.points[cp].y + centroid (1);
-          pt (k0) = -(coeff->at (3) + pt (k1) * coeff->at (k1) + pt (k2) * coeff->at (k2)) / coeff->at (k0);
+          pt (k0) = -(coeff.at (3) + pt (k1) * coeff.at (k1) + pt (k2) * coeff.at (k2)) / coeff.at (k0);
 
           // Copy the point data to Polygon3D format
           hull.points[d].x = pt (0);
@@ -213,7 +214,7 @@ namespace cloud_geometry
       * \param hull the resultant 2D convex hull model as a \a Polyline2D
       */
     void
-      convexHull2D (std::vector<robot_msgs::Point32> points, robot_msgs::Polyline2D &hull)
+      convexHull2D (const std::vector<robot_msgs::Point32> &points, robot_msgs::Polyline2D &hull)
     {
       int nr_points = points.size ();
       hull.points.resize (nr_points + 1);
@@ -342,18 +343,18 @@ namespace cloud_geometry
       * \param polygon a polygon
       */
     bool
-      isPointIn2DPolygon (robot_msgs::Point32 point, robot_msgs::Polygon3D *polygon)
+      isPointIn2DPolygon (const robot_msgs::Point32 &point, const robot_msgs::Polygon3D &polygon)
     {
       bool in_poly = false;
       double x1, x2, y1, y2;
 
-      int nr_poly_points = polygon->points.size ();
-      double xold = polygon->points[nr_poly_points - 1].x;
-      double yold = polygon->points[nr_poly_points - 1].y;
+      int nr_poly_points = polygon.points.size ();
+      double xold = polygon.points[nr_poly_points - 1].x;
+      double yold = polygon.points[nr_poly_points - 1].y;
       for (int i = 0; i < nr_poly_points; i++)
       {
-        double xnew = polygon->points[i].x;
-        double ynew = polygon->points[i].y;
+        double xnew = polygon.points[i].x;
+        double ynew = polygon.points[i].y;
         if (xnew > xold)
         {
           x1 = xold;

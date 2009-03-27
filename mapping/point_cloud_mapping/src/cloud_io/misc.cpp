@@ -40,7 +40,7 @@ namespace cloud_io
     * \param value the string defining the channel name
     */
   int
-    getIndex (robot_msgs::PointCloud points, std::string value)
+    getIndex (const robot_msgs::PointCloud &points, std::string value)
   {
     // Get the index we need
     for (unsigned int d = 0; d < points.get_chan_size (); d++)

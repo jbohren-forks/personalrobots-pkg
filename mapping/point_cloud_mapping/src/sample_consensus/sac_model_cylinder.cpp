@@ -118,7 +118,7 @@ namespace sample_consensus
     * ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
   std::vector<int>
-    SACModelCylinder::selectWithinDistance (std::vector<double> model_coefficients, double threshold)
+    SACModelCylinder::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
   {
     std::vector<int> inliers;
 
@@ -143,7 +143,7 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a cylinder model that we need to compute distances to
     */
   std::vector<double>
-    SACModelCylinder::getDistancesToModel (std::vector<double> model_coefficients)
+    SACModelCylinder::getDistancesToModel (const std::vector<double> &model_coefficients)
   {
     std::vector<double> distances (indices_.size ());
 
@@ -163,7 +163,7 @@ namespace sample_consensus
     * \todo implement this.
     */
   robot_msgs::PointCloud
-    SACModelCylinder::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelCylinder::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
     std::cerr << "[SACModelCylinder::projecPoints] Not implemented yet." << std::endl;
     return (*cloud_);
@@ -176,7 +176,7 @@ namespace sample_consensus
     * \todo implement this.
     */
   void
-    SACModelCylinder::projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelCylinder::projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
     std::cerr << "[SACModelCylinder::projecPointsInPlace] Not implemented yet." << std::endl;
   }
@@ -187,24 +187,24 @@ namespace sample_consensus
     * \param indices the point indices found as possible good candidates for creating a valid model
     */
   bool
-    SACModelCylinder::computeModelCoefficients (std::vector<int> indices)
+    SACModelCylinder::computeModelCoefficients (const std::vector<int> &indices)
   {
     model_coefficients_.resize (7);
 
     // Save the nx/ny/nz channel indices the first time we run this
     if (nx_idx_ == -1)
     {
-      nx_idx_ = cloud_geometry::getChannelIndex (cloud_, "nx");
+      nx_idx_ = cloud_geometry::getChannelIndex (*cloud_, "nx");
       if (nx_idx_ == -1) return (false);
     }
     if (ny_idx_ == -1)
     {
-      ny_idx_ = cloud_geometry::getChannelIndex (cloud_, "ny");
+      ny_idx_ = cloud_geometry::getChannelIndex (*cloud_, "ny");
       if (ny_idx_ == -1) return (false);
     }
     if (nz_idx_ == -1)
     {
-      nz_idx_ = cloud_geometry::getChannelIndex (cloud_, "nz");
+      nz_idx_ = cloud_geometry::getChannelIndex (*cloud_, "nz");
       if (nz_idx_ == -1) return (false);
     }
 
@@ -222,11 +222,11 @@ namespace sample_consensus
     w.y = (u.y + cloud_->pts.at (indices.at (0)).y) - cloud_->pts.at (indices.at (1)).y;
     w.z = (u.z + cloud_->pts.at (indices.at (0)).z) - cloud_->pts.at (indices.at (1)).z;
 
-    double a = cloud_geometry::dot (&u, &u);
-    double b = cloud_geometry::dot (&u, &v);
-    double c = cloud_geometry::dot (&v, &v);
-    double d = cloud_geometry::dot (&u, &w);
-    double e = cloud_geometry::dot (&v, &w);
+    double a = cloud_geometry::dot (u, u);
+    double b = cloud_geometry::dot (u, v);
+    double c = cloud_geometry::dot (v, v);
+    double d = cloud_geometry::dot (u, w);
+    double e = cloud_geometry::dot (v, w);
     double denominator = a*c - b*b;
     double sc, tc;
     // Compute the line parameters of the two closest points
@@ -270,7 +270,7 @@ namespace sample_consensus
     * \param inliers the data inliers found as supporting the model
     */
   std::vector<double>
-    SACModelCylinder::refitModel (std::vector<int> inliers)
+    SACModelCylinder::refitModel (const std::vector<int> &inliers)
   {
     if (inliers.size () == 0)
     {
@@ -293,7 +293,7 @@ namespace sample_consensus
     * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
     */
   bool
-    SACModelCylinder::doSamplesVerifyModel (std::set<int> indices, double threshold)
+    SACModelCylinder::doSamplesVerifyModel (const std::set<int> &indices, double threshold)
   {
     for (std::set<int>::iterator it = indices.begin (); it != indices.end (); ++it)
       // Aproximate the distance from the point to the cylinder as the difference between

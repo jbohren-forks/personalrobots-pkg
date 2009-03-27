@@ -44,9 +44,9 @@ namespace cloud_geometry
   namespace transforms
   {
 
-    void getPlaneToPlaneTransformation (std::vector<double> plane_a, std::vector<double> plane_b, float tx, float ty, float tz,
+    void getPlaneToPlaneTransformation (const std::vector<double> &plane_a, const std::vector<double> &plane_b, float tx, float ty, float tz,
                                         Eigen::Matrix4d &transformation);
-    void getPlaneToPlaneTransformation (std::vector<double> plane_a, robot_msgs::Point32 *plane_b, float tx, float ty, float tz,
+    void getPlaneToPlaneTransformation (const std::vector<double> &plane_a, const robot_msgs::Point32 &plane_b, float tx, float ty, float tz,
                                         Eigen::Matrix4d &transformation);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -56,11 +56,11 @@ namespace cloud_geometry
       * \param transform the 4x4 rigid transformation
       */
     inline void
-      transformPoint (robot_msgs::Point32 *point_in, robot_msgs::Point32 &point_out, Eigen::Matrix4d transformation)
+      transformPoint (const robot_msgs::Point32 &point_in, robot_msgs::Point32 &point_out, const Eigen::Matrix4d &transformation)
     {
-      point_out.x = transformation (0, 0) * point_in->x + transformation (0, 1) * point_in->y + transformation (0, 2) * point_in->z + transformation (0, 3);
-      point_out.y = transformation (1, 0) * point_in->x + transformation (1, 1) * point_in->y + transformation (1, 2) * point_in->z + transformation (1, 3);
-      point_out.z = transformation (2, 0) * point_in->x + transformation (2, 1) * point_in->y + transformation (2, 2) * point_in->z + transformation (2, 3);
+      point_out.x = transformation (0, 0) * point_in.x + transformation (0, 1) * point_in.y + transformation (0, 2) * point_in.z + transformation (0, 3);
+      point_out.y = transformation (1, 0) * point_in.x + transformation (1, 1) * point_in.y + transformation (1, 2) * point_in.z + transformation (1, 3);
+      point_out.z = transformation (2, 0) * point_in.x + transformation (2, 1) * point_in.y + transformation (2, 2) * point_in.z + transformation (2, 3);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,11 +70,11 @@ namespace cloud_geometry
       * \param transform the 4x4 rigid transformation
       */
     inline void
-      transformPoints (std::vector<robot_msgs::Point32> *points_in, std::vector<robot_msgs::Point32> &points_out, Eigen::Matrix4d transformation)
+      transformPoints (const std::vector<robot_msgs::Point32> &points_in, std::vector<robot_msgs::Point32> &points_out, const Eigen::Matrix4d &transformation)
     {
-      points_out.resize (points_in->size ());
-      for (unsigned i = 0; i < points_in->size (); i++)
-        transformPoint (&points_in->at (i), points_out[i], transformation);
+      points_out.resize (points_in.size ());
+      for (unsigned i = 0; i < points_in.size (); i++)
+        transformPoint (points_in.at (i), points_out[i], transformation);
     }
 
 
@@ -84,7 +84,7 @@ namespace cloud_geometry
       * \param transformation_inverse the output transformation (the inverse of \a transformation)
       */
     inline void
-      getInverseTransformation (Eigen::Matrix4d transformation, Eigen::Matrix4d &transformation_inverse)
+      getInverseTransformation (const Eigen::Matrix4d &transformation, Eigen::Matrix4d &transformation_inverse)
     {
       float tx = transformation (0, 3);
       float ty = transformation (1, 3);
@@ -112,7 +112,7 @@ namespace cloud_geometry
       transformation_inverse (3, 3) = 1;
     }
 
-    void convertAxisAngleToRotationMatrix (robot_msgs::Point32 axis, double angle, Eigen::Matrix3d &rotation);
+    void convertAxisAngleToRotationMatrix (const robot_msgs::Point32 &axis, double angle, Eigen::Matrix3d &rotation);
   }
 }
 

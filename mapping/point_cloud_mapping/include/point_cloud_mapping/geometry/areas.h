@@ -53,7 +53,7 @@ namespace cloud_geometry
       * \param p2 the second Point32 point
       */
     inline bool
-      comparePoint2D (const robot_msgs::Point32& p1, const robot_msgs::Point32& p2)
+      comparePoint2D (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
     {
       if (p1.x < p2.x)      return (true);
       else if (p1.x > p2.x) return (false);
@@ -67,7 +67,7 @@ namespace cloud_geometry
       * \param p2 the second 3d point
       */
     inline bool
-      comparePoint3D (const robot_msgs::Point32& p1, const robot_msgs::Point32& p2)
+      comparePoint3D (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
     {
       if (p1.x < p2.x)      return (true);
       else if (p1.x > p2.x) return (false);
@@ -77,12 +77,12 @@ namespace cloud_geometry
       else                  return (false);
     }
 
-    double compute2DPolygonalArea (robot_msgs::PointCloud points, std::vector<double> normal);
-    double compute2DPolygonalArea (robot_msgs::Polygon3D polygon, std::vector<double> normal);
-    void convexHull2D (robot_msgs::PointCloud *points, std::vector<int> *indices, std::vector<double> *coeff, robot_msgs::Polygon3D &hull);
-    void convexHull2D (std::vector<robot_msgs::Point32> points, robot_msgs::Polyline2D &hull);
+    double compute2DPolygonalArea (const robot_msgs::PointCloud &points, const std::vector<double> &normal);
+    double compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon, const std::vector<double> &normal);
+    void convexHull2D (const robot_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff, robot_msgs::Polygon3D &hull);
+    void convexHull2D (const std::vector<robot_msgs::Point32> &points, robot_msgs::Polyline2D &hull);
 
-    bool isPointIn2DPolygon (robot_msgs::Point32 point, robot_msgs::Polygon3D *polygon);
+    bool isPointIn2DPolygon (const robot_msgs::Point32 &point, const robot_msgs::Polygon3D &polygon);
   }
 }
 

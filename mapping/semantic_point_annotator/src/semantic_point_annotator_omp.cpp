@@ -373,7 +373,7 @@ class SemanticPointAnnotator
       robot_origin.y /= indices->size ();
 
       // Compute a distance from 0,0,0 to the plane
-      double distance = cloud_geometry::distances::pointToPlaneDistance (&robot_origin, *coeff);
+      double distance = cloud_geometry::distances::pointToPlaneDistance (robot_origin, *coeff);
 
       // Test for floor
       if (distance < rule_floor_)
@@ -402,7 +402,7 @@ class SemanticPointAnnotator
       double r, g, b;
       // Get the minimum and maximum bounds of the plane
       Point32 minP, maxP;
-      cloud_geometry::statistics::getMinMax (points, indices, minP, maxP);
+      cloud_geometry::statistics::getMinMax (*points, *indices, minP, maxP);
       // Test for wall
       if (maxP.z > rule_wall_)
       {
@@ -425,14 +425,14 @@ class SemanticPointAnnotator
                           vector<vector<int> > *neighbors, Polygon3D &poly)
     {
       Eigen::Vector3d u, v;
-      cloud_geometry::getCoordinateSystemOnPlane (coeff, u, v);
+      cloud_geometry::getCoordinateSystemOnPlane (*coeff, u, v);
 
       vector<int> inliers (indices->size ());
       int nr_p = 0;
       for (unsigned int i = 0; i < indices->size (); i++)
       {
         vector<int> *point_neighbors = &neighbors->at (i);
-        if (cloud_geometry::nearest::isBoundaryPoint (points, indices->at (i), point_neighbors, u, v, boundary_angle_threshold_))
+        if (cloud_geometry::nearest::isBoundaryPoint (*points, indices->at (i), *point_neighbors, u, v, boundary_angle_threshold_))
         {
           inliers[nr_p] = indices->at (i);
           nr_p++;
@@ -455,13 +455,13 @@ class SemanticPointAnnotator
 
       tf_.transformPoint ("base_link", base_link_origin, map_origin);
 
-      ROS_INFO ("Received %d data points. Current robot pose is %g, %g, %g", cloud_.pts.size (), map_origin.point.x, map_origin.point.y, map_origin.point.z);
+      ROS_INFO ("Received %d data points. Current robot pose is %g, %g, %g", (int)cloud_.pts.size (), map_origin.point.x, map_origin.point.y, map_origin.point.z);
 
       cloud_annotated_.header = cloud_.header;
 
-      int nx = cloud_geometry::getChannelIndex (&cloud_, "nx");
-      int ny = cloud_geometry::getChannelIndex (&cloud_, "ny");
-      int nz = cloud_geometry::getChannelIndex (&cloud_, "nz");
+      int nx = cloud_geometry::getChannelIndex (cloud_, "nx");
+      int ny = cloud_geometry::getChannelIndex (cloud_, "ny");
+      int nz = cloud_geometry::getChannelIndex (cloud_, "nz");
 
       if ( (cloud_.chan.size () < 3) || (nx == -1) || (ny == -1) || (nz == -1) )
       {
@@ -475,11 +475,11 @@ class SemanticPointAnnotator
 
       // ---[ Select points whose normals are parallel with the Z-axis
       vector<int> indices_z;
-      cloud_geometry::getPointIndicesAxisParallelNormals (&cloud_, nx, ny, nz, eps_angle_, &z_axis_, indices_z);
+      cloud_geometry::getPointIndicesAxisParallelNormals (cloud_, nx, ny, nz, eps_angle_, z_axis_, indices_z);
 
       // ---[ Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_xy;
-      cloud_geometry::getPointIndicesAxisPerpendicularNormals (&cloud_, nx, ny, nz, eps_angle_, &z_axis_, indices_xy);
+      cloud_geometry::getPointIndicesAxisPerpendicularNormals (cloud_, nx, ny, nz, eps_angle_, z_axis_, indices_xy);
 
       vector<Region> clusters;
       // Split the Z-parallel points into clusters
@@ -500,7 +500,7 @@ class SemanticPointAnnotator
 
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Found %d clusters with %d points in %g seconds.", clusters.size (), total_p, time_spent);
+      ROS_INFO ("Found %d clusters with %d points in %g seconds.", (int)clusters.size (), total_p, time_spent);
       gettimeofday (&t1, NULL);
 
       vector<vector<vector<int> > > all_cluster_inliers (clusters.size ());
@@ -584,7 +584,7 @@ class SemanticPointAnnotator
           if (concave_)
             computeConcaveHull (&cloud_, indices, coeff, &neighbors[cc], pmap_.polygons[cc]);
           else
-            cloud_geometry::areas::convexHull2D (&cloud_, indices, coeff, pmap_.polygons[cc]);
+            cloud_geometry::areas::convexHull2D (cloud_, *indices, *coeff, pmap_.polygons[cc]);
         }
       }
 

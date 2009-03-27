@@ -85,7 +85,7 @@ namespace cloud_geometry
       * \param indices the point indices
       */
     robot_msgs::Point32
-      computeMedian (const robot_msgs::PointCloud& points, const std::vector<int>& indices)
+      computeMedian (const robot_msgs::PointCloud &points, const std::vector<int> &indices)
     {
       robot_msgs::Point32 median;
 
@@ -129,7 +129,7 @@ namespace cloud_geometry
       * \param sigma the sigma value
       */
     double
-      computeMedianAbsoluteDeviation (const robot_msgs::PointCloud& points, double sigma)
+      computeMedianAbsoluteDeviation (const robot_msgs::PointCloud &points, double sigma)
     {
       // median (dist (x - median (x)))
       robot_msgs::Point32 median = computeMedian (points);
@@ -163,7 +163,7 @@ namespace cloud_geometry
       * \param sigma the sigma value
       */
     double
-      computeMedianAbsoluteDeviation (const robot_msgs::PointCloud& points, const std::vector<int>& indices, double sigma)
+      computeMedianAbsoluteDeviation (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double sigma)
     {
       // median (dist (x - median (x)))
       robot_msgs::Point32 median = computeMedian (points, indices);
@@ -196,17 +196,17 @@ namespace cloud_geometry
       * \param stddev the resultant standard deviation of the distribution
       */
     void
-      getChannelMeanStd (const robot_msgs::PointCloud *points, int d_idx, double &mean, double &stddev)
+      getChannelMeanStd (const robot_msgs::PointCloud &points, int d_idx, double &mean, double &stddev)
     {
       double sum = 0, sq_sum = 0;
 
-      for (unsigned int i = 0; i < points->pts.size (); i++)
+      for (unsigned int i = 0; i < points.pts.size (); i++)
       {
-        sum += points->chan.at (d_idx).vals.at (i);
-        sq_sum += points->chan.at (d_idx).vals.at (i) * points->chan.at (d_idx).vals.at (i);
+        sum += points.chan.at (d_idx).vals.at (i);
+        sq_sum += points.chan.at (d_idx).vals.at (i) * points.chan.at (d_idx).vals.at (i);
       }
-      mean = sum / points->pts.size ();
-      double variance = (double)(sq_sum - sum * sum / points->pts.size ()) / (points->pts.size () - 1);
+      mean = sum / points.pts.size ();
+      double variance = (double)(sq_sum - sum * sum / points.pts.size ()) / (points.pts.size () - 1);
       stddev = sqrt (variance);
     }
 
@@ -219,17 +219,17 @@ namespace cloud_geometry
       * \param stddev the resultant standard deviation of the distribution
       */
     void
-      getChannelMeanStd (const robot_msgs::PointCloud *points, const std::vector<int> *indices, int d_idx, double &mean, double &stddev)
+      getChannelMeanStd (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx, double &mean, double &stddev)
     {
       double sum = 0, sq_sum = 0;
 
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
-        sum += points->chan.at (d_idx).vals.at (indices->at (i));
-        sq_sum += points->chan.at (d_idx).vals.at (indices->at (i)) * points->chan.at (d_idx).vals.at (indices->at (i));
+        sum += points.chan.at (d_idx).vals.at (indices.at (i));
+        sq_sum += points.chan.at (d_idx).vals.at (indices.at (i)) * points.chan.at (d_idx).vals.at (indices.at (i));
       }
-      mean = sum / indices->size ();
-      double variance = (double)(sq_sum - sum * sum / indices->size ()) / (indices->size () - 1);
+      mean = sum / indices.size ();
+      double variance = (double)(sq_sum - sum * sum / indices.size ()) / (indices.size () - 1);
       stddev = sqrt (variance);
     }
 
@@ -245,18 +245,18 @@ namespace cloud_geometry
       * \param inliers the resultant point indices
       */
     void
-      selectPointsOutsideDistribution (const robot_msgs::PointCloud *points, const std::vector<int> *indices, int d_idx,
+      selectPointsOutsideDistribution (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
                                        double mean, double stddev, double alpha, std::vector<int> &inliers)
     {
-      inliers.resize (indices->size ());
+      inliers.resize (indices.size ());
       int nr_i = 0;
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
-        if ( (points->chan.at (d_idx).vals.at (indices->at (i)) > (mean + alpha * stddev)) ||
-             (points->chan.at (d_idx).vals.at (indices->at (i)) < (mean - alpha * stddev))
+        if ( (points.chan.at (d_idx).vals.at (indices.at (i)) > (mean + alpha * stddev)) ||
+             (points.chan.at (d_idx).vals.at (indices.at (i)) < (mean - alpha * stddev))
            )
         {
-          inliers[nr_i] = indices->at (i);
+          inliers[nr_i] = indices.at (i);
           nr_i++;
         }
       }
@@ -275,18 +275,18 @@ namespace cloud_geometry
       * \param inliers the resultant point indices
       */
     void
-      selectPointsInsideDistribution (const robot_msgs::PointCloud *points, const std::vector<int> *indices, int d_idx,
+      selectPointsInsideDistribution (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
                                       double mean, double stddev, double alpha, std::vector<int> &inliers)
     {
-      inliers.resize (indices->size ());
+      inliers.resize (indices.size ());
       int nr_i = 0;
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
-        if ( (points->chan.at (d_idx).vals.at (indices->at (i)) < (mean + alpha * stddev)) &&
-             (points->chan.at (d_idx).vals.at (indices->at (i)) > (mean - alpha * stddev))
+        if ( (points.chan.at (d_idx).vals.at (indices.at (i)) < (mean + alpha * stddev)) &&
+             (points.chan.at (d_idx).vals.at (indices.at (i)) > (mean - alpha * stddev))
            )
         {
-          inliers[nr_i] = indices->at (i);
+          inliers[nr_i] = indices.at (i);
           nr_i++;
         }
       }

@@ -136,7 +136,7 @@ class PlanarPatchMap
         // Project the inliers onto the model
         model->projectPointsInPlace (inliers, coeff);
 
-        cloud_geometry::areas::convexHull2D (model->getCloud (), &inliers, &coeff, poly);
+        cloud_geometry::areas::convexHull2D (*model->getCloud (), inliers, coeff, poly);
       }
     }
 
@@ -163,14 +163,14 @@ class PlanarPatchMap
     // Callback
     void cloud_cb ()
     {
-      ROS_INFO ("Received %d data points.", cloud_.pts.size ());
+      ROS_INFO ("Received %d data points.", (int)cloud_.pts.size ());
 
-      int d_idx = cloud_geometry::getChannelIndex (&cloud_, "distances");
+      int d_idx = cloud_geometry::getChannelIndex (cloud_, "distances");
       if (d_idx != -1)
       {
         filterCloudBasedOnDistance (&cloud_, cloud_f_, d_idx, d_min_, d_max_);
         ROS_INFO ("Distance information present. Filtering points between %g and %g : %d / %d left.", d_min_, d_max_,
-                  cloud_f_.pts.size (), cloud_.pts.size ());
+                  (int)cloud_f_.pts.size (), (int)cloud_.pts.size ());
       }
       else
         cloud_f_ = cloud_;
@@ -209,7 +209,7 @@ class PlanarPatchMap
 
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Number of: [total points / points inserted / difference] : [%d / %d / %d] in %g seconds.", cloud_f_.pts.size (), total_pts, (int)fabs (cloud_f_.pts.size () - total_pts), time_spent);
+      ROS_INFO ("Number of: [total points / points inserted / difference] : [%d / %d / %d] in %g seconds.", (int)cloud_f_.pts.size (), total_pts, (int)fabs (cloud_f_.pts.size () - total_pts), time_spent);
       pmap.header = cloud_.header;
       node_.publish ("planar_map", pmap);
 

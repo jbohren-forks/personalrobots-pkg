@@ -49,9 +49,9 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointXYDistanceSqr (const robot_msgs::Point32 *p1, const robot_msgs::Point32 *p2)
+      pointToPointXYDistanceSqr (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
     {
-      return ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) );
+      return ( (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y) );
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -60,7 +60,7 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointXYDistance (const robot_msgs::Point32 *p1, const robot_msgs::Point32 *p2)
+      pointToPointXYDistance (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
     {
       return ( sqrt (pointToPointXYDistanceSqr (p1, p2) ));
     }
@@ -71,9 +71,9 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointXZDistanceSqr (const robot_msgs::Point32 *p1, const robot_msgs::Point32 *p2)
+      pointToPointXZDistanceSqr (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
     {
-      return ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->z - p2->z) * (p1->z - p2->z) );
+      return ( (p1.x - p2.x) * (p1.x - p2.x) + (p1.z - p2.z) * (p1.z - p2.z) );
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +82,7 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointXZDistance (const robot_msgs::Point32 *p1, const robot_msgs::Point32 *p2)
+      pointToPointXZDistance (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
     {
       return ( sqrt (pointToPointXZDistanceSqr (p1, p2) ));
     }
@@ -93,9 +93,9 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointYZDistanceSqr (const robot_msgs::Point32 *p1, const robot_msgs::Point32 *p2)
+      pointToPointYZDistanceSqr (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
     {
-      return ( (p1->y - p2->y) * (p1->y - p2->y) + (p1->z - p2->z) * (p1->z - p2->z) );
+      return ( (p1.y - p2.y) * (p1.y - p2.y) + (p1.z - p2.z) * (p1.z - p2.z) );
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,7 +104,7 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointYZDistance (const robot_msgs::Point32 *p1, const robot_msgs::Point32 *p2)
+      pointToPointYZDistance (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
     {
       return ( sqrt (pointToPointYZDistanceSqr (p1, p2) ));
     }
@@ -115,9 +115,9 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointDistanceSqr (const robot_msgs::Point32 *p1, const robot_msgs::Point32 *p2)
+      pointToPointDistanceSqr (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
     {
-      return ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) + (p1->z - p2->z) * (p1->z - p2->z) );
+      return ( (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y) + (p1.z - p2.z) * (p1.z - p2.z) );
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -126,7 +126,7 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointDistance (const robot_msgs::Point32 *p1, const robot_msgs::Point32 *p2)
+      pointToPointDistance (const robot_msgs::Point32 &p1, const robot_msgs::Point32 &p2)
     {
       return (sqrt (pointToPointDistanceSqr (p1, p2) ));
     }
@@ -137,9 +137,9 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointDistanceSqr (const robot_msgs::Point *p1, const robot_msgs::Point *p2)
+      pointToPointDistanceSqr (const robot_msgs::Point &p1, const robot_msgs::Point &p2)
     {
-      return ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) + (p1->z - p2->z) * (p1->z - p2->z) );
+      return ( (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y) + (p1.z - p2.z) * (p1.z - p2.z) );
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -148,7 +148,7 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointDistance (const robot_msgs::Point *p1, const robot_msgs::Point *p2)
+      pointToPointDistance (const robot_msgs::Point &p1, const robot_msgs::Point &p2)
     {
       return (sqrt (pointToPointDistanceSqr (p1, p2) ));
     }
@@ -159,9 +159,9 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointDistanceSqr (const robot_msgs::Point32 *p1, const robot_msgs::Point *p2)
+      pointToPointDistanceSqr (const robot_msgs::Point32 &p1, const robot_msgs::Point &p2)
     {
-      return ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) + (p1->z - p2->z) * (p1->z - p2->z) );
+      return ( (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y) + (p1.z - p2.z) * (p1.z - p2.z) );
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -170,7 +170,7 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointDistance (const robot_msgs::Point32 *p1, const robot_msgs::Point *p2)
+      pointToPointDistance (const robot_msgs::Point32 &p1, const robot_msgs::Point &p2)
     {
       return (sqrt (pointToPointDistanceSqr (p1, p2) ));
     }
@@ -181,9 +181,9 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointDistanceSqr (const robot_msgs::Point *p1, const robot_msgs::Point32 *p2)
+      pointToPointDistanceSqr (const robot_msgs::Point &p1, const robot_msgs::Point32 &p2)
     {
-      return ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) + (p1->z - p2->z) * (p1->z - p2->z) );
+      return ( (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y) + (p1.z - p2.z) * (p1.z - p2.z) );
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -192,13 +192,13 @@ namespace cloud_geometry
       * \param p2 the second point
       */
     inline double
-      pointToPointDistance (const robot_msgs::Point *p1, const robot_msgs::Point32 *p2)
+      pointToPointDistance (const robot_msgs::Point &p1, const robot_msgs::Point32 &p2)
     {
       return (sqrt (pointToPointDistanceSqr (p1, p2) ));
     }
 
-    double pointToLineDistance (const robot_msgs::Point32 p, const robot_msgs::Point32 q, const robot_msgs::Point32 dir);
-    double pointToLineDistance (const robot_msgs::Point32 p, std::vector<double> line_coefficients);
+    double pointToLineDistance (const robot_msgs::Point32 &p, const robot_msgs::Point32 &q, const robot_msgs::Point32 &dir);
+    double pointToLineDistance (const robot_msgs::Point32 &p, const std::vector<double> &line_coefficients);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Get the distance from a point to a plane (signed) defined by ax+by+cz+d=0
@@ -206,9 +206,9 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline double
-      pointToPlaneDistanceSigned (const robot_msgs::Point32 *p, std::vector<double> plane_coefficients)
+      pointToPlaneDistanceSigned (const robot_msgs::Point32 &p, const std::vector<double> &plane_coefficients)
     {
-      return (plane_coefficients[0]*p->x + plane_coefficients[1]*p->y + plane_coefficients[2]*p->z + plane_coefficients[3]);
+      return (plane_coefficients[0]*p.x + plane_coefficients[1]*p.y + plane_coefficients[2]*p.z + plane_coefficients[3]);
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Get the distance from a point to a plane (signed) defined by ax+by+cz+d=0
@@ -219,9 +219,9 @@ namespace cloud_geometry
       * \param d the normalized <i>d</i> coefficient of a plane
       */
     inline double
-      pointToPlaneDistanceSigned (const robot_msgs::Point32 *p, double a, double b, double c, double d)
+      pointToPlaneDistanceSigned (const robot_msgs::Point32 &p, double a, double b, double c, double d)
     {
-      return (a * p->x + b * p->y + c * p->z + d);
+      return (a * p.x + b * p.y + c * p.z + d);
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Get the distance from a point to a plane (signed) defined by ax+by+cz+d=0
@@ -229,9 +229,9 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline double
-      pointToPlaneDistanceSigned (const robot_msgs::Point32 *p, Eigen::Vector4d plane_coefficients)
+      pointToPlaneDistanceSigned (const robot_msgs::Point32 &p, const Eigen::Vector4d &plane_coefficients)
     {
-      return ( plane_coefficients (0) * p->x + plane_coefficients (1) * p->y + plane_coefficients (2) * p->z + plane_coefficients (3) );
+      return ( plane_coefficients (0) * p.x + plane_coefficients (1) * p.y + plane_coefficients (2) * p.z + plane_coefficients (3) );
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -240,7 +240,7 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline double
-      pointToPlaneDistance (const robot_msgs::Point32 *p, std::vector<double> plane_coefficients)
+      pointToPlaneDistance (const robot_msgs::Point32 &p, const std::vector<double> &plane_coefficients)
     {
       return (fabs (pointToPlaneDistanceSigned (p, plane_coefficients)) );
     }
@@ -253,7 +253,7 @@ namespace cloud_geometry
       * \param d the normalized <i>d</i> coefficient of a plane
       */
     inline double
-      pointToPlaneDistance (const robot_msgs::Point32 *p, double a, double b, double c, double d)
+      pointToPlaneDistance (const robot_msgs::Point32 &p, double a, double b, double c, double d)
     {
       return (fabs (pointToPlaneDistance (p, a, b, c, d)) );
     }
@@ -263,7 +263,7 @@ namespace cloud_geometry
       * \param plane_coefficients the normalized coefficients (a, b, c, d) of a plane
       */
     inline double
-      pointToPlaneDistance (const robot_msgs::Point32 *p, Eigen::Vector4d plane_coefficients)
+      pointToPlaneDistance (const robot_msgs::Point32 &p, const Eigen::Vector4d &plane_coefficients)
     {
       return ( fabs (pointToPlaneDistance (p, plane_coefficients)) );
     }
@@ -274,7 +274,7 @@ namespace cloud_geometry
       * \param sphere_coefficients the coefficients (x, y, z, R) of a sphere
       */
     inline double
-      pointToSphereDistance (const robot_msgs::Point32 p, std::vector<double> sphere_coefficients)
+      pointToSphereDistance (const robot_msgs::Point32 &p, const std::vector<double> &sphere_coefficients)
     {
       return (sqrt (
                     (p.x - sphere_coefficients[0]) * (p.x - sphere_coefficients[0]) +
@@ -291,13 +291,13 @@ namespace cloud_geometry
       * \param R the radius coefficient of a sphere
       */
     inline double
-      pointToSphereDistance (const robot_msgs::Point32 p, double x, double y, double z, double r)
+      pointToSphereDistance (const robot_msgs::Point32 &p, double x, double y, double z, double r)
     {
       return (sqrt ( (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y) + (p.z - z) * (p.z - z) ) - r);
     }
 
 
-    void lineToLineSegment (std::vector<double> line_a, std::vector<double> line_b, std::vector<double> &segment);
+    void lineToLineSegment (const std::vector<double> &line_a, const std::vector<double> &line_b, std::vector<double> &segment);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Creates a parallel 2D line at a given distance in an X-Y plane (Z is ignored)
@@ -307,7 +307,7 @@ namespace cloud_geometry
       * \param distance the desired distance between the lines
       */
     inline void
-      createParallel2DLine (std::vector<double> line_a, std::vector<double> &line_b, double distance)
+      createParallel2DLine (const std::vector<double> &line_a, std::vector<double> &line_b, double distance)
     {
       line_b.resize (6);
       // The direction of the resultant line is equal to the first
@@ -332,44 +332,44 @@ namespace cloud_geometry
       * \param poly the polygon
       */
     inline double
-      pointToPolygonDistanceSqr (const robot_msgs::Point32 *p, const robot_msgs::Polygon3D *poly)
+      pointToPolygonDistanceSqr (const robot_msgs::Point32 &p, const robot_msgs::Polygon3D &poly)
     {
       double min_distance = FLT_MAX;
       robot_msgs::Point32 dir, p_t;
       // Treat the polygon as a set of 3D lines, and compute the distance from the point to each line
       unsigned int i = 0;
-      for (i = 0; i < poly->points.size () - 1; i++)
+      for (i = 0; i < poly.points.size () - 1; i++)
       {
         // Compute the direction
-        dir.x = poly->points[i + 1].x - poly->points[i].x;
-        dir.y = poly->points[i + 1].y - poly->points[i].y;
-        dir.z = poly->points[i + 1].z - poly->points[i].z;
+        dir.x = poly.points[i + 1].x - poly.points[i].x;
+        dir.y = poly.points[i + 1].y - poly.points[i].y;
+        dir.z = poly.points[i + 1].z - poly.points[i].z;
 
         // Calculate the distance from the point to the line
         // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
-        p_t.x = poly->points[i + 1].x - p->x;
-        p_t.y = poly->points[i + 1].y - p->y;
-        p_t.z = poly->points[i + 1].z - p->z;
+        p_t.x = poly.points[i + 1].x - p.x;
+        p_t.y = poly.points[i + 1].y - p.y;
+        p_t.z = poly.points[i + 1].z - p.z;
 
-        robot_msgs::Point32 c = cross (&p_t, &dir);
+        robot_msgs::Point32 c = cross (p_t, dir);
         double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
         if (sqr_distance < min_distance)
           min_distance = sqr_distance;
       }
 
-      // ---[ Check the [i-1 -> 0] line too
+      // ---[ Check the [i-1 . 0] line too
       // Compute the direction
-      dir.x = poly->points[i].x - poly->points[0].x;
-      dir.y = poly->points[i].y - poly->points[0].y;
-      dir.z = poly->points[i].z - poly->points[0].z;
+      dir.x = poly.points[i].x - poly.points[0].x;
+      dir.y = poly.points[i].y - poly.points[0].y;
+      dir.z = poly.points[i].z - poly.points[0].z;
 
       // Calculate the distance from the point to the line
       // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
-      p_t.x = poly->points[i].x - p->x;
-      p_t.y = poly->points[i].y - p->y;
-      p_t.z = poly->points[i].z - p->z;
+      p_t.x = poly.points[i].x - p.x;
+      p_t.y = poly.points[i].y - p.y;
+      p_t.z = poly.points[i].z - p.z;
 
-      robot_msgs::Point32 c = cross (&p_t, &dir);
+      robot_msgs::Point32 c = cross (p_t, dir);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
       if (sqr_distance < min_distance)
         min_distance = sqr_distance;
@@ -383,7 +383,7 @@ namespace cloud_geometry
       * \param poly the polygon
       */
     inline double
-      pointToPolygonDistance (const robot_msgs::Point32 *p, const robot_msgs::Polygon3D *poly)
+      pointToPolygonDistance (const robot_msgs::Point32 &p, const robot_msgs::Polygon3D &poly)
     {
       return (sqrt (pointToPolygonDistanceSqr (p, poly)));
     }

@@ -45,7 +45,7 @@ namespace cloud_geometry
       * \param dir the direction of the line
       */
     double
-      pointToLineDistance (robot_msgs::Point32 p, robot_msgs::Point32 q, robot_msgs::Point32 dir)
+      pointToLineDistance (const robot_msgs::Point32 &p, const robot_msgs::Point32 &q, const robot_msgs::Point32 &dir)
     {
       // Calculate the distance from the point to the line
       // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
@@ -57,7 +57,7 @@ namespace cloud_geometry
       p_t.y = r.y - p.y;
       p_t.z = r.z - p.z;
 
-      robot_msgs::Point32 c = cross (&p_t, &dir);
+      robot_msgs::Point32 c = cross (p_t, dir);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
       return (sqrt (sqr_distance));
     }
@@ -68,7 +68,7 @@ namespace cloud_geometry
       * \param line_coefficients the line coefficients (point.x point.y point.z direction.x direction.y direction.z)
       */
     double
-      pointToLineDistance (robot_msgs::Point32 p, std::vector<double> line_coefficients)
+      pointToLineDistance (const robot_msgs::Point32 &p, const std::vector<double> &line_coefficients)
     {
       // Calculate the distance from the point to the line
       // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
@@ -83,7 +83,7 @@ namespace cloud_geometry
       p_t.y = r.y - p.y;
       p_t.z = r.z - p.z;
 
-      robot_msgs::Point32 c = cross (&p_t, &dir);
+      robot_msgs::Point32 c = cross (p_t, dir);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
       return (sqrt (sqr_distance));
     }
@@ -95,7 +95,7 @@ namespace cloud_geometry
       * \param segment the resulting two 3D points that mark the beginning and the end of the segment
       */
     void
-      lineToLineSegment (std::vector<double> line_a, std::vector<double> line_b, std::vector<double> &segment)
+      lineToLineSegment (const std::vector<double> &line_a, const std::vector<double> &line_b, std::vector<double> &segment)
     {
       segment.resize (6);
 
@@ -122,11 +122,11 @@ namespace cloud_geometry
       w.y = p2.y - line_b.at (1);
       w.z = p2.z - line_b.at (2);
 
-      double a = dot (&u, &u);
-      double b = dot (&u, &v);
-      double c = dot (&v, &v);
-      double d = dot (&u, &w);
-      double e = dot (&v, &w);
+      double a = dot (u, u);
+      double b = dot (u, v);
+      double c = dot (v, v);
+      double d = dot (u, w);
+      double e = dot (v, w);
       double denominator = a*c - b*b;
       double sc, tc;
       // Compute the line parameters of the two closest points

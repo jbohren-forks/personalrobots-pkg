@@ -81,7 +81,7 @@ namespace sample_consensus
     * ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
   std::vector<int>
-    SACModelLine::selectWithinDistance (std::vector<double> model_coefficients, double threshold)
+    SACModelLine::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
   {
     double sqr_threshold = threshold * threshold;
 
@@ -110,7 +110,7 @@ namespace sample_consensus
       // P1P2 = sqrt (x3^2 + y3^2 + z3^2)
       // a = sqrt [(y3*z4 - z3*y4)^2 + (x3*z4 - x4*z3)^2 + (x3*y4 - x4*y3)^2]
       //double distance = SQR_NORM (cANN::cross (p4, p3)) / SQR_NORM (p3);
-      robot_msgs::Point32 c = cloud_geometry::cross (&p4, &p3);
+      robot_msgs::Point32 c = cloud_geometry::cross (p4, p3);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
 
       if (sqr_distance < sqr_threshold)
@@ -125,7 +125,7 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a line model that we need to compute distances to
     */
   std::vector<double>
-    SACModelLine::getDistancesToModel (std::vector<double> model_coefficients)
+    SACModelLine::getDistancesToModel (const std::vector<double> &model_coefficients)
   {
     std::vector<double> distances (indices_.size ());
 
@@ -144,7 +144,7 @@ namespace sample_consensus
       p4.y = model_coefficients.at (4) - cloud_->pts.at (indices_.at (i)).y;
       p4.z = model_coefficients.at (5) - cloud_->pts.at (indices_.at (i)).z;
 
-      robot_msgs::Point32 c = cloud_geometry::cross (&p4, &p3);
+      robot_msgs::Point32 c = cloud_geometry::cross (p4, p3);
       distances[i] = sqrt (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
     }
     return (distances);
@@ -156,7 +156,7 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a line model
     */
   robot_msgs::PointCloud
-    SACModelLine::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelLine::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
     robot_msgs::PointCloud projected_cloud;
     // Allocate enough space
@@ -201,7 +201,7 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a line model
     */
   void
-    SACModelLine::projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelLine::projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
     // Compute the line direction (P2 - P1)
     robot_msgs::Point32 p21;
@@ -230,7 +230,7 @@ namespace sample_consensus
     * \param indices the point indices found as possible good candidates for creating a valid model
     */
   bool
-    SACModelLine::computeModelCoefficients (std::vector<int> indices)
+    SACModelLine::computeModelCoefficients (const std::vector<int> &indices)
   {
     model_coefficients_.resize (6);
     model_coefficients_[0] = cloud_->pts.at (indices.at (0)).x;
@@ -249,7 +249,7 @@ namespace sample_consensus
     * \param inliers the data inliers found as supporting the model
     */
   std::vector<double>
-    SACModelLine::refitModel (std::vector<int> inliers)
+    SACModelLine::refitModel (const std::vector<int> &inliers)
   {
     if (inliers.size () == 0)
       return (model_coefficients_);
@@ -260,7 +260,7 @@ namespace sample_consensus
     robot_msgs::Point32 centroid;
     // Compute the 3x3 covariance matrix
     Eigen::Matrix3d covariance_matrix;
-    cloud_geometry::nearest::computeCovarianceMatrix (cloud_, &inliers, covariance_matrix, centroid);
+    cloud_geometry::nearest::computeCovarianceMatrix (*cloud_, inliers, covariance_matrix, centroid);
 
     refit_coefficients[0] = centroid.x;
     refit_coefficients[1] = centroid.y;
@@ -285,7 +285,7 @@ namespace sample_consensus
     * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
     */
   bool
-    SACModelLine::doSamplesVerifyModel (std::set<int> indices, double threshold)
+    SACModelLine::doSamplesVerifyModel (const std::set<int> &indices, double threshold)
   {
     double sqr_threshold = threshold * threshold;
     for (std::set<int>::iterator it = indices.begin (); it != indices.end (); ++it)
@@ -299,7 +299,7 @@ namespace sample_consensus
       p4.y = model_coefficients_.at (4) - cloud_->pts.at (*it).y;
       p4.z = model_coefficients_.at (5) - cloud_->pts.at (*it).z;
 
-      robot_msgs::Point32 c = cloud_geometry::cross (&p4, &p3);
+      robot_msgs::Point32 c = cloud_geometry::cross (p4, p3);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
 
       if (sqr_distance < sqr_threshold)

@@ -108,7 +108,7 @@ namespace sample_consensus
     * ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
   std::vector<int>
-    SACModelPlane::selectWithinDistance (std::vector<double> model_coefficients, double threshold)
+    SACModelPlane::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
   {
     std::vector<int> inliers;
 
@@ -132,7 +132,7 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a plane model that we need to compute distances to
     */
   std::vector<double>
-    SACModelPlane::getDistancesToModel (std::vector<double> model_coefficients)
+    SACModelPlane::getDistancesToModel (const std::vector<double> &model_coefficients)
   {
     std::vector<double> distances (indices_.size ());
 
@@ -153,7 +153,7 @@ namespace sample_consensus
     * \param model_coefficients the *normalized* coefficients of a plane model
     */
   robot_msgs::PointCloud
-    SACModelPlane::projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelPlane::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
     robot_msgs::PointCloud projected_cloud;
     // Allocate enough space
@@ -194,7 +194,7 @@ namespace sample_consensus
       for (unsigned int d = 0; d < projected_cloud.get_chan_size (); d++)
         projected_cloud.chan[d].vals[i] = cloud_->chan[d].vals[inliers.at (i)];
     }
-    return (projected_cloud); 
+    return (projected_cloud);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -203,7 +203,7 @@ namespace sample_consensus
     * \param model_coefficients the *normalized* coefficients of a plane model
     */
   void
-    SACModelPlane::projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients)
+    SACModelPlane::projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
   {
     // Get the plane normal
     // Calculate the 2-norm: norm (x) = sqrt (sum (abs (v)^2))
@@ -237,7 +237,7 @@ namespace sample_consensus
     * \param indices the point indices found as possible good candidates for creating a valid model
     */
   bool
-    SACModelPlane::computeModelCoefficients (std::vector<int> indices)
+    SACModelPlane::computeModelCoefficients (const std::vector<int> &indices)
   {
     model_coefficients_.resize (4);
     double Dx1, Dy1, Dz1, Dx2, Dy2, Dz2, Dy1Dy2;
@@ -294,7 +294,7 @@ namespace sample_consensus
     * \param inliers the data inliers found as supporting the model
     */
   std::vector<double>
-    SACModelPlane::refitModel (std::vector<int> inliers)
+    SACModelPlane::refitModel (const std::vector<int> &inliers)
   {
     if (inliers.size () == 0)
     {
@@ -306,7 +306,7 @@ namespace sample_consensus
     double curvature;
 
     // Use Least-Squares to fit the plane through all the given sample points and find out its coefficients
-    cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud_, &inliers, plane_coefficients, curvature);
+    cloud_geometry::nearest::computeSurfaceNormalCurvature (*cloud_, inliers, plane_coefficients, curvature);
 
     std::vector<double> refit (4);
     for (int d = 0; d < 4; d++)
@@ -321,7 +321,7 @@ namespace sample_consensus
     * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
     */
   bool
-    SACModelPlane::doSamplesVerifyModel (std::set<int> indices, double threshold)
+    SACModelPlane::doSamplesVerifyModel (const std::set<int> &indices, double threshold)
   {
     for (std::set<int>::iterator it = indices.begin (); it != indices.end (); ++it)
       if (fabs (model_coefficients_.at (0) * cloud_->pts.at (*it).x +

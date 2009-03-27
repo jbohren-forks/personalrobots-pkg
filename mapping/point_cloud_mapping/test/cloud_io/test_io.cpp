@@ -47,7 +47,7 @@ TEST (CloudIO, Read)
   EXPECT_NEAR (points.pts[0].x, 0.0054216, 1e-5);
   EXPECT_NEAR (points.pts[0].y, 0.11349, 1e-5);
   EXPECT_NEAR (points.pts[0].z, 0.040749, 1e-5);
-  
+
   EXPECT_NEAR (points.pts[points.pts.size () - 1].x, -0.07793, 1e-5);
   EXPECT_NEAR (points.pts[points.pts.size () - 1].y, 0.17516, 1e-5);
   EXPECT_NEAR (points.pts[points.pts.size () - 1].z, -0.0444, 1e-5);
@@ -78,19 +78,19 @@ TEST (CloudIO, Write)
   points.pts[17].x = 2;        points.pts[17].y = -3;        points.pts[17].z = 0;
 
   // Make sure we have permissions to write there
-  int res = savePCDFile ("/tmp/test_cloud_io.pcd", &points, 10);
+  int res = savePCDFile ("/tmp/test_cloud_io.pcd", points, 10);
   EXPECT_EQ (res, 0);
   points.pts.clear ();
-  
+
   // Please make sure that this file exists, otherwise the test will fail.
   res = loadPCDFile ("/tmp/test_cloud_io.pcd", points);
   EXPECT_EQ (res, 0);
   EXPECT_EQ ((int)points.pts.size (), 18);
-  
+
   EXPECT_NEAR (points.pts[0].x, 3.587751, 1e-5);
   EXPECT_NEAR (points.pts[0].y, -4.190982, 1e-5);
   EXPECT_NEAR (points.pts[0].z, 0, 1e-5);
-  
+
   EXPECT_NEAR (points.pts[points.pts.size () - 1].x, 2, 1e-5);
   EXPECT_NEAR (points.pts[points.pts.size () - 1].y, -3, 1e-5);
   EXPECT_NEAR (points.pts[points.pts.size () - 1].z, 0, 1e-5);

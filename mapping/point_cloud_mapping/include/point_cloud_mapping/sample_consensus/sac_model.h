@@ -60,50 +60,50 @@ namespace sample_consensus
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Test whether the given model coefficients are valid given the input point cloud data. Pure virtual.
        * \param model_coefficients the model coefficients that need to be tested */
-      virtual bool testModelCoefficients (std::vector<double> model_coefficients) = 0;
+      virtual bool testModelCoefficients (const std::vector<double> &model_coefficients) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Check whether the given index samples can form a valid model, compute the model coefficients from
        * these samples and store them internally in model_coefficients_. Pure virtual.
        * \param indices the point indices found as possible good candidates for creating a valid model */
-      virtual bool computeModelCoefficients (std::vector<int> indices) = 0;
+      virtual bool computeModelCoefficients (const std::vector<int> &indices) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Recompute the model coefficients using the given inlier set and return them to the user. Pure virtual.
        * @note: these are the coefficients of the model after refinement (eg. after a least-squares optimization)
        * \param inliers the data inliers found as supporting the model */
-      virtual std::vector<double> refitModel (std::vector<int> inliers) = 0;
+      virtual std::vector<double> refitModel (const std::vector<int> &inliers) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Compute all distances from the cloud data to a given model. Pure virtual.
        * \param model_coefficients the coefficients of a model that we need to compute distances to */
-      virtual std::vector<double> getDistancesToModel (std::vector<double> model_coefficients) = 0;
+      virtual std::vector<double> getDistancesToModel (const std::vector<double> &model_coefficients) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Select all the points which respect the given model coefficients as inliers. Pure virtual. 
+      /** \brief Select all the points which respect the given model coefficients as inliers. Pure virtual.
        * \param model_coefficients the coefficients of a model that we need to compute distances to
        * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
        * @note: To get the refined inliers of a model, use:
        *        ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold); */
-      virtual std::vector<int> selectWithinDistance (std::vector<double> model_coefficients, double threshold) = 0;
+      virtual std::vector<int> selectWithinDistance (const std::vector<double> &model_coefficients, double threshold) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Create a new point cloud with inliers projected onto the model. Pure virtual.
        * \param inliers the data inliers that we want to project on the model
        * \param model_coefficients the coefficients of a model */
-      virtual robot_msgs::PointCloud projectPoints (std::vector<int> inliers, std::vector<double> model_coefficients) = 0;
+      virtual robot_msgs::PointCloud projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Project inliers (in place) onto the given model. Pure virtual. 
+      /** \brief Project inliers (in place) onto the given model. Pure virtual.
        * \param inliers the data inliers that we want to project on the model
        * \param model_coefficients the coefficients of a model */
-      virtual void projectPointsInPlace (std::vector<int> inliers, std::vector<double> model_coefficients) = 0;
+      virtual void projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Verify whether a subset of indices verifies the internal model coefficients. Pure virtual.
        * \param indices the data indices that need to be tested against the model
        * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers */
-      virtual bool doSamplesVerifyModel (std::set<int> indices, double threshold) = 0;
+      virtual bool doSamplesVerifyModel (const std::set<int> &indices, double threshold) = 0;
 
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

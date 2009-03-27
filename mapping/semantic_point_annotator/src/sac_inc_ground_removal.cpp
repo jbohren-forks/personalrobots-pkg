@@ -240,8 +240,8 @@ class IncGroundRemoval
         return;
       }
 
-      ROS_DEBUG ("Received %d data points with %d channels (%s).", cloud_.pts.size (), cloud_.chan.size (), cloud_geometry::getAvailableChannels (&cloud_).c_str ());
-      int idx_idx = cloud_geometry::getChannelIndex (&cloud_, "index");
+      ROS_DEBUG ("Received %d data points with %d channels (%s).", (int)cloud_.pts.size (), (int)cloud_.chan.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
+      int idx_idx = cloud_geometry::getChannelIndex (cloud_, "index");
       if (idx_idx == -1)
       {
         ROS_ERROR ("Channel 'index' missing in input PointCloud message!");
@@ -278,7 +278,7 @@ class IncGroundRemoval
       }
       possible_ground_indices.resize (nr_p);
 
-      ROS_DEBUG ("Number of possible ground indices: %d.", possible_ground_indices.size ());
+      ROS_DEBUG ("Number of possible ground indices: %d.", (int)possible_ground_indices.size ());
 
       vector<int> ground_inliers;
 
@@ -288,7 +288,7 @@ class IncGroundRemoval
       if (ground_inliers.size () == 0)
         ROS_WARN ("Couldn't fit a model to the scan.");
 
-      ROS_DEBUG ("Total number of ground inliers before refinement: %d.", ground_inliers.size ());
+      ROS_DEBUG ("Total number of ground inliers before refinement: %d.", (int)ground_inliers.size ());
 
       // Do we attempt to do a planar refinement to remove points "below" the plane model found ?
       if (planar_refine_ > 0)
@@ -303,7 +303,7 @@ class IncGroundRemoval
         // Estimate the plane from the line inliers
         Eigen::Vector4d plane_parameters;
         double curvature;
-        cloud_geometry::nearest::computeSurfaceNormalCurvature (&cloud_, &ground_inliers, plane_parameters, curvature);
+        cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud_, ground_inliers, plane_parameters, curvature);
 
         //make sure that there are inliers to refine
         if(!ground_inliers.empty()){
@@ -330,14 +330,14 @@ class IncGroundRemoval
           // Compute the distance from the remaining points to the model plane, and add to the inliers list if they are below
           for (unsigned int i = 0; i < remaining_possible_ground_indices.size (); i++)
           {
-            double distance_to_ground  = cloud_geometry::distances::pointToPlaneDistanceSigned (&cloud_.pts.at (remaining_possible_ground_indices[i]), plane_parameters);
+            double distance_to_ground  = cloud_geometry::distances::pointToPlaneDistanceSigned (cloud_.pts.at (remaining_possible_ground_indices[i]), plane_parameters);
             if (distance_to_ground > 0)
               continue;
             ground_inliers.push_back (remaining_possible_ground_indices[i]);
           }
         }
       }
-      ROS_DEBUG ("Total number of ground inliers after refinement: %d.", ground_inliers.size ());
+      ROS_DEBUG ("Total number of ground inliers after refinement: %d.", (int)ground_inliers.size ());
 
 #if DEBUG
       // Prepare new arrays
@@ -392,8 +392,8 @@ class IncGroundRemoval
 
       gettimeofday (&t2, NULL);
       double time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_DEBUG ("Number of points found on ground plane: %d ; remaining: %d (%g seconds).", ground_inliers.size (),
-                remaining_indices.size (), time_spent);
+      ROS_DEBUG ("Number of points found on ground plane: %d ; remaining: %d (%g seconds).", (int)ground_inliers.size (),
+                (int)remaining_indices.size (), time_spent);
       node_.publish ("cloud_ground_filtered", cloud_noground_);
     }
 

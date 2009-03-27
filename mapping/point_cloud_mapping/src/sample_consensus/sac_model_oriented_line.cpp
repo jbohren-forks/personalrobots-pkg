@@ -48,7 +48,7 @@ namespace sample_consensus
     * ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
   std::vector<int>
-    SACModelOrientedLine::selectWithinDistance (std::vector<double> model_coefficients, double threshold)
+    SACModelOrientedLine::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
   {
     double sqr_threshold = threshold * threshold;
 
@@ -60,7 +60,7 @@ namespace sample_consensus
     p3.y = model_coefficients.at (4) - model_coefficients.at (1);
     p3.z = model_coefficients.at (5) - model_coefficients.at (2);
 
-    double angle_error = cloud_geometry::angles::getAngle3D (&axis_, &p3);
+    double angle_error = cloud_geometry::angles::getAngle3D (axis_, p3);
 
     // Check whether the current line model satisfies our angle threshold criterion with respect to the given axis
     if (angle_error >  eps_angle_)
@@ -83,7 +83,7 @@ namespace sample_consensus
       // P1P2 = sqrt (x3^2 + y3^2 + z3^2)
       // a = sqrt [(y3*z4 - z3*y4)^2 + (x3*z4 - x4*z3)^2 + (x3*y4 - x4*y3)^2]
       //double distance = SQR_NORM (cANN::cross (p4, p3)) / SQR_NORM (p3);
-      robot_msgs::Point32 c = cloud_geometry::cross (&p4, &p3);
+      robot_msgs::Point32 c = cloud_geometry::cross (p4, p3);
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
 
       if (sqr_distance < sqr_threshold)
@@ -98,7 +98,7 @@ namespace sample_consensus
     * \param model_coefficients the coefficients of a line model that we need to compute distances to
     */
   std::vector<double>
-    SACModelOrientedLine::getDistancesToModel (std::vector<double> model_coefficients)
+    SACModelOrientedLine::getDistancesToModel (const std::vector<double> &model_coefficients)
   {
     std::vector<double> distances (indices_.size ());
 
@@ -108,7 +108,7 @@ namespace sample_consensus
     p3.y = model_coefficients.at (4) - model_coefficients.at (1);
     p3.z = model_coefficients.at (5) - model_coefficients.at (2);
 
-    double angle_error = cloud_geometry::angles::getAngle3D (&axis_, &p3);
+    double angle_error = cloud_geometry::angles::getAngle3D (axis_, p3);
 
     // Check whether the current line model satisfies our angle threshold criterion with respect to the given axis
     if (angle_error >  eps_angle_)
@@ -123,7 +123,7 @@ namespace sample_consensus
       p4.y = model_coefficients.at (4) - cloud_->pts.at (indices_.at (i)).y;
       p4.z = model_coefficients.at (5) - cloud_->pts.at (indices_.at (i)).z;
 
-      robot_msgs::Point32 c = cloud_geometry::cross (&p4, &p3);
+      robot_msgs::Point32 c = cloud_geometry::cross (p4, p3);
       distances[i] = sqrt (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
     }
     return (distances);

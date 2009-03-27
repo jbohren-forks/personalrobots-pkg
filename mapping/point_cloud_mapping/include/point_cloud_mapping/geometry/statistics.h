@@ -52,17 +52,17 @@ namespace cloud_geometry
       * \param max_idx the resultant index of the 'maximum' point
       */
     inline void
-      getLargestDiagonalIndices (const robot_msgs::Polygon3D *poly, int &min_idx, int &max_idx)
+      getLargestDiagonalIndices (const robot_msgs::Polygon3D &poly, int &min_idx, int &max_idx)
     {
       double largest_diagonal = -FLT_MAX;
-      for (unsigned int i = 0; i < poly->points.size (); i++)
+      for (unsigned int i = 0; i < poly.points.size (); i++)
       {
-        for (unsigned int j = i; j < poly->points.size (); j++)
+        for (unsigned int j = i; j < poly.points.size (); j++)
         {
           double current_diagonal =
-                                    (poly->points[i].x - poly->points[j].x) * (poly->points[i].x - poly->points[j].x) +
-                                    (poly->points[i].y - poly->points[j].y) * (poly->points[i].y - poly->points[j].y) +
-                                    (poly->points[i].z - poly->points[j].z) * (poly->points[i].z - poly->points[j].z);
+                                    (poly.points[i].x - poly.points[j].x) * (poly.points[i].x - poly.points[j].x) +
+                                    (poly.points[i].y - poly.points[j].y) * (poly.points[i].y - poly.points[j].y) +
+                                    (poly.points[i].z - poly.points[j].z) * (poly.points[i].z - poly.points[j].z);
           if (current_diagonal > largest_diagonal)
           {
             min_idx = i;
@@ -80,17 +80,17 @@ namespace cloud_geometry
       * \param max_idx the resultant index of the 'maximum' point
       */
     inline void
-      getLargestDiagonalIndices (const robot_msgs::PointCloud *points, int &min_idx, int &max_idx)
+      getLargestDiagonalIndices (const robot_msgs::PointCloud &points, int &min_idx, int &max_idx)
     {
       double largest_diagonal = -FLT_MAX;
-      for (unsigned int i = 0; i < points->pts.size (); i++)
+      for (unsigned int i = 0; i < points.pts.size (); i++)
       {
-        for (unsigned int j = i; j < points->pts.size (); j++)
+        for (unsigned int j = i; j < points.pts.size (); j++)
         {
           double current_diagonal =
-                                    (points->pts.at (i).x - points->pts.at (j).x) * (points->pts.at (i).x - points->pts.at (j).x) +
-                                    (points->pts.at (i).y - points->pts.at (j).y) * (points->pts.at (i).y - points->pts.at (j).y) +
-                                    (points->pts.at (i).z - points->pts.at (j).z) * (points->pts.at (i).z - points->pts.at (j).z);
+                                    (points.pts.at (i).x - points.pts.at (j).x) * (points.pts.at (i).x - points.pts.at (j).x) +
+                                    (points.pts.at (i).y - points.pts.at (j).y) * (points.pts.at (i).y - points.pts.at (j).y) +
+                                    (points.pts.at (i).z - points.pts.at (j).z) * (points.pts.at (i).z - points.pts.at (j).z);
           if (current_diagonal > largest_diagonal)
           {
             min_idx = i;
@@ -109,17 +109,17 @@ namespace cloud_geometry
       * \param max_idx the resultant index of the 'maximum' point
       */
     inline void
-      getLargestDiagonalIndices (const robot_msgs::PointCloud *points, const std::vector<int> *indices, int &min_idx, int &max_idx)
+      getLargestDiagonalIndices (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int &min_idx, int &max_idx)
     {
       double largest_diagonal = -FLT_MAX;
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
-        for (unsigned int j = i; j < indices->size (); j++)
+        for (unsigned int j = i; j < indices.size (); j++)
         {
           double current_diagonal =
-                                    (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) * (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) +
-                                    (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y) * (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y) +
-                                    (points->pts.at (indices->at (i)).z - points->pts.at (indices->at (j)).z) * (points->pts.at (indices->at (i)).z - points->pts.at (indices->at (j)).z);
+                                    (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) * (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) +
+                                    (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y) * (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y) +
+                                    (points.pts.at (indices.at (i)).z - points.pts.at (indices.at (j)).z) * (points.pts.at (indices.at (i)).z - points.pts.at (indices.at (j)).z);
           if (current_diagonal > largest_diagonal)
           {
             min_idx = i;
@@ -137,21 +137,21 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestDiagonalPoints (const robot_msgs::Polygon3D *poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getLargestDiagonalPoints (const robot_msgs::Polygon3D &poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
     {
       double largest_diagonal = -FLT_MAX;
-      for (unsigned int i = 0; i < poly->points.size (); i++)
+      for (unsigned int i = 0; i < poly.points.size (); i++)
       {
-        for (unsigned int j = i; j < poly->points.size (); j++)
+        for (unsigned int j = i; j < poly.points.size (); j++)
         {
           double current_diagonal =
-                                    (poly->points[i].x - poly->points[j].x) * (poly->points[i].x - poly->points[j].x) +
-                                    (poly->points[i].y - poly->points[j].y) * (poly->points[i].y - poly->points[j].y) +
-                                    (poly->points[i].z - poly->points[j].z) * (poly->points[i].z - poly->points[j].z);
+                                    (poly.points[i].x - poly.points[j].x) * (poly.points[i].x - poly.points[j].x) +
+                                    (poly.points[i].y - poly.points[j].y) * (poly.points[i].y - poly.points[j].y) +
+                                    (poly.points[i].z - poly.points[j].z) * (poly.points[i].z - poly.points[j].z);
           if (current_diagonal > largest_diagonal)
           {
-            min_p.x = poly->points[i].x; min_p.y = poly->points[i].y; min_p.z = poly->points[i].z;
-            max_p.x = poly->points[j].x; max_p.y = poly->points[j].y; max_p.z = poly->points[j].z;
+            min_p.x = poly.points[i].x; min_p.y = poly.points[i].y; min_p.z = poly.points[i].z;
+            max_p.x = poly.points[j].x; max_p.y = poly.points[j].y; max_p.z = poly.points[j].z;
             largest_diagonal = current_diagonal;
           }
         }
@@ -165,21 +165,21 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestDiagonalPoints (const robot_msgs::PointCloud *points, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getLargestDiagonalPoints (const robot_msgs::PointCloud &points, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
     {
       double largest_diagonal = -FLT_MAX;
-      for (unsigned int i = 0; i < points->pts.size (); i++)
+      for (unsigned int i = 0; i < points.pts.size (); i++)
       {
-        for (unsigned int j = i; j < points->pts.size (); j++)
+        for (unsigned int j = i; j < points.pts.size (); j++)
         {
           double current_diagonal =
-                                    (points->pts.at (i).x - points->pts.at (j).x) * (points->pts.at (i).x - points->pts.at (j).x) +
-                                    (points->pts.at (i).y - points->pts.at (j).y) * (points->pts.at (i).y - points->pts.at (j).y) +
-                                    (points->pts.at (i).z - points->pts.at (j).z) * (points->pts.at (i).z - points->pts.at (j).z);
+                                    (points.pts.at (i).x - points.pts.at (j).x) * (points.pts.at (i).x - points.pts.at (j).x) +
+                                    (points.pts.at (i).y - points.pts.at (j).y) * (points.pts.at (i).y - points.pts.at (j).y) +
+                                    (points.pts.at (i).z - points.pts.at (j).z) * (points.pts.at (i).z - points.pts.at (j).z);
           if (current_diagonal > largest_diagonal)
           {
-            min_p.x = points->pts.at (i).x; min_p.y = points->pts.at (i).y; min_p.z = points->pts.at (i).z;
-            max_p.x = points->pts.at (j).x; max_p.y = points->pts.at (j).y; max_p.z = points->pts.at (j).z;
+            min_p.x = points.pts.at (i).x; min_p.y = points.pts.at (i).y; min_p.z = points.pts.at (i).z;
+            max_p.x = points.pts.at (j).x; max_p.y = points.pts.at (j).y; max_p.z = points.pts.at (j).z;
             largest_diagonal = current_diagonal;
           }
         }
@@ -194,32 +194,32 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestDiagonalPoints (const robot_msgs::PointCloud *points, const std::vector<int> *indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getLargestDiagonalPoints (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
     {
       double largest_diagonal = -FLT_MAX;
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
-        for (unsigned int j = i; j < indices->size (); j++)
+        for (unsigned int j = i; j < indices.size (); j++)
         {
           double current_diagonal =
-                                    (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) * (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) +
-                                    (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y) * (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y) +
-                                    (points->pts.at (indices->at (i)).z - points->pts.at (indices->at (j)).z) * (points->pts.at (indices->at (i)).z - points->pts.at (indices->at (j)).z);
+                                    (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) * (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) +
+                                    (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y) * (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y) +
+                                    (points.pts.at (indices.at (i)).z - points.pts.at (indices.at (j)).z) * (points.pts.at (indices.at (i)).z - points.pts.at (indices.at (j)).z);
           if (current_diagonal > largest_diagonal)
           {
-            min_p.x = points->pts.at (indices->at (i)).x; min_p.y = points->pts.at (indices->at (i)).y; min_p.z = points->pts.at (indices->at (i)).z;
-            max_p.x = points->pts.at (indices->at (j)).x; max_p.y = points->pts.at (indices->at (j)).y; max_p.z = points->pts.at (indices->at (j)).z;
+            min_p.x = points.pts.at (indices.at (i)).x; min_p.y = points.pts.at (indices.at (i)).y; min_p.z = points.pts.at (indices.at (i)).z;
+            max_p.x = points.pts.at (indices.at (j)).x; max_p.y = points.pts.at (indices.at (j)).y; max_p.z = points.pts.at (indices.at (j)).z;
             largest_diagonal = current_diagonal;
           }
         }
       }
     }
 
-    robot_msgs::Point32 computeMedian (const robot_msgs::PointCloud& points);
-    robot_msgs::Point32 computeMedian (const robot_msgs::PointCloud& points, const std::vector<int>& indices);
+    robot_msgs::Point32 computeMedian (const robot_msgs::PointCloud &points);
+    robot_msgs::Point32 computeMedian (const robot_msgs::PointCloud &points, const std::vector<int> &indices);
 
-    double computeMedianAbsoluteDeviation (const robot_msgs::PointCloud& points, double sigma);
-    double computeMedianAbsoluteDeviation (const robot_msgs::PointCloud& points, const std::vector<int>& indices, double sigma);
+    double computeMedianAbsoluteDeviation (const robot_msgs::PointCloud &points, double sigma);
+    double computeMedianAbsoluteDeviation (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double sigma);
 
 
 
@@ -230,19 +230,19 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestXYPoints (const robot_msgs::Polygon3D *poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getLargestXYPoints (const robot_msgs::Polygon3D &poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
     {
       double largest_xy = -FLT_MAX;
-      for (unsigned int i = 0; i < poly->points.size (); i++)
+      for (unsigned int i = 0; i < poly.points.size (); i++)
       {
-        for (unsigned int j = i; j < poly->points.size (); j++)
+        for (unsigned int j = i; j < poly.points.size (); j++)
         {
-          double current_xy = (poly->points[i].x - poly->points[j].x) * (poly->points[i].x - poly->points[j].x) +
-                              (poly->points[i].y - poly->points[j].y) * (poly->points[i].y - poly->points[j].y);
+          double current_xy = (poly.points[i].x - poly.points[j].x) * (poly.points[i].x - poly.points[j].x) +
+                              (poly.points[i].y - poly.points[j].y) * (poly.points[i].y - poly.points[j].y);
           if (current_xy > largest_xy)
           {
-            min_p.x = poly->points[i].x; min_p.y = poly->points[i].y; min_p.z = 0;
-            max_p.x = poly->points[j].x; max_p.y = poly->points[j].y; max_p.z = 0;
+            min_p.x = poly.points[i].x; min_p.y = poly.points[i].y; min_p.z = 0;
+            max_p.x = poly.points[j].x; max_p.y = poly.points[j].y; max_p.z = 0;
             largest_xy = current_xy;
           }
         }
@@ -259,24 +259,24 @@ namespace cloud_geometry
       * \param maxP the resultant maximum point in the set
       */
     inline void
-      getLargestXYPoints (const robot_msgs::PointCloud *points, const std::vector<int> *indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getLargestXYPoints (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
     {
       double largest_xy = -FLT_MAX;
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
-        for (unsigned int j = i; j < indices->size (); j++)
+        for (unsigned int j = i; j < indices.size (); j++)
         {
-          double current_xy = (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) * 
-                              (points->pts.at (indices->at (i)).x - points->pts.at (indices->at (j)).x) +
-                              (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y) * 
-                              (points->pts.at (indices->at (i)).y - points->pts.at (indices->at (j)).y);
+          double current_xy = (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) *
+                              (points.pts.at (indices.at (i)).x - points.pts.at (indices.at (j)).x) +
+                              (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y) *
+                              (points.pts.at (indices.at (i)).y - points.pts.at (indices.at (j)).y);
           if (current_xy > largest_xy )
           {
-            min_p.x = points->pts.at (indices->at (i)).x; 
-            min_p.y = points->pts.at (indices->at (i)).y; 
+            min_p.x = points.pts.at (indices.at (i)).x;
+            min_p.y = points.pts.at (indices.at (i)).y;
             min_p.z = 0;
-            max_p.x = points->pts.at (indices->at (j)).x; 
-            max_p.y = points->pts.at (indices->at (j)).y; 
+            max_p.x = points.pts.at (indices.at (j)).x;
+            max_p.y = points.pts.at (indices.at (j)).y;
             max_p.z = 0;
             largest_xy = current_xy;
           }
@@ -294,11 +294,11 @@ namespace cloud_geometry
       * \param r the r-dimension
       */
     inline double
-      computeCentralizedMoment (const robot_msgs::PointCloud *points, double p, double q, double r)
+      computeCentralizedMoment (const robot_msgs::PointCloud &points, double p, double q, double r)
     {
       double result = 0.0;
-      for (unsigned int cp = 0; cp < points->pts.size (); cp++)
-        result += pow (points->pts[cp].x, p) * pow (points->pts[cp].y, q) * pow (points->pts[cp].z, r);
+      for (unsigned int cp = 0; cp < points.pts.size (); cp++)
+        result += pow (points.pts[cp].x, p) * pow (points.pts[cp].y, q) * pow (points.pts[cp].z, r);
 
       return (result);
     }
@@ -312,11 +312,11 @@ namespace cloud_geometry
       * \param r the r-dimension
       */
     inline double
-      computeCentralizedMoment (const robot_msgs::PointCloud *points, const std::vector<int> *indices, double p, double q, double r)
+      computeCentralizedMoment (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double p, double q, double r)
     {
       double result = 0.0;
-      for (unsigned int cp = 0; cp < indices->size (); cp++)
-        result += pow (points->pts.at (indices->at (cp)).x, p) * pow (points->pts.at (indices->at (cp)).y, q) * pow (points->pts.at (indices->at (cp)).z, r);
+      for (unsigned int cp = 0; cp < indices.size (); cp++)
+        result += pow (points.pts.at (indices.at (cp)).x, p) * pow (points.pts.at (indices.at (cp)).y, q) * pow (points.pts.at (indices.at (cp)).z, r);
 
       return (result);
     }
@@ -328,20 +328,20 @@ namespace cloud_geometry
       * \param maxP the resultant maximum bounding box coordinates
       */
     inline void
-      getMinMax (const robot_msgs::PointCloud *points, robot_msgs::Point32 &minP, robot_msgs::Point32 &maxP)
+      getMinMax (const robot_msgs::PointCloud &points, robot_msgs::Point32 &minP, robot_msgs::Point32 &maxP)
     {
       minP.x = minP.y = minP.z = FLT_MAX;
       maxP.x = maxP.y = maxP.z = -FLT_MAX;
 
-      for (unsigned int i = 0; i < points->pts.size (); i++)
+      for (unsigned int i = 0; i < points.pts.size (); i++)
       {
-        minP.x = (points->pts[i].x < minP.x) ? points->pts[i].x : minP.x;
-        minP.y = (points->pts[i].y < minP.y) ? points->pts[i].y : minP.y;
-        minP.z = (points->pts[i].z < minP.z) ? points->pts[i].z : minP.z;
+        minP.x = (points.pts[i].x < minP.x) ? points.pts[i].x : minP.x;
+        minP.y = (points.pts[i].y < minP.y) ? points.pts[i].y : minP.y;
+        minP.z = (points.pts[i].z < minP.z) ? points.pts[i].z : minP.z;
 
-        maxP.x = (points->pts[i].x > maxP.x) ? points->pts[i].x : maxP.x;
-        maxP.y = (points->pts[i].y > maxP.y) ? points->pts[i].y : maxP.y;
-        maxP.z = (points->pts[i].z > maxP.z) ? points->pts[i].z : maxP.z;
+        maxP.x = (points.pts[i].x > maxP.x) ? points.pts[i].x : maxP.x;
+        maxP.y = (points.pts[i].y > maxP.y) ? points.pts[i].y : maxP.y;
+        maxP.z = (points.pts[i].z > maxP.z) ? points.pts[i].z : maxP.z;
       }
     }
 
@@ -353,20 +353,20 @@ namespace cloud_geometry
       * \param max_p the resultant maximum bounding box coordinates
       */
     inline void
-      getMinMax (const robot_msgs::Polygon3D *poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getMinMax (const robot_msgs::Polygon3D &poly, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
     {
       min_p.x = min_p.y = min_p.z = FLT_MAX;
       max_p.x = max_p.y = max_p.z = -FLT_MAX;
 
-      for (unsigned int i = 0; i < poly->points.size (); i++)
+      for (unsigned int i = 0; i < poly.points.size (); i++)
       {
-        min_p.x = (poly->points[i].x < min_p.x) ? poly->points[i].x : min_p.x;
-        min_p.y = (poly->points[i].y < min_p.y) ? poly->points[i].y : min_p.y;
-        min_p.z = (poly->points[i].z < min_p.z) ? poly->points[i].z : min_p.z;
+        min_p.x = (poly.points[i].x < min_p.x) ? poly.points[i].x : min_p.x;
+        min_p.y = (poly.points[i].y < min_p.y) ? poly.points[i].y : min_p.y;
+        min_p.z = (poly.points[i].z < min_p.z) ? poly.points[i].z : min_p.z;
 
-        max_p.x = (poly->points[i].x > max_p.x) ? poly->points[i].x : max_p.x;
-        max_p.y = (poly->points[i].y > max_p.y) ? poly->points[i].y : max_p.y;
-        max_p.z = (poly->points[i].z > max_p.z) ? poly->points[i].z : max_p.z;
+        max_p.x = (poly.points[i].x > max_p.x) ? poly.points[i].x : max_p.x;
+        max_p.y = (poly.points[i].y > max_p.y) ? poly.points[i].y : max_p.y;
+        max_p.z = (poly.points[i].z > max_p.z) ? poly.points[i].z : max_p.z;
       }
     }
 
@@ -378,20 +378,20 @@ namespace cloud_geometry
       * \param max_p the resultant maximum bounding box coordinates
       */
     inline void
-      getMinMax (const robot_msgs::PointCloud *points, const std::vector<int> *indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
+      getMinMax (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::Point32 &min_p, robot_msgs::Point32 &max_p)
     {
       min_p.x = min_p.y = min_p.z = FLT_MAX;
       max_p.x = max_p.y = max_p.z = -FLT_MAX;
 
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
-        min_p.x = (points->pts.at (indices->at (i)).x < min_p.x) ? points->pts.at (indices->at (i)).x : min_p.x;
-        min_p.y = (points->pts.at (indices->at (i)).y < min_p.y) ? points->pts.at (indices->at (i)).y : min_p.y;
-        min_p.z = (points->pts.at (indices->at (i)).z < min_p.z) ? points->pts.at (indices->at (i)).z : min_p.z;
+        min_p.x = (points.pts.at (indices.at (i)).x < min_p.x) ? points.pts.at (indices.at (i)).x : min_p.x;
+        min_p.y = (points.pts.at (indices.at (i)).y < min_p.y) ? points.pts.at (indices.at (i)).y : min_p.y;
+        min_p.z = (points.pts.at (indices.at (i)).z < min_p.z) ? points.pts.at (indices.at (i)).z : min_p.z;
 
-        max_p.x = (points->pts.at (indices->at (i)).x > max_p.x) ? points->pts.at (indices->at (i)).x : max_p.x;
-        max_p.y = (points->pts.at (indices->at (i)).y > max_p.y) ? points->pts.at (indices->at (i)).y : max_p.y;
-        max_p.z = (points->pts.at (indices->at (i)).z > max_p.z) ? points->pts.at (indices->at (i)).z : max_p.z;
+        max_p.x = (points.pts.at (indices.at (i)).x > max_p.x) ? points.pts.at (indices.at (i)).x : max_p.x;
+        max_p.y = (points.pts.at (indices.at (i)).y > max_p.y) ? points.pts.at (indices.at (i)).y : max_p.y;
+        max_p.z = (points.pts.at (indices.at (i)).z > max_p.z) ? points.pts.at (indices.at (i)).z : max_p.z;
       }
     }
 
@@ -405,23 +405,23 @@ namespace cloud_geometry
       * \param cut_distance a maximum admissible distance threshold for points from the laser origin
       */
     inline void
-      getMinMax (const robot_msgs::PointCloud *points, robot_msgs::Point32 &min_pt, robot_msgs::Point32 &max_pt,
+      getMinMax (const robot_msgs::PointCloud &points, robot_msgs::Point32 &min_pt, robot_msgs::Point32 &max_pt,
                  int c_idx, double cut_distance)
     {
       min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
       max_pt.x = max_pt.y = max_pt.z = -FLT_MAX;
 
-      for (unsigned int i = 0; i < points->pts.size (); i++)
+      for (unsigned int i = 0; i < points.pts.size (); i++)
       {
-        if (c_idx != -1 && points->chan[c_idx].vals[i] > cut_distance)
+        if (c_idx != -1 && points.chan[c_idx].vals[i] > cut_distance)
           continue;
-        min_pt.x = (points->pts[i].x < min_pt.x) ? points->pts[i].x : min_pt.x;
-        min_pt.y = (points->pts[i].y < min_pt.y) ? points->pts[i].y : min_pt.y;
-        min_pt.z = (points->pts[i].z < min_pt.z) ? points->pts[i].z : min_pt.z;
+        min_pt.x = (points.pts[i].x < min_pt.x) ? points.pts[i].x : min_pt.x;
+        min_pt.y = (points.pts[i].y < min_pt.y) ? points.pts[i].y : min_pt.y;
+        min_pt.z = (points.pts[i].z < min_pt.z) ? points.pts[i].z : min_pt.z;
 
-        max_pt.x = (points->pts[i].x > max_pt.x) ? points->pts[i].x : max_pt.x;
-        max_pt.y = (points->pts[i].y > max_pt.y) ? points->pts[i].y : max_pt.y;
-        max_pt.z = (points->pts[i].z > max_pt.z) ? points->pts[i].z : max_pt.z;
+        max_pt.x = (points.pts[i].x > max_pt.x) ? points.pts[i].x : max_pt.x;
+        max_pt.y = (points.pts[i].y > max_pt.y) ? points.pts[i].y : max_pt.y;
+        max_pt.z = (points.pts[i].z > max_pt.z) ? points.pts[i].z : max_pt.z;
       }
     }
 
@@ -436,32 +436,32 @@ namespace cloud_geometry
       * \param cut_distance a maximum admissible distance threshold for points from the laser origin
       */
     inline void
-      getMinMax (const robot_msgs::PointCloud *points, const std::vector<int> *indices, robot_msgs::Point32 &min_pt, robot_msgs::Point32 &max_pt,
+      getMinMax (const robot_msgs::PointCloud &points, const std::vector<int> &indices, robot_msgs::Point32 &min_pt, robot_msgs::Point32 &max_pt,
                  int c_idx, double cut_distance)
     {
       min_pt.x = min_pt.y = min_pt.z = FLT_MAX;
       max_pt.x = max_pt.y = max_pt.z = -FLT_MAX;
 
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
-        if (c_idx != -1 && points->chan[c_idx].vals[indices->at (i)] > cut_distance)
+        if (c_idx != -1 && points.chan[c_idx].vals[indices.at (i)] > cut_distance)
           continue;
-        min_pt.x = (points->pts[indices->at (i)].x < min_pt.x) ? points->pts[indices->at (i)].x : min_pt.x;
-        min_pt.y = (points->pts[indices->at (i)].y < min_pt.y) ? points->pts[indices->at (i)].y : min_pt.y;
-        min_pt.z = (points->pts[indices->at (i)].z < min_pt.z) ? points->pts[indices->at (i)].z : min_pt.z;
+        min_pt.x = (points.pts[indices.at (i)].x < min_pt.x) ? points.pts[indices.at (i)].x : min_pt.x;
+        min_pt.y = (points.pts[indices.at (i)].y < min_pt.y) ? points.pts[indices.at (i)].y : min_pt.y;
+        min_pt.z = (points.pts[indices.at (i)].z < min_pt.z) ? points.pts[indices.at (i)].z : min_pt.z;
 
-        max_pt.x = (points->pts[indices->at (i)].x > max_pt.x) ? points->pts[indices->at (i)].x : max_pt.x;
-        max_pt.y = (points->pts[indices->at (i)].y > max_pt.y) ? points->pts[indices->at (i)].y : max_pt.y;
-        max_pt.z = (points->pts[indices->at (i)].z > max_pt.z) ? points->pts[indices->at (i)].z : max_pt.z;
+        max_pt.x = (points.pts[indices.at (i)].x > max_pt.x) ? points.pts[indices.at (i)].x : max_pt.x;
+        max_pt.y = (points.pts[indices.at (i)].y > max_pt.y) ? points.pts[indices.at (i)].y : max_pt.y;
+        max_pt.z = (points.pts[indices.at (i)].z > max_pt.z) ? points.pts[indices.at (i)].z : max_pt.z;
       }
     }
 
-    void getChannelMeanStd (const robot_msgs::PointCloud *points, int d_idx, double &mean, double &stddev);
-    void getChannelMeanStd (const robot_msgs::PointCloud *points, const std::vector<int> *indices, int d_idx, double &mean, double &stddev);
+    void getChannelMeanStd (const robot_msgs::PointCloud &points, int d_idx, double &mean, double &stddev);
+    void getChannelMeanStd (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx, double &mean, double &stddev);
 
-    void selectPointsOutsideDistribution (const robot_msgs::PointCloud *points, const std::vector<int> *indices, int d_idx,
+    void selectPointsOutsideDistribution (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
                                           double mean, double stddev, double alpha, std::vector<int> &inliers);
-    void selectPointsInsideDistribution (const robot_msgs::PointCloud *points, const std::vector<int> *indices, int d_idx,
+    void selectPointsInsideDistribution (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx,
                                          double mean, double stddev, double alpha, std::vector<int> &inliers);
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -471,17 +471,17 @@ namespace cloud_geometry
       * \param stddev the resultant standard deviation of the distribution
       */
     inline void
-      getMeanStd (const std::vector<int> *values, double &mean, double &stddev)
+      getMeanStd (const std::vector<int> &values, double &mean, double &stddev)
     {
       double sum = 0, sq_sum = 0;
 
-      for (unsigned int i = 0; i < values->size (); i++)
+      for (unsigned int i = 0; i < values.size (); i++)
       {
-        sum += values->at (i);
-        sq_sum += values->at (i) * values->at (i);
+        sum += values.at (i);
+        sq_sum += values.at (i) * values.at (i);
       }
-      mean = sum / values->size ();
-      double variance = (double)(sq_sum - sum * sum / values->size ()) / (values->size () - 1);
+      mean = sum / values.size ();
+      double variance = (double)(sq_sum - sum * sum / values.size ()) / (values.size () - 1);
       stddev = sqrt (variance);
     }
 
