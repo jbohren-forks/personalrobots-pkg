@@ -210,7 +210,8 @@ if __name__ == '__main__':
     pickup()
     pub.publish(Float64(0.6))
 
-    rospy.spin()
+    sleep(2)
+    #rospy.spin()
 
   finally:
     for name in controllers:

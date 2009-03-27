@@ -79,6 +79,7 @@ def main():
             tf_msg.transforms[0].header.stamp = rospy.rostime.get_rostime()
             tf_pub.publish(tf_msg)
             seq += 1
+            outlet_msg = track_outlet_pose.msg
         else:
             outlet_msg = track_outlet_pose.msg
 

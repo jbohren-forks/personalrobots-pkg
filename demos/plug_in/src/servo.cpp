@@ -37,13 +37,15 @@
 #include "robot_msgs/TaskFrameFormalism.h"
 
 const double MIN_STANDOFF = 0.035;
+const double SUCCESS_THRESHOLD = 0.025;
 
-enum {MEASURING, MOVING, PUSHING, FORCING};
+enum {MEASURING, MOVING, PUSHING, FORCING, HOLDING};
 int g_state = MEASURING;
 
 ros::Time g_started_pushing = ros::Time::now(),
   g_started_forcing = ros::Time::now(),
-  g_stopped_forcing = ros::Time::now();
+  g_stopped_forcing = ros::Time::now(),
+  g_started_holding = ros::Time::now();
 
 boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PoseStamped> > g_mn;
 boost::scoped_ptr<tf::TransformListener> TF;
@@ -135,7 +137,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
     printf("Offset: (% 0.3lf, % 0.3lf, % 0.3lf)\n", offset.x(), offset.y(), offset.z());
     if (g_started_pushing + ros::Duration(5.0) < ros::Time::now())
     {
-      if (false) // if (in_outlet)
+      if (offset.x() > SUCCESS_THRESHOLD) // if (in_outlet)
       {
         g_state = FORCING;
       }
@@ -148,7 +150,13 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
   }
 
   case FORCING: {
-    g_state = MEASURING;
+    if (ros::Time::now() > g_started_forcing + ros::Duration(1.0))
+      g_state = HOLDING;
+    break;
+  }
+
+  case HOLDING: {
+    //g_state = MEASURING;
     break;
   }
   }
@@ -234,7 +242,7 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
       tff.mode.rot.x = 2;
       tff.mode.rot.y = 2;
       tff.mode.rot.z = 2;
-      tff.value.vel.x = 40;
+      tff.value.vel.x = 50;
       tff.value.vel.y = mech_offset.getOrigin().y();
       tff.value.vel.z = mech_offset.getOrigin().z();
       tff.value.rot.x = 0.0;
@@ -246,6 +254,26 @@ void plug_cb(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg
       tff.mode.vel.z = 2;
       tff.value.vel.y = 0.0;
       tff.value.vel.z = 0.0;
+      ros::Node::instance()->publish("/arm_hybrid/command", tff);
+      break;
+    }
+
+    case HOLDING: {
+      printf("enter HOLDING\n");
+      g_started_holding = ros::Time::now();
+      robot_msgs::TaskFrameFormalism tff;
+      tff.header.frame_id = "outlet_pose";
+      tff.header.stamp = msg->header.stamp;
+      tff.mode.vel.x = 1;
+      tff.mode.vel.y = 3;
+      tff.mode.vel.z = 3;
+      tff.mode.rot.x = 3;
+      tff.mode.rot.y = 3;
+      tff.mode.rot.z = 3;
+      tff.value.vel.x = 4;
+      tff.value.vel.y = mech_offset.getOrigin().y();
+      tff.value.vel.z = mech_offset.getOrigin().z();
+      mech_offset.getBasis().getEulerZYX(tff.value.rot.z, tff.value.rot.y, tff.value.rot.x);
       ros::Node::instance()->publish("/arm_hybrid/command", tff);
       break;
     }

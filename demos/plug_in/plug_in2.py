@@ -138,6 +138,8 @@ def main():
     else:
         # trajectory controller is already spawned
 
+        # TODO: actually check if the traj controller is up.  Spawn if not
+
         p_up = PoseStamped()
         p_up.header.frame_id = 'base_link'
         p_up.header.stamp = rospy.get_rostime()
@@ -150,19 +152,26 @@ def main():
         p_face.pose.position = xyz(0.33, -0.09, 0.37)
         p_face.pose.orientation = Quaternion(-0.04, 0.26, -0.00, 0.96)
 
-        p_stage = PoseStamped()
-        p_stage.header.frame_id = 'outlet_pose'
-        p_stage.header.stamp = rospy.get_rostime()
-        p_stage.pose.position = xyz(-0.12, 0.0, 0.0)
-        p_stage.pose.orientation = rpy(0,0.3,0)
+        p_stage1 = PoseStamped()
+        p_stage1.header.frame_id = 'outlet_pose'
+        p_stage1.header.stamp = rospy.get_rostime()
+        p_stage1.pose.position = xyz(-0.12, 0.0, 0.04)
+        p_stage1.pose.orientation = rpy(0,0.3,0)
+
+        p_stage2 = PoseStamped()
+        p_stage2.header.frame_id = 'outlet_pose'
+        p_stage2.header.stamp = rospy.get_rostime()
+        p_stage2.pose.position = xyz(-0.07, 0.0, 0.04)
+        p_stage2.pose.orientation = rpy(0,0.3,0)
 
         try:
             print "Waiting for the trajectory controller"
             move_arm = rospy.ServiceProxy('cartesian_trajectory_right/move_to', MoveToPose)
             print "Staging the plug"
-            move_arm(p_up)
-            move_arm(p_face)
-            move_arm(p_stage)
+            p_up.header.stamp = rospy.get_rostime(); move_arm(p_up)
+            p_face.header.stamp = rospy.get_rostime(); move_arm(p_face)
+            p_stage1.header.stamp = rospy.get_rostime(); move_arm(p_stage1)
+            p_stage2.header.stamp = rospy.get_rostime(); move_arm(p_stage2)
         except rospy.ServiceException, e:
             print "move_to service failed: %s" % e
 
@@ -252,7 +261,8 @@ def main():
         rospy.wait_for_service("/arm_hybrid/set_tool_frame")
         if rospy.is_shutdown(): return
         set_tool_frame = rospy.ServiceProxy("/arm_hybrid/set_tool_frame", SetPoseStamped)
-        set_tool_frame(plug_pose)
+        #set_tool_frame(plug_pose)
+        set_tool_frame(track_plug_pose.msg)
         print "Tool frame set"
         time.sleep(1)
 
