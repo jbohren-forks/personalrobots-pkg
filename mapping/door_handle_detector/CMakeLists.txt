@@ -8,11 +8,6 @@ genmsg()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-#rospack_add_executable (door_handle_detector_node
-#                        src/geometric_helper.cpp
-#                        src/door_handle_detector.cpp
-#                       )
-
 rospack_add_executable (doors_detector_node
                         src/geometric_helper.cpp
                         src/doors_detector.cpp
@@ -64,7 +59,6 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 
   if( HAVE_OPENMP AND HAS_GOMP_LIB )
     add_definitions("-fopenmp")
-#    target_link_libraries(door_handle_detector_node gomp)
     target_link_libraries(doors_detector_node gomp)
     target_link_libraries(handle_detector_node gomp)
     set(OPENMP_LFLAGS "-lgomp")
