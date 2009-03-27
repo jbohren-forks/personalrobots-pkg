@@ -49,7 +49,7 @@ namespace door_handle_detector{
 class DetectDoorAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
 {
 public:
-  DetectDoorAction();
+  DetectDoorAction(ros::Node& node);
   ~DetectDoorAction();
 
   virtual void handleActivate(const robot_msgs::Door& door);

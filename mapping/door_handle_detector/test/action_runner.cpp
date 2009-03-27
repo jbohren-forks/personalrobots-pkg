@@ -42,6 +42,7 @@
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 
+
 using namespace door_handle_detector;
 
 
@@ -53,7 +54,9 @@ int main(int argc, char** argv)
 {
   ros::init(argc,argv); 
 
-  DetectDoorAction detect;
+  ros::Node node("name");
+
+  DetectDoorAction detect(node);
   GraspDoorAction grasp;
   OpenDoorAction open;
 

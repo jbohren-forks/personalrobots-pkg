@@ -35,76 +35,15 @@
  *
  *********************************************************************/
 
-#include <ros/node.h>
+#include <door_handle_detector/action_detect_door.h>
+#include <door_handle_detector/DetectDoorActionStatus.h>
 #include <robot_msgs/Door.h>
-#include <door_handle_detector/DoorsDetectorCloud.h>
-#include <point_cloud_assembler/BuildCloudAngle.h>
-#include <tf/transform_listener.h>
+#include <ros/node.h>
+#include <robot_actions/action_runner.h>
 
 using namespace ros;
 using namespace std;
-
-class TriggerDoorsCloudDetection
-{
-private:
-  robot_msgs::Door my_door_;
-  ros::Node& node_;
-  tf::TransformListener tf_;
-  
-public:
-  TriggerDoorsCloudDetection (ros::Node& anode) 
-    : node_ (anode),
-      tf_(anode)
-  {
-    // initialize my door
-    node_.param ("~/door_frame_p1_x", (double&)my_door_.frame_p1.x, 1.5);
-    node_.param ("~/door_frame_p1_y", (double&)my_door_.frame_p1.y, -0.5);
-    node_.param ("~/door_frame_p2_x", (double&)my_door_.frame_p2.x, 1.5);
-    node_.param ("~/door_frame_p2_y", (double&)my_door_.frame_p2.y, 0.5);
-    node_.param ("~/door_hinge", (int&)my_door_.hinge, -1);
-    node_.param ("~/door_rot_dir", (int&)my_door_.rot_dir, -1);
-    my_door_.header.frame_id = "base_footprint";
-    
-    // check where robot is relative to door
-    if (!tf_.canTransform("base_footprint", "laser_tilt_link", ros::Time(), ros::Duration().fromSec(5.0)))
-      ROS_ERROR("TriggerDoorsScan: constructor failed");
-    tf::Stamped<tf::Transform> tilt_stage;
-    tf_.lookupTransform("base_footprint", "laser_tilt_link", ros::Time(), tilt_stage);
-    double laser_height = tilt_stage.getOrigin()[2];
-    tf::Stamped<tf::Vector3> doorpoint(tf::Vector3((my_door_.door_p1.x+my_door_.door_p2.x)/2.0,
-                                                   (my_door_.door_p1.y+my_door_.door_p2.y)/2.0,
-                                                   (my_door_.door_p1.z+my_door_.door_p2.z)/2.0),
-                                       ros::Time(), my_door_.header.frame_id);
-    if (!tf_.canTransform("base_footprint", doorpoint.frame_id_, ros::Time(), ros::Duration().fromSec(5.0)))
-      ROS_ERROR("TriggerDoorsScan: constructor failed");
-    tf_.transformPoint("base_footprint", doorpoint, doorpoint);
-    double dist = doorpoint[0];
-    double door_height = 2.3;
-    ROS_INFO("TriggerDoorsScan: tilt laser is at height %f, and door at distance %f", laser_height, dist);
-  
-    // gets a point cloud from the point_cloud_srv
-    ROS_INFO("DectectDoorAction: get a point cloud from the door");
-    point_cloud_assembler::BuildCloudAngle::Request req_pointcloud;
-    point_cloud_assembler::BuildCloudAngle::Response res_pointcloud;
-    req_pointcloud.angle_begin = -atan2(door_height - laser_height, dist);
-    req_pointcloud.angle_end = atan2(laser_height, dist);
-    req_pointcloud.duration = 10.0;
-    if (!ros::service::call("point_cloud_srv/single_sweep_cloud", req_pointcloud, res_pointcloud))
-      ROS_ERROR("TriggerDoorsScan: error receiving cloud");
-
-    
-    door_handle_detector::DoorsDetectorCloud::Request req_doorsdetect;
-    door_handle_detector::DoorsDetectorCloud::Response res_doorsdetect;
-    req_doorsdetect.door = my_door_;
-    req_doorsdetect.cloud = res_pointcloud.cloud;
-    if (!ros::service::call ("doors_detector_cloud", req_doorsdetect, res_doorsdetect))
-      ROS_ERROR("TriggerDoorsScan: error calling doors detector");
-    
-  }
-}; // class
-
-
-
+using namespace door_handle_detector;
 
 // -----------------------------------
 //              MAIN
@@ -113,9 +52,26 @@ public:
 int
   main (int argc, char **argv)
 {
-  ros::init (argc, argv);
+  ros::init(argc, argv);
 
+  ros::Node node("name");
 
+  robot_msgs::Door my_door_;
+
+  my_door_.frame_p1.x = 1.5;
+  my_door_.frame_p1.y = -0.5;
+  my_door_.frame_p2.x = 1.5;
+  my_door_.frame_p2.y = 0.5;
+  my_door_.rot_dir = -1;
+  my_door_.hinge = -1;
+  my_door_.header.frame_id = "base_footprint";
+
+  door_handle_detector::DetectDoorAction detector(node);
+  robot_actions::ActionRunner runner(10.0);
+  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(detector);
+
+  runner.run();
+  detector.handleActivate(my_door_);
 
   return (0);
 }
