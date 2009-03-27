@@ -26,6 +26,10 @@ rospack_add_executable(run_chain_dumper src/run_chain_dumper.cpp)
 target_link_libraries(run_chain_dumper kinematic_calibration)
 rospack_link_boost(run_chain_dumper thread)
 
+rospack_add_executable(add_calibration_data src/add_calibration_data.cpp)
+target_link_libraries(add_calibration_data kinematic_calibration)
+rospack_link_boost(add_calibration_data thread)
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 add_subdirectory(test EXCLUDE_FROM_ALL)
