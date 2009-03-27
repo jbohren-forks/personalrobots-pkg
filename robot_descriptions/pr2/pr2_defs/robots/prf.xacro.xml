@@ -32,7 +32,8 @@
 
   <!-- Proscilica Camera -->
   <prosilica_cam name="high_def" parent="head_plate_frame">
-    <origin xyz="0 0.07 0.025" rpy="0 0 0" />        
+    <origin xyz="${cal_high_def_x}    ${0.07+cal_high_def_y} ${0.025+cal_high_def_z}"
+            rpy="${cal_high_def_roll} ${cal_high_def_pitch} ${cal_high_def_yaw}" />
   </prosilica_cam>
 
   <!-- Stereocam -->
