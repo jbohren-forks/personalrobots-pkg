@@ -37,7 +37,6 @@
 
 #include <ros/node.h>
 #include <robot_msgs/Door.h>
-#include <door_handle_detector/DoorDetector.h>
 #include <door_handle_detector/DoorsDetector.h>
 
 using namespace ros;
@@ -49,8 +48,8 @@ class TriggerHandleDetection
     robot_msgs::Door my_door_;
     door_handle_detector::DoorsDetector::Request req_doorsdetect;
     door_handle_detector::DoorsDetector::Response res_doorsdetect;
-    door_handle_detector::DoorDetector::Request req_handledetect;
-    door_handle_detector::DoorDetector::Response res_handledetect;
+    door_handle_detector::DoorsDetector::Request req_handledetect;
+    door_handle_detector::DoorsDetector::Response res_handledetect;
     ros::Node& node_;
 
   public:

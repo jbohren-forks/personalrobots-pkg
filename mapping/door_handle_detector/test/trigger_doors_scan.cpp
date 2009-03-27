@@ -115,8 +115,7 @@ int
 {
   ros::init (argc, argv);
 
-  ros::Node ros_node ("open_doors_executive_test");
-  TriggerDoorsCloudDetection executive (ros_node);
+
 
   return (0);
 }

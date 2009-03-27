@@ -50,7 +50,7 @@
 #include <door_handle_detector/geometric_helper.h>
 
 // Include the service call type
-#include "door_handle_detector/DoorDetector.h"
+#include "door_handle_detector/DoorsDetector.h"
 
 #include <tf/message_notifier.h>
 #include <angles/angles.h>
@@ -137,7 +137,7 @@ class HandleDetector
     /** \brief This is the main service callback: it gets called whenever a request to find a new handle is given   */
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     bool
-      detectHandle (door_handle_detector::DoorDetector::Request &req, door_handle_detector::DoorDetector::Response &resp)
+      detectHandle (door_handle_detector::DoorsDetector::Request &req, door_handle_detector::DoorsDetector::Response &resp)
     {
       vector<int> tmp_indices;    // Used as a temporary indices array
       Point32 tmp_p;              // Used as a temporary point
@@ -335,16 +335,17 @@ class HandleDetector
       node_.publish ("~handle_polygon", pmap_);
 
       // Reply door message in same frame as request door message
-      resp.door = req.door;
+      resp.doors.resize(1);
+      resp.doors[0] = req.door;
       tf::Stamped<Point32> handle (handle_center, cloud_orig_.header.stamp, parameter_frame_);
       transformPoint (&tf_, cloud_orig_.header.frame_id, handle, handle);
-      resp.door.header.stamp = cloud_orig_.header.stamp;
-      resp.door.header.frame_id = cloud_orig_.header.frame_id;
-      resp.door.handle = handle;
+      resp.doors[0].header.stamp = cloud_orig_.header.stamp;
+      resp.doors[0].header.frame_id = cloud_orig_.header.frame_id;
+      resp.doors[0].handle = handle;
 
       ROS_INFO ("Handle detected. Result in frame %s \n  Handle = [%f, %f, %f]. \n  Total time: %f.",
-                resp.door.header.frame_id.c_str (),
-                resp.door.handle.x, resp.door.handle.y, resp.door.handle.z,
+                resp.doors[0].header.frame_id.c_str (),
+                resp.doors[0].handle.x, resp.doors[0].handle.y, resp.doors[0].handle.z,
                 duration.toSec ());
       return (true);
     }
