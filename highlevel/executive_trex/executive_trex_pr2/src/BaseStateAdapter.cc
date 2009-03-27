@@ -12,11 +12,15 @@ namespace TREX {
 
       virtual ~BaseStateAdapter(){}
 
+
     private:
       void fillObservationParameters(ObservationByValue* obs){
-	obs->push_back("x", new IntervalDomain(stateMsg.pos.x));
-	obs->push_back("y", new IntervalDomain(stateMsg.pos.y));
-	obs->push_back("th",new IntervalDomain(stateMsg.pos.th));
+	// Get the 2D Pose
+	double x, y, th;
+	get2DPose(x, y, th);
+	obs->push_back("x", new IntervalDomain(x));
+	obs->push_back("y", new IntervalDomain(y));
+	obs->push_back("th",new IntervalDomain(th));
       }
     };
 

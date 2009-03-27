@@ -9,7 +9,7 @@ typedef float [0.0 1.0] UNIT_FLOAT;
 /**
  * BaseState will capture position and orientation.
  */
-class BaseState extends AgentTimeline {
+class BaseState extends ROSTFStateVariable {
 	predicate Holds{
 		float x;
 		float y;
@@ -27,7 +27,7 @@ class BaseState extends AgentTimeline {
  * MoveBase behavior will handle active control of vehicle to accomplish 
  * a waypoint. This maps to the wave front player in the 2D nav stack.
  */
-class MoveBase extends ROSAction {
+class MoveBase extends ROSTFAction {
 
   predicate Inactive{
     float x;

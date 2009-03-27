@@ -2,6 +2,7 @@
 #define H_ROSStateAdapter
 
 #include "ROSAdapter.hh"
+#include "StringDomain.hh"
 
 namespace TREX {
 
@@ -20,9 +21,11 @@ namespace TREX {
 
     Observation* getObservation(){
       ObservationByValue* obs = new ObservationByValue(timelineName, predicate);
-      stateMsg.lock();
+
+      if(tf_enabled)
+	obs->push_back("frame_id", new StringDomain(frame_id));
+
       fillObservationParameters(obs);
-      stateMsg.unlock();
       return obs;
     }
 

@@ -3,9 +3,50 @@
  */
 
 /**
- * Augments predicates with a frame_id
+ * Augments the state variable value with a frame_id for all state variable subclasses
+ */
+class ROSStateVariable extends AgentTimeline {
+
+  predicate Holds{}
+
+  ROSStateVariable(Mode _mode){
+    super(_mode, "Holds");
+  }
+}
+
+/**
+ * Augments the state variable value with a frame_id for all state variable subclasses
+ */
+class ROSTFStateVariable extends ROSStateVariable {
+
+  predicate Holds{
+    string frame_id;
+  }
+
+  ROSTFStateVariable(Mode _mode){
+    super(_mode);
+  }
+}
+
+
+/**
+ * Specialize to mark all ROS Actions
  */
 class ROSAction extends Behavior {
+
+  predicate Active{}
+
+  predicate Inactive { }
+
+  ROSAction(Mode _mode){
+    super(_mode);
+  }
+}
+
+/**
+ * Augments predicates with a frame_id for all action subclasses
+ */
+class ROSTFAction extends ROSAction {
 
   predicate Active{
     string frame_id;
@@ -15,8 +56,7 @@ class ROSAction extends Behavior {
     string frame_id;
   }
 
-  ROSAction(Mode _mode){
+  ROSTFAction(Mode _mode){
     super(_mode);
   }
-
 }

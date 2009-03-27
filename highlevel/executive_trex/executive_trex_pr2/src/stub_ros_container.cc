@@ -49,6 +49,7 @@
 #include <robot_actions/DoorActionState.h>
 #include <robot_actions/ShellCommandState.h>
 #include <robot_actions/MoveBaseState.h>
+#include <robot_actions/Pose2D.h>
 #include <robot_actions/RechargeState.h>
 #include <boost/thread.hpp>
 #include <cstdlib>
@@ -147,8 +148,8 @@ int main(int argc, char** argv){
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door);
 
   // Allocate other action stubs
-  executive_trex_pr2::StubAction<robot_msgs::Pose> move_base("move_base");
-  runner.connect<robot_msgs::Pose, robot_actions::MoveBaseState, robot_msgs::Pose>(move_base);
+  executive_trex_pr2::StubAction<robot_actions::Pose2D> move_base("move_base");
+  runner.connect<robot_actions::Pose2D, robot_actions::MoveBaseState, robot_actions::Pose2D>(move_base);
   executive_trex_pr2::StubAction<std_msgs::Float32> recharge("recharge_controller");
   runner.connect<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32>(recharge);
   executive_trex_pr2::StubAction<std_msgs::String> shell_command("shell_command");

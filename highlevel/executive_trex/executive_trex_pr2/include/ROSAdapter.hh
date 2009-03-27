@@ -3,8 +3,22 @@
 
 #include "Executive.hh"
 #include "Adapter.hh"
+#include "Debug.hh"
+#include "StringDomain.hh"
+#include "Token.hh"
+
+// Message types of interest
+#include <robot_msgs/Pose.h>
+#include <robot_msgs/Point32.h>
+#include <std_msgs/String.h>
+
+// For transform support
+#include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/message_notifier.h>
 
 namespace TREX {
+
 
   class ROSAdapter: public Adapter {
   public:
@@ -22,14 +36,15 @@ namespace TREX {
   private:
     bool isInitialized() const;
 
-    bool m_initialized; /*!< Hook to flag if expected ros initialization messages have arrived */
-
     bool handleRequest(const TokenId& goal);
 
     void handleRecall(const TokenId& goal);
 
     void commonInit(const TiXmlElement& configData);
 
+    static bool hasFrameParam(const TiXmlElement& configData);
+
+    bool m_initialized; /*!< Hook to flag if expected ros initialization messages have arrived */
     std::vector<std::string> nddlNames_;
     std::vector<std::string> rosNames_;
 
@@ -41,11 +56,85 @@ namespace TREX {
     virtual Observation* getObservation() = 0;
     virtual bool dispatchRequest(const TokenId& goal, bool enabled){return true;}
 
+    /**
+     * @brief Simple utility to wrape TF checking and message
+     */
+    void checkTFEnabled();
+
     const std::vector<std::string>& nddlNames() const {return nddlNames_;}
     const std::vector<std::string>& rosNames() const {return rosNames_;}
 
+    /********************************************************
+     * CORE TOKEN / ROS TYPE CONVERSIONS
+     *******************************************************/
+    StringDomain* toStringDomain(const std_msgs::String& msg);
+
+    // bind a string
+    void write(const StringDomain& dom, std_msgs::String& msg);
+
+    // Bind intervals to the singleton, or the domain midpoint
+    template <class T>
+    void write(const AbstractDomain& dom, T& target){
+      double value = (dom.isSingleton() ? dom.getSingletonValue() : (dom.getLowerBound() + dom.getUpperBound() / 2) );
+      condDebugMsg(!dom.isSingleton(), "trex:warning:dispatching", "Reducing unbound paramater " << dom.toString() << " to " << value);
+      target = static_cast<T>(value);
+    }
+
+    // Bind names paramater to value
+    template <class T>
+    void write(const char* param_name, const TokenId& token, T& target){
+      ConstrainedVariableId var = token->getVariable(param_name);
+      ROS_ASSERT(var.isValid());
+      const AbstractDomain& dom = var->lastDomain();
+      ROS_ASSERT(dom.isNumeric());
+      double value;
+      write(dom, value);
+      target = value;
+    }
+
+    // Bind intervals to the singleton, or the domain midpoint
+    template <class T>
+    void read(const char* name, ObservationByValue& obs, const T& source){
+      obs.push_back(name, new IntervalDomain(source));
+    }
+
     /**
-     * @brief Helper methiod to obtain an index for a given ros name.
+     * @brief Reads values into an observation
+     * @param obs The output observation
+     * @param x The x position
+     * @param y The y position
+     * @param th The yaw angle
+     */
+    void readPose(ObservationByValue& obs, double x, double y, double th);
+
+    /**
+     * @brief Writes values from a token
+     * @param token The output observation
+     * @param x The x position
+     * @param y The y position
+     * @param th The yaw angle
+     */
+    void writePose(const TokenId& token, float& x, float& y, float& th);
+
+    /**
+     * @brief A utility function that fills out x, y, and th 
+     * @param x The x position
+     * @param y The y position
+     * @param th The yaw angle
+     */
+    void get2DPose(double& x, double& y, double& th);
+
+    /**
+     * @brief A utility function that obtains a pose sourced in the frame given by the source frame id
+     * and transformed into the adapter frame given by the member variable - frame_id of the adapter.
+     * @param source_frame_id The frame used to query tf.
+     * @param out The output point
+     * @param in The input point
+     */
+    void transformPoint(const std::string& source_frame_id, robot_msgs::Point32& out, const robot_msgs::Point32& in);
+
+    /**
+     * @brief Helper method to obtain an index for a given ros name.
      * @param The rosName to look for
      * @param The index to fill if found
      * @return True if found, else false
@@ -56,6 +145,9 @@ namespace TREX {
     const std::string timelineName;
     const std::string timelineType;
     const std::string stateTopic;
+    const bool tf_enabled;
+    std::string frame_id; /**< The frame to use for transforms, if enabled. Note that this is mutable based on task context */
+    tf::TransformListener tf; /**< Used to do transforms */
   };
 }
 #endif

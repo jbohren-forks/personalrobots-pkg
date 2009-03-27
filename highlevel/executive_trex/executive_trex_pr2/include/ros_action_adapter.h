@@ -5,6 +5,7 @@
 #include "Token.hh"
 #include "TokenVariable.hh"
 #include "SymbolDomain.hh"
+#include "StringDomain.hh"
 
 namespace TREX {
 
@@ -48,6 +49,7 @@ namespace TREX {
 	// Update marker to prevent overwrite
 	lastUpdated = getCurrentTick();
 
+	TREX_INFO("ros:debug:synchronization", nameString() << "Received transition to " << LabelStr(getResultStatus(_observation).getSingletonValue()).toString());
 	ROS_DEBUG("%sReceived transition to %s",  nameString().c_str(), LabelStr(getResultStatus(_observation).getSingletonValue()).c_str());
 
 	_observation.unlock();
@@ -86,20 +88,32 @@ namespace TREX {
       _observation.lock();
 
       if(_observation.status.value != _observation.status.ACTIVE && (is_active || (getCurrentTick() == 0))){
+	TREX_INFO("ros:debug:synchronization", nameString() << "Transitioning INACTIVE with status=" << 
+		  LabelStr(getResultStatus(_observation).getSingletonValue()).toString());
+
 	ROS_DEBUG("%sTransitioning INACTIVE with status=%s",
 		  nameString().c_str(),
 		  LabelStr(getResultStatus(_observation).getSingletonValue()).c_str());
 
 	obs = new ObservationByValue(timelineName, inactivePredicate);
+
 	fillInactiveObservationParameters(_observation.feedback, obs);
+
 	obs->push_back("status", getResultStatus(_observation).copy());
 	is_active = false;
       }
       else if(_observation.status.value == _observation.status.ACTIVE && !is_active){
-	ROS_DEBUG("%sTransitioning ACTIVE with status", nameString().c_str());
+	TREX_INFO("ros:debug:synchronization", nameString() << "Transitioning ACTIVE");
+	ROS_DEBUG("%sTransitioning ACTIVE", nameString().c_str());
 	obs = new ObservationByValue(timelineName, activePredicate);
+
 	fillActiveObservationParameters(_observation.goal, obs);
 	is_active = true;
+      }
+
+      // If tf enabled then we must populate the frame_id attribute
+      if(tf_enabled){
+	obs->push_back("frame_id", new StringDomain(frame_id));
       }
 
       _observation.unlock();
@@ -137,11 +151,35 @@ namespace TREX {
 	enableController = false;
       }
 
+      // Set the goal and its frame
       Goal goal_msg;
+
+      // If tf is enabled, and we are dispatching a request or a recall, then we should update the frame
+      // we want passed on the goal
+      if(tf_enabled){
+	ConstrainedVariableId frame_var = goal->getVariable("frame_id");
+	ROS_ASSERT(frame_var.isId() && frame_var.isValid());
+	// If the frame parameter is open, or a singleton, then close it by restricting the base domain
+	// to the closed string domain given by the current domain
+	if(frame_var->lastDomain().isOpen() || !frame_var->lastDomain().isSingleton()){
+	  StringDomain dom;
+	  dom.insert(frame_id);
+	  dom.close();
+	  frame_var->restrictBaseDomain(dom);
+	}
+	else{
+	  LabelStr lblStr = frame_var->lastDomain().getSingletonValue();
+	  frame_id = lblStr.toString();
+	}
+      }
+
       fillDispatchParameters(goal_msg, goal);
 
       ROS_DEBUG("%s%s goal %s", 
 		nameString().c_str(), (enableController ? "Dispatching" : "Recalling"), goal->toString().c_str());
+
+      TREX_INFO("ros:debug:dispatching",  
+		nameString().c_str() << (enableController ? "Dispatching" : "Recalling") << goal->toLongString());
 
       if(enableController)
 	m_node->publishMsg<Goal>(_request_topic, goal_msg);
