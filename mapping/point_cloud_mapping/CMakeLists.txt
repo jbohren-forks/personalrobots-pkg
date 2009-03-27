@@ -27,6 +27,8 @@ target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
                        src/cloud_geometry/transforms.cpp
                       )
   rospack_add_gtest (bin/test_geometry_statistics test/cloud_geometry/test_geometry_statistics.cpp)
+  rospack_add_gtest (bin/test_geometry_angles     test/cloud_geometry/test_geometry_angles.cpp)
+
 # ---[ Cloud I/O library
   rospack_add_library (cloud_io
                        src/cloud_io/read.cpp
