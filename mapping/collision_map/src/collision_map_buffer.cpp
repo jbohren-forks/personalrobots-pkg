@@ -643,7 +643,7 @@ class CollisionMapperBuffer
         //time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
         time_spent = (t2 - t1).toSec ();
         ROS_DEBUG ("Collision map with %u boxes computed in %g seconds. Total maps in the queue %d.",
-                  (unsigned int)final_collision_map_.boxes.size (), time_spent, decaying_maps_.size ());
+                  (unsigned int)final_collision_map_.boxes.size (), time_spent, (int)decaying_maps_.size ());
 
         node_.publish ("collision_map_buffer", final_collision_map_);
       }
