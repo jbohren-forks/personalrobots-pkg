@@ -57,9 +57,9 @@
   <license>BSD</license>
   <review status="3rdparty" notes=""/>
   <url>http://devernay.free.fr/hacks/cminpack.html</url>
-  <export>
+<!--  <export>
     <cpp cflags="-I${prefix}/build/ann_1.1.1/include" lflags="-Wl,-rpath,${prefix}/build/ann_1.1.1/lib -L${prefix}/build/ann_1.1.1/lib -lANN" />
-  </export>
+  </export>-->
 
   <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
