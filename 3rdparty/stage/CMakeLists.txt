@@ -6,8 +6,12 @@ rospack(stage)
 rospack_add_boost_directories()
 
 # Build Stage
-add_custom_target(build_stage ALL
-                  COMMAND cmake -E chdir ${PROJECT_SOURCE_DIR} make -f Makefile.stage)
+execute_process(COMMAND cmake -E chdir ${PROJECT_SOURCE_DIR} make -f Makefile.stage
+                RESULT_VARIABLE _make_failed)
+if(_make_failed)
+  message(FATAL_ERROR "Build of Stage failed")
+endif(_make_failed)
+
 set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES stage-svn)
 
 
