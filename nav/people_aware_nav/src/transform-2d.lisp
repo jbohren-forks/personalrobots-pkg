@@ -21,6 +21,7 @@
    :transform-between
    :transform-pose
    :inverse
+   :mv*
    :a-
    :inner-product
    :unit-vector
@@ -63,12 +64,12 @@
   (declare (rigid-transformation trans) (pose pose))
   (make-pose
    (transform-point trans (pose-position pose))
-   (+ (pose-orientation pose) (angle trans))))
+   (mod (+ (pose-orientation pose) (angle trans)) (* 2 pi))))
 
 (defun transform-between (pose1 pose2)
   "Return the unique rigid transformation sending pose1 to pose2"
   (declare (pose pose1) (pose pose2))
-  (let ((theta (- (pose-orientation pose2) (pose-orientation pose1)))
+  (let ((theta (mod (- (pose-orientation pose2) (pose-orientation pose1)) (* 2 pi)))
 	(position1 (pose-position pose1))
 	(position2 (pose-position pose2)))
     (let ((x1 (aref position1 0)) (y1 (aref position1 1))
@@ -82,7 +83,7 @@
   (declare (rigid-transformation trans))
   (let ((c (cos (angle trans))) (s (sin (angle trans)))
 	(dx (aref (offset trans) 0)) (dy (aref (offset trans) 1)))
-    (make-rigid-transformation (vector (- (+ (* c dx) (* s dy))) (- (* s dx) (* c dy))) (- (angle trans)))))
+    (make-rigid-transformation (vector (- (+ (* c dx) (* s dy))) (- (* s dx) (* c dy))) (mod (- (angle trans)) (* 2 pi)))))
     
 	  
 
@@ -111,7 +112,7 @@
 
 (defun l2-norm (v)
   (declare (point v))
-  (inner-product v v))
+  (sqrt (inner-product v v)))
 
 (defun inner-product (v w)
   (declare (point v) (point w))

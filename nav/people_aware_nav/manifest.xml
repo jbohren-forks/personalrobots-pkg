@@ -4,4 +4,11 @@
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <depend package="roslisp" />
+<depend package="roslib" />
+<depend package="hallway_tracker" />
+<depend package="tf" />
+<depend package="robot_msgs" />
+<depend package="deprecated_msgs" />
+<depend package="rosconsole" />
+<depend package="roscpp" />
 </package>
