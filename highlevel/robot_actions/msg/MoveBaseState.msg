@@ -4,7 +4,7 @@ Header header
 ActionStatus status
 
 # Target position and orientation
-robot_msgs/Pose goal
+Pose2D goal
 
 # Actual position and orientation
-robot_msgs/Pose feedback
+Pose2D feedback
