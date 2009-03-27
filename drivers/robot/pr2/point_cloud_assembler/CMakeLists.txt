@@ -21,17 +21,4 @@ rospack_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_cloud_assembler.launch
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 # Download needed data file
-# This code is wrapped up in a new macro, which hasn't yet been merged to
-# the stable branch of ROS.
-#rospack_download_test_data(http://pr.willowgarage.com/data/calonder_descriptor/current.rtc current.rtc)
-set(_url http://pr.willowgarage.com/data/point_cloud_assembler/test_assembler.bag)
-set(_filename test/test_assembler.bag)
-find_package(Wget REQUIRED)
-add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/${_filename}
-                   COMMAND ${WGET_EXECUTABLE} -r ${_url} -O ${PROJECT_SOURCE_DIR}/${_filename}
-                   VERBATIM)
-# Create a legal target name, in case the target name has slashes in it
-string(REPLACE "/" "_" _testname download_data_${_filename})
-add_custom_target(${_testname}
-                  DEPENDS ${PROJECT_SOURCE_DIR}/${_filename})
-add_dependencies(tests ${_testname})
+rospack_download_test_data(http://pr.willowgarage.com/data/point_cloud_assembler/test_assembler.bag test/test_assembler.bag)

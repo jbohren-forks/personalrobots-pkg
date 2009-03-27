@@ -20,17 +20,4 @@ rospack_link_boost(test_robot_pose_ekf thread)
 rospack_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_robot_pose_ekf.launch)
 
 # Download needed data file
-# This code is wrapped up in a new macro, which hasn't yet been merged to
-# the stable branch of ROS.
-#rospack_download_test_data(http://pr.willowgarage.com/data/calonder_descriptor/current.rtc current.rtc)
-set(_url http://pr.willowgarage.com/data/robot_pose_ekf/ekf_test.bag)
-set(_filename test/ekf_test.bag)
-find_package(Wget REQUIRED)
-add_custom_command(OUTPUT ${PROJECT_SOURCE_DIR}/${_filename}
-                   COMMAND ${WGET_EXECUTABLE} -r ${_url} -O ${PROJECT_SOURCE_DIR}/${_filename}
-                   VERBATIM)
-# Create a legal target name, in case the target name has slashes in it
-string(REPLACE "/" "_" _testname download_data_${_filename})
-add_custom_target(${_testname}
-                  DEPENDS ${PROJECT_SOURCE_DIR}/${_filename})
-add_dependencies(tests ${_testname})
+rospack_download_test_data(http://pr.willowgarage.com/data/robot_pose_ekf/ekf_test.bag test/ekf_test.bag)
