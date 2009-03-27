@@ -30,6 +30,8 @@
 (defparameter *wall-buffer* .2 "Additional buffer distance that we'd like to keep from wall")
 (defparameter *move-base-timeout-multiplier* 10 "Given a goal D metres away, timeout on move-base after D times this many seconds")
 (defparameter *wait-inc* .5)
+(defparameter *path-clear-wait-time* 5)
+(defparameter *person-timeout-threshold* 4)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Types
@@ -50,6 +52,7 @@
 (defvar *person-pos* nil)
 (defvar *hallway* (make-corridor nil nil))
 (defvar *global-frame*)
+(defvar *last-time-person-seen* 0.0)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main
@@ -60,45 +63,32 @@
   (with-ros-node ("lane_changer")
 
     ;; 1. setup
-    (subscribe "hallway_points" "robot_msgs/PointCloud" #'hallway-callback)
-    (subscribe "person_position" "robot_msgs/Point" (store-message-in *person-pos*))
-    (subscribe "robot_pose" "deprecated_msgs/Pose2DFloat32" #'pose-callback)
-    (subscribe "state" "robot_msgs/Planner2DState" #'state-callback)
-    (advertise "goal" "robot_msgs/Planner2DGoal")
-    (setq *global-frame* (get-param "global_frame_id"))
-    (ros-info "Global frame is ~a with type ~a" *global-frame* (type-of *global-frame*))
+    (setup-node)
     (loop
        (format t "~&Corridor state is ~a" *hallway*)
        (format t "~&Robot pose is ~a" *robot-pose*)
        (format t "~&Enter next goal: ")
        (let ((x (read)))
 	 (if (listp x)
-	     (move-action (first x) (second x) 0.0)
+	     (goto (first x) (second x) (or (third x) 0.0))
 	     (move-to-right))))))
-			 
-			 
 
+(defun setup-node ()
+  (subscribe "hallway_points" "robot_msgs/PointCloud" #'hallway-callback)
+  (subscribe "person_position" "robot_msgs/Point" #'person-callback)
+  (subscribe "robot_pose" "deprecated_msgs/Pose2DFloat32" #'pose-callback)
+  (subscribe "state" "robot_msgs/Planner2DState" #'state-callback)
+  (advertise "goal" "robot_msgs/Planner2DGoal")
+  (setq *global-frame* (get-param "global_frame_id"))
+  (ros-info "Global frame is ~a with type ~a" *global-frame* (type-of *global-frame*)))
+
+			 
+(defun goto (x y theta)
+  (unless (eq :succeeded (move-to x y theta))
+    (if (< (time-since-person-seen) *person-timeout-threshold*)
+	(wait-then-move x y theta)
+	(ros-info "Path failed, and person has not been seen recently"))))
     
-#|
-    ;; 2. executive
-    (with-highlevel-controller (move-base "state" "robot_msgs/Planner2DState" "goal" "robot_msgs/Planner2DGoal")
-      (ecase (controller-result move-base (goal-message *original-goal*))
-	(succeeded (print "done!"))
-	(aborted 
-	 (ecase (controller-result move-base (goal-message (waiting-pose current-pose corridor-width)))
-	   (aborted (print "Could not move to waiting position --- failing!"))
-	   (succeeded (wait-for-person-to-move)
-		      (ecase (controller-result move-base (goal-message *original-goal*))
-			(succeeded (print "done!"))
-			(aborted (print "Failed even after lane-change."))))))))))
-
-  |#    
-
-(defun start-node ()
-  (roslisp:start-ros-node "nav")
-  (subscribe "person_position" "robot_msgs/Point" #'print)
-  (subscribe "robot_pose" "deprecated_msgs/Pose2DFloat32" #'print)
-  (advertise "goal" "robot_msgs/Planner2DGoal"))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -106,7 +96,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+(defun wait-then-move (x y theta)
+  (move-to-right)
+  (ros-info "Waiting ~a seconds for path to become clear" *path-clear-wait-time*)
+  (move-to x y theta))
+
 (defun move-to-right ()
+  (ros-info "Shifting to right lane")
   (move-action (waiting-pose *robot-pose* *hallway*)))
 
 (defun move-to (x y theta)
@@ -115,6 +111,9 @@
 	  (deprecated_msgs:y-val m) y
 	  (deprecated_msgs:th-val m) theta)
     (move-action m)))
+
+
+
 
 (defun move-action (m)
   "Encapsulates durative action as a blocking call.  Returns :succeeded or :aborted (preemption is considered an error)"
@@ -174,6 +173,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+;; We don't actually look at the message - just keep track of when we saw them
+(defun person-callback (m)
+  (declare (ignore m))
+  (setq *last-time-person-seen* (ros-time)))
+
+
 
 (defun state-callback (state)
   (with-mutex (*node-lock*)
@@ -209,6 +214,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun time-since-person-seen ()
+  (- (ros-time) *last-time-person-seen*))
+
 
 
 (defun timeout (x y inc)
@@ -258,24 +267,4 @@
   (robot_msgs:value-val (robot_msgs:status-val m)))
 
     
-    
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Communication with highlevel controllers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-#|(defmacro with-highlevel-controller ((name state-topic state-type goal-topic goal-type) &body body)
-  `(let ((,state-message-queue (make-queue)))
-     (subscribe state-topic state-type (add-to-queue ,state-message-queue))
-     (advertise goal-topic goal-type)
-     ;; not quite right
-     (flet ((controller-result (name message)
-	      (controller-result message goal-topic state-message-queue)))
-       ,@body)))
-
-
-(defun controller-result (goal-pos topic response-queue)
-  (publish topic (make-instance '<Planner2DGoal> :position goal-pos))
-  (dequeue-wait response-queue)) 
-
-|#
     
