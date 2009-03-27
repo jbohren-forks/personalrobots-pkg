@@ -30,51 +30,37 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
- *
- * $Id$
- *
  *********************************************************************/
 
-#include <door_handle_detector/action_detect_door.h>
-#include <door_handle_detector/DetectDoorActionStatus.h>
-#include <robot_msgs/Door.h>
+/* Author: Wim Meeusen */
+
+#ifndef ACTION_DETECT_HANDLE_H
+#define ACTION_DETECT_HANDLE_H
+
+
 #include <ros/node.h>
-#include <robot_actions/action_runner.h>
+#include <robot_msgs/Door.h>
+#include <robot_actions/action.h>
+#include <tf/transform_listener.h>
 
-using namespace ros;
-using namespace std;
-using namespace door_handle_detector;
+namespace door_handle_detector{
 
-// -----------------------------------
-//              MAIN
-// -----------------------------------
 
-int
-  main (int argc, char **argv)
+class DetectHandleAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
 {
-  ros::init(argc, argv);
+public:
+  DetectHandleAction(ros::Node& node);
+  ~DetectHandleAction();
 
-  ros::Node node("name");
+  virtual void handleActivate(const robot_msgs::Door& door);
+  virtual void handlePreempt();
 
-  robot_msgs::Door my_door_;
 
-  my_door_.frame_p1.x = 1.0;
-  my_door_.frame_p1.y = -0.5;
-  my_door_.frame_p2.x = 1.5;
-  my_door_.frame_p2.y = 0.5;
-  my_door_.rot_dir = -1;
-  my_door_.hinge = -1;
-  my_door_.header.frame_id = "base_footprint";
+private:
+  bool request_preempt_;
+  tf::TransformListener tf_;
 
-  door_handle_detector::DetectDoorAction door_detector(node);
-  door_handle_detector::DetectDoorAction handle_detector(node);
-  robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(door_detector);
-  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(handle_detector);
-  runner.run();
+};
 
-  door_detector.handleActivate(my_door_);
-  //handle_detector.handleActivate(my_door_);
-
-  return (0);
 }
+#endif

@@ -21,6 +21,7 @@ rospack_add_executable (handle_detector_node
 rospack_add_library(executive_functions src/executive_functions.cpp)
 
 rospack_add_executable(action_runner src/action_detect_door.cpp 
+				     src/action_detect_handle.cpp 	     
 				     src/action_grasp_door.cpp 
 				     src/action_open_door.cpp 
 				     test/action_runner.cpp)
@@ -29,14 +30,8 @@ rospack_add_executable(action_runner src/action_detect_door.cpp
 rospack_add_executable(trigger_doors test/trigger_doors.cpp)
 rospack_add_executable(trigger_handle test/trigger_handle.cpp)
 rospack_add_executable(trigger_doors_scan test/trigger_doors_scan.cpp
-				     src/action_detect_door.cpp)	
-
-
-#rospack_add_executable(trigger test/trigger.cpp)
-#rospack_add_executable(open_door_executive_test test/open_door_executive_test.cpp)
-#rospack_add_executable(door_checkerboard_detector test/door_checkerboard_detector.cpp)
-#rospack_add_executable(test_door_detection test/test_door_detection.cpp)
-#rospack_add_executable(test_door_detection_joystick test/test_door_detection_joystick.cpp)
+				     src/action_detect_door.cpp
+				     src/action_detect_handle.cpp)
 
 # check for OpenMP
 include(CheckIncludeFile)
