@@ -267,12 +267,22 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
   std::string mapped_target_frame = remap(tf_prefix_, target_frame);
   std::string mapped_source_frame = remap(tf_prefix_, source_frame);
 
+  ros::Time local_time = time;
+
+  if (local_time == ros::Time())
+    if (NO_ERROR != getLatestCommonTime(mapped_source_frame, mapped_target_frame, local_time, NULL)) // set time if zero
+      {
+	return false;
+      }
+
+
+
   TransformLists t_list;
   ///\todo check return
   int retval;
   try 
   {
-    retval = lookupLists(lookupFrameNumber( mapped_target_frame), time, lookupFrameNumber( mapped_source_frame), t_list, NULL);
+    retval = lookupLists(lookupFrameNumber( mapped_target_frame), local_time, lookupFrameNumber( mapped_source_frame), t_list, NULL);
   }
   catch (tf::LookupException &ex)
   {
@@ -293,11 +303,11 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
     }
   }
 
-  if (time != ros::Time() && test_extrapolation(time, t_list, NULL))
-  {
-    return false;
-  }
-
+  if (test_extrapolation(local_time, t_list, NULL))
+    {
+      return false;
+    }
+  
   return true;
 };
 
@@ -308,13 +318,23 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
   std::string mapped_source_frame = remap(tf_prefix_, source_frame);
   std::string mapped_fixed_frame = remap(tf_prefix_, fixed_frame);
 
+  ros::Time mapped_source_time = source_time;
+  ros::Time mapped_target_time = target_time;
+
+  if (mapped_source_time == ros::Time())
+    if (NO_ERROR != getLatestCommonTime(mapped_source_frame, mapped_fixed_frame, mapped_source_time, NULL))
+      {
+	return false;
+      }
+    
+
   //calculate first leg
   TransformLists t_list;
 
   int retval;
   try 
   {
-    retval = lookupLists(lookupFrameNumber( mapped_fixed_frame), source_time, lookupFrameNumber( mapped_source_frame), t_list, NULL);
+    retval = lookupLists(lookupFrameNumber( mapped_fixed_frame), mapped_source_time, lookupFrameNumber( mapped_source_frame), t_list, NULL);
   }
   catch (tf::LookupException &ex)
   {
@@ -329,17 +349,25 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
       return false;
   }
 
-  if (target_time != ros::Time() && test_extrapolation(target_time, t_list, NULL))
-    return false;
-
+  if (test_extrapolation(mapped_source_time, t_list, NULL))
+    {
+      	printf("filaing here21");
+	return false;
+    }
 
   btTransform temp1 = computeTransformFromList(t_list);
+
+  if  (mapped_target_time == ros::Time())
+    if (NO_ERROR != getLatestCommonTime(mapped_fixed_frame, mapped_target_frame, mapped_target_time, NULL))
+      {
+	return false;
+      }
 
 
   TransformLists t_list2;
   try
   {
-    retval =  lookupLists(lookupFrameNumber( mapped_target_frame), target_time, lookupFrameNumber( mapped_fixed_frame), t_list2, NULL);
+    retval =  lookupLists(lookupFrameNumber( mapped_target_frame), mapped_target_time, lookupFrameNumber( mapped_fixed_frame), t_list2, NULL);
   }
   catch (tf::LookupException &ex)
   {
@@ -354,7 +382,7 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
       return false;
   }
 
-  if (source_time != ros::Time() && test_extrapolation(target_time, t_list, NULL))
+  if (test_extrapolation(mapped_target_time, t_list, NULL))
     return false;
 
   return true;
