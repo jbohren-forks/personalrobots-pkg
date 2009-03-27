@@ -351,7 +351,7 @@ string dumpToXML(const list< pair<string, double> >& calib_params)
 
   for (it = calib_params.begin(); it != calib_params.end(); ++it )
   {
-    printf("<property name=\"%s\" value=\"%f\">\n", it->first.c_str(), it->second) ;
+    printf("<property name=\"%s\" value=\"%f\" />\n", it->first.c_str(), it->second) ;
   }
 
   return "" ;
