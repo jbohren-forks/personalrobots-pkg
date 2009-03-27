@@ -11,7 +11,6 @@ way.  This package also provides stageros, a ROS node that uses Stage.
 <review status="unreviewed" notes=""/>
 <url>http://playerstage.sf.net</url>
 <export>
-  <cpp lflags="-Wl,-rpath,${prefix}/stage/lib `PKG_CONFIG_PATH=${prefix}/stage/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs stage`" cflags="`PKG_CONFIG_PATH=${prefix}/stage/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --cflags stage`"/>
   <doxymaker external="http://playerstage.sourceforge.net/doc/stage-cvs"/>
 </export>
 <versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/stage/branches/stage-ros"/>
