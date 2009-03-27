@@ -87,17 +87,16 @@ private:
   // SOME CONSTANTS
   // the default theta0 when gap size is 0 is needed to assign passive joint angles
   //
-  static const double theta0_              = 2.97571;
-  static const double phi0_                = 29.98717;
+  static const double theta0_              = 2.97571*M_PI/180.0; // convert to radians
+  static const double phi0_                = 29.98717*M_PI/180.0; // convert to radians
   static const double gear_ratio_          = 29.16; //729.0/25.0;
-  // convert below from mm to meters
-  static const double t0_                  = 0.0; //-0.19543/1000.0;
-  static const double screw_reduction_     = 2.0/1000.0;
-  static const double L0_                  = 34.70821/1000.0;
-  static const double coef_h_              = 5.200/1000.0;
-  static const double coef_a_              = 67.56801/1000.0;
-  static const double coef_b_              = 48.97193/1000.0;
-  static const double coef_r_              = 91.50000/1000.0;
+  static const double t0_                  = -0.19543/1000.0; // convert to meters
+  static const double screw_reduction_     = 2.0/1000.0; // convert to meters
+  static const double L0_                  = 34.70821/1000.0; // convert to meters
+  static const double coef_h_              = 5.200/1000.0; // convert to meters
+  static const double coef_a_              = 67.56801/1000.0; // convert to meters
+  static const double coef_b_              = 48.97193/1000.0; // convert to meters
+  static const double coef_r_              = 91.50000/1000.0; // convert to meters
 
 #define TOL 0.00001   // limit for denominators
 };
