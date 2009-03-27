@@ -26,11 +26,12 @@ target_link_libraries(test_sbpl sbpl)
 rospack_add_executable(test_adjacency_list src/test/test_adjacency_list.cpp)
 target_link_libraries(test_adjacency_list sbpl)
 
-# Test target for module tests to be included in gtest regression test harness
-rospack_add_gtest_future(utest src/test/module-tests.cpp)
-target_link_libraries(utest sbpl)
+## Test target for module tests to be included in gtest regression test harness
+#rospack_add_gtest_future(utest src/test/module-tests.cpp)
+#target_link_libraries(utest sbpl)
+## Send output of tests to the test directory
+#set_target_properties(utest PROPERTIES
+#                      RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/src/test)
 
-# Send output of tests to the test directory
-set_target_properties(utest PROPERTIES
-                      RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/src/test)
-
+# Download needed data file
+rospack_download_test_data(http://pr.willowgarage.com/data/sbpl/env_examples/nav2d/willow-25mm-inflated-env.cfg env_examples/nav2d/willow-25mm-inflated-env.cfg)
