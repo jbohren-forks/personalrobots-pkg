@@ -464,12 +464,12 @@ bool
   * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
   */
 void
-  findClusters (PointCloud &points, vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
+  findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                 int nx_idx, int ny_idx, int nz_idx,
                 double eps_angle, unsigned int min_pts_per_cluster)
 {
   // Create a tree for these points
-  cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (&points, &indices);
+  cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
 
   int nr_points = indices.size ();
   // Create a bool vector of processed point indices, and initialize it to false
@@ -477,6 +477,7 @@ void
   processed.resize (nr_points, false);
 
   vector<int> nn_indices;
+  vector<double> nn_distances;
   // Process all points in the indices vector
   for (int i = 0; i < nr_points; i++)
   {
@@ -498,8 +499,7 @@ void
     while (sq_idx < (int)seed_queue.size ())
     {
       // Search for sq_idx
-      tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
-      tree->getNeighborsIndices (nn_indices);
+      tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
 
       for (unsigned int j = 1; j < nn_indices.size (); j++)       // nn_indices[0] should be sq_idx
       {
@@ -640,7 +640,7 @@ bool
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (PointCloud &points, vector<int> &point_indices, PointCloud &points_down, int k, PointStamped *viewpoint_cloud)
+  estimatePointNormals (const PointCloud &points, const vector<int> &point_indices, PointCloud &points_down, int k, const PointStamped &viewpoint_cloud)
 {
   // Reserve space for 4 channels: nx, ny, nz, curvature
   points_down.chan.resize (4);
@@ -652,17 +652,17 @@ void
     points_down.chan[d].vals.resize (points_down.pts.size ());
 
   // Create a Kd-Tree for the original cloud
-  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (&points, &point_indices);
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (points, point_indices);
 
   // Allocate enough space for point indices
   vector<vector<int> > points_k_indices (points_down.pts.size ());
-  vector<double> distances (points.pts.size ());
+  vector<double> distances;
 
   // Get the nearest neighbors for all the point indices in the bounds
   for (int i = 0; i < (int)points_down.pts.size (); i++)
   {
     //kdtree->nearestKSearch (i, k, points_k_indices[i], distances);
-    kdtree->radiusSearch (&points_down.pts[i], 0.025, points_k_indices[i], distances);
+    kdtree->radiusSearch (points_down.pts[i], 0.025, points_k_indices[i], distances);
   }
 
 #pragma omp parallel for schedule(dynamic)
@@ -677,9 +677,9 @@ void
 
     // See if we need to flip any plane normals
     Point32 vp_m;
-    vp_m.x = viewpoint_cloud->point.x - points_down.pts[i].x;
-    vp_m.y = viewpoint_cloud->point.y - points_down.pts[i].y;
-    vp_m.z = viewpoint_cloud->point.z - points_down.pts[i].z;
+    vp_m.x = viewpoint_cloud.point.x - points_down.pts[i].x;
+    vp_m.y = viewpoint_cloud.point.y - points_down.pts[i].y;
+    vp_m.z = viewpoint_cloud.point.z - points_down.pts[i].z;
 
     // Dot product between the (viewpoint - point) and the plane normal
     double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
@@ -707,7 +707,7 @@ void
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (PointCloud &points, vector<int> &point_indices, int k, PointStamped *viewpoint_cloud)
+  estimatePointNormals (PointCloud &points, const vector<int> &point_indices, int k, const PointStamped &viewpoint_cloud)
 {
   int old_channel_size = points.chan.size ();
   // Reserve space for 4 channels: nx, ny, nz, curvature
@@ -720,17 +720,17 @@ void
     points.chan[d].vals.resize (points.pts.size ());
 
   // Create a Kd-Tree for the original cloud
-  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (&points, &point_indices);
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (points, point_indices);
 
   // Allocate enough space for point indices
   vector<vector<int> > points_k_indices (point_indices.size ());
-  vector<double> distances (point_indices.size ());
+  vector<double> distances;
 
   // Get the nearest neighbors for all the point indices in the bounds
   for (unsigned int i = 0; i < point_indices.size (); i++)
   {
     //kdtree->nearestKSearch (i, k, points_k_indices[i], distances);
-    kdtree->radiusSearch (&points.pts[point_indices.at (i)], 0.025, points_k_indices[i], distances);
+    kdtree->radiusSearch (points.pts[point_indices.at (i)], 0.025, points_k_indices[i], distances);
   }
 
 #pragma omp parallel for schedule(dynamic)
@@ -747,9 +747,9 @@ void
 
     // See if we need to flip any plane normals
     Point32 vp_m;
-    vp_m.x = viewpoint_cloud->point.x - points.pts[point_indices.at (i)].x;
-    vp_m.y = viewpoint_cloud->point.y - points.pts[point_indices.at (i)].y;
-    vp_m.z = viewpoint_cloud->point.z - points.pts[point_indices.at (i)].z;
+    vp_m.x = viewpoint_cloud.point.x - points.pts[point_indices.at (i)].x;
+    vp_m.y = viewpoint_cloud.point.y - points.pts[point_indices.at (i)].y;
+    vp_m.z = viewpoint_cloud.point.z - points.pts[point_indices.at (i)].z;
 
     // Dot product between the (viewpoint - point) and the plane normal
     double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
@@ -777,7 +777,7 @@ void
   * \param viewpoint_cloud a pointer to the viewpoint where the cloud was acquired from (used for normal flip)
   */
 void
-  estimatePointNormals (PointCloud &points, PointCloud &points_down, int k, PointStamped *viewpoint_cloud)
+  estimatePointNormals (const PointCloud &points, PointCloud &points_down, int k, const PointStamped &viewpoint_cloud)
 {
   int nr_points = points_down.pts.size ();
   // Reserve space for 4 channels: nx, ny, nz, curvature
@@ -789,11 +789,11 @@ void
   for (unsigned int d = 0; d < points_down.chan.size (); d++)
     points_down.chan[d].vals.resize (nr_points);
 
-  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (&points);
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (points);
 
   // Allocate enough space for point indices
   vector<vector<int> > points_k_indices (nr_points);
-  vector<double> distances (points.pts.size ());
+  vector<double> distances;
 
   // Get the nearest neighbors for all the point indices in the bounds
   for (int i = 0; i < nr_points; i++)
@@ -801,7 +801,7 @@ void
     //points_k_indices[i].resize (k);
     //kdtree->nearestKSearch (&points_down.pts[i], k, points_k_indices[i], distances);
     //kdtree->radiusSearch (&points_down.pts[i], 0.05, points_k_indices[i], distances);
-    kdtree->radiusSearch (&points_down.pts[i], 0.025, points_k_indices[i], distances);
+    kdtree->radiusSearch (points_down.pts[i], 0.025, points_k_indices[i], distances);
   }
 
 //#pragma omp parallel for schedule(dynamic)
@@ -814,9 +814,9 @@ void
 
     // See if we need to flip any plane normals
     Point32 vp_m;
-    vp_m.x = viewpoint_cloud->point.x - points_down.pts[i].x;
-    vp_m.y = viewpoint_cloud->point.y - points_down.pts[i].y;
-    vp_m.z = viewpoint_cloud->point.z - points_down.pts[i].z;
+    vp_m.x = viewpoint_cloud.point.x - points_down.pts[i].x;
+    vp_m.y = viewpoint_cloud.point.y - points_down.pts[i].y;
+    vp_m.z = viewpoint_cloud.point.z - points_down.pts[i].z;
 
     // Dot product between the (viewpoint - point) and the plane normal
     double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
@@ -934,7 +934,7 @@ int
   * \param dist_thresh the distance threshold used
   */
 void
-  growCurrentCluster (robot_msgs::PointCloud &points, std::vector<int> &indices, const std::vector<int> &cluster,
+  growCurrentCluster (const robot_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<int> &cluster,
                       std::vector<int> &inliers, double dist_thresh)
 {
   // Copy the cluster
@@ -950,7 +950,7 @@ void
   ROS_DEBUG ("[growCurrentCluster] Creating Kd-Tree with %d points for a %d-points cluster.", (int)indices.size (), (int)cluster.size ());
 
   // Create a Kd-Tree for the original cloud
-  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (&points, &indices);
+  cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (points, indices);
 
   // Get the nearest neighbors for all the point indices in the bounds
   for (unsigned int i = 0; i < cluster.size (); i++)
@@ -958,7 +958,7 @@ void
     vector<int> points_k_indices;
     vector<double> distances;
 
-    kdtree->radiusSearch (&points.pts[cluster.at (i)], dist_thresh, points_k_indices, distances);
+    kdtree->radiusSearch (points.pts[cluster.at (i)], dist_thresh, points_k_indices, distances);
     // Copy the inliers
     if (points_k_indices.size () == 0)
       continue;

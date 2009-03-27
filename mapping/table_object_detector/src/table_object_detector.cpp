@@ -57,7 +57,7 @@
 #include <angles/angles.h>
 
 // Kd Tree
-#include <point_cloud_mapping/cloud_kdtree.h>
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/angles.h>
@@ -245,7 +245,7 @@ class TableObjectDetector
         cloud_down_.chan[d].vals.resize (cloud_down_.pts.size ());
 
       // Create Kd-Tree
-      estimatePointNormals (&cloud_down_);
+      estimatePointNormals (cloud_down_);
 
       // ---[ Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_z;
@@ -481,18 +481,19 @@ class TableObjectDetector
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      findClusters (PointCloud &points, vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
+      findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                     int nx_idx, int ny_idx, int nz_idx,
                     unsigned int min_pts_per_cluster = 1)
     {
       // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (&points, &indices);
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
 
       // Create a bool vector of processed point indices, and initialize it to false
       vector<bool> processed;
       processed.resize (indices.size (), false);
 
       vector<int> nn_indices;
+      vector<double> nn_distances;
       // Process all points in the indices vector
       for (unsigned int i = 0; i < indices.size (); i++)
       {
@@ -511,8 +512,7 @@ class TableObjectDetector
 
         while (sq_idx < (int)seed_queue.size ())
         {
-          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
-          tree->getNeighborsIndices (nn_indices);
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
 
           for (unsigned int j = 1; j < nn_indices.size (); j++)
           {
@@ -561,17 +561,18 @@ class TableObjectDetector
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      findClusters (PointCloud &points, vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
+      findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                     unsigned int min_pts_per_cluster = 1)
     {
       // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (&points, &indices);
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
 
       // Create a bool vector of processed point indices, and initialize it to false
       vector<bool> processed;
       processed.resize (indices.size (), false);
 
       vector<int> nn_indices;
+      vector<double> nn_distances;
       // Process all points in the indices vector
       for (unsigned int i = 0; i < indices.size (); i++)
       {
@@ -586,8 +587,7 @@ class TableObjectDetector
 
         while (sq_idx < (int)seed_queue.size ())
         {
-          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
-          tree->getNeighborsIndices (nn_indices);
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
 
           for (unsigned int j = 1; j < nn_indices.size (); j++)
           {
@@ -660,16 +660,16 @@ class TableObjectDetector
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      estimatePointNormals (PointCloud *cloud)
+      estimatePointNormals (PointCloud &cloud)
     {
-      cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTree (cloud);
+      cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (cloud);
       vector<vector<int> > points_k_indices;
       // Allocate enough space for point indices
-      points_k_indices.resize (cloud->pts.size ());
-      for (int i = 0; i < (int)cloud->pts.size (); i++)
+      points_k_indices.resize (cloud.pts.size ());
+      for (int i = 0; i < (int)cloud.pts.size (); i++)
         points_k_indices[i].resize (k_);
       // Get the nerest neighbors for all the point indices in the bounds
-      for (int i = 0; i < (int)cloud->pts.size (); i++)
+      for (int i = 0; i < (int)cloud.pts.size (); i++)
       {
         vector<double> distances (k_);
         kdtree->nearestKSearch (i, k_, points_k_indices[i], distances);
@@ -683,20 +683,20 @@ class TableObjectDetector
 
       try
       {
-        tf_.transformPoint (cloud->header.frame_id, viewpoint_laser, viewpoint_cloud);
+        tf_.transformPoint (cloud.header.frame_id, viewpoint_laser, viewpoint_cloud);
       }
       catch (tf::TransformException)
       {
         viewpoint_cloud.point.x = viewpoint_cloud.point.y = viewpoint_cloud.point.z = 0.0;
       }
 
-      #pragma omp parallel for schedule(dynamic)
-      for (int i = 0; i < (int)cloud->pts.size (); i++)
+#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < (int)cloud.pts.size (); i++)
       {
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
         Eigen::Vector4d plane_parameters;
         double curvature;
-        cloud_geometry::nearest::computeSurfaceNormalCurvature (*cloud, points_k_indices[i], plane_parameters, curvature);
+        cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud, points_k_indices[i], plane_parameters, curvature);
 
         // See if we need to flip any plane normals
         Point32 vp_m;
@@ -713,10 +713,10 @@ class TableObjectDetector
           for (int d = 0; d < 3; d++)
             plane_parameters (d) *= -1;
         }
-        cloud->chan[0].vals[i] = plane_parameters (0);
-        cloud->chan[1].vals[i] = plane_parameters (1);
-        cloud->chan[2].vals[i] = plane_parameters (2);
-        cloud->chan[3].vals[i] = fabs (plane_parameters (3));
+        cloud.chan[0].vals[i] = plane_parameters (0);
+        cloud.chan[1].vals[i] = plane_parameters (1);
+        cloud.chan[2].vals[i] = plane_parameters (2);
+        cloud.chan[3].vals[i] = fabs (plane_parameters (3));
       }
       // Delete the kd-tree
       delete kdtree;

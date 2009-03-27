@@ -170,7 +170,7 @@ bool
   sendMarker (viewpoint_cloud_.point.x, viewpoint_cloud_.point.y, viewpoint_cloud_.point.z, parameter_frame_, &node_, global_marker_id_, 0, 0, 0);
 #endif
   // Create Kd-Tree and estimate the point normals in the original point cloud
-  estimatePointNormals (pointcloud, indices_in_bounds, cloud_down, k_search_, &viewpoint_cloud_);
+  estimatePointNormals (pointcloud, indices_in_bounds, cloud_down, k_search_, viewpoint_cloud_);
 
   // Select points whose normals are perpendicular to the Z-axis
   vector<int> indices_xy;

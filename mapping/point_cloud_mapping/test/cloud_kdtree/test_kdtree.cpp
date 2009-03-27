@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2008-2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -33,13 +33,14 @@
 #include <gtest/gtest.h>
 #include "robot_msgs/PointCloud.h"
 
-#include "point_cloud_mapping/cloud_kdtree.h"
+#include "point_cloud_mapping/kdtree/kdtree.h"
+#include "point_cloud_mapping/kdtree/kdtree_ann.h"
 
 #include "bunny_model.h"      // Import the Stanford bunny model
 
 using namespace cloud_kdtree;
 
-TEST (CloudKdTree, CreateDestroy)
+TEST (CloudKdTreeANN, CreateDestroy)
 {
   robot_msgs::PointCloud points;
 
@@ -47,14 +48,14 @@ TEST (CloudKdTree, CreateDestroy)
   cloud_kdtree_tests::getBunnyModel (points);
 
   // Create a KdTree object
-  KdTree* tree = new KdTree (&points);
+  KdTree* tree = new KdTreeANN (points);
   EXPECT_TRUE (tree != NULL);
 
   // Destroy the tree
   delete tree;
 }
 
-TEST (CloudKdTree, Search)
+TEST (CloudKdTreeANN, Search)
 {
   bool state;
   robot_msgs::PointCloud points;
@@ -65,13 +66,10 @@ TEST (CloudKdTree, Search)
   cloud_kdtree_tests::getBunnyModel (points);
 
   // Create a KdTree object
-  KdTree* tree = new KdTree (&points);
+  KdTree* tree = new KdTreeANN (points);
 
-  state = tree->nearestKSearch (&points.pts[0], 10);
-  EXPECT_EQ (state, true);
+  tree->nearestKSearch (points.pts[0], 10, indices, distances);
 
-  tree->getNeighborsIndices (indices);
-  tree->getNeighborsDistances (distances);
   EXPECT_EQ (indices[0], 0);
   EXPECT_EQ (indices[1], 12);
   EXPECT_EQ (indices[2], 198);
@@ -93,11 +91,8 @@ TEST (CloudKdTree, Search)
   EXPECT_NEAR (distances[8], 0.000198955, 1e-7);
   EXPECT_NEAR (distances[9], 0.000214294, 1e-7);
 
-  state = tree->nearestKSearch (&points, 0, 10);
-  EXPECT_EQ (state, true);
+  tree->nearestKSearch (points, 0, 10, indices, distances);
 
-  tree->getNeighborsIndices (indices);
-  tree->getNeighborsDistances (distances);
   EXPECT_EQ (indices[0], 0);
   EXPECT_EQ (indices[1], 12);
   EXPECT_EQ (indices[2], 198);
@@ -119,11 +114,9 @@ TEST (CloudKdTree, Search)
   EXPECT_NEAR (distances[8], 0.000198955, 1e-7);
   EXPECT_NEAR (distances[9], 0.000214294, 1e-7);
 
-  state = tree->radiusSearch (&points.pts[0], 0.01);
+  state = tree->radiusSearch (points.pts[0], 0.01, indices, distances);
   EXPECT_EQ (state, true);
 
-  tree->getNeighborsIndices (indices);
-  tree->getNeighborsDistances (distances);
   EXPECT_EQ (indices[0], 0);
   EXPECT_EQ (indices[1], 12);
   EXPECT_EQ (indices[2], 198);
@@ -137,11 +130,9 @@ TEST (CloudKdTree, Search)
   EXPECT_NEAR (distances[4], 6.26006e-05, 1e-7);
   EXPECT_NEAR (distances[5], 9.67441e-05, 1e-7);
 
-  state = tree->radiusSearch (&points, 0, 0.01);
+  state = tree->radiusSearch (points, 0, 0.01, indices, distances);
   EXPECT_EQ (state, true);
 
-  tree->getNeighborsIndices (indices);
-  tree->getNeighborsDistances (distances);
   EXPECT_EQ (indices[0], 0);
   EXPECT_EQ (indices[1], 12);
   EXPECT_EQ (indices[2], 198);

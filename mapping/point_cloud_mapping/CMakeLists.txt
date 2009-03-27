@@ -48,9 +48,13 @@ target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
   target_link_libraries (bin/test_cloud_io cloud_io)
 
 # ---[ Cloud Kd-Tree library
+#  rospack_add_library (cloud_kdtree
+#                       src/cloud_kdtree/convert.cpp
+#                       src/cloud_kdtree/search.cpp
+#                      )
+
   rospack_add_library (cloud_kdtree
-                       src/cloud_kdtree/convert.cpp
-                       src/cloud_kdtree/search.cpp
+                       src/cloud_kdtree/kdtree_ann.cpp
                       )
 
   rospack_add_gtest (bin/test_cloud_kdtree test/cloud_kdtree/test_kdtree.cpp)

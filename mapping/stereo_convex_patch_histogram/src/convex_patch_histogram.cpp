@@ -60,7 +60,7 @@ histogram and matches it using HIK (the Histogram Intersection Kernel) to a "dat
 #include <point_cloud_mapping/geometry/nearest.h>
 
 #include <point_cloud_mapping/cloud_io.h>
-#include <point_cloud_mapping/cloud_kdtree.h>
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 #include <sys/time.h>
 
@@ -117,19 +117,19 @@ class ConvexPatchHistogram
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      findClusters (PointCloud *points, vector<double> coeff, vector<vector<int> > &clusters)
+      findClusters (const PointCloud &points, vector<double> coeff, vector<vector<int> > &clusters)
     {
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points);
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points);
 
       vector<bool> processed;
-      processed.resize (points->pts.size (), false);
+      processed.resize (points.pts.size (), false);
 
-      vector<int> indices (points->pts.size ());
+      vector<int> indices (points.pts.size ());
       int nr_p = 0;
       for (unsigned int i = 0; i < indices.size (); i++)
       {
         // Compute a distance from each point to the plane
-        double distance = cloud_geometry::distances::pointToPlaneDistance (points->pts[i], coeff);
+        double distance = cloud_geometry::distances::pointToPlaneDistance (points.pts[i], coeff);
         if (distance < 3 * sac_distance_threshold_)
         {
           indices[nr_p] = i;
@@ -139,6 +139,7 @@ class ConvexPatchHistogram
       indices.resize (nr_p);
 
       vector<int> nn_indices;
+      vector<double> nn_distances;
       for (vector<int>::iterator it = indices.begin (); it != indices.end (); ++it)
       {
         if (processed[*it])
@@ -152,8 +153,7 @@ class ConvexPatchHistogram
 
         while (q_idx < (int)q.size ())
         {
-          tree->radiusSearch (points, q[q_idx], 0.01, 20);
-          tree->getNeighborsIndices (nn_indices);
+          tree->radiusSearch (points, q[q_idx], 0.01, nn_indices, nn_distances, 20);
 
           for (unsigned int j = 1; j < nn_indices.size (); j++)
           {
@@ -256,7 +256,7 @@ class ConvexPatchHistogram
 
       // Split the untextured cloud into clusters close to the plane found
       vector<vector<int> > clusters;
-      findClusters (&cloud_, coeff, clusters);
+      findClusters (cloud_, coeff, clusters);
 
       gettimeofday (&t2, NULL);
       time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);

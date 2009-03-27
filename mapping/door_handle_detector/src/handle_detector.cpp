@@ -243,7 +243,7 @@ class HandleDetector
       getHandleCandidates (indices_in_bounds, coeff, polygon, polygon_tr, transformation, handle_indices);
 
       // Create Kd-Tree and estimate the point normals in the original point cloud for the points left
-      estimatePointNormals (cloud_tr_, handle_indices, k_search_, &viewpoint_cloud_);
+      estimatePointNormals (cloud_tr_, handle_indices, k_search_, viewpoint_cloud_);
 
       // Find the handle by performing a composite segmentation in distance and intensity space for all points left
       // Select points outside the (mean +/- \alpha_ * stddev) distribution

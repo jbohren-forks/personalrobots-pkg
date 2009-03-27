@@ -55,7 +55,7 @@
 #include <angles/angles.h>
 
 // Kd Tree
-#include <point_cloud_mapping/cloud_kdtree.h>
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/areas.h>
@@ -167,8 +167,8 @@ class SemanticPointAnnotator
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** \brief Decompose a region of space into clusters based on the euclidean distance between points
-      * \param points pointer to the point cloud message
-      * \param indices pointer to a list of point indices
+      * \param points the point cloud message
+      * \param indices a list of point indices
       * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
       * \param clusters the resultant clusters
       * \param nx_idx
@@ -177,20 +177,21 @@ class SemanticPointAnnotator
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<Region> &clusters,
+      findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<Region> &clusters,
                     int nx_idx, int ny_idx, int nz_idx,
                     unsigned int min_pts_per_cluster = 1)
     {
       // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
 
       // Create a bool vector of processed point indices, and initialize it to false
       vector<bool> processed;
-      processed.resize (indices->size (), false);
+      processed.resize (indices.size (), false);
 
       vector<int> nn_indices;
+      vector<double> nn_distances;
       // Process all points in the indices vector
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
         if (processed[i])
           continue;
@@ -199,28 +200,27 @@ class SemanticPointAnnotator
         int sq_idx = 0;
         seed_queue.push_back (i);
 
-        double norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
-                              points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
-                              points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
+        double norm_a = sqrt (points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (i)] +
+                              points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (i)] +
+                              points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (i)]);
 
         processed[i] = true;
 
         while (sq_idx < (int)seed_queue.size ())
         {
-          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
-          tree->getNeighborsIndices (nn_indices);
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
 
           for (unsigned int j = 1; j < nn_indices.size (); j++)
           {
             if (!processed.at (nn_indices[j]))
             {
-              double norm_b = sqrt (points->chan[nx_idx].vals[indices->at (nn_indices[j])] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-                                    points->chan[ny_idx].vals[indices->at (nn_indices[j])] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-                                    points->chan[nz_idx].vals[indices->at (nn_indices[j])] * points->chan[nz_idx].vals[indices->at (nn_indices[j])]);
+              double norm_b = sqrt (points.chan[nx_idx].vals[indices.at (nn_indices[j])] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
+                                    points.chan[ny_idx].vals[indices.at (nn_indices[j])] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
+                                    points.chan[nz_idx].vals[indices.at (nn_indices[j])] * points.chan[nz_idx].vals[indices.at (nn_indices[j])]);
               // [-1;1]
-              double dot_p = points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (nn_indices[j])] +
-                             points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (nn_indices[j])] +
-                             points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (nn_indices[j])];
+              double dot_p = points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
+                             points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
+                             points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (nn_indices[j])];
               if ( acos (dot_p / (norm_a * norm_b)) < region_angle_threshold_)
               {
                 processed[nn_indices[j]] = true;
@@ -239,7 +239,7 @@ class SemanticPointAnnotator
           //r.indices = seed_queue;
           r.indices.resize (seed_queue.size ());
           for (unsigned int j = 0; j < r.indices.size (); j++)
-            r.indices[j] = indices->at (seed_queue[j]);
+            r.indices[j] = indices.at (seed_queue[j]);
           clusters.push_back (r);
         }
       }
@@ -250,26 +250,26 @@ class SemanticPointAnnotator
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      sortConcaveHull2D (PointCloud *points, vector<int> *indices, Polygon3D &poly)
+      sortConcaveHull2D (const PointCloud &points, const vector<int> &indices, Polygon3D &poly)
     {
       // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
 
       vector<int> seed_queue;
       seed_queue.push_back (0);
 
       // Create a bool vector of processed point indices, and initialize it to false
       vector<bool> processed;
-      processed.resize (indices->size (), false);
+      processed.resize (indices.size (), false);
       vector<int> nn_indices;
+      vector<double> nn_distances;
 
       // Process all points in the indices vector
       int i = 0;
       processed[i] = true;                            // Mark the current point as "processed"
-      while (seed_queue.size () < indices->size ())
+      while (seed_queue.size () < indices.size ())
       {
-        tree->nearestKSearch (seed_queue[i], indices->size ());
-        tree->getNeighborsIndices (nn_indices);
+        tree->nearestKSearch (seed_queue[i], indices.size (), nn_indices, nn_distances);
 
         for (unsigned int j = 0;  j < nn_indices.size (); j++)
         {
@@ -286,9 +286,9 @@ class SemanticPointAnnotator
       poly.points.resize (seed_queue.size ());
       for (unsigned int i = 0; i < seed_queue.size (); i++)
       {
-        poly.points[i].x = points->pts.at (indices->at (seed_queue[i])).x;
-        poly.points[i].y = points->pts.at (indices->at (seed_queue[i])).y;
-        poly.points[i].z = points->pts.at (indices->at (seed_queue[i])).z;
+        poly.points[i].x = points.pts.at (indices.at (seed_queue[i])).x;
+        poly.points[i].y = points.pts.at (indices.at (seed_queue[i])).y;
+        poly.points[i].z = points.pts.at (indices.at (seed_queue[i])).z;
       }
       // Destroy the tree
       delete tree;
@@ -421,26 +421,25 @@ class SemanticPointAnnotator
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     void
-      computeConcaveHull (PointCloud *points, vector<int> *indices, vector<double> *coeff,
-                          vector<vector<int> > *neighbors, Polygon3D &poly)
+      computeConcaveHull (const PointCloud &points, const vector<int> &indices, const vector<double> &coeff,
+                          const vector<vector<int> > &neighbors, Polygon3D &poly)
     {
       Eigen::Vector3d u, v;
-      cloud_geometry::getCoordinateSystemOnPlane (*coeff, u, v);
+      cloud_geometry::getCoordinateSystemOnPlane (coeff, u, v);
 
-      vector<int> inliers (indices->size ());
+      vector<int> inliers (indices.size ());
       int nr_p = 0;
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
-        vector<int> *point_neighbors = &neighbors->at (i);
-        if (cloud_geometry::nearest::isBoundaryPoint (*points, indices->at (i), *point_neighbors, u, v, boundary_angle_threshold_))
+        if (cloud_geometry::nearest::isBoundaryPoint (points, indices.at (i), neighbors.at (i), u, v, boundary_angle_threshold_))
         {
-          inliers[nr_p] = indices->at (i);
+          inliers[nr_p] = indices.at (i);
           nr_p++;
         }
       }
       inliers.resize (nr_p);
 
-      sortConcaveHull2D (points, &inliers, poly);
+      sortConcaveHull2D (points, inliers, poly);
     }
 
 
@@ -483,13 +482,13 @@ class SemanticPointAnnotator
 
       vector<Region> clusters;
       // Split the Z-parallel points into clusters
-      findClusters (&cloud_, &indices_z, region_growing_tolerance_, clusters, nx, ny, nz, min_cluster_pts_);
+      findClusters (cloud_, indices_z, region_growing_tolerance_, clusters, nx, ny, nz, min_cluster_pts_);
       int z_c = clusters.size ();
       for (int i = 0; i < z_c; i++)
         clusters[i].region_type = 0;
 
       // Split the Z-perpendicular points into clusters
-      findClusters (&cloud_, &indices_xy, region_growing_tolerance_, clusters, nx, ny, nz, min_cluster_pts_);
+      findClusters (cloud_, indices_xy, region_growing_tolerance_, clusters, nx, ny, nz, min_cluster_pts_);
       for (unsigned int i = z_c; i < clusters.size (); i++)
         clusters[i].region_type = 1;
 
@@ -530,6 +529,7 @@ class SemanticPointAnnotator
 
       // Bummer - no omp here
       // cloud_kdtree is not thread safe because we rely on ANN/FL-ANN, so get the neighbors here
+      vector<double> nn_distances;
       vector<vector<vector<int> > > neighbors (clusters.size ());
       if (concave_)
       {
@@ -539,23 +539,21 @@ class SemanticPointAnnotator
             continue;
 
           vector<vector<int> > *cluster_neighbors = &neighbors[cc];
-          vector<int> *indices = &all_cluster_inliers[cc][0];
 
-          if (indices->size () == 0)
+          if (all_cluster_inliers[cc][0].size () == 0)
             continue;
-          cluster_neighbors->resize (indices->size ());
+          cluster_neighbors->resize (all_cluster_inliers[cc][0].size ());
 
           // Create a tree for these points
-          cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (&cloud_, indices);
-          for (unsigned int i = 0; i < indices->size (); i++)
+          cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (cloud_, all_cluster_inliers[cc][0]);
+          for (unsigned int i = 0; i < all_cluster_inliers[cc][0].size (); i++)
           {
-            tree->radiusSearch (i, 0.3);                      // 30cm radius search
+            tree->radiusSearch (i, 0.3, cluster_neighbors->at (i), nn_distances);                      // 30cm radius search
 //            tree->nearestKSearch (i, 30);                      // 30cm radius search
             // Note: the neighbors below are in the 0->indices.size () spectrum and need to be
             // transformed into global point indices (!)
-            tree->getNeighborsIndices (cluster_neighbors->at (i));
             for (unsigned int j = 0; j < cluster_neighbors->at (i).size (); j++)
-              cluster_neighbors->at(i).at(j) = indices->at (cluster_neighbors->at(i).at(j));
+              cluster_neighbors->at(i).at(j) = all_cluster_inliers[cc][0].at (cluster_neighbors->at(i).at(j));
           }
           // Destroy the tree
           delete tree;
@@ -576,15 +574,13 @@ class SemanticPointAnnotator
           if (all_cluster_inliers[cc].size () == 0 || all_cluster_coeff[cc].size () == 0)
             continue;
 
-          vector<int> *indices  = &all_cluster_inliers[cc][0];
-          vector<double> *coeff = &all_cluster_coeff[cc][0];
-          if (indices->size () == 0 || coeff->size () == 0)
+          if (all_cluster_inliers[cc][0].size () == 0 || all_cluster_coeff[cc][0].size () == 0)
             continue;
 
           if (concave_)
-            computeConcaveHull (&cloud_, indices, coeff, &neighbors[cc], pmap_.polygons[cc]);
+            computeConcaveHull (cloud_, all_cluster_inliers[cc][0], all_cluster_coeff[cc][0], neighbors[cc], pmap_.polygons[cc]);
           else
-            cloud_geometry::areas::convexHull2D (cloud_, *indices, *coeff, pmap_.polygons[cc]);
+            cloud_geometry::areas::convexHull2D (cloud_, all_cluster_inliers[cc][0], all_cluster_coeff[cc][0], pmap_.polygons[cc]);
         }
       }
 

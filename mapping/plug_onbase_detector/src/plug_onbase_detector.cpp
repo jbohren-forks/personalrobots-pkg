@@ -54,7 +54,7 @@
 #include <tf/transform_listener.h>
 
 // Kd Tree
-#include <point_cloud_mapping/cloud_kdtree.h>
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/angles.h>
@@ -223,7 +223,7 @@ class PlugOnBaseDetector
 
       // Find the object clusters supported by it
       vector<vector<int> > object_clusters;
-      findClusters (&cloud_, &remaining_indices, 0.01, object_clusters, 5);
+      findClusters (cloud_, remaining_indices, 0.01, object_clusters, 5);
 
       if (object_clusters.size () != 0)
         ROS_DEBUG ("Number of remaining clusters on base: %d. Selecting the largest cluster with %d points as the plug candidate.", (int)object_clusters.size (), (int)object_clusters[0].size ());
@@ -307,19 +307,20 @@ class PlugOnBaseDetector
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<vector<int> > &clusters,
+      findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                     unsigned int min_pts_per_cluster = 1)
     {
       // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
 
       // Create a bool vector of processed point indices, and initialize it to false
       vector<bool> processed;
-      processed.resize (indices->size (), false);
+      processed.resize (indices.size (), false);
 
       vector<int> nn_indices;
+      vector<double> nn_distances;
       // Process all points in the indices vector
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
         if (processed[i])
           continue;
@@ -332,8 +333,7 @@ class PlugOnBaseDetector
 
         while (sq_idx < (int)seed_queue.size ())
         {
-          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
-          tree->getNeighborsIndices (nn_indices);
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
 
           for (unsigned int j = 1; j < nn_indices.size (); j++)
           {
@@ -354,7 +354,7 @@ class PlugOnBaseDetector
           //r.indices = seed_queue;
           r.resize (seed_queue.size ());
           for (unsigned int j = 0; j < r.size (); j++)
-            r[j] = indices->at (seed_queue[j]);
+            r[j] = indices.at (seed_queue[j]);
           clusters.push_back (r);
         }
       }

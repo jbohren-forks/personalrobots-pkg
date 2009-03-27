@@ -49,7 +49,7 @@ moment invariants, etc.
 #include <tf/transform_listener.h>
 
 // Cloud kd-tree
-#include <point_cloud_mapping/cloud_kdtree.h>
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/point.h>
@@ -251,7 +251,7 @@ class NormalEstimation
       gettimeofday (&t1, NULL);
 
       // Create Kd-Tree
-      kdtree_ = new cloud_kdtree::KdTree (&cloud_normals_);
+      kdtree_ = new cloud_kdtree::KdTreeANN (cloud_normals_);
 
       // Allocate enough space for point indices
       points_indices_.resize (cloud_normals_.pts.size ());
