@@ -16,6 +16,7 @@
   <depend package="angles" />
   <depend package="point_cloud_mapping" />
   <depend package="checkerboard_detector" />
+  <depend package="point_cloud_assembler" />
   <depend package="std_msgs" />
   <depend package="sbpl_arm_executive" />
 

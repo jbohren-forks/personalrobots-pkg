@@ -34,6 +34,7 @@ rospack_add_executable(open_door_executive_test test/open_door_executive_test.cp
 
 rospack_add_executable(trigger test/trigger.cpp)
 rospack_add_executable(trigger_doors test/trigger_doors.cpp)
+rospack_add_executable(trigger_doors_scan test/trigger_doors_scan.cpp)
 rospack_add_executable(trigger_handle test/trigger_handle.cpp)
 
 rospack_add_executable(door_checkerboard_detector test/door_checkerboard_detector.cpp)

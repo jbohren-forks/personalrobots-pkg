@@ -40,8 +40,8 @@
 
 #include <ros/node.h>
 #include <robot_msgs/Door.h>
-#include <door_handle_detector/DoorDetector.h>
 #include <robot_actions/action.h>
+#include <tf/transform_listener.h>
 
 namespace door_handle_detector{
 
@@ -57,8 +57,9 @@ public:
 
 
 private:
-  door_handle_detector::DoorDetector::Request  req_doordetect;
-  door_handle_detector::DoorDetector::Response res_doordetect;
+  bool request_preempt_;
+  tf::TransformListener tf_;
+
 };
 
 }

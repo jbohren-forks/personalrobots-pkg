@@ -42,11 +42,10 @@
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/PointStamped.h>
 #include <robot_msgs/VisualizationMarker.h>
+#include <robot_msgs/Door.h>
 
 #include <tf/transform_listener.h>
 
-// Include the service call type
-#include "door_handle_detector/DoorDetector.h"
 
 // Point Cloud Mapping includes
 #include <point_cloud_mapping/geometry/angles.h>
@@ -179,7 +178,7 @@ inline void
   anode->publish ("visualizationMarker", mk);
 }
 
-void obtainCloudIndicesSet (robot_msgs::PointCloud *points, std::vector<int> &indices, door_handle_detector::DoorDetector::Request door_req,
+void obtainCloudIndicesSet (robot_msgs::PointCloud *points, std::vector<int> &indices, robot_msgs::Door& door,
                             tf::TransformListener *tf, std::string fixed_param_frame, double min_z_bounds, double max_z_bounds, double frame_multiplier);
 
 
