@@ -116,6 +116,25 @@ namespace TREX {
      */
     void writePose(const TokenId& token, float& x, float& y, float& th);
 
+
+    /**
+     * @brief Reads values into an observation
+     * @param obs The output observation
+     * @param x The x position
+     * @param y The y position
+     * @param z The z angle
+     */
+    void readPoint(ObservationByValue& obs, double x, double y, double z);
+
+    /**
+     * @brief Writes values from a token
+     * @param token The output observation
+     * @param x The x position
+     * @param y The y position
+     * @param z The z angle
+     */
+    void writePoint(const TokenId& token, float& x, float& y, float& z);
+
     /**
      * @brief A utility function that fills out x, y, and th 
      * @param x The x position

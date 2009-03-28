@@ -18,6 +18,9 @@ rospack_add_nddl("test/doors/with_map/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/without_map/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/single_action_test/pr2.doorman.nddl")
 
+# Plug Tests
+rospack_add_nddl("test/plugs/single_action_test/pr2.recharger.nddl")
+
 #rospack_add_nddl("test/model_tests/pr2.master.nddl")
 #rospack_add_nddl("test/model_tests/pr2.doorman.nddl")
 #rospack_add_nddl("test/model_tests/pr2.driver.nddl")

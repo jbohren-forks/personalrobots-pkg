@@ -26,8 +26,7 @@ map_initialize_from_file("willow.tmap");
 rejectable(detect_door.Active cmd_detect_door);
 
 // Parameters
-// Not setting the frame as it should be picked up from the adapter comfiguration by default.
-//cmd_detect_door.frame_id = "odom_combined_offset";
+cmd_detect_door.frame_id = "base_footprint";
 
 // Bind door state data
 cmd_detect_door.frame_p1_x =  1.5;

@@ -41,9 +41,11 @@
 
 #include <std_msgs/String.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Empty.h>
 #include <robot_msgs/Pose.h>
 #include <robot_msgs/Door.h>
 #include <robot_msgs/BatteryState.h>
+#include <robot_msgs/PlugStow.h>
 #include <robot_actions/action_runner.h>
 #include <robot_actions/action.h>
 #include <robot_actions/DoorActionState.h>
@@ -51,6 +53,7 @@
 #include <robot_actions/MoveBaseState.h>
 #include <robot_actions/Pose2D.h>
 #include <robot_actions/RechargeState.h>
+#include <robot_actions/DetectPlugOnBaseActionState.h>
 #include <boost/thread.hpp>
 #include <cstdlib>
 
@@ -124,6 +127,32 @@ namespace executive_trex_pr2 {
     const double _update_rate;
     boost::thread* _update_thread;
   };
+
+
+
+  template <class Goal, class Feedback>
+  class StubAction1: public robot_actions::Action<Goal, Feedback> {
+  public:
+
+    StubAction1(const std::string& name): robot_actions::Action<Goal, Feedback>(name) {}
+
+  private:
+
+    // Activation does all the real work
+    virtual void handleActivate(const Goal& msg){
+      // Immediate reply
+      robot_actions::Action<Goal, Feedback>::notifyActivated();
+      notifySucceeded(_feedback);
+    }
+
+    // Activation does all the real work
+    virtual void handlePreempt(){
+      // Immediate reply
+      notifyPreempted(_feedback);
+    }
+
+    Feedback _feedback;
+  };
 }
 
 int main(int argc, char** argv){ 
@@ -146,6 +175,10 @@ int main(int argc, char** argv){
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp_handle);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door);
+
+  // Action stubs for plugs
+  executive_trex_pr2::StubAction1<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
+  runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect_plug_on_base);
 
   // Allocate other action stubs
   executive_trex_pr2::StubAction<robot_actions::Pose2D> move_base("move_base");

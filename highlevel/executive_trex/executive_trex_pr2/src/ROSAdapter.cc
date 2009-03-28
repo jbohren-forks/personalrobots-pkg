@@ -175,6 +175,18 @@ namespace TREX {
     write("th", token, th);
   }
 
+  void ROSAdapter::readPoint(ObservationByValue& obs, double x, double y, double z){
+    read("x", obs, x);
+    read("y", obs, y);
+    read("z", obs, z);
+  }
+
+  void ROSAdapter::writePoint(const TokenId& token, float& x, float& y, float& z){
+    write("x", token, x);
+    write("y", token, y);
+    write("z", token, z);
+  }
+
   StringDomain* ROSAdapter::toStringDomain(const std_msgs::String& msg){
     return new StringDomain(LabelStr(msg.data), "string");
   }

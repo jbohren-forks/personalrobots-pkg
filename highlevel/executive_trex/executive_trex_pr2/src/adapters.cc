@@ -40,11 +40,13 @@
 #include "ROSStateAdapter.hh"
 #include <std_msgs/Empty.h>
 #include <robot_msgs/Door.h>
+#include <robot_msgs/PlugStow.h>
 #include <robot_actions/ShellCommandState.h>
 #include <robot_actions/DoorActionState.h>
 #include <robot_actions/MoveBaseState.h>
 #include <robot_actions/Pose2D.h>
 #include <robot_actions/RechargeState.h>
+#include <robot_actions/DetectPlugOnBaseActionState.h>
 
 namespace TREX {
 
@@ -288,4 +290,30 @@ namespace TREX {
 
   // Allocate a Factory
   TeleoReactor::ConcreteFactory<BaseStateAdapter> l_NewBaseStateAdapter_Factory("NewBaseStateAdapter");
+
+  /***********************************************************************
+   * @brief DetectPlugOnBase actions with a pose message for goal and feedback
+   **********************************************************************/
+  class DetectPlugOnBaseAdapter: public ROSActionAdapter<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow> {
+  public:
+
+    DetectPlugOnBaseAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(agentName, configData){
+    }
+
+    virtual ~DetectPlugOnBaseAdapter(){}
+
+  protected:
+
+    virtual void fillActiveObservationParameters(const std_msgs::Empty& msg, ObservationByValue* obs){}
+
+    virtual void fillInactiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){ 
+      readPoint(*obs, msg.plug_centroid.x, msg.plug_centroid.y, msg.plug_centroid.z);
+    }
+
+    void fillDispatchParameters(std_msgs::Empty& msg, const TokenId& goalToken){}
+  };
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<DetectPlugOnBaseAdapter> DetectPlugOnBaseAdapter_Factory("DetectPlugOnBaseAdapter");
 }
