@@ -36,12 +36,15 @@
 // ROS includes
 #include <robot_msgs/Point.h>
 #include <robot_msgs/Point32.h>
+#include <robot_msgs/PointStamped.h>
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <robot_msgs/Polyline2D.h>
 
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/nearest.h>
+
+#include <Eigen/Core>
 
 namespace cloud_geometry
 {
@@ -219,6 +222,63 @@ namespace cloud_geometry
       if (std::isnan (rad))
         ROS_ERROR ("[cloud_geometry::angles::getAngle3D] got a NaN angle!");
       return (rad);
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Flip (in place) the estimated normal of a point towards a given viewpoint
+      * \param normal the plane normal to be flipped
+      * \param point a given point
+      * \param viewpoint the viewpoint
+      */
+    inline void
+      flipNormalTowardsViewpoint (Eigen::Vector4d &normal, const robot_msgs::Point32 &point, const robot_msgs::PointStamped &viewpoint)
+    {
+      // See if we need to flip any plane normals
+      float vp_m[3];
+      vp_m[0] = viewpoint.point.x - point.x;
+      vp_m[1] = viewpoint.point.y - point.y;
+      vp_m[2] = viewpoint.point.z - point.z;
+
+      // Dot product between the (viewpoint - point) and the plane normal
+      double cos_theta = (vp_m[0] * normal (0) + vp_m[1] * normal (1) + vp_m[2] * normal (2));
+
+      // Flip the plane normal
+      if (cos_theta < 0)
+      {
+        for (int d = 0; d < 3; d++)
+          normal (d) *= -1;
+        // Hessian form (D = nc . p_plane (centroid here) + p)
+        normal (3) = -1 * (normal (0) * point.x + normal (1) * point.y + normal (2) * point.z);
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Flip (in place) the estimated normal of a point towards a given viewpoint
+      * \param normal the plane normal to be flipped
+      * \param point a given point
+      * \param viewpoint the viewpoint
+      */
+    inline void
+      flipNormalTowardsViewpoint (std::vector<double> &normal, const robot_msgs::Point32 &point, const robot_msgs::PointStamped &viewpoint)
+    {
+      // See if we need to flip any plane normals
+      float vp_m[3];
+      vp_m[0] = viewpoint.point.x - point.x;
+      vp_m[1] = viewpoint.point.y - point.y;
+      vp_m[2] = viewpoint.point.z - point.z;
+
+      // Dot product between the (viewpoint - point) and the plane normal
+      double cos_theta = (vp_m[0] * normal[0] + vp_m[1] * normal[1] + vp_m[2] * normal[2]);
+
+      // Flip the plane normal
+      if (cos_theta < 0)
+      {
+        for (int d = 0; d < 3; d++)
+          normal[d] *= -1;
+        // Hessian form (D = nc . p_plane (centroid here) + p)
+        normal[3] = -1 * (normal[0] * point.x + normal[1] * point.y + normal[2] * point.z);
+      }
     }
 
   }

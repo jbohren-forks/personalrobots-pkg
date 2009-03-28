@@ -35,6 +35,7 @@
 
 // ROS includes
 #include <robot_msgs/PointCloud.h>
+#include <robot_msgs/PointStamped.h>
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/Polygon3D.h>
 
@@ -235,13 +236,19 @@ namespace cloud_geometry
     void computeCentroid (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &centroid);
     void computeCentroid (const robot_msgs::PointCloud &points, std::vector<int> &indices, robot_msgs::PointCloud &centroid);
 
-    void computeSurfaceNormalCurvature (const robot_msgs::PointCloud &points, Eigen::Vector4d &plane_parameters, double &curvature);
-    void computeSurfaceNormalCurvature (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature);
+    void computePointNormal (const robot_msgs::PointCloud &points, Eigen::Vector4d &plane_parameters, double &curvature);
+    void computePointNormal (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature);
 
     void computeMomentInvariants (const robot_msgs::PointCloud &points, double &j1, double &j2, double &j3);
     void computeMomentInvariants (const robot_msgs::PointCloud &points, const std::vector<int> &indices, double &j1, double &j2, double &j3);
 
     bool isBoundaryPoint (const robot_msgs::PointCloud &points, int q_idx, const std::vector<int> &neighbors, const Eigen::Vector3d& u, const Eigen::Vector3d& v, double angle_threshold = M_PI / 2.0);
+
+    void computePointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k, const robot_msgs::PointStamped &viewpoint);
+    void computePointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, double radius, const robot_msgs::PointStamped &viewpoint);
+    void computePointCloudNormals (robot_msgs::PointCloud &points, int k, const robot_msgs::PointStamped &viewpoint);
+    void computePointCloudNormals (robot_msgs::PointCloud &points, double radius, const robot_msgs::PointStamped &viewpoint);
+
   }
 }
 

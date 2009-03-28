@@ -35,6 +35,9 @@
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/statistics.h>
 
+#include <point_cloud_mapping/kdtree/kdtree.h>
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
+
 namespace cloud_geometry
 {
 
@@ -125,7 +128,7 @@ namespace cloud_geometry
       * \f]
       */
     void
-      computeSurfaceNormalCurvature (const robot_msgs::PointCloud &points, Eigen::Vector4d &plane_parameters, double &curvature)
+      computePointNormal (const robot_msgs::PointCloud &points, Eigen::Vector4d &plane_parameters, double &curvature)
     {
       robot_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
@@ -165,7 +168,7 @@ namespace cloud_geometry
       * \f]
       */
     void
-      computeSurfaceNormalCurvature (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature)
+      computePointNormal (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature)
     {
       robot_msgs::Point32 centroid;
       // Compute the 3x3 covariance matrix
@@ -315,6 +318,180 @@ namespace cloud_geometry
         return (true);
       else
         return (false);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Estimate (in place) the point normals and surface curvatures for a given point cloud dataset (points)
+      * using the data from a different point cloud (surface) for least-squares planar estimation.
+      * \param points the input point cloud (on output, 4 extra channels will be added: \a nx, \a ny, \a nz, and \a curvatures)
+      * \param surface the point cloud data to use for least-squares planar estimation
+      * \param k use a fixed number of k-nearest neighbors for the least-squares fit
+      * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
+      */
+    void
+      computePointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, int k,
+                                const robot_msgs::PointStamped &viewpoint)
+    {
+      int nr_points = points.pts.size ();
+      int orig_dims = points.chan.size ();
+      points.chan.resize (orig_dims + 4);                     // Reserve space for 4 channels: nx, ny, nz, curvature
+      points.chan[orig_dims + 0].name = "nx";
+      points.chan[orig_dims + 1].name = "ny";
+      points.chan[orig_dims + 2].name = "nz";
+      points.chan[orig_dims + 3].name = "curvatures";
+      for (unsigned int d = orig_dims; d < points.chan.size (); d++)
+        points.chan[d].vals.resize (nr_points);
+
+      cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (surface);
+
+//#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < nr_points; i++)                     // Get the nearest neighbors for all the point indices in the bounds
+      {
+        std::vector<int> nn_indices;
+        std::vector<float> nn_distances;
+        kdtree->nearestKSearch (points.pts[i], k, nn_indices, nn_distances);
+
+        Eigen::Vector4d plane_parameters;                     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+        double curvature;
+        computePointNormal (surface, nn_indices, plane_parameters, curvature);
+
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points.pts[i], viewpoint);
+
+        points.chan[orig_dims + 0].vals[i] = plane_parameters (0);
+        points.chan[orig_dims + 1].vals[i] = plane_parameters (1);
+        points.chan[orig_dims + 2].vals[i] = plane_parameters (2);
+        points.chan[orig_dims + 3].vals[i] = curvature;
+      }
+      delete kdtree;                                          // Delete the kd-tree
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Estimate (in place) the point normals and surface curvatures for a given point cloud dataset (points)
+      * using the data from a different point cloud (surface) for least-squares planar estimation.
+      * \param points the input point cloud (on output, 4 extra channels will be added: \a nx, \a ny, \a nz, and \a curvatures)
+      * \param surface the point cloud data to use for least-squares planar estimation
+      * \param radius use a neighbor fixed radius search for the least-squares fit
+      * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
+      */
+    void
+      computePointCloudNormals (robot_msgs::PointCloud &points, const robot_msgs::PointCloud &surface, double radius,
+                                const robot_msgs::PointStamped &viewpoint)
+    {
+      int nr_points = points.pts.size ();
+      int orig_dims = points.chan.size ();
+      points.chan.resize (orig_dims + 4);                     // Reserve space for 4 channels: nx, ny, nz, curvature
+      points.chan[orig_dims + 0].name = "nx";
+      points.chan[orig_dims + 1].name = "ny";
+      points.chan[orig_dims + 2].name = "nz";
+      points.chan[orig_dims + 3].name = "curvatures";
+      for (unsigned int d = orig_dims; d < points.chan.size (); d++)
+        points.chan[d].vals.resize (nr_points);
+
+      cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (surface);
+
+//#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < nr_points; i++)                     // Get the nearest neighbors for all the point indices in the bounds
+      {
+        std::vector<int> nn_indices;
+        std::vector<float> nn_distances;
+        kdtree->radiusSearch (points.pts[i], radius, nn_indices, nn_distances);
+
+        Eigen::Vector4d plane_parameters;                     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+        double curvature;
+        computePointNormal (surface, nn_indices, plane_parameters, curvature);
+
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points.pts[i], viewpoint);
+
+        points.chan[orig_dims + 0].vals[i] = plane_parameters (0);
+        points.chan[orig_dims + 1].vals[i] = plane_parameters (1);
+        points.chan[orig_dims + 2].vals[i] = plane_parameters (2);
+        points.chan[orig_dims + 3].vals[i] = curvature;
+      }
+      delete kdtree;                                          // Delete the kd-tree
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Estimate (in place) the point normals and surface curvatures for a given point cloud dataset (points)
+      * \param points the input point cloud (on output, 4 extra channels will be added: \a nx, \a ny, \a nz, and \a curvatures)
+      * \param k use a fixed number of k-nearest neighbors for the least-squares fit
+      * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
+      */
+    void
+      computePointCloudNormals (robot_msgs::PointCloud &points, int k, const robot_msgs::PointStamped &viewpoint)
+    {
+      int nr_points = points.pts.size ();
+      int orig_dims = points.chan.size ();
+      points.chan.resize (orig_dims + 4);                     // Reserve space for 4 channels: nx, ny, nz, curvature
+      points.chan[orig_dims + 0].name = "nx";
+      points.chan[orig_dims + 1].name = "ny";
+      points.chan[orig_dims + 2].name = "nz";
+      points.chan[orig_dims + 3].name = "curvatures";
+      for (unsigned int d = orig_dims; d < points.chan.size (); d++)
+        points.chan[d].vals.resize (nr_points);
+
+      cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (points);
+
+//#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < nr_points; i++)                     // Get the nearest neighbors for all the point indices in the bounds
+      {
+        std::vector<int> nn_indices;
+        std::vector<float> nn_distances;
+        kdtree->nearestKSearch (points.pts[i], k, nn_indices, nn_distances);
+
+        Eigen::Vector4d plane_parameters;                     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+        double curvature;
+        computePointNormal (points, nn_indices, plane_parameters, curvature);
+
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points.pts[i], viewpoint);
+
+        points.chan[orig_dims + 0].vals[i] = plane_parameters (0);
+        points.chan[orig_dims + 1].vals[i] = plane_parameters (1);
+        points.chan[orig_dims + 2].vals[i] = plane_parameters (2);
+        points.chan[orig_dims + 3].vals[i] = curvature;
+      }
+      delete kdtree;                                          // Delete the kd-tree
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Estimate (in place) the point normals and surface curvatures for a given point cloud dataset (points)
+      * \param points the input point cloud (on output, 4 extra channels will be added: \a nx, \a ny, \a nz, and \a curvatures)
+      * \param radius use a neighbor fixed radius search for the least-squares fit
+      * \param viewpoint the viewpoint where the cloud was acquired from (used for normal flip)
+      */
+    void
+      computePointCloudNormals (robot_msgs::PointCloud &points, double radius, const robot_msgs::PointStamped &viewpoint)
+    {
+      int nr_points = points.pts.size ();
+      int orig_dims = points.chan.size ();
+      points.chan.resize (orig_dims + 4);                     // Reserve space for 4 channels: nx, ny, nz, curvature
+      points.chan[orig_dims + 0].name = "nx";
+      points.chan[orig_dims + 1].name = "ny";
+      points.chan[orig_dims + 2].name = "nz";
+      points.chan[orig_dims + 3].name = "curvatures";
+      for (unsigned int d = orig_dims; d < points.chan.size (); d++)
+        points.chan[d].vals.resize (nr_points);
+
+      cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (points);
+
+//#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < nr_points; i++)                     // Get the nearest neighbors for all the point indices in the bounds
+      {
+        std::vector<int> nn_indices;
+        std::vector<float> nn_distances;
+        kdtree->radiusSearch (points.pts[i], radius, nn_indices, nn_distances);
+
+        Eigen::Vector4d plane_parameters;                     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
+        double curvature;
+        computePointNormal (points, nn_indices, plane_parameters, curvature);
+
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points.pts[i], viewpoint);
+
+        points.chan[orig_dims + 0].vals[i] = plane_parameters (0);
+        points.chan[orig_dims + 1].vals[i] = plane_parameters (1);
+        points.chan[orig_dims + 2].vals[i] = plane_parameters (2);
+        points.chan[orig_dims + 3].vals[i] = curvature;
+      }
+      delete kdtree;                                          // Delete the kd-tree
     }
 
   }

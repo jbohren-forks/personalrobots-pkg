@@ -50,10 +50,37 @@ namespace cloud_kdtree
     float* p = (float*)malloc (3 * sizeof (float));
     p[0] = p_q.x; p[1] = p_q.y; p[2] = p_q.z;
 
+    std::cerr << p[0] <<  " " << p[1] << " " << p[2] << std::endl;
     m_lock_.lock ();
-//    int* nn_idx_ = (int*) malloc(tcount*nn*sizeof(int));
-//    float* nn_dists_ = (float*) malloc(tcount*nn*sizeof(float));
-    flann_find_nearest_neighbors_index (index_id_, p, 1, &k_indices[0], &k_distances[0], k, flann_param_.checks, &flann_param_);
+    int* nn_idx_ = (int*) malloc (k * sizeof (int));
+    float* nn_dists_ = (float*) malloc (k * sizeof (float));
+//    flann_find_nearest_neighbors_index (index_id_, p, 1, &k_indices[0], &k_distances[0], k, flann_param_.checks, &flann_param_);
+    flann_find_nearest_neighbors_index (index_id_, p, 1, nn_idx_, nn_dists_, k, flann_param_.checks, &flann_param_);
+
+//    EXPECT_EQ (indices[0], 0);
+//    EXPECT_EQ (indices[1], 12);
+//    EXPECT_EQ (indices[2], 198);
+//    EXPECT_EQ (indices[3], 1);
+//    EXPECT_EQ (indices[4], 127);
+//    EXPECT_EQ (indices[5], 18);
+//    EXPECT_EQ (indices[6], 132);
+//    EXPECT_EQ (indices[7], 10);
+//    EXPECT_EQ (indices[8], 11);
+//    EXPECT_EQ (indices[9], 197);
+
+    /// 0 12 198 1 127 18 132 10 11 197
+
+    /// 0 12 198 1 2 125 26 278 42 248
+    /// 0 12 198 1 18 132 10 197 16 9
+    /// 0 12 198 1 18 132 10 197 16 9
+    /// 0 12 198 1 18 132 10 197 16 9
+
+    for (int i = 0 ; i < 10; i++)
+      std::cerr << nn_idx_[i] << " ";
+    std::cerr << std::endl;
+
+    free (nn_idx_);
+    free (nn_dists_);
     m_lock_.unlock ();
 
     free (p);

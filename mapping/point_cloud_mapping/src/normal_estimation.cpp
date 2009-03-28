@@ -52,6 +52,7 @@ moment invariants, etc.
 #include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 // Cloud geometry
+#include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/areas.h>
 #include <point_cloud_mapping/geometry/nearest.h>
@@ -274,33 +275,19 @@ class NormalEstimation
       ROS_INFO ("Nearest neighbors found in %g seconds.", time_spent);
 
       gettimeofday (&t1, NULL);
-      #pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
       {
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c), and moment invariants (j1, j2, j3)
         Eigen::Vector4d plane_parameters;
         double curvature, j1, j2, j3;
-        cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud_normals_, points_indices_[i], plane_parameters, curvature);
+        cloud_geometry::nearest::computePointNormal (cloud_normals_, points_indices_[i], plane_parameters, curvature);
 
         if (compute_moments_)
           cloud_geometry::nearest::computeMomentInvariants (cloud_normals_, points_indices_[i], j1, j2, j3);
 
-        // See if we need to flip any plane normals
-        Point32 vp_m;
-        vp_m.x = viewpoint_cloud.point.x - cloud_normals_.pts[i].x;
-        vp_m.y = viewpoint_cloud.point.y - cloud_normals_.pts[i].y;
-        vp_m.z = viewpoint_cloud.point.z - cloud_normals_.pts[i].z;
-        //double norm = sqrt (vp_m.x * vp_m.x + vp_m.y * vp_m.y + vp_m.z * vp_m.z);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_normals_.pts[i], viewpoint_cloud);
 
-        // Dot product between the (viewpoint - point) and the plane normal
-        double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));// / norm;
-
-        // Flip the plane normal
-        if (cos_theta < 0)
-        {
-          for (int d = 0; d < 3; d++)
-            plane_parameters (d) *= -1;
-        }
 #ifdef  DEBUG
         cloud_normals_.pts[i].x = plane_parameters (0);
         cloud_normals_.pts[i].y = plane_parameters (1);
