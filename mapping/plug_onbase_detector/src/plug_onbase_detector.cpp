@@ -318,7 +318,7 @@ class PlugOnBaseDetector
       processed.resize (indices.size (), false);
 
       vector<int> nn_indices;
-      vector<double> nn_distances;
+      vector<float> nn_distances;
       // Process all points in the indices vector
       for (unsigned int i = 0; i < indices.size (); i++)
       {

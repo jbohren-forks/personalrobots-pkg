@@ -266,7 +266,7 @@ class NormalEstimation
       // Get the nerest neighbors for all points
       for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
       {
-        vector<double> distances (k_);
+        vector<float> distances;
         kdtree_->nearestKSearch (i, k_, points_indices_[i], distances);
       }
       gettimeofday (&t2, NULL);

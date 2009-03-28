@@ -139,7 +139,7 @@ class ConvexPatchHistogram
       indices.resize (nr_p);
 
       vector<int> nn_indices;
-      vector<double> nn_distances;
+      vector<float> nn_distances;
       for (vector<int>::iterator it = indices.begin (); it != indices.end (); ++it)
       {
         if (processed[*it])

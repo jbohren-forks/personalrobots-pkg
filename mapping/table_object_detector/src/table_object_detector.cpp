@@ -493,7 +493,7 @@ class TableObjectDetector
       processed.resize (indices.size (), false);
 
       vector<int> nn_indices;
-      vector<double> nn_distances;
+      vector<float> nn_distances;
       // Process all points in the indices vector
       for (unsigned int i = 0; i < indices.size (); i++)
       {
@@ -572,7 +572,7 @@ class TableObjectDetector
       processed.resize (indices.size (), false);
 
       vector<int> nn_indices;
-      vector<double> nn_distances;
+      vector<float> nn_distances;
       // Process all points in the indices vector
       for (unsigned int i = 0; i < indices.size (); i++)
       {
@@ -669,11 +669,9 @@ class TableObjectDetector
       for (int i = 0; i < (int)cloud.pts.size (); i++)
         points_k_indices[i].resize (k_);
       // Get the nerest neighbors for all the point indices in the bounds
+      vector<float> distances;
       for (int i = 0; i < (int)cloud.pts.size (); i++)
-      {
-        vector<double> distances (k_);
         kdtree->nearestKSearch (i, k_, points_k_indices[i], distances);
-      }
 
       // Figure out the viewpoint value in the point cloud frame
       PointStamped viewpoint_laser, viewpoint_cloud;

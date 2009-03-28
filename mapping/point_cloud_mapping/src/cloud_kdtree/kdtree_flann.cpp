@@ -30,7 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
-#include "point_cloud_mapping/kdtree/kdtree_ann.h"
+#include "point_cloud_mapping/kdtree/kdtree_flann.h"
 
 namespace cloud_kdtree
 {
@@ -42,19 +42,21 @@ namespace cloud_kdtree
    * \param k_distances the resultant point distances
    */
   void
-    KdTreeANN::nearestKSearch (const robot_msgs::Point32 &p_q, int k, std::vector<int> &k_indices, std::vector<float> &k_distances)
+    KdTreeFLANN::nearestKSearch (const robot_msgs::Point32 &p_q, int k, std::vector<int> &k_indices, std::vector<float> &k_distances)
   {
     k_indices.resize (k);
     k_distances.resize (k);
 
-    ANNpoint p = annAllocPt (3);
+    float* p = (float*)malloc (3 * sizeof (float));
     p[0] = p_q.x; p[1] = p_q.y; p[2] = p_q.z;
 
     m_lock_.lock ();
-    ann_kd_tree_->annkSearch (p, k, &k_indices[0], &k_distances[0], epsilon_);
+//    int* nn_idx_ = (int*) malloc(tcount*nn*sizeof(int));
+//    float* nn_dists_ = (float*) malloc(tcount*nn*sizeof(float));
+    flann_find_nearest_neighbors_index (index_id_, p, 1, &k_indices[0], &k_distances[0], k, flann_param_.checks, &flann_param_);
     m_lock_.unlock ();
 
-    annDeallocPt (p);
+    free (p);
     return;
   }
 
@@ -67,7 +69,7 @@ namespace cloud_kdtree
    * \param k_distances the resultant point distances
    */
   void
-    KdTreeANN::nearestKSearch (const robot_msgs::PointCloud &points, int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances)
+    KdTreeFLANN::nearestKSearch (const robot_msgs::PointCloud &points, int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances)
   {
     if (index >= (int)points.pts.size ())
       return;
@@ -75,14 +77,14 @@ namespace cloud_kdtree
     k_indices.resize (k);
     k_distances.resize (k);
 
-    ANNpoint p = annAllocPt (3);
+    float* p = (float*)malloc (3 * sizeof (float));
     p[0] = points.pts.at (index).x; p[1] = points.pts.at (index).y; p[2] = points.pts.at (index).z;
 
     m_lock_.lock ();
-    ann_kd_tree_->annkSearch (p, k, &k_indices[0], &k_distances[0], epsilon_);
+    flann_find_nearest_neighbors_index (index_id_, p, 1, &k_indices[0], &k_distances[0], k, flann_param_.checks, &flann_param_);
     m_lock_.unlock ();
 
-    annDeallocPt (p);
+    free (p);
     return;
   }
 
@@ -95,21 +97,22 @@ namespace cloud_kdtree
    * \param max_nn if given, bounds the maximum returned neighbors to this value
    */
   bool
-    KdTreeANN::radiusSearch (const robot_msgs::Point32 &p_q, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
-                             int max_nn)
+    KdTreeFLANN::radiusSearch (const robot_msgs::Point32 &p_q, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
+                               int max_nn)
   {
-    ANNpoint p = annAllocPt (3);
+    float* p = (float*)malloc (3 * sizeof (float));
     p[0] = p_q.x; p[1] = p_q.y; p[2] = p_q.z;
     radius *= radius;
 
+    int neighbors_in_radius_;
     m_lock_.lock ();
-    int neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius, 0, NULL, NULL, epsilon_);
+//    int neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius, 0, NULL, NULL, epsilon_);
     m_lock_.unlock ();
 
     // No neighbors found ? Return false
     if (neighbors_in_radius_ == 0)
     {
-      annDeallocPt (p);
+      free (p);
       return (false);
     }
 
@@ -118,10 +121,10 @@ namespace cloud_kdtree
     k_distances.resize (neighbors_in_radius_);
 
     m_lock_.lock ();
-    ann_kd_tree_->annkFRSearch (p, radius, neighbors_in_radius_, &k_indices[0], &k_distances[0], epsilon_);
+    flann_radius_search (index_id_, p, &k_indices[0], &k_distances[0], nr_points_, radius, flann_param_.checks, &flann_param_);
     m_lock_.unlock ();
 
-    annDeallocPt (p);
+    free (p);
     return (true);
   }
 
@@ -135,21 +138,22 @@ namespace cloud_kdtree
    * \param max_nn if given, bounds the maximum returned neighbors to this value
    */
   bool
-    KdTreeANN::radiusSearch (const robot_msgs::PointCloud &points, int index, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
-                             int max_nn)
+    KdTreeFLANN::radiusSearch (const robot_msgs::PointCloud &points, int index, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
+                               int max_nn)
   {
-    ANNpoint p = annAllocPt (3);
+    float* p = (float*)malloc (3 * sizeof (float));
     p[0] = points.pts.at (index).x; p[1] = points.pts.at (index).y; p[2] = points.pts.at (index).z;
     radius *= radius;
 
+    int neighbors_in_radius_;
     m_lock_.lock ();
-    int neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius, 0, NULL, NULL, epsilon_);
+//    int neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (p, radius, 0, NULL, NULL, epsilon_);
     m_lock_.unlock ();
 
     // No neighbors found ? Return false
     if (neighbors_in_radius_ == 0)
     {
-      annDeallocPt (p);
+      free (p);
       return (false);
     }
 
@@ -158,10 +162,10 @@ namespace cloud_kdtree
     k_distances.resize (neighbors_in_radius_);
 
     m_lock_.lock ();
-    ann_kd_tree_->annkFRSearch (p, radius, neighbors_in_radius_, &k_indices[0], &k_distances[0], epsilon_);
+    flann_radius_search (index_id_, p, &k_indices[0], &k_distances[0], nr_points_, radius, flann_param_.checks, &flann_param_);
     m_lock_.unlock ();
 
-    annDeallocPt (p);
+    free (p);
     return (true);
   }
 
@@ -171,7 +175,7 @@ namespace cloud_kdtree
    * \param ros_cloud the ROS PointCloud message
    */
   int
-    KdTreeANN::convertCloudToArray (const robot_msgs::PointCloud &ros_cloud)
+    KdTreeFLANN::convertCloudToArray (const robot_msgs::PointCloud &ros_cloud)
   {
     // No point in doing anything if the array is empty
     if (ros_cloud.pts.size () == 0)
@@ -183,13 +187,13 @@ namespace cloud_kdtree
     }
 
     m_lock_.lock ();
-    points_ = annAllocPts (ros_cloud.pts.size (), 3);       // default number of dimensions (3 = xyz)
+    points_ = (float*)malloc (ros_cloud.pts.size () * 3 * sizeof (float));    // default number of dimensions (3 = xyz)
 
     for (unsigned int cp = 0; cp < ros_cloud.pts.size (); cp++)
     {
-      points_[cp][0] = ros_cloud.pts[cp].x;
-      points_[cp][1] = ros_cloud.pts[cp].y;
-      points_[cp][2] = ros_cloud.pts[cp].z;
+      points_[cp * 3 + 0] = ros_cloud.pts[cp].x;
+      points_[cp * 3 + 1] = ros_cloud.pts[cp].y;
+      points_[cp * 3 + 2] = ros_cloud.pts[cp].z;
     }
     m_lock_.unlock ();
 
@@ -206,7 +210,7 @@ namespace cloud_kdtree
    * \param indices the point cloud indices
    */
   int
-    KdTreeANN::convertCloudToArray (const robot_msgs::PointCloud &ros_cloud, const std::vector<int> &indices)
+    KdTreeFLANN::convertCloudToArray (const robot_msgs::PointCloud &ros_cloud, const std::vector<int> &indices)
   {
     // No point in doing anything if the array is empty
     if (ros_cloud.pts.size () == 0 || indices.size () > ros_cloud.pts.size ())
@@ -218,13 +222,13 @@ namespace cloud_kdtree
     }
 
     m_lock_.lock ();
-    points_ = annAllocPts (indices.size (), 3);       // default number of dimensions (3 = xyz)
+    points_ = (float*)malloc (indices.size () * 3 * sizeof (float));    // default number of dimensions (3 = xyz)
 
     for (unsigned int cp = 0; cp < indices.size (); cp++)
     {
-      points_[cp][0] = ros_cloud.pts[indices.at (cp)].x;
-      points_[cp][1] = ros_cloud.pts[indices.at (cp)].y;
-      points_[cp][2] = ros_cloud.pts[indices.at (cp)].z;
+      points_[cp * 3 + 0] = ros_cloud.pts[indices.at (cp)].x;
+      points_[cp * 3 + 1] = ros_cloud.pts[indices.at (cp)].y;
+      points_[cp * 3 + 2] = ros_cloud.pts[indices.at (cp)].z;
     }
     m_lock_.unlock ();
 

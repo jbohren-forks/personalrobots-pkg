@@ -30,18 +30,18 @@
 
 /** \author Radu Bogdan Rusu */
 
-#ifndef _CLOUD_KDTREE_KDTREE_ANN_H_
-#define _CLOUD_KDTREE_KDTREE_ANN_H_
+#ifndef _CLOUD_KDTREE_KDTREE_FLANN_H_
+#define _CLOUD_KDTREE_KDTREE_FLANN_H_
 
 #include "point_cloud_mapping/kdtree/kdtree.h"
 
 #include <boost/thread/mutex.hpp>
 
-#include <ANN/ANN.h>
+#include <flann.h>
 
 namespace cloud_kdtree
 {
-  class KdTreeANN : public KdTree
+  class KdTreeFLANN : public KdTree
   {
     public:
 
@@ -49,23 +49,34 @@ namespace cloud_kdtree
       /** \brief Constructor for KdTree.
         * \param points the ROS point cloud data array
         */
-      KdTreeANN (const robot_msgs::PointCloud &points)
+      KdTreeFLANN (const robot_msgs::PointCloud &points)
       {
         epsilon_     = 0.0;   // default error bound value
         dim_         = 3;     // default number of dimensions (3 = xyz)
-        bucket_size_ = std::min (30, (int)points.pts.size ());    // default bucket size value
 
         // Allocate enough data
         nr_points_ = convertCloudToArray (points);
         if (nr_points_ == 0)
         {
-          ROS_ERROR ("[KdTreeANN] Could not create kD-tree for %d points!", nr_points_);
+          ROS_ERROR ("[KdTreeFLANN] Could not create kD-tree for %d points!", nr_points_);
           return;
         }
 
         // Create the kd_tree representation
+        float speedup;
+        FLANNParameters flann_param;
+        flann_param.algorithm = KDTREE;
+        flann_param.log_level = LOG_NONE;
+        flann_param.log_destination = NULL;
+
+        flann_param.checks = 32;
+        flann_param.trees = 8;
+        flann_param.branching = 32;
+        flann_param.iterations = 7;
+        flann_param.target_precision = -1;
+
         m_lock_.lock ();
-        ann_kd_tree_ = new ANNkd_tree (points_, nr_points_, dim_, bucket_size_);
+        index_id_    = flann_build_index (points_, nr_points_, dim_, &speedup, &flann_param);
         m_lock_.unlock ();
       }
 
@@ -77,40 +88,48 @@ namespace cloud_kdtree
         * \param points the ROS point cloud data array
         * \param indices the point cloud indices
         */
-      KdTreeANN (const robot_msgs::PointCloud &points, const std::vector<int> &indices)
+      KdTreeFLANN (const robot_msgs::PointCloud &points, const std::vector<int> &indices)
       {
         epsilon_     = 0.0;   // default error bound value
         dim_         = 3;     // default number of dimensions (3 = xyz)
-        bucket_size_ = std::min (30, (int)indices.size ());    // default bucket size value
 
         // Allocate enough data
         nr_points_ = convertCloudToArray (points, indices);
         if (nr_points_ == 0)
         {
-          ROS_ERROR ("[KdTreeANN] Could not create kD-tree for %d points!", nr_points_);
+          ROS_ERROR ("[KdTreeFLANN] Could not create kD-tree for %d points!", nr_points_);
           return;
         }
 
         // Create the kd_tree representation
+        float speedup;
         m_lock_.lock ();
-        ann_kd_tree_ = new ANNkd_tree (points_, nr_points_, dim_, bucket_size_);
+        flann_param_.algorithm = KDTREE;
+        flann_param_.log_level = LOG_NONE;
+        flann_param_.log_destination = NULL;
+
+        flann_param_.checks = 32;
+        flann_param_.trees = 8;
+        flann_param_.branching = 32;
+        flann_param_.iterations = 7;
+        flann_param_.target_precision = -1;
+
+        index_id_    = flann_build_index (points_, nr_points_, dim_, &speedup, &flann_param_);
         m_lock_.unlock ();
       }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Destructor for KdTree. Deletes all allocated data arrays and destroys the kd-tree structures. */
-      virtual ~KdTreeANN ()
+      virtual ~KdTreeFLANN ()
       {
         m_lock_.lock ();
 
         // Data array cleanup
         if (points_ != NULL && nr_points_ != 0)
-          annDeallocPts (points_);
+          free (points_);
 
         // ANN Cleanup
-        if (ann_kd_tree_ != NULL) delete ann_kd_tree_;
-        ann_kd_tree_ = NULL;
-        annClose ();
+        flann_free_index (index_id_, &flann_param_);
 
         m_lock_.unlock ();
       }
@@ -132,7 +151,7 @@ namespace cloud_kdtree
           return;
 
         m_lock_.lock ();
-        ann_kd_tree_->annkSearch (points_[index], k, &k_indices[0], &k_distances[0], epsilon_);
+        flann_find_nearest_neighbors_index (index_id_, &points_[index], 1, &k_indices[0], &k_distances[0], k, flann_param_.checks, &flann_param_);
         m_lock_.unlock ();
         return;
       }
@@ -154,8 +173,9 @@ namespace cloud_kdtree
       {
         radius *= radius;
 
+        int neighbors_in_radius_;
         m_lock_.lock ();
-        int neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (points_[index], radius, 0, NULL, NULL, epsilon_);
+        //int neighbors_in_radius_ = ann_kd_tree_->annkFRSearch (points_[index], radius, 0, NULL, NULL, epsilon_);
         m_lock_.unlock ();
 
         // No neighbors found ? Return false
@@ -167,7 +187,7 @@ namespace cloud_kdtree
         k_distances.resize (neighbors_in_radius_);
 
         m_lock_.lock ();
-        ann_kd_tree_->annkFRSearch (points_[index], radius, neighbors_in_radius_, &k_indices[0], &k_distances[0], epsilon_);
+        flann_radius_search (index_id_, &points_[index], &k_indices[0], &k_distances[0], nr_points_, radius, flann_param_.checks, &flann_param_);
         m_lock_.unlock ();
 
         return (true);
@@ -182,14 +202,14 @@ namespace cloud_kdtree
 
       boost::mutex m_lock_;
 
-      /** \brief The ANN kd tree object */
-      ANNkd_tree* ann_kd_tree_;
+      /** \brief A FL-ANN type index reference */
+      FLANN_INDEX index_id_;
 
-      /** \brief Internal tree bucket size */
-      double bucket_size_;
+      /** \brief A pointer to a FL-ANN parameter structure */
+      FLANNParameters flann_param_;
 
       /** \brief Internal pointer to data */
-      ANNpointArray points_;
+      float* points_;
 
       /** \brief Number of points in the tree */
       int nr_points_;

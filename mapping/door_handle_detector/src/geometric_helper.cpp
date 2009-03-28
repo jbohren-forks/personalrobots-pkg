@@ -477,7 +477,7 @@ void
   processed.resize (nr_points, false);
 
   vector<int> nn_indices;
-  vector<double> nn_distances;
+  vector<float> nn_distances;
   // Process all points in the indices vector
   for (int i = 0; i < nr_points; i++)
   {
@@ -656,7 +656,7 @@ void
 
   // Allocate enough space for point indices
   vector<vector<int> > points_k_indices (points_down.pts.size ());
-  vector<double> distances;
+  vector<float> distances;
 
   // Get the nearest neighbors for all the point indices in the bounds
   for (int i = 0; i < (int)points_down.pts.size (); i++)
@@ -724,7 +724,7 @@ void
 
   // Allocate enough space for point indices
   vector<vector<int> > points_k_indices (point_indices.size ());
-  vector<double> distances;
+  vector<float> distances;
 
   // Get the nearest neighbors for all the point indices in the bounds
   for (unsigned int i = 0; i < point_indices.size (); i++)
@@ -793,7 +793,7 @@ void
 
   // Allocate enough space for point indices
   vector<vector<int> > points_k_indices (nr_points);
-  vector<double> distances;
+  vector<float> distances;
 
   // Get the nearest neighbors for all the point indices in the bounds
   for (int i = 0; i < nr_points; i++)
@@ -953,10 +953,10 @@ void
   cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (points, indices);
 
   // Get the nearest neighbors for all the point indices in the bounds
+  vector<float> distances;
   for (unsigned int i = 0; i < cluster.size (); i++)
   {
     vector<int> points_k_indices;
-    vector<double> distances;
 
     kdtree->radiusSearch (points.pts[cluster.at (i)], dist_thresh, points_k_indices, distances);
     // Copy the inliers

@@ -60,7 +60,7 @@ TEST (CloudKdTreeANN, Search)
   bool state;
   robot_msgs::PointCloud points;
   std::vector<int> indices;
-  std::vector<double> distances;
+  std::vector<float> distances;
 
   // Get a point cloud dataset
   cloud_kdtree_tests::getBunnyModel (points);

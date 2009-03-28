@@ -189,7 +189,7 @@ class SemanticPointAnnotator
       processed.resize (indices.size (), false);
 
       vector<int> nn_indices;
-      vector<double> nn_distances;
+      vector<float> nn_distances;
       // Process all points in the indices vector
       for (unsigned int i = 0; i < indices.size (); i++)
       {
@@ -262,7 +262,7 @@ class SemanticPointAnnotator
       vector<bool> processed;
       processed.resize (indices.size (), false);
       vector<int> nn_indices;
-      vector<double> nn_distances;
+      vector<float> nn_distances;
 
       // Process all points in the indices vector
       int i = 0;
@@ -529,7 +529,7 @@ class SemanticPointAnnotator
 
       // Bummer - no omp here
       // cloud_kdtree is not thread safe because we rely on ANN/FL-ANN, so get the neighbors here
-      vector<double> nn_distances;
+      vector<float> nn_distances;
       vector<vector<vector<int> > > neighbors (clusters.size ());
       if (concave_)
       {

@@ -71,15 +71,15 @@ namespace cloud_kdtree
       /** \brief Destructor for KdTree. Deletes all allocated data arrays and destroys the kd-tree structures. */
       virtual ~KdTree () { }
 
-      virtual void nearestKSearch (const robot_msgs::Point32 &p_q, int k, std::vector<int> &k_indices, std::vector<double> &k_distances) = 0;
-      virtual void nearestKSearch (const robot_msgs::PointCloud &points, int index, int k, std::vector<int> &k_indices, std::vector<double> &k_distances) = 0;
-      virtual inline void nearestKSearch (int index, int k, std::vector<int> &k_indices, std::vector<double> &k_distances) = 0;
+      virtual void nearestKSearch (const robot_msgs::Point32 &p_q, int k, std::vector<int> &k_indices, std::vector<float> &k_distances) = 0;
+      virtual void nearestKSearch (const robot_msgs::PointCloud &points, int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances) = 0;
+      virtual inline void nearestKSearch (int index, int k, std::vector<int> &k_indices, std::vector<float> &k_distances) = 0;
 
-      virtual bool radiusSearch (const robot_msgs::Point32 &p_q, double radius, std::vector<int> &k_indices, std::vector<double> &k_distances,
+      virtual bool radiusSearch (const robot_msgs::Point32 &p_q, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
                                  int max_nn = INT_MAX) = 0;
-      virtual bool radiusSearch (const robot_msgs::PointCloud &points, int index, double radius, std::vector<int> &k_indices, std::vector<double> &k_distances,
+      virtual bool radiusSearch (const robot_msgs::PointCloud &points, int index, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
                                  int max_nn = INT_MAX) = 0;
-      virtual inline bool radiusSearch (int index, double radius, std::vector<int> &k_indices, std::vector<double> &k_distances,
+      virtual inline bool radiusSearch (int index, double radius, std::vector<int> &k_indices, std::vector<float> &k_distances,
                                         int max_nn = INT_MAX) = 0;
 
 
