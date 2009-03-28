@@ -11,7 +11,7 @@ include_directories(${PYTHON_INCLUDE_PATH})
 rospack_add_library(pytoro src/py.cpp)
 
 set_target_properties(pytoro PROPERTIES OUTPUT_NAME pytoro PREFIX "")
-rospack_add_compile_flags(pytoro -g -O3 -Wno-missing-field-initializers -march=pentium3 -msse3)
+rospack_add_compile_flags(pytoro -g -O3 -Wno-missing-field-initializers )
 
 # unit tests
 rospack_add_pyunit(test/directed.py)
