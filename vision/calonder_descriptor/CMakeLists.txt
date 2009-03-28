@@ -5,7 +5,7 @@ rospack(calonder_descriptor)
 set(ROS_BUILD_TYPE Release)
 #rospack_add_boost_directories()
 
-add_definitions(-Wall -O3 -march=pentium4 -mfpmath=sse -mmmx -msse -msse2 -msse3)
+add_definitions(-Wall -O3 -mfpmath=sse -mmmx -msse -msse2 -msse3)
 #add_definitions(-Wall -O0 -g -DDEBUG)
 rospack_add_library(calonder src/randomized_tree.cpp src/rtree_classifier.cpp src/patch_generator.cpp)
 
@@ -15,7 +15,7 @@ target_link_libraries(calonder cblas)
 
 rospack_add_library(pycalonder src/py.cpp src/randomized_tree.cpp src/rtree_classifier.cpp src/patch_generator.cpp)
 set_target_properties(pycalonder PROPERTIES OUTPUT_NAME calonder PREFIX "")
-rospack_add_compile_flags(pycalonder -Wno-missing-field-initializers -save-temps -march=pentium3 -msse3)
+rospack_add_compile_flags(pycalonder -Wno-missing-field-initializers -save-temps -msse3)
 #rospack_add_compile_flags(pycalonder -Wno-missing-field-initializers -save-temps)
 target_link_libraries(pycalonder cblas)
 

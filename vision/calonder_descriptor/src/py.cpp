@@ -231,7 +231,7 @@ PyObject *train(PyObject *self, PyObject *args)
                           &x, &y, &kp, &num_trees, &depth, &views,
                           &dimension, &num_quant_bits))
       return NULL;
-    dimension = std::min(dimension, PyList_Size(kp));
+    dimension = std::min(dimension, (int)PyList_Size(kp));
     input = cvCreateImageHeader(cvSize(x, y), IPL_DEPTH_8U, 1);
     cvSetData(input, imgdata, x);
   }
