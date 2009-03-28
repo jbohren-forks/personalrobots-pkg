@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: plug_onbase_detector.cpp 12961 2009-03-25 18:05:30Z mmwise $
+ * $Id: plug_onbase_detector.cpp 13070 2009-03-28 00:04:21Z veedee $
  *
  */
 
@@ -56,7 +56,7 @@
 #include <tf/transform_listener.h>
 
 // Kd Tree
-#include <point_cloud_mapping/cloud_kdtree.h>
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/angles.h>
@@ -107,9 +107,8 @@ class PlugOnBaseDetector
     int publish_debug_;
     double sac_distance_threshold_;
     double base_z_min_, base_xy_max_, base_plane_height_;
-    void deactivate() {active_ = false;}
     void activate() {active_ = true;}
-
+    void deactivate() {active_ = false;}
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     PlugOnBaseDetector (ros::Node& anode) : node_ (anode), tf_ (anode)
@@ -126,7 +125,6 @@ class PlugOnBaseDetector
       base_xy_max_ *= base_xy_max_;
 
       active_ = true;
-
 
       // Check to see if the default/given topic exists in the list of published topics on the server yet, and issue a warning otherwise
       string cloud_topic ("snapshot_cloud");
@@ -166,10 +164,11 @@ class PlugOnBaseDetector
     {
       if(active_ == false)
       {
-        ROS_DEBUG ("plug_onbase_detector_node is inactive.");
+        ROS_DEBUG("plug_onbase_detector is inactive");
         return;
       }
-      
+
+
       ROS_DEBUG ("Received %u data points in frame %s.", (unsigned int)cloud_.pts.size (), cloud_.header.frame_id.c_str ());
 
       if (cloud_.header.frame_id != "base_link")
@@ -218,7 +217,7 @@ class PlugOnBaseDetector
       // Remove points below the plane
       for (unsigned int i = 0; i < indices_in_bounds.size (); i++)
       {
-        if (cloud_geometry::distances::pointToPlaneDistanceSigned (&cloud_tr_.pts[indices_in_bounds.at (i)], coeff) < 0)
+        if (cloud_geometry::distances::pointToPlaneDistanceSigned (cloud_tr_.pts[indices_in_bounds.at (i)], coeff) < 0)
           inliers.push_back (indices_in_bounds.at (i));
       }
 
@@ -232,10 +231,10 @@ class PlugOnBaseDetector
 
       // Find the object clusters supported by it
       vector<vector<int> > object_clusters;
-      findClusters (&cloud_, &remaining_indices, 0.01, object_clusters, 5);
+      findClusters (cloud_, remaining_indices, 0.01, object_clusters, 5);
 
       if (object_clusters.size () != 0)
-        ROS_DEBUG ("Number of remaining clusters on base: %d. Selecting the largest cluster with %d points as the plug candidate.", object_clusters.size (), object_clusters[0].size ());
+        ROS_DEBUG ("Number of remaining clusters on base: %d. Selecting the largest cluster with %d points as the plug candidate.", (int)object_clusters.size (), (int)object_clusters[0].size ());
 
 //#define DEBUG 1
 #if DEBUG
@@ -256,7 +255,7 @@ class PlugOnBaseDetector
         // Assume the largest one is the one we're interested in for now
         // NOTE: This is not the final version of the code ! We're still doing tests !
         Point32 minP, maxP;
-        cloud_geometry::statistics::getMinMax (&cloud_, &object_clusters[0], minP, maxP);
+        cloud_geometry::statistics::getMinMax (cloud_, object_clusters[0], minP, maxP);
         p_stow_.stowed = true;
         p_stow_.plug_centroid.x =  ( maxP.x + minP.x ) / 2.0;
         p_stow_.plug_centroid.y =  ( maxP.y + minP.y ) / 2.0;
@@ -286,7 +285,7 @@ class PlugOnBaseDetector
           cloud_annotated_.pts[0].y = p_stow_.plug_centroid.y;
           cloud_annotated_.pts[0].z = p_stow_.plug_centroid.z;
           cloud_annotated_.chan[0].vals[0] = 255;
-          ROS_DEBUG ("Debug publishing enabled with %d points.", cloud_annotated_.pts.size ());
+          ROS_INFO ("Debug publishing enabled with %d points.", (int)cloud_annotated_.pts.size ());
         }
         else
         {
@@ -316,19 +315,20 @@ class PlugOnBaseDetector
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
-      findClusters (PointCloud *points, vector<int> *indices, double tolerance, vector<vector<int> > &clusters,
+      findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                     unsigned int min_pts_per_cluster = 1)
     {
       // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTree (points, indices);
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
 
       // Create a bool vector of processed point indices, and initialize it to false
       vector<bool> processed;
-      processed.resize (indices->size (), false);
+      processed.resize (indices.size (), false);
 
       vector<int> nn_indices;
+      vector<float> nn_distances;
       // Process all points in the indices vector
-      for (unsigned int i = 0; i < indices->size (); i++)
+      for (unsigned int i = 0; i < indices.size (); i++)
       {
         if (processed[i])
           continue;
@@ -341,8 +341,7 @@ class PlugOnBaseDetector
 
         while (sq_idx < (int)seed_queue.size ())
         {
-          tree->radiusSearch (seed_queue.at (sq_idx), tolerance);
-          tree->getNeighborsIndices (nn_indices);
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
 
           for (unsigned int j = 1; j < nn_indices.size (); j++)
           {
@@ -363,7 +362,7 @@ class PlugOnBaseDetector
           //r.indices = seed_queue;
           r.resize (seed_queue.size ());
           for (unsigned int j = 0; j < r.size (); j++)
-            r[j] = indices->at (seed_queue[j]);
+            r[j] = indices.at (seed_queue[j]);
           clusters.push_back (r);
         }
       }
@@ -526,4 +525,6 @@ class PlugOnBaseDetector
 
 
 };
+
 #endif
+
