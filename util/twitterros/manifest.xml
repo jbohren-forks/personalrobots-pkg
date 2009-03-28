@@ -6,7 +6,7 @@ Twiiter interface for ROS
 </description>
 <author>James Bowman</author>
 <license>BSD</license>
-<review status="unreviewed" notes=""/>
+<review status="proposal cleared" notes=""/>
 <url>http://pr.willowgarage.com/wiki/twitter</url>
 <depend package="rospy"/>
 <depend package="python-twitter"/>
