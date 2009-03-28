@@ -113,9 +113,7 @@
 #include <boost/thread.hpp>
 #include <robot_filter/RobotFilter.h>
 
-using namespace costmap_2d;
-
-namespace ros 
+namespace costmap_2d
 {
   CostMapNode::CostMapNode()
     : use_base_scan_(true), use_tilt_scan_(true), use_stereo_(true), use_low_obstacles_(true),

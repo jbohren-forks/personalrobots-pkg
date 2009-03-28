@@ -73,7 +73,7 @@ namespace robot_filter {
   class RobotFilter;
 }
 
-namespace ros {
+namespace costmap_2d {
 
   class CostMapNode{
 
@@ -91,6 +91,12 @@ namespace ros {
     footprint_t const & getFootprint() const;
 
     double local_access_mapsize_;
+
+    costmap_2d::CostMap2D* costMap_; /**< The cost map mainatined incrementally from laser scans */
+
+    costmap_2d::CostMapAccessor* global_map_accessor_; /**< Read-only access to global cost map */
+
+    costmap_2d::CostMapAccessor* local_map_accessor_; /**< Read-only access to a window on the cost map */
       
     protected:
 
@@ -196,10 +202,6 @@ namespace ros {
     costmap_2d::BasicObservationBuffer* lowObstacleBuffer_;
     costmap_2d::BasicObservationBuffer* stereoCloudBuffer_;
 
-    costmap_2d::CostMap2D* costMap_; /**< The cost map mainatined incrementally from laser scans */
-    costmap_2d::CostMapAccessor* global_map_accessor_; /**< Read-only access to global cost map */
-    costmap_2d::CostMapAccessor* local_map_accessor_; /**< Read-only access to a window on the cost map */
-
     robot_srvs::StaticMap::Response costmap_response_;
 
     tf::Stamped<tf::Pose> global_pose_; /**< The global pose in the map frame */
@@ -209,8 +211,6 @@ namespace ros {
     /** Parameters that will be passed on initialization soon */
     double baseLaserMaxRange_; /**< Used in laser scan projection */
     double tiltLaserMaxRange_; /**< Used in laser scan projection */
-
-    std::list<deprecated_msgs::Pose2DFloat32>  plan_; /**< The 2D plan in grid co-ordinates of the cost map */
 
     // Filter parameters
     double minZ_;

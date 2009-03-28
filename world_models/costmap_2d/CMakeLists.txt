@@ -21,3 +21,7 @@ target_link_libraries(utest costmap_2d)
 # Target for benchmarking the costmap
 rospack_add_executable(benchmark src/test/benchmark.cpp )
 target_link_libraries(benchmark costmap_2d)
+
+# Target for running a standalone version of costmap
+rospack_add_executable(costmap_standalone src/costmap_standalone.cpp )
+target_link_libraries(costmap_standalone costmap_2d)
