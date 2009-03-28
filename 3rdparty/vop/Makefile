@@ -1,8 +1,7 @@
 all: vop
 
 TARBALL     = build/vop-1.2.1.tar.gz
-TARBALL_URL = http://www.excamera.com/files/vop-1.2.1.tar.gz
-#TARBALL_URL = http://pr.willowgarage.com/downloads/vop-1.2.tar.gz
+TARBALL_URL = http://pr.willowgarage.com/downloads/vop-1.2.1.tar.gz
 SOURCE_DIR  = build/vop-1.2.1
 
 UNPACK_CMD  = tar xzf
