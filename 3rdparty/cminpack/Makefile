@@ -1,7 +1,7 @@
 all: installed
 
 TARBALL     = build/cminpack-1.0.2.tar.gz
-TARBALL_URL = http://devernay.free.fr/hacks/cminpack-1.0.2.tar.gz
+TARBALL_URL = http://pr.willowgarage.com/downloads/cminpack-1.0.2.tar.gz
 UNPACK_CMD  = tar xfz
 SOURCE_DIR  = build/cminpack-1.0.2
 
