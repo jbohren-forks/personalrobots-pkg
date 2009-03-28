@@ -36,13 +36,13 @@
 static std::string median_filter_xml = "<!-- NO FILTER DEFINED-->";
 
 
-class MedianFilterNode 
+class GenericLaserScanFilterNode 
 {
 public:
   laser_scan::LaserScan msg;
 
 
-  MedianFilterNode(ros::Node& anode) :  filter_chain_(), node_(anode)
+  GenericLaserScanFilterNode(ros::Node& anode) :  filter_chain_(), node_(anode)
   {
     node_.advertise<laser_scan::LaserScan>("~output", 1000);
 
@@ -51,7 +51,7 @@ public:
     ROS_INFO("Got parameter'~filters' as: %s\n", filter_xml.c_str());
     
     filter_chain_.configureFromXMLString(1, filter_xml);
-    node_.subscribe("scan_in", msg, &MedianFilterNode::callback,this, 3);
+    node_.subscribe("scan_in", msg, &GenericLaserScanFilterNode::callback,this, 3);
   }
   void callback()
   {
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   ros::Node ros_node("scan_filter_node");
   
-  MedianFilterNode t(ros_node);
+  GenericLaserScanFilterNode t(ros_node);
   ros_node.spin();
   
   return 0;
