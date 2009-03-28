@@ -13,4 +13,8 @@
   <depend package="point_cloud_mapping" />
   <depend package="robot_msgs" />
 
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include"/>
+  </export>
+
 </package>
