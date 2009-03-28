@@ -1,0 +1,18 @@
+
+
+/**
+ * @brief Useful abstract actions that achieve their behavior using
+ * lower level ROS actions
+ */
+class ArmActions extends Actions {
+
+  predicate StowArms{}
+
+  predicate UnstowArms{}
+
+  predicate OpenGripper{ bool is_left; }
+
+  predicate CloseGripper{ bool is_left; }
+
+
+}

@@ -1,0 +1,179 @@
+/**
+ * Recharging - a short hand version
+ * Selects exactly one option, evaluates top down. Arms will be stowed as needed by subsequent action
+ * Each action at this level breaks down to achieve its pre and post conditions
+ * This action selection loop iterates until it exists with abort or done
+ *
+ * Control variables, listed in order in whcih we expect them to become true:
+ * - outlet_localized
+ * - plug_localized_on_base
+ * - ready_to_grasp
+ * - plug_grasped
+ * - plug_staged
+ * - socket_localized
+ * - ready_to_servo
+ * - ready_to_insert
+ * - plug_inserted
+ * - plugged_in
+ * - battery_charged
+ * - plug_stowed
+ *
+ * Questions:
+ * - what frame does this occur in?
+ * - what happens if the system wakes up in any state?
+ * - can we sense condition variables directly?
+ *
+ * Feedback:
+ * - update condition variables
+ * - plug pose
+ * - socket pose
+ *
+ * Resources:
+ * - tilt_laser
+ * - gripper_controller
+ * - point_cloud_assembler
+ * - priscillica_camera
+ * - arm_controller
+ * - head (pointing)
+ *
+ * Note that we can have an end time variable that is passed forward. 
+ * Lets call this the 'completion_time'. Also note that I could place the
+ * logic in more detail in each case statement
+ */
+on recharging select{
+ case plug_stowed == false && plug_grasped == false:
+   abort; // Lost the plug
+ case plugged_in == true && plug_grasped == false:
+   abort; // Lost the plug
+ case battery_charged == true && plug_stowed == true:
+   done; // Ready to depart
+ case battery_charged == true && plugged_in == false:
+   stow_plug;
+ case battery_charged == true && plugged_in == true :
+   unplug;
+ case plugged_in == true:
+   hold_plug_in_socket; // Terminates when recharged
+ case plug_inserted == true:
+   push_plug_in;
+ case ready_to_insert == true:
+   insert_plug_in_socket;
+ case ready_to_servo == true:
+   servo_to_outlet:
+ case plug_staged == true && socket_localized == false:
+   detect_outlet;
+ case plug_staged == false && plug_grasped == true:
+   localize_plug_in_gripper;
+ case ready_to_grasp == true:
+   grasp_plug;
+ case plug_localized_on_base == true:
+   move_to_grasp;
+ case outlet_localized == true:
+   detect_plug;
+ default:
+   find_socket; // Coarse. Iterate motion and perception
+}
+
+/**
+ * General constraints
+ */
+on recharging  {
+  // While the plug is in hand, the gripper controller must be up, and holding the plug
+  if(plug_grasped == true){
+    gripper_controller(all) == Active;
+  }
+
+  // Once the outlet is localized the base should be stationary
+  if(outlet_localized == true){
+    move_base(all) == Inactive;
+  }
+
+  // These relations can be stated, though they may not be necessary. Stating these constraints allows for
+  // error conditions to revert the state of the controller
+  if(plug_inserted == false) 
+    plugged_in = false;
+
+  if(plug_grasped == false) 
+    plug_staged = false;
+
+  if(plug_staged == false || socket_localized == false)
+    ready_to_servo = flase;
+
+  // If we want to trip the 
+
+
+}
+
+
+/**
+ * Now a breakdown if the actions selected above
+ */
+done {
+
+}
+
+hold_plug_in_socket {
+
+  // Keep it held until the end. Concurrent with the end. Is this just a command to hold position that many
+  // people could use. Is it the default behavior to hold position as long as the controller is up? Do we have
+  // to actually comand anything actively or should we just make sure no-one else does? Interesting to thing of getting
+  // a navi stack goal from someone while it is holding the plug. Want to prevent such premption
+  cmd_hold_position(end] = Active;
+}
+
+push_plug_in {
+
+}
+
+insert_plug_in_socket {
+
+}
+
+on servo_to_outlet {
+  // Must be ready to servo at the start of this action
+  Recharger.Holds rc = recharging(start);
+  rc.ready_to_servo == true;
+
+  // The Hybrid Controller must be up while servoing to the outlet. Note that this should not be the same as an action which would
+  // be dispatched a recall in the event of a plan failure, which is actually commanding a negative consequence. We can keep the state
+  // internally and just switch states
+  hybrid_controller(all) == Active;
+
+  // The priscillica camera must be pointing at the socket (what frame? - is it a parameter)
+  priscillica_camera(all) = Active(rc.socket_pose);
+
+  // Now tie into the external action. The end of the command and the end of this higher level action are connected by a temporal window of
+  // +/- 1 to allow for termination of the command by the executive and termination of the action by the completion of the command
+  cmd_servo_to_outlet(end + TIME_TOLERANCE] == Active;
+}
+
+detect_outlet{
+  // Arms must be out of the way throughout. It woud be ideal to have designated positions
+  // in the robot frame
+  left_arm(all) == Inactive(LEFT_ARM_FREE_POSITION);
+  right_arm(all) == Inactive(RIGHT_ARM_FREE_POSITION);
+
+  // ends with execution of the detect plug on base
+  detect_plug_on_base(end + TIME_TOLERANCE] == Active;
+}
+
+localize_plug_in_gripper {
+
+}
+
+grasp_plug {
+
+}
+
+move_to_grasp{
+
+}
+
+/**
+ * @brief 
+detect_plug {
+
+}
+
+find_socket {
+
+}

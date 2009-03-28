@@ -1,0 +1,18 @@
+/**
+ * This file defines actions and state variables specific to the plugs domain
+ * @author Conor McGann
+ */
+class DetectPlugOnBase extends ROSTFAction {
+
+  predicate Active{}
+
+  predicate Inactive{
+    float x;
+    float y;
+    float z;
+  }
+
+  DetectPlugOnBase(Mode _mode){
+    super(_mode);
+  }
+};

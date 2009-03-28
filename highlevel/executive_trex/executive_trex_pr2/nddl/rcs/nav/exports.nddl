@@ -1,10 +1,13 @@
 
+/**
+ * This file defines actions and state variables utilized in navigation. It will include
+ * @author Conor McGann
+ */
 
 float BASE_POSITION_ERROR = 1.0;
 float ANGLE_ERROR = 0.2;
 
 typedef float [0.0 1.0] UNIT_FLOAT;
-
 
 /**
  * BaseState will capture position and orientation.
@@ -25,7 +28,7 @@ class BaseState extends ROSTFStateVariable {
 
 /**
  * MoveBase behavior will handle active control of vehicle to accomplish 
- * a waypoint. This maps to the wave front player in the 2D nav stack.
+ * a waypoint.
  */
 class MoveBase extends ROSTFAction {
 
@@ -36,7 +39,6 @@ class MoveBase extends ROSTFAction {
     float des_x;
     float des_y;
     float des_th;
-    bool recharging;
   }
 
   // Parameters to get to the target
@@ -44,7 +46,6 @@ class MoveBase extends ROSTFAction {
     float x;
     float y;
     float th;
-    bool recharging;
   }
 
   MoveBase(Mode _mode){
@@ -54,4 +55,28 @@ class MoveBase extends ROSTFAction {
   MoveBase(Mode _mode, int max_duration_){
     super(_mode, max_duration_);
   }
+};
+
+/**
+ * @brief This is a sensing action which will be used during navigation and recharging.
+ *
+ * It should return success if it found the plug, and the plug is on the base in the expected position. 
+ * It will take as input an expected x, y, and th triple in the 'robot frame' and it will give feedback of the 
+ * actual x and y values.
+ */
+class DetectPlugOnBase extends ROSTFAction {
+
+  predicate Active {
+    float x;
+    float y;
+    float th;
+  }
+
+  predicate Inactive {
+    float x;
+    float y;
+    float th;
+  }
+
+  DetectPlugOnBase(Mode _mode){ super(_mode);}
 };

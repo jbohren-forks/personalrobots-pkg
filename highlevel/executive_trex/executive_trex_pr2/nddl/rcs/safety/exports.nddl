@@ -1,0 +1,37 @@
+/**
+ * This file defines actions and state variables
+ * @author Conor McGann
+ */
+
+/**
+ * @brief This is a sensing action which will be used during navigation and recharging.
+ *
+ * It should return success if it found the plug, and the plug is on the base in the expected position. 
+ * It will take as input an expected x, and y and z value in the robot frame and it will give feedback of the 
+ * actual x and y values.
+ */
+class DetectPlugOnBase extends ROSTFAction {
+
+  predicate Active {
+    float x;
+    float y;
+    float z;
+  }
+
+  predicate Inactive {
+    float x;
+    float y;
+    float z;
+  }
+
+  DetectPlugOnBase(Mode _mode){ super(_mode);}
+
+};
+
+/**
+ * @brief This is a general utility for tucking arms.
+ *
+ * This is not a ROS action. Instead it will use MoveArm primitives to accomplish the arm position changes.
+ * It will be used by anoyone doing navigation
+ */
+class TuckArms extends Behavior {}
