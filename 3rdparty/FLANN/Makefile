@@ -1,7 +1,7 @@
 all: installed
 
 TARBALL     = build/flann-1.2-src.zip
-TARBALL_URL = http://www.cs.ubc.ca/~mariusm/uploads/FLANN/flann-1.2-src.zip
+TARBALL_URL = http://pr.willowgarage.com/downloads/flann-1.2-src.zip
 UNPACK_CMD  = unzip -x
 SOURCE_DIR  = build/flann-1.2-src
 TARBALL_PATCH = cmakelists.patch
