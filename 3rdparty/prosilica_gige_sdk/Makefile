@@ -1,7 +1,7 @@
 default: installed all
 
 TARBALL = build/Prosilica\ GigE\ SDK\ Linux\ 1.18.tgz
-TARBALL_URL = http://www.prosilica.com/support/gige/081015/Prosilica%20GigE%20SDK%20Linux%201.18.tgz
+TARBALL_URL = http://pr.willowgarage.com/downloads/Prosilica%20GigE%20SDK%20Linux%201.18.tgz
 SOURCE_DIR = build/Prosilica_GigE_SDK
 INITIAL_DIR = build/Prosilica\ GigE\ SDK
 # Spaces in tarball file name screw this up, awesome
