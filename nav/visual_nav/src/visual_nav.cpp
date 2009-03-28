@@ -130,8 +130,6 @@ void VisualNavRoadmap::RoadmapImpl::attachScan (const NodeId i, const PointSet& 
   Transform2D trans = getTransformBetween(pose_when_scanned, graph_[v].pose);
   node_scans_[v] = PointSet();
   std::transform (scan.begin(), scan.end(), inserter(node_scans_[v], node_scans_[v].begin()), bind(transformPoint, trans, _1));
-  ROS_DEBUG_STREAM_NAMED ("scans", "Point " << *(scan.begin()) << " was scanned from pose " << pose_when_scanned
-                          << " and node's current pose is " << graph_[v].pose << " so point's now at " << *(node_scans_[v].begin()));
 }
 
 

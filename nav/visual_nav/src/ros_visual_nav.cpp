@@ -49,6 +49,7 @@
 #include <boost/shared_ptr.hpp>
 #include <ros/node.h>
 #include <deprecated_msgs/Point2DFloat32.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/PointStamped.h>
 #include <laser_scan/laser_scan.h>
@@ -92,6 +93,7 @@ namespace visual_nav
 
 using robot_msgs::VisualizationMarker; // the message class name
 using ros::Time;
+using deprecated_msgs::RobotBase2DOdom;
 
 
 typedef map<int, NodeId> IdMap;
@@ -122,6 +124,7 @@ public:
   // Callbacks
   void roadmapCallback();
   void goalCallback();
+  void poseCallback();
   void baseScanCallback(const Notifier::MessagePtr& msg);
 
 private:
@@ -224,6 +227,9 @@ private:
   RoadmapPtr roadmap_;
   Roadmap roadmap_message_;
 
+  // Temporary
+  RobotBase2DOdom pose_message_;
+
   // Goal messages
   VisualNavGoal goal_message_;
 
@@ -300,6 +306,7 @@ RosVisualNavigator::RosVisualNavigator (double exit_point_radius, const Pose& in
 void RosVisualNavigator::setupTopics ()
 {
   node_.subscribe("roadmap", roadmap_message_, &RosVisualNavigator::roadmapCallback, this, 1);
+  node_.subscribe("localizedpose", pose_message_, &RosVisualNavigator::poseCallback, this, 1);
   node_.subscribe("visual_nav_goal", goal_message_, &RosVisualNavigator::goalCallback, this, 1);
   base_scan_notifier_ = NotifierPtr(new Notifier(&tf_listener_, ros::Node::instance(),  bind(&RosVisualNavigator::baseScanCallback, this, _1), "base_scan", "vslam", 50));
   node_.advertise<Planner2DGoal>("goal", 1);
@@ -312,7 +319,7 @@ void RosVisualNavigator::setupTopics ()
 void RosVisualNavigator::run ()
 {
   // \todo Remove constant for duration
-  Duration d(0,1<<28); // about 4hz
+  Duration d(0.1); 
 
   // Wait for map and odom messages
   for (uint i=0; ; ++i) {
@@ -352,6 +359,9 @@ void RosVisualNavigator::roadmapCallback ()
   ROS_DEBUG_NAMED ("node", "In roadmap callback");
   // No need to acquire lock since callback does this automatically
 
+  ROS_INFO_STREAM ("Time is " << Time::now() << " and roadmap stamp is " << roadmap_message_.header.stamp);
+
+
   roadmap_message_.get_nodes_vec(nodes);
   roadmap_message_.get_edges_vec(edges);
 
@@ -370,6 +380,11 @@ void RosVisualNavigator::roadmapCallback ()
     map_received_=true;
   }
 
+}
+
+void RosVisualNavigator::poseCallback ()
+{
+  ROS_INFO_STREAM ("Time is " << Time::now() << " and pose stamp is " << pose_message_.header.stamp);
 }
 
 
