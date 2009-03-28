@@ -44,7 +44,7 @@ target_link_libraries(testBroadcaster tf)
 rospack_add_executable(transform_sender src/transform_sender.cpp)
 target_link_libraries(transform_sender tf)
 
-rospack_add_executable(test_notifier test/test_notifier.cpp)
+rospack_add_executable(test_notifier EXCLUDE_FROM_ALL test/test_notifier.cpp)
 rospack_declare_test(test_notifier)
 rospack_add_gtest_build_flags(test_notifier)
 target_link_libraries(test_notifier tf ${Boost_LIBRARIES})
