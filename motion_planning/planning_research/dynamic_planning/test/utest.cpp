@@ -120,17 +120,17 @@ void testPrecomputeActions(const std::string& env){
 	  //x
 	  fread(&dtemp1, sizeof(dtemp1), 1, fp1);
 	  fread(&dtemp2, sizeof(dtemp2), 1, fp2);
-	  ASSERT_EQ(dtemp1, dtemp2);
+	  ASSERT_FLOAT_EQ(dtemp1, dtemp2);
 	  
 	  //y
 	  fread(&dtemp1, sizeof(dtemp1), 1, fp1);
 	  fread(&dtemp2, sizeof(dtemp2), 1, fp2);
-	  ASSERT_EQ(dtemp1, dtemp2);
+	  ASSERT_FLOAT_EQ(dtemp1, dtemp2);
 	  
 	  //theta
 	  fread(&dtemp1, sizeof(dtemp1), 1, fp1);
 	  fread(&dtemp2, sizeof(dtemp2), 1, fp2);
-	  ASSERT_EQ(dtemp1, dtemp2);
+	  ASSERT_FLOAT_EQ(dtemp1, dtemp2);
 	  
 	}
 
