@@ -15,7 +15,7 @@ rospack_add_executable (bin/normal_estimation_node src/normal_estimation.cpp)
 target_link_libraries (bin/normal_estimation_node cloud_geometry cloud_kdtree)
 
 rospack_add_executable (bin/planar_fit_node src/planar_fit.cpp)
-target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree)
+target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_consensus)
 
 # ---[ Cloud Geometry library
   rospack_add_library (cloud_geometry

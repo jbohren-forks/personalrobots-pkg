@@ -220,7 +220,7 @@ namespace cloud_geometry
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Downsample a Point Cloud using a voxelized grid approach
-    * \param points a pointer to the point cloud message
+    * \param points the point cloud message
     * \param indices a set of point indices
     * \param points_down the resultant downsampled point cloud
     * \param leaf_size the voxel leaf dimensions
@@ -313,7 +313,7 @@ namespace cloud_geometry
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Downsample a Point Cloud using a voxelized grid approach
     * \note this method should not be used in fast loops as it always reallocs the std::vector<Leaf> internally (!)
-    * \param points a pointer to the point cloud message
+    * \param points the point cloud message
     * \param points_down the resultant downsampled point cloud
     * \param leaf_size the voxel leaf dimensions
     */
@@ -322,6 +322,35 @@ namespace cloud_geometry
   {
     std::vector<Leaf> leaves;
     downsamplePointCloud (points, points_down, leaf_size, leaves, -1);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Create a new point cloud object by copying the data from a given input point cloud using a set of indices
+    * \param points the input point cloud message
+    * \param indices a set of point indices
+    * \param points the resultant/output point cloud message
+    */
+  void
+    copyPointCloud (const robot_msgs::PointCloud &input, const std::vector<int> &indices, robot_msgs::PointCloud &output)
+  {
+    output.header = input.header;
+    output.pts.resize (indices.size ());
+    output.chan.resize (input.chan.size ());
+
+    for (unsigned int d = 0; d < output.chan.size (); d++)
+    {
+      output.chan[d].name = input.chan[d].name;
+      output.chan[d].vals.resize (input.chan[d].vals.size ());
+    }
+
+    for (unsigned int i = 0; i < indices.size (); i++)
+    {
+      output.pts[i].x = input.pts[indices.at (i)].x;
+      output.pts[i].y = input.pts[indices.at (i)].y;
+      output.pts[i].z = input.pts[indices.at (i)].z;
+      for (unsigned int d = 0; d < output.chan.size (); d++)
+        output.chan[d].vals[i] = input.chan[d].vals[indices.at (i)];
+    }
   }
 
 }
