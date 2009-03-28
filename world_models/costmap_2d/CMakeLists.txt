@@ -9,8 +9,10 @@ rospack_add_boost_directories()
 rospack_add_library(costmap_2d src/costmap_2d.cpp 
 			       src/obstacle_map_accessor.cpp 
 			       src/observation_buffer.cpp
-			       src/basic_observation_buffer.cpp)
+			       src/basic_observation_buffer.cpp
+                               src/costmap_node.cpp)
 rospack_link_boost(costmap_2d thread)
+
 
 # Test target for module tests to be included in gtest regression test harness
 rospack_add_gtest(utest src/test/module-tests.cpp)
