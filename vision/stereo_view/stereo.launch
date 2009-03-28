@@ -6,7 +6,7 @@
     <param name="do_stereo" type="bool" value="True"/>
     <param name="do_calc_points" type="bool" value="True"/>
   </node>
-  <node ns="stereodcam" name="stereoproc" pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
+  <node name="stereoproc" pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
   <node name="stereo_view" pkg="stereo_view" type="stereo_view" respawn="false" output="screen"/>
 </launch>
 
