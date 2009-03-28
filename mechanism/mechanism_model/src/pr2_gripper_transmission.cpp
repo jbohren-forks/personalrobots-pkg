@@ -153,7 +153,7 @@ void PR2GripperTransmission::computeGapStates(
 }
 
 ///////////////////////////////////////////////////////////
-/// given gap properties (theta), compute actuator states (motor revolutions, motor torques).
+/// given joint properties (theta), compute actuator states (motor revolutions, motor torques).
 void PR2GripperTransmission::inverseGapStates(
   std::vector<Actuator*>& as, std::vector<JointState*>& js,
   double theta,double &MR,double &dMR_dtheta,double &dtheta_dt,double &dMR_dt)
