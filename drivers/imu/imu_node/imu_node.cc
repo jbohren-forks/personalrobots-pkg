@@ -86,7 +86,7 @@ Reads the following parameters from the parameter server
 #include <math.h>
 #include <iostream>
 
-#include "3dmgx2.h"
+#include "3dmgx2_driver/3dmgx2.h"
 
 #include "ros/node.h"
 #include "ros/time.h"
@@ -103,12 +103,12 @@ using namespace std;
 class ImuNode: public ros::Node
 {
 public:
-  MS_3DMGX2::IMU imu;
+  ms_3dmgx2_driver::IMU imu;
   robot_msgs::PoseWithRatesStamped reading;
 
   string port;
 
-  MS_3DMGX2::IMU::cmd cmd;
+  ms_3dmgx2_driver::IMU::cmd cmd;
 
   int count_;
 
@@ -133,7 +133,7 @@ public:
 
     param("~autostart", autostart, true);
 
-    cmd = MS_3DMGX2::IMU::CMD_ACCEL_ANGRATE_ORIENT;
+    cmd = ms_3dmgx2_driver::IMU::CMD_ACCEL_ANGRATE_ORIENT;
     
     running = false;
 
@@ -180,7 +180,7 @@ public:
 
       running = true;
 
-    } catch (MS_3DMGX2::exception& e) {
+    } catch (ms_3dmgx2_driver::exception& e) {
       ROS_INFO("Exception thrown while starting IMU.\n %s", e.what());
       return -1;
     }
@@ -195,7 +195,7 @@ public:
       try
       {
         imu.close_port();
-      } catch (MS_3DMGX2::exception& e) {
+      } catch (ms_3dmgx2_driver::exception& e) {
         ROS_INFO("Exception thrown while stopping IMU.\n %s", e.what());
       }
       running = false;
@@ -237,7 +237,7 @@ public:
 
       publish("imu_data", reading);
         
-    } catch (MS_3DMGX2::exception& e) {
+    } catch (ms_3dmgx2_driver::exception& e) {
       ROS_INFO("Exception thrown while trying to get the IMU reading.\n%s", e.what());
       return -1;
     }
@@ -278,7 +278,7 @@ public:
     try
     {
       imu.close_port();
-    } catch (MS_3DMGX2::exception& e) {
+    } catch (ms_3dmgx2_driver::exception& e) {
     }
   }
 
@@ -340,7 +340,7 @@ public:
     double accel[3];
     double angrate[3];
 
-    if (!imu.set_continuous(MS_3DMGX2::IMU::CMD_ACCEL_ANGRATE))
+    if (!imu.set_continuous(ms_3dmgx2_driver::IMU::CMD_ACCEL_ANGRATE))
     {
       status.level = 2;
       status.message = "Could not start streaming data.";
@@ -372,7 +372,7 @@ public:
     double grav_y = 0.0;
     double grav_z = 0.0;
 
-    if (!imu.set_continuous(MS_3DMGX2::IMU::CMD_ACCEL_ANGRATE))
+    if (!imu.set_continuous(ms_3dmgx2_driver::IMU::CMD_ACCEL_ANGRATE))
     {
       status.level = 2;
       status.message = "Could not start streaming data.";
@@ -396,7 +396,7 @@ public:
                     pow(grav_y / (double)(num), 2.0) + 
                     pow(grav_z / (double)(num), 2.0));
       
-      //      double err = (grav - MS_3DMGX2::G);
+      //      double err = (grav - ms_3dmgx2_driver::G);
       double err = (grav - 9.796);
       
       if (fabs(err) < .05)
