@@ -5,9 +5,13 @@ include(CMakeDetermineSystem)
 rospack(star_detector)
 rospack_add_library(starfeature src/detector.cpp src/integral.cpp src/keypoint.cpp)
 rospack_add_compile_flags(starfeature -save-temps)
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "i686")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
   rospack_add_compile_flags(starfeature -march=pentium3 -msse3)
-endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686")
+endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
 
 # Obsoleted by directed test below
 #rospack_add_gtest(utest test/utest.cpp )
@@ -21,8 +25,12 @@ rospack_add_library(pystarfeature src/pydetector.cpp)
 target_link_libraries(pystarfeature starfeature)
 set_target_properties(pystarfeature PROPERTIES OUTPUT_NAME starfeature PREFIX "")
 rospack_add_compile_flags(pystarfeature -Wno-missing-field-initializers -save-temps)
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "i686")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
   rospack_add_compile_flags(pystarfeature -march=pentium3 -msse3)
-endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686")
+endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
 
 rospack_add_pyunit(test/directed.py)
