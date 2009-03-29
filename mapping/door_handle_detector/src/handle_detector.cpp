@@ -221,7 +221,7 @@ class HandleDetector
 
       vector<int> inliers, outliers;
       // Find the actual door plane. If the door moved since detection, return false/exit
-      if (!fitSACPlane (cloud_tr_, indices_in_bounds, inliers, coeff, &viewpoint_cloud_, sac_distance_threshold_, min_plane_pts_) || inliers.size () == 0)
+      if (!fitSACPlane (cloud_tr_, indices_in_bounds, inliers, coeff, viewpoint_cloud_, sac_distance_threshold_, min_plane_pts_) || inliers.size () == 0)
       {
         ROS_ERROR ("Could not find a door planar model in the input data (%d points)! Exiting...", nr_p);
         return (false);

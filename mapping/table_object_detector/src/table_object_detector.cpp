@@ -694,23 +694,10 @@ class TableObjectDetector
         // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
         Eigen::Vector4d plane_parameters;
         double curvature;
-        cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud, points_k_indices[i], plane_parameters, curvature);
+        cloud_geometry::nearest::computePointNormal (cloud, points_k_indices[i], plane_parameters, curvature);
 
-        // See if we need to flip any plane normals
-        Point32 vp_m;
-        vp_m.x = viewpoint_cloud.point.x - cloud_down_.pts[i].x;
-        vp_m.y = viewpoint_cloud.point.y - cloud_down_.pts[i].y;
-        vp_m.z = viewpoint_cloud.point.z - cloud_down_.pts[i].z;
+        cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_down_.pts[i], viewpoint_cloud);
 
-        // Dot product between the (viewpoint - point) and the plane normal
-        double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));// / norm;
-
-        // Flip the plane normal
-        if (cos_theta < 0)
-        {
-          for (int d = 0; d < 3; d++)
-            plane_parameters (d) *= -1;
-        }
         cloud.chan[0].vals[i] = plane_parameters (0);
         cloud.chan[1].vals[i] = plane_parameters (1);
         cloud.chan[2].vals[i] = plane_parameters (2);

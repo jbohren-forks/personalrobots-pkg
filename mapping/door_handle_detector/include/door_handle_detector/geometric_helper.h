@@ -202,7 +202,7 @@ void findClusters (const robot_msgs::PointCloud &points, const std::vector<int> 
                    int nx_idx, int ny_idx, int nz_idx, double eps_angle, unsigned int min_pts_per_cluster = 1);
 
 bool fitSACPlane (robot_msgs::PointCloud &points, std::vector<int> indices, std::vector<int> &inliers, std::vector<double> &coeff,
-                  robot_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts);
+                  const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts);
 
 void estimatePointNormals (const robot_msgs::PointCloud &points, const std::vector<int> &point_indices, robot_msgs::PointCloud &points_down, int k, const robot_msgs::PointStamped &viewpoint_cloud);
 void estimatePointNormals (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &points_down, int k, const robot_msgs::PointStamped &viewpoint_cloud);

@@ -90,7 +90,7 @@ class PCDGenerator
       {
         usleep (1000000);
 
-        ROS_INFO ("Publishing data (%d points) on topic %s.", (int)msg_cloud_.pts.size (), node_.mapName (cloud_topic_).c_str ());
+        ROS_INFO ("Publishing data (%d points) on topic %s in frame %s.", (int)msg_cloud_.pts.size (), node_.mapName (cloud_topic_).c_str (), msg_cloud_.header.frame_id.c_str ());
         msg_cloud_.header.stamp = ros::Time::now ();
         node_.publish ("cloud_pcd", msg_cloud_);
       }

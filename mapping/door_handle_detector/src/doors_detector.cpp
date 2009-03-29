@@ -229,7 +229,7 @@ bool
 
     // Find the best plane in this cluster
     vector<int> inliers;
-    if (!fitSACPlane (cloud_down, clusters[cc], inliers, coeff[cc], &viewpoint_cloud_, sac_distance_threshold_, euclidean_cluster_min_pts_))
+    if (!fitSACPlane (cloud_down, clusters[cc], inliers, coeff[cc], viewpoint_cloud_, sac_distance_threshold_, euclidean_cluster_min_pts_))
     {
       goodness_factor[cc] = 0;
       ROS_DEBUG ("R: Could not find planar model for cluster %d (%d hull points, %d points).", cc, (int)pmap_.polygons[cc].points.size (), (int)inliers.size ());

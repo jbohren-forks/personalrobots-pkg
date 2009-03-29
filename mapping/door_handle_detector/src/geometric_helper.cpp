@@ -433,7 +433,7 @@ bool
   // Compute the normal of this cluster
   Eigen::Vector4d plane_parameters;
   double curvature;
-  cloud_geometry::nearest::computeSurfaceNormalCurvature (points, indices, plane_parameters, curvature);
+  cloud_geometry::nearest::computePointNormal (points, indices, plane_parameters, curvature);
   Point32 normal;
   normal.x = plane_parameters (0);
   normal.y = plane_parameters (1);
@@ -564,7 +564,7 @@ void
   */
 bool
   fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
-               robot_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts)
+               const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
 {
   if ((int)indices.size () < min_pts)
   {
@@ -596,23 +596,8 @@ bool
     inliers = model->selectWithinDistance (coeff, dist_thresh);
     //inliers = sac->getInliers ();
 
-    // Flip plane normal according to the viewpoint information
-    Point32 vp_m;
-    vp_m.x = viewpoint_cloud->point.x - points.pts.at (inliers[0]).x;
-    vp_m.y = viewpoint_cloud->point.y - points.pts.at (inliers[0]).y;
-    vp_m.z = viewpoint_cloud->point.z - points.pts.at (inliers[0]).z;
+    cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint_cloud);
 
-    // Dot product between the (viewpoint - point) and the plane normal
-    double cos_theta = (vp_m.x * coeff[0] + vp_m.y * coeff[1] + vp_m.z * coeff[2]);
-
-    // Flip the plane normal
-    if (cos_theta < 0)
-    {
-      for (int d = 0; d < 3; d++)
-        coeff[d] *= -1;
-      // Hessian form (D = nc . p_plane (centroid here) + p)
-      coeff[3] = -1 * (coeff[0] * points.pts.at (inliers[0]).x + coeff[1] * points.pts.at (inliers[0]).y + coeff[2] * points.pts.at (inliers[0]).z);
-    }
     //ROS_DEBUG ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
     //           coeff[0], coeff[1], coeff[2], coeff[3]);
 
@@ -673,23 +658,10 @@ void
     double curvature;
     for (int j = 0; j < (int)points_k_indices[i].size (); j++)
       points_k_indices[i][j] = point_indices.at (points_k_indices[i][j]);
-    cloud_geometry::nearest::computeSurfaceNormalCurvature (points, points_k_indices[i], plane_parameters, curvature);
+    cloud_geometry::nearest::computePointNormal (points, points_k_indices[i], plane_parameters, curvature);
 
-    // See if we need to flip any plane normals
-    Point32 vp_m;
-    vp_m.x = viewpoint_cloud.point.x - points_down.pts[i].x;
-    vp_m.y = viewpoint_cloud.point.y - points_down.pts[i].y;
-    vp_m.z = viewpoint_cloud.point.z - points_down.pts[i].z;
+    cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points_down.pts[i], viewpoint_cloud);
 
-    // Dot product between the (viewpoint - point) and the plane normal
-    double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
-
-    // Flip the plane normal
-    if (cos_theta < 0)
-    {
-      for (int d = 0; d < 3; d++)
-        plane_parameters (d) *= -1;
-    }
     points_down.chan[0].vals[i] = plane_parameters (0);
     points_down.chan[1].vals[i] = plane_parameters (1);
     points_down.chan[2].vals[i] = plane_parameters (2);
@@ -743,23 +715,10 @@ void
     for (int j = 0; j < (int)points_k_indices[i].size (); j++)
       points_k_indices[i][j] = point_indices.at (points_k_indices[i][j]);
 
-    cloud_geometry::nearest::computeSurfaceNormalCurvature (points, points_k_indices[i], plane_parameters, curvature);
+    cloud_geometry::nearest::computePointNormal (points, points_k_indices[i], plane_parameters, curvature);
 
-    // See if we need to flip any plane normals
-    Point32 vp_m;
-    vp_m.x = viewpoint_cloud.point.x - points.pts[point_indices.at (i)].x;
-    vp_m.y = viewpoint_cloud.point.y - points.pts[point_indices.at (i)].y;
-    vp_m.z = viewpoint_cloud.point.z - points.pts[point_indices.at (i)].z;
+    cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points.pts[point_indices.at (i)], viewpoint_cloud);
 
-    // Dot product between the (viewpoint - point) and the plane normal
-    double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
-
-    // Flip the plane normal
-    if (cos_theta < 0)
-    {
-      for (int d = 0; d < 3; d++)
-        plane_parameters (d) *= -1;
-    }
     points.chan[old_channel_size + 0].vals[point_indices.at (i)] = plane_parameters (0);
     points.chan[old_channel_size + 1].vals[point_indices.at (i)] = plane_parameters (1);
     points.chan[old_channel_size + 2].vals[point_indices.at (i)] = plane_parameters (2);
@@ -810,23 +769,10 @@ void
     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
     Eigen::Vector4d plane_parameters;
     double curvature;
-    cloud_geometry::nearest::computeSurfaceNormalCurvature (points, points_k_indices[i], plane_parameters, curvature);
+    cloud_geometry::nearest::computePointNormal (points, points_k_indices[i], plane_parameters, curvature);
 
-    // See if we need to flip any plane normals
-    Point32 vp_m;
-    vp_m.x = viewpoint_cloud.point.x - points_down.pts[i].x;
-    vp_m.y = viewpoint_cloud.point.y - points_down.pts[i].y;
-    vp_m.z = viewpoint_cloud.point.z - points_down.pts[i].z;
+    cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points_down.pts[i], viewpoint_cloud);
 
-    // Dot product between the (viewpoint - point) and the plane normal
-    double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
-
-    // Flip the plane normal
-    if (cos_theta < 0)
-    {
-      for (int d = 0; d < 3; d++)
-        plane_parameters (d) *= -1;
-    }
     points_down.chan[0].vals[i] = plane_parameters (0);
     points_down.chan[1].vals[i] = plane_parameters (1);
     points_down.chan[2].vals[i] = plane_parameters (2);

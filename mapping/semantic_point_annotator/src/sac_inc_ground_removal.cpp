@@ -55,6 +55,7 @@
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/areas.h>
+#include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/distances.h>
 #include <point_cloud_mapping/geometry/nearest.h>
@@ -303,29 +304,12 @@ class IncGroundRemoval
         // Estimate the plane from the line inliers
         Eigen::Vector4d plane_parameters;
         double curvature;
-        cloud_geometry::nearest::computeSurfaceNormalCurvature (cloud_, ground_inliers, plane_parameters, curvature);
+        cloud_geometry::nearest::computePointNormal (cloud_, ground_inliers, plane_parameters, curvature);
 
         //make sure that there are inliers to refine
-        if(!ground_inliers.empty()){
-          // Flip plane normal according to the viewpoint information
-          Point32 vp_m;
-          vp_m.x = viewpoint_cloud_.point.x - cloud_.pts.at (ground_inliers[0]).x;
-          vp_m.y = viewpoint_cloud_.point.y - cloud_.pts.at (ground_inliers[0]).y;
-          vp_m.z = viewpoint_cloud_.point.z - cloud_.pts.at (ground_inliers[0]).z;
-
-          // Dot product between the (viewpoint - point) and the plane normal
-          double cos_theta = (vp_m.x * plane_parameters (0) + vp_m.y * plane_parameters (1) + vp_m.z * plane_parameters (2));
-
-          // Flip the plane normal
-          if (cos_theta < 0)
-          {
-            for (int d = 0; d < 3; d++)
-              plane_parameters (d) *= -1;
-            // Hessian form (D = nc . p_plane (centroid here) + p)
-            plane_parameters (3) = -1 * (plane_parameters (0) * cloud_.pts.at (ground_inliers[0]).x +
-                plane_parameters (1) * cloud_.pts.at (ground_inliers[0]).y +
-                plane_parameters (2) * cloud_.pts.at (ground_inliers[0]).z);
-          }
+        if (!ground_inliers.empty ())
+        {
+          cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_.pts.at (ground_inliers[0]), viewpoint_cloud_);
 
           // Compute the distance from the remaining points to the model plane, and add to the inliers list if they are below
           for (unsigned int i = 0; i < remaining_possible_ground_indices.size (); i++)
