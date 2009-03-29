@@ -1,0 +1,20 @@
+<launch>
+
+  <!-- If search_radius_or_knn is different than 0, we estimate point normals -->
+  <param name="/planar_fit/search_radius_or_knn" value="0" />
+  <param name="/planar_fit/search_radius"        value="0.02" />
+  <param name="/planar_fit/search_k_closest"     value="20" />
+
+  <!-- Use downsampling if the data is too dense and the nearest neighborhood searches for normal estimation take too long -->
+  <param name="/planar_fit/downsample"              value="1" />
+  <param name="/planar_fit/downsample_leaf_width_x" value="0.01" />
+  <param name="/planar_fit/downsample_leaf_width_y" value="0.01" />
+  <param name="/planar_fit/downsample_leaf_width_z" value="0.01" />
+  <!-- Use the original data for normal estimation -->
+  <param name="/planar_fit/normals_high_fidelity"   value="1" />
+    
+  <param name="/planar_fit/sac_distance_threshold" value="0.03" />
+  <param name="/planar_fit/sac_maximum_iterations" value="200" />
+
+  <node pkg="point_cloud_mapping" type="planar_fit_node" name="planar_fit" output="screen" respawn="true" />
+</launch>
