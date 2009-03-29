@@ -355,7 +355,8 @@ namespace cloud_geometry
 
   std::string getAvailableChannels (const robot_msgs::PointCloud &cloud);
 
-  void copyPointCloud (const robot_msgs::PointCloud &input, const std::vector<int> &indices, robot_msgs::PointCloud &output);
+  void getPointCloud (const robot_msgs::PointCloud &input, const std::vector<int> &indices, robot_msgs::PointCloud &output);
+  void getPointCloudOutside (const robot_msgs::PointCloud &input, std::vector<int> indices, robot_msgs::PointCloud &output);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Write the point data to screen (stderr)

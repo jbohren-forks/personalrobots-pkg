@@ -98,9 +98,14 @@ namespace sample_consensus
       std::set<int> fraction_idx = getRandomSamples (*sac_model_->getCloud (), *sac_model_->getIndices (), fraction_nr_points);
 
       if (!sac_model_->doSamplesVerifyModel (fraction_idx, threshold_))
+      {
         // Unfortunately we cannot "continue" after the first iteration, because k might not be set, while iterations gets incremented
         if (k != 1.0)
+        {
+          iterations_ += 1;
           continue;
+        }
+      }
 
       double d_cur_penalty = 0;
       // d_cur_penalty = sum (min (dist, threshold))

@@ -16,5 +16,7 @@
   <param name="/planar_fit/sac_distance_threshold" value="0.03" />
   <param name="/planar_fit/sac_maximum_iterations" value="200" />
 
-  <node pkg="point_cloud_mapping" type="planar_fit_node" name="planar_fit" output="screen" respawn="true" />
+  <node pkg="point_cloud_mapping" type="planar_fit_node" name="planar_fit" output="screen" respawn="true">
+    <remap from="tilt_laser_cloud" to="cloud_pcd" />
+  </node>
 </launch>

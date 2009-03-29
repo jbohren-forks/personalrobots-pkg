@@ -60,6 +60,8 @@ namespace cloud_geometry
     getAvailableChannels (const robot_msgs::PointCloud &cloud)
   {
     std::string result;
+    if (cloud.chan.size () == 0)
+      return (result);
     unsigned int i;
     for (i = 0; i < cloud.chan.size () - 1; i++)
     {
@@ -331,7 +333,7 @@ namespace cloud_geometry
     * \param points the resultant/output point cloud message
     */
   void
-    copyPointCloud (const robot_msgs::PointCloud &input, const std::vector<int> &indices, robot_msgs::PointCloud &output)
+    getPointCloud (const robot_msgs::PointCloud &input, const std::vector<int> &indices, robot_msgs::PointCloud &output)
   {
     output.header = input.header;
     output.pts.resize (indices.size ());
@@ -343,6 +345,7 @@ namespace cloud_geometry
       output.chan[d].vals.resize (input.chan[d].vals.size ());
     }
 
+    // Copy the data
     for (unsigned int i = 0; i < indices.size (); i++)
     {
       output.pts[i].x = input.pts[indices.at (i)].x;
@@ -353,4 +356,48 @@ namespace cloud_geometry
     }
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Create a new point cloud object by copying the data from a given input point cloud using a set of indices
+    * \param points the input point cloud message
+    * \param indices a set of point indices
+    * \param points the resultant/output point cloud message
+    */
+  void
+    getPointCloudOutside (const robot_msgs::PointCloud &input, std::vector<int> indices, robot_msgs::PointCloud &output)
+  {
+    std::vector<int> indices_outside;
+    // Create the entire index list
+    std::vector<int> all_indices (input.pts.size ());
+    for (unsigned int i = 0; i < all_indices.size (); i++)
+      all_indices[i] = i;
+
+    sort (indices.begin (), indices.end ());
+
+    set_difference (all_indices.begin (), all_indices.end (), indices.begin (), indices.end (),
+                    inserter (indices_outside, indices_outside.begin ()));
+
+    if (indices_outside.size () == 0)
+      return;
+
+    output.header = input.header;
+    output.chan.resize (input.chan.size ());
+
+    output.pts.resize (indices_outside.size ());
+
+    for (unsigned int d = 0; d < output.chan.size (); d++)
+    {
+      output.chan[d].name = input.chan[d].name;
+      output.chan[d].vals.resize (input.chan[d].vals.size ());
+    }
+
+    // Copy the data
+    for (unsigned int i = 0; i < indices_outside.size (); i++)
+    {
+      output.pts[i].x = input.pts[indices_outside.at (i)].x;
+      output.pts[i].y = input.pts[indices_outside.at (i)].y;
+      output.pts[i].z = input.pts[indices_outside.at (i)].z;
+      for (unsigned int d = 0; d < output.chan.size (); d++)
+        output.chan[d].vals[i] = input.chan[d].vals[indices_outside.at (i)];
+    }
+  }
 }

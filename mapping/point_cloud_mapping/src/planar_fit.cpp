@@ -77,7 +77,7 @@ class PlanarFit
   public:
 
     // ROS messages
-    PointCloud cloud_, cloud_down_, cloud_plane_;
+    PointCloud cloud_, cloud_down_, cloud_plane_, cloud_outliers_;
 
     tf::TransformListener tf_;
 
@@ -108,7 +108,7 @@ class PlanarFit
     PlanarFit (ros::Node& anode) : node_ (anode),  tf_ (anode)
     {
       node_.param ("~search_radius_or_knn", radius_or_knn_, 1);   // none (0), radius (1) or k (2) nearest neighbor search
-      node_.param ("~search_radius", radius_, 0.02);              // 2cm radius by default
+      node_.param ("~search_radius", radius_, 0.01);              // 1cm radius by default
       node_.param ("~search_k_closest", k_, 25);                  // 25 k-neighbors by default
 
       node_.param ("~downsample", downsample_, 1);                        // downsample cloud before normal estimation
@@ -118,7 +118,7 @@ class PlanarFit
 
       node_.param ("~normals_high_fidelity", normals_fidelity_, 1);       // compute the downsampled normals from the original data
 
-      node_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.03);   // 3 cm threshold
+      node_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.02);   // 2 cm threshold
       node_.param ("~sac_maximum_iterations", sac_maximum_iterations_, 500);    // maximum 500 SAC iterations
 
       string cloud_topic ("tilt_laser_cloud");
@@ -140,6 +140,7 @@ class PlanarFit
       node_.subscribe (cloud_topic, cloud_, &PlanarFit::cloud_cb, this, 1);
       node_.advertise<PointCloud> ("~normals", 1);
       node_.advertise<PointCloud> ("~plane", 1);
+      node_.advertise<PointCloud> ("~outliers", 1);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -166,7 +167,7 @@ class PlanarFit
         ROS_INFO ("Cloud view point in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
                   viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
       }
-      catch (tf::ConnectivityException)
+      catch (...)
       {
         // Default to 0.05, 0, 0.942768 (base_link, ~base_footprint)
         viewpoint_cloud.point.x = 0.05; viewpoint_cloud.point.y = 0.0; viewpoint_cloud.point.z = 0.942768;
@@ -225,7 +226,7 @@ class PlanarFit
           ROS_ERROR ("Not enough memory to create a simple downsampled representation. Change the downsample_leaf_width parameters.");
           return;
         }
-        ROS_INFO ("Downsampling enabled. Number of points left: %d in %g seconds.", (int)cloud_down_.pts.size (), (ros::Time::now () - ts1).toSec ());
+        ROS_INFO ("Downsampling enabled. Number of points left: %d / %d in %g seconds.", (int)cloud_down_.pts.size (), (int)cloud_.pts.size (), (ros::Time::now () - ts1).toSec ());
 
         if (radius_or_knn_ == 1)             // Use a radius search
         {
@@ -258,20 +259,26 @@ class PlanarFit
       // ---[ Fit a planar model
       vector<int> inliers;
       vector<double> coeff;
+      int total_nr_points;
       ts = ros::Time::now ();
       if (downsample_ != 0)
       {
+        total_nr_points = cloud_down_.pts.size ();
         fitSACPlane (cloud_down_, inliers, coeff, viewpoint_cloud, sac_distance_threshold_);
-        cloud_geometry::copyPointCloud (cloud_down_, inliers, cloud_plane_);
+        cloud_geometry::getPointCloud (cloud_down_, inliers, cloud_plane_);
+        cloud_geometry::getPointCloudOutside (cloud_down_, inliers, cloud_outliers_);
       }
       else
       {
+        total_nr_points = cloud_.pts.size ();
         fitSACPlane (cloud_, inliers, coeff, viewpoint_cloud, sac_distance_threshold_);
-        cloud_geometry::copyPointCloud (cloud_, inliers, cloud_plane_);
+        cloud_geometry::getPointCloud (cloud_, inliers, cloud_plane_);
+        cloud_geometry::getPointCloudOutside (cloud_, inliers, cloud_outliers_);
       }
-      ROS_INFO ("Planar model found in %g seconds.", (ros::Time::now () - ts).toSec ());
+      ROS_INFO ("Planar model found with %d / %d inliers in %g seconds.\n", (int)inliers.size (), total_nr_points, (ros::Time::now () - ts).toSec ());
 
       node_.publish ("~plane", cloud_plane_);
+      node_.publish ("~outliers", cloud_outliers_);
     }
 
 
@@ -290,13 +297,17 @@ class PlanarFit
     {
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+//      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+      sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, dist_thresh);
 //      sample_consensus::SAC *sac             = new sample_consensus::RRANSAC (model, dist_thresh);
+//      reinterpret_cast<sample_consensus::RRANSAC*>(sac)->setFractionNrPretest (50);
+//      sample_consensus::SAC *sac             = new sample_consensus::RMSAC (model, dist_thresh);
+      //      reinterpret_cast<sample_consensus::RMSAC*>(sac)->setFractionNrPretest (10);
       sac->setMaxIterations (sac_maximum_iterations_);
       model->setDataSet (&points);
 
       // Search for the best plane
-      if (sac->computeModel ())
+      if (sac->computeModel (0))
       {
         sac->computeCoefficients ();          // Compute the model coefficients
         coeff   = sac->refineCoefficients (); // Refine them using least-squares
@@ -304,8 +315,8 @@ class PlanarFit
 
         cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint_cloud);
 
-        ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]\n", (int)sac->getInliers ().size (),
-                   coeff[0], coeff[1], coeff[2], coeff[3]);
+        //ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (),
+        //           coeff[0], coeff[1], coeff[2], coeff[3]);
 
         // Project the inliers onto the model
         model->projectPointsInPlace (inliers, coeff);
