@@ -281,6 +281,34 @@ namespace cloud_geometry
       }
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Flip (in place) the estimated normal of a point towards a given viewpoint
+      * \param normal the plane normal to be flipped
+      * \param point a given point
+      * \param viewpoint the viewpoint
+      */
+    inline void
+      flipNormalTowardsViewpoint (std::vector<double> &normal, const robot_msgs::Point32 &point, const robot_msgs::Point32 &viewpoint)
+    {
+      // See if we need to flip any plane normals
+      float vp_m[3];
+      vp_m[0] = viewpoint.x - point.x;
+      vp_m[1] = viewpoint.y - point.y;
+      vp_m[2] = viewpoint.z - point.z;
+
+      // Dot product between the (viewpoint - point) and the plane normal
+      double cos_theta = (vp_m[0] * normal[0] + vp_m[1] * normal[1] + vp_m[2] * normal[2]);
+
+      // Flip the plane normal
+      if (cos_theta < 0)
+      {
+        for (int d = 0; d < 3; d++)
+          normal[d] *= -1;
+        // Hessian form (D = nc . p_plane (centroid here) + p)
+        normal[3] = -1 * (normal[0] * point.x + normal[1] * point.y + normal[2] * point.z);
+      }
+    }
+
   }
 }
 
