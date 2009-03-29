@@ -44,15 +44,14 @@ namespace sample_consensus
   /** \brief Select all the points which respect the given model coefficients as inliers.
     * \param model_coefficients the coefficients of a line model that we need to compute distances to
     * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
+    * \param inliers the resultant model inliers
     * \note: To get the refined inliers of a model, use:
     * ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
-  std::vector<int>
-    SACModelOrientedLine::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
+  void
+    SACModelOrientedLine::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold, std::vector<int> &inliers)
   {
     double sqr_threshold = threshold * threshold;
-
-    std::vector<int> inliers;
 
     // Obtain the line direction
     robot_msgs::Point32 p3, p4;
@@ -64,8 +63,13 @@ namespace sample_consensus
 
     // Check whether the current line model satisfies our angle threshold criterion with respect to the given axis
     if (angle_error >  eps_angle_)
-      return (inliers);
+    {
+      inliers.resize (0);
+      return;
+    }
 
+    int nr_p = 0;
+    inliers.resize (indices_.size ());
     // Iterate through the 3d points and calculate the distances from them to the plane
     for (unsigned int i = 0; i < indices_.size (); i++)
     {
@@ -87,21 +91,24 @@ namespace sample_consensus
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
 
       if (sqr_distance < sqr_threshold)
+      {
         // Returns the indices of the points whose squared distances are smaller than the threshold
-        inliers.push_back (indices_[i]);
+        inliers[nr_p] = indices_[i];
+        nr_p++;
+      }
     }
-    return (inliers);
+    inliers.resize (nr_p);
+    return;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Compute all distances from the cloud data to a given line model.
     * \param model_coefficients the coefficients of a line model that we need to compute distances to
+    * \param distances the resultant estimated distances
     */
-  std::vector<double>
-    SACModelOrientedLine::getDistancesToModel (const std::vector<double> &model_coefficients)
+  void
+    SACModelOrientedLine::getDistancesToModel (const std::vector<double> &model_coefficients, std::vector<double> &distances)
   {
-    std::vector<double> distances (indices_.size ());
-
     // Obtain the line direction
     robot_msgs::Point32 p3, p4;
     p3.x = model_coefficients.at (3) - model_coefficients.at (0);
@@ -112,8 +119,12 @@ namespace sample_consensus
 
     // Check whether the current line model satisfies our angle threshold criterion with respect to the given axis
     if (angle_error >  eps_angle_)
-      return (distances);
+    {
+      distances.resize (0);
+      return;
+    }
 
+    distances.resize (indices_.size ());
     // Iterate through the 3d points and calculate the distances from them to the plane
     for (unsigned int i = 0; i < indices_.size (); i++)
     {
@@ -126,7 +137,7 @@ namespace sample_consensus
       robot_msgs::Point32 c = cloud_geometry::cross (p4, p3);
       distances[i] = sqrt (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
     }
-    return (distances);
+    return;
   }
 
 }

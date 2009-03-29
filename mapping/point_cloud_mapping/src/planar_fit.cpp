@@ -311,7 +311,7 @@ class PlanarFit
       {
         sac->computeCoefficients ();          // Compute the model coefficients
         coeff   = sac->refineCoefficients (); // Refine them using least-squares
-        inliers = model->selectWithinDistance (coeff, dist_thresh);
+        model->selectWithinDistance (coeff, dist_thresh, inliers);
 
         cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint_cloud);
 

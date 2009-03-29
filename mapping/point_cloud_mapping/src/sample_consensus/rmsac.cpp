@@ -76,6 +76,7 @@ namespace sample_consensus
     std::vector<int> best_model;
     std::vector<int> best_inliers, inliers;
     std::vector<int> selection;
+    std::vector<double> distances;
 
     int n_inliers_count = 0;
 
@@ -86,7 +87,7 @@ namespace sample_consensus
     while (iterations_ < k)
     {
       // Get X samples which satisfy the model criteria
-      selection = sac_model_->getSamples (iterations_);
+      sac_model_->getSamples (iterations_, selection);
 
       if (selection.size () == 0) break;
 
@@ -109,8 +110,15 @@ namespace sample_consensus
 
       double d_cur_penalty = 0;
       // d_cur_penalty = sum (min (dist, threshold))
+
       // Iterate through the 3d points and calculate the distances from them to the model
-      std::vector<double> distances = sac_model_->getDistancesToModel (sac_model_->getModelCoefficients ());
+      sac_model_->getDistancesToModel (sac_model_->getModelCoefficients (), distances);
+      if (distances.size () == 0 && k != 1.0)
+      {
+        iterations_ += 1;
+        continue;
+      }
+
       for (unsigned int i = 0; i < sac_model_->getIndices ()->size (); i++)
         d_cur_penalty += std::min ((double)distances[i], threshold_);
 
@@ -122,7 +130,7 @@ namespace sample_consensus
 
         // Save the inliers
         best_inliers.resize (sac_model_->getIndices ()->size ());
-        int n_inliers_count = 0;
+        n_inliers_count = 0;
         for (unsigned int i = 0; i < sac_model_->getIndices ()->size (); i++)
         {
           if (distances[i] <= threshold_)
@@ -143,7 +151,7 @@ namespace sample_consensus
 
       iterations_ += 1;
       if (debug > 1)
-        std::cerr << "[RMSAC::computeModel] Trial " << iterations_ << " out of " << ceil (k) << ": best number of inliers so far is " << n_inliers_count << "." << std::endl;
+        std::cerr << "[RMSAC::computeModel] Trial " << iterations_ << " out of " << ceil (k) << ": best number of inliers so far is " << best_inliers.size () << "." << std::endl;
       if (iterations_ > max_iterations_)
       {
         if (debug > 0)

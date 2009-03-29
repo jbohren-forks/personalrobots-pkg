@@ -54,8 +54,10 @@ namespace sample_consensus
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Get a set of random data samples and return them as point indices. Pure virtual.
-       * \param iterations the internal number of iterations used by SAC methods */
-      virtual std::vector<int> getSamples (int &iterations) = 0;
+        * \param iterations the internal number of iterations used by SAC methods
+        * \param samples the resultant model samples
+        */
+      virtual void getSamples (int &iterations, std::vector<int> &samples) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Test whether the given model coefficients are valid given the input point cloud data. Pure virtual.
@@ -76,16 +78,20 @@ namespace sample_consensus
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Compute all distances from the cloud data to a given model. Pure virtual.
-       * \param model_coefficients the coefficients of a model that we need to compute distances to */
-      virtual std::vector<double> getDistancesToModel (const std::vector<double> &model_coefficients) = 0;
+        * \param model_coefficients the coefficients of a model that we need to compute distances to
+        * \param distances the resultant estimated distances
+        */
+      virtual void getDistancesToModel (const std::vector<double> &model_coefficients, std::vector<double> &distances) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Select all the points which respect the given model coefficients as inliers. Pure virtual.
-       * \param model_coefficients the coefficients of a model that we need to compute distances to
-       * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
-       * @note: To get the refined inliers of a model, use:
-       *        ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold); */
-      virtual std::vector<int> selectWithinDistance (const std::vector<double> &model_coefficients, double threshold) = 0;
+        * \param model_coefficients the coefficients of a model that we need to compute distances to
+        * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
+        * \param inliers the resultant model inliers
+        * @note: To get the refined inliers of a model, use:
+        *        ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
+        */
+      virtual void selectWithinDistance (const std::vector<double> &model_coefficients, double threshold, std::vector<int> &inliers) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Create a new point cloud with inliers projected onto the model. Pure virtual.

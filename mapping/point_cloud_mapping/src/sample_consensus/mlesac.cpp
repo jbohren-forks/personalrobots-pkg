@@ -76,6 +76,9 @@ namespace sample_consensus
     std::vector<int> best_model;
     std::vector<int> best_inliers, inliers;
     std::vector<int> selection;
+    std::vector<double> distances;
+
+    int n_inliers_count = 0;
 
     // Compute sigma - remember to set threshold_ correctly !
     sigma_ = cloud_geometry::statistics::computeMedianAbsoluteDeviation (*sac_model_->getCloud (), *sac_model_->getIndices (), threshold_);
@@ -96,7 +99,7 @@ namespace sample_consensus
     while (iterations_ < k)
     {
       // Get X samples which satisfy the model criteria
-      selection = sac_model_->getSamples (iterations_);
+      sac_model_->getSamples (iterations_, selection);
 
       if (selection.size () == 0) break;
 
@@ -104,7 +107,12 @@ namespace sample_consensus
       sac_model_->computeModelCoefficients (selection);
 
       // Iterate through the 3d points and calculate the distances from them to the model
-      std::vector<double> distances = sac_model_->getDistancesToModel (sac_model_->getModelCoefficients ());
+      sac_model_->getDistancesToModel (sac_model_->getModelCoefficients (), distances);
+      if (distances.size () == 0 && k != 1.0)
+      {
+        iterations_ += 1;
+        continue;
+      }
 
       // Use Expectiation-Maximization to find out the right value for d_cur_penalty
       // ---[ Initial estimate for the gamma mixing parameter = 1/2
@@ -142,7 +150,7 @@ namespace sample_consensus
 
         // Save the inliers
         best_inliers.resize (sac_model_->getIndices ()->size ());
-        int n_inliers_count = 0;
+        n_inliers_count = 0;
         for (unsigned int i = 0; i < sac_model_->getIndices ()->size (); i++)
         {
           if (distances[i] <= 2 * sigma_)

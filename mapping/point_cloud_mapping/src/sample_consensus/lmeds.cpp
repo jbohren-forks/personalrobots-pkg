@@ -69,12 +69,13 @@ namespace sample_consensus
     std::vector<int> best_model;
     std::vector<int> best_inliers;
     std::vector<int> selection;
+    std::vector<double> distances;
 
     // Iterate
     while (iterations_ < max_iterations_)
     {
       // Get X samples which satisfy the model criteria
-      selection = sac_model_->getSamples (iterations_);
+      sac_model_->getSamples (iterations_, selection);
 
       if (selection.size () == 0) break;
 
@@ -85,7 +86,12 @@ namespace sample_consensus
       // d_cur_penalty = sum (min (dist, threshold))
 
       // Iterate through the 3d points and calculate the distances from them to the model
-      std::vector<double> distances = sac_model_->getDistancesToModel (sac_model_->getModelCoefficients ());
+      sac_model_->getDistancesToModel (sac_model_->getModelCoefficients (), distances);
+      if (distances.size () == 0)
+      {
+        iterations_ += 1;
+        continue;
+      }
 
       std::sort (distances.begin (), distances.end ());
 
@@ -120,7 +126,10 @@ namespace sample_consensus
 
       sac_model_->computeModelCoefficients (best_model);
       // Iterate through the 3d points and calculate the distances from them to the model
-      std::vector<double> distances = sac_model_->getDistancesToModel (sac_model_->getModelCoefficients ());
+      std::vector<double> distances;
+      sac_model_->getDistancesToModel (sac_model_->getModelCoefficients (), distances);
+      if (distances.size () == 0)
+        ROS_WARN ("Distances to model _after_ model estimation have size 0!");
 
       best_inliers.resize (sac_model_->getIndices ()->size ());
       int n_inliers_count = 0;

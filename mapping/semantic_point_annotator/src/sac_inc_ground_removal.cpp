@@ -209,7 +209,7 @@ class IncGroundRemoval
 
         sac->computeCoefficients ();             // Compute the model coefficients
         line_coeff = sac->refineCoefficients (); // Refine them using least-squares
-        inliers    = model->selectWithinDistance (line_coeff, sac_distance_threshold_);
+        model->selectWithinDistance (line_coeff, sac_distance_threshold_, inliers);
 
         // Project the inliers onto the model
         //model->projectPointsInPlace (sac->getInliers (), coeff);

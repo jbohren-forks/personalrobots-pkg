@@ -39,7 +39,7 @@
 #include <point_cloud_mapping/sample_consensus/model_types.h>
 
 /** \brief Define the maximum number of iterations for selecting 3 unique points */
-#define MAX_ITERATIONS_UNIQUE 1000
+#define MAX_ITERATIONS_UNIQUE 10000
 
 namespace sample_consensus
 {
@@ -60,7 +60,7 @@ namespace sample_consensus
       /** \brief Destructor for base SACModelLine. */
       virtual ~SACModelParallelLines () { }
 
-      virtual std::vector<int> getSamples (int &iterations);
+      virtual void getSamples (int &iterations, std::vector<int> &samples);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Test whether the given model coefficients are valid given the input point cloud data.
@@ -72,8 +72,8 @@ namespace sample_consensus
       virtual bool computeModelCoefficients (const std::vector<int> &indices);
 
       virtual std::vector<double> refitModel (const std::vector<int> &inliers);
-      virtual std::vector<double> getDistancesToModel (const std::vector<double> &model_coefficients);
-      virtual std::vector<int>    selectWithinDistance (const std::vector<double> &model_coefficients, double threshold);
+      virtual void getDistancesToModel (const std::vector<double> &model_coefficients, std::vector<double> &distances);
+      virtual void selectWithinDistance (const std::vector<double> &model_coefficients, double threshold, std::vector<int> &inliers);
 
       virtual robot_msgs::PointCloud projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients);
 

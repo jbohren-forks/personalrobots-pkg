@@ -38,32 +38,34 @@ namespace sample_consensus
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Get 3 random non-collinear points as data samples and return them as point indices.
     * \param iterations the internal number of iterations used by SAC methods
+    * \param samples the resultant model samples
     * \note assumes unique points!
     */
-  std::vector<int>
-    SACModelCircle2D::getSamples (int &iterations)
+  void
+    SACModelCircle2D::getSamples (int &iterations, std::vector<int> &samples)
   {
-    std::vector<int> random_idx (3);
+    samples.resize (3);
+    double trand = indices_.size () / (RAND_MAX + 1.0);
 
     // Get a random number between 1 and max_indices
-    int idx = (int)(indices_.size () * (rand () / (RAND_MAX + 1.0)));
+    int idx = (int)(rand () * trand);
     // Get the index
-    random_idx[0] = indices_.at (idx);
+    samples[0] = indices_.at (idx);
 
     // Get a second point which is different than the first
     do
     {
-      idx = (int)(indices_.size () * (rand () / (RAND_MAX + 1.0)));
-      random_idx[1] = indices_.at (idx);
+      idx = (int)(rand () * trand);
+      samples[1] = indices_.at (idx);
       iterations++;
-    } while (random_idx[1] == random_idx[0]);
+    } while (samples[1] == samples[0]);
     iterations--;
 
     double Dx1, Dy1, Dz1, Dx2, Dy2, Dz2, Dy1Dy2;
     // Compute the segment values (in 3d) between XY
-    Dx1 = cloud_->pts[random_idx[1]].x - cloud_->pts[random_idx[0]].x;
-    Dy1 = cloud_->pts[random_idx[1]].y - cloud_->pts[random_idx[0]].y;
-    Dz1 = cloud_->pts[random_idx[1]].z - cloud_->pts[random_idx[0]].z;
+    Dx1 = cloud_->pts[samples[1]].x - cloud_->pts[samples[0]].x;
+    Dy1 = cloud_->pts[samples[1]].y - cloud_->pts[samples[0]].y;
+    Dz1 = cloud_->pts[samples[1]].z - cloud_->pts[samples[0]].z;
 
     int iter = 0;
     do
@@ -71,23 +73,23 @@ namespace sample_consensus
       // Get the third point, different from the first two
       do
       {
-        idx = (int)(indices_.size () * (rand () / (RAND_MAX + 1.0)));
-        random_idx[2] = indices_.at (idx);
+        idx = (int)(rand () * trand);
+        samples[2] = indices_.at (idx);
         iterations++;
-      } while ( (random_idx[2] == random_idx[1]) || (random_idx[2] == random_idx[0]) );
+      } while ( (samples[2] == samples[1]) || (samples[2] == samples[0]) );
       iterations--;
 
       // Compute the segment values (in 3d) between XZ
-      Dx2 = cloud_->pts[random_idx[2]].x - cloud_->pts[random_idx[0]].x;
-      Dy2 = cloud_->pts[random_idx[2]].y - cloud_->pts[random_idx[0]].y;
-      Dz2 = cloud_->pts[random_idx[2]].z - cloud_->pts[random_idx[0]].z;
+      Dx2 = cloud_->pts[samples[2]].x - cloud_->pts[samples[0]].x;
+      Dy2 = cloud_->pts[samples[2]].y - cloud_->pts[samples[0]].y;
+      Dz2 = cloud_->pts[samples[2]].z - cloud_->pts[samples[0]].z;
 
       Dy1Dy2 = Dy1 / Dy2;
       iter++;
 
       if (iter > MAX_ITERATIONS_COLLINEAR )
       {
-        std::cerr << "[SACModelCircle2D::getSamples] WARNING: Could not select 3 non collinear points in " << MAX_ITERATIONS_COLLINEAR << " iterations!!!" << std::endl;
+        ROS_WARN ("[SACModelCircle2D::getSamples] WARNING: Could not select 3 non collinear points in %d iterations!",  MAX_ITERATIONS_COLLINEAR);
         break;
       }
       iterations++;
@@ -96,20 +98,22 @@ namespace sample_consensus
     while (((Dx1 / Dx2) == Dy1Dy2) && (Dy1Dy2 == (Dz1 / Dz2)));
     iterations--;
 
-    return (random_idx);
+    return;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Select all the points which respect the given model coefficients as inliers.
     * \param model_coefficients the coefficients of a circle model that we need to compute distances to
     * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
+    * \param inliers the resultant model inliers
     * \note: To get the refined inliers of a model, use:
     * ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
-  std::vector<int>
-    SACModelCircle2D::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
+  void
+    SACModelCircle2D::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold, std::vector<int> &inliers)
   {
-    std::vector<int> inliers;
+    int nr_p = 0;
+    inliers.resize (indices_.size ());
 
     // Iterate through the 3d points and calculate the distances from them to the circle
     for (unsigned int i = 0; i < indices_.size (); i++)
@@ -124,20 +128,25 @@ namespace sample_consensus
                                               ( cloud_->pts.at (indices_[i]).y - model_coefficients.at (1) )
                                              ) - model_coefficients.at (2));
       if (distance_to_circle < threshold)
+      {
         // Returns the indices of the points whose distances are smaller than the threshold
-        inliers.push_back (indices_[i]);
+        inliers[nr_p] = indices_[i];
+        nr_p++;
+      }
     }
-    return (inliers);
+    inliers.resize (nr_p);
+    return;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Compute all distances from the cloud data to a given 2D circle model.
     * \param model_coefficients the coefficients of a 2D circle model that we need to compute distances to
+    * \param distances the resultant estimated distances
     */
-  std::vector<double>
-    SACModelCircle2D::getDistancesToModel (const std::vector<double> &model_coefficients)
+  void
+    SACModelCircle2D::getDistancesToModel (const std::vector<double> &model_coefficients, std::vector<double> &distances)
   {
-    std::vector<double> distances (indices_.size ());
+    distances.resize (indices_.size ());
 
     // Iterate through the 3d points and calculate the distances from them to the circle
     for (unsigned int i = 0; i < indices_.size (); i++)
@@ -150,7 +159,7 @@ namespace sample_consensus
                                  ( cloud_->pts.at (indices_[i]).y - model_coefficients.at (1) ) *
                                  ( cloud_->pts.at (indices_[i]).y - model_coefficients.at (1) )
                                 ) - model_coefficients.at (2));
-    return (distances);
+    return;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

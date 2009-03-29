@@ -64,8 +64,8 @@ namespace sample_consensus
         */
       void setEpsAngle (double ea) { this->eps_angle_ = ea; }
 
-      virtual std::vector<double> getDistancesToModel (const std::vector<double> &model_coefficients);
-      virtual std::vector<int>    selectWithinDistance (const std::vector<double> &model_coefficients, double threshold);
+      virtual void getDistancesToModel (const std::vector<double> &model_coefficients, std::vector<double> &distances);
+      virtual void selectWithinDistance (const std::vector<double> &model_coefficients, double threshold, std::vector<int> &inliers);
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Return an unique id for this model (SACMODEL_ORIENTED_LINE). */

@@ -200,7 +200,7 @@ class GroundRemoval
 
         sac->computeCoefficients ();             // Compute the model coefficients
         line_coeff = sac->refineCoefficients (); // Refine them using least-squares
-        inliers    = model->selectWithinDistance (line_coeff, sac_distance_threshold_);
+        model->selectWithinDistance (line_coeff, sac_distance_threshold_, inliers);
 
         // Project the inliers onto the model
         //model->projectPointsInPlace (sac->getInliers (), coeff);
@@ -315,7 +315,7 @@ class GroundRemoval
         if (!ground_inliers.empty ())
         {
           cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, cloud_.pts.at (ground_inliers[0]), viewpoint_cloud_);
-          
+
           // Compute the distance from the remaining points to the model plane, and add to the inliers list if they are below
           for (unsigned int i = 0; i < remaining_possible_ground_indices.size (); i++)
           {

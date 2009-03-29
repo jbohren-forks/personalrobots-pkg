@@ -40,14 +40,15 @@ namespace sample_consensus
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Select all the points which respect the given model coefficients as inliers.
     * \param model_coefficients the coefficients of a plane model that we need to compute distances to
+    * \param inliers the resultant model inliers
     * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
     * \note: To get the refined inliers of a model, use:
     * ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
-  std::vector<int>
-    SACModelOrientedPlane::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
+  void
+    SACModelOrientedPlane::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold, std::vector<int> &inliers)
   {
-    std::vector<int> inliers;
+    int nr_p = 0;
 
     // Obtain the plane normal
     robot_msgs::Point32 n;
@@ -59,8 +60,12 @@ namespace sample_consensus
 
     // Check whether the current plane model satisfies our angle threshold criterion with respect to the given axis
     if ( (angle_error > eps_angle_) && ( (M_PI - angle_error) > eps_angle_ ) )
-      return (inliers);
+    {
+      inliers.resize (0);
+      return;
+    }
 
+    inliers.resize (indices_.size ());
     // Iterate through the 3d points and calculate the distances from them to the plane
     for (unsigned int i = 0; i < indices_.size (); i++)
     {
@@ -70,21 +75,24 @@ namespace sample_consensus
                 model_coefficients.at (1) * cloud_->pts.at (indices_.at (i)).y +
                 model_coefficients.at (2) * cloud_->pts.at (indices_.at (i)).z +
                 model_coefficients.at (3)) < threshold)
+      {
         // Returns the indices of the points whose distances are smaller than the threshold
-        inliers.push_back (indices_[i]);
+        inliers[nr_p] = indices_[i];
+        nr_p++;
+      }
     }
-    return (inliers);
+    inliers.resize (nr_p);
+    return;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Compute all distances from the cloud data to a given plane model.
     * \param model_coefficients the coefficients of a plane model that we need to compute distances to
+    * \param distances the resultant estimated distances
     */
-  std::vector<double>
-    SACModelOrientedPlane::getDistancesToModel (const std::vector<double> &model_coefficients)
+  void
+    SACModelOrientedPlane::getDistancesToModel (const std::vector<double> &model_coefficients, std::vector<double> &distances)
   {
-    std::vector<double> distances (indices_.size ());
-
     // Obtain the plane normal
     robot_msgs::Point32 n;
     n.x = model_coefficients.at (0);
@@ -94,9 +102,14 @@ namespace sample_consensus
     double angle_error = cloud_geometry::angles::getAngle3D (axis_, n);
 
     // Check whether the current plane model satisfies our angle threshold criterion with respect to the given axis
+    // TODO: check this
     if ( (angle_error > eps_angle_) && ( (M_PI - angle_error) > eps_angle_ ) )
-      return (distances);
+    {
+      distances.resize (0);
+      return;
+    }
 
+    distances.resize (indices_.size ());
     // Iterate through the 3d points and calculate the distances from them to the plane
     for (unsigned int i = 0; i < indices_.size (); i++)
       // Calculate the distance from the point to the plane normal as the dot product
@@ -105,7 +118,7 @@ namespace sample_consensus
                            model_coefficients.at (1) * cloud_->pts.at (indices_[i]).y +
                            model_coefficients.at (2) * cloud_->pts.at (indices_[i]).z +
                            model_coefficients.at (3));
-    return (distances);
+    return;
   }
 
 }

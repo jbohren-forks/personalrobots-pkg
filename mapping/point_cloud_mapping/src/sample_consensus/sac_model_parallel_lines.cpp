@@ -155,10 +155,11 @@ namespace sample_consensus
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Get 3 random points as data samples and return them as point indices.
     * \param iterations The internal number of iterations used by the SAC methods
+    * \param samples the resultant model samples
     * \note Ensures that the 3 points are unique and not co-linear.
     */
-  std::vector<int>
-    SACModelParallelLines::getSamples (int &iterations)
+  void
+    SACModelParallelLines::getSamples (int &iterations, std::vector<int> &samples)
   {
     std::vector<int> random_idx (3);
     double trand = indices_.size () / (RAND_MAX + 1.0);
@@ -183,7 +184,7 @@ namespace sample_consensus
 
       if (iter > MAX_ITERATIONS_UNIQUE)
       {
-        std::cerr << "[SACModelParallelLines::getSamples] WARNING: Could not select 3 unique, non-colinear points in " << MAX_ITERATIONS_UNIQUE << " iterations!" << std::endl;
+        ROS_WARN ("[SACModelParallelLines::getSamples] WARNING: Could not select 3 unique, non-colinear points in %d iterations!", MAX_ITERATIONS_UNIQUE);
         break;
       }
 
@@ -221,25 +222,26 @@ namespace sample_consensus
 
     iterations += iter-1;
 
-    std::vector<int> random_idx_final (3);
-    random_idx_final[0] = random_idx[r0];
-    random_idx_final[1] = random_idx[r1];
-    random_idx_final[2] = random_idx[r2];
-    return (random_idx_final);
+    samples.resize (3);
+    samples[0] = random_idx[r0];
+    samples[1] = random_idx[r1];
+    samples[2] = random_idx[r2];
+    return;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Select all the points which respect the given model coefficients as inliers.
     * \param model_coefficients The coefficients of the parallel lines model.
     * \param threshold The maximum distance from an inlier to its closest line.
+    * \param inliers the resultant model inliers
     * \note: To get the refined inliers of a model, use:
     * refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
-  std::vector<int>
-    SACModelParallelLines::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
+  void
+    SACModelParallelLines::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold, std::vector<int> &inliers)
   {
-
-    std::vector<int> inliers;
+    int nr_p = 0;
+    inliers.resize (indices_.size ());
 
     // Get all of the point-to-closest-line distances.
     std::vector<int> closest_line (indices_.size ());
@@ -250,26 +252,29 @@ namespace sample_consensus
     for (unsigned int i = 0; i < closest_dist.size (); i++)
     {
       if (closest_dist[i] < threshold)
-        inliers.push_back (indices_[i]);
+      {
+        inliers[nr_p] = indices_[i];
+        nr_p++;
+      }
     }
-    return (inliers);
+    inliers.resize (nr_p);
+    return;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Compute all distances from the cloud data to a given parallel lines model.
     * \param model_coefficients The coefficients of a line model that we need to compute distances to. The order is (point on line 1, another point on line 1, point on line 2).
+    * \param distances the resultant estimated distances
     */
-  std::vector<double>
-    SACModelParallelLines::getDistancesToModel (const std::vector<double> &model_coefficients)
+  void
+    SACModelParallelLines::getDistancesToModel (const std::vector<double> &model_coefficients, std::vector<double> &distances)
   {
-    std::vector<double> distances (indices_.size ());
+    distances.resize (indices_.size ());
 
     std::vector<int> closest_line (indices_.size ());
-    std::vector<double> closest_dist (indices_.size ());
+    closestLine (indices_, model_coefficients, &closest_line, &distances);
 
-    closestLine (indices_, model_coefficients, &closest_line, &closest_dist);
-
-    return (closest_dist);
+    return;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

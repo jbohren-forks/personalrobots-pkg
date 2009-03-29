@@ -78,14 +78,14 @@ namespace sample_consensus
     while (iterations_ < k)
     {
       // Get X samples which satisfy the model criteria
-      selection = sac_model_->getSamples (iterations_);
+      sac_model_->getSamples (iterations_, selection);
 
       if (selection.size () == 0) break;
 
       // Search for inliers in the point cloud for the current plane model M
       sac_model_->computeModelCoefficients (selection);
 
-      inliers = sac_model_->selectWithinDistance (sac_model_->getModelCoefficients (), threshold_);
+      sac_model_->selectWithinDistance (sac_model_->getModelCoefficients (), threshold_, inliers);
       n_inliers_count = inliers.size ();
 
       // Better match ?

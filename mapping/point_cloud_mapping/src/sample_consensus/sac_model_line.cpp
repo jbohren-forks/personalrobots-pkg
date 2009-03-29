@@ -42,50 +42,54 @@ namespace sample_consensus
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Get 2 random points as data samples and return them as point indices.
     * \param iterations the internal number of iterations used by SAC methods
+    * \param samples the resultant model samples
     * \note assumes unique points!
     */
-  std::vector<int>
-    SACModelLine::getSamples (int &iterations)
+  void
+    SACModelLine::getSamples (int &iterations, std::vector<int> &samples)
   {
-    std::vector<int> random_idx (2);
+    samples.resize (2);
+    double trand = indices_.size () / (RAND_MAX + 1.0);
 
     // Get a random number between 1 and max_indices
-    int idx = (int)(indices_.size () * (rand () / (RAND_MAX + 1.0)));
+    int idx = (int)(rand () * trand);
     // Get the index
-    random_idx[0] = indices_.at (idx);
+    samples[0] = indices_.at (idx);
 
     // Get a second point which is different than the first
     int iter = 0;
     do
     {
-      idx = (int)(indices_.size () * (rand () / (RAND_MAX + 1.0)));
-      random_idx[1] = indices_.at (idx);
+      idx = (int)(rand () * trand);
+      samples[1] = indices_.at (idx);
       iter++;
 
       if (iter > MAX_ITERATIONS_UNIQUE)
       {
-        std::cerr << "[SACModelLine::getSamples] WARNING: Could not select 2 unique points in " << MAX_ITERATIONS_UNIQUE << " iterations!!!" << std::endl;
+        ROS_WARN ("[SACModelLine::getSamples] WARNING: Could not select 2 unique points in %d iterations!", MAX_ITERATIONS_UNIQUE);
         break;
       }
       iterations++;
-    } while (random_idx[1] == random_idx[0]);
+    } while (samples[1] == samples[0]);
     iterations--;
-    return (random_idx);
+    return;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Select all the points which respect the given model coefficients as inliers.
     * \param model_coefficients the coefficients of a line model that we need to compute distances to
     * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
+    * \param inliers the resultant model inliers
     * \note: To get the refined inliers of a model, use:
     * ANNpoint refined_coeff = refitModel (...); selectWithinDistance (refined_coeff, threshold);
     */
-  std::vector<int>
-    SACModelLine::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold)
+  void
+    SACModelLine::selectWithinDistance (const std::vector<double> &model_coefficients, double threshold, std::vector<int> &inliers)
   {
     double sqr_threshold = threshold * threshold;
 
-    std::vector<int> inliers;
+    int nr_p = 0;
+    inliers.resize (indices_.size ());
 
     // Obtain the line direction
     robot_msgs::Point32 p3, p4;
@@ -114,20 +118,25 @@ namespace sample_consensus
       double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
 
       if (sqr_distance < sqr_threshold)
+      {
         // Returns the indices of the points whose squared distances are smaller than the threshold
-        inliers.push_back (indices_[i]);
+        inliers[nr_p] = indices_[i];
+        nr_p++;
+      }
     }
-    return (inliers);
+    inliers.resize (nr_p);
+    return;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Compute all distances from the cloud data to a given line model.
     * \param model_coefficients the coefficients of a line model that we need to compute distances to
+    * \param distances the resultant estimated distances
     */
-  std::vector<double>
-    SACModelLine::getDistancesToModel (const std::vector<double> &model_coefficients)
+  void
+    SACModelLine::getDistancesToModel (const std::vector<double> &model_coefficients, std::vector<double> &distances)
   {
-    std::vector<double> distances (indices_.size ());
+    distances.resize (indices_.size ());
 
     // Obtain the line direction
     robot_msgs::Point32 p3, p4;
@@ -147,7 +156,7 @@ namespace sample_consensus
       robot_msgs::Point32 c = cloud_geometry::cross (p4, p3);
       distances[i] = sqrt (c.x * c.x + c.y * c.y + c.z * c.z) / (p3.x * p3.x + p3.y * p3.y + p3.z * p3.z);
     }
-    return (distances);
+    return;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

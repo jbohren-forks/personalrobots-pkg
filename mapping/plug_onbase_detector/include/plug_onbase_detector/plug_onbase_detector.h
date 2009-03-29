@@ -414,7 +414,7 @@ class PlugOnBaseDetector
         }
         sac->computeCoefficients ();          // Compute the model coefficients
         coeff   = sac->refineCoefficients (); // Refine them using least-squares
-        inliers = model->selectWithinDistance (coeff, dist_thresh);
+        model->selectWithinDistance (coeff, dist_thresh, inliers);
 
         // Flip plane normal according to the viewpoint information
         Point32 vp_m;
