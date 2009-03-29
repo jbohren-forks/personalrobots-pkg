@@ -41,7 +41,6 @@
 
 // ROS core
 #include <ros/node.h>
-//#include <ros/time.h>
 
 #include <robot_msgs/PointCloud.h>
 
