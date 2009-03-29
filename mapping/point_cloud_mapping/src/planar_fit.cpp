@@ -66,6 +66,8 @@ This node should be used for testing different planar segmentation strategies.
 #include <point_cloud_mapping/sample_consensus/rmsac.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 
+#include <angles/angles.h>
+
 using namespace std;
 using namespace robot_msgs;
 
@@ -104,12 +106,17 @@ class PlanarFit
     double sac_distance_threshold_;
     int sac_maximum_iterations_;
 
+    // Euclidean clustering
+    int use_clustering_;      // use clustering (1) or not (0)
+    double euclidean_cluster_angle_tolerance_, euclidean_cluster_distance_tolerance_;
+    int euclidean_cluster_min_pts_;
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     PlanarFit (ros::Node& anode) : node_ (anode),  tf_ (anode)
     {
       node_.param ("~search_radius_or_knn", radius_or_knn_, 1);   // none (0), radius (1) or k (2) nearest neighbor search
       node_.param ("~search_radius", radius_, 0.01);              // 1cm radius by default
-      node_.param ("~search_k_closest", k_, 25);                  // 25 k-neighbors by default
+      node_.param ("~search_k_closest", k_, 20);                  // 20 k-neighbors by default
 
       node_.param ("~downsample", downsample_, 1);                        // downsample cloud before normal estimation
       node_.param ("~downsample_leaf_width_x", leaf_width_.x, 0.02);      // 2cm radius by default
@@ -120,6 +127,12 @@ class PlanarFit
 
       node_.param ("~sac_distance_threshold", sac_distance_threshold_, 0.02);   // 2 cm threshold
       node_.param ("~sac_maximum_iterations", sac_maximum_iterations_, 500);    // maximum 500 SAC iterations
+
+      node_.param ("~use_clustering", use_clustering_, 0);
+      node_.param ("~euclidean_cluster_angle_tolerance", euclidean_cluster_angle_tolerance_, 15.0);
+      euclidean_cluster_angle_tolerance_ = angles::from_degrees (euclidean_cluster_angle_tolerance_);
+      node_.param ("~euclidean_cluster_min_pts", euclidean_cluster_min_pts_, 500);
+      node_.param ("~euclidean_cluster_distance_tolerance", euclidean_cluster_distance_tolerance_, 0.05);
 
       string cloud_topic ("tilt_laser_cloud");
 
@@ -264,14 +277,50 @@ class PlanarFit
       if (downsample_ != 0)
       {
         total_nr_points = cloud_down_.pts.size ();
-        fitSACPlane (cloud_down_, inliers, coeff, viewpoint_cloud, sac_distance_threshold_);
+
+        // Break into clusters
+        if (use_clustering_)
+        {
+          ros::Time ts1 = ros::Time::now ();
+          vector<vector<int> > clusters;
+
+          if (radius_or_knn_ != 0)                  // did we estimate normals ?
+            findClusters (cloud_down_, euclidean_cluster_distance_tolerance_, clusters, 0, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
+          else                                      // if not, set nx_idx to -1 and perform a pure Euclidean clustering
+            findClusters (cloud_down_, euclidean_cluster_distance_tolerance_, clusters, -1, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
+          ROS_INFO ("Clustering done. Number of clusters extracted: %d in %g seconds.", (int)clusters.size (), (ros::Time::now () - ts1).toSec ());
+
+          ts = ros::Time::now ();
+          fitSACPlane (&cloud_down_, clusters[clusters.size () - 1], inliers, coeff, viewpoint_cloud, sac_distance_threshold_);    // Fit the plane model
+        }
+        else
+          fitSACPlane (&cloud_down_, inliers, coeff, viewpoint_cloud, sac_distance_threshold_);    // Fit the plane model
+
         cloud_geometry::getPointCloud (cloud_down_, inliers, cloud_plane_);
         cloud_geometry::getPointCloudOutside (cloud_down_, inliers, cloud_outliers_);
       }
       else
       {
         total_nr_points = cloud_.pts.size ();
-        fitSACPlane (cloud_, inliers, coeff, viewpoint_cloud, sac_distance_threshold_);
+
+        // Break into clusters
+        if (use_clustering_)
+        {
+          ros::Time ts1 = ros::Time::now ();
+          vector<vector<int> > clusters;
+
+          if (radius_or_knn_ != 0)                  // did we estimate normals ?
+            findClusters (cloud_, euclidean_cluster_distance_tolerance_, clusters, 0, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
+          else                                      // if not, set nx_idx to -1 and perform a pure Euclidean clustering
+            findClusters (cloud_, euclidean_cluster_distance_tolerance_, clusters, -1, 1, 2, euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
+          ROS_INFO ("Clustering done. Number of clusters extracted: %d in %g seconds.", (int)clusters.size (), (ros::Time::now () - ts1).toSec ());
+
+          ts = ros::Time::now ();
+          fitSACPlane (&cloud_, clusters[clusters.size () - 1], inliers, coeff, viewpoint_cloud, sac_distance_threshold_);    // Fit the plane model
+        }
+        else
+          fitSACPlane (&cloud_, inliers, coeff, viewpoint_cloud, sac_distance_threshold_);       // Fit the plane model
+
         cloud_geometry::getPointCloud (cloud_, inliers, cloud_plane_);
         cloud_geometry::getPointCloudOutside (cloud_, inliers, cloud_outliers_);
       }
@@ -292,19 +341,21 @@ class PlanarFit
       * \param min_pts the minimum number of points allowed as inliers for a plane model
       */
     bool
-      fitSACPlane (PointCloud &points, vector<int> &inliers, vector<double> &coeff,
+      fitSACPlane (PointCloud *points, vector<int> &inliers, vector<double> &coeff,
                    const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh)
     {
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-//      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
-      sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, dist_thresh);
-//      sample_consensus::SAC *sac             = new sample_consensus::RRANSAC (model, dist_thresh);
-//      reinterpret_cast<sample_consensus::RRANSAC*>(sac)->setFractionNrPretest (50);
-//      sample_consensus::SAC *sac             = new sample_consensus::RMSAC (model, dist_thresh);
+
+      //      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+      //      sample_consensus::SAC *sac             = new sample_consensus::RRANSAC (model, dist_thresh);
+      //      reinterpret_cast<sample_consensus::RRANSAC*>(sac)->setFractionNrPretest (50);
+      //      sample_consensus::SAC *sac             = new sample_consensus::RMSAC (model, dist_thresh);
       //      reinterpret_cast<sample_consensus::RMSAC*>(sac)->setFractionNrPretest (10);
+
+      sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, dist_thresh);
       sac->setMaxIterations (sac_maximum_iterations_);
-      model->setDataSet (&points);
+      model->setDataSet (points);
 
       // Search for the best plane
       if (sac->computeModel (0))
@@ -313,7 +364,7 @@ class PlanarFit
         coeff   = sac->refineCoefficients (); // Refine them using least-squares
         model->selectWithinDistance (coeff, dist_thresh, inliers);
 
-        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint_cloud);
+        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);
 
         //ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (),
         //           coeff[0], coeff[1], coeff[2], coeff[3]);
@@ -330,6 +381,152 @@ class PlanarFit
       delete sac;
       delete model;
       return (true);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Find a plane model in a point cloud with SAmple Consensus methods
+      * \param points the point cloud message
+      * \param indices a subset of point indices to use
+      * \param inliers the resultant planar inliers
+      * \param coeff the resultant plane coefficients
+      * \param viewpoint_cloud a point to the pose where the data was acquired from (for normal flipping)
+      * \param dist_thresh the maximum allowed distance threshold of an inlier to the model
+      * \param min_pts the minimum number of points allowed as inliers for a plane model
+      */
+    bool
+      fitSACPlane (PointCloud *points, vector<int> &indices, vector<int> &inliers, vector<double> &coeff,
+                   const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh)
+    {
+      // Create and initialize the SAC model
+      sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
+
+      //      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+      //      sample_consensus::SAC *sac             = new sample_consensus::RRANSAC (model, dist_thresh);
+      //      reinterpret_cast<sample_consensus::RRANSAC*>(sac)->setFractionNrPretest (50);
+      //      sample_consensus::SAC *sac             = new sample_consensus::RMSAC (model, dist_thresh);
+      //      reinterpret_cast<sample_consensus::RMSAC*>(sac)->setFractionNrPretest (10);
+
+      sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, dist_thresh);
+      sac->setMaxIterations (sac_maximum_iterations_);
+      model->setDataSet (points, indices);
+
+      // Search for the best plane
+      if (sac->computeModel (0))
+      {
+        sac->computeCoefficients ();          // Compute the model coefficients
+        coeff   = sac->refineCoefficients (); // Refine them using least-squares
+        model->selectWithinDistance (coeff, dist_thresh, inliers);
+
+        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);
+
+        //ROS_INFO ("Found a planar model supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (),
+        //           coeff[0], coeff[1], coeff[2], coeff[3]);
+
+        // Project the inliers onto the model
+        model->projectPointsInPlace (inliers, coeff);
+      }
+      else
+      {
+        ROS_ERROR ("Could not compute a plane model.");
+        return (false);
+      }
+
+      delete sac;
+      delete model;
+      return (true);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Decompose a region of space into clusters based on the euclidean distance between points, and the normal
+      * angular deviation
+      * \NOTE: assumes normalized point normals !
+      * \param points pointer to the point cloud message
+      * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
+      * \param clusters the resultant clusters
+      * \param nx_idx the index of the channel containing the X component of the normal
+      * \param ny_idx the index of the channel containing the Y component of the normal
+      * \param nz_idx the index of the channel containing the Z component of the normal
+      * \param eps_angle the maximum allowed difference between normals in degrees for cluster/region growing
+      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
+      */
+    void
+      findClusters (PointCloud &points, double tolerance, vector<vector<int> > &clusters,
+                    int nx_idx, int ny_idx, int nz_idx,
+                    double eps_angle, unsigned int min_pts_per_cluster = 1)
+    {
+      // Create a tree for these points
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points);
+
+      int nr_points = points.pts.size ();
+      // Create a bool vector of processed point indices, and initialize it to false
+      vector<bool> processed;
+      processed.resize (nr_points, false);
+
+      vector<int> nn_indices;
+      vector<float> nn_distances;
+      // Process all points in the indices vector
+      for (int i = 0; i < nr_points; i++)
+      {
+        if (processed[i])
+          continue;
+
+        vector<int> seed_queue;
+        int sq_idx = 0;
+        seed_queue.push_back (i);
+
+        processed[i] = true;
+
+        while (sq_idx < (int)seed_queue.size ())
+        {
+          // Search for sq_idx
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
+
+          for (unsigned int j = 1; j < nn_indices.size (); j++)       // nn_indices[0] should be sq_idx
+          {
+            if (processed.at (nn_indices[j]))                         // Has this point been processed before ?
+              continue;
+
+            processed[nn_indices[j]] = true;
+            if (nx_idx != -1)                                         // Are point normals present ?
+            {
+              // [-1;1]
+              double dot_p = points.chan[nx_idx].vals[i] * points.chan[nx_idx].vals[nn_indices[j]] +
+                             points.chan[ny_idx].vals[i] * points.chan[ny_idx].vals[nn_indices[j]] +
+                             points.chan[nz_idx].vals[i] * points.chan[nz_idx].vals[nn_indices[j]];
+              if ( fabs (acos (dot_p)) < eps_angle )
+              {
+                processed[nn_indices[j]] = true;
+                seed_queue.push_back (nn_indices[j]);
+              }
+            }
+            // If normal information is not present, perform a simple Euclidean clustering
+            else
+            {
+              processed[nn_indices[j]] = true;
+              seed_queue.push_back (nn_indices[j]);
+            }
+          }
+
+          sq_idx++;
+        }
+
+        // If this queue is satisfactory, add to the clusters
+        if (seed_queue.size () >= min_pts_per_cluster)
+        {
+          vector<int> r (seed_queue.size ());
+          for (unsigned int j = 0; j < seed_queue.size (); j++)
+            r[j] = seed_queue[j];
+
+          // Remove duplicates
+          sort (r.begin (), r.end ());
+          r.erase (unique (r.begin (), r.end ()), r.end ());
+
+          clusters.push_back (r);
+        }
+      }
+
+      // Destroy the tree
+      delete tree;
     }
 };
 
