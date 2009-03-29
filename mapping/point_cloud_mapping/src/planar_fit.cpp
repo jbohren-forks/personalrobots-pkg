@@ -194,11 +194,28 @@ class PlanarFit
     void
       updateParametersFromServer ()
     {
-      if (node_.hasParam ("~downsample")) node_.getParam ("~downsample", downsample_);
+      if (node_.hasParam ("~search_radius_or_knn")) node_.getParam ("~search_radius_or_knn", radius_or_knn_);
+      if (node_.hasParam ("~search_radius")) node_.getParam ("~search_radius", radius_);
+      if (node_.hasParam ("~search_k_closest")) node_.getParam ("~search_k_closest", k_);
 
+      if (node_.hasParam ("~downsample")) node_.getParam ("~downsample", downsample_);
       if (node_.hasParam ("~downsample_leaf_width_x")) node_.getParam ("~downsample_leaf_width_x", leaf_width_.x);
       if (node_.hasParam ("~downsample_leaf_width_y")) node_.getParam ("~downsample_leaf_width_y", leaf_width_.y);
       if (node_.hasParam ("~downsample_leaf_width_z")) node_.getParam ("~downsample_leaf_width_z", leaf_width_.z);
+
+      if (node_.hasParam ("~normals_high_fidelity")) node_.getParam ("~normals_high_fidelity", normals_fidelity_);
+
+      if (node_.hasParam ("~sac_distance_threshold")) node_.getParam ("~sac_distance_threshold", sac_distance_threshold_);
+      if (node_.hasParam ("~sac_maximum_iterations")) node_.getParam ("~sac_maximum_iterations", sac_maximum_iterations_);
+
+      if (node_.hasParam ("~use_clustering")) node_.getParam ("~use_clustering", use_clustering_);
+      if (node_.hasParam ("~euclidean_cluster_min_pts")) node_.getParam ("~euclidean_cluster_min_pts", euclidean_cluster_min_pts_);
+      if (node_.hasParam ("~euclidean_cluster_distance_tolerance")) node_.getParam ("~euclidean_cluster_distance_tolerance", euclidean_cluster_distance_tolerance_);
+      if (node_.hasParam ("~euclidean_cluster_angle_tolerance"))
+      {
+        node_.getParam ("~euclidean_cluster_angle_tolerance", euclidean_cluster_angle_tolerance_);
+        euclidean_cluster_angle_tolerance_ = angles::from_degrees (euclidean_cluster_angle_tolerance_);
+      }
     }
 
 
@@ -349,7 +366,7 @@ class PlanarFit
 
       //      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
       //      sample_consensus::SAC *sac             = new sample_consensus::RRANSAC (model, dist_thresh);
-      //      reinterpret_cast<sample_consensus::RRANSAC*>(sac)->setFractionNrPretest (50);
+      //      reinterpret_cast<sample_consensus::RRANSAC*>(sac)->setFractionNrPretest (10);
       //      sample_consensus::SAC *sac             = new sample_consensus::RMSAC (model, dist_thresh);
       //      reinterpret_cast<sample_consensus::RMSAC*>(sac)->setFractionNrPretest (10);
 
@@ -402,7 +419,7 @@ class PlanarFit
 
       //      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
       //      sample_consensus::SAC *sac             = new sample_consensus::RRANSAC (model, dist_thresh);
-      //      reinterpret_cast<sample_consensus::RRANSAC*>(sac)->setFractionNrPretest (50);
+      //      reinterpret_cast<sample_consensus::RRANSAC*>(sac)->setFractionNrPretest (10);
       //      sample_consensus::SAC *sac             = new sample_consensus::RMSAC (model, dist_thresh);
       //      reinterpret_cast<sample_consensus::RMSAC*>(sac)->setFractionNrPretest (10);
 
