@@ -25,6 +25,8 @@
    - normal_estimation_node: a node which estimates local surface properties at each point such as surface normals,
                              curvature changes, moment invariants, etc.
 
+   - planar_fit_node: a node that segments the best plane for a given dataset using a variety of methods
+
   </description>
 
   <author>Radu Bogdan Rusu and contributors</author>
