@@ -438,7 +438,7 @@ public:
 
 	  // Create and initialize the SAC model
 	  sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-	//  sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+	 //  sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
 	  sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
 	  sac->setMaxIterations (500);
 	  model->setDataSet (&points, indices);
@@ -456,8 +456,7 @@ public:
 	    }
 	    sac->computeCoefficients ();          // Compute the model coefficients
 	    coeff   = sac->refineCoefficients (); // Refine them using least-squares
-	    inliers = model->selectWithinDistance (coeff, dist_thresh);
-	    //inliers = sac->getInliers ();
+	    model->selectWithinDistance (coeff, dist_thresh, inliers);
 
 	    // Flip plane normal according to the viewpoint information
 	    Point32 vp_m;
