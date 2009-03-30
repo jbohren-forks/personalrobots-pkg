@@ -56,20 +56,20 @@ TEST (CloudKdTreeANN, CreateDestroy)
   delete tree;
 }
 
-/*TEST (CloudKdTreeFLANN, CreateDestroy)
+TEST (CloudKdTreeFLANN, CreateDestroy)
 {
   robot_msgs::PointCloud points;
 
-  // Get a point cloud dataset
+  //Get a point cloud dataset
   cloud_kdtree_tests::getBunnyModel (points);
 
-  // Create a KdTree object
+  //Create a KdTree object
   KdTree* tree = new KdTreeFLANN (points);
   EXPECT_TRUE (tree != NULL);
 
-  // Destroy the tree
+  //Destroy the tree
   delete tree;
-}*/
+}
 
 TEST (CloudKdTreeANN, Search)
 {
@@ -166,17 +166,31 @@ TEST (CloudKdTreeANN, Search)
   delete tree;
 }
 
-/*TEST (CloudKdTreeFLANN, Search)
+
+//void save_points(robot_msgs::PointCloud& points)
+//{
+//	FILE* f = fopen("points.dat","w");
+//	for (int i=0;i<points.pts.size();++i) {
+//		fprintf(f,"%f %f %f\n", points.pts[i].x,points.pts[i].y,points.pts[i].z);
+//	}
+//	fclose(f);
+//}
+
+
+
+TEST (CloudKdTreeFLANN, Search)
 {
   bool state;
   robot_msgs::PointCloud points;
   std::vector<int> indices;
   std::vector<float> distances;
 
-  // Get a point cloud dataset
+  //Get a point cloud dataset
   cloud_kdtree_tests::getBunnyModel (points);
 
-  // Create a KdTree object
+//  save_points(points);
+
+  //Create a KdTree object
   KdTree* tree = new KdTreeFLANN (points);
 
   std::cerr << points.pts[0].x <<  " " << points.pts[0].y << " " << points.pts[0].z << std::endl;
@@ -204,64 +218,64 @@ TEST (CloudKdTreeANN, Search)
   EXPECT_NEAR (distances[8], 0.000198955, 1e-7);
   EXPECT_NEAR (distances[9], 0.000214294, 1e-7);
 
-  tree->nearestKSearch (points, 0, 10, indices, distances);
+   tree->nearestKSearch (points, 0, 10, indices, distances);
 
-  EXPECT_EQ (indices[0], 0);
-  EXPECT_EQ (indices[1], 12);
-  EXPECT_EQ (indices[2], 198);
-  EXPECT_EQ (indices[3], 1);
-  EXPECT_EQ (indices[4], 127);
-  EXPECT_EQ (indices[5], 18);
-  EXPECT_EQ (indices[6], 132);
-  EXPECT_EQ (indices[7], 10);
-  EXPECT_EQ (indices[8], 11);
-  EXPECT_EQ (indices[9], 197);
-  EXPECT_NEAR (distances[0], 0, 1e-7);
-  EXPECT_NEAR (distances[1], 3.75822e-05, 1e-7);
-  EXPECT_NEAR (distances[2], 4.04651e-05, 1e-7);
-  EXPECT_NEAR (distances[3], 5.2208e-05, 1e-7);
-  EXPECT_NEAR (distances[4], 6.26006e-05, 1e-7);
-  EXPECT_NEAR (distances[5], 9.67441e-05, 1e-7);
-  EXPECT_NEAR (distances[6], 0.000103859, 1e-7);
-  EXPECT_NEAR (distances[7], 0.000188363, 1e-7);
-  EXPECT_NEAR (distances[8], 0.000198955, 1e-7);
-  EXPECT_NEAR (distances[9], 0.000214294, 1e-7);
+   EXPECT_EQ (indices[0], 0);
+   EXPECT_EQ (indices[1], 12);
+   EXPECT_EQ (indices[2], 198);
+   EXPECT_EQ (indices[3], 1);
+   EXPECT_EQ (indices[4], 127);
+   EXPECT_EQ (indices[5], 18);
+   EXPECT_EQ (indices[6], 132);
+   EXPECT_EQ (indices[7], 10);
+   EXPECT_EQ (indices[8], 11);
+   EXPECT_EQ (indices[9], 197);
+   EXPECT_NEAR (distances[0], 0, 1e-7);
+   EXPECT_NEAR (distances[1], 3.75822e-05, 1e-7);
+   EXPECT_NEAR (distances[2], 4.04651e-05, 1e-7);
+   EXPECT_NEAR (distances[3], 5.2208e-05, 1e-7);
+   EXPECT_NEAR (distances[4], 6.26006e-05, 1e-7);
+   EXPECT_NEAR (distances[5], 9.67441e-05, 1e-7);
+   EXPECT_NEAR (distances[6], 0.000103859, 1e-7);
+   EXPECT_NEAR (distances[7], 0.000188363, 1e-7);
+   EXPECT_NEAR (distances[8], 0.000198955, 1e-7);
+   EXPECT_NEAR (distances[9], 0.000214294, 1e-7);
+//
+//   state = tree->radiusSearch (points.pts[0], 0.01, indices, distances);
+//   EXPECT_EQ (state, true);
+//
+//   EXPECT_EQ (indices[0], 0);
+//   EXPECT_EQ (indices[1], 12);
+//   EXPECT_EQ (indices[2], 198);
+//   EXPECT_EQ (indices[3], 1);
+//   EXPECT_EQ (indices[4], 127);
+//   EXPECT_EQ (indices[5], 18);
+//   EXPECT_NEAR (distances[0], 0, 1e-7);
+//   EXPECT_NEAR (distances[1], 3.75822e-05, 1e-7);
+//   EXPECT_NEAR (distances[2], 4.04651e-05, 1e-7);
+//   EXPECT_NEAR (distances[3], 5.2208e-05, 1e-7);
+//   EXPECT_NEAR (distances[4], 6.26006e-05, 1e-7);
+//   EXPECT_NEAR (distances[5], 9.67441e-05, 1e-7);
+//
+//   state = tree->radiusSearch (points, 0, 0.01, indices, distances);
+//   EXPECT_EQ (state, true);
+//
+//   EXPECT_EQ (indices[0], 0);
+//   EXPECT_EQ (indices[1], 12);
+//   EXPECT_EQ (indices[2], 198);
+//   EXPECT_EQ (indices[3], 1);
+//   EXPECT_EQ (indices[4], 127);
+//   EXPECT_EQ (indices[5], 18);
+//   EXPECT_NEAR (distances[0], 0, 1e-7);
+//   EXPECT_NEAR (distances[1], 3.75822e-05, 1e-7);
+//   EXPECT_NEAR (distances[2], 4.04651e-05, 1e-7);
+//   EXPECT_NEAR (distances[3], 5.2208e-05, 1e-7);
+//   EXPECT_NEAR (distances[4], 6.26006e-05, 1e-7);
+//   EXPECT_NEAR (distances[5], 9.67441e-05, 1e-7);
 
-  state = tree->radiusSearch (points.pts[0], 0.01, indices, distances);
-  EXPECT_EQ (state, true);
-
-  EXPECT_EQ (indices[0], 0);
-  EXPECT_EQ (indices[1], 12);
-  EXPECT_EQ (indices[2], 198);
-  EXPECT_EQ (indices[3], 1);
-  EXPECT_EQ (indices[4], 127);
-  EXPECT_EQ (indices[5], 18);
-  EXPECT_NEAR (distances[0], 0, 1e-7);
-  EXPECT_NEAR (distances[1], 3.75822e-05, 1e-7);
-  EXPECT_NEAR (distances[2], 4.04651e-05, 1e-7);
-  EXPECT_NEAR (distances[3], 5.2208e-05, 1e-7);
-  EXPECT_NEAR (distances[4], 6.26006e-05, 1e-7);
-  EXPECT_NEAR (distances[5], 9.67441e-05, 1e-7);
-
-  state = tree->radiusSearch (points, 0, 0.01, indices, distances);
-  EXPECT_EQ (state, true);
-
-  EXPECT_EQ (indices[0], 0);
-  EXPECT_EQ (indices[1], 12);
-  EXPECT_EQ (indices[2], 198);
-  EXPECT_EQ (indices[3], 1);
-  EXPECT_EQ (indices[4], 127);
-  EXPECT_EQ (indices[5], 18);
-  EXPECT_NEAR (distances[0], 0, 1e-7);
-  EXPECT_NEAR (distances[1], 3.75822e-05, 1e-7);
-  EXPECT_NEAR (distances[2], 4.04651e-05, 1e-7);
-  EXPECT_NEAR (distances[3], 5.2208e-05, 1e-7);
-  EXPECT_NEAR (distances[4], 6.26006e-05, 1e-7);
-  EXPECT_NEAR (distances[5], 9.67441e-05, 1e-7);
-
-  // Destroy the tree
+  //Destroy the tree
   delete tree;
-}*/
+}
 
 /* ---[ */
 int

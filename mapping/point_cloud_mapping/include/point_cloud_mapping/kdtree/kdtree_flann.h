@@ -64,16 +64,16 @@ namespace cloud_kdtree
 
         // Create the kd_tree representation
         float speedup;
-        FLANNParameters flann_param;
-        flann_param.algorithm = KDTREE;
-        flann_param.log_level = LOG_NONE;
-        flann_param.log_destination = NULL;
+        flann_param_.algorithm = KDTREE;
+        flann_param_.log_level = LOG_NONE;
+        flann_param_.log_destination = NULL;
 
-        flann_param.trees = 1;
-        flann_param.target_precision = -1;
+        flann_param_.trees = 1;
+        flann_param_.target_precision = -1;
+        flann_param_.checks = 1024;
 
         m_lock_.lock ();
-        index_id_    = flann_build_index (points_, nr_points_, dim_, &speedup, &flann_param);
+        index_id_    = flann_build_index (points_, nr_points_, dim_, &speedup, &flann_param_);
         m_lock_.unlock ();
       }
 
@@ -100,13 +100,13 @@ namespace cloud_kdtree
 
         // Create the kd_tree representation
         float speedup;
-        FLANNParameters flann_param;
-        flann_param.algorithm = KDTREE;
-        flann_param.log_level = LOG_NONE;
-        flann_param.log_destination = NULL;
+        flann_param_.algorithm = KDTREE;
+        flann_param_.log_level = LOG_NONE;
+        flann_param_.log_destination = NULL;
 
-        flann_param.trees = 1;
-        flann_param.target_precision = -1;
+        flann_param_.trees = 1;
+        flann_param_.target_precision = -1;
+        flann_param_.checks = 1024;
 
         m_lock_.lock ();
         index_id_    = flann_build_index (points_, nr_points_, dim_, &speedup, &flann_param_);
