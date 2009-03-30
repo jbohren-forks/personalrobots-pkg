@@ -148,35 +148,35 @@ namespace cloud_geometry
     points_down.header = points.header;
     points_down.pts.resize (points.pts.size ());
 
-    robot_msgs::Point32 minP, maxP, minB, maxB, divB;
-    cloud_geometry::statistics::getMinMax (points, indices, minP, maxP, d_idx, cut_distance);
+    robot_msgs::Point32 min_p, max_p, min_b, max_b, div_b;
+    cloud_geometry::statistics::getMinMax (points, indices, min_p, max_p, d_idx, cut_distance);
 
     // Compute the minimum and maximum bounding box values
-    minB.x = (int)(floor (minP.x / leaf_size.x));
-    maxB.x = (int)(floor (maxP.x / leaf_size.x));
+    min_b.x = (int)(floor (min_p.x / leaf_size.x));
+    max_b.x = (int)(floor (max_p.x / leaf_size.x));
 
-    minB.y = (int)(floor (minP.y / leaf_size.y));
-    maxB.y = (int)(floor (maxP.y / leaf_size.y));
+    min_b.y = (int)(floor (min_p.y / leaf_size.y));
+    max_b.y = (int)(floor (max_p.y / leaf_size.y));
 
-    minB.z = (int)(floor (minP.z / leaf_size.z));
-    maxB.z = (int)(floor (maxP.z / leaf_size.z));
+    min_b.z = (int)(floor (min_p.z / leaf_size.z));
+    max_b.z = (int)(floor (max_p.z / leaf_size.z));
 
     // Compute the number of divisions needed along all axis
-    divB.x = (int)(maxB.x - minB.x + 1);
-    divB.y = (int)(maxB.y - minB.y + 1);
-    divB.z = (int)(maxB.z - minB.z + 1);
+    div_b.x = (int)(max_b.x - min_b.x + 1);
+    div_b.y = (int)(max_b.y - min_b.y + 1);
+    div_b.z = (int)(max_b.z - min_b.z + 1);
 
     // Allocate the space needed
     try
     {
-      if (leaves.capacity () < divB.x * divB.y * divB.z)
-        leaves.reserve (divB.x * divB.y * divB.z);             // fallback to x*y*z from 2*x*y*z due to memory problems
-      leaves.resize (divB.x * divB.y * divB.z);
+      if (leaves.capacity () < div_b.x * div_b.y * div_b.z)
+        leaves.reserve (div_b.x * div_b.y * div_b.z);             // fallback to x*y*z from 2*x*y*z due to memory problems
+      leaves.resize (div_b.x * div_b.y * div_b.z);
     }
     catch (std::bad_alloc)
     {
-      ROS_ERROR ("Attempting to allocate a vector of %f (%g x %g x %g) leaf elements (%f bytes total)", divB.x * divB.y * divB.z,
-                 divB.x, divB.y, divB.z, divB.x * divB.y * divB.z * sizeof (Leaf));
+      ROS_ERROR ("Attempting to allocate a vector of %f (%g x %g x %g) leaf elements (%f bytes total)", div_b.x * div_b.y * div_b.z,
+                 div_b.x, div_b.y, div_b.z, div_b.x * div_b.y * div_b.z * sizeof (Leaf));
     }
 
     for (unsigned int cl = 0; cl < leaves.size (); cl++)
@@ -198,7 +198,7 @@ namespace cloud_geometry
       int j = (int)(floor (points.pts[indices.at (cp)].y / leaf_size.y));
       int k = (int)(floor (points.pts[indices.at (cp)].z / leaf_size.z));
 
-      int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
+      int idx = ( (k - min_b.z) * div_b.y * div_b.x ) + ( (j - min_b.y) * div_b.x ) + (i - min_b.x);
       leaves[idx].centroid_x += points.pts[indices.at (cp)].x;
       leaves[idx].centroid_y += points.pts[indices.at (cp)].y;
       leaves[idx].centroid_z += points.pts[indices.at (cp)].z;
@@ -240,35 +240,35 @@ namespace cloud_geometry
     points_down.header = points.header;
     points_down.pts.resize (points.pts.size ());
 
-    robot_msgs::Point32 minP, maxP, minB, maxB, divB;
-    cloud_geometry::statistics::getMinMax (points, minP, maxP, d_idx, cut_distance);
+    robot_msgs::Point32 min_p, max_p, min_b, max_b, div_b;
+    cloud_geometry::statistics::getMinMax (points, min_p, max_p, d_idx, cut_distance);
 
     // Compute the minimum and maximum bounding box values
-    minB.x = (int)(floor (minP.x / leaf_size.x));
-    maxB.x = (int)(floor (maxP.x / leaf_size.x));
+    min_b.x = (int)(floor (min_p.x / leaf_size.x));
+    max_b.x = (int)(floor (max_p.x / leaf_size.x));
 
-    minB.y = (int)(floor (minP.y / leaf_size.y));
-    maxB.y = (int)(floor (maxP.y / leaf_size.y));
+    min_b.y = (int)(floor (min_p.y / leaf_size.y));
+    max_b.y = (int)(floor (max_p.y / leaf_size.y));
 
-    minB.z = (int)(floor (minP.z / leaf_size.z));
-    maxB.z = (int)(floor (maxP.z / leaf_size.z));
+    min_b.z = (int)(floor (min_p.z / leaf_size.z));
+    max_b.z = (int)(floor (max_p.z / leaf_size.z));
 
     // Compute the number of divisions needed along all axis
-    divB.x = (int)(maxB.x - minB.x + 1);
-    divB.y = (int)(maxB.y - minB.y + 1);
-    divB.z = (int)(maxB.z - minB.z + 1);
+    div_b.x = (int)(max_b.x - min_b.x + 1);
+    div_b.y = (int)(max_b.y - min_b.y + 1);
+    div_b.z = (int)(max_b.z - min_b.z + 1);
 
     // Allocate the space needed
     try
     {
-      if (leaves.capacity () < divB.x * divB.y * divB.z)
-        leaves.reserve (divB.x * divB.y * divB.z);             // fallback to x*y*z from 2*x*y*z due to memory problems
-      leaves.resize (divB.x * divB.y * divB.z);
+      if (leaves.capacity () < div_b.x * div_b.y * div_b.z)
+        leaves.reserve (div_b.x * div_b.y * div_b.z);             // fallback to x*y*z from 2*x*y*z due to memory problems
+      leaves.resize (div_b.x * div_b.y * div_b.z);
     }
     catch (std::bad_alloc)
     {
-      ROS_ERROR ("Attempting to allocate a vector of %f (%g x %g x %g) leaf elements (%f bytes total)", divB.x * divB.y * divB.z,
-                 divB.x, divB.y, divB.z, divB.x * divB.y * divB.z * sizeof (Leaf));
+      ROS_ERROR ("Attempting to allocate a vector of %f (%g x %g x %g) leaf elements (%f bytes total)", div_b.x * div_b.y * div_b.z,
+                 div_b.x, div_b.y, div_b.z, div_b.x * div_b.y * div_b.z * sizeof (Leaf));
     }
 
     for (unsigned int cl = 0; cl < leaves.size (); cl++)
@@ -290,7 +290,7 @@ namespace cloud_geometry
       int j = (int)(floor (points.pts[cp].y / leaf_size.y));
       int k = (int)(floor (points.pts[cp].z / leaf_size.z));
 
-      int idx = ( (k - minB.z) * divB.y * divB.x ) + ( (j - minB.y) * divB.x ) + (i - minB.x);
+      int idx = ( (k - min_b.z) * div_b.y * div_b.x ) + ( (j - min_b.y) * div_b.x ) + (i - min_b.x);
       leaves[idx].centroid_x += points.pts[cp].x;
       leaves[idx].centroid_y += points.pts[cp].y;
       leaves[idx].centroid_z += points.pts[cp].z;
