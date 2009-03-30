@@ -1,0 +1,6 @@
+std_msgs/String type
+robot_msgs/JointTrajPoint start
+robot_msgs/JointTrajPoint joint_goal
+robot_msgs/Pose[] cartesian_goals
+---
+robot_msgs/JointTraj traj

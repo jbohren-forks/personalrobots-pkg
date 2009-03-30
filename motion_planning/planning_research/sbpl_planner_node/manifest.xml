@@ -1,0 +1,22 @@
+<package>
+  <description brief="ROS ified SBPL planning">
+
+  </description>
+  <author>Sachin Chitta/schitta@willowgarage.com</author>
+  <license>BSD</license>
+    <depend package="sbpl" />
+    <depend package="roscpp"/>
+    <depend package="rosconsole"/>
+    <depend package="std_msgs"/>
+    <depend package="robot_msgs"/>
+    <depend package="costmap_2d"/>
+    <depend package="tf"/>
+    <depend package="mpglue"/>
+  <url></url>
+
+  <export>
+      <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib "/>
+  </export>
+
+</package>
+
