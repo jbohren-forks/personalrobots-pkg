@@ -98,7 +98,6 @@ on recharging  {
   if(plug_staged == false || socket_localized == false)
     ready_to_servo = flase;
 
-  // If we want to trip the 
 
 
 }
@@ -107,12 +106,11 @@ on recharging  {
 /**
  * Now a breakdown if the actions selected above
  */
-done {
 
-}
+
+done {}
 
 hold_plug_in_socket {
-
   // Keep it held until the end. Concurrent with the end. Is this just a command to hold position that many
   // people could use. Is it the default behavior to hold position as long as the controller is up? Do we have
   // to actually comand anything actively or should we just make sure no-one else does? Interesting to thing of getting
@@ -170,6 +168,7 @@ move_to_grasp{
 
 /**
  * @brief 
+ */ 
 detect_plug {
 
 }
