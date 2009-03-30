@@ -89,6 +89,8 @@ def readmask(hexstr):
             mask.append(False)
     return mask
 
+        
+
 class PowerBattery(object):
     def __init__(self):
         self.present = False
@@ -156,11 +158,11 @@ class PowerController(object):
     
 class RobotPower(object):
     def __init__(self):
-        print "made robot power"
         self.controllers = [PowerController() for i in xrange(0, 4)]
         self.pub = rospy.Publisher("/diagnostics", DiagnosticMessage)
         self.battery_state_pub = rospy.Publisher("battery_state", BatteryState)
         self.full_charge_energy = 0
+        self.last_battery_warn = 0
 
     def print_remaining(self):
         print """___________________________________
@@ -214,6 +216,12 @@ time remaining per battery pack in minutes"""
             controller_status_string = "All good"
             if timeout < time.time() - c.last_time:
                 controller_status_string = " Timeout %f > %f"%(c.last_time, timeout)
+                controller_status_value = 2
+            if c.time_remaining < 20:
+                controller_status_string = " Low Battery %f Minutes Remaining"%(c.time_remaining)
+                controller_status_value = 1
+            if c.time_remaining < 5:
+                controller_status_string = " Extremely Low Battery %f Minutes Remaining"%(c.time_remaining)
                 controller_status_value = 2
             stat.append(DiagnosticStatus(controller_status_value, "IBPS %d"%ci, controller_status_string, sval, []))
             ## @todo make the status string represent errors etc
@@ -271,13 +279,17 @@ time remaining per battery pack in minutes"""
         self.pub.publish(DiagnosticMessage(None, stat))
 
         
-    ## Send out the state of the controller on a diagnostic message
+    ## Send out the state of the battery charge
     def send_battery_state(self):
         stat = []
         full_energy = 0        
         energy = 0
         power = 0
+	controller_count = 0
+	average_time_remaining  = 0
         for c in self.controllers:
+	    controller_count = controller_count + 1
+	    average_time_remaining = (average_time_remaining * (controller_count - 1) + c.time_remaining ) / controller_count 
             for b in c.batteries:
                 if b.present < 0.5:
                     continue
@@ -287,8 +299,19 @@ time remaining per battery pack in minutes"""
 
         self.full_charge_energy = full_energy
 
+        # Send errors if runtime remaining is low
+	
+        if average_time_remaining  < 1.0: 
+            rospy.logfatal("Batteries have %.2f minutes estimated remaining"%average_time_remaining)
+	elif average_time_remaining  < 5.0: 
+            rospy.logerr("Batteries have %.2f minutes estimated remaining"%average_time_remaining)
+        elif average_time_remaining < 30.0 and self.last_battery_warn + 6 < rospy.rostime.get_time():
+            rospy.logwarn("Batteries have %.2f minutes estimated remaining"%average_time_remaining)
+            self.last_battery_warn = rospy.rostime.get_time()
+
         #print "Sent Energy: %.0f (J)  of %.0f (J) Power: %.2f (W)\n"%(energy, full_energy, power)
         self.battery_state_pub.publish(BatteryState(None, energy, full_energy, power))
+
 
 ################################################################################
 # BATTERY MESSAGE PARSING        
