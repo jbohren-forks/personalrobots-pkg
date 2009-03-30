@@ -56,6 +56,7 @@
 #include "robot_msgs/PointStamped.h"
 #include "robot_msgs/Door.h"
 #include "robot_msgs/VisualizationMarker.h"
+#include "door_handle_detector/DoorsDetector.h"
 
 #include <string>
 
@@ -116,6 +117,7 @@ public:
 
 	robot_msgs::PointCloud cloud;
 	robot_msgs::Door door;
+	robot_msgs::Point32 door_handle;
 
 	IplImage* left;
 	IplImage* right;
@@ -125,6 +127,7 @@ public:
 	CvScalar door_plane;
 	bool have_door_plane;
 	bool pause;
+	bool display;
 
 	string destination_frame;
 
@@ -145,12 +148,15 @@ public:
 	{
 		tf_ = new tf::TransformListener(*this);
 
-		cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
-		//cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
-//		cvNamedWindow("contours", CV_WINDOW_AUTOSIZE);
-		cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
-		cvNamedWindow("disparity_original", CV_WINDOW_AUTOSIZE);
+		param("~display", display, false);
 
+		if (display) {
+			cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
+			//cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
+			//		cvNamedWindow("contours", CV_WINDOW_AUTOSIZE);
+			cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
+			cvNamedWindow("disparity_original", CV_WINDOW_AUTOSIZE);
+		}
 
 		std::list<std::string> left_list;
 		left_list.push_back(std::string("stereo/left/image_rect_color"));
@@ -191,10 +197,15 @@ public:
         }
         storage = cvCreateMemStorage(0);
 
+        // invalid location until we get a detection
+        door_handle.x = -1;
+        door_handle.y = -1;
+        door_handle.z = -1;
 
-        param<string>("destination_frame", destination_frame, "base_link");
+        param<string>("destination_frame", destination_frame, "odom_combined");
         advertise<robot_msgs::PointStamped>("handle_detector/handle_location",1);
         advertise<robot_msgs::VisualizationMarker>("visualizationMarker",1);
+        advertiseService("door_handle_vision_detector", &HandleDetector::detectDoorSrv, this);
 	}
 
 	~HandleDetector()
@@ -328,7 +339,7 @@ private:
 		cvResetImageROI(disp);
 		cvSetImageCOI(disp,0);
 
-		double mean;
+		double mean = 0;
 		disparitySTD(disp, r, mean);
 
 		if (cnt<nz_fraction*r.width*r.height) {
@@ -389,6 +400,9 @@ private:
 
 		// publish handle location
 		tf_->transformPoint(destination_frame, pin, pout);
+		door_handle.x = pout.point.x;
+		door_handle.y = pout.point.y;
+		door_handle.z = pout.point.z;
 		publish("handle_detector/handle_location", pout);
 
 
@@ -413,8 +427,6 @@ private:
         marker.b = 0;
 
         publish( "visualizationMarker", marker );
-
-
 
 		return true;
 	}
@@ -484,22 +496,27 @@ private:
 			cvCvtScale(dbridge.toIpl(), disp, 4.0/dispinfo.dpp);
 		}
 
-		cvShowImage("left", left);
-		//cvShowImage("right", right);
-//		cvShowImage("disparity", disp_clone);
+		if (display) {
+			cvShowImage("left", left);
+			//cvShowImage("right", right);
+			//		cvShowImage("disparity", disp_clone);
 
-		cvShowImage("disparity_original", disp);
+			cvShowImage("disparity_original", disp);
 
+		}
 
 		applyPositionPrior(disp);
-		cvShowImage("disparity", disp);
+		if (display) {
+			cvShowImage("disparity", disp);
+		}
 //		findEdges(left);
 		findHandleCascade();
 
 
-//		cvShowImage("disparity", disp);
-		cvShowImage("left", left);
-
+		if (display) {
+			//		cvShowImage("disparity", disp);
+			cvShowImage("left", left);
+		}
 		if (disp_clone!=NULL)
 			cvReleaseImage(&disp_clone);
 
@@ -550,10 +567,34 @@ private:
 		}
 
 
-		cvShowImage("contours", gray);
+		if (display) {
+			cvShowImage("contours", gray);
+		}
 
 		cvReleaseImage(&gray);
 	}
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/** \brief Service call to detect doors*/
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	bool  detectDoorSrv (door_handle_detector::DoorsDetector::Request &req,
+						door_handle_detector::DoorsDetector::Response &resp)
+	{
+		resp.doors.resize(1);
+
+		resp.doors[0] = req.door;
+		if (door_handle.z>=0) { // valid door handle
+			resp.doors[0].handle = door_handle;
+			resp.doors[0].weight = 1;
+		}
+		else {
+			resp.doors[0].weight = -1;
+			return false;
+		}
+
+	  return true;
+	}
+
 
 
 	void image_cb_timeout(ros::Time t)
@@ -650,6 +691,7 @@ private:
 	{
 		robot_msgs::PointCloud base_cloud;
 
+		tf_->setExtrapolationLimit(ros::Duration(2.0));
 		try {
 			tf_->transformPointCloud("base_link", cloud, base_cloud);
 		}

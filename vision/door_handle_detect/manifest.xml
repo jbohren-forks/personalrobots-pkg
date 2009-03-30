@@ -13,4 +13,5 @@
   <depend package="topic_synchronizer"/>
   <depend package="stereo_utils"/>
   <depend package="tf"/>
+  <depend package="door_handle_detector"/>
 </package>
