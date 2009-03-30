@@ -56,7 +56,7 @@ public:
 
     // Copy into result
     fillImage(res.image, "image", img.Height(), img.Width(), 3,
-              "bgr", "uint8", img.ImageData());
+              "bgr", "uint8", img.ImageData(), 3, img.WidthStep());
     
     // Copy cam info we care about
     memcpy(&res.cam_info.D[0], D_->data.db, 5*sizeof(double));
