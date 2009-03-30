@@ -213,7 +213,7 @@ time remaining per battery pack in minutes"""
                     (time.time() - c.last_time, "Time since update (s)")]
             sval = [DiagnosticValue(v, s) for v,s in sval]
             controller_status_value = 0
-            controller_status_string = "All good"
+            controller_status_string = "OK"
             if timeout < time.time() - c.last_time:
                 controller_status_string = " Timeout %f > %f"%(c.last_time, timeout)
                 controller_status_value = 2
