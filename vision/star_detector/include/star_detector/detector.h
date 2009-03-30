@@ -150,7 +150,7 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
       case 5: FilterResponsesGen5(); break;
       case 6: FilterResponsesGen6(); break;
       case 7: FilterResponsesGen7(); break;
-      case 8: FilterResponsesGen7(); break;
+      case 8: FilterResponsesGen8(); break;
       case 9: FilterResponsesGen9(); break;
       case 10: FilterResponsesGen10(); break;
       case 11: FilterResponsesGen11(); break;
