@@ -1,0 +1,11 @@
+<package>
+  <description>A library and ROS node to provide access to the forearm camera from MindTribe.</description>
+  <author>Patrick Mihelich, Eric MacIntosh, David Palchak</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="image_msgs" />
+  <depend package="diagnostic_updater" />
+  <depend package="opencv_latest" />
+</package>

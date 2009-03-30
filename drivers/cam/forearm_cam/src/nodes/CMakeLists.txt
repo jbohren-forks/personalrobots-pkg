@@ -1,0 +1,2 @@
+rospack_add_executable(forearm_node forearm_node.cpp)
+target_link_libraries(forearm_node forearmcam)
