@@ -236,6 +236,9 @@ namespace cloud_geometry
     void computeCentroid (const robot_msgs::PointCloud &points, robot_msgs::PointCloud &centroid);
     void computeCentroid (const robot_msgs::PointCloud &points, std::vector<int> &indices, robot_msgs::PointCloud &centroid);
 
+    void computePatchEigen (const robot_msgs::PointCloud &points, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values);
+    void computePatchEigen (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Matrix3d &eigen_vectors, Eigen::Vector3d &eigen_values);
+
     void computePointNormal (const robot_msgs::PointCloud &points, Eigen::Vector4d &plane_parameters, double &curvature);
     void computePointNormal (const robot_msgs::PointCloud &points, const std::vector<int> &indices, Eigen::Vector4d &plane_parameters, double &curvature);
 
