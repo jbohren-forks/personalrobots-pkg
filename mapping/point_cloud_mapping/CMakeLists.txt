@@ -99,6 +99,11 @@ target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_co
   target_link_libraries (bin/test_sample_consensus_sphere_fit sample_consensus cloud_geometry cloud_kdtree)
   target_link_libraries (bin/test_sample_consensus_cylinder_fit sample_consensus cloud_geometry cloud_kdtree)
 
+# ---[ Fast/Point Feature Histograms 3D descriptors
+  rospack_add_library (pfh_descriptor
+                       src/pfh_descriptor/pfh.cpp
+                       src/pfh_descriptor/fpfh.cpp
+                      )
 
 # check for OpenMP
 include(CheckIncludeFile)
