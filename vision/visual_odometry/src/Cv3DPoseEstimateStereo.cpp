@@ -648,7 +648,7 @@ PoseEstimateStereo::getTrackablePairsByCrossCorr(
 		}
 		numTrackablePairs++;
 	}
-	assert(numTrackablePairs == (int)(trackablePairs)?trackablePairs->size():-1);
+	// assert(numTrackablePairs == (int)(trackablePairs)?trackablePairs->size():-1);
 	return status;
 }
 
