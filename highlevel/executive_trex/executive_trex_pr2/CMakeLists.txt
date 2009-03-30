@@ -9,7 +9,8 @@ genmsg()
 rospack_add_boost_directories()
 
 #Will replace jam...
-include(NDDL.cmake)
+#include(NDDL.cmake)
+setup_nddl()
 
 # Door Tests
 rospack_add_nddl("test/doors/pr2.rcs.sim.nddl")

@@ -3,8 +3,9 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(test_executive_trex_pr2)
 
 
-find_ros_package(executive_trex_pr2)
-include(${executive_trex_pr2_PACKAGE_PATH}/NDDL.cmake)
+#find_ros_package(executive_trex_pr2)
+#include(${executive_trex_pr2_PACKAGE_PATH}/NDDL.cmake)
+setup_nddl()
 
 
 
