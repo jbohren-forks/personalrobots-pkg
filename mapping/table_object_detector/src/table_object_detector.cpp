@@ -259,7 +259,7 @@ class TableObjectDetector
 
       vector<vector<int> > clusters;
       // Split the Z-parallel points into clusters
-      findClusters (cloud_down_, indices_z, clusters_growing_tolerance_, clusters, 0, 1, 2, clusters_min_pts_);
+      findClusters (cloud_down_, indices_z, clusters_growing_tolerance_, clusters, 0, 1, 2, region_angle_threshold_, clusters_min_pts_);
 
       sort (clusters.begin (), clusters.end (), compareRegions);
 
@@ -363,7 +363,7 @@ class TableObjectDetector
       {
         // Break the object inliers into clusters in an Euclidean sense
         vector<vector<int> > objects;
-        findClusters (cloud_in_, inliers, clusters_growing_tolerance_, objects, -1, 1, 2, clusters_min_pts_);
+        findClusters (cloud_in_, inliers, clusters_growing_tolerance_, objects, -1, -1, -1, region_angle_threshold_, clusters_min_pts_);
 
         int total_nr_pts = 0;
         for (unsigned int i = 0; i < objects.size (); i++)
@@ -478,29 +478,36 @@ class TableObjectDetector
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Decompose a region of space into clusters based on the euclidean distance between points
+    /** \brief Decompose a region of space into clusters based on the euclidean distance between points, and the normal
+      * angular deviation
+      * \NOTE: assumes normalized point normals !
       * \param points pointer to the point cloud message
       * \param indices pointer to a list of point indices
       * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
       * \param clusters the resultant clusters
+      * \param nx_idx the index of the channel containing the X component of the normal
+      * \param ny_idx the index of the channel containing the Y component of the normal
+      * \param nz_idx the index of the channel containing the Z component of the normal
+      * \param eps_angle the maximum allowed difference between normals in degrees for cluster/region growing
       * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
       */
     void
       findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
                     int nx_idx, int ny_idx, int nz_idx,
-                    unsigned int min_pts_per_cluster = 1)
+                    double eps_angle, unsigned int min_pts_per_cluster)
     {
       // Create a tree for these points
       cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
 
+      int nr_points = indices.size ();
       // Create a bool vector of processed point indices, and initialize it to false
       vector<bool> processed;
-      processed.resize (indices.size (), false);
+      processed.resize (nr_points, false);
 
       vector<int> nn_indices;
       vector<float> nn_distances;
       // Process all points in the indices vector
-      for (unsigned int i = 0; i < indices.size (); i++)
+      for (int i = 0; i < nr_points; i++)
       {
         if (processed[i])
           continue;
@@ -509,32 +516,36 @@ class TableObjectDetector
         int sq_idx = 0;
         seed_queue.push_back (i);
 
-        double norm_a = sqrt (points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (i)] +
-                              points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (i)] +
-                              points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (i)]);
-
         processed[i] = true;
 
         while (sq_idx < (int)seed_queue.size ())
         {
+          // Search for sq_idx
           tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
 
-          for (unsigned int j = 1; j < nn_indices.size (); j++)
+          for (unsigned int j = 1; j < nn_indices.size (); j++)       // nn_indices[0] should be sq_idx
           {
-            if (!processed.at (nn_indices[j]))
+            if (processed.at (nn_indices[j]))                         // Has this point been processed before ?
+              continue;
+
+            processed[nn_indices[j]] = true;
+            if (nx_idx != -1)                                         // Are point normals present ?
             {
-              double norm_b = sqrt (points.chan[nx_idx].vals[indices.at (nn_indices[j])] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
-                                    points.chan[ny_idx].vals[indices.at (nn_indices[j])] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
-                                    points.chan[nz_idx].vals[indices.at (nn_indices[j])] * points.chan[nz_idx].vals[indices.at (nn_indices[j])]);
               // [-1;1]
               double dot_p = points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
                              points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
                              points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (nn_indices[j])];
-              if ( acos (dot_p / (norm_a * norm_b)) < region_angle_threshold_)
+              if ( fabs (acos (dot_p)) < eps_angle )
               {
                 processed[nn_indices[j]] = true;
                 seed_queue.push_back (nn_indices[j]);
               }
+            }
+            // If normal information is not present, perform a simple Euclidean clustering
+            else
+            {
+              processed[nn_indices[j]] = true;
+              seed_queue.push_back (nn_indices[j]);
             }
           }
 
@@ -544,11 +555,13 @@ class TableObjectDetector
         // If this queue is satisfactory, add to the clusters
         if (seed_queue.size () >= min_pts_per_cluster)
         {
-          vector<int> r;
-          //r.indices = seed_queue;
-          r.resize (seed_queue.size ());
-          for (unsigned int j = 0; j < r.size (); j++)
+          vector<int> r (seed_queue.size ());
+          for (unsigned int j = 0; j < seed_queue.size (); j++)
             r[j] = indices.at (seed_queue[j]);
+
+          sort (r.begin (), r.end ());
+          r.erase (unique (r.begin (), r.end ()), r.end ());
+
           clusters.push_back (r);
         }
       }
