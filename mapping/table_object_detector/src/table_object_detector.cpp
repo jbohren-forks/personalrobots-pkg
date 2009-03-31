@@ -165,7 +165,7 @@ class TableObjectDetector
         node_.advertise<PointCloud> ("cloud_annotated", 1);
 
         cloud_annotated_.chan.resize (1);
-        cloud_annotated_.chan[0].name = "rgb";
+        cloud_annotated_.chan[0].name = "intensities";
       }
     }
 
@@ -183,18 +183,13 @@ class TableObjectDetector
     bool
       detectTable (FindTable::Request &req, FindTable::Response &resp)
     {
-      timeval t1, t2;
-      double time_spent;
-
       updateParametersFromServer ();
 
       // Subscribe to a point cloud topic
       need_cloud_data_ = true;
-      tf::MessageNotifier<robot_msgs::PointCloud>
-              _pointcloudnotifier(&tf_, ros::Node::instance(),
-                                  boost::bind(&TableObjectDetector::cloud_cb,
-                                              this, _1),
-                                  input_cloud_topic_, global_frame_, 50);
+      tf::MessageNotifier<robot_msgs::PointCloud> _pointcloudnotifier (&tf_, ros::Node::instance (),
+                                                                       boost::bind (&TableObjectDetector::cloud_cb, this, _1),
+                                                                       input_cloud_topic_, global_frame_, 50);
       //node_.subscribe (input_cloud_topic_, cloud_in_, &TableObjectDetector::cloud_cb, this, 1);
 
       // Wait until the scan is ready, sleep for 10ms
@@ -206,7 +201,7 @@ class TableObjectDetector
       // Unsubscribe from the point cloud topic
       node_.unsubscribe (input_cloud_topic_.c_str ()) ;
 
-      gettimeofday (&t1, NULL);
+      ros::Time ts = ros::Time::now ();
       // We have a pointcloud, estimate the true point bounds
       vector<int> indices_in_bounds (cloud_in_.pts.size ());
       int nr_p = 0;
@@ -235,12 +230,11 @@ class TableObjectDetector
 
       ROS_DEBUG ("Number of points after downsampling with a leaf of size [%f,%f,%f]: %d.", leaf_width_.x, leaf_width_.y, leaf_width_.z, (int)cloud_down_.pts.size ());
 
-      // Reserve space for 4 channels: nx, ny, nz, curvature
-      cloud_down_.chan.resize (4);     // Allocate 7 more channels
+      // Reserve space for 3 channels: nx, ny, nz
+      cloud_down_.chan.resize (3);
       cloud_down_.chan[0].name = "nx";
       cloud_down_.chan[1].name = "ny";
       cloud_down_.chan[2].name = "nz";
-      cloud_down_.chan[3].name = "curvature";
       for (unsigned int d = 0; d < cloud_down_.chan.size (); d++)
         cloud_down_.chan[d].vals.resize (cloud_down_.pts.size ());
 
@@ -250,24 +244,6 @@ class TableObjectDetector
       // ---[ Select points whose normals are perpendicular to the Z-axis
       vector<int> indices_z;
       cloud_geometry::getPointIndicesAxisParallelNormals (cloud_down_, 0, 1, 2, eps_angle_, z_axis_, indices_z);
-
-/*      indices_z.resize (cloud_down_.pts.size ());
-      for (unsigned int i = 0; i < cloud_down_.pts.size (); i++)
-      {
-        indices_z[i] = i;
-      }
-
-        cloud_annotated_.header = cloud_down_.header;
-        cloud_annotated_.pts.resize (indices_z.size ());
-        cloud_annotated_.chan[0].vals.resize (indices_z.size ());
-        for (unsigned int i = 0; i < indices_z.size (); i++)
-        {
-          cloud_annotated_.pts[i] = cloud_down_.pts.at (indices_z[i]);
-          cloud_annotated_.chan[0].vals[i] = cloud_down_.chan[0].vals.at (indices_z[i]);
-        }
-        publish ("cloud_annotated", cloud_annotated_);
-
-        return (true);*/
       ROS_DEBUG ("Number of points with normals parallel to Z: %d.", (int)indices_z.size ());
 
       vector<vector<int> > clusters;
@@ -298,7 +274,7 @@ class TableObjectDetector
         ROS_WARN ("No table found");
         return (false);
       }
-      ROS_DEBUG ("Number of clusters found: %d, largest cluster: %d.", (int)clusters.size (), (int)clusters[c_good].size ());
+      ROS_INFO ("Number of clusters found: %d, largest cluster: %d.", (int)clusters.size (), (int)clusters[c_good].size ());
 
       // Fill in the header
       resp.table.header.frame_id = global_frame_;
@@ -318,8 +294,8 @@ class TableObjectDetector
       PointStamped minPstamped_global, maxPstamped_global;
       try
       {
-        tf_.transformPoint(global_frame_, minPstamped_local, minPstamped_global);
-        tf_.transformPoint(global_frame_, maxPstamped_local, maxPstamped_global);
+        tf_.transformPoint (global_frame_, minPstamped_local, minPstamped_global);
+        tf_.transformPoint (global_frame_, maxPstamped_local, maxPstamped_global);
         resp.table.table_min.x = minPstamped_global.point.x;
         resp.table.table_min.y = minPstamped_global.point.y;
         resp.table.table_max.x = maxPstamped_global.point.x;
@@ -332,13 +308,7 @@ class TableObjectDetector
         return (false);
       }
 
-      // Get the goal position for the robot base
-//      resp.base_target_pose.x  = ;
-//      resp.base_target_pose.y  = ;
-//      resp.base_target_pose.th = ;
-
       // Compute the convex hull
-      //pmap_.header = cloud_down_.header;
       pmap_.header.stamp = cloud_down_.header.stamp;
       pmap_.header.frame_id = global_frame_;
       pmap_.polygons.resize (1);
@@ -359,7 +329,7 @@ class TableObjectDetector
           {
             local.point.x = pmap_.polygons[i].points[j].x;
             local.point.y = pmap_.polygons[i].points[j].y;
-            tf_.transformPoint(global_frame_, local, global);
+            tf_.transformPoint (global_frame_, local, global);
             pmap_.polygons[i].points[j].x = global.point.x;
             pmap_.polygons[i].points[j].y = global.point.y;
           }
@@ -391,10 +361,8 @@ class TableObjectDetector
         node_.publish ("semantic_polygonal_map", pmap_);
       }
 
-      gettimeofday (&t2, NULL);
-      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
       ROS_INFO ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
-                resp.table.table_min.x, resp.table.table_min.y, resp.table.table_max.x, resp.table.table_max.y, (int)resp.table.objects.size (), time_spent);
+                resp.table.table_min.x, resp.table.table_min.y, resp.table.table_max.x, resp.table.table_max.y, (int)resp.table.objects.size (), (ros::Time::now () - ts).toSec ());
       return (true);
     }
 
@@ -630,7 +598,7 @@ class TableObjectDetector
 
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, sac_distance_threshold_);
+      sample_consensus::SAC *sac             = new sample_consensus::MSAC (model, sac_distance_threshold_);
       sac->setMaxIterations (500);
       sac->setProbability (0.99);
       model->setDataSet (points, *indices);
@@ -646,8 +614,9 @@ class TableObjectDetector
           coeff.resize (0);
           return (0);
         }
-        inliers = sac->getInliers ();
-        coeff   = sac->computeCoefficients ();
+        sac->computeCoefficients ();          // Compute the model coefficients
+        coeff   = sac->refineCoefficients (); // Refine them using least-squares
+        model->selectWithinDistance (coeff, sac_distance_threshold_, inliers);
 
         //fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
         //         coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
@@ -701,7 +670,6 @@ class TableObjectDetector
         cloud.chan[0].vals[i] = plane_parameters (0);
         cloud.chan[1].vals[i] = plane_parameters (1);
         cloud.chan[2].vals[i] = plane_parameters (2);
-        cloud.chan[3].vals[i] = fabs (plane_parameters (3));
       }
       // Delete the kd-tree
       delete kdtree;
