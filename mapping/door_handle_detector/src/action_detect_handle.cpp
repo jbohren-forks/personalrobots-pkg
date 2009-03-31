@@ -34,6 +34,7 @@
 
 #include <door_handle_detector/action_detect_handle.h>
 #include <door_handle_detector/DoorsDetectorCloud.h>
+#include <door_handle_detector/DoorsDetector.h>
 #include <point_cloud_assembler/BuildCloudAngle.h>
 
 
@@ -49,8 +50,11 @@ static const string fixed_frame = "odom_combined";
 
 DetectHandleAction::DetectHandleAction(Node& node): 
   robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_door_action"),
+  node_(node),
   tf_(node)
-{};
+{
+  node_.advertise<robot_msgs::PointStamped>("head_pan_tilt_controller/frame_track_point",10);
+};
 
 
 DetectHandleAction::~DetectHandleAction(){};
@@ -63,17 +67,42 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
   request_preempt_ = false;
   notifyActivated();
 
-  // check where robot is relative to handle
+  robot_msgs::Door result_laser, result_camera;
+  if (!laserDetection(door, result_laser)){
+    if (request_preempt_)
+      notifyPreempted(door);
+    else
+      notifyAborted(door);
+  }
+
+  if (!cameraDetection(door, result_camera)){
+    if (request_preempt_)
+      notifyPreempted(door);
+    else
+      notifyAborted(door);
+  }
+
+  notifySucceeded(result_laser);
+  //notifySucceeded(result_camera);
+}
+
+
+
+bool DetectHandleAction::laserDetection(const robot_msgs::Door& door_in,
+                                        robot_msgs::Door& door_out)
+{
+  // check where robot is relative to the door
+  if (request_preempt_) return false;
   if (!tf_.canTransform("base_footprint", "laser_tilt_link", ros::Time(), ros::Duration().fromSec(5.0)))
     ROS_ERROR("DetectHandleAction: error getting transform");
   tf::Stamped<tf::Transform> tilt_stage;
   tf_.lookupTransform("base_footprint", "laser_tilt_link", ros::Time(), tilt_stage);
   ROS_INFO("DetectHandleAction: handle activate");
   double laser_height = tilt_stage.getOrigin()[2];
-  tf::Stamped<tf::Vector3> handlepoint(tf::Vector3((door.door_p1.x+door.door_p2.x)/2.0,
-						   (door.door_p1.y+door.door_p2.y)/2.0,
-						   (door.door_p1.z+door.door_p2.z)/2.0),
-				       ros::Time(), door.header.frame_id);
+  tf::Stamped<tf::Vector3> handlepoint(tf::Vector3((door_in.door_p1.x+door_in.door_p2.x)/2.0,
+						   (door_in.door_p1.y+door_in.door_p2.y)/2.0,
+						   (door_in.door_p1.z+door_in.door_p2.z)/2.0),
+				       ros::Time(), door_in.header.frame_id);
   if (!tf_.canTransform("base_footprint", handlepoint.frame_id_, ros::Time(), ros::Duration().fromSec(5.0)))
     ROS_ERROR("DetectHandleAction: error getting transform");
   tf_.transformPoint("base_footprint", handlepoint, handlepoint);
@@ -83,6 +112,7 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
   ROS_INFO("DetectHandleAction: tilt laser is at height %f, and door at distance %f", laser_height, dist);
   
   // gets a point cloud from the point_cloud_srv
+  if (request_preempt_) return false;
   ROS_INFO("DetectHandleAction: get a point cloud from the door");
   point_cloud_assembler::BuildCloudAngle::Request req_pointcloud;
   point_cloud_assembler::BuildCloudAngle::Response res_pointcloud;
@@ -91,23 +121,54 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
   req_pointcloud.duration = 4.0;
   if (!ros::service::call("point_cloud_srv/single_sweep_cloud", req_pointcloud, res_pointcloud)){
     ROS_ERROR("DetectHandleAction: failed to get point cloud for door detection");
-    notifyAborted(door);
-    return;
+    return false;
   }
 
   // detect handle
-  ROS_INFO("DetectHandleAction: detect the hangle");
+  if (request_preempt_) return false;
+  ROS_INFO("DetectHandleAction: detect the handle");
   door_handle_detector::DoorsDetectorCloud::Request  req_handledetect;
   door_handle_detector::DoorsDetectorCloud::Response res_handledetect;
-  req_handledetect.door = door;
+  req_handledetect.door = door_in;
   req_handledetect.cloud = res_pointcloud.cloud;
-  if (!ros::service::call("handle_detector_cloud", req_handledetect, res_pointcloud)){
+  if (!ros::service::call("handle_detector_cloud", req_handledetect, res_handledetect)){
     ROS_ERROR("DetectHandleAction: failed to detect a handle");
-    notifyAborted(door);
-    return;
+    return false;
   }
 
-  notifySucceeded(res_handledetect.doors[0]);
+  door_out = res_handledetect.doors[0];
+  return true;
+}
+
+
+
+
+bool DetectHandleAction::cameraDetection(const robot_msgs::Door& door_in,
+                                         robot_msgs::Door& door_out)
+{
+  // make the head point towards the door
+  if (request_preempt_) return false;
+  ROS_INFO("DetectHandleAction: point head towards door");
+  robot_msgs::PointStamped door_pnt;
+  door_pnt.header.frame_id = door_in.header.frame_id;
+  door_pnt.point.x = (door_in.door_p1.x+door_in.door_p2.x)/2.0;
+  door_pnt.point.y = (door_in.door_p1.y+door_in.door_p2.y)/2.0;
+  door_pnt.point.z = 0.9;
+  node_.publish("head_pan_tilt_controller/frame_track_point", door_pnt);
+
+  // detect handle
+  if (request_preempt_) return false;
+  ROS_INFO("DetectHandleAction: detect the handle");
+  door_handle_detector::DoorsDetector::Request  req_handledetect;
+  door_handle_detector::DoorsDetector::Response res_handledetect;
+  req_handledetect.door = door_in;
+  if (!ros::service::call("????????????", req_handledetect, res_handledetect)){
+    ROS_ERROR("DetectHandleAction: failed to detect a handle");
+    return false;
+  }
+
+  door_out = res_handledetect.doors[0];
+  return true;
 }
 
 

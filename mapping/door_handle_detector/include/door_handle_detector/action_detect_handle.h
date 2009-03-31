@@ -57,6 +57,10 @@ public:
 
 
 private:
+  bool laserDetection(const robot_msgs::Door& door_in, robot_msgs::Door& door_out);
+  bool cameraDetection(const robot_msgs::Door& door, robot_msgs::Door& door_out);
+
+  ros::Node& node_;
   bool request_preempt_;
   tf::TransformListener tf_;
 
