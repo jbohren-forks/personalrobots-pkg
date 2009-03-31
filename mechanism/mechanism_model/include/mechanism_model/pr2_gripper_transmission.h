@@ -47,13 +47,14 @@
 #include "tinyxml/tinyxml.h"
 #include "mechanism_model/transmission.h"
 #include "mechanism_model/robot.h"
+#include "control_toolbox/pid.h"
 
 namespace mechanism {
 
 class PR2GripperTransmission : public Transmission
 {
 public:
-  PR2GripperTransmission() : A_(0), B_(1), C_(0) {}
+  PR2GripperTransmission() {}
   virtual ~PR2GripperTransmission() {}
 
   bool initXml(TiXmlElement *config, Robot *robot);
@@ -72,10 +73,10 @@ public:
 
   // store name for passive joints.
   std::vector<std::string> passive_joints_;
+  std::vector<control_toolbox::Pid*> pids_;  // For keeping the joint angles aligned in Gazebo
+  double current_time_, last_time_;
 
 private:
-  double A_, B_, C_ ; // gripper angle = reduction*acos(A*motor+B)
-
   /// \brief compute gap position, velocity and applied effort from actuator states
   void computeGapStates(std::vector<Actuator*>& as, std::vector<JointState*>& js,
                         double MR,double MR_dot,double MT,

@@ -75,18 +75,6 @@ bool PR2GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     }
     gap_mechanical_reduction_ = atof(joint_reduction);
 
-    // get the nonlinear transmission parameters
-    const char *pA = j->Attribute("A");
-    if( pA != NULL )
-        A_ = atof(pA);
-
-    const char *pB = j->Attribute("B");
-    if( pB != NULL )
-        B_ = atof(pB);
-
-    const char *pC = j->Attribute("C");
-    if( pC != NULL )
-        C_ = atof(pC);
   }
 
   for (TiXmlElement *j = config->FirstChildElement("passive_joint"); j; j = j->NextSiblingElement("passive_joint"))
@@ -97,10 +85,36 @@ bool PR2GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
       ROS_WARN("PR2GripperTransmission could not find joint named \"%s\"", joint_name);
       return false;
     }
-    joint_names_.push_back(joint_name);
-    passive_joints_.push_back(joint_name);
+    else
+    {
+      // add joint name to list
+      joint_names_.push_back(joint_name);
+      passive_joints_.push_back(joint_name);
+
+      // add a pid for mimic
+      control_toolbox::Pid* pid = new control_toolbox::Pid();
+
+      // initialize pid
+      TiXmlElement *pel = j->FirstChildElement("gazebo_mimic_pid");
+      if (pel)
+      {
+        pid->initXml(pel);
+        std::cout << "found gazebo_mimic_pid" << std::endl;
+      }
+      else
+      {
+        pid->initPid(1.0,.0,.0,.0,.0);  // hardcoded defaults
+      }
+
+      // add to global list, one per passive joint
+      pids_.push_back(pid);
+    }
 
   }
+
+  // time for updating pid loops
+  current_time_ = robot->hw_->current_time_;
+  last_time_    = robot->hw_->current_time_;
 
   return true;
 }
@@ -350,6 +364,9 @@ void PR2GripperTransmission::propagateEffort(
   ROS_ASSERT(js.size() == passive_joints_.size() + 1);
 
   // obtain the physical location of passive joints in sim, and average them, need this to compute dMR/dtheta
+  // in hardware, the position of passive joints are set by propagatePosition, so they should be identical and
+  // the inverse transform should be consistent.
+  // FIXME:  check consistency
   double mean_joint_angle  = 0.0;
   double count             = 0;
 
@@ -362,10 +379,10 @@ void PR2GripperTransmission::propagateEffort(
       // assign passive joints
       mean_joint_angle    += angles::shortest_angular_distance(mean_joint_angle,js[i]->position_) + mean_joint_angle;
       count++;
-      // std::cout << "passive joint propagateEffort js[" << i << "]:" << js[i]->joint_->name_
-      //           << " mean_joint_angle:" << mean_joint_angle / count
-      //           << " count:" << count
-      //           << std::endl;
+      std::cout << "passive joint propagateEffort js[" << i << "]:" << js[i]->joint_->name_
+                << " mean_joint_angle:" << mean_joint_angle / count
+                << " count:" << count
+                << std::endl;
     }
     else
     {
@@ -414,6 +431,7 @@ void PR2GripperTransmission::propagateEffortBackwards(
   ROS_ASSERT(as.size() == 1);
   ROS_ASSERT(js.size() == passive_joints_.size() + 1);
 
+  current_time_ = 0; //FIXME: get time!
   //
   // below transforms from encoder value to gap size, based on 090224_link_data.xls provided by Functions Engineering
   //
@@ -430,6 +448,51 @@ void PR2GripperTransmission::propagateEffortBackwards(
 
   // compute gap position, velocity, applied_effort from actuator states
   computeGapStates(as,js,MR,MR_dot,MT,theta,dtheta_dMR, dt_dtheta, dt_dMR,gap_size,gap_velocity,gap_effort);
+
+  //   // mimic joints to avg_MR.
+  //   // obtain the physical location of passive joints in sim, and average them.
+  //   double mean_joint_angle  = 0.0;
+  //   double mean_joint_rate   = 0.0;
+  //   double mean_joint_torque = 0.0;
+  //   double count             = 0;
+  //   // get average state avg_MR for enforcing mimic
+  //   for (unsigned int i = 0; i < js.size(); ++i)
+  //   {
+  //     // find encoder value based on joint position, this really is just based on the single
+  //     // physical joint with the encoder mounted on it.
+  //     // find the passive joint name
+  //     std::vector<std::string>::iterator it = std::find(passive_joints_.begin(),passive_joints_.end(),js[i]->joint_->name_);
+  //     //if (it == passive_joints_.begin())
+  //     if (it != passive_joints_.end())
+  //     {
+  //       // assign passive joints
+  //       mean_joint_angle    += angles::shortest_angular_distance(mean_joint_angle,js[i]->position_) + mean_joint_angle;
+  //       mean_joint_rate     += js[i]->velocity_      ;
+  //       mean_joint_torque   += js[i]->applied_effort_;
+  //       count++;
+  //       // std::cout << "propagatePositionBackwards js[" << i << "]:" << js[i]->joint_->name_
+  //       //           << " mean_joint_angle:" << mean_joint_angle / count
+  //       //           << " mean_joint_rate:" << mean_joint_rate / count
+  //       //           << " mean_joint_torque:" << mean_joint_torque / count
+  //       //           << " angle:"  << angles::shortest_angular_distance(mean_joint_angle,js[i]->position_) + mean_joint_angle
+  //       //           << " rate:"   << js[i]->velocity_
+  //       //           << " torque:" << js[i]->applied_effort_
+  //       //           << " count:" << count
+  //       //           << std::endl;
+  //     }
+  //     else
+  //     {
+  //       // std::cout << " js[" << i << "]:" << js[i]->joint_->name_ << " not a passive joint " << std::endl;
+  //     }
+  //   }
+  //   double avg_joint_angle  = mean_joint_angle  / count;
+  //   double avg_joint_rate   = mean_joint_rate   / count;
+  //   double avg_joint_torque = mean_joint_torque / count;
+  //   double avg_theta            = angles::shortest_angular_distance(theta0_,avg_joint_angle)+2.0*theta0_;
+  //   double avg_MR,avg_dMR_dtheta,avg_dtheta_dt,avg_dMR_dt;
+  //   // compute inverse transform for the gap joint, returns MR and dMR_dtheta
+  //   inverseGapStates(as,js,avg_theta,avg_MR,avg_dMR_dtheta,avg_dtheta_dt,avg_dMR_dt);
+
 
   // assign joint states
   for (unsigned int i = 0; i < js.size(); ++i)
@@ -456,23 +519,35 @@ void PR2GripperTransmission::propagateEffortBackwards(
 
         // now do the reverse transform
         // get individual passive joint error
-        double jtheta              = theta0_ + angles::normalize_angle_positive(js[i]->position_);
+        //double joint_theta              = theta0_ + angles::normalize_angle_positive(js[i]->position_);
+        double joint_theta              = angles::shortest_angular_distance(theta0_,js[i]->position_) + 2.0*theta0_;
         // now do the reverse transform
-        double jMR,jdMR_dtheta,jdtheta_dt,jdMR_dt;
+        double joint_MR,joint_dMR_dtheta,joint_dtheta_dt,joint_dMR_dt;
         // compute inverse transform for the gap joint, returns MR and dMR_dtheta
-        inverseGapStates(as,js,jtheta,jMR,jdMR_dtheta,jdtheta_dt,jdMR_dt);
+        inverseGapStates(as,js,joint_theta,joint_MR,joint_dMR_dtheta,joint_dtheta_dt,joint_dMR_dt);
 
         // assign passive joints efforts
-        double finger_MR_error_    = jMR - as[0]->state_.position_ / gap_mechanical_reduction_;
-        //js[i]->commanded_effort_   = 0.0; //FIXME: coefficients are hack, use pid
-        //js[i]->commanded_effort_   = dtheta_dMR* (0.0  - 10.0*finger_MR_error_); //FIXME: coefficients are hack, use pid
-        js[i]->commanded_effort_   = dtheta_dMR* (MT - 10.0*finger_MR_error_); //FIXME: coefficients are hack, use pid
-        // std::cout << "propagateEffortBackwards js[" << i << "]:" << js[i]->joint_->name_
-        //           << " MT:" << MT
-        //           << " jMR:" << jMR
-        //           << " finger_MR_error_:" << finger_MR_error_
-        //           << " js_cmd_eff:" << js[i]->commanded_effort_
-        //           << std::endl;
+        //double finger_MR_error_    = joint_MR - avg_MR; // appears unstable due to tips much faster than upper fingers
+        double finger_MR_error_    = joint_MR - as[0]->state_.position_ / gap_mechanical_reduction_;
+        unsigned int index = it - passive_joints_.begin();
+        double MIMICT = pids_[index]->updatePid(finger_MR_error_,0.001); //FIXME: get time and use current_time_ - last_time_
+
+        // sum joint torques from actuator motor and mimic constraint
+        js[i]->commanded_effort_   = dtheta_dMR*(MT + MIMICT);
+
+        double pp,ii,dd,ii11,ii22;
+        pids_[index]->getGains(pp,ii,dd,ii11,ii22);
+        std::cout << "propagateEffortBackwards js[" << i << "]:" << js[i]->joint_->name_
+                  << " i:" << index
+                  << " actuator motor torque:" << MT
+                  << " joint_MR:" << joint_MR
+                  << " finger_MR_error_:" << finger_MR_error_
+                  << " mimic torque:" << MIMICT
+                  << " pid:" << pp
+                  << "," << ii
+                  << "," << dd
+                  << " js_cmd_eff:" << js[i]->commanded_effort_
+                  << std::endl;
       }
       else
       {
@@ -480,6 +555,7 @@ void PR2GripperTransmission::propagateEffortBackwards(
       }
     }
   }
+  last_time_ = current_time_;
 
 }
 
