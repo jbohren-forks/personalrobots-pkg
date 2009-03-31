@@ -164,23 +164,23 @@ public:
 
     try
     {
-      imu.open_port(port.c_str());
+      imu.openPort(port.c_str());
 
       ROS_INFO("Initializing IMU sensor.");
 
-      imu.init_gyros();
+      imu.initGyros();
 
       ROS_INFO("Initializing IMU time with offset %f.", offset_);
 
-      imu.init_time(offset_);
+      imu.initTime(offset_);
 
       ROS_INFO("IMU sensor initialized.");
 
-      imu.set_continuous(cmd);
+      imu.setContinuous(cmd);
 
       running = true;
 
-    } catch (ms_3dmgx2_driver::exception& e) {
+    } catch (ms_3dmgx2_driver::Exception& e) {
       ROS_INFO("Exception thrown while starting IMU.\n %s", e.what());
       return -1;
     }
@@ -194,8 +194,8 @@ public:
     {
       try
       {
-        imu.close_port();
-      } catch (ms_3dmgx2_driver::exception& e) {
+        imu.closePort();
+      } catch (ms_3dmgx2_driver::Exception& e) {
         ROS_INFO("Exception thrown while stopping IMU.\n %s", e.what());
       }
       running = false;
@@ -214,7 +214,7 @@ public:
       double angrate[3];
       double orientation[9];
 
-      imu.receive_accel_angrate_orientation(&time, accel, angrate, orientation);
+      imu.receiveAccelAngrateOrientation(&time, accel, angrate, orientation);
 
       reading.acc.acc.ax = accel[0];
       reading.acc.acc.ay = accel[1];
@@ -237,7 +237,7 @@ public:
 
       publish("imu_data", reading);
         
-    } catch (ms_3dmgx2_driver::exception& e) {
+    } catch (ms_3dmgx2_driver::Exception& e) {
       ROS_INFO("Exception thrown while trying to get the IMU reading.\n%s", e.what());
       return -1;
     }
@@ -277,8 +277,8 @@ public:
   {
     try
     {
-      imu.close_port();
-    } catch (ms_3dmgx2_driver::exception& e) {
+      imu.closePort();
+    } catch (ms_3dmgx2_driver::Exception& e) {
     }
   }
 
@@ -302,7 +302,7 @@ public:
   {
     status.name = "Connection Test";
 
-    imu.open_port(port.c_str());
+    imu.openPort(port.c_str());
 
     status.level = 0;
     status.message = "Connected successfully.";
@@ -316,7 +316,7 @@ public:
     double bias_y;
     double bias_z;
     
-    imu.init_gyros(&bias_x, &bias_y, &bias_z);
+    imu.initGyros(&bias_x, &bias_y, &bias_z);
 
     status.level = 0;
     status.message = "Successfully calculated gyro biases.";
@@ -340,7 +340,7 @@ public:
     double accel[3];
     double angrate[3];
 
-    if (!imu.set_continuous(ms_3dmgx2_driver::IMU::CMD_ACCEL_ANGRATE))
+    if (!imu.setContinuous(ms_3dmgx2_driver::IMU::CMD_ACCEL_ANGRATE))
     {
       status.level = 2;
       status.message = "Could not start streaming data.";
@@ -348,10 +348,10 @@ public:
 
       for (int i = 0; i < 100; i++)
       {
-        imu.receive_accel_angrate(&time, accel, angrate);
+        imu.receiveAccelAngrate(&time, accel, angrate);
       }
       
-      imu.stop_continuous();
+      imu.stopContinuous();
 
       status.level = 0;
       status.message = "Data streamed successfully.";
@@ -372,7 +372,7 @@ public:
     double grav_y = 0.0;
     double grav_z = 0.0;
 
-    if (!imu.set_continuous(ms_3dmgx2_driver::IMU::CMD_ACCEL_ANGRATE))
+    if (!imu.setContinuous(ms_3dmgx2_driver::IMU::CMD_ACCEL_ANGRATE))
     {
       status.level = 2;
       status.message = "Could not start streaming data.";
@@ -382,7 +382,7 @@ public:
 
       for (int i = 0; i < num; i++)
       {
-        imu.receive_accel_angrate(&time, accel, angrate);
+        imu.receiveAccelAngrate(&time, accel, angrate);
         
         grav_x += accel[0];
         grav_y += accel[1];
@@ -390,7 +390,7 @@ public:
 
       }
       
-      imu.stop_continuous();
+      imu.stopContinuous();
 
       grav += sqrt( pow(grav_x / (double)(num), 2.0) + 
                     pow(grav_y / (double)(num), 2.0) + 
@@ -423,7 +423,7 @@ public:
   {
     status.name = "Disconnect Test";
 
-    imu.close_port();
+    imu.closePort();
 
     status.level = 0;
     status.message = "Disconnected successfully.";
@@ -436,9 +436,9 @@ public:
     if (running)
     {
 
-      imu.open_port(port.c_str());
+      imu.openPort(port.c_str());
 
-      if (imu.set_continuous(cmd) != true)
+      if (imu.setContinuous(cmd) != true)
       {
         status.level = 2;
         status.message = "Failed to resume previous mode of operation.";
@@ -490,7 +490,7 @@ public:
     ROS_INFO("Total IMU time offset is now %f.", offset_);
 
     // send changes to inu driver
-    imu.set_fixed_offset(offset_);
+    imu.setFixedOffset(offset_);
 
     // write changes to param server
     setParam("~time_offset", offset_);

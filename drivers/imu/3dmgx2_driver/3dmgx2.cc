@@ -96,56 +96,56 @@ ms_3dmgx2_driver::IMU::IMU() : fd(-1), continuous(false)
 // Destructor
 ms_3dmgx2_driver::IMU::~IMU()
 {
-  close_port();
+  closePort();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Open the IMU port
 void
-ms_3dmgx2_driver::IMU::open_port(const char *port_name)
+ms_3dmgx2_driver::IMU::openPort(const char *port_name)
 {
   // Open the port
   fd = open(port_name, O_RDWR | O_SYNC , S_IRUSR | S_IWUSR );
   if (fd < 0)
-    IMU_EXCEPT(ms_3dmgx2_driver::exception, "Unable to open serial port [%s]; [%s]", port_name, strerror(errno));
+    IMU_EXCEPT(ms_3dmgx2_driver::Exception, "Unable to open serial port [%s]; [%s]", port_name, strerror(errno));
 
   // Change port settings
   struct termios term;
   if (tcgetattr(fd, &term) < 0)
-    IMU_EXCEPT(ms_3dmgx2_driver::exception, "Unable to get serial port attributes");
+    IMU_EXCEPT(ms_3dmgx2_driver::Exception, "Unable to get serial port attributes");
 
   cfmakeraw( &term );
   cfsetispeed(&term, B115200);
   cfsetospeed(&term, B115200);
 
   if (tcsetattr(this->fd, TCSAFLUSH, &term) < 0 )
-    IMU_EXCEPT(ms_3dmgx2_driver::exception, "Unable to set serial port attributes");
+    IMU_EXCEPT(ms_3dmgx2_driver::Exception, "Unable to set serial port attributes");
 
   // Stop continuous mode
-  stop_continuous();
+  stopContinuous();
 
   // Make sure queues are empty before we begin
   if (tcflush(fd, TCIOFLUSH) != 0)
-    IMU_EXCEPT(ms_3dmgx2_driver::exception, "Tcflush failed");
+    IMU_EXCEPT(ms_3dmgx2_driver::Exception, "Tcflush failed");
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Close the IMU port
 void
-ms_3dmgx2_driver::IMU::close_port()
+ms_3dmgx2_driver::IMU::closePort()
 {
   try {
-    stop_continuous();
+    stopContinuous();
 
-  } catch (ms_3dmgx2_driver::exception &e) {
+  } catch (ms_3dmgx2_driver::Exception &e) {
     // Exceptions here are fine since we are closing anyways
   }
   
   if (fd != -1)
     if (close(fd) != 0)
-      IMU_EXCEPT(ms_3dmgx2_driver::exception, "Unable to close serial port; [%s]", strerror(errno));
+      IMU_EXCEPT(ms_3dmgx2_driver::Exception, "Unable to close serial port; [%s]", strerror(errno));
   fd = -1;
 }
 
@@ -154,7 +154,7 @@ ms_3dmgx2_driver::IMU::close_port()
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize time information
 void
-ms_3dmgx2_driver::IMU::init_time(double fix_off)
+ms_3dmgx2_driver::IMU::initTime(double fix_off)
 {
   wraps = 0;
 
@@ -182,7 +182,7 @@ ms_3dmgx2_driver::IMU::init_time(double fix_off)
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize IMU gyros
 void
-ms_3dmgx2_driver::IMU::init_gyros(double* bias_x, double* bias_y, double* bias_z)
+ms_3dmgx2_driver::IMU::initGyros(double* bias_x, double* bias_y, double* bias_z)
 {
   wraps = 0;
 
@@ -210,7 +210,7 @@ ms_3dmgx2_driver::IMU::init_gyros(double* bias_x, double* bias_y, double* bias_z
 ////////////////////////////////////////////////////////////////////////////////
 // Put the IMU into continuous mode
 bool
-ms_3dmgx2_driver::IMU::set_continuous(cmd command)
+ms_3dmgx2_driver::IMU::setContinuous(cmd command)
 {
   uint8_t cmd[4];
   uint8_t rep[8];
@@ -235,7 +235,7 @@ ms_3dmgx2_driver::IMU::set_continuous(cmd command)
 ////////////////////////////////////////////////////////////////////////////////
 // Take the IMU out of continuous mode
 void
-ms_3dmgx2_driver::IMU::stop_continuous()
+ms_3dmgx2_driver::IMU::stopContinuous()
 {
   uint8_t cmd[1];
 
@@ -246,7 +246,7 @@ ms_3dmgx2_driver::IMU::stop_continuous()
   usleep(1000000);
 
   if (tcflush(fd, TCIOFLUSH) != 0)
-    IMU_EXCEPT(ms_3dmgx2_driver::exception, "Tcflush failed");
+    IMU_EXCEPT(ms_3dmgx2_driver::Exception, "Tcflush failed");
 }
 
 
@@ -254,7 +254,7 @@ ms_3dmgx2_driver::IMU::stop_continuous()
 ////////////////////////////////////////////////////////////////////////////////
 // Receive ACCEL_ANGRATE_MAG message
 void
-ms_3dmgx2_driver::IMU::receive_accel_angrate_mag(uint64_t *time, double accel[3], double angrate[3], double mag[3])
+ms_3dmgx2_driver::IMU::receiveAccelAngrateMag(uint64_t *time, double accel[3], double angrate[3], double mag[3])
 {
   int i, k;
   uint8_t rep[43];
@@ -287,14 +287,14 @@ ms_3dmgx2_driver::IMU::receive_accel_angrate_mag(uint64_t *time, double accel[3]
     k += 4;
   }
 
-  imu_time = extract_time(rep+37);
-  *time = filter_time(imu_time, sys_time);
+  imu_time = extractTime(rep+37);
+  *time = filterTime(imu_time, sys_time);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Receive ACCEL_ANGRATE_ORIENTATION message
 void
-ms_3dmgx2_driver::IMU::receive_accel_angrate_orientation(uint64_t *time, double accel[3], double angrate[3], double orientation[9])
+ms_3dmgx2_driver::IMU::receiveAccelAngrateOrientation(uint64_t *time, double accel[3], double angrate[3], double orientation[9])
 {
   int i, k;
   uint8_t rep[67];
@@ -327,15 +327,15 @@ ms_3dmgx2_driver::IMU::receive_accel_angrate_orientation(uint64_t *time, double 
     k += 4;
   }
 
-  imu_time = extract_time(rep+61);
-  *time = filter_time(imu_time, sys_time);
+  imu_time = extractTime(rep+61);
+  *time = filterTime(imu_time, sys_time);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Receive ACCEL_ANGRATE message
 void
-ms_3dmgx2_driver::IMU::receive_accel_angrate(uint64_t *time, double accel[3], double angrate[3])
+ms_3dmgx2_driver::IMU::receiveAccelAngrate(uint64_t *time, double accel[3], double angrate[3])
 {
   int i, k;
   uint8_t rep[31];
@@ -361,15 +361,15 @@ ms_3dmgx2_driver::IMU::receive_accel_angrate(uint64_t *time, double accel[3], do
     k += 4;
   }
 
-  imu_time = extract_time(rep+25);
-  *time = filter_time(imu_time, sys_time);
+  imu_time = extractTime(rep+25);
+  *time = filterTime(imu_time, sys_time);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Receive EULER message
 void
-ms_3dmgx2_driver::IMU::receive_euler(uint64_t *time, double *roll, double *pitch, double *yaw)
+ms_3dmgx2_driver::IMU::receiveEuler(uint64_t *time, double *roll, double *pitch, double *yaw)
 {
   uint8_t rep[19];
 
@@ -382,15 +382,15 @@ ms_3dmgx2_driver::IMU::receive_euler(uint64_t *time, double *roll, double *pitch
   *pitch = extract_float(rep + 5);
   *yaw   = extract_float(rep + 9);
 
-  imu_time  = extract_time(rep + 13);
-  *time = filter_time(imu_time, sys_time);
+  imu_time  = extractTime(rep + 13);
+  *time = filterTime(imu_time, sys_time);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Extract time and process rollover
 uint64_t
-ms_3dmgx2_driver::IMU::extract_time(uint8_t* addr)
+ms_3dmgx2_driver::IMU::extractTime(uint8_t* addr)
 {
   uint32_t ticks = bswap_32(*(uint32_t*)(addr));
 
@@ -429,15 +429,15 @@ ms_3dmgx2_driver::IMU::send(void *cmd, int cmd_len)
   // Write the data to the port
   bytes = write(this->fd, cmd, cmd_len);
   if (bytes < 0)
-    IMU_EXCEPT(ms_3dmgx2_driver::exception, "error writing to IMU [%s]", strerror(errno));
+    IMU_EXCEPT(ms_3dmgx2_driver::Exception, "error writing to IMU [%s]", strerror(errno));
 
   if (bytes != cmd_len)
-    IMU_EXCEPT(ms_3dmgx2_driver::exception, "whole message not written to IMU");
+    IMU_EXCEPT(ms_3dmgx2_driver::Exception, "whole message not written to IMU");
 
   // Make sure the queue is drained
   // Synchronous IO doesnt always work
   if (tcdrain(this->fd) != 0)
-    IMU_EXCEPT(ms_3dmgx2_driver::exception, "tcdrain failed");
+    IMU_EXCEPT(ms_3dmgx2_driver::Exception, "tcdrain failed");
 
   return bytes;
 }
@@ -465,14 +465,14 @@ ms_3dmgx2_driver::IMU::receive(uint8_t command, void *rep, int rep_len, int time
     if (timeout > 0)
     {
       if ( (retval = poll(ufd, 1, timeout)) < 0 )
-        IMU_EXCEPT(ms_3dmgx2_driver::exception, "poll failed  [%s]", strerror(errno));
+        IMU_EXCEPT(ms_3dmgx2_driver::Exception, "poll failed  [%s]", strerror(errno));
       
       if (retval == 0)
-        IMU_EXCEPT(ms_3dmgx2_driver::timeout_exception, "timeout reached");
+        IMU_EXCEPT(ms_3dmgx2_driver::TimeoutException, "timeout reached");
     }
 	
     if (read(this->fd, (uint8_t*) rep, 1) <= 0)
-      IMU_EXCEPT(ms_3dmgx2_driver::exception, "read failed [%s]", strerror(errno));
+      IMU_EXCEPT(ms_3dmgx2_driver::Exception, "read failed [%s]", strerror(errno));
 
     skippedbytes++;
   }
@@ -489,16 +489,16 @@ ms_3dmgx2_driver::IMU::receive(uint8_t command, void *rep, int rep_len, int time
     if (timeout > 0)
     {
       if ( (retval = poll(ufd, 1, timeout)) < 0 )
-        IMU_EXCEPT(ms_3dmgx2_driver::exception, "poll failed  [%s]", strerror(errno));
+        IMU_EXCEPT(ms_3dmgx2_driver::Exception, "poll failed  [%s]", strerror(errno));
       
       if (retval == 0)
-        IMU_EXCEPT(ms_3dmgx2_driver::timeout_exception, "timeout reached");
+        IMU_EXCEPT(ms_3dmgx2_driver::TimeoutException, "timeout reached");
     }
 
     nbytes = read(this->fd, (uint8_t*) rep + bytes, rep_len - bytes);
 
     if (nbytes < 0)
-      IMU_EXCEPT(ms_3dmgx2_driver::exception, "read failed  [%s]", strerror(errno));
+      IMU_EXCEPT(ms_3dmgx2_driver::Exception, "read failed  [%s]", strerror(errno));
     
     bytes += nbytes;
   }
@@ -510,21 +510,21 @@ ms_3dmgx2_driver::IMU::receive(uint8_t command, void *rep, int rep_len, int time
     checksum += ((uint8_t*)rep)[i];
   }
 
-  // If wrong throw exception
+  // If wrong throw Exception
   if (checksum != bswap_16(*(uint16_t*)((uint8_t*)rep+rep_len-2)))
-    IMU_EXCEPT(ms_3dmgx2_driver::corrupted_data_exception, "invalid checksum.\n Make sure the IMU sensor is connected to this computer.");
+    IMU_EXCEPT(ms_3dmgx2_driver::CorruptedDataException, "invalid checksum.\n Make sure the IMU sensor is connected to this computer.");
   
   return bytes;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Kalman filter for time estimation
-uint64_t ms_3dmgx2_driver::IMU::filter_time(uint64_t imu_time, uint64_t sys_time)
+uint64_t ms_3dmgx2_driver::IMU::filterTime(uint64_t imu_time, uint64_t sys_time)
 {
   // first calculate the sum of KF_NUM_SUM measurements
   if (counter < KF_NUM_SUM){
     counter ++;
-    sum_meas += (to_double(imu_time) - to_double(sys_time));
+    sum_meas += (toDouble(imu_time) - toDouble(sys_time));
   }
   // update kalman filter with fixed innovation
   else{
@@ -539,13 +539,13 @@ uint64_t ms_3dmgx2_driver::IMU::filter_time(uint64_t imu_time, uint64_t sys_time
     // reset counter and average
     counter = 0; sum_meas = 0;
   }
-  return imu_time - to_uint64_t( offset ) + to_uint64_t( fixed_offset );
+  return imu_time - toUint64_t( offset ) + toUint64_t( fixed_offset );
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // convert uint64_t time to double time
-double ms_3dmgx2_driver::IMU::to_double(uint64_t time)
+double ms_3dmgx2_driver::IMU::toDouble(uint64_t time)
 {
   double res = trunc(time/1e9);
   res += (((double)time)/1e9) - res;
@@ -555,7 +555,7 @@ double ms_3dmgx2_driver::IMU::to_double(uint64_t time)
 
 ////////////////////////////////////////////////////////////////////////////////
 // convert double time to uint64_t time
-uint64_t  ms_3dmgx2_driver::IMU::to_uint64_t(double time)
+uint64_t  ms_3dmgx2_driver::IMU::toUint64_t(double time)
 {
   return (uint64_t)(time * 1e9);
 }

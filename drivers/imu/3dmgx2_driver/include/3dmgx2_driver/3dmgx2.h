@@ -41,9 +41,9 @@ namespace ms_3dmgx2_driver
     name(const char* msg) : parent(msg) {} \
   }
 
-  DEF_EXCEPTION(exception, std::runtime_error);
-  DEF_EXCEPTION(timeout_exception, exception);
-  DEF_EXCEPTION(corrupted_data_exception, exception);
+  DEF_EXCEPTION(Exception, std::runtime_error);
+  DEF_EXCEPTION(TimeoutException, Exception);
+  DEF_EXCEPTION(CorruptedDataException, Exception);
 
   #undef DEF_EXCEPTION
 
@@ -145,10 +145,10 @@ namespace ms_3dmgx2_driver
      * \param port_name   A character array containing the name of the port
      *
      */
-    void open_port(const char *port_name);
+    void openPort(const char *port_name);
 
     //! Close the port
-    void close_port();
+    void closePort();
 
     //! Initialize timing variables.
     /*!
@@ -157,7 +157,7 @@ namespace ms_3dmgx2_driver
      *
      * \param fix_off this fixed offset will be added to the timestamp of the imu
      */
-    void init_time(double fix_off);
+    void initTime(double fix_off);
 
     //! Initial gyros
     /*! 
@@ -170,7 +170,7 @@ namespace ms_3dmgx2_driver
      * \param bias_y   Pointer to double where y bias will be placed.
      * \param bias_z   Pointer to double where z bias will be placed.
      */
-    void init_gyros(double* bias_x = 0, double* bias_y = 0, double* bias_z = 0);
+    void initGyros(double* bias_x = 0, double* bias_y = 0, double* bias_z = 0);
 
     //! Put the device in continuous mode
     /*!
@@ -181,10 +181,10 @@ namespace ms_3dmgx2_driver
      * 
      * \return  Whether or not continuous mode was enabled successfully.
      */
-    bool set_continuous(cmd command);
+    bool setContinuous(cmd command);
 
     //! Take the device out of continous mode.
-    void stop_continuous();
+    void stopContinuous();
 
     //! Read a message of type "ACCEL_ANGRATE"
     /*! 
@@ -192,7 +192,7 @@ namespace ms_3dmgx2_driver
      * \param accel   array of accelerations which will be filled
      * \param angrate array of angular rates which will be filled
      */
-    void receive_accel_angrate(uint64_t *time, double accel[3], double angrate[3]);
+    void receiveAccelAngrate(uint64_t *time, double accel[3], double angrate[3]);
 
     //! Read a message of type "ACCEL_ANGRATE_MAG"
     /*! 
@@ -201,7 +201,7 @@ namespace ms_3dmgx2_driver
      * \param angrate array of angular rates which will be filled
      * \param mag     array of magnetometer orientations which will be filled
      */
-    void receive_accel_angrate_mag(uint64_t *time, double accel[3], double angrate[3], double mag[3]);
+    void receiveAccelAngrateMag(uint64_t *time, double accel[3], double angrate[3], double mag[3]);
 
     //! Read a message of type "EULER"
     /*! 
@@ -210,7 +210,7 @@ namespace ms_3dmgx2_driver
      * \param pitch   Pointer to pitch value which will be filled
      * \param yaw     Pointer to yaw value which will be filled
      */
-    void receive_euler(uint64_t *time, double *roll, double *pitch, double *yaw);
+    void receiveEuler(uint64_t *time, double *roll, double *pitch, double *yaw);
 
     //! Read a message of type "ACCEL_ANGRATE_ORIENTATION"
     /*! 
@@ -219,13 +219,13 @@ namespace ms_3dmgx2_driver
      * \param angrate     array of angular rates which will be filled
      * \param orientation orientation matrix which will be filled
      */
-    void receive_accel_angrate_orientation(uint64_t *time, double accel[3], double angrate[3], double orientation[9]);
+    void receiveAccelAngrateOrientation(uint64_t *time, double accel[3], double angrate[3], double orientation[9]);
 
     //! Set the fixed time offset
     /*! 
      * \param fix_off  Fixed time offset in seconds
      */
-    void set_fixed_offset(double fix_off) {fixed_offset = fix_off;};
+    void setFixedOffset(double fix_off) {fixed_offset = fix_off;};
 
   private:
     //! Send a command to the IMU and wait for a reply
@@ -238,16 +238,16 @@ namespace ms_3dmgx2_driver
     int receive(uint8_t command, void *rep, int rep_len, int timeout = 0, uint64_t* sys_time = NULL);
 
     //! Extract time from a pointer into an imu buffer
-    uint64_t extract_time(uint8_t* addr);
+    uint64_t extractTime(uint8_t* addr);
 
     //! Run the filter on the imu time and system times
-    uint64_t filter_time(uint64_t imu_time, uint64_t sys_time);
+    uint64_t filterTime(uint64_t imu_time, uint64_t sys_time);
 
     //! Convert the uint64_t time to a double for numerical computations
-    double to_double(uint64_t time);
+    double toDouble(uint64_t time);
 
     //! Convert the double time back to a uint64_t
-    uint64_t to_uint64_t(double time);
+    uint64_t toUint64_t(double time);
 
     //! The file descriptor
     int fd;
