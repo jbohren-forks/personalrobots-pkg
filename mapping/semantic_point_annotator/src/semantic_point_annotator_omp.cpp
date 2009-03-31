@@ -123,7 +123,7 @@ class SemanticPointAnnotator
       // This should be set to whatever the leaf_width factor is in the downsampler
       node_.param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.05);     // 5 cm
 
-      node_.param ("~p_eps_angle_", eps_angle_, 15.0);                              // 15 degrees
+      node_.param ("~p_eps_angle", eps_angle_, 15.0);                               // 15 degrees
 
       node_.param ("~create_polygonal_map", polygonal_map_, true);            // Create a polygonal map ?
       node_.param ("~concave", concave_, false);                              // Create concave hulls by default
