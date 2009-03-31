@@ -16,6 +16,8 @@
 
 <!-- Battery Monitor -->
   <node machine="two" pkg="ocean_battery_driver" type="monitor" respawn="true"/>
+<!-- Battery Assertions -->
+<include file="$(find ocean_battery_driver)/expected_batteries.launch"/>
 
 <!-- Base Laser -->
   <node machine="two" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
@@ -61,6 +63,7 @@
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1" machine="two"/> 
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="prf2" machine="three"/>
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="prf2" machine="four"/>
+
 
 </launch>
 
