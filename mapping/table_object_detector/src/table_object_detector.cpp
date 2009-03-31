@@ -163,9 +163,6 @@ class TableObjectDetector
       {
         node_.advertise<PolygonalMap> ("semantic_polygonal_map", 1);
         node_.advertise<PointCloud> ("cloud_annotated", 1);
-
-        cloud_annotated_.chan.resize (1);
-        cloud_annotated_.chan[0].name = "intensities";
       }
     }
 
@@ -177,6 +174,20 @@ class TableObjectDetector
         node_.getParam ("~frame_distance_eps", frame_distance_eps_);
       if (node_.hasParam ("~input_cloud_topic"))
         node_.getParam ("~input_cloud_topic", input_cloud_topic_);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Obtain a 24-bit RGB coded value from 3 independent <r, g, b> channel values
+      * \param r the red channel value
+      * \param g the green channel value
+      * \param b the blue channel value
+      */
+    inline double
+      getRGB (float r, float g, float b)
+    {
+      int res = (int(r * 255) << 16) | (int(g*255) << 8) | int(b*255);
+      double rgb = *(float*)(&res);
+      return (rgb);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -337,32 +348,58 @@ class TableObjectDetector
       }
       catch (tf::TransformException)
       {
-        ROS_ERROR ("Failed to PolygonalMap from frame %s to frame %s",
-                   cloud_down_.header.frame_id.c_str(), global_frame_.c_str());
+        ROS_ERROR ("Failed to PolygonalMap from frame %s to frame %s", cloud_down_.header.frame_id.c_str(), global_frame_.c_str());
         return (false);
       }
 
       resp.table.table = pmap_.polygons[0];
 
-      // Reserve enough space
+
+      ROS_INFO ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
+                resp.table.table_min.x, resp.table.table_min.y, resp.table.table_max.x, resp.table.table_max.y, (int)resp.table.objects.size (), (ros::Time::now () - ts).toSec ());
+
+      // Should only used for debugging purposes (on screen visualization)
       if (publish_debug_)
       {
+        // Break the object inliers into clusters in an Euclidean sense
+        vector<vector<int> > objects;
+        findClusters (cloud_in_, inliers, clusters_growing_tolerance_, objects, -1, 1, 2, clusters_min_pts_);
+
+        int total_nr_pts = 0;
+        for (unsigned int i = 0; i < objects.size (); i++)
+          total_nr_pts += objects[i].size ();
+
         cloud_annotated_.header = cloud_down_.header;
-        cloud_annotated_.pts.resize (inliers.size ());
-        cloud_annotated_.chan[0].vals.resize (inliers.size ());
-        for (unsigned int i = 0; i < inliers.size (); i++)
+        cloud_annotated_.pts.resize (total_nr_pts);
+
+        // Copy all the channels from the original pointcloud
+        cloud_annotated_.chan.resize (cloud_in_.chan.size () + 1);
+        for (unsigned int d = 0; d < cloud_in_.chan.size (); d++)
         {
-          cloud_annotated_.pts[i] = cloud_in_.pts.at (inliers[i]);
-          cloud_annotated_.chan[0].vals[i] = cloud_in_.chan[0].vals.at (inliers[i]);
-/*          cloud_annotated_.pts[i] = cloud_down_.pts.at (inliers[i]);
-          cloud_annotated_.chan[0].vals[i] = cloud_down_.chan[0].vals.at (inliers[i]);*/
+          cloud_annotated_.chan[d].name = cloud_in_.chan[d].name;
+          cloud_annotated_.chan[d].vals.resize (total_nr_pts);
+        }
+        cloud_annotated_.chan[cloud_in_.chan.size ()].name = "rgb";
+        cloud_annotated_.chan[cloud_in_.chan.size ()].vals.resize (total_nr_pts);
+
+        // For each object in the set
+        int nr_p = 0;
+        for (unsigned int i = 0; i < objects.size (); i++)
+        {
+          float rgb = getRGB (rand () / (RAND_MAX + 1.0), rand () / (RAND_MAX + 1.0), rand () / (RAND_MAX + 1.0));
+          // Get its points
+          for (unsigned int j = 0; j < objects[i].size (); j++)
+          {
+            cloud_annotated_.pts[nr_p] = cloud_in_.pts.at (objects[i][j]);
+            for (unsigned int d = 0; d < cloud_in_.chan.size (); d++)
+              cloud_annotated_.chan[d].vals[nr_p] = cloud_in_.chan[d].vals.at (objects[i][j]);
+            cloud_annotated_.chan[cloud_in_.chan.size ()].vals[nr_p] = rgb;
+            nr_p++;
+          }
         }
         node_.publish ("cloud_annotated", cloud_annotated_);
         node_.publish ("semantic_polygonal_map", pmap_);
       }
-
-      ROS_INFO ("Table found. Bounds: [%f, %f] -> [%f, %f]. Number of objects: %d. Total time: %f.",
-                resp.table.table_min.x, resp.table.table_min.y, resp.table.table_max.x, resp.table.table_max.y, (int)resp.table.objects.size (), (ros::Time::now () - ts).toSec ());
       return (true);
     }
 
