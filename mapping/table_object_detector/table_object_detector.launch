@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="table_object_detector" type="table_object_detector_node" name="table_object_detector" respawn="true" output="screen" />
+</launch>

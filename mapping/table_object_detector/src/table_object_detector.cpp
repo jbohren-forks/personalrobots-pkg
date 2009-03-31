@@ -153,7 +153,7 @@ class TableObjectDetector
 
       node_.param ("~publish_debug", publish_debug_, true);
 
-      node_.param ("~input_cloud_topic", input_cloud_topic_, string ("full_cloud"));
+      node_.param ("~input_cloud_topic", input_cloud_topic_, string ("tilt_laser_cloud"));
       node_.advertiseService("table_object_detector", &TableObjectDetector::detectTable, this);
 
       // This should be set to whatever the leaf_width factor is in the downsampler
