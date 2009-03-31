@@ -94,14 +94,16 @@ class PCDGenerator
       double interval = rate_ * 1e+6;
       while (node_.ok ())
       {
-        usleep (interval);
-
         transform_.stamp_ = ros::Time::now ();
         broadcaster_.sendTransform (transform_);
 
         ROS_INFO ("Publishing data (%d points) on topic %s in frame %s.", (int)msg_cloud_.pts.size (), node_.mapName (cloud_topic_).c_str (), msg_cloud_.header.frame_id.c_str ());
         msg_cloud_.header.stamp = ros::Time::now ();
         node_.publish ("cloud_pcd", msg_cloud_);
+        
+        if (interval == 0)                      // We only publish once if a 0 seconds interval is given
+          break;
+        usleep (interval);
       }
 
       return (true);
@@ -116,7 +118,7 @@ int
 {
   if (argc < 3)
   {
-    ROS_ERROR ("Syntax is: %s <file.pcd> rate", argv[0]);
+    ROS_ERROR ("Syntax is: %s <file.pcd> [publishing_interval (in seconds)]", argv[0]);
     return (-1);
   }
 
