@@ -144,7 +144,7 @@ public:
 
   void publishImage(size_t width, size_t height, uint8_t *frameData)
   {
-    fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
+    fillImage(image_, "image", height, width, 1, "mono"/*"bayer_bggr"*/, "uint8", frameData);
     node_.publish("~raw", image_);
   }
 
