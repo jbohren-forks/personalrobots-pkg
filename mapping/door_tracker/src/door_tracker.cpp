@@ -44,6 +44,8 @@
 // ROS core
 #include <ros/node.h>
 // ROS messages
+#include <door_handle_detector/DoorsDetector.h>
+
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
 #include <robot_msgs/PolygonalMap.h>
@@ -51,6 +53,8 @@
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/Door.h>
 #include <robot_msgs/VisualizationMarker.h>
+
+#include <std_msgs/String.h>
 
 // Sample Consensus
 #include <point_cloud_mapping/sample_consensus/sac.h>
@@ -103,6 +107,10 @@ class DoorTracker
 
     boost::mutex door_msg_mutex_ ;
 
+    boost::mutex cloud_msg_mutex_ ;
+
+    bool active_;
+
     /********** Parameters that need to be gotten from the param server *******/
     std::string door_msg_topic_, base_laser_topic_;
     int sac_min_points_per_model_;
@@ -110,11 +118,27 @@ class DoorTracker
     double eps_angle_, frame_multiplier_;
     int sac_min_points_left_;
     double door_min_width_, door_max_width_;
+    std_msgs::String activate_msg_;
+    bool publish_all_candidates_;
+    int num_clouds_received_;
+    bool continuous_detection_;
 
     DoorTracker():message_notifier_(NULL)
     {
       node_ = ros::Node::instance();
       tf_ = new tf::TransformListener(*node_);
+      num_clouds_received_ = 0;
+      continuous_detection_ = false;
+    };
+
+    ~DoorTracker()
+    {
+//      node_->unsubscribe(base_laser_topic_,&DoorTracker::laserCallBack,this);
+    }
+
+    void start()
+    {
+      active_ = true;
       node_->param<std::string>("~p_door_msg_topic_", door_msg_topic_, "door_message");                              // 10 degrees
       node_->param<std::string>("~p_base_laser_topic_", base_laser_topic_, "base_scan");                              // 10 degrees
 
@@ -137,23 +161,37 @@ class DoorTracker
       node_->param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
       door_msg_.header.frame_id = "base_footprint";
 
-//      node_->subscribe(base_laser_topic_,cloud_, &DoorTracker::laserCallBack,this,1);
-      node_->subscribe(door_msg_topic_,door_msg_in_, &DoorTracker::doorMsgCallBack,this,1);
+      node_->param("~publish_all_candidates" , publish_all_candidates_, false); 
+
+//      node_->subscribe(door_msg_topic_,door_msg_in_, &DoorTracker::doorMsgCallBack,this,1);
       node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+      node_->subscribe("~activate",activate_msg_,&DoorTracker::activate,this,1);
+      node_->advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
 
       message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (tf_, node_,  boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_.c_str (), door_msg_.header.frame_id, 1);
-    };
+    }
 
-    ~DoorTracker()
+    void shutdown()
     {
-//      node_->unsubscribe(base_laser_topic_,&DoorTracker::laserCallBack,this);
-      node_->unsubscribe(door_msg_topic_,&DoorTracker::doorMsgCallBack,this);
-      node_->unadvertise("visualizationMarker");
-      delete message_notifier_;
+      if(active_)
+      {
+        active_ = false;
+        num_clouds_received_ = 0;
+//        node_->unsubscribe(door_msg_topic_,&DoorTracker::doorMsgCallBack,this);
+        node_->unadvertise("~doors_detector");
+        node_->unadvertise("visualizationMarker");
+        delete message_notifier_;
+      }
     }
 
     void laserCallBack(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
     {
+      if(!active_)
+        return;
+
+      num_clouds_received_++;
+
+      cloud_msg_mutex_.lock();
       cloud_ = *cloud;
       ROS_INFO("Received a point cloud with %d points in frame: %s",(int) cloud_.pts.size(),cloud_.header.frame_id.c_str());
       if(cloud_.pts.empty())
@@ -164,12 +202,64 @@ class DoorTracker
       if ((int)cloud_.pts.size() < sac_min_points_per_model_)
         return;
 
+      door_msg_mutex_.unlock();
+
+      if(continuous_detection_) // do this on every laser callback
+      {
+        findDoor();
+      }
+
+    }
+
+    void publishLine(const Point32 &min_p, const Point32 &max_p, const int &id, const std::string &frame_id)
+    {   
+      robot_msgs::VisualizationMarker marker;
+      marker.header.frame_id = frame_id;
+      marker.header.stamp = ros::Time();
+      marker.id = id;
+      marker.type = robot_msgs::VisualizationMarker::LINE_STRIP;
+      marker.action = robot_msgs::VisualizationMarker::ADD;
+      marker.x = 0.0;
+      marker.y = 0.0;
+      marker.z = 0.0;
+      marker.yaw = 0.0;
+      marker.pitch = 0.0;
+      marker.roll = 0.0;
+      marker.xScale = 0.01;
+      marker.yScale = 0.1;
+      marker.zScale = 0.1;
+      marker.alpha = 255;
+      marker.r = 0;
+      marker.g = 0;
+      marker.b = 255;
+      marker.set_points_size(2);
+
+      marker.points[0].x = min_p.x;
+      marker.points[0].y = min_p.y;
+      marker.points[0].z = min_p.z;
+
+      marker.points[1].x = max_p.x;
+      marker.points[1].y = max_p.y;
+      marker.points[1].z = max_p.z;
+      ROS_DEBUG("Publishing line between: p1: %f %f %f, p2: %f %f %f",marker.points[0].x,marker.points[0].y,marker.points[0].z,marker.points[1].x,marker.points[1].y,marker.points[1].z);
+
+      node_->publish( "visualizationMarker", marker );
+    }
+
+    void findDoor()
+    {
+      cloud_msg_mutex_.lock();
+      PointCloud cloud = cloud_;//create a local copy - should be fine since its a small scan from the base laser
+      cloud_msg_mutex_.unlock();
 
       vector<int> indices;
       vector<int> possible_door_points;
-      indices.resize(cloud_.pts.size());
+      int inliers_size_max = 0;
+      int inliers_size_max_index = -1;
 
-      for(unsigned int i=0; i < cloud_.pts.size(); i++)      //Use all the indices
+      indices.resize(cloud.pts.size());
+
+      for(unsigned int i=0; i < cloud.pts.size(); i++)      //Use all the indices
       {
         indices[i] = i;
       }
@@ -181,59 +271,25 @@ class DoorTracker
       vector<Point32> line_segment_min;
       vector<Point32> line_segment_max;
 
-      fitSACLines(&cloud_,indices,inliers,coeff,line_segment_min,line_segment_max);
+      fitSACLines(&cloud,indices,inliers,coeff,line_segment_min,line_segment_max);
 
-/*      //Publish all the lines as visualization markers
+      if(publish_all_candidates_)
+      {
+        for(unsigned int i=0; i < inliers.size(); i++)
+        {
+          publishLine(line_segment_min[i],line_segment_max[i],i,cloud.header.frame_id);
+        }
+      }
       for(unsigned int i=0; i < inliers.size(); i++)
       {
-        robot_msgs::VisualizationMarker marker;
-        marker.header.frame_id = cloud_.header.frame_id;
-        marker.header.stamp = ros::Time((uint64_t)0ULL);
-        marker.id = i;
-        marker.type = robot_msgs::VisualizationMarker::LINE_STRIP;
-        marker.action = robot_msgs::VisualizationMarker::ADD;
-        marker.x = 0.0;
-        marker.y = 0.0;
-        marker.z = 0.0;
-        marker.yaw = 0.0;
-        marker.pitch = 0.0;
-        marker.roll = 0.0;
-        marker.xScale = 0.01;
-        marker.yScale = 0.1;
-        marker.zScale = 0.1;
-        marker.alpha = 255;
-        marker.r = 0;
-        marker.g = 255;
-        marker.b = 0;
-        marker.set_points_size(2);
-
-        marker.points[0].x = line_segment_min[i].x;
-        marker.points[0].y = line_segment_min[i].y;
-        marker.points[0].z = line_segment_min[i].z;
-
-        marker.points[1].x = line_segment_max[i].x;
-        marker.points[1].y = line_segment_max[i].y;
-        marker.points[1].z = line_segment_max[i].z;
-
-        node_->publish( "visualizationMarker", marker );
+        double door_frame_width = sqrt ( (line_segment_max[i].x - line_segment_min[i].x) * (line_segment_max[i].x - line_segment_min[i].x) + (line_segment_max[i].y -  line_segment_min[i].y) * (line_segment_max[i].y -  line_segment_min[i].y) );
+        if(door_frame_width < door_min_width_ || door_frame_width > door_max_width_)
+        {
+          inliers[i].resize(0);
+          ROS_WARN("This candidate line has the wrong width: %f which is outside the (min,max) limits: (%f,%f)",door_frame_width,door_min_width_,door_max_width_);
+        } 
       }
-*/
-      // Take all the lines and find the door
 
-
-/*      //Rule 1 - choose a line with a width approximately equal to the door width
-      for(unsigned int i=0; i < inliers.size(); i++)
-      {
-       double door_frame_width = sqrt ( (line_segment_max[i].x - line_segment_min[i].x) * (line_segment_max[i].x - line_segment_min[i].x) + (line_segment_max[i].y -  line_segment_min[i].y) * (line_segment_max[i].y -  line_segment_min[i].y) );
-       if(door_frame_width < door_min_width_ || door_frame_width > door_max_width_)
-       {
-         inliers[i].resize(0);
-         ROS_WARN("This candidate line has the wrong width: %f which is outside the (min,max) limits: (%f,%f)",door_frame_width,door_min_width_,door_max_width_);
-       }
-      }
-*/
-      int inliers_size_max = 0;
-      int inliers_size_max_index = -1;
       for(unsigned int i=0; i < inliers.size(); i++)
       {
         if((int) inliers[i].size() > inliers_size_max)
@@ -244,47 +300,50 @@ class DoorTracker
       }
       if(inliers_size_max_index > -1)
       {
-        robot_msgs::VisualizationMarker marker;
-        marker.header.frame_id = cloud_.header.frame_id;
-        marker.header.stamp = ros::Time((uint64_t)0ULL);
-        marker.id = 0;
-        marker.type = robot_msgs::VisualizationMarker::LINE_STRIP;
-        marker.action = robot_msgs::VisualizationMarker::ADD;
-        marker.x = 0.0;
-        marker.y = 0.0;
-        marker.z = 0.0;
-        marker.yaw = 0.0;
-        marker.pitch = 0.0;
-        marker.roll = 0.0;
-        marker.xScale = 0.01;
-        marker.yScale = 0.1;
-        marker.zScale = 0.1;
-        marker.alpha = 255;
-        marker.r = 0;
-        marker.g = 0;
-        marker.b = 255;
-        marker.set_points_size(2);
-
-        marker.points[0].x = line_segment_min[inliers_size_max_index].x;
-        marker.points[0].y = line_segment_min[inliers_size_max_index].y;
-        marker.points[0].z = line_segment_min[inliers_size_max_index].z;
-
-        marker.points[1].x = line_segment_max[inliers_size_max_index].x;
-        marker.points[1].y = line_segment_max[inliers_size_max_index].y;
-        marker.points[1].z = line_segment_max[inliers_size_max_index].z;
-        ROS_INFO("Door found at: p1: %f %f %f, p2: %f %f %f",marker.points[0].x,marker.points[0].y,marker.points[0].z,marker.points[1].x,marker.points[1].y,marker.points[1].z);
-
-        node_->publish( "visualizationMarker", marker );
+        publishLine(line_segment_min[inliers_size_max_index],line_segment_max[inliers_size_max_index],0, cloud.header.frame_id);
       }
     }
 
-
-    void doorMsgCallBack()
+    bool detectDoorService(door_handle_detector::DoorsDetector::Request &req, door_handle_detector::DoorsDetector::Response &resp)
     {
       door_msg_mutex_.lock();
-      door_msg_ = door_msg_in_;
+      door_msg_ = req.door;
       door_msg_mutex_.unlock();
-      //populate the door message
+
+      start();
+      active_ = true;
+      ros::Duration tictoc = ros::Duration ().fromSec(0.05);
+      while ((int)num_clouds_received_ < 2)// || (cloud_orig_.header.stamp < (start_time + delay)))
+      {
+        tictoc.sleep ();
+      }
+      findDoor(); //Find the door
+      active_ = false;
+      shutdown();
+      return true;
+    }
+
+    void activate()
+    {
+      if (activate_msg_.data == std::string("activate"))
+      {
+        if(!continuous_detection_)
+        {
+          continuous_detection_ = true;
+          start();
+          active_ = true;
+        }
+      }
+      else if (activate_msg_.data == std::string("deactivate"))
+      {
+        if(continuous_detection_)
+        {
+          continuous_detection_ = false;
+          active_ = false;
+          shutdown();
+        }
+      }
+      return;
     }
 
     void fitSACLines(PointCloud *points, vector<int> indices, vector<vector<int> > &inliers, vector<vector<double> > &coeff, vector<Point32> &line_segment_min, vector<Point32> &line_segment_max)
@@ -448,7 +507,7 @@ class DoorTracker
 
 /* ---[ */
 int
-  main (int argc, char** argv)
+main (int argc, char** argv)
 {
   ros::init (argc, argv);
 

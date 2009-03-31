@@ -17,5 +17,6 @@
   <depend package="checkerboard_detector" />
   <depend package="std_msgs" />
   <depend package="sbpl_arm_executive" />
+  <depend package="door_handle_detector" />
 
 </package>
