@@ -38,9 +38,22 @@
 #define COSTMAP_COSTMAP_2D_H_
 
 #include <vector>
+#include <queue>
 #include <new_costmap/observation.h>
+#include <robot_msgs/PointCloud.h>
 
 namespace costmap_2d {
+  //for priority queue propagation
+  class CostmapCell {
+    public:
+      double priority;
+      unsigned int index;
+  };
+
+  bool operator<(const CostmapCell &a, const CostmapCell &b){
+    return a.priority < b.priority;
+  }
+
   /**
    * @class Costmap
    * @brief A 2D costmap provides a mapping between points in the world and their associated "costs".
@@ -96,6 +109,10 @@ namespace costmap_2d {
        */
       bool worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const;
 
+      inline unsigned int getIndex(unsigned int mx, unsigned int my) const{
+        return my * size_x_ + mx;
+      }
+
       /**
        * @brief  Convert from map coordinates to world coordinates without checking for legal bounds
        * @param  wx The x world coordinate
@@ -118,7 +135,7 @@ namespace costmap_2d {
        * @brief  Insert new obstacles into the cost map
        * @param obstacles The point clouds of obstacles to insert into the map 
        */
-      void updateObstacles(const std::vector<Observation>& obstacles);
+      void updateObstacles(const std::vector<Observation>& observations);
 
       /**
        * @brief  Clear freespace based on any number of planar scans
@@ -185,6 +202,10 @@ namespace costmap_2d {
       double origin_y_;
       unsigned char* static_map_;
       unsigned char* cost_map_;
+      unsigned char* markers_;
+      std::priority_queue<CostmapCell> inflation_queue;
+      double sq_obstacle_range_;
+      double max_obstacle_height_;
   };
 };
 

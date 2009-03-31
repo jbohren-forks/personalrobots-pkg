@@ -37,8 +37,10 @@
 #include <new_costmap/costmap_2d.h>
 
 using namespace std;
+using namespace robot_msgs;
 
 namespace costmap_2d{
+
 
   Costmap2D::Costmap2D(double meters_size_x, double meters_size_y, 
       double resolution, double origin_x, double origin_y) : resolution_(resolution), 
@@ -108,7 +110,7 @@ namespace costmap_2d{
     unsigned char local_map[cell_size_x * cell_size_y];
 
     //copy the local window in the costmap to the local map
-    unsigned int cost_map_index = start_y * size_x_ + start_x;
+    unsigned int cost_map_index = getIndex(start_x, start_y);
     unsigned int local_map_index = 0;
     for(unsigned int y = 0; y < cell_size_y; ++y){
       for(unsigned int x = 0; x < cell_size_x; ++x){
@@ -121,10 +123,10 @@ namespace costmap_2d{
     }
 
     //now we'll reset the costmap to the static map
-    memcpy(cost_map_, static_map_, size_x_ * size_y_);
+    memcpy(cost_map_, static_map_, size_x_ * size_y_ * sizeof(unsigned char));
 
     //now we want to copy the local map back into the costmap
-    cost_map_index = start_y * size_x_ + start_x;
+    cost_map_index = getIndex(start_x, start_y);
     local_map_index = 0;
     for(unsigned int y = 0; y < cell_size_y; ++y){
       for(unsigned int x = 0; x < cell_size_x; ++x){
@@ -137,7 +139,45 @@ namespace costmap_2d{
     }
   }
 
-  void Costmap2D::updateObstacles(const std::vector<Observation>& obstacles){}
+  void Costmap2D::updateObstacles(const std::vector<Observation>& observations){
+    //reset the markers for inflation
+    memset(markers_, 0, size_x_ * size_y_ * sizeof(unsigned char));
+
+    //place the new obstacles into a priority queue... each with a priority of zero to begin with
+    for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
+      const Observation& obs = *it;
+      const PointCloud& cloud =*(obs.cloud_);
+      for(unsigned int i = 0; i < cloud.pts.size(); ++i){
+        //if the obstacle is too high or too far away from the robot we won't add it
+        if(cloud.pts[i].z > max_obstacle_height_)
+          continue;
+
+        //compute the squared distance from the hitpoint to the pointcloud's origin
+        double sq_dist = (cloud.pts[i].x - obs.origin_.x) * (cloud.pts[i].x - obs.origin_.x)
+          + (cloud.pts[i].y - obs.origin_.y) * (cloud.pts[i].y - obs.origin_.y)
+          + (cloud.pts[i].z - obs.origin_.z) * (cloud.pts[i].z - obs.origin_.z);
+
+        //if the point is far enough away... we won't consider it
+        if(sq_dist >= sq_obstacle_range_)
+          continue;
+
+        //now we need to compute the map coordinates for the observation
+        unsigned int mx, my;
+        if(!worldToMap(cloud.pts[i].x, cloud.pts[i].y, mx, my))
+          continue;
+
+        unsigned int index = getIndex(mx, my);
+
+        CostmapCell c;
+        c.priority = 0.0;
+        c.index = index;
+
+        //push the relevant cell index back onto the inflation queue and mark it
+        inflation_queue.push(c);
+        markers_[index] = 1;
+      }
+    }
+  }
 
   void Costmap2D::raytraceFreespace(const std::vector<Observation>& clearing_scans){}
 
@@ -156,4 +196,5 @@ namespace costmap_2d{
   double Costmap2D::originY() const{}
 
   double Costmap2D::resolution() const{}
+
 };
