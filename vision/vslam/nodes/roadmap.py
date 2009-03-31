@@ -133,6 +133,7 @@ class FakeRoadmapServer:
     print len(es), "edges"
     p.edges = [ vslam.msg.Edge(a,b) for (a,b) in es ]
     p.localization = len(self.nodes) - 1
+    print "Stamp is ", stamp, " header stamp is ", p.header.stamp
     self.pub.publish(p)
 
 def main(args):
