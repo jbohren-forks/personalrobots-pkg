@@ -260,6 +260,7 @@ class PlugOnBaseDetector
         p_stow_.plug_centroid.x =  ( maxP.x + minP.x ) / 2.0;
         p_stow_.plug_centroid.y =  ( maxP.y + minP.y ) / 2.0;
         p_stow_.plug_centroid.z =  ( maxP.z + minP.z ) / 2.0;
+        p_stow_.header.frame_id = cloud_.header.frame_id;
       }
 
       if (publish_debug_)
