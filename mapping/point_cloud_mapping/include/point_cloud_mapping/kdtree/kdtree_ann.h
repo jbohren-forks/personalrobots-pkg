@@ -131,6 +131,9 @@ namespace cloud_kdtree
         if (index >= nr_points_)
           return;
 
+        k_indices.resize (k);
+        k_distances.resize (k);
+
         m_lock_.lock ();
         ann_kd_tree_->annkSearch (points_[index], k, &k_indices[0], &k_distances[0], epsilon_);
         m_lock_.unlock ();

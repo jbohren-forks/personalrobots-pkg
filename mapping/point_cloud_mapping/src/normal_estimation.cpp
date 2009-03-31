@@ -281,7 +281,7 @@ class NormalEstimation
       ROS_INFO ("Kd-tree created in %g seconds.", (ros::Time::now () - ts).toSec ());
 
       ts = ros::Time::now ();
-      // Get the nerest neighbors for all points
+      // Get the nearest neighbors for all points
       for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
       {
         vector<float> distances;
