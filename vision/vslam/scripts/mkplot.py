@@ -107,6 +107,8 @@ def playlist(args):
     for d in r.next():
       yield d + (f,)
 
+log_dead_reckon = []
+
 inl_history = [0,0]
 for cam,l_image,r_image,label in playlist(args):
   print framecounter
@@ -133,7 +135,8 @@ for cam,l_image,r_image,label in playlist(args):
     oe_home = None
   for i,vo in enumerate(vos):
     af = SparseStereoFrame(l_image, r_image)
-    vo.handle_frame(af)
+    vopose = vo.handle_frame(af)
+    log_dead_reckon.append(vopose)
     inl_history.append(vo.inl)
     inl_history = inl_history[-2:]
     af.connected = vo.inl > 7
@@ -164,6 +167,8 @@ for cam,l_image,r_image,label in playlist(args):
   inliers.append(vo.inl)
 
   framecounter += 1
+  if framecounter > 500:
+    break
 
   def ground_truth(p, q):
     return Pose(transformations.rotation_matrix_from_quaternion([q.x, q.y, q.z, q.w])[:3,:3], [p.x, p.y, p.z])
@@ -188,6 +193,16 @@ for cam,l_image,r_image,label in playlist(args):
 print "There are", len(vo.tracks), "tracks"
 print "There are", len([t for t in vo.tracks if t.alive]), "live tracks"
 print "There are", len(set([t.p[-1] for t in vo.tracks if t.alive])), "unique endpoints on live tracks"
+
+f = open('dead_reckon.poses', 'w')
+for i,p in enumerate(log_dead_reckon):
+  print >>f, i, p.tolist()
+f.close()
+skel.optimize()
+f = open('optimized.poses', 'w')
+for i in sorted(skel.nodes):
+  print >>f, i, skel.newpose(i).tolist()
+f.close()
 
 for vo in vos:
   print vo.name()
