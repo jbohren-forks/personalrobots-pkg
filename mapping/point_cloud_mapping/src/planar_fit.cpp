@@ -238,7 +238,7 @@ class PlanarFit
       ros::Time ts = ros::Time::now ();
       // Figure out the viewpoint value in the cloud_frame frame
       PointStamped viewpoint_cloud;
-      getCloudViewPoint (cloud_.header.frame_id, viewpoint_cloud, &tf_);
+      getCloudViewPoint (cloud_.header.frame_id, viewpoint_cloud, tf_);
 
       // ---------------------------------------------------------------------------------------------------------------
       // ---[ Downsample and/or estimate point normals
