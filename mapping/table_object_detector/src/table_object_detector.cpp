@@ -363,7 +363,7 @@ class TableObjectDetector
       {
         // Break the object inliers into clusters in an Euclidean sense
         vector<vector<int> > objects;
-        findClusters (cloud_in_, inliers, clusters_growing_tolerance_, objects, -1, -1, -1, region_angle_threshold_, clusters_min_pts_);
+        findClusters (cloud_in_, inliers, object_cluster_tolerance_, objects, -1, -1, -1, region_angle_threshold_, clusters_min_pts_);
 
         int total_nr_pts = 0;
         for (unsigned int i = 0; i < objects.size (); i++)
