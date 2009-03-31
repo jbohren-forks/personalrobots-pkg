@@ -103,13 +103,13 @@ class TableObjectDetector
 
     // Parameters
     string global_frame_;
-    double frame_distance_eps_, min_z_bounds_, max_z_bounds_;
+    double min_z_bounds_, max_z_bounds_;
     string input_cloud_topic_;
     int k_;
     double clusters_growing_tolerance_;
     int clusters_min_pts_;
 
-    int min_points_per_object_;
+    int object_cluster_min_pts_;
     double object_cluster_tolerance_;
 
     bool need_cloud_data_, publish_debug_;
@@ -122,7 +122,6 @@ class TableObjectDetector
     TableObjectDetector (ros::Node& anode) : node_ (anode), tf_(anode)
     {
       node_.param ("/global_frame_id", global_frame_, std::string("/base_link"));
-      node_.param ("~frame_distance_eps", frame_distance_eps_, 0.2);          // Allow 20cm extra space by default
 
       node_.param ("~min_z_bounds", min_z_bounds_, 0.0);                      // restrict the Z dimension between 0
       node_.param ("~max_z_bounds", max_z_bounds_, 3.0);                      // and 3.0 m
@@ -133,7 +132,7 @@ class TableObjectDetector
       node_.param ("~search_k_closest", k_, 10);                              // 10 k-neighbors by default
 
       z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
-      node_.param ("~normal_eps_angle_", eps_angle_, 15.0);                   // 15 degrees
+      node_.param ("~normal_eps_angle", eps_angle_, 15.0);                   // 15 degrees
       eps_angle_ = angles::from_degrees (eps_angle_);                         // convert to radians
 
       node_.param ("~region_angle_threshold", region_angle_threshold_, 30.0);   // Difference between normals in degrees for cluster/region growing
@@ -143,7 +142,7 @@ class TableObjectDetector
       node_.param ("~clusters_min_pts", clusters_min_pts_, 10);                        // 10 points
 
       node_.param ("~object_cluster_tolerance", object_cluster_tolerance_, 0.05);   // 5cm between two objects
-      node_.param ("~min_points_per_object", min_points_per_object_, 30);           // 30 points per object cluster
+      node_.param ("~object_cluster_min_pts", object_cluster_min_pts_, 30);           // 30 points per object cluster
 
       node_.param ("~table_min_height", table_min_height_, 0.5);              // minimum height of a table : 0.5m
       node_.param ("~table_max_height", table_max_height_, 1.5);              // maximum height of a table : 1.5m
@@ -170,8 +169,6 @@ class TableObjectDetector
     void
       updateParametersFromServer ()
     {
-      if (node_.hasParam ("~frame_distance_eps"))
-        node_.getParam ("~frame_distance_eps", frame_distance_eps_);
       if (node_.hasParam ("~input_cloud_topic"))
         node_.getParam ("~input_cloud_topic", input_cloud_topic_);
     }
@@ -363,7 +360,7 @@ class TableObjectDetector
       {
         // Break the object inliers into clusters in an Euclidean sense
         vector<vector<int> > objects;
-        findClusters (cloud_in_, inliers, object_cluster_tolerance_, objects, -1, -1, -1, region_angle_threshold_, clusters_min_pts_);
+        findClusters (cloud_in_, inliers, object_cluster_tolerance_, objects, -1, -1, -1, region_angle_threshold_, object_cluster_min_pts_);
 
         int total_nr_pts = 0;
         for (unsigned int i = 0; i < objects.size (); i++)
@@ -444,7 +441,7 @@ class TableObjectDetector
       // Find the clusters
       nr_p = 0;
       vector<vector<int> > object_clusters;
-      findClusters (points, object_indices, object_cluster_tolerance_, object_clusters, min_points_per_object_);
+      findClusters (points, object_indices, object_cluster_tolerance_, object_clusters, object_cluster_min_pts_);
 
       robot_msgs::Point32 minPCluster, maxPCluster;
       table.objects.resize (object_clusters.size ());

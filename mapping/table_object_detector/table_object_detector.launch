@@ -1,3 +1,28 @@
 <launch>
+
+  <param name="/global_frame_id" value="/base_link" />
+  <param name="/table_object_detector/min_z_bounds" value="0.0" />
+  <param name="/table_object_detector/max_z_bounds" value="3.0" />
+
+  <param name="/table_object_detector/downsample_leaf_width_x" value="0.03" />
+  <param name="/table_object_detector/downsample_leaf_width_y" value="0.03" />
+  <param name="/table_object_detector/downsample_leaf_width_z" value="0.03" />
+  <param name="/table_object_detector/search_k_closest"        value="10" />
+
+  <param name="/table_object_detector/normal_eps_angle" value="15.0" />
+
+  <param name="/table_object_detector/region_angle_threshold" value="30.0" />
+
+  <param name="/table_object_detector/clusters_growing_tolerance" value="0.5" />
+  <param name="/table_object_detector/clusters_min_pts"           value="10" />
+
+  <param name="/table_object_detector/object_cluster_tolerance" value="0.05" />
+  <param name="/table_object_detector/object_cluster_min_pts"   value="30" />
+
+  <param name="/table_object_detector/table_min_height" value="0.5" />
+  <param name="/table_object_detector/table_max_height" value="1.5" />
+  <param name="/table_object_detector/table_delta_z"    value="0.03" />
+  <param name="/table_object_detector/object_min_distance_from_table"  value="0.10" />
+
   <node pkg="table_object_detector" type="table_object_detector_node" name="table_object_detector" respawn="true" output="screen" />
 </launch>
