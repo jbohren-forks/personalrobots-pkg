@@ -166,7 +166,7 @@ class PlanarFit
       * \param tf a pointer to a TransformListener object
       */
     void
-      getCloudViewPoint (const string &cloud_frame, PointStamped &viewpoint_cloud, const tf::TransformListener *tf)
+      getCloudViewPoint (const string &cloud_frame, PointStamped &viewpoint_cloud, tf::TransformListener &tf)
     {
       // Figure out the viewpoint value in the point cloud frame
       PointStamped viewpoint_laser;
@@ -176,7 +176,7 @@ class PlanarFit
 
       try
       {
-        tf->transformPoint (cloud_frame, viewpoint_laser, viewpoint_cloud);
+        tf.transformPoint (cloud_frame, viewpoint_laser, viewpoint_cloud);
         ROS_INFO ("Cloud view point in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
                   viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
       }

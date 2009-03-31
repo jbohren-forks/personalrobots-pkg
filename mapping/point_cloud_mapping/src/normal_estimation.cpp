@@ -100,9 +100,9 @@ class NormalEstimation
       node_.param ("~compute_moments", compute_moments_, false);  // Do not compute moment invariants by default
 
       node_.param ("~downsample", downsample_, 1);                        // Downsample cloud before normal estimation
-      node_.param ("~downsample_leaf_width_x", leaf_width_.x, 0.05);      // 2cm radius by default
-      node_.param ("~downsample_leaf_width_y", leaf_width_.y, 0.05);      // 2cm radius by default
-      node_.param ("~downsample_leaf_width_z", leaf_width_.z, 0.05);      // 2cm radius by default
+      node_.param ("~downsample_leaf_width_x", leaf_width_.x, 0.05);      // 5cm radius by default
+      node_.param ("~downsample_leaf_width_y", leaf_width_.y, 0.05);      // 5cm radius by default
+      node_.param ("~downsample_leaf_width_z", leaf_width_.z, 0.05);      // 5cm radius by default
       node_.param ("~cut_distance", cut_distance_, 10.0);   // 10m by default
 
       if (downsample_ != 0)
@@ -159,37 +159,60 @@ class NormalEstimation
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Get the view point from where the scans were taken in the incoming PointCloud message frame
+      * \param cloud_frame the point cloud message TF frame
+      * \param viewpoint_cloud the resultant view point in the incoming cloud frame
+      * \param tf a pointer to a TransformListener object
+      */
+    void
+      getCloudViewPoint (const string &cloud_frame, PointStamped &viewpoint_cloud, tf::TransformListener &tf)
+    {
+      // Figure out the viewpoint value in the point cloud frame
+      PointStamped viewpoint_laser;
+      viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
+      // Set the viewpoint in the laser coordinate system to 0, 0, 0
+      viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
+
+      try
+      {
+        tf.transformPoint (cloud_frame, viewpoint_laser, viewpoint_cloud);
+        ROS_INFO ("Cloud view point in frame %s is: %g, %g, %g.", cloud_frame.c_str (),
+                  viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
+      }
+      catch (...)
+      {
+        // Default to 0.05, 0, 0.942768 (base_link, ~base_footprint)
+        viewpoint_cloud.point.x = 0.05; viewpoint_cloud.point.y = 0.0; viewpoint_cloud.point.z = 0.942768;
+        ROS_WARN ("Could not transform a point from frame %s to frame %s! Defaulting to <%f, %f, %f>",
+                  viewpoint_laser.header.frame_id.c_str (), cloud_frame.c_str (),
+                  viewpoint_cloud.point.x, viewpoint_cloud.point.y, viewpoint_cloud.point.z);
+      }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback
     void cloud_cb ()
     {
       updateParametersFromServer ();
 
-      ROS_INFO ("Received %d data points.", (int)cloud_.pts.size ());
+      ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)cloud_.pts.size (), cloud_.header.frame_id.c_str (),
+                (int)cloud_.chan.size (), cloud_geometry::getAvailableChannels (cloud_).c_str ());
       if (cloud_.pts.size () == 0)
+      {
+        ROS_ERROR ("No data points found. Exiting...");
         return;
-
-      // Figure out the viewpoint value in the base_link frame
-      PointStamped viewpoint_laser, viewpoint_cloud;
-      viewpoint_laser.header.frame_id = "laser_tilt_mount_link";
-      // Set the viewpoint in the laser coordinate system to 0,0,0
-      viewpoint_laser.point.x = viewpoint_laser.point.y = viewpoint_laser.point.z = 0.0;
-
-      try
-      {
-        tf_.transformPoint ("base_link", viewpoint_laser, viewpoint_cloud);
-      }
-      catch (tf::ConnectivityException)
-      {
-        viewpoint_cloud.point.x = viewpoint_cloud.point.y = viewpoint_cloud.point.z = 0.0;
       }
 
-      timeval t1, t2;
-      double time_spent;
+      // Figure out the viewpoint value in the cloud_frame frame
+      PointStamped viewpoint_cloud;
+      getCloudViewPoint (cloud_.header.frame_id, viewpoint_cloud, tf_);
+
+      ros::Time ts = ros::Time::now ();
 
       // If a-priori downsampling is enabled...
       if (downsample_ != 0)
       {
-        gettimeofday (&t1, NULL);
+        ros::Time ts1 = ros::Time::now ();
         int d_idx = cloud_geometry::getChannelIndex (cloud_, "distances");
         try
         {
@@ -200,9 +223,7 @@ class NormalEstimation
 //          cloud_geometry::downsamplePointCloudSet (cloud_, cloud_down_, leaf_width_, d_idx, cut_distance_);
         }
 
-        gettimeofday (&t2, NULL);
-        time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-        ROS_INFO ("Downsampling enabled. Number of points left: %d in %g seconds.", (int)cloud_down_.pts.size (), time_spent);
+        ROS_INFO ("Downsampling enabled. Number of points left: %d / %d in %g seconds.", (int)cloud_down_.pts.size (), (int)cloud_.pts.size (), (ros::Time::now () - ts1).toSec ());
       }
 
       // Resize
@@ -249,8 +270,6 @@ class NormalEstimation
       }
 #endif
 
-      gettimeofday (&t1, NULL);
-
       // Create Kd-Tree
       kdtree_ = new cloud_kdtree::KdTreeANN (cloud_normals_);
 
@@ -259,22 +278,17 @@ class NormalEstimation
       for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
         points_indices_[i].resize (k_);
 
-      gettimeofday (&t2, NULL);
-      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Kd-tree created in %g seconds.", time_spent);
+      ROS_INFO ("Kd-tree created in %g seconds.", (ros::Time::now () - ts).toSec ());
 
-      gettimeofday (&t1, NULL);
+      ts = ros::Time::now ();
       // Get the nerest neighbors for all points
       for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
       {
         vector<float> distances;
         kdtree_->nearestKSearch (i, k_, points_indices_[i], distances);
       }
-      gettimeofday (&t2, NULL);
-      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Nearest neighbors found in %g seconds.", time_spent);
+      ROS_INFO ("Nearest neighbors found in %g seconds.\n", (ros::Time::now () - ts).toSec ());
 
-      gettimeofday (&t1, NULL);
 #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int)cloud_normals_.pts.size (); i++)
       {
@@ -307,9 +321,7 @@ class NormalEstimation
 #endif
       }
 
-      gettimeofday (&t2, NULL);
-      time_spent = t2.tv_sec + (double)t2.tv_usec / 1000000.0 - (t1.tv_sec + (double)t1.tv_usec / 1000000.0);
-      ROS_INFO ("Local features estimated in %g seconds.", time_spent);
+      ROS_INFO ("Local features estimated in %g seconds.\n", (ros::Time::now () - ts).toSec ());
 
       node_.publish ("cloud_normals", cloud_normals_);
 
