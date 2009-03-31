@@ -108,7 +108,7 @@ namespace robot_actions {
 	break;
       }
 
-      sleep(curr, 1 / _update_rate);
+      sleep(curr, 1.0 / _update_rate);
     }
   }
   
