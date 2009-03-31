@@ -327,29 +327,32 @@ namespace cloud_geometry
         return (false);
       double uvn_nn[2];
       // Compute the angles between each neighbouring point and the query point itself
-      std::vector<double> angles (neighbors.size () - 1);
-      for (unsigned int i = 0; i < neighbors.size () - 1; i++)
+      std::vector<double> angles;
+      angles.reserve (neighbors.size ());
+      for (unsigned int i = 0; i < neighbors.size (); i++)
       {
-        uvn_nn[0] = (points.pts.at (neighbors.at (i+1)).x - points.pts.at (q_idx).x) * u (0) +
-                    (points.pts.at (neighbors.at (i+1)).y - points.pts.at (q_idx).y) * u (1) +
-                    (points.pts.at (neighbors.at (i+1)).z - points.pts.at (q_idx).z) * u (2);
-        uvn_nn[1] = (points.pts.at (neighbors.at (i+1)).x - points.pts.at (q_idx).x) * v (0) +
-                    (points.pts.at (neighbors.at (i+1)).y - points.pts.at (q_idx).y) * v (1) +
-                    (points.pts.at (neighbors.at (i+1)).z - points.pts.at (q_idx).z) * v (2);
-        angles[i] = cloud_geometry::angles::getAngle2D (uvn_nn);
+        uvn_nn[0] = (points.pts.at (neighbors.at (i)).x - points.pts.at (q_idx).x) * u (0) +
+                    (points.pts.at (neighbors.at (i)).y - points.pts.at (q_idx).y) * u (1) +
+                    (points.pts.at (neighbors.at (i)).z - points.pts.at (q_idx).z) * u (2);
+        uvn_nn[1] = (points.pts.at (neighbors.at (i)).x - points.pts.at (q_idx).x) * v (0) +
+                    (points.pts.at (neighbors.at (i)).y - points.pts.at (q_idx).y) * v (1) +
+                    (points.pts.at (neighbors.at (i)).z - points.pts.at (q_idx).z) * v (2);
+        if (uvn_nn[0] == 0 && uvn_nn[1] == 0)
+          continue;
+        angles.push_back (cloud_geometry::angles::getAngle2D (uvn_nn));
       }
       sort (angles.begin (), angles.end ());
 
       // Compute the maximal angle difference between two consecutive angles
       double max_dif = DBL_MIN, dif;
-      for (unsigned int i = 0; i < neighbors.size () - 2; i++)
+      for (unsigned int i = 0; i < angles.size () - 1; i++)
       {
         dif = angles[i + 1] - angles[i];
         if (max_dif < dif)
           max_dif = dif;
       }
       // Get the angle difference between the last and the first
-      dif = 2 * M_PI - angles[neighbors.size () - 2] + angles[0];
+      dif = 2 * M_PI - angles[angles.size () - 1] + angles[0];
       if (max_dif < dif)
         max_dif = dif;
 
