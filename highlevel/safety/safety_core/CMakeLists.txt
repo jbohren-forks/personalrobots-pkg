@@ -8,5 +8,5 @@ genmsg()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-rospack_add_executable(action_runner src/action_detect_plug_onbase.cpp 
+rospack_add_executable(action_runner src/action_detect_plug_on_base.cpp 
 				               src/action_runner.cpp)

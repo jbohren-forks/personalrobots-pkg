@@ -1,23 +1,23 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
+   *   * Redistributions in binary form must reproduce the above
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
  *   * Neither the name of Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -33,13 +33,13 @@
  *********************************************************************/
 
 
-#include <safety_core/action_detect_plug_onbase.h>
+#include <safety_core/action_detect_plug_on_base.h>
 #include <math.h>
 
 using namespace safety_core;
 
-DetectPlugOnBaseAction::DetectPlugOnBaseAction(ros::Node& node) : 
-  robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>("detect_plug_onbase_action"), 
+DetectPlugOnBaseAction::DetectPlugOnBaseAction(ros::Node& node) :
+  robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>("detect_plug_on_base_action"),
   node_(node),
   request_preempt_(false)
 {
@@ -56,7 +56,7 @@ DetectPlugOnBaseAction::~DetectPlugOnBaseAction()
 void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
 {
   reset();
-  
+
   notifyActivated();
   #if 0
   if (!ros::service::call("laser_tilt_controller/set_periodic_cmd", req_laser, res_laser))
@@ -65,7 +65,7 @@ void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
     {
       plug_stow_.stowed = 0;
       notifyPreempted(plug_stow_);
-    }  
+    }
     else
     {
       plug_stow_.stowed = 0;
@@ -74,10 +74,10 @@ void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
     return;
   }
   #endif
-  
+
   detector_->activate();
- 
-  return; 
+
+  return;
 }
 
 void DetectPlugOnBaseAction::handlePreempt()
@@ -90,40 +90,40 @@ void DetectPlugOnBaseAction::reset()
 {
   not_found_count_ = 0;
   found_count_ = 0;
-  
+
   std_x_ = 0;
   std_y_ = 0;
   std_z_ = 0;
-  
+
   sum_x_ = 0;
   sum_y_ = 0;
   sum_z_ = 0;
-  
+
   sum_sq_x_ = 0;
   sum_sq_y_ = 0;
   sum_sq_z_ = 0;
-  
+
   plug_stow_.stowed = 0;
   plug_stow_.plug_centroid.x = 0;
   plug_stow_.plug_centroid.y = 0;
   plug_stow_.plug_centroid.z = 0;
-  
+
   req_laser.command.profile = "linear";
   req_laser.command.period = 6;
   req_laser.command.amplitude = 0.11;
   req_laser.command.offset = 1.36;
-  
+
 }
 
 void DetectPlugOnBaseAction::localizePlug()
 {
-  if (request_preempt_) 
-  { 
+  if (request_preempt_)
+  {
     plug_stow_.stowed = 0;
-    notifyPreempted(plug_stow_); 
+    notifyPreempted(plug_stow_);
     return;
   }
-    
+
   if(plug_stow_msg.stowed == 0)
   {
     not_found_count_++;
@@ -138,34 +138,34 @@ void DetectPlugOnBaseAction::localizePlug()
   else
   {
     found_count_++;
-    // x 
+    // x
     sum_x_ += plug_stow_msg.plug_centroid.x;
-    plug_stow_.plug_centroid.x = sum_x_ / found_count_;  
+    plug_stow_.plug_centroid.x = sum_x_ / found_count_;
     sum_sq_x_ += pow(plug_stow_msg.plug_centroid.x, 2);
     std_x_ = sqrt((sum_sq_x_/found_count_) - pow(plug_stow_.plug_centroid.x, 2));
-    
+
     // y
     sum_y_ += plug_stow_msg.plug_centroid.y;
-    plug_stow_.plug_centroid.y = sum_y_ / found_count_;  
+    plug_stow_.plug_centroid.y = sum_y_ / found_count_;
     sum_sq_y_ += pow(plug_stow_msg.plug_centroid.y, 2);
     std_y_ = sqrt((sum_sq_y_/found_count_) - pow(plug_stow_.plug_centroid.y, 2));
-    
+
     // z
     sum_z_ += plug_stow_msg.plug_centroid.z;
-    plug_stow_.plug_centroid.z = sum_z_ / found_count_;  
+    plug_stow_.plug_centroid.z = sum_z_ / found_count_;
     sum_sq_z_ += pow(plug_stow_msg.plug_centroid.z, 2);
     std_z_ = sqrt((sum_sq_z_/found_count_) - pow(plug_stow_.plug_centroid.z, 2));
-    
-    ROS_INFO("std_x: %f std_y: %f std_z: %f", std_x_, std_y_, std_z_);
+
+    //ROS_INFO("std_x: %f std_y: %f std_z: %f", std_x_, std_y_, std_z_);
     if(found_count_ > 3 && std_x_ < 0.05 && std_y_ < 0.05 && std_z_ < 0.05)
     {
       plug_stow_.stowed = 1;
       notifySucceeded(plug_stow_);
     }
   }
-  
-  
-  
-  
+
+
+
+
   return;
 }

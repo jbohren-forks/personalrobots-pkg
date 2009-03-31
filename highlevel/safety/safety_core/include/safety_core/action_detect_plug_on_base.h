@@ -1,13 +1,13 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -35,8 +35,8 @@
 
 /* Author: Melonee Wise */
 
-#ifndef ACTION_DETECT_PLUG_ONBASE_H
-#define ACTION_DETECT_PLUG_ONBASE_H
+#ifndef ACTION_DETECT_PLUG_ON_BASE_H
+#define ACTION_DETECT_PLUG_ON_BASE_H
 
 
 #include <ros/node.h>
@@ -57,37 +57,37 @@ public:
   virtual void handleActivate(const std_msgs::Empty& empty);
   virtual void handlePreempt();
 
-  
+
 
 private:
   // average the last couple plug centroids
   void localizePlug();
   void reset();
-  
-  
+
+
   ros::Node& node_;
-  
+
   PlugOnBaseDetector::PlugOnBaseDetector* detector_;
-  
+
   robot_msgs::PlugStow plug_stow_;
   robot_msgs::PlugStow plug_stow_msg;
   bool request_preempt_;
-  
+
   int not_found_count_;
   int found_count_;
-  
+
   double sum_x_;
   double sum_y_;
   double sum_z_;
-  
+
   double sum_sq_x_;
   double sum_sq_y_;
   double sum_sq_z_;
-  
-  double std_x_; 
+
+  double std_x_;
   double std_y_;
   double std_z_;
-  
+
   pr2_mechanism_controllers::SetPeriodicCmd::Request req_laser;
   pr2_mechanism_controllers::SetPeriodicCmd::Response res_laser;
 };
