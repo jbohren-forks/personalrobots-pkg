@@ -360,7 +360,7 @@ class TableObjectDetector
       {
         // Break the object inliers into clusters in an Euclidean sense
         vector<vector<int> > objects;
-        findClusters (cloud_in_, inliers, object_cluster_tolerance_, objects, -1, -1, -1, region_angle_threshold_, object_cluster_min_pts_);
+        findClusters (cloud_in_, inliers, object_cluster_tolerance_, objects, -1, -1, -1, -1, object_cluster_min_pts_);
 
         int total_nr_pts = 0;
         for (unsigned int i = 0; i < objects.size (); i++)
@@ -441,7 +441,7 @@ class TableObjectDetector
       // Find the clusters
       nr_p = 0;
       vector<vector<int> > object_clusters;
-      findClusters (points, object_indices, object_cluster_tolerance_, object_clusters, object_cluster_min_pts_);
+      findClusters (points, object_indices, object_cluster_tolerance_, object_clusters, -1, -1, -1, -1, object_cluster_min_pts_);
 
       robot_msgs::Point32 minPCluster, maxPCluster;
       table.objects.resize (object_clusters.size ());
@@ -559,71 +559,6 @@ class TableObjectDetector
           sort (r.begin (), r.end ());
           r.erase (unique (r.begin (), r.end ()), r.end ());
 
-          clusters.push_back (r);
-        }
-      }
-
-      // Destroy the tree
-      delete tree;
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Decompose a region of space into clusters based on the euclidean distance between points
-      * \param points pointer to the point cloud message
-      * \param indices pointer to a list of point indices
-      * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
-      * \param clusters the resultant clusters
-      * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
-      */
-    void
-      findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
-                    unsigned int min_pts_per_cluster = 1)
-    {
-      // Create a tree for these points
-      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
-
-      // Create a bool vector of processed point indices, and initialize it to false
-      vector<bool> processed;
-      processed.resize (indices.size (), false);
-
-      vector<int> nn_indices;
-      vector<float> nn_distances;
-      // Process all points in the indices vector
-      for (unsigned int i = 0; i < indices.size (); i++)
-      {
-        if (processed[i])
-          continue;
-
-        vector<int> seed_queue;
-        int sq_idx = 0;
-        seed_queue.push_back (i);
-
-        processed[i] = true;
-
-        while (sq_idx < (int)seed_queue.size ())
-        {
-          tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
-
-          for (unsigned int j = 1; j < nn_indices.size (); j++)
-          {
-            if (!processed.at (nn_indices[j]))
-            {
-              processed[nn_indices[j]] = true;
-              seed_queue.push_back (nn_indices[j]);
-            }
-          }
-
-          sq_idx++;
-        }
-
-        // If this queue is satisfactory, add to the clusters
-        if (seed_queue.size () >= min_pts_per_cluster)
-        {
-          vector<int> r;
-          //r.indices = seed_queue;
-          r.resize (seed_queue.size ());
-          for (unsigned int j = 0; j < r.size (); j++)
-            r[j] = indices.at (seed_queue[j]);
           clusters.push_back (r);
         }
       }
