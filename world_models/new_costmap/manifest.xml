@@ -1,0 +1,18 @@
+<package>
+<description>Cost map maintenance library</description>
+<author>Eitan Marder-Eppstein</author>
+<license>BSD</license>
+<review status="unreviewed" notes=""/>
+<depend package="rosconsole"/>
+<depend package="roscpp" />
+<depend package="std_msgs" />
+<depend package="robot_msgs" />
+<depend package="laser_scan" />
+<depend package="pr2_msgs" />
+<depend package="tf" />
+<depend package="robot_filter" />
+<depend package="robot_srvs" />
+<export>
+  <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib `rosboost-cfg --lflags thread` -lnew_costmap"/>
+</export>
+</package>
