@@ -53,7 +53,7 @@ VoxelGrid::VoxelGrid(unsigned int size_x, unsigned int size_y, unsigned int size
 
 VoxelGrid::~VoxelGrid()
 {
-  delete(data);
+  delete [] data;
 }
 
 void VoxelGrid::markVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1){

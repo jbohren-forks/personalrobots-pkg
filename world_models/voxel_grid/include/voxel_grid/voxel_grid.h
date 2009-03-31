@@ -99,8 +99,6 @@ public:
   unsigned int sizeY();
   unsigned int sizeZ();
 
-private:
-
   template <class ActionType>
   inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int z0, 
       unsigned int x1, unsigned int y1, unsigned int z1){
@@ -147,6 +145,8 @@ private:
 
     bresenham3D(at, z_off, grid_off, grid_off, abs_dz, abs_dx, abs_dy, error_x, error_y, offset_dz, offset_dx, offset_dy, offset, z_mask);
   }
+
+private:
 
   //the real work is done here... 3D bresenham implementation
   template <class ActionType, class OffA, class OffB, class OffC>
