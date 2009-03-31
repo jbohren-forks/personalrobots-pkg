@@ -306,12 +306,12 @@ class NormalEstimation
         cloud_normals_.pts[i].x = plane_parameters (0);
         cloud_normals_.pts[i].y = plane_parameters (1);
         cloud_normals_.pts[i].z = plane_parameters (2);
-        cloud_normals_.chan[0].vals[i] = fabs (plane_parameters (3));
+        cloud_normals_.chan[0].vals[i] = curvature;
 #else
         cloud_normals_.chan[original_chan_size + 0].vals[i] = plane_parameters (0);
         cloud_normals_.chan[original_chan_size + 1].vals[i] = plane_parameters (1);
         cloud_normals_.chan[original_chan_size + 2].vals[i] = plane_parameters (2);
-        cloud_normals_.chan[original_chan_size + 3].vals[i] = fabs (plane_parameters (3));
+        cloud_normals_.chan[original_chan_size + 3].vals[i] = curvature;
         if (compute_moments_)
         {
           cloud_normals_.chan[original_chan_size + 4].vals[i] = j1;
