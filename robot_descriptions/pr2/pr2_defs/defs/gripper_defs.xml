@@ -609,8 +609,8 @@
     -->
     <joint name="${side}_gripper_joint" type="prismatic">
       <axis xyz="0 0 1" />
-      <limit effort="100000.0" velocity="100000.0"
-             min="-100.0" max="100.0"
+      <limit effort="100.0" velocity="0.02"
+             min="0.0" max="0.03"
              k_velocity="1.0" k_position="1.0"
              safety_length_min="0.0" safety_length_max="0.001" />
     </joint>
@@ -622,8 +622,8 @@
     <controller name="cal_${side}_gripper" type="GripperCalibrationControllerNode">
       <calibrate joint="${side}_gripper_joint"
                  actuator="${side}_gripper_motor"
-                 velocity="-10" />
-      <pid p="15" i="0" d="0" iClamp="0" />
+                 velocity="-0.01" />
+      <pid p="500" i="25.0" d="0" iClamp="50.0" />
     </controller>
   </macro>
 
