@@ -139,18 +139,19 @@ namespace costmap_2d{
     double start_point_x = wx - w_size_x / 2;
     double start_point_y = wy - w_size_y / 2;
 
+    //check start bounds
+    start_point_x = max(origin_x_, start_point_x);
+    start_point_y = max(origin_y_, start_point_y);
+
     unsigned int start_x, start_y, end_x, end_y;
-    //we'll do our own bounds checking for the window
-    worldToMapNoBounds(start_point_x, start_point_y, start_x, start_y);
+    worldToMap(start_point_x, start_point_y, start_x, start_y);
+
+    //we'll do our own bounds checking for the end of the window
     worldToMapNoBounds(start_point_x + w_size_x, start_point_y + w_size_y, end_x, end_y);
 
-    //check start bounds
-    start_x = start_point_x < origin_x_ ? 0 : start_x;
-    start_y = start_point_y < origin_y_ ? 0 : start_y;
-
     //check end bounds
-    end_x = end_x > size_x_ ? size_x_ : end_x;
-    end_y = end_y > size_y_ ? size_y_ : end_y;
+    end_x = min(end_x, size_x_);
+    end_y = min(end_y, size_y_);
 
     unsigned int cell_size_x = end_x - start_x;
     unsigned int cell_size_y = end_y - start_y;
@@ -167,8 +168,7 @@ namespace costmap_2d{
         local_map_cell++;
         cost_map_cell++;
       }
-      local_map_cell += cell_size_x;
-      cost_map_cell += size_x_;
+      cost_map_cell += size_x_ - cell_size_x;
     }
 
     //now we'll reset the costmap to the static map
@@ -183,8 +183,7 @@ namespace costmap_2d{
         local_map_cell++;
         cost_map_cell++;
       }
-      local_map_cell += cell_size_x;
-      cost_map_cell += size_x_;
+      cost_map_cell += size_x_ - cell_size_x;
     }
   }
 
@@ -215,7 +214,9 @@ namespace costmap_2d{
     //place the new obstacles into a priority queue... each with a priority of zero to begin with
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
       const Observation& obs = *it;
-      const PointCloud& cloud =*(obs.cloud_);
+
+      const PointCloud& cloud =obs.cloud_;
+
       for(unsigned int i = 0; i < cloud.pts.size(); ++i){
         //if the obstacle is too high or too far away from the robot we won't add it
         if(cloud.pts[i].z > max_obstacle_height_)
@@ -285,7 +286,7 @@ namespace costmap_2d{
 
     double ox = clearing_observation.origin_.x;
     double oy = clearing_observation.origin_.y;
-    PointCloud* cloud = clearing_observation.cloud_;
+    PointCloud cloud = clearing_observation.cloud_;
 
     //get the map coordinates of the origin of the sensor 
     unsigned int x0, y0;
@@ -293,23 +294,27 @@ namespace costmap_2d{
       return;
 
     //we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
-    double end_x = origin_x_ + metersSizeX();
-    double end_y = origin_y_ + metersSizeY();
+    double map_end_x = origin_x_ + metersSizeX();
+    double map_end_y = origin_y_ + metersSizeY();
 
     //for each point in the cloud, we want to trace a line from the origin and clear obstacles along it
-    for(unsigned int i = 0; i < cloud->pts.size(); ++i){
-      double wx = cloud->pts[i].x;
-      double wy = cloud->pts[i].y;
+    for(unsigned int i = 0; i < cloud.pts.size(); ++i){
+      double wx = cloud.pts[i].x;
+      double wy = cloud.pts[i].y;
 
       //we want to check that we scale the vector so that we only trace to the desired distance
       double sq_distance = (wx - ox) * (wx - ox) + (wy - oy) * (wy - oy);
       double scaling_fact = sq_raytrace_range / sq_distance;
-      scaling_fact = scaling_fact > 1.0 ? 1.0 : scaling_fact;
+      scaling_fact = min(1.0, scaling_fact);
+
+      double a = wx - ox;
+      double b = wy - oy;
+
+      wx = ox + scaling_fact * a;
+      wy = oy + scaling_fact * b;
 
       //now we also need to make sure that the enpoint we're raytracing 
       //to isn't off the costmap and scale if necessary
-      double a = wx - ox;
-      double b = wy - oy;
 
       //the minimum value to raytrace from is the origin
       if(wx < origin_x_){
@@ -324,13 +329,13 @@ namespace costmap_2d{
       }
 
       //the maximum value to raytrace to is the end of the map
-      if(wx > end_x){
-        double t = (end_x - ox) / a;
+      if(wx > map_end_x){
+        double t = (map_end_x - ox) / a;
         wx = ox + a * t;
         wy = oy + b * t;
       }
-      if(wy > end_y){
-        double t = (end_y - oy) / b;
+      if(wy > map_end_y){
+        double t = (map_end_y - oy) / b;
         wx = ox + a * t;
         wy = oy + b * t;
       }
@@ -358,11 +363,11 @@ namespace costmap_2d{
     double end_y = start_y + w_size_y;
 
     //scale the window based on the bounds of the costmap
-    start_x = start_x < origin_x_ ? origin_x_ : start_x;
-    start_y = start_y < origin_y_ ? origin_y_ : start_y;
+    start_x = max(origin_x_, start_x);
+    start_y = max(origin_y_, start_y);
 
-    end_x = end_x > origin_x_ + metersSizeX() ? origin_x_ + metersSizeX() : end_x;
-    end_y = end_y > origin_y_ + metersSizeY() ? origin_y_ + metersSizeY() : end_y;
+    end_x = min(origin_x_ + metersSizeX(), end_x);
+    end_y = min(origin_y_ + metersSizeY(), end_y);
 
     //get the map coordinates of the bounds of the window
     unsigned int map_sx, map_sy, map_ex, map_ey;
@@ -382,8 +387,8 @@ namespace costmap_2d{
         current++;
         index++;
       }
-      current += size_x_;
-      index += size_x_;
+      current += size_x_ - (map_ex - map_sx) - 1;
+      index += size_x_ - (map_ex - map_sx) - 1;
     }
   }
 
