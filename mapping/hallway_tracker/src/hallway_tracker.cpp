@@ -156,7 +156,8 @@ public:
 
     // Subscribe to the scans.
     message_notifier_ = new tf::MessageNotifier<laser_scan::LaserScan> (tf_, node_, boost::bind(&HallwayTracker::laserCallBack, this, _1), base_laser_topic_.c_str(), fixed_frame_, 1);
-  };
+    message_notifier_->setTolerance(ros::Duration(.02));
+  }
 
   ~HallwayTracker()
   {
@@ -176,7 +177,13 @@ public:
 
     // Transform into a PointCloud message
     int mask = laser_scan::MASK_INTENSITY | laser_scan::MASK_DISTANCE | laser_scan::MASK_INDEX | laser_scan::MASK_TIMESTAMP;
-    projector_.transformLaserScanToPointCloud(fixed_frame_, cloud_, filtered_scan, *tf_, mask);
+    try {
+      projector_.transformLaserScanToPointCloud(fixed_frame_, cloud_, filtered_scan, *tf_, mask);
+    }
+    catch (tf::TransformException& e) {
+      ROS_WARN ("TF exception transforming scan to cloud: %s", e.what());
+      return;
+    }
 
     // Check that the cloud is large enough.
     if(cloud_.pts.empty())
@@ -203,7 +210,13 @@ public:
       tmp_pt_in[0] = cloud_.pts[i].x;
       tmp_pt_in[1] = cloud_.pts[i].y;
       tmp_pt_in[2] = cloud_.pts[i].z;
+      try {
       tf_->transformPoint("base_laser", tmp_pt_in, tmp_pt_out); // Get distance from the robot.
+      }
+      catch (tf::TransformException& e) {
+        ROS_WARN ("TF exception transforming point: %s", e.what());
+      }
+
       if (tmp_pt_out.length() < max_point_dist_m_) {
 	possible_hallway_points[iind] = i;
 	iind++;
