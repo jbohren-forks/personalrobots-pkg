@@ -144,7 +144,10 @@ namespace costmap_2d{
     start_point_y = max(origin_y_, start_point_y);
 
     unsigned int start_x, start_y, end_x, end_y;
-    worldToMap(start_point_x, start_point_y, start_x, start_y);
+
+    //check for legality just in case
+    if(!worldToMap(start_point_x, start_point_y, start_x, start_y))
+      return;
 
     //we'll do our own bounds checking for the end of the window
     worldToMapNoBounds(start_point_x + w_size_x, start_point_y + w_size_y, end_x, end_y);
@@ -278,9 +281,6 @@ namespace costmap_2d{
   }
 
   void Costmap2D::raytraceFreespace(const Observation& clearing_observation){
-    //pre-comput the squared raytrace range... saves a sqrt in an inner loop
-    double sq_raytrace_range = raytrace_range_ * raytrace_range_;
-
     //create the functor that we'll use to clear cells from the costmap
     ClearCell clearer(cost_map_);
 
@@ -302,50 +302,46 @@ namespace costmap_2d{
       double wx = cloud.pts[i].x;
       double wy = cloud.pts[i].y;
 
-      //we want to check that we scale the vector so that we only trace to the desired distance
-      double sq_distance = (wx - ox) * (wx - ox) + (wy - oy) * (wy - oy);
-      double scaling_fact = sq_raytrace_range / sq_distance;
-      scaling_fact = min(1.0, scaling_fact);
-
-      double a = wx - ox;
-      double b = wy - oy;
-
-      wx = ox + scaling_fact * a;
-      wy = oy + scaling_fact * b;
-
       //now we also need to make sure that the enpoint we're raytracing 
       //to isn't off the costmap and scale if necessary
+      double a = wx - ox;
+      double b = wy - oy;
 
       //the minimum value to raytrace from is the origin
       if(wx < origin_x_){
         double t = (origin_x_ - ox) / a;
-        wx = ox + a * t;
+        wx = origin_x_;
         wy = oy + b * t;
       }
       if(wy < origin_y_){
         double t = (origin_y_ - oy) / b;
         wx = ox + a * t;
-        wy = oy + b * t;
+        wy = origin_y_;
       }
 
       //the maximum value to raytrace to is the end of the map
       if(wx > map_end_x){
         double t = (map_end_x - ox) / a;
-        wx = ox + a * t;
+        wx = map_end_x;
         wy = oy + b * t;
       }
       if(wy > map_end_y){
         double t = (map_end_y - oy) / b;
         wx = ox + a * t;
-        wy = oy + b * t;
+        wy = map_end_y;
       }
 
       //now that the vector is scaled correctly... we'll get the map coordinates of its endpoint
       unsigned int x1, y1;
-      worldToMap(wx, wy, x1, y1);
+
+      //check for legality just in case
+      if(!worldToMap(wx, wy, x1, y1))
+        continue;
+
+      unsigned int cell_raytrace_range = cellDistance(raytrace_range_);
 
       //and finally... we can execute our trace to clear obstacles along that line
-      raytraceLine(clearer, x0, y0, x1, y1);
+      raytraceLine(clearer, x0, y0, x1, y1, cell_raytrace_range);
     }
   }
 
@@ -371,8 +367,10 @@ namespace costmap_2d{
 
     //get the map coordinates of the bounds of the window
     unsigned int map_sx, map_sy, map_ex, map_ey;
-    worldToMap(start_x, start_y, map_sx, map_sy);
-    worldToMap(end_x, end_y, map_ex, map_ey);
+
+    //check for legality just in case
+    if(!worldToMap(start_x, start_y, map_sx, map_sy) || !worldToMap(end_x, end_y, map_ex, map_ey))
+      return;
 
     //we know that we want to clear all non-lethal obstacles in this window to get it ready for inflation
     unsigned int index = getIndex(map_sx, map_sy);

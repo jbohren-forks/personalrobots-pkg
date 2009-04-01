@@ -278,10 +278,10 @@ namespace costmap_2d {
        * @param  y0 The starting y coordinate
        * @param  x1 The ending x coordinate
        * @param  y1 The ending y coordinate
-       * @return 
+       * @param  max_length The maximum desired length of the segment... allows you to not go all the way to the endpoint
        */
       template <class ActionType>
-        inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1){
+        inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, unsigned int max_length){
           int dx = x1 - x0;
           int dy = y1 - y0;
 
@@ -293,16 +293,20 @@ namespace costmap_2d {
 
           unsigned int offset = y0 * size_x_ + x0;
 
+          //we need to chose how much to scale our dominant dimension, based on the maximum length of the line
+          double dist = sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1));
+          double scale = std::min(1.0,  max_length / dist);
+
           //if x is dominant
           if(abs_dx >= abs_dy){
             int error_y = abs_dx / 2;
-            bresenham2D(at, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset);
+            bresenham2D(at, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset, (unsigned int)(scale * abs_dx));
             return;
           }
 
           //otherwise y is dominant
           int error_x = abs_dy / 2;
-          bresenham2D(at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset);
+          bresenham2D(at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset, (unsigned int)(scale * abs_dy));
 
         }
 
@@ -310,8 +314,9 @@ namespace costmap_2d {
        * @brief  A 2D implementation of Bresenham's raytracing algorithm... applies an action at each step
        */
       template <class ActionType>
-        inline void bresenham2D(ActionType at, unsigned int abs_da, unsigned int abs_db, int error_b, int offset_a, int offset_b, unsigned int offset){
-          for(unsigned int i = 0; i < abs_da; ++i){
+        inline void bresenham2D(ActionType at, unsigned int abs_da, unsigned int abs_db, int error_b, int offset_a, int offset_b, 
+            unsigned int offset, unsigned int max_length){
+          for(unsigned int i = 0; i < std::min(max_length, abs_da); ++i){
             at(offset);
             offset += offset_a;
             error_b += abs_db;
@@ -408,6 +413,16 @@ namespace costmap_2d {
           ClearCell(unsigned char* cost_map) : cost_map_(cost_map) {}
           inline void operator()(unsigned int offset){
             cost_map_[offset] = 0;
+          }
+        private:
+          unsigned char* cost_map_;
+      };
+
+      class MarkCell {
+        public:
+          MarkCell(unsigned char* cost_map) : cost_map_(cost_map) {}
+          inline void operator()(unsigned int offset){
+            cost_map_[offset] = LETHAL_OBSTACLE;
           }
         private:
           unsigned char* cost_map_;
