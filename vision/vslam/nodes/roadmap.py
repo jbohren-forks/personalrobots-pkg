@@ -123,6 +123,7 @@ class FakeRoadmapServer:
 
   def send_map(self, stamp):
     p = vslam.msg.Roadmap()
+    print "sending time", stamp
     p.header.stamp = stamp
     p.nodes = [ vslam.msg.Node(x,y,t) for (x,y,t) in self.nodes ]
     es = []
@@ -137,7 +138,10 @@ class FakeRoadmapServer:
     self.pub.publish(p)
 
 def main(args):
-  rms = FakeRoadmapServer(args)
+  if args[1] == 'stage':
+    rms = FakeRoadmapServer(args)
+  else:
+    rms = RoadmapServer(args)
   rospy.spin()
 
 if __name__ == '__main__':
