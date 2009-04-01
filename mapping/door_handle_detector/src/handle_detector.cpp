@@ -273,20 +273,6 @@ bool HandleDetector::detectHandle (const robot_msgs::Door& door, PointCloud poin
   return (true);
 }
 
-      // Go over each cluster, fit vertical lines to get rid of the points near the door edges in an elegant manner,
-      // then consider the rest as true handle candidate clusters
-      vector<vector<int> > line_inliers (clusters.size ());
-      vector<vector<int> > inliers (clusters.size ());
-      for (int i = 0; i < (int)clusters.size (); i++)
-      {
-        // One method to prune point clusters would be to fit vertical lines (Z parallel) and remove their inliers
-#if 0
-        //fitSACOrientedLine (&cloud_tr_, clusters[i], sac_distance_threshold_, &z_axis_, euclidean_cluster_angle_tolerance_, line_inliers[i]);
-        //set_difference (clusters[i].begin (), clusters[i].end (), line_inliers[i].begin (), line_inliers[i].end (),
-        //                inserter (remaining_clusters[i], remaining_clusters[i].begin ()));
-#endif
-        // Grow the current cluster using the door outliers
-        growCurrentCluster (&cloud_tr_, outliers, &clusters[i], inliers[i], 2 * euclidean_cluster_distance_tolerance_);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void HandleDetector::refineHandleCandidatesWithDoorOutliers (vector<int> &handle_indices, vector<int> &outliers, 
@@ -458,31 +444,6 @@ void  HandleDetector::getHandleCandidates (const vector<int> &indices, const vec
 }
 
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Select the door outliers that could represent a handle
-      *
-      * \param indices a pointer to all the point indices
-      * \param inliers a pointer to the point indices which are inliers for the door plane
-      * \param coeff the door planar coefficients
-      * \param polygon the polygonal bounds of the door
-      * \param polygon_tr the polygonal bounds of the door in the X-Y plane
-      * \param transformation the transformation between the door planar coefficients and the X-Y plane
-      *
-      * \param outliers the resultant outliers
-      *
-      * \note The following global parameters are used:
-      *       cloud_tr_, viewpoint_cloud_
-      *       distance_from_door_margin_, euclidean_cluster_distance_tolerance_, euclidean_cluster_min_pts_
-      */
-    void
-      getDoorOutliers (vector<int> *indices, vector<int> *inliers,
-                       vector<double> *coeff, Polygon3D *polygon, Polygon3D *polygon_tr, Eigen::Matrix4d transformation,
-                       vector<int> &outliers)
-    {
-      vector<int> tmp_indices;    // Used as a temporary indices array
-      Point32 tmp_p;              // Used as a temporary point
-      set_difference (indices->begin (), indices->end (), inliers->begin (), inliers->end (),
-                      inserter (outliers, outliers.begin ()));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void HandleDetector::getDoorOutliers (const vector<int> &indices, const vector<int> &inliers,
@@ -560,8 +521,6 @@ bool  HandleDetector::detectHandleSrv (door_handle_detector::DoorsDetector::Requ
   while ((int)num_clouds_received_ < 1)
     tictoc.sleep ();
   delete message_notifier;
-      tmp_indices.resize (nr_p);
-      outliers = tmp_indices;
 
   return detectHandle(req.door, pointcloud_, resp.doors);
 }

@@ -69,7 +69,6 @@ DoorDetector::DoorDetector (ros::Node* anode)
     node_->param ("~rectangle_constrain_edge_angle", rectangle_constrain_edge_angle_, 10.0);
     rectangle_constrain_edge_angle_ = angles::from_degrees (rectangle_constrain_edge_angle_);
   }
-#include <angles/angles.h>
 
   // ---[ Parameters regarding optimizations / real-time computations
   leaf_width_ = 0.02;              // 2cm box size by default
@@ -110,9 +109,7 @@ DoorDetector::DoorDetector (ros::Node* anode)
 
   global_marker_id_ = 1;
 }
-    double minimum_z_, maximum_z_;;
 
-    int global_marker_id_;
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -210,8 +207,6 @@ bool
     {
       cloud_regions.pts.push_back (cloud_down.pts[clusters[cc][j]]);
       cloud_regions.chan[0].vals.push_back (getRGB (r, g, b));
-
-      global_marker_id_ = 1;
     }
   }
   node_->publish ("~door_regions", cloud_regions);
@@ -411,7 +406,6 @@ bool
     else
       pmap_.polygons[cc].points.resize (0);
   }
-        if (bad_candidate) continue;
 
   ROS_INFO (" - Found %d / %d potential door candidates.", doors_found_cnt, (int)clusters.size ());
   result.resize(doors_found_cnt);
@@ -490,6 +484,7 @@ bool
 
   return true;
 }
+
 
 
 
