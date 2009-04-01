@@ -59,7 +59,7 @@ namespace costmap_2d {
   };
 
   inline bool operator<(const CellData &a, const CellData &b){
-    return a.distance_ < b.distance_;
+    return a.distance_ > b.distance_;
   }
 
   /**
@@ -114,7 +114,7 @@ namespace costmap_2d {
        * @param my The y coordinate of the cell 
        * @return The cost of the cell
        */
-      unsigned char getCellCost(unsigned int mx, unsigned int my) const;
+      unsigned char getCost(unsigned int mx, unsigned int my) const;
 
       /**
        * @brief  Convert from map coordinates to world coordinates
@@ -228,7 +228,7 @@ namespace costmap_2d {
           double distance = distanceLookup(mx, my, src_x, src_y);
 
           //we only want to put the cell in the queue if it is within the inflation radius of the obstacle point
-          if(distance > cell_inflation_radius_)
+          if(distance >= cell_inflation_radius_)
             return;
 
           //assign the cost associated with the distance from an obstacle to the cell

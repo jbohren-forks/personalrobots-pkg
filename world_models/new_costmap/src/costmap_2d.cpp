@@ -105,7 +105,7 @@ namespace costmap_2d{
     return (unsigned int) cells_dist;
   }
 
-  unsigned char Costmap2D::getCellCost(unsigned int mx, unsigned int my) const {
+  unsigned char Costmap2D::getCost(unsigned int mx, unsigned int my) const {
     ROS_ASSERT_MSG(mx < size_x_ && my < size_y_, "You cannot get the cost of a cell that is outside the bounds of the costmap");
     return cost_map_[my * size_x_ + mx];
   }
