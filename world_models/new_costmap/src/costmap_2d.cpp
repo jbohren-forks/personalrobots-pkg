@@ -41,20 +41,74 @@ using namespace robot_msgs;
 
 namespace costmap_2d{
 
-
   Costmap2D::Costmap2D(double meters_size_x, double meters_size_y, 
       double resolution, double origin_x, double origin_y) : resolution_(resolution), 
   origin_x_(origin_x), origin_y_(origin_y) {
     //make sure that we have a legal sized cost_map
     ROS_ASSERT_MSG(meters_size_x > 0 && meters_size_y > 0, "Both the x and y dimensions of the costmap must be greater than 0.");
 
-    size_x_ = (unsigned int) (meters_size_x / resolution);
-    size_y_ = (unsigned int) (meters_size_y / resolution);
+    size_x_ = (unsigned int) ceil(meters_size_x / resolution);
+    size_y_ = (unsigned int) ceil(meters_size_y / resolution);
   }
 
   Costmap2D::Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, 
-      double resolution, double origin_x, double origin_y) : size_x_(cells_size_x),
-  size_y_(cells_size_y), resolution_(resolution), origin_x_(origin_x), origin_y_(origin_y) {}
+      double resolution, double origin_x, double origin_y, double inscribed_radius,
+      double circumscribed_radius, double inflation_radius, double obstacle_range,
+      double max_obstacle_height, double weight,
+      const std::vector<unsigned char>& static_data, unsigned char lethal_threshold) : size_x_(cells_size_x),
+  size_y_(cells_size_y), resolution_(resolution), origin_x_(origin_x), origin_y_(origin_y), static_map_(NULL),
+  cost_map_(NULL), markers_(NULL), sq_obstacle_range_(obstacle_range * obstacle_range), 
+  max_obstacle_height_(max_obstacle_height), cached_costs_(NULL), cached_distances_(NULL), 
+  inscribed_radius_(inscribed_radius), circumscribed_radius_(circumscribed_radius), inflation_radius_(inflation_radius),
+  weight_(weight){
+    //convert our inflations from world to cell distance
+    inscribed_radius_ = cellDistance(inscribed_radius);
+    circumscribed_radius_ = cellDistance(circumscribed_radius);
+    inflation_radius_ = cellDistance(inflation_radius);
+
+    //based on the inflation radius... compute distance and cost caches
+    cached_costs_ = new unsigned char*[inflation_radius_ + 1];
+    cached_distances_ = new double*[inflation_radius_ + 1];
+    for(unsigned int i = 0; i <= inflation_radius_; ++i){
+      cached_costs_[i] = new unsigned char[inflation_radius_ + 1];
+      cached_distances_[i] = new double[inflation_radius_ + 1];
+      for(unsigned int j = 0; i <= inflation_radius_; ++j){
+        cached_distances_[i][j] = sqrt(i*i + j*j);
+        cached_costs_[i][j] = computeCost(cached_distances_[i][j]);
+      }
+    }
+
+    if(!static_data.empty()){
+      ROS_ASSERT_MSG(size_x_ * size_y_ == static_data_.size(), "If you want to initialize a costmap with static data, their sizes must match.");
+
+      //we'll need a priority queue for inflation
+      std::priority_queue<CellData*> inflation_queue;
+
+      //initialize the costmap with static data
+      for(unsigned int i = 0; i < size_x_; ++i){
+        for(unsigned int j = 0; j < size_y_; ++j){
+          unsigned int index = getIndex(i, j);
+          //if the static value is above the threshold... it is a lethal obstacle... otherwise just take the cost
+          cost_map_[index] = static_data[index] >= lethal_threshold ? LETHAL_OBSTACLE : static_data[index];
+          if(cost_map_[index] == LETHAL_OBSTACLE){
+            unsigned int mx, my;
+            indexToCells(index, mx, my);
+            enqueue(index, mx, my, mx, my, inflation_queue);
+          }
+        }
+      }
+      //now... let's inflate the obstacles
+      inflateObstacles(inflation_queue);
+
+      //we also want to keep a copy of the current costmap as the static map
+      memcpy(static_map_, cost_map_, size_x_ * size_y_);
+    }
+  }
+
+  unsigned int Costmap2D::cellDistance(double world_dist){
+    double cells_dist = max(0.0, ceil(world_dist / resolution_));
+    return (unsigned int) cells_dist;
+  }
 
   unsigned char Costmap2D::getCellCost(unsigned int mx, unsigned int my) const {
     ROS_ASSERT_MSG(mx < size_x_ && my < size_y_, "You cannot get the cost of a cell that is outside the bounds of the costmap");
@@ -208,7 +262,8 @@ namespace costmap_2d{
 
   void Costmap2D::raytraceFreespace(const std::vector<Observation>& clearing_scans){}
 
-  void Costmap2D::inflateObstaclesInWindow(double wx, double wy, double w_size_x, double w_size_y){}
+  void Costmap2D::inflateObstaclesInWindow(double wx, double wy, double w_size_x, double w_size_y){
+  }
 
   unsigned int Costmap2D::cellSizeX() const{}
 

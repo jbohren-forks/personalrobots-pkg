@@ -86,9 +86,20 @@ namespace costmap_2d {
        * @param  resolution The resolution of the map in meters/cell
        * @param  origin_x The x origin of the map
        * @param  origin_y The y origin of the map
+       * @param  inscribed_radius The inscribed radius of the robot
+       * @param  circumscribed_radius The circumscribed radius of the robot
+       * @param  inflation_radius How far out to inflate obstacles
+       * @param  obstacle_range The maximum range at which obstacles will be put into the costmap
+       * @param  max_obstacle_height The maximum height of obstacles that will be considered
+       * @param  weight The scaling factor for the cost function. Should be 0 < weight <= 1. Lower values reduce effective cost.
+       * @param  static_data Data used to initialize the costmap
+       * @param  lethal_threshold The cost threshold at which a point in the static data is considered a lethal obstacle
        */
       Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, 
-          double resolution, double origin_x, double origin_y);
+          double resolution, double origin_x, double origin_y, double inscribed_radius,
+          double circumscribed_radius, double inflation_radius, double obstacle_range,
+          double max_obstacle_height, double weight,
+          const std::vector<unsigned char>& static_data, unsigned char lethal_threshold);
 
       /**
        * @brief  Get the cost of a cell in the costmap
@@ -119,6 +130,11 @@ namespace costmap_2d {
 
       inline unsigned int getIndex(unsigned int mx, unsigned int my) const{
         return my * size_x_ + mx;
+      }
+
+      inline void indexToCells(unsigned int index, unsigned int& mx, unsigned int& my) const{
+        my = index / size_x_;
+        mx = index - (my * size_x_);
       }
 
       inline void updateCellCost(unsigned int index, unsigned char cost){
@@ -273,6 +289,8 @@ namespace costmap_2d {
        */
       void inflateObstacles(std::priority_queue<CellData*>& inflation_queue);
 
+      unsigned int cellDistance(double world_dist);
+
       unsigned int size_x_;
       unsigned int size_y_;
       double resolution_;
@@ -285,7 +303,7 @@ namespace costmap_2d {
       double max_obstacle_height_;
       unsigned char** cached_costs_;
       double** cached_distances_;
-      double inscribed_radius_, circumscribed_radius, inflation_radius_;
+      unsigned int inscribed_radius_, circumscribed_radius_, inflation_radius_;
       double weight_;
   };
 };
