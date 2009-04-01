@@ -12,7 +12,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(random_misc_utils)
 
 #uncomment if you have defined messages
-#genmsg()
+genmsg()
 #uncomment if you have defined services
 #gensrv()
 
