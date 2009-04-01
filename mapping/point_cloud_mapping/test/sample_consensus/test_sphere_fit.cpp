@@ -72,13 +72,18 @@ TEST (LMedS, SACModelSphere)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 9);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 4);
   //printf ("Sphere coefficients: %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3]);
   EXPECT_NEAR (coeff[0], 2.0, 1e-1);
   EXPECT_NEAR (coeff[1], 2.0, 1e-1);
   EXPECT_NEAR (coeff[2], 2.0, 1e-1);
   EXPECT_NEAR (coeff[3], 0.99, 1e-1);
+
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+  EXPECT_EQ ((int)coeff_ref.size (), 4);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -114,13 +119,18 @@ TEST (RANSAC, SACModelSphere)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 9);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 4);
   //printf ("Sphere coefficients: %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3]);
   EXPECT_NEAR (coeff[0], 2.0, 1e-1);
   EXPECT_NEAR (coeff[1], 2.0, 1e-1);
   EXPECT_NEAR (coeff[2], 2.0, 1e-1);
   EXPECT_NEAR (coeff[3], 0.99, 1e-1);
+
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+  EXPECT_EQ ((int)coeff_ref.size (), 4);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -156,13 +166,18 @@ TEST (MSAC, SACModelSphere)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 9);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 4);
   //printf ("Sphere coefficients: %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3]);
   EXPECT_NEAR (coeff[0], 2.0, 1e-1);
   EXPECT_NEAR (coeff[1], 2.0, 1e-1);
   EXPECT_NEAR (coeff[2], 2.0, 1e-1);
   EXPECT_NEAR (coeff[3], 0.99, 1e-1);
+
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+  EXPECT_EQ ((int)coeff_ref.size (), 4);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -200,13 +215,18 @@ TEST (RRANSAC, SACModelSphere)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 9);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 4);
   //printf ("Sphere coefficients: %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3]);
   EXPECT_NEAR (coeff[0], 2.0, 1e-1);
   EXPECT_NEAR (coeff[1], 2.0, 1e-1);
   EXPECT_NEAR (coeff[2], 2.0, 1e-1);
   EXPECT_NEAR (coeff[3], 0.99, 1e-1);
+
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+  EXPECT_EQ ((int)coeff_ref.size (), 4);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -244,13 +264,18 @@ TEST (RMSAC, SACModelSphere)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 9);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 4);
   //printf ("Sphere coefficients: %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3]);
   EXPECT_NEAR (coeff[0], 2.0, 1e-1);
   EXPECT_NEAR (coeff[1], 2.0, 1e-1);
   EXPECT_NEAR (coeff[2], 2.0, 1e-1);
   EXPECT_NEAR (coeff[3], 0.99, 1e-1);
+
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+  EXPECT_EQ ((int)coeff_ref.size (), 4);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);

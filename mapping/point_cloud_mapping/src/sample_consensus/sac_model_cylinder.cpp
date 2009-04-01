@@ -35,6 +35,8 @@
 #include <point_cloud_mapping/geometry/point.h>
 #include <point_cloud_mapping/geometry/distances.h>
 
+#include <cminpack.h>
+
 namespace sample_consensus
 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -290,10 +292,44 @@ namespace sample_consensus
       refit_coefficients = model_coefficients_;
       return;
     }
+    if (model_coefficients_.size () == 0)
+    {
+      ROS_WARN ("[SACModelCylinder::RefitModel] Initial model coefficients have not been estimated yet - proceeding without an initial solution!");
+      best_inliers_ = indices_;
+    }
 
-    refit_coefficients.resize (7);
-    for (int d = 0; d < 7; d++)
-      refit_coefficients[d] = model_coefficients_[d];
+    int m = inliers.size ();
+
+    double *fvec = new double[m];
+
+    int n = 7;      // 7 unknowns
+    int iwa[n];
+
+    int lwa = m * n + 5 * n + m;
+    double *wa = new double[lwa];
+
+    // Set the initial solution
+    double x[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    if ((int)model_coefficients_.size () == n)
+      for (int d = 0; d < n; d++)
+        x[d] = model_coefficients_.at (d);
+
+    // Set tol to the square root of the machine. Unless high solutions are required, these are the recommended settings.
+    double tol = sqrt (dpmpar (1));
+
+    // Optimize using forward-difference approximation LM
+    int info = lmdif1 (&sample_consensus::SACModelCylinder::functionToOptimize, this, m, n, x, fvec, tol, iwa, wa, lwa);
+
+    // Compute the L2 norm of the residuals
+    ROS_DEBUG ("LM solver finished with exit code %i, having a residual norm of %g. \nInitial solution: %g %g %g %g %g %g %g \nFinal solution: %g %g %g %g %g %g %g",
+               info, enorm (m, fvec), model_coefficients_.at (0), model_coefficients_.at (1), model_coefficients_.at (2), model_coefficients_.at (3),
+               model_coefficients_.at (4), model_coefficients_.at (5), model_coefficients_.at (6), x[0], x[1], x[2], x[3], x[4], x[5], x[6]);
+
+    refit_coefficients.resize (n);
+    for (int d = 0; d < n; d++)
+      refit_coefficients[d] = x[d];
+
+    free (wa); free (fvec);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////(
@@ -310,15 +346,14 @@ namespace sample_consensus
   {
     SACModelCylinder *model = (SACModelCylinder*)p;
 
-    for (int i = 0; i < n; i ++)
-    {
-      // Compute the difference between the center of the circle and the datapoint X_i
-      double xt = model->cloud_->pts[model->best_inliers_.at (i)].x - x[0];
-      double yt = model->cloud_->pts[model->best_inliers_.at (i)].y - x[1];
+    std::vector<double> line_coefficients (6);
+    for (unsigned int d = 0; d < 6; d++)
+      line_coefficients[d] = x[d];
 
-      // g = sqrt ((x-a)^2 + (y-b)^2) - R
-      fvec[i] = sqrt (xt * xt + yt * yt) - x[2];
-    }
+    for (int i = 0; i < n; i ++)
+      // dist = f - r
+      fvec[i] = cloud_geometry::distances::pointToLineDistance (model->cloud_->pts[model->best_inliers_.at (i)], line_coefficients) - x[6];
+
     return (0);
   }
 

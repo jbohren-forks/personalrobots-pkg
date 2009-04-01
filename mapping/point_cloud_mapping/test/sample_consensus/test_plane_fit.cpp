@@ -72,7 +72,8 @@ TEST (LMedS, SACModelPlane)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 9);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 4);
   //printf ("Plane coefficients: %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3]);
   EXPECT_EQ (coeff[0], 0);
@@ -139,7 +140,8 @@ TEST (RANSAC, SACModelPlane)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 9);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 4);
   //printf ("Plane coefficients: %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3]);
   EXPECT_EQ (coeff[0], 0);
@@ -206,7 +208,8 @@ TEST (MSAC, SACModelPlane)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 9);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 4);
   //printf ("Plane coefficients: %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3]);
   EXPECT_EQ (coeff[0], 0);
@@ -273,7 +276,8 @@ TEST (MLESAC, SACModelPlane)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 9);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 4);
   //printf ("Plane coefficients: %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3]);
   EXPECT_EQ (coeff[0], 0);
@@ -342,7 +346,8 @@ TEST (RRANSAC, SACModelPlane)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 9);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 4);
   //printf ("Plane coefficients: %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3]);
   EXPECT_EQ (coeff[0], 0);
@@ -411,7 +416,8 @@ TEST (RMSAC, SACModelPlane)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 9);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 4);
   //printf ("Plane coefficients: %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3]);
   EXPECT_EQ (coeff[0], 0);

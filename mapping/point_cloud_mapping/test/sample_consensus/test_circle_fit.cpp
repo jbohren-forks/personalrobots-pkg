@@ -80,17 +80,19 @@ TEST (LMedS, SACModelCircle2D)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 17);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 3);
   //printf ("Circle 2D coefficients: %f %f %f\n", coeff[0], coeff[1], coeff[2]);
   EXPECT_NEAR (coeff[0],  2.99, 1e-1);
   EXPECT_NEAR (coeff[1], -5.00, 1e-1);
   EXPECT_NEAR (coeff[2],  0.99, 1e-1);
 
-/*  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
-*/
+
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
 
@@ -133,7 +135,8 @@ TEST (RANSAC, SACModelCircle2D)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 17);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 3);
   //printf ("Circle 2D coefficients: %f %f %f\n", coeff[0], coeff[1], coeff[2]);
   EXPECT_NEAR (coeff[0],  2.99, 1e-1);
@@ -142,9 +145,9 @@ TEST (RANSAC, SACModelCircle2D)
 
   std::vector<double> coeff_ref;
   sac->refineCoefficients (coeff_ref);
-/*  EXPECT_EQ ((int)coeff_ref.size (), 3);
+  EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
-*/
+
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
 
@@ -187,17 +190,19 @@ TEST (MSAC, SACModelCircle2D)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 17);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 3);
   //printf ("Circle 2D coefficients: %f %f %f\n", coeff[0], coeff[1], coeff[2]);
   EXPECT_NEAR (coeff[0],  2.99, 1e-1);
   EXPECT_NEAR (coeff[1], -5.00, 1e-1);
   EXPECT_NEAR (coeff[2],  0.99, 1e-1);
 
-/*  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
-*/
+
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
 
@@ -240,17 +245,19 @@ TEST (MLESAC, SACModelCircle2D)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 17);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 3);
   //printf ("Circle 2D coefficients: %f %f %f\n", coeff[0], coeff[1], coeff[2]);
   EXPECT_NEAR (coeff[0],  2.99, 1e-1);
   EXPECT_NEAR (coeff[1], -5.00, 1e-1);
   EXPECT_NEAR (coeff[2],  0.99, 1e-1);
 
-/*  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
-*/
+
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
 
@@ -293,17 +300,19 @@ TEST (RRANSAC, SACModelCircle2D)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 17);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 3);
   //printf ("Circle 2D coefficients: %f %f %f\n", coeff[0], coeff[1], coeff[2]);
   EXPECT_NEAR (coeff[0],  2.99, 1e-1);
   EXPECT_NEAR (coeff[1], -5.00, 1e-1);
   EXPECT_NEAR (coeff[2],  0.99, 1e-1);
 
-/*  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
-*/
+
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
 
@@ -346,17 +355,19 @@ TEST (RMSAC, SACModelCircle2D)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 17);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 3);
   //printf ("Circle 2D coefficients: %f %f %f\n", coeff[0], coeff[1], coeff[2]);
   EXPECT_NEAR (coeff[0],  2.99, 1e-1);
   EXPECT_NEAR (coeff[1], -5.00, 1e-1);
   EXPECT_NEAR (coeff[2],  0.99, 1e-1);
 
-/*  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
-*/
+
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
 

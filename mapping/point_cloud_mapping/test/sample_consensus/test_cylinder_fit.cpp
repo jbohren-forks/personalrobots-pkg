@@ -111,12 +111,17 @@ TEST (LMedS, SACModelCylinder)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 20);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 7);
   //printf ("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
   EXPECT_NEAR (coeff[0], -0.5, 1e-1);
   EXPECT_NEAR (coeff[1], 1.7, 1e-1);
   EXPECT_NEAR (coeff[6], 0.5, 1e-1);
+
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+  EXPECT_EQ ((int)coeff_ref.size (), 7);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);
@@ -191,12 +196,17 @@ TEST (RANSAC, SACModelCylinder)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 20);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 7);
   //printf ("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
   EXPECT_NEAR (coeff[0], -0.5, 1e-1);
   EXPECT_NEAR (coeff[1], 1.7, 1e-1);
   EXPECT_NEAR (coeff[6], 0.5, 1e-1);
+
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+  EXPECT_EQ ((int)coeff_ref.size (), 7);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);
@@ -271,12 +281,17 @@ TEST (MSAC, SACModelCylinder)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 20);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 7);
   //printf ("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
   EXPECT_NEAR (coeff[0], -0.5, 1e-1);
   EXPECT_NEAR (coeff[1], 1.7, 1e-1);
   EXPECT_NEAR (coeff[6], 0.5, 1e-1);
+
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+  EXPECT_EQ ((int)coeff_ref.size (), 7);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);
@@ -351,12 +366,17 @@ TEST (MLESAC, SACModelCylinder)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 20);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 7);
   //printf ("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
   EXPECT_NEAR (coeff[0], -0.5, 1e-1);
   EXPECT_NEAR (coeff[1], 1.7, 1e-1);
   EXPECT_NEAR (coeff[6], 0.5, 1e-1);
+
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+  EXPECT_EQ ((int)coeff_ref.size (), 7);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);
@@ -432,12 +452,17 @@ TEST (RRANSAC, SACModelCylinder)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 20);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 7);
   //printf ("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
   EXPECT_NEAR (coeff[0], -0.5, 1e-1);
   EXPECT_NEAR (coeff[1], 1.7, 1e-1);
   EXPECT_NEAR (coeff[6], 0.5, 1e-1);
+
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+  EXPECT_EQ ((int)coeff_ref.size (), 7);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);
@@ -513,12 +538,17 @@ TEST (RMSAC, SACModelCylinder)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 20);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 7);
   //printf ("Cylinder coefficients: %f %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5], coeff[6]);
   EXPECT_NEAR (coeff[0], -0.5, 1e-1);
   EXPECT_NEAR (coeff[1], 1.7, 1e-1);
   EXPECT_NEAR (coeff[6], 0.5, 1e-1);
+
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+  EXPECT_EQ ((int)coeff_ref.size (), 7);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 0);

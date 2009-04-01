@@ -73,7 +73,8 @@ TEST (LMedS, SACModelLine)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 8);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 6);
   //printf ("Line coefficients: %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
   robot_msgs::Point32 dir;
@@ -134,7 +135,8 @@ TEST (RANSAC, SACModelLine)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 8);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 6);
   //printf ("Line coefficients: %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
   robot_msgs::Point32 dir;
@@ -195,7 +197,8 @@ TEST (MSAC, SACModelLine)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 8);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 6);
   //printf ("Line coefficients: %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
   robot_msgs::Point32 dir;
@@ -318,7 +321,8 @@ TEST (RRANSAC, SACModelLine)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 8);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 6);
   //printf ("Line coefficients: %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
   robot_msgs::Point32 dir;
@@ -380,7 +384,8 @@ TEST (RMSAC, SACModelLine)
   std::vector<int> inliers = sac->getInliers ();
   EXPECT_EQ ((int)inliers.size (), 8);
 
-  std::vector<double> coeff = sac->computeCoefficients ();
+  std::vector<double> coeff;
+  sac->computeCoefficients (coeff);
   EXPECT_EQ ((int)coeff.size (), 6);
   //printf ("Line coefficients: %f %f %f %f %f %f\n", coeff[0], coeff[1], coeff[2], coeff[3], coeff[4], coeff[5]);
   robot_msgs::Point32 dir;

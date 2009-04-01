@@ -34,6 +34,8 @@
 #include <point_cloud_mapping/geometry/nearest.h>
 #include <Eigen/LU>
 
+#include <cminpack.h>
+
 namespace sample_consensus
 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -288,65 +290,71 @@ namespace sample_consensus
       refit_coefficients = model_coefficients_;
       return;
     }
+    if (model_coefficients_.size () == 0)
+    {
+      ROS_WARN ("[SACModelSphere::RefitModel] Initial model coefficients have not been estimated yet - proceeding without an initial solution!");
+      best_inliers_ = indices_;
+    }
 
-/*    LMStrucData data;
+    int m = inliers.size ();
 
-    data.points  = points;
-    data.samples = samples;
+    double *fvec = new double[m];
 
-    double *x (new double[samples.size ()]);
-    for (unsigned int i = 0; i < samples.size (); i++)
-      x[i] = 0;
+    int n = 4;      // 4 unknowns
+    int iwa[n];
 
-    // I: minim. options [\tau, \epsilon1, \epsilon2, \epsilon3]. Respectively the scale factor for initial \mu,
-    // stopping thresholds for ||J^T e||_inf, ||Dp||_2 and ||e||_2. Set to NULL for defaults to be used
-    double opts[LM_OPTS_SZ], info[LM_INFO_SZ];
-    opts[0] = LM_INIT_MU;
-    opts[1] = 1E-15;
-    opts[2] = 1E-15;
-    opts[3] = 1E-20;
-    opts[4] = LM_DIFF_DELTA;
+    int lwa = m * n + 5 * n + m;
+    double *wa = new double[lwa];
 
-    int m = 4;               /// I: parameter vector dimension (i.e. #unknowns)
-    int n = samples.size (); /// I: measurement vector dimension
-    int itmax = 5000;        // I: maximum number of iterations
+    // Set the initial solution
+    double x[4] = {0.0, 0.0, 0.0, 0.0};
+    if ((int)model_coefficients_.size () == n)
+      for (int d = 0; d < n; d++)
+        x[d] = model_coefficients_.at (d);
 
-    printf ("Using the following initial estimates: %g, %g, %g, %g\n", bestCoefficients[0], bestCoefficients[1], bestCoefficients[2], bestCoefficients[3]);
-    // I/O: initial parameter estimates. On output contains the estimated solution
-    double p[m];
-    // Position of center point
-    p[0] = bestCoefficients[0];
-    p[1] = bestCoefficients[1];
-    p[2] = bestCoefficients[2];
-    // Radius
-    p[3] = bestCoefficients[3];
+    // Set tol to the square root of the machine. Unless high solutions are required, these are the recommended settings.
+    double tol = sqrt (dpmpar (1));
 
-    // double *work,  // I: pointer to working memory, allocated internally if NULL.
-    // If !=NULL, it is assumed to point to a memory chunk at least LM_DER_WORKSZ(m, n)*sizeof(double) bytes long
-    // double *covar, // O: Covariance matrix corresponding to LS solution; Assumed to point to a mxm matrix. Set to NULL if not needed.
-    // void *adata)   // I: pointer to possibly needed additional data, passed uninterpreted to func & jacf. Set to NULL if not needed
-    int ret = dlevmar_der (sphere_func, sphere_jac, p, x, m, n, itmax, opts, info, NULL, NULL, (void *) &data);
-//    int ret = dlevmar_dif (spherefit_func, p, X, m, n, itmax, opts, info, NULL, NULL, data);
+    // Optimize using forward-difference approximation LM
+    int info = lmdif1 (&sample_consensus::SACModelSphere::functionToOptimize, this, m, n, x, fvec, tol, iwa, wa, lwa);
 
-    printf ("Levenberg-Marquardt returned %d in %g iter, reason %g\nSolution: ", ret, info[5], info[6]);
-    for (int i = 0; i < 4; ++i)
-      printf ("%.7g ", p[i]);
+    // Compute the L2 norm of the residuals
+    ROS_DEBUG ("LM solver finished with exit code %i, having a residual norm of %g. \nInitial solution: %g %g %g %g \nFinal solution: %g %g %g %g",
+               info, enorm (m, fvec), model_coefficients_.at (0), model_coefficients_.at (1), model_coefficients_.at (2), model_coefficients_.at (3),
+               x[0], x[1], x[2], x[3]);
 
-    printf ("\n\nMinimization info:\n");
-    for (int i = 0; i < LM_INFO_SZ; ++i)
-      printf ("%g ", info[i]);
-    printf ("\n");
+    refit_coefficients.resize (n);
+    for (int d = 0; d < n; d++)
+      refit_coefficients[d] = x[d];
 
-    ANNpoint newcoeff = annAllocPt (4);
-    newcoeff[0] = p[0]; newcoeff[1] = p[1];
-    newcoeff[2] = p[2]; newcoeff[3] = p[3];
-//    newcoeff[0] = bestCoefficients[0]; newcoeff[1] = bestCoefficients[1];
-//    newcoeff[2] = bestCoefficients[2]; newcoeff[3] = bestCoefficients[3];
-    return newcoeff;
+    free (wa); free (fvec);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////(
+  /** \brief Cost function to be minimized
+    * \param p a pointer to our data structure array
+    * \param m the number of functions
+    * \param n the number of variables
+    * \param x a pointer to the variables array
+    * \param fvec a pointer to the resultant functions evaluations
+    * \param iflag set to -1 inside the function to terminate execution
     */
-    refit_coefficients.resize (4);
-//     for (int d = 0; d < 4; d++)
-//       refit[d] = plane_coefficients (d);
+  int
+    SACModelSphere::functionToOptimize (void *p, int m, int n, const double *x, double *fvec, int iflag)
+  {
+    SACModelSphere *model = (SACModelSphere*)p;
+
+    for (int i = 0; i < n; i ++)
+    {
+      // Compute the difference between the center of the sphere and the datapoint X_i
+      double xt = model->cloud_->pts[model->best_inliers_.at (i)].x - x[0];
+      double yt = model->cloud_->pts[model->best_inliers_.at (i)].y - x[1];
+      double zt = model->cloud_->pts[model->best_inliers_.at (i)].z - x[2];
+
+      // g = sqrt ((x-a)^2 + (y-b)^2 + (z-c)^2) - R
+      fvec[i] = sqrt (xt * xt + yt * yt + zt * zt) - x[3];
+    }
+    return (0);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

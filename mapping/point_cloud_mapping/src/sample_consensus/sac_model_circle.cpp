@@ -33,7 +33,6 @@
 #include <point_cloud_mapping/sample_consensus/sac_model_circle.h>
 #include <point_cloud_mapping/geometry/nearest.h>
 
-#include <boost/bind.hpp>
 #include <cminpack.h>
 
 namespace sample_consensus
@@ -262,8 +261,8 @@ namespace sample_consensus
 
     // Set the initial solution
     double x[3] = {0.0, 0.0, 0.0};
-    if (model_coefficients_.size () == 3)
-      for (int d = 0; d < 3; d++)
+    if ((int)model_coefficients_.size () == n)
+      for (int d = 0; d < n; d++)
         x[d] = model_coefficients_.at (d);
 
     // Set tol to the square root of the machine. Unless high solutions are required, these are the recommended settings.
@@ -273,11 +272,11 @@ namespace sample_consensus
     int info = lmdif1 (&sample_consensus::SACModelCircle2D::functionToOptimize, this, m, n, x, fvec, tol, iwa, wa, lwa);
 
     // Compute the L2 norm of the residuals
-    ROS_DEBUG ("LM solver finished with exit code %i, having a residual norm of %g. Initial solution: %g %g %g. Final solution: %g %g %g",
+    ROS_DEBUG ("LM solver finished with exit code %i, having a residual norm of %g. \nInitial solution: %g %g %g \nFinal solution: %g %g %g",
                info, enorm (m, fvec), model_coefficients_.at (0), model_coefficients_.at (1), model_coefficients_.at (2), x[0], x[1], x[2]);
 
-    refit_coefficients.resize (3);
-    for (int d = 0; d < 3; d++)
+    refit_coefficients.resize (n);
+    for (int d = 0; d < n; d++)
       refit_coefficients[d] = x[d];
 
     free (wa); free (fvec);
