@@ -138,9 +138,9 @@ void PR2GripperTransmission::computeGapStates(
   //
   // below transforms from encoder value to gap size, based on 090224_link_data.xls provided by Functions Engineering
   //
-  double arg          = (coef_a_*coef_a_+coef_b_*coef_b_-pow(L0_+MR*screw_reduction_/gear_ratio_,2))/(2.0*coef_a_*coef_b_);
-  arg                 = arg < -1.0 ? -1.0 : arg > 1.0 ? 1.0 : arg;
-  theta               = theta0_ - phi0_ + acos(arg);
+  double u            = (coef_a_*coef_a_+coef_b_*coef_b_-pow(L0_+MR*screw_reduction_/gear_ratio_,2))/(2.0*coef_a_*coef_b_);
+  u                   = u < -1.0 ? -1.0 : u > 1.0 ? 1.0 : u;
+  theta               = theta0_ - phi0_ + acos(u);
   // limit theta
   theta = theta > 0 ? theta : 0;
   // force theta to be greater than theta0_
@@ -151,11 +151,14 @@ void PR2GripperTransmission::computeGapStates(
   //
   // based on similar transforms, get the velocity of the gripper gap size based on encoder velocity
   //
-  double arg_dot      = -(L0_ * screw_reduction_)/(gear_ratio_*coef_a_*coef_b_) // d(arg)/d(MR)
+  double arg          = 1.0 - pow(u,2);
+  arg                 = arg > TOL ? arg : TOL; //LIMIT: CAP u at TOL artificially
+
+  double du_dMR       = -(L0_ * screw_reduction_)/(gear_ratio_*coef_a_*coef_b_) // d(arg)/d(MR)
                                -screw_reduction_*MR*pow(screw_reduction_/gear_ratio_,2);
-  double u            = 1.0 - pow(arg,2);
-  u                   = u > TOL ? u : TOL; //LIMIT: CAP u at TOL artificially
-  dtheta_dMR          = -1.0/sqrt(u) * arg_dot; // derivative of acos
+
+  dtheta_dMR          = -1.0/sqrt(arg) * du_dMR; // derivative of acos
+
   dt_dtheta           = coef_r_ * cos( theta );
   dt_dMR              = dt_dtheta * dtheta_dMR;
   gap_velocity        = MR_dot * dt_dMR;
@@ -163,7 +166,7 @@ void PR2GripperTransmission::computeGapStates(
   //
   // get the effort at the gripper gap based on torque at the motor
   //
-  gap_effort          = MT      * dt_dMR;
+  gap_effort          = MT      / dt_dMR;
 }
 
 ///////////////////////////////////////////////////////////
@@ -183,7 +186,7 @@ void PR2GripperTransmission::inverseGapStates(
   // now do the reverse transform
   double arg         = -2.0*coef_a_*coef_b_*cos(theta-theta0_+phi0_)
                                    -coef_h_*coef_h_+coef_a_*coef_a_+coef_b_*coef_b_;
-  if (arg >= 0.0)
+  if (arg > 0.0)
   {
     MR               = gear_ratio_/screw_reduction_ * ( sqrt(arg) - L0_ );
     dMR_dtheta       = gear_ratio_/(2.0 * screw_reduction_) / sqrt(arg)
@@ -198,14 +201,25 @@ void PR2GripperTransmission::inverseGapStates(
   // enforce MR limit: greater than 0
   MR = MR >= 0.0 ? MR : 0.0;
 
-  // compute gap_size_mm from theta
-  double gap_size_mm = t0_ + coef_r_ * ( sin(theta) - sin(theta0_) ); // in mm
+  // compute gap_size from theta
+  double gap_size = t0_ + coef_r_ * ( sin(theta) - sin(theta0_) ); // in mm
 
   // compute more inverse gradients
-  double u           = 1.0 - pow((gap_size_mm - t0_)/coef_r_ + sin(theta0_),2);
-  u                  = u > TOL ? u : TOL; //LIMIT: CAP u at TOL artificially
-  dtheta_dt          = 1.0 / sqrt( u ) / coef_r_;  // derivative of asin
+  double u           = (gap_size - t0_)/coef_r_ + sin(theta0_);
+  double arg2        = 1.0 - pow(u,2);
+  arg2               = arg2 > TOL ? arg2 : TOL; //LIMIT: CAP arg2 at TOL artificially
+  dtheta_dt          = 1.0 / sqrt( arg2 ) / coef_r_;  // derivative of asin
   dMR_dt             = dMR_dtheta * dtheta_dt;  // remember, here, t is gap_size
+  // std::cout << "debug reverse transform: "
+  //           << " theta:" << theta
+  //           << " MR:" << MR
+  //           << " gap_size:" << gap_size
+  //           << " u:" << u
+  //           << " arg2:" << arg2
+  //           << " dMR_dtheta:" << dMR_dtheta
+  //           << " dtheta_dt:" << dtheta_dt
+  //           << " dMR_dt:" << dMR_dt
+  //           << std::endl;
 
 }
 
@@ -219,11 +233,11 @@ void PR2GripperTransmission::propagatePosition(
   ROS_ASSERT(as.size() == 1);
   ROS_ASSERT(js.size() == passive_joints_.size() + 1); // passive joints and 1 gap joint
 
-  /// \brief motor revolutions ( = encoder value * gap_mechanical_reduction )
-  double MR        = as[0]->state_.position_ / gap_mechanical_reduction_; // motor revolution
-  double MR_dot    = as[0]->state_.velocity_ / gap_mechanical_reduction_; // revs per sec
-  /// \brief gripper motor torque
-  double MT        = as[0]->state_.last_measured_effort_ / gap_mechanical_reduction_;
+  /// \brief motor revolutions ( = encoder value * gap_mechanical_reduction_ * rad2mr_ )
+  double MR        = as[0]->state_.position_ / gap_mechanical_reduction_ * rad2mr_ ; // motor revolution
+  double MR_dot    = as[0]->state_.velocity_ / gap_mechanical_reduction_ * rad2mr_ ; // revs per sec
+  /// \brief gripper motor torque: originally in newton-meters, but we convert it to Nm*(MR/rad)
+  double MT        = as[0]->state_.last_measured_effort_ / gap_mechanical_reduction_ * rad2mr_ ;
   /// internal theta state, gripper closed it is theta0_.  same as finger joint angles + theta0_.
   double theta, dtheta_dMR, dt_dtheta, dt_dMR;
   /// information on the fictitious joint: gap_joint
@@ -263,7 +277,7 @@ void PR2GripperTransmission::propagatePosition(
         // assign passive joints
         js[i]->position_       = theta - theta0_;
         js[i]->velocity_       = dtheta_dMR * MR_dot                   ;
-        js[i]->applied_effort_ = dtheta_dMR * MT                       ;
+        js[i]->applied_effort_ = MT / dtheta_dMR                       ;
         // std::cout << "propagatePosition passive_joint js[" << i << "]:" << js[i]->joint_->name_
         //           << " theta:" << theta
         //           << " dtheta_dMR:" << dtheta_dMR
@@ -292,9 +306,14 @@ void PR2GripperTransmission::propagatePositionBackwards(
   double mean_joint_rate   = 0.0;
   double mean_joint_torque = 0.0;
   double count             = 0;
+  double gripper_effort;
 
   for (unsigned int i = 0; i < js.size(); ++i)
   {
+    if (js[i]->joint_->name_ == gap_joint_)
+    {
+      gripper_effort = js[i]->commanded_effort_; // added this variable for clarifying things for myself
+    }
     // find encoder value based on joint position, this really is just based on the single
     // physical joint with the encoder mounted on it.
     // find the passive joint name
@@ -343,11 +362,12 @@ void PR2GripperTransmission::propagatePositionBackwards(
   //           << " gap_size from MR:" <<  t0_ + coef_r_ * ( sin(theta) - sin(theta0_) )
   //           << std::endl;
 
-  as[0]->state_.position_             = MR                            * gap_mechanical_reduction_;
-  as[0]->state_.velocity_             = avg_joint_rate   * dMR_dtheta * gap_mechanical_reduction_;
+  as[0]->state_.position_             = MR                            * gap_mechanical_reduction_ / rad2mr_ ;
+  as[0]->state_.velocity_             = avg_joint_rate   * dMR_dtheta * gap_mechanical_reduction_ / rad2mr_ ;
   // FIXME: this could potentially come from the tactile sensors
   // FIXME: is averaging finger torques and transmitting the thing to do?
-  as[0]->state_.last_measured_effort_ = avg_joint_torque * dMR_dtheta * gap_mechanical_reduction_;
+  // as[0]->state_.last_measured_effort_ = avg_joint_torque * dMR_dtheta * gap_mechanical_reduction_ / rad2mr_ ;
+  as[0]->state_.last_measured_effort_ = gripper_effort   / dMR_dt * gap_mechanical_reduction_ / rad2mr_ ;
   //as[0]->state_.last_measured_effort_ = 0.0;
 
   // std::cout << "propagatePositionBackwards as[0]:"
@@ -379,10 +399,10 @@ void PR2GripperTransmission::propagateEffort(
       // assign passive joints
       mean_joint_angle    += angles::shortest_angular_distance(mean_joint_angle,js[i]->position_) + mean_joint_angle;
       count++;
-      std::cout << "passive joint propagateEffort js[" << i << "]:" << js[i]->joint_->name_
-                << " mean_joint_angle:" << mean_joint_angle / count
-                << " count:" << count
-                << std::endl;
+      // std::cout << "passive joint propagateEffort js[" << i << "]:" << js[i]->joint_->name_
+      //           << " mean_joint_angle:" << mean_joint_angle / count
+      //           << " count:" << count
+      //           << std::endl;
     }
     else
     {
@@ -411,7 +431,7 @@ void PR2GripperTransmission::propagateEffort(
     {
       double js_gap_effort = js[i]->commanded_effort_; // added this variable for clarifying things for myself
       // go from gap linear effort (js[i]->commanded_effort_) to actuator effort = MT * gap_mechanical_reduction_
-      as[0]->command_.effort_ = js_gap_effort * dMR_dt * gap_mechanical_reduction_;
+      as[0]->command_.effort_ = js_gap_effort / dMR_dt * gap_mechanical_reduction_ / rad2mr_ ;
       // std::cout << "propagateEffort " << " js[" << i << "]:" << js[i]->joint_->name_
       //           << " as cmd eff:" << as[0]->command_.effort_
       //           << " js_gap_effort:" << js_gap_effort
@@ -436,10 +456,10 @@ void PR2GripperTransmission::propagateEffortBackwards(
   // below transforms from encoder value to gap size, based on 090224_link_data.xls provided by Functions Engineering
   //
   /// \brief motor revolutions ( = encoder value * gap_mechanical_reduction )
-  double MR        = as[0]->state_.position_ / gap_mechanical_reduction_; // motor revs
-  double MR_dot    = as[0]->state_.velocity_ / gap_mechanical_reduction_; // revs per sec
+  double MR        = as[0]->state_.position_ / gap_mechanical_reduction_ * rad2mr_ ; // motor revs
+  double MR_dot    = as[0]->state_.velocity_ / gap_mechanical_reduction_ * rad2mr_ ; // revs per sec
   /// \brief gripper motor torque
-  double MT        = as[0]->command_.effort_ / gap_mechanical_reduction_;
+  double MT        = as[0]->command_.effort_ / gap_mechanical_reduction_ * rad2mr_ ;
 
   /// internal theta state, gripper closed it is theta0_.  same as finger joint angles + theta0_.
   double theta, dtheta_dMR, dt_dtheta, dt_dMR;
@@ -500,7 +520,7 @@ void PR2GripperTransmission::propagateEffortBackwards(
     if (js[i]->joint_->name_ == gap_joint_)
     {
       // assign gap joint
-      // js[i]->commanded_effort_ = gap_effort; // do not need to propagate fictitious joint effort backwards
+      js[i]->commanded_effort_ = gap_effort; // do not need to propagate fictitious joint effort backwards
       // std::cout << "propagateEffortBackwards gap_joint js[" << i << "]:" << js[i]->joint_->name_
       //           << " MR:" << MR
       //           << " dtheta_dMR:" << dtheta_dMR
@@ -528,26 +548,27 @@ void PR2GripperTransmission::propagateEffortBackwards(
 
         // assign passive joints efforts
         //double finger_MR_error_    = joint_MR - avg_MR; // appears unstable due to tips much faster than upper fingers
-        double finger_MR_error_    = joint_MR - as[0]->state_.position_ / gap_mechanical_reduction_;
+        double finger_MR_error_    = joint_MR - as[0]->state_.position_ / gap_mechanical_reduction_ * rad2mr_ ;
         unsigned int index = it - passive_joints_.begin();
         double MIMICT = pids_[index]->updatePid(finger_MR_error_,0.001); //FIXME: get time and use current_time_ - last_time_
 
-        // sum joint torques from actuator motor and mimic constraint
-        js[i]->commanded_effort_   = dtheta_dMR*(MT + MIMICT);
+        // sum joint torques from actuator motor and mimic constraint and convert to joint torques
+        js[i]->commanded_effort_   = (MT + MIMICT) / dtheta_dMR;
 
         double pp,ii,dd,ii11,ii22;
         pids_[index]->getGains(pp,ii,dd,ii11,ii22);
-        std::cout << "propagateEffortBackwards js[" << i << "]:" << js[i]->joint_->name_
-                  << " i:" << index
-                  << " actuator motor torque:" << MT
-                  << " joint_MR:" << joint_MR
-                  << " finger_MR_error_:" << finger_MR_error_
-                  << " mimic torque:" << MIMICT
-                  << " pid:" << pp
-                  << "," << ii
-                  << "," << dd
-                  << " js_cmd_eff:" << js[i]->commanded_effort_
-                  << std::endl;
+        // std::cout << "propagateEffortBackwards js[" << i << "]:" << js[i]->joint_->name_
+        //           << " i:" << index
+        //           << " actuator motor torque:" << MT
+        //           << " joint_MR:" << joint_MR
+        //           << " MR:" << as[0]->state_.position_ / gap_mechanical_reduction_ * rad2mr_
+        //           << " finger_MR_error_:" << finger_MR_error_
+        //           << " mimic torque:" << MIMICT
+        //           << " pid:" << pp
+        //           << "," << ii
+        //           << "," << dd
+        //           << " js_cmd_eff:" << js[i]->commanded_effort_
+        //           << std::endl;
       }
       else
       {
