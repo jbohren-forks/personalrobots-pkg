@@ -124,8 +124,8 @@ bool MoveBaseTopological::makePlan(){
     unlock();
     
     stateMsg.lock();
-    start.first=(int)floor(stateMsg.pos.y/resolution);
-    start.second=(int)floor(stateMsg.pos.x/resolution);
+    start.first=(int)floor(stateMsg.feedback.y/resolution);
+    start.second=(int)floor(stateMsg.feedback.x/resolution);
 
     goal.second=(int)floor(stateMsg.goal.x/resolution);
     goal.first=(int)floor(stateMsg.goal.y/resolution);

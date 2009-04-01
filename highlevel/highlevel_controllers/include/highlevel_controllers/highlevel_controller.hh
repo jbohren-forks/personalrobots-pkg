@@ -133,9 +133,9 @@ protected:
    * @param stateTopic The ROS topic on which controller state update messages are published
    * @param goalTopic The ROS topic on which controller goals are received
    */
-  HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
+  HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic, std::string _preemptTopic = std::string("preempt")): 
     initialized(false), terminated(false), stateTopic(_stateTopic), 
-    goalTopic(_goalTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), 
+    goalTopic(_goalTopic), preemptTopic(_preemptTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), 
     lastPlan_(ros::Time::now()), timeout_(0, 0), valid_(false) {
 
     // Obtain the control frequency for this node
@@ -155,10 +155,13 @@ protected:
       plannerCycleTime_ = -1;
 
     // Advertize controller state updates - do not want to miss a state transition.
-    ros::Node::instance()->advertise<S>(stateTopic, QUEUE_MAX());
+    ros::Node::instance()->advertise<S>(nodeName + "/" + stateTopic, QUEUE_MAX());
 
     // Subscribe to controller goal requests. Last request winds. We drop others
-    ros::Node::instance()->subscribe(goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
+    ros::Node::instance()->subscribe(nodeName + "/" + goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
+
+    // Subscribe to controller goal requests. Last request winds. We drop others
+    ros::Node::instance()->subscribe(nodeName + "/" + preemptTopic, goalMsg, &HighlevelController<S, G>::preemptCallback,  this, 1);
 
     // Subscribe to executive shutdown signal
     ros::Node::instance()->subscribe("highlevel_controllers/shutdown", shutdownMsg_, &HighlevelController<S, G>::shutdownCallback, this, 1);
@@ -344,7 +347,7 @@ private:
    * goal has not yet been accomplished and that no plan has been constructed yet.
    */
   void activate(){
-    ROS_DEBUG("Activating controller with timeout of %f seconds\n", this->goalMsg.timeout);
+    ROS_DEBUG("Activating controller\n");
 
     valid_ = 0;
     this->stateMsg.status.value = this->stateMsg.status.ACTIVE;
@@ -366,13 +369,16 @@ private:
     handleDeactivation();
   }
 
+  void preemptCallback(){
+    lock();
+    preempt();
+    updateStateMsg();
+    ros::Node::instance()->publish(stateTopic, this->stateMsg);
+    unlock();
+  }
+
   void goalCallback(){
-    if (goalMsg.timeout < 0) {
-      ROS_ERROR("Controller was given negative timeout, setting to zero.");
-      timeout_ = ros::Duration().fromSec(0);
-    } else {
-      timeout_ = ros::Duration().fromSec(goalMsg.timeout);
-    }
+    timeout_ = ros::Duration().fromSec(0);
 
     // Do nothing if not initialized
     if(!isInitialized() || isTerminated())
@@ -383,7 +389,7 @@ private:
     // reset the timer on planning delay bound
     lastPlan_ = ros::Time::now();
 
-    if(!isActive() && goalMsg.enable){
+    if(!isActive()){
       activate();
     }
     else if(isActive()){
@@ -391,11 +397,9 @@ private:
 
       // If we are active, and this is a goal, publish the state message and activate. This allows us
       // to over-ride a new goal, but still forces the transition between active and inactive states
-      if(goalMsg.enable){
-	ROS_DEBUG("Publishing state %d", stateMsg.status.value);
-	ros::Node::instance()->publish(stateTopic, stateMsg);
-	activate();
-      }
+      ROS_DEBUG("Publishing state %d", stateMsg.status.value);
+      ros::Node::instance()->publish(stateTopic, stateMsg);
+      activate();
     }
 
     // Call to allow derived class to update goal member variables
@@ -480,6 +484,7 @@ private:
   bool terminated; /*!< Marks if the node has been terminated. */
   const std::string stateTopic; /*!< The topic on which state updates are published */
   const std::string goalTopic; /*!< The topic on which it subscribes for goal requests and recalls */
+  const std::string preemptTopic; /*!< The topic on which it subscribes for preemptions */
   double controllerCycleTime_; /*!< The duration for each control cycle */
   double plannerCycleTime_; /*!< The duration for each planner cycle. */
   boost::recursive_mutex lock_; /*!< Lock for access to class members in callbacks */

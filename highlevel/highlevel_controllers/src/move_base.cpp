@@ -128,7 +128,7 @@ namespace ros {
   namespace highlevel_controllers {
 
     MoveBase::MoveBase()
-      : HighlevelController<robot_msgs::Planner2DState, robot_msgs::Planner2DGoal>("move_base", "state", "goal"),
+      : HighlevelController<robot_actions::MoveBaseState, robot_actions::Pose2D>("move_base", "feedback", "activate"),
         tf_(*ros::Node::instance(), true, ros::Duration(10)), // cache for 10 sec, no extrapolation
       controller_(NULL),
       costMap_(NULL),
@@ -147,13 +147,6 @@ namespace ros {
       base_odom_.vel.x = 0;
       base_odom_.vel.y = 0;
       base_odom_.vel.th = 0;
-
-      // Initialize state message parameters that are unused
-      stateMsg.waypoint.x = 0.0;
-      stateMsg.waypoint.y = 0.0;
-      stateMsg.waypoint.th = 0.0;
-      stateMsg.set_waypoints_size(0);
-      stateMsg.waypoint_idx = -1;
 
       // Update rate for the cost map
       ros::Node::instance()->param("~move_base/map_update_frequency", map_update_frequency_, map_update_frequency_);
@@ -460,8 +453,8 @@ namespace ros {
 
       tf::Stamped<tf::Pose> goalPose, transformedGoalPose;
       btQuaternion qt;
-      qt.setEulerZYX(goalMsg.goal.th, 0, 0);
-      goalPose.setData(btTransform(qt, btVector3(goalMsg.goal.x, goalMsg.goal.y, 0)));
+      qt.setEulerZYX(goalMsg.th, 0, 0);
+      goalPose.setData(btTransform(qt, btVector3(goalMsg.x, goalMsg.y, 0)));
       goalPose.frame_id_ = goalMsg.header.frame_id;
       goalPose.stamp_ = ros::Time();
 
@@ -481,6 +474,8 @@ namespace ros {
         ROS_ERROR("The details of the ExtrapolationException are: %s\n", ex.what());
       }
 
+      stateMsg.goal.header.frame_id = goalMsg.header.frame_id;
+      stateMsg.goal.header.stamp = goalMsg.header.stamp;
       stateMsg.goal.x = transformedGoalPose.getOrigin().x();
       stateMsg.goal.y = transformedGoalPose.getOrigin().y();
       double uselessPitch, uselessRoll, yaw;
@@ -495,11 +490,11 @@ namespace ros {
       updateGlobalPose();
 
       // Assign state data
-      stateMsg.pos.x = global_pose_.getOrigin().x();
-      stateMsg.pos.y = global_pose_.getOrigin().y();
+      stateMsg.feedback.x = global_pose_.getOrigin().x();
+      stateMsg.feedback.y = global_pose_.getOrigin().y();
       double uselessPitch, uselessRoll, yaw;
       global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
-      stateMsg.pos.th = (float)yaw;
+      stateMsg.feedback.th = (float)yaw;
     }
 
     void MoveBase::baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message)

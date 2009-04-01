@@ -51,8 +51,8 @@
 #include <mpglue/plan.h>
 
 // Message structures used
-#include <robot_msgs/Planner2DState.h>
-#include <robot_msgs/Planner2DGoal.h>
+#include <robot_actions/MoveBaseState.h>
+#include <robot_actions/Pose2D.h>
 #include <robot_msgs/PoseDot.h>
 #include <laser_scan/LaserScan.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
@@ -82,7 +82,7 @@ namespace robot_filter {
 namespace ros {
   namespace highlevel_controllers {
 
-    class MoveBase : public HighlevelController<robot_msgs::Planner2DState, robot_msgs::Planner2DGoal> {
+    class MoveBase : public HighlevelController<robot_actions::MoveBaseState, robot_actions::Pose2D> {
 
     public:
       

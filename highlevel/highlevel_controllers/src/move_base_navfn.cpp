@@ -109,7 +109,7 @@ namespace ros {
 	int goal[2];
 	stateMsg.lock();
 	unsigned int mx, my;
-	getCostMap().WC_MC(stateMsg.pos.x, stateMsg.pos.y, mx, my);
+	getCostMap().WC_MC(stateMsg.feedback.x, stateMsg.feedback.y, mx, my);
 	pos[0] = mx;
 	pos[1] = my;
 
