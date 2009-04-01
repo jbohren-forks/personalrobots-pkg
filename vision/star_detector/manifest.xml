@@ -2,7 +2,7 @@
   <description>
     Star feature detector based on integral images.
   </description>
-  <author>Patrick Mihelich</author>
+  <author>Patrick Mihelich, James Bowman</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
