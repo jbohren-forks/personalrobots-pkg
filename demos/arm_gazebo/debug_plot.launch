@@ -5,5 +5,11 @@
   <node pkg="rosviz" type="rxplot" args="-m. -p30 /r_gripper_l_finger_tip_bumper/force/vector/x /r_gripper_l_finger_tip_bumper/force/vector/y /r_gripper_l_finger_tip_bumper/force/vector/z" respawn="false" output="screen" />
   <node pkg="rosviz" type="rxplot" args="-m. -p30 /l_gripper_l_finger_bumper/force/vector/x /l_gripper_l_finger_bumper/force/vector/y /l_gripper_l_finger_bumper/force/vector/z" respawn="false" output="screen" />
   <node pkg="rosviz" type="rxplot" args="-m. -p30 /r_gripper_l_finger_bumper/force/vector/x /r_gripper_l_finger_bumper/force/vector/y /r_gripper_l_finger_bumper/force/vector/z" respawn="false" output="screen" />
+  <!-- gripper transmission debug -->
+  <!-- gripper_motor and gripper_joint: check transforms -->
+  <node pkg="rosviz" type="rxplot" args="-m. -p30 /mechanism_state/actuator_states[2]/position,/mechanism_state/joint_states[15]/position" output="screen"/>
+  <!-- gripper_motor last_measured_effort_: check propagate position backwards reverse transforms for effort -->
+  <!-- gripper_motor last_measured_effort_: check propagate effort transforms for effort -->
+  <node pkg="rosviz" type="rxplot" args="-m. -p30 /mechanism_state/actuator_states[2]/last_measured_effort,/mechanism_state/actuator_states[2]/last_commanded_effort" output="screen"/>
 </launch>
 

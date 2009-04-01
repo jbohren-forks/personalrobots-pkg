@@ -26,6 +26,6 @@
   </controller>
 
   <controller name="r_gripper_controller" type="JointEffortControllerNode">
-    <joint name="r_gripper_l_finger_joint"/>
+    <joint name="r_gripper_joint"/>
   </controller>
 </controllers>
