@@ -13,6 +13,7 @@
 <depend package="realtime_tools" />
 <depend package="rospy" />
 <depend package="tf" />
+<depend package="robot_actions" />
 <depend package="robot_msgs" />
 <depend package="robot_srvs" />
 <depend package="std_srvs" />
