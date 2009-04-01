@@ -55,7 +55,7 @@ cmd_detect_door.height =  2.5;
 cmd_detect_door.hinge =  UNKNOWN;
 cmd_detect_door.rot_dir =  UNKNOWN;
 
-//
+/*
 cmd_detect_handle.frame_id = "base_footprint";
 cmd_detect_handle.frame_p1_x =  1.5;
 cmd_detect_handle.frame_p1_y = -0.5;
@@ -75,6 +75,7 @@ cmd_detect_handle.handle_z =  1.0;
 cmd_detect_handle.height =  2.5;
 cmd_detect_handle.hinge =  UNKNOWN;
 cmd_detect_handle.rot_dir =  UNKNOWN;
+*/
 
-//get_state(cmd_detect_handle.state, feedback_detect_door.state);
+get_state(cmd_detect_handle.state, feedback_detect_door.state);
 

@@ -37,6 +37,10 @@ namespace TREX{
     exit(0);
   }
 
+  /**
+   * @brief Assigns parameter values from one token to another, matching by name
+   * and skipping any intrinsic values: status
+   */
   class GetStateConstraint: public Constraint{
   public:
     GetStateConstraint(const LabelStr& name,
@@ -183,11 +187,7 @@ namespace TREX{
      _source_token(TREX::getParentToken(variables[1])){
     checkError(variables.size() == 2, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
   }
-	 
-  /**
-   * If the position is bound, we can make a region query. The result should be intersected on the domain.
-   * @todo Integarte proper code from Wim. Also assumes good data
-   */
+
   void GetStateConstraint::handleExecute(){
 
     debugMsg("trex:propagation:get_state",  "BEFORE: " << toString());
@@ -195,12 +195,15 @@ namespace TREX{
     // Iterate over all parameters of the source token. Any with a name match will be intersected
     std::vector<ConstrainedVariableId>::const_iterator it = _source_token->parameters().begin();
     while (it != _source_token->parameters().end()){
+      static const LabelStr STATUS("status");
       ConstrainedVariableId v_source = *it;
-      ConstrainedVariableId v_target = _target_token->getVariable(v_source->getName());
-      if(v_target.isId()){
-	AbstractDomain& target_dom = getCurrentDomain(v_target);
-	if(target_dom.intersect(v_source->lastDomain()) && target_dom.isEmpty()){
-	  return;
+      if(v_source->getName() != STATUS){
+	ConstrainedVariableId v_target = _target_token->getVariable(v_source->getName());
+	if(v_target.isId()){
+	  AbstractDomain& target_dom = getCurrentDomain(v_target);
+	  if(target_dom.intersect(v_source->lastDomain()) && target_dom.isEmpty()){
+	    return;
+	  }
 	}
       }
       ++it;
