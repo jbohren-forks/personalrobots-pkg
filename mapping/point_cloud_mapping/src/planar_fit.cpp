@@ -377,8 +377,8 @@ class PlanarFit
       // Search for the best plane
       if (sac->computeModel (0))
       {
-        sac->computeCoefficients ();          // Compute the model coefficients
-        coeff   = sac->refineCoefficients (); // Refine them using least-squares
+        sac->computeCoefficients (coeff);     // Compute the model coefficients
+        sac->refineCoefficients (coeff);      // Refine them using least-squares
         model->selectWithinDistance (coeff, dist_thresh, inliers);
 
         cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);
@@ -430,8 +430,8 @@ class PlanarFit
       // Search for the best plane
       if (sac->computeModel (0))
       {
-        sac->computeCoefficients ();          // Compute the model coefficients
-        coeff   = sac->refineCoefficients (); // Refine them using least-squares
+        sac->computeCoefficients (coeff);     // Compute the model coefficients
+        sac->refineCoefficients (coeff);      // Refine them using least-squares
         model->selectWithinDistance (coeff, dist_thresh, inliers);
 
         cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points->pts.at (inliers[0]), viewpoint_cloud);

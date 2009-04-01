@@ -212,7 +212,7 @@ class PlugOnBaseDetector
       // Find the base plane
       vector<int> inliers;
       vector<double> coeff;
-      fitSACPlane (cloud_tr_, indices_in_bounds, inliers, coeff, &viewpoint_cloud_, sac_distance_threshold_, 100);
+      fitSACPlane (cloud_tr_, indices_in_bounds, inliers, coeff, viewpoint_cloud_, sac_distance_threshold_, 100);
 
       // Remove points below the plane
       for (unsigned int i = 0; i < indices_in_bounds.size (); i++)
@@ -387,7 +387,7 @@ class PlugOnBaseDetector
       */
     int
       fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
-                  robot_msgs::PointStamped *viewpoint_cloud, double dist_thresh, int min_pts)
+                   const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
     {
       if ((int)indices.size () < min_pts)
       {
@@ -413,27 +413,12 @@ class PlugOnBaseDetector
           coeff.resize (0);
           return (-1);
         }
-        sac->computeCoefficients ();          // Compute the model coefficients
-        coeff   = sac->refineCoefficients (); // Refine them using least-squares
+        sac->computeCoefficients (coeff);   // Compute the model coefficients
+        sac->refineCoefficients (coeff);    // Refine them using least-squares
         model->selectWithinDistance (coeff, dist_thresh, inliers);
 
         // Flip plane normal according to the viewpoint information
-        Point32 vp_m;
-        vp_m.x = viewpoint_cloud->point.x - points.pts.at (inliers[0]).x;
-        vp_m.y = viewpoint_cloud->point.y - points.pts.at (inliers[0]).y;
-        vp_m.z = viewpoint_cloud->point.z - points.pts.at (inliers[0]).z;
-
-        // Dot product between the (viewpoint - point) and the plane normal
-        double cos_theta = (vp_m.x * coeff[0] + vp_m.y * coeff[1] + vp_m.z * coeff[2]);
-
-        // Flip the plane normal
-        if (cos_theta < 0)
-        {
-          for (int d = 0; d < 3; d++)
-            coeff[d] *= -1;
-          // Hessian form (D = nc . p_plane (centroid here) + p)
-          coeff[3] = -1 * (coeff[0] * points.pts.at (inliers[0]).x + coeff[1] * points.pts.at (inliers[0]).y + coeff[2] * points.pts.at (inliers[0]).z);
-        }
+        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint_cloud);
         //ROS_INFO ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
         //          coeff[0], coeff[1], coeff[2], coeff[3]);
       }

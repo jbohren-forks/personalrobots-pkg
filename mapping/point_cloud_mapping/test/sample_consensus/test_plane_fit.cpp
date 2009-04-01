@@ -88,7 +88,8 @@ TEST (LMedS, SACModelPlane)
     EXPECT_EQ (coeff[3], 0.75);
   }
 
-  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 4);
   //printf ("Plane coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
   EXPECT_EQ (coeff[0], 0);
@@ -154,7 +155,8 @@ TEST (RANSAC, SACModelPlane)
     EXPECT_EQ (coeff[3], 0.75);
   }
 
-  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 4);
   //printf ("Plane coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
   EXPECT_EQ (coeff[0], 0);
@@ -220,7 +222,8 @@ TEST (MSAC, SACModelPlane)
     EXPECT_EQ (coeff[3], 0.75);
   }
 
-  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 4);
   //printf ("Plane coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
   EXPECT_EQ (coeff[0], 0);
@@ -286,7 +289,8 @@ TEST (MLESAC, SACModelPlane)
     EXPECT_EQ (coeff[3], 0.75);
   }
 
-  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 4);
   //printf ("Plane coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
   EXPECT_EQ (coeff[0], 0);
@@ -354,7 +358,8 @@ TEST (RRANSAC, SACModelPlane)
     EXPECT_EQ (coeff[3], 0.75);
   }
 
-  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 4);
   //printf ("Plane coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
   EXPECT_EQ (coeff[0], 0);
@@ -422,7 +427,8 @@ TEST (RMSAC, SACModelPlane)
     EXPECT_EQ (coeff[3], 0.75);
   }
 
-  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 4);
   //printf ("Plane coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
   EXPECT_EQ (coeff[0], 0);

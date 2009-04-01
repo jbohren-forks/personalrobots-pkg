@@ -227,7 +227,7 @@ public:
     // Now find the best fit parallel lines to this set of points and a corresponding set of inliers
     if (sac->computeModel()) {
       inliers = sac->getInliers();
-      coeffs = sac->computeCoefficients();
+      sac->computeCoefficients (coeffs);
       visualization(coeffs, inliers);
       // Publish the result
       robot_msgs::PointCloud model_cloud;

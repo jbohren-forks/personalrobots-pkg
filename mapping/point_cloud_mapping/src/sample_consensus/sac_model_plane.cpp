@@ -160,21 +160,21 @@ namespace sample_consensus
   /** \brief Create a new point cloud with inliers projected onto the plane model.
     * \param inliers the data inliers that we want to project on the plane model
     * \param model_coefficients the *normalized* coefficients of a plane model
+    * \param projected_points the resultant projected points
     */
-  robot_msgs::PointCloud
-    SACModelPlane::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
+  void
+    SACModelPlane::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
+                                  robot_msgs::PointCloud &projected_points)
   {
-    robot_msgs::PointCloud projected_cloud;
     // Allocate enough space
-    projected_cloud.pts.resize (inliers.size ());
-
-    projected_cloud.set_chan_size (cloud_->get_chan_size ());
+    projected_points.pts.resize (inliers.size ());
+    projected_points.set_chan_size (cloud_->get_chan_size ());
 
     // Create the channels
-    for (unsigned int d = 0; d < projected_cloud.get_chan_size (); d++)
+    for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
     {
-      projected_cloud.chan[d].name = cloud_->chan[d].name;
-      projected_cloud.chan[d].vals.resize (inliers.size ());
+      projected_points.chan[d].name = cloud_->chan[d].name;
+      projected_points.chan[d].vals.resize (inliers.size ());
     }
 
     // Get the plane normal
@@ -196,14 +196,13 @@ namespace sample_consensus
                                  model_coefficients.at (2) * cloud_->pts.at (inliers.at (i)).z +
                                  model_coefficients.at (3) * 1;
       // Calculate the projection of the point on the plane
-      projected_cloud.pts[i].x = cloud_->pts.at (inliers.at (i)).x - distance_to_plane * model_coefficients.at (0);
-      projected_cloud.pts[i].y = cloud_->pts.at (inliers.at (i)).y - distance_to_plane * model_coefficients.at (1);
-      projected_cloud.pts[i].z = cloud_->pts.at (inliers.at (i)).z - distance_to_plane * model_coefficients.at (2);
+      projected_points.pts[i].x = cloud_->pts.at (inliers.at (i)).x - distance_to_plane * model_coefficients.at (0);
+      projected_points.pts[i].y = cloud_->pts.at (inliers.at (i)).y - distance_to_plane * model_coefficients.at (1);
+      projected_points.pts[i].z = cloud_->pts.at (inliers.at (i)).z - distance_to_plane * model_coefficients.at (2);
       // Copy the other attributes
-      for (unsigned int d = 0; d < projected_cloud.get_chan_size (); d++)
-        projected_cloud.chan[d].vals[i] = cloud_->chan[d].vals[inliers.at (i)];
+      for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
+        projected_points.chan[d].vals[i] = cloud_->chan[d].vals[inliers.at (i)];
     }
-    return (projected_cloud);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -301,14 +300,16 @@ namespace sample_consensus
   /** \brief Recompute the plane coefficients using the given inlier set and return them to the user.
     * @note: these are the coefficients of the plane model after refinement (eg. after SVD)
     * \param inliers the data inliers found as supporting the model
+    * \param refit_coefficients the resultant recomputed coefficients after non-linear optimization
     */
-  std::vector<double>
-    SACModelPlane::refitModel (const std::vector<int> &inliers)
+  void
+    SACModelPlane::refitModel (const std::vector<int> &inliers, std::vector<double> &refit_coefficients)
   {
     if (inliers.size () == 0)
     {
-      // std::cerr << "[SACModelPlanes::RefitModel] Cannot re-fit 0 inliers!" << std::endl;
-      return (model_coefficients_);
+      ROS_ERROR ("[SACModelPlane::RefitModel] Cannot re-fit 0 inliers!");
+      refit_coefficients = model_coefficients_;
+      return;
     }
 
     Eigen::Vector4d plane_coefficients;
@@ -317,11 +318,9 @@ namespace sample_consensus
     // Use Least-Squares to fit the plane through all the given sample points and find out its coefficients
     cloud_geometry::nearest::computePointNormal (*cloud_, inliers, plane_coefficients, curvature);
 
-    std::vector<double> refit (4);
+    refit_coefficients.resize (4);
     for (int d = 0; d < 4; d++)
-      refit[d] = plane_coefficients (d);
-
-    return (refit);
+      refit_coefficients[d] = plane_coefficients (d);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

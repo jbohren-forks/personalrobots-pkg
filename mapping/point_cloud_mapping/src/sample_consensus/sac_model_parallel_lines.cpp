@@ -281,20 +281,21 @@ namespace sample_consensus
   /** \brief Create a new point cloud with inliers projected onto the line model.
     * \param inliers The indices of the inliers into the data cloud.
     * \param model_coefficients The coefficients of the parallel lines model.
+    * \param projected_points the resultant projected points
     */
-  robot_msgs::PointCloud
-    SACModelParallelLines::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
+  void
+    SACModelParallelLines::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
+                                          robot_msgs::PointCloud &projected_points)
   {
-    robot_msgs::PointCloud projected_cloud;
     // Allocate enough space
-    projected_cloud.pts.resize (inliers.size ());
+    projected_points.pts.resize (inliers.size ());
 
     // Create the channels
-    projected_cloud.set_chan_size (cloud_->get_chan_size ());
-    for (unsigned int d = 0; d < projected_cloud.get_chan_size (); d++)
+    projected_points.set_chan_size (cloud_->get_chan_size ());
+    for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
     {
-      projected_cloud.chan[d].name = cloud_->chan[d].name;
-      projected_cloud.chan[d].vals.resize (inliers.size ());
+      projected_points.chan[d].name = cloud_->chan[d].name;
+      projected_points.chan[d].vals.resize (inliers.size ());
     }
 
     // Compute the closest distances from the pts to the lines.
@@ -329,15 +330,14 @@ namespace sample_consensus
                   ( mx * l1.x + my * l1.y + mz * l1.z )
                  ) / l_sqr_length;
       // Calculate the projection of the point on the line (pointProj = A + k * B)
-      projected_cloud.pts[i].x = mx + k * l1.x;
-      projected_cloud.pts[i].y = my + k * l1.y;
-      projected_cloud.pts[i].z = mz + k * l1.z;
+      projected_points.pts[i].x = mx + k * l1.x;
+      projected_points.pts[i].y = my + k * l1.y;
+      projected_points.pts[i].z = mz + k * l1.z;
 
       // Copy the other attributes
-      for (unsigned int d = 0; d < projected_cloud.get_chan_size (); d++)
-        projected_cloud.chan[d].vals[i] = cloud_->chan[d].vals[inliers[i]];
+      for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
+        projected_points.chan[d].vals[i] = cloud_->chan[d].vals[inliers[i]];
     }
-    return (projected_cloud);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -415,19 +415,24 @@ namespace sample_consensus
   /** \brief Recompute the parallel lines coefficients using the given inlier set and return them to the user.
     * @note: These are the coefficients of the line model after refinement.
     * \param inliers The data inliers found as supporting the model.
+    * \param refit_coefficients the resultant recomputed coefficients after non-linear optimization
     */
-  std::vector<double>
-    SACModelParallelLines::refitModel (const std::vector<int> &inliers)
+  void
+    SACModelParallelLines::refitModel (const std::vector<int> &inliers, std::vector<double> &refit_coefficients)
   {
     if (inliers.size () == 0)
-      return (model_coefficients_);
+    {
+      ROS_ERROR ("[SACModelParallelLines::RefitModel] Cannot re-fit 0 inliers!");
+      refit_coefficients = model_coefficients_;
+      return;
+    }
 
     // Get the distances from the inliers to their closest line
     std::vector<int> closest_line (inliers.size ());
     std::vector<double> closest_dist (inliers.size ());
     closestLine (inliers, model_coefficients_, &closest_line, &closest_dist);
 
-    std::vector<double> refit_coefficients (9);
+    refit_coefficients.resize (9);
 
     // Compute the centroids of the two sets of samples
     robot_msgs::Point32 centroid1, centroid2, centroid;
@@ -487,8 +492,6 @@ namespace sample_consensus
     refit_coefficients[3] = eigen_vectors(0, 2) + refit_coefficients[0];
     refit_coefficients[4] = eigen_vectors(1, 2) + refit_coefficients[1];
     refit_coefficients[5] = eigen_vectors(2, 2) + refit_coefficients[2];
-
-    return (refit_coefficients);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

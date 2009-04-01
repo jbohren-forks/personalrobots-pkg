@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+ * Copyright (c) 2008-2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -186,13 +186,15 @@ namespace sample_consensus
   /** \brief Create a new point cloud with inliers projected onto the sphere model.
     * \param inliers the data inliers that we want to project on the sphere model
     * \param model_coefficients the coefficients of a sphere model
+    * \param projected_points the resultant projected points
     * \todo implement this.
     */
-  robot_msgs::PointCloud
-    SACModelSphere::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
+  void
+    SACModelSphere::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
+                                   robot_msgs::PointCloud &projected_points)
   {
     std::cerr << "[SACModelSphere::projecPoints] Not implemented yet." << std::endl;
-    return (*cloud_);
+    projected_points = *cloud_;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -275,14 +277,16 @@ namespace sample_consensus
   /** \brief Recompute the sphere coefficients using the given inlier set and return them to the user.
     * @note: these are the coefficients of the sphere model after refinement (eg. after SVD)
     * \param inliers the data inliers found as supporting the model
+    * \param refit_coefficients the resultant recomputed coefficients after non-linear optimization
     */
-  std::vector<double>
-    SACModelSphere::refitModel (const std::vector<int> &inliers)
+  void
+    SACModelSphere::refitModel (const std::vector<int> &inliers, std::vector<double> &refit_coefficients)
   {
     if (inliers.size () == 0)
     {
-      // std::cerr << "[SACModelSphere::RefitModel] Cannot re-fit 0 inliers!" << std::endl;
-      return (model_coefficients_);
+      ROS_ERROR ("[SACModelSphere::RefitModel] Cannot re-fit 0 inliers!");
+      refit_coefficients = model_coefficients_;
+      return;
     }
 
 /*    LMStrucData data;
@@ -340,11 +344,9 @@ namespace sample_consensus
 //    newcoeff[2] = bestCoefficients[2]; newcoeff[3] = bestCoefficients[3];
     return newcoeff;
     */
-    std::vector<double> refit (4);
+    refit_coefficients.resize (4);
 //     for (int d = 0; d < 4; d++)
 //       refit[d] = plane_coefficients (d);
-
-    return (refit);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

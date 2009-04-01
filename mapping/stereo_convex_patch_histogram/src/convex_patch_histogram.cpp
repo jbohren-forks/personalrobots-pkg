@@ -106,7 +106,8 @@ class ConvexPatchHistogram
       {
         // Obtain the inliers and the planar model coefficients
         inliers = sac->getInliers ();
-        coeff = sac->computeCoefficients ();
+        sac->computeCoefficients (coeff);
+        sac->refineCoefficients (coeff);
         ROS_INFO ("The best plane model found is supported by %d inliers: [%g, %g, %g, %g]", (int)inliers.size (),
                   coeff[0], coeff[1], coeff[2], coeff[3]);
 

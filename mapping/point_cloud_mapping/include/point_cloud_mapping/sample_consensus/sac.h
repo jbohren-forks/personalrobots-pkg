@@ -101,19 +101,21 @@ namespace sample_consensus
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Compute the coefficients of the model and return them. */
-      virtual std::vector<double>
-        computeCoefficients ()
+      virtual void
+        computeCoefficients (std::vector<double> &coefficients)
       {
         sac_model_->computeModelCoefficients (sac_model_->getBestModel ());
-        return (sac_model_->getModelCoefficients ());
+        coefficients = sac_model_->getModelCoefficients ();
       }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /** \brief Use Least-Squares optimizations to refine the coefficients of the model, and return them. */
-      virtual std::vector<double>
-        refineCoefficients ()
+      /** \brief Use Least-Squares optimizations to refine the coefficients of the model, and return them.
+        * \param refit_coefficients the resultant recomputed coefficients after non-linear optimization
+        */
+      virtual void
+        refineCoefficients (std::vector<double> &refined_coefficients)
       {
-        return (sac_model_->refitModel (sac_model_->getBestInliers ()));
+        sac_model_->refitModel (sac_model_->getBestInliers (), refined_coefficients);
       }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -138,11 +140,13 @@ namespace sample_consensus
       /** \brief Project a set of given points (using their indices) onto the model and return their projections.
         * \param indices a set of indices that represent the data that we're interested in
         * \param model_coefficients the coefficients of the underlying model
+        * \param projected_points the resultant projected points
         */
-      virtual robot_msgs::PointCloud
-        projectPointsToModel (std::vector<int> indices, std::vector<double> model_coefficients)
+      virtual void
+        projectPointsToModel (const std::vector<int> &indices, const std::vector<double> &model_coefficients,
+                              robot_msgs::PointCloud &projected_points)
       {
-        return (sac_model_->projectPoints (indices, model_coefficients));
+        sac_model_->projectPoints (indices, model_coefficients, projected_points);
       }
 
 

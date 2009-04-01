@@ -33,6 +33,9 @@
 #include <point_cloud_mapping/sample_consensus/sac_model_circle.h>
 #include <point_cloud_mapping/geometry/nearest.h>
 
+#include <boost/bind.hpp>
+#include <cminpack.h>
+
 namespace sample_consensus
 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -166,13 +169,15 @@ namespace sample_consensus
   /** \brief Create a new point cloud with inliers projected onto the 2D circle model.
     * \param inliers the data inliers that we want to project on the 2D circle model
     * \param model_coefficients the coefficients of a 2D circle model
+    * \param projected_points the resultant projected points
     * \todo implement this.
     */
-  robot_msgs::PointCloud
-    SACModelCircle2D::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
+  void
+    SACModelCircle2D::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
+                                     robot_msgs::PointCloud &projected_points)
   {
     std::cerr << "[SACModelCircle2D::projecPoints] Not implemented yet." << std::endl;
-    return (*cloud_);
+    projected_points = *cloud_;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -228,21 +233,80 @@ namespace sample_consensus
   /** \brief Recompute the plane coefficients using the given inlier set and return them to the user.
     * @note: these are the coefficients of the circle model after refinement (eg. after SVD)
     * \param inliers the data inliers found as supporting the model
+    * \param refit_coefficients the resultant recomputed coefficients after non-linear optimization
     */
-  std::vector<double>
-    SACModelCircle2D::refitModel (const std::vector<int> &inliers)
+  void
+    SACModelCircle2D::refitModel (const std::vector<int> &inliers, std::vector<double> &refit_coefficients)
   {
     if (inliers.size () == 0)
     {
-      // std::cerr << "[SACModelCircle2D::RefitModel] Cannot re-fit 0 inliers!" << std::endl;
-      return (model_coefficients_);
+      ROS_ERROR ("[SACModelCircle2D::RefitModel] Cannot re-fit 0 inliers!");
+      refit_coefficients = model_coefficients_;
+      return;
+    }
+    if (model_coefficients_.size () == 0)
+    {
+      ROS_WARN ("[SACModelCircle2D::RefitModel] Initial model coefficients have not been estimated yet - proceeding without an initial solution!");
+      best_inliers_ = indices_;
     }
 
-    std::vector<double> refit (4);
-//     for (int d = 0; d < 4; d++)
-//       refit[d] = plane_coefficients (d);
+    int m = inliers.size ();
 
-    return (refit);
+    double *fvec = new double[m];
+
+    int n = 3;      // 3 unknowns
+    int iwa[n];
+
+    int lwa = m * n + 5 * n + m;
+    double *wa = new double[lwa];
+
+    // Set the initial solution
+    double x[3] = {0.0, 0.0, 0.0};
+    if (model_coefficients_.size () == 3)
+      for (int d = 0; d < 3; d++)
+        x[d] = model_coefficients_.at (d);
+
+    // Set tol to the square root of the machine. Unless high solutions are required, these are the recommended settings.
+    double tol = sqrt (dpmpar (1));
+
+    // Optimize using forward-difference approximation LM
+    int info = lmdif1 (&sample_consensus::SACModelCircle2D::functionToOptimize, this, m, n, x, fvec, tol, iwa, wa, lwa);
+
+    // Compute the L2 norm of the residuals
+    ROS_DEBUG ("LM solver finished with exit code %i, having a residual norm of %g. Initial solution: %g %g %g. Final solution: %g %g %g",
+               info, enorm (m, fvec), model_coefficients_.at (0), model_coefficients_.at (1), model_coefficients_.at (2), x[0], x[1], x[2]);
+
+    refit_coefficients.resize (3);
+    for (int d = 0; d < 3; d++)
+      refit_coefficients[d] = x[d];
+
+    free (wa); free (fvec);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////(
+  /** \brief Cost function to be minimized
+    * \param p a pointer to our data structure array
+    * \param m the number of functions
+    * \param n the number of variables
+    * \param x a pointer to the variables array
+    * \param fvec a pointer to the resultant functions evaluations
+    * \param iflag set to -1 inside the function to terminate execution
+    */
+  int
+    SACModelCircle2D::functionToOptimize (void *p, int m, int n, const double *x, double *fvec, int iflag)
+  {
+    SACModelCircle2D *model = (SACModelCircle2D*)p;
+
+    for (int i = 0; i < n; i ++)
+    {
+      // Compute the difference between the center of the circle and the datapoint X_i
+      double xt = model->cloud_->pts[model->best_inliers_.at (i)].x - x[0];
+      double yt = model->cloud_->pts[model->best_inliers_.at (i)].y - x[1];
+
+      // g = sqrt ((x-a)^2 + (y-b)^2) - R
+      fvec[i] = sqrt (xt * xt + yt * yt) - x[2];
+    }
+    return (0);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

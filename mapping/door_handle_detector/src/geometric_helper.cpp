@@ -591,8 +591,8 @@ bool
       coeff.resize (0);
       return (false);
     }
-    sac->computeCoefficients ();          // Compute the model coefficients
-    coeff   = sac->refineCoefficients (); // Refine them using least-squares
+    sac->computeCoefficients (coeff);          // Compute the model coefficients
+    sac->refineCoefficients (coeff);           // Refine them using least-squares
     model->selectWithinDistance (coeff, dist_thresh, inliers);
     //inliers = sac->getInliers ();
 
@@ -809,10 +809,11 @@ int
   model->setAxis (axis);
   model->setEpsAngle (eps_angle);
 
+  vector<double> coeff;
   // Search for the best line
   if (sac->computeModel ())
   {
-    sac->computeCoefficients ();             // Compute the model coefficients
+    sac->computeCoefficients (coeff);            // Compute the model coefficients
     //line_inliers = model->selectWithinDistance (sac->refineCoefficients (), dist_thresh);
     line_inliers = sac->getInliers ();
   }
@@ -855,9 +856,10 @@ int
   model->setEpsAngle (eps_angle);
 
   // Search for the best line
+  vector<double> coeff;
   if (sac->computeModel ())
   {
-    sac->computeCoefficients ();             // Compute the model coefficients
+    sac->computeCoefficients (coeff);             // Compute the model coefficients
     line_inliers = sac->getInliers ();
   }
   else

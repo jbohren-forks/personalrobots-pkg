@@ -86,7 +86,8 @@ TEST (LMedS, SACModelLine)
   EXPECT_NEAR (dir.y, 0.577, 1e-3);
   EXPECT_NEAR (dir.z, 0.577, 1e-3);
 
-  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 6);
   //printf ("Line coefficients (refined): %f %f %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3], coeff_ref[4], coeff_ref[5]);
   robot_msgs::Point32 dir_ref;
@@ -146,7 +147,8 @@ TEST (RANSAC, SACModelLine)
   EXPECT_NEAR (dir.y, 0.577, 1e-3);
   EXPECT_NEAR (dir.z, 0.577, 1e-3);
 
-  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 6);
   //printf ("Line coefficients (refined): %f %f %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3], coeff_ref[4], coeff_ref[5]);
   robot_msgs::Point32 dir_ref;
@@ -206,7 +208,8 @@ TEST (MSAC, SACModelLine)
   EXPECT_NEAR (dir.y, 0.577, 1e-3);
   EXPECT_NEAR (dir.z, 0.577, 1e-3);
 
-  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 6);
   //printf ("Line coefficients (refined): %f %f %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3], coeff_ref[4], coeff_ref[5]);
   robot_msgs::Point32 dir_ref;
@@ -328,7 +331,8 @@ TEST (RRANSAC, SACModelLine)
   EXPECT_NEAR (dir.y, 0.577, 1e-3);
   EXPECT_NEAR (dir.z, 0.577, 1e-3);
 
-  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 6);
   //printf ("Line coefficients (refined): %f %f %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3], coeff_ref[4], coeff_ref[5]);
   robot_msgs::Point32 dir_ref;
@@ -389,7 +393,8 @@ TEST (RMSAC, SACModelLine)
   EXPECT_NEAR (dir.y, 0.577, 1e-3);
   EXPECT_NEAR (dir.z, 0.577, 1e-3);
 
-  std::vector<double> coeff_ref = sac->refineCoefficients ();
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 6);
   //printf ("Line coefficients (refined): %f %f %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3], coeff_ref[4], coeff_ref[5]);
   robot_msgs::Point32 dir_ref;

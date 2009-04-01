@@ -596,8 +596,8 @@ class TableObjectDetector
           coeff.resize (0);
           return (0);
         }
-        sac->computeCoefficients ();          // Compute the model coefficients
-        coeff   = sac->refineCoefficients (); // Refine them using least-squares
+        sac->computeCoefficients (coeff);     // Compute the model coefficients
+        sac->refineCoefficients (coeff);      // Refine them using least-squares
         model->selectWithinDistance (coeff, sac_distance_threshold_, inliers);
 
         //fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),

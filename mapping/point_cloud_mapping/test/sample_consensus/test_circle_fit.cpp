@@ -140,8 +140,9 @@ TEST (RANSAC, SACModelCircle2D)
   EXPECT_NEAR (coeff[1], -5.00, 1e-1);
   EXPECT_NEAR (coeff[2],  0.99, 1e-1);
 
-/*  std::vector<double> coeff_ref = sac->refineCoefficients ();
-  EXPECT_EQ ((int)coeff_ref.size (), 3);
+  std::vector<double> coeff_ref;
+  sac->refineCoefficients (coeff_ref);
+/*  EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
 */
   int nr_points_left = sac->removeInliers ();

@@ -169,13 +169,15 @@ namespace sample_consensus
   /** \brief Create a new point cloud with inliers projected onto the cylinder model.
     * \param inliers the data inliers that we want to project on the cylinder model
     * \param model_coefficients the coefficients of a cylinder model
+    * \param projected_points the resultant projected points
     * \todo implement this.
     */
-  robot_msgs::PointCloud
-    SACModelCylinder::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
+  void
+    SACModelCylinder::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
+                                     robot_msgs::PointCloud &projected_points)
   {
     std::cerr << "[SACModelCylinder::projecPoints] Not implemented yet." << std::endl;
-    return (*cloud_);
+    projected_points = *cloud_;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -277,23 +279,47 @@ namespace sample_consensus
   /** \brief Recompute the cylinder coefficients using the given inlier set and return them to the user.
     * @note: these are the coefficients of the cylinder model after refinement (eg. after SVD)
     * \param inliers the data inliers found as supporting the model
+    * \param refit_coefficients the resultant recomputed coefficients after non-linear optimization
     */
-  std::vector<double>
-    SACModelCylinder::refitModel (const std::vector<int> &inliers)
+  void
+    SACModelCylinder::refitModel (const std::vector<int> &inliers, std::vector<double> &refit_coefficients)
   {
     if (inliers.size () == 0)
     {
-      // std::cerr << "[SACModelCylinder::RefitModel] Cannot re-fit 0 inliers!" << std::endl;
-      return (model_coefficients_);
+      ROS_ERROR ("[SACModelCylinder::RefitModel] Cannot re-fit 0 inliers!");
+      refit_coefficients = model_coefficients_;
+      return;
     }
 
-/*
-    */
-    std::vector<double> refit (7);
-    for (int d = 0; d < 4; d++)
-      refit[d] = model_coefficients_[d];
+    refit_coefficients.resize (7);
+    for (int d = 0; d < 7; d++)
+      refit_coefficients[d] = model_coefficients_[d];
+  }
 
-    return (refit);
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////(
+  /** \brief Cost function to be minimized
+    * \param p a pointer to our data structure array
+    * \param m the number of functions
+    * \param n the number of variables
+    * \param x a pointer to the variables array
+    * \param fvec a pointer to the resultant functions evaluations
+    * \param iflag set to -1 inside the function to terminate execution
+    */
+  int
+    SACModelCylinder::functionToOptimize (void *p, int m, int n, const double *x, double *fvec, int iflag)
+  {
+    SACModelCylinder *model = (SACModelCylinder*)p;
+
+    for (int i = 0; i < n; i ++)
+    {
+      // Compute the difference between the center of the circle and the datapoint X_i
+      double xt = model->cloud_->pts[model->best_inliers_.at (i)].x - x[0];
+      double yt = model->cloud_->pts[model->best_inliers_.at (i)].y - x[1];
+
+      // g = sqrt ((x-a)^2 + (y-b)^2) - R
+      fvec[i] = sqrt (xt * xt + yt * yt) - x[2];
+    }
+    return (0);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

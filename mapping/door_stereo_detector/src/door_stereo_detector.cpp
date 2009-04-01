@@ -301,7 +301,9 @@ class DoorStereo
           if((int) sac->getInliers().size() < sac_min_points_per_model_)
             break;
           inliers.push_back(sac->getInliers());
-          coeff.push_back(sac->computeCoefficients());
+          vector<double> model_coefficients;
+          sac->computeCoefficients (model_coefficients);
+          coeff.push_back (model_coefficients);
 
           //Find the edges of the line segments
           cloud_geometry::statistics::getMinMax (*points, inliers.back(), minP, maxP);

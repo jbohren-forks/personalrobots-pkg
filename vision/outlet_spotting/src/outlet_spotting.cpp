@@ -59,6 +59,7 @@
 #include "std_msgs/UInt8.h" //for projector status
 
 
+#include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 #include <point_cloud_mapping/sample_consensus/sac.h>
 #include <point_cloud_mapping/sample_consensus/lmeds.h>
@@ -454,27 +455,12 @@ public:
 	      coeff.resize (0);
 	      return (false);
 	    }
-	    sac->computeCoefficients ();          // Compute the model coefficients
-	    coeff   = sac->refineCoefficients (); // Refine them using least-squares
+	    sac->computeCoefficients (coeff);          // Compute the model coefficients
+	    sac->refineCoefficients (coeff);           // Refine them using least-squares
 	    model->selectWithinDistance (coeff, dist_thresh, inliers);
 
 	    // Flip plane normal according to the viewpoint information
-	    Point32 vp_m;
-	    vp_m.x = viewpoint.x - points.pts.at (inliers[0]).x;
-	    vp_m.y = viewpoint.y - points.pts.at (inliers[0]).y;
-	    vp_m.z = viewpoint.z - points.pts.at (inliers[0]).z;
-
-	    // Dot product between the (viewpoint - point) and the plane normal
-	    double cos_theta = (vp_m.x * coeff[0] + vp_m.y * coeff[1] + vp_m.z * coeff[2]);
-
-	    // Flip the plane normal
-	    if (cos_theta < 0)
-	    {
-	      for (int d = 0; d < 3; d++)
-	        coeff[d] *= -1;
-	      // Hessian form (D = nc . p_plane (centroid here) + p)
-	      coeff[3] = -1 * (coeff[0] * points.pts.at (inliers[0]).x + coeff[1] * points.pts.at (inliers[0]).y + coeff[2] * points.pts.at (inliers[0]).z);
-	    }
+	    cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint);
 	    //ROS_DEBUG ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
 	    //           coeff[0], coeff[1], coeff[2], coeff[3]);
 	  }

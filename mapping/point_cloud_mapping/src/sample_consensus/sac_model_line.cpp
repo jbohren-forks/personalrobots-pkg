@@ -163,21 +163,21 @@ namespace sample_consensus
   /** \brief Create a new point cloud with inliers projected onto the line model.
     * \param inliers the data inliers that we want to project on the line model
     * \param model_coefficients the coefficients of a line model
+    * \param projected_points the resultant projected points
     */
-  robot_msgs::PointCloud
-    SACModelLine::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients)
+  void
+    SACModelLine::projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients,
+                                 robot_msgs::PointCloud &projected_points)
   {
-    robot_msgs::PointCloud projected_cloud;
     // Allocate enough space
-    projected_cloud.pts.resize (inliers.size ());
-
-    projected_cloud.set_chan_size (cloud_->get_chan_size ());
+    projected_points.pts.resize (inliers.size ());
+    projected_points.set_chan_size (cloud_->get_chan_size ());
 
     // Create the channels
-    for (unsigned int d = 0; d < projected_cloud.get_chan_size (); d++)
+    for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
     {
-      projected_cloud.chan[d].name = cloud_->chan[d].name;
-      projected_cloud.chan[d].vals.resize (inliers.size ());
+      projected_points.chan[d].name = cloud_->chan[d].name;
+      projected_points.chan[d].vals.resize (inliers.size ());
     }
 
     // Compute the line direction (P2 - P1)
@@ -194,14 +194,13 @@ namespace sample_consensus
                    (model_coefficients_[0] * p21.x + model_coefficients_[1] * p21.y + model_coefficients_[2] * p21.z)
                  ) / (p21.x * p21.x + p21.y * p21.y + p21.z * p21.z);
       // Calculate the projection of the point on the line (pointProj = A + k * B)
-      projected_cloud.pts[i].x = model_coefficients_.at (0) + k * p21.x;
-      projected_cloud.pts[i].y = model_coefficients_.at (1) + k * p21.y;
-      projected_cloud.pts[i].z = model_coefficients_.at (2) + k * p21.z;
+      projected_points.pts[i].x = model_coefficients_.at (0) + k * p21.x;
+      projected_points.pts[i].y = model_coefficients_.at (1) + k * p21.y;
+      projected_points.pts[i].z = model_coefficients_.at (2) + k * p21.z;
       // Copy the other attributes
-      for (unsigned int d = 0; d < projected_cloud.get_chan_size (); d++)
-        projected_cloud.chan[d].vals[i] = cloud_->chan[d].vals[inliers.at (i)];
+      for (unsigned int d = 0; d < projected_points.get_chan_size (); d++)
+        projected_points.chan[d].vals[i] = cloud_->chan[d].vals[inliers.at (i)];
     }
-    return (projected_cloud);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -256,14 +255,19 @@ namespace sample_consensus
   /** \brief Recompute the line coefficients using the given inlier set and return them to the user.
     * @note: these are the coefficients of the line model after refinement
     * \param inliers the data inliers found as supporting the model
+    * \param refit_coefficients the resultant recomputed coefficients after non-linear optimization
     */
-  std::vector<double>
-    SACModelLine::refitModel (const std::vector<int> &inliers)
+  void
+    SACModelLine::refitModel (const std::vector<int> &inliers, std::vector<double> &refit_coefficients)
   {
     if (inliers.size () == 0)
-      return (model_coefficients_);
+    {
+      ROS_ERROR ("[SACModelLine::RefitModel] Cannot re-fit 0 inliers!");
+      refit_coefficients = model_coefficients_;
+      return;
+    }
 
-    std::vector<double> refit_coefficients (6);
+    refit_coefficients.resize (6);
 
     // Compute the centroid of the samples
     robot_msgs::Point32 centroid;
@@ -284,8 +288,6 @@ namespace sample_consensus
     refit_coefficients[3] = eigen_vectors (0, 2) + refit_coefficients[0];
     refit_coefficients[4] = eigen_vectors (1, 2) + refit_coefficients[1];
     refit_coefficients[5] = eigen_vectors (2, 2) + refit_coefficients[2];
-
-    return (refit_coefficients);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

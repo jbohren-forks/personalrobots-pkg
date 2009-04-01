@@ -333,7 +333,10 @@ class SemanticPointAnnotator
             break;
           }
           inliers.push_back (sac->getInliers ());
-          coeff.push_back (sac->computeCoefficients ());
+          vector<double> model_coeff;
+          sac->computeCoefficients (model_coeff);
+          sac->refineCoefficients  (model_coeff);
+          coeff.push_back (model_coeff);
 
           //fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
           //         coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
@@ -584,6 +587,7 @@ class SemanticPointAnnotator
         }
       }
 
+      // Go over each cluster
       for (int cc = 0; cc < (int)clusters.size (); cc++)
       {
         double r, g, b, rgb;

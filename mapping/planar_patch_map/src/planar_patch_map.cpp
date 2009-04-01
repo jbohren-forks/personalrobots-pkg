@@ -116,21 +116,25 @@ class PlanarPatchMap
     void
       fitSACPlane (PointCloud *points, cloud_octree::Octree *octree, cloud_octree::Leaf* leaf, Polygon3D &poly)
     {
+      double dist_thresh = 0.02;
       vector<int> indices = leaf->getIndices ();
       if ((int)indices.size () < sac_min_points_per_cell_)
         return;
 
       // Create and initialize the SAC model
       sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, 0.02);
+      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
       model->setDataSet (points, indices);
 
+      vector<int> inliers;
+      vector<double> coeff;
       // Search for the best plane
       if (sac->computeModel ())
       {
         // Obtain the inliers and the planar model coefficients
-        std::vector<int> inliers = sac->getInliers ();
-        std::vector<double> coeff = sac->computeCoefficients ();
+        sac->computeCoefficients (coeff);
+        sac->refineCoefficients (coeff);
+        model->selectWithinDistance (coeff, dist_thresh, inliers);
         ///fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", inliers.size (), coeff[0], coeff[1], coeff[2], coeff[3]);
 
         // Project the inliers onto the model

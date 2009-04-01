@@ -198,8 +198,8 @@ class GroundRemoval
           return (false);
         //inliers    = sac->getInliers ();
 
-        sac->computeCoefficients ();             // Compute the model coefficients
-        line_coeff = sac->refineCoefficients (); // Refine them using least-squares
+        sac->computeCoefficients (line_coeff);             // Compute the model coefficients
+        sac->refineCoefficients (line_coeff);              // Refine them using least-squares
         model->selectWithinDistance (line_coeff, sac_distance_threshold_, inliers);
 
         // Project the inliers onto the model

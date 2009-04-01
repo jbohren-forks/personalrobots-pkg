@@ -61,20 +61,24 @@ namespace sample_consensus
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Test whether the given model coefficients are valid given the input point cloud data. Pure virtual.
-       * \param model_coefficients the model coefficients that need to be tested */
+        * \param model_coefficients the model coefficients that need to be tested
+        */
       virtual bool testModelCoefficients (const std::vector<double> &model_coefficients) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Check whether the given index samples can form a valid model, compute the model coefficients from
-       * these samples and store them internally in model_coefficients_. Pure virtual.
-       * \param indices the point indices found as possible good candidates for creating a valid model */
+        * these samples and store them internally in model_coefficients_. Pure virtual.
+        * \param indices the point indices found as possible good candidates for creating a valid model
+        */
       virtual bool computeModelCoefficients (const std::vector<int> &indices) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Recompute the model coefficients using the given inlier set and return them to the user. Pure virtual.
-       * @note: these are the coefficients of the model after refinement (eg. after a least-squares optimization)
-       * \param inliers the data inliers found as supporting the model */
-      virtual std::vector<double> refitModel (const std::vector<int> &inliers) = 0;
+        * @note: these are the coefficients of the model after refinement (eg. after a least-squares optimization)
+        * \param inliers the data inliers found as supporting the model
+        * \param refit_coefficients the resultant recomputed coefficients after non-linear optimization
+        */
+      virtual void refitModel (const std::vector<int> &inliers, std::vector<double> &refit_coefficients) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Compute all distances from the cloud data to a given model. Pure virtual.
@@ -95,20 +99,24 @@ namespace sample_consensus
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Create a new point cloud with inliers projected onto the model. Pure virtual.
-       * \param inliers the data inliers that we want to project on the model
-       * \param model_coefficients the coefficients of a model */
-      virtual robot_msgs::PointCloud projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients) = 0;
+        * \param inliers the data inliers that we want to project on the model
+        * \param model_coefficients the coefficients of a model
+        * \param projected_points the resultant projected points
+        */
+      virtual void projectPoints (const std::vector<int> &inliers, const std::vector<double> &model_coefficients, robot_msgs::PointCloud &projected_points) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Project inliers (in place) onto the given model. Pure virtual.
-       * \param inliers the data inliers that we want to project on the model
-       * \param model_coefficients the coefficients of a model */
+        * \param inliers the data inliers that we want to project on the model
+        * \param model_coefficients the coefficients of a model
+        */
       virtual void projectPointsInPlace (const std::vector<int> &inliers, const std::vector<double> &model_coefficients) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Verify whether a subset of indices verifies the internal model coefficients. Pure virtual.
-       * \param indices the data indices that need to be tested against the model
-       * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers */
+        * \param indices the data indices that need to be tested against the model
+        * \param threshold a maximum admissible distance threshold for determining the inliers from the outliers
+        */
       virtual bool doSamplesVerifyModel (const std::set<int> &indices, double threshold) = 0;
 
 
@@ -150,7 +158,7 @@ namespace sample_consensus
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Set the best set of inliers. Used by SAC methods. Do not call this except if you know what you're doing.
        * \param best_inliers the set of inliers for the best model */
-      void setBestInliers (std::vector<int> best_inliers) { this->best_inliers_ = best_inliers; }
+      void setBestInliers (const std::vector<int> &best_inliers) { this->best_inliers_ = best_inliers; }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Return the best set of inliers found so far for this model. */
