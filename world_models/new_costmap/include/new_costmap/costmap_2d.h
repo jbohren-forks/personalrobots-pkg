@@ -92,6 +92,11 @@ namespace costmap_2d {
           const std::vector<unsigned char>& static_data, unsigned char lethal_threshold);
 
       /**
+       * @brief  Destructor
+       */
+      ~Costmap2D();
+
+      /**
        * @brief  Revert to the static map outside of a specified window centered at a world coordinate
        * @param wx The x coordinate of the center point of the window in world space (meters)
        * @param wy The y coordinate of the center point of the window in world space (meters)
@@ -155,17 +160,6 @@ namespace costmap_2d {
         my = index / size_x_;
         mx = index - (my * size_x_);
       }
-
-
-      /**
-       * @brief  Convert from map coordinates to world coordinates without checking for legal bounds
-       * @param  wx The x world coordinate
-       * @param  wy The y world coordinate
-       * @param  mx Will be set to the associated map x coordinate
-       * @param  my Will be set to the associated map y coordinate
-       */
-      void worldToMapNoBounds(double wx, double wy, unsigned int& mx, unsigned int& my) const;
-
 
       /**
        * @brief  Accessor for the x size of the costmap in cells
@@ -270,7 +264,6 @@ namespace costmap_2d {
       void resetInflationWindow(double wx, double wy, double w_size_x, double w_size_y,
           std::priority_queue<CellData>& inflation_queue );
 
-
       /**
        * @brief  Raytrace a line and apply some action at each step
        * @param  at The action to take... a functor
@@ -335,6 +328,15 @@ namespace costmap_2d {
       void inflateObstacles(std::priority_queue<CellData>& inflation_queue);
 
       /**
+       * @brief  Convert from map coordinates to world coordinates without checking for legal bounds
+       * @param  wx The x world coordinate
+       * @param  wy The y world coordinate
+       * @param  mx Will be set to the associated map x coordinate
+       * @param  my Will be set to the associated map y coordinate
+       */
+      void worldToMapNoBounds(double wx, double wy, unsigned int& mx, unsigned int& my) const;
+
+      /**
        * @brief  Takes the max of existing cost and the new cost... keeps static map obstacles from being overridden prematurely
        * @param index The index od the cell to assign a cost to 
        * @param cost The cost
@@ -372,12 +374,28 @@ namespace costmap_2d {
         return cost;
       }
 
+      /**
+       * @brief  Lookup pre-computed costs
+       * @param mx The x coordinate of the current cell 
+       * @param my The y coordinate of the current cell 
+       * @param src_x The x coordinate of the source cell 
+       * @param src_y The y coordinate of the source cell 
+       * @return 
+       */
       inline char costLookup(int mx, int my, int src_x, int src_y){
         unsigned int dx = abs(mx - src_x);
         unsigned int dy = abs(my - src_y);
         return cached_costs_[dx][dy];
       }
 
+      /**
+       * @brief  Lookup pre-computed distances
+       * @param mx The x coordinate of the current cell 
+       * @param my The y coordinate of the current cell 
+       * @param src_x The x coordinate of the source cell 
+       * @param src_y The y coordinate of the source cell 
+       * @return 
+       */
       inline double distanceLookup(int mx, int my, int src_x, int src_y){
         unsigned int dx = abs(mx - src_x);
         unsigned int dy = abs(my - src_y);

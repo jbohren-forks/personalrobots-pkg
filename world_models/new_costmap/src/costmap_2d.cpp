@@ -100,6 +100,24 @@ namespace costmap_2d{
     }
   }
 
+  Costmap2D::~Costmap2D(){
+    if(cost_map_ != NULL) delete[] cost_map_;
+    if(static_map_ != NULL) delete[] static_map_;
+    if(markers_ != NULL) delete[] markers_;
+
+    if(cached_distances_ != NULL){
+      for(unsigned int i = 0; i <= cell_inflation_radius_; ++i){
+        if(cached_distances_[i] != NULL) delete[] cached_distances_[i];
+      }
+    }
+
+    if(cached_costs_ != NULL){
+      for(unsigned int i = 0; i <= cell_inflation_radius_; ++i){
+        if(cached_costs_[i] != NULL) delete[] cached_costs_[i];
+      }
+    }
+  }
+
   unsigned int Costmap2D::cellDistance(double world_dist){
     double cells_dist = max(0.0, ceil(world_dist / resolution_));
     return (unsigned int) cells_dist;
