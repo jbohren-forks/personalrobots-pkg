@@ -80,7 +80,8 @@ public:
 
 private:
   /** \brief This is the main door detectoin function */
-  bool detectDoors(const robot_msgs::Door& door, robot_msgs::PointCloud pointcloud, std::vector<robot_msgs::Door>& result) const;
+  bool detectDoors(const robot_msgs::Door& door, robot_msgs::PointCloud pointcloud, 
+                   std::vector<robot_msgs::Door>& result) const;
 
   /** \brief Main point cloud callback.*/
   void cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud);
