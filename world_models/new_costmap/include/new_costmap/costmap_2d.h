@@ -91,6 +91,7 @@ namespace costmap_2d {
        * @param  inflation_radius How far out to inflate obstacles
        * @param  obstacle_range The maximum range at which obstacles will be put into the costmap
        * @param  max_obstacle_height The maximum height of obstacles that will be considered
+       * @param  raytrace_range The maximum distance we'll raytrace out to
        * @param  weight The scaling factor for the cost function. Should be 0 < weight <= 1. Lower values reduce effective cost.
        * @param  static_data Data used to initialize the costmap
        * @param  lethal_threshold The cost threshold at which a point in the static data is considered a lethal obstacle
@@ -98,7 +99,7 @@ namespace costmap_2d {
       Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, 
           double resolution, double origin_x, double origin_y, double inscribed_radius,
           double circumscribed_radius, double inflation_radius, double obstacle_range,
-          double max_obstacle_height, double weight,
+          double max_obstacle_height, double raytrace_range, double weight,
           const std::vector<unsigned char>& static_data, unsigned char lethal_threshold);
 
       /**
@@ -283,6 +284,50 @@ namespace costmap_2d {
         }
       }
 
+      inline int sign(int x){
+        return x > 0 ? 1.0 : -1.0;
+      }
+
+      template <class ActionType>
+        inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1){
+          int dx = x1 - x0;
+          int dy = y1 - y0;
+
+          unsigned int abs_dx = abs(dx);
+          unsigned int abs_dy = abs(dy);
+
+          int offset_dx = sign(dx);
+          int offset_dy = sign(dy) * size_x_;
+
+          unsigned int offset = y0 * size_x_ + x0;
+
+          //if x is dominant
+          if(abs_dx >= abs_dy){
+            int error_y = abs_dx / 2;
+            bresenham2D(at, abs_dx, abs_dy, error_y, offset_dx, offset_dy, offset);
+            return;
+          }
+
+          //otherwise y is dominant
+          int error_x = abs_dy / 2;
+          bresenham2D(at, abs_dy, abs_dx, error_x, offset_dy, offset_dx, offset);
+
+        }
+
+      template <class ActionType>
+        inline void bresenham2D(ActionType at, unsigned int abs_da, unsigned int abs_db, int error_b, int offset_a, int offset_b, unsigned int offset){
+          for(unsigned int i = 0; i < abs_da; ++i){
+            at(offset);
+            offset += offset_a;
+            error_b += abs_db;
+            if((unsigned int)error_b >= abs_da){
+              offset += offset_b;
+              error_b -= abs_da;
+            }
+          }
+          at(offset);
+        }
+
       /**
        * @brief  Given a priority queue with the actual obstacles, compute the inflated costs for the costmap
        * @param  inflation_queue A priority queue contatining the cell data for the actual obstacles
@@ -301,10 +346,22 @@ namespace costmap_2d {
       unsigned char* markers_;
       double sq_obstacle_range_;
       double max_obstacle_height_;
+      double raytrace_range_;
       unsigned char** cached_costs_;
       double** cached_distances_;
       unsigned int inscribed_radius_, circumscribed_radius_, inflation_radius_;
       double weight_;
+
+      //functors for raytracing actions
+      class ClearCell {
+        public:
+          ClearCell(unsigned char* cost_map) : cost_map_(cost_map) {}
+          inline void operator()(unsigned int offset){
+            cost_map_[offset] = 0;
+          }
+        private:
+          unsigned char* cost_map_;
+      };
   };
 };
 

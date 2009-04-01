@@ -54,11 +54,11 @@ namespace costmap_2d{
   Costmap2D::Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, 
       double resolution, double origin_x, double origin_y, double inscribed_radius,
       double circumscribed_radius, double inflation_radius, double obstacle_range,
-      double max_obstacle_height, double weight,
+      double max_obstacle_height, double raytrace_range, double weight,
       const std::vector<unsigned char>& static_data, unsigned char lethal_threshold) : size_x_(cells_size_x),
   size_y_(cells_size_y), resolution_(resolution), origin_x_(origin_x), origin_y_(origin_y), static_map_(NULL),
   cost_map_(NULL), markers_(NULL), sq_obstacle_range_(obstacle_range * obstacle_range), 
-  max_obstacle_height_(max_obstacle_height), cached_costs_(NULL), cached_distances_(NULL), 
+  max_obstacle_height_(max_obstacle_height), raytrace_range_(raytrace_range), cached_costs_(NULL), cached_distances_(NULL), 
   inscribed_radius_(inscribed_radius), circumscribed_radius_(circumscribed_radius), inflation_radius_(inflation_radius),
   weight_(weight){
     //convert our inflations from world to cell distance
@@ -260,7 +260,76 @@ namespace costmap_2d{
     }
   }
 
-  void Costmap2D::raytraceFreespace(const std::vector<Observation>& clearing_scans){}
+
+  void Costmap2D::raytraceFreespace(const std::vector<Observation>& clearing_scans){
+    //pre-comput the squared raytrace range... saves a sqrt in an inner loop
+    double sq_raytrace_range = raytrace_range_ * raytrace_range_;
+
+    //create the functor that we'll use to clear cells from the costmap
+    ClearCell clearer(cost_map_);
+
+    for(unsigned int i = 0; i < clearing_scans.size(); ++i){
+      double ox = clearing_scans[i].origin_.x;
+      double oy = clearing_scans[i].origin_.y;
+      PointCloud* cloud = clearing_scans[i].cloud_;
+
+      //get the map coordinates of the origin of the sensor 
+      unsigned int x0, y0;
+      if(!worldToMap(ox, oy, x0, y0))
+        return;
+
+      //we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
+      double end_x = origin_x_ + metersSizeX();
+      double end_y = origin_y_ + metersSizeY();
+
+      //for each point in the cloud, we want to trace a line from the origin and clear obstacles along it
+      for(unsigned int j = 0; j < cloud->pts.size(); ++j){
+        double wx = cloud->pts[j].x;
+        double wy = cloud->pts[i].y;
+
+        //we want to check that we scale the vector so that we only trace to the desired distance
+        double sq_distance = (wx - ox) * (wx - ox) + (wy - oy) * (wy - oy);
+        double scaling_fact = sq_raytrace_range / sq_distance;
+        scaling_fact = scaling_fact > 1.0 ? 1.0 : scaling_fact;
+
+        //now we also need to make sure that the enpoint we're raytracing 
+        //to isn't off the costmap and scale if necessary
+        double a = wx - ox;
+        double b = wy - oy;
+
+        //the minimum value to raytrace from is the origin
+        if(wx < origin_x_){
+          double t = (origin_x_ - ox) / a;
+          wx = ox + a * t;
+          wy = oy + b * t;
+        }
+        if(wy < origin_y_){
+          double t = (origin_y_ - oy) / b;
+          wx = ox + a * t;
+          wy = oy + b * t;
+        }
+
+        //the maximum value to raytrace to is the end of the map
+        if(wx > end_x){
+          double t = (end_x - ox) / a;
+          wx = ox + a * t;
+          wy = oy + b * t;
+        }
+        if(wy > end_y){
+          double t = (end_y - oy) / b;
+          wx = ox + a * t;
+          wy = oy + b * t;
+        }
+
+        //now that the vector is scaled correctly... we'll get the map coordinates of its endpoint
+        unsigned int x1, y1;
+        worldToMap(wx, wy, x1, y1);
+
+        //and finally... we can execute our trace to clear obstacles along that line
+        raytraceLine(clearer, x0, y0, x1, y1);
+      }
+    }
+  }
 
   void Costmap2D::inflateObstaclesInWindow(double wx, double wy, double w_size_x, double w_size_y){
   }
