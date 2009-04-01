@@ -1,9 +1,7 @@
 <package>
 <description brief="Prosilica GigE SDK">
 
-The Prosilica GigE SDK allows users to control and capture images from Prosilica's GigE Vision gigabit Ethernet cameras.
-
-Package currently assumes x86 Linux.
+The Prosilica GigE Linux SDK allows users to control and capture images from Prosilica's GigE Vision gigabit Ethernet cameras.
 
 </description>
 <author>Prosilica, Inc.</author>
