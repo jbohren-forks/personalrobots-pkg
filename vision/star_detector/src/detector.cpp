@@ -149,4 +149,6 @@ void StarDetector::FilterResponses()
   }
 }
 
+#ifdef __SSE2__
 #include "generated.i"
+#endif
