@@ -19,6 +19,18 @@
     <param name="deadman_button" value="4" type="int"/>
     <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" respawn="true" machine="four" />
 
+    <!-- Filter for tilt laser shadowing/veiling -->
+    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="tilt_shadow_filter">
+      <param name="scan_topic" value="tilt_scan" />
+      <param name="cloud_topic" value="tilt_laser_cloud_filtered" />
+    </node>
+    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="base_shadow_filter" >
+      <param name="scan_topic" value="base_scan" />
+      <param name="cloud_topic" value="base_scan_filtered" />
+      <param name="preservative" value="true" />
+      <param name="laser_max_range" value="30.0" />
+    </node>
+
     <param name="robot_pose_ekf/freq" value="30.0"/>
     <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
     <param name="robot_pose_ekf/odom_used" value="true"/>
@@ -42,6 +54,28 @@
     <param name="pf_odom_frame_id" value="odom_combined"/>
     <param name="pf_transform_tolerance" value="0.2" />
     <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="true" args="scan:=base_scan" machine="four" />
+
+   <!-- For ground plane detection -->
+    <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" name="point_cloud_assembler" machine="three" respawn="true">
+      <remap from="scan_in" to="tilt_laser_cloud_filtered" />
+      <param name="tf_cache_time_secs" type="double" value="10.0" />
+      <param name="tf_extrap_limit" type="double" value="0.01" />
+      <param name="max_scans" type="int" value="400" />
+      <param name="fixed_frame" type="string" value="odom_combined" />
+    </node>
+
+    <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" name="snapshotter" machine="three" respawn="true" >
+      <remap from="build_cloud" to="point_cloud_assembler/build_cloud" />
+      <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+    </node>
+
+
+    <node pkg="semantic_point_annotator" type="sac_inc_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen" >
+      <param name="z_threshold" value="0.1" />
+      <param name="sac_min_points_per_model" value="6" />
+      <param name="sac_distance_threshold" value="0.03" />
+      <param name="planar_refine" value="1" />
+    </node>
 
     <!--<node pkg="highlevel_controllers" type="move_base_sbpl" respawn="true" machine="four" output="screen" >-->
     <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen" name="move_base_node">
@@ -104,9 +138,9 @@
 
       <!-- Setting these parameters to 0.0 disables the watchdog on them. For stage this is required since we
      are not getting any data -->
-      <param name="costmap_2d/tilt_laser_keepalive" value="0.0" />
-      <param name="costmap_2d/tilt_laser_update_rate" value="0.0"/>
-      <param name="costmap_2d/low_obstacle_update_rate" value="0.0"/>
+      <param name="costmap_2d/tilt_laser_keepalive" value="2.0" />
+      <param name="costmap_2d/tilt_laser_update_rate" value="2.0"/>
+      <param name="costmap_2d/low_obstacle_update_rate" value="0.2"/>
       <param name="costmap_2d/stereo_update_rate" value="0.0"/>
     </node>
 
