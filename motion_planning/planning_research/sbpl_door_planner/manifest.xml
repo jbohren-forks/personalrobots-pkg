@@ -5,6 +5,12 @@
   <author>Maxim Likhachev/maximl@seas.upenn.edu, Sachin Chitta/schitta@willowgarage.com</author>
   <license>BSD</license>
     <depend package="sbpl" />
+    <depend package="roscpp"/>
+    <depend package="rosconsole"/>
+    <depend package="std_msgs"/>
+    <depend package="robot_msgs"/>
+    <depend package="costmap_2d"/>
+    <depend package="tf"/>
   <url></url>
 
   <export>

@@ -131,6 +131,7 @@ void EnvironmentNAVXYTHETADOOR::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldr
     doorangleV->push_back(2);
     dooranglecostV->push_back(0);
     dooranglecostV->push_back(3);
-
+// No larger than 255 unsigned char
+// Also put in an infinite cost
 }
 

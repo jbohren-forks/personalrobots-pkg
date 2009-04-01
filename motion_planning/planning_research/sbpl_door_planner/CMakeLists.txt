@@ -15,3 +15,4 @@ rospack_add_executable(planDoorPath src/test/main.cpp
                                     src/discrete_space_information/navxythetadoor/environment_navxythetadoor.cpp)
 
 target_link_libraries(planDoorPath sbpl_door_planner)
+
