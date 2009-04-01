@@ -365,10 +365,6 @@ AmclNode::AmclNode() :
   param("pf_odom_drift_yy", odom_drift_yy, 0.2);
   param("pf_odom_drift_aa", odom_drift_aa, 0.2);
   param("pf_odom_drift_xa", odom_drift_xa, 0.2);
-  odom_drift_xx = 0.5;
-  odom_drift_yy = 0.5;
-  odom_drift_aa = 0.5;
-  odom_drift_xa = 0.5;
   param("pf_min_d", d_thresh, 0.2);
   param("pf_min_a", a_thresh, M_PI/6.0);
   param("pf_odom_frame_id", odom_frame_id, string("odom"));
@@ -476,6 +472,16 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     // publish new transform robot->map
     ros::Time t;
     t.fromSec(hdr->timestamp);
+    /*
+    this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
+                                                                      tf::Point(pdata->pos.px, pdata->pos.py, 0.0)),
+                                                        t, "base_footprint","map"));
+                                                        */
+
+    //this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
+    //                                                                  tf::Point(pdata->pos.px, pdata->pos.py, 0.0)).inverse(),
+    //                                                    t, "map", "base_footprint"));
+
     // subtracting base to odom from map to base and send map to odom instead
     tf::Stamped<tf::Pose> odom_to_map;
     try
@@ -496,11 +502,28 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
                                                                       tf::Point(      odom_to_map.getOrigin() ) ).inverse(),
                                                         transform_expiration,odom_frame_id, "/map"));
 
+    /*
+    printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
+           pdata->pos.px,
+           pdata->pos.py,
+           RTOD(pdata->pos.pa),
+           (long long unsigned int)floor(hdr->timestamp),
+           (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 
+                          1000000000ULL));
+                          */
+    
     localizedOdomMsg.pos.x = pdata->pos.px;
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
     localizedOdomMsg.header.stamp.fromSec(hdr->timestamp);
     localizedOdomMsg.header.frame_id = "/map";
+    /*
+    printf("O: %.6f %.3f %.3f %.3f\n",
+           hdr->timestamp, 
+           localizedOdomMsg.pos.x, 
+           localizedOdomMsg.pos.y, 
+           localizedOdomMsg.pos.th);
+           */
     publish("localizedpose", localizedOdomMsg);
 
     if((ros::Time::now() - this->last_cloud_pub_time) >= cloud_pub_interval)
@@ -535,26 +558,6 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
       }
     }
 
-    return(0);
-  }
-  // Is it a hypothesis message from amcl?
-  if(Message::MatchMessage(hdr,
-                           PLAYER_MSGTYPE_DATA, 
-                           PLAYER_LOCALIZE_DATA_HYPOTHS,
-                           this->olocalize_addr))
-  {
-    // Cast the message payload appropriately 
-    player_localize_data_t* pdata = 
-            (player_localize_data_t*)data;
-    printf("%d hypoths\n", pdata->hypoths_count);
-    for(int j=0;j<pdata->hypoths_count;j++)
-    {
-      printf("%d:  %.3f %.3f %.3f\n", 
-             j,
-             pdata->hypoths[j].cov[0],
-             pdata->hypoths[j].cov[1],
-             pdata->hypoths[j].cov[2]);
-    }
     return(0);
   }
   // Is it a request for the map metadata?
@@ -666,14 +669,14 @@ int
 AmclNode::start()
 {
   // Subscribe to device, which causes it to startup
-  if((this->pdevice->Subscribe(this->Driver::InQueue) != 0) ||
-     (this->ldevice->Subscribe(this->Driver::InQueue) != 0))
+  if(this->pdevice->Subscribe(this->Driver::InQueue) != 0)
   {
-    puts("Failed to start the driver");
+    puts("Failed to subscribe the driver");
     return(-1);
   }
   else
   {
+    //this->setPose(0,0,0);
     return(0);
   }
 }
@@ -682,8 +685,7 @@ int
 AmclNode::stop()
 {
   // Unsubscribe from the device, which causes it to shutdown
-  if((pdevice->Unsubscribe(this->Driver::InQueue) != 0) ||
-     (ldevice->Unsubscribe(this->Driver::InQueue) != 0))
+  if(pdevice->Unsubscribe(this->Driver::InQueue) != 0)
   {
     puts("Failed to stop the driver");
   }
