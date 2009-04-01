@@ -118,7 +118,7 @@ DoorDetector::DoorDetector (ros::Node* anode)
 bool
   DoorDetector::detectDoors(const robot_msgs::Door& door, PointCloud pointcloud, std::vector<robot_msgs::Door>& result) const
 {
-  ROS_INFO ("DetectDoors: Start detecting doors in a point cloud of size %i", (int)pointcloud.pts.size ());
+  ROS_INFO ("DoorDetector: Start detecting doors in a point cloud of size %i", (int)pointcloud.pts.size ());
 
   Time ts = Time::now();
   Duration duration;
@@ -131,7 +131,7 @@ bool
     return false;
   }
   tf_.transformPointCloud (parameter_frame_, pointcloud, pointcloud);
-  ROS_INFO("DetectDoors: Pointcloud transformed to robot frame");
+  ROS_INFO("DoorDetector: Pointcloud transformed to robot frame");
 
   // Get the cloud viewpoint in the parameter frame
   PointStamped viewpoint_cloud_;
