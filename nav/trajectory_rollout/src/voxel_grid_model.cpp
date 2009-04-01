@@ -233,8 +233,7 @@ namespace trajectory_rollout {
 
       double distance = dist(ox, oy, oz, wpx, wpy, wpz);
       double scaling_fact = raytrace_range / distance;
-      //scaling_fact = scaling_fact > 1 ? 1 : scaling_fact;
-      scaling_fact = 1.0;
+      scaling_fact = scaling_fact > 1.0 ? 1.0 : scaling_fact;
       wpx = scaling_fact * (wpx - ox) + ox;
       wpy = scaling_fact * (wpy - oy) + oy;
       wpz = scaling_fact * (wpz - oz) + oz;
