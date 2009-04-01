@@ -40,17 +40,6 @@ using namespace std;
 using namespace robot_msgs;
 
 namespace costmap_2d{
-
-  Costmap2D::Costmap2D(double meters_size_x, double meters_size_y, 
-      double resolution, double origin_x, double origin_y) : resolution_(resolution), 
-  origin_x_(origin_x), origin_y_(origin_y) {
-    //make sure that we have a legal sized cost_map
-    ROS_ASSERT_MSG(meters_size_x > 0 && meters_size_y > 0, "Both the x and y dimensions of the costmap must be greater than 0.");
-
-    size_x_ = (unsigned int) ceil(meters_size_x / resolution);
-    size_y_ = (unsigned int) ceil(meters_size_y / resolution);
-  }
-
   Costmap2D::Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, 
       double resolution, double origin_x, double origin_y, double inscribed_radius,
       double circumscribed_radius, double inflation_radius, double obstacle_range,
@@ -61,6 +50,12 @@ namespace costmap_2d{
   max_obstacle_height_(max_obstacle_height), raytrace_range_(raytrace_range), cached_costs_(NULL), cached_distances_(NULL), 
   inscribed_radius_(inscribed_radius), circumscribed_radius_(circumscribed_radius), inflation_radius_(inflation_radius),
   weight_(weight){
+    //creat the cost_map, static_map, and markers
+    cost_map_ = new unsigned char[size_x_ * size_y_];
+    static_map_ = new unsigned char[size_x_ * size_y_];
+    markers_ = new unsigned char[size_x_ * size_y_];
+    memset(markers_, 0, size_x_ * size_y_ * sizeof(unsigned char));
+
     //convert our inflations from world to cell distance
     cell_inscribed_radius_ = cellDistance(inscribed_radius);
     cell_circumscribed_radius_ = cellDistance(circumscribed_radius);
@@ -72,14 +67,14 @@ namespace costmap_2d{
     for(unsigned int i = 0; i <= cell_inflation_radius_; ++i){
       cached_costs_[i] = new unsigned char[cell_inflation_radius_ + 1];
       cached_distances_[i] = new double[cell_inflation_radius_ + 1];
-      for(unsigned int j = 0; i <= cell_inflation_radius_; ++j){
+      for(unsigned int j = 0; j <= cell_inflation_radius_; ++j){
         cached_distances_[i][j] = sqrt(i*i + j*j);
         cached_costs_[i][j] = computeCost(cached_distances_[i][j]);
       }
     }
 
     if(!static_data.empty()){
-      ROS_ASSERT_MSG(size_x_ * size_y_ == static_data_.size(), "If you want to initialize a costmap with static data, their sizes must match.");
+      ROS_ASSERT_MSG(size_x_ * size_y_ == static_data.size(), "If you want to initialize a costmap with static data, their sizes must match.");
 
       //make sure the inflation queue is empty at the beginning of the cycle (should always be true)
       ROS_ASSERT_MSG(inflation_queue_.empty(), "The inflation queue must be empty at the beginning of inflation");
@@ -108,11 +103,6 @@ namespace costmap_2d{
   unsigned int Costmap2D::cellDistance(double world_dist){
     double cells_dist = max(0.0, ceil(world_dist / resolution_));
     return (unsigned int) cells_dist;
-  }
-
-  double Costmap2D::worldDistance(unsigned int cell_dist){
-    double world_dist = cell_dist * resolution_;
-    return world_dist;
   }
 
   unsigned char Costmap2D::getCellCost(unsigned int mx, unsigned int my) const {

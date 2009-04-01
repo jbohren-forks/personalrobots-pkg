@@ -58,7 +58,7 @@ namespace costmap_2d {
       unsigned int src_x_, src_y_;
   };
 
-  bool operator<(const CellData &a, const CellData &b){
+  inline bool operator<(const CellData &a, const CellData &b){
     return a.distance_ < b.distance_;
   }
 
@@ -68,17 +68,6 @@ namespace costmap_2d {
    */
   class Costmap2D {
     public:
-      /**
-       * @brief  Constructor for a costmap
-       * @param  meters_size_x The x size of the map in meters
-       * @param  meters_size_y The y size of the map in meters
-       * @param  resolution The resolution of the map in meters/cell
-       * @param  origin_x The x origin of the map
-       * @param  origin_y The y origin of the map
-       */
-      Costmap2D(double meters_size_x, double meters_size_y, 
-          double resolution, double origin_x, double origin_y);
-
       /**
        * @brief  Constructor for a costmap
        * @param  cells_size_x The x size of the map in cells
@@ -103,6 +92,23 @@ namespace costmap_2d {
           const std::vector<unsigned char>& static_data, unsigned char lethal_threshold);
 
       /**
+       * @brief  Revert to the static map outside of a specified window centered at a world coordinate
+       * @param wx The x coordinate of the center point of the window in world space (meters)
+       * @param wy The y coordinate of the center point of the window in world space (meters)
+       * @param w_size_x The x size of the window in meters
+       * @param w_size_y The y size of the window in meters
+       */
+      void resetMapOutsideWindow(double wx, double wy, double w_size_x, double w_size_y);
+
+      /**
+       * @brief  Update the costmap with new observations
+       * @param obstacles The point clouds of obstacles to insert into the map 
+       * @param clearing_observations The set of observations to use for raytracing 
+       */
+      void updateWorld(double robot_x, double robot_y, 
+          const std::vector<Observation>& observations, const std::vector<Observation>& clearing_observations);
+
+      /**
        * @brief  Get the cost of a cell in the costmap
        * @param mx The x coordinate of the cell 
        * @param my The y coordinate of the cell 
@@ -125,51 +131,31 @@ namespace costmap_2d {
        * @param  wy The y world coordinate
        * @param  mx Will be set to the associated map x coordinate
        * @param  my Will be set to the associated map y coordinate
-       * @return true if the conversion was successful (legal bounds) false otherwise
+       * @return True if the conversion was successful (legal bounds) false otherwise
        */
       bool worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const;
 
+      /**
+       * @brief  Given two map coordinates... compute the associated index
+       * @param mx The x coordinate 
+       * @param my The y coordinate 
+       * @return The associated index
+       */
       inline unsigned int getIndex(unsigned int mx, unsigned int my) const{
         return my * size_x_ + mx;
       }
 
+      /**
+       * @brief  Given an index... compute the associated map coordinates
+       * @param  index The index
+       * @param  mx Will be set to the x coordinate
+       * @param  my Will be set to the y coordinate
+       */
       inline void indexToCells(unsigned int index, unsigned int& mx, unsigned int& my) const{
         my = index / size_x_;
         mx = index - (my * size_x_);
       }
 
-      inline void updateCellCost(unsigned int index, unsigned char cost){
-        unsigned char* cell_cost = &cost_map_[index];
-        if(*cell_cost == NO_INFORMATION)
-          *cell_cost = cost;
-        else
-          *cell_cost = std::max(cost, *cell_cost);
-      }
-
-      inline unsigned char computeCost(double distance) const {
-        unsigned char cost = 0;
-        if(distance == 0)
-          cost = LETHAL_OBSTACLE;
-        else if(distance <= cell_inscribed_radius_)
-          cost = INSCRIBED_INFLATED_OBSTACLE;
-        else {
-          double factor = weight_ / (1 + pow(distance - cell_inscribed_radius_, 2));
-          cost = (unsigned char) ((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
-        }
-        return cost;
-      }
-
-      inline char costLookup(int mx, int my, int src_x, int src_y){
-        unsigned int dx = abs(mx - src_x);
-        unsigned int dy = abs(my - src_y);
-        return cached_costs_[dx][dy];
-      }
-
-      inline double distanceLookup(int mx, int my, int src_x, int src_y){
-        unsigned int dx = abs(mx - src_x);
-        unsigned int dy = abs(my - src_y);
-        return cached_distances_[dx][dy];
-      }
 
       /**
        * @brief  Convert from map coordinates to world coordinates without checking for legal bounds
@@ -180,52 +166,6 @@ namespace costmap_2d {
        */
       void worldToMapNoBounds(double wx, double wy, unsigned int& mx, unsigned int& my) const;
 
-      /**
-       * @brief  Revert to the static map outside of a specified window centered at a world coordinate
-       * @param wx The x coordinate of the center point of the window in world space (meters)
-       * @param wy The y coordinate of the center point of the window in world space (meters)
-       * @param w_size_x The x size of the window in meters
-       * @param w_size_y The y size of the window in meters
-       */
-      void resetMapOutsideWindow(double wx, double wy, double w_size_x, double w_size_y);
-
-      /**
-       * @brief  Update the costmap with new observations
-       * @param obstacles The point clouds of obstacles to insert into the map 
-       * @param clearing_observations The set of observations to use for raytracing 
-       */
-      void updateWorld(double robot_x, double robot_y, 
-          const std::vector<Observation>& observations, const std::vector<Observation>& clearing_observations);
-
-      /**
-       * @brief  Insert new obstacles into the cost map
-       * @param obstacles The point clouds of obstacles to insert into the map 
-       * @param inflation_queue The queue to place the obstacles into for inflation
-       */
-      void updateObstacles(const std::vector<Observation>& observations, std::priority_queue<CellData>& inflation_queue);
-
-      /**
-       * @brief  Clear freespace based on any number of observations
-       * @param clearing_observations The observations used to raytrace 
-       */
-      void raytraceFreespace(const std::vector<Observation>& clearing_observations);
-
-      /**
-       * @brief  Clear freespace from an observation
-       * @param clearing_observation The observation used to raytrace 
-       */
-      void raytraceFreespace(const Observation& clearing_observation);
-
-      /**
-       * @brief  Provides support for re-inflating obstacles within a certain window (used after raytracing)
-       * @param wx The x coordinate of the center point of the window in world space (meters)
-       * @param wy The y coordinate of the center point of the window in world space (meters)
-       * @param w_size_x The x size of the window in meters
-       * @param w_size_y The y size of the window in meters
-       * @param inflation_queue The priority queue to push items back onto for propogation
-       */
-      void resetInflationWindow(double wx, double wy, double w_size_x, double w_size_y,
-          std::priority_queue<CellData>& inflation_queue );
 
       /**
        * @brief  Accessor for the x size of the costmap in cells
@@ -278,7 +218,6 @@ namespace costmap_2d {
        * @param  src_x The x index of the obstacle point inflation started at
        * @param  src_y The y index of the obstacle point inflation started at
        * @param  inflation_queue The priority queue to insert into
-       * @return 
        */
       inline void enqueue(unsigned int index, unsigned int mx, unsigned int my, 
           unsigned int src_x, unsigned int src_y, std::priority_queue<CellData>& inflation_queue){
@@ -293,7 +232,7 @@ namespace costmap_2d {
             return;
 
           //assign the cost associated with the distance from an obstacle to the cell
-          cost_map_[index] = costLookup(mx, my, src_x, src_y);
+          updateCellCost(index, costLookup(mx, my, src_x, src_y));
 
           //push the cell data onto the queue and mark
           inflation_queue.push(CellData(distance, index, mx, my, src_x, src_y));
@@ -301,10 +240,46 @@ namespace costmap_2d {
         }
       }
 
-      inline int sign(int x){
-        return x > 0 ? 1.0 : -1.0;
-      }
+      /**
+       * @brief  Insert new obstacles into the cost map
+       * @param obstacles The point clouds of obstacles to insert into the map 
+       * @param inflation_queue The queue to place the obstacles into for inflation
+       */
+      void updateObstacles(const std::vector<Observation>& observations, std::priority_queue<CellData>& inflation_queue);
 
+      /**
+       * @brief  Clear freespace based on any number of observations
+       * @param clearing_observations The observations used to raytrace 
+       */
+      void raytraceFreespace(const std::vector<Observation>& clearing_observations);
+
+      /**
+       * @brief  Clear freespace from an observation
+       * @param clearing_observation The observation used to raytrace 
+       */
+      void raytraceFreespace(const Observation& clearing_observation);
+
+      /**
+       * @brief  Provides support for re-inflating obstacles within a certain window (used after raytracing)
+       * @param wx The x coordinate of the center point of the window in world space (meters)
+       * @param wy The y coordinate of the center point of the window in world space (meters)
+       * @param w_size_x The x size of the window in meters
+       * @param w_size_y The y size of the window in meters
+       * @param inflation_queue The priority queue to push items back onto for propogation
+       */
+      void resetInflationWindow(double wx, double wy, double w_size_x, double w_size_y,
+          std::priority_queue<CellData>& inflation_queue );
+
+
+      /**
+       * @brief  Raytrace a line and apply some action at each step
+       * @param  at The action to take... a functor
+       * @param  x0 The starting x coordinate
+       * @param  y0 The starting y coordinate
+       * @param  x1 The ending x coordinate
+       * @param  y1 The ending y coordinate
+       * @return 
+       */
       template <class ActionType>
         inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1){
           int dx = x1 - x0;
@@ -331,6 +306,9 @@ namespace costmap_2d {
 
         }
 
+      /**
+       * @brief  A 2D implementation of Bresenham's raytracing algorithm... applies an action at each step
+       */
       template <class ActionType>
         inline void bresenham2D(ActionType at, unsigned int abs_da, unsigned int abs_db, int error_b, int offset_a, int offset_b, unsigned int offset){
           for(unsigned int i = 0; i < abs_da; ++i){
@@ -351,9 +329,60 @@ namespace costmap_2d {
        */
       void inflateObstacles(std::priority_queue<CellData>& inflation_queue);
 
+      /**
+       * @brief  Takes the max of existing cost and the new cost... keeps static map obstacles from being overridden prematurely
+       * @param index The index od the cell to assign a cost to 
+       * @param cost The cost
+       */
+      inline void updateCellCost(unsigned int index, unsigned char cost){
+        unsigned char* cell_cost = &cost_map_[index];
+        if(*cell_cost == NO_INFORMATION)
+          *cell_cost = cost;
+        else
+          *cell_cost = std::max(cost, *cell_cost);
+      }
+
+      /**
+       * @brief  Given distance in the world... convert it to cells
+       * @param  world_dist The world distance
+       * @return The equivalent cell distance
+       */
       unsigned int cellDistance(double world_dist);
 
-      double worldDistance(unsigned int cell_dist);
+      /**
+       * @brief  Given a distance... compute a cost
+       * @param  distance The distance from an obstacle in cells
+       * @return A cost value for the distance
+       */
+      inline unsigned char computeCost(double distance) const {
+        unsigned char cost = 0;
+        if(distance == 0)
+          cost = LETHAL_OBSTACLE;
+        else if(distance <= cell_inscribed_radius_)
+          cost = INSCRIBED_INFLATED_OBSTACLE;
+        else {
+          double factor = weight_ / (1 + pow(distance - cell_inscribed_radius_, 2));
+          cost = (unsigned char) ((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
+        }
+        return cost;
+      }
+
+      inline char costLookup(int mx, int my, int src_x, int src_y){
+        unsigned int dx = abs(mx - src_x);
+        unsigned int dy = abs(my - src_y);
+        return cached_costs_[dx][dy];
+      }
+
+      inline double distanceLookup(int mx, int my, int src_x, int src_y){
+        unsigned int dx = abs(mx - src_x);
+        unsigned int dy = abs(my - src_y);
+        return cached_distances_[dx][dy];
+      }
+
+      inline int sign(int x){
+        return x > 0 ? 1.0 : -1.0;
+      }
+
 
       unsigned int size_x_;
       unsigned int size_y_;
