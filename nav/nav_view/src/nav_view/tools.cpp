@@ -37,6 +37,8 @@
 
 #include "nav_view_panel.h"
 
+#include "tf/tf.h"
+
 namespace nav_view
 {
 
@@ -169,11 +171,12 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
       }
       else
       {
-        deprecated_msgs::Pose2DFloat32 pose;
-        pose.x = pos_.x;
-        pose.y = pos_.y;
-        pose.th = angle;
-        printf( "setting pose: %.3f %.3f %.3f\n", pose.x, pose.y, pose.th );
+        robot_msgs::PoseWithCovariance pose;
+        pose.pose.position.x = pos_.x;
+        pose.pose.position.y = pos_.y;
+        tf::QuaternionTFToMsg(tf::Quaternion(angle, 0.0, 0.0),
+                              pose.pose.orientation);
+        ROS_INFO( "setting pose: %.3f %.3f %.3f\n", pos_.x, pos_.y, angle );
         ros_node_->publish( "initialpose", pose );
       }
 

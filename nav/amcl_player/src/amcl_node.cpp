@@ -87,7 +87,10 @@ Publishes to (name / type):
 
 #include <deque>
 
+#include <boost/bind.hpp>
+
 #include "map/map.h"
+#include "pf/pf.h"
 
 #include "ros/assert.h"
 
@@ -96,14 +99,15 @@ Publishes to (name / type):
 
 // Messages that I need
 #include "laser_scan/LaserScan.h"
-#include "deprecated_msgs/RobotBase2DOdom.h"
+#include "robot_msgs/PoseWithCovariance.h"
 #include "robot_msgs/ParticleCloud.h"
-#include "deprecated_msgs/Pose2DFloat32.h"
+#include "robot_msgs/Pose.h"
 #include "robot_srvs/StaticMap.h"
 
 // For transform support
 #include "tf/transform_broadcaster.h"
 #include "tf/transform_listener.h"
+#include "tf/message_notifier.h"
 
 class AmclNode
 {
@@ -116,16 +120,18 @@ class AmclNode
     int setPose(double x, double y, double a);
 
   private:
-    tf::TransformBroadcaster* tf;
-    tf::TransformListener* tfL;
+    tf::TransformBroadcaster* tfb_;
+    tf::TransformListener* tf_;
 
     // incoming messages
     laser_scan::LaserScan laser_msg_;
-    deprecated_msgs::Pose2DFloat32 initialPoseMsg_;
+    robot_msgs::PoseWithCovariance initialPoseMsg_;
     
     // Message callbacks
-    void laserReceived();
+    void laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& laser_scan);
     void initialPoseReceived();
+
+    double getYaw(robot_msgs::Pose& p);
 
     //parameter for what odom to use
     std::string odom_frame_id;
@@ -136,6 +142,13 @@ class AmclNode
     double resolution;
     bool have_laser_pose;
     double laser_x, laser_y, laser_yaw;
+
+    tf::MessageNotifier<laser_scan::LaserScan>* laser_scan_notifer;
+
+    // Particle filter
+    pf_t *pf_;
+    int pf_min_samples_, pf_max_samples_;
+    double pf_err_, pf_z_;
 
     ros::Duration cloud_pub_interval;
     ros::Time last_cloud_pub_time;
@@ -174,23 +187,22 @@ main(int argc, char** argv)
 
 AmclNode::AmclNode() :
         map_(NULL),
-        have_laser_pose(false)
+        have_laser_pose(false),
+        pf_(NULL)
 {
   // Grab params off the param server
-  int max_beams, min_samples, max_samples;
+  int max_beams;
   double odom_drift_xx, odom_drift_yy, odom_drift_aa, odom_drift_xa;
   double d_thresh, a_thresh;
   ros::Node::instance()->param("pf_laser_max_beams", max_beams, 20);
-  ros::Node::instance()->param("pf_min_samples", min_samples, 500);
-  ros::Node::instance()->param("pf_max_samples", max_samples, 10000);
+  ros::Node::instance()->param("pf_min_samples", pf_min_samples_, 500);
+  ros::Node::instance()->param("pf_max_samples", pf_max_samples_, 10000);
+  ros::Node::instance()->param("pf_err", pf_err_, 0.01);
+  ros::Node::instance()->param("pf_z", pf_z_, 3.0);
   ros::Node::instance()->param("pf_odom_drift_xx", odom_drift_xx, 0.2);
   ros::Node::instance()->param("pf_odom_drift_yy", odom_drift_yy, 0.2);
   ros::Node::instance()->param("pf_odom_drift_aa", odom_drift_aa, 0.2);
   ros::Node::instance()->param("pf_odom_drift_xa", odom_drift_xa, 0.2);
-  odom_drift_xx = 0.5;
-  odom_drift_yy = 0.5;
-  odom_drift_aa = 0.5;
-  odom_drift_xa = 0.5;
   ros::Node::instance()->param("pf_min_d", d_thresh, 0.2);
   ros::Node::instance()->param("pf_min_a", a_thresh, M_PI/6.0);
   ros::Node::instance()->param("pf_odom_frame_id", odom_frame_id, std::string("odom"));
@@ -203,14 +215,27 @@ AmclNode::AmclNode() :
   setPose(startX, startY, startTH);
 
   cloud_pub_interval.fromSec(1.0);
-  tf = new tf::TransformBroadcaster(*ros::Node::instance());
-  tfL = new tf::TransformListener(*ros::Node::instance());
+  tfb_ = new tf::TransformBroadcaster(*ros::Node::instance());
+  tf_ = new tf::TransformListener(*ros::Node::instance());
 
   map_ = requestMap();
+  
+  // Create the particle filter
+  pf_ = pf_alloc(pf_min_samples_, pf_max_samples_);
+  pf_->pop_err = pf_err_;
+  pf_->pop_z = pf_z_;
 
-  ros::Node::instance()->advertise<deprecated_msgs::RobotBase2DOdom>("localizedpose",2);
+  //ros::Node::instance()->advertise<deprecated_msgs::RobotBase2DOdom>("localizedpose",2);
+  ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("localizedpose",2);
   ros::Node::instance()->advertise<robot_msgs::ParticleCloud>("particlecloud",2);
-  ros::Node::instance()->subscribe("scan", laser_msg_, &AmclNode::laserReceived,this,2);
+  //ros::Node::instance()->subscribe("scan", laser_msg_, &AmclNode::laserReceived,this,2);
+  laser_scan_notifer = 
+          new tf::MessageNotifier<laser_scan::LaserScan>
+          (tf_, ros::Node::instance(),  
+           boost::bind(&AmclNode::laserReceived, 
+                       this, _1), 
+           "scan", "base_footprint",
+           20);
   ros::Node::instance()->subscribe("initialpose", initialPoseMsg_, &AmclNode::initialPoseReceived,this,2);
 }
 
@@ -285,7 +310,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     tf::Stamped<tf::Pose> odom_to_map;
     try
     {
-      this->tfL->transformPose(odom_frame_id,tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
+      this->tf_->transformPose(odom_frame_id,tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
                                                                        btVector3(pdata->pos.px, pdata->pos.py, 0.0)).inverse(), 
                                                       t, "base_footprint"),odom_to_map);
     }
@@ -297,7 +322,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     //we want to send a transform that is good up until a tolerance time so that odom can be used
     ros::Time transform_expiration;
     transform_expiration.fromSec(hdr->timestamp + transform_tolerance_);
-    this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
+    this->tfb_->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
                                                                       tf::Point(      odom_to_map.getOrigin() ) ).inverse(),
                                                         transform_expiration,odom_frame_id, "/map"));
 
@@ -500,7 +525,7 @@ AmclNode::getOdomPose(double& x, double& y, double& yaw,
   tf::Stamped<btTransform> odom_pose;
   try
   {
-    this->tfL->transformPose(odom_frame_id, ident, odom_pose);
+    this->tf_->transformPose(odom_frame_id, ident, odom_pose);
   }
   catch(tf::TransformException e)
   {
@@ -516,8 +541,9 @@ AmclNode::getOdomPose(double& x, double& y, double& yaw,
 }
 
 void
-AmclNode::laserReceived()
+AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& laser_scan)
 {
+  puts("got scan");
 #if 0
   // Do we have the base->base_laser Tx yet?
   if(!have_laser_pose)
@@ -528,7 +554,7 @@ AmclNode::laserReceived()
     tf::Stamped<btTransform> laser_pose;
     try
     {
-      this->tfL->transformPose("base_footprint", ident, laser_pose);
+      this->tf_->transformPose("base_footprint", ident, laser_pose);
     }
     catch(tf::TransformException e)
     {
@@ -629,10 +655,22 @@ AmclNode::laserReceived()
 #endif
 }
 
+double
+AmclNode::getYaw(robot_msgs::Pose& p)
+{
+  tf::Stamped<tf::Transform> t;
+  tf::PoseMsgToTF(p, t);
+  double yaw, pitch, roll;
+  btMatrix3x3 mat = t.getBasis();
+  mat.getEulerZYX(yaw,pitch,roll);
+  return yaw;
+}
+
 void 
 AmclNode::initialPoseReceived()
 {
-  setPose(initialPoseMsg_.x,
-          initialPoseMsg_.y,
-          initialPoseMsg_.th);
+  ROS_DEBUG("Setting pose: %.3f %.3f %.3f", 
+            initialPoseMsg_.pose.position.x,
+            initialPoseMsg_.pose.position.y,
+            getYaw(initialPoseMsg_.pose));
 }

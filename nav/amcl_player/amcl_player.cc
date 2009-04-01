@@ -56,7 +56,7 @@ $ amcl_player
 Subscribes to (name/type):
 - @b "odom"/RobotBase2DOdom : robot's odometric pose.  Only the position information is used (velocity is ignored).
 - @b "scan"/LaserScan : laser scans.
-- @b "initialpose"/Pose2DFloat32: pose used to (re)initialize particle filter
+- @b "initialpose"/PoseWithCovariance: pose used to (re)initialize particle filter
 
 Publishes to (name / type):
 - @b "localizedpose"/RobotBase2DOdom : robot's localized map pose.  Only the position information is set (no velocity).
@@ -100,7 +100,7 @@ Publishes to (name / type):
 #include "laser_scan/LaserScan.h"
 #include "deprecated_msgs/RobotBase2DOdom.h"
 #include "robot_msgs/ParticleCloud.h"
-#include "deprecated_msgs/Pose2DFloat32.h"
+#include "robot_msgs/PoseWithCovariance.h"
 #include "robot_srvs/StaticMap.h"
 
 // For transform support
@@ -148,12 +148,14 @@ class AmclNode: public ros::Node, public Driver
     robot_msgs::ParticleCloud particleCloudMsg;
     deprecated_msgs::RobotBase2DOdom odomMsg;
     laser_scan::LaserScan laserMsg;
-    deprecated_msgs::Pose2DFloat32 initialPoseMsg;
+    robot_msgs::PoseWithCovariance initialPoseMsg;
     
     // Message callbacks
     void odomReceived();
     void laserReceived();
     void initialPoseReceived();
+
+    double getYaw(robot_msgs::Pose& p);
 
     // These are the devices that amcl offers, and to which we subscribe
     Driver* driver;
@@ -877,9 +879,9 @@ AmclNode::laserReceived()
 void 
 AmclNode::initialPoseReceived()
 {
-  this->AmclNode::setPose(this->initialPoseMsg.x,
-                          this->initialPoseMsg.y,
-                          this->initialPoseMsg.th);
+  this->AmclNode::setPose(this->initialPoseMsg.pose.position.x,
+                          this->initialPoseMsg.pose.position.y,
+                          this->getYaw(this->initialPoseMsg.pose));
 }
 
 void
@@ -914,3 +916,13 @@ AmclNode::odomReceived()
                                   */
 }
 
+double
+AmclNode::getYaw(robot_msgs::Pose& p)
+{
+  tf::Stamped<tf::Transform> t;
+  tf::PoseMsgToTF(p, t);
+  double yaw, pitch, roll;
+  btMatrix3x3 mat = t.getBasis();
+  mat.getEulerZYX(yaw,pitch,roll);
+  return yaw;
+}

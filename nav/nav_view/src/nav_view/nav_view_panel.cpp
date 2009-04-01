@@ -117,7 +117,7 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
   ros_node_->param("/global_frame_id", global_frame_id_, std::string("/map"));
 
   ros_node_->advertise<robot_msgs::Planner2DGoal>("goal", 1);
-  ros_node_->advertise<deprecated_msgs::Pose2DFloat32>("initialpose", 1);
+  ros_node_->advertise<robot_msgs::PoseWithCovariance>("initialpose", 1);
   ros_node_->subscribe("particlecloud", cloud_, &NavViewPanel::incomingParticleCloud, this, 1);
   ros_node_->subscribe("gui_path", path_line_, &NavViewPanel::incomingGuiPath, this, 1);
   ros_node_->subscribe("local_path", local_path_, &NavViewPanel::incomingLocalPath, this, 1);

@@ -1,15 +1,10 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rospack(amcl_player)
-set(new_code FALSE)
-
-if(NOT new_code)
 
 rospack_add_executable(amcl_player amcl_player.cc)
 target_link_libraries(amcl_player playerdrivers)
 rospack_add_executable(cli cli.cpp)
-
-else(NOT new_code)
 
 rospack_add_library(amcl_pf 
                     src/pf/pf.c 
@@ -34,5 +29,3 @@ target_link_libraries(amcl_sensors amcl_map amcl_pf)
 rospack_add_executable(bin/amcl
                        src/amcl_node.cpp)
 target_link_libraries(bin/amcl amcl_sensors amcl_map amcl_pf)
-
-endif(NOT new_code)
