@@ -32,8 +32,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef HIGHLEVEL_CONTROLLERS_MOVE_BASE_H
-#define HIGHLEVEL_CONTROLLERS_MOVE_BASE_H
+#ifndef COSTMAP_NODE_H
+#define COSTMAP_NODE_H
 
 // Costmap used for the map representation
 #include <costmap_2d/costmap_2d.h>
@@ -98,13 +98,13 @@ namespace costmap_2d {
 
     costmap_2d::CostMapAccessor* local_map_accessor_; /**< Read-only access to a window on the cost map */
       
-    protected:
-
     /**
      * @brief Accessor for the cost map. Use mainly for initialization
      * of specialized map strunture for planning
      */
     const costmap_2d::CostMapAccessor& getCostMap() const {return *global_map_accessor_;}
+
+    protected:
 
     /**
      * @brief A handler to be over-ridden in the derived class to handle a diff stream from the
