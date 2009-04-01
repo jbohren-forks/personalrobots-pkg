@@ -96,8 +96,62 @@ namespace costmap_2d{
       inflateObstacles(inflation_queue_);
 
       //we also want to keep a copy of the current costmap as the static map
-      memcpy(static_map_, cost_map_, size_x_ * size_y_);
+      memcpy(static_map_, cost_map_, size_x_ * size_y_ * sizeof(unsigned char));
     }
+    else{
+      //everything is unknown initially if we don't have a static map
+      memset(static_map_, NO_INFORMATION, size_x_ * size_y_ * sizeof(unsigned char));
+      memset(cost_map_, NO_INFORMATION, size_x_ * size_y_ * sizeof(unsigned char));
+    }
+  }
+
+  Costmap2D::Costmap2D(const Costmap2D& map) : static_map_(NULL), cost_map_(NULL), markers_(NULL), cached_costs_(NULL), cached_distances_(NULL){
+    size_x_ = map.size_x_;
+    size_y_ = map.size_y_;
+    resolution_ = map.resolution_;
+    origin_x_ = map.origin_x_;
+    origin_y_ = map.origin_y_;
+
+    //initialize our various maps
+    cost_map_ = new unsigned char[size_x_ * size_y_];
+    static_map_ = new unsigned char[size_x_ * size_y_];
+    markers_ = new unsigned char[size_x_ * size_y_];
+
+    //reset markers for inflation
+    memset(markers_, 0, size_x_ * size_y_ * sizeof(unsigned char));
+
+    //copy the static map
+    memcpy(static_map_, map.static_map_, size_x_ * size_y_ * sizeof(unsigned char));
+
+    //copy the cost map
+    memcpy(cost_map_, map.cost_map_, size_x_ * size_y_ * sizeof(unsigned char));
+
+    sq_obstacle_range_ = map.sq_obstacle_range_;
+    max_obstacle_height_ = map.max_obstacle_height_;
+    raytrace_range_ = map.raytrace_range_;
+
+    inscribed_radius_ = map.inscribed_radius_;
+    circumscribed_radius_ = map.circumscribed_radius_;
+    inflation_radius_ = map.inflation_radius_;
+
+    cell_inscribed_radius_ = map.cell_inscribed_radius_;
+    cell_circumscribed_radius_ = map.cell_circumscribed_radius_;
+    cell_inflation_radius_ = map.cell_inflation_radius_;
+
+    weight_ = map.weight_;
+
+    //copy the cost and distance kernels
+    cached_costs_ = new unsigned char*[cell_inflation_radius_ + 1];
+    cached_distances_ = new double*[cell_inflation_radius_ + 1];
+    for(unsigned int i = 0; i <= cell_inflation_radius_; ++i){
+      cached_costs_[i] = new unsigned char[cell_inflation_radius_ + 1];
+      cached_distances_[i] = new double[cell_inflation_radius_ + 1];
+      for(unsigned int j = 0; j <= cell_inflation_radius_; ++j){
+        cached_distances_[i][j] = map.cached_distances_[i][j];
+        cached_costs_[i][j] = map.cached_costs_[i][j];
+      }
+    }
+
   }
 
   Costmap2D::~Costmap2D(){
@@ -121,6 +175,12 @@ namespace costmap_2d{
   unsigned int Costmap2D::cellDistance(double world_dist){
     double cells_dist = max(0.0, ceil(world_dist / resolution_));
     return (unsigned int) cells_dist;
+  }
+
+  unsigned char* Costmap2D::getCharMap(){
+    unsigned char* map_copy = new unsigned char[size_x_ * size_y_];
+    memcpy(map_copy, cost_map_, size_x_ * size_y_ * sizeof(unsigned char));
+    return map_copy;
   }
 
   unsigned char Costmap2D::getCost(unsigned int mx, unsigned int my) const {

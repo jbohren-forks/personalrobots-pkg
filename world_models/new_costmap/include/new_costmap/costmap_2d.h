@@ -75,6 +75,12 @@ namespace costmap_2d {
           const std::vector<unsigned char>& static_data, unsigned char lethal_threshold);
 
       /**
+       * @brief  Copy constructor for a costmap, creates a copy efficiently
+       * @param map The costmap to copy 
+       */
+      Costmap2D(const Costmap2D& map);
+
+      /**
        * @brief  Destructor
        */
       ~Costmap2D();
@@ -151,6 +157,12 @@ namespace costmap_2d {
         my = index / size_x_;
         mx = index - (my * size_x_);
       }
+
+      /**
+       * @brief  Will return a copy of the underlying unsigned char array used as the costmap (NOTE: THE BURDEN IS ON THE USER TO DELETE THE ARRAY RETURNED)
+       * @return A copy of the underlying unsigned char array storing cost values
+       */
+      unsigned char* getCharMap();
 
       /**
        * @brief  Accessor for the x size of the costmap in cells

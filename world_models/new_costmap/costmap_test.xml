@@ -2,6 +2,13 @@
   <master auto="start"/>
   <group name="wg">
     <node pkg="new_costmap" type="costmap_test" respawn="false" name="new_cost_map" output="screen">
+      <param name="costmap/static_map" value="true" />
+      <param name="costmap/global_frame" value="map" />
+      <param name="costmap/map_origin_x" value="-5.0" />
+      <param name="costmap/map_origin_y" value="-5.0" />
+      <param name="costmap/map_width" value="10.0" />
+      <param name="costmap/map_height" value="10.0" />
+      <param name="costmap/map_resolution" value="0.01" />
       <param name="costmap/observation_topics" value="base_scan" />
       <!--<param name="costmap/base_scan/sensor_frame" value="base_link" />-->
       <param name="costmap/base_scan/observation_persistance" value="0.0" />

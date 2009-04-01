@@ -95,6 +95,15 @@ namespace costmap_2d {
     ros_node_.param("~costmap/static_map", static_map, true);
     std::vector<unsigned char> input_data;
 
+    double map_width_meters, map_height_meters;
+    ros_node_.param("~costmap/map_width", map_width_meters, 10.0);
+    ros_node_.param("~costmap/map_height", map_height_meters, 10.0);
+    ros_node_.param("~costmap/map_resolution", map_resolution, 0.05);
+    ros_node_.param("~costmap/map_origin_x", map_origin_x, 0.0);
+    ros_node_.param("~costmap/map_origin_y", map_origin_y, 0.0);
+    map_width = (unsigned int)(map_width_meters / map_resolution);
+    map_height = (unsigned int)(map_height_meters / map_resolution);
+
     if(static_map){
       robot_srvs::StaticMap::Request map_req;
       robot_srvs::StaticMap::Response map_resp;
@@ -106,6 +115,17 @@ namespace costmap_2d {
       }
       ROS_INFO("Received a %d X %d map at %f m/pix\n",
           map_resp.map.width, map_resp.map.height, map_resp.map.resolution);
+
+      //check if the user has set any parameters that will be overwritten
+      bool user_map_params = false;
+      user_map_params |= ros_node_.hasParam("~costmap/map_width");
+      user_map_params |= ros_node_.hasParam("~costmap/map_height");
+      user_map_params |= ros_node_.hasParam("~costmap/map_resolution");
+      user_map_params |= ros_node_.hasParam("~costmap/map_origin_x");
+      user_map_params |= ros_node_.hasParam("~costmap/map_origin_y");
+
+      if(user_map_params)
+        ROS_WARN("You have set map parameters, but also requested to use the static map. Your parameters will be overwritten by those given by the map server");
 
       // We are treating cells with no information as lethal obstacles based on the input data. This is not ideal but
       // our planner and controller do not reason about the no obstacle case
@@ -119,17 +139,6 @@ namespace costmap_2d {
       map_resolution = map_resp.map.resolution;
       map_origin_x = map_resp.map.origin.x;
       map_origin_y = map_resp.map.origin.y;
-
-    }
-    else{
-      double map_width_meters, map_height_meters;
-      ros_node_.param("~costmap/map_width", map_width_meters, 10.0);
-      ros_node_.param("~costmap/map_height", map_height_meters, 10.0);
-      ros_node_.param("~costmap/map_resolution", map_resolution, 0.05);
-      ros_node_.param("~costmap/map_origin_x", map_origin_x, 0.0);
-      ros_node_.param("~costmap/map_origin_y", map_origin_y, 0.0);
-      map_width = (unsigned int)(map_width_meters / map_resolution);
-      map_height = (unsigned int)(map_height_meters / map_resolution);
 
     }
 
@@ -154,7 +163,7 @@ namespace costmap_2d {
     struct timeval start, end;
     double start_t, end_t, t_diff;
     gettimeofday(&start, NULL);
-    new_costmap_ = new Costmap2D(map_width, map_height,
+    costmap_ = new Costmap2D(map_width, map_height,
         map_resolution, map_origin_x, map_origin_y, inscribed_radius, circumscribed_radius, inflation_radius, 
         obstacle_range, max_obstacle_height, raytrace_range, cost_scale, input_data, lethal_threshold);
     gettimeofday(&end, NULL);
@@ -164,15 +173,18 @@ namespace costmap_2d {
     ROS_INFO("New map construction time: %.9f", t_diff);
 
 
+    //create a thread to handle updating the map
+    
     //create a separate thread to publish cost data to the visualizer
     visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DROS::publishCostMap, this));
+
     window_reset_thread_ = new boost::thread(boost::bind(&Costmap2DROS::resetWindow, this));
 
   }
 
   Costmap2DROS::~Costmap2DROS(){
-    if(new_costmap_ != NULL)
-      delete new_costmap_;
+    if(costmap_ != NULL)
+      delete costmap_;
 
     if(visualizer_thread_ != NULL)
       delete visualizer_thread_;
@@ -201,16 +213,16 @@ namespace costmap_2d {
     projector_.projectLaser(*message, base_cloud, -1.0, true);
 
     //buffer the point cloud
-    lock_.lock();
+    observation_lock_.lock();
     buffer->bufferCloud(base_cloud);
-    lock_.unlock();
+    observation_lock_.unlock();
   }
 
   void Costmap2DROS::pointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message, ObservationBuffer* buffer){
     //buffer the point cloud
-    lock_.lock();
+    observation_lock_.lock();
     buffer->bufferCloud(*message);
-    lock_.unlock();
+    observation_lock_.unlock();
   }
 
   void Costmap2DROS::spin(){
@@ -244,22 +256,26 @@ namespace costmap_2d {
 
     bool current = true;
     std::vector<Observation> observations;
-    lock_.lock();
+    observation_lock_.lock();
     for(unsigned int i = 0; i < observation_buffers_.size(); ++i){
       observation_buffers_[i]->getObservations(observations);
       current = current && observation_buffers_[i]->isCurrent();
     }
-    lock_.unlock();
+    observation_lock_.unlock();
 
+    map_lock_.lock();
     struct timeval start, end;
     double start_t, end_t, t_diff;
     gettimeofday(&start, NULL);
-    new_costmap_->updateWorld(wx, wy, observations, observations);
+    costmap_->updateWorld(wx, wy, observations, observations);
     gettimeofday(&end, NULL);
     start_t = start.tv_sec + double(start.tv_usec) / 1e6;
     end_t = end.tv_sec + double(end.tv_usec) / 1e6;
     t_diff = end_t - start_t;
     ROS_INFO("Map update time: %.9f", t_diff);
+    map_lock_.unlock();
+
+
   }
 
   void Costmap2DROS::resetWindow(){
@@ -284,10 +300,10 @@ namespace costmap_2d {
 
       double wx = global_pose.getOrigin().x();
       double wy = global_pose.getOrigin().y();
-      lock_.lock();
+      map_lock_.lock();
       ROS_INFO("Resetting map outside window");
-      new_costmap_->resetMapOutsideWindow(wx, wy, 5.0, 5.0);
-      lock_.unlock();
+      costmap_->resetMapOutsideWindow(wx, wy, 5.0, 5.0);
+      map_lock_.unlock();
 
       usleep(1e6/0.2);
     }
@@ -296,21 +312,21 @@ namespace costmap_2d {
   void Costmap2DROS::publishCostMap(){
     while(ros_node_.ok()){
       ROS_INFO("publishing map");
-      lock_.lock();
+      map_lock_.lock();
       std::vector< std::pair<double, double> > raw_obstacles, inflated_obstacles;
-      for(unsigned int i = 0; i<new_costmap_->cellSizeX(); i++){
-        for(unsigned int j = 0; j<new_costmap_->cellSizeY();j++){
+      for(unsigned int i = 0; i<costmap_->cellSizeX(); i++){
+        for(unsigned int j = 0; j<costmap_->cellSizeY();j++){
           double wx, wy;
-          new_costmap_->mapToWorld(i, j, wx, wy);
+          costmap_->mapToWorld(i, j, wx, wy);
           std::pair<double, double> p(wx, wy);
 
-          if(new_costmap_->getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
+          if(costmap_->getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
             raw_obstacles.push_back(p);
-          else if(new_costmap_->getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+          else if(costmap_->getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
             inflated_obstacles.push_back(p);
         }
       }
-      lock_.unlock();
+      map_lock_.unlock();
 
       // First publish raw obstacles in red
       robot_msgs::Polyline2D obstacle_msg;
@@ -347,11 +363,23 @@ namespace costmap_2d {
     }
   }
 
+  Costmap2D Costmap2DROS::getCostMap(){
+    map_lock_.lock();
+    return Costmap2D(*costmap_);
+    map_lock_.unlock();
+  }
+
+  unsigned char* Costmap2DROS::getCharMap(){
+    map_lock_.lock();
+    return costmap_->getCharMap();
+    map_lock_.unlock();
+  }
+
 };
 
 int main(int argc, char** argv){
   ros::init(argc, argv);
-  ros::Node ros_node("new_costmap_tester");
+  ros::Node ros_node("costmap_tester");
   Costmap2DROS tester(ros_node);
   tester.spin();
 

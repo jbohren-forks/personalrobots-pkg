@@ -78,13 +78,16 @@ namespace costmap_2d {
       void updateMap();
       void resetWindow();
       void publishCostMap();
+      Costmap2D getCostMap();
+      unsigned char* getCharMap();
 
     private:
       ros::Node& ros_node_;
       tf::TransformListener tf_; ///< @brief Used for transforming point clouds
       laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
-      boost::recursive_mutex lock_; ///< @brief A lock for accessing data in callbacks safely
-      Costmap2D* new_costmap_;
+      boost::recursive_mutex observation_lock_; ///< @brief A lock for accessing data in callbacks safely
+      boost::recursive_mutex map_lock_; ///< @brief A lock for accessing data in callbacks safely
+      Costmap2D* costmap_;
       std::string global_frame_;
       double freq_;
       boost::thread* visualizer_thread_;
