@@ -131,7 +131,7 @@ public:
 
     // Receive frames through callback
     // TODO: start this in separate thread?
-    node_.advertise<image_msgs::Image>("~raw", 1);
+    node_.advertise<image_msgs::Image>("~image_raw", 1);
     pr2VidReceive( camera_->ifName, port, 480, 752, &ForearmNode::frameHandler, this );
   }
 
@@ -144,8 +144,8 @@ public:
 
   void publishImage(size_t width, size_t height, uint8_t *frameData)
   {
-    fillImage(image_, "image", height, width, 1, "mono"/*"bayer_bggr"*/, "uint8", frameData);
-    node_.publish("~raw", image_);
+    fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
+    node_.publish("~image_raw", image_);
   }
 
 private:

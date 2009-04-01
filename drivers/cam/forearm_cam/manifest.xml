@@ -8,4 +8,6 @@
   <depend package="image_msgs" />
   <depend package="diagnostic_updater" />
   <depend package="opencv_latest" />
+  <depend package="stereo_image_proc" />
+  <depend package="image_view" />
 </package>
