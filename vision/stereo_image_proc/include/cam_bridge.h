@@ -183,7 +183,7 @@ namespace cam_bridge
     memcpy((char*)(*d), (char*)(&arr.data[0]), new_size);
   }
 
-  void RawStereoToCamData(image_msgs::Image& im_msg, image_msgs::CamInfo& info_msg, uint8_t& type, cam::ImageData* im)
+  void RawStereoToCamData(image_msgs::Image& im_msg, image_msgs::CamInfo& info_msg, uint8_t type, cam::ImageData* im)
   {
 
     im->imRawType = COLOR_CODING_NONE;
@@ -228,8 +228,8 @@ namespace cam_bridge
       im->imRectColorType = COLOR_CODING_RGB8;
     }
 
-    im->imHeight = info_msg.height;
-    im->imWidth  = info_msg.width;
+    im->imHeight = im_msg.uint8_data.layout.dim[0].size;
+    im->imWidth  = im_msg.uint8_data.layout.dim[1].size;
 
     memcpy((char*)(im->D), (char*)(&info_msg.D[0]),  5*sizeof(double));
     memcpy((char*)(im->K), (char*)(&info_msg.K[0]),  9*sizeof(double));
