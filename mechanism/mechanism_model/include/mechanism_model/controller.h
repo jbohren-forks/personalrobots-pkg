@@ -96,10 +96,8 @@ public:
   // The starting method is called by the realtime thread just before
   // the first call to update.
   virtual bool starting() { return true; }
-
-  virtual bool start() {return true;}
   virtual void update(void) = 0;
-  virtual bool stop() {return true;}
+  virtual bool stopping() {return true;}
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config) = 0;
 
 
@@ -113,8 +111,9 @@ public:
   {
     bool ret = false;
 
+    // start succeeds when the controller was stopped and starting() returns true
     if (state_ == INITIALIZED){
-      ret = start();
+      ret = starting();
       if (ret) state_ = RUNNING;
     }
 
@@ -127,9 +126,10 @@ public:
   {
     bool ret = false;
 
-    if (state_ == RUNNING){
-      ret = stop();
-      if (ret) state_ = INITIALIZED;
+    // stop succeeds even if the controller was already stopped
+    if (state_ == RUNNING || state_ == INITIALIZED){
+      stopping();
+      state_ = INITIALIZED;
     }
 
     return ret;
