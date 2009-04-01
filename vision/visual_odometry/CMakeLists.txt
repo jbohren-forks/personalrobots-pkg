@@ -24,5 +24,15 @@ rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initia
 #rospack_add_compile_flags(visual_odometry -g -O0 -DDEBUG=1 -Wno-missing-field-initializers -msse3)
 #rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initializers )
 
+include(CMakeDetermineSystem)
+
 # unit tests
-rospack_add_pyunit(test/directed.py)
+# Currently, this test hangs on 64-bit, due to a bug in OpenCV, #1114.  So
+# we only enable in on 32-bit
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+   CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
+  rospack_add_pyunit(test/directed.py)
+endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "i386" OR
+      CMAKE_SYSTEM_PROCESSOR MATCHES "unknown")
