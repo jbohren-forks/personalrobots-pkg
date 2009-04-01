@@ -72,7 +72,6 @@ private:
 
   ros::Node* node_;
   std::string controller_name_;
-  unsigned int  num_joints_, num_segments_;
   double last_time_, time_started_, time_passed_, max_duration_;
   bool is_moving_, request_preempt_;
   KDL::Frame pose_begin_, pose_end_, pose_current_;

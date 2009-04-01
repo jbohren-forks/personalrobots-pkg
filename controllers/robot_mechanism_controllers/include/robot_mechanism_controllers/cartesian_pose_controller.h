@@ -70,7 +70,6 @@ private:
 
   ros::Node* node_;
   std::string controller_name_;
-  unsigned int  num_joints_, num_segments_;
   double last_time_;
 
   // robot structure

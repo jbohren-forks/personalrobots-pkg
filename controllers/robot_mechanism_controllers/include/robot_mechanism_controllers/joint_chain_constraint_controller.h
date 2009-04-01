@@ -127,7 +127,6 @@ private:
   Eigen::Matrix<float,6,1> task_wrench_;
   std::list<ConstraintState> constraint_list_;
   int list_size_;
-  unsigned int num_joints_;
   mechanism::Chain mechanism_chain_;
 
   std::string controller_name_;

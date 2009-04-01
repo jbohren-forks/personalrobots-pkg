@@ -69,7 +69,6 @@ private:
 
   ros::Node* node_;
   std::string controller_name_;
-  unsigned int num_joints_;
   mechanism::RobotState *robot_state_;
   mechanism::Chain chain_;
 

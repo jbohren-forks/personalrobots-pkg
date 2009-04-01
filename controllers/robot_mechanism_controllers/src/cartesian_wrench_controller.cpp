@@ -75,11 +75,10 @@ bool CartesianWrenchController::init(mechanism::RobotState *robot_state,
   chain_.toKDL(kdl_chain_);
 
   // create solver
-  num_joints_   = kdl_chain_.getNrOfJoints();
   jnt_to_jac_solver_ = new ChainJntToJacSolver(kdl_chain_);
-  jnt_pos_.resize(num_joints_);
-  jnt_eff_.resize(num_joints_);
-  jacobian_.resize(num_joints_);
+  jnt_pos_.resize(kdl_chain_.getNrOfJoints());
+  jnt_eff_.resize(kdl_chain_.getNrOfJoints());
+  jacobian_.resize(kdl_chain_.getNrOfJoints());
 
   // diagnostics messages
   cout << "Initialize diagnostics !!!!!" << endl;
@@ -128,7 +127,7 @@ void CartesianWrenchController::update()
   jnt_to_jac_solver_->JntToJac(jnt_pos_, jacobian_);
 
   // convert the wrench into joint efforts
-  for (unsigned int i = 0; i < num_joints_; i++){
+  for (unsigned int i = 0; i < kdl_chain_.getNrOfJoints(); i++){
     jnt_eff_(i) = 0;
     for (unsigned int j=0; j<6; j++)
       jnt_eff_(i) += (jacobian_(j,i) * wrench_desi_(j));

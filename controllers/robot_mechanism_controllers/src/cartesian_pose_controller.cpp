@@ -79,10 +79,8 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state,
   robot_.toKDL(chain_);
 
   // create solver
-  num_joints_   = chain_.getNrOfJoints();
-  num_segments_ = chain_.getNrOfSegments();
   jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
-  jnt_pos_.resize(num_joints_);
+  jnt_pos_.resize(chain_.getNrOfJoints());
 
   // get pid controller
   control_toolbox::Pid pid_controller;

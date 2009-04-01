@@ -46,7 +46,6 @@ namespace controller {
 
 CartesianTwistControllerIk::CartesianTwistControllerIk()
   : node_(ros::Node::instance()),
-    num_joints_(0),
     robot_state_(NULL),
     jnt_to_twist_solver_(NULL),
     twist_to_jnt_solver_(NULL)
@@ -59,7 +58,7 @@ CartesianTwistControllerIk::~CartesianTwistControllerIk()
   if (jnt_to_twist_solver_) delete jnt_to_twist_solver_;
   if (twist_to_jnt_solver_) delete twist_to_jnt_solver_;
 
-  for (unsigned int i=0; i<num_joints_; i++)
+  for (unsigned int i=0; i<chain_.getNrOfJoints(); i++)
     if (joint_vel_controllers_[i]) delete joint_vel_controllers_[i];
 }
 
@@ -83,21 +82,19 @@ CartesianTwistControllerIk::~CartesianTwistControllerIk()
   robot_.toKDL(chain_);
 
   // create solver
-  num_joints_   = chain_.getNrOfJoints();
-  num_segments_ = chain_.getNrOfSegments();
   jnt_to_twist_solver_ = new ChainFkSolverVel_recursive(chain_);
   twist_to_jnt_solver_ = new ChainIkSolverVel_pinv(chain_);
-  jnt_pos_.resize(num_joints_);
-  jnt_vel_.resize(num_joints_);
+  jnt_pos_.resize(chain_.getNrOfJoints());
+  jnt_vel_.resize(chain_.getNrOfJoints());
 
   // get pid controller parameters
   control_toolbox::Pid pid_joint;
   pid_joint.initParam(controller_name_+"/joint");
 
   // create and initialize joint velocity controllers
-  for (unsigned int i=0 ;i<num_joints_; i++)
+  for (unsigned int i=0 ;i<chain_.getNrOfJoints(); i++)
     joint_vel_controllers_.push_back(new JointVelocityController);
-  for (unsigned int i=0 ;i<num_joints_; i++){
+  for (unsigned int i=0 ;i<chain_.getNrOfJoints(); i++){
     cout << "constructing velocity controller for joint " << robot_.getJointName(i) << endl;
     joint_vel_controllers_[i]->init(robot_state, robot_.getJointName(i), pid_joint);
   }
@@ -116,7 +113,7 @@ bool CartesianTwistControllerIk::starting()
 
   // start joint velocity controllers
   bool res = true;
-  //for (unsigned int i=0 ;i<num_joints_; i++)
+  //for (unsigned int i=0 ;i<chain_.getNrOfJoints(); i++)
   // if (!joint_vel_controllers_[i]->starting()) res = false;
 
   return res;
@@ -135,7 +132,7 @@ void CartesianTwistControllerIk::update()
   twist_to_jnt_solver_->CartToJnt(jnt_pos_, twist_desi_, jnt_vel_);
 
   // send joint velocities to joint velocity controllers
-  for (unsigned int i=0; i<num_joints_; i++){
+  for (unsigned int i=0; i<chain_.getNrOfJoints(); i++){
     joint_vel_controllers_[i]->setCommand(jnt_vel_(i));
     joint_vel_controllers_[i]->update();
   }

@@ -80,22 +80,21 @@ bool JointChainConstraintController::init(mechanism::RobotState *robot_state,
   mechanism_chain_.toKDL(kdl_chain_);
 
   // create solver
-  num_joints_   = kdl_chain_.getNrOfJoints();
   jnt_to_jac_solver_ = new ChainJntToJacSolver(kdl_chain_);
-  jnt_pos_.resize(num_joints_);
-  jnt_eff_.resize(num_joints_);
-  chain_kdl_jacobian_.resize(num_joints_);
+  jnt_pos_.resize(kdl_chain_.getNrOfJoints());
+  jnt_eff_.resize(kdl_chain_.getNrOfJoints());
+  chain_kdl_jacobian_.resize(kdl_chain_.getNrOfJoints());
   
   wrench_desired_ = Wrench::Zero();
   
   // create the required matrices
-  joint_constraint_torque_ = Eigen::MatrixXf::Zero(num_joints_, 1);
+  joint_constraint_torque_ = Eigen::MatrixXf::Zero(kdl_chain_.getNrOfJoints(), 1);
   // TODO: make sure to change this in the future to have mixed constraint conditions on joints
-  joint_constraint_jacobian_ = Eigen::MatrixXf::Zero(num_joints_, num_joints_);
-  joint_constraint_null_space_ = Eigen::MatrixXf::Zero(num_joints_, num_joints_);
-  task_torque_ = Eigen::MatrixXf::Zero(num_joints_, 1);
-  identity_ = Eigen::MatrixXf::Identity(num_joints_, num_joints_);
-  chain_eigen_jacobian_ = Eigen::MatrixXf::Zero(6, num_joints_);
+  joint_constraint_jacobian_ = Eigen::MatrixXf::Zero(kdl_chain_.getNrOfJoints(), kdl_chain_.getNrOfJoints());
+  joint_constraint_null_space_ = Eigen::MatrixXf::Zero(kdl_chain_.getNrOfJoints(), kdl_chain_.getNrOfJoints());
+  task_torque_ = Eigen::MatrixXf::Zero(kdl_chain_.getNrOfJoints(), 1);
+  identity_ = Eigen::MatrixXf::Identity(kdl_chain_.getNrOfJoints(), kdl_chain_.getNrOfJoints());
+  chain_eigen_jacobian_ = Eigen::MatrixXf::Zero(6, kdl_chain_.getNrOfJoints());
   last_time_ = robot_state->hw_->current_time_;
 
   // advertise service
@@ -123,7 +122,7 @@ void JointChainConstraintController::update()
   //convert to eigen for easier math
   for (unsigned int i = 0; i < 6; i++)
   {
-    for (unsigned int j = 0; j < num_joints_; j++)
+    for (unsigned int j = 0; j < kdl_chain_.getNrOfJoints(); j++)
     {
       chain_eigen_jacobian_(i,j) = chain_kdl_jacobian_(i,j);
     }
@@ -143,7 +142,7 @@ void JointChainConstraintController::update()
     task_wrench_(i) = wrench_desired_(i);
   task_torque_ = joint_constraint_null_space_ * chain_eigen_jacobian_.transpose() * task_wrench_;
   
-  for (unsigned int i = 0; i < num_joints_; ++i)
+  for (unsigned int i = 0; i < kdl_chain_.getNrOfJoints(); ++i)
   {
     jnt_eff_(i) = joint_constraint_torque_(i) + task_torque_(i);
     //printf("effort:%lf\n",jnt_eff_(i));
@@ -254,7 +253,7 @@ bool JointChainConstraintController::addConstraint(robot_mechanism_controllers::
   ConstraintState temp;
   bool found = false;
   
-  for(unsigned int i =0; i < num_joints_; i++)
+  for(unsigned int i =0; i < kdl_chain_.getNrOfJoints(); i++)
   {
     std::string name = mechanism_chain_.getJoint(i)->name_;
     printf("Checking joint %s\n", name.c_str());
