@@ -48,7 +48,6 @@ map_t *map_alloc(void)
   map->size_x = 0;
   map->size_y = 0;
   map->scale = 0;
-  map->max_occ_dist = 0;
   
   // Allocate storage for main map
   map->cells = (map_cell_t*) NULL;
@@ -83,6 +82,7 @@ map_cell_t *map_get_cell(map_t *map, double ox, double oy, double oa)
 }
 
 
+/*
 // Update the cspace distance values
 void map_update_cspace(map_t *map, double max_occ_dist)
 {
@@ -136,3 +136,4 @@ void map_update_cspace(map_t *map, double max_occ_dist)
   
   return;
 }
+*/

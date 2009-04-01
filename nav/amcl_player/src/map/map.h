@@ -49,10 +49,10 @@ typedef struct
   int occ_state;
 
   // Distance to the nearest occupied cell
-  double occ_dist;
+  //double occ_dist;
 
   // Wifi levels
-  int wifi_levels[MAP_WIFI_MAX_LEVELS];
+  //int wifi_levels[MAP_WIFI_MAX_LEVELS];
 
 } map_cell_t;
 
@@ -65,9 +65,6 @@ typedef struct
   
   // Map scale (m/cell)
   double scale;
-
-  // Max occupancy distance value
-  double max_occ_dist;
 
   // Map dimensions (number of cells)
   int size_x, size_y;
@@ -96,10 +93,10 @@ map_cell_t *map_get_cell(map_t *map, double ox, double oy, double oa);
 int map_load_occ(map_t *map, const char *filename, double scale, int negate);
 
 // Load a wifi signal strength map
-int map_load_wifi(map_t *map, const char *filename, int index);
+//int map_load_wifi(map_t *map, const char *filename, int index);
 
 // Update the cspace distances
-void map_update_cspace(map_t *map, double max_occ_dist);
+//void map_update_cspace(map_t *map, double max_occ_dist);
 
 
 /**************************************************************************

@@ -130,6 +130,7 @@ int map_load_occ(map_t *map, const char *filename, double scale, int negate)
 
 ////////////////////////////////////////////////////////////////////////////
 // Load a wifi signal strength map
+/*
 int map_load_wifi(map_t *map, const char *filename, int index)
 {
   FILE *file;
@@ -203,6 +204,7 @@ int map_load_wifi(map_t *map, const char *filename, int index)
 
   return 0;
 }
+*/
 
 
 
