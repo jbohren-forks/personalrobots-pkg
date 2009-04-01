@@ -4,7 +4,7 @@
  <author>Roland Philippsen</author>
  <license>BSD</license>
  <review status="unreviewed" notes=""/>
- <url>http://pr.willowgarage.com</url>
+ <url>http://pr.willowgarage.com/pr-docs/ros-packages/mpbench/html/</url>
  <depend package="libsunflower"/>
  <depend package="nepumuk"/>
  <depend package="mpglue"/>
