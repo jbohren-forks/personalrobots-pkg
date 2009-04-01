@@ -50,6 +50,8 @@ SBPLPlannerNode::SBPLPlannerNode()
   ros::Node::instance()->advertiseService("~GetPlan", &SBPLPlannerNode::planPath, this);
 
   initializePlannerAndEnvironment();
+
+  cost_map_accessor_ = &(cost_map_node_.getCostMap());
 };
 
 SBPLPlannerNode::~SBPLPlannerNode()
@@ -98,6 +100,22 @@ bool SBPLPlannerNode::initializePlannerAndEnvironment()
       ros::Node::instance()->param("~timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
       // Could also sanity check the other parameters...
       env_.reset(mpglue::SBPLEnvironment::create3DKIN(mcm, mit, footprint_, nominalvel_mpersecs,timetoturn45degsinplace_secs, 0));
+    }
+    else if ("XYThetaLattice" == environment_type_) 
+    {
+      FILE *env_config_fp;
+      std::string filename = "sbpl_env_cfg_tmp.txt";
+      std::string env_config_string;
+      ros::Node::instance()->param<std::string>("~env_config_file", env_config_string, " ");
+      env_config_fp = fopen(filename.c_str(),"wt");
+      fprintf(env_config_fp,"%s",env_config_string.c_str());
+      fclose(env_config_fp);
+
+      double nominalvel_mpersecs, timetoturn45degsinplace_secs;
+      ros::Node::instance()->param("~nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
+      ros::Node::instance()->param("~timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
+      // Could also sanity check the other parameters...
+      env_.reset(mpglue::SBPLEnvironment::createXYThetaLattice(mcm, mit, footprint_, nominalvel_mpersecs,timetoturn45degsinplace_secs, filename, 0));
     }
     else 
     {

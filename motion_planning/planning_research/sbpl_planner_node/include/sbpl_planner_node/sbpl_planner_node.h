@@ -49,6 +49,7 @@
 
 // Costmap used for the map representation
 #include <costmap_2d/costmap_2d.h>
+#include <costmap_2d/costmap_node.h>
 
 // MPGlue and sbpl headers
 #include <mpglue/sbpl_planner.h>
@@ -84,9 +85,11 @@ class SBPLPlannerNode
   std::string environment_type_;
   std::string cost_map_topic_;
 
-  costmap_2d::CostMapAccessor* cost_map_accessor_; /**< Read-only access to global cost map */
+  const costmap_2d::CostMapAccessor *cost_map_accessor_; /**< Read-only access to global cost map */
 //  costmap_2d::CostMap2DMsg cost_map_msg_; /**< The cost map maintained incrementally from laser scans */
-  costmap_2d::CostMap2D* cost_map_; /**< The cost map mainatined incrementally from laser scans */
+//  costmap_2d::CostMap2D* cost_map_; /**< The cost map mainatined incrementally from laser scans */
+
+  costmap_2d::CostMapNode cost_map_node_;
 
   bool initializePlannerAndEnvironment();
   void costMapCallBack();
