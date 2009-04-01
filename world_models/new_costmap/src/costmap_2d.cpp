@@ -62,17 +62,17 @@ namespace costmap_2d{
   inscribed_radius_(inscribed_radius), circumscribed_radius_(circumscribed_radius), inflation_radius_(inflation_radius),
   weight_(weight){
     //convert our inflations from world to cell distance
-    inscribed_radius_ = cellDistance(inscribed_radius);
-    circumscribed_radius_ = cellDistance(circumscribed_radius);
-    inflation_radius_ = cellDistance(inflation_radius);
+    cell_inscribed_radius_ = cellDistance(inscribed_radius);
+    cell_circumscribed_radius_ = cellDistance(circumscribed_radius);
+    cell_inflation_radius_ = cellDistance(inflation_radius);
 
     //based on the inflation radius... compute distance and cost caches
-    cached_costs_ = new unsigned char*[inflation_radius_ + 1];
-    cached_distances_ = new double*[inflation_radius_ + 1];
-    for(unsigned int i = 0; i <= inflation_radius_; ++i){
-      cached_costs_[i] = new unsigned char[inflation_radius_ + 1];
-      cached_distances_[i] = new double[inflation_radius_ + 1];
-      for(unsigned int j = 0; i <= inflation_radius_; ++j){
+    cached_costs_ = new unsigned char*[cell_inflation_radius_ + 1];
+    cached_distances_ = new double*[cell_inflation_radius_ + 1];
+    for(unsigned int i = 0; i <= cell_inflation_radius_; ++i){
+      cached_costs_[i] = new unsigned char[cell_inflation_radius_ + 1];
+      cached_distances_[i] = new double[cell_inflation_radius_ + 1];
+      for(unsigned int j = 0; i <= cell_inflation_radius_; ++j){
         cached_distances_[i][j] = sqrt(i*i + j*j);
         cached_costs_[i][j] = computeCost(cached_distances_[i][j]);
       }
@@ -81,8 +81,8 @@ namespace costmap_2d{
     if(!static_data.empty()){
       ROS_ASSERT_MSG(size_x_ * size_y_ == static_data_.size(), "If you want to initialize a costmap with static data, their sizes must match.");
 
-      //we'll need a priority queue for inflation
-      std::priority_queue<CellData*> inflation_queue;
+      //make sure the inflation queue is empty at the beginning of the cycle (should always be true)
+      ROS_ASSERT_MSG(inflation_queue_.empty(), "The inflation queue must be empty at the beginning of inflation");
 
       //initialize the costmap with static data
       for(unsigned int i = 0; i < size_x_; ++i){
@@ -93,12 +93,12 @@ namespace costmap_2d{
           if(cost_map_[index] == LETHAL_OBSTACLE){
             unsigned int mx, my;
             indexToCells(index, mx, my);
-            enqueue(index, mx, my, mx, my, inflation_queue);
+            enqueue(index, mx, my, mx, my, inflation_queue_);
           }
         }
       }
       //now... let's inflate the obstacles
-      inflateObstacles(inflation_queue);
+      inflateObstacles(inflation_queue_);
 
       //we also want to keep a copy of the current costmap as the static map
       memcpy(static_map_, cost_map_, size_x_ * size_y_);
@@ -108,6 +108,11 @@ namespace costmap_2d{
   unsigned int Costmap2D::cellDistance(double world_dist){
     double cells_dist = max(0.0, ceil(world_dist / resolution_));
     return (unsigned int) cells_dist;
+  }
+
+  double Costmap2D::worldDistance(unsigned int cell_dist){
+    double world_dist = cell_dist * resolution_;
+    return world_dist;
   }
 
   unsigned char Costmap2D::getCellCost(unsigned int mx, unsigned int my) const {
@@ -164,42 +169,59 @@ namespace costmap_2d{
     unsigned char local_map[cell_size_x * cell_size_y];
 
     //copy the local window in the costmap to the local map
-    unsigned int cost_map_index = getIndex(start_x, start_y);
-    unsigned int local_map_index = 0;
+    unsigned char* cost_map_cell = &cost_map_[getIndex(start_x, start_y)];
+    unsigned char* local_map_cell = local_map;
     for(unsigned int y = 0; y < cell_size_y; ++y){
       for(unsigned int x = 0; x < cell_size_x; ++x){
-        local_map[local_map_index] = cost_map_[cost_map_index];
-        local_map_index++;
-        cost_map_index++;
+        *local_map_cell = *cost_map_cell;
+        local_map_cell++;
+        cost_map_cell++;
       }
-      local_map_index += cell_size_x;
-      cost_map_index += size_x_;
+      local_map_cell += cell_size_x;
+      cost_map_cell += size_x_;
     }
 
     //now we'll reset the costmap to the static map
     memcpy(cost_map_, static_map_, size_x_ * size_y_ * sizeof(unsigned char));
 
     //now we want to copy the local map back into the costmap
-    cost_map_index = getIndex(start_x, start_y);
-    local_map_index = 0;
+    cost_map_cell = &cost_map_[getIndex(start_x, start_y)];
+    local_map_cell = local_map;
     for(unsigned int y = 0; y < cell_size_y; ++y){
       for(unsigned int x = 0; x < cell_size_x; ++x){
-        cost_map_[cost_map_index] = local_map[local_map_index];
-        local_map_index++;
-        cost_map_index++;
+        *cost_map_cell = *local_map_cell;
+        local_map_cell++;
+        cost_map_cell++;
       }
-      local_map_index += cell_size_x;
-      cost_map_index += size_x_;
+      local_map_cell += cell_size_x;
+      cost_map_cell += size_x_;
     }
   }
 
-  void Costmap2D::updateObstacles(const std::vector<Observation>& observations){
+  void Costmap2D::updateWorld(double robot_x, double robot_y, 
+      const vector<Observation>& observations, const vector<Observation>& clearing_observations){
     //reset the markers for inflation
     memset(markers_, 0, size_x_ * size_y_ * sizeof(unsigned char));
 
-    //create a priority queue
-    std::priority_queue<CellData*> inflation_queue;
+    //make sure the inflation queue is empty at the beginning of the cycle (should always be true)
+    ROS_ASSERT_MSG(inflation_queue_.empty(), "The inflation queue must be empty at the beginning of inflation");
 
+    //raytrace freespace
+    raytraceFreespace(clearing_observations);
+
+    //if we raytrace X meters out... we must re-inflate obstacles within the containing square of that circle
+    double inflation_window_size = 2 * (raytrace_range_ + inflation_radius_);
+
+    //reset the inflation window.. clears all costs except lethal costs and adds them to the queue for re-propagation
+    resetInflationWindow(robot_x, robot_y, inflation_window_size, inflation_window_size, inflation_queue_);
+
+    //now we also want to add the new obstacles we've received to the cost map
+    updateObstacles(observations, inflation_queue_);
+
+    inflateObstacles(inflation_queue_);
+  }
+
+  void Costmap2D::updateObstacles(const vector<Observation>& observations, priority_queue<CellData>& inflation_queue){
     //place the new obstacles into a priority queue... each with a priority of zero to begin with
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
       const Observation& obs = *it;
@@ -229,21 +251,18 @@ namespace costmap_2d{
         enqueue(index, mx, my, mx, my, inflation_queue);
       }
     }
-    inflateObstacles(inflation_queue);
   }
 
-  void Costmap2D::inflateObstacles(priority_queue<CellData*>& inflation_queue){
-    CellData* current_cell = NULL;
+  void Costmap2D::inflateObstacles(priority_queue<CellData>& inflation_queue){
     while(!inflation_queue.empty()){
       //get the highest priority cell and pop it off the priority queue
-      current_cell = inflation_queue.top();
-      inflation_queue.pop();
+      const CellData& current_cell = inflation_queue.top();
 
-      unsigned int index = current_cell->index_;
-      unsigned int mx = current_cell->x_;
-      unsigned int my = current_cell->y_;
-      unsigned int sx = current_cell->src_x_;
-      unsigned int sy = current_cell->src_y_;
+      unsigned int index = current_cell.index_;
+      unsigned int mx = current_cell.x_;
+      unsigned int my = current_cell.y_;
+      unsigned int sx = current_cell.src_x_;
+      unsigned int sy = current_cell.src_y_;
 
       //attempt to put the neighbors of the current cell onto the queue
       if(mx > 0)
@@ -255,97 +274,155 @@ namespace costmap_2d{
       if(my < size_y_ - 1)
         enqueue(index + size_x_, mx, my + 1, sx, sy, inflation_queue);
 
-      //delete the current_cell b/c it is no longer on the queue and no longer needed
-      delete current_cell;
+      //remove the current cell from the priority queue
+      inflation_queue.pop();
     }
   }
 
 
-  void Costmap2D::raytraceFreespace(const std::vector<Observation>& clearing_scans){
+  void Costmap2D::raytraceFreespace(const std::vector<Observation>& clearing_observations){
+    for(unsigned int i = 0; i < clearing_observations.size(); ++i){
+      raytraceFreespace(clearing_observations[i]);
+    }
+  }
+
+  void Costmap2D::raytraceFreespace(const Observation& clearing_observation){
     //pre-comput the squared raytrace range... saves a sqrt in an inner loop
     double sq_raytrace_range = raytrace_range_ * raytrace_range_;
 
     //create the functor that we'll use to clear cells from the costmap
     ClearCell clearer(cost_map_);
 
-    for(unsigned int i = 0; i < clearing_scans.size(); ++i){
-      double ox = clearing_scans[i].origin_.x;
-      double oy = clearing_scans[i].origin_.y;
-      PointCloud* cloud = clearing_scans[i].cloud_;
+    double ox = clearing_observation.origin_.x;
+    double oy = clearing_observation.origin_.y;
+    PointCloud* cloud = clearing_observation.cloud_;
 
-      //get the map coordinates of the origin of the sensor 
-      unsigned int x0, y0;
-      if(!worldToMap(ox, oy, x0, y0))
-        return;
+    //get the map coordinates of the origin of the sensor 
+    unsigned int x0, y0;
+    if(!worldToMap(ox, oy, x0, y0))
+      return;
 
-      //we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
-      double end_x = origin_x_ + metersSizeX();
-      double end_y = origin_y_ + metersSizeY();
+    //we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
+    double end_x = origin_x_ + metersSizeX();
+    double end_y = origin_y_ + metersSizeY();
 
-      //for each point in the cloud, we want to trace a line from the origin and clear obstacles along it
-      for(unsigned int j = 0; j < cloud->pts.size(); ++j){
-        double wx = cloud->pts[j].x;
-        double wy = cloud->pts[i].y;
+    //for each point in the cloud, we want to trace a line from the origin and clear obstacles along it
+    for(unsigned int i = 0; i < cloud->pts.size(); ++i){
+      double wx = cloud->pts[i].x;
+      double wy = cloud->pts[i].y;
 
-        //we want to check that we scale the vector so that we only trace to the desired distance
-        double sq_distance = (wx - ox) * (wx - ox) + (wy - oy) * (wy - oy);
-        double scaling_fact = sq_raytrace_range / sq_distance;
-        scaling_fact = scaling_fact > 1.0 ? 1.0 : scaling_fact;
+      //we want to check that we scale the vector so that we only trace to the desired distance
+      double sq_distance = (wx - ox) * (wx - ox) + (wy - oy) * (wy - oy);
+      double scaling_fact = sq_raytrace_range / sq_distance;
+      scaling_fact = scaling_fact > 1.0 ? 1.0 : scaling_fact;
 
-        //now we also need to make sure that the enpoint we're raytracing 
-        //to isn't off the costmap and scale if necessary
-        double a = wx - ox;
-        double b = wy - oy;
+      //now we also need to make sure that the enpoint we're raytracing 
+      //to isn't off the costmap and scale if necessary
+      double a = wx - ox;
+      double b = wy - oy;
 
-        //the minimum value to raytrace from is the origin
-        if(wx < origin_x_){
-          double t = (origin_x_ - ox) / a;
-          wx = ox + a * t;
-          wy = oy + b * t;
-        }
-        if(wy < origin_y_){
-          double t = (origin_y_ - oy) / b;
-          wx = ox + a * t;
-          wy = oy + b * t;
-        }
-
-        //the maximum value to raytrace to is the end of the map
-        if(wx > end_x){
-          double t = (end_x - ox) / a;
-          wx = ox + a * t;
-          wy = oy + b * t;
-        }
-        if(wy > end_y){
-          double t = (end_y - oy) / b;
-          wx = ox + a * t;
-          wy = oy + b * t;
-        }
-
-        //now that the vector is scaled correctly... we'll get the map coordinates of its endpoint
-        unsigned int x1, y1;
-        worldToMap(wx, wy, x1, y1);
-
-        //and finally... we can execute our trace to clear obstacles along that line
-        raytraceLine(clearer, x0, y0, x1, y1);
+      //the minimum value to raytrace from is the origin
+      if(wx < origin_x_){
+        double t = (origin_x_ - ox) / a;
+        wx = ox + a * t;
+        wy = oy + b * t;
       }
+      if(wy < origin_y_){
+        double t = (origin_y_ - oy) / b;
+        wx = ox + a * t;
+        wy = oy + b * t;
+      }
+
+      //the maximum value to raytrace to is the end of the map
+      if(wx > end_x){
+        double t = (end_x - ox) / a;
+        wx = ox + a * t;
+        wy = oy + b * t;
+      }
+      if(wy > end_y){
+        double t = (end_y - oy) / b;
+        wx = ox + a * t;
+        wy = oy + b * t;
+      }
+
+      //now that the vector is scaled correctly... we'll get the map coordinates of its endpoint
+      unsigned int x1, y1;
+      worldToMap(wx, wy, x1, y1);
+
+      //and finally... we can execute our trace to clear obstacles along that line
+      raytraceLine(clearer, x0, y0, x1, y1);
     }
   }
 
-  void Costmap2D::inflateObstaclesInWindow(double wx, double wy, double w_size_x, double w_size_y){
+  void Costmap2D::resetInflationWindow(double wx, double wy, double w_size_x, double w_size_y,
+      priority_queue<CellData>& inflation_queue){
+    //get the cell coordinates of the center point of the window
+    unsigned int mx, my;
+    if(!worldToMap(wx, wy, mx, my))
+      return;
+
+    //compute the bounds of the window
+    double start_x = wx - w_size_x / 2;
+    double start_y = wy - w_size_y / 2;
+    double end_x = start_x + w_size_x;
+    double end_y = start_y + w_size_y;
+
+    //scale the window based on the bounds of the costmap
+    start_x = start_x < origin_x_ ? origin_x_ : start_x;
+    start_y = start_y < origin_y_ ? origin_y_ : start_y;
+
+    end_x = end_x > origin_x_ + metersSizeX() ? origin_x_ + metersSizeX() : end_x;
+    end_y = end_y > origin_y_ + metersSizeY() ? origin_y_ + metersSizeY() : end_y;
+
+    //get the map coordinates of the bounds of the window
+    unsigned int map_sx, map_sy, map_ex, map_ey;
+    worldToMap(start_x, start_y, map_sx, map_sy);
+    worldToMap(end_x, end_y, map_ex, map_ey);
+
+    //we know that we want to clear all non-lethal obstacles in this window to get it ready for inflation
+    unsigned int index = getIndex(map_sx, map_sy);
+    unsigned char* current = &cost_map_[index];
+    for(unsigned int j = map_sy; j <= map_ey; ++j){
+      for(unsigned int i = map_sx; i <= map_ex; ++i){
+        //if the cell is a lethal obstacle... we'll keep it and queue it, otherwise... we'll clear it
+        if(*current == LETHAL_OBSTACLE)
+          enqueue(index, i, j, i, j, inflation_queue);
+        else
+          *current = 0;
+        current++;
+        index++;
+      }
+      current += size_x_;
+      index += size_x_;
+    }
   }
 
-  unsigned int Costmap2D::cellSizeX() const{}
+  unsigned int Costmap2D::cellSizeX() const{
+    return size_x_;
+  }
 
-  unsigned int Costmap2D::cellSizeY() const{}
+  unsigned int Costmap2D::cellSizeY() const{
+    return size_y_;
+  }
 
-  double Costmap2D::metersSizeX() const{}
+  double Costmap2D::metersSizeX() const{
+    return (size_x_ - 1 + 0.5) * resolution_;
+  }
 
-  double Costmap2D::metersSizeY() const{}
+  double Costmap2D::metersSizeY() const{
+    return (size_y_ - 1 + 0.5) * resolution_;
+  }
 
-  double Costmap2D::originX() const{}
+  double Costmap2D::originX() const{
+    return origin_x_;
+  }
 
-  double Costmap2D::originY() const{}
+  double Costmap2D::originY() const{
+    return origin_y_;
+  }
 
-  double Costmap2D::resolution() const{}
+  double Costmap2D::resolution() const{
+    return resolution_;
+  }
 
 };

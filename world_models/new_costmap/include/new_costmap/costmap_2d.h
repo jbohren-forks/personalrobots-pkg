@@ -150,10 +150,10 @@ namespace costmap_2d {
         unsigned char cost = 0;
         if(distance == 0)
           cost = LETHAL_OBSTACLE;
-        else if(distance <= inscribed_radius_)
+        else if(distance <= cell_inscribed_radius_)
           cost = INSCRIBED_INFLATED_OBSTACLE;
         else {
-          double factor = weight_ / (1 + pow(distance - inscribed_radius_, 2));
+          double factor = weight_ / (1 + pow(distance - cell_inscribed_radius_, 2));
           cost = (unsigned char) ((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
         }
         return cost;
@@ -190,25 +190,42 @@ namespace costmap_2d {
       void resetMapOutsideWindow(double wx, double wy, double w_size_x, double w_size_y);
 
       /**
+       * @brief  Update the costmap with new observations
+       * @param obstacles The point clouds of obstacles to insert into the map 
+       * @param clearing_observations The set of observations to use for raytracing 
+       */
+      void updateWorld(double robot_x, double robot_y, 
+          const std::vector<Observation>& observations, const std::vector<Observation>& clearing_observations);
+
+      /**
        * @brief  Insert new obstacles into the cost map
        * @param obstacles The point clouds of obstacles to insert into the map 
+       * @param inflation_queue The queue to place the obstacles into for inflation
        */
-      void updateObstacles(const std::vector<Observation>& observations);
+      void updateObstacles(const std::vector<Observation>& observations, std::priority_queue<CellData>& inflation_queue);
 
       /**
-       * @brief  Clear freespace based on any number of planar scans
-       * @param clearing_scans The scans used to raytrace 
+       * @brief  Clear freespace based on any number of observations
+       * @param clearing_observations The observations used to raytrace 
        */
-      void raytraceFreespace(const std::vector<Observation>& clearing_scans);
+      void raytraceFreespace(const std::vector<Observation>& clearing_observations);
 
       /**
-       * @brief  Inflate obstacles within a given window centered at a point in world coordinates
+       * @brief  Clear freespace from an observation
+       * @param clearing_observation The observation used to raytrace 
+       */
+      void raytraceFreespace(const Observation& clearing_observation);
+
+      /**
+       * @brief  Provides support for re-inflating obstacles within a certain window (used after raytracing)
        * @param wx The x coordinate of the center point of the window in world space (meters)
        * @param wy The y coordinate of the center point of the window in world space (meters)
        * @param w_size_x The x size of the window in meters
        * @param w_size_y The y size of the window in meters
+       * @param inflation_queue The priority queue to push items back onto for propogation
        */
-      void inflateObstaclesInWindow(double wx, double wy, double w_size_x, double w_size_y);
+      void resetInflationWindow(double wx, double wy, double w_size_x, double w_size_y,
+          std::priority_queue<CellData>& inflation_queue );
 
       /**
        * @brief  Accessor for the x size of the costmap in cells
@@ -224,13 +241,13 @@ namespace costmap_2d {
 
       /**
        * @brief  Accessor for the x size of the costmap in meters
-       * @return The x size of the costmap
+       * @return The x size of the costmap (returns the centerpoint of the last legal cell in the map)
        */
       double metersSizeX() const;
 
       /**
        * @brief  Accessor for the y size of the costmap in meters
-       * @return The y size of the costmap
+       * @return The y size of the costmap (returns the centerpoint of the last legal cell in the map)
        */
       double metersSizeY() const;
 
@@ -264,7 +281,7 @@ namespace costmap_2d {
        * @return 
        */
       inline void enqueue(unsigned int index, unsigned int mx, unsigned int my, 
-          unsigned int src_x, unsigned int src_y, std::priority_queue<CellData*>& inflation_queue){
+          unsigned int src_x, unsigned int src_y, std::priority_queue<CellData>& inflation_queue){
         unsigned char* marked = &markers_[index];
         //set the cost of the cell being inserted
         if(*marked == 0){
@@ -272,14 +289,14 @@ namespace costmap_2d {
           double distance = distanceLookup(mx, my, src_x, src_y);
 
           //we only want to put the cell in the queue if it is within the inflation radius of the obstacle point
-          if(distance > inflation_radius_)
+          if(distance > cell_inflation_radius_)
             return;
 
           //assign the cost associated with the distance from an obstacle to the cell
           cost_map_[index] = costLookup(mx, my, src_x, src_y);
 
           //push the cell data onto the queue and mark
-          inflation_queue.push(new CellData(distance, index, mx, my, src_x, src_y));
+          inflation_queue.push(CellData(distance, index, mx, my, src_x, src_y));
           *marked = 1;
         }
       }
@@ -332,9 +349,11 @@ namespace costmap_2d {
        * @brief  Given a priority queue with the actual obstacles, compute the inflated costs for the costmap
        * @param  inflation_queue A priority queue contatining the cell data for the actual obstacles
        */
-      void inflateObstacles(std::priority_queue<CellData*>& inflation_queue);
+      void inflateObstacles(std::priority_queue<CellData>& inflation_queue);
 
       unsigned int cellDistance(double world_dist);
+
+      double worldDistance(unsigned int cell_dist);
 
       unsigned int size_x_;
       unsigned int size_y_;
@@ -349,8 +368,10 @@ namespace costmap_2d {
       double raytrace_range_;
       unsigned char** cached_costs_;
       double** cached_distances_;
-      unsigned int inscribed_radius_, circumscribed_radius_, inflation_radius_;
+      double inscribed_radius_, circumscribed_radius_, inflation_radius_;
+      unsigned int cell_inscribed_radius_, cell_circumscribed_radius_, cell_inflation_radius_;
       double weight_;
+      std::priority_queue<CellData> inflation_queue_;
 
       //functors for raytracing actions
       class ClearCell {
