@@ -1,0 +1,15 @@
+<package>
+  <description brief="random_misc_utils">
+
+     random_misc_utils - a collection of useful programming helpers
+
+  </description>
+  <author>Melonee Wise/mwise@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/random_misc_utils</url>
+  <depend package="loki"/>
+
+</package>
+
+
