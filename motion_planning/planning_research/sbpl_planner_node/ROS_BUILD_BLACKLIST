@@ -1,0 +1,7 @@
+[100%] Building CXX object CMakeFiles/sbpl_planner.dir/src/sbpl_planner_node.o
+/home/rosbuild/.hudson/jobs/personalrobots-update/workspace/personalrobots/world_models/costmap_2d/include/costmap_2d/costmap_node.h: In constructor 'SBPLPlannerNode::SBPLPlannerNode()':
+/home/rosbuild/.hudson/jobs/personalrobots-update/workspace/personalrobots/world_models/costmap_2d/include/costmap_2d/costmap_node.h:107: error: 'const costmap_2d::CostMapAccessor&
+costmap_2d::CostMapNode::getCostMap() const' is protected
+/home/rosbuild/.hudson/jobs/personalrobots-update/workspace/personalrobots/motion_planning/planning_research/sbpl_planner_node/src/sbpl_planner_node.cpp:54: error: within this context
+make[3]: *** [CMakeFiles/sbpl_planner.dir/src/sbpl_planner_node.o] Error 1
+
