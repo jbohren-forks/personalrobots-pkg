@@ -5,7 +5,7 @@
 
   <property name="M_PI" value="3.1415926535897931" />
 
-  <property name="gripper_max_angle" value="0.548" />
+  <property name="gripper_max_angle" value="0.548" /> <!-- max gap size /2 -->
   <property name="gripper_min_angle" value="0.00" />
 
   <property name="finger_stop_kd"             value="1.0" />
@@ -13,26 +13,27 @@
   <property name="finger_fudge_factor"        value="1.0" />
 
   <property name="finger_damping"             value="3.0" />
+  <property name="finger_tip_damping"         value="0.001" />
 
-  <property name="finger_tip_damping"         value="0.01" />
+  <property name="finger_kp"                  value="20.0" />
+  <property name="finger_kd"                  value="10.0" />
+  <property name="finger_fm"                  value="10.0" />
+
   <property name="finger_tip_kp"              value="10.0" />
-  <property name="finger_tip_kd"              value="05.0" />
-  <property name="finger_tip_fm"              value="10.0" />
-  <property name="finger_tip_mu"              value="50.0" />
-  <property name="finger_joint_effort_limit"  value="10.0" />
+  <property name="finger_tip_kd"              value="01.0" />
+  <property name="finger_tip_fm"              value="01.0" />
+
+  <property name="finger_tip_mu"              value="500.0" />
+  <property name="finger_mu"                  value="500.0" />
+
+  <property name="finger_joint_effort_limit"  value="0.5" />
 
   <macro name="pr2_finger_limits" params="reflect">
-    <limit effort="0.5"
-           velocity="0.5" k_velocity="0.5"
-           min="0" max="1.57"
-           safety_length_min="0" safety_length_max="0.01" k_position="0.5" />
-  </macro>
-
-  <macro name="pr2_finger_limits_negative" params="reflect">
-    <limit effort="0.5"
-           velocity="0.5" k_velocity="0.5"
-           min="-1.57" max="0"
-           safety_length_min="0" safety_length_max="0.01" k_position="0.5" />
+    <!-- IMPORTANT: k_velocity and k_position of 1 will induce instability on the acutal joint -->
+    <limit effort="${finger_joint_effort_limit}" velocity="0.5"
+           min="${gripper_min_angle}" max="${gripper_max_angle}"
+           k_velocity="0.5" k_position="0.5"
+           safety_length_min="0.0" safety_length_max="0.01" />
   </macro>
 
   <macro name="pr2_finger" params="prefix parent">
@@ -106,6 +107,8 @@
       </map>
       <map name="${prefix}_l_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
+        <elem key="mu1" value="${finger_mu}" />
+        <elem key="mu2" value="${finger_mu}" />
         <elem key="kp" value="1000000.0" />
         <elem key="kd" value="1.0" />
       </map>
@@ -114,17 +117,19 @@
     <!-- Finger proximal digit -->
 
     <joint name="${prefix}_r_finger_joint" type="revolute">
-      <axis xyz="0 0 1" />
+      <axis xyz="0 0 -1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.0 -1.0" />
-      <pr2_finger_limits_negative reflect="1" />
+      <pr2_finger_limits reflect="1" />
       <joint_properties damping="${finger_damping}" />
-      <mimic name="${prefix}_l_finger_joint" mult="${-1}" offset="0"/>
+      <!--
+      <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_r_finger_mimic" flag="gazebo">
-        <elem key="mimicKp"   value="20.0" />
-        <elem key="mimicKd"   value="10.0" />
-        <elem key="mimicFMax" value="10.0" />
+        <elem key="mimicKp"   value="${finger_kp}" />
+        <elem key="mimicKd"   value="${finger_kd}" />
+        <elem key="mimicFMax" value="${finger_fm}" />
       </map>
+      -->
       <map name="${prefix}_r_finger_options" flag="gazebo">
         <elem key="provideFeedback" value="true"/>
         <elem key="initialAngle" value="${-gripper_min_angle}"/>
@@ -186,6 +191,8 @@
       </map>
       <map name="${prefix}_r_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
+        <elem key="mu1" value="${finger_mu}" />
+        <elem key="mu2" value="${finger_mu}" />
         <elem key="kp" value="1000000.0" />
         <elem key="kd" value="1.0" />
       </map>
@@ -194,17 +201,19 @@
     <!-- Finger tip -->
 
     <joint name="${prefix}_l_finger_tip_joint" type="revolute">
-      <axis xyz="0 0 1" />
+      <axis xyz="0 0 -1" />
       <anchor xyz="0 0 0" />
       <calibration reference_position="0" values="1.0 -1.0" />
-      <pr2_finger_limits_negative reflect="1" />
+      <pr2_finger_limits reflect="1" />
       <joint_properties damping="${finger_tip_damping}" />
-      <mimic name="${prefix}_l_finger_joint" mult="-1" offset="0"/>
+      <!--
+      <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_l_finger_tip_mimic" flag="gazebo">
         <elem key="mimicKp"   value="${finger_tip_kp}" />
         <elem key="mimicKd"   value="${finger_tip_kd}" />
         <elem key="mimicFMax" value="${finger_tip_fm}" />
       </map>
+      -->
       <map name="${prefix}_l_finger_tip_options" flag="gazebo">
         <elem key="provideFeedback" value="true"/>
         <elem key="initialAngle" value="${-gripper_min_angle}"/>
@@ -265,7 +274,7 @@
         <elem key="turnGravityOff">true</elem>
         <elem key="mu1" value="${finger_tip_mu}" />
         <elem key="mu2" value="${finger_tip_mu}" />
-        <elem key="kp"  value="100000000.0" />
+        <elem key="kp"  value="10000000.0" />
         <elem key="kd"  value="1.0" />
         <elem key="selfCollide" value="false" />
       </map>
@@ -279,12 +288,14 @@
       <calibration reference_position="0" values="1.0 -1.0" />
       <pr2_finger_limits reflect="1" />
       <joint_properties damping="${finger_tip_damping}" />
+      <!--
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_r_finger_tip_mimic" flag="gazebo">
         <elem key="mimicKp"   value="${finger_tip_kp}" />
         <elem key="mimicKd"   value="${finger_tip_kd}" />
         <elem key="mimicFMax" value="${finger_tip_fm}" />
       </map>
+      -->
       <map name="${prefix}_r_finger_tip_options" flag="gazebo">
         <elem key="provideFeedback" value="true"/>
         <elem key="initialAngle" value="${gripper_min_angle}"/>
@@ -345,7 +356,7 @@
         <elem key="turnGravityOff">true</elem>
         <elem key="mu1" value="${finger_tip_mu}" />
         <elem key="mu2" value="${finger_tip_mu}" />
-        <elem key="kp"  value="100000000.0" />
+        <elem key="kp"  value="10000000.0" />
         <elem key="kd"  value="1.0" />
         <elem key="selfCollide" value="false" />
       </map>
@@ -442,6 +453,7 @@
 
 
   <macro name="pr2_gripper" params="side parent">
+
     <joint name="${side}_gripper_palm_joint" type="fixed" />
     <link name="${side}_gripper_palm_link">
       <parent name="${parent}" />
@@ -559,30 +571,56 @@
       </verbatim>
     </map>
 
+
+
     <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm_link" />
 
-    <!-- sin(angle*reduction) = motor_encoder * A + B -->
-    <transmission type="GripperTransmission" name="${side}_gripper_trans" A="0.0002193927" B="0.530981135">
-      <actuator name="${side}_gripper_motor" />
-      <joint name="${side}_gripper_r_finger_joint" preduction="1.0" ereduction="6.0" />
-      <joint name="${side}_gripper_r_finger_tip_joint" preduction="1.0" ereduction="6.0" />
-      <joint name="${side}_gripper_l_finger_joint" preduction="1.0" ereduction="6.0"/>
-      <joint name="${side}_gripper_l_finger_tip_joint" preduction="1.0" ereduction="6.0" />
-      <pid p="0.01" i="0.001" d="0.005" iClamp="0.005" />
+    <!-- [lr]_gripper_joint position is the gap_size/2                                       -->
+    <!-- [lr]_gripper_joint velocity is the gap linear velocity                              -->
+    <!-- [lr]_gripper_joint effort   is the gap linear force                                 -->
+    <!-- Please refer to function engineering spreadsheet 090224_link_data.xls for           -->
+    <!-- the transmission function.                                                          -->
+    <!-- Please refer to mechanism_model/src/pr2_gripper_transmission.cpp for implementation.-->
+    <!-- gazebo_mimic_pid is for sim only.                                                   -->
+    <transmission type="PR2GripperTransmission" name="${side}_gripper_trans" >
+      <actuator       name="${side}_gripper_motor" />
+      <gap_joint      name="${side}_gripper_joint"                       mechanical_reduction="1.0" />
+      <passive_joint  name="${side}_gripper_l_finger_joint"     >
+        <gazebo_mimic_pid p="0.001" i="0.0" d="0.0" iClamp="0.0" />
+      </passive_joint>
+      <passive_joint  name="${side}_gripper_r_finger_joint"     >
+        <gazebo_mimic_pid p="0.001" i="0.0" d="0.0" iClamp="0.0" />
+      </passive_joint>
+      <passive_joint  name="${side}_gripper_r_finger_tip_joint" >
+        <gazebo_mimic_pid p="0.00001" i="0.0" d="0.0" iClamp="0.0" />
+      </passive_joint>
+      <passive_joint  name="${side}_gripper_l_finger_tip_joint" >
+        <gazebo_mimic_pid p="0.00001" i="0.0" d="0.0" iClamp="0.0" />
+      </passive_joint>
     </transmission>
+
     <!--
-    <transmission type="SimpleTransmission" name="${side}_gripper_trans">
-      <actuator name="${side}_gripper_motor" />
-      <joint name="${side}_gripper_l_finger_joint" />
-      <mechanicalReduction>6.0</mechanicalReduction>
-    </transmission>
-     -->
+             min="${gripper_min_angle}" max="${gripper_max_angle}"
+    -->
+    <!-- fictitous joint that represents the gripper gap -->
+    <!-- effort is the linear force at the gripper gap
+         velocity limit is the linear velocity limit at the gripper gap
+         try and introduce a very stiff spring
+    -->
+    <joint name="${side}_gripper_joint" type="prismatic">
+      <axis xyz="0 0 1" />
+      <limit effort="100000.0" velocity="100000.0"
+             min="-100.0" max="100.0"
+             k_velocity="1.0" k_position="1.0"
+             safety_length_min="0.0" safety_length_max="0.001" />
+    </joint>
+
   </macro>
 
   <!--                    Calibration                            -->
   <macro name="gripper_calibrator" params="side">
     <controller name="cal_${side}_gripper" type="GripperCalibrationControllerNode">
-      <calibrate joint="${side}_gripper_l_finger_joint"
+      <calibrate joint="${side}_gripper_joint"
                  actuator="${side}_gripper_motor"
                  velocity="-10" />
       <pid p="15" i="0" d="0" iClamp="0" />
