@@ -29,6 +29,7 @@
  */
 
 #include <door_handle_detector/doors_detector.h>
+#include <door_handle_detector/door_functions.h>
 
 
 using namespace std;
@@ -45,6 +46,7 @@ DoorDetector::DoorDetector (ros::Node* anode)
   // ---[ Parameters regarding geometric constraints for the door/handle
   {
     node_->param ("~parameter_frame", parameter_frame_, string ("base_footprint"));
+    node_->param ("~fixed_frame", fixed_frame_, string ("odom_combined"));
 
     node_->param ("~door_min_height", door_min_height_, 1.2);                  // minimum height of a door: 1.2m
     node_->param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
@@ -124,14 +126,24 @@ bool
   Duration duration;
   Duration timeout = Duration().fromSec(5.0);
 
-  // New strategy: transform the PCD (Point Cloud Data) into the parameter_frame, and work there
+  // transform the PCD (Point Cloud Data) into the parameter_frame, and work there
   if (!tf_.canTransform(parameter_frame_, pointcloud.header.frame_id, pointcloud.header.stamp, timeout)){
     ROS_ERROR ("Could not transform point cloud from frame %s to frame %s.",
                pointcloud.header.frame_id.c_str (), parameter_frame_.c_str ());
     return false;
   }
   tf_.transformPointCloud (parameter_frame_, pointcloud, pointcloud);
-  ROS_INFO("DoorDetector: Pointcloud transformed to robot frame");
+  ROS_INFO("DoorDetector: Pointcloud transformed to parameter frame");
+
+  // transform the door message into the parameter_frame, and work there
+  if (!tf_.canTransform(parameter_frame_, door.header.frame_id, door.header.stamp, timeout)){
+    ROS_ERROR ("Could not transform door message from frame %s to frame %s.",
+               door.header.frame_id.c_str (), parameter_frame_.c_str ());
+    return false;
+  }
+  Door door_tr;
+  transformTo(tf_, parameter_frame_, door, door_tr);
+  ROS_INFO("DoorDetector: door message transformed to parameter frame");
 
   // Get the cloud viewpoint in the parameter frame
   PointStamped viewpoint_cloud_;
@@ -351,10 +363,10 @@ bool
 
     // ---[ Compute the distance from the door to the prior of the door
     double door_distance = fmax (0.001,
-                                 fmin (cloud_geometry::distances::pointToPointXYDistance (door.door_p1, min_p),
-                                       fmin (cloud_geometry::distances::pointToPointXYDistance (door.door_p1, max_p),
-                                             fmin (cloud_geometry::distances::pointToPointXYDistance (door.door_p2, min_p),
-                                                   cloud_geometry::distances::pointToPointXYDistance (door.door_p2, max_p)))));
+                                 fmin (cloud_geometry::distances::pointToPointXYDistance (door_tr.door_p1, min_p),
+                                       fmin (cloud_geometry::distances::pointToPointXYDistance (door_tr.door_p1, max_p),
+                                             fmin (cloud_geometry::distances::pointToPointXYDistance (door_tr.door_p2, min_p),
+                                                   cloud_geometry::distances::pointToPointXYDistance (door_tr.door_p2, max_p)))));
     goodness_factor[cc] /= door_distance;
     ROS_WARN ("A: Door candidate (%d, %d hull points, %d points) accepted with: average point density (%g), area (%g), width (%g), height (%g).\n Planar coefficients: [%g %g %g %g]",
               cc, (int)pmap_.polygons[cc].points.size (), (int)inliers.size (), density, area, door_frame, door_height, coeff[cc][0], coeff[cc][1], coeff[cc][2], coeff[cc][3]);
@@ -419,7 +431,7 @@ bool
       continue;
 
     // initialize with original door message
-    result[nr_d] = door;
+    result[nr_d] = door_tr;
 
     // Save the weight (we need to reorder at the end)
     result[nr_d].weight = goodness_factor[cc];
@@ -428,27 +440,19 @@ bool
     cloud_geometry::statistics::getLargestXYPoints (pmap_.polygons[cc], min_p, max_p);
 
     // Reply doors message in same frame as request doors message
-    tf::Stamped<tf::Point> pnt_p1(tf::Vector3(min_p.x, min_p.y, min_p.z), pointcloud.header.stamp, parameter_frame_);
-    tf_.transformPoint(door.header.frame_id, pnt_p1, pnt_p1);
-    result[nr_d].door_p1.x = pnt_p1[0];
-    result[nr_d].door_p1.y = pnt_p1[1];
-    result[nr_d].door_p1.z = pnt_p1[2];
-
-    tf::Stamped<tf::Point> pnt_p2(tf::Vector3(max_p.x, max_p.y, min_p.z), pointcloud.header.stamp, parameter_frame_);
-    tf_.transformPoint(door.header.frame_id, pnt_p2, pnt_p2);
-    result[nr_d].door_p2.x = pnt_p2[0];
-    result[nr_d].door_p2.y = pnt_p2[1];
-    result[nr_d].door_p2.z = pnt_p2[2];
-
-    tf::Stamped<tf::Point> norm(tf::Vector3(coeff[cc][0], coeff[cc][1], coeff[cc][2]), pointcloud.header.stamp, parameter_frame_);
-    tf_.transformVector(door.header.frame_id, norm, norm);
-    result[nr_d].normal.x = norm[0];
-    result[nr_d].normal.y = norm[1];
-    result[nr_d].normal.z = norm[2];
+    result[nr_d].door_p1 = min_p;
+    result[nr_d].door_p2 = max_p;
+    result[nr_d].door_p2.z = min_p.z;
+    result[nr_d].normal.x = coeff[cc][0];
+    result[nr_d].normal.y = coeff[cc][1];
+    result[nr_d].normal.z = coeff[cc][2];
 
     // Need min/max Z
     cloud_geometry::statistics::getMinMax (pmap_.polygons[cc], min_p, max_p);
     result[nr_d].height = fabs (max_p.z - min_p.z);
+
+    transformTo(tf_, fixed_frame_, result[nr_d], result[nr_d]);
+
     nr_d++;
   }
 

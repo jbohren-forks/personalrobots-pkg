@@ -1,13 +1,13 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -47,7 +47,7 @@ static const string fixed_frame = "odom_combined";
 
 
 
-DetectDoorAction::DetectDoorAction(Node& node): 
+DetectDoorAction::DetectDoorAction(Node& node):
   robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_door"),
   tf_(node)
 {};
@@ -108,7 +108,7 @@ bool DetectDoorAction::laserDetection(const robot_msgs::Door& door_in, robot_msg
   double door_bottom = -0.5;
   double door_top    =  2.5;
   ROS_INFO("DetectDoorAction: tilt laser is at height %f, and door at distance %f", laser_height, dist);
-  
+
   // gets a point cloud from the point_cloud_srv
   if (request_preempt_) return false;
   ROS_INFO("DetectDoorAction: get a point cloud from the door");

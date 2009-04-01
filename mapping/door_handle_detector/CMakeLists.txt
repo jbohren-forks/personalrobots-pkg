@@ -11,11 +11,13 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 rospack_add_executable (doors_detector_node
                         src/geometric_helper.cpp
                         src/doors_detector.cpp
+			src/door_functions.cpp
                        )
 
 rospack_add_executable (handle_detector_node
                         src/geometric_helper.cpp
                         src/handle_detector.cpp
+			src/door_functions.cpp
                        )
 
 rospack_add_library(executive_functions src/executive_functions.cpp)

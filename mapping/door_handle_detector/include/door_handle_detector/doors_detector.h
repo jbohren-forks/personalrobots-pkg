@@ -87,6 +87,7 @@ private:
   void cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud);
 
   mutable ros::Node* node_;
+  mutable int global_marker_id_;
 
   // parameters for callback function
   robot_msgs::PointCloud pointcloud_;  
@@ -95,7 +96,7 @@ private:
   robot_msgs::Point32 z_axis_;
   tf::TransformListener tf_;
   
-  std::string parameter_frame_;
+  std::string parameter_frame_, fixed_frame_;
   
   // Parameters regarding geometric constraints for the door/handle
   double door_min_height_, door_min_width_, door_max_height_, door_max_width_, door_min_z_;
@@ -119,7 +120,7 @@ private:
   double maximum_search_radius_, maximum_search_radius_limit_, maximum_scan_angle_limit_;
   double minimum_z_, maximum_z_;;
   
-  int global_marker_id_;
+
 
   
 };
