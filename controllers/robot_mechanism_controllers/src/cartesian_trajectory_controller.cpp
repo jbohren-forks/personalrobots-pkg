@@ -135,7 +135,7 @@ bool CartesianTrajectoryController::moveTo(const Frame& pose_desi, double durati
 
 
 
-bool CartesianTrajectoryController::start()
+bool CartesianTrajectoryController::starting()
 {
   // time
   last_time_ = robot_state_->hw_->current_time_;
@@ -148,7 +148,7 @@ bool CartesianTrajectoryController::start()
   is_moving_ = false;
   request_preempt_ = false;
 
-  return pose_controller_.start();
+  return pose_controller_.starting();
 }
 
 
@@ -267,9 +267,9 @@ bool CartesianTrajectoryControllerNode::initXml(mechanism::RobotState *robot, Ti
 }
 
 
-bool CartesianTrajectoryControllerNode::start()
+bool CartesianTrajectoryControllerNode::starting()
 {
-  return controller_.start();
+  return controller_.starting();
 }
 
 void CartesianTrajectoryControllerNode::update()
@@ -285,8 +285,11 @@ bool CartesianTrajectoryControllerNode::moveTo(robot_srvs::MoveToPose::Request &
   if (!moveTo(req.pose))
     return false;
 
+  cout << "start moveto service " << endl;
   while (controller_.isMoving())
     Duration().fromSec(0.01).sleep();
+
+  cout << "end moveto service " << endl;
 
   if (controller_.isPreempted())
     return false;

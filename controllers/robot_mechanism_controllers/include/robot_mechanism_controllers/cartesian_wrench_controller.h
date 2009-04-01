@@ -38,11 +38,14 @@
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
-#include "ros/node.h"
-#include "robot_msgs/Wrench.h"
-#include "mechanism_model/controller.h"
-#include "mechanism_model/chain.h"
-#include "tf/transform_datatypes.h"
+#include <ros/node.h>
+#include <robot_msgs/Wrench.h>
+#include <mechanism_model/controller.h>
+#include <mechanism_model/chain.h>
+#include <tf/transform_datatypes.h>
+#include <robot_msgs/DiagnosticMessage.h>
+#include <realtime_tools/realtime_publisher.h>
+
 
 
 namespace controller {
@@ -55,13 +58,15 @@ public:
 
   bool initialize(mechanism::RobotState *robot, const std::string& root_name, 
                   const std::string& tip_name, const std::string& controller_name);
-  bool start();
+  bool starting();
   void update();
 
   // input of the controller
   KDL::Wrench wrench_desi_;
 
 private:
+  bool publishDiagnostics(int level, const string& message);
+
   ros::Node* node_;
   std::string controller_name_;
   unsigned int num_joints_;
@@ -72,6 +77,11 @@ private:
   KDL::ChainJntToJacSolver *jnt_to_jac_solver_;
   KDL::JntArray jnt_pos_, jnt_eff_;
   KDL::Jacobian jacobian_;
+
+  robot_msgs::DiagnosticMessage diagnostics_;
+  realtime_tools::RealtimePublisher <robot_msgs::DiagnosticMessage> diagnostics_publisher_;
+  ros::Time diagnostics_time_;
+  ros::Duration diagnostics_interval_;
 };
 
 
@@ -86,7 +96,7 @@ class CartesianWrenchControllerNode : public Controller
   ~CartesianWrenchControllerNode();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool start();
+  bool starting();
   void update();
   void command();
 

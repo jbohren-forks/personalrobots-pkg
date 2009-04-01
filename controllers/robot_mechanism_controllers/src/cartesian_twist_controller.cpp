@@ -98,7 +98,7 @@ bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, co
 }
 
 
-bool CartesianTwistController::start()
+bool CartesianTwistController::starting()
 {
   // reset pid controllers
   for (unsigned int i=0; i<6; i++)
@@ -110,7 +110,7 @@ bool CartesianTwistController::start()
   // set disired twist to 0
   twist_desi_ = Twist::Zero();
 
-  return wrench_controller_.start();
+  return wrench_controller_.starting();
 }
 
 
@@ -198,9 +198,9 @@ bool CartesianTwistControllerNode::initXml(mechanism::RobotState *robot, TiXmlEl
 }
 
 
-bool CartesianTwistControllerNode::start()
+bool CartesianTwistControllerNode::starting()
 {
-  return controller_.start();
+  return controller_.starting();
 }
 
 void CartesianTwistControllerNode::update()

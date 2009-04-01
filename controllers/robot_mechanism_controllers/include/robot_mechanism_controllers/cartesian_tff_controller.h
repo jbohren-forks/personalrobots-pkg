@@ -57,7 +57,7 @@ public:
 
   bool initialize(mechanism::RobotState *robot, const std::string& root_name, 
                   const std::string& tip_name, const std::string& controller_name);
-  bool start();
+  bool starting();
   void update();
 
   void tffCommand(int mode1, double value1, int mode2, double value2, int mode3, double value3,
@@ -113,7 +113,7 @@ class CartesianTFFControllerNode : public Controller
   ~CartesianTFFControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool start();
+  bool starting();
   void update();
   void command();
 

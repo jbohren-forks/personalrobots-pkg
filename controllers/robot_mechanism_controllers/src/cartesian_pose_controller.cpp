@@ -98,7 +98,7 @@ bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, con
 }
 
 
-bool CartesianPoseController::start()
+bool CartesianPoseController::starting()
 {
   // reset pid controllers
   for (unsigned int i=0; i<6; i++)
@@ -109,7 +109,7 @@ bool CartesianPoseController::start()
   pose_desi_ = getPose();
   last_time_ = robot_state_->hw_->current_time_;
 
-  return twist_controller_.start();
+  return twist_controller_.starting();
 }
 
 
@@ -209,9 +209,9 @@ bool CartesianPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   return true;
 }
 
-bool CartesianPoseControllerNode::start()
+bool CartesianPoseControllerNode::starting()
 {
-  return controller_.start();
+  return controller_.starting();
 }
 
 void CartesianPoseControllerNode::update()

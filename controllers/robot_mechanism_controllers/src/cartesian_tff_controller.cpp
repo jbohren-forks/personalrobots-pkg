@@ -123,7 +123,7 @@ bool CartesianTFFController::initialize(mechanism::RobotState *robot_state, cons
 
 
 
-bool CartesianTFFController::start()
+bool CartesianTFFController::starting()
 {
   // time
   last_time_ = robot_state_->hw_->current_time_;
@@ -148,10 +148,10 @@ bool CartesianTFFController::start()
   position_ = Twist::Zero();
 
   if (use_constraint_controller)
-    //return constraint_controller_.start();
+    //return constraint_controller_.starting();
     return true;
   else
-    return wrench_controller_.start();
+    return wrench_controller_.starting();
 }
 
 
@@ -256,9 +256,9 @@ bool CartesianTFFControllerNode::initXml(mechanism::RobotState *robot, TiXmlElem
   return true;
 }
 
-bool CartesianTFFControllerNode::start()
+bool CartesianTFFControllerNode::starting()
 {
-  return controller_.start();
+  return controller_.starting();
 }
 
 

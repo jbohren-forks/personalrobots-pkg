@@ -104,7 +104,7 @@ CartesianTwistControllerIk::~CartesianTwistControllerIk()
 
 
 
-bool CartesianTwistControllerIk::start()
+bool CartesianTwistControllerIk::starting()
 {
   // time
   last_time_ = robot_state_->hw_->current_time_;
@@ -115,7 +115,7 @@ bool CartesianTwistControllerIk::start()
   // start joint velocity controllers
   bool res = true;
   //for (unsigned int i=0 ;i<num_joints_; i++)
-  // if (!joint_vel_controllers_[i]->start()) res = false;
+  // if (!joint_vel_controllers_[i]->starting()) res = false;
 
   return res;
 }
@@ -193,9 +193,9 @@ bool CartesianTwistControllerIkNode::initXml(mechanism::RobotState *robot, TiXml
 }
 
 
-bool CartesianTwistControllerIkNode::start()
+bool CartesianTwistControllerIkNode::starting()
 {
-  return controller_.start();
+  return controller_.starting();
 }
 
 

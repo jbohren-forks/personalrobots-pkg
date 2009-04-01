@@ -45,7 +45,8 @@ namespace controller {
 
 CartesianWrenchController::CartesianWrenchController()
 : robot_state_(NULL),
-  jnt_to_jac_solver_(NULL)
+  jnt_to_jac_solver_(NULL),
+  diagnostics_publisher_("/diagnostics", 2)
 {}
 
 
@@ -80,11 +81,26 @@ bool CartesianWrenchController::initialize(mechanism::RobotState *robot_state,
   jnt_eff_.resize(num_joints_);
   jacobian_.resize(num_joints_);
 
+  // diagnostics messages
+  cout << "Initialize diagnostics !!!!!" << endl;
+  diagnostics_.status.resize(1);
+  diagnostics_.status[0].name  = "Wrench Controller";
+  diagnostics_.status[0].values.resize(1);
+  diagnostics_.status[0].values[0].value = 3;
+  diagnostics_.status[0].values[0].label = "TestValueLabel";
+
+  diagnostics_.status[0].strings.resize(1);
+  diagnostics_.status[0].strings[0].value = "TestValue";
+  diagnostics_.status[0].strings[0].label = "TestLabel";
+
+  diagnostics_time_ = ros::Time::now();
+  diagnostics_interval_ = ros::Duration().fromSec(1.0);
+
   return true;
 }
 
 
-bool CartesianWrenchController::start()
+bool CartesianWrenchController::starting()
 {
   // set desired wrench to 0
   wrench_desi_ = Wrench::Zero();
@@ -96,9 +112,14 @@ bool CartesianWrenchController::start()
 
 void CartesianWrenchController::update()
 {
+
+
   // check if joints are calibrated
-  if (!chain_.allCalibrated(robot_state_->joint_states_))
+  if (!chain_.allCalibrated(robot_state_->joint_states_)){
+    publishDiagnostics(2, "Not all joints are calibrated");
     return;
+  }
+  publishDiagnostics(0, "No problems detected");
 
   // get joint positions
   chain_.getPositions(robot_state_->joint_states_, jnt_pos_);
@@ -119,6 +140,23 @@ void CartesianWrenchController::update()
 
 
 
+bool CartesianWrenchController::publishDiagnostics(int level, const string& message)
+{
+  if (diagnostics_time_ + diagnostics_interval_ < ros::Time::now())
+  {
+    if (!diagnostics_publisher_.trylock())
+      return false;
+
+    diagnostics_.status[0].level = level;
+    diagnostics_.status[0].message  = message;
+      
+    diagnostics_publisher_.unlockAndPublish();
+    diagnostics_time_ = ros::Time::now();
+    return true;
+  }
+
+  return false;
+}
 
 
 
@@ -168,9 +206,9 @@ bool CartesianWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   return true;
 }
 
-bool CartesianWrenchControllerNode::start()
+bool CartesianWrenchControllerNode::starting()
 {
-  return controller_.start();
+  return controller_.starting();
 }
 
 void CartesianWrenchControllerNode::update()

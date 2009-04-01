@@ -56,7 +56,7 @@ public:
 
   bool initialize(mechanism::RobotState *robot, const std::string& root_name, 
                   const std::string& tip_name, const std::string& controller_name);
-  bool start();
+  bool starting();
   void update();
 
   // input of the controller
@@ -101,7 +101,7 @@ class CartesianTwistControllerIkNode : public Controller
   ~CartesianTwistControllerIkNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool start();
+  bool starting();
   void update();
   void command();
 
