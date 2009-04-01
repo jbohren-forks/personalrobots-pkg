@@ -30,7 +30,7 @@
 #define AMCL_LASER_H
 
 #include "amcl_sensor.h"
-#include "map/map.h"
+#include "../map/map.h"
 
 // Laser sensor data
 class AMCLLaserData : public AMCLSensorData

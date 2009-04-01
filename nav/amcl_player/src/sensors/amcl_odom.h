@@ -30,7 +30,7 @@
 #define AMCL_ODOM_H
 
 #include "amcl_sensor.h"
-#include "pf/pf_pdf.h"
+#include "../pf/pf_pdf.h"
 
 // Odometric sensor data
 class AMCLOdomData : public AMCLSensorData
