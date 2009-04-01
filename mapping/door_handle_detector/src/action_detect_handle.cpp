@@ -49,15 +49,18 @@ static const string fixed_frame = "odom_combined";
 
 
 DetectHandleAction::DetectHandleAction(Node& node): 
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_door_action"),
+  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_handle"),
   node_(node),
   tf_(node)
 {
-  node_.advertise<robot_msgs::PointStamped>("head_pan_tilt_controller/frame_track_point",10);
+  node_.advertise<robot_msgs::PointStamped>("head_controller/head_track_point",10);
 };
 
 
-DetectHandleAction::~DetectHandleAction(){};
+DetectHandleAction::~DetectHandleAction()
+{
+  node_.unadvertise("head_controller/head_track_point");
+};
 
 
 
@@ -68,22 +71,28 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
   notifyActivated();
 
   robot_msgs::Door result_laser, result_camera;
+  /*
   if (!laserDetection(door, result_laser)){
     if (request_preempt_)
       notifyPreempted(door);
     else
       notifyAborted(door);
   }
-
+  notifySucceeded(result_laser);
+  */
   if (!cameraDetection(door, result_camera)){
-    if (request_preempt_)
+    if (request_preempt_){
+      ROS_INFO("DetectHandleAction: Preempted");
       notifyPreempted(door);
-    else
+    }
+    else{
+      ROS_INFO("DetectHandleAction: Aborted");
       notifyAborted(door);
+    }
   }
 
-  notifySucceeded(result_laser);
-  //notifySucceeded(result_camera);
+  ROS_INFO("DetectHandleAction: Succeeded");
+  notifySucceeded(result_camera);
 }
 
 
@@ -154,7 +163,12 @@ bool DetectHandleAction::cameraDetection(const robot_msgs::Door& door_in,
   door_pnt.point.x = (door_in.door_p1.x+door_in.door_p2.x)/2.0;
   door_pnt.point.y = (door_in.door_p1.y+door_in.door_p2.y)/2.0;
   door_pnt.point.z = 0.9;
-  node_.publish("head_pan_tilt_controller/frame_track_point", door_pnt);
+  cout << "door_pnt.point " << door_in.header.frame_id << " " 
+       << door_pnt.point.x << " " 
+       << door_pnt.point.y << " " 
+       <<  door_pnt.point.z << endl;
+  node_.publish("head_controller/head_track_point", door_pnt);
+  ros::Duration().fromSec(2).sleep();
 
   // detect handle
   if (request_preempt_) return false;
@@ -162,7 +176,7 @@ bool DetectHandleAction::cameraDetection(const robot_msgs::Door& door_in,
   door_handle_detector::DoorsDetector::Request  req_handledetect;
   door_handle_detector::DoorsDetector::Response res_handledetect;
   req_handledetect.door = door_in;
-  if (!ros::service::call("????????????", req_handledetect, res_handledetect)){
+  if (!ros::service::call("door_handle_vision_detector", req_handledetect, res_handledetect)){
     ROS_ERROR("DetectHandleAction: failed to detect a handle");
     return false;
   }

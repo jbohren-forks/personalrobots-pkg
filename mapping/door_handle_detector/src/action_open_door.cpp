@@ -47,7 +47,7 @@ static const string fixed_frame = "odom_combined";
 
 
 OpenDoorAction::OpenDoorAction() : 
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("open_door_action"), 
+  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("open_door"), 
   node_(ros::Node::instance()),    
   request_preempt_(false)
 {};

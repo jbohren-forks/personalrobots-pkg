@@ -47,7 +47,7 @@ static const string fixed_frame = "odom_combined";
 
 
 GraspDoorAction::GraspDoorAction() : 
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("grasp_door_action"), 
+  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("grasp_handle"), 
   node_(ros::Node::instance()),
   request_preempt_(false),
   tf_(*node_)

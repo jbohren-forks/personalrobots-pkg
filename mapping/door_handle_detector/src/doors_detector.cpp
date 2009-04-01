@@ -418,21 +418,33 @@ bool
     if (goodness_factor[cc] == 0)
       continue;
 
+    // initialize with original door message
+    result[nr_d] = door;
+
     // Save the weight (we need to reorder at the end)
     result[nr_d].weight = goodness_factor[cc];
 
     // Get the min_p and max_p of selected cluster
     cloud_geometry::statistics::getLargestXYPoints (pmap_.polygons[cc], min_p, max_p);
 
-    // @RADU: The doors that are detected are all in the parameter frame, not in the door frame
     // Reply doors message in same frame as request doors message
-    result[nr_d].header.frame_id = door.header.frame_id;
-    result[nr_d].door_p1 = min_p;
-    result[nr_d].door_p2 = max_p;
+    tf::Stamped<tf::Point> pnt_p1(tf::Vector3(min_p.x, min_p.y, min_p.z), pointcloud.header.stamp, parameter_frame_);
+    tf_.transformPoint(door.header.frame_id, pnt_p1, pnt_p1);
+    result[nr_d].door_p1.x = pnt_p1[0];
+    result[nr_d].door_p1.y = pnt_p1[1];
+    result[nr_d].door_p1.z = pnt_p1[2];
 
-    result[nr_d].normal.x      = coeff[cc][0];
-    result[nr_d].normal.y      = coeff[cc][1];
-    result[nr_d].normal.z      = coeff[cc][2];
+    tf::Stamped<tf::Point> pnt_p2(tf::Vector3(max_p.x, max_p.y, min_p.z), pointcloud.header.stamp, parameter_frame_);
+    tf_.transformPoint(door.header.frame_id, pnt_p2, pnt_p2);
+    result[nr_d].door_p2.x = pnt_p2[0];
+    result[nr_d].door_p2.y = pnt_p2[1];
+    result[nr_d].door_p2.z = pnt_p2[2];
+
+    tf::Stamped<tf::Point> norm(tf::Vector3(coeff[cc][0], coeff[cc][1], coeff[cc][2]), pointcloud.header.stamp, parameter_frame_);
+    tf_.transformVector(door.header.frame_id, norm, norm);
+    result[nr_d].normal.x = norm[0];
+    result[nr_d].normal.y = norm[1];
+    result[nr_d].normal.z = norm[2];
 
     // Need min/max Z
     cloud_geometry::statistics::getMinMax (pmap_.polygons[cc], min_p, max_p);
