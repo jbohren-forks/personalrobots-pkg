@@ -252,7 +252,7 @@ void PR2GripperTransmission::propagatePosition(
     if (js[i]->joint_->name_ == gap_joint_)
     {
       // assign gap joint
-      js[i]->position_       = gap_size;
+      js[i]->position_       = gap_size*2.0; // function engineering's transmission give half the total gripper size
       js[i]->velocity_       = gap_velocity;
       js[i]->applied_effort_ = gap_effort;
       // std::cout << "propagatePosition gap_joint js[" << i << "]:" << js[i]->joint_->name_
