@@ -27,10 +27,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defparameter *robot-radius* .32 "Circumscribed radius of robot in metres")
-(defparameter *wall-buffer* .2 "Additional buffer distance that we'd like to keep from wall")
+(defparameter *wall-buffer* .1 "Additional buffer distance that we'd like to keep from wall")
 (defparameter *move-base-timeout-multiplier* 10 "Given a goal D metres away, timeout on move-base after D times this many seconds")
 (defparameter *wait-inc* .5)
-(defparameter *path-clear-wait-time* 5)
+(defparameter *path-clear-wait-time* 6)
 (defparameter *person-timeout-threshold* 4)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -99,29 +99,30 @@
 (defun wait-then-move (x y theta)
   (move-to-right)
   (ros-info "Waiting ~a seconds for path to become clear" *path-clear-wait-time*)
-  (move-to x y theta))
+  (sleep *path-clear-wait-time*)
+  (move-to x y theta 0))
 
 (defun move-to-right ()
   (ros-info "Shifting to right lane")
   (move-action (waiting-pose *robot-pose* *hallway*)))
 
-(defun move-to (x y theta)
+(defun move-to (x y theta &optional (timeout 1))
   (let ((m (make-instance '<Pose2DFloat32>)))
     (setf (deprecated_msgs:x-val m) x
 	  (deprecated_msgs:y-val m) y
 	  (deprecated_msgs:th-val m) theta)
-    (move-action m)))
+    (move-action m timeout)))
 
 
 
 
-(defun move-action (m)
+(defun move-action (m &optional (timeout 1))
   "Encapsulates durative action as a blocking call.  Returns :succeeded or :aborted (preemption is considered an error)"
   (declare (<Pose2DFloat32> m))
   (with-message-fields ((x :x) (y :y) (theta :th)) m
     (with-mutex (*node-lock*)
       (setq *state-changes* nil)
-      (send-nav-goal x y theta))
+      (send-nav-goal x y theta timeout))
     (ros-info "Waiting for move to ~a, ~a, ~a to become active" x y theta)
     (let ((count 0))
       (loop-at-most-every *wait-inc*
@@ -135,25 +136,31 @@
 	   (return-from move-action))))
     (let ((count 0)
 	  (max-count (timeout x y *wait-inc*)))
-      (ros-info "Waiting ~a seconds for move to ~a, ~a, ~a to become inactive" (* max-count *wait-inc*) x y theta)
+      (ros-info "Waiting at most ~a seconds for move to ~a, ~a, ~a to become inactive" (* max-count *wait-inc*) x y theta)
       (loop-at-most-every *wait-inc*
 	 (let ((msg (find-if #'(lambda (state-msg)
-				 (and (= (status state-msg) (symbol-code '<ControllerStatus> :success))
+				 (and (or (succeeded state-msg) (aborted state-msg))
 				      (refers-to-goal state-msg x y)))
 			     *state-changes*)))
 	   (when msg
-	     (ros-info "Succeeded with message ~a" msg)
-	     (return-from move-action :succeeded))
+	     (cond
+	       ((succeeded msg)
+		(ros-info "Succeeded with message ~a" msg)
+		(return-from move-action :succeeded))
+	       ((aborted msg)
+		(ros-info "Plan could not be found for move; aborting")
+		(return-from move-action :aborted))))
 	   (when (> (incf count) max-count)
-	     (ros-info "Aborting as timeout exceeded")
+	     (ros-info "Aborting as timeout exceeded.  This shouldn't have been reached due to timeout to goal!")
 	     (disable-nav)
 	     (return-from move-action :aborted)))))))
 				  
 
-(defun send-nav-goal (x y th)
+(defun send-nav-goal (x y th timeout)
   (let ((m (make-instance 'robot_msgs:<Planner2DGoal>)))
     (setf (robot_msgs:enable-val m) 1
 	  (roslib:frame_id-val (robot_msgs:header-val m)) *global-frame*
+	  (robot_msgs:timeout-val m) timeout
 	  (deprecated_msgs:x-val (robot_msgs:goal-val m)) x
 	  (deprecated_msgs:y-val (robot_msgs:goal-val m)) y
 	  (deprecated_msgs:th-val (robot_msgs:goal-val m)) th)
@@ -240,11 +247,17 @@
   "Return the pose corresponding to 'shifting to the right lane' in the map frame"
   (declare (pose current-pose) (values <Pose2DFloat32>))
   (let* ((corridor-pose (transform-pose (corridor-transform corridor) current-pose))
+	 (corridor-frame-position (pose-position corridor-pose))
 	 (facing-forward (<= 0.0 (pose-orientation corridor-pose) pi))
 	 (target-wall-offset (if facing-forward
 				 (- (corridor-width corridor) *robot-radius* *wall-buffer*)
 				 (+ *robot-radius* *wall-buffer*)))
-	 (global-pose (transform-pose (inverse (corridor-transform corridor)) (make-pose (vector target-wall-offset (aref (pose-position corridor-pose) 1)) (/ pi (if facing-forward 2 -2)))))
+	 (target-wall-y (+ (aref corridor-frame-position 1)
+			   (* (if facing-forward 1 -1)
+			      (abs (- target-wall-offset (aref corridor-frame-position 0))))))
+	 (global-pose (transform-pose (inverse (corridor-transform corridor)) 
+				      (make-pose (vector target-wall-offset target-wall-y) 
+						 (/ pi (if facing-forward 2 -2)))))
 	 (m (make-instance '<Pose2DFloat32>)))
     (setf (deprecated_msgs:x-val m) (aref (pose-position global-pose) 0)
 	  (deprecated_msgs:y-val m) (aref (pose-position global-pose) 1)
@@ -266,5 +279,10 @@
 (defun status (m)
   (robot_msgs:value-val (robot_msgs:status-val m)))
 
-    
+
+(defun aborted (m)
+  (eq (status m) (symbol-code '<ControllerStatus> :aborted)))
+
+(defun succeeded (m)
+  (eq (status m) (symbol-code '<ControllerStatus> :success)))
     
