@@ -244,6 +244,20 @@ class DetectDoor extends DoorManipulationBehavior {
 };
 
 /**
+ * DetectHandle is activated to search for the door. It will assume it is in a suitable observation position facing the door
+ */
+class DetectHandle extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  DetectHandle(Mode _mode){
+    super(_mode);
+  }
+};
+
+/**
  * NotifyDoorBlocked will just send a message to update the world model that the given door is blocked. We will indicate
  * the parameters based on the current and target positions
  */

@@ -169,16 +169,16 @@ int main(int argc, char** argv){
   robot_actions::ActionRunner runner(10.0);
   
   // Add action stubs for doors
-  executive_trex_pr2::StubAction<robot_msgs::Door> detect_door("detect_door");
+  //executive_trex_pr2::StubAction<robot_msgs::Door> detect_door("detect_door");
   executive_trex_pr2::StubAction<robot_msgs::Door> grasp_handle("grasp_handle");
   executive_trex_pr2::StubAction<robot_msgs::Door> open_door("open_door");
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
+  //runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp_handle);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door);
 
   // Action stubs for plugs
-  executive_trex_pr2::StubAction1<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
-  runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect_plug_on_base);
+  //executive_trex_pr2::StubAction1<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
+  //runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect_plug_on_base);
 
   // Allocate other action stubs
   executive_trex_pr2::StubAction<robot_actions::Pose2D> move_base("move_base");

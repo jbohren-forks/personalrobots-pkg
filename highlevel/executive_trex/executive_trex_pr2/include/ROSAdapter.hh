@@ -150,7 +150,49 @@ namespace TREX {
      * @param out The output point
      * @param in The input point
      */
-    void transformPoint(const std::string& source_frame_id, robot_msgs::Point32& out, const robot_msgs::Point32& in);
+    template<class T>
+    void transformPoint(const std::string& source_frame_id, T& out, const T& in){
+      checkTFEnabled();
+
+      TREX_INFO("ros:debug:synchronization", nameString() << "Transforming point with source frame = " << source_frame_id);
+
+      tf::Stamped<tf::Point> tmp;
+      tmp.stamp_ = ros::Time();
+      tmp.frame_id_ = source_frame_id;
+      tmp[0] = in.x;
+      tmp[1] = in.y;
+      tmp[2] = in.z;
+
+      // Should we be waiting here?
+      try{
+	tf.transformPoint(frame_id, tmp, tmp);
+	out.x = tmp[0];
+	out.y = tmp[1];
+	out.z = tmp[2];
+      }
+      catch(tf::LookupException& ex) {
+	TREX_INFO("ros:debug:synchronization", nameString() << "No transform available. Error: " << ex.what());
+	ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      }
+      catch(tf::ConnectivityException& ex) {
+	TREX_INFO("ros:debug:synchronization", nameString() << "Connectivity Error: " << ex.what());
+	ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      }
+      catch(tf::ExtrapolationException& ex) {
+	TREX_INFO("ros:debug:synchronization", nameString() << "Extrapolation Error: " << ex.what());
+	ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      }
+
+      TREX_INFO("ros:debug:synchronization", "Transformed point from [" << source_frame_id << "]" << 
+		"<" << in.x << ", " << in.y << ", " << in.z << "> to [" << frame_id << "]" << 
+		"<" << out.x << ", " << out.y << ", " << out.z << ">");
+    }
+
+    /**
+     * @brief Utility to test if we can transform from the given frame. Call during synchronization
+     * for handling error reporting if expected frames are not provided.
+     */
+    bool canTransform(const std::string& source_frame);
 
     /**
      * @brief Helper method to obtain an index for a given ros name.

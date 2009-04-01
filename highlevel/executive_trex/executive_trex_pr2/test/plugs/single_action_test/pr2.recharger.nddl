@@ -15,7 +15,7 @@ map_initialize_from_file("willow.tmap");
 rejectable(detect_plug_on_base.Active cmd_detect_plug_on_base);
 
 // Parameters
-cmd_detect_plug_on_base.frame_id = "base_footprint";
+cmd_detect_plug_on_base.frame_id = "base_link";
 
 
 

@@ -11,7 +11,7 @@ namespace TREX {
 
   template <class Goal, class State, class Feedback> class ROSActionAdapter: public ROSAdapter {
   public:
-
+    
     ROSActionAdapter(const LabelStr& agentName, const TiXmlElement& configData)
       : ROSAdapter(agentName, configData, 1, "/feedback"), inactivePredicate(timelineType + ".Inactive"), activePredicate(timelineType + ".Active"),
 	is_active(false), lastPublished(-1), lastUpdated(0), 
@@ -19,12 +19,10 @@ namespace TREX {
 	_preempt_topic(timelineName + "/preempt"),
 	_feedback_topic(timelineName + "/feedback"){
     }
-
+   
     virtual ~ROSActionAdapter(){}
 
   protected:
-    State _state_msg;
-    State _observation;
 
     /**
      * @brief Handle state update message from the controller. This will fill the _state_msg parameters and
@@ -49,7 +47,7 @@ namespace TREX {
 	// Update marker to prevent overwrite
 	lastUpdated = getCurrentTick();
 
-	TREX_INFO("ros:debug:synchronization", nameString() << "Received transition to " << LabelStr(getResultStatus(_observation).getSingletonValue()).toString());
+	TREX_INFO("ros:debug:synchronization", nameString() << "Received transition to " << LabelStr(getResultStatus(_observation).getSingletonValue()).toString())
 	ROS_DEBUG("%sReceived transition to %s",  nameString().c_str(), LabelStr(getResultStatus(_observation).getSingletonValue()).c_str());
 
 	_observation.unlock();
@@ -79,9 +77,15 @@ namespace TREX {
     }
 
     Observation* getObservation(){
+
+      TREX_INFO("ros:debug:synchronization", nameString() << "First call - before checking flag. " <<
+		"Last updated at " << lastUpdated << " and last published " <<  lastPublished);
+
       // Nothing to do if we published for the last update
       if(((int) lastUpdated) == lastPublished)
 	return NULL;
+
+      TREX_INFO("ros:debug:synchronization", nameString() << "Getting observation...");
 
       ObservationByValue* obs = NULL;
 
@@ -100,6 +104,7 @@ namespace TREX {
 	fillInactiveObservationParameters(_observation.feedback, obs);
 
 	obs->push_back("status", getResultStatus(_observation).copy());
+
 	is_active = false;
       }
       else if(_observation.status.value == _observation.status.ACTIVE && !is_active){
@@ -108,6 +113,7 @@ namespace TREX {
 	obs = new ObservationByValue(timelineName, activePredicate);
 
 	fillActiveObservationParameters(_observation.goal, obs);
+
 	is_active = true;
       }
 
@@ -115,6 +121,8 @@ namespace TREX {
       if(tf_enabled){
 	obs->push_back("frame_id", new StringDomain(frame_id));
       }
+
+      TREX_INFO("ros:debug:synchronization", nameString() << "Observation retrieved.");
 
       _observation.unlock();
 
@@ -195,7 +203,13 @@ namespace TREX {
 
     virtual void fillDispatchParameters(Goal& msg, const TokenId& goalToken) = 0;
 
+    bool isActive() const {return is_active;}
+
+    bool succeeded() const {return _observation.status.value == _observation.status.SUCCESS;}
+
   private:
+    State _state_msg; /*!< This message is used for the feedback callback handler */
+    State _observation; /*!< This message is where we copy the state update on a transition */
     const LabelStr inactivePredicate;
     const LabelStr activePredicate;
     bool is_active;

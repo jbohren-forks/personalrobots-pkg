@@ -5,12 +5,12 @@
  * This action selection loop iterates until it exists with abort or done
  *
  * Control variables, listed in order in whcih we expect them to become true:
- * - outlet_localized
+ * - outlet_localized_coarse
  * - plug_localized_on_base
- * - ready_to_grasp
+ * - ready_to_grasp_plug
  * - plug_grasped
  * - plug_staged
- * - socket_localized
+ * - outlet_localized_fine
  * - ready_to_servo
  * - ready_to_insert
  * - plug_inserted
@@ -46,7 +46,7 @@ on recharging select{
  case plugged_in == true && plug_grasped == false:
    abort; // Lost the plug
  case battery_charged == true && plug_stowed == true:
-   done; // Ready to depart
+   this(#] complated_state == Holds(SUCCEEDED); // Successor is inactive.
  case battery_charged == true && plugged_in == false:
    stow_plug;
  case battery_charged == true && plugged_in == true :
@@ -59,7 +59,7 @@ on recharging select{
    insert_plug_in_socket;
  case ready_to_servo == true:
    servo_to_outlet:
- case plug_staged == true && socket_localized == false:
+ case plug_staged == true && outlet_localized_fine == false:
    detect_outlet;
  case plug_staged == false && plug_grasped == true:
    localize_plug_in_gripper;
@@ -70,9 +70,13 @@ on recharging select{
  case outlet_localized == true:
    detect_plug;
  default:
-   find_socket; // Coarse. Iterate motion and perception
+   detect_outlet_coarse; // Coarse. Iterate motion and perception
 }
 
+detect_outlet_coarse {
+// Use a notion of time to say when to give up on a specific outlet.
+
+}
 /**
  * General constraints
  */
@@ -89,14 +93,17 @@ on recharging  {
 
   // These relations can be stated, though they may not be necessary. Stating these constraints allows for
   // error conditions to revert the state of the controller
-  if(plug_inserted == false) 
+  if(plug_inserted == false){
     plugged_in = false;
+  }
 
-  if(plug_grasped == false) 
+  if(plug_grasped == false){
     plug_staged = false;
+  }
 
-  if(plug_staged == false || socket_localized == false)
+  if(plug_staged == false || socket_localized == false){
     ready_to_servo = flase;
+  }
 
 
 

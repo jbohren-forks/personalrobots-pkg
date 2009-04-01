@@ -43,6 +43,7 @@ namespace TREX {
     }
     else {
       frame_id = frame_param;
+      TREX_INFO("ros:info", "Storing data for " << timelineName.c_str() << " in the " << frame_id << " frame.");
     }
 
     // Iterate over child xml nodes and look for nodes of type Param to populate the nddl to ros mappings
@@ -65,7 +66,7 @@ namespace TREX {
   }
 
   void ROSAdapter::handleInit(TICK initialTick, const std::map<double, ServerId>& serversByTimeline, const ObserverId& observer){
-    ROS_INFO("Trying to initialize %s.", timelineName.c_str());
+    TREX_INFO("ros:info", "Trying to initialize " << timelineName.c_str());
 
     TREX::Adapter::handleInit(initialTick, serversByTimeline, observer);
 
@@ -75,24 +76,22 @@ namespace TREX {
 
     // Wait till we are initialized before moving ahead
     while(!isInitialized() && ros::Node::instance()->ok()){
-      ROS_INFO("Waiting to connect for %s. If this is taking too long then the expected message is not being published.", timelineName.c_str());
+      TREX_INFO("ros:info", "Waiting to connect for " << timelineName.c_str() << 
+		". If this is taking too long then the expected message is not being published. Check rostopic hz <topic_name>");
       sleep(1);
     }
 
-    ROS_INFO("Connection established for %s", timelineName.c_str());
+    TREX_INFO("ros:info", "Connection established for " << timelineName.c_str());
   }
 
   ROSAdapter::~ROSAdapter() {
   }
 
   bool ROSAdapter::synchronize(){
-    TREX_INFO("ros:synchronization", nameString() << "Checking..");
 
     // Derived class will populate actual observations
     Observation* obs = NULL;
     obs = getObservation();
-
-    TREX_INFO("ros:synchronization", nameString() << obs->toString());
 
     if(obs != NULL){
       sendNotify(*obs);
@@ -137,6 +136,8 @@ namespace TREX {
     checkTFEnabled();
 
     tf::Stamped<tf::Pose> source_pose, target_pose;
+
+    // The source we are looking for is the origin in the base footprint frame
     source_pose.setIdentity();
     source_pose.frame_id_ = "base_footprint";
     source_pose.stamp_ = ros::Time();
@@ -146,7 +147,7 @@ namespace TREX {
       tf.transformPose(frame_id, source_pose, target_pose);
     }
     catch(tf::LookupException& ex) {
-      ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      ROS_ERROR("No Transform available getting 2D pose from base_footprint to %s. Error: %s\n", target_pose.frame_id_.c_str(), ex.what());
     }
     catch(tf::ConnectivityException& ex) {
       ROS_ERROR("Connectivity Error: %s\n", ex.what());
@@ -160,7 +161,8 @@ namespace TREX {
     double useless_pitch, useless_roll;
     target_pose.getBasis().getEulerZYX(th, useless_pitch, useless_roll);
 
-    ROS_DEBUG("Transformed pose to (x=%f, y=%f, th=%f)", x, y, th);
+    debugMsg("ros:debug:synchronization:get2DPose", 
+	     "Transformed base pose to (x=" << x << ", y=" << y << ", th=" << th << ")");
   }
 
   void ROSAdapter::readPose(ObservationByValue& obs, double x, double y, double th){
@@ -197,41 +199,22 @@ namespace TREX {
     condDebugMsg(!dom.isSingleton(), "trex:warning:dispatching", "Reducing unbound paramater " << dom.toString() << " to ''");
   }
 
-  // Transform one point to another. The output is in the frame id of the adapter
-  void ROSAdapter::transformPoint(const std::string& source_frame_id, robot_msgs::Point32& out, const robot_msgs::Point32& in){
-    checkTFEnabled();
-
-    tf::Stamped<tf::Point> tmp;
-    tmp.stamp_ = ros::Time();
-    tmp.frame_id_ = source_frame_id;
-    tmp[0] = in.x;
-    tmp[1] = in.y;
-    tmp[2] = in.z;
-
-    // Should we be waiting here?
-    try{
-      tf.transformPoint(frame_id, tmp, tmp);
-      out.x = tmp[0];
-      out.y = tmp[1];
-      out.z = tmp[2];
-    }
-    catch(tf::LookupException& ex) {
-      ROS_ERROR("No Transform available Error: %s\n", ex.what());
-    }
-    catch(tf::ConnectivityException& ex) {
-      ROS_ERROR("Connectivity Error: %s\n", ex.what());
-    }
-    catch(tf::ExtrapolationException& ex) {
-      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-    }
-
-    ROS_DEBUG("Transformed pose to (x=%f, y=%f, th=%f)", out.x, out.y, out.y);
-  }
-
   void ROSAdapter::checkTFEnabled(){
     if(!tf_enabled){
       ROS_ERROR("Attempted to call a transform for an adapater that is not transform enabled. Check your TREX input configuration for the adapter %s and ensure the 'frame_id' parameter is set",
 		getName().c_str());
     }
+  }
+
+  bool ROSAdapter::canTransform(const std::string& source_frame_id){
+    static const ros::Duration timeout(ros::Duration().fromSec(1.0));
+
+      // The message must have a frame id set
+    if(!tf.canTransform(frame_id, source_frame_id, ros::Time::now(), timeout)){
+      debugMsg("ros:error:synchronization", nameString() << "No transfrom available from " << source_frame_id << " to " << frame_id); 
+      return false;
+    }
+
+    return true;
   }
 }

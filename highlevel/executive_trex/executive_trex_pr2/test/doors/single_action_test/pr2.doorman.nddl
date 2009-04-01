@@ -4,18 +4,19 @@
 #include "test/doors/single_action_test/imports.nddl"
 #include "world_model/topological_map.nddl"
 
-/*
+/* Select the ones we want here
 MoveBase move_base = new MoveBase(External);
 ReleaseDoor release_door = new ReleaseDoor(External);
 OpenDoorWithGrasp open_door = new OpenDoorWithGrasp(External);
 GraspHandle grasp_handle = new GraspHandle(External);
 OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
-DetectDoor detect_door = new DetectDoor(External);
+DetectDoor door_detector = new DetectDoor(External);
 CheckDoorway check_doorway = new CheckDoorway(External);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
 */
 
 DetectDoor detect_door = new DetectDoor(External);
+DetectHandle detect_handle = new DetectHandle(External);
 
 close();
 
@@ -24,11 +25,17 @@ map_initialize_from_file("willow.tmap");
 
 // The goal is to execute an OpenDoor action, where we give it the door data
 rejectable(detect_door.Active cmd_detect_door);
+rejectable(detect_door.Inactive feedback_detect_door);
+rejectable(detect_handle.Active cmd_detect_handle);
 
-// Parameters
+// Bind order
+cmd_detect_door meets feedback_detect_door;
+cmd_detect_door before cmd_detect_handle;
+
+eq(feedback_detect_door.status, SUCCESS);
+
+// Input is for door detection
 cmd_detect_door.frame_id = "base_footprint";
-
-// Bind door state data
 cmd_detect_door.frame_p1_x =  1.5;
 cmd_detect_door.frame_p1_y = -0.5;
 cmd_detect_door.frame_p1_z =  1.0;
@@ -41,10 +48,33 @@ cmd_detect_door.door_p1_z =  1.0;
 cmd_detect_door.door_p2_x =  1.5;
 cmd_detect_door.door_p2_y =  0.5;
 cmd_detect_door.door_p2_z =  1.0;
+cmd_detect_door.handle_x =  1.5;
+cmd_detect_door.handle_y =  0.5;
+cmd_detect_door.handle_z =  1.0;
 cmd_detect_door.height =  2.5;
 cmd_detect_door.hinge =  UNKNOWN;
 cmd_detect_door.rot_dir =  UNKNOWN;
 
+//
+cmd_detect_handle.frame_id = "base_footprint";
+cmd_detect_handle.frame_p1_x =  1.5;
+cmd_detect_handle.frame_p1_y = -0.5;
+cmd_detect_handle.frame_p1_z =  1.0;
+cmd_detect_handle.frame_p2_x =  1.5;
+cmd_detect_handle.frame_p2_y =  0.5;
+cmd_detect_handle.frame_p2_z =  1.0;
+cmd_detect_handle.door_p1_x =  1.5;
+cmd_detect_handle.door_p1_y =  -0.5;
+cmd_detect_handle.door_p1_z =  1.0;
+cmd_detect_handle.door_p2_x =  1.5;
+cmd_detect_handle.door_p2_y =  0.5;
+cmd_detect_handle.door_p2_z =  1.0;
+cmd_detect_handle.handle_x =  1.5;
+cmd_detect_handle.handle_y =  0.0;
+cmd_detect_handle.handle_z =  1.0;
+cmd_detect_handle.height =  2.5;
+cmd_detect_handle.hinge =  UNKNOWN;
+cmd_detect_handle.rot_dir =  UNKNOWN;
 
-
+//get_state(cmd_detect_handle.state, feedback_detect_door.state);
 
