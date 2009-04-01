@@ -9,6 +9,7 @@
  <depend package="roscpp"/>
  <depend package="costmap_2d"/>
  <depend package="sbpl"/>
+ <depend package="sbpl_door_planner"/>
  <depend package="libsunflower"/>
  <depend package="navfn"/>
  <export>

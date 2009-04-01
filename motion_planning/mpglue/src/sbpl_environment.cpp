@@ -469,6 +469,103 @@ namespace mpglue {
 							    nominalvel_mpersecs,
 							    timetoturn45degsinplace_secs);
   }
+
+
+
+
+  /**
+     \todo Hardcoded goal tolerance: 0.1 meters in X and Y, 22.5 degrees in Theta.
+  */
+  SBPLEnvironment * SBPLEnvironment::
+  createXYThetaDoor(boost::shared_ptr<CostmapAccessor const> cm,
+		       boost::shared_ptr<IndexTransform const> it,
+		       footprint_t const & footprint,
+		       double nominalvel_mpersecs,
+		       double timetoturn45degsinplace_secs,
+		       std::string const & motor_primitive_filename,
+		       std::ostream * dbgos) throw(std::exception)
+  {
+    EnvironmentNAVXYTHETADOOR * env(new EnvironmentNAVXYTHETADOOR());
+    if ( ! env->SetEnvParameter("cost_inscribed", cm->getInscribedCost())) {
+      delete env;
+      throw runtime_error("mpglue::SBPLEnvironment::createXYThetaLattice():"
+			  " EnvironmentNAVXYTHETADOOR::SetEnvParameter(\"cost_inscribed\", "
+			  + sfl::to_string(cm->getInscribedCost()) + ") failed");
+    }
+    if ( ! env->SetEnvParameter("cost_possibly_circumscribed", cm->getPossiblyCircumcribedCost())) {
+      delete env;
+      throw runtime_error("mpglue::SBPLEnvironment::createXYThetaLattice():"
+			  " EnvironmentNAVXYTHETADOOR::SetEnvParameter(\"cost_possibly_circumscribed\", "
+			  + sfl::to_string(cm->getPossiblyCircumcribedCost()) + ") failed");
+    }
+    
+    int const obst_cost_thresh(cm->getLethalCost());
+    vector<sbpl_2Dpt_t> perimeterptsV;
+    perimeterptsV.reserve(footprint.size());
+    for (size_t ii(0); ii < footprint.size(); ++ii) {
+      sbpl_2Dpt_t pt;
+      pt.x = footprint[ii].x;
+      pt.y = footprint[ii].y;
+      perimeterptsV.push_back(pt);
+    }
+    
+    static double const goaltol_x(0.1);
+    static double const goaltol_y(0.1);
+    static double const goaltol_theta(22.5 * M_PI / 180.0);
+    
+    if (dbgos) {
+      *dbgos << "mpglue::SBPLEnvironment:createXYThetaLattice():\n"
+	     << "  motor_primitive_filename = " << motor_primitive_filename << "\n"
+	     << "  perimeterptsV =\n";
+      for (vector<sbpl_2Dpt_t>::const_iterator ip(perimeterptsV.begin());
+	   ip != perimeterptsV.end(); ++ip)
+	*dbgos << "    " << ip->x << "\t" << ip->y << "\n";
+      *dbgos << "  goaltol_x = " << goaltol_x << "\n"
+	     << "  goaltol_y = " << goaltol_y << "\n"
+	     << "  goaltol_theta = " << goaltol_theta << " rad = "
+	     << goaltol_theta * 180.0 / M_PI << " deg\n"
+	     << "  nominalvel_mpersecs = " << nominalvel_mpersecs << "\n"
+	     << "  timetoturn45degsinplace_secs = " << timetoturn45degsinplace_secs << "\n"
+	     << "  obst_cost_thresh = " << obst_cost_thresh << "\n" << flush;
+    }
+    
+    // good: Take advantage of the fact that InitializeEnv() can take
+    // a NULL-pointer as mapdata in order to initialize to all
+    // freespace.
+    //
+    // bad: Most costmaps do not support negative grid indices, so the
+    // generic CostmapAccessor::getXBegin() and getYBegin() are ignored
+    // and simply assumed to always return 0 (which they won't if we
+    // use growable costmaps).
+    env->InitializeEnv(cm->getXEnd(), // width
+		       cm->getYEnd(), // height
+		       0,	// mapdata
+		       0, 0, 0, // start (x, y, theta)
+		       0, 0, 0,	// goal (x, y, theta)
+		       goaltol_x, goaltol_y, goaltol_theta,
+		       perimeterptsV, it->getResolution(), nominalvel_mpersecs,
+		       timetoturn45degsinplace_secs, obst_cost_thresh,
+		       motor_primitive_filename.c_str());
+    
+    // as above, assume getXBegin() and getYBegin() are always zero
+    for (ssize_t ix(0); ix < cm->getXEnd(); ++ix)
+      for (ssize_t iy(0); iy < cm->getYEnd(); ++iy) {
+	int cost;
+	if (cm->getCost(ix, iy, &cost))	// "always" succeeds though
+	  env->UpdateCost(ix, iy, cost);
+      }
+    
+    return new SBPLEnvironmentDSI<EnvironmentNAVXYTHETADOOR>(cm, it, env, footprint,
+							    nominalvel_mpersecs,
+							    timetoturn45degsinplace_secs);
+  }
+
+
+
+
+
+
+
   
 }
 

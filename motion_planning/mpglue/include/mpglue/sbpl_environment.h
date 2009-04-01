@@ -62,6 +62,7 @@ using std::vector;
 #include <utils/mdp.h>
 #include <discrete_space_information/environment.h>
 #include <discrete_space_information/nav2d/environment_nav2D.h>
+#include <sbpl_door_planner/environment_navxythetadoor.h>
 
 namespace mpglue {
   
@@ -95,6 +96,14 @@ namespace mpglue {
 					 std::ostream * dbgos) throw(std::exception);
     
     static SBPLEnvironment * createXYThetaLattice(boost::shared_ptr<CostmapAccessor const> cm,
+						  boost::shared_ptr<IndexTransform const> it,
+						  footprint_t const & footprint,
+						  double nominalvel_mpersecs,
+						  double timetoturn45degsinplace_secs,
+						  std::string const & motor_primitive_filename,
+						  std::ostream * dbgos) throw(std::exception);
+
+    static SBPLEnvironment * createXYThetaDoor(boost::shared_ptr<CostmapAccessor const> cm,
 						  boost::shared_ptr<IndexTransform const> it,
 						  footprint_t const & footprint,
 						  double nominalvel_mpersecs,
