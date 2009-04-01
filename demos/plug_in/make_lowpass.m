@@ -6,7 +6,7 @@ args = argv;
 filter_name = args{1};
 alpha = str2num(args{2});
 
-a = [1 (1 - alpha)];
+a = [1 (-(1 - alpha))];
 b = [alpha 0];
 
 printf('<filter name="%s" type="TransferFunctionFilter">\n', filter_name);
