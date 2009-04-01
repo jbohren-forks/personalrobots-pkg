@@ -12,27 +12,29 @@ typedef float [0.0 1.0] UNIT_FLOAT;
 /**
  * BaseState will capture position and orientation.
  */
-class BaseState extends ROSTFStateVariable {
-	predicate Holds{
-		float x;
-		float y;
-		float th;
-		float accumulatedDistance; // Derived from inputs
-		defaultOnCommit(accumulatedDistance, 0.0);
-	}
+class BaseState extends ROSStateVariable {
+  predicate Holds{
+    string frame_id;
+    float x;
+    float y;
+    float th;
+    float accumulatedDistance; // Derived from inputs
+    defaultOnCommit(accumulatedDistance, 0.0);
+  }
 
-	BaseState(Mode _mode){
-		super(_mode, "Holds", true);
-	}
+  BaseState(Mode _mode){
+    super(_mode, "Holds", true);
+  }
 };
 
 /**
  * MoveBase behavior will handle active control of vehicle to accomplish 
  * a waypoint.
  */
-class MoveBase extends ROSTFAction {
+class MoveBase extends ROSAction {
 
   predicate Inactive{
+    string frame_id;
     float x;
     float y;
     float th;
@@ -43,6 +45,7 @@ class MoveBase extends ROSTFAction {
 
   // Parameters to get to the target
   predicate Active {
+    string frame_id;
     float x;
     float y;
     float th;
@@ -64,15 +67,17 @@ class MoveBase extends ROSTFAction {
  * It will take as input an expected x, y, and th triple in the 'robot frame' and it will give feedback of the 
  * actual x and y values.
  */
-class DetectPlugOnBase extends ROSTFAction {
+class DetectPlugOnBase extends ROSAction {
 
   predicate Active {
+    string frame_id;
     float x;
     float y;
     float th;
   }
 
   predicate Inactive {
+    string frame_id;
     float x;
     float y;
     float th;

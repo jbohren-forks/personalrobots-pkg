@@ -12,13 +12,7 @@
 #include <robot_msgs/Point32.h>
 #include <std_msgs/String.h>
 
-// For transform support
-#include <tf/transform_listener.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/message_notifier.h>
-
 namespace TREX {
-
 
   class ROSAdapter: public Adapter {
   public:
@@ -42,8 +36,6 @@ namespace TREX {
 
     void commonInit(const TiXmlElement& configData);
 
-    static bool hasFrameParam(const TiXmlElement& configData);
-
     bool m_initialized; /*!< Hook to flag if expected ros initialization messages have arrived */
     std::vector<std::string> nddlNames_;
     std::vector<std::string> rosNames_;
@@ -56,11 +48,6 @@ namespace TREX {
     virtual Observation* getObservation() = 0;
     virtual bool dispatchRequest(const TokenId& goal, bool enabled){return true;}
 
-    /**
-     * @brief Simple utility to wrape TF checking and message
-     */
-    void checkTFEnabled();
-
     const std::vector<std::string>& nddlNames() const {return nddlNames_;}
     const std::vector<std::string>& rosNames() const {return rosNames_;}
 
@@ -69,13 +56,24 @@ namespace TREX {
      *******************************************************/
     StringDomain* toStringDomain(const std_msgs::String& msg);
 
+    /**
+     * @brief Extracts a frame if from a token. Will return the empty string if no
+     * frame is found. Assumes the parameter name is 'frame_id'.
+     */
+    static std::string getFrame(const TokenId& token);
+
+    /**
+     * @brief Sets a frame in an observatio. Assumes the parameter name is 'frame_id'.
+     */
+    static void setFrame(const std::string frame_id, ObservationByValue* obs);
+
     // bind a string
     void write(const StringDomain& dom, std_msgs::String& msg);
 
     // Bind intervals to the singleton, or the domain midpoint
     template <class T>
     void write(const AbstractDomain& dom, T& target){
-      double value = (dom.isSingleton() ? dom.getSingletonValue() : (dom.getLowerBound() + dom.getUpperBound() / 2) );
+      double value = (dom.isSingleton() ? dom.getSingletonValue() : (dom.getLowerBound() + dom.getUpperBound()) / 2 );
       condDebugMsg(!dom.isSingleton(), "trex:warning:dispatching", "Reducing unbound paramater " << dom.toString() << " to " << value);
       target = static_cast<T>(value);
     }
@@ -141,59 +139,8 @@ namespace TREX {
      * @param y The y position
      * @param th The yaw angle
      */
-    void get2DPose(double& x, double& y, double& th);
-
-    /**
-     * @brief A utility function that obtains a pose sourced in the frame given by the source frame id
-     * and transformed into the adapter frame given by the member variable - frame_id of the adapter.
-     * @param source_frame_id The frame used to query tf.
-     * @param out The output point
-     * @param in The input point
-     */
-    template<class T>
-    void transformPoint(const std::string& source_frame_id, T& out, const T& in){
-      checkTFEnabled();
-
-      TREX_INFO("ros:debug:synchronization", nameString() << "Transforming point with source frame = " << source_frame_id);
-
-      tf::Stamped<tf::Point> tmp;
-      tmp.stamp_ = ros::Time();
-      tmp.frame_id_ = source_frame_id;
-      tmp[0] = in.x;
-      tmp[1] = in.y;
-      tmp[2] = in.z;
-
-      // Should we be waiting here?
-      try{
-	tf.transformPoint(frame_id, tmp, tmp);
-	out.x = tmp[0];
-	out.y = tmp[1];
-	out.z = tmp[2];
-      }
-      catch(tf::LookupException& ex) {
-	TREX_INFO("ros:debug:synchronization", nameString() << "No transform available. Error: " << ex.what());
-	ROS_ERROR("No Transform available Error: %s\n", ex.what());
-      }
-      catch(tf::ConnectivityException& ex) {
-	TREX_INFO("ros:debug:synchronization", nameString() << "Connectivity Error: " << ex.what());
-	ROS_ERROR("Connectivity Error: %s\n", ex.what());
-      }
-      catch(tf::ExtrapolationException& ex) {
-	TREX_INFO("ros:debug:synchronization", nameString() << "Extrapolation Error: " << ex.what());
-	ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-      }
-
-      TREX_INFO("ros:debug:synchronization", "Transformed point from [" << source_frame_id << "]" << 
-		"<" << in.x << ", " << in.y << ", " << in.z << "> to [" << frame_id << "]" << 
-		"<" << out.x << ", " << out.y << ", " << out.z << ">");
-    }
-
-    /**
-     * @brief Utility to test if we can transform from the given frame. Call during synchronization
-     * for handling error reporting if expected frames are not provided.
-     */
-    bool canTransform(const std::string& source_frame);
-
+    void get2DPose(const robot_msgs::Pose& pose, double& x, double& y, double& th);
+ 
     /**
      * @brief Helper method to obtain an index for a given ros name.
      * @param The rosName to look for
@@ -202,13 +149,12 @@ namespace TREX {
      */
     bool rosIndex(const std::string& rosName, unsigned int& ind) const;
 
+  
+  
     ExecutiveId m_node; /*! The node. */
     const std::string timelineName;
     const std::string timelineType;
     const std::string stateTopic;
-    const bool tf_enabled;
-    std::string frame_id; /**< The frame to use for transforms, if enabled. Note that this is mutable based on task context */
-    tf::TransformListener tf; /**< Used to do transforms */
   };
 }
 #endif

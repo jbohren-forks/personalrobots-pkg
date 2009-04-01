@@ -117,11 +117,6 @@ namespace TREX {
 	is_active = true;
       }
 
-      // If tf enabled then we must populate the frame_id attribute
-      if(tf_enabled){
-	obs->push_back("frame_id", new StringDomain(frame_id));
-      }
-
       TREX_INFO("ros:debug:synchronization", nameString() << "Observation retrieved.");
 
       _observation.unlock();
@@ -161,25 +156,6 @@ namespace TREX {
 
       // Set the goal and its frame
       Goal goal_msg;
-
-      // If tf is enabled, and we are dispatching a request or a recall, then we should update the frame
-      // we want passed on the goal
-      if(tf_enabled){
-	ConstrainedVariableId frame_var = goal->getVariable("frame_id");
-	ROS_ASSERT(frame_var.isId() && frame_var.isValid());
-	// If the frame parameter is open, or a singleton, then close it by restricting the base domain
-	// to the closed string domain given by the current domain
-	if(frame_var->lastDomain().isOpen() || !frame_var->lastDomain().isSingleton()){
-	  StringDomain dom;
-	  dom.insert(frame_id);
-	  dom.close();
-	  frame_var->restrictBaseDomain(dom);
-	}
-	else{
-	  LabelStr lblStr = frame_var->lastDomain().getSingletonValue();
-	  frame_id = lblStr.toString();
-	}
-      }
 
       fillDispatchParameters(goal_msg, goal);
 

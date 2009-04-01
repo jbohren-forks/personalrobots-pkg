@@ -94,8 +94,8 @@ namespace TREX {
      * float handle_z
      */
     void write(const TokenId& token, robot_msgs::Door& msg){
-      // Set the farme we are in
-      msg.header.frame_id = frame_id;
+      // Set the frame we are in
+      msg.header.frame_id = getFrame(token);
 
       // Frame Data
       ROSAdapter::write<float>("frame_p1_x", token, msg.frame_p1.x);
@@ -123,55 +123,39 @@ namespace TREX {
     }
     // Read Observation from Door Message
     void read(ObservationByValue& obs, const robot_msgs::Door& msg){
-
-      // Transform all the points
-      robot_msgs::Point32 frame_p1, frame_p2, door_p1, door_p2, handle;
-      ROSAdapter::transformPoint<robot_msgs::Point32>(msg.header.frame_id, frame_p1, msg.frame_p1);
-      ROSAdapter::transformPoint<robot_msgs::Point32>(msg.header.frame_id, frame_p2, msg.frame_p2);
-      ROSAdapter::transformPoint<robot_msgs::Point32>(msg.header.frame_id, door_p1, msg.door_p1);
-      ROSAdapter::transformPoint<robot_msgs::Point32>(msg.header.frame_id, door_p2, msg.door_p2);
-      ROSAdapter::transformPoint<robot_msgs::Point32>(msg.header.frame_id, handle, msg.handle);
+      setFrame(msg.header.frame_id, &obs);
 
       // Frame Data
-      ROSAdapter::read<float>("frame_p1_x", obs, frame_p1.x);
-      ROSAdapter::read<float>("frame_p1_y", obs, frame_p1.y);
-      ROSAdapter::read<float>("frame_p1_z", obs, frame_p1.z);
-      ROSAdapter::read<float>("frame_p2_x", obs, frame_p2.x);
-      ROSAdapter::read<float>("frame_p2_y", obs, frame_p2.y);
-      ROSAdapter::read<float>("frame_p2_z", obs, frame_p2.z);
+      ROSAdapter::read<float>("frame_p1_x", obs, msg.frame_p1.x);
+      ROSAdapter::read<float>("frame_p1_y", obs, msg.frame_p1.y);
+      ROSAdapter::read<float>("frame_p1_z", obs, msg.frame_p1.z);
+      ROSAdapter::read<float>("frame_p2_x", obs, msg.frame_p2.x);
+      ROSAdapter::read<float>("frame_p2_y", obs, msg.frame_p2.y);
+      ROSAdapter::read<float>("frame_p2_z", obs, msg.frame_p2.z);
       ROSAdapter::read<float>("height", obs, msg.height);
       ROSAdapter::read<int32_t>("hinge", obs, msg.hinge);
       ROSAdapter::read<int32_t>("rot_dir", obs, msg.rot_dir);
 
       // Door Data
-      ROSAdapter::read<float>("door_p1_x", obs, door_p1.x);
-      ROSAdapter::read<float>("door_p1_y", obs, door_p1.y);
-      ROSAdapter::read<float>("door_p1_z", obs, door_p1.z);
-      ROSAdapter::read<float>("door_p2_x", obs, door_p2.x);
-      ROSAdapter::read<float>("door_p2_y", obs, door_p2.y);
-      ROSAdapter::read<float>("door_p2_z", obs, door_p2.z);
+      ROSAdapter::read<float>("door_p1_x", obs, msg.door_p1.x);
+      ROSAdapter::read<float>("door_p1_y", obs, msg.door_p1.y);
+      ROSAdapter::read<float>("door_p1_z", obs, msg.door_p1.z);
+      ROSAdapter::read<float>("door_p2_x", obs, msg.door_p2.x);
+      ROSAdapter::read<float>("door_p2_y", obs, msg.door_p2.y);
+      ROSAdapter::read<float>("door_p2_z", obs, msg.door_p2.z);
 
       // Handle Data
-      ROSAdapter::read<float>("handle_x", obs, handle.x);
-      ROSAdapter::read<float>("handle_y", obs, handle.y);
-      ROSAdapter::read<float>("handle_z", obs, handle.z);
+      ROSAdapter::read<float>("handle_x", obs, msg.handle.x);
+      ROSAdapter::read<float>("handle_y", obs, msg.handle.y);
+      ROSAdapter::read<float>("handle_z", obs, msg.handle.z);
     }
     
     virtual void fillActiveObservationParameters(const robot_msgs::Door& msg, ObservationByValue* obs){
-      // Dispatched goal should have a frame id
-      if(!canTransform(msg.header.frame_id))
-	return;
-
       read(*obs, msg);
     }
 
     virtual void fillInactiveObservationParameters(const robot_msgs::Door& msg, ObservationByValue* obs){ 
-      // For door actions, we only expect meaningful feedback if the status is SUCCESS
-      if(succeeded()){
-	if(!canTransform(msg.header.frame_id))
-	  return;
-	read(*obs, msg);
-      }
+      read(*obs, msg);
     }
 
     void fillDispatchParameters(robot_msgs::Door& msg, const TokenId& goalToken){
@@ -197,21 +181,15 @@ namespace TREX {
   protected:
 
     virtual void fillActiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){
-      if(!canTransform("base_footprint"))
-	return;
-
       readPose(*obs, msg.x, msg.y, msg.th);
     }
 
     virtual void fillInactiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){ 
-      if(!canTransform("base_footprint"))
-	return;
-
       readPose(*obs, msg.x, msg.y, msg.th);
     }
 
     void fillDispatchParameters(robot_actions::Pose2D& msg, const TokenId& goalToken){
-      msg.header.frame_id = frame_id;
+      msg.header.frame_id = getFrame(goalToken);
       writePose(goalToken, msg.x, msg.y, msg.th);
     }
   };
@@ -297,11 +275,8 @@ namespace TREX {
 
   private:
     void fillObservationParameters(ObservationByValue* obs){
-      if(!canTransform("base_footprint"))
-	return;
-
       double x(0.0), y(0.0), th(0.0);
-      get2DPose(x, y, th);
+      get2DPose(stateMsg, x, y, th);
       readPose(*obs, x, y, th);
     }
   };
@@ -326,15 +301,9 @@ namespace TREX {
     virtual void fillActiveObservationParameters(const std_msgs::Empty& msg, ObservationByValue* obs){}
 
     virtual void fillInactiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){
-
-      if(!canTransform(msg.header.frame_id))
-	return;
-
-      robot_msgs::Point plug_centroid;
-      ROSAdapter::transformPoint<robot_msgs::Point>(msg.header.frame_id, plug_centroid, msg.plug_centroid);
-      ROSAdapter::read<double>("x", *obs, plug_centroid.x);
-      ROSAdapter::read<double>("y", *obs, plug_centroid.y);
-      ROSAdapter::read<double>("z", *obs, plug_centroid.z);
+      ROSAdapter::read<double>("x", *obs, msg.plug_centroid.x);
+      ROSAdapter::read<double>("y", *obs, msg.plug_centroid.y);
+      ROSAdapter::read<double>("z", *obs, msg.plug_centroid.z);
     }
 
     void fillDispatchParameters(std_msgs::Empty& msg, const TokenId& goalToken){}

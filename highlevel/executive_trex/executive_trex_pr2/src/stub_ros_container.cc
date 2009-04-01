@@ -69,7 +69,7 @@ namespace executive_trex_pr2 {
 
     StubAction(const std::string& name): robot_actions::Action<T, T>(name) {}
 
-  private:
+  protected:
 
     // Activation does all the real work
     virtual void handleActivate(const T& msg){
@@ -86,6 +86,15 @@ namespace executive_trex_pr2 {
     }
 
     T _state;
+  };
+
+  template <class T>
+  class StubFrameAction: public StubAction<T> {
+  public:
+
+    StubFrameAction(const std::string& name, const std::string& frame): StubAction<T>(name) {
+      StubAction<T>::_state.header.frame_id = frame;
+    }
   };
 
   /**
@@ -128,13 +137,13 @@ namespace executive_trex_pr2 {
     boost::thread* _update_thread;
   };
 
-
-
   template <class Goal, class Feedback>
-  class StubAction1: public robot_actions::Action<Goal, Feedback> {
+  class StubFrameAction1: public robot_actions::Action<Goal, Feedback> {
   public:
 
-    StubAction1(const std::string& name): robot_actions::Action<Goal, Feedback>(name) {}
+    StubFrameAction1(const std::string& name, const std::string& frame): robot_actions::Action<Goal, Feedback>(name) {
+      _feedback.header.frame_id = frame;
+    }
 
   private:
 
@@ -168,20 +177,29 @@ int main(int argc, char** argv){
   // Allocate an action runner with an update rate of 10 Hz
   robot_actions::ActionRunner runner(10.0);
   
-  // Add action stubs for doors
-  //executive_trex_pr2::StubAction<robot_msgs::Door> detect_door("detect_door");
-  executive_trex_pr2::StubAction<robot_msgs::Door> grasp_handle("grasp_handle");
-  executive_trex_pr2::StubAction<robot_msgs::Door> open_door("open_door");
-  //runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
+  /* Add action stubs for doors */
+
+  // Detect Door
+  executive_trex_pr2::StubFrameAction<robot_msgs::Door> detect_door("detect_door", "base_link");
+  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
+
+  // Detect Handle
+  executive_trex_pr2::StubFrameAction<robot_msgs::Door> detect_handle("detect_handle", "base_link");
+  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);
+
+  // Grasp Handle
+  executive_trex_pr2::StubFrameAction<robot_msgs::Door> grasp_handle("grasp_handle", "base_link");
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp_handle);
+
+  executive_trex_pr2::StubFrameAction<robot_msgs::Door> open_door("open_door", "base_link");
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door);
 
-  // Action stubs for plugs
-  //executive_trex_pr2::StubAction1<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
-  //runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect_plug_on_base);
+  /* Action stubs for plugs */
+  executive_trex_pr2::StubFrameAction1<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base", "torso_link_lift");
+  runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect_plug_on_base);
 
   // Allocate other action stubs
-  executive_trex_pr2::StubAction<robot_actions::Pose2D> move_base("move_base");
+  executive_trex_pr2::StubFrameAction<robot_actions::Pose2D> move_base("move_base", "base_link");
   runner.connect<robot_actions::Pose2D, robot_actions::MoveBaseState, robot_actions::Pose2D>(move_base);
   executive_trex_pr2::StubAction<std_msgs::Float32> recharge("recharge_controller");
   runner.connect<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32>(recharge);
@@ -190,6 +208,7 @@ int main(int argc, char** argv){
 
   // Miscellaneous
   runner.run();
+
   node.spin();
 
   return 0;

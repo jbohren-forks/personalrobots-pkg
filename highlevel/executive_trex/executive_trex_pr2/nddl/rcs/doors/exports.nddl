@@ -38,9 +38,11 @@ constraint  door_get_robot_pose_for_door(x, y, th, door_p1_x, door_p1_y, door_p2
  * status flags. Note that if any value is unkown, then we consider we have lost observability of the door.
  * @see Door.msg
  */
-class DoorState extends ROSTFStateVariable {
+class DoorState extends ROSStateVariable {
 
   predicate Holds {
+    string frame_id;
+
     // Control variable so we know when we can trust values. It should be published by the door monitor.
     // We will require that this be false when the doormonitor terminates
     bool active;
@@ -78,12 +80,14 @@ class DoorState extends ROSTFStateVariable {
   }
 };
 
-class DoorManipulationBehavior extends ROSTFAction {
+class DoorManipulationBehavior extends ROSAction {
 
   /**
    * The parameters here 
    */
   predicate Active{
+    string frame_id;
+
     // Points for the door frame
     float frame_p1_x;
     float frame_p1_y;
@@ -112,6 +116,8 @@ class DoorManipulationBehavior extends ROSTFAction {
   }
 
   predicate Inactive{
+    string frame_id;
+
     // Points for the door frame
     float frame_p1_x;
     float frame_p1_y;
@@ -208,12 +214,13 @@ class ReleaseDoor extends DoorManipulationBehavior {
 /**
  * This is a sensing action to see if there is a path to the goal.
  */
-class CheckDoorway extends ROSTFAction {
+class CheckDoorway extends ROSAction {
 
   /**
    * The parameters here 
    */
   predicate Active{
+    string frame_id;
     float x; 
     float y;
     float th;

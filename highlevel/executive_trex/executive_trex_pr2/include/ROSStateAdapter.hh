@@ -21,10 +21,6 @@ namespace TREX {
 
     Observation* getObservation(){
       ObservationByValue* obs = new ObservationByValue(timelineName, predicate);
-
-      if(tf_enabled)
-	obs->push_back("frame_id", new StringDomain(frame_id));
-
       fillObservationParameters(obs);
       return obs;
     }
