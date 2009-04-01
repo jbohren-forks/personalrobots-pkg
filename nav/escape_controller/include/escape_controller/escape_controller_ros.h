@@ -34,8 +34,8 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#ifndef ESCAPE_CONTROLLER_ESCAPE_CONTROLLER_H_
-#define ESCAPE_CONTROLLER_ESCAPE_CONTROLLER_H_
+#ifndef ESCAPE_CONTROLLER_ESCAPE_CONTROLLER_ROS_H_
+#define ESCAPE_CONTROLLER_ESCAPE_CONTROLLER_ROS_H_
 
 #include <string>
 #include <highlevel_controllers/highlevel_controller.hh>
@@ -43,9 +43,9 @@
 #include <escape_controllers/EscapeGoal.h>
 
 namespace escape_controller {
-  class EscapeController : public HighlevelController<EscapeState, EscapeGoal> {
+  class EscapeControllerROS : public HighlevelController<EscapeState, EscapeGoal> {
     public:
-      EscapeController(const std::string& state_topic, const std::string& goal_topic);
+      EscapeControllerROS(const std::string& state_topic, const std::string& goal_topic);
 
       virtual ~EscapeController();
 
@@ -62,10 +62,10 @@ namespace escape_controller {
       pr2_msgs::BaseControllerState base_state_msg_;
   };
 
-  EscapeController::EscapeController(const string& state_topic, const string& goal_topic)
+  EscapeControllerROS::EscapeControllerROS(const string& state_topic, const string& goal_topic)
     : HighlevelController<EscapeState, EscapeGoal>("escape_controller", state_topic, goal_topic)
   {
-    subscribe("/base_controller/state", base_state_msg_, &EscapeController::baseStateCallback, 1);
+    subscribe("/base_controller/state", base_state_msg_, &EscapeControllerROS::baseStateCallback, 1);
   }
 };
 #endif

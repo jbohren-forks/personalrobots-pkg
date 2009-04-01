@@ -132,27 +132,8 @@ def set_params():
   rospy.set_param("cartesian_trajectory_right/pose/twist/fb_rot/d", 0.0)
   rospy.set_param("cartesian_trajectory_right/pose/twist/fb_rot/i_clamp", 0.2)
 
-  rospy.set_param("cartesian_pose/root_name", 'torso_lift_link')
-  rospy.set_param("cartesian_pose/tip_name", 'r_gripper_tool_frame')
-  rospy.set_param("cartesian_pose/p",16.0)
-  rospy.set_param("cartesian_pose/i",4.0)
-  rospy.set_param("cartesian_pose/d",0.0)
-  rospy.set_param("cartesian_pose/i_clamp",3.0)
-
-
-  rospy.set_param("cartesian_pose/twist/ff_trans", 20.0)
-  rospy.set_param("cartesian_pose/twist/ff_rot", 5.0)
-  rospy.set_param("cartesian_pose/twist/fb_trans/p", 20.0)
-  rospy.set_param("cartesian_pose/twist/fb_trans/i", 0.5)
-  rospy.set_param("cartesian_pose/twist/fb_trans/d", 0.0 )
-  rospy.set_param("cartesian_pose/twist/fb_trans/i_clamp", 1.0)
-  rospy.set_param("cartesian_pose/twist/fb_rot/p", 1.5 )
-  rospy.set_param("cartesian_pose/twist/fb_rot/i", 0.1)
-  rospy.set_param("cartesian_pose/twist/fb_rot/d", 0.0)
-  rospy.set_param("cartesian_pose/twist/fb_rot/i_clamp", 0.2)
-  
 if __name__ == '__main__':
-  
+
   rospy.wait_for_service('spawn_controller')
   rospy.init_node('move_to_pickup', anonymous = True)
   rospy.wait_for_service('kill_and_spawn_controllers')
@@ -228,9 +209,7 @@ if __name__ == '__main__':
     print "picking up plug"
     pickup()
     pub.publish(Float64(0.6))
-    mechanism.kill_controller('right_arm/trajectory_controller')
-    mechanism.spawn_controller(xml_for_pose.read())
-    controllers.append('cartesian_pose')
+
     sleep(2)
     #rospy.spin()
 

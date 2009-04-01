@@ -195,7 +195,6 @@ bool checkDoorEdges (const robot_msgs::Polygon3D &poly, const robot_msgs::Point3
 
 void selectBestDistributionStatistics (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx, std::vector<int> &inliers);
 void selectBestDualDistributionStatistics (const robot_msgs::PointCloud &points, const std::vector<int> &indices, int d_idx_1, int d_idx_2, std::vector<int> &inliers);
-void selectBestDualDistributionStatistics (robot_msgs::PointCloud *points, std::vector<int> *indices, int d_idx_1, int d_idx_2, std::vector<int> &inliers);
 
 bool checkIfClusterPerpendicular (robot_msgs::PointCloud *points, std::vector<int> *indices, robot_msgs::PointStamped *viewpoint,
                                   std::vector<double> *coeff, double eps_angle);
