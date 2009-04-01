@@ -62,7 +62,10 @@ CartesianTrajectoryController::~CartesianTrajectoryController()
 
 
 
-bool CartesianTrajectoryController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string controller_name)
+bool CartesianTrajectoryController::init(mechanism::RobotState *robot_state, 
+                                         const string& root_name, 
+                                         const string& tip_name, 
+                                         const string controller_name)
 {
   cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
   controller_name_ = controller_name;
@@ -94,7 +97,7 @@ bool CartesianTrajectoryController::initialize(mechanism::RobotState *robot_stat
   }
 
   // initialize pose controller
-  pose_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/pose");
+  pose_controller_.init(robot_state, root_name, tip_name, controller_name_+"/pose");
 
   return true;
 }
@@ -252,7 +255,7 @@ bool CartesianTrajectoryControllerNode::initXml(mechanism::RobotState *robot, Ti
   node_->param(controller_name_+"/tip_name", tip_name, string("no_tip_name_given"));
 
   // initialize controller
-  if (!controller_.initialize(robot, root_name_, tip_name, controller_name_))
+  if (!controller_.init(robot, root_name_, tip_name, controller_name_))
     return false;
 
   // subscribe to pose commands

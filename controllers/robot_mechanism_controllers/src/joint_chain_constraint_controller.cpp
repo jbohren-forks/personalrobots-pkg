@@ -58,7 +58,10 @@ JointChainConstraintController::~JointChainConstraintController()
 
 }
 
-bool JointChainConstraintController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string& controller_name)
+bool JointChainConstraintController::init(mechanism::RobotState *robot_state, 
+                                          const string& root_name, 
+                                          const string& tip_name, 
+                                          const string& controller_name)
 {
   ROS_INFO("Intializing JointChainConstraintController,\"%s\", between \"%s\" and \"%s\".", controller_name.c_str(), root_name.c_str(), tip_name.c_str());
 
@@ -319,7 +322,7 @@ bool JointChainConstraintControllerNode::initXml(mechanism::RobotState *robot, T
   node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
   
   // initialize wrench controller
-  if (!controller_.initialize(robot, root_name, tip_name, controller_name_))
+  if (!controller_.init(robot, root_name, tip_name, controller_name_))
   {
     ROS_ERROR( "Failed to initialize JointChainConstraintController,\"%s\".", controller_name_.c_str());
     return false;

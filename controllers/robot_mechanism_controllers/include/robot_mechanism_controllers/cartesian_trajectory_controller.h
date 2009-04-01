@@ -57,7 +57,8 @@ public:
   CartesianTrajectoryController();
   ~CartesianTrajectoryController();
 
-  bool initialize(mechanism::RobotState *robot, const std::string& root_name, const std::string& tip_name, const string controller_name);
+  bool init(mechanism::RobotState *robot, const std::string& root_name, 
+            const std::string& tip_name, const string controller_name);
   bool starting();
   void update();
   bool moveTo(const KDL::Frame& pose_desi, double duration=0);

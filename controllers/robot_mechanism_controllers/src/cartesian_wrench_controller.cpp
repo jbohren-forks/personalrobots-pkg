@@ -58,10 +58,10 @@ CartesianWrenchController::~CartesianWrenchController()
 
 
 
-bool CartesianWrenchController::initialize(mechanism::RobotState *robot_state, 
-                                           const std::string& root_name, 
-                                           const std::string& tip_name, 
-                                           const std::string& controller_name)
+bool CartesianWrenchController::init(mechanism::RobotState *robot_state, 
+                                     const std::string& root_name, 
+                                     const std::string& tip_name, 
+                                     const std::string& controller_name)
 {
   controller_name_ = controller_name;
 
@@ -197,7 +197,7 @@ bool CartesianWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   }
 
   // initialize wrench controller
-  if (!controller_.initialize(robot, root_name, tip_name, controller_name_)) return false;
+  if (!controller_.init(robot, root_name, tip_name, controller_name_)) return false;
 
   // subscribe to wrench commands
   node_->subscribe(controller_name_ + "/command", wrench_msg_,

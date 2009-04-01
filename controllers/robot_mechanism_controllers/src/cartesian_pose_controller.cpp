@@ -61,7 +61,10 @@ CartesianPoseController::~CartesianPoseController()
 }
 
 
-bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string& controller_name)
+bool CartesianPoseController::init(mechanism::RobotState *robot_state, 
+                                   const string& root_name, 
+                                   const string& tip_name, 
+                                   const string& controller_name)
 {
   cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
   controller_name_ = controller_name;
@@ -88,7 +91,7 @@ bool CartesianPoseController::initialize(mechanism::RobotState *robot_state, con
     pid_controller_.push_back(pid_controller);
 
   // initialize twist controller
-  twist_controller_.initialize(robot_state_, root_name, tip_name, controller_name_+"/twist");
+  twist_controller_.init(robot_state_, root_name, tip_name, controller_name_+"/twist");
 
   // realtime publisher for control error
   error_publisher_ = new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/error", 1);
@@ -199,7 +202,7 @@ bool CartesianPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
 
   // initialize controller  
-  if (!controller_.initialize(robot, root_name_, tip_name, controller_name_))
+  if (!controller_.init(robot, root_name_, tip_name, controller_name_))
     return false;
   
   // subscribe to pose commands

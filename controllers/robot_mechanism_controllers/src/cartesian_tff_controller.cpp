@@ -62,7 +62,10 @@ CartesianTFFController::~CartesianTFFController()
 
 
 
-bool CartesianTFFController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string& controller_name)
+bool CartesianTFFController::init(mechanism::RobotState *robot_state, 
+                                  const string& root_name, 
+                                  const string& tip_name, 
+                                  const string& controller_name)
 {
   cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
   controller_name_ = controller_name;
@@ -113,9 +116,9 @@ bool CartesianTFFController::initialize(mechanism::RobotState *robot_state, cons
 
   // create wrench/constraint controller
   if (use_constraint_controller)
-    constraint_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
+    constraint_controller_.init(robot_state, root_name, tip_name, controller_name_+"/wrench");
   else
-    wrench_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
+    wrench_controller_.init(robot_state, root_name, tip_name, controller_name_+"/wrench");
 
 
   return true;
@@ -246,7 +249,7 @@ bool CartesianTFFControllerNode::initXml(mechanism::RobotState *robot, TiXmlElem
   node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
 
   // initialize controller  
-  if (!controller_.initialize(robot, root_name, tip_name, controller_name_))
+  if (!controller_.init(robot, root_name, tip_name, controller_name_))
     return false;
   
   // subscribe to tff commands

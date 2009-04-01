@@ -58,7 +58,10 @@ CartesianTwistController::~CartesianTwistController()
 
 
 
-bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, const string& root_name, const string& tip_name, const string& controller_name)
+bool CartesianTwistController::init(mechanism::RobotState *robot_state, 
+                                    const string& root_name, 
+                                    const string& tip_name, 
+                                    const string& controller_name)
 {
   cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
   controller_name_ = controller_name;
@@ -92,7 +95,7 @@ bool CartesianTwistController::initialize(mechanism::RobotState *robot_state, co
   node_->param(controller_name_+"/ff_rot", ff_rot_, 0.0) ;
 
   // create wrench controller
-  wrench_controller_.initialize(robot_state, root_name, tip_name, controller_name_+"/wrench");
+  wrench_controller_.init(robot_state, root_name, tip_name, controller_name_+"/wrench");
 
   return true;
 }
@@ -183,7 +186,7 @@ bool CartesianTwistControllerNode::initXml(mechanism::RobotState *robot, TiXmlEl
   node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
 
   // initialize controller  
-  if (!controller_.initialize(robot, root_name, tip_name, controller_name_))
+  if (!controller_.init(robot, root_name, tip_name, controller_name_))
     return false;
   
   // subscribe to twist commands

@@ -55,8 +55,8 @@ public:
   CartesianPoseController();
   ~CartesianPoseController();
 
-  bool initialize(mechanism::RobotState *robot, const std::string& root_name, 
-                  const std::string& tip_name, const std::string& controller_name);
+  bool init(mechanism::RobotState *robot, const std::string& root_name, 
+            const std::string& tip_name, const std::string& controller_name);
   bool starting();
   void update();
 
