@@ -143,6 +143,9 @@ namespace costmap_2d{
     //reset the markers for inflation
     memset(markers_, 0, size_x_ * size_y_ * sizeof(unsigned char));
 
+    //create a priority queue
+    std::priority_queue<CellData*> inflation_queue;
+
     //place the new obstacles into a priority queue... each with a priority of zero to begin with
     for(vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it){
       const Observation& obs = *it;
@@ -168,14 +171,38 @@ namespace costmap_2d{
 
         unsigned int index = getIndex(mx, my);
 
-        CostmapCell c;
-        c.priority = 0.0;
-        c.index = index;
-
-        //push the relevant cell index back onto the inflation queue and mark it
-        inflation_queue.push(c);
-        markers_[index] = 1;
+        //push the relevant cell index back onto the inflation queue
+        enqueue(index, mx, my, mx, my, inflation_queue);
       }
+    }
+    inflateObstacles(inflation_queue);
+  }
+
+  void Costmap2D::inflateObstacles(priority_queue<CellData*>& inflation_queue){
+    CellData* current_cell = NULL;
+    while(!inflation_queue.empty()){
+      //get the highest priority cell and pop it off the priority queue
+      current_cell = inflation_queue.top();
+      inflation_queue.pop();
+
+      unsigned int index = current_cell->index_;
+      unsigned int mx = current_cell->x_;
+      unsigned int my = current_cell->y_;
+      unsigned int sx = current_cell->src_x_;
+      unsigned int sy = current_cell->src_y_;
+
+      //attempt to put the neighbors of the current cell onto the queue
+      if(mx > 0)
+        enqueue(index - 1, mx - 1, my, sx, sy, inflation_queue); 
+      if(my > 0)
+        enqueue(index - size_x_, mx, my - 1, sx, sy, inflation_queue);
+      if(mx < size_x_ - 1)
+        enqueue(index + 1, mx + 1, my, sx, sy, inflation_queue);
+      if(my < size_y_ - 1)
+        enqueue(index + size_x_, mx, my + 1, sx, sy, inflation_queue);
+
+      //delete the current_cell b/c it is no longer on the queue and no longer needed
+      delete current_cell;
     }
   }
 

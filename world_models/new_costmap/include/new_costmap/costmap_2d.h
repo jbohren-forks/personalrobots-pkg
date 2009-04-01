@@ -43,15 +43,23 @@
 #include <robot_msgs/PointCloud.h>
 
 namespace costmap_2d {
+  static const unsigned char NO_INFORMATION = 255;
+  static const unsigned char LETHAL_OBSTACLE = 254;
+  static const unsigned char INSCRIBED_INFLATED_OBSTACLE = 253;
+
   //for priority queue propagation
-  class CostmapCell {
+  class CellData {
     public:
-      double priority;
-      unsigned int index;
+      CellData(double d, double i, unsigned int x, unsigned int y, unsigned int sx, unsigned int sy) : distance_(d), 
+      index_(i), x_(x), y_(y), src_x_(sx), src_y_(sy) {}
+      double distance_;
+      unsigned int index_;
+      unsigned int x_, y_;
+      unsigned int src_x_, src_y_;
   };
 
-  bool operator<(const CostmapCell &a, const CostmapCell &b){
-    return a.priority < b.priority;
+  bool operator<(const CellData &a, const CellData &b){
+    return a.distance_ < b.distance_;
   }
 
   /**
@@ -111,6 +119,39 @@ namespace costmap_2d {
 
       inline unsigned int getIndex(unsigned int mx, unsigned int my) const{
         return my * size_x_ + mx;
+      }
+
+      inline void updateCellCost(unsigned int index, unsigned char cost){
+        unsigned char* cell_cost = &cost_map_[index];
+        if(*cell_cost == NO_INFORMATION)
+          *cell_cost = cost;
+        else
+          *cell_cost = std::max(cost, *cell_cost);
+      }
+
+      inline unsigned char computeCost(double distance) const {
+        unsigned char cost = 0;
+        if(distance == 0)
+          cost = LETHAL_OBSTACLE;
+        else if(distance <= inscribed_radius_)
+          cost = INSCRIBED_INFLATED_OBSTACLE;
+        else {
+          double factor = weight_ / (1 + pow(distance - inscribed_radius_, 2));
+          cost = (unsigned char) ((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
+        }
+        return cost;
+      }
+
+      inline char costLookup(int mx, int my, int src_x, int src_y){
+        unsigned int dx = abs(mx - src_x);
+        unsigned int dy = abs(my - src_y);
+        return cached_costs_[dx][dy];
+      }
+
+      inline double distanceLookup(int mx, int my, int src_x, int src_y){
+        unsigned int dx = abs(mx - src_x);
+        unsigned int dy = abs(my - src_y);
+        return cached_distances_[dx][dy];
       }
 
       /**
@@ -195,6 +236,43 @@ namespace costmap_2d {
       double resolution() const;
 
     private:
+      /**
+       * @brief  Given an index of a cell in the costmap, place it into a priority queue for obstacle inflation
+       * @param  index The index of the cell
+       * @param  mx The x coordinate of the cell (can be computed from the index, but saves time to store it)
+       * @param  my The y coordinate of the cell (can be computed from the index, but saves time to store it)
+       * @param  src_x The x index of the obstacle point inflation started at
+       * @param  src_y The y index of the obstacle point inflation started at
+       * @param  inflation_queue The priority queue to insert into
+       * @return 
+       */
+      inline void enqueue(unsigned int index, unsigned int mx, unsigned int my, 
+          unsigned int src_x, unsigned int src_y, std::priority_queue<CellData*>& inflation_queue){
+        unsigned char* marked = &markers_[index];
+        //set the cost of the cell being inserted
+        if(*marked == 0){
+          //we compute our distance table one cell further than the inflation radius dictates so we can make the check below
+          double distance = distanceLookup(mx, my, src_x, src_y);
+
+          //we only want to put the cell in the queue if it is within the inflation radius of the obstacle point
+          if(distance > inflation_radius_)
+            return;
+
+          //assign the cost associated with the distance from an obstacle to the cell
+          cost_map_[index] = costLookup(mx, my, src_x, src_y);
+
+          //push the cell data onto the queue and mark
+          inflation_queue.push(new CellData(distance, index, mx, my, src_x, src_y));
+          *marked = 1;
+        }
+      }
+
+      /**
+       * @brief  Given a priority queue with the actual obstacles, compute the inflated costs for the costmap
+       * @param  inflation_queue A priority queue contatining the cell data for the actual obstacles
+       */
+      void inflateObstacles(std::priority_queue<CellData*>& inflation_queue);
+
       unsigned int size_x_;
       unsigned int size_y_;
       double resolution_;
@@ -203,9 +281,12 @@ namespace costmap_2d {
       unsigned char* static_map_;
       unsigned char* cost_map_;
       unsigned char* markers_;
-      std::priority_queue<CostmapCell> inflation_queue;
       double sq_obstacle_range_;
       double max_obstacle_height_;
+      unsigned char** cached_costs_;
+      double** cached_distances_;
+      double inscribed_radius_, circumscribed_radius, inflation_radius_;
+      double weight_;
   };
 };
 

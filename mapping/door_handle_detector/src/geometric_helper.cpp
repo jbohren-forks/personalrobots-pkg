@@ -544,6 +544,10 @@ void
       sort (r.begin (), r.end ());
       r.erase (unique (r.begin (), r.end ()), r.end ());
 
+
+      sort (r.begin (), r.end ());
+      r.erase (unique (r.begin (), r.end ()), r.end ());
+
       clusters.push_back (r);
     }
   }
