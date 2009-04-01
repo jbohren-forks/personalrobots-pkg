@@ -6,8 +6,8 @@ genmsg()
 
 #rospack_add_boost_directories()
 
-rospack_add_library(new_costmap_2d src/costmap_2d.cpp)
+rospack_add_library(new_costmap_2d src/costmap_2d.cpp src/observation_buffer.cpp src/costmap_2d_ros.cpp)
 #rospack_link_boost(costmap_2d thread)
 
-rospack_add_executable(costmap_test src/costmap_test.cpp)
+rospack_add_executable(costmap_test src/costmap_2d_ros.cpp)
 target_link_libraries(costmap_test new_costmap_2d)

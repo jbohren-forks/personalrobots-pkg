@@ -37,7 +37,7 @@
 #include <ros/node.h>
 #include <ros/console.h>
 #include <new_costmap/costmap_2d.h>
-#include <costmap_2d/costmap_2d.h>
+#include <new_costmap/observation_buffer.h>
 #include <robot_srvs/StaticMap.h>
 #include <robot_msgs/Polyline2D.h>
 #include <map>
@@ -61,12 +61,14 @@ using namespace robot_msgs;
 
 class CostmapTester {
   public:
-    CostmapTester(ros::Node& ros_node) : ros_node_(ros_node), base_scan_notifier_(NULL), tf_(ros_node, true, ros::Duration(10)), observations_(1), global_frame_("map"), freq_(5) {
+    CostmapTester(ros::Node& ros_node) : ros_node_(ros_node), base_scan_notifier_(NULL), tf_(ros_node, true, ros::Duration(10)), global_frame_("map"), freq_(5), base_scan_buffer_(NULL) {
       ros_node.advertise<robot_msgs::Polyline2D>("raw_obstacles", 1);
       ros_node.advertise<robot_msgs::Polyline2D>("inflated_obstacles", 1);
       
+      base_scan_buffer_ = new ObservationBuffer(0.0, 0.2, tf_, "map", "base_laser");
+
       base_scan_notifier_ = new MessageNotifier<laser_scan::LaserScan>(&tf_, &ros_node,
-          boost::bind(&CostmapTester::baseScanCallback, this, _1),
+          boost::bind(&CostmapTester::baseScanCallback, this, _1, (int) 1),
           "base_scan", global_frame_, 50);
 
       robot_srvs::StaticMap::Request map_req;
@@ -99,17 +101,6 @@ class CostmapTester {
       t_diff = end_t - start_t;
       ROS_INFO("New map construction time: %.9f", t_diff);
 
-      gettimeofday(&start, NULL);
-      old_costmap_ = new CostMap2D((unsigned int)map_resp.map.width, (unsigned int)map_resp.map.height,
-          input_data , map_resp.map.resolution,
-          100, 2.0, 15, 25,
-          0.55, 0.46, 0.325, 1.0,
-          10.0, 10.0, 10.0);
-      gettimeofday(&end, NULL);
-      start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-      end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-      t_diff = end_t - start_t;
-      ROS_INFO("Old map construction time: %.9f", t_diff);
 
       //create a separate thread to publish cost data to the visualizer
       visualizer_thread_ = new boost::thread(boost::bind(&CostmapTester::publishCostMap, this));
@@ -119,37 +110,22 @@ class CostmapTester {
 
     ~CostmapTester(){
       delete new_costmap_;
-      delete old_costmap_;
       delete base_scan_notifier_;
       delete visualizer_thread_;
       delete window_reset_thread_;
+      delete base_scan_buffer_;
     }
 
-    void baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message){
+    void baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message, int i){
       //project the laser into a point cloud
       PointCloud base_cloud;
       base_cloud.header = message->header;
       //we want all values... even those out of range
       projector_.projectLaser(*message, base_cloud, -1.0, true);
-      Stamped<btVector3> global_origin;
 
+      //buffer the point cloud
       lock_.lock();
-      //we know the transform is available from the laser frame to the global frame 
-      try{
-        //transform the origin for the sensor
-        Stamped<btVector3> local_origin(btVector3(0, 0, 0), base_cloud.header.stamp, base_cloud.header.frame_id);
-        tf_.transformPoint(global_frame_, local_origin, global_origin);
-        observations_[0].origin_.x = global_origin.getX();
-        observations_[0].origin_.y = global_origin.getY();
-        observations_[0].origin_.z = global_origin.getZ();
-
-        //transform the point cloud
-        tf_.transformPointCloud(global_frame_, base_cloud, observations_[0].cloud_);
-      }
-      catch(tf::TransformException& ex){
-        ROS_ERROR("TF Exception that should never happen %s", ex.what());
-        return;
-      }
+      base_scan_buffer_->bufferCloud(base_cloud);
       lock_.unlock();
     }
 
@@ -187,7 +163,9 @@ class CostmapTester {
       struct timeval start, end;
       double start_t, end_t, t_diff;
       gettimeofday(&start, NULL);
-      new_costmap_->updateWorld(wx, wy, observations_, observations_);
+      std::vector<Observation> observations;
+      base_scan_buffer_->getObservations(observations);
+      new_costmap_->updateWorld(wx, wy, observations, observations);
       gettimeofday(&end, NULL);
       start_t = start.tv_sec + double(start.tv_usec) / 1e6;
       end_t = end.tv_sec + double(end.tv_usec) / 1e6;
@@ -286,13 +264,12 @@ class CostmapTester {
     tf::TransformListener tf_; ///< @brief Used for transforming point clouds
     laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
     boost::recursive_mutex lock_; ///< @brief A lock for accessing data in callbacks safely
-    std::vector<Observation> observations_;
     Costmap2D* new_costmap_;
-    CostMap2D* old_costmap_;
     std::string global_frame_;
     double freq_;
-    boost::thread *visualizer_thread_;
-    boost::thread *window_reset_thread_;
+    boost::thread* visualizer_thread_;
+    boost::thread* window_reset_thread_;
+    ObservationBuffer* base_scan_buffer_;
 
 };
 

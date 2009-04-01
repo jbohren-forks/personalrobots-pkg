@@ -40,28 +40,11 @@
 #include <vector>
 #include <queue>
 #include <new_costmap/observation.h>
+#include <new_costmap/cell_data.h>
+#include <new_costmap/cost_values.h>
 #include <robot_msgs/PointCloud.h>
 
 namespace costmap_2d {
-  static const unsigned char NO_INFORMATION = 255;
-  static const unsigned char LETHAL_OBSTACLE = 254;
-  static const unsigned char INSCRIBED_INFLATED_OBSTACLE = 253;
-
-  //for priority queue propagation
-  class CellData {
-    public:
-      CellData(double d, double i, unsigned int x, unsigned int y, unsigned int sx, unsigned int sy) : distance_(d), 
-      index_(i), x_(x), y_(y), src_x_(sx), src_y_(sy) {}
-      double distance_;
-      unsigned int index_;
-      unsigned int x_, y_;
-      unsigned int src_x_, src_y_;
-  };
-
-  inline bool operator<(const CellData &a, const CellData &b){
-    return a.distance_ > b.distance_;
-  }
-
   /**
    * @class Costmap
    * @brief A 2D costmap provides a mapping between points in the world and their associated "costs".
@@ -120,6 +103,14 @@ namespace costmap_2d {
        * @return The cost of the cell
        */
       unsigned char getCost(unsigned int mx, unsigned int my) const;
+
+      /**
+       * @brief  Set the cost of a cell in the costmap
+       * @param mx The x coordinate of the cell 
+       * @param my The y coordinate of the cell 
+       * @param cost The cost to set the cell to
+       */
+      void setCost(unsigned int mx, unsigned int my, unsigned char cost);
 
       /**
        * @brief  Convert from map coordinates to world coordinates

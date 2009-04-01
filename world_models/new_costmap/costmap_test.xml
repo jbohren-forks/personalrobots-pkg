@@ -1,0 +1,12 @@
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+    <node pkg="new_costmap" type="costmap_test" respawn="false" name="new_cost_map" output="screen">
+      <param name="costmap/observation_topics" value="base_scan" />
+      <!--<param name="costmap/base_scan/sensor_frame" value="base_link" />-->
+      <param name="costmap/base_scan/observation_persistance" value="0.0" />
+      <param name="costmap/base_scan/expected_update_rate" value="0.2" />
+      <param name="costmap/base_scan/data_type" value="LaserScan" />
+    </node>
+  </group>
+</launch>

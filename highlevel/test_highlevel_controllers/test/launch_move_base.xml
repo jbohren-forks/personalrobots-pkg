@@ -26,8 +26,8 @@
       <param name="costmap_2d/inflation_radius" value="0.55"/>
       <param name="costmap_2d/circumscribed_radius" value="0.46"/>
       <param name="costmap_2d/inscribed_radius" value="0.325"/>
-      <param name="costmap_2d/raytrace_window" value="10.0"/>
-      <param name="costmap_2d/raytrace_range" value="10.0"/>
+      <param name="costmap_2d/raytrace_window" value="4.0"/>
+      <param name="costmap_2d/raytrace_range" value="4.0"/>
       <param name="costmap_2d/weight" value="0.1"/>
       <param name="costmap_2d/zLB" value="0.10"/>
       <param name="costmap_2d/zUB" value="0.30"/>

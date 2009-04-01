@@ -125,7 +125,12 @@ namespace costmap_2d{
 
   unsigned char Costmap2D::getCost(unsigned int mx, unsigned int my) const {
     ROS_ASSERT_MSG(mx < size_x_ && my < size_y_, "You cannot get the cost of a cell that is outside the bounds of the costmap");
-    return cost_map_[my * size_x_ + mx];
+    return cost_map_[getIndex(mx, my)];
+  }
+
+  void Costmap2D::setCost(unsigned int mx, unsigned int my, unsigned char cost) {
+    ROS_ASSERT_MSG(mx < size_x_ && my < size_y_, "You cannot set the cost of a cell that is outside the bounds of the costmap");
+    cost_map_[getIndex(mx, my)] = cost;
   }
 
   void Costmap2D::mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const {

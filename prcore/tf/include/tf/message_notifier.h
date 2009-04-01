@@ -35,6 +35,7 @@
 #include <ros/node.h>
 #include <tf/tf.h>
 #include <tf/tfMessage.h>
+#include <tf/message_notifier_base.h>
 
 #include <string>
 #include <list>
@@ -95,7 +96,7 @@ class Transformer;
  \endverbatim
  */
 template<class Message>
-class MessageNotifier
+class MessageNotifier : public MessageNotifierBase
 {
 public:
   typedef boost::shared_ptr<Message> MessagePtr;
