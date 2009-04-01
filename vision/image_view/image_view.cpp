@@ -68,6 +68,10 @@ public:
 
   void image_cb()
   {
+    // May want to view raw bayer data
+    if (img_msg_.encoding.find("bayer") != std::string::npos)
+      img_msg_.encoding = "mono";
+    
     if (img_bridge_.fromImage(img_msg_, "bgr"))
       cvShowImage(window_name_.c_str(), img_bridge_.toIpl());
   }
