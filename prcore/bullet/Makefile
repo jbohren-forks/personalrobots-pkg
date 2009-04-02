@@ -42,6 +42,7 @@ BULLET_INC_DIRS = . \
 
 build_tarball: $(SVN_DIR) patched
 	# How to build tarball goes here
+	-cd $(SVN_DIR) && make clean
 	-cd $(SVN_DIR) && rm -f CMakeCache.txt
 	rm -rf $(SVN_DIR)/Extras
 	mkdir -p build
