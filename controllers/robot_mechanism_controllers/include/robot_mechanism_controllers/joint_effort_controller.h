@@ -32,7 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#pragma once
+#ifndef JOINT_EFFORT_CONTROLLER_H
+#define JOINT_EFFORT_CONTROLLER_H
 
 /***************************************************/
 /*! \class controller::JointEffortController
@@ -69,38 +70,19 @@ public:
 
   JointEffortController();
   ~JointEffortController();
-  /*!
-   * \brief Functional way to initialize limits and gains.
-   * \param pid Pid gain values.
-   * \param joint_name Name of joint we want to control.
-   * \param *robot The robot.
-   */
+
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   bool init(mechanism::RobotState *robot, const std::string &joint_name);
-  /*!
-   * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
-   *
-   * \param command
-   */
-  void setCommand(double cmd);
 
-  /*!
-   * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
-   */
-  void getCommand(double & cmd);
-
-  /*!
-   * \brief Issues commands to the joint. Should be called at regular intervals
-   */
-
+  virtual bool starting() { command_ = 0.0; return true; }
   virtual void update();
 
-  std::string getJointName();
   mechanism::JointState *joint_state_;     /**< Joint we're controlling. */
+
+  double command_;                         /**< Last commanded effort. */
 
 private:
   mechanism::RobotState *robot_;           /**< Pointer to robot structure. */
-  double command_;                         /**< Last commanded effort. */
 };
 
 /***************************************************/
@@ -146,4 +128,4 @@ private:
 };
 }
 
-
+#endif

@@ -33,13 +33,13 @@
  *********************************************************************/
 #include <robot_mechanism_controllers/joint_effort_controller.h>
 
-using namespace std;
-using namespace controller;
 
-ROS_REGISTER_CONTROLLER(JointEffortController)
+namespace controller {
+
+//ROS_REGISTER_CONTROLLER(JointEffortController)
 
 JointEffortController::JointEffortController()
-: joint_state_(NULL), robot_(NULL), command_(0)
+: joint_state_(NULL), command_(0), robot_(NULL)
 {
 }
 
@@ -48,13 +48,17 @@ JointEffortController::~JointEffortController()
 }
 bool JointEffortController::init(mechanism::RobotState *robot, const std::string &joint_name)
 {
-  assert(robot);
+  if (!robot)
+  {
+    ROS_ERROR("The given robot was NULL");
+    return false;
+  }
   robot_ = robot;
 
   joint_state_ = robot_->getJointState(joint_name);
   if (!joint_state_)
   {
-    fprintf(stderr, "JointEffortController could not find joint named \"%s\"\n",
+    ROS_ERROR("JointEffortController could not find joint named \"%s\"\n",
             joint_name.c_str());
     return false;
   }
@@ -64,12 +68,16 @@ bool JointEffortController::init(mechanism::RobotState *robot, const std::string
 
 bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  assert(robot);
+  if (!robot)
+  {
+    ROS_ERROR("The given robot was NULL");
+    return false;
+  }
 
   TiXmlElement *j = config->FirstChildElement("joint");
-  if (!j)
+  if (!j || !j->Attribute("name"))
   {
-    fprintf(stderr, "JointEffortController was not given a joint\n");
+    ROS_ERROR("JointEffortController was not given a joint\n");
     return false;
   }
 
@@ -80,26 +88,8 @@ bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *
 
 }
 
-std::string JointEffortController::getJointName()
-{
-  return joint_state_->joint_->name_;
-}
-
-// Set the joint position command
-void JointEffortController::setCommand(double cmd)
-{
-  command_ = cmd;
-}
-
-// Return the current position command
-void JointEffortController::getCommand(double & cmd)
-{
-  cmd = command_;
-}
-
 void JointEffortController::update()
 {
-
   joint_state_->commanded_effort_ = command_;
 }
 
@@ -142,15 +132,14 @@ bool JointEffortControllerNode::initXml(mechanism::RobotState *robot, TiXmlEleme
 
 void JointEffortControllerNode::setCommand()
 {
-  c_->setCommand(cmd_.data);
+  c_->command_ = cmd_.data;
 }
 
 bool JointEffortControllerNode::getCommand(robot_srvs::GetValue::Request &req,
                                            robot_srvs::GetValue::Response &resp)
 {
-  double cmd;
-  c_->getCommand(cmd);
-  resp.v = cmd;
+  resp.v = c_->command_;
   return true;
 }
 
+}
