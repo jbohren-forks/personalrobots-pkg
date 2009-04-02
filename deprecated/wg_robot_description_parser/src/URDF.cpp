@@ -1179,7 +1179,7 @@ namespace robot_desc {
     {
         if (m_joints.find(name) == m_joints.end())
         {
-        errorMessage("Attempting to add information to an undefined joint: '" + name + "'");
+        // errorMessage("Attempting to add information to an undefined joint: '" + name + "'"); // FIXME: disabled due to parent-free abstract gripper_joints
         errorLocation(node);        
         return;
         }
