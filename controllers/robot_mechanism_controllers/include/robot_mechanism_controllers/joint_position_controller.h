@@ -43,7 +43,7 @@
 
     Example config:<br>
 
-    <controller type="JointPositionController" name="controller_name" topic="a_topic"><br>
+    <controller type="JointPositionController" name="controller_name" ><br>
       <joint name="head_tilt_joint"><br>
         <pid p="1.0" i="0.0" d="3.0" iClamp="0.0" /><br>
       </joint><br>

@@ -135,24 +135,18 @@ void JointVelocityController::update()
   assert(robot_ != NULL);
   double error(0);
   double time = robot_->hw_->current_time_;
-  static int count = 0;
+  
 
   error =joint_state_->velocity_ - command_;
 
   joint_state_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
   
-  if(count % 10 == 0)
-  {
-    if(controller_state_publisher_->trylock())
-    {
-      controller_state_publisher_->msg_.set_point = command_; 
-      controller_state_publisher_->msg_.process_value = joint_state_->velocity_; 
-      controller_state_publisher_->msg_.error = error; 
-      controller_state_publisher_->msg_.time_step = time - last_time_; 
-      controller_state_publisher_->unlockAndPublish();      
-    }
-  }
-  count++;
+  
+  controller_state_publisher_->msg_.set_point = command_; 
+  controller_state_publisher_->msg_.process_value = joint_state_->velocity_; 
+  controller_state_publisher_->msg_.error = error; 
+  controller_state_publisher_->msg_.time_step = time - last_time_; 
+   
   last_time_ = time;
 }
 
@@ -173,7 +167,17 @@ JointVelocityControllerNode::~JointVelocityControllerNode()
 
 void JointVelocityControllerNode::update()
 {
+  static int count = 0;
   c_->update();
+  
+  if(count % 10 == 0)
+  {
+    if(c_->controller_state_publisher_->trylock())
+    {
+      c_->controller_state_publisher_->unlockAndPublish();      
+    }
+  }
+  count++;
 }
 
 bool JointVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
