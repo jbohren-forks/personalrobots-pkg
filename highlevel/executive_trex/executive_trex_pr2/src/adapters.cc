@@ -47,6 +47,8 @@
 #include <robot_actions/Pose2D.h>
 #include <robot_actions/RechargeState.h>
 #include <robot_actions/DetectPlugOnBaseActionState.h>
+#include <robot_actions/SwitchControllers.h>
+#include <robot_actions/SwitchControllersState.h>
 
 namespace TREX {
 
@@ -311,4 +313,64 @@ namespace TREX {
 
   // Allocate Factory
   TeleoReactor::ConcreteFactory<DetectPlugOnBaseAdapter> DetectPlugOnBaseAdapter_Factory("DetectPlugOnBaseAdapter");
+
+
+  /***********************************************************************
+   * @brief SwtichControllers action
+   **********************************************************************/
+  class SwitchControllersAdapter: public ROSActionAdapter<robot_actions::SwitchControllers, robot_actions::SwitchControllersState, std_msgs::Empty> {
+  public:
+
+    SwitchControllersAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<robot_actions::SwitchControllers, robot_actions::SwitchControllersState, std_msgs::Empty>(agentName, configData){
+    }
+
+    virtual ~SwitchControllersAdapter(){}
+
+  protected:
+
+    virtual void fillActiveObservationParameters(const robot_actions::SwitchControllers& msg, ObservationByValue* obs){}
+
+    virtual void fillInactiveObservationParameters(const std_msgs::Empty& msg, ObservationByValue* obs){}
+
+    void fillDispatchParameters(robot_actions::SwitchControllers& msg, const TokenId& goalToken){
+      // The token will have a set of merged tokens on it. These merged tokens all are derived from a master of type
+      // 'MechanismController' which will be in a state of up or down. If it is up, we will append to the stop list, and if down, we
+      // will append to the start list
+
+      // Apply for immediate master token
+      handleMasterToken(goalToken->master(), msg);
+
+      // Apply over merged tokens
+      const TokenSet& merged_tokens = goalToken->getMergedTokens();
+      for(TokenSet::const_iterator it = merged_tokens.begin(); it != merged_tokens.end(); ++it){
+	TokenId merged_token = *it;
+	handleMasterToken(merged_token->master(), msg);
+      }
+    }
+
+    void handleMasterToken(const TokenId& master_token, robot_actions::SwitchControllers& msg){
+      if(master_token.isId() && master_token->getPlanDatabase()->getSchema()->isA(master_token->getPredicateName(), "MechanismController.Holds")){
+	ConstrainedVariableId param = master_token->getVariable("is_up");
+	checkError(param.isValid(), "Trying to dispatch controller switch but could find no variable named 'is_up' in token " << master_token->toString() << 
+		   ". This indicates that the model is out of synch with the adapter code.");
+	ROS_ASSERT(param.isId());
+	checkError(param->lastDomain().isSingleton(), "Cannot tell if controller is up or down:" << param->toString() << ". Model should ensure value is bound.");
+
+	bool is_up = (bool) param->lastDomain().getSingletonValue();
+	std::string controller_name = Observation::getTimelineName(master_token).toString();
+	if(is_up){
+	  TREX_INFO("ros:debug:dispatching", "Adding " << controller_name << " to the stop list. Current state is:" << param->lastDomain().toString());
+	  msg.stop_controllers.push_back(controller_name);
+	}
+	else {
+	  TREX_INFO("ros:debug:dispatching", "Adding " << controller_name << " to the start list. Current state is:" << param->lastDomain().toString());
+	  msg.start_controllers.push_back(controller_name);
+	}
+      }
+    }
+  };
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<SwitchControllersAdapter> SwitchControllersAdapter_Factory("SwitchControllersAdapter");
 }

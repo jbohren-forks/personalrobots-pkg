@@ -54,6 +54,8 @@
 #include <robot_actions/Pose2D.h>
 #include <robot_actions/RechargeState.h>
 #include <robot_actions/DetectPlugOnBaseActionState.h>
+#include <robot_actions/SwitchControllers.h>
+#include <robot_actions/SwitchControllersState.h>
 #include <boost/thread.hpp>
 #include <cstdlib>
 
@@ -137,15 +139,14 @@ namespace executive_trex_pr2 {
     boost::thread* _update_thread;
   };
 
+
   template <class Goal, class Feedback>
-  class StubFrameAction1: public robot_actions::Action<Goal, Feedback> {
+  class StubAction1: public robot_actions::Action<Goal, Feedback> {
   public:
 
-    StubFrameAction1(const std::string& name, const std::string& frame): robot_actions::Action<Goal, Feedback>(name) {
-      _feedback.header.frame_id = frame;
-    }
+    StubAction1(const std::string& name): robot_actions::Action<Goal, Feedback>(name) {}
 
-  private:
+  protected:
 
     // Activation does all the real work
     virtual void handleActivate(const Goal& msg){
@@ -162,6 +163,16 @@ namespace executive_trex_pr2 {
 
     Feedback _feedback;
   };
+
+  template <class Goal, class Feedback>
+  class StubFrameAction1: public StubAction1<Goal, Feedback> {
+  public:
+
+    StubFrameAction1(const std::string& name, const std::string& frame): StubAction1<Goal, Feedback>(name) {
+      StubAction1<Goal, Feedback>::_feedback.header.frame_id = frame;
+    }
+  };
+
 }
 
 int main(int argc, char** argv){ 
@@ -197,6 +208,10 @@ int main(int argc, char** argv){
   /* Action stubs for plugs */
   executive_trex_pr2::StubFrameAction1<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base", "torso_link_lift");
   runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect_plug_on_base);
+
+  /* Action stubs for resource management */
+  executive_trex_pr2::StubAction1<robot_actions::SwitchControllers, std_msgs::Empty> switch_controllers("switch_controllers");
+  runner.connect<robot_actions::SwitchControllers, robot_actions::SwitchControllersState, std_msgs::Empty>(switch_controllers);
 
   // Allocate other action stubs
   executive_trex_pr2::StubFrameAction<robot_actions::Pose2D> move_base("move_base", "base_link");
