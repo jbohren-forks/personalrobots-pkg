@@ -20,6 +20,11 @@
   <depend package="point_cloud_assembler" />
   <depend package="std_msgs" />
   <depend package="sbpl_arm_executive" />
+  <depend package="opencv_latest"/>
+  <depend package="image_msgs"/>
+  <depend package="topic_synchronizer"/>
+  <depend package="stereo_utils"/>
+  <depend package="tf"/>
 
 
  <export>

@@ -32,6 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+// Author: Marius Muja
+
 #include <vector>
 #include <fstream>
 #include <sstream>
