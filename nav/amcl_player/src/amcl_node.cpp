@@ -88,6 +88,7 @@ Publishes to (name / type):
 #include <deque>
 
 #include <boost/bind.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include "map/map.h"
 #include "pf/pf.h"
@@ -110,6 +111,20 @@ Publishes to (name / type):
 #include "tf/transform_broadcaster.h"
 #include "tf/transform_listener.h"
 #include "tf/message_notifier.h"
+
+// Pose hypothesis
+typedef struct
+{
+  // Total weight (weights sum to 1)
+  double weight;
+
+  // Mean of pose esimate
+  pf_vector_t pf_pose_mean;
+
+  // Covariance of pose estimate
+  pf_matrix_t pf_pose_cov;
+
+} amcl_hyp_t;
 
 class AmclNode
 {
@@ -135,7 +150,7 @@ class AmclNode
     double getYaw(robot_msgs::Pose& p);
 
     //parameter for what odom to use
-    std::string odom_frame_id;
+    std::string odom_frame_id_;
 
     map_t* map_;
     char* mapdata;
@@ -148,6 +163,7 @@ class AmclNode
 
     // Particle filter
     pf_t *pf_;
+    boost::mutex pf_mutex_;
     int pf_min_samples_, pf_max_samples_;
     double pf_err_, pf_z_;
     bool pf_init_;
@@ -182,7 +198,7 @@ main(int argc, char** argv)
 {
   ros::init(argc, argv);
 
-  ros::Node n("amcl_player");
+  ros::Node n("amcl");
 
   AmclNode an;
 
@@ -195,8 +211,7 @@ main(int argc, char** argv)
 AmclNode::AmclNode() :
         map_(NULL),
         have_laser_pose(false),
-        pf_(NULL),
-        pf_init_(false)
+        pf_(NULL)
 {
   // Grab params off the param server
   int max_beams;
@@ -212,7 +227,7 @@ AmclNode::AmclNode() :
   ros::Node::instance()->param("pf_odom_drift_xa", odom_drift_xa, 0.2);
   ros::Node::instance()->param("pf_min_d", d_thresh_, 0.2);
   ros::Node::instance()->param("pf_min_a", a_thresh_, M_PI/6.0);
-  ros::Node::instance()->param("pf_odom_frame_id", odom_frame_id, std::string("odom"));
+  ros::Node::instance()->param("pf_odom_frame_id", odom_frame_id_, std::string("odom"));
   ros::Node::instance()->param("pf_transform_tolerance", transform_tolerance_, 0.0);
 
   double startX, startY, startTH;
@@ -241,6 +256,7 @@ AmclNode::AmclNode() :
   pf_init_pose_cov.m[1][1] = 1.0 * 1.0;
   pf_init_pose_cov.m[2][2] = 2*M_PI * 2*M_PI;
   pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
+  pf_init_ = false;
 
   // Instantiate the sensor objects
   // Odometry
@@ -265,7 +281,7 @@ AmclNode::AmclNode() :
           (tf_, ros::Node::instance(),  
            boost::bind(&AmclNode::laserReceived, 
                        this, _1), 
-           "scan", "base_footprint",
+           "scan", odom_frame_id_,
            20);
   ros::Node::instance()->subscribe("initialpose", initialPoseMsg_, &AmclNode::initialPoseReceived,this,2);
 }
@@ -557,7 +573,7 @@ AmclNode::getOdomPose(double& x, double& y, double& yaw,
   tf::Stamped<btTransform> odom_pose;
   try
   {
-    this->tf_->transformPose(odom_frame_id, ident, odom_pose);
+    this->tf_->transformPose(odom_frame_id_, ident, odom_pose);
   }
   catch(tf::TransformException e)
   {
@@ -617,6 +633,8 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     return;
   }
 
+  pf_mutex_.lock();
+
   bool update = false;
   pf_vector_t delta;
 
@@ -648,18 +666,89 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     //printf("pose\n");
     //pf_vector_fprintf(pose, stdout, "%.3f");
 
-    AMCLOdomData data;
-    data.pose = pose;
+    AMCLOdomData odata;
+    odata.pose = pose;
     // HACK
     // Modify the delta in the action data so the filter gets
     // updated correctly
-    data.delta = delta;
+    odata.delta = delta;
 
     // Use the action data to update the filter
-    odom_->UpdateAction(pf_, (AMCLSensorData*)&data);
+    odom_->UpdateAction(pf_, (AMCLSensorData*)&odata);
 
     // Pose at last filter update
     //this->pf_odom_pose = pose;
+  }
+
+  // If the robot has moved, update the filter
+  if(update)
+  {
+    AMCLLaserData ldata;
+    ldata.sensor = laser_;
+    ldata.range_count = laser_scan->ranges.size();
+    ldata.range_max = laser_scan->range_max;
+    // The AMCLLaserData destructor will free this memory
+    ldata.ranges = new double[ldata.range_count][2];
+    ROS_ASSERT(ldata.ranges);
+    for(int i=0;i<ldata.range_count;i++)
+    {
+      // amcl doesn't (yet) have a concept of min range.  So we'll map short
+      // readings to max range.
+      if(laser_scan->ranges[i] <= laser_scan->range_min)
+        ldata.ranges[i][0] = laser_scan->range_max;
+      else
+        ldata.ranges[i][0] = laser_scan->ranges[i];
+      // Compute bearing
+      ldata.ranges[i][1] = laser_scan->angle_min + 
+              (i * laser_scan->angle_increment);
+    }
+
+    laser_->UpdateSensor(pf_, (AMCLSensorData*)&ldata);
+    pf_odom_pose_ = pose;
+  
+    // Resample the particles
+    pf_update_resample(pf_);
+    ROS_INFO("Num samples: %d\n", pf_->sets[pf_->current_set].sample_count);
+
+    // Read out the current hypotheses
+    double max_weight = 0.0;
+    pf_vector_t max_weight_pose={{0.0,0.0,0.0}};
+    const int MAX_HYPS = 8;
+    std::vector<amcl_hyp_t> hyps;
+    hyps.resize(MAX_HYPS);
+    int hyp_count = 0;
+    for(hyp_count = 0; hyp_count < MAX_HYPS; hyp_count++)
+    {
+      double weight;
+      pf_vector_t pose_mean;
+      pf_matrix_t pose_cov;
+      if (!pf_get_cluster_stats(pf_, hyp_count, &weight, &pose_mean, &pose_cov))
+        break;
+
+      //pf_vector_fprintf(pose_mean, stdout, "%.3f");
+
+      hyps[hyp_count].weight = weight;
+      hyps[hyp_count].pf_pose_mean = pose_mean;
+      hyps[hyp_count].pf_pose_cov = pose_cov;
+
+      if(hyps[hyp_count].weight > max_weight)
+      {
+        max_weight = hyps[hyp_count].weight;
+        max_weight_pose = hyps[hyp_count].pf_pose_mean;
+      }
+    }
+
+    if(max_weight > 0.0)
+    {
+      ROS_INFO("Max weight pose: %.3f %.3f %.3f",
+               max_weight_pose.v[0],
+               max_weight_pose.v[1],
+               max_weight_pose.v[2]);
+    }
+    else
+    {
+      ROS_ERROR("No pose!");
+    }
   }
 
 #if 0
@@ -724,6 +813,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
   delete[] pdata.ranges;
   delete[] pdata.intensity;
 #endif
+  pf_mutex_.unlock();
 }
 
 double
@@ -740,8 +830,21 @@ AmclNode::getYaw(robot_msgs::Pose& p)
 void 
 AmclNode::initialPoseReceived()
 {
-  ROS_DEBUG("Setting pose: %.3f %.3f %.3f", 
-            initialPoseMsg_.pose.position.x,
-            initialPoseMsg_.pose.position.y,
-            getYaw(initialPoseMsg_.pose));
+  ROS_INFO("Setting pose: %.3f %.3f %.3f", 
+           initialPoseMsg_.pose.position.x,
+           initialPoseMsg_.pose.position.y,
+           getYaw(initialPoseMsg_.pose));
+  // Re-initialize the filter
+  pf_vector_t pf_init_pose_mean = pf_vector_zero();
+  pf_init_pose_mean.v[0] = initialPoseMsg_.pose.position.x;
+  pf_init_pose_mean.v[1] = initialPoseMsg_.pose.position.y;
+  pf_init_pose_mean.v[2] = getYaw(initialPoseMsg_.pose);
+  pf_matrix_t pf_init_pose_cov = pf_matrix_zero();
+  pf_init_pose_cov.m[0][0] = 1.0 * 1.0;
+  pf_init_pose_cov.m[1][1] = 1.0 * 1.0;
+  pf_init_pose_cov.m[2][2] = 2*M_PI * 2*M_PI;
+  pf_mutex_.lock();
+  pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
+  pf_init_ = false;
+  pf_mutex_.unlock();
 }
