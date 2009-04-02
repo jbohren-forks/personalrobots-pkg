@@ -36,37 +36,35 @@
 import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
-from robot_msgs.msg import Planner2DGoal, Planner2DState, ControllerStatus
+from robot_actions.msg import Pose2D, MoveBaseState
 
 class MoveBase:
   def __init__(self):
-    self.pub_goal = rospy.Publisher("goal", Planner2DGoal)
-    rospy.Subscriber("state", Planner2DState, self.stateCallback)
+    self.pub_goal = rospy.Publisher("/move_base_node/activate", Pose2D)
+    rospy.Subscriber("/move_base_node/feedback", MoveBaseState, self.stateCallback)
     self.status = None
 
   def stateCallback(self, msg):
     self.status = msg.status
 
   def moveBase(self, frame, x, y, a):
-    g = Planner2DGoal()
-    g.goal.x = x
-    g.goal.y = y
-    g.goal.th = a
-    g.enable = 1
+    g = Pose2D()
+    g.x = x
+    g.y = y
+    g.th = a
     g.header.frame_id = frame
-    g.timeout = 0.0
-    print '[MoveBase] Sending the robot to (%f,%f,%f)'%(g.goal.x,g.goal.y,g.goal.th)
+    print '[MoveBase] Sending the robot to (%f,%f,%f)'%(g.x,g.y,g.th)
     self.pub_goal.publish(g)
 
     # HACK to get around the lack of proper goal_id support
     print '[MoveBase] Waiting for goal to be taken up...'
     rospy.sleep(2.0)
 
-    while self.status == None or self.status.value == ControllerStatus.ACTIVE:
+    while self.status == None or self.status.value == self.status.ACTIVE:
       print '[MoveBase] Waiting for goal achievement...'
       rospy.sleep(1.0)
 
-    return self.status.value == ControllerStatus.SUCCESS
+    return self.status.value == self.status.SUCCESS
 
 if __name__ == '__main__':
   import sys

@@ -36,12 +36,12 @@
 import roslib
 roslib.load_manifest('tabletop_manipulation')
 import rospy
-from robot_msgs.msg import Planner2DGoal, Planner2DState
+from robot_actions.msg import Pose2D, MoveBaseState
 
 class StopBase:
   def __init__(self):
-    self.pub_goal = rospy.Publisher("goal", Planner2DGoal)
-    rospy.Subscriber("state", Planner2DState, self.stateCallback)
+    self.pub_goal = rospy.Publisher("/move_base_node/preempt", Pose2D)
+    rospy.Subscriber("/move_base_node/feedback", MoveBaseState, self.stateCallback)
     self.goal_id = -1
     self.status = None
 
@@ -50,21 +50,19 @@ class StopBase:
     self.status = msg.status
 
   def stopBase(self):
-    g = Planner2DGoal()
-    g.goal.x = 0
-    g.goal.y = 0
-    g.goal.th = 0
-    g.enable = 1
+    g = Pose2D()
+    g.x = 0
+    g.y = 0
+    g.th = 0
     g.header.frame_id = ''
-    g.timeout = 0.0
     print '[StopBase] Stopping base'
     self.pub_goal.publish(g)
 
-    while self.status == None or self.status == Planner2DState.ACTIVE:
+    while self.status == None or self.status == self.status.ACTIVE:
       print '[StopBase] Waiting for goal achievement...'
       rospy.sleep(1.0)
 
-    return self.status != Planner2DState.INACTIVE
+    return self.status != self.status.INACTIVE
 
 if __name__ == '__main__':
   import sys

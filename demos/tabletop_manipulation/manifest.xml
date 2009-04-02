@@ -15,5 +15,6 @@
   <depend package="plan_ompl_path"/>
   <depend package="pr2_msgs"/>
   <depend package="rosviz"/>
+  <depend package="robot_actions"/>
   <depend package="tf"/>
 </package>
