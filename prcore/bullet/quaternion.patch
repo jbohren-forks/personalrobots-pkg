@@ -20,23 +20,6 @@ Index: src/LinearMath/btQuaternion.h
 ===================================================================
 --- src/LinearMath/btQuaternion.h	(revision 1644)
 +++ src/LinearMath/btQuaternion.h	(working copy)
-@@ -103,6 +103,16 @@
-                          cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw, //z
-                          cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw); //formerly yzx
- 	}
-+  /**@brief Set the rotation by heading 
-+   * @param yaw Yaw angle */
-+        void setHeading(const btScalar& yaw)
-+        {
-+#ifndef BT_EULER_DEFAULT_ZYX
-+          setEuler(yaw, 0.0, 0.0); 
-+#else
-+          setEulerZYX(yaw, 0.0, 0.0); 
-+#endif 
-+        } 
-   /**@brief Add two quaternions
-    * @param q The quaternion to add to this one */
- 	SIMD_FORCE_INLINE	btQuaternion& operator+=(const btQuaternion& q)
 @@ -200,15 +210,30 @@
  	{
  		btScalar s = btSqrt(length2() * q.length2());
@@ -116,33 +99,3 @@ Index: src/LinearMath/btMatrix3x3.h
  		btScalar ci ( btCos(eulerX)); 
  		btScalar cj ( btCos(eulerY)); 
  		btScalar ch ( btCos(eulerZ)); 
-@@ -201,6 +200,29 @@
- 			return identityMatrix;
- 		}
- 
-+  /**@brief Set the rotation by heading 
-+   * @param yaw Yaw angle */
-+        void setHeading(const btScalar& yaw)
-+        {
-+#ifndef BT_EULER_DEFAULT_ZYX
-+          setEulerYPR(yaw, 0.0, 0.0); 
-+#else
-+          setEulerZYX(yaw, 0.0, 0.0); 
-+#endif 
-+        } 
-+  /**@brief Get the rotational heading */
-+       btScalar getHeading(void)
-+       {
-+         btScalar yaw, pitch, roll;
-+#ifndef BT_EULER_DEFAULT_ZYX
-+          getEulerYPR(yaw, pitch, roll); 
-+#else
-+          getEulerZYX(yaw, pitch, roll); 
-+#endif 
-+          return yaw;
-+        } 
-+  
-+
-   /**@brief Fill the values of the matrix into a 9 element array 
-    * @param m The array to be filled */
- 		void getOpenGLSubMatrix(btScalar *m) const 
