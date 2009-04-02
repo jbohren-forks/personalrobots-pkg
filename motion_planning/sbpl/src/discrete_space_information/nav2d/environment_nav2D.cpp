@@ -948,7 +948,7 @@ int EnvironmentNAV2D::SetGoal(int x, int y){
     }
     EnvNAV2D.goalstateid = OutHashEntry->stateID;
 	EnvNAV2DCfg.EndX_c = x;
-	EnvNAV2DCfg.EndY_c = x;
+	EnvNAV2DCfg.EndY_c = y;
 
 
     return EnvNAV2D.goalstateid;    
@@ -984,7 +984,7 @@ int EnvironmentNAV2D::SetStart(int x, int y){
     }
     EnvNAV2D.startstateid = OutHashEntry->stateID;
 	EnvNAV2DCfg.StartX_c = x;
-	EnvNAV2DCfg.StartY_c = x;
+	EnvNAV2DCfg.StartY_c = y;
 
     return EnvNAV2D.startstateid;    
 

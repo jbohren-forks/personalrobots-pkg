@@ -70,6 +70,31 @@ typedef struct {
 	double y;
 } sbpl_2Dpt_t;
 
+typedef struct BINARYHIDDENVARIABLE
+{
+	int h_ID; //ID of the variable
+	unsigned char Prob;
+
+}sbpl_BinaryHiddenVar_t;
+
+typedef struct BELIEFSTATEWITHBINARYHVALS
+{
+	int s_ID; //ID of S part of state-space
+	vector<sbpl_BinaryHiddenVar_t> updatedhvaluesV; //vector of updated h-values, the rest are the same as at the start state
+	
+
+}sbpl_BeliefStatewithBinaryh_t;
+
+typedef struct POLICYBELIEFSTATEWITHBINARYHVALS
+{
+
+	sbpl_BeliefStatewithBinaryh_t BeliefState; //current belief state
+
+	int nextpolicyactionID; //ID of the next policy action if exists (otherwise -1)
+	vector<int> outcomestateIndexV; //indices of the outcome states of the policy action. If outcome state is not in the policy, then it is -1
+
+}sbpl_PolicyStatewithBinaryh_t;
+
 
 
 

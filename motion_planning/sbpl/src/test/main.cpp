@@ -150,6 +150,67 @@ int plan2d(int argc, char *argv[])
     return bRet;
 }
 
+int plan2duu(int argc, char *argv[])
+{
+
+	int bRet = 0;
+	double allocated_time_secs = 100.0; //in seconds
+	MDPConfig MDPCfg;
+	
+	//Initialize Environment (should be called before initializing anything else)
+	EnvironmentNAV2DUU environment_nav2Duu;
+	if(!environment_nav2Duu.InitializeEnv(argv[1]))
+	{
+		printf("ERROR: InitializeEnv failed\n");
+		exit(1);
+	}
+
+	//Initialize MDP Info
+	if(!environment_nav2Duu.InitializeMDPCfg(&MDPCfg))
+	{
+		printf("ERROR: InitializeMDPCfg failed\n");
+		exit(1);
+	}
+
+
+	//create the planner
+	PPCPPlanner planner(&environment_nav2Duu, environment_nav2Duu.SizeofCreatedEnv(), environment_nav2Duu.SizeofH());
+	
+	//set start and goal
+    if(planner.set_start(MDPCfg.startstateid) == 0)
+        {
+            printf("ERROR: failed to set start state\n");
+            exit(1);
+        }
+    if(planner.set_goal(MDPCfg.goalstateid) == 0)
+        {
+            printf("ERROR: failed to set goal state\n");
+            exit(1);
+        }
+
+
+    printf("start planning...\n");
+	float ExpectedCost, ProbofReachGoal;
+	vector<sbpl_PolicyStatewithBinaryh_t> SolutionPolicy;
+	bRet = planner.replan(allocated_time_secs, &SolutionPolicy, &ExpectedCost, &ProbofReachGoal);
+    printf("done planning\n");
+
+
+	if(bRet)
+	{
+		//print the solution
+		printf("Solution is found: exp. cost=%f probofreachgoal=%f\n", ExpectedCost, ProbofReachGoal);
+	}
+	else
+		printf("Solution does not exist\n");
+
+	fflush(NULL);
+
+
+    return bRet;
+}
+
+
 int plan3dkin(int argc, char *argv[])
 {
 
@@ -285,7 +346,7 @@ int planxythetalat(int argc, char *argv[])
 	//set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
 	vector<sbpl_2Dpt_t> perimeterptsV;
 	sbpl_2Dpt_t pt_m;
-	double halfwidth = 0.08; //0.3;
+	double halfwidth = 0.02; //0.3;
 	double halflength = 0.1; //0.45;
 	pt_m.x = -halflength;
 	pt_m.y = -halfwidth;
@@ -310,11 +371,16 @@ int planxythetalat(int argc, char *argv[])
 	//Initialize Environment (should be called before initializing anything else)
 	EnvironmentNAVXYTHETALAT environment_navxythetalat;
 
+	//if cost of any cell >= cost_inscribed, then it indicates DEFINITE collision with an obstacle, independently of the rotation of the robot
+	//if cost_inscribed is not really computed, then set it to obsthresh (ENVNAVXYTHETALAT_DEFAULTOBSTHRESH)
 	if(!environment_navxythetalat.SetEnvParameter("cost_inscribed", 253)) //TODO - debugmax - should be part of environment file
 	{
 		printf("ERROR: failed to set parameters\n");
 		exit(1);
 	}
+
+	//if cost of any cell < cost_possibly_circumscribed, then it indicates DEFINITELY NO collision with an obstacle, independently of the rotation of the robot
+	//if cost_possibly_circumscribed is not really computed, then set it to 0
 	if(!environment_navxythetalat.SetEnvParameter("cost_possibly_circumscribed", 128)) 
 	{
 		printf("ERROR: failed to set parameters\n");
@@ -1083,6 +1149,9 @@ int main(int argc, char *argv[])
 
     //robotarm planning
     //planrobarm(argc, argv);
+
+    //2D planning under uncertainty
+	//plan2duu(argc, argv);
 
 	
 	return 0;

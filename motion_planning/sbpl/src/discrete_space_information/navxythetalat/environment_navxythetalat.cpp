@@ -697,6 +697,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActionswithBaseMotionPrimitive(vector<S
 			//compute and store interm points as well as intersecting cells
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].interm3DcellsV.clear();
 			EnvNAVXYTHETALAT3Dcell_t previnterm3Dcell;
 			for (int pind = 0; pind < (int)motionprimitiveV->at(aind).intermptV.size(); pind++)
 			{
@@ -834,6 +835,8 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActionswithCompleteMotionPrimitive(vect
 			//compute and store interm points as well as intersecting cells
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].interm3DcellsV.clear();
+			EnvNAVXYTHETALAT3Dcell_t previnterm3Dcell;
 			for (int pind = 0; pind < (int)motionprimitiveV->at(mind).intermptV.size(); pind++)
 			{
 				EnvNAVXYTHETALAT3Dpt_t intermpt = motionprimitiveV->at(mind).intermptV[pind];
@@ -847,6 +850,18 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActionswithCompleteMotionPrimitive(vect
 				pose.x += sourcepose.x;
 				pose.y += sourcepose.y;
 				CalculateFootprintForPose(pose, &EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intersectingcellsV);
+			
+				//now also store the intermediate discretized cell if not there already
+				EnvNAVXYTHETALAT3Dcell_t interm3Dcell;
+				interm3Dcell.x = CONTXY2DISC(pose.x, EnvNAVXYTHETALATCfg.cellsize_m);
+				interm3Dcell.y = CONTXY2DISC(pose.y, EnvNAVXYTHETALATCfg.cellsize_m);
+				interm3Dcell.theta = ContTheta2Disc(pose.theta, NAVXYTHETALAT_THETADIRS); 
+				if(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].interm3DcellsV.size() == 0 || 
+					previnterm3Dcell.theta != interm3Dcell.theta || previnterm3Dcell.x != interm3Dcell.x || previnterm3Dcell.y != interm3Dcell.y)
+				{
+					EnvNAVXYTHETALATCfg.ActionsV[tind][aind].interm3DcellsV.push_back(interm3Dcell);
+				}
+				previnterm3Dcell = interm3Dcell;
 			}
 
 			//now remove the source footprint
@@ -1228,6 +1243,8 @@ int EnvironmentNAVXYTHETALAT::GetActionCost(int SourceX, int SourceY, int Source
 	for(i = 0; i < (int)action->interm3DcellsV.size(); i++)
 	{
 		interm3Dcell = action->interm3DcellsV.at(i);
+		interm3Dcell.x = interm3Dcell.x + SourceX;
+		interm3Dcell.y = interm3Dcell.y + SourceY;
 		
 		if(interm3Dcell.x < 0 || interm3Dcell.x >= EnvNAVXYTHETALATCfg.EnvWidth_c ||
 			interm3Dcell.y < 0 || interm3Dcell.y >= EnvNAVXYTHETALATCfg.EnvHeight_c)

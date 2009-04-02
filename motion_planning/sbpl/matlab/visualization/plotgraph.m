@@ -59,7 +59,7 @@ if LDOG
 else %WG
     cellsize = 0.025;
     %map = load('costmap--soffice1-msfl-r100-i0-c135-I225-d750-H3000-env.txt');
-    map = load('cubicle-25mm-inflated-env.txt');
+   map = load('cubicle-25mm-inflated-env.txt');
     %map = load('willow-25mm-noninflated.txt');
     x = load('sol.txt');
 end;

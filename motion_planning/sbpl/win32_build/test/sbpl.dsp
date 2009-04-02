@@ -101,6 +101,10 @@ SOURCE=..\..\src\discrete_space_information\nav2d\environment_nav2D.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\discrete_space_information\nav2d_uu\environment_nav2duu.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\discrete_space_information\nav3dkin\environment_nav3Dkin.cpp
 # End Source File
 # Begin Source File
@@ -128,6 +132,10 @@ SOURCE=..\..\src\test\main.cpp
 # Begin Source File
 
 SOURCE=..\..\src\utils\mdp.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\planners\PPCP\ppcpplanner.cpp
 # End Source File
 # Begin Source File
 
@@ -164,6 +172,10 @@ SOURCE=..\..\src\discrete_space_information\environment.h
 # Begin Source File
 
 SOURCE=..\..\src\discrete_space_information\nav2d\environment_nav2D.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\discrete_space_information\nav2d_uu\environment_nav2duu.h
 # End Source File
 # Begin Source File
 
@@ -221,6 +233,10 @@ SOURCE=..\..\src\utils\mdpconfig.h
 # Begin Source File
 
 SOURCE=..\..\src\planners\planner.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\planners\PPCP\ppcpplanner.h
 # End Source File
 # Begin Source File
 

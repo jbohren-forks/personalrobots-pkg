@@ -63,12 +63,15 @@ using namespace std;
 #include "../discrete_space_information/nav3dkin/environment_nav3Dkin.h"
 #include "../discrete_space_information/navxythetalat/environment_navxythetalat.h"
 #include "../discrete_space_information/robarm/environment_robarm.h"
+#include "../discrete_space_information/nav2d_uu/environment_nav2Duu.h"
 #include "../utils/list.h"
 #include "../utils/heap.h"
 #include "../planners/VI/viplanner.h"
 #include "../planners/ARAStar/araplanner.h"
 #include "../planners/ADStar/adplanner.h"
 #include "../utils/2Dgridsearch.h"
+#include "../planners/PPCP/ppcpplanner.h"
+
 
 #endif
 
