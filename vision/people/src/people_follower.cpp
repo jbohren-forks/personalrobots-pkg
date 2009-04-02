@@ -70,18 +70,14 @@ namespace estimation
     people_notifier_ = new MessageNotifier<PositionMeasurement>(&robot_state_, this,  boost::bind(&PeopleFollower::callback, this, _1), 
                                                                "people_tracker_filter", fixed_frame_, 10);
     // advertise robot poses
-    advertise<robot_msgs::Planner2DGoal>("goal", 10);
+    advertise<robot_actions::Pose2D>("/move_base_node/activate", 10);
 
     // initialize goal
     people_pos_.header.frame_id = fixed_frame_;
     people_pos_.header.stamp = ros::Time().fromSec(0);
-    people_pos_.enable = true;
-    people_pos_.timeout = 1000000;
 
     robot_pos_.header.frame_id = fixed_frame_;
     robot_pos_.header.stamp = ros::Time().fromSec(0);
-    robot_pos_.enable = true;
-    robot_pos_.timeout = 1000000;
 
     time_last_publish_ = Time::now();
 
@@ -115,16 +111,16 @@ namespace estimation
     robot_state_.transformPoint(fixed_frame_, people_pos_rel, people_pos_fixed_frame);
 
     // convert to planner 2D goal message
-    people_pos_.goal.x = people_pos_fixed_frame.x();
-    people_pos_.goal.y = people_pos_fixed_frame.y();
-    people_pos_.goal.th = 0.0;
+    people_pos_.x = people_pos_fixed_frame.x();
+    people_pos_.y = people_pos_fixed_frame.y();
+    people_pos_.th = 0.0;
 
     if (initialized_){
       // calculate distance and angle
-      double dx = people_pos_.goal.x - people_poses_.back().goal.x;
-      double dy = people_pos_.goal.y - people_poses_.back().goal.y;
+      double dx = people_pos_.x - people_poses_.back().x;
+      double dy = people_pos_.y - people_poses_.back().y;
       double length = sqrt(pow(dx,2) + pow(dy,2));
-      people_pos_.goal.th = atan2(dy, dx);
+      people_pos_.th = atan2(dy, dx);
 
       // add to list buffer 
       if (length > distance_threshold_){
@@ -133,15 +129,15 @@ namespace estimation
       }
 
       // find next goal to send, which is follow_distance_ away from people_pos_
-      while  (sqrt(pow(people_pos_.goal.x-people_poses_.front().goal.x,2) +
-                   pow(people_pos_.goal.y-people_poses_.front().goal.y,2) ) > follow_distance_) {
+      while  (sqrt(pow(people_pos_.x-people_poses_.front().x,2) +
+                   pow(people_pos_.y-people_poses_.front().y,2) ) > follow_distance_) {
         people_poses_.pop_front();
         distances_.pop_front();
       }
-      robot_pos_.goal = people_poses_.front().goal;
-      dx = people_pos_.goal.x - robot_pos_.goal.x;
-      dy = people_pos_.goal.y - robot_pos_.goal.y;
-      robot_pos_.goal.th = atan2(dy, dx);
+      robot_pos_ = people_poses_.front();
+      dx = people_pos_.x - robot_pos_.x;
+      dy = people_pos_.y - robot_pos_.y;
+      robot_pos_.th = atan2(dy, dx);
 
       /*
       cout << "person pos " 
@@ -164,8 +160,8 @@ namespace estimation
       }
 
       // visualize goal
-      robot_goal_cloud_.pts[0].x = robot_pos_.goal.x;
-      robot_goal_cloud_.pts[0].y = robot_pos_.goal.y;
+      robot_goal_cloud_.pts[0].x = robot_pos_.x;
+      robot_goal_cloud_.pts[0].y = robot_pos_.y;
       robot_goal_cloud_.pts[0].z = 0.0;
       robot_goal_cloud_.header.frame_id = fixed_frame_;
       publish("goal_pos",robot_goal_cloud_);
