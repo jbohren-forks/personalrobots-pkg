@@ -92,6 +92,9 @@ TEST (LMedS, SACModelCircle2D)
   sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
+  EXPECT_NEAR (coeff_ref[0],  2.99, 1e-1);
+  EXPECT_NEAR (coeff_ref[1], -5.00, 1e-1);
+  EXPECT_NEAR (coeff_ref[2],  0.99, 1e-1);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -147,6 +150,9 @@ TEST (RANSAC, SACModelCircle2D)
   sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
+  EXPECT_NEAR (coeff_ref[0],  2.99, 1e-1);
+  EXPECT_NEAR (coeff_ref[1], -5.00, 1e-1);
+  EXPECT_NEAR (coeff_ref[2],  0.99, 1e-1);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -202,6 +208,9 @@ TEST (MSAC, SACModelCircle2D)
   sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
+  EXPECT_NEAR (coeff_ref[0],  2.99, 1e-1);
+  EXPECT_NEAR (coeff_ref[1], -5.00, 1e-1);
+  EXPECT_NEAR (coeff_ref[2],  0.99, 1e-1);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -257,6 +266,9 @@ TEST (MLESAC, SACModelCircle2D)
   sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
+  EXPECT_NEAR (coeff_ref[0],  2.99, 1e-1);
+  EXPECT_NEAR (coeff_ref[1], -5.00, 1e-1);
+  EXPECT_NEAR (coeff_ref[2],  0.99, 1e-1);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -312,6 +324,9 @@ TEST (RRANSAC, SACModelCircle2D)
   sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
+  EXPECT_NEAR (coeff_ref[0],  2.99, 1e-1);
+  EXPECT_NEAR (coeff_ref[1], -5.00, 1e-1);
+  EXPECT_NEAR (coeff_ref[2],  0.99, 1e-1);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -367,6 +382,9 @@ TEST (RMSAC, SACModelCircle2D)
   sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 3);
   //printf ("Circle 2D coefficients (refined): %f %f %f %f\n", coeff_ref[0], coeff_ref[1], coeff_ref[2], coeff_ref[3]);
+  EXPECT_NEAR (coeff_ref[0],  2.99, 1e-1);
+  EXPECT_NEAR (coeff_ref[1], -5.00, 1e-1);
+  EXPECT_NEAR (coeff_ref[2],  0.99, 1e-1);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);

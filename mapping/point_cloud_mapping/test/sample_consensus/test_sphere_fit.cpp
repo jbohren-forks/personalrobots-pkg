@@ -84,6 +84,10 @@ TEST (LMedS, SACModelSphere)
   std::vector<double> coeff_ref;
   sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 4);
+  EXPECT_NEAR (coeff_ref[0], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[1], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[2], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[3], 0.99, 1e-1);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -131,6 +135,10 @@ TEST (RANSAC, SACModelSphere)
   std::vector<double> coeff_ref;
   sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 4);
+  EXPECT_NEAR (coeff_ref[0], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[1], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[2], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[3], 0.99, 1e-1);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -178,6 +186,10 @@ TEST (MSAC, SACModelSphere)
   std::vector<double> coeff_ref;
   sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 4);
+  EXPECT_NEAR (coeff_ref[0], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[1], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[2], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[3], 0.99, 1e-1);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -227,6 +239,10 @@ TEST (RRANSAC, SACModelSphere)
   std::vector<double> coeff_ref;
   sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 4);
+  EXPECT_NEAR (coeff_ref[0], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[1], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[2], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[3], 0.99, 1e-1);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
@@ -276,6 +292,10 @@ TEST (RMSAC, SACModelSphere)
   std::vector<double> coeff_ref;
   sac->refineCoefficients (coeff_ref);
   EXPECT_EQ ((int)coeff_ref.size (), 4);
+  EXPECT_NEAR (coeff_ref[0], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[1], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[2], 2.0, 1e-1);
+  EXPECT_NEAR (coeff_ref[3], 0.99, 1e-1);
 
   int nr_points_left = sac->removeInliers ();
   EXPECT_EQ (nr_points_left, 1);
