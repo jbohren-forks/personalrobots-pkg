@@ -8,6 +8,7 @@
 <depend package="hallway_tracker" />
 <depend package="tf" />
 <depend package="robot_msgs" />
+<depend package="robot_actions" />
 <depend package="deprecated_msgs" />
 <depend package="rosconsole" />
 <depend package="roscpp" />

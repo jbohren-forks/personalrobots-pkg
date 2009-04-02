@@ -1,5 +1,5 @@
 (roslisp:ros-load-message-types "robot_msgs/PointCloud" "robot_msgs/Point" "deprecated_msgs/Pose2DFloat32" 
-				"robot_msgs/Planner2DGoal" "robot_msgs/Planner2DState")
+				"robot_actions/Pose2D" "robot_actions/MoveBaseState")
 
 
 (defpackage :lane-following
@@ -77,8 +77,8 @@
   (subscribe "hallway_points" "robot_msgs/PointCloud" #'hallway-callback)
   (subscribe "person_position" "robot_msgs/Point" #'person-callback)
   (subscribe "robot_pose" "deprecated_msgs/Pose2DFloat32" #'pose-callback)
-  (subscribe "state" "robot_msgs/Planner2DState" #'state-callback)
-  (advertise "goal" "robot_msgs/Planner2DGoal")
+  (subscribe "state" "robot_actions/MoveBaseState" #'state-callback)
+  (advertise "goal" "robot_actions/Pose2D")
   (setq *global-frame* (get-param "global_frame_id"))
   (ros-info "Global frame is ~a with type ~a" *global-frame* (type-of *global-frame*)))
 
@@ -157,20 +157,17 @@
 				  
 
 (defun send-nav-goal (x y th timeout)
-  (let ((m (make-instance 'robot_msgs:<Planner2DGoal>)))
-    (setf (robot_msgs:enable-val m) 1
-	  (roslib:frame_id-val (robot_msgs:header-val m)) *global-frame*
-	  (robot_msgs:timeout-val m) timeout
-	  (deprecated_msgs:x-val (robot_msgs:goal-val m)) x
-	  (deprecated_msgs:y-val (robot_msgs:goal-val m)) y
-	  (deprecated_msgs:th-val (robot_msgs:goal-val m)) th)
-    (publish-on-topic "goal" m)))
+  (let ((m (make-instance 'robot_actions:<Pose2D>)))
+    (setf (roslib:frame_id-val (robot_actions:header-val m)) *global-frame*
+	  (robot_actions:x-val m) x
+	  (robot_actions:y-val m) y
+	  (robot_actions:th-val m) th)
+    (publish-on-topic "/move_base_node/activate" m)))
 
 (defun disable-nav ()
-  (let ((m (make-instance 'robot_msgs:<Planner2DGoal>)))
-    (setf (robot_msgs:enable-val m) 0
-	  (roslib:frame_id-val (robot_msgs:header-val m)) *global-frame*)
-    (publish-on-topic "goal" m)))
+  (let ((m (make-instance 'robot_actions:<Pose2D>)))
+    (setf (roslib:frame_id-val (robot_actions:header-val m)) *global-frame*)
+    (publish-on-topic "/move_base_node/preempt" m)))
 
 
 
