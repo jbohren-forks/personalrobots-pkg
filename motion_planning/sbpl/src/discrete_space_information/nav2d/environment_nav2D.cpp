@@ -155,7 +155,7 @@ void EnvironmentNAV2D::SetConfiguration(int width, int height,
 void EnvironmentNAV2D::ReadConfiguration(FILE* fCfg)
 {
 	//read in the configuration of environment and initialize  EnvNAV2DCfg structure
-	char sTemp[1024];
+	char sTemp[1024], sTemp1[1024];
 	int dTemp;
 	int x, y;
 
@@ -166,6 +166,20 @@ void EnvironmentNAV2D::ReadConfiguration(FILE* fCfg)
 	fscanf(fCfg, "%s", sTemp);
 	EnvNAV2DCfg.EnvHeight_c = atoi(sTemp);
 	
+	//obsthresh: 
+	fscanf(fCfg, "%s", sTemp);
+	strcpy(sTemp1, "obsthresh:");
+	if(strcmp(sTemp1, sTemp) != 0)
+	{
+		printf("ERROR: configuration file has incorrect format\n");
+		printf("Expected %s got %s\n", sTemp1, sTemp);
+		exit(1);
+	}
+	fscanf(fCfg, "%s", sTemp);
+	EnvNAV2DCfg.obsthresh = atof(sTemp);
+	printf("obsthresh = %d\n", EnvNAV2DCfg.obsthresh);
+
+
 	//start(cells): 
 	fscanf(fCfg, "%s", sTemp);
 	fscanf(fCfg, "%s", sTemp);

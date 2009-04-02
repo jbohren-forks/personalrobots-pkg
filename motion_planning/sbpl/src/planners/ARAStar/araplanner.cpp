@@ -932,6 +932,9 @@ vector<int> ARAPlanner::GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, 
                 actioncost = CostV.at(i);
 
         }
+		if(actioncost == INFINITECOST)
+			printf("WARNING: actioncost = %d\n", actioncost);
+
         solcost += actioncost;
 
         //fprintf(fDeb, "actioncost=%d between states %d and %d\n", 
