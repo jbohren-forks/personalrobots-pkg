@@ -242,22 +242,22 @@ namespace sample_consensus
   /** \brief Check whether the given index samples can form a valid plane model, compute the model coefficients from
     * these samples and store them internally in model_coefficients_. The plane coefficients are:
     * a, b, c, d (ax+by+cz+d=0)
-    * \param indices the point indices found as possible good candidates for creating a valid model
+    * \param samples the point indices found as possible good candidates for creating a valid model
     */
   bool
-    SACModelPlane::computeModelCoefficients (const std::vector<int> &indices)
+    SACModelPlane::computeModelCoefficients (const std::vector<int> &samples)
   {
     model_coefficients_.resize (4);
     double Dx1, Dy1, Dz1, Dx2, Dy2, Dz2, Dy1Dy2;
     // Compute the segment values (in 3d) between XY
-    Dx1 = cloud_->pts.at (indices.at (1)).x - cloud_->pts.at (indices.at (0)).x;
-    Dy1 = cloud_->pts.at (indices.at (1)).y - cloud_->pts.at (indices.at (0)).y;
-    Dz1 = cloud_->pts.at (indices.at (1)).z - cloud_->pts.at (indices.at (0)).z;
+    Dx1 = cloud_->pts.at (samples.at (1)).x - cloud_->pts.at (samples.at (0)).x;
+    Dy1 = cloud_->pts.at (samples.at (1)).y - cloud_->pts.at (samples.at (0)).y;
+    Dz1 = cloud_->pts.at (samples.at (1)).z - cloud_->pts.at (samples.at (0)).z;
 
     // Compute the segment values (in 3d) between XZ
-    Dx2 = cloud_->pts.at (indices.at (2)).x - cloud_->pts.at (indices.at (0)).x;
-    Dy2 = cloud_->pts.at (indices.at (2)).y - cloud_->pts.at (indices.at (0)).y;
-    Dz2 = cloud_->pts.at (indices.at (2)).z - cloud_->pts.at (indices.at (0)).z;
+    Dx2 = cloud_->pts.at (samples.at (2)).x - cloud_->pts.at (samples.at (0)).x;
+    Dy2 = cloud_->pts.at (samples.at (2)).y - cloud_->pts.at (samples.at (0)).y;
+    Dz2 = cloud_->pts.at (samples.at (2)).z - cloud_->pts.at (samples.at (0)).z;
 
     Dy1Dy2 = Dy1 / Dy2;
     if (((Dx1 / Dx2) == Dy1Dy2) && (Dy1Dy2 == (Dz1 / Dz2)))     // Check for collinearity
@@ -265,20 +265,20 @@ namespace sample_consensus
 
     // Compute the plane coefficients from the 3 given points in a straightforward manner
     // calculate the plane normal n = (p2-p1) x (p3-p1) = cross (p2-p1, p3-p1)
-    model_coefficients_[0] = (cloud_->pts.at (indices.at (1)).y - cloud_->pts.at (indices.at (0)).y) *
-                             (cloud_->pts.at (indices.at (2)).z - cloud_->pts.at (indices.at (0)).z) -
-                             (cloud_->pts.at (indices.at (1)).z - cloud_->pts.at (indices.at (0)).z) *
-                             (cloud_->pts.at (indices.at (2)).y - cloud_->pts.at (indices.at (0)).y);
+    model_coefficients_[0] = (cloud_->pts.at (samples.at (1)).y - cloud_->pts.at (samples.at (0)).y) *
+                             (cloud_->pts.at (samples.at (2)).z - cloud_->pts.at (samples.at (0)).z) -
+                             (cloud_->pts.at (samples.at (1)).z - cloud_->pts.at (samples.at (0)).z) *
+                             (cloud_->pts.at (samples.at (2)).y - cloud_->pts.at (samples.at (0)).y);
 
-    model_coefficients_[1] = (cloud_->pts.at (indices.at (1)).z - cloud_->pts.at (indices.at (0)).z) *
-                             (cloud_->pts.at (indices.at (2)).x - cloud_->pts.at (indices.at (0)).x) -
-                             (cloud_->pts.at (indices.at (1)).x - cloud_->pts.at (indices.at (0)).x) *
-                             (cloud_->pts.at (indices.at (2)).z - cloud_->pts.at (indices.at (0)).z);
+    model_coefficients_[1] = (cloud_->pts.at (samples.at (1)).z - cloud_->pts.at (samples.at (0)).z) *
+                             (cloud_->pts.at (samples.at (2)).x - cloud_->pts.at (samples.at (0)).x) -
+                             (cloud_->pts.at (samples.at (1)).x - cloud_->pts.at (samples.at (0)).x) *
+                             (cloud_->pts.at (samples.at (2)).z - cloud_->pts.at (samples.at (0)).z);
 
-    model_coefficients_[2] = (cloud_->pts.at (indices.at (1)).x - cloud_->pts.at (indices.at (0)).x) *
-                             (cloud_->pts.at (indices.at (2)).y - cloud_->pts.at (indices.at (0)).y) -
-                             (cloud_->pts.at (indices.at (1)).y - cloud_->pts.at (indices.at (0)).y) *
-                             (cloud_->pts.at (indices.at (2)).x - cloud_->pts.at (indices.at (0)).x);
+    model_coefficients_[2] = (cloud_->pts.at (samples.at (1)).x - cloud_->pts.at (samples.at (0)).x) *
+                             (cloud_->pts.at (samples.at (2)).y - cloud_->pts.at (samples.at (0)).y) -
+                             (cloud_->pts.at (samples.at (1)).y - cloud_->pts.at (samples.at (0)).y) *
+                             (cloud_->pts.at (samples.at (2)).x - cloud_->pts.at (samples.at (0)).x);
     // calculate the 2-norm: norm (x) = sqrt (sum (abs (v)^2))
     // nx ny nz (aka: ax + by + cz ...
     double n_norm = sqrt (model_coefficients_[0] * model_coefficients_[0] +
@@ -289,9 +289,9 @@ namespace sample_consensus
     model_coefficients_[2] /= n_norm;
 
     // ... + d = 0
-    model_coefficients_[3] = -1 * (model_coefficients_[0] * cloud_->pts.at (indices.at (0)).x +
-                                   model_coefficients_[1] * cloud_->pts.at (indices.at (0)).y +
-                                   model_coefficients_[2] * cloud_->pts.at (indices.at (0)).z);
+    model_coefficients_[3] = -1 * (model_coefficients_[0] * cloud_->pts.at (samples.at (0)).x +
+                                   model_coefficients_[1] * cloud_->pts.at (samples.at (0)).y +
+                                   model_coefficients_[2] * cloud_->pts.at (samples.at (0)).z);
 
     return (true);
   }

@@ -194,24 +194,24 @@ namespace sample_consensus
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Check whether the given index samples can form a valid 2D circle model, compute the model coefficients from
     * these samples and store them internally in model_coefficients_.
-    * \param indices the point indices found as possible good candidates for creating a valid model
+    * \param samples the point indices found as possible good candidates for creating a valid model
     */
   bool
-    SACModelCircle2D::computeModelCoefficients (const std::vector<int> &indices)
+    SACModelCircle2D::computeModelCoefficients (const std::vector<int> &samples)
   {
     model_coefficients_.resize (3);
 
     robot_msgs::Point32 u, v, m;
-    u.x = ( cloud_->pts.at (indices.at (0)).x + cloud_->pts.at (indices.at (1)).x ) / 2;
-    u.y = ( cloud_->pts.at (indices.at (1)).x + cloud_->pts.at (indices.at (2)).x ) / 2;
+    u.x = ( cloud_->pts.at (samples.at (0)).x + cloud_->pts.at (samples.at (1)).x ) / 2;
+    u.y = ( cloud_->pts.at (samples.at (1)).x + cloud_->pts.at (samples.at (2)).x ) / 2;
 
-    v.x = ( cloud_->pts.at (indices.at (0)).y + cloud_->pts.at (indices.at (1)).y ) / 2;
-    v.y = ( cloud_->pts.at (indices.at (1)).y + cloud_->pts.at (indices.at (2)).y ) / 2;
+    v.x = ( cloud_->pts.at (samples.at (0)).y + cloud_->pts.at (samples.at (1)).y ) / 2;
+    v.y = ( cloud_->pts.at (samples.at (1)).y + cloud_->pts.at (samples.at (2)).y ) / 2;
 
-    m.x = -( cloud_->pts.at (indices.at (1)).x - cloud_->pts.at (indices.at (0)).x ) /
-           ( cloud_->pts.at (indices.at (1)).y - cloud_->pts.at (indices.at (0)).y );
-    m.y = -( cloud_->pts.at (indices.at (2)).x - cloud_->pts.at (indices.at (1)).x ) /
-           ( cloud_->pts.at (indices.at (2)).y - cloud_->pts.at (indices.at (1)).y );
+    m.x = -( cloud_->pts.at (samples.at (1)).x - cloud_->pts.at (samples.at (0)).x ) /
+           ( cloud_->pts.at (samples.at (1)).y - cloud_->pts.at (samples.at (0)).y );
+    m.y = -( cloud_->pts.at (samples.at (2)).x - cloud_->pts.at (samples.at (1)).x ) /
+           ( cloud_->pts.at (samples.at (2)).y - cloud_->pts.at (samples.at (1)).y );
 
     // Center (x, y)
     model_coefficients_[0] = (m.x * u.x -  m.y * u.y  - (v.x - v.y) )           / (m.x - m.y);
@@ -219,11 +219,11 @@ namespace sample_consensus
 
     // Radius
     model_coefficients_[2] = sqrt (
-                                   ( model_coefficients_[0] - cloud_->pts.at (indices.at (0)).x ) *
-                                   ( model_coefficients_[0] - cloud_->pts.at (indices.at (0)).x ) +
+                                   ( model_coefficients_[0] - cloud_->pts.at (samples.at (0)).x ) *
+                                   ( model_coefficients_[0] - cloud_->pts.at (samples.at (0)).x ) +
 
-                                   ( model_coefficients_[1] - cloud_->pts.at (indices.at (0)).y ) *
-                                   ( model_coefficients_[1] - cloud_->pts.at (indices.at (0)).y )
+                                   ( model_coefficients_[1] - cloud_->pts.at (samples.at (0)).y ) *
+                                   ( model_coefficients_[1] - cloud_->pts.at (samples.at (0)).y )
                                   );
     return (true);
   }
@@ -249,6 +249,8 @@ namespace sample_consensus
       best_inliers_ = indices_;
     }
 
+    tmp_inliers_ = &inliers;
+    
     int m = inliers.size ();
 
     double *fvec = new double[m];
@@ -272,8 +274,8 @@ namespace sample_consensus
     int info = lmdif1 (&sample_consensus::SACModelCircle2D::functionToOptimize, this, m, n, x, fvec, tol, iwa, wa, lwa);
 
     // Compute the L2 norm of the residuals
-    ROS_DEBUG ("LM solver finished with exit code %i, having a residual norm of %g. \nInitial solution: %g %g %g \nFinal solution: %g %g %g",
-               info, enorm (m, fvec), model_coefficients_.at (0), model_coefficients_.at (1), model_coefficients_.at (2), x[0], x[1], x[2]);
+    ROS_DEBUG  ("LM solver finished with exit code %i, having a residual norm of %g. \nInitial solution: %g %g %g \nFinal solution: %g %g %g",
+                info, enorm (m, fvec), model_coefficients_.at (0), model_coefficients_.at (1), model_coefficients_.at (2), x[0], x[1], x[2]);
 
     refit_coefficients.resize (n);
     for (int d = 0; d < n; d++)
@@ -296,11 +298,11 @@ namespace sample_consensus
   {
     SACModelCircle2D *model = (SACModelCircle2D*)p;
 
-    for (int i = 0; i < n; i ++)
+    for (int i = 0; i < m; i ++)
     {
       // Compute the difference between the center of the circle and the datapoint X_i
-      double xt = model->cloud_->pts[model->best_inliers_.at (i)].x - x[0];
-      double yt = model->cloud_->pts[model->best_inliers_.at (i)].y - x[1];
+      double xt = model->cloud_->pts[model->tmp_inliers_->at (i)].x - x[0];
+      double yt = model->cloud_->pts[model->tmp_inliers_->at (i)].y - x[1];
 
       // g = sqrt ((x-a)^2 + (y-b)^2) - R
       fvec[i] = sqrt (xt * xt + yt * yt) - x[2];

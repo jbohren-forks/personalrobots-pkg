@@ -68,9 +68,9 @@ namespace sample_consensus
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Check whether the given index samples can form a valid model, compute the model coefficients from
         * these samples and store them internally in model_coefficients_. Pure virtual.
-        * \param indices the point indices found as possible good candidates for creating a valid model
+        * \param samples the point indices found as possible good candidates for creating a valid model
         */
-      virtual bool computeModelCoefficients (const std::vector<int> &indices) = 0;
+      virtual bool computeModelCoefficients (const std::vector<int> &samples) = 0;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       /** \brief Recompute the model coefficients using the given inlier set and return them to the user. Pure virtual.

@@ -391,21 +391,21 @@ namespace sample_consensus
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Compute the model coefficients from the samples and store them internally in model_coefficients_. The line coefficients are represented by the points themselves.
-    * \param indices The point indices found as possible good candidates for creating a valid model.
+    * \param samples The point indices found as possible good candidates for creating a valid model.
     */
   bool
-    SACModelParallelLines::computeModelCoefficients (const std::vector<int> &indices)
+    SACModelParallelLines::computeModelCoefficients (const std::vector<int> &samples)
   {
     model_coefficients_.resize (9);
-    model_coefficients_[0] = cloud_->pts[indices[0]].x;
-    model_coefficients_[1] = cloud_->pts[indices[0]].y;
-    model_coefficients_[2] = cloud_->pts[indices[0]].z;
-    model_coefficients_[3] = cloud_->pts[indices[1]].x;
-    model_coefficients_[4] = cloud_->pts[indices[1]].y;
-    model_coefficients_[5] = cloud_->pts[indices[1]].z;
-    model_coefficients_[6] = cloud_->pts[indices[2]].x;
-    model_coefficients_[7] = cloud_->pts[indices[2]].y;
-    model_coefficients_[8] = cloud_->pts[indices[2]].z;
+    model_coefficients_[0] = cloud_->pts[samples[0]].x;
+    model_coefficients_[1] = cloud_->pts[samples[0]].y;
+    model_coefficients_[2] = cloud_->pts[samples[0]].z;
+    model_coefficients_[3] = cloud_->pts[samples[1]].x;
+    model_coefficients_[4] = cloud_->pts[samples[1]].y;
+    model_coefficients_[5] = cloud_->pts[samples[1]].z;
+    model_coefficients_[6] = cloud_->pts[samples[2]].x;
+    model_coefficients_[7] = cloud_->pts[samples[2]].y;
+    model_coefficients_[8] = cloud_->pts[samples[2]].z;
 
     return (true);
   }

@@ -214,19 +214,19 @@ namespace sample_consensus
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Check whether the given index samples can form a valid sphere model, compute the model coefficients from
     * these samples and store them internally in model_coefficients_. The sphere coefficients are: x, y, z, R.
-    * \param indices the point indices found as possible good candidates for creating a valid model
+    * \param samples the point indices found as possible good candidates for creating a valid model
     */
   bool
-    SACModelSphere::computeModelCoefficients (const std::vector<int> &indices)
+    SACModelSphere::computeModelCoefficients (const std::vector<int> &samples)
   {
     model_coefficients_.resize (4);
 
     Eigen::Matrix4d temp;
     for (int i = 0; i < 4; i++)
     {
-      temp (i, 0) = cloud_->pts.at (indices.at (i)).x;
-      temp (i, 1) = cloud_->pts.at (indices.at (i)).y;
-      temp (i, 2) = cloud_->pts.at (indices.at (i)).z;
+      temp (i, 0) = cloud_->pts.at (samples.at (i)).x;
+      temp (i, 1) = cloud_->pts.at (samples.at (i)).y;
+      temp (i, 2) = cloud_->pts.at (samples.at (i)).z;
       temp (i, 3) = 1;
     }
     double m11 = temp.determinant ();
@@ -234,31 +234,31 @@ namespace sample_consensus
       return (false);             // the points don't define a sphere!
 
     for (int i = 0; i < 4; i++)
-      temp (i, 0) = (cloud_->pts.at (indices.at (i)).x) * (cloud_->pts.at (indices.at (i)).x) +
-                    (cloud_->pts.at (indices.at (i)).y) * (cloud_->pts.at (indices.at (i)).y) +
-                    (cloud_->pts.at (indices.at (i)).z) * (cloud_->pts.at (indices.at (i)).z);
+      temp (i, 0) = (cloud_->pts.at (samples.at (i)).x) * (cloud_->pts.at (samples.at (i)).x) +
+                    (cloud_->pts.at (samples.at (i)).y) * (cloud_->pts.at (samples.at (i)).y) +
+                    (cloud_->pts.at (samples.at (i)).z) * (cloud_->pts.at (samples.at (i)).z);
     double m12 = temp.determinant ();
 
     for (int i = 0; i < 4; i++)
     {
       temp (i, 1) = temp (i, 0);
-      temp (i, 0) = cloud_->pts.at (indices.at (i)).x;
+      temp (i, 0) = cloud_->pts.at (samples.at (i)).x;
     }
     double m13 = temp.determinant ();
 
     for (int i = 0; i < 4; i++)
     {
       temp (i, 2) = temp (i, 1);
-      temp (i, 1) = cloud_->pts.at (indices.at (i)).y;
+      temp (i, 1) = cloud_->pts.at (samples.at (i)).y;
     }
     double m14 = temp.determinant ();
 
     for (int i = 0; i < 4; i++)
     {
       temp (i, 0) = temp (i, 2);
-      temp (i, 1) = cloud_->pts.at (indices.at (i)).x;
-      temp (i, 2) = cloud_->pts.at (indices.at (i)).y;
-      temp (i, 3) = cloud_->pts.at (indices.at (i)).z;
+      temp (i, 1) = cloud_->pts.at (samples.at (i)).x;
+      temp (i, 2) = cloud_->pts.at (samples.at (i)).y;
+      temp (i, 3) = cloud_->pts.at (samples.at (i)).z;
     }
     double m15 = temp.determinant ();
 
@@ -296,6 +296,8 @@ namespace sample_consensus
       best_inliers_ = indices_;
     }
 
+    tmp_inliers_ = &inliers;
+    
     int m = inliers.size ();
 
     double *fvec = new double[m];
@@ -344,12 +346,12 @@ namespace sample_consensus
   {
     SACModelSphere *model = (SACModelSphere*)p;
 
-    for (int i = 0; i < n; i ++)
+    for (int i = 0; i < m; i ++)
     {
       // Compute the difference between the center of the sphere and the datapoint X_i
-      double xt = model->cloud_->pts[model->best_inliers_.at (i)].x - x[0];
-      double yt = model->cloud_->pts[model->best_inliers_.at (i)].y - x[1];
-      double zt = model->cloud_->pts[model->best_inliers_.at (i)].z - x[2];
+      double xt = model->cloud_->pts[model->tmp_inliers_->at (i)].x - x[0];
+      double yt = model->cloud_->pts[model->tmp_inliers_->at (i)].y - x[1];
+      double zt = model->cloud_->pts[model->tmp_inliers_->at (i)].z - x[2];
 
       // g = sqrt ((x-a)^2 + (y-b)^2 + (z-c)^2) - R
       fvec[i] = sqrt (xt * xt + yt * yt + zt * zt) - x[3];

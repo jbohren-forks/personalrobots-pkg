@@ -235,18 +235,18 @@ namespace sample_consensus
   /** \brief Check whether the given index samples can form a valid line model, compute the model coefficients from
     * these samples and store them internally in model_coefficients_. The line coefficients are represented by the
     * points themselves.
-    * \param indices the point indices found as possible good candidates for creating a valid model
+    * \param samples the point indices found as possible good candidates for creating a valid model
     */
   bool
-    SACModelLine::computeModelCoefficients (const std::vector<int> &indices)
+    SACModelLine::computeModelCoefficients (const std::vector<int> &samples)
   {
     model_coefficients_.resize (6);
-    model_coefficients_[0] = cloud_->pts.at (indices.at (0)).x;
-    model_coefficients_[1] = cloud_->pts.at (indices.at (0)).y;
-    model_coefficients_[2] = cloud_->pts.at (indices.at (0)).z;
-    model_coefficients_[3] = cloud_->pts.at (indices.at (1)).x;
-    model_coefficients_[4] = cloud_->pts.at (indices.at (1)).y;
-    model_coefficients_[5] = cloud_->pts.at (indices.at (1)).z;
+    model_coefficients_[0] = cloud_->pts.at (samples.at (0)).x;
+    model_coefficients_[1] = cloud_->pts.at (samples.at (0)).y;
+    model_coefficients_[2] = cloud_->pts.at (samples.at (0)).z;
+    model_coefficients_[3] = cloud_->pts.at (samples.at (1)).x;
+    model_coefficients_[4] = cloud_->pts.at (samples.at (1)).y;
+    model_coefficients_[5] = cloud_->pts.at (samples.at (1)).z;
 
     return (true);
   }

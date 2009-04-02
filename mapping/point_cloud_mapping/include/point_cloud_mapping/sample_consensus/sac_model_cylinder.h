@@ -63,7 +63,7 @@ namespace sample_consensus
         */
       bool testModelCoefficients (const std::vector<double> &model_coefficients) { return true; }
 
-      virtual bool computeModelCoefficients (const std::vector<int> &indices);
+      virtual bool computeModelCoefficients (const std::vector<int> &samples);
 
       virtual void refitModel (const std::vector<int> &inliers, std::vector<double> &refit_coefficients);
       virtual void getDistancesToModel (const std::vector<double> &model_coefficients, std::vector<double> &distances);
@@ -83,7 +83,8 @@ namespace sample_consensus
     private:
       /** \brief The coordinates of point normals in the dataset. */
       int nx_idx_, ny_idx_, nz_idx_;
-
+      /** \brief temporary pointer to a list of given indices for refitModel () */
+      const std::vector<int> *tmp_inliers_;
   };
 }
 

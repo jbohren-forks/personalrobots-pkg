@@ -197,10 +197,10 @@ namespace sample_consensus
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Check whether the given index samples can form a valid cylinder model, compute the model coefficients from
     * these samples and store them internally in model_coefficients_. The cylinder coefficients are: x, y, z, R.
-    * \param indices the point indices found as possible good candidates for creating a valid model
+    * \param samples the point indices found as possible good candidates for creating a valid model
     */
   bool
-    SACModelCylinder::computeModelCoefficients (const std::vector<int> &indices)
+    SACModelCylinder::computeModelCoefficients (const std::vector<int> &samples)
   {
     model_coefficients_.resize (7);
 
@@ -223,17 +223,17 @@ namespace sample_consensus
 
     robot_msgs::Point32 u, v, w;
 
-    u.x = cloud_->chan[nx_idx_].vals.at (indices.at (0));
-    u.y = cloud_->chan[ny_idx_].vals.at (indices.at (0));
-    u.z = cloud_->chan[nz_idx_].vals.at (indices.at (0));
+    u.x = cloud_->chan[nx_idx_].vals.at (samples.at (0));
+    u.y = cloud_->chan[ny_idx_].vals.at (samples.at (0));
+    u.z = cloud_->chan[nz_idx_].vals.at (samples.at (0));
 
-    v.x = cloud_->chan[nx_idx_].vals.at (indices.at (1));
-    v.y = cloud_->chan[ny_idx_].vals.at (indices.at (1));
-    v.z = cloud_->chan[nz_idx_].vals.at (indices.at (1));
+    v.x = cloud_->chan[nx_idx_].vals.at (samples.at (1));
+    v.y = cloud_->chan[ny_idx_].vals.at (samples.at (1));
+    v.z = cloud_->chan[nz_idx_].vals.at (samples.at (1));
 
-    w.x = (u.x + cloud_->pts.at (indices.at (0)).x) - cloud_->pts.at (indices.at (1)).x;
-    w.y = (u.y + cloud_->pts.at (indices.at (0)).y) - cloud_->pts.at (indices.at (1)).y;
-    w.z = (u.z + cloud_->pts.at (indices.at (0)).z) - cloud_->pts.at (indices.at (1)).z;
+    w.x = (u.x + cloud_->pts.at (samples.at (0)).x) - cloud_->pts.at (samples.at (1)).x;
+    w.y = (u.y + cloud_->pts.at (samples.at (0)).y) - cloud_->pts.at (samples.at (1)).y;
+    w.z = (u.z + cloud_->pts.at (samples.at (0)).z) - cloud_->pts.at (samples.at (1)).z;
 
     double a = cloud_geometry::dot (u, u);
     double b = cloud_geometry::dot (u, v);
@@ -255,12 +255,12 @@ namespace sample_consensus
     }
 
     // point_on_axis, axis_direction
-    model_coefficients_[0] = cloud_->pts.at (indices.at (0)).x + cloud_->chan[nx_idx_].vals.at (indices.at (0)) + (sc * u.x);
-    model_coefficients_[1] = cloud_->pts.at (indices.at (0)).y + cloud_->chan[ny_idx_].vals.at (indices.at (0)) + (sc * u.y);
-    model_coefficients_[2] = cloud_->pts.at (indices.at (0)).z + cloud_->chan[nz_idx_].vals.at (indices.at (0)) + (sc * u.z);
-    model_coefficients_[3] = cloud_->pts.at (indices.at (1)).x + (tc * v.x) - model_coefficients_[0];
-    model_coefficients_[4] = cloud_->pts.at (indices.at (1)).y + (tc * v.y) - model_coefficients_[1];
-    model_coefficients_[5] = cloud_->pts.at (indices.at (1)).z + (tc * v.z) - model_coefficients_[2];
+    model_coefficients_[0] = cloud_->pts.at (samples.at (0)).x + cloud_->chan[nx_idx_].vals.at (samples.at (0)) + (sc * u.x);
+    model_coefficients_[1] = cloud_->pts.at (samples.at (0)).y + cloud_->chan[ny_idx_].vals.at (samples.at (0)) + (sc * u.y);
+    model_coefficients_[2] = cloud_->pts.at (samples.at (0)).z + cloud_->chan[nz_idx_].vals.at (samples.at (0)) + (sc * u.z);
+    model_coefficients_[3] = cloud_->pts.at (samples.at (1)).x + (tc * v.x) - model_coefficients_[0];
+    model_coefficients_[4] = cloud_->pts.at (samples.at (1)).y + (tc * v.y) - model_coefficients_[1];
+    model_coefficients_[5] = cloud_->pts.at (samples.at (1)).z + (tc * v.z) - model_coefficients_[2];
 
     double norm = sqrt (
                         (model_coefficients_[3] * model_coefficients_[3]) +
@@ -272,7 +272,7 @@ namespace sample_consensus
     model_coefficients_[5] /= norm;
 
     // cylinder radius
-    model_coefficients_[6] = cloud_geometry::distances::pointToLineDistance (cloud_->pts.at (indices.at (0)), model_coefficients_);
+    model_coefficients_[6] = cloud_geometry::distances::pointToLineDistance (cloud_->pts.at (samples.at (0)), model_coefficients_);
 
     return (true);
   }
@@ -297,6 +297,8 @@ namespace sample_consensus
       ROS_WARN ("[SACModelCylinder::RefitModel] Initial model coefficients have not been estimated yet - proceeding without an initial solution!");
       best_inliers_ = indices_;
     }
+
+    tmp_inliers_ = &inliers;
 
     int m = inliers.size ();
 
@@ -350,9 +352,9 @@ namespace sample_consensus
     for (unsigned int d = 0; d < 6; d++)
       line_coefficients[d] = x[d];
 
-    for (int i = 0; i < n; i ++)
+    for (int i = 0; i < m; i++)
       // dist = f - r
-      fvec[i] = cloud_geometry::distances::pointToLineDistance (model->cloud_->pts[model->best_inliers_.at (i)], line_coefficients) - x[6];
+      fvec[i] = cloud_geometry::distances::pointToLineDistance (model->cloud_->pts[model->tmp_inliers_->at (i)], line_coefficients) - x[6];
 
     return (0);
   }
