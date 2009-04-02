@@ -118,7 +118,7 @@ public:
       if(isInitialized()){
 	doOneCycle();
 
-	ros::Node::instance()->publish(stateTopic, this->stateMsg);
+	ros::Node::instance()->publish("~" + stateTopic, this->stateMsg);
       }
  
       sleep(curr, controllerCycleTime_);
@@ -159,6 +159,7 @@ protected:
 
     // Subscribe to controller goal requests. Last request winds. We drop others
     ros::Node::instance()->subscribe("~" + goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
+    ros::Node::instance()->subscribe("goal", goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
 
     // Subscribe to controller goal requests. Last request winds. We drop others
     ros::Node::instance()->subscribe("~" + preemptTopic, goalMsg, &HighlevelController<S, G>::preemptCallback,  this, 1);
@@ -373,7 +374,7 @@ private:
     lock();
     preempt();
     updateStateMsg();
-    ros::Node::instance()->publish(stateTopic, this->stateMsg);
+    ros::Node::instance()->publish("~" + stateTopic, this->stateMsg);
     unlock();
   }
 
@@ -398,7 +399,7 @@ private:
       // If we are active, and this is a goal, publish the state message and activate. This allows us
       // to over-ride a new goal, but still forces the transition between active and inactive states
       ROS_DEBUG("Publishing state %d", stateMsg.status.value);
-      ros::Node::instance()->publish(stateTopic, stateMsg);
+      ros::Node::instance()->publish("~" + stateTopic, stateMsg);
       activate();
     }
 
@@ -412,7 +413,7 @@ private:
     // after this execution, but publishing it here ensures we get a message where the state
     // is active, even if it transitions in the first cycle to an inactive state. This can occur for
     // example if the planner returns that there is no plan to be had, for example.
-    ros::Node::instance()->publish(stateTopic, this->stateMsg);
+    ros::Node::instance()->publish("~" + stateTopic, this->stateMsg);
 
     unlock();
   }
@@ -456,7 +457,7 @@ private:
     // Publish a response reflecting the state for this cycle. The state may change
     // after this execution, but publishing it here ensures we get a message where the state
     // is active, even if it transitions in the first cycle to an inactive state
-    ros::Node::instance()->publish(stateTopic, this->stateMsg);
+    ros::Node::instance()->publish("~" + stateTopic, this->stateMsg);
 
     // If we are in an active state, we want to evalaute what to do whether we have a plan or not. In
     // the latter case, commands may be given to maintain a fail-safe state. The structure here ensures

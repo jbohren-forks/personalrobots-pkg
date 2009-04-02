@@ -384,10 +384,10 @@ namespace ros
       ROS_DEBUG("Planning for new goal...\n");
       robot_msgs::JointTraj valid_path;
       stateMsg.lock();
-      transform2DPose(stateMsg.pos.x,stateMsg.pos.y,stateMsg.pos.th,global_frame_, base_trajectory_controller_frame_id_,current_x_,current_y_,current_theta_);
+      transform2DPose(stateMsg.feedback.x,stateMsg.feedback.y,stateMsg.feedback.th,global_frame_, base_trajectory_controller_frame_id_,current_x_,current_y_,current_theta_);
       transform2DPose(stateMsg.goal.x,stateMsg.goal.y,stateMsg.goal.th,global_frame_, base_trajectory_controller_frame_id_,goal_x_,goal_y_,goal_theta_);
-      ROS_INFO("Current position: in frame %s, %f %f %f, goal (id: %d) position: %f %f %f", global_frame_.c_str(),stateMsg.pos.x,stateMsg.pos.y,stateMsg.pos.th,goal_id_,stateMsg.goal.x,stateMsg.goal.y,stateMsg.goal.th);
-      publishFootprint(stateMsg.pos.x, stateMsg.pos.y, stateMsg.pos.th);
+      ROS_INFO("Current position: in frame %s, %f %f %f, goal (id: %d) position: %f %f %f", global_frame_.c_str(),stateMsg.feedback.x,stateMsg.feedback.y,stateMsg.feedback.th,goal_id_,stateMsg.goal.x,stateMsg.goal.y,stateMsg.goal.th);
+      publishFootprint(stateMsg.feedback.x, stateMsg.feedback.y, stateMsg.feedback.th);
       stateMsg.unlock();
 
       ROS_INFO("Current position: in frame %s, %f %f %f, goal (id: %d) position: %f %f %f", base_trajectory_controller_frame_id_.c_str(),current_x_,current_y_,current_theta_,goal_id_,goal_x_,goal_y_,goal_theta_);
@@ -433,7 +433,7 @@ namespace ros
 
       ROS_DEBUG("Publishing trajectory on topic: %s with %d points",base_trajectory_controller_topic_.c_str(),valid_path_.points.size());
 
-      //costMap_->revertToStaticMap(stateMsg.pos.x,stateMsg.pos.y);
+      //costMap_->revertToStaticMap(stateMsg.feedback.x,stateMsg.feedback.y);
 
       if(!goalWithinTolerance())
         ros::Node::instance()->publish(base_trajectory_controller_topic_,valid_path_);         
