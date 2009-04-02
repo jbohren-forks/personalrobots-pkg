@@ -62,6 +62,11 @@
 #include <std_msgs/Float64.h>
 #include <robot_srvs/GetValue.h>
 
+//Realtime publisher
+#include <robot_mechanism_controllers/JointControllerState.h>
+#include <realtime_tools/realtime_publisher.h>
+#include <realtime_tools/realtime_tools.h>
+
 namespace controller
 {
 
@@ -104,6 +109,7 @@ public:
 
   std::string getJointName();
   mechanism::JointState *joint_state_;           /**< Joint we're controlling. */
+  realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState>* controller_state_publisher_ ;
 
 private:
   mechanism::RobotState *robot_;                  /**< Pointer to robot structure. */

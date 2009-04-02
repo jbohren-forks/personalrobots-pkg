@@ -34,6 +34,7 @@
 
 #include <robot_mechanism_controllers/joint_position_controller.h>
 #include <angles/angles.h>
+#include "tinyxml/tinyxml.h"
 
 using namespace std;
 using namespace controller;
@@ -44,6 +45,7 @@ ROS_REGISTER_CONTROLLER(JointPositionController)
 JointPositionController::JointPositionController()
 : joint_state_(NULL), initialized_(false), robot_(NULL), last_time_(0), command_(0)
 {
+  controller_state_publisher_ = NULL;
 }
 
 JointPositionController::~JointPositionController()
@@ -88,7 +90,13 @@ bool JointPositionController::initXml(mechanism::RobotState *robot, TiXmlElement
   TiXmlElement *p = j->FirstChildElement("pid");
   control_toolbox::Pid pid;
   if (p)
+  { 
+    controller_state_publisher_->msg_.p = p->Attribute("p") ? atof(p->Attribute("p")) : 0.0;
+    controller_state_publisher_->msg_.i = p->Attribute("i") ? atof(p->Attribute("i")) : 0.0;
+    controller_state_publisher_->msg_.d = p->Attribute("d") ? atof(p->Attribute("d")) : 0.0;
+    controller_state_publisher_->msg_.i_clamp = p->Attribute("iClamp") ? atof(p->Attribute("iClamp")) : 0.0;
     pid.initXml(p);
+  }
   else
     fprintf(stderr, "JointPositionController's config did not specify the default pid parameters.\n");
 
@@ -98,6 +106,10 @@ bool JointPositionController::initXml(mechanism::RobotState *robot, TiXmlElement
 void JointPositionController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
 {
   pid_controller_.setGains(p,i,d,i_max,i_min);
+  controller_state_publisher_->msg_.p = p; 
+  controller_state_publisher_->msg_.i = i; 
+  controller_state_publisher_->msg_.d = d; 
+  controller_state_publisher_->msg_.i_clamp = i_max; 
 }
 
 void JointPositionController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
@@ -130,7 +142,7 @@ void JointPositionController::update()
   assert(robot_ != NULL);
   double error(0);
   double time = robot_->hw_->current_time_;
-
+  static int count = 0;
   assert(joint_state_->joint_);
 
   if (!initialized_)
@@ -154,6 +166,19 @@ void JointPositionController::update()
   }
 
   joint_state_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
+  
+  if(count % 10 == 0)
+  {
+    if(controller_state_publisher_->trylock())
+    {
+      controller_state_publisher_->msg_.set_point = command_; 
+      controller_state_publisher_->msg_.process_value = joint_state_->position_; 
+      controller_state_publisher_->msg_.error = error; 
+      controller_state_publisher_->msg_.time_step = time - last_time_; 
+      controller_state_publisher_->unlockAndPublish();      
+    }
+  }
+  count++;
   last_time_ = time;
 }
 
@@ -167,6 +192,8 @@ JointPositionControllerNode::JointPositionControllerNode(): node_(ros::Node::ins
 
 JointPositionControllerNode::~JointPositionControllerNode()
 {
+  c_->controller_state_publisher_->stop();
+  delete c_->controller_state_publisher_;
   delete c_;
 }
 
@@ -179,7 +206,12 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
 {
   assert(node_);
   service_prefix_ = config->Attribute("name");
-
+  
+  //publishers
+  if (c_->controller_state_publisher_ != NULL)
+    delete c_->controller_state_publisher_ ;
+  c_->controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState> (service_prefix_+"/state", 1) ;
+  
   // Parses subcontroller configuration
   if (!c_->initXml(robot, config))
     return false;
@@ -189,6 +221,7 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   //services
   node_->advertiseService(service_prefix_ + "/get_command", &JointPositionControllerNode::getCommand, this);
   guard_get_command_.set(service_prefix_ + "/get_command");
+  
 
   return true;
 }
