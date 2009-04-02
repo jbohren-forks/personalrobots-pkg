@@ -31,6 +31,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+# Author: Marius Muja
 
 import wx
 import wx.lib.intctrl
@@ -106,8 +107,10 @@ class IntParameterWidget(wx.Panel):
             print "Cannot set parameter: "+self.param
 
     def onEdit(self, event): 
-        value = int(event.GetString())
-        print value
+        str_value = event.GetString()
+        #print str_value
+        value = int(str_value)
+        #print value
         self._setParam(self.param, value)
 
 

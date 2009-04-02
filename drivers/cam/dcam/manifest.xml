@@ -15,6 +15,7 @@
   <depend package="std_srvs"/>
   <depend package="image_msgs"/>
   <depend package="diagnostic_updater"/>
+  <depend package="rospy"/>
 
   <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
