@@ -72,7 +72,7 @@ Subscribes to (name/type):
 - @b "gui_laser"/Polyline2D : re-projected laser scan from a planner.  Rendered as a set of points.
 
 Publishes to (name / type):
-- @b "goal"/Planner2DGoal : goal for planner.  Sent on middle button click.
+- @b "goal"/Pose2D : goal for planner.  Sent on middle button click.
 - @b "initialpose"/Pose2DFloat32 : pose to initialize localization system.  Sent on SHIFT + middle button click.
 
 <hr>
@@ -98,7 +98,7 @@ Publishes to (name / type):
 
 // messages and services
 #include "robot_msgs/ParticleCloud.h"
-#include "robot_msgs/Planner2DGoal.h"
+#include "robot_actions/Pose2D.h"
 #include "robot_msgs/Polyline2D.h"
 #include "deprecated_msgs/Pose2DFloat32.h"
 #include "pr2_msgs/OccDiff.h"
@@ -115,7 +115,7 @@ class NavView : public ros::Node, public ros::SDLGL
 {
 public:
   robot_msgs::ParticleCloud cloud;
-  robot_msgs::Planner2DGoal goal;
+  robot_actions::Pose2D goal;
   robot_msgs::Polyline2D pathline;
   robot_msgs::Polyline2D local_path;
   robot_msgs::Polyline2D robot_footprint;
@@ -148,7 +148,7 @@ public:
   {
     param("max_frame_rate", max_frame_rate, 5.0);
     param("/global_frame_id", global_frame, std::string("map"));
-    advertise<robot_msgs::Planner2DGoal>("goal",1);
+    advertise<robot_actions::Pose2D>("goal",1);
     advertise<deprecated_msgs::Pose2DFloat32>("initialpose",1);
     subscribe("particlecloud", cloud, &NavView::generic_cb,1);
     subscribe("gui_path", pathline, &NavView::generic_cb,1);
@@ -299,14 +299,13 @@ NavView::mouse_button(int x, int y, int button, bool is_down)
       {
         // Send out the goal
         goal.header.frame_id = global_frame;
-        goal.goal.x = gx;
-        goal.goal.y = gy;
-        goal.goal.th = ga;
-        goal.enable = 1;
+        goal.x = gx;
+        goal.y = gy;
+        goal.th = ga;
         printf("setting goal: %.3f %.3f %.3f\n",
-               goal.goal.x,
-               goal.goal.y,
-               goal.goal.th);
+               goal.x,
+               goal.y,
+               goal.th);
         publish("goal", goal);
       }
 
