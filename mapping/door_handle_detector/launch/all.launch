@@ -1,8 +1,0 @@
-<launch>
-
-  <include file="$(find door_handle_detector)/launch/door_handle_detector.launch"/>
-  <include file="$(find door_handle_detector)/launch/controllers.launch"/>	
-  <include file="$(find door_handle_detector)/launch/navigation.launch"/>
-  <!--include file="$(find door_handle_detector)/test/launch/open_door.launch"/-->		
-
-</launch>

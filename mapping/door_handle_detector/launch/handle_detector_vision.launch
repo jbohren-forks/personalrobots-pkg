@@ -9,7 +9,6 @@
                         Provides: all 3 images available
          rectified:     Rectification on chip
                         Provides: all 3 images available but no color
-          -->
   <param name="stereo/videre_mode" type="str" value="none"/>
   <param name="stereo/do_colorize" type="bool" value="True"/>
   <param name="stereo/do_rectify" type="bool" value="True"/>
@@ -20,12 +19,16 @@
   <param name="stereo/ndisp"  value="128"/>
   <param name="stereo/gain" type="int" value="10"/>
   <param name="stereo/exposure" type="int" value="100"/>
-    
+          -->
 
-<!-- <node pkg="dcam" type="stereodcam" respawn="false"/>-->
-  <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
+
+<!-- Stereo image processing -->
+ <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
+
+<!-- Handle detector -->
  <node pkg="door_handle_detector" name="handle_detector_vision" type="handle_detector_vision" respawn="false" output="screen">
- <param name="display" type="bool" value="true" />
+   <param name="display" type="bool" value="true" />
  </node>
+
 </launch>
 
