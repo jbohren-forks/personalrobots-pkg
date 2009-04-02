@@ -32,7 +32,16 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-// Author Conor McGann (mcgann@willowgarage.com)
+/**
+ * @mainpage
+ * 
+ * The robot_actions package provides a construct for goal achieving, modular behavior primitives that are non-blocking
+ * for the client, and preemptable. This is in contrast to a service which is not preemptable and blocks the client. 
+ *
+ * @htmlinclude manifest.html
+ *
+ * @author Conor McGann
+ */
 
 #ifndef H_robot_actions_Action
 #define H_robot_actions_Action
@@ -98,7 +107,8 @@ namespace robot_actions {
     }
 
     /**
-     * @brief A call made periodically to provide an opportunity to execute. 
+     * @brief A call made periodically to provide an opportunity to execute. It will delegate to a subclass to
+     * allow feedback to be written.
      */
     void update(){
 
@@ -107,7 +117,7 @@ namespace robot_actions {
 	handleUpdate(_feedback);
 
       // Always post a state update
-      _callback(_status, _goal, _feedback);
+      makeCallback(_status, _goal, _feedback);
     }
 
     /**
@@ -127,7 +137,6 @@ namespace robot_actions {
 
     /**
      * @brief An action will call this method when it has been activated successfully
-     * @param Feedback to provide in the state update
      */
     void notifyActivated(){
       ROS_DEBUG("%s activated.", getName().c_str());
@@ -135,7 +144,7 @@ namespace robot_actions {
       _status.lock();
       if(!isActive()){
 	_status.value = ActionStatus::ACTIVE;
-	_callback(_status, _goal, _feedback);
+	makeCallback(_status, _goal, _feedback);
       }
       _status.unlock();
     }
@@ -172,7 +181,7 @@ namespace robot_actions {
      * @param name The action name
      */
     Action(const std::string& name)
-    : _name(name) {
+      : _name(name), _callback(NULL) {
       _status.value = ActionStatus::UNDEFINED; 
     }
 
@@ -193,17 +202,23 @@ namespace robot_actions {
       if(isActive()){
 	_feedback = feedback;
 	_status.value = status_flag;
-	_callback(_status, _goal, _feedback);
-      }
+	 makeCallback(_status, _goal, _feedback);      }
       _status.unlock();
+    }
+
+    void makeCallback(const ActionStatus& status, const Goal& goal, const Feedback& feedback){
+      if(_callback != NULL)
+	_callback(status, goal, feedback);
+      else
+	ROS_WARN("No callback registered for action %s", _name.c_str());
     }
 
     const std::string _name; /*!< Name for the action */
     boost::function< void(const ActionStatus&, const Goal&, const Feedback&) > _callback; /*!< Callback function for sending updates */
-    ActionStatus _status;
-    Goal _goal;
-    Feedback _feedback;
-  };
 
+    ActionStatus _status; /*!< The current action status */
+    Goal _goal; /*!< The current goal, if the action is active */
+    Feedback _feedback; /*!< Current feedback. May or may not get updated on interim updates. */
+  };
 }
 #endif
