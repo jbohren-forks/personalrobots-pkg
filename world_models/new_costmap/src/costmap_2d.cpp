@@ -177,10 +177,14 @@ namespace costmap_2d{
     return (unsigned int) cells_dist;
   }
 
-  unsigned char* Costmap2D::getCharMap(){
+  unsigned char* Costmap2D::getCharMapCopy() const {
     unsigned char* map_copy = new unsigned char[size_x_ * size_y_];
     memcpy(map_copy, cost_map_, size_x_ * size_y_ * sizeof(unsigned char));
     return map_copy;
+  }
+
+  const unsigned char* Costmap2D::getCharMap() const {
+    return cost_map_;
   }
 
   unsigned char Costmap2D::getCost(unsigned int mx, unsigned int my) const {

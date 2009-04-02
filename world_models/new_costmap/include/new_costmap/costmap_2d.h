@@ -162,7 +162,13 @@ namespace costmap_2d {
        * @brief  Will return a copy of the underlying unsigned char array used as the costmap (NOTE: THE BURDEN IS ON THE USER TO DELETE THE ARRAY RETURNED)
        * @return A copy of the underlying unsigned char array storing cost values
        */
-      unsigned char* getCharMap();
+      unsigned char* getCharMapCopy() const;
+
+      /**
+       * @brief  Will return a immutable pointer to the underlying unsigned char array used as the costmap
+       * @return A pointer to the underlying unsigned char array storing cost values
+       */
+      const unsigned char* getCharMap() const;
 
       /**
        * @brief  Accessor for the x size of the costmap in cells

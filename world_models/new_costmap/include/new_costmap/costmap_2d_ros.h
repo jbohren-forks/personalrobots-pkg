@@ -69,29 +69,32 @@ namespace costmap_2d {
 
   class Costmap2DROS {
     public:
-      Costmap2DROS(ros::Node& ros_node);
+      Costmap2DROS(ros::Node& ros_node, tf::TransformListener& tf);
       ~Costmap2DROS();
 
       void laserScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message, ObservationBuffer* buffer);
       void pointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message, ObservationBuffer* buffer);
       void spin();
       void updateMap();
-      void resetWindow();
+      void resetMapOutsideWindow(double size_x, double size_y);
       void publishCostMap();
-      Costmap2D getCostMap();
-      unsigned char* getCharMap();
+      Costmap2D* getCostMapCopy();
+      unsigned char* getCharMapCopy();
+      unsigned int cellSizeX();
+      unsigned int cellSizeY();
 
     private:
       ros::Node& ros_node_;
-      tf::TransformListener tf_; ///< @brief Used for transforming point clouds
+      tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
       laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
       boost::recursive_mutex observation_lock_; ///< @brief A lock for accessing data in callbacks safely
       boost::recursive_mutex map_lock_; ///< @brief A lock for accessing data in callbacks safely
       Costmap2D* costmap_;
       std::string global_frame_;
+      std::string robot_base_frame_; ///< @brief The frame_id of the robot base
       double freq_;
       boost::thread* visualizer_thread_;
-      boost::thread* window_reset_thread_;
+      boost::thread* map_update_thread_;
 
       std::vector<tf::MessageNotifierBase*> observation_notifiers_; ///< @brief Used to make sure that transforms are available for each sensor
       std::vector<ObservationBuffer*> observation_buffers_; ///< @brief Used to store observations from various sensors

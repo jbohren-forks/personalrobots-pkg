@@ -40,8 +40,8 @@ using namespace std;
 
 namespace costmap_2d {
 
-  Costmap2DROS::Costmap2DROS(ros::Node& ros_node) : ros_node_(ros_node), 
-  tf_(ros_node, true, ros::Duration(10)){
+  Costmap2DROS::Costmap2DROS(ros::Node& ros_node, tf::TransformListener& tf) : ros_node_(ros_node), 
+  tf_(tf), costmap_(NULL), visualizer_thread_(NULL), map_update_thread_(NULL){
     ros_node_.advertise<robot_msgs::Polyline2D>("raw_obstacles", 1);
     ros_node_.advertise<robot_msgs::Polyline2D>("inflated_obstacles", 1);
 
@@ -53,6 +53,7 @@ namespace costmap_2d {
 
     ros_node_.param("~costmap/update_frequency", freq_, 5.0);
     ros_node_.param("~costmap/global_frame", global_frame_, string("map"));
+    ros_node_.param("~costmap/robot_base_frame", robot_base_frame_, string("base_link"));
 
     //now we need to split the topics based on whitespace which we can use a stringstream for
     stringstream ss(topics_string);
@@ -174,11 +175,10 @@ namespace costmap_2d {
 
 
     //create a thread to handle updating the map
+    map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::spin, this));
     
     //create a separate thread to publish cost data to the visualizer
     visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DROS::publishCostMap, this));
-
-    window_reset_thread_ = new boost::thread(boost::bind(&Costmap2DROS::resetWindow, this));
 
   }
 
@@ -189,8 +189,8 @@ namespace costmap_2d {
     if(visualizer_thread_ != NULL)
       delete visualizer_thread_;
 
-    if(window_reset_thread_ != NULL)
-      delete window_reset_thread_;
+    if(map_update_thread_ != NULL)
+      delete map_update_thread_;
 
     //clean up observation buffers
     for(unsigned int i = 0; i < observation_buffers_.size(); ++i){
@@ -278,12 +278,12 @@ namespace costmap_2d {
 
   }
 
-  void Costmap2DROS::resetWindow(){
+  void Costmap2DROS::resetMapOutsideWindow(double size_x, double size_y){
     while(ros_node_.ok()){
       tf::Stamped<tf::Pose> robot_pose, global_pose;
       global_pose.setIdentity();
       robot_pose.setIdentity();
-      robot_pose.frame_id_ = "base_link";
+      robot_pose.frame_id_ = robot_base_frame_;
       robot_pose.stamp_ = ros::Time();
       try{
         tf_.transformPose(global_frame_, robot_pose, global_pose);
@@ -302,7 +302,7 @@ namespace costmap_2d {
       double wy = global_pose.getOrigin().y();
       map_lock_.lock();
       ROS_INFO("Resetting map outside window");
-      costmap_->resetMapOutsideWindow(wx, wy, 5.0, 5.0);
+      costmap_->resetMapOutsideWindow(wx, wy, size_x, size_y);
       map_lock_.unlock();
 
       usleep(1e6/0.2);
@@ -363,16 +363,32 @@ namespace costmap_2d {
     }
   }
 
-  Costmap2D Costmap2DROS::getCostMap(){
+  Costmap2D* Costmap2DROS::getCostMapCopy(){
     map_lock_.lock();
-    return Costmap2D(*costmap_);
+    Costmap2D* new_map = new Costmap2D(*costmap_);
     map_lock_.unlock();
+    return new_map;
   }
 
-  unsigned char* Costmap2DROS::getCharMap(){
+  unsigned char* Costmap2DROS::getCharMapCopy(){
     map_lock_.lock();
-    return costmap_->getCharMap();
+    unsigned char* new_map = costmap_->getCharMapCopy();
     map_lock_.unlock();
+    return new_map;
+  }
+
+  unsigned int Costmap2DROS::cellSizeX() {
+    map_lock_.lock();
+    unsigned int size_x = costmap_->cellSizeX();
+    map_lock_.unlock();
+    return size_x;
+  }
+
+  unsigned int Costmap2DROS::cellSizeY() {
+    map_lock_.lock();
+    unsigned int size_y = costmap_->cellSizeY();
+    map_lock_.unlock();
+    return size_y;
   }
 
 };
@@ -380,8 +396,9 @@ namespace costmap_2d {
 int main(int argc, char** argv){
   ros::init(argc, argv);
   ros::Node ros_node("costmap_tester");
-  Costmap2DROS tester(ros_node);
-  tester.spin();
+  tf::TransformListener tf(ros_node, true, ros::Duration(10));
+  Costmap2DROS tester(ros_node, tf);
+  ros_node.spin();
 
   return(0);
 
