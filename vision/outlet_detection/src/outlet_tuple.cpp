@@ -818,3 +818,64 @@ void calc_camera_pose(CvMat* intrinsic_mat, CvMat* distortion_coeffs, CvPoint2D3
 	cvReleaseMat(&object_points);
 	cvReleaseMat(&image_points);
 }
+
+void outlet_template_t::save(const char* filename)
+{
+    CvMemStorage* storage = cvCreateMemStorage();
+    CvFileStorage* fs = cvOpenFileStorage(filename, storage, CV_STORAGE_WRITE);
+    
+    cvWriteInt(fs, "outlet count", outlet_count);
+    for(int i = 0; i < outlet_count; i++)
+    {
+        char buf[1024];
+        
+        sprintf(buf, "outlet %d center x", i);
+        cvWriteReal(fs, buf, centers[i].x);
+        
+        sprintf(buf, "outlet %d center y", i);
+        cvWriteReal(fs, buf, centers[i].y);
+    }
+    
+    cvReleaseFileStorage(&fs);
+    cvReleaseMemStorage(&storage);
+}
+
+int outlet_template_t::load(const char* filename)
+{
+    CvMemStorage* storage = cvCreateMemStorage();
+    CvFileStorage* fs = cvOpenFileStorage(filename, storage, CV_STORAGE_READ);
+    
+    CvFileNode* node = cvGetFileNodeByName(fs, 0, "outlet count");
+    if(!node)
+    {
+        cvReleaseFileStorage(&fs);
+        cvReleaseMemStorage(&storage);
+        return 0;
+    }
+
+    int _outlet_count = cvReadInt(node);
+    
+    CvPoint2D32f* _outlet_centers = new CvPoint2D32f[_outlet_count];
+    
+    for(int i = 0; i < _outlet_count; i++)
+    {
+        char buf[1024];
+        
+        sprintf(buf, "outlet %d center x", i);
+        node = cvGetFileNodeByName(fs, 0, buf);
+        _outlet_centers[i].x = cvReadReal(node);
+
+        sprintf(buf, "outlet %d center y", i);
+        node = cvGetFileNodeByName(fs, 0, buf);
+        _outlet_centers[i].y = cvReadReal(node);
+    }
+    
+    cvReleaseFileStorage(&fs);
+    cvReleaseMemStorage(&storage);
+    
+    initialize(_outlet_count, _outlet_centers);
+    
+    delete [] _outlet_centers;
+    
+    return 1;
+}

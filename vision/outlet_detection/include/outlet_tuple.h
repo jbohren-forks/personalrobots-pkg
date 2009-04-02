@@ -114,6 +114,9 @@ public:
 		centers[2] = cvPoint2D32f(46.15f, 38.7f);
 		centers[3] = cvPoint2D32f(-0.15f, 38.7f);
 	};
+    
+    void save(const char* filename);
+    int load(const char* filename);
 	
 protected:
 	int outlet_count;
