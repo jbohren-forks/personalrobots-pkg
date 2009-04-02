@@ -12,6 +12,7 @@ rospack_add_library(sbpl
                          src/planners/ARAStar/araplanner.cpp
                          src/planners/ADStar/adplanner.cpp
                          src/planners/VI/viplanner.cpp
+						 src/planners/PPCP/ppcpplanner.cpp
                          src/utils/heap.cpp
                          src/utils/mdp.cpp
                          src/utils/utils.cpp
