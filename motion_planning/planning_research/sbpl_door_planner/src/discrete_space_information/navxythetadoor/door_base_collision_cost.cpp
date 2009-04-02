@@ -70,13 +70,19 @@ namespace door_base_collision_cost
 
     if(d > max_radius || d < min_radius)
     {
+#ifdef DEBUG
+       printf("handle too far from shoulder\n\n");
+#endif
       return MAX_COST;
     }
 
-    double angle = atan2(dx,dy);
+    double angle = atan2(dy,dx);
 
     if(angle > max_angle || angle < min_angle)
     {
+#ifdef DEBUG
+       printf("handle: %f, (dx,dy) (%f,%f) too acute from shoulder\n\n",angle,dx,dy);
+#endif
       return MAX_COST;
     }
     else
@@ -88,18 +94,6 @@ namespace door_base_collision_cost
 
   bool findAngleLimits(const double &door_length, const double &door_thickness, const double &pivot_length, const double max_radius, const std::vector<double> &point, std::vector<double> &angles)
   {
-    if(point[0] < 0)
-    {
-      angles.push_back(0.0);
-      return true;
-    }
-
-    if(point[1] < -(pivot_length + door_thickness))
-    {
-      angles.push_back(0.0);
-      return true;
-    }    
-
     double dx = point[0];
     double dy = point[1];
     double d = sqrt(dx*dx + dy*dy);
@@ -109,23 +103,8 @@ namespace door_base_collision_cost
       return false;
     }
 
-    double t3 = atan2(dx,dy);
-
-    double temp = pivot_length/d;
-    if(fabs(temp) > 1.0)
-    {
-      return false;
-    }
-    double t21 = acos(temp);
-
-    temp = (pivot_length+door_thickness)/d;
-    if(fabs(temp) > 1.0)
-      return false;
-
-    double t22 = acos(temp);
-
-    angles.push_back(M_PI - (t3+t21));
-    angles.push_back(M_PI - (t3+t22));
+    double t3 = atan2(dy,dx);
+    angles.push_back(t3);
     return true;
   }
 
@@ -222,8 +201,16 @@ namespace door_base_collision_cost
     }
 
     std::sort(free_angles.begin(),free_angles.end());
-    min_angle = free_angles.front();
-    max_angle = free_angles.back();
+    if(free_angles.size() < 1)
+    {
+       min_angle = M_PI/2.0;
+       max_angle = 0.0;
+    }
+    else
+    {
+       min_angle = free_angles.front();
+       max_angle = free_angles.back();
+    }
     return;
   }
 
@@ -241,7 +228,7 @@ namespace door_base_collision_cost
   {
     // local door frame is already defined using the door message
     // transform robot footprint into global frame and then into local door frame
-
+     FILE* fp = fopen("data.txt","wt");
     std::vector<std::vector<double> > global_fp;
     std::vector<std::vector<double> > transformed_fp;
 
@@ -253,18 +240,46 @@ namespace door_base_collision_cost
     global_fp.resize(footprint.size());
     transformed_fp.resize(footprint.size());
 
+    fprintf(fp,"hinge = [");
+    fprintf(fp,"0 0];\n");
+    fprintf(fp,"\ndoor = [");
+    fprintf(fp,"%f %f\n",0.0,-pivot_length);
+    fprintf(fp,"%f %f\n",0.0,-pivot_length-door_thickness);
+    fprintf(fp,"%f %f\n",door_length,-pivot_length-door_thickness);
+    fprintf(fp,"%f %f];\n",door_length,-pivot_length);
+    fprintf(fp,"handle = [ %f, %f];",door_handle_pose[0],door_handle_pose[1]);
+
+    fprintf(fp,"\npose = [");
+    for(int j=0; j <3; j++)
+    {
+       fprintf(fp,"%f ",robot_global_pose[j]);
+    }
+    fprintf(fp,"];");
+    fprintf(fp,"\nfootprint = [");
+
     for(int i=0; i < (int) footprint.size(); i++)
     {
       transform2D(footprint[i],global_fp[i],robot_global_pose[0],robot_global_pose[1],robot_global_pose[2]);
+      fprintf(fp,"%f %f\n",global_fp[i][0],global_fp[i][1]);
       transform2DInverse(global_fp[i],transformed_fp[i],door_global_pose[0],door_global_pose[1],door_global_pose[2]);
     }
+    fprintf(fp,"];");
+
+    std::vector<double> global_shoulder_position;
+    transform2D(robot_shoulder_position,global_shoulder_position,robot_global_pose[0],robot_global_pose[1],robot_global_pose[2]);
+    fprintf(fp,"\nshoulder_pose = [%f %f];\n",global_shoulder_position[0],global_shoulder_position[1]);
     double min_angle;
     double max_angle;
     freeAngleRange(transformed_fp,door_length,door_thickness,pivot_length,max_radius,min_angle,max_angle);
+#ifdef DEBUG
     printf("Free angles are: %f, %f\n",min_angle,max_angle);
+#endif
+    fprintf(fp,"\nangle_costs = [");
     if(min_angle > 0)
     {
-      int num_intervals = min_angle/delta_angle;
+       if(min_angle > M_PI/2.0)
+          min_angle = M_PI/2.0;
+       int num_intervals = (int) (min_angle/delta_angle);
       for(int i=0; i<num_intervals; i++)
       {
         double new_angle = i * delta_angle;
@@ -281,24 +296,36 @@ namespace door_base_collision_cost
 
     if(max_angle < M_PI/2.0)
     {
-      int num_intervals = (M_PI/2 - max_angle)/delta_angle;
-      for(int i=0; i<num_intervals; i++)
+       if(max_angle < 0)
+          max_angle = 0;
+       int num_intervals = (int) ((M_PI/2 - max_angle)/delta_angle);
+#ifdef DEBUG
+      printf("Num intervals: %d, max angle: %f\n",num_intervals,max_angle);
+#endif
+      for(int i=0; i<num_intervals+1; i++)
       {
         double new_angle = M_PI/2 - i * delta_angle;
         transform2D(door_handle_pose,global_handle,door_global_pose[0],door_global_pose[1],door_global_pose[2]+new_angle);
         transform2DInverse(global_handle,robot_handle,robot_global_pose[0],robot_global_pose[1],robot_global_pose[2]);
         double cost = findWorkspaceCost(robot_shoulder_position,robot_handle,min_workspace_angle,max_workspace_angle,min_workspace_radius,max_workspace_radius);
+
+      #ifdef DEBUG
+        printf("angle: %f, cost: %f\n",new_angle,cost);
+#endif
         if(cost < MAX_COST)
         {
           valid_angles.push_back(new_angle);
           valid_cost.push_back(cost);
+          fprintf(fp,"%f %f\n", new_angle,cost);
         }
       }
     }
-
+    fprintf(fp,"];");
+    fclose(fp);
   }
-
 }
+
+
 
 using namespace door_base_collision_cost;
 
@@ -329,6 +356,15 @@ int main(int argc, char *argv[])
   double y = -0.5;
   double theta = M_PI/2.0;
 
+  if(argc > 1)
+     x = atof(argv[1]);
+  if(argc > 2)
+     y = atof(argv[2]);
+  if(argc > 3)
+     theta = atof(argv[3]);
+
+
+  printf("x: %f, y:%f, theta:%f\n",x,y,theta);
   double shoulder_position_x = -0.2;
   double shoulder_position_y = -0.2;
 
@@ -361,7 +397,7 @@ int main(int argc, char *argv[])
   door_global_pose[2] = 0.0;
 
   robot_shoulder_position.resize(2);
-  robot_shoulder_position[0] = -shoulder_position_x;
+  robot_shoulder_position[0] = shoulder_position_x;
   robot_shoulder_position[1] = shoulder_position_y;
 
   door_handle_pose.resize(2);
