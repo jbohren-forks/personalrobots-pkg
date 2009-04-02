@@ -15,13 +15,13 @@
   <property name="finger_damping"             value="3.0" />
   <property name="finger_tip_damping"         value="0.001" />
 
-  <property name="finger_kp"                  value="20.0" />
-  <property name="finger_kd"                  value="10.0" />
-  <property name="finger_fm"                  value="10.0" />
+  <property name="finger_kp"                  value="0.0" />
+  <property name="finger_kd"                  value="0.0" />
+  <property name="finger_fm"                  value="0.0" />
 
-  <property name="finger_tip_kp"              value="10.0" />
-  <property name="finger_tip_kd"              value="01.0" />
-  <property name="finger_tip_fm"              value="01.0" />
+  <property name="finger_tip_kp"              value="0.0" />
+  <property name="finger_tip_kd"              value="0.0" />
+  <property name="finger_tip_fm"              value="0.0" />
 
   <property name="finger_tip_mu"              value="500.0" />
   <property name="finger_mu"                  value="500.0" />
@@ -122,14 +122,12 @@
       <calibration reference_position="0" values="1.0 -1.0" />
       <pr2_finger_limits reflect="1" />
       <joint_properties damping="${finger_damping}" />
-      <!--
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_r_finger_mimic" flag="gazebo">
         <elem key="mimicKp"   value="${finger_kp}" />
         <elem key="mimicKd"   value="${finger_kd}" />
         <elem key="mimicFMax" value="${finger_fm}" />
       </map>
-      -->
       <map name="${prefix}_r_finger_options" flag="gazebo">
         <elem key="provideFeedback" value="true"/>
         <elem key="initialAngle" value="${-gripper_min_angle}"/>
@@ -206,14 +204,12 @@
       <calibration reference_position="0" values="1.0 -1.0" />
       <pr2_finger_limits reflect="1" />
       <joint_properties damping="${finger_tip_damping}" />
-      <!--
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_l_finger_tip_mimic" flag="gazebo">
         <elem key="mimicKp"   value="${finger_tip_kp}" />
         <elem key="mimicKd"   value="${finger_tip_kd}" />
         <elem key="mimicFMax" value="${finger_tip_fm}" />
       </map>
-      -->
       <map name="${prefix}_l_finger_tip_options" flag="gazebo">
         <elem key="provideFeedback" value="true"/>
         <elem key="initialAngle" value="${-gripper_min_angle}"/>
@@ -288,14 +284,12 @@
       <calibration reference_position="0" values="1.0 -1.0" />
       <pr2_finger_limits reflect="1" />
       <joint_properties damping="${finger_tip_damping}" />
-      <!--
       <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
       <map name="${prefix}_r_finger_tip_mimic" flag="gazebo">
         <elem key="mimicKp"   value="${finger_tip_kp}" />
         <elem key="mimicKd"   value="${finger_tip_kd}" />
         <elem key="mimicFMax" value="${finger_tip_fm}" />
       </map>
-      -->
       <map name="${prefix}_r_finger_tip_options" flag="gazebo">
         <elem key="provideFeedback" value="true"/>
         <elem key="initialAngle" value="${gripper_min_angle}"/>
