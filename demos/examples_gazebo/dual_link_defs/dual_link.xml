@@ -20,16 +20,22 @@
   <joint name="link1_joint" type="revolute" >
     <axis xyz="0 0 1" />
     <anchor xyz="0 0 0" />
-    <limit min="-3.14159" max="3.14159" effort="100" velocity="5" />
+    <limit min="0.0" max="0.0" effort="100" velocity="5"
+           k_position="1.0" k_velocity="1.0"
+           safety_length_min="0.0" safety_length_max="0.0" />
     <calibration values="1.5 -1 " />
+    <joint_properties damping="10.0" />
   </joint>
   
   <!-- joint blocks -->
   <joint name="link2_joint" type="revolute" >
     <axis xyz="0 1 0" />
     <anchor xyz="0.0 0 0" />
-    <limit min="-3.14159" max="3.14159" effort="100" velocity="5" />
+    <limit min="-3.0" max="3.0" effort="100" velocity="5"
+           k_position="1.0" k_velocity="1.0"
+           safety_length_min="0.0" safety_length_max="0.0" />
     <calibration values="1.5 -1 " />
+    <joint_properties damping="0.0" />
   </joint>
 
 
@@ -41,7 +47,7 @@
     <inertial>
       <mass value="1000" />
       <com xyz="0 0 0" />
-      <inertia ixx="1000"  ixy="0"  ixz="0" iyy="1000" iyz="0" izz="1000" />
+      <inertia ixx="100"  ixy="0"  ixz="0" iyy="100" iyz="0" izz="100" />
     </inertial> 
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
@@ -128,41 +134,42 @@
   
   <map name="sensor" flag="gazebo">
     <verbatim key="mechanism_control_simulation">
-    <controller:ros_time name="ros_time" plugin="libros_time.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
-    </controller:ros_time>
 
-    <!-- pr2_actarray -->
-    <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
-      <alwayson>true</alwayson>
-      <updaterate>1000.0</updaterate>
-
-      <interface:audio name="gazebo_mechanism_control_dummy_iface" />
-    </controller:gazebo_mechanism_control>
-
-    <!-- ros_p3d for position groundtruth -->
-    <controller:ros_p3d name="p3d_link1_controller" plugin="libros_p3d.so">
+      <controller:ros_time name="ros_time" plugin="libros_time.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>1000.0</updateRate>
-        <bodyName>link1</bodyName>
-        <topicName>link1_pose</topicName>
-        <frameName>map</frameName>
-        <xyzOffsets>0 0 0.0</xyzOffsets>
-        <rpyOffsets>0 0 0.0</rpyOffsets>
-        <interface:position name="p3d_link1_position"/>
-    </controller:ros_p3d>
+        <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
+      </controller:ros_time>
 
-    <!-- ros_p3d for position groundtruth -->
-    <controller:ros_p3d name="p3d_link2_controller" plugin="libros_p3d.so">
+      <!-- pr2_actarray -->
+      <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>1000.0</updateRate>
-        <bodyName>link2</bodyName>
-        <topicName>link2_pose</topicName>
-        <frameName>map</frameName>
-        <interface:position name="p3d_link2_position"/>
-    </controller:ros_p3d>
+
+        <interface:audio name="gazebo_mechanism_control_dummy_iface" />
+      </controller:gazebo_mechanism_control>
+
+      <!-- ros_p3d for position groundtruth -->
+      <controller:ros_p3d name="p3d_link1_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>link1</bodyName>
+          <topicName>link1_pose</topicName>
+          <frameName>map</frameName>
+          <xyzOffsets>0 0 0.0</xyzOffsets>
+          <rpyOffsets>0 0 0.0</rpyOffsets>
+          <interface:position name="p3d_link1_position"/>
+      </controller:ros_p3d>
+
+      <!-- ros_p3d for position groundtruth -->
+      <controller:ros_p3d name="p3d_link2_controller" plugin="libros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>link2</bodyName>
+          <topicName>link2_pose</topicName>
+          <frameName>map</frameName>
+          <interface:position name="p3d_link2_position"/>
+      </controller:ros_p3d>
 
     </verbatim>
   </map>
