@@ -35,8 +35,8 @@
 #include <ros/node.h>
 #include <robot_msgs/Door.h>
 #include <robot_msgs/TaskFrameFormalism.h>
-#include <robot_msgs/Planner2DGoal.h>
-#include <robot_msgs/Planner2DState.h>
+#include <robot_actions/Pose2D.h>
+#include <robot_actions/MoveBaseState.h>
 #include <robot_srvs/SwitchController.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
@@ -67,7 +67,7 @@ private:
 
   robot_msgs::Door my_door_;
   robot_msgs::TaskFrameFormalism tff_msg_;
-  robot_msgs::Planner2DState planner_state_;
+  robot_actions::MoveBaseState planner_state_;
 
   door_handle_detector::DoorDetector::Request  req_doordetect;
   door_handle_detector::DoorDetector::Response res_doordetect;
@@ -96,8 +96,8 @@ public:
 
     advertise<robot_msgs::TaskFrameFormalism>("cartesian_tff_right/command",1);
     advertise<std_msgs::Float64>("gripper_effort/set_command",1);
-    advertise<robot_msgs::Planner2DGoal>("goal", 10);
-    subscribe("state", planner_state_,  &OpenDoorExecutiveTest::plannerCallback, 1);
+    advertise<robot_actions::Pose2D>("/move_base_node/activate", 10);
+    subscribe("/move_base_node/feedback", planner_state_,  &OpenDoorExecutiveTest::plannerCallback, 1);
     subscribe("/joy_annotator/annotation_msg", joy_msg_, &OpenDoorExecutiveTest::joyCallback,1);
 
     // frames
@@ -209,15 +209,13 @@ public:
     PoseStampedTFToMsg(gripper_pose, gripper_pose_msg);
 
     // move the robot in front of the door
-    robot_msgs::Planner2DGoal robot_pose_msg;
+    robot_actions::Pose2D robot_pose_msg;
     robot_pose_msg.header.frame_id = fixed_frame_;
-    robot_pose_msg.enable = true;
-    robot_pose_msg.timeout = 1000000;
-    robot_pose_msg.goal.x = robot_pos(0);
-    robot_pose_msg.goal.y = robot_pos(1);
-    robot_pose_msg.goal.th = z_angle;
+    robot_pose_msg.x = robot_pos(0);
+    robot_pose_msg.y = robot_pos(1);
+    robot_pose_msg.th = z_angle;
     planner_finished_ = false;
-    publish("goal", robot_pose_msg);
+    publish("/move_base_node/activate", robot_pose_msg);
     cout << "moving in front of door...  " << flush;
     while (!planner_finished_)
       polling_.sleep();
