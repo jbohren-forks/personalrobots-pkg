@@ -51,7 +51,7 @@ namespace costmap_2d {
     string topics_string;
     //get the topics that we'll subscribe to from the parameter server
     ros_node_.param("~costmap/observation_topics", topics_string, string(""));
-    ROS_INFO("Topics: %s", topics_string.c_str());
+    ROS_INFO("Subscribed to Topics: %s", topics_string.c_str());
 
     ros_node_.param("~costmap/global_frame", global_frame_, string("map"));
     ros_node_.param("~costmap/robot_base_frame", robot_base_frame_, string("base_link"));
@@ -74,7 +74,7 @@ namespace costmap_2d {
       //create an observation buffer
       observation_buffers_.push_back(new ObservationBuffer(topic, observation_keep_time, expected_update_rate, tf_, global_frame_, sensor_frame));
 
-      ROS_INFO("Created an observation buffer for topic %s, expected update rate: %.2f, observation persistance: %.2f", topic.c_str(), expected_update_rate, observation_keep_time);
+      ROS_DEBUG("Created an observation buffer for topic %s, expected update rate: %.2f, observation persistance: %.2f", topic.c_str(), expected_update_rate, observation_keep_time);
 
       //create a callback for the topic
       if(data_type == "LaserScan"){
@@ -243,7 +243,15 @@ namespace costmap_2d {
     ros::Duration cycle_time = ros::Duration(1.0 / frequency);
     while(ros_node_.ok()){
       ros::Time start_time = ros::Time::now();
+      struct timeval start, end;
+      double start_t, end_t, t_diff;
+      gettimeofday(&start, NULL);
       updateMap();
+      gettimeofday(&end, NULL);
+      start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+      end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+      t_diff = end_t - start_t;
+      ROS_DEBUG("Map update time: %.9f", t_diff);
       if(!sleepLeftover(start_time, cycle_time))
         ROS_WARN("Map update loop missed its desired cycle time of %.4f", cycle_time.toSec());
     }
@@ -266,10 +274,11 @@ namespace costmap_2d {
   bool Costmap2DROS::sleepLeftover(ros::Time start, ros::Duration cycle_time){
     ros::Time expected_end = start + cycle_time;
     ///@todo: because durations don't handle subtraction properly right now
-    ros::Duration sleep_time = ros::Duration((ros::Time::now() - expected_end).toSec()); 
+    ros::Duration sleep_time = ros::Duration((expected_end - ros::Time::now()).toSec()); 
 
-    if(sleep_time < ros::Duration(0.0))
+    if(sleep_time < ros::Duration(0.0)){
       return false;
+    }
 
     sleep_time.sleep();
     return true;
@@ -308,15 +317,7 @@ namespace costmap_2d {
     observation_lock_.unlock();
 
     map_lock_.lock();
-    struct timeval start, end;
-    double start_t, end_t, t_diff;
-    gettimeofday(&start, NULL);
     costmap_->updateWorld(wx, wy, observations, observations);
-    gettimeofday(&end, NULL);
-    start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-    end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-    t_diff = end_t - start_t;
-    ROS_INFO("Map update time: %.9f", t_diff);
     map_lock_.unlock();
 
 
@@ -345,7 +346,7 @@ namespace costmap_2d {
       double wx = global_pose.getOrigin().x();
       double wy = global_pose.getOrigin().y();
       map_lock_.lock();
-      ROS_INFO("Resetting map outside window");
+      ROS_DEBUG("Resetting map outside window");
       costmap_->resetMapOutsideWindow(wx, wy, size_x, size_y);
       map_lock_.unlock();
 
@@ -354,7 +355,7 @@ namespace costmap_2d {
   }
 
   void Costmap2DROS::publishCostMap(){
-    ROS_INFO("publishing map");
+    ROS_DEBUG("publishing map");
     map_lock_.lock();
     std::vector< std::pair<double, double> > raw_obstacles, inflated_obstacles;
     for(unsigned int i = 0; i<costmap_->cellSizeX(); i++){
