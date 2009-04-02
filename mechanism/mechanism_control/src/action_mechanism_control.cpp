@@ -34,8 +34,9 @@
 
 #include <ros/node.h>
 #include <robot_srvs/SwitchController.h>
-#include <mechanism_control/SwitchController.h>
-#include <mechanism_control/SwitchControllerState.h>
+#include <std_msgs/Empty.h>
+#include <robot_actions/SwitchControllers.h>
+#include <robot_actions/SwitchControllersState.h>
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 
@@ -43,18 +44,18 @@
 using namespace ros;
 using namespace std;
 
-class ActionMechanismControl: public robot_actions::Action<mechanism_control::SwitchController, mechanism_control::SwitchController>{
+class ActionMechanismControl: public robot_actions::Action<robot_actions::SwitchControllers, std_msgs::Empty>{
 
 public: 
   ActionMechanismControl(Node& node): 
-    robot_actions::Action<mechanism_control::SwitchController, mechanism_control::SwitchController>("door_detector")
+    robot_actions::Action<robot_actions::SwitchControllers, std_msgs::Empty>("switch_controllers")
   {};
   
   
   ~ActionMechanismControl(){};
   
   
-  void handleActivate(const mechanism_control::SwitchController& c)
+  void handleActivate(const robot_actions::SwitchControllers& c)
   {
     robot_srvs::SwitchController::Request req;
     robot_srvs::SwitchController::Response resp;
@@ -62,10 +63,10 @@ public:
     req.stop_controllers  = c.stop_controllers;
     if (!ros::service::call("switch_controller", req, resp)){
       ROS_ERROR("ActionMechanismControl: failed to switch controllers");
-      notifyAborted(c);
+      notifyAborted(std_msgs::Empty());
     }
     else
-      notifySucceeded(c);
+      notifySucceeded(std_msgs::Empty());
   }
   
   
@@ -91,11 +92,10 @@ int main(int argc, char** argv)
 {
   ros::init(argc,argv);
 
-  ros::Node node("name");
+  ros::Node node("mechanism_control_action_container");
   ActionMechanismControl act(node);
-
-  robot_actions::ActionRunner runner(1.0);
-  runner.connect<mechanism_control::SwitchController, mechanism_control::SwitchControllerState, mechanism_control::SwitchController>(act);
+  robot_actions::ActionRunner runner(2.0);
+  runner.connect<robot_actions::SwitchControllers, robot_actions::SwitchControllersState,  std_msgs::Empty>(act);
   runner.run();
 
   node.spin();
