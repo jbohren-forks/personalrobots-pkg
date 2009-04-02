@@ -155,13 +155,13 @@ protected:
       plannerCycleTime_ = -1;
 
     // Advertize controller state updates - do not want to miss a state transition.
-    ros::Node::instance()->advertise<S>(nodeName + "/" + stateTopic, QUEUE_MAX());
+    ros::Node::instance()->advertise<S>("~" + stateTopic, QUEUE_MAX());
 
     // Subscribe to controller goal requests. Last request winds. We drop others
-    ros::Node::instance()->subscribe(nodeName + "/" + goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
+    ros::Node::instance()->subscribe("~" + goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
 
     // Subscribe to controller goal requests. Last request winds. We drop others
-    ros::Node::instance()->subscribe(nodeName + "/" + preemptTopic, goalMsg, &HighlevelController<S, G>::preemptCallback,  this, 1);
+    ros::Node::instance()->subscribe("~" + preemptTopic, goalMsg, &HighlevelController<S, G>::preemptCallback,  this, 1);
 
     // Subscribe to executive shutdown signal
     ros::Node::instance()->subscribe("highlevel_controllers/shutdown", shutdownMsg_, &HighlevelController<S, G>::shutdownCallback, this, 1);
