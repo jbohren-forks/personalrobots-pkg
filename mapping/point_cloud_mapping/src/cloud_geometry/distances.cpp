@@ -72,19 +72,20 @@ namespace cloud_geometry
     {
       // Calculate the distance from the point to the line
       // D = ||(P2-P1) x (P1-P0)|| / ||P2-P1|| = norm (cross (p2-p1, p2-p0)) / norm(p2-p1)
-      robot_msgs::Point32 r, p_t, dir;
-      dir.x = line_coefficients[3];
-      dir.y = line_coefficients[4];
-      dir.z = line_coefficients[5];
-      r.x = line_coefficients[0] + dir.x;
-      r.y = line_coefficients[1] + dir.y;
-      r.z = line_coefficients[2] + dir.z;
-      p_t.x = r.x - p.x;
-      p_t.y = r.y - p.y;
-      p_t.z = r.z - p.z;
+      std::vector<double> dir (3), r (3), p_t (3), c;
+      dir[0] = line_coefficients[3];
+      dir[1] = line_coefficients[4];
+      dir[2] = line_coefficients[5];
 
-      robot_msgs::Point32 c = cross (p_t, dir);
-      double sqr_distance = (c.x * c.x + c.y * c.y + c.z * c.z) / (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+      r[0] = line_coefficients[0] + dir[0];
+      r[1] = line_coefficients[1] + dir[1];
+      r[2] = line_coefficients[2] + dir[2];
+      p_t[0] = r[0] - p.x;
+      p_t[1] = r[1] - p.y;
+      p_t[2] = r[2] - p.z;
+
+      cross (p_t, dir, c);
+      double sqr_distance = (c[0] * c[0] + c[1] * c[1] + c[2] * c[2]) / (dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
       return (sqrt (sqr_distance));
     }
 
