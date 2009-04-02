@@ -61,7 +61,7 @@
 #include <tf/message_notifier.h>
 #include <visual_nav/visual_nav.h>
 #include <robot_msgs/Polyline2D.h>
-#include <robot_msgs/Planner2DGoal.h>
+#include <robot_actions/Pose2D.h>
 #include <robot_msgs/VisualizationMarker.h>
 #include <vslam/Roadmap.h>
 #include <visual_nav/exceptions.h>
@@ -71,7 +71,7 @@
 using deprecated_msgs::Point2DFloat32;
 using std::string;
 using std::vector;
-using robot_msgs::Planner2DGoal;
+using robot_actions::Pose2D;
 using robot_msgs::Point;
 using robot_msgs::PointStamped;
 using robot_msgs::Point32;
@@ -309,7 +309,7 @@ void RosVisualNavigator::setupTopics ()
   node_.subscribe("localizedpose", pose_message_, &RosVisualNavigator::poseCallback, this, 1);
   node_.subscribe("visual_nav_goal", goal_message_, &RosVisualNavigator::goalCallback, this, 1);
   base_scan_notifier_ = NotifierPtr(new Notifier(&tf_listener_, ros::Node::instance(),  bind(&RosVisualNavigator::baseScanCallback, this, _1), "base_scan", "vslam", 50));
-  node_.advertise<Planner2DGoal>("goal", 1);
+  node_.advertise<Pose2D>("/move_base_node/activate", 1);
   node_.advertise<VisualizationMarker>( "visualizationMarker", 0 );
   node_.advertise<Polyline2D> ("vslam_laser", 1);
 }
@@ -451,14 +451,13 @@ void RosVisualNavigator::publishExitPoint ()
     exit_point_ = roadmap_->pathExitPoint(path, exit_point_radius_);
 
     // publish the goal message
-    Planner2DGoal m;
+    Pose2D m;
 
-    m.goal.x = exit_point_.x;
-    m.goal.y = exit_point_.y;
-    m.goal.th = exit_point_.theta;
+    m.x = exit_point_.x;
+    m.y = exit_point_.y;
+    m.th = exit_point_.theta;
     m.header.frame_id = "vslam";
-    m.enable = 1;
-    node_.publish("goal", m);
+    node_.publish("/move_base_node/activate", m);
   }
   catch (UnknownNodeIdException& r) {
     if (r.id == goal_id_) {
