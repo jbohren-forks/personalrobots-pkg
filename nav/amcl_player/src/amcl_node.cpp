@@ -91,6 +91,8 @@ Publishes to (name / type):
 
 #include "map/map.h"
 #include "pf/pf.h"
+#include "sensors/amcl_odom.h"
+#include "sensors/amcl_laser.h"
 
 #include "ros/assert.h"
 
@@ -124,7 +126,6 @@ class AmclNode
     tf::TransformListener* tf_;
 
     // incoming messages
-    laser_scan::LaserScan laser_msg_;
     robot_msgs::PoseWithCovariance initialPoseMsg_;
     
     // Message callbacks
@@ -149,6 +150,12 @@ class AmclNode
     pf_t *pf_;
     int pf_min_samples_, pf_max_samples_;
     double pf_err_, pf_z_;
+    bool pf_init_;
+    pf_vector_t pf_odom_pose_;
+    double d_thresh_, a_thresh_;
+
+    AMCLOdom* odom_;
+    AMCLLaser* laser_;
 
     ros::Duration cloud_pub_interval;
     ros::Time last_cloud_pub_time;
@@ -188,12 +195,12 @@ main(int argc, char** argv)
 AmclNode::AmclNode() :
         map_(NULL),
         have_laser_pose(false),
-        pf_(NULL)
+        pf_(NULL),
+        pf_init_(false)
 {
   // Grab params off the param server
   int max_beams;
   double odom_drift_xx, odom_drift_yy, odom_drift_aa, odom_drift_xa;
-  double d_thresh, a_thresh;
   ros::Node::instance()->param("pf_laser_max_beams", max_beams, 20);
   ros::Node::instance()->param("pf_min_samples", pf_min_samples_, 500);
   ros::Node::instance()->param("pf_max_samples", pf_max_samples_, 10000);
@@ -203,8 +210,8 @@ AmclNode::AmclNode() :
   ros::Node::instance()->param("pf_odom_drift_yy", odom_drift_yy, 0.2);
   ros::Node::instance()->param("pf_odom_drift_aa", odom_drift_aa, 0.2);
   ros::Node::instance()->param("pf_odom_drift_xa", odom_drift_xa, 0.2);
-  ros::Node::instance()->param("pf_min_d", d_thresh, 0.2);
-  ros::Node::instance()->param("pf_min_a", a_thresh, M_PI/6.0);
+  ros::Node::instance()->param("pf_min_d", d_thresh_, 0.2);
+  ros::Node::instance()->param("pf_min_a", a_thresh_, M_PI/6.0);
   ros::Node::instance()->param("pf_odom_frame_id", odom_frame_id, std::string("odom"));
   ros::Node::instance()->param("pf_transform_tolerance", transform_tolerance_, 0.0);
 
@@ -212,7 +219,6 @@ AmclNode::AmclNode() :
   ros::Node::instance()->param("robot_x_start", startX, 0.0);
   ros::Node::instance()->param("robot_y_start", startY, 0.0);
   ros::Node::instance()->param("robot_th_start", startTH, 0.0);
-  setPose(startX, startY, startTH);
 
   cloud_pub_interval.fromSec(1.0);
   tfb_ = new tf::TransformBroadcaster(*ros::Node::instance());
@@ -225,10 +231,35 @@ AmclNode::AmclNode() :
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 
-  //ros::Node::instance()->advertise<deprecated_msgs::RobotBase2DOdom>("localizedpose",2);
+  // Initialize the filter
+  pf_vector_t pf_init_pose_mean = pf_vector_zero();
+  pf_init_pose_mean.v[0] = startX;
+  pf_init_pose_mean.v[1] = startY;
+  pf_init_pose_mean.v[2] = startTH;
+  pf_matrix_t pf_init_pose_cov = pf_matrix_zero();
+  pf_init_pose_cov.m[0][0] = 1.0 * 1.0;
+  pf_init_pose_cov.m[1][1] = 1.0 * 1.0;
+  pf_init_pose_cov.m[2][2] = 2*M_PI * 2*M_PI;
+  pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
+
+  // Instantiate the sensor objects
+  // Odometry
+  pf_matrix_t drift = pf_matrix_zero();
+  drift.m[0][0] = odom_drift_xx;
+  drift.m[1][1] = odom_drift_yy;
+  drift.m[2][0] = odom_drift_xa;
+  drift.m[2][2] = odom_drift_aa;
+  odom_ = new AMCLOdom(drift);
+  ROS_ASSERT(odom_);
+  // Laser
+  // We pass in null laser pose to start with; we'll change it later
+  pf_vector_t dummy = pf_vector_zero();
+  // TODO: expose laser model params
+  laser_ = new AMCLLaser(max_beams, 0.1, 0.1, dummy, map_);
+  ROS_ASSERT(laser_);
+
   ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("localizedpose",2);
   ros::Node::instance()->advertise<robot_msgs::ParticleCloud>("particlecloud",2);
-  //ros::Node::instance()->subscribe("scan", laser_msg_, &AmclNode::laserReceived,this,2);
   laser_scan_notifer = 
           new tf::MessageNotifier<laser_scan::LaserScan>
           (tf_, ros::Node::instance(),  
@@ -284,6 +315,7 @@ AmclNode::requestMap()
 AmclNode::~AmclNode()
 {
   map_free(map_);
+  // TODO: delete everything allocated in constructor
 }
 
 #if 0
@@ -543,14 +575,12 @@ AmclNode::getOdomPose(double& x, double& y, double& yaw,
 void
 AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& laser_scan)
 {
-  puts("got scan");
-#if 0
   // Do we have the base->base_laser Tx yet?
   if(!have_laser_pose)
   {
     tf::Stamped<tf::Pose> ident (btTransform(btQuaternion(0,0,0), 
                                              btVector3(0,0,0)), 
-                                 ros::Time(), laser_msg_.header.frame_id);
+                                 ros::Time(), laser_scan->header.frame_id);
     tf::Stamped<btTransform> laser_pose;
     try
     {
@@ -558,100 +588,141 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     }
     catch(tf::TransformException e)
     {
+      ROS_ERROR("Couldn't transform from %s to %s, "
+                "even though the message notifier is in use",
+                laser_scan->header.frame_id.c_str(),
+                "base_footprint");
       return;
     }
 
-    laser_x = laser_pose.getOrigin().x();
-    laser_y = laser_pose.getOrigin().y();
+    pf_vector_t laser_pose_v;
+    laser_pose_v.v[0] = laser_pose.getOrigin().x();
+    laser_pose_v.v[1] = laser_pose.getOrigin().y();
     double p,r;
-    laser_pose.getBasis().getEulerZYX(laser_yaw,p,r);
+    laser_pose.getBasis().getEulerZYX(laser_pose_v.v[2],p,r);
+    laser_->SetLaserPose(laser_pose_v);
+    ROS_DEBUG("Received laser's pose wrt robot: %.3f %.3f %.3f",
+              laser_pose_v.v[0], 
+              laser_pose_v.v[1], 
+              laser_pose_v.v[2]);
     have_laser_pose = true;
   }
 
-  // Put it on the queue
-  laser_scan::LaserScan newscan(laser_msg_);
-  laser_scans.push_back(newscan);
-
-  // Process the queued scans
-  while(!laser_scans.empty())
+  // Where was the robot when this scan was taken?
+  pf_vector_t pose;
+  if(!getOdomPose(pose.v[0], pose.v[1], pose.v[2], 
+                  laser_scan->header.stamp, "base_footprint"))
   {
-    laser_scan::LaserScan scan = laser_scans.front();
-
-    //make sure that we don't fall to far in the past
-    // To work around the lack of ros::Time support in roscpp, we'll take the time of the
-    // most recent laser message instead of ros::Time::now()
-    if(laser_msg_.header.stamp - scan.header.stamp > ros::Duration(9, 0)){
-      laser_scans.pop_front();
-      continue;
-    }
-    
-    // Where was the robot when this scan was taken?
-    double x, y, yaw;
-    if(!getOdomPose(x, y, yaw, scan.header.stamp, "base_footprint"))
-      break;
-
-    laser_scans.pop_front();
-
-    double timestamp = scan.header.stamp.toSec();
-    //printf("I: %.6f %.3f %.3f %.3f\n",
-           //timestamp, x, y, yaw);
-
-    // Synthesize an odometry message
-    player_position2d_data_t pdata_odom;
-    pdata_odom.pos.px = x;
-    pdata_odom.pos.py = y;
-    pdata_odom.pos.pa = yaw;
-    pdata_odom.vel.px = 0.0;
-    pdata_odom.vel.py = 0.0;
-    pdata_odom.vel.pa = 0.0;
-    pdata_odom.stall = 0;
-
-    this->Driver::Publish(this->position2d_addr,
-                          PLAYER_MSGTYPE_DATA,
-                          PLAYER_POSITION2D_DATA_STATE,
-                          (void*)&pdata_odom,0,
-                          &timestamp);
-
-
-    // Got new scan; reformat and pass it on
-    player_laser_data_t pdata;
-    pdata.min_angle = scan.angle_min;
-    pdata.max_angle = scan.angle_max;
-    pdata.resolution = scan.angle_increment;
-    // HACK, until the hokuyourg_player node is fixed
-    if(scan.range_max > 0.1)
-      pdata.max_range = scan.range_max;
-    else
-      pdata.max_range = 30.0;
-    pdata.ranges_count = scan.get_ranges_size();
-    pdata.ranges = new float[pdata.ranges_count];
-    ROS_ASSERT(pdata.ranges);
-    // We have to iterate over, rather than block copy, the ranges, because
-    // we have to filter out short readings.
-    for(unsigned int i=0;i<pdata.ranges_count;i++)
-    {
-      // Player doesn't have a concept of min range.  So we'll map short
-      // readings to max range.
-      if(scan.ranges[i] <= scan.range_min)
-        pdata.ranges[i] = scan.range_max;
-      else
-        pdata.ranges[i] = scan.ranges[i];
-    }
-    pdata.intensity_count = scan.get_intensities_size();
-    pdata.intensity = new uint8_t[pdata.intensity_count];
-    ROS_ASSERT(pdata.intensity);
-    memset(pdata.intensity,0,sizeof(uint8_t)*pdata.intensity_count);
-    pdata.id = scan.header.seq;
-
-    this->Driver::Publish(this->laser_addr,
-                          PLAYER_MSGTYPE_DATA,
-                          PLAYER_LASER_DATA_SCAN,
-                          (void*)&pdata,0,
-                          &timestamp);
-
-    delete[] pdata.ranges;
-    delete[] pdata.intensity;
+    ROS_ERROR("Couldn't determine robot's pose associated with laser scan");
+    return;
   }
+
+  bool update = false;
+  pf_vector_t delta;
+
+  if(pf_init_)
+  {
+    // Compute change in pose
+    delta = pf_vector_coord_sub(pose, pf_odom_pose_);
+
+    // See if we should update the filter
+    update = fabs(delta.v[0]) > d_thresh_ ||
+             fabs(delta.v[1]) > d_thresh_ ||
+             fabs(delta.v[2]) > a_thresh_;
+  }
+
+  if(!pf_init_)
+  {
+    // Pose at last filter update
+    pf_odom_pose_ = pose;
+
+    // Filter is now initialized
+    pf_init_ = true;
+
+    // Should update sensor data
+    update = true;
+  }
+  // If the robot has moved, update the filter
+  else if(pf_init_ && update)
+  {
+    //printf("pose\n");
+    //pf_vector_fprintf(pose, stdout, "%.3f");
+
+    AMCLOdomData data;
+    data.pose = pose;
+    // HACK
+    // Modify the delta in the action data so the filter gets
+    // updated correctly
+    data.delta = delta;
+
+    // Use the action data to update the filter
+    odom_->UpdateAction(pf_, (AMCLSensorData*)&data);
+
+    // Pose at last filter update
+    //this->pf_odom_pose = pose;
+  }
+
+#if 0
+
+  double timestamp = scan.header.stamp.toSec();
+  //printf("I: %.6f %.3f %.3f %.3f\n",
+  //timestamp, x, y, yaw);
+
+  // Synthesize an odometry message
+  player_position2d_data_t pdata_odom;
+  pdata_odom.pos.px = x;
+  pdata_odom.pos.py = y;
+  pdata_odom.pos.pa = yaw;
+  pdata_odom.vel.px = 0.0;
+  pdata_odom.vel.py = 0.0;
+  pdata_odom.vel.pa = 0.0;
+  pdata_odom.stall = 0;
+
+  this->Driver::Publish(this->position2d_addr,
+                        PLAYER_MSGTYPE_DATA,
+                        PLAYER_POSITION2D_DATA_STATE,
+                        (void*)&pdata_odom,0,
+                        &timestamp);
+
+
+  // Got new scan; reformat and pass it on
+  player_laser_data_t pdata;
+  pdata.min_angle = scan.angle_min;
+  pdata.max_angle = scan.angle_max;
+  pdata.resolution = scan.angle_increment;
+  // HACK, until the hokuyourg_player node is fixed
+  if(scan.range_max > 0.1)
+    pdata.max_range = scan.range_max;
+  else
+    pdata.max_range = 30.0;
+  pdata.ranges_count = scan.get_ranges_size();
+  pdata.ranges = new float[pdata.ranges_count];
+  ROS_ASSERT(pdata.ranges);
+  // We have to iterate over, rather than block copy, the ranges, because
+  // we have to filter out short readings.
+  for(unsigned int i=0;i<pdata.ranges_count;i++)
+  {
+    // Player doesn't have a concept of min range.  So we'll map short
+    // readings to max range.
+    if(scan.ranges[i] <= scan.range_min)
+      pdata.ranges[i] = scan.range_max;
+    else
+      pdata.ranges[i] = scan.ranges[i];
+  }
+  pdata.intensity_count = scan.get_intensities_size();
+  pdata.intensity = new uint8_t[pdata.intensity_count];
+  ROS_ASSERT(pdata.intensity);
+  memset(pdata.intensity,0,sizeof(uint8_t)*pdata.intensity_count);
+  pdata.id = scan.header.seq;
+
+  this->Driver::Publish(this->laser_addr,
+                        PLAYER_MSGTYPE_DATA,
+                        PLAYER_LASER_DATA_SCAN,
+                        (void*)&pdata,0,
+                        &timestamp);
+
+  delete[] pdata.ranges;
+  delete[] pdata.intensity;
 #endif
 }
 

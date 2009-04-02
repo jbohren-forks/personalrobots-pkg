@@ -59,6 +59,10 @@ class AMCLLaser : public AMCLSensor
   // filter has been updated.
   public: virtual bool UpdateSensor(pf_t *pf, AMCLSensorData *data);
 
+  // Set the laser's pose after construction
+  public: void SetLaserPose(pf_vector_t& laser_pose) 
+          {this->laser_pose = laser_pose;}
+
   // Determine the probability for the given pose
   private: static double SensorModel(AMCLLaserData *data, 
                                      pf_sample_set_t* set);
