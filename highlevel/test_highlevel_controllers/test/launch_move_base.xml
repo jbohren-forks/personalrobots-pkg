@@ -1,6 +1,6 @@
 <launch>
   <group name="wg">  
-    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" output="screen" name="move_base_navfn" >
+    <node pkg="highlevel_controllers" type="move_base_navfn" respawn="false" output="screen" name="move_base_node" >
 
       <!-- possible values for plannerType:
            - "ARAPlanner"
