@@ -118,8 +118,8 @@ void CasterControllerEffort::update()
 
   double wd = drive_effort_;  // Wheel torque due to driving
   double ws = VEL_TO_EFF * (WHEEL_RADIUS / WHEEL_OFFSET) * steer_velocity_;  // Wheel torque due to steering
-  wheel_r_eff_.setCommand(wd + ws);
-  wheel_l_eff_.setCommand(wd - ws);
+  wheel_r_eff_.command_ = wd + ws;
+  wheel_l_eff_.command_ = wd - ws;
 
   caster_vel_.update();
   wheel_l_eff_.update();

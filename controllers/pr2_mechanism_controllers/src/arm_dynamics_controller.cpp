@@ -134,7 +134,7 @@ void ArmDynamicsController::getJointCmd(robot_msgs::JointCmd & cmd) const
   const unsigned int n = joint_effort_controllers_.size();
   cmd.set_names_size(n);
   for(unsigned int i=0; i<n; ++i)
-      cmd.names[i] = joint_effort_controllers_[i]->getJointName();
+    cmd.names[i] = joint_effort_controllers_[i]->joint_state_->joint_->name_;
 
   cmd.set_positions_vec(goals_);
 }
@@ -144,7 +144,7 @@ controller::JointEffortController* ArmDynamicsController::getJointEffortControll
 {
   for(int i=0; i< (int) num_joints_; i++)
   {
-    if(joint_effort_controllers_[i]->getJointName() == name)
+    if(joint_effort_controllers_[i]->joint_state_->joint_->name_ == name)
     {
       return joint_effort_controllers_[i];
     }
@@ -157,7 +157,7 @@ int ArmDynamicsController::getJointControllerByName(std::string name)
 {
   for(int i=0; i< (int) num_joints_; i++)
   {
-    if(joint_effort_controllers_[i]->getJointName() == name)
+    if(joint_effort_controllers_[i]->joint_state_->joint_->name_ == name)
     {
       return i;
     }
@@ -186,7 +186,7 @@ void ArmDynamicsController::update(void)
 
   for(unsigned int i=0; i < num_joints_;++i)
   {
-   joint_effort_controllers_[i]->setCommand(control_torque_[i]);
+    joint_effort_controllers_[i]->command_ = control_torque_[i];
 //    joint_effort_controllers_[i]->setCommand(0.0);
   }
 
