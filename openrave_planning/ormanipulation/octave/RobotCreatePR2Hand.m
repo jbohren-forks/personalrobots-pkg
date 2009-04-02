@@ -31,8 +31,9 @@ robot.id = orEnvGetBody(name);
 robot.filename = 'robots/pr2gripperfull.robot.xml';
 
 if( robot.id <= 0 )
+robot.filename
     robot.id = orEnvCreateRobot(name, robot.filename);
-    if( robot.id == 0 )
+    if( isempty(robot.id) || robot.id == 0 )
         error('failed to create %s', robot.filename);
     end
 end

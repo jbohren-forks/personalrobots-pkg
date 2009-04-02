@@ -39,7 +39,7 @@
 function robotinfo = orEnvGetRobots(robotid, options)
 session = openraveros_getglobalsession();
 req = openraveros_env_getrobots();
-if( exist('robotid','var') )
+if( exist('robotid','var') && ~isempty(robotid) )
     req.bodyid = robotid;
 end
 if( exist('options','var') )
