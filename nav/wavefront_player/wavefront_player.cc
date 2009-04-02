@@ -73,7 +73,7 @@ $ wavefront_player
 
 Subscribes to (name/type):
 - @b "localizedpose"/RobotBase2DOdom : robot's map pose.  Only the position information is used (velocity is ignored).
-- @b "goal"/Planner2DGoal : goal for the robot.
+- @b "goal"/Pose2D : goal for the robot.
 - @b "scan"/LaserScan : laser scans.  Used to temporarily modify the map for dynamic obstacles.
 
 Publishes to (name / type):
@@ -114,8 +114,8 @@ robot.
 #include "boost/thread/mutex.hpp"
 
 // The messages that we'll use
-#include <robot_msgs/Planner2DState.h>
-#include <robot_msgs/Planner2DGoal.h>
+#include <robot_actions/MoveBaseState.h>
+#include <robot_actions/Pose2D.h>
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/PointCloud.h>
 #include <laser_scan/LaserScan.h>
@@ -202,11 +202,11 @@ class WavefrontNode: public ros::Node
     double tvmin, tvmax, avmin, avmax, amin, amax;
 
     // incoming/outgoing messages
-    robot_msgs::Planner2DGoal goalMsg;
+    robot_actions::Pose2D goalMsg;
     //MsgRobotBase2DOdom odomMsg;
     robot_msgs::Polyline2D polylineMsg;
     robot_msgs::Polyline2D pointcloudMsg;
-    robot_msgs::Planner2DState pstate;
+    robot_actions::MoveBaseState pstate;
     //MsgRobotBase2DOdom prevOdom;
     bool firstodom;
 
@@ -365,7 +365,7 @@ WavefrontNode::WavefrontNode() :
 
   this->firstodom = true;
 
-  advertise<robot_msgs::Planner2DState>("state",1);
+  advertise<robot_actions::MoveBaseState>("state",1);
   advertise<robot_msgs::Polyline2D>("gui_path",1);
   advertise<robot_msgs::Polyline2D>("gui_laser",1);
   advertise<robot_msgs::PoseDot>("cmd_vel",1);
@@ -386,18 +386,18 @@ WavefrontNode::goalReceived()
 {
   this->lock.lock();
   // Got a new goal message; handle it
-  this->enable = goalMsg.enable;
+  this->enable = 1;
 
   if(this->enable){
     printf("got new goal: %.3f %.3f %.3f\n",
-	   goalMsg.goal.x,
-	   goalMsg.goal.y,
-	   RTOD(goalMsg.goal.th));
+	   goalMsg.x,
+	   goalMsg.y,
+	   RTOD(goalMsg.th));
 
     // Populate goal data
-    this->goal[0] = goalMsg.goal.x;
-    this->goal[1] = goalMsg.goal.y;
-    this->goal[2] = goalMsg.goal.th;
+    this->goal[0] = goalMsg.x;
+    this->goal[1] = goalMsg.y;
+    this->goal[2] = goalMsg.th;
     this->planner_state = NEW_GOAL;
 
     // Set state for actively pursuing a goal
@@ -416,17 +416,12 @@ WavefrontNode::goalReceived()
   mat.getEulerZYX(yaw, pitch, roll);
 
   // Fill out and publish response
-  this->pstate.pos.x = global_pose.getOrigin().x();
-  this->pstate.pos.y = global_pose.getOrigin().y();
-  this->pstate.pos.th = yaw;
+  this->pstate.feedback.x = global_pose.getOrigin().x();
+  this->pstate.feedback.y = global_pose.getOrigin().y();
+  this->pstate.feedback.th = yaw;
   this->pstate.goal.x = this->goal[0];
   this->pstate.goal.y = this->goal[1];
   this->pstate.goal.th = this->goal[2];
-  this->pstate.waypoint.x = 0.0;
-  this->pstate.waypoint.y = 0.0;
-  this->pstate.waypoint.th = 0.0;
-  this->pstate.set_waypoints_size(0);
-  this->pstate.waypoint_idx = -1;
   publish("state",this->pstate);
   this->lock.unlock();
 }
@@ -758,17 +753,12 @@ WavefrontNode::doOneCycle()
   else
     this->pstate.status.value = this->pstate.status.SUCCESS;
 
-  this->pstate.pos.x = global_pose.getOrigin().x();
-  this->pstate.pos.y = global_pose.getOrigin().y();
-  this->pstate.pos.th = yaw;
+  this->pstate.feedback.x = global_pose.getOrigin().x();
+  this->pstate.feedback.y = global_pose.getOrigin().y();
+  this->pstate.feedback.th = yaw;
   this->pstate.goal.x = this->goal[0];
   this->pstate.goal.y = this->goal[1];
   this->pstate.goal.th = this->goal[2];
-  this->pstate.waypoint.x = 0.0;
-  this->pstate.waypoint.y = 0.0;
-  this->pstate.waypoint.th = 0.0;
-  this->pstate.set_waypoints_size(0);
-  this->pstate.waypoint_idx = -1;
 
   publish("state",this->pstate);
 
