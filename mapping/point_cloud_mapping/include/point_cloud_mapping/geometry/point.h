@@ -83,7 +83,8 @@ namespace cloud_geometry
     getPointAsFloatArray (const robot_msgs::PointCloud &points, int index, std::vector<float> &array)
   {
     // Resize for XYZ (3) + NR_CHANNELS
-    array.resize (3 + points.get_chan_size ());
+    if (array.size () != 3 + points.get_chan_size ())
+      array.resize (3 + points.get_chan_size ());
     array[0] = points.pts[index].x;
     array[1] = points.pts[index].y;
     array[2] = points.pts[index].z;
@@ -103,7 +104,8 @@ namespace cloud_geometry
     getPointAsFloatArray (const robot_msgs::PointCloud &points, int index, std::vector<float> &array, int nr_channels)
   {
     // Resize for XYZ (3) + NR_CHANNELS
-    array.resize (3 + nr_channels);
+    if ((int)array.size () != 3 + nr_channels)
+      array.resize (3 + nr_channels);
     array[0] = points.pts[index].x;
     array[1] = points.pts[index].y;
     array[2] = points.pts[index].z;
@@ -124,7 +126,8 @@ namespace cloud_geometry
     getPointAsFloatArray (const robot_msgs::PointCloud &points, int index, std::vector<float> &array, int start_channel, int end_channel)
   {
     // Resize for XYZ (3) + NR_CHANNELS
-    array.resize (3 + end_channel - start_channel);
+    if ((int)array.size () != 3 + end_channel - start_channel)
+      array.resize (3 + end_channel - start_channel);
     array[0] = points.pts[index].x;
     array[1] = points.pts[index].y;
     array[2] = points.pts[index].z;
@@ -147,7 +150,8 @@ namespace cloud_geometry
     if (channels.size () > points.get_chan_size ())
       return;
     // Resize for XYZ (3) + NR_CHANNELS
-    array.resize (3 + channels.size ());
+    if (array.size () != 3 + channels.size ())
+      array.resize (3 + channels.size ());
     array[0] = points.pts[index].x;
     array[1] = points.pts[index].y;
     array[2] = points.pts[index].z;
@@ -184,6 +188,37 @@ namespace cloud_geometry
     r.y = p1.at (2) * p2.x - p1.at (0) * p2.z;
     r.z = p1.at (0) * p2.y - p1.at (1) * p2.x;
     return (r);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the cross product between two points (vectors).
+    * \param p1 the first point/vector
+    * \param p2 the second point/vector
+    */
+  inline robot_msgs::Point32
+    cross (const robot_msgs::Point32 &p1, const std::vector<double> &p2)
+  {
+    robot_msgs::Point32 r;
+    r.x = p2.at (1) * p1.z - p2.at (2) * p1.y;
+    r.y = p2.at (2) * p1.x - p2.at (0) * p1.z;
+    r.z = p2.at (0) * p1.y - p2.at (1) * p1.x;
+    return (r);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /** \brief Compute the cross product between two points (vectors).
+    * \param p1 the first point/vector
+    * \param p2 the second point/vector
+    * \param the resultant third vector p3 = p1 x p2
+    */
+  inline void
+    cross (const std::vector<double> &p1, const std::vector<double> &p2, std::vector<double> &p3)
+  {
+    if (p3.size () != 3)
+      p3.resize (3);
+    p3[0] = p1.at (1) * p2.at (2) - p1.at (2) * p2.at (1);
+    p3[1] = p1.at (2) * p2.at (0) - p1.at (0) * p2.at (2);
+    p3[2] = p1.at (0) * p2.at (1) - p1.at (1) * p2.at (0);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
