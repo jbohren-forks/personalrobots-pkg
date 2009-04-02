@@ -1,5 +1,5 @@
 <launch>
-  <param name="ip_address" type="str" value="169.254.68.68"/>
+  <param name="ip_address" type="str" value="10.68.0.20"/>
   <param name="exposure_auto" type="str" value="Auto"/>
   <param name="gain_auto" type="str" value="Auto"/>
   <!--
