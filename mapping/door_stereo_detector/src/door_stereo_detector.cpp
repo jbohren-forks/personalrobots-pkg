@@ -117,7 +117,7 @@ class DoorStereo
 
       node_->param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  // 100 points at high resolution
       node_->param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.01);     // 3 cm
-      node_->param ("~p_eps_angle_", eps_angle_, 30.0);                              // 10 degrees
+      node_->param ("~p_eps_angle_", eps_angle_, 2.0);                              // 10 degrees
       node_->param ("~p_frame_multiplier_", frame_multiplier_,1.0);
       node_->param ("~p_sac_min_points_left", sac_min_points_left_, 10);
       node_->param ("~p_door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
@@ -306,7 +306,7 @@ class DoorStereo
           coeff.push_back (model_coefficients);
 
           //Find the edges of the line segments
-          cloud_geometry::statistics::getMinMax (*points, inliers.back(), minP, maxP);
+          cloud_geometry::statistics::getLargestDiagonalPoints(*points, inliers.back(), minP, maxP);
           line_segment_min.push_back(minP);
           line_segment_max.push_back(maxP);
 
