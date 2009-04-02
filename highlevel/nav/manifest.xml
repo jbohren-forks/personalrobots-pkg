@@ -1,0 +1,25 @@
+<package>
+  <description brief="A general navigation stack">
+  A navigation stack that, given a goal, will attempt to reach it.
+  </description>
+ <author>Eitan Marder-Eppstein</author>
+ <license>BSD</license>
+ <review status="unreviewed" notes=""/>
+ <url>http://pr.willowgarage.com</url>
+
+ <depend package="roscpp"/>
+ <depend package="rosconsole"/>
+ <depend package="std_msgs"/>
+ <depend package="deprecated_msgs"/>
+ <depend package="robot_msgs"/>
+ <depend package="robot_actions"/>
+ <depend package="trajectory_rollout"/>
+ <depend package="new_costmap"/>
+ <depend package="tf"/>
+ <depend package="roslib"/>
+ <depend package="navfn"/>
+
+ <export>
+ <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib `rosboost-cfg --lflags thread` -lnav"/>
+ </export>
+</package>
