@@ -49,6 +49,7 @@ import rospy, rostest
 from std_msgs.msg import *
 from robot_msgs.msg import *
 from deprecated_msgs.msg import *
+from robot_actions.msg import *
 from tf.transformations import *
 from numpy import *
 
@@ -192,7 +193,7 @@ class NavStackTest(unittest.TestCase):
     def test_set_goal(self):
         print "LNK\n"
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
-        pub_goal = rospy.Publisher("goal", Planner2DGoal) #received by wavefront_player or equivalent
+        pub_goal = rospy.Publisher("/move_base_node/activate", Pose2D) #received by wavefront_player or equivalent
         rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
         rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
@@ -265,7 +266,7 @@ class NavStackTest(unittest.TestCase):
             h.stamp = rospy.get_rostime();
             h.frame_id = "/map"
             if self.publish_goal:
-              pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(self.target_x,self.target_y,self.target_t),1,1.0))
+              pub_goal.publish(Pose2D(h, self.target_x, self.target_y, self.target_t))
             time.sleep(1.0)
 
             # compute angular error between deltas in odom and p3d
