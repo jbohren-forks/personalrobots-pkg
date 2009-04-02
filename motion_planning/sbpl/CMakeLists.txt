@@ -7,12 +7,13 @@ rospack_add_library(sbpl
                          src/discrete_space_information/nav2d/environment_nav2D.cpp
                          src/discrete_space_information/nav3dkin/environment_nav3Dkin.cpp
                          src/discrete_space_information/navxythetalat/environment_navxythetalat.cpp
+                         src/discrete_space_information/nav2d/environment_nav2Duu.cpp
                          src/discrete_space_information/template/environment_XXX.cpp
                          src/discrete_space_information/robarm/environment_robarm.cpp
                          src/planners/ARAStar/araplanner.cpp
                          src/planners/ADStar/adplanner.cpp
                          src/planners/VI/viplanner.cpp
-						 src/planners/PPCP/ppcpplanner.cpp
+                         src/planners/PPCP/ppcpplanner.cpp
                          src/utils/heap.cpp
                          src/utils/mdp.cpp
                          src/utils/utils.cpp
