@@ -92,7 +92,7 @@ void FancyChain(const string& robot_desc)
   printf("Displaying All the links:\n") ;
   for (unsigned int i=0; i<robot.links_.size(); i++)
   {
-    printf("%02u) %u ", i, (unsigned int) robot.links_[i]) ;
+    printf("%02u) %p ", i,  robot.links_[i]) ;
     fflush(stdout) ;
     printf("%s\n", robot.links_[i]->name_.c_str())  ;
   }
@@ -100,7 +100,7 @@ void FancyChain(const string& robot_desc)
   printf("Displaying All the joints:\n") ;
   for (unsigned int i=0; i<robot.joints_.size(); i++)
   {
-    printf("%02u) %u ", i, (unsigned int) robot.joints_[i]) ;
+    printf("%02u) %p ", i,  robot.joints_[i]) ;
     fflush(stdout) ;
     printf("%s\n", robot.joints_[i]->name_.c_str()) ;
   }
