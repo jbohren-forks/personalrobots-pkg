@@ -77,8 +77,8 @@ DoorDetector::DoorDetector (ros::Node* anode)
   k_search_   = 10;                // 10 k-neighbors by default
   z_axis_.x = 0; z_axis_.y = 0; z_axis_.z = 1;
 
-  minimum_z_ = 0.05;               // We don't care about points below 5cm in the 'base_footprint' TF frame
-  maximum_z_ = 2.7;                // We don't care about points above 2.7m in the 'base_footprint' TF frame
+  minimum_z_ = 0.05;               // We don't care about points 5 cm below the ground
+  maximum_z_ = 2.7;                // We don't care about points 2.7m above the ground
 
   normal_angle_tolerance_ = angles::from_degrees (15.0); // Maximum angular difference in normal space for inliers wrt the Z-axis
   // Parameters regarding the thresholds for Euclidean region growing/clustering
@@ -100,12 +100,11 @@ DoorDetector::DoorDetector (ros::Node* anode)
   minimum_region_density_ = (1 / leaf_width_) * (1 / leaf_width_) * 2.0 / 3.0;
 
 
-  // Temporary parameters
+  // advertise services
   node_->param ("~input_cloud_topic", input_cloud_topic_, string ("/snapshot_cloud"));
   node_->advertiseService ("doors_detector", &DoorDetector::detectDoorSrv, this);
   node_->advertiseService ("doors_detector_cloud", &DoorDetector::detectDoorCloudSrv, this);
   node_->advertise<robot_msgs::VisualizationMarker> ("visualizationMarker", 100);
-
   node_->advertise<PolygonalMap> ("~door_frames", 1);
   node_->advertise<PointCloud> ("~door_regions", 1);
 
