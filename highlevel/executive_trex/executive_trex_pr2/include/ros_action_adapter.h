@@ -151,24 +151,32 @@ namespace TREX {
 	if(goal->start()->lastDomain().getUpperBound() > getCurrentTick())
 	  return false;
 
+	// If already inactive, there is nothing to be done. This can occur if the action activates and succeeds immediately.
+	if(!isActive()){
+	  TREX_INFO("ros:debug:dispatching", nameString().c_str() << "No need to dispatch " << goal->toString());
+	  return true;
+	}
+
 	enableController = false;
       }
 
+      // If we are disabling and it is already active then 
       // Set the goal and its frame
       Goal goal_msg;
 
       fillDispatchParameters(goal_msg, goal);
 
-      ROS_DEBUG("%s%s goal %s", 
-		nameString().c_str(), (enableController ? "Dispatching" : "Recalling"), goal->toString().c_str());
-
       TREX_INFO("ros:debug:dispatching",  
-		nameString().c_str() << (enableController ? "Dispatching" : "Recalling") << goal->toLongString());
+		nameString().c_str() << (enableController ? _request_topic : _preempt_topic) << " WITH "  << goal->toLongString());
 
-      if(enableController)
+      // If this is a request to activate the action, send it. However, if it is a request to deactivate the action we need only send it
+      // if the action is currently active
+      if(enableController){
 	m_node->publishMsg<Goal>(_request_topic, goal_msg);
-      else
+      }
+      else {
 	m_node->publishMsg<Goal>(_preempt_topic, goal_msg);
+      }
 
       return true;
     }
