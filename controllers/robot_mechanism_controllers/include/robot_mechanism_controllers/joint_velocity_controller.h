@@ -109,7 +109,7 @@ public:
 
   std::string getJointName();
   mechanism::JointState *joint_state_;           /**< Joint we're controlling. */
-  realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState>* controller_state_publisher_ ;
+  double dt_;
 
 private:
   mechanism::RobotState *robot_;                  /**< Pointer to robot structure. */
@@ -154,7 +154,8 @@ private:
 
   //msgs
   std_msgs::Float64 cmd_;                      /**< The command from the subscription. */
-
+  //publisher
+  realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState>* controller_state_publisher_ ;
   //controller
   JointVelocityController *c_;                 /**< The controller. */
 

@@ -42,7 +42,6 @@ ROS_REGISTER_CONTROLLER(JointVelocityController)
 JointVelocityController::JointVelocityController()
 : joint_state_(NULL), robot_(NULL), last_time_(0), command_(0)
 {
-  controller_state_publisher_ = NULL;
 }
 
 JointVelocityController::~JointVelocityController()
@@ -87,10 +86,6 @@ bool JointVelocityController::initXml(mechanism::RobotState *robot, TiXmlElement
   control_toolbox::Pid pid;
   if (p)
   {
-    controller_state_publisher_->msg_.p = p->Attribute("p") ? atof(p->Attribute("p")) : 0.0;
-    controller_state_publisher_->msg_.i = p->Attribute("i") ? atof(p->Attribute("i")) : 0.0;
-    controller_state_publisher_->msg_.d = p->Attribute("d") ? atof(p->Attribute("d")) : 0.0;
-    controller_state_publisher_->msg_.i_clamp = p->Attribute("iClamp") ? atof(p->Attribute("iClamp")) : 0.0;
     pid.initXml(p);
   }
   else
@@ -102,10 +97,7 @@ bool JointVelocityController::initXml(mechanism::RobotState *robot, TiXmlElement
 void JointVelocityController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
 {
   pid_controller_.setGains(p,i,d,i_max,i_min);
-  controller_state_publisher_->msg_.p = p; 
-  controller_state_publisher_->msg_.i = i; 
-  controller_state_publisher_->msg_.d = d; 
-  controller_state_publisher_->msg_.i_clamp = i_max; 
+  
 }
 
 void JointVelocityController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
@@ -135,17 +127,10 @@ void JointVelocityController::update()
   assert(robot_ != NULL);
   double error(0);
   double time = robot_->hw_->current_time_;
-  
-
+ 
   error =joint_state_->velocity_ - command_;
-
-  joint_state_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
-  
-  
-  controller_state_publisher_->msg_.set_point = command_; 
-  controller_state_publisher_->msg_.process_value = joint_state_->velocity_; 
-  controller_state_publisher_->msg_.error = error; 
-  controller_state_publisher_->msg_.time_step = time - last_time_; 
+  dt_= time - last_time_;
+  joint_state_->commanded_effort_ = pid_controller_.updatePid(error, dt_);
    
   last_time_ = time;
 }
@@ -156,12 +141,13 @@ ROS_REGISTER_CONTROLLER(JointVelocityControllerNode)
 JointVelocityControllerNode::JointVelocityControllerNode(): node_(ros::Node::instance())
 {
   c_ = new JointVelocityController();
+  controller_state_publisher_ = NULL;
 }
 
 JointVelocityControllerNode::~JointVelocityControllerNode()
 {
-  c_->controller_state_publisher_->stop();
-  delete c_->controller_state_publisher_;
+  controller_state_publisher_->stop();
+  delete controller_state_publisher_;
   delete c_;
 }
 
@@ -172,9 +158,22 @@ void JointVelocityControllerNode::update()
   
   if(count % 10 == 0)
   {
-    if(c_->controller_state_publisher_->trylock())
+    if(controller_state_publisher_->trylock())
     {
-      c_->controller_state_publisher_->unlockAndPublish();      
+      double command, p,i,d,i_min,i_max;
+      c_->getCommand(command);
+      controller_state_publisher_->msg_.set_point = command; 
+      controller_state_publisher_->msg_.process_value = c_->joint_state_->velocity_; 
+      controller_state_publisher_->msg_.error = c_->joint_state_->velocity_ - command;
+      controller_state_publisher_->msg_.time_step = c_->dt_;
+      
+      c_->getGains(p,i,d,i_max,i_min);
+      controller_state_publisher_->msg_.p = p; 
+      controller_state_publisher_->msg_.i = i; 
+      controller_state_publisher_->msg_.d = d; 
+      controller_state_publisher_->msg_.i_clamp = i_max; 
+       
+      controller_state_publisher_->unlockAndPublish();      
     }
   }
   count++;
@@ -185,9 +184,9 @@ bool JointVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   assert(node_);
   service_prefix_ = config->Attribute("name");
   //publishers
-  if (c_->controller_state_publisher_ != NULL)
-    delete c_->controller_state_publisher_ ;
-  c_->controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState> (service_prefix_+"/state", 1) ;
+  if (controller_state_publisher_ != NULL)
+    delete controller_state_publisher_ ;
+  controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState> (service_prefix_+"/state", 1) ;
   
   
   // Parses subcontroller configuration
