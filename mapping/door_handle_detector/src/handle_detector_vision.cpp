@@ -161,7 +161,7 @@ public:
 
         param("~display", display, false);
         stringstream ss;
-        ss << getenv("ROS_ROOT") << "/../ros-pkg/vision/door_handle_detect/data/";
+        ss << getenv("ROS_ROOT") << "/../ros-pkg/mapping/door_handle_detector/data/";
         string path = ss.str();
         string cascade_classifier;
         param<string>("cascade_classifier", cascade_classifier, path + "handles_data.xml");
@@ -204,7 +204,7 @@ private:
     void loadClassifier(string cascade_classifier)
     {
         //		subscribe("/door_detector/door_msg", door, &HandleDetector::door_detected,1);
-        ROS_INFO("Loading cascade classifier");
+        ROS_INFO("Loading cascade classifier: %s", cascade_classifier.c_str());
         cascade = (CvHaarClassifierCascade*)(cvLoad(cascade_classifier.c_str(), 0, 0, 0));
         if(!cascade){
             ROS_ERROR("Cannot load cascade classifier\n");
