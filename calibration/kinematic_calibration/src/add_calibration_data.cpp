@@ -94,7 +94,7 @@ public:
     printf("Displaying all the links:\n") ;
     for (unsigned int i=0; i<robot_.links_.size(); i++)
     {
-      printf("%02u) %u ", i, (unsigned int) robot_.links_[i]) ;
+      printf("%02u) %p ", i, robot_.links_[i]) ;
       fflush(stdout) ;
       printf("%s\n", robot_.links_[i]->name_.c_str())  ;
     }
@@ -102,7 +102,7 @@ public:
     printf("Displaying all the joints:\n") ;
     for (unsigned int i=0; i<robot_.joints_.size(); i++)
     {
-      printf("%02u) %u ", i, (unsigned int) robot_.joints_[i]) ;
+      printf("%02u) %p ", i, robot_.joints_[i]) ;
       fflush(stdout) ;
       printf("%s\n", robot_.joints_[i]->name_.c_str()) ;
     }
