@@ -65,7 +65,7 @@ public:
   ~HandleDetector (){};
 
   /** \brief This is the main service callback: it gets called whenever a request to find a new handle is given   */
-  bool detectHandleSrv (door_handle_detector::DoorsDetector::Request &req, 
+  bool detectHandleSrv (door_handle_detector::DoorsDetector::Request &req,
                         door_handle_detector::DoorsDetector::Response &resp);
   bool detectHandleCloudSrv (door_handle_detector::DoorsDetectorCloud::Request &req,
                              door_handle_detector::DoorsDetectorCloud::Response &resp);
@@ -84,7 +84,7 @@ private:
    *       cloud_tr_
    *       distance_from_door_margin_, euclidean_cluster_distance_tolerance_, euclidean_cluster_min_pts_
    */
-  void refineHandleCandidatesWithDoorOutliers (std::vector<int> &handle_indices, std::vector<int> &outliers, 
+  void refineHandleCandidatesWithDoorOutliers (std::vector<int> &handle_indices, std::vector<int> &outliers,
                                                const robot_msgs::Polygon3D &polygon,
                                                const std::vector<double> &coeff, const robot_msgs::Point32 &door_axis,
                                                robot_msgs::PointCloud& pointcloud) const;
@@ -105,7 +105,7 @@ private:
    *       cloud_tr_, viewpoint_cloud_
    */
   void getHandleCandidates (const std::vector<int> &indices, const std::vector<double> &coeff,
-                            const robot_msgs::Polygon3D &polygon, const robot_msgs::Polygon3D &polygon_tr, 
+                            const robot_msgs::Polygon3D &polygon, const robot_msgs::Polygon3D &polygon_tr,
                             Eigen::Matrix4d transformation, std::vector<int> &handle_indices,
                             robot_msgs::PointCloud& pointcloud, robot_msgs::PointStamped& viewpoint_cloud) const;
 
@@ -125,7 +125,7 @@ private:
    *       distance_from_door_margin_, euclidean_cluster_distance_tolerance_, euclidean_cluster_min_pts_
    */
   void getDoorOutliers (const std::vector<int> &indices, const std::vector<int> &inliers,
-                        const std::vector<double> &coeff, const robot_msgs::Polygon3D &polygon, 
+                        const std::vector<double> &coeff, const robot_msgs::Polygon3D &polygon,
                         const robot_msgs::Polygon3D &polygon_tr, Eigen::Matrix4d transformation,
                         std::vector<int> &outliers, robot_msgs::PointCloud& pointcloud) const;
 
@@ -134,7 +134,7 @@ private:
 
 
 
-  bool detectHandle (const robot_msgs::Door& door, robot_msgs::PointCloud pointcloud, 
+  bool detectHandle (const robot_msgs::Door& door, robot_msgs::PointCloud pointcloud,
                      std::vector<robot_msgs::Door>& result) const;
 
   mutable ros::Node* node_;
@@ -143,26 +143,26 @@ private:
   robot_msgs::PointCloud pointcloud_;
   robot_msgs::Point32 z_axis_;
 
-  
+
   tf::TransformListener tf_;
 
-  std::string input_cloud_topic_, parameter_frame_, door_frame_;
+  std::string input_cloud_topic_, parameter_frame_, fixed_frame_;
   unsigned int num_clouds_received_;
 
   int k_search_;
-  
+
   // Parameters regarding geometric constraints for the door/handle
   double handle_distance_door_max_threshold_;
-  
+
   // ADA requirements with respect to the handle
   double handle_max_height_, handle_min_height_;
-  
+
     // Parameters for the euclidean clustering/cluster rejection
   double euclidean_cluster_angle_tolerance_, euclidean_cluster_distance_tolerance_;
   int euclidean_cluster_min_pts_;
-  
+
   double distance_from_door_margin_, min_plane_pts_, sac_distance_threshold_;
-  
+
   int global_marker_id_;
 
 }; // class

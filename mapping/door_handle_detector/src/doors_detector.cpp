@@ -115,7 +115,7 @@ DoorDetector::DoorDetector (ros::Node* anode)
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/** \brief This is the main door detectoin function */
+/** \brief This is the main door detection function */
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool
   DoorDetector::detectDoors(const robot_msgs::Door& door, PointCloud pointcloud, std::vector<robot_msgs::Door>& result) const
@@ -128,7 +128,7 @@ bool
 
   // transform the PCD (Point Cloud Data) into the parameter_frame, and work there
   if (!tf_.canTransform(parameter_frame_, pointcloud.header.frame_id, pointcloud.header.stamp, timeout)){
-    ROS_ERROR ("Could not transform point cloud from frame %s to frame %s.",
+    ROS_ERROR ("DoorDetector: Could not transform point cloud from frame %s to frame %s.",
                pointcloud.header.frame_id.c_str (), parameter_frame_.c_str ());
     return false;
   }
@@ -136,14 +136,13 @@ bool
   ROS_INFO("DoorDetector: Pointcloud transformed to parameter frame");
 
   // transform the door message into the parameter_frame, and work there
-  if (!tf_.canTransform(parameter_frame_, door.header.frame_id, door.header.stamp, timeout)){
-    ROS_ERROR ("Could not transform door message from frame %s to frame %s.",
-               door.header.frame_id.c_str (), parameter_frame_.c_str ());
-    return false;
-  }
   Door door_tr;
-  transformTo(tf_, parameter_frame_, door, door_tr);
-  ROS_INFO("DoorDetector: door message transformed to parameter frame");
+  if (!transformTo(tf_, parameter_frame_, door, door_tr)){
+     ROS_ERROR ("DoorDetector: Could not transform door message from frame %s to frame %s.",
+                door.header.frame_id.c_str (), parameter_frame_.c_str ());
+     return false;
+   }
+   ROS_INFO("DoorDetector: door message transformed to parameter frame");
 
   // Get the cloud viewpoint in the parameter frame
   PointStamped viewpoint_cloud_;

@@ -8,32 +8,42 @@ genmsg()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-rospack_add_executable (doors_detector_node
+# door detector
+rospack_add_executable (doors_detector_laser
                         src/geometric_helper.cpp
                         src/doors_detector.cpp
 			src/door_functions.cpp
                        )
 
-rospack_add_executable (handle_detector_node
+# handle detector
+rospack_add_executable (handle_detector_laser
                         src/geometric_helper.cpp
                         src/handle_detector.cpp
 			src/door_functions.cpp
                        )
 
+# executive interface
+rospack_add_executable(door_action_runner 
+                       src/action_detect_door.cpp 
+		       src/action_detect_handle.cpp 	     
+		       src/action_grasp_door.cpp 
+		       src/action_open_door.cpp 
+		       src/action_runner.cpp
+                      )
+
+
+# test
+rospack_add_executable(trigger_doors_detector 
+                       test/trigger_doors_detector.cpp
+		       src/action_detect_door.cpp
+		       src/action_detect_handle.cpp
+                      )
+
 rospack_add_library(executive_functions src/executive_functions.cpp)
 
-rospack_add_executable(action_runner src/action_detect_door.cpp 
-				     src/action_detect_handle.cpp 	     
-				     src/action_grasp_door.cpp 
-				     src/action_open_door.cpp 
-				     test/action_runner.cpp)
 
 
-rospack_add_executable(trigger_doors test/trigger_doors.cpp)
-rospack_add_executable(trigger_handle test/trigger_handle.cpp)
-rospack_add_executable(trigger_doors_scan test/trigger_doors_scan.cpp
-				     src/action_detect_door.cpp
-				     src/action_detect_handle.cpp)
+
 
 # check for OpenMP
 include(CheckIncludeFile)
@@ -57,8 +67,8 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 
   if( HAVE_OPENMP AND HAS_GOMP_LIB )
     add_definitions("-fopenmp")
-    target_link_libraries(doors_detector_node gomp)
-    target_link_libraries(handle_detector_node gomp)
+    target_link_libraries(doors_detector_laser gomp)
+    target_link_libraries(handle_detector_laser gomp)
     set(OPENMP_LFLAGS "-lgomp")
   endif( HAVE_OPENMP AND HAS_GOMP_LIB )
 endif( WIN32 )

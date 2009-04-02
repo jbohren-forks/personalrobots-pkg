@@ -1,13 +1,13 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -42,8 +42,9 @@
 
 // convert door message to frame
 bool transformTo(const tf::Transformer& tf, const std::string& goal_frame, const robot_msgs::Door& door_in, robot_msgs::Door& door_out);
-bool transformTo(const tf::Transformer& tf, const std::string& source_frame, const std::string& goal_frame, const ros::Time& time,
-                 const robot_msgs::Point32 point_in, robot_msgs::Point32 point_out);
-
+bool transformPointTo(const tf::Transformer& tf, const std::string& source_frame, const std::string& goal_frame, const ros::Time& time,
+                      const robot_msgs::Point32 point_in, robot_msgs::Point32 point_out);
+bool transformVectorTo(const tf::Transformer& tf, const std::string& source_frame, const std::string& goal_frame, const ros::Time& time,
+                       const robot_msgs::Vector3 point_in, robot_msgs::Vector3 point_out);
 
 #endif

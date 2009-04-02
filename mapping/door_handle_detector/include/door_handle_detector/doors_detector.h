@@ -72,15 +72,15 @@ public:
   ~DoorDetector (){};
 
   /** \brief Service call to detect doors*/
-  bool detectDoorSrv (door_handle_detector::DoorsDetector::Request &req, 
+  bool detectDoorSrv (door_handle_detector::DoorsDetector::Request &req,
                       door_handle_detector::DoorsDetector::Response &resp);
   /** \brief Service call to detect doors*/
-  bool detectDoorCloudSrv (door_handle_detector::DoorsDetectorCloud::Request &req, 
+  bool detectDoorCloudSrv (door_handle_detector::DoorsDetectorCloud::Request &req,
                            door_handle_detector::DoorsDetectorCloud::Response &resp);
 
 private:
-  /** \brief This is the main door detectoin function */
-  bool detectDoors(const robot_msgs::Door& door, robot_msgs::PointCloud pointcloud, 
+  /** \brief This is the main door detection function */
+  bool detectDoors(const robot_msgs::Door& door, robot_msgs::PointCloud pointcloud,
                    std::vector<robot_msgs::Door>& result) const;
 
   /** \brief Main point cloud callback.*/
@@ -90,39 +90,39 @@ private:
   mutable int global_marker_id_;
 
   // parameters for callback function
-  robot_msgs::PointCloud pointcloud_;  
+  robot_msgs::PointCloud pointcloud_;
   std::string input_cloud_topic_;
   unsigned int num_clouds_received_;
   robot_msgs::Point32 z_axis_;
   tf::TransformListener tf_;
-  
+
   std::string parameter_frame_, fixed_frame_;
-  
+
   // Parameters regarding geometric constraints for the door/handle
   double door_min_height_, door_min_width_, door_max_height_, door_max_width_, door_min_z_;
-  
+
   // Parameters regarding the _fast_ normals/plane computation using a lower quality (downsampled) dataset
   double leaf_width_;
   double sac_distance_threshold_;
   double normal_angle_tolerance_;
   int k_search_;
-  
+
   // Parameters for the euclidean clustering/cluster rejection
   double euclidean_cluster_angle_tolerance_, euclidean_cluster_distance_tolerance_;
   int euclidean_cluster_min_pts_;
-  
+
   // Parameters for "rectangularity" constraints
   double rectangle_constrain_edge_height_;
   double rectangle_constrain_edge_angle_;
-  
+
   // Prune door candidates
   double minimum_region_density_;
   double maximum_search_radius_, maximum_search_radius_limit_, maximum_scan_angle_limit_;
   double minimum_z_, maximum_z_;;
-  
 
 
-  
+
+
 };
 
 
