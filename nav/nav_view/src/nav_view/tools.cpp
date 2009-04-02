@@ -160,13 +160,12 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
 
       if ( is_goal_ )
       {
-        robot_msgs::Planner2DGoal goal;
-        goal.goal.x = pos_.x;
-        goal.goal.y = pos_.y;
-        goal.goal.th = angle;
-        goal.enable = 1;
+        robot_actions::Pose2D goal;
+        goal.x = pos_.x;
+        goal.y = pos_.y;
+        goal.th = angle;
 	goal.header.frame_id = panel_->getGlobalFrame();
-        printf("setting goal: %.3f %.3f %.3f\n", goal.goal.x, goal.goal.y, goal.goal.th);
+        printf("setting goal: %.3f %.3f %.3f\n", goal.x, goal.y, goal.th);
         ros_node_->publish( "goal", goal );
       }
       else

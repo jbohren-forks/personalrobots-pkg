@@ -33,7 +33,7 @@
 #include "nav_view_panel_generated.h"
 
 #include "robot_msgs/ParticleCloud.h"
-#include "robot_msgs/Planner2DGoal.h"
+#include "robot_actions/Pose2D.h"
 #include "robot_msgs/Polyline2D.h"
 #include "robot_msgs/PoseWithCovariance.h"
 #include "robot_srvs/StaticMap.h"
@@ -95,7 +95,7 @@ Subscribes to (name/type):
 - @b "inflated_obstacles"/Polyline2D : Inflated obstacle data. Rendered as points
 
 Publishes to (name / type):
-- @b "goal"/Planner2DGoal : goal for planner.  Sent when using the Goal tool
+- @b "goal"/Pose2D : goal for planner.  Sent when using the Goal tool
 - @b "initialpose"/Pose2DFloat32 : pose to initialize localization system.  Sent when using the Pose tool
 
 <hr>
@@ -207,7 +207,7 @@ protected:
   Ogre::TexturePtr map_texture_;
 
   robot_msgs::ParticleCloud cloud_;
-  robot_msgs::Planner2DGoal goal_;
+  robot_actions::Pose2D goal_;
   robot_msgs::Polyline2D path_line_;
   robot_msgs::Polyline2D local_path_;
   robot_msgs::Polyline2D robot_footprint_;
