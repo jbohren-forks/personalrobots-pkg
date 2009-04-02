@@ -7,6 +7,6 @@
     </node>
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
     <node pkg="nav_view" type="nav_view" respawn="false"/>
-    <node pkg="nav" type="planner_test" />
+    <node pkg="nav" type="planner_test" output="screen" />
   </group>
 </launch>

@@ -56,7 +56,7 @@ class PlannerTest {
       ros_node_.setParam("~costmap/base_scan/expected_update_rate", 0.2);
       ros_node_.setParam("~costmap/base_scan/data_type", "LaserScan");
 
-      map_updater_ = new Costmap2DROS(ros_node_, tf_);
+      map_updater_ = new costmap_2d::Costmap2DROS(ros_node_, tf_);
       planner_ = new NavFn(map_updater_->cellSizeX(), map_updater_->cellSizeY());
     }
 
@@ -150,8 +150,8 @@ class PlannerTest {
     ros::Node& ros_node_;
     tf::TransformListener& tf_;
     robot_actions::Pose2D goal_msg_;
-    Costmap2DROS* map_updater_;
-    Costmap2D* working_copy_;
+    costmap_2d::Costmap2DROS* map_updater_;
+    costmap_2d::Costmap2D* working_copy_;
     NavFn* planner_;
 };
 
