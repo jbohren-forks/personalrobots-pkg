@@ -61,40 +61,125 @@
 // Thread suppport
 #include <boost/thread.hpp>
 
-using namespace costmap_2d;
-using namespace tf;
-using namespace robot_msgs;
 
 namespace costmap_2d {
 
+  /**
+   * @class Costmap2DROS
+   * @brief A ROS wrapper for a 2D Costmap. Handles subscribing to topics that
+   * provide observations about obstacles in either the form of PointCloud or LaserScan
+   * messages.
+   */
   class Costmap2DROS {
     public:
+      /**
+       * @brief  Constructor for the wrapper
+       * @param ros_node A reference to the ros node to run on
+       * @param tf A reference to a TransformListener
+       */
       Costmap2DROS(ros::Node& ros_node, tf::TransformListener& tf);
+
+      /**
+       * @brief  Destructor for the wrapper. Cleans up pointers.
+       */
       ~Costmap2DROS();
 
+      /**
+       * @brief  If you want to manage your own observation buffer you can add it to the costmap 
+       * <B>(NOTE: The buffer will be deleted on destruction of the costmap... 
+       * perhaps a boost shared pointer should go here eventually)</B>
+       * @param  buffer A pointer to your observation buffer
+       */
+      void addObservationBuffer(ObservationBuffer* buffer);
+
+      /**
+       * @brief  A callback to handle buffering LaserScan messages
+       * @param message The message returned from a message notifier 
+       * @param buffer A pointer to the observation buffer to update
+       */
       void laserScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message, ObservationBuffer* buffer);
+
+      /**
+       * @brief  A callback to handle buffering PointCloud messages
+       * @param message The message returned from a message notifier 
+       * @param buffer A pointer to the observation buffer to update
+       */
       void pointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message, ObservationBuffer* buffer);
-      void spin();
+
+      /**
+       * @brief  Update the underlying costmap with new sensor data. 
+       * If you want to update the map outside of the update loop that runs, you can call this.
+       */
       void updateMap();
+
+      /**
+       * @brief  Reset to the static map outside of a window around the robot specified by the user
+       * @param size_x The x size of the window to keep unchanged 
+       * @param size_y The y size of the window to keep unchanged 
+       */
       void resetMapOutsideWindow(double size_x, double size_y);
+
+      /**
+       * @brief  Publish the underlying costmap to the visualizer
+       * If you want to publish the map outside of the publish loop that runs, you can call this.
+       */
       void publishCostMap();
+
+      /**
+       * @brief  Returns a copy of the underlying costmap <B>(NOTE: THE USER IS RESPONSIBLE FOR DELETION)</B>
+       * @return A copy of the underlying costmap
+       */
       Costmap2D* getCostMapCopy();
+
+      /**
+       * @brief  Returns a copy of the underlying unsigned character array <B>(NOTE: THE USER IS RESPONSIBLE FOR DELETION)</B>
+       * @return A copy of the underlying unsigned character character array used for the costmap
+       */
       unsigned char* getCharMapCopy();
+
+      /**
+       * @brief  Returns the x size of the costmap in cells
+       * @return The x size of the costmap in cells
+       */
       unsigned int cellSizeX();
+
+      /**
+       * @brief  Returns the y size of the costmap in cells
+       * @return The y size of the costmap in cells
+       */
       unsigned int cellSizeY();
 
     private:
-      ros::Node& ros_node_;
+      /**
+       * @brief  Sleeps for the remaining cycle time of a update loop
+       * @param  start The time the loop started
+       * @param  cycle_time How long the loop is supposed to take
+       * @return True if the cycle was completed in time false if it took too long
+       */
+      bool sleepLeftover(ros::Time start, ros::Duration cycle_time);
+
+      /**
+       * @brief  The loop that handles updating the costmap
+       * @param  frequency The rate at which to run the loop
+       */
+      void mapUpdateLoop(double frequency);
+
+      /**
+       * @brief  The loop that handles displaying the costmap
+       * @param  frequency The rate at which to run the loop
+       */
+      void mapPublishLoop(double frequency);
+
+      ros::Node& ros_node_; ///< @brief The ros node to use
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
       laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
       boost::recursive_mutex observation_lock_; ///< @brief A lock for accessing data in callbacks safely
       boost::recursive_mutex map_lock_; ///< @brief A lock for accessing data in callbacks safely
-      Costmap2D* costmap_;
-      std::string global_frame_;
+      Costmap2D* costmap_; ///< @brief The underlying costmap to update
+      std::string global_frame_; ///< @brief The global frame for the costmap
       std::string robot_base_frame_; ///< @brief The frame_id of the robot base
-      double freq_;
-      boost::thread* visualizer_thread_;
-      boost::thread* map_update_thread_;
+      boost::thread* visualizer_thread_; ///< @brief A thread for publising to the visualizer
+      boost::thread* map_update_thread_; ///< @brief A thread for updating the map
 
       std::vector<tf::MessageNotifierBase*> observation_notifiers_; ///< @brief Used to make sure that transforms are available for each sensor
       std::vector<ObservationBuffer*> observation_buffers_; ///< @brief Used to store observations from various sensors

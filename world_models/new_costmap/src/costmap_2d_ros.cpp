@@ -37,10 +37,12 @@
 #include <new_costmap/costmap_2d_ros.h>
 
 using namespace std;
+using namespace tf;
+using namespace robot_msgs;
 
 namespace costmap_2d {
 
-  Costmap2DROS::Costmap2DROS(ros::Node& ros_node, tf::TransformListener& tf) : ros_node_(ros_node), 
+  Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf) : ros_node_(ros_node), 
   tf_(tf), costmap_(NULL), visualizer_thread_(NULL), map_update_thread_(NULL){
     ros_node_.advertise<robot_msgs::Polyline2D>("raw_obstacles", 1);
     ros_node_.advertise<robot_msgs::Polyline2D>("inflated_obstacles", 1);
@@ -51,7 +53,6 @@ namespace costmap_2d {
     ros_node_.param("~costmap/observation_topics", topics_string, string(""));
     ROS_INFO("Topics: %s", topics_string.c_str());
 
-    ros_node_.param("~costmap/update_frequency", freq_, 5.0);
     ros_node_.param("~costmap/global_frame", global_frame_, string("map"));
     ros_node_.param("~costmap/robot_base_frame", robot_base_frame_, string("base_link"));
 
@@ -81,7 +82,7 @@ namespace costmap_2d {
               boost::bind(&Costmap2DROS::laserScanCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50));
       }
       else{
-        observation_notifiers_.push_back(new MessageNotifier<robot_msgs::PointCloud>(&tf_, &ros_node_,
+        observation_notifiers_.push_back(new MessageNotifier<PointCloud>(&tf_, &ros_node_,
               boost::bind(&Costmap2DROS::pointCloudCallback, this, _1, observation_buffers_.back()), topic, global_frame_, 50));
       }
 
@@ -97,11 +98,11 @@ namespace costmap_2d {
     std::vector<unsigned char> input_data;
 
     double map_width_meters, map_height_meters;
-    ros_node_.param("~costmap/map_width", map_width_meters, 10.0);
-    ros_node_.param("~costmap/map_height", map_height_meters, 10.0);
-    ros_node_.param("~costmap/map_resolution", map_resolution, 0.05);
-    ros_node_.param("~costmap/map_origin_x", map_origin_x, 0.0);
-    ros_node_.param("~costmap/map_origin_y", map_origin_y, 0.0);
+    ros_node_.param("~costmap/width", map_width_meters, 10.0);
+    ros_node_.param("~costmap/height", map_height_meters, 10.0);
+    ros_node_.param("~costmap/resolution", map_resolution, 0.05);
+    ros_node_.param("~costmap/origin_x", map_origin_x, 0.0);
+    ros_node_.param("~costmap/origin_y", map_origin_y, 0.0);
     map_width = (unsigned int)(map_width_meters / map_resolution);
     map_height = (unsigned int)(map_height_meters / map_resolution);
 
@@ -119,11 +120,11 @@ namespace costmap_2d {
 
       //check if the user has set any parameters that will be overwritten
       bool user_map_params = false;
-      user_map_params |= ros_node_.hasParam("~costmap/map_width");
-      user_map_params |= ros_node_.hasParam("~costmap/map_height");
-      user_map_params |= ros_node_.hasParam("~costmap/map_resolution");
-      user_map_params |= ros_node_.hasParam("~costmap/map_origin_x");
-      user_map_params |= ros_node_.hasParam("~costmap/map_origin_y");
+      user_map_params |= ros_node_.hasParam("~costmap/width");
+      user_map_params |= ros_node_.hasParam("~costmap/height");
+      user_map_params |= ros_node_.hasParam("~costmap/resolution");
+      user_map_params |= ros_node_.hasParam("~costmap/origin_x");
+      user_map_params |= ros_node_.hasParam("~costmap/origin_y");
 
       if(user_map_params)
         ROS_WARN("You have set map parameters, but also requested to use the static map. Your parameters will be overwritten by those given by the map server");
@@ -175,10 +176,14 @@ namespace costmap_2d {
 
 
     //create a thread to handle updating the map
-    map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::spin, this));
+    double map_update_frequency;
+    ros_node_.param("~costmap/update_frequency", map_update_frequency, 5.0);
+    map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
     
     //create a separate thread to publish cost data to the visualizer
-    visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DROS::publishCostMap, this));
+    double map_publish_frequency;
+    ros_node_.param("~costmap/publish_frequency", map_publish_frequency, 2.0);
+    visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapPublishLoop, this, map_publish_frequency));
 
   }
 
@@ -205,6 +210,11 @@ namespace costmap_2d {
     }
   }
 
+  void Costmap2DROS::addObservationBuffer(ObservationBuffer* buffer){
+    if(buffer != NULL)
+      observation_buffers_.push_back(buffer);
+  }
+
   void Costmap2DROS::laserScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message, ObservationBuffer* buffer){
     //project the laser into a point cloud
     PointCloud base_cloud;
@@ -218,19 +228,53 @@ namespace costmap_2d {
     observation_lock_.unlock();
   }
 
-  void Costmap2DROS::pointCloudCallback(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& message, ObservationBuffer* buffer){
+  void Costmap2DROS::pointCloudCallback(const tf::MessageNotifier<PointCloud>::MessagePtr& message, ObservationBuffer* buffer){
     //buffer the point cloud
     observation_lock_.lock();
     buffer->bufferCloud(*message);
     observation_lock_.unlock();
   }
 
-  void Costmap2DROS::spin(){
+  void Costmap2DROS::mapUpdateLoop(double frequency){
+    //the user might not want to run the loop every cycle
+    if(frequency == 0.0)
+      return;
+
+    ros::Duration cycle_time = ros::Duration(1.0 / frequency);
     while(ros_node_.ok()){
+      ros::Time start_time = ros::Time::now();
       updateMap();
-      usleep(1e6/freq_);
+      if(!sleepLeftover(start_time, cycle_time))
+        ROS_WARN("Map update loop missed its desired cycle time of %.4f", cycle_time.toSec());
     }
   }
+
+  void Costmap2DROS::mapPublishLoop(double frequency){
+    //the user might not want to run the loop every cycle
+    if(frequency == 0.0)
+      return;
+
+    ros::Duration cycle_time = ros::Duration(1.0 / frequency);
+    while(ros_node_.ok()){
+      ros::Time start_time = ros::Time::now();
+      publishCostMap();
+      if(!sleepLeftover(start_time, cycle_time))
+        ROS_WARN("Map publishing loop missed its desired cycle time of %.4f", cycle_time.toSec());
+    }
+  }
+
+  bool Costmap2DROS::sleepLeftover(ros::Time start, ros::Duration cycle_time){
+    ros::Time expected_end = start + cycle_time;
+    ///@todo: because durations don't handle subtraction properly right now
+    ros::Duration sleep_time = ros::Duration((ros::Time::now() - expected_end).toSec()); 
+
+    if(sleep_time < ros::Duration(0.0))
+      return false;
+
+    sleep_time.sleep();
+    return true;
+  }
+
 
   void Costmap2DROS::updateMap(){
     tf::Stamped<tf::Pose> robot_pose, global_pose;
@@ -310,57 +354,54 @@ namespace costmap_2d {
   }
 
   void Costmap2DROS::publishCostMap(){
-    while(ros_node_.ok()){
-      ROS_INFO("publishing map");
-      map_lock_.lock();
-      std::vector< std::pair<double, double> > raw_obstacles, inflated_obstacles;
-      for(unsigned int i = 0; i<costmap_->cellSizeX(); i++){
-        for(unsigned int j = 0; j<costmap_->cellSizeY();j++){
-          double wx, wy;
-          costmap_->mapToWorld(i, j, wx, wy);
-          std::pair<double, double> p(wx, wy);
+    ROS_INFO("publishing map");
+    map_lock_.lock();
+    std::vector< std::pair<double, double> > raw_obstacles, inflated_obstacles;
+    for(unsigned int i = 0; i<costmap_->cellSizeX(); i++){
+      for(unsigned int j = 0; j<costmap_->cellSizeY();j++){
+        double wx, wy;
+        costmap_->mapToWorld(i, j, wx, wy);
+        std::pair<double, double> p(wx, wy);
 
-          if(costmap_->getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
-            raw_obstacles.push_back(p);
-          else if(costmap_->getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
-            inflated_obstacles.push_back(p);
-        }
+        if(costmap_->getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
+          raw_obstacles.push_back(p);
+        else if(costmap_->getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+          inflated_obstacles.push_back(p);
       }
-      map_lock_.unlock();
-
-      // First publish raw obstacles in red
-      robot_msgs::Polyline2D obstacle_msg;
-      obstacle_msg.header.frame_id = global_frame_;
-      unsigned int pointCount = raw_obstacles.size();
-      obstacle_msg.set_points_size(pointCount);
-      obstacle_msg.color.a = 0.0;
-      obstacle_msg.color.r = 1.0;
-      obstacle_msg.color.b = 0.0;
-      obstacle_msg.color.g = 0.0;
-
-      for(unsigned int i=0;i<pointCount;i++){
-        obstacle_msg.points[i].x = raw_obstacles[i].first;
-        obstacle_msg.points[i].y = raw_obstacles[i].second;
-      }
-
-      ros::Node::instance()->publish("raw_obstacles", obstacle_msg);
-
-      // Now do inflated obstacles in blue
-      pointCount = inflated_obstacles.size();
-      obstacle_msg.set_points_size(pointCount);
-      obstacle_msg.color.a = 0.0;
-      obstacle_msg.color.r = 0.0;
-      obstacle_msg.color.b = 1.0;
-      obstacle_msg.color.g = 0.0;
-
-      for(unsigned int i=0;i<pointCount;i++){
-        obstacle_msg.points[i].x = inflated_obstacles[i].first;
-        obstacle_msg.points[i].y = inflated_obstacles[i].second;
-      }
-
-      ros::Node::instance()->publish("inflated_obstacles", obstacle_msg);
-      usleep(1e6/2.0);
     }
+    map_lock_.unlock();
+
+    // First publish raw obstacles in red
+    Polyline2D obstacle_msg;
+    obstacle_msg.header.frame_id = global_frame_;
+    unsigned int pointCount = raw_obstacles.size();
+    obstacle_msg.set_points_size(pointCount);
+    obstacle_msg.color.a = 0.0;
+    obstacle_msg.color.r = 1.0;
+    obstacle_msg.color.b = 0.0;
+    obstacle_msg.color.g = 0.0;
+
+    for(unsigned int i=0;i<pointCount;i++){
+      obstacle_msg.points[i].x = raw_obstacles[i].first;
+      obstacle_msg.points[i].y = raw_obstacles[i].second;
+    }
+
+    ros::Node::instance()->publish("raw_obstacles", obstacle_msg);
+
+    // Now do inflated obstacles in blue
+    pointCount = inflated_obstacles.size();
+    obstacle_msg.set_points_size(pointCount);
+    obstacle_msg.color.a = 0.0;
+    obstacle_msg.color.r = 0.0;
+    obstacle_msg.color.b = 1.0;
+    obstacle_msg.color.g = 0.0;
+
+    for(unsigned int i=0;i<pointCount;i++){
+      obstacle_msg.points[i].x = inflated_obstacles[i].first;
+      obstacle_msg.points[i].y = inflated_obstacles[i].second;
+    }
+
+    ros::Node::instance()->publish("inflated_obstacles", obstacle_msg);
   }
 
   Costmap2D* Costmap2DROS::getCostMapCopy(){
@@ -397,7 +438,7 @@ int main(int argc, char** argv){
   ros::init(argc, argv);
   ros::Node ros_node("costmap_tester");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
-  Costmap2DROS tester(ros_node, tf);
+  costmap_2d::Costmap2DROS tester(ros_node, tf);
   ros_node.spin();
 
   return(0);

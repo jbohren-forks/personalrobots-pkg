@@ -46,7 +46,7 @@
 
 namespace costmap_2d {
   /**
-   * @class Costmap
+   * @class Costmap2D
    * @brief A 2D costmap provides a mapping between points in the world and their associated "costs".
    */
   class Costmap2D {
