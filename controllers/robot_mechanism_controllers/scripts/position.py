@@ -49,7 +49,7 @@ def xml_for(joint, p, i, d, iClamp):
     return "\
 <controller name=\"%s\" type=\"JointPositionControllerNode\">\
   <joint name=\"%s\" >\
-    <pid p=\"%d\" i=\"%d\" d=\"%d\" iClamp=\"%d\" \>\
+    <pid p=\"%f\" i=\"%f\" d=\"%f\" iClamp=\"%d\" \>\
   </joint>\
 </controller>" % (CONTROLLER_NAME, joint, p, i, d, iClamp)
 
