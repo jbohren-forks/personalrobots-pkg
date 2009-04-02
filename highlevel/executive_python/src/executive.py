@@ -140,7 +140,7 @@ if __name__ == '__main__':
   try:
     batt_monitor = BatteryMonitorAdapter(.7, "bogus_battery_state")
     recharger = RechargeAdapter(.8, "recharge_state", "recharge_goal")
-    navigator = NavigationAdapter(30, 300, "state", "goal")
+    navigator = NavigationAdapter(30, 300, "/move_base_node/feedback", "/move_base_node/activate")
 
     goals = [
      [50.250, 6.863, 3.083], 

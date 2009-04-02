@@ -38,14 +38,14 @@ import roslib
 roslib.load_manifest('executive_python')
 import rospy
 import random
-from robot_msgs.msg import Planner2DGoal, Planner2DState
+from robot_actions.msg import Pose2D, MoveBaseState
 
 class NavigationAdapter:
   def __init__(self, no_plan_limit, time_limit, state_topic, goal_topic):
     self.no_plan_limit = no_plan_limit
     self.time_limit = time_limit
-    rospy.Subscriber(state_topic, Planner2DState, self.update)
-    self.pub = rospy.Publisher(goal_topic, Planner2DGoal)
+    rospy.Subscriber(state_topic, MoveBaseState, self.update)
+    self.pub = rospy.Publisher(goal_topic, Pose2D)
     self.state = None
     self.start_time = rospy.get_time()
     self.last_plan_time = rospy.get_time()  
@@ -70,7 +70,7 @@ class NavigationAdapter:
     return self.state.status.value == self.state.status.SUCCESS
 
   def currentPosition(self):
-    return [self.state.pos.x, self.state.pos.y, self.state.pos.th]
+    return [self.state.feedback.x, self.state.feedback.y, self.state.feedback.th]
 
   def currentGoal(self):
     return [self.state.goal.x, self.state.goal.y, self.state.goal.th]
@@ -78,13 +78,11 @@ class NavigationAdapter:
   #Send a new goal to the move base node
   def sendGoal(self, goal_pts, frame):
     self.start_time = rospy.get_time()
-    goal = Planner2DGoal()
+    goal = Pose2D()
     goal.header.frame_id = frame
-    goal.goal.x = goal_pts[0]
-    goal.goal.y = goal_pts[1]
-    goal.goal.th = goal_pts[2]
-    goal.timeout = 0
-    goal.enable = 1
+    goal.x = goal_pts[0]
+    goal.y = goal_pts[1]
+    goal.th = goal_pts[2]
 
     self.pub.publish(goal)
 
