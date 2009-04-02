@@ -6,7 +6,7 @@ rospack_add_boost_directories()
 
 # set(ROS_BUILD_TYPE Release)
 rospack_add_library(place_recognition src/kmeans.cpp src/vocabulary_tree.cpp)
-rospack_add_compile_flags(place_recognition -g -Wno-missing-field-initializers -save-temps -march=pentium3 -msse3)
+rospack_add_compile_flags(place_recognition -g -Wno-missing-field-initializers -save-temps -msse3)
 
 find_package(PythonLibs)
 include_directories(${PYTHON_INCLUDE_PATH})

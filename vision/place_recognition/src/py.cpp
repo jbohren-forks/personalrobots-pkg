@@ -99,7 +99,7 @@ static FeatureMatrix extract_float_features(PyObject *self, PyObject *pim,
 
     // Find keypoints
     detector.DetectPoints(left.Ipl(), std::back_inserter(pts));
-    printf("[Star detector gave %d points, dimension %d]\n", pts.size(), dimension);
+    printf("[Star detector gave %d points, dimension %d]\n", (int)(pts.size()), dimension);
 
     // Compute descriptors
     image_features.resize(pts.size(), dimension);
@@ -160,7 +160,7 @@ static sig_data_t* extract_features(PyObject *self, PyObject *pim,
 
     // Find keypoints
     detector.DetectPoints(left.Ipl(), std::back_inserter(pts));
-    printf("[Star detector gave %d points, dimension %d]\n", pts.size(), dimension);
+    printf("[Star detector gave %d points, dimension %d]\n", (int)(pts.size()), dimension);
 
     // Compute descriptors
     *num_features = pts.size();
