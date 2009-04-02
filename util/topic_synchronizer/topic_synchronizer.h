@@ -313,6 +313,13 @@ class TopicSynchronizer
   {
     ready_ = true;
   }
+
+  void reset()
+  {
+	  expected_count_ = 0;
+	  count_ = 0;
+	  done_ = false;
+  }
 };
 
 #endif

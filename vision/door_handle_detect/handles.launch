@@ -24,6 +24,8 @@
 
 <!-- <node pkg="dcam" type="stereodcam" respawn="false"/>-->
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
- <node pkg="door_handle_detect" name="door_handle_detect" type="door_handle_detect" respawn="false" output="screen"/> 
+ <node pkg="door_handle_detect" name="door_handle_detect" type="door_handle_detect" respawn="false" output="screen">
+ <param name="display" type="bool" value="true" />
+ </node>
 </launch>
 
