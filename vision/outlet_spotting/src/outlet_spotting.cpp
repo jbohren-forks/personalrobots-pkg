@@ -55,7 +55,7 @@
 #include "image_msgs/Image.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
-#include "robot_msgs/BoundingBoxStamped.h"
+#include "robot_msgs/OutletPose.h"
 #include "std_msgs/UInt8.h" //for projector status
 
 
@@ -90,7 +90,7 @@ public:
 
 	robot_msgs::PointCloud cloud;
 
-	robot_msgs::BoundingBoxStamped outlet_bbox;
+	robot_msgs::OutletPose outlet_bbox;
 
 	IplImage* left;
 //	IplImage* right;''
@@ -143,7 +143,7 @@ public:
 
 		sync.ready();
 
-		advertise<BoundingBoxStamped>("stereo/outlet_bbox",1);
+		advertise<OutletPose>("stereo/outlet_bbox",1);
 	}
 
 	~OutletSpotting()
@@ -475,74 +475,18 @@ public:
 	}
 
 
-	bool getOutletBBox(const CvRect& r, Point32 &p1, Point32 &p2)
+	bool publishOutletBBox(const CvRect& r)
 	{
 		vector<int> indices;
 
-		Point32 bb_min;
-		Point32 bb_max;
-		bool init_bb = false;
 
+		robot_msgs::PointCloud outlet_cloud = filterPointCloud(r);
+		CvScalar plane = estimatePlaneLS(outlet_cloud);
 
-		// see which are the image x and y channels in the point cloud
-		int xchan = -1;
-		int ychan = -1;
-		for (size_t i=0;i<cloud.chan.size();++i) {
-			if (cloud.chan[i].name == "x") {
-				xchan = i;
-			}
-			if (cloud.chan[i].name == "y") {
-				ychan = i;
-			}
-		}
-
-		if (xchan!=-1 && ychan!=-1) {
-			vector<float>& xcoords = cloud.chan[xchan].vals;
-			vector<float>& ycoords = cloud.chan[ychan].vals;
-			for (uint32_t i=0;i<cloud.get_pts_size();++i) {
-				if (xcoords[i]>r.x && xcoords[i]<r.x+r.width && ycoords[i]>r.y && ycoords[i]<r.y+r.height) {
-
-					if (init_bb) {
-						bb_min.x = min(bb_min.x,cloud.pts[i].x);
-						bb_min.y = min(bb_min.y,cloud.pts[i].y);
-						bb_min.z = min(bb_min.z,cloud.pts[i].z);
-						bb_max.x = max(bb_max.x,cloud.pts[i].x);
-						bb_max.y = max(bb_max.y,cloud.pts[i].y);
-						bb_max.z = max(bb_max.z,cloud.pts[i].z);
-					}
-					else {
-						bb_min = cloud.pts[i];
-						bb_max = cloud.pts[i];
-						init_bb = true;
-					}
-					// point inside the interest region
-//					indices.push_back(i);
-				}
-			}
-		}
-
-		// fit a plane
-//		vector<int> inliers;
-//		vector<double> coeff;
-//		Point32 viewpoint;
-//		bool plane_found = fitSACPlane(cloud, indices, inliers, coeff, viewpoint, 0.1, 1000);
-
-//		if (!plane_found) {
-//			return false;
-//		}
-
-
-		//publish bounding_box
 		outlet_bbox.header.frame_id = cloud.header.frame_id;
 		outlet_bbox.header.stamp = cloud.header.stamp;
 
-		outlet_bbox.center.x = (bb_min.x+bb_max.x)/2;
-		outlet_bbox.center.y = (bb_min.y+bb_max.y)/2;
-		outlet_bbox.center.z = (bb_min.z+bb_max.z)/2;
-
-		outlet_bbox.extents.x = (bb_max.x-bb_min.x)/2;
-		outlet_bbox.extents.y = (bb_max.y-bb_min.y)/2;
-		outlet_bbox.extents.z = (bb_max.z-bb_min.z)/2;
+//		outlet_bbox.point
 
 		publish("stereo/outlet_bbox", outlet_bbox);
 
@@ -619,9 +563,7 @@ public:
 			if (save_patches) savePatch(left,bbs[t],"outlet_match");
 
 
-			Point32 p1;
-			Point32 p2;
-			getOutletBBox(bbs[t], p1, p2);
+			publishOutletBBox(bbs[t]);
 
 			// draw bounding box for now
 			CvPoint pt2 = cvPoint(bbs[t].x+wi,bbs[t].y+hi);
@@ -686,6 +628,78 @@ public:
 			p+=ws-(rw*nchan);
 			d+=dws-(rw*dchan);
 		}
+	}
+
+
+
+	robot_msgs::PointCloud filterPointCloud(const CvRect& rect)
+	{
+		robot_msgs::PointCloud result;
+
+		int xchan = -1;
+		int ychan = -1;
+
+		for (size_t i=0;i<cloud.chan.size();++i) {
+			if (cloud.chan[i].name == "x") {
+				xchan = i;
+			}
+			if (cloud.chan[i].name == "y") {
+				ychan = i;
+			}
+		}
+
+		if (xchan!=-1 && ychan!=-1) {
+			for (size_t i=0;i<cloud.pts.size();++i) {
+				int x = (int)cloud.chan[xchan].vals[i];
+				int y = (int)cloud.chan[ychan].vals[i];
+				if (x>=rect.x && x<rect.x+rect.width && y>=rect.y && y<rect.y+rect.height) {
+					result.pts.push_back(cloud.pts[i]);
+				}
+			}
+		}
+
+		return result;
+	}
+
+//
+//	// returns the plane in Hessian normal form
+	CvScalar estimatePlaneLS(robot_msgs::PointCloud points)
+	{
+		int cnt = points.pts.size();
+		CvMat* A = cvCreateMat(cnt, 3, CV_32FC1);
+
+		for (int i=0;i<cnt;++i) {
+			robot_msgs::Point32 p = points.pts[i];
+			cvmSet(A,i,0,p.x);
+			cvmSet(A,i,1,p.y);
+			cvmSet(A,i,2,p.z);
+		}
+
+		vector<float> ones(cnt,1);
+		CvMat B;
+		cvInitMatHeader(&B,cnt,1,CV_32FC1,&ones[0]);
+		CvMat* X = cvCreateMat(3,1,CV_32FC1);
+
+		int ok = cvSolve( A, &B, X,CV_SVD );
+
+		CvScalar plane;
+
+		if (ok) {
+			float* xp = X->data.fl;
+
+			float d = sqrt(xp[0]*xp[0]+xp[1]*xp[1]+xp[2]*xp[2]);
+			plane.val[0] = xp[0]/d;
+			plane.val[1] = xp[1]/d;
+			plane.val[2] = xp[2]/d;
+			plane.val[3] = -1/d;
+		}
+		else {
+			plane.val[0] = plane.val[1] = plane.val[2] = plane.val[3] = -1;
+		}
+
+		cvReleaseMat(&A);
+
+		return plane;
 	}
 
 
