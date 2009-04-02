@@ -114,7 +114,10 @@ public:
 
     // Select a video mode
     // TODO: make this a parameter
-    if ( pr2ImagerModeSelect( camera_, MT9VMODE_752x480x15b1 ) != 0) {
+    int mode = MT9VMODE_752x480x15b1;
+    //int mode = MT9VMODE_640x480x30b1;
+    //int mode = MT9VMODE_640x480x25b1;
+    if ( pr2ImagerModeSelect( camera_, mode ) != 0) {
       ROS_FATAL("Mode select error");
       node_.shutdown();
       return;
@@ -133,6 +136,7 @@ public:
     // TODO: start this in separate thread?
     node_.advertise<image_msgs::Image>("~image_raw", 1);
     pr2VidReceive( camera_->ifName, port, 480, 752, &ForearmNode::frameHandler, this );
+    //pr2VidReceive( camera_->ifName, port, 480, 640, &ForearmNode::frameHandler, this );
   }
 
   ~ForearmNode()
@@ -162,11 +166,19 @@ private:
     }
 
     // Check for short packet (video lines were missing)
-    if (eofInfo->header.line_number == IMAGER_LINENO_SHRT) {
+    if (eofInfo->header.line_number == IMAGER_LINENO_SHORT) {
       ROS_WARN("Short frame (video lines were missing)");
       return 0;
     }
-
+    /*
+    // Save to disk
+    char filename[100];
+    sprintf(filename, "v%05u.pgm", eofInfo->header.frame_number);
+    FILE *myfile = fopen(filename, "wb");
+    fprintf(myfile, "P5\n%i %i\n255\n", width, height);
+    fwrite(frameData, sizeof(uint8_t), height*width, myfile);
+    fclose(myfile);
+    */
     fa_node.publishImage(width, height, frameData);
 
     return 0;

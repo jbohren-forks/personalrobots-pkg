@@ -579,17 +579,21 @@ typedef struct PACKED_ATTRIBUTE {
 /// Line numbers that match this mask are reserved to indicate special packet types.
 #define IMAGER_MAGICLINE_MASK 0xFFF0
 
-/// Flags this video line packet as being an End Of Frame packet
+/// Flags this video packet as being an normal End Of Frame packet
 #define IMAGER_LINENO_EOF 0xFFFF
 
-/// Flags this video line packet as being an EOF Error packet
+/// Flags this video packet as being a General Error packet
 #define IMAGER_LINENO_ERR 0xFFFE
 
-/// Flags this video line packet as being an EOF Overflow packet
+/// Flags this video packet as being an Overflow packet
 #define IMAGER_LINENO_OVF 0xFFFD
 
-/// Flags this video line packet as being an EOF "Short" packet (only used host side)
-#define IMAGER_LINENO_SHRT 0xFFFC
+/// Flags this video packet as being an Abort packet
+#define IMAGER_LINENO_ABORT 0xFFFC
+
+/// Flags a frame as Short (used only by the library)
+#define IMAGER_LINENO_SHORT 0xFFFB
+
 
 /**
  * This frame header is added to the beginning of every video line packet.
@@ -601,13 +605,21 @@ typedef struct PACKED_ATTRIBUTE {
       uint16_t vert_resolution;     ///< Number of video line packets per frame (not including EOF packet)
 } HeaderVideoLine;
 
+
 /**
- * This structure encapsulates one entire video line - a HeaderVideoLine plus associated data
+ * This packet is a normal line of video.
+ *
+ * The data field is sized to accomodate the widest frame possible. 
+ *
+ * Per Willow Garage request, the PacketEOF is a special case of the PacketVideoLine, with the
+ * line number field set to IMAGER_LINENO_NOERR (per client request).
  */
-typedef struct PACKET_ATTRIBUTE {
+typedef struct PACKED_ATTRIBUTE {
 	HeaderVideoLine header;
-	uint8_t lineData[];
+	uint8_t data[752];
 } PacketVideoLine;
+
+
 
 /// Number of I2C register to read during each video frame interval
 #define I2C_REGS_PER_FRAME 4
@@ -635,13 +647,5 @@ typedef struct PACKED_ATTRIBUTE {
 /// Sentinel value that indicates no I2C read should be performed at that index
 #define I2C_AUTO_REG_UNUSED ((uint32_t)-1)
 
-/// Normal EOF packet, no error
-#define IMAGER_ERR_NONE     0
-
-/// Error EOF packet, an Imager overflow has occurred (softcore was unable to keep up with video)
-#define IMAGER_ERR_OVERFLOW 1
-
-/// Error EOF packet, an internal Imager pipeline error was detected
-#define IMAGER_ERR_PIPELINE 2
 
 #endif //_IPCAM_PACKET_H_

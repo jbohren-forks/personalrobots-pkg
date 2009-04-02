@@ -1,6 +1,5 @@
 #ifndef _PR2LIB_H_
 #define _PR2LIB_H_
-
 #include <stdint.h>
 #include "list.h"
 #include "ipcam_packet.h"
@@ -14,7 +13,7 @@ extern "C" {
  * Firmware version number
  */
 #define PR2LIB_VERSION_MAJOR 0x01
-#define PR2LIB_VERSION_MINOR 0x03
+#define PR2LIB_VERSION_MINOR 0x04
 #define PR2LIB_VERSION ((PR2LIB_VERSION_MAJOR <<8) | PR2LIB_VERSION_MINOR )
 
 
@@ -72,5 +71,5 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 #ifdef __cplusplus
 }
 #endif
-  
+
 #endif // _PR2LIB_H_

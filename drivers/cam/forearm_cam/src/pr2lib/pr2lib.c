@@ -810,7 +810,7 @@ int pr2SensorSelect( const IpCamList *camInfo, uint8_t index, uint32_t reg ) {
 
 	strncpy(sPkt.hdr.hrt, "Select I2C", sizeof(sPkt.hdr.hrt));
 	sPkt.index = index;
-	sPkt.address = reg;
+	sPkt.address = htonl(reg);
 
 	/* Create a new socket bound to a local ephemeral port, and get our local connection
 	 * info so we can request a reply back to the same socket.
@@ -999,7 +999,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 	}
 
 	// Allocate enough storage for the header as well as 'width' bytes of video data
-	PacketVideoLine *vPkt=malloc(sizeof(HeaderVideoLine)+width*sizeof(uint8_t));
+	PacketVideoLine *vPkt=malloc(sizeof(PacketVideoLine));
 	if(vPkt == NULL) {
 		perror("Can't malloc line packet buffer");
 		return -1;
@@ -1048,7 +1048,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 		// After the last frame has been processed, start a fresh frame with the expected line.
 		if( (eof==NULL) && (firstPacket==false) ) {
 			if(vPkt->header.line_number < height ) {
-				memcpy(&(frame_buf[vPkt->header.line_number*width]), vPkt->lineData, width);
+				memcpy(&(frame_buf[vPkt->header.line_number*width]), vPkt->data, width);
 				lineCount++;
 			}
 			currentFrame = vPkt->header.frame_number;
@@ -1092,12 +1092,16 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 			}
 
 			// Check for frames that ended with an error
-			if( (vPkt->header.line_number == IMAGER_LINENO_ERR) || (vPkt->header.line_number == IMAGER_LINENO_OVF) ) {
-				debug("Overflow or pipeline error: %03X\n", vPkt->header.line_number);
+			if( (vPkt->header.line_number == IMAGER_LINENO_ERR) || 
+			    (vPkt->header.line_number == IMAGER_LINENO_OVF) ) {
+				debug("Video error: %04X\n", vPkt->header.line_number);
 
 				// In the case of these special 'error' EOF packets, there has been a serious internal camera failure
 				// so we will abort rather than try to process the last frame.
 				break;
+			} else if (vPkt->header.line_number == IMAGER_LINENO_ABORT) {
+				debug("Video aborted\n");
+				break;  //don't process last frame
 			} else if(vPkt->header.frame_number != currentFrame) {
 				// If we have received a line from the next frame, we must have missed the EOF somehow
 				debug ("Frame #%u missing EOF\n", currentFrame);
@@ -1137,23 +1141,17 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 					eof->i2c[i] = ntohs(eof->i2c[i]);
 				}
 
-#define OLD_FIRMWARE
-#ifdef OLD_FIRMWARE
-				for(int i=0; i<eof->i2c_valid; i++) {
-					debug("%u: %04X ", i, eof->i2c[i]);
-				}
-#else
+
 				for(int i=0; i<I2C_REGS_PER_FRAME; i++) {
 					if (eof->i2c_valid & (1UL << i)) {
 						debug("%u: %04X ", i, eof->i2c[i]);
 					}
 				}
-#endif
 
 				if(lineCount != height) {
 					debug("Short (%u/%u)", lineCount, height);
 					// Flag packet as being short for the frameHandler
-					eof->header.line_number = IMAGER_LINENO_SHRT;
+					eof->header.line_number = IMAGER_LINENO_SHORT;
 					shortFrameCount++;
 				}
 				debug("\n");
@@ -1170,7 +1168,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 					debug("Invalid line number received: %u (max %u)\n", vPkt->header.line_number, vPkt->header.vert_resolution);
 					break;
 				}
-				memcpy(&(frame_buf[vPkt->header.line_number*width]), vPkt->lineData, width);
+				memcpy(&(frame_buf[vPkt->header.line_number*width]), vPkt->data, width);
 				lineCount++;
 			}
 		} while(frameComplete == false);
@@ -1188,11 +1186,11 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 
 	struct timeval totalTime;
 	timersub(&vidStopTime, &vidStartTime, &totalTime);
-
+	
 
 	debug("Video statistics:\n");
-	debug("Total run time was %llu usec\n", totalTime.tv_sec*1000*1000+totalTime.tv_usec);
-	debug("Total frames received: %u (%f fps)\n", frameCount, (float)frameCount*1000/((float)elapsedTime/1000));
+	debug("Total run time was %llu usec\n", (long long int)totalTime.tv_sec*1000*1000+totalTime.tv_usec);
+	debug("Total frames received: %u (%f fps)\n", frameCount, (float)frameCount*1000/((float)(totalTime.tv_sec*1000*1000+totalTime.tv_usec)/1000));
 	debug("Short frames: %u, Missing EOFs: %u\n", shortFrameCount, missingEofCount);
 
 	close(s);
