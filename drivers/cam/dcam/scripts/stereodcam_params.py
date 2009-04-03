@@ -38,7 +38,7 @@ import wx.lib.intctrl
 import sys
 import os
 
-PKG = 'stereodcam_params' # this package name
+PKG = 'dcam' # this package name
 import roslib; roslib.load_manifest(PKG)
 from roslib.scriptutil import get_param_server, script_resolve_name
 from roslib.names import ns_join, get_ros_namespace, make_caller_id, make_global_ns, GLOBALNS
