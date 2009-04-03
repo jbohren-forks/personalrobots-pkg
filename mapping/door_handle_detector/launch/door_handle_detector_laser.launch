@@ -10,6 +10,13 @@
     <param name="downsample_factor" type="int" value="1" />
   </node>
 
+<!-- point cloud snapshotter -->
+  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+    <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+    <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
+    <remap from="full_cloud" to="snapshot_cloud" />
+  </node>
+
 <!-- Generate single sweep scan -->
   <node pkg="point_cloud_assembler" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
 

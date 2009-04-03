@@ -71,7 +71,6 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
   notifyActivated();
 
   robot_msgs::Door result_laser, result_camera;
-  /*
   if (!laserDetection(door, result_laser)){
     if (request_preempt_)
       notifyPreempted(door);
@@ -79,7 +78,9 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
       notifyAborted(door);
   }
   notifySucceeded(result_laser);
-  */
+  ROS_INFO("DetectHandleAction: Succeeded");
+
+  /*
   if (!cameraDetection(door, result_camera)){
     if (request_preempt_){
       ROS_INFO("DetectHandleAction: Preempted");
@@ -90,9 +91,9 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
       notifyAborted(door);
     }
   }
-
   ROS_INFO("DetectHandleAction: Succeeded");
   notifySucceeded(result_camera);
+  */
 }
 
 
