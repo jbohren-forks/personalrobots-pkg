@@ -48,7 +48,7 @@ import os, os.path, threading, time
 import rospy, rostest
 from robot_msgs.msg import *
 
-TOLERANCE = 0.0059
+TOLERANCE = 0.006
 TEST_DURATION = 20.0
 
 class E:
@@ -149,8 +149,14 @@ class PendulumTest(unittest.TestCase):
         timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             if self.error1_count > 0 and self.error2_count > 0:
-              print  "E1 count:" + str(self.error1_count) + " error:" + str(self.error1_total)  + " avg err:" + str(self.error1_total / self.error1_count) \
-                  + " E2 count:" + str(self.error2_count) + " error:" + str(self.error2_total)  + " avg err:" + str(self.error2_total / self.error2_count)
+              print  "E1 count:" + str(self.error1_count) \
+                                 + " error:" + str(self.error1_total) \
+                                 + " avg err:" + str(self.error1_total / self.error1_count) \
+                                 + " max err:" + str(self.error1_max) \
+                  + " E2 count:" + str(self.error2_count) \
+                                 + " error:" + str(self.error2_total) \
+                                 + " avg err:" + str(self.error2_total / self.error2_count) \
+                                 + " max err:" + str(self.error2_max)
               if self.error2_count > self.min_runs and self.error1_count > self.min_runs:
                 if self.error1_total / self.error1_count < self.tolerance and self.error2_total / self.error2_count < self.tolerance:
                   if self.error1_max < self.tolerance and self.error2_max < self.tolerance:
