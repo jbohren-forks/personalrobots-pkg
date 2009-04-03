@@ -44,6 +44,7 @@
 #include <robot_msgs/Twist.h>
 #include <mechanism_model/controller.h>
 #include <realtime_tools/realtime_publisher.h>
+#include <boost/scoped_ptr.hpp>
 #include "robot_mechanism_controllers/cartesian_twist_controller.h"
 
 
@@ -81,7 +82,7 @@ private:
 
   // kdl stuff for kinematics
   KDL::Chain             chain_;
-  KDL::ChainFkSolverPos* jnt_to_pose_solver_;
+  boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
   KDL::JntArray          jnt_pos_;
 
   // to get joint positions, velocities, and to set joint torques

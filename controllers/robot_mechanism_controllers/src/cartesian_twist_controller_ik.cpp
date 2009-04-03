@@ -31,10 +31,9 @@
  * Author: Wim Meeussen
  */
 
-#include <urdf/parser.h>
 #include <algorithm>
 #include <robot_kinematics/robot_kinematics.h>
-#include "robot_mechanism_controllers/cartesian_twist_controller_ik.h"
+#include <robot_mechanism_controllers/cartesian_twist_controller_ik.h>
 
 
 using namespace KDL;
@@ -55,21 +54,17 @@ CartesianTwistControllerIk::CartesianTwistControllerIk()
 
 CartesianTwistControllerIk::~CartesianTwistControllerIk()
 {
-  if (jnt_to_twist_solver_) delete jnt_to_twist_solver_;
-  if (twist_to_jnt_solver_) delete twist_to_jnt_solver_;
-
-  for (unsigned int i=0; i<chain_.getNrOfJoints(); i++)
+  for (unsigned int i=0; i<kdl_chain_.getNrOfJoints(); i++)
     if (joint_vel_controllers_[i]) delete joint_vel_controllers_[i];
 }
 
 
 
-  bool CartesianTwistControllerIk::init(mechanism::RobotState *robot_state, 
-                                        const string& root_name, 
-                                        const string& tip_name,  
-                                        const string& controller_name)
+bool CartesianTwistControllerIk::init(mechanism::RobotState *robot_state,
+                                      const string& root_name,
+                                      const string& tip_name,
+                                      const string& controller_name)
 {
-  cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
   controller_name_ = controller_name;
 
   // test if we got robot pointer
@@ -77,26 +72,25 @@ CartesianTwistControllerIk::~CartesianTwistControllerIk()
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!robot_.init(robot_state->model_, root_name, tip_name))
+  if (!chain_.init(robot_state->model_, root_name, tip_name))
     return false;
-  robot_.toKDL(chain_);
+  chain_.toKDL(kdl_chain_);
 
   // create solver
-  jnt_to_twist_solver_ = new ChainFkSolverVel_recursive(chain_);
-  twist_to_jnt_solver_ = new ChainIkSolverVel_pinv(chain_);
-  jnt_pos_.resize(chain_.getNrOfJoints());
-  jnt_vel_.resize(chain_.getNrOfJoints());
+  jnt_to_twist_solver_.reset(new ChainFkSolverVel_recursive(kdl_chain_));
+  twist_to_jnt_solver_.reset(new ChainIkSolverVel_pinv(kdl_chain_));
+  jnt_pos_.resize(kdl_chain_.getNrOfJoints());
+  jnt_vel_.resize(kdl_chain_.getNrOfJoints());
 
   // get pid controller parameters
   control_toolbox::Pid pid_joint;
   pid_joint.initParam(controller_name_+"/joint");
 
   // create and initialize joint velocity controllers
-  for (unsigned int i=0 ;i<chain_.getNrOfJoints(); i++)
+  for (unsigned int i=0 ;i<kdl_chain_.getNrOfJoints(); i++)
     joint_vel_controllers_.push_back(new JointVelocityController);
-  for (unsigned int i=0 ;i<chain_.getNrOfJoints(); i++){
-    cout << "constructing velocity controller for joint " << robot_.getJointName(i) << endl;
-    joint_vel_controllers_[i]->init(robot_state, robot_.getJointName(i), pid_joint);
+  for (unsigned int i=0 ;i<kdl_chain_.getNrOfJoints(); i++){
+    joint_vel_controllers_[i]->init(robot_state, chain_.getJointName(i), pid_joint);
   }
   return true;
 }
@@ -113,8 +107,8 @@ bool CartesianTwistControllerIk::starting()
 
   // start joint velocity controllers
   bool res = true;
-  //for (unsigned int i=0 ;i<chain_.getNrOfJoints(); i++)
-  // if (!joint_vel_controllers_[i]->starting()) res = false;
+  for (unsigned int i=0 ;i<kdl_chain_.getNrOfJoints(); i++)
+    if (!joint_vel_controllers_[i]->starting()) res = false;
 
   return res;
 }
@@ -123,16 +117,16 @@ bool CartesianTwistControllerIk::starting()
 void CartesianTwistControllerIk::update()
 {
   // check if joints are calibrated
-  if (!robot_.allCalibrated(robot_state_->joint_states_)) return;
+  if (!chain_.allCalibrated(robot_state_->joint_states_)) return;
 
-  // get the joint positions 
-  robot_.getPositions(robot_state_->joint_states_, jnt_pos_);
+  // get the joint positions
+  chain_.getPositions(robot_state_->joint_states_, jnt_pos_);
 
   // calculate joint velocities
   twist_to_jnt_solver_->CartToJnt(jnt_pos_, twist_desi_, jnt_vel_);
 
   // send joint velocities to joint velocity controllers
-  for (unsigned int i=0; i<chain_.getNrOfJoints(); i++){
+  for (unsigned int i=0; i<kdl_chain_.getNrOfJoints(); i++){
     joint_vel_controllers_[i]->setCommand(jnt_vel_(i));
     joint_vel_controllers_[i]->update();
   }
@@ -156,37 +150,35 @@ CartesianTwistControllerIkNode::CartesianTwistControllerIkNode()
 CartesianTwistControllerIkNode::~CartesianTwistControllerIkNode()
 {
   node_->unsubscribe(controller_name_ + "/command");
-  node_->unsubscribe("spacenav/joy");
 }
 
 
 bool CartesianTwistControllerIkNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // get the controller name
-  controller_name_ = config->Attribute("name");
-
-  // get parameters
-  node_->param(controller_name_+"/joystick_max_trans", joystick_max_trans_, 0.0);
-  node_->param(controller_name_+"/joystick_max_rot", joystick_max_rot_, 0.0);
-
-  cout << "joystick max " << joystick_max_trans_ << " " << joystick_max_rot_ << endl;
-
-  // get name of root and tip
-  string root_name, tip_name;
-  node_->param(controller_name_+"/root_name", root_name, string("no_name_given"));
-  node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
-
-  // initialize controller  
-  if (!controller_.init(robot, root_name, tip_name, controller_name_))
+  // get the controller name from xml file
+  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
+  if (controller_name_ == ""){
+    ROS_ERROR("CartesianTwistIkControllerNode: No controller name given in xml file");
     return false;
-  
+  }
+
+  // get name of root and tip from the parameter server
+  std::string root_name, tip_name;
+  if (!node_->getParam(controller_name_+"/root_name", root_name)){
+    ROS_ERROR("CartesianTwistIkControllerNode: No root name found on parameter server");
+    return false;
+ }
+  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+    ROS_ERROR("CartesianTwistIkControllerNode: No tip name found on parameter server");
+    return false;
+  }
+
+  // initialize twist controller
+  if (!controller_.init(robot, root_name, tip_name, controller_name_)) return false;
+
   // subscribe to twist commands
   node_->subscribe(controller_name_ + "/command", twist_msg_,
 		   &CartesianTwistControllerIkNode::command, this, 1);
-
-  // subscribe to joystick commands
-  node_->subscribe("spacenav/joy", joystick_msg_,
-		   &CartesianTwistControllerIkNode::joystick, this, 1);
 
   return true;
 }
@@ -215,15 +207,6 @@ void CartesianTwistControllerIkNode::command()
   controller_.twist_desi_.rot(2) = twist_msg_.rot.z;
 }
 
-
-void CartesianTwistControllerIkNode::joystick()
-{
-  // convert to twist command
-  for (unsigned int i=0; i<3; i++){
-    controller_.twist_desi_.vel(i)  = joystick_msg_.axes[i]   * joystick_max_trans_;
-    controller_.twist_desi_.rot(i)  = joystick_msg_.axes[i+3] * joystick_max_rot_;
-  }
-}
 
 
 }; // namespace

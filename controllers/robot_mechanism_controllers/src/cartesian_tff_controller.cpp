@@ -31,10 +31,9 @@
  * Author: Wim Meeussen
  */
 
-#include "urdf/parser.h"
 #include <algorithm>
-#include "robot_kinematics/robot_kinematics.h"
-#include "robot_mechanism_controllers/cartesian_tff_controller.h"
+#include <robot_kinematics/robot_kinematics.h>
+#include <robot_mechanism_controllers/cartesian_tff_controller.h>
 
 
 using namespace KDL;
@@ -56,9 +55,7 @@ CartesianTFFController::CartesianTFFController()
 
 
 CartesianTFFController::~CartesianTFFController()
-{
-  if (jnt_to_twist_solver_) delete jnt_to_twist_solver_;
-}
+{}
 
 
 
@@ -67,7 +64,6 @@ bool CartesianTFFController::init(mechanism::RobotState *robot_state,
                                   const string& tip_name, 
                                   const string& controller_name)
 {
-  cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
   controller_name_ = controller_name;
 
   // test if we got robot pointer
@@ -75,13 +71,13 @@ bool CartesianTFFController::init(mechanism::RobotState *robot_state,
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!robot_.init(robot_state->model_, root_name, tip_name))
+  if (!chain_.init(robot_state->model_, root_name, tip_name))
     return false;
-  robot_.toKDL(chain_);
+  chain_.toKDL(kdl_chain_);
 
   // create solver
-  jnt_to_twist_solver_ = new ChainFkSolverVel_recursive(chain_);
-  jnt_posvel_.resize(chain_.getNrOfJoints());
+  jnt_to_twist_solver_.reset(new ChainFkSolverVel_recursive(kdl_chain_));
+  jnt_posvel_.resize(kdl_chain_.getNrOfJoints());
 
   // twist to wrench
   double trans, rot;
@@ -143,7 +139,7 @@ bool CartesianTFFController::starting()
 
   // set initial position, twist
   FrameVel frame_twist; 
-  robot_.getVelocities(robot_state_->joint_states_, jnt_posvel_);
+  chain_.getVelocities(robot_state_->joint_states_, jnt_posvel_);
   jnt_to_twist_solver_->JntToCart(jnt_posvel_, frame_twist);
   pose_meas_old_ = frame_twist.value();
   position_ = Twist::Zero();
@@ -164,7 +160,7 @@ void CartesianTFFController::update()
   last_time_ = time;
 
   // get the joint positions and velocities
-  robot_.getVelocities(robot_state_->joint_states_, jnt_posvel_);
+  chain_.getVelocities(robot_state_->joint_states_, jnt_posvel_);
 
   // get cartesian twist and pose
   FrameVel frame_twist; 
@@ -238,18 +234,27 @@ CartesianTFFControllerNode::~CartesianTFFControllerNode()
 
 bool CartesianTFFControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // get the controller name
-  controller_name_ = config->Attribute("name");
-
-  // get name of root and tip
-  string root_name, tip_name;
-  node_->param(controller_name_+"/root_name", root_name, string("no_name_given"));
-  node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
-
-  // initialize controller  
-  if (!controller_.init(robot, root_name, tip_name, controller_name_))
+  // get the controller name from xml file
+  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
+  if (controller_name_ == ""){
+    ROS_ERROR("CartesianTFFControllerNode: No controller name given in xml file");
     return false;
-  
+  }
+
+  // get name of root and tip from the parameter server
+  std::string root_name, tip_name;
+  if (!node_->getParam(controller_name_+"/root_name", root_name)){
+    ROS_ERROR("CartesianTFFControllerNode: No root name found on parameter server");
+    return false;
+  }
+  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+    ROS_ERROR("CartesianTFFControllerNode: No tip name found on parameter server");
+    return false;
+  }
+
+  // initialize tff controller
+  if (!controller_.init(robot, root_name, tip_name, controller_name_)) return false;
+
   // subscribe to tff commands
   node_->subscribe(controller_name_ + "/command", tff_msg_,
 		   &CartesianTFFControllerNode::command, this, 1);

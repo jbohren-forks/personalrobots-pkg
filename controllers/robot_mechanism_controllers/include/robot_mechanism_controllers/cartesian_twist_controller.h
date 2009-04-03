@@ -38,13 +38,13 @@
 #include <kdl/chain.hpp>
 #include <kdl/chainfksolver.hpp>
 #include <kdl/frames.hpp>
-#include "ros/node.h"
-#include "robot_msgs/Twist.h"
-#include "mechanism_model/controller.h"
-#include "tf/transform_datatypes.h"
-#include "robot_mechanism_controllers/cartesian_wrench_controller.h"
-#include "joy/Joy.h"
+#include <ros/node.h>
+#include <robot_msgs/Twist.h>
+#include <mechanism_model/controller.h>
+#include <tf/transform_datatypes.h>
+#include <robot_mechanism_controllers/cartesian_wrench_controller.h>
 #include <control_toolbox/pid.h>
+#include <boost/scoped_ptr.hpp>
 
 namespace controller {
 
@@ -54,7 +54,7 @@ public:
   CartesianTwistController();
   ~CartesianTwistController();
 
-  bool init(mechanism::RobotState *robot, const std::string& root_name, 
+  bool init(mechanism::RobotState *robot, const std::string& root_name,
             const std::string& tip_name, const std::string& controller_name);
   bool starting();
   void update();
@@ -62,25 +62,24 @@ public:
   // input of the controller
   KDL::Twist twist_desi_, twist_meas_;
 
+private:
   // output of the controller
   KDL::Wrench wrench_out_;
 
-
-private:
   ros::Node* node_;
   std::string controller_name_;
   double last_time_, ff_trans_, ff_rot_;
 
   // pid controllers
-  std::vector<control_toolbox::Pid>fb_pid_controller_;     
+  std::vector<control_toolbox::Pid>fb_pid_controller_;
 
   // robot description
   mechanism::RobotState *robot_state_;
-  mechanism::Chain robot_;
+  mechanism::Chain chain_;
 
   // kdl stuff for kinematics
-  KDL::Chain             chain_;
-  KDL::ChainFkSolverVel* jnt_to_twist_solver_;
+  KDL::Chain             kdl_chain_;
+  boost::scoped_ptr<KDL::ChainFkSolverVel> jnt_to_twist_solver_;
   KDL::JntArrayVel       jnt_posvel_;
 
   // internal wrench controller
@@ -97,25 +96,18 @@ class CartesianTwistControllerNode : public Controller
  public:
   CartesianTwistControllerNode();
   ~CartesianTwistControllerNode();
-  
+
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   bool starting();
   void update();
   void command();
 
-  // callback functions for joystick
-  void joystick();
-  
  private:
   ros::Node* node_;
   std::string controller_name_;
-  double joystick_max_trans_, joystick_max_rot_;
-  std::string topic_;
-
   CartesianTwistController controller_;
 
   robot_msgs::Twist twist_msg_;
-  joy::Joy joystick_msg_;
 };
 
 } // namespace

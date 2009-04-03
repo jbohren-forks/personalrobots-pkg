@@ -56,9 +56,7 @@ CartesianPoseController::CartesianPoseController()
 {}
 
 CartesianPoseController::~CartesianPoseController()
-{
-  if (jnt_to_pose_solver_) delete jnt_to_pose_solver_;
-}
+{}
 
 
 bool CartesianPoseController::init(mechanism::RobotState *robot_state, 
@@ -79,7 +77,7 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state,
   robot_.toKDL(chain_);
 
   // create solver
-  jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
+  jnt_to_pose_solver_.reset(new ChainFkSolverPos_recursive(chain_));
   jnt_pos_.resize(chain_.getNrOfJoints());
 
   // get pid controller
@@ -191,17 +189,26 @@ CartesianPoseControllerNode::~CartesianPoseControllerNode()
 
 bool CartesianPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // get the controller name
-  controller_name_ = config->Attribute("name");
-
-  // get name of root and tip
-  string tip_name;
-  node_->param(controller_name_+"/root_name", root_name_, string("no_name_given"));
-  node_->param(controller_name_+"/tip_name", tip_name, string("no_name_given"));
-
-  // initialize controller  
-  if (!controller_.init(robot, root_name_, tip_name, controller_name_))
+  // get the controller name from xml file
+  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
+  if (controller_name_ == ""){
+    ROS_ERROR("CartesianPoseControllerNode: No controller name given in xml file");
     return false;
+  }
+
+  // get name of root and tip from the parameter server
+  std::string tip_name;
+  if (!node_->getParam(controller_name_+"/root_name", root_name_)){
+    ROS_ERROR("CartesianPoseControllerNode: No root name found on parameter server");
+    return false;
+  }
+  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+    ROS_ERROR("CartesianPoseControllerNode: No tip name found on parameter server");
+    return false;
+  }
+
+  // initialize pose controller
+  if (!controller_.init(robot, root_name_, tip_name, controller_name_)) return false;
   
   // subscribe to pose commands
   command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&robot_state_, node_,  

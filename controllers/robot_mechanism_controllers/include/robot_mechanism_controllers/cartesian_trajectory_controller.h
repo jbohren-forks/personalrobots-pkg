@@ -47,6 +47,7 @@
 #include <robot_mechanism_controllers/cartesian_pose_controller.h>
 #include <robot_srvs/MoveToPose.h>
 #include <std_srvs/Empty.h>
+#include <boost/scoped_ptr.hpp>
 
 namespace controller {
 
@@ -79,11 +80,11 @@ private:
 
   // robot structure
   mechanism::RobotState *robot_state_;       
-  mechanism::Chain robot_;
+  mechanism::Chain chain_;
 
   // kdl stuff for kinematics
-  KDL::Chain             chain_;
-  KDL::ChainFkSolverPos* jnt_to_pose_solver_;
+  KDL::Chain             kdl_chain_;
+  boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
   KDL::JntArray          jnt_pos_;
 
   // motion profiles

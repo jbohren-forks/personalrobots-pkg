@@ -38,14 +38,14 @@
 #include <kdl/chain.hpp>
 #include <kdl/chainfksolver.hpp>
 #include <kdl/frames.hpp>
-#include "ros/node.h"
-#include "robot_msgs/TaskFrameFormalism.h"
-#include "mechanism_model/controller.h"
-#include "tf/transform_datatypes.h"
+#include <ros/node.h>
+#include <robot_msgs/TaskFrameFormalism.h>
+#include <mechanism_model/controller.h>
+#include <tf/transform_datatypes.h>
+#include <control_toolbox/pid.h>
+#include <boost/scoped_ptr.hpp>
 #include "robot_mechanism_controllers/cartesian_wrench_controller.h"
 #include "robot_mechanism_controllers/joint_chain_constraint_controller.h"
-#include "joy/Joy.h"
-#include <control_toolbox/pid.h>
 
 namespace controller {
 
@@ -74,11 +74,11 @@ private:
 
   // robot description
   mechanism::RobotState *robot_state_;
-  mechanism::Chain robot_;
+  mechanism::Chain chain_;
 
   // kdl stuff for kinematics
-  KDL::Chain             chain_;
-  KDL::ChainFkSolverVel* jnt_to_twist_solver_;
+  KDL::Chain             kdl_chain_;
+  boost::scoped_ptr<KDL::ChainFkSolverVel> jnt_to_twist_solver_;
   KDL::JntArrayVel       jnt_posvel_;
 
   // command for tff

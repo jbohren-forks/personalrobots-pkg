@@ -31,10 +31,9 @@
  * Author: Wim Meeussen
  */
 
-#include "urdf/parser.h"
 #include <algorithm>
-#include "robot_kinematics/robot_kinematics.h"
-#include "robot_mechanism_controllers/cartesian_wrench_controller.h"
+#include <robot_kinematics/robot_kinematics.h>
+#include <robot_mechanism_controllers/cartesian_wrench_controller.h>
 
 
 using namespace KDL;
@@ -52,15 +51,13 @@ CartesianWrenchController::CartesianWrenchController()
 
 
 CartesianWrenchController::~CartesianWrenchController()
-{
-  if (jnt_to_jac_solver_) delete jnt_to_jac_solver_;
-}
+{}
 
 
 
-bool CartesianWrenchController::init(mechanism::RobotState *robot_state, 
-                                     const std::string& root_name, 
-                                     const std::string& tip_name, 
+bool CartesianWrenchController::init(mechanism::RobotState *robot_state,
+                                     const std::string& root_name,
+                                     const std::string& tip_name,
                                      const std::string& controller_name)
 {
   controller_name_ = controller_name;
@@ -75,7 +72,7 @@ bool CartesianWrenchController::init(mechanism::RobotState *robot_state,
   chain_.toKDL(kdl_chain_);
 
   // create solver
-  jnt_to_jac_solver_ = new ChainJntToJacSolver(kdl_chain_);
+  jnt_to_jac_solver_.reset(new ChainJntToJacSolver(kdl_chain_));
   jnt_pos_.resize(kdl_chain_.getNrOfJoints());
   jnt_eff_.resize(kdl_chain_.getNrOfJoints());
   jacobian_.resize(kdl_chain_.getNrOfJoints());
@@ -111,8 +108,6 @@ bool CartesianWrenchController::starting()
 
 void CartesianWrenchController::update()
 {
-
-
   // check if joints are calibrated
   if (!chain_.allCalibrated(robot_state_->joint_states_)){
     publishDiagnostics(2, "Not all joints are calibrated");
@@ -148,7 +143,7 @@ bool CartesianWrenchController::publishDiagnostics(int level, const string& mess
 
     diagnostics_.status[0].level = level;
     diagnostics_.status[0].message  = message;
-      
+
     diagnostics_publisher_.unlockAndPublish();
     diagnostics_time_ = ros::Time::now();
     return true;

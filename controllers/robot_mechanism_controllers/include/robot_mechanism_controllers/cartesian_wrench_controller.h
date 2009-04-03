@@ -45,7 +45,7 @@
 #include <tf/transform_datatypes.h>
 #include <robot_msgs/DiagnosticMessage.h>
 #include <realtime_tools/realtime_publisher.h>
-
+#include <boost/scoped_ptr.hpp>
 
 
 namespace controller {
@@ -73,7 +73,7 @@ private:
   mechanism::Chain chain_;
 
   KDL::Chain kdl_chain_;
-  KDL::ChainJntToJacSolver *jnt_to_jac_solver_;
+  boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;
   KDL::JntArray jnt_pos_, jnt_eff_;
   KDL::Jacobian jacobian_;
 

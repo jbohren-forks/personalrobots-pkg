@@ -43,8 +43,8 @@
 #include <tf/transform_datatypes.h>
 #include <robot_mechanism_controllers/cartesian_wrench_controller.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
-#include <joy/Joy.h>
 #include <control_toolbox/pid.h>
+#include <boost/scoped_ptr.hpp>
 
 namespace controller {
 
@@ -54,7 +54,7 @@ public:
   CartesianTwistControllerIk();
   ~CartesianTwistControllerIk();
 
-  bool init(mechanism::RobotState *robot, const std::string& root_name, 
+  bool init(mechanism::RobotState *robot, const std::string& root_name,
             const std::string& tip_name, const std::string& controller_name);
   bool starting();
   void update();
@@ -62,26 +62,25 @@ public:
   // input of the controller
   KDL::Twist twist_desi_, twist_meas_;
 
+private:
   // joint velocity controllers
   std::vector<JointVelocityController*> joint_vel_controllers_;
 
-
-private:
   ros::Node* node_;
   std::string controller_name_;
   double last_time_;
 
   // pid controllers
-  std::vector<control_toolbox::Pid> pid_controller_;     
+  std::vector<control_toolbox::Pid> pid_controller_;
 
   // robot description
   mechanism::RobotState *robot_state_;
-  mechanism::Chain robot_;
+  mechanism::Chain chain_;
 
   // kdl stuff for kinematics
-  KDL::Chain             chain_;
-  KDL::ChainFkSolverVel* jnt_to_twist_solver_;
-  KDL::ChainIkSolverVel_pinv* twist_to_jnt_solver_;
+  KDL::Chain             kdl_chain_;
+  boost::scoped_ptr<KDL::ChainFkSolverVel> jnt_to_twist_solver_;
+  boost::scoped_ptr<KDL::ChainIkSolverVel_pinv> twist_to_jnt_solver_;
   KDL::JntArray          jnt_pos_, jnt_vel_;
 
   // internal wrench controller
@@ -98,25 +97,19 @@ class CartesianTwistControllerIkNode : public Controller
  public:
   CartesianTwistControllerIkNode();
   ~CartesianTwistControllerIkNode();
-  
+
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   bool starting();
   void update();
   void command();
 
-  // callback functions for joystick
-  void joystick();
-  
  private:
   ros::Node* node_;
   std::string controller_name_;
-  double joystick_max_trans_, joystick_max_rot_;
-  std::string topic_;
 
   CartesianTwistControllerIk controller_;
 
   robot_msgs::Twist twist_msg_;
-  joy::Joy joystick_msg_;
 };
 
 } // namespace

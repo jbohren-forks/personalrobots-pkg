@@ -33,10 +33,9 @@
 
 
 
-#include "urdf/parser.h"
 #include <algorithm>
-#include "robot_kinematics/robot_kinematics.h"
-#include "robot_mechanism_controllers/cartesian_trajectory_controller.h"
+#include <robot_kinematics/robot_kinematics.h>
+#include <robot_mechanism_controllers/cartesian_trajectory_controller.h>
 
 
 using namespace KDL;
@@ -56,18 +55,15 @@ CartesianTrajectoryController::CartesianTrajectoryController()
 {}
 
 CartesianTrajectoryController::~CartesianTrajectoryController()
-{
-  if (jnt_to_pose_solver_) delete jnt_to_pose_solver_;
-}
+{}
 
 
 
-bool CartesianTrajectoryController::init(mechanism::RobotState *robot_state, 
-                                         const string& root_name, 
-                                         const string& tip_name, 
+bool CartesianTrajectoryController::init(mechanism::RobotState *robot_state,
+                                         const string& root_name,
+                                         const string& tip_name,
                                          const string controller_name)
 {
-  cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
   controller_name_ = controller_name;
 
   // test if we got robot pointer
@@ -75,13 +71,13 @@ bool CartesianTrajectoryController::init(mechanism::RobotState *robot_state,
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!robot_.init(robot_state->model_, root_name, tip_name))
+  if (!chain_.init(robot_state->model_, root_name, tip_name))
     return false;
-  robot_.toKDL(chain_);
+  chain_.toKDL(kdl_chain_);
 
   // create solver
-  jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
-  jnt_pos_.resize(chain_.getNrOfJoints());
+  jnt_to_pose_solver_.reset(new ChainFkSolverPos_recursive(kdl_chain_));
+  jnt_pos_.resize(kdl_chain_.getNrOfJoints());
 
   // initialize motion profile
   double max_vel_trans, max_vel_rot, max_acc_trans, max_acc_rot;
@@ -126,10 +122,10 @@ bool CartesianTrajectoryController::moveTo(const Frame& pose_desi, double durati
   for (unsigned int i=0; i<6; i++)
     motion_profile_[i].SetProfileDuration( 0, twist_move(i), max_duration_ );
 
-  cout << controller_name_ << " will move to new pose in " << max_duration_ << " seconds" << endl;
-
   time_passed_ = 0;
   is_moving_ = true;
+
+  ROS_INFO("CartesianTrajectoryController: %s will move to new pose in %f seconds", controller_name_.c_str(), max_duration_);
 
   return true;
 }
@@ -204,14 +200,10 @@ void CartesianTrajectoryController::update()
   pose_controller_.update();
 }
 
-
-
-
-
 Frame CartesianTrajectoryController::getPose()
 {
   // get the joint positions and velocities
-  robot_.getPositions(robot_state_->joint_states_, jnt_pos_);
+  chain_.getPositions(robot_state_->joint_states_, jnt_pos_);
 
   // get cartesian pose
   Frame result;
@@ -239,30 +231,40 @@ CartesianTrajectoryControllerNode::~CartesianTrajectoryControllerNode()
 {
   if (command_notifier_) delete command_notifier_;
   node_->unadvertiseService(controller_name_+"/move_to");
+  node_->unadvertiseService(controller_name_+"/preempt");
 }
 
 
 bool CartesianTrajectoryControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // get the controller name
-  controller_name_ = config->Attribute("name");
-
-  // get name of root and tip
-  string tip_name;
-  node_->param(controller_name_+"/root_name", root_name_, string("no_root_name_given"));
-  node_->param(controller_name_+"/tip_name", tip_name, string("no_tip_name_given"));
-
-  // initialize controller
-  if (!controller_.init(robot, root_name_, tip_name, controller_name_))
+  // get the controller name from xml file
+  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
+  if (controller_name_ == ""){
+    ROS_ERROR("CartesianTrajectoryControllerNode: No controller name given in xml file");
     return false;
+  }
+
+  // get name of root and tip from the parameter server
+  std::string tip_name;
+  if (!node_->getParam(controller_name_+"/root_name", root_name_)){
+    ROS_ERROR("CartesianTrajectoryControllerNode: No root name found on parameter server");
+    return false;
+  }
+  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+    ROS_ERROR("CartesianTrajectoryControllerNode: No tip name found on parameter server");
+    return false;
+  }
+
+  // initialize pose controller
+  if (!controller_.init(robot, root_name_, tip_name, controller_name_)) return false;
 
   // subscribe to pose commands
   command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&robot_state_, node_,
 								 boost::bind(&CartesianTrajectoryControllerNode::command, this, _1),
 								 controller_name_ + "/command", root_name_, 1);
-
-  // advertise moveto service
+  // advertise services
   node_->advertiseService(controller_name_+"/move_to", &CartesianTrajectoryControllerNode::moveTo, this);
+  node_->advertiseService(controller_name_+"/preempt", &CartesianTrajectoryControllerNode::preempt, this);
 
   return true;
 }
@@ -286,16 +288,44 @@ bool CartesianTrajectoryControllerNode::moveTo(robot_srvs::MoveToPose::Request &
   if (!moveTo(req.pose))
     return false;
 
-  cout << "start moveto service " << endl;
   while (controller_.isMoving())
     Duration().fromSec(0.01).sleep();
 
-  cout << "end moveto service " << endl;
 
   if (controller_.isPreempted())
     return false;
   else
     return true;
+}
+
+
+
+void CartesianTrajectoryControllerNode::command(const MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg)
+{
+  moveTo(*pose_msg);
+}
+
+
+bool CartesianTrajectoryControllerNode::moveTo(robot_msgs::PoseStamped& pose)
+{
+  // convert message to transform
+  Stamped<Pose> pose_stamped;
+  PoseStampedMsgToTF(pose, pose_stamped);
+
+  // convert to reference frame of root link of the controller chain
+  Duration timeout = Duration().fromSec(2.0);
+  if (!robot_state_.canTransform(root_name_, pose.header.frame_id, pose.header.stamp, timeout)){
+	  ROS_ERROR("CartesianTrajectoryControllerNode: could not transform goal pose from %s to %s at time %f",
+			  pose.header.frame_id.c_str(), root_name_.c_str(), pose.header.stamp.toSec());
+	  return false;
+  }
+  else
+	  robot_state_.transformPose(root_name_, pose_stamped, pose_stamped);
+
+  // tell controller where to move to
+  Frame pose_desi;
+  TransformToFrame(pose_stamped, pose_desi);
+  return controller_.moveTo(pose_desi);
 }
 
 
@@ -314,55 +344,6 @@ bool CartesianTrajectoryControllerNode::preempt(std_srvs::Empty::Request &req,
     sleep_time.sleep();
 
   return true;
-}
-
-
-
-void CartesianTrajectoryControllerNode::command(const MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg)
-{
-  moveTo(*pose_msg);
-}
-
-
-
-
-
-
-
-
-
-
-
-// ----------------------------------
-// helper functions
-// ----------------------------------
-bool CartesianTrajectoryControllerNode::moveTo(robot_msgs::PoseStamped& pose)
-{
-  // convert message to transform
-  Stamped<Pose> pose_stamped;
-  PoseStampedMsgToTF(pose, pose_stamped);
-
-  // convert to reference frame of root link of the controller chain
-  Duration sleeptime = Duration().fromSec(0.001);
-  Duration timeout = Duration().fromSec(5.0);
-  Time starttime = Time().now();
-  try
-  {
-    while (!robot_state_.canTransform(root_name_, pose.header.frame_id, pose.header.stamp) &&
-           (Time().now() - starttime) < timeout )
-      sleeptime.sleep();
-    robot_state_.transformPose(root_name_, pose_stamped, pose_stamped);
-  }
-  catch (const tf::TransformException &ex)
-  {
-    ROS_ERROR("Transform exception: %s", ex.what());
-    return false;
-  }
-
-  // tell controller where to move to
-  Frame pose_desi;
-  TransformToFrame(pose_stamped, pose_desi);
-  return controller_.moveTo(pose_desi);
 }
 
 
