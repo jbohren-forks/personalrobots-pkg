@@ -20,7 +20,7 @@ CvRTrees* train_rf(CvMat* predictors, CvMat* labels)
 	const float priors[] = {0.25f,0.75f};
 	CvRTrees* rtrees = new CvRTrees();
 	CvRTParams rtparams = CvRTParams(5, 10, 0, false, 2, priors, true, 
-									 (int)sqrt(predictors->cols), tree_count, 1e-6, 
+									 (int)sqrt((float)predictors->cols), tree_count, 1e-6, 
 									 CV_TERMCRIT_ITER + CV_TERMCRIT_EPS);
 	CvMat* var_type = cvCreateMat(predictors->cols + 1, 1, CV_8UC1);
 	for(int i = 0; i < predictors->cols; i++)

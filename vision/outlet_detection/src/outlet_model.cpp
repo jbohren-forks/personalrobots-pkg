@@ -603,13 +603,13 @@ void find_outlet_features(IplImage* src, vector<outlet_feature_t>& features, con
 
 inline float outlet_size(outlet_t outlet)
 {
-	return fabs((outlet.hole2.x - outlet.hole1.x)*(outlet.hole2.x - outlet.hole1.x) + 
+	return fabs((float)(outlet.hole2.x - outlet.hole1.x)*(outlet.hole2.x - outlet.hole1.x) + 
 				(outlet.hole2.y - outlet.hole1.y)*(outlet.hole2.y - outlet.hole1.y));
 }
 
 CvRect outlet_rect(outlet_t outlet)
 {
-	float dist = fabs(outlet.hole2.x - outlet.hole1.x);
+	float dist = fabs((float)outlet.hole2.x - outlet.hole1.x);
 #if defined(_EUROPE)
 	float width = dist*2.0f;
 #else
@@ -813,8 +813,8 @@ int is_point_incenter_roi(const vector<CvRect>& rects, CvPoint point)
 {
 	for(vector<CvRect>::const_iterator it = rects.begin(); it != rects.end(); it++)
 	{
-		CvRect small = resize_rect(*it, 0.5f);
-		if(is_point_inside_rect(small, point))
+		CvRect _small = resize_rect(*it, 0.5f);
+		if(is_point_inside_rect(_small, point))
 		{
 			return 1;
 		}
@@ -837,10 +837,10 @@ int is_point_inside_roi(const outlet_roi_t& outlet_roi, CvPoint point, string im
 	return ret;
 }
 
-inline int is_rect_inside_rect(CvRect large, CvRect small)
+inline int is_rect_inside_rect(CvRect large, CvRect smaller)
 {
-	if(small.x >= large.x && small.y >= large.y && small.x + small.width <= large.x + large.width &&
-	   small.y + small.height <= large.y + large.height)
+	if(smaller.x >= large.x && smaller.y >= large.y && smaller.x + smaller.width <= large.x + large.width &&
+	   smaller.y + smaller.height <= large.y + large.height)
 	{
 		return 1;
 	}
