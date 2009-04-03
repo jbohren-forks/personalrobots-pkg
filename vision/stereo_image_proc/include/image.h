@@ -223,10 +223,14 @@ namespace cam
 
   private:
     // various color converters
-    void convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
+    void convertBayerGRBGColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 				  int width, int height, color_conversion_t colorAlg);
-    void convertBayerRGGBMono(uint8_t *src, uint8_t *dstm,
+    void convertBayerBGGRColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 				  int width, int height, color_conversion_t colorAlg);
+    void convertBayerGRBGMono(uint8_t *src, uint8_t *dstm,
+                              int width, int height, color_conversion_t colorAlg);
+    void convertBayerBGGRMono(uint8_t *src, uint8_t *dstm,
+                              int width, int height, color_conversion_t colorAlg);
   };
 
 

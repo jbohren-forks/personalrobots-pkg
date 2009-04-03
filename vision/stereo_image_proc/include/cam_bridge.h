@@ -195,7 +195,7 @@ namespace cam_bridge
     if (type == image_msgs::RawStereo::IMAGE_RAW)
     {
       extractImage(im_msg.uint8_data, &im->imRawSize, &im->imRaw);
-      im->imRawType = COLOR_CODING_BAYER8_RGGB;
+      im->imRawType = COLOR_CODING_BAYER8_GRBG;
     }
     else if (type == image_msgs::RawStereo::IMAGE)
     {
@@ -228,7 +228,8 @@ namespace cam_bridge
       im->imRectColorType = COLOR_CODING_RGB8;
     }
 
-    // FIXME: 
+    // FIXME: this to avoid segfault when right image empty (disparity image requested instead).
+    //        this all seems kind of hacky
     if (im_msg.depth == "uint8") {
       im->imHeight = im_msg.uint8_data.layout.dim[0].size;
       im->imWidth  = im_msg.uint8_data.layout.dim[1].size;

@@ -94,9 +94,13 @@ public:
     boost::lock_guard<boost::mutex> guard(cam_info_mutex_);
 
     cam_bridge::RawStereoToCamData(raw_img_, cam_info_, image_msgs::RawStereo::IMAGE_RAW, &img_data_);
+    img_data_.imRawType = COLOR_CODING_BAYER8_BGGR;
 
-    if (do_colorize_)
+    if (do_colorize_) {
+      //img_data_.colorConvertType = COLOR_CONVERSION_EDGE;
       img_data_.doBayerColorRGB();
+      //img_data_.doBayerMono();
+    }
 
     if (do_rectify_ && have_cam_info_)
       img_data_.doRectify();
