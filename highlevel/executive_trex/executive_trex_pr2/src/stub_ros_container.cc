@@ -179,10 +179,24 @@ int main(int argc, char** argv){
   ros::init(argc, argv);
   ros::Node node("executive_trex_pr2/action_container");
 
-  // Create state publishers
-  executive_trex_pr2::StatePublisher<robot_msgs::Pose> base_state_publisher(robot_msgs::Pose(), "base_state", 10.0);
-  executive_trex_pr2::StatePublisher<robot_msgs::BatteryState> battery_state_publisher(robot_msgs::BatteryState(), "battery_state", 10.0);
-  executive_trex_pr2::StatePublisher<robot_msgs::BatteryState> bogus_battery_state_publisher(robot_msgs::BatteryState(), "bogus_battery_state", 10.0);
+  // Create state publishers, if parameters are set
+  executive_trex_pr2::StatePublisher<robot_msgs::Pose>* base_state_publisher = NULL;
+  bool create_base_state_publisher = false;
+  ros::Node::instance()->param("/trex/create_base_state_publisher", create_base_state_publisher, create_base_state_publisher);
+  if (create_base_state_publisher)
+    base_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::Pose>(robot_msgs::Pose(), "base_state", 10.0);
+
+  executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>* battery_state_publisher = NULL; 
+  bool create_battery_state_publisher = false; 
+  ros::Node::instance()->param("/trex/create_battery_state_publisher", create_battery_state_publisher, create_battery_state_publisher);
+  if (create_battery_state_publisher)
+    battery_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>(robot_msgs::BatteryState(), "battery_state", 10.0);
+
+  executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>* bogus_battery_state_publisher = NULL; 
+  bool create_bogus_battery_state_publisher = false;
+  ros::Node::instance()->param("/trex/create_bogus_battery_state_publisher", create_bogus_battery_state_publisher, create_bogus_battery_state_publisher);
+  if (create_bogus_battery_state_publisher)
+    bogus_battery_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>(robot_msgs::BatteryState(), "bogus_battery_state", 10.0);
 
 
   // Allocate an action runner with an update rate of 10 Hz
