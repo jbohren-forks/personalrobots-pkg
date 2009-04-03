@@ -71,7 +71,7 @@ F = zeros(length(calibdata),1);
 
 for i = 1:length(calibdata)
     if( ~isempty(jointoffsets) )
-        orBodySetJointValues(robot.id, calibdata{i}.jointvalues+jointoffsets);
+        orBodySetJointValues(robot.id, calibdata{i}.jointvalues(:)+jointoffsets(:));
         links = orBodyGetLinks(robot.id);
         Tlaser_tilt_mount_link = [reshape(links(:,laser_tilt_mount_link),[3 4]); 0 0 0 1];
         Thead_tilt_link = [reshape(links(:,head_tilt_link),[3 4]); 0 0 0 1];

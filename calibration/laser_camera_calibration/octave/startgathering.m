@@ -104,8 +104,15 @@ data = [];
 rawjointvalues = cellfun(@(x) x.position, mecstatemsg.joint_states);
 if( ~isempty(robot) )
     %% if this fails, then find the joint name
-    jointindices = cellfun(@(x) find(cellfun(@(y) strcmp(x,y.name), mecstatemsg.joint_states),1,'first'), robot.jointnames);
-    data.jointvalues = rawjointvalues(jointindices);
+    data.jointvalues = [];
+    for iname = 1:length(robot.jointnames)
+        jointindices = find(cellfun(@(y) strcmp(robot.jointnames{iname},y.name), mecstatemsg.joint_states),1,'first');
+        if( isempty(jointindices) )
+            data.jointvalues(end+1) = 0;
+        else
+            data.jointvalues(end+1) = rawjointvalues(jointindices);
+        end
+    end
 else
     data.jointvalues = rawjointvalues;
 end
