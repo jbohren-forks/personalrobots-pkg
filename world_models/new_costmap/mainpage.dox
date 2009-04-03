@@ -24,7 +24,17 @@ int main(argc, char** argv){
   ros::init(arc,argv);
   ros::Node ros_node("costmap_runner");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
+
+  //set parameters before construction of the Costmap2DROS object... we'll use the base laser to add data to this costmap
+  ros_node_.setParam("~costmap/observation_topics", "base_scan");
+  ros_node_.setParam("~costmap/base_scan/observation_persistance", 0.0);
+  ros_node_.setParam("~costmap/base_scan/expected_update_rate", 0.2);
+  ros_node_.setParam("~costmap/base_scan/data_type", "LaserScan");
+
+  //construct the costmap
   costmap_2d::Costmap2DROS costmap_updater(ros_node, tf);
+
+  //do something here
   ros_node.spin();
   return(0);
 }
@@ -39,10 +49,14 @@ a costmap.
 
 @verbatim
 void doSomething(costmap_2d::Costmap2DROS& map_updater){
+  //get a copy of the underlying Costmap2D
   costmap_2d::Costmap2D* costmap = map_updater.getCostMapCopy();
+
   //do whatever you want with the map here
   ROS_INFO("The size of the map in meters is: (%.2f, %.2f)", costmap->metersSizeX(), costmap->metersSizeY());
-  delete costmap; //make sure to clean up
+
+  //make sure to clean up
+  delete costmap;
 }
 @endverbatim
 
