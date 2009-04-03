@@ -90,30 +90,27 @@ bool CartesianTFFController::init(mechanism::RobotState *robot_state,
 
   // get pid controllers
   control_toolbox::Pid pid_controller;
-  pid_controller.initParam(controller_name_+"/vel_trans");
+  if (!pid_controller.initParam(controller_name_+"/vel_trans")) return false;
   for (unsigned int i=0; i<3; i++)
     vel_pid_controller_.push_back(pid_controller);
 
-  pid_controller.initParam(controller_name_+"/vel_rot");
+  if (!pid_controller.initParam(controller_name_+"/vel_rot")) return false;
   for (unsigned int i=0; i<3; i++)
     vel_pid_controller_.push_back(pid_controller);
 
-  pid_controller.initParam(controller_name_+"/pos_trans");
+  if (!pid_controller.initParam(controller_name_+"/pos_trans")) return false;
   for (unsigned int i=0; i<3; i++)
     pos_pid_controller_.push_back(pid_controller);
 
-  pid_controller.initParam(controller_name_+"/pos_rot");
+  if (!pid_controller.initParam(controller_name_+"/pos_rot")) return false;
   for (unsigned int i=0; i<3; i++)
     pos_pid_controller_.push_back(pid_controller);
-
-  fprintf(stderr, "pid controllers created\n");
 
   // create wrench/constraint controller
   if (use_constraint_controller)
-    constraint_controller_.init(robot_state, root_name, tip_name, controller_name_+"/wrench");
+    if (!constraint_controller_.init(robot_state, root_name, tip_name, controller_name_+"/wrench")) return false;
   else
-    wrench_controller_.init(robot_state, root_name, tip_name, controller_name_+"/wrench");
-
+    if (!wrench_controller_.init(robot_state, root_name, tip_name, controller_name_+"/wrench")) return false;
 
   return true;
 }

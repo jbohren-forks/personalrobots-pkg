@@ -91,7 +91,7 @@ bool CartesianTrajectoryController::init(mechanism::RobotState *robot_state,
   }
 
   // initialize pose controller
-  pose_controller_.init(robot_state, root_name, tip_name, controller_name_+"/pose");
+  if (!pose_controller_.init(robot_state, root_name, tip_name, controller_name_+"/pose")) return false;
 
   return true;
 }

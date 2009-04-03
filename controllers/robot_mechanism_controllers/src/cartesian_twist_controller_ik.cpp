@@ -84,13 +84,14 @@ bool CartesianTwistControllerIk::init(mechanism::RobotState *robot_state,
 
   // get pid controller parameters
   control_toolbox::Pid pid_joint;
-  pid_joint.initParam(controller_name_+"/joint");
+  if (!pid_joint.initParam(controller_name_+"/joint")) return false;
 
   // create and initialize joint velocity controllers
   for (unsigned int i=0 ;i<kdl_chain_.getNrOfJoints(); i++)
     joint_vel_controllers_.push_back(new JointVelocityController);
   for (unsigned int i=0 ;i<kdl_chain_.getNrOfJoints(); i++){
-    joint_vel_controllers_[i]->init(robot_state, chain_.getJointName(i), pid_joint);
+    if (!joint_vel_controllers_[i]->init(robot_state, chain_.getJointName(i), pid_joint))
+      return false;
   }
   return true;
 }

@@ -75,13 +75,14 @@ bool CartesianTwistController::init(mechanism::RobotState *robot_state,
   jnt_to_twist_solver_.reset(new ChainFkSolverVel_recursive(kdl_chain_));
   jnt_posvel_.resize(kdl_chain_.getNrOfJoints());
 
-  // get pid controller
+  // constructs 3 identical pid controllers: for the x,y and z translations
   control_toolbox::Pid pid_controller;
-  pid_controller.initParam(controller_name_+"/fb_trans");
+  if (!pid_controller.initParam(controller_name_+"/fb_trans")) return false;
   for (unsigned int i=0; i<3; i++)
     fb_pid_controller_.push_back(pid_controller);
 
-  pid_controller.initParam(controller_name_+"/fb_rot");
+  // constructs 3 identical pid controllers: for the x,y and z rotations
+  if (!pid_controller.initParam(controller_name_+"/fb_rot")) return false;
   for (unsigned int i=0; i<3; i++)
     fb_pid_controller_.push_back(pid_controller);
 
@@ -89,7 +90,7 @@ bool CartesianTwistController::init(mechanism::RobotState *robot_state,
   node_->param(controller_name_+"/ff_rot", ff_rot_, 0.0) ;
 
   // create wrench controller
-  wrench_controller_.init(robot_state, root_name, tip_name, controller_name_+"/wrench");
+  if (!wrench_controller_.init(robot_state, root_name, tip_name, controller_name_+"/wrench")) return false;
 
   return true;
 }

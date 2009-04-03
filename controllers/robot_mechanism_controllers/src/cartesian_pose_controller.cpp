@@ -80,14 +80,14 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state,
   jnt_to_pose_solver_.reset(new ChainFkSolverPos_recursive(chain_));
   jnt_pos_.resize(chain_.getNrOfJoints());
 
-  // get pid controller
+  // create 6 identical pid controllers for x, y and z translation, and x, y, z rotation
   control_toolbox::Pid pid_controller;
-  pid_controller.initParam(controller_name_);
+  if (!pid_controller.initParam(controller_name_)) return false;
   for (unsigned int i=0; i<6; i++)
     pid_controller_.push_back(pid_controller);
 
   // initialize twist controller
-  twist_controller_.init(robot_state_, root_name, tip_name, controller_name_+"/twist");
+  if (!twist_controller_.init(robot_state_, root_name, tip_name, controller_name_+"/twist")) return false;
 
   // realtime publisher for control error
   error_publisher_ = new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/error", 1);
