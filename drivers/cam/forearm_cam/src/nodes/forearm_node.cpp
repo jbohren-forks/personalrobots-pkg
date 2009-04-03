@@ -43,6 +43,8 @@
 #include "pr2lib.h"
 #include "host_netutil.h"
 
+static const float MODE_FPS[] = {15, 12.5, 30, 25, 15, 12.5, 60, 50, 30, 25};
+
 class ForearmNode
 {
 private:
@@ -50,16 +52,87 @@ private:
   IpCamList* camera_;
   image_msgs::Image image_;
 
+  int video_mode_;
+  int width_;
+  int height_;
+  float expected_fps_;
+  bool started_video_;
+
 public:
-  ForearmNode(ros::Node &node) : node_(node), camera_(NULL)
+  ForearmNode(ros::Node &node)
+    : node_(node), camera_(NULL), started_video_(false)
+  {
+    // Read parameters
+    std::string if_name;
+    node_.param("~if_name", if_name, std::string("eth0"));
+
+    std::string ip_address;
+    if (node_.hasParam("~ip_address"))
+      node_.getParam("~ip_address", ip_address);
+    else {
+      ROS_FATAL("IP address not specified");
+      node_.shutdown();
+      return;
+    }
+
+    int port;
+    node_.param("~port", port, 9090);
+
+    std::string mode_name;
+    node_.param("~video_mode", mode_name, std::string("752x480x15"));
+    if (mode_name.compare("752x480x15") == 0)
+      video_mode_ = MT9VMODE_752x480x15b1;
+    else if (mode_name.compare("752x480x12.5") == 0)
+      video_mode_ = MT9VMODE_752x480x12_5b1;
+    else if (mode_name.compare("640x480x30") == 0)
+      video_mode_ = MT9VMODE_640x480x30b1;
+    else if (mode_name.compare("640x480x25") == 0)
+      video_mode_ = MT9VMODE_640x480x25b1;
+    else if (mode_name.compare("640x480x15") == 0)
+      video_mode_ = MT9VMODE_640x480x15b1;
+    else if (mode_name.compare("640x480x12.5") == 0)
+      video_mode_ = MT9VMODE_640x480x12_5b1;
+    else if (mode_name.compare("320x240x60") == 0)
+      video_mode_ = MT9VMODE_320x240x60b2;
+    else if (mode_name.compare("320x240x50") == 0)
+      video_mode_ = MT9VMODE_320x240x50b2;
+    else if (mode_name.compare("320x240x30") == 0)
+      video_mode_ = MT9VMODE_320x240x30b2;
+    else if (mode_name.compare("320x240x25") == 0)
+      video_mode_ = MT9VMODE_320x240x25b2;
+    else {
+      ROS_FATAL("Unknown video mode %s", mode_name.c_str());
+      node_.shutdown();
+      return;
+    }
+
+    if (video_mode_ <= MT9VMODE_752x480x12_5b1)
+      width_ = 752;
+    else if (video_mode_ <= MT9VMODE_640x480x12_5b1)
+      width_ = 640;
+    else
+      width_ = 320;
+    height_ = (video_mode_ <= MT9VMODE_640x480x12_5b1) ? 480 : 240;
+    expected_fps_ = MODE_FPS[ video_mode_ ];
+
+    // Configure camera
+    configure(if_name, ip_address, port);
+  }
+
+  ~ForearmNode()
+  {
+    // Stop video
+    if ( started_video_ && pr2StopVid(camera_) != 0 )
+      ROS_ERROR("Video Stop error");
+  }
+
+  void configure(const std::string &if_name, const std::string &ip_address, int port)
   {
     // Create a new IpCamList to hold the camera list
     IpCamList camList;
     pr2CamListInit(&camList);
 
     // Discover any connected cameras, wait for 0.5 second for replies
-    std::string if_name;
-    node_.param("~if_name", if_name, std::string("eth0"));
     if( pr2Discover(if_name.c_str(), &camList, SEC_TO_USEC(0.5)) == -1) {
       ROS_FATAL("Discover error");
       node_.shutdown();
@@ -76,27 +149,18 @@ public:
     camera_ = pr2CamListGetEntry(&camList, 0);
 
     // Configure the camera with its IP address, wait up to 500ms for completion
-    if (node_.hasParam("~ip_address")) {
-      std::string ip_address;
-      node_.getParam("~ip_address", ip_address);
-      
-      int retval = pr2Configure(camera_, ip_address.c_str(), SEC_TO_USEC(0.5));
-      if (retval != 0) {
-        if (retval == ERR_CONFIG_ARPFAIL) {
-          ROS_WARN("Unable to update ARP table (are you root?), continuing anyway");
-        } else {
-          ROS_FATAL("IP address configuration failed");
-          node_.shutdown();
-          return;
-        }
+    int retval = pr2Configure(camera_, ip_address.c_str(), SEC_TO_USEC(0.5));
+    if (retval != 0) {
+      if (retval == ERR_CONFIG_ARPFAIL) {
+        ROS_WARN("Unable to update ARP table (are you root?), continuing anyway");
+      } else {
+        ROS_FATAL("IP address configuration failed");
+        node_.shutdown();
+        return;
       }
-      ROS_INFO("Configured camera #%d, S/N #%u, IP address %s", 0, camera_->serial, ip_address.c_str());
     }
-    else {
-      ROS_FATAL("IP address not specified");
-      node_.shutdown();
-      return;
-    }
+    ROS_INFO("Configured camera #%d, S/N #%u, IP address %s", 0,
+             camera_->serial, ip_address.c_str());
 
     // We are going to receive the video on this host, so we need our own MAC address
     sockaddr localMac;
@@ -115,46 +179,35 @@ public:
     }
 
     // Select a video mode
-    // TODO: make this a parameter
-    int mode = MT9VMODE_752x480x15b1;
-    //int mode = MT9VMODE_640x480x30b1;
-    //int mode = MT9VMODE_640x480x25b1;
-    if ( pr2ImagerModeSelect( camera_, mode ) != 0) {
+    if ( pr2ImagerModeSelect( camera_, video_mode_ ) != 0) {
       ROS_FATAL("Mode select error");
       node_.shutdown();
       return;
     }
 
-    // Start video; send it to specified host port (defaults to 9090)
-    int port;
-    node_.param("~port", port, 9090);
-    if ( pr2StartVid( camera_, (uint8_t *)&(localMac.sa_data[0]), inet_ntoa(localIp), port) != 0 ) {
+    // Start video; send it to specified host port
+    if ( pr2StartVid( camera_, (uint8_t *)&(localMac.sa_data[0]),
+                      inet_ntoa(localIp), port) != 0 ) {
       ROS_FATAL("Video start error");
       node_.shutdown();
       return;
     }
+    started_video_ = true;
 
     // Receive frames through callback
     // TODO: start this in separate thread?
     node_.advertise<image_msgs::Image>("~image_raw", 1);
-    pr2VidReceive( camera_->ifName, port, 480, 752, &ForearmNode::frameHandler, this );
-    //pr2VidReceive( camera_->ifName, port, 480, 640, &ForearmNode::frameHandler, this );
+    pr2VidReceive( camera_->ifName, port, height_, width_,
+                   &ForearmNode::frameHandler, this );
   }
 
-  ~ForearmNode()
-  {
-    // Stop video
-    if ( pr2StopVid(camera_) != 0 )
-      ROS_ERROR("Video Stop error");
-  }
-
+private:
   void publishImage(size_t width, size_t height, uint8_t *frameData)
   {
     fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
     node_.publish("~image_raw", image_);
   }
-
-private:
+  
   static int frameHandler(size_t width, size_t height, uint8_t *frameData,
                           PacketEOF *eofInfo, void *userData)
   {
@@ -172,15 +225,7 @@ private:
       ROS_WARN("Short frame (video lines were missing)");
       return 0;
     }
-    /*
-    // Save to disk
-    char filename[100];
-    sprintf(filename, "v%05u.pgm", eofInfo->header.frame_number);
-    FILE *myfile = fopen(filename, "wb");
-    fprintf(myfile, "P5\n%i %i\n255\n", width, height);
-    fwrite(frameData, sizeof(uint8_t), height*width, myfile);
-    fclose(myfile);
-    */
+
     fa_node.publishImage(width, height, frameData);
 
     return 0;

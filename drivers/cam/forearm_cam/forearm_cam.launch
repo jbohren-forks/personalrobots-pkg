@@ -1,6 +1,7 @@
 <launch>
   <group ns="forearm">
     <param name="ip_address" type="str" value="10.0.3.68"/>
+    <param name="video_mode" type="str" value="752x480x15"/>
     <param name="do_colorize" type="bool" value="True"/>
     <param name="do_rectify" type="bool" value="False"/>
   </group>
