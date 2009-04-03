@@ -28,6 +28,7 @@
  */
 
 #include <sbpl/headers.h>
+#include <sbpl_door_planner/door_base_collision_cost.h>
 
 #ifndef __ENVIRONMENT_NAVXYTHETADOOR_H_
 #define __ENVIRONMENT_NAVXYTHETADOOR_H_
@@ -35,19 +36,41 @@
 
 class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
 {
- public:
-    EnvironmentNAVXYTHETADOOR() {};
-    ~EnvironmentNAVXYTHETADOOR() {};
+  public:
+  EnvironmentNAVXYTHETADOOR() {};
+  ~EnvironmentNAVXYTHETADOOR() {};
 
- protected:
+  std::vector<std::vector<double> > footprint_;
+  std::vector<double> door_global_pose_;
+  std::vector<double> robot_shoulder_position_;
+  std::vector<double> door_handle_pose_;
+  double door_thickness_;
+  double pivot_length_;
+  double door_length_;
 
-	virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
+  double min_workspace_radius_;
+  double max_workspace_radius_;
 
-    //returns possible doorangle and associated costs (costs are used as multipliers, cost = 0 will be used as a
-    //a multiplication factor of 1 (no penalty). Infinite cost should be indicated by INFINITECOST, or better if not
-    //returned at all as a possible doorangle.
-    void GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldrobotpose3D, vector<int>* doorangleV, 
-                            vector<int>* dooranglecostV);
+  double max_workspace_angle_;
+  double min_workspace_angle_;
+
+  double delta_angle_;
+
+  double shoulder_position_x_;
+  double shoulder_position_y_;
+
+  std::vector<double> robot_global_pose_;
+  door_base_collision_cost::DoorBaseCollisionCost db_;
+
+  protected:
+
+  virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
+
+  //returns possible doorangle and associated costs (costs are used as multipliers, cost = 0 will be used as a
+  //a multiplication factor of 1 (no penalty). Infinite cost should be indicated by INFINITECOST, or better if not
+  //returned at all as a possible doorangle.
+  void GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldrobotpose3D, vector<int>* doorangleV, 
+                          vector<int>* dooranglecostV);
 
 };
 

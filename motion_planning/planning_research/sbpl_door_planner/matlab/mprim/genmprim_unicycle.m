@@ -13,7 +13,7 @@ UNICYCLE_MPRIM_16DEGS = 1;
 
 
 if UNICYCLE_MPRIM_16DEGS == 1
-    resolution = 0.025;
+    resolution = 0.1;
     numberofangles = 16; %preferably a power of 2, definitely multiple of 8
 
     %multipliers (multiplier is used as costmult*cost)

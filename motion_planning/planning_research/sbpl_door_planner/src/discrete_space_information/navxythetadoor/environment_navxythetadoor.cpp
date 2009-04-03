@@ -30,12 +30,9 @@
 #include <sbpl/headers.h>
 #include <sbpl_door_planner/environment_navxythetadoor.h>
 
-
-
-
-
 int EnvironmentNAVXYTHETADOOR::GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action)
 {
+
 	sbpl_2Dcell_t cell;
     vector<int> doorangleV, prevdoorangleV;
     vector<int> dooranglecostV, prevdooranglecostV;
@@ -44,8 +41,10 @@ int EnvironmentNAVXYTHETADOOR::GetActionCost(int SourceX, int SourceY, int Sourc
 	//TODO - go over bounding box (minpt and maxpt) to test validity and skip testing boundaries below, also order intersect cells so that the four farthest pts go first
 	
 	if(!IsValidCell(SourceX, SourceY))
+        {
+//          printf("\n\n\nReturning infinite cost\n\n\n");
 		return INFINITECOST;
-
+        }
     //compute world frame offset for the action
     double sourcex = DISCXY2CONT(SourceX, EnvNAVXYTHETALATCfg.cellsize_m);
     double sourcey = DISCXY2CONT(SourceY, EnvNAVXYTHETALATCfg.cellsize_m);
@@ -63,14 +62,15 @@ int EnvironmentNAVXYTHETADOOR::GetActionCost(int SourceX, int SourceY, int Sourc
         //get the door intervals together with the costs
         doorangleV.clear();
         dooranglecostV.clear();
+//        printf("\n\n\n Getting action cost\n\n\n");
         GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV);
-
+//        printf("Size angles: %d, costs: %d\n",doorangleV.size(),dooranglecostV.size());
         if(i > 0){
             //go over the previous interval and pick the common value with the smallest cost
             int mincost = INFINITECOST;
             int bestprevangle = -1;
             for(int cind = 0; cind < (int)doorangleV.size(); cind++){
-                for(int pind = 0; pind < (int) doorangleV.size(); pind++){
+                for(int pind = 0; pind < (int) prevdoorangleV.size(); pind++){
                     if(doorangleV[cind] == prevdoorangleV[pind] && __min(dooranglecostV[cind], prevdooranglecostV[pind]) < mincost){
                         mincost = __min(dooranglecostV[cind], prevdooranglecostV[pind]);
                         bestprevangle = prevdoorangleV[pind];
@@ -86,6 +86,7 @@ int EnvironmentNAVXYTHETADOOR::GetActionCost(int SourceX, int SourceY, int Sourc
         prevdooranglecostV = dooranglecostV;
 
     }    
+//    printf("\n\n\n Skipping previous step\n\n\n");
     if(doorcostmultiplier >= INFINITECOST)
         return INFINITECOST;
 
@@ -127,10 +128,17 @@ void EnvironmentNAVXYTHETADOOR::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldr
     doorangleV->clear();
     dooranglecostV->clear();
 
-    doorangleV->push_back(1);
+/*    doorangleV->push_back(1);
     doorangleV->push_back(2);
     dooranglecostV->push_back(0);
     dooranglecostV->push_back(3);
+*/
+    robot_global_pose_[0] = worldrobotpose3D.x;
+    robot_global_pose_[1] = worldrobotpose3D.y;
+    robot_global_pose_[2] = worldrobotpose3D.theta;
+
+    db_.getValidDoorAngles(footprint_, robot_global_pose_, door_global_pose_, robot_shoulder_position_, door_handle_pose_, door_length_, door_thickness_, pivot_length_, min_workspace_angle_, max_workspace_angle_, min_workspace_radius_, max_workspace_radius_, delta_angle_, *doorangleV, *dooranglecostV);
+
 // No larger than 255 unsigned char
 // Also put in an infinite cost
 }

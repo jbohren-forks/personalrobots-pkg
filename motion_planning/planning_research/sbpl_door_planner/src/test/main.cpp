@@ -34,174 +34,219 @@
 
 void PrintUsage(char *argv[])
 {
-	printf("USAGE: %s <cfg file>\n", argv[0]);
+  printf("USAGE: %s <cfg file>\n", argv[0]);
 }
 
 
 int planxythetadoor(int argc, char *argv[])
 {
 
-    int bRet = 0;
-    double allocated_time_secs = 5; //in seconds
-    MDPConfig MDPCfg;
-    bool bsearchuntilfirstsolution = false;
+  int bRet = 0;
+  double allocated_time_secs = 100; //in seconds
+  MDPConfig MDPCfg;
+  bool bsearchuntilfirstsolution = false;
 
-    //set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
-    vector<sbpl_2Dpt_t> perimeterptsV;
-    sbpl_2Dpt_t pt_m;
-    double halfwidth = 0.03;    //0.08; //0.3;
-    double halflength = 0.025;  //0.1; //0.45;
-    pt_m.x = -halflength;
-    pt_m.y = -halfwidth;
-    perimeterptsV.push_back(pt_m);
-    pt_m.x = halflength;
-    pt_m.y = -halfwidth;
-    perimeterptsV.push_back(pt_m);
-    pt_m.x = halflength;
-    pt_m.y = halfwidth;
-    perimeterptsV.push_back(pt_m);
-    pt_m.x = -halflength;
-    pt_m.y = halfwidth;
-    perimeterptsV.push_back(pt_m);
+  //set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
+  vector<sbpl_2Dpt_t> perimeterptsV;
+  sbpl_2Dpt_t pt_m;
+  double halfwidth = 0.10;    //0.08; //0.3;
+  double halflength = 0.10;  //0.1; //0.45;
+  pt_m.x = -halflength;
+  pt_m.y = -halfwidth;
+  perimeterptsV.push_back(pt_m);
+  pt_m.x = halflength;
+  pt_m.y = -halfwidth;
+  perimeterptsV.push_back(pt_m);
+  pt_m.x = halflength;
+  pt_m.y = halfwidth;
+  perimeterptsV.push_back(pt_m);
+  pt_m.x = -halflength;
+  pt_m.y = halfwidth;
+  perimeterptsV.push_back(pt_m);
 
-    //Initialize Environment (should be called before initializing anything else)
-    EnvironmentNAVXYTHETADOOR environment_navxythetadoor;
+  //Initialize Environment (should be called before initializing anything else)
+  EnvironmentNAVXYTHETADOOR environment_navxythetadoor;
 
-    if(argc == 3)
+  if(argc == 3)
+  {
+    if(!environment_navxythetadoor.InitializeEnv(argv[1], perimeterptsV, argv[2]))
     {
-        if(!environment_navxythetadoor.InitializeEnv(argv[1], perimeterptsV, argv[2]))
-        {
-            printf("ERROR: InitializeEnv failed\n");
-            exit(1);
-        }
+      printf("ERROR: InitializeEnv failed\n");
+      exit(1);
     }
-    else
+  }
+  else
+  {
+    if(!environment_navxythetadoor.InitializeEnv(argv[1], perimeterptsV, NULL))
     {
-        if(!environment_navxythetadoor.InitializeEnv(argv[1], perimeterptsV, NULL))
-        {
-            printf("ERROR: InitializeEnv failed\n");
-            exit(1);
-        }
+      printf("ERROR: InitializeEnv failed\n");
+      exit(1);
     }
+  }
 
-    //Initialize MDP Info
-    if(!environment_navxythetadoor.InitializeMDPCfg(&MDPCfg))
-    {
-        printf("ERROR: InitializeMDPCfg failed\n");
-        exit(1);
-    }
+  //Initialize MDP Info
+  if(!environment_navxythetadoor.InitializeMDPCfg(&MDPCfg))
+  {
+    printf("ERROR: InitializeMDPCfg failed\n");
+    exit(1);
+  }
+
+  //Initialize the door information
+  environment_navxythetadoor.footprint_.resize(4);
+  environment_navxythetadoor.footprint_[0].resize(2);
+  environment_navxythetadoor.footprint_[0][0] = halfwidth;
+  environment_navxythetadoor.footprint_[0][1] = halfwidth;
+
+  environment_navxythetadoor.footprint_[1].resize(2);
+  environment_navxythetadoor.footprint_[1][0] = -halfwidth;
+  environment_navxythetadoor.footprint_[1][1] = halfwidth;
+
+  environment_navxythetadoor.footprint_[2].resize(2);
+  environment_navxythetadoor.footprint_[2][0] = -halfwidth;
+  environment_navxythetadoor.footprint_[2][1] = -halfwidth;
+
+  environment_navxythetadoor.footprint_[3].resize(2);
+  environment_navxythetadoor.footprint_[3][0] = halfwidth;
+  environment_navxythetadoor.footprint_[3][1] = -halfwidth;
+
+  environment_navxythetadoor.robot_shoulder_position_.resize(2);
+  environment_navxythetadoor.robot_shoulder_position_[0] = -0.025;
+  environment_navxythetadoor.robot_shoulder_position_[1] = -0.025;
+
+  environment_navxythetadoor.door_handle_pose_.resize(2);
+  environment_navxythetadoor.door_handle_pose_[0] = 0.4;
+  environment_navxythetadoor.door_handle_pose_[1] = 0;
+
+  environment_navxythetadoor.robot_global_pose_.resize(3);
+
+  environment_navxythetadoor.door_global_pose_.resize(3);
+  environment_navxythetadoor.door_global_pose_[0] = 0.5;
+  environment_navxythetadoor.door_global_pose_[1] = 0.75;
+  environment_navxythetadoor.door_global_pose_[2] = 0.0;
+
+  environment_navxythetadoor.door_thickness_ = 0.01;
+  environment_navxythetadoor.pivot_length_ = 0.0;
+  environment_navxythetadoor.door_length_ = 0.5;
+
+  environment_navxythetadoor.min_workspace_radius_ = 0.0;
+  environment_navxythetadoor.max_workspace_radius_ = 1.0;
+
+  environment_navxythetadoor.max_workspace_angle_ = M_PI/2.0;
+  environment_navxythetadoor.min_workspace_angle_ = -3*M_PI/2.0;
+  environment_navxythetadoor.delta_angle_ = 0.1;
 
 
-    //plan a path
-    vector<int> solution_stateIDs_V;
-    bool bforwardsearch = false;
-    ARAPlanner planner(&environment_navxythetadoor, bforwardsearch);
 
-    if(planner.set_start(MDPCfg.startstateid) == 0)
-        {
-            printf("ERROR: failed to set start state\n");
-            exit(1);
-        }
+  //plan a path
+  vector<int> solution_stateIDs_V;
+  bool bforwardsearch = false;
+  ARAPlanner planner(&environment_navxythetadoor, bforwardsearch);
 
-    if(planner.set_goal(MDPCfg.goalstateid) == 0)
-        {
-            printf("ERROR: failed to set goal state\n");
-            exit(1);
-        }
-	planner.set_initialsolution_eps(3.0);
+  if(planner.set_start(MDPCfg.startstateid) == 0)
+  {
+    printf("ERROR: failed to set start state\n");
+    exit(1);
+  }
 
-	//set search mode
-	planner.set_search_mode(bsearchuntilfirstsolution);
+  if(planner.set_goal(MDPCfg.goalstateid) == 0)
+  {
+    printf("ERROR: failed to set goal state\n");
+    exit(1);
+  }
+  planner.set_initialsolution_eps(3.0);
 
-    printf("start planning...\n");
-	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
-    printf("done planning\n");
-	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+  //set search mode
+  planner.set_search_mode(bsearchuntilfirstsolution);
 
-    environment_navxythetadoor.PrintTimeStat(stdout);
+  printf("start planning...\n");
+  bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+  printf("done planning\n");
+  std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
 
-	/*
+  environment_navxythetadoor.PrintTimeStat(stdout);
+
+  /*
     if(planner.set_start(environment_navxythetadoor.SetStart(1.6,0.5,0)) == 0)
-        {
-            printf("ERROR: failed to set start state\n");
-            exit(1);
-        }
-
-
-    printf("start planning...\n");
-	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
-    printf("done planning\n");
-	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
-
-    environment_navxythetadoor.PrintTimeStat(stdout);
-
-
-    printf("start planning...\n");
-	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
-    printf("done planning\n");
-	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
-
-    environment_navxythetadoor.PrintTimeStat(stdout);
-
-    printf("start planning...\n");
-	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
-    printf("done planning\n");
-	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
-
-    environment_navxythetadoor.PrintTimeStat(stdout);
-
-    printf("start planning...\n");
-	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
-    printf("done planning\n");
-	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
-
-    environment_navxythetadoor.PrintTimeStat(stdout);
-
-    printf("start planning...\n");
-	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
-    printf("done planning\n");
-	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
-	*/
-
-    FILE* fSol = fopen("sol.txt", "w");
-	vector<EnvNAVXYTHETALAT3Dpt_t> xythetaPath;
-	environment_navxythetadoor.ConvertStateIDPathintoXYThetaPath(&solution_stateIDs_V, &xythetaPath);
-	for(unsigned int i = 0; i < xythetaPath.size(); i++) {
-            fprintf(fSol, "%.3f %.3f %.3f\n", xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta);
-	}
-    fclose(fSol);
-
-    environment_navxythetadoor.PrintTimeStat(stdout);
-
-    //print a path
-    if(bRet)
     {
-        //print the solution
-        printf("Solution is found\n");
+    printf("ERROR: failed to set start state\n");
+    exit(1);
     }
-    else
-        printf("Solution does not exist\n");
-
-    fflush(NULL);
 
 
-    return bRet;
+    printf("start planning...\n");
+    bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+    std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_navxythetadoor.PrintTimeStat(stdout);
+
+
+    printf("start planning...\n");
+    bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+    std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_navxythetadoor.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+    bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+    std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_navxythetadoor.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+    bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+    std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_navxythetadoor.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+    bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+    std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+  */
+
+  FILE* fSol = fopen("sol.txt", "w");
+  vector<EnvNAVXYTHETALAT3Dpt_t> xythetaPath;
+  environment_navxythetadoor.ConvertStateIDPathintoXYThetaPath(&solution_stateIDs_V, &xythetaPath);
+  for(unsigned int i = 0; i < xythetaPath.size(); i++) {
+    fprintf(fSol, "%.3f %.3f %.3f\n", xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta);
+  }
+  fclose(fSol);
+
+  environment_navxythetadoor.PrintTimeStat(stdout);
+
+  //print a path
+  if(bRet)
+  {
+    //print the solution
+    printf("Solution is found\n");
+  }
+  else
+    printf("Solution does not exist\n");
+
+  fflush(NULL);
+
+
+  return bRet;
 }
 
 
 int main(int argc, char *argv[])
 {
 
-    if(argc < 2)
-    {
-        PrintUsage(argv);
-        exit(1);
-    }
+  if(argc < 2)
+  {
+    PrintUsage(argv);
+    exit(1);
+  }
 
-    //xytheta door planning
-    planxythetadoor(argc, argv);
+  //xytheta door planning
+  planxythetadoor(argc, argv);
 
-    return 0;
+  return 0;
 }
 
 

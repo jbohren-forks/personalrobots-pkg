@@ -11,8 +11,10 @@ rospack_add_library(sbpl_door_planner
 # Build executables in the bin directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-rospack_add_executable(planDoorPath src/test/main.cpp
-                                    src/discrete_space_information/navxythetadoor/environment_navxythetadoor.cpp)
+rospack_add_executable(planDoorPath src/discrete_space_information/navxythetadoor/door_base_collision_cost.cpp
+                                    src/discrete_space_information/navxythetadoor/environment_navxythetadoor.cpp
+                                    src/test/main.cpp)
 
 target_link_libraries(planDoorPath sbpl_door_planner)
 
+#rospack_add_executable(doorBaseCollision src/discrete_space_information/navxythetadoor/door_base_collision_cost.cpp)
