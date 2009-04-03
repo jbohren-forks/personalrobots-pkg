@@ -1,0 +1,57 @@
+
+/**
+ * @brief Structure for Mechanism Controllers. We can type them if we wish
+ */
+class MechanismController {
+  MechanismController(){}
+};
+
+/**
+ * @brief A mechanism can be controlled by at most one controller at a time. Some mechanisms
+ * may require exactly one controller at all times. Others may do without control. We may also want
+ * to express a specific subset of controllers that are applicable for a given mechanism.
+ */
+class Mechanism extends AgentTimeline {
+
+  predicate Uncontrolled {}
+
+  predicate ControlledBy{
+    MechanismController controller;
+  }
+
+  Mechanism(Mode _mode){
+    super(_mode, "Uncontrolled");
+  }
+};
+
+/**
+ * This file defines all controllers used in mechanism control.
+ */
+MechanismController head_controller = new MechanismController();
+MechanismController laser_tilt_controller = new MechanismController();
+MechanismController gripper_effort = new MechanismController();
+MechanismController cartesian_trajectory_right = new MechanismController();
+MechanismController cartesian_tff_right = new MechanismController();
+MechanismController base_controller = new MechanismController();
+
+
+/**
+ * The Assembly combines all mechanisms for the PR2. It allows a single point of declaration an instances
+ * can be created as external or internal.
+ */
+class Assembly {
+  // Mechanisms
+  Mechanism head;
+  Mechanism tilt_scanner;
+  Mechanism right_arm;
+  Mechanism right_gripper;
+  Mechanism base;
+
+  Assembly(Mode _mode){
+    Mechanism head = new Mechanism(_mode);
+    Mechanism tilt_scanner = new Mechanism(_mode);
+    Mechanism right_arm = new Mechanism(_mode);
+    Mechanism right_gripper = new Mechanism(_mode);
+    Mechanism base = new Mechanism(_mode);
+  }
+};

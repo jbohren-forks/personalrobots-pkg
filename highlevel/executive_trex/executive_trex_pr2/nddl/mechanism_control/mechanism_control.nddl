@@ -1,0 +1,73 @@
+#include "TREX.nddl"
+#include "rcs/exports.nddl"
+#include "mechanism_control/exports.nddl"
+#include "mechanism_control/controllers.nddl"
+
+
+
+/**
+ * @brief Track the state (up or down) of a specific controller in mechanism control
+ */
+class MechanismControllerState extends AgentTimeline {
+  MechanismController controller;
+
+  predicate Holds{
+    bool is_up;
+
+    defaultOnCommit(is_up, false);
+  }
+
+  MechanismControllerState(Mode _mode, MechanismController c){
+    super(_mode, "Holds");
+    controller = c;
+  }
+};
+
+/**
+ * A controller will oscillate between being up and being down. The transition of
+ * state is concurrent with (achieved by) a call to SwitchControllers
+ */
+MechanismControllerState::Holds {
+  // State must oscillate between being up and down
+  met_by(Holds p);
+  neq(p.is_up, is_up);
+  meets(Holds s);
+  neq(s.is_up, is_up);
+
+  // Transition event is the reconfiguration action. Bound the duration
+  bool required;
+  testLEQ(required, end, missionEnd);
+  if(required == true){
+    ends(SwitchControllers.Active swap_cmd);
+    eq(swap_cmd.status, SUCCESS);
+  }
+}
+
+/**
+ * Once we are in control, we stay in control.
+ */
+Mechanism::ControlledBy {
+  /**
+   * TODO: Enforce requirement that mechanism is always in control
+  meets(ControlledBy);
+  default(controller, object.default_controller);
+  */
+
+  // Co-temporal with the controller being up
+  equals(MechanismControllerState.Holds mcs);
+  eq(mcs.controller, controller);
+  eq(mcs.is_up, true);
+}
+
+// Controller State variables
+MechanismControllerState head_controller_sv = new MechanismControllerState(Internal, head_controller);
+MechanismControllerState laser_tilt_controller_sv = new MechanismControllerState(Internal, laser_tilt_controller);
+MechanismControllerState gripper_effort_sv = new MechanismControllerState(Internal, gripper_effort_sv);
+MechanismControllerState cartesian_trajectory_right_sv = new MechanismControllerState(Internal, cartesian_trajectory_right);
+MechanismControllerState cartesian_tff_right_sv = new MechanismControllerState(Internal, cartesian_tff_right);
+MechanismControllerState base_controller_sv = new MechanismControllerState(Internal, base_controller);
+
+Assembly assembly = new Assembly(Internal);
+
+// Swap Command
+SwitchControllers switch_controllers = new SwitchControllers(External);
