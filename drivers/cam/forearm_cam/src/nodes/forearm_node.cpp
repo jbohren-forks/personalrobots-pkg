@@ -145,14 +145,25 @@ public:
       return;
     }
 
-    // TODO: look for specific serial number
-    camera_ = pr2CamListGetEntry(&camList, 0);
+    // Open camera with requested serial number, or first camera found if none requested
+    int index = 0;
+    if (node_.hasParam("~serial_number")) {
+      int sn;
+      node_.getParam("~serial_number", sn);
+      index = pr2CamListFind(&camList, sn);
+      if (index == -1) {
+        ROS_FATAL("Couldn't find camera with S/N %i", sn);
+        node_.shutdown();
+        return;
+      }
+    }
+    camera_ = pr2CamListGetEntry(&camList, index);
 
     // Configure the camera with its IP address, wait up to 500ms for completion
     int retval = pr2Configure(camera_, ip_address.c_str(), SEC_TO_USEC(0.5));
     if (retval != 0) {
       if (retval == ERR_CONFIG_ARPFAIL) {
-        ROS_WARN("Unable to update ARP table (are you root?), continuing anyway");
+        ROS_WARN("Unable to create ARP entry (are you root?), continuing anyway");
       } else {
         ROS_FATAL("IP address configuration failed");
         node_.shutdown();
