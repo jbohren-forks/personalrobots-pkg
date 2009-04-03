@@ -14,7 +14,7 @@ source `rospack find trex`/TREX/devConfig
 cd `rospack find trex`/TREX
 
 # Build the nddl jar file used to parse input files
-jam $ROS_PARALLEL_JOBS -q nddl.jar
+jam  -q nddl.jar
 
 if [ $? -ne 0 ] ; then
     echo "Jam of nddl.jar failed."
@@ -29,9 +29,9 @@ function run_jam {
   echo $1
   echo $2
   if [ `uname` = Darwin ]; then
-    jam $2 $ROS_PARALLEL_JOBS -q $1.dylib
+    jam $2  -q $1.dylib
   else
-    jam $2 $ROS_PARALLEL_JOBS -q $1.so
+    jam $2  -q $1.so
   fi
   if [ $? -ne 0 ] ; then
     echo "Jam of $1 failed."
