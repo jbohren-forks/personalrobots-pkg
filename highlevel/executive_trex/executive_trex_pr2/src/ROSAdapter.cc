@@ -71,12 +71,13 @@ namespace TREX {
   }
 
   bool ROSAdapter::synchronize(){
-
+    TREX_INFO("ros:debug:synchronization", nameString() << "Synchronizing");
     // Derived class will populate actual observations
     Observation* obs = NULL;
     obs = getObservation();
 
     if(obs != NULL){
+      TREX_INFO("ros:info", nameString() << "Found observation:" << obs->toString());
       sendNotify(*obs);
       delete obs;
     }

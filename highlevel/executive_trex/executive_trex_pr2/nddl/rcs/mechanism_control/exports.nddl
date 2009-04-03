@@ -12,7 +12,7 @@ class SwitchControllers extends ROSAction {
   /**
    * Should happen in a single tick
    */
-  predicate Active{ eq(duration, 1); }
+  predicate Active{ leq(duration, 2); }
 
   predicate Inactive {}
 

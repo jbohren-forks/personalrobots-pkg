@@ -350,7 +350,7 @@ namespace TREX {
     }
 
     void handleMasterToken(const TokenId& master_token, robot_actions::SwitchControllers& msg){
-      if(master_token.isId() && master_token->getPlanDatabase()->getSchema()->isA(master_token->getPredicateName(), "MechanismController.Holds")){
+      if(master_token.isId() && master_token->getPlanDatabase()->getSchema()->isA(master_token->getPredicateName(), "MechanismControllerState.Holds")){
 	ConstrainedVariableId param = master_token->getVariable("is_up");
 	checkError(param.isValid(), "Trying to dispatch controller switch but could find no variable named 'is_up' in token " << master_token->toString() << 
 		   ". This indicates that the model is out of synch with the adapter code.");
