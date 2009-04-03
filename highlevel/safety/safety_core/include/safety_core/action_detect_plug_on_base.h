@@ -63,8 +63,8 @@ private:
   // average the last couple plug centroids
   void localizePlug();
   void reset();
-
-
+  
+  
   ros::Node& node_;
 
   PlugOnBaseDetector::PlugOnBaseDetector* detector_;
@@ -72,7 +72,8 @@ private:
   robot_msgs::PlugStow plug_stow_;
   robot_msgs::PlugStow plug_stow_msg;
   bool request_preempt_;
-
+  
+  std::string laser_controller_;
   int not_found_count_;
   int found_count_;
 

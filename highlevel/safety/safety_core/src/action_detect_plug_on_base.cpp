@@ -41,7 +41,8 @@ using namespace safety_core;
 DetectPlugOnBaseAction::DetectPlugOnBaseAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>("detect_plug_on_base_action"),
   node_(node),
-  request_preempt_(false)
+  request_preempt_(false),
+  laser_controller_("laser_tilt_controller")
 {
   detector_ = new PlugOnBaseDetector::PlugOnBaseDetector(node);
   detector_->deactivate();
@@ -56,10 +57,20 @@ DetectPlugOnBaseAction::~DetectPlugOnBaseAction()
 void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
 {
   reset();
-
+  node_.param("~/tilt_laser_controller", laser_controller_, laser_controller_) ;
+  
+  if(laser_controller_ == "")
+  {
+    ROS_ERROR("The tilt_laser_controller param was not set.");
+    plug_stow_.stowed = 0;
+    notifyAborted(plug_stow_);
+    return;
+  }
+  
   notifyActivated();
-  #if 0
-  if (!ros::service::call("laser_tilt_controller/set_periodic_cmd", req_laser, res_laser))
+  
+  #if 1
+  if (!ros::service::call(laser_controller_ + "/set_periodic_cmd", req_laser, res_laser))
   {
     if (request_preempt_)
     {
