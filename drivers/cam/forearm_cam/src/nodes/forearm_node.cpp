@@ -82,11 +82,13 @@ public:
       
       int retval = pr2Configure(camera_, ip_address.c_str(), SEC_TO_USEC(0.5));
       if (retval != 0) {
-        ROS_FATAL("IP address configuration failed");
-        if (retval == ERR_CONFIG_ARPFAIL)
-          ROS_FATAL("Must be root to make changes to the ARP table");
-        node_.shutdown();
-        return;
+        if (retval == ERR_CONFIG_ARPFAIL) {
+          ROS_WARN("Unable to update ARP table (are you root?), continuing anyway");
+        } else {
+          ROS_FATAL("IP address configuration failed");
+          node_.shutdown();
+          return;
+        }
       }
       ROS_INFO("Configured camera #%d, S/N #%u, IP address %s", 0, camera_->serial, ip_address.c_str());
     }
