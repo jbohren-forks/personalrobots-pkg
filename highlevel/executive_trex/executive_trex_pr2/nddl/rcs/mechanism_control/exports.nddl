@@ -1,0 +1,22 @@
+/**
+ * This file declares the exports for interacting with robot resources such as sensors
+ * and mechanism controllers
+ * @author Conor McGann
+ */
+
+/**
+ * A command that will swap controllers as necesseray
+ */
+class SwitchControllers extends ROSAction {
+
+  /**
+   * Should happen in a single tick
+   */
+  predicate Active{ eq(duration, 1); }
+
+  predicate Inactive {}
+
+  SwitchControllers(Mode _mode){
+    super(_mode);
+  }
+}
