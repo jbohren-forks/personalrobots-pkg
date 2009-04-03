@@ -53,20 +53,48 @@ namespace costmap_2d {
    */
   class ObservationBuffer {
     public:
+      /**
+       * @brief  Constructs an observation buffer
+       * @param  topic_name The topic of the observations, used as an identifier for error and warning messages
+       * @param  observation_keep_time Defines the persistance of observations in seconds, 0 means only keep the latest
+       * @param  expected_update_rate How often this buffer is expected to be updated, 0 means there is no limit
+       * @param  tf A reference to a TransformListener
+       * @param  global_frame The frame to transform PointClouds into
+       * @param  sensor_frame The frame of the origin of the sensor, special value frame_from_message means use the incoming message frame
+       */
       ObservationBuffer(std::string topic_name, double observation_keep_time, double expected_update_rate, 
           tf::TransformListener& tf, std::string global_frame, std::string sensor_frame);
 
+      /**
+       * @brief  Destructor... cleans up
+       */
       ~ObservationBuffer();
 
-      //burden is on the user to make sure the transform is available... ie they should use a MessageNotifier
+      /**
+       * @brief  Transforms a PointCloud to the global frame and buffers it
+       * <b>Note: The burden is on the user to make sure the transform is available... ie they should use a MessageNotifier</b>
+       * @param  cloud The cloud to be buffered
+       */
       void bufferCloud(const robot_msgs::PointCloud& cloud);
 
+      /**
+       * @brief  Pushes copies of all current observations onto the end of the vector passed in
+       * @param  observations The vector to be filled
+       */
       void getObservations(std::vector<Observation>& observations);
 
+      /**
+       * @brief  Check if the observation buffer is being update at its expected rate
+       * @return True if it is being updated at the expected rate, false otherwise
+       */
       bool isCurrent() const;
 
     private:
+      /**
+       * @brief  Removes any stale observations from the buffer list
+       */
       void purgeStaleObservations();
+
       tf::TransformListener& tf_;
       const ros::Duration observation_keep_time_;
       const ros::Duration expected_update_rate_;

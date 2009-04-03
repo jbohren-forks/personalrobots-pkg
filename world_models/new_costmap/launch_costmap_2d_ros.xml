@@ -1,0 +1,41 @@
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+    <node pkg="new_costmap" type="costmap_test" respawn="false" name="new_cost_map" output="screen">
+      <param name="costmap/global_frame" value="map" />
+      <param name="costmap/robot_base_frame" value="base_link" />
+
+      <param name="costmap/update_frequency" value="5.0" />
+      <param name="costmap/publish_frequency" value="2.0" />
+
+      <param name="costmap/obstacle_range" value="2.5" />
+      <param name="costmap/max_obstacle_height" value="2.0" />
+      <param name="costmap/raytrace_range" value="3.0" />
+
+      <param name="costmap/inscribed_radius" value="0.325" />
+      <param name="costmap/circumscribed_radius" value="0.46" />
+      <param name="costmap/inflation_radius" value="0.55" />
+
+      <param name="costmap/observation_topics" value="base_scan" />
+
+      <param name="costmap/base_scan/sensor_frame" value="frame_from_message" />
+      <param name="costmap/base_scan/observation_persistance" value="0.0" />
+      <param name="costmap/base_scan/expected_update_rate" value="0.2" />
+      <param name="costmap/base_scan/data_type" value="LaserScan" />
+
+      <param name="costmap/static_map" value="true" />
+
+      <!-- begin only used if static map is set to false -->
+      <param name="costmap/width" value="10.0" />
+      <param name="costmap/height" value="10.0" />
+      <param name="costmap/resolution" value="0.01" />
+      <param name="costmap/origin_x" value="-5.0" />
+      <param name="costmap/origin_y" value="-5.0" />
+      <!-- end only used if static map is set to false -->
+
+      <param name="costmap/cost_scaling_factor" value="1.0" />
+      <param name="costmap/lethal_cost_threshold" value="100" />
+
+    </node>
+  </group>
+</launch>
