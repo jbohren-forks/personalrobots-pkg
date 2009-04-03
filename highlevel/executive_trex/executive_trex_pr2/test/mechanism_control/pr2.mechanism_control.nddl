@@ -1,0 +1,18 @@
+#include "mechanism_control/mechanism_control.nddl"
+
+close();
+
+rejectable(tilt_scanner.ControlledBy tilt_scanner_active);
+eq(tilt_scanner_active.controller, laser_tilt_controller);
+
+rejectable(right_arm.ControlledBy right_arm_first);
+eq(right_arm_first.controller, cartesian_tff_right);
+
+rejectable(right_arm.ControlledBy right_arm_second);
+eq(right_arm_second.controller, cartesian_trajectory_right);
+
+right_arm_first before right_arm_second;
+right_arm_second before tilt_scanner_active;
+
+// Force tilt scanner inactive
+eq(tilt_scanner_active.duration, 30);
