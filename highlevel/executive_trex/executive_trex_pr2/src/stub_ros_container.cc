@@ -175,27 +175,33 @@ namespace executive_trex_pr2 {
 
 }
 
+
+/**
+ * Test if a component should be created, according to ros params.
+ */
+bool getComponentParam(std::string name) {
+  bool value = false;
+  ros::Node::instance()->param(name, value, value);
+  return value;
+}
+
+
+
 int main(int argc, char** argv){ 
   ros::init(argc, argv);
   ros::Node node("executive_trex_pr2/action_container");
 
   // Create state publishers, if parameters are set
   executive_trex_pr2::StatePublisher<robot_msgs::Pose>* base_state_publisher = NULL;
-  bool create_base_state_publisher = false;
-  ros::Node::instance()->param("/trex/create_base_state_publisher", create_base_state_publisher, create_base_state_publisher);
-  if (create_base_state_publisher)
+  if (getComponentParam("/trex/create_base_state_publisher"))
     base_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::Pose>(robot_msgs::Pose(), "base_state", 10.0);
 
   executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>* battery_state_publisher = NULL; 
-  bool create_battery_state_publisher = false; 
-  ros::Node::instance()->param("/trex/create_battery_state_publisher", create_battery_state_publisher, create_battery_state_publisher);
-  if (create_battery_state_publisher)
+  if (getComponentParam("/trex/create_battery_state_publisher"))
     battery_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>(robot_msgs::BatteryState(), "battery_state", 10.0);
 
   executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>* bogus_battery_state_publisher = NULL; 
-  bool create_bogus_battery_state_publisher = false;
-  ros::Node::instance()->param("/trex/create_bogus_battery_state_publisher", create_bogus_battery_state_publisher, create_bogus_battery_state_publisher);
-  if (create_bogus_battery_state_publisher)
+  if (getComponentParam("/trex/create_bogus_battery_state_publisher"))
     bogus_battery_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>(robot_msgs::BatteryState(), "bogus_battery_state", 10.0);
 
 
@@ -206,39 +212,55 @@ int main(int argc, char** argv){
 
   // Detect Door
   executive_trex_pr2::StubFrameAction<robot_msgs::Door> detect_door("detect_door", "base_link");
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
+  if (getComponentParam("/trex/create_detect_door"))
+    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
 
   // Detect Handle
   executive_trex_pr2::StubFrameAction<robot_msgs::Door> detect_handle("detect_handle", "base_link");
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);
+  if (getComponentParam("/trex/create_detect_handle"))
+    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);
 
   // Grasp Handle
   executive_trex_pr2::StubFrameAction<robot_msgs::Door> grasp_handle("grasp_handle", "base_link");
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp_handle);
+  if (getComponentParam("/trex/create_grasp_handle"))
+    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp_handle);
 
   executive_trex_pr2::StubFrameAction<robot_msgs::Door> open_door("open_door", "base_link");
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door);
+  if (getComponentParam("/trex/create_open_door"))
+    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door);
 
   /* Action stubs for plugs */
   executive_trex_pr2::StubFrameAction1<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base", "torso_link_lift");
-  runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect_plug_on_base);
+  if (getComponentParam("/trex/create_detect_plug_on_base"))
+    runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect_plug_on_base);
 
   /* Action stubs for resource management */
   executive_trex_pr2::StubAction1<robot_actions::SwitchControllers, std_msgs::Empty> switch_controllers("switch_controllers");
-  runner.connect<robot_actions::SwitchControllers, robot_actions::SwitchControllersState, std_msgs::Empty>(switch_controllers);
+  if (getComponentParam("/trex/create_switch_controllers"))
+    runner.connect<robot_actions::SwitchControllers, robot_actions::SwitchControllersState, std_msgs::Empty>(switch_controllers);
 
   // Allocate other action stubs
   executive_trex_pr2::StubFrameAction<robot_actions::Pose2D> move_base("move_base", "base_link");
-  runner.connect<robot_actions::Pose2D, robot_actions::MoveBaseState, robot_actions::Pose2D>(move_base);
+  if (getComponentParam("/trex/create_move_base"))
+    runner.connect<robot_actions::Pose2D, robot_actions::MoveBaseState, robot_actions::Pose2D>(move_base);
   executive_trex_pr2::StubAction<std_msgs::Float32> recharge("recharge_controller");
-  runner.connect<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32>(recharge);
+  if (getComponentParam("/trex/create_recharge"))
+    runner.connect<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32>(recharge);
   executive_trex_pr2::StubAction<std_msgs::String> shell_command("shell_command");
-  runner.connect<std_msgs::String, robot_actions::ShellCommandState, std_msgs::String>(shell_command);
+  if (getComponentParam("/trex/create_shell_command"))
+    runner.connect<std_msgs::String, robot_actions::ShellCommandState, std_msgs::String>(shell_command);
 
   // Miscellaneous
   runner.run();
 
   node.spin();
+
+  if (base_state_publisher)
+    delete base_state_publisher;
+  if (battery_state_publisher)
+    delete battery_state_publisher;
+  if (bogus_battery_state_publisher)
+    delete bogus_battery_state_publisher;
 
   return 0;
 }
