@@ -22,9 +22,7 @@ Tcamerainit = [0 0 1 0.05;
                -1 0 0 0.05;
                0 -1 0 0.095];
 [Tcamera, Tlaser, jointoffsets] = calibratevalues(calibdata, robot, Tcamerainit); % compute the calibration values
-disp('camera transform: ');
+
+['joint offsets: ' sprintf('%f ', jointoffsets)]
 Tcamera
-disp('laser transform: ');
 Tlaser
-disp('joint offsets: ');
-jointoffsets
