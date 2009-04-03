@@ -45,6 +45,12 @@
 #include <robot_msgs/PointCloud.h>
 
 namespace costmap_2d {
+  //convenient for storing x/y point pairs
+  struct MapLocation {
+    unsigned int x;
+    unsigned int y;
+  };
+
   /**
    * @class Costmap2D
    * @brief A 2D costmap provides a mapping between points in the world and their associated "costs".
@@ -159,7 +165,8 @@ namespace costmap_2d {
       }
 
       /**
-       * @brief  Will return a copy of the underlying unsigned char array used as the costmap (NOTE: THE BURDEN IS ON THE USER TO DELETE THE ARRAY RETURNED)
+       * @brief  Will return a copy of the underlying unsigned char array used as the costmap 
+       * <b>(NOTE: THE BURDEN IS ON THE USER TO DELETE THE ARRAY RETURNED)</b>
        * @return A copy of the underlying unsigned char array storing cost values
        */
       unsigned char* getCharMapCopy() const;
@@ -211,6 +218,28 @@ namespace costmap_2d {
        * @return The resolution of the costmap
        */
       double resolution() const;
+
+      /**
+       * @brief  Sets the cost of a convex polygon to a desired value
+       * @param polygon The polygon to perform the operation on 
+       * @param cost_value The value to set costs to
+       * @return True if the polygon was filled... false if it could not be filled
+       */
+      bool setConvexPolygonCost(const std::vector<robot_msgs::Point>& polygon, unsigned char cost_value);
+
+      /**
+       * @brief  Get the map cells that make up the outline of a polygon
+       * @param polygon The polygon in map coordinates to rasterize 
+       * @param polygon_cells Will be set to the cells contained in the outline of the polygon
+       */
+      void polygonOutlineCells(const std::vector<MapLocation>& polygon, std::vector<MapLocation>& polygon_cells);
+
+      /**
+       * @brief  Get the map cells that fill a convex polygon
+       * @param polygon The polygon in map coordinates to rasterize 
+       * @param polygon_cells Will be set to the cells that fill the polygon
+       */
+      void convexFillCells(const std::vector<MapLocation>& polygon, std::vector<MapLocation>& polygon_cells);
 
     private:
       /**
@@ -283,7 +312,7 @@ namespace costmap_2d {
        * @param  max_length The maximum desired length of the segment... allows you to not go all the way to the endpoint
        */
       template <class ActionType>
-        inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, unsigned int max_length){
+        inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, unsigned int max_length = UINT_MAX){
           int dx = x1 - x0;
           int dy = y1 - y0;
 
@@ -453,6 +482,24 @@ namespace costmap_2d {
           }
         private:
           unsigned char* cost_map_;
+      };
+
+      class PolygonOutlineCells {
+        public:
+          PolygonOutlineCells(const Costmap2D& cost_map, const unsigned char* char_map, std::vector<MapLocation>& cells) 
+            : cost_map_(cost_map), char_map_(char_map), cells_(cells){}
+
+          //just push the relevant cells back onto the list
+          inline void operator()(unsigned int offset){
+            MapLocation loc;
+            cost_map_.indexToCells(offset, loc.x, loc.y);
+            cells_.push_back(loc);
+          }
+
+        private:
+          const Costmap2D& cost_map_;
+          const unsigned char* char_map_;
+          std::vector<MapLocation>& cells_;
       };
   };
 };

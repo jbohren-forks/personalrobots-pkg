@@ -477,6 +477,103 @@ namespace costmap_2d{
     }
   }
 
+  bool Costmap2D::setConvexPolygonCost(const std::vector<robot_msgs::Point>& polygon, unsigned char cost_value) {
+    //we assume the polygon is given in the global_frame... we need to transform it to map coordinates
+    std::vector<MapLocation> map_polygon;
+    for(unsigned int i = 0; i < polygon.size(); ++i){
+      MapLocation loc;
+      if(!worldToMap(polygon[i].x, polygon[i].y, loc.x, loc.y)){
+        ROS_WARN("Polygon lies outside map bounds, so we can't fill it");
+        return false;
+      }
+      map_polygon.push_back(loc);
+    }
+
+    std::vector<MapLocation> polygon_cells;
+
+    //get the cells that fill the polygon
+    convexFillCells(map_polygon, polygon_cells);
+
+    //set the cost of those cells
+    for(unsigned int i = 0; i < polygon_cells.size(); ++i){
+      unsigned int index = getIndex(polygon_cells[i].x, polygon_cells[i].y);
+      cost_map_[index] = cost_value;
+    }
+    return true;
+  }
+
+  void Costmap2D::polygonOutlineCells(const std::vector<MapLocation>& polygon, std::vector<MapLocation>& polygon_cells){
+    PolygonOutlineCells cell_gatherer(*this, cost_map_, polygon_cells);
+    for(unsigned int i = 0; i < polygon.size() - 1; ++i){
+      raytraceLine(cell_gatherer, polygon[i].x, polygon[i].y, polygon[i + 1].x, polygon[i + 1].y); 
+    }
+    if(!polygon.empty()){
+      unsigned int last_index = polygon.size() - 1;
+      //we also need to close the polygon by going from the last point to the first
+      raytraceLine(cell_gatherer, polygon[last_index].x, polygon[last_index].y, polygon[0].x, polygon[0].y);
+    }
+  }
+
+  void Costmap2D::convexFillCells(const std::vector<MapLocation>& polygon, std::vector<MapLocation>& polygon_cells){
+    //first get the cells that make up the outline of the polygon
+    polygonOutlineCells(polygon, polygon_cells);
+
+    //quick bubble sort to sort points by x
+    MapLocation swap;
+    unsigned int i = 0;
+    while(i < polygon_cells.size()){
+      if(polygon_cells[i].x > polygon_cells[i + 1].x){
+        swap = polygon_cells[i];
+        polygon_cells[i] = polygon_cells[i + 1];
+        polygon_cells[i + 1] = swap;
+
+        if(i > 0)
+          --i;
+      }
+      else
+        ++i;
+    }
+
+    i = 0;
+    MapLocation min_pt;
+    MapLocation max_pt;
+    unsigned int min_x = polygon_cells[0].x;
+    unsigned int max_x = polygon_cells[polygon_cells.size() -1].x;
+
+    //walk through each column and mark cells inside the polygon
+    for(unsigned int x = min_x; x <= max_x; ++x){
+      if(i >= polygon_cells.size() - 1)
+        break;
+
+      if(polygon_cells[i].y < polygon_cells[i + 1].y){
+        min_pt = polygon_cells[i];
+        max_pt = polygon_cells[i + 1];
+      }
+      else{
+        min_pt = polygon_cells[i + 1];
+        max_pt = polygon_cells[i];
+      }
+
+      i += 2;
+      while(i < polygon_cells.size() && polygon_cells[i].x == x){
+        if(polygon_cells[i].y < min_pt.y)
+          min_pt = polygon_cells[i];
+        else if(polygon_cells[i].y > max_pt.y)
+          max_pt = polygon_cells[i];
+        ++i;
+      }
+
+      MapLocation pt;
+      //loop though cells in the column
+      for(unsigned int y = min_pt.y; y < max_pt.y; ++y){
+        pt.x = x;
+        pt.y = y;
+        polygon_cells.push_back(pt);
+
+      }
+    }
+  }
+
   unsigned int Costmap2D::cellSizeX() const{
     return size_x_;
   }
