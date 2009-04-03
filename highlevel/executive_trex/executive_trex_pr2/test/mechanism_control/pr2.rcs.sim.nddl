@@ -5,9 +5,8 @@
 #include "rcs/exports.nddl"
 #include "rcs/mechanism_control/exports.nddl"
 
-// Will start 1 tick after dispatch
 Behavior::Active{
-  addEq(dispatch_time, [0 1], start);
+  addEq(dispatch_time, [0, 1], start);
   eq(status, SUCCESS);
 }
 
