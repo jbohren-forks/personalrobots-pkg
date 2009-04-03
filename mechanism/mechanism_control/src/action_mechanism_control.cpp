@@ -57,6 +57,14 @@ public:
   
   void handleActivate(const robot_actions::SwitchControllers& c)
   {
+    notifyActivated();
+
+    ROS_INFO("ActionMechanismControl: received request to start %i controllers and stop %i controllers", 
+	     c.start_controllers.size(), c.stop_controllers.size());
+    for (unsigned int i=0; i<c.start_controllers.size(); i++)
+      ROS_INFO("ActionMechanismControl: starting controller %s", c.start_controllers[i].c_str());
+    for (unsigned int i=0; i<c.stop_controllers.size(); i++)
+      ROS_INFO("ActionMechanismControl: stopping controller %s", c.stop_controllers[i].c_str());
     robot_srvs::SwitchController::Request req;
     robot_srvs::SwitchController::Response resp;
     req.start_controllers = c.start_controllers;
@@ -65,8 +73,10 @@ public:
       ROS_ERROR("ActionMechanismControl: failed to switch controllers");
       notifyAborted(std_msgs::Empty());
     }
-    else
+    else{
+      ROS_INFO("ActionMechanismControl: controlers switched succesfully");
       notifySucceeded(std_msgs::Empty());
+    }
   }
   
   
