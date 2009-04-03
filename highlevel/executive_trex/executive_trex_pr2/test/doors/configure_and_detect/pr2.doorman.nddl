@@ -1,8 +1,9 @@
 /**
  * Execute a single external action
  */
-#include "test/doors/single_action_test/imports.nddl"
-#include "world_model/topological_map.nddl"
+#include "test/doors/configure_and_detect/imports.nddl"
+#include "rcs/resources/exports.nddl"
+#include "resources/mechanism_control.nddl"
 
 /* Select the ones we want here
 MoveBase move_base = new MoveBase(External);
@@ -22,6 +23,19 @@ close();
 
 // Load a topological map - should have a trivial map here
 map_initialize_from_file("willow.tmap");
+
+// Laser controller for the tilt scanner
+rejectable(tilt_scanner.ControlledBy tilt_scanner_active);
+eq(tilt_scanner_active.controller, laser_tilt_controller);
+
+// Head controlle
+rejectable(head.ControlledBy head_controller_active);
+eq(head_controller_active.controller, head_controller);
+
+// Actions require controllers and head and tilt need to be both alive. A bit of a hack
+head_controller_active equals tilt_scanner_active;
+cmd_detect_door contained_by tilt_scanner_active;
+cmd_detect_handle contained_by tilt_scanner_active;
 
 // The goal is to execute an OpenDoor action, where we give it the door data
 rejectable(detect_door.Active cmd_detect_door);

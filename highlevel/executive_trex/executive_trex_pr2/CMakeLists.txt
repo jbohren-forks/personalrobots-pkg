@@ -22,9 +22,9 @@ rospack_add_nddl("test/doors/single_action_test/pr2.doorman.nddl")
 # Plug Tests
 rospack_add_nddl("test/plugs/single_action_test/pr2.recharger.nddl")
 
-# Resource Configuration Management Tests
-rospack_add_nddl("test/resources/swap.0/pr2.client.nddl")
-rospack_add_nddl("test/resources/swap.0/pr2.server.nddl")
+# Mechanism Control Tests
+rospack_add_nddl("test/mechanism_control/pr2.mechanism_control.nddl")
+rospack_add_nddl("test/mechanism_control/pr2.rcs.sim.nddl")
 
 #rospack_add_nddl("test/model_tests/pr2.master.nddl")
 #rospack_add_nddl("test/model_tests/pr2.doorman.nddl")

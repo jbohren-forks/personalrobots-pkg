@@ -4,9 +4,9 @@
 
   <param name="/trex/input_file" value="doorman.cfg"/>
   <param name="/trex/path" value="$(find executive_trex_pr2)/cfg"/>
-  <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/doors/single_action_test"/>
+  <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/doors/configure_and_detect"/>
   <param name="/trex/time_limit" value="30"/>
   <param name="/trex/log_dir" value="$(find executive_trex_pr2)/logs"/>
   <param name="/trex/play_back" value="0"/>
-  <!--node pkg="executive_trex_pr2" type="trexdebug"/-->
+  <node pkg="executive_trex_pr2" type="trexdebug"/>
 </launch>

@@ -48,10 +48,10 @@ class Assembly {
   Mechanism base;
 
   Assembly(Mode _mode){
-    Mechanism head = new Mechanism(_mode);
-    Mechanism tilt_scanner = new Mechanism(_mode);
-    Mechanism right_arm = new Mechanism(_mode);
-    Mechanism right_gripper = new Mechanism(_mode);
-    Mechanism base = new Mechanism(_mode);
+    head = new Mechanism(_mode);
+    tilt_scanner = new Mechanism(_mode);
+    right_arm = new Mechanism(_mode);
+    right_gripper = new Mechanism(_mode);
+    base = new Mechanism(_mode);
   }
 };

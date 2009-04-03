@@ -1,9 +1,7 @@
 #include "TREX.nddl"
 #include "rcs/exports.nddl"
+#include "rcs/mechanism_control/exports.nddl"
 #include "mechanism_control/exports.nddl"
-#include "mechanism_control/controllers.nddl"
-
-
 
 /**
  * @brief Track the state (up or down) of a specific controller in mechanism control
@@ -55,14 +53,14 @@ Mechanism::ControlledBy {
 
   // Co-temporal with the controller being up
   equals(MechanismControllerState.Holds mcs);
-  eq(mcs.controller, controller);
+  eq(mcs.object.controller, controller);
   eq(mcs.is_up, true);
 }
 
 // Controller State variables
 MechanismControllerState head_controller_sv = new MechanismControllerState(Internal, head_controller);
 MechanismControllerState laser_tilt_controller_sv = new MechanismControllerState(Internal, laser_tilt_controller);
-MechanismControllerState gripper_effort_sv = new MechanismControllerState(Internal, gripper_effort_sv);
+MechanismControllerState gripper_effort_sv = new MechanismControllerState(Internal, gripper_effort);
 MechanismControllerState cartesian_trajectory_right_sv = new MechanismControllerState(Internal, cartesian_trajectory_right);
 MechanismControllerState cartesian_tff_right_sv = new MechanismControllerState(Internal, cartesian_tff_right);
 MechanismControllerState base_controller_sv = new MechanismControllerState(Internal, base_controller);
