@@ -22,6 +22,5 @@ rospack_link_boost(governor_node thread)
 
 rospack_add_executable(point_grid src/point_grid.cpp)
 
-rospack_add_gtest(utest test/utest.cpp)
-target_link_libraries(utest trajectory_rollout)
-set_target_properties(utest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+rospack_add_gtest(test/utest test/utest.cpp)
+target_link_libraries(test/utest trajectory_rollout)
