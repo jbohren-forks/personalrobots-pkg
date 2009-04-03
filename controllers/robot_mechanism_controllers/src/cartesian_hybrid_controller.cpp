@@ -304,10 +304,10 @@ void CartesianHybridController::update()
   }
 #else
 
-     // Velocity saturation
-   if (saturated_velocity_ >= 0.0)
-   {
-     KDL::Vector &v = twist_meas_filtered_.vel;
+  // Velocity saturation
+  if (saturated_velocity_ >= 0.0)
+  {
+    KDL::Vector &v = twist_meas_filtered_.vel;
 
     // Desired force along the direction of the current velocity
     double fv = dot(wrench_desi_.force, twist_meas_filtered_.vel) / v.Norm();
@@ -328,8 +328,7 @@ void CartesianHybridController::update()
     }
     if (fv > fv_max)
       debug.msg_.data.push_back(99);
-      wrench_desi_.force -= (v / v.Norm()) * (fv - fv_max);
-    }
+    wrench_desi_.force -= (v / v.Norm()) * (fv - fv_max);
   }
 #endif
   if (debug_locked)
