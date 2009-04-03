@@ -16,6 +16,7 @@ end
 robot = orEnvGetRobots(robotid);
 
 calibdata = startgathering(robot);
+disp(sprintf('total data points: %d',length(calibdata)))
 
 %% initial estimate of camera
 Tcamerainit = [0 0 1 0.05;
@@ -23,6 +24,7 @@ Tcamerainit = [0 0 1 0.05;
                0 -1 0 0.095];
 [Tcamera, Tlaser, jointoffsets] = calibratevalues(calibdata, robot, Tcamerainit); % compute the calibration values
 
+disp(sprintf('calibration results, total data points: %d',length(calibdata)))
 ['joint offsets: ' sprintf('%f ', jointoffsets)]
 Tcamera
 Tlaser
