@@ -62,6 +62,7 @@ public:
   KDL::Wrench wrench_desi_;
   KDL::Frame pose_meas_;
   KDL::Twist twist_meas_;
+  KDL::Twist twist_meas_filtered_;
 
   control_toolbox::Pid pose_pids_[6];  // (x,y,z) position, then (x,y,z) rot
   control_toolbox::Pid twist_pids_[6];
@@ -80,6 +81,9 @@ public:
 
   int initial_mode_;
 
+  double saturated_velocity_;
+  double k_saturated_velocity_;
+
   bool use_filter_;
   filters::FilterChain<double> twist_filter_;
 };
@@ -94,8 +98,6 @@ public:
   virtual void update(void);
   virtual bool starting() { return c_.starting(); }
 
-  bool setTaskFrame(robot_srvs::SetPoseStamped::Request &req,
-                    robot_srvs::SetPoseStamped::Response &resp);
   void command();
 
 private:
