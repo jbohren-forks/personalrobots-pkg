@@ -5,6 +5,7 @@ gensrv()
 
 include_directories(${PROJECT_SOURCE_DIR}/code)
 rospack_add_library(sbpl_door_planner
+	            src/discrete_space_information/navxythetadoor/door_base_collision_cost.cpp
                     src/discrete_space_information/navxythetadoor/environment_navxythetadoor.cpp
                    )
 
