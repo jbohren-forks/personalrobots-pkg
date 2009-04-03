@@ -1,0 +1,12 @@
+<launch>
+  <master auto="start"/>
+  <include file="$(find test_highlevel_controllers)/test/launch_stage_5cm_nox.xml" />
+
+
+
+  <test test-name="test_navfn_19_29" pkg="test_highlevel_controllers" type="test_navfn.py" args="19 29 0" time-limit="200"/>
+  <test test-name="test_navfn_15_19" pkg="test_highlevel_controllers" type="test_navfn.py" args="15 29 0" time-limit="200"/>
+  <test test-name="test_navfn_11_27" pkg="test_highlevel_controllers" type="test_navfn.py" args="11 27 0" time-limit="200"/>
+
+</launch>
+
