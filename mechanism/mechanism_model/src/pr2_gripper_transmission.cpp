@@ -317,6 +317,7 @@ void PR2GripperTransmission::getAngleRateTorqueFromMinRateJoint(
     {
       if (abs(js[i]->velocity_) < rate)
       {
+        rate              = js[i]->velocity_      ;
         minRateJointIndex = i;
 
         // std::cout << "propagatePositionBackwards js[" << i << "]:" << js[i]->joint_->name_
@@ -334,7 +335,6 @@ void PR2GripperTransmission::getAngleRateTorqueFromMinRateJoint(
   assert(minRateJointIndex < js.size()); // some joint rate better be smaller than 1.0e16
 
   angle             = angles::shortest_angular_distance(theta0_,js[minRateJointIndex]->position_) + theta0_;
-  rate              = js[minRateJointIndex]->velocity_      ;
   torque            = js[minRateJointIndex]->applied_effort_;
 }
 
