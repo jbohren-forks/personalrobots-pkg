@@ -1,0 +1,38 @@
+<launch>
+  <!--
+    Run a PR2 left arm in simulation
+  -->
+  <group name="wg">
+    <!-- send pr2_l_arm.xml to param server -->
+    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/gripper.xacro.xml'" />
+
+    <!-- -g flag runs gazebo in gui-less mode -->
+    <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
+      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
+      <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+      <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+      <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+    </node>
+
+    <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen"/>
+
+    <!-- start arm controller -->
+    <!--
+    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/l_arm_default_controller.xml" respawn="false"  />
+    -->
+
+    <!-- send arm a command -->
+    <!--
+    <node pkg="robot_mechanism_controllers" type="control.py" args="set l_gripper_controller 0.5" respawn="false" output="screen" />
+    -->
+
+    <!-- for visualization -->
+    <!--
+    <node pkg="rviz" type="rviz" respawn="false" output="screen" />
+    <include file="$(find arm_gazebo)/debug_plot.launch"/>
+    -->
+
+  </group>
+</launch>
+
