@@ -1,0 +1,55 @@
+#!/bin/bash
+
+HELP=0
+
+if [ "x" = "x$2" ] ; then
+    LIST_PACK="executive_trex_pr2 test_executive_trex_pr2 `rospack list-names`"
+    for PACKAGE in $LIST_PACK ; do 
+	pwd | grep `rospack find $PACKAGE` > /dev/null
+	if [ $? -ne 1 ] ; then
+	    PACKAGE_NAME=$PACKAGE
+	    break
+	fi
+    done
+    PACKAGE=
+else
+    PACKAGE_NAME=$2
+    rospack find $2 > /dev/null
+    if [ $? -ne 0 ] ; then
+	echo "The specified package could not be found."
+	PACKAGE_NAME=
+	HELP=1
+    fi
+fi
+
+if [ "x" = "x$PACKAGE_NAME" ] ; then
+    echo "Package name does not exist or cannot be autodetected."
+    HELP=1
+fi
+
+if [ $HELP -ne 0 ] ; then
+    echo "Usage:"
+    echo "$0 filename package"
+    echo "Where:"
+    echo "   filename is the name of an nddl file (mandatory)"
+    echo "   package is the name of the package whose nddl flags"
+    echo "   are to be used. Will try to autodetect."
+    exit 1
+fi
+
+
+FLAGS=`rospack export --lang=nddl --attrib=iflags $PACKAGE_NAME`
+PATH=`rospack find executive_trex_pr2`
+
+
+echo "Using nddl flags from $PACKAGE_NAME."
+echo "The flags are: $FLAGS"
+
+FILES=`$PATH/bin/nddl_depends.py $FLAGS $1`
+
+if [ $? -ne 0 ] ; then
+    echo "Error in nddl_depends.py ($?):" 
+    echo $FILES
+else
+    echo "The files included by $1 are: $FILES"
+fi
