@@ -156,6 +156,7 @@ class GroundRemoval
             r[j] = seed_queue[j];
           clusters.push_back (r);
           seed_queue.resize (0);
+          seed_queue.push_back (indices->at (i));
         }
       }
       // Copy the last laser scan as well
