@@ -8,6 +8,7 @@
  <depend package="roscpp"/>
  <depend package="std_msgs"/>
  <depend package="robot_msgs"/>
+ <depend package="deprecated_msgs"/><!-- For pose2d to polyline2d to point2dfloat32-->
 
  <export>
     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib  -lrobot_actions"/>
