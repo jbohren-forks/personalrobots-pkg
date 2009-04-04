@@ -51,7 +51,7 @@ public:
   {
     ros::Node* node = ros::Node::instance();
 
-    node->param("~window_name", window_name_, std::string("Image"));
+    node->param("~window_name", window_name_, node->mapName("image"));
     bool autosize;
     node->param("~autosize", autosize, true);
     
