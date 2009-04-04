@@ -39,20 +39,19 @@ namespace door_base_collision_cost
         double cth = cos(door_theta);
         double sth = sin(door_theta);
 
-        fp_out.resize(2);
-        fp_out[0] = fp_in[0]*cth+fp_in[1]*sth-door_x*cth-door_y*sth;
-        fp_out[1] = -fp_in[0]*sth+fp_in[1]*cth+door_x*sth-door_y*cth;
+//        fp_out.resize(2);
+        fp_out.push_back(fp_in[0]*cth+fp_in[1]*sth-door_x*cth-door_y*sth);
+        fp_out.push_back(-fp_in[0]*sth+fp_in[1]*cth+door_x*sth-door_y*cth);
         return;
       }
-
       void  DoorBaseCollisionCost::transform2D(const std::vector<double> &fp_in, std::vector<double> &fp_out, const double &x, const double &y, const double &theta)
       {
         double cth = cos(theta);
         double sth = sin(theta);
 
-        fp_out.resize(2);
-        fp_out[0] = fp_in[0]*cth-fp_in[1]*sth+x;
-        fp_out[1] = fp_in[0]*sth+fp_in[1]*cth+y;
+//        fp_out.resize(2);
+        fp_out.push_back(fp_in[0]*cth-fp_in[1]*sth+x);
+        fp_out.push_back(fp_in[0]*sth+fp_in[1]*cth+y);
         return;
       }
 

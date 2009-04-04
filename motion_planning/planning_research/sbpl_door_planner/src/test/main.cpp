@@ -49,8 +49,8 @@ int planxythetadoor(int argc, char *argv[])
   //set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
   vector<sbpl_2Dpt_t> perimeterptsV;
   sbpl_2Dpt_t pt_m;
-  double halfwidth = 0.10;    //0.08; //0.3;
-  double halflength = 0.10;  //0.1; //0.45;
+  double halfwidth = 0.315;    //0.08; //0.3;
+  double halflength = 0.315;  //0.1; //0.45;
   pt_m.x = -halflength;
   pt_m.y = -halfwidth;
   perimeterptsV.push_back(pt_m);
@@ -110,26 +110,26 @@ int planxythetadoor(int argc, char *argv[])
   environment_navxythetadoor.footprint_[3][1] = -halfwidth;
 
   environment_navxythetadoor.robot_shoulder_position_.resize(2);
-  environment_navxythetadoor.robot_shoulder_position_[0] = -0.025;
-  environment_navxythetadoor.robot_shoulder_position_[1] = -0.025;
+  environment_navxythetadoor.robot_shoulder_position_[0] = -0.05;
+  environment_navxythetadoor.robot_shoulder_position_[1] = -0.188;
 
   environment_navxythetadoor.door_handle_pose_.resize(2);
-  environment_navxythetadoor.door_handle_pose_[0] = 0.4;
+  environment_navxythetadoor.door_handle_pose_[0] = 0.7;
   environment_navxythetadoor.door_handle_pose_[1] = 0;
 
   environment_navxythetadoor.robot_global_pose_.resize(3);
 
   environment_navxythetadoor.door_global_pose_.resize(3);
-  environment_navxythetadoor.door_global_pose_[0] = 0.5;
-  environment_navxythetadoor.door_global_pose_[1] = 0.75;
+  environment_navxythetadoor.door_global_pose_[0] = 0.35;
+  environment_navxythetadoor.door_global_pose_[1] = 1.1;
   environment_navxythetadoor.door_global_pose_[2] = 0.0;
 
   environment_navxythetadoor.door_thickness_ = 0.01;
   environment_navxythetadoor.pivot_length_ = 0.0;
-  environment_navxythetadoor.door_length_ = 0.5;
+  environment_navxythetadoor.door_length_ = 0.8;
 
   environment_navxythetadoor.min_workspace_radius_ = 0.0;
-  environment_navxythetadoor.max_workspace_radius_ = 1.0;
+  environment_navxythetadoor.max_workspace_radius_ = 2.0;
 
   environment_navxythetadoor.max_workspace_angle_ = M_PI/2.0;
   environment_navxythetadoor.min_workspace_angle_ = -3*M_PI/2.0;
