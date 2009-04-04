@@ -14,8 +14,8 @@ subject to the following restrictions:
 
 
 
-#ifndef SIMD__VECTOR3_H
-#define SIMD__VECTOR3_H
+#ifndef PYSIMD__VECTOR3_H
+#define PYSIMD__VECTOR3_H
 
 
 #include "LinearMath/btScalar.h"
@@ -24,6 +24,9 @@ subject to the following restrictions:
  * It has an un-used w component to suit 16-byte alignment when btVector3 is stored in containers. This extra component can be used by derived classes (Quaternion?) or by user
  * Ideally, this class should be replaced by a platform optimized SIMD version that keeps the data in registers
  */
+
+namespace py
+{
 
 class btVector3
 {
@@ -398,7 +401,7 @@ operator/( const btVector3& v2) const
 
 };
 
+}
 
 
-
-#endif //SIMD__VECTOR3_H
+#endif //PYSIMD__VECTOR3_H
