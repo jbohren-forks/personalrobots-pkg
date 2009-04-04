@@ -4,8 +4,12 @@
     <param name="acquisition_mode" type="str" value="Continuous"/>
   </group>
   <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" respawn="false" output="screen"/>
-  <node name="prosilica_view" pkg="prosilica_cam" type="prosilica_view" respawn="false" output="screen">
-    <!--remap from="Image" to="/prosilica/image"/-->
-    <remap from="Image" to="/prosilica/image_rect"/>
+  
+  <group ns="prosilica_view">
+    <param name="window_name" type="str" value="Prosilica camera"/>
+    <param name="autosize" type="bool" value="false"/>
+  </group>
+  <node name="prosilica_view" pkg="image_view" type="image_view" respawn="false">
+    <remap from="image" to="/prosilica/image_rect"/>
   </node>
 </launch>
