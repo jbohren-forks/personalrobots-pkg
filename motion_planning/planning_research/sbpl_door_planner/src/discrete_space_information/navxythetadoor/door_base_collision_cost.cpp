@@ -176,8 +176,8 @@ namespace door_base_collision_cost
           {
             for(int j=0; j < (int) angles.size(); j++)
             {
-               if(!isnan(angles[i]))
-              free_angles.push_back(angles[i]);
+               if(!isnan(angles[j]))
+              free_angles.push_back(angles[j]);
             }
           }
         }
@@ -190,8 +190,8 @@ namespace door_base_collision_cost
           {
             for(int j=0; j < (int) angles.size(); j++)
             {
-               if(!isnan(angles[i]))
-                  free_angles.push_back(angles[i]);
+               if(!isnan(angles[j]))
+                  free_angles.push_back(angles[j]);
             }
           }
         }
