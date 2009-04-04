@@ -125,12 +125,12 @@ namespace TREX {
 
       G goalMsg;
       fillRequestParameters(goalMsg, goal);
-      goalMsg.enable = enableController;
-      goalMsg.timeout = 0;
+      //goalMsg.enable = enableController;
+      //goalMsg.timeout = 0;
       if (goal->getVariable("timeout")) {
 	const IntervalDomain& dom = goal->getVariable("timeout")->lastDomain();
 	if (dom.isSingleton()) {
-	  goalMsg.timeout = dom.getSingletonValue();
+	  //goalMsg.timeout = dom.getSingletonValue();
 	}
       }
 

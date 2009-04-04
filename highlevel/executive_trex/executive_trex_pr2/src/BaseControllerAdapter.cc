@@ -1,16 +1,16 @@
 #include "ROSControllerAdapter.hh"
 #include "IntervalDomain.hh"
 #include "Token.hh"
-#include <robot_msgs/Planner2DState.h>
-#include <robot_msgs/Planner2DGoal.h>
+#include <robot_actions/Pose2D.h>
+#include <robot_actions/MoveBaseState.h>
 
 namespace TREX {
 
-  class BaseControllerAdapter: public ROSControllerAdapter<robot_msgs::Planner2DState, robot_msgs::Planner2DGoal> {
+  class BaseControllerAdapter: public ROSControllerAdapter<robot_actions::MoveBaseState, robot_actions::Pose2D> {
   public:
 
     BaseControllerAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSControllerAdapter<robot_msgs::Planner2DState, robot_msgs::Planner2DGoal>(agentName, configData){
+      : ROSControllerAdapter<robot_actions::MoveBaseState, robot_actions::Pose2D>(agentName, configData){
     }
 
     virtual ~BaseControllerAdapter(){}
@@ -24,20 +24,20 @@ namespace TREX {
     }
 
     void fillInactiveObservationParameters(ObservationByValue* obs){
-      obs->push_back("x", new IntervalDomain(stateMsg.pos.x));
-      obs->push_back("y", new IntervalDomain(stateMsg.pos.y));
-      obs->push_back("th", new IntervalDomain(stateMsg.pos.th));
+      obs->push_back("x", new IntervalDomain(stateMsg.feedback.x));
+      obs->push_back("y", new IntervalDomain(stateMsg.feedback.y));
+      obs->push_back("th", new IntervalDomain(stateMsg.feedback.th));
     }
 
-    void fillRequestParameters(robot_msgs::Planner2DGoal& goalMsg, const TokenId& goalToken){
+    void fillRequestParameters(robot_actions::Pose2D& goalMsg, const TokenId& goalToken){
       const IntervalDomain& x = goalToken->getVariable("x")->lastDomain();
       const IntervalDomain& y = goalToken->getVariable("y")->lastDomain();
       const IntervalDomain& th = goalToken->getVariable("th")->lastDomain();
 
       goalMsg.header.frame_id = "/map";
-      goalMsg.goal.x = (x.isSingleton()  ? x.getSingletonValue() : (x.getLowerBound() + x.getUpperBound()) / 2);
-      goalMsg.goal.y = (y.isSingleton()  ? y.getSingletonValue() : (y.getLowerBound() + y.getUpperBound()) / 2);
-      goalMsg.goal.th = (th.isSingleton()  ? th.getSingletonValue() : (th.getLowerBound() + th.getUpperBound()) / 2);
+      goalMsg.x = (x.isSingleton()  ? x.getSingletonValue() : (x.getLowerBound() + x.getUpperBound()) / 2);
+      goalMsg.y = (y.isSingleton()  ? y.getSingletonValue() : (y.getLowerBound() + y.getUpperBound()) / 2);
+      goalMsg.th = (th.isSingleton()  ? th.getSingletonValue() : (th.getLowerBound() + th.getUpperBound()) / 2);
     }
 
   };
