@@ -127,7 +127,7 @@ bool
 
   // transform the PCD (Point Cloud Data) into the parameter_frame, and work there
   if (!tf_.canTransform(parameter_frame_, pointcloud.header.frame_id, pointcloud.header.stamp, timeout)){
-    ROS_ERROR ("DoorDetector: Could not transform point cloud from frame %s to frame %s.",
+    ROS_ERROR ("DoorDetector: Could not transform point cloud from frame '%s' to frame '%s'.",
                pointcloud.header.frame_id.c_str (), parameter_frame_.c_str ());
     return false;
   }

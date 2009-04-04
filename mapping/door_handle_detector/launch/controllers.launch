@@ -16,6 +16,7 @@
   <node pkg="mechanism_control" type="spawner.py" args="$(find door_handle_detector)/launch/gripper_effort_right.xml" />
 
 <!-- Cartesian trajectory controller -->
+<!--
   <param name="cartesian_trajectory_right/autostart" type="bool" value="false" />
   <param name="cartesian_trajectory_right/root_name" type="string" value="torso_lift_link" />
   <param name="cartesian_trajectory_right/tip_name" type="string" value="r_gripper_tool_frame" />
@@ -38,9 +39,10 @@
   <param name="cartesian_trajectory_right/pose/twist/fb_rot/d" value="0.0" />
   <param name="cartesian_trajectory_right/pose/twist/fb_rot/i_clamp" value="0.2" />
   <node pkg="mechanism_control" type="spawner.py" args="$(find arm_life_test)/cartesian_trajectory_right.xml" output="screen"/>
-
+-->
 
 <!-- Cartesian tff controller -->
+<!--
   <param name="cartesian_tff_right/autostart" type="bool" value="false" />
   <param name="cartesian_tff_right/root_name" type="string" value="torso_lift_link" />
   <param name="cartesian_tff_right/tip_name" type="string" value="r_gripper_tool_frame" />
@@ -63,5 +65,5 @@
   <param name="cartesian_tff_right/pos_rot/d" value="0.0" />
   <param name="cartesian_tff_right/pos_rot/i_clamp" value="0.2" />
   <node pkg="mechanism_control" type="spawner.py" args="$(find arm_life_test)/cartesian_tff_right.xml" output="screen"/>
-
+-->
 </launch>

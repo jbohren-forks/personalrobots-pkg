@@ -88,7 +88,7 @@ bool DetectDoorAction::laserDetection(const robot_msgs::Door& door_in, robot_msg
   // check where robot is relative to door
   if (request_preempt_) return false;
   if (!tf_.canTransform("base_footprint", "laser_tilt_link", ros::Time(), ros::Duration().fromSec(5.0))){
-    ROS_ERROR("DetectDoorAction: error getting transform from base_footprint to laser_tilt_link");
+    ROS_ERROR("DetectDoorAction: error getting transform from 'base_footprint' to 'laser_tilt_link'");
     return false;
   }
   tf::Stamped<tf::Transform> tilt_stage;
@@ -100,7 +100,7 @@ bool DetectDoorAction::laserDetection(const robot_msgs::Door& door_in, robot_msg
 				     ros::Time(), door_in.header.frame_id);
   if (request_preempt_) return false;
   if (!tf_.canTransform("base_footprint", doorpoint.frame_id_, ros::Time(), ros::Duration().fromSec(5.0))){
-    ROS_ERROR("DetectDoorAction: error getting transform from base_footprint to %s", doorpoint.frame_id_.c_str());
+    ROS_ERROR("DetectDoorAction: error getting transform from 'base_footprint' to '%s'", doorpoint.frame_id_.c_str());
     return false;
   }
   tf_.transformPoint("base_footprint", doorpoint, doorpoint);
