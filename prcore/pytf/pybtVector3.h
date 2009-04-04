@@ -18,15 +18,14 @@ subject to the following restrictions:
 #define SIMD__VECTOR3_H
 
 
-#include "btScalar.h"
-#include "btScalar.h"
-#include "btMinMax.h"
+#include "LinearMath/btScalar.h"
+#include "LinearMath/btMinMax.h"
 /**@brief btVector3 can be used to represent 3D points and vectors.
  * It has an un-used w component to suit 16-byte alignment when btVector3 is stored in containers. This extra component can be used by derived classes (Quaternion?) or by user
  * Ideally, this class should be replaced by a platform optimized SIMD version that keeps the data in registers
  */
 
-ATTRIBUTE_ALIGNED16(class) btVector3
+class btVector3
 {
 public:
 
@@ -135,11 +134,17 @@ public:
 
   /**@brief Return the distance squared between the ends of this and another vector
    * This is symantically treating the vector like a point */
-	SIMD_FORCE_INLINE btScalar distance2(const btVector3& v) const;
+	SIMD_FORCE_INLINE btScalar distance2(const btVector3& v) const
+  {
+    	return (v - *this).length2();
+  };
 
   /**@brief Return the distance between the ends of this and another vector
    * This is symantically treating the vector like a point */
-	SIMD_FORCE_INLINE btScalar distance(const btVector3& v) const;
+	SIMD_FORCE_INLINE btScalar distance(const btVector3& v) const
+  {
+    return (v - *this).length();
+  };
 
   /**@brief Normalize this vector 
    * x^2 + y^2 + z^2 = 1 */
@@ -149,12 +154,26 @@ public:
 	}
 
   /**@brief Return a normalized version of this vector */
-	SIMD_FORCE_INLINE btVector3 normalized() const;
+	SIMD_FORCE_INLINE btVector3 normalized() const
+  {
+    return *this / length();
+  };
 
   /**@brief Rotate this vector 
    * @param wAxis The axis to rotate about 
    * @param angle The angle to rotate by */
-	SIMD_FORCE_INLINE btVector3 rotate( const btVector3& wAxis, const btScalar angle );
+	SIMD_FORCE_INLINE btVector3 rotate( const btVector3& wAxis, const btScalar angle )
+  {
+ 	// wAxis must be a unit lenght vector
+
+	btVector3 o = wAxis * wAxis.dot( *this );
+	btVector3 x = *this - o;
+	btVector3 y;
+
+	y = wAxis.cross( *this );
+
+	return ( o + x * btCos( angle ) + y * btSin( angle ) );
+  };
 
   /**@brief Return the angle between this and another vector
    * @param v The other vector */
@@ -318,333 +337,68 @@ public:
 			v2->setValue(-y()	,x()	,0.);
 		}
 
-};
 
-%extend btVector3 {
+
+/*%extend btVector3 {
   char * __str__()
   {
     static char temp[256];
     sprintf(temp, "[%f, %f, %f]", self->getX(), self->getY(), self->getZ());
     return &temp[0];
   }
-
+*/
 /**@brief Return the sum of two vectors (Point symantics)*/
 SIMD_FORCE_INLINE btVector3 
-operator+(const btVector3& v1, const btVector3& v2) 
+operator+(const btVector3& v2)  const
 {
-	return btVector3(v1.m_floats[0] + v2.m_floats[0], v1.m_floats[1] + v2.m_floats[1], v1.m_floats[2] + v2.m_floats[2]);
+	return btVector3(this->m_floats[0] + v2.m_floats[0], this->m_floats[1] + v2.m_floats[1], this->m_floats[2] + v2.m_floats[2]);
 }
 
 /**@brief Return the elementwise product of two vectors */
 SIMD_FORCE_INLINE btVector3 
-operator*(const btVector3& v1, const btVector3& v2) 
+operator*(const btVector3& v2) const 
 {
-	return btVector3(v1.m_floats[0] * v2.m_floats[0], v1.m_floats[1] * v2.m_floats[1], v1.m_floats[2] * v2.m_floats[2]);
+	return btVector3(this->m_floats[0] * v2.m_floats[0], this->m_floats[1] * v2.m_floats[1], this->m_floats[2] * v2.m_floats[2]);
 }
 
 /**@brief Return the difference between two vectors */
 SIMD_FORCE_INLINE btVector3 
-operator-(const btVector3& v1, const btVector3& v2)
+operator-(const btVector3& v2) const
 {
-	return btVector3(v1.m_floats[0] - v2.m_floats[0], v1.m_floats[1] - v2.m_floats[1], v1.m_floats[2] - v2.m_floats[2]);
+	return btVector3(this->m_floats[0] - v2.m_floats[0], this->m_floats[1] - v2.m_floats[1], this->m_floats[2] - v2.m_floats[2]);
 }
 /**@brief Return the negative of the vector */
 SIMD_FORCE_INLINE btVector3 
-operator-(const btVector3& v)
+operator-() const
 {
-	return btVector3(-v.m_floats[0], -v.m_floats[1], -v.m_floats[2]);
+	return btVector3(-this->m_floats[0], -this->m_floats[1], -this->m_floats[2]);
 }
 
 /**@brief Return the vector scaled by s */
 SIMD_FORCE_INLINE btVector3 
-operator*(const btVector3& v, const btScalar& s)
+operator*(const btScalar& s) const
 {
-	return btVector3(v.m_floats[0] * s, v.m_floats[1] * s, v.m_floats[2] * s);
-}
-
-/**@brief Return the vector scaled by s */
-SIMD_FORCE_INLINE btVector3 
-operator*(const btScalar& s, const btVector3& v)
-{ 
-	return v * s; 
+	return btVector3(this->m_floats[0] * s, this->m_floats[1] * s, this->m_floats[2] * s);
 }
 
 /**@brief Return the vector inversely scaled by s */
 SIMD_FORCE_INLINE btVector3
-operator/(const btVector3& v, const btScalar& s)
+operator/(const btScalar& s) const
 {
 	btFullAssert(s != btScalar(0.0));
-	return v * (btScalar(1.0) / s);
+	return *this * (btScalar(1.0) / s);
 }
 
 /**@brief Return the vector inversely scaled by s */
 SIMD_FORCE_INLINE btVector3
-operator/(const btVector3& v1, const btVector3& v2)
+operator/( const btVector3& v2) const
 {
-	return btVector3(v1.m_floats[0] / v2.m_floats[0],v1.m_floats[1] / v2.m_floats[1],v1.m_floats[2] / v2.m_floats[2]);
+	return btVector3(this->m_floats[0] / v2.m_floats[0],this->m_floats[1] / v2.m_floats[1],this->m_floats[2] / v2.m_floats[2]);
 }
-
-/**@brief Return the dot product between two vectors */
-SIMD_FORCE_INLINE btScalar 
-dot(const btVector3& v1, const btVector3& v2) 
-{ 
-	return v1.dot(v2); 
-}
-
-
-/**@brief Return the distance squared between two vectors */
-SIMD_FORCE_INLINE btScalar
-distance2(const btVector3& v1, const btVector3& v2) 
-{ 
-	return v1.distance2(v2); 
-}
-
-
-/**@brief Return the distance between two vectors */
-SIMD_FORCE_INLINE btScalar
-distance(const btVector3& v1, const btVector3& v2) 
-{ 
-	return v1.distance(v2); 
-}
-
-/**@brief Return the angle between two vectors */
-SIMD_FORCE_INLINE btScalar
-angle(const btVector3& v1, const btVector3& v2) 
-{ 
-	return v1.angle(v2); 
-}
-
-/**@brief Return the cross product of two vectors */
-SIMD_FORCE_INLINE btVector3 
-cross(const btVector3& v1, const btVector3& v2) 
-{ 
-	return v1.cross(v2); 
-}
-
-SIMD_FORCE_INLINE btScalar
-triple(const btVector3& v1, const btVector3& v2, const btVector3& v3)
-{
-	return v1.triple(v2, v3);
-}
-
-/**@brief Return the linear interpolation between two vectors
- * @param v1 One vector 
- * @param v2 The other vector 
- * @param t The ration of this to v (t = 0 => return v1, t=1 => return v2) */
-SIMD_FORCE_INLINE btVector3 
-lerp(const btVector3& v1, const btVector3& v2, const btScalar& t)
-{
-	return v1.lerp(v2, t);
-}
-
-
-
-SIMD_FORCE_INLINE btScalar btVector3::distance2(const btVector3& v) const
-{
-	return (v - *this).length2();
-}
-
-SIMD_FORCE_INLINE btScalar btVector3::distance(const btVector3& v) const
-{
-	return (v - *this).length();
-}
-
-SIMD_FORCE_INLINE btVector3 btVector3::normalized() const
-{
-	return *this / length();
-} 
-
-SIMD_FORCE_INLINE btVector3 btVector3::rotate( const btVector3& wAxis, const btScalar angle )
-{
-	// wAxis must be a unit lenght vector
-
-	btVector3 o = wAxis * wAxis.dot( *this );
-	btVector3 x = *this - o;
-	btVector3 y;
-
-	y = wAxis.cross( *this );
-
-	return ( o + x * btCos( angle ) + y * btSin( angle ) );
-}
-
-}
-
-class btVector4 : public btVector3
-{
-public:
-
-	SIMD_FORCE_INLINE btVector4() {}
-
-
-	SIMD_FORCE_INLINE btVector4(const btScalar& x, const btScalar& y, const btScalar& z,const btScalar& w) 
-		: btVector3(x,y,z)
-	{
-		m_floats[3] = w;
-	}
-
-
-	SIMD_FORCE_INLINE btVector4 absolute4() const 
-	{
-		return btVector4(
-			btFabs(m_floats[0]), 
-			btFabs(m_floats[1]), 
-			btFabs(m_floats[2]),
-			btFabs(m_floats[3]));
-	}
-
-
-
-	btScalar	getW() const { return m_floats[3];}
-
-
-		SIMD_FORCE_INLINE int maxAxis4() const
-	{
-		int maxIndex = -1;
-		btScalar maxVal = btScalar(-1e30);
-		if (m_floats[0] > maxVal)
-		{
-			maxIndex = 0;
-			maxVal = m_floats[0];
-		}
-		if (m_floats[1] > maxVal)
-		{
-			maxIndex = 1;
-			maxVal = m_floats[1];
-		}
-		if (m_floats[2] > maxVal)
-		{
-			maxIndex = 2;
-			maxVal =m_floats[2];
-		}
-		if (m_floats[3] > maxVal)
-		{
-			maxIndex = 3;
-			maxVal = m_floats[3];
-		}
-		
-		
-		
-
-		return maxIndex;
-
-	}
-
-
-	SIMD_FORCE_INLINE int minAxis4() const
-	{
-		int minIndex = -1;
-		btScalar minVal = btScalar(1e30);
-		if (m_floats[0] < minVal)
-		{
-			minIndex = 0;
-			minVal = m_floats[0];
-		}
-		if (m_floats[1] < minVal)
-		{
-			minIndex = 1;
-			minVal = m_floats[1];
-		}
-		if (m_floats[2] < minVal)
-		{
-			minIndex = 2;
-			minVal =m_floats[2];
-		}
-		if (m_floats[3] < minVal)
-		{
-			minIndex = 3;
-			minVal = m_floats[3];
-		}
-		
-		return minIndex;
-
-	}
-
-
-	SIMD_FORCE_INLINE int closestAxis4() const 
-	{
-		return absolute4().maxAxis4();
-	}
-
-	
- 
-
-  /**@brief Set x,y,z and zero w 
-   * @param x Value of x
-   * @param y Value of y
-   * @param z Value of z
-   */
-		
-
-/*		void getValue(btScalar *m) const 
-		{
-			m[0] = m_floats[0];
-			m[1] = m_floats[1];
-			m[2] =m_floats[2];
-		}
-*/
-/**@brief Set the values 
-   * @param x Value of x
-   * @param y Value of y
-   * @param z Value of z
-   * @param w Value of w
-   */
-		SIMD_FORCE_INLINE void	setValue(const btScalar& x, const btScalar& y, const btScalar& z,const btScalar& w)
-		{
-			m_floats[0]=x;
-			m_floats[1]=y;
-			m_floats[2]=z;
-			m_floats[3]=w;
-		}
-
-
- 
 
 };
 
 
-///btSwapVector3Endian swaps vector endianness, useful for network and cross-platform serialization
-SIMD_FORCE_INLINE void	btSwapScalarEndian(const btScalar& sourceVal, btScalar& destVal)
-{
-	#ifdef BT_USE_DOUBLE_PRECISION
-	unsigned char* dest = (unsigned char*) &destVal;
-	unsigned char* src  = (unsigned char*) &sourceVal;
-	dest[0] = src[7];
-    dest[1] = src[6];
-    dest[2] = src[5];
-    dest[3] = src[4];
-    dest[4] = src[3];
-    dest[5] = src[2];
-    dest[6] = src[1];
-    dest[7] = src[0];
-#else
-	unsigned char* dest = (unsigned char*) &destVal;
-	unsigned char* src  = (unsigned char*) &sourceVal;
-	dest[0] = src[3];
-    dest[1] = src[2];
-    dest[2] = src[1];
-    dest[3] = src[0];
-#endif //BT_USE_DOUBLE_PRECISION
-}
-///btSwapVector3Endian swaps vector endianness, useful for network and cross-platform serialization
-SIMD_FORCE_INLINE void	btSwapVector3Endian(const btVector3& sourceVec, btVector3& destVec)
-{
-	for (int i=0;i<4;i++)
-	{
-		btSwapScalarEndian(sourceVec[i],destVec[i]);
-	}
 
-}
-
-///btUnSwapVector3Endian swaps vector endianness, useful for network and cross-platform serialization
-SIMD_FORCE_INLINE void	btUnSwapVector3Endian(btVector3& vector)
-{
-
-	btVector3	swappedVec;
-	for (int i=0;i<4;i++)
-	{
-		btSwapScalarEndian(vector[i],swappedVec[i]);
-	}
-	vector = swappedVec;
-}
 
 #endif //SIMD__VECTOR3_H
