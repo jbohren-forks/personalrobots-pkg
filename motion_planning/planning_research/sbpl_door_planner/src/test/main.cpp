@@ -120,18 +120,18 @@ int planxythetadoor(int argc, char *argv[])
   environment_navxythetadoor.robot_global_pose_.resize(3);
 
   environment_navxythetadoor.door_global_pose_.resize(3);
-  environment_navxythetadoor.door_global_pose_[0] = 0.35;
+  environment_navxythetadoor.door_global_pose_[0] = 0.25;
   environment_navxythetadoor.door_global_pose_[1] = 1.1;
   environment_navxythetadoor.door_global_pose_[2] = 0.0;
 
   environment_navxythetadoor.door_thickness_ = 0.01;
   environment_navxythetadoor.pivot_length_ = 0.0;
-  environment_navxythetadoor.door_length_ = 0.8;
+  environment_navxythetadoor.door_length_ = 0.9;
 
   environment_navxythetadoor.min_workspace_radius_ = 0.0;
   environment_navxythetadoor.max_workspace_radius_ = 2.0;
 
-  environment_navxythetadoor.max_workspace_angle_ = M_PI/2.0;
+  environment_navxythetadoor.max_workspace_angle_ = 3*M_PI/2.0;
   environment_navxythetadoor.min_workspace_angle_ = -3*M_PI/2.0;
   environment_navxythetadoor.delta_angle_ = 0.1;
 
@@ -139,7 +139,7 @@ int planxythetadoor(int argc, char *argv[])
 
   //plan a path
   vector<int> solution_stateIDs_V;
-  bool bforwardsearch = false;
+  bool bforwardsearch = true;
   ARAPlanner planner(&environment_navxythetadoor, bforwardsearch);
 
   if(planner.set_start(MDPCfg.startstateid) == 0)

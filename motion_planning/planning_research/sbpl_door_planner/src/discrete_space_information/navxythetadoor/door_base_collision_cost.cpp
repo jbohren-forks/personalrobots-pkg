@@ -29,7 +29,7 @@
 
 #include <sbpl_door_planner/door_base_collision_cost.h>
 #define MAX_COST 255
-
+//#define DEBUG 1
 using namespace std;
 
 namespace door_base_collision_cost
@@ -176,6 +176,7 @@ namespace door_base_collision_cost
           {
             for(int j=0; j < (int) angles.size(); j++)
             {
+               if(!isnan(angles[i]))
               free_angles.push_back(angles[i]);
             }
           }
@@ -189,21 +190,28 @@ namespace door_base_collision_cost
           {
             for(int j=0; j < (int) angles.size(); j++)
             {
-              free_angles.push_back(angles[i]);
+               if(!isnan(angles[i]))
+                  free_angles.push_back(angles[i]);
             }
           }
         }
 
-        std::sort(free_angles.begin(),free_angles.end());
         if(free_angles.size() < 1)
         {
           min_angle = M_PI/2.0;
           max_angle = 0.0;
+          return;
+        }
+        std::sort(free_angles.begin(),free_angles.end());
+        if(free_angles.size() > 1)
+        {
+          min_angle = free_angles[0];
+          max_angle = free_angles[free_angles.size()-1];
         }
         else
         {
-          min_angle = free_angles.front();
-          max_angle = free_angles.back();
+          min_angle = free_angles[0];
+          max_angle = free_angles[0];
         }
         return;
       }
@@ -287,14 +295,16 @@ namespace door_base_collision_cost
           int num_intervals = (int) (min_angle/delta_angle);
           for(int i=0; i<num_intervals; i++)
           {
+             global_handle.resize(0);
+             robot_handle.resize(0);
             double new_angle = i * delta_angle;
             transform2D(door_handle_pose,global_handle,door_global_pose[0],door_global_pose[1],door_global_pose[2]+new_angle);
             transform2DInverse(global_handle,robot_handle,robot_global_pose[0],robot_global_pose[1],robot_global_pose[2]);
             double cost = findWorkspaceCost(robot_shoulder_position,robot_handle,min_workspace_angle,max_workspace_angle,min_workspace_radius,max_workspace_radius);
             if(cost < MAX_COST)
             {
-              valid_angles.push_back(new_angle);
-              valid_cost.push_back(cost);
+               valid_angles.push_back((int)(new_angle*180.0/M_PI));
+               valid_cost.push_back((int) cost);
             }
           }
         }
@@ -309,6 +319,8 @@ namespace door_base_collision_cost
 #endif
           for(int i=0; i<num_intervals+1; i++)
           {
+             global_handle.clear();
+             robot_handle.clear();
             double new_angle = M_PI/2 - i * delta_angle;
             transform2D(door_handle_pose,global_handle,door_global_pose[0],door_global_pose[1],door_global_pose[2]+new_angle);
             transform2DInverse(global_handle,robot_handle,robot_global_pose[0],robot_global_pose[1],robot_global_pose[2]);
