@@ -3,15 +3,21 @@
 HELP=0
 
 if [ "x" = "x$2" ] ; then
-    LIST_PACK="executive_trex_pr2 test_executive_trex_pr2 `rospack list-names`"
-    for PACKAGE in $LIST_PACK ; do 
-	pwd | grep `rospack find $PACKAGE` > /dev/null
-	if [ $? -ne 1 ] ; then
-	    PACKAGE_NAME=$PACKAGE
-	    break
+    DIR=`pwd`/
+    ITER=100
+    while [ $ITER -ne 0 ] ; do
+	if [ -a $DIR/manifest.xml ] ; then
+	    break;
 	fi
+	DIR="$DIR../"
+	ITER=`expr $ITER - 1`
     done
-    PACKAGE=
+    DIR=`cd $DIR && pwd`
+    PACKAGE_NAME=`basename $DIR`
+    rospack find $PACKAGE_NAME > /dev/null
+    if [ $? -ne 0 ] ; then
+	echo "Package not found due to internal error: directory $DIR contians a manfiest, of package $PACKAGE, that is not found by rospack."
+    fi
 else
     PACKAGE_NAME=$2
     rospack find $2 > /dev/null
@@ -24,6 +30,11 @@ fi
 
 if [ "x" = "x$PACKAGE_NAME" ] ; then
     echo "Package name does not exist or cannot be autodetected."
+    HELP=1
+fi
+
+if [ "x" = "x$1" ] ; then
+    echo "No NDDL file specified."
     HELP=1
 fi
 
@@ -51,5 +62,8 @@ if [ $? -ne 0 ] ; then
     echo "Error in nddl_depends.py ($?):" 
     echo $FILES
 else
-    echo "The files included by $1 are: $FILES"
+    echo "The files included by $1 are:"
+    for FILE in $FILES ; do
+	echo $FILE
+    done
 fi
