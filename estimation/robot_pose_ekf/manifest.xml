@@ -2,6 +2,8 @@
 <description>Package to merge sensor data from odometry,IMU, VO, etc, into an estimate for the robot pose.</description>
 <author>Wim Meeussen</author>
 <license>BSD</license>
+<review status="proposal cleared" notes=""/>
+<url>http://pr.willowgarage.com/wiki/robot_pose_ekf</url>
 <depend package="roscpp" />
 <depend package="bfl" />
 <depend package="std_msgs" />
