@@ -1,0 +1,33 @@
+<package>
+  <description>
+    A node which recognizes lambertian objects using stereo.
+  </description>
+
+  <author>Gary Bradski</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="robot_msgs" />
+  <depend package="robot_srvs" />
+  <depend package="robot_actions" />
+  <depend package="kdl" />
+  <depend package="angles" />
+  <depend package="point_cloud_mapping" />
+  <depend package="checkerboard_detector" />
+  <depend package="point_cloud_assembler" />
+  <depend package="std_msgs" />
+  <depend package="opencv_latest"/>
+  <depend package="image_msgs"/>
+  <depend package="topic_synchronizer"/>
+  <depend package="stereo_utils"/>
+  <depend package="tf"/>
+
+
+ <export>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib  -lexecutive_functions"/>
+ </export>
+
+
+</package>
