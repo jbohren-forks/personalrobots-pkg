@@ -84,6 +84,9 @@ private:
   void inverseGapStates(std::vector<Actuator*>& as, std::vector<JointState*>& js,
                         double theta,double &MR, double &dMR_dtheta,double &dtheta_dt,double &dMR_dt);
 
+  void getAngleRateTorqueFromMinRateJoint(
+    std::vector<JointState*>& js, std::vector<Actuator*>& as,
+    int &minRateJointIndex,double &angle,double &rate,double &torque);
   //
   // SOME CONSTANTS
   // the default theta0 when gap size is 0 is needed to assign passive joint angles
