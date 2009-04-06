@@ -97,7 +97,7 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
     return false;
   chain_.toKDL(kdl_chain_);
 
-  // some parametersjoint_constraint_null_space_ =  identity_joint_ - joint_constraint_jac_ * joint_constraint_jac_.transpose();
+  // some parameters
   ros::Node *node = ros::Node::instance();
   assert(node);
 
@@ -236,7 +236,7 @@ void PlugController::computeConstraintJacobian()
   r_to_line = r_to_line.normalized();
 
   // update the jacobian for the line constraint
-  if (dist_to_line_ > 0)
+  if (dist_to_line_ > 0.1)
   {
     constraint_jac_(0,0) = r_to_line(0);
     constraint_jac_(1,0) = r_to_line(1);
