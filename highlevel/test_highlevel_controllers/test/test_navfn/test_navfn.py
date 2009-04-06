@@ -50,6 +50,13 @@ class TestMoveBaseNavfn(unittest.TestCase):
         self.success = False
         self.fail = False
         self.goal = Pose2D()
+        # Do initialization that rospy demands
+        self.goal.boundary.points = []
+        self.goal.boundary.color.r = 0.0
+        self.goal.boundary.color.g = 0.0
+        self.goal.boundary.color.b = 0.0
+        self.goal.boundary.color.a = 0.0
+
         self.goal.header.frame_id = "/map"
         self.goal.x = float(sys.argv[1]) #19
         self.goal.y = float(sys.argv[2]) #29
