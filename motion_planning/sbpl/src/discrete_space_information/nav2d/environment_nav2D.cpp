@@ -442,7 +442,7 @@ void EnvironmentNAV2D::InitializeEnvironment()
 	EnvNAV2D.Coord2StateIDHashTable = new vector<EnvNAV2DHashEntry_t*>[EnvNAV2D.HashTableSize];
 	
 	//initialize the map from StateID to Coord
-	EnvNAV2D.StateID2CoordTable.clear();
+	EnvNAV2D.StateID2CoordTable.clear(); 
 
 	//create start state 
 	HashEntry = CreateNewHashEntry(EnvNAV2DCfg.StartX_c, EnvNAV2DCfg.StartY_c);
@@ -845,7 +845,7 @@ void EnvironmentNAV2D::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<
 		//compute costmult
 		 int costmult = targetcostmult;
 		//for diagonal move, take max over adjacent cells
-        if(predX != HashEntry->X && predY != HashEntry->Y && aind < 7)
+        if(predX != HashEntry->X && predY != HashEntry->Y && aind <= 7)
 		{
 			costmult = __max(costmult, 	EnvNAV2DCfg.Grid2D[HashEntry->X][predY]);
 			costmult = __max(costmult, EnvNAV2DCfg.Grid2D[predX][HashEntry->Y]);

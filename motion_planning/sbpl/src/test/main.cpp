@@ -83,7 +83,7 @@ int plan2d(int argc, char *argv[])
             exit(1);
         }
 
-	planner.set_initialsolution_eps(5.0);
+	planner.set_initialsolution_eps(1.0);
 
     printf("start planning...\n");
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
@@ -1135,7 +1135,7 @@ int main(int argc, char *argv[])
 	}
 
     //2D planning
-    plan2d(argc, argv);
+    //plan2d(argc, argv);
     //planandnavigate2d(argc, argv);
 
     //3D planning
@@ -1145,7 +1145,7 @@ int main(int argc, char *argv[])
     //planandnavigate3dkin(argc, argv);
 
     //xytheta planning
-	//planxythetalat(argc, argv);
+	planxythetalat(argc, argv);
 
     //robotarm planning
     //planrobarm(argc, argv);

@@ -344,7 +344,7 @@ void ARAPlanner::UpdateSuccs(ARAState* state, ARASearchStateSpace_t* pSearchStat
 	} //for actions
 }
 
-
+//TODO-debugmax - add obsthresh and other thresholds to other environments in 3dkin
 int ARAPlanner::GetGVal(int StateID, ARASearchStateSpace_t* pSearchStateSpace)
 {
 	 CMDPSTATE* cmdp_state = GetState(StateID, pSearchStateSpace);

@@ -186,10 +186,10 @@ public:
 	int  GetFromToHeuristic(int FromStateID, int ToStateID);
 	int  GetGoalHeuristic(int stateID);
 	int  GetStartHeuristic(int stateID);
-	void SetAllActionsandAllOutcomes(CMDPSTATE* state);
-	void SetAllPreds(CMDPSTATE* state);
-	void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
-	void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
+	virtual void SetAllActionsandAllOutcomes(CMDPSTATE* state);
+	virtual void SetAllPreds(CMDPSTATE* state);
+	virtual void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
+	virtual void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
 
 	int	 SizeofCreatedEnv();
 	void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);

@@ -33,12 +33,9 @@
 #define ENVNAV2D_COSTMULT 1000
 
 
-//-1, 0, 1 per each dX and dY
-#define ENVNAV2D_ACTIONSWIDTH 8
-
 #define ENVNAV2D_DEFAULTOBSTHRESH 1 //253-for willow garage	//see explanation of the value below
 
-#define ENVNAV2D_MAXDIRS 16
+#define ENVNAV2D_MAXDIRS 16 //TODO-debugmax - crashes for 8 in debug mode
 
 //configuration parameters
 typedef struct ENV_NAV2D_CONFIG
@@ -53,8 +50,6 @@ typedef struct ENV_NAV2D_CONFIG
 	//the value at which and above which cells are obstacles in the maps sent from outside
 	//the default is defined above
 	unsigned char obsthresh; 
-
-//	int dXY[ENVNAV2D_ACTIONSWIDTH][2];
 
 	int dx_[ENVNAV2D_MAXDIRS];
 	int dy_[ENVNAV2D_MAXDIRS];
