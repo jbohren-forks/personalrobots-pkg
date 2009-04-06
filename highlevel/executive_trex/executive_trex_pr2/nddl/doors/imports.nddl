@@ -4,11 +4,13 @@
 #include "rcs/exports.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/doors/exports.nddl"
+#include "mechanism_control/exports.nddl"
 #include "safety/exports.nddl"
 #include "nav/nav.nddl"
 #include "world_model/topological_map.nddl"
 
-// Register constraints for interacting with door domain
+// Mechanism Control - access to mechanisms and how they are controlled
+Assembly assembly = new Assembly(External);
 
 // Safety
 MobilityStatus mobility_status = new MobilityStatus(External);
@@ -18,10 +20,23 @@ BaseState base_state = new BaseState(External);
 
 // External RCS Highlevel controllers
 MoveBase move_base = new MoveBase(External);
-ReleaseDoor release_door = new ReleaseDoor(External);
+//ReleaseDoor release_door = new ReleaseDoor(External);
 OpenDoorWithGrasp open_door = new OpenDoorWithGrasp(External);
-GraspHandle grasp_handle = new GraspHandle(External);
-OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
+//GraspHandle grasp_handle = new GraspHandle(External);
+//OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
+DetectHandle detect_handle = new DetectHandle(External);
 DetectDoor detect_door = new DetectDoor(External);
-CheckDoorway check_doorway = new CheckDoorway(External);
-NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
+//CheckDoorway check_doorway = new CheckDoorway(External);
+//NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
+
+
+DetectDoor::Active{
+  contained_by(assembly.tilt_scanner.ControlledBy c0);
+  eq(c0.controller, laser_tilt_controller);
+}
+
+DetectHandle::Active{
+  contained_by(assembly.tilt_scanner.ControlledBy c0);
+  eq(c0.controller, laser_tilt_controller);
+}
+
