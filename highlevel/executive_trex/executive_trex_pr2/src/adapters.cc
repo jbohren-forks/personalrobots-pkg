@@ -277,8 +277,10 @@ namespace TREX {
 
   private:
     void fillObservationParameters(ObservationByValue* obs){
-      double x(0.0), y(0.0), th(0.0);
-      get2DPose(stateMsg, x, y, th);
+      double x = 0.0;
+      double y = 0.0;
+      double th = 0.0;
+      //@todo get2DPose(stateMsg, x, y, th);
       readPose(*obs, x, y, th);
     }
   };
@@ -358,7 +360,20 @@ namespace TREX {
 	checkError(param->lastDomain().isSingleton(), "Cannot tell if controller is up or down:" << param->toString() << ". Model should ensure value is bound.");
 
 	bool is_up = (bool) param->lastDomain().getSingletonValue();
-	std::string controller_name = Observation::getTimelineName(master_token).toString();
+
+	// The controller name is a parameter of the object on which the master is placed
+	checkError(master_token->getObject()->lastDomain().isSingleton(), master_token->getObject()->lastDomain().toString());
+	ObjectId master_object = (ObjectId) master_token->getObject()->lastDomain().getSingletonValue();
+	checkError(master_token->getObject()->lastDomain().isSingleton(), master_token->getObject()->lastDomain().toString());
+
+	std::string master_name = Observation::getTimelineName(master_token).toString();
+	std::string controller_param_name = master_name + ".controller";
+	ConstrainedVariableId controller_sv_id = master_object->getVariable(controller_param_name); // This is ugly
+	checkError(controller_sv_id.isValid(), "No variable named '" << controller_param_name << "' in " << master_object->toLongString());
+	checkError(controller_sv_id->lastDomain().isSingleton(), controller_sv_id->lastDomain().toString());
+	ObjectId controller_id = (ObjectId) controller_sv_id->lastDomain().getSingletonValue();
+	std::string controller_name = controller_id->getName().toString();
+
 	if(is_up){
 	  TREX_INFO("ros:debug:dispatching", "Adding " << controller_name << " to the stop list. Current state is:" << param->lastDomain().toString());
 	  msg.stop_controllers.push_back(controller_name);
