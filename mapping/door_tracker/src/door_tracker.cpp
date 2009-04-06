@@ -129,6 +129,9 @@ class DoorTracker
       tf_ = new tf::TransformListener(*node_);
       num_clouds_received_ = 0;
       continuous_detection_ = false;
+      active_ = false;
+      node_->subscribe("~activate",activate_msg_,&DoorTracker::activate,this,1);
+      ROS_INFO("Started door tracker");
     };
 
     ~DoorTracker()
@@ -138,37 +141,40 @@ class DoorTracker
 
     void start()
     {
-      active_ = true;
-      node_->param<std::string>("~p_door_msg_topic_", door_msg_topic_, "door_message");                              // 10 degrees
-      node_->param<std::string>("~p_base_laser_topic_", base_laser_topic_, "base_scan");                              // 10 degrees
+      if(!active_)
+      {
+        node_->param<std::string>("~p_door_msg_topic_", door_msg_topic_, "door_message");                              // 10 degrees
+        node_->param<std::string>("~p_base_laser_topic_", base_laser_topic_, "base_scan");                              // 10 degrees
 
-      node_->param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  // 100 points at high resolution
-      node_->param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
-      node_->param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
-      node_->param ("~p_frame_multiplier_", frame_multiplier_,1.0);
-      node_->param ("~p_sac_min_points_left", sac_min_points_left_, 10);
-      node_->param ("~p_door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
-      node_->param ("~p_door_max_width", door_max_width_, 1.4);                    // maximum width of a door: 1.4m
+        node_->param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  // 100 points at high resolution
+        node_->param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
+        node_->param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
+        node_->param ("~p_frame_multiplier_", frame_multiplier_,6.0);
+        node_->param ("~p_sac_min_points_left", sac_min_points_left_, 10);
+        node_->param ("~p_door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
+        node_->param ("~p_door_max_width", door_max_width_, 1.1);                    // maximum width of a door: 1.4m
 
-      eps_angle_ = angles::from_degrees (eps_angle_);                      // convert to radians
+        eps_angle_ = angles::from_degrees (eps_angle_);                      // convert to radians
 
-      double tmp; int tmp2;
-      node_->param("~p_door_frame_p1_x", tmp, 1.5); door_msg_.frame_p1.x = tmp;
-      node_->param("~p_door_frame_p1_y", tmp, -0.5); door_msg_.frame_p1.y = tmp;
-      node_->param("~p_door_frame_p2_x", tmp, 1.5); door_msg_.frame_p2.x = tmp;
-      node_->param("~p_door_frame_p2_y", tmp, 0.5); door_msg_.frame_p2.y = tmp;
-      node_->param("~p_door_hinge" , tmp2, -1); door_msg_.hinge = tmp2;
-      node_->param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
-      door_msg_.header.frame_id = "base_footprint";
+        double tmp; int tmp2;
+        node_->param("~p_door_frame_p1_x", tmp, 0.5); door_msg_.frame_p1.x = tmp;
+        node_->param("~p_door_frame_p1_y", tmp, -0.5); door_msg_.frame_p1.y = tmp;
+        node_->param("~p_door_frame_p2_x", tmp, 0.5); door_msg_.frame_p2.x = tmp;
+        node_->param("~p_door_frame_p2_y", tmp, 0.5); door_msg_.frame_p2.y = tmp;
+        node_->param("~p_door_hinge" , tmp2, -1); door_msg_.hinge = tmp2;
+        node_->param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
+        door_msg_.header.frame_id = "base_link";
 
-      node_->param("~publish_all_candidates" , publish_all_candidates_, false); 
+        node_->param("~publish_all_candidates" , publish_all_candidates_, false); 
 
 //      node_->subscribe(door_msg_topic_,door_msg_in_, &DoorTracker::doorMsgCallBack,this,1);
-      node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
-      node_->subscribe("~activate",activate_msg_,&DoorTracker::activate,this,1);
-      node_->advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
+        node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+        node_->advertise<robot_msgs::Door>( "~door_message", 0 );
+        node_->advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
 
-      message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (tf_, node_,  boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_.c_str (), door_msg_.header.frame_id, 1);
+        message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (tf_, node_,  boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_.c_str (), door_msg_.header.frame_id, 1);
+        active_ = true;
+      }
     }
 
     void shutdown()
@@ -179,6 +185,7 @@ class DoorTracker
         num_clouds_received_ = 0;
 //        node_->unsubscribe(door_msg_topic_,&DoorTracker::doorMsgCallBack,this);
         node_->unadvertise("~doors_detector");
+        node_->unadvertise("~door_message");
         node_->unadvertise("visualizationMarker");
         delete message_notifier_;
       }
@@ -202,13 +209,12 @@ class DoorTracker
       if ((int)cloud_.pts.size() < sac_min_points_per_model_)
         return;
 
-      door_msg_mutex_.unlock();
+      cloud_msg_mutex_.unlock();
 
       if(continuous_detection_) // do this on every laser callback
       {
         findDoor();
       }
-
     }
 
     void publishLine(const Point32 &min_p, const Point32 &max_p, const int &id, const std::string &frame_id)
@@ -241,7 +247,7 @@ class DoorTracker
       marker.points[1].x = max_p.x;
       marker.points[1].y = max_p.y;
       marker.points[1].z = max_p.z;
-      ROS_DEBUG("Publishing line between: p1: %f %f %f, p2: %f %f %f",marker.points[0].x,marker.points[0].y,marker.points[0].z,marker.points[1].x,marker.points[1].y,marker.points[1].z);
+      ROS_INFO("Publishing line between: p1: %f %f %f, p2: %f %f %f",marker.points[0].x,marker.points[0].y,marker.points[0].z,marker.points[1].x,marker.points[1].y,marker.points[1].z);
 
       node_->publish( "visualizationMarker", marker );
     }
@@ -287,7 +293,17 @@ class DoorTracker
         {
           inliers[i].resize(0);
           ROS_WARN("This candidate line has the wrong width: %f which is outside the (min,max) limits: (%f,%f)",door_frame_width,door_min_width_,door_max_width_);
+          continue;
         } 
+        double door_pt_angle_1 = atan2(line_segment_max[i].y,line_segment_max[i].x);
+        double door_pt_angle_2 = atan2(line_segment_min[i].y,line_segment_min[i].x);
+
+        if(fabs(door_pt_angle_1) > M_PI/2.0 || fabs(door_pt_angle_2) > M_PI/2.0)
+        {
+          inliers[i].resize(0);
+          ROS_WARN("This candidate line is close to the sensor range edges: may not be a door");
+          continue;
+        }
       }
 
       for(unsigned int i=0; i < inliers.size(); i++)
@@ -301,6 +317,15 @@ class DoorTracker
       if(inliers_size_max_index > -1)
       {
         publishLine(line_segment_min[inliers_size_max_index],line_segment_max[inliers_size_max_index],0, cloud.header.frame_id);
+        robot_msgs::Door door_tmp;
+        door_tmp.door_p1.x = line_segment_min[inliers_size_max_index].x;
+        door_tmp.door_p1.y = line_segment_min[inliers_size_max_index].y;
+        door_tmp.door_p1.z = line_segment_min[inliers_size_max_index].z;
+        door_tmp.door_p2.x = line_segment_max[inliers_size_max_index].x;
+        door_tmp.door_p2.y = line_segment_max[inliers_size_max_index].y;
+        door_tmp.door_p2.z = line_segment_max[inliers_size_max_index].z;
+        door_temp.header = cloud.header;
+        node_->publish( "~door_message", door_tmp);        
       }
     }
 
@@ -311,35 +336,35 @@ class DoorTracker
       door_msg_mutex_.unlock();
 
       start();
-      active_ = true;
       ros::Duration tictoc = ros::Duration ().fromSec(0.05);
       while ((int)num_clouds_received_ < 2)// || (cloud_orig_.header.stamp < (start_time + delay)))
       {
         tictoc.sleep ();
       }
       findDoor(); //Find the door
-      active_ = false;
       shutdown();
       return true;
     }
 
     void activate()
     {
+      ROS_INFO("Trying to activate: %s",activate_msg_.data.c_str());
+
       if (activate_msg_.data == std::string("activate"))
       {
         if(!continuous_detection_)
         {
+          ROS_INFO("Activating continuous detection");
           continuous_detection_ = true;
           start();
-          active_ = true;
         }
       }
       else if (activate_msg_.data == std::string("deactivate"))
       {
         if(continuous_detection_)
         {
+          ROS_INFO("Deactivating continuous detection");
           continuous_detection_ = false;
-          active_ = false;
           shutdown();
         }
       }
@@ -377,12 +402,11 @@ class DoorTracker
           if((int) sac->getInliers().size() < sac_min_points_per_model_)
             break;
           inliers.push_back(sac->getInliers());
-          vector<double> model_coeff;
-          sac->computeCoefficients (model_coeff);
-          coeff.push_back (model_coeff);
+          coeff.push_back(sac->computeCoefficients());
 
           //Find the edges of the line segments
-          cloud_geometry::statistics::getMinMax (*points, inliers.back(), minP, maxP);
+//          cloud_geometry::statistics::getMinMax (*points, inliers.back(), minP, maxP);
+          cloud_geometry::statistics::getLargestXYPoints (*points, inliers.back(), minP, maxP);
           line_segment_min.push_back(minP);
           line_segment_max.push_back(maxP);
 
@@ -445,6 +469,8 @@ class DoorTracker
       ROS_INFO ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.",min_bbox.x, min_bbox.y, min_bbox.z, max_bbox.x, max_bbox.y, max_bbox.z, (int)indices.size ());
     }
 
+
+/*
     void get3DBounds (Point32 *p1, Point32 *p2, Point32 &min_b, Point32 &max_b, int multiplier)
     {
       // Get the door_frame distance in the X-Y plane
@@ -477,6 +503,41 @@ class DoorTracker
         max_b.y = tmp;
       }
     }
+*/
+
+    void get3DBounds (Point32 *p1, Point32 *p2, Point32 &min_b, Point32 &max_b, int multiplier)
+    {
+      // Get the door_frame distance in the X-Y plane
+      float door_frame = sqrt ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) );
+
+      float center[2];
+      center[0] = (p1->x + p2->x) / 2.0;
+      center[1] = (p1->y + p2->y) / 2.0;
+
+      // Obtain the bounds (doesn't matter which is min and which is max at this point)
+      min_b.x = center[0] + (multiplier * door_frame) / 2.0;
+      min_b.y = center[1] + (multiplier * door_frame) / 2.0;
+      min_b.z = -FLT_MAX;
+
+      max_b.x = center[0];
+      max_b.y = center[1] - (multiplier * door_frame) / 2.0;
+      max_b.z = FLT_MAX;
+
+      // Order min/max
+      if (min_b.x > max_b.x)
+      {
+        float tmp = min_b.x;
+        min_b.x = max_b.x;
+        max_b.x = tmp;
+      }
+      if (min_b.y > max_b.y)
+      {
+        float tmp = min_b.y;
+        min_b.y = max_b.y;
+        max_b.y = tmp;
+      }
+    }
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /** \brief Transform a given point from its current frame to a given target frame
