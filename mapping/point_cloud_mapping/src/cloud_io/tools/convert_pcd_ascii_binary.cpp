@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2008 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
+  /*
+ * Copyright (c) 2009 Radu Bogdan Rusu <rusu -=- cs.tum.edu>
  *
  * All rights reserved.
  *
@@ -28,13 +28,23 @@
  *
  */
 
-/** \author Radu Bogdan Rusu
-  *
-  * Extremely silly PCD to C++ ROS robot_msgs PointCloud converter.
-  * Useful for tools which don't want to link against \a cloud_io (I guess).
-  *
-  */
+/**
+@mainpage
+
+@htmlinclude manifest.html
+
+\author Radu Bogdan Rusu
+
+@b convert_pcd_ascii_binary converts PCD (Point Cloud Data) files from ascii to binary and viceversa (in place).
+
+ **/
+
+#include <robot_msgs/PointCloud.h>
 #include <point_cloud_mapping/cloud_io.h>
+
+using namespace std;
+using namespace cloud_io;
+using namespace robot_msgs;
 
 /* ---[ */
 int
@@ -42,41 +52,29 @@ int
 {
   if (argc < 2)
   {
-    fprintf (stderr, "Error. No command line argument(s) specified. Syntax is: %s <input.pcd>\n", argv[0]);
+    ROS_ERROR ("Syntax is: %s <file.pcd>", argv[0]);
     return (-1);
   }
 
-  robot_msgs::PointCloud points;
-  int res = cloud_io::loadPCDFile (argv[1], points);
-
+  PointCloud msg_cloud;
+  int res = loadPCDFile (argv[1], msg_cloud);
   if (res == -1)
   {
-    fprintf (stderr, "Error loading %s.\n", argv[1]);
+    ROS_ERROR ("Error loading %s!", argv[1]);
     return (-1);
   }
+  
+  if (res == 0)
+    ROS_INFO ("Loaded (%d points, ASCII format) with: %s", (int)msg_cloud.pts.size (), getAvailableDimensions (msg_cloud).c_str ());
+  else
+    ROS_INFO ("Loaded (%d points, binary format) with: %s", (int)msg_cloud.pts.size (), getAvailableDimensions (msg_cloud).c_str ());
+  
+  res = !res;
+  if (res)
+    ROS_INFO ("Saving (in place) to binary format.");
+  else
+    ROS_INFO ("Saving (in place) to ASCII format.");
 
-  fprintf (stdout, "robot_msgs::PointCloud points;\n");
-  fprintf (stdout, "points.pts.resize (%i);\n", (int)points.pts.size ());
-
-  if (points.chan.size () > 0)
-  {
-    fprintf (stdout, "points.chan.resize (%i);\n", (int)points.chan.size ());
-    for (unsigned int d = 0; d < points.chan.size (); d++)
-    {
-      fprintf (stdout, "points.chan[%i].name = %s;\n", d, points.chan[d].name.c_str ());
-      fprintf (stdout, "points.chan[%i].vals.resize (%i);", d, (int)points.chan.size ());
-    }
-  }
-
-  fprintf (stdout, "\n");
-  for (unsigned int i = 0; i < points.pts.size (); i++)
-    fprintf (stdout, "points.pts[%5i].x = %f; points.pts[%5i].y = %f; points.pts[%5i].z = %f;\n", i, points.pts[i].x, i, points.pts[i].y, i, points.pts[i].z);
-
-  fprintf (stdout, "\n");
-  for (unsigned int d = 0; d < points.chan.size (); d++)
-    for (unsigned int i = 0; i < points.pts.size (); i++)
-      fprintf (stdout, "points.chan[%i].vals[%5i] = %f;\n", d, i, points.chan[d].vals[i]);
-
-  return (0);
+  savePCDFile (argv[1], msg_cloud, res);
 }
 /* ]--- */

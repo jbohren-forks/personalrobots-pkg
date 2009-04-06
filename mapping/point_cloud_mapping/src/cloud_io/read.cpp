@@ -38,7 +38,7 @@ namespace cloud_io
 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /** \brief Load point cloud data from a PCD file containing n-D points.
-  * Returns -1 on error, 0 on success.
+  * Returns -1 on error, > 0 on success (denoting the underlying PCD file type: 0=ascii, 1=binary)
   * \note All lines besides:
   * - the ones beginning with # (treated as comments)
   * - COLUMNS ...
@@ -188,6 +188,6 @@ namespace cloud_io
       return (-1);
     }
 
-    return (0);
+    return (binary_data);
   }
 }
