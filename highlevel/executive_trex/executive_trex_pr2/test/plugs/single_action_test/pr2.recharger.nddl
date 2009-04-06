@@ -1,15 +1,11 @@
 /**
  * Execute a single external action
  */
-#include "test/plugs/single_action_test/imports.nddl"
-#include "world_model/topological_map.nddl"
+#include "plugs/imports.nddl"
 
 DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(External);
 
 close();
-
-// Load a topological map - should have a trivial map here
-map_initialize_from_file("willow.tmap");
 
 // The goal is to execute an OpenDoor action, where we give it the door data
 rejectable(detect_plug_on_base.Active cmd_detect_plug_on_base);
