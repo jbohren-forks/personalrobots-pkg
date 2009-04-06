@@ -1,4 +1,4 @@
- %module pybullet_swig
+ %module bullet
  %{
  /* Includes the header in the wrapper code */
 #include "LinearMath/btQuadWord.h"
