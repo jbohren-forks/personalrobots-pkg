@@ -16,6 +16,7 @@ class DetectPlugOnBase extends ROSAction {
 
   predicate Inactive {
     string frame_id;
+    bool stowed;
     float x;
     float y;
     float z;
@@ -30,4 +31,4 @@ class DetectPlugOnBase extends ROSAction {
  * This is not a ROS action. Instead it will use MoveArm primitives to accomplish the arm position changes.
  * It will be used by anoyone doing navigation
  */
-class TuckArms extends Behavior {}
+class TuckArms extends  ROSAction {}
