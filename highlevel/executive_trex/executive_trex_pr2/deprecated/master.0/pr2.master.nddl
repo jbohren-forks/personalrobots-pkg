@@ -1,0 +1,26 @@
+#include "master.nddl"
+
+/* Waypoints */
+Waypoint w0 = new Waypoint(19.45, 18.3, 0.0);
+Waypoint w1 = new Waypoint(16.50, 18.85, 0.0);
+Waypoint w2 = new Waypoint(15.0, 22.15, 0.0);
+
+/* Charging Stations */
+ChargingStation c1 = new ChargingStation(21.15, 15.25, 0.0); // Outside Eitan's office
+
+close();
+
+// Loads the map from file
+map_initialize_from_file("../test/willow.tmap");
+
+rejectable(Navigator.Active g0);
+g0.w = w0;
+
+// Add condition check for test case
+// assert path[g0.end) == Holds(false, w0.x + [-0.5, 0.05], w0.y + [-0.5, 0.05], ?)
+rejectable(path.Holds c0);
+concurrent(g0.end, c0.start);
+eq(c0.active, false);
+addEq(w0.x, [-0.5, 0.05], c0.x);
+addEq(w0.y, [-0.5, 0.05], c0.y);
+assertCompleted(c0.state);

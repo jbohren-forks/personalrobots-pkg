@@ -1,0 +1,5 @@
+#include "master.sim.nddl"
+fact(base_state.Holds bs);
+bs.x = 0.0;
+bs.y = 0.0;
+bs.th = 0.0;
