@@ -8,6 +8,7 @@
   <url>http://pr.willowgarage.com</url>
   <review status="experimental" notes="beta"/>
 
+  <depend package="eigen" />
   <depend package="roscpp" />
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
@@ -16,7 +17,6 @@
   <depend package="point_cloud_mapping" />
   <depend package="checkerboard_detector" />
   <depend package="std_msgs" />
-  <depend package="sbpl_arm_executive" />
   <depend package="door_handle_detector" />
 
 </package>
