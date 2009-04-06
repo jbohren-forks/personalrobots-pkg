@@ -495,6 +495,7 @@ class btMatrix3x3 {
   ///Data storage for the matrix, each vector is a row of the matrix
 		btVector3 m_el[3];
 
+public:
 	SIMD_FORCE_INLINE btVector3 
 	operator*(const btVector3& v) const 
 	{
@@ -618,6 +619,13 @@ SIMD_FORCE_INLINE bool operator==(const btMatrix3x3& m1, const btMatrix3x3& m2)
             m1.getRow(0).getElement(1) == m2.getRow(0).getElement(1) && m1.getRow(1).getElement(1) == m2.getRow(1).getElement(1) && m1.getRow(2).getElement(1) == m2.getRow(2).getElement(1) &&
             m1.getRow(0).getElement(2) == m2.getRow(0).getElement(2) && m1.getRow(1).getElement(2) == m2.getRow(1).getElement(2) && m1.getRow(2).getElement(2) == m2.getRow(2).getElement(2) );
 }
+
+py::btVector3  vecTimesMatrix(const py::btVector3& v, const py::btMatrix3x3& m)
+  {
+    return py::btVector3(m.tdotx(v), m.tdoty(v), m.tdotz(v));
+  }
+
+
 }
 
 #endif

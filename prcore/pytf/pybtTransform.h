@@ -14,13 +14,15 @@ subject to the following restrictions:
 
 
 
-#ifndef btTransform_H
-#define btTransform_H
+#ifndef pybtTransform_H
+#define pybtTransform_H
 
-#include "btVector3.h"
-#include "btMatrix3x3.h"
+#include "pybtVector3.h"
+#include "pybtMatrix3x3.h"
 
 
+namespace py
+{
 /**@brief The btTransform class supports rigid transforms with only translation and rotation and no scaling/shear.
  *It can be used in combination with btVector3, btQuaternion and btMatrix3x3 linear algebra classes. */
 class btTransform {
@@ -82,9 +84,9 @@ public:
 /**@brief Return the transform of the vector */
 	SIMD_FORCE_INLINE btVector3 operator()(const btVector3& x) const
 	{
-		return btVector3(m_basis[0].dot(x) + m_origin.x(), 
-			m_basis[1].dot(x) + m_origin.y(), 
-			m_basis[2].dot(x) + m_origin.z());
+          return btVector3(m_basis.getRow(0).dot(x) + m_origin.x(), 
+                           m_basis.getRow(1).dot(x) + m_origin.y(), 
+                           m_basis.getRow(2).dot(x) + m_origin.z());
 	}
 
   /**@brief Return the transform of the vector */
@@ -217,7 +219,7 @@ btTransform::inverseTimes(const btTransform& t) const
 {
 	btVector3 v = t.getOrigin() - m_origin;
 		return btTransform(m_basis.transposeTimes(t.m_basis),
-			v * m_basis);
+                                   py::vecTimesMatrix(v, m_basis));
 }
 
 SIMD_FORCE_INLINE btTransform 
@@ -228,13 +230,6 @@ btTransform::operator*(const btTransform& t) const
 }
 
 
-%extend btTransform {
-/**@brief Test if two transforms have all elements equal */
-SIMD_FORCE_INLINE bool operator==(const btTransform& t1, const btTransform& t2)
-{
-   return ( t1.getBasis()  == t2.getBasis() &&
-            t1.getOrigin() == t2.getOrigin() );
-}
 }
 
 #endif

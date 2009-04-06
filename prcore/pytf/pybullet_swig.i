@@ -4,8 +4,8 @@
 #include "LinearMath/btQuadWord.h"
 //#include "pybtVector3.h"
 //#include "pybtQuaternion.h"
-#include "pybtMatrix3x3.h"
-// #include "LinearMath/btTransform.h"
+//#include "pybtMatrix3x3.h"
+#include "pybtTransform.h"
  %}
  
 %include "std_string.i"
@@ -17,7 +17,7 @@
 %include "pybtVector3.h"
 %include "pybtQuaternion.h"
 %include "pybtMatrix3x3.h"
-//%include "pybtTransform.h"
+%include "pybtTransform.h"
 
 %extend py::btQuaternion{
   char * __str__()
@@ -78,7 +78,28 @@
 
   py::btVector3  __rmul__(const py::btVector3& v)
   {
-    return py::btVector3(self->tdotx(v), self->tdoty(v), self->tdotz(v));
+    return py::vecTimesMatrix(v, *self);
   }
+
+}
+
+%extend py::btTransform
+{
+  char * __str__()
+  {
+    static char temp[1024];
+
+    py::btVector3 orig = self->getOrigin();
+    py::btMatrix3x3 basis = self->getBasis();
+    sprintf(temp, "Origin:\n[%f, %f, %f]\n\nBasis:\n[[%f, %f, %f]|\n|[%f, %f, %f]|\n|[%f, %f, %f]]",
+            orig.getX(), orig.getY(), orig.getZ(),
+            basis.getRow(0).getX(), basis.getRow(0).getY(), basis.getRow(0).getZ(),
+            basis.getRow(1).getX(), basis.getRow(1).getY(), basis.getRow(1).getZ(),
+            basis.getRow(2).getX(), basis.getRow(2).getY(), basis.getRow(2).getZ()
+            );
+    return &temp[0];
+  };
+
+
 
 }
