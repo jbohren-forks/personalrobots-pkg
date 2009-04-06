@@ -20,15 +20,21 @@ BaseState base_state = new BaseState(External);
 
 // External RCS Highlevel controllers
 MoveBase move_base = new MoveBase(External);
-//ReleaseDoor release_door = new ReleaseDoor(External);
+ReleaseDoor release_door = new ReleaseDoor(External);
 OpenDoorWithGrasp open_door = new OpenDoorWithGrasp(External);
-//GraspHandle grasp_handle = new GraspHandle(External);
-//OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
+GraspHandle grasp_handle = new GraspHandle(External);
 DetectHandle detect_handle = new DetectHandle(External);
 DetectDoor detect_door = new DetectDoor(External);
-//CheckDoorway check_doorway = new CheckDoorway(External);
-//NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
 
+// Future integration
+// OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
+// CheckDoorway check_doorway = new CheckDoorway(External);
+// NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
+
+
+/**
+ * Door and handle detection reuire the tilt laser to be operational
+ */
 
 DetectDoor::Active{
   contained_by(assembly.tilt_scanner.ControlledBy c0);

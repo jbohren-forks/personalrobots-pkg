@@ -1,7 +1,6 @@
 /**
  * Execute a single external action
  */
-//#include "test/doors/single_action_test/imports.nddl"
 #include "doors/imports.nddl"
 #include "mechanism_control/exports.nddl"
 

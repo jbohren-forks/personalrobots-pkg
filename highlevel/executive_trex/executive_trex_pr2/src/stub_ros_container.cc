@@ -90,15 +90,6 @@ namespace executive_trex_pr2 {
     T _state;
   };
 
-  template <class T>
-  class StubFrameAction: public StubAction<T> {
-  public:
-
-    StubFrameAction(const std::string& name, const std::string& frame): StubAction<T>(name) {
-      StubAction<T>::_state.header.frame_id = frame;
-    }
-  };
-
   /**
    * @brief This stub handles publishing state messages at a given rate
    */
@@ -164,15 +155,6 @@ namespace executive_trex_pr2 {
     Feedback _feedback;
   };
 
-  template <class Goal, class Feedback>
-  class StubFrameAction1: public StubAction1<Goal, Feedback> {
-  public:
-
-    StubFrameAction1(const std::string& name, const std::string& frame): StubAction1<Goal, Feedback>(name) {
-      StubAction1<Goal, Feedback>::_feedback.header.frame_id = frame;
-    }
-  };
-
 }
 
 
@@ -182,6 +164,7 @@ namespace executive_trex_pr2 {
 bool getComponentParam(std::string name) {
   bool value = false;
   ros::Node::instance()->param(name, value, value);
+  ROS_INFO("Parameter for %s is %d", name.c_str(), value);
   return value;
 }
 
@@ -193,15 +176,15 @@ int main(int argc, char** argv){
 
   // Create state publishers, if parameters are set
   executive_trex_pr2::StatePublisher<robot_msgs::Pose>* base_state_publisher = NULL;
-  if (getComponentParam("/trex/create_base_state_publisher"))
+  if (getComponentParam("/trex/enable_base_state_publisher"))
     base_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::Pose>(robot_msgs::Pose(), "base_state", 10.0);
 
   executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>* battery_state_publisher = NULL; 
-  if (getComponentParam("/trex/create_battery_state_publisher"))
+  if (getComponentParam("/trex/enable_battery_state_publisher"))
     battery_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>(robot_msgs::BatteryState(), "battery_state", 10.0);
 
   executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>* bogus_battery_state_publisher = NULL; 
-  if (getComponentParam("/trex/create_bogus_battery_state_publisher"))
+  if (getComponentParam("/trex/enable_bogus_battery_state_publisher"))
     bogus_battery_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>(robot_msgs::BatteryState(), "bogus_battery_state", 10.0);
 
 
@@ -211,43 +194,47 @@ int main(int argc, char** argv){
   /* Add action stubs for doors */
 
   // Detect Door
-  executive_trex_pr2::StubFrameAction<robot_msgs::Door> detect_door("detect_door", "base_link");
-  if (getComponentParam("/trex/create_detect_door"))
+  executive_trex_pr2::StubAction<robot_msgs::Door> detect_door("detect_door");
+  if (getComponentParam("/trex/enable_detect_door"))
     runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
 
   // Detect Handle
-  executive_trex_pr2::StubFrameAction<robot_msgs::Door> detect_handle("detect_handle", "base_link");
-  if (getComponentParam("/trex/create_detect_handle"))
+  executive_trex_pr2::StubAction<robot_msgs::Door> detect_handle("detect_handle");
+  if (getComponentParam("/trex/enable_detect_handle"))
     runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);
 
   // Grasp Handle
-  executive_trex_pr2::StubFrameAction<robot_msgs::Door> grasp_handle("grasp_handle", "base_link");
-  if (getComponentParam("/trex/create_grasp_handle"))
+  executive_trex_pr2::StubAction<robot_msgs::Door> grasp_handle("grasp_handle");
+  if (getComponentParam("/trex/enable_grasp_handle"))
     runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp_handle);
 
-  executive_trex_pr2::StubFrameAction<robot_msgs::Door> open_door("open_door", "base_link");
-  if (getComponentParam("/trex/create_open_door"))
+  executive_trex_pr2::StubAction<robot_msgs::Door> open_door("open_door");
+  if (getComponentParam("/trex/enable_open_door"))
     runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door);
 
+  executive_trex_pr2::StubAction<robot_msgs::Door> release_door("release_door");
+  if (getComponentParam("/trex/enable_release_door"))
+    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(release_door);
+
   /* Action stubs for plugs */
-  executive_trex_pr2::StubFrameAction1<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base", "torso_link_lift");
-  if (getComponentParam("/trex/create_detect_plug_on_base"))
+  executive_trex_pr2::StubAction1<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
+  if (getComponentParam("/trex/enable_detect_plug_on_base"))
     runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect_plug_on_base);
 
   /* Action stubs for resource management */
   executive_trex_pr2::StubAction1<robot_actions::SwitchControllers, std_msgs::Empty> switch_controllers("switch_controllers");
-  if (getComponentParam("/trex/create_switch_controllers"))
+  if (getComponentParam("/trex/enable_switch_controllers"))
     runner.connect<robot_actions::SwitchControllers, robot_actions::SwitchControllersState, std_msgs::Empty>(switch_controllers);
 
   // Allocate other action stubs
-  executive_trex_pr2::StubFrameAction<robot_actions::Pose2D> move_base("move_base", "base_link");
-  if (getComponentParam("/trex/create_move_base"))
+  executive_trex_pr2::StubAction<robot_actions::Pose2D> move_base("move_base");
+  if (getComponentParam("/trex/enable_move_base"))
     runner.connect<robot_actions::Pose2D, robot_actions::MoveBaseState, robot_actions::Pose2D>(move_base);
   executive_trex_pr2::StubAction<std_msgs::Float32> recharge("recharge_controller");
-  if (getComponentParam("/trex/create_recharge"))
+  if (getComponentParam("/trex/enable_recharge"))
     runner.connect<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32>(recharge);
   executive_trex_pr2::StubAction<std_msgs::String> shell_command("shell_command");
-  if (getComponentParam("/trex/create_shell_command"))
+  if (getComponentParam("/trex/enable_shell_command"))
     runner.connect<std_msgs::String, robot_actions::ShellCommandState, std_msgs::String>(shell_command);
 
   // Miscellaneous

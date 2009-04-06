@@ -1,6 +1,6 @@
 <launch>
   <master auto="start"/>
-  <!--node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" /-->
+  <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
   <param name="/trex/input_file" value="mechanism_control.cfg"/>
   <param name="/trex/path" value="$(find executive_trex_pr2)/cfg"/>
   <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/mechanism_control"/>

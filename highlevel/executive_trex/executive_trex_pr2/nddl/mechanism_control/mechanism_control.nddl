@@ -30,40 +30,22 @@ MechanismControllerState::Holds {
   met_by(Holds p);
   neq(p.is_up, is_up);
 
-  if(end){
-    meets(Holds s);
-    neq(s.is_up, is_up);
-  }
+  meets(Holds s);
+  neq(s.is_up, is_up);
 
-  // Hack for just before the end. Scope out of the horizon if its end time is not necessarily within
-  if(is_up == false){
-    bool required;
-    int inside_bounds;
-    addEq(inside_bounds, 2, missionEnd);
-    testLEQ(required, end, inside_bounds);
-    if(required == true){
-      ends(SwitchControllers.Active swap_cmd);
-      eq(swap_cmd.status, SUCCESS);
-    }
-  }
-
-  // Force it inside the mission horizon
-  if(is_up == true){
-    temporalDistance(start, [1 +inf], missionEnd);
+  // If and only if required, then link to a command. A better way to handle this?
+  bool required;
+  testLT(required, end, missionEnd);
+  if(required == true){
+    ends(SwitchControllers.Active swap_cmd);
+    eq(swap_cmd.status, SUCCESS);
   }
 }
 
 /**
- * Once we are in control, we stay in control.
+ * The controller must be up while controlling the mechanism
  */
 Mechanism::ControlledBy {
-  /**
-   * TODO: Enforce requirement that mechanism is always in control
-  meets(ControlledBy);
-  default(controller, object.default_controller);
-  */
-
-  // Co-temporal with the controller being up
   equals(MechanismControllerState.Holds mcs);
   eq(mcs.object.controller, controller);
   eq(mcs.is_up, true);

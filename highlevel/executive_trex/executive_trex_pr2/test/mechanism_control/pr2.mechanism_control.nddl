@@ -1,3 +1,9 @@
+/**
+ * Bring up and down mechanism controllers in temporal order. By bringup up a second
+ * controller for the same mechanism, we will have to bring down the first in a swap.
+ * Finally, we will require the tilt laser controller to remain active for a minimum
+ * duration.
+ */
 #include "mechanism_control/mechanism_control.nddl"
 
 close();

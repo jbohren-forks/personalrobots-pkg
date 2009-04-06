@@ -4,9 +4,10 @@
 #include "TREX.nddl"
 #include "rcs/exports.nddl"
 #include "rcs/mechanism_control/exports.nddl"
+#include "test/actions.nddl"
 
 Behavior::Active{
-  addEq(dispatch_time, [0, 1], start);
+  starts(TestActions.StartEvent);
   eq(status, SUCCESS);
 }
 
