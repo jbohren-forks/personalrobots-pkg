@@ -265,8 +265,11 @@ class NavStackTest(unittest.TestCase):
             h = rospy.Header();
             h.stamp = rospy.get_rostime();
             h.frame_id = "/map"
+            points = []; #[Point2DFloat32()];
+            color  = ColorRGBA(0,0,0,0);
+            boundary = Polyline2D(h,points,color);
             if self.publish_goal:
-              pub_goal.publish(Pose2D(h, self.target_x, self.target_y, self.target_t))
+              pub_goal.publish(Pose2D(h, self.target_x, self.target_y, self.target_t, boundary))
             time.sleep(1.0)
 
             # compute angular error between deltas in odom and p3d
