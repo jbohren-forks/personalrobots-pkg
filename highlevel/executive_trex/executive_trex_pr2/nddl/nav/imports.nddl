@@ -1,7 +1,27 @@
 #include "TREX.nddl"
+#include "constraints.nddl"
+
+// Tier 1 interface points
 #include "rcs/exports.nddl"
 #include "rcs/nav/exports.nddl"
+#include "rcs/safety/exports.nddl"
 
+// Tier 2 interface points
+#include "mechanism_control/exports.nddl"
+#include "safety/exports.nddl"
+#include "nav/nav.nddl"
+
+// Mechanism Control - access to mechanisms and how they are controlled
+Assembly assembly = new Assembly(External);
+
+// Safety
+MobilityStatus mobility_status = new MobilityStatus(External);
+
+// Navigation related actions
 MoveBase move_base = new MoveBase(External);
 
-close();
+/** ADDITIONAL RULES **/
+MoveBase::Active{
+  contained_by(assembly.base.ControlledBy c0);
+  eq(c0.controller, base_controller);
+}
