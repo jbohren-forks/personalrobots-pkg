@@ -59,29 +59,3 @@ class MoveBase extends ROSAction {
     super(_mode, max_duration_);
   }
 };
-
-/**
- * @brief This is a sensing action which will be used during navigation and recharging.
- *
- * It should return success if it found the plug, and the plug is on the base in the expected position. 
- * It will take as input an expected x, y, and th triple in the 'robot frame' and it will give feedback of the 
- * actual x and y values.
- */
-class DetectPlugOnBase extends ROSAction {
-
-  predicate Active {
-    string frame_id;
-    float x;
-    float y;
-    float th;
-  }
-
-  predicate Inactive {
-    string frame_id;
-    float x;
-    float y;
-    float th;
-  }
-
-  DetectPlugOnBase(Mode _mode){ super(_mode);}
-};

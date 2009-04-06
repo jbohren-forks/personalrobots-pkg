@@ -21,6 +21,8 @@ rospack_add_nddl("test/doors/without_map/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/single_action_test/pr2.doorman.nddl")
 
 # Plug Tests
+rospack_add_nddl("test/plugs/pr2.safety.nddl")
+rospack_add_nddl("test/plugs/pr2.mechanism_control.nddl")
 rospack_add_nddl("test/plugs/single_action_test/pr2.recharger.nddl")
 
 # Mechanism Control Tests

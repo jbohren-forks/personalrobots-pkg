@@ -1,19 +1,1 @@
-/**
- * This file defines actions and state variables specific to the plugs domain
- * @author Conor McGann
- */
-class DetectPlugOnBase extends ROSAction {
 
-  predicate Active{}
-
-  predicate Inactive{
-    string frame_id;
-    float x;
-    float y;
-    float z;
-  }
-
-  DetectPlugOnBase(Mode _mode){
-    super(_mode);
-  }
-};

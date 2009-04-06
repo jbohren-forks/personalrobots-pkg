@@ -3,8 +3,6 @@
  */
 #include "plugs/imports.nddl"
 
-DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(External);
-
 close();
 
 // The goal is to execute an OpenDoor action, where we give it the door data

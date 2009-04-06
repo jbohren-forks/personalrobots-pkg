@@ -7,25 +7,21 @@
  * @brief This is a sensing action which will be used during navigation and recharging.
  *
  * It should return success if it found the plug, and the plug is on the base in the expected position. 
- * It will take as input an expected x, and y and z value in the robot frame and it will give feedback of the 
+ * It will take as input an expected x, y, and th triple in the 'robot frame' and it will give feedback of the 
  * actual x and y values.
  */
-class DetectPlugOnBase extends ROSTFAction {
+class DetectPlugOnBase extends ROSAction {
 
-  predicate Active {
-    float x;
-    float y;
-    float z;
-  }
+  predicate Active {}
 
   predicate Inactive {
+    string frame_id;
     float x;
     float y;
     float z;
   }
 
   DetectPlugOnBase(Mode _mode){ super(_mode);}
-
 };
 
 /**
