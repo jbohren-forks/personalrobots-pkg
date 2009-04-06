@@ -6,7 +6,7 @@
 /**
  * @brief For placing the plug back on the base.
  */
-class StowPlug extends ROSTFAction {
+class StowPlug extends ROSAction {
   // Goal takes a point for the target location
   predicate Active{
     float x;
@@ -23,7 +23,7 @@ class StowPlug extends ROSTFAction {
 /**
  * @brief For unplugging from the socket.
  */
-class Unplug extends ROSTFAction {
+class Unplug extends ROSAction {
   // Goal takes a point for the target location
   predicate Active{
   }
@@ -37,7 +37,7 @@ class Unplug extends ROSTFAction {
 /**
  * @brief Push plug into socket. Should be just at the socket and in the gripper.
  */
-class PushPlugIn extends ROSTFAction {
+class PushPlugIn extends ROSAction {
   predicate Active{}
 
   predicate Inactive{}
@@ -48,7 +48,7 @@ class PushPlugIn extends ROSTFAction {
 /**
  * @brief Initial insertion - where the prongs are in. Follow up with a push
  */
-class InsertPlug extends ROSTFAction {
+class InsertPlug extends ROSAction {
   predicate Active{}
 
   predicate Inactive{}
@@ -59,7 +59,7 @@ class InsertPlug extends ROSTFAction {
 /**
  * @brief Servo to outlet, assuming we have the plug staged etc
  */
-class ServoToOutlet extends ROSTFAction {
+class ServoToOutlet extends ROSAction {
   predicate Active{}
 
   predicate Inactive{}
@@ -70,7 +70,7 @@ class ServoToOutlet extends ROSTFAction {
 /**
  * @brief Detect the outlet with fine resolution
  */
-class DetectOutletFine extends ROSTFAction {
+class DetectOutletFine extends ROSAction {
   // Input takes a point
   predicate Active{
     float x;
@@ -94,7 +94,7 @@ class DetectOutletFine extends ROSTFAction {
 /**
  * @brief Detect the outlet with coarse resolution
  */
-class DetectOutletCoarse extends ROSTFAction {
+class DetectOutletCoarse extends ROSAction {
   // Input takes a point
   predicate Active{
     float x;
@@ -118,7 +118,7 @@ class DetectOutletCoarse extends ROSTFAction {
 /**
  * @brief Localize the plug in the gripper
  */
-class LocalizePlugInGripper extends ROSTFAction {
+class LocalizePlugInGripper extends ROSAction {
   predicate Active{
   }
 
@@ -131,7 +131,7 @@ class LocalizePlugInGripper extends ROSTFAction {
 /**
  * @brief Grasp the plug on the base
  */
-class GraspPlug extends ROSTFAction {
+class GraspPlug extends ROSAction {
   predicate Active{
   }
 
@@ -144,7 +144,7 @@ class GraspPlug extends ROSTFAction {
 /**
  * @brief Move to a grasp point
  */
-class MoveToGrasp extends ROSTFAction {
+class MoveToGrasp extends ROSAction {
   predicate Active{
   }
 

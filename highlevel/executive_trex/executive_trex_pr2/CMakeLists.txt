@@ -12,17 +12,18 @@ rospack_add_boost_directories()
 #include(NDDL.cmake)
 setup_nddl()
 
+# Shared files
+rospack_add_nddl("test/pr2.safety.nddl")
+rospack_add_nddl("test/pr2.mechanism_control.nddl")
+
+# Nav Tests
+#rospack_add_nddl("test/nav/pr2.driver.nddl")
+
 # Door Tests
 rospack_add_nddl("test/doors/pr2.rcs.sim.nddl")
-rospack_add_nddl("test/doors/pr2.safety.nddl")
-rospack_add_nddl("test/doors/pr2.mechanism_control.nddl")
-rospack_add_nddl("test/doors/with_map/pr2.doorman.nddl")
-rospack_add_nddl("test/doors/without_map/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/single_action_test/pr2.doorman.nddl")
 
 # Plug Tests
-rospack_add_nddl("test/plugs/pr2.safety.nddl")
-rospack_add_nddl("test/plugs/pr2.mechanism_control.nddl")
 rospack_add_nddl("test/plugs/single_action_test/pr2.recharger.nddl")
 
 # Mechanism Control Tests
