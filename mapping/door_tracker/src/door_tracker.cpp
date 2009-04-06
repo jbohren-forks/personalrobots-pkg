@@ -324,7 +324,7 @@ class DoorTracker
         door_tmp.door_p2.x = line_segment_max[inliers_size_max_index].x;
         door_tmp.door_p2.y = line_segment_max[inliers_size_max_index].y;
         door_tmp.door_p2.z = line_segment_max[inliers_size_max_index].z;
-        door_temp.header = cloud.header;
+        door_tmp.header = cloud.header;
         node_->publish( "~door_message", door_tmp);        
       }
     }
