@@ -17,4 +17,5 @@
   <depend package="openraveros"/>
   <depend package="checkerboard_detector"/>
   <depend package="pr2_default_controllers"/>
+  <depend package="openrave_robot_description"/>
 </package>
