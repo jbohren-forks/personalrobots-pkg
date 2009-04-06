@@ -8,8 +8,7 @@ genmsg()
 
 rospack_add_boost_directories()
 
-#Will replace jam...
-#include(NDDL.cmake)
+# To build exec input files
 setup_nddl()
 
 # Shared files
@@ -17,7 +16,7 @@ rospack_add_nddl("test/pr2.safety.nddl")
 rospack_add_nddl("test/pr2.mechanism_control.nddl")
 
 # Nav Tests
-#rospack_add_nddl("test/nav/pr2.driver.nddl")
+rospack_add_nddl("test/nav/pr2.driver.nddl")
 
 # Door Tests
 rospack_add_nddl("test/doors/pr2.rcs.sim.nddl")

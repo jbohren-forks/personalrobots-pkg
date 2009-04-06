@@ -7,7 +7,7 @@
  * @brief 
  */
 class PlugUntuckArms extends ROSAction {
-  StowPlug(Mode _mode){super(_mode);}
+  PlugUntuckArms(Mode _mode){super(_mode);}
 };
 
 /**
@@ -151,5 +151,5 @@ class MoveAndGraspPlug extends ROSAction {
     string frame_id;
   }
 
-  MoveToGrasp(Mode _mode){super(_mode);}
+  MoveAndGraspPlug(Mode _mode){super(_mode);}
 };

@@ -1,0 +1,7 @@
+#include "TREX.nddl"
+#include "rcs/exports.nddl"
+#include "rcs/nav/exports.nddl"
+
+MoveBase move_base = new MoveBase(External);
+
+close();

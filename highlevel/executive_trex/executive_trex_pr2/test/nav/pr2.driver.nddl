@@ -1,0 +1,8 @@
+#include "nav/imports.nddl"
+
+close();
+
+rejectable(move_base.Active g0);
+g0.x = 19.5;
+g0.y = 29.0;
+g0.th = 0.0;

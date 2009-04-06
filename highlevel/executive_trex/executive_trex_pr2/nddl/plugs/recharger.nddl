@@ -1,3 +1,19 @@
+
+
+/**
+ * @brief This may get deprecated in favor of a simple position control
+ */
+class HoldPlugInSocket extends Behavior {
+  // Goal takes a point for the target location
+  predicate Active{}
+
+  // No feedback. Just succeeds or not
+  predicate Inactive{}
+
+  HoldPlugInSocket(Mode _mode){super(_mode);}
+};
+
+
 /**
  * Recharging - a short hand version
  * Selects exactly one option, evaluates top down. Arms will be stowed as needed by subsequent action
