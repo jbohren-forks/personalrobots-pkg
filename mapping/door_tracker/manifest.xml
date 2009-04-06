@@ -12,11 +12,10 @@
   <depend package="roscpp" />
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
-  <depend package="kdl" />
   <depend package="angles" />
   <depend package="point_cloud_mapping" />
-  <depend package="checkerboard_detector" />
   <depend package="std_msgs" />
   <depend package="door_handle_detector" />
+  <depend package="filters" />
 
 </package>

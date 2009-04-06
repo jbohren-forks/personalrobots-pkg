@@ -78,6 +78,14 @@
 
 #include <sys/time.h>
 
+// Clouds and scans
+#include <laser_scan/LaserScan.h>
+#include <laser_scan/laser_scan.h>
+
+//Filters
+#include "filters/filter_chain.h"
+#include "laser_scan/scan_shadows_filter.h"
+
 using namespace std;
 using namespace robot_msgs;
 
@@ -96,10 +104,11 @@ class DoorTracker
     ros::Node *node_;
 
     PointCloud cloud_;
+    laser_scan::LaserProjection projector_; // Used to project laser scans into point clouds
 
     tf::TransformListener *tf_;
 
-    tf::MessageNotifier<robot_msgs::PointCloud>* message_notifier_;
+    tf::MessageNotifier<laser_scan::LaserScan>* message_notifier_;
 
     robot_msgs::Door door_msg_;
 
@@ -111,8 +120,18 @@ class DoorTracker
 
     bool active_;
 
+    filters::FilterChain<laser_scan::LaserScan> filter_chain_;
+
+    tf::Stamped<tf::Pose> global_pose_;
+
+    double global_yaw_;
+
+    double global_x_;
+
+    double global_y_;
+
     /********** Parameters that need to be gotten from the param server *******/
-    std::string door_msg_topic_, base_laser_topic_;
+    std::string door_msg_topic_, base_laser_topic_,fixed_frame_;
     int sac_min_points_per_model_;
     double sac_distance_threshold_;
     double eps_angle_, frame_multiplier_;
@@ -132,6 +151,16 @@ class DoorTracker
       active_ = false;
       node_->subscribe("~activate",activate_msg_,&DoorTracker::activate,this,1);
       ROS_INFO("Started door tracker");
+
+      //Laser Scan Filtering
+      std::string filter_xml;
+      node_->param("~filters", filter_xml,std::string("<filters><!--NO Filters defined--></filters>"));
+      //ROS_INFO("Got ~filters as: %s\n", filter_xml.c_str());
+      TiXmlDocument xml_doc;
+      xml_doc.Parse(filter_xml.c_str());
+      TiXmlElement * config = xml_doc.RootElement();
+
+      filter_chain_.configure(1, config);
     };
 
     ~DoorTracker()
@@ -153,6 +182,7 @@ class DoorTracker
         node_->param ("~p_sac_min_points_left", sac_min_points_left_, 10);
         node_->param ("~p_door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
         node_->param ("~p_door_max_width", door_max_width_, 1.1);                    // maximum width of a door: 1.4m
+        node_->param("~p_fixed_frame", fixed_frame_, string("odom_combined"));
 
         eps_angle_ = angles::from_degrees (eps_angle_);                      // convert to radians
 
@@ -172,7 +202,8 @@ class DoorTracker
         node_->advertise<robot_msgs::Door>( "~door_message", 0 );
         node_->advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
 
-        message_notifier_ = new tf::MessageNotifier<robot_msgs::PointCloud> (tf_, node_,  boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_.c_str (), door_msg_.header.frame_id, 1);
+        message_notifier_ = new tf::MessageNotifier<laser_scan::LaserScan> (tf_, node_,  boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_.c_str (), fixed_frame_, 1);
+        message_notifier_->setTolerance(ros::Duration(.02));
         active_ = true;
       }
     }
@@ -191,15 +222,60 @@ class DoorTracker
       }
     }
 
-    void laserCallBack(const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud)
+
+    void updateGlobalPose()
+    {
+      tf::Stamped<tf::Pose> robotPose;
+      robotPose.setIdentity();
+      robotPose.frame_id_ = "base_link";
+      robotPose.stamp_ = ros::Time();
+
+      try{
+        tf_->transformPose(fixed_frame_, robotPose, global_pose_);
+      }
+      catch(tf::LookupException& ex) {
+        ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      }
+      catch(tf::ConnectivityException& ex) {
+        ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      }
+      catch(tf::ExtrapolationException& ex) {
+        ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      }
+
+      double useless_pitch, useless_roll, yaw;
+
+      global_pose_.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
+      global_yaw_ = yaw;
+      global_x_ = global_pose_.getOrigin().x();
+      global_y_ = global_pose_.getOrigin().y();
+
+//      ROS_DEBUG("Received new position (x=%f, y=%f, th=%f)", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
+    }
+
+
+
+    void laserCallBack(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& scan_msg)
     {
       if(!active_)
         return;
 
+      laser_scan::LaserScan filtered_scan;
+      filter_chain_.update (*scan_msg, filtered_scan);
+      // Transform into a PointCloud message
+      int mask = laser_scan::MASK_INTENSITY | laser_scan::MASK_DISTANCE | laser_scan::MASK_INDEX | laser_scan::MASK_TIMESTAMP;
+      try {
+        projector_.transformLaserScanToPointCloud(fixed_frame_, cloud_, filtered_scan, *tf_, mask);
+      }
+      catch (tf::TransformException& e) {
+        ROS_WARN ("TF exception transforming scan to cloud: %s", e.what());
+        return;
+      }
+
       num_clouds_received_++;
 
-      cloud_msg_mutex_.lock();
-      cloud_ = *cloud;
+//      cloud_msg_mutex_.lock();
+//      cloud_ = *cloud;
       ROS_INFO("Received a point cloud with %d points in frame: %s",(int) cloud_.pts.size(),cloud_.header.frame_id.c_str());
       if(cloud_.pts.empty())
       {
@@ -209,7 +285,7 @@ class DoorTracker
       if ((int)cloud_.pts.size() < sac_min_points_per_model_)
         return;
 
-      cloud_msg_mutex_.unlock();
+//      cloud_msg_mutex_.unlock();
 
       if(continuous_detection_) // do this on every laser callback
       {
@@ -252,11 +328,23 @@ class DoorTracker
       node_->publish( "visualizationMarker", marker );
     }
 
+
+    void transform2DInverse(const Point32 &fp_in, Point32 &fp_out, const double &robot_x, const double &robot_y, const double &robot_theta)
+    {
+      double cth = cos(robot_theta);
+      double sth = sin(robot_theta);
+      fp_out.x = fp_in.x*cth+fp_in.y*sth-robot_x*cth-robot_y*sth;
+      fp_out.y = -fp_in.x*sth+fp_in.y*cth+robot_x*sth-robot_y*cth;
+      return;
+    }
+
     void findDoor()
     {
       cloud_msg_mutex_.lock();
       PointCloud cloud = cloud_;//create a local copy - should be fine since its a small scan from the base laser
       cloud_msg_mutex_.unlock();
+
+      updateGlobalPose();
 
       vector<int> indices;
       vector<int> possible_door_points;
@@ -294,9 +382,14 @@ class DoorTracker
           inliers[i].resize(0);
           ROS_WARN("This candidate line has the wrong width: %f which is outside the (min,max) limits: (%f,%f)",door_frame_width,door_min_width_,door_max_width_);
           continue;
-        } 
-        double door_pt_angle_1 = atan2(line_segment_max[i].y,line_segment_max[i].x);
-        double door_pt_angle_2 = atan2(line_segment_min[i].y,line_segment_min[i].x);
+        }
+ 
+        Point32 temp_min,temp_max;
+        transform2DInverse(line_segment_min[i],temp_min,global_x_,global_y_,global_yaw_);
+        transform2DInverse(line_segment_min[i],temp_max,global_x_,global_y_,global_yaw_);
+ 
+        double door_pt_angle_1 = atan2(temp_max.y,temp_max.x);
+        double door_pt_angle_2 = atan2(temp_min.y,temp_min.x);
 
         if(fabs(door_pt_angle_1) > M_PI/2.0 || fabs(door_pt_angle_2) > M_PI/2.0)
         {
@@ -475,38 +568,38 @@ class DoorTracker
 
 
 /*
-    void get3DBounds (Point32 *p1, Point32 *p2, Point32 &min_b, Point32 &max_b, int multiplier)
-    {
-      // Get the door_frame distance in the X-Y plane
-      float door_frame = sqrt ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) );
+  void get3DBounds (Point32 *p1, Point32 *p2, Point32 &min_b, Point32 &max_b, int multiplier)
+  {
+  // Get the door_frame distance in the X-Y plane
+  float door_frame = sqrt ( (p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y) );
 
-      float center[2];
-      center[0] = (p1->x + p2->x) / 2.0;
-      center[1] = (p1->y + p2->y) / 2.0;
+  float center[2];
+  center[0] = (p1->x + p2->x) / 2.0;
+  center[1] = (p1->y + p2->y) / 2.0;
 
-      // Obtain the bounds (doesn't matter which is min and which is max at this point)
-      min_b.x = center[0] + (multiplier * door_frame) / 2.0;
-      min_b.y = center[1] + (multiplier * door_frame) / 2.0;
-      min_b.z = -FLT_MAX;
+  // Obtain the bounds (doesn't matter which is min and which is max at this point)
+  min_b.x = center[0] + (multiplier * door_frame) / 2.0;
+  min_b.y = center[1] + (multiplier * door_frame) / 2.0;
+  min_b.z = -FLT_MAX;
 
-      max_b.x = center[0] - (multiplier * door_frame) / 2.0;
-      max_b.y = center[1] - (multiplier * door_frame) / 2.0;
-      max_b.z = FLT_MAX;
+  max_b.x = center[0] - (multiplier * door_frame) / 2.0;
+  max_b.y = center[1] - (multiplier * door_frame) / 2.0;
+  max_b.z = FLT_MAX;
 
-      // Order min/max
-      if (min_b.x > max_b.x)
-      {
-        float tmp = min_b.x;
-        min_b.x = max_b.x;
-        max_b.x = tmp;
-      }
-      if (min_b.y > max_b.y)
-      {
-        float tmp = min_b.y;
-        min_b.y = max_b.y;
-        max_b.y = tmp;
-      }
-    }
+  // Order min/max
+  if (min_b.x > max_b.x)
+  {
+  float tmp = min_b.x;
+  min_b.x = max_b.x;
+  max_b.x = tmp;
+  }
+  if (min_b.y > max_b.y)
+  {
+  float tmp = min_b.y;
+  min_b.y = max_b.y;
+  max_b.y = tmp;
+  }
+  }
 */
 
     void get3DBounds (Point32 *p1, Point32 *p2, Point32 &min_b, Point32 &max_b, int multiplier)
