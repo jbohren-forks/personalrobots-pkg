@@ -44,8 +44,8 @@ using namespace door_handle_detector;
 
 
 static const string fixed_frame = "odom_combined";
-
-
+static const double scan_speed  = 0.1; // [m/sec]
+static const double scan_height = 0.4; //[m]
 
 
 DetectHandleAction::DetectHandleAction(Node& node): 
@@ -87,7 +87,6 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
   }
 
 
-  /*
   if (!cameraDetection(door, result_laser)){
     if (request_preempt_){
       ROS_INFO("DetectHandleAction: Preempted");
@@ -102,7 +101,6 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
     ROS_INFO("DetectHandleAction: Succeeded");
     notifySucceeded(result_camera);
   }
-  */
 }
 
 
@@ -122,7 +120,7 @@ bool DetectHandleAction::laserDetection(const robot_msgs::Door& door_in,
   double laser_height = tilt_stage.getOrigin()[2];
   tf::Stamped<tf::Vector3> handlepoint(tf::Vector3((door_in.door_p1.x+door_in.door_p2.x)/2.0,
 						   (door_in.door_p1.y+door_in.door_p2.y)/2.0,
-						   (door_in.door_p1.z+door_in.door_p2.z)/2.0),
+						   0.9),
 				       ros::Time(), door_in.header.frame_id);
   if (!tf_.canTransform("base_footprint", handlepoint.frame_id_, ros::Time(), ros::Duration().fromSec(5.0))){
     ROS_ERROR("DetectHandleAction: could not get transform from 'base_footprint' to '%s'", handlepoint.frame_id_.c_str());
@@ -130,8 +128,8 @@ bool DetectHandleAction::laserDetection(const robot_msgs::Door& door_in,
   }
   tf_.transformPoint("base_footprint", handlepoint, handlepoint);
   double dist = handlepoint[0];
-  double handle_bottom = handlepoint[2]-0.4;
-  double handle_top = handlepoint[2]+0.4;
+  double handle_bottom = handlepoint[2]-(scan_height/2.0);
+  double handle_top = handlepoint[2]+(scan_height/2.0);
   ROS_INFO("DetectHandleAction: tilt laser is at height %f, and door at distance %f", laser_height, dist);
   
   // gets a point cloud from the point_cloud_srv
@@ -141,7 +139,7 @@ bool DetectHandleAction::laserDetection(const robot_msgs::Door& door_in,
   point_cloud_assembler::BuildCloudAngle::Response res_pointcloud;
   req_pointcloud.angle_begin = -atan2(handle_top - laser_height, dist);
   req_pointcloud.angle_end = atan2(laser_height - handle_bottom, dist);
-  req_pointcloud.duration = 4.0;
+  req_pointcloud.duration = scan_height/scan_speed;
   if (!ros::service::call("point_cloud_srv/single_sweep_cloud", req_pointcloud, res_pointcloud)){
     ROS_ERROR("DetectHandleAction: failed to get point cloud for door detection");
     return false;

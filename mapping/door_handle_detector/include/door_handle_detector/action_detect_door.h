@@ -55,6 +55,8 @@ public:
   virtual void handleActivate(const robot_msgs::Door& door);
   virtual void handlePreempt();
 
+  robot_msgs::Door tmp_result_;
+
 
 private:
   bool laserDetection(const robot_msgs::Door& door_in, robot_msgs::Door& door_out);

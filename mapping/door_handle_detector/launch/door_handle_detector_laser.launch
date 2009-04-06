@@ -1,5 +1,14 @@
 <launch>
 
+<!-- Stereo image processing -->
+ <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
+
+<!-- Camera dandle detector -->
+ <node pkg="door_handle_detector" name="handle_detector_vision" type="handle_detector_vision" respawn="false" output="screen">
+   <param name="display" type="bool" value="false" />
+ </node>
+
+
 <!-- Laser scan assembler -->
   <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
     <remap from="scan_in" to="tilt_scan"/>

@@ -77,6 +77,7 @@ void DetectDoorAction::handleActivate(const robot_msgs::Door& door)
   else{
     ROS_INFO("DetectDoorAction: Succeeded");
     notifySucceeded(result_laser);
+    tmp_result_ = result_laser;
   }
 }
 

@@ -88,26 +88,26 @@ bool HandleDetector::detectHandle (const robot_msgs::Door& door, PointCloud poin
 
   Time ts = Time::now();
   Duration duration;
-  Duration timeout = Duration().fromSec(5.0);
+  Duration timeout = Duration().fromSec(2.0);
 
-  // New strategy: transform the PCD (Point Cloud Data) into the parameter_frame, and work there
+  // Transform the PCD (Point Cloud Data) into the parameter_frame, and work there
   if (!tf_.canTransform(parameter_frame_, pointcloud.header.frame_id, pointcloud.header.stamp, timeout)){
     ROS_ERROR ("HandleDetector: Could not transform point cloud from frame '%s' to frame '%s'.",
                pointcloud.header.frame_id.c_str (), parameter_frame_.c_str ());
     return false;
   }
   tf_.transformPointCloud (parameter_frame_, pointcloud, pointcloud);
-  ROS_INFO("HandleDetector: Pointcloud transformed to robot frame");
+  ROS_INFO("HandleDetector: Pointcloud transformed to '%s'", parameter_frame_.c_str());
 
 
   // transform the door message into the parameter_frame, and work there
   Door door_tr;
   if (!transformTo(tf_, parameter_frame_, door, door_tr)){
-     ROS_ERROR ("HandleDetector: Could not transform door message from frame %s to frame %s.",
+     ROS_ERROR ("HandleDetector: Could not transform door message from frame '%s' to frame '%s'.",
                 door.header.frame_id.c_str (), parameter_frame_.c_str ());
      return false;
    }
-   ROS_INFO("HandleDetector: door message transformed to parameter frame");
+  ROS_INFO("HandleDetector: Door message transformed to '%s'", parameter_frame_.c_str());
 
 
   vector<int> tmp_indices;    // Used as a temporary indices array
