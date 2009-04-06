@@ -1,0 +1,10 @@
+%YAML:1.0
+CAMERA_PARAMETERS_PATH: "D:/work/Argus/DATA/Outlet_chessbrd_Canon/canonwg.yml"
+IMAGES_LIST_PATH: "D:/work/Argus/DATA/Outlet_chessbrd_Canon/Small/2.txt"
+LOG_FILE_PATH: "D:/work/Argus/DATA/Outlet_chessbrd_Canon/resultes.log"
+OUTLETS_COORDINATES_PATH: "D:/work/Argus/DATA/Temp/outlets.txt"
+CHESSBOARD_WIDTH: 6
+CHESSBOARD_HEIGHT: 9
+SQUARE_WIDTH: 21.40
+SQUARE_HEIGHT: 21.18
+MAX_REPROJECTION_ERROR: 2
