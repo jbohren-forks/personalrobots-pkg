@@ -154,8 +154,19 @@ void EnvironmentNAVXYTHETADOOR::SetDesiredDoorAngles(vector<int> desired_door_an
 	printf("desired door angles are set to %d values\n", this->desired_door_anglesV.size());
 }
 
+int EnvironmentNAVXYTHETADOOR::MinCostDesiredDoorAngle(int x, int y, int theta)
+{
+
+  //TODO
+  return INFINITECOST;
+
+
+}
+
+
+
 //overwrites the parent navxythetalat class to return a goal whenever a state has the desired angle door, independently of the robot pose
-void EnvironmentNAVXYTHETALAT::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<EnvNAVXYTHETALATAction_t*>* actionV /*=NULL*/)
+void EnvironmentNAVXYTHETADOOR::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<EnvNAVXYTHETALATAction_t*>* actionV /*=NULL*/)
 {
     int aind;
 

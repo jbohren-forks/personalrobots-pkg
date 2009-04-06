@@ -72,7 +72,6 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
   void SetDesiredDoorAngles(vector<int> desired_door_anglesV);
 
 
-
 	void SetAllActionsandAllOutcomes(CMDPSTATE* state){
 		printf("ERROR: SetAllActionsandAllOutcomes not supported in navxythetadoor environment\n");
 		exit(1);
@@ -81,7 +80,12 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
 		printf("ERROR: SetAllPreds not supported in navxythetadoor environment\n");
 		exit(1);
 	};
-	void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
+
+	void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV){
+	  GetSuccs(SourceStateID, SuccIDV, CostV, NULL);
+	}
+
+	void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<EnvNAVXYTHETALATAction_t*>* actionindV=NULL);
 
 	void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV){
 		printf("ERROR: GetPreds not supported in navxythetadoor environment\n");
@@ -99,6 +103,10 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
   //returned at all as a possible doorangle.
   void GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldrobotpose3D, vector<int>* doorangleV, 
                           vector<int>* dooranglecostV);
+
+  //returns the cost to getting to mincost desired door angles while staying at this pose
+  //returns infinity if no desired goal angle is reachable
+  int MinCostDesiredDoorAngle(int x, int y, int theta);
 
 };
 
