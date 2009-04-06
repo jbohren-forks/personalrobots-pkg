@@ -15,7 +15,10 @@ rospack_add_executable(outlet_model src/main.cpp)
 target_link_libraries(outlet_model outlet)
 rospack_add_executable(outlet_sample src/sample.cpp)
 target_link_libraries(outlet_sample outlet)
-add_definitions(-D_OUTLET_HR -D_TUNING -D_USE_OUTLET_TUPLE)
+rospack_add_executable(outlet_measure src/CalculateRealCoordinates.cpp src/OutletsMeasurement.cpp)
+target_link_libraries(outlet_measure outlet)
+
+add_definitions(-D_OUTLET_HR -D_TUNING -D_USE_OUTLET_TUPLE -D_VERBOSE)
 #add_definitions(-D_VERBOSE)
 
 rospack_add_executable(outlet_node src/outlet_node.cpp)
