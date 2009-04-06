@@ -291,8 +291,8 @@ public:
 	///operator btScalar*() replaces operator[], using implicit conversion. We added operator != and operator == to avoid pointer comparisons.
 	
                 // Commented two below for swig errors Tully
-        //SIMD_FORCE_INLINE	operator       btScalar *()       { return &m_floats[0]; }
-	//SIMD_FORCE_INLINE	operator const btScalar *() const { return &m_floats[0]; }
+  //SIMD_FORCE_INLINE	operator       btScalar *()       { return &m_floats[0]; }
+  //SIMD_FORCE_INLINE	operator const btScalar *() const { return &m_floats[0]; }
 
 	SIMD_FORCE_INLINE	bool	operator==(const btVector3& other) const
 	{
@@ -398,6 +398,18 @@ operator/( const btVector3& v2) const
 {
 	return btVector3(this->m_floats[0] / v2.m_floats[0],this->m_floats[1] / v2.m_floats[1],this->m_floats[2] / v2.m_floats[2]);
 }
+
+  btScalar& getElement(int i)
+  {
+    btAssert(0 <= i < 4);
+    return m_floats[i];
+  }
+
+  const btScalar& getElement(int i) const
+  {
+    btAssert(0 <= i < 4);
+    return m_floats[i];
+  }
 
 };
 

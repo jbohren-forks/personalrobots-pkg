@@ -16,12 +16,13 @@ subject to the following restrictions:
 #ifndef btMatrix3x3_H
 #define btMatrix3x3_H
 
-#include "btScalar.h"
+#include "LinearMath/btScalar.h"
 
-#include "btVector3.h"
-#include "btQuaternion.h"
+#include "pybtVector3.h"
+#include "pybtQuaternion.h"
 
-
+namespace py
+{
 
 /**@brief The btMatrix3x3 class implements a 3x3 rotation matrix, to perform linear algebra in combination with btQuaternion, btTransform and btVector3.
  * Make sure to only include a pure orthogonal matrix without scaling. */
@@ -71,7 +72,7 @@ class btMatrix3x3 {
    *  @param i Column number 0 indexed */
 		SIMD_FORCE_INLINE btVector3 getColumn(int i) const
 		{
-			return btVector3(m_el[0][i],m_el[1][i],m_el[2][i]);
+                  return btVector3(m_el[0].getElement(i),m_el[1].getElement(i),m_el[2].getElement(i));
 		}
 		
 
@@ -82,23 +83,27 @@ class btMatrix3x3 {
 			btFullAssert(0 <= i && i < 3);
 			return m_el[i];
 		}
-
+		SIMD_FORCE_INLINE btVector3& getRow(int i)
+		{
+			btFullAssert(0 <= i && i < 3);
+			return m_el[i];
+		}
   /** @brief Get a mutable reference to a row of the matrix as a vector 
    *  @param i Row number 0 indexed */
-		SIMD_FORCE_INLINE btVector3&  operator[](int i)
+  /** %extend		SIMD_FORCE_INLINE btVector3&  operator[](int i)
 		{ 
 			btFullAssert(0 <= i && i < 3);
 			return m_el[i]; 
 		}
-		
+  */
   /** @brief Get a const reference to a row of the matrix as a vector 
    *  @param i Row number 0 indexed */
-		SIMD_FORCE_INLINE const btVector3& operator[](int i) const
+  /** SIMD_FORCE_INLINE const btVector3& operator[](int i) const
 		{
 			btFullAssert(0 <= i && i < 3);
 			return m_el[i]; 
 		}
-		
+  */	
   /** @brief Multiply by the target matrix on the right
    *  @param m Rotation matrix to be applied 
    * Equivilant to this = this * m */
@@ -244,13 +249,13 @@ class btMatrix3x3 {
 				int j = (i + 1) % 3;  
 				int k = (i + 2) % 3;
 				
-				btScalar s = btSqrt(m_el[i][i] - m_el[j][j] - m_el[k][k] + btScalar(1.0));
+				btScalar s = btSqrt(m_el[i].getElement(i) - m_el[j].getElement(j) - m_el[k].getElement(k) + btScalar(1.0));
 				temp[i] = s * btScalar(0.5);
 				s = btScalar(0.5) / s;
 				
-				temp[3] = (m_el[k][j] - m_el[j][k]) * s;
-				temp[j] = (m_el[j][i] + m_el[i][j]) * s;
-				temp[k] = (m_el[k][i] + m_el[i][k]) * s;
+				temp[3] = (m_el[k].getElement(j) - m_el[j].getElement(k)) * s;
+				temp[j] = (m_el[j].getElement(i) + m_el[i].getElement(j)) * s;
+				temp[k] = (m_el[k].getElement(i) + m_el[i].getElement(k)) * s;
 			}
 			q.setValue(temp[0],temp[1],temp[2],temp[3]);
 		}
@@ -404,15 +409,15 @@ class btMatrix3x3 {
 			int p = 0;
 			int q = 1;
 			int r = 2;
-			btScalar max = btFabs(m_el[0][1]);
-			btScalar v = btFabs(m_el[0][2]);
+			btScalar max = btFabs(m_el[0].getElement(1));
+			btScalar v = btFabs(m_el[0].getElement(2));
 			if (v > max)
 			{
 			   q = 2;
 			   r = 1;
 			   max = v;
 			}
-			v = btFabs(m_el[1][2]);
+			v = btFabs(m_el[1].getElement(2));
 			if (v > max)
 			{
 			   p = 1;
@@ -421,7 +426,7 @@ class btMatrix3x3 {
 			   max = v;
 			}
 
-			btScalar t = threshold * (btFabs(m_el[0][0]) + btFabs(m_el[1][1]) + btFabs(m_el[2][2]));
+			btScalar t = threshold * (btFabs(m_el[0].getElement(0)) + btFabs(m_el[1].getElement(1)) + btFabs(m_el[2].getElement(2)));
 			if (max <= t)
 			{
 			   if (max <= SIMD_EPSILON * t)
@@ -432,8 +437,8 @@ class btMatrix3x3 {
 			}
 
 			// compute Jacobi rotation J which leads to a zero for element [p][q] 
-			btScalar mpq = m_el[p][q];
-			btScalar theta = (m_el[q][q] - m_el[p][p]) / (2 * mpq);
+			btScalar mpq = m_el[p].getElement(q);
+			btScalar theta = (m_el[q].getElement(q) - m_el[p].getElement(p)) / (2 * mpq);
 			btScalar theta2 = theta * theta;
 			btScalar cos;
 			btScalar sin;
@@ -453,22 +458,22 @@ class btMatrix3x3 {
 			}
 
 			// apply rotation to matrix (this = J^T * this * J)
-			m_el[p][q] = m_el[q][p] = 0;
-			m_el[p][p] -= t * mpq;
-			m_el[q][q] += t * mpq;
-			btScalar mrp = m_el[r][p];
-			btScalar mrq = m_el[r][q];
-			m_el[r][p] = m_el[p][r] = cos * mrp - sin * mrq;
-			m_el[r][q] = m_el[q][r] = cos * mrq + sin * mrp;
+			m_el[p].getElement(q) = m_el[q].getElement(p) = 0; ///\todo check assignment into reference
+			m_el[p].getElement(p) -= t * mpq;
+			m_el[q].getElement(q) += t * mpq;
+			btScalar mrp = m_el[r].getElement(p);
+			btScalar mrq = m_el[r].getElement(q);
+			m_el[r].getElement(p) = m_el[p].getElement(r) = cos * mrp - sin * mrq;
+			m_el[r].getElement(q) = m_el[q].getElement(r) = cos * mrq + sin * mrp;
 
 			// apply rotation to rot (rot = rot * J)
 			for (int i = 0; i < 3; i++)
 			{
-			   btVector3& row = rot[i];
-			   mrp = row[p];
-			   mrq = row[q];
-			   row[p] = cos * mrp - sin * mrq;
-			   row[q] = cos * mrq + sin * mrp;
+                          btVector3& row = rot.getRow(i);
+			   mrp = row.getElement(p);
+			   mrq = row.getElement(q);
+			   row.getElement(p) = cos * mrp - sin * mrq;
+			   row.getElement(q) = cos * mrq + sin * mrp;
 			}
 		 }
 		}
@@ -485,13 +490,28 @@ class btMatrix3x3 {
    */
 		btScalar cofac(int r1, int c1, int r2, int c2) const 
 		{
-			return m_el[r1][c1] * m_el[r2][c2] - m_el[r1][c2] * m_el[r2][c1];
+                  return m_el[r1].getElement(c1) * m_el[r2].getElement(c2) - m_el[r1].getElement(c2) * m_el[r2].getElement(c1);
 		}
   ///Data storage for the matrix, each vector is a row of the matrix
 		btVector3 m_el[3];
-	};
 
-%extend btMatrix3x3 {	
+	SIMD_FORCE_INLINE btVector3 
+	operator*(const btVector3& v) const 
+	{
+		return btVector3(getRow(0).dot(v), getRow(1).dot(v), getRow(2).dot(v));
+	}
+
+	SIMD_FORCE_INLINE btMatrix3x3 
+	operator*(const btMatrix3x3& m2) const
+	{
+		return btMatrix3x3(
+			m2.tdotx( getRow(0)), m2.tdoty( getRow(0)), m2.tdotz( getRow(0)),
+			m2.tdotx( getRow(1)), m2.tdoty( getRow(1)), m2.tdotz( getRow(1)),
+			m2.tdotx( getRow(2)), m2.tdoty( getRow(2)), m2.tdotz( getRow(2)));
+	}
+
+};
+
 	SIMD_FORCE_INLINE btMatrix3x3& 
 	btMatrix3x3::operator*=(const btMatrix3x3& m)
 	{
@@ -504,7 +524,8 @@ class btMatrix3x3 {
 	SIMD_FORCE_INLINE btScalar 
 	btMatrix3x3::determinant() const
 	{ 
-		return triple((*this)[0], (*this)[1], (*this)[2]);
+          btVector3 vec =  (*this).getRow(0);
+          return vec.triple( (*this).getRow(1), (*this).getRow(2));
 	}
 	
 
@@ -537,7 +558,7 @@ class btMatrix3x3 {
 	btMatrix3x3::inverse() const
 	{
 		btVector3 co(cofac(1, 1, 2, 2), cofac(1, 2, 2, 0), cofac(1, 0, 2, 1));
-		btScalar det = (*this)[0].dot(co);
+		btScalar det = (*this).getRow(0).dot(co);
 		btFullAssert(det != btScalar(0.0));
 		btScalar s = btScalar(1.0) / det;
 		return btMatrix3x3(co.x() * s, cofac(0, 2, 2, 1) * s, cofac(0, 1, 1, 2) * s,
@@ -549,48 +570,30 @@ class btMatrix3x3 {
 	btMatrix3x3::transposeTimes(const btMatrix3x3& m) const
 	{
 		return btMatrix3x3(
-			m_el[0].x() * m[0].x() + m_el[1].x() * m[1].x() + m_el[2].x() * m[2].x(),
-			m_el[0].x() * m[0].y() + m_el[1].x() * m[1].y() + m_el[2].x() * m[2].y(),
-			m_el[0].x() * m[0].z() + m_el[1].x() * m[1].z() + m_el[2].x() * m[2].z(),
-			m_el[0].y() * m[0].x() + m_el[1].y() * m[1].x() + m_el[2].y() * m[2].x(),
-			m_el[0].y() * m[0].y() + m_el[1].y() * m[1].y() + m_el[2].y() * m[2].y(),
-			m_el[0].y() * m[0].z() + m_el[1].y() * m[1].z() + m_el[2].y() * m[2].z(),
-			m_el[0].z() * m[0].x() + m_el[1].z() * m[1].x() + m_el[2].z() * m[2].x(),
-			m_el[0].z() * m[0].y() + m_el[1].z() * m[1].y() + m_el[2].z() * m[2].y(),
-			m_el[0].z() * m[0].z() + m_el[1].z() * m[1].z() + m_el[2].z() * m[2].z());
+			(*this).getRow(0).x() * m.getRow(0).x() + (*this).getRow(1).x() * m.getRow(1).x() + (*this).getRow(2).x() * m.getRow(2).x(),
+			(*this).getRow(0).x() * m.getRow(0).y() + (*this).getRow(1).x() * m.getRow(1).y() + (*this).getRow(2).x() * m.getRow(2).y(),
+			(*this).getRow(0).x() * m.getRow(0).z() + (*this).getRow(1).x() * m.getRow(1).z() + (*this).getRow(2).x() * m.getRow(2).z(),
+			(*this).getRow(0).y() * m.getRow(0).x() + (*this).getRow(1).y() * m.getRow(1).x() + (*this).getRow(2).y() * m.getRow(2).x(),
+			(*this).getRow(0).y() * m.getRow(0).y() + (*this).getRow(1).y() * m.getRow(1).y() + (*this).getRow(2).y() * m.getRow(2).y(),
+			(*this).getRow(0).y() * m.getRow(0).z() + (*this).getRow(1).y() * m.getRow(1).z() + (*this).getRow(2).y() * m.getRow(2).z(),
+			(*this).getRow(0).z() * m.getRow(0).x() + (*this).getRow(1).z() * m.getRow(1).x() + (*this).getRow(2).z() * m.getRow(2).x(),
+			(*this).getRow(0).z() * m.getRow(0).y() + (*this).getRow(1).z() * m.getRow(1).y() + (*this).getRow(2).z() * m.getRow(2).y(),
+			(*this).getRow(0).z() * m.getRow(0).z() + (*this).getRow(1).z() * m.getRow(1).z() + (*this).getRow(2).z() * m.getRow(2).z());
 	}
 	
 	SIMD_FORCE_INLINE btMatrix3x3 
 	btMatrix3x3::timesTranspose(const btMatrix3x3& m) const
 	{
 		return btMatrix3x3(
-			m_el[0].dot(m[0]), m_el[0].dot(m[1]), m_el[0].dot(m[2]),
-			m_el[1].dot(m[0]), m_el[1].dot(m[1]), m_el[1].dot(m[2]),
-			m_el[2].dot(m[0]), m_el[2].dot(m[1]), m_el[2].dot(m[2]));
+			(*this).getRow(0).dot(m.getRow(0)), (*this).getRow(0).dot(m.getRow(1)), (*this).getRow(0).dot(m.getRow(2)),
+			(*this).getRow(1).dot(m.getRow(0)), (*this).getRow(1).dot(m.getRow(1)), (*this).getRow(1).dot(m.getRow(2)),
+			(*this).getRow(2).dot(m.getRow(0)), (*this).getRow(2).dot(m.getRow(1)), (*this).getRow(2).dot(m.getRow(2)));
 		
 	}
 
-	SIMD_FORCE_INLINE btVector3 
-	operator*(const btMatrix3x3& m, const btVector3& v) 
-	{
-		return btVector3(m[0].dot(v), m[1].dot(v), m[2].dot(v));
-	}
 	
 
-	SIMD_FORCE_INLINE btVector3
-	operator*(const btVector3& v, const btMatrix3x3& m)
-	{
-		return btVector3(m.tdotx(v), m.tdoty(v), m.tdotz(v));
-	}
 
-	SIMD_FORCE_INLINE btMatrix3x3 
-	operator*(const btMatrix3x3& m1, const btMatrix3x3& m2)
-	{
-		return btMatrix3x3(
-			m2.tdotx( m1[0]), m2.tdoty( m1[0]), m2.tdotz( m1[0]),
-			m2.tdotx( m1[1]), m2.tdoty( m1[1]), m2.tdotz( m1[1]),
-			m2.tdotx( m1[2]), m2.tdoty( m1[2]), m2.tdotz( m1[2]));
-	}
 
 /*
 	SIMD_FORCE_INLINE btMatrix3x3 btMultTransposeLeft(const btMatrix3x3& m1, const btMatrix3x3& m2) {
@@ -611,9 +614,10 @@ class btMatrix3x3 {
  * It will test all elements are equal.  */
 SIMD_FORCE_INLINE bool operator==(const btMatrix3x3& m1, const btMatrix3x3& m2)
 {
-   return ( m1[0][0] == m2[0][0] && m1[1][0] == m2[1][0] && m1[2][0] == m2[2][0] &&
-            m1[0][1] == m2[0][1] && m1[1][1] == m2[1][1] && m1[2][1] == m2[2][1] &&
-            m1[0][2] == m2[0][2] && m1[1][2] == m2[1][2] && m1[2][2] == m2[2][2] );
+  return ( m1.getRow(0).getElement(0) == m2.getRow(0).getElement(0) && m1.getRow(1).getElement(0) == m2.getRow(1).getElement(0) && m1.getRow(2).getElement(0) == m2.getRow(2).getElement(0) &&
+            m1.getRow(0).getElement(1) == m2.getRow(0).getElement(1) && m1.getRow(1).getElement(1) == m2.getRow(1).getElement(1) && m1.getRow(2).getElement(1) == m2.getRow(2).getElement(1) &&
+            m1.getRow(0).getElement(2) == m2.getRow(0).getElement(2) && m1.getRow(1).getElement(2) == m2.getRow(1).getElement(2) && m1.getRow(2).getElement(2) == m2.getRow(2).getElement(2) );
 }
 }
+
 #endif

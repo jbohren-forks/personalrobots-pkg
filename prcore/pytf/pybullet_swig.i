@@ -1,8 +1,10 @@
  %module pybullet_swig
  %{
  /* Includes the header in the wrapper code */
-#include "pybtVector3.h"
-#include "pybtQuaternion.h"
+#include "LinearMath/btQuadWord.h"
+//#include "pybtVector3.h"
+//#include "pybtQuaternion.h"
+#include "pybtMatrix3x3.h"
 // #include "LinearMath/btTransform.h"
  %}
  
@@ -14,7 +16,7 @@
 
 %include "pybtVector3.h"
 %include "pybtQuaternion.h"
-//%include "pybtMatrix3x3.h"
+%include "pybtMatrix3x3.h"
 //%include "pybtTransform.h"
 
 %extend py::btQuaternion{
@@ -58,3 +60,25 @@
   };
 
  }
+
+%extend py::btMatrix3x3
+{
+  char * __str__()
+  {
+    static char temp[1024];
+
+    sprintf(temp, "[[%f, %f, %f]|\n|[%f, %f, %f]|\n|[%f, %f, %f]]",
+            self->getRow(0).getX(), self->getRow(0).getY(), self->getRow(0).getZ(),
+            self->getRow(1).getX(), self->getRow(1).getY(), self->getRow(1).getZ(),
+            self->getRow(2).getX(), self->getRow(2).getY(), self->getRow(2).getZ()
+            );
+    return &temp[0];
+  };
+
+
+  py::btVector3  __rmul__(const py::btVector3& v)
+  {
+    return py::btVector3(self->tdotx(v), self->tdoty(v), self->tdotz(v));
+  }
+
+}
