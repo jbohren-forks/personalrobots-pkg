@@ -1,3 +1,0 @@
-#include "safety/safety.nddl"
-
-close();
