@@ -119,7 +119,6 @@ int EnvironmentNAVXYTHETADOOR::GetActionCost(int SourceX, int SourceY, int Sourc
 }
 
 
-
 void EnvironmentNAVXYTHETADOOR::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldrobotpose3D, vector<int>* doorangleV, 
                                                    vector<int>* dooranglecostV)
 {
@@ -141,5 +140,96 @@ void EnvironmentNAVXYTHETADOOR::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldr
 
 // No larger than 255 unsigned char
 // Also put in an infinite cost
+}
+
+
+//setting desired door angles - see comments in environment_navxythetadoor.h file
+void EnvironmentNAVXYTHETADOOR::SetDesiredDoorAngles(vector<int> desired_door_anglesV)
+{
+
+	//set the vector
+	this->desired_door_anglesV.clear();
+	this->desired_door_anglesV = desired_door_anglesV;
+
+	printf("desired door angles are set to %d values\n", this->desired_door_anglesV.size());
+}
+
+//overwrites the parent navxythetalat class to return a goal whenever a state has the desired angle door, independently of the robot pose
+void EnvironmentNAVXYTHETALAT::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<EnvNAVXYTHETALATAction_t*>* actionV /*=NULL*/)
+{
+    int aind;
+
+#if TIME_DEBUG
+		clock_t currenttime = clock();
+#endif
+
+    //clear the successor array
+    SuccIDV->clear();
+    CostV->clear();
+    SuccIDV->reserve(EnvNAVXYTHETALATCfg.actionwidth); 
+    CostV->reserve(EnvNAVXYTHETALATCfg.actionwidth);
+	if(actionV != NULL)
+	{
+		actionV->clear();
+		actionV->reserve(EnvNAVXYTHETALATCfg.actionwidth);
+	}
+
+	//goal state should be absorbing
+	if(SourceStateID == EnvNAVXYTHETALAT.goalstateid)
+		return;
+
+	//get X, Y for the state
+	EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[SourceStateID];
+	
+	//iterate through actions
+    bool bTestBounds = false;
+    if(HashEntry->X == 0 || HashEntry->X == EnvNAVXYTHETALATCfg.EnvWidth_c-1 ||  //TODO - need to modify to take robot perimeter into account
+       HashEntry->Y == 0 || HashEntry->Y == EnvNAVXYTHETALATCfg.EnvHeight_c-1)
+        bTestBounds = true;
+
+	for (aind = 0; aind < EnvNAVXYTHETALATCfg.actionwidth; aind++)
+	{
+		EnvNAVXYTHETALATAction_t* nav3daction = &EnvNAVXYTHETALATCfg.ActionsV[HashEntry->Theta][aind];
+        int newX = HashEntry->X + nav3daction->dX;
+		int newY = HashEntry->Y + nav3daction->dY;
+		int newTheta = NORMALIZEDISCTHETA(nav3daction->endtheta, NAVXYTHETALAT_THETADIRS);	
+
+        //skip the invalid cells
+		if(bTestBounds){ //TODO - need to modify to take robot perimeter into account
+            if(!IsValidCell(newX, newY)) 
+                continue;
+        }
+
+		//get cost
+		int cost = GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction);
+        if(cost >= INFINITECOST)
+            continue;
+
+		//check that the out state is not goal in term of desired door_angles
+		int mincostofdesireddoorangle = MinCostDesiredDoorAngle(newX,newY,newTheta);
+		if (mincostofdesireddoorangle < INFINITECOST)
+		{
+			//insert the goal (NOTE: we ignore the final door cost)
+			SuccIDV->push_back(EnvNAVXYTHETALAT.goalstateid);
+		}
+		else{		
+	    	EnvNAVXYTHETALATHashEntry_t* OutHashEntry;
+			if((OutHashEntry = GetHashEntry(newX, newY, newTheta)) == NULL)
+			{
+				//have to create a new entry
+				OutHashEntry = CreateNewHashEntry(newX, newY, newTheta);
+			}
+	        SuccIDV->push_back(OutHashEntry->stateID);
+		}
+
+        CostV->push_back(cost);
+		if(actionV != NULL)
+			actionV->push_back(nav3daction);
+	}
+
+#if TIME_DEBUG
+		time_getsuccs += clock()-currenttime;
+#endif
+
 }
 

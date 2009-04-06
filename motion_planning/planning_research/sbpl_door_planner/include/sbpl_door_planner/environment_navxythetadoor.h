@@ -62,6 +62,34 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
   std::vector<double> robot_global_pose_;
   door_base_collision_cost::DoorBaseCollisionCost db_;
 
+  std::vector<int> desired_door_anglesV;
+
+  //this function sets the door angles at which a goal configuration is declared EVEN if goalx,goaly,goaltheta are not satisfied.
+  //The goal is ALSO declared if goalx,goaly,goaltheta are satisfied but none of the desired door angles are satisfied
+  //It is therefore important to keep setting goalx,goaly,goaltheta, otherwise it will be 0s by default and may be satisfied right away. They are
+  //also used to compute heuristics.
+  //FInally, desired door angles should only be used when the search is done forward (no sense to set it in the backward search)
+  void SetDesiredDoorAngles(vector<int> desired_door_anglesV);
+
+
+
+	void SetAllActionsandAllOutcomes(CMDPSTATE* state){
+		printf("ERROR: SetAllActionsandAllOutcomes not supported in navxythetadoor environment\n");
+		exit(1);
+	};
+	void SetAllPreds(CMDPSTATE* state){
+		printf("ERROR: SetAllPreds not supported in navxythetadoor environment\n");
+		exit(1);
+	};
+	void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV);
+
+	void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV){
+		printf("ERROR: GetPreds not supported in navxythetadoor environment\n");
+		exit(1);
+	};
+
+
+
   protected:
 
   virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
