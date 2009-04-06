@@ -95,11 +95,11 @@ class DoorDatabase
       node_ = ros::Node::instance();
       tf_ = new tf::TransformListener(*node_);
 
-      node_->param<std::string>("~p_door_msg_topic_", door_msg_topic_,"door_message");
+      node_->param<std::string>("~p_door_msg_topic_", door_msg_topic_,"/door_tracker_node/door_message");
       node_->param<std::string>("~door_database_frame", door_database_frame_,"map"); 
       node_->param<int>("~p_min_angles_per_door",min_angles_per_door_, 3); 
       node_->param<double>("~p_angle_difference_threshold",angle_difference_threshold_,M_PI/6.0);
-      node_->param<double>("~p_door_point_distance_threshold",door_point_distance_threshold_,0.15);
+      node_->param<double>("~p_door_point_distance_threshold",door_point_distance_threshold_,0.25);
 
       node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
 
@@ -113,7 +113,7 @@ class DoorDatabase
       node_->param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
       door_msg_.header.frame_id = "base_link";
 
-      message_notifier_ = new tf::MessageNotifier<robot_msgs::Door> (tf_, node_,  boost::bind(&DoorDatabase::doorMsgCallBack, this, _1), door_database_frame_.c_str (), door_msg_.header.frame_id, 1);
+      message_notifier_ = new tf::MessageNotifier<robot_msgs::Door> (tf_, node_,  boost::bind(&DoorDatabase::doorMsgCallBack, this, _1), door_msg_topic_.c_str (), door_msg_.header.frame_id, 1);
     };
 
     ~DoorDatabase()
@@ -135,14 +135,20 @@ class DoorDatabase
     robot_msgs::Point32 findHingePosition(door_tracker::DoorDatabaseObject &db)
     {
       double x1(0.0),y1(0.0);
+
+      x1 = db.door.door_p1.x;
+      y1 = db.door.door_p1.y;
+
       robot_msgs::Point32 hinge;
       MatrixXf lhs;
       lhs = MatrixXf::Zero((int) db.angles.size(),3);
       for(int i=0; i< (int) db.angles.size(); i++)
       {
+//        db.angles[i] = angles::normalize_angle(db.angles[i]-db.angles[0]);
         lhs(i,0) = db.coeff[i].data[0]*cos(db.angles[i])-db.coeff[i].data[0]+db.coeff[i].data[1]*sin(db.angles[i]);
-        lhs(i,1) = -db.coeff[i].data[1]*sin(db.angles[i])-db.coeff[i].data[1]+db.coeff[i].data[1]*cos(db.angles[i]);
+        lhs(i,1) = -db.coeff[i].data[0]*sin(db.angles[i])-db.coeff[i].data[1]+db.coeff[i].data[1]*cos(db.angles[i]);
         lhs(i,2) = -x1*db.coeff[i].data[0]*cos(db.angles[i]) + y1*db.coeff[i].data[0]*sin(db.angles[i])-y1*db.coeff[i].data[1]*cos(db.angles[i])-x1*db.coeff[i].data[1]*sin(db.angles[i]);
+        ROS_INFO(" Matrix elements are: %f %f %f %f",lhs(i,0),lhs(i,1),lhs(i,2),db.angles[i]);
       }
       
       VectorXf rhs;
@@ -152,7 +158,8 @@ class DoorDatabase
         rhs(i) = db.coeff[i].data[2];
       }
 
-      VectorXf sol;
+      VectorXf sol = VectorXf::Zero(3);
+      ROS_INFO("lhs is a %d x 3 matrix, rhs is a %d vector",(int) db.angles.size(), (int) db.angles.size());
       lhs.svd().solve(rhs,&sol);
       hinge.x = sol(0);
       hinge.y = sol(1);
@@ -222,16 +229,6 @@ class DoorDatabase
       }
       double new_door_angle = atan2(dy,dx);
 
-      if(db.angles.size() == 1)
-      {
-        //check the hinge point
-        if(index_p1 != db.door.hinge)
-        {
-          db.door.hinge = index_p1;
-          db.angles[0] = angles::normalize_angle(db.angles[0]+M_PI);
-        }
-
-      }
 
       bool different_angle = true;
 
@@ -249,7 +246,21 @@ class DoorDatabase
 
       if(different_angle && (int) db.angles.size() < min_angles_per_door_)
       {
+        if(db.angles.size() == 1)
+        {
+          //check the hinge point
+          if(index_p1 != db.door.hinge)
+          {
+            ROS_INFO("Switching angles since index_p1: %d does not match: %d",index_p1,db.door.hinge);
+            db.door.hinge = index_p1;
+            db.angles[0] = angles::normalize_angle(db.angles[0]+M_PI);
+          }
+
+        }
+
         db.angles.resize(db.angles.size()+1);
+        ROS_INFO("Adding new point to door: p1: %f, %f, %f, p2: %f, %f, %f",door.door_p1.x,door.door_p1.y,door.door_p1.z,door.door_p2.x,door.door_p2.x,door.door_p2.z);
+        ROS_INFO("Door has a different angle.\nNumber of angles for door is now %d",(int) db.angles.size());
         db.coeff.resize(db.coeff.size()+1);
         db.angles[db.angles.size()-1] = new_door_angle;
         db.coeff[db.coeff.size()-1] = generateLinearCoeff(door.door_p1,door.door_p2);
@@ -270,9 +281,11 @@ class DoorDatabase
         if(sameDoor(database[i].door,door,index_p1,index_p2))
         {
           updateDoorInfo(database[i],door,index_p1,index_p2);
+          ROS_DEBUG("Door is in the database");
           return true;
         }
       }
+      ROS_INFO("Door is not in the database");
       return false;
     }
 

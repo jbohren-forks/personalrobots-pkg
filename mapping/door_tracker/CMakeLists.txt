@@ -11,6 +11,8 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 rospack_add_executable (door_tracker_node src/door_tracker.cpp)
 rospack_add_executable (door_database_node src/door_database.cpp)
 
+rospack_add_executable (door_tracker_test src/door_tracker_activate.cpp)
+
 # check for OpenMP
 include(CheckIncludeFile)
 include(CheckCXXCompilerFlag)
