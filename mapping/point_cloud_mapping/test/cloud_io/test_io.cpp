@@ -42,7 +42,7 @@ TEST (CloudIO, Read)
   robot_msgs::PointCloud points;
   // Please make sure that this file exists, otherwise the test will fail.
   int res = loadPCDFile ("./test/cloud_io/bun0.pcd", points);
-  EXPECT_EQ (res, 0);
+  EXPECT_NE (res, -1);
   EXPECT_EQ ((int)points.pts.size (), 397);
   EXPECT_NEAR (points.pts[0].x, 0.0054216, 1e-5);
   EXPECT_NEAR (points.pts[0].y, 0.11349, 1e-5);
@@ -84,7 +84,7 @@ TEST (CloudIO, Write)
 
   // Please make sure that this file exists, otherwise the test will fail.
   res = loadPCDFile ("/tmp/test_cloud_io.pcd", points);
-  EXPECT_EQ (res, 0);
+  EXPECT_NE (res, -1);
   EXPECT_EQ ((int)points.pts.size (), 18);
 
   EXPECT_NEAR (points.pts[0].x, 3.587751, 1e-5);
