@@ -32,8 +32,6 @@ rospack_add_gtest_future(tf_unittest_future test/tf_unittest_future.cpp)
 target_link_libraries(tf_unittest_future tf)
 rospack_add_gtest(cache_unittest test/cache_unittest.cpp)
 target_link_libraries(cache_unittest tf)
-rospack_add_gtest(bullet_unittest test/bullet_unittest.cpp)
-target_link_libraries(bullet_unittest tf)
 
 rospack_add_executable(btTest test/quaternion.cpp)
 rospack_add_executable(testListener test/testListener.cpp)
