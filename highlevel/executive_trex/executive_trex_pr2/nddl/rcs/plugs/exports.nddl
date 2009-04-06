@@ -1,1 +1,155 @@
+/**
+ * This file specifies the interface for actions in the plugs domain
+ * @note Detection of the plug on the base is specified in the safety area.
+ */
 
+/**
+ * @brief For placing the plug back on the base.
+ */
+class StowPlug extends ROSTFAction {
+  // Goal takes a point for the target location
+  predicate Active{
+    float x;
+    float y;
+    float z;
+  }
+
+  // No feedback. Just succeeds or not
+  predicate Inactive{}
+
+  StowPlug(Mode _mode){super(_mode);}
+};
+
+/**
+ * @brief For unplugging from the socket.
+ */
+class Unplug extends ROSTFAction {
+  // Goal takes a point for the target location
+  predicate Active{
+  }
+
+  // No feedback. Just succeeds or not
+  predicate Inactive{}
+
+  Unplug(Mode _mode){super(_mode);}
+};
+
+/**
+ * @brief Push plug into socket. Should be just at the socket and in the gripper.
+ */
+class PushPlugIn extends ROSTFAction {
+  predicate Active{}
+
+  predicate Inactive{}
+
+  PushPlugIn(Mode _mode){super(_mode);}
+};
+
+/**
+ * @brief Initial insertion - where the prongs are in. Follow up with a push
+ */
+class InsertPlug extends ROSTFAction {
+  predicate Active{}
+
+  predicate Inactive{}
+
+  InsertPlug(Mode _mode){super(_mode);}
+};
+
+/**
+ * @brief Servo to outlet, assuming we have the plug staged etc
+ */
+class ServoToOutlet extends ROSTFAction {
+  predicate Active{}
+
+  predicate Inactive{}
+
+  ServoToOutlet(Mode _mode){super(_mode);}
+};
+
+/**
+ * @brief Detect the outlet with fine resolution
+ */
+class DetectOutletFine extends ROSTFAction {
+  // Input takes a point
+  predicate Active{
+    float x;
+    float y;
+    float z;
+  }
+
+  // Output produces a point and the normal
+  predicate Inactive{
+    float x;
+    float y;
+    float z;
+    float dx;
+    float dy;
+    float dz;
+  }
+
+  DetectOutletFine(Mode _mode){super(_mode);}
+};
+
+/**
+ * @brief Detect the outlet with coarse resolution
+ */
+class DetectOutletCoarse extends ROSTFAction {
+  // Input takes a point
+  predicate Active{
+    float x;
+    float y;
+    float z;
+  }
+
+  // Output produces a point and the normal
+  predicate Inactive{
+    float x;
+    float y;
+    float z;
+    float dx;
+    float dy;
+    float dz;
+  }
+
+  DetectOutletCoarse(Mode _mode){super(_mode);}
+};
+
+/**
+ * @brief Localize the plug in the gripper
+ */
+class LocalizePlugInGripper extends ROSTFAction {
+  predicate Active{
+  }
+
+  predicate Inactive{
+  }
+
+  LocalizePlugInGripper(Mode _mode){super(_mode);}
+};
+
+/**
+ * @brief Grasp the plug on the base
+ */
+class GraspPlug extends ROSTFAction {
+  predicate Active{
+  }
+
+  predicate Inactive{
+  }
+
+  GraspPlug(Mode _mode){super(_mode);}
+};
+
+/**
+ * @brief Move to a grasp point
+ */
+class MoveToGrasp extends ROSTFAction {
+  predicate Active{
+  }
+
+  predicate Inactive{
+  }
+
+  MoveToGrasp(Mode _mode){super(_mode);}
+};
