@@ -1,0 +1,30 @@
+/**
+ * This file identifies the mapping from behaviors to controllers
+ * @see mechanism_control/imports.nddl
+ */
+
+MoveBase::Active{
+  // Base Controller Required
+  contained_by(assembly.base.ControlledBy c0);
+  eq(c0.controller, base_controller);
+
+  // Tilt Laser Controller Required
+  contained_by(assembly.tilt_scanner.ControlledBy c1);
+  eq(c1.controller, laser_tilt_controller);
+
+  // Head Controller Required
+  contained_by(assembly.head.ControlledBy c2);
+  eq(c2.controller, head_controller);
+}
+
+DetectDoor::Active{
+  contained_by(assembly.tilt_scanner.ControlledBy c0);
+  eq(c0.controller, laser_tilt_controller);
+}
+
+DetectHandle::Active{
+  contained_by(assembly.tilt_scanner.ControlledBy c0);
+  eq(c0.controller, laser_tilt_controller);
+}
+
+// Remainder TBD
