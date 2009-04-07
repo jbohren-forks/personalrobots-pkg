@@ -10,7 +10,7 @@ ifeq ($(WITH_DRAWSTUFF), yes)
 CFG_OPTIONS += --with-drawstuff=X11
 endif
 
-all: build
+all: installed
 
 ROOT = $(shell rospack find opende)/opende
 
@@ -32,9 +32,7 @@ GCC_FLAGS     = CXXFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include' CFLAGS='-DNDEBUG
 CONFIGURE_FLAGS = $(CFG_OPTIONS) $(GCC_FLAGS)
 
 
-build: SVN_UP_REVERT_PATCH opende
-
-opende: $(SVN_DIR) patched
+installed: $(SVN_DIR) patched
 	cd $(SVN_DIR) && sh ./autogen.sh
 	cd $(SVN_DIR) && ./configure --prefix=$(ROOT) --with-trimesh=opcode --enable-new-trimesh --enable-shared $(CONFIGURE_FLAGS)
 	cd $(SVN_DIR) && make $(ROS_PARALLEL_JOBS)
