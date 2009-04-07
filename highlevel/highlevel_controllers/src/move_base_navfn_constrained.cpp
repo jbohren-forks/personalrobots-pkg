@@ -95,10 +95,12 @@ namespace ros {
        */
       virtual bool makePlan();
 
-      void enforceConstraints (const Polyline2D& boundary, uchar* cost_map) const;
-      void enforceConstraint (const Point2DFloat32& p1, const Point2DFloat32& p2, uchar* cost_map) const;
+      void enforceConstraints (const Polyline2D& boundary, uchar* cost_map);
+      void enforceConstraint (const Point2DFloat32& p1, const Point2DFloat32& p2, uchar* cost_map);
 
       NavFn planner_;
+    
+      vector<Point2DFloat32> visualized_points_;
     };
     
     
@@ -106,27 +108,37 @@ namespace ros {
       : MoveBase(), planner_(getCostMap().getWidth(), getCostMap().getHeight())
     {
       initialize();
+      Node::instance()->advertise<Polyline2D>("planning_boundary", 1);
     }
 
 
 
-  void MoveBaseNAVFN::enforceConstraints (const Polyline2D& boundary, uchar* cost_map) const
+  void MoveBaseNAVFN::enforceConstraints (const Polyline2D& boundary, uchar* cost_map)
   {
     vector<Point2DFloat32> points;
     boundary.get_points_vec(points);
-    ROS_DEBUG_NAMED ("constraints", "I am about to enforce a polyline constraint with length %u starting with points %f, %f and %f, %f",
-                     points.size(), points[0].x, points[0].y, points[1].x, points[1].y);
 
-    // \todo Need to take the header of the polyline into account
-    for (uint i=0; i<points.size()-1; ++i) {
-      enforceConstraint(points[i], points[i+1], cost_map);
+    visualized_points_.clear();
+    if (points.size()>1) {
+      ROS_DEBUG_NAMED ("constraints", "I am about to enforce a polyline constraint with length %u starting with points %f, %f and %f, %f",
+                       points.size(), points[0].x, points[0].y, points[1].x, points[1].y);
+
+      // \todo Need to take the header of the polyline into account
+      for (uint i=0; i<points.size()-1; ++i) {
+        enforceConstraint(points[i], points[i+1], cost_map);
+      }
     }
+
+    Polyline2D visualized_boundary;
+    visualized_boundary.header.frame_id=global_frame_;
+    visualized_boundary.set_points_vec(visualized_points_);
+    Node::instance()->publish("planning_boundary", visualized_boundary);
   }
 
-  void MoveBaseNAVFN::enforceConstraint (const Point2DFloat32& p1, const Point2DFloat32& p2, uchar* cost_map) const
+  
+  // This is a hack that will occasionally miss cells.  Bresenham's algorithm is the right way.
+  void MoveBaseNAVFN::enforceConstraint (const Point2DFloat32& p1, const Point2DFloat32& p2, uchar* cost_map)
   {
-    // This is a hack that will occasionally miss cells.  Bresenham's algorithm is the right way.
-
     const double dx=p2.x-p1.x;
     const double dy=p2.y-p1.y;
     const double l=sqrt(dx*dx+dy*dy);
@@ -139,6 +151,11 @@ namespace ros {
       uint ind=getCostMap().WC_IND(x, y);
       ROS_INFO ("Marking point %f, %f with index %u as obstacle", x, y, ind);
       cost_map[ind] = CostMap2D::LETHAL_OBSTACLE;
+
+      Point2DFloat32 visualized_point;
+      visualized_point.x=x;
+      visualized_point.y=y;
+      visualized_points_.push_back(visualized_point);
     }
   }
     
