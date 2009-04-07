@@ -1,5 +1,8 @@
 <launch>
   <node pkg="door_tracker" type="door_tracker_node" output="screen" name="door_tracker_node">
-    <remap from="base_scan" to="tilt_laser_cloud_filtered"/>
+    <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />  
   </node>
+  <node pkg="door_tracker" type="door_database_node" output="screen" name="door_database_node"/>
+  <node pkg="door_tracker" type="door_tracker_test" output="screen" name="door_activate_node"/>
+
 </launch>
