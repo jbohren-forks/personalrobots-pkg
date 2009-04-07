@@ -60,6 +60,12 @@ ConstantTorqueController::ConstantTorqueController():
   start = true;
   test_duration_ = 5;
   count_ = 0;
+
+  diagnostic_message_.set_status_size(1);
+  robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
+  status->name = "ConstantTorque";
+  status->level = 0;
+  status->message = "OK: Done.";
 }
 
 ConstantTorqueController::~ConstantTorqueController()
