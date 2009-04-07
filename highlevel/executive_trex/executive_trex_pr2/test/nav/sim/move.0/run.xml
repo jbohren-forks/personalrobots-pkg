@@ -1,0 +1,10 @@
+<launch>
+  <master auto="start"/>
+  <param name="/trex/input_file" value="driver.cfg"/>
+  <param name="/trex/path" value="$(find executive_trex_pr2)/cfg"/>
+  <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/nav/sim/move.0"/>
+  <param name="/trex/time_limit" value="60"/>
+  <param name="/trex/log_dir" value="$(find executive_trex_pr2)/logs"/>
+  <param name="/trex/play_back" value="0"/>
+  <node pkg="executive_trex_pr2" type="trexdebug"/>
+</launch>
