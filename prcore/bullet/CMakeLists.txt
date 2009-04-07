@@ -12,8 +12,6 @@ if(_make_failed)
   message(FATAL_ERROR "Build of Bullet failed")
 endif(_make_failed)
 
-#set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES stage-svn)
-
 ### python header for swig
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_PATH})
@@ -23,23 +21,9 @@ include_directories(build/include)
 link_directories(lib)
 add_definitions(-DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX)
 
+### bullet unit tests for items i've patched
 rospack_add_gtest(bullet_unittest test/bullet_unittest.cpp)
 target_link_libraries(bullet_unittest LinearMath)
-
-# Find the build flags for Stage
-#set(ENV{PKG_CONFIG_PATH} "${PROJECT_SOURCE_DIR}/stage/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-#pkg_check_modules(STAGE REQUIRED stage)
-
-#include_directories(${STAGE_INCLUDE_DIRS})
-#link_directories(${STAGE_LIBRARY_DIRS})
-
-#rospack_add_executable(bin/stageros src/stageros.cpp)
-#rospack_link_boost(bin/stageros thread)
-#add_dependencies(bin/stageros build_stage)
-
-#rospack_add_compile_flags(bin/stageros ${STAGE_CFLAGS_OTHERS})
-#target_link_libraries(bin/stageros ${STAGE_LIBRARIES})
-#rospack_add_link_flags(bin/stageros ${STAGE_LDFLAGS_OTHERS})
 
 
 # Find the combined swig flags for this project
