@@ -17,10 +17,12 @@ rospack_add_nddl("test/pr2.mechanism_control.nddl")
 
 # Nav Tests
 rospack_add_nddl("test/nav/pr2.driver.nddl")
+rospack_add_nddl("test/nav/sim/move.0/pr2.rcs.sim.nddl")
 
 # Door Tests
 rospack_add_nddl("test/doors/pr2.rcs.sim.nddl")
 rospack_add_nddl("test/doors/single_action_test/pr2.doorman.nddl")
+rospack_add_nddl("test/doors/controller/pr2.doorman.nddl")
 
 # Plug Tests
 rospack_add_nddl("test/plugs/single_action_test/pr2.recharger.nddl")
