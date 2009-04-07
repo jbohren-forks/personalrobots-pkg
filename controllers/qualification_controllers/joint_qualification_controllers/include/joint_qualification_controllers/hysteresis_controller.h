@@ -47,6 +47,7 @@
 
 #include <ros/node.h>
 #include <math.h>
+#include <sstream>
 #include <robot_msgs/DiagnosticMessage.h>
 #include <joint_qualification_controllers/TestData.h>
 #include <realtime_tools/realtime_publisher.h>
@@ -72,7 +73,7 @@ public:
    * \param max_effort Effort to limit the controller at.
    * \param *robot The robot that is being controlled.
    */
-  void init( double velocity, double max_effort, double max_expected_effort, double min_expected_effort, double min_pos, double max_pos, double time, std::string name ,mechanism::RobotState *robot);
+  void init( double velocity, double max_effort, double max_expected_effort, double min_expected_effort, double min_pos, double max_pos, double time, double timeout, std::string name, mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 
@@ -105,6 +106,8 @@ private:
   int loop_count_;
   bool complete;
   bool start;
+
+  double timeout_;
   
   int state_;
   int starting_count;
