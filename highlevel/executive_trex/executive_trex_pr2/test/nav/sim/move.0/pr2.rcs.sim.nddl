@@ -1,0 +1,8 @@
+#include "test/nav/sim/sim.nddl"
+
+close();
+
+fact(base_state.Holds f0);
+f0.x = 15.0;
+f0.y = 15.0;
+f0.th = 0.0;
