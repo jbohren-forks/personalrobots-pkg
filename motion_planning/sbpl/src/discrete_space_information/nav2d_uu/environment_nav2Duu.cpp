@@ -545,7 +545,7 @@ void EnvironmentNAV2DUU::GetPreds(int stateID, const vector<sbpl_BinaryHiddenVar
 	bool bFreeh = false;
 
 	//iterate over updated h-values to make sure dest cell is not in there
-	for(int hind = 0; hind < updatedhvaluesV->size(); hind++)
+	for(int hind = 0; hind < (int)updatedhvaluesV->size(); hind++)
 	{
 		if(updatedhvaluesV->at(hind).Prob < NAV2DUU_ERR_EPS)
 			bFreeh = true; //there are elements that are free
@@ -602,7 +602,7 @@ void EnvironmentNAV2DUU::GetPreds(int stateID, const vector<sbpl_BinaryHiddenVar
 				//check that it is not known to be free. Otherwise - invalid move
 				int tempID = EnvNAV2DUUCfg.HiddenVariableXY2ID[destx][predY];
 				bool btempfree = false;
-				for(int hind = 0; hind < updatedhvaluesV->size(); hind++)
+				for(int hind = 0; hind < (int)updatedhvaluesV->size(); hind++)
 				{
 					if(updatedhvaluesV->at(hind).h_ID == tempID)
 					{
@@ -625,7 +625,7 @@ void EnvironmentNAV2DUU::GetPreds(int stateID, const vector<sbpl_BinaryHiddenVar
 				//check that it is not known to be free. Otherwise - invalid move
 				int tempID = EnvNAV2DUUCfg.HiddenVariableXY2ID[predX][desty];
 				bool btempfree = false;
-				for(int hind = 0; hind < updatedhvaluesV->size(); hind++)
+				for(int hind = 0; hind < (int)updatedhvaluesV->size(); hind++)
 				{
 					if(updatedhvaluesV->at(hind).h_ID == tempID)
 					{
