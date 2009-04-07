@@ -15,4 +15,5 @@
   <depend package="point_cloud_mapping"/>
   <depend package="rospy"/>
   <depend package="tf"/>
+  <depend package="robot_actions"/>
 </package>

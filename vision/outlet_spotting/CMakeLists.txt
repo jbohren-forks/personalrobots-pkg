@@ -9,3 +9,5 @@ gensrv()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(outlet_spotting src/outlet_spotting.cpp src/outlet_tuple.cpp)
+
+rospack_add_executable(test_detect_service src/test_detect_service.cpp)

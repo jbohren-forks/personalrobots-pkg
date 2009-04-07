@@ -55,7 +55,7 @@
 #include "image_msgs/Image.h"
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
-#include "robot_msgs/OutletPose.h"
+#include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/VisualizationMarker.h"
 #include "robot_msgs/Planner2DGoal.h"
 
@@ -63,13 +63,17 @@
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
 #include <point_cloud_mapping/sample_consensus/sac.h>
+#include <point_cloud_mapping/sample_consensus/ransac.h>
 #include <point_cloud_mapping/sample_consensus/lmeds.h>
 #include "topic_synchronizer.h"
 #include <tf/transform_listener.h>
 
-
 #include "CvStereoCamModel.h"
 #include "outlet_tuple.h"
+
+#include "outlet_spotting/OutletSpotting.h"
+#include "robot_actions/action.h"
+
 
 #include <boost/thread.hpp>
 
@@ -106,6 +110,7 @@ public:
 
 };
 
+
 class OutletSpotting : public ros::Node
 {
 public:
@@ -122,12 +127,15 @@ public:
 	image_msgs::CvBridge dbridge;
 
 	robot_msgs::PointCloud cloud;
-	robot_msgs::PointCloud cloud_topic;
+	robot_msgs::PointCloud cloud_fetch;
 
-	robot_msgs::OutletPose outlet_pose;
+	robot_msgs::PointCloud laser_cloud;
+	robot_msgs::PointCloud laser_cloud_fetch;
+
+//	robot_msgs::PoseStamped outlet_pose;
 
 	IplImage* left;
-//	IplImage* right;''
+//	IplImage* right;
 	IplImage* disp;
 	IplImage* disp_clone;
 
@@ -137,23 +145,24 @@ public:
 	TopicSynchronizer<OutletSpotting> sync;
 
 
+	boost::mutex clound_point_mutex;
+	boost::condition_variable cloud_point_cv;
+
 	boost::mutex cv_mutex;
+	boost::condition_variable images_cv;
+	bool have_cloud_point_;
+
 
 	tf::TransformListener *tf_;
 
-    ros::Time goal_time;
-
-
 	OutletSpotting() : ros::Node("stereo_view"),left(NULL), disp(NULL), disp_clone(NULL),
-		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.05), &OutletSpotting::image_cb_timeout)
+		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(false)
 
 	{
         tf_ = new tf::TransformListener(*this);
 
-
 		param ("~display", display, false);  // 100 points at high resolution
 		param ("~save_patches", save_patches, false);  // 100 points at high resolution
-
 
 		if (display) {
 			ROS_INFO("Displaying images\n");
@@ -163,7 +172,28 @@ public:
 			cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 		}
 
+        advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
+        advertiseService("outlet_spotting_service", &OutletSpotting::outletSpottingService, this);
 
+
+	}
+
+	~OutletSpotting()
+	{
+		if (left)
+			cvReleaseImage(&left);
+//		if (right)
+//			cvReleaseImage(&right);
+		if (disp)
+			cvReleaseImage(&disp);
+	}
+
+private:
+
+    void subscribeToData()
+    {
+
+    	sync.reset();
 		std::list<std::string> left_list;
 		left_list.push_back(std::string("stereo/left/image_rect_color"));
 		left_list.push_back(std::string("stereo/left/image_rect"));
@@ -179,28 +209,28 @@ public:
 		sync.subscribe("stereo/disparity_info", dispinfo, 1);
 		sync.subscribe("stereo/right/cam_info", rcinfo, 1);
 
-		sync.subscribe("stereo/cloud", cloud_topic, 1);
+		sync.subscribe("stereo/cloud", cloud_fetch, 1);
 
 		sync.ready();
 
-		advertise<OutletPose>("stereo/outlet_pose",1);
-        advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
-        advertise<robot_msgs::Planner2DGoal>("goal", 1);
+		subscribe("full_cloud", laser_cloud_fetch, &OutletSpotting::laser_cloud_callback, 1);
+    }
+
+    void unsubscribeFromData()
+    {
+        unsubscribe("stereo/left/image_rect_color");
+        unsubscribe("stereo/left/image_rect");
+        unsubscribe("stereo/disparity");
+        unsubscribe("stereo/stereo_info");
+        unsubscribe("stereo/disparity_info");
+        unsubscribe("stereo/right/cam_info");
+        unsubscribe("stereo/cloud");
+        unsubscribe("full_cloud");
+    }
 
 
-        goal_time = ros::Time::now();
 
-	}
 
-	~OutletSpotting()
-	{
-		if (left)
-			cvReleaseImage(&left);
-//		if (right)
-//			cvReleaseImage(&right);
-		if (disp)
-			cvReleaseImage(&disp);
-	}
 
 	/////WORKING FUNCTIONS////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////
@@ -424,7 +454,7 @@ public:
 		return sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y)+(a.z-b.z)*(a.z-b.z));
 	}
 
-	void getBBoxDimensions(IplImage *Id, CvRect &R, double meanDisparity, double& dx, double& dy, double& z)
+	void getBBoxDimensions(IplImage *Id, CvRect &R, double meanDisparity, double& dx, double& dy)
 	{
 		// initialize stereo camera model
 		double Fx = rcinfo.P[0];  double Fy = rcinfo.P[5];
@@ -444,8 +474,6 @@ public:
 
 		dx = cvDist(p1,p2);
 		dy = cvDist(p1,p3);
-
-		z = p1.z;
 	}
 
 
@@ -461,64 +489,6 @@ public:
 		cvResetImageROI(img);
 	}
 
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/** \brief Find a plane model in a point cloud given via a set of point indices with SAmple Consensus methods
-	  * \param points the point cloud message
-	  * \param indices a pointer to a set of point cloud indices to test
-	  * \param inliers the resultant planar inliers
-	  * \param coeff the resultant plane coefficients
-	  * \param viewpoint_cloud a point to the pose where the data was acquired from (for normal flipping)
-	  * \param dist_thresh the maximum allowed distance threshold of an inlier to the model
-	  * \param min_pts the minimum number of points allowed as inliers for a plane model
-	  */
-	bool
-	  fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
-	               const robot_msgs::Point32 &viewpoint, double dist_thresh, int min_pts)
-	{
-	  if ((int)indices.size () < min_pts)
-	  {
-	    inliers.resize (0);
-	    coeff.resize (0);
-	    return (false);
-	  }
-
-	  // Create and initialize the SAC model
-	  sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-	 //  sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
-	  sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
-	  sac->setMaxIterations (500);
-	  model->setDataSet (&points, indices);
-
-	  // Search for the best plane
-	  if (sac->computeModel ())
-	  {
-	    // Obtain the inliers and the planar model coefficients
-	    if ((int)sac->getInliers ().size () < min_pts)
-	    {
-//	      ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), min_pts);
-	      inliers.resize (0);
-	      coeff.resize (0);
-	      return (false);
-	    }
-	    sac->computeCoefficients (coeff);          // Compute the model coefficients
-	    sac->refineCoefficients (coeff);           // Refine them using least-squares
-	    model->selectWithinDistance (coeff, dist_thresh, inliers);
-
-	    // Flip plane normal according to the viewpoint information
-	    cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint);
-	    //ROS_DEBUG ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
-	    //           coeff[0], coeff[1], coeff[2], coeff[3]);
-	  }
-	  else
-	  {
-	    ROS_ERROR ("Could not compute a plane model.");
-	    return (false);
-	  }
-	  delete sac;
-	  delete model;
-	  return (true);
-	}
 
 	/**
 	 * \brief Finds the nearest point with non-zero disparity
@@ -587,18 +557,18 @@ public:
      * \brief Publishes a visualization marker for a point.
      * @param p
      */
-    void showPointMarker(robot_msgs::PointStamped p)
+    void showMarkers(robot_msgs::PoseStamped pose)
     {
         robot_msgs::VisualizationMarker marker;
-        marker.header.frame_id = p.header.frame_id;
+        marker.header.frame_id = pose.header.frame_id;
         marker.header.stamp = ros::Time((uint64_t)(0ULL));
-        marker.id = 0;
+        marker.id = 101;
         marker.type = robot_msgs::VisualizationMarker::SPHERE;
         marker.action = robot_msgs::VisualizationMarker::ADD;
 
-        marker.x = p.point.x;
-        marker.y = p.point.y;
-        marker.z = p.point.z;
+        marker.x = pose.pose.position.x;
+        marker.y = pose.pose.position.y;
+        marker.z = pose.pose.position.z;
         marker.yaw = 0.0;
         marker.pitch = 0.0;
         marker.roll = 0.0;
@@ -609,96 +579,232 @@ public:
         marker.r = 0;
         marker.g = 255;
         marker.b = 0;
+
         publish("visualizationMarker", marker);
+
+
+        tf::Pose tf_pose;
+
+        tf::PoseMsgToTF(pose.pose,tf_pose);
+        tf::Point point(-1,0,0);
+        tf::Point normal = tf_pose*point;
+
+
+        marker.header.frame_id = pose.header.frame_id;
+        marker.header.stamp = ros::Time((uint64_t)(0ULL));
+        marker.id = 102;
+        marker.type = robot_msgs::VisualizationMarker::SPHERE;
+        marker.action = robot_msgs::VisualizationMarker::ADD;
+
+        marker.x = normal.x();
+        marker.y = normal.y();
+        marker.z = normal.z();
+        marker.yaw = 0.0;
+        marker.pitch = 0.0;
+        marker.roll = 0.0;
+        marker.xScale = 0.1;
+        marker.yScale = 0.1;
+        marker.zScale = 0.1;
+        marker.alpha = 255;
+        marker.r = 0;
+        marker.g = 255;
+        marker.b = 0;
+
+        publish("visualizationMarker", marker);
+        printf("Published marker.\n");
     }
 
 
+    double squaredPointDistance(Point32 p1, Point p2)
+    {
+    	return (p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y)+(p1.z-p2.z)*(p1.z-p2.z);
+    }
 
 
-	bool publishOutletPose(const CvRect& r, const CvPoint& p)
+    PointCloud outletVecinity(PointCloud laser_cloud, PointStamped ps_cloud, double distance)
+    {
+    	PointCloud result;
+    	result.header.frame_id = laser_cloud.header.frame_id;
+    	result.header.stamp = laser_cloud.header.stamp;
+
+    	double d = distance*distance;
+    	for (size_t i=0; i<laser_cloud.get_pts_size(); ++i) {
+    		if (squaredPointDistance(laser_cloud.pts[i],ps_cloud.point)<d) {
+    			result.pts.push_back(laser_cloud.pts[i]);
+    		}
+    	}
+
+    	return result;
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Find a plane model in a point cloud given via a set of point indices with SAmple Consensus methods
+      * \param points the point cloud message
+      * \param indices a pointer to a set of point cloud indices to test
+      * \param inliers the resultant planar inliers
+      * \param coeff the resultant plane coefficients
+      * \param viewpoint_cloud a point to the pose where the data was acquired from (for normal flipping)
+      * \param dist_thresh the maximum allowed distance threshold of an inlier to the model
+      * \param min_pts the minimum number of points allowed as inliers for a plane model
+      */
+    bool
+      fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
+                   const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
+    {
+      if ((int)indices.size () < min_pts)
+      {
+        inliers.resize (0);
+        coeff.resize (0);
+        return (false);
+      }
+
+      // Create and initialize the SAC model
+      sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
+      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+      //sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
+      sac->setMaxIterations (500);
+      model->setDataSet (&points, indices);
+
+      // Search for the best plane
+      if (sac->computeModel ())
+      {
+        // Obtain the inliers and the planar model coefficients
+        if ((int)sac->getInliers ().size () < min_pts)
+        {
+          //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
+          inliers.resize (0);
+          coeff.resize (0);
+          return (false);
+        }
+        sac->computeCoefficients (coeff);          // Compute the model coefficients
+        sac->refineCoefficients (coeff);           // Refine them using least-squares
+        model->selectWithinDistance (coeff, dist_thresh, inliers);
+        //inliers = sac->getInliers ();
+
+        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint_cloud);
+
+        //ROS_DEBUG ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
+        //           coeff[0], coeff[1], coeff[2], coeff[3]);
+
+        // Project the inliers onto the model
+        model->projectPointsInPlace (inliers, coeff);
+      }
+      else
+      {
+        ROS_ERROR ("Could not compute a plane model.");
+        return (false);
+      }
+      sort (inliers.begin (), inliers.end ());
+
+      delete sac;
+      delete model;
+      return (true);
+    }
+
+
+	bool getPoseStamped(const CvRect& r, const CvPoint& p, PoseStamped& pose)
 	{
 		CvPoint cp = p;
-		bool found = findCenterPoint(disp, r,cp);
-
+		bool found = findCenterPoint(disp, r, cp);
 		if (!found) {
 			return false;
 		}
 
 		robot_msgs::PointCloud outlet_cloud = filterPointCloud(r);
-//		CvScalar plane = estimatePlaneLS(outlet_cloud);
 		robot_msgs::Point32 center_point;
 		found = find3DPoint(outlet_cloud, cp, center_point);
 		if (!found) {
 			return false;
 		}
 
-		outlet_pose.header.frame_id = cloud.header.frame_id;
-		outlet_pose.header.stamp = cloud.header.stamp;
-
-		outlet_pose.point.x = center_point.x;
-		outlet_pose.point.y = center_point.y;
-		outlet_pose.point.z = center_point.z;
-
-//		outlet_pose.vector.x = plane.val[0];
-//		outlet_pose.vector.y = plane.val[1];
-//		outlet_pose.vector.z = plane.val[2];
-
-		publish("stereo/outlet_pose", outlet_pose);
-
-
-		// transform point in base_link
 		PointStamped ps_stereo;
 		ps_stereo.header.frame_id = cloud.header.frame_id;
 		ps_stereo.header.stamp = cloud.header.stamp;
-
 		ps_stereo.point.x = center_point.x;
 		ps_stereo.point.y = center_point.y;
 		ps_stereo.point.z = center_point.z;
-		PointStamped ps_base;
 
+		ROS_INFO("OutletSpotter: Found outlet bbox, I'm waiting for cloud point.");
 
+		boost::unique_lock<boost::mutex> lock(clound_point_mutex);
+		// waiting for the cloud point
+		while (!have_cloud_point_) {
+			cloud_point_cv.wait(lock);
+		}
+
+		ROS_INFO("OutletSpotter: computing normal.");
+		// got a cloud point
+		PointStamped ps_cloud;
         try {
-            tf_->transformPoint("base_link", ps_stereo, ps_base);
+            tf_->transformPoint(laser_cloud.header.frame_id, ps_stereo, ps_cloud);
         }
-        catch(tf::LookupException & ex){
-            ROS_ERROR("Lookup exception: %s\n", ex.what());
+        catch(tf::TransformException & ex){
+            ROS_ERROR("Transform exception: %s\n", ex.what());
         }
-        catch(tf::ExtrapolationException & ex){
-            ROS_DEBUG("Extrapolation exception: %s\n", ex.what());
+        PointCloud outlet_vecinity = outletVecinity(laser_cloud, ps_cloud, 0.2);
+
+        // fit a plate in the outlet cloud
+        vector<int> indices(outlet_vecinity.pts.size());
+        for (size_t i=0;i<outlet_vecinity.get_pts_size();++i) {
+        	indices[i] = i;
         }
-        catch(tf::ConnectivityException & ex){
-            ROS_ERROR("Connectivity exception: %s\n", ex.what());
+        vector<int> inliers;
+        vector<double> coeff(4);	// plane coefficients
+
+        // find viewpoint in laser frame
+        PointStamped stereo_viewpoint;
+        stereo_viewpoint.header.frame_id = cloud.header.frame_id;
+        stereo_viewpoint.header.stamp = cloud.header.stamp;
+        stereo_viewpoint.point.x = 0;
+        stereo_viewpoint.point.x = 0;
+        stereo_viewpoint.point.x = 0;
+
+        PointStamped viewpoint;
+        try {
+            tf_->transformPoint(laser_cloud.header.frame_id, stereo_viewpoint, viewpoint);
+        }
+        catch(tf::TransformException & ex){
+            ROS_ERROR("Transform exception: %s\n", ex.what());
         }
 
-        Planner2DGoal goal;
-        goal.header.frame_id = ps_base.header.frame_id;
-        goal.header.stamp = ps_base.header.stamp;
-        goal.goal.x = ps_base.point.x;
-        goal.goal.y = ps_base.point.y;
-        goal.goal.th = 0; // for now
+        double dist_thresh = 0.02;
+        int min_pts = 50;
 
-        if ((ros::Time::now()-goal_time).toSec()>2) {
-        	printf("Setting goal: %f, %f, %f\n", goal.goal.x, goal.goal.y, goal.goal.th);
-        	publish("goal", goal);
-            goal_time = ros::Time::now();
+		ROS_INFO("OutletSpotter: finding wall plane");
+        if ( !fitSACPlane (outlet_vecinity, indices, inliers, coeff, viewpoint, dist_thresh, min_pts) || inliers.size()==0) {
+        	ROS_ERROR ("Cannot find outlet plane in laser scan, aborting...");
+        	return false;
         }
 
 
 
-//        printf("Stereo frame point: (%f,%f,%f), vector: (%f,%f,%f) \n",ps_stereo.point.x,ps_stereo.point.y,ps_stereo.point.z,
-//        		vec_stereo.vector.x,vec_stereo.vector.y,vec_stereo.vector.z);
-//        printf("Base frame point: (%f,%f,%f), vector: (%f,%f,%f) \n",ps_base.point.x,ps_base.point.y,ps_base.point.z,
-//        		vec_base.vector.x,vec_base.vector.y,vec_base.vector.z);
+        // fill the outlet pose
+        pose.header.frame_id = laser_cloud.header.frame_id;
+        pose.header.stamp = laser_cloud.header.stamp;
+
+        btVector3 position(ps_cloud.point.x,ps_cloud.point.y,ps_cloud.point.z);
+        btVector3 normal(coeff[0],coeff[1],coeff[2]);
+        btVector3 up(0,0,1);
+        btVector3 left = normal.cross(up).normalized();
 
 
-        showPointMarker(ps_base);
+        btMatrix3x3 rotation;
+        rotation[0] = -normal; // x
+        rotation[1] = left; // y
+        rotation[2] = up;     // z
+        rotation = rotation.transpose();
+        btQuaternion orientation;
+        rotation.getRotation(orientation);
+        tf::Transform outlet_pose(orientation, position);
+        tf::PoseTFToMsg(outlet_pose, pose.pose);
 
-
+        ROS_INFO("OutletSpotter: finished computing outlet pose");
 
 		return true;
 	}
 
-	void detectOutlet()
+	bool detectOutlet(PoseStamped& pose)
 	{
 		int Nerode = 1;
 		int Ndialate = 7;
@@ -734,22 +840,21 @@ public:
 				if (save_patches) savePatch(left,bbs[t],"outlet_high_std");
 				continue;
 			}
-			if(!vertical) {
-				if (save_patches) savePatch(left,bbs[t],"outlet_not_vertical");
-				continue;
-			}
+//			if(!vertical) {
+//				if (save_patches) savePatch(left,bbs[t],"outlet_not_vertical");
+//				continue;
+//			}
 
 
 			// check bonding box real world dimensions
 			double dx;
 			double dy;
-			double z;
-			getBBoxDimensions(disp_clone, bbs[t], meanDisparity, dx, dy, z);
-			if (dx<0.05 || dx>0.16) {
+			getBBoxDimensions(disp_clone, bbs[t], meanDisparity, dx, dy);
+			if (dx<0.05 || dx>0.26) {
 				if (save_patches) savePatch(left,bbs[t],"outlet_wrong_dimensions");
 				continue;
 			}
-			if (dy<0.05 || dy>0.16) {
+			if (dy<0.05 || dy>0.26) {
 				if (save_patches) savePatch(left,bbs[t],"outlet_wrong_dimensions");
 				continue;
 			}
@@ -768,13 +873,21 @@ public:
 			if (save_patches) savePatch(left,bbs[t],"outlet_match");
 
 
-			publishOutletPose(bbs[t], centers[t]);
+			if (display) {
+				// draw bounding box
+				CvPoint pt2 = cvPoint(bbs[t].x+wi,bbs[t].y+hi);
+				cvRectangle(left,pt1,pt2,CV_RGB(0,255,0));
+			}
+			found = getPoseStamped(bbs[t], centers[t], pose);
 
-			// draw bounding box for now
-			CvPoint pt2 = cvPoint(bbs[t].x+wi,bbs[t].y+hi);
-			cvRectangle(left,pt1,pt2,CV_RGB(0,255,0));
-
+			// one outlet is enough
+			if (found) {
+				return true;
+			}
 		}
+
+		ROS_INFO("OutletSpotter: outlet not found");
+		return false;
 	}
 
 
@@ -843,51 +956,32 @@ public:
 		return result;
 	}
 
-//
-//	// returns the plane in Hessian normal form
-	CvScalar estimatePlaneLS(robot_msgs::PointCloud points)
+    /**
+     * \brief Service call to spot outlets
+     */
+    bool outletSpottingService(outlet_spotting::OutletSpotting::Request & req, outlet_spotting::OutletSpotting::Response & resp)
+    {
+    	ROS_INFO("OutletSpotter: service called");
+        return runOutletSpotter(req.point,resp.pose);
+    }
+
+    /**
+     *
+     */
+	void laser_cloud_callback()
 	{
-		int cnt = points.pts.size();
-		CvMat* A = cvCreateMat(cnt, 3, CV_32FC1);
+		boost::lock_guard<boost::mutex> lock(clound_point_mutex);
+		have_cloud_point_ = true;
+		ROS_INFO("OutletSpotter: received cloud point");
+		laser_cloud = laser_cloud_fetch;
 
-		for (int i=0;i<cnt;++i) {
-			robot_msgs::Point32 p = points.pts[i];
-			cvmSet(A,i,0,p.x);
-			cvmSet(A,i,1,p.y);
-			cvmSet(A,i,2,p.z);
-		}
-
-		vector<float> ones(cnt,1);
-		CvMat B;
-		cvInitMatHeader(&B,cnt,1,CV_32FC1,&ones[0]);
-		CvMat* X = cvCreateMat(3,1,CV_32FC1);
-
-		int ok = cvSolve( A, &B, X,CV_SVD );
-
-		CvScalar plane;
-
-		if (ok) {
-			float* xp = X->data.fl;
-
-			float d = sqrt(xp[0]*xp[0]+xp[1]*xp[1]+xp[2]*xp[2]);
-			plane.val[0] = xp[0]/d;
-			plane.val[1] = xp[1]/d;
-			plane.val[2] = xp[2]/d;
-			plane.val[3] = -1/d;
-		}
-		else {
-			plane.val[0] = plane.val[1] = plane.val[2] = plane.val[3] = -1;
-		}
-
-		cvReleaseMat(&A);
-
-		return plane;
+		cloud_point_cv.notify_all();
 	}
 
 
 	void image_cb_all(ros::Time t)
 	{
-		cv_mutex.lock();
+        boost::lock_guard<boost::mutex> lock(cv_mutex);
 
 		if (lbridge.fromImage(limage, "bgr"))
 		{
@@ -913,23 +1007,13 @@ public:
 			cvCvtScale(dbridge.toIpl(), disp, 4.0/dispinfo.dpp);
 		}
 
-		cloud = cloud_topic;
-
-		detectOutlet();
-
-		if (display) {
-			cvShowImage("left", left);
-			//cvShowImage("right", right);
-			cvShowImage("contours", disp);
-			cvShowImage("disparity", disp_clone);
-		}
+		cloud = cloud_fetch;
 
 		if (disp_clone!=NULL)
 			cvReleaseImage(&disp_clone);
 
 
-		cv_mutex.unlock();
-
+		images_cv.notify_all();
 	}
 
 	void image_cb_timeout(ros::Time t)
@@ -946,12 +1030,12 @@ public:
 		if (stinfo.header.stamp != t)
 			printf("Timed out waiting for stereo info\n");
 
-		if (cloud_topic.header.stamp != t)
+		if (cloud_fetch.header.stamp != t)
 			printf("Timed out waiting for point cloud\n");
 
-		//Proceed to show images anyways
-//		image_cb_all(t);
 	}
+
+public:
 
 	bool spin()
 	{
@@ -965,7 +1049,6 @@ public:
 			if (key=='s')
 				save_patches ^= true;
 
-
 			cv_mutex.unlock();
 			usleep(10000);
 		}
@@ -973,7 +1056,104 @@ public:
 		return true;
 	}
 
+
+	bool runOutletSpotter(const robot_msgs::PointStamped& request, robot_msgs::PoseStamped& pose)
+	{
+        subscribeToData();
+		boost::unique_lock<boost::mutex> images_lock(cv_mutex);
+		ROS_INFO("OutletSpotter: waiting for images");
+    	images_cv.wait(images_lock);
+
+    	ROS_INFO("OutletSpotter: performing detection");
+
+		bool found = detectOutlet(pose);
+
+		if (display) {
+			cvShowImage("left", left);
+			//cvShowImage("right", right);
+			cvShowImage("contours", disp);
+			cvShowImage("disparity", disp_clone);
+		}
+
+
+        unsubscribeFromData();
+
+        showMarkers(pose);
+
+		return found;
+	}
+
+
+
 };
+
+
+
+
+
+
+class SpotOutletAction: public robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>
+{
+public:
+  SpotOutletAction(OutletSpotting& spotter) :
+	  robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("spot_outlet"),
+	  spotter_(spotter)
+  {
+	  spotter_.advertise<robot_msgs::PointStamped>("head_controller/head_track_point",10);
+  }
+  ~SpotOutletAction()
+  {
+	  spotter_.unadvertise("head_controller/head_track_point");
+  }
+
+  virtual void handleActivate(const robot_msgs::PointStamped& outlet_estimate)
+  {
+	  ROS_INFO("SpotOutletAction: handle activate");
+	  request_preempt_ = false;
+	  notifyActivated();
+
+	  robot_msgs::PoseStamped outlet_pose;
+	  if (!spotOutlet(outlet_estimate, outlet_pose)){
+		  if (request_preempt_){
+			  ROS_INFO("SpotOutletAction: Preempted");
+			  notifyPreempted(outlet_pose);
+		  }
+		  else{
+			  ROS_INFO("SpotOutletAction: Aborted");
+			  notifyAborted(outlet_pose);
+		  }
+	  }
+	  else{
+		  ROS_INFO("SpotOutletAction: Succeeded");
+		  notifySucceeded(outlet_pose);
+	  }
+
+  }
+
+  virtual void handlePreempt()
+  {
+	  request_preempt_ = true;
+  }
+
+private:
+
+	bool spotOutlet(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& pose)
+	{
+		// turn head to face outlet
+		spotter_.publish("head_controller/head_track_point", outlet_estimate);
+
+		return spotter_.runOutletSpotter(outlet_estimate, pose);
+
+	}
+
+	OutletSpotting& spotter_;
+	bool request_preempt_;
+
+};
+
+
+
+
 
 int main(int argc, char **argv)
 {
