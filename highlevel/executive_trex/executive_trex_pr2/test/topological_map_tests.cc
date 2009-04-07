@@ -115,6 +115,13 @@ TEST(executive_trex_pr2, map_read_from_file){
   // Points that are ligitimately obstacles
   ASSERT_EQ(map.isObstacle(15.0, 25.2), true);
 
+  // This should be a doorway
+  //unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(13.25, 25.15);
+  unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(25.15, 13.25);
+  bool is_doorway(false);
+  map.isDoorway(region_id, is_doorway);
+  ASSERT_EQ(is_doorway, true);
+
   robot_msgs::Door door_state;
   ASSERT_EQ(TopologicalMapAdapter::instance()->getDoorState(206, door_state), true);
 }
