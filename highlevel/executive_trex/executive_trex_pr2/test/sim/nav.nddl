@@ -151,7 +151,8 @@ BaseController::Holds{
     eq(dy, 0.0);
     eq(dth, 0.0);
 
-    contained_by(MoveBase.Inactive);
+    contained_by(MoveBase.Inactive mb);
+    eq(mb.status, SUCCESS);
   }
 }
 
@@ -186,6 +187,7 @@ MoveBase::Active{
   eq(bc.y, y);
   eq(bc.th, th);
 
+/*
   // For now, assume a constant duration, and write the end bounds thru magic so we are transported
   // to the target position instantaneouosly
   eq(duration, 3);
@@ -193,6 +195,7 @@ MoveBase::Active{
   eq(bs.x, x);
   eq(bs.y, y);
   eq(bs.th, th);
+*/
 }
 
 MoveBase::Inactive{
