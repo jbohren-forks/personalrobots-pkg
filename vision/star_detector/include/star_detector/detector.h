@@ -116,7 +116,8 @@ private:
   int StarPixels(int radius, int offset);
   
   //! Calculate the filter responses over the range of desired scales.
-  void FilterResponses(); // fallback pure C++ implementation
+  void FilterResponses();
+  void FilterResponsesFallback(); // pure C++ implementation
   void FilterResponsesGen3();
   void FilterResponsesGen4();
   void FilterResponsesGen5();
@@ -142,28 +143,7 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
   cvIntegral(source, m_upright, NULL, NULL);
   TiltedIntegral(source, m_tilted, m_flat);
 
-  // If possible, run one of the optimized versions
-#ifdef __SSE2__
-  if ((m_W < OPTIMIZED_WIDTH) && (3 <= m_n) && (m_n <= 12)) {
-    switch (m_n) {
-      case 3: FilterResponsesGen3(); break;
-      case 4: FilterResponsesGen4(); break;
-      case 5: FilterResponsesGen5(); break;
-      case 6: FilterResponsesGen6(); break;
-      case 7: FilterResponsesGen7(); break;
-      case 8: FilterResponsesGen8(); break;
-      case 9: FilterResponsesGen9(); break;
-      case 10: FilterResponsesGen10(); break;
-      case 11: FilterResponsesGen11(); break;
-      case 12: FilterResponsesGen12(); break;
-    }
-  } else {
-    FilterResponses();
-  }
-#else
-#warning "SSE instructions unavailable, using slower C++ fallback code."
   FilterResponses();
-#endif
 
   return FindExtrema(inserter);
 }

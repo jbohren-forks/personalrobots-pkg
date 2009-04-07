@@ -104,9 +104,35 @@ int StarDetector::StarPixels(int radius, int offset)
   return upright_pixels + tilt_pixels;
 }
 
+void StarDetector::FilterResponses()
+{
+  // If possible, run one of the optimized versions
+#ifdef __SSE2__
+  if ((m_W < OPTIMIZED_WIDTH) && (3 <= m_n) && (m_n <= 12)) {
+    switch (m_n) {
+      case 3: FilterResponsesGen3(); break;
+      case 4: FilterResponsesGen4(); break;
+      case 5: FilterResponsesGen5(); break;
+      case 6: FilterResponsesGen6(); break;
+      case 7: FilterResponsesGen7(); break;
+      case 8: FilterResponsesGen8(); break;
+      case 9: FilterResponsesGen9(); break;
+      case 10: FilterResponsesGen10(); break;
+      case 11: FilterResponsesGen11(); break;
+      case 12: FilterResponsesGen12(); break;
+    }
+  } else {
+    FilterResponsesFallback();
+  }
+#else
+#warning "SSE instructions unavailable, using slower C++ fallback code."
+  FilterResponsesFallback();
+#endif
+}
+
 // Lightly optimized pure C++ version. If possible, one of the SIMD versions
 // in generated.i will be used instead.
-void StarDetector::FilterResponses()
+void StarDetector::FilterResponsesFallback()
 {
   if (!m_filter_params) {
     // Cache constants associated with each scale
