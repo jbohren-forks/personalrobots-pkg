@@ -73,6 +73,8 @@
 
 #include "outlet_spotting/OutletSpotting.h"
 #include "robot_actions/action.h"
+#include "robot_actions/action_runner.h"
+#include "robot_actions/DetectOutletState.h"
 
 
 #include <boost/thread.hpp>
@@ -155,6 +157,8 @@ public:
 
 	tf::TransformListener *tf_;
 
+	int frames_number_;
+
 	OutletSpotting() : ros::Node("stereo_view"),left(NULL), disp(NULL), disp_clone(NULL),
 		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(false)
 
@@ -163,6 +167,7 @@ public:
 
 		param ("~display", display, false);  // 100 points at high resolution
 		param ("~save_patches", save_patches, false);  // 100 points at high resolution
+		param ("~frames_number", frames_number_, 7);  // 100 points at high resolution
 
 		if (display) {
 			ROS_INFO("Displaying images\n");
@@ -174,8 +179,6 @@ public:
 
         advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
         advertiseService("outlet_spotting_service", &OutletSpotting::outletSpottingService, this);
-
-
 	}
 
 	~OutletSpotting()
@@ -186,6 +189,9 @@ public:
 //			cvReleaseImage(&right);
 		if (disp)
 			cvReleaseImage(&disp);
+
+		unadvertise("visualizationMarker");
+		unadvertiseService("outlet_spotting_service");
 	}
 
 private:
@@ -611,7 +617,6 @@ private:
         marker.b = 0;
 
         publish("visualizationMarker", marker);
-        printf("Published marker.\n");
     }
 
 
@@ -962,7 +967,10 @@ private:
     bool outletSpottingService(outlet_spotting::OutletSpotting::Request & req, outlet_spotting::OutletSpotting::Response & resp)
     {
     	ROS_INFO("OutletSpotter: service called");
-        return runOutletSpotter(req.point,resp.pose);
+
+    	bool found = runOutletSpotter(req.point,resp.pose);
+
+    	return found;
     }
 
     /**
@@ -1059,22 +1067,27 @@ public:
 
 	bool runOutletSpotter(const robot_msgs::PointStamped& request, robot_msgs::PoseStamped& pose)
 	{
+		bool found;
         subscribeToData();
-		boost::unique_lock<boost::mutex> images_lock(cv_mutex);
-		ROS_INFO("OutletSpotter: waiting for images");
-    	images_cv.wait(images_lock);
 
-    	ROS_INFO("OutletSpotter: performing detection");
+        {
+        	boost::unique_lock<boost::mutex> images_lock(cv_mutex);
+        	for (int i=0;i<frames_number_;++i) {
+        		ROS_INFO("OutletSpotter: waiting for images");
+        		images_cv.wait(images_lock);
 
-		bool found = detectOutlet(pose);
+        		ROS_INFO("OutletSpotter: performing detection");
+        		found = detectOutlet(pose);
+        		if (found) break;
 
-		if (display) {
-			cvShowImage("left", left);
-			//cvShowImage("right", right);
-			cvShowImage("contours", disp);
-			cvShowImage("disparity", disp_clone);
-		}
-
+        		if (display) {
+        			cvShowImage("left", left);
+        			//cvShowImage("right", right);
+        			cvShowImage("contours", disp);
+        			cvShowImage("disparity", disp_clone);
+        		}
+        	}
+        }
 
         unsubscribeFromData();
 
@@ -1096,7 +1109,7 @@ class SpotOutletAction: public robot_actions::Action<robot_msgs::PointStamped, r
 {
 public:
   SpotOutletAction(OutletSpotting& spotter) :
-	  robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("spot_outlet"),
+	  robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_coarse"),
 	  spotter_(spotter)
   {
 	  spotter_.advertise<robot_msgs::PointStamped>("head_controller/head_track_point",10);
@@ -1158,9 +1171,14 @@ private:
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv);
+	OutletSpotting spotter;
 
-	OutletSpotting view;
-	view.spin();
+	SpotOutletAction spot_outlet(spotter);
+	robot_actions::ActionRunner runner(10.0);
+	runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(spot_outlet);
+	runner.run();
+
+	spotter.spin();
 
 	return 0;
 }
