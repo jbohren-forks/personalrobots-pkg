@@ -50,16 +50,18 @@
 
 namespace controller {
 
-class CartesianWrenchController 
+class CartesianWrenchController : public Controller
 {
 public:
   CartesianWrenchController();
   ~CartesianWrenchController();
 
-  bool init(mechanism::RobotState *robot, const std::string& root_name, 
-            const std::string& tip_name, const std::string& controller_name);
+  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+
   bool starting();
   void update();
+
+  void command();
 
   // input of the controller
   KDL::Wrench wrench_desi_;
@@ -81,28 +83,6 @@ private:
   realtime_tools::RealtimePublisher <robot_msgs::DiagnosticMessage> diagnostics_publisher_;
   ros::Time diagnostics_time_;
   ros::Duration diagnostics_interval_;
-};
-
-
-
-
-
-
-class CartesianWrenchControllerNode : public Controller
-{
- public:
-  CartesianWrenchControllerNode();
-  ~CartesianWrenchControllerNode();
-
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool starting();
-  void update();
-  void command();
-
- private:
-  ros::Node* node_;
-  std::string controller_name_;
-  CartesianWrenchController controller_;
 
   robot_msgs::Wrench wrench_msg_;
 };

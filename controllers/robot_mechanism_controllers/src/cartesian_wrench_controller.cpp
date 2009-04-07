@@ -38,12 +38,14 @@
 
 using namespace KDL;
 
-
-
 namespace controller {
 
+
+ROS_REGISTER_CONTROLLER(CartesianWrenchController)
+
 CartesianWrenchController::CartesianWrenchController()
-: robot_state_(NULL),
+: node_(ros::Node::instance()),
+  robot_state_(NULL),
   jnt_to_jac_solver_(NULL),
   diagnostics_publisher_("/diagnostics", 2)
 {}
@@ -51,23 +53,39 @@ CartesianWrenchController::CartesianWrenchController()
 
 
 CartesianWrenchController::~CartesianWrenchController()
-{}
-
-
-
-bool CartesianWrenchController::init(mechanism::RobotState *robot_state,
-                                     const std::string& root_name,
-                                     const std::string& tip_name,
-                                     const std::string& controller_name)
 {
-  controller_name_ = controller_name;
+  node_->unsubscribe(controller_name_ + "/command");
+}
+
+
+
+
+bool CartesianWrenchController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+{
+  // get the controller name from xml file
+  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
+  if (controller_name_ == ""){
+    ROS_ERROR("CartesianWrenchController: No controller name given in xml file");
+    return false;
+  }
+
+  // get name of root and tip from the parameter server
+  std::string root_name, tip_name;
+  if (!node_->getParam(controller_name_+"/root_name", root_name)){
+    ROS_ERROR("CartesianWrenchController: No root name found on parameter server");
+    return false;
+  }
+  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+    ROS_ERROR("CartesianWrenchController: No tip name found on parameter server");
+    return false;
+  }
 
   // test if we got robot pointer
   assert(robot_state);
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!chain_.init(robot_state->model_, root_name, tip_name))
+  if (!chain_.init(robot_state_->model_, root_name, tip_name))
     return false;
   chain_.toKDL(kdl_chain_);
 
@@ -78,7 +96,6 @@ bool CartesianWrenchController::init(mechanism::RobotState *robot_state,
   jacobian_.resize(kdl_chain_.getNrOfJoints());
 
   // diagnostics messages
-  cout << "Initialize diagnostics !!!!!" << endl;
   diagnostics_.status.resize(1);
   diagnostics_.status[0].name  = "Wrench Controller";
   diagnostics_.status[0].values.resize(1);
@@ -91,6 +108,11 @@ bool CartesianWrenchController::init(mechanism::RobotState *robot_state,
 
   diagnostics_time_ = ros::Time::now();
   diagnostics_interval_ = ros::Duration().fromSec(1.0);
+
+
+  // subscribe to wrench commands
+  node_->subscribe(controller_name_ + "/command", wrench_msg_,
+		   &CartesianWrenchController::command, this, 1);
 
   return true;
 }
@@ -154,72 +176,15 @@ bool CartesianWrenchController::publishDiagnostics(int level, const string& mess
 
 
 
-
-
-
-ROS_REGISTER_CONTROLLER(CartesianWrenchControllerNode)
-
-CartesianWrenchControllerNode::CartesianWrenchControllerNode()
-: node_(ros::Node::instance())
-{}
-
-
-CartesianWrenchControllerNode::~CartesianWrenchControllerNode()
-{
-  node_->unsubscribe(controller_name_ + "/command");
-}
-
-
-bool CartesianWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  // get the controller name from xml file
-  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
-  if (controller_name_ == ""){
-    ROS_ERROR("CartesianWrenchControllerNode: No controller name given in xml file");
-    return false;
-  }
-
-  // get name of root and tip from the parameter server
-  std::string root_name, tip_name;
-  if (!node_->getParam(controller_name_+"/root_name", root_name)){
-    ROS_ERROR("CartesianWrenchControllerNode: No root name found on parameter server");
-    return false;
-  }
-  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
-    ROS_ERROR("CartesianWrenchControllerNode: No tip name found on parameter server");
-    return false;
-  }
-
-  // initialize wrench controller
-  if (!controller_.init(robot, root_name, tip_name, controller_name_)) return false;
-
-  // subscribe to wrench commands
-  node_->subscribe(controller_name_ + "/command", wrench_msg_,
-		   &CartesianWrenchControllerNode::command, this, 1);
-
-  return true;
-}
-
-bool CartesianWrenchControllerNode::starting()
-{
-  return controller_.starting();
-}
-
-void CartesianWrenchControllerNode::update()
-{
-  controller_.update();
-}
-
-
-void CartesianWrenchControllerNode::command()
+void CartesianWrenchController::command()
 {
   // convert to wrench command
-  controller_.wrench_desi_.force(0) = wrench_msg_.force.x;
-  controller_.wrench_desi_.force(1) = wrench_msg_.force.y;
-  controller_.wrench_desi_.force(2) = wrench_msg_.force.z;
-  controller_.wrench_desi_.torque(0) = wrench_msg_.torque.x;
-  controller_.wrench_desi_.torque(1) = wrench_msg_.torque.y;
-  controller_.wrench_desi_.torque(2) = wrench_msg_.torque.z;
+  wrench_desi_.force(0) = wrench_msg_.force.x;
+  wrench_desi_.force(1) = wrench_msg_.force.y;
+  wrench_desi_.force(2) = wrench_msg_.force.z;
+  wrench_desi_.torque(0) = wrench_msg_.torque.x;
+  wrench_desi_.torque(1) = wrench_msg_.torque.y;
+  wrench_desi_.torque(2) = wrench_msg_.torque.z;
 }
 
 }; // namespace

@@ -33,15 +33,14 @@
 
 #include <algorithm>
 #include <robot_kinematics/robot_kinematics.h>
-#include <robot_mechanism_controllers/cartesian_twist_controller_ik.h>
+#include "robot_mechanism_controllers/cartesian_twist_controller_ik.h"
 
 
 using namespace KDL;
 
-static const std::string controller_name = "cartesian_twist_ik";
-
-
 namespace controller {
+
+ROS_REGISTER_CONTROLLER(CartesianTwistControllerIk)
 
 CartesianTwistControllerIk::CartesianTwistControllerIk()
   : node_(ros::Node::instance()),
@@ -54,18 +53,33 @@ CartesianTwistControllerIk::CartesianTwistControllerIk()
 
 CartesianTwistControllerIk::~CartesianTwistControllerIk()
 {
+  node_->unsubscribe(controller_name_ + "/command");
+
   for (unsigned int i=0; i<kdl_chain_.getNrOfJoints(); i++)
     if (joint_vel_controllers_[i]) delete joint_vel_controllers_[i];
 }
 
 
 
-bool CartesianTwistControllerIk::init(mechanism::RobotState *robot_state,
-                                      const string& root_name,
-                                      const string& tip_name,
-                                      const string& controller_name)
+bool CartesianTwistControllerIk::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
-  controller_name_ = controller_name;
+  // get the controller name from xml file
+  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
+  if (controller_name_ == ""){
+    ROS_ERROR("CartesianTwistIkController: No controller name given in xml file");
+    return false;
+  }
+
+  // get name of root and tip from the parameter server
+  std::string root_name, tip_name;
+  if (!node_->getParam(controller_name_+"/root_name", root_name)){
+    ROS_ERROR("CartesianTwistIkController: No root name found on parameter server");
+    return false;
+ }
+  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+    ROS_ERROR("CartesianTwistIkController: No tip name found on parameter server");
+    return false;
+  }
 
   // test if we got robot pointer
   assert(robot_state);
@@ -93,6 +107,11 @@ bool CartesianTwistControllerIk::init(mechanism::RobotState *robot_state,
     if (!joint_vel_controllers_[i]->init(robot_state, chain_.getJointName(i), pid_joint))
       return false;
   }
+
+  // subscribe to twist commands
+  node_->subscribe(controller_name_ + "/command", twist_msg_,
+		   &CartesianTwistControllerIk::command, this, 1);
+
   return true;
 }
 
@@ -135,77 +154,15 @@ void CartesianTwistControllerIk::update()
 }
 
 
-
-
-
-
-
-
-ROS_REGISTER_CONTROLLER(CartesianTwistControllerIkNode)
-
-CartesianTwistControllerIkNode::CartesianTwistControllerIkNode()
-: node_(ros::Node::instance())
-{}
-
-
-CartesianTwistControllerIkNode::~CartesianTwistControllerIkNode()
-{
-  node_->unsubscribe(controller_name_ + "/command");
-}
-
-
-bool CartesianTwistControllerIkNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  // get the controller name from xml file
-  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
-  if (controller_name_ == ""){
-    ROS_ERROR("CartesianTwistIkControllerNode: No controller name given in xml file");
-    return false;
-  }
-
-  // get name of root and tip from the parameter server
-  std::string root_name, tip_name;
-  if (!node_->getParam(controller_name_+"/root_name", root_name)){
-    ROS_ERROR("CartesianTwistIkControllerNode: No root name found on parameter server");
-    return false;
- }
-  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
-    ROS_ERROR("CartesianTwistIkControllerNode: No tip name found on parameter server");
-    return false;
-  }
-
-  // initialize twist controller
-  if (!controller_.init(robot, root_name, tip_name, controller_name_)) return false;
-
-  // subscribe to twist commands
-  node_->subscribe(controller_name_ + "/command", twist_msg_,
-		   &CartesianTwistControllerIkNode::command, this, 1);
-
-  return true;
-}
-
-
-bool CartesianTwistControllerIkNode::starting()
-{
-  return controller_.starting();
-}
-
-
-void CartesianTwistControllerIkNode::update()
-{
-  controller_.update();
-}
-
-
-void CartesianTwistControllerIkNode::command()
+void CartesianTwistControllerIk::command()
 {
   // convert to twist command
-  controller_.twist_desi_.vel(0) = twist_msg_.vel.x;
-  controller_.twist_desi_.vel(1) = twist_msg_.vel.y;
-  controller_.twist_desi_.vel(2) = twist_msg_.vel.z;
-  controller_.twist_desi_.rot(0) = twist_msg_.rot.x;
-  controller_.twist_desi_.rot(1) = twist_msg_.rot.y;
-  controller_.twist_desi_.rot(2) = twist_msg_.rot.z;
+  twist_desi_.vel(0) = twist_msg_.vel.x;
+  twist_desi_.vel(1) = twist_msg_.vel.y;
+  twist_desi_.vel(2) = twist_msg_.vel.z;
+  twist_desi_.rot(0) = twist_msg_.rot.x;
+  twist_desi_.rot(1) = twist_msg_.rot.y;
+  twist_desi_.rot(2) = twist_msg_.rot.z;
 }
 
 

@@ -50,16 +50,18 @@
 
 namespace controller {
 
-class CartesianPoseController
+class CartesianPoseController : public Controller
 {
 public:
   CartesianPoseController();
   ~CartesianPoseController();
 
-  bool init(mechanism::RobotState *robot, const std::string& root_name, 
-            const std::string& tip_name, const std::string& controller_name);
+  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+
   bool starting();
   void update();
+
+  void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
 
   // input of the controller
   KDL::Frame pose_desi_, pose_meas_;
@@ -68,9 +70,10 @@ public:
 
 private:
   KDL::Frame getPose();
+  void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
 
   ros::Node* node_;
-  std::string controller_name_;
+  std::string controller_name_, root_name_;
   double last_time_;
 
   // robot structure
@@ -88,39 +91,15 @@ private:
   // to get joint positions, velocities, and to set joint torques
   std::vector<mechanism::JointState*> joints_; 
 
-  // internal twist controller
-  CartesianTwistController twist_controller_;
-
   // reatltime publisher
   realtime_tools::RealtimePublisher<robot_msgs::Twist>* error_publisher_;
   unsigned int loop_count_;
-};
 
-
-
-
-class CartesianPoseControllerNode : public Controller
-{
- public:
-  CartesianPoseControllerNode();
-  ~CartesianPoseControllerNode();
-  
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool starting();
-  void update();
-  void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
-
-
- private:
-  void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
-  ros::Node* node_;
-  std::string controller_name_;
-  tf::TransformListener robot_state_;
+  tf::TransformListener tf_;
   tf::MessageNotifier<robot_msgs::PoseStamped>* command_notifier_;
-  std::string root_name_;
 
-  CartesianPoseController controller_;
-
+  // twist controller
+  CartesianTwistController* twist_controller_;
 };
 
 } // namespace

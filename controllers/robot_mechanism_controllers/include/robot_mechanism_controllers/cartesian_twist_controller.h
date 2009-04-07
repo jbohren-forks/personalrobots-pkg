@@ -48,16 +48,18 @@
 
 namespace controller {
 
-class CartesianTwistController
+class CartesianTwistController : public Controller
 {
 public:
   CartesianTwistController();
   ~CartesianTwistController();
 
-  bool init(mechanism::RobotState *robot, const std::string& root_name,
-            const std::string& tip_name, const std::string& controller_name);
+  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+
   bool starting();
   void update();
+
+  void command();
 
   // input of the controller
   KDL::Twist twist_desi_, twist_meas_;
@@ -82,30 +84,8 @@ private:
   boost::scoped_ptr<KDL::ChainFkSolverVel> jnt_to_twist_solver_;
   KDL::JntArrayVel       jnt_posvel_;
 
-  // internal wrench controller
-  CartesianWrenchController wrench_controller_;
-};
-
-
-
-
-
-
-class CartesianTwistControllerNode : public Controller
-{
- public:
-  CartesianTwistControllerNode();
-  ~CartesianTwistControllerNode();
-
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool starting();
-  void update();
-  void command();
-
- private:
-  ros::Node* node_;
-  std::string controller_name_;
-  CartesianTwistController controller_;
+  // wrench controller
+  CartesianWrenchController* wrench_controller_;
 
   robot_msgs::Twist twist_msg_;
 };

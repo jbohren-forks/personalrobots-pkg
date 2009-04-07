@@ -6,6 +6,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="rospy"/>
   <depend package="mechanism_model" />
+  <depend package="mechanism_control" />
   <depend package="control_toolbox" />
   <depend package="tinyxml" />
   <depend package="misc_utils" />

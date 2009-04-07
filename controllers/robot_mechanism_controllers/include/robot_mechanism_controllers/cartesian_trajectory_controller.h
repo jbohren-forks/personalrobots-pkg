@@ -52,24 +52,29 @@
 namespace controller {
 
 
-class CartesianTrajectoryController
+class CartesianTrajectoryController : public Controller
 {
 public:
   CartesianTrajectoryController();
   ~CartesianTrajectoryController();
 
-  bool init(mechanism::RobotState *robot, const std::string& root_name, 
-            const std::string& tip_name, const string controller_name);
+  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+
   bool starting();
   void update();
-  bool moveTo(const KDL::Frame& pose_desi, double duration=0);
-  bool isMoving() {return is_moving_; };
-  bool isPreempted() {return request_preempt_;};
-  void preempt() {request_preempt_ = true;};
+  bool moveTo(const robot_msgs::PoseStamped& pose, double duration=0);
 
 
 private:
   KDL::Frame getPose();
+  void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
+
+  // topic
+  void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
+
+  // service calls
+  bool moveTo(robot_srvs::MoveToPose::Request &req, robot_srvs::MoveToPose::Response &resp);
+  bool preempt(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp);
 
   ros::Node* node_;
   std::string controller_name_;
@@ -90,44 +95,15 @@ private:
   // motion profiles
   std::vector<KDL::VelocityProfile_Trap> motion_profile_;
 
-  // internal pose controller
-  CartesianPoseController pose_controller_;
-};
+  // pose controller
+  CartesianPoseController* pose_controller_;
 
-
-
-
-class CartesianTrajectoryControllerNode : public Controller
-{
- public:
-  CartesianTrajectoryControllerNode();
-  ~CartesianTrajectoryControllerNode();
-  
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool starting();
-  void update();
-  void command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg);
-
-  bool moveTo(robot_srvs::MoveToPose::Request &req, robot_srvs::MoveToPose::Response &resp);
-
-  bool preempt(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp);
-
- private:
-  bool moveTo(robot_msgs::PoseStamped& pose);
-  void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
-
-  ros::Node* node_;
-  std::string controller_name_;
-
-  tf::TransformListener robot_state_;
+  tf::TransformListener tf_;
   tf::MessageNotifier<robot_msgs::PoseStamped>* command_notifier_;
 
   std::string root_name_;
-
-  CartesianTrajectoryController controller_;
 };
 
-} // namespace
 
-
+}
 #endif

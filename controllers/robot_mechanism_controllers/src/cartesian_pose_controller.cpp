@@ -33,9 +33,9 @@
 
 
 
-#include "urdf/parser.h"
 #include <algorithm>
-#include "robot_kinematics/robot_kinematics.h"
+#include <robot_kinematics/robot_kinematics.h>
+#include <mechanism_control/mechanism_control.h>
 #include "robot_mechanism_controllers/cartesian_pose_controller.h"
 
 
@@ -46,33 +46,49 @@ using namespace std;
 
 namespace controller {
 
-
+ROS_REGISTER_CONTROLLER(CartesianPoseController)
 
 CartesianPoseController::CartesianPoseController()
 : node_(ros::Node::instance()),
   robot_state_(NULL),
   jnt_to_pose_solver_(NULL),
-  error_publisher_(NULL)
+  error_publisher_(NULL),
+  tf_(*node_),
+  command_notifier_(NULL)
 {}
 
 CartesianPoseController::~CartesianPoseController()
-{}
-
-
-bool CartesianPoseController::init(mechanism::RobotState *robot_state, 
-                                   const string& root_name, 
-                                   const string& tip_name, 
-                                   const string& controller_name)
 {
-  cout << "initializing " << controller_name << " between " << root_name << " and " << tip_name << endl;
-  controller_name_ = controller_name;
+  if (command_notifier_) delete command_notifier_;
+}
+
+
+bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+{
+  // get the controller name from xml file
+  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
+  if (controller_name_ == ""){
+    ROS_ERROR("CartesianPoseController: No controller name given in xml file");
+    return false;
+  }
+
+  // get name of root and tip from the parameter server
+  std::string tip_name;
+  if (!node_->getParam(controller_name_+"/root_name", root_name_)){
+    ROS_ERROR("CartesianPoseController: No root name found on parameter server");
+    return false;
+  }
+  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
+    ROS_ERROR("CartesianPoseController: No tip name found on parameter server");
+    return false;
+  }
 
   // test if we got robot pointer
   assert(robot_state);
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!robot_.init(robot_state_->model_, root_name, tip_name))
+  if (!robot_.init(robot_state_->model_, root_name_, tip_name))
     return false;
   robot_.toKDL(chain_);
 
@@ -86,9 +102,21 @@ bool CartesianPoseController::init(mechanism::RobotState *robot_state,
   for (unsigned int i=0; i<6; i++)
     pid_controller_.push_back(pid_controller);
 
-  // initialize twist controller
-  if (!twist_controller_.init(robot_state_, root_name, tip_name, controller_name_+"/twist")) return false;
+  // get a pointer to the twist controller
+  MechanismControl* mc;
+  if (!MechanismControl::Instance(mc)){
+    ROS_ERROR("CartesianPoseController: could not get instance to mechanism control");
+    return false;
+  }
+  if (!mc->getControllerByName<CartesianTwistController>("cartesian_twist", twist_controller_)){
+    ROS_ERROR("CartesianTwistController: could not connect to twist controller");
+    return false;
+  }
 
+  // subscribe to pose commands
+  command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&tf_, node_,  
+								 boost::bind(&CartesianPoseController::command, this, _1),
+								 controller_name_ + "/command", root_name_, 1);
   // realtime publisher for control error
   error_publisher_ = new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/error", 1);
   loop_count_ = 0;
@@ -107,15 +135,12 @@ bool CartesianPoseController::starting()
   twist_ff_ = Twist::Zero();
   pose_desi_ = getPose();
   last_time_ = robot_state_->hw_->current_time_;
-
-  return twist_controller_.starting();
 }
 
 
 
 void CartesianPoseController::update()
 {
-
   // get time
   double time = robot_state_->hw_->current_time_;
   double dt = time - last_time_;
@@ -131,8 +156,8 @@ void CartesianPoseController::update()
     twist_fb(i) = pid_controller_[i].updatePid(twist_error(i), dt);
 
   // send feedback twist and feedforward twist to twist controller
-  twist_controller_.twist_desi_ = twist_fb + twist_ff_;
-  twist_controller_.update();
+  twist_controller_->twist_desi_ = twist_fb + twist_ff_;
+  twist_controller_->update();
 
   if (++loop_count_ % 100 == 0){
     if (error_publisher_){
@@ -150,9 +175,6 @@ void CartesianPoseController::update()
 
 }
 
-
-
-
 Frame CartesianPoseController::getPose()
 {
   // get the joint positions and velocities
@@ -165,85 +187,18 @@ Frame CartesianPoseController::getPose()
   return result;
 }
 
-
-
-
-
-
-
-
-ROS_REGISTER_CONTROLLER(CartesianPoseControllerNode)
-
-CartesianPoseControllerNode::CartesianPoseControllerNode() 
-: node_(ros::Node::instance()),
-  robot_state_(*node_, true),
-  command_notifier_(NULL)
-{}
-
-
-CartesianPoseControllerNode::~CartesianPoseControllerNode()
-{
-  if (command_notifier_) delete command_notifier_;
-}
-
-
-bool CartesianPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
-{
-  // get the controller name from xml file
-  controller_name_ = config->Attribute("name") ? config->Attribute("name") : "";
-  if (controller_name_ == ""){
-    ROS_ERROR("CartesianPoseControllerNode: No controller name given in xml file");
-    return false;
-  }
-
-  // get name of root and tip from the parameter server
-  std::string tip_name;
-  if (!node_->getParam(controller_name_+"/root_name", root_name_)){
-    ROS_ERROR("CartesianPoseControllerNode: No root name found on parameter server");
-    return false;
-  }
-  if (!node_->getParam(controller_name_+"/tip_name", tip_name)){
-    ROS_ERROR("CartesianPoseControllerNode: No tip name found on parameter server");
-    return false;
-  }
-
-  // initialize pose controller
-  if (!controller_.init(robot, root_name_, tip_name, controller_name_)) return false;
-  
-  // subscribe to pose commands
-  command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&robot_state_, node_,  
-								 boost::bind(&CartesianPoseControllerNode::command, this, _1),
-								 controller_name_ + "/command", root_name_, 1);
-  return true;
-}
-
-bool CartesianPoseControllerNode::starting()
-{
-  return controller_.starting();
-}
-
-void CartesianPoseControllerNode::update()
-{
-  controller_.update();
-}
-
-
-void CartesianPoseControllerNode::command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg)
+void CartesianPoseController::command(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg)
 {
   // convert message to transform
   Stamped<Pose> pose_stamped;
   PoseStampedMsgToTF(*pose_msg, pose_stamped);
 
   // convert to reference frame of root link of the controller chain  
-  robot_state_.transformPose(root_name_, pose_stamped, pose_stamped);
-  TransformToFrame(pose_stamped, controller_.pose_desi_);
+  tf_.transformPose(root_name_, pose_stamped, pose_stamped);
+  TransformToFrame(pose_stamped, pose_desi_);
 }
 
-
-
-
-
-void CartesianPoseControllerNode::TransformToFrame(const Transform& trans, Frame& frame)
+void CartesianPoseController::TransformToFrame(const Transform& trans, Frame& frame)
 {
   frame.p(0) = trans.getOrigin().x();
   frame.p(1) = trans.getOrigin().y();

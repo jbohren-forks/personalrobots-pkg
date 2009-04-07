@@ -49,20 +49,18 @@
 
 namespace controller {
 
-class CartesianTFFController
+class CartesianTFFController : public Controller
 {
 public:
   CartesianTFFController();
   ~CartesianTFFController();
 
-  bool init(mechanism::RobotState *robot, const std::string& root_name, 
-            const std::string& tip_name, const std::string& controller_name);
+  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+
   bool starting();
   void update();
 
-  void tffCommand(int mode1, double value1, int mode2, double value2, int mode3, double value3,
-                  int mode4, double value4, int mode5, double value5, int mode6, double value6);
-
+  void command();
 
 private:
   ros::Node* node_;
@@ -94,37 +92,9 @@ private:
   robot_msgs::TaskFrameFormalism tff_msg_;
 
   // internal wrench controller
-  CartesianWrenchController wrench_controller_;
-  JointChainConstraintController constraint_controller_;
-
-  unsigned int counter;
+  CartesianWrenchController* wrench_controller_;
 };
 
-
-
-
-
-
-class CartesianTFFControllerNode : public Controller
-{
- public:
-  CartesianTFFControllerNode();
-  ~CartesianTFFControllerNode();
-  
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  bool starting();
-  void update();
-  void command();
-
- private:
-  ros::Node* node_;
-  std::string controller_name_;
-  std::string topic_;
-
-  CartesianTFFController controller_;
-
-  robot_msgs::TaskFrameFormalism tff_msg_;
-};
 
 } // namespace
 
