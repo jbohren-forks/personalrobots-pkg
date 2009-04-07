@@ -25,7 +25,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 /*
- * Author: Stuart Glaser
+ * Author: Stuart Glaser, Wim Meeussen
  */
 
 #include "mechanism_control/mechanism_control.h"
@@ -36,18 +36,31 @@
 using namespace mechanism;
 using namespace boost::accumulators;
 
+
+MechanismControl* MechanismControl::mechanism_control_ = NULL;
+
+
 MechanismControl::MechanismControl(HardwareInterface *hw) :
   state_(NULL), hw_(hw), initialized_(0),
   current_controllers_list_(0), used_by_realtime_(-1), publisher_("/diagnostics", 1),
   loop_count_(0)
 {
   model_.hw_ = hw;
+  mechanism_control_ = this;
 }
 
 MechanismControl::~MechanismControl()
 {
   if (state_)
     delete state_;
+}
+
+bool MechanismControl::Instance(MechanismControl*& mech)
+{
+  if (mechanism_control_ == NULL) return false;
+
+  mech = mechanism_control_;
+  return true;
 }
 
 bool MechanismControl::initXml(TiXmlElement* config)
@@ -137,8 +150,9 @@ void MechanismControl::update()
   state_->zeroCommands();
 
   // Update all controllers
+  // Start with controller that was last added
   double start_update = realtime_gettime();
-  for (size_t i = 0; i < controllers.size(); ++i)
+  for (int i=controllers.size()-1; i>=0; i--)
   {
     if (controllers[i].state != EMPTY)
     {
@@ -195,7 +209,7 @@ void MechanismControl::update()
   }
 }
 
-controller::Controller* MechanismControl::getControllerByName(std::string name)
+controller::Controller* MechanismControl::getControllerByName(const std::string& name) 
 {
   std::vector<ControllerSpec> &controllers = controllers_lists_[current_controllers_list_];
   for (size_t i = 0; i < controllers.size(); ++i)
@@ -205,7 +219,6 @@ controller::Controller* MechanismControl::getControllerByName(std::string name)
   }
   return NULL;
 }
-
 
 void MechanismControl::getControllerNames(std::vector<std::string> &names)
 {

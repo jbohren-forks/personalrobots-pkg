@@ -71,23 +71,24 @@ if __name__ == '__main__':
         print_usage()
     rospy.init_node('spawner', anonymous=True)
 
-    f = open(sys.argv[1])
-    xml = f.read()
-    f.close()
+    for c in range(1,len(sys.argv)):
+        f = open(sys.argv[c])
+        xml = f.read()
+        f.close()
 
-    # Override rospy's signal handling.  We'll invoke rospy's handler after
-    # we're done shutting down.
-    import signal
-    prev_handler = signal.getsignal(signal.SIGINT)
-    signal.signal(signal.SIGINT, shutdown)
+        # Override rospy's signal handling.  We'll invoke rospy's handler after
+        # we're done shutting down.
+        import signal
+        prev_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, shutdown)
 
-    resp = spawn_controller(xml)
+        resp = spawn_controller(xml)
 
-    for i in range(len(resp.ok)):
-        if resp.ok[i] == chr(1):
-            spawned.append(resp.name[i])
-        else:
-            print "Failed to spawn %s" % resp.name[i]
+        for r in range(len(resp.ok)):
+            if resp.ok[r] == chr(1):
+                spawned.append(resp.name[r])
+            else:
+                print "Failed to spawn %s" % resp.name[r]
+
     print "Spawned controllers: %s" % ', '.join(spawned)
-
     rospy.spin()

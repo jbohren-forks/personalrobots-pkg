@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) 2008-2009, Willow Garage, Inc.
 //
@@ -27,7 +26,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 /*
- * Author: Stuart Glaser
+ * Author: Stuart Glaser, Wim Meeussen
  */
 #ifndef MECHANISM_CONTROL_H
 #define MECHANISM_CONTROL_H
@@ -64,8 +63,13 @@
 
 typedef controller::Controller* (*ControllerAllocator)();
 
+
 class MechanismControl {
+
 public:
+  // Give access to mechanism control
+  static bool Instance(MechanismControl*& mech);
+
   MechanismControl(HardwareInterface *hw);
   virtual ~MechanismControl();
 
@@ -81,7 +85,21 @@ public:
                         const std::vector<std::string>& stop_controllers);
 
   // controllers_lock_ must be locked before calling
-  controller::Controller* getControllerByName(std::string name);
+  controller::Controller* getControllerByName(const std::string& name);
+  template<class ControllerType> bool getControllerByName(const std::string& name, ControllerType*& c)
+  {
+    // get controller
+    controller::Controller* controller = getControllerByName(name);
+    if (controller == NULL) return false;
+    
+    // cast controller to ControllerType
+    ControllerType* controller_type = dynamic_cast< ControllerType* >(controller);
+    if (controller_type == NULL)  return false;
+  
+    // copy result
+    c = controller_type;
+    return true;
+  };
 
   struct AddReq
   {
@@ -104,6 +122,8 @@ public:
   HardwareInterface *hw_;
 
 private:
+  static MechanismControl* mechanism_control_;
+
   bool initialized_, switch_success_;
 
   typedef boost::accumulators::accumulator_set<
