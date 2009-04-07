@@ -651,7 +651,7 @@ private:
         	cvRectangle(left, cvPoint(bbox.x, bbox.y), cvPoint(bbox.x + bbox.width, bbox.y + bbox.height), CV_RGB(0, 255, 0));
         	cvShowImage("left", left);
         }
-//        showHandleMarker(handle);
+        showHandleMarker(handle);
 
 		return true;
     }
