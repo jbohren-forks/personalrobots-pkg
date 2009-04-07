@@ -1,6 +1,6 @@
 Index: ode/src/quickstep.cpp
 ===================================================================
---- ode/src/quickstep.cpp	(revision 1657)
+--- ode/src/quickstep.cpp	(revision 1665)
 +++ ode/src/quickstep.cpp	(working copy)
 @@ -33,6 +33,8 @@
  #include "lcp.h"
