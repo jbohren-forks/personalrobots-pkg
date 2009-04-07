@@ -699,6 +699,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActionswithBaseMotionPrimitive(vector<S
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].interm3DcellsV.clear();
 			EnvNAVXYTHETALAT3Dcell_t previnterm3Dcell;
+			previnterm3Dcell.theta = previnterm3Dcell.x = previnterm3Dcell.y = 0;
 			for (int pind = 0; pind < (int)motionprimitiveV->at(aind).intermptV.size(); pind++)
 			{
 				EnvNAVXYTHETALAT3Dpt_t intermpt = motionprimitiveV->at(aind).intermptV[pind];
@@ -837,6 +838,7 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActionswithCompleteMotionPrimitive(vect
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].intermptV.clear();
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].interm3DcellsV.clear();
 			EnvNAVXYTHETALAT3Dcell_t previnterm3Dcell;
+			previnterm3Dcell.theta = 0; previnterm3Dcell.x = 0; previnterm3Dcell.y = 0;			
 			for (int pind = 0; pind < (int)motionprimitiveV->at(mind).intermptV.size(); pind++)
 			{
 				EnvNAVXYTHETALAT3Dpt_t intermpt = motionprimitiveV->at(mind).intermptV[pind];
@@ -2296,7 +2298,7 @@ void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* st
 	int targetx_c, targety_c, targettheta_c;
 	int sourcex_c, sourcey_c, sourcetheta_c;
 
-	printf("checks=%d\n", checks);
+	//printf("checks=%ld\n", checks);
 
 	xythetaPath->clear();
 
@@ -2401,7 +2403,7 @@ bool EnvironmentNAVXYTHETALAT::SetEnvParameter(const char* parameter, int value)
 	{
 		if(value < 0 || value > 255)
 		{
-			printf("ERROR: invalid value %d for parameter %s\n");
+		  printf("ERROR: invalid value %d for parameter %s\n", value, parameter);
 			return false;
 		}
 		EnvNAVXYTHETALATCfg.cost_inscribed_thresh = (unsigned char)value;
@@ -2410,7 +2412,7 @@ bool EnvironmentNAVXYTHETALAT::SetEnvParameter(const char* parameter, int value)
 	{
 		if(value < 0 || value > 255)
 		{
-			printf("ERROR: invalid value %d for parameter %s\n");
+		  printf("ERROR: invalid value %d for parameter %s\n", value, parameter);
 			return false;
 		}
 		EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh = value;
