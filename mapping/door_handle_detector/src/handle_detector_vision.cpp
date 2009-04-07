@@ -73,35 +73,6 @@
 
 using namespace std;
 
-template <typename T>
-class IndexedIplImage
-{
-public:
-	IplImage* img_;
-	T* p;
-
-	IndexedIplImage(IplImage* img) : img_(img)
-	{
-		p = (T*)img_->imageData;
-	}
-
-	operator IplImage*()
-	{
-		return img_;
-	}
-
-	T at(int x, int y, int chan = 0)
-	{
-		return *(p+y*img_->width+x*img_->nChannels+chan);
-	}
-
-	T integral_sum(const CvRect &r)
-	{
-		return at(r.x+r.width+1,r.y+r.height+1)-at(r.x+r.width+1,r.y)-at(r.x,r.y+r.height+1)+at(r.x,r.y);
-	}
-
-};
-
 class HandleDetector : public ros::Node
 {
 public:
