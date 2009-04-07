@@ -56,22 +56,11 @@ class imgStereo:
 class TestDirected(unittest.TestCase):
 
   def test_sad(self):
-    cam = camera.Camera((389.0, 389.0, 89.23, 323.42, 323.42, 274.95))
-    vo = VisualOdometer(cam)
-
-    class adapter:
-      def __init__(self, im):
-        self.rawdata = im.tostring()
-        self.size = im.size
-
-    im = adapter(Image.open("img1.pgm"))
-    vo.feature_detector.thresh *= 15
-    vo.find_keypoints(im)
-    im.kp = im.kp2d
-    vo.collect_descriptors(im)
-    print len(im.kp)
-    matches = vo.temporal_match(im, im)
-    for (a,b) in matches:
+    im = Image.open("img1.pgm")
+    fd = FeatureDetectorStar(300)
+    ds = DescriptorSchemeCalonder()
+    af = SparseStereoFrame(im, im, feature_detector = fd, descriptor_scheme = ds)
+    for (a,b) in af.match(af):
       self.assert_(a == b)
 
   def xtest_smoke(self):
@@ -143,10 +132,12 @@ class TestDirected(unittest.TestCase):
     left = Image.new("L", (640,480))
     circle(left, 320, 200, 4, 255)
 
+    fd = FeatureDetectorStar(300)
+    ds = DescriptorSchemeCalonder()
     for disparity in range(20):
       right = Image.new("L", (640,480))
       circle(right, 320 - disparity, 200, 4, 255)
-      sf = SparseStereoFrame(left, right)
+      sf = SparseStereoFrame(left, right, feature_detector = fd, descriptor_scheme = ds)
       self.assertAlmostEqual(sf.lookup_disparity(320,200), disparity, 0)
 
   def test_solve_spin(self):
@@ -349,6 +340,8 @@ class TestDirected(unittest.TestCase):
       print "frame", x, "has", len(af.kp), "keypoints", pose
 
   def test_stereo(self):
+    fd = FeatureDetectorStar(300)
+    ds = DescriptorSchemeCalonder()
     cam = camera.VidereCamera(open("wallcal.ini").read())
     #lf = Image.open("wallcal-L.bmp").convert("L")
     #rf = Image.open("wallcal-R.bmp").convert("L")
@@ -359,12 +352,12 @@ class TestDirected(unittest.TestCase):
       rf = ImageChops.offset(rf, -int(offset * 16), 0)
       rf = rf.resize((640,480), Image.ANTIALIAS)
       for gradient in [ False, True ]:
-        af = SparseStereoFrame(lf, rf, gradient)
+        af = SparseStereoFrame(lf, rf, gradient, feature_detector = fd, descriptor_scheme = ds)
         vo = VisualOdometer(cam)
         vo.find_keypoints(af)
         vo.find_disparities(af)
-        error = offset - sum([d for (x,y,d) in af.kp]) / len(af.kp)
-        self.assert_(abs(error) < 0.25) 
+        error = offset - sum([d for (x,y,d) in af.features()]) / len(af.features())
+        self.assert_(abs(error) < 0.5) 
 
     if 0:
       scribble = Image.merge("RGB", (lf,rf,Image.new("L", lf.size))).resize((1280,960))
@@ -382,6 +375,8 @@ class TestDirected(unittest.TestCase):
     vo = VisualOdometer(camera.Camera((389.0, 389.0, 89.23 * 1e-3, 323.42, 323.42, 274.95)))
     stereo_cam = {}
     af = {}
+    fd = FeatureDetectorStar(300)
+    ds = DescriptorSchemeCalonder()
     for i in range(5):
       stereo_cam[i] = camera.Camera((389.0, 389.0, .080 + .010 * i, 323.42, 323.42, 274.95))
       desired_pose = Pose()
@@ -393,13 +388,13 @@ class TestDirected(unittest.TestCase):
       scene += [object(isphere(vec3(x,y,z+6), 0.3), shadeLitCloud, {'scale':3}) for (x,y,z) in cloud]
       imL,imR = [ im.convert("L") for im in [imL,imR] ]
       render_stereo_scene(imL, imR, None, cam, scene, 0)
-      af[i] = SparseStereoFrame(imL, imR)
+      af[i] = SparseStereoFrame(imL, imR, feature_detector = fd, descriptor_scheme = ds)
       vo.process_frame(af[i])
     pe = PoseEstimator()
     for i1 in range(5):
       for i0 in range(5):
         pairs = vo.temporal_match(af[i1], af[i0])
-        res = pe.estimateC(stereo_cam[i0], af[i0].kp, stereo_cam[i1], af[i1].kp, pairs, False)
+        res = pe.estimateC(stereo_cam[i0], af[i0].features(), stereo_cam[i1], af[i1].features(), pairs, False)
         x,y,z = res[2]
         self.assertAlmostEqual(x,0,0)
         self.assertAlmostEqual(y,0,0)

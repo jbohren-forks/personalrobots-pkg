@@ -47,7 +47,7 @@ import image_msgs.msg
 from stereo import DenseStereoFrame, SparseStereoFrame
 import robot_msgs.msg
 
-from visualodometer import VisualOdometer, FeatureDetectorHarris, FeatureDetector4x4, FeatureDetectorFast, Pose
+from visualodometer import VisualOdometer, FeatureDetectorHarris, FeatureDetector4x4, FeatureDetectorFast, Pose, DescriptorSchemeCalonder
 import camera
 
 class imgAdapted:
@@ -79,17 +79,19 @@ class VO:
 
     self.vo = None
     self.modulo = 0
+    self.fd = FeatureDetectorFast(300)
+    self.ds = DescriptorSchemeCalonder()
 
   def handle_raw_stereo(self, msg):
     size = (msg.left_info.width, msg.left_info.height)
     if self.vo == None:
       cam = camera.StereoCamera(msg.right_info)
-      self.vo = VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(),
+      self.vo = VisualOdometer(cam, scavenge = False, 
                           inlier_error_threshold = 3.0, sba = None,
                           inlier_thresh = 100,
                           position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
     pair = [imgAdapted(i, size) for i in [ msg.left_image, msg.right_image ]]
-    af = SparseStereoFrame(pair[0], pair[1])
+    af = SparseStereoFrame(pair[0], pair[1], feature_detector = self.fd, descriptor_scheme = self.ds)
     pose = self.vo.handle_frame(af)
     p = robot_msgs.msg.VOPose()
     p.inliers = self.vo.inl

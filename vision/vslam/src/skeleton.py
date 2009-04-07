@@ -5,6 +5,7 @@ import Image
 from pytoro import TreeOptimizer3
 import place_recognition
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris, from_xyz_euler
+from pe import PoseEstimator
 from stereo import SparseStereoFrame
 from timer import Timer
 
@@ -33,7 +34,7 @@ def default_termcrit(count, delta):
 
 class Skeleton:
 
-  def __init__(self, cam):
+  def __init__(self, cam, **kwargs):
     self.nodes = set()
     self.edges = set()
     self.weak_edges = []
@@ -49,8 +50,15 @@ class Skeleton:
     else:
       self.vt = None
     self.place_ids = []
-    self.vo = VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeCalonder())
-    #self.vo = VisualOdometer(cam)
+    self.cam = cam
+    self.pe = PoseEstimator(*cam.params)
+
+    self.ds = None
+    for k,a in kwargs.items():
+      if k == 'descriptor_scheme':
+        self.ds = a
+    if self.ds == None:
+      self.ds = DescriptorSchemeCalonder()
 
     self.node_kp = {}
     self.node_descriptors = {}
@@ -91,11 +99,6 @@ class Skeleton:
     self.prev_pose = None
     f.close()
 
-    for id in self.node_descriptors.keys():
-      ma = calonder.BruteForceMatcher(self.vo.descriptor_scheme.cl.dimension())
-      for sig in self.node_descriptors[id]:
-        ma.addSignature(sig)
-
     for id in self.place_ids:
       self.vt.add(None, self.node_descriptors[id])
 
@@ -130,7 +133,6 @@ class Skeleton:
           print "reached", sorted(reached)
           print "remaining edges", sorted([e[:2] for e in edges])
           sys.exit(1)
-      #self.pg.save("silly.toro")
 
   def add(self, this, connected = True):
     if len(self.nodes) == 0:
@@ -259,39 +261,21 @@ class Skeleton:
     print "OPT TIMER ", 1000.0*(t1-t0), "  ITERATIONS ", count, "  FRAMES ", self.node_vdist, "  ERROR ", self.pg.error()
     print
 
-  def my_frame(self, id):
-    return minimum_frame(id, self.node_kp[id], self.node_descriptors[id])
-
-  def xmemoize_node_kp_d(self, af):
-    self.timer['descriptors'].start()
-    if not (af.id in self.node_kp):
-      nf = SparseStereoFrame(af.lf, af.rf)
-      self.vo.setup_frame(nf)
-      self.node_kp[af.id] = nf.kp
-      self.node_descriptors[af.id] = nf.descriptors
-
-      if 0:
-        pylab.imshow(numpy.fromstring(af.lf.tostring(), numpy.uint8).reshape(480,640), cmap=pylab.cm.gray)
-        pylab.scatter([x for (x,y,d) in nf.kp], [y for (x,y,d) in nf.kp], label = 'f0 kp', c = 'red')
-        pylab.show()
-        Image.fromstring("L", (640,480), af.lf.tostring()).save("star.png")
-    self.timer['descriptors'].stop()
-
   def memoize_node_kp_d(self, af):
     self.timer['descriptors'].start()
     if not (af.id in self.node_kp):
-      self.node_kp[af.id] = af.kp
-      self.node_descriptors[af.id] = af.descriptors
+      self.node_kp[af.id] = af.features()
+      self.node_descriptors[af.id] = af.descriptors()
     self.timer['descriptors'].stop()
 
   def PE(self, af0, af1):
-    return self.vo.proximity(self.my_frame(af0), self.my_frame(af1))
-
-  def correct_frame_pose(self, id):
-    if id in self.nodes:
-      return self.newpose(id)
+    pairs = [ (a,b) for (a,b,_) in self.ds.match0(self.node_kp[af1], self.node_descriptors[af1], self.node_kp[af0], self.node_descriptors[af0]) ]
+    inl,R,T = self.pe.estimateC(self.cam, self.node_kp[af0], self.cam, self.node_kp[af1], pairs)
+    if inl == 0:
+      return (0, None)
     else:
-      return None
+      r33 = numpy.mat(numpy.array(R).reshape(3,3))
+      return (inl, Pose(r33, numpy.array(T)))
 
   def drawable(self):
 
@@ -397,9 +381,8 @@ class Skeleton:
     return (return_positions, return_edges, return_loc)
 
     localizations = []
-    self.vo.setup_frame(qf)
-    far = [id for id in self.place_find(qf.lf, qf.descriptors)]
-    print "far", far
+    far = [id for id in self.place_find(qf.lf, qf.descriptors())]
+    assert 0
     coll = [ self.vo.proximity(qf, self.my_frame(f)) + (f,) for f in far ]
     print coll
     for inl,obs,id1 in coll:
@@ -423,7 +406,6 @@ class Skeleton:
       for n,t in self.timer.items():
         print "%-20s %fms" % (n, 1e3 * t.sum / niter)
       print "%-20s %fms" % ("TOTAL", self.average_time_per_frame())
-    #self.vo.summarize_timers()
 
   def dump_timers(self, filename):
     f = open(filename, 'w')

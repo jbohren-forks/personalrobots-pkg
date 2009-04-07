@@ -112,19 +112,21 @@ def getImage(i):
     imL,imR,_ = im.split()
   return (desired_pose, imL, imR)
 
-skel = Skeleton(stereo_cam)
-vo = VisualOdometer(stereo_cam, descriptor_scheme = DescriptorSchemeCalonder(), scavenge = False, sba=None, inlier_error_threshold = 3.0)
+fd = FeatureDetectorFast(300)
+ds = DescriptorSchemeCalonder()
+skel = Skeleton(stereo_cam, descriptor_scheme = ds)
+vo = VisualOdometer(stereo_cam, scavenge = False, sba=None, inlier_error_threshold = 3.0)
 vo.num_frames = 0
 
 ground_truth = []
 started = time.time()
 
 connected = False
-for i in range(0,400):
+for i in range(0,800):
   print i
   (desired_pose, imL, imR) = getImage(i)
   ground_truth.append(desired_pose.xform(0,0,0))
-  f = SparseStereoFrame(imL, imR)
+  f = SparseStereoFrame(imL, imR, feature_detector = fd, descriptor_scheme = ds)
   vo.handle_frame(f)
   skel.add(vo.keyframe, connected)
   connected = True
@@ -145,12 +147,12 @@ print "Took", took, "so", 1000*took / i, "ms/frame"
 
 skel.optimize()
 
-skel.save("saved-skel400")
+#skel.save("saved-skel400")
 
-skel = Skeleton(stereo_cam)
-skel.load("saved-skel")
-print "about to optimize..."
-skel.optimize()
+#skel = Skeleton(stereo_cam)
+#skel.load("saved-skel")
+#print "about to optimize..."
+#skel.optimize()
 
 def plot_poses(Ps, c, l):
   traj = [ p.xform(0,0,0) for p in Ps ]

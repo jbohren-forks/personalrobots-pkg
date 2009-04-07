@@ -24,7 +24,7 @@ class TestDirected(unittest.TestCase):
 
     def test_identity(self):
       im = Image.open("f0-left.png")
-      kp = [(x-16, y-16) for (x,y,r) in fast.fast(im.tostring(), im.size[0], im.size[1], 60, 0) if (x > 32) and (y > 32) and (x < (640-32)) and (y < (480-32))]
+      kp = [(x-16, y-16) for (x,y,r) in fast.fast(im.tostring(), im.size[0], im.size[1], 55, 0) if (x > 32) and (y > 32) and (x < (640-32)) and (y < (480-32))]
       print "keypoints", len(kp)
       dim = 176 # actual dimension will be min(176, |kp|)
 
@@ -33,12 +33,19 @@ class TestDirected(unittest.TestCase):
       if 0:
         cl1.train(im.tostring(), im.size[0], im.size[1], kp, 50, 10, 100, dim, 0)
       else:
-        #filename = '/u/prdata/calonder_trees/current.rtc'
-        # current.rtc gets downloaded before we run
+        # CMakefile.txt downloads current.rtc before this test runs
         filename = 'current.rtc'
         cl1.read(filename)
 
       dim = cl1.dimension()
+
+      for i in range(1000000):
+        print i
+        sigs = cl1.getSignatures(im, kp)
+        #for (x,y) in kp:
+        #  patch = im.crop((x,y,x+32,y+32))
+        #  sig = cl1.getSignature(patch.tostring(), patch.size[0], patch.size[1])
+      return
 
       def testclassifier(kp, im, cl):
         ma = calonder.BruteForceMatcher(dim)

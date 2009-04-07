@@ -4,7 +4,28 @@ import Image as Image
 scratch = " " * (640 * 480)
 
 class Frame:
-  pass
+
+  def __init__(self, **kwargs):
+    self.feat = None
+    self.feature_detector = kwargs['feature_detector']
+    self.desc = None
+    self.descriptor_scheme = kwargs['descriptor_scheme']
+
+  def features(self):
+    if not self.feat:
+      kp2d = self.feature_detector.detect(self)
+      disparities = [self.lookup_disparity(x,y) for (x,y) in kp2d]
+      self.feat = [ (x,y,z) for ((x,y),z) in zip(kp2d, disparities) if z]
+    return self.feat
+
+  def descriptors(self):
+    if not self.desc:
+      self.desc = self.descriptor_scheme.collect0(self, self.features())
+    return self.desc
+
+  def match(self, other):
+    assert self.descriptor_scheme == other.descriptor_scheme
+    return self.descriptor_scheme.match0(self.features(), self.descriptors(), other.features(), other.descriptors())
 
 class ComputedDenseStereoFrame(Frame):
   def __init__(self, lf, rf):
@@ -59,7 +80,8 @@ def do_stereo_sparse(refpat, rgrad, x, y, xim, yim, ftzero, dlen, tfilter_thresh
   return (0.5 + 16*v)
 
 class SparseStereoFrame(Frame):
-  def __init__(self, lf, rf, use_grad_img = True):
+  def __init__(self, lf, rf, use_grad_img = True, **kwargs):
+    Frame.__init__(self, **kwargs)
     self.externals = []
     self.lf = lf
     self.rf = rf

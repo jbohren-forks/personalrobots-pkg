@@ -291,6 +291,7 @@ PyObject *getSignature(PyObject *self, PyObject *args)
   object->size = pc->classifier->classes();
   posix_memalign((void**)&object->data, 16, object->size * sizeof(SigType));
   pc->classifier->getSignature(input, object->data);
+  cvReleaseImageHeader(&input);
   return (PyObject*)object;
 }
 
@@ -373,8 +374,10 @@ PyObject *getSignatures(PyObject *self, PyObject *args)
     posix_memalign((void**)&object->data, 16, object->size * sizeof(SigType));
     pc->classifier->getSignature(input, object->data);
     PyList_Append(r, (PyObject*)object);
+    Py_DECREF((PyObject*)object);
   }
   Py_DECREF(imob);
+  cvReleaseImage(&input);
   return r;
 }
 

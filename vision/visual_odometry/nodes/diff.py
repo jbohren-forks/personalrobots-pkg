@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import roslib
-roslib.load_manifest('vslam')
+roslib.load_manifest('visual_odometry')
 
 import sys
 import time
@@ -40,35 +40,29 @@ import getopt
 
 from math import *
 
-from image_msgs.msg import RawStereo
-import vslam.msg
 import rospy
 
-import Image
-import time
-import math
+import image_msgs.msg
+import robot_msgs.msg
 
-import pylab
-# interactive mode on
-pylab.ion()
-timefig = pylab.figure(1)
-timesub = pylab.subplot(111)
+class diff:
+  def __init__(self):
+    self.prev_a = 0
+    self.prev_b = 0
+    rospy.TopicSub('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_a, queue_size=2, buff_size=7000000)
+    rospy.TopicSub('/vo', robot_msgs.msg.VOPose, self.handle_b, queue_size=2, buff_size=7000000)
 
-def handle_roadmap(msg):
-  pylab.cla()
-  pylab.scatter([n.x for n in msg.nodes], [n.y for n in msg.nodes])
-  pylab.quiver([ n.x for n in msg.nodes ], [n.y for n in msg.nodes], [ math.cos(n.theta) for n in msg.nodes ], [math.sin(n.theta) for n in msg.nodes])
-  if 0:
-    for i,n in enumerate(msg.nodes):
-      pylab.annotate('%d' % i, (n.x, n.y))
-    for e in msg.edges:
-      i0,i1 = e.node0, e.node1
-      pylab.plot([ msg.nodes[i0].x, msg.nodes[i1].x ], [ msg.nodes[i0].y, msg.nodes[i1].y ])
-  pylab.draw()
+  def handle_a(self, msg):
+    self.prev_a = msg.header.stamp.to_seconds()
+    print "A difference", abs(self.prev_b - self.prev_a)
+
+  def handle_b(self, msg):
+    self.prev_b = msg.header.stamp.to_seconds()
+    print "B difference", abs(self.prev_b - self.prev_a)
 
 def main(args):
-  rospy.init_node('watchmap')
-  rospy.TopicSub('/roadmap', vslam.msg.Roadmap, handle_roadmap)
+  rospy.init_node('diff')
+  D = diff()
   rospy.spin()
 
 if __name__ == '__main__':

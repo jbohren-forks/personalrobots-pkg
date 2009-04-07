@@ -172,28 +172,29 @@ class FeatureDetector:
   def name(self):
     return self.__class__.__name__
 
-  def __init__(self):
+  def __init__(self, target_count):
     self.thresh = self.default_thresh
     self.cold = True
+    self.target_count = target_count
 
-  def detect(self, frame, target_points):
+  def detect(self, frame):
 
-    features = self.get_features(frame, target_points)
-    if len(features) < (target_points * 0.5) or len(features) > (target_points * 2.0):
+    features = self.get_features(frame, self.target_count)
+    if len(features) < (self.target_count * 0.5) or len(features) > (self.target_count * 2.0):
         (lo,hi) = self.threshrange
         for i in range(7):
           self.thresh = 0.5 * (lo + hi)
-          features = self.get_features(frame, target_points)
-          if len(features) < target_points:
+          features = self.get_features(frame, self.target_count)
+          if len(features) < self.target_count:
             hi = self.thresh
-          if len(features) > target_points:
+          if len(features) > self.target_count:
             lo = self.thresh
         self.thresh = 0.5 * (lo + hi)
 
     # Try to be a bit adaptive for next time
-    if len(features) > (target_points * 1.1):
+    if len(features) > (self.target_count * 1.1):
         self.thresh *= 1.05
-    if len(features) < (target_points * 0.9):
+    if len(features) < (self.target_count * 0.9):
         self.thresh *= 0.95
     return features
 
@@ -201,32 +202,25 @@ class FeatureDetector:
 # can be simpler.  Just always keep the threshold high enough to give
 # too many responses, and take the top N.
 
-class FeatureDetectorOrdered:
+class FeatureDetectorOrdered(FeatureDetector):
 
-  def name(self):
-    return self.__class__.__name__
+  def detect(self, frame):
 
-  def __init__(self):
-    self.thresh = self.default_thresh
-    self.cold = True
-
-  def detect(self, frame, target_points):
-
-    features = self.get_features(frame, target_points)
+    features = self.get_features(frame, self.target_count)
     # Too few features, so lower threshold
-    while (len(features) < target_points) and (self.thresh > self.threshrange[0]):
+    while (len(features) < self.target_count) and (self.thresh > self.threshrange[0]):
       self.thresh = float(max(self.threshrange[0], self.thresh / 2))
-      features = self.get_features(frame, target_points)
+      features = self.get_features(frame, self.target_count)
     # If starving, rerun 
     if (len(features) < 100) and (self.thresh <= self.threshrange[0]):
-      features = self.get_features(frame, target_points, True)
+      features = self.get_features(frame, self.target_count, True)
 
     # Try to be a bit more adaptive for next time
-    if len(features) > (target_points * 2):
+    if len(features) > (self.target_count * 2):
       self.thresh *= 2
-    if len(features) < (target_points * 1.25):
+    if len(features) < (self.target_count * 1.25):
       self.thresh *= 0.95
-    return features[:target_points]
+    return features[:self.target_count]
 
 def FAST(imdata, xsize, ysize, thresh, barrier = 9):
   kp = fast.fast(imdata, xsize, ysize, barrier, int(thresh))
@@ -325,11 +319,10 @@ class DescriptorScheme:
 
 class DescriptorSchemeSAD(DescriptorScheme):
 
-  def collect(self, frame):
-    if not hasattr(frame, "lgrad"):
-      frame.lgrad = " " * (frame.size[0] * frame.size[1])
-      VO.ost_do_prefilter_norm(frame.rawdata, frame.lgrad, frame.size[0], frame.size[1], 31, scratch)
-    frame.descriptors = [ VO.grab_16x16(frame.lgrad, frame.size[0], p[0]-7, p[1]-7) for p in frame.kp ]
+  def collect0(self, frame, kp):
+    lgrad = " " * (frame.size[0] * frame.size[1])
+    VO.ost_do_prefilter_norm(frame.rawdata, frame.lgrad, frame.size[0], frame.size[1], 31, scratch)
+    return [ VO.grab_16x16(frame.lgrad, frame.size[0], p[0]-7, p[1]-7) for p in kp ]
 
   def search(self, di, descriptors, hits):
       i = VO.sad_search(di, descriptors, hits)
@@ -348,16 +341,9 @@ class DescriptorSchemeCalonder(DescriptorScheme):
     assert os.access(filename, os.R_OK)
     self.cl.read(filename)
 
-  def collect(self, frame):
+  def collect0(self, frame, kp):
     im = Image.fromstring("L", frame.size, frame.rawdata)
-    if 0:
-      frame.descriptors = []
-      for (x,y,d) in frame.kp:
-        patch = im.crop((x-16,y-16,x+16,y+16))
-        sig = self.cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
-        frame.descriptors.append(sig)
-    else:
-      frame.descriptors = self.cl.getSignatures(im, [ (x,y) for (x,y,d) in frame.kp ])
+    return self.cl.getSignatures(im, [ (x,y) for (x,y,d) in kp ])
 
   def search(self, di, descriptors, hits):
     matcher = calonder.BruteForceMatcher(self.cl.dimension())
@@ -385,27 +371,6 @@ class Track:
     self.id.append(p1id)
     self.lastpt = p1
     self.sba_track.extend(p1id, p1)
-
-class FrameAnalyzer:
-  def __init__(self, **kwargs):
-    self.feature_detector = kwargs.get('feature_detector', FeatureDetectorFast())
-    self.targetkp = kwargs.get('targetkp', 300)
-  def analyze(self, f):
-    kp2d = self.feature_detector.detect(frame, self.targetkp)
-    disparities = [frame.lookup_disparity(x,y) for (x,y) in frame.kp2d]
-    kp = [ (x,y,z) for ((x,y),z) in zip(frame.kp2d, disparities) if z]
-    return kp
-
-def temporal_match(self, af0, af1, want_distances = False):
-  """
-  Match features between two frames.  Returns a list of pairs of
-  indices into the features in the two frames, and optionally a distance
-  value for each pair, if want_distances in True.
-  """
-  pairs = self.descriptor_scheme.match(af0, af1)
-  if not want_distances:
-    pairs = [(a,b) for (a,b,d) in pairs]
-  return pairs
 
 import pe
 
@@ -440,8 +405,6 @@ class VisualOdometer:
     self.position_thresh = kwargs.get('position_keypoint_thresh', 0.5)
     self.angle_thresh = kwargs.get('angle_keypoint_thresh', (2 * pi) / (5. / 360))
     self.inlier_thresh = kwargs.get('inlier_thresh', 175)
-    self.feature_detector = kwargs.get('feature_detector', FeatureDetectorFast())
-    self.descriptor_scheme = kwargs.get('descriptor_scheme', DescriptorSchemeSAD())
     self.inlier_error_threshold = kwargs.get('inlier_error_threshold', 3.0)
     self.scavenge = kwargs.get('scavenge', False)
     self.sba = kwargs.get('sba', None)
@@ -452,7 +415,7 @@ class VisualOdometer:
     self.pe.setNumRansacIterations(self.num_ransac_iters)
 
   def name(self):
-    return "VisualOdometer (%s %s iet=%.1f sba=%s)" % (self.feature_detector.name(), self.descriptor_scheme.name(), self.inlier_error_threshold, str(self.sba))
+    return "VisualOdometer (iet=%.1f sba=%s)" % (self.inlier_error_threshold, str(self.sba))
 
   def reset_timers(self):
     for n,t in self.timer.items():
@@ -477,36 +440,19 @@ class VisualOdometer:
 
 
   def find_keypoints(self, frame):
-    self.timer['feature'].start()
-    frame.kp2d = self.feature_detector.detect(frame, self.targetkp)
-    self.timer['feature'].stop()
+    pass
 
   def find_disparities(self, frame):
-    self.timer['disparity'].start()
-    disparities = [frame.lookup_disparity(x,y) for (x,y) in frame.kp2d]
-    frame.kp = [ (x,y,z) for ((x,y),z) in zip(frame.kp2d, disparities) if z]
-    #print "disparities", len(frame.kp2d), len(frame.kp)
-
-    if 0:
-      import pylab
-      pylab.imshow(numpy.fromstring(frame.lf.tostring(), numpy.uint8).reshape(480,640), cmap=pylab.cm.gray)
-      pylab.scatter([x for (x,y) in frame.kp2d], [y for (x,y) in frame.kp2d], label = '2d', c = 'red')
-      pylab.scatter([x for (x,y,d) in frame.kp], [y for (x,y,d) in frame.kp], label = 'disparities', c = 'green')
-      pylab.legend()
-      pylab.show()
-
-    self.timer['disparity'].stop()
+    pass
 
   lgrad = " " * (640 * 480)
   def collect_descriptors(self, frame):
-    self.timer['descriptor_collection'].start()
-    self.descriptor_scheme.collect(frame)
-    self.timer['descriptor_collection'].stop()
+    pass
 
   def temporal_match(self, af0, af1, want_distances = False):
     """ Match features between two frames.  Returns a list of pairs of indices into the features in the two frames, and optionally a distance value for each pair, if want_distances in True.  """
     self.timer['temporal_match'].start()
-    pairs = self.descriptor_scheme.match(af0, af1)
+    pairs = af0.match(af1)
     if not want_distances:
       pairs = [(a,b) for (a,b,d) in pairs]
     self.timer['temporal_match'].stop()
@@ -732,9 +678,6 @@ class VisualOdometer:
     self.timer['sba'].stop()
 
   def process_frame(self, frame):
-    self.find_keypoints(frame)
-    self.find_disparities(frame)
-    self.collect_descriptors(frame)
     frame.id = self.num_frames
 
   def add_external_frame(self, frame, fext):
@@ -771,9 +714,6 @@ class VisualOdometer:
       self.sba_handle_frame(newkey)
 
   def handle_frame(self, frame):
-    self.find_keypoints(frame)
-    self.find_disparities(frame)
-    self.collect_descriptors(frame)
     frame.id = self.num_frames
     return self.handle_frame_0(frame)
 
@@ -785,7 +725,7 @@ class VisualOdometer:
       ref = self.keyframe
       self.pairs = self.temporal_match(ref, frame)
       #if frame.id == 202 and ref.id == 199: self.show_pairs(self.pairs, ref, frame)
-      solution = self.solve(ref.kp, frame.kp, self.pairs)
+      solution = self.solve(ref.features(), frame.features(), self.pairs)
       if solution and solution[0] > 5:
         (inl, rot, shift) = solution
         diff_pose = self.mkpose(rot, shift)
@@ -832,7 +772,7 @@ class VisualOdometer:
     self.num_frames  += 1
     self.tot_inliers += self.inl
     self.tot_matches += len(self.pairs)
-    self.tot_points  += len(frame.kp2d)
+    self.tot_points  += len(frame.features())
 
     return self.pose
 
