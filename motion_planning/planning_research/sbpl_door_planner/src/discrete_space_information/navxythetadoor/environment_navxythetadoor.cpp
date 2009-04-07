@@ -33,18 +33,17 @@
 int EnvironmentNAVXYTHETADOOR::GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action)
 {
 
-	sbpl_2Dcell_t cell;
+    sbpl_2Dcell_t cell;
     vector<int> doorangleV, prevdoorangleV;
     vector<int> dooranglecostV, prevdooranglecostV;
     int i;
 
-	//TODO - go over bounding box (minpt and maxpt) to test validity and skip testing boundaries below, also order intersect cells so that the four farthest pts go first
 	
-	if(!IsValidCell(SourceX, SourceY))
-        {
-//          printf("\n\n\nReturning infinite cost\n\n\n");
-		return INFINITECOST;
-        }
+    if(!IsValidCell(SourceX, SourceY))
+      {
+	//          printf("\n\n\nReturning infinite cost\n\n\n");
+	return INFINITECOST;
+      }
     //compute world frame offset for the action
     double sourcex = DISCXY2CONT(SourceX, EnvNAVXYTHETALATCfg.cellsize_m);
     double sourcey = DISCXY2CONT(SourceY, EnvNAVXYTHETALATCfg.cellsize_m);
@@ -154,12 +153,41 @@ void EnvironmentNAVXYTHETADOOR::SetDesiredDoorAngles(vector<int> desired_door_an
 	printf("desired door angles are set to %d values\n", this->desired_door_anglesV.size());
 }
 
+
 int EnvironmentNAVXYTHETADOOR::MinCostDesiredDoorAngle(int x, int y, int theta)
 {
 
-  //TODO
-  return INFINITECOST;
+  vector<int> doorangleV;
+  vector<int> dooranglecostV;
 
+  //special case of no desired door angles
+  if(desired_door_anglesV.size() == 0)
+    return INFINITECOST;
+
+  //get the world 3d robot pose
+  EnvNAVXYTHETALAT3Dpt_t point3D;
+  point3D.x = DISCXY2CONT(x, EnvNAVXYTHETALATCfg.cellsize_m);
+  point3D.y = DISCXY2CONT(y, EnvNAVXYTHETALATCfg.cellsize_m);
+  point3D.theta = DiscTheta2Cont(theta, NAVXYTHETALAT_THETADIRS);
+
+  //get the door intervals together with the costs
+  doorangleV.clear();
+  dooranglecostV.clear();
+  GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV);
+
+  //go over the interval and pick the desired angle with the smallest cost
+  int mincost = INFINITECOST;
+  int bestangle = -1;
+  for(int cind = 0; cind < (int)doorangleV.size(); cind++){
+    for(int dind = 0; dind < (int) desired_door_anglesV.size(); dind++){
+      if(doorangleV[cind] == desired_door_anglesV[dind] && dooranglecostV[cind] < mincost){
+	mincost = dooranglecostV[cind];
+	bestangle = desired_door_anglesV[dind];
+      }
+    }
+  }
+
+  return mincost;
 
 }
 
@@ -179,67 +207,60 @@ void EnvironmentNAVXYTHETADOOR::GetSuccs(int SourceStateID, vector<int>* SuccIDV
     CostV->clear();
     SuccIDV->reserve(EnvNAVXYTHETALATCfg.actionwidth); 
     CostV->reserve(EnvNAVXYTHETALATCfg.actionwidth);
-	if(actionV != NULL)
-	{
-		actionV->clear();
-		actionV->reserve(EnvNAVXYTHETALATCfg.actionwidth);
-	}
-
-	//goal state should be absorbing
-	if(SourceStateID == EnvNAVXYTHETALAT.goalstateid)
-		return;
-
-	//get X, Y for the state
-	EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[SourceStateID];
+    if(actionV != NULL)
+      {
+	actionV->clear();
+	actionV->reserve(EnvNAVXYTHETALATCfg.actionwidth);
+      }
+    
+    //goal state should be absorbing
+    if(SourceStateID == EnvNAVXYTHETALAT.goalstateid)
+      return;
+    
+    //get X, Y for the state
+    EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[SourceStateID];
+    
+    //iterate through actions
+    for (aind = 0; aind < EnvNAVXYTHETALATCfg.actionwidth; aind++)
+      {
+	EnvNAVXYTHETALATAction_t* nav3daction = &EnvNAVXYTHETALATCfg.ActionsV[HashEntry->Theta][aind];
+	int newX = HashEntry->X + nav3daction->dX;
+	int newY = HashEntry->Y + nav3daction->dY;
+	int newTheta = NORMALIZEDISCTHETA(nav3daction->endtheta, NAVXYTHETALAT_THETADIRS);	
 	
-	//iterate through actions
-    bool bTestBounds = false;
-    if(HashEntry->X == 0 || HashEntry->X == EnvNAVXYTHETALATCfg.EnvWidth_c-1 ||  //TODO - need to modify to take robot perimeter into account
-       HashEntry->Y == 0 || HashEntry->Y == EnvNAVXYTHETALATCfg.EnvHeight_c-1)
-        bTestBounds = true;
-
-	for (aind = 0; aind < EnvNAVXYTHETALATCfg.actionwidth; aind++)
-	{
-		EnvNAVXYTHETALATAction_t* nav3daction = &EnvNAVXYTHETALATCfg.ActionsV[HashEntry->Theta][aind];
-        int newX = HashEntry->X + nav3daction->dX;
-		int newY = HashEntry->Y + nav3daction->dY;
-		int newTheta = NORMALIZEDISCTHETA(nav3daction->endtheta, NAVXYTHETALAT_THETADIRS);	
-
-        //skip the invalid cells
-		if(bTestBounds){ //TODO - need to modify to take robot perimeter into account
-            if(!IsValidCell(newX, newY)) 
-                continue;
-        }
-
-		//get cost
-		int cost = GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction);
-        if(cost >= INFINITECOST)
-            continue;
-
-		//check that the out state is not goal in term of desired door_angles
-		int mincostofdesireddoorangle = MinCostDesiredDoorAngle(newX,newY,newTheta);
-		if (mincostofdesireddoorangle < INFINITECOST)
-		{
-			//insert the goal (NOTE: we ignore the final door cost)
-			SuccIDV->push_back(EnvNAVXYTHETALAT.goalstateid);
-		}
-		else{		
-	    	EnvNAVXYTHETALATHashEntry_t* OutHashEntry;
-			if((OutHashEntry = GetHashEntry(newX, newY, newTheta)) == NULL)
-			{
-				//have to create a new entry
-				OutHashEntry = CreateNewHashEntry(newX, newY, newTheta);
-			}
-	        SuccIDV->push_back(OutHashEntry->stateID);
-		}
-
-        CostV->push_back(cost);
-		if(actionV != NULL)
-			actionV->push_back(nav3daction);
+	//skip the invalid cells
+	if(!IsValidCell(newX, newY)) 
+	  continue;
+	
+	//get cost
+	int cost = GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction);
+	if(cost >= INFINITECOST)
+	  continue;
+	
+	//check that the out state is not goal in term of desired door_angles
+	int mincostofdesireddoorangle = MinCostDesiredDoorAngle(newX,newY,newTheta);
+	if (mincostofdesireddoorangle < INFINITECOST)
+	  {
+	    //insert the goal (NOTE: we ignore the final door cost)
+	    SuccIDV->push_back(EnvNAVXYTHETALAT.goalstateid);
+	  }
+	else{		
+	  EnvNAVXYTHETALATHashEntry_t* OutHashEntry;
+	  if((OutHashEntry = GetHashEntry(newX, newY, newTheta)) == NULL)
+	    {
+	      //have to create a new entry
+	      OutHashEntry = CreateNewHashEntry(newX, newY, newTheta);
+	    }
+	  SuccIDV->push_back(OutHashEntry->stateID);
 	}
-
+	
+	CostV->push_back(cost);
+	if(actionV != NULL)
+	  actionV->push_back(nav3daction);
+      }
+    
 #if TIME_DEBUG
-		time_getsuccs += clock()-currenttime;
+    time_getsuccs += clock()-currenttime;
 #endif
 
 }
