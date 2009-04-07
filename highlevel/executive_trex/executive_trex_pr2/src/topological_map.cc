@@ -108,6 +108,61 @@ namespace executive_trex_pr2 {
     condDebugMsg(_region.isEmpty(), "map:get_region_from_position", 
 		 "isObstacle(" << x << ", " << y << ") == " << (TopologicalMapAdapter::instance()->isObstacle(x, y) ? "TRUE" : "FALSE"));
   } 
+
+  //*******************************************************************************************
+  MapGetDoorwayFromPointsConstraint::MapGetDoorwayFromPointsConstraint(const LabelStr& name,
+									 const LabelStr& propagatorName,
+									 const ConstraintEngineId& constraintEngine,
+									 const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _region(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))),
+     _x1(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _y1(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
+     _x2(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
+     _y2(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))){
+    checkError(variables.size() == 5, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
+    
+  /**
+   * If the position is bound, we can make a region query. The result should be intersected on the domain.
+   */
+  void MapGetDoorwayFromPointsConstraint::handleExecute(){
+    // Wait till inputs are bound. This is a common pattern for functions and could be mapped into a base class with an input and output
+    // list
+    if(!_x1.isSingleton() || !_y1.isSingleton() || !_x2.isSingleton() || !_y2.isSingleton())
+      return;
+
+    debugMsg("map:get_doorway_from_points",  "BEFORE: " << toString());
+
+    double x1 = _x1.getSingletonValue();
+    double y1 = _y1.getSingletonValue();
+    double x2 = _x2.getSingletonValue();
+    double y2 = _y2.getSingletonValue();
+    double x = (x1 + x2) / 2;
+    double y = (y1 + y2) / 2;
+    unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(x, y);
+
+    checkError(region_id > 0, "No region at midpoint given by <" << x << ", " << y << ">");
+
+    condDebugMsg(region_id == 0, "map:get_doorway_from_points", 
+		 "isObstacle(" << x << ", " << y << ") == " << (TopologicalMapAdapter::instance()->isObstacle(x, y) ? "TRUE" : "FALSE"));
+
+    // Check if it is a doorway
+    bool is_doorway(true);
+    TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway);
+
+
+    condDebugMsg(is_doorway == false, "map:get_doorway_from_points", "region " << region_id << "containing <" << x << ", " << y << "> is not a doorway");
+
+    // If it is not a doorway, then set to zero
+    if(is_doorway == false)
+      _region.set(0);
+    else
+      _region.set(region_id);
+
+    debugMsg("map:get_doorway_from_points",  "AFTER: " << toString());
+  }
     
   //*******************************************************************************************
   MapIsDoorwayConstraint::MapIsDoorwayConstraint(const LabelStr& name,

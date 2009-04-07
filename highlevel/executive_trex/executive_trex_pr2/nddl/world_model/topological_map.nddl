@@ -17,6 +17,10 @@ constraint map_connector(connection_id, x, y, th) { connection_id <: MAP_KEY && 
 // A function: given an x,y position, bind a region.
 constraint map_get_region_from_position(region_id, x, y){ region_id <: MAP_KEY && x <: numeric && y <: numeric }
 
+// A function: given a pair of 2d points, return the doorway containing their mid-point. If not a doorway, then
+// it will return a NO_KEY
+constraint map_get_doorway_from_points(region_id, x1, y1, x2, y2){ region_id <: MAP_KEY && x1 <: numeric && y1 <: numeric && x2 <: numeric && y2 <: numeric }
+
 // A function to query if a region is a doorway
 constraint map_is_doorway(result, region_id) { result <: bool && region_id <: MAP_KEY }
 

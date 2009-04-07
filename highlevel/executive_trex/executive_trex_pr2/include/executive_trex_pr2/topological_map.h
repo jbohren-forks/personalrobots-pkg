@@ -99,6 +99,27 @@ namespace executive_trex_pr2 {
   };
 
   /**
+   * @brief A function: given an x,y position, bind a region.
+   */
+  class MapGetDoorwayFromPointsConstraint : public Constraint {
+  public:
+    
+    MapGetDoorwayFromPointsConstraint(const LabelStr& name,
+				      const LabelStr& propagatorName,
+				      const ConstraintEngineId& constraintEngine,
+				      const std::vector<ConstrainedVariableId>& variables);
+    virtual void handleExecute();
+    
+  private:
+    IntervalIntDomain& _region;
+    IntervalDomain& _x1;
+    IntervalDomain& _y1;
+    IntervalDomain& _x2;
+    IntervalDomain& _y2;
+  };
+
+
+  /**
    * @brief A function to query if a region is a doorway
    */
   class MapIsDoorwayConstraint : public Constraint {

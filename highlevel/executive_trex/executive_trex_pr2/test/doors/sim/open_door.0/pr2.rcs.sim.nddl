@@ -1,13 +1,11 @@
-#include "rcs.sim.nddl";
+#include "test/doors/sim/sim.nddl";
 
 // Initialize state variables
-
-// The initial base position is going to be <3, 3, 0>. This will be to close to the door to detect it, and facing away from the door.
-// Expect that the robot will have to rotate and translate in order to detect the door.
+// The initial base position is going to be just outside sachins office
 fact(base_state.Holds f0);
-f0.x = 3.0;
-f0.y = 3.0;
-f0.th = 0.0;
+eq(f0.x, outside_sachins_office.x);
+eq(f0.y, outside_sachins_office.y);
+eq(f0.th, outside_sachins_office.th);
 
 // We will make sure that the doorway is not clear until tick 50. This will hold up exit. The default value will kick in to
 // Transition to true.

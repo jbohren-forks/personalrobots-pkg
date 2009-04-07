@@ -1,5 +1,3 @@
-
-
 /**
  * @brief Constraint to assign the parameters of one token to another based on name matching
  */

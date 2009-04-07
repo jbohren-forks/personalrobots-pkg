@@ -136,6 +136,8 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
 			  executive_trex_pr2::MapGetRegionFromPositionConstraint, "map_get_region_from_position", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::MapGetDoorwayFromPointsConstraint, "map_get_doorway_from_points", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
 			  executive_trex_pr2::MapIsDoorwayConstraint, "map_is_doorway", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
 			  executive_trex_pr2::MapGetDoorStateConstraint, "map_get_door_state", "Default");

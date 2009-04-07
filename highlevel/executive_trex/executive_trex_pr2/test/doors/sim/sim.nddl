@@ -2,9 +2,12 @@
 #include "rcs/exports.nddl"
 #include "rcs/mechanism_control/exports.nddl"
 #include "rcs/nav/exports.nddl"
+#include "rcs/doors/exports.nddl"
 #include "test/sim/rcs.nddl"
 #include "test/sim/mechanism_control.nddl"
 #include "test/sim/nav.nddl"
 #include "test/sim/doors.nddl"
+#include "world_model/topological_map.nddl"
+#include "test/locations.nddl"
 
 close();

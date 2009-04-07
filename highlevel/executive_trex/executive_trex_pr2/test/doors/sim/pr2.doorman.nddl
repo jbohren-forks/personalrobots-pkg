@@ -1,15 +1,24 @@
-#include "doors/doorman.nddl"
+#include "doors/door_controller.nddl"
+#include "world_model/topological_map.nddl"
+#include "test/locations.nddl"
 
 DoorController door_controller = new DoorController(Internal, false);
 
 close();
 
-
 // Loads the map from file
 map_initialize_from_file("../test/willow.tmap");
 
-// Will be trying to get thru a doorway which will exity at positin <3, 6, 2.0>
 rejectable(door_controller.Holds g0);
-g0.target_x = 3.0;
-g0.target_y = 6.0;
-g0.target_th = 2.0;
+g0.active = true;
+eq(g0.target_x, inside_sachins_office.x);
+eq(g0.target_y, inside_sachins_office.y);
+eq(g0.target_th, inside_sachins_office.th);
+
+// Initial conditions for control flags
+eq(g0.found_door, false);
+eq(g0.found_handle, false);
+eq(g0.have_handle, MAYBE);
+eq(g0.door_latched, true);
+eq(g0.doorway_clear, false);
+eq(g0.last_checked_door, FORCE_DOOR_CHECK);
