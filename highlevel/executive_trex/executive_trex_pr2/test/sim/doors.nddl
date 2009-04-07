@@ -1,0 +1,73 @@
+/**
+ * A simulation control variable governing when the doorway will be clear.
+ */
+class DoorwayClearSV extends AgentTimeline {
+
+  predicate Holds{ 
+    bool value;
+  }
+
+  DoorwayClearSV(){ super(Internal, "Holds");}
+};
+
+DoorwayClearSV::Holds{  default(value, true); }
+
+/**
+ * A simulation control variable governing when the doorway will be unlocked
+ */
+class DoorwayLockedSV extends AgentTimeline {
+
+  predicate Holds{ 
+    bool value;
+  }
+
+  DoorwayLockedSV(){ super(Internal, "Holds");}
+};
+
+
+DoorwayLockedSV::Holds{  default(value, false); }
+
+/**
+ * For now, assume a fixed duration, and always return success.
+ */
+
+ROSAction::Active{
+  eq(duration, 1);
+
+  // Handle always free at the end
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+
+/**
+ * Update result parameters according to simulation control variables.
+ */
+CheckDoorway::Inactive{
+  // DoorwayClearSV.Holds dc = doorway_cleared_sv(start);
+  any(DoorwayClearSV.Holds dc);
+  precedes(dc.start, start);
+  temporalDistance(start, [1 +inf], dc.end);
+  eq(doorway_clear, dc.value);
+
+  // DoorwayLockedSV.Holds dl = doorway_locked_sv(start);
+  any(DoorwayLockedSV.Holds dl);
+  precedes(dl.start, start);
+  temporalDistance(start, [1 +inf], dl.end);
+  eq(door_latched, dl.value);
+}
+
+// External controllers specific to the door domain
+ReleaseDoor release_door = new ReleaseDoor(Internal);
+OpenDoorWithGrasp open_door = new OpenDoorWithGrasp(Internal);
+GraspHandle grasp_handle = new GraspHandle(Internal);
+OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
+DetectDoor detect_door = new DetectDoor(Internal);
+DetectHandle detect_handle = new DetectHandle(Internal);
+CheckDoorway check_doorway = new CheckDoorway(Internal);
+NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(Internal);
+
+
+// Simulation Control Variables
+DoorwayClearSV doorway_clear_sv = new DoorwayClearSV();
+DoorwayLockedSV doorway_locked_sv = new DoorwayLockedSV();

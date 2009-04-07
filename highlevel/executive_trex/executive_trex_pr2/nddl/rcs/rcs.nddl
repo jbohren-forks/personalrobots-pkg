@@ -44,9 +44,3 @@ Behavior::Active{
   meets(Inactive s);
   eq(s.status, SUCCESS);
 }
-
-// Remaining behaviors for which we do not even have stubs
-ReleaseDoor release_door = new ReleaseDoor(Internal);
-OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
-CheckDoorway check_doorway = new CheckDoorway(Internal);
-NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(Internal);

@@ -1,0 +1,10 @@
+#include "TREX.nddl"
+#include "rcs/exports.nddl"
+#include "rcs/mechanism_control/exports.nddl"
+#include "rcs/nav/exports.nddl"
+#include "test/sim/rcs.nddl"
+#include "test/sim/mechanism_control.nddl"
+#include "test/sim/nav.nddl"
+#include "test/sim/doors.nddl"
+
+close();

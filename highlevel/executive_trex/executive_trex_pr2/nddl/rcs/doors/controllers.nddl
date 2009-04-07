@@ -1,0 +1,13 @@
+#include "rcs/controllers.nddl"
+
+DetectDoor::Active{
+  contained_by(assembly.tilt_scanner.ControlledBy c0);
+  eq(c0.controller, laser_tilt_controller);
+}
+
+DetectHandle::Active{
+  contained_by(assembly.tilt_scanner.ControlledBy c0);
+  eq(c0.controller, laser_tilt_controller);
+}
+
+// Remainder TBD

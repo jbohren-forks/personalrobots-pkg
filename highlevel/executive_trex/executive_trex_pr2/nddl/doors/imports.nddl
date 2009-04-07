@@ -5,12 +5,19 @@
 #include "rcs/nav/exports.nddl"
 #include "rcs/doors/exports.nddl"
 #include "mechanism_control/exports.nddl"
+#include "rcs/doors/controllers.nddl"
 #include "safety/exports.nddl"
 #include "nav/nav.nddl"
 #include "world_model/topological_map.nddl"
 
-// Mechanism Control - access to mechanisms and how they are controlled
-Assembly assembly = new Assembly(External);
+/** External Functions to be integrated **/
+
+// Compute the x, y, th base position based on the position and orientation of the door frame. Perhaps
+// we just want to use the 2 points for the door, or door frame. Why can z be greater than 0?
+constraint get_door_detection_base_position(x, y, th, door_x1, door_y1, door_x2, door_y2);
+
+// Given a current position, and a target handle position, compute a goal base position to enable a grasp
+constraint get_door_grasp_base_position(x, y, th, door_x1, door_y1, door_x2, door_y2);
 
 // Safety
 MobilityStatus mobility_status = new MobilityStatus(External);
@@ -25,24 +32,11 @@ OpenDoorWithGrasp open_door = new OpenDoorWithGrasp(External);
 GraspHandle grasp_handle = new GraspHandle(External);
 DetectHandle detect_handle = new DetectHandle(External);
 DetectDoor detect_door = new DetectDoor(External);
-
-// Future integration
-// OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
-// CheckDoorway check_doorway = new CheckDoorway(External);
-// NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
+OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
+CheckDoorway check_doorway = new CheckDoorway(External);
+NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
 
 
-/**
- * Door and handle detection reuire the tilt laser to be operational
- */
 
-DetectDoor::Active{
-  contained_by(assembly.tilt_scanner.ControlledBy c0);
-  eq(c0.controller, laser_tilt_controller);
-}
 
-DetectHandle::Active{
-  contained_by(assembly.tilt_scanner.ControlledBy c0);
-  eq(c0.controller, laser_tilt_controller);
-}
 
