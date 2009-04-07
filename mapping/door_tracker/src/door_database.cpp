@@ -62,6 +62,8 @@
 #include <Eigen/Array>
 #include <Eigen/SVD>
 
+#define HINGE_POINT_CONST 200
+
 using namespace std;
 using namespace robot_msgs;
 using namespace door_tracker;
@@ -98,7 +100,7 @@ class DoorDatabase
       node_->param<std::string>("~p_door_msg_topic_", door_msg_topic_,"/door_tracker_node/door_message");
       node_->param<std::string>("~door_database_frame", door_database_frame_,"map"); 
       node_->param<int>("~p_min_angles_per_door",min_angles_per_door_, 3); 
-      node_->param<double>("~p_angle_difference_threshold",angle_difference_threshold_,M_PI/6.0);
+      node_->param<double>("~p_angle_difference_threshold",angle_difference_threshold_,M_PI/12.0);
       node_->param<double>("~p_door_point_distance_threshold",door_point_distance_threshold_,0.25);
 
       node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
@@ -136,8 +138,8 @@ class DoorDatabase
     {
       double x1(0.0),y1(0.0);
 
-      x1 = db.door.door_p1.x;
-      y1 = db.door.door_p1.y;
+      x1 = (db.door.door_p1.x+db.door.door_p2.x)/2.0;
+      y1 = (db.door.door_p1.y+db.door.door_p2.y)/2.0;
 
       robot_msgs::Point32 hinge;
       MatrixXf lhs;
@@ -208,7 +210,8 @@ class DoorDatabase
       database[index].set_coeff_size(1);
       database[index].coeff[0];
       database[index].coeff[0] = generateLinearCoeff(door.door_p1,door.door_p2); 
-      ROS_INFO("Adding new door to database: p1: %f, %f, %f, p2: %f, %f, %f",door.door_p1.x,door.door_p1.y,door.door_p1.z,door.door_p2.x,door.door_p2.x,door.door_p2.z);
+      ROS_INFO("Adding new door to database: p1: %f, %f, %f, p2: %f, %f, %f",door.door_p1.x,door.door_p1.y,door.door_p1.z,door.door_p2.x,door.door_p2.y,door.door_p2.z);
+      ROS_INFO("There are %d candidate doors in the database now.",index+1);
     }
 
     double distance(const robot_msgs::Point32 &d1, const robot_msgs::Point32 &d2)
@@ -251,16 +254,14 @@ class DoorDatabase
           //check the hinge point
           if(index_p1 != db.door.hinge)
           {
-            ROS_INFO("Switching angles since index_p1: %d does not match: %d",index_p1,db.door.hinge);
+            ROS_DEBUG("Switching angles since index_p1: %d does not match: %d",index_p1,db.door.hinge);
             db.door.hinge = index_p1;
             db.angles[0] = angles::normalize_angle(db.angles[0]+M_PI);
           }
-
         }
 
         db.angles.resize(db.angles.size()+1);
-        ROS_INFO("Adding new point to door: p1: %f, %f, %f, p2: %f, %f, %f",door.door_p1.x,door.door_p1.y,door.door_p1.z,door.door_p2.x,door.door_p2.x,door.door_p2.z);
-        ROS_INFO("Door has a different angle.\nNumber of angles for door is now %d",(int) db.angles.size());
+        ROS_INFO("Door has a different angle: %f \nNumber of angles for door is now %d", new_door_angle, (int) db.angles.size());
         db.coeff.resize(db.coeff.size()+1);
         db.angles[db.angles.size()-1] = new_door_angle;
         db.coeff[db.coeff.size()-1] = generateLinearCoeff(door.door_p1,door.door_p2);
@@ -268,6 +269,7 @@ class DoorDatabase
         {
           db.door.frame_p1 = findHingePosition(db);
           db.door.hinge = 0;
+          publishDoors();
         }
       }
     }
@@ -281,12 +283,51 @@ class DoorDatabase
         if(sameDoor(database[i].door,door,index_p1,index_p2))
         {
           updateDoorInfo(database[i],door,index_p1,index_p2);
-          ROS_DEBUG("Door is in the database");
+          ROS_DEBUG("Adding new point to door[%d] p1: %f, %f, %f, p2: %f, %f, %f",i,door.door_p1.x,door.door_p1.y,door.door_p1.z,door.door_p2.x,door.door_p2.y,door.door_p2.z);
+          ROS_DEBUG("Door is in the database with index %d",i);
           return true;
         }
       }
       ROS_INFO("Door is not in the database");
       return false;
+    }
+
+    void publishPoint(const Point32 &point, const int &id, const std::string &frame_id)
+    {   
+      robot_msgs::VisualizationMarker marker;
+      marker.header.frame_id = frame_id;
+      marker.header.stamp = ros::Time();
+      marker.id = id;
+      marker.type = robot_msgs::VisualizationMarker::SPHERE;
+      marker.action = robot_msgs::VisualizationMarker::ADD;
+      marker.x = point.x;
+      marker.y = point.y;
+      marker.z = point.z;
+      marker.yaw = 0.0;
+      marker.pitch = 0.0;
+      marker.roll = 0.0;
+      marker.xScale = 0.1;
+      marker.yScale = 0.1;
+      marker.zScale = 0.1;
+      marker.alpha = 255;
+      marker.r = 0;
+      marker.g = 255;
+      marker.b = 0;
+//      ROS_DEBUG("Publishing line between: p1: %f %f %f, p2: %f %f %f",marker.points[0].x,marker.points[0].y,marker.points[0].z,marker.points[1].x,marker.points[1].y,marker.points[1].z);
+
+      node_->publish( "visualizationMarker", marker );
+    }
+
+    void publishDoors()
+    {
+      for(int i=0; i < (int) database_.size(); i++)
+      {
+        if((int) database_[i].angles.size() == min_angles_per_door_)
+        {
+          publishPoint(database_[i].door.frame_p1,i+HINGE_POINT_CONST,database_[i].door.header.frame_id);
+          ROS_INFO("Publishing hinge point (%f,%f,%f) in frame id %s",database_[i].door.frame_p1.x,database_[i].door.frame_p1.y,database_[i].door.frame_p1.z,database_[i].door.header.frame_id.c_str());
+        }
+      }
     }
 
     bool sameDoor(const robot_msgs::Door &door1, const robot_msgs::Door &door2, int &hinge_index_p1, int &hinge_index_p2)
