@@ -15,6 +15,7 @@ The Bullet Physics Engine
 <export>
 <cpp cflags="-I${prefix}/build/include -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX" lflags="-L${prefix}/build/lib -lLinearMath -lBulletCollision -lBulletDynamics" />
   <doxymaker external="http://www.continuousphysics.com/Bullet/BulletFull/index.html" />
+<swig flags="-python -c++"/>
 </export>
 </package>
 
