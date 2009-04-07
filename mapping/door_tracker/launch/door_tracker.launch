@@ -3,6 +3,5 @@
     <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />  
   </node>
   <node pkg="door_tracker" type="door_database_node" output="screen" name="door_database_node"/>
-  <node pkg="door_tracker" type="door_tracker_test" output="screen" name="door_activate_node"/>
 
 </launch>

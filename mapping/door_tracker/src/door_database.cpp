@@ -85,6 +85,8 @@ class DoorDatabase
 
     std::vector<DoorDatabaseObject> database_;
 
+    int hinge_number_;
+
     /*** Parameters to be updated from the param server ***/
     std::string door_msg_topic_;
     std::string door_database_frame_;
@@ -99,7 +101,7 @@ class DoorDatabase
 
       node_->param<std::string>("~p_door_msg_topic_", door_msg_topic_,"/door_tracker_node/door_message");
       node_->param<std::string>("~door_database_frame", door_database_frame_,"map"); 
-      node_->param<int>("~p_min_angles_per_door",min_angles_per_door_, 3); 
+      node_->param<int>("~p_min_angles_per_door",min_angles_per_door_, 4); 
       node_->param<double>("~p_angle_difference_threshold",angle_difference_threshold_,M_PI/12.0);
       node_->param<double>("~p_door_point_distance_threshold",door_point_distance_threshold_,0.25);
 
@@ -115,7 +117,9 @@ class DoorDatabase
       node_->param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
       door_msg_.header.frame_id = "base_link";
 
-      message_notifier_ = new tf::MessageNotifier<robot_msgs::Door> (tf_, node_,  boost::bind(&DoorDatabase::doorMsgCallBack, this, _1), door_msg_topic_.c_str (), door_msg_.header.frame_id, 1);
+      node_->subscribe(door_msg_topic_,door_msg_, &DoorDatabase::doorMsgCallBack,this,1);
+//    message_notifier_ = new tf::MessageNotifier<robot_msgs::Door> (tf_, node_,  boost::bind(&DoorDatabase::doorMsgCallBack, this, _1), door_msg_topic_.c_str (), door_database_frame_, 1);
+      hinge_number_ = 0;
     };
 
     ~DoorDatabase()
@@ -124,9 +128,10 @@ class DoorDatabase
       delete message_notifier_;
     }
 
-    void doorMsgCallBack(const tf::MessageNotifier<robot_msgs::Door>::MessagePtr& door)
+//    void doorMsgCallBack(const tf::MessageNotifier<robot_msgs::Door>::MessagePtr& door)
+    void doorMsgCallBack()
     {
-      updateDatabase(*door);
+      updateDatabase(door_msg_);
     }
 
     void initializeDatabase()
@@ -168,7 +173,8 @@ class DoorDatabase
       hinge.z = 0;
 
       ROS_INFO("Setting hinge at: %f %f %f",hinge.x,hinge.y,hinge.z);
-
+      publishPoint(hinge,HINGE_POINT_CONST+hinge_number_,db.door.header.frame_id);
+      hinge_number_++;
       return hinge;
     }
 
@@ -269,7 +275,7 @@ class DoorDatabase
         {
           db.door.frame_p1 = findHingePosition(db);
           db.door.hinge = 0;
-          publishDoors();
+//          publishDoors();
         }
       }
     }

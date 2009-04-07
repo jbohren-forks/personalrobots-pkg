@@ -63,6 +63,7 @@
 #include <point_cloud_mapping/sample_consensus/lmeds.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_line.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
+#include <point_cloud_mapping/kdtree/kdtree_ann.h>
 
 // Cloud geometry
 #include <point_cloud_mapping/geometry/areas.h>
@@ -91,11 +92,11 @@ using namespace robot_msgs;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Comparison operator for a vector of vectors
-inline bool compareRegions (const std::vector<int> &a, const std::vector<int> &b)
+inline bool
+  compareRegions (const std::vector<int> &a, const std::vector<int> &b)
 {
   return (a.size () < b.size ());
 }
-
 
 class DoorTracker
 {
@@ -130,6 +131,13 @@ class DoorTracker
 
     double global_y_;
 
+    bool done_detection_;
+
+    double euclidean_cluster_angle_tolerance_;
+    double  euclidean_cluster_min_pts_;               // 1000 points
+    double  euclidean_cluster_distance_tolerance_;               // 5 cm
+
+
     /********** Parameters that need to be gotten from the param server *******/
     std::string door_msg_topic_, base_laser_topic_,fixed_frame_;
     int sac_min_points_per_model_;
@@ -161,12 +169,154 @@ class DoorTracker
       TiXmlElement * config = xml_doc.RootElement();
 
       filter_chain_.configure(1, config);
+      done_detection_ = true;
+
+      euclidean_cluster_angle_tolerance_    = angles::from_degrees (25.0);
+      euclidean_cluster_min_pts_            = 20;               // 1000 points
+      euclidean_cluster_distance_tolerance_ = 0.03;               // 5 cm
     };
 
     ~DoorTracker()
     {
 //      node_->unsubscribe(base_laser_topic_,&DoorTracker::laserCallBack,this);
     }
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/** \brief Decompose a region of space into clusters based on the euclidean distance between points, and the normal
+ * angular deviation
+ * \NOTE: assumes normalized point normals !
+ * \param points pointer to the point cloud message
+ * \param indices pointer to a list of point indices
+ * \param tolerance the spatial tolerance as a measure in the L2 Euclidean space
+ * \param clusters the resultant clusters
+ * \param nx_idx the index of the channel containing the X component of the normal
+ * \param ny_idx the index of the channel containing the Y component of the normal
+ * \param nz_idx the index of the channel containing the Z component of the normal
+ * \param eps_angle the maximum allowed difference between normals in degrees for cluster/region growing
+ * \param min_pts_per_cluster minimum number of points that a cluster may contain (default = 1)
+ */
+    void
+    findClusters (const PointCloud &points, const vector<int> &indices, double tolerance, vector<vector<int> > &clusters,
+                  int nx_idx, int ny_idx, int nz_idx,
+                  double eps_angle, unsigned int min_pts_per_cluster)
+    {
+      // Create a tree for these points
+      cloud_kdtree::KdTree* tree = new cloud_kdtree::KdTreeANN (points, indices);
+
+      int nr_points = indices.size ();
+      // Create a bool vector of processed point indices, and initialize it to false
+      vector<bool> processed;
+      processed.resize (nr_points, false);
+
+      vector<int> nn_indices;
+      vector<float> nn_distances;
+      // Process all points in the indices vector
+      for (int i = 0; i < nr_points; i++)
+      {
+        if (processed[i])
+          continue;
+
+        vector<int> seed_queue;
+        int sq_idx = 0;
+        seed_queue.push_back (i);
+
+//    double norm_a = 0.0;
+//    if (nx_idx != -1)         // If we use normal indices...
+//      norm_a = sqrt (points->chan[nx_idx].vals[indices->at (i)] * points->chan[nx_idx].vals[indices->at (i)] +
+//                     points->chan[ny_idx].vals[indices->at (i)] * points->chan[ny_idx].vals[indices->at (i)] +
+//                     points->chan[nz_idx].vals[indices->at (i)] * points->chan[nz_idx].vals[indices->at (i)]);
+
+        processed[i] = true;
+
+        while (sq_idx < (int)seed_queue.size ())
+        {
+          // Search for sq_idx
+          tree->radiusSearch (seed_queue.at (sq_idx), tolerance, nn_indices, nn_distances);
+
+          for (unsigned int j = 1; j < nn_indices.size (); j++)       // nn_indices[0] should be sq_idx
+          {
+            if (processed.at (nn_indices[j]))                         // Has this point been processed before ?
+              continue;
+
+            processed[nn_indices[j]] = true;
+            if (nx_idx != -1)                                         // Are point normals present ?
+            {
+//          double norm_b = sqrt (points.chan[nx_idx].vals[indices.at (nn_indices[j])] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
+//                                points.chan[ny_idx].vals[indices.at (nn_indices[j])] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
+//                                points.chan[nz_idx].vals[indices.at (nn_indices[j])] * points.chan[nz_idx].vals[indices.at (nn_indices[j])]);
+              // [-1;1]
+              double dot_p = points.chan[nx_idx].vals[indices.at (i)] * points.chan[nx_idx].vals[indices.at (nn_indices[j])] +
+                points.chan[ny_idx].vals[indices.at (i)] * points.chan[ny_idx].vals[indices.at (nn_indices[j])] +
+                points.chan[nz_idx].vals[indices.at (i)] * points.chan[nz_idx].vals[indices.at (nn_indices[j])];
+//          if ( acos (dot_p / (norm_a * norm_b)) < eps_angle)
+              if ( fabs (acos (dot_p)) < eps_angle )
+              {
+                processed[nn_indices[j]] = true;
+                seed_queue.push_back (nn_indices[j]);
+              }
+            }
+            // If normal information is not present, perform a simple Euclidean clustering
+            else
+            {
+              processed[nn_indices[j]] = true;
+              seed_queue.push_back (nn_indices[j]);
+            }
+          }
+
+          sq_idx++;
+        }
+
+        // If this queue is satisfactory, add to the clusters
+        if (seed_queue.size () >= min_pts_per_cluster)
+        {
+          vector<int> r (seed_queue.size ());
+          for (unsigned int j = 0; j < seed_queue.size (); j++)
+            r[j] = indices.at (seed_queue[j]);
+
+          sort (r.begin (), r.end ());
+          r.erase (unique (r.begin (), r.end ()), r.end ());
+
+          clusters.push_back (r);
+        }
+      }
+
+      // Destroy the tree
+      delete tree;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     void start()
     {
@@ -176,7 +326,7 @@ class DoorTracker
         node_->param<std::string>("~p_base_laser_topic_", base_laser_topic_, "base_scan");                              // 10 degrees
 
         node_->param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  // 100 points at high resolution
-        node_->param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.01);     // 3 cm
+        node_->param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
         node_->param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
         node_->param ("~p_frame_multiplier_", frame_multiplier_,6.0);
         node_->param ("~p_sac_min_points_left", sac_min_points_left_, 10);
@@ -219,6 +369,7 @@ class DoorTracker
         node_->unadvertise("~door_message");
         node_->unadvertise("visualizationMarker");
         delete message_notifier_;
+        delete tf_;
       }
     }
 
@@ -260,6 +411,12 @@ class DoorTracker
       if(!active_)
         return;
 
+      if(!done_detection_)
+        return;
+
+      cloud_msg_mutex_.lock();
+
+      done_detection_  = false;
       laser_scan::LaserScan filtered_scan;
       filter_chain_.update (*scan_msg, filtered_scan);
       // Transform into a PointCloud message
@@ -268,7 +425,8 @@ class DoorTracker
         projector_.transformLaserScanToPointCloud(fixed_frame_, cloud_, filtered_scan, *tf_, mask);
       }
       catch (tf::TransformException& e) {
-        ROS_WARN ("TF exception transforming scan to cloud: %s", e.what());
+        ROS_ERROR ("TF exception transforming scan to cloud: %s", e.what());
+      cloud_msg_mutex_.unlock();
         return;
       }
 
@@ -280,17 +438,21 @@ class DoorTracker
       if(cloud_.pts.empty())
       {
         ROS_WARN("Received an empty point cloud");
+        cloud_msg_mutex_.unlock();
         return;
       }
       if ((int)cloud_.pts.size() < sac_min_points_per_model_)
+      {
+        cloud_msg_mutex_.unlock();
         return;
-
+      }
 //      cloud_msg_mutex_.unlock();
 
       if(continuous_detection_) // do this on every laser callback
       {
         findDoor();
       }
+      cloud_msg_mutex_.unlock();
     }
 
     void publishLine(const Point32 &min_p, const Point32 &max_p, const int &id, const std::string &frame_id)
@@ -340,9 +502,10 @@ class DoorTracker
 
     void findDoor()
     {
-      cloud_msg_mutex_.lock();
+      ROS_DEBUG("Finding door");
+      //cloud_msg_mutex_.lock();
       PointCloud cloud = cloud_;//create a local copy - should be fine since its a small scan from the base laser
-      cloud_msg_mutex_.unlock();
+      //cloud_msg_mutex_.unlock();
 
       updateGlobalPose();
 
@@ -386,7 +549,7 @@ class DoorTracker
  
         Point32 temp_min,temp_max;
         transform2DInverse(line_segment_min[i],temp_min,global_x_,global_y_,global_yaw_);
-        transform2DInverse(line_segment_min[i],temp_max,global_x_,global_y_,global_yaw_);
+        transform2DInverse(line_segment_max[i],temp_max,global_x_,global_y_,global_yaw_);
  
         double door_pt_angle_1 = atan2(temp_max.y,temp_max.x);
         double door_pt_angle_2 = atan2(temp_min.y,temp_min.x);
@@ -421,6 +584,9 @@ class DoorTracker
         door_tmp.header.frame_id = fixed_frame_;
         node_->publish( "~door_message", door_tmp);        
       }
+      ROS_DEBUG("Done finding door");
+
+      done_detection_ = true;
     }
 
     bool detectDoorService(door_handle_detector::DoorsDetector::Request &req, door_handle_detector::DoorsDetector::Response &resp)
@@ -469,7 +635,6 @@ class DoorTracker
     {
       Point32 minP, maxP;
 
-
       // Create and initialize the SAC model
       sample_consensus::SACModelLine *model = new sample_consensus::SACModelLine ();
       sample_consensus::SAC *sac            = new sample_consensus::RANSAC (model, sac_distance_threshold_);
@@ -501,30 +666,53 @@ class DoorTracker
         if(sac->computeModel(0))
         {
           if((int) sac->getInliers().size() < sac_min_points_per_model_)
+          {
+            ROS_DEBUG("Not enough inliers");
             break;
+          }
           std::vector<double> new_coeff;
           sac->computeCoefficients(new_coeff);
           sac->refineCoefficients(new_coeff);
-          coeff.push_back(new_coeff);
 //          coeff.push_back(sac->computeCoefficients());
 
           vector<int> inliers_local;
           model->selectWithinDistance(new_coeff, sac_distance_threshold_,inliers_local);
-          inliers.push_back(inliers_local);
           
+          // Split the inliers into clusters
+          vector<vector<int> > clusters;
+          findClusters (*points, inliers_local, euclidean_cluster_distance_tolerance_, clusters, -1, 1, 2,
+                        euclidean_cluster_angle_tolerance_, euclidean_cluster_min_pts_);
+          sort (clusters.begin (), clusters.end (), compareRegions);
+          reverse (clusters.begin (), clusters.end ());
 
-          //Find the edges of the line segments
-//          cloud_geometry::statistics::getMinMax (*points, inliers.back(), minP, maxP);
-          cloud_geometry::statistics::getLargestXYPoints (*points, inliers.back(), minP, maxP);
-          line_segment_min.push_back(minP);
-          line_segment_max.push_back(maxP);
+          if(clusters.size() == 0)
+          {
+            number_remaining_points = sac->removeInliers ();
+            ROS_DEBUG("Found zero clusters");
+            continue;
+          }
+          ROS_DEBUG("Found %d clusters",clusters.size());
+          for(int i=0; i < (int) clusters.size(); i++)
+          {
+            if((int) clusters[i].size() >  sac_min_points_per_model_)
+            {
+              coeff.push_back(new_coeff);
+              inliers.push_back(clusters[i]);
 
-          //      fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", (int)sac->getInliers ().size (), coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
-
+              //Find the edges of the line segments
+              //cloud_geometry::statistics::getMinMax (*points, inliers.back(), minP, maxP);
+              cloud_geometry::statistics::getLargestXYPoints (*points, inliers.back(), minP, maxP);
+              line_segment_min.push_back(minP);
+              line_segment_max.push_back(maxP);
+//              fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", (int)sac->getInliers ().size (), coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
+            }
+          }
           // Remove the current inliers in the model
           number_remaining_points = sac->removeInliers ();
         }
       }
+      delete model;
+      delete sac;
     }
 
 

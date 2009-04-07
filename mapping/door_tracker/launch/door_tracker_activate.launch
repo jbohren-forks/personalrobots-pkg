@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="door_tracker" type="door_tracker_test" output="screen" name="door_activate_node"/>
+</launch>
