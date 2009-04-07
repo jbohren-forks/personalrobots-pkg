@@ -150,7 +150,7 @@ class DoorTracker
       continuous_detection_ = false;
       active_ = false;
       node_->subscribe("~activate",activate_msg_,&DoorTracker::activate,this,1);
-      ROS_INFO("Started door tracker");
+      ROS_DEBUG("Started door tracker");
 
       //Laser Scan Filtering
       std::string filter_xml;
@@ -176,13 +176,13 @@ class DoorTracker
         node_->param<std::string>("~p_base_laser_topic_", base_laser_topic_, "base_scan");                              // 10 degrees
 
         node_->param ("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  // 100 points at high resolution
-        node_->param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
+        node_->param ("~p_sac_distance_threshold", sac_distance_threshold_, 0.01);     // 3 cm
         node_->param ("~p_eps_angle_", eps_angle_, 10.0);                              // 10 degrees
         node_->param ("~p_frame_multiplier_", frame_multiplier_,6.0);
         node_->param ("~p_sac_min_points_left", sac_min_points_left_, 10);
         node_->param ("~p_door_min_width", door_min_width_, 0.8);                    // minimum width of a door: 0.8m
-        node_->param ("~p_door_max_width", door_max_width_, 1.1);                    // maximum width of a door: 1.4m
-        node_->param("~p_fixed_frame", fixed_frame_, string("odom_combined"));
+        node_->param ("~p_door_max_width", door_max_width_, 0.9);                    // maximum width of a door: 1.4m
+        node_->param("~p_fixed_frame", fixed_frame_, string("map"));
 
         eps_angle_ = angles::from_degrees (eps_angle_);                      // convert to radians
 
@@ -276,7 +276,7 @@ class DoorTracker
 
 //      cloud_msg_mutex_.lock();
 //      cloud_ = *cloud;
-      ROS_INFO("Received a point cloud with %d points in frame: %s",(int) cloud_.pts.size(),cloud_.header.frame_id.c_str());
+      ROS_DEBUG("Received a point cloud with %d points in frame: %s",(int) cloud_.pts.size(),cloud_.header.frame_id.c_str());
       if(cloud_.pts.empty())
       {
         ROS_WARN("Received an empty point cloud");
@@ -323,7 +323,7 @@ class DoorTracker
       marker.points[1].x = max_p.x;
       marker.points[1].y = max_p.y;
       marker.points[1].z = max_p.z;
-      ROS_INFO("Publishing line between: p1: %f %f %f, p2: %f %f %f",marker.points[0].x,marker.points[0].y,marker.points[0].z,marker.points[1].x,marker.points[1].y,marker.points[1].z);
+      ROS_DEBUG("Publishing line between: p1: %f %f %f, p2: %f %f %f",marker.points[0].x,marker.points[0].y,marker.points[0].z,marker.points[1].x,marker.points[1].y,marker.points[1].z);
 
       node_->publish( "visualizationMarker", marker );
     }
@@ -380,7 +380,7 @@ class DoorTracker
         if(door_frame_width < door_min_width_ || door_frame_width > door_max_width_)
         {
           inliers[i].resize(0);
-          ROS_WARN("This candidate line has the wrong width: %f which is outside the (min,max) limits: (%f,%f)",door_frame_width,door_min_width_,door_max_width_);
+          ROS_DEBUG("This candidate line has the wrong width: %f which is outside the (min,max) limits: (%f,%f)",door_frame_width,door_min_width_,door_max_width_);
           continue;
         }
  
@@ -394,7 +394,7 @@ class DoorTracker
         if(fabs(door_pt_angle_1) > M_PI/2.0 || fabs(door_pt_angle_2) > M_PI/2.0)
         {
           inliers[i].resize(0);
-          ROS_WARN("This candidate line is close to the sensor range edges: may not be a door");
+          ROS_DEBUG("This candidate line is close to the sensor range edges: may not be a door");
           continue;
         }
       }
@@ -418,6 +418,7 @@ class DoorTracker
         door_tmp.door_p2.y = line_segment_max[inliers_size_max_index].y;
         door_tmp.door_p2.z = line_segment_max[inliers_size_max_index].z;
         door_tmp.header = cloud.header;
+        door_tmp.header.frame_id = fixed_frame_;
         node_->publish( "~door_message", door_tmp);        
       }
     }
@@ -441,7 +442,7 @@ class DoorTracker
 
     void activate()
     {
-      ROS_INFO("Trying to activate: %s",activate_msg_.data.c_str());
+      ROS_DEBUG("Trying to activate: %s",activate_msg_.data.c_str());
 
       if (activate_msg_.data == std::string("activate"))
       {
@@ -468,37 +469,48 @@ class DoorTracker
     {
       Point32 minP, maxP;
 
-      vector<int> inliers_local;
 
       // Create and initialize the SAC model
       sample_consensus::SACModelLine *model = new sample_consensus::SACModelLine ();
-      sample_consensus::SAC *sac            = new sample_consensus::MSAC (model, sac_distance_threshold_);
+      sample_consensus::SAC *sac            = new sample_consensus::RANSAC (model, sac_distance_threshold_);
       sac->setMaxIterations (100);
       sac->setProbability (0.95);
 
       //First find points close to the door frame and neglect points that are far away
-      vector<int> possible_door_points;
-      door_msg_mutex_.lock();
-      obtainCloudIndicesSet(points,possible_door_points,door_msg_,tf_,frame_multiplier_);
-      door_msg_mutex_.unlock();
-
-      model->setDataSet (points, possible_door_points);
-
+      //vector<int> possible_door_points;
+      //door_msg_mutex_.lock();
+      //obtainCloudIndicesSet(points,possible_door_points,door_msg_,tf_,frame_multiplier_);
+      //door_msg_mutex_.unlock();
+      //model->setDataSet (points, possible_door_points);
       // Now find the best fit line to this set of points and a corresponding set of inliers
       // Prepare enough space
-      int number_remaining_points = possible_door_points.size();
+      // int number_remaining_points = possible_door_points.size();
+
+      vector<int> indices_l;
+      indices_l.resize(points->pts.size());
+      for(unsigned int i=0; i < points->pts.size(); i++)      //Use all the indices
+      {
+        indices_l[i] = i;
+      }
+      model->setDataSet (points, indices_l);
+      int number_remaining_points = indices_l.size();
+
 
       while(number_remaining_points > sac_min_points_left_)
       {
-        if(sac->computeModel())
+        if(sac->computeModel(0))
         {
           if((int) sac->getInliers().size() < sac_min_points_per_model_)
             break;
-          inliers.push_back(sac->getInliers());
           std::vector<double> new_coeff;
           sac->computeCoefficients(new_coeff);
+          sac->refineCoefficients(new_coeff);
           coeff.push_back(new_coeff);
 //          coeff.push_back(sac->computeCoefficients());
+
+          vector<int> inliers_local;
+          model->selectWithinDistance(new_coeff, sac_distance_threshold_,inliers_local);
+          inliers.push_back(inliers_local);
           
 
           //Find the edges of the line segments
@@ -507,7 +519,7 @@ class DoorTracker
           line_segment_min.push_back(minP);
           line_segment_max.push_back(maxP);
 
-          fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", (int)sac->getInliers ().size (), coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
+          //      fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", (int)sac->getInliers ().size (), coeff[coeff.size () - 1][0], coeff[coeff.size () - 1][1], coeff[coeff.size () - 1][2], coeff[coeff.size () - 1][3]);
 
           // Remove the current inliers in the model
           number_remaining_points = sac->removeInliers ();
@@ -531,7 +543,7 @@ class DoorTracker
       transformPoint (tf,cloud_frame, frame_p1, frame_p1);
       transformPoint (tf,cloud_frame, frame_p2, frame_p2);
 
-      ROS_INFO ("Start detecting door at points in frame %s [%g, %g, %g] -> [%g, %g, %g]",
+      ROS_DEBUG ("Start detecting door at points in frame %s [%g, %g, %g] -> [%g, %g, %g]",
                 cloud_frame.c_str (), frame_p1.x, frame_p1.y, frame_p1.z, frame_p2.x, frame_p2.y, frame_p2.z);
 
       // Obtain the bounding box information in the reference frame of the laser scan
@@ -539,7 +551,7 @@ class DoorTracker
 
       if (frame_multiplier == -1)
       {
-        ROS_INFO ("Door frame multiplier set to -1. Using the entire point cloud data.");
+        ROS_DEBUG ("Door frame multiplier set to -1. Using the entire point cloud data.");
         // Use the complete bounds of the point cloud
         cloud_geometry::statistics::getMinMax (*points, min_bbox, max_bbox);
         for (unsigned int i = 0; i < points->pts.size (); i++)
@@ -563,7 +575,7 @@ class DoorTracker
         }
         indices.resize (nr_p);
       }
-      ROS_INFO ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.",min_bbox.x, min_bbox.y, min_bbox.z, max_bbox.x, max_bbox.y, max_bbox.z, (int)indices.size ());
+      ROS_DEBUG ("Number of points in bounds [%f,%f,%f] -> [%f,%f,%f]: %d.",min_bbox.x, min_bbox.y, min_bbox.z, max_bbox.x, max_bbox.y, max_bbox.z, (int)indices.size ());
     }
 
 
