@@ -100,6 +100,8 @@ There are a number of parameters that can be used to configure the costmap_2d::C
 <br><br>
 <li><b>~costmap/static_map</b>, <i>bool</i> <br>Whether or not to use the static map to initialize the costmap</li>
 <br><br>
+<li><b>~costmap/rolling_window</b>, <i>bool</i> <br>Whether or not to use a rolling window version of the costmap</li>
+<br><br>
 <li> 
   <b>The following parameters are only used if static_map is set to false</b><br><br>
   <ul>

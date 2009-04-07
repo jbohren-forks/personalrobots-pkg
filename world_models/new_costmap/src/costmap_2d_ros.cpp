@@ -97,6 +97,9 @@ namespace costmap_2d {
     ros_node_.param("~costmap/static_map", static_map, true);
     std::vector<unsigned char> input_data;
 
+    //check if we want a rolling window version of the costmap
+    ros_node_.param("~costmap/rolling_window", rolling_window_, false);
+
     double map_width_meters, map_height_meters;
     ros_node_.param("~costmap/width", map_width_meters, 10.0);
     ros_node_.param("~costmap/height", map_height_meters, 10.0);
@@ -172,7 +175,7 @@ namespace costmap_2d {
     start_t = start.tv_sec + double(start.tv_usec) / 1e6;
     end_t = end.tv_sec + double(end.tv_usec) / 1e6;
     t_diff = end_t - start_t;
-    ROS_INFO("New map construction time: %.9f", t_diff);
+    ROS_DEBUG("New map construction time: %.9f", t_diff);
 
 
     //create a thread to handle updating the map
@@ -251,7 +254,7 @@ namespace costmap_2d {
       start_t = start.tv_sec + double(start.tv_usec) / 1e6;
       end_t = end.tv_sec + double(end.tv_usec) / 1e6;
       t_diff = end_t - start_t;
-      ROS_DEBUG("Map update time: %.9f", t_diff);
+      ROS_INFO("Map update time: %.9f", t_diff);
       if(!sleepLeftover(start_time, cycle_time))
         ROS_WARN("Map update loop missed its desired cycle time of %.4f", cycle_time.toSec());
     }
@@ -317,6 +320,12 @@ namespace costmap_2d {
     observation_lock_.unlock();
 
     map_lock_.lock();
+    //if we're using a rolling buffer costmap... we need to update the origin using the robot's position
+    if(rolling_window_){
+      double origin_x = wx - costmap_->metersSizeX() / 2;
+      double origin_y = wy - costmap_->metersSizeY() / 2;
+      costmap_->updateOrigin(origin_x, origin_y);
+    }
     costmap_->updateWorld(wx, wy, observations, observations);
     map_lock_.unlock();
 

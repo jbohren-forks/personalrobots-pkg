@@ -215,7 +215,7 @@ namespace costmap_2d{
     return false;
   }
 
-  void Costmap2D::worldToMapNoBounds(double wx, double wy, unsigned int& mx, unsigned int& my) const {
+  void Costmap2D::worldToMapNoBounds(double wx, double wy, int& mx, int& my) const {
     mx = (int) ((wx - origin_x_) / resolution_);
     my = (int) ((wy - origin_y_) / resolution_);
   }
@@ -225,23 +225,22 @@ namespace costmap_2d{
 
     double start_point_x = wx - w_size_x / 2;
     double start_point_y = wy - w_size_y / 2;
+    double end_point_x = start_point_x + w_size_x;
+    double end_point_y = start_point_x + w_size_y;
 
     //check start bounds
     start_point_x = max(origin_x_, start_point_x);
     start_point_y = max(origin_y_, start_point_y);
 
+    //check end bounds
+    end_point_x = min(origin_x_ + metersSizeX(), end_point_x);
+    end_point_y = min(origin_y_ + metersSizeY(), end_point_y);
+
     unsigned int start_x, start_y, end_x, end_y;
 
     //check for legality just in case
-    if(!worldToMap(start_point_x, start_point_y, start_x, start_y))
+    if(!worldToMap(start_point_x, start_point_y, start_x, start_y) || !worldToMap(end_point_x, end_point_y, end_x, end_y))
       return;
-
-    //we'll do our own bounds checking for the end of the window
-    worldToMapNoBounds(start_point_x + w_size_x, start_point_y + w_size_y, end_x, end_y);
-
-    //check end bounds
-    end_x = min(end_x, size_x_);
-    end_y = min(end_y, size_y_);
 
     unsigned int cell_size_x = end_x - start_x;
     unsigned int cell_size_y = end_y - start_y;
@@ -475,6 +474,72 @@ namespace costmap_2d{
       current += size_x_ - (map_ex - map_sx) - 1;
       index += size_x_ - (map_ex - map_sx) - 1;
     }
+  }
+
+  void Costmap2D::updateOrigin(double new_origin_x, double new_origin_y){
+    //project the new origin into the grid
+    int cell_ox, cell_oy;
+    cell_ox = int((new_origin_x - origin_x_) / resolution_);
+    cell_oy = int((new_origin_y - origin_y_) / resolution_);
+
+    //compute the associated world coordinates for the origin cell
+    //beacuase we want to keep things grid-aligned
+    double new_grid_ox, new_grid_oy;
+    new_grid_ox = origin_x_ + cell_ox * resolution_;
+    new_grid_oy = origin_y_ + cell_oy * resolution_;
+
+    //To save casting from unsigned int to int a bunch of times
+    int size_x = size_x_;
+    int size_y = size_y_;
+
+    //we need to compute the overlap of the new and existing windows
+    int lower_left_x, lower_left_y, upper_right_x, upper_right_y;
+    lower_left_x = min(max(cell_ox, 0), size_x);
+    lower_left_y = min(max(cell_oy, 0), size_y);
+    upper_right_x = min(max(cell_ox + size_x, 0), size_x);
+    upper_right_y = min(max(cell_oy + size_y, 0), size_y);
+
+    unsigned int cell_size_x = upper_right_x - lower_left_x;
+    unsigned int cell_size_y = upper_right_y - lower_left_y;
+
+    //we need a map to store the obstacles in the window temporarily
+    unsigned char local_map[cell_size_x * cell_size_y];
+
+    //copy the local window in the costmap to the local map
+    unsigned char* cost_map_cell = &cost_map_[getIndex(lower_left_x, lower_left_y)];
+    unsigned char* local_map_cell = local_map;
+    for(unsigned int y = 0; y < cell_size_y; ++y){
+      for(unsigned int x = 0; x < cell_size_x; ++x){
+        *local_map_cell = *cost_map_cell;
+        local_map_cell++;
+        cost_map_cell++;
+      }
+      cost_map_cell += size_x_ - cell_size_x;
+    }
+
+    //now we'll set the costmap to be completely unknown
+    memset(cost_map_, NO_INFORMATION, size_x_ * size_y_ * sizeof(unsigned char));
+
+    //update the origin with the appropriate world coordinates
+    origin_x_ = new_grid_ox;
+    origin_y_ = new_grid_oy;
+
+    //compute the starting cell location for copying data back in
+    int start_x = lower_left_x - cell_ox;
+    int start_y = lower_left_y - cell_oy;
+
+    //now we want to copy the overlapping information back into the map, but in its new location
+    cost_map_cell = &cost_map_[getIndex(start_x, start_y)];
+    local_map_cell = local_map;
+    for(unsigned int y = 0; y < cell_size_y; ++y){
+      for(unsigned int x = 0; x < cell_size_x; ++x){
+        *cost_map_cell = *local_map_cell;
+        local_map_cell++;
+        cost_map_cell++;
+      }
+      cost_map_cell += size_x_ - cell_size_x;
+    }
+
   }
 
   bool Costmap2D::setConvexPolygonCost(const std::vector<robot_msgs::Point>& polygon, unsigned char cost_value) {

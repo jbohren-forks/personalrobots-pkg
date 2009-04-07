@@ -241,6 +241,14 @@ namespace costmap_2d {
        */
       void convexFillCells(const std::vector<MapLocation>& polygon, std::vector<MapLocation>& polygon_cells);
 
+
+      /**
+       * @brief  Move the origin of the costmap to a new location.... keeping data when it can
+       * @param  new_origin_x The x coordinate of the new origin
+       * @param  new_origin_y The y coordinate of the new origin
+       */
+      void updateOrigin(double new_origin_x, double new_origin_y);
+
     private:
       /**
        * @brief  Given an index of a cell in the costmap, place it into a priority queue for obstacle inflation
@@ -372,7 +380,7 @@ namespace costmap_2d {
        * @param  mx Will be set to the associated map x coordinate
        * @param  my Will be set to the associated map y coordinate
        */
-      void worldToMapNoBounds(double wx, double wy, unsigned int& mx, unsigned int& my) const;
+      void worldToMapNoBounds(double wx, double wy, int& mx, int& my) const;
 
       /**
        * @brief  Takes the max of existing cost and the new cost... keeps static map obstacles from being overridden prematurely

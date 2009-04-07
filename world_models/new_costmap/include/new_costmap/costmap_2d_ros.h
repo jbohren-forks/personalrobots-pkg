@@ -183,6 +183,7 @@ namespace costmap_2d {
 
       std::vector<tf::MessageNotifierBase*> observation_notifiers_; ///< @brief Used to make sure that transforms are available for each sensor
       std::vector<ObservationBuffer*> observation_buffers_; ///< @brief Used to store observations from various sensors
+      bool rolling_window_;
 
   };
 };

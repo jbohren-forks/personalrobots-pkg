@@ -23,12 +23,13 @@
       <param name="costmap/base_scan/expected_update_rate" value="0.2" />
       <param name="costmap/base_scan/data_type" value="LaserScan" />
 
-      <param name="costmap/static_map" value="true" />
+      <param name="costmap/static_map" value="false" />
+      <param name="costmap/rolling_window" value="true" />
 
       <!-- begin only used if static map is set to false -->
-      <param name="costmap/width" value="10.0" />
-      <param name="costmap/height" value="10.0" />
-      <param name="costmap/resolution" value="0.01" />
+      <param name="costmap/width" value="6.0" />
+      <param name="costmap/height" value="6.0" />
+      <param name="costmap/resolution" value="0.025" />
       <param name="costmap/origin_x" value="-5.0" />
       <param name="costmap/origin_y" value="-5.0" />
       <!-- end only used if static map is set to false -->
