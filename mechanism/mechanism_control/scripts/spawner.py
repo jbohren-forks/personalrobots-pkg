@@ -52,7 +52,7 @@ prev_handler = None
 
 def shutdown(sig, stackframe):
     global spawned
-    for name in spawned:
+    for name in reversed(spawned):
         for i in range(3):
             try:
                 rospy.logout("Trying to kill %s" % name)
@@ -71,17 +71,16 @@ if __name__ == '__main__':
         print_usage()
     rospy.init_node('spawner', anonymous=True)
 
+    # Override rospy's signal handling.  We'll invoke rospy's handler after
+    # we're done shutting down.
+    import signal
+    prev_handler = signal.getsignal(signal.SIGINT)
+    signal.signal(signal.SIGINT, shutdown)
+
     for c in range(1,len(sys.argv)):
         f = open(sys.argv[c])
         xml = f.read()
         f.close()
-
-        # Override rospy's signal handling.  We'll invoke rospy's handler after
-        # we're done shutting down.
-        import signal
-        prev_handler = signal.getsignal(signal.SIGINT)
-        signal.signal(signal.SIGINT, shutdown)
-
         resp = spawn_controller(xml)
 
         for r in range(len(resp.ok)):
