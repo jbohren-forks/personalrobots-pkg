@@ -56,7 +56,8 @@
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/OutletPose.h"
-#include "std_msgs/UInt8.h" //for projector status
+#include "robot_msgs/VisualizationMarker.h"
+#include "robot_msgs/Planner2DGoal.h"
 
 
 #include <point_cloud_mapping/geometry/angles.h>
@@ -64,6 +65,8 @@
 #include <point_cloud_mapping/sample_consensus/sac.h>
 #include <point_cloud_mapping/sample_consensus/lmeds.h>
 #include "topic_synchronizer.h"
+#include <tf/transform_listener.h>
+
 
 #include "CvStereoCamModel.h"
 #include "outlet_tuple.h"
@@ -72,6 +75,36 @@
 
 using namespace std;
 using namespace robot_msgs;
+
+
+template <typename T>
+class IndexedIplImage
+{
+public:
+	IplImage* img_;
+	T* p;
+
+	IndexedIplImage(IplImage* img) : img_(img)
+	{
+		p = (T*)img_->imageData;
+	}
+
+	operator IplImage*()
+	{
+		return img_;
+	}
+
+	T at(int x, int y, int chan = 0)
+	{
+		return *(p+y*img_->width+x*img_->nChannels+chan);
+	}
+
+	T integral_sum(const CvRect &r)
+	{
+		return at(r.x+r.width+1,r.y+r.height+1)-at(r.x+r.width+1,r.y)-at(r.x,r.y+r.height+1)+at(r.x,r.y);
+	}
+
+};
 
 class OutletSpotting : public ros::Node
 {
@@ -89,8 +122,9 @@ public:
 	image_msgs::CvBridge dbridge;
 
 	robot_msgs::PointCloud cloud;
+	robot_msgs::PointCloud cloud_topic;
 
-	robot_msgs::OutletPose outlet_bbox;
+	robot_msgs::OutletPose outlet_pose;
 
 	IplImage* left;
 //	IplImage* right;''
@@ -105,11 +139,17 @@ public:
 
 	boost::mutex cv_mutex;
 
+	tf::TransformListener *tf_;
+
+    ros::Time goal_time;
+
 
 	OutletSpotting() : ros::Node("stereo_view"),left(NULL), disp(NULL), disp_clone(NULL),
 		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.05), &OutletSpotting::image_cb_timeout)
 
 	{
+        tf_ = new tf::TransformListener(*this);
+
 
 		param ("~display", display, false);  // 100 points at high resolution
 		param ("~save_patches", save_patches, false);  // 100 points at high resolution
@@ -139,11 +179,17 @@ public:
 		sync.subscribe("stereo/disparity_info", dispinfo, 1);
 		sync.subscribe("stereo/right/cam_info", rcinfo, 1);
 
-		sync.subscribe("stereo/cloud", cloud, 1);
+		sync.subscribe("stereo/cloud", cloud_topic, 1);
 
 		sync.ready();
 
-		advertise<OutletPose>("stereo/outlet_bbox",1);
+		advertise<OutletPose>("stereo/outlet_pose",1);
+        advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
+        advertise<robot_msgs::Planner2DGoal>("goal", 1);
+
+
+        goal_time = ros::Time::now();
+
 	}
 
 	~OutletSpotting()
@@ -474,21 +520,180 @@ public:
 	  return (true);
 	}
 
-
-	bool publishOutletBBox(const CvRect& r)
+	/**
+	 * \brief Finds the nearest point with non-zero disparity
+	 * @param r
+	 * @return
+	 */
+	bool findCenterPoint(IplImage* disp_image, const CvRect& r, CvPoint& p)
 	{
-		vector<int> indices;
+		int dir[][2] = { {1,0}, {0,1}, {-1,0}, {0,-1}};
 
+		int d = 0;
+		int cnt = 1;
+		int i=0;
+		IndexedIplImage<unsigned char> img(disp_image);
+		while (r.x<=p.x && r.y<=p.y && r.x+r.width>p.x && r.y+r.height>p.y) {
+
+			if (img.at(p.x,p.y)!=0) {
+				return true;
+			}
+			p.x += dir[d][0];
+			p.y += dir[d][1];
+			i++;
+			if (i==cnt) {
+				i=0;
+				d = (d+1) %4;
+				if (d%2==0) {
+					cnt++;
+				}
+			}
+		}
+
+		return false;
+	}
+
+
+	bool find3DPoint(const robot_msgs::PointCloud& pc, const CvPoint& p, robot_msgs::Point32& center_point)
+	{
+		int xchan = -1;
+		int ychan = -1;
+
+		for (size_t i=0;i<pc.chan.size();++i) {
+			if (pc.chan[i].name == "x") {
+				xchan = i;
+			}
+			if (pc.chan[i].name == "y") {
+				ychan = i;
+			}
+		}
+
+		if (xchan!=-1 && ychan!=-1) {
+			for (size_t i=0;i<pc.pts.size();++i) {
+				int x = (int)pc.chan[xchan].vals[i];
+				int y = (int)pc.chan[ychan].vals[i];
+				if (x==p.x && y==p.y) {
+					center_point = pc.pts[i];
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+
+
+    /**
+     * \brief Publishes a visualization marker for a point.
+     * @param p
+     */
+    void showPointMarker(robot_msgs::PointStamped p)
+    {
+        robot_msgs::VisualizationMarker marker;
+        marker.header.frame_id = p.header.frame_id;
+        marker.header.stamp = ros::Time((uint64_t)(0ULL));
+        marker.id = 0;
+        marker.type = robot_msgs::VisualizationMarker::SPHERE;
+        marker.action = robot_msgs::VisualizationMarker::ADD;
+
+        marker.x = p.point.x;
+        marker.y = p.point.y;
+        marker.z = p.point.z;
+        marker.yaw = 0.0;
+        marker.pitch = 0.0;
+        marker.roll = 0.0;
+        marker.xScale = 0.1;
+        marker.yScale = 0.1;
+        marker.zScale = 0.1;
+        marker.alpha = 255;
+        marker.r = 0;
+        marker.g = 255;
+        marker.b = 0;
+        publish("visualizationMarker", marker);
+    }
+
+
+
+
+	bool publishOutletPose(const CvRect& r, const CvPoint& p)
+	{
+		CvPoint cp = p;
+		bool found = findCenterPoint(disp, r,cp);
+
+		if (!found) {
+			return false;
+		}
 
 		robot_msgs::PointCloud outlet_cloud = filterPointCloud(r);
-		CvScalar plane = estimatePlaneLS(outlet_cloud);
+//		CvScalar plane = estimatePlaneLS(outlet_cloud);
+		robot_msgs::Point32 center_point;
+		found = find3DPoint(outlet_cloud, cp, center_point);
+		if (!found) {
+			return false;
+		}
 
-		outlet_bbox.header.frame_id = cloud.header.frame_id;
-		outlet_bbox.header.stamp = cloud.header.stamp;
+		outlet_pose.header.frame_id = cloud.header.frame_id;
+		outlet_pose.header.stamp = cloud.header.stamp;
 
-//		outlet_bbox.point
+		outlet_pose.point.x = center_point.x;
+		outlet_pose.point.y = center_point.y;
+		outlet_pose.point.z = center_point.z;
 
-		publish("stereo/outlet_bbox", outlet_bbox);
+//		outlet_pose.vector.x = plane.val[0];
+//		outlet_pose.vector.y = plane.val[1];
+//		outlet_pose.vector.z = plane.val[2];
+
+		publish("stereo/outlet_pose", outlet_pose);
+
+
+		// transform point in base_link
+		PointStamped ps_stereo;
+		ps_stereo.header.frame_id = cloud.header.frame_id;
+		ps_stereo.header.stamp = cloud.header.stamp;
+
+		ps_stereo.point.x = center_point.x;
+		ps_stereo.point.y = center_point.y;
+		ps_stereo.point.z = center_point.z;
+		PointStamped ps_base;
+
+
+        try {
+            tf_->transformPoint("base_link", ps_stereo, ps_base);
+        }
+        catch(tf::LookupException & ex){
+            ROS_ERROR("Lookup exception: %s\n", ex.what());
+        }
+        catch(tf::ExtrapolationException & ex){
+            ROS_DEBUG("Extrapolation exception: %s\n", ex.what());
+        }
+        catch(tf::ConnectivityException & ex){
+            ROS_ERROR("Connectivity exception: %s\n", ex.what());
+        }
+
+        Planner2DGoal goal;
+        goal.header.frame_id = ps_base.header.frame_id;
+        goal.header.stamp = ps_base.header.stamp;
+        goal.goal.x = ps_base.point.x;
+        goal.goal.y = ps_base.point.y;
+        goal.goal.th = 0; // for now
+
+        if ((ros::Time::now()-goal_time).toSec()>2) {
+        	printf("Setting goal: %f, %f, %f\n", goal.goal.x, goal.goal.y, goal.goal.th);
+        	publish("goal", goal);
+            goal_time = ros::Time::now();
+        }
+
+
+
+//        printf("Stereo frame point: (%f,%f,%f), vector: (%f,%f,%f) \n",ps_stereo.point.x,ps_stereo.point.y,ps_stereo.point.z,
+//        		vec_stereo.vector.x,vec_stereo.vector.y,vec_stereo.vector.z);
+//        printf("Base frame point: (%f,%f,%f), vector: (%f,%f,%f) \n",ps_base.point.x,ps_base.point.y,ps_base.point.z,
+//        		vec_base.vector.x,vec_base.vector.y,vec_base.vector.z);
+
+
+        showPointMarker(ps_base);
+
+
 
 		return true;
 	}
@@ -552,8 +757,8 @@ public:
 			// if we made it this far, check the patch to see if it's an outlet
 			IplImage* patch = cvCreateImage(cvSize(bbs[t].width, bbs[t].height), IPL_DEPTH_8U, 1);
 			cvCopyPatch(left,patch, bbs[t]);
-			CvPoint2D32f centers[4];
-			bool found = find_outlet_centroids(patch, centers, 1);
+			CvPoint2D32f centroids[4];
+			bool found = find_outlet_centroids(patch, centroids, 1);
 			cvReleaseImage(&patch);
 
 			if (!found) {
@@ -563,45 +768,13 @@ public:
 			if (save_patches) savePatch(left,bbs[t],"outlet_match");
 
 
-			publishOutletBBox(bbs[t]);
+			publishOutletPose(bbs[t], centers[t]);
 
 			// draw bounding box for now
 			CvPoint pt2 = cvPoint(bbs[t].x+wi,bbs[t].y+hi);
 			cvRectangle(left,pt1,pt2,CV_RGB(0,255,0));
 
 		}
-
-		// wire detection attempt
-//		areaTooSmall = 160;
-//		areaTooLarge = 400;
-//		aspectLimit = 1;
-//		fillFactor = 0;
-//
-//		cvCopy(disp_clone,disp);
-//		cvconnectedDisparityComponents(disp, 1, areaTooSmall*areaTooSmall,
-//				areaTooLarge*areaTooLarge,(float)(aspectLimit)/100.0, fillFactor,
-//				&num, bbs, centers);
-//
-//		for(int t=0; t<num; ++t)
-//		{
-//			CvPoint pt1 = cvPoint(bbs[t].x,bbs[t].y);
-//			int wi = bbs[t].width;
-//			int hi = bbs[t].height;
-//			//			printf("Box %d: w=%d, h=%d\n",t,wi,hi);
-//			double meanDisparity;
-//			double Disp = disparitySTD(disp_clone, bbs[t],vertical,meanDisparity);
-//			//			printf("** STD = %lf, vertical=%d\n",Disp,vertical);
-//			if(Disp < 10) {
-//				continue;
-//			}
-//
-//			if (vertical) {
-//				continue;
-//			}
-//			CvPoint pt2 = cvPoint(bbs[t].x+wi,bbs[t].y+hi);
-//			cvRectangle(left,pt1,pt2,CV_RGB(255,0,0));
-//		}
-
 	}
 
 
@@ -648,12 +821,21 @@ public:
 			}
 		}
 
+		int chan_size = cloud.get_chan_size();
+		result.chan.resize(chan_size);
+		for (int j=0;j<chan_size;++j) {
+			result.chan[j].name = cloud.chan[j].name;
+		}
+
 		if (xchan!=-1 && ychan!=-1) {
 			for (size_t i=0;i<cloud.pts.size();++i) {
 				int x = (int)cloud.chan[xchan].vals[i];
 				int y = (int)cloud.chan[ychan].vals[i];
 				if (x>=rect.x && x<rect.x+rect.width && y>=rect.y && y<rect.y+rect.height) {
 					result.pts.push_back(cloud.pts[i]);
+					for (int j=0;j<chan_size;++j) {
+						result.chan[j].vals.push_back(cloud.chan[j].vals[i]);
+					}
 				}
 			}
 		}
@@ -731,6 +913,8 @@ public:
 			cvCvtScale(dbridge.toIpl(), disp, 4.0/dispinfo.dpp);
 		}
 
+		cloud = cloud_topic;
+
 		detectOutlet();
 
 		if (display) {
@@ -762,7 +946,7 @@ public:
 		if (stinfo.header.stamp != t)
 			printf("Timed out waiting for stereo info\n");
 
-		if (cloud.header.stamp != t)
+		if (cloud_topic.header.stamp != t)
 			printf("Timed out waiting for point cloud\n");
 
 		//Proceed to show images anyways
