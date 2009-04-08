@@ -61,10 +61,10 @@ public:
     frame_id("FRAME_ID_UNINITIALIZED"),
     parent_id("PARENT_ID_UNINITIALIZED"),
     stamp(0.0) {};
-  StampedPose(py::Transform t, double stamp_in, const std::string& frame_id_in):
-    transform(t), frame_id(frame_id_in),
+  StampedPose(py::Transform p, double stamp_in, const std::string& frame_id_in):
+    pose(p), frame_id(frame_id_in),
     parent_id("PARENT_ID_UNINITIALIZED"), stamp(stamp_in)  {};
-  py::Transform transform;
+  py::Transform pose;
   std::string frame_id;
   std::string parent_id;
   double stamp;
@@ -121,53 +121,7 @@ public:
   double stamp;
 };
 
-void StampedQuaternionPytoBt(const StampedQuaternion & in, tf::Stamped<tf::Quaternion>& out)
-{
-  const py::Quaternion & quat_in = in.quaternion;
-  out = tf::Stamped<tf::Quaternion>(tf::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
-                                    ros::Time().fromSec(in.stamp),
-                                    in.frame_id);
-};
-  
-void StampedQuaternionBttoPy(const tf::Stamped<tf::Quaternion>& in, StampedQuaternion& out)
-{
-  const tf::Quaternion & quat_in = in;
-  out = StampedQuaternion(py::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
-                          in.stamp_.toSec(),
-                          in.frame_id_);
-};
 
-void StampedPointPytoBt(const StampedPoint & in, tf::Stamped<tf::Point>& out)
-{
-  const py::Vector3 & point_in = in.point;
-  out = tf::Stamped<tf::Point>(tf::Point(point_in.x(), point_in.y(), point_in.z()),
-                               ros::Time().fromSec(in.stamp),
-                               in.frame_id);
-};
-  
-void StampedPointBttoPy(const tf::Stamped<tf::Point>& in, StampedPoint& out)
-{
-  const tf::Point & point_in = in;
-  out = StampedPoint(py::Vector3(point_in.x(), point_in.y(), point_in.z()),
-                     in.stamp_.toSec(),
-                     in.frame_id_);
-};
-
-void StampedVectorPytoBt(const StampedVector & in, tf::Stamped<tf::Vector3>& out)
-{
-  const py::Vector3 & vector_in = in.vector;
-  out = tf::Stamped<tf::Vector3>(tf::Vector3(vector_in.x(), vector_in.y(), vector_in.z()),
-                               ros::Time().fromSec(in.stamp),
-                               in.frame_id);
-};
-  
-void StampedVectorBttoPy(const tf::Stamped<tf::Vector3>& in, StampedVector& out)
-{
-  const tf::Vector3 & vector_in = in;
-  out = StampedVector(py::Vector3(vector_in.x(), vector_in.y(), vector_in.z()),
-                     in.stamp_.toSec(),
-                     in.frame_id_);
-};
 
 class Transformer
 {
@@ -220,16 +174,7 @@ public:
     tf::Stamped<tf::Transform> tr;
     tf_.lookupTransform(target_frame, source_frame, ros::Time().fromSec(time), tr);
     StampedTransform retval;
-    const tf::Vector3& orig = tr.getOrigin();
-    retval.transform.setOrigin(py::Vector3(orig.x(), orig.y(), orig.z()));
-    
-    const tf::Quaternion& rot = tr.getRotation();
-    retval.transform.setRotation(py::Quaternion(rot.x(), rot.y(), rot.z(), rot.w()));
-
-    retval.frame_id = tr.frame_id_;
-    retval.parent_id = tr.parent_id_;
-    retval.stamp = tr.stamp_.toSec();
-
+    StampedTransformBttoPy(tr, retval);
     return retval;
 
   };
@@ -243,17 +188,7 @@ public:
                         source_frame, ros::Time().fromSec(source_time), 
                         fixed_frame, tr);
     StampedTransform retval;
-
-    const tf::Vector3& orig = tr.getOrigin();
-    retval.transform.setOrigin(py::Vector3(orig.x(), orig.y(), orig.z()));
-    
-    const tf::Quaternion& rot = tr.getRotation();
-    retval.transform.setRotation(py::Quaternion(rot.x(), rot.y(), rot.z(), rot.w()));
-
-    retval.frame_id = tr.frame_id_;
-    retval.parent_id = tr.parent_id_;
-    retval.stamp = tr.stamp_.toSec();
-    
+    StampedTransformBttoPy(tr, retval);
     return retval;
   };
 
@@ -354,6 +289,95 @@ public:
 private:
   tf::Transformer tf_;
 
+void StampedQuaternionPytoBt(const StampedQuaternion & in, tf::Stamped<tf::Quaternion>& out) const
+{
+  const py::Quaternion & quat_in = in.quaternion;
+  out = tf::Stamped<tf::Quaternion>(tf::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
+                                    ros::Time().fromSec(in.stamp),
+                                    in.frame_id);
+};
+  
+void StampedQuaternionBttoPy(const tf::Stamped<tf::Quaternion>& in, StampedQuaternion& out) const
+{
+  const tf::Quaternion & quat_in = in;
+  out = StampedQuaternion(py::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
+                          in.stamp_.toSec(),
+                          in.frame_id_);
+};
+
+void StampedPointPytoBt(const StampedPoint & in, tf::Stamped<tf::Point>& out) const
+{
+  const py::Vector3 & point_in = in.point;
+  out = tf::Stamped<tf::Point>(tf::Point(point_in.x(), point_in.y(), point_in.z()),
+                               ros::Time().fromSec(in.stamp),
+                               in.frame_id);
+};
+  
+void StampedPointBttoPy(const tf::Stamped<tf::Point>& in, StampedPoint& out) const
+{
+  const tf::Point & point_in = in;
+  out = StampedPoint(py::Vector3(point_in.x(), point_in.y(), point_in.z()),
+                     in.stamp_.toSec(),
+                     in.frame_id_);
+};
+
+void StampedVectorPytoBt(const StampedVector & in, tf::Stamped<tf::Vector3>& out) const
+{
+  const py::Vector3 & vector_in = in.vector;
+  out = tf::Stamped<tf::Vector3>(tf::Vector3(vector_in.x(), vector_in.y(), vector_in.z()),
+                               ros::Time().fromSec(in.stamp),
+                               in.frame_id);
+};
+  
+void StampedVectorBttoPy(const tf::Stamped<tf::Vector3>& in, StampedVector& out) const
+{
+  const tf::Vector3 & vector_in = in;
+  out = StampedVector(py::Vector3(vector_in.x(), vector_in.y(), vector_in.z()),
+                     in.stamp_.toSec(),
+                     in.frame_id_);
+};
+
+void StampedPosePytoBt(const StampedPose & in, tf::Stamped<tf::Pose>& out) const
+{
+  const py::Vector3 & point_in = in.pose.getOrigin();
+  const py::Quaternion & quat_in = in.pose.getRotation();
+  out = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
+                                       tf::Point(point_in.x(), point_in.y(), point_in.z())),
+                              ros::Time().fromSec(in.stamp),
+                              in.frame_id);
+};
+
+void StampedPoseBttoPy(const tf::Stamped<tf::Pose>& in, StampedPose& out) const
+{
+  const tf::Vector3 & orig = in.getOrigin();
+  const tf::Quaternion & quat = in.getRotation();
+  out = StampedPose(py::Transform(py::Quaternion(quat.x(), quat.y(), quat.z(), quat.w()), 
+                                  py::Vector3(orig.x(), orig.y(), orig.z())),
+                    in.stamp_.toSec(),
+                    in.frame_id_);
+};
+
+void StampedTransformPytoBt(const StampedTransform & in, tf::Stamped<tf::Transform>& out) const
+{
+  const py::Vector3 & point_in = in.transform.getOrigin();
+  const py::Quaternion & quat_in = in.transform.getRotation();
+  out = tf::Stamped<tf::Transform>(tf::Transform(tf::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
+                                                 tf::Point(point_in.x(), point_in.y(), point_in.z())),
+                                   ros::Time().fromSec(in.stamp),
+                                   in.frame_id, 
+                                   in.parent_id);
+};
+
+void StampedTransformBttoPy(const tf::Stamped<tf::Transform>& in, StampedTransform& out) const
+{
+  const tf::Vector3 & orig = in.getOrigin();
+  const tf::Quaternion & quat = in.getRotation();
+  out = StampedTransform(py::Transform(py::Quaternion(quat.x(), quat.y(), quat.z(), quat.w()), 
+                                       py::Vector3(orig.x(), orig.y(), orig.z())),
+                         in.stamp_.toSec(),
+                         in.frame_id_,
+                         in.parent_id_);
+};
 };
 
 
