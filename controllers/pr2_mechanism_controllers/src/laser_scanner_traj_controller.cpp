@@ -425,7 +425,7 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
 bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_mechanism_controllers::SetPeriodicCmd::Request &req, 
                                                     pr2_mechanism_controllers::SetPeriodicCmd::Response &res)
 {
-  cout << "laser scanner controller: set periodic command" << endl;
+  ROS_INFO("LaserScannerTrajControllerNode: set periodic command");
 
   if (!c_.setPeriodicCmd(req.command))
     return false;
