@@ -84,7 +84,7 @@ class DoorController extends AgentTimeline {
  * This rule fires essentially a TR-style decision tree to select
  * the next action to take. The action choices are(in reverse order):
  * - ReleaseDoor
- * - OpenDoorWithGrasp
+ * - OpenDoor
  * - GraspHandle
  * - MoveBase (x 2)
  * - OpenDoorWithoutGrasp
@@ -159,8 +159,8 @@ DoorController::Holds {
       if(recheck_doorway == false){
 
 	if(have_handle == TRUE) {
-	  // OpenDoorWithGrasp(any, end_bounds] == Active();
-	  starts_before(OpenDoorWithGrasp.Active cmd);
+	  // OpenDoor(any, end_bounds] == Active();
+	  starts_before(OpenDoor.Active cmd);
 	  concurrent(cmd.end, end_bounds);
 	}
 	else {
@@ -307,7 +307,7 @@ ReleaseDoor::Inactive{
   }
 }
 
-OpenDoorWithGrasp::Inactive{
+OpenDoor::Inactive{
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
     eq(dc.last_checked_door, FORCE_DOOR_CHECK);

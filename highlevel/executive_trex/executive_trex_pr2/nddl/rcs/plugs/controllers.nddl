@@ -1,0 +1,23 @@
+// Defines controller requirements for PLUG actions
+
+#include "rcs/controllers.nddl"
+
+RightArmMechanism right_arm_mechanism = new RightArmMechanism(Internal);
+RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(Internal);
+
+DetectPlugOnBase::Active{
+  contained_by(tilt_laser_mechanism.tilt_laser_controller);
+}
+
+SafetyTuckArms::Active{
+  contained_by(right_arm_mechanism.joint_trajectory_controller);
+}
+
+PlugsUntuckArms::Active{
+  contained_by(right_arm_mechanism.joint_trajectory_controller);
+}
+
+MoveAndGraspPlug::Active{
+  contained_by(right_arm_mechanism.cartesian_trajectory_controller);
+  contained_by(right_gripper_mechanism.position_controller);
+}

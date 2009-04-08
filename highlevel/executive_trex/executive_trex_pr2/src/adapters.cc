@@ -352,8 +352,12 @@ namespace TREX {
       }
     }
 
+    /**
+     * The Master Token is an instance of a MechanismController. It has a paramater indicating if it is up or down. The timeline name
+     * should correspond to the actual controller name.
+     */
     void handleMasterToken(const TokenId& master_token, robot_actions::SwitchControllers& msg){
-      if(master_token.isId() && master_token->getPlanDatabase()->getSchema()->isA(master_token->getPredicateName(), "MechanismControllerState.Holds")){
+      if(master_token.isId() && master_token->getPlanDatabase()->getSchema()->isA(master_token->getPredicateName(), "MechanismController.Holds")){
 	ConstrainedVariableId param = master_token->getVariable("is_up");
 	checkError(param.isValid(), "Trying to dispatch controller switch but could find no variable named 'is_up' in token " << master_token->toString() << 
 		   ". This indicates that the model is out of synch with the adapter code.");
@@ -361,19 +365,7 @@ namespace TREX {
 	checkError(param->lastDomain().isSingleton(), "Cannot tell if controller is up or down:" << param->toString() << ". Model should ensure value is bound.");
 
 	bool is_up = (bool) param->lastDomain().getSingletonValue();
-
-	// The controller name is a parameter of the object on which the master is placed
-	checkError(master_token->getObject()->lastDomain().isSingleton(), master_token->getObject()->lastDomain().toString());
-	ObjectId master_object = (ObjectId) master_token->getObject()->lastDomain().getSingletonValue();
-	checkError(master_token->getObject()->lastDomain().isSingleton(), master_token->getObject()->lastDomain().toString());
-
-	std::string master_name = Observation::getTimelineName(master_token).toString();
-	std::string controller_param_name = master_name + ".controller";
-	ConstrainedVariableId controller_sv_id = master_object->getVariable(controller_param_name); // This is ugly
-	checkError(controller_sv_id.isValid(), "No variable named '" << controller_param_name << "' in " << master_object->toLongString());
-	checkError(controller_sv_id->lastDomain().isSingleton(), controller_sv_id->lastDomain().toString());
-	ObjectId controller_id = (ObjectId) controller_sv_id->lastDomain().getSingletonValue();
-	std::string controller_name = controller_id->getName().toString();
+	std::string controller_name = Observation::getTimelineName(master_token).toString();
 
 	if(is_up){
 	  TREX_INFO("ros:debug:dispatching", "Adding " << controller_name << " to the stop list. Current state is:" << param->lastDomain().toString());

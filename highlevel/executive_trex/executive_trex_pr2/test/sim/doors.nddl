@@ -66,7 +66,7 @@ CheckDoorway::Inactive{
 
 // External controllers specific to the door domain
 ReleaseDoor release_door = new ReleaseDoor(Internal);
-OpenDoorWithGrasp open_door = new OpenDoorWithGrasp(Internal);
+OpenDoor open_door = new OpenDoor(Internal);
 GraspHandle grasp_handle = new GraspHandle(Internal);
 OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
 DetectDoor detect_door = new DetectDoor(Internal);

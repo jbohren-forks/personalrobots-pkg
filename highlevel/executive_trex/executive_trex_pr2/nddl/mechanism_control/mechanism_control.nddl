@@ -6,32 +6,25 @@
 /**
  * @brief Track the state (up or down) of a specific controller in mechanism control
  */
-class MechanismControllerState extends AgentTimeline {
-  MechanismController controller;
+class MechanismController extends AgentTimeline {
 
   predicate Holds{
     bool is_up;
-
     defaultOnCommit(is_up, false);
   }
 
-  MechanismControllerState(Mode _mode, MechanismController c){
+  MechanismController(Mode _mode){
     super(_mode, "Holds");
-    controller = c;
   }
 };
 
-/**
- * A controller will oscillate between being up and being down. The transition of
- * state is concurrent with (achieved by) a call to SwitchControllers
- */
-MechanismControllerState::Holds {
-  // State must oscillate between being up and down
-  met_by(Holds p);
-  neq(p.is_up, is_up);
-
+// Same rule expressed for both states
+MechanismController::Holds {
+  // Values oscillate
   meets(Holds s);
-  neq(s.is_up, is_up);
+  met_by(Holds p);
+  neq(is_up, p.is_up);
+  neq(is_up, s.is_up);
 
   // If and only if required, then link to a command. A better way to handle this?
   bool required;
@@ -42,24 +35,83 @@ MechanismControllerState::Holds {
   }
 }
 
-/**
- * The controller must be up while controlling the mechanism
- */
-Mechanism::ControlledBy {
-  equals(MechanismControllerState.Holds mcs);
-  eq(mcs.object.controller, controller);
-  eq(mcs.is_up, true);
+
+// Controller State Variables
+MechanismController base_controller_sv = new MechanismController(Internal);
+MechanismController head_controller_sv = new MechanismController(Internal);
+MechanismController tilt_laser_controller_sv = new MechanismController(Internal);
+MechanismController r_gripper_effort_controller_sv = new MechanismController(Internal);
+MechanismController r_gripper_position_controller_sv = new MechanismController(Internal);
+MechanismController r_arm_joint_trajectory_controller_sv = new MechanismController(Internal);
+MechanismController r_arm_cartesian_trajectory_controller_sv = new MechanismController(Internal);
+MechanismController r_arm_cartesian_twist_controller_sv = new MechanismController(Internal);
+MechanismController r_arm_cartesian_wrench_controller_sv = new MechanismController(Internal);
+MechanismController r_arm_cartesian_pose_controller_sv = new MechanismController(Internal);
+MechanismController r_arm_cartesian_tff_controller_sv = new MechanismController(Internal);
+
+BaseMechanism::base_controller{ 
+  equals(base_controller_sv.Holds c);
+  eq(c.is_up, true);
 }
 
-// Controller State variables
-MechanismControllerState head_controller_sv = new MechanismControllerState(Internal, head_controller);
-MechanismControllerState laser_tilt_controller_sv = new MechanismControllerState(Internal, laser_tilt_controller);
-MechanismControllerState gripper_effort_sv = new MechanismControllerState(Internal, gripper_effort);
-MechanismControllerState cartesian_trajectory_right_sv = new MechanismControllerState(Internal, cartesian_trajectory_right);
-MechanismControllerState cartesian_tff_right_sv = new MechanismControllerState(Internal, cartesian_tff_right);
-MechanismControllerState base_controller_sv = new MechanismControllerState(Internal, base_controller);
+HeadMechanism::head_controller{ 
+  equals(head_controller_sv.Holds c);
+  eq(c.is_up, true);
+}
 
-Assembly assembly = new Assembly(Internal);
+TiltLaserMechanism::tilt_laser_controller{ 
+  equals(tilt_laser_controller_sv.Holds c);
+  eq(c.is_up, true);
+}
+
+RightArmMechanism::composite_cartesian_controller{
+  equals(r_arm_cartesian_wrench_controller_sv.Holds c0);
+  eq(c0.is_up, true);
+  equals(r_arm_cartesian_twist_controller_sv.Holds c1);
+  eq(c1.is_up, true);
+  equals(r_arm_cartesian_pose_controller_sv.Holds c2);
+  eq(c2.is_up, true);
+  equals(r_arm_cartesian_trajectory_controller_sv.Holds c3);
+  eq(c3.is_up, true);
+}
+
+RightArmMechanism::composite_tff_controller{
+  equals(r_arm_cartesian_wrench_controller_sv.Holds c0);
+  eq(c0.is_up, true);
+  equals(r_arm_cartesian_twist_controller_sv.Holds c1);
+  eq(c1.is_up, true);
+  equals(r_arm_cartesian_pose_controller_sv.Holds c2);
+  eq(c2.is_up, true);
+  equals(r_arm_cartesian_tff_controller_sv.Holds c3);
+  eq(c3.is_up, true);
+}
+
+RightArmMechanism::joint_trajectory_controller{
+  equals(r_arm_joint_trajectory_controller_sv.Holds c);
+  eq(c.is_up, true);
+}
+
+RightArmMechanism::cartesian_trajectory_controller{
+  equals(r_arm_cartesian_trajectory_controller_sv.Holds c);
+  eq(c.is_up, true);
+}
+
+RightGripperMechanism::gripper_effort_controller{
+  equals(r_gripper_effort_controller_sv.Holds c);
+  eq(c.is_up, true);
+}
+
+RightGripperMechanism::gripper_position_controller{
+  equals(r_gripper_position_controller_sv.Holds c);
+  eq(c.is_up, true);
+}
 
 // Swap Command
 SwitchControllers switch_controllers = new SwitchControllers(External);
+
+// Actual mechanisms
+BaseMechanism base_mechanism = new BaseMechanism(Internal);
+HeadMechanism head_mechanism = new HeadMechanism(Internal);
+TiltLaserMechanism tilt_laser_mechanism = new TiltLaserMechanism(Internal);
+RightArmMechanism right_arm_mechanism = new RightArmMechanism(Internal);
+RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(Internal);

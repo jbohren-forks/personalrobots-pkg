@@ -1,13 +1,26 @@
 #include "rcs/controllers.nddl"
 
+RightArmMechanism right_arm_mechanism = new RightArmMechanism(Internal);
+RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(Internal);
+
 DetectDoor::Active{
-  contained_by(assembly.tilt_scanner.ControlledBy c0);
-  eq(c0.controller, laser_tilt_controller);
+  contained_by(tilt_laser_mechanism.tilt_laser_controller);
 }
 
 DetectHandle::Active{
-  contained_by(assembly.tilt_scanner.ControlledBy c0);
-  eq(c0.controller, laser_tilt_controller);
+  contained_by(tilt_laser_mechanism.tilt_laser_controller);
+  contained_by(head_mechanism.head_controller);
 }
+
+GraspHandle::Active{
+  contained_by(right_arm_mechanism.composite_cartesian_controller);
+  contained_by(right_gripper_mechanism.gripper_effort_controller);
+}
+
+OpenDoor::Active{
+  contained_by(right_arm_mechanism.composite_tff_controller);
+  contained_by(right_gripper_mechanism.gripper_effort_controller);
+}
+
 
 // Remainder TBD

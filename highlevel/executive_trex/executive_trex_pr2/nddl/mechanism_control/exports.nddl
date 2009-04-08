@@ -2,56 +2,44 @@
 /**
  * @brief Structure for Mechanism Controllers. We can type them if we wish
  */
-class MechanismController {
-  MechanismController(){}
-};
-
-/**
- * @brief A mechanism can be controlled by at most one controller at a time. Some mechanisms
- * may require exactly one controller at all times. Others may do without control. We may also want
- * to express a specific subset of controllers that are applicable for a given mechanism.
- */
 class Mechanism extends AgentTimeline {
 
-  predicate Uncontrolled {}
-
-  predicate ControlledBy{
-    MechanismController controller;
-  }
+  predicate uncontrolled {}
 
   Mechanism(Mode _mode){
-    super(_mode, "Uncontrolled");
+    super(_mode, "uncontrolled");
   }
 };
 
-/**
- * This file defines all controllers used in mechanism control.
- */
-MechanismController head_controller = new MechanismController();
-MechanismController laser_tilt_controller = new MechanismController();
-MechanismController gripper_effort = new MechanismController();
-MechanismController cartesian_trajectory_right = new MechanismController();
-MechanismController cartesian_tff_right = new MechanismController();
-MechanismController base_controller = new MechanismController();
+/**********************************************
+ * Mechanisms and their controllers
+ *********************************************/
 
+class BaseMechanism extends Mechanism {
+  predicate base_controller{}
+  BaseMechanism(Mode _mode){ super(_mode); }
+};
 
-/**
- * The Assembly combines all mechanisms for the PR2. It allows a single point of declaration an instances
- * can be created as external or internal.
- */
-class Assembly {
-  // Mechanisms
-  Mechanism head;
-  Mechanism tilt_scanner;
-  Mechanism right_arm;
-  Mechanism right_gripper;
-  Mechanism base;
+class HeadMechanism extends Mechanism {
+  predicate head_controller{}
+  HeadMechanism(Mode _mode){ super(_mode); }
+};
 
-  Assembly(Mode _mode){
-    head = new Mechanism(_mode);
-    tilt_scanner = new Mechanism(_mode);
-    right_arm = new Mechanism(_mode);
-    right_gripper = new Mechanism(_mode);
-    base = new Mechanism(_mode);
-  }
+class RightArmMechanism extends Mechanism {
+  predicate cartesian_trajectory_controller{}
+  predicate joint_trajectory_controller{}
+  predicate composite_cartesian_controller{}
+  predicate composite_tff_controller{}
+  RightArmMechanism(Mode _mode){ super(_mode); }
+};
+
+class RightGripperMechanism extends Mechanism {
+  predicate gripper_position_controller{}
+  predicate gripper_effort_controller{}
+  RightGripperMechanism(Mode _mode){ super(_mode); }
+};
+
+class TiltLaserMechanism extends Mechanism {
+  predicate tilt_laser_controller{}
+  TiltLaserMechanism(Mode _mode){ super(_mode); }
 };

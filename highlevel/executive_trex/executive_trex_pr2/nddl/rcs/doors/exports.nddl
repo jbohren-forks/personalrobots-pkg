@@ -125,13 +125,13 @@ class GraspHandle extends DoorManipulationBehavior {
 /**
  * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
  */
-class OpenDoorWithGrasp extends DoorManipulationBehavior {
+class OpenDoor extends DoorManipulationBehavior {
 
   // Redeclare because of bug in parser
   predicate Active{}
   predicate Inactive{}
 
-  OpenDoorWithGrasp(Mode _mode){
+  OpenDoor(Mode _mode){
     super(_mode);
   }
 };
