@@ -44,6 +44,26 @@ public:
     frame_id("FRAME_ID_UNINITIALIZED"),
     parent_id("PARENT_ID_UNINITIALIZED"),
     stamp(0.0) {};
+  StampedTransform(py::Transform t, double stamp_in, const std::string& frame_id_in, const std::string& parent_id_in):
+    transform(t), frame_id(frame_id_in),
+    parent_id(parent_id_in), stamp(stamp_in)  {};
+  py::Transform transform;
+  std::string frame_id;
+  std::string parent_id;
+  double stamp;
+};
+
+/**\brief The swig interface data type */
+class StampedPose
+{
+public:
+  StampedPose():
+    frame_id("FRAME_ID_UNINITIALIZED"),
+    parent_id("PARENT_ID_UNINITIALIZED"),
+    stamp(0.0) {};
+  StampedPose(py::Transform t, double stamp_in, const std::string& frame_id_in):
+    transform(t), frame_id(frame_id_in),
+    parent_id("PARENT_ID_UNINITIALIZED"), stamp(stamp_in)  {};
   py::Transform transform;
   std::string frame_id;
   std::string parent_id;
@@ -58,6 +78,9 @@ public:
     frame_id("FRAME_ID_UNINITIALIZED"),
     parent_id("PARENT_ID_UNINITIALIZED"),
     stamp(0.0) {};
+  StampedPoint(py::Vector3 p, double stamp_in, const std::string& frame_id_in):
+    point(p), frame_id(frame_id_in),
+    parent_id("PARENT_ID_UNINITIALIZED"), stamp(stamp_in)  {};
   py::Vector3 point;
   std::string frame_id;
   std::string parent_id;
@@ -72,6 +95,9 @@ public:
     frame_id("FRAME_ID_UNINITIALIZED"),
     parent_id("PARENT_ID_UNINITIALIZED"),
     stamp(0.0) {};
+  StampedVector(py::Vector3 p, double stamp_in, const std::string& frame_id_in):
+    vector(p), frame_id(frame_id_in),
+    parent_id("PARENT_ID_UNINITIALIZED"), stamp(stamp_in)  {};
   py::Vector3 vector;
   std::string frame_id;
   std::string parent_id;
@@ -86,13 +112,62 @@ public:
     frame_id("FRAME_ID_UNINITIALIZED"),
     parent_id("PARENT_ID_UNINITIALIZED"),
     stamp(0.0) {};
+  StampedQuaternion(py::Quaternion q, double stamp_in, const std::string& frame_id_in):
+    quaternion(q), frame_id(frame_id_in),
+    parent_id("PARENT_ID_UNINITIALIZED"), stamp(stamp_in)  {};
   py::Quaternion quaternion;
   std::string frame_id;
   std::string parent_id;
   double stamp;
 };
 
+void StampedQuaternionPytoBt(const StampedQuaternion & in, tf::Stamped<tf::Quaternion>& out)
+{
+  const py::Quaternion & quat_in = in.quaternion;
+  out = tf::Stamped<tf::Quaternion>(tf::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
+                                    ros::Time().fromSec(in.stamp),
+                                    in.frame_id);
+};
+  
+void StampedQuaternionBttoPy(const tf::Stamped<tf::Quaternion>& in, StampedQuaternion& out)
+{
+  const tf::Quaternion & quat_in = in;
+  out = StampedQuaternion(py::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
+                          in.stamp_.toSec(),
+                          in.frame_id_);
+};
 
+void StampedPointPytoBt(const StampedPoint & in, tf::Stamped<tf::Point>& out)
+{
+  const py::Vector3 & point_in = in.point;
+  out = tf::Stamped<tf::Point>(tf::Point(point_in.x(), point_in.y(), point_in.z()),
+                               ros::Time().fromSec(in.stamp),
+                               in.frame_id);
+};
+  
+void StampedPointBttoPy(const tf::Stamped<tf::Point>& in, StampedPoint& out)
+{
+  const tf::Point & point_in = in;
+  out = StampedPoint(py::Vector3(point_in.x(), point_in.y(), point_in.z()),
+                     in.stamp_.toSec(),
+                     in.frame_id_);
+};
+
+void StampedVectorPytoBt(const StampedVector & in, tf::Stamped<tf::Vector3>& out)
+{
+  const py::Vector3 & vector_in = in.vector;
+  out = tf::Stamped<tf::Vector3>(tf::Vector3(vector_in.x(), vector_in.y(), vector_in.z()),
+                               ros::Time().fromSec(in.stamp),
+                               in.frame_id);
+};
+  
+void StampedVectorBttoPy(const tf::Stamped<tf::Vector3>& in, StampedVector& out)
+{
+  const tf::Vector3 & vector_in = in;
+  out = StampedVector(py::Vector3(vector_in.x(), vector_in.y(), vector_in.z()),
+                     in.stamp_.toSec(),
+                     in.frame_id_);
+};
 
 class Transformer
 {
@@ -103,7 +178,7 @@ public:
    * 
    */
   Transformer(bool interpolating = true, 
-                ros::Duration cache_time = ros::Duration(10.0)):
+              ros::Duration cache_time = ros::Duration(10.0)):
     tf_(interpolating, cache_time){;};
   virtual ~Transformer(void){;};
   
@@ -123,9 +198,9 @@ public:
                                                           btVector3(orig.getX(),
                                                                     orig.getX(),
                                                                     orig.getZ())),
-                                                          ros::Time().fromSec(transform.stamp),
-                                                          transform.frame_id,
-                                                          transform.parent_id));
+                                              ros::Time().fromSec(transform.stamp),
+                                              transform.frame_id,
+                                              transform.parent_id));
   };
 
 
@@ -140,14 +215,16 @@ public:
    * TransformReference::MaxDepthException
    */
   StampedTransform getTransform(const std::string& target_frame, const std::string& source_frame, 
-                       double time)
+                                double time)
   {
     tf::Stamped<tf::Transform> tr;
     tf_.lookupTransform(target_frame, source_frame, ros::Time().fromSec(time), tr);
     StampedTransform retval;
-    retval.transform.setOrigin(py::Vector3(tr.getOrigin().x(), tr.getOrigin().y(), tr.getOrigin().z()));
+    const tf::Vector3& orig = tr.getOrigin();
+    retval.transform.setOrigin(py::Vector3(orig.x(), orig.y(), orig.z()));
     
-    retval.transform.setRotation(py::Quaternion(tr.getRotation().x(), tr.getRotation().y(), tr.getRotation().z(), tr.getRotation().w()));
+    const tf::Quaternion& rot = tr.getRotation();
+    retval.transform.setRotation(py::Quaternion(rot.x(), rot.y(), rot.z(), rot.w()));
 
     retval.frame_id = tr.frame_id_;
     retval.parent_id = tr.parent_id_;
@@ -156,20 +233,23 @@ public:
     return retval;
 
   };
-    //time traveling version
+  //time traveling version
   StampedTransform getTransform(const std::string& target_frame, double target_time, 
-                       const std::string& source_frame, double source_time, 
-                       const std::string& fixed_frame)
+                                const std::string& source_frame, double source_time, 
+                                const std::string& fixed_frame)
   {
     tf::Stamped<tf::Transform> tr;
     tf_.lookupTransform(target_frame, ros::Time().fromSec(target_time),
                         source_frame, ros::Time().fromSec(source_time), 
                         fixed_frame, tr);
     StampedTransform retval;
-    retval.transform.setOrigin(py::Vector3(tr.getOrigin().x(), tr.getOrigin().y(), tr.getOrigin().z()));
+
+    const tf::Vector3& orig = tr.getOrigin();
+    retval.transform.setOrigin(py::Vector3(orig.x(), orig.y(), orig.z()));
     
-    retval.transform.setRotation(py::Quaternion(tr.getRotation().x(), tr.getRotation().y(), tr.getRotation().z(), tr.getRotation().w()));
-    
+    const tf::Quaternion& rot = tr.getRotation();
+    retval.transform.setRotation(py::Quaternion(rot.x(), rot.y(), rot.z(), rot.w()));
+
     retval.frame_id = tr.frame_id_;
     retval.parent_id = tr.parent_id_;
     retval.stamp = tr.stamp_.toSec();
@@ -185,12 +265,12 @@ public:
     return tf_.canTransform(target_frame, source_frame, ros::Time().fromSec(time));};
   //time traveling version
   bool canTransform(const std::string& target_frame, double target_time, 
-                       const std::string& source_frame, double source_time, 
-                       const std::string& fixed_frame)
+                    const std::string& source_frame, double source_time, 
+                    const std::string& fixed_frame)
   {
     return tf_.canTransform(target_frame, ros::Time().fromSec(target_time),
-                        source_frame, ros::Time().fromSec(source_time),
-                        fixed_frame);
+                            source_frame, ros::Time().fromSec(source_time),
+                            fixed_frame);
   };
                        
   /**@brief Return the latest rostime which is common across the spanning set 
@@ -226,7 +306,50 @@ public:
    * \param distance How far to extrapolate before throwing an exception
    * default is zero */
   void setExtrapolationLimit(const double seconds)
-  {tf_.setExtrapolationLimit(ros::Duration().fromSec(seconds));};
+  {
+    tf_.setExtrapolationLimit(ros::Duration().fromSec(seconds));
+  };
+
+  /** \brief Transform a Stamped Quaternion into the target frame */
+  void transformQuaternion(const std::string& target_frame, const StampedQuaternion& stamped_in, StampedQuaternion& stamped_out) const
+  {
+    tf::Stamped<tf::Quaternion> temp_output, temp_input;
+    StampedQuaternionPytoBt(stamped_in, temp_input);
+    tf_.transformQuaternion(target_frame, 
+                            temp_input,
+                            temp_output);
+    StampedQuaternionBttoPy(temp_output, stamped_out);
+                            
+  };
+  /** \brief Transform a Stamped Vector3 into the target frame */
+  //  void transformVector(const std::string& target_frame, const Stamped<tf::Vector3>& stamped_in, Stamped<tf::Vector3>& stamped_out) const;
+  /** \brief Transform a Stamped Point into the target frame */
+  //void transformPoint(const std::string& target_frame, const Stamped<tf::Point>& stamped_in, Stamped<tf::Point>& stamped_out) const;
+  /** \brief Transform a Stamped Pose into the target frame */
+  //void transformPose(const std::string& target_frame, const Stamped<tf::Pose>& stamped_in, Stamped<tf::Pose>& stamped_out) const;
+
+  /** \brief Transform a Stamped Quaternion into the target frame 
+      void transformQuaternion(const std::string& target_frame, const ros::Time& target_time, 
+      const Stamped<tf::Quaternion>& stamped_in, 
+      const std::string& fixed_frame, 
+      Stamped<tf::Quaternion>& stamped_out) const;*/
+  /** \brief Transform a Stamped Vector3 into the target frame 
+      void transformVector(const std::string& target_frame, const ros::Time& target_time, 
+      const Stamped<tf::Vector3>& stamped_in, 
+      const std::string& fixed_frame, 
+      Stamped<tf::Vector3>& stamped_out) const;*/
+  /** \brief Transform a Stamped Point into the target frame 
+   * \todo document
+   void transformPoint(const std::string& target_frame, const ros::Time& target_time, 
+   const Stamped<tf::Point>& stamped_in, 
+   const std::string& fixed_frame, 
+   Stamped<tf::Point>& stamped_out) const;*/
+  /** \brief Transform a Stamped Pose into the target frame 
+   * \todo document
+   void transformPose(const std::string& target_frame, const ros::Time& target_time, 
+   const Stamped<tf::Pose>& stamped_in, 
+   const std::string& fixed_frame,
+   Stamped<tf::Pose>& stamped_out) const;*/
 
 private:
   tf::Transformer tf_;
