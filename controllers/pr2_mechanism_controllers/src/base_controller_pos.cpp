@@ -63,8 +63,8 @@ BaseControllerPos::BaseControllerPos() : num_wheels_(0), num_casters_(0)
    max_accel_.y = 0.1;
    max_accel_.z = 0.1;
 
-   max_acceleration_ = 15.0;
-   max_dirn_change_rate_ = 15.0;
+   max_acceleration_ = 2.0;
+   max_dirn_change_rate_ = 4.0;
 
    cmd_vel_.x = 0;
    cmd_vel_.y = 0;
@@ -208,7 +208,7 @@ void BaseControllerPos::init(std::vector<JointControlParam> jcp, mechanism::Robo
 
          base_casters_[num_casters_].name_ = std::string(" ");
          base_casters_[num_casters_].name_ = std::string(joint_name);
-
+         error_steer_angle_.push_back(0.0);
          num_casters_++;
       }
       if(joint_name.find("wheel") != string::npos)
@@ -502,7 +502,7 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
    double new_cmd_mag = sqrt(new_cmd.x*new_cmd.x+new_cmd.y*new_cmd.y+new_cmd.z*new_cmd.z);
    libTF::Vector new_vel_direction;
    double dot_direction(0), delta_direction(0), delta_direction_m_pi(0);
-   double epsilon_direction_difference(0.2);
+   double epsilon_direction_difference(0.01);
    if(max_rate.x > EPS)
       dt_min_x = fabs(new_cmd.x-cmd_vel_.x)/max_rate.x;
    if(max_rate.y > EPS)
@@ -541,6 +541,15 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
      } 
      if(fabs(cmd_vel_magnitude_) < EPS)
      {
+/*       for(int i=0; i < num_casters_; i++)
+       {
+         if(fabs(angles::normalize_angle(error_steer_angle_[i])) > epsilon_direction_difference)
+         {
+           new_cmd_mag = 0.0;
+           break;
+         }
+       }
+*/
        if(fabs(new_vel_direction.x - cmd_vel_direction_.x) > epsilon_direction_difference || fabs(new_vel_direction.y - cmd_vel_direction_.y) >  epsilon_direction_difference  || fabs(new_vel_direction.z - cmd_vel_direction_.z) >  epsilon_direction_difference)
        {
          new_cmd_mag = 0.0;
@@ -642,6 +651,8 @@ void BaseControllerPos::computeDesiredCasterSteer(double current_sample_time, do
 
     error_steer_dt = angles::shortest_angular_distance(steer_angle_desired_dt, steer_angle_actual_[i]);
     error_steer_m_pi_dt = angles::shortest_angular_distance(steer_angle_desired_m_pi_dt, steer_angle_actual_[i]);
+
+    error_steer_angle_[i] = error_steer;
 
 /*    if(fabs(error_steer_m_pi) < fabs(error_steer))
     {

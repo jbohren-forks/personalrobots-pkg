@@ -103,7 +103,7 @@ bool WholeBodyTrajectoryController::initXml(mechanism::RobotState * robot, TiXml
         joint_name_.push_back(joint_name);        
 
         double velocity_limit = atof(pj->Attribute("limit"));
-        joint_velocity_limits_.push_back(velocity_limit);
+        joint_velocity_limits_.push_back(velocity_limit*velocity_scaling_factor_);
 
         if(static_cast<std::string>(pj->Attribute("type")) == std::string("ROTARY_CONTINUOUS"))
         {
@@ -415,7 +415,7 @@ void WholeBodyTrajectoryController::updateBaseController(double time)
       error = current_joint_position_[joint_index] - joint_cmd_rt_[joint_index];
     }
     error_dot = current_joint_velocity_[joint_index] - joint_cmd_dot_rt_[joint_index];      
-    cmd[i] = base_pid_controller_[i].updatePid(error, error_dot, time - last_time_);
+    cmd[i] = base_pid_controller_[i].updatePid(error, time - last_time_);
     cmd[i] += joint_cmd_dot_rt_[joint_index];
     if(i == 2)
     {
@@ -428,7 +428,8 @@ void WholeBodyTrajectoryController::updateBaseController(double time)
   double vy = -cmd[0]*sin(theta) + cmd[1]*cos(theta);
   double vw = cmd[2];
 
-  base_controller_node_.setCommand(vx,vy,vw);
+  if(active_)
+    base_controller_node_.setCommand(vx,vy,vw);
 //  base_controller_node_.setCommand(0.0,0.0,0.0);
 
 }
@@ -469,6 +470,7 @@ bool WholeBodyTrajectoryController::reachedGoalPosition(std::vector<double> join
 
 void WholeBodyTrajectoryController::updateJointControllers(void)
 {
+
   for(unsigned int i=0;i<joint_pv_controllers_.size();++i)
     joint_pv_controllers_[i]->update();
 
@@ -504,6 +506,8 @@ ROS_REGISTER_CONTROLLER(WholeBodyTrajectoryControllerNode)
   std::cout<<"Controller node created"<<endl;
   c_ = new WholeBodyTrajectoryController();
   diagnostics_publisher_ = NULL;
+
+  c_->active_ = false;
 }
 
 WholeBodyTrajectoryControllerNode::~WholeBodyTrajectoryControllerNode()
@@ -527,11 +531,14 @@ WholeBodyTrajectoryControllerNode::~WholeBodyTrajectoryControllerNode()
     std::cout << "unsub arm controller" << topic_name_ << std::endl;
     node_->unsubscribe(topic_name_);
   }
+
+  node_->unsubscribe("whole_body_trajectory_controller/activate");
   delete c_;
 }
 
 void WholeBodyTrajectoryControllerNode::update()
 {
+
   c_->updateJointValues();
 
   if(c_->trajectory_done_)
@@ -550,7 +557,12 @@ void WholeBodyTrajectoryControllerNode::update()
     publishDiagnostics();
     last_diagnostics_publish_time_ = c_->current_time_;
   }
+}
 
+void WholeBodyTrajectoryControllerNode::activate()
+{
+  c_->active_ = true;
+  c_->stopMotion(); //sets all the desired joint values to their current values - prevents PID gains from building up on activation
 }
 
 void WholeBodyTrajectoryControllerNode::updateTrajectoryQueue(int last_trajectory_finish_status)
@@ -587,7 +599,7 @@ bool WholeBodyTrajectoryControllerNode::initXml(mechanism::RobotState * robot, T
   double scale;
   node_->param<double>(service_prefix_ + "/velocity_scaling_factor",scale,0.25);
   node_->param<double>(service_prefix_ + "/trajectory_wait_timeout",trajectory_wait_timeout_,10.0);
-  node_->param<double>(service_prefix_ + "/trajectory_update_timeout",c_->max_allowed_update_time_,0.1);
+  node_->param<double>(service_prefix_ + "/trajectory_update_timeout",c_->max_allowed_update_time_,0.2);
 
   c_->velocity_scaling_factor_ = std::min(1.0,std::max(0.0,scale));
 
@@ -616,8 +628,9 @@ bool WholeBodyTrajectoryControllerNode::initXml(mechanism::RobotState * robot, T
       ROS_INFO("Listening to topic: %s",topic_name_.c_str());
     }
 
-    getJointTrajectoryThresholds();
+    node_->subscribe("whole_body_trajectory_controller/activate",activate_msg_,&WholeBodyTrajectoryControllerNode::activate,this,1);
 
+    getJointTrajectoryThresholds();
 
     if (c_->controller_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
       delete c_->controller_state_publisher_ ;
