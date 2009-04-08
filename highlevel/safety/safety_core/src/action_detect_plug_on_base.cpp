@@ -58,7 +58,7 @@ DetectPlugOnBaseAction::~DetectPlugOnBaseAction()
 void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
 {
   reset();
-  node_.param(action_name_ + "/tilt_laser_controller", laser_controller_, laser_controller_);
+  node_.param(action_name_ + "/laser_tilt_controller", laser_controller_, laser_controller_);
   
   if(laser_controller_ == "")
   {
@@ -70,7 +70,7 @@ void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
   
   notifyActivated();
   
-  #if 1
+ 
   if (!ros::service::call(laser_controller_ + "/set_periodic_cmd", req_laser_, res_laser_))
   {
     if (request_preempt_)
@@ -87,8 +87,7 @@ void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
     }
     return;
   }
-  #endif
-
+ 
   detector_->activate();
 
   return;

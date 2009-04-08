@@ -69,7 +69,7 @@ int main(int argc, char** argv)
   runner.run();
   
   //detect.handleActivate(empty);
-  tuck_arms.handleActivate(empty);
+  //tuck_arms.handleActivate(empty);
   node.spin();
   return 0;
 }
