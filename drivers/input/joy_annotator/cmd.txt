@@ -1,3 +1,4 @@
 1 detect_door
+2 open_door
 1234 testtest
 12 test
