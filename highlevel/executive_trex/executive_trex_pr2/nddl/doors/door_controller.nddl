@@ -37,6 +37,35 @@ class DoorController extends AgentTimeline {
     float target_x;
     float target_y;
     float target_th;
+
+    // Door state
+    string frame_id;
+
+    // Points for the door frame
+    float frame_p1_x;
+    float frame_p1_y;
+    float frame_p1_z;
+    float frame_p2_x;
+    float frame_p2_y;
+    float frame_p2_z;
+
+    // Additional Frame information
+    float height;
+    HINGE_FRAME hinge;
+    ROTATION_DIRECTION rot_dir;
+
+    // Points for the door
+    float door_p1_x;
+    float door_p1_y;
+    float door_p1_z;
+    float door_p2_x;
+    float door_p2_y;
+    float door_p2_z;
+
+    // Handle data
+    float handle_x;
+    float handle_y;
+    float handle_z;
   }
 
   DoorController(Mode _mode){
@@ -69,17 +98,6 @@ class DoorController extends AgentTimeline {
  * completion of the command should also bring about a completion of the given control step
  */
 DoorController::Holds {
-  // We will assume default values on commitment based on predecessor. We really want these values to be bound. These values carry
-  // forward from priors as they are updated by actions and we thus assume inertia
-  met_by(Holds p);
-  defaultOnCommit(active, p.active);
-  defaultOnCommit(found_door, p.found_door);
-  defaultOnCommit(found_handle, p.found_handle);
-  defaultOnCommit(have_handle, p.have_handle);
-  defaultOnCommit(door_latched, p.door_latched);
-  defaultOnCommit(doorway_clear, p.doorway_clear);
-  defaultOnCommit(last_checked_door, p.last_checked_door);
-
 
   // Bind values for inactive case
   if(active == false){
@@ -94,11 +112,11 @@ DoorController::Holds {
 
   // If we are active, then we must evaluate different states based on current base, door , and handle state
   if(active == true){
+    // Target data derived from move behavior
     contained_by(MoveBehavior.Active mb_active);
     eq(target_x, mb_active.x);
     eq(target_y, mb_active.y);
     eq(target_th, mb_active.th);
-
     // The end bound defined here provides a margin of error around the connection between the end time of the
     // command issued here, and the end time of the control step.
     int end_bounds;
@@ -152,15 +170,9 @@ DoorController::Holds {
 	  temporalDistance(start, [1 +inf], bs.end);
 
 	  if(found_handle == true){
-	    // Get the door state to compute positions
-	    // DoorState.Holds ds = door_state(start);
-	    any(DoorState.Holds ds);
-	    precedes(ds.start, start);
-	    temporalDistance(start, [1 +inf], ds.end);
-
 	    // Are we in a grasp position? Now is a good time to find out. We use the available door state message
 	    float grasp_x, grasp_y, grasp_th;
-	    door_get_robot_pose_for_door(grasp_x, grasp_y, grasp_th, ds.door_p1_x, ds.door_p1_y, ds.door_p2_x, ds.door_p2_y, GRASP_RANGE);
+	    door_get_robot_pose_for_door(grasp_x, grasp_y, grasp_th, door_p1_x, door_p1_y, door_p2_x, door_p2_y, GRASP_RANGE);
 
 	    // @todo We should probably treat position and orientation seperately for tolerances
 	    float distanceAway;
@@ -196,12 +208,10 @@ DoorController::Holds {
 	      // If we have not found the door, then we need to get the data from the topological map in order to locate the door
 	      map_get_doorway_from_points(door_id, bs.x, bs.y, target_x, target_y);
 
-
 	      // Read data from the topological map
-	      any(DoorState.Holds ds);
-	      map_get_door_state(ds.state, door_id);
+	      map_get_door_state(this.state, door_id);
 	      float detect_x, detect_y, detect_th;
-	      door_get_robot_pose_for_door(detect_x, detect_y, detect_th, ds.frame_p1_x, ds.frame_p1_y, ds.frame_p2_x, ds.frame_p2_y, DETECTION_RANGE);
+	      door_get_robot_pose_for_door(detect_x, detect_y, detect_th, frame_p1_x, frame_p1_y, frame_p2_x, frame_p2_y, DETECTION_RANGE);
 	      float distanceAway;
 	      calcDistance(distanceAway, bs.x, bs.y, bs.th, detect_x, detect_y, detect_th);
 	      testLEQ(in_detection_position, distanceAway, DETECTION_POSITION_ERROR);
@@ -228,166 +238,114 @@ DoorController::Holds {
   }
 }
 
+/**
+ * Defines update rule for default values
+ */
+DoorController::Holds{
+  // We will assume default values on commitment based on predecessor. We really want these values to be bound. These values carry
+  // forward from priors as they are updated by actions and we thus assume inertia
+  met_by(Holds p);
+  defaultOnCommit(active, p.active);
+  defaultOnCommit(found_door, p.found_door);
+  defaultOnCommit(found_handle, p.found_handle);
+  defaultOnCommit(have_handle, p.have_handle);
+  defaultOnCommit(door_latched, p.door_latched);
+  defaultOnCommit(doorway_clear, p.doorway_clear);
+  defaultOnCommit(last_checked_door, p.last_checked_door);
+
+  // Door State Data
+  defaultOnCommit(hinge, p.hinge);
+  defaultOnCommit(rot_dir, p.rot_dir);
+  defaultOnCommit(frame_p1_x, p.frame_p1_x);
+  defaultOnCommit(frame_p1_y, p.frame_p1_y);
+  defaultOnCommit(frame_p1_z, p.frame_p1_z);
+  defaultOnCommit(frame_p2_x, p.frame_p2_x);
+  defaultOnCommit(frame_p2_y, p.frame_p2_y);
+  defaultOnCommit(frame_p2_z, p.frame_p2_z);
+  defaultOnCommit(door_p1_x, p.door_p1_x);
+  defaultOnCommit(door_p1_y, p.door_p1_y);
+  defaultOnCommit(door_p1_z, p.door_p1_z);
+  defaultOnCommit(door_p2_x, p.door_p2_x);
+  defaultOnCommit(door_p2_y, p.door_p2_y);
+  defaultOnCommit(door_p2_z, p.door_p2_z);
+  defaultOnCommit(height, p.height);
+  defaultOnCommit(hinge, p.hinge);
+  defaultOnCommit(rot_dir, p.rot_dir);
+  defaultOnCommit(handle_x, p.handle_x);
+  defaultOnCommit(handle_y, p.handle_y);
+  defaultOnCommit(handle_z, p.handle_z);
+}
 
 /************************************************************************
  * Now we define how actions update the door controller by setting
  * feedback parameters on success or failure
  ***********************************************************************/
 
-DoorState::Holds{
-  met_by(Holds p);
-
-  // Commit to unknown values if nothing set
-  defaultOnCommit(hinge, UNKNOWN);
-  defaultOnCommit(rot_dir, UNKNOWN);
-
-  // Active status
-  defaultOnCommit(active, p.active);
-
-  // Points for the door frame. 
-  defaultOnCommit(frame_p1_x, p.frame_p1_x);
-  defaultOnCommit(frame_p1_y, p.frame_p1_y);
-  defaultOnCommit(frame_p1_z, p.frame_p1_z);
-  defaultOnCommit(frame_p2_z, p.frame_p2_x);
-  defaultOnCommit(frame_p2_z, p.frame_p2_y);
-  defaultOnCommit(frame_p2_z, p.frame_p2_z);
-
-  // Points for th door
-  defaultOnCommit(door_p1_x, p.door_p1_x);
-  defaultOnCommit(door_p1_y, p.door_p1_y);
-  defaultOnCommit(door_p1_z, p.door_p1_z);
-  defaultOnCommit(door_p2_z, p.door_p2_x);
-  defaultOnCommit(door_p2_z, p.door_p2_y);
-  defaultOnCommit(door_p2_z, p.door_p2_z);
-
-  // Handle data
-  defaultOnCommit(height, p.height);
-  defaultOnCommit(hinge, p.hinge);
-  defaultOnCommit(rot_dir, p.rot_dir);
-}
-
 // Derive input bounds form the behavior
 DoorManipulationBehavior::Active{
-  // DoorController(start) == Holds(dc);
+  // DoorController(start) == Holds(door_state);
   any(DoorController.Holds dc);
   precedes(dc.start, start);
   temporalDistance(start, [1 +inf], dc.end);
-
-  if(dc.active == true){
-    // The door state at the start is written into the action
-    any(DoorState.Holds ds);
-    precedes(ds.start, start);
-    temporalDistance(start, [1 +inf], ds.end);
-    eq(ds.active, true);
-    get_state(this.state, ds.state);
-  }
+  get_state(this.state, dc.state);
 }
 
 DoorManipulationBehavior::Inactive{
-
+  // If successful, then the completion of the action starts a new step in the controller
   if(status == SUCCESS){
-    // Update the door state with feedback I would really like to be able to say:
-    // eq(door_data, ds.door_data)
-    // and have that be the same as an iterative eq() over the components of a variable structure.
-    // DoorState[start) == Holds(true, door_data);
-    starts(DoorState.Holds ds);
-    eq(ds.active, true);
-    get_state(this.state, ds.state);
+    starts(DoorController.Holds dc);
+    eq(dc.active, true);
+    get_state(dc.state, this.state);
   }
 }
 
 ReleaseDoor::Inactive{
-
-  // If successful it means we were able to execute the check. The result can still be clear or not
   if(status == SUCCESS){
-    // This is a common pattern for all - to bind to the door controller
-    // DoorController[start + TIME_ERROR_BOUND) dc == Holds;
-    any(DoorController.Holds dc);
-    TIME_ERROR_BOUND error;
-    temporalDistance(dc.start, error, start);
+    starts(DoorController.Holds dc);
     eq(dc.have_handle, FALSE);
     eq(dc.last_checked_door, FORCE_DOOR_CHECK);
-    concurrent(dc.start, start);
   }
 }
 
 OpenDoorWithGrasp::Inactive{
-
-  // If successful, update the state with feedback. Note that at this point we could
-  // set values for door and handle state. On the other hand, we could also just
-  // start a door detector
   if(status == SUCCESS){
-    // Update door controller with feedback
-    any(DoorController.Holds dc);
-    TIME_ERROR_BOUND error;
-    temporalDistance(dc.start, error, start);
+    starts(DoorController.Holds dc);
     eq(dc.last_checked_door, FORCE_DOOR_CHECK);
     eq(dc.have_handle, TRUE);
-    concurrent(dc.start, start);
   }
 }
 
 GraspHandle::Inactive{
-
-  // If successful, update the state with feedback. Note that at this point we could
-  // set values for door and handle state. On the other hand, we could also just
-  // start a door detector
   if(status == SUCCESS){
-    // Update door controller with feedback
-    any(DoorController.Holds dc);
-    TIME_ERROR_BOUND error;
-    temporalDistance(dc.start, error, start);
+    starts(DoorController.Holds dc);
     eq(dc.have_handle, TRUE);
     eq(dc.last_checked_door, start);
-    concurrent(dc.start, start);
   }
 }
 
 OpenDoorWithoutGrasp::Inactive{
-
-  // If successful, there is nothing really to do, since it will depend on the CheckDoorway
-  // behavior finding the clear path. What we can do is reset the last checked time to force an immediate recheck
   if(status == SUCCESS){
-    // Update door controller with feedback
-    any(DoorController.Holds dc);
-    TIME_ERROR_BOUND error;
-    temporalDistance(dc.start, error, start);
+    starts(DoorController.Holds dc);
     eq(dc.last_checked_door, FORCE_DOOR_CHECK);
-    concurrent(dc.start, start);
   }
 }
 
 DetectDoor::Inactive{
-
-  // If successful, update the state with feedback. Note that at this point we could
-  // set values for door and handle state. On the other hand, we could also just
-  // start a door detector
   if(status == SUCCESS){
-    // Update door controller with feedback
-    any(DoorController.Holds dc);
-    TIME_ERROR_BOUND error;
-    temporalDistance(dc.start, error, start);
+    starts(DoorController.Holds dc);
     eq(dc.found_door, true);
     eq(dc.found_handle, true);
-    concurrent(dc.start, start);
   }
 }
 
 CheckDoorway::Inactive{
-
-  // If successful it means we were able to execute the check. The result can still be clear or not
   if(status == SUCCESS){
-    // Update door controller with feedback
-    any(DoorController.Holds dc);
-    TIME_ERROR_BOUND error;
-    temporalDistance(dc.start, error, start);
+    starts(DoorController.Holds dc);
     eq(dc.doorway_clear, doorway_clear);
     eq(dc.door_latched, door_latched);
     eq(dc.last_checked_door, start);
-    concurrent(dc.start, start);
   }
 }
 
 // Internal - controller must be allocated separately
 MoveBehavior doorman = new MoveBehavior(Internal, true);
-DoorState door_state = new DoorState(Internal);

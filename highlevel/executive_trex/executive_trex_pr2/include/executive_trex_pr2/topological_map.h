@@ -151,6 +151,8 @@ namespace executive_trex_pr2 {
     virtual void handleExecute();
     
   private:
+    std::string toString() const;
+
     bool apply(double value, const char* param_name);
 
     TokenId _token_id;

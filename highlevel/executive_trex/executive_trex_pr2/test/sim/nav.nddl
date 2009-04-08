@@ -25,9 +25,9 @@ class BaseController extends AgentTimeline {
     float th;
 
     // Deltas to be used to update successor state, if not already set
-    float dx;
-    float dy;
-    float dth;
+    LINEAR_VELOCITY dx;
+    LINEAR_VELOCITY dy;
+    LINEAR_VELOCITY dth;
 
     // Control flags
     bool active;
@@ -111,21 +111,9 @@ BaseController::Holds{
 	LINEAR_VELOCITY estDX;
 	LINEAR_VELOCITY estDY;
 	LINEAR_VELOCITY estDTH;
-	defaultOnCommit(estDX, ub_dx);
-	defaultOnCommit(estDY, ub_dy);
-	defaultOnCommit(estDTH, ub_dth);
-
-	if(estDX){
-	  defaultOnCommit(dx, estDX);
-	}
-
-	if(estDY){
-	  defaultOnCommit(dy, estDY);
-	}
-
-	if(estDTH){
-	  defaultOnCommit(dth, estDTH);
-	}
+	defaultOnCommit(dx, ub_dx);
+	defaultOnCommit(dy, ub_dy);
+	defaultOnCommit(dth, ub_dth);
 
 	// if (abs(dx) >= XY_ERROR || abs(dy) >= XY_ERROR || abs(dth) > THETA_ERROR) then successor is active.
 	// Otherwise, terminate the parent.

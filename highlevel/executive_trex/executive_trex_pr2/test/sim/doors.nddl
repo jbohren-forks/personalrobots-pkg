@@ -31,7 +31,7 @@ DoorwayLockedSV::Holds{  default(value, false); }
  * For now, assume a fixed duration, and always return success.
  */
 
-ROSAction::Active{
+DoorManipulationBehavior::Active{
   eq(duration, 1);
 
   // Handle always free at the end
@@ -39,6 +39,13 @@ ROSAction::Active{
   eq(s.status, SUCCESS);
 }
 
+CheckDoorway::Active {
+  eq(duration, 1);
+
+  // Handle always free at the end
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
 
 /**
  * Update result parameters according to simulation control variables.

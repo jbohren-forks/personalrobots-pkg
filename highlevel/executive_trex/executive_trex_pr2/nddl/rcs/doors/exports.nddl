@@ -33,53 +33,6 @@ constraint  door_get_robot_pose_for_door(x, y, th, door_p1_x, door_p1_y, door_p2
     door_p1_x <: x && door_p1_y <: x && door_p2_x <: x && door_p2_y <: x && distance <: x
 }
 
-/**
- * DoorState is a state variable providing feedback on the perceived state of the door and its related
- * status flags. Note that if any value is unkown, then we consider we have lost observability of the door.
- * @see Door.msg
- */
-class DoorState extends ROSStateVariable {
-
-  predicate Holds {
-    string frame_id;
-
-    // Control variable so we know when we can trust values. It should be published by the door monitor.
-    // We will require that this be false when the doormonitor terminates
-    bool active;
-
-    // Points for the door frame
-    float frame_p1_x;
-    float frame_p1_y;
-    float frame_p1_z;
-    float frame_p2_x;
-    float frame_p2_y;
-    float frame_p2_z;
-
-
-    // Additional Frame information
-    float height;
-    HINGE_FRAME hinge;
-    ROTATION_DIRECTION rot_dir;
-
-    // Points for the door
-    float door_p1_x;
-    float door_p1_y;
-    float door_p1_z;
-    float door_p2_x;
-    float door_p2_y;
-    float door_p2_z;
-
-    // Handle data
-    float handle_x;
-    float handle_y;
-    float handle_z;
-  }
-
-  DoorState(Mode _mode){
-    super(_mode, "Holds");
-  }
-};
-
 class DoorManipulationBehavior extends ROSAction {
 
   /**

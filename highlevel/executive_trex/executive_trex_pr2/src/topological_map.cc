@@ -216,7 +216,9 @@ namespace executive_trex_pr2 {
     if(!TopologicalMapAdapter::instance()->getDoorState(id, door_state))
       _door_id.empty();
     else {
-      if(!apply(door_state.frame_p1.x, "frame_p1_x") ||
+      static const LabelStr MAP_FRAME("map");
+      if(!apply(MAP_FRAME, "frame_id") ||
+	 !apply(door_state.frame_p1.x, "frame_p1_x") ||
 	 !apply(door_state.frame_p1.y, "frame_p1_y") ||
 	 !apply(door_state.frame_p1.z, "frame_p1_z") ||
 	 !apply(door_state.frame_p2.x, "frame_p2_x") ||
@@ -240,6 +242,16 @@ namespace executive_trex_pr2 {
     debugMsg("map:get_door_state",  "AFTER: " << toString());
   }
   
+  std::string MapGetDoorStateConstraint::toString() const {
+    std::stringstream ss;
+    for(std::vector<ConstrainedVariableId>::const_iterator it = _token_id->parameters().begin(); it != _token_id->parameters().end(); ++it){
+      ConstrainedVariableId var = *it;
+      ss << var->getName().toString() << " == " << var->lastDomain().toString() << std::endl;
+    }
+
+    return ss.str();
+  }
+
   /**
    * Reads a numeric value into a token parameter by name
    */
@@ -248,7 +260,6 @@ namespace executive_trex_pr2 {
     ROS_ASSERT(var.isValid());
 
     AbstractDomain& dom = getCurrentDomain(var);
-    ROS_ASSERT(dom.isNumeric());
     dom.set(value);
     return !dom.isEmpty();
   }
