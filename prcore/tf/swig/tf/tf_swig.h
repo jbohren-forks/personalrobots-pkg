@@ -253,38 +253,96 @@ public:
     tf_.transformQuaternion(target_frame, 
                             temp_input,
                             temp_output);
-    StampedQuaternionBttoPy(temp_output, stamped_out);
-                            
+    StampedQuaternionBttoPy(temp_output, stamped_out);                            
   };
   /** \brief Transform a Stamped Vector3 into the target frame */
-  //  void transformVector(const std::string& target_frame, const Stamped<tf::Vector3>& stamped_in, Stamped<tf::Vector3>& stamped_out) const;
+  void transformVector(const std::string& target_frame, const StampedVector& stamped_in, StampedVector& stamped_out) const
+  {
+    tf::Stamped<tf::Vector3> temp_output, temp_input;
+    StampedVectorPytoBt(stamped_in, temp_input);
+    tf_.transformVector(target_frame, 
+                        temp_input,
+                        temp_output);
+    StampedVectorBttoPy(temp_output, stamped_out);
+    
+  };
   /** \brief Transform a Stamped Point into the target frame */
-  //void transformPoint(const std::string& target_frame, const Stamped<tf::Point>& stamped_in, Stamped<tf::Point>& stamped_out) const;
+  void transformPoint(const std::string& target_frame, const StampedPoint& stamped_in, StampedPoint& stamped_out) const
+  {
+    tf::Stamped<tf::Point> temp_output, temp_input;
+    StampedPointPytoBt(stamped_in, temp_input);
+    tf_.transformPoint(target_frame, 
+                            temp_input,
+                            temp_output);
+    StampedPointBttoPy(temp_output, stamped_out);
+  };
   /** \brief Transform a Stamped Pose into the target frame */
-  //void transformPose(const std::string& target_frame, const Stamped<tf::Pose>& stamped_in, Stamped<tf::Pose>& stamped_out) const;
+  void transformPose(const std::string& target_frame, const StampedPose& stamped_in, StampedPose& stamped_out) const
+  {
+    tf::Stamped<tf::Pose> temp_output, temp_input;
+    StampedPosePytoBt(stamped_in, temp_input);
+    tf_.transformPose(target_frame, 
+                            temp_input,
+                            temp_output);
+    StampedPoseBttoPy(temp_output, stamped_out);
 
-  /** \brief Transform a Stamped Quaternion into the target frame 
-      void transformQuaternion(const std::string& target_frame, const ros::Time& target_time, 
-      const Stamped<tf::Quaternion>& stamped_in, 
-      const std::string& fixed_frame, 
-      Stamped<tf::Quaternion>& stamped_out) const;*/
-  /** \brief Transform a Stamped Vector3 into the target frame 
-      void transformVector(const std::string& target_frame, const ros::Time& target_time, 
-      const Stamped<tf::Vector3>& stamped_in, 
-      const std::string& fixed_frame, 
-      Stamped<tf::Vector3>& stamped_out) const;*/
+  };
+
+  /** \brief Transform a Stamped Quaternion into the target frame */
+  void transformQuaternion(const std::string& target_frame, double target_time, 
+                           const StampedQuaternion& stamped_in, 
+                           const std::string& fixed_frame, 
+                           StampedQuaternion& stamped_out) const
+  {
+    tf::Stamped<tf::Quaternion> temp_output, temp_input;
+    StampedQuaternionPytoBt(stamped_in, temp_input);
+    tf_.transformQuaternion(target_frame, ros::Time().fromSec(target_time),
+                            temp_input, fixed_frame,
+                            temp_output);
+    StampedQuaternionBttoPy(temp_output, stamped_out);
+  };
+  /** \brief Transform a Stamped Vector3 into the target frame */
+      void transformVector(const std::string& target_frame, double target_time, 
+                           const StampedVector& stamped_in, 
+                           const std::string& fixed_frame, 
+                           StampedVector& stamped_out) const
+  {
+    tf::Stamped<tf::Vector3> temp_output, temp_input;
+    StampedVectorPytoBt(stamped_in, temp_input);
+    tf_.transformVector(target_frame, ros::Time().fromSec(target_time),
+                        temp_input, fixed_frame,
+                        temp_output);
+    StampedVectorBttoPy(temp_output, stamped_out);    
+  };
   /** \brief Transform a Stamped Point into the target frame 
-   * \todo document
-   void transformPoint(const std::string& target_frame, const ros::Time& target_time, 
-   const Stamped<tf::Point>& stamped_in, 
-   const std::string& fixed_frame, 
-   Stamped<tf::Point>& stamped_out) const;*/
+   * \todo document */
+  void transformPoint(const std::string& target_frame, double target_time, 
+                      const StampedPoint& stamped_in, 
+                      const std::string& fixed_frame, 
+                      StampedPoint& stamped_out) const
+  {
+    tf::Stamped<tf::Point> temp_output, temp_input;
+    StampedPointPytoBt(stamped_in, temp_input);
+    tf_.transformPoint(target_frame, ros::Time().fromSec(target_time),
+                       temp_input, fixed_frame,
+                       temp_output);
+    StampedPointBttoPy(temp_output, stamped_out);
+    
+  };
   /** \brief Transform a Stamped Pose into the target frame 
-   * \todo document
-   void transformPose(const std::string& target_frame, const ros::Time& target_time, 
-   const Stamped<tf::Pose>& stamped_in, 
-   const std::string& fixed_frame,
-   Stamped<tf::Pose>& stamped_out) const;*/
+   * \todo document */
+  void transformPose(const std::string& target_frame, double target_time, 
+                     const StampedPose& stamped_in, 
+                     const std::string& fixed_frame,
+                     StampedPose& stamped_out) const
+  {
+    tf::Stamped<tf::Pose> temp_output, temp_input;
+    StampedPosePytoBt(stamped_in, temp_input);
+    tf_.transformPose(target_frame, ros::Time().fromSec(target_time),
+                      temp_input, fixed_frame,
+                      temp_output);
+    StampedPoseBttoPy(temp_output, stamped_out);
+  };
 
 private:
   tf::Transformer tf_;
