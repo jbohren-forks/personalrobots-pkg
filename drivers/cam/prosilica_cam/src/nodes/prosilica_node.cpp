@@ -34,12 +34,12 @@
 
 // TODO: doxygen mainpage
 
-#include "ros/node.h"
-#include "image_msgs/Image.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/FillImage.h"
-#include "image_msgs/CvBridge.h"
-#include "diagnostic_updater/diagnostic_updater.h"
+#include <ros/node.h>
+#include <image_msgs/Image.h>
+#include <image_msgs/CamInfo.h>
+#include <image_msgs/FillImage.h>
+#include <image_msgs/CvBridge.h>
+#include <diagnostic_updater/diagnostic_updater.h>
 
 #include <cv.h>
 #include <cvwimage.h>
@@ -53,18 +53,21 @@
 #include "prosilica/prosilica.h"
 #include "prosilica_cam/PolledImage.h"
 
-// TODO: don't inherit from Node
-class ProsilicaNode : public ros::Node
+class ProsilicaNode
 {
 private:
+  ros::Node &node_;
+  
   boost::scoped_ptr<prosilica::Camera> cam_;
   prosilica::AcquisitionMode mode_;
   image_msgs::Image img_, rect_img_;
   image_msgs::CvBridge img_bridge_, rect_img_bridge_;
   image_msgs::CamInfo cam_info_;
   bool running_;
-  int count_;
   DiagnosticUpdater<ProsilicaNode> diagnostic_;
+  int count_;
+  double desired_freq_;
+  
   boost::mutex grab_mutex_;
 
   // calibration matrices
@@ -76,28 +79,27 @@ private:
   bool calibrated_;
 
 public:
-  ProsilicaNode() : ros::Node("prosilica"), cam_(NULL),
-                    running_(false), count_(0), diagnostic_(this)
+  ProsilicaNode(ros::Node &node)
+    : node_(node), cam_(NULL), running_(false), diagnostic_(this, &node_), count_(0)
   {
     prosilica::init();
-    //diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
 
     if (prosilica::numCameras() == 0)
       ROS_WARN("Found no cameras on local subnet");
 
     unsigned long guid = 0;
 
-    if (hasParam("~guid"))
+    if (node_.hasParam("~guid"))
     {
       std::string guid_str;
-      getParam("~guid", guid_str);
+      node_.getParam("~guid", guid_str);
       guid = strtol(guid_str.c_str(), NULL, 0);
     }
       
-    if (hasParam("~ip_address"))
+    if (node_.hasParam("~ip_address"))
     {
       std::string ip_str;
-      getParam("~ip_address", ip_str);
+      node_.getParam("~ip_address", ip_str);
       cam_.reset( new prosilica::Camera(ip_str.c_str()) );
       
       // Verify Guid is the one expected
@@ -120,19 +122,24 @@ public:
 
     // Acquisition control
     std::string mode_str;
-    param("~acquisition_mode", mode_str, std::string("Continuous"));
-    if (mode_str == std::string("Continuous"))
+    node_.param("~acquisition_mode", mode_str, std::string("Continuous"));
+    if (mode_str == std::string("Continuous")) {
       mode_ = prosilica::Continuous;
-    else if (mode_str == std::string("Triggered"))
+      desired_freq_ = 1; // make sure we get _something_
+    }
+    else if (mode_str == std::string("Triggered")) {
       mode_ = prosilica::Triggered;
+      desired_freq_ = 0;
+    }
     else {
       ROS_FATAL("Unknown setting");
-      shutdown();
+      node_.shutdown();
+      return;
     }
     
     // Feature control
     std::string auto_setting;
-    param("~exposure_auto", auto_setting, std::string("Auto"));
+    node_.param("~exposure_auto", auto_setting, std::string("Auto"));
     if (auto_setting == std::string("Auto"))
       cam_->setExposure(0, prosilica::Auto);
     else if (auto_setting == std::string("AutoOnce"))
@@ -140,14 +147,15 @@ public:
     else if (auto_setting == std::string("Manual"))
     {
       int val;
-      getParam("~exposure", val);
+      node_.getParam("~exposure", val);
       cam_->setExposure(val, prosilica::Manual);
     } else {
       ROS_FATAL("Unknown setting");
-      shutdown();
+      node_.shutdown();
+      return;
     }
     
-    param("~gain_auto", auto_setting, std::string("Auto"));
+    node_.param("~gain_auto", auto_setting, std::string("Auto"));
     if (auto_setting == std::string("Auto"))
       cam_->setGain(0, prosilica::Auto);
     else if (auto_setting == std::string("AutoOnce"))
@@ -155,14 +163,15 @@ public:
     else if (auto_setting == std::string("Manual"))
     {
       int val;
-      getParam("~gain", val);
+      node_.getParam("~gain", val);
       cam_->setGain(val, prosilica::Manual);
     } else {
       ROS_FATAL("Unknown setting");
-      shutdown();
+      node_.shutdown();
+      return;
     }
     
-    param("~whitebal_auto", auto_setting, std::string("Auto"));
+    node_.param("~whitebal_auto", auto_setting, std::string("Auto"));
     if (auto_setting == std::string("Auto"))
       cam_->setWhiteBalance(0, 0, prosilica::Auto);
     else if (auto_setting == std::string("AutoOnce"))
@@ -170,12 +179,13 @@ public:
     else if (auto_setting == std::string("Manual"))
     {
       int blue, red;
-      getParam("~whitebal_blue", blue);
-      getParam("~whitebal_red", red);
+      node_.getParam("~whitebal_blue", blue);
+      node_.getParam("~whitebal_red", red);
       cam_->setWhiteBalance(blue, red, prosilica::Manual);
     } else {
       ROS_FATAL("Unknown setting");
-      shutdown();
+      node_.shutdown();
+      return;
     }
 
     // Try to load intrinsics from on-camera memory
@@ -186,14 +196,14 @@ public:
       ROS_WARN("Failed to load intrinsics from camera");
 
     cam_->setRoiToWholeFrame();
-    // TODO: other params
-    // TODO: check any diagnostics?
     
-    advertise<image_msgs::Image>("~image", 1);
+    node_.advertise<image_msgs::Image>("~image", 1);
     if (calibrated_) {
-      advertise<image_msgs::Image>("~image_rect", 1);
-      advertise<image_msgs::CamInfo>("~cam_info", 1);
+      node_.advertise<image_msgs::Image>("~image_rect", 1);
+      node_.advertise<image_msgs::CamInfo>("~cam_info", 1);
     }
+
+    diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
   }
 
   ~ProsilicaNode()
@@ -209,7 +219,7 @@ public:
 
     cam_->start(mode_);
     if (mode_ == prosilica::Triggered)
-      advertiseService("~poll", &ProsilicaNode::triggeredGrab);
+      node_.advertiseService("~poll", &ProsilicaNode::triggeredGrab, this);
     
     running_ = true;
 
@@ -222,7 +232,7 @@ public:
       return 0;
 
     if (mode_ == prosilica::Triggered)
-      unadvertiseService("~poll");
+      node_.unadvertiseService("~poll");
     cam_->stop();
     
     running_ = false;
@@ -233,7 +243,29 @@ public:
   void freqStatus(robot_msgs::DiagnosticStatus& status)
   {
     status.name = "Frequency Status";
-    // TODO: complete this
+
+    double freq = (double)(count_)/diagnostic_.getPeriod();
+
+    if (freq < (.9*desired_freq_))
+    {
+      status.level = 2;
+      status.message = "Desired frequency not met";
+    }
+    else
+    {
+      status.level = 0;
+      status.message = "Desired frequency met";
+    }
+
+    status.set_values_size(3);
+    status.values[0].label = "Images in interval";
+    status.values[0].value = count_;
+    status.values[1].label = "Desired frequency";
+    status.values[1].value = desired_freq_;
+    status.values[2].label = "Actual frequency";
+    status.values[2].value = freq;
+
+    count_ = 0;
   }
 
   bool spin()
@@ -241,7 +273,7 @@ public:
     // Start up the camera
     start();
     
-    while (ok())
+    while (node_.ok())
     {
       usleep(100000);
       diagnostic_.update();
@@ -414,6 +446,7 @@ private:
         return false;
       
       // Camera info
+      // TODO: full-frame height/width here
       cam_info.height = frame->Height;
       cam_info.width = frame->Width;
 
@@ -426,10 +459,11 @@ private:
       if (frame->RegionX != 0 || frame->RegionY != 0) {
         cam_info.K[2] -= frame->RegionX; //cx
         cam_info.K[5] -= frame->RegionY; //cy
-        // TODO: cam_info.P
+        // TODO: cam_info.R, cam_info.P
       }
     }
 
+    count_++;
     return true;
   }
   
@@ -441,12 +475,12 @@ private:
       return;
 
     img_.header.stamp = time;
-    publish("~image", img_);
+    node_.publish("~image", img_);
     if (calibrated_) {
       rect_img_.header.stamp = time;
-      publish("~image_rect", rect_img_);
+      node_.publish("~image_rect", rect_img_);
       cam_info_.header.stamp = time;
-      publish("~cam_info", cam_info_);
+      node_.publish("~cam_info", cam_info_);
     }
   }
 
@@ -527,9 +561,9 @@ private:
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
-
-  ProsilicaNode node;
-  node.spin();
+  ros::Node n("prosilica");
+  ProsilicaNode pn(n);
+  pn.spin();
 
   return 0;
 }
