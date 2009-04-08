@@ -37,8 +37,8 @@
 // Modified for Euclidean-distance computation
 //
 
-#include"navfn.h"
-#include "ros/console.h"
+#include <navfn/navfn.h>
+#include <ros/console.h>
 
 //
 // function to perform nav fn calculation

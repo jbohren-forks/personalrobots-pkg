@@ -2,8 +2,8 @@
 // simple timing test of the nav fn planner
 // 
 
-#include "navfn.h"
-#include "navwin.h"
+#include <navfn/navfn.h>
+#include <navfn/navwin.h>
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>

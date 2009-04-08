@@ -2,7 +2,7 @@
 // simple timing test of the nav fn planner
 // 
 
-#include "navwin.h"
+#include <navfn/navwin.h>
 #include <string.h>
 
 
