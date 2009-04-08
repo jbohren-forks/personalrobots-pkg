@@ -43,7 +43,7 @@
 #include "pr2lib.h"
 #include "host_netutil.h"
 
-static const float MODE_FPS[] = {15, 12.5, 30, 25, 15, 12.5, 60, 50, 30, 25};
+static const double MODE_FPS[] = {15, 12.5, 30, 25, 15, 12.5, 60, 50, 30, 25};
 
 class ForearmNode
 {
@@ -55,12 +55,16 @@ private:
   int video_mode_;
   int width_;
   int height_;
-  float expected_fps_;
+  double desired_freq_;
   bool started_video_;
+
+  DiagnosticUpdater<ForearmNode> diagnostic_;
+  int count_;
 
 public:
   ForearmNode(ros::Node &node)
-    : node_(node), camera_(NULL), started_video_(false)
+    : node_(node), camera_(NULL), started_video_(false),
+      diagnostic_(this, &node_), count_(0)
   {
     // Read parameters
     std::string if_name;
@@ -113,8 +117,10 @@ public:
     else
       width_ = 320;
     height_ = (video_mode_ <= MT9VMODE_640x480x12_5b1) ? 480 : 240;
-    expected_fps_ = MODE_FPS[ video_mode_ ];
+    desired_freq_ = MODE_FPS[ video_mode_ ];
 
+    diagnostic_.addUpdater( &ForearmNode::freqStatus );
+    
     // Configure camera
     configure(if_name, ip_address, port);
   }
@@ -212,6 +218,34 @@ public:
                    &ForearmNode::frameHandler, this );
   }
 
+  void freqStatus(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Frequency Status";
+
+    double freq = (double)(count_)/diagnostic_.getPeriod();
+
+    if (freq < (.9*desired_freq_))
+    {
+      status.level = 2;
+      status.message = "Desired frequency not met";
+    }
+    else
+    {
+      status.level = 0;
+      status.message = "Desired frequency met";
+    }
+
+    status.set_values_size(3);
+    status.values[0].label = "Images in interval";
+    status.values[0].value = count_;
+    status.values[1].label = "Desired frequency";
+    status.values[1].value = desired_freq_;
+    status.values[2].label = "Actual frequency";
+    status.values[2].value = freq;
+
+    count_ = 0;
+  }
+
 private:
   void publishImage(size_t width, size_t height, uint8_t *frameData)
   {
@@ -238,6 +272,8 @@ private:
     }
 
     fa_node.publishImage(width, height, frameData);
+    fa_node.count_++;
+    fa_node.diagnostic_.update();
 
     return 0;
   }
