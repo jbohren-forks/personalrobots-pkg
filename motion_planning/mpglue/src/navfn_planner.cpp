@@ -34,7 +34,7 @@
 
 #include <mpglue/navfn_planner.h>
 #include <mpglue/costmap.h>
-#include <navfn.h>
+#include <navfn/navfn.h>
 
 namespace mpglue {
   
