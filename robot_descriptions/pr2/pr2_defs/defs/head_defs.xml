@@ -565,7 +565,7 @@
     </joint>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
-      <actuator name="${name}_a2a_motor" />
+      <actuator name="${name}_motor_alpha2a" />
       <joint name="${name}_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
     </transmission>
@@ -612,7 +612,7 @@
 
     <transmission type="SimpleTransmission" name="${name}_trans">
       <!-- Motor must be configured with 310009 motor with large gearhead -->
-      <actuator name="${name}_a2b_motor" />
+      <actuator name="${name}_motor_alpha2b" />
       <joint name="${name}_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
     </transmission>
@@ -772,7 +772,7 @@
     <controller name="cal_head_tilt" topic="cal_head_tilt"
                 type="JointUDCalibrationControllerNode">
       <calibrate joint="head_tilt_joint"
-                 actuator="head_tilt_a2a_motor"
+                 actuator="head_tilt_motor_alpha2a"
                  transmission="head_tilt_trans"
                  velocity="-1.0" />
       <pid p="20.0" i="5.0" d="0" iClamp="1.0" />
@@ -792,7 +792,7 @@
     <controller name="cal_head_tilt" topic="cal_head_tilt"
                 type="JointUDCalibrationControllerNode">
       <calibrate joint="head_tilt_joint"
-                 actuator="head_tilt_a2b_motor"
+                 actuator="head_tilt_motor_alpha2b"
                  transmission="head_tilt_trans"
                  velocity="-1.0" />
       <pid p="20.0" i="5.0" d="0" iClamp="1.0" />
