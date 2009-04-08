@@ -32,12 +32,19 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+// Msgs
 //#include <robot_msgs/PlugStow.h>
 #include <std_msgs/Empty.h>
+
+// Actions
 #include <plugs_core/action_untuck_arms.h>
 //#include <plugs_core/action_move_and_grasp_plug.h>
-//#include <robot_actions/MoveAndGraspPlugActionState.h>
+
+// State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
+//#include <robot_actions/MoveAndGraspPlugActionState.h>
+
+
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 
@@ -52,6 +59,7 @@ int main(int argc, char** argv)
   ros::init(argc,argv);
 
   ros::Node node("plugs_core_actions");
+  std_msgs::Empty empty;
   //robot_msgs::PlugStow plug_msg;
   //MoveToGraspPlugAction move_to_grasp(node);
   UntuckArmsAction untuck_arms;
@@ -61,6 +69,7 @@ int main(int argc, char** argv)
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(untuck_arms);
 
   runner.run();
+  untuck_arms.handleActivate(empty);
   // plug_msg.header.frame_id = "torso_lift_link";
   // plug_msg.stowed = 1;
   // plug-msg.plug_centroid.x = 0.24;

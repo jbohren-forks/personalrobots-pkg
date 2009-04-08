@@ -78,7 +78,7 @@ private:
   std_msgs::Empty empty_;
   
   bool request_preempt_;
-
+  bool traj_error_;
 
   std::string which_arms_;
   std::string right_arm_controller_;

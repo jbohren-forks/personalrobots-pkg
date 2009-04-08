@@ -34,16 +34,17 @@
 
 
 #include <plugs_core/action_move_to_grasp_plug.h>
-#include <math.h>
+
 
 using namespace plugs_core;
 
-MoveAndGraspPlugAction::MoveAndGraspPlugAction(ros::Node& node) :
-  robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>("move_to_grasp_plug"),
-  node_(node),
+MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
+  robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>("move_and_grasp_plug"),
+  action_name_("move_and_grasp_plug"),
+  node_(ros::Node::instance()),
   request_preempt_(false),
   gripper_controller_("r_gripper_position_controller"),  
-  arm_controller_("right_arm/trajectory_controller")
+  arm_controller_("r_arm_cartesian_trajectory_controller")
 {
 };
 
@@ -55,21 +56,21 @@ void MoveAndGraspPlugAction::handleActivate(const std_msgs::Empty& empty)
 {
   reset();
   
-  // Get the controller names from the parameter server
-  node_.param("~/gripper_controller", gripper_controller_, gripper_controller_);
-  node_.param("~/arm_controller", arm_controller_, arm_controller_); 
+  // Get the controller names 
+  node_.param(action_name_ + "/gripper_controller", gripper_controller_, gripper_controller_);
+  node_.param(action_name_ + "/arm_controller", arm_controller_, arm_controller_); 
   
   if(gripper_controller_ == "" )
   {
-    ROS_ERROR("The gripper controller param was not set.");
-    notifyAborted();
+    ROS_ERROR("%s: Aborted, gripper controller param was not set.", action_name_.c_str());
+    notifyAborted(empty_);
     return;
   }
   
   if(arm_controller_ == "" )
   {
-    ROS_ERROR("The arm controller param was not set.");
-    notifyAborted();
+    ROS_ERROR("%s: Aborted, arm controller param was not set.", action_name_.c_str());
+    notifyAborted(empty_);
     return;
   }
 
