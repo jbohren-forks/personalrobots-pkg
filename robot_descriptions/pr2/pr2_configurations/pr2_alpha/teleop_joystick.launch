@@ -15,14 +15,14 @@
 <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" output="screen"/>
   </group>
 
-<!-- Why is the EKF launched with the joystick?-->
+<!-- Why is the EKF launched with the joystick?
 <param name="robot_pose_ekf/freq" value="30.0"/>
 <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
 <param name="robot_pose_ekf/odom_used" value="true"/>
 <param name="robot_pose_ekf/imu_used" value="true"/>
 <param name="robot_pose_ekf/vo_used" value="false"/>
     
-<node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf"/>
+<node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf"/-->
 
 </launch>
 
