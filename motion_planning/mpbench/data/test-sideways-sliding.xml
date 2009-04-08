@@ -1,0 +1,45 @@
+<setup>
+  
+  <defaults>
+    <start>
+      <from_scratch>true</from_scratch>
+      <use_initial_solution>false</use_initial_solution>
+      <allow_iteration>false</allow_iteration>
+      <alloc_time>inf</alloc_time>
+    </start>
+    <goal>
+      <tolerance>0.3  4</tolerance>
+    </goal>
+  </defaults>
+  
+  <world>
+    <!-- outer bounding box -->
+    <addline>  0     0     7    0    </addline>
+    <addline>  0     0     0    6    </addline>
+    <addline>  0     6     7    6    </addline>
+    <addline>  7     0     7    6    </addline>
+    <!-- variously space walls with openings -->
+    <addline>  0     1.1   2.5  1.1  </addline>
+    <addline>  4.5   1.1   7    1.1  </addline>
+    <addline>  0     2.6   2.5  2.6  </addline>
+    <addline>  4.5   2.6   7    2.6  </addline>
+  </world>
+  
+  <task>
+    <description>bottom / narrowest</description>
+    <goal><pose>  6.5   0.72  -1.55 </pose></goal>
+    <start><pose> 0.5   0.38   1.56 </pose></start>
+  </task>
+  
+  <task>
+    <description>center</description>
+    <goal><pose>  6.5   2.22  -1.55 </pose></goal>
+    <start><pose> 0.5   1.48   1.56 </pose></start>
+  </task>
+  
+  <task>
+    <description>top / widest</description>
+    <goal><pose>  6.5   5.62  -1.55 </pose></goal>
+    <start><pose> 0.5   2.98   1.56 </pose></start>
+  </task>
+</setup>
