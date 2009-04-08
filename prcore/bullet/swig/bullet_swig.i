@@ -19,7 +19,7 @@
 %include "pybtMatrix3x3.h"
 %include "pybtTransform.h"
 
-%extend py::btQuaternion{
+%extend py::Quaternion{
   char * __str__()
   {
     static char temp[256];
@@ -27,10 +27,10 @@
     return &temp[0];
   };
   
-  btQuaternion  __rmul__(const btVector3& w)
+  Quaternion  __rmul__(const Vector3& w)
 {
-  py::btQuaternion& q = *self;
-  return py::btQuaternion( w.x() * q.w() + w.y() * q.z() - w.z() * q.y(),
+  py::Quaternion& q = *self;
+  return py::Quaternion( w.x() * q.w() + w.y() * q.z() - w.z() * q.y(),
 		w.y() * q.w() + w.z() * q.x() - w.x() * q.z(),
 		w.z() * q.w() + w.x() * q.y() - w.y() * q.x(),
 		-w.x() * q.x() - w.y() * q.y() - w.z() * q.z()); 
@@ -39,7 +39,7 @@
 
  }
 
-%extend py::btVector3 {
+%extend py::Vector3 {
   char * __str__()
   {
     static char temp[256];
@@ -48,12 +48,12 @@
   };
   
 
-   btVector3 __rmul__(float s) 
+   Vector3 __rmul__(float s) 
   {
-    return py::btVector3(self->m_floats[0] * s, self->m_floats[1] * s, self->m_floats[2] * s);
+    return py::Vector3(self->m_floats[0] * s, self->m_floats[1] * s, self->m_floats[2] * s);
   };
 
-  btVector3 __rdiv__(float s) 
+  Vector3 __rdiv__(float s) 
   {
     btFullAssert(s != btScalar(0.0));
     return self->operator*(btScalar(1.0) / s);
@@ -61,7 +61,7 @@
 
  }
 
-%extend py::btMatrix3x3
+%extend py::Matrix3x3
 {
   char * __str__()
   {
@@ -76,21 +76,21 @@
   };
 
 
-  py::btVector3  __rmul__(const py::btVector3& v)
+  py::Vector3  __rmul__(const py::Vector3& v)
   {
     return py::vecTimesMatrix(v, *self);
   }
 
 }
 
-%extend py::btTransform
+%extend py::Transform
 {
   char * __str__()
   {
     static char temp[1024];
 
-    py::btVector3 orig = self->getOrigin();
-    py::btMatrix3x3 basis = self->getBasis();
+    py::Vector3 orig = self->getOrigin();
+    py::Matrix3x3 basis = self->getBasis();
     sprintf(temp, "Origin:\n[%f, %f, %f]\n\nBasis:\n[[%f, %f, %f]|\n|[%f, %f, %f]|\n|[%f, %f, %f]]",
             orig.getX(), orig.getY(), orig.getZ(),
             basis.getRow(0).getX(), basis.getRow(0).getY(), basis.getRow(0).getZ(),

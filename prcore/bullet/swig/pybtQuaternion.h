@@ -15,7 +15,7 @@ subject to the following restrictions:
 
 
 #ifndef PYSIMD__QUATERNION_H_
-#define PUSIMD__QUATERNION_H_
+#define PYSIMD__QUATERNION_H_
 
 
 #include "pybtVector3.h"
@@ -24,22 +24,22 @@ subject to the following restrictions:
 namespace py
 {
 
-/**@brief The btQuaternion implements quaternion to perform linear algebra rotations in combination with btMatrix3x3, btVector3 and btTransform. */
-class btQuaternion : public btQuadWord {
+/**@brief The Quaternion implements quaternion to perform linear algebra rotations in combination with btMatrix3x3, Vector3 and btTransform. */
+class Quaternion : public btQuadWord {
 public:
   /**@brief No initialization constructor */
-	btQuaternion() {}
+	Quaternion() {}
 
 	//		template <typename btScalar>
 	//		explicit Quaternion(const btScalar *v) : Tuple4<btScalar>(v) {}
   /**@brief Constructor from scalars */
-	btQuaternion(const btScalar& x, const btScalar& y, const btScalar& z, const btScalar& w) 
+	Quaternion(const btScalar& x, const btScalar& y, const btScalar& z, const btScalar& w) 
 		: btQuadWord(x, y, z, w) 
 	{}
   /**@brief Axis angle Constructor
    * @param axis The axis which the rotation is around
    * @param angle The magnitude of the rotation around the angle (Radians) */
-  btQuaternion(const btVector3& axis, const btScalar& angle) 
+  Quaternion(const Vector3& axis, const btScalar& angle) 
 	{ 
 		setRotation(axis, angle); 
 	}
@@ -47,7 +47,7 @@ public:
    * @param yaw Angle around Y unless BT_EULER_DEFAULT_ZYX defined then Z
    * @param pitch Angle around X unless BT_EULER_DEFAULT_ZYX defined then Y
    * @param roll Angle around Z unless BT_EULER_DEFAULT_ZYX defined then X */
-	btQuaternion(const btScalar& yaw, const btScalar& pitch, const btScalar& roll)
+	Quaternion(const btScalar& yaw, const btScalar& pitch, const btScalar& roll)
 	{ 
 #ifndef BT_EULER_DEFAULT_ZYX
 		setEuler(yaw, pitch, roll); 
@@ -58,7 +58,7 @@ public:
   /**@brief Set the rotation using axis angle notation 
    * @param axis The axis around which to rotate
    * @param angle The magnitude of the rotation in Radians */
-	void setRotation(const btVector3& axis, const btScalar& angle)
+	void setRotation(const Vector3& axis, const btScalar& angle)
 	{
 		btScalar d = axis.length();
 		btAssert(d != btScalar(0.0));
@@ -118,7 +118,7 @@ public:
         } 
   /**@brief Add two quaternions
    * @param q The quaternion to add to this one */
-	SIMD_FORCE_INLINE	btQuaternion& operator+=(const btQuaternion& q)
+	SIMD_FORCE_INLINE	Quaternion& operator+=(const Quaternion& q)
 	{
 		m_floats[0] += q.x(); m_floats[1] += q.y(); m_floats[2] += q.z(); m_floats[3] += q.m_floats[3];
 		return *this;
@@ -126,7 +126,7 @@ public:
 
   /**@brief Subtract out a quaternion
    * @param q The quaternion to subtract from this one */
-	btQuaternion& operator-=(const btQuaternion& q) 
+	Quaternion& operator-=(const Quaternion& q) 
 	{
 		m_floats[0] -= q.x(); m_floats[1] -= q.y(); m_floats[2] -= q.z(); m_floats[3] -= q.m_floats[3];
 		return *this;
@@ -134,7 +134,7 @@ public:
 
   /**@brief Scale this quaternion
    * @param s The scalar to scale by */
-	btQuaternion& operator*=(const btScalar& s)
+	Quaternion& operator*=(const btScalar& s)
 	{
 		m_floats[0] *= s; m_floats[1] *= s; m_floats[2] *= s; m_floats[3] *= s;
 		return *this;
@@ -143,7 +143,7 @@ public:
   /**@brief Multiply this quaternion by q on the right
    * @param q The other quaternion 
    * Equivilant to this = this * q */
-	btQuaternion& operator*=(const btQuaternion& q)
+	Quaternion& operator*=(const Quaternion& q)
 	{
 		setValue(m_floats[3] * q.x() + m_floats[0] * q.m_floats[3] + m_floats[1] * q.z() - m_floats[2] * q.y(),
 			m_floats[3] * q.y() + m_floats[1] * q.m_floats[3] + m_floats[2] * q.x() - m_floats[0] * q.z(),
@@ -153,7 +153,7 @@ public:
 	}
   /**@brief Return the dot product between this quaternion and another
    * @param q The other quaternion */
-	btScalar dot(const btQuaternion& q) const
+	btScalar dot(const Quaternion& q) const
 	{
 		return m_floats[0] * q.x() + m_floats[1] * q.y() + m_floats[2] * q.z() + m_floats[3] * q.m_floats[3];
 	}
@@ -172,23 +172,23 @@ public:
 
   /**@brief Normalize the quaternion 
    * Such that x^2 + y^2 + z^2 +w^2 = 1 */
-	btQuaternion& normalize() 
+	Quaternion& normalize() 
 	{
 		return *this /= length();
 	}
 
   /**@brief Return a scaled version of this quaternion
    * @param s The scale factor */
-	SIMD_FORCE_INLINE btQuaternion
+	SIMD_FORCE_INLINE Quaternion
 	operator*(const btScalar& s) const
 	{
-		return btQuaternion(x() * s, y() * s, z() * s, m_floats[3] * s);
+		return Quaternion(x() * s, y() * s, z() * s, m_floats[3] * s);
 	}
 
 
   /**@brief Return an inversely scaled versionof this quaternion
    * @param s The inverse scale factor */
-	btQuaternion operator/(const btScalar& s) const
+	Quaternion operator/(const btScalar& s) const
 	{
 		btAssert(s != btScalar(0.0));
 		return *this * (btScalar(1.0) / s);
@@ -196,20 +196,20 @@ public:
 
   /**@brief Inversely scale this quaternion
    * @param s The scale factor */
-	btQuaternion& operator/=(const btScalar& s) 
+	Quaternion& operator/=(const btScalar& s) 
 	{
 		btAssert(s != btScalar(0.0));
 		return *this *= btScalar(1.0) / s;
 	}
 
   /**@brief Return a normalized version of this quaternion */
-	btQuaternion normalized() const 
+	Quaternion normalized() const 
 	{
 		return *this / length();
 	} 
   /**@brief Return the angle between this quaternion and the other 
    * @param q The other quaternion */
-	btScalar angle(const btQuaternion& q) const 
+	btScalar angle(const Quaternion& q) const 
 	{
 		btScalar s = btSqrt(length2() * q.length2());
 		btAssert(s != btScalar(0.0));
@@ -229,50 +229,50 @@ public:
 	}
 
    /**@brief Return the axis of the rotation represented by this quaternion */
- 	btVector3 getAxis() const
+ 	Vector3 getAxis() const
  	{
                 btScalar s_squared = btScalar(1.) - btPow(m_floats[3], 2.);
                 if (s_squared < 10 * SIMD_EPSILON) //Check for divide by zero
- 			return btVector3(1.0, 0.0, 0.0);  // Arbitrary
+ 			return Vector3(1.0, 0.0, 0.0);  // Arbitrary
  		btScalar s = btSqrt(s_squared);
- 		return btVector3(m_floats[0] / s, m_floats[1] / s, m_floats[2] / s);
+ 		return Vector3(m_floats[0] / s, m_floats[1] / s, m_floats[2] / s);
  	}
 
   /**@brief Return the inverse of this quaternion */
-	btQuaternion inverse() const
+	Quaternion inverse() const
 	{
-		return btQuaternion(-m_floats[0], -m_floats[1], -m_floats[2], m_floats[3]);
+		return Quaternion(-m_floats[0], -m_floats[1], -m_floats[2], m_floats[3]);
 	}
 
   /**@brief Return the sum of this quaternion and the other 
    * @param q2 The other quaternion */
-	SIMD_FORCE_INLINE btQuaternion
-	operator+(const btQuaternion& q2) const
+	SIMD_FORCE_INLINE Quaternion
+	operator+(const Quaternion& q2) const
 	{
-		const btQuaternion& q1 = *this;
-		return btQuaternion(q1.x() + q2.x(), q1.y() + q2.y(), q1.z() + q2.z(), q1.m_floats[3] + q2.m_floats[3]);
+		const Quaternion& q1 = *this;
+		return Quaternion(q1.x() + q2.x(), q1.y() + q2.y(), q1.z() + q2.z(), q1.m_floats[3] + q2.m_floats[3]);
 	}
 
   /**@brief Return the difference between this quaternion and the other 
    * @param q2 The other quaternion */
-	SIMD_FORCE_INLINE btQuaternion
-	operator-(const btQuaternion& q2) const
+	SIMD_FORCE_INLINE Quaternion
+	operator-(const Quaternion& q2) const
 	{
-		const btQuaternion& q1 = *this;
-		return btQuaternion(q1.x() - q2.x(), q1.y() - q2.y(), q1.z() - q2.z(), q1.m_floats[3] - q2.m_floats[3]);
+		const Quaternion& q1 = *this;
+		return Quaternion(q1.x() - q2.x(), q1.y() - q2.y(), q1.z() - q2.z(), q1.m_floats[3] - q2.m_floats[3]);
 	}
 
   /**@brief Return the negative of this quaternion 
    * This simply negates each element */
-	SIMD_FORCE_INLINE btQuaternion operator-() const
+	SIMD_FORCE_INLINE Quaternion operator-() const
 	{
-		const btQuaternion& q2 = *this;
-		return btQuaternion( - q2.x(), - q2.y(),  - q2.z(),  - q2.m_floats[3]);
+		const Quaternion& q2 = *this;
+		return Quaternion( - q2.x(), - q2.y(),  - q2.z(),  - q2.m_floats[3]);
 	}
   /**@todo document this and it's use */
-	SIMD_FORCE_INLINE btQuaternion farthest( const btQuaternion& qd) const 
+	SIMD_FORCE_INLINE Quaternion farthest( const Quaternion& qd) const 
 	{
-		btQuaternion diff,sum;
+		Quaternion diff,sum;
 		diff = *this - qd;
 		sum = *this + qd;
 		if( diff.dot(diff) > sum.dot(sum) )
@@ -284,7 +284,7 @@ public:
    * @param q The other quaternion to interpolate with 
    * @param t The ratio between this and q to interpolate.  If t = 0 the result is this, if t=1 the result is q.
    * Slerp interpolates assuming constant velocity.  */
-	btQuaternion slerp(const btQuaternion& q, const btScalar& t) const
+	Quaternion slerp(const Quaternion& q, const btScalar& t) const
 	{
 		btScalar theta = angle(q);
 		if (theta != btScalar(0.0))
@@ -293,12 +293,12 @@ public:
 			btScalar s0 = btSin((btScalar(1.0) - t) * theta);
 			btScalar s1 = btSin(t * theta);   
                         if (dot(q) < 0) // Take care of long angle case see http://en.wikipedia.org/wiki/Slerp
-                          return btQuaternion((m_floats[0] * s0 + -q.x() * s1) * d,
+                          return Quaternion((m_floats[0] * s0 + -q.x() * s1) * d,
                                               (m_floats[1] * s0 + -q.y() * s1) * d,
                                               (m_floats[2] * s0 + -q.z() * s1) * d,
                                               (m_floats[3] * s0 + -q.m_floats[3] * s1) * d);
                         else
-                          return btQuaternion((m_floats[0] * s0 + q.x() * s1) * d,
+                          return Quaternion((m_floats[0] * s0 + q.x() * s1) * d,
                                               (m_floats[1] * s0 + q.y() * s1) * d,
                                               (m_floats[2] * s0 + q.z() * s1) * d,
                                               (m_floats[3] * s0 + q.m_floats[3] * s1) * d);
@@ -310,30 +310,30 @@ public:
 		}
 	}
 
-	static const btQuaternion&	getIdentity()
+	static const Quaternion&	getIdentity()
 	{
-		static const btQuaternion identityQuat(btScalar(0.),btScalar(0.),btScalar(0.),btScalar(1.));
+		static const Quaternion identityQuat(btScalar(0.),btScalar(0.),btScalar(0.),btScalar(1.));
 		return identityQuat;
 	}
 
 	SIMD_FORCE_INLINE const btScalar& getW() const { return m_floats[3]; }
 
 /**@brief Return the product of two quaternions */
-SIMD_FORCE_INLINE btQuaternion
-operator*(const btQuaternion& q2) const
+SIMD_FORCE_INLINE Quaternion
+operator*(const Quaternion& q2) const
   {
-  const btQuaternion & q1 = *this;
-	return btQuaternion(q1.w() * q2.x() + q1.x() * q2.w() + q1.y() * q2.z() - q1.z() * q2.y(),
+  const Quaternion & q1 = *this;
+	return Quaternion(q1.w() * q2.x() + q1.x() * q2.w() + q1.y() * q2.z() - q1.z() * q2.y(),
 		q1.w() * q2.y() + q1.y() * q2.w() + q1.z() * q2.x() - q1.x() * q2.z(),
 		q1.w() * q2.z() + q1.z() * q2.w() + q1.x() * q2.y() - q1.y() * q2.x(),
 		q1.w() * q2.w() - q1.x() * q2.x() - q1.y() * q2.y() - q1.z() * q2.z()); 
 }
 
-SIMD_FORCE_INLINE btQuaternion
-operator*(const btVector3& w) const
+SIMD_FORCE_INLINE Quaternion
+operator*(const Vector3& w) const
 {
-  const btQuaternion & q = *this;
-	return btQuaternion( q.w() * w.x() + q.y() * w.z() - q.z() * w.y(),
+  const Quaternion & q = *this;
+	return Quaternion( q.w() * w.x() + q.y() * w.z() - q.z() * w.y(),
 		q.w() * w.y() + q.z() * w.x() - q.x() * w.z(),
 		q.w() * w.z() + q.x() * w.y() - q.y() * w.x(),
 		-q.x() * w.x() - q.y() * w.y() - q.z() * w.z()); 
@@ -346,31 +346,31 @@ operator*(const btVector3& w) const
 
 
 
-SIMD_FORCE_INLINE btVector3 
-quatRotate(const btQuaternion& rotation, const btVector3& v) 
+SIMD_FORCE_INLINE Vector3 
+quatRotate(const Quaternion& rotation, const Vector3& v) 
 {
-	btQuaternion q = rotation * v;
+	Quaternion q = rotation * v;
 	q *= rotation.inverse();
-	return btVector3(q.getX(),q.getY(),q.getZ());
+	return Vector3(q.getX(),q.getY(),q.getZ());
 }
 
-SIMD_FORCE_INLINE btQuaternion 
-shortestArcQuat(const btVector3& v0, const btVector3& v1) // Game Programming Gems 2.10. make sure v0,v1 are normalized
+SIMD_FORCE_INLINE Quaternion 
+shortestArcQuat(const Vector3& v0, const Vector3& v1) // Game Programming Gems 2.10. make sure v0,v1 are normalized
 {
-	btVector3 c = v0.cross(v1);
+	Vector3 c = v0.cross(v1);
 	btScalar  d = v0.dot(v1);
 
 	if (d < -1.0 + SIMD_EPSILON)
-		return btQuaternion(0.0f,1.0f,0.0f,0.0f); // just pick any vector
+		return Quaternion(0.0f,1.0f,0.0f,0.0f); // just pick any vector
 
 	btScalar  s = btSqrt((1.0f + d) * 2.0f);
 	btScalar rs = 1.0f / s;
 
-	return btQuaternion(c.getX()*rs,c.getY()*rs,c.getZ()*rs,s * 0.5f);
+	return Quaternion(c.getX()*rs,c.getY()*rs,c.getZ()*rs,s * 0.5f);
 }
 
-SIMD_FORCE_INLINE btQuaternion 
-shortestArcQuatNormalize2(btVector3& v0,btVector3& v1)
+SIMD_FORCE_INLINE Quaternion 
+shortestArcQuatNormalize2(Vector3& v0,Vector3& v1)
 {
 	v0.normalize();
 	v1.normalize();

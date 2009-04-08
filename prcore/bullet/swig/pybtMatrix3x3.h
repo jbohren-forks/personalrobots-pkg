@@ -24,17 +24,17 @@ subject to the following restrictions:
 namespace py
 {
 
-/**@brief The btMatrix3x3 class implements a 3x3 rotation matrix, to perform linear algebra in combination with btQuaternion, btTransform and btVector3.
+/**@brief The Matrix3x3 class implements a 3x3 rotation matrix, to perform linear algebra in combination with Quaternion, btTransform and Vector3.
  * Make sure to only include a pure orthogonal matrix without scaling. */
-class btMatrix3x3 {
+class Matrix3x3 {
 	public:
   /** @brief No initializaion constructor */
-		btMatrix3x3 () {}
+		Matrix3x3 () {}
 		
-//		explicit btMatrix3x3(const btScalar *m) { setFromOpenGLSubMatrix(m); }
+//		explicit Matrix3x3(const btScalar *m) { setFromOpenGLSubMatrix(m); }
 		
   /**@brief Constructor from Quaternion */
-		explicit btMatrix3x3(const btQuaternion& q) { setRotation(q); }
+		explicit Matrix3x3(const Quaternion& q) { setRotation(q); }
 		/*
 		template <typename btScalar>
 		Matrix3x3(const btScalar& yaw, const btScalar& pitch, const btScalar& roll)
@@ -43,7 +43,7 @@ class btMatrix3x3 {
 		}
 		*/
   /** @brief Constructor with row major formatting */
-		btMatrix3x3(const btScalar& xx, const btScalar& xy, const btScalar& xz,
+		Matrix3x3(const btScalar& xx, const btScalar& xy, const btScalar& xz,
 				  const btScalar& yx, const btScalar& yy, const btScalar& yz,
 				  const btScalar& zx, const btScalar& zy, const btScalar& zz)
 		{ 
@@ -52,7 +52,7 @@ class btMatrix3x3 {
 					 zx, zy, zz);
 		}
   /** @brief Copy constructor */
-		SIMD_FORCE_INLINE btMatrix3x3 (const btMatrix3x3& other)
+		SIMD_FORCE_INLINE Matrix3x3 (const Matrix3x3& other)
 		{
 			m_el[0] = other.m_el[0];
 			m_el[1] = other.m_el[1];
@@ -60,7 +60,7 @@ class btMatrix3x3 {
 		}
   /** @brief Assignment Operator */
   /* Comment for swig I'm not sure why it's complaining Warning 362
-		SIMD_FORCE_INLINE btMatrix3x3& operator=(const btMatrix3x3& other)
+		SIMD_FORCE_INLINE Matrix3x3& operator=(const Matrix3x3& other)
 		{
 			m_el[0] = other.m_el[0];
 			m_el[1] = other.m_el[1];
@@ -70,27 +70,27 @@ class btMatrix3x3 {
 
   /** @brief Get a column of the matrix as a vector 
    *  @param i Column number 0 indexed */
-		SIMD_FORCE_INLINE btVector3 getColumn(int i) const
+		SIMD_FORCE_INLINE Vector3 getColumn(int i) const
 		{
-                  return btVector3(m_el[0].getElement(i),m_el[1].getElement(i),m_el[2].getElement(i));
+                  return Vector3(m_el[0].getElement(i),m_el[1].getElement(i),m_el[2].getElement(i));
 		}
 		
 
   /** @brief Get a row of the matrix as a vector 
    *  @param i Row number 0 indexed */
-		SIMD_FORCE_INLINE const btVector3& getRow(int i) const
+		SIMD_FORCE_INLINE const Vector3& getRow(int i) const
 		{
 			btFullAssert(0 <= i && i < 3);
 			return m_el[i];
 		}
-		SIMD_FORCE_INLINE btVector3& getRow(int i)
+		SIMD_FORCE_INLINE Vector3& getRow(int i)
 		{
 			btFullAssert(0 <= i && i < 3);
 			return m_el[i];
 		}
   /** @brief Get a mutable reference to a row of the matrix as a vector 
    *  @param i Row number 0 indexed */
-  /** %extend		SIMD_FORCE_INLINE btVector3&  operator[](int i)
+  /** %extend		SIMD_FORCE_INLINE Vector3&  operator[](int i)
 		{ 
 			btFullAssert(0 <= i && i < 3);
 			return m_el[i]; 
@@ -98,7 +98,7 @@ class btMatrix3x3 {
   */
   /** @brief Get a const reference to a row of the matrix as a vector 
    *  @param i Row number 0 indexed */
-  /** SIMD_FORCE_INLINE const btVector3& operator[](int i) const
+  /** SIMD_FORCE_INLINE const Vector3& operator[](int i) const
 		{
 			btFullAssert(0 <= i && i < 3);
 			return m_el[i]; 
@@ -107,7 +107,7 @@ class btMatrix3x3 {
   /** @brief Multiply by the target matrix on the right
    *  @param m Rotation matrix to be applied 
    * Equivilant to this = this * m */
-		btMatrix3x3& operator*=(const btMatrix3x3& m); 
+		Matrix3x3& operator*=(const Matrix3x3& m); 
 		
   /** @brief Set from a carray of btScalars 
    *  @param m A pointer to the beginning of an array of 9 btScalars */
@@ -139,7 +139,7 @@ class btMatrix3x3 {
 
   /** @brief Set the matrix from a quaternion
    *  @param q The Quaternion to match */  
-		void setRotation(const btQuaternion& q) 
+		void setRotation(const Quaternion& q) 
 		{
 			btScalar d = q.length2();
 			btFullAssert(d != btScalar(0.0));
@@ -198,9 +198,9 @@ class btMatrix3x3 {
 					 btScalar(0.0), btScalar(0.0), btScalar(1.0)); 
 		}
 
-		static const btMatrix3x3&	getIdentity()
+		static const Matrix3x3&	getIdentity()
 		{
-			static const btMatrix3x3 identityMatrix(btScalar(1.0), btScalar(0.0), btScalar(0.0), 
+			static const Matrix3x3 identityMatrix(btScalar(1.0), btScalar(0.0), btScalar(0.0), 
 					 btScalar(0.0), btScalar(1.0), btScalar(0.0), 
 					 btScalar(0.0), btScalar(0.0), btScalar(1.0));
 			return identityMatrix;
@@ -226,7 +226,7 @@ class btMatrix3x3 {
 
   /**@brief Get the matrix represented as a quaternion 
    * @param q The quaternion which will be set */
-		void getRotation(btQuaternion& q) const
+		void getRotation(Quaternion& q) const
 		{
 			btScalar trace = m_el[0].x() + m_el[1].y() + m_el[2].z();
 			btScalar temp[4];
@@ -356,9 +356,9 @@ class btMatrix3x3 {
   /**@brief Create a scaled copy of the matrix 
    * @param s Scaling vector The elements of the vector will scale each column */
 		
-		btMatrix3x3 scaled(const btVector3& s) const
+		Matrix3x3 scaled(const Vector3& s) const
 		{
-			return btMatrix3x3(m_el[0].x() * s.x(), m_el[0].y() * s.y(), m_el[0].z() * s.z(),
+			return Matrix3x3(m_el[0].x() * s.x(), m_el[0].y() * s.y(), m_el[0].z() * s.z(),
 									 m_el[1].x() * s.x(), m_el[1].y() * s.y(), m_el[1].z() * s.z(),
 									 m_el[2].x() * s.x(), m_el[2].y() * s.y(), m_el[2].z() * s.z());
 		}
@@ -366,26 +366,26 @@ class btMatrix3x3 {
   /**@brief Return the determinant of the matrix */
 		btScalar            determinant() const;
   /**@brief Return the adjoint of the matrix */
-		btMatrix3x3 adjoint() const;
+		Matrix3x3 adjoint() const;
   /**@brief Return the matrix with all values non negative */
-		btMatrix3x3 absolute() const;
+		Matrix3x3 absolute() const;
   /**@brief Return the transpose of the matrix */
-		btMatrix3x3 transpose() const;
+		Matrix3x3 transpose() const;
   /**@brief Return the inverse of the matrix */
-		btMatrix3x3 inverse() const; 
+		Matrix3x3 inverse() const; 
 		
-		btMatrix3x3 transposeTimes(const btMatrix3x3& m) const;
-		btMatrix3x3 timesTranspose(const btMatrix3x3& m) const;
+		Matrix3x3 transposeTimes(const Matrix3x3& m) const;
+		Matrix3x3 timesTranspose(const Matrix3x3& m) const;
 		
-		SIMD_FORCE_INLINE btScalar tdotx(const btVector3& v) const 
+		SIMD_FORCE_INLINE btScalar tdotx(const Vector3& v) const 
 		{
 			return m_el[0].x() * v.x() + m_el[1].x() * v.y() + m_el[2].x() * v.z();
 		}
-		SIMD_FORCE_INLINE btScalar tdoty(const btVector3& v) const 
+		SIMD_FORCE_INLINE btScalar tdoty(const Vector3& v) const 
 		{
 			return m_el[0].y() * v.x() + m_el[1].y() * v.y() + m_el[2].y() * v.z();
 		}
-		SIMD_FORCE_INLINE btScalar tdotz(const btVector3& v) const 
+		SIMD_FORCE_INLINE btScalar tdotz(const Vector3& v) const 
 		{
 			return m_el[0].z() * v.x() + m_el[1].z() * v.y() + m_el[2].z() * v.z();
 		}
@@ -400,7 +400,7 @@ class btMatrix3x3 {
    * 
    * Note that this matrix is assumed to be symmetric. 
    */
-		void diagonalize(btMatrix3x3& rot, btScalar threshold, int maxSteps)
+		void diagonalize(Matrix3x3& rot, btScalar threshold, int maxSteps)
 		{
 		 rot.setIdentity();
 		 for (int step = maxSteps; step > 0; step--)
@@ -469,7 +469,7 @@ class btMatrix3x3 {
 			// apply rotation to rot (rot = rot * J)
 			for (int i = 0; i < 3; i++)
 			{
-                          btVector3& row = rot.getRow(i);
+                          Vector3& row = rot.getRow(i);
 			   mrp = row.getElement(p);
 			   mrq = row.getElement(q);
 			   row.getElement(p) = cos * mrp - sin * mrq;
@@ -493,19 +493,19 @@ class btMatrix3x3 {
                   return m_el[r1].getElement(c1) * m_el[r2].getElement(c2) - m_el[r1].getElement(c2) * m_el[r2].getElement(c1);
 		}
   ///Data storage for the matrix, each vector is a row of the matrix
-		btVector3 m_el[3];
+		Vector3 m_el[3];
 
 public:
-	SIMD_FORCE_INLINE btVector3 
-	operator*(const btVector3& v) const 
+	SIMD_FORCE_INLINE Vector3 
+	operator*(const Vector3& v) const 
 	{
-		return btVector3(getRow(0).dot(v), getRow(1).dot(v), getRow(2).dot(v));
+		return Vector3(getRow(0).dot(v), getRow(1).dot(v), getRow(2).dot(v));
 	}
 
-	SIMD_FORCE_INLINE btMatrix3x3 
-	operator*(const btMatrix3x3& m2) const
+	SIMD_FORCE_INLINE Matrix3x3 
+	operator*(const Matrix3x3& m2) const
 	{
-		return btMatrix3x3(
+		return Matrix3x3(
 			m2.tdotx( getRow(0)), m2.tdoty( getRow(0)), m2.tdotz( getRow(0)),
 			m2.tdotx( getRow(1)), m2.tdoty( getRow(1)), m2.tdotz( getRow(1)),
 			m2.tdotx( getRow(2)), m2.tdoty( getRow(2)), m2.tdotz( getRow(2)));
@@ -513,8 +513,8 @@ public:
 
 };
 
-	SIMD_FORCE_INLINE btMatrix3x3& 
-	btMatrix3x3::operator*=(const btMatrix3x3& m)
+	SIMD_FORCE_INLINE Matrix3x3& 
+	Matrix3x3::operator*=(const Matrix3x3& m)
 	{
 		setValue(m.tdotx(m_el[0]), m.tdoty(m_el[0]), m.tdotz(m_el[0]),
 				 m.tdotx(m_el[1]), m.tdoty(m_el[1]), m.tdotz(m_el[1]),
@@ -523,54 +523,54 @@ public:
 	}
 	
 	SIMD_FORCE_INLINE btScalar 
-	btMatrix3x3::determinant() const
+	Matrix3x3::determinant() const
 	{ 
-          btVector3 vec =  (*this).getRow(0);
+          Vector3 vec =  (*this).getRow(0);
           return vec.triple( (*this).getRow(1), (*this).getRow(2));
 	}
 	
 
-	SIMD_FORCE_INLINE btMatrix3x3 
-	btMatrix3x3::absolute() const
+	SIMD_FORCE_INLINE Matrix3x3 
+	Matrix3x3::absolute() const
 	{
-		return btMatrix3x3(
+		return Matrix3x3(
 			btFabs(m_el[0].x()), btFabs(m_el[0].y()), btFabs(m_el[0].z()),
 			btFabs(m_el[1].x()), btFabs(m_el[1].y()), btFabs(m_el[1].z()),
 			btFabs(m_el[2].x()), btFabs(m_el[2].y()), btFabs(m_el[2].z()));
 	}
 
-	SIMD_FORCE_INLINE btMatrix3x3 
-	btMatrix3x3::transpose() const 
+	SIMD_FORCE_INLINE Matrix3x3 
+	Matrix3x3::transpose() const 
 	{
-		return btMatrix3x3(m_el[0].x(), m_el[1].x(), m_el[2].x(),
+		return Matrix3x3(m_el[0].x(), m_el[1].x(), m_el[2].x(),
 								 m_el[0].y(), m_el[1].y(), m_el[2].y(),
 								 m_el[0].z(), m_el[1].z(), m_el[2].z());
 	}
 	
-	SIMD_FORCE_INLINE btMatrix3x3 
-	btMatrix3x3::adjoint() const 
+	SIMD_FORCE_INLINE Matrix3x3 
+	Matrix3x3::adjoint() const 
 	{
-		return btMatrix3x3(cofac(1, 1, 2, 2), cofac(0, 2, 2, 1), cofac(0, 1, 1, 2),
+		return Matrix3x3(cofac(1, 1, 2, 2), cofac(0, 2, 2, 1), cofac(0, 1, 1, 2),
 								 cofac(1, 2, 2, 0), cofac(0, 0, 2, 2), cofac(0, 2, 1, 0),
 								 cofac(1, 0, 2, 1), cofac(0, 1, 2, 0), cofac(0, 0, 1, 1));
 	}
 	
-	SIMD_FORCE_INLINE btMatrix3x3 
-	btMatrix3x3::inverse() const
+	SIMD_FORCE_INLINE Matrix3x3 
+	Matrix3x3::inverse() const
 	{
-		btVector3 co(cofac(1, 1, 2, 2), cofac(1, 2, 2, 0), cofac(1, 0, 2, 1));
+		Vector3 co(cofac(1, 1, 2, 2), cofac(1, 2, 2, 0), cofac(1, 0, 2, 1));
 		btScalar det = (*this).getRow(0).dot(co);
 		btFullAssert(det != btScalar(0.0));
 		btScalar s = btScalar(1.0) / det;
-		return btMatrix3x3(co.x() * s, cofac(0, 2, 2, 1) * s, cofac(0, 1, 1, 2) * s,
+		return Matrix3x3(co.x() * s, cofac(0, 2, 2, 1) * s, cofac(0, 1, 1, 2) * s,
 								 co.y() * s, cofac(0, 0, 2, 2) * s, cofac(0, 2, 1, 0) * s,
 								 co.z() * s, cofac(0, 1, 2, 0) * s, cofac(0, 0, 1, 1) * s);
 	}
 	
-	SIMD_FORCE_INLINE btMatrix3x3 
-	btMatrix3x3::transposeTimes(const btMatrix3x3& m) const
+	SIMD_FORCE_INLINE Matrix3x3 
+	Matrix3x3::transposeTimes(const Matrix3x3& m) const
 	{
-		return btMatrix3x3(
+		return Matrix3x3(
 			(*this).getRow(0).x() * m.getRow(0).x() + (*this).getRow(1).x() * m.getRow(1).x() + (*this).getRow(2).x() * m.getRow(2).x(),
 			(*this).getRow(0).x() * m.getRow(0).y() + (*this).getRow(1).x() * m.getRow(1).y() + (*this).getRow(2).x() * m.getRow(2).y(),
 			(*this).getRow(0).x() * m.getRow(0).z() + (*this).getRow(1).x() * m.getRow(1).z() + (*this).getRow(2).x() * m.getRow(2).z(),
@@ -582,10 +582,10 @@ public:
 			(*this).getRow(0).z() * m.getRow(0).z() + (*this).getRow(1).z() * m.getRow(1).z() + (*this).getRow(2).z() * m.getRow(2).z());
 	}
 	
-	SIMD_FORCE_INLINE btMatrix3x3 
-	btMatrix3x3::timesTranspose(const btMatrix3x3& m) const
+	SIMD_FORCE_INLINE Matrix3x3 
+	Matrix3x3::timesTranspose(const Matrix3x3& m) const
 	{
-		return btMatrix3x3(
+		return Matrix3x3(
 			(*this).getRow(0).dot(m.getRow(0)), (*this).getRow(0).dot(m.getRow(1)), (*this).getRow(0).dot(m.getRow(2)),
 			(*this).getRow(1).dot(m.getRow(0)), (*this).getRow(1).dot(m.getRow(1)), (*this).getRow(1).dot(m.getRow(2)),
 			(*this).getRow(2).dot(m.getRow(0)), (*this).getRow(2).dot(m.getRow(1)), (*this).getRow(2).dot(m.getRow(2)));
@@ -597,8 +597,8 @@ public:
 
 
 /*
-	SIMD_FORCE_INLINE btMatrix3x3 btMultTransposeLeft(const btMatrix3x3& m1, const btMatrix3x3& m2) {
-    return btMatrix3x3(
+	SIMD_FORCE_INLINE Matrix3x3 btMultTransposeLeft(const Matrix3x3& m1, const Matrix3x3& m2) {
+    return Matrix3x3(
         m1[0][0] * m2[0][0] + m1[1][0] * m2[1][0] + m1[2][0] * m2[2][0],
         m1[0][0] * m2[0][1] + m1[1][0] * m2[1][1] + m1[2][0] * m2[2][1],
         m1[0][0] * m2[0][2] + m1[1][0] * m2[1][2] + m1[2][0] * m2[2][2],
@@ -613,16 +613,16 @@ public:
 
 /**@brief Equality operator between two matrices
  * It will test all elements are equal.  */
-SIMD_FORCE_INLINE bool operator==(const btMatrix3x3& m1, const btMatrix3x3& m2)
+SIMD_FORCE_INLINE bool operator==(const Matrix3x3& m1, const Matrix3x3& m2)
 {
   return ( m1.getRow(0).getElement(0) == m2.getRow(0).getElement(0) && m1.getRow(1).getElement(0) == m2.getRow(1).getElement(0) && m1.getRow(2).getElement(0) == m2.getRow(2).getElement(0) &&
             m1.getRow(0).getElement(1) == m2.getRow(0).getElement(1) && m1.getRow(1).getElement(1) == m2.getRow(1).getElement(1) && m1.getRow(2).getElement(1) == m2.getRow(2).getElement(1) &&
             m1.getRow(0).getElement(2) == m2.getRow(0).getElement(2) && m1.getRow(1).getElement(2) == m2.getRow(1).getElement(2) && m1.getRow(2).getElement(2) == m2.getRow(2).getElement(2) );
 }
 
-py::btVector3  vecTimesMatrix(const py::btVector3& v, const py::btMatrix3x3& m)
+py::Vector3  vecTimesMatrix(const py::Vector3& v, const py::Matrix3x3& m)
   {
-    return py::btVector3(m.tdotx(v), m.tdoty(v), m.tdotz(v));
+    return py::Vector3(m.tdotx(v), m.tdoty(v), m.tdotz(v));
   }
 
 
