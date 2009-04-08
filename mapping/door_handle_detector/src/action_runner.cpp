@@ -57,13 +57,13 @@ int main(int argc, char** argv)
 
   DetectDoorAction detect_door(node);
   DetectHandleAction detect_handle(node);
-  //GraspDoorAction grasp;
+  GraspDoorAction grasp(node);
   //OpenDoorAction open;
 
   robot_actions::ActionRunner runner(10.0);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);  
-  //runner.connect<robot_msgs::Door, door_handle_detector::GraspDoorActionStatus, robot_msgs::Door>(grasp);
+  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp);
   //runner.connect<robot_msgs::Door, door_handle_detector::OpenDoorActionStatus, robot_msgs::Door>(open);
 
   runner.run();

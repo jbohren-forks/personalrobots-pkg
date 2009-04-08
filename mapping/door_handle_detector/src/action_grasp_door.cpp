@@ -46,13 +46,13 @@ static const string fixed_frame = "odom_combined";
 
 
 
-GraspDoorAction::GraspDoorAction() : 
+GraspDoorAction::GraspDoorAction(Node& node) : 
   robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("grasp_handle"), 
-  node_(ros::Node::instance()),
+  node_(node),
   request_preempt_(false),
-  tf_(*node_)
+  tf_(node)
 {
-  node_->advertise<std_msgs::Float64>("gripper_effort/set_command",10);
+  node_.advertise<std_msgs::Float64>("gripper_effort/set_command",10);
 };
 
 
@@ -77,7 +77,7 @@ void GraspDoorAction::handleActivate(const robot_msgs::Door& door)
   if (request_preempt_) {notifyPreempted(door); return;}
   std_msgs::Float64 gripper_msg;
   gripper_msg.data = 2.0;
-  node_->publish("gripper_effort/set_command", gripper_msg);
+  node_.publish("gripper_effort/set_command", gripper_msg);
   
   // move gripper in front of door
   if (request_preempt_) {notifyPreempted(door); return;}
@@ -111,12 +111,12 @@ void GraspDoorAction::handleActivate(const robot_msgs::Door& door)
   // close the gripper
   if (request_preempt_) {notifyPreempted(door); return;}
   gripper_msg.data = -2.0;
-  node_->publish("gripper_effort/set_command", gripper_msg);
+  node_.publish("gripper_effort/set_command", gripper_msg);
   for (unsigned int i=0; i<100; i++){
     Duration().fromSec(4.0/100.0).sleep();
     if (request_preempt_) {
       gripper_msg.data = 0.0;
-      node_->publish("gripper_effort/set_command", gripper_msg);
+      node_.publish("gripper_effort/set_command", gripper_msg);
       notifyPreempted(door); 
       return;
     }

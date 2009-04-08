@@ -55,7 +55,7 @@ namespace door_handle_detector{
 class GraspDoorAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
 {
 public:
-  GraspDoorAction();
+  GraspDoorAction(ros::Node& node);
   ~GraspDoorAction();
 
   virtual void handleActivate(const robot_msgs::Door& door);
@@ -66,7 +66,7 @@ private:
   // get angle between the door normal and the x-axis
   double getDoorAngle(const robot_msgs::Door& door);
 
-  ros::Node* node_;
+  ros::Node& node_;
 
   bool request_preempt_;
   tf::TransformListener tf_; 
