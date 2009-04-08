@@ -89,14 +89,15 @@ class RoadmapServer:
     size = (msg.left_info.width, msg.left_info.height)
     if self.vo == None:
       cam = camera.StereoCamera(msg.right_info)
-      self.vo = VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(),
-                          descriptor_scheme = DescriptorSchemeCalonder(),
+      self.fd = FeatureDetectorFast(300)
+      self.ds = DescriptorSchemeCalonder()
+      self.vo = VisualOdometer(cam, scavenge = False,
                           inlier_error_threshold = 3.0, sba = None,
                           inlier_thresh = 100,
                           position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
       self.vo.num_frames = self.startframe
     pair = [Image.fromstring("L", size, i.uint8_data.data) for i in [ msg.left_image, msg.right_image ]]
-    af = SparseStereoFrame(pair[0], pair[1])
+    af = SparseStereoFrame(pair[0], pair[1], feature_detector = self.fd, descriptor_scheme = self.ds)
     self.vo.handle_frame(af)
     if self.skel.add(self.vo.keyframe):
       self.send_map()
@@ -138,7 +139,7 @@ class FakeRoadmapServer:
     self.pub.publish(p)
 
 def main(args):
-  if args[1] == 'stage':
+  if (len(args) > 1) and (args[1] == 'stage'):
     rms = FakeRoadmapServer(args)
   else:
     rms = RoadmapServer(args)
