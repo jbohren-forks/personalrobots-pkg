@@ -35,7 +35,7 @@
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
 #include <ros/node.h>
-#include <navfn.h>
+#include <navfn/navfn.h>
 #include <new_costmap/costmap_2d_ros.h>
 #include <new_costmap/costmap_2d.h>
 #include <robot_actions/Pose2D.h>
