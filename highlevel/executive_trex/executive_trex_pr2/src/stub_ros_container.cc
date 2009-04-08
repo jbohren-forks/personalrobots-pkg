@@ -42,6 +42,7 @@
 #include <std_msgs/String.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Empty.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <robot_msgs/Pose.h>
 #include <robot_msgs/Door.h>
 #include <robot_msgs/BatteryState.h>
@@ -175,9 +176,9 @@ int main(int argc, char** argv){
   ros::Node node("executive_trex_pr2/action_container");
 
   // Create state publishers, if parameters are set
-  executive_trex_pr2::StatePublisher<robot_msgs::Pose>* base_state_publisher = NULL;
+  executive_trex_pr2::StatePublisher<deprecated_msgs::RobotBase2DOdom>* base_state_publisher = NULL;
   if (getComponentParam("/trex/enable_base_state_publisher"))
-    base_state_publisher = new executive_trex_pr2::StatePublisher<robot_msgs::Pose>(robot_msgs::Pose(), "base_state", 10.0);
+    base_state_publisher = new executive_trex_pr2::StatePublisher<deprecated_msgs::RobotBase2DOdom>(deprecated_msgs::RobotBase2DOdom(), "localizedpose", 10.0);
 
   executive_trex_pr2::StatePublisher<robot_msgs::BatteryState>* battery_state_publisher = NULL; 
   if (getComponentParam("/trex/enable_battery_state_publisher"))

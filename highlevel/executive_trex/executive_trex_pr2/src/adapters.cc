@@ -39,6 +39,7 @@
 #include "ros_action_adapter.h"
 #include "ROSStateAdapter.hh"
 #include <std_msgs/Empty.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <robot_msgs/Door.h>
 #include <robot_msgs/PlugStow.h>
 #include <robot_actions/ShellCommandState.h>
@@ -183,10 +184,12 @@ namespace TREX {
   protected:
 
     virtual void fillActiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){
+      setFrame(msg.header.frame_id, obs);
       readPose(*obs, msg.x, msg.y, msg.th);
     }
 
     virtual void fillInactiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){ 
+      setFrame(msg.header.frame_id, obs);
       readPose(*obs, msg.x, msg.y, msg.th);
     }
 
@@ -267,21 +270,18 @@ namespace TREX {
    * @brief ShellCommand action will take system commands in strings and 
    * ship them for execution.
    **********************************************************************/
-  class BaseStateAdapter: public ROSStateAdapter<robot_msgs::Pose> {
+  class BaseStateAdapter: public ROSStateAdapter<deprecated_msgs::RobotBase2DOdom> {
   public:
     BaseStateAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSStateAdapter<robot_msgs::Pose> ( agentName, configData) {
+      : ROSStateAdapter<deprecated_msgs::RobotBase2DOdom> ( agentName, configData) {
     }
 
     virtual ~BaseStateAdapter(){}
 
   private:
     void fillObservationParameters(ObservationByValue* obs){
-      double x = 0.0;
-      double y = 0.0;
-      double th = 0.0;
-      //@todo get2DPose(stateMsg, x, y, th);
-      readPose(*obs, x, y, th);
+      setFrame(stateMsg.header.frame_id, obs);
+      readPose(*obs, stateMsg.pos.x, stateMsg.pos.y, stateMsg.pos.th);
     }
   };
 
@@ -305,6 +305,7 @@ namespace TREX {
     virtual void fillActiveObservationParameters(const std_msgs::Empty& msg, ObservationByValue* obs){}
 
     virtual void fillInactiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){
+      setFrame(msg.header.frame_id, obs);
       ROSAdapter::read<double>("x", *obs, msg.plug_centroid.x);
       ROSAdapter::read<double>("y", *obs, msg.plug_centroid.y);
       ROSAdapter::read<double>("z", *obs, msg.plug_centroid.z);

@@ -5,7 +5,6 @@
 
   <include file="$(find test_executive_trex_pr2)/cfg/launch_stage.xml" />
 
-  <remap from="localizedpose" to="base_state"/>
   <param name="/trex/input_file" value="driver.cfg"/>
   <param name="/trex/path" value="$(find executive_trex_pr2)/cfg"/>
   <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/nav/without_stubs"/>

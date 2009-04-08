@@ -31,7 +31,7 @@ namespace TREX {
 
   private:
     void registerSubscribers() {
-      debugMsg("ROS", "Registering subscriber for " << timelineName << " on topic " << stateTopic);
+      TREX_INFO("ros:debug", nameString() << "Registering subscriber for " << timelineName << " on topic " << stateTopic);
       m_node->registerSubscriber(stateTopic, stateMsg, &TREX::ROSStateAdapter<S>::handleCallback, this, QUEUE_MAX());
     }
 

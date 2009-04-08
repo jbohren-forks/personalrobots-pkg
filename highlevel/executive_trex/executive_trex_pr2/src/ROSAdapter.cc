@@ -163,9 +163,9 @@ namespace TREX {
 
   std::string ROSAdapter::getFrame(const TokenId& token){
     ConstrainedVariableId frame_var = token->getVariable("frame_id");
-    // if no such parameter, ot it is not a singleton, then return the empty string
+    // if no such parameter, or it is not a singleton, then return the empty string
     if(frame_var.isNoId() || !frame_var->lastDomain().isSingleton())
-      return "";
+      return "map";
 
     LabelStr lblStr = frame_var->lastDomain().getSingletonValue();
     return lblStr.toString();
