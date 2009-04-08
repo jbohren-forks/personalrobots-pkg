@@ -5,17 +5,36 @@
 
   <group ns="r_arm_joint_trajectory_controller" clear_params="true">
     <param name="velocity_scaling_factor" value="0.75" type="double" />
-    <param name="trajectory_wait_timeout" value="0.5" type="double" />
+    <param name="trajectory_wait_timeout" value="5.0" type="double" />
     
-    <param name="r_shoulder_pan_joint/goal_reached_threshold" value="0.1" type="double" />
-    <param name="r_shoulder_lift_joint/goal_reached_threshold" value="0.1" type="double" />
-    <param name="r_shoulder_roll_joint/goal_reached_threshold" value="0.1" type="double" />
-    <param name="r_elbow_flex_joint/goal_reached_threshold" value="0.1" type="double" />
-    <param name="r_forearm_roll_joint/goal_reached_threshold" value="0.1" type="double" />
-    <param name="r_wrist_flex_joint/goal_reached_threshold" value="0.1" type="double" />
-    <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.1" type="double" />    
+    <param name="r_shoulder_pan_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_shoulder_lift_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_upper_arm_roll_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_elbow_flex_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_forearm_roll_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_wrist_flex_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.25" type="double" />    
   </group>
   
   <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/integration/r_arm_joint_trajectory_controller.xml" />
+  
+  <!-- Controller and Node Required for plug on base detection -->
+  
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
+  
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler">
+    <remap from="scan_in" to="tilt_scan"/>
+    <param name="tf_cache_time_secs" type="double" value="10.0" />
+    <param name="max_scans" type="int" value="400" />
+    <param name="ignore_laser_skew" type="bool" value="true" />
+    <param name="fixed_frame" type="string" value="torso_lift_link" />
+    <param name="downsample_factor" type="int" value="2" />
+  </node>
+
+  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
+    <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+    <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
+    <remap from="full_cloud" to="snapshot_cloud" />
+  </node>  
 
 </launch>
