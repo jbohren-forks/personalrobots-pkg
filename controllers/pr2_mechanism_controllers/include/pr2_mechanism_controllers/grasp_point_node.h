@@ -70,6 +70,8 @@ namespace grasp_point_node
 
     private:
 
+    double root_x_, root_y_, root_z_;
+
     double increment_;
 
     tf::TransformListener tf_; /**< Used to do transforms */

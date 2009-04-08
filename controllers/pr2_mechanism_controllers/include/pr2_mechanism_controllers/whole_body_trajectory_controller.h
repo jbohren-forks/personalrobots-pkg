@@ -213,6 +213,9 @@ namespace controller
     double max_allowed_update_time_;
 
     bool watch_dog_active_;
+
+    bool active_;
+
   };
 
 /** @class WholeBodyTrajectoryControllerNode
@@ -276,6 +279,10 @@ namespace controller
     void getJointTrajectoryThresholds();
 
     private:
+
+    std_msgs::String activate_msg_;
+
+    void activate();
 
     void publishDiagnostics();
 

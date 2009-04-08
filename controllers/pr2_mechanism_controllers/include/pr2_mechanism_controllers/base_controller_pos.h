@@ -324,6 +324,8 @@ namespace controller
      */
     double kp_speed_;
 
+    std::vector<double> error_steer_angle_;
+
     /*!
      * \brief compute 2D velocity of a point on a rigid body given a 2D input velocity
      * \param pos - Vector (see libTF for more information)
