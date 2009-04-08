@@ -514,7 +514,7 @@ void PR2GripperTransmission::propagateEffortBackwards(
 
         // assign passive joints efforts
         //double finger_MR_error_    = joint_MR - mimic_MR; // appears unstable due to tips much faster than upper fingers
-        double finger_MR_error_    = joint_MR + as[0]->state_.position_ / gap_mechanical_reduction_ * rad2mr_ ;
+        double finger_MR_error_    = joint_MR - as[0]->state_.position_ / gap_mechanical_reduction_ * rad2mr_ ;
         unsigned int index = it - passive_joints_.begin();
         double MIMICT = pids_[index]->updatePid(finger_MR_error_,0.001); //FIXME: get time and use current_time_ - last_time_
 
