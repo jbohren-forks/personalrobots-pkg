@@ -5,7 +5,7 @@
 
   <group ns="r_arm_joint_trajectory_controller" clear_params="true">
     <param name="velocity_scaling_factor" value="0.75" type="double" />
-    <param name="trajectory_wait_timeout" value="5.0" type="double" />
+    <param name="trajectory_wait_timeout" value="10.0" type="double" />
     
     <param name="r_shoulder_pan_joint/goal_reached_threshold" value="0.25" type="double" />
     <param name="r_shoulder_lift_joint/goal_reached_threshold" value="0.25" type="double" />
@@ -13,13 +13,17 @@
     <param name="r_elbow_flex_joint/goal_reached_threshold" value="0.25" type="double" />
     <param name="r_forearm_roll_joint/goal_reached_threshold" value="0.25" type="double" />
     <param name="r_wrist_flex_joint/goal_reached_threshold" value="0.25" type="double" />
-    <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.25" type="double" />    
+    <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.25" type="double" /> 
+    <param name="autostart" value="false" type="bool" /> 
   </group>
   
+ 
   <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/integration/r_arm_joint_trajectory_controller.xml" />
   
   <!-- Controller and Node Required for plug on base detection -->
   
+  <!--
+  <param name="laser_tilt_controller/autostart" value="false" type="bool" /> 
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
   
   <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler">
@@ -36,5 +40,5 @@
     <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
     <remap from="full_cloud" to="snapshot_cloud" />
   </node>  
-
+  -->
 </launch>
