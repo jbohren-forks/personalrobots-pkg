@@ -96,24 +96,25 @@ public:
     scan_req.command.period = req.duration*2.0;
     scan_req.command.profile = "linear";
     if (!ros::service::call("laser_tilt_controller/set_periodic_cmd", scan_req, scan_res))
-      ROS_ERROR("Point cloud srv: error setting laser scanner periodic command");
+      ROS_ERROR("PointCloudSrv: error setting laser scanner periodic command");
     else
-    ROS_INFO("Point cloud srv: commanded tilt laser scanner");
+    ROS_INFO("PointCloudSrv: commanded tilt laser scanner");
 
 
     // wait for signal from laser to know when scan is finished
     Time begin_time = scan_res.start_time;
+    Duration timeout = Duration().fromSec(2.0);
     while (laser_time_ < begin_time){
       boost::mutex::scoped_lock laser_lock(laser_mutex_);
-      if (ros::Time::now() > begin_time + Duration().fromSec(req.duration*2.0)){
-        ROS_ERROR("Point cloud srv: Timeout waiting for laser scan to come in");
+      if (ros::Time::now() > begin_time + Duration().fromSec(req.duration) + timeout){
+        ROS_ERROR("PointCloudSrv: Timeout waiting for laser scan to come in");
         return false;
       }
       laser_lock.unlock();
       Duration().fromSec(0.05).sleep();
     }
     Time end_time = laser_time_;
-    ROS_INFO("Point cloud srv: generated point cloud from time %f to %f", begin_time.toSec(), end_time.toSec());
+    ROS_INFO("PointCloudSrv: generated point cloud from time %f to %f", begin_time.toSec(), end_time.toSec());
 
     // get a point cloud from the point cloud assembler
     BuildCloud::Request assembler_req ;
@@ -121,9 +122,9 @@ public:
     assembler_req.begin = begin_time;
     assembler_req.end   = end_time;
     if (!ros::service::call("laser_scan_assembler/build_cloud", assembler_req, assembler_res))
-      ROS_ERROR("Point cloud srv: error receiving point cloud from point cloud assembler");
+      ROS_ERROR("PointCloudSrv: error receiving point cloud from point cloud assembler");
     else
-      ROS_INFO("Point cloud srv: received point cloud of size %i from point cloud assembler", assembler_res.cloud.pts.size());
+      ROS_INFO("PointCloudSrv: received point cloud of size %i from point cloud assembler", assembler_res.cloud.pts.size());
 
     res.cloud = assembler_res.cloud;
     return true;
