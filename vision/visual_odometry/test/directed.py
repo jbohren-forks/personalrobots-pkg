@@ -58,7 +58,7 @@ class TestDirected(unittest.TestCase):
   def test_sad(self):
     im = Image.open("img1.pgm")
     fd = FeatureDetectorStar(300)
-    ds = DescriptorSchemeCalonder()
+    ds = DescriptorSchemeSAD()
     af = SparseStereoFrame(im, im, feature_detector = fd, descriptor_scheme = ds)
     for (a,b) in af.match(af):
       self.assert_(a == b)
@@ -133,7 +133,7 @@ class TestDirected(unittest.TestCase):
     circle(left, 320, 200, 4, 255)
 
     fd = FeatureDetectorStar(300)
-    ds = DescriptorSchemeCalonder()
+    ds = DescriptorSchemeSAD()
     for disparity in range(20):
       right = Image.new("L", (640,480))
       circle(right, 320 - disparity, 200, 4, 255)
@@ -241,7 +241,7 @@ class TestDirected(unittest.TestCase):
           expected.append(P)
           afs.append(SparseStereoFrame(imgStereo(li), imgStereo(ri)))
 
-      vo = VisualOdometer(cam, descriptor_scheme = DescriptorSchemeCalonder())
+      vo = VisualOdometer(cam)
       for i,(af,ep) in enumerate(zip(afs, expected)):
         vo.handle_frame(af)
         if 0:
@@ -341,7 +341,7 @@ class TestDirected(unittest.TestCase):
 
   def test_stereo(self):
     fd = FeatureDetectorStar(300)
-    ds = DescriptorSchemeCalonder()
+    ds = DescriptorSchemeSAD()
     cam = camera.VidereCamera(open("wallcal.ini").read())
     #lf = Image.open("wallcal-L.bmp").convert("L")
     #rf = Image.open("wallcal-R.bmp").convert("L")
@@ -376,7 +376,7 @@ class TestDirected(unittest.TestCase):
     stereo_cam = {}
     af = {}
     fd = FeatureDetectorStar(300)
-    ds = DescriptorSchemeCalonder()
+    ds = DescriptorSchemeSAD()
     for i in range(5):
       stereo_cam[i] = camera.Camera((389.0, 389.0, .080 + .010 * i, 323.42, 323.42, 274.95))
       desired_pose = Pose()
