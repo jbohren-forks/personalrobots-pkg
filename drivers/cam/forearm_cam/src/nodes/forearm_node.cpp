@@ -57,6 +57,7 @@ private:
   int height_;
   double desired_freq_;
   bool started_video_;
+  bool ext_trigger_;
 
   DiagnosticUpdater<ForearmNode> diagnostic_;
   int count_;
@@ -81,6 +82,8 @@ public:
 
     int port;
     node_.param("~port", port, 9090);
+
+    node_.param("~ext_trigger", ext_trigger_, false);
 
     std::string mode_name;
     node_.param("~video_mode", mode_name, std::string("752x480x15"));
@@ -191,6 +194,13 @@ public:
     in_addr localIp;
     if ( wgIpGetLocalAddr(camera_->ifName, &localIp) != 0) {
       ROS_FATAL("Unable to get local IP address for interface %s", camera_->ifName);
+      node_.shutdown();
+      return;
+    }
+
+    // Select a video mode
+    if ( pr2TriggerControl( camera_, ext_trigger_ ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
+      ROS_FATAL("Trigger mode set error");
       node_.shutdown();
       return;
     }
