@@ -35,16 +35,40 @@
 #ifndef MPGLUE_PLAN_HPP
 #define MPGLUE_PLAN_HPP
 
+#include <robot_msgs/Pose.h>
 #include <deprecated_msgs/Pose2DFloat32.h>
 #include <vector>
 
 namespace mpglue {
   
   typedef std::vector<int> raw_sbpl_plan_t;
-  typedef std::vector<deprecated_msgs::Pose2DFloat32> waypoint_plan_t;
+  
+  namespace deprecated {
+    typedef std::vector<deprecated_msgs::Pose2DFloat32> waypoint_plan_t;
+  }
   
   class SBPLEnvironment;
   class IndexTransform;
+  
+  
+  struct waypoint_s {
+    static double const default_dr;
+    static double const default_dtheta;
+    
+    waypoint_s(double x, double y, double theta, double dr, double dtheta);
+    waypoint_s(double x, double y, double theta);
+    waypoint_s(waypoint_s const & orig);
+    waypoint_s(robot_msgs::Pose const & pose, double dr, double dtheta);
+    explicit waypoint_s(robot_msgs::Pose const & pose);
+    waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose, double dr, double dtheta);
+    explicit waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose);
+    
+    bool ignoreTheta() const;
+    
+    double x, y, theta, dr, dtheta;
+  };
+  
+  typedef std::vector<waypoint_s> waypoint_plan_t;
   
   
   /**
@@ -55,9 +79,101 @@ namespace mpglue {
   {
   public:
     explicit PlanConverter(waypoint_plan_t * plan);
-    void addWaypoint(deprecated_msgs::Pose2DFloat32 const & waypoint);
-    void addWaypoint(double px, double py, double pth);
+    PlanConverter(waypoint_plan_t * plan, double default_dr, double default_dtheta);
     
+    void addWaypoint(double px, double py, double pth)
+    { addWaypoint(waypoint_s(px, py, pth, default_dr, default_dtheta)); }
+    
+    void addWaypoint(double px, double py, double pth, double dr, double dtheta)
+    { addWaypoint(waypoint_s(px, py, pth, dr, dtheta)); }
+    
+    void addWaypoint(waypoint_s const & wp);
+    
+    /**
+       Convert a plan from a raw state ID sequence (as computed by
+       SBPLPlanner subclasses) to waypoints that are
+       understandable. Optionally provides some statistics on the
+       plan.
+    */
+    static void convertSBPL(/** in: how to translate state IDs to (x, y) or (x, y, theta)  */
+			    SBPLEnvironment const & environment,
+			    /** in: the raw plan */
+			    raw_sbpl_plan_t const & raw,
+			    /** in: the radial tolerance of each waypoint */
+			    double dr,
+			    /** in: the angular tolerance of each
+				waypoint (use M_PI to ignore theta) */
+			    double dtheta,
+			    /** out: the converted plan (it is just appended
+				to, not cleared for you) */
+			    waypoint_plan_t * plan,
+			    /** optional out: the cumulated path length */
+			    double * optPlanLengthM,
+			    /** optional out: the cumulated change in the path
+				tangential direction (the angle between the
+				x-axis and the delta between two successive
+				waypoints) */
+			    double * optTangentChangeRad,
+			    /** optional out: the cumulated change in the
+				direction of the waypoints (the delta of
+				theta values).
+				\note This only makes sense for plans that are
+				aware of the robot's heading though, i.e. dtheta < M_PI. */
+			    double * optDirectionChangeRad);
+    
+    /**
+       Convert a plan from an float index-pair sequence (as computed by
+       NavFn) to waypoints that are understandable. Optionally provides
+       some statistics on the plan. Have a look at
+       convertXYInterpolate() though, it takes advantage of the
+       sub-pixel resolution available in NavFn.
+    */
+    static void convertXY(/** in: how to translate map (x, y) to global (x, y) */
+			  IndexTransform const & itransform,
+			  /** in: array of X-coordinates (continuous grid index). */
+			  float const * path_x,
+			  /** in: array of Y-coordinates (continuous grid index). */
+			  float const * path_y,
+			  /** in: the length of path_x[] and path_y[]. */
+			  int path_len,
+			  /** in: the radial tolerance of each waypoint */
+			  double dr,
+			  /** out: the converted plan (it is just appended
+			      to, not cleared for you) */
+			  waypoint_plan_t * plan,
+			  /** optional out: the cumulated path length */
+			  double * optPlanLengthM,
+			  /** optional out: the cumulated change in the path
+			      tangential direction (the angle between the
+			      x-axis and the delta between two successive
+			      waypoints) */
+			  double * optTangentChangeRad);
+    
+    /**
+       Uses interpolateIndexToGlobal() for sub-pixel resolution.
+    */
+    static void convertXYInterpolate(/** in: how to translate map (x, y) to global (x, y) */
+				     IndexTransform const & itransform,
+				     /** in: array of X-coordinates (continuous grid index). */
+				     float const * path_x,
+				     /** in: array of Y-coordinates (continuous grid index). */
+				     float const * path_y,
+				     /** in: the length of path_x[] and path_y[]. */
+				     int path_len,
+				     /** in: the radial tolerance of each waypoint */
+				     double dr,
+				     /** out: the converted plan (it is just appended
+					 to, not cleared for you) */
+				     waypoint_plan_t * plan,
+				     /** optional out: the cumulated path length */
+				     double * optPlanLengthM,
+				     /** optional out: the cumulated change in the path
+					 tangential direction (the angle between the
+					 x-axis and the delta between two successive
+					 waypoints) */
+				     double * optTangentChangeRad);
+    
+    double default_dr, default_dtheta;
     double plan_length, tangent_change, direction_change;
     
   private:
@@ -65,93 +181,6 @@ namespace mpglue {
     size_t count_;
     double prevx_, prevy_, prevtan_, prevdir_;
   };
-  
-  
-  /**
-     Convert a plan from a raw state ID sequence (as computed by
-     SBPLPlanner subclasses) to waypoints that are
-     understandable. Optionally provides some statistics on the plan.
-  */
-  void convertPlan(/** in: how to translate state IDs to deprecated_msgs::Pose2DFloat32 */
-		   SBPLEnvironment const & environment,
-		   /** in: the raw plan */
-		   raw_sbpl_plan_t const & raw,
-		   /** out: the converted plan (it is just appended
-		       to, not cleared for you) */
-		   waypoint_plan_t * plan,
-		   /** optional out: the cumulated path length */
-		   double * optPlanLengthM,
-		   /** optional out: the cumulated change in the path
-		       tangential direction (the angle between the
-		       x-axis and the delta between two successive
-		       waypoints) */
-		   double * optTangentChangeRad,
-		   /** optional out: the cumulated change in the
-		       direction of the waypoints (the delta of
-		       deprecated_msgs::Pose2DFloat32::th values).
-		       \note This only makes sense for plans that are
-		       aware of the robot's heading though. */
-		   double * optDirectionChangeRad);
-  
-  /**
-     Convert a plan from an float index-pair sequence (as computed by
-     NavFn) to waypoints that are understandable. Optionally provides
-     some statistics on the plan. Have a look at
-     convertPlanInterpolate() though, it takes advantage of the
-     sub-pixel resolution available in NavFn.
-  */
-  void convertPlan(/** in: how to translate state IDs to deprecated_msgs::Pose2DFloat32 */
-		   IndexTransform const & itransform,
-		   /** in: array of X-coordinates (continuous grid index). */
-		   float const * path_x,
-		   /** in: array of Y-coordinates (continuous grid index). */
-		   float const * path_y,
-		   /** in: the length of path_x[] and path_y[]. */
-		   int path_len,
-		   /** out: the converted plan (it is just appended
-		       to, not cleared for you) */
-		   waypoint_plan_t * plan,
-		   /** optional out: the cumulated path length */
-		   double * optPlanLengthM,
-		   /** optional out: the cumulated change in the path
-		       tangential direction (the angle between the
-		       x-axis and the delta between two successive
-		       waypoints) */
-		   double * optTangentChangeRad,
-		   /** optional out: the cumulated change in the
-		       direction of the waypoints (the delta of
-		       deprecated_msgs::Pose2DFloat32::th values).
-		       \note This only makes sense for plans that are
-		       aware of the robot's heading though. */
-		   double * optDirectionChangeRad);
-  
-  /**
-     Uses interpolateIndexToGlobal() for sub-pixel resolution.
-  */
-  void convertPlanInterpolate(/** in: how to translate state IDs to deprecated_msgs::Pose2DFloat32 */
-			      IndexTransform const & itransform,
-			      /** in: array of X-coordinates (continuous grid index). */
-			      float const * path_x,
-			      /** in: array of Y-coordinates (continuous grid index). */
-			      float const * path_y,
-			      /** in: the length of path_x[] and path_y[]. */
-			      int path_len,
-			      /** out: the converted plan (it is just appended
-				  to, not cleared for you) */
-			      waypoint_plan_t * plan,
-			      /** optional out: the cumulated path length */
-			      double * optPlanLengthM,
-			      /** optional out: the cumulated change in the path
-				  tangential direction (the angle between the
-				  x-axis and the delta between two successive
-				  waypoints) */
-			      double * optTangentChangeRad,
-			      /** optional out: the cumulated change in the
-				  direction of the waypoints (the delta of
-				  deprecated_msgs::Pose2DFloat32::th values).
-				  \note This only makes sense for plans that are
-				  aware of the robot's heading though. */
-			      double * optDirectionChangeRad);
   
 }
 

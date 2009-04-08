@@ -11,17 +11,19 @@ genplot = "%s/genplot.py" % foo[1]
 
 worldspec = []
 worldexpl = []
-worldspec.append("pgm:204:../data/willow-clip1-r25.pgm:../data/willow-clip1-r25-a.xml")
-worldexpl.append("hallway to office")
-worldspec.append("pgm:204:../data/willow-clip1-r25.pgm:../data/willow-clip1-r25-b.xml")
-worldexpl.append("office to hallway")
+worldspec.append("xml:../data/test-sideways-sliding.xml")
+worldexpl.append("test sideways sliding")
 
 plannerspec = []
 plannerexpl = []
 plannerspec.append("ad:xythetalat:../data/pr2.mprim")
-plannerexpl.append("AD planner on lattice")
+plannerexpl.append("AD planner without sideways motion")
+plannerspec.append("ad:xythetalat:../data/pr2sides.mprim")
+plannerexpl.append("AD planner with sideways motion")
 plannerspec.append("ara:xythetalat:../data/pr2.mprim")
-plannerexpl.append("ARA planner on lattice")
+plannerexpl.append("ARA planner without sideways motion")
+plannerspec.append("ara:xythetalat:../data/pr2sides.mprim")
+plannerexpl.append("ARA planner with sideways motion")
 
 robotspec = []
 robotexpl = []
@@ -33,8 +35,6 @@ costmapspec = []
 costmapexpl = []
 costmapspec.append("sfl:25:325:460:550")
 costmapexpl.append("fully inflated")
-costmapspec.append("sfl:25:325:460:460")
-costmapexpl.append("inflated to circumscribed")
 costmapspec.append("sfl:25:325:325:325")
 costmapexpl.append("inflated to inscribed")
 costmapspec.append("sfl:25:0:0:0")

@@ -169,6 +169,16 @@ namespace mpglue {
     boost::shared_ptr<CostmapAccessor const> getCostmap() const { return cm_; }
     boost::shared_ptr<IndexTransform const> getIndexTransform() const { return it_; }
     
+    /**
+       \return the precision of the angular information contained in
+       the environment representation. For 2D planners, this is M_PI
+       (they do not take the theta angle into account). For planners
+       that do take theta into account, the returned value should be
+       half the angular resolution, such that +/- the tolerance covers
+       the full range.
+     */
+    virtual double GetAngularTolerance() const = 0;
+    
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost) = 0;
     

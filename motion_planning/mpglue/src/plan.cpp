@@ -38,10 +38,62 @@
 
 namespace mpglue {
   
+  double const waypoint_s::default_dr(0.1);
+  double const waypoint_s::default_dtheta(M_PI);
+  
+  waypoint_s::waypoint_s(double _x, double _y, double _theta, double _dr, double _dtheta)
+    : x(_x), y(_y), theta(_theta), dr(_dr), dtheta(_dtheta) {}
+  
+  waypoint_s::waypoint_s(double _x, double _y, double _theta)
+    : x(_x), y(_y), theta(_theta), dr(default_dr), dtheta(default_dtheta) {}
+  
+  waypoint_s::waypoint_s(waypoint_s const & orig)
+    : x(orig.x), y(orig.y), theta(orig.theta), dr(orig.dr), dtheta(orig.dtheta) {}
+
+  waypoint_s::waypoint_s(robot_msgs::Pose const & pose, double _dr, double _dtheta)
+    : x(pose.position.x), y(pose.position.y),
+      theta(atan2(pose.orientation.z, pose.orientation.w)),
+      dr(_dr), dtheta(_dtheta) {}
+  
+  waypoint_s::waypoint_s(robot_msgs::Pose const & pose)
+    : x(pose.position.x), y(pose.position.y),
+      theta(atan2(pose.orientation.z, pose.orientation.w)),
+      dr(default_dr), dtheta(default_dtheta) {}
+  
+  waypoint_s::waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose, double _dr, double _dtheta)
+    : x(pose.x), y(pose.y), theta(pose.th), dr(_dr), dtheta(_dtheta) {}
+  
+  waypoint_s::waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose)
+    : x(pose.x), y(pose.y), theta(pose.th), dr(default_dr), dtheta(default_dtheta) {}
+  
+  bool waypoint_s::ignoreTheta() const
+  {
+    return dtheta >= M_PI;
+  }
+  
   
   PlanConverter::
   PlanConverter(waypoint_plan_t * plan)
-    : plan_length(0),
+    : default_dr(waypoint_s::default_dr),
+      default_dtheta(waypoint_s::default_dtheta),
+      plan_length(0),
+      tangent_change(0),
+      direction_change(0),
+      plan_(plan),
+      count_(0),
+      prevx_(0),
+      prevy_(0),
+      prevtan_(0),
+      prevdir_(0)
+  {
+  }
+  
+  
+  PlanConverter::
+  PlanConverter(waypoint_plan_t * plan, double _default_dr, double _default_dtheta)
+    : default_dr(_default_dr),
+      default_dtheta(_default_dtheta),
+      plan_length(0),
       tangent_change(0),
       direction_change(0),
       plan_(plan),
@@ -55,47 +107,39 @@ namespace mpglue {
   
   
   void PlanConverter::
-  addWaypoint(deprecated_msgs::Pose2DFloat32 const & waypoint)
+  addWaypoint(waypoint_s const & wp)
   {
     if (0 < count_) {
-      double const dx(waypoint.x - prevx_);
-      double const dy(waypoint.y - prevy_);
+      double const dx(wp.x - prevx_);
+      double const dy(wp.y - prevy_);
       plan_length += sqrt(pow(dx, 2) + pow(dy, 2));
-      direction_change += fabs(sfl::mod2pi(waypoint.th - prevdir_));
+      direction_change += fabs(sfl::mod2pi(wp.theta - prevdir_));
       double const tangent(atan2(dy, dx));
       if (1 < count_) // tangent change only available after 2nd point
 	tangent_change += fabs(sfl::mod2pi(tangent - prevtan_));
       prevtan_ = tangent;
     }
-    plan_->push_back(waypoint);
+    plan_->push_back(wp);
     ++count_;
-    prevx_ = waypoint.x;
-    prevy_ = waypoint.y;
-    prevdir_ = waypoint.th;
+    prevx_ = wp.x;
+    prevy_ = wp.y;
+    prevdir_ = wp.theta;
   }
   
   
   void PlanConverter::
-  addWaypoint(double px, double py, double pth)
+  convertSBPL(SBPLEnvironment const & environment,
+	      raw_sbpl_plan_t const & raw,
+	      double dr,
+	      double dtheta,
+	      waypoint_plan_t * plan,
+	      double * optPlanLengthM,
+	      double * optTangentChangeRad,
+	      double * optDirectionChangeRad)
   {
-    deprecated_msgs::Pose2DFloat32 pp;
-    pp.x = px;
-    pp.y = py;
-    pp.th = pth;
-    addWaypoint(pp);
-  }
-  
-  
-  void convertPlan(SBPLEnvironment const & environment,
-		   raw_sbpl_plan_t const & raw,
-		   waypoint_plan_t * plan,
-		   double * optPlanLengthM,
-		   double * optTangentChangeRad,
-		   double * optDirectionChangeRad)
-  {
-    PlanConverter pc(plan);
+    PlanConverter pc(plan, dr, dtheta);
     for (raw_sbpl_plan_t::const_iterator it(raw.begin()); it != raw.end(); ++it)
-      pc.addWaypoint(environment.GetPoseFromState(*it));
+      pc.addWaypoint(waypoint_s(environment.GetPoseFromState(*it), dr, dtheta));
     if (optPlanLengthM)
       *optPlanLengthM = pc.plan_length;
     if (optTangentChangeRad)
@@ -105,16 +149,17 @@ namespace mpglue {
   }
   
   
-  void convertPlan(IndexTransform const & itransform,
-		   float const * path_x,
-		   float const * path_y,
-		   int path_len,
-		   waypoint_plan_t * plan,
-		   double * optPlanLengthM,
-		   double * optTangentChangeRad,
-		   double * optDirectionChangeRad)
+  void PlanConverter::
+  convertXY(IndexTransform const & itransform,
+	    float const * path_x,
+	    float const * path_y,
+	    int path_len,
+	    double dr,
+	    waypoint_plan_t * plan,
+	    double * optPlanLengthM,
+	    double * optTangentChangeRad)
   {
-    PlanConverter pc(plan);
+    PlanConverter pc(plan, dr, M_PI);
     ssize_t prev_ix(0), prev_iy(0);
     for (int ii(0); ii < path_len; ++ii, ++path_x, ++path_y) {
       ssize_t const ix(static_cast<ssize_t>(rint(*path_x)));
@@ -131,21 +176,20 @@ namespace mpglue {
       *optPlanLengthM = pc.plan_length;
     if (optTangentChangeRad)
       *optTangentChangeRad = pc.tangent_change;
-    if (optDirectionChangeRad)
-      *optDirectionChangeRad = pc.direction_change;
   }
   
   
-  void convertPlanInterpolate(IndexTransform const & itransform,
-			      float const * path_x,
-			      float const * path_y,
-			      int path_len,
-			      waypoint_plan_t * plan,
-			      double * optPlanLengthM,
-			      double * optTangentChangeRad,
-			      double * optDirectionChangeRad)
+  void PlanConverter::
+  convertXYInterpolate(IndexTransform const & itransform,
+		       float const * path_x,
+		       float const * path_y,
+		       int path_len,
+		       double dr,
+		       waypoint_plan_t * plan,
+		       double * optPlanLengthM,
+		       double * optTangentChangeRad)
   {
-    PlanConverter pc(plan);
+    PlanConverter pc(plan, dr, M_PI);
     double const resolution(itransform.getResolution());
     for (int ii(0); ii < path_len; ++ii, ++path_x, ++path_y) {
       ssize_t ix(static_cast<ssize_t>(rint(*path_x)));
@@ -160,8 +204,6 @@ namespace mpglue {
       *optPlanLengthM = pc.plan_length;
     if (optTangentChangeRad)
       *optTangentChangeRad = pc.tangent_change;
-    if (optDirectionChangeRad)
-      *optDirectionChangeRad = pc.direction_change;
   }
   
 }

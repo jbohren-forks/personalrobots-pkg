@@ -40,6 +40,7 @@
   <task>
     <description>top / widest</description>
     <goal><pose>  6.5   5.62  -1.55 </pose></goal>
+    <door> iejfrw wewoief </door>
     <start><pose> 0.5   2.98   1.56 </pose></start>
   </task>
 </setup>

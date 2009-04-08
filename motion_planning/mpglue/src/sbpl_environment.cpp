@@ -107,6 +107,8 @@ namespace {
     virtual deprecated_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
     virtual int GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const;
     
+    virtual double GetAngularTolerance() const;
+    
   protected:
     virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
     virtual StateChangeQuery const * createStateChangeQuery(std::vector<nav2dcell_t> const & changedcellsV) const;
@@ -131,10 +133,8 @@ namespace {
     SBPLEnvironmentDSI(boost::shared_ptr<CostmapAccessor const> cm,
 		       boost::shared_ptr<IndexTransform const> it,
 		       DSIsubclass * env,
-		       footprint_t const & footprint,
-		       double nominalvel_mpersecs,
-		       double timetoturn45degsinplace_secs)
-      : SBPLEnvironment(cm, it), env_(env) {}
+		       double angular_tolerance)
+      : SBPLEnvironment(cm, it), env_(env), angular_tolerance_(angular_tolerance) {}
     
     virtual ~SBPLEnvironmentDSI()
     { delete env_; }
@@ -196,8 +196,12 @@ namespace {
       return env_->GetStateFromCoord(ix, iy, ith);
     }
     
+    virtual double GetAngularTolerance() const
+    {
+      return angular_tolerance_;
+    }
+    
   protected:
-
     /** \todo The check IsWithinMapCell() should be done inside
 	EnvironmentNAV3DKIN::UpdateCost() or whatever subclass we are
 	dealing with here. */
@@ -217,6 +221,8 @@ namespace {
 	conceivable change the underlying DSIsubclass, which we
 	don't care about here. */
     mutable DSIsubclass * env_;
+
+    double angular_tolerance_;
   };
   
 }
@@ -377,9 +383,8 @@ namespace mpglue {
 	  env->UpdateCost(ix, iy, cost);
       }
     
-    return new SBPLEnvironmentDSI<EnvironmentNAV3DKIN>(cm, it, env, footprint,
-						       nominalvel_mpersecs,
-						       timetoturn45degsinplace_secs);
+    static double const dtheta(M_PI / NAV3DKIN_THETADIRS);
+    return new SBPLEnvironmentDSI<EnvironmentNAV3DKIN>(cm, it, env, dtheta);
   }
   
   
@@ -465,9 +470,8 @@ namespace mpglue {
 	  env->UpdateCost(ix, iy, cost);
       }
     
-    return new SBPLEnvironmentDSI<EnvironmentNAVXYTHETALAT>(cm, it, env, footprint,
-							    nominalvel_mpersecs,
-							    timetoturn45degsinplace_secs);
+    static double const dtheta(M_PI / NAVXYTHETALAT_THETADIRS);
+    return new SBPLEnvironmentDSI<EnvironmentNAVXYTHETALAT>(cm, it, env, dtheta);
   }
 
 
@@ -488,13 +492,13 @@ namespace mpglue {
     EnvironmentNAVXYTHETADOOR * env(new EnvironmentNAVXYTHETADOOR());
     if ( ! env->SetEnvParameter("cost_inscribed", cm->getInscribedCost())) {
       delete env;
-      throw runtime_error("mpglue::SBPLEnvironment::createXYThetaLattice():"
+      throw runtime_error("mpglue::SBPLEnvironment::createXYThetaDoor():"
 			  " EnvironmentNAVXYTHETADOOR::SetEnvParameter(\"cost_inscribed\", "
 			  + sfl::to_string(cm->getInscribedCost()) + ") failed");
     }
     if ( ! env->SetEnvParameter("cost_possibly_circumscribed", cm->getPossiblyCircumcribedCost())) {
       delete env;
-      throw runtime_error("mpglue::SBPLEnvironment::createXYThetaLattice():"
+      throw runtime_error("mpglue::SBPLEnvironment::createXYThetaDoor():"
 			  " EnvironmentNAVXYTHETADOOR::SetEnvParameter(\"cost_possibly_circumscribed\", "
 			  + sfl::to_string(cm->getPossiblyCircumcribedCost()) + ") failed");
     }
@@ -514,7 +518,7 @@ namespace mpglue {
     static double const goaltol_theta(22.5 * M_PI / 180.0);
     
     if (dbgos) {
-      *dbgos << "mpglue::SBPLEnvironment:createXYThetaLattice():\n"
+      *dbgos << "mpglue::SBPLEnvironment:createXYThetaDoor():\n"
 	     << "  motor_primitive_filename = " << motor_primitive_filename << "\n"
 	     << "  perimeterptsV =\n";
       for (vector<sbpl_2Dpt_t>::const_iterator ip(perimeterptsV.begin());
@@ -555,9 +559,9 @@ namespace mpglue {
 	  env->UpdateCost(ix, iy, cost);
       }
     
-    return new SBPLEnvironmentDSI<EnvironmentNAVXYTHETADOOR>(cm, it, env, footprint,
-							    nominalvel_mpersecs,
-							    timetoturn45degsinplace_secs);
+    /**< \todo Experimental door planner, basically copy-pasted from NAVXYTHETALAT */
+    static double const dtheta(M_PI / NAVXYTHETALAT_THETADIRS);
+    return new SBPLEnvironmentDSI<EnvironmentNAVXYTHETADOOR>(cm, it, env, dtheta);
   }
 
 
@@ -698,6 +702,13 @@ namespace {
     if ( ! env_->IsWithinMapCell(ix, iy))
       return -1;
     return env_->GetStateFromCoord(ix, iy);
+  }
+  
+  
+  double SBPLEnvironment2D::
+  GetAngularTolerance() const
+  {
+    return M_PI;
   }
   
 }

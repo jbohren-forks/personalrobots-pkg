@@ -97,7 +97,6 @@ namespace mpbench {
 		  bool _websiteMode,
 		  std::string const & _baseFilename,
 		  ResultCollection const & _result,
-		  bool _ignorePlanTheta,
 		  std::ostream & _logOs)
       : setup(_setup),
 	world(*_setup.getWorld()),
@@ -109,7 +108,6 @@ namespace mpbench {
 	baseFilename(_baseFilename),
 	footprint(_setup.getFootprint()),
 	result(_result),
-	ignorePlanTheta(_ignorePlanTheta),
 	logOs(_logOs)
     {
     }
@@ -316,7 +314,8 @@ void init_layout_three()
 
   new npm::TraversabilityDrawing("costmap_dark", new CostmapWrapProxy(0),
 				 npm::TraversabilityDrawing::MINIMAL_DARK);
-  new PlanDrawing("planner", -1, -1, false);
+  static bool const detailed(true);
+  new PlanDrawing("planner", -1, -1, detailed);
   view = new npm::View("planner", npm::Instance<npm::UniqueManager<npm::View> >());
   // beware of weird npm::View::Configure() param order: x, y, width, height
   view->Configure(v_width, 0, v_width, 1);
@@ -437,20 +436,27 @@ namespace {
       glColor3d(0.5, 1, 0);
       glLineWidth(1);
       if (plan) {
-	for (wpi_t iw(plan->begin()); iw != plan->end(); iw += skip) {
+	for (wpi_t iw(plan->begin()); iw != plan->end(); /* this can segfault: iw += skip */) {
 	  glPushMatrix();
 	  glTranslated(iw->x, iw->y, 0);
-	  if (configptr->ignorePlanTheta) {
+	  if (iw->ignoreTheta()) {
 	    gluDisk(wrap_glu_quadric_instance(),
 		    configptr->inscribedRadius,
 		    configptr->inscribedRadius,
 		    36, 1);
 	  }
 	  else {
-	    glRotated(180 * iw->th / M_PI, 0, 0, 1);
+	    glRotated(180 * iw->theta / M_PI, 0, 0, 1);
 	    drawFootprint();
 	  }
 	  glPopMatrix();
+	  // quick hack to skip ahead while not missing the end of an
+	  // STL container... should be done more properly.
+	  for (size_t ii(0); ii < skip; ++ii) {
+	    ++iw;
+	    if (iw == plan->end())
+	      break;
+	  }
 	} // endfor(plan)
       }	// endif(plan)
     } // endif(detailed)

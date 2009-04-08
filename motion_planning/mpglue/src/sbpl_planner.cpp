@@ -194,11 +194,18 @@ namespace mpglue {
     if (1 == stats_.status) {
       plan.reset(new waypoint_plan_t());
       if (1 < solution.size())
-	convertPlan(*environment_, solution, plan.get(),
-		    &stats_.plan_length,
-		    &stats_.plan_angle_change,
-		    0 // XXXX to do: if 3DKIN we actually want something here
-		    );
+	PlanConverter::convertSBPL(*environment_,
+				   solution,
+				   // using the cell size as waypoint
+				   // tolerance seems like a good
+				   // heuristic
+				   itransform_->getResolution(),
+				   environment_->GetAngularTolerance(),
+				   plan.get(),
+				   &stats_.plan_length,
+				   &stats_.plan_angle_change,
+				   0 // XXXX to do: if 3DKIN we actually want something here
+				   );
     }
     return plan;
   }

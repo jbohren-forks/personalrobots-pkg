@@ -126,7 +126,6 @@ int main(int argc, char ** argv)
 			       websiteMode,
 			       baseFilename(),
 			       *result_collection,
-			       true, // XXXX to do: depends on 3DKIN
 			       *logos),
 	    "mpbench",
 	    3, // hack: layoutID

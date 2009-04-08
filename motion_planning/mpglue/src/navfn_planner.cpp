@@ -103,13 +103,30 @@ namespace mpglue {
     if (planner_->calcNavFnAstar()) {
       plan.reset(new waypoint_plan_t());
       if (interpolate_plan_)
-	convertPlanInterpolate(*itransform_, planner_->getPathX(), planner_->getPathY(),
-			       planner_->getPathLen(), plan.get(), &stats_.plan_length,
-			       &stats_.plan_angle_change, 0);
+	PlanConverter::convertXYInterpolate(*itransform_,
+					    planner_->getPathX(),
+					    planner_->getPathY(),
+					    planner_->getPathLen(),
+					    // using the cell size as
+					    // waypoint tolerance
+					    // seems like a good
+					    // heuristic
+					    itransform_->getResolution(),
+					    plan.get(),
+					    &stats_.plan_length,
+					    &stats_.plan_angle_change);
       else
-	convertPlan(*itransform_, planner_->getPathX(), planner_->getPathY(),
-		    planner_->getPathLen(), plan.get(), &stats_.plan_length,
-		    &stats_.plan_angle_change, 0);
+	PlanConverter::convertXY(*itransform_,
+				 planner_->getPathX(),
+				 planner_->getPathY(),
+				 planner_->getPathLen(),
+				 // using the cell size as waypoint
+				 // tolerance seems like a good
+				 // heuristic
+				 itransform_->getResolution(),
+				 plan.get(),
+				 &stats_.plan_length,
+				 &stats_.plan_angle_change);
     }
     return plan;
   }

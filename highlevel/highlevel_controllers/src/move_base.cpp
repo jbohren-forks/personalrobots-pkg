@@ -615,7 +615,14 @@ namespace ros {
       sentry<MoveBase> guard(this);
       if (!isValid() || plan_.size() > newPlan.size()){
         plan_.clear();
-        std::copy(newPlan.begin(), newPlan.end(), std::back_inserter(plan_));
+	deprecated_msgs::Pose2DFloat32 pose;
+	for (mpglue::waypoint_plan_t::const_iterator ip(newPlan.begin());
+	     ip != newPlan.end(); ++ip) {
+	  pose.x = ip->x;
+	  pose.y = ip->y;
+	  pose.th = ip->theta;
+	  plan_.push_back(pose);
+	}
         publishPath(true, plan_);
       }
     }

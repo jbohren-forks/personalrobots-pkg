@@ -51,7 +51,6 @@ namespace mpbench {
 		    bool websiteMode,
 		    std::string const & baseFilename,
 		    ResultCollection const & result,
-		    bool ignorePlanTheta,
 		    std::ostream & logOs);
       
       Setup const & setup;
@@ -64,7 +63,6 @@ namespace mpbench {
       std::string const baseFilename;
       mpglue::footprint_t const & footprint;
       ResultCollection const & result;
-      bool const ignorePlanTheta;
       mutable std::ostream & logOs;
     };
     
