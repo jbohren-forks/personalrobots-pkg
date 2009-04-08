@@ -59,7 +59,7 @@
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
 
-#include "topic_synchronizer.h"
+#include "topic_synchronizer/topic_synchronizer.h"
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"

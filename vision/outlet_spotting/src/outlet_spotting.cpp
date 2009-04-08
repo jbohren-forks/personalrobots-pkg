@@ -65,7 +65,7 @@
 #include <point_cloud_mapping/sample_consensus/sac.h>
 #include <point_cloud_mapping/sample_consensus/ransac.h>
 #include <point_cloud_mapping/sample_consensus/lmeds.h>
-#include "topic_synchronizer.h"
+#include "topic_synchronizer/topic_synchronizer.h"
 #include <tf/transform_listener.h>
 
 #include "CvStereoCamModel.h"

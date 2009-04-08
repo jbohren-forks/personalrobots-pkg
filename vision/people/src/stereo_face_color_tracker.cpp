@@ -49,7 +49,7 @@
 #include "image_msgs/Image.h"
 #include "image_msgs/CvBridge.h"
 #include "image_msgs/ColoredLines.h"
-#include "topic_synchronizer.h"
+#include "topic_synchronizer/topic_synchronizer.h"
 #include "tf/transform_listener.h"
 
 #include "opencv/cxcore.h"

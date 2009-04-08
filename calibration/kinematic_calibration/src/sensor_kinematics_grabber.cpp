@@ -39,7 +39,7 @@
 #include "robot_msgs/MechanismState.h"
 #include "robot_msgs/MocapSnapshot.h"
 
-#include "topic_synchronizer.h"
+#include "topic_synchronizer/topic_synchronizer.h"
 
 #include "std_msgs/Empty.h"
 #include "robot_msgs/PointCloud.h"

@@ -106,7 +106,8 @@ class TopicSynchronizer
   private:
 
   //! A pointer to your node for calling callback
-  N* node_;
+  ros::Node* node_;
+  N* obj_ ;
 
   //! The callback to be called if successful
   void (N::*callback_)(ros::Time);
@@ -224,11 +225,11 @@ class TopicSynchronizer
       {
         timed_out = true;
         if (timeout_callback_)
-          (*node_.*timeout_callback_)(*time);
+          (obj_->*timeout_callback_)(*time);
       }
 
     if (*time == waiting_time_ && !timed_out)
-      (*node_.*callback_)(*time);
+      (obj_->*callback_)(*time);
 
     if (*time == waiting_time_)
     {
@@ -243,14 +244,30 @@ class TopicSynchronizer
 
   //! Constructor
   /*!
-   * The constructor for the TopicSynchronizer
+   * The constructor for the TopicSynchronizer. Kept for backwards compatibility. Since you shouldn't
+   * be inheriting from ros::Node, this constructor is probably not the one you want to be using.
    *
-   * \param node             A pointer to your node.
+   * \param node             A pointer to your node, which happens to also be the callback object
    * \param callback         A pointer to the callback to invoke when all messages have arrived
    * \param timeout          The duration
    * \param timeout_callback A callback which is triggered when the timeout expires
    */
-  TopicSynchronizer(N* node, void (N::*callback)(ros::Time), ros::Duration timeout = ros::Duration(1.0), void (N::*timeout_callback)(ros::Time) = NULL) : node_(node), callback_(callback), timeout_callback_(timeout_callback), expected_count_(0), count_(0), done_(false)
+  TopicSynchronizer(N* obj, void (N::*callback)(ros::Time), ros::Duration timeout = ros::Duration(1.0), void (N::*timeout_callback)(ros::Time) = NULL) : node_(obj), obj_(obj), callback_(callback), timeout_callback_(timeout_callback), expected_count_(0), count_(0), done_(false)
+  {
+    timeout_ = boost::posix_time::nanosec(timeout.toNSec());
+  }
+
+  //! Constructor
+  /*!
+   * The constructor for the TopicSynchronizer
+   *
+   * \param node             A pointer to your node.
+   * \param obj              A pointer to the callback object
+   * \param callback         A pointer to the callback to invoke when all messages have arrived
+   * \param timeout          The duration
+   * \param timeout_callback A callback which is triggered when the timeout expires
+   */
+  TopicSynchronizer(ros::Node* node, N* obj, void (N::*callback)(ros::Time), ros::Duration timeout = ros::Duration(1.0), void (N::*timeout_callback)(ros::Time) = NULL) : node_(node), obj_(obj), callback_(callback), timeout_callback_(timeout_callback), expected_count_(0), count_(0), done_(false)
   {
     timeout_ = boost::posix_time::nanosec(timeout.toNSec());
   }

@@ -6,7 +6,7 @@
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <export>
-    <cpp cflags="-I${prefix} -D__STDC_LIMIT_MACROS -DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG `rosboost-cfg --cflags`" lflags="`rosboost-cfg --lflags thread`"/>
+    <cpp cflags="-I${prefix}/include -D__STDC_LIMIT_MACROS -DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG `rosboost-cfg --cflags`" lflags="`rosboost-cfg --lflags thread`"/>
   </export>
   <url>http://pr.willowgarage.com/wiki/topic_synchronizer</url>
 </package>

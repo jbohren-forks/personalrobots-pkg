@@ -49,7 +49,7 @@
 #include "CvStereoCamModel.h"
 #include <robot_msgs/PositionMeasurement.h>
 #include "color_calib.h"
-#include "topic_synchronizer.h"
+#include "topic_synchronizer/topic_synchronizer.h"
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"

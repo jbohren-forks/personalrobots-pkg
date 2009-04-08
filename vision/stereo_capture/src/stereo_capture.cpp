@@ -73,7 +73,7 @@
 // ... //
 
 #include "color_calib.h"
-#include "topic_synchronizer.h"
+#include "topic_synchronizer/topic_synchronizer.h"
 #include <boost/thread.hpp>
 
 //DEFINES
