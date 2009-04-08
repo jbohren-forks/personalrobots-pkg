@@ -42,6 +42,7 @@ TuckArmsAction::TuckArmsAction() :
   action_name_("safety_tuck_arms"),
   node_(ros::Node::instance()),
   request_preempt_(false),  
+  traj_error_(false),
   which_arms_("right"),
   right_arm_controller_("r_arm_joint_trajectory_controller"),
   left_arm_controller_("l_arm_joint_trajectory_controller")
@@ -126,7 +127,7 @@ void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
     traj_id_ = traj_res_.trajectoryid;
     current_controller_name_ = right_arm_controller_;
     
-    while(!isTrajectoryDone())
+    while(!isTrajectoryDone() && !traj_error_)
     {
       if (request_preempt_)
       {
@@ -140,7 +141,7 @@ void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
   }
   
   
-  if((which_arms_ == "both") || (which_arms_ == "left"))
+  if((which_arms_ == "both") || (which_arms_ == "left") && !traj_error_)
   {
     if(!ros::service::call(left_arm_controller_ + "/TrajectoryStart", left_traj_req_, traj_res_))
     {
@@ -151,7 +152,7 @@ void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
     traj_id_ = traj_res_.trajectoryid;
     current_controller_name_ = left_arm_controller_;
     
-    while(!isTrajectoryDone())
+    while(!isTrajectoryDone() && !traj_error_)
     {
       if (request_preempt_)
       {
@@ -162,6 +163,13 @@ void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
       }
       sleep(0.5);
     }
+  }
+  
+  if(traj_error_)
+  {
+    ROS_ERROR("%s: Aborted, trajectory controller failed to reach goal.", action_name_.c_str());
+    notifyAborted(empty_);
+    return;
   }
   notifySucceeded(empty_);
   return;
@@ -186,10 +194,17 @@ bool TuckArmsAction::isTrajectoryDone()
   if(!ros::service::call(current_controller_name_ + "/TrajectoryQuery", req, res))
   {
     ROS_ERROR("%s: Error, failed to query trajectory completion", action_name_.c_str());
+    traj_error_ = true;
     return done;
   }   
   else if(res.done == res.State_Done)
+  {
     done = true;
+  }
+  else if(res.done == res.State_Failed)
+  {
+    traj_error_ = true;
+  }
   
 
   return done;
