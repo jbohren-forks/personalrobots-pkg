@@ -208,7 +208,7 @@ private:
 
     void unsubscribeStereoData()
     {
-//        unsubscribe("stereo/left/image_rect_color");
+        unsubscribe("stereo/left/image_rect_color");
         unsubscribe("stereo/left/image_rect");
         unsubscribe("stereo/disparity");
         unsubscribe("stereo/stereo_info");

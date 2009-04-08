@@ -165,9 +165,9 @@ public:
 	{
         tf_ = new tf::TransformListener(*this);
 
-		param ("~display", display, false);  // 100 points at high resolution
-		param ("~save_patches", save_patches, false);  // 100 points at high resolution
-		param ("~frames_number", frames_number_, 7);  // 100 points at high resolution
+		param ("~display", display, false);
+		param ("~save_patches", save_patches, false);
+		param ("~frames_number", frames_number_, 7);
 
 		if (display) {
 			ROS_INFO("Displaying images\n");
