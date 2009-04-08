@@ -50,9 +50,51 @@ public:
   double stamp;
 };
 
+/**\brief The swig interface data type */
+class StampedPoint
+{
+public:
+  StampedPoint():
+    frame_id("FRAME_ID_UNINITIALIZED"),
+    parent_id("PARENT_ID_UNINITIALIZED"),
+    stamp(0.0) {};
+  py::Vector3 point;
+  std::string frame_id;
+  std::string parent_id;
+  double stamp;
+};
+
+/**\brief The swig interface data type */
+class StampedVector
+{
+public:
+  StampedVector():
+    frame_id("FRAME_ID_UNINITIALIZED"),
+    parent_id("PARENT_ID_UNINITIALIZED"),
+    stamp(0.0) {};
+  py::Vector3 vector;
+  std::string frame_id;
+  std::string parent_id;
+  double stamp;
+};
+
+/**\brief The swig interface data type */
+class StampedQuaternion
+{
+public:
+  StampedQuaternion():
+    frame_id("FRAME_ID_UNINITIALIZED"),
+    parent_id("PARENT_ID_UNINITIALIZED"),
+    stamp(0.0) {};
+  py::Quaternion quaternion;
+  std::string frame_id;
+  std::string parent_id;
+  double stamp;
+};
 
 
-class pyTransformer
+
+class Transformer
 {
 public:
   /** Constructor 
@@ -60,10 +102,10 @@ public:
    * \param cache_time How long to keep a history of transforms in nanoseconds
    * 
    */
-  pyTransformer(bool interpolating = true, 
+  Transformer(bool interpolating = true, 
                 ros::Duration cache_time = ros::Duration(10.0)):
     tf_(interpolating, cache_time){;};
-  virtual ~pyTransformer(void){;};
+  virtual ~Transformer(void){;};
   
   /** \brief Clear all data */
   void clear() {tf_.clear();};
