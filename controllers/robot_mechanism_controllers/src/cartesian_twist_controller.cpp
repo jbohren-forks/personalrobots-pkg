@@ -113,7 +113,12 @@ bool CartesianTwistController::initXml(mechanism::RobotState *robot_state, TiXml
     ROS_ERROR("CartesianTwistController: could not get instance to mechanism control");
     return false;
   }
-  if (!mc->getControllerByName<CartesianWrenchController>("cartesian_wrench", wrench_controller_)){
+  string output;
+  if (!node_->getParam(controller_name_+"/output", output)){
+    ROS_ERROR("CartesianTwistController: No ouptut name found on parameter server");
+    return false;
+  }
+  if (!mc->getControllerByName<CartesianWrenchController>(output, wrench_controller_)){
     ROS_ERROR("CartesianTwistController: could not connect to wrench controller");
     return false;
   }

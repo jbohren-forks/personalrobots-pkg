@@ -116,7 +116,12 @@ bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot_state, 
     ROS_ERROR("CartesianTrajectoryController: could not get instance to mechanism control");
     return false;
   }
-  if (!mc->getControllerByName<CartesianPoseController>("cartesian_pose", pose_controller_)){
+  string output;
+  if (!node_->getParam(controller_name_+"/output", output)){
+    ROS_ERROR("CartesianTrajectoryController: No ouptut name found on parameter server");
+    return false;
+  }
+  if (!mc->getControllerByName<CartesianPoseController>(output, pose_controller_)){
     ROS_ERROR("CartesianPoseController: could not connect to pose controller");
     return false;
   }
