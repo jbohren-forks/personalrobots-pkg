@@ -15,5 +15,8 @@
   <depend package="angles" />
   <depend package="point_cloud_mapping" />
   <depend package="std_msgs" />
+  <depend package="opencv_latest" />
+  <depend package="image_msgs" />
+  <depend package="topic_synchronizer" />
 
 </package>
