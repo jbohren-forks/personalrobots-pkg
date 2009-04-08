@@ -1,0 +1,21 @@
+<launch>
+ 
+ 
+  <!-- Controller Required for tuck and untuck -->
+
+  <group ns="r_arm_joint_trajectory_controller" clear_params="true">
+    <param name="velocity_scaling_factor" value="0.75" type="double" />
+    <param name="trajectory_wait_timeout" value="0.5" type="double" />
+    
+    <param name="r_shoulder_pan_joint/goal_reached_threshold" value="0.1" type="double" />
+    <param name="r_shoulder_lift_joint/goal_reached_threshold" value="0.1" type="double" />
+    <param name="r_shoulder_roll_joint/goal_reached_threshold" value="0.1" type="double" />
+    <param name="r_elbow_flex_joint/goal_reached_threshold" value="0.1" type="double" />
+    <param name="r_forearm_roll_joint/goal_reached_threshold" value="0.1" type="double" />
+    <param name="r_wrist_flex_joint/goal_reached_threshold" value="0.1" type="double" />
+    <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.1" type="double" />    
+  </group>
+  
+  <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/integration/r_arm_joint_trajectory_controller.xml" />
+
+</launch>
