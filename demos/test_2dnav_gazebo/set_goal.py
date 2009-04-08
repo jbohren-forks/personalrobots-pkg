@@ -182,7 +182,7 @@ class NavStackTest(unittest.TestCase):
           if abs(state.goal.x-self.target_x)<FLOAT_TOL and \
              abs(state.goal.y-self.target_y)<FLOAT_TOL and \
              abs(shortest_angular_distance(state.goal.th,self.target_t))<FLOAT_TOL and \
-             ( state.status.value == 1 or state.status.value == 4 ):
+             ( state.status.value == 4 ):
             print "state goal is published: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
             self.publish_goal = False
     
@@ -198,7 +198,7 @@ class NavStackTest(unittest.TestCase):
         rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
-        rospy.Subscriber("state"                 , Planner2DState      , self.stateInput)
+        rospy.Subscriber("/move_base/feedback"   , MoveBaseState       , self.stateInput)
 
         # below only for debugging build 303, base not moving
         rospy.Subscriber("cmd_vel"               , PoseDot             , self.cmd_velInput)
