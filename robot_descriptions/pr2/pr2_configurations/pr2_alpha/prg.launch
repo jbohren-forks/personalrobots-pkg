@@ -29,7 +29,7 @@
 
 <!-- Tilt Laser -->
   <node  machine="realtime" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
-    <param name="port" type="string" value="/dev/ttyACM1" />
+    <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="laser_tilt_link" />
     <param name="min_ang_degrees" type="double" value="-70.0" />
     <param name="max_ang_degrees" type="double" value="70.0" />
@@ -54,12 +54,12 @@
 
 <!-- Stereo cam -->
   <group ns="stereo">
-    <param name="videre_mode" type="str" value="disparity_raw"/>
+    <param name="videre_mode" type="str" value="rectified"/>
     <param name="do_colorize" type="bool" value="True"/>
     <param name="do_rectify" type="bool" value="True"/>
     <param name="do_stereo" type="bool" value="False"/>
     <param name="do_calc_points" type="bool" value="False"/>
-    <param name="fps" type="double" value="15.0"/>
+    <param name="fps" type="double" value="30.0"/>
     <param name="frame_id" type="string" value="stereo_link"/>
   </group>
   <node machine="four" pkg="dcam" type="stereodcam" respawn="false"/>
