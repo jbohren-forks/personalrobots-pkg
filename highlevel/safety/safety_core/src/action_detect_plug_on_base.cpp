@@ -39,7 +39,8 @@
 using namespace safety_core;
 
 DetectPlugOnBaseAction::DetectPlugOnBaseAction(ros::Node& node) :
-  robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>("detect_plug_on_base_action"),
+  robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>("detect_plug_on_base"),
+  action_name_("detect_plug_on_base"),
   node_(node),
   request_preempt_(false),
   laser_controller_("laser_tilt_controller")
@@ -57,11 +58,11 @@ DetectPlugOnBaseAction::~DetectPlugOnBaseAction()
 void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
 {
   reset();
-  node_.param("~/tilt_laser_controller", laser_controller_, laser_controller_) ;
+  node_.param(action_name_ + "/tilt_laser_controller", laser_controller_, laser_controller_);
   
   if(laser_controller_ == "")
   {
-    ROS_ERROR("The tilt_laser_controller param was not set.");
+    ROS_ERROR("%s: tilt_laser_controller param was not set.",action_name_.c_str());
     plug_stow_.stowed = 0;
     notifyAborted(plug_stow_);
     return;
@@ -74,11 +75,13 @@ void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
   {
     if (request_preempt_)
     {
+      ROS_INFO("%s: preempted.", action_name_.c_str());
       plug_stow_.stowed = 0;
       notifyPreempted(plug_stow_);
     }
     else
     {
+      ROS_ERROR("%s: Failed to start laser.", action_name_.c_str());
       plug_stow_.stowed = 0;
       notifyAborted(plug_stow_);
     }
@@ -130,6 +133,7 @@ void DetectPlugOnBaseAction::localizePlug()
 {
   if (request_preempt_)
   {
+    ROS_INFO("%s: preempted.", action_name_.c_str());
     plug_stow_.stowed = 0;
     notifyPreempted(plug_stow_);
     return;
@@ -140,6 +144,7 @@ void DetectPlugOnBaseAction::localizePlug()
     not_found_count_++;
     if(not_found_count_ > 10)
     {
+      ROS_INFO("%s: aborted.", action_name_.c_str());
       plug_stow_.stowed = 0;
       notifyAborted(plug_stow_);
       return;
@@ -167,16 +172,13 @@ void DetectPlugOnBaseAction::localizePlug()
     sum_sq_z_ += pow(plug_stow_msg.plug_centroid.z, 2);
     std_z_ = sqrt((sum_sq_z_/found_count_) - pow(plug_stow_.plug_centroid.z, 2));
 
-    //ROS_INFO("std_x: %f std_y: %f std_z: %f", std_x_, std_y_, std_z_);
     if(found_count_ > 3 && std_x_ < 0.05 && std_y_ < 0.05 && std_z_ < 0.05)
     {
+      ROS_INFO("%s: succeeded.", action_name_.c_str());
       plug_stow_.stowed = 1;
       notifySucceeded(plug_stow_);
     }
   }
-
-
-
 
   return;
 }

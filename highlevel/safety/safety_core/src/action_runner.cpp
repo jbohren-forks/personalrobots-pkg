@@ -32,10 +32,18 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+// Msgs
 #include <robot_msgs/PlugStow.h>
 #include <std_msgs/Empty.h>
+
+// Actions
 #include <safety_core/action_detect_plug_on_base.h>
+#include <safety_core/action_tuck_arms.h>
+
+// States
+#include <robot_actions/NoArgumentsActionState.h>
 #include <robot_actions/DetectPlugOnBaseActionState.h>
+
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 
@@ -52,10 +60,12 @@ int main(int argc, char** argv)
   ros::Node node("safety_core_actions");
   std_msgs::Empty empty;
   DetectPlugOnBaseAction detect(node);
-
+  TuckArmsAction tuck_arms;
+   
   robot_actions::ActionRunner runner(10.0);
   runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect);
-
+  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(tuck_arms);
+  
   runner.run();
   detect.handleActivate(empty);
 

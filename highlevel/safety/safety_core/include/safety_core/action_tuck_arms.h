@@ -35,24 +35,27 @@
 
 /* Author: Melonee Wise */
 
-#ifndef ACTION_DETECT_PLUG_ON_BASE_H
-#define ACTION_DETECT_PLUG_ON_BASE_H
+#ifndef ACTION_UNTUCK_ARMS_H
+#define ACTION_UNTUCK_ARMS_H
 
 
 #include <ros/node.h>
-#include <robot_msgs/PlugStow.h>
-#include <pr2_mechanism_controllers/SetPeriodicCmd.h>
+
 #include <std_msgs/Empty.h>
 #include <robot_actions/action.h>
-#include <plug_onbase_detector/plug_onbase_detector.h>
+
+#include <robot_msgs/JointTraj.h>
+#include <pr2_mechanism_controllers/TrajectoryStart.h>
+#include <pr2_mechanism_controllers/TrajectoryQuery.h>
+#include <pr2_mechanism_controllers/TrajectoryCancel.h>
 
 namespace safety_core{
 
-class DetectPlugOnBaseAction: public robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>
+class TuckArmsAction: public robot_actions::Action<std_msgs::Empty, std_msgs::Empty>
 {
 public:
-  DetectPlugOnBaseAction(ros::Node& node);
-  ~DetectPlugOnBaseAction();
+  TuckArmsAction();
+  ~TuckArmsAction();
 
   virtual void handleActivate(const std_msgs::Empty& empty);
   virtual void handlePreempt();
@@ -61,37 +64,30 @@ public:
 
 private:
   // average the last couple plug centroids
-  void localizePlug();
-  void reset();
+  bool isTrajectoryDone();
+  void cancelTrajectory();
   
   std::string action_name_;
   
-  ros::Node& node_;
+  ros::Node* node_;
 
-  PlugOnBaseDetector::PlugOnBaseDetector* detector_;
+  pr2_mechanism_controllers::TrajectoryStart::Request right_traj_req_;
+  pr2_mechanism_controllers::TrajectoryStart::Request left_traj_req_;
+  pr2_mechanism_controllers::TrajectoryStart::Response traj_res_;  
 
-  robot_msgs::PlugStow plug_stow_;
-  robot_msgs::PlugStow plug_stow_msg;
-  bool request_preempt_;
+  std_msgs::Empty empty_;
   
-  std::string laser_controller_;
-  int not_found_count_;
-  int found_count_;
+  bool request_preempt_;
 
-  double sum_x_;
-  double sum_y_;
-  double sum_z_;
 
-  double sum_sq_x_;
-  double sum_sq_y_;
-  double sum_sq_z_;
-
-  double std_x_;
-  double std_y_;
-  double std_z_;
-
-  pr2_mechanism_controllers::SetPeriodicCmd::Request req_laser;
-  pr2_mechanism_controllers::SetPeriodicCmd::Response res_laser;
+  std::string which_arms_;
+  std::string right_arm_controller_;
+  std::string left_arm_controller_;
+  std::string current_controller_name_;
+  
+  
+  int traj_id_; 
+ 
 };
 
 }
