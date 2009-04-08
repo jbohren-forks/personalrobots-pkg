@@ -1,0 +1,7 @@
+<launch>
+
+ <node pkg="recognition_lambertian" name="plane_fit" type="plane_fit" respawn="false" output="screen">
+</node>
+
+</launch>
+
