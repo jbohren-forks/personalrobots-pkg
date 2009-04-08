@@ -13,8 +13,8 @@ subject to the following restrictions:
 */
 
 
-#ifndef btMatrix3x3_H
-#define btMatrix3x3_H
+#ifndef pybtMatrix3x3_H
+#define pybtMatrix3x3_H
 
 #include "LinearMath/btScalar.h"
 
