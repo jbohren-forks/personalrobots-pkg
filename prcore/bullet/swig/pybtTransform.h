@@ -45,7 +45,7 @@ public:
   /**@brief Constructor from Matrix3x3 (optional Vector3)
    * @param b Rotation from Matrix 
    * @param c Translation from Vector default (0,0,0)*/
-  Transform(py::Matrix3x3 b, 
+  Transform(const py::Matrix3x3& b, 
 		const Vector3& c = Vector3(btScalar(0), btScalar(0), btScalar(0)))
 		: m_basis(b),
 		m_origin(c)
