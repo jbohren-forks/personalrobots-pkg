@@ -134,8 +134,8 @@ protected:
    * @param goalTopic The ROS topic on which controller goals are received
    */
   HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic, std::string _preemptTopic = std::string("preempt")): 
-    initialized(false), terminated(false), stateTopic(nodeName + "/" + _stateTopic), 
-    goalTopic(nodeName + "/" + _goalTopic), preemptTopic(nodeName + "/" + _preemptTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), 
+    initialized(false), terminated(false), stateTopic("~" + _stateTopic), 
+    goalTopic("~" + _goalTopic), preemptTopic("~" + _preemptTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), 
     lastPlan_(ros::Time::now()), timeout_(0, 0), valid_(false) {
 
     // Obtain the control frequency for this node
