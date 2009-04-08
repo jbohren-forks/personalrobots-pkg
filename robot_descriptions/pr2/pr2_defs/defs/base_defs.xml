@@ -186,7 +186,7 @@
     </link>
 
     <transmission type="SimpleTransmission" name="${parent}_${suffix}_wheel_trans">
-      <actuator name="${parent}_${suffix}_a2_wheel_motor" />
+      <actuator name="${parent}_${suffix}_wheel_motor_alpha2" />
       <joint name="${parent}_${suffix}_wheel_joint" />
       <mechanicalReduction>${-1 * reflect * 80}</mechanicalReduction>
     </transmission>
@@ -232,7 +232,7 @@
     </link>
 
     <transmission type="SimpleTransmission" name="${suffix}_caster_rotation_trans">
-      <actuator name="${suffix}_caster_a2_rotation_motor" />
+      <actuator name="${suffix}_caster_rotation_motor_alpha2" />
       <joint name="${suffix}_caster_rotation_joint" />
       <mechanicalReduction>80</mechanicalReduction>
     </transmission>
@@ -559,7 +559,7 @@
     <controller type="CasterCalibrationControllerNode"
                 name="cal_caster_${suffix}" topic="cal_caster_${suffix}">
       <calibrate joint="${suffix}_caster_rotation_joint"
-                 actuator="${suffix}_caster_a2_rotation_motor"
+                 actuator="${suffix}_caster_rotation_motor_alpha2"
                  transmission="${suffix}_caster_rotation_trans"
                  velocity="1.0" />
       <joints caster="${suffix}_caster_rotation_joint"
