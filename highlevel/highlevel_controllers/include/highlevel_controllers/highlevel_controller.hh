@@ -118,7 +118,7 @@ public:
       if(isInitialized()){
 	doOneCycle();
 
-	ros::Node::instance()->publish("~" + stateTopic, this->stateMsg);
+	ros::Node::instance()->publish(stateTopic, this->stateMsg);
       }
  
       sleep(curr, controllerCycleTime_);
@@ -134,8 +134,8 @@ protected:
    * @param goalTopic The ROS topic on which controller goals are received
    */
   HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic, std::string _preemptTopic = std::string("preempt")): 
-    initialized(false), terminated(false), stateTopic(_stateTopic), 
-    goalTopic(_goalTopic), preemptTopic(_preemptTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), 
+    initialized(false), terminated(false), stateTopic(nodeName + "/" + _stateTopic), 
+    goalTopic(nodeName + "/" + _goalTopic), preemptTopic(nodeName + "/" + _preemptTopic), controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL), 
     lastPlan_(ros::Time::now()), timeout_(0, 0), valid_(false) {
 
     // Obtain the control frequency for this node
@@ -155,14 +155,14 @@ protected:
       plannerCycleTime_ = -1;
 
     // Advertize controller state updates - do not want to miss a state transition.
-    ros::Node::instance()->advertise<S>("~" + stateTopic, QUEUE_MAX());
+    ros::Node::instance()->advertise<S>(stateTopic, QUEUE_MAX());
 
     // Subscribe to controller goal requests. Last request winds. We drop others
-    ros::Node::instance()->subscribe("~" + goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
+    ros::Node::instance()->subscribe(goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
     ros::Node::instance()->subscribe("goal", goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
 
     // Subscribe to controller goal requests. Last request winds. We drop others
-    ros::Node::instance()->subscribe("~" + preemptTopic, goalMsg, &HighlevelController<S, G>::preemptCallback,  this, 1);
+    ros::Node::instance()->subscribe(preemptTopic, goalMsg, &HighlevelController<S, G>::preemptCallback,  this, 1);
 
     // Subscribe to executive shutdown signal
     ros::Node::instance()->subscribe("highlevel_controllers/shutdown", shutdownMsg_, &HighlevelController<S, G>::shutdownCallback, this, 1);
@@ -374,7 +374,7 @@ private:
     lock();
     preempt();
     updateStateMsg();
-    ros::Node::instance()->publish("~" + stateTopic, this->stateMsg);
+    ros::Node::instance()->publish(stateTopic, this->stateMsg);
     unlock();
   }
 
@@ -399,7 +399,7 @@ private:
       // If we are active, and this is a goal, publish the state message and activate. This allows us
       // to over-ride a new goal, but still forces the transition between active and inactive states
       ROS_DEBUG("Publishing state %d", stateMsg.status.value);
-      ros::Node::instance()->publish("~" + stateTopic, stateMsg);
+      ros::Node::instance()->publish(stateTopic, stateMsg);
       activate();
     }
 
@@ -413,7 +413,7 @@ private:
     // after this execution, but publishing it here ensures we get a message where the state
     // is active, even if it transitions in the first cycle to an inactive state. This can occur for
     // example if the planner returns that there is no plan to be had, for example.
-    ros::Node::instance()->publish("~" + stateTopic, this->stateMsg);
+    ros::Node::instance()->publish(stateTopic, this->stateMsg);
 
     unlock();
   }
@@ -457,7 +457,7 @@ private:
     // Publish a response reflecting the state for this cycle. The state may change
     // after this execution, but publishing it here ensures we get a message where the state
     // is active, even if it transitions in the first cycle to an inactive state
-    ros::Node::instance()->publish("~" + stateTopic, this->stateMsg);
+    ros::Node::instance()->publish(stateTopic, this->stateMsg);
 
     // If we are in an active state, we want to evalaute what to do whether we have a plan or not. In
     // the latter case, commands may be given to maintain a fail-safe state. The structure here ensures
