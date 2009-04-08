@@ -105,6 +105,77 @@ namespace trajectory_rollout {
     return 1.0;
   }
 
+
+
+  bool CostmapModel::footprintValidCost(const Point2DFloat32& position, const vector<Point2DFloat32>& footprint, 
+                                   double inscribed_radius, double circumscribed_radius, double &cost){
+    if(footprint.size() < 3)
+      return false;
+
+    //used to put things into grid coordinates
+    unsigned int cell_x, cell_y;
+
+    //get the cell coord of the center point of the robot
+    if(!ma_.WC_MC(position.x, position.y, cell_x, cell_y))
+      return false;
+
+    //for circular robots the circumscribed radius will equal the inscribed radius and we can do a point check
+    if(circumscribed_radius == inscribed_radius){
+      if(ma_.isDefinitelyBlocked(cell_x, cell_y))
+        return false;
+      cost = ma_.getCost(cell_x,cell_y);
+      return true;
+    }
+
+    //for non-circular robots... we can still save time by checking if the circumscribed circle is clear of obstacles
+    if(!ma_.isCircumscribedCell(cell_x, cell_y))
+    {
+      cost = ma_.getCost(cell_x,cell_y);
+      return true;
+    }
+    //now we really have to lay down the footprint in the costmap grid
+    unsigned int x0, x1, y0, y1;
+    double line_cost = 0.0;
+
+    //we need to rasterize each line in the footprint
+    for(unsigned int i = 0; i < footprint.size() - 1; ++i){
+      //get the cell coord of the first point
+      if(!ma_.WC_MC(footprint[i].x, footprint[i].y, x0, y0))
+        return false;
+
+      //get the cell coord of the second point
+      if(!ma_.WC_MC(footprint[i + 1].x, footprint[i + 1].y, x1, y1))
+        return false;
+
+      line_cost = lineCost(x0, x1, y0, y1);
+
+      //if there is an obstacle that hits the line... we know that we can return false right away 
+      if(line_cost < 0)
+        return false;
+    }
+
+    //we also need to connect the first point in the footprint to the last point
+    //get the cell coord of the last point
+    if(!ma_.WC_MC(footprint.back().x, footprint.back().y, x0, y0))
+      return false;
+
+    //get the cell coord of the first point
+    if(!ma_.WC_MC(footprint.front().x, footprint.front().y, x1, y1))
+      return false;
+
+    line_cost = lineCost(x0, x1, y0, y1);
+
+    if(line_cost < 0)
+      return false;
+
+    cost = ma_.getCost(cell_x,cell_y);
+    //if all line costs are legal... then we can return that the footprint is legal
+    return true;
+  }
+
+
+
+
   //calculate the cost of a ray-traced line
   double CostmapModel::lineCost(int x0, int x1, 
       int y0, int y1){

@@ -72,6 +72,9 @@ namespace trajectory_rollout {
       virtual double footprintCost(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint,
           double inscribed_radius, double circumscribed_radius);
 
+      bool footprintValidCost(const deprecated_msgs::Point2DFloat32& position, const std::vector<deprecated_msgs::Point2DFloat32>& footprint, double inscribed_radius, double circumscribed_radius, double &cost);
+
+
       /**
        * @brief  The costmap already keeps track of world observations, so for this world model this method does nothing
        * @param footprint The footprint of the robot in its current location
