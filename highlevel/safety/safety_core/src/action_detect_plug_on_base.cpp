@@ -71,7 +71,7 @@ void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
   notifyActivated();
   
   #if 1
-  if (!ros::service::call(laser_controller_ + "/set_periodic_cmd", req_laser, res_laser))
+  if (!ros::service::call(laser_controller_ + "/set_periodic_cmd", req_laser_, res_laser_))
   {
     if (request_preempt_)
     {
@@ -122,10 +122,10 @@ void DetectPlugOnBaseAction::reset()
   plug_stow_.plug_centroid.y = 0;
   plug_stow_.plug_centroid.z = 0;
 
-  req_laser.command.profile = "linear";
-  req_laser.command.period = 6;
-  req_laser.command.amplitude = 0.11;
-  req_laser.command.offset = 1.36;
+  req_laser_.command.profile = "linear";
+  req_laser_.command.period = 6;
+  req_laser_.command.amplitude = 0.11;
+  req_laser_.command.offset = 1.36;
 
 }
 

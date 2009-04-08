@@ -40,7 +40,7 @@
 #include <safety_core/action_detect_plug_on_base.h>
 #include <safety_core/action_tuck_arms.h>
 
-// States
+// State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
 #include <robot_actions/DetectPlugOnBaseActionState.h>
 
@@ -67,7 +67,8 @@ int main(int argc, char** argv)
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(tuck_arms);
   
   runner.run();
-  detect.handleActivate(empty);
+  
+  //detect.handleActivate(empty);
 
   node.spin();
   return 0;

@@ -90,8 +90,8 @@ private:
   double std_y_;
   double std_z_;
 
-  pr2_mechanism_controllers::SetPeriodicCmd::Request req_laser;
-  pr2_mechanism_controllers::SetPeriodicCmd::Response res_laser;
+  pr2_mechanism_controllers::SetPeriodicCmd::Request req_laser_;
+  pr2_mechanism_controllers::SetPeriodicCmd::Response res_laser_;
 };
 
 }
