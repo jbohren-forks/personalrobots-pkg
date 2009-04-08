@@ -1,0 +1,6 @@
+<launch>
+
+  <include file="$(find door_demos)/launch/base_trajectory_controller.launch"/>
+  <include file="$(find door_demos)/launch/move_base_door.launch"/>
+
+</launch>

@@ -2,14 +2,14 @@
 
     <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
-    <node pkg="highlevel_controllers" type="move_base_door" respawn="true" machine="two" output="screen" name="move_base_node">
+    <node pkg="highlevel_controllers" type="move_base_door" respawn="true" machine="two" output="screen" name="move_base_door_node">
       <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
       <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
       <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
       <param name="move_base/plannerType" value="ARAPlanner"/>
       <param name="move_base/environmentType" value="2D"/>
-      <param name="move_base/controller_frequency" value="10.0"/>
-      <param name="move_base/map_update_frequency" value="10.0"/>
+      <param name="move_base/controller_frequency" value="20.0"/>
+      <param name="move_base/map_update_frequency" value="15.0"/>
       <param name="move_base/planner_frequency" value="0.0"/>
       <param name="move_base/plannerTimeLimit" value="0.5"/>
       <param name="costmap_2d/base_laser_max_range" value="20.0"/>
@@ -21,7 +21,8 @@
       <param name="costmap_2d/freespace_projection_height" value="2.0"/>
       <param name="costmap_2d/inflation_radius" value="0.46"/>
       <param name="costmap_2d/circumscribed_radius" value="0.46"/>
-      <param name="costmap_2d/inscribed_radius" value="0.305"/>
+      <param name="costmap_2d/inscribed_radius" value="0.315"/>
+      <param name="costmap_2d/robot_radius" value="0.315"/>
       <param name="costmap_2d/raytrace_window" value="4.0"/>
       <param name="costmap_2d/weight" value="0.1"/>
 

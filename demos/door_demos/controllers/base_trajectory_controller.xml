@@ -86,19 +86,19 @@
 
     <controller name="base_x_controller" type="BasePIDController">
       <joint name="base_x" limit="1.0" type="PRISMATIC_CONTINUOUS">
-        <pid p="0.0" d="0.0" i="0.0" iClamp="0.0" />
+        <pid p="15.0" d="0.0" i="0.0" iClamp="0.0" />
       </joint>
     </controller>
 
     <controller name="base_y_controller" type="BasePIDController">
       <joint name="base_y" limit="1.0" type="PRISMATIC_CONTINUOUS">
-        <pid p="0.0" d="0.0" i="0.0" iClamp="0.0" />
+        <pid p="15.0" d="0.0" i="0.0" iClamp="0.0" />
       </joint>
     </controller>
 
     <controller name="base_w_controller" type="BasePIDController">
       <joint name="base_theta" limit="1.0" type="ROTARY_CONTINUOUS">
-        <pid p="0.0" d="0.0" i="0.0" iClamp="0.0" />
+        <pid p="15.0" d="0.0" i="0.0" iClamp="0.0" />
       </joint>
     </controller>
 
