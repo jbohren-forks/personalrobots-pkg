@@ -1,0 +1,1 @@
+<controller type="CartesianTrajectoryController" name="r_arm_cartesian_trajectory_controller" />
