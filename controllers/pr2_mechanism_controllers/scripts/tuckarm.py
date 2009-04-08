@@ -66,7 +66,7 @@ def go(side, positions):
 USAGE = 'tuckarm.py <arms> ; <arms> is \'(r)ight\', \'(l)eft\', or \'(b)oth\' arms'
 
 def set_params_right():
-  rospy.set_param("right_arm/trajectory_controller/velocity_scaling_factor", 0.75)
+  rospy.set_param("right_arm/trajectory_controller/velocity_scaling_factor", 0.5)
   rospy.set_param("right_arm/trajectory_controller/trajectory_wait_timeout", 0.25)
 
   rospy.set_param("right_arm/trajectory_controller/r_shoulder_pan_joint/goal_reached_threshold", 0.1)
@@ -124,7 +124,7 @@ if __name__ == '__main__':
       set_params_right()
       resp = mechanism.spawn_controller(xml_for_right.read())
       controllers.append('right_arm/trajectory_controller')
-      positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,-1.57,-2.25,0.0,0.0,0.0]]    
+      positions = [[0.0,0.0,0.0,-1.57,0.0,0.0,0.0], [0.0,1.57,-1.57,-1.57,0.0,0.0,0.0]]    
       go('right', positions)
 
       rospy.spin()
@@ -142,7 +142,7 @@ if __name__ == '__main__':
       controllers.append('left_arm/trajectory_controller')
         
       positions_l = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.05,1.57,-2.25,0.0,0.0,0.0]] 
-      positions_r = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,-1.57,-2.25,0.0,0.0,0.0]]
+      positions_r = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,-1.57,-1.57,0.0,0.0,0.0]]
       
       go('right', positions_r)
       sleep(0.5)
