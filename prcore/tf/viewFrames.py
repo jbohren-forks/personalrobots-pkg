@@ -42,7 +42,7 @@ PKG = 'tf' # this package name
 
 import roslib; roslib.load_manifest(PKG) 
 
-import sys
+import sys, time
 import os
 import string
 import re
@@ -54,8 +54,19 @@ from optparse import OptionParser
 import rospy
 from tf.srv import *
 
+import tf.tf_swig as pytf
+from tf import TransformListener
 
-def generate(node_name):
+def listen(duration):
+    rospy.init_node("viewFrames.py", anonymous=True)
+    tf_listener = TransformListener.TransformListener()
+    print "Listening to /tf_message for %f seconds"%duration
+    time.sleep(duration)
+    print "Done Listening"
+    return tf_listener.all_frames_as_dot()
+    
+
+def poll(node_name):
     print "Waiting for service %s/tf_frames"%node_name
     rospy.wait_for_service('%s/tf_frames'%node_name)
 
@@ -64,16 +75,17 @@ def generate(node_name):
         tf_frames_proxy = rospy.ServiceProxy('%s/tf_frames'%node_name, FrameGraph)
 
         output = tf_frames_proxy.call(FrameGraphRequest())
-##        print output.dot_graph
-
-
 
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
+        
+    return output.dot_graph
+
+def generate(dot_graph):
 
 
     with open('frames.gv', 'w') as outfile:
-        outfile.write(output.dot_graph)
+        outfile.write(dot_graph)
 
 
     try:
@@ -106,8 +118,11 @@ if __name__ == '__main__':
                       dest="node")
     options, args = parser.parse_args()
 
+    dot_graph = ''
     if not options.node:
-        print "Please enter a node name as an argument"
-        exit(-1)
+        dot_graph = listen(5.0)
     else:
-        generate(options.node)
+        print "hi", options.node
+        dot_graph = poll(options.node)
+
+    generate(dot_graph)
