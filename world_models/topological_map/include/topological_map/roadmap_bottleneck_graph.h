@@ -32,7 +32,7 @@
 
 #include "bottleneck_graph.h"
 #include <discrete_space_information/precomputed_adjacency_list/environment_precomputed_adjacency_list.h>
-#include <navfn.h>
+#include <navfn/navfn.h>
 
 namespace topological_map
 {
