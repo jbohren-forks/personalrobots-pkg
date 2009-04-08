@@ -66,7 +66,7 @@
 #include <boost/scoped_array.hpp>
 #include <highlevel_controllers/move_base.hh>
 #include <robot_actions/Pose2D.h>
-#include <navfn.h>
+#include <navfn/navfn.h>
 
 using namespace costmap_2d;
 using robot_msgs::Polyline2D;

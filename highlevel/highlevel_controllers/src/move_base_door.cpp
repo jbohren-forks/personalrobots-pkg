@@ -65,7 +65,7 @@
  **/
 
 #include <highlevel_controllers/move_base.hh>
-#include <navfn.h>
+#include <navfn/navfn.h>
 
 #include <robot_msgs/JointTraj.h>
 #include <angles/angles.h>

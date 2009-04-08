@@ -64,7 +64,7 @@
  **/
 
 #include <highlevel_controllers/move_base.hh>
-#include <navfn.h>
+#include <navfn/navfn.h>
 
 using namespace costmap_2d;
 
