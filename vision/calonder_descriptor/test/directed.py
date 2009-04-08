@@ -39,12 +39,13 @@ class TestDirected(unittest.TestCase):
 
       dim = cl1.dimension()
 
-      for i in range(1000000):
-        print i
-        sigs = cl1.getSignatures(im, kp)
-        #for (x,y) in kp:
-        #  patch = im.crop((x,y,x+32,y+32))
-        #  sig = cl1.getSignature(patch.tostring(), patch.size[0], patch.size[1])
+      if 0:
+        for i in range(1000000):
+          print i
+          sigs = cl1.getSignatures(im, kp)
+          #for (x,y) in kp:
+          #  patch = im.crop((x,y,x+32,y+32))
+          #  sig = cl1.getSignature(patch.tostring(), patch.size[0], patch.size[1])
       return
 
       def testclassifier(kp, im, cl):
