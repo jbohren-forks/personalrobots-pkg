@@ -1,0 +1,57 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+
+<!-- controllers-->
+  <include file="$(find 2dnav_pr2)/milestone/controllers.launch" />
+
+
+<!-- perception-->
+  <include file="$(find 2dnav_pr2)/milestone/perception.launch" />
+
+
+<!-- navigation-->
+  <include file="$(find 2dnav_pr2)/milestone/navigation.launch" />
+
+
+<!-- door domain -->
+  <include file="$(find door_handle_detector)/launch/door_handle_detector.launch" />  
+  <node pkg="doors_core" type="action_runner" />
+
+
+<!-- joystick -->
+  <param name="axis_vx" value="3" type="int"/>
+  <param name="axis_vy" value="2" type="int"/>
+  <param name="axis_vw" value="0" type="int"/>
+  <param name="pan" value="4" type="int"/>
+  <param name="tilt" value="5" type="int"/>
+  <param name="max_vw" value="1.0" />
+  <param name="max_vx" value="1.0" />
+  <param name="max_vy" value="1.0" />
+  <param name="deadman_button" value="4" type="int"/>
+  <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" respawn="true" machine="four" />
+
+
+<!-- Robot pose ekf -->
+  <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" machine="four" name="robot_pose_ekf">
+    <param name="freq" value="30.0"/>
+    <param name="sensor_timeout" value="1.0"/>
+    <param name="odom_used" value="true"/>
+    <param name="imu_used" value="true"/>
+    <param name="vo_used" value="false"/>
+  </node>
+
+
+<!-- Battery monitor -->
+  <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com raschemmel@willowgarage.com pr2-users@lists.willowgarage.com"/>
+  <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
+  <param name="recharge/subject_unplug" value="Robot Needs To Be Unplugged"/>
+  <param name="recharge/body_plugin" value="Hello, could you please plug me in?\nThanks, PR2"/>
+  <param name="recharge/body_unplug" value="Hello, could you please unplug me?\nThanks, PR2"/>
+  <param name="recharge/mail_client" value="mailx -s"/>
+  <node pkg="highlevel_controllers" type="recharge_controller" respawn="true" machine="four" />
+
+
+  <!-- For telling the robot to go charge -->
+    <node pkg="highlevel_controllers" type="joy_batt_sender" respawn="true" machine="four" />
+</launch>
