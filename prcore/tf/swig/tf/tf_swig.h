@@ -143,18 +143,9 @@ public:
    * Set a transform in the local library */
   void setTransform(const TransformStamped& transform)
   {
-    const py::Quaternion& rot = transform.transform.getRotation();
-    const py::Vector3& orig = transform.transform.getOrigin();
-    tf_.setTransform(tf::Stamped<btTransform>(btTransform(btQuaternion(rot.getX(),
-                                                                       rot.getX(),
-                                                                       rot.getX(),
-                                                                       rot.getX()),
-                                                          btVector3(orig.getX(),
-                                                                    orig.getX(),
-                                                                    orig.getZ())),
-                                              ros::Time().fromSec(transform.stamp),
-                                              transform.frame_id,
-                                              transform.parent_id));
+    tf::Stamped<tf::Transform> tr;
+    TransformStampedPytoBt(transform, tr);    
+    tf_.setTransform(tr);
   };
 
 

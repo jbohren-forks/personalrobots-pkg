@@ -120,6 +120,42 @@ def transform_stamped_bt_to_msg(bt):
     msg.parent_id = bt.parent_id
     return msg
 
+def pose_msg_to_bt(msg):
+    rot = msg.rotation
+    tr = msg.translation
+    t = bullet.Pose(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w),
+                         bullet.Vector3(tr.x, tr.y, tr.z))
+    t.setOrigin(bullet.Vector3(tr.x, tr.y, tr.z))
+    t.setRotation(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w))
+    return t
+
+def pose_stamped_msg_to_bt(msg):
+    return tf_swig.PoseStamped(pose_msg_to_bt(msg.pose),
+                                    msg.header.stamp.to_seconds(),
+                                    msg.header.frame_id,
+                                    msg.parent_id)
+
+def pose_bt_to_msg(bt):
+    rot = bt.getRotation()
+    tr = bt.getOrigin()
+    msg = robot_msgs.Pose()
+    msg.translation.x = tr.x()
+    msg.translation.y = tr.y()
+    msg.translation.z = tr.z()
+    msg.rotation.x = rot.x()
+    msg.rotation.y = rot.y()
+    msg.rotation.z = rot.z()
+    msg.rotation.w = rot.w()
+    return msg
+
+def pose_stamped_bt_to_msg(bt):
+    msg = robot_msgs.PoseStamped()
+    msg.pose = pose_bt_to_msg(bt.pose)
+    msg.header.frame_id = bt.frame_id
+    msg.header.stamp = rospy.rostime().from_seconds(bt.stamp)
+    msg.parent_id = bt.parent_id
+    return msg
+
 class TransformBroadcaster:
     def __init__(self):
         print "TransformBroadcaster initing"
@@ -179,4 +215,12 @@ class TransformListener:
     def set_extrapolation_limit(self, limit):
         self.transformer.setExtrapolationLimit(limit.to_seconds())
 
+    def transform_pose(self, target_frame, pose):
+        pose_out = tf_swig.PoseStamped()
+        self.transformer.transformPose(target_frame, pose, pose_out)
+        return pose_out
 
+    def transform_pose_in_time(self, target_frame, target_time, fixed_frame, pose):
+        pose_out = tf_swig.PoseStamped()
+        self.transformer.transformPose(target_frame, target_time, pose, fixed_frame, pose_out)
+        return pose_out
