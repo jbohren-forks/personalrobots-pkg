@@ -5,10 +5,8 @@
  * - Door domain constraints
  */
 #include "doors/imports.nddl"
-#include "doors/actions.nddl"
+#include "test/doors/actions.nddl"
 #include "world_model/topological_map.nddl"
-
-DoorActions door_actions = new DoorActions();
 
 Location sachins_doorway = new Location(13.15, 25.25, 0.0);
 

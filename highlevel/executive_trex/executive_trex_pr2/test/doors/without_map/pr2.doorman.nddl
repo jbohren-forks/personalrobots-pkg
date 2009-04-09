@@ -1,15 +1,11 @@
 /**
 
  * This test case will execute the open door action to get through sachins doorway. It tests:
- * - Basic Topological Map Integration
  * - Door domain actions
  * - Door domain constraints
  */
 #include "doors/imports.nddl"
-#include "doors/actions.nddl"
-#include "world_model/topological_map.nddl"
-
-DoorActions door_actions = new DoorActions();
+#include "test/doors/actions.nddl"
 
 close();
 

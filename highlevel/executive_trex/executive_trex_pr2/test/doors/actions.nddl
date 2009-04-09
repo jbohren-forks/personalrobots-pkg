@@ -52,13 +52,15 @@ DoorActions::OpenDoorById{
   // Here is the basic sequence. First introduce the components
   contains(MoveBase.Active cmd_move_to_detect);
   contains(DetectDoor.Active cmd_detect_door);
+  contains(DetectHandle.Active cmd_detect_handle);
   contains(MoveBase.Active cmd_go_to_grasp_position);
   contains(GraspHandle.Active cmd_grasp_handle);
-  contains(OpenDoorWithGrasp.Active cmd_open_door);
+  contains(OpenDoor.Active cmd_open_door);
 
   // Impose ordering constraints
   cmd_move_to_detect before cmd_detect_door;
-  cmd_detect_door before cmd_go_to_grasp_position;
+  cmd_detect_door before cmd_detect_handle;
+  cmd_detect_handle before cmd_go_to_grasp_position;
   cmd_go_to_grasp_position before cmd_grasp_handle;
   cmd_grasp_handle before cmd_open_door;
 
@@ -93,16 +95,18 @@ DoorActions::OpenDoorByDoorState{
   // This action requires all bounds to be set
   all_bounds_set(this.state);
 
-  // Here is the basic sequence. First introduce the components	
+  // Here is the basic sequence. First introduce the components
   contains(MoveBase.Active cmd_move_to_detect);
   contains(DetectDoor.Active cmd_detect_door);
+  contains(DetectHandle.Active cmd_detect_handle);
   contains(MoveBase.Active cmd_go_to_grasp_position);
   contains(GraspHandle.Active cmd_grasp_handle);
-  contains(OpenDoorWithGrasp.Active cmd_open_door);
+  contains(OpenDoor.Active cmd_open_door);
 
   // Impose ordering constraints
   cmd_move_to_detect before cmd_detect_door;
-  cmd_detect_door before cmd_go_to_grasp_position;
+  cmd_detect_door before cmd_detect_handle;
+  cmd_detect_handle before cmd_go_to_grasp_position;
   cmd_go_to_grasp_position before cmd_grasp_handle;
   cmd_grasp_handle before cmd_open_door;
 
@@ -139,3 +143,5 @@ DoorActions::OpenDoorByDoorState{
 			       GRASP_RANGE);
 
 }
+
+DoorActions door_actions = new DoorActions();

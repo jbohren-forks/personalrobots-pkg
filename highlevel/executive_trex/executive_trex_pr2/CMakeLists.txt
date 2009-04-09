@@ -22,7 +22,8 @@ rospack_add_nddl("test/nav/sim/move.0/pr2.rcs.sim.nddl")
 # Door Tests
 rospack_add_nddl("test/doors/pr2.rcs.sim.nddl")
 rospack_add_nddl("test/doors/single_action_test/pr2.doorman.nddl")
-rospack_add_nddl("test/doors/open_door/pr2.doorman.nddl")
+rospack_add_nddl("test/doors/without_map/pr2.doorman.nddl")
+rospack_add_nddl("test/doors/with_map/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/sim/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/sim/open_door.0/pr2.rcs.sim.nddl")
 
