@@ -1,0 +1,13 @@
+// Defines controller requirements for PLUG actions
+
+#include "rcs/controllers.nddl"
+
+RightArmMechanism right_arm_mechanism = new RightArmMechanism(Internal);
+
+DetectPlugOnBase::Active{
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+}
+
+SafetyTuckArms::Active{
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
+}

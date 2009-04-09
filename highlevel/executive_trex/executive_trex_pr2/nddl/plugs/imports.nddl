@@ -5,6 +5,7 @@
 #include "rcs/safety/exports.nddl"
 #include "rcs/plugs/exports.nddl"
 #include "mechanism_control/exports.nddl"
+#include "rcs/plugs/controllers.nddl"
 #include "safety/exports.nddl"
 #include "nav/nav.nddl"
 
@@ -15,6 +16,7 @@ MobilityStatus mobility_status = new MobilityStatus(External);
 BaseState base_state = new BaseState(External);
 
 // Actions
+PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(External);
 DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(External);
-
+SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
 MoveBase move_base = new MoveBase(External);

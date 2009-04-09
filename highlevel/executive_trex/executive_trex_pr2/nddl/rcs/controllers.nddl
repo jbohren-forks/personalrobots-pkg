@@ -6,10 +6,10 @@
 // Mechanisms used
 BaseMechanism base_mechanism = new BaseMechanism(External);
 HeadMechanism head_mechanism = new HeadMechanism(External);
-TiltLaserMechanism tilt_laser_mechanism = new TiltLaserMechanism(External);
+TiltLaserMechanism laser_tilt_mechanism = new TiltLaserMechanism(External);
 
 MoveBase::Active{
-  contained_by(base_mechanism.base_controller);
-  contained_by(head_mechanism.head_controller);
-  contained_by(tilt_laser_mechanism.tilt_laser_controller);
+  contained_by(base_mechanism.use_base_controller);
+  contained_by(head_mechanism.use_head_controller);
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
 }

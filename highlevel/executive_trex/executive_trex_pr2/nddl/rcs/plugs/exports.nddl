@@ -6,8 +6,8 @@
 /**
  * @brief 
  */
-class PlugUntuckArms extends ROSAction {
-  PlugUntuckArms(Mode _mode){super(_mode);}
+class PlugsUntuckArms extends ROSAction {
+  PlugsUntuckArms(Mode _mode){super(_mode);}
 };
 
 /**

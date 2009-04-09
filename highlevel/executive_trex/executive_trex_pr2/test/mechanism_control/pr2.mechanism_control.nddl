@@ -8,11 +8,11 @@
 
 close();
 
-rejectable(tilt_laser_mechanism.tilt_laser_controller tilt_scanner_active);
+rejectable(laser_tilt_mechanism.use_laser_tilt_controller tilt_scanner_active);
 
-rejectable(right_arm_mechanism.cartesian_trajectory_controller right_arm_first);
+rejectable(right_arm_mechanism.use_cartesian_trajectory_controller right_arm_first);
 
-rejectable(right_arm_mechanism.composite_tff_controller right_arm_second);
+rejectable(right_arm_mechanism.use_composite_tff_controller right_arm_second);
 
 right_arm_first before right_arm_second;
 right_arm_second before tilt_scanner_active;

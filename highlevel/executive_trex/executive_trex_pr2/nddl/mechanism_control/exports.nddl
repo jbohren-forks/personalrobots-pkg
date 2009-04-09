@@ -16,30 +16,30 @@ class Mechanism extends AgentTimeline {
  *********************************************/
 
 class BaseMechanism extends Mechanism {
-  predicate base_controller{}
+  predicate use_base_controller{}
   BaseMechanism(Mode _mode){ super(_mode); }
 };
 
 class HeadMechanism extends Mechanism {
-  predicate head_controller{}
+  predicate use_head_controller{}
   HeadMechanism(Mode _mode){ super(_mode); }
 };
 
 class RightArmMechanism extends Mechanism {
-  predicate cartesian_trajectory_controller{}
-  predicate joint_trajectory_controller{}
-  predicate composite_cartesian_controller{}
-  predicate composite_tff_controller{}
+  predicate use_cartesian_trajectory_controller{}
+  predicate use_joint_trajectory_controller{}
+  predicate use_composite_cartesian_controller{}
+  predicate use_composite_tff_controller{}
   RightArmMechanism(Mode _mode){ super(_mode); }
 };
 
 class RightGripperMechanism extends Mechanism {
-  predicate gripper_position_controller{}
-  predicate gripper_effort_controller{}
+  predicate use_position_controller{}
+  predicate use_effort_controller{}
   RightGripperMechanism(Mode _mode){ super(_mode); }
 };
 
 class TiltLaserMechanism extends Mechanism {
-  predicate tilt_laser_controller{}
+  predicate use_laser_tilt_controller{}
   TiltLaserMechanism(Mode _mode){ super(_mode); }
 };

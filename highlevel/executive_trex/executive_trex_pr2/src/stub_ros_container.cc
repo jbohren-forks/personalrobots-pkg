@@ -49,7 +49,10 @@
 #include <robot_msgs/PlugStow.h>
 #include <robot_actions/action_runner.h>
 #include <robot_actions/action.h>
+#include <robot_actions/NoArgumentsActionState.h>
 #include <robot_actions/DoorActionState.h>
+#include <robot_actions/CheckDoorwayState.h>
+#include <robot_actions/NotifyDoorBlockedState.h>
 #include <robot_actions/ShellCommandState.h>
 #include <robot_actions/MoveBaseState.h>
 #include <robot_actions/Pose2D.h>
@@ -213,6 +216,10 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_open_door"))
     runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door);
 
+  executive_trex_pr2::StubAction<robot_msgs::Door> open_door_without_grasp("open_door_without_grasp");
+  if (getComponentParam("/trex/enable_open_door_without_grasp"))
+    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door_without_grasp);
+
   executive_trex_pr2::StubAction<robot_msgs::Door> release_door("release_door");
   if (getComponentParam("/trex/enable_release_door"))
     runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(release_door);
@@ -231,12 +238,30 @@ int main(int argc, char** argv){
   executive_trex_pr2::StubAction<robot_actions::Pose2D> move_base("move_base");
   if (getComponentParam("/trex/enable_move_base"))
     runner.connect<robot_actions::Pose2D, robot_actions::MoveBaseState, robot_actions::Pose2D>(move_base);
+
   executive_trex_pr2::StubAction<std_msgs::Float32> recharge("recharge_controller");
   if (getComponentParam("/trex/enable_recharge"))
     runner.connect<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32>(recharge);
+
   executive_trex_pr2::StubAction<std_msgs::String> shell_command("shell_command");
   if (getComponentParam("/trex/enable_shell_command"))
     runner.connect<std_msgs::String, robot_actions::ShellCommandState, std_msgs::String>(shell_command);
+
+  executive_trex_pr2::StubAction<robot_actions::Pose2D> check_doorway("check_doorway");
+  if (getComponentParam("/trex/enable_check_doorway"))
+    runner.connect<robot_actions::Pose2D, robot_actions::CheckDoorwayState, robot_actions::Pose2D>(check_doorway);
+
+  executive_trex_pr2::StubAction<robot_actions::Pose2D> notify_door_blocked("notify_door_blocked");
+  if (getComponentParam("/trex/enable_notify_door_blocked"))
+    runner.connect<robot_actions::Pose2D, robot_actions::NotifyDoorBlockedState, robot_actions::Pose2D>(notify_door_blocked);
+
+  executive_trex_pr2::StubAction<std_msgs::Empty> safety_tuck_arms("safety_tuck_arms");
+  if (getComponentParam("/trex/enable_safety_tuck_arms"))
+    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(safety_tuck_arms);
+
+  executive_trex_pr2::StubAction<std_msgs::Empty> plugs_untuck_arms("plugs_untuck_arms");
+  if (getComponentParam("/trex/enable_plugs_untuck_arms"))
+    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(plugs_untuck_arms);
 
   // Miscellaneous
   runner.run();

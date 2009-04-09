@@ -42,8 +42,11 @@
 #include <deprecated_msgs/RobotBase2DOdom.h>
 #include <robot_msgs/Door.h>
 #include <robot_msgs/PlugStow.h>
+#include <robot_actions/NoArgumentsActionState.h>
 #include <robot_actions/ShellCommandState.h>
 #include <robot_actions/DoorActionState.h>
+#include <robot_actions/CheckDoorwayState.h>
+#include <robot_actions/NotifyDoorBlockedState.h>
 #include <robot_actions/MoveBaseState.h>
 #include <robot_actions/Pose2D.h>
 #include <robot_actions/RechargeState.h>
@@ -201,6 +204,89 @@ namespace TREX {
 
   // Allocate Factory
   TeleoReactor::ConcreteFactory<MoveBaseAdapter> MoveBaseAdapter_Factory("NewMoveBaseAdapter");
+
+  /***********************************************************************
+   * @brief CheckDoorway actions with a pose message for goal and feedback
+   **********************************************************************/
+  class CheckDoorwayAdapter: public ROSActionAdapter<robot_actions::Pose2D, robot_actions::CheckDoorwayState, robot_actions::Pose2D> {
+  public:
+
+    CheckDoorwayAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<robot_actions::Pose2D, robot_actions::CheckDoorwayState,  robot_actions::Pose2D>(agentName, configData){
+    }
+
+    virtual ~CheckDoorwayAdapter(){}
+
+  protected:
+
+    virtual void fillActiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){
+    }
+
+    virtual void fillInactiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){ 
+    }
+
+    void fillDispatchParameters(robot_actions::Pose2D& msg, const TokenId& goalToken){
+      msg.header.frame_id = getFrame(goalToken);
+      writePose(goalToken, msg.x, msg.y, msg.th);
+    }
+  };
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<CheckDoorwayAdapter> CheckDoorwayAdapter_Factory("CheckDoorwayAdapter");
+
+  /***********************************************************************
+   * @brief NotifyDoorBlocked action
+   **********************************************************************/
+  class NotifyDoorBlockedAdapter: public ROSActionAdapter<robot_actions::Pose2D, robot_actions::NotifyDoorBlockedState, robot_actions::Pose2D> {
+  public:
+
+    NotifyDoorBlockedAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<robot_actions::Pose2D, robot_actions::NotifyDoorBlockedState,  robot_actions::Pose2D>(agentName, configData){
+    }
+
+    virtual ~NotifyDoorBlockedAdapter(){}
+
+  protected:
+
+    virtual void fillActiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){
+    }
+
+    virtual void fillInactiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){ 
+    }
+
+    void fillDispatchParameters(robot_actions::Pose2D& msg, const TokenId& goalToken){
+    }
+  };
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<NotifyDoorBlockedAdapter> NotifyDoorBlockedAdapter_Factory("NotifyDoorBlockedAdapter");
+
+  /***********************************************************************
+   * @brief NoArgumentsAction action
+   **********************************************************************/
+  class NoArgumentsActionAdapter: public ROSActionAdapter<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> {
+  public:
+
+    NoArgumentsActionAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<std_msgs::Empty, robot_actions::NoArgumentsActionState,  std_msgs::Empty>(agentName, configData){
+    }
+
+    virtual ~NoArgumentsActionAdapter(){}
+
+  protected:
+
+    virtual void fillActiveObservationParameters(const std_msgs::Empty& msg, ObservationByValue* obs){
+    }
+
+    virtual void fillInactiveObservationParameters(const std_msgs::Empty& msg, ObservationByValue* obs){ 
+    }
+
+    void fillDispatchParameters(std_msgs::Empty& msg, const TokenId& goalToken){
+    }
+  };
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<NoArgumentsActionAdapter> NoArgumentsActionAdapter_Factory("NoArgumentsActionAdapter");
 
 
   /***********************************************************************

@@ -27,8 +27,5 @@ class DetectPlugOnBase extends ROSAction {
 
 /**
  * @brief This is a general utility for tucking arms.
- *
- * This is not a ROS action. Instead it will use MoveArm primitives to accomplish the arm position changes.
- * It will be used by anoyone doing navigation
  */
-class TuckArms extends  ROSAction {}
+class SafetyTuckArms extends  ROSAction {}

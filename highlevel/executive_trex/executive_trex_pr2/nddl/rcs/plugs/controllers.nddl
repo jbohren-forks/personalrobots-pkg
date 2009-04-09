@@ -2,22 +2,22 @@
 
 #include "rcs/controllers.nddl"
 
-RightArmMechanism right_arm_mechanism = new RightArmMechanism(Internal);
-RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(Internal);
+RightArmMechanism right_arm_mechanism = new RightArmMechanism(External);
+RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
 
 DetectPlugOnBase::Active{
-  contained_by(tilt_laser_mechanism.tilt_laser_controller);
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
 }
 
 SafetyTuckArms::Active{
-  contained_by(right_arm_mechanism.joint_trajectory_controller);
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
 }
 
 PlugsUntuckArms::Active{
-  contained_by(right_arm_mechanism.joint_trajectory_controller);
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
 }
 
 MoveAndGraspPlug::Active{
-  contained_by(right_arm_mechanism.cartesian_trajectory_controller);
-  contained_by(right_gripper_mechanism.position_controller);
+  contained_by(right_arm_mechanism.use_cartesian_trajectory_controller);
+  contained_by(right_gripper_mechanism.use_position_controller);
 }
