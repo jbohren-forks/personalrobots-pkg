@@ -1,6 +1,7 @@
 <launch>
   <group name="wg">
     <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+    <param name="/global_frame_id" value="map"/>
     <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" />
     <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
     <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" />
