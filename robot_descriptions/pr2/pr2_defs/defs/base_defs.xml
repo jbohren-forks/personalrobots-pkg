@@ -546,7 +546,7 @@
       <calibrate joint="${suffix}_caster_rotation_joint"
                  actuator="${suffix}_caster_rotation_motor"
                  transmission="${suffix}_caster_rotation_trans"
-                 velocity="1.0" />
+                 velocity="2.0" />
       <joints caster="${suffix}_caster_rotation_joint"
               wheel_l="${suffix}_caster_l_wheel_joint"
               wheel_r="${suffix}_caster_r_wheel_joint" />
