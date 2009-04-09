@@ -35,12 +35,12 @@
  *
  *********************************************************************/
 
+#include "doors_core/action_detect_door.h"
+#include "doors_core/action_detect_handle.h"
 #include <door_handle_detector/DetectDoorActionStatus.h>
 #include <robot_msgs/Door.h>
 #include <ros/node.h>
 #include <robot_actions/action_runner.h>
-#include "doors_core/action_detect_door.h"
-
 
 using namespace ros;
 using namespace std;
@@ -68,14 +68,14 @@ int
   my_door_.header.frame_id = "base_footprint";
 
   door_handle_detector::DetectDoorAction door_detector(node);
-  door_handle_detector::DetectDoorAction handle_detector(node);
+  door_handle_detector::DetectHandleAction handle_detector(node);
   robot_actions::ActionRunner runner(10.0);
   runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(door_detector);
   runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(handle_detector);
   runner.run();
 
   door_detector.handleActivate(my_door_);
-  //handle_detector.handleActivate(my_door_);
+  handle_detector.handleActivate(door_detector.tmp_result_);
 
   return (0);
 }
