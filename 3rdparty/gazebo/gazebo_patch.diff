@@ -1,6 +1,6 @@
 Index: libgazebo/gazebo.h
 ===================================================================
---- libgazebo/gazebo.h	(revision 7524)
+--- libgazebo/gazebo.h	(revision 7531)
 +++ libgazebo/gazebo.h	(working copy)
 @@ -556,7 +556,7 @@
  
@@ -113,7 +113,7 @@ Index: libgazebo/gazebo.h
  };
 Index: server/physics/MapGeom.hh
 ===================================================================
---- server/physics/MapGeom.hh	(revision 7524)
+--- server/physics/MapGeom.hh	(revision 7531)
 +++ server/physics/MapGeom.hh	(working copy)
 @@ -27,7 +27,11 @@
  #ifndef MAPGEOM_HH
@@ -140,7 +140,7 @@ Index: server/physics/MapGeom.hh
  
 Index: server/physics/MapGeom.cc
 ===================================================================
---- server/physics/MapGeom.cc	(revision 7524)
+--- server/physics/MapGeom.cc	(revision 7531)
 +++ server/physics/MapGeom.cc	(working copy)
 @@ -25,16 +25,15 @@
   */
@@ -260,7 +260,7 @@ Index: server/physics/MapGeom.cc
  
 Index: server/physics/Joint.hh
 ===================================================================
---- server/physics/Joint.hh	(revision 7524)
+--- server/physics/Joint.hh	(revision 7531)
 +++ server/physics/Joint.hh	(working copy)
 @@ -156,6 +156,8 @@
      /// Name of this joint
@@ -317,7 +317,7 @@ Index: server/physics/Joint.hh
  
 Index: server/physics/ContactParams.cc
 ===================================================================
---- server/physics/ContactParams.cc	(revision 7524)
+--- server/physics/ContactParams.cc	(revision 7531)
 +++ server/physics/ContactParams.cc	(working copy)
 @@ -35,11 +35,11 @@
  // Default constructor
@@ -338,7 +338,7 @@ Index: server/physics/ContactParams.cc
    this->mu2 = dInfinity;
 Index: server/physics/Joint.cc
 ===================================================================
---- server/physics/Joint.cc	(revision 7524)
+--- server/physics/Joint.cc	(revision 7531)
 +++ server/physics/Joint.cc	(working copy)
 @@ -30,6 +30,9 @@
  #include "Model.hh"
@@ -674,7 +674,7 @@ Index: server/physics/Joint.cc
  //////////////////////////////////////////////////////////////////////////////
 Index: server/Model.hh
 ===================================================================
---- server/Model.hh	(revision 7524)
+--- server/Model.hh	(revision 7531)
 +++ server/Model.hh	(working copy)
 @@ -39,6 +39,10 @@
  #include "Entity.hh"
@@ -717,7 +717,7 @@ Index: server/Model.hh
  }
 Index: server/Global.hh
 ===================================================================
---- server/Global.hh	(revision 7524)
+--- server/Global.hh	(revision 7531)
 +++ server/Global.hh	(working copy)
 @@ -88,4 +88,7 @@
  
@@ -727,9 +727,59 @@ Index: server/Global.hh
 +//#define TIMING
 +
  #endif
+Index: server/rendering/UserCamera.hh
+===================================================================
+--- server/rendering/UserCamera.hh	(revision 7531)
++++ server/rendering/UserCamera.hh	(working copy)
+@@ -81,6 +81,10 @@
+     private: std::string name;
+     private: static unsigned int cameraCount;
+     private: static int count;
++
++    protected: ParamT<bool> *UCSaveFramesP;
++    /// List of all the parameters
++    protected: std::vector<Param*> UCParameters;
+   };
+ }
+ 
+Index: server/rendering/UserCamera.cc
+===================================================================
+--- server/rendering/UserCamera.cc	(revision 7531)
++++ server/rendering/UserCamera.cc	(working copy)
+@@ -51,6 +51,10 @@
+ 
+   stream << "UserCamera_" << this->count++;
+   this->name = stream.str(); 
++
++  Param::Begin(&this->UCParameters);
++  this->UCSaveFramesP = new ParamT<bool>("UCSaveFrames", false, 0);
++  Param::End();
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -65,6 +69,9 @@
+ {
+   OgreCamera::LoadCam(node);
+ 
++  if (node)
++    this->UCSaveFramesP->Load(node);
++
+   this->SetClipDist(0.1, 100);
+   this->SetFOV( DTOR(60) );
+ }
+@@ -94,8 +101,7 @@
+ 
+   OgreAdaptor::Instance()->UpdateWindow(this->window, this);
+ 
+-
+-  if (this->saveFramesP->GetValue())
++  if (this->UCSaveFramesP->GetValue())
+   {
+     char tmp[1024];
+     if (!this->savePathnameP->GetValue().empty())
 Index: server/Model.cc
 ===================================================================
---- server/Model.cc	(revision 7524)
+--- server/Model.cc	(revision 7531)
 +++ server/Model.cc	(working copy)
 @@ -46,7 +46,12 @@
  #include "ControllerFactory.hh"
@@ -915,7 +965,7 @@ Index: server/Model.cc
 +
 Index: SConstruct
 ===================================================================
---- SConstruct	(revision 7524)
+--- SConstruct	(revision 7531)
 +++ SConstruct	(working copy)
 @@ -5,7 +5,7 @@
  
