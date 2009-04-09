@@ -331,6 +331,7 @@ void create_setup()
 
 static void plan_iteratively(size_t task_id, size_t episode_id,
 			     episode::startspec const & start, episode::goalspec const & goal,
+			     boost::shared_ptr<episode::doorspec> door,
 			     SBPLPlannerWrap & planner_ref)
 {
   double prev_epsilon(-1);
@@ -376,7 +377,7 @@ static void plan_iteratively(size_t task_id, size_t episode_id,
       stats->logStream(*logos, "  episode " + sfl::to_string(episode_id) + " iteration "
 		       + sfl::to_string(iteration_id) + ": FAILURE", "    ");
       *logos << flush;
-      result_collection->insert(task_id, episode_id, iteration_id, start, goal, plan, stats);
+      result_collection->insert(task_id, episode_id, iteration_id, start, goal, door, plan, stats);
       break;
     }
     
@@ -408,7 +409,7 @@ static void plan_iteratively(size_t task_id, size_t episode_id,
       stats->logStream(*logos, "  episode " + sfl::to_string(episode_id) + " iteration "
 		       + sfl::to_string(iteration_id) + "  IMPROVED", "    ");
     *logos << flush;
-    result_collection->insert(task_id, episode_id, iteration_id, start, goal, plan, stats);
+    result_collection->insert(task_id, episode_id, iteration_id, start, goal, door, plan, stats);
     prev_epsilon = stats->solution_epsilon;
   }  
 }
@@ -416,6 +417,7 @@ static void plan_iteratively(size_t task_id, size_t episode_id,
 
 static void plan_once(size_t task_id, size_t episode_id,
 		      episode::startspec const & start, episode::goalspec const & goal,
+		      boost::shared_ptr<episode::doorspec> door,
 		      CostmapPlanner & planner_ref)
 {
   shared_ptr<waypoint_plan_t> plan;
@@ -437,7 +439,7 @@ static void plan_once(size_t task_id, size_t episode_id,
   shared_ptr<CostmapPlannerStats> stats(planner_ref.copyStats());
   stats->logStream(*logos, title, "    ");
   *logos << flush;
-  result_collection->insert(task_id, episode_id, 0, start, goal, plan, stats);
+  result_collection->insert(task_id, episode_id, 0, start, goal, door, plan, stats);
 }
 
 
@@ -470,14 +472,14 @@ void run_tasks()
 	
 	// not all planners can be run iteratively...
 	if ( ! sbpl_planner)
-	  plan_once(task_id, episode_id, start, task.goal, *planner);
+	  plan_once(task_id, episode_id, start, task.goal, task.door, *planner);
 	else {
 	  if (start.allow_iteration)
-	    plan_iteratively(task_id, episode_id, start, task.goal, *sbpl_planner);
+	    plan_iteratively(task_id, episode_id, start, task.goal, task.door, *sbpl_planner);
 	  else {
 	    sbpl_planner->stopAtFirstSolution(start.use_initial_solution);
 	    sbpl_planner->setAllocatedTime(start.alloc_time);
-	    plan_once(task_id, episode_id, start, task.goal, *sbpl_planner);
+	    plan_once(task_id, episode_id, start, task.goal, task.door, *sbpl_planner);
 	  }
 	}
       } // endfor(episode)

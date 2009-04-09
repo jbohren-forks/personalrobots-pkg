@@ -546,6 +546,12 @@ namespace mpbench {
 	   << " " << to_string(is->allow_iteration)
 	   << " " << is->alloc_time
 	   << " " << is->px << "  " << is->py << "  " << is->pth << "\n";
+      if ((*it)->door)
+	os << prefix << "    door " << (*it)->door->px
+	   << " " << (*it)->door->py << " " << (*it)->door->th_shut << " " << (*it)->door->th_open
+	   << " " << (*it)->door->width << " " << (*it)->door->dhandle << "\n";
+      else
+	os << prefix << "    no door\n";
     }
   }
   
@@ -592,6 +598,53 @@ namespace mpbench {
     {
     }
     
+    
+    doorspec::
+    doorspec(doorspec const & orig)
+      : px(orig.px),
+	py(orig.py),
+	th_shut(orig.th_shut),
+	th_open(orig.th_open),
+	width(orig.width),
+	dhandle(orig.dhandle)
+    {
+    }
+    
+    
+    doorspec::
+    doorspec(double _px,
+	     double _py,
+	     double _th_shut,
+	     double _th_open,
+	     double _width,
+	     double _dhandle)
+      : px(_px),
+	py(_py),
+	th_shut(_th_shut),
+	th_open(_th_open),
+	width(_width),
+	dhandle(_dhandle)
+    {
+    }
+    
+    
+    boost::shared_ptr<doorspec> doorspec::
+    convert(double hinge_x, double hinge_y,
+	    double door_x, double door_y,
+	    double handle_distance,
+	    double angle_range)
+    {
+      double const dx(door_x - hinge_x);
+      double const dy(door_y - hinge_y);
+      double const th_shut(atan2(dy, dx));
+      boost::shared_ptr<doorspec> door(new doorspec(hinge_x, hinge_y,
+						    th_shut, th_shut + angle_range,
+						    sqrt(pow(dx, 2) + pow(dy, 2)),
+						    handle_distance));
+      return door;
+    }
+    
+    
     taskspec::
     taskspec(std::string const & _description, goalspec const & _goal)
       : description(_description),
@@ -599,12 +652,24 @@ namespace mpbench {
     {
     }
     
+    
+    taskspec::
+    taskspec(std::string const & _description, goalspec const & _goal, doorspec const & _door)
+      : description(_description),
+	goal(_goal),
+	door(new doorspec(_door))
+    {
+    }
+    
+    
     taskspec::
     taskspec(taskspec const & orig)
       : description(orig.description),
 	goal(orig.goal),
 	start(orig.start)
     {
+      if (orig.door)
+	door.reset(new doorspec(*orig.door));
     }
     
   }

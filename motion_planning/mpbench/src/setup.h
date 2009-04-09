@@ -84,14 +84,38 @@ namespace mpbench {
       double tol_xy;
       double tol_th;
     };
-
+    
+    struct doorspec {
+      doorspec(doorspec const & orig);
+      doorspec(double px,
+	       double py,
+	       double th_shut,
+	       double th_open,
+	       double width,
+	       double dhandle);
+      
+      static boost::shared_ptr<doorspec> convert(double hinge_x, double hinge_y,
+						 double door_x, double door_y,
+						 double handle_distance,
+						 double angle_range);
+      
+      double px;		/**< x-coordinate of hinge */
+      double py;		/**< y-coordinate of hinge */
+      double th_shut;		/**< angle between global X and door when fully shut */
+      double th_open;		/**< angle between global X and door when fully open */
+      double width;		/**< distance from hinge to extremity of door */
+      double dhandle;		/**< distance from hinge to handle */
+    };
+    
     struct taskspec {
       taskspec(std::string const & description, goalspec const & goal);
+      taskspec(std::string const & description, goalspec const & goal, doorspec const & door);
       taskspec(taskspec const & orig);
       
       std::string description;
       goalspec goal;
       std::vector<startspec> start; // per episode
+      boost::shared_ptr<doorspec> door; /**< only used by door planner (for now, anyway) */
     };
     
   }

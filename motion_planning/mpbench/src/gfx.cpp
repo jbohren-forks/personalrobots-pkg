@@ -61,6 +61,8 @@ static bool made_first_screenshot(false);
 static gfx::Configuration const * configptr(0);
 static double glut_aspect(1); 	// desired width / height (defined in init_layout_X())
 
+GLUquadric * quadric(0);
+
 static void init_layout_one();
 static void init_layout_two();
 static void init_layout_three();
@@ -162,6 +164,9 @@ namespace mpbench {
       glutReshapeFunc(reshape);
       glutKeyboardFunc(keyboard);
       ////glutTimerFunc(glut_timer_ms, timer, handle);
+      
+      // hm, should we deallocate this somewhere?
+      quadric = gluNewQuadric();
       
       made_first_screenshot = false;
       glutMainLoop();
@@ -460,6 +465,35 @@ namespace {
 	} // endfor(plan)
       }	// endif(plan)
     } // endif(detailed)
+    
+    if (result.door) {
+      glPushMatrix();
+      glTranslated(result.door->px, result.door->py, 0);
+      glRotated(180 * result.door->th_shut / M_PI, 0, 0, 1);
+      glColor3d(0.2, 0.2, 1);
+      GLint const slices(12);
+      GLint const loops(1);
+      GLdouble const start(90); // in deg, clockwise, zero is along y-axis
+      double const sweep_rad(result.door->th_open - result.door->th_shut);
+      GLdouble const sweep(-180 * sweep_rad / M_PI); // in deg, clockwise, from start angle
+      glLineWidth(3);
+      gluPartialDisk(quadric, result.door->width, result.door->width,
+		     slices, loops, start, sweep);
+      glLineWidth(1);
+      gluPartialDisk(quadric, result.door->dhandle, result.door->dhandle,
+		     slices, loops, start, sweep);
+      glLineWidth(3);
+      glBegin(GL_LINES);
+      glVertex2d(result.door->width, 0);
+      glVertex2d(0, 0);
+      glEnd();
+      glLineWidth(1);
+      glBegin(GL_LINES);
+      glVertex2d(0, 0);
+      glVertex2d(result.door->width * cos(sweep_rad), result.door->width * sin(sweep_rad));
+      glEnd();
+      glPopMatrix();
+    }
     
     episode::startspec const & start(result.start);
     glPushMatrix();

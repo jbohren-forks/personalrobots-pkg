@@ -55,6 +55,8 @@ namespace mpbench {
 	    size_t iteration_id,
 	    episode::startspec const & start,
 	    episode::goalspec const & goal,
+	    /** optional, only used by door planner (and actuallu required by it) */
+	    boost::shared_ptr<episode::doorspec> door,
 	    boost::shared_ptr<mpglue::waypoint_plan_t> plan,
 	    boost::shared_ptr<mpglue::CostmapPlannerStats> stats);
       
@@ -65,6 +67,7 @@ namespace mpbench {
       size_t iteration_id;
       episode::startspec start;
       episode::goalspec goal;
+      boost::shared_ptr<episode::doorspec> door; /**< optional */
       boost::shared_ptr<mpglue::waypoint_plan_t> plan;
       boost::shared_ptr<mpglue::CostmapPlannerStats> stats;
     };
@@ -87,6 +90,8 @@ namespace mpbench {
 		size_t iteration_id,
 		episode::startspec const & start,
 		episode::goalspec const & goal,
+		/** optional, only used by door planner (and actuallu required by it) */
+		boost::shared_ptr<episode::doorspec> door,
 		boost::shared_ptr<mpglue::waypoint_plan_t> plan,
 		boost::shared_ptr<mpglue::CostmapPlannerStats> stats);
     

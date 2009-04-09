@@ -275,9 +275,16 @@ void start_element_handler(void * user_data,
     sp->buffer.reset(new mpbench::StringBuffer());
   }
   
+  else if ("door" == tag) {
+    if ("task" != prevtag)
+      throwme(sp, "<door> only allowed in <task>, not in <" + prevtag + ">");
+    sp->buffer.reset(new mpbench::StringBuffer());
+  }
+  
   else if ("task" == tag) {
     sp->tmp_task.description = "none";
     sp->tmp_task.start.clear();
+    sp->tmp_task.door.reset();
   }
   
   else if ("start" == tag) {
@@ -393,6 +400,26 @@ void end_element_handler(void * user_data,
     }
     else
       throwme(sp, "<pose> only allowed in <start> or <goal>, not in <" + prevtag + ">");
+  }
+  
+  else if ("door" == tag) {
+    if ( ! sp->buffer)
+      throwme(sp, "BUG: no string buffer for <door>");
+    istringstream is(sp->buffer->GetString());
+    is >> sp->tmp_hinge_x
+       >> sp->tmp_hinge_y
+       >> sp->tmp_door_x
+       >> sp->tmp_door_y
+       >> sp->tmp_handle_distance
+       >> sp->tmp_angle_range;
+    if ( ! is)
+      throwme(sp, "could not read door spec from \"" + sp->buffer->GetString() + "\"");
+    sp->tmp_task.door = episode::doorspec::convert(sp->tmp_hinge_x,
+						   sp->tmp_hinge_y,
+						   sp->tmp_door_x,
+						   sp->tmp_door_y,
+						   sp->tmp_handle_distance,
+						   sp->tmp_angle_range);
   }
   
   else if ("goal" == tag) {

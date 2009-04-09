@@ -110,6 +110,12 @@ namespace mpbench {
     episode::goalspec tmp_goal;
     episode::taskspec tmp_task;
     ssize_t tmp_episode;
+    double tmp_hinge_x;
+    double tmp_hinge_y;
+    double tmp_door_x;
+    double tmp_door_y;
+    double tmp_handle_distance;
+    double tmp_angle_range;
   };
   
 }

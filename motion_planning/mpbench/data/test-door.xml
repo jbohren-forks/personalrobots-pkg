@@ -1,0 +1,32 @@
+<setup>
+  
+  <defaults>
+    <start>
+      <from_scratch>true</from_scratch>
+      <use_initial_solution>false</use_initial_solution>
+      <allow_iteration>false</allow_iteration>
+      <alloc_time>inf</alloc_time>
+    </start>
+    <goal>
+      <tolerance>0.3  4</tolerance>
+    </goal>
+  </defaults>
+  
+  <world>
+    <!-- outer bounding box -->
+    <addline>  0     0     7    0    </addline>
+    <addline>  0     0     0    6    </addline>
+    <addline>  0     6     7    6    </addline>
+    <addline>  7     0     7    6    </addline>
+    <!-- wall with door opening -->
+    <addline>  0     3     3    3    </addline>
+    <addline>  4     3     7    3    </addline>
+  </world>
+  
+  <task>
+    <description>go through a door...</description>
+    <door> 3  3  4  3  0.8  2.1 </door>
+    <goal><pose>  3.5   4.0    1.55 </pose></goal>
+    <start><pose> 3.5   2.5    1.56 </pose></start>
+  </task>
+</setup>

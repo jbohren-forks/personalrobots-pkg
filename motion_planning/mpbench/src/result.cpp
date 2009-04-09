@@ -48,6 +48,7 @@ namespace mpbench {
 	  size_t _iteration_id,
 	  episode::startspec const & _start,
 	  episode::goalspec const & _goal,
+	  shared_ptr<episode::doorspec> _door,
 	  boost::shared_ptr<mpglue::waypoint_plan_t> _plan,
 	  boost::shared_ptr<mpglue::CostmapPlannerStats> _stats)
       : task_id(_task_id),
@@ -55,6 +56,7 @@ namespace mpbench {
 	iteration_id(_iteration_id),
 	start(_start),
 	goal(_goal),
+	door(_door),
 	plan(_plan),
 	stats(_stats)      
     {
@@ -88,11 +90,12 @@ namespace mpbench {
 	 size_t iteration_id,
 	 episode::startspec const & start,
 	 episode::goalspec const & goal,
+	 boost::shared_ptr<episode::doorspec> door,
 	 boost::shared_ptr<mpglue::waypoint_plan_t> plan,
 	 boost::shared_ptr<mpglue::CostmapPlannerStats> stats)
   {
     shared_ptr<result::entry>
-      entry(new result::entry(task_id, episode_id, iteration_id, start, goal, plan, stats));
+      entry(new result::entry(task_id, episode_id, iteration_id, start, goal, door, plan, stats));
     list_.push_back(entry);
   }
   
