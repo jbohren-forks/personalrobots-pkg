@@ -143,7 +143,7 @@ class AmclNode
     tf::Transform latest_tf_;
 
     // incoming messages
-    robot_msgs::PoseWithCovariance initialPoseMsg_;
+    robot_msgs::PoseWithCovariance initial_pose_;
     
     // Message callbacks
     void laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& laser_scan);
@@ -286,7 +286,7 @@ AmclNode::AmclNode() :
                        this, _1), 
            "scan", odom_frame_id_,
            20);
-  ros::Node::instance()->subscribe("initialpose", initialPoseMsg_, &AmclNode::initialPoseReceived,this,2);
+  ros::Node::instance()->subscribe("initialpose", initial_pose_, &AmclNode::initialPoseReceived,this,2);
 }
 
 map_t*
@@ -503,7 +503,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
                       cloud_msg.particles[i]);
 
     }
-    //ros::Node::instance()->publish("particlecloud", cloud_msg);
+    ros::Node::instance()->publish("particlecloud", cloud_msg);
 
 
     // Read out the current hypotheses
@@ -538,9 +538,11 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
                 hyps[max_weight_hyp].pf_pose_mean.v[1],
                 hyps[max_weight_hyp].pf_pose_mean.v[2]);
 
+      /*
       puts("");
       pf_matrix_fprintf(hyps[max_weight_hyp].pf_pose_cov, stdout, "%6.3f");
       puts("");
+      */
 
       robot_msgs::PoseWithCovariance p;
       // Copy in the pose
@@ -638,18 +640,25 @@ void
 AmclNode::initialPoseReceived()
 {
   ROS_INFO("Setting pose: %.3f %.3f %.3f", 
-           initialPoseMsg_.pose.position.x,
-           initialPoseMsg_.pose.position.y,
-           getYaw(initialPoseMsg_.pose));
+           initial_pose_.pose.position.x,
+           initial_pose_.pose.position.y,
+           getYaw(initial_pose_.pose));
   // Re-initialize the filter
   pf_vector_t pf_init_pose_mean = pf_vector_zero();
-  pf_init_pose_mean.v[0] = initialPoseMsg_.pose.position.x;
-  pf_init_pose_mean.v[1] = initialPoseMsg_.pose.position.y;
-  pf_init_pose_mean.v[2] = getYaw(initialPoseMsg_.pose);
+  pf_init_pose_mean.v[0] = initial_pose_.pose.position.x;
+  pf_init_pose_mean.v[1] = initial_pose_.pose.position.y;
+  pf_init_pose_mean.v[2] = getYaw(initial_pose_.pose);
   pf_matrix_t pf_init_pose_cov = pf_matrix_zero();
-  pf_init_pose_cov.m[0][0] = 1.0 * 1.0;
-  pf_init_pose_cov.m[1][1] = 1.0 * 1.0;
-  pf_init_pose_cov.m[2][2] = M_PI/12.0 * M_PI/12.0;
+  // Copy in the covariance, converting from 6-D to 3-D
+  for(int i=0; i<2; i++)
+  {
+    for(int j=0; j<2; j++)
+    {
+      pf_init_pose_cov.m[i][j] = initial_pose_.covariance[6*i+j];
+    }
+  }
+  pf_init_pose_cov.m[2][2] = initial_pose_.covariance[6*3+3];
+
   pf_mutex_.lock();
   pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
   pf_init_ = false;

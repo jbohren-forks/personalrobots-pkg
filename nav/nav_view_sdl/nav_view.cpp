@@ -100,7 +100,7 @@ Publishes to (name / type):
 #include "robot_msgs/ParticleCloud.h"
 #include "robot_actions/Pose2D.h"
 #include "robot_msgs/Polyline2D.h"
-#include "deprecated_msgs/Pose2DFloat32.h"
+#include "robot_msgs/PoseWithCovariance.h"
 #include "pr2_msgs/OccDiff.h"
 #include "robot_srvs/StaticMap.h"
 #include <pr2_srvs/TransientObstacles.h>
@@ -120,7 +120,7 @@ public:
   robot_msgs::Polyline2D local_path;
   robot_msgs::Polyline2D robot_footprint;
   robot_msgs::Polyline2D laserscan;
-  deprecated_msgs::Pose2DFloat32 initialpose;
+  robot_msgs::PoseWithCovariance initialpose;
   robot_msgs::Polyline2D inflatedObstacles;
   robot_msgs::Polyline2D rawObstacles;
   pr2_msgs::OccDiff occ_diff_;
@@ -149,7 +149,7 @@ public:
     param("max_frame_rate", max_frame_rate, 5.0);
     param("/global_frame_id", global_frame, std::string("map"));
     advertise<robot_actions::Pose2D>("goal",1);
-    advertise<deprecated_msgs::Pose2DFloat32>("initialpose",1);
+    advertise<robot_msgs::PoseWithCovariance>("initialpose",1);
     subscribe("particlecloud", cloud, &NavView::generic_cb,1);
     subscribe("gui_path", pathline, &NavView::generic_cb,1);
     subscribe("local_path", local_path, &NavView::generic_cb,1);
@@ -285,13 +285,15 @@ NavView::mouse_button(int x, int y, int button, bool is_down)
       if(keystate[SDLK_LSHIFT] || keystate[SDLK_RSHIFT])
       {
         // Send out the pose
-        initialpose.x = gx;
-        initialpose.y = gy;
-        initialpose.th = ga;
+        initialpose.pose.position.x = gx;
+        initialpose.pose.position.y = gy;
+        tf::QuaternionTFToMsg(tf::Quaternion(ga, 0.0, 0.0),
+                              initialpose.pose.orientation);
+        initialpose.covariance[6*0+0] = 0.5 * 0.5;
+        initialpose.covariance[6*1+1] = 0.5 * 0.5;
+        initialpose.covariance[6*3+3] = M_PI/12.0 * M_PI/12.0;
         printf("setting pose: %.3f %.3f %.3f\n",
-               initialpose.x,
-               initialpose.y,
-               initialpose.th);
+               gx, gy, ga);
         publish("initialpose", initialpose);
       }
       // No modifiers; set goal
