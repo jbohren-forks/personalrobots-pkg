@@ -65,7 +65,7 @@
 // transform library
 #include <tf/transform_listener.h>
 
-#include "topic_synchronizer/topic_synchronizer.h"
+#include <topic_synchronizer/topic_synchronizer.h>
 
 #include "CvStereoCamModel.h"
 

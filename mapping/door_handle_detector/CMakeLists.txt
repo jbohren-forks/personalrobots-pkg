@@ -27,26 +27,6 @@ rospack_add_executable(handle_detector_vision
                        src/handle_detector_vision.cpp 
                       )
 
-# executive interface
-rospack_add_executable(door_action_runner 
-                       src/action_detect_door.cpp 
-		       src/action_detect_handle.cpp 	     
-		       src/action_grasp_door.cpp 
-		       src/action_open_door.cpp 
-		       src/action_runner.cpp
-                      )
-
-
-# test
-rospack_add_executable(trigger_doors_detector 
-                       test/trigger_doors_detector.cpp
-		       src/action_detect_door.cpp
-		       src/action_detect_handle.cpp
-                      )
-
-rospack_add_library(executive_functions src/executive_functions.cpp)
-
-
 rospack_add_executable(handle_detector_vision src/handle_detector_vision.cpp)
 rospack_add_executable(test_detect_service test/test_detect_service.cpp)
 

@@ -9,8 +9,8 @@
   <review status="experimental" notes="beta"/>
 
   <depend package="roscpp" />
+  <depend package="std_msgs" />
   <depend package="robot_msgs" />
-  <depend package="robot_actions" />
   <depend package="robot_srvs" />
   <depend package="robot_actions" />
   <depend package="kdl" />
@@ -18,7 +18,6 @@
   <depend package="point_cloud_mapping" />
   <depend package="checkerboard_detector" />
   <depend package="point_cloud_assembler" />
-  <depend package="std_msgs" />
   <depend package="sbpl_arm_executive" />
   <depend package="opencv_latest"/>
   <depend package="image_msgs"/>
@@ -26,9 +25,8 @@
   <depend package="stereo_utils"/>
   <depend package="tf"/>
 
-
  <export>
-    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib  -lexecutive_functions"/>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
  </export>
 
 
