@@ -74,32 +74,46 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
     if (request_preempt_){
       ROS_INFO("DetectHandleAction: Preempted");
       notifyPreempted(door);
+      return;
     }
     else{
-      ROS_INFO("DetectHandleAction: Aborted");
+      ROS_INFO("DetectHandleAction: Aborted laser detection");
       notifyAborted(door);
+      return;
     }
   }
-  else{
-    ROS_INFO("DetectHandleAction: Succeeded");
-    notifySucceeded(result_laser);
-  }
-
 
   if (!cameraDetection(door, result_laser)){
     if (request_preempt_){
       ROS_INFO("DetectHandleAction: Preempted");
       notifyPreempted(door);
+      return;
     }
     else{
-      ROS_INFO("DetectHandleAction: Aborted");
+      ROS_INFO("DetectHandleAction: Aborted camera detection");
       notifyAborted(door);
+      return;
     }
   }
-  else{
-    ROS_INFO("DetectHandleAction: Succeeded");
-    notifySucceeded(result_camera);
+  
+
+  double  error = sqrt(pow(result_laser.handle.x - result_camera.handle.x,2) +
+		       pow(result_laser.handle.y - result_camera.handle.y,2) +
+		       pow(result_laser.handle.z - result_camera.handle.z,2));
+  ROS_INFO("DetectHandleAction: Error between laser and camera result = %f", error);
+
+  if (error > 0.1){
+      ROS_INFO("DetectHandleAction: Aborted because error between laser and camera result is too big");
+      notifyAborted(door);
+      return;
   }
+
+  // success
+  result_laser.handle.x = (result_laser.handle.x + result_camera.handle.x)/2.0;
+  result_laser.handle.y = (result_laser.handle.y + result_camera.handle.y)/2.0;
+  result_laser.handle.z = (result_laser.handle.z + result_camera.handle.z)/2.0;
+
+  notifySucceeded(result_laser);
 }
 
 
