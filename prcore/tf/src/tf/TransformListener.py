@@ -156,6 +156,115 @@ def pose_stamped_bt_to_msg(bt):
     msg.parent_id = bt.parent_id
     return msg
 
+def point_msg_to_bt(msg):
+    rot = msg.rotation
+    tr = msg.translation
+    t = bullet.Point(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w),
+                         bullet.Vector3(tr.x, tr.y, tr.z))
+    t.setOrigin(bullet.Vector3(tr.x, tr.y, tr.z))
+    t.setRotation(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w))
+    return t
+
+def point_stamped_msg_to_bt(msg):
+    return tf_swig.PointStamped(point_msg_to_bt(msg.point),
+                                    msg.header.stamp.to_seconds(),
+                                    msg.header.frame_id,
+                                    msg.parent_id)
+
+def point_bt_to_msg(bt):
+    rot = bt.getRotation()
+    tr = bt.getOrigin()
+    msg = robot_msgs.Point()
+    msg.translation.x = tr.x()
+    msg.translation.y = tr.y()
+    msg.translation.z = tr.z()
+    msg.rotation.x = rot.x()
+    msg.rotation.y = rot.y()
+    msg.rotation.z = rot.z()
+    msg.rotation.w = rot.w()
+    return msg
+
+def point_stamped_bt_to_msg(bt):
+    msg = robot_msgs.PointStamped()
+    msg.point = point_bt_to_msg(bt.point)
+    msg.header.frame_id = bt.frame_id
+    msg.header.stamp = rospy.rostime().from_seconds(bt.stamp)
+    msg.parent_id = bt.parent_id
+    return msg
+
+def vector_msg_to_bt(msg):
+    rot = msg.rotation
+    tr = msg.translation
+    t = bullet.Vector(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w),
+                         bullet.Vector3(tr.x, tr.y, tr.z))
+    t.setOrigin(bullet.Vector3(tr.x, tr.y, tr.z))
+    t.setRotation(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w))
+    return t
+
+def vector_stamped_msg_to_bt(msg):
+    return tf_swig.VectorStamped(vector_msg_to_bt(msg.vector),
+                                    msg.header.stamp.to_seconds(),
+                                    msg.header.frame_id,
+                                    msg.parent_id)
+
+def vector_bt_to_msg(bt):
+    rot = bt.getRotation()
+    tr = bt.getOrigin()
+    msg = robot_msgs.Vector()
+    msg.translation.x = tr.x()
+    msg.translation.y = tr.y()
+    msg.translation.z = tr.z()
+    msg.rotation.x = rot.x()
+    msg.rotation.y = rot.y()
+    msg.rotation.z = rot.z()
+    msg.rotation.w = rot.w()
+    return msg
+
+def vector_stamped_bt_to_msg(bt):
+    msg = robot_msgs.VectorStamped()
+    msg.vector = vector_bt_to_msg(bt.vector)
+    msg.header.frame_id = bt.frame_id
+    msg.header.stamp = rospy.rostime().from_seconds(bt.stamp)
+    msg.parent_id = bt.parent_id
+    return msg
+
+
+def quaternion_msg_to_bt(msg):
+    rot = msg.rotation
+    tr = msg.translation
+    t = bullet.Quaternion(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w),
+                         bullet.Vector3(tr.x, tr.y, tr.z))
+    t.setOrigin(bullet.Vector3(tr.x, tr.y, tr.z))
+    t.setRotation(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w))
+    return t
+
+def quaternion_stamped_msg_to_bt(msg):
+    return tf_swig.QuaternionStamped(quaternion_msg_to_bt(msg.quaternion),
+                                    msg.header.stamp.to_seconds(),
+                                    msg.header.frame_id,
+                                    msg.parent_id)
+
+def quaternion_bt_to_msg(bt):
+    rot = bt.getRotation()
+    tr = bt.getOrigin()
+    msg = robot_msgs.Quaternion()
+    msg.translation.x = tr.x()
+    msg.translation.y = tr.y()
+    msg.translation.z = tr.z()
+    msg.rotation.x = rot.x()
+    msg.rotation.y = rot.y()
+    msg.rotation.z = rot.z()
+    msg.rotation.w = rot.w()
+    return msg
+
+def quaternion_stamped_bt_to_msg(bt):
+    msg = robot_msgs.QuaternionStamped()
+    msg.quaternion = quaternion_bt_to_msg(bt.quaternion)
+    msg.header.frame_id = bt.frame_id
+    msg.header.stamp = rospy.rostime().from_seconds(bt.stamp)
+    msg.parent_id = bt.parent_id
+    return msg
+
 class TransformBroadcaster:
     def __init__(self):
         print "TransformBroadcaster initing"
@@ -197,7 +306,7 @@ class TransformListener:
     def can_transform(self, target_frame, source_frame, time):
         return self.transformer.canTransform(target_frame, source_frame, time.to_seconds())
 
-    def can_transform_full(self, target_frame, target_time, source_frame, source_time, fixed_frame):
+    def can_transform_in_time(self, target_frame, target_time, source_frame, source_time, fixed_frame):
         return self.transformer.canTransform(target_frame, target_time.to_seconds(), source_frame, source_time.to_seconds(), fixed_frame)
 
     def get_latest_common_time(self, source_frame, target_frame):
@@ -224,3 +333,34 @@ class TransformListener:
         pose_out = tf_swig.PoseStamped()
         self.transformer.transformPose(target_frame, target_time, pose, fixed_frame, pose_out)
         return pose_out
+
+    def transform_point(self, target_frame, point):
+        point_out = tf_swig.PointStamped()
+        self.transformer.transformPoint(target_frame, point, point_out)
+        return point_out
+
+    def transform_point_in_time(self, target_frame, target_time, fixed_frame, point):
+        point_out = tf_swig.PointStamped()
+        self.transformer.transformPoint(target_frame, target_time, point, fixed_frame, point_out)
+        return point_out
+
+    def transform_vector(self, target_frame, vector):
+        vector_out = tf_swig.VectorStamped()
+        self.transformer.transformVector(target_frame, vector, vector_out)
+        return vector_out
+
+    def transform_vector_in_time(self, target_frame, target_time, fixed_frame, vector):
+        vector_out = tf_swig.VectorStamped()
+        self.transformer.transformVector(target_frame, target_time, vector, fixed_frame, vector_out)
+        return vector_out
+
+    def transform_quaternion(self, target_frame, quaternion):
+        quaternion_out = tf_swig.QuaternionStamped()
+        self.transformer.transformQuaternion(target_frame, quaternion, quaternion_out)
+        return quaternion_out
+
+    def transform_quaternion_in_time(self, target_frame, target_time, fixed_frame, quaternion):
+        quaternion_out = tf_swig.QuaternionStamped()
+        self.transformer.transformQuaternion(target_frame, target_time, quaternion, fixed_frame, quaternion_out)
+        return quaternion_out
+

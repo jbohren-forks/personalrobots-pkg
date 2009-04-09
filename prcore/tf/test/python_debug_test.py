@@ -51,5 +51,22 @@ try:
     po.frame_id = "base_link"
     po2 = tfl.transform_pose("/map", po)
 
+    # test transforming point
+    po = tf.tf_swig.PointStamped()
+    po.frame_id = "base_link"
+    po2 = tfl.transform_point("/map", po)
+
+    # test transforming vector
+    po = tf.tf_swig.VectorStamped()
+    po.frame_id = "base_link"
+    po2 = tfl.transform_vector("/map", po)
+
+    # test transforming quaternion
+    po = tf.tf_swig.QuaternionStamped()
+    po.frame_id = "base_link"
+    po2 = tfl.transform_quaternion("/map", po)
+
+
+
 except ValueError, e:
     print "Exception %s Improperly thrown: %s"%(type(e), e)
