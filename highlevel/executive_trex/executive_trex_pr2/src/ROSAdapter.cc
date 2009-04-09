@@ -8,6 +8,44 @@
 
 namespace TREX { 				     
 
+
+  /**
+   * Write token to the message
+   */
+  void ROSAdapter::writeTokenToDoorMessage(const TokenId& token, robot_msgs::Door& msg){
+    // Set the frame we are in
+    msg.header.frame_id = ROSAdapter::getFrame(token);
+
+    // Extract the stamp
+    double time_stamp_double;
+    ROSAdapter::write<double>("time_stamp", token, time_stamp_double);
+    msg.header.stamp.fromSec(time_stamp_double);
+
+    // Frame Data
+    ROSAdapter::write<float>("frame_p1_x", token, msg.frame_p1.x);
+    ROSAdapter::write<float>("frame_p1_y", token, msg.frame_p1.y);
+    ROSAdapter::write<float>("frame_p1_z", token, msg.frame_p1.z);
+    ROSAdapter::write<float>("frame_p2_x", token, msg.frame_p2.x);
+    ROSAdapter::write<float>("frame_p2_y", token, msg.frame_p2.y);
+    ROSAdapter::write<float>("frame_p2_z", token, msg.frame_p2.z);
+    ROSAdapter::write<float>("height", token, msg.height);
+    ROSAdapter::write<int32_t>("hinge", token, msg.hinge);
+    ROSAdapter::write<int32_t>("rot_dir", token, msg.rot_dir);
+
+    // Door Data
+    ROSAdapter::write<float>("door_p1_x", token, msg.door_p1.x);
+    ROSAdapter::write<float>("door_p1_y", token, msg.door_p1.y);
+    ROSAdapter::write<float>("door_p1_z", token, msg.door_p1.z);
+    ROSAdapter::write<float>("door_p2_x", token, msg.door_p2.x);
+    ROSAdapter::write<float>("door_p2_y", token, msg.door_p2.y);
+    ROSAdapter::write<float>("door_p2_z", token, msg.door_p2.z);
+
+    // Handle Data
+    ROSAdapter::write<float>("handle_x", token, msg.handle.x);
+    ROSAdapter::write<float>("handle_y", token, msg.handle.y);
+    ROSAdapter::write<float>("handle_z", token, msg.handle.z);
+  }
+
   /**
    * ROS Adapters will always log, to support playback. This is achieved by setting parameters in the
    * base class constructor

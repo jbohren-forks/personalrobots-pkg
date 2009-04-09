@@ -217,7 +217,9 @@ namespace executive_trex_pr2 {
       _door_id.empty();
     else {
       static const LabelStr MAP_FRAME("map");
+      double timestamp = ros::Time::now().toSec();
       if(!apply(MAP_FRAME, "frame_id") ||
+	 !apply(timestamp, "time_stamp") ||
 	 !apply(door_state.frame_p1.x, "frame_p1_x") ||
 	 !apply(door_state.frame_p1.y, "frame_p1_y") ||
 	 !apply(door_state.frame_p1.z, "frame_p1_z") ||

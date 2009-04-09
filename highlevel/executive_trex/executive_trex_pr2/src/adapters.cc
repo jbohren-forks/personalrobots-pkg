@@ -72,61 +72,11 @@ namespace TREX {
 
     /**
      * @brief bind a door message based on the token
-     *
-     * // Points for the door frame
-     * float frame_p1_x;
-     * float frame_p1_y;
-     * float frame_p1_z;
-     * float frame_p2_x;
-     * float frame_p2_y;
-     * float frame_p2_z;
-     *
-     * // Handle data
-     * float height;
-     * HINGE_FRAME hinge;
-     * ROTATION_DIRECTION rot_dir;
-     *
-     * // Points for the door
-     * float door_p1_x;
-     * float door_p1_y;
-     * float door_p1_z;
-     * float door_p2_x;
-     * float door_p2_y;
-     * float door_p2_z;
-     *
-     * // Handle Data
-     * float handle_x
-     * float handle_y
-     * float handle_z
      */
     void write(const TokenId& token, robot_msgs::Door& msg){
-      // Set the frame we are in
-      msg.header.frame_id = getFrame(token);
-
-      // Frame Data
-      ROSAdapter::write<float>("frame_p1_x", token, msg.frame_p1.x);
-      ROSAdapter::write<float>("frame_p1_y", token, msg.frame_p1.y);
-      ROSAdapter::write<float>("frame_p1_z", token, msg.frame_p1.z);
-      ROSAdapter::write<float>("frame_p2_x", token, msg.frame_p2.x);
-      ROSAdapter::write<float>("frame_p2_y", token, msg.frame_p2.y);
-      ROSAdapter::write<float>("frame_p2_z", token, msg.frame_p2.z);
-      ROSAdapter::write<float>("height", token, msg.height);
-      ROSAdapter::write<int32_t>("hinge", token, msg.hinge);
-      ROSAdapter::write<int32_t>("rot_dir", token, msg.rot_dir);
-
-      // Door Data
-      ROSAdapter::write<float>("door_p1_x", token, msg.door_p1.x);
-      ROSAdapter::write<float>("door_p1_y", token, msg.door_p1.y);
-      ROSAdapter::write<float>("door_p1_z", token, msg.door_p1.z);
-      ROSAdapter::write<float>("door_p2_x", token, msg.door_p2.x);
-      ROSAdapter::write<float>("door_p2_y", token, msg.door_p2.y);
-      ROSAdapter::write<float>("door_p2_z", token, msg.door_p2.z);
-
-      // Handle Data
-      ROSAdapter::write<float>("handle_x", token, msg.handle.x);
-      ROSAdapter::write<float>("handle_y", token, msg.handle.y);
-      ROSAdapter::write<float>("handle_z", token, msg.handle.z);
+      writeTokenToDoorMessage(token, msg);
     }
+
     // Read Observation from Door Message
     void read(ObservationByValue& obs, const robot_msgs::Door& msg){
       setFrame(msg.header.frame_id, &obs);
@@ -143,6 +93,11 @@ namespace TREX {
       ROSAdapter::read<int32_t>("rot_dir", obs, msg.rot_dir);
 
       // Door Data
+      TREX_INFO("ros:debug:synchronization", 
+		"door_p1 = <" << msg.door_p1.x << ", " << msg.door_p1.y << ", " << msg.door_p1.z << ">");
+      TREX_INFO("ros:debug:synchronization", 
+		"door_p2 = <" << msg.door_p2.x << ", " << msg.door_p2.y << ", " << msg.door_p2.z << ">");
+
       ROSAdapter::read<float>("door_p1_x", obs, msg.door_p1.x);
       ROSAdapter::read<float>("door_p1_y", obs, msg.door_p1.y);
       ROSAdapter::read<float>("door_p1_z", obs, msg.door_p1.z);
