@@ -4,6 +4,7 @@
     <!-- machine tags for sim, be sure to set environment variable ROBOT to sim -->
     <!--include file="$(find pr2_alpha)/$(env ROBOT).machine" /--> <!-- can't set env for include tags -->
     <include file="$(find pr2_alpha)/sim.machine" />
+    <param name="/global_frame_id" value="map"/>
 
     <!-- publish mapping between odom and base_footprint -->
     <!-- publishes odom_combined -->
@@ -106,6 +107,8 @@
       <param name="costmap_2d/inscribed_radius" value="0.325"/>
       <param name="costmap_2d/raytrace_window" value="10.0"/>
       <param name="costmap_2d/weight" value="0.1"/>
+      <param name="costmap_2d/zLB" value="0.25"/>
+      <param name="costmap_2d/zUB" value="0.35"/>
 
 
       <param name="trajectory_rollout/map_size" value="4.0" />
@@ -129,6 +132,8 @@
       <param name="trajectory_rollout/min_in_place_vel_th" value="0.4" />
       <param name="trajectory_rollout/world_model" value="freespace" />
       <param name="trajectory_rollout/dwa" value="false" />
+      <param name="trajectory_rollout/heading_scoring" value="false" />
+      <param name="trajectory_rollout/heading_scoring_timestep" value="0.8" />
       <param name="trajectory_rollout/simple_attractor" value="false" />
 
       <param name="trajectory_rollout/yaw_goal_tolerance" value=".05" />
