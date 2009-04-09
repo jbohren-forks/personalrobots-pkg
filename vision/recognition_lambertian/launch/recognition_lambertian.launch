@@ -23,7 +23,7 @@
 
 
 <!-- Stereo image processing -->
- <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
+ <!--node pkg="stereo_image_proc" type="stereoproc" respawn="false"/-->
 
 <!-- Handle detector -->
  <node pkg="recognition_lambertian" name="recognition_lambertian" type="recognition_lambertian" respawn="false" output="screen">

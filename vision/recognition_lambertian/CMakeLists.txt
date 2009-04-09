@@ -14,4 +14,5 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 rospack_add_executable(recognition_lambertian src/recognition_lambertian.cpp)
 rospack_add_executable(test_detect_service test/test_detect_service.cpp)
 rospack_add_executable (plane_fit src/plane_fit.cpp)
+rospack_add_executable (publish_scene src/publish_scene.cpp)
 

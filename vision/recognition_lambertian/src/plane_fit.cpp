@@ -79,7 +79,7 @@ class PlanarFit
                    vector<int> &indices)
   {
     // This should be given as a parameter as well, or set global, etc
-    double sac_distance_threshold_ = 0.007;        // 2cm distance threshold for inliers (point-to-plane distance)
+    double sac_distance_threshold_ = 0.007;
 
     vector<int> indices_in_bounds;
     // Get the point indices within z_min <-> z_max
@@ -144,12 +144,12 @@ class PlanarFit
     PlanarFit (ros::Node& anode) : node_ (anode)
     {
       node_.param ("~z_min", z_min_, 0.5);
-      node_.param ("~z_max", z_max_, 1.5);
+      node_.param ("~z_max", z_max_, 2.0);
       node_.param ("~support", support_, 0.1);
       node_.param ("~min_area", min_area_, 0.2);
       node_.param ("~n_max", n_max_, 1);
 
-      string cloud_topic ("cloud_pcd");
+      string cloud_topic ("stereo/cloud");
 
       vector<pair<string, string> > t_list;
       node_.getPublishedTopics (&t_list);

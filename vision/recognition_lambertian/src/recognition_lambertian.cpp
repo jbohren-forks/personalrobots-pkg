@@ -168,9 +168,9 @@ public:
 
         if(display){
             cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
-            //cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
+            cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
             cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
-            cvNamedWindow("disparity_original", CV_WINDOW_AUTOSIZE);
+//            cvNamedWindow("disparity_original", CV_WINDOW_AUTOSIZE);
         }
 
 //        subscribeStereoData();
@@ -221,15 +221,15 @@ private:
         left_list.push_back(std::string("stereo/left/image_rect"));
         sync.subscribe(left_list, limage, 1);
 
-        //		std::list<std::string> right_list;
-        //		right_list.push_back(std::string("stereo/right/image_rect_color"));
-        //		right_list.push_back(std::string("stereo/right/image_rect"));
-        //		sync.subscribe(right_list, rimage, 1);
+        std::list<std::string> right_list;
+        right_list.push_back(std::string("stereo/right/image_rect_color"));
+        right_list.push_back(std::string("stereo/right/image_rect"));
+        sync.subscribe(right_list, rimage, 1);
 
         sync.subscribe("stereo/disparity", dimage, 1);
-        sync.subscribe("stereo/stereo_info", stinfo, 1);
-        sync.subscribe("stereo/disparity_info", dispinfo, 1);
-        sync.subscribe("stereo/right/cam_info", rcinfo, 1);
+//        sync.subscribe("stereo/stereo_info", stinfo, 1);
+//        sync.subscribe("stereo/disparity_info", dispinfo, 1);
+//        sync.subscribe("stereo/right/cam_info", rcinfo, 1);
         sync.subscribe("stereo/cloud", cloud_fetch, 1);
         sync.ready();
 //        sleep(1);
@@ -237,12 +237,14 @@ private:
 
     void unsubscribeStereoData()
     {
-//        unsubscribe("stereo/left/image_rect_color");
+        unsubscribe("stereo/left/image_rect_color");
         unsubscribe("stereo/left/image_rect");
+        unsubscribe("stereo/right/image_rect_color");
+        unsubscribe("stereo/right/image_rect");
         unsubscribe("stereo/disparity");
-        unsubscribe("stereo/stereo_info");
-        unsubscribe("stereo/disparity_info");
-        unsubscribe("stereo/right/cam_info");
+//        unsubscribe("stereo/stereo_info");
+//        unsubscribe("stereo/disparity_info");
+//        unsubscribe("stereo/right/cam_info");
         unsubscribe("stereo/cloud");
     }
 
@@ -712,14 +714,15 @@ private:
         		cvShowImage("disparity_original", disp);
         	}
         	// eliminate from disparity locations that cannot contain a handle
-        	applyPositionPrior();
+//        	applyPositionPrior();
         	// run cascade classifier
-        	findHandleCascade(handle_rect);
+//        	findHandleCascade(handle_rect);
         	if(display){
         		// show filtered disparity
         		cvShowImage("disparity", disp);
         		// show left image
         		cvShowImage("left", left);
+        		cvShowImage("right", right);
         	}
         }
 
@@ -907,9 +910,9 @@ private:
             printf("Timed out waiting for disparity image\n");
         }
 
-        if(stinfo.header.stamp != t) {
-            printf("Timed out waiting for stereo info\n");
-        }
+//        if(stinfo.header.stamp != t) {
+//            printf("Timed out waiting for stereo info\n");
+//        }
 
         if(cloud_fetch.header.stamp != t) {
         	printf("Timed out waiting for point cloud\n");
@@ -942,8 +945,9 @@ private:
             if(disp != NULL)
                 cvReleaseImage(&disp);
 
-            disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-            cvCvtScale(dbridge.toIpl(), disp, 4.0 / dispinfo.dpp);
+//            disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
+            disp = cvCloneImage(dbridge.toIpl());
+//            cvCvtScale(dbridge.toIpl(), disp, 4.0 / dispinfo.dpp);
         }
 
         cloud = cloud_fetch;
