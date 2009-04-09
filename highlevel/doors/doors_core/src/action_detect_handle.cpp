@@ -34,6 +34,7 @@
 
 #include <door_handle_detector/DoorsDetectorCloud.h>
 #include <door_handle_detector/DoorsDetector.h>
+#include <door_handle_detector/door_functions.h>
 #include <point_cloud_assembler/BuildCloudAngle.h>
 #include "doors_core/action_detect_handle.h"
 
@@ -82,7 +83,16 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
       return;
     }
   }
+  if (!door_handle_detector::transformTo(tf_, fixed_frame, result_laser, result_laser)){
+    ROS_ERROR ("DetectHandleAction: Could not transform door message from frame %s to frame %s.",
+	       result_laser.header.frame_id.c_str (), fixed_frame.c_str ());
+    notifyAborted(door);
+    return;
+  }
+  ROS_INFO("DetectHandleAction: door message transformed to fixed frame");
 
+
+  /*
   if (!cameraDetection(door, result_laser)){
     if (request_preempt_){
       ROS_INFO("DetectHandleAction: Preempted");
@@ -95,7 +105,16 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
       return;
     }
   }
-  
+  if (!door_handle_detector::transformTo(tf_, fixed_frame, result_camera, result_camera)){
+    ROS_ERROR ("DetectHandleAction: Could not transform door message from frame %s to frame %s.",
+                result_camera.header.frame_id.c_str (), fixed_frame.c_str ());
+    notifyAborted(door);
+     return;
+   }
+   ROS_INFO("DetectHandleAction: door message transformed to parameter frame");
+  */
+  result_camera = result_laser;
+
 
   double  error = sqrt(pow(result_laser.handle.x - result_camera.handle.x,2) +
 		       pow(result_laser.handle.y - result_camera.handle.y,2) +
