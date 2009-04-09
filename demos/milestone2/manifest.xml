@@ -4,14 +4,18 @@
   <license>BSD</license>
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
-  <depend package="executive_trex_pr2"/>
   <depend package="amcl_player"/>
-  <depend package="map_server"/>
+  <depend package="hokuyo_node"/>
+  <depend package="imu_node"/>
   <depend package="robot_pose_ekf"/>
+  <depend package="map_server"/>
+  <depend package="executive_trex_pr2"/>
   <depend package="trajectory_rollout"/>
   <depend package="highlevel_controllers"/>
   <depend package="pr2_alpha"/>
+  <depend package="pr2_experimental_controllers"/>
   <depend package="semantic_point_annotator"/>
+  <depend package="2dnav_stage"/>
   <depend package="point_cloud_assembler"/>
   <depend package="door_handle_detector"/>
   <depend package="doors_core"/>
