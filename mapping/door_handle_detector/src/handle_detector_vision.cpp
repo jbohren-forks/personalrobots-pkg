@@ -59,6 +59,7 @@
 #include "robot_msgs/Door.h"
 #include "robot_msgs/VisualizationMarker.h"
 #include "door_handle_detector/DoorsDetector.h"
+#include "std_srvs/Empty.h"
 
 #include <string>
 
@@ -113,6 +114,12 @@ public:
 	// display stereo images ?
 	bool display;
 
+	bool preempted_;
+	bool got_images_;
+
+
+	double image_timeout_;
+	ros::Time start_image_wait_;
 
 
 	CvHaarClassifierCascade* cascade;
@@ -128,6 +135,7 @@ public:
         param("~min_height", min_height, 0.7);
         param("~max_height", max_height, 1.0);
         param("~frames_no", frames_no, 7);
+        param("~timeout", image_timeout_, 3.0);		// timeout (in seconds) until an image must be received, otherwise abort
 
 
         param("~display", display, false);
@@ -135,7 +143,7 @@ public:
         ss << getenv("ROS_ROOT") << "/../ros-pkg/mapping/door_handle_detector/data/";
         string path = ss.str();
         string cascade_classifier;
-        param<string>("cascade_classifier", cascade_classifier, path + "handles_data.xml");
+        param<string>("~cascade_classifier", cascade_classifier, path + "handles_data.xml");
 
         if(display){
             cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
@@ -153,6 +161,7 @@ public:
 //        advertise<robot_msgs::PointStamped>("handle_detector/handle_location", 1);
         advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
         advertiseService("door_handle_vision_detector", &HandleDetector::detectHandleSrv, this);
+        advertiseService("door_handle_vision_preempt", &HandleDetector::preempt, this);
     }
 
     ~HandleDetector()
@@ -169,6 +178,9 @@ public:
         if(storage){
             cvReleaseMemStorage(&storage);
         }
+        unadvertise("visualizationMarker");
+        unadvertiseService("door_handle_vision_detector");
+        unadvertiseService("door_handle_vision_preempt");
     }
 
 private:
@@ -520,37 +532,6 @@ private:
     }
 
     /**
-     * \brief Finds edges in an image
-     * @param img
-     */
-    void findEdges(IplImage *img)
-    {
-        IplImage *gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
-        cvCvtColor(img, gray, CV_RGB2GRAY);
-        cvCanny(gray, gray, 20, 40);
-        CvMemStorage *storage = cvCreateMemStorage(0);
-        CvSeq *lines = 0;
-        lines = cvHoughLines2(gray, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI / 360, 100, 200, 100);
-        for(int i = 0;i < lines->total;i++){
-            CvPoint *line = (CvPoint*)cvGetSeqElem(lines, i);
-            CvPoint p1 = line[0];
-            CvPoint p2 = line[1];
-            if(abs(p1.x - p2.x) > 0){
-                float min_angle = 80;
-                float slope = float(abs(p1.y - p2.y)) / abs(p1.x - p2.x);
-                float min_slope = tan(CV_PI / 2 - min_angle * CV_PI / 180);
-                if(slope < min_slope)
-                    continue;
-
-                printf("slope: %f, min_slope: %f\n", slope, min_slope);
-            }
-            cvLine(left, p1, p2, CV_RGB(255, 0, 0), 2, CV_AA, 0);
-        }
-
-        cvReleaseImage(&gray);
-    }
-
-    /**
      * \brief Checks if a point should belong to a cluster
      *
      * @param center
@@ -637,11 +618,20 @@ private:
         robot_msgs::Point p;
         getROIDimensions(bbox, dx, dy, p);
 
-        handle.header.frame_id = cloud.header.frame_id;
-        handle.header.stamp = cloud.header.stamp;
-        handle.point.x = p.z;
-        handle.point.y = -p.x;
-        handle.point.z = -p.y;
+        robot_msgs::PointStamped handle_stereo;
+
+        handle_stereo.header.frame_id = cloud.header.frame_id;
+        handle_stereo.header.stamp = cloud.header.stamp;
+        handle_stereo.point.x = p.z;
+        handle_stereo.point.y = -p.x;
+        handle_stereo.point.z = -p.y;
+
+        try {
+        	tf_->transformPoint(handle.header.frame_id, handle_stereo, handle);
+        }
+        catch(tf::TransformException & ex){
+        	ROS_ERROR("Lookup exception: %s\n", ex.what());
+        }
 
 
         printf("Clustered Handle at: (%d,%d,%d,%d)\n", bbox.x,bbox.y,bbox.width, bbox.height);
@@ -651,7 +641,7 @@ private:
         	cvRectangle(left, cvPoint(bbox.x, bbox.y), cvPoint(bbox.x + bbox.width, bbox.y + bbox.height), CV_RGB(0, 255, 0));
         	cvShowImage("left", left);
         }
-        showHandleMarker(handle);
+        showHandleMarker(handle_stereo);
 
 		return true;
     }
@@ -674,7 +664,13 @@ private:
 
         	printf("Waiting for images\n");
         	// block until images are available to process
-        	images_ready.wait(images_lock);
+        	got_images_ = false;
+        	preempted_ = false;
+        	start_image_wait_ = ros::Time::now();
+        	while (!got_images_ && !preempted_) {
+        		images_ready.wait(images_lock);
+        	}
+        	if (preempted_) break;
 
         	printf("Woke up, processing images\n");
 
@@ -705,6 +701,7 @@ private:
     {
 
         robot_msgs::PointStamped handle;
+        handle.header.frame_id = req.door.header.frame_id;   // want handle in the same frame as the door
     	subscribeStereoData();
         bool found = runHandleDetector(handle);
     	unsubscribeStereoData();
@@ -734,9 +731,21 @@ private:
             resp.doors[0].handle.z = handle.point.z;
             resp.doors[0].weight = 1;
         }else{
+            resp.doors[0] = req.door;
             resp.doors[0].weight = -1;
         }
         return true;
+    }
+
+
+    bool preempt(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp)
+    {
+    	ROS_INFO("Preempting.");
+        boost::lock_guard<boost::mutex> lock(cv_mutex);
+    	preempted_ = true;
+    	images_ready.notify_all();
+
+    	return true;
     }
 
 
@@ -784,7 +793,12 @@ private:
      */
     CvScalar estimatePlaneLS(robot_msgs::PointCloud points)
     {
+        CvScalar plane;
         int cnt = points.pts.size();
+        if (cnt==0) {
+            plane.val[0] = plane.val[1] = plane.val[2] = plane.val[3] = -1;
+            return plane;
+        }
         CvMat *A = cvCreateMat(cnt, 3, CV_32FC1);
         for(int i = 0;i < cnt;++i){
             robot_msgs::Point32 p = points.pts[i];
@@ -797,7 +811,6 @@ private:
         cvInitMatHeader(&B, cnt, 1, CV_32FC1, &ones[0]);
         CvMat *X = cvCreateMat(3, 1, CV_32FC1);
         int ok = cvSolve(A, &B, X, CV_SVD);
-        CvScalar plane;
         if(ok){
             float *xp = X->data.fl;
             float d = sqrt(xp[0] * xp[0] + xp[1] * xp[1] + xp[2] * xp[2]);
@@ -870,6 +883,7 @@ private:
      */
     void image_cb_timeout(ros::Time t)
     {
+        boost::lock_guard<boost::mutex> lock(cv_mutex);
         if(limage.header.stamp != t) {
             printf("Timed out waiting for left image\n");
         }
@@ -884,6 +898,11 @@ private:
 
         if(cloud_fetch.header.stamp != t) {
         	printf("Timed out waiting for point cloud\n");
+        }
+        if ((ros::Time::now()-start_image_wait_) > ros::Duration(image_timeout_)) {
+        	ROS_INFO("No images for %f seconds, timing out...", image_timeout_);
+        	preempted_ = true;
+        	images_ready.notify_all();
         }
     }
 
@@ -919,6 +938,7 @@ private:
 
         cloud = cloud_fetch;
 
+        got_images_ = true;
         images_ready.notify_all();
     }
 

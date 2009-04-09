@@ -29,6 +29,7 @@ rospack_add_executable(handle_detector_vision
 
 rospack_add_executable(handle_detector_vision src/handle_detector_vision.cpp)
 rospack_add_executable(test_detect_service test/test_detect_service.cpp)
+rospack_add_executable(test_preempt_service test/test_preempt_service.cpp)
 
 
 
