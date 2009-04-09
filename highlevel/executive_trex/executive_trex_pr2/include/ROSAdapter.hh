@@ -11,6 +11,7 @@
 #include <robot_msgs/Pose.h>
 #include <robot_msgs/Point32.h>
 #include <std_msgs/String.h>
+#include <robot_msgs/Door.h>
 
 namespace TREX {
 
@@ -27,6 +28,47 @@ namespace TREX {
 
     bool synchronize();
 
+    /**
+     * @brief Extracts a frame if from a token. Will return the empty string if no
+     * frame is found. Assumes the parameter name is 'frame_id'.
+     */
+    static std::string getFrame(const TokenId& token);
+
+    /**
+     * @brief Sets a frame in an observatio. Assumes the parameter name is 'frame_id'.
+     */
+    static void setFrame(const std::string frame_id, ObservationByValue* obs);
+
+    /**
+     * @brief Stuff token data into a door message
+     */
+    static void writeTokenToDoorMessage(const TokenId& token, robot_msgs::Door& msg);
+
+    // Bind intervals to the singleton, or the domain midpoint
+    template <class T>
+    static void write(const AbstractDomain& dom, T& target){
+      double value = (dom.isSingleton() ? dom.getSingletonValue() : (dom.getLowerBound() + dom.getUpperBound()) / 2 );
+      condDebugMsg(!dom.isSingleton(), "trex:warning:dispatching", "Reducing unbound paramater " << dom.toString() << " to " << value);
+      target = static_cast<T>(value);
+    }
+
+    // Bind names paramater to value
+    template <class T>
+    static void write(const char* param_name, const TokenId& token, T& target){
+      ConstrainedVariableId var = token->getVariable(param_name);
+      ROS_ASSERT(var.isValid());
+      const AbstractDomain& dom = var->lastDomain();
+      ROS_ASSERT(dom.isNumeric());
+      double value;
+      write(dom, value);
+      target = value;
+    }
+
+    // Bind intervals to the singleton, or the domain midpoint
+    template <class T>
+    static void read(const char* name, ObservationByValue& obs, const T& source){
+      obs.push_back(name, new IntervalDomain(source));
+    }
   private:
     bool isInitialized() const;
 
@@ -56,45 +98,8 @@ namespace TREX {
      *******************************************************/
     StringDomain* toStringDomain(const std_msgs::String& msg);
 
-    /**
-     * @brief Extracts a frame if from a token. Will return the empty string if no
-     * frame is found. Assumes the parameter name is 'frame_id'.
-     */
-    static std::string getFrame(const TokenId& token);
-
-    /**
-     * @brief Sets a frame in an observatio. Assumes the parameter name is 'frame_id'.
-     */
-    static void setFrame(const std::string frame_id, ObservationByValue* obs);
-
     // bind a string
     void write(const StringDomain& dom, std_msgs::String& msg);
-
-    // Bind intervals to the singleton, or the domain midpoint
-    template <class T>
-    void write(const AbstractDomain& dom, T& target){
-      double value = (dom.isSingleton() ? dom.getSingletonValue() : (dom.getLowerBound() + dom.getUpperBound()) / 2 );
-      condDebugMsg(!dom.isSingleton(), "trex:warning:dispatching", "Reducing unbound paramater " << dom.toString() << " to " << value);
-      target = static_cast<T>(value);
-    }
-
-    // Bind names paramater to value
-    template <class T>
-    void write(const char* param_name, const TokenId& token, T& target){
-      ConstrainedVariableId var = token->getVariable(param_name);
-      ROS_ASSERT(var.isValid());
-      const AbstractDomain& dom = var->lastDomain();
-      ROS_ASSERT(dom.isNumeric());
-      double value;
-      write(dom, value);
-      target = value;
-    }
-
-    // Bind intervals to the singleton, or the domain midpoint
-    template <class T>
-    void read(const char* name, ObservationByValue& obs, const T& source){
-      obs.push_back(name, new IntervalDomain(source));
-    }
 
     /**
      * @brief Reads values into an observation

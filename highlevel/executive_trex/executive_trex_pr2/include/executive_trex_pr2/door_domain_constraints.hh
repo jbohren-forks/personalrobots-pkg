@@ -9,6 +9,10 @@
 
 #include "Constraint.hh"
 #include "IntervalDomain.hh"
+#include "ConstrainedVariable.hh"
+#include "Utilities.hh"
+#include "Token.hh"
+#include "StringDomain.hh"
 
 using namespace EUROPA;
 
@@ -25,16 +29,15 @@ namespace executive_trex_pr2 {
 				  const ConstraintEngineId& constraintEngine,
 				  const std::vector<ConstrainedVariableId>& variables);
 
+    static std::vector<ConstrainedVariableId> makeScopeForToken(const std::vector<ConstrainedVariableId>& variables);
+
     virtual void handleExecute();
     
   private:
     IntervalDomain& _x;
     IntervalDomain& _y;
     IntervalDomain& _th;
-    IntervalDomain& _x1;
-    IntervalDomain& _y1;
-    IntervalDomain& _x2;
-    IntervalDomain& _y2;
+    const TokenId _token_id;
     IntervalDomain& _range;
   };
 

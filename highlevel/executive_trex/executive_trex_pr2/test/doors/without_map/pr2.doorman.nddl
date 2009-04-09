@@ -9,9 +9,6 @@
 
 close();
 
-// Load a topological map
-map_initialize_from_file("willow.tmap");
-
 // The goal is to execute an OpenDoor action, where we give it the door data
 rejectable(door_actions.OpenDoorByDoorState cmd_open_door);
 
