@@ -37,7 +37,6 @@ MechanismController::Holds {
 
 
 // Controller State Variables
-MechanismController base_controller = new MechanismController(Internal);
 MechanismController head_controller = new MechanismController(Internal);
 MechanismController laser_tilt_controller = new MechanismController(Internal);
 MechanismController r_gripper_effort_controller = new MechanismController(Internal);
@@ -48,11 +47,6 @@ MechanismController r_arm_cartesian_twist_controller = new MechanismController(I
 MechanismController r_arm_cartesian_wrench_controller = new MechanismController(Internal);
 MechanismController r_arm_cartesian_pose_controller = new MechanismController(Internal);
 MechanismController r_arm_cartesian_tff_controller = new MechanismController(Internal);
-
-BaseMechanism::use_base_controller{ 
-  equals(base_controller.Holds c);
-  eq(c.is_up, true);
-}
 
 HeadMechanism::use_head_controller{ 
   equals(head_controller.Holds c);
@@ -106,7 +100,6 @@ RightGripperMechanism::use_position_controller{
 SwitchControllers switch_controllers = new SwitchControllers(External);
 
 // Actual mechanisms
-BaseMechanism base_mechanism = new BaseMechanism(Internal);
 HeadMechanism head_mechanism = new HeadMechanism(Internal);
 TiltLaserMechanism laser_tilt_mechanism = new TiltLaserMechanism(Internal);
 RightArmMechanism right_arm_mechanism = new RightArmMechanism(Internal);

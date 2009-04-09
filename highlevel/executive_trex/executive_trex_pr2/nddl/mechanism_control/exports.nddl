@@ -15,11 +15,6 @@ class Mechanism extends AgentTimeline {
  * Mechanisms and their controllers
  *********************************************/
 
-class BaseMechanism extends Mechanism {
-  predicate use_base_controller{}
-  BaseMechanism(Mode _mode){ super(_mode); }
-};
-
 class HeadMechanism extends Mechanism {
   predicate use_head_controller{}
   HeadMechanism(Mode _mode){ super(_mode); }
