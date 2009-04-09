@@ -32,6 +32,9 @@
 
 #include <stdint.h>
 #include <sstream>
+
+#include <boost/scoped_ptr.hpp>
+
 #include "filters/filter_base.h"
 
 #include "filters/realtime_circular_buffer.h"
@@ -108,7 +111,7 @@ public:
   
 protected:
   std::vector<T> temp_storage_;                       ///< Preallocated storage for the list to sort
-  RealtimeCircularBuffer<std::vector<T> >* data_storage_;                       ///< Storage for data between updates
+  boost::scoped_ptr<RealtimeCircularBuffer<std::vector<T> > > data_storage_;                       ///< Storage for data between updates
   
   std::vector<T> temp;  //used for preallocation and copying from non vector source
 
@@ -127,7 +130,6 @@ MedianFilter<T>::MedianFilter():
 template <typename T>
 MedianFilter<T>::~MedianFilter()
 {
-  if (data_storage_) delete data_storage_;
 };
 
 
@@ -143,7 +145,7 @@ bool MedianFilter<T>::configure()
   number_of_observations_ = no_obs;
     
   temp.resize(this->number_of_channels_);
-  data_storage_ = new RealtimeCircularBuffer<std::vector<T> >(number_of_observations_, temp);
+  data_storage_.reset( new RealtimeCircularBuffer<std::vector<T> >(number_of_observations_, temp));
   temp_storage_.resize(number_of_observations_);
   
   return true;

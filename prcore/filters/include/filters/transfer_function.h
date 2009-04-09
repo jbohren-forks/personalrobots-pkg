@@ -37,6 +37,7 @@
 #include <vector>
 #include <string>
 
+#include <boost/scoped_ptr.hpp>
 
 #include "filters/filter_base.h"
 #include "filters/realtime_circular_buffer.h"
@@ -99,8 +100,8 @@ public:
 
 protected:
   
-  RealtimeCircularBuffer<std::vector<T> >* input_buffer_; //The input sample history. 
-  RealtimeCircularBuffer<std::vector<T> >* output_buffer_; //The output sample history.
+  boost::scoped_ptr<RealtimeCircularBuffer<std::vector<T> > > input_buffer_; //The input sample history. 
+  boost::scoped_ptr<RealtimeCircularBuffer<std::vector<T> > > output_buffer_; //The output sample history.
   
   std::vector<T>  temp; //used for storage and preallocation
   
@@ -120,8 +121,6 @@ TransferFunctionFilter<T>::TransferFunctionFilter()
 template <typename T>
 TransferFunctionFilter<T>::~TransferFunctionFilter()
 {
-  if (input_buffer_) delete input_buffer_;
-  if (output_buffer_) delete output_buffer_;
 };
 
 template <typename T>
@@ -144,8 +143,8 @@ bool TransferFunctionFilter<T>::configure()
 
   // Create the input and output buffers of the correct size.
   temp.resize(this->number_of_channels_);
-  input_buffer_ = new RealtimeCircularBuffer<std::vector<T> >(b_.size()-1, temp);
-  output_buffer_ = new RealtimeCircularBuffer<std::vector<T> >(a_.size()-1, temp);
+  input_buffer_.reset(new RealtimeCircularBuffer<std::vector<T> >(b_.size()-1, temp));
+  output_buffer_.reset(new RealtimeCircularBuffer<std::vector<T> >(a_.size()-1, temp));
   
   // Prevent divide by zero while normalizing coeffs.
   if ( a_[0] == 0)

@@ -34,6 +34,8 @@
 #include <cstring>
 #include <stdio.h>
 
+#include <boost/scoped_ptr.hpp>
+
 #include "filters/filter_base.h"
 #include "ros/assert.h"
 
@@ -66,7 +68,7 @@ public:
   virtual bool update( const std::vector<T> & data_in, std::vector<T>& data_out);
   
 protected:
-  RealtimeCircularBuffer<std::vector<T> >* data_storage_; ///< Storage for data between updates
+  boost::scoped_ptr<RealtimeCircularBuffer<std::vector<T> > > data_storage_; ///< Storage for data between updates
   uint32_t last_updated_row_;                     ///< The last row to have been updated by the filter
 
   std::vector<T> temp;  //used for preallocation and copying from non vector source
@@ -97,7 +99,7 @@ bool MeanFilter<T>::configure()
   }
   
   temp.resize(number_of_channels_);
-  data_storage_ = new RealtimeCircularBuffer<std::vector<T> >(number_of_observations_, temp);
+  data_storage_.reset(new RealtimeCircularBuffer<std::vector<T> >(number_of_observations_, temp));
 
   return true;
 }
@@ -105,7 +107,6 @@ bool MeanFilter<T>::configure()
 template <typename T>
 MeanFilter<T>::~MeanFilter()
 {
-  if (data_storage_) delete data_storage_;
 }
 
 
