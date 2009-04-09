@@ -18,7 +18,7 @@
 
 <!-- Gripper controller -->
   <param name="r_gripper_effort_controller/autostart" type="bool" value="false" />
-  <node pkg="mechanism_control" type="spawner.py" args="$(find door_handle_detector)/launch/r_gripper_effort_controller.xml" />
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_gripper_effort_controller.xml" />
 
 <!-- Cartesian wrench controller -->
   <param name="r_arm_cartesian_wrench_controller/autostart" type="bool" value="false" />

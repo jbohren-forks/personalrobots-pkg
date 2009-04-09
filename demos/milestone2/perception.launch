@@ -1,6 +1,9 @@
 <launch>
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
+<!-- Stereo image processing -->
+   <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" />
+
 <!-- Filter for tilt laser shadowing/veiling -->
   <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" name="tilt_shadow_filter">
     <param name="scan_topic" value="tilt_scan" />
