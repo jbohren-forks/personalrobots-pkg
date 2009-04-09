@@ -19,7 +19,6 @@
 
 #include "outlet_detector.h"
 
-//#define _OUTLET_INTERACTIVE_CAPTURE
 
 class OutletDetector : public ros::Node
 {
@@ -35,11 +34,6 @@ private:
   tf::TransformBroadcaster tf_broadcaster_;
   CvMat* K_;
   bool display_;
-  int count_;
-  IplImage* display_image_;
-  bool continue_, failed_;
-  btVector3 holes[12];
-  btVector3 old_holes[12];
 
   // TODO: policies to listen from far outlet detection, last 3d location?
   enum { WholeFrame, LastImageLocation } roi_policy_;
@@ -49,8 +43,7 @@ private:
 public:
   OutletDetector()
     : ros::Node("outlet_detector"), img_(res_.image), cam_info_(res_.cam_info),
-      tf_broadcaster_(*this), K_(NULL), count_(0), display_image_(NULL),
-      continue_(false)
+      tf_broadcaster_(*this), K_(NULL)
   {
     param("display", display_, true);
 
@@ -80,7 +73,6 @@ public:
   ~OutletDetector()
   {
     cvReleaseMat(&K_);
-    cvReleaseImage(&display_image_);
     if (display_)
       cvDestroyWindow(wndname);
   }
@@ -103,7 +95,6 @@ public:
     std::vector<outlet_t> outlets;
     if (!detect_outlet_tuple(image, K_, NULL, outlets)) {
       //ROS_WARN("Failed to detect outlet");
-      failed_ = true;
 
       // Expand ROI for next image
       if (roi_policy_ == LastImageLocation) {
@@ -117,10 +108,9 @@ public:
         cvShowImage(wndname, image);
       return;
     }
-    failed_ = false;
 
     // Change data representation and coordinate frame
-    //btVector3 holes[12];
+    btVector3 holes[12];
     for (int i = 0; i < 4; ++i) {
       changeAxes(outlets[i].coord_hole_ground, holes[3*i]);
       changeAxes(outlets[i].coord_hole1, holes[3*i+1]);
@@ -182,29 +172,9 @@ public:
     */
     
     if (display_) {
-#ifdef _OUTLET_INTERACTIVE_CAPTURE
-      if (!display_image_)
-        display_image_ = cvCloneImage(image);
-      else
-        cvCopy(image, display_image_);
-      draw_outlets(display_image_, outlets);
-      cvShowImage(wndname, display_image_);
-#else
       draw_outlets(image, outlets);
       cvShowImage(wndname, image);
-#endif
     }
-  }
-
-  void saveImages()
-  {
-    char buffer[32];
-    snprintf(buffer, 32, "views/V%04d.jpg", count_);
-    cvSaveImage(buffer, img_bridge_.toIpl());
-    printf("Saved %s\n", buffer);
-    snprintf(buffer, 32, "views/out%04d.jpg", count_++);
-    cvSaveImage(buffer, display_image_);
-    printf("Saved %s\n", buffer);
   }
   
   bool spin()
@@ -216,30 +186,6 @@ public:
         image_cb();
         // TODO: figure out what's actually causing banding
         usleep(100000); // hack to (mostly) get rid of banding
-#ifdef _OUTLET_INTERACTIVE_CAPTURE
-        if (continue_) {
-          int i = 0;
-          while (!failed_ && i < 12) {
-            if (holes[i].distance(old_holes[i]) > 0.01)
-              failed_ = true;
-            ++i;
-          }
-
-          if (failed_)
-            continue_ = false;
-        }
-        if (!continue_) {
-          int key = cvWaitKey(0);
-          if (key == 's') {
-            saveImages();
-          } else if (key == 'c') {
-            memcpy(old_holes, holes, sizeof(holes));
-            continue_ = true;
-          } else if (key == 'q') {
-            return true;
-          }
-        }
-#endif
       } else {
         //ROS_WARN("Service call failed");
         // TODO: wait for service to become available
