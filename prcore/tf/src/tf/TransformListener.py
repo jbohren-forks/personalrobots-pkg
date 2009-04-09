@@ -55,7 +55,7 @@ class NumpyTransformStamped:
     def as_transform_stamped(self):
         return transform_stamped_from_numpy_transform_stamped(self)
 
-def numpy_transform_stamped_from_transform_stamped(transform):
+def transform_stamped_msg_to_numpy(transform):
     quat = numpy.array([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w],dtype=numpy.float64)
     rot_mat = transformations.rotation_matrix_from_quaternion(quat)
     #print "Quat: \n", quat
@@ -68,7 +68,7 @@ def numpy_transform_stamped_from_transform_stamped(transform):
     #print "Net:\n",  net_tr
     return net_tr
 
-def transform_stamped_from_numpy_transform_stamped(numpy_transform):
+def transform_stamped_numpy_to_msg(numpy_transform):
     ts = TransformStamped()
     ts.header.stamp = numpy_transform.stamp
     ts.header.frame_id = numpy_transform.frame_id
@@ -84,7 +84,7 @@ def transform_stamped_from_numpy_transform_stamped(numpy_transform):
     ts.transform.translation.z = numpy_transform.mat[2,3]
     return ts
 
-def TransformMsgToBt(msg):
+def transform_msg_to_bt(msg):
     rot = msg.rotation
     tr = msg.translation
     t = bullet.Transform(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w),
@@ -93,14 +93,14 @@ def TransformMsgToBt(msg):
     t.setRotation(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w))
     return t
 
-def TransformStampedMsgToBt(msg):
-    return tf_swig.TransformStamped(TransformMsgToBt(msg.transform),
+def transform_stamped_msg_to_bt(msg):
+    return tf_swig.TransformStamped(transform_msg_to_bt(msg.transform),
                                     msg.header.stamp.to_seconds(),
                                     msg.header.frame_id,
                                     msg.parent_id)
 
-def TransformBtToMsg(bt):
-    rot = bt.getRotatioin()
+def transform_bt_to_msg(bt):
+    rot = bt.getRotation()
     tr = bt.getOrigin()
     msg = robot_msgs.Transform()
     msg.translation.x = tr.x()
@@ -112,9 +112,9 @@ def TransformBtToMsg(bt):
     msg.rotation.w = rot.w()
     return msg
 
-def TransformStampedBtToMsg(bt):
+def transform_stamped_bt_to_msg(bt):
     msg = robot_msgs.TransformStamped()
-    msg.transform = TransformBtToMsg(bt.transform)
+    msg.transform = transform_bt_to_msg(bt.transform)
     msg.header.frame_id = bt.frame_id
     msg.header.stamp = rospy.rostime().from_seconds(bt.stamp)
     msg.parent_id = bt.parent_id
@@ -144,7 +144,7 @@ class TransformListener:
     def callback(self, data):
         for transform in data.transforms:
             #print "Got data:", transform.header.frame_id
-            self.set_transform(TransformStampedMsgToBt(transform))
+            self.set_transform(transform_stamped_msg_to_bt(transform))
 
     def frame_graph_service(self, req):
         return FrameGraphResponse(self.all_frames_as_dot())
