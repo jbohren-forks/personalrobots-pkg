@@ -84,19 +84,6 @@ def transform_stamped_numpy_to_msg(numpy_transform):
     ts.transform.translation.z = numpy_transform.mat[2,3]
     return ts
 
-class TransformBroadcaster:
-    def __init__(self):
-        print "TransformBroadcaster initing"
-        pub = rospy.Publisher("/tf_message", tfMessage)
-
-    def send_transform(self, transform):
-        msg = tfMessage([transform])
-        pub.publish(msg)
-
-    def send_transforms(self, transforms):
-        msg = tfMessage(transforms)
-        pub.publish(msg)
-
 class TransformListener:
     def __init__(self):
         print "Transform Listener initing"
