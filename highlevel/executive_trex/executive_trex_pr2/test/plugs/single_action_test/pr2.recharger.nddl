@@ -6,6 +6,8 @@
 
 close();
 
+rejectable(detect_plug_on_base.Active cmd_detect_plug_on_base);
+/*
 // 3 actions in sequence
 rejectable(safety_tuck_arms.Active cmd_tuck_arms);
 rejectable(plugs_untuck_arms.Active cmd_untuck_arms);
@@ -15,6 +17,7 @@ rejectable(safety_tuck_arms.Active cmd_tuck_arms_again);
 cmd_tuck_arms before cmd_untuck_arms;
 cmd_untuck_arms before cmd_detect_plug_on_base;
 cmd_detect_plug_on_base before cmd_tuck_arms_again;
+*/
 
 
 
