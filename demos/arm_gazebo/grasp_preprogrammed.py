@@ -60,7 +60,7 @@ CMD_POS_6      =  0.0
 CMD_POS_7      =  0.0
 LOWER_Z        =  0.1
 PAN_RAD        =  0.2
-G_OPEN         =  0.5;
+G_OPEN         =  0.058;
 G_CLOSE        =  0.0;
 
 p3d_received   = False
