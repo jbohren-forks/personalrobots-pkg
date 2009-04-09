@@ -1,35 +1,19 @@
 <launch>
 
-<!-- Stereo image processing -->
- <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
-
-<!-- Camera dandle detector -->
+<!-- Handle detector Camera -->
  <node pkg="door_handle_detector" name="handle_detector_vision" type="handle_detector_vision" respawn="false" output="screen">
    <param name="display" type="bool" value="false" />
  </node>
 
+<!-- Handle detector Laser -->
+  <param name="/handle_detector_node/parameter_frame" type="string" value="base_footprint" />
+  <param name="/handle_detector_node/fixed_frame" type="string" value="odom_combined" />
+  <param name="/handle_detector_node/handle_min_height" value="0.7" />
+  <param name="/handle_detector_node/handle_max_height" value="1.1" />
+  <param name="/handle_detector_node/handle_distance_door_max_threshold" value="0.3" />
+  <node pkg="door_handle_detector" type="handle_detector_laser" name="handle_detector_laser" output="screen" respawn="true" />
 
-<!-- Laser scan assembler -->
-  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
-    <remap from="scan_in" to="tilt_scan"/>
-    <param name="tf_cache_time_secs" type="double" value="10.0" />
-    <param name="max_scans" type="int" value="1000" />
-    <param name="ignore_laser_skew" type="bool" value="true" />
-    <param name="fixed_frame" type="string" value="odom_combined" />
-    <param name="downsample_factor" type="int" value="1" />
-  </node>
-
-<!-- point cloud snapshotter -->
-  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="snapshotter">
-    <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
-    <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
-    <remap from="full_cloud" to="snapshot_cloud" />
-  </node>
-
-<!-- Generate single sweep scan -->
-  <node pkg="point_cloud_assembler" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
-
-<!-- Door detection -->
+<!-- Door detector -->
   <param name="/doors_detector_node/parameter_frame" type="string" value="base_footprint" />
   <param name="/doors_detector_node/fixed_frame" type="string" value="odom_combined" />
   <param name="/doors_detector_node/door_min_height" value="1.1" />
@@ -39,13 +23,5 @@
   <param name="/doors_detector_node/handle_min_height" value="0.7" />
   <param name="/doors_detector_node/handle_max_height" value="1.1" />
   <node pkg="door_handle_detector" type="doors_detector_laser" name="doors_detector_laser" output="screen" respawn="true" />
-
-<!-- Handle detection -->
-  <param name="/handle_detector_node/parameter_frame" type="string" value="base_footprint" />
-  <param name="/handle_detector_node/fixed_frame" type="string" value="odom_combined" />
-  <param name="/handle_detector_node/handle_min_height" value="0.7" />
-  <param name="/handle_detector_node/handle_max_height" value="1.1" />
-  <param name="/handle_detector_node/handle_distance_door_max_threshold" value="0.3" />
-  <node pkg="door_handle_detector" type="handle_detector_laser" name="handle_detector_laser" output="screen" respawn="true" />
 
 </launch>
