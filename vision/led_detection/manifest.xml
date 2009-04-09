@@ -1,0 +1,16 @@
+<package>
+  <description>
+    Extract an LED from an image using prior information about
+    the LED's location based on TF frames
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="opencv_latest" />
+  <depend package="tf" />
+  <depend package="image_msgs" />
+  <depend package="robot_msgs" />
+  <depend package="topic_synchronizer" />
+  
+</package>
