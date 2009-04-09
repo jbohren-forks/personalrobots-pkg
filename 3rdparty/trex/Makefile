@@ -27,7 +27,7 @@ includes: trex PlanWorks PLASMA
 # GET plasma
 plasma:
 	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5334 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
-	cd PLASMA && $(SVN_CMDLINE) up -r 5334 ;
+	-cd PLASMA && $(SVN_CMDLINE) up -r 5334 ;
 
 #install the patch
 #patch-PLASMA: PLASMA
@@ -38,12 +38,12 @@ plasma:
 # GET PlanWorks
 planworks:
 	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 5117 http://europa-pso.googlecode.com/svn/PlanWorks/trunk PlanWorks; fi ;
-	cd PlanWorks && $(SVN_CMDLINE) up -r 5117; \
+	-cd PlanWorks && $(SVN_CMDLINE) up -r 5117; \
 
 # Get TREX
 trex: plasma
 	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 95 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
-	cd TREX && $(SVN_CMDLINE) up -r 95 ;
+	-cd TREX && $(SVN_CMDLINE) up -r 95 ;
 	@if [ ! -d logs ]; then mkdir logs; fi
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
 
