@@ -342,7 +342,7 @@ namespace cloud_geometry
     for (unsigned int d = 0; d < output.chan.size (); d++)
     {
       output.chan[d].name = input.chan[d].name;
-      output.chan[d].vals.resize (input.chan[d].vals.size ());
+      output.chan[d].vals.resize (indices.size ());
     }
 
     // Copy the data
@@ -387,7 +387,7 @@ namespace cloud_geometry
     for (unsigned int d = 0; d < output.chan.size (); d++)
     {
       output.chan[d].name = input.chan[d].name;
-      output.chan[d].vals.resize (input.chan[d].vals.size ());
+      output.chan[d].vals.resize (indices_outside.size ());
     }
 
     // Copy the data
