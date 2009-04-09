@@ -287,7 +287,7 @@ class IncGroundRemoval
       fitSACLine (&cloud_, &possible_ground_indices, ground_inliers);
 
       if (ground_inliers.size () == 0)
-        ROS_WARN ("Couldn't fit a model to the scan.");
+        ROS_DEBUG ("Couldn't fit a model to the scan.");
 
       ROS_DEBUG ("Total number of ground inliers before refinement: %d.", (int)ground_inliers.size ());
 
