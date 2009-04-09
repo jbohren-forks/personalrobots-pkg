@@ -117,11 +117,11 @@ def py_transform_from_transform_stamped(transform):
 def TransformStampedMsgToBt(msg):
     rot = msg.transform.rotation
     tr = msg.transform.translation
-    ts = tf_swig.StampedTransform()
+    ts = tf_swig.TransformStamped()
     ts.transform.setOrigin(bullet.Vector3(tr.x, tr.y, tr.z))
     ts.transform.setRotation(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w))
     ts.frame_id = msg.header.frame_id
-    ts.parent_id = msg.parent_id
+    ts.parent_id = msg. parent_id
     ts.stamp = msg.header.stamp.to_seconds()
     return ts
 
