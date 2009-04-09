@@ -136,11 +136,11 @@ class AmclNode
 
     int process();
 
-    int setPose(double x, double y, double a);
-
   private:
     tf::TransformBroadcaster* tfb_;
     tf::TransformListener* tf_;
+
+    tf::Transform latest_tf_;
 
     // incoming messages
     robot_msgs::PoseWithCovariance initialPoseMsg_;
@@ -246,7 +246,6 @@ AmclNode::AmclNode() :
   
   // Create the particle filter
   pf_ = pf_alloc(pf_min_samples_, pf_max_samples_);
-  printf("allocated with %d %d\n", pf_min_samples_, pf_max_samples_);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 
@@ -278,7 +277,7 @@ AmclNode::AmclNode() :
   laser_ = new AMCLLaser(max_beams, 0.1, 0.1, dummy, map_);
   ROS_ASSERT(laser_);
 
-  //ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("localizedpose",2);
+  ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("amcl_pose",2);
   ros::Node::instance()->advertise<robot_msgs::ParticleCloud>("particlecloud",2);
   laser_scan_notifer = 
           new tf::MessageNotifier<laser_scan::LaserScan>
@@ -314,8 +313,8 @@ AmclNode::requestMap()
   map->size_x = resp.map.width;
   map->size_y = resp.map.height;
   map->scale = resp.map.resolution;
-  map->origin_x = resp.map.origin.x;
-  map->origin_y = resp.map.origin.y;
+  map->origin_x = resp.map.origin.x + (map->size_x / 2) * map->scale;
+  map->origin_y = resp.map.origin.y + (map->size_y / 2) * map->scale;
   // Convert to player format
   map->cells = new map_cell_t[map->size_x * map->size_y];
   ROS_ASSERT(map->cells);
@@ -341,235 +340,6 @@ AmclNode::~AmclNode()
   delete laser_;
   delete odom_;
   // TODO: delete everything allocated in constructor
-}
-
-#if 0
-int 
-AmclNode::ProcessMessage(QueuePointer &resp_queue, 
-                         player_msghdr * hdr,
-                         void * data)
-{
-  // Is it a new pose from amcl?
-  if(Message::MatchMessage(hdr,
-                           PLAYER_MSGTYPE_DATA, 
-                           PLAYER_POSITION2D_DATA_STATE,
-                           this->oposition2d_addr))
-  {
-    // Cast the message payload appropriately 
-    player_position2d_data_t* pdata = 
-            (player_position2d_data_t*)data;
-
-    
-    // publish new transform robot->map
-    ros::Time t;
-    t.fromSec(hdr->timestamp);
-    // subtracting base to odom from map to base and send map to odom instead
-    tf::Stamped<tf::Pose> odom_to_map;
-    try
-    {
-      this->tf_->transformPose(odom_frame_id,tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
-                                                                       btVector3(pdata->pos.px, pdata->pos.py, 0.0)).inverse(), 
-                                                      t, "base_footprint"),odom_to_map);
-    }
-    catch(tf::TransformException e){
-      ROS_DEBUG("Dropping out of process message step\n");
-      return(0);
-    }
-    
-    //we want to send a transform that is good up until a tolerance time so that odom can be used
-    ros::Time transform_expiration;
-    transform_expiration.fromSec(hdr->timestamp + transform_tolerance_);
-    this->tfb_->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
-                                                                      tf::Point(      odom_to_map.getOrigin() ) ).inverse(),
-                                                        transform_expiration,odom_frame_id, "/map"));
-
-    localizedOdomMsg.pos.x = pdata->pos.px;
-    localizedOdomMsg.pos.y = pdata->pos.py;
-    localizedOdomMsg.pos.th = pdata->pos.pa;
-    localizedOdomMsg.header.stamp.fromSec(hdr->timestamp);
-    localizedOdomMsg.header.frame_id = "/map";
-    publish("localizedpose", localizedOdomMsg);
-
-    if((ros::Time::now() - this->last_cloud_pub_time) >= cloud_pub_interval)
-    {
-      last_cloud_pub_time = ros::Time::now();
-      // Also request and publish the particle cloud
-      Message* msg;
-      if((msg = this->ldevice->Request(this->Driver::InQueue,
-                                       PLAYER_MSGTYPE_REQ,
-                                       PLAYER_LOCALIZE_REQ_GET_PARTICLES,
-                                       NULL, 0, NULL, true)))
-      {
-        player_localize_get_particles_t* resp =
-                (player_localize_get_particles_t*)(msg->GetPayload());
-        particleCloudMsg.set_particles_size(resp->particles_count);
-        for(unsigned int i=0;i<resp->particles_count;i++)
-        {
-          tf::PoseTFToMsg(tf::Pose(btQuaternion(resp->particles[i].pose.pa, 0, 0), btVector3(resp->particles[i].pose.px, resp->particles[i].pose.py, 0)),
-                          particleCloudMsg.particles[i]);
-          
-          /*          particleCloudMsg.particles[i].x = resp->particles[i].pose.px;
-          particleCloudMsg.particles[i].y = resp->particles[i].pose.py;
-          particleCloudMsg.particles[i].th = resp->particles[i].pose.pa;
-          */
-        }
-        publish("particlecloud", particleCloudMsg);
-        delete msg;
-      }
-      else
-      {
-        puts("Warning: failed to get particle cloud from amcl");
-      }
-    }
-
-    return(0);
-  }
-  // Is it a hypothesis message from amcl?
-  if(Message::MatchMessage(hdr,
-                           PLAYER_MSGTYPE_DATA, 
-                           PLAYER_LOCALIZE_DATA_HYPOTHS,
-                           this->olocalize_addr))
-  {
-    // Cast the message payload appropriately 
-    player_localize_data_t* pdata = 
-            (player_localize_data_t*)data;
-    printf("%d hypoths\n", pdata->hypoths_count);
-    for(int j=0;j<pdata->hypoths_count;j++)
-    {
-      printf("%d:  %.3f %.3f %.3f\n", 
-             j,
-             pdata->hypoths[j].cov[0],
-             pdata->hypoths[j].cov[1],
-             pdata->hypoths[j].cov[2]);
-    }
-    return(0);
-  }
-  // Is it a request for the map metadata?
-  else if(Message::MatchMessage(hdr,
-                                PLAYER_MSGTYPE_REQ, 
-                                PLAYER_MAP_REQ_GET_INFO,
-                                this->map_addr))
-  {
-    player_map_info_t info;
-    info.scale = this->resolution;
-    info.width = this->sx;
-    info.height = this->sy;
-    info.origin.px = 0;
-    info.origin.py = 0;
-    info.origin.pa = 0;
-    this->Publish(this->map_addr, resp_queue,
-                  PLAYER_MSGTYPE_RESP_ACK,
-                  PLAYER_MAP_REQ_GET_INFO,
-                  (void*)&info);
-    return(0);
-  }
-  // Is it a request for a map tile?
-  else if(Message::MatchMessage(hdr,
-                                PLAYER_MSGTYPE_REQ, 
-                                PLAYER_MAP_REQ_GET_DATA,
-                                this->map_addr))
-  {
-    player_map_data_t* mapreq = (player_map_data_t*)data;
-
-    player_map_data_t mapresp;
-
-    int i, j;
-    int oi, oj, si, sj;
-
-    // Construct reply
-    oi = mapresp.col = mapreq->col;
-    oj = mapresp.row = mapreq->row;
-    si = mapresp.width = mapreq->width;
-    sj = mapresp.height = mapreq->height;
-    mapresp.data_count = mapresp.width * mapresp.height;
-    mapresp.data = new int8_t [mapresp.data_count];
-    ROS_ASSERT(mapresp.data);
-    // Grab the pixels from the map
-    for(j = 0; j < sj; j++)
-    {
-      for(i = 0; i < si; i++)
-      {
-        if(MAP_VALID(this, i + oi, j + oj))
-          mapresp.data[i + j * si] = this->mapdata[MAP_IDX(this->sx, i+oi, j+oj)];
-        else
-        {
-          PLAYER_WARN2("requested cell (%d,%d) is offmap", i+oi, j+oj);
-          mapresp.data[i + j * si] = 0;
-        }
-      }
-    }
-
-    this->Publish(this->map_addr, resp_queue,
-                  PLAYER_MSGTYPE_RESP_ACK,
-                  PLAYER_MAP_REQ_GET_DATA,
-                  (void*)&mapresp);
-    delete [] mapresp.data;
-    return(0);
-  }
-  // Is it a request for laser geometry (pose of laser wrt parent)?
-  else if (Message::MatchMessage(hdr, PLAYER_MSGTYPE_REQ,
-                                 PLAYER_LASER_REQ_GET_GEOM,
-                                 this->laser_addr))
-  {
-    while(!have_laser_pose)
-    {
-      ros::Duration d;
-      d.fromSec(0.5);
-      ROS_INFO("Waiting to receive base->base_laser transform...");
-      d.sleep();
-    }
-    ROS_INFO("Received base->base_laser transform...");
-    player_laser_geom_t geom;
-    memset(&geom, 0, sizeof(geom));
-    geom.pose.px = laser_x;
-    geom.pose.py = laser_y;
-    geom.pose.pyaw = laser_yaw;
-    geom.size.sl = 0.06;
-    geom.size.sw = 0.06;
-
-    this->Publish(this->laser_addr,
-                  resp_queue,
-                  PLAYER_MSGTYPE_RESP_ACK,
-                  PLAYER_LASER_REQ_GET_GEOM,
-                  (void*)&geom);
-    return(0);
-  }
-  // Is it an ACK from a request that I sent earlier?
-  else if(Message::MatchMessage(hdr, PLAYER_MSGTYPE_RESP_ACK,
-                                 -1))
-    return(0);
-  else
-  {
-    printf("Unhandled Player message %d:%d:%d:%d\n",
-           hdr->type,
-           hdr->subtype,
-           hdr->addr.interf,
-           hdr->addr.index);
-    return(-1);
-  }
-}
-#endif
-
-int
-AmclNode::setPose(double x, double y, double a)
-{
-  /*
-  player_localize_set_pose_t p;
-
-  p.mean.px = x;
-  p.mean.py = y;
-  p.mean.pa = a;
-
-  p.cov[0] = 0.25*0.25;
-  p.cov[1] = 0.25*0.25;
-  p.cov[2] = (M_PI/12.0)*(M_PI/12.0);
-
-  this->ldevice->PutMsg(this->Driver::InQueue,
-                        PLAYER_MSGTYPE_REQ,
-                        PLAYER_LOCALIZE_REQ_SET_POSE,
-                        (void*)&p,0,NULL);
-                        */
-  return(0);
 }
 
 bool
@@ -652,9 +422,6 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     // Compute change in pose
     delta = pf_vector_coord_sub(pose, pf_odom_pose_);
 
-    ROS_INFO("delta: %.3f %.3f %.3f\n",
-             delta.v[0], delta.v[1], delta.v[2]);
-
     // See if we should update the filter
     update = fabs(delta.v[0]) > d_thresh_ ||
              fabs(delta.v[1]) > d_thresh_ ||
@@ -722,7 +489,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     pf_update_resample(pf_);
 
     pf_sample_set_t* set = pf_->sets + pf_->current_set;
-    ROS_INFO("Num samples: %d\n", set->sample_count);
+    ROS_DEBUG("Num samples: %d\n", set->sample_count);
 
     // Publish the resulting cloud
     // TODO: set maximum rate for publishing
@@ -736,25 +503,22 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
                       cloud_msg.particles[i]);
 
     }
-    ros::Node::instance()->publish("particlecloud", cloud_msg);
+    //ros::Node::instance()->publish("particlecloud", cloud_msg);
 
 
     // Read out the current hypotheses
     double max_weight = 0.0;
-    pf_vector_t max_weight_pose={{0.0,0.0,0.0}};
+    int max_weight_hyp = -1;
     const int MAX_HYPS = 8;
     std::vector<amcl_hyp_t> hyps;
     hyps.resize(MAX_HYPS);
-    int hyp_count = 0;
-    for(hyp_count = 0; hyp_count < MAX_HYPS; hyp_count++)
+    for(int hyp_count = 0; hyp_count < MAX_HYPS; hyp_count++)
     {
       double weight;
       pf_vector_t pose_mean;
       pf_matrix_t pose_cov;
       if (!pf_get_cluster_stats(pf_, hyp_count, &weight, &pose_mean, &pose_cov))
         break;
-
-      //pf_vector_fprintf(pose_mean, stdout, "%.3f");
 
       hyps[hyp_count].weight = weight;
       hyps[hyp_count].pf_pose_mean = pose_mean;
@@ -763,34 +527,57 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
       if(hyps[hyp_count].weight > max_weight)
       {
         max_weight = hyps[hyp_count].weight;
-        max_weight_pose = hyps[hyp_count].pf_pose_mean;
+        max_weight_hyp = hyp_count;
       }
     }
 
     if(max_weight > 0.0)
     {
-      ROS_INFO("Max weight pose: %.3f %.3f %.3f",
-               max_weight_pose.v[0],
-               max_weight_pose.v[1],
-               max_weight_pose.v[2]);
+      ROS_DEBUG("Max weight pose: %.3f %.3f %.3f",
+                hyps[max_weight_hyp].pf_pose_mean.v[0],
+                hyps[max_weight_hyp].pf_pose_mean.v[1],
+                hyps[max_weight_hyp].pf_pose_mean.v[2]);
+
+      puts("");
+      pf_matrix_fprintf(hyps[max_weight_hyp].pf_pose_cov, stdout, "%6.3f");
+      puts("");
+
+      robot_msgs::PoseWithCovariance p;
+      // Copy in the pose
+      p.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
+      p.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];
+      tf::QuaternionTFToMsg(tf::Quaternion(hyps[max_weight_hyp].pf_pose_mean.v[2], 0.0, 0.0),
+                            p.pose.orientation);
+      // Copy in the covariance, converting from 3-D to 6-D
+      for(int i=0; i<2; i++)
+      {
+        for(int j=0; j<2; j++)
+        {
+          p.covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
+        }
+      }
+      p.covariance[6*3+3] = hyps[max_weight_hyp].pf_pose_cov.m[2][2];
 
       /*
-      robot_msgs::PoseWithCovariance p;
-      p.pose.position.x = max_weight_pose.v[0];
-      p.pose.position.y = max_weight_pose.v[1];
-      tf::QuaternionTFToMsg(tf::Quaternion(max_weight_pose.v[2], 0.0, 0.0),
-                            p.pose.orientation);
-      ros::Node::instance()->publish("localizedpose", p);
+      printf("cov:\n");
+      for(int i=0; i<6; i++)
+      {
+        for(int j=0; j<6; j++)
+          printf("%6.3f ", p.covariance[6*i+j]);
+        puts("");
+      }
       */
+
+      ros::Node::instance()->publish("amcl_pose", p);
       
       // subtracting base to odom from map to base and send map to odom instead
       tf::Stamped<tf::Pose> odom_to_map;
       try
       {
-        tf::Transform tmp_tf(tf::Quaternion(max_weight_pose.v[2], 
+        tf::Transform tmp_tf(tf::Quaternion(hyps[max_weight_hyp].pf_pose_mean.v[2], 
                                             0, 0), 
-                             tf::Vector3(max_weight_pose.v[0],
-                                         max_weight_pose.v[1],
+                             tf::Vector3(hyps[max_weight_hyp].pf_pose_mean.v[0],
+                                         hyps[max_weight_hyp].pf_pose_mean.v[1],
                                          0.0));
         tf::Stamped<tf::Pose> tmp_tf_stamped (tmp_tf.inverse(), 
                                               laser_scan->header.stamp, 
@@ -806,14 +593,14 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
         return;
       }
 
+      latest_tf_ = tf::Transform(tf::Quaternion(odom_to_map.getRotation()),
+                                 tf::Point(odom_to_map.getOrigin()));
+
       // We want to send a transform that is good up until a 
       // tolerance time so that odom can be used
       ros::Time transform_expiration = (laser_scan->header.stamp +
                                         transform_tolerance_);
-      tf::Transform tmp_tf(tf::Quaternion(odom_to_map.getRotation()),
-                           tf::Point(odom_to_map.getOrigin()));
-
-      tf::Stamped<tf::Transform> tmp_tf_stamped(tmp_tf.inverse(),
+      tf::Stamped<tf::Transform> tmp_tf_stamped(latest_tf_.inverse(),
                                                 transform_expiration,
                                                 odom_frame_id_, "map");
       this->tfb_->sendTransform(tmp_tf_stamped);
@@ -823,69 +610,16 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
       ROS_ERROR("No pose!");
     }
   }
-
-#if 0
-
-  double timestamp = scan.header.stamp.toSec();
-  //printf("I: %.6f %.3f %.3f %.3f\n",
-  //timestamp, x, y, yaw);
-
-  // Synthesize an odometry message
-  player_position2d_data_t pdata_odom;
-  pdata_odom.pos.px = x;
-  pdata_odom.pos.py = y;
-  pdata_odom.pos.pa = yaw;
-  pdata_odom.vel.px = 0.0;
-  pdata_odom.vel.py = 0.0;
-  pdata_odom.vel.pa = 0.0;
-  pdata_odom.stall = 0;
-
-  this->Driver::Publish(this->position2d_addr,
-                        PLAYER_MSGTYPE_DATA,
-                        PLAYER_POSITION2D_DATA_STATE,
-                        (void*)&pdata_odom,0,
-                        &timestamp);
-
-
-  // Got new scan; reformat and pass it on
-  player_laser_data_t pdata;
-  pdata.min_angle = scan.angle_min;
-  pdata.max_angle = scan.angle_max;
-  pdata.resolution = scan.angle_increment;
-  // HACK, until the hokuyourg_player node is fixed
-  if(scan.range_max > 0.1)
-    pdata.max_range = scan.range_max;
   else
-    pdata.max_range = 30.0;
-  pdata.ranges_count = scan.get_ranges_size();
-  pdata.ranges = new float[pdata.ranges_count];
-  ROS_ASSERT(pdata.ranges);
-  // We have to iterate over, rather than block copy, the ranges, because
-  // we have to filter out short readings.
-  for(unsigned int i=0;i<pdata.ranges_count;i++)
   {
-    // Player doesn't have a concept of min range.  So we'll map short
-    // readings to max range.
-    if(scan.ranges[i] <= scan.range_min)
-      pdata.ranges[i] = scan.range_max;
-    else
-      pdata.ranges[i] = scan.ranges[i];
+    ros::Time transform_expiration = (laser_scan->header.stamp +
+                                      transform_tolerance_);
+    tf::Stamped<tf::Transform> tmp_tf_stamped(latest_tf_.inverse(),
+                                              transform_expiration,
+                                              odom_frame_id_, "map");
+    this->tfb_->sendTransform(tmp_tf_stamped);
   }
-  pdata.intensity_count = scan.get_intensities_size();
-  pdata.intensity = new uint8_t[pdata.intensity_count];
-  ROS_ASSERT(pdata.intensity);
-  memset(pdata.intensity,0,sizeof(uint8_t)*pdata.intensity_count);
-  pdata.id = scan.header.seq;
 
-  this->Driver::Publish(this->laser_addr,
-                        PLAYER_MSGTYPE_DATA,
-                        PLAYER_LASER_DATA_SCAN,
-                        (void*)&pdata,0,
-                        &timestamp);
-
-  delete[] pdata.ranges;
-  delete[] pdata.intensity;
-#endif
   pf_mutex_.unlock();
 }
 
