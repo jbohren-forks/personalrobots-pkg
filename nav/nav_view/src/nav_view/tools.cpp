@@ -175,6 +175,9 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
         pose.pose.position.y = pos_.y;
         tf::QuaternionTFToMsg(tf::Quaternion(angle, 0.0, 0.0),
                               pose.pose.orientation);
+        pose.covariance[6*0+0] = 0.5 * 0.5;
+        pose.covariance[6*1+1] = 0.5 * 0.5;
+        pose.covariance[6*3+3] = M_PI/12.0 * M_PI/12.0;
         ROS_INFO( "setting pose: %.3f %.3f %.3f\n", pos_.x, pos_.y, angle );
         ros_node_->publish( "initialpose", pose );
       }
