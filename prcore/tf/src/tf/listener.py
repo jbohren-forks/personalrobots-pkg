@@ -35,7 +35,7 @@ roslib.load_manifest(PKG)
 import sys, os
 
 import rospy
-import tf_swig
+import tf
 from tf import transformations
 import numpy
 
@@ -87,7 +87,7 @@ def transform_stamped_numpy_to_msg(numpy_transform):
 class TransformListener:
     def __init__(self):
         print "Transform Listener initing"
-        self.transformer = tf_swig.Transformer()
+        self.transformer = tf.Transformer()
         #assuming rospy is inited
         rospy.Subscriber("/tf_message", tfMessage, self.callback)
         self.frame_graph_server = rospy.Service('~tf_frames', FrameGraph, self.frame_graph_service)
@@ -95,7 +95,7 @@ class TransformListener:
     def callback(self, data):
         for transform in data.transforms:
             #print "Got data:", transform.header.frame_id
-            self.set_transform(transform_stamped_msg_to_bt(transform))
+            self.set_transform(tf.transform_stamped_msg_to_bt(transform))
 
     def frame_graph_service(self, req):
         return FrameGraphResponse(self.all_frames_as_dot())
@@ -131,42 +131,42 @@ class TransformListener:
         self.transformer.setExtrapolationLimit(limit.to_seconds())
 
     def transform_pose(self, target_frame, pose):
-        pose_out = tf_swig.PoseStamped()
+        pose_out = tf.PoseStamped()
         self.transformer.transformPose(target_frame, pose, pose_out)
         return pose_out
 
     def transform_pose_in_time(self, target_frame, target_time, fixed_frame, pose):
-        pose_out = tf_swig.PoseStamped()
+        pose_out = tf.PoseStamped()
         self.transformer.transformPose(target_frame, target_time, pose, fixed_frame, pose_out)
         return pose_out
 
     def transform_point(self, target_frame, point):
-        point_out = tf_swig.PointStamped()
+        point_out = tf.PointStamped()
         self.transformer.transformPoint(target_frame, point, point_out)
         return point_out
 
     def transform_point_in_time(self, target_frame, target_time, fixed_frame, point):
-        point_out = tf_swig.PointStamped()
+        point_out = tf.PointStamped()
         self.transformer.transformPoint(target_frame, target_time, point, fixed_frame, point_out)
         return point_out
 
     def transform_vector(self, target_frame, vector):
-        vector_out = tf_swig.VectorStamped()
+        vector_out = tf.VectorStamped()
         self.transformer.transformVector(target_frame, vector, vector_out)
         return vector_out
 
     def transform_vector_in_time(self, target_frame, target_time, fixed_frame, vector):
-        vector_out = tf_swig.VectorStamped()
+        vector_out = tf.VectorStamped()
         self.transformer.transformVector(target_frame, target_time, vector, fixed_frame, vector_out)
         return vector_out
 
     def transform_quaternion(self, target_frame, quaternion):
-        quaternion_out = tf_swig.QuaternionStamped()
+        quaternion_out = tf.QuaternionStamped()
         self.transformer.transformQuaternion(target_frame, quaternion, quaternion_out)
         return quaternion_out
 
     def transform_quaternion_in_time(self, target_frame, target_time, fixed_frame, quaternion):
-        quaternion_out = tf_swig.QuaternionStamped()
+        quaternion_out = tf.QuaternionStamped()
         self.transformer.transformQuaternion(target_frame, target_time, quaternion, fixed_frame, quaternion_out)
         return quaternion_out
 

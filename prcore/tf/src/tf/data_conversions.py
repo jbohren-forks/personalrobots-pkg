@@ -25,6 +25,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import roslib; roslib.load_manifest("tf")
+
+import tf
+import bullet
 
 def transform_msg_to_bt(msg):
     rot = msg.rotation
@@ -36,7 +40,7 @@ def transform_msg_to_bt(msg):
     return t
 
 def transform_stamped_msg_to_bt(msg):
-    return tf_swig.TransformStamped(transform_msg_to_bt(msg.transform),
+    return tf.TransformStamped(transform_msg_to_bt(msg.transform),
                                     msg.header.stamp.to_seconds(),
                                     msg.header.frame_id,
                                     msg.parent_id)
@@ -72,7 +76,7 @@ def pose_msg_to_bt(msg):
     return t
 
 def pose_stamped_msg_to_bt(msg):
-    return tf_swig.PoseStamped(pose_msg_to_bt(msg.pose),
+    return tf.PoseStamped(pose_msg_to_bt(msg.pose),
                                     msg.header.stamp.to_seconds(),
                                     msg.header.frame_id,
                                     msg.parent_id)
@@ -108,7 +112,7 @@ def point_msg_to_bt(msg):
     return t
 
 def point_stamped_msg_to_bt(msg):
-    return tf_swig.PointStamped(point_msg_to_bt(msg.point),
+    return tf.PointStamped(point_msg_to_bt(msg.point),
                                     msg.header.stamp.to_seconds(),
                                     msg.header.frame_id,
                                     msg.parent_id)
@@ -144,7 +148,7 @@ def vector_msg_to_bt(msg):
     return t
 
 def vector_stamped_msg_to_bt(msg):
-    return tf_swig.VectorStamped(vector_msg_to_bt(msg.vector),
+    return tf.VectorStamped(vector_msg_to_bt(msg.vector),
                                     msg.header.stamp.to_seconds(),
                                     msg.header.frame_id,
                                     msg.parent_id)
@@ -181,7 +185,7 @@ def quaternion_msg_to_bt(msg):
     return t
 
 def quaternion_stamped_msg_to_bt(msg):
-    return tf_swig.QuaternionStamped(quaternion_msg_to_bt(msg.quaternion),
+    return tf.QuaternionStamped(quaternion_msg_to_bt(msg.quaternion),
                                     msg.header.stamp.to_seconds(),
                                     msg.header.frame_id,
                                     msg.parent_id)

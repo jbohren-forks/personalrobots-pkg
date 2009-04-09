@@ -29,14 +29,13 @@
 import roslib; roslib.load_manifest("tf")
 
 import rospy
-import tf.tf_swig
-import tf.TransformListener
+import tf
 import time
 
 try:
 
     rospy.init_node("test_node")
-    tfl = tf.TransformListener.TransformListener()
+    tfl = tf.TransformListener()
     time.sleep(1)
 
     # View all frames
@@ -47,22 +46,22 @@ try:
 
     
     # test transforming pose
-    po = tf.tf_swig.PoseStamped()
+    po = tf.PoseStamped()
     po.frame_id = "base_link"
     po2 = tfl.transform_pose("/map", po)
 
     # test transforming point
-    po = tf.tf_swig.PointStamped()
+    po = tf.PointStamped()
     po.frame_id = "base_link"
     po2 = tfl.transform_point("/map", po)
 
     # test transforming vector
-    po = tf.tf_swig.VectorStamped()
+    po = tf.VectorStamped()
     po.frame_id = "base_link"
     po2 = tfl.transform_vector("/map", po)
 
     # test transforming quaternion
-    po = tf.tf_swig.QuaternionStamped()
+    po = tf.QuaternionStamped()
     po.frame_id = "base_link"
     po2 = tfl.transform_quaternion("/map", po)
 
