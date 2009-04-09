@@ -84,46 +84,41 @@ def transform_stamped_from_numpy_transform_stamped(numpy_transform):
     ts.transform.translation.z = numpy_transform.mat[2,3]
     return ts
 
-def transform_stamped_from_py_transform(ptf):
-    ts = TransformStamped()
-    ts.header.stamp = ptf.stamp
-    ts.header.frame_id = ptf.frame_id
-    ts.parent_id = ptf.parent_id
-    ts.transform.rotation.x = ptf.qx
-    ts.transform.rotation.y = ptf.qy
-    ts.transform.rotation.z = ptf.qz
-    ts.transform.rotation.w = ptf.qw
-    ts.transform.translation.x = ptf.x
-    ts.transform.translation.y = ptf.y
-    ts.transform.translation.z = ptf.z
-    return ts
-
-def py_transform_from_transform_stamped(transform):
-    rot = transform.transform.rotation
-    tr = transform.transform.translation
-    ptf = tf_swig.Transform()
-    ptf.qx = rot.x
-    ptf.qy = rot.y
-    ptf.qz = rot.z
-    ptf.qw = rot.w
-    ptf.x  = tr.x
-    ptf.y  = tr.y
-    ptf.z  = tr.z
-    ptf.frame_id = transform.header.frame_id
-    ptf.parent_id = transform.parent_id
-    ptf.stamp = transform.header.stamp.to_seconds()
-    return ptf
+def TransformMsgToBt(msg):
+    rot = msg.rotation
+    tr = msg.translation
+    t = bullet.Transform(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w),
+                         bullet.Vector3(tr.x, tr.y, tr.z))
+    t.setOrigin(bullet.Vector3(tr.x, tr.y, tr.z))
+    t.setRotation(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w))
+    return t
 
 def TransformStampedMsgToBt(msg):
-    rot = msg.transform.rotation
-    tr = msg.transform.translation
-    ts = tf_swig.TransformStamped()
-    ts.transform.setOrigin(bullet.Vector3(tr.x, tr.y, tr.z))
-    ts.transform.setRotation(bullet.Quaternion(rot.x, rot.y, rot.z, rot.w))
-    ts.frame_id = msg.header.frame_id
-    ts.parent_id = msg. parent_id
-    ts.stamp = msg.header.stamp.to_seconds()
-    return ts
+    return tf_swig.TransformStamped(TransformMsgToBt(msg.transform),
+                                    msg.header.stamp.to_seconds(),
+                                    msg.header.frame_id,
+                                    msg.parent_id)
+
+def TransformBtToMsg(bt):
+    rot = bt.getRotatioin()
+    tr = bt.getOrigin()
+    msg = robot_msgs.Transform()
+    msg.translation.x = tr.x()
+    msg.translation.y = tr.y()
+    msg.translation.z = tr.z()
+    msg.rotation.x = rot.x()
+    msg.rotation.y = rot.y()
+    msg.rotation.z = rot.z()
+    msg.rotation.w = rot.w()
+    return msg
+
+def TransformStampedBtToMsg(bt):
+    msg = robot_msgs.TransformStamped()
+    msg.transform = TransformBtToMsg(bt.transform)
+    msg.header.frame_id = bt.frame_id
+    msg.header.stamp = rospy.rostime().from_seconds(bt.stamp)
+    msg.parent_id = bt.parent_id
+    return msg
 
 class TransformBroadcaster:
     def __init__(self):
@@ -149,25 +144,19 @@ class TransformListener:
     def callback(self, data):
         for transform in data.transforms:
             #print "Got data:", transform.header.frame_id
-            self.set_transform(transform)
+            self.set_transform(TransformStampedMsgToBt(transform))
 
     def frame_graph_service(self, req):
         return FrameGraphResponse(self.all_frames_as_dot())
         
     def set_transform(self, transform_stamped):
-        bttf = TransformStampedMsgToBt(transform_stamped)
-        self.transformer.setTransform(bttf)
-    
-
+        self.transformer.setTransform(transform_stamped)
 
     def get_transform(self, frame_id, parent_id, time):
-        ptf = self.transformer.getTransform(frame_id, parent_id, time.to_seconds())
-        return transform_stamped_from_py_transform(ptf)
+        return self.transformer.getTransform(frame_id, parent_id, time.to_seconds())
 
     def get_transform_full(self, target_frame, target_time, source_frame, source_time, fixed_frame):
-        ptf = self.transformer.getTransform(target_frame, target_time.to_seconds(), source_frame, source_time.to_seconds(), fixed_frame)
-        return transform_stamped_from_py_transform(ptf)
-            
+        return self.transformer.getTransform(target_frame, target_time.to_seconds(), source_frame, source_time.to_seconds(), fixed_frame)
 
     def can_transform(self, target_frame, source_frame, time):
         return self.transformer.canTransform(target_frame, source_frame, time.to_seconds())
