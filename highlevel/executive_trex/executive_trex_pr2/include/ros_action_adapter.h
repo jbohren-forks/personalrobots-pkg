@@ -181,11 +181,11 @@ namespace TREX {
       return true;
     }
 
-    virtual void fillActiveObservationParameters(const Goal& msg, ObservationByValue* obs) = 0;
+    virtual void fillActiveObservationParameters(const Goal& msg, ObservationByValue* obs){}
 
-    virtual void fillInactiveObservationParameters(const Feedback& msg, ObservationByValue* obs) = 0;
+    virtual void fillInactiveObservationParameters(const Feedback& msg, ObservationByValue* obs){}
 
-    virtual void fillDispatchParameters(Goal& msg, const TokenId& goalToken) = 0;
+    virtual void fillDispatchParameters(Goal& msg, const TokenId& goalToken){}
 
     bool isActive() const {return is_active;}
 

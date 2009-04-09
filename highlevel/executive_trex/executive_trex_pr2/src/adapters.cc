@@ -36,23 +36,24 @@
  */
 
 
+#include <executive_trex_pr2/adapter_utilities.h>
 #include "ros_action_adapter.h"
 #include "ROSStateAdapter.hh"
 #include <std_msgs/Empty.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
-#include <robot_msgs/Door.h>
-#include <robot_msgs/PlugStow.h>
 #include <robot_actions/NoArgumentsActionState.h>
 #include <robot_actions/ShellCommandState.h>
 #include <robot_actions/DoorActionState.h>
 #include <robot_actions/CheckDoorwayState.h>
 #include <robot_actions/NotifyDoorBlockedState.h>
 #include <robot_actions/MoveBaseState.h>
-#include <robot_actions/Pose2D.h>
 #include <robot_actions/RechargeState.h>
 #include <robot_actions/DetectPlugOnBaseActionState.h>
 #include <robot_actions/SwitchControllers.h>
 #include <robot_actions/SwitchControllersState.h>
+#include <robot_actions/Pose2D.h>
+
+using namespace executive_trex_pr2;
 
 namespace TREX {
 
@@ -65,62 +66,17 @@ namespace TREX {
     DoorActionAdapter(const LabelStr& agentName, const TiXmlElement& configData)
       : ROSActionAdapter<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(agentName, configData){
     }
-
-    virtual ~DoorActionAdapter(){}
-
-  protected:
-
-    /**
-     * @brief bind a door message based on the token
-     */
-    void write(const TokenId& token, robot_msgs::Door& msg){
-      writeTokenToDoorMessage(token, msg);
-    }
-
-    // Read Observation from Door Message
-    void read(ObservationByValue& obs, const robot_msgs::Door& msg){
-      setFrame(msg.header.frame_id, &obs);
-
-      // Frame Data
-      ROSAdapter::read<float>("frame_p1_x", obs, msg.frame_p1.x);
-      ROSAdapter::read<float>("frame_p1_y", obs, msg.frame_p1.y);
-      ROSAdapter::read<float>("frame_p1_z", obs, msg.frame_p1.z);
-      ROSAdapter::read<float>("frame_p2_x", obs, msg.frame_p2.x);
-      ROSAdapter::read<float>("frame_p2_y", obs, msg.frame_p2.y);
-      ROSAdapter::read<float>("frame_p2_z", obs, msg.frame_p2.z);
-      ROSAdapter::read<float>("height", obs, msg.height);
-      ROSAdapter::read<int32_t>("hinge", obs, msg.hinge);
-      ROSAdapter::read<int32_t>("rot_dir", obs, msg.rot_dir);
-
-      // Door Data
-      TREX_INFO("ros:debug:synchronization", 
-		"door_p1 = <" << msg.door_p1.x << ", " << msg.door_p1.y << ", " << msg.door_p1.z << ">");
-      TREX_INFO("ros:debug:synchronization", 
-		"door_p2 = <" << msg.door_p2.x << ", " << msg.door_p2.y << ", " << msg.door_p2.z << ">");
-
-      ROSAdapter::read<float>("door_p1_x", obs, msg.door_p1.x);
-      ROSAdapter::read<float>("door_p1_y", obs, msg.door_p1.y);
-      ROSAdapter::read<float>("door_p1_z", obs, msg.door_p1.z);
-      ROSAdapter::read<float>("door_p2_x", obs, msg.door_p2.x);
-      ROSAdapter::read<float>("door_p2_y", obs, msg.door_p2.y);
-      ROSAdapter::read<float>("door_p2_z", obs, msg.door_p2.z);
-
-      // Handle Data
-      ROSAdapter::read<float>("handle_x", obs, msg.handle.x);
-      ROSAdapter::read<float>("handle_y", obs, msg.handle.y);
-      ROSAdapter::read<float>("handle_z", obs, msg.handle.z);
-    }
     
     virtual void fillActiveObservationParameters(const robot_msgs::Door& msg, ObservationByValue* obs){
-      read(*obs, msg);
+      AdapterUtilities::read(*obs, msg);
     }
 
     virtual void fillInactiveObservationParameters(const robot_msgs::Door& msg, ObservationByValue* obs){ 
-      read(*obs, msg);
+      AdapterUtilities::read(*obs, msg);
     }
 
     void fillDispatchParameters(robot_msgs::Door& msg, const TokenId& goalToken){
-      write(goalToken, msg);
+      AdapterUtilities::write(goalToken, msg);
     }
   }; 
 
@@ -137,23 +93,19 @@ namespace TREX {
       : ROSActionAdapter<robot_actions::Pose2D, robot_actions::MoveBaseState,  robot_actions::Pose2D>(agentName, configData){
     }
 
-    virtual ~MoveBaseAdapter(){}
-
-  protected:
-
     virtual void fillActiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){
-      setFrame(msg.header.frame_id, obs);
-      readPose(*obs, msg.x, msg.y, msg.th);
+      AdapterUtilities::setFrame(msg.header.frame_id, *obs);
+      AdapterUtilities::readPose(*obs, msg.x, msg.y, msg.th);
     }
 
     virtual void fillInactiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){ 
-      setFrame(msg.header.frame_id, obs);
-      readPose(*obs, msg.x, msg.y, msg.th);
+      AdapterUtilities::setFrame(msg.header.frame_id, *obs);
+      AdapterUtilities::readPose(*obs, msg.x, msg.y, msg.th);
     }
 
     void fillDispatchParameters(robot_actions::Pose2D& msg, const TokenId& goalToken){
-      msg.header.frame_id = getFrame(goalToken);
-      writePose(goalToken, msg.x, msg.y, msg.th);
+      msg.header.frame_id = AdapterUtilities::getFrame(goalToken);
+      AdapterUtilities::writePose(goalToken, msg.x, msg.y, msg.th);
     }
   };
 
@@ -170,19 +122,9 @@ namespace TREX {
       : ROSActionAdapter<robot_actions::Pose2D, robot_actions::CheckDoorwayState,  robot_actions::Pose2D>(agentName, configData){
     }
 
-    virtual ~CheckDoorwayAdapter(){}
-
-  protected:
-
-    virtual void fillActiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){
-    }
-
-    virtual void fillInactiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){ 
-    }
-
     void fillDispatchParameters(robot_actions::Pose2D& msg, const TokenId& goalToken){
-      msg.header.frame_id = getFrame(goalToken);
-      writePose(goalToken, msg.x, msg.y, msg.th);
+      msg.header.frame_id = AdapterUtilities::getFrame(goalToken);
+      AdapterUtilities::writePose(goalToken, msg.x, msg.y, msg.th);
     }
   };
 
@@ -199,16 +141,9 @@ namespace TREX {
       : ROSActionAdapter<robot_actions::Pose2D, robot_actions::NotifyDoorBlockedState,  robot_actions::Pose2D>(agentName, configData){
     }
 
-    virtual ~NotifyDoorBlockedAdapter(){}
-
-  protected:
-
-    virtual void fillActiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){
-    }
-
-    virtual void fillInactiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){ 
-    }
-
+    /**
+     * @todo Should take a door message and an ID?
+     */
     void fillDispatchParameters(robot_actions::Pose2D& msg, const TokenId& goalToken){
     }
   };
@@ -225,19 +160,6 @@ namespace TREX {
     NoArgumentsActionAdapter(const LabelStr& agentName, const TiXmlElement& configData)
       : ROSActionAdapter<std_msgs::Empty, robot_actions::NoArgumentsActionState,  std_msgs::Empty>(agentName, configData){
     }
-
-    virtual ~NoArgumentsActionAdapter(){}
-
-  protected:
-
-    virtual void fillActiveObservationParameters(const std_msgs::Empty& msg, ObservationByValue* obs){
-    }
-
-    virtual void fillInactiveObservationParameters(const std_msgs::Empty& msg, ObservationByValue* obs){ 
-    }
-
-    void fillDispatchParameters(std_msgs::Empty& msg, const TokenId& goalToken){
-    }
   };
 
   // Allocate Factory
@@ -252,21 +174,17 @@ namespace TREX {
 
     RechargeAdapter(const LabelStr& agentName, const TiXmlElement& configData)
       : ROSActionAdapter<std_msgs::Float32, robot_actions::RechargeState,  std_msgs::Float32>(agentName, configData){}
-
-    virtual ~RechargeAdapter(){}
-
-  protected:
     
     virtual void fillActiveObservationParameters(const std_msgs::Float32& msg, ObservationByValue* obs){
-      ROSAdapter::read<float>("recharge_level", *obs, msg.data);
+      AdapterUtilities::read<float>("recharge_level", *obs, msg.data);
     }
 
     virtual void fillInactiveObservationParameters(const std_msgs::Float32& msg, ObservationByValue* obs){
-      ROSAdapter::read<float>("recharge_level", *obs, msg.data);
+      AdapterUtilities::read<float>("recharge_level", *obs, msg.data);
     }
 
     virtual void fillDispatchParameters(std_msgs::Float32& msg, const TokenId& goalToken){
-      ROSAdapter::write<float>("recharge_level", goalToken, msg.data);
+      AdapterUtilities::write<float>("recharge_level", goalToken, msg.data);
     }
   };
 
@@ -284,22 +202,18 @@ namespace TREX {
     ShellCommandAdapter(const LabelStr& agentName, const TiXmlElement& configData)
       : ROSActionAdapter<std_msgs::String, robot_actions::ShellCommandState, std_msgs::String>(agentName, configData){
     }
-
-    virtual ~ShellCommandAdapter(){}
-
-  protected:
     
     virtual void fillActiveObservationParameters(const std_msgs::String& msg, ObservationByValue* obs){
-      obs->push_back("request", toStringDomain(msg));
+      obs->push_back("request", AdapterUtilities::toStringDomain(msg));
     }
 
     virtual void fillInactiveObservationParameters(const std_msgs::String& msg, ObservationByValue* obs){ 
-      obs->push_back("response", toStringDomain(msg));
+      obs->push_back("response", AdapterUtilities::toStringDomain(msg));
     }
 
     void fillDispatchParameters(std_msgs::String& msg, const TokenId& goalToken){
       const StringDomain& dom = static_cast<const StringDomain&>(goalToken->getVariable("request")->lastDomain());
-      write(dom, msg);
+      AdapterUtilities::write(dom, msg);
     }
   };  
 
@@ -317,12 +231,10 @@ namespace TREX {
       : ROSStateAdapter<deprecated_msgs::RobotBase2DOdom> ( agentName, configData) {
     }
 
-    virtual ~BaseStateAdapter(){}
-
   private:
     void fillObservationParameters(ObservationByValue* obs){
-      setFrame(stateMsg.header.frame_id, obs);
-      readPose(*obs, stateMsg.pos.x, stateMsg.pos.y, stateMsg.pos.th);
+      AdapterUtilities::setFrame(stateMsg.header.frame_id, *obs);
+      AdapterUtilities::readPose(*obs, stateMsg.pos.x, stateMsg.pos.y, stateMsg.pos.th);
     }
   };
 
@@ -339,20 +251,9 @@ namespace TREX {
       : ROSActionAdapter<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(agentName, configData){
     }
 
-    virtual ~DetectPlugOnBaseAdapter(){}
-
-  protected:
-
-    virtual void fillActiveObservationParameters(const std_msgs::Empty& msg, ObservationByValue* obs){}
-
     virtual void fillInactiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){
-      setFrame(msg.header.frame_id, obs);
-      ROSAdapter::read<double>("x", *obs, msg.plug_centroid.x);
-      ROSAdapter::read<double>("y", *obs, msg.plug_centroid.y);
-      ROSAdapter::read<double>("z", *obs, msg.plug_centroid.z);
+      AdapterUtilities::read(*obs, msg);
     }
-
-    void fillDispatchParameters(std_msgs::Empty& msg, const TokenId& goalToken){}
   };
 
   // Allocate Factory
@@ -368,14 +269,6 @@ namespace TREX {
     SwitchControllersAdapter(const LabelStr& agentName, const TiXmlElement& configData)
       : ROSActionAdapter<robot_actions::SwitchControllers, robot_actions::SwitchControllersState, std_msgs::Empty>(agentName, configData){
     }
-
-    virtual ~SwitchControllersAdapter(){}
-
-  protected:
-
-    virtual void fillActiveObservationParameters(const robot_actions::SwitchControllers& msg, ObservationByValue* obs){}
-
-    virtual void fillInactiveObservationParameters(const std_msgs::Empty& msg, ObservationByValue* obs){}
 
     void fillDispatchParameters(robot_actions::SwitchControllers& msg, const TokenId& goalToken){
       // The token will have a set of merged tokens on it. These merged tokens all are derived from a master of type

@@ -1,6 +1,6 @@
 #include <executive_trex_pr2/door_domain_constraints.hh>
+#include <executive_trex_pr2/adapter_utilities.h>
 #include <doors_core/executive_functions.h>
-#include <ROSAdapter.hh>
 
 #include "Debug.hh"
 
@@ -50,7 +50,7 @@ namespace executive_trex_pr2 {
     }
 
     robot_msgs::Door msg;
-    ROSAdapter::writeTokenToDoorMessage(_token_id, msg);
+    AdapterUtilities::write(_token_id, msg);
 
     // Now make the calculation - How this works without knowledge of robot position is beyond me. Have to check with Wim.
     tf::Stamped<tf::Pose> tf_stamped_pose = getRobotPose(msg, _range.getSingletonValue());

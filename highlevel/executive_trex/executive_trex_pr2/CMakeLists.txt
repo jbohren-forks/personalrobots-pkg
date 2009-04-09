@@ -104,6 +104,7 @@ set(TREX_FILES src/Executive.cc
 	       src/BatteryStateAdapter.cc
 	       src/topological_map.cc
 	       src/door_domain_constraints.cc
+	       src/adapter_utilities.cc
 	       src/adapters.cc)
 
 # trexdebug builds with a large number of run-time error checking running which is expensive

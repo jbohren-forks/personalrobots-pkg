@@ -12,6 +12,7 @@ class PlugsUntuckArms extends ROSAction {
 
 /**
  * @brief For placing the plug back on the base.
+ * Leaves the arm in a free position out of the way so that we can confirm that the plug is stowed
  */
 class StowPlug extends ROSAction {
   // Goal takes a point for the target location
