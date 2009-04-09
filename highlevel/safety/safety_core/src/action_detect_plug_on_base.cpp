@@ -57,6 +57,8 @@ DetectPlugOnBaseAction::~DetectPlugOnBaseAction()
 
 void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
 {
+  notifyActivated();
+
   reset();
   node_.param(action_name_ + "/laser_tilt_controller", laser_controller_, laser_controller_);
   
@@ -67,17 +69,12 @@ void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
     notifyAborted(plug_stow_);
     return;
   }
-  
-  notifyActivated();
-  
  
   if (!ros::service::call(laser_controller_ + "/set_periodic_cmd", req_laser_, res_laser_))
   {
-    if (request_preempt_)
+    if (!isActive())
     {
-      ROS_INFO("%s: preempted.", action_name_.c_str());
-      plug_stow_.stowed = 0;
-      notifyPreempted(plug_stow_);
+      return;
     }
     else
     {
@@ -95,7 +92,9 @@ void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
 
 void DetectPlugOnBaseAction::handlePreempt()
 {
-  request_preempt_ = true;
+  ROS_INFO("%s: preempted.", action_name_.c_str());
+  plug_stow_.stowed = 0;
+  notifyPreempted(plug_stow_);
   return;
 }
 
@@ -130,13 +129,8 @@ void DetectPlugOnBaseAction::reset()
 
 void DetectPlugOnBaseAction::localizePlug()
 {
-  if (request_preempt_)
-  {
-    ROS_INFO("%s: preempted.", action_name_.c_str());
-    plug_stow_.stowed = 0;
-    notifyPreempted(plug_stow_);
+  if(!isActive())
     return;
-  }
 
   if(plug_stow_msg.stowed == 0)
   {
@@ -174,8 +168,11 @@ void DetectPlugOnBaseAction::localizePlug()
     if(found_count_ > 3 && std_x_ < 0.05 && std_y_ < 0.05 && std_z_ < 0.05)
     {
       ROS_INFO("%s: succeeded.", action_name_.c_str());
+      plug_stow_.header.frame_id = plug_stow_msg.header.frame_id;    
       plug_stow_.stowed = 1;
+      detector_->deactivate();
       notifySucceeded(plug_stow_);
+      
     }
   }
 
