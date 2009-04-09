@@ -40,6 +40,8 @@
 #include <string.h>
 #include <robot_msgs/Door.h>
 
+namespace door_handle_detector{
+
 // convert door message to frame
 bool transformTo(const tf::Transformer& tf, const std::string& goal_frame, const robot_msgs::Door& door_in, robot_msgs::Door& door_out);
 bool transformPointTo(const tf::Transformer& tf, const std::string& source_frame, const std::string& goal_frame, const ros::Time& time,
@@ -47,4 +49,5 @@ bool transformPointTo(const tf::Transformer& tf, const std::string& source_frame
 bool transformVectorTo(const tf::Transformer& tf, const std::string& source_frame, const std::string& goal_frame, const ros::Time& time,
                        const robot_msgs::Vector3 point_in, robot_msgs::Vector3 point_out);
 
+}
 #endif

@@ -39,6 +39,8 @@ using namespace std;
 using namespace tf;
 
 
+namespace door_handle_detector{
+
 bool transformTo(const tf::Transformer& tf, const string& goal_frame, const robot_msgs::Door& door_in, robot_msgs::Door& door_out)
 {
   door_out = door_in;
@@ -48,6 +50,7 @@ bool transformTo(const tf::Transformer& tf, const string& goal_frame, const robo
   if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.door_p2, door_out.door_p2)) return false;
   if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.handle, door_out.handle)) return false;
   if (!transformVectorTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.normal, door_out.normal)) return false;
+  door_out.header.frame_id = goal_frame;
   return true;
 }
 
@@ -79,4 +82,5 @@ bool transformVectorTo(const tf::Transformer& tf, const string& source_frame, co
   point_out.z = pnt[2];
 
   return true;
+}
 }
