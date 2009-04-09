@@ -30,6 +30,8 @@
 
 #include "../pf/pf.h"
 
+namespace amcl
+{
 
 // Forward declarations
 class AMCLSensorData;
@@ -90,6 +92,6 @@ class AMCLSensorData
   public: double time;
 };
 
-
+}
 
 #endif

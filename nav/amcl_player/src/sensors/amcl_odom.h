@@ -32,6 +32,9 @@
 #include "amcl_sensor.h"
 #include "../pf/pf_pdf.h"
 
+namespace amcl
+{
+
 // Odometric sensor data
 class AMCLOdomData : public AMCLSensorData
 {
@@ -75,6 +78,6 @@ class AMCLOdom : public AMCLSensor
 };
 
 
-
+}
 
 #endif

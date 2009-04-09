@@ -32,6 +32,9 @@
 #include "amcl_sensor.h"
 #include "../map/map.h"
 
+namespace amcl
+{
+
 // Laser sensor data
 class AMCLLaserData : public AMCLSensorData
 {
@@ -101,6 +104,6 @@ class AMCLLaser : public AMCLSensor
 };
 
 
-
+}
 
 #endif

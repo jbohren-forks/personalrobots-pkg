@@ -112,6 +112,8 @@ Publishes to (name / type):
 #include "tf/transform_listener.h"
 #include "tf/message_notifier.h"
 
+using namespace amcl;
+
 // Pose hypothesis
 typedef struct
 {
@@ -157,7 +159,6 @@ class AmclNode
     int sx, sy;
     double resolution;
     bool have_laser_pose;
-    double laser_x, laser_y, laser_yaw;
 
     tf::MessageNotifier<laser_scan::LaserScan>* laser_scan_notifer;
 
@@ -188,7 +189,7 @@ class AmclNode
     
     //time for tolerance on the published transform, 
     //basically defines how long a map->odom transform is good for
-    double transform_tolerance_;
+    ros::Duration transform_tolerance_;
 };
 
 #define USAGE "USAGE: amcl"
@@ -228,7 +229,9 @@ AmclNode::AmclNode() :
   ros::Node::instance()->param("pf_min_d", d_thresh_, 0.2);
   ros::Node::instance()->param("pf_min_a", a_thresh_, M_PI/6.0);
   ros::Node::instance()->param("pf_odom_frame_id", odom_frame_id_, std::string("odom"));
-  ros::Node::instance()->param("pf_transform_tolerance", transform_tolerance_, 0.0);
+  double tmp_tol;
+  ros::Node::instance()->param("pf_transform_tolerance", tmp_tol, 0.1);
+  transform_tolerance_.fromSec(tmp_tol);
 
   double startX, startY, startTH;
   ros::Node::instance()->param("robot_x_start", startX, 0.0);
@@ -243,6 +246,7 @@ AmclNode::AmclNode() :
   
   // Create the particle filter
   pf_ = pf_alloc(pf_min_samples_, pf_max_samples_);
+  printf("allocated with %d %d\n", pf_min_samples_, pf_max_samples_);
   pf_->pop_err = pf_err_;
   pf_->pop_z = pf_z_;
 
@@ -274,7 +278,7 @@ AmclNode::AmclNode() :
   laser_ = new AMCLLaser(max_beams, 0.1, 0.1, dummy, map_);
   ROS_ASSERT(laser_);
 
-  ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("localizedpose",2);
+  //ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("localizedpose",2);
   ros::Node::instance()->advertise<robot_msgs::ParticleCloud>("particlecloud",2);
   laser_scan_notifer = 
           new tf::MessageNotifier<laser_scan::LaserScan>
@@ -331,6 +335,11 @@ AmclNode::requestMap()
 AmclNode::~AmclNode()
 {
   map_free(map_);
+  delete tfb_;
+  delete tf_;
+  pf_free(pf_);
+  delete laser_;
+  delete odom_;
   // TODO: delete everything allocated in constructor
 }
 
@@ -643,6 +652,9 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     // Compute change in pose
     delta = pf_vector_coord_sub(pose, pf_odom_pose_);
 
+    ROS_INFO("delta: %.3f %.3f %.3f\n",
+             delta.v[0], delta.v[1], delta.v[2]);
+
     // See if we should update the filter
     update = fabs(delta.v[0]) > d_thresh_ ||
              fabs(delta.v[1]) > d_thresh_ ||
@@ -708,7 +720,24 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
   
     // Resample the particles
     pf_update_resample(pf_);
-    ROS_INFO("Num samples: %d\n", pf_->sets[pf_->current_set].sample_count);
+
+    pf_sample_set_t* set = pf_->sets + pf_->current_set;
+    ROS_INFO("Num samples: %d\n", set->sample_count);
+
+    // Publish the resulting cloud
+    // TODO: set maximum rate for publishing
+    robot_msgs::ParticleCloud cloud_msg;
+    cloud_msg.set_particles_size(set->sample_count);
+    for(int i=0;i<set->sample_count;i++)
+    {
+      tf::PoseTFToMsg(tf::Pose(btQuaternion(set->samples[i].pose.v[2], 0, 0), 
+                               btVector3(set->samples[i].pose.v[0], 
+                                         set->samples[i].pose.v[1], 0)),
+                      cloud_msg.particles[i]);
+
+    }
+    ros::Node::instance()->publish("particlecloud", cloud_msg);
+
 
     // Read out the current hypotheses
     double max_weight = 0.0;
@@ -744,6 +773,50 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
                max_weight_pose.v[0],
                max_weight_pose.v[1],
                max_weight_pose.v[2]);
+
+      /*
+      robot_msgs::PoseWithCovariance p;
+      p.pose.position.x = max_weight_pose.v[0];
+      p.pose.position.y = max_weight_pose.v[1];
+      tf::QuaternionTFToMsg(tf::Quaternion(max_weight_pose.v[2], 0.0, 0.0),
+                            p.pose.orientation);
+      ros::Node::instance()->publish("localizedpose", p);
+      */
+      
+      // subtracting base to odom from map to base and send map to odom instead
+      tf::Stamped<tf::Pose> odom_to_map;
+      try
+      {
+        tf::Transform tmp_tf(tf::Quaternion(max_weight_pose.v[2], 
+                                            0, 0), 
+                             tf::Vector3(max_weight_pose.v[0],
+                                         max_weight_pose.v[1],
+                                         0.0));
+        tf::Stamped<tf::Pose> tmp_tf_stamped (tmp_tf.inverse(), 
+                                              laser_scan->header.stamp, 
+                                              "base_footprint");
+        this->tf_->transformPose(odom_frame_id_, 
+                                 tmp_tf_stamped,
+                                 odom_to_map);
+      }
+      catch(tf::TransformException)
+      {
+        ROS_DEBUG("Failed to subtract base to odom transform");
+        pf_mutex_.unlock();
+        return;
+      }
+
+      // We want to send a transform that is good up until a 
+      // tolerance time so that odom can be used
+      ros::Time transform_expiration = (laser_scan->header.stamp +
+                                        transform_tolerance_);
+      tf::Transform tmp_tf(tf::Quaternion(odom_to_map.getRotation()),
+                           tf::Point(odom_to_map.getOrigin()));
+
+      tf::Stamped<tf::Transform> tmp_tf_stamped(tmp_tf.inverse(),
+                                                transform_expiration,
+                                                odom_frame_id_, "map");
+      this->tfb_->sendTransform(tmp_tf_stamped);
     }
     else
     {
@@ -842,7 +915,7 @@ AmclNode::initialPoseReceived()
   pf_matrix_t pf_init_pose_cov = pf_matrix_zero();
   pf_init_pose_cov.m[0][0] = 1.0 * 1.0;
   pf_init_pose_cov.m[1][1] = 1.0 * 1.0;
-  pf_init_pose_cov.m[2][2] = 2*M_PI * 2*M_PI;
+  pf_init_pose_cov.m[2][2] = M_PI/12.0 * M_PI/12.0;
   pf_mutex_.lock();
   pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
   pf_init_ = false;

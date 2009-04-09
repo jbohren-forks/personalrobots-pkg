@@ -34,6 +34,8 @@
 
 #include "amcl_laser.h"
 
+using namespace amcl;
+
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
 AMCLLaser::AMCLLaser(size_t max_beams, 

@@ -32,6 +32,8 @@
 
 #include "amcl_odom.h"
 
+using namespace amcl;
+
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
 AMCLOdom::AMCLOdom(pf_matrix_t& drift) : AMCLSensor()
