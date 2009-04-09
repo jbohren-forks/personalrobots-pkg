@@ -66,6 +66,7 @@ def power_board_client(breaker_number, command):
         return resp1.retval
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
+        return 255 
 
 def usage():
     return "%s breaker_number(0 | 1 | 2) command(start | stop | reset | disable | none)"%sys.argv[0]
