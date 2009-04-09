@@ -59,7 +59,9 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
   double shoulder_position_x_;
   double shoulder_position_y_;
 
-  std::vector<double> robot_global_pose_;
+  double global_door_open_angle_;
+  double global_door_closed_angle_;
+
   door_base_collision_cost::DoorBaseCollisionCost db_;
 
   std::vector<int> desired_door_anglesV;
@@ -94,6 +96,9 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
 
 
 
+  bool GetMinCostDoorAngle(double x, double y, double theta, double &angle, double &door_angle_cost);
+
+
   protected:
 
   virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
@@ -103,6 +108,7 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
   //returned at all as a possible doorangle.
   void GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldrobotpose3D, vector<int>* doorangleV, 
                           vector<int>* dooranglecostV);
+
 
   //returns the cost to getting to mincost desired door angles while staying at this pose
   //returns infinity if no desired goal angle is reachable

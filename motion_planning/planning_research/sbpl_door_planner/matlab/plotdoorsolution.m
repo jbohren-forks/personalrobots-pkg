@@ -17,7 +17,6 @@ figure(1)
 hold on
 axis([-2 2 -2 2]);
 axis equal
-handle1 = plot([door_p1(1) door_p2(1)],[door_p1(2) door_p2(2)],'r-');
 plot(a(:,1),a(:,2),'g');
 for i=1:length(a)
     [px py] = robotBox(a(i,1),a(i,2),a(i,3),initRobotBox);
@@ -25,6 +24,14 @@ for i=1:length(a)
         handle2 = plot(px,py,'b-');
     else
         set(handle2,'XData',px,'YData',py);
+    end
+    
+    door_p2 = rotZ(door_angle+a(i,4))*[door_length 0 0 1]';
+    door_p2 = door_p2(1:2,1) + hinge_global_position(1:2)';
+    if i==1
+      handle1 = plot([door_p1(1) door_p2(1)],[door_p1(2) door_p2(2)],'r-');
+    else
+        set(handle1,'XData',[door_p1(1) door_p2(1)],'YData',[door_p1(2) door_p2(2)]);
     end
     pause(0.2);
 end

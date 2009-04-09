@@ -131,11 +131,14 @@ void EnvironmentNAVXYTHETADOOR::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldr
     dooranglecostV->push_back(0);
     dooranglecostV->push_back(3);
 */
-    robot_global_pose_[0] = worldrobotpose3D.x;
-    robot_global_pose_[1] = worldrobotpose3D.y;
-    robot_global_pose_[2] = worldrobotpose3D.theta;
 
-    db_.getValidDoorAngles(footprint_, robot_global_pose_, door_global_pose_, robot_shoulder_position_, door_handle_pose_, door_length_, door_thickness_, pivot_length_, min_workspace_angle_, max_workspace_angle_, min_workspace_radius_, max_workspace_radius_, delta_angle_, *doorangleV, *dooranglecostV);
+    std::vector<double> robot_global_pose(3);
+
+    robot_global_pose[0] = worldrobotpose3D.x;
+    robot_global_pose[1] = worldrobotpose3D.y;
+    robot_global_pose[2] = worldrobotpose3D.theta;
+
+    db_.getValidDoorAngles(footprint_, robot_global_pose, door_global_pose_, robot_shoulder_position_, door_handle_pose_, door_length_, door_thickness_, pivot_length_, min_workspace_angle_, max_workspace_angle_, min_workspace_radius_, max_workspace_radius_, delta_angle_, *doorangleV, *dooranglecostV, global_door_open_angle_, global_door_closed_angle_);
 
 // No larger than 255 unsigned char
 // Also put in an infinite cost
@@ -191,6 +194,45 @@ int EnvironmentNAVXYTHETADOOR::MinCostDesiredDoorAngle(int x, int y, int theta)
 
 }
 
+
+bool EnvironmentNAVXYTHETADOOR::GetMinCostDoorAngle(double x, double y, double theta, double &angle, double &door_angle_cost)
+{
+  vector<int> doorangleV;
+  vector<int> dooranglecostV;
+
+  //get the world 3d robot pose
+  EnvNAVXYTHETALAT3Dpt_t point3D;
+  point3D.x = x;
+  point3D.y = y;
+  point3D.theta = theta;
+
+  //get the door intervals together with the costs
+  doorangleV.clear();
+  dooranglecostV.clear();
+  GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV);
+
+  //go over the interval and pick the angle with the smallest cost
+  int mincost = INFINITECOST;
+  int bestangle = -INFINITECOST;
+  for(int cind = 0; cind < (int)doorangleV.size(); cind++)
+  {
+//    printf("angles[%d]: %d %d\n",cind,doorangleV[cind],dooranglecostV[cind]);
+      if(dooranglecostV[cind] < mincost)
+      {
+	mincost = dooranglecostV[cind];
+	bestangle = doorangleV[cind];
+      }
+  }
+
+  if(bestangle != -INFINITECOST)
+  {    
+    angle = M_PI*bestangle/180.0;
+    door_angle_cost = mincost;
+//    printf("bestangle: %d\n",bestangle);
+    return true;
+  }
+  return false;
+}
 
 
 //overwrites the parent navxythetalat class to return a goal whenever a state has the desired angle door, independently of the robot pose
@@ -264,4 +306,5 @@ void EnvironmentNAVXYTHETADOOR::GetSuccs(int SourceStateID, vector<int>* SuccIDV
 #endif
 
 }
+
 

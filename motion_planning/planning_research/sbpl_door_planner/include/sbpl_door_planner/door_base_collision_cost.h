@@ -46,15 +46,15 @@ namespace door_base_collision_cost
 
     void transform2D(const std::vector<double> &fp_in, std::vector<double> &fp_out, const double &x, const double &y, const double &theta);
 
-    double  findWorkspaceCost(const std::vector<double> robot_shoulder_position, const std::vector<double> robot_handle_position, const double &min_angle, const double &max_angle, const double &min_radius, const double &max_radius);
+    double findWorkspaceCost(const std::vector<double> robot_shoulder_position, const std::vector<double> robot_handle_position, const double &min_angle, const double &max_angle, const double &min_radius, const double &max_radius);
 
-    bool  findAngleLimits(const double &door_length, const double &door_thickness, const double &pivot_length, const double max_radius, const std::vector<double> &point, std::vector<double> &angles);
+    bool findAngleLimits(const double &door_length, const double &door_thickness, const double &pivot_length, const double max_radius, const std::vector<double> &point, std::vector<double> &angles);
 
-    bool  findCircleLineSegmentIntersection(const std::vector<double> &p1, const std::vector<double> &p2, const double &x_r, const double &y_r, const double &radius, std::vector<std::vector<double> > intersection_points);
+    bool findCircleLineSegmentIntersection(const std::vector<double> &p1, const std::vector<double> &p2, const double &x_r, const double &y_r, const double &radius, std::vector<std::vector<double> > intersection_points);
 
-    void  freeAngleRange(const std::vector<std::vector<double> > &footprint, const double &door_length,  const double &door_thickness, const double &pivot_length, const double &max_radius, double &min_angle, double &max_angle);
+    void freeAngleRange(const std::vector<std::vector<double> > &footprint, const double &door_length,  const double &door_thickness, const double &pivot_length, const double &max_radius, double &min_angle, double &max_angle, const double &door_open_angle, const double &door_closed_angle);
 
-    void  getValidDoorAngles(const std::vector<std::vector<double> > &footprint, 
+    void getValidDoorAngles(const std::vector<std::vector<double> > &footprint, 
                                                       const std::vector<double> &robot_global_pose, 
                                                       const std::vector<double> &door_global_pose, 
                                                       const std::vector<double> &robot_shoulder_position, 
@@ -64,9 +64,15 @@ namespace door_base_collision_cost
                                                       const double &min_workspace_radius, const double &max_workspace_radius,
                                                       const double &delta_angle,
                                                       std::vector<int> &valid_angles, 
-                             std::vector<int> &valid_cost);
+                             std::vector<int> &valid_cost, const double &global_door_open_angle, const double &global_door_closed_angle);
 
-    void  findCirclePolygonIntersection(const double &center_x, const double &center_y, const double &radius, const std::vector<std::vector<double> > &footprint, std::vector<std::vector<double> > &solution);
+    void findCirclePolygonIntersection(const double &center_x, const double &center_y, const double &radius, const std::vector<std::vector<double> > &footprint, std::vector<std::vector<double> > &solution);
+
+    private:
+
+    double local_door_open_angle_;
+
+    double local_door_closed_angle_;
 
   };
 }

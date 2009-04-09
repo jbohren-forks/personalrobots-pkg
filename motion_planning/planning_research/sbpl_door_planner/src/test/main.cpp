@@ -117,8 +117,6 @@ int planxythetadoor(int argc, char *argv[])
   environment_navxythetadoor.door_handle_pose_[0] = 0.7;
   environment_navxythetadoor.door_handle_pose_[1] = 0;
 
-  environment_navxythetadoor.robot_global_pose_.resize(3);
-
   environment_navxythetadoor.door_global_pose_.resize(3);
   environment_navxythetadoor.door_global_pose_[0] = 0.25;
   environment_navxythetadoor.door_global_pose_[1] = 1.1;
@@ -135,6 +133,8 @@ int planxythetadoor(int argc, char *argv[])
   environment_navxythetadoor.min_workspace_angle_ = -3*M_PI/2.0;
   environment_navxythetadoor.delta_angle_ = 0.1;
 
+  environment_navxythetadoor.global_door_open_angle_ = M_PI/2.0;
+  environment_navxythetadoor.global_door_closed_angle_ = 0.0;
 
 
   //plan a path
@@ -212,7 +212,16 @@ int planxythetadoor(int argc, char *argv[])
   vector<EnvNAVXYTHETALAT3Dpt_t> xythetaPath;
   environment_navxythetadoor.ConvertStateIDPathintoXYThetaPath(&solution_stateIDs_V, &xythetaPath);
   for(unsigned int i = 0; i < xythetaPath.size(); i++) {
-    fprintf(fSol, "%.3f %.3f %.3f\n", xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta);
+    double door_angle;
+    double door_angle_cost;
+    if(!environment_navxythetadoor.GetMinCostDoorAngle(xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta,door_angle,door_angle_cost))
+    {
+      fprintf(fSol, "%.3f %.3f %.3f %.3f %.3f\n", xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta,0.0,0.0);
+    }
+    else
+    {
+      fprintf(fSol, "%.3f %.3f %.3f %.3f %.3f\n", xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta,door_angle,door_angle_cost);
+    }
   }
   fclose(fSol);
 
