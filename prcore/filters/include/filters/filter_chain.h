@@ -223,6 +223,7 @@ bool FilterChain<T>::update (const std::vector<T>& data_in, std::vector<T>& data
   else if (list_size == 2)
   {
     result = reference_pointers_[0]->update(data_in, buffer0_);
+    if (result == false) {return false; };//don't keep processing on failure
     result = result && reference_pointers_[1]->update(buffer0_, data_out);
   }
   else
@@ -234,7 +235,8 @@ bool FilterChain<T>::update (const std::vector<T>& data_in, std::vector<T>& data
         result = result && reference_pointers_[i]->update(buffer0_, buffer1_);
       else
         result = result && reference_pointers_[i]->update(buffer1_, buffer0_);
-      
+
+      if (result == false) {return false; }; //don't keep processing on failure
     }
     if (list_size % 2 == 1) // odd number last deposit was in buffer0
       result = result && reference_pointers_.back()->update(buffer0_, data_out);
