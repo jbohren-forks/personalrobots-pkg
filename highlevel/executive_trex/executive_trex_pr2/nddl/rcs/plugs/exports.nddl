@@ -16,7 +16,7 @@ class PlugsUntuckArms extends ROSAction {
  */
 class StowPlug extends ROSAction {
   predicate Active{
-    float time_stamp; // A double encoding is reliable
+    float time_stamp;
     string frame_id;
     bool stowed;
     float x;
@@ -77,6 +77,7 @@ class ServoToOutlet extends ROSAction {
     float dx;
     float dy;
     float dz;
+    float dw;
   }
 
   predicate Inactive{}
@@ -107,6 +108,7 @@ class DetectOutletFine extends ROSAction {
     float dx;
     float dy;
     float dz;
+    float dw;
   }
 
   DetectOutletFine(Mode _mode){super(_mode);}
@@ -135,6 +137,7 @@ class DetectOutletCoarse extends ROSAction {
     float dx;
     float dy;
     float dz;
+    float dw;
   }
 
   DetectOutletCoarse(Mode _mode){super(_mode);}

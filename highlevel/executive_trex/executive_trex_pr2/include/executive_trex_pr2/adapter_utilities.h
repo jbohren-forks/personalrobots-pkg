@@ -12,6 +12,9 @@
 #include <std_msgs/String.h>
 #include <robot_msgs/Door.h>
 #include <robot_msgs/PlugStow.h>
+#include <robot_actions/ServoToOutlet.h>
+#include <robot_msgs/PointStamped.h>
+#include <robot_msgs/PoseStamped.h>
 
 using namespace EUROPA;
 using namespace TREX;
@@ -53,11 +56,31 @@ namespace executive_trex_pr2 {
      * @brief Read plug stow message
      */
     static void read(ObservationByValue& obs, const robot_msgs::PlugStow& msg);
+    
+    /**
+     * @brief Read point stamped message
+     */
+    static void read(ObservationByValue& obs, const robot_msgs::PointStamped& msg);
+
+    /**
+     * @brief Read pose stamped message
+     */
+    static void read(ObservationByValue& obs, const robot_msgs::PoseStamped& msg);
 
     /**
      * @brief Stuff token data into a plug stow message
      */
     static void write(const TokenId& token, robot_msgs::PlugStow& msg);
+
+    /**
+     * @brief Stuff token data into a point stamped message
+     */
+    static void write(const TokenId& token, robot_msgs::PointStamped& msg);
+
+    /**
+     * @brief Stuff token data into a ServoToOutlet message
+     */
+    static void write(const TokenId& token, robot_actions::ServoToOutlet& msg);
 
     /**
      * @brief Bind intervals to the singleton, or the domain midpoint

@@ -339,4 +339,46 @@ namespace TREX {
 
   // Allocate Factory
   TeleoReactor::ConcreteFactory<SwitchControllersAdapter> SwitchControllersAdapter_Factory("SwitchControllersAdapter");
+
+  /***********************************************************************
+   * @brief ServoToOutlet 
+   **********************************************************************/
+  class ServoToOutletAdapter: public ROSActionAdapter<robot_actions::ServoToOutlet, robot_actions::ServoToOutletState, std_msgs::Empty> {
+  public:
+
+    ServoToOutletAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<robot_actions::ServoToOutlet, robot_actions::ServoToOutletState, std_msgs::Empty>(agentName, configData){
+    }
+
+    void fillDispatchParameters(robot_msgs::PlugStow& msg, const TokenId& goalToken){
+      AdapterUtilities::write(goalToken, msg);
+    }
+  };
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<ServoToOutletAdapter> ServoToOutletAdapter_Factory("ServoToOutletAdapter");
+
+  /***********************************************************************
+   * @brief DetectOutletAdapter
+   **********************************************************************/
+  class DetectOutletAdapter: public ROSActionAdapter<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped> {
+  public:
+
+    DetectOutletAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(agentName, configData){
+    }
+
+    void fillDispatchParameters(robot_msgs::PointStamped& msg, const TokenId& goalToken){
+      AdapterUtilities::write(goalToken, msg);
+    }
+    virtual void fillActiveObservationParameters(const robot_msgs::PointStamped& msg, ObservationByValue* obs){
+      AdapterUtilities::read(*obs, msg);
+    }
+    virtual void fillInactiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
+      AdapterUtilities::read(*obs, msg);
+    }
+  };
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<DetectOutletAdapter> DetectOutletAdapter_Factory("DetectOutletAdapter");
 }

@@ -84,6 +84,34 @@ namespace executive_trex_pr2 {
     read<double>("z", obs, msg.plug_centroid.z);
   }
 
+  void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::PointStamped& msg){
+    setFrame(msg.header.frame_id, obs);
+    readPoint(obs, msg.point.x, msg.point.y, msg.point.z);
+  }
+
+  void AdapterUtilities::write(const TokenId& token, robot_msgs::PointStamped& msg){
+    // Set the frame we are in
+    msg.header.frame_id = getFrame(token);
+
+    // Extract the stamp
+    double time_stamp_double;
+    write<double>("time_stamp", token, time_stamp_double);
+    msg.header.stamp.fromSec(time_stamp_double);
+
+    write<double>("x", token, msg.point.x);
+    write<double>("y", token, msg.point.y);
+    write<double>("z", token, msg.point.z);
+  }
+
+  void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::PoseStamped& msg){
+    setFrame(msg.header.frame_id, obs);
+    readPoint(obs, msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
+    read<double>("dx", obs, msg.pose.orientation.x);
+    read<double>("dy", obs, msg.pose.orientation.y);
+    read<double>("dz", obs, msg.pose.orientation.z);
+    read<double>("dw", obs, msg.pose.orientation.w);
+  }
+
   void AdapterUtilities::write(const TokenId& token, robot_msgs::PlugStow& msg){
     // Set the frame we are in
     msg.header.frame_id = getFrame(token);
@@ -98,6 +126,28 @@ namespace executive_trex_pr2 {
     write<double>("y", token, msg.plug_centroid.y);
     write<double>("z", token, msg.plug_centroid.z);
   }
+
+
+  void AdapterUtilities::write(const TokenId& token, robot_actions::ServoToOutlet& msg) {
+    //Set frame
+    msg.header.frame_id = getFrame(token);
+    
+    // Extract the stamp
+    double time_stamp_double;
+    write<double>("time_stamp", token, time_stamp_double);
+    msg.header.stamp.fromSec(time_stamp_double);
+
+    write<float>("x", token, msg.x);
+    write<float>("y", token, msg.y);
+    write<float>("z", token, msg.z);
+
+    write<float>("dx", token, msg.dx);
+    write<float>("dy", token, msg.dy);
+    write<float>("dz", token, msg.dz);
+    write<float>("dw", token, msg.dw);
+  }
+
+
 
   void AdapterUtilities::readPose(ObservationByValue& obs, double x, double y, double th){
     read("x", obs, x);

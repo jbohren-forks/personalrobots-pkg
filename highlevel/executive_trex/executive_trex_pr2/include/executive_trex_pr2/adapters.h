@@ -61,3 +61,6 @@
 #include <robot_actions/StowPlugState.h>
 #include <robot_actions/SwitchControllers.h>
 #include <robot_actions/SwitchControllersState.h>
+#include <robot_actions/ServoToOutlet.h>
+#include <robot_actions/ServoToOutletState.h>
+#include <robot_actions/DetectOutletState.h>

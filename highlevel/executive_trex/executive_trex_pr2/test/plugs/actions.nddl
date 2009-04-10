@@ -20,23 +20,33 @@ PlugActions::DetectPlug {
   contains(safety_tuck_arms.Active cmd_tuck_arms);
   contains(plugs_untuck_arms.Active cmd_untuck_arms);
   contains(detect_plug_on_base.Active cmd_detect_plug_on_base);
+  contains(detect_outlet_coarse.Active cmd_detect_outlet_coarse);
+  contains(detect_outlet_fine.Active cmd_detect_outlet_fine);
   contains(safety_tuck_arms.Active cmd_tuck_arms_again);
 
   cmd_tuck_arms before cmd_untuck_arms;
   cmd_untuck_arms before cmd_detect_plug_on_base;
-  cmd_detect_plug_on_base before cmd_tuck_arms_again;
+  cmd_detect_plug_on_base before cmd_detect_outlet_coarse;
+  cmd_detect_outlet_coarse before cmd_detect_outlet_fine;
+  cmd_detect_outlet_fine before cmd_tuck_arms_again;
 
   concurrent(end, cmd_tuck_arms_again.end);
 }
 
 PlugActions::PickupAndRelease {
   // Subgoal all the actions. It would be nice if they were sequenced in declaration
+  // These are variable declarations, in the form of contains(${X}.active cmd_${X})
+  // where X is a variable declared in plugs/imports.nddl.
   contains(safety_tuck_arms.Active cmd_tuck_arms);
   contains(plugs_untuck_arms.Active cmd_untuck_arms);
   contains(detect_plug_on_base.Active cmd_detect_plug_on_base);
   contains(move_and_grasp_plug.Active cmd_move_and_grasp_plug);
   contains(localize_plug_in_gripper.Active cmd_localize_plug_in_gripper);
   contains(stow_plug.Active cmd_stow_plug);
+  contains(servo_to_outlet.Active cmd_servo_to_outlet);
+  contains(insert_plug.Active cmd_insert_plug);
+  contains(push_plug_in.Active cmd_push_plug_in);
+  contains(unplug.Active cmd_unplug);
   contains(detect_plug_on_base.Active cmd_detect_plug_on_base_to_confirm);
   contains(safety_tuck_arms.Active cmd_tuck_arms_again);
 
@@ -46,7 +56,11 @@ PlugActions::PickupAndRelease {
   cmd_detect_plug_on_base before cmd_move_and_grasp_plug;
   cmd_move_and_grasp_plug before cmd_localize_plug_in_gripper;
   cmd_localize_plug_in_gripper before cmd_stow_plug;
-  cmd_stow_plug before cmd_detect_plug_on_base_to_confirm;
+  cmd_stow_plug before cmd_servo_to_outlet;
+  cmd_servo_to_outlet before cmd_insert_plug;
+  cmd_insert_plug before cmd_push_plug_in;
+  cmd_push_plug_in before cmd_unplug;
+  cmd_unplug before cmd_detect_plug_on_base_to_confirm;
   cmd_detect_plug_on_base_to_confirm before cmd_tuck_arms_again;
 
   // require that the all execute successfully
@@ -57,6 +71,9 @@ PlugActions::PickupAndRelease {
      cmd_move_and_grasp_plug.status,
      cmd_localize_plug_in_gripper.status,
      cmd_stow_plug.status,
+     cmd_insert_plug.status,
+     cmd_push_plug_in.status,
+     cmd_unplug.status,
      cmd_detect_plug_on_base_to_confirm.status,
      cmd_tuck_arms_again.status);
 
