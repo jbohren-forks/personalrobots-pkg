@@ -1,0 +1,7 @@
+float64 rep_rate
+float64 phase
+float64 duty_cycle
+uint32 running
+uint32 active_low
+uint32 pulsed
+---

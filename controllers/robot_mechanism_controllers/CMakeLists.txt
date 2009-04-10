@@ -31,6 +31,7 @@ set(_srcs
     src/lqr_controller.cpp
     src/ros_serialchain_model.cpp
     src/joint_chain_constraint_controller.cpp
+    src/trigger_controller.cpp
 )
 
 # For some reason, the endeffector_constraint_controller won't build on OSX
