@@ -87,7 +87,7 @@ class PicmapNode:
 
     #self.pub = rospy.Publisher("/picmap_pose", vslam.msg.Picmap)
 
-    rospy.TopicSub('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=1, buff_size=7000000)
+    rospy.TopicSub('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
     rospy.TopicSub('/amcl_pose', robot_msgs.msg.PoseWithCovariance, self.handle_amcl_pose)
     rospy.TopicSub('/tf_message', tf.msg.tfMessage, self.handle_tf)
 
