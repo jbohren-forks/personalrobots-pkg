@@ -123,6 +123,7 @@ namespace costmap_2d {
       /**
        * @brief  Publish the underlying costmap to the visualizer
        * If you want to publish the map outside of the publish loop that runs, you can call this.
+       * @param map The map to be published
        */
       void publishCostMap(Costmap2D& map);
 
