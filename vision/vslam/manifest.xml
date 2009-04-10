@@ -7,6 +7,9 @@
   <review status="unreviewed" notes=""/>
   <depend package="visual_odometry"/>
   <depend package="std_msgs"/>
+  <depend package="image_msgs"/>
+  <depend package="robot_msgs"/>
+  <depend package="deprecated_msgs"/>
   <depend package="rospy"/>
   <depend package="tf"/>
   <depend package="pytf"/>
