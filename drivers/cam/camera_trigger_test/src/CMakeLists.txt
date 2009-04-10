@@ -1,0 +1,1 @@
+rospack_add_executable(trigger_test trigger_test.cpp)
