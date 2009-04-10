@@ -1,0 +1,21 @@
+<tracker>
+  <!-- TF Frame with LED -->
+  <marker frame="r_gripper_led_frame" />
+
+  <!-- Head Chain -->
+  <joint name="head_pan_joint"   tol=".001" />
+  <joint name="head_tilt_joint"  tol=".001" />
+
+  <!-- Right Arm Chain -->
+  <joint name="r_shoulder_pan_joint"   tol=".001" />
+  <joint name="r_shoulder_lift_joint"  tol=".001" />
+  <joint name="r_upper_arm_roll_joint" tol=".001" />
+  <joint name="r_elbow_flex_joint"     tol=".001" />
+  <joint name="r_forearm_roll_joint"   tol=".001" />
+  <joint name="r_wrist_flex_joint"     tol=".001" />
+  <joint name="r_wrist_roll_joint"     tol=".001" />
+
+  <!-- Time Synchronized Image Streams -->
+  <stream topic="/stereo_left_detector/led"/>
+
+</tracker>

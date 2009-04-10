@@ -16,3 +16,6 @@ target_link_libraries(test/error_vec_marker_3d_unittest kinematic_calibration)
 rospack_add_gtest(test/estimator_marker_3d_unittest estimator_marker_3d_unittest.cpp)
 target_link_libraries(test/estimator_marker_3d_unittest kinematic_calibration)
 
+rospack_add_gtest(test/msg_cache_unittest msg_cache_unittest.cpp)
+#target_link_libraries(test/msg_cache_unittest kinematic_calibration)
+
