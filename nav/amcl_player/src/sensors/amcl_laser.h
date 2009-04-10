@@ -53,10 +53,15 @@ class AMCLLaser : public AMCLSensor
 {
   // Default constructor
   public: AMCLLaser(size_t max_beams, 
-                     double range_var,
-                     double range_bad,
-                     pf_vector_t& laser_pose,
-                     map_t* map);
+                    double z_hit,
+                    double z_short,
+                    double z_max,
+                    double z_rand,
+                    double sigma_hit,
+                    double labda_short,
+                    double chi_outlier,
+                    pf_vector_t& laser_pose,
+                    map_t* map);
   
   // Update the filter based on the sensor model.  Returns true if the
   // filter has been updated.
@@ -82,25 +87,20 @@ class AMCLLaser : public AMCLSensor
   // Max beams to consider
   private: int max_beams;
 
-  // Laser range variance
-  private: double range_var;
-
-  // Probability of bad range readings
-  private: double range_bad;
-
-#ifdef INCLUDE_RTKGUI
-  // Setup the GUI
-  private: virtual void SetupGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig);
-
-  // Finalize the GUI
-  private: virtual void ShutdownGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig);
-
-  // Draw sensor data
-  public: virtual void UpdateGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig, AMCLSensorData *data);
-
-  // Figures
-  private: rtk_fig_t *fig, *map_fig;
-#endif
+  // Laser model params
+  //
+  // Mixture params for the 4 components of the model; must sum to 1
+  private: double z_hit;
+  private: double z_short;
+  private: double z_max;
+  private: double z_rand;
+  //
+  // Stddev of Gaussian model for laser hits.
+  private: double sigma_hit;
+  // Decay rate of exponential model for short readings.
+  private: double lambda_short;
+  // Threshold for outlier rejection (unused)
+  private: double chi_outlier;
 };
 
 

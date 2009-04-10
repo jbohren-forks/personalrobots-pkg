@@ -117,11 +117,17 @@ typedef struct _pf_t
   int current_set;
   pf_sample_set_t sets[2];
 
+  // Running averages, slow and fast, of likelihood
+  double w_slow, w_fast;
+
+  // Decay rates for running averages
+  double alpha_slow, alpha_fast;
 } pf_t;
 
 
 // Create a new filter
-pf_t *pf_alloc(int min_samples, int max_samples);
+pf_t *pf_alloc(int min_samples, int max_samples,
+               double alpha_slow, double alpha_fast);
 
 // Free an existing filter
 void pf_free(pf_t *pf);

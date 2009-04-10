@@ -27,6 +27,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
+#include <algorithm>
+
 #include <sys/types.h> // required by Darwin
 #include <math.h>
 
@@ -34,59 +36,38 @@
 
 using namespace amcl;
 
+static double
+normalize(double z)
+{
+  return atan2(sin(z),cos(z));
+}
+static double
+angle_diff(double a, double b)
+{
+  double d1, d2;
+  a = normalize(a);
+  b = normalize(b);
+  d1 = a-b;
+  d2 = 2*M_PI - fabs(d1);
+  if(d1 > 0)
+    d2 *= -1.0;
+  if(fabs(d1) < fabs(d2))
+    return(d1);
+  else
+    return(d2);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
-AMCLOdom::AMCLOdom(pf_matrix_t& drift) : AMCLSensor()
+AMCLOdom::AMCLOdom(double alpha1, double alpha2, double alpha3, double alpha4):
+        AMCLSensor()
 {
-  this->action_pdf = NULL;
   this->time = 0.0;
-  this->drift = drift;
+  this->alpha1 = alpha1;
+  this->alpha2 = alpha2;
+  this->alpha3 = alpha3;
+  this->alpha4 = alpha4;
 }
-
-
-#if 0
-////////////////////////////////////////////////////////////////////////////////
-// Get the current odometry reading
-//AMCLSensorData *AMCLOdom::GetData(void)
-// Process message for this interface
-int AMCLOdom::ProcessMessage(QueuePointer &resp_queue,
-                                     player_msghdr * hdr,
-                                     void * idata)
-{
-  pf_vector_t pose;
-  AMCLOdomData *ndata;
-
-  if(!Message::MatchMessage(hdr, PLAYER_MSGTYPE_DATA,
-                            PLAYER_POSITION2D_DATA_STATE, this->odom_addr))
-  {
-    return -1;
-  }
-
-  player_position2d_data_t* data = reinterpret_cast<player_position2d_data_t*> (idata);
-
-  // Compute new robot pose
-  pose.v[0] = data->pos.px;
-  pose.v[1] = data->pos.py;
-  pose.v[2] = data->pos.pa;
-
-  //printf("getdata %.3f %.3f %.3f\n",
-  	 //pose.v[0], pose.v[1], pose.v[2]);
-
-  ndata = new AMCLOdomData;
-
-  ndata->sensor = this;
-  ndata->time = hdr->timestamp;
-
-  ndata->pose = pose;
-  ndata->delta = pf_vector_zero();
-
-  this->time = hdr->timestamp;
-
-  AMCL.Push(ndata);
-
-  return 0;
-}
-#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,84 +75,60 @@ int AMCLOdom::ProcessMessage(QueuePointer &resp_queue,
 bool AMCLOdom::UpdateAction(pf_t *pf, AMCLSensorData *data)
 {
   AMCLOdomData *ndata;
-  pf_vector_t x;
-  pf_matrix_t cx;
-  double ux, uy, ua;
   ndata = (AMCLOdomData*) data;
 
-  /*
-  printf("odom: %f %f %f : %f %f %f\n",
-         ndata->pose.v[0], ndata->pose.v[1], ndata->pose.v[2],
-         ndata->delta.v[0], ndata->delta.v[1], ndata->delta.v[2]);
-  */
+  // Compute the new sample poses
+  pf_sample_set_t *set;
 
-  // See how far the robot has moved
-  x = ndata->delta;
+  set = pf->sets + pf->current_set;
+  pf_vector_t old_pose = pf_vector_sub(ndata->pose, ndata->delta);
 
-  // Odometric drift model
-  // This could probably be improved
-  ux = this->drift.m[0][0] * x.v[0];
-  uy = this->drift.m[1][1] * x.v[1];
-  ua = this->drift.m[2][0] * fabs(x.v[0])
-    + this->drift.m[2][1] * fabs(x.v[1])
-    + this->drift.m[2][2] * fabs(x.v[2]);
+  // Implement sample_motion_odometry (Prob Rob p 136)
+  double delta_rot1, delta_trans, delta_rot2;
+  double delta_rot1_hat, delta_trans_hat, delta_rot2_hat;
+  double delta_rot1_noise, delta_rot2_noise;
+  
+  // Avoid passing -0.0 vs +0.0 into atan2()
+  if((ndata->delta.v[1] == 0.0) && (ndata->delta.v[0] == 0.0))
+    delta_rot1 = 0.0;
+  else
+    delta_rot1 = atan2(ndata->delta.v[1], ndata->delta.v[0]);
+  delta_trans = sqrt(ndata->delta.v[0]*ndata->delta.v[0] +
+                     ndata->delta.v[1]*ndata->delta.v[1]);
+  delta_rot2 = angle_diff(ndata->delta.v[2], delta_rot1);
+  
+  // We want to treat backward and forward motion symmetrically for the
+  // noise model to be applied below.  The standard model seems to assume
+  // forward motion.
+  delta_rot1_noise = std::min(fabs(angle_diff(delta_rot1,0.0)),
+                              fabs(angle_diff(delta_rot1,M_PI)));
+  delta_rot2_noise = std::min(fabs(angle_diff(delta_rot2,0.0)),
+                              fabs(angle_diff(delta_rot2,M_PI)));
 
-  cx = pf_matrix_zero();
-  cx.m[0][0] = ux * ux;
-  cx.m[1][1] = uy * uy;
-  cx.m[2][2] = ua * ua;
+  for (int i = 0; i < set->sample_count; i++)
+  {
+    pf_sample_t* sample = set->samples + i;
 
-  //printf("x = %f %f %f\n", x.v[0], x.v[1], x.v[2]);
+    // Sample pose differences
+    delta_rot1_hat = angle_diff(delta_rot1,
+                                pf_ran_gaussian(this->alpha1*delta_rot1_noise*delta_rot1_noise +
+                                                this->alpha2*delta_trans*delta_trans));
+    delta_trans_hat = delta_trans - 
+            pf_ran_gaussian(this->alpha3*delta_trans*delta_trans +
+                            this->alpha4*delta_rot1_noise*delta_rot1_noise +
+                            this->alpha4*delta_rot2_noise*delta_rot2_noise);
+    delta_rot2_hat = angle_diff(delta_rot2,
+                                pf_ran_gaussian(this->alpha1*delta_rot2_noise*delta_rot2_noise +
+                                                this->alpha2*delta_trans*delta_trans));
 
-  // Create a pdf with suitable characterisitics
-  this->action_pdf = pf_pdf_gaussian_alloc(x, cx);
-
-  // Update the filter
-  pf_update_action(pf, (pf_action_model_fn_t) ActionModel, this);
-
-  // Delete the pdf
-  pf_pdf_gaussian_free(this->action_pdf);
-  this->action_pdf = NULL;
+    // Apply sampled update to particle pose
+    sample->pose.v[0] += delta_trans_hat * 
+            cos(sample->pose.v[2] + delta_rot1_hat);
+    sample->pose.v[1] += delta_trans_hat * 
+            sin(sample->pose.v[2] + delta_rot1_hat);
+    sample->pose.v[2] += delta_rot1_hat + delta_rot2_hat;
+    sample->weight = 1.0 / set->sample_count;
+  }
 
   return true;
 }
-
-
-////////////////////////////////////////////////////////////////////////////////
-// The action model function (static method)
-void
-AMCLOdom::ActionModel(AMCLOdom *self, pf_sample_set_t* set)
-{
-  int i;
-  pf_vector_t z;
-  pf_sample_t *sample;
-
-  // Compute the new sample poses
-  for (i = 0; i < set->sample_count; i++)
-  {
-    sample = set->samples + i;
-    z = pf_pdf_gaussian_sample(self->action_pdf);
-    sample->pose = pf_vector_coord_add(z, sample->pose);
-    sample->weight = 1.0 / set->sample_count;
-  }
-}
-
-
-#ifdef INCLUDE_RTKGUI
-
-////////////////////////////////////////////////////////////////////////////////
-// Setup the GUI
-void AMCLOdom::SetupGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig)
-{
-  return;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-// Shutdown the GUI
-void AMCLOdom::ShutdownGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig)
-{
-  return;
-}
-
-#endif

@@ -50,31 +50,17 @@ class AMCLOdomData : public AMCLSensorData
 class AMCLOdom : public AMCLSensor
 {
   // Default constructor
-  public: AMCLOdom(pf_matrix_t& drift);
+  public: AMCLOdom(double alpha1, double alpha2, double alpha3, double alpha4);
 
   // Update the filter based on the action model.  Returns true if the filter
   // has been updated.
   public: virtual bool UpdateAction(pf_t *pf, AMCLSensorData *data);
 
-  // The action model callback (static method)
-  public: static void ActionModel(AMCLOdom *self, pf_sample_set_t* set);
-  
   // Current data timestamp
   private: double time;
   
   // Drift model
-  private: pf_matrix_t drift;
-  
-  // PDF used to generate action samples
-  private: pf_pdf_gaussian_t *action_pdf;
-
-#ifdef INCLUDE_RTKGUI
-  // Setup the GUI
-  private: virtual void SetupGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig);
-
-  // Finalize the GUI
-  private: virtual void ShutdownGUI(rtk_canvas_t *canvas, rtk_fig_t *robot_fig);
-#endif
+  private: double alpha1, alpha2, alpha3, alpha4;
 };
 
 

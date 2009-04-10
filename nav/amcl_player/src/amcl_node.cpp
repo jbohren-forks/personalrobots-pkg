@@ -165,11 +165,11 @@ class AmclNode
     // Particle filter
     pf_t *pf_;
     boost::mutex pf_mutex_;
-    int pf_min_samples_, pf_max_samples_;
     double pf_err_, pf_z_;
     bool pf_init_;
     pf_vector_t pf_odom_pose_;
     double d_thresh_, a_thresh_;
+    int resample_interval_;
 
     AMCLOdom* odom_;
     AMCLLaser* laser_;
@@ -215,22 +215,36 @@ AmclNode::AmclNode() :
         pf_(NULL)
 {
   // Grab params off the param server
-  int max_beams;
-  double odom_drift_xx, odom_drift_yy, odom_drift_aa, odom_drift_xa;
-  ros::Node::instance()->param("pf_laser_max_beams", max_beams, 20);
-  ros::Node::instance()->param("pf_min_samples", pf_min_samples_, 500);
-  ros::Node::instance()->param("pf_max_samples", pf_max_samples_, 10000);
-  ros::Node::instance()->param("pf_err", pf_err_, 0.01);
-  ros::Node::instance()->param("pf_z", pf_z_, 3.0);
-  ros::Node::instance()->param("pf_odom_drift_xx", odom_drift_xx, 0.2);
-  ros::Node::instance()->param("pf_odom_drift_yy", odom_drift_yy, 0.2);
-  ros::Node::instance()->param("pf_odom_drift_aa", odom_drift_aa, 0.2);
-  ros::Node::instance()->param("pf_odom_drift_xa", odom_drift_xa, 0.2);
-  ros::Node::instance()->param("pf_min_d", d_thresh_, 0.2);
-  ros::Node::instance()->param("pf_min_a", a_thresh_, M_PI/6.0);
-  ros::Node::instance()->param("pf_odom_frame_id", odom_frame_id_, std::string("odom"));
+  int max_beams, min_particles, max_particles;
+  double alpha1, alpha2, alpha3, alpha4;
+  double alpha_slow, alpha_fast;
+  double z_hit, z_short, z_max, z_rand, sigma_hit, lambda_short;
+  double pf_err, pf_z;
+  ros::Node::instance()->param("~laser_max_beams", max_beams, 20);
+  ros::Node::instance()->param("~min_particles", min_particles, 100);
+  ros::Node::instance()->param("~max_particles", max_particles, 5000);
+  ros::Node::instance()->param("~kld_err", pf_err, 0.01);
+  ros::Node::instance()->param("~kld_z", pf_z, 3.0);
+  ros::Node::instance()->param("~odom_alpha1", alpha1, 0.2);
+  ros::Node::instance()->param("~odom_alpha2", alpha2, 0.2);
+  ros::Node::instance()->param("~odom_alpha3", alpha3, 0.2);
+  ros::Node::instance()->param("~odom_alpha4", alpha4, 0.2);
+  ros::Node::instance()->param("~laser_z_hit", z_hit, 0.8);
+  ros::Node::instance()->param("~laser_z_short", z_short, 0.1);
+  ros::Node::instance()->param("~laser_z_max", z_max, 0.05);
+  ros::Node::instance()->param("~laser_z_rand", z_rand, 0.05);
+  ros::Node::instance()->param("~laser_sigma_hit", sigma_hit, 0.2);
+  ros::Node::instance()->param("~laser_lambda_short", lambda_short, 0.1);
+
+  ros::Node::instance()->param("~update_min_d", d_thresh_, 0.2);
+  ros::Node::instance()->param("~update_min_a", a_thresh_, M_PI/6.0);
+  ros::Node::instance()->param("~odom_frame_id", odom_frame_id_, std::string("odom"));
+  ros::Node::instance()->param("~resample_interval", resample_interval_, 8);
   double tmp_tol;
-  ros::Node::instance()->param("pf_transform_tolerance", tmp_tol, 0.1);
+  ros::Node::instance()->param("~transform_tolerance", tmp_tol, 0.1);
+  ros::Node::instance()->param("~recovery_alpha_slow", alpha_slow, 0.0);
+  ros::Node::instance()->param("~recovery_alpha_fast", alpha_fast, 0.0);
+
   transform_tolerance_.fromSec(tmp_tol);
 
   double startX, startY, startTH;
@@ -245,9 +259,10 @@ AmclNode::AmclNode() :
   map_ = requestMap();
   
   // Create the particle filter
-  pf_ = pf_alloc(pf_min_samples_, pf_max_samples_);
-  pf_->pop_err = pf_err_;
-  pf_->pop_z = pf_z_;
+  pf_ = pf_alloc(min_particles, max_particles,
+                 alpha_slow, alpha_fast);
+  pf_->pop_err = pf_err;
+  pf_->pop_z = pf_z;
 
   // Initialize the filter
   pf_vector_t pf_init_pose_mean = pf_vector_zero();
@@ -255,26 +270,21 @@ AmclNode::AmclNode() :
   pf_init_pose_mean.v[1] = startY;
   pf_init_pose_mean.v[2] = startTH;
   pf_matrix_t pf_init_pose_cov = pf_matrix_zero();
-  pf_init_pose_cov.m[0][0] = 1.0 * 1.0;
-  pf_init_pose_cov.m[1][1] = 1.0 * 1.0;
-  pf_init_pose_cov.m[2][2] = 2*M_PI * 2*M_PI;
+  pf_init_pose_cov.m[0][0] = 0.5 * 0.5;
+  pf_init_pose_cov.m[1][1] = 0.5 * 0.5;
+  pf_init_pose_cov.m[2][2] = M_PI/12.0 * M_PI/12.0;
   pf_init(pf_, pf_init_pose_mean, pf_init_pose_cov);
   pf_init_ = false;
 
   // Instantiate the sensor objects
   // Odometry
-  pf_matrix_t drift = pf_matrix_zero();
-  drift.m[0][0] = odom_drift_xx;
-  drift.m[1][1] = odom_drift_yy;
-  drift.m[2][0] = odom_drift_xa;
-  drift.m[2][2] = odom_drift_aa;
-  odom_ = new AMCLOdom(drift);
+  odom_ = new AMCLOdom(alpha1, alpha2, alpha3, alpha4);
   ROS_ASSERT(odom_);
   // Laser
   // We pass in null laser pose to start with; we'll change it later
   pf_vector_t dummy = pf_vector_zero();
-  // TODO: expose laser model params
-  laser_ = new AMCLLaser(max_beams, 0.1, 0.01, dummy, map_);
+  laser_ = new AMCLLaser(max_beams, z_hit, z_short, z_max, z_rand, 
+                         sigma_hit, lambda_short, 0.0, dummy, map_);
   ROS_ASSERT(laser_);
 
   ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("amcl_pose",2);
@@ -370,6 +380,7 @@ AmclNode::getOdomPose(double& x, double& y, double& yaw,
 void
 AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& laser_scan)
 {
+  static int count=0;
   // Do we have the base->base_laser Tx yet?
   if(!have_laser_pose)
   {
@@ -438,6 +449,8 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
 
     // Should update sensor data
     update = true;
+    
+    count = 0;
   }
   // If the robot has moved, update the filter
   else if(pf_init_ && update)
@@ -459,6 +472,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     //this->pf_odom_pose = pose;
   }
 
+  bool resampled = false;
   // If the robot has moved, update the filter
   if(update)
   {
@@ -486,7 +500,11 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     pf_odom_pose_ = pose;
   
     // Resample the particles
-    pf_update_resample(pf_);
+    if(!(count++ % resample_interval_))
+    {
+      pf_update_resample(pf_);
+      resampled = true;
+    }
 
     pf_sample_set_t* set = pf_->sets + pf_->current_set;
     ROS_DEBUG("Num samples: %d\n", set->sample_count);
@@ -504,8 +522,10 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
 
     }
     ros::Node::instance()->publish("particlecloud", cloud_msg);
+  }
 
-
+  if(resampled)
+  {
     // Read out the current hypotheses
     double max_weight = 0.0;
     int max_weight_hyp = -1;
@@ -542,10 +562,10 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
                 hyps[max_weight_hyp].pf_pose_mean.v[2]);
 
       /*
-      puts("");
-      pf_matrix_fprintf(hyps[max_weight_hyp].pf_pose_cov, stdout, "%6.3f");
-      puts("");
-      */
+         puts("");
+         pf_matrix_fprintf(hyps[max_weight_hyp].pf_pose_cov, stdout, "%6.3f");
+         puts("");
+       */
 
       robot_msgs::PoseWithCovariance p;
       // Copy in the pose
@@ -564,17 +584,17 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
       p.covariance[6*3+3] = hyps[max_weight_hyp].pf_pose_cov.m[2][2];
 
       /*
-      printf("cov:\n");
-      for(int i=0; i<6; i++)
-      {
-        for(int j=0; j<6; j++)
-          printf("%6.3f ", p.covariance[6*i+j]);
-        puts("");
-      }
-      */
+         printf("cov:\n");
+         for(int i=0; i<6; i++)
+         {
+         for(int j=0; j<6; j++)
+         printf("%6.3f ", p.covariance[6*i+j]);
+         puts("");
+         }
+       */
 
       ros::Node::instance()->publish("amcl_pose", p);
-      
+
       // subtracting base to odom from map to base and send map to odom instead
       tf::Stamped<tf::Pose> odom_to_map;
       try

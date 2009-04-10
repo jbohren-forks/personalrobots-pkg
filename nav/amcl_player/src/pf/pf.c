@@ -43,7 +43,8 @@ static void pf_cluster_stats(pf_t *pf, pf_sample_set_t *set);
 
 
 // Create a new filter
-pf_t *pf_alloc(int min_samples, int max_samples)
+pf_t *pf_alloc(int min_samples, int max_samples,
+               double alpha_slow, double alpha_fast)
 {
   int i, j;
   pf_t *pf;
@@ -87,6 +88,12 @@ pf_t *pf_alloc(int min_samples, int max_samples)
     set->cluster_max_count = 100;
     set->clusters = calloc(set->cluster_max_count, sizeof(pf_cluster_t));
   }
+
+  pf->w_slow = 0.0;
+  pf->w_fast = 0.0;
+
+  pf->alpha_slow = alpha_slow;
+  pf->alpha_fast = alpha_fast;
 
   return pf;
 }
@@ -136,6 +143,8 @@ void pf_init(pf_t *pf, pf_vector_t mean, pf_matrix_t cov)
     // Add sample to histogram
     pf_kdtree_insert(set->kdtree, sample->pose, sample->weight);
   }
+
+  pf->w_slow = pf->w_fast = 0.0;
 
   pf_pdf_gaussian_free(pdf);
     
@@ -234,33 +243,37 @@ void pf_update_resample(pf_t *pf)
 {
   int i;
   double total;
-  //double *randlist;
   pf_sample_set_t *set_a, *set_b;
   pf_sample_t *sample_a, *sample_b;
-  //pf_pdf_discrete_t *pdf;
 
   double r,c,U;
   int m;
   double count_inv;
+  double w_avg, w_diff;
 
   set_a = pf->sets + pf->current_set;
   set_b = pf->sets + (pf->current_set + 1) % 2;
 
-  // Create the discrete distribution to sample from
-  /*
-  total = 0;
-  randlist = calloc(set_a->sample_count, sizeof(double));
-  for (i = 0; i < set_a->sample_count; i++)
-  {
-    total += set_a->samples[i].weight;
-    randlist[i] = set_a->samples[i].weight;
-  }
-  */
-
-  //printf("resample total %f\n", total);
-
-  // Initialize the random number generator
-  //pdf = pf_pdf_discrete_alloc(set_a->sample_count, randlist);
+  // Compute average likelihood of samples (Prob Rob p258)
+  w_avg = 0.0;
+  for(i=0; i<set_a->sample_count; i++)
+    w_avg += set_a->samples[i].weight;
+  w_avg /= set_a->sample_count;
+  
+  // Update running averages of likelihood of samples (Prob Rob p258)
+  if(pf->w_slow == 0.0)
+    pf->w_slow = w_avg;
+  else
+    pf->w_slow += pf->alpha_slow * (w_avg - pf->w_slow);
+  if(pf->w_fast == 0.0)
+    pf->w_fast = w_avg;
+  else
+    pf->w_fast += pf->alpha_fast * (w_avg - pf->w_fast);
+  w_diff = 1.0 - pf->w_fast / pf->w_slow;
+  if(w_diff < 0.0)
+    w_diff = 0.0;
+  //printf("avg: %9.6f slow: %9.6f fast: %9.6f diff: %9.6f\n",
+         //w_avg, pf->w_slow, pf->w_fast, w_diff);
 
   // Create the kd tree for adaptive sampling
   pf_kdtree_clear(set_b->kdtree);
@@ -277,34 +290,44 @@ void pf_update_resample(pf_t *pf)
   m = 0;
   while(set_b->sample_count < pf->max_samples)
   {
-    U = r + m * count_inv;
-    while(U>c)
+    sample_b = set_b->samples + set_b->sample_count++;
+
+    if(drand48() < w_diff)
     {
-      i++;
-      // Handle wrap-around by resetting counters and picking a new random
-      // number
-      if(i >= set_a->sample_count)
+      sample_b->pose.v[0] += drand48() * 20.0 - 10.0;
+      sample_b->pose.v[1] += drand48() * 20.0 - 10.0;
+      sample_b->pose.v[2] += drand48() * 2.0*M_PI - M_PI;
+    }
+    else
+    {
+      U = r + m * count_inv;
+      while(U>c)
       {
-        r = drand48() * count_inv;
-        c = set_a->samples[0].weight;
-        i = 0;
-        m = 0;
-        U = r + m * count_inv;
-        continue;
+        i++;
+        // Handle wrap-around by resetting counters and picking a new random
+        // number
+        if(i >= set_a->sample_count)
+        {
+          r = drand48() * count_inv;
+          c = set_a->samples[0].weight;
+          i = 0;
+          m = 0;
+          U = r + m * count_inv;
+          continue;
+        }
+        c += set_a->samples[i].weight;
       }
-      c += set_a->samples[i].weight;
+      m++;
+
+      sample_a = set_a->samples + i;
+
+      //printf("%d %f\n", i, sample_a->weight);
+      assert(sample_a->weight > 0);
+
+      // Add sample to list
+      sample_b->pose = sample_a->pose;
     }
 
-    //i = pf_pdf_discrete_sample(pdf);    
-
-    sample_a = set_a->samples + i;
-
-    //printf("%d %f\n", i, sample_a->weight);
-    assert(sample_a->weight > 0);
-
-    // Add sample to list
-    sample_b = set_b->samples + set_b->sample_count++;
-    sample_b->pose = sample_a->pose;
     sample_b->weight = 1.0;
     total += sample_b->weight;
 
@@ -318,13 +341,9 @@ void pf_update_resample(pf_t *pf)
     if (set_b->sample_count > pf_resample_limit(pf, set_b->kdtree->leaf_count))
       break;
 
-    m++;
   }
 
   //fprintf(stderr, "\n\n");
-
-  //pf_pdf_discrete_free(pdf);
-  //free(randlist);
 
   // Normalize weights
   for (i = 0; i < set_b->sample_count; i++)
