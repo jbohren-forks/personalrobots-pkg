@@ -55,7 +55,7 @@ def start_publishing():
     if _pub is not None:
         return
     print "registering onto %s"%OUT
-    _pub = rospy.TopicPub(OUT, MSG)
+    _pub = rospy.Publisher(OUT, MSG)
     
 def callback(data):
     start_publishing()
@@ -64,7 +64,7 @@ def callback(data):
     
 def listener_publisher():
     rospy.init_node(NAME)
-    rospy.TopicSub(IN, MSG, callback)
+    rospy.Subscriber(IN, MSG, callback)
     rospy.spin()
         
 if __name__ == '__main__':

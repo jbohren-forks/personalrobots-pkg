@@ -81,7 +81,7 @@ class TestMechanismState(unittest.TestCase):
                 rospy.resolve_name(PUBNODE)), "%s is not up"%PUBNODE)
         
         print "Subscribing to ", SUBTOPIC
-        rospy.TopicSub(SUBTOPIC, MSG, self._test_ms_callback) 
+        rospy.Subscriber(SUBTOPIC, MSG, self._test_ms_callback) 
 
         sleep_time = 3.0
         print "Waiting %s seconds to collect messages"%sleep_time
