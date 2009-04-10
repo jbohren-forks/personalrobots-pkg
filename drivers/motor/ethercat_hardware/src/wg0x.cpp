@@ -319,6 +319,7 @@ void WG0X::convertCommand(ActuatorCommand &command, unsigned char *buffer)
   c->programmed_current_ = int(command.current_ / config_info_.nominal_current_scale_);
   c->mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT | MODE_SAFETY_RESET) : MODE_OFF;
   c->checksum_ = rotateRight8(computeChecksum(c, sizeof(WG0XCommand) - 1));
+  c->digital_out_ = command.digital_out_;
 }
 
 void WG0X::computeCurrent(ActuatorCommand &command)
