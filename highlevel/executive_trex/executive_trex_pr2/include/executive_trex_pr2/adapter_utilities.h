@@ -55,6 +55,11 @@ namespace executive_trex_pr2 {
     static void read(ObservationByValue& obs, const robot_msgs::PlugStow& msg);
 
     /**
+     * @brief Stuff token data into a plug stow message
+     */
+    static void write(const TokenId& token, robot_msgs::PlugStow& msg);
+
+    /**
      * @brief Bind intervals to the singleton, or the domain midpoint
      */
     template <class T>

@@ -19,4 +19,7 @@ BaseState base_state = new BaseState(External);
 PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(External);
 DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(External);
 SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
+MoveAndGraspPlug move_and_grasp_plug = new MoveAndGraspPlug(External);
+LocalizePlugInGripper localize_plug_in_gripper = new LocalizePlugInGripper(External);
+StowPlug stow_plug = new StowPlug(External);
 MoveBase move_base = new MoveBase(External);

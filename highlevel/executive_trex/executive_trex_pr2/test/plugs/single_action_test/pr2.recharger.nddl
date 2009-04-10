@@ -3,24 +3,10 @@
  */
 #include "plugs/imports.nddl"
 #include "mechanism_control/exports.nddl"
+#include "test/plugs/actions.nddl"
 
 close();
 
-//rejectable(detect_plug_on_base.Active cmd_detect_plug_on_base_1);
-
-// 3 actions in sequence
-rejectable(safety_tuck_arms.Active cmd_tuck_arms);
-rejectable(plugs_untuck_arms.Active cmd_untuck_arms);
-rejectable(detect_plug_on_base.Active cmd_detect_plug_on_base_2);
-rejectable(safety_tuck_arms.Active cmd_tuck_arms_again);
-
-//cmd_detect_plug_on_base_1 before cmd_tuck_arms;
-cmd_tuck_arms before cmd_untuck_arms;
-cmd_untuck_arms before cmd_detect_plug_on_base_2;
-cmd_detect_plug_on_base_2 before cmd_tuck_arms_again;
-
-
-
-
-
+//rejectable(plug_actions.DetectPlug action);
+rejectable(plug_actions.PickupAndRelease action);
 

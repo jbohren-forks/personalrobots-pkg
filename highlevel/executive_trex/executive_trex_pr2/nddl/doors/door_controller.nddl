@@ -209,7 +209,7 @@ DoorController::Holds {
 	      map_get_doorway_from_points(door_id, bs.x, bs.y, target_x, target_y);
 
 	      // Read data from the topological map
-	      map_get_door_state(this.state, door_id);
+	      map_get_door_state(this.object, door_id);
 	      float detect_x, detect_y, detect_th;
 	      door_get_robot_pose_for_door(detect_x, detect_y, detect_th, frame_p1_x, frame_p1_y, frame_p2_x, frame_p2_y, DETECTION_RANGE);
 	      float distanceAway;
@@ -219,7 +219,7 @@ DoorController::Holds {
 	      if(in_detection_position == true){
 		// DetectDoor(any, end_bounds] == Active();
 		starts_before(DetectDoor.Active cmd);
-		map_get_door_state(cmd.state, door_id);
+		map_get_door_state(cmd.object, door_id);
 		concurrent(cmd.end, end_bounds);
 	      }
 	      else {
@@ -287,7 +287,7 @@ DoorManipulationBehavior::Active{
   any(DoorController.Holds dc);
   precedes(dc.start, start);
   temporalDistance(start, [1 +inf], dc.end);
-  get_state(this.state, dc.state);
+  get_state(this.object, dc.object);
 }
 
 DoorManipulationBehavior::Inactive{
@@ -295,7 +295,7 @@ DoorManipulationBehavior::Inactive{
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
     eq(dc.active, true);
-    get_state(dc.state, this.state);
+    get_state(dc.object, this.object);
   }
 }
 

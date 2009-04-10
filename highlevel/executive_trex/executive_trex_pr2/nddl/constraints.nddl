@@ -1,4 +1,4 @@
 /**
  * @brief Constraint to assign the parameters of one token to another based on name matching
  */
-constraint get_state(target, source) { target <: TokenStates && source <: TokenStates }
+constraint get_state(target, source) { target <: Object && source <: Object }

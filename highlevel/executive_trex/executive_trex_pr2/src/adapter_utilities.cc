@@ -84,6 +84,21 @@ namespace executive_trex_pr2 {
     read<double>("z", obs, msg.plug_centroid.z);
   }
 
+  void AdapterUtilities::write(const TokenId& token, robot_msgs::PlugStow& msg){
+    // Set the frame we are in
+    msg.header.frame_id = getFrame(token);
+
+    // Extract the stamp
+    double time_stamp_double;
+    write<double>("time_stamp", token, time_stamp_double);
+    msg.header.stamp.fromSec(time_stamp_double);
+
+    write<int8_t>("stowed", token, msg.stowed);
+    write<double>("x", token, msg.plug_centroid.x);
+    write<double>("y", token, msg.plug_centroid.y);
+    write<double>("z", token, msg.plug_centroid.z);
+  }
+
   void AdapterUtilities::readPose(ObservationByValue& obs, double x, double y, double th){
     read("x", obs, x);
     read("y", obs, y);

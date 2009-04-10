@@ -38,28 +38,7 @@
  *
  * @author Conor McGann
  */
-
-#include <std_msgs/String.h>
-#include <std_msgs/Float32.h>
-#include <std_msgs/Empty.h>
-#include <deprecated_msgs/RobotBase2DOdom.h>
-#include <robot_msgs/Pose.h>
-#include <robot_msgs/Door.h>
-#include <robot_msgs/BatteryState.h>
-#include <robot_msgs/PlugStow.h>
-#include <robot_actions/action_runner.h>
-#include <robot_actions/action.h>
-#include <robot_actions/NoArgumentsActionState.h>
-#include <robot_actions/DoorActionState.h>
-#include <robot_actions/CheckDoorwayState.h>
-#include <robot_actions/NotifyDoorBlockedState.h>
-#include <robot_actions/ShellCommandState.h>
-#include <robot_actions/MoveBaseState.h>
-#include <robot_actions/Pose2D.h>
-#include <robot_actions/RechargeState.h>
-#include <robot_actions/DetectPlugOnBaseActionState.h>
-#include <robot_actions/SwitchControllers.h>
-#include <robot_actions/SwitchControllersState.h>
+#include <executive_trex_pr2/adapters.h>
 #include <boost/thread.hpp>
 #include <cstdlib>
 
@@ -229,6 +208,22 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_detect_plug_on_base"))
     runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect_plug_on_base);
 
+  executive_trex_pr2::StubAction1<robot_msgs::PlugStow, std_msgs::Empty> move_and_grasp_plug("move_and_grasp_plug");
+  if (getComponentParam("/trex/enable_move_and_grasp_plug"))
+    runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp_plug);
+
+  executive_trex_pr2::StubAction1<robot_msgs::PlugStow, std_msgs::Empty> stow_plug("stow_plug");
+  if (getComponentParam("/trex/enable_stow_plug"))
+    runner.connect<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
+
+  executive_trex_pr2::StubAction<std_msgs::Empty> plugs_untuck_arms("plugs_untuck_arms");
+  if (getComponentParam("/trex/enable_plugs_untuck_arms"))
+    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(plugs_untuck_arms);
+
+  executive_trex_pr2::StubAction<std_msgs::Empty> localize_plug_in_gripper("localize_plug_in_gripper");
+  if (getComponentParam("/trex/enable_localize_plug_in_gripper"))
+    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(localize_plug_in_gripper);
+
   /* Action stubs for resource management */
   executive_trex_pr2::StubAction1<robot_actions::SwitchControllers, std_msgs::Empty> switch_controllers("switch_controllers");
   if (getComponentParam("/trex/enable_switch_controllers"))
@@ -258,10 +253,6 @@ int main(int argc, char** argv){
   executive_trex_pr2::StubAction<std_msgs::Empty> safety_tuck_arms("safety_tuck_arms");
   if (getComponentParam("/trex/enable_safety_tuck_arms"))
     runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(safety_tuck_arms);
-
-  executive_trex_pr2::StubAction<std_msgs::Empty> plugs_untuck_arms("plugs_untuck_arms");
-  if (getComponentParam("/trex/enable_plugs_untuck_arms"))
-    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(plugs_untuck_arms);
 
   // Miscellaneous
   runner.run();

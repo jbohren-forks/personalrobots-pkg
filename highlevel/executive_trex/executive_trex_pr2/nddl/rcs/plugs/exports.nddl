@@ -15,9 +15,8 @@ class PlugsUntuckArms extends ROSAction {
  * Leaves the arm in a free position out of the way so that we can confirm that the plug is stowed
  */
 class StowPlug extends ROSAction {
-  // Goal takes a point for the target location
   predicate Active{
-    // PlugStow message from detect plug
+    float time_stamp; // A double encoding is reliable
     string frame_id;
     bool stowed;
     float x;
@@ -65,9 +64,12 @@ class InsertPlug extends ROSAction {
  * @todo Might be a pose message
  */
 class ServoToOutlet extends ROSAction {
+  /**
+   * Outlet Pose Message. We do not need the plug pose since the tool frame will already
+   * have been moved to the location of the plug by LocalizePlug action
+   */
   predicate Active{
-    // Outlet Pose Message. We do not need the plug pose since the tool frame will already
-    // have been moved to the location of the plug by LocalizePlug action
+    float time_stamp; // A double encoding is reliable
     string frame_id;
     float x;
     float y;
@@ -88,6 +90,7 @@ class ServoToOutlet extends ROSAction {
 class DetectOutletFine extends ROSAction {
   // Input takes a point
   predicate Active{
+    float time_stamp; // A double encoding is reliable
     string frame_id;
     float x;
     float y;
@@ -96,6 +99,7 @@ class DetectOutletFine extends ROSAction {
 
   // Output produces a point and the normal
   predicate Inactive{
+    float time_stamp; // A double encoding is reliable
     string frame_id;
     float x;
     float y;
@@ -114,6 +118,7 @@ class DetectOutletFine extends ROSAction {
 class DetectOutletCoarse extends ROSAction {
   // Input takes a point
   predicate Active{
+    float time_stamp; // A double encoding is reliable
     string frame_id;
     float x;
     float y;
@@ -122,6 +127,7 @@ class DetectOutletCoarse extends ROSAction {
 
   // Output produces a point and the normal
   predicate Inactive{
+    float time_stamp; // A double encoding is reliable
     string frame_id;
     float x;
     float y;
@@ -144,12 +150,16 @@ class LocalizePlugInGripper extends ROSAction {
 };
 
 /**
- * @brief Move to a grasp point and grasp
+ * @brief Move to a grasp point and grasp.
  */
 class MoveAndGraspPlug extends ROSAction {
   predicate Active{
-    // PlugStowed message
+    float time_stamp; // A double encoding is reliable
     string frame_id;
+    bool stowed;
+    float x;
+    float y;
+    float z;
   }
 
   MoveAndGraspPlug(Mode _mode){super(_mode);}

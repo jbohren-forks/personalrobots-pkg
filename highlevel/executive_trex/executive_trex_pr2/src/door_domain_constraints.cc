@@ -19,10 +19,12 @@ namespace executive_trex_pr2 {
      _th(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
      _token_id(TREX::getParentToken(variables[3])),
      _range(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))){
-    checkError(variables.size() == 5, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
   }
 
   std::vector<ConstrainedVariableId> GetRobotPoseForDoorConstraint::makeScopeForToken(const std::vector<ConstrainedVariableId>& variables){
+    if(variables.size() > 5)
+      return variables;
+
     std::vector<ConstrainedVariableId> new_scope(variables);
     TokenId token = TREX::getParentToken(variables[3]);
     const std::vector<ConstrainedVariableId>& params = token->parameters();

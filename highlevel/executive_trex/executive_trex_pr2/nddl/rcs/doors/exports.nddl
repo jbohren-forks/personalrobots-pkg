@@ -24,14 +24,6 @@ int DOOR_CHECK_INTERVAL = 5; // Wait 5 seconds before checking the doorway is cl
 
 enum MAYBE_TRUE_OR_FALSE {TRUE, FALSE, MAYBE} ;
 
-
-/**
- * @brief Obtain the base position a given distance normal to the door frame. Need the current position?
- */
-constraint  door_get_robot_pose_for_door(x, y, th, token_state, distance){
-  x <: numeric && y <: x && th <: x && token_state <: TokenStates && distance <: x
-}
-
 class DoorManipulationBehavior extends ROSAction {
 
   /**

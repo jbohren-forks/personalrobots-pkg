@@ -1,0 +1,80 @@
+/**
+ * Actions used to support testing. These actions utilize an explict specification of
+ * a plan to decompose an action into its parts. This is mainly used for testing the indivudual
+ * actions as directly as possible.
+ */
+class PlugActions extends AgentActions {
+
+  /**
+   * Super simple - tuck, untuck, detect, tuck
+   */
+  predicate DetectPlug{}
+
+  /**
+   * Will execute actions as far as grapping the plug, and staging it, and then putting it back
+   */
+  predicate PickupAndRelease{}
+};
+
+PlugActions::DetectPlug {
+  contains(safety_tuck_arms.Active cmd_tuck_arms);
+  contains(plugs_untuck_arms.Active cmd_untuck_arms);
+  contains(detect_plug_on_base.Active cmd_detect_plug_on_base);
+  contains(safety_tuck_arms.Active cmd_tuck_arms_again);
+
+  cmd_tuck_arms before cmd_untuck_arms;
+  cmd_untuck_arms before cmd_detect_plug_on_base;
+  cmd_detect_plug_on_base before cmd_tuck_arms_again;
+
+  concurrent(end, cmd_tuck_arms_again.end);
+}
+
+PlugActions::PickupAndRelease {
+  // Subgoal all the actions. It would be nice if they were sequenced in declaration
+  contains(safety_tuck_arms.Active cmd_tuck_arms);
+  contains(plugs_untuck_arms.Active cmd_untuck_arms);
+  contains(detect_plug_on_base.Active cmd_detect_plug_on_base);
+  contains(move_and_grasp_plug.Active cmd_move_and_grasp_plug);
+  contains(localize_plug_in_gripper.Active cmd_localize_plug_in_gripper);
+  contains(stow_plug.Active cmd_stow_plug);
+  contains(detect_plug_on_base.Active cmd_detect_plug_on_base_to_confirm);
+  contains(safety_tuck_arms.Active cmd_tuck_arms_again);
+
+  // Sequence them
+  cmd_tuck_arms before cmd_untuck_arms;
+  cmd_untuck_arms before cmd_detect_plug_on_base;
+  cmd_detect_plug_on_base before cmd_move_and_grasp_plug;
+  cmd_move_and_grasp_plug before cmd_localize_plug_in_gripper;
+  cmd_localize_plug_in_gripper before cmd_stow_plug;
+  cmd_stow_plug before cmd_detect_plug_on_base_to_confirm;
+  cmd_detect_plug_on_base_to_confirm before cmd_tuck_arms_again;
+
+  // require that the all execute successfully
+  eq(SUCCESS,
+     cmd_tuck_arms.status,
+     cmd_untuck_arms.status,
+     cmd_detect_plug_on_base.status,
+     cmd_move_and_grasp_plug.status,
+     cmd_localize_plug_in_gripper.status,
+     cmd_stow_plug.status,
+     cmd_detect_plug_on_base_to_confirm.status,
+     cmd_tuck_arms_again.status);
+
+  // Finally, make sure feedback flows correctly. So first we bind to the feedback
+  // Should be nice to say:
+  // DetectPlugOnBase.Inactive feedback == detect_plug_on_base[cmd_detect_plug_on_base.end);
+  // cmd_stow_plug.plug_state == feedback.plug_state
+  contains(detect_plug_on_base.Inactive feedback_detect_plug_on_base);
+  cmd_detect_plug_on_base meets feedback_detect_plug_on_base;
+
+  // Provides input to grasp
+  get_state(cmd_move_and_grasp_plug.object, feedback_detect_plug_on_base.object);
+
+  // Provides input to stow
+  get_state(cmd_stow_plug.object, feedback_detect_plug_on_base.object);
+
+  // Finally, the action ends when the tuck arms finishes
+  concurrent(end, cmd_tuck_arms_again.end);
+}
+
+PlugActions plug_actions = new PlugActions();

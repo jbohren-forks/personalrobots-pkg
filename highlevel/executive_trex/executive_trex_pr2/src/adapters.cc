@@ -37,21 +37,9 @@
 
 
 #include <executive_trex_pr2/adapter_utilities.h>
+#include <executive_trex_pr2/adapters.h>
 #include "ros_action_adapter.h"
 #include "ROSStateAdapter.hh"
-#include <std_msgs/Empty.h>
-#include <deprecated_msgs/RobotBase2DOdom.h>
-#include <robot_actions/NoArgumentsActionState.h>
-#include <robot_actions/ShellCommandState.h>
-#include <robot_actions/DoorActionState.h>
-#include <robot_actions/CheckDoorwayState.h>
-#include <robot_actions/NotifyDoorBlockedState.h>
-#include <robot_actions/MoveBaseState.h>
-#include <robot_actions/RechargeState.h>
-#include <robot_actions/DetectPlugOnBaseActionState.h>
-#include <robot_actions/SwitchControllers.h>
-#include <robot_actions/SwitchControllersState.h>
-#include <robot_actions/Pose2D.h>
 
 using namespace executive_trex_pr2;
 
@@ -167,7 +155,7 @@ namespace TREX {
 
 
   /***********************************************************************
-   * @@brief Recharge action with no goal or feedback
+   * @@brief Recharge action
    **********************************************************************/
   class RechargeAdapter: public ROSActionAdapter<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32> {
   public:
@@ -242,7 +230,7 @@ namespace TREX {
   TeleoReactor::ConcreteFactory<BaseStateAdapter> l_NewBaseStateAdapter_Factory("NewBaseStateAdapter");
 
   /***********************************************************************
-   * @brief DetectPlugOnBase actions with a pose message for goal and feedback
+   * @brief DetectPlugOnBase 
    **********************************************************************/
   class DetectPlugOnBaseAdapter: public ROSActionAdapter<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow> {
   public:
@@ -258,6 +246,42 @@ namespace TREX {
 
   // Allocate Factory
   TeleoReactor::ConcreteFactory<DetectPlugOnBaseAdapter> DetectPlugOnBaseAdapter_Factory("DetectPlugOnBaseAdapter");
+
+  /***********************************************************************
+   * @brief MoveAndGraspPlug 
+   **********************************************************************/
+  class MoveAndGraspPlugAdapter: public ROSActionAdapter<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty> {
+  public:
+
+    MoveAndGraspPlugAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(agentName, configData){
+    }
+
+    void fillDispatchParameters(robot_msgs::PlugStow& msg, const TokenId& goalToken){
+      AdapterUtilities::write(goalToken, msg);
+    }
+  };
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<MoveAndGraspPlugAdapter> MoveAndGraspPlugAdapter_Factory("MoveAndGraspPlugAdapter");
+
+  /***********************************************************************
+   * @brief StowPlug 
+   **********************************************************************/
+  class StowPlugAdapter: public ROSActionAdapter<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty> {
+  public:
+
+    StowPlugAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty>(agentName, configData){
+    }
+
+    void fillDispatchParameters(robot_msgs::PlugStow& msg, const TokenId& goalToken){
+      AdapterUtilities::write(goalToken, msg);
+    }
+  };
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<StowPlugAdapter> StowPlugAdapter_Factory("StowPlugAdapter");
 
 
   /***********************************************************************
