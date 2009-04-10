@@ -75,10 +75,10 @@ namespace costmap_2d {
        * @param  lethal_threshold The cost threshold at which a point in the static data is considered a lethal obstacle
        */
       Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, 
-          double resolution, double origin_x, double origin_y, double inscribed_radius,
-          double circumscribed_radius, double inflation_radius, double obstacle_range,
-          double max_obstacle_height, double raytrace_range, double weight,
-          const std::vector<unsigned char>& static_data, unsigned char lethal_threshold);
+          double resolution, double origin_x, double origin_y, double inscribed_radius = 0.0,
+          double circumscribed_radius = 0.0, double inflation_radius = 0.0, double obstacle_range = 0.0,
+          double max_obstacle_height = 0.0, double raytrace_range = 0.0, double weight = 1.0,
+          const std::vector<unsigned char>& static_data = std::vector<unsigned char>(0), unsigned char lethal_threshold = 0);
 
       /**
        * @brief  Copy constructor for a costmap, creates a copy efficiently
@@ -99,6 +99,15 @@ namespace costmap_2d {
        * @param w_size_y The y size of the window in meters
        */
       void resetMapOutsideWindow(double wx, double wy, double w_size_x, double w_size_y);
+
+      /**
+       * @brief Re-inflate obstacles within a given window
+       * @param wx The x coordinate of the center point of the window in world space (meters)
+       * @param wy The y coordinate of the center point of the window in world space (meters)
+       * @param w_size_x The x size of the window in meters
+       * @param w_size_y The y size of the window in meters
+       */
+      void reinflateWindow(double wx, double wy, double w_size_x, double w_size_y);
 
       /**
        * @brief  Update the costmap with new observations
@@ -248,6 +257,14 @@ namespace costmap_2d {
        * @param  new_origin_y The y coordinate of the new origin
        */
       void updateOrigin(double new_origin_x, double new_origin_y);
+
+      /**
+       * @brief  Check if a cell falls within the circumscribed radius of the robot
+       * @param The x coordinate of the cell
+       * @param The y coordinate of the cell
+       * @return True if the cell is inside the circumscribed radius, false otherwise
+       */
+      bool circumscribedCell(unsigned int x, unsigned int y) const;
 
     private:
       /**
@@ -453,6 +470,7 @@ namespace costmap_2d {
       }
 
 
+    protected:
       unsigned int size_x_;
       unsigned int size_y_;
       double resolution_;
@@ -470,6 +488,7 @@ namespace costmap_2d {
       unsigned int cell_inscribed_radius_, cell_circumscribed_radius_, cell_inflation_radius_;
       double weight_;
       std::priority_queue<CellData> inflation_queue_;
+      unsigned char circumscribed_cost_lb_;
 
       //functors for raytracing actions
       class ClearCell {

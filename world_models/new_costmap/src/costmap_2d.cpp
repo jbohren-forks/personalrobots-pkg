@@ -61,6 +61,9 @@ namespace costmap_2d{
     cell_circumscribed_radius_ = cellDistance(circumscribed_radius);
     cell_inflation_radius_ = cellDistance(inflation_radius);
 
+    //set the cost for the circumscribed radius of the robot
+    circumscribed_cost_lb_ = computeCost(cell_circumscribed_radius_);
+
     //based on the inflation radius... compute distance and cost caches
     cached_costs_ = new unsigned char*[cell_inflation_radius_ + 1];
     cached_distances_ = new double*[cell_inflation_radius_ + 1];
@@ -137,6 +140,9 @@ namespace costmap_2d{
     cell_inscribed_radius_ = map.cell_inscribed_radius_;
     cell_circumscribed_radius_ = map.cell_circumscribed_radius_;
     cell_inflation_radius_ = map.cell_inflation_radius_;
+
+    //set the cost for the circumscribed radius of the robot
+    circumscribed_cost_lb_ = map.circumscribed_cost_lb_;
 
     weight_ = map.weight_;
 
@@ -297,6 +303,18 @@ namespace costmap_2d{
     updateObstacles(observations, inflation_queue_);
 
     inflateObstacles(inflation_queue_);
+  }
+  
+  void Costmap2D::reinflateWindow(double wx, double wy, double w_size_x, double w_size_y){
+    //make sure the inflation queue is empty at the beginning of the cycle (should always be true)
+    ROS_ASSERT_MSG(inflation_queue_.empty(), "The inflation queue must be empty at the beginning of inflation");
+
+    //reset the inflation window.. clears all costs except lethal costs and adds them to the queue for re-propagation
+    resetInflationWindow(wx, wy, w_size_x, w_size_y, inflation_queue_);
+
+    //inflate the obstacles
+    inflateObstacles(inflation_queue_);
+
   }
 
   void Costmap2D::updateObstacles(const vector<Observation>& observations, priority_queue<CellData>& inflation_queue){
@@ -665,6 +683,13 @@ namespace costmap_2d{
 
   double Costmap2D::resolution() const{
     return resolution_;
+  }
+
+  bool Costmap2D::circumscribedCell(unsigned int x, unsigned int y) const {
+    unsigned char cost = getCost(x, y);
+    if(cost < INSCRIBED_INFLATED_OBSTACLE && cost >= circumscribed_cost_lb_)
+      return true;
+    return false;
   }
 
 };

@@ -76,8 +76,9 @@ namespace costmap_2d {
        * @brief  Constructor for the wrapper
        * @param ros_node A reference to the ros node to run on
        * @param tf A reference to a TransformListener
+       * @param prefix An optional prefix to prepend to the parameter list for the costmap
        */
-      Costmap2DROS(ros::Node& ros_node, tf::TransformListener& tf);
+      Costmap2DROS(ros::Node& ros_node, tf::TransformListener& tf, std::string prefix = std::string(""));
 
       /**
        * @brief  Destructor for the wrapper. Cleans up pointers.

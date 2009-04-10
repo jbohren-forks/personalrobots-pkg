@@ -42,7 +42,7 @@ using namespace robot_msgs;
 
 namespace costmap_2d {
 
-  Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf) : ros_node_(ros_node), 
+  Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix) : ros_node_(ros_node), 
   tf_(tf), costmap_(NULL), visualizer_thread_(NULL), map_update_thread_(NULL){
     ros_node_.advertise<robot_msgs::Polyline2D>("raw_obstacles", 1);
     ros_node_.advertise<robot_msgs::Polyline2D>("inflated_obstacles", 1);
@@ -50,11 +50,11 @@ namespace costmap_2d {
     
     string topics_string;
     //get the topics that we'll subscribe to from the parameter server
-    ros_node_.param("~costmap/observation_topics", topics_string, string(""));
+    ros_node_.param("~" + prefix + "/costmap/observation_topics", topics_string, string(""));
     ROS_INFO("Subscribed to Topics: %s", topics_string.c_str());
 
-    ros_node_.param("~costmap/global_frame", global_frame_, string("map"));
-    ros_node_.param("~costmap/robot_base_frame", robot_base_frame_, string("base_link"));
+    ros_node_.param("~" + prefix + "/costmap/global_frame", global_frame_, string("map"));
+    ros_node_.param("~" + prefix + "/costmap/robot_base_frame", robot_base_frame_, string("base_link"));
 
     //now we need to split the topics based on whitespace which we can use a stringstream for
     stringstream ss(topics_string);
@@ -64,10 +64,10 @@ namespace costmap_2d {
       //get the parameters for the specific topic
       double observation_keep_time, expected_update_rate;
       string sensor_frame, data_type;
-      ros_node_.param("~costmap/" + topic + "/sensor_frame", sensor_frame, string("frame_from_message"));
-      ros_node_.param("~costmap/" + topic + "/observation_persistance", observation_keep_time, 0.0);
-      ros_node_.param("~costmap/" + topic + "/expected_update_rate", expected_update_rate, 0.0);
-      ros_node_.param("~costmap/" + topic + "/data_type", data_type, string("PointCloud"));
+      ros_node_.param("~" + prefix + "/costmap/" + topic + "/sensor_frame", sensor_frame, string("frame_from_message"));
+      ros_node_.param("~" + prefix + "/costmap/" + topic + "/observation_persistance", observation_keep_time, 0.0);
+      ros_node_.param("~" + prefix + "/costmap/" + topic + "/expected_update_rate", expected_update_rate, 0.0);
+      ros_node_.param("~" + prefix + "/costmap/" + topic + "/data_type", data_type, string("PointCloud"));
 
       ROS_ASSERT_MSG(data_type == "PointCloud" || data_type == "LaserScan", "Only topics that use point clouds or laser scans are currently supported");
 
@@ -94,18 +94,18 @@ namespace costmap_2d {
     double map_resolution;
     double map_origin_x, map_origin_y;
 
-    ros_node_.param("~costmap/static_map", static_map, true);
+    ros_node_.param("~" + prefix + "/costmap/static_map", static_map, true);
     std::vector<unsigned char> input_data;
 
     //check if we want a rolling window version of the costmap
-    ros_node_.param("~costmap/rolling_window", rolling_window_, false);
+    ros_node_.param("~" + prefix + "/costmap/rolling_window", rolling_window_, false);
 
     double map_width_meters, map_height_meters;
-    ros_node_.param("~costmap/width", map_width_meters, 10.0);
-    ros_node_.param("~costmap/height", map_height_meters, 10.0);
-    ros_node_.param("~costmap/resolution", map_resolution, 0.05);
-    ros_node_.param("~costmap/origin_x", map_origin_x, 0.0);
-    ros_node_.param("~costmap/origin_y", map_origin_y, 0.0);
+    ros_node_.param("~" + prefix + "/costmap/width", map_width_meters, 10.0);
+    ros_node_.param("~" + prefix + "/costmap/height", map_height_meters, 10.0);
+    ros_node_.param("~" + prefix + "/costmap/resolution", map_resolution, 0.05);
+    ros_node_.param("~" + prefix + "/costmap/origin_x", map_origin_x, 0.0);
+    ros_node_.param("~" + prefix + "/costmap/origin_y", map_origin_y, 0.0);
     map_width = (unsigned int)(map_width_meters / map_resolution);
     map_height = (unsigned int)(map_height_meters / map_resolution);
 
@@ -123,11 +123,11 @@ namespace costmap_2d {
 
       //check if the user has set any parameters that will be overwritten
       bool user_map_params = false;
-      user_map_params |= ros_node_.hasParam("~costmap/width");
-      user_map_params |= ros_node_.hasParam("~costmap/height");
-      user_map_params |= ros_node_.hasParam("~costmap/resolution");
-      user_map_params |= ros_node_.hasParam("~costmap/origin_x");
-      user_map_params |= ros_node_.hasParam("~costmap/origin_y");
+      user_map_params |= ros_node_.hasParam("~" + prefix + "/costmap/width");
+      user_map_params |= ros_node_.hasParam("~" + prefix + "/costmap/height");
+      user_map_params |= ros_node_.hasParam("~" + prefix + "/costmap/resolution");
+      user_map_params |= ros_node_.hasParam("~" + prefix + "/costmap/origin_x");
+      user_map_params |= ros_node_.hasParam("~" + prefix + "/costmap/origin_y");
 
       if(user_map_params)
         ROS_WARN("You have set map parameters, but also requested to use the static map. Your parameters will be overwritten by those given by the map server");
@@ -148,20 +148,20 @@ namespace costmap_2d {
     }
 
     double inscribed_radius, circumscribed_radius, inflation_radius;
-    ros_node_.param("~costmap/inscribed_radius", inscribed_radius, 0.325);
-    ros_node_.param("~costmap/circumscribed_radius", circumscribed_radius, 0.46);
-    ros_node_.param("~costmap/inflation_radius", inflation_radius, 0.55);
+    ros_node_.param("~" + prefix + "/costmap/inscribed_radius", inscribed_radius, 0.325);
+    ros_node_.param("~" + prefix + "/costmap/circumscribed_radius", circumscribed_radius, 0.46);
+    ros_node_.param("~" + prefix + "/costmap/inflation_radius", inflation_radius, 0.55);
 
     double obstacle_range, max_obstacle_height, raytrace_range;
-    ros_node_.param("~costmap/obstacle_range", obstacle_range, 2.5);
-    ros_node_.param("~costmap/max_obstacle_height", max_obstacle_height, 2.0);
-    ros_node_.param("~costmap/raytrace_range", raytrace_range, 3.0);
+    ros_node_.param("~" + prefix + "/costmap/obstacle_range", obstacle_range, 2.5);
+    ros_node_.param("~" + prefix + "/costmap/max_obstacle_height", max_obstacle_height, 2.0);
+    ros_node_.param("~" + prefix + "/costmap/raytrace_range", raytrace_range, 3.0);
 
     double cost_scale;
-    ros_node_.param("~costmap/cost_scaling_factor", cost_scale, 1.0);
+    ros_node_.param("~" + prefix + "/costmap/cost_scaling_factor", cost_scale, 1.0);
 
     int temp_lethal_threshold;
-    ros_node_.param("~costmap/lethal_cost_threshold", temp_lethal_threshold, int(100));
+    ros_node_.param("~" + prefix + "/costmap/lethal_cost_threshold", temp_lethal_threshold, int(100));
 
     unsigned char lethal_threshold = max(min(temp_lethal_threshold, 255), 0);
 
@@ -180,12 +180,12 @@ namespace costmap_2d {
 
     //create a thread to handle updating the map
     double map_update_frequency;
-    ros_node_.param("~costmap/update_frequency", map_update_frequency, 5.0);
+    ros_node_.param("~" + prefix + "/costmap/update_frequency", map_update_frequency, 5.0);
     map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
     
     //create a separate thread to publish cost data to the visualizer
     double map_publish_frequency;
-    ros_node_.param("~costmap/publish_frequency", map_publish_frequency, 2.0);
+    ros_node_.param("~" + prefix + "/costmap/publish_frequency", map_publish_frequency, 2.0);
     visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapPublishLoop, this, map_publish_frequency));
 
   }
@@ -254,7 +254,7 @@ namespace costmap_2d {
       start_t = start.tv_sec + double(start.tv_usec) / 1e6;
       end_t = end.tv_sec + double(end.tv_usec) / 1e6;
       t_diff = end_t - start_t;
-      ROS_INFO("Map update time: %.9f", t_diff);
+      ROS_DEBUG("Map update time: %.9f", t_diff);
       if(!sleepLeftover(start_time, cycle_time))
         ROS_WARN("Map update loop missed its desired cycle time of %.4f", cycle_time.toSec());
     }
