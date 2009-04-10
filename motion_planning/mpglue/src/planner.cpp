@@ -252,7 +252,8 @@ namespace mpglue {
     getrusage(RUSAGE_SELF, &ru_started);
     gettimeofday(&t_started, 0);
     
-    boost::shared_ptr<waypoint_plan_t> plan(doCreatePlan());
+    boost::shared_ptr<waypoint_plan_t> plan;
+    plan = doCreatePlan();
     
     struct rusage ru_finished;
     struct timeval t_finished;

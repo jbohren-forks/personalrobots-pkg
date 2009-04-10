@@ -443,15 +443,15 @@ namespace {
       if (plan) {
 	for (wpi_t iw(plan->begin()); iw != plan->end(); /* this can segfault: iw += skip */) {
 	  glPushMatrix();
-	  glTranslated(iw->x, iw->y, 0);
-	  if (iw->ignoreTheta()) {
+	  glTranslated((*iw)->x, (*iw)->y, 0);
+	  if ((*iw)->ignoreTheta()) {
 	    gluDisk(wrap_glu_quadric_instance(),
 		    configptr->inscribedRadius,
 		    configptr->inscribedRadius,
 		    36, 1);
 	  }
 	  else {
-	    glRotated(180 * iw->theta / M_PI, 0, 0, 1);
+	    glRotated(180 * (*iw)->theta / M_PI, 0, 0, 1);
 	    drawFootprint();
 	  }
 	  glPopMatrix();
@@ -525,7 +525,7 @@ namespace {
 	glLineWidth(1);
       glBegin(GL_LINE_STRIP);
       for (wpi_t iw(plan->begin()); iw != plan->end(); ++iw)
-	glVertex2d(iw->x, iw->y);
+	glVertex2d((*iw)->x, (*iw)->y);
       glEnd();
     }
   }

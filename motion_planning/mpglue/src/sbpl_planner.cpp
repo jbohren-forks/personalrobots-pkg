@@ -206,7 +206,20 @@ namespace mpglue {
 				   &stats_.plan_angle_change,
 				   0 // XXXX to do: if 3DKIN we actually want something here
 				   );
+      
+      // quick hack for door planner
+      EnvironmentNAVXYTHETADOOR * doorenv(dynamic_cast<EnvironmentNAVXYTHETADOOR *>(environment_->getDSI()));
+      if (doorenv) {
+	shared_ptr<waypoint_plan_t> doorplan(new waypoint_plan_t());
+	for (size_t ii(0); ii < plan->size(); ++ii) {
+	  double const theta(0.1); // get this from door environment...
+	  shared_ptr<door_waypoint_s> doorwpt(new door_waypoint_s(*(*plan)[ii], theta, 0.2));
+        doorplan->push_back(doorwpt);
+	}
+	return doorplan;
+      }
     }
+    
     return plan;
   }
   

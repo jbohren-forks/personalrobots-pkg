@@ -62,13 +62,14 @@ namespace mpglue {
     explicit waypoint_s(robot_msgs::Pose const & pose);
     waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose, double dr, double dtheta);
     explicit waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose);
-    
+      
+      
     bool ignoreTheta() const;
     
     double x, y, theta, dr, dtheta;
   };
   
-  typedef std::vector<waypoint_s> waypoint_plan_t;
+  typedef std::vector<boost::shared_ptr<waypoint_s> > waypoint_plan_t;
   
   
   /**
@@ -88,6 +89,8 @@ namespace mpglue {
     { addWaypoint(waypoint_s(px, py, pth, dr, dtheta)); }
     
     void addWaypoint(waypoint_s const & wp);
+    
+    void addWaypoint(boost::shared_ptr<waypoint_s> wp);
     
     /**
        Convert a plan from a raw state ID sequence (as computed by

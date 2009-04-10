@@ -44,11 +44,12 @@
 #include <costmap_2d/obstacle_map_accessor.h>
 #include <sbpl/headers.h>
 // #include <sfl/gplan/Mapper2d.hpp>
-// #include <sfl/util/numeric.hpp>
+#include <sfl/util/numeric.hpp>
 #include <sfl/util/strutil.hpp>
 // #include <errno.h>
 // #include <cstring>
 // #include <err.h>
+#include <robot_msgs/Door.h>
 
 #ifdef MPBENCH_HAVE_NETPGM
 extern "C" {
@@ -712,7 +713,7 @@ namespace mpbench {
       planner.reset(new mpglue::NavFnPlanner(world->getCostmap(task_id),
 					     world->getIndexTransform(),
 					     interpolate_path));
-    }
+    } // end NavFn
     
     else if ("EStar" == planner_name) {
 #ifndef MPBENCH_HAVE_ESTAR
@@ -735,11 +736,14 @@ namespace mpbench {
 					     world->getIndexTransform(),
 					     &cerr));
 #endif // MPBENCH_HAVE_ESTAR
-    }
+    } // end EStar
     
-    else {
+    else { // all others must be SBPL
       if (verbose_os_)
 	*verbose_os_ << "  creating SBPLPlanner subtype\n" << flush;
+      
+      // reasonably quick hack for Sachin... black magic, grrr
+      bool door_planner_hack(false);
       
       // The remaining possibilities are (currently) all derived from
       // SBPL and thus all need an SBPLEnvironment instance, so we
@@ -792,10 +796,56 @@ namespace mpbench {
 							      mprim_filename,
 							      verbose_os_));
       }
+      else if ("xythetadoor" == envstr) {
+	if (verbose_os_)
+	  *verbose_os_ << "  creating XYTHETADOOR Environment\n" << flush;
+	double const
+	  timetoturn45degsinplace_secs(45.0 * M_PI / 180.0 / opt_.robot_nominal_rotation_speed);
+	string mprim_filename("data/pr2.mprim");
+	sfl::token_to(opt_.planner_tok, 2, mprim_filename);
+	if (verbose_os_)
+	  *verbose_os_ << "  motion primitive file: " << mprim_filename << "\n" << flush;
+        
+	shared_ptr<episode::taskspec> spec(tasklist_[task_id]);
+	if ( ! spec)
+	  throw runtime_error("BUG??? in mpbench::Setup::getPlanner(" + to_string(task_id)
+			      + "): no task spec for that ID");
+	if ( ! spec->door)
+	  throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
+			      + "): door planner requires a door for this task");
+
+        robot_msgs::Door doormsg;
+        doormsg.frame_p1.x = spec->door->px; // hinge
+        doormsg.frame_p1.y = spec->door->py;
+        doormsg.frame_p2.x = spec->door->px + spec->door->width * cos(spec->door->th_shut); // other end
+        doormsg.frame_p2.y = spec->door->px + spec->door->width * sin(spec->door->th_shut);
+        doormsg.handle.x = spec->door->px + spec->door->dhandle * cos(spec->door->th_shut); // handle
+        doormsg.handle.y = spec->door->px + spec->door->dhandle * sin(spec->door->th_shut);
+        doormsg.hinge = 0;
+        if (sfl::mod2pi(spec->door->th_open - spec->door->th_shut) > 0)
+          doormsg.rot_dir = 1;
+        else
+          doormsg.rot_dir = -1;
+        doormsg.header.frame_id = "map";
+        
+	sbpl_environment.
+	  reset(mpglue::SBPLEnvironment::createXYThetaDoor(world->getCostmap(task_id),
+							   world->getIndexTransform(),
+							   getFootprint(),
+							   opt_.robot_nominal_forward_speed,
+							   timetoturn45degsinplace_secs,
+							   mprim_filename,
+							   verbose_os_, doormsg));
+	door_planner_hack = true;
+	if (tasklist_.size() <= task_id)
+	  throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
+			      + "): only " + to_string(tasklist_.size()) + " tasks in the list");
+      }
       else
 	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
 			    + "): invalid environment token \""
-			    + envstr + "\", must be \"2d\", \"2d16\" or \"3dkin\"");
+			    + envstr + "\", must be \"2d\", \"2d16\" or \"3dkin\" (maybe more are OK in the code)");
+      
       if ( ! sbpl_environment)
 	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
 			    + "): failed to create SBPLEnvironment from \""
@@ -819,6 +869,12 @@ namespace mpbench {
 	throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
 			    + "): invalid search direction \"" + dirstr
 			    + "\", should be \"fwd\" or \"bwd\"");
+      
+      if (door_planner_hack) {
+	if (verbose_os_)
+	  *verbose_os_ << "  door_planner_hack: search direction must always be forward\n" << flush;
+	forwardsearch = true;
+      }
       
       shared_ptr<SBPLPlanner> sbpl_planner;
       if ("ARAStar" == planner_name) {

@@ -109,11 +109,18 @@ namespace mpglue {
   void PlanConverter::
   addWaypoint(waypoint_s const & wp)
   {
+    addWaypoint(boost::shared_ptr<waypoint_s>(new waypoint_s(wp)));
+  }
+  
+  
+  void PlanConverter::
+  addWaypoint(boost::shared_ptr<waypoint_s> wp)
+  {
     if (0 < count_) {
-      double const dx(wp.x - prevx_);
-      double const dy(wp.y - prevy_);
+      double const dx(wp->x - prevx_);
+      double const dy(wp->y - prevy_);
       plan_length += sqrt(pow(dx, 2) + pow(dy, 2));
-      direction_change += fabs(sfl::mod2pi(wp.theta - prevdir_));
+      direction_change += fabs(sfl::mod2pi(wp->theta - prevdir_));
       double const tangent(atan2(dy, dx));
       if (1 < count_) // tangent change only available after 2nd point
 	tangent_change += fabs(sfl::mod2pi(tangent - prevtan_));
@@ -121,9 +128,9 @@ namespace mpglue {
     }
     plan_->push_back(wp);
     ++count_;
-    prevx_ = wp.x;
-    prevy_ = wp.y;
-    prevdir_ = wp.theta;
+    prevx_ = wp->x;
+    prevy_ = wp->y;
+    prevdir_ = wp->theta;
   }
   
   

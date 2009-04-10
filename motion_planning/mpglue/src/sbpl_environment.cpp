@@ -487,7 +487,7 @@ namespace mpglue {
 		       double nominalvel_mpersecs,
 		       double timetoturn45degsinplace_secs,
 		       std::string const & motor_primitive_filename,
-		       std::ostream * dbgos) throw(std::exception)
+                    std::ostream * dbgos, robot_msgs::Door door) throw(std::exception)
   {
     EnvironmentNAVXYTHETADOOR * env(new EnvironmentNAVXYTHETADOOR());
     if ( ! env->SetEnvParameter("cost_inscribed", cm->getInscribedCost())) {
@@ -558,7 +558,9 @@ namespace mpglue {
 	if (cm->getCost(ix, iy, &cost))	// "always" succeeds though
 	  env->UpdateCost(ix, iy, cost);
       }
-    
+    const double door_thickness = 0.05;
+    env->setDoorProperties(door,door_thickness);
+
     /**< \todo Experimental door planner, basically copy-pasted from NAVXYTHETALAT */
     static double const dtheta(M_PI / NAVXYTHETALAT_THETADIRS);
     return new SBPLEnvironmentDSI<EnvironmentNAVXYTHETADOOR>(cm, it, env, dtheta);

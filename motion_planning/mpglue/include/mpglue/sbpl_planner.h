@@ -70,6 +70,15 @@ namespace mpglue {
   };
   
   
+  struct door_waypoint_s: public waypoint_s {
+      door_waypoint_s(waypoint_s const & wpt, double _door_angle, double _cost)
+        : waypoint_s(wpt), door_angle(_door_angle), cost(_cost) {}
+      
+      double door_angle;
+      double cost;
+  };
+  
+  
   class SBPLPlannerWrap
     : public AnytimeCostmapPlanner
   {
