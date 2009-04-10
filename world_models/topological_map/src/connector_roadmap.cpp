@@ -157,11 +157,13 @@ ConnectorCosts Roadmap::connectorCosts (const ConnectorId i, const ConnectorId j
   resetIndices();
   DistanceMap distances;
   ConnectorCosts costs;
+  PredecessorMap predecessors; // We shouldn't actually need this, but adding it removes a warning about boost/dijkstra_shortest_paths.hpp...
   
   dijkstra_shortest_paths(graph_, w, weight_map(get(&EdgeInfo::cost, graph_)).
                           vertex_index_map(get(&NodeInfo::index, graph_)).
-                          distance_map(DistancePmap(distances)).visitor(DijkstraVisitor()));
-  
+                          distance_map(DistancePmap(distances)).visitor(DijkstraVisitor()).
+                          predecessor_map(PredecessorPmap(predecessors)));
+
   RoadmapAdjacencyIterator adj_iter, adj_end;
   for (tie(adj_iter, adj_end)=adjacent_vertices(v, graph_); adj_iter!=adj_end; ++adj_iter) {
     DistanceMap::iterator pos = distances.find(*adj_iter);

@@ -143,6 +143,12 @@ struct NotDoorwayRegionException: public TopologicalMapException
   NotDoorwayRegionException (const RegionId id) : TopologicalMapException (format("Can't add door to non-doorway region %1%") % id) {}
 };
 
+struct ObservationOutOfSequenceException: public TopologicalMapException
+{
+  ObservationOutOfSequenceException (const ros::Time& stamp1, const ros::Time& stamp2) : 
+    TopologicalMapException (format ("Observations at %1% and %2% are out of sequence") % stamp1 % stamp2) {}
+};
+
 } // namespace topological_map
 
 

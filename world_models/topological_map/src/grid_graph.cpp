@@ -183,14 +183,17 @@ ReachableCostVector GridGraph::singleSourceCosts (const Cell2D& source, const ve
   GridDistances distances;
   GridGraphVertex start = cellVertex(source);
 
+
   resetIndices();
   ROS_DEBUG_NAMED ("grid_graph_shortest_path", "Computing single source costs");
 
-
+  typedef map<GridGraphVertex, GridGraphVertex> GridPreds;
+  GridPreds predecessors;
   boost::dijkstra_shortest_paths (graph_, start,
                                   weight_map(get(&EdgeCost::cost, graph_)).
                                   vertex_index_map(get(&CellInfo::index, graph_)).
                                   distance_map(associative_property_map<GridDistances>(distances)).
+                                  predecessor_map(associative_property_map<GridPreds>(predecessors)). // to avoid warnings
                                   visitor(GraphSearchVisitor()));
 
    

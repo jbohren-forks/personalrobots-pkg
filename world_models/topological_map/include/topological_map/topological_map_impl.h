@@ -45,6 +45,7 @@ using std::istream;
 using boost::tuple;
 using boost::shared_ptr;
 using robot_msgs::Door;
+using ros::Time;
 
 class RegionGraph;
 class Roadmap;
@@ -63,10 +64,10 @@ class TopologicalMap::MapImpl
 public:
 
   /// Default constructor creates empty graph
-  MapImpl(const OccupancyGrid& grid, double resolution);
+  MapImpl(const OccupancyGrid& grid, double resolution, double door_open_prior_prob, double door_reversion_rate);
 
   /// Constructor that reads from a stream
-  MapImpl(istream& stream);
+  MapImpl(istream& stream, double door_open_prior_prob, double door_reversion_rate);
 
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
@@ -89,6 +90,18 @@ public:
   /// \throws UnknownRegionException
   /// \throws NotDoorwayRegionException
   void observeDoorMessage (RegionId id, const Door& msg);
+
+  /// \post New evidence about attempted door traversal has been incorporated
+  /// \pre \a stamp must be greater than the stamp of the last call to this function
+  /// \param succeeded true iff the door was successfully traversed
+  /// \param stamp time when the attempted traversal finished
+  void observeDoorTraversal (RegionId id, bool succeeded, const Time& stamp);
+
+  /// \return Probability that this door is open at the given time
+  /// \pre \a stamp must be greater than the stamp of the last observation to this door (or 0 if there are no observations yet)
+  /// \throws ObservationOutOfSequenceExceptioon
+  /// \throws NoDoorInRegionException
+  double doorOpenProb (RegionId id, const ros::Time& stamp);
 
   /// \return set of cells in region given id
   /// \throws UnknownRegionException
@@ -157,6 +170,14 @@ public:
   // Return cell corresponding to a given connector id and region
   Cell2D connectorCell (ConnectorId id, RegionId r) const;
 
+  /// \post Sets the prior probability of doors being open.  Default is .1;
+  /// \param prob must be between 0 and 1
+  void setDoorOpenPriorProb (double prob) { ROS_ASSERT ((prob>=0.0)&&(prob<=1.0)); door_open_prior_prob_ = prob; }
+
+  /// \post Sets the rate at which door states revert to their prior probability after an observation.
+  /// \param rate must be > 0.  
+  void setDoorReversionRate (double rate) { ROS_ASSERT (rate>0.0); door_reversion_rate_ = rate; }
+
 private: 
 
 
@@ -189,12 +210,15 @@ private:
 
   RegionConnectorMap region_connector_map_;
 
+  double door_open_prior_prob_;
+  double door_reversion_rate_;
+
   RegionDoorMap region_door_map_;
 
   shared_ptr<TemporaryRoadmapNode> goal_;
   
   const double resolution_;
-
+ 
 };
 
 

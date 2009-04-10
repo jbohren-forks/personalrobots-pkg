@@ -36,7 +36,7 @@ namespace topological_map
 
 using std::endl;
 
-DoorInfo::DoorInfo (istream& str)
+DoorInfo::DoorInfo (istream& str, double open_prob) : open_prob_(open_prob), last_obs_time_(0.0)
 {
   Door msg;
   str >> msg.frame_p1.x >> msg.frame_p1.y >> msg.frame_p1.z;
@@ -61,9 +61,6 @@ void DoorInfo::writeToStream (ostream& str) const
   str << endl << msg_.handle.x << " " << msg_.handle.y << " " << msg_.handle.z;
   str << endl << msg_.height << " " << msg_.hinge << " " << msg_.rot_dir;
 }
-
-
-
 
 
 Door DoorInfo::getDoorMessage () const

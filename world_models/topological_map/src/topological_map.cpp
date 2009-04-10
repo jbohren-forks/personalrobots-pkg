@@ -43,9 +43,11 @@
 #include <topological_map/roadmap.h>
 #include <topological_map/door_info.h>
 #include <algorithm>
+#include <cmath>
 #include <ros/console.h>
 #include <ros/assert.h>
 #include <topological_map/exception.h>
+
 
 // For debugging
 #include <iostream>
@@ -206,7 +208,7 @@ RegionConnectorMap readRegionConnectorMap (istream& str)
   return m;
 }
 
-RegionDoorMap readRegionDoorMap (istream& str)
+RegionDoorMap readRegionDoorMap (istream& str, const double prior_open_prob)
 {
   ROS_DEBUG_NAMED ("io", "Reading region door map");
   RegionDoorMap m;
@@ -215,7 +217,7 @@ RegionDoorMap readRegionDoorMap (istream& str)
   for (uint i=0; i<size; ++i) {
     RegionId id;
     str >> id;
-    m[id] = DoorInfoPtr(new DoorInfo(str));
+    m[id] = DoorInfoPtr(new DoorInfo(str, prior_open_prob));
   }
   return m;
 }
@@ -375,16 +377,18 @@ ObstacleDistanceArray computeObstacleDistances(GridPtr grid)
 }
     
 
-TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution) :
+TopologicalMap::MapImpl::MapImpl(const OccupancyGrid& grid, double resolution, double door_open_prior_prob, double door_reversion_rate) :
   grid_(new OccupancyGrid(grid)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(new RegionGraph), 
-  roadmap_(new Roadmap), grid_graph_(new GridGraph(grid_)), resolution_(resolution)
+  roadmap_(new Roadmap), grid_graph_(new GridGraph(grid_)), door_open_prior_prob_(door_open_prior_prob), 
+  door_reversion_rate_(door_reversion_rate), resolution_(resolution)
 {
 }
 
-TopologicalMap::MapImpl::MapImpl (istream& str) : 
+TopologicalMap::MapImpl::MapImpl (istream& str, double door_open_prior_prob, double door_reversion_rate) : 
   grid_(readGrid(str)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(readRegionGraph(str)), 
   roadmap_(readRoadmap(str)), grid_graph_(new GridGraph(grid_)),
-  region_connector_map_(readRegionConnectorMap(str)), region_door_map_(readRegionDoorMap(str)), resolution_(readResolution(str))
+  region_connector_map_(readRegionConnectorMap(str)), door_open_prior_prob_(door_open_prior_prob),
+  door_reversion_rate_(door_reversion_rate), region_door_map_(readRegionDoorMap(str, door_open_prior_prob_)), resolution_(readResolution(str))
 {
 }
 
@@ -423,12 +427,45 @@ void TopologicalMap::MapImpl::observeDoorMessage (RegionId id, const Door& msg)
   }
   RegionDoorMap::iterator iter = region_door_map_.find(id);
   if (iter==region_door_map_.end()) {
-    region_door_map_[id] = DoorInfoPtr(new DoorInfo());
+    region_door_map_[id] = DoorInfoPtr(new DoorInfo(door_open_prior_prob_));
     region_door_map_[id]->observeDoorMessage(msg);
   }
   else {
     iter->second->observeDoorMessage(msg);
   }
+}
+
+void TopologicalMap::MapImpl::observeDoorTraversal (RegionId id, bool succeeded, const Time& stamp)
+{
+  if (region_graph_->regionType(id)!=DOORWAY) {
+    throw NoDoorInRegionException(id);
+  }
+  RegionDoorMap::iterator iter=region_door_map_.find(id);
+  ROS_ASSERT_MSG (iter!=region_door_map_.end(), "Unexpectedly couldn't find door info for region %u", id);
+  DoorInfoPtr door = iter->second;
+  if (stamp < door->getLastObsTime()) {
+    throw ObservationOutOfSequenceException(stamp, door->getLastObsTime());
+  }
+  door->setOpenProb (succeeded ? 1.0 : 0.0);
+  door->setLastObsTime (stamp);
+}
+
+
+double TopologicalMap::MapImpl::doorOpenProb (RegionId id, const ros::Time& stamp)
+{
+  ROS_INFO ("Type is %u", region_graph_->regionType(id));
+  if (region_graph_->regionType(id)!=DOORWAY) {
+    throw NoDoorInRegionException(id);
+  }
+  RegionDoorMap::iterator iter=region_door_map_.find(id);
+  ROS_ASSERT_MSG (iter!=region_door_map_.end(), "Unexpectedly couldn't find door info for region %u", id);
+  DoorInfoPtr door = iter->second;
+  if (stamp < door->getLastObsTime()) {
+    throw ObservationOutOfSequenceException(stamp, door->getLastObsTime());
+  }
+  double d = (stamp - door->getLastObsTime()).toSec();
+  double w = exp(-d/door_reversion_rate_);
+  return w*door->getOpenProb()+(1-w)*door_open_prior_prob_;
 }
 
 RegionIdVector TopologicalMap::MapImpl::neighbors (const RegionId id) const
@@ -779,11 +816,13 @@ TopologicalMap::MapImpl::TemporaryRoadmapNode::~TemporaryRoadmapNode ()
  * TopologicalMap ops are forwarded to MapImpl
  ************************************************************/
 
-TopologicalMap::TopologicalMap (const OccupancyGrid& grid, double resolution) : map_impl_(new MapImpl(grid, resolution))
+TopologicalMap::TopologicalMap (const OccupancyGrid& grid, double resolution, double door_open_prior_prob, double door_reversion_rate) 
+  : map_impl_(new MapImpl(grid, resolution, door_open_prior_prob, door_reversion_rate))
 {
 }
 
-TopologicalMap::TopologicalMap(istream& str) : map_impl_(new MapImpl(str))
+TopologicalMap::TopologicalMap(istream& str, double door_open_prior_prob, double door_reversion_rate) 
+  : map_impl_(new MapImpl(str, door_open_prior_prob, door_reversion_rate))
 {
 }
 
@@ -810,6 +849,16 @@ Door TopologicalMap::regionDoor (RegionId id) const
 void TopologicalMap::observeDoorMessage (RegionId id, const Door& msg)
 {
   map_impl_->observeDoorMessage(id,msg);
+}
+
+void TopologicalMap::observeDoorTraversal (RegionId id, bool succeeded, const Time& stamp)
+{
+  map_impl_->observeDoorTraversal (id, succeeded, stamp);
+}
+
+double TopologicalMap::doorOpenProb (RegionId id, const ros::Time& stamp)
+{
+  return map_impl_->doorOpenProb(id, stamp);
 }
 
 

@@ -33,25 +33,33 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <robot_msgs/Door.h>
+#include <ros/time.h>
 
 namespace topological_map
 {
 
 using robot_msgs::Door;
+using ros::Time;
 
 class DoorInfo
 {
 public:
-  DoorInfo () {}
-  DoorInfo (istream& str);
+  DoorInfo (double open_prob) : open_prob_(open_prob), last_obs_time_(0.0) {}
+  DoorInfo (istream& str, double open_prob);
   Door getDoorMessage () const;
   void observeDoorMessage (const Door& msg);
   void writeToStream (ostream& str) const;
+  double getOpenProb() const { return open_prob_; }
+  void setOpenProb(double open_prob) { open_prob_ = open_prob; }
+  Time getLastObsTime() const { return last_obs_time_; }
+  void setLastObsTime(const Time& last_obs_time) { last_obs_time_ = last_obs_time; }
 
 private:
   // For now, just store a door message
   // Eventually, add variance terms
   Door msg_;
+  double open_prob_;
+  Time last_obs_time_;
 };
 
 typedef boost::shared_ptr<DoorInfo> DoorInfoPtr;
