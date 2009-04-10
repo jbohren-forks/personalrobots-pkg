@@ -75,8 +75,7 @@ add_custom_command(OUTPUT   ${SWIG_OUTPUT_CPP_FILE}
                             ${SWIG_OUTPUT_PYTHON_FILE}
                    COMMAND  ${SWIG_COMMAND}
                    DEPENDS  ${SWIG_INTERFACE_FILE}
-			    swig/tf/tf_swig.h
-			    swig/tf_swig.i)
+			    swig/tf/tf_swig.h)
 
 # We add src/wx_rosout to the include list so that
 # ogre_tools_swig_generated.cpp can find its headers.  This is part of a
@@ -91,3 +90,7 @@ target_link_libraries(python_${PROJECT_NAME} tf ${PYTHON_LIBRARIES})
 set_target_properties(python_${PROJECT_NAME}
                       PROPERTIES OUTPUT_NAME _${PROJECT_NAME}_swig
                       PREFIX "")
+
+
+# Tests for swig
+rospack_add_pyunit_future(test/test_datatype_conversion.py)

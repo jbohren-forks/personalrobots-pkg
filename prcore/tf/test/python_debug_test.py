@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (c) 2009, Willow Garage, Inc.
 # All rights reserved.
 # 
@@ -50,6 +49,8 @@ try:
     po.frame_id = "base_link"
     po2 = tfl.transform_pose("/map", po)
 
+    print po2.pose
+
     # test transforming point
     po = tf.PointStamped()
     po.frame_id = "base_link"
@@ -65,7 +66,7 @@ try:
     po.frame_id = "base_link"
     po2 = tfl.transform_quaternion("/map", po)
 
-
+    tr = tf.TransformStamped()
 
 except ValueError, e:
     print "Exception %s Improperly thrown: %s"%(type(e), e)
