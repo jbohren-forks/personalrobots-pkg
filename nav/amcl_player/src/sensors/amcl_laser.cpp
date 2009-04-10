@@ -30,6 +30,7 @@
 #include <sys/types.h> // required by Darwin
 #include <math.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <unistd.h>
 
 #include "amcl_laser.h"
@@ -264,6 +265,15 @@ double AMCLLaser::SensorModel(AMCLLaserData *data, pf_sample_set_t* set)
 
   total_weight = 0.0;
 
+  double z_hit = 0.25;
+  double z_short = 0.25;
+  double z_max = 0.25;
+  double z_rand = 0.25;
+
+  double sigma_hit = 0.1;
+  double lambda_short = 0.1;
+  double chi_outlier = 0.5;
+
   // Compute the sample weights
   for (j = 0; j < set->sample_count; j++)
   {
@@ -284,7 +294,7 @@ double AMCLLaser::SensorModel(AMCLLaserData *data, pf_sample_set_t* set)
       // Compute the range according to the map
       map_range = map_calc_range(self->map, pose.v[0], pose.v[1],
                                  pose.v[2] + obs_bearing, data->range_max + 1.0);
-
+#if 1
       if (obs_range >= data->range_max && map_range >= data->range_max)
       {
         pz = 1.0;
@@ -297,18 +307,31 @@ double AMCLLaser::SensorModel(AMCLLaserData *data, pf_sample_set_t* set)
         z = obs_range - map_range;
         pz = self->range_bad + (1 - self->range_bad) * exp(-(z * z) / (2 * c * c));
       }
+#else
 
-      /*
-         if (obs->range >= 8.0 && map_range >= 8.0)
-         p *= 1.0;
-         else if (obs->range >= 8.0 && map_range < 8.0)
-         p *= self->range_bad;
-         else if (obs->range < 8.0 && map_range >= 8.0)
-         p *= self->range_bad;
-         else
-         p *= laser_sensor_prob(self, obs->range, map_range);
-       */
+      pz = 0.0;
 
+      // Part 1: good, but noisy, hit
+      z = obs_range - map_range;
+      pz += z_hit * exp(-(z * z) / (2 * sigma_hit * sigma_hit));
+
+      // Part 2: short reading from unexpected obstacle (e.g., a person)
+      if(z < 0)
+        pz += z_short * lambda_short * exp(-lambda_short*obs_range);
+
+      // Part 3: Failure to detect obstacle, reported as max-range
+      if(obs_range == data->range_max)
+        pz += z_max * 1.0;
+
+      // Part 4: Random measurements
+      if(obs_range < data->range_max)
+        pz += z_rand * 1.0/data->range_max;
+
+      // TODO: outlier rejection for short readings
+#endif
+
+      assert(pz <= 1.0);
+      assert(pz >= 0.0);
       p *= pz;
     }
 

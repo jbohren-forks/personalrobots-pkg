@@ -274,7 +274,7 @@ AmclNode::AmclNode() :
   // We pass in null laser pose to start with; we'll change it later
   pf_vector_t dummy = pf_vector_zero();
   // TODO: expose laser model params
-  laser_ = new AMCLLaser(max_beams, 0.1, 0.1, dummy, map_);
+  laser_ = new AMCLLaser(max_beams, 0.1, 0.01, dummy, map_);
   ROS_ASSERT(laser_);
 
   ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("amcl_pose",2);
@@ -509,16 +509,19 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     // Read out the current hypotheses
     double max_weight = 0.0;
     int max_weight_hyp = -1;
-    const int MAX_HYPS = 8;
     std::vector<amcl_hyp_t> hyps;
-    hyps.resize(MAX_HYPS);
-    for(int hyp_count = 0; hyp_count < MAX_HYPS; hyp_count++)
+    hyps.resize(pf_->sets[pf_->current_set].cluster_count);
+    for(int hyp_count = 0; 
+        hyp_count < pf_->sets[pf_->current_set].cluster_count; hyp_count++)
     {
       double weight;
       pf_vector_t pose_mean;
       pf_matrix_t pose_cov;
       if (!pf_get_cluster_stats(pf_, hyp_count, &weight, &pose_mean, &pose_cov))
+      {
+        ROS_ERROR("Couldn't get stats on cluster %d", hyp_count);
         break;
+      }
 
       hyps[hyp_count].weight = weight;
       hyps[hyp_count].pf_pose_mean = pose_mean;
