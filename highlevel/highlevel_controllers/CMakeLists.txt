@@ -41,11 +41,6 @@ rospack_add_executable(move_base_follow src/move_base_follow.cpp)
 target_link_libraries(move_base_follow highlevel_controllers)
 rospack_link_boost(move_base_follow thread)
 
-# move_base_topological
-rospack_add_executable(move_base_topological src/move_base_topological.cpp)
-target_link_libraries(move_base_topological highlevel_controllers)
-rospack_link_boost(move_base_topological thread)
-
 # MoveArmEndEffector
 rospack_add_executable(move_end_effector src/move_end_effector.cpp)
 rospack_link_boost(move_end_effector thread)
