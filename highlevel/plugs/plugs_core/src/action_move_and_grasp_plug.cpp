@@ -45,6 +45,25 @@ MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
   gripper_controller_("r_gripper_position_controller"),  
   arm_controller_("r_arm_cartesian_trajectory_controller")
 {
+
+  node_->param(action_name_ + "/gripper_controller", gripper_controller_, gripper_controller_);
+  node_->param(action_name_ + "/arm_controller", arm_controller_, arm_controller_);
+  node_->advertise<std_msgs::Float64>(gripper_controller_ + "/set_command", 1);
+
+  if(gripper_controller_ == "" )
+    {
+      ROS_ERROR("%s: Aborted, gripper controller param was not set.", action_name_.c_str());
+      notifyAborted(empty_);
+      return;
+    }
+
+  if(arm_controller_ == "" )
+    {
+      ROS_ERROR("%s: Aborted, arm controller param was not set.", action_name_.c_str());
+      notifyAborted(empty_);
+      return;
+    }
+
 };
 
 MoveAndGraspPlugAction::~MoveAndGraspPlugAction()
@@ -59,23 +78,6 @@ void MoveAndGraspPlugAction::handleActivate(const robot_msgs::PlugStow& plug_sto
 
   reset();
   
-  // Get the controller names 
-  node_->param(action_name_ + "/gripper_controller", gripper_controller_, gripper_controller_);
-  node_->param(action_name_ + "/arm_controller", arm_controller_, arm_controller_); 
-  
-  if(gripper_controller_ == "" )
-  {
-    ROS_ERROR("%s: Aborted, gripper controller param was not set.", action_name_.c_str());
-    notifyAborted(empty_);
-    return;
-  }
-  
-  if(arm_controller_ == "" )
-  {
-    ROS_ERROR("%s: Aborted, arm controller param was not set.", action_name_.c_str());
-    notifyAborted(empty_);
-    return;
-  }
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
   moveToGrasp();
   graspPlug();
@@ -94,7 +96,7 @@ void MoveAndGraspPlugAction::reset()
   
   last_grasp_value_ = 10.0;
   grasp_count_ = 0;
-  gripper_cmd_.data = 0.05;
+  gripper_cmd_.data = 0.04;
   req_pose_.pose.header.frame_id = plug_stow_.header.frame_id; 
   req_pose_.pose.pose.position.x = plug_stow_.plug_centroid.x;
   req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y;
