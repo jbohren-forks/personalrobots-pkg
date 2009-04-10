@@ -119,11 +119,12 @@ class ActuatorCommand
 {
 public:
   ActuatorCommand() :
-    enable_(0), effort_(0)
+    enable_(0), effort_(0), digital_out_(false)
   {}
   bool enable_;
   double effort_;
   double current_;
+  bool digital_out_;
 };
 
 class Actuator
