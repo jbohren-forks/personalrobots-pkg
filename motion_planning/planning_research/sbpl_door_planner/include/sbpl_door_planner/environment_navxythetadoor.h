@@ -83,12 +83,11 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
   void setDoorProperties(const robot_msgs::Door &door, double door_thickness);
 
   void setRobotProperties(const double &min_workspace_radius, 
-                          const double &max_workspace_radius, 
-                          const double &min_workspace_angle, 
-                          const double &max_workspace_angle,
-                          const double &robot_shoulder_position_x,
-                          const double &robot_shoulder_position_y);
-
+                                                   const double &max_workspace_radius, 
+                                                   const double &min_workspace_angle, 
+                                                   const double &max_workspace_angle,
+                                                   const robot_msgs::Point32 &robot_shoulder_position, 
+                          const std::vector<robot_msgs::Point32> &footprint);
   protected:
 
   virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);

@@ -311,8 +311,8 @@ void EnvironmentNAVXYTHETADOOR::GetSuccs(int SourceStateID, vector<int>* SuccIDV
 void EnvironmentNAVXYTHETADOOR::setDoorProperties(const robot_msgs::Door &door, 
                                                   double door_thickness)
 {
-/*
-  door_thickness_ = door_thickness;
+
+  db_.door_thickness_ = door_thickness;
 
   double hinge_global_x = door.frame_p1.x;
   double hinge_global_y = door.frame_p1.y;
@@ -333,50 +333,53 @@ void EnvironmentNAVXYTHETADOOR::setDoorProperties(const robot_msgs::Door &door,
      edge_global_z = door.frame_p1.z;
   }
 
-  double door_frame_global_yaw = atan2(edge_global_y-hinge_global_y,edge_global_x-hinge_global_x);
-  double door_length = sqrt(pow(edge_global_y-hinge_global_y,2) + pow(edge_global_x-hinge_global_x,2));
+  db_.door_frame_global_yaw_ = atan2(edge_global_y-hinge_global_y,edge_global_x-hinge_global_x);
+  db_.door_length_ = sqrt(pow(edge_global_y-hinge_global_y,2) + pow(edge_global_x-hinge_global_x,2));
 
-  double sth = sin(door_frame_global_yaw);
-  double cth = cos(door_frame_global_yaw);
+  double sth = sin(db_.door_frame_global_yaw_);
+  double cth = cos(db_.door_frame_global_yaw_);
 
-  door_global_pose_.resize(3);
-  door_global_pose_[0] = hinge_global_x;
-  door_global_pose_[1] = hinge_global_y;
-  door_global_pose_[2] = door_frame_global_yaw;
+  db_.door_frame_global_position_.x = hinge_global_x;
+  db_.door_frame_global_position_.y = hinge_global_y;
 
   // Need to transform handle pose from global frame to local door frame - TODO handle pose in Door message should already be in local frame
-  door_handle_pose_.resize(2);
-  door_handle_pose_[0] = door.handle.x*cth+door.handle.y*sth-hinge_global_x*cth-hinge_global_y*sth;
-  door_handle_pose_[1] = -door.handle.x*sth+door.handle.y*cth+hinge_global_x*sth-hinge_global_y*cth;
+  db_.door_handle_position_.x = door.handle.x*cth+door.handle.y*sth-hinge_global_x*cth-hinge_global_y*sth;
+  db_.door_handle_position_.y = -door.handle.x*sth+door.handle.y*cth+hinge_global_x*sth-hinge_global_y*cth;
 
-  pivot_length_ = 0.0;
-  door_length_ = door_length;
+  db_.pivot_length_ = 0.0;
 
-  door_angle_discretization_interval_ = 0.1;
+  db_.door_angle_discretization_interval_ = 0.1;
 
-  global_door_closed_angle_ = door_frame_global_yaw;
-  global_door_open_angle_ = angles::normalize_angle(door_frame_global_yaw + door.rot_dir*M_PI/2.0);
+  db_.global_door_closed_angle_ = db_.door_frame_global_yaw_;
+  db_.global_door_open_angle_ = angles::normalize_angle(db_.door_frame_global_yaw_ + door.rot_dir*M_PI/2.0);
 
-  rot_dir_ = door.rot_dir;
-*/
+  db_.rot_dir_ = door.rot_dir;
+  db_.init();
 }
 
 void EnvironmentNAVXYTHETADOOR::setRobotProperties(const double &min_workspace_radius, 
                                                    const double &max_workspace_radius, 
                                                    const double &min_workspace_angle, 
                                                    const double &max_workspace_angle,
-                                                   const double &robot_shoulder_position_x,
-                                                   const double &robot_shoulder_position_y)
+                                                   const robot_msgs::Point32 &robot_shoulder_position, 
+                                                   const std::vector<robot_msgs::Point32> &footprint)
 {
-/*
-  arm_min_workspace_radius_ = min_workspace_radius;
-  arm_max_workspace_radius_ = max_workspace_radius;
+  db_.arm_min_workspace_radius_ = min_workspace_radius;
+  db_.arm_max_workspace_radius_ = max_workspace_radius;
 
-  arm_max_workspace_angle_ = max_workspace_angle;
-  arm_min_workspace_angle_ = min_workspace_angle;
+  db_.arm_max_workspace_angle_ = max_workspace_angle;
+  db_.arm_min_workspace_angle_ = min_workspace_angle;
 
-  shoulder_position_x_ = robot_shoulder_position_x;
-  shoulder_position_y_ = robot_shoulder_position_y;
-*/
+  db_.robot_shoulder_position_.x = robot_shoulder_position.x;
+  db_.robot_shoulder_position_.y = robot_shoulder_position.y;
+
+  db_.footprint_.resize(footprint.size()); 
+
+  for(int i=0; i < (int) footprint.size(); i++)
+  {
+     db_.footprint_[i].x = footprint[i].x;
+     db_.footprint_[i].y = footprint[i].y;
+  }
+
 }
 
