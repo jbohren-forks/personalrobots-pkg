@@ -15,7 +15,7 @@ t = TransformListener.TransformListener()
 time.sleep(0.5)
 for i in xrange(1,10):
     print "Looping"
-    current_time = rospy.rostime.get_rostime()
+    current_time = rospy.get_rostime()
     if not t.can_transform("frame", "parent", current_time):
         print "waiting to try again"
         time.sleep(0.1)

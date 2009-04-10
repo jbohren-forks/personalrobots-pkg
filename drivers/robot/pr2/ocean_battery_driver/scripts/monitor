@@ -305,9 +305,9 @@ time remaining per battery pack in minutes"""
             rospy.logfatal("Batteries have %.2f minutes estimated remaining"%average_time_remaining)
 	elif average_time_remaining  < 5.0: 
             rospy.logerr("Batteries have %.2f minutes estimated remaining"%average_time_remaining)
-        elif average_time_remaining < 30.0 and self.last_battery_warn + 6 < rospy.rostime.get_time():
+        elif average_time_remaining < 30.0 and self.last_battery_warn + 6 < rospy.get_time():
             rospy.logwarn("Batteries have %.2f minutes estimated remaining"%average_time_remaining)
-            self.last_battery_warn = rospy.rostime.get_time()
+            self.last_battery_warn = rospy.get_time()
 
         #print "Sent Energy: %.0f (J)  of %.0f (J) Power: %.2f (W)\n"%(energy, full_energy, power)
         self.battery_state_pub.publish(BatteryState(None, energy, full_energy, power))

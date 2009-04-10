@@ -105,7 +105,7 @@ def main():
         if cnt % 3 == 0:
             try:
                 set_tool_frame(track_plug_pose.msg)
-            except rospy.service.ServiceException, ex:
+            except rospy.ServiceException, ex:
                 print "set_tool frame service went down.  Reconnecting..."
                 rospy.wait_for_service("/%s/set_tool_frame" % CONTROLLER)
                 if rospy.is_shutdown(): return

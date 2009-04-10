@@ -73,7 +73,7 @@ class dcamImage:
 class VO:
 
   def __init__(self):
-    rospy.TopicSub('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
+    rospy.Subscriber('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
 
     self.pub_vo = rospy.Publisher("/vo", robot_msgs.msg.VOPose)
 

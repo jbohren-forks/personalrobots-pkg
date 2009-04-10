@@ -60,8 +60,8 @@ class TiltScan:
     if resp:
       # Set the collision_map_buffer's window size accordingly, to remember a
       # fixed time window scans.
-      rospy.client.set_param('collision_map_buffer/window_size', 
-                             int(self.laser_buffer_time / (period / 2.0)))
+      rospy.set_param('collision_map_buffer/window_size', 
+                      int(self.laser_buffer_time / (period / 2.0)))
 
       print '[TiltScan] Waiting for a full sweep at the new speed...'
       # Wait until the laser's swept through most of its period at the new

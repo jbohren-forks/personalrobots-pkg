@@ -207,10 +207,10 @@ class Executive:
 
     # Set the collision_map_buffer's window size accordingly, to remember a
     # fixed time window scans.
-    rospy.client.set_param('collision_map_buffer/window_size', 
-                           int(self.laser_buffer_time / (period / 2.0)))
+    rospy.set_param('collision_map_buffer/window_size', 
+                    int(self.laser_buffer_time / (period / 2.0)))
     return resp
-
+  
   def getTable(self):
     print 'Calling FindTable'
     s = rospy.ServiceProxy('table_object_detector', FindTable)
@@ -418,7 +418,7 @@ SubtractObjectFromCollisionMap)
     sys.exit(0)
 
   def doCycle(self):
-    curr_time = rospy.rostime.get_time()
+    curr_time = rospy.get_time()
     #make sure that all adapters have legal states
     if self.legalStates():
       if self.state == 'idle':

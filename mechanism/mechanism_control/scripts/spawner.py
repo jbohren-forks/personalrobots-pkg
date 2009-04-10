@@ -59,7 +59,7 @@ def shutdown(sig, stackframe):
                 kill_controller(name)
                 rospy.logout("Succeeded in killing %s" % name)
                 break
-            except rospy.service.ServiceException:
+            except rospy.ServiceException:
                 raise
                 rospy.logerr("ServiceException while killing %s" % name)
     # We're shutdown.  Now invoke rospy's handler for full cleanup.

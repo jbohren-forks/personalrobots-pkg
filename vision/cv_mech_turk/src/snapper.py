@@ -65,7 +65,7 @@ class Snapper:
 def main(args):
   s = Snapper()
   rospy.init_node('snapper')
-  rospy.TopicSub('/stereo/left/image_rect_color', image_msgs.msg.Image, s.handle_raw_stereo, queue_size=2, buff_size=7000000)
+  rospy.Subscriber('/stereo/left/image_rect_color', image_msgs.msg.Image, s.handle_raw_stereo, queue_size=2, buff_size=7000000)
   rospy.spin()
 
 if __name__ == '__main__':

@@ -14,8 +14,8 @@ def localized_callback(data):
     print "localized: %d.%d %.2f, %.2f, %.2f" % (data.header.stamp.secs, data.header.stamp.nsecs, data.pos.x, data.pos.y, data.pos.th)
 
 def pose_listen():
-    rospy.TopicSub("/odom", RobotBase2DOdom, odom_callback)
-    rospy.TopicSub("/localizedpose", RobotBase2DOdom, localized_callback)
+    rospy.Subscriber("/odom", RobotBase2DOdom, odom_callback)
+    rospy.Subscriber("/localizedpose", RobotBase2DOdom, localized_callback)
     rospy.init_node(NAME, anonymous=True)
     rospy.spin()
 

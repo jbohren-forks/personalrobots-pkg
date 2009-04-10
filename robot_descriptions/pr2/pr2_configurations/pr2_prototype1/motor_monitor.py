@@ -20,7 +20,7 @@ def callback(data):
         print "Resetting motors"
 
 def listener_with_user_data():
-    rospy.TopicSub("/diagnostics", DiagnosticMessage, callback)
+    rospy.Subscriber("/diagnostics", DiagnosticMessage, callback)
     rospy.init_node(NAME, anonymous=True)
     rospy.spin()
 

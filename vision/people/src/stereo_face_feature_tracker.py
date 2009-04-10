@@ -727,9 +727,9 @@ def main(argv) :
     #people_tracker.pub = rospy.Publisher('head_controller/track_point',PointStamped)
     people_tracker.pub = rospy.Publisher('/stereo_face_feature_tracker/position_measurement',PositionMeasurement)
     rospy.init_node('stereo_face_feature_tracker', anonymous=True)
-    #rospy.TopicSub('/head_controller/track_point',PointStamped,people_tracker.point_stamped)
-    rospy.TopicSub('/videre/images',ImageArray,people_tracker.frame)
-    rospy.TopicSub('/videre/cal_params',String,people_tracker.params)
+    #rospy.Subscriber('/head_controller/track_point',PointStamped,people_tracker.point_stamped)
+    rospy.Subscriber('/videre/images',ImageArray,people_tracker.frame)
+    rospy.Subscriber('/videre/cal_params',String,people_tracker.params)
     rospy.spin()
 
 

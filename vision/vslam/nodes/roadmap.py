@@ -74,7 +74,7 @@ class RoadmapServer:
     time.sleep(1)
     self.send_map()
 
-    rospy.TopicSub('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
+    rospy.Subscriber('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
 
   def send_map(self):
     p = vslam.msg.Roadmap()
@@ -112,7 +112,7 @@ class FakeRoadmapServer:
   def __init__(self, args):
     rospy.init_node('roadmap_server')
     self.pub = rospy.Publisher("/roadmap", vslam.msg.Roadmap)
-    rospy.TopicSub('/localizedpose', deprecated_msgs.msg.RobotBase2DOdom, self.handle_localizedpose)
+    rospy.Subscriber('/localizedpose', deprecated_msgs.msg.RobotBase2DOdom, self.handle_localizedpose)
     self.nodes = []
 
   def handle_localizedpose(self, msg):

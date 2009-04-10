@@ -72,7 +72,7 @@ class Corrector:
     self.vo = vo
     self.library = library
 
-    rospy.TopicSub('/vo/key', Frame, self.incoming_frame)
+    rospy.Subscriber('/vo/key', Frame, self.incoming_frame)
     self.pub_tmo = rospy.Publisher("/vo/tmo", Pose44)
     self.frameq = Queue()
 

@@ -69,7 +69,7 @@ def handle_roadmap(msg):
 
 def main(args):
   rospy.init_node('watchmap')
-  rospy.TopicSub('/roadmap', vslam.msg.Roadmap, handle_roadmap)
+  rospy.Subscriber('/roadmap', vslam.msg.Roadmap, handle_roadmap)
   rospy.spin()
 
 if __name__ == '__main__':

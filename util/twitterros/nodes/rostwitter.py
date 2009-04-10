@@ -57,7 +57,7 @@ class Twitter:
     if twitPass == None:
       twitPass = passes[twitId]
     self.api = twitter.Api(username=twitId, password=twitPass)
-    rospy.TopicSub('/twitter', std_msgs.msg.String, self.handle_message)
+    rospy.Subscriber('/twitter', std_msgs.msg.String, self.handle_message)
 
   def handle_message(self, msg):
     status = self.api.PostUpdate(msg.data[:140])

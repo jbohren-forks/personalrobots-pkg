@@ -74,9 +74,9 @@ class VODemo:
     self.mode = mode
     self.library = library
 
-    rospy.TopicSub('/videre/images', ImageArray, self.display_array)
-    rospy.TopicSub('/videre/cal_params', String, self.display_params)
-    rospy.TopicSub('/vo/tmo', Pose44, self.handle_corrections)
+    rospy.Subscriber('/videre/images', ImageArray, self.display_array)
+    rospy.Subscriber('/videre/cal_params', String, self.display_params)
+    rospy.Subscriber('/vo/tmo', Pose44, self.handle_corrections)
 
     self.viz_pub = rospy.Publisher("/overlay", Lines)
     self.vo_key_pub = rospy.Publisher("/vo/key", Frame)

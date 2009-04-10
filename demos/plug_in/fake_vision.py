@@ -59,7 +59,7 @@ class Tracker:
 
 mechanism_state = Tracker('/mechanism_state', MechanismState)
 def last_time():
-  return rospy.rostime.get_rostime()
+  return rospy.get_rostime()
   global mechanism_state
   if mechanism_state.msg:
     return mechanism_state.msg.header.stamp
