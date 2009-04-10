@@ -87,9 +87,9 @@ class PicmapNode:
 
     #self.pub = rospy.Publisher("/picmap_pose", vslam.msg.Picmap)
 
-    rospy.TopicSub('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
-    rospy.TopicSub('/amcl_pose', robot_msgs.msg.PoseWithCovariance, self.handle_amcl_pose)
-    rospy.TopicSub('/tf_message', tf.msg.tfMessage, self.handle_tf)
+    rospy.Subscriber('/stereo/raw_stereo', image_msgs.msg.RawStereo, self.handle_raw_stereo, queue_size=2, buff_size=7000000)
+    rospy.Subscriber('/amcl_pose', robot_msgs.msg.PoseWithCovariance, self.handle_amcl_pose)
+    rospy.Subscriber('/tf_message', tf.msg.tfMessage, self.handle_tf)
 
   def handle_tf(self, msg):
     print "incoming transform", min([ t.header.stamp.to_seconds() for t in msg.transforms ])
