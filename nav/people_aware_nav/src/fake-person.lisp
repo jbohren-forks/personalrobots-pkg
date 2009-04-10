@@ -22,12 +22,14 @@
 
 (defun main ()
   (with-ros-node ("fake-person-sender")
-    (advertise "person_position" "robot_msgs/Point")
-    ;;(advertise "cloud_ground_filtered" "robot_msgs/PointCloud")
-    (advertise "visualizationMarker" "robot_msgs/VisualizationMarker")
-    (let ((global_frame (get-param "global_frame_id")))
-      (loop 
-	 (let* ((x (read)) (y (read)))
+    ;; (advertise "person_position" "robot_msgs/Point")
+;;     ;;(advertise "cloud_ground_filtered" "robot_msgs/PointCloud")
+;;     (advertise "visualizationMarker" "robot_msgs/VisualizationMarker")
+    (let ((global_frame "map"))
+      (loop
+	 (sleep 1)
+	   (print "Hello")
+	 (let* ((x 10.0) (y 10.0))
 	   (if (and (typep x 'real) (typep y 'real))
 	       
 	       (let ((pos-message (make-instance '<Point>))
@@ -36,7 +38,7 @@
 		 (setf (x-val pos-message) x
 		       (y-val pos-message) y
 		       (z-val pos-message) 0)
-		 (publish-on-topic "person_position" pos-message)
+		 ;; (publish-on-topic "person_position" pos-message)
 
 
 		 (setf (pts-val cloud-message) (make-array 100)

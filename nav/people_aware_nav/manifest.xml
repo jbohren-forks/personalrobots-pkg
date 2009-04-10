@@ -6,6 +6,7 @@
 <depend package="roslisp" />
 <depend package="roslib" />
 <depend package="hallway_tracker" />
+<depend package="topic_synchronizer" />
 <depend package="tf" />
 <depend package="robot_msgs" />
 <depend package="robot_actions" />
