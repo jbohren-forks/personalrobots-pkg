@@ -76,8 +76,7 @@ private:
   pr2_mechanism_controllers::TrajectoryStart::Response traj_res_;  
 
   std_msgs::Empty empty_;
-  
-  bool request_preempt_;
+
   bool traj_error_;
 
   std::string which_arms_;

@@ -69,7 +69,7 @@ int main(int argc, char** argv)
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(untuck_arms);
 
   runner.run();
-  untuck_arms.handleActivate(empty);
+  //untuck_arms.handleActivate(empty);
   // plug_msg.header.frame_id = "torso_lift_link";
   // plug_msg.stowed = 1;
   // plug-msg.plug_centroid.x = 0.24;

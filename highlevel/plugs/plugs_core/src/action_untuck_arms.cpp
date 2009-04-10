@@ -41,7 +41,6 @@ UntuckArmsAction::UntuckArmsAction() :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("plugs_untuck_arms"),
   action_name_("plugs_untuck_arms"),
   node_(ros::Node::instance()),
-  request_preempt_(false),
   traj_error_(false),  
   which_arms_("right"),
   right_arm_controller_("r_arm_joint_trajectory_controller"),
@@ -80,6 +79,7 @@ UntuckArmsAction::~UntuckArmsAction()
 
 void UntuckArmsAction::handleActivate(const std_msgs::Empty& empty)
 {
+  notifyActivated();
   
   // Check which arms need to be untucked.
   node_->param(action_name_ + "/which_arms", which_arms_, which_arms_);
@@ -115,8 +115,7 @@ void UntuckArmsAction::handleActivate(const std_msgs::Empty& empty)
     }
   }
     
-  notifyActivated();
-  
+ 
   if((which_arms_ == "both") || (which_arms_ == "right"))
   {
     if(!ros::service::call(right_arm_controller_ + "/TrajectoryStart", right_traj_req_, traj_res_))
@@ -130,13 +129,8 @@ void UntuckArmsAction::handleActivate(const std_msgs::Empty& empty)
     
     while(!isTrajectoryDone() && !traj_error_)
     {
-      if (request_preempt_)
-      {
-        cancelTrajectory();
-        ROS_INFO("%s: Preempted.", action_name_.c_str());
-        notifyPreempted(empty_);
+      if (!isActive())
         return;
-      }
       sleep(0.5);
     }
   }
@@ -155,13 +149,8 @@ void UntuckArmsAction::handleActivate(const std_msgs::Empty& empty)
     
     while(!isTrajectoryDone() && !traj_error_)
     {
-      if (request_preempt_)
-      {
-        cancelTrajectory();
-        ROS_INFO("%s: Preempted.", action_name_.c_str());
-        notifyPreempted(empty_);
+      if (!isActive())
         return;
-      }
       sleep(0.5);
     }
   }
@@ -179,7 +168,9 @@ void UntuckArmsAction::handleActivate(const std_msgs::Empty& empty)
 
 void UntuckArmsAction::handlePreempt()
 {
-  request_preempt_ = true;
+  cancelTrajectory();
+  ROS_INFO("%s: Preempted.", action_name_.c_str());
+  notifyPreempted(empty_);
   return;
 }
 
@@ -205,6 +196,7 @@ bool UntuckArmsAction::isTrajectoryDone()
   }
   else if(res.done == res.State_Failed)
   {
+    ROS_ERROR("%s: Error, failed to complete trajectory", action_name_.c_str());
     traj_error_ = true;
   }
   
@@ -220,7 +212,7 @@ void UntuckArmsAction::cancelTrajectory()
   
   if(!ros::service::call(current_controller_name_ + "/TrajectoryCancel", cancel, dummy))
   {
-    ROS_ERROR("%s: Error, failed to cancel trajectory completion", action_name_.c_str());
+    ROS_ERROR("%s: Error, failed to cancel trajectory", action_name_.c_str());
   }
   return;
 

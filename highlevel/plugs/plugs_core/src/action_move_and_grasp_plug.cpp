@@ -117,6 +117,8 @@ void MoveAndGraspPlugAction::checkGrasp()
     return;
   }
   
+  node_.publish(gripper_controller_ + "/set_command", 0.0)
+  
   // Make sure that the gripper has stopped moving
   if(last_grasp_value > controller_state_msg.process_value)
   {
