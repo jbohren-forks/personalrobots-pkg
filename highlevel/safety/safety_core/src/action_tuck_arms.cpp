@@ -40,8 +40,7 @@ using namespace safety_core;
 TuckArmsAction::TuckArmsAction() :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("safety_tuck_arms"),
   action_name_("safety_tuck_arms"),
-  node_(ros::Node::instance()),
-  request_preempt_(false),  
+  node_(ros::Node::instance()),  
   traj_error_(false),
   which_arms_("right"),
   right_arm_controller_("r_arm_joint_trajectory_controller"),
@@ -79,6 +78,7 @@ TuckArmsAction::~TuckArmsAction()
 
 void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
 {
+  notifyActivated();
   
   // Check which arms need to be untucked.
   node_->param(action_name_ + "/which_arms", which_arms_, which_arms_);
@@ -114,7 +114,7 @@ void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
     }
   }
     
-  notifyActivated();
+  
   
   if((which_arms_ == "both") || (which_arms_ == "right"))
   {
@@ -129,13 +129,8 @@ void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
     
     while(!isTrajectoryDone() && !traj_error_)
     {
-      if (request_preempt_)
-      {
-        cancelTrajectory();
-        ROS_INFO("%s: Preempted.", action_name_.c_str());
-        notifyPreempted(empty_);
+      if (!isActive())
         return;
-      }
       sleep(0.5);
     }
   }
@@ -154,13 +149,8 @@ void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
     
     while(!isTrajectoryDone() && !traj_error_)
     {
-      if (request_preempt_)
-      {
-        cancelTrajectory();
-        ROS_INFO("%s: Preempted.", action_name_.c_str());
-        notifyPreempted(empty_);
+      if (!isActive())
         return;
-      }
       sleep(0.5);
     }
   }
@@ -177,7 +167,9 @@ void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
 
 void TuckArmsAction::handlePreempt()
 {
-  request_preempt_ = true;
+  cancelTrajectory();
+  ROS_INFO("%s: Preempted.", action_name_.c_str());
+  notifyPreempted(empty_);
   return;
 }
 
@@ -203,6 +195,7 @@ bool TuckArmsAction::isTrajectoryDone()
   }
   else if(res.done == res.State_Failed)
   {
+    ROS_ERROR("%s: Error, failed to complete trajectory", action_name_.c_str());
     traj_error_ = true;
   }
   
@@ -218,7 +211,7 @@ void TuckArmsAction::cancelTrajectory()
   
   if(!ros::service::call(current_controller_name_ + "/TrajectoryCancel", cancel, dummy))
   {
-    ROS_ERROR("%s: Error, failed to cancel trajectory completion", action_name_.c_str());
+    ROS_ERROR("%s: Error, failed to cancel trajectory", action_name_.c_str());
   }
   return;
 

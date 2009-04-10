@@ -42,7 +42,6 @@ DetectPlugOnBaseAction::DetectPlugOnBaseAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>("detect_plug_on_base"),
   action_name_("detect_plug_on_base"),
   node_(node),
-  request_preempt_(false),
   laser_controller_("laser_tilt_controller")
 {
   detector_ = new PlugOnBaseDetector::PlugOnBaseDetector(node);
@@ -69,7 +68,7 @@ void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
     notifyAborted(plug_stow_);
     return;
   }
- 
+  
   if (!ros::service::call(laser_controller_ + "/set_periodic_cmd", req_laser_, res_laser_))
   {
     if (!isActive())
@@ -139,6 +138,7 @@ void DetectPlugOnBaseAction::localizePlug()
     {
       ROS_INFO("%s: aborted.", action_name_.c_str());
       plug_stow_.stowed = 0;
+      detector_->deactivate();
       notifyAborted(plug_stow_);
       return;
     }

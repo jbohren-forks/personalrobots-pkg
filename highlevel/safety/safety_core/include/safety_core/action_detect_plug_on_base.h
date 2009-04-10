@@ -72,7 +72,6 @@ private:
 
   robot_msgs::PlugStow plug_stow_;
   robot_msgs::PlugStow plug_stow_msg;
-  bool request_preempt_;
   
   std::string laser_controller_;
   int not_found_count_;
