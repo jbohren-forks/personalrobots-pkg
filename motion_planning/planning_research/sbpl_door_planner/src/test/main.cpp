@@ -92,50 +92,45 @@ int planxythetadoor(int argc, char *argv[])
   }
 
   //Initialize the door information
-  environment_navxythetadoor.footprint_.resize(4);
-  environment_navxythetadoor.footprint_[0].resize(2);
-  environment_navxythetadoor.footprint_[0][0] = halfwidth;
-  environment_navxythetadoor.footprint_[0][1] = halfwidth;
+  environment_navxythetadoor.db_.footprint_.resize(4);
+  environment_navxythetadoor.db_.footprint_[0].x = halfwidth;
+  environment_navxythetadoor.db_.footprint_[0].y = halfwidth;
 
-  environment_navxythetadoor.footprint_[1].resize(2);
-  environment_navxythetadoor.footprint_[1][0] = -halfwidth;
-  environment_navxythetadoor.footprint_[1][1] = halfwidth;
+  environment_navxythetadoor.db_.footprint_[1].x = -halfwidth;
+  environment_navxythetadoor.db_.footprint_[1].y = halfwidth;
 
-  environment_navxythetadoor.footprint_[2].resize(2);
-  environment_navxythetadoor.footprint_[2][0] = -halfwidth;
-  environment_navxythetadoor.footprint_[2][1] = -halfwidth;
+  environment_navxythetadoor.db_.footprint_[2].x = -halfwidth;
+  environment_navxythetadoor.db_.footprint_[2].y = -halfwidth;
 
-  environment_navxythetadoor.footprint_[3].resize(2);
-  environment_navxythetadoor.footprint_[3][0] = halfwidth;
-  environment_navxythetadoor.footprint_[3][1] = -halfwidth;
+  environment_navxythetadoor.db_.footprint_[3].x = halfwidth;
+  environment_navxythetadoor.db_.footprint_[3].y = -halfwidth;
 
-  environment_navxythetadoor.robot_shoulder_position_.resize(2);
-  environment_navxythetadoor.robot_shoulder_position_[0] = -0.05;
-  environment_navxythetadoor.robot_shoulder_position_[1] = -0.188;
+  environment_navxythetadoor.db_.robot_shoulder_position_.x = -0.05;
+  environment_navxythetadoor.db_.robot_shoulder_position_.y = -0.188;
 
-  environment_navxythetadoor.door_handle_pose_.resize(2);
-  environment_navxythetadoor.door_handle_pose_[0] = 0.7;
-  environment_navxythetadoor.door_handle_pose_[1] = 0;
+  environment_navxythetadoor.db_.door_handle_position_.x = 0.7;
+  environment_navxythetadoor.db_.door_handle_position_.y = 0;
 
-  environment_navxythetadoor.door_global_pose_.resize(3);
-  environment_navxythetadoor.door_global_pose_[0] = 0.25;
-  environment_navxythetadoor.door_global_pose_[1] = 1.1;
-  environment_navxythetadoor.door_global_pose_[2] = 0.0;
+  environment_navxythetadoor.db_.door_frame_global_position_.x = 0.25;
+  environment_navxythetadoor.db_.door_frame_global_position_.y = 1.1;
+  environment_navxythetadoor.db_.door_frame_global_yaw_ = 0.0;
 
-  environment_navxythetadoor.door_thickness_ = 0.01;
-  environment_navxythetadoor.pivot_length_ = 0.0;
-  environment_navxythetadoor.door_length_ = 0.9;
+  environment_navxythetadoor.db_.door_thickness_ = 0.01;
+  environment_navxythetadoor.db_.pivot_length_ = 0.0;
+  environment_navxythetadoor.db_.door_length_ = 0.9;
 
-  environment_navxythetadoor.min_workspace_radius_ = 0.0;
-  environment_navxythetadoor.max_workspace_radius_ = 2.0;
+  environment_navxythetadoor.db_.arm_min_workspace_radius_ = 0.0;
+  environment_navxythetadoor.db_.arm_max_workspace_radius_ = 1.1;
 
-  environment_navxythetadoor.max_workspace_angle_ = 3*M_PI/2.0;
-  environment_navxythetadoor.min_workspace_angle_ = -3*M_PI/2.0;
-  environment_navxythetadoor.delta_angle_ = 0.1;
+  environment_navxythetadoor.db_.arm_max_workspace_angle_ = M_PI/2.0;
+  environment_navxythetadoor.db_.arm_min_workspace_angle_ = -M_PI/2.0;
+  environment_navxythetadoor.db_.door_angle_discretization_interval_ = 0.1;
 
-  environment_navxythetadoor.global_door_open_angle_ = M_PI/2.0;
-  environment_navxythetadoor.global_door_closed_angle_ = 0.0;
+  environment_navxythetadoor.db_.global_door_open_angle_ = M_PI/2.0;
+  environment_navxythetadoor.db_.global_door_closed_angle_ = 0.0;
 
+  environment_navxythetadoor.db_.rot_dir_ = 1;
+  environment_navxythetadoor.db_.init();
 
   //plan a path
   vector<int> solution_stateIDs_V;
@@ -224,6 +219,8 @@ int planxythetadoor(int argc, char *argv[])
     }
   }
   fclose(fSol);
+
+  environment_navxythetadoor.db_.writeToFile("doordata.m");
 
   environment_navxythetadoor.PrintTimeStat(stdout);
 

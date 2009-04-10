@@ -32,6 +32,8 @@
 #include <stdio.h>
 #include <algorithm>
 
+#include <robot_msgs/Point32.h>
+
 #define MAX_COST 255
 
 using namespace std;
@@ -40,39 +42,97 @@ namespace door_base_collision_cost
 {
   class DoorBaseCollisionCost
   {
+
     public:
 
-    void transform2DInverse(const std::vector<double> &fp_in, std::vector<double> &fp_out, const double &door_x, const double &door_y, const double &door_theta);
 
-    void transform2D(const std::vector<double> &fp_in, std::vector<double> &fp_out, const double &x, const double &y, const double &theta);
+    void init();
 
-    double findWorkspaceCost(const std::vector<double> robot_shoulder_position, const std::vector<double> robot_handle_position, const double &min_angle, const double &max_angle, const double &min_radius, const double &max_radius);
+    void getValidDoorAngles(const robot_msgs::Point32 &global_position, const double &global_yaw, std::vector<int> &valid_angle, std::vector<int> &valid_cost);
 
-    bool findAngleLimits(const double &door_length, const double &door_thickness, const double &pivot_length, const double max_radius, const std::vector<double> &point, std::vector<double> &angles);
 
-    bool findCircleLineSegmentIntersection(const std::vector<double> &p1, const std::vector<double> &p2, const double &x_r, const double &y_r, const double &radius, std::vector<std::vector<double> > intersection_points);
+    std::vector<robot_msgs::Point32> footprint_;/*! 2D footprint of the robot */
 
-    void freeAngleRange(const std::vector<std::vector<double> > &footprint, const double &door_length,  const double &door_thickness, const double &pivot_length, const double &max_radius, double &min_angle, double &max_angle, const double &door_open_angle, const double &door_closed_angle);
+    double arm_min_workspace_radius_; /*! min allowable radius of the workspace from the shoulder position of the arm */
 
-    void getValidDoorAngles(const std::vector<std::vector<double> > &footprint, 
-                                                      const std::vector<double> &robot_global_pose, 
-                                                      const std::vector<double> &door_global_pose, 
-                                                      const std::vector<double> &robot_shoulder_position, 
-                                                      const std::vector<double> &door_handle_pose, 
-                                                      const double &door_length, const double &door_thickness, const double &pivot_length, 
-                                                      const double &min_workspace_angle, const double &max_workspace_angle, 
-                                                      const double &min_workspace_radius, const double &max_workspace_radius,
-                                                      const double &delta_angle,
-                                                      std::vector<int> &valid_angles, 
-                             std::vector<int> &valid_cost, const double &global_door_open_angle, const double &global_door_closed_angle);
+    double arm_max_workspace_radius_;  /*! max allowable radius of the workspace from the shoulder position of the arm */
 
-    void findCirclePolygonIntersection(const double &center_x, const double &center_y, const double &radius, const std::vector<std::vector<double> > &footprint, std::vector<std::vector<double> > &solution);
+    double arm_min_workspace_angle_;  /*! min allowable workspace angle from the shoulder position of the arm */
+
+    double arm_max_workspace_angle_;  /*! max allowable workspace angle from the shoulder position of the arm */
+
+    robot_msgs::Point32 door_frame_global_position_; /*! Global 2D position of the door frame */
+
+    double door_frame_global_yaw_;
+
+    robot_msgs::Point32 robot_shoulder_position_; /*! 2D position of the shoulder of the arm used for opening/closing the door in the robot frame ("base_link") frame */
+
+    robot_msgs::Point32 door_handle_position_; /*! 2D position of the handle in a frame attached to the door at the hinge with X axis towards the free end of the door and Z pointing upwards */
+
+    double door_thickness_; /*! Thickness of the door (in meters) */
+
+    double pivot_length_; /*! Length from pivot/hinge to closest edge of the door */
+
+    double door_length_; /*! Length of the door (in meters) */
+
+    double door_angle_discretization_interval_; /*! Discretization interval used by the planner to open and close doors */
+
+    double global_door_open_angle_;  /*! Angle of the door when open (in global frame) */
+
+    double global_door_closed_angle_; /*! Angle of the door when closed (in global frame) */
+
+    int rot_dir_; /*! Rotation direction to OPEN the door (w.r.t Z axis pointing upwards) */
+
+    double max_door_collision_radius_;
+
+    void writeToFile(std::string filename);
+
+    void writeSolution(const std::string &filename, const robot_msgs::Point32 &robot_position, const double &robot_yaw, const std::vector<int> &angles, const std::vector<int> &angle_costs);
 
     private:
 
-    double local_door_open_angle_;
+    void transform2DInverse(const robot_msgs::Point32 &point_in, 
+                                                   robot_msgs::Point32 &point_out, 
+                                                   const robot_msgs::Point32 &frame, 
+                                                   const double &frame_yaw);
 
-    double local_door_closed_angle_;
+    void transform2D(const robot_msgs::Point32 &point_in, robot_msgs::Point32 &point_out, const robot_msgs::Point32 &frame, const double &frame_yaw);
+
+
+    unsigned char findWorkspaceCost(const robot_msgs::Point32 &robot_position, 
+                                    const double &robot_yaw, 
+                                    const double &door_angle);
+
+    bool  findAngleLimits(const double max_radius, const robot_msgs::Point32 &point, double &angle);
+
+
+    bool findCircleLineSegmentIntersection(const robot_msgs::Point32 &p1, 
+                                           const robot_msgs::Point32 &p2, 
+                                           const robot_msgs::Point32 &center, 
+                                           const double &radius, 
+                                           std::vector<robot_msgs::Point32> &intersection_points);
+
+    void findCirclePolygonIntersection(const robot_msgs::Point32 &center, 
+                                       const double &radius, 
+                                       const std::vector<robot_msgs::Point32> &footprint, 
+                                       std::vector<robot_msgs::Point32> &solution);
+
+    void freeAngleRange(const std::vector<robot_msgs::Point32> &footprint, 
+                        const double &max_radius, 
+                        double &min_obstructed_angle, 
+                        double &max_obstructed_angle);
+
+
+    void getDoorFrameFootprint(const robot_msgs::Point32 &robot_global_position, const double &robot_global_yaw, std::vector<robot_msgs::Point32> &fp_out);
+
+
+    double local_door_open_angle_;  /*! Angle of the door when open (in local door frame) */
+
+    double local_door_closed_angle_; /*! Angle of the door when closed (in local door frame) */
+
+    double local_door_min_angle_;
+
+    double local_door_max_angle_;
 
   };
 }

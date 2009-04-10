@@ -28,6 +28,7 @@
  */
 
 #include <sbpl_door_planner/door_base_collision_cost.h>
+#include <robot_msgs/Point32.h>
 #include <angles/angles.h>
 #define MAX_COST 255
 //#define DEBUG 1
@@ -35,35 +36,50 @@ using namespace std;
 
 namespace door_base_collision_cost
 {
-  void DoorBaseCollisionCost::transform2DInverse(const std::vector<double> &fp_in, std::vector<double> &fp_out, const double &door_x, const double &door_y, const double &door_theta)
-  {
-    double cth = cos(door_theta);
-    double sth = sin(door_theta);
 
-//        fp_out.resize(2);
-    fp_out.push_back(fp_in[0]*cth+fp_in[1]*sth-door_x*cth-door_y*sth);
-    fp_out.push_back(-fp_in[0]*sth+fp_in[1]*cth+door_x*sth-door_y*cth);
-    return;
-  }
-  void  DoorBaseCollisionCost::transform2D(const std::vector<double> &fp_in, std::vector<double> &fp_out, const double &x, const double &y, const double &theta)
+  void DoorBaseCollisionCost::transform2DInverse(const robot_msgs::Point32 &point_in, 
+                                                 robot_msgs::Point32 &point_out, 
+                                                 const robot_msgs::Point32 &frame, 
+                                                 const double &frame_yaw)
   {
-    double cth = cos(theta);
-    double sth = sin(theta);
+    double cth = cos(frame_yaw);
+    double sth = sin(frame_yaw);
 
-//        fp_out.resize(2);
-    fp_out.push_back(fp_in[0]*cth-fp_in[1]*sth+x);
-    fp_out.push_back(fp_in[0]*sth+fp_in[1]*cth+y);
+    point_out.x = point_in.x * cth + point_in.y * sth - frame.x * cth - frame.y * sth;
+    point_out.y = -point_in.x * sth + point_in.y * cth + frame.x * sth - frame.y * cth;
     return;
   }
 
-  double  DoorBaseCollisionCost::findWorkspaceCost(const std::vector<double> robot_shoulder_position, const std::vector<double> robot_handle_position, const double &min_angle, const double &max_angle, const double &min_radius, const double &max_radius)
+  void DoorBaseCollisionCost::transform2D(const robot_msgs::Point32 &point_in, robot_msgs::Point32 &point_out, const robot_msgs::Point32 &frame, const double &frame_yaw)
   {
-    double dx = robot_handle_position[0] - robot_shoulder_position[0];
-    double dy = robot_handle_position[1] - robot_shoulder_position[1];
+    double cth = cos(frame_yaw);
+    double sth = sin(frame_yaw);
+
+    point_out.x = frame.x + point_in.x * cth - point_in.y * sth;
+    point_out.y = frame.y + point_in.x * sth + point_in.y * cth;
+    return;
+  }
+
+
+
+  unsigned char DoorBaseCollisionCost::findWorkspaceCost(const robot_msgs::Point32 &robot_position, 
+                                                         const double &robot_yaw, 
+                                                         const double &door_angle)
+  {
+
+    robot_msgs::Point32 global_handle_position;
+    robot_msgs::Point32 robot_handle_position;
+
+//Transform the handle position
+    transform2D(door_handle_position_,global_handle_position,door_frame_global_position_,door_frame_global_yaw_+door_angle);
+    transform2DInverse(global_handle_position,robot_handle_position,robot_position, robot_yaw);
+
+    double dx = robot_handle_position.x - robot_shoulder_position_.x;
+    double dy = robot_handle_position.y - robot_shoulder_position_.y;
 
     double d = sqrt(dx*dx + dy*dy);
 
-    if(d > max_radius || d < min_radius)
+    if(d > arm_max_workspace_radius_ || d < arm_min_workspace_radius_)
     {
 #ifdef DEBUG
       printf("handle too far from shoulder\n\n");
@@ -72,8 +88,7 @@ namespace door_base_collision_cost
     }
 
     double angle = atan2(dy,dx);
-
-    if(angle > max_angle || angle < min_angle)
+    if(angle > arm_max_workspace_angle_ || angle < arm_min_workspace_angle_)
     {
 #ifdef DEBUG
       printf("handle: %f, (dx,dy) (%f,%f) too acute from shoulder\n\n",angle,dx,dy);
@@ -82,32 +97,34 @@ namespace door_base_collision_cost
     }
     else
     {
-      double factor = 1.0/(1.0 + pow((angle - (max_angle+min_angle)/2.0),2) * pow((d - (max_radius+min_radius)/2.0),2));
+      double factor = 1.0/(1.0 + pow((angle - (arm_max_workspace_angle_+arm_min_workspace_angle_)/2.0),2) * pow((d - (arm_max_workspace_radius_ + arm_min_workspace_radius_))/2.0,2));
       return (unsigned char)((1-factor)*MAX_COST);
     }
   }
 
-  bool  DoorBaseCollisionCost::findAngleLimits(const double &door_length, const double &door_thickness, const double &pivot_length, const double max_radius, const std::vector<double> &point, std::vector<double> &angles)
+  bool  DoorBaseCollisionCost::findAngleLimits(const double max_radius, const robot_msgs::Point32 &point, double &angle)
   {
-    double dx = point[0];
-    double dy = point[1];
+    double dx = point.x;
+    double dy = point.y;
     double d = sqrt(dx*dx + dy*dy);
-
     if(d > max_radius)
     {
       return false;
     }
-
-    double t3 = atan2(dy,dx);
-    angles.push_back(t3);
+    angle = atan2(dy,dx);
     return true;
   }
 
-  bool  DoorBaseCollisionCost::findCircleLineSegmentIntersection(const std::vector<double> &p1, const std::vector<double> &p2, const double &x_r, const double &y_r, const double &radius, std::vector<std::vector<double> > intersection_points)
+
+  bool DoorBaseCollisionCost::findCircleLineSegmentIntersection(const robot_msgs::Point32 &p1, 
+                                                                const robot_msgs::Point32 &p2, 
+                                                                const robot_msgs::Point32 &center, 
+                                                                const double &radius, 
+                                                                std::vector<robot_msgs::Point32> &intersection_points)
   {
     double eps = 1e-5;
-    double dx = p2[0]-p1[0];
-    double dy = p2[1]-p1[1];
+    double dx = p2.x-p1.x;
+    double dy = p2.y-p1.y;
     double theta = atan2(dy,dx);
     double cost = cos(theta);
     double sint = sin(theta);
@@ -116,12 +133,11 @@ namespace door_base_collision_cost
     if(d < eps)
       return false;
 
-    std::vector<double> int_pt;
-    int_pt.resize(2);
+    robot_msgs::Point32 int_pt;
 
     double a = pow(d,2);
-    double b = -2*x_r*d*cost + 2*p1[0]*d*cost -2*y_r*d*sint + 2*p1[1]*d*sint;
-    double c = pow(p1[0],2) + pow(x_r,2) - 2*p1[0]*x_r + pow(p1[1],2) + pow(y_r,2) - 2*p1[1]*y_r - pow(radius,2);
+    double b = -2*center.x*d*cost + 2*p1.x*d*cost -2*center.y*d*sint + 2*p1.y*d*sint;
+    double c = pow(p1.x,2) + pow(center.x,2) - 2*p1.x*center.x + pow(p1.y,2) + pow(center.y,2) - 2*p1.y*center.y - pow(radius,2);
 
     double disc = pow(b,2) - 4*a*c;
     if(disc < 0)
@@ -130,31 +146,35 @@ namespace door_base_collision_cost
     double t1 = (-b + sqrt(disc))/2*a;   
     if(t1 >= 0 && t1 <= 1) // point is inside limits on the line segment
     {
-      int_pt[0] = p1[0]+d*cost*t1;
-      int_pt[1] = p1[1]+d*sint*t1;
+      int_pt.x = p1.x+d*cost*t1;
+      int_pt.y = p1.y+d*sint*t1;
       intersection_points.push_back(int_pt);
     }
 
     t1 = (-b - sqrt(disc))/2*a;   
     if(t1 >= 0 && t1 <= 1) // point is inside limits on the line segment
     {
-      int_pt[0] = p1[0]+d*cost*t1;
-      int_pt[1] = p1[1]+d*sint*t1;
+      int_pt.x = p1.x+d*cost*t1;
+      int_pt.y = p1.y+d*sint*t1;
       intersection_points.push_back(int_pt);
     }
     return true;
   }
 
-  void  DoorBaseCollisionCost::findCirclePolygonIntersection(const double &center_x, const double &center_y, const double &radius, const std::vector<std::vector<double> > &footprint, std::vector<std::vector<double> > &solution)
+
+  void DoorBaseCollisionCost::findCirclePolygonIntersection(const robot_msgs::Point32 &center, 
+                                                            const double &radius, 
+                                                            const std::vector<robot_msgs::Point32> &footprint, 
+                                                            std::vector<robot_msgs::Point32> &solution)
   {
-    std::vector<std::vector<double> > intersection_points;
+    std::vector<robot_msgs::Point32> intersection_points;
 
     for(int i=0; i < (int) footprint.size(); i++)
     {
       int p1 = i;
       int p2 = (i+1)%((int) footprint.size());      
       intersection_points.resize(0);
-      if (findCircleLineSegmentIntersection(footprint[p1],footprint[p2],center_x,center_y,radius,intersection_points))
+      if (findCircleLineSegmentIntersection(footprint[p1],footprint[p2],center,radius,intersection_points))
       {
         for(int j=0; j< (int) intersection_points.size(); j++)
         {
@@ -164,290 +184,164 @@ namespace door_base_collision_cost
     }
   }
 
-
-  void DoorBaseCollisionCost::freeAngleRange(const std::vector<std::vector<double> > &footprint, const double &door_length,  const double &door_thickness, const double &pivot_length, const double &max_radius, double &min_angle, double &max_angle, const double &door_closed_angle, const double &door_open_angle)
+  void DoorBaseCollisionCost::freeAngleRange(const std::vector<robot_msgs::Point32> &footprint, 
+                                             const double &max_radius, 
+                                             double &min_obstructed_angle, 
+                                             double &max_obstructed_angle)
   {
-    std::vector<double> free_angles;
-    std::vector<double> angles;
+    std::vector<double> obstructed_angles;
+    double angle(0.0);
 
     for(int i=0; i < (int) footprint.size(); i++)
     {
-      angles.resize(0);
-      if(findAngleLimits(door_length,door_thickness,pivot_length,max_radius,footprint[i],angles))
+      if(findAngleLimits(max_radius,footprint[i],angle))
       {
-        for(int j=0; j < (int) angles.size(); j++)
+#ifdef DEBUG
+        if(isnan(angle))
         {
-          if(!isnan(angles[j]))
-            free_angles.push_back(angles::shortest_angular_distance(door_closed_angle,angles[j]));
+          printf("fp\n");
+          exit(-1);
         }
+#endif
+          obstructed_angles.push_back(angle);
       }
     }
-    std::vector<std::vector<double> > solution;
-    findCirclePolygonIntersection(0,0,max_radius,footprint, solution);
+    std::vector<robot_msgs::Point32> solution;
+    robot_msgs::Point32 center;
+    center.x = 0.0;
+    center.y = 0.0;
+    findCirclePolygonIntersection(center,max_radius,footprint, solution);
     for(int i=0; i < (int) solution.size(); i++)
     {
-      angles.resize(0);
-      if(findAngleLimits(door_length,door_thickness,pivot_length,max_radius,footprint[i],angles))
+      if(findAngleLimits(max_radius,solution[i],angle))
       {
-        for(int j=0; j < (int) angles.size(); j++)
+#ifdef DEBUG
+        if(isnan(angle))
         {
-          if(!isnan(angles[j]))
-            free_angles.push_back(angles::shortest_angular_distance(door_closed_angle,angles[j]));
+          printf("circle: %f %f\n radius: %f\n %f %f\n",center.x,center.y,max_radius,footprint[i].x,footprint[i].y);
+          exit(-1);
         }
+#endif
+        obstructed_angles.push_back(angle);
       }
     }
 
-    if(free_angles.size() < 1) //The door swept area is collision free
+    if(obstructed_angles.size() < 1) //The door swept area is collision free
     {
-      double angle_1 = angles::shortest_angular_distance(door_closed_angle,door_open_angle);
-      double angle_2 = 0.0;
-      min_angle = std::min<double>(angle_1,angle_2);
-      max_angle = std::max<double>(angle_1,angle_2);
+      min_obstructed_angle = local_door_max_angle_;
+      max_obstructed_angle = local_door_min_angle_;
       return;
     }
-    std::sort(free_angles.begin(),free_angles.end());
-    min_angle = free_angles[0];
-    max_angle = free_angles[free_angles.size()-1];
+    std::sort(obstructed_angles.begin(),obstructed_angles.end());
+    min_obstructed_angle = obstructed_angles[0];
+    max_obstructed_angle = obstructed_angles[obstructed_angles.size()-1];
+    if(isnan(max_obstructed_angle))
+    {
+      printf("Size: %d\n",obstructed_angles.size());
+      exit(-1);
+    }
     return;
   }
 
-  void DoorBaseCollisionCost::getValidDoorAngles(const std::vector<std::vector<double> > &footprint, 
-                                                 const std::vector<double> &robot_global_pose, 
-                                                 const std::vector<double> &door_global_pose, 
-                                                 const std::vector<double> &robot_shoulder_position, 
-                                                 const std::vector<double> &door_handle_pose, 
-                                                 const double &door_length, const double &door_thickness, const double &pivot_length, 
-                                                 const double &min_workspace_angle, const double &max_workspace_angle, 
-                                                 const double &min_workspace_radius, const double &max_workspace_radius,
-                                                 const double &delta_angle,
-                                                 std::vector<int> &valid_angles, 
-                                                 std::vector<int> &valid_cost, 
-                                                 const double &global_door_open_angle,
-                                                 const double &global_door_closed_angle) 
+
+  void DoorBaseCollisionCost::getDoorFrameFootprint(const robot_msgs::Point32 &robot_global_position, const double &robot_global_yaw, std::vector<robot_msgs::Point32> &fp_out)
   {
-    // local door frame is already defined using the door message
-    // transform robot footprint into global frame and then into local door frame
-    FILE* fp = fopen("doordata.m","wt");
-    std::vector<std::vector<double> > global_fp;
-    std::vector<std::vector<double> > transformed_fp;
-
-    std::vector<double> global_handle;
-    std::vector<double> robot_handle;
-
-    double max_radius = sqrt(pow(door_length,2) + pow(door_thickness + pivot_length,2));
-
-    //local open/close angles should now be in the -pi/2 to pi/2 range (subject to small sensor error) 
-    double local_door_open_angle   = angles::shortest_angular_distance(door_global_pose[2],global_door_open_angle);
-    double local_door_closed_angle = angles::shortest_angular_distance(door_global_pose[2],global_door_closed_angle);
-
-    global_fp.resize(footprint.size());
-    transformed_fp.resize(footprint.size());
-
-    fprintf(fp,"hinge_global_position = [%f %f];\n",door_global_pose[0],door_global_pose[1]);
-    fprintf(fp,"door_length = %f;\n",door_length);
-    fprintf(fp,"door_angle = %f;\n",door_global_pose[2]);
-
-    fprintf(fp,"hinge = [");
-    fprintf(fp,"0 0];\n");
-    fprintf(fp,"\ndoor = [");
-    fprintf(fp,"%f %f\n",0.0,-pivot_length);
-    fprintf(fp,"%f %f\n",0.0,-pivot_length-door_thickness);
-    fprintf(fp,"%f %f\n",door_length,-pivot_length-door_thickness);
-    fprintf(fp,"%f %f];\n",door_length,-pivot_length);
-    fprintf(fp,"handle = [ %f, %f];",door_handle_pose[0],door_handle_pose[1]);
-
-    fprintf(fp,"\npose = [");
-    for(int j=0; j <3; j++)
+    std::vector<robot_msgs::Point32> global_fp;
+    global_fp.resize(footprint_.size());
+    for(int i=0; i < (int) footprint_.size(); i++)
     {
-      fprintf(fp,"%f ",robot_global_pose[j]);
+      transform2D(footprint_[i],global_fp[i],robot_global_position,robot_global_yaw);
+      transform2DInverse(global_fp[i],fp_out[i],door_frame_global_position_,door_frame_global_yaw_);
     }
-    fprintf(fp,"];");
-    fprintf(fp,"\nglobal_footprint = [");
+  }
 
-    for(int i=0; i < (int) footprint.size(); i++)
-    {
-      transform2D(footprint[i],global_fp[i],robot_global_pose[0],robot_global_pose[1],robot_global_pose[2]);
-      fprintf(fp,"%f %f\n",global_fp[i][0],global_fp[i][1]);
-      transform2DInverse(global_fp[i],transformed_fp[i],door_global_pose[0],door_global_pose[1],door_global_pose[2]);
-    }
-    fprintf(fp,"];");
+  void DoorBaseCollisionCost::init()
+  {
+    max_door_collision_radius_ = sqrt(pow(door_length_,2) + pow(door_thickness_ + pivot_length_,2));
+//local open/close angles should now be in the -pi/2 to pi/2 range (subject to small sensor error) 
+    local_door_open_angle_   = angles::shortest_angular_distance(door_frame_global_yaw_,global_door_open_angle_);
+    local_door_closed_angle_ = angles::shortest_angular_distance(door_frame_global_yaw_,global_door_closed_angle_);
+    local_door_min_angle_ = std::min<double>(local_door_open_angle_,local_door_closed_angle_);
+    local_door_max_angle_ = std::max<double>(local_door_open_angle_,local_door_closed_angle_);
+  }
 
-    fprintf(fp,"\nlocal_footprint = [");
-    for(int i=0; i < (int) footprint.size(); i++)
-    {
-      fprintf(fp,"%f %f\n",footprint[i][0],footprint[i][1]);
-    }
-    fprintf(fp,"];\n");
+  void DoorBaseCollisionCost::getValidDoorAngles(const robot_msgs::Point32 &global_position, const double &global_yaw, std::vector<int> &valid_angles, std::vector<int> &valid_cost) 
+  {
+    double min_obstructed_angle(0.0),max_obstructed_angle(0.0);
+    std::vector<robot_msgs::Point32> door_fp;
 
-    std::vector<double> global_shoulder_position;
-    transform2D(robot_shoulder_position,global_shoulder_position,robot_global_pose[0],robot_global_pose[1],robot_global_pose[2]);
-    fprintf(fp,"\nshoulder_pose = [%f %f];\n",global_shoulder_position[0],global_shoulder_position[1]);
-    double min_angle;
-    double max_angle;
-    freeAngleRange(transformed_fp,door_length,door_thickness,pivot_length,max_radius,min_angle,max_angle,local_door_open_angle,local_door_closed_angle);
-
+    door_fp.resize(footprint_.size());
+    getDoorFrameFootprint(global_position,global_yaw,door_fp);
+    freeAngleRange(door_fp,max_door_collision_radius_,min_obstructed_angle,max_obstructed_angle);
 #ifdef DEBUG
-    printf("Free angles are: %f, %f\n",min_angle,max_angle);
+    printf("\nMin %f; Max %f\n",min_obstructed_angle,max_obstructed_angle);
+    printf("\nLocal min: %f max: %f\n",local_door_min_angle_,local_door_max_angle_);
 #endif
+    if(min_obstructed_angle > local_door_min_angle_)
+    {
+      if(min_obstructed_angle > local_door_max_angle_)
+        min_obstructed_angle = local_door_max_angle_;
 
-    int rotation_direction = 1;
-    if(angles::shortest_angular_distance(local_door_closed_angle,local_door_open_angle) < 0)
-    {
-      rotation_direction = -1;
-    }
-    double min_rotation_angle(0.0), max_rotation_angle(0.0);
-    if(rotation_direction > 0)
-    {
-      min_rotation_angle = local_door_closed_angle;
-      max_rotation_angle = local_door_open_angle;
-    }
-    else
-    {
-      max_rotation_angle = local_door_closed_angle;
-      min_rotation_angle = local_door_open_angle;
-    }
-
-    fprintf(fp,"\nangle_costs = [");
-    if(min_angle > min_rotation_angle)
-    {
-      if(min_angle > max_rotation_angle)
-        min_angle = max_rotation_angle;
-      int num_intervals = (int) (angles::normalize_angle(min_angle-min_rotation_angle)/delta_angle);
+      int num_intervals = (int) (angles::normalize_angle(min_obstructed_angle-local_door_min_angle_)/door_angle_discretization_interval_);
       for(int i=0; i<num_intervals; i++)
       {
-        global_handle.resize(0);
-        robot_handle.resize(0);
-        double new_angle = angles::normalize_angle(min_rotation_angle + i * delta_angle);
-        transform2D(door_handle_pose,global_handle,door_global_pose[0],door_global_pose[1],door_global_pose[2]+new_angle);
-        transform2DInverse(global_handle,robot_handle,robot_global_pose[0],robot_global_pose[1],robot_global_pose[2]);
-        double cost = findWorkspaceCost(robot_shoulder_position,robot_handle,min_workspace_angle,max_workspace_angle,min_workspace_radius,max_workspace_radius);
+        double new_angle = angles::normalize_angle(local_door_min_angle_ + i * door_angle_discretization_interval_);
+        unsigned char cost = findWorkspaceCost(global_position,global_yaw,new_angle);
         if(cost < MAX_COST)
         {
           valid_angles.push_back((int)(new_angle*180.0/M_PI));
           valid_cost.push_back((int) cost);
-          fprintf(fp,"%f %f\n", new_angle,cost);
         }
       }
     }
 
-    if(max_angle < max_rotation_angle)
+    if(max_obstructed_angle < local_door_max_angle_)
     {
-      if(max_angle < min_rotation_angle)
-        max_angle = min_rotation_angle;
-      int num_intervals = (int) ((max_rotation_angle - max_angle)/delta_angle);
-#ifdef DEBUG
-      printf("Num intervals: %d, max angle: %f\n",num_intervals,max_angle);
-#endif
-      for(int i=0; i<num_intervals+1; i++)
+      if(max_obstructed_angle < local_door_min_angle_)
+        max_obstructed_angle = local_door_min_angle_;
+      int num_intervals = (int) (angles::normalize_angle(local_door_max_angle_-max_obstructed_angle)/door_angle_discretization_interval_);
+      for(int i=0; i<num_intervals; i++)
       {
-        global_handle.clear();
-        robot_handle.clear();
-        double new_angle = max_rotation_angle - i * delta_angle;
-        transform2D(door_handle_pose,global_handle,door_global_pose[0],door_global_pose[1],door_global_pose[2]+new_angle);
-        transform2DInverse(global_handle,robot_handle,robot_global_pose[0],robot_global_pose[1],robot_global_pose[2]);
-        double cost = findWorkspaceCost(robot_shoulder_position,robot_handle,min_workspace_angle,max_workspace_angle,min_workspace_radius,max_workspace_radius);
-
-#ifdef DEBUG
-        printf("angle: %f, cost: %f\n",new_angle,cost);
-#endif
+        double new_angle = angles::normalize_angle(local_door_max_angle_ - i * door_angle_discretization_interval_);
+        unsigned char cost = findWorkspaceCost(global_position,global_yaw,new_angle);
         if(cost < MAX_COST)
         {
           valid_angles.push_back((int)(new_angle*180.0/M_PI));
-          valid_cost.push_back((int)cost);
-          fprintf(fp,"%f %f\n", new_angle,cost);
+          valid_cost.push_back((int) cost);
         }
       }
     }
+  }
+
+  void DoorBaseCollisionCost::writeToFile(std::string filename)
+  {
+    FILE *fp = fopen(filename.c_str(),"wt");
+
+    //Print door position
+    fprintf(fp,"hinge_global_position = [%f %f];\n",door_frame_global_position_.x,door_frame_global_position_.y);    
+    fprintf(fp,"door_length = %f\n",door_length_);
+    fprintf(fp,"door_angle = %f\n",door_frame_global_yaw_);
+    fprintf(fp,"local_footprint = [ ");
+
+    for(int i=0; i < (int) footprint_.size(); i++)
+    {
+      fprintf(fp,"%f %f\n",footprint_[i].x,footprint_[i].y);
+    }
+
     fprintf(fp,"];");
     fclose(fp);
   }
-}
 
-/*using namespace door_base_collision_cost;
-
-int main(int argc, char *argv[])
-{
-  std::vector<std::vector<double> > footprint;
-  std::vector<double> robot_global_pose;
-  std::vector<double> door_global_pose;
-  std::vector<double> robot_shoulder_position;
-  std::vector<double> door_handle_pose;
-  std::vector<int> valid_angles;
-  std::vector<int> valid_cost;
-
-  double robot_half_width = 0.63/2.0;
-  double door_thickness = 0.05;
-  double pivot_length = 0.05;
-  double door_length = 0.9;
-
-  double min_workspace_radius = 0.2;
-  double max_workspace_radius = 1.5;
-
-  double max_workspace_angle = M_PI/2.0;
-  double min_workspace_angle = -3*M_PI/2.0;
-
-  double delta_angle = 0.1;
-
-  double x = 0.5;
-  double y = -0.5;
-  double theta = M_PI/2.0;
-
-  if(argc > 1)
-     x = atof(argv[1]);
-  if(argc > 2)
-     y = atof(argv[2]);
-  if(argc > 3)
-     theta = atof(argv[3]);
-
-
-  printf("x: %f, y:%f, theta:%f\n",x,y,theta);
-  double shoulder_position_x = -0.2;
-  double shoulder_position_y = -0.2;
-
-
-  footprint.resize(4);
-  footprint[0].resize(2);
-  footprint[0][0] = robot_half_width;
-  footprint[0][1] = robot_half_width;
-
-  footprint[1].resize(2);
-  footprint[1][0] = -robot_half_width;
-  footprint[1][1] = robot_half_width;
-
-  footprint[2].resize(2);
-  footprint[2][0] = -robot_half_width;
-  footprint[2][1] = -robot_half_width;
-
-  footprint[3].resize(2);
-  footprint[3][0] = robot_half_width;
-  footprint[3][1] = -robot_half_width;
-
-  robot_global_pose.resize(3);
-  robot_global_pose[0] = x;
-  robot_global_pose[1] = y;
-  robot_global_pose[2] = theta;
-
-  door_global_pose.resize(3);
-  door_global_pose[0] = 0.0;
-  door_global_pose[1] = 0.0;
-  door_global_pose[2] = 0.0;
-
-  robot_shoulder_position.resize(2);
-  robot_shoulder_position[0] = shoulder_position_x;
-  robot_shoulder_position[1] = shoulder_position_y;
-
-  door_handle_pose.resize(2);
-  door_handle_pose[0] = 0.75;
-  door_handle_pose[1] = -0.1;
-
-  DoorBaseCollisionCost db;
-  db.getValidDoorAngles(footprint, robot_global_pose, door_global_pose, robot_shoulder_position, door_handle_pose, door_length, door_thickness, pivot_length, min_workspace_angle, max_workspace_angle, min_workspace_radius, max_workspace_radius, delta_angle, valid_angles, valid_cost);
-  
-  for(int i=0; i < (int) valid_angles.size(); i++)
+  void DoorBaseCollisionCost::writeSolution(const std::string &filename, const robot_msgs::Point32 &robot_position, const double &robot_yaw, const std::vector<int> &angles, const std::vector<int> &angle_costs)
   {
-    printf("Angle: %f, Cost: %f\n",valid_angles[i],valid_cost[i]);
+    FILE *fp = fopen(filename.c_str(),"wt");
+    //Print door position
+    for(int i=0; i < (int) angles.size(); i++)
+    {
+      fprintf(fp,"%f %f %f %f %f\n",robot_position.x, robot_position.y, robot_yaw, angles::normalize_angle((double)angles[i]*M_PI/180.0 + door_frame_global_yaw_),(double) angle_costs[i]);
+    }
+    fclose(fp);
   }
+};
 
-  return(0);
-}
-*/
+

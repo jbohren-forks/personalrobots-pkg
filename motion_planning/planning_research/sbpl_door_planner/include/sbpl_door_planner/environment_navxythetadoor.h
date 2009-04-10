@@ -29,6 +29,8 @@
 
 #include <sbpl/headers.h>
 #include <sbpl_door_planner/door_base_collision_cost.h>
+#include <robot_msgs/Door.h>
+#include <angles/angles.h>
 
 #ifndef __ENVIRONMENT_NAVXYTHETADOOR_H_
 #define __ENVIRONMENT_NAVXYTHETADOOR_H_
@@ -37,34 +39,15 @@
 class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
 {
   public:
+
   EnvironmentNAVXYTHETADOOR() {};
+
   ~EnvironmentNAVXYTHETADOOR() {};
 
-  std::vector<std::vector<double> > footprint_;
-  std::vector<double> door_global_pose_;
-  std::vector<double> robot_shoulder_position_;
-  std::vector<double> door_handle_pose_;
-  double door_thickness_;
-  double pivot_length_;
-  double door_length_;
 
-  double min_workspace_radius_;
-  double max_workspace_radius_;
+  door_base_collision_cost::DoorBaseCollisionCost db_; /*! Class used to compute free (valid) door angles given x, y, theta position of the robot */
 
-  double max_workspace_angle_;
-  double min_workspace_angle_;
-
-  double delta_angle_;
-
-  double shoulder_position_x_;
-  double shoulder_position_y_;
-
-  double global_door_open_angle_;
-  double global_door_closed_angle_;
-
-  door_base_collision_cost::DoorBaseCollisionCost db_;
-
-  std::vector<int> desired_door_anglesV;
+  std::vector<int> desired_door_anglesV; 
 
   //this function sets the door angles at which a goal configuration is declared EVEN if goalx,goaly,goaltheta are not satisfied.
   //The goal is ALSO declared if goalx,goaly,goaltheta are satisfied but none of the desired door angles are satisfied
@@ -74,30 +57,37 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
   void SetDesiredDoorAngles(vector<int> desired_door_anglesV);
 
 
-	void SetAllActionsandAllOutcomes(CMDPSTATE* state){
-		printf("ERROR: SetAllActionsandAllOutcomes not supported in navxythetadoor environment\n");
-		exit(1);
-	};
-	void SetAllPreds(CMDPSTATE* state){
-		printf("ERROR: SetAllPreds not supported in navxythetadoor environment\n");
-		exit(1);
-	};
+  void SetAllActionsandAllOutcomes(CMDPSTATE* state){
+    printf("ERROR: SetAllActionsandAllOutcomes not supported in navxythetadoor environment\n");
+    exit(1);
+  };
+  void SetAllPreds(CMDPSTATE* state){
+    printf("ERROR: SetAllPreds not supported in navxythetadoor environment\n");
+    exit(1);
+  };
 
-	void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV){
-	  GetSuccs(SourceStateID, SuccIDV, CostV, NULL);
-	}
+  void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV){
+    GetSuccs(SourceStateID, SuccIDV, CostV, NULL);
+  }
 
-	void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<EnvNAVXYTHETALATAction_t*>* actionindV=NULL);
+  void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<EnvNAVXYTHETALATAction_t*>* actionindV=NULL);
 
-	void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV){
-		printf("ERROR: GetPreds not supported in navxythetadoor environment\n");
-		exit(1);
-	};
-
+  void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV){
+    printf("ERROR: GetPreds not supported in navxythetadoor environment\n");
+    exit(1);
+  };
 
 
   bool GetMinCostDoorAngle(double x, double y, double theta, double &angle, double &door_angle_cost);
 
+  void setDoorProperties(const robot_msgs::Door &door, double door_thickness);
+
+  void setRobotProperties(const double &min_workspace_radius, 
+                          const double &max_workspace_radius, 
+                          const double &min_workspace_angle, 
+                          const double &max_workspace_angle,
+                          const double &robot_shoulder_position_x,
+                          const double &robot_shoulder_position_y);
 
   protected:
 

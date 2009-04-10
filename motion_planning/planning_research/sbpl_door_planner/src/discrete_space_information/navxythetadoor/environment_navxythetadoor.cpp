@@ -132,13 +132,14 @@ void EnvironmentNAVXYTHETADOOR::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldr
     dooranglecostV->push_back(3);
 */
 
-    std::vector<double> robot_global_pose(3);
+    robot_msgs::Point32 robot_global_pose;
+    double robot_global_yaw;
 
-    robot_global_pose[0] = worldrobotpose3D.x;
-    robot_global_pose[1] = worldrobotpose3D.y;
-    robot_global_pose[2] = worldrobotpose3D.theta;
+    robot_global_pose.x = worldrobotpose3D.x;
+    robot_global_pose.y = worldrobotpose3D.y;
+    robot_global_yaw = worldrobotpose3D.theta;
 
-    db_.getValidDoorAngles(footprint_, robot_global_pose, door_global_pose_, robot_shoulder_position_, door_handle_pose_, door_length_, door_thickness_, pivot_length_, min_workspace_angle_, max_workspace_angle_, min_workspace_radius_, max_workspace_radius_, delta_angle_, *doorangleV, *dooranglecostV, global_door_open_angle_, global_door_closed_angle_);
+    db_.getValidDoorAngles(robot_global_pose,robot_global_yaw,*doorangleV,*dooranglecostV);
 
 // No larger than 255 unsigned char
 // Also put in an infinite cost
@@ -307,4 +308,75 @@ void EnvironmentNAVXYTHETADOOR::GetSuccs(int SourceStateID, vector<int>* SuccIDV
 
 }
 
+void EnvironmentNAVXYTHETADOOR::setDoorProperties(const robot_msgs::Door &door, 
+                                                  double door_thickness)
+{
+/*
+  door_thickness_ = door_thickness;
+
+  double hinge_global_x = door.frame_p1.x;
+  double hinge_global_y = door.frame_p1.y;
+  double hinge_global_z = door.frame_p1.z;
+
+  double edge_global_x = door.frame_p2.x;
+  double edge_global_y = door.frame_p2.y;
+  double edge_global_z = door.frame_p2.z;
+
+  if(door.hinge == 1)
+  {
+     hinge_global_x = door.frame_p2.x;
+     hinge_global_y = door.frame_p2.y;
+     hinge_global_z = door.frame_p2.z;
+
+     edge_global_x = door.frame_p1.x;
+     edge_global_y = door.frame_p1.y;
+     edge_global_z = door.frame_p1.z;
+  }
+
+  double door_frame_global_yaw = atan2(edge_global_y-hinge_global_y,edge_global_x-hinge_global_x);
+  double door_length = sqrt(pow(edge_global_y-hinge_global_y,2) + pow(edge_global_x-hinge_global_x,2));
+
+  double sth = sin(door_frame_global_yaw);
+  double cth = cos(door_frame_global_yaw);
+
+  door_global_pose_.resize(3);
+  door_global_pose_[0] = hinge_global_x;
+  door_global_pose_[1] = hinge_global_y;
+  door_global_pose_[2] = door_frame_global_yaw;
+
+  // Need to transform handle pose from global frame to local door frame - TODO handle pose in Door message should already be in local frame
+  door_handle_pose_.resize(2);
+  door_handle_pose_[0] = door.handle.x*cth+door.handle.y*sth-hinge_global_x*cth-hinge_global_y*sth;
+  door_handle_pose_[1] = -door.handle.x*sth+door.handle.y*cth+hinge_global_x*sth-hinge_global_y*cth;
+
+  pivot_length_ = 0.0;
+  door_length_ = door_length;
+
+  door_angle_discretization_interval_ = 0.1;
+
+  global_door_closed_angle_ = door_frame_global_yaw;
+  global_door_open_angle_ = angles::normalize_angle(door_frame_global_yaw + door.rot_dir*M_PI/2.0);
+
+  rot_dir_ = door.rot_dir;
+*/
+}
+
+void EnvironmentNAVXYTHETADOOR::setRobotProperties(const double &min_workspace_radius, 
+                                                   const double &max_workspace_radius, 
+                                                   const double &min_workspace_angle, 
+                                                   const double &max_workspace_angle,
+                                                   const double &robot_shoulder_position_x,
+                                                   const double &robot_shoulder_position_y)
+{
+/*
+  arm_min_workspace_radius_ = min_workspace_radius;
+  arm_max_workspace_radius_ = max_workspace_radius;
+
+  arm_max_workspace_angle_ = max_workspace_angle;
+  arm_min_workspace_angle_ = min_workspace_angle;
+
+  shoulder_position_x_ = robot_shoulder_position_x;
+  shoulder_position_y_ = robot_shoulder_position_y;
+*/
+}
 

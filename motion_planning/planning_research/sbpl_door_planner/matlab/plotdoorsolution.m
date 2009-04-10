@@ -18,7 +18,7 @@ hold on
 axis([-2 2 -2 2]);
 axis equal
 plot(a(:,1),a(:,2),'g');
-for i=1:length(a)
+for i=1:size(a,1)
     [px py] = robotBox(a(i,1),a(i,2),a(i,3),initRobotBox);
     if(i==1)
         handle2 = plot(px,py,'b-');
