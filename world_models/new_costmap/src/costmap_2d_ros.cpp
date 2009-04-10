@@ -268,7 +268,7 @@ namespace costmap_2d {
     ros::Duration cycle_time = ros::Duration(1.0 / frequency);
     while(ros_node_.ok()){
       ros::Time start_time = ros::Time::now();
-      publishCostMap();
+      publishCostMap(*costmap_);
       if(!sleepLeftover(start_time, cycle_time))
         ROS_WARN("Map publishing loop missed its desired cycle time of %.4f", cycle_time.toSec());
     }
@@ -363,19 +363,19 @@ namespace costmap_2d {
     }
   }
 
-  void Costmap2DROS::publishCostMap(){
+  void Costmap2DROS::publishCostMap(Costmap2D& map){
     ROS_DEBUG("publishing map");
     map_lock_.lock();
     std::vector< std::pair<double, double> > raw_obstacles, inflated_obstacles;
-    for(unsigned int i = 0; i<costmap_->cellSizeX(); i++){
-      for(unsigned int j = 0; j<costmap_->cellSizeY();j++){
+    for(unsigned int i = 0; i<map.cellSizeX(); i++){
+      for(unsigned int j = 0; j<map.cellSizeY();j++){
         double wx, wy;
-        costmap_->mapToWorld(i, j, wx, wy);
+        map.mapToWorld(i, j, wx, wy);
         std::pair<double, double> p(wx, wy);
 
-        if(costmap_->getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
+        if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
           raw_obstacles.push_back(p);
-        else if(costmap_->getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+        else if(map.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
           inflated_obstacles.push_back(p);
       }
     }
