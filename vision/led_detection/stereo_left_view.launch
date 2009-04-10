@@ -1,0 +1,9 @@
+<launch>
+
+  <!-- Viewer -->
+
+  <node pkg="image_view" type="image_view" name="stereo_left_led_view" output="screen">
+    <remap from="image" to="/stereo_left_detector/debug_image" />
+  </node>
+
+</launch>

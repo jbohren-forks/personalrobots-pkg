@@ -207,7 +207,7 @@ bool LedDetector::findLed(const IplImage* image, const image_msgs::CamInfo& info
 
   if (debug_image != NULL)
   {
-    cvCvtColor(working, debug_image, CV_GRAY2BGR) ;
+    cvCvtColor(image, debug_image, CV_GRAY2BGR) ;
     cvCircle(debug_image, cvPoint(led_pix.x, led_pix.y), 20, cvScalar(0,255,0), 1) ;
     if (led_pose)
       cvCircle(debug_image, cvPoint(expected_loc.x, expected_loc.y), 20, cvScalar(0,0,255), 1) ;

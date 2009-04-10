@@ -104,12 +104,14 @@ void LedDetectionNode::msgCallback(ros::Time t)
     robot_msgs::PoseStamped led_cam ;
     try
     {
+      std::string target_frame = cam_info_msg_.header.frame_id ;
+      bool transformable ;
+      // Hack, since we don't have a good way to use TF notifiers and topic_synchronizers in series
+      transformable = tf_.canTransform(target_frame, led_world.header.frame_id, led_world.header.stamp, ros::Duration().fromSec(0.05)) ;
+      if (!transformable)
+	ROS_WARN("canTransform FAILED!") ;
       // Determine the LED's pose in the camera's frame
-      //tf_.transformPose(cam_info_msg_.header.frame_id, led_world, led_cam) ;
-      tf_.transformPose("stereo_optical_frame", led_world, led_cam) ;           //! \todo Hack, until frame names are more sensible
-      led_cam.pose.position.x = 0 ;
-      led_cam.pose.position.y = 0 ;
-      led_cam.pose.position.z = 1 ;
+      tf_.transformPose(cam_info_msg_.header.frame_id, led_world, led_cam) ;
     }
     catch(tf::TransformException& ex)
     {
