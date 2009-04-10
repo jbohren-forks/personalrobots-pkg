@@ -33,16 +33,16 @@
  *********************************************************************/
 
 // Msgs
-//#include <robot_msgs/PlugStow.h>
+#include <robot_msgs/PlugStow.h>
 #include <std_msgs/Empty.h>
 
 // Actions
 #include <plugs_core/action_untuck_arms.h>
-//#include <plugs_core/action_move_and_grasp_plug.h>
+#include <plugs_core/action_move_and_grasp_plug.h>
 
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
-//#include <robot_actions/MoveAndGraspPlugActionState.h>
+#include <robot_actions/MoveAndGraspPlugActionState.h>
 
 
 #include <robot_actions/action.h>
@@ -60,22 +60,22 @@ int main(int argc, char** argv)
 
   ros::Node node("plugs_core_actions");
   std_msgs::Empty empty;
-  //robot_msgs::PlugStow plug_msg;
-  //MoveToGraspPlugAction move_to_grasp(node);
+  robot_msgs::PlugStow plug_msg;
+  MoveAndGraspPlugAction move_and_grasp;
   UntuckArmsAction untuck_arms;
 
   robot_actions::ActionRunner runner(10.0);
-  //runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugActionState, std_msgs::Empty>(move_to_grasp);
+  runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugActionState, std_msgs::Empty>(move_and_grasp);
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(untuck_arms);
 
   runner.run();
   //untuck_arms.handleActivate(empty);
-  // plug_msg.header.frame_id = "torso_lift_link";
-  // plug_msg.stowed = 1;
-  // plug-msg.plug_centroid.x = 0.24;
-  // plug_msg.plug_centroid.y = 0.03;
-  // plug_msg.plug_centroid.z = -0.45;
-  // move_to_grasp.handleActivate(plug_msg);
+  plug_msg.header.frame_id = "torso_lift_link";
+  plug_msg.stowed = 1;
+  plug_msg.plug_centroid.x = 0.24;
+  plug_msg.plug_centroid.y = 0.03;
+  plug_msg.plug_centroid.z = -0.45;
+  move_and_grasp.handleActivate(plug_msg);
 
   node.spin();
   return 0;

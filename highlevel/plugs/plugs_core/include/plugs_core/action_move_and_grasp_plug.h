@@ -38,46 +38,60 @@
 #ifndef ACTION_MOVE_AND_GRASP_PLUG_H
 #define ACTION_MOVE_AND_GRASP_PLUG_H
 
-
+// ROS Stuff
 #include <ros/node.h>
+
+// Msgs
+#include <robot_mechanism_controllers/JointControllerState.h>
 #include <robot_msgs/PlugStow.h>
-#include <pr2_mechanism_controllers/SetPeriodicCmd.h>
 #include <std_msgs/Empty.h>
+#include <std_msgs/Float64.h>
+
+// Srvs 
+#include <robot_srvs/MoveToPose.h>
+
+// Robot Action Stuff
 #include <robot_actions/action.h>
-#include <plug_onbase_detector/plug_onbase_detector.h>
+
 
 namespace plugs_core{
 
 class MoveAndGraspPlugAction: public robot_actions::Action<robot_msgs::PlugStow, std_msgs::Empty>
 {
 public:
-  MoveAndGraspPlugAction(ros::Node& node);
+  MoveAndGraspPlugAction();
   ~MoveAndGraspPlugAction();
 
-  virtual void handleActivate(const std_msgs::Empty& empty);
+  virtual void handleActivate(const robot_msgs::PlugStow& plug_stow);
   virtual void handlePreempt();
 
 
-
 private:
-  // average the last couple plug centroids
-  void localizePlug();
+  
   void reset();
-
-
-  ros::Node& node_;
-
+  void moveToGrasp();
+  void graspPlug();
+  void checkGrasp();
   
+  std::string action_name_;
 
-  robot_mechanism_controllers::JointControllerState controller_state_msg_;
-  
-  bool request_preempt_;
-  
+  ros::Node* node_;
+
   std::string gripper_controller_;
   std::string arm_controller_;
+
+  std_msgs::Empty empty_;
+  robot_msgs::PlugStow plug_stow_;
+ 
+  
+  robot_srvs::MoveToPose::Request req_pose_;
+  robot_srvs::MoveToPose::Response res_pose_;
+  
+  robot_mechanism_controllers::JointControllerState controller_state_msg_;
   
   double last_grasp_value_;
   int grasp_count_;
+  std_msgs::Float64 gripper_cmd_;
    
  
 };
