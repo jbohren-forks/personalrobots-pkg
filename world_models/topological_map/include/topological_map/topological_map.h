@@ -143,7 +143,7 @@ public:
   void observeDoorMessage (RegionId id, const robot_msgs::Door& msg);
 
   /// \post New evidence about attempted door traversal has been incorporated
-  /// \pre \a stamp must be greater than the stamp of the last call to this function
+  /// \pre \a stamp must be greater than the stamp of the last call to this function for this door
   /// \param succeeded true iff the door was successfully traversed
   /// \param stamp time when the attempted traversal finished
   /// \throws ObservationOutOfSequenceException
