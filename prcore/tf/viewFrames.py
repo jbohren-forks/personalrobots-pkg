@@ -53,13 +53,11 @@ from optparse import OptionParser
 
 import rospy
 from tf.srv import *
-
-import tf.tf_swig as pytf
-from tf import TransformListener
+import tf
 
 def listen(duration):
     rospy.init_node("viewFrames.py", anonymous=True)
-    tf_listener = TransformListener.TransformListener()
+    tf_listener = tf.TransformListener()
     print "Listening to /tf_message for %f seconds"%duration
     time.sleep(duration)
     print "Done Listening"
