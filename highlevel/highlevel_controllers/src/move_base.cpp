@@ -618,9 +618,9 @@ namespace ros {
 	deprecated_msgs::Pose2DFloat32 pose;
 	for (mpglue::waypoint_plan_t::const_iterator ip(newPlan.begin());
 	     ip != newPlan.end(); ++ip) {
-	  pose.x = ip->x;
-	  pose.y = ip->y;
-	  pose.th = ip->theta;
+	  pose.x = (*ip)->x;
+	  pose.y = (*ip)->y;
+	  pose.th = (*ip)->theta;
 	  plan_.push_back(pose);
 	}
         publishPath(true, plan_);
