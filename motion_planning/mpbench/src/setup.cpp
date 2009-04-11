@@ -975,6 +975,7 @@ namespace mpbench {
        << prefix << "        2d = use 2D environment (default)\n"
        << prefix << "        3dkin = use 3DKIN environment\n"
        << prefix << "        xythetalat = use XYTHETALAT environment\n"
+       << prefix << "        xythetadoor = use DOOR environment\n"
        << prefix << "        custom = uses by XYTHETALAT to specify the motion primitive file\n"
        << prefix << "                 defaults to data/pr2.mprim\n"
        << prefix << "        bwd = use backward search (default)\n"

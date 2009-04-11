@@ -518,7 +518,7 @@ namespace {
     glPopMatrix();
     
     if (plan) {
-      glColor3d(1, 1, 0);
+      glColor3d(0.5, 1, 0.5);
       if (detailed)
 	glLineWidth(3);		// make it stand out among the rest
       else

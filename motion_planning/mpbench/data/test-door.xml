@@ -3,9 +3,9 @@
   <defaults>
     <start>
       <from_scratch>true</from_scratch>
-      <use_initial_solution>false</use_initial_solution>
-      <allow_iteration>false</allow_iteration>
-      <alloc_time>inf</alloc_time>
+      <use_initial_solution>true</use_initial_solution>
+      <allow_iteration>true</allow_iteration>
+      <alloc_time>0.5</alloc_time>
     </start>
     <goal>
       <tolerance>0.3  4</tolerance>
@@ -13,20 +13,54 @@
   </defaults>
   
   <world>
-    <!-- outer bounding box -->
-    <addline>  0     0     7    0    </addline>
-    <addline>  0     0     0    6    </addline>
-    <addline>  0     6     7    6    </addline>
-    <addline>  7     0     7    6    </addline>
+    <addline>  0     5     5    5    </addline>
+
     <!-- wall with door opening -->
-    <addline>  0     3     3    3    </addline>
-    <addline>  4     3     7    3    </addline>
+    <addline>  0     3     1    3    </addline>
+    <addline>  2     3     3    3    </addline>
+    <addline>  4     3     5    3    </addline>
+    <addline>  6     3     7    3    </addline>
+    <addline>  8     3     9    3    </addline>
   </world>
   
   <task>
     <description>go through a door...</description>
+    <!-- e.g. run like this:
+         ./mpbenchmark -w xml:data/test-door.xml -p ad:xythetadoor:data/pr2sides.mprim -c sfl:25 -->
+    <!-- hinge (x, y)  door-end (x, y)  handle-distance   angle range [rad] -->
+    <door> 2  3  1  3  0.8  2.1 </door>
+    <goal><pose>  1.5   3.0    1.55 </pose></goal>
+    <start><pose> 1.3   2.5    1.56 </pose></start>
+  </task>
+  
+  <task>
+    <description>go through a door...</description>
+    <!-- e.g. run like this:
+         ./mpbenchmark -w xml:data/test-door.xml -p ad:xythetadoor:data/pr2sides.mprim -c sfl:25 -->
+    <!-- hinge (x, y)  door-end (x, y)  handle-distance   angle range [rad] -->
     <door> 3  3  4  3  0.8  2.1 </door>
-    <goal><pose>  3.5   4.0    1.55 </pose></goal>
-    <start><pose> 3.5   2.5    1.56 </pose></start>
+    <goal><pose>  3.5   3.0    1.55 </pose></goal>
+    <start><pose> 3.3   2.5    1.56 </pose></start>
+  </task>
+
+  
+  <task>
+    <description>go through a door...</description>
+    <!-- e.g. run like this:
+         ./mpbenchmark -w xml:data/test-door.xml -p ad:xythetadoor:data/pr2sides.mprim -c sfl:25 -->
+    <!-- hinge (x, y)  door-end (x, y)  handle-distance   angle range [rad] -->
+    <door> 6  3  5  3  0.8  -2.1 </door>
+    <goal><pose>  5.5   3.0    1.55 </pose></goal>
+    <start><pose> 5.3   2.5    1.56 </pose></start>
+  </task>
+  
+  <task>
+    <description>go through a door...</description>
+    <!-- e.g. run like this:
+         ./mpbenchmark -w xml:data/test-door.xml -p ad:xythetadoor:data/pr2sides.mprim -c sfl:25 -->
+    <!-- hinge (x, y)  door-end (x, y)  handle-distance   angle range [rad] -->
+    <door> 7  3  8  3  0.8  -2.1 </door>
+    <goal><pose>  7.5   3.0    1.55 </pose></goal>
+    <start><pose> 7.3   2.5    1.56 </pose></start>
   </task>
 </setup>
