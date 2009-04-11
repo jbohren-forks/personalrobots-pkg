@@ -119,7 +119,7 @@ bool SBPLPlannerNode::initializePlannerAndEnvironment()
     }
     else 
     {
-      ROS_ERROR("in MoveBaseSBPL ctor: invalid environmentType \"%s\", use 2D, 2D16 or 3DKIN",environment_type_.c_str());
+      ROS_ERROR("in MoveBaseSBPL ctor: invalid environmentType \"%s\", use 2D, 2D16, 3DKIN, XYThetaLattice, XYThetaLatticeDoor",environment_type_.c_str());
       throw int(2);
     }
 	

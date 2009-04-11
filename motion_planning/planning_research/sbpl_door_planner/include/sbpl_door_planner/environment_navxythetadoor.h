@@ -44,6 +44,7 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
 
   ~EnvironmentNAVXYTHETADOOR() {};
 
+  void setDoorDiscretizationAngle(const double &door_angle_discretization_interval);
 
   door_base_collision_cost::DoorBaseCollisionCost db_; /*! Class used to compute free (valid) door angles given x, y, theta position of the robot */
 
@@ -86,8 +87,7 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
                                                    const double &max_workspace_radius, 
                                                    const double &min_workspace_angle, 
                                                    const double &max_workspace_angle,
-                                                   const robot_msgs::Point32 &robot_shoulder_position, 
-                          const std::vector<robot_msgs::Point32> &footprint);
+                          const robot_msgs::Point32 &robot_shoulder_position);                        
   protected:
 
   virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);

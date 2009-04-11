@@ -308,6 +308,11 @@ void EnvironmentNAVXYTHETADOOR::GetSuccs(int SourceStateID, vector<int>* SuccIDV
 
 }
 
+void EnvironmentNAVXYTHETADOOR::setDoorDiscretizationAngle(const double &door_angle_discretization_interval)
+{
+    db_.door_angle_discretization_interval_ = door_angle_discretization_interval;
+}
+
 void EnvironmentNAVXYTHETADOOR::setDoorProperties(const robot_msgs::Door &door, 
                                                   double door_thickness)
 {
@@ -348,7 +353,6 @@ void EnvironmentNAVXYTHETADOOR::setDoorProperties(const robot_msgs::Door &door,
 
   db_.pivot_length_ = 0.0;
 
-  db_.door_angle_discretization_interval_ = 0.1;
 
   db_.global_door_closed_angle_ = db_.door_frame_global_yaw_;
   db_.global_door_open_angle_ = angles::normalize_angle(db_.door_frame_global_yaw_ + door.rot_dir*M_PI/2.0);
@@ -361,8 +365,7 @@ void EnvironmentNAVXYTHETADOOR::setRobotProperties(const double &min_workspace_r
                                                    const double &max_workspace_radius, 
                                                    const double &min_workspace_angle, 
                                                    const double &max_workspace_angle,
-                                                   const robot_msgs::Point32 &robot_shoulder_position, 
-                                                   const std::vector<robot_msgs::Point32> &footprint)
+                                                   const robot_msgs::Point32 &robot_shoulder_position)
 {
   db_.arm_min_workspace_radius_ = min_workspace_radius;
   db_.arm_max_workspace_radius_ = max_workspace_radius;
@@ -373,12 +376,15 @@ void EnvironmentNAVXYTHETADOOR::setRobotProperties(const double &min_workspace_r
   db_.robot_shoulder_position_.x = robot_shoulder_position.x;
   db_.robot_shoulder_position_.y = robot_shoulder_position.y;
 
-  db_.footprint_.resize(footprint.size()); 
 
-  for(int i=0; i < (int) footprint.size(); i++)
+//	EnvNAVXYTHETALATCfg.FootprintPolygon = perimeterptsV;
+
+  db_.footprint_.resize(EnvNAVXYTHETALATCfg.FootprintPolygon.size()); 
+
+  for(int i=0; i < (int) EnvNAVXYTHETALATCfg.FootprintPolygon.size(); i++)
   {
-     db_.footprint_[i].x = footprint[i].x;
-     db_.footprint_[i].y = footprint[i].y;
+     db_.footprint_[i].x = EnvNAVXYTHETALATCfg.FootprintPolygon[i].x;
+     db_.footprint_[i].y = EnvNAVXYTHETALATCfg.FootprintPolygon[i].y;
   }
 
 }

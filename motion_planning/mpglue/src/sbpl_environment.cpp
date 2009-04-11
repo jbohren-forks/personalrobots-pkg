@@ -561,6 +561,19 @@ namespace mpglue {
     const double door_thickness = 0.05;
     env->setDoorProperties(door,door_thickness);
 
+  const double arm_min_workspace_radius = 0.0;
+  const double arm_max_workspace_radius = 1.1;
+
+  const double arm_max_workspace_angle = M_PI/2.0;
+  const double arm_min_workspace_angle = -M_PI/2.0;
+  const double door_angle_discretization_interval = 0.1;
+  robot_msgs::Point32 shoulder;
+  shoulder.x = 0.0;
+  shoulder.y = -0.2;
+
+  env->setRobotProperties(arm_min_workspace_radius,arm_max_workspace_radius,arm_min_workspace_angle,arm_max_workspace_angle,shoulder);
+  env->setDoorDiscretizationAngle(door_angle_discretization_interval);
+
     /**< \todo Experimental door planner, basically copy-pasted from NAVXYTHETALAT */
     static double const dtheta(M_PI / NAVXYTHETALAT_THETADIRS);
     return new SBPLEnvironmentDSI<EnvironmentNAVXYTHETADOOR>(cm, it, env, dtheta);
