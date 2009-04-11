@@ -260,6 +260,7 @@ AmclNode::AmclNode() :
   
   // Create the particle filter
   pf_ = pf_alloc(min_particles, max_particles,
+                 //0.01, 0.1);
                  alpha_slow, alpha_fast);
   pf_->pop_err = pf_err;
   pf_->pop_z = pf_z;

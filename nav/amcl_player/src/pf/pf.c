@@ -85,7 +85,8 @@ pf_t *pf_alloc(int min_samples, int max_samples,
     set->kdtree = pf_kdtree_alloc(3 * max_samples);
 
     set->cluster_count = 0;
-    set->cluster_max_count = 100;
+    //set->cluster_max_count = 100;
+    set->cluster_max_count = max_samples;
     set->clusters = calloc(set->cluster_max_count, sizeof(pf_cluster_t));
   }
 
@@ -216,11 +217,26 @@ void pf_update_sensor(pf_t *pf, pf_sensor_model_fn_t sensor_fn, void *sensor_dat
   if (total > 0.0)
   {
     // Normalize weights
+    double w_avg = 0;
     for (i = 0; i < set->sample_count; i++)
     {
       sample = set->samples + i;
+      w_avg += sample->weight;
       sample->weight /= total;
     }
+    w_avg /= set->sample_count;
+    
+    // Update running averages of likelihood of samples (Prob Rob p258)
+    if(pf->w_slow == 0.0)
+      pf->w_slow = w_avg;
+    else
+      pf->w_slow += pf->alpha_slow * (w_avg - pf->w_slow);
+    if(pf->w_fast == 0.0)
+      pf->w_fast = w_avg;
+    else
+      pf->w_fast += pf->alpha_fast * (w_avg - pf->w_fast);
+    //printf("w_avg: %e slow: %e fast: %e\n", 
+           //w_avg, pf->w_slow, pf->w_fast);
   }
   else
   {
@@ -249,31 +265,16 @@ void pf_update_resample(pf_t *pf)
   double r,c,U;
   int m;
   double count_inv;
-  double w_avg, w_diff;
+  double w_diff;
 
   set_a = pf->sets + pf->current_set;
   set_b = pf->sets + (pf->current_set + 1) % 2;
-
-  // Compute average likelihood of samples (Prob Rob p258)
-  w_avg = 0.0;
-  for(i=0; i<set_a->sample_count; i++)
-    w_avg += set_a->samples[i].weight;
-  w_avg /= set_a->sample_count;
   
-  // Update running averages of likelihood of samples (Prob Rob p258)
-  if(pf->w_slow == 0.0)
-    pf->w_slow = w_avg;
-  else
-    pf->w_slow += pf->alpha_slow * (w_avg - pf->w_slow);
-  if(pf->w_fast == 0.0)
-    pf->w_fast = w_avg;
-  else
-    pf->w_fast += pf->alpha_fast * (w_avg - pf->w_fast);
+
   w_diff = 1.0 - pf->w_fast / pf->w_slow;
   if(w_diff < 0.0)
     w_diff = 0.0;
-  //printf("avg: %9.6f slow: %9.6f fast: %9.6f diff: %9.6f\n",
-         //w_avg, pf->w_slow, pf->w_fast, w_diff);
+  //printf("w_diff: %9.6f\n", w_diff);
 
   // Create the kd tree for adaptive sampling
   pf_kdtree_clear(set_b->kdtree);
@@ -343,6 +344,9 @@ void pf_update_resample(pf_t *pf)
 
   }
 
+  if(w_diff > 0.0)
+    pf->w_slow = pf->w_fast = 0.0;
+
   //fprintf(stderr, "\n\n");
 
   // Normalize weights
@@ -357,7 +361,7 @@ void pf_update_resample(pf_t *pf)
 
   // Use the newly created sample set
   pf->current_set = (pf->current_set + 1) % 2;
-  
+
   return;
 }
 
@@ -471,7 +475,7 @@ void pf_cluster_stats(pf_t *pf, pf_sample_set_t *set)
                                          cluster->m[3] * cluster->m[3]));
 
     //printf("cluster %d %d %f (%f %f %f)\n", i, cluster->count, cluster->weight,
-    //       cluster->mean.v[0], cluster->mean.v[1], cluster->mean.v[2]);
+           //cluster->mean.v[0], cluster->mean.v[1], cluster->mean.v[2]);
     //pf_matrix_fprintf(cluster->cov, stdout, "%e");
   }
 

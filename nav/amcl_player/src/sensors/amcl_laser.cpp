@@ -91,7 +91,7 @@ double AMCLLaser::SensorModel(AMCLLaserData *data, pf_sample_set_t* set)
 {
   AMCLLaser *self;
   int i, j, step;
-  double z, c, pz;
+  double z, pz;
   double p;
   double map_range;
   double obs_range, obs_bearing;
