@@ -56,7 +56,7 @@
 #include <robot_actions/MoveBaseState.h>
 #include <robot_actions/Pose2D.h>
 #include <robot_actions/RechargeState.h>
-#include <robot_actions/DetectPlugOnBaseActionState.h>
+#include <robot_actions/DetectPlugOnBaseState.h>
 #include <robot_actions/MoveAndGraspPlugState.h>
 #include <robot_actions/StowPlugState.h>
 #include <robot_actions/SwitchControllers.h>

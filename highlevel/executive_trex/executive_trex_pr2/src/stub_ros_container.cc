@@ -206,7 +206,7 @@ int main(int argc, char** argv){
   /* Action stubs for plugs */
   executive_trex_pr2::StubAction1<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
   if (getComponentParam("/trex/enable_detect_plug_on_base"))
-    runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect_plug_on_base);
+    runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow>(detect_plug_on_base);
 
   executive_trex_pr2::StubAction1<robot_msgs::PlugStow, std_msgs::Empty> move_and_grasp_plug("move_and_grasp_plug");
   if (getComponentParam("/trex/enable_move_and_grasp_plug"))

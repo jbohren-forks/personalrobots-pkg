@@ -42,7 +42,7 @@
 
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
-#include <robot_actions/DetectPlugOnBaseActionState.h>
+#include <robot_actions/DetectPlugOnBaseState.h>
 
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
@@ -63,7 +63,7 @@ int main(int argc, char** argv)
   TuckArmsAction tuck_arms;
    
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(detect);
+  runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow>(detect);
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(tuck_arms);
   
   runner.run();

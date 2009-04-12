@@ -232,11 +232,11 @@ namespace TREX {
   /***********************************************************************
    * @brief DetectPlugOnBase 
    **********************************************************************/
-  class DetectPlugOnBaseAdapter: public ROSActionAdapter<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow> {
+  class DetectPlugOnBaseAdapter: public ROSActionAdapter<std_msgs::Empty, robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow> {
   public:
 
     DetectPlugOnBaseAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<std_msgs::Empty, robot_actions::DetectPlugOnBaseActionState, robot_msgs::PlugStow>(agentName, configData){
+      : ROSActionAdapter<std_msgs::Empty, robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow>(agentName, configData){
     }
 
     virtual void fillInactiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){
