@@ -14,6 +14,6 @@
 <depend package="eigen"/>
 
 <export>
-<cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltopological_map -ltopological_graph" />
+<cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltopological_graph" />
 </export>
 </package>
