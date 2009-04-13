@@ -728,6 +728,7 @@ private:
         if(found){
             resp.doors.resize(1);
             resp.doors[0] = req.door;
+            resp.doors[0].header.stamp = handle.header.stamp; // set time stamp
             resp.doors[0].handle.x = handle.point.x;
             resp.doors[0].handle.y = handle.point.y;
             resp.doors[0].handle.z = handle.point.z;
