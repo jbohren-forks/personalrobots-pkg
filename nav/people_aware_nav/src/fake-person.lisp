@@ -20,44 +20,20 @@
 
 (in-package :fake-person)
 
+
+(defvar *person-pos* nil)
+
+
+(defun publisher ()
+  (loop-at-most-every .1
+     (when *person-pos*
+       (publish-on-topic "person_position" *person-pos*))))
+
 (defun main ()
   (with-ros-node ("fake-person-sender")
-    ;; (advertise "person_position" "robot_msgs/Point")
-;;     ;;(advertise "cloud_ground_filtered" "robot_msgs/PointCloud")
-;;     (advertise "visualizationMarker" "robot_msgs/VisualizationMarker")
-    (let ((global_frame "map"))
-      (loop
-	 (sleep 1)
-	   (print "Hello")
-	 (let* ((x 10.0) (y 10.0))
-	   (if (and (typep x 'real) (typep y 'real))
-	       
-	       (let ((pos-message (make-instance '<Point>))
-		     (cloud-message (make-instance '<PointCloud>)))
-		       
-		 (setf (x-val pos-message) x
-		       (y-val pos-message) y
-		       (z-val pos-message) 0)
-		 ;; (publish-on-topic "person_position" pos-message)
+    (advertise "person_position" "robot_msgs/Point")
+    (sb-thread:make-thread #'publisher :name "fake-person-publisher")
+    (loop
+       (let ((x (read)) (y (read)))
+	 (setq *person-pos* (make-instance '<Point> :x x :y y :z 0))))))
 
-
-		 (setf (pts-val cloud-message) (make-array 100)
-		       (frame_id-val (header-val cloud-message)) global_frame)
-		 (dotimes (i 10)
-		   (dotimes (j 10)
-		     (setf (aref (pts-val cloud-message) (+ i (* 10 j)))
-			   (let ((p (make-instance '<Point32>)))
-			     (setf (x-val p) (+ x (* i .1))
-				   (y-val p) (+ y (* j .1))
-				   (z-val p) 0.1)
-			     p))))
-		 ;;(publish-on-topic "cloud_ground_filtered" cloud-message)
-		 )
-	       
-	     
-	       (princ "Not a legal position")))))))
-
-	   
-       
-	 
-      

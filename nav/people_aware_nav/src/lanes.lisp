@@ -1,5 +1,6 @@
 (roslisp:ros-load-message-types "robot_msgs/PointCloud" "robot_msgs/Point" "deprecated_msgs/Pose2DFloat32" 
 				"robot_actions/Pose2D" "robot_actions/MoveBaseState" "deprecated_msgs/Point2DFloat32")
+(roslisp:ros-load-service-types "people_aware_nav/PersonOnPath")
 
 
 (defpackage :lane-following
@@ -29,7 +30,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defparameter *robot-radius* .32 "Circumscribed radius of robot in metres")
-(defparameter *wall-buffer* .1 "Additional buffer distance that we'd like to keep from wall")
+(defparameter *wall-buffer* .2 "Additional buffer distance that we'd like to keep from wall")
 (defparameter *path-clear-wait-time* 6 "How many seconds robot will wait for person to move")
 (defvar *global-frame*)
 
@@ -50,7 +51,7 @@
 (defvar *hallway* (make-hallway nil nil) "Configuration of the hallway we're in.  Set by hallway-callback.")
 (defvar *move-base-result* nil "Did move-base succeed?.  Set by send-move-goal and state-callback.")
 (defvar *person-on-path* nil "Is a person on the path?.") ;; Maybe get rid of this?
-(defvar *current-goal* nil "Current nav goal.  Set by send-move-goal.")
+(defvar *current-goal* '(0 0) "Current nav goal.  Set by send-move-goal.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main
@@ -84,6 +85,7 @@
 (defun goto (x y theta)
   (send-move-goal x y theta)
   (loop-at-most-every .1
+     (format t ".")
      (when *move-base-result* 
        (return-from goto *move-base-result*))
      (when (person-on-path)
@@ -91,7 +93,13 @@
 
   ;; Person on path
   (move-to-right)
-  (constrained-move x y theta))
+  ;;(sleep 0)
+  (constrained-move x y theta)
+  (loop-at-most-every .1
+     (when *move-base-result*
+       (return *move-base-result*))))
+
+
     
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -101,6 +109,7 @@
 
 
 (defun move-to-right ()
+  (ros-info "Moving to right")
   (let* ((pose (waiting-pose *robot-pose* *hallway*))
 	 (position (pose-position pose))
 	 (theta (pose-orientation pose)))
@@ -111,6 +120,7 @@
 
 (defun constrained-move (x y theta)
   "Move to x, y, theta, with a timeout parameter set, and with a constraint not to move backwards.  Backwards is defined by drawing a line behind the robot, perpendicular to its current heading."
+  (ros-info "Initiating constrained move")
   (setq *current-goal* (list x y)
 	*move-base-result* nil)
   (publish-on-topic "/move_base_node/activate"
@@ -133,7 +143,11 @@
     (publish-on-topic "/move_base_node/preempt" m)))
 
 (defun person-on-path ()
-  (people_aware_nav:value-val (call-service "is_person_on_path" 'people_aware_nav:PersonOnPath)))
+  (not (= 0 (people_aware_nav:value-val (call-service "is_person_on_path" 'people_aware_nav:PersonOnPath)))))
+
+(defun spin-around ()
+  (send-move-goal (aref (pose-position *robot-pose*) 0) (aref (pose-position *robot-pose*) 1)
+		  (+ 3.14 (pose-orientation *robot-pose*))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -203,7 +217,7 @@
 				 (- (hallway-width hallway) *robot-radius* *wall-buffer*)
 				 (+ *robot-radius* *wall-buffer*)))
 	 (target-wall-y (+ (aref hallway-frame-position 1)
-			   (* (if facing-forward 1 -1)
+			   (* (if facing-forward 2 -2)
 			      (abs (- target-wall-offset (aref hallway-frame-position 0))))))
 	 (global-pose (transform-pose (inverse (hallway-transform hallway)) 
 				      (make-pose (vector target-wall-offset target-wall-y) 

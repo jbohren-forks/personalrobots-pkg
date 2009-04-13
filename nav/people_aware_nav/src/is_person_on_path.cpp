@@ -45,6 +45,7 @@
 #include "tf/transform_listener.h"
 #include <tf/message_notifier.h>
 #include <people_aware_nav/PersonOnPath.h>
+#include <boost/thread/mutex.hpp>
 
 namespace people_aware_nav
 {
@@ -61,6 +62,8 @@ public:
   bool got_person_pos_, got_path_;
   std::string fixed_frame_;
   double total_dist_sqr_m_;
+  boost::mutex person_mutex_;
+  boost::mutex path_mutex_;
 
   IsPersonOnPath() 
   {
@@ -79,6 +82,11 @@ public:
     message_notifier_person_ = new tf::MessageNotifier<robot_msgs::PositionMeasurement> (tf_, node_, boost::bind(&IsPersonOnPath::personPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
     message_notifier_path_ = new tf::MessageNotifier<robot_msgs::Polyline2D>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "gui_path", fixed_frame_, 1);
 
+    person_mutex_.lock();
+    person_mutex_.unlock();
+    path_mutex_.lock();
+    path_mutex_.unlock();
+    
     node_->advertiseService ("is_person_on_path", &IsPersonOnPath::personOnPathCB);
     
   }
@@ -90,20 +98,30 @@ public:
   // Person callback
   void personPosCB(const tf::MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& person_pos_msg) 
   {
+    person_mutex_.lock();
     person_pos_ = *person_pos_msg;
+    ROS_INFO_STREAM ("In person pos callback and got_person_pos_ is " << got_person_pos_);
     got_person_pos_ = true;
+    person_mutex_.unlock();
   }
 
   // Path callback
   void pathCB(const tf::MessageNotifier<robot_msgs::Polyline2D>::MessagePtr& gui_path_msg)
   {
+    path_mutex_.lock();
+    ROS_INFO_STREAM ("In path callback and got_path_ is " << got_path_);
     path_ = *gui_path_msg;
     got_path_ = true;
+    path_mutex_.unlock();
   }
 
   // Service callback
   bool personOnPathCB (PersonOnPath::Request& req, PersonOnPath::Response& resp)
   {
+    path_mutex_.lock();
+    person_mutex_.lock();
+
+    
     bool on_path;
     float dist;
     ros::Time current_time, person_stamp, path_stamp;
@@ -112,7 +130,14 @@ public:
       ROS_WARN_STREAM ("Unable to tell if person was on path.  Ret vals: Current time " << current_time << " Person stamp : " << person_stamp << " Path stamp : " << path_stamp);
     }
     resp.value = on_path ? 1 : 0;
+    ROS_DEBUG_STREAM_NAMED ("person_on_path", "Person on path value is " << resp.value);
+
+    path_mutex_.unlock();
+    person_mutex_.unlock();
+
     return true;
+
+
   }
 
   // Compute distance between the person and the path. Return true if distance was calculated, false otherwise (eg if the transforms didn't work).
@@ -123,10 +148,17 @@ public:
     *person_stamp = ros::Time().fromSec(0);
     *path_stamp = ros::Time().fromSec(0);
     *current_time = ros::Time().fromSec(0);
+    
+    ROS_INFO ("Attempting to compute person-path dist");
 
     // Check that we have both the person and path messages.
-    if (~got_person_pos_ || ~got_path_)
+    if (!got_person_pos_ || !got_path_)
+    {
+      ROS_INFO_COND (!got_person_pos_, "Didn't have person");
+      ROS_INFO_COND (!got_path_, "Didn't have path");
+      std::cout << "\nGot path is " << got_path_;
       return false;
+    }
 
     // Convert the path and the person to the current time. If either is stale (too old for TF), mark them as unusable and return false.
     (*current_time) = (person_pos_.header.stamp > path_.header.stamp) ? person_pos_.header.stamp : path_.header.stamp;
@@ -137,6 +169,7 @@ public:
       tf_->transformPoint(fixed_frame_, *current_time, t_person_tf_stamped_point, fixed_frame_, t_person_tf_stamped_point);
     }
     catch (tf::TransformException& ex) {
+      ROS_INFO ("Unable to do person transformation");
       got_person_pos_ = false;
       return false;
     }
@@ -161,7 +194,7 @@ public:
 	tf_->transformPoint(fixed_frame_, *current_time, t_path_point1, fixed_frame_, t_path_point1);
       }
       catch (tf::TransformException& ex) {
-	got_path_ = false;
+        ROS_INFO ("Unable to do path transformation");
 	return false;
       }      
 
@@ -169,7 +202,7 @@ public:
 	tf_->transformPoint(fixed_frame_, *current_time, t_path_point2, fixed_frame_, t_path_point2);
       }
       catch (tf::TransformException& ex) {
-	got_path_ = false;
+        ROS_INFO ("Unable to do path transformation");
 	return false;
       }
 
