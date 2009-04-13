@@ -435,6 +435,7 @@ private:
         cvSetImageCOI(disp, 0);
 
         if(cnt < nz_fraction * r.width * r.height){
+        	printf("Not enough coverage\n");
             return false;
         }
 
@@ -453,7 +454,8 @@ private:
             cnt++;
         }
         sum /= cnt;
-        if(max_dist > 0.1 || sum < 0.005){
+        if(max_dist > 0.1 || sum < 0.002){
+        	printf("Not enough depth variation: %f, %f\n", max_dist, sum);
             return false;
         }
 
@@ -519,7 +521,7 @@ private:
 //                    }
                 }
                 else{
-                    //                    cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 0, 0));
+//                	cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 0, 0));
                 }
             }
 
