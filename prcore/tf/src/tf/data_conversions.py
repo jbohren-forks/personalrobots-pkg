@@ -43,9 +43,6 @@ class PoseStamped(tf.tf_swig.PoseStamped):
 
     def __setattr__(self, name, value):
         if name == "stamp":
-            print "sec ", value.secs
-            print "nsec ", value.nsecs
-            print type (value.secs)
             object.__setattr__(self, '_sec',int(value.secs))
             object.__setattr__(self, '_nsec',value.nsecs)
         else:
@@ -60,8 +57,6 @@ class TransformStamped(tf.tf_swig.TransformStamped):
 
     def __setattr__(self, name, value):
         if name == "stamp":
-            print "sec ", value.secs
-            print "nsec ", value.nsecs
             object.__setattr__(self, '_sec',value.secs)
             object.__setattr__(self, '_nsec',value.nsecs)
         else:
@@ -76,8 +71,6 @@ class PointStamped(tf.tf_swig.PointStamped):
 
     def __setattr__(self, name, value):
         if name == "stamp":
-            print "sec ", value.secs
-            print "nsec ", value.nsecs
             object.__setattr__(self, '_sec',value.secs)
             object.__setattr__(self, '_nsec',value.nsecs)
         else:
@@ -92,8 +85,6 @@ class VectorStamped(tf.tf_swig.VectorStamped):
 
     def __setattr__(self, name, value):
         if name == "stamp":
-            print "sec ", value.secs
-            print "nsec ", value.nsecs
             object.__setattr__(self, '_sec',value.secs)
             object.__setattr__(self, '_nsec',value.nsecs)
         else:
@@ -108,8 +99,6 @@ class QuaternionStamped(tf.tf_swig.QuaternionStamped):
 
     def __setattr__(self, name, value):
         if name == "stamp":
-            print "sec ", value.secs
-            print "nsec ", value.nsecs
             object.__setattr__(self, '_sec',value.secs)
             object.__setattr__(self, '_nsec',value.nsecs)
         else:
@@ -147,7 +136,7 @@ def transform_stamped_bt_to_msg(bt):
     msg = robot_msgs.msg.TransformStamped()
     msg.transform = transform_bt_to_msg(bt.transform)
     msg.header.frame_id = bt.frame_id
-    msg.header.stamp = rospy.Time().from_seconds(bt.stamp)
+    msg.header.stamp = bt.stamp
     msg.parent_id = bt.parent_id
     return msg
 
@@ -182,7 +171,7 @@ def pose_stamped_bt_to_msg(bt):
     msg = robot_msgs.msg.PoseStamped()
     msg.pose = pose_bt_to_msg(bt.pose)
     msg.header.frame_id = bt.frame_id
-    msg.header.stamp = rospy.Time().from_seconds(bt.stamp)
+    msg.header.stamp = bt.stamp
     return msg
 
 def point_msg_to_bt(msg):
@@ -205,7 +194,7 @@ def point_stamped_bt_to_msg(bt):
     msg = robot_msgs.msg.PointStamped()
     msg.point = point_bt_to_msg(bt.point)
     msg.header.frame_id = bt.frame_id
-    msg.header.stamp = rospy.Time().from_seconds(bt.stamp)
+    msg.header.stamp = bt.stamp
     return msg
 
 
@@ -229,7 +218,7 @@ def vector_stamped_bt_to_msg(bt):
     msg = robot_msgs.msg.Vector3Stamped()
     msg.vector = vector_bt_to_msg(bt.vector)
     msg.header.frame_id = bt.frame_id
-    msg.header.stamp = rospy.Time().from_seconds(bt.stamp)
+    msg.header.stamp = bt.stamp
     return msg
 
 def quaternion_msg_to_bt(msg):
@@ -253,6 +242,6 @@ def quaternion_stamped_bt_to_msg(bt):
     msg = robot_msgs.msg.QuaternionStamped()
     msg.quaternion = quaternion_bt_to_msg(bt.quaternion)
     msg.header.frame_id = bt.frame_id
-    msg.header.stamp = rospy.Time().from_seconds(bt.stamp)
+    msg.header.stamp = bt.stamp
     return msg
 

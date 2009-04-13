@@ -48,7 +48,7 @@ class PoseConversions(unittest.TestCase):
         self.tfvector_stamped.vector.y = 0
         self.tfvector_stamped.vector.z = 0
         self.tfvector_stamped.frame_id = "frame1"
-        self.tfvector_stamped.stamp = 10.0
+        self.tfvector_stamped.stamp = roslib.rostime.Time(10, 0)
 
         self.msgvector_stamped = robot_msgs.msg.Vector3Stamped()
         self.msgvector_stamped.vector.x = 0
@@ -64,7 +64,7 @@ class PoseConversions(unittest.TestCase):
         self.tfquaternion_stamped.quaternion.z = 0
         self.tfquaternion_stamped.quaternion.w = 1
         self.tfquaternion_stamped.frame_id = "frame1"
-        self.tfquaternion_stamped.stamp = 10.0
+        self.tfquaternion_stamped.stamp = roslib.rostime.Time(10, 0)
 
         self.msgquaternion_stamped = robot_msgs.msg.QuaternionStamped()
         self.msgquaternion_stamped.quaternion.x = 0

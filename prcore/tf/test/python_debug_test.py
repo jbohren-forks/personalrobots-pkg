@@ -30,7 +30,7 @@ import roslib; roslib.load_manifest("tf")
 import rospy
 import tf
 import time
-
+import bullet
 try:
 
     rospy.init_node("test_node")
@@ -78,20 +78,45 @@ try:
     print "getting stamp"
     output = lps.stamp
     print output
+    print lps.pose
+    lps.pose.setIdentity()
+    print lps.pose    
     print 'private varilables ', lps._sec, lps._nsec
 
-
-    lps = tf.PointStamped()
+    transform_stamped = tf.TransformStamped()
     print "getting stamp"
-    print lps.stamp
+    print transform_stamped.stamp
 #    mytime = rospy.Time().now()
     mytime = rospy.Time(10,20)
-    lps.stamp = mytime
+    transform_stamped.stamp = mytime
     print mytime
     print "getting stamp"
-    output = lps.stamp
+    output = transform_stamped.stamp
     print output
-    print 'private varilables ', lps._sec, lps._nsec
+    print transform_stamped.transform
+    transform_stamped.transform.setIdentity()
+    print transform_stamped.transform
+    #    transform_stamped.transform.basis.setEulerZYX(0,0,0)
+    print "setting rotation"
+    transform_stamped.transform.setRotation(bullet.Quaternion(1,0,0))
+    #transform_stamped.transform.setIdentity()
+    print transform_stamped.transform
+    print 'private varilables ', transform_stamped._sec, transform_stamped._nsec
+
+
+    pointstamped = tf.PointStamped()
+    print "getting stamp"
+    print pointstamped.stamp
+#    mytime = rospy.Time().now()
+    mytime = rospy.Time(10,20)
+    pointstamped.stamp = mytime
+    print mytime
+    print "getting stamp"
+    output = pointstamped.stamp
+    print output
+    print pointstamped.point
+    print transform_stamped.transform * pointstamped.point
+    print 'private varilables ', pointstamped._sec, pointstamped._nsec
 
 
 except ValueError, e:
