@@ -49,3 +49,8 @@ rospack_add_executable(bin/amcl
                     src/sensors/amcl_laser.cpp)
 
 #target_link_libraries(bin/amcl amcl_sensors amcl_map amcl_pf)
+
+rospack_download_test_data(http://pr.willowgarage.com/data/amcl/basic_localization.bag test/basic_localization.bag)
+rospack_download_test_data(http://pr.willowgarage.com/data/amcl/willow-full.pgm test/willow-full.pgm)
+
+rospack_add_rostest(test/basic_localization.xml)

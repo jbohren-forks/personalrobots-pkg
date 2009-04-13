@@ -10,5 +10,10 @@
   <depend package="std_msgs" />
   <depend package="deprecated_msgs" />
   <depend package="robot_msgs" />
+  <depend package="std_srvs" />
   <depend package="laser_scan" />
+  
+  <!-- For tests -->
+  <depend package="map_server"/>
+  <depend package="rostest"/>
 </package>

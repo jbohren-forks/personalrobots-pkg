@@ -106,6 +106,7 @@ Publishes to (name / type):
 #include "robot_msgs/ParticleCloud.h"
 #include "robot_msgs/Pose.h"
 #include "robot_srvs/StaticMap.h"
+#include "std_srvs/Empty.h"
 
 // For transform support
 #include "tf/transform_broadcaster.h"
@@ -141,11 +142,18 @@ class AmclNode
     tf::TransformListener* tf_;
 
     tf::Transform latest_tf_;
+    bool latest_tf_valid_;
+
+    // Pose-generating function used to uniformly distribute particles over
+    // the map
+    static pf_vector_t uniformPoseGenerator(void* arg);
 
     // incoming messages
     robot_msgs::PoseWithCovariance initial_pose_;
     
     // Message callbacks
+    bool globalLocalizationCallback(std_srvs::Empty::Request& req,
+                                    std_srvs::Empty::Response& res);
     void laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& laser_scan);
     void initialPoseReceived();
 
@@ -170,6 +178,7 @@ class AmclNode
     pf_vector_t pf_odom_pose_;
     double d_thresh_, a_thresh_;
     int resample_interval_;
+    int resample_count_;
 
     AMCLOdom* odom_;
     AMCLLaser* laser_;
@@ -210,9 +219,11 @@ main(int argc, char** argv)
 }
 
 AmclNode::AmclNode() :
+        latest_tf_valid_(false),
         map_(NULL),
         have_laser_pose(false),
-        pf_(NULL)
+        pf_(NULL),
+        resample_count_(0)
 {
   // Grab params off the param server
   int max_beams, min_particles, max_particles;
@@ -224,7 +235,7 @@ AmclNode::AmclNode() :
   ros::Node::instance()->param("~min_particles", min_particles, 100);
   ros::Node::instance()->param("~max_particles", max_particles, 5000);
   ros::Node::instance()->param("~kld_err", pf_err, 0.01);
-  ros::Node::instance()->param("~kld_z", pf_z, 3.0);
+  ros::Node::instance()->param("~kld_z", pf_z, 0.99);
   ros::Node::instance()->param("~odom_alpha1", alpha1, 0.2);
   ros::Node::instance()->param("~odom_alpha2", alpha2, 0.2);
   ros::Node::instance()->param("~odom_alpha3", alpha3, 0.2);
@@ -248,9 +259,9 @@ AmclNode::AmclNode() :
   transform_tolerance_.fromSec(tmp_tol);
 
   double startX, startY, startTH;
-  ros::Node::instance()->param("robot_x_start", startX, 0.0);
-  ros::Node::instance()->param("robot_y_start", startY, 0.0);
-  ros::Node::instance()->param("robot_th_start", startTH, 0.0);
+  ros::Node::instance()->param("~initial_pose_x", startX, 0.0);
+  ros::Node::instance()->param("~initial_pose_y", startY, 0.0);
+  ros::Node::instance()->param("~initial_pose_a", startTH, 0.0);
 
   cloud_pub_interval.fromSec(1.0);
   tfb_ = new tf::TransformBroadcaster(*ros::Node::instance());
@@ -290,6 +301,9 @@ AmclNode::AmclNode() :
 
   ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("amcl_pose",2);
   ros::Node::instance()->advertise<robot_msgs::ParticleCloud>("particlecloud",2);
+  ros::Node::instance()->advertiseService("global_localization",
+                                          &AmclNode::globalLocalizationCallback,
+                                          this);
   laser_scan_notifer = 
           new tf::MessageNotifier<laser_scan::LaserScan>
           (tf_, ros::Node::instance(),  
@@ -378,10 +392,53 @@ AmclNode::getOdomPose(double& x, double& y, double& yaw,
   return true;
 }
 
+
+pf_vector_t 
+AmclNode::uniformPoseGenerator(void* arg)
+{
+  map_t* map = (map_t*)arg;
+  double min_x, max_x, min_y, max_y;
+
+  min_x = (map->size_x * map->scale)/2.0 - map->origin_x;
+  max_x = (map->size_x * map->scale)/2.0 + map->origin_x;
+  min_y = (map->size_y * map->scale)/2.0 - map->origin_y;
+  max_y = (map->size_y * map->scale)/2.0 + map->origin_y;
+
+  pf_vector_t p;
+
+  for(;;)
+  {
+    p.v[0] = min_x + drand48() * (max_x - min_x);
+    p.v[1] = min_y + drand48() * (max_y - min_y);
+    p.v[2] = drand48() * 2 * M_PI - M_PI;
+
+    // Check that it's a free cell
+    int i,j;
+    i = MAP_GXWX(map, p.v[0]);
+    j = MAP_GYWY(map, p.v[1]);
+    if(map->cells[MAP_INDEX(map,i,j)].occ_state == -1)
+      break;
+  }
+
+  return p;
+}
+
+bool
+AmclNode::globalLocalizationCallback(std_srvs::Empty::Request& req,
+                                     std_srvs::Empty::Response& res)
+{
+  pf_mutex_.lock();
+  ROS_INFO("Initializing with uniform distribution");
+  pf_init_model(pf_, (pf_init_model_fn_t)AmclNode::uniformPoseGenerator, 
+                (void *)map_);
+  pf_init_ = false;
+  pf_mutex_.unlock();
+  return true;
+}
+
 void
 AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& laser_scan)
 {
-  static int count=0;
   // Do we have the base->base_laser Tx yet?
   if(!have_laser_pose)
   {
@@ -427,7 +484,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
   pf_mutex_.lock();
 
   bool update = false;
-  pf_vector_t delta;
+  pf_vector_t delta = pf_vector_zero();
 
   if(pf_init_)
   {
@@ -451,7 +508,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     // Should update sensor data
     update = true;
     
-    count = 0;
+    resample_count_ = 0;
   }
   // If the robot has moved, update the filter
   else if(pf_init_ && update)
@@ -501,14 +558,14 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     pf_odom_pose_ = pose;
   
     // Resample the particles
-    if(!(count++ % resample_interval_))
+    if(!(++resample_count_ % resample_interval_))
     {
       pf_update_resample(pf_);
       resampled = true;
     }
 
     pf_sample_set_t* set = pf_->sets + pf_->current_set;
-    ROS_DEBUG("Num samples: %d\n", set->sample_count);
+    ROS_INFO("Num samples: %d\n", set->sample_count);
 
     // Publish the resulting cloud
     // TODO: set maximum rate for publishing
@@ -621,6 +678,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
 
       latest_tf_ = tf::Transform(tf::Quaternion(odom_to_map.getRotation()),
                                  tf::Point(odom_to_map.getOrigin()));
+      latest_tf_valid_ = true;
 
       // We want to send a transform that is good up until a 
       // tolerance time so that odom can be used
@@ -636,7 +694,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
       ROS_ERROR("No pose!");
     }
   }
-  else
+  else if(latest_tf_valid_)
   {
     ros::Time transform_expiration = (laser_scan->header.stamp +
                                       transform_tolerance_);

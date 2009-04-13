@@ -181,6 +181,8 @@ void pf_init_model(pf_t *pf, pf_init_model_fn_t init_fn, void *init_data)
     pf_kdtree_insert(set->kdtree, sample->pose, sample->weight);
   }
 
+  pf->w_slow = pf->w_fast = 0.0;
+
   // Re-compute cluster statistics
   pf_cluster_stats(pf, set);
   
@@ -341,7 +343,6 @@ void pf_update_resample(pf_t *pf)
     // See if we have enough samples yet
     if (set_b->sample_count > pf_resample_limit(pf, set_b->kdtree->leaf_count))
       break;
-
   }
 
   if(w_diff > 0.0)
@@ -374,7 +375,7 @@ int pf_resample_limit(pf_t *pf, int k)
   int n;
 
   if (k <= 1)
-    return pf->min_samples;
+    return pf->max_samples;
 
   a = 1;
   b = 2 / (9 * ((double) k - 1));
@@ -385,7 +386,7 @@ int pf_resample_limit(pf_t *pf, int k)
 
   if (n < pf->min_samples)
     return pf->min_samples;
-  if (n >= pf->max_samples)
+  if (n > pf->max_samples)
     return pf->max_samples;
   
   return n;
