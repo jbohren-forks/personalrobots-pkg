@@ -1,23 +1,13 @@
 <launch>
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
+<!-- Work in odom combined offset frame -->
+  <param name="/global_frame_id" value="odom_combined_offset"/>
+  <node pkg="tf" type="transform_sender" args="-20 -20 0 0 0 0 odom_combined_offset odom_combined 10"/>
 
-<!-- AMCL -->
-  <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.025.pgm 0.025" respawn="true" machine="four" />
-  <param name="global_frame_id" value="map"/>
-  <param name="laser_x_offset" type="double" value=".275" />
-  <param name="pf_laser_max_beams" value="20"/>
-  <param name="pf_min_samples" value="500"/>
-  <param name="pf_max_samples" value="10000"/>
-  <param name="pf_odom_drift_xx" value="0.2"/>
-  <param name="pf_odom_drift_yy" value="0.2"/>
-  <param name="pf_odom_drift_aa" value="0.2"/>
-  <param name="pf_odom_drift_xa" value="0.2"/>
-  <param name="pf_min_d" value="0.25"/>
-  <param name="pf_min_a" value="0.524"/>
-  <param name="pf_odom_frame_id" value="odom_combined"/>
-  <param name="pf_transform_tolerance" value="0.2" />
-  <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="true" args="scan:=base_scan" machine="four" />
+
+<!-- Run a static map -->
+  <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-empty-0.05.pgm 0.05" respawn="true" machine="three" />
 
 
 <!-- Ground plane detection -->
@@ -30,7 +20,7 @@
 
 
 <!-- Move Base node-->
-  <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen" name="move_base_node">
+  <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="three" output="screen" name="move_base_node">
     <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
     <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
     <param name="move_base/plannerType" value="ARAPlanner"/>

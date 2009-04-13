@@ -3,15 +3,15 @@
 
 
 <!-- controllers-->
-  <include file="$(find 2dnav_pr2)/milestone/controllers.launch" />
+  <include file="$(find milestone2)/controllers.launch" />
 
 
 <!-- perception-->
-  <include file="$(find 2dnav_pr2)/milestone/perception.launch" />
+  <include file="$(find milestone2)/perception.launch" />
 
 
 <!-- navigation-->
-  <include file="$(find 2dnav_pr2)/milestone/navigation.launch" />
+  <include file="$(find milestone2)/navigation.launch" />
 
 
 <!-- door domain -->
