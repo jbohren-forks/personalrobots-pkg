@@ -47,6 +47,10 @@ target_link_libraries (bin/planar_fit_node cloud_geometry cloud_kdtree sample_co
   rospack_add_executable (bin/pcd_to_msg_node src/cloud_io/tools/pcd_to_msg.cpp)
   target_link_libraries (bin/pcd_to_msg_node cloud_io)
 
+  rospack_add_executable (bin/convert_pcd_ascii_binary src/cloud_io/tools/convert_pcd_ascii_binary.cpp)
+  target_link_libraries (bin/convert_pcd_ascii_binary cloud_io)
+
+
   rospack_add_gtest (bin/test_cloud_io test/cloud_io/test_io.cpp)
   target_link_libraries (bin/test_cloud_io cloud_io)
 
