@@ -28,8 +28,8 @@
  *
  */
 
-#include <door_handle_detector/doors_detector.h>
-#include <door_handle_detector/door_functions.h>
+#include "door_handle_detector/doors_detector.h"
+#include "door_handle_detector/door_functions.h"
 
 
 using namespace std;
@@ -448,6 +448,8 @@ bool
     // Need min/max Z
     cloud_geometry::statistics::getMinMax (pmap_.polygons[cc], min_p, max_p);
     result[nr_d].height = fabs (max_p.z - min_p.z);
+
+    cout << "found door " << result[nr_d] << endl;
 
     transformTo(tf_, fixed_frame_, result[nr_d], result[nr_d]);
 

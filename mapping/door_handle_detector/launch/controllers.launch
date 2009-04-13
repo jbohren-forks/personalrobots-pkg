@@ -9,15 +9,15 @@
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" />
 
 <!-- Laser tilt controller -->
-  <param name="laser_tilt_controller/autostart" type="bool" value="false" />
+  <param name="laser_tilt_controller/autostart" type="bool" value="true" />
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
 
 <!-- Head controller -->
-  <param name="head_controller/autostart" type="bool" value="false" />
+  <param name="head_controller/autostart" type="bool" value="true" />
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" />
 
 <!-- Gripper controller -->
-  <param name="r_gripper_effort_controller/autostart" type="bool" value="false" />
+  <param name="r_gripper_effort_controller/autostart" type="bool" value="true" />
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_gripper_effort_controller.xml" />
 
 

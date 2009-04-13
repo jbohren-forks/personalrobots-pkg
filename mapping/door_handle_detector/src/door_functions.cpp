@@ -57,7 +57,7 @@ bool transformTo(const tf::Transformer& tf, const string& goal_frame, const robo
 
 
 bool transformPointTo(const tf::Transformer& tf, const string& source_frame, const string& goal_frame, const Time& time,
-                      const robot_msgs::Point32 point_in, robot_msgs::Point32 point_out)
+                      const robot_msgs::Point32& point_in, robot_msgs::Point32& point_out)
 {
   ros::Duration timeout = Duration().fromSec(2.0);
   tf::Stamped<tf::Point> pnt(tf::Vector3(point_in.x, point_in.y, point_in.z), time, source_frame);
@@ -71,7 +71,7 @@ bool transformPointTo(const tf::Transformer& tf, const string& source_frame, con
 }
 
 bool transformVectorTo(const tf::Transformer& tf, const string& source_frame, const string& goal_frame, const Time& time,
-                       const robot_msgs::Vector3 point_in, robot_msgs::Vector3 point_out)
+                       const robot_msgs::Vector3& point_in, robot_msgs::Vector3& point_out)
 {
   ros::Duration timeout = Duration().fromSec(2.0);
   tf::Stamped<tf::Point> pnt(tf::Vector3(point_in.x, point_in.y, point_in.z), time, source_frame);
@@ -83,4 +83,27 @@ bool transformVectorTo(const tf::Transformer& tf, const string& source_frame, co
 
   return true;
 }
+
+
+std::ostream& operator<< (std::ostream& os, const robot_msgs::Door& d)
+{
+  os << "Door message in " << d.header.frame_id << endl;
+  os << " - frame (" 
+     << d.frame_p1.x << " " << d.frame_p1.y << " "<< d.frame_p1.z << ") -- (" 
+     << d.frame_p2.x << " " << d.frame_p2.y << " "<< d.frame_p2.z << ")" << endl;
+
+  os << " - boundary (" 
+     << d.door_p1.x << " " << d.door_p1.y << " "<< d.door_p1.z << ") -- (" 
+     << d.door_p2.x << " " << d.door_p2.y << " "<< d.door_p2.z << ")" << endl;
+
+  os << " - handle (" 
+     << d.handle.x << " " << d.handle.y << " "<< d.handle.z << ")" << endl;
+
+  os << " - normal (" 
+     << d.normal.x << " " << d.normal.y << " "<< d.normal.z << ")" << endl;
+
+  return os;
+}
+
+
 }
