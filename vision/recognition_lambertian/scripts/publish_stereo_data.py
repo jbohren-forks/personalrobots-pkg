@@ -6,6 +6,12 @@ import wx
 import sys
 import os
 import string
+import re
+
+import roslib; roslib.load_manifest('recognition_lambertian')
+
+from std_msgs.msg import String
+import rospy
 
 # begin wxGlade: extracode
 # end wxGlade
@@ -14,6 +20,9 @@ import string
 
 class MyFrame(wx.Frame):
     def __init__(self, *args, **kwds):
+        
+        self.pub = rospy.Publisher('/publish_scene/prefix', String)
+        rospy.init_node('publish_stereo_data', anonymous=True)
         # begin wxGlade: MyFrame.__init__
         kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
@@ -36,7 +45,7 @@ class MyFrame(wx.Frame):
 
     def __set_properties(self):
         # begin wxGlade: MyFrame.__set_properties
-        self.SetTitle("frame_1")
+        self.SetTitle("Scene chooser")
         self.SetSize((527, 706))
         # end wxGlade
 
@@ -58,10 +67,6 @@ class MyFrame(wx.Frame):
         self.Layout()
         # end wxGlade
 
-    def onListSelect(self, event): # wxGlade: MyFrame.<event_handler>
-        print "Event handler `onListSelect' not implemented!"
-        event.Skip()
-
     def onPublish(self, event): # wxGlade: MyFrame.<event_handler>
         print "Event handler `onPublish' not implemented!"
         event.Skip()
@@ -71,7 +76,9 @@ class MyFrame(wx.Frame):
         event.Skip()
 
     def onListSelected(self, event): # wxGlade: MyFrame.<event_handler>
-        print "Event handler `onListSelected' not implemented"
+        dir = str(self.dir_picker.GetPath())
+        prefix =  str(event.GetText())
+        self.pub.publish(String(dir+"/"+prefix))
         event.Skip()
 
     def onLoad(self, event): # wxGlade: MyFrame.<event_handler>
@@ -82,8 +89,8 @@ class MyFrame(wx.Frame):
             if os.path.isfile(os.path.join(dir,file)):
                 i += 1
                 if file.endswith('.pcd'):
-                    self.list_images.InsertStringItem(i,file)
-        event.Skip()
+                    prefix = re.search('[a-z]+\.[0-9]+\.[TN]\.[a-zA-Z]+',file).group()
+                    self.list_images.InsertStringItem(i,prefix)
 
 # end of class MyFrame
 

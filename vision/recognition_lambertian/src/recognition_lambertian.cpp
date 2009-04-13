@@ -176,12 +176,12 @@ public:
 //        subscribeStereoData();
 
         // load a cascade classifier
-        loadClassifier(cascade_classifier);
         // invalid location until we get a detection
 
 //        advertise<robot_msgs::PointStamped>("handle_detector/handle_location", 1);
         advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
-        advertiseService("recognize_lambertian", &RecognitionLambertian::detectHandleSrv, this);
+
+        subscribeStereoData();
     }
 
     ~RecognitionLambertian()
@@ -198,19 +198,11 @@ public:
         if(storage){
             cvReleaseMemStorage(&storage);
         }
+
+        unsubscribeStereoData();
     }
 
 private:
-    void loadClassifier(string cascade_classifier)
-    {
-        //		subscribe("/door_detector/door_msg", door, &RecognitionLambertian::door_detected,1);
-        ROS_INFO("Loading cascade classifier: %s", cascade_classifier.c_str());
-        cascade = (CvHaarClassifierCascade*)(cvLoad(cascade_classifier.c_str(), 0, 0, 0));
-        if(!cascade){
-            ROS_ERROR("Cannot load cascade classifier\n");
-        }
-        storage = cvCreateMemStorage(0);
-    }
 
     void subscribeStereoData()
     {
@@ -396,380 +388,27 @@ private:
     }
 
 
-
-//    void showPlaneMarker(CvScalar plane, robot_msgs::PointCloud pc)
-//    {
-//
-//    	double min_d = 10000;
-//    	int min_i = -1;
-//    	for (size_t i=0;i<pc.pts.size();++i) {
-//			float dist = fabs(plane.val[0]*pc.pts[i].x+plane.val[1]*pc.pts[i].y+plane.val[2]*pc.pts[i].z+plane.val[3]);
-//			if (dist<min_d) {
-//				min_d = dist;
-//				min_i = i;
-//			}
-//    	}
-//
-//
-//        robot_msgs::VisualizationMarker marker;
-//        marker.header.frame_id = pc.header.frame_id;
-//        marker.header.stamp = pc.header.stamp;
-//        marker.id = 1211;
-//        marker.type = robot_msgs::VisualizationMarker::SPHERE;
-//        marker.action = robot_msgs::VisualizationMarker::ADD;
-//        marker.x = pc.pts[min_i].x;
-//        marker.y = pc.pts[min_i].y;
-//        marker.z = pc.pts[min_i].z;
-//        marker.yaw = 0.0;
-//        marker.pitch = 0.0;
-//        marker.roll = 0.0;
-//        marker.xScale = 0.1;
-//        marker.yScale = 0.1;
-//        marker.zScale = 0.1;
-//        marker.alpha = 255;
-//        marker.r = 255;
-//        marker.g = 0;
-//        marker.b = 0;
-//        publish("visualizationMarker", marker);
-//
-//        printf("Show marker at: (%f,%f,%f)", marker.x, marker.y, marker.z);
-//    }
-
-    /**
-     * \brief Determine if it's possible for handle to be in a specific ROI
-     *
-     * It looks at things like, height, approximate size of ROI, how flat it is.
-     *
-     * @param r
-     * @return
-     */
-    bool handlePossibleHere(const CvRect &r)
+    void runRecognitionLambertian()
     {
-        const float nz_fraction = 0.1;
+        // acquire cv_mutex lock
+//        boost::unique_lock<boost::mutex> images_lock(cv_mutex);
 
-        cvSetImageROI(disp, r);
-        cvSetImageCOI(disp, 1);
-        int cnt = cvCountNonZero(disp);
-        cvResetImageROI(disp);
-        cvSetImageCOI(disp, 0);
-
-        if(cnt < nz_fraction * r.width * r.height){
-            return false;
-        }
-
-        // compute least-squares handle plane
-        robot_msgs::PointCloud pc = filterPointCloud(r);
-        CvScalar plane = estimatePlaneLS(pc);
-
-        cnt = 0;
-        double sum = 0;
-        double max_dist = 0;
-        for(size_t i = 0;i < pc.pts.size();++i){
-            robot_msgs::Point32 p = pc.pts[i];
-            double dist = fabs(plane.val[0] * p.x + plane.val[1] * p.y + plane.val[2] * p.z + plane.val[3]);
-            max_dist = max(max_dist, dist);
-            sum += dist;
-            cnt++;
-        }
-        sum /= cnt;
-        if(max_dist > 0.1 || sum < 0.005){
-            return false;
-        }
-
-        double dx, dy;
-        robot_msgs::Point p;
-        getROIDimensions(r, dx, dy, p);
-        if(dx > 0.25 || dy > 0.15){
-            ROS_INFO("Too big, discarding");
-            return false;
-        }
-
-        robot_msgs::PointStamped pin, pout;
-        pin.header.frame_id = cloud.header.frame_id;
-        pin.header.stamp = cloud.header.stamp;
-        pin.point.x = p.z;
-        pin.point.y = -p.x;
-        pin.point.z = -p.y;
-        try {
-            tf_->transformPoint("base_link", pin, pout);
-        }
-        catch(tf::LookupException & ex){
-            ROS_ERROR("Lookup exception: %s\n", ex.what());
-        }
-        catch(tf::ExtrapolationException & ex){
-            ROS_DEBUG("Extrapolation exception: %s\n", ex.what());
-        }
-        catch(tf::ConnectivityException & ex){
-            ROS_ERROR("Connectivity exception: %s\n", ex.what());
-        }
-
-        if(pout.point.z > max_height || pout.point.z < min_height){
-            return false;
-        }
-
-        printf("Handle at: (%d,%d,%d,%d)\n", r.x,r.y,r.width, r.height);
+        // goes to sleep until some images arrive
+//        images_ready.wait(images_lock);
+//        printf("Woke up, processing images\n");
 
 
-        return true;
-    }
-
-    /**
-     * \brief Start handle detection
-     */
-    void findHandleCascade(vector<CvRect> & handle_rect)
-    {
-        IplImage *gray = cvCreateImage(cvSize(left->width, left->height), 8, 1);
-        cvCvtColor(left, gray, CV_BGR2GRAY);
-        cvEqualizeHist(gray, gray);
-        cvClearMemStorage(storage);
-        if(cascade){
-            CvSeq *handles = cvHaarDetectObjects(gray, cascade, storage, 1.1, 2, 0, //|CV_HAAR_FIND_BIGGEST_OBJECT
-            //|CV_HAAR_DO_ROUGH_SEARCH
-            //|CV_HAAR_DO_CANNY_PRUNING
-            //|CV_HAAR_SCALE_IMAGE
-            cvSize(10, 10));
-            for(int i = 0;i < (handles ? handles->total : 0);i++){
-                CvRect *r = (CvRect*)cvGetSeqElem(handles, i);
-
-                if(handlePossibleHere(*r)){
-                    handle_rect.push_back(*r);
-//                    if(display){
-//                        cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(0, 255, 0));
-//                    }
-                }
-                else{
-                    //                    cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 0, 0));
-                }
-            }
-
-        }
-        else {
-        	ROS_ERROR("Cannot look for handle, no detector loaded");
-        }
-
-        cvReleaseImage(&gray);
-    }
-
-    /**
-     * \brief Finds edges in an image
-     * @param img
-     */
-    void findEdges(IplImage *img)
-    {
-        IplImage *gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
-        cvCvtColor(img, gray, CV_RGB2GRAY);
-        cvCanny(gray, gray, 20, 40);
-        CvMemStorage *storage = cvCreateMemStorage(0);
-        CvSeq *lines = 0;
-        lines = cvHoughLines2(gray, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI / 360, 100, 200, 100);
-        for(int i = 0;i < lines->total;i++){
-            CvPoint *line = (CvPoint*)cvGetSeqElem(lines, i);
-            CvPoint p1 = line[0];
-            CvPoint p2 = line[1];
-            if(abs(p1.x - p2.x) > 0){
-                float min_angle = 80;
-                float slope = float(abs(p1.y - p2.y)) / abs(p1.x - p2.x);
-                float min_slope = tan(CV_PI / 2 - min_angle * CV_PI / 180);
-                if(slope < min_slope)
-                    continue;
-
-                printf("slope: %f, min_slope: %f\n", slope, min_slope);
-            }
-            cvLine(left, p1, p2, CV_RGB(255, 0, 0), 2, CV_AA, 0);
-        }
-
-        cvReleaseImage(&gray);
-    }
-
-    /**
-     * \brief Checks if a point should belong to a cluster
-     *
-     * @param center
-     * @param p
-     * @return
-     */
-    bool belongsToCluster(pair<float,float> center, pair<float,float> p)
-    {
-    	return fabs(center.first-p.first)<3 && fabs(center.second-p.second)<3;
-    }
-
-
-    /**
-     * Helper function.
-     *
-     * @param r
-     * @return
-     */
-    pair<float,float> rectCenter(const CvRect& r)
-    {
-    	return make_pair(r.x+(float)r.width/2,r.y+(float)r.height/2);
-    }
-
-    /**
-     * \brief Decide the handle position from several detections across multiple frames
-     *
-     * This method does some simple clustering of all the bounding boxes and picks the cluster with
-     * the most elements.
-     *
-     * @param handle_rect The handle bounding boxes
-     * @param handle Point indicating the real-world handle position
-     * @return
-     */
-    bool decideHandlePosition(vector<CvRect>& handle_rect, robot_msgs::PointStamped & handle)
-    {
-    	if (handle_rect.size()==0) {
-    		return false;
-    	}
-
-    	vector<int> cluster_size;
-    	vector<pair<float,float> > centers;
-    	vector<pair<float,float> > sizes;
-
-    	for (size_t i=0;i<handle_rect.size();++i) {
-    		CvRect r = handle_rect[i];
-    		pair<float,float> crt = rectCenter(r);
-    		bool found_cluster = false;
-    		for (size_t j=0;j<centers.size();++j) {
-    			if (belongsToCluster(centers[j],crt)) {
-    				int n = cluster_size[j];
-    				centers[j].first = (centers[j].first*n+crt.first)/(n+1);
-    				centers[j].second = (centers[j].second*n+crt.second)/(n+1);
-    				sizes[j].first = (sizes[j].first*n+r.width)/(n+1);
-    				sizes[j].second = (sizes[j].second*n+r.height)/(n+1);
-    				cluster_size[j]++;
-    				found_cluster = true;
-    				break;
-    			}
-    		}
-    		if (!found_cluster) {
-    			centers.push_back(crt);
-    			sizes.push_back(make_pair(r.width,r.height));
-    			cluster_size.push_back(1);
-    		}
-    	}
-
-    	int max_ind = 0;
-    	int max = cluster_size[0];
-
-    	for (size_t i=0;i<cluster_size.size();++i) {
-    		if (cluster_size[i]>max) {
-    			max = cluster_size[i];
-    			max_ind = i;
-    		}
-    	}
-
-    	CvRect bbox;
-    	bbox.x = (int) centers[max_ind].first-(int)(sizes[max_ind].first/2);
-    	bbox.y = (int) centers[max_ind].second-(int)(sizes[max_ind].second/2);
-    	bbox.width = (int) sizes[max_ind].first;
-    	bbox.height = (int) sizes[max_ind].second;
-
-        double dx, dy;
-        robot_msgs::Point p;
-        getROIDimensions(bbox, dx, dy, p);
-
-        handle.header.frame_id = cloud.header.frame_id;
-        handle.header.stamp = cloud.header.stamp;
-        handle.point.x = p.z;
-        handle.point.y = -p.x;
-        handle.point.z = -p.y;
-
-
-        printf("Clustered Handle at: (%d,%d,%d,%d)\n", bbox.x,bbox.y,bbox.width, bbox.height);
-
+        // do usefull stuff
 
         if(display){
-        	cvRectangle(left, cvPoint(bbox.x, bbox.y), cvPoint(bbox.x + bbox.width, bbox.y + bbox.height), CV_RGB(0, 255, 0));
+        	// show filtered disparity
+        	cvShowImage("disparity", disp);
+        	// show left image
         	cvShowImage("left", left);
+        	cvShowImage("right", right);
         }
-//        showHandleMarker(handle);
-
-		return true;
     }
 
-
-    /**
-     * \brief Runs the handle detector
-     *
-     * @param handle Position of detected handle
-     * @return True if handle was found, false otherwise.
-     */
-    bool runRecognitionLambertian(robot_msgs::PointStamped & handle)
-    {
-    	vector<CvRect> handle_rect;
-
-        // acquire cv_mutex lock
-        boost::unique_lock<boost::mutex> images_lock(cv_mutex);
-
-        for (int i=0;i<frames_no;++i) {
-
-        	printf("Waiting for images\n");
-        	// block until images are available to process
-        	images_ready.wait(images_lock);
-
-        	printf("Woke up, processing images\n");
-
-        	if(display){
-        		// show original disparity
-        		cvShowImage("disparity_original", disp);
-        	}
-        	// eliminate from disparity locations that cannot contain a handle
-//        	applyPositionPrior();
-        	// run cascade classifier
-//        	findHandleCascade(handle_rect);
-        	if(display){
-        		// show filtered disparity
-        		cvShowImage("disparity", disp);
-        		// show left image
-        		cvShowImage("left", left);
-        		cvShowImage("right", right);
-        	}
-        }
-
-        bool found = decideHandlePosition(handle_rect, handle);
-        return found;
-    }
-
-    /**
-     * \brief Service call to detect doors
-     */
-    bool detectHandleSrv(recognition_lambertian::DoorsDetector::Request & req, recognition_lambertian::DoorsDetector::Response & resp)
-    {
-
-        robot_msgs::PointStamped handle;
-    	subscribeStereoData();
-        bool found = runRecognitionLambertian(handle);
-    	unsubscribeStereoData();
-
-        if(!found){
-            return false;
-        }
-        robot_msgs::PointStamped handle_transformed;
-        // transform the point in the expected frame
-        try {
-            tf_->transformPoint(req.door.header.frame_id, handle, handle_transformed);
-        }
-        catch(tf::LookupException & ex){
-            ROS_ERROR("Lookup exception: %s\n", ex.what());
-        }
-        catch(tf::ExtrapolationException & ex){
-            ROS_DEBUG("Extrapolation exception: %s\n", ex.what());
-        }
-        catch(tf::ConnectivityException & ex){
-            ROS_ERROR("Connectivity exception: %s\n", ex.what());
-        }
-        if(found){
-            resp.doors.resize(1);
-            resp.doors[0] = req.door;
-            resp.doors[0].handle.x = handle.point.x;
-            resp.doors[0].handle.y = handle.point.y;
-            resp.doors[0].handle.z = handle.point.z;
-            resp.doors[0].weight = 1;
-        }else{
-            resp.doors[0].weight = -1;
-        }
-        return true;
-    }
 
 
     /**
@@ -952,12 +591,17 @@ private:
 
         cloud = cloud_fetch;
 
-        images_ready.notify_all();
+//        images_ready.notify_all();
+        runRecognitionLambertian();
     }
 
 
 
 public:
+	/**
+	 * Needed for OpenCV event loop, to show images
+	 * @return
+	 */
 	/**
 	 * Needed for OpenCV event loop, to show images
 	 * @return

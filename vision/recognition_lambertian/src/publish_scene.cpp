@@ -31,11 +31,10 @@
 /**
 @mainpage
 
-@htmlinclude manifest.html
+\author Marius Muja
 
-\author Radu Bogdan Rusu
-
-@b pcd_generator is a simple node that loads PCD (Point Cloud Data) files from disk and publishes them as ROS messages.
+@b publish_scenene is a node that publishes the PCD (Point Cloud Data) files and images captured with stereo_capture node.
+		It is derived from the pcd_generator node.
 
 **/
 
@@ -51,6 +50,7 @@
 #include <image_msgs/Image.h>
 #include <image_msgs/CvBridge.h>
 #include <image_msgs/FillImage.h>
+#include <std_msgs/String.h>
 
 #include <point_cloud_mapping/cloud_io.h>
 
@@ -76,6 +76,10 @@ protected:
 	Image right_;
 	Image disp_;
 
+
+	boost::mutex data_mutex;
+	boost::condition_variable new_data;
+
 public:
 
 	// ROS messages
@@ -87,6 +91,9 @@ public:
 	string right_topic_;
 	string disp_topic_;
 	double rate_;
+
+
+	std_msgs::String msg_prefix;
 
 	PublishScene (ros::Node& anode) : tf_frame_ ("base_link"), node_ (anode), broadcaster_ (anode),
 	transform_ (btTransform (btQuaternion (0, 0, 0), btVector3 (0, 0, 0)), ros::Time::now (), tf_frame_, tf_frame_)
@@ -101,6 +108,9 @@ public:
 		node_.advertise<image_msgs::Image> (right_topic_.c_str (), 1);
 		node_.advertise<image_msgs::Image> (disp_topic_.c_str (), 1);
 		ROS_INFO ("Publishing data on topic %s.", node_.mapName (cloud_topic_).c_str ());
+
+
+		node_.subscribe("~prefix", msg_prefix, &PublishScene::newPrefix, this, 1);
 
 		left_img_ = NULL;
 		right_img_ = NULL;
@@ -135,13 +145,28 @@ public:
 		}
 	}
 
+	void newPrefix()
+	{
+		boost::lock_guard<boost::mutex> lock(data_mutex);
 
-	////////////////////////////////////////////////////////////////////////////////
-	// Start
-	int start ()
+		ROS_INFO("Got new prefix");
+		prefix_ = msg_prefix.data;
+		int success = loadData();
+
+		if (success<0) {
+			ROS_ERROR("Cannot load data");
+		}
+		else {
+			new_data.notify_all();
+		}
+	}
+
+
+
+	int loadData()
 	{
 		if (prefix_ == "") {
-			return (-1);
+			return -1;
 		}
 
 		string cloud_pcd;
@@ -152,7 +177,7 @@ public:
 
 		ROS_INFO("Loading point cloud data: %s", cloud_pcd.c_str());
 		if (cloud_io::loadPCDFile (cloud_pcd.c_str (), msg_cloud_) == -1) {
-			return -1;
+			return -2;
 		}
 
 		ROS_INFO("Loading right image: %s", left_name.c_str());
@@ -162,8 +187,7 @@ public:
 		ROS_INFO("Loading disparity image: %s", disp_name.c_str());
 		disp_img_ = cvLoadImage(disp_name.c_str(),CV_LOAD_IMAGE_GRAYSCALE);
 
-
-		return (0);
+		return 0;
 	}
 
 
@@ -187,9 +211,13 @@ public:
 	// Spin (!)
 	bool spin ()
 	{
-		double interval = rate_ * 1e+6;
+//		double interval = rate_ * 1e+6;
 		while (node_.ok ())
 		{
+
+			boost::unique_lock<boost::mutex> lock(data_mutex);
+
+			new_data.wait(lock);
 
 			ros::Time stamp = ros::Time::now();
 
@@ -227,10 +255,10 @@ public:
 //			cvNamedWindow("disparity", 1);
 //			cvShowImage("disparity", disp_bridge.toIpl());
 
-			if (interval == 0)                      // We only publish once if a 0 seconds interval is given
-				break;
-			cvWaitKey(100);
-			usleep (interval);
+//			if (interval == 0)                      // We only publish once if a 0 seconds interval is given
+//				break;
+//			cvWaitKey(100);
+//			usleep (interval);
 		}
 
 		return (true);
@@ -243,25 +271,11 @@ public:
 int
 main (int argc, char** argv)
 {
-	if (argc < 3)
-	{
-		ROS_ERROR ("Syntax is: %s <prefix> [publishing_interval (in seconds)]", argv[0]);
-		return (-1);
-	}
 
 	ros::init (argc, argv);
-
-	ros::Node ros_node ("broadcast_scane");
+	ros::Node ros_node ("publish_scene");
 
 	PublishScene c (ros_node);
-	c.prefix_ = string (argv[1]);
-	c.rate_      = atof (argv[2]);
-
-	if (c.start () == -1)
-	{
-		ROS_ERROR ("Could not load file. Exiting.");
-		return (-1);
-	}
 	c.spin ();
 
 	return (0);
