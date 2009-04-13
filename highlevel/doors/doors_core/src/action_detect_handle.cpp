@@ -70,6 +70,8 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
   request_preempt_ = false;
   notifyActivated();
 
+  cout << "begin handle detection action " << door << endl;
+
   robot_msgs::Door result_laser, result_camera;
   if (!laserDetection(door, result_laser)){
     if (request_preempt_){
@@ -89,11 +91,12 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
     notifyAborted(door);
     return;
   }
-  ROS_INFO("DetectHandleAction: door message transformed to fixed frame");
+  cout << result_laser << endl;
+  ROS_INFO("DetectHandleAction: detected handle position transformed to '%s'", fixed_frame.c_str());
 
 
-  /*
-  if (!cameraDetection(door, result_laser)){
+
+  if (!cameraDetection(door, result_camera)){
     if (request_preempt_){
       ROS_INFO("DetectHandleAction: Preempted");
       notifyPreempted(door);
@@ -107,22 +110,23 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
   }
   if (!door_handle_detector::transformTo(tf_, fixed_frame, result_camera, result_camera)){
     ROS_ERROR ("DetectHandleAction: Could not transform door message from frame %s to frame %s.",
-                result_camera.header.frame_id.c_str (), fixed_frame.c_str ());
+	       result_camera.header.frame_id.c_str (), fixed_frame.c_str ());
     notifyAborted(door);
-     return;
-   }
-   ROS_INFO("DetectHandleAction: door message transformed to parameter frame");
-  */
-  result_camera = result_laser;
+    return;
+  }
+  cout << result_camera << endl;
+  ROS_INFO("DetectHandleAction: detected handle position transformed to '%s'", fixed_frame.c_str());
+  
 
 
+  //  result_camera = result_laser;
   double  error = sqrt(pow(result_laser.handle.x - result_camera.handle.x,2) +
 		       pow(result_laser.handle.y - result_camera.handle.y,2) +
 		       pow(result_laser.handle.z - result_camera.handle.z,2));
-  ROS_INFO("DetectHandleAction: Error between laser and camera result = %f", error);
+  ROS_INFO("DetectHandleAction: difference between laser and camera result = %f", error);
 
   if (error > 0.1){
-      ROS_INFO("DetectHandleAction: Aborted because error between laser and camera result is too big");
+      ROS_ERROR("DetectHandleAction: Aborted because error between laser and camera result is too big");
       notifyAborted(door);
       return;
   }
@@ -132,6 +136,7 @@ void DetectHandleAction::handleActivate(const robot_msgs::Door& door)
   result_laser.handle.y = (result_laser.handle.y + result_camera.handle.y)/2.0;
   result_laser.handle.z = (result_laser.handle.z + result_camera.handle.z)/2.0;
 
+  ROS_INFO("DetectHandleAction: Succeeded");
   notifySucceeded(result_laser);
 }
 
@@ -148,7 +153,6 @@ bool DetectHandleAction::laserDetection(const robot_msgs::Door& door_in,
   }
   tf::Stamped<tf::Transform> tilt_stage;
   tf_.lookupTransform("base_footprint", "laser_tilt_link", ros::Time(), tilt_stage);
-  ROS_INFO("DetectHandleAction: handle activate");
   double laser_height = tilt_stage.getOrigin()[2];
   tf::Stamped<tf::Vector3> handlepoint(tf::Vector3((door_in.door_p1.x+door_in.door_p2.x)/2.0,
 						   (door_in.door_p1.y+door_in.door_p2.y)/2.0,
@@ -207,10 +211,11 @@ bool DetectHandleAction::cameraDetection(const robot_msgs::Door& door_in,
   door_pnt.point.x = (door_in.door_p1.x+door_in.door_p2.x)/2.0;
   door_pnt.point.y = (door_in.door_p1.y+door_in.door_p2.y)/2.0;
   door_pnt.point.z = 0.9;
-  cout << "door_pnt.point " << door_in.header.frame_id << " " 
+  cout << "head point: (" 
        << door_pnt.point.x << " " 
-       << door_pnt.point.y << " " 
-       <<  door_pnt.point.z << endl;
+       << door_pnt.point.y << " "
+       << door_pnt.point.z << ")" << endl;
+
   node_.publish("head_controller/head_track_point", door_pnt);
   ros::Duration().fromSec(2).sleep();
 

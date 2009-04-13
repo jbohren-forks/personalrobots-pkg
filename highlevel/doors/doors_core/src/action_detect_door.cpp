@@ -33,6 +33,7 @@
  *********************************************************************/
 
 #include <door_handle_detector/DoorsDetectorCloud.h>
+#include <door_handle_detector/door_functions.h>
 #include <point_cloud_assembler/BuildCloudAngle.h>
 #include "doors_core/action_detect_door.h"
 
@@ -135,6 +136,7 @@ bool DetectDoorAction::laserDetection(const robot_msgs::Door& door_in, robot_msg
     return false;
   }
 
+  cout << "end door detection action " << res_doordetect.doors[0] << endl;
   door_out = res_doordetect.doors[0];
   return true;
 }
