@@ -26,7 +26,7 @@
   <depend package="place_recognition"/-->
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -loutlet"/>
+    <cpp cflags="-I${prefix}/include -I${prefix}/srv/cpp" lflags=" -L${prefix}/lib -loutlet"/>
   </export>
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>

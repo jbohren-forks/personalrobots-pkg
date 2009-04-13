@@ -3,6 +3,8 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rospack(outlet_detection)
 
+gensrv()
+
 rospack_add_boost_directories()
 
 add_definitions(-Wall -O3 -DNDEBUG)
@@ -18,7 +20,7 @@ target_link_libraries(outlet_sample outlet)
 rospack_add_executable(outlet_measure src/CalculateRealCoordinates.cpp src/OutletsMeasurement.cpp)
 target_link_libraries(outlet_measure outlet)
 
-add_definitions(-D_OUTLET_HR -D_TUNING -D_USE_OUTLET_TUPLE -D_VERBOSE)
+add_definitions(-D_OUTLET_HR -D_TUNING -D_USE_OUTLET_TUPLE)
 #add_definitions(-D_VERBOSE)
 
 rospack_add_executable(outlet_node src/outlet_node.cpp)
@@ -27,9 +29,3 @@ target_link_libraries(outlet_node outlet)
 rospack_add_executable(plug_node src/plug_node.cpp src/cvcalibinit.cpp)
 
 rospack_add_executable(calibrate_plug src/calibrate_plug.cpp)
-
-#rospack_add_executable(bin/useChessBoard src/useChessBoard.cpp)
-#rospack_add_executable(bin/templateMatching src/templateMatching.cpp)
-#rospack_add_library(blob cvblobslib/Blob.cpp cvblobslib/BlobResult.cpp cvblobslib/BlobExtraction.cpp)
-#rospack_add_executable(bin/orange_detect src/orange_detect.cpp)
-#target_link_libraries(bin/orange_detect blob)

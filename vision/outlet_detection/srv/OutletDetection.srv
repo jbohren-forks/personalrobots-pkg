@@ -1,0 +1,3 @@
+robot_msgs/PointStamped point
+---
+robot_msgs/PoseStamped pose

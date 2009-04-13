@@ -5,7 +5,12 @@
 #include <robot_msgs/PoseStamped.h>
 #include <prosilica_cam/PolledImage.h>
 #include <tf/transform_broadcaster.h>
-
+#include <tf/transform_listener.h>
+/*
+#include <robot_actions/action.h>
+#include <robot_actions/action_runner.h>
+#include <robot_actions/DetectOutletState.h>
+*/
 #include <LinearMath/btVector3.h>
 #include <LinearMath/btMatrix3x3.h>
 
@@ -18,7 +23,7 @@
 #include <Eigen/QR>
 
 #include "outlet_detector.h"
-
+#include "outlet_detection/OutletDetection.h"
 
 class OutletDetector : public ros::Node
 {
@@ -30,8 +35,9 @@ private:
   image_msgs::Image& img_;
   image_msgs::CamInfo& cam_info_;
   image_msgs::CvBridge img_bridge_;
-  robot_msgs::PoseStamped pose_;
+  std::vector<outlet_t> outlets_;
   tf::TransformBroadcaster tf_broadcaster_;
+  tf::TransformListener tf_listener_;
   CvMat* K_;
   bool display_;
 
@@ -43,7 +49,7 @@ private:
 public:
   OutletDetector()
     : ros::Node("outlet_detector"), img_(res_.image), cam_info_(res_.cam_info),
-      tf_broadcaster_(*this), K_(NULL)
+      tf_broadcaster_(*this), tf_listener_(*this), K_(NULL)
   {
     param("display", display_, true);
 
@@ -68,34 +74,47 @@ public:
     }
     
     advertise<robot_msgs::PoseStamped>("pose", 1);
+    advertiseService("detect_outlet", &OutletDetector::detectOutletService, this);
   }
 
   ~OutletDetector()
   {
+    unadvertise("pose");
+    unadvertiseService("detect_outlet");
+    
     cvReleaseMat(&K_);
     if (display_)
       cvDestroyWindow(wndname);
   }
 
-  void caminfo_cb()
+  void processCamInfo()
   {
     if (K_ == NULL)
       K_ = cvCreateMat(3, 3, CV_64FC1);
     memcpy(K_->data.db, &cam_info_.K[0], 9 * sizeof(double));
   }
 
-  void image_cb()
+  void processImage()
   {
-    if (!img_bridge_.fromImage(img_, "bgr")) {
-      ROS_ERROR("Failed to convert image");
-      return;
+    robot_msgs::PoseStamped pose;
+    
+    if (detectOutlet(pose)) {
+      publish("pose", pose);
+      
+      // Recenter ROI for next image request
+      if (roi_policy_ == LastImageLocation) {
+        CvRect tuple_roi[4];
+        for (int i = 0; i < 4; i++)
+          tuple_roi[i] = outlet_rect(outlets_[i]);
+        CvRect outlet_roi;
+        calc_bounding_rect(4, tuple_roi, outlet_roi);
+        outlet_roi.x += req_.region_x;
+        outlet_roi.y += req_.region_y;
+        outlet_roi = fitToFrame(resize_rect(outlet_roi, RESIZE_FACTOR));
+        setRoi(outlet_roi);
+      }
     }
-
-    IplImage* image = img_bridge_.toIpl();
-    std::vector<outlet_t> outlets;
-    if (!detect_outlet_tuple(image, K_, NULL, outlets)) {
-      //ROS_WARN("Failed to detect outlet");
-
+    else {
       // Expand ROI for next image
       if (roi_policy_ == LastImageLocation) {
         CvRect outlet_roi = cvRect(req_.region_x, req_.region_y,
@@ -103,18 +122,53 @@ public:
         outlet_roi = fitToFrame(resize_rect(outlet_roi, RESIZE_FACTOR));
         setRoi(outlet_roi);
       }
-      
+    }
+  }
+
+  bool detectOutletService(outlet_detection::OutletDetection::Request &od_req,
+                           outlet_detection::OutletDetection::Response &od_res)
+  {
+    // Transform coarse estimate to high-def camera frame
+    robot_msgs::PointStamped highdef_pt;
+    try {
+      tf_listener_.transformPoint("high_def_frame", od_req.point, highdef_pt);
+    }
+    catch (tf::TransformException &ex) {
+      ROS_ERROR("Transform exception: %s\n", ex.what());
+      return false;
+    }
+
+    // TODO: project to image, look in local ROI
+
+    // Fallback: search full frame
+    req_.region_x = req_.region_y = req_.width = req_.height = 0;
+    if (!ros::service::call("/prosilica/poll", req_, res_))
+      return false;
+    return detectOutlet(od_res.pose);
+  }
+  
+  bool detectOutlet(robot_msgs::PoseStamped &pose)
+  {
+    if (!img_bridge_.fromImage(img_, "bgr")) {
+      ROS_ERROR("Failed to convert image");
+      return false;
+    }
+
+    IplImage* image = img_bridge_.toIpl();
+    outlets_.clear();
+    if (!detect_outlet_tuple(image, K_, NULL, outlets_)) {
+      //ROS_WARN("Failed to detect outlet");
       if (display_)
         cvShowImage(wndname, image);
-      return;
+      return false;
     }
 
     // Change data representation and coordinate frame
     btVector3 holes[12];
     for (int i = 0; i < 4; ++i) {
-      changeAxes(outlets[i].coord_hole_ground, holes[3*i]);
-      changeAxes(outlets[i].coord_hole1, holes[3*i+1]);
-      changeAxes(outlets[i].coord_hole2, holes[3*i+2]);
+      changeAxes(outlets_[i].coord_hole_ground, holes[3*i]);
+      changeAxes(outlets_[i].coord_hole1, holes[3*i+1]);
+      changeAxes(outlets_[i].coord_hole2, holes[3*i+2]);
     }
 
     // Fit normal and right vectors to 12 socket holes
@@ -137,26 +191,15 @@ public:
     rotation.getRotation(orientation);
     tf::Transform outlet_pose(orientation, holes[0]);
     
-    // Publish to topic and TF
-    tf::PoseTFToMsg(outlet_pose, pose_.pose);
-    pose_.header.frame_id = "high_def_frame";
-    pose_.header.stamp = img_.header.stamp;
-    publish("pose", pose_);
+    // Publish to TF
     tf_broadcaster_.sendTransform(outlet_pose, ros::Time::now(),
                                   "outlet_frame", "high_def_frame");
 
-    // Calculate ROI for next image request
-    if (roi_policy_ == LastImageLocation) {
-      CvRect tuple_roi[4];
-      for (int i = 0; i < 4; i++)
-        tuple_roi[i] = outlet_rect(outlets[i]);
-      CvRect outlet_roi;
-      calc_bounding_rect(4, tuple_roi, outlet_roi);
-      outlet_roi.x += req_.region_x;
-      outlet_roi.y += req_.region_y;
-      outlet_roi = fitToFrame(resize_rect(outlet_roi, RESIZE_FACTOR));
-      setRoi(outlet_roi);
-    }
+    // Fill returned pose
+    tf::PoseTFToMsg(outlet_pose, pose.pose);
+    pose.header.frame_id = "high_def_frame";
+    pose.header.stamp = img_.header.stamp;
+
     /*
     ROS_INFO("Ground TL: %.5f %.5f %.5f, Ground TR: %.5f %.5f %.5f, "
              "Ground BR: %.5f %.5f %.5f, Ground BL: %.5f %.5f %.5f",
@@ -172,9 +215,11 @@ public:
     */
     
     if (display_) {
-      draw_outlets(image, outlets);
+      draw_outlets(image, outlets_);
       cvShowImage(wndname, image);
     }
+
+    return true;
   }
   
   bool spin()
@@ -182,8 +227,8 @@ public:
     while (ok())
     {
       if (ros::service::call("/prosilica/poll", req_, res_)) {
-        caminfo_cb();
-        image_cb();
+        processCamInfo();
+        processImage();
         // TODO: figure out what's actually causing banding
         usleep(100000); // hack to (mostly) get rid of banding
       } else {
