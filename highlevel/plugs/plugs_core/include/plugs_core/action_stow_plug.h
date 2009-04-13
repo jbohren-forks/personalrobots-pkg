@@ -32,58 +32,69 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+
+/* Author: Melonee Wise */
+
+#ifndef ACTION_STOW_PLUG_H
+#define ACTION_STOW_PLUG_H
+
+// ROS Stuff
+#include <ros/node.h>
+
 // Msgs
+#include <robot_mechanism_controllers/JointControllerState.h>
 #include <robot_msgs/PlugStow.h>
 #include <std_msgs/Empty.h>
+#include <std_msgs/Float64.h>
 
-// Actions
-#include <plugs_core/action_untuck_arms.h>
-#include <plugs_core/action_move_and_grasp_plug.h>
-#include <plugs_core/action_stow_plug.h>
+// Srvs 
+#include <robot_srvs/MoveToPose.h>
 
-// State Msgs
-#include <robot_actions/NoArgumentsActionState.h>
-#include <robot_actions/MoveAndGraspPlugState.h>
-
-
+// Robot Action Stuff
 #include <robot_actions/action.h>
-#include <robot_actions/action_runner.h>
 
-using namespace plugs_core;
 
-// -----------------------------------
-//              MAIN
-// -----------------------------------
+namespace plugs_core{
 
-int main(int argc, char** argv)
+class StowPlugAction: public robot_actions::Action<robot_msgs::PlugStow, std_msgs::Empty>
 {
-  ros::init(argc,argv);
+public:
+  StowPlugAction();
+  ~StowPlugAction();
 
-  ros::Node node("plugs_core_actions");
-  std_msgs::Empty empty;
-  robot_msgs::PlugStow plug_msg;
+  virtual void handleActivate(const robot_msgs::PlugStow& plug_stow);
+  virtual void handlePreempt();
+
+
+private:
   
-  UntuckArmsAction untuck_arms;
-  MoveAndGraspPlugAction move_and_grasp;
-  StowPlugAction stow_plug;
+  void reset();
+  void moveToStow();
+  void releasePlug();
+  void checkGrasp();
+  
+  std::string action_name_;
 
-  robot_actions::ActionRunner runner(10.0);
-  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(untuck_arms);
-  runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp);
-  runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(stow_plug);
+  ros::Node* node_;
 
-  runner.run();
+  std::string gripper_controller_;
+  std::string arm_controller_;
 
-  //untuck_arms.handleActivate(empty);
-  // plug_msg.header.frame_id = "torso_lift_link";
-  // plug_msg.stowed = 1;
-  // plug-msg.plug_centroid.x = 0.24;
-  // plug_msg.plug_centroid.y = 0.03;
-  // plug_msg.plug_centroid.z = -0.45;
-  // move_to_grasp.handleActivate(plug_msg);
+  std_msgs::Empty empty_;
+  robot_msgs::PlugStow plug_stow_;
+ 
+  
+  robot_srvs::MoveToPose::Request req_pose_;
+  robot_srvs::MoveToPose::Response res_pose_;
+  
+  robot_mechanism_controllers::JointControllerState controller_state_msg_;
+  
+  double last_grasp_value_;
+  int grasp_count_;
+  std_msgs::Float64 gripper_cmd_;
+   
+ 
+};
 
-  //untuck_arms.handleActivate(empty);
-
-  node.spin();
-  return 0;
 }
+#endif

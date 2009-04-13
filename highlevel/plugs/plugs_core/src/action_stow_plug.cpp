@@ -33,14 +33,14 @@
  *********************************************************************/
 
 
-#include <plugs_core/action_move_and_grasp_plug.h>
+#include <plugs_core/action_stow_plug.h>
 
 
 using namespace plugs_core;
 
-MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
-  robot_actions::Action<robot_msgs::PlugStow, std_msgs::Empty>("move_and_grasp_plug"),
-  action_name_("move_and_grasp_plug"),
+StowPlugAction::StowPlugAction() :
+  robot_actions::Action<robot_msgs::PlugStow, std_msgs::Empty>("stow_plug"),
+  action_name_("stow_plug"),
   node_(ros::Node::instance()),
   gripper_controller_("r_gripper_position_controller"),  
   arm_controller_("r_arm_cartesian_trajectory_controller")
@@ -64,11 +64,11 @@ MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
 
 };
 
-MoveAndGraspPlugAction::~MoveAndGraspPlugAction()
+StowPlugAction::~StowPlugAction()
 {
 };
 
-void MoveAndGraspPlugAction::handleActivate(const robot_msgs::PlugStow& plug_stow)
+void StowPlugAction::handleActivate(const robot_msgs::PlugStow& plug_stow)
 {
   notifyActivated();
 
@@ -76,25 +76,25 @@ void MoveAndGraspPlugAction::handleActivate(const robot_msgs::PlugStow& plug_sto
 
   reset();
   
-  node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
-  moveToGrasp();
-  graspPlug();
+  moveToStow();
+  releasePlug();
   return;
 }
 
-void MoveAndGraspPlugAction::handlePreempt()
+void StowPlugAction::handlePreempt()
 {
   ROS_INFO("%s: Preempted.", action_name_.c_str());
   notifyPreempted(empty_);
   return;
 }
 
-void MoveAndGraspPlugAction::reset()
+void StowPlugAction::reset()
 {
   
-  last_grasp_value_ = 10.0;
+  last_grasp_value_ = 0.0;
   grasp_count_ = 0;
   gripper_cmd_.data = 0.04;
+
   req_pose_.pose.header.frame_id = plug_stow_.header.frame_id; 
   req_pose_.pose.pose.position.x = plug_stow_.plug_centroid.x;
   req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y;
@@ -109,12 +109,12 @@ void MoveAndGraspPlugAction::reset()
 }
 
 
-void MoveAndGraspPlugAction::moveToGrasp()
+void StowPlugAction::moveToStow()
 {
   if (!isActive())
     return;
 
-  node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
+  
   req_pose_.pose.header.stamp = ros::Time();
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
@@ -135,23 +135,22 @@ void MoveAndGraspPlugAction::moveToGrasp()
     notifyAborted(empty_);
     return;
   }
-  gripper_cmd_.data = 0.0;
   return;
 }
 
 
-void MoveAndGraspPlugAction::graspPlug()
+void StowPlugAction::releasePlug()
 {
   if (!isActive())
     return;
 
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
-  node_->subscribe(gripper_controller_ + "/state", controller_state_msg_, &MoveAndGraspPlugAction::checkGrasp, this, 1); 
+  node_->subscribe(gripper_controller_ + "/state", controller_state_msg_, &StowPlugAction::checkGrasp, this, 1); 
   
   return;
 }
 
-void MoveAndGraspPlugAction::checkGrasp()
+void StowPlugAction::checkGrasp()
 {
   if (!isActive())
     return;
@@ -159,7 +158,7 @@ void MoveAndGraspPlugAction::checkGrasp()
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
   
   // Make sure that the gripper has stopped moving
-  if(last_grasp_value_ > controller_state_msg_.process_value)
+  if(last_grasp_value_ < controller_state_msg_.process_value)
   {
     last_grasp_value_ = controller_state_msg_.process_value;
   }
@@ -171,10 +170,10 @@ void MoveAndGraspPlugAction::checkGrasp()
   // The gripper is closed and stopped moving
   if(grasp_count_ > 20)
   {
-    // Something went wrong... no plug grasped in gripper
-    if(controller_state_msg_.error < 0.005)
+    // Something went wrong... can't open the gripper
+    if(controller_state_msg_.error > 0.005)
     {
-      ROS_INFO("%s: Error, failed to grasp plug.", action_name_.c_str());
+      ROS_INFO("%s: Error, failed to release plug.", action_name_.c_str());
       node_->unsubscribe(gripper_controller_ + "/state");
       notifyAborted(empty_);
       return;
