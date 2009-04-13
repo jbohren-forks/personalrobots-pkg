@@ -32,61 +32,45 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+
+/* Author: Patrick Mihelich */
+
+#ifndef ACTION_FINE_OUTLET_DETECT_H
+#define ACTION_FINE_OUTLET_DETECT_H
+
+// ROS Stuff
+#include <ros/node.h>
+
 // Msgs
-#include <robot_msgs/PlugStow.h>
-#include <std_msgs/Empty.h>
+#include <robot_msgs/PointStamped.h>
+#include <robot_msgs/PoseStamped.h>
+#include <robot_actions/DetectOutletState.h>
 
-// Actions
-#include <plugs_core/action_untuck_arms.h>
-#include <plugs_core/action_move_and_grasp_plug.h>
-#include <plugs_core/action_fine_outlet_detect.h>
-#include <plugs_core/action_stow_plug.h>
+// Srvs 
+#include <outlet_detection/OutletDetection.h>
 
-// State Msgs
-#include <robot_actions/NoArgumentsActionState.h>
-#include <robot_actions/MoveAndGraspPlugState.h>
-
-
+// Robot Action Stuff
 #include <robot_actions/action.h>
-#include <robot_actions/action_runner.h>
 
-using namespace plugs_core;
 
-// -----------------------------------
-//              MAIN
-// -----------------------------------
+namespace plugs_core{
 
-int main(int argc, char** argv)
+class FineOutletDetectAction
+  : public robot_actions::Action<robot_msgs::PointStamped,
+                                 robot_msgs::PoseStamped>
 {
-  ros::init(argc,argv);
+public:
+  FineOutletDetectAction();
 
-  ros::Node node("plugs_core_actions");
-  std_msgs::Empty empty;
-  robot_msgs::PlugStow plug_msg;
-  
-  UntuckArmsAction untuck_arms;
-  MoveAndGraspPlugAction move_and_grasp;
-  StowPlugAction stow_plug;
-  FineOutletDetectAction fine_outlet_detect;
+  virtual void handleActivate(const robot_msgs::PointStamped& point);
+  virtual void handlePreempt();
 
-  robot_actions::ActionRunner runner(10.0);
-  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(untuck_arms);
-  runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp);
-  runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(stow_plug);
-  runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(fine_outlet_detect);
+private:
+  ros::Node* node_;
 
-  runner.run();
+  outlet_detection::OutletDetection::Request req_;
+  outlet_detection::OutletDetection::Response res_;
+};
 
-  //untuck_arms.handleActivate(empty);
-  // plug_msg.header.frame_id = "torso_lift_link";
-  // plug_msg.stowed = 1;
-  // plug-msg.plug_centroid.x = 0.24;
-  // plug_msg.plug_centroid.y = 0.03;
-  // plug_msg.plug_centroid.z = -0.45;
-  // move_to_grasp.handleActivate(plug_msg);
-
-  //untuck_arms.handleActivate(empty);
-
-  node.spin();
-  return 0;
 }
+#endif
