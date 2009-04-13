@@ -12,7 +12,7 @@
 
 %include "LinearMath/btScalar.h"
 %include "LinearMath/btMinMax.h"
-
+%include "LinearMath/btQuadWord.h"
 
 %include "pybtVector3.h"
 %include "pybtQuaternion.h"

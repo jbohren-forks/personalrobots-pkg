@@ -15,9 +15,9 @@ The Bullet Physics Engine
 <sysdepend os="ubuntu" version="8.04-hardy" package="swig"/>
 <sysdepend os="ubuntu" version="7.10-gutsy" package="swig"/>
 <export>
-<cpp cflags="-I${prefix}/build/include -I${prefix}/swig -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX" lflags="-L${prefix}/build/lib -lLinearMath -lBulletCollision -lBulletDynamics" />
+<cpp cflags="-I${prefix}/build/include -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX  -I${prefix}/swig" lflags="-L${prefix}/build/lib -lLinearMath -lBulletCollision -lBulletDynamics" />
   <doxymaker external="http://www.continuousphysics.com/Bullet/BulletFull/index.html" />
-<swig flags="-python -c++"/>
+<swig flags="-python -c++ -I${prefix}/build/include -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX -I${prefix}/swig "/>
 </export>
 </package>
 
