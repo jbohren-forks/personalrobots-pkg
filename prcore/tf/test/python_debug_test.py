@@ -68,5 +68,33 @@ try:
 
     tr = tf.TransformStamped()
 
+    lps = tf.PoseStamped()
+    print "getting stamp"
+    print lps.stamp
+#    mytime = rospy.Time().now()
+    mytime = rospy.Time(10,20)
+    lps.stamp = mytime
+    print mytime
+    print "getting stamp"
+    output = lps.stamp
+    print output
+    print 'private varilables ', lps._sec, lps._nsec
+
+
+    lps = tf.PointStamped()
+    print "getting stamp"
+    print lps.stamp
+#    mytime = rospy.Time().now()
+    mytime = rospy.Time(10,20)
+    lps.stamp = mytime
+    print mytime
+    print "getting stamp"
+    output = lps.stamp
+    print output
+    print 'private varilables ', lps._sec, lps._nsec
+
+
 except ValueError, e:
     print "Exception %s Improperly thrown: %s"%(type(e), e)
+
+

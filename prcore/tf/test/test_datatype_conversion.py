@@ -14,7 +14,7 @@ class PoseConversions(unittest.TestCase):
         self.tfpose_stamped = tf.PoseStamped()
         self.tfpose_stamped.pose.setIdentity()
         self.tfpose_stamped.frame_id = "frame1"
-        self.tfpose_stamped.stamp = 10.0
+        self.tfpose_stamped.stamp = roslib.rostime.Time(10,0)
 
         self.msgpose_stamped = robot_msgs.msg.PoseStamped()
         self.msgpose_stamped.pose.position.x = 0
@@ -25,7 +25,7 @@ class PoseConversions(unittest.TestCase):
         self.msgpose_stamped.pose.orientation.z = 0
         self.msgpose_stamped.pose.orientation.w = 1
         self.msgpose_stamped.header.frame_id = "frame1"
-        self.msgpose_stamped.header.stamp = rospy.Time().from_seconds(10.0)
+        self.msgpose_stamped.header.stamp = roslib.rostime.Time(10,0)
 
         ## Setup the point tests
         self.tfpoint_stamped = tf.PointStamped()
@@ -33,14 +33,14 @@ class PoseConversions(unittest.TestCase):
         self.tfpoint_stamped.point.y = 0
         self.tfpoint_stamped.point.z = 0
         self.tfpoint_stamped.frame_id = "frame1"
-        self.tfpoint_stamped.stamp = 10.0
+        self.tfpoint_stamped.stamp = roslib.rostime.Time(10,0)
 
         self.msgpoint_stamped = robot_msgs.msg.PointStamped()
         self.msgpoint_stamped.point.x = 0
         self.msgpoint_stamped.point.y = 0
         self.msgpoint_stamped.point.z = 0
         self.msgpoint_stamped.header.frame_id = "frame1"
-        self.msgpoint_stamped.header.stamp = rospy.Time().from_seconds(10.0)
+        self.msgpoint_stamped.header.stamp = roslib.rostime.Time(10,0)
 
         ## Setup the vector tests
         self.tfvector_stamped = tf.VectorStamped()
@@ -55,7 +55,7 @@ class PoseConversions(unittest.TestCase):
         self.msgvector_stamped.vector.y = 0
         self.msgvector_stamped.vector.z = 0
         self.msgvector_stamped.header.frame_id = "frame1"
-        self.msgvector_stamped.header.stamp = rospy.Time().from_seconds(10.0)
+        self.msgvector_stamped.header.stamp = roslib.rostime.Time(10,0)
 
         ## Setup the quaternion tests
         self.tfquaternion_stamped = tf.QuaternionStamped()
@@ -72,7 +72,7 @@ class PoseConversions(unittest.TestCase):
         self.msgquaternion_stamped.quaternion.z = 0
         self.msgquaternion_stamped.quaternion.w = 1
         self.msgquaternion_stamped.header.frame_id = "frame1"
-        self.msgquaternion_stamped.header.stamp = rospy.Time().from_seconds(10.0)
+        self.msgquaternion_stamped.header.stamp = roslib.rostime.Time(10,0)
         
     # Test Pose conversions
     def test_msg_operator(self):

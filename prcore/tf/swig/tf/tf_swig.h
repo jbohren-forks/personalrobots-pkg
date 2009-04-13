@@ -43,14 +43,15 @@ public:
   TransformStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
     parent_id("PARENT_ID_UNINITIALIZED"),
-    stamp(0.0) {};
-  TransformStamped(py::Transform t, double stamp_in, const std::string& frame_id_in, const std::string& parent_id_in):
+    _sec(0), _nsec(0) {};
+  TransformStamped(py::Transform t, int sec, int nsec, const std::string& frame_id_in, const std::string& parent_id_in):
     transform(t), frame_id(frame_id_in),
-    parent_id(parent_id_in), stamp(stamp_in)  {};
+    parent_id(parent_id_in), _sec(sec), _nsec(nsec)  {};
   py::Transform transform;
   std::string frame_id;
   std::string parent_id;
-  double stamp;
+  int _sec;
+  int _nsec;
 };
 
 /**\brief The swig interface data type */
@@ -60,14 +61,15 @@ public:
   PoseStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
     parent_id("PARENT_ID_UNINITIALIZED"),
-    stamp(0.0) {};
-  PoseStamped(py::Transform p, double stamp_in, const std::string& frame_id_in):
+    _sec(0), _nsec(0) {};
+  PoseStamped(py::Transform p, int stamp_sec, int stamp_nsec, const std::string& frame_id_in):
     pose(p), frame_id(frame_id_in),
-    parent_id("PARENT_ID_UNINITIALIZED"), stamp(stamp_in)  {};
+    parent_id("PARENT_ID_UNINITIALIZED"), _sec(stamp_sec), _nsec(stamp_nsec)  {};
   py::Transform pose;
   std::string frame_id;
   std::string parent_id;
-  double stamp;
+  int _sec;
+  int _nsec;
 };
 
 /**\brief The swig interface data type */
@@ -77,14 +79,15 @@ public:
   PointStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
     parent_id("PARENT_ID_UNINITIALIZED"),
-    stamp(0.0) {};
-  PointStamped(py::Vector3 p, double stamp_in, const std::string& frame_id_in):
+    _sec(0), _nsec(0) {};
+  PointStamped(py::Vector3 p, int sec, int nsec, const std::string& frame_id_in):
     point(p), frame_id(frame_id_in),
-    parent_id("PARENT_ID_UNINITIALIZED"), stamp(stamp_in)  {};
+    parent_id("PARENT_ID_UNINITIALIZED"), _sec(sec), _nsec(nsec)  {};
   py::Vector3 point;
   std::string frame_id;
   std::string parent_id;
-  double stamp;
+  int _sec;
+  int _nsec;
 };
 
 /**\brief The swig interface data type */
@@ -94,14 +97,15 @@ public:
   VectorStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
     parent_id("PARENT_ID_UNINITIALIZED"),
-    stamp(0.0) {};
-  VectorStamped(py::Vector3 p, double stamp_in, const std::string& frame_id_in):
+    _sec(0), _nsec(0) {};
+  VectorStamped(py::Vector3 p, int sec, int nsec, const std::string& frame_id_in):
     vector(p), frame_id(frame_id_in),
-    parent_id("PARENT_ID_UNINITIALIZED"), stamp(stamp_in)  {};
+    parent_id("PARENT_ID_UNINITIALIZED"), _sec(sec), _nsec(nsec)  {};
   py::Vector3 vector;
   std::string frame_id;
   std::string parent_id;
-  double stamp;
+  int _sec;
+  int _nsec;
 };
 
 /**\brief The swig interface data type */
@@ -111,14 +115,15 @@ public:
   QuaternionStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
     parent_id("PARENT_ID_UNINITIALIZED"),
-    stamp(0.0) {};
-  QuaternionStamped(py::Quaternion q, double stamp_in, const std::string& frame_id_in):
+    _sec(0), _nsec(0) {};
+  QuaternionStamped(py::Quaternion q, int sec, int nsec, const std::string& frame_id_in):
     quaternion(q), frame_id(frame_id_in),
-    parent_id("PARENT_ID_UNINITIALIZED"), stamp(stamp_in)  {};
+    parent_id("PARENT_ID_UNINITIALIZED"), _sec(sec), _nsec(nsec)  {};
   py::Quaternion quaternion;
   std::string frame_id;
   std::string parent_id;
-  double stamp;
+  int _sec;
+  int _nsec;
 };
 
 
@@ -342,7 +347,7 @@ void QuaternionStampedPytoBt(const QuaternionStamped & in, tf::Stamped<tf::Quate
 {
   const py::Quaternion & quat_in = in.quaternion;
   out = tf::Stamped<tf::Quaternion>(tf::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
-                                    ros::Time().fromSec(in.stamp),
+                                    ros::Time(in._sec, in._nsec),
                                     in.frame_id);
 };
   
@@ -350,7 +355,7 @@ void QuaternionStampedBttoPy(const tf::Stamped<tf::Quaternion>& in, QuaternionSt
 {
   const tf::Quaternion & quat_in = in;
   out = QuaternionStamped(py::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
-                          in.stamp_.toSec(),
+                          in.stamp_.sec, in.stamp_.nsec,
                           in.frame_id_);
 };
 
@@ -358,7 +363,7 @@ void PointStampedPytoBt(const PointStamped & in, tf::Stamped<tf::Point>& out) co
 {
   const py::Vector3 & point_in = in.point;
   out = tf::Stamped<tf::Point>(tf::Point(point_in.x(), point_in.y(), point_in.z()),
-                               ros::Time().fromSec(in.stamp),
+                               ros::Time(in._sec, in._nsec),
                                in.frame_id);
 };
   
@@ -366,7 +371,7 @@ void PointStampedBttoPy(const tf::Stamped<tf::Point>& in, PointStamped& out) con
 {
   const tf::Point & point_in = in;
   out = PointStamped(py::Vector3(point_in.x(), point_in.y(), point_in.z()),
-                     in.stamp_.toSec(),
+                     in.stamp_.sec, in.stamp_.nsec,
                      in.frame_id_);
 };
 
@@ -374,7 +379,7 @@ void VectorStampedPytoBt(const VectorStamped & in, tf::Stamped<tf::Vector3>& out
 {
   const py::Vector3 & vector_in = in.vector;
   out = tf::Stamped<tf::Vector3>(tf::Vector3(vector_in.x(), vector_in.y(), vector_in.z()),
-                               ros::Time().fromSec(in.stamp),
+                               ros::Time(in._sec, in._nsec),
                                in.frame_id);
 };
   
@@ -382,7 +387,7 @@ void VectorStampedBttoPy(const tf::Stamped<tf::Vector3>& in, VectorStamped& out)
 {
   const tf::Vector3 & vector_in = in;
   out = VectorStamped(py::Vector3(vector_in.x(), vector_in.y(), vector_in.z()),
-                     in.stamp_.toSec(),
+                     in.stamp_.sec, in.stamp_.nsec,
                      in.frame_id_);
 };
 
@@ -392,7 +397,7 @@ void PoseStampedPytoBt(const PoseStamped & in, tf::Stamped<tf::Pose>& out) const
   const py::Quaternion & quat_in = in.pose.getRotation();
   out = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
                                        tf::Point(point_in.x(), point_in.y(), point_in.z())),
-                              ros::Time().fromSec(in.stamp),
+                              ros::Time(ros::Time(in._sec, in._nsec)),
                               in.frame_id);
 };
 
@@ -402,7 +407,7 @@ void PoseStampedBttoPy(const tf::Stamped<tf::Pose>& in, PoseStamped& out) const
   const tf::Quaternion & quat = in.getRotation();
   out = PoseStamped(py::Transform(py::Quaternion(quat.x(), quat.y(), quat.z(), quat.w()), 
                                   py::Vector3(orig.x(), orig.y(), orig.z())),
-                    in.stamp_.toSec(),
+                    in.stamp_.sec, in.stamp_.nsec,
                     in.frame_id_);
 };
 
@@ -412,7 +417,7 @@ void TransformStampedPytoBt(const TransformStamped & in, tf::Stamped<tf::Transfo
   const py::Quaternion & quat_in = in.transform.getRotation();
   out = tf::Stamped<tf::Transform>(tf::Transform(tf::Quaternion(quat_in.x(), quat_in.y(), quat_in.z(), quat_in.w()),
                                                  tf::Point(point_in.x(), point_in.y(), point_in.z())),
-                                   ros::Time().fromSec(in.stamp),
+                                   ros::Time(in._sec, in._nsec),
                                    in.frame_id, 
                                    in.parent_id);
 };
@@ -423,7 +428,7 @@ void TransformStampedBttoPy(const tf::Stamped<tf::Transform>& in, TransformStamp
   const tf::Quaternion & quat = in.getRotation();
   out = TransformStamped(py::Transform(py::Quaternion(quat.x(), quat.y(), quat.z(), quat.w()), 
                                        py::Vector3(orig.x(), orig.y(), orig.z())),
-                         in.stamp_.toSec(),
+                         in.stamp_.sec, in.stamp_.nsec,
                          in.frame_id_,
                          in.parent_id_);
 };

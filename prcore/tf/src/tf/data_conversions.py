@@ -28,9 +28,92 @@
 import roslib; roslib.load_manifest("tf")
 
 import tf
+import tf.tf_swig
 import bullet
 import robot_msgs.msg
 import rospy #for rostime
+
+
+class PoseStamped(tf.tf_swig.PoseStamped):
+    def __getattribute__(self,name):
+        if name == "stamp":
+            return roslib.rostime.Time(self._sec, self._nsec)
+        else:
+            return tf.tf_swig.PoseStamped.__getattribute__(self,name)
+
+    def __setattr__(self, name, value):
+        if name == "stamp":
+            print "sec ", value.secs
+            print "nsec ", value.nsecs
+            print type (value.secs)
+            object.__setattr__(self, '_sec',int(value.secs))
+            object.__setattr__(self, '_nsec',value.nsecs)
+        else:
+            object.__setattr__(self,name, value)
+        
+class TransformStamped(tf.tf_swig.TransformStamped):
+    def __getattribute__(self,name):
+        if name == "stamp":
+            return roslib.rostime.Time(self._sec, self._nsec)
+        else:
+            return tf.tf_swig.TransformStamped.__getattribute__(self,name)
+
+    def __setattr__(self, name, value):
+        if name == "stamp":
+            print "sec ", value.secs
+            print "nsec ", value.nsecs
+            object.__setattr__(self, '_sec',value.secs)
+            object.__setattr__(self, '_nsec',value.nsecs)
+        else:
+            object.__setattr__(self,name, value)
+        
+class PointStamped(tf.tf_swig.PointStamped):
+    def __getattribute__(self,name):
+        if name == "stamp":
+            return roslib.rostime.Time(self._sec, self._nsec)
+        else:
+            return tf.tf_swig.PointStamped.__getattribute__(self,name)
+
+    def __setattr__(self, name, value):
+        if name == "stamp":
+            print "sec ", value.secs
+            print "nsec ", value.nsecs
+            object.__setattr__(self, '_sec',value.secs)
+            object.__setattr__(self, '_nsec',value.nsecs)
+        else:
+            object.__setattr__(self,name, value)
+
+class VectorStamped(tf.tf_swig.VectorStamped):
+    def __getattribute__(self,name):
+        if name == "stamp":
+            return roslib.rostime.Time(self._sec, self._nsec)
+        else:
+            return tf.tf_swig.VectorStamped.__getattribute__(self,name)
+
+    def __setattr__(self, name, value):
+        if name == "stamp":
+            print "sec ", value.secs
+            print "nsec ", value.nsecs
+            object.__setattr__(self, '_sec',value.secs)
+            object.__setattr__(self, '_nsec',value.nsecs)
+        else:
+            object.__setattr__(self,name, value)
+
+class QuaternionStamped(tf.tf_swig.QuaternionStamped):
+    def __getattribute__(self,name):
+        if name == "stamp":
+            return roslib.rostime.Time(self._sec, self._nsec)
+        else:
+            return tf.tf_swig.QuaternionStamped.__getattribute__(self,name)
+
+    def __setattr__(self, name, value):
+        if name == "stamp":
+            print "sec ", value.secs
+            print "nsec ", value.nsecs
+            object.__setattr__(self, '_sec',value.secs)
+            object.__setattr__(self, '_nsec',value.nsecs)
+        else:
+            object.__setattr__(self,name, value)
 
 def transform_msg_to_bt(msg):
     rot = msg.rotation
@@ -43,7 +126,7 @@ def transform_msg_to_bt(msg):
 
 def transform_stamped_msg_to_bt(msg):
     return tf.TransformStamped(transform_msg_to_bt(msg.transform),
-                                    msg.header.stamp.to_seconds(),
+                                    msg.header.stamp.secs, msg.header.stamp.nsecs,
                                     msg.header.frame_id,
                                     msg.parent_id)
 
@@ -79,7 +162,7 @@ def pose_msg_to_bt(msg):
 
 def pose_stamped_msg_to_bt(msg):
     return tf.PoseStamped(pose_msg_to_bt(msg.pose),
-                                    msg.header.stamp.to_seconds(),
+                                    msg.header.stamp.secs, msg.header.stamp.nsecs,
                                     msg.header.frame_id)
 
 def pose_bt_to_msg(bt):
@@ -108,7 +191,7 @@ def point_msg_to_bt(msg):
 
 def point_stamped_msg_to_bt(msg):
     return tf.PointStamped(point_msg_to_bt(msg.point),
-                                    msg.header.stamp.to_seconds(),
+                                    msg.header.stamp.secs, msg.header.stamp.nsecs,
                                     msg.header.frame_id)
 
 def point_bt_to_msg(bt):
@@ -132,7 +215,7 @@ def vector_msg_to_bt(msg):
 
 def vector_stamped_msg_to_bt(msg):
     return tf.VectorStamped(vector_msg_to_bt(msg.vector),
-                                    msg.header.stamp.to_seconds(),
+                                    msg.header.stamp.secs, msg.header.stamp.nsecs,
                                     msg.header.frame_id)
 
 def vector_bt_to_msg(bt):
@@ -155,7 +238,7 @@ def quaternion_msg_to_bt(msg):
 
 def quaternion_stamped_msg_to_bt(msg):
     return tf.QuaternionStamped(quaternion_msg_to_bt(msg.quaternion),
-                                    msg.header.stamp.to_seconds(),
+                                    msg.header.stamp.secs, msg.header.stamp.nsecs,
                                     msg.header.frame_id)
 
 def quaternion_bt_to_msg(bt):
