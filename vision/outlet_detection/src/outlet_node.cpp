@@ -48,11 +48,11 @@ public:
     : ros::Node("outlet_detector"), img_(res_.image), cam_info_(res_.cam_info),
       tf_broadcaster_(*this), tf_listener_(*this), K_(NULL)
   {
-    param("display", display_, true);
-    param("service_mode", service_mode_, false);
+    param("~display", display_, true);
+    param("~service_mode", service_mode_, false);
 
     std::string policy;
-    param("roi_policy", policy, std::string("WholeFrame"));
+    param("~roi_policy", policy, std::string("WholeFrame"));
     if (policy == std::string("WholeFrame"))
       roi_policy_ = WholeFrame;
     else if (policy == std::string("LastImageLocation"))
@@ -72,17 +72,17 @@ public:
     }
     
     if (service_mode_)
-      advertiseService("detect_outlet", &OutletDetector::detectOutletService, this);
+      advertiseService("~fine_outlet_detect", &OutletDetector::detectOutletService, this);
     else
-      advertise<robot_msgs::PoseStamped>("pose", 1);
+      advertise<robot_msgs::PoseStamped>("~pose", 1);
   }
 
   ~OutletDetector()
   {
     if (service_mode_)
-      unadvertiseService("detect_outlet");
+      unadvertiseService("~fine_outlet_detect");
     else
-      unadvertise("pose");
+      unadvertise("~pose");
     
     cvReleaseMat(&K_);
     if (display_)
@@ -101,7 +101,7 @@ public:
     robot_msgs::PoseStamped pose;
     
     if (detectOutlet(pose)) {
-      publish("pose", pose);
+      publish("~pose", pose);
       
       // Recenter ROI for next image request
       if (roi_policy_ == LastImageLocation) {
