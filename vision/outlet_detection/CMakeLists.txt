@@ -30,3 +30,5 @@ target_link_libraries(outlet_node outlet)
 rospack_add_executable(plug_node src/plug_node.cpp src/cvcalibinit.cpp)
 
 rospack_add_executable(calibrate_plug src/calibrate_plug.cpp)
+
+rospack_add_executable(test_outlet_service src/test_outlet_service.cpp)

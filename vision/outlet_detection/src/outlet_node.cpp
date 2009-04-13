@@ -146,6 +146,7 @@ public:
     req_.region_x = req_.region_y = req_.width = req_.height = 0;
     if (!ros::service::call("/prosilica/poll", req_, res_))
       return false;
+    processCamInfo();
     return detectOutlet(od_res.pose);
   }
   
