@@ -6,11 +6,7 @@
 #include <prosilica_cam/PolledImage.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
-/*
-#include <robot_actions/action.h>
-#include <robot_actions/action_runner.h>
-#include <robot_actions/DetectOutletState.h>
-*/
+
 #include <LinearMath/btVector3.h>
 #include <LinearMath/btMatrix3x3.h>
 
@@ -40,6 +36,7 @@ private:
   tf::TransformListener tf_listener_;
   CvMat* K_;
   bool display_;
+  bool service_mode_;
 
   // TODO: policies to listen from far outlet detection, last 3d location?
   enum { WholeFrame, LastImageLocation } roi_policy_;
@@ -52,6 +49,7 @@ public:
       tf_broadcaster_(*this), tf_listener_(*this), K_(NULL)
   {
     param("display", display_, true);
+    param("service_mode", service_mode_, false);
 
     std::string policy;
     param("roi_policy", policy, std::string("WholeFrame"));
@@ -73,14 +71,18 @@ public:
       cvStartWindowThread();
     }
     
-    advertise<robot_msgs::PoseStamped>("pose", 1);
-    advertiseService("detect_outlet", &OutletDetector::detectOutletService, this);
+    if (service_mode_)
+      advertiseService("detect_outlet", &OutletDetector::detectOutletService, this);
+    else
+      advertise<robot_msgs::PoseStamped>("pose", 1);
   }
 
   ~OutletDetector()
   {
-    unadvertise("pose");
-    unadvertiseService("detect_outlet");
+    if (service_mode_)
+      unadvertiseService("detect_outlet");
+    else
+      unadvertise("pose");
     
     cvReleaseMat(&K_);
     if (display_)
@@ -222,8 +224,11 @@ public:
     return true;
   }
   
-  bool spin()
+  void spin()
   {
+    if (service_mode_)
+      return ros::Node::spin();
+
     while (ok())
     {
       if (ros::service::call("/prosilica/poll", req_, res_)) {
@@ -237,8 +242,6 @@ public:
         usleep(100000);
       }
     }
-
-    return true;
   }
 
 private:

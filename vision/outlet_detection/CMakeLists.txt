@@ -3,8 +3,9 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rospack(outlet_detection)
 
-gensrv()
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
+gensrv()
 rospack_add_boost_directories()
 
 add_definitions(-Wall -O3 -DNDEBUG)
