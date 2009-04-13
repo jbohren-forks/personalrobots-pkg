@@ -89,21 +89,28 @@ namespace door_base_collision_cost
 
     void writeSolution(const std::string &filename, const robot_msgs::Point32 &robot_position, const double &robot_yaw, const std::vector<int> &angles, const std::vector<int> &angle_costs);
 
+    void getDesiredDoorAngles(const std::vector<int> &desired_door_anglesV, std::vector<int> &local_desired_door_angles);
+
     private:
 
     void transform2DInverse(const robot_msgs::Point32 &point_in, 
-                                                   robot_msgs::Point32 &point_out, 
-                                                   const robot_msgs::Point32 &frame, 
-                                                   const double &frame_yaw);
+                                  robot_msgs::Point32 &point_out, 
+                            const robot_msgs::Point32 &frame, 
+                            const double &frame_yaw);
 
-    void transform2D(const robot_msgs::Point32 &point_in, robot_msgs::Point32 &point_out, const robot_msgs::Point32 &frame, const double &frame_yaw);
+    void transform2D(const robot_msgs::Point32 &point_in, 
+                           robot_msgs::Point32 &point_out, 
+                     const robot_msgs::Point32 &frame, 
+                     const double &frame_yaw);
 
 
     unsigned char findWorkspaceCost(const robot_msgs::Point32 &robot_position, 
                                     const double &robot_yaw, 
                                     const double &door_angle);
 
-    bool  findAngleLimits(const double max_radius, const robot_msgs::Point32 &point, double &angle);
+    bool  findAngleLimits(const double max_radius, 
+                          const robot_msgs::Point32 &point, 
+                          double &angle);
 
 
     bool findCircleLineSegmentIntersection(const robot_msgs::Point32 &p1, 
@@ -123,7 +130,9 @@ namespace door_base_collision_cost
                         double &max_obstructed_angle);
 
 
-    void getDoorFrameFootprint(const robot_msgs::Point32 &robot_global_position, const double &robot_global_yaw, std::vector<robot_msgs::Point32> &fp_out);
+    void getDoorFrameFootprint(const robot_msgs::Point32 &robot_global_position, 
+                               const double &robot_global_yaw, 
+                               std::vector<robot_msgs::Point32> &fp_out);
 
 
     double local_door_open_angle_;  /*! Angle of the door when open (in local door frame) */

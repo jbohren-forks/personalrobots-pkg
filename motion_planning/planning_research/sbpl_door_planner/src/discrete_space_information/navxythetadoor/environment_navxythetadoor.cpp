@@ -41,7 +41,7 @@ int EnvironmentNAVXYTHETADOOR::GetActionCost(int SourceX, int SourceY, int Sourc
 	
     if(!IsValidCell(SourceX, SourceY))
       {
-	//          printf("\n\n\nReturning infinite cost\n\n\n");
+	printf("\n\n\nReturning infinite cost\n\n\n");
 	return INFINITECOST;
       }
     //compute world frame offset for the action
@@ -141,20 +141,26 @@ void EnvironmentNAVXYTHETADOOR::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldr
 
     db_.getValidDoorAngles(robot_global_pose,robot_global_yaw,*doorangleV,*dooranglecostV);
 
+//    for(int i=0; i<doorangleV->size(); i++)
+//    {
+//      printf("Valid angle [%d]: %d, %d\n",i,doorangleV->at(i),dooranglecostV->at(i));
+//    }
 // No larger than 255 unsigned char
 // Also put in an infinite cost
 }
 
-
 //setting desired door angles - see comments in environment_navxythetadoor.h file
 void EnvironmentNAVXYTHETADOOR::SetDesiredDoorAngles(vector<int> desired_door_anglesV)
 {
+  std::vector<int> desired_door_angles_local;
+  desired_door_angles_local.resize(desired_door_anglesV.size());
+  //set the vector
+  db_.getDesiredDoorAngles(desired_door_anglesV, desired_door_angles_local);
 
-	//set the vector
-	this->desired_door_anglesV.clear();
-	this->desired_door_anglesV = desired_door_anglesV;
+  this->desired_door_anglesV.clear();
+  this->desired_door_anglesV = desired_door_anglesV;
 
-	printf("desired door angles are set to %d values\n", this->desired_door_anglesV.size());
+  printf("desired door angles are set to %d values\n", this->desired_door_anglesV.size());
 }
 
 
@@ -192,7 +198,6 @@ int EnvironmentNAVXYTHETADOOR::MinCostDesiredDoorAngle(int x, int y, int theta)
   }
 
   return mincost;
-
 }
 
 
@@ -239,78 +244,78 @@ bool EnvironmentNAVXYTHETADOOR::GetMinCostDoorAngle(double x, double y, double t
 //overwrites the parent navxythetalat class to return a goal whenever a state has the desired angle door, independently of the robot pose
 void EnvironmentNAVXYTHETADOOR::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<EnvNAVXYTHETALATAction_t*>* actionV /*=NULL*/)
 {
-    int aind;
+  int aind;
 
 #if TIME_DEBUG
-		clock_t currenttime = clock();
+  clock_t currenttime = clock();
 #endif
 
-    //clear the successor array
-    SuccIDV->clear();
-    CostV->clear();
-    SuccIDV->reserve(EnvNAVXYTHETALATCfg.actionwidth); 
-    CostV->reserve(EnvNAVXYTHETALATCfg.actionwidth);
+  //clear the successor array
+  SuccIDV->clear();
+  CostV->clear();
+  SuccIDV->reserve(EnvNAVXYTHETALATCfg.actionwidth); 
+  CostV->reserve(EnvNAVXYTHETALATCfg.actionwidth);
+  if(actionV != NULL)
+  {
+    actionV->clear();
+    actionV->reserve(EnvNAVXYTHETALATCfg.actionwidth);
+  }
+    
+  //goal state should be absorbing
+  if(SourceStateID == EnvNAVXYTHETALAT.goalstateid)
+    return;
+    
+  //get X, Y for the state
+  EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[SourceStateID];
+    
+  //iterate through actions
+  for (aind = 0; aind < EnvNAVXYTHETALATCfg.actionwidth; aind++)
+  {
+    EnvNAVXYTHETALATAction_t* nav3daction = &EnvNAVXYTHETALATCfg.ActionsV[HashEntry->Theta][aind];
+    int newX = HashEntry->X + nav3daction->dX;
+    int newY = HashEntry->Y + nav3daction->dY;
+    int newTheta = NORMALIZEDISCTHETA(nav3daction->endtheta, NAVXYTHETALAT_THETADIRS);	
+	
+    //skip the invalid cells
+    if(!IsValidCell(newX, newY)) 
+      continue;
+	
+    //get cost
+    int cost = GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction);
+    if(cost >= INFINITECOST)
+      continue;
+	
+    //check that the out state is not goal in term of desired door_angles
+    int mincostofdesireddoorangle = MinCostDesiredDoorAngle(newX,newY,newTheta);
+    if (mincostofdesireddoorangle < INFINITECOST)
+    {
+      //insert the goal (NOTE: we ignore the final door cost)
+      SuccIDV->push_back(EnvNAVXYTHETALAT.goalstateid);
+    }
+    else{		
+      EnvNAVXYTHETALATHashEntry_t* OutHashEntry;
+      if((OutHashEntry = GetHashEntry(newX, newY, newTheta)) == NULL)
+      {
+        //have to create a new entry
+        OutHashEntry = CreateNewHashEntry(newX, newY, newTheta);
+      }
+      SuccIDV->push_back(OutHashEntry->stateID);
+    }
+	
+    CostV->push_back(cost);
     if(actionV != NULL)
-      {
-	actionV->clear();
-	actionV->reserve(EnvNAVXYTHETALATCfg.actionwidth);
-      }
-    
-    //goal state should be absorbing
-    if(SourceStateID == EnvNAVXYTHETALAT.goalstateid)
-      return;
-    
-    //get X, Y for the state
-    EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[SourceStateID];
-    
-    //iterate through actions
-    for (aind = 0; aind < EnvNAVXYTHETALATCfg.actionwidth; aind++)
-      {
-	EnvNAVXYTHETALATAction_t* nav3daction = &EnvNAVXYTHETALATCfg.ActionsV[HashEntry->Theta][aind];
-	int newX = HashEntry->X + nav3daction->dX;
-	int newY = HashEntry->Y + nav3daction->dY;
-	int newTheta = NORMALIZEDISCTHETA(nav3daction->endtheta, NAVXYTHETALAT_THETADIRS);	
-	
-	//skip the invalid cells
-	if(!IsValidCell(newX, newY)) 
-	  continue;
-	
-	//get cost
-	int cost = GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction);
-	if(cost >= INFINITECOST)
-	  continue;
-	
-	//check that the out state is not goal in term of desired door_angles
-	int mincostofdesireddoorangle = MinCostDesiredDoorAngle(newX,newY,newTheta);
-	if (mincostofdesireddoorangle < INFINITECOST)
-	  {
-	    //insert the goal (NOTE: we ignore the final door cost)
-	    SuccIDV->push_back(EnvNAVXYTHETALAT.goalstateid);
-	  }
-	else{		
-	  EnvNAVXYTHETALATHashEntry_t* OutHashEntry;
-	  if((OutHashEntry = GetHashEntry(newX, newY, newTheta)) == NULL)
-	    {
-	      //have to create a new entry
-	      OutHashEntry = CreateNewHashEntry(newX, newY, newTheta);
-	    }
-	  SuccIDV->push_back(OutHashEntry->stateID);
-	}
-	
-	CostV->push_back(cost);
-	if(actionV != NULL)
-	  actionV->push_back(nav3daction);
-      }
+      actionV->push_back(nav3daction);
+  }
     
 #if TIME_DEBUG
-    time_getsuccs += clock()-currenttime;
+  time_getsuccs += clock()-currenttime;
 #endif
 
 }
 
 void EnvironmentNAVXYTHETADOOR::setDoorDiscretizationAngle(const double &door_angle_discretization_interval)
 {
-    db_.door_angle_discretization_interval_ = door_angle_discretization_interval;
+  db_.door_angle_discretization_interval_ = door_angle_discretization_interval;
 }
 
 void EnvironmentNAVXYTHETADOOR::setDoorProperties(const robot_msgs::Door &door, 
@@ -329,13 +334,13 @@ void EnvironmentNAVXYTHETADOOR::setDoorProperties(const robot_msgs::Door &door,
 
   if(door.hinge == 1)
   {
-     hinge_global_x = door.frame_p2.x;
-     hinge_global_y = door.frame_p2.y;
-     hinge_global_z = door.frame_p2.z;
+    hinge_global_x = door.frame_p2.x;
+    hinge_global_y = door.frame_p2.y;
+    hinge_global_z = door.frame_p2.z;
 
-     edge_global_x = door.frame_p1.x;
-     edge_global_y = door.frame_p1.y;
-     edge_global_z = door.frame_p1.z;
+    edge_global_x = door.frame_p1.x;
+    edge_global_y = door.frame_p1.y;
+    edge_global_z = door.frame_p1.z;
   }
 
   db_.door_frame_global_yaw_ = atan2(edge_global_y-hinge_global_y,edge_global_x-hinge_global_x);
@@ -359,6 +364,18 @@ void EnvironmentNAVXYTHETADOOR::setDoorProperties(const robot_msgs::Door &door,
 
   db_.rot_dir_ = door.rot_dir;
   db_.init();
+
+  //Set default desired door angle to door open position
+  vector<int> desired_door_angles;
+  desired_door_angles.resize(1);
+  desired_door_angles[0] = angles::to_degrees(db_.global_door_open_angle_);
+  printf("\n\nDoor hinge position: %f %f %f\n",hinge_global_x,hinge_global_y,hinge_global_z);
+  printf("Door edge  position: %f %f %f\n",edge_global_x,edge_global_y,edge_global_z);
+  printf("Door global yaw: %f\n",db_.door_frame_global_yaw_);
+  printf("Rotation direction: %d\n",db_.rot_dir_);
+  printf("Handle position in door frame: %f %f\n",db_.door_handle_position_.x,db_.door_handle_position_.y);
+  printf("Global door open angle: %f\n",db_.global_door_open_angle_);
+  SetDesiredDoorAngles(desired_door_angles);
 }
 
 void EnvironmentNAVXYTHETADOOR::setRobotProperties(const double &min_workspace_radius, 
@@ -383,9 +400,14 @@ void EnvironmentNAVXYTHETADOOR::setRobotProperties(const double &min_workspace_r
 
   for(int i=0; i < (int) EnvNAVXYTHETALATCfg.FootprintPolygon.size(); i++)
   {
-     db_.footprint_[i].x = EnvNAVXYTHETALATCfg.FootprintPolygon[i].x;
-     db_.footprint_[i].y = EnvNAVXYTHETALATCfg.FootprintPolygon[i].y;
+    db_.footprint_[i].x = EnvNAVXYTHETALATCfg.FootprintPolygon[i].x;
+    db_.footprint_[i].y = EnvNAVXYTHETALATCfg.FootprintPolygon[i].y;
   }
 
+  printf("\n\nRobot properties\n");
+  printf("Arm workspace angles: (min,max): %f %f\n",db_.arm_min_workspace_angle_,db_.arm_max_workspace_angle_);
+  printf("Arm workspace radii: (min,max): %f %f\n",db_.arm_min_workspace_radius_,db_.arm_max_workspace_radius_);
+  printf("Shoulder position: %f %f\n",db_.robot_shoulder_position_.x,db_.robot_shoulder_position_.y);
+  printf("\n\n"); 
 }
 

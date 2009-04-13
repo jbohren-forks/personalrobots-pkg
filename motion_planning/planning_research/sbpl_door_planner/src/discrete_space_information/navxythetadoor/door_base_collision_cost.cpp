@@ -79,6 +79,14 @@ namespace door_base_collision_cost
 
     double d = sqrt(dx*dx + dy*dy);
 
+#ifdef DEBUG
+    printf("\nWorkspace computation\n");
+    printf("Robot position: %f %f %f\n",robot_position.x,robot_position.y,robot_yaw);
+    printf("Door angle: %f\n",door_angle);
+    printf("Global handle position: %f, %f\n",global_handle_position.x,global_handle_position.y);
+    printf("Robot handle position: %f, %f\n\n",robot_handle_position.x,robot_handle_position.y);
+#endif
+
     if(d > arm_max_workspace_radius_ || d < arm_min_workspace_radius_)
     {
 #ifdef DEBUG
@@ -341,6 +349,17 @@ namespace door_base_collision_cost
       fprintf(fp,"%f %f %f %f %f\n",robot_position.x, robot_position.y, robot_yaw, angles::normalize_angle((double)angles[i]*M_PI/180.0 + door_frame_global_yaw_),(double) angle_costs[i]);
     }
     fclose(fp);
+  }
+
+  void DoorBaseCollisionCost::getDesiredDoorAngles(const std::vector<int> &desired_door_anglesV, std::vector<int> &local_desired_door_angles)
+  {
+    //Convert global closed angle to degrees
+    for(int i=0; i < (int) desired_door_anglesV.size(); i++)
+    {
+      local_desired_door_angles[i] = (int) angles::to_degrees(angles::shortest_angular_distance(global_door_closed_angle_,angles::from_degrees(desired_door_anglesV[i])));
+//      printf("\n\nDB:: desired door angle: %d\n\n",desired_door_anglesV[i]);
+//      printf("\n\nDB:: desired door angle: %d\n\n",local_desired_door_angles[i]);
+    }
   }
 };
 
