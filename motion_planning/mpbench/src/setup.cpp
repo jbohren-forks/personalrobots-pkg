@@ -818,9 +818,9 @@ namespace mpbench {
         doormsg.frame_p1.x = spec->door->px; // hinge
         doormsg.frame_p1.y = spec->door->py;
         doormsg.frame_p2.x = spec->door->px + spec->door->width * cos(spec->door->th_shut); // other end
-        doormsg.frame_p2.y = spec->door->px + spec->door->width * sin(spec->door->th_shut);
+        doormsg.frame_p2.y = spec->door->py + spec->door->width * sin(spec->door->th_shut);
         doormsg.handle.x = spec->door->px + spec->door->dhandle * cos(spec->door->th_shut); // handle
-        doormsg.handle.y = spec->door->px + spec->door->dhandle * sin(spec->door->th_shut);
+        doormsg.handle.y = spec->door->py + spec->door->dhandle * sin(spec->door->th_shut);
         doormsg.hinge = 0;
         if (sfl::mod2pi(spec->door->th_open - spec->door->th_shut) > 0)
           doormsg.rot_dir = 1;
