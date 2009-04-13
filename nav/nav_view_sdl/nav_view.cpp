@@ -103,7 +103,9 @@ Publishes to (name / type):
 #include "robot_msgs/PoseWithCovariance.h"
 #include "pr2_msgs/OccDiff.h"
 #include "robot_srvs/StaticMap.h"
-#include <pr2_srvs/TransientObstacles.h>
+#include "pr2_srvs/TransientObstacles.h"
+#include "std_srvs/Empty.h"
+
 #include "sdlgl/sdlgl.h"
 
 struct ObstaclePoint {
@@ -216,6 +218,7 @@ public:
   }
 
   virtual void mouse_button(int x, int y, int button, bool is_down);
+  virtual void keypress(char c, uint16_t u, SDLMod mod);
 };
 
 void
@@ -313,6 +316,17 @@ NavView::mouse_button(int x, int y, int button, bool is_down)
 
       setting_theta = false;
     }
+  }
+}
+
+void 
+NavView::keypress(char c, uint16_t u, SDLMod mod) 
+{ 
+  if(c == SDLK_g)
+  {
+    std_srvs::Empty::Request req;
+    std_srvs::Empty::Response res;
+    ros::service::call("global_localization", req, res);
   }
 }
 
