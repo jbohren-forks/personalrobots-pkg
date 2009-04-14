@@ -59,7 +59,6 @@ DetectDoorAction::~DetectDoorAction(){};
 robot_actions::ResultStatus DetectDoorAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
 {
   ROS_INFO("DetectDoorAction: execute");
-  feedback = goal;
 
   robot_msgs::Door result_laser;
   if (!laserDetection(goal, result_laser)){
