@@ -92,7 +92,6 @@ pf_t *pf_alloc(int min_samples, int max_samples,
     set->kdtree = pf_kdtree_alloc(3 * max_samples);
 
     set->cluster_count = 0;
-    //set->cluster_max_count = 100;
     set->cluster_max_count = max_samples;
     set->clusters = calloc(set->cluster_max_count, sizeof(pf_cluster_t));
   }

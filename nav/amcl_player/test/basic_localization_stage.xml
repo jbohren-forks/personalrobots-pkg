@@ -4,11 +4,12 @@ setting pose: 30.329 34.644 3.142
 <launch>
     <param name="/use_sim_time" value="true"/>
     <node pkg="rosrecord" type="rosplay" 
-          args="-r 10 -b 10 $(find amcl_player)/test/basic_localization_stage.bag"/>
+          args="-s 1 -r 10 -b 10 $(find amcl_player)/test/basic_localization_stage.bag"/>
     <node pkg="map_server" type="map_server" args="$(find amcl_player)/test/willow-full.pgm 0.1"/>
     <node pkg="amcl_player" type="amcl" name="amcl" respawn="false" output="screen">
       <remap from="scan" to="base_scan" />
-      <param name="laser_max_beams" value="20"/>
+      <param name="laser_max_range" value="8.0"/>
+      <param name="laser_max_beams" value="30"/>
       <param name="min_particles" value="100"/>
       <param name="max_particles" value="5000"/>
       <param name="kld_err" value="0.01"/>
@@ -17,12 +18,14 @@ setting pose: 30.329 34.644 3.142
       <param name="odom_alpha2" value="0.2"/>
       <param name="odom_alpha3" value="0.2"/>
       <param name="odom_alpha4" value="0.2"/>
-      <param name="laser_z_hit" value="0.8"/>
+      <param name="laser_z_hit" value="0.9"/>
       <param name="laser_z_short" value="0.1"/>
       <param name="laser_z_max" value="0.05"/>
-      <param name="laser_z_rand" value="0.05"/>
+      <param name="laser_z_rand" value="0.1"/>
       <param name="laser_sigma_hit" value="0.2"/>
       <param name="laser_lambda_short" value="0.1"/>
+      <param name="laser_model_type" value="likelihood_field"/>
+      <param name="laser_likelihood_max_dist" value="2.0"/>
       <param name="update_min_d" value="0.2"/>
       <param name="update_min_a" value="0.5"/>
       <param name="odom_frame_id" value="odom"/>
@@ -35,5 +38,5 @@ setting pose: 30.329 34.644 3.142
       <param name="initial_pose_a" value="-0.503"/>
     </node>
   <test time-limit="180" test-name="basic_localization" pkg="amcl_player" 
-        type="basic_localization.py" args="31.383 35.099 -2.748 0.1 0.1 90.0"/>
+        type="basic_localization.py" args="31.723 35.322 -2.554 0.25 0.25 90.0"/>
 </launch>

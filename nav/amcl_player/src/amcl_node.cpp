@@ -85,7 +85,7 @@ Publishes to (name / type):
 
  **/
 
-#include <deque>
+#include <algorithm>
 
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
@@ -179,6 +179,7 @@ class AmclNode
     double d_thresh_, a_thresh_;
     int resample_interval_;
     int resample_count_;
+    double laser_max_range_;
 
     AMCLOdom* odom_;
     AMCLLaser* laser_;
@@ -192,10 +193,6 @@ class AmclNode
     bool getOdomPose(double& x, double& y, double& yaw, 
                      const ros::Time& t, const std::string& f);
 
-    // buffer of not-yet-transformed scans
-    // TODO: use MessageNotifier
-    std::deque<laser_scan::LaserScan> laser_scans;
-    
     //time for tolerance on the published transform, 
     //basically defines how long a map->odom transform is good for
     ros::Duration transform_tolerance_;
@@ -231,6 +228,7 @@ AmclNode::AmclNode() :
   double alpha_slow, alpha_fast;
   double z_hit, z_short, z_max, z_rand, sigma_hit, lambda_short;
   double pf_err, pf_z;
+  ros::Node::instance()->param("~laser_max_range", laser_max_range_, -1.0);
   ros::Node::instance()->param("~laser_max_beams", max_beams, 30);
   ros::Node::instance()->param("~min_particles", min_particles, 100);
   ros::Node::instance()->param("~max_particles", max_particles, 5000);
@@ -559,7 +557,10 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     AMCLLaserData ldata;
     ldata.sensor = laser_;
     ldata.range_count = laser_scan->ranges.size();
-    ldata.range_max = laser_scan->range_max;
+    if(laser_max_range_ > 0.0)
+      ldata.range_max = std::min(laser_scan->range_max, (float)laser_max_range_);
+    else
+      ldata.range_max = laser_scan->range_max;
     // The AMCLLaserData destructor will free this memory
     ldata.ranges = new double[ldata.range_count][2];
     ROS_ASSERT(ldata.ranges);
