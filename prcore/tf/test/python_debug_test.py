@@ -31,6 +31,8 @@ import rospy
 import tf
 import time
 import bullet
+import math
+
 try:
 
     rospy.init_node("test_node")
@@ -69,9 +71,8 @@ try:
     tr = tf.TransformStamped()
 
     lps = tf.PoseStamped()
-    print "getting stamp"
-    print lps.stamp
-#    mytime = rospy.Time().now()
+    lps.pose.setIdentity()
+    print "setting stamp"
     mytime = rospy.Time(10,20)
     lps.stamp = mytime
     print mytime
@@ -79,9 +80,10 @@ try:
     output = lps.stamp
     print output
     print lps.pose
-    lps.pose.setIdentity()
+    print "setting pose.positon to 1,2,3"
+    lps.pose.setOrigin( bullet.Vector3(1,2,3))
+    print lps.pose.getOrigin()
     print lps.pose    
-    print 'private varilables ', lps._sec, lps._nsec
 
     transform_stamped = tf.TransformStamped()
     print "getting stamp"
@@ -90,18 +92,15 @@ try:
     mytime = rospy.Time(10,20)
     transform_stamped.stamp = mytime
     print mytime
-    print "getting stamp"
-    output = transform_stamped.stamp
-    print output
-    print transform_stamped.transform
+    print "getting stamp", transform_stamped.stamp
+    print "transform:", transform_stamped.transform
     transform_stamped.transform.setIdentity()
-    print transform_stamped.transform
+    print "after setIdentity()", transform_stamped.transform
     #    transform_stamped.transform.basis.setEulerZYX(0,0,0)
-    print "setting rotation"
-    transform_stamped.transform.setRotation(bullet.Quaternion(1,0,0))
-    #transform_stamped.transform.setIdentity()
-    print transform_stamped.transform
-    print 'private varilables ', transform_stamped._sec, transform_stamped._nsec
+    quat = bullet.Quaternion(math.pi/2,0,0)
+    print "quaternion ", quat
+    transform_stamped.transform.setRotation(quat)
+    print "setting rotation to PI/2",transform_stamped.transform
 
 
     pointstamped = tf.PointStamped()
@@ -116,7 +115,6 @@ try:
     print output
     print pointstamped.point
     print transform_stamped.transform * pointstamped.point
-    print 'private varilables ', pointstamped._sec, pointstamped._nsec
 
 
 except ValueError, e:

@@ -46,7 +46,7 @@ class PoseStamped(tf.tf_swig.PoseStamped):
             object.__setattr__(self, '_sec',int(value.secs))
             object.__setattr__(self, '_nsec',value.nsecs)
         else:
-            object.__setattr__(self,name, value)
+            object.__setattr__(self,name, value) #calls through to base class
         
 class TransformStamped(tf.tf_swig.TransformStamped):
     def __getattribute__(self,name):
@@ -60,7 +60,7 @@ class TransformStamped(tf.tf_swig.TransformStamped):
             object.__setattr__(self, '_sec',value.secs)
             object.__setattr__(self, '_nsec',value.nsecs)
         else:
-            object.__setattr__(self,name, value)
+            object.__setattr__(self,name, value) #calls through to base class
         
 class PointStamped(tf.tf_swig.PointStamped):
     def __getattribute__(self,name):
@@ -74,7 +74,7 @@ class PointStamped(tf.tf_swig.PointStamped):
             object.__setattr__(self, '_sec',value.secs)
             object.__setattr__(self, '_nsec',value.nsecs)
         else:
-            object.__setattr__(self,name, value)
+            object.__setattr__(self,name, value) #calls through to base class
 
 class VectorStamped(tf.tf_swig.VectorStamped):
     def __getattribute__(self,name):
@@ -88,7 +88,7 @@ class VectorStamped(tf.tf_swig.VectorStamped):
             object.__setattr__(self, '_sec',value.secs)
             object.__setattr__(self, '_nsec',value.nsecs)
         else:
-            object.__setattr__(self,name, value)
+            object.__setattr__(self,name, value) #calls through to base class
 
 class QuaternionStamped(tf.tf_swig.QuaternionStamped):
     def __getattribute__(self,name):
@@ -102,7 +102,7 @@ class QuaternionStamped(tf.tf_swig.QuaternionStamped):
             object.__setattr__(self, '_sec',value.secs)
             object.__setattr__(self, '_nsec',value.nsecs)
         else:
-            object.__setattr__(self,name, value)
+            object.__setattr__(self,name, value) #calls through to base class
 
 def transform_msg_to_bt(msg):
     rot = msg.rotation
