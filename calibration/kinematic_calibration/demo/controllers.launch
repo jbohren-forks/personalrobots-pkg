@@ -14,12 +14,9 @@
   <param name="right_arm_trajectory_controller/r_wrist_roll_joint/goal_reached_threshold" type="double" value="0.1"/>
   <param name="right_arm_trajectory_controller/r_gripper_l_finger_joint/goal_reached_threshold" type="double" value="0.1"/>
 
-  <node pkg="mechanism_control" type="spawner.py" args="$(find kinematic_calibration)/demo/arm_traj_controller.xml" output="screen"/>
-
-<!-- Head Controller -->
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/head_pan_tilt_controller.xml" />
+  <node pkg="mechanism_control" type="spawner.py" args="$(find kinematic_calibration)/demo/arm_head_traj_controller.xml" output="screen"/>
 
 <!-- Teleop Base -->
-  <include file="$(find pr2_alpha)/teleop_joystick.launch" />
+<!--  <include file="$(find pr2_alpha)/teleop_joystick.launch" /> -->
 
 </launch>
