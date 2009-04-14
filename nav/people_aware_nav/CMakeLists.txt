@@ -7,4 +7,4 @@ rospack_add_executable(bin/person_pos_sender src/person_node.cpp)
 rospack_add_executable(bin/is_person_on_path src/is_person_on_path.cpp)
 rospack_link_boost(bin/is_person_on_path thread)
 rospack_add_lisp_executable(bin/fake_person src/fake-person.lisp)
-rospack_add_executable(bin/test_is_person_on_path src/test_is_person_on_path.cpp)
+
