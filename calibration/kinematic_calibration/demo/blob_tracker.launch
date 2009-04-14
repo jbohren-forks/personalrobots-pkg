@@ -1,7 +1,6 @@
 <launch>
-  <node pkg="kinematic_calibration" type="led_tracker" name="tracker_node" output="screen">
+  <node pkg="kinematic_calibration" type="camera_cal_sampler" name="stereo_sampler" output="screen">
     <param name="config" type="string"
            textfile="$(find kinematic_calibration)/demo/blob_tracker.xml" />
-  </node>  
-
+  </node>
 </launch>

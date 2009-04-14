@@ -61,75 +61,74 @@ class ImagePointHandler
 {
 
 public:
-  ImagePointHandler(unsigned int N, boost::mutex* lock) : cache_(N), lock_(lock)
+  ImagePointHandler(unsigned int N) : cache_(N)
   {
-    msg_ = new image_msgs::ImagePointStamped ;
+
   }
 
   ~ImagePointHandler()
   {
-    delete msg_ ;
+
   }
 
   void imagePointCallback()
   {
-    lock_->lock() ;
-    cache_.insertData(*msg_) ;
-    lock_->unlock() ;
+    lock_.lock() ;
+    cache_.insertData(msg_) ;
+    lock_.unlock() ;
   }
 
   image_msgs::ImagePointStamped& getMsg()
   {
-    return *msg_ ;
+    return msg_ ;
   }
 
   bool isStable(Interval interval, unsigned int min_samples, double pos_tolerance)
   {
     bool stable ;
-    lock_->lock() ;
+    lock_.lock() ;
     stable = cache_.isStable(interval, min_samples, pos_tolerance) ;
-    lock_->unlock() ;
+    lock_.unlock() ;
     return stable ;
   }
 
   ros::Time latestTime()
   {
-    lock_->lock() ;
+    lock_.lock() ;
     ros::Time latest_time = cache_.latestTime() ;
-    lock_->unlock() ;
+    lock_.unlock() ;
     return latest_time ;
   }
 
   void findClosestBefore(const ros::Time& time, image_msgs::ImagePointStamped& data_out)
   {
-    lock_->lock() ;
+    lock_.lock() ;
     cache_.findClosestBefore(time, data_out) ;
-    lock_->unlock() ;
+    lock_.unlock() ;
   }
 
+  std::string topic_ ;
+
 private:
+
   ImagePointCache cache_ ;
-  boost::mutex* lock_ ;
-  // Allocate these on the heap. This way, the location of the msg
-  //   doesn't change when we resize a vector<ImagePointHandler>
-  image_msgs::ImagePointStamped* msg_ ;
+  boost::mutex lock_ ;
+  image_msgs::ImagePointStamped msg_ ;
 } ;
-
-
 
 class CameraCalSampler
 {
 public:
   CameraCalSampler(ros::Node* node) ;
+  ~CameraCalSampler() ;
 
   void intervalCallback() ;
 private:
   ros::Node* node_ ;
 
-  boost::mutex lock_ ;
   MsgCacheListener<robot_msgs::MechanismState> mech_state_cache_ ;
   Interval interval_msg_ ;
-  std::vector<ImagePointHandler> stream_handlers_ ;
+  std::vector<ImagePointHandler*> stream_handlers_ ;
 } ;
 
 
@@ -159,8 +158,9 @@ CameraCalSampler::CameraCalSampler(ros::Node* node) : node_(node), mech_state_ca
   stream_config = root->FirstChildElement("stream") ;
   const char* led_topic ;
 
-  stream_handlers_.clear() ;
 
+  stream_handlers_.clear() ;
+  int i=0 ;
   while(stream_config)
   {
     led_topic = stream_config->Attribute("topic") ;
@@ -177,10 +177,11 @@ CameraCalSampler::CameraCalSampler(ros::Node* node) : node_(node), mech_state_ca
         case TIXML_SUCCESS:
         {
           ROS_INFO("Stream - name: %s  cache_size: %u", led_topic, cache_size) ;
-          //! \todo Give each handler it's own lock, instead of one meta-lock
-          stream_handlers_.push_back(ImagePointHandler(cache_size, &lock_)) ;
-          node_->subscribe(led_topic, stream_handlers_[stream_handlers_.size()-1].getMsg(),
-                           &ImagePointHandler::imagePointCallback, &stream_handlers_[stream_handlers_.size()-1], cache_size) ;
+
+          ImagePointHandler* cur_handler = new ImagePointHandler(cache_size) ;
+          cur_handler->topic_ = led_topic ;
+          node_->subscribe(led_topic, cur_handler->getMsg(), &ImagePointHandler::imagePointCallback, cur_handler, cache_size) ;
+          stream_handlers_.push_back(cur_handler) ;
           break ;
         }
         case TIXML_WRONG_TYPE:
@@ -194,8 +195,8 @@ CameraCalSampler::CameraCalSampler(ros::Node* node) : node_(node), mech_state_ca
           return ;
       }
     }
-
     stream_config = stream_config->NextSiblingElement("stream") ;
+    i++ ;
   }
 
   mech_state_cache_.subscribe(node_, "mechanism_state") ;
@@ -209,19 +210,28 @@ CameraCalSampler::CameraCalSampler(ros::Node* node) : node_(node), mech_state_ca
   return ;
 }
 
+CameraCalSampler::~CameraCalSampler()
+{
+  for(unsigned int i=0; i<stream_handlers_.size(); i++)
+  {
+    node_->unsubscribe(stream_handlers_[i]->topic_) ;
+    delete stream_handlers_[i] ;
+  }
+}
+
 void CameraCalSampler::intervalCallback()
 {
   // Wait until camera data is available
   for(unsigned int i=0; i < stream_handlers_.size(); i++)
   {
-    while (stream_handlers_[i].latestTime() < interval_msg_.end)
+    while (stream_handlers_[i]->latestTime() < interval_msg_.end)
       usleep(100) ;
   }
 
   // Make sure that the camera data is stable
   for(unsigned int i=0; i < stream_handlers_.size(); i++)
   {
-    if (!stream_handlers_[i].isStable(interval_msg_, 5, 1.01))
+    if (!stream_handlers_[i]->isStable(interval_msg_, 5, 1.01))
     {
       printf("Stream %u not stable\n", i) ;
       return ;
@@ -236,7 +246,7 @@ void CameraCalSampler::intervalCallback()
 
   sample.set_points_size(stream_handlers_.size()) ;
   for(unsigned int i=0; i < stream_handlers_.size(); i++)
-    stream_handlers_[i].findClosestBefore(grab_time, sample.points[i]) ;
+    stream_handlers_[i]->findClosestBefore(grab_time, sample.points[i]) ;
 
   node_->publish("~cal_sample", sample) ;
 }
