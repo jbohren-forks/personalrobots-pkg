@@ -91,19 +91,12 @@ namespace highlevel_controllers {
     /**
      * @brief Will update goal data.
      */
-    virtual void handleActivate(const std_msgs::Float32& goalMsg);
-
-    /**
-     * @brief Immediate preemption
-     */
-    virtual void handlePreempt(){
-      notifyPreempted(_recharge_level);
-    }
+    virtual robot_actions::ResultStatus execute(const std_msgs::Float32& goalMsg, std_msgs::Float32& feedback);
 
     /**
      * @brief Will do what dispatch commands used to to
      */
-    virtual void handleUpdate(std_msgs::Float32& feedback);
+    bool handleUpdate(std_msgs::Float32& feedback);
 
     void batteryStateCallback();
 
@@ -207,7 +200,7 @@ namespace highlevel_controllers {
     ROS_INFO("Mail command sent: %s\n", command.c_str());
   }
   
-  void RechargeController::handleActivate(const std_msgs::Float32& goalMsg){
+  robot_actions::ResultStatus RechargeController::execute(const std_msgs::Float32& goalMsg, std_msgs::Float32& feedback){
     _recharge_level.lock();
     _recharge_level = goalMsg;
     pluginNotified_ = false;
@@ -215,13 +208,23 @@ namespace highlevel_controllers {
     connectionCount_ = 0;
     _recharge_level.unlock();
 
-    notifyActivated();
+    // Will update at 10 Hz
+    ros::Duration d; d.fromSec(0.10);
+    while(!isPreemptRequested() && !handleUpdate(feedback))
+      d.sleep();
+
+    if(isPreemptRequested())
+      return robot_actions::PREEMPTED;
+
+    return robot_actions::SUCCESS;
   }
 
-  void RechargeController::handleUpdate(std_msgs::Float32& feedback){
+  bool RechargeController::handleUpdate(std_msgs::Float32& feedback){
 
-    if(!connected() && charged() && connectionCount_ > 0)
-      notifySucceeded(_recharge_level);
+    if(!connected() && charged() && connectionCount_ > 0){
+      feedback = _recharge_level;
+      return true;
+    }
     else {
       if(!connected() && (connectionCount_ == 0 || !charged()) && !pluginNotified_){
 	sendMail(PLUG);
@@ -234,6 +237,8 @@ namespace highlevel_controllers {
 	ROS_DEBUG("Requested help to unplug.");
       }
     }
+
+    return false;
   }
 
   bool RechargeController::charged() {

@@ -54,33 +54,23 @@ namespace highlevel_controllers {
   private:
 
     // Activation does all the real work
-    virtual void handleActivate(const std_msgs::String& command_str){
-      // Immediate reply
-      notifyActivated();
-
-      ROS_INFO("Trying to execute %s.", command_str.data.c_str());
+    virtual robot_actions::ResultStatus execute(const std_msgs::String& command_str, std_msgs::String& feedback_str){
+      ROS_DEBUG("Trying to execute %s.", command_str.data.c_str());
 
       // Will now block the goal callback thread, which is OK
       int result = system(command_str.data.c_str());
       if( result == 0 ){
-	ROS_INFO("Successful execution of %s.", command_str.data.c_str());
-	notifySucceeded(command_str);
+	feedback_str = command_str;
+	return robot_actions::SUCCESS;
       }
-      else {
-	std::stringstream feedback;
-	feedback << "Aborted " << command_str.data << " with return code: " << result;
-	ROS_INFO("Failed to execute %s. Result Code is.", command_str.data.c_str());
-	std_msgs::String response;
-	response.data = feedback.str();
-	notifyAborted(response);
-      }
-    }
 
-    //
-    virtual void handlePreempt(){
-      std_msgs::String NO_FEEDBACK;
-      NO_FEEDBACK.data = "NO FEEDBACK";
-      notifyPreempted(NO_FEEDBACK);
+
+      std::stringstream feedback;
+      feedback << "Aborted " << command_str.data << " with return code: " << result;
+      ROS_DEBUG("Failed to execute %s. Result Code = %d", command_str.data.c_str(), result);
+      std_msgs::String response;
+      feedback_str.data = feedback.str();
+      return robot_actions::ABORTED;
     }
   };
 }
