@@ -162,7 +162,7 @@ protected:
     ros::Node::instance()->subscribe("goal", goalMsg, &HighlevelController<S, G>::goalCallback,  this, 1);
 
     // Subscribe to controller goal requests. Last request winds. We drop others
-    ros::Node::instance()->subscribe(preemptTopic, goalMsg, &HighlevelController<S, G>::preemptCallback,  this, 1);
+    ros::Node::instance()->subscribe(preemptTopic, preemptMsg, &HighlevelController<S, G>::preemptCallback,  this, 1);
 
     // Subscribe to executive shutdown signal
     ros::Node::instance()->subscribe("highlevel_controllers/shutdown", shutdownMsg_, &HighlevelController<S, G>::shutdownCallback, this, 1);
@@ -284,6 +284,7 @@ protected:
   };
   
 
+  std_msgs::Empty preemptMsg; /*!< Preemption message is just an empty event */
   G goalMsg; /*!< Message populated by callback */
   S stateMsg; /*!< Message published. Will be populated in the control loop */
 
