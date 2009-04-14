@@ -57,10 +57,7 @@ public:
   UntuckArmsAction();
   ~UntuckArmsAction();
 
-  virtual void handleActivate(const std_msgs::Empty& empty);
-  virtual void handlePreempt();
-
-
+  virtual robot_actions::ResultStatus execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback);
 
 private:
   // average the last couple plug centroids

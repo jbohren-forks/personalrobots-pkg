@@ -62,9 +62,7 @@ public:
   StowPlugAction();
   ~StowPlugAction();
 
-  virtual void handleActivate(const robot_msgs::PlugStow& plug_stow);
-  virtual void handlePreempt();
-
+  virtual robot_actions::ResultStatus execute(const robot_msgs::PlugStow& plug_stow, std_msgs::Empty&);
 
 private:
   

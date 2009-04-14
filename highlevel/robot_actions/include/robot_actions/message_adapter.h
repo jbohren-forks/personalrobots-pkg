@@ -39,6 +39,7 @@
 
 #include <robot_actions/action.h>
 #include <robot_actions/ActionStatus.h>
+#include <std_msgs/Empty.h>
 #include <boost/thread.hpp>
 #include <ros/node.h>
 #include <ros/console.h>
@@ -67,15 +68,14 @@ namespace robot_actions {
     /**
      * @brief Implement clean up call on termination
      */
-    void terminate(){
+    virtual void terminate(){
       _terminated = true;
     }
 
     /**
-     * @brief Provide an implementation that updates the status
+     * @brief Called to push state update
      */
-    virtual void update() = 0;
-
+    virtual void publish() = 0;
 
   protected:
 
@@ -130,12 +130,16 @@ namespace robot_actions {
 
     // Call back invoked from the action. Packages up as a state message and ships
     void notify(const ActionStatus& status, const Goal& goal, const Feedback& feedback){
-      ROS_DEBUG("Call back called to publish %s for %s", _update_topic.c_str(), _action.getName().c_str());
       State state_msg;
       state_msg.status = status;
       state_msg.goal = goal;
       state_msg.feedback = feedback;
       ros::Node::instance()->publish(_update_topic, state_msg);
+    }
+
+    virtual void publish(){
+      if(isOk())
+	_action.publish();
     }
 
   protected:
@@ -164,16 +168,16 @@ namespace robot_actions {
 	_action.preempt();
     }
 
-    virtual void update() {
-      if(isOk())
-	_action.update();
+    void terminate(){
+      AbstractAdapter::terminate();
+      _action.terminate();
     }
     
     /** DATA MEMBERS **/
     Action<Goal, Feedback>& _action; /*! The action to do the real work */
     const std::string _update_topic;
     Goal _request_msg; /*!< Message populated by handler for a request */
-    Goal _preemption_msg; /*!< Message pupulated by handler for a preemption */
+    std_msgs::Empty _preemption_msg; /*!< Message populated by handler for a preemption. */
     State _state_msg; /*!< Message published. */
   };
 

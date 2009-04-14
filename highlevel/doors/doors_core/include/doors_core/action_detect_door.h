@@ -50,18 +50,15 @@ class DetectDoorAction: public robot_actions::Action<robot_msgs::Door, robot_msg
 {
 public:
   DetectDoorAction(ros::Node& node);
+
   ~DetectDoorAction();
 
-  virtual void handleActivate(const robot_msgs::Door& door);
-  virtual void handlePreempt();
+  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
 
   robot_msgs::Door tmp_result_;
 
-
 private:
   bool laserDetection(const robot_msgs::Door& door_in, robot_msgs::Door& door_out);
-
-  bool request_preempt_;
   tf::TransformListener tf_;
 
 };

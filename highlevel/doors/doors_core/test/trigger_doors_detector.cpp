@@ -74,8 +74,9 @@ int
   runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(handle_detector);
   runner.run();
 
-  door_detector.handleActivate(my_door_);
-  handle_detector.handleActivate(door_detector.tmp_result_);
+  robot_msgs::Door feedback;
+  door_detector.execute(my_door_, feedback);
+  handle_detector.execute(door_detector.tmp_result_, feedback);
 
   return (0);
 }

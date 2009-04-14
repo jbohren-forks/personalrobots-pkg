@@ -78,7 +78,6 @@ namespace robot_actions {
   }
 
   void ActionRunner::updateLoop(){
-    
     while(ros::Node::instance()->ok()) {
       ros::Time curr = ros::Time::now();
       bool done(true);
@@ -88,14 +87,12 @@ namespace robot_actions {
 	// Iterate through adapters to ping each one for an update
 	for(std::vector<AbstractAdapter*>::const_iterator it = _adapters.begin(); it != _adapters.end(); ++it){
 	  AbstractAdapter* adapter = *it;
-
-	  if(!isTerminated()){
-	    adapter->update();
-	  }
-	  else if(adapter->isOk()){
+	  if(isTerminated() && adapter->isOk()){
 	    done = false;
 	    adapter->terminate();
 	  }
+
+	  adapter->publish();
 	}
       }
       else {

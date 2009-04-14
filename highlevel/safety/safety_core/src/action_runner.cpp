@@ -67,9 +67,10 @@ int main(int argc, char** argv)
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(tuck_arms);
   
   runner.run();
-  
-  //detect.handleActivate(empty);
-  //tuck_arms.handleActivate(empty);
+
+  //robot_msgs::PlugStow feedback;
+  //detect.execute(empty, feedback);
+  //tuck_arms.execute(empty, empty);
   node.spin();
   return 0;
 }

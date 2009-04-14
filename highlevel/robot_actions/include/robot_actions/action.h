@@ -48,8 +48,19 @@
 
 #include <robot_actions/ActionStatus.h>
 #include <boost/bind.hpp>
+#include <boost/thread.hpp>
 
 namespace robot_actions {
+
+  /**
+   * @brief Result codes for execution of an action. All values are sub states of the inactive state for an action.
+   * @see ActionStatus
+   */
+  enum ResultStatus {
+    SUCCESS = 1,
+    ABORTED = 2,
+    PREEMPTED = 3
+  };
 
   /**
    * @brief Abstract base class for a durative, preemptable action.
@@ -59,66 +70,39 @@ namespace robot_actions {
   protected:
 
     /**
-     * @brief This method is called on receipt of a new goal. The derived class will implement this method to 
-     * pursue the goal.
-     * @param Goal The goal to accomplish.
-     * @see notifyActivated
+     * @brief Blocking, user specified code for the action. This function should check periodically if isPreemptRequested is true, and if so, exit.
+     * @param goal The goal message currently associated with the controller.
+     * @param feedback The feedback message. At the end of the function, this will be published.
      */
-    virtual void handleActivate(const Goal& goalMsg) = 0;
+    virtual ResultStatus execute(const Goal& goal, Feedback& feedback) = 0;
 
     /**
-     * @brief This method is called to preempt execution of a goal. The derived class must terminate all activiity
-     * pursuing an active goal. As soon as we return from this call, the actor will be deactivated.
-     * @see notifyPreempted
+     * @brief Allows the user to check if the action is active. This is primarily used to condition behavior
+     * for low duty cycles when the action is inactive
+     * @return True if the action is active, false otherwise.
      */
-    virtual void handlePreempt() = 0;
+    bool isActive() const { return _status.value == _status.ACTIVE; }
+    
+    /**
+     * @brief Called by the user to check if the action has a new goal.
+     * @return True if a request to preempt is made, false otherwise.
+     */
+    bool isPreemptRequested() const { return _preempt_request; }
 
     /**
-     * @brief A method call periodically - allows the action to provide intermediate feedback.
+     * @brief Called by the user when a new feedback message is ready to be published.
+     * @param feedback The feedback message.
      */
-    virtual void handleUpdate(Feedback& feedback){}
+    void update(const Feedback& feedback) {
+      // Update local feedback state
+      _feedback.lock();
+      _feedback = feedback;
+      _feedback.unlock();
+
+      makeCallback(_status, _goal, feedback);
+    }
 
   public:
-
-    /**
-     * @brief This method is called on receipt of a new goal. The derived class will implement this method to 
-     * pursue the goal. The actor we be activated as soon as notifyActivated is called on the actioncontainer.
-     * @param Goal The goal to accomplish.
-     * @see notifyActivated
-     */
-    void activate(const Goal& goal){
-      ROS_DEBUG("%s received request to activate.", getName().c_str());
-
-      if(!isActive()){
-	_goal = goal;
-	handleActivate(_goal);
-      }
-    }
-
-    /**
-     * @brief This method is called to preempt execution of a goal. The derived class must terminate all activiity
-     * pursuing an active goal. The actor will be deactivated as soon as notifyPreempted is called on the actioncontainer.
-     * @see notifyPreempted
-     */
-    void preempt(){
-      ROS_DEBUG("%s received request to preempt.", getName().c_str());
-      if(isActive())
-	handlePreempt();
-    }
-
-    /**
-     * @brief A call made periodically to provide an opportunity to execute. It will delegate to a subclass to
-     * allow feedback to be written.
-     */
-    void update(){
-
-      // Allow for action to update
-      if(isActive())
-	handleUpdate(_feedback);
-
-      // Always post a state update
-      makeCallback(_status, _goal, _feedback);
-    }
 
     /**
      * @brief Accessor for the action name
@@ -126,84 +110,132 @@ namespace robot_actions {
     const std::string& getName() const { return _name; }
 
     /**
+     * @brief Preempts the controller. Blocks until it preempts.
+     */
+    void preempt() {
+      _preempt_request = true; 
+      ROS_DEBUG("[%s]Preempt requested\n", getName().c_str());
+      while(isActive()) {
+	ros::Duration d; d.fromSec(0.001);
+	d.sleep();
+      }
+      ROS_DEBUG("[%s]Preempt achieved\n", getName().c_str());
+      _preempt_request = false; 
+    }
+
+    /**
+     * @brief Activates the controller.
+     */
+    void activate(const Goal& goal) {
+      if (isActive()) {
+	ROS_DEBUG("[%s]New goal forcing preemption of current active goal\n", getName().c_str());
+	preempt();
+      }
+
+      // Set the goal and activate
+      ROS_DEBUG("[%s]Setting new goal.", getName().c_str());
+      _goal.lock();
+      _goal = goal;
+      _goal.unlock();
+      _status.value = _status.ACTIVE;
+      update(Feedback());
+    }
+
+    /**
      * @brief Connect the action to a container for handling outbound messages
      * @todo Implement with a functor object and bost bind perhaps
      */
     void connect(const boost::function< void(const ActionStatus&, const Goal&, const Feedback&) >& callback){ _callback = callback; }
 
-  protected:
-
-    /** The notification methods below are used by derived action classes to generate state transition events **/
-
     /**
-     * @brief An action will call this method when it has been activated successfully
+     * @brief Call to terminate an action - prevent it from runLoopning again.
      */
-    void notifyActivated(){
-      ROS_DEBUG("%s activated.", getName().c_str());
+    void terminate() { 
+      _terminated = true;
 
-      _status.lock();
-      if(!isActive()){
-	_status.value = ActionStatus::ACTIVE;
-	makeCallback(_status, _goal, _feedback);
+      if(isActive()){
+	preempt();
       }
-      _status.unlock();
     }
 
     /**
-     * @brief An action will call this method when it has completed successfully.
-     * @param Feedback to provide in the state update
+     * @brief Called by an external client to publish an update
      */
-    void notifySucceeded(const Feedback& feedback){
-      ROS_DEBUG("%s completed successfully.", getName().c_str());
-      handleDeactivation(feedback, ActionStatus::SUCCESS);
+    void publish(){
+      makeCallback(_status, _goal, _feedback);
     }
 
-    /**
-     * @brief An action will call this method when it has aborted of its own volition
-     * @param Feedback to provide in the state update
-     */
-    void notifyAborted(const Feedback& feedback){
-      ROS_DEBUG("%s aborted.", getName().c_str());
-      handleDeactivation(feedback, ActionStatus::ABORTED);
-    }
-
-    /**
-     * @brief An action will call this method when it has successfully been preempted
-     * @param Feedback to provide in the state update
-     */
-    void notifyPreempted(const Feedback& feedback){
-      ROS_DEBUG("%s preempted.", getName().c_str());
-      handleDeactivation(feedback, ActionStatus::PREEMPTED);
-    }
+  protected:
 
     /**
      * @brief Constructor
      * @param name The action name
      */
     Action(const std::string& name)
-      : _name(name), _callback(NULL) {
+      : _name(name), _preempt_request(false), _result_status(SUCCESS), _terminated(false), _action_thread(NULL), _callback(NULL){
       _status.value = ActionStatus::UNDEFINED; 
+      _action_thread = new boost::thread(boost::bind(&Action<Goal, Feedback>::runLoop, this));
     }
 
-    virtual ~Action(){}
+    virtual ~Action(){
+      terminate();
+      _action_thread->join();
+      delete _action_thread;
+    }
+
 
     /**
-     * @brief True if the action is active, false otherwise
+     * @brief Called by the derived class to deactivate the node. Used when actions leverage call
+     * backs for processing. In  that case the derived class will have to implement a busy loop in the execute
+     * method.
      */
-    bool isActive() const {
-      return _status.value == ActionStatus::ACTIVE;
+    void deactivate(const ResultStatus& result_status, const Feedback& feedback){
+      _result_status = result_status;
+      _status.value = result_status;
+      _feedback.lock();
+      _feedback = feedback;
+      _feedback.unlock();
+      ROS_DEBUG("[%s]Deactivated\n", getName().c_str());
+    }
+
+    /**
+     * @brief This method is defined for derived class implementations that deactivate via callbacks or other threads. It
+     * provides a simple blocking pattern for implementing execute method.
+     */
+    ResultStatus waitForDeactivation(Feedback& feedback){
+      ROS_DEBUG("[%s]Waiting for completion\n", getName().c_str());
+      ros::Duration d; d.fromSec(0.001);
+      while(isActive()){
+	d.sleep();
+      }
+
+      // Write feedback
+      _feedback.lock();
+      feedback = _feedback;
+      _feedback.unlock();
+
+      ROS_DEBUG("[%s]Completed\n", getName().c_str());
+      return _result_status;
     }
 
   private:
 
-    void handleDeactivation(const Feedback& feedback, int8_t status_flag){
-      // Only do work if we are active. Need to lock protect this
-      _status.lock();
-      if(isActive()){
-	_feedback = feedback;
-	_status.value = status_flag;
-	 makeCallback(_status, _goal, _feedback);      }
-      _status.unlock();
+    void runLoop() {
+      ROS_DEBUG("[%s]Run loop enabled", _name.c_str());
+      ros::Duration d; 
+      d.fromSec(0.010);
+      while (!_terminated){
+	if(isActive()){
+	  Feedback end_result;
+	  ROS_DEBUG("[%s]Starting execution", _name.c_str());
+	  _status.value = execute(_goal, end_result);
+	  ROS_DEBUG("[%s]Completed execution", _name.c_str());
+	  update(end_result);
+	}
+
+	d.sleep();
+      }
+      ROS_DEBUG("[%s]Run loop disabled", _name.c_str());
     }
 
     void makeCallback(const ActionStatus& status, const Goal& goal, const Feedback& feedback){
@@ -213,12 +245,16 @@ namespace robot_actions {
 	ROS_WARN("No callback registered for action %s", _name.c_str());
     }
 
-    const std::string _name; /*!< Name for the action */
-    boost::function< void(const ActionStatus&, const Goal&, const Feedback&) > _callback; /*!< Callback function for sending updates */
 
+    const std::string _name; /*!< Name for the action */
+    bool _preempt_request; /*!< True when preemption has been requested. */
     ActionStatus _status; /*!< The current action status */
+    ResultStatus _result_status; /*!< The current action status */
     Goal _goal; /*!< The current goal, if the action is active */
     Feedback _feedback; /*!< Current feedback. May or may not get updated on interim updates. */
+    bool _terminated;
+    boost::thread* _action_thread; /*!< Thread running the action */
+    boost::function< void(const ActionStatus&, const Goal&, const Feedback&) > _callback; /*!< Callback function for sending updates */
   };
 }
 #endif

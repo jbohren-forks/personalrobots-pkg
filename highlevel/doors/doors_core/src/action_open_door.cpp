@@ -48,8 +48,7 @@ static const string fixed_frame = "odom_combined";
 
 OpenDoorAction::OpenDoorAction() : 
   robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("open_door"), 
-  node_(ros::Node::instance()),    
-  request_preempt_(false)
+  node_(ros::Node::instance())
 {};
 
 
@@ -59,10 +58,10 @@ OpenDoorAction::~OpenDoorAction()
 
 
 
-void OpenDoorAction::handleActivate(const robot_msgs::Door& door)
-{
-  notifyActivated();
-  
+robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
+{ 
+  feedback = goal;
+
   // stop
   tff_stop_.mode.vel.x = tff_stop_.FORCE;
   tff_stop_.mode.vel.y = tff_stop_.FORCE;
@@ -108,17 +107,14 @@ void OpenDoorAction::handleActivate(const robot_msgs::Door& door)
   tff_door_.value.rot.y = 0.0;
   tff_door_.value.rot.z = 0.0;
   
-  
-  
   // turn handle
   for (unsigned int i=0; i<100; i++){
     tff_handle_.value.rot.x += -1.5/100.0;
     node_->publish("cartesian_tff_right/command", tff_handle_);
     Duration().fromSec(4.0/100.0).sleep();
-    if (request_preempt_) {
+    if (isPreemptRequested()) {
       node_->publish("cartesian_tff_right/command", tff_stop_);
-      notifyPreempted(door); 
-      return;
+      return robot_actions::PREEMPTED;
     }
   }
   
@@ -126,23 +122,13 @@ void OpenDoorAction::handleActivate(const robot_msgs::Door& door)
   node_->publish("cartesian_tff_right/command", tff_door_);
   for (unsigned int i=0; i<500; i++){
     Duration().fromSec(10.0/500.0).sleep();
-    if (request_preempt_) {
+    if (isPreemptRequested()) {
       node_->publish("cartesian_tff_right/command", tff_stop_);
-      notifyPreempted(door); 
-      return;
+      return robot_actions::PREEMPTED;
     }
   }
   
   // finish
   node_->publish("cartesian_tff_right/command", tff_stop_);
-  
-  notifySucceeded(door);
+  return robot_actions::SUCCESS;
 }
-
-
-
-
-void OpenDoorAction::handlePreempt()
-{
-  request_preempt_ = true;
-};

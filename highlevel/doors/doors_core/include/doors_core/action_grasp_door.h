@@ -58,8 +58,7 @@ public:
   GraspDoorAction(ros::Node& node);
   ~GraspDoorAction();
 
-  virtual void handleActivate(const robot_msgs::Door& door);
-  virtual void handlePreempt();
+  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
 
 
 private:
@@ -67,8 +66,6 @@ private:
   double getDoorAngle(const robot_msgs::Door& door);
 
   ros::Node& node_;
-
-  bool request_preempt_;
   tf::TransformListener tf_; 
 
   std_srvs::Empty::Request  req_empty;

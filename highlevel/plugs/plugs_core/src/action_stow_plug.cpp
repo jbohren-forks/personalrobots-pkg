@@ -68,24 +68,15 @@ StowPlugAction::~StowPlugAction()
 {
 };
 
-void StowPlugAction::handleActivate(const robot_msgs::PlugStow& plug_stow)
+robot_actions::ResultStatus StowPlugAction::execute(const robot_msgs::PlugStow& plug_stow, std_msgs::Empty& feedback)
 {
-  notifyActivated();
-
   plug_stow_ = plug_stow;
 
   reset();
   
   moveToStow();
   releasePlug();
-  return;
-}
-
-void StowPlugAction::handlePreempt()
-{
-  ROS_INFO("%s: Preempted.", action_name_.c_str());
-  notifyPreempted(empty_);
-  return;
+  return waitForDeactivation(feedback);
 }
 
 void StowPlugAction::reset()
@@ -108,23 +99,19 @@ void StowPlugAction::reset()
 
 }
 
-
 void StowPlugAction::moveToStow()
-{
-  if (!isActive())
-    return;
-
-  
+{ 
   req_pose_.pose.header.stamp = ros::Time();
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
-    notifyAborted(empty_);
+    deactivate(robot_actions::ABORTED, empty_);
     return;
   }
   
-  if (!isActive())
+  if (isPreemptRequested())
     return;
+
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
 
   req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z - 0.1;
@@ -132,28 +119,34 @@ void StowPlugAction::moveToStow()
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
-    notifyAborted(empty_);
-    return;
+    deactivate(robot_actions::ABORTED, empty_);
   }
+
   return;
 }
 
 
 void StowPlugAction::releasePlug()
 {
-  if (!isActive())
+  
+  if (isPreemptRequested())
     return;
 
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
+
+  // DO U REALLY WANT TO SUBSCRIBE EACH TIME? WHAT HAPPENS IF U DO NOT?
   node_->subscribe(gripper_controller_ + "/state", controller_state_msg_, &StowPlugAction::checkGrasp, this, 1); 
-  
-  return;
 }
 
 void StowPlugAction::checkGrasp()
 {
   if (!isActive())
     return;
+
+  if (isPreemptRequested()){
+    deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
+    return;
+  }
   
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
   
@@ -175,14 +168,14 @@ void StowPlugAction::checkGrasp()
     {
       ROS_INFO("%s: Error, failed to release plug.", action_name_.c_str());
       node_->unsubscribe(gripper_controller_ + "/state");
-      notifyAborted(empty_);
+      deactivate(robot_actions::ABORTED, std_msgs::Empty());
       return;
     }
     else
     {
       ROS_INFO("%s: succeeded.", action_name_.c_str());
       node_->unsubscribe(gripper_controller_ + "/state");
-      notifySucceeded(empty_);
+      deactivate(robot_actions::SUCCESS, std_msgs::Empty());
       return;
     }
   }

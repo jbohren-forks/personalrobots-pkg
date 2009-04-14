@@ -55,10 +55,8 @@ public:
   ~ActionMechanismControl(){};
   
   
-  void handleActivate(const robot_actions::SwitchControllers& c)
+  virtual robot_actions::ResultStatus execute(const robot_actions::SwitchControllers& c, std_msgs::Empty&)
   {
-    notifyActivated();
-
     ROS_INFO("ActionMechanismControl: received request to start %i controllers and stop %i controllers", 
 	     c.start_controllers.size(), c.stop_controllers.size());
     for (unsigned int i=0; i<c.start_controllers.size(); i++)
@@ -71,18 +69,13 @@ public:
     req.stop_controllers  = c.stop_controllers;
     if (!ros::service::call("switch_controller", req, resp)){
       ROS_ERROR("ActionMechanismControl: failed to switch controllers");
-      notifyAborted(std_msgs::Empty());
+      return robot_actions::ABORTED;
     }
     else{
       ROS_INFO("ActionMechanismControl: controlers switched succesfully");
-      notifySucceeded(std_msgs::Empty());
+      return robot_actions::SUCCESS;
     }
   }
-  
-  
-  // cannot be preempted
-  void handlePreempt()
-  {};
 
 };// class
 

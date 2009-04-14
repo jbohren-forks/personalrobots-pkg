@@ -33,7 +33,6 @@
  *********************************************************************/
 
 #include <door_handle_detector/DoorsDetectorCloud.h>
-#include <door_handle_detector/door_functions.h>
 #include <point_cloud_assembler/BuildCloudAngle.h>
 #include "doors_core/action_detect_door.h"
 
@@ -57,38 +56,33 @@ DetectDoorAction::DetectDoorAction(Node& node):
 DetectDoorAction::~DetectDoorAction(){};
 
 
-
-void DetectDoorAction::handleActivate(const robot_msgs::Door& door)
+robot_actions::ResultStatus DetectDoorAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
 {
-  ROS_INFO("DetectDoorAction: handle activate");
-  request_preempt_ = false;
-  notifyActivated();
+  ROS_INFO("DetectDoorAction: execute");
+  feedback = goal;
 
   robot_msgs::Door result_laser;
-  if (!laserDetection(door, result_laser)){
-    if (request_preempt_){
+  if (!laserDetection(goal, result_laser)){
+    if (isPreemptRequested()){
       ROS_ERROR("DetectDoorAction: Preempted");
-      notifyPreempted(door);
+      return robot_actions::PREEMPTED;
     }
     else{
       ROS_ERROR("DetectDoorAction: Aborted");
-      notifyAborted(door);
+      return robot_actions::ABORTED;
     }
   }
-  else{
-    ROS_INFO("DetectDoorAction: Succeeded");
-    notifySucceeded(result_laser);
-    tmp_result_ = result_laser;
-  }
+
+  ROS_INFO("DetectDoorAction: Succeeded");
+  feedback = result_laser;
+  return robot_actions::SUCCESS;
 }
-
-
-
 
 bool DetectDoorAction::laserDetection(const robot_msgs::Door& door_in, robot_msgs::Door& door_out)
 {
   // check where robot is relative to door
-  if (request_preempt_) return false;
+  if (isPreemptRequested()) return false;
+
   if (!tf_.canTransform("base_footprint", "laser_tilt_link", ros::Time(), ros::Duration().fromSec(5.0))){
     ROS_ERROR("DetectDoorAction: error getting transform from 'base_footprint' to 'laser_tilt_link'");
     return false;
@@ -100,11 +94,14 @@ bool DetectDoorAction::laserDetection(const robot_msgs::Door& door_in, robot_msg
 						 (door_in.frame_p1.y+door_in.frame_p2.y)/2.0,
 						 (door_in.frame_p1.z+door_in.frame_p2.z)/2.0),
 				     ros::Time(), door_in.header.frame_id);
-  if (request_preempt_) return false;
+
+  if (isPreemptRequested()) return false;
+
   if (!tf_.canTransform("base_footprint", doorpoint.frame_id_, ros::Time(), ros::Duration().fromSec(5.0))){
     ROS_ERROR("DetectDoorAction: error getting transform from 'base_footprint' to '%s'", doorpoint.frame_id_.c_str());
     return false;
   }
+
   tf_.transformPoint("base_footprint", doorpoint, doorpoint);
   double dist = doorpoint[0];
   double door_bottom = -0.5;
@@ -112,7 +109,8 @@ bool DetectDoorAction::laserDetection(const robot_msgs::Door& door_in, robot_msg
   ROS_INFO("DetectDoorAction: tilt laser is at height %f, and door at distance %f", laser_height, dist);
 
   // gets a point cloud from the point_cloud_srv
-  if (request_preempt_) return false;
+  if (isPreemptRequested()) return false;
+
   ROS_INFO("DetectDoorAction: get a point cloud from the door");
   point_cloud_assembler::BuildCloudAngle::Request req_pointcloud;
   point_cloud_assembler::BuildCloudAngle::Response res_pointcloud;
@@ -125,26 +123,20 @@ bool DetectDoorAction::laserDetection(const robot_msgs::Door& door_in, robot_msg
   }
 
   // detect door
-  if (request_preempt_) return false;
+  if (isPreemptRequested()) return false;
+
   ROS_INFO("DetectDoorAction: detect the door");
   door_handle_detector::DoorsDetectorCloud::Request  req_doordetect;
   door_handle_detector::DoorsDetectorCloud::Response res_doordetect;
   req_doordetect.door = door_in;
   req_doordetect.cloud = res_pointcloud.cloud;
+
   if (!ros::service::call("doors_detector_cloud", req_doordetect, res_doordetect)){
     ROS_ERROR("DetectDoorAction: failed to detect a door");
     return false;
   }
 
-  cout << "end door detection action " << res_doordetect.doors[0] << endl;
   door_out = res_doordetect.doors[0];
   return true;
 }
-
-
-
-void DetectDoorAction::handlePreempt()
-{
-  request_preempt_ = true;
-};
 

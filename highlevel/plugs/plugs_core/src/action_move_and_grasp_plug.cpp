@@ -53,12 +53,14 @@ MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
   if(gripper_controller_ == "" )
     {
       ROS_ERROR("%s: Aborted, gripper controller param was not set.", action_name_.c_str());
+      terminate();
       return;
     }
 
   if(arm_controller_ == "" )
     {
       ROS_ERROR("%s: Aborted, arm controller param was not set.", action_name_.c_str());
+      terminate();
       return;
     }
 
@@ -68,10 +70,8 @@ MoveAndGraspPlugAction::~MoveAndGraspPlugAction()
 {
 };
 
-void MoveAndGraspPlugAction::handleActivate(const robot_msgs::PlugStow& plug_stow)
+robot_actions::ResultStatus MoveAndGraspPlugAction::execute(const robot_msgs::PlugStow& plug_stow, std_msgs::Empty& feedback)
 {
-  notifyActivated();
-
   plug_stow_ = plug_stow;
 
   reset();
@@ -79,19 +79,11 @@ void MoveAndGraspPlugAction::handleActivate(const robot_msgs::PlugStow& plug_sto
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
   moveToGrasp();
   graspPlug();
-  return;
-}
-
-void MoveAndGraspPlugAction::handlePreempt()
-{
-  ROS_INFO("%s: Preempted.", action_name_.c_str());
-  notifyPreempted(empty_);
-  return;
+  return waitForDeactivation(feedback);
 }
 
 void MoveAndGraspPlugAction::reset()
 {
-  
   last_grasp_value_ = 10.0;
   grasp_count_ = 0;
   gripper_cmd_.data = 0.04;
@@ -104,27 +96,25 @@ void MoveAndGraspPlugAction::reset()
   req_pose_.pose.pose.orientation.y = 0.13;
   req_pose_.pose.pose.orientation.z = 0.68;
   req_pose_.pose.pose.orientation.w = 0.68;
-
-
 }
 
 
 void MoveAndGraspPlugAction::moveToGrasp()
 {
-  if (!isActive())
-    return;
-
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
   req_pose_.pose.header.stamp = ros::Time();
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
-    notifyAborted(empty_);
+    deactivate(robot_actions::ABORTED, empty_);
     return;
   }
   
-  if (!isActive())
+  if (isPreemptRequested()){
+    deactivate(robot_actions::PREEMPTED, empty_);
     return;
+  }
+
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
 
   req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z - 0.1;
@@ -132,9 +122,10 @@ void MoveAndGraspPlugAction::moveToGrasp()
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
-    notifyAborted(empty_);
+    deactivate(robot_actions::ABORTED, empty_);
     return;
   }
+
   gripper_cmd_.data = 0.0;
   return;
 }
@@ -142,12 +133,9 @@ void MoveAndGraspPlugAction::moveToGrasp()
 
 void MoveAndGraspPlugAction::graspPlug()
 {
-  if (!isActive())
-    return;
-
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
   node_->subscribe(gripper_controller_ + "/state", controller_state_msg_, &MoveAndGraspPlugAction::checkGrasp, this, 1); 
-  
+  deactivate(robot_actions::SUCCESS, empty_);
   return;
 }
 
@@ -176,18 +164,16 @@ void MoveAndGraspPlugAction::checkGrasp()
     {
       ROS_INFO("%s: Error, failed to grasp plug.", action_name_.c_str());
       node_->unsubscribe(gripper_controller_ + "/state");
-      notifyAborted(empty_);
+      deactivate(robot_actions::ABORTED, empty_);
       return;
     }
     else
     {
       ROS_INFO("%s: succeeded.", action_name_.c_str());
       node_->unsubscribe(gripper_controller_ + "/state");
-      notifySucceeded(empty_);
+      deactivate(robot_actions::SUCCESS, empty_);
       return;
     }
   }
-
-  return;
 }
 

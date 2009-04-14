@@ -52,16 +52,14 @@ public:
   DetectHandleAction(ros::Node& node);
   ~DetectHandleAction();
 
-  virtual void handleActivate(const robot_msgs::Door& door);
-  virtual void handlePreempt();
 
+  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
 
 private:
   bool laserDetection(const robot_msgs::Door& door_in, robot_msgs::Door& door_out);
   bool cameraDetection(const robot_msgs::Door& door, robot_msgs::Door& door_out);
 
   ros::Node& node_;
-  bool request_preempt_;
   tf::TransformListener tf_;
 
 };

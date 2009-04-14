@@ -52,12 +52,9 @@ class DetectPlugOnBaseAction: public robot_actions::Action<std_msgs::Empty, robo
 {
 public:
   DetectPlugOnBaseAction(ros::Node& node);
-  ~DetectPlugOnBaseAction();
+  virtual ~DetectPlugOnBaseAction();
 
-  virtual void handleActivate(const std_msgs::Empty& empty);
-  virtual void handlePreempt();
-
-
+  robot_actions::ResultStatus execute(const std_msgs::Empty& empty, robot_msgs::PlugStow& feedback);
 
 private:
   // average the last couple plug centroids

@@ -62,8 +62,7 @@ class FineOutletDetectAction
 public:
   FineOutletDetectAction();
 
-  virtual void handleActivate(const robot_msgs::PointStamped& point);
-  virtual void handlePreempt();
+  virtual robot_actions::ResultStatus execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback);
 
 private:
   ros::Node* node_;

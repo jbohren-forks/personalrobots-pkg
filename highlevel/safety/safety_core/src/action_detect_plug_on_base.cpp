@@ -49,6 +49,7 @@ DetectPlugOnBaseAction::DetectPlugOnBaseAction(ros::Node& node) :
   {
     ROS_ERROR("%s: tilt_laser_controller param was not set.",action_name_.c_str());
     plug_stow_.stowed = 0;
+    terminate();
     return;
   }
 
@@ -62,38 +63,20 @@ DetectPlugOnBaseAction::~DetectPlugOnBaseAction()
   if(detector_) delete detector_;
 };
 
-void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
+robot_actions::ResultStatus DetectPlugOnBaseAction::execute(const std_msgs::Empty& empty, robot_msgs::PlugStow& feedback)
 {
-  notifyActivated();
-
   reset();
-  
+
   if (!ros::service::call(laser_controller_ + "/set_periodic_cmd", req_laser_, res_laser_))
   {
-    if (!isActive())
-    {
-      return;
-    }
-    else
-    {
-      ROS_ERROR("%s: Failed to start laser.", action_name_.c_str());
-      plug_stow_.stowed = 0;
-      notifyAborted(plug_stow_);
-    }
-    return;
+    ROS_ERROR("%s: Failed to start laser.", action_name_.c_str());
+    plug_stow_.stowed = 0;
+    return robot_actions::ABORTED;
   }
  
   detector_->activate();
 
-  return;
-}
-
-void DetectPlugOnBaseAction::handlePreempt()
-{
-  ROS_INFO("%s: preempted.", action_name_.c_str());
-  plug_stow_.stowed = 0;
-  notifyPreempted(plug_stow_);
-  return;
+  return waitForDeactivation(feedback);
 }
 
 void DetectPlugOnBaseAction::reset()
@@ -130,6 +113,11 @@ void DetectPlugOnBaseAction::localizePlug()
   if(!isActive())
     return;
 
+  if (isPreemptRequested()){
+    deactivate(robot_actions::PREEMPTED, plug_stow_);
+    return;
+  }
+
   if(plug_stow_msg.stowed == 0)
   {
     not_found_count_++;
@@ -138,8 +126,7 @@ void DetectPlugOnBaseAction::localizePlug()
       ROS_INFO("%s: aborted.", action_name_.c_str());
       plug_stow_.stowed = 0;
       detector_->deactivate();
-      notifyAborted(plug_stow_);
-      return;
+      deactivate(robot_actions::ABORTED, plug_stow_);
     }
     return;
   }
@@ -170,10 +157,7 @@ void DetectPlugOnBaseAction::localizePlug()
       plug_stow_.header.frame_id = plug_stow_msg.header.frame_id;    
       plug_stow_.stowed = 1;
       detector_->deactivate();
-      notifySucceeded(plug_stow_);
-      
+      deactivate(robot_actions::SUCCESS, plug_stow_);   
     }
   }
-
-  return;
 }

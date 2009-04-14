@@ -6,6 +6,7 @@
 #include "TokenVariable.hh"
 #include "SymbolDomain.hh"
 #include "StringDomain.hh"
+#include <std_msgs/Empty.h>
 
 namespace TREX {
 
@@ -73,7 +74,7 @@ namespace TREX {
       ROS_INFO("%sRegistering publisher for %s on topic: %s", 
 	       nameString().c_str(), timelineName.c_str(), _preempt_topic.c_str());
 
-      m_node->registerPublisher<Goal>(_preempt_topic, QUEUE_MAX());
+      m_node->registerPublisher<std_msgs::Empty>(_preempt_topic, QUEUE_MAX());
     }
 
     Observation* getObservation(){
@@ -175,7 +176,8 @@ namespace TREX {
 	m_node->publishMsg<Goal>(_request_topic, goal_msg);
       }
       else {
-	m_node->publishMsg<Goal>(_preempt_topic, goal_msg);
+	std_msgs::Empty recall_msg;
+	m_node->publishMsg<std_msgs::Empty>(_preempt_topic, recall_msg);
       }
 
       return true;

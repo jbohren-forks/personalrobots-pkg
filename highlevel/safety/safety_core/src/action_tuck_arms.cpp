@@ -107,25 +107,27 @@ TuckArmsAction::~TuckArmsAction()
 {
 };
 
-void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
-{
-  notifyActivated();
- 
+robot_actions::ResultStatus TuckArmsAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
+{ 
   if((which_arms_ == "both") || (which_arms_ == "right"))
   {
     if(!ros::service::call(right_arm_controller_ + "/TrajectoryStart", right_traj_req_, traj_res_))
     {
       ROS_ERROR("%s: Aborted, failed to start right trajectory.", action_name_.c_str());
-      notifyAborted(empty_);
-      return;
+      return robot_actions::ABORTED;
     }  
+
     traj_id_ = traj_res_.trajectoryid;
     current_controller_name_ = right_arm_controller_;
     
     while(!isTrajectoryDone() && !traj_error_)
     {
-      if (!isActive())
-        return;
+      if (isPreemptRequested()){
+	cancelTrajectory();
+	ROS_INFO("%s: Preempted.", action_name_.c_str());
+        return robot_actions::PREEMPTED;
+      }
+
       sleep(0.5);
     }
   }
@@ -136,16 +138,20 @@ void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
     if(!ros::service::call(left_arm_controller_ + "/TrajectoryStart", left_traj_req_, traj_res_))
     {
       ROS_ERROR("%s: Aborted, failed to start left trajectory.", action_name_.c_str());
-      notifyAborted(empty_);
-      return;
+      return robot_actions::ABORTED;
     }  
+
     traj_id_ = traj_res_.trajectoryid;
     current_controller_name_ = left_arm_controller_;
     
     while(!isTrajectoryDone() && !traj_error_)
     {
-      if (!isActive())
-        return;
+      if (isPreemptRequested()){
+	cancelTrajectory();
+	ROS_INFO("%s: Preempted.", action_name_.c_str());
+        return robot_actions::PREEMPTED;
+      }
+
       sleep(0.5);
     }
   }
@@ -153,21 +159,11 @@ void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
   if(traj_error_)
   {
     ROS_ERROR("%s: Aborted, trajectory controller failed to reach goal.", action_name_.c_str());
-    notifyAborted(empty_);
-    return;
+    return robot_actions::ABORTED;
   }
-  notifySucceeded(empty_);
-  return;
-}
 
-void TuckArmsAction::handlePreempt()
-{
-  cancelTrajectory();
-  ROS_INFO("%s: Preempted.", action_name_.c_str());
-  notifyPreempted(empty_);
-  return;
+  return robot_actions::SUCCESS;
 }
-
 
 bool TuckArmsAction::isTrajectoryDone()
 {
@@ -194,7 +190,6 @@ bool TuckArmsAction::isTrajectoryDone()
     traj_error_ = true;
   }
   
-
   return done;
 }
 

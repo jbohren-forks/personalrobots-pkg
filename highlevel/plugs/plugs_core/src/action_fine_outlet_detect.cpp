@@ -43,19 +43,12 @@ FineOutletDetectAction::FineOutletDetectAction()
 {
 }
 
-void FineOutletDetectAction::handleActivate(const robot_msgs::PointStamped& point)
-{
-  notifyActivated();
+robot_actions::ResultStatus FineOutletDetectAction::execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback){
 
   req_.point = point;
   bool success = ros::service::call("/outlet_detector/fine_outlet_detect", req_, res_);
   if (success)
-    notifySucceeded(res_.pose);
+    return robot_actions::SUCCESS;
   else
-    notifyAborted(res_.pose);
-}
-
-void FineOutletDetectAction::handlePreempt()
-{
-  // TODO: allow preemption?
+    return robot_actions::ABORTED;
 }

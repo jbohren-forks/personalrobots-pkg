@@ -2,6 +2,7 @@
   <master auto="start"/>
   <param name="/trex/enable_base_state_publisher" value="true"/>
   <param name="/trex/enable_switch_controllers" value="true"/>
+  <param name="/trex/enable_safety_tuck_arms" value="true"/>
   <param name="/trex/enable_detect_door" value="true"/>
   <param name="/trex/enable_detect_handle" value="true"/>
   <param name="/trex/enable_grasp_handle" value="true"/>

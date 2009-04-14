@@ -62,9 +62,7 @@ public:
   MoveAndGraspPlugAction();
   ~MoveAndGraspPlugAction();
 
-  virtual void handleActivate(const robot_msgs::PlugStow& plug_stow);
-  virtual void handlePreempt();
-
+  robot_actions::ResultStatus execute(const robot_msgs::PlugStow& plug_stow, std_msgs::Empty&);
 
 private:
   

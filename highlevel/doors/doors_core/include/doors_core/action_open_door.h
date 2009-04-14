@@ -56,14 +56,10 @@ public:
   OpenDoorAction();
   ~OpenDoorAction();
 
-  virtual void handleActivate(const robot_msgs::Door& door);
-  virtual void handlePreempt();
-
+  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
 
 private:
   ros::Node* node_;
-
-  bool request_preempt_;
 
   robot_msgs::TaskFrameFormalism tff_stop_, tff_handle_, tff_door_;
 

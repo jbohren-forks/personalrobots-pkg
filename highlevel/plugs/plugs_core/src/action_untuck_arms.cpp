@@ -51,6 +51,7 @@ UntuckArmsAction::UntuckArmsAction() :
   if(which_arms_ == "")
   {
     ROS_ERROR("%s: Aborted, which arms param was not set.", action_name_.c_str());
+    terminate();
     return;
   }
 
@@ -62,6 +63,7 @@ UntuckArmsAction::UntuckArmsAction() :
     if(right_arm_controller_ == "")
     {
       ROS_ERROR("%s: Aborted, right arm controller param was not set.", action_name_.c_str());
+      terminate();
       return;
     }
   }
@@ -73,6 +75,7 @@ UntuckArmsAction::UntuckArmsAction() :
     if(left_arm_controller_ == "")
     {
       ROS_ERROR("%s: Aborted, left arm controller param was not set.", action_name_.c_str());
+      terminate();
       return;
     }
   }
@@ -111,68 +114,59 @@ UntuckArmsAction::~UntuckArmsAction()
 {
 };
 
-void UntuckArmsAction::handleActivate(const std_msgs::Empty& empty)
-{
-  notifyActivated();
-
-  if((which_arms_ == "both") || (which_arms_ == "right"))
-  {
-    if(!ros::service::call(right_arm_controller_ + "/TrajectoryStart", right_traj_req_, traj_res_))
+robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
+{ 
+  if(!ros::service::call(right_arm_controller_ + "/TrajectoryStart", right_traj_req_, traj_res_))
     {
       ROS_ERROR("%s: Aborted, failed to start right arm trajectory.", action_name_.c_str());
-      notifyAborted(empty_);
-      return;
-    }  
-    traj_id_ = traj_res_.trajectoryid;
-    current_controller_name_ = right_arm_controller_;
+      return robot_actions::ABORTED;
+    }
+
+  traj_id_ = traj_res_.trajectoryid;
+  current_controller_name_ = right_arm_controller_;
     
-    while(!isTrajectoryDone() && !traj_error_)
+  while(!isTrajectoryDone() && !traj_error_)
     {
-      if (!isActive())
-        return;
+      if (isPreemptRequested()){
+	cancelTrajectory();
+	ROS_INFO("%s: Preempted.", action_name_.c_str());
+        return robot_actions::PREEMPTED;
+      }
+
       sleep(0.5);
     }
-  }
   
   
   if((which_arms_ == "both") || (which_arms_ == "left") && !traj_error_)
-  {
-    if(!ros::service::call(left_arm_controller_ + "/TrajectoryStart", left_traj_req_, traj_res_))
     {
-      ROS_ERROR("%s: Aborted, failed to start left arm  trajectory.", action_name_.c_str());
-      notifyAborted(empty_);
-      return;
-    }  
-    traj_id_ = traj_res_.trajectoryid;
-    current_controller_name_ = left_arm_controller_;
+      if(!ros::service::call(left_arm_controller_ + "/TrajectoryStart", left_traj_req_, traj_res_))
+	{
+	  ROS_ERROR("%s: Aborted, failed to start left arm  trajectory.", action_name_.c_str());
+	  return robot_actions::ABORTED;
+	}  
+      traj_id_ = traj_res_.trajectoryid;
+      current_controller_name_ = left_arm_controller_;
     
-    while(!isTrajectoryDone() && !traj_error_)
-    {
-      if (!isActive())
-        return;
-      sleep(0.5);
+      while(!isTrajectoryDone() && !traj_error_)
+	{
+	  if (isPreemptRequested()){
+	    cancelTrajectory();
+	    ROS_INFO("%s: Preempted.", action_name_.c_str());
+	    return robot_actions::PREEMPTED;
+	  }
+
+	  sleep(0.5);
+	}
     }
-  }
   
   if(traj_error_)
-  {
-    ROS_ERROR("%s: Aborted, trajectory controller failed to reach goal.", action_name_.c_str());
-    notifyAborted(empty_);
-    return;
-  }
+    {
+      ROS_ERROR("%s: Aborted, trajectory controller failed to reach goal.", action_name_.c_str());
+      return robot_actions::ABORTED;
+    }
   
-  notifySucceeded(empty_);
-  return;
+  return robot_actions::SUCCESS;
 }
-
-void UntuckArmsAction::handlePreempt()
-{
-  cancelTrajectory();
-  ROS_INFO("%s: Preempted.", action_name_.c_str());
-  notifyPreempted(empty_);
-  return;
-}
-
 
 bool UntuckArmsAction::isTrajectoryDone()
 {
