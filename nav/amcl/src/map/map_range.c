@@ -36,94 +36,6 @@
 // out-of-bound cells are treated as occupied, which makes it easy to
 // use Stage bitmap files.
 double map_calc_range(map_t *map, double ox, double oy, double oa, double max_range)
-#if 0
-{
-  int i, j;
-  int ai, aj, bi, bj;
-  double dx, dy;
-  map_cell_t *cell;
-  
-  if (fabs(cos(oa)) > fabs(sin(oa)))
-  {
-    ai = MAP_GXWX(map, ox);
-    bi = MAP_GXWX(map, ox + max_range * cos(oa));
-    
-    aj = MAP_GYWY(map, oy);
-    dy = tan(oa) * map->scale;
-
-    if (ai < bi)
-    {
-      for (i = ai; i < bi; i++)
-      {
-        j = MAP_GYWY(map, oy + (i - ai) * dy);
-        if (MAP_VALID(map, i, j))
-        {
-          cell = map->cells + MAP_INDEX(map, i, j);
-          if (cell->occ_state >= 0)
-            return sqrt((i - ai) * (i - ai) + (j - aj) * (j - aj)) * map->scale;
-        }
-        else
-            return sqrt((i - ai) * (i - ai) + (j - aj) * (j - aj)) * map->scale;          
-      }
-    }
-    else
-    {
-      for (i = ai; i > bi; i--)
-      {
-        j = MAP_GYWY(map, oy + (i - ai) * dy);
-        if (MAP_VALID(map, i, j))
-        {
-          cell = map->cells + MAP_INDEX(map, i, j);
-          if (cell->occ_state >= 0)
-            return sqrt((i - ai) * (i - ai) + (j - aj) * (j - aj)) * map->scale;
-        }
-        else
-          return sqrt((i - ai) * (i - ai) + (j - aj) * (j - aj)) * map->scale;
-      }
-    }
-  }
-  else
-  {
-    ai = MAP_GXWX(map, ox);
-    dx = tan(M_PI/2 - oa) * map->scale;
-    
-    aj = MAP_GYWY(map, oy);
-    bj = MAP_GYWY(map, oy + max_range * sin(oa));
-
-    if (aj < bj)
-    {
-      for (j = aj; j < bj; j++)
-      {
-        i = MAP_GXWX(map, ox + (j - aj) * dx);
-        if (MAP_VALID(map, i, j))
-        {
-          cell = map->cells + MAP_INDEX(map, i, j);
-          if (cell->occ_state >= 0)
-            return sqrt((i - ai) * (i - ai) + (j - aj) * (j - aj)) * map->scale;
-        }
-        else
-          return sqrt((i - ai) * (i - ai) + (j - aj) * (j - aj)) * map->scale;
-      }
-    }
-    else
-    {
-      for (j = aj; j > bj; j--)
-      {
-        i = MAP_GXWX(map, ox + (j - aj) * dx);
-        if (MAP_VALID(map, i, j))
-        {
-          cell = map->cells + MAP_INDEX(map, i, j);
-          if (cell->occ_state >= 0)
-            return sqrt((i - ai) * (i - ai) + (j - aj) * (j - aj)) * map->scale;
-        }
-        else
-          return sqrt((i - ai) * (i - ai) + (j - aj) * (j - aj)) * map->scale;
-      }
-    }
-  }
-  return max_range;
-}
-#else
 {
   // Bresenham raytracing
   int x0,x1,y0,y1;
@@ -206,4 +118,3 @@ double map_calc_range(map_t *map, double ox, double oy, double oa, double max_ra
   }
   return max_range;
 }
-#endif

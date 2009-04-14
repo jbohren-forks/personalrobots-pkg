@@ -1,15 +1,18 @@
 <package>
-  <description>A ROS node that wraps up the Player amcl driver, which implements the Adaptive Monte Carlo Localization algorithm.</description>
+  <description>A ROS node that implements the Adaptive Monte Carlo 
+  Localization algorithm. Derived from the Player amcl driver.</description>
+  <url>http://pr.willowgarage.com/wiki/amcl</url>
   <author>Brian P. Gerkey</author>
-  <license>BSD</license>
+  <license>LGPL</license>
   <review status="unreviewed" notes="API review in progress (Brian)"/>
   <depend package="roscpp" />
-  <depend package="player" />
   <depend package="tf" />
   <depend package="robot_srvs" />
-  <depend package="std_msgs" />
-  <depend package="deprecated_msgs" />
   <depend package="robot_msgs" />
   <depend package="std_srvs" />
   <depend package="laser_scan" />
+  
+  <!-- For tests -->
+  <depend package="map_server"/>
+  <depend package="rostest"/>
 </package>

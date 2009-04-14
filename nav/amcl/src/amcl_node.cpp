@@ -1,32 +1,24 @@
 /*
- * amcl_player
- * Copyright (c) 2008, Willow Garage, Inc.
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <ORGANIZATION> nor the names of its
- *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ *  Copyright (c) 2008, Willow Garage, Inc.
+ *  All rights reserved.
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public
+ *  License along with this library; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
  */
+
+/* Author: Brian Gerkey */
 
 /**
 
@@ -34,21 +26,34 @@
 
 @htmlinclude manifest.html
 
-@b amcl is a probabilistic localization system for a robot moving in
-2D.  It implements the adaptive Monte Carlo localization algorithm (as
-described by Dieter Fox), which uses a particle filter to track the pose of
-a robot against a known map.
+@b !amcl is a probabilistic localization system for a robot moving in
+2D.  It implements the adaptive (or KLD-sampling) Monte Carlo localization
+approach (as described by Dieter Fox), which uses a particle filter to
+track the pose of a robot against a known map.
 
-This node uses a modified version of the Player @b amcl driver.  For
-detailed documentation, consult <a
-href="http://playerstage.sourceforge.net/doc/Player-cvs/player/group__driver__amcl.html">Player
-amcl documentation</a>.
+Many of the algorithms and their parameters are well-described in the
+book Probabilistic Robotics, by Thrun, Burgard, and Fox.  The user is
+advised to check there for more detail.  In particular, we use the
+following algorithms from that book: @b sample_motion_model_odometry,
+@b beam_range_finder_model, @b likelihood_field_range_finder_model,
+@b Augmented_MCL, and @b KLD_Sampling_MCL.
+
+As currently implemented, this node works only with laser scans and
+laser maps.  It could be extended to work with other sensor data.
+
+This node is derived, with thanks, from Andrew Howard's excellent 'amcl'
+Player driver.
 
 <hr>
 
 @section usage Usage
 @verbatim
-$ amcl
+$ amcl [standard ROS arguments]
+@endverbatim
+
+Example:
+@verbatim
+$ amcl scan:=base_scan
 @endverbatim
 
 <hr>
@@ -56,32 +61,56 @@ $ amcl
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "scan"/LaserScan : laser scans.
-- @b "initialpose"/Pose2DFloat32: pose used to (re)initialize particle filter
+- @b "scan" laser_scan/LaserScan : laser scans
+- @b "tf_message" tf/tfMessage : transforms
 
 Publishes to (name / type):
-- @b "localizedpose"/RobotBase2DOdom : robot's localized map pose.  Only the position information is set (no velocity).
-- @b "particlecloud"/ParticleCloud : the set of particles being maintained by the filter.
+- @b "amcl_pose" robot_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
+- @b "particlecloud" robot_msgs/ParticleCloud : the set of pose estimates being maintained by the filter.
 
 <hr>
 
 @section parameters ROS parameters
 
-- @b "robot_x_start" (double) : The starting X position of the robot, default: 0.
-- @b "robot_y_start" (double) : The starting Y position of the robot, default: 0.
-- @b "robot_th_start" (double) : The starting TH position of the robot, default: 0.
-- @b pf_laser_max_beams (int) : The number of laser beams to use when localizing, default: 20.
-- @b pf_min_samples (int) : The minimum number of particles used when localizing, default: 500
-- @b pf_max_samples (int) : The maximum number of particles used when localizing, default: 10000
-- @b pf_odom_drift_xx (double) : Element 0,0 of the covariance matrix used in estimating odometric error, default: 0.2
-- @b pf_odom_drift_yy (double) : Element 1,1 of the covariance matrix used in estimating odometric error, default: 0.2
-- @b pf_odom_drift_aa (double) : Element 2,2 of the covariance matrix used in estimating odometric error, default: 0.2
-- @b pf_odom_drift_xa (double) : Element 2,0 of the covariance matrix used in estimating odometric error, default: 0.2
-- @b pf_min_d (double) : Minimum translational change (meters) required to trigger filter update, default: 0.2
-- @b pf_min_a (double) : Minimum rotational change (radians) required to trigger filter update, default: pi/6.0
-- @b odom_frame_id (string) : The desired frame_id to use for odometery
+@subsection filter_params Overall filter parameters
+  - @b "~min_particles" (int) : Minimum allowed number of particles, default: 100
+  - @b "~max_particles" (int) : Maximum allowed number of particles, default: 5000
+  - @b "~kld_err" (double) : Maximum error between the true distribution and the estimated distribution, default: 0.01
+  - @b "~kld_z" (double) : Upper standard normal quantile for (1 - p), where p is the probability that the error on the estimated distrubition will be less than kld_err, default: 0.99
+  - @b "~update_min_d" (double) : Translational movement required before performing a filter update, default: 0.2 meters
+  - @b "~update_min_a" (double) : Rotational movement required before performing a filter update, default: M_PI/6.0 radians
+  - @b "~resample_interval" (int) : Number of filter updates required before resampling, default: 10
+  - @b "~transform_tolerance" (double) : Time with which to post-date the transform that is published, to indicate that this transform is valid into the future, default: 0.1 seconds
+  - @b "~recovery_alpha_slow" (double) : Exponential decay rate for the slow average weight filter, used in deciding when to recover by adding random poses, default: 0.001
+  - @b "~recovery_alpha_fast" (double) : Exponential decay rate for the fast average weight filter, used in deciding when to recover by adding random poses, default: 0.1
+  - @b "~initial_pose_x" (double) : Initial pose estimate (x), used to initialize filter with Gaussian distribution, default: 0.0 meters
+  - @b "~initial_pose_y" (double) : Initial pose estimate (y), used to initialize filter with Gaussian distribution, default: 0.0 meters
+  - @b "~initial_pose_a" (double) : Initial pose estimate (yaw), used to initialize filter with Gaussian distribution, default: 0.0 radians
 
-@todo Expose the various amcl parameters via ROS.
+@subsection laser_params Laser model parameters
+Note that whichever mixture weights are in use should sum to 1.  The beam
+model uses all 4: z_hit, z_short, z_max, and z_rand.  The likelihood_field
+model uses only 2: z_hit and z_rand.
+
+  - @b "~laser_max_range" (double) : Maximum scan range to be considered; -1.0 will cause the laser's reported maximum range to be used, default: -1.0
+  - @b "~laser_max_beams" (int) : How many evenly-spaced beams in each scan to be used when updating the filter, default: 30
+  - @b "~laser_z_hit" (double) : Mixture weight for the z_hit part of the model, default: 0.95
+  - @b "~laser_z_short" (double) : Mixture weight for the z_short part of the model, default: 0.1
+  - @b "~laser_z_max" (double) : Mixture weight for the z_max part of the model, default: 0.05
+  - @b "~laser_z_rand" (double) : Mixture weight for the z_rand part of the model, default: 0.05
+  - @b "~laser_sigma_hit" (double) : Standard deviation for Gaussian model used in z_hit part of the model, default: 0.2 meters
+  - @b "~laser_lambda_short" (double) : Exponential decay parameter for z_short part of model, default: 0.1
+  - @b "~laser_likelihood_max_dist" (double) : Maximum distance to do obstacle inflation on map, for use in likelihood_field model, default: 2.0 meters
+  - @b "~laser_model_type" (string) : Which model to use, either "beam" or "likelihood_field," default: "likelihood_field"
+
+@subsection odom_params Odometery model parameters
+We use the @b sample_motion_model_odometry algorithm from Probabilistic
+Robotics, p136.
+  - @b "~odom_alpha1" (double) : Rotation-related noise parameter, default: 0.2
+  - @b "~odom_alpha2" (double) : Translation-related noise parameter, default: 0.2
+  - @b "~odom_alpha3" (double) : Translation-related noise parameter, default: 0.2
+  - @b "~odom_alpha4" (double) : Rotation-related noise parameter, default: 0.2
+  - @b "~odom_frame_id" (string) : Which frame to use for odometry, default: "odom"
 
  **/
 
@@ -250,16 +279,16 @@ AmclNode::AmclNode() :
                                laser_likelihood_max_dist, 2.0);
   std::string tmp_model_type;
   laser_model_t laser_model_type;
-  ros::Node::instance()->param("~laser_model_type", tmp_model_type, std::string("beam"));
+  ros::Node::instance()->param("~laser_model_type", tmp_model_type, std::string("likelihood_field"));
   if(tmp_model_type == "beam")
     laser_model_type = LASER_MODEL_BEAM;
   else if(tmp_model_type == "likelihood_field")
     laser_model_type = LASER_MODEL_LIKELIHOOD_FIELD;
   else
   {
-    ROS_WARN("Unknown laser model type \"%s\"; defaulting to beam model",
+    ROS_WARN("Unknown laser model type \"%s\"; defaulting to likelihood_field model",
              tmp_model_type.c_str());
-    laser_model_type = LASER_MODEL_BEAM;
+    laser_model_type = LASER_MODEL_LIKELIHOOD_FIELD;
   }
 
   ros::Node::instance()->param("~update_min_d", d_thresh_, 0.2);
@@ -649,6 +678,9 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
        */
 
       robot_msgs::PoseWithCovariance p;
+      // Fill in the header
+      p.header.frame_id = "map";
+      p.header.stamp = laser_scan->header.stamp;
       // Copy in the pose
       p.pose.position.x = hyps[max_weight_hyp].pf_pose_mean.v[0];
       p.pose.position.y = hyps[max_weight_hyp].pf_pose_mean.v[1];

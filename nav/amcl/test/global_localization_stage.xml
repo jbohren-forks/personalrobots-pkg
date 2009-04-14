@@ -4,9 +4,9 @@ setting pose: 30.329 34.644 3.142
 <launch>
     <param name="/use_sim_time" value="true"/>
     <node pkg="rosrecord" type="rosplay" 
-          args="-s 2 -r 1 -b 10 $(find amcl_player)/test/global_localization_stage.bag"/>
-    <node pkg="map_server" type="map_server" args="$(find amcl_player)/test/willow-full.pgm 0.1"/>
-    <node pkg="amcl_player" type="amcl" name="amcl" respawn="false" output="screen">
+          args="-s 2 -r 1 -b 10 $(find amcl)/test/global_localization_stage.bag"/>
+    <node pkg="map_server" type="map_server" args="$(find amcl)/test/willow-full.pgm 0.1"/>
+    <node pkg="amcl" type="amcl" name="amcl" respawn="false" output="screen">
       <remap from="scan" to="base_scan" />
       <param name="laser_max_range" value="16.0"/>
       <param name="laser_max_beams" value="30"/>
@@ -37,6 +37,6 @@ setting pose: 30.329 34.644 3.142
       <param name="robot_y_start" value="0.0"/>
       <param name="robot_th_start" value="0.0"/>
     </node>
-  <test time-limit="180" test-name="global_localization" pkg="amcl_player" 
+  <test time-limit="180" test-name="global_localization" pkg="amcl" 
         type="global_localization.py" args=" 39.358 36.750 3.099 0.25 0.25 28.0"/>
 </launch>
