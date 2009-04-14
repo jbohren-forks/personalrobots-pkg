@@ -49,7 +49,11 @@ namespace robot_actions {
 
   ActionRunner::~ActionRunner(){
     terminate();
-    _update_thread->join();
+
+    if(_update_thread != NULL){
+      _update_thread->join();
+      delete _update_thread;
+    }
 
     // Now deallocate all adapters
     for(std::vector<AbstractAdapter*>::const_iterator it = _adapters.begin(); it != _adapters.end(); ++it){
