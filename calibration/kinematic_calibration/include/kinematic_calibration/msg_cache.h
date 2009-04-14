@@ -62,11 +62,13 @@ public:
    * \param N max number of elements to store in history
    */
   MsgCache(unsigned int N) ;
+  void resize(unsigned int N) ;
   void insertData(const T &data) ;
 
   void findClosestBefore(const ros::Time& time, T& data_out) ;
   void findClosestAfter (const ros::Time& time, T& data_out) ;
 
+  ros::Time latestTime() ;
 protected:
   std::deque<T> storage_ ;
   unsigned int max_elems_ ;
@@ -98,6 +100,15 @@ MsgCache<T>::MsgCache(unsigned int N) : max_elems_(N)
 {
 
 }
+
+template<class T>
+void MsgCache<T>::resize(unsigned int N)
+{
+  max_elems_ = N ;
+  while (storage_.size() > max_elems_)
+    storage_.pop_front() ;
+}
+
 
 template<class T>
 void MsgCache<T>::insertData(const T& data)
@@ -150,6 +161,11 @@ void MsgCache<T>::findClosestAfter(const ros::Time& time, T& data_out)
   throw std::runtime_error("ERROR: All elements in cache occur before the requested time") ;
 }
 
+template<class T>
+ros::Time MsgCache<T>::latestTime()
+{
+  return storage_.back().header.stamp ;
+}
 
 //******** Message Cache Listener **********
 

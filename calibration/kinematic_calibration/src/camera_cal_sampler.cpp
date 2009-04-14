@@ -35,7 +35,7 @@
 //! \author Vijay Pradeep
 
 #include "ros/node.h"
-#include "kinematic_calibration/led_tracker.h"
+#include "kinematic_calibration/camera_cal_sampler.h"
 
 using namespace kinematic_calibration ;
 
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 
   ros::Node node("tracker_node") ;
 
-  LedTracker tracker(&node) ;
+  CameraCalSampler tracker(&node) ;
 
   node.spin() ;
 
