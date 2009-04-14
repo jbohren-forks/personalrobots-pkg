@@ -271,11 +271,17 @@ Frame CartesianTrajectoryController::getPose()
 bool CartesianTrajectoryController::moveTo(robot_srvs::MoveToPose::Request &req,
 					   robot_srvs::MoveToPose::Response &resp)
 {
+  ROS_INFO("CartesianTrajectoryController: service request for moveto");
   if (!moveTo(req.pose, 0.0))
     return false;
+  ROS_INFO("CartesianTrajectoryController: moveto command successful");
 
-  while (is_moving_)
-    Duration().fromSec(0.01).sleep();
+  while (is_moving_){
+    Duration().fromSec(0.1).sleep();
+    ROS_INFO("CartesianTrajectoryController: waiting for moveto to complete");
+  }
+
+  ROS_INFO("CartesianTrajectoryController: moveto finished");
 
   if (request_preempt_)
     return false;
