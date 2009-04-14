@@ -3,7 +3,7 @@
   <group name="wg">
     <node pkg="stage" type="stageros" args="$(find 2dnav_stage)/worlds/willow-pr2.world" respawn="false" output="screen"/>
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full.pgm 0.1" respawn="false" output="screen"/>
-    <node pkg="amcl_player" type="amcl" name="amcl" respawn="false" output="screen">
+    <node pkg="amcl" type="amcl" name="amcl" respawn="false" output="screen">
       <remap from="scan" to="base_scan" />
       <param name="laser_max_beams" value="30"/>
       <param name="min_particles" value="100"/>
