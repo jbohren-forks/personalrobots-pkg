@@ -112,13 +112,6 @@ typedef struct
 
 	bool bInitialized;
 
-	//hash table of size x_size*y_size. Maps from coords to stateId	
-	int HashTableSize;
-	vector<EnvNAVXYTHETALATHashEntry_t*>* Coord2StateIDHashTable;
-
-	//vector that maps from stateID to coords	
-	vector<EnvNAVXYTHETALATHashEntry_t*> StateID2CoordTable;
-
 	//any additional variables
 
 
@@ -169,15 +162,15 @@ typedef struct ENV_NAVXYTHETALAT_CONFIG
 } EnvNAVXYTHETALATConfig_t;
 
 
-
 class SBPL2DGridSearch;
 
-class EnvironmentNAVXYTHETALAT : public DiscreteSpaceInformation
+template<class EnvNAVLATHashEntry_t>
+class EnvironmentNAVXYTHETALATTICE : public DiscreteSpaceInformation
 {
 
 public:
 
-	EnvironmentNAVXYTHETALAT();
+	EnvironmentNAVXYTHETALATTICE();
 
 	bool InitializeEnv(const char* sEnvFile, const vector<sbpl_2Dpt_t>& perimeterptsV, const char* sMotPrimFile);	
 	bool InitializeEnv(const char* sEnvFile);
@@ -192,7 +185,7 @@ public:
 	virtual void GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV);
 
 	int	 SizeofCreatedEnv();
-	void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
+	virtual void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
 	void PrintEnv_Config(FILE* fOut);
 
     bool InitializeEnv(int width, int height,
@@ -227,7 +220,7 @@ public:
 	const EnvNAVXYTHETALATConfig_t* GetEnvNavConfig();
 
 
-    ~EnvironmentNAVXYTHETALAT();
+    ~EnvironmentNAVXYTHETALATTICE();
 
     void PrintTimeStat(FILE* fOut);
   
@@ -273,7 +266,17 @@ public:
 	EnvironmentNAVXYTHETALAT_t EnvNAVXYTHETALAT;
 	vector<EnvNAVXYTHETALAT3Dcell_t> affectedsuccstatesV; //arrays of states whose outgoing actions cross cell 0,0
 	vector<EnvNAVXYTHETALAT3Dcell_t> affectedpredstatesV; //arrays of states whose incoming actions cross cell 0,0
+
+	//states hashtable
+	//hash table of size x_size*y_size. Maps from coords to stateId	
+	int HashTableSize;
+	vector<EnvNAVLATHashEntry_t*>* Coord2StateIDHashTable;
+	//vector that maps from stateID to coords	
+	vector<EnvNAVLATHashEntry_t*> StateID2CoordTable;
 	
+
+
+
 	//2D search for heuristic computations
 	bool bNeedtoRecomputeStartHeuristics;
 	SBPL2DGridSearch* grid2Dsearch;
@@ -299,12 +302,12 @@ public:
 	void PrecomputeActionswithCompleteMotionPrimitive(vector<SBPL_xytheta_mprimitive>* motionprimitiveV);
 	void PrecomputeActions();
 
-	EnvNAVXYTHETALATHashEntry_t* GetHashEntry(int X, int Y, int Theta);
+	EnvNAVLATHashEntry_t* GetHashEntry(int X, int Y, int Theta);
 
-	EnvNAVXYTHETALATHashEntry_t* CreateNewHashEntry(int X, int Y, int Theta);
+	EnvNAVLATHashEntry_t* CreateNewHashEntry(int X, int Y, int Theta);
 
 
-	void CreateStartandGoalStates();
+	//void CreateStartandGoalStates();
 
 	void InitializeEnvironment();
 
@@ -330,6 +333,10 @@ public:
 	void PrintHeuristicValues();
 
 };
+
+
+typedef EnvironmentNAVXYTHETALATTICE<EnvNAVXYTHETALATHashEntry_t> EnvironmentNAVXYTHETALAT;
+
 
 #endif
 

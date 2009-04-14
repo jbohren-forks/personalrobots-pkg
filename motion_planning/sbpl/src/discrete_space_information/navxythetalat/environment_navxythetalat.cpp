@@ -38,9 +38,12 @@ static clock_t time_getsuccs = 0;
 
 static long int checks = 0; //TODO-debugmax
 
+//forward declaration of all possible template types (in order to use templates in cpp rather than in .h)
+template EnvironmentNAVXYTHETALATTICE<EnvNAVXYTHETALATHashEntry_t>; 
 
 //-----------------constructors/destructors-------------------------------
-EnvironmentNAVXYTHETALAT::EnvironmentNAVXYTHETALAT()
+template<class EnvNAVLATHashEntry_t>
+EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::EnvironmentNAVXYTHETALATTICE()
 {
 	EnvNAVXYTHETALATCfg.obsthresh = ENVNAVXYTHETALAT_DEFAULTOBSTHRESH;
 	EnvNAVXYTHETALATCfg.cost_inscribed_thresh = EnvNAVXYTHETALATCfg.obsthresh; //the value that pretty much makes it disabled
@@ -54,7 +57,8 @@ EnvironmentNAVXYTHETALAT::EnvironmentNAVXYTHETALAT()
 	EnvNAVXYTHETALATCfg.actionwidth = NAVXYTHETALAT_DEFAULT_ACTIONWIDTH;
 }
 
-EnvironmentNAVXYTHETALAT::~EnvironmentNAVXYTHETALAT()
+template<class EnvNAVLATHashEntry_t>
+EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::~EnvironmentNAVXYTHETALATTICE()
 {
 	if(grid2Dsearch != NULL)
 		delete grid2Dsearch;
@@ -83,31 +87,32 @@ static unsigned int inthash(unsigned int key)
 //examples of hash functions: map state coordinates onto a hash value
 //#define GETHASHBIN(X, Y) (Y*WIDTH_Y+X) 
 //here we have state coord: <X1, X2, X3, X4>
-unsigned int EnvironmentNAVXYTHETALAT::GETHASHBIN(unsigned int X1, unsigned int X2, unsigned int Theta)
+template<class EnvNAVLATHashEntry_t>
+unsigned int EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GETHASHBIN(unsigned int X1, unsigned int X2, unsigned int Theta)
 {
 
-	return inthash(inthash(X1)+(inthash(X2)<<1)+(inthash(Theta)<<2)) & (EnvNAVXYTHETALAT.HashTableSize-1);
+	return inthash(inthash(X1)+(inthash(X2)<<1)+(inthash(Theta)<<2)) & (HashTableSize-1);
 }
 
 
-
-void EnvironmentNAVXYTHETALAT::PrintHashTableHist()
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::PrintHashTableHist()
 {
 	int s0=0, s1=0, s50=0, s100=0, s200=0, s300=0, slarge=0;
 
-	for(int  j = 0; j < EnvNAVXYTHETALAT.HashTableSize; j++)
+	for(int  j = 0; j < HashTableSize; j++)
 	{
-		if((int)EnvNAVXYTHETALAT.Coord2StateIDHashTable[j].size() == 0)
+		if((int)Coord2StateIDHashTable[j].size() == 0)
 			s0++;
-		else if((int)EnvNAVXYTHETALAT.Coord2StateIDHashTable[j].size() < 50)
+		else if((int)Coord2StateIDHashTable[j].size() < 50)
 			s1++;
-		else if((int)EnvNAVXYTHETALAT.Coord2StateIDHashTable[j].size() < 100)
+		else if((int)Coord2StateIDHashTable[j].size() < 100)
 			s50++;
-		else if((int)EnvNAVXYTHETALAT.Coord2StateIDHashTable[j].size() < 200)
+		else if((int)Coord2StateIDHashTable[j].size() < 200)
 			s100++;
-		else if((int)EnvNAVXYTHETALAT.Coord2StateIDHashTable[j].size() < 300)
+		else if((int)Coord2StateIDHashTable[j].size() < 300)
 			s200++;
-		else if((int)EnvNAVXYTHETALAT.Coord2StateIDHashTable[j].size() < 400)
+		else if((int)Coord2StateIDHashTable[j].size() < 400)
 			s300++;
 		else
 			slarge++;
@@ -116,7 +121,9 @@ void EnvironmentNAVXYTHETALAT::PrintHashTableHist()
 		s0,s1, s50, s100, s200,s300,slarge);
 }
 
-void EnvironmentNAVXYTHETALAT::SetConfiguration(int width, int height,
+
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::SetConfiguration(int width, int height,
 					const unsigned char* mapdata,
 					int startx, int starty, int starttheta,
 					int goalx, int goaly, int goaltheta,
@@ -187,7 +194,8 @@ void EnvironmentNAVXYTHETALAT::SetConfiguration(int width, int height,
   }
 }
 
-void EnvironmentNAVXYTHETALAT::ReadConfiguration(FILE* fCfg)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::ReadConfiguration(FILE* fCfg)
 {
 	//read in the configuration of environment and initialize  EnvNAVXYTHETALATCfg structure
 	char sTemp[1024], sTemp1[1024];
@@ -315,7 +323,8 @@ void EnvironmentNAVXYTHETALAT::ReadConfiguration(FILE* fCfg)
 
 }
 
-bool EnvironmentNAVXYTHETALAT::ReadinCell(EnvNAVXYTHETALAT3Dcell_t* cell, FILE* fIn)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::ReadinCell(EnvNAVXYTHETALAT3Dcell_t* cell, FILE* fIn)
 {
    char sTemp[60];
 
@@ -335,7 +344,8 @@ bool EnvironmentNAVXYTHETALAT::ReadinCell(EnvNAVXYTHETALAT3Dcell_t* cell, FILE* 
 	return true;
 }
 
-bool EnvironmentNAVXYTHETALAT::ReadinPose(EnvNAVXYTHETALAT3Dpt_t* pose, FILE* fIn)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::ReadinPose(EnvNAVXYTHETALAT3Dpt_t* pose, FILE* fIn)
 {
    char sTemp[60];
 
@@ -354,7 +364,8 @@ bool EnvironmentNAVXYTHETALAT::ReadinPose(EnvNAVXYTHETALAT3Dpt_t* pose, FILE* fI
 	return true;
 }
 
-bool EnvironmentNAVXYTHETALAT::ReadinMotionPrimitive(SBPL_xytheta_mprimitive* pMotPrim, FILE* fIn)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::ReadinMotionPrimitive(SBPL_xytheta_mprimitive* pMotPrim, FILE* fIn)
 {
     char sTemp[1024];
 	int dTemp;
@@ -460,7 +471,8 @@ bool EnvironmentNAVXYTHETALAT::ReadinMotionPrimitive(SBPL_xytheta_mprimitive* pM
 
 
 
-bool EnvironmentNAVXYTHETALAT::ReadMotionPrimitives(FILE* fMotPrims)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::ReadMotionPrimitives(FILE* fMotPrims)
 {
     char sTemp[1024], sExpected[1024];
     float fTemp;
@@ -517,7 +529,7 @@ bool EnvironmentNAVXYTHETALAT::ReadMotionPrimitives(FILE* fMotPrims)
     for(int i = 0; i < totalNumofActions; i++){
 		SBPL_xytheta_mprimitive motprim;
 
-		if(EnvironmentNAVXYTHETALAT::ReadinMotionPrimitive(&motprim, fMotPrims) == false)
+		if(EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::ReadinMotionPrimitive(&motprim, fMotPrims) == false)
 			return false;
 
 		EnvNAVXYTHETALATCfg.mprimV.push_back(motprim);
@@ -529,7 +541,8 @@ bool EnvironmentNAVXYTHETALAT::ReadMotionPrimitives(FILE* fMotPrims)
 }
 
 
-void EnvironmentNAVXYTHETALAT::ComputeReplanningDataforAction(EnvNAVXYTHETALATAction_t* action)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::ComputeReplanningDataforAction(EnvNAVXYTHETALATAction_t* action)
 {
 	int j;
 
@@ -632,7 +645,8 @@ void EnvironmentNAVXYTHETALAT::ComputeReplanningDataforAction(EnvNAVXYTHETALATAc
 
 //computes all the 3D states whose outgoing actions are potentially affected when cell (0,0) changes its status
 //it also does the same for the 3D states whose incoming actions are potentially affected when cell (0,0) changes its status
-void EnvironmentNAVXYTHETALAT::ComputeReplanningData()
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::ComputeReplanningData()
 {
 
     //iterate over all actions
@@ -649,7 +663,8 @@ void EnvironmentNAVXYTHETALAT::ComputeReplanningData()
 }
 
 //here motionprimitivevector contains actions only for 0 angle
-void EnvironmentNAVXYTHETALAT::PrecomputeActionswithBaseMotionPrimitive(vector<SBPL_xytheta_mprimitive>* motionprimitiveV)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::PrecomputeActionswithBaseMotionPrimitive(vector<SBPL_xytheta_mprimitive>* motionprimitiveV)
 {
 
 	printf("Pre-computing action data...\n");
@@ -771,7 +786,8 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActionswithBaseMotionPrimitive(vector<S
 
 
 //here motionprimitivevector contains actions for all angles
-void EnvironmentNAVXYTHETALAT::PrecomputeActionswithCompleteMotionPrimitive(vector<SBPL_xytheta_mprimitive>* motionprimitiveV)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::PrecomputeActionswithCompleteMotionPrimitive(vector<SBPL_xytheta_mprimitive>* motionprimitiveV)
 {
 
 	printf("Pre-computing action data...\n");
@@ -911,7 +927,8 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActionswithCompleteMotionPrimitive(vect
 
 }
 
-void EnvironmentNAVXYTHETALAT::PrecomputeActions()
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::PrecomputeActions()
 {
 
 	//construct list of actions
@@ -1043,7 +1060,8 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 
 
 
-void EnvironmentNAVXYTHETALAT::InitializeEnvConfig(vector<SBPL_xytheta_mprimitive>* motionprimitiveV)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::InitializeEnvConfig(vector<SBPL_xytheta_mprimitive>* motionprimitiveV)
 {
 	//aditional to configuration file initialization of EnvNAVXYTHETALATCfg if necessary
 
@@ -1094,8 +1112,8 @@ void EnvironmentNAVXYTHETALAT::InitializeEnvConfig(vector<SBPL_xytheta_mprimitiv
 }
 
 
-
-EnvNAVXYTHETALATHashEntry_t* EnvironmentNAVXYTHETALAT::GetHashEntry(int X, int Y, int Theta)
+template<class EnvNAVLATHashEntry_t>
+EnvNAVLATHashEntry_t* EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetHashEntry(int X, int Y, int Theta)
 {
 
 #if TIME_DEBUG
@@ -1105,26 +1123,26 @@ EnvNAVXYTHETALATHashEntry_t* EnvironmentNAVXYTHETALAT::GetHashEntry(int X, int Y
 	int binid = GETHASHBIN(X, Y, Theta);
 	
 #if DEBUG
-	if ((int)EnvNAVXYTHETALAT.Coord2StateIDHashTable[binid].size() > 500)
+	if ((int)Coord2StateIDHashTable[binid].size() > 500)
 	{
 		printf("WARNING: Hash table has a bin %d (X=%d Y=%d) of size %d\n", 
-			binid, X, Y, EnvNAVXYTHETALAT.Coord2StateIDHashTable[binid].size());
+			binid, X, Y, Coord2StateIDHashTable[binid].size());
 		
 		PrintHashTableHist();		
 	}
 #endif
 
 	//iterate over the states in the bin and select the perfect match
-	for(int ind = 0; ind < (int)EnvNAVXYTHETALAT.Coord2StateIDHashTable[binid].size(); ind++)
+	for(int ind = 0; ind < (int)Coord2StateIDHashTable[binid].size(); ind++)
 	{
-		if( EnvNAVXYTHETALAT.Coord2StateIDHashTable[binid][ind]->X == X 
-			&& EnvNAVXYTHETALAT.Coord2StateIDHashTable[binid][ind]->Y == Y
-			&& EnvNAVXYTHETALAT.Coord2StateIDHashTable[binid][ind]->Theta == Theta)
+		if( Coord2StateIDHashTable[binid][ind]->X == X 
+			&& Coord2StateIDHashTable[binid][ind]->Y == Y
+			&& Coord2StateIDHashTable[binid][ind]->Theta == Theta)
 		{
 #if TIME_DEBUG
 			time_gethash += clock()-currenttime;
 #endif
-			return EnvNAVXYTHETALAT.Coord2StateIDHashTable[binid][ind];
+			return Coord2StateIDHashTable[binid][ind];
 		}
 	}
 
@@ -1136,7 +1154,8 @@ EnvNAVXYTHETALATHashEntry_t* EnvironmentNAVXYTHETALAT::GetHashEntry(int X, int Y
 }
 
 
-EnvNAVXYTHETALATHashEntry_t* EnvironmentNAVXYTHETALAT::CreateNewHashEntry(int X, int Y, int Theta) 
+template<class EnvNAVLATHashEntry_t>
+EnvNAVLATHashEntry_t* EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::CreateNewHashEntry(int X, int Y, int Theta) 
 {
 	int i;
 
@@ -1144,23 +1163,23 @@ EnvNAVXYTHETALATHashEntry_t* EnvironmentNAVXYTHETALAT::CreateNewHashEntry(int X,
 	clock_t currenttime = clock();
 #endif
 
-	EnvNAVXYTHETALATHashEntry_t* HashEntry = new EnvNAVXYTHETALATHashEntry_t;
+	EnvNAVLATHashEntry_t* HashEntry = new EnvNAVLATHashEntry_t;
 
 	HashEntry->X = X;
 	HashEntry->Y = Y;
 	HashEntry->Theta = Theta;
 
-	HashEntry->stateID = EnvNAVXYTHETALAT.StateID2CoordTable.size();
+	HashEntry->stateID = StateID2CoordTable.size();
 
 	//insert into the tables
-	EnvNAVXYTHETALAT.StateID2CoordTable.push_back(HashEntry);
+	StateID2CoordTable.push_back(HashEntry);
 
 
 	//get the hash table bin
 	i = GETHASHBIN(HashEntry->X, HashEntry->Y, HashEntry->Theta); 
 
 	//insert the entry into the bin
-	EnvNAVXYTHETALAT.Coord2StateIDHashTable[i].push_back(HashEntry);
+	Coord2StateIDHashTable[i].push_back(HashEntry);
 
 	//insert into and initialize the mappings
 	int* entry = new int [NUMOFINDICES_STATEID2IND];
@@ -1183,20 +1202,23 @@ EnvNAVXYTHETALATHashEntry_t* EnvironmentNAVXYTHETALAT::CreateNewHashEntry(int X,
 	return HashEntry;
 }
 
-bool EnvironmentNAVXYTHETALAT::IsValidCell(int X, int Y)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::IsValidCell(int X, int Y)
 {
 	return (X >= 0 && X < EnvNAVXYTHETALATCfg.EnvWidth_c && 
 		Y >= 0 && Y < EnvNAVXYTHETALATCfg.EnvHeight_c && 
 		EnvNAVXYTHETALATCfg.Grid2D[X][Y] < EnvNAVXYTHETALATCfg.obsthresh);
 }
 
-bool EnvironmentNAVXYTHETALAT::IsWithinMapCell(int X, int Y)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::IsWithinMapCell(int X, int Y)
 {
 	return (X >= 0 && X < EnvNAVXYTHETALATCfg.EnvWidth_c && 
 		Y >= 0 && Y < EnvNAVXYTHETALATCfg.EnvHeight_c);
 }
 
-bool EnvironmentNAVXYTHETALAT::IsValidConfiguration(int X, int Y, int Theta)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::IsValidConfiguration(int X, int Y, int Theta)
 {
 	vector<sbpl_2Dcell_t> footprint;
 	EnvNAVXYTHETALAT3Dpt_t pose;
@@ -1226,8 +1248,8 @@ bool EnvironmentNAVXYTHETALAT::IsValidConfiguration(int X, int Y, int Theta)
 	return true;
 }
 
-
-int EnvironmentNAVXYTHETALAT::GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action)
+template<class EnvNAVLATHashEntry_t>
+int EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action)
 {
 	sbpl_2Dcell_t cell;
 	EnvNAVXYTHETALAT3Dcell_t interm3Dcell;
@@ -1291,17 +1313,17 @@ int EnvironmentNAVXYTHETALAT::GetActionCost(int SourceX, int SourceY, int Source
 }
 
 
-
-void EnvironmentNAVXYTHETALAT::InitializeEnvironment()
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::InitializeEnvironment()
 {
-	EnvNAVXYTHETALATHashEntry_t* HashEntry;
+	EnvNAVLATHashEntry_t* HashEntry;
 
 	//initialize the map from Coord to StateID
-	EnvNAVXYTHETALAT.HashTableSize = 64*1024; //should be power of two
-	EnvNAVXYTHETALAT.Coord2StateIDHashTable = new vector<EnvNAVXYTHETALATHashEntry_t*>[EnvNAVXYTHETALAT.HashTableSize];
+	HashTableSize = 64*1024; //should be power of two
+	Coord2StateIDHashTable = new vector<EnvNAVLATHashEntry_t*>[HashTableSize];
 	
 	//initialize the map from StateID to Coord
-	EnvNAVXYTHETALAT.StateID2CoordTable.clear();
+	StateID2CoordTable.clear();
 
 	//create start state 
 	HashEntry = CreateNewHashEntry(EnvNAVXYTHETALATCfg.StartX_c, EnvNAVXYTHETALATCfg.StartY_c, EnvNAVXYTHETALATCfg.StartTheta);
@@ -1316,7 +1338,8 @@ void EnvironmentNAVXYTHETALAT::InitializeEnvironment()
 
 }
 
-double EnvironmentNAVXYTHETALAT::EuclideanDistance_m(int X1, int Y1, int X2, int Y2)
+template<class EnvNAVLATHashEntry_t>
+double EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::EuclideanDistance_m(int X1, int Y1, int X2, int Y2)
 {
     int sqdist = ((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2));
     return EnvNAVXYTHETALATCfg.cellsize_m*sqrt((double)sqdist);
@@ -1325,7 +1348,8 @@ double EnvironmentNAVXYTHETALAT::EuclideanDistance_m(int X1, int Y1, int X2, int
 
 
 //adds points to it (does not clear it beforehand)
-void EnvironmentNAVXYTHETALAT::CalculateFootprintForPose(EnvNAVXYTHETALAT3Dpt_t pose, vector<sbpl_2Dcell_t>* footprint)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::CalculateFootprintForPose(EnvNAVXYTHETALAT3Dpt_t pose, vector<sbpl_2Dcell_t>* footprint)
 {  
 	int pind;
 
@@ -1450,8 +1474,8 @@ void EnvironmentNAVXYTHETALAT::CalculateFootprintForPose(EnvNAVXYTHETALAT3Dpt_t 
   }
 }
 
-
-void EnvironmentNAVXYTHETALAT::RemoveSourceFootprint(EnvNAVXYTHETALAT3Dpt_t sourcepose, vector<sbpl_2Dcell_t>* footprint)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::RemoveSourceFootprint(EnvNAVXYTHETALAT3Dpt_t sourcepose, vector<sbpl_2Dcell_t>* footprint)
 {  
 	vector<sbpl_2Dcell_t> sourcefootprint;
 
@@ -1480,7 +1504,8 @@ void EnvironmentNAVXYTHETALAT::RemoveSourceFootprint(EnvNAVXYTHETALAT3Dpt_t sour
 
 //------------------------------Heuristic computation--------------------------
 
-void EnvironmentNAVXYTHETALAT::ComputeHeuristicValues()
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::ComputeHeuristicValues()
 {
 	//whatever necessary pre-computation of heuristic values is done here 
 	printf("Precomputing heuristics...\n");
@@ -1493,7 +1518,8 @@ void EnvironmentNAVXYTHETALAT::ComputeHeuristicValues()
 }
 
 //------------debugging functions---------------------------------------------
-bool EnvironmentNAVXYTHETALAT::CheckQuant(FILE* fOut) 
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::CheckQuant(FILE* fOut) 
 {
 
   for(double theta  = -10; theta < 10; theta += 2.0*PI_CONST/NAVXYTHETALAT_THETADIRS*0.01)
@@ -1519,7 +1545,8 @@ bool EnvironmentNAVXYTHETALAT::CheckQuant(FILE* fOut)
 //-----------------------------------------------------------------------------
 
 //-----------interface with outside functions-----------------------------------
-bool EnvironmentNAVXYTHETALAT::InitializeEnv(const char* sEnvFile, const vector<sbpl_2Dpt_t>& perimeterptsV, const char* sMotPrimFile)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::InitializeEnv(const char* sEnvFile, const vector<sbpl_2Dpt_t>& perimeterptsV, const char* sMotPrimFile)
 {
 	EnvNAVXYTHETALATCfg.FootprintPolygon = perimeterptsV;
 
@@ -1554,7 +1581,8 @@ bool EnvironmentNAVXYTHETALAT::InitializeEnv(const char* sEnvFile, const vector<
 }
 
 
-bool EnvironmentNAVXYTHETALAT::InitializeEnv(const char* sEnvFile)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::InitializeEnv(const char* sEnvFile)
 {
 
 	FILE* fCfg = fopen(sEnvFile, "r");
@@ -1573,7 +1601,8 @@ bool EnvironmentNAVXYTHETALAT::InitializeEnv(const char* sEnvFile)
 
 
 
-bool EnvironmentNAVXYTHETALAT::InitializeEnv(int width, int height,
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::InitializeEnv(int width, int height,
 					const unsigned char* mapdata,
 					double startx, double starty, double starttheta,
 					double goalx, double goaly, double goaltheta,
@@ -1630,7 +1659,8 @@ bool EnvironmentNAVXYTHETALAT::InitializeEnv(int width, int height,
 }
 
 
-bool EnvironmentNAVXYTHETALAT::InitGeneral(vector<SBPL_xytheta_mprimitive>* motionprimitiveV) {
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::InitGeneral(vector<SBPL_xytheta_mprimitive>* motionprimitiveV) {
 
 
   //Initialize other parameters of the environment
@@ -1645,7 +1675,8 @@ bool EnvironmentNAVXYTHETALAT::InitGeneral(vector<SBPL_xytheta_mprimitive>* moti
   return true;
 }
 
-bool EnvironmentNAVXYTHETALAT::InitializeMDPCfg(MDPConfig *MDPCfg)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::InitializeMDPCfg(MDPConfig *MDPCfg)
 {
 	//initialize MDPCfg with the start and goal ids	
 	MDPCfg->goalstateid = EnvNAVXYTHETALAT.goalstateid;
@@ -1655,7 +1686,8 @@ bool EnvironmentNAVXYTHETALAT::InitializeMDPCfg(MDPConfig *MDPCfg)
 }
 
 
-void EnvironmentNAVXYTHETALAT::PrintHeuristicValues()
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::PrintHeuristicValues()
 {
 	FILE* fHeur = fopen("heur.txt", "w");
 
@@ -1672,7 +1704,8 @@ void EnvironmentNAVXYTHETALAT::PrintHeuristicValues()
 }
 
 
-int EnvironmentNAVXYTHETALAT::GetFromToHeuristic(int FromStateID, int ToStateID)
+template<class EnvNAVLATHashEntry_t>
+int EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetFromToHeuristic(int FromStateID, int ToStateID)
 {
 
 #if USE_HEUR==0
@@ -1681,8 +1714,8 @@ int EnvironmentNAVXYTHETALAT::GetFromToHeuristic(int FromStateID, int ToStateID)
 
 
 #if DEBUG
-	if(FromStateID >= (int)EnvNAVXYTHETALAT.StateID2CoordTable.size() 
-		|| ToStateID >= (int)EnvNAVXYTHETALAT.StateID2CoordTable.size())
+	if(FromStateID >= (int)StateID2CoordTable.size() 
+		|| ToStateID >= (int)StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvNAVXYTHETALAT... function: stateID illegal\n");
 		exit(1);
@@ -1690,8 +1723,8 @@ int EnvironmentNAVXYTHETALAT::GetFromToHeuristic(int FromStateID, int ToStateID)
 #endif
 
 	//get X, Y for the state
-	EnvNAVXYTHETALATHashEntry_t* FromHashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[FromStateID];
-	EnvNAVXYTHETALATHashEntry_t* ToHashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[ToStateID];
+	EnvNAVLATHashEntry_t* FromHashEntry = StateID2CoordTable[FromStateID];
+	EnvNAVLATHashEntry_t* ToHashEntry = StateID2CoordTable[ToStateID];
 	
 
 	return (int)(NAVXYTHETALAT_COSTMULT_MTOMM*EuclideanDistance_m(FromHashEntry->X, FromHashEntry->Y, ToHashEntry->X, ToHashEntry->Y)/EnvNAVXYTHETALATCfg.nominalvel_mpersecs);	
@@ -1699,14 +1732,15 @@ int EnvironmentNAVXYTHETALAT::GetFromToHeuristic(int FromStateID, int ToStateID)
 }
 
 
-int EnvironmentNAVXYTHETALAT::GetGoalHeuristic(int stateID)
+template<class EnvNAVLATHashEntry_t>
+int EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetGoalHeuristic(int stateID)
 {
 #if USE_HEUR==0
 	return 0;
 #endif
 
 #if DEBUG
-	if(stateID >= (int)EnvNAVXYTHETALAT.StateID2CoordTable.size())
+	if(stateID >= (int)StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvNAVXYTHETALAT... function: stateID illegal\n");
 		exit(1);
@@ -1719,8 +1753,8 @@ int EnvironmentNAVXYTHETALAT::GetGoalHeuristic(int stateID)
 
 }
 
-
-int EnvironmentNAVXYTHETALAT::GetStartHeuristic(int stateID)
+template<class EnvNAVLATHashEntry_t>
+int EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetStartHeuristic(int stateID)
 {
 
 
@@ -1730,7 +1764,7 @@ int EnvironmentNAVXYTHETALAT::GetStartHeuristic(int stateID)
 
 
 #if DEBUG
-	if(stateID >= (int)EnvNAVXYTHETALAT.StateID2CoordTable.size())
+	if(stateID >= (int)StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvNAVXYTHETALAT... function: stateID illegal\n");
 		exit(1);
@@ -1753,7 +1787,7 @@ int EnvironmentNAVXYTHETALAT::GetStartHeuristic(int stateID)
 
 	}
 
-	EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[stateID];
+	EnvNAVLATHashEntry_t* HashEntry = StateID2CoordTable[stateID];
 	int h2D = grid2Dsearch->getlowerboundoncostfromstart_inmm(HashEntry->X, HashEntry->Y);
 	int hEuclid = (int)(NAVXYTHETALAT_COSTMULT_MTOMM*EuclideanDistance_m(EnvNAVXYTHETALATCfg.StartX_c, EnvNAVXYTHETALATCfg.StartY_c, HashEntry->X, HashEntry->Y));
 		
@@ -1768,14 +1802,14 @@ int EnvironmentNAVXYTHETALAT::GetStartHeuristic(int stateID)
 }
 
 
-
-void EnvironmentNAVXYTHETALAT::SetAllActionsandAllOutcomes(CMDPSTATE* state)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 {
 
 	int cost;
 
 #if DEBUG
-	if(state->StateID >= (int)EnvNAVXYTHETALAT.StateID2CoordTable.size())
+	if(state->StateID >= (int)StateID2CoordTable.size())
 	{
 		printf("ERROR in Env... function: stateID illegal\n");
 		exit(1);
@@ -1794,7 +1828,7 @@ void EnvironmentNAVXYTHETALAT::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 		return;
 
 	//get X, Y for the state
-	EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[state->StateID];
+	EnvNAVLATHashEntry_t* HashEntry = StateID2CoordTable[state->StateID];
 	
 	//iterate through actions
     bool bTestBounds = false;
@@ -1826,7 +1860,7 @@ void EnvironmentNAVXYTHETALAT::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 		clock_t currenttime = clock();
 #endif
 
-    	EnvNAVXYTHETALATHashEntry_t* OutHashEntry;
+    	EnvNAVLATHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(newX, newY, newTheta)) == NULL)
 		{
 			//have to create a new entry
@@ -1842,8 +1876,8 @@ void EnvironmentNAVXYTHETALAT::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 }
 
 
-
-void EnvironmentNAVXYTHETALAT::SetAllPreds(CMDPSTATE* state)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::SetAllPreds(CMDPSTATE* state)
 {
 	//implement this if the planner needs access to predecessors
 	
@@ -1851,13 +1885,14 @@ void EnvironmentNAVXYTHETALAT::SetAllPreds(CMDPSTATE* state)
 	exit(1);
 }
 
-
-void EnvironmentNAVXYTHETALAT::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
 {
 	GetSuccs(SourceStateID, SuccIDV, CostV, NULL);
 }
 
-void EnvironmentNAVXYTHETALAT::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<EnvNAVXYTHETALATAction_t*>* actionV /*=NULL*/)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV, vector<EnvNAVXYTHETALATAction_t*>* actionV /*=NULL*/)
 {
     int aind;
 
@@ -1881,7 +1916,7 @@ void EnvironmentNAVXYTHETALAT::GetSuccs(int SourceStateID, vector<int>* SuccIDV,
 		return;
 
 	//get X, Y for the state
-	EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[SourceStateID];
+	EnvNAVLATHashEntry_t* HashEntry = StateID2CoordTable[SourceStateID];
 	
 	//iterate through actions
     bool bTestBounds = false;
@@ -1907,7 +1942,7 @@ void EnvironmentNAVXYTHETALAT::GetSuccs(int SourceStateID, vector<int>* SuccIDV,
         if(cost >= INFINITECOST)
             continue;
 
-    	EnvNAVXYTHETALATHashEntry_t* OutHashEntry;
+    	EnvNAVLATHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(newX, newY, newTheta)) == NULL)
 		{
 			//have to create a new entry
@@ -1926,7 +1961,8 @@ void EnvironmentNAVXYTHETALAT::GetSuccs(int SourceStateID, vector<int>* SuccIDV,
 
 }
 
-void EnvironmentNAVXYTHETALAT::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<int>* CostV)
 {
 
     int aind;
@@ -1942,7 +1978,7 @@ void EnvironmentNAVXYTHETALAT::GetPreds(int TargetStateID, vector<int>* PredIDV,
     CostV->reserve(EnvNAVXYTHETALATCfg.actionwidth);
 
 	//get X, Y for the state
-	EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[TargetStateID];
+	EnvNAVLATHashEntry_t* HashEntry = StateID2CoordTable[TargetStateID];
 	
 	//iterate through actions
     bool bTestBounds = false;
@@ -1971,7 +2007,7 @@ void EnvironmentNAVXYTHETALAT::GetPreds(int TargetStateID, vector<int>* PredIDV,
 	    if(cost >= INFINITECOST)
 			continue;
         
-    	EnvNAVXYTHETALATHashEntry_t* OutHashEntry;
+    	EnvNAVLATHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(predX, predY, predTheta)) == NULL)
 		{
 			//have to create a new entry
@@ -1990,17 +2026,18 @@ void EnvironmentNAVXYTHETALAT::GetPreds(int TargetStateID, vector<int>* PredIDV,
 }
 
 
-
-int EnvironmentNAVXYTHETALAT::SizeofCreatedEnv()
+template<class EnvNAVLATHashEntry_t>
+int EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::SizeofCreatedEnv()
 {
-	return (int)EnvNAVXYTHETALAT.StateID2CoordTable.size();
+	return (int)StateID2CoordTable.size();
 	
 }
 
-void EnvironmentNAVXYTHETALAT::PrintState(int stateID, bool bVerbose, FILE* fOut /*=NULL*/)
+template<>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVXYTHETALATHashEntry_t>::PrintState(int stateID, bool bVerbose, FILE* fOut /*=NULL*/)
 {
 #if DEBUG
-	if(stateID >= (int)EnvNAVXYTHETALAT.StateID2CoordTable.size())
+	if(stateID >= (int)StateID2CoordTable.size())
 	{
 		printf("ERROR in EnvNAVXYTHETALAT... function: stateID illegal (2)\n");
 		exit(1);
@@ -2010,7 +2047,7 @@ void EnvironmentNAVXYTHETALAT::PrintState(int stateID, bool bVerbose, FILE* fOut
 	if(fOut == NULL)
 		fOut = stdout;
 
-	EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[stateID];
+	EnvNAVLATHashEntry_t* HashEntry = StateID2CoordTable[stateID];
 
 	if(stateID == EnvNAVXYTHETALAT.goalstateid && bVerbose)
 	{
@@ -2025,16 +2062,18 @@ void EnvironmentNAVXYTHETALAT::PrintState(int stateID, bool bVerbose, FILE* fOut
 
 }
 
-void EnvironmentNAVXYTHETALAT::GetCoordFromState(int stateID, int& x, int& y, int& theta) const {
-  EnvNAVXYTHETALATHashEntry_t* HashEntry = EnvNAVXYTHETALAT.StateID2CoordTable[stateID];
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetCoordFromState(int stateID, int& x, int& y, int& theta) const {
+  EnvNAVLATHashEntry_t* HashEntry = StateID2CoordTable[stateID];
   x = HashEntry->X;
   y = HashEntry->Y;
   theta = HashEntry->Theta;
 }
 
-int EnvironmentNAVXYTHETALAT::GetStateFromCoord(int x, int y, int theta) {
+template<class EnvNAVLATHashEntry_t>
+int EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetStateFromCoord(int x, int y, int theta) {
 
-   EnvNAVXYTHETALATHashEntry_t* OutHashEntry;
+   EnvNAVLATHashEntry_t* OutHashEntry;
     if((OutHashEntry = GetHashEntry(x, y, theta)) == NULL){
         //have to create a new entry
         OutHashEntry = CreateNewHashEntry(x, y, theta);
@@ -2042,12 +2081,14 @@ int EnvironmentNAVXYTHETALAT::GetStateFromCoord(int x, int y, int theta) {
     return OutHashEntry->stateID;
 }
 
-const EnvNAVXYTHETALATConfig_t* EnvironmentNAVXYTHETALAT::GetEnvNavConfig() {
+template<class EnvNAVLATHashEntry_t>
+const EnvNAVXYTHETALATConfig_t* EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetEnvNavConfig() {
   return &EnvNAVXYTHETALATCfg;
 }
 
 //returns the stateid if success, and -1 otherwise
-int EnvironmentNAVXYTHETALAT::SetGoal(double x_m, double y_m, double theta_rad){
+template<class EnvNAVLATHashEntry_t>
+int EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::SetGoal(double x_m, double y_m, double theta_rad){
 
 	int x = CONTXY2DISC(x_m, EnvNAVXYTHETALATCfg.cellsize_m);
 	int y = CONTXY2DISC(y_m, EnvNAVXYTHETALATCfg.cellsize_m);
@@ -2066,7 +2107,7 @@ int EnvironmentNAVXYTHETALAT::SetGoal(double x_m, double y_m, double theta_rad){
 		printf("WARNING: goal configuration is invalid\n");
 	}
 
-    EnvNAVXYTHETALATHashEntry_t* OutHashEntry;
+    EnvNAVLATHashEntry_t* OutHashEntry;
     if((OutHashEntry = GetHashEntry(x, y, theta)) == NULL){
         //have to create a new entry
         OutHashEntry = CreateNewHashEntry(x, y, theta);
@@ -2089,7 +2130,8 @@ int EnvironmentNAVXYTHETALAT::SetGoal(double x_m, double y_m, double theta_rad){
 
 
 //returns the stateid if success, and -1 otherwise
-int EnvironmentNAVXYTHETALAT::SetStart(double x_m, double y_m, double theta_rad){
+template<class EnvNAVLATHashEntry_t>
+int EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::SetStart(double x_m, double y_m, double theta_rad){
 
 	int x = CONTXY2DISC(x_m, EnvNAVXYTHETALATCfg.cellsize_m);
 	int y = CONTXY2DISC(y_m, EnvNAVXYTHETALATCfg.cellsize_m); 
@@ -2108,7 +2150,7 @@ int EnvironmentNAVXYTHETALAT::SetStart(double x_m, double y_m, double theta_rad)
 		printf("WARNING: start configuration %d %d %d is invalid\n", x,y,theta);
 	}
 
-    EnvNAVXYTHETALATHashEntry_t* OutHashEntry;
+    EnvNAVLATHashEntry_t* OutHashEntry;
     if((OutHashEntry = GetHashEntry(x, y, theta)) == NULL){
         //have to create a new entry
         OutHashEntry = CreateNewHashEntry(x, y, theta);
@@ -2128,7 +2170,8 @@ int EnvironmentNAVXYTHETALAT::SetStart(double x_m, double y_m, double theta_rad)
 
 }
 
-bool EnvironmentNAVXYTHETALAT::UpdateCost(int x, int y, unsigned char newcost)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::UpdateCost(int x, int y, unsigned char newcost)
 {
 
 #if DEBUG
@@ -2142,8 +2185,8 @@ bool EnvironmentNAVXYTHETALAT::UpdateCost(int x, int y, unsigned char newcost)
     return true;
 }
 
-
-void EnvironmentNAVXYTHETALAT::PrintEnv_Config(FILE* fOut)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::PrintEnv_Config(FILE* fOut)
 {
 
 	//implement this if the planner needs to print out EnvNAVXYTHETALAT. configuration
@@ -2153,7 +2196,8 @@ void EnvironmentNAVXYTHETALAT::PrintEnv_Config(FILE* fOut)
 
 }
 
-void EnvironmentNAVXYTHETALAT::PrintTimeStat(FILE* fOut)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::PrintTimeStat(FILE* fOut)
 {
 
 #if TIME_DEBUG
@@ -2163,12 +2207,12 @@ void EnvironmentNAVXYTHETALAT::PrintTimeStat(FILE* fOut)
 #endif
 }
 
-
-void EnvironmentNAVXYTHETALAT::GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV)
 {
 	nav2dcell_t cell;
 	EnvNAVXYTHETALAT3Dcell_t affectedcell;
-	EnvNAVXYTHETALATHashEntry_t* affectedHashEntry;
+	EnvNAVLATHashEntry_t* affectedHashEntry;
 
 
 	for(int i = 0; i < (int)changedcellsV->size(); i++) 
@@ -2192,11 +2236,12 @@ void EnvironmentNAVXYTHETALAT::GetPredsofChangedEdges(vector<nav2dcell_t> const 
 	}
 }
 
-void EnvironmentNAVXYTHETALAT::GetSuccsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *succs_of_changededgesIDV)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetSuccsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *succs_of_changededgesIDV)
 {
 	nav2dcell_t cell;
 	EnvNAVXYTHETALAT3Dcell_t affectedcell;
-	EnvNAVXYTHETALATHashEntry_t* affectedHashEntry;
+	EnvNAVLATHashEntry_t* affectedHashEntry;
 
 	printf("ERROR: getsuccs is not supported currently\n");
 	exit(1);
@@ -2224,8 +2269,8 @@ void EnvironmentNAVXYTHETALAT::GetSuccsofChangedEdges(vector<nav2dcell_t> const 
 }
 
 
-
-bool EnvironmentNAVXYTHETALAT::IsObstacle(int x, int y)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::IsObstacle(int x, int y)
 {
 
 #if DEBUG
@@ -2237,7 +2282,8 @@ bool EnvironmentNAVXYTHETALAT::IsObstacle(int x, int y)
 
 }
 
-void EnvironmentNAVXYTHETALAT::GetEnvParms(int *size_x, int *size_y, double* startx, double* starty, double*starttheta, double* goalx, double* goaly, double* goaltheta,
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetEnvParms(int *size_x, int *size_y, double* startx, double* starty, double*starttheta, double* goalx, double* goaly, double* goaltheta,
 									  	double* cellsize_m, double* nominalvel_mpersecs, double* timetoturn45degsinplace_secs, unsigned char* obsthresh,
 										vector<SBPL_xytheta_mprimitive>* mprimitiveV)
 {
@@ -2260,8 +2306,8 @@ void EnvironmentNAVXYTHETALAT::GetEnvParms(int *size_x, int *size_y, double* sta
 	*mprimitiveV = EnvNAVXYTHETALATCfg.mprimV;
 }
 
-
-bool EnvironmentNAVXYTHETALAT::PoseContToDisc(double px, double py, double pth,
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::PoseContToDisc(double px, double py, double pth,
 					 int &ix, int &iy, int &ith) const
 {
   ix = CONTXY2DISC(px, EnvNAVXYTHETALATCfg.cellsize_m);
@@ -2272,8 +2318,8 @@ bool EnvironmentNAVXYTHETALAT::PoseContToDisc(double px, double py, double pth,
     && (iy >= 0) && (iy < EnvNAVXYTHETALATCfg.EnvHeight_c);
 }
 
-
-bool EnvironmentNAVXYTHETALAT::PoseDiscToCont(int ix, int iy, int ith,
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::PoseDiscToCont(int ix, int iy, int ith,
 					 double &px, double &py, double &pth) const
 {
   px = DISCXY2CONT(ix, EnvNAVXYTHETALATCfg.cellsize_m);
@@ -2284,13 +2330,14 @@ bool EnvironmentNAVXYTHETALAT::PoseDiscToCont(int ix, int iy, int ith,
     && (iy >= 0) && (iy < EnvNAVXYTHETALATCfg.EnvHeight_c);
 }
 
-unsigned char EnvironmentNAVXYTHETALAT::GetMapCost(int x, int y)
+template<class EnvNAVLATHashEntry_t>
+unsigned char EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::GetMapCost(int x, int y)
 {
 	return EnvNAVXYTHETALATCfg.Grid2D[x][y];
 }
 
-
-void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* stateIDPath, vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath)
+template<class EnvNAVLATHashEntry_t>
+void EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::ConvertStateIDPathintoXYThetaPath(vector<int>* stateIDPath, vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath)
 {
 	vector<EnvNAVXYTHETALATAction_t*> actionV;
 	vector<int> CostV;
@@ -2388,7 +2435,8 @@ void EnvironmentNAVXYTHETALAT::ConvertStateIDPathintoXYThetaPath(vector<int>* st
 	}
 }
 
-bool EnvironmentNAVXYTHETALAT::SetEnvParameter(const char* parameter, int value)
+template<class EnvNAVLATHashEntry_t>
+bool EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::SetEnvParameter(const char* parameter, int value)
 {
 
 	if(EnvNAVXYTHETALAT.bInitialized == true)
