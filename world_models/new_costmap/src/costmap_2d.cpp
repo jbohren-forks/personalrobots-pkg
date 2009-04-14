@@ -598,6 +598,10 @@ namespace costmap_2d{
   }
 
   void Costmap2D::convexFillCells(const std::vector<MapLocation>& polygon, std::vector<MapLocation>& polygon_cells){
+    //we need a minimum polygon of a traingle
+    if(polygon.size() < 3)
+      return;
+
     //first get the cells that make up the outline of the polygon
     polygonOutlineCells(polygon, polygon_cells);
 
