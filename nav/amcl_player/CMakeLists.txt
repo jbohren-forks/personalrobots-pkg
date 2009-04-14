@@ -53,4 +53,4 @@ rospack_add_executable(bin/amcl
 rospack_download_test_data(http://pr.willowgarage.com/data/amcl/basic_localization_stage.bag test/basic_localization_stage.bag)
 rospack_download_test_data(http://pr.willowgarage.com/data/amcl/willow-full.pgm test/willow-full.pgm)
 
-rospack_add_rostest(test/basic_localization.xml)
+rospack_add_rostest(test/basic_localization_stage.xml)

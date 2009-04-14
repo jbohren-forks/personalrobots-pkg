@@ -674,11 +674,11 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
        */
 
       ros::Node::instance()->publish("amcl_pose", p);
-      ROS_INFO("New pose: %6.3f %6.3f %6.3f %6.3f",
+      double yaw = getYaw(p.pose);
+      ROS_INFO("New pose: %6.3f %6.3f %6.3f",
                p.pose.position.x,
                p.pose.position.y,
-               p.pose.orientation.z,
-               p.pose.orientation.w);
+               yaw);
 
       // subtracting base to odom from map to base and send map to odom instead
       tf::Stamped<tf::Pose> odom_to_map;
