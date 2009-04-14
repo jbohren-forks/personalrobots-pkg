@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "pf.h"
 #include "pf_pdf.h"
@@ -44,14 +45,20 @@ static void pf_cluster_stats(pf_t *pf, pf_sample_set_t *set);
 
 // Create a new filter
 pf_t *pf_alloc(int min_samples, int max_samples,
-               double alpha_slow, double alpha_fast)
+               double alpha_slow, double alpha_fast,
+               pf_init_model_fn_t random_pose_fn, void *random_pose_data)
 {
   int i, j;
   pf_t *pf;
   pf_sample_set_t *set;
   pf_sample_t *sample;
   
+  srand48(time(NULL));
+
   pf = calloc(1, sizeof(pf_t));
+
+  pf->random_pose_fn = random_pose_fn;
+  pf->random_pose_data = random_pose_data;
 
   pf->min_samples = min_samples;
   pf->max_samples = max_samples;
@@ -203,6 +210,7 @@ void pf_update_action(pf_t *pf, pf_action_model_fn_t action_fn, void *action_dat
 }
 
 
+#include <float.h>
 // Update the filter with some new sensor observation
 void pf_update_sensor(pf_t *pf, pf_sensor_model_fn_t sensor_fn, void *sensor_data)
 {
@@ -219,16 +227,15 @@ void pf_update_sensor(pf_t *pf, pf_sensor_model_fn_t sensor_fn, void *sensor_dat
   if (total > 0.0)
   {
     // Normalize weights
-    double w_avg = 0;
+    double w_avg=0.0;
     for (i = 0; i < set->sample_count; i++)
     {
       sample = set->samples + i;
       w_avg += sample->weight;
       sample->weight /= total;
     }
-    w_avg /= set->sample_count;
-    
     // Update running averages of likelihood of samples (Prob Rob p258)
+    w_avg /= set->sample_count;
     if(pf->w_slow == 0.0)
       pf->w_slow = w_avg;
     else
@@ -251,7 +258,7 @@ void pf_update_sensor(pf_t *pf, pf_sensor_model_fn_t sensor_fn, void *sensor_dat
       sample->weight = 1.0 / set->sample_count;
     }
   }
-  
+
   return;
 }
 
@@ -264,19 +271,23 @@ void pf_update_resample(pf_t *pf)
   pf_sample_set_t *set_a, *set_b;
   pf_sample_t *sample_a, *sample_b;
 
-  double r,c,U;
-  int m;
-  double count_inv;
+  //double r,c,U;
+  //int m;
+  //double count_inv;
+  double* c;
+
   double w_diff;
 
   set_a = pf->sets + pf->current_set;
   set_b = pf->sets + (pf->current_set + 1) % 2;
-  
 
-  w_diff = 1.0 - pf->w_fast / pf->w_slow;
-  if(w_diff < 0.0)
-    w_diff = 0.0;
-  //printf("w_diff: %9.6f\n", w_diff);
+  // Build up cumulative probability table for resampling.
+  // TODO: Replace this with a more efficient procedure
+  // (e.g., http://www.network-theory.co.uk/docs/gslref/GeneralDiscreteDistributions.html)
+  c = (double*)malloc(sizeof(double)*set_a->sample_count);
+  c[0] = 0.0;
+  for(i=0;i<set_a->sample_count;i++)
+    c[i] = c[i-1]+set_a->samples[i].weight;
 
   // Create the kd tree for adaptive sampling
   pf_kdtree_clear(set_b->kdtree);
@@ -285,24 +296,33 @@ void pf_update_resample(pf_t *pf)
   total = 0;
   set_b->sample_count = 0;
 
+  w_diff = 1.0 - pf->w_fast / pf->w_slow;
+  if(w_diff < 0.0)
+    w_diff = 0.0;
+  //printf("w_diff: %9.6f\n", w_diff);
+
+  // Can't (easily) combine low-variance sampler with KLD adaptive
+  // sampling, so we'll take the more traditional route.
+  /*
   // Low-variance resampler, taken from Probabilistic Robotics, p110
   count_inv = 1.0/set_a->sample_count;
   r = drand48() * count_inv;
   c = set_a->samples[0].weight;
   i = 0;
   m = 0;
+  */
   while(set_b->sample_count < pf->max_samples)
   {
     sample_b = set_b->samples + set_b->sample_count++;
 
     if(drand48() < w_diff)
-    {
-      sample_b->pose.v[0] += drand48() * 20.0 - 10.0;
-      sample_b->pose.v[1] += drand48() * 20.0 - 10.0;
-      sample_b->pose.v[2] += drand48() * 2.0*M_PI - M_PI;
-    }
+      sample_b->pose = (pf->random_pose_fn)(pf->random_pose_data);
     else
     {
+      // Can't (easily) combine low-variance sampler with KLD adaptive
+      // sampling, so we'll take the more traditional route.
+      /*
+      // Low-variance resampler, taken from Probabilistic Robotics, p110
       U = r + m * count_inv;
       while(U>c)
       {
@@ -321,10 +341,20 @@ void pf_update_resample(pf_t *pf)
         c += set_a->samples[i].weight;
       }
       m++;
+      */
+
+      // Naive discrete event sampler
+      double r;
+      r = drand48();
+      for(i=0;i<set_a->sample_count;i++)
+      {
+        if(r < c[i])
+          break;
+      }
+      assert(i<set_a->sample_count);
 
       sample_a = set_a->samples + i;
 
-      //printf("%d %f\n", i, sample_a->weight);
       assert(sample_a->weight > 0);
 
       // Add sample to list
@@ -337,14 +367,13 @@ void pf_update_resample(pf_t *pf)
     // Add sample to histogram
     pf_kdtree_insert(set_b->kdtree, sample_b->pose, sample_b->weight);
 
-    //fprintf(stderr, "resample %d %d %d\n", set_b->sample_count, set_b->kdtree->leaf_count,
-            //pf_resample_limit(pf, set_b->kdtree->leaf_count));
-
     // See if we have enough samples yet
     if (set_b->sample_count > pf_resample_limit(pf, set_b->kdtree->leaf_count))
       break;
   }
-
+  puts("");
+  
+  // Reset averages, to avoid spiraling off into complete randomness.
   if(w_diff > 0.0)
     pf->w_slow = pf->w_fast = 0.0;
 
@@ -356,13 +385,14 @@ void pf_update_resample(pf_t *pf)
     sample_b = set_b->samples + i;
     sample_b->weight /= total;
   }
-
+  
   // Re-compute cluster statistics
   pf_cluster_stats(pf, set_b);
 
   // Use the newly created sample set
   pf->current_set = (pf->current_set + 1) % 2;
 
+  free(c);
   return;
 }
 

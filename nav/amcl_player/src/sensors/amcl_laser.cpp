@@ -39,23 +39,26 @@ using namespace amcl;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
-AMCLLaser::AMCLLaser(size_t max_beams, 
-                     double z_hit,
-                     double z_short,
-                     double z_max,
-                     double z_rand,
-                     double sigma_hit,
-                     double lambda_short,
-                     double chi_outlier,
-                     pf_vector_t& laser_pose,
-                     map_t* map) : AMCLSensor()
+AMCLLaser::AMCLLaser(size_t max_beams, map_t* map) : AMCLSensor()
 {
   this->time = 0.0;
 
   this->max_beams = max_beams;
-  this->laser_pose = laser_pose;
   this->map = map;
 
+  return;
+}
+
+void 
+AMCLLaser::SetModelBeam(double z_hit,
+                        double z_short,
+                        double z_max,
+                        double z_rand,
+                        double sigma_hit,
+                        double lambda_short,
+                        double chi_outlier)
+{
+  this->model_type = LASER_MODEL_BEAM;
   this->z_hit = z_hit;
   this->z_short = z_short;
   this->z_max = z_max;
@@ -63,8 +66,21 @@ AMCLLaser::AMCLLaser(size_t max_beams,
   this->sigma_hit = sigma_hit;
   this->lambda_short = lambda_short;
   this->chi_outlier = chi_outlier;
+}
 
-  return;
+void 
+AMCLLaser::SetModelLikelihoodField(double z_hit,
+                                   double z_rand,
+                                   double sigma_hit,
+                                   double max_occ_dist)
+{
+  this->model_type = LASER_MODEL_LIKELIHOOD_FIELD;
+  this->z_hit = z_hit;
+  this->z_max = z_max;
+  this->z_rand = z_rand;
+  this->sigma_hit = sigma_hit;
+
+  map_update_cspace(this->map, max_occ_dist);
 }
 
 
@@ -79,7 +95,12 @@ bool AMCLLaser::UpdateSensor(pf_t *pf, AMCLSensorData *data)
     return false;
 
   // Apply the laser sensor model
-  pf_update_sensor(pf, (pf_sensor_model_fn_t) SensorModel, data);
+  if(this->model_type == LASER_MODEL_BEAM)
+    pf_update_sensor(pf, (pf_sensor_model_fn_t) BeamModel, data);
+  else if(this->model_type == LASER_MODEL_LIKELIHOOD_FIELD)
+    pf_update_sensor(pf, (pf_sensor_model_fn_t) LikelihoodFieldModel, data);
+  else
+    pf_update_sensor(pf, (pf_sensor_model_fn_t) BeamModel, data);
 
   return true;
 }
@@ -87,7 +108,7 @@ bool AMCLLaser::UpdateSensor(pf_t *pf, AMCLSensorData *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Determine the probability for the given pose
-double AMCLLaser::SensorModel(AMCLLaserData *data, pf_sample_set_t* set)
+double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
 {
   AMCLLaser *self;
   int i, j, step;
@@ -122,7 +143,7 @@ double AMCLLaser::SensorModel(AMCLLaserData *data, pf_sample_set_t* set)
 
       // Compute the range according to the map
       map_range = map_calc_range(self->map, pose.v[0], pose.v[1],
-                                 pose.v[2] + obs_bearing, data->range_max + 1.0);
+                                 pose.v[2] + obs_bearing, data->range_max);
       pz = 0.0;
 
       // Part 1: good, but noisy, hit
@@ -148,8 +169,79 @@ double AMCLLaser::SensorModel(AMCLLaserData *data, pf_sample_set_t* set)
       p *= pz;
     }
 
-    //printf("%e\n", p);
-    //assert(p >= 0);
+    sample->weight *= p;
+    total_weight += sample->weight;
+  }
+  puts("");
+
+  return(total_weight);
+}
+
+double AMCLLaser::LikelihoodFieldModel(AMCLLaserData *data, pf_sample_set_t* set)
+{
+  AMCLLaser *self;
+  int i, j, step;
+  double z, pz;
+  double p;
+  double obs_range, obs_bearing;
+  double total_weight;
+  pf_sample_t *sample;
+  pf_vector_t pose;
+  pf_vector_t hit;
+
+  self = (AMCLLaser*) data->sensor;
+
+  total_weight = 0.0;
+
+  // Compute the sample weights
+  for (j = 0; j < set->sample_count; j++)
+  {
+    sample = set->samples + j;
+    pose = sample->pose;
+
+    // Take account of the laser pose relative to the robot
+    pose = pf_vector_coord_add(self->laser_pose, pose);
+
+    p = 1.0;
+
+    step = (data->range_count - 1) / (self->max_beams - 1);
+    for (i = 0; i < data->range_count; i += step)
+    {
+      obs_range = data->ranges[i][0];
+      obs_bearing = data->ranges[i][1];
+
+      // This model ignores max range readings
+      if(obs_range >= data->range_max)
+        continue;
+
+      pz = 0.0;
+
+      // Compute the endpoint of the beam
+      hit.v[0] = pose.v[0] + obs_range * cos(pose.v[2] + obs_bearing);
+      hit.v[1] = pose.v[1] + obs_range * sin(pose.v[2] + obs_bearing);
+
+      // Convert to map grid coords.
+      int mi, mj;
+      mi = MAP_GXWX(self->map, hit.v[0]);
+      mj = MAP_GYWY(self->map, hit.v[1]);
+      
+      // Part 1: Get distance from the hit to closest obstacle.
+      // Off-map penalized as max distance
+      if(!MAP_VALID(self->map, mi, mj))
+        z = self->map->max_occ_dist;
+      else
+        z = self->map->cells[MAP_INDEX(self->map,mi,mj)].occ_dist;
+      // Gaussian model
+      pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit));
+      // Part 2: random measurements
+      pz += self->z_rand * 1.0/data->range_max;
+
+      // TODO: outlier rejection for short readings
+
+      assert(pz <= 1.0);
+      assert(pz >= 0.0);
+      p *= pz;
+    }
 
     sample->weight *= p;
     total_weight += sample->weight;

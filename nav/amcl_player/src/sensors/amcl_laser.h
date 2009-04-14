@@ -35,6 +35,12 @@
 namespace amcl
 {
 
+typedef enum
+{
+  LASER_MODEL_BEAM,
+  LASER_MODEL_LIKELIHOOD_FIELD
+} laser_model_t;
+
 // Laser sensor data
 class AMCLLaserData : public AMCLSensorData
 {
@@ -52,16 +58,20 @@ class AMCLLaserData : public AMCLSensorData
 class AMCLLaser : public AMCLSensor
 {
   // Default constructor
-  public: AMCLLaser(size_t max_beams, 
-                    double z_hit,
-                    double z_short,
-                    double z_max,
-                    double z_rand,
-                    double sigma_hit,
-                    double labda_short,
-                    double chi_outlier,
-                    pf_vector_t& laser_pose,
-                    map_t* map);
+  public: AMCLLaser(size_t max_beams, map_t* map);
+
+  public: void SetModelBeam(double z_hit,
+                            double z_short,
+                            double z_max,
+                            double z_rand,
+                            double sigma_hit,
+                            double labda_short,
+                            double chi_outlier);
+
+  public: void SetModelLikelihoodField(double z_hit,
+                                       double z_rand,
+                                       double sigma_hit,
+                                       double max_occ_dist);
   
   // Update the filter based on the sensor model.  Returns true if the
   // filter has been updated.
@@ -72,8 +82,13 @@ class AMCLLaser : public AMCLSensor
           {this->laser_pose = laser_pose;}
 
   // Determine the probability for the given pose
-  private: static double SensorModel(AMCLLaserData *data, 
-                                     pf_sample_set_t* set);
+  private: static double BeamModel(AMCLLaserData *data, 
+                                   pf_sample_set_t* set);
+  // Determine the probability for the given pose
+  private: static double LikelihoodFieldModel(AMCLLaserData *data, 
+                                              pf_sample_set_t* set);
+
+  private: laser_model_t model_type;
 
   // Current data timestamp
   private: double time;
@@ -89,7 +104,7 @@ class AMCLLaser : public AMCLSensor
 
   // Laser model params
   //
-  // Mixture params for the 4 components of the model; must sum to 1
+  // Mixture params for the components of the model; must sum to 1
   private: double z_hit;
   private: double z_short;
   private: double z_max;

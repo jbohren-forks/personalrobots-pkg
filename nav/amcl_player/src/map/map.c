@@ -29,6 +29,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "map.h"
 
@@ -82,8 +83,9 @@ map_cell_t *map_get_cell(map_t *map, double ox, double oy, double oa)
 }
 
 
-/*
 // Update the cspace distance values
+// TODO: replace this with a more efficient implementation.  Not crucial,
+// because we only do it once, at startup.
 void map_update_cspace(map_t *map, double max_occ_dist)
 {
   int i, j;
@@ -136,4 +138,3 @@ void map_update_cspace(map_t *map, double max_occ_dist)
   
   return;
 }
-*/

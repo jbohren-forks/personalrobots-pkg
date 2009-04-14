@@ -49,7 +49,7 @@ typedef struct
   int occ_state;
 
   // Distance to the nearest occupied cell
-  //double occ_dist;
+  double occ_dist;
 
   // Wifi levels
   //int wifi_levels[MAP_WIFI_MAX_LEVELS];
@@ -71,6 +71,10 @@ typedef struct
   
   // The map data, stored as a grid
   map_cell_t *cells;
+
+  // Max distance at which we care about obstacles, for constructing
+  // likelihood field
+  double max_occ_dist;
   
 } map_t;
 
@@ -96,7 +100,7 @@ int map_load_occ(map_t *map, const char *filename, double scale, int negate);
 //int map_load_wifi(map_t *map, const char *filename, int index);
 
 // Update the cspace distances
-//void map_update_cspace(map_t *map, double max_occ_dist);
+void map_update_cspace(map_t *map, double max_occ_dist);
 
 
 /**************************************************************************

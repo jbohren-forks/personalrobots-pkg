@@ -4,12 +4,13 @@ import roslib
 roslib.load_manifest('amcl_player')
 
 import sys
-import unittest
-
-import rospy
-import rostest
 import time
 import math
+
+import unittest
+import rospy
+import rostest
+import tf
 
 from robot_msgs.msg import PoseWithCovariance
 
@@ -39,8 +40,19 @@ class TestBasicLocalization(unittest.TestCase):
     while (rospy.rostime.get_time() - start_time) < target_time:
       time.sleep(0.1)
     self.assertNotEquals(self.pose, None)
+    tf_pose = tf.pose_stamped_msg_to_bt(self.pose)
+    rotmat = tf_pose.getBasis()
+    print (stderr, rotmat)
+    yaw = 0.0
+    pitch = 0.0
+    roll = 0.0
+    rotmat.getEulerZYX(yaw,pitch,roll)
+    print (stderr, yaw)
+    
+
     self.assertTrue(abs(self.pose.position.x - target_x) <= tolerance_d)
     self.assertTrue(abs(self.pose.position.y - target_y) <= tolerance_d)
+
     self.assertTrue(abs(self.pose.orientation.z - target_z) <= tolerance_a)
     self.assertTrue(abs(self.pose.orientation.w - target_w) <= tolerance_a)
 

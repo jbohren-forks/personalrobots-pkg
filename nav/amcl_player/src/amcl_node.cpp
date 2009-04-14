@@ -231,7 +231,7 @@ AmclNode::AmclNode() :
   double alpha_slow, alpha_fast;
   double z_hit, z_short, z_max, z_rand, sigma_hit, lambda_short;
   double pf_err, pf_z;
-  ros::Node::instance()->param("~laser_max_beams", max_beams, 20);
+  ros::Node::instance()->param("~laser_max_beams", max_beams, 30);
   ros::Node::instance()->param("~min_particles", min_particles, 100);
   ros::Node::instance()->param("~max_particles", max_particles, 5000);
   ros::Node::instance()->param("~kld_err", pf_err, 0.01);
@@ -240,21 +240,39 @@ AmclNode::AmclNode() :
   ros::Node::instance()->param("~odom_alpha2", alpha2, 0.2);
   ros::Node::instance()->param("~odom_alpha3", alpha3, 0.2);
   ros::Node::instance()->param("~odom_alpha4", alpha4, 0.2);
-  ros::Node::instance()->param("~laser_z_hit", z_hit, 0.8);
+
+  ros::Node::instance()->param("~laser_z_hit", z_hit, 0.95);
   ros::Node::instance()->param("~laser_z_short", z_short, 0.1);
   ros::Node::instance()->param("~laser_z_max", z_max, 0.05);
   ros::Node::instance()->param("~laser_z_rand", z_rand, 0.05);
   ros::Node::instance()->param("~laser_sigma_hit", sigma_hit, 0.2);
   ros::Node::instance()->param("~laser_lambda_short", lambda_short, 0.1);
+  double laser_likelihood_max_dist;
+  ros::Node::instance()->param("~laser_likelihood_max_dist", 
+                               laser_likelihood_max_dist, 2.0);
+  std::string tmp_model_type;
+  laser_model_t laser_model_type;
+  ros::Node::instance()->param("~laser_model_type", tmp_model_type, std::string("beam"));
+  if(tmp_model_type == "beam")
+    laser_model_type = LASER_MODEL_BEAM;
+  else if(tmp_model_type == "likelihood_field")
+    laser_model_type = LASER_MODEL_LIKELIHOOD_FIELD;
+  else
+  {
+    ROS_WARN("Unknown laser model type \"%s\"; defaulting to beam model",
+             tmp_model_type.c_str());
+    laser_model_type = LASER_MODEL_BEAM;
+  }
 
   ros::Node::instance()->param("~update_min_d", d_thresh_, 0.2);
   ros::Node::instance()->param("~update_min_a", a_thresh_, M_PI/6.0);
   ros::Node::instance()->param("~odom_frame_id", odom_frame_id_, std::string("odom"));
-  ros::Node::instance()->param("~resample_interval", resample_interval_, 8);
+  ros::Node::instance()->param("~resample_interval", resample_interval_, 10);
   double tmp_tol;
   ros::Node::instance()->param("~transform_tolerance", tmp_tol, 0.1);
-  ros::Node::instance()->param("~recovery_alpha_slow", alpha_slow, 0.0);
-  ros::Node::instance()->param("~recovery_alpha_fast", alpha_fast, 0.0);
+  ros::Node::instance()->param("~recovery_alpha_slow", alpha_slow, 0.001);
+  ros::Node::instance()->param("~recovery_alpha_fast", alpha_fast, 0.1);
+
 
   transform_tolerance_.fromSec(tmp_tol);
 
@@ -271,8 +289,9 @@ AmclNode::AmclNode() :
   
   // Create the particle filter
   pf_ = pf_alloc(min_particles, max_particles,
-                 //0.01, 0.1);
-                 alpha_slow, alpha_fast);
+                 alpha_slow, alpha_fast,
+                 (pf_init_model_fn_t)AmclNode::uniformPoseGenerator, 
+                 (void *)map_);
   pf_->pop_err = pf_err;
   pf_->pop_z = pf_z;
 
@@ -293,11 +312,14 @@ AmclNode::AmclNode() :
   odom_ = new AMCLOdom(alpha1, alpha2, alpha3, alpha4);
   ROS_ASSERT(odom_);
   // Laser
-  // We pass in null laser pose to start with; we'll change it later
-  pf_vector_t dummy = pf_vector_zero();
-  laser_ = new AMCLLaser(max_beams, z_hit, z_short, z_max, z_rand, 
-                         sigma_hit, lambda_short, 0.0, dummy, map_);
+  laser_ = new AMCLLaser(max_beams, map_);
   ROS_ASSERT(laser_);
+  if(laser_model_type == LASER_MODEL_BEAM)
+    laser_->SetModelBeam(z_hit, z_short, z_max, z_rand, 
+                         sigma_hit, lambda_short, 0.0);
+  else
+    laser_->SetModelLikelihoodField(z_hit, z_rand, sigma_hit, 
+                                    laser_likelihood_max_dist);
 
   ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("amcl_pose",2);
   ros::Node::instance()->advertise<robot_msgs::ParticleCloud>("particlecloud",2);
@@ -310,7 +332,7 @@ AmclNode::AmclNode() :
            boost::bind(&AmclNode::laserReceived, 
                        this, _1), 
            "scan", odom_frame_id_,
-           20);
+           100);
   ros::Node::instance()->subscribe("initialpose", initial_pose_, &AmclNode::initialPoseReceived,this,2);
 }
 
@@ -341,7 +363,7 @@ AmclNode::requestMap()
   map->origin_x = resp.map.origin.x + (map->size_x / 2) * map->scale;
   map->origin_y = resp.map.origin.y + (map->size_y / 2) * map->scale;
   // Convert to player format
-  map->cells = new map_cell_t[map->size_x * map->size_y];
+  map->cells = (map_cell_t*)malloc(sizeof(map_cell_t)*map->size_x*map->size_y);
   ROS_ASSERT(map->cells);
   for(int i=0;i<map->size_x * map->size_y;i++)
   {
@@ -416,7 +438,7 @@ AmclNode::uniformPoseGenerator(void* arg)
     int i,j;
     i = MAP_GXWX(map, p.v[0]);
     j = MAP_GYWY(map, p.v[1]);
-    if(map->cells[MAP_INDEX(map,i,j)].occ_state == -1)
+    if(MAP_VALID(map,i,j) && (map->cells[MAP_INDEX(map,i,j)].occ_state == -1))
       break;
   }
 
@@ -652,6 +674,11 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
        */
 
       ros::Node::instance()->publish("amcl_pose", p);
+      ROS_INFO("New pose: %6.3f %6.3f %6.3f %6.3f",
+               p.pose.position.x,
+               p.pose.position.y,
+               p.pose.orientation.z,
+               p.pose.orientation.w);
 
       // subtracting base to odom from map to base and send map to odom instead
       tf::Stamped<tf::Pose> odom_to_map;
