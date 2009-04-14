@@ -62,8 +62,8 @@ public:
   bool got_person_pos_, got_path_;
   std::string fixed_frame_;
   double total_dist_sqr_m_;
-  boost::mutex person_mutex_;
-  boost::mutex path_mutex_;
+  boost::mutex path_mutex_, person_mutex_;
+
 
   IsPersonOnPath() 
   {
@@ -82,12 +82,11 @@ public:
     message_notifier_person_ = new tf::MessageNotifier<robot_msgs::PositionMeasurement> (tf_, node_, boost::bind(&IsPersonOnPath::personPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
     message_notifier_path_ = new tf::MessageNotifier<robot_msgs::Polyline2D>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "gui_path", fixed_frame_, 1);
 
-    person_mutex_.lock();
-    person_mutex_.unlock();
+    node_->advertiseService ("is_person_on_path", &IsPersonOnPath::personOnPathCB, this);
     path_mutex_.lock();
+    ROS_INFO("locked");
     path_mutex_.unlock();
-    
-    node_->advertiseService ("is_person_on_path", &IsPersonOnPath::personOnPathCB);
+    ROS_INFO ("Done initializing node");
     
   }
 
@@ -98,29 +97,26 @@ public:
   // Person callback
   void personPosCB(const tf::MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& person_pos_msg) 
   {
-    person_mutex_.lock();
+    boost::mutex::scoped_lock l2(person_mutex_);
     person_pos_ = *person_pos_msg;
     ROS_INFO_STREAM ("In person pos callback and got_person_pos_ is " << got_person_pos_);
     got_person_pos_ = true;
-    person_mutex_.unlock();
   }
 
   // Path callback
   void pathCB(const tf::MessageNotifier<robot_msgs::Polyline2D>::MessagePtr& gui_path_msg)
   {
-    path_mutex_.lock();
+    boost::mutex::scoped_lock l(path_mutex_);
     ROS_INFO_STREAM ("In path callback and got_path_ is " << got_path_);
     path_ = *gui_path_msg;
     got_path_ = true;
-    path_mutex_.unlock();
   }
 
   // Service callback
-  bool personOnPathCB (PersonOnPath::Request& req, PersonOnPath::Response& resp)
+  bool personOnPathCB (people_aware_nav::PersonOnPath::Request& req, people_aware_nav::PersonOnPath::Response& resp)
   {
-    path_mutex_.lock();
-    person_mutex_.lock();
-
+    boost::mutex::scoped_lock l(path_mutex_);
+    boost::mutex::scoped_lock l2(person_mutex_);
     
     bool on_path;
     float dist;
@@ -132,8 +128,6 @@ public:
     resp.value = on_path ? 1 : 0;
     ROS_DEBUG_STREAM_NAMED ("person_on_path", "Person on path value is " << resp.value);
 
-    path_mutex_.unlock();
-    person_mutex_.unlock();
 
     return true;
 
@@ -259,9 +253,13 @@ main (int argc, char** argv)
 {
   ros::init (argc, argv);
 
-  ros::Node q("is_person_on_path");
 
+  ros::Node q("is_person_on_path");
   people_aware_nav::IsPersonOnPath qt;
+  
+  qt.path_mutex_.lock();
+  ROS_INFO ("locked in main");
+  qt.path_mutex_.unlock();
 
   q.spin ();
   return (0);
