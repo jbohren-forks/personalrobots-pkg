@@ -45,8 +45,7 @@ class JoyBattSender
       ros::Node::instance()->param<int>("~stop_button", stop_button_, 7);
       ros::Node::instance()->param<int>("~go_button", go_button_, 5);
       ros::Node::instance()->param<int>("~deadman_button", deadman_button_, 4);
-      robot_msgs::BatteryState bs;
-      ros::Node::instance()->advertise("bogus_battery_state", bs, &JoyBattSender::sendHeartbeat, 2);
+      ros::Node::instance()->advertise<robot_msgs::BatteryState>("bogus_battery_state", boost::bind(&JoyBattSender::sendHeartbeat, this, _1), 2);
       ros::Node::instance()->subscribe("joy", joy_msg_, &JoyBattSender::handleJoyMsg, this, 2);
     }
 
@@ -108,7 +107,7 @@ main(int argc, char** argv)
 
   node.spin();
 
-  
+
 
   return 0;
 }

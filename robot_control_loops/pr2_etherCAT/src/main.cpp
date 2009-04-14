@@ -301,23 +301,17 @@ void quitRequested(int sig)
   g_quit = 1;
 }
 
-class Shutdown {
-public:
-  bool shutdownService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp)
-  {
-    quitRequested(0);
-    return true;
-  }
-};
+bool shutdownService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp)
+{
+  quitRequested(0);
+  return true;
+}
 
-class Reset {
-public:
-  bool resetMotorsService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp)
-  {
-    g_reset_motors = true;
-    return true;
-  }
-};
+bool resetMotorsService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp)
+{
+  g_reset_motors = true;
+  return true;
+}
 
 void warnOnSecondary(int sig)
 {
@@ -369,7 +363,7 @@ static int setupPidFile(void)
       ROS_FATAL("Unable to create pid file '%s': %s", PIDFILE, strerror(errno));
       goto end;
     }
-    
+
     if ((fd = open(PIDFILE, O_RDWR)) < 0)
     {
       ROS_FATAL("Unable to open pid file '%s': %s", PIDFILE, strerror(errno));
@@ -522,8 +516,8 @@ int main(int argc, char *argv[])
   // Catch if we fall back to secondary mode
   signal(SIGXCPU, warnOnSecondary);
 
-  node->advertiseService("shutdown", &Shutdown::shutdownService);
-  node->advertiseService("reset_motors", &Reset::resetMotorsService);
+  node->advertiseService("shutdown", shutdownService);
+  node->advertiseService("reset_motors", resetMotorsService);
 
   //Start thread
   int rv;

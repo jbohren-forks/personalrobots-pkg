@@ -309,7 +309,7 @@ namespace costmap_2d
     // Might be worth eventually having a dedicated node provide this service and all
     // nodes including move_base access the costmap through it, but for now leaving costmap
     // in move_base for fast access
-    ros::Node::instance()->advertiseService("costmap", &CostMapNode::costmapCallback);
+    ros::Node::instance()->advertiseService("costmap", &CostMapNode::costmapCallback, this);
 
     // The cost map is populated with either laser scans in the case that we are unable to use a
     // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
