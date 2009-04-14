@@ -8,6 +8,7 @@
 #include <FL/Fl_Menu_Bar.H>
 extern void load_images_cb(Fl_Menu_*, void*);
 extern void save_images_cb(Fl_Menu_*, void*);
+extern void save_3d_cb(Fl_Menu_*, void*);
 extern void load_params_cb(Fl_Menu_*, void*);
 extern void save_params_cb(Fl_Menu_*, void*);
 extern void upload_params_cb(Fl_Menu_*, void*);

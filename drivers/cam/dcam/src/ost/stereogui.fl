@@ -13,7 +13,7 @@ class stereogui {open
       Fl_Output info_message {
         xywh {10 510 490 25} box BORDER_BOX color 49 labelsize 11 textsize 11
       }
-      Fl_Menu_Bar {} {
+      Fl_Menu_Bar {} {open
         xywh {0 0 680 20}
       } {
         Submenu {} {
@@ -27,8 +27,13 @@ class stereogui {open
           }
           MenuItem {} {
             label {Save Images...}
-            callback save_images_cb
-            xywh {0 0 30 20} labelsize 11 divider
+            callback save_images_cb selected
+            xywh {0 0 30 20} labelsize 11
+          }
+          MenuItem {} {
+            label {Save Point Cloud...}
+            callback save_3d_cb
+            xywh {10 10 30 20} labelsize 11 divider
           }
           MenuItem {} {
             label {Load Params...}
@@ -72,7 +77,7 @@ class stereogui {open
           xywh {20 20 30 20}
         }
       }
-      Fl_Group {} {open
+      Fl_Group {} {
         xywh {5 25 1285 485}
       } {
         Fl_Group {} {open
@@ -93,7 +98,7 @@ class stereogui {open
           Fl_Box {} {
             xywh {650 25 640 480} box EMBOSSED_FRAME labeltype NO_LABEL
           }
-          Fl_Box mainRight {selected
+          Fl_Box mainRight {
             xywh {650 25 640 480} labeltype NO_LABEL
             code0 {\#include "calwin.h"}
             class calImageWindow
@@ -795,7 +800,7 @@ class stereogui {open
       }
     }
     Fl_Window cal_window {
-      label Calibration open
+      label Calibration
       xywh {591 314 305 340} type Single hide
     } {
       Fl_Group {} {open
@@ -990,7 +995,7 @@ class stereogui {open
         Fl_Counter {} {
           label {Window:}
           callback corrsize_cb
-          xywh {75 60 55 20} type Simple labelsize 11 align 4 minimum 5 maximum 23 step 1 value 15
+          xywh {75 60 55 20} type Simple labelsize 11 align 4 minimum 7 maximum 21 step 1 value 15
         }
         Fl_Counter {} {
           label {X off:}

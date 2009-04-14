@@ -5,7 +5,8 @@
 Fl_Menu_Item stereogui::menu_[] = {
  {"File", 0,  0, 0, 64, FL_NORMAL_LABEL, 0, 14, 0},
  {"Load Images...", 0,  (Fl_Callback*)load_images_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 0},
- {"Save Images...", 0,  (Fl_Callback*)save_images_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 0},
+ {"Save Images...", 0,  (Fl_Callback*)save_images_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"Save Point Cloud...", 0,  (Fl_Callback*)save_3d_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 0},
  {"Load Params...", 0,  (Fl_Callback*)load_params_cb, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
  {"Save Params...", 0,  (Fl_Callback*)save_params_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 0},
  {"Upload Params...", 0,  (Fl_Callback*)upload_params_cb, 0, 128, FL_NORMAL_LABEL, 0, 11, 0},
@@ -1244,8 +1245,8 @@ stereogui::stereogui() {
       { Fl_Counter* o = new Fl_Counter(75, 60, 55, 20, "Window:");
         o->type(1);
         o->labelsize(11);
-        o->minimum(5);
-        o->maximum(23);
+        o->minimum(7);
+        o->maximum(21);
         o->step(1);
         o->value(15);
         o->callback((Fl_Callback*)corrsize_cb);

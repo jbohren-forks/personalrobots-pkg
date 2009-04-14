@@ -33,15 +33,15 @@
 *********************************************************************/
 
 /*#########################################
- * stereocal.cpp
+ * ost.cpp
  *
- * Main functions for stereo cal GUI
+ * Main functions for open stereo GUI
  *
  *#########################################
  */
 
 /**
- ** stereocal.cpp
+ ** ost.cpp
  **
  ** Kurt Konolige
  ** Senior Researcher
@@ -431,14 +431,14 @@ main(int argc, char **argv)	// no arguments
 	  if (isStereo)	// get stereo disparity
 	    stIm->doDisparity(sp_alg);
 	  tt1 = get_ms();
-	  printf("Stereo time: %d ms\n", (int)(tt1-tt0));
+//	  printf("Stereo time: %d ms\n", (int)(tt1-tt0));
 
 	  if (is3D)		// get 3D points
 	    {
 	      tt0 = get_ms();
 	      stIm->doCalcPts(true); // make it an array
 	      tt1 = get_ms();
-	      printf("3D time: %d ms\n", (int)(tt1-tt0));
+//	      printf("3D time: %d ms\n", (int)(tt1-tt0));
 
 	      // check for extracting a plane or planes
 	      isPlanar = false;
@@ -455,7 +455,7 @@ main(int argc, char **argv)	// no arguments
 		  planeObj.FindPlane(planeParams, planeThresh, 50);
 		  planeObj.IndexPlane(2, planeThresh, planeParams);
 		  tt1 = get_ms();
-		  printf("Planar time: %d ms\n", (int)(tt1-tt0));
+//		  printf("Planar time: %d ms\n", (int)(tt1-tt0));
 		  printf("Found plane %f %f %f %f with %d/%d inliers\n", 
 			 planeParams[0], planeParams[1], planeParams[2], planeParams[3], n, nn);
 		}
@@ -1886,8 +1886,8 @@ save_images(char *fname)
       cvSaveImage(fn, im);
       debug_message("[oST] Wrote %s", fn);
     }
-
 }
+
 
 // save all calibration images
 // current save to name "cal-XXX"
@@ -2942,7 +2942,7 @@ void load_images_cb(Fl_Menu_ *w, void *u)
 
 
 //
-// save all you can
+// save all types of images available: left, right, rectified, color
 // 
 void save_images_cb(Fl_Menu_ *w, void *u)
 {
@@ -2959,6 +2959,37 @@ void save_images_cb(Fl_Menu_ *w, void *u)
   save_images(fname);
 }
 
+
+//
+// save the 3D point cloud
+// format: w x h, then 1 line per point over full image, XYZA
+//  A is zero for a good point, -1 for a bad one
+//
+
+void
+save_3d_cb(Fl_Menu_ *w, void *u)
+{
+  if (!stIm || !stIm->hasDisparity)
+    {
+      debug_message("[OST] No disparity image");
+      return;			// no disparity image
+    }
+
+  char *fname = fl_file_chooser("Save point file (.txt)", "{*.txt}", NULL);
+  if (fname == NULL)
+    return;
+
+
+  stIm->doCalcPts(true);
+  FILE *fp = fopen(fname,"w");
+  fprintf(fp, "%d %d\n", stIm->imWidth, stIm->imHeight);
+
+  pt_xyza_t *pts = stIm->imPtArray();
+  for (int i=0; i<stIm->imHeight; i++)
+    for (int j=0; j<stIm->imWidth; j++, pts++)
+      fprintf(fp, "%f %f %f %d\n", pts->X, pts->Y, pts->Z, pts->A);
+  fclose(fp);
+}
 
 
 
