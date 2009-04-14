@@ -78,8 +78,6 @@ public:
       ROS_FATAL("Unknown ROI policy setting");
       shutdown();
     }
-    frame_w_ = 2448; // TODO: actually get these values from somewhere
-    frame_h_ = 2050;
 
     req_.timeout_ms = 100;
 
@@ -124,6 +122,8 @@ public:
     if (K_ == NULL)
       K_ = cvCreateMat(3, 3, CV_64FC1);
     memcpy((char*)(K_->data.db), (char*)(&cam_info_.K[0]), 9 * sizeof(double));
+    frame_w_ = cam_info_.width;
+    frame_h_ = cam_info_.height;
   }
 
   void image_cb()
