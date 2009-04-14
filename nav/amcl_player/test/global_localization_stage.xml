@@ -11,7 +11,7 @@ setting pose: 30.329 34.644 3.142
       <param name="laser_max_range" value="16.0"/>
       <param name="laser_max_beams" value="30"/>
       <param name="min_particles" value="1000"/>
-      <param name="max_particles" value="30000"/>
+      <param name="max_particles" value="50000"/>
       <param name="kld_err" value="0.05"/>
       <param name="kld_z" value="0.99"/>
       <param name="odom_alpha1" value="0.2"/>
@@ -38,5 +38,5 @@ setting pose: 30.329 34.644 3.142
       <param name="robot_th_start" value="0.0"/>
     </node>
   <test time-limit="180" test-name="global_localization" pkg="amcl_player" 
-        type="global_localization.py" args="31.723 35.322 -2.554 0.25 0.25 28.0"/>
+        type="global_localization.py" args=" 39.358 36.750 3.099 0.25 0.25 28.0"/>
 </launch>
