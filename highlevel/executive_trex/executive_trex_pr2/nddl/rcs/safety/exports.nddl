@@ -15,6 +15,7 @@ class DetectPlugOnBase extends ROSAction {
   predicate Active {}
 
   predicate Inactive {
+    float time_stamp; // A double encoding is reliable
     string frame_id;
     bool stowed;
     float x;

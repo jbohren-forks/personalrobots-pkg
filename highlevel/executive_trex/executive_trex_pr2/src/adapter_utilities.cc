@@ -9,13 +9,7 @@ namespace executive_trex_pr2 {
    * Write token to the message
    */
   void AdapterUtilities::write(const TokenId& token, robot_msgs::Door& msg){
-    // Set the frame we are in
-    msg.header.frame_id = getFrame(token);
-
-    // Extract the stamp
-    double time_stamp_double;
-    write<double>("time_stamp", token, time_stamp_double);
-    msg.header.stamp.fromSec(time_stamp_double);
+    getHeader(msg, token);
 
     // Frame Data
     write<float>("frame_p1_x", token, msg.frame_p1.x);
@@ -40,11 +34,16 @@ namespace executive_trex_pr2 {
     write<float>("handle_x", token, msg.handle.x);
     write<float>("handle_y", token, msg.handle.y);
     write<float>("handle_z", token, msg.handle.z);
+
+    // Normal
+    write<double>("normal_x", token, msg.normal.x);
+    write<double>("normal_y", token, msg.normal.y);
+    write<double>("normal_z", token, msg.normal.z);
   }
 
   // Read Observation from Door Message
   void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::Door& msg){
-    setFrame(msg.header.frame_id, obs);
+    setHeader(msg, obs);
 
     // Frame Data
     read<float>("frame_p1_x", obs, msg.frame_p1.x);
@@ -70,14 +69,14 @@ namespace executive_trex_pr2 {
     read<float>("door_p2_y", obs, msg.door_p2.y);
     read<float>("door_p2_z", obs, msg.door_p2.z);
 
-    // Handle Data
-    read<float>("handle_x", obs, msg.handle.x);
-    read<float>("handle_y", obs, msg.handle.y);
-    read<float>("handle_z", obs, msg.handle.z);
+    // Normal Data
+    read<double>("normal_x", obs, msg.normal.x);
+    read<double>("normal_y", obs, msg.normal.y);
+    read<double>("normal_z", obs, msg.normal.z);
   }
 
   void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::PlugStow& msg){
-    setFrame(msg.header.frame_id, obs);
+    setHeader(msg, obs);
     read<bool>("stowed", obs, msg.stowed);
     read<double>("x", obs, msg.plug_centroid.x);
     read<double>("y", obs, msg.plug_centroid.y);
@@ -85,18 +84,12 @@ namespace executive_trex_pr2 {
   }
 
   void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::PointStamped& msg){
-    setFrame(msg.header.frame_id, obs);
+    setHeader(msg, obs);
     readPoint(obs, msg.point.x, msg.point.y, msg.point.z);
   }
 
   void AdapterUtilities::write(const TokenId& token, robot_msgs::PointStamped& msg){
-    // Set the frame we are in
-    msg.header.frame_id = getFrame(token);
-
-    // Extract the stamp
-    double time_stamp_double;
-    write<double>("time_stamp", token, time_stamp_double);
-    msg.header.stamp.fromSec(time_stamp_double);
+    getHeader(msg, token);
 
     write<double>("x", token, msg.point.x);
     write<double>("y", token, msg.point.y);
@@ -104,7 +97,8 @@ namespace executive_trex_pr2 {
   }
 
   void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::PoseStamped& msg){
-    setFrame(msg.header.frame_id, obs);
+    setHeader(msg, obs);
+
     readPoint(obs, msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
     read<double>("dx", obs, msg.pose.orientation.x);
     read<double>("dy", obs, msg.pose.orientation.y);
@@ -113,13 +107,7 @@ namespace executive_trex_pr2 {
   }
 
   void AdapterUtilities::write(const TokenId& token, robot_msgs::PlugStow& msg){
-    // Set the frame we are in
-    msg.header.frame_id = getFrame(token);
-
-    // Extract the stamp
-    double time_stamp_double;
-    write<double>("time_stamp", token, time_stamp_double);
-    msg.header.stamp.fromSec(time_stamp_double);
+    getHeader(msg, token);
 
     write<int8_t>("stowed", token, msg.stowed);
     write<double>("x", token, msg.plug_centroid.x);
@@ -129,13 +117,7 @@ namespace executive_trex_pr2 {
 
 
   void AdapterUtilities::write(const TokenId& token, robot_actions::ServoToOutlet& msg) {
-    //Set frame
-    msg.header.frame_id = getFrame(token);
-    
-    // Extract the stamp
-    double time_stamp_double;
-    write<double>("time_stamp", token, time_stamp_double);
-    msg.header.stamp.fromSec(time_stamp_double);
+    getHeader(msg, token);
 
     write<float>("x", token, msg.x);
     write<float>("y", token, msg.y);
@@ -202,9 +184,5 @@ namespace executive_trex_pr2 {
 
     LabelStr lblStr = frame_var->lastDomain().getSingletonValue();
     return lblStr.toString();
-  }
-
-  void AdapterUtilities::setFrame(const std::string& frame_id, ObservationByValue& obs){
-    obs.push_back("frame_id", new StringDomain(frame_id, "string"));
   }
 }

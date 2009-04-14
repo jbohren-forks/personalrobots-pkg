@@ -5,8 +5,9 @@
 #include "rcs/nav/exports.nddl"
 #include "rcs/doors/exports.nddl"
 #include "mechanism_control/exports.nddl"
-#include "rcs/doors/controllers.nddl"
 #include "safety/exports.nddl"
+#include "rcs/safety/exports.nddl"
+#include "rcs/doors/controllers.nddl"
 #include "nav/nav.nddl"
 #include "world_model/topological_map.nddl"
 
@@ -33,6 +34,7 @@ MobilityStatus mobility_status = new MobilityStatus(External);
 BaseState base_state = new BaseState(External);
 
 // External RCS Highlevel controllers
+SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
 MoveBase move_base = new MoveBase(External);
 ReleaseDoor release_door = new ReleaseDoor(External);
 OpenDoor open_door = new OpenDoor(External);

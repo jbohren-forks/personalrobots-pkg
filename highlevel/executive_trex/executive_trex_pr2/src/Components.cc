@@ -49,7 +49,7 @@ namespace TREX{
 		       const std::vector<ConstrainedVariableId>& variables);
 
   private:
-    std::vector<ConstrainedVariableId> makeScope(const std::vector<ConstrainedVariableId>& variables );
+    std::vector<ConstrainedVariableId> makeNewScope(const std::vector<ConstrainedVariableId>& variables );
     void handleExecute();
     std::string toString() const;
 
@@ -185,18 +185,19 @@ namespace TREX{
 					 const LabelStr& propagatorName,
 					 const ConstraintEngineId& constraintEngine,
 					 const std::vector<ConstrainedVariableId>& variables)
-    :Constraint(name, propagatorName, constraintEngine, makeScope(variables)),
+    :Constraint(name, propagatorName, constraintEngine, makeNewScope(variables)),
      _target_token(TREX::getParentToken(variables[0])), 
      _source_token(TREX::getParentToken(variables[1])){}
 
 
-  std::vector<ConstrainedVariableId> GetStateConstraint::makeScope(const std::vector<ConstrainedVariableId>& variables){
+  std::vector<ConstrainedVariableId> GetStateConstraint::makeNewScope(const std::vector<ConstrainedVariableId>& variables){
     // If already mapped, then return without modification. This is the case when merging
     if(variables.size() > 2)
       return variables;
 
     // Otherwise swap for parameters of both tokens
     std::vector<ConstrainedVariableId> new_scope(TREX::getParentToken(variables[0])->parameters());
+
     const std::vector<ConstrainedVariableId>& params = TREX::getParentToken(variables[1])->parameters();
     for(unsigned int i = 0; i< params.size(); i++)
       new_scope.push_back(params[i]);

@@ -41,6 +41,8 @@ PlugActions::PickupAndRelease {
   contains(plugs_untuck_arms.Active cmd_untuck_arms);
   contains(detect_plug_on_base.Active cmd_detect_plug_on_base);
   contains(move_and_grasp_plug.Active cmd_move_and_grasp_plug);
+
+/*
   contains(localize_plug_in_gripper.Active cmd_localize_plug_in_gripper);
   contains(stow_plug.Active cmd_stow_plug);
   contains(servo_to_outlet.Active cmd_servo_to_outlet);
@@ -49,11 +51,13 @@ PlugActions::PickupAndRelease {
   contains(unplug.Active cmd_unplug);
   contains(detect_plug_on_base.Active cmd_detect_plug_on_base_to_confirm);
   contains(safety_tuck_arms.Active cmd_tuck_arms_again);
-
+*/
   // Sequence them
   cmd_tuck_arms before cmd_untuck_arms;
   cmd_untuck_arms before cmd_detect_plug_on_base;
   cmd_detect_plug_on_base before cmd_move_and_grasp_plug;
+
+/*
   cmd_move_and_grasp_plug before cmd_localize_plug_in_gripper;
   cmd_localize_plug_in_gripper before cmd_stow_plug;
   cmd_stow_plug before cmd_servo_to_outlet;
@@ -76,6 +80,12 @@ PlugActions::PickupAndRelease {
      cmd_unplug.status,
      cmd_detect_plug_on_base_to_confirm.status,
      cmd_tuck_arms_again.status);
+*/
+  eq(SUCCESS,
+     cmd_tuck_arms.status,
+     cmd_untuck_arms.status,
+     cmd_detect_plug_on_base.status,
+     cmd_move_and_grasp_plug.status);
 
   // Finally, make sure feedback flows correctly. So first we bind to the feedback
   // Should be nice to say:
@@ -85,13 +95,23 @@ PlugActions::PickupAndRelease {
   cmd_detect_plug_on_base meets feedback_detect_plug_on_base;
 
   // Provides input to grasp
-  get_state(cmd_move_and_grasp_plug.object, feedback_detect_plug_on_base.object);
+  //get_state(cmd_move_and_grasp_plug.object, feedback_detect_plug_on_base.object);
+  eq(cmd_move_and_grasp_plug.time_stamp, feedback_detect_plug_on_base.time_stamp);
+  eq(cmd_move_and_grasp_plug.frame_id, feedback_detect_plug_on_base.frame_id);
+  eq(cmd_move_and_grasp_plug.stowed, feedback_detect_plug_on_base.stowed);
+  eq(cmd_move_and_grasp_plug.x, feedback_detect_plug_on_base.x);
+  eq(cmd_move_and_grasp_plug.y, feedback_detect_plug_on_base.y);
+  eq(cmd_move_and_grasp_plug.z, feedback_detect_plug_on_base.z);
 
+/*
   // Provides input to stow
   get_state(cmd_stow_plug.object, feedback_detect_plug_on_base.object);
 
   // Finally, the action ends when the tuck arms finishes
   concurrent(end, cmd_tuck_arms_again.end);
+*/
+
+  concurrent(end, cmd_move_and_grasp_plug.end);
 }
 
 PlugActions plug_actions = new PlugActions();

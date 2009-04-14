@@ -38,11 +38,6 @@ namespace executive_trex_pr2 {
     static std::string getFrame(const TokenId& token);
 
     /**
-     * @brief Sets a frame in an observation. Assumes the parameter name is 'frame_id'.
-     */
-    static void setFrame(const std::string& frame_id, ObservationByValue& obs);
-
-    /**
      * @brief Stuff token data into a door message
      */
     static void write(const TokenId& token, robot_msgs::Door& msg);
@@ -98,9 +93,9 @@ namespace executive_trex_pr2 {
     template <class T>
     static void write(const char* param_name, const TokenId& token, T& target){
       ConstrainedVariableId var = token->getVariable(param_name);
-      ROS_ASSERT(var.isValid());
+      checkError(var.isValid(), "No Parameter named " << param_name << " in " << token->toString());
       const AbstractDomain& dom = var->lastDomain();
-      ROS_ASSERT(dom.isNumeric());
+      checkError(dom.isNumeric(), param_name << " is not numeric.");
       double value;
       write(dom, value);
       target = value;
@@ -110,6 +105,37 @@ namespace executive_trex_pr2 {
     template <class T>
     static void read(const char* name, ObservationByValue& obs, const T& source){
       obs.push_back(name, new IntervalDomain(source));
+    }
+
+    /**
+     * @brief Sets a frame and time stamp in the head of an observation. Assumes the parameter name is 'frame_id'.
+     */
+    template <class T>  static void setHeader(const T& msg, ObservationByValue& obs){
+      obs.push_back("frame_id", new StringDomain(msg.header.frame_id, "string"));
+      debugMsg("ros", "Cutting time stamp of " << msg.header.stamp.toSec() << " by " << getEpoch());
+      double time_stamp = std::max(msg.header.stamp.toSec() - getEpoch(), 0.0);
+      read<double>("time_stamp", obs, time_stamp);
+    }
+
+    template <class T> static void getHeader(T& msg, const TokenId& token){
+      // Set the frame we are in
+      msg.header.frame_id = getFrame(token);
+
+      // Set time value as the current time
+      double time_stamp_double = ros::Time::now().toSec();
+
+      // If bound, then use that value
+      ConstrainedVariableId var = token->getVariable("time_stamp");
+      checkError(var.isValid(), "No Parameter named 'time_stamp' in " << token->toString());
+      const AbstractDomain& dom = var->lastDomain();
+      checkError(dom.isNumeric(), "time_stamp must be numeric.");
+      if(dom.isSingleton()){
+	time_stamp_double = dom.getSingletonValue() + getEpoch();
+	debugMsg("ros", "Sett time stamp of " << time_stamp_double << " with additional offset of " << getEpoch());
+      }
+
+      // The time stamp should be set to current time if the value
+      msg.header.stamp.fromSec(time_stamp_double);
     }
 
     static StringDomain* toStringDomain(const std_msgs::String& msg);
@@ -161,6 +187,12 @@ namespace executive_trex_pr2 {
      * @param th The yaw angle
      */
     static void get2DPose(const robot_msgs::Pose& pose, double& x, double& y, double& th);
+
+  private:
+    static unsigned int getEpoch() {
+      static const unsigned int epoch_seconds(ros::Time::now().toSec());
+      return epoch_seconds;
+    }
  
   };
 }

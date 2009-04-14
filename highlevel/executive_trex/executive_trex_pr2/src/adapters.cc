@@ -82,12 +82,12 @@ namespace TREX {
     }
 
     virtual void fillActiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){
-      AdapterUtilities::setFrame(msg.header.frame_id, *obs);
-      AdapterUtilities::readPose(*obs, msg.x, msg.y, msg.th);
+      //AdapterUtilities::setHeader(msg, *obs);
+      //AdapterUtilities::readPose(*obs, msg.x, msg.y, msg.th);
     }
 
     virtual void fillInactiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){ 
-      AdapterUtilities::setFrame(msg.header.frame_id, *obs);
+      AdapterUtilities::setHeader(msg, *obs);
       AdapterUtilities::readPose(*obs, msg.x, msg.y, msg.th);
     }
 
@@ -221,7 +221,7 @@ namespace TREX {
 
   private:
     void fillObservationParameters(ObservationByValue* obs){
-      AdapterUtilities::setFrame(stateMsg.header.frame_id, *obs);
+      AdapterUtilities::setHeader(stateMsg, *obs);
       AdapterUtilities::readPose(*obs, stateMsg.pos.x, stateMsg.pos.y, stateMsg.pos.th);
     }
   };

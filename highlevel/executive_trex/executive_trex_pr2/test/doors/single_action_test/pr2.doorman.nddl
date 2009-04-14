@@ -15,19 +15,21 @@ cmd_move_to_grasp.th = 0.0;
 */
 
 // The goal is to execute an OpenDoor action, where we give it the door data
+rejectable(safety_tuck_arms.Active cmd_tuck_arms);
 rejectable(detect_door.Active cmd_detect_door);
 rejectable(detect_door.Inactive feedback_detect_door);
 rejectable(detect_handle.Active cmd_detect_handle);
 rejectable(detect_handle.Inactive feedback_detect_handle);
 rejectable(move_base.Active cmd_move_to_grasp);
-
-
+rejectable(grasp_handle.Active cmd_grasp_handle);
 
 // Bind order
+cmd_tuck_arms before cmd_detect_door;
 cmd_detect_door meets feedback_detect_door;
 cmd_detect_door before cmd_detect_handle;
 cmd_detect_handle meets feedback_detect_handle;
 cmd_detect_handle before cmd_move_to_grasp;
+cmd_move_to_grasp before cmd_grasp_handle;
 
 eq(feedback_detect_door.status, SUCCESS);
 
@@ -56,8 +58,12 @@ get_state(cmd_detect_handle.object, feedback_detect_door.object);
 
 // Set params for move base
 eq(cmd_move_to_grasp.frame_id, feedback_detect_handle.frame_id);
+eq(cmd_move_to_grasp.time_stamp, feedback_detect_handle.time_stamp);
 door_get_robot_pose_for_door(cmd_move_to_grasp.x, cmd_move_to_grasp.y, cmd_move_to_grasp.th,
 			     feedback_detect_handle.object,
 			     GRASP_RANGE);
+
+// Set params for grasp handle
+get_state(cmd_grasp_handle.object, feedback_detect_door.object);
 
 

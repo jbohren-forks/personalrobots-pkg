@@ -58,6 +58,11 @@ class DoorManipulationBehavior extends ROSAction {
     float handle_x;
     float handle_y;
     float handle_z;
+
+    // Normal
+    float normal_x;
+    float normal_y;
+    float normal_z;
   }
 
   predicate Inactive{
@@ -90,6 +95,11 @@ class DoorManipulationBehavior extends ROSAction {
     float handle_x;
     float handle_y;
     float handle_z;
+
+    // Normal
+    float normal_x;
+    float normal_y;
+    float normal_z;
 
     // Commit to unknown values if nothing set
     defaultOnCommit(hinge, UNKNOWN);
@@ -166,6 +176,7 @@ class CheckDoorway extends ROSAction {
    * The parameters here 
    */
   predicate Active{
+    float time_stamp;
     string frame_id;
     float x; 
     float y;
