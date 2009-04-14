@@ -283,10 +283,10 @@ void pf_update_resample(pf_t *pf)
   // Build up cumulative probability table for resampling.
   // TODO: Replace this with a more efficient procedure
   // (e.g., http://www.network-theory.co.uk/docs/gslref/GeneralDiscreteDistributions.html)
-  c = (double*)malloc(sizeof(double)*set_a->sample_count);
+  c = (double*)malloc(sizeof(double)*(set_a->sample_count+1));
   c[0] = 0.0;
   for(i=0;i<set_a->sample_count;i++)
-    c[i] = c[i-1]+set_a->samples[i].weight;
+    c[i+1] = c[i]+set_a->samples[i].weight;
 
   // Create the kd tree for adaptive sampling
   pf_kdtree_clear(set_b->kdtree);
@@ -347,7 +347,7 @@ void pf_update_resample(pf_t *pf)
       r = drand48();
       for(i=0;i<set_a->sample_count;i++)
       {
-        if(r < c[i])
+        if((c[i] <= r) && (r < c[i+1]))
           break;
       }
       assert(i<set_a->sample_count);
