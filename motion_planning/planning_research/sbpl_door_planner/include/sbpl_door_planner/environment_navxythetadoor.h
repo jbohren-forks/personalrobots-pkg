@@ -57,6 +57,8 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
   //FInally, desired door angles should only be used when the search is done forward (no sense to set it in the backward search)
   void SetDesiredDoorAngles(vector<int> desired_door_anglesV);
 
+  void GetPathMinDoorAngle(const std::vector<EnvNAVXYTHETALAT3Dpt_t> &path, std::vector<double> &angle, std::vector<double> &angle_cost);
+
 
   void SetAllActionsandAllOutcomes(CMDPSTATE* state){
     printf("ERROR: SetAllActionsandAllOutcomes not supported in navxythetadoor environment\n");

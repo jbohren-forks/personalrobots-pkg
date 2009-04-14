@@ -232,7 +232,7 @@ bool EnvironmentNAVXYTHETADOOR::GetMinCostDoorAngle(double x, double y, double t
 
   if(bestangle != -INFINITECOST)
   {    
-    angle = M_PI*bestangle/180.0;
+    angle = angles::normalize_angle((double) angles::from_degrees(bestangle) + db_.door_frame_global_yaw_);
     door_angle_cost = mincost;
 //    printf("bestangle: %d\n",bestangle);
     return true;
@@ -411,3 +411,26 @@ void EnvironmentNAVXYTHETADOOR::setRobotProperties(const double &min_workspace_r
   printf("\n\n"); 
 }
 
+
+
+void EnvironmentNAVXYTHETADOOR::GetPathMinDoorAngle(const std::vector<EnvNAVXYTHETALAT3Dpt_t> &path, std::vector<double> &angle, std::vector<double> &angle_cost)
+{
+  angle.resize(path.size());
+  angle_cost.resize(path.size());
+
+  for(unsigned int i = 0; i < path.size(); i++) 
+  {
+    double door_angle;
+    double door_angle_cost;
+    if(this->GetMinCostDoorAngle(path.at(i).x, path.at(i).y, path.at(i).theta,door_angle,door_angle_cost))
+    {
+      angle.at(i) = door_angle;
+      angle_cost.at(i) = door_angle_cost;
+    }
+    else
+    {
+      angle.at(i) = 0.0;
+      angle_cost.at(i) = INFINITECOST;
+    }
+  }
+}
