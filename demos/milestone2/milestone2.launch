@@ -19,6 +19,10 @@
   <node pkg="doors_core" type="action_runner" output="screen" />
 
 
+<!-- Safety -->
+  <node pkg="safety_core" type="action_runner" output="screen" />
+
+
 <!-- joystick -->
   <param name="axis_vx" value="3" type="int"/>
   <param name="axis_vy" value="2" type="int"/>

@@ -20,6 +20,23 @@
   <param name="r_gripper_effort_controller/autostart" type="bool" value="false" />
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_gripper_effort_controller.xml" />
 
+<!-- Tuck arm controller -->
+  <group ns="r_arm_joint_trajectory_controller" clear_params="true">
+    <param name="velocity_scaling_factor" value="0.75" type="double" />
+    <param name="trajectory_wait_timeout" value="10.0" type="double" />
+    
+    <param name="r_shoulder_pan_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_shoulder_lift_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_upper_arm_roll_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_elbow_flex_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_forearm_roll_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_wrist_flex_joint/goal_reached_threshold" value="0.25" type="double" />
+    <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.25" type="double" /> 
+    <param name="autostart" type="bool" value="false" /> 
+  </group>
+  <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/integration/r_arm_joint_trajectory_controller.xml" />
+
+
 <!-- Cartesian wrench controller -->
   <param name="r_arm_cartesian_wrench_controller/autostart" type="bool" value="false" />
   <param name="r_arm_cartesian_wrench_controller/root_name" type="string" value="torso_lift_link" />
