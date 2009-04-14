@@ -39,14 +39,18 @@ static clock_t time_getsuccs = 0;
 static long int checks = 0; //TODO-debugmax
 
 //forward declaration of all possible template types (in order to use templates in cpp rather than in .h)
-template EnvironmentNAVXYTHETALATTICE<EnvNAVXYTHETALATHashEntry_t>; 
+
+template class EnvironmentNAVXYTHETALATTICE<EnvNAVXYTHETALATHashEntry_t>;
 
 //-----------------constructors/destructors-------------------------------
-template<class EnvNAVLATHashEntry_t>
-EnvironmentNAVXYTHETALATTICE<EnvNAVLATHashEntry_t>::EnvironmentNAVXYTHETALATTICE()
+template<>
+EnvironmentNAVXYTHETALATTICE<EnvNAVXYTHETALATHashEntry_t>::EnvironmentNAVXYTHETALATTICE()
 {
 	EnvNAVXYTHETALATCfg.obsthresh = ENVNAVXYTHETALAT_DEFAULTOBSTHRESH;
-	EnvNAVXYTHETALATCfg.cost_inscribed_thresh = EnvNAVXYTHETALATCfg.obsthresh; //the value that pretty much makes it disabled
+	
+	//the value that pretty much makes it disabled	
+	EnvNAVXYTHETALATCfg.cost_inscribed_thresh = EnvNAVXYTHETALATCfg.obsthresh; 
+
 	EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh = -1; //the value that pretty much makes it disabled
 
 	grid2Dsearch = NULL;
@@ -2047,7 +2051,7 @@ void EnvironmentNAVXYTHETALATTICE<EnvNAVXYTHETALATHashEntry_t>::PrintState(int s
 	if(fOut == NULL)
 		fOut = stdout;
 
-	EnvNAVLATHashEntry_t* HashEntry = StateID2CoordTable[stateID];
+	EnvNAVXYTHETALATHashEntry_t* HashEntry = StateID2CoordTable[stateID];
 
 	if(stateID == EnvNAVXYTHETALAT.goalstateid && bVerbose)
 	{
