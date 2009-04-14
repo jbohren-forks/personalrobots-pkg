@@ -216,6 +216,7 @@ void CartesianTrajectoryController::update()
   if (request_preempt_){
     twist_current_ = Twist::Zero();
     is_moving_ = false;
+    ROS_INFO("CartesianTrajectoryController: preempted trajectory");
   }
 
   // if we are moving
@@ -227,6 +228,7 @@ void CartesianTrajectoryController::update()
       twist_current_ = Twist::Zero();
       pose_current_  = pose_end_;
       is_moving_ = false;
+      ROS_INFO("CartesianTrajectoryController: finshed trajectory");
     }
     // still in trajectory
     else{
@@ -267,7 +269,7 @@ Frame CartesianTrajectoryController::getPose()
 
 
 bool CartesianTrajectoryController::moveTo(robot_srvs::MoveToPose::Request &req,
-                                               robot_srvs::MoveToPose::Response &resp)
+					   robot_srvs::MoveToPose::Response &resp)
 {
   if (!moveTo(req.pose, 0.0))
     return false;
@@ -290,7 +292,7 @@ void CartesianTrajectoryController::command(const MessageNotifier<robot_msgs::Po
 
 
 bool CartesianTrajectoryController::preempt(std_srvs::Empty::Request &req,
-                                                std_srvs::Empty::Response &resp)
+					    std_srvs::Empty::Response &resp)
 {
   // you can only preempt is the robot is moving
   if (!is_moving_)
