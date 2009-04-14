@@ -54,6 +54,11 @@ namespace robot_actions {
   public:
 
     /**
+     * @Destructor
+     */
+    virtual ~AbstractAdapter(){}
+
+    /**
      * @brief Check if OK
      */
     bool isOk() const { return _initialized && !_terminated; }
