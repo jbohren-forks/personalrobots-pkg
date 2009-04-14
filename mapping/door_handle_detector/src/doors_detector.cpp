@@ -431,6 +431,9 @@ bool
     // initialize with original door message
     result[nr_d] = door_tr;
 
+    // set the timestamp to the stamp of the pontcloud
+    result[nr_d].header.stamp = pointcloud.header.stamp;
+
     // Save the weight (we need to reorder at the end)
     result[nr_d].weight = goodness_factor[cc];
 
@@ -449,9 +452,13 @@ bool
     cloud_geometry::statistics::getMinMax (pmap_.polygons[cc], min_p, max_p);
     result[nr_d].height = fabs (max_p.z - min_p.z);
 
+    cout << "transform door to " << fixed_frame_ << endl;
+    if (!transformTo(tf_, fixed_frame_, result[nr_d], result[nr_d])){
+      ROS_ERROR ("DoorsDetector: could not tranform door from '%s' frame to '%s' frame", 
+		 result[nr_d].header.frame_id.c_str(), fixed_frame_.c_str());
+      return false;
+    }
     cout << "found door " << result[nr_d] << endl;
-
-    transformTo(tf_, fixed_frame_, result[nr_d], result[nr_d]);
 
     nr_d++;
   }

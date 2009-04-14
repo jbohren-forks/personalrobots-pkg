@@ -87,7 +87,7 @@ bool transformVectorTo(const tf::Transformer& tf, const string& source_frame, co
 
 std::ostream& operator<< (std::ostream& os, const robot_msgs::Door& d)
 {
-  os << "Door message in " << d.header.frame_id << endl;
+  os << "Door message in " << d.header.frame_id << " at time " << d.header.stamp.toSec() << endl;
   os << " - frame (" 
      << d.frame_p1.x << " " << d.frame_p1.y << " "<< d.frame_p1.z << ") -- (" 
      << d.frame_p2.x << " " << d.frame_p2.y << " "<< d.frame_p2.z << ")" << endl;
@@ -101,6 +101,8 @@ std::ostream& operator<< (std::ostream& os, const robot_msgs::Door& d)
 
   os << " - normal (" 
      << d.normal.x << " " << d.normal.y << " "<< d.normal.z << ")" << endl;
+
+  os << " - hinge side " << d.hinge << endl;
 
   return os;
 }
