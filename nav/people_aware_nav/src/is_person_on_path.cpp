@@ -41,7 +41,7 @@
 #include <ros/node.h>
 #include <robot_msgs/PositionMeasurement.h>
 #include <robot_msgs/Polyline2D.h>
-#include <topic_synchronizer/topic_synchronizer.h>
+//#include <topic_synchronizer/topic_synchronizer.h>
 #include "tf/transform_listener.h"
 #include <tf/message_notifier.h>
 #include <people_aware_nav/PersonOnPath.h>
@@ -99,8 +99,8 @@ public:
   {
     boost::mutex::scoped_lock l2(person_mutex_);
     person_pos_ = *person_pos_msg;
-    ROS_INFO_STREAM ("In person pos callback and got_person_pos_ is " << got_person_pos_);
     got_person_pos_ = true;
+    ROS_INFO_STREAM ("Have seen person and got_person_ is " << got_person_pos_);
   }
 
   // Path callback
@@ -126,7 +126,7 @@ public:
       ROS_WARN_STREAM ("Unable to tell if person was on path.  Ret vals: Current time " << current_time << " Person stamp : " << person_stamp << " Path stamp : " << path_stamp);
     }
     resp.value = on_path ? 1 : 0;
-    ROS_DEBUG_STREAM_NAMED ("person_on_path", "Person on path value is " << resp.value);
+    ROS_DEBUG_STREAM_NAMED ("person_on_path", "Person on path value is " << (int) resp.value << " at distance " << dist);
 
 
     return true;
@@ -143,8 +143,6 @@ public:
     *path_stamp = ros::Time().fromSec(0);
     *current_time = ros::Time().fromSec(0);
     
-    ROS_INFO ("Attempting to compute person-path dist");
-
     // Check that we have both the person and path messages.
     if (!got_person_pos_ || !got_path_)
     {
@@ -163,14 +161,21 @@ public:
       tf_->transformPoint(fixed_frame_, *current_time, t_person_tf_stamped_point, fixed_frame_, t_person_tf_stamped_point);
     }
     catch (tf::TransformException& ex) {
-      ROS_INFO ("Unable to do person transformation");
+      ROS_INFO_STREAM ("Unable to do person transformation" << ex.what());
+      ROS_INFO_STREAM ("Image time : " << person_pos_.header.stamp << ".  Current time : " << *current_time << ". Rostime " << ros::Time::now());
       got_person_pos_ = false;
       return false;
     }
 
+    ROS_DEBUG_STREAM_NAMED ("person_on_path", "Attempting to compute person-path dist to point " << t_person_tf_stamped_point[0] << ", " << t_person_tf_stamped_point[1]);
+
+
+
     // Go through each line segment on the path and get the distance to the person.
     double min_dist = -1.0;
     for (uint i=0; i<path_.points.size()-1; i++) {
+
+
       // Two points on the line segment
       tf::Point tpt1;
       tpt1[0] = path_.points[i].x;
@@ -188,7 +193,7 @@ public:
 	tf_->transformPoint(fixed_frame_, *current_time, t_path_point1, fixed_frame_, t_path_point1);
       }
       catch (tf::TransformException& ex) {
-        ROS_INFO ("Unable to do path transformation");
+        ROS_INFO_STREAM ("Unable to do path transformation " << ex.what());
 	return false;
       }      
 
@@ -196,29 +201,43 @@ public:
 	tf_->transformPoint(fixed_frame_, *current_time, t_path_point2, fixed_frame_, t_path_point2);
       }
       catch (tf::TransformException& ex) {
-        ROS_INFO ("Unable to do path transformation");
+        ROS_INFO_STREAM ("Unable to do path transformation: " << ex.what());
 	return false;
       }
 
       
       // Distance from point to line:
       tf::Vector3 s, d;
+      double dotss, dotdd;
       s = t_path_point2 - t_path_point1;
+
+      // Check that the length of the line isn't 0.
+      dotss = dot(s,s);
+      if (dotss < 1E-10) {
+	ROS_DEBUG_STREAM_NAMED("person_on_path","Line segment length is too small, skipping.");
+	continue;
+      }
+
       d = t_person_tf_stamped_point - t_path_point1;
-      
+      dotdd = dot(d,d);
+
       tf::Vector3 c;
       c = cross(s,d);
-      double sqr_dist = dot(c,c) / dot(s,s);
+      double sqr_dist = dot(c,c) / dotss;
 
       if (min_dist < 0.0 || sqr_dist < min_dist) {
+
 	// Check that the point actually projects onto the line segment. If not, the closest distance is really to an endpoint.
-	double k = ( dot( t_person_tf_stamped_point, s) - dot(t_path_point1,s) ) / dot(s,s);
+	double k = ( dot( t_person_tf_stamped_point, s) - dot(t_path_point1,s) ) / dotss;
 	if (k < 0) {
-	  sqr_dist = dot(d,d);
+          ROS_DEBUG_STREAM_NAMED ("person_on_path", "endpoint1");
+	  sqr_dist = dotdd;
 	}
 	else if (k > 1) {
+          ROS_DEBUG_STREAM_NAMED ("person_on_path", "endpoint2");
 	  d = t_person_tf_stamped_point - t_path_point2;
-	  sqr_dist = dot(d,d);
+	  dotdd = dot(d,d);
+	  sqr_dist = dotdd;
 	}
 	
 	// If this is the closest line segment to the person, set the min distance.
@@ -227,22 +246,28 @@ public:
 	}
 	
       }
+
+      ROS_DEBUG_STREAM_NAMED ("person_on_path", "Sq. distance from " << t_path_point1[0] << ", " << t_path_point1[1] << " to " << t_path_point2[0] << ", " << t_path_point2[1] << " is " << sqr_dist);
+
+
     }
 
     // The person is on the path if their min distance to one of the line segments is less than their radius plus the robot's radius.
     if (min_dist >= 0.0 && min_dist <= total_dist_sqr_m_) {
       *is_on_path = true;
+      *dist = sqrt(min_dist);
     }
     else {
       *is_on_path = false;
     }
 
-    *dist = sqrt(min_dist);
+
     *person_stamp = person_pos_.header.stamp;
     *path_stamp = path_.header.stamp;
 
     return true;
   }
+
 }; // class
 
 }; // namespace
@@ -252,7 +277,6 @@ int
 main (int argc, char** argv)
 {
   ros::init (argc, argv);
-
 
   ros::Node q("is_person_on_path");
   people_aware_nav::IsPersonOnPath qt;
