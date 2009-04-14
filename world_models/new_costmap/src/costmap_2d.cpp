@@ -604,7 +604,7 @@ namespace costmap_2d{
     //quick bubble sort to sort points by x
     MapLocation swap;
     unsigned int i = 0;
-    while(i < polygon_cells.size()){
+    while(i < polygon_cells.size() - 1){
       if(polygon_cells[i].x > polygon_cells[i + 1].x){
         swap = polygon_cells[i];
         polygon_cells[i] = polygon_cells[i + 1];
