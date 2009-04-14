@@ -444,9 +444,9 @@ bool
     result[nr_d].door_p1 = min_p;
     result[nr_d].door_p2 = max_p;
     result[nr_d].door_p2.z = min_p.z;
-    result[nr_d].normal.x = coeff[cc][0];
-    result[nr_d].normal.y = coeff[cc][1];
-    result[nr_d].normal.z = coeff[cc][2];
+    result[nr_d].normal.x = -coeff[cc][0];
+    result[nr_d].normal.y = -coeff[cc][1];
+    result[nr_d].normal.z = -coeff[cc][2];
 
     // Need min/max Z
     cloud_geometry::statistics::getMinMax (pmap_.polygons[cc], min_p, max_p);
