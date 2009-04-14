@@ -1,0 +1,42 @@
+<!-- setting pose: 47.943 21.421 -0.503
+setting pose: 30.329 34.644 3.142 
+117.5s -->
+<launch>
+    <param name="/use_sim_time" value="true"/>
+    <node pkg="rosrecord" type="rosplay" 
+          args="-s 2 -r 1 -b 10 $(find amcl_player)/test/global_localization_stage.bag"/>
+    <node pkg="map_server" type="map_server" args="$(find amcl_player)/test/willow-full.pgm 0.1"/>
+    <node pkg="amcl_player" type="amcl" name="amcl" respawn="false" output="screen">
+      <remap from="scan" to="base_scan" />
+      <param name="laser_max_range" value="16.0"/>
+      <param name="laser_max_beams" value="30"/>
+      <param name="min_particles" value="1000"/>
+      <param name="max_particles" value="30000"/>
+      <param name="kld_err" value="0.05"/>
+      <param name="kld_z" value="0.99"/>
+      <param name="odom_alpha1" value="0.2"/>
+      <param name="odom_alpha2" value="0.2"/>
+      <param name="odom_alpha3" value="0.2"/>
+      <param name="odom_alpha4" value="0.2"/>
+      <param name="laser_z_hit" value="0.8"/>
+      <param name="laser_z_short" value="0.1"/>
+      <param name="laser_z_max" value="0.05"/>
+      <param name="laser_z_rand" value="0.2"/>
+      <param name="laser_sigma_hit" value="0.2"/>
+      <param name="laser_lambda_short" value="0.1"/>
+      <param name="laser_model_type" value="likelihood_field"/>
+      <param name="laser_likelihood_max_dist" value="2.0"/>
+      <param name="update_min_d" value="0.2"/>
+      <param name="update_min_a" value="0.5"/>
+      <param name="odom_frame_id" value="odom"/>
+      <param name="resample_interval" value="8"/>
+      <param name="transform_tolerance" value="0.1"/>
+      <param name="recovery_alpha_slow" value="0.001"/>
+      <param name="recovery_alpha_fast" value="0.1"/>
+      <param name="robot_x_start" value="0.0"/>
+      <param name="robot_y_start" value="0.0"/>
+      <param name="robot_th_start" value="0.0"/>
+    </node>
+  <test time-limit="180" test-name="global_localization" pkg="amcl_player" 
+        type="global_localization.py" args="31.723 35.322 -2.554 0.25 0.25 28.0"/>
+</launch>
