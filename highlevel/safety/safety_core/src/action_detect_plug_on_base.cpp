@@ -44,6 +44,14 @@ DetectPlugOnBaseAction::DetectPlugOnBaseAction(ros::Node& node) :
   node_(node),
   laser_controller_("laser_tilt_controller")
 {
+  node_.param(action_name_ + "/laser_tilt_controller", laser_controller_, laser_controller_);
+  if(laser_controller_ == "")
+  {
+    ROS_ERROR("%s: tilt_laser_controller param was not set.",action_name_.c_str());
+    plug_stow_.stowed = 0;
+    return;
+  }
+
   detector_ = new PlugOnBaseDetector::PlugOnBaseDetector(node);
   detector_->deactivate();
   node_.subscribe ("~plug_stow_info", plug_stow_msg, &DetectPlugOnBaseAction::localizePlug, this, 1);
@@ -59,15 +67,6 @@ void DetectPlugOnBaseAction::handleActivate(const std_msgs::Empty& empty)
   notifyActivated();
 
   reset();
-  node_.param(action_name_ + "/laser_tilt_controller", laser_controller_, laser_controller_);
-  
-  if(laser_controller_ == "")
-  {
-    ROS_ERROR("%s: tilt_laser_controller param was not set.",action_name_.c_str());
-    plug_stow_.stowed = 0;
-    notifyAborted(plug_stow_);
-    return;
-  }
   
   if (!ros::service::call(laser_controller_ + "/set_periodic_cmd", req_laser_, res_laser_))
   {

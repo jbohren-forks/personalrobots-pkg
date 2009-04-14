@@ -46,6 +46,37 @@ TuckArmsAction::TuckArmsAction() :
   right_arm_controller_("r_arm_joint_trajectory_controller"),
   left_arm_controller_("l_arm_joint_trajectory_controller")
 {
+  // Check which arms need to be untucked.
+  node_->param(action_name_ + "/which_arms", which_arms_, which_arms_);
+  if(which_arms_ == "")
+  {
+    ROS_ERROR("%s: Aborted, which arms param was not set.", action_name_.c_str());
+    return;
+  }
+
+  // Get the controller names
+  if((which_arms_ == "both") || (which_arms_ == "right"))
+  {
+    node_->param(action_name_ + "/right_arm_controller", right_arm_controller_, right_arm_controller_); 
+   
+    if(right_arm_controller_ == "")
+    {
+      ROS_ERROR("%s: Aborted, right arm controller param was not set.", action_name_.c_str());
+      return;
+    }
+  }
+  
+  if((which_arms_ == "both") || (which_arms_ == "left"))
+  {
+    node_->param(action_name_ + "/left_arm_controller", left_arm_controller_, left_arm_controller_);
+    
+    if(left_arm_controller_ == "")
+    {
+      ROS_ERROR("%s: Aborted, left arm controller param was not set.", action_name_.c_str());
+      return;
+    }
+  }
+
   double right_arm_traj[2][7] = {{0.0,0.0,0.0,-2.25,0.0,0.0,0.0},{0.0,1.57,-1.57,-2.25,0.0,0.0,0.0}};
   double left_arm_traj[2][7] = {{0.0,0.0,0.0,-2.25,0.0,0.0,0.0}, {0.0,1.57,1.57,-2.25,0.0,0.0,0.0}};
                      
@@ -79,43 +110,7 @@ TuckArmsAction::~TuckArmsAction()
 void TuckArmsAction::handleActivate(const std_msgs::Empty& empty)
 {
   notifyActivated();
-  
-  // Check which arms need to be untucked.
-  node_->param(action_name_ + "/which_arms", which_arms_, which_arms_);
-  if(which_arms_ == "")
-  {
-    ROS_ERROR("%s: Aborted, which arms param was not set.", action_name_.c_str());
-    notifyAborted(empty_);
-    return;
-  }
-
-  // Get the controller names
-  if((which_arms_ == "both") || (which_arms_ == "right"))
-  {
-    node_->param(action_name_ + "/right_arm_controller", right_arm_controller_, right_arm_controller_); 
-   
-    if(right_arm_controller_ == "")
-    {
-      ROS_ERROR("%s: Aborted, right arm controller param was not set.", action_name_.c_str());
-      notifyAborted(empty_);
-      return;
-    }
-  }
-  
-  if((which_arms_ == "both") || (which_arms_ == "left"))
-  {
-    node_->param(action_name_ + "/left_arm_controller", left_arm_controller_, left_arm_controller_);
-    
-    if(left_arm_controller_ == "")
-    {
-      ROS_ERROR("%s: Aborted, left arm controller param was not set.", action_name_.c_str());
-      notifyAborted(empty_);
-      return;
-    }
-  }
-    
-  
-  
+ 
   if((which_arms_ == "both") || (which_arms_ == "right"))
   {
     if(!ros::service::call(right_arm_controller_ + "/TrajectoryStart", right_traj_req_, traj_res_))
