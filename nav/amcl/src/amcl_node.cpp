@@ -546,6 +546,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
              fabs(delta.v[2]) > a_thresh_;
   }
 
+  bool force_publication = false;
   if(!pf_init_)
   {
     // Pose at last filter update
@@ -556,6 +557,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
 
     // Should update sensor data
     update = true;
+    force_publication = true;
     
     resample_count_ = 0;
   }
@@ -634,7 +636,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     ros::Node::instance()->publish("particlecloud", cloud_msg);
   }
 
-  if(resampled)
+  if(resampled || force_publication)
   {
     // Read out the current hypotheses
     double max_weight = 0.0;
