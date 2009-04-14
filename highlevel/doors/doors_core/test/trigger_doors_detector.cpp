@@ -61,7 +61,7 @@ int
 
   my_door_.frame_p1.x = 1.0;
   my_door_.frame_p1.y = -0.5;
-  my_door_.frame_p2.x = 1.5;
+  my_door_.frame_p2.x = 1.0;
   my_door_.frame_p2.y = 0.5;
   my_door_.rot_dir = -1;
   my_door_.hinge = -1;

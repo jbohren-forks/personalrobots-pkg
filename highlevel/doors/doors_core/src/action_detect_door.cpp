@@ -67,11 +67,11 @@ void DetectDoorAction::handleActivate(const robot_msgs::Door& door)
   robot_msgs::Door result_laser;
   if (!laserDetection(door, result_laser)){
     if (request_preempt_){
-      ROS_INFO("DetectDoorAction: Preempted");
+      ROS_ERROR("DetectDoorAction: Preempted");
       notifyPreempted(door);
     }
     else{
-      ROS_INFO("DetectDoorAction: Aborted");
+      ROS_ERROR("DetectDoorAction: Aborted");
       notifyAborted(door);
     }
   }
