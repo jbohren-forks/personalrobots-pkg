@@ -13,7 +13,7 @@
 #include <vector>
 using namespace std;
 
-#include "outlet_model.h"
+#include "outlet_detection/outlet_model.h"
 
 
 // detect_outlet_tuple: high-level function for detecting 4 orange outlets

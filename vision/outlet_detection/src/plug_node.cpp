@@ -14,7 +14,7 @@
 
 #include <boost/thread.hpp>
 
-#include "outlet_detector.h" // TODO: get rid of this
+#include "outlet_detection/outlet_detector.h" // TODO: get rid of this
 
 extern "C"
 int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,

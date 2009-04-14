@@ -13,7 +13,7 @@
 
 #include <time.h>
 
-#include "planar.h"
+#include "outlet_detection/planar.h"
 #include <highgui.h>
 #include <stdio.h>
 

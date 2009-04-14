@@ -16,10 +16,10 @@ using namespace std;
 
 #include "star_detector/detector.h"
 
-#include "outlet_model.h"
-#include "learning.h"
-#include "planar.h"
-#include "outlet_tuple.h"
+#include "outlet_detection/outlet_model.h"
+#include "outlet_detection/learning.h"
+#include "outlet_detection/planar.h"
+#include "outlet_detection/outlet_tuple.h"
 
 const int xsize = 11;
 const int ysize = 11;

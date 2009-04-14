@@ -22,11 +22,11 @@ using namespace std;
 #include <highgui.h>
 #include <ml.h>
 
-#include "learning.h"
+#include "outlet_detection/learning.h"
 #include "star_detector/detector.h"
-#include "outlet_model.h"
-#include "outlet_tuple.h"
-#include "planar.h"
+#include "outlet_detection/outlet_model.h"
+#include "outlet_detection/outlet_tuple.h"
+#include "outlet_detection/planar.h"
 
 int LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortion_coeffs)
 {

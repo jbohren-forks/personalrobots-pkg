@@ -26,9 +26,9 @@ static int PRINTF( const char*, ... )
 #endif // _VERBOSE
 
 
-#include "outlet_detector.h"
-#include "planar.h"
-#include "outlet_tuple.h"
+#include "outlet_detection/outlet_detector.h"
+#include "outlet_detection/planar.h"
+#include "outlet_detection/outlet_tuple.h"
 
 #include "highgui.h"
 

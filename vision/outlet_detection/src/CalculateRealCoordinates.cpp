@@ -12,8 +12,8 @@
 #endif
 #include <stdio.h>
 #include <ctype.h>
-#include "outlet_detector.h"
-#include "CalculateRealCoordinates.h"
+#include "outlet_detection/outlet_detector.h"
+#include "outlet_detection/CalculateRealCoordinates.h"
 
 
 // INPUT: - Image with chessboard and outlets in it

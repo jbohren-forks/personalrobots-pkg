@@ -19,7 +19,7 @@
 #include <algorithm>
 using namespace std;
 
-#include "outlet_tuple.h"
+#include "outlet_detection/outlet_tuple.h"
 #include <highgui.h>
 
 const float pi = 3.1415926f;

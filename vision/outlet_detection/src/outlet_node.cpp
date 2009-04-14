@@ -18,7 +18,7 @@
 #include <Eigen/Core>
 #include <Eigen/QR>
 
-#include "outlet_detector.h"
+#include "outlet_detection/outlet_detector.h"
 #include "outlet_detection/OutletDetection.h"
 
 class OutletDetector : public ros::Node

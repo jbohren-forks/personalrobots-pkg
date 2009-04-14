@@ -8,7 +8,7 @@
  */
 
 #include <stdio.h>
-#include "learning.h"
+#include "outlet_detection/learning.h"
 
 CvRTrees* train_rf(CvMat* predictors, CvMat* labels)
 {

@@ -21,7 +21,7 @@ using namespace std;
 #include <cv.h>
 #include <ml.h>
 
-#include "outlet_tuple.h"
+#include "outlet_detection/outlet_tuple.h"
 #include "star_detector/detector.h"
 
 typedef struct 
