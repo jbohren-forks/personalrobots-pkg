@@ -1,0 +1,3 @@
+<controller name="torso_lift_controller" topic="torso_lift_controller" type="JointEffortControllerNode">
+  <joint name="torso_lift_joint" />
+</controller>
