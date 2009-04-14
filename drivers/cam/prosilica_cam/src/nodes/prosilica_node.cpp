@@ -445,10 +445,9 @@ private:
       if (!rectifyFrame(frame, img, rect_img))
         return false;
       
-      // Camera info
-      // TODO: full-frame height/width here
-      cam_info.height = frame->Height;
-      cam_info.width = frame->Width;
+      // Camera info (uses full-frame width/height)
+      cam_info.width = undistortY_.Width();
+      cam_info.height = undistortX_.Height();
 
       memcpy((char*)(&cam_info.D[0]), (char*)D_, sizeof(D_));
       memcpy((char*)(&cam_info.K[0]), (char*)K_, sizeof(K_));
