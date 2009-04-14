@@ -220,6 +220,11 @@ public:
 
       d = t_person_tf_stamped_point - t_path_point1;
       dotdd = dot(d,d);
+      if (dotdd < 1E-10) {
+	ROS_DEBUG_STREAM_NAMED("person_on_path", "Person is (almost) at line segment point 1. Returning distance of 0.");
+	min_dist = 0.0;
+	break;
+      }
 
       tf::Vector3 c;
       c = cross(s,d);
@@ -237,6 +242,11 @@ public:
           ROS_DEBUG_STREAM_NAMED ("person_on_path", "endpoint2");
 	  d = t_person_tf_stamped_point - t_path_point2;
 	  dotdd = dot(d,d);
+	  if (dotdd < 1E-10) {
+	    ROS_DEBUG_STREAM_NAMED("person_on_path", "Person is (almost) at line segment point 2. Returning distance of 0.");
+	    min_dist = 0.0;
+	    break;
+	  }
 	  sqr_dist = dotdd;
 	}
 	
