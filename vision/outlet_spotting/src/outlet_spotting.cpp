@@ -1119,33 +1119,25 @@ public:
 	  spotter_.unadvertise("head_controller/head_track_point");
   }
 
-  virtual void handleActivate(const robot_msgs::PointStamped& outlet_estimate)
+  virtual robot_actions::ResultStatus execute(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& outlet_pose)
   {
-	  ROS_INFO("SpotOutletAction: handle activate");
-	  request_preempt_ = false;
-	  notifyActivated();
+	  ROS_INFO("SpotOutletAction: executing");
 
-	  robot_msgs::PoseStamped outlet_pose;
 	  if (!spotOutlet(outlet_estimate, outlet_pose)){
-		  if (request_preempt_){
+	    if (isPreemptRequested()){
 			  ROS_INFO("SpotOutletAction: Preempted");
-			  notifyPreempted(outlet_pose);
+			  return robot_actions::PREEMPTED;
 		  }
 		  else{
 			  ROS_INFO("SpotOutletAction: Aborted");
-			  notifyAborted(outlet_pose);
+			  return robot_actions::ABORTED;
 		  }
 	  }
 	  else{
 		  ROS_INFO("SpotOutletAction: Succeeded");
-		  notifySucceeded(outlet_pose);
+		  return robot_actions::SUCCESS;
 	  }
 
-  }
-
-  virtual void handlePreempt()
-  {
-	  request_preempt_ = true;
   }
 
 private:
