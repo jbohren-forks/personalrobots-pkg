@@ -1,5 +1,5 @@
 <tracker>
   <!-- Time Synchronized Image Streams -->
-  <stream topic="/stereo_left_detector/led" cache_size="40"/>
+  <stream cam="stereo_left" topic="/stereo_left_detector/led" target="r_gripper_led" cache_size="40"/>
 
 </tracker>

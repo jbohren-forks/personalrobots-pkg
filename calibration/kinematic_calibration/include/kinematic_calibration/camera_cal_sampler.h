@@ -107,7 +107,10 @@ public:
     lock_.unlock() ;
   }
 
+  std::string cam_ ;
   std::string topic_ ;
+  std::string target_ ;
+  ros::Duration timing_error_ ;
 
 private:
 
@@ -156,44 +159,47 @@ CameraCalSampler::CameraCalSampler(ros::Node* node) : node_(node), mech_state_ca
   // ********** Extract LED Tracker Streams **********
   TiXmlElement* stream_config ;
   stream_config = root->FirstChildElement("stream") ;
-  const char* led_topic ;
-
+  const char* topic ;
+  const char* cam ;
+  const char* target ;
 
   stream_handlers_.clear() ;
   int i=0 ;
   while(stream_config)
   {
-    led_topic = stream_config->Attribute("topic") ;
+    cam    = stream_config->Attribute("cam") ;
+    topic  = stream_config->Attribute("topic") ;
+    target = stream_config->Attribute("target") ;
 
-    if (!led_topic)
-      ROS_ERROR("Found <stream> tag without 'topic' attribute\n") ;
-    else  // Found no errors
+    int cache_size ;
+    int cache_result = stream_config->QueryIntAttribute("cache_size", &cache_size) ;
+
+    double max_timing_error ;
+    int timing_result = stream_config->QueryDoubleAttribute("max_timing_error", &max_timing_error) ;
+
+    if (!cam)
+      ROS_ERROR("Found <stream> tag without 'cam' attribute") ;
+    else if (!topic)
+      ROS_ERROR("Found <stream> tag without 'topic' attribute") ;
+    else if (!target)
+      ROS_ERROR("Found <stream> tag without 'target' attribute") ;
+    else if (cache_result != TIXML_SUCCESS)
+      ROS_ERROR("Error reading in 'cache size' attribute") ;
+    else if (timing_result != TIXML_SUCCESS)
+      ROS_ERROR("Error reading in 'max_timing_error' attribute") ;
+    else
     {
-      int result ;
-      int cache_size ;
-      result = stream_config->QueryIntAttribute("cache_size", &cache_size) ;
-      switch(result)
-      {
-        case TIXML_SUCCESS:
-        {
-          ROS_INFO("Stream - name: %s  cache_size: %u", led_topic, cache_size) ;
+      ROS_INFO("Stream -> cam: %s  topic: %s target: %s cache_size: %u", cam, topic, target, cache_size) ;
 
-          ImagePointHandler* cur_handler = new ImagePointHandler(cache_size) ;
-          cur_handler->topic_ = led_topic ;
-          node_->subscribe(led_topic, cur_handler->getMsg(), &ImagePointHandler::imagePointCallback, cur_handler, cache_size) ;
-          stream_handlers_.push_back(cur_handler) ;
-          break ;
-        }
-        case TIXML_WRONG_TYPE:
-          ROS_ERROR("Stream - topic: %s  cache_size: [WRONG TYPE]", led_topic) ;
-          return ;
-        case TIXML_NO_ATTRIBUTE:
-          ROS_ERROR("Stream - topic: %s  cache_size: [NOT FOUND]", led_topic) ;
-          return ;
-        default :
-          ROS_ERROR("Unknown TinyXML Error Code") ;
-          return ;
-      }
+      ImagePointHandler* cur_handler = new ImagePointHandler(cache_size) ;
+      cur_handler->cam_    = cam ;
+      cur_handler->topic_  = topic ;
+      cur_handler->target_ = target ;
+      cur_handler->timing_error_ = ros::Duration().fromSec(max_timing_error) ;
+
+      node_->subscribe(topic, cur_handler->getMsg(), &ImagePointHandler::imagePointCallback, cur_handler, cache_size) ;
+      stream_handlers_.push_back(cur_handler) ;
+      break ;
     }
     stream_config = stream_config->NextSiblingElement("stream") ;
     i++ ;
@@ -221,6 +227,7 @@ CameraCalSampler::~CameraCalSampler()
 
 void CameraCalSampler::intervalCallback()
 {
+
   // Wait until camera data is available
   for(unsigned int i=0; i < stream_handlers_.size(); i++)
   {
@@ -231,7 +238,10 @@ void CameraCalSampler::intervalCallback()
   // Make sure that the camera data is stable
   for(unsigned int i=0; i < stream_handlers_.size(); i++)
   {
-    if (!stream_handlers_[i]->isStable(interval_msg_, 5, 1.01))
+    Interval shrunk = interval_msg_ ;
+    shrunk.start = interval_msg_.start + stream_handlers_[i]->timing_error_ ;
+    shrunk.end   = interval_msg_.end   - stream_handlers_[i]->timing_error_ ;
+    if (!stream_handlers_[i]->isStable(shrunk, 5, 1.01))
     {
       printf("Stream %u not stable\n", i) ;
       return ;
@@ -244,9 +254,16 @@ void CameraCalSampler::intervalCallback()
   grab_time.fromNSec((interval_msg_.start.toNSec()+interval_msg_.end.toNSec())/2) ;
   mech_state_cache_.findClosestBefore(grab_time, sample.mech_state) ;
 
-  sample.set_points_size(stream_handlers_.size()) ;
+  sample.set_points_size (stream_handlers_.size()) ;
+  sample.set_cams_size   (stream_handlers_.size()) ;
+  sample.set_targets_size(stream_handlers_.size()) ;
+
   for(unsigned int i=0; i < stream_handlers_.size(); i++)
+  {
     stream_handlers_[i]->findClosestBefore(grab_time, sample.points[i]) ;
+    sample.cams[i]    = stream_handlers_[i]->cam_ ;
+    sample.targets[i] = stream_handlers_[i]->target_ ;
+  }
 
   node_->publish("~cal_sample", sample) ;
 }
