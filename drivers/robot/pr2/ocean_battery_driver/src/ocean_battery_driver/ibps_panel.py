@@ -72,22 +72,29 @@ class BatteryPanel(wx.Panel):
         self.energy_text.SetEditable(False)
         self.status_text.SetEditable(False)
 
+        # Start a timer to check for timeout
+        self.timeout_interval = 4
+        self.last_message_time = rospy.get_time()
+        self.timer = wx.Timer(self, 1)
+        self.Bind(wx.EVT_TIMER, self.on_timer, self.timer)
+        self.start_timer()
+
         self._messages = []
         
     def message_callback(self, message):
         self._mutex.acquire()
         
         self._messages.append(message)
+        self.last_message_time = rospy.get_time()
         
         self._mutex.release()
         
         wx.CallAfter(self.new_message)
         
     def new_message(self):
-
-
         self._mutex.acquire()
         for message in self._messages:
+            self.start_timer()
             ratio = message.energy_remaining / max(message.energy_capacity, 0.0001)
             self.power_text.SetValue('%.2f Watts'%message.power_consumption)
             self.energy_text.SetValue('%.2f of %.2f Joules    %.1f Percent'%(message.energy_remaining, message.energy_capacity, ratio*100.0 ))
@@ -98,9 +105,6 @@ class BatteryPanel(wx.Panel):
             else:
                 self.energy_text.SetBackgroundColour("Red")
                                 
-            
-        
-
 ##        self.textboxes[0].value = "hi"       
         self._messages = []
         
@@ -108,3 +112,36 @@ class BatteryPanel(wx.Panel):
         
         self.Refresh()
         
+    def start_timer(self):
+      # Set a timer to expire one second after we expect to timeout. This
+      # way a timer event happens at most once every second if the
+      # simulation is in slow motion, and we are at most one second late if
+      # the simulation is happening in real time.
+      interval = rospy.get_time() - self.last_message_time;
+      sleep_time = 1000 * (self.timeout_interval - interval + 1);
+      self.timer.Start(sleep_time, False)
+      #print 'start_timer %f\n'%sleep_time
+
+    def on_timer(self, event):
+      self._mutex.acquire()
+
+      interval = rospy.get_time() - self.last_message_time
+      
+      #print 'on_timer %f %f %f\n'%(rospy.get_time(), self.last_message_time, interval)
+
+      # Consider that we have timed out after 5 seconds of ros time, or if
+      # the ros time jumps back (in that case something fishy just happened
+      # and the previously displayed value is most likely stale).
+      if interval > self.timeout_interval or interval < 0:
+        #print 'timeout\n'
+        self.timer.Stop()
+
+        self.power_text.SetValue(self.power_text.GetValue()+' (stale)')
+        self.energy_text.SetValue(self.energy_text.GetValue()+' (stale)')
+        #self.status_text.SetValue(self.status_text.GetValue()+' (stale)')
+        self.energy_text.SetBackgroundColour("White")
+      else:
+        self.start_timer()
+
+      self._mutex.release()
+      self.Refresh()
