@@ -1,5 +1,4 @@
 #include "doors/door_controller.nddl"
-#include "world_model/topological_map.nddl"
 #include "test/locations.nddl"
 
 DoorController door_controller = new DoorController(Internal, false);

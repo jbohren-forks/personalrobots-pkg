@@ -1,19 +1,41 @@
 #include "TREX.nddl"
 #include "constraints.nddl"
 
-// Tier 1 interface points
+// Tier 1 interface points - external api
 #include "rcs/exports.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/safety/exports.nddl"
 
-// Tier 2 interface points
+// Tier 2 interface points - other domains
 #include "mechanism_control/exports.nddl"
-#include "rcs/controllers.nddl"
 #include "safety/exports.nddl"
 #include "nav/nav.nddl"
 
+// Mechanisms used for driving and tucking arms
+HeadMechanism head_mechanism = new HeadMechanism(External);
+TiltLaserMechanism laser_tilt_mechanism = new TiltLaserMechanism(External);
+RightArmMechanism right_arm_mechanism = new RightArmMechanism(External);
+
 // Safety
 MobilityStatus mobility_status = new MobilityStatus(External);
+SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
+DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(External);
 
-// Navigation related actions
+// Navigation specific
 MoveBase move_base = new MoveBase(External);
+BaseState base_state = new BaseState(External);
+
+// Controller requirements for actions
+DetectPlugOnBase::Active{
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+}
+
+SafetyTuckArms::Active{
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
+}
+
+// Controller requirements
+MoveBase::Active{
+  contained_by(head_mechanism.use_head_controller);
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+}

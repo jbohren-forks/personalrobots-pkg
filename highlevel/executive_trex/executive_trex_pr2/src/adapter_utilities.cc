@@ -69,6 +69,11 @@ namespace executive_trex_pr2 {
     read<float>("door_p2_y", obs, msg.door_p2.y);
     read<float>("door_p2_z", obs, msg.door_p2.z);
 
+    // Handle Data
+    read<float>("handle_x", obs, msg.handle.x);
+    read<float>("handle_y", obs, msg.handle.y);
+    read<float>("handle_z", obs, msg.handle.z);
+
     // Normal Data
     read<double>("normal_x", obs, msg.normal.x);
     read<double>("normal_y", obs, msg.normal.y);

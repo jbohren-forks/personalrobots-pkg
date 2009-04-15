@@ -1,15 +1,6 @@
-// Subsystems
-#include "TREX.nddl"
-#include "constraints.nddl"
-#include "rcs/exports.nddl"
-#include "rcs/nav/exports.nddl"
-#include "rcs/doors/exports.nddl"
-#include "mechanism_control/exports.nddl"
-#include "safety/exports.nddl"
-#include "rcs/safety/exports.nddl"
-#include "rcs/doors/controllers.nddl"
-#include "nav/nav.nddl"
+#include "nav/imports.nddl"
 #include "world_model/topological_map.nddl"
+#include "rcs/doors/exports.nddl"
 
 /** External Functions to be integrated **/
 
@@ -27,15 +18,10 @@ constraint get_door_detection_base_position(x, y, th, door_x1, door_y1, door_x2,
 // Given a current position, and a target handle position, compute a goal base position to enable a grasp
 constraint get_door_grasp_base_position(x, y, th, door_x1, door_y1, door_x2, door_y2);
 
-// Safety
-MobilityStatus mobility_status = new MobilityStatus(External);
+// Additional mechanisms used
+RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
 
-// External RCS state variables
-BaseState base_state = new BaseState(External);
-
-// External RCS Highlevel controllers
-SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
-MoveBase move_base = new MoveBase(External);
+// Additional actions for the doro domain
 ReleaseDoor release_door = new ReleaseDoor(External);
 OpenDoor open_door = new OpenDoor(External);
 GraspHandle grasp_handle = new GraspHandle(External);
@@ -45,6 +31,27 @@ OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External
 CheckDoorway check_doorway = new CheckDoorway(External);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
 
+// Controller requirements
+DetectDoor::Active{
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
+}
+
+DetectHandle::Active{
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+  contained_by(head_mechanism.use_head_controller);
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
+}
+
+GraspHandle::Active{
+  contained_by(right_arm_mechanism.use_composite_cartesian_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
+
+OpenDoor::Active{
+  contained_by(right_arm_mechanism.use_composite_tff_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
 
 
 
