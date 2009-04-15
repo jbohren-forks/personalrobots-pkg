@@ -82,20 +82,13 @@ namespace robot_actions {
   }
 
   void ActionRunner::updateLoop(){
-    while(ros::Node::instance()->ok()) {
+    while(ros::Node::instance()->ok() && !isTerminated()) {
       ros::Time curr = ros::Time::now();
-      bool done(true);
 
       if(_initialized){
-
 	// Iterate through adapters to ping each one for an update
 	for(std::vector<AbstractAdapter*>::const_iterator it = _adapters.begin(); it != _adapters.end(); ++it){
 	  AbstractAdapter* adapter = *it;
-	  if(isTerminated() && adapter->isOk()){
-	    done = false;
-	    adapter->terminate();
-	  }
-
 	  adapter->publish();
 	}
       }
@@ -103,13 +96,15 @@ namespace robot_actions {
 	ROS_DEBUG("Action Runner pending initialization");
       }
 
-      // If we are terminated and done then we can quit the thread
-      if(isTerminated() && done){
-	ROS_DEBUG("Terminating action runner update loop");
-	break;
-      }
-
       sleep(curr, 1.0 / _update_rate);
+    }
+
+    ROS_DEBUG("Terminating action runner update loop");
+
+    // Iterate through adapters to ping each one for an update
+    for(std::vector<AbstractAdapter*>::const_iterator it = _adapters.begin(); it != _adapters.end(); ++it){
+      AbstractAdapter* adapter = *it;
+      adapter->terminate();
     }
   }
   
