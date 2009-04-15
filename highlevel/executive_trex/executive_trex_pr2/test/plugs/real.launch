@@ -1,27 +1,20 @@
 <launch>
   <master auto="start"/>
   <param name="/trex/enable_base_state_publisher" value="true"/>
-  <param name="/trex/enable_switch_controllers" value="true"/>
-  <param name="/trex/enable_detect_plug_on_base" value="true"/>
-  <param name="/trex/enable_safety_tuck_arms" value="true"/>
-  <param name="/trex/enable_plugs_untuck_arms" value="true"/>
-  <param name="/trex/enable_move_and_grasp_plug" value="true"/>
+  <param name="/trex/enable_move_base" value="true"/>
   <param name="/trex/enable_localize_plug_in_gripper" value="true"/>
   <param name="/trex/enable_stow_plug" value="true"/>
   <param name="/trex/enable_push_plug_in" value="true"/>
   <param name="/trex/enable_unplug" value="true"/>
   <param name="/trex/enable_servo_to_outlet" value="true"/>
   <param name="/trex/enable_insert_plug" value="true"/>
-  <param name="/trex/enable_move_base" value="true"/>
   <param name="/trex/enable_detect_outlet_coarse" value="true"/>
   <param name="/trex/enable_detect_outlet_fine" value="true"/>
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
 
   <param name="/trex/input_file" value="recharger.cfg"/>
   <param name="/trex/path" value="$(find executive_trex_pr2)/cfg"/>
-  <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/plugs/single_action_test"/>
-  <param name="/trex/time_limit" value="30"/>
+  <param name="/trex/time_limit" value="100"/>
   <param name="/trex/log_dir" value="$(find executive_trex_pr2)/logs"/>
   <param name="/trex/play_back" value="0"/>
-  <node pkg="executive_trex_pr2" type="trexdebug"/>
 </launch>

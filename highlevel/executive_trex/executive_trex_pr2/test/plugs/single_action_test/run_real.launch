@@ -1,0 +1,5 @@
+<launch>
+  <master auto="start"/>
+  <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/plugs/single_action_test"/>
+  <include file="$(find executive_trex_pr2)/test/plugs/real.launch" />
+</launch>
