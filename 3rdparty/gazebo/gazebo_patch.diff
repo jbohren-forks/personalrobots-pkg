@@ -1,6 +1,6 @@
 Index: libgazebo/gazebo.h
 ===================================================================
---- libgazebo/gazebo.h	(revision 7531)
+--- libgazebo/gazebo.h	(revision 7599)
 +++ libgazebo/gazebo.h	(working copy)
 @@ -556,7 +556,7 @@
  
@@ -113,7 +113,7 @@ Index: libgazebo/gazebo.h
  };
 Index: server/physics/MapGeom.hh
 ===================================================================
---- server/physics/MapGeom.hh	(revision 7531)
+--- server/physics/MapGeom.hh	(revision 7599)
 +++ server/physics/MapGeom.hh	(working copy)
 @@ -27,7 +27,11 @@
  #ifndef MAPGEOM_HH
@@ -140,7 +140,7 @@ Index: server/physics/MapGeom.hh
  
 Index: server/physics/MapGeom.cc
 ===================================================================
---- server/physics/MapGeom.cc	(revision 7531)
+--- server/physics/MapGeom.cc	(revision 7599)
 +++ server/physics/MapGeom.cc	(working copy)
 @@ -25,16 +25,15 @@
   */
@@ -260,7 +260,7 @@ Index: server/physics/MapGeom.cc
  
 Index: server/physics/Joint.hh
 ===================================================================
---- server/physics/Joint.hh	(revision 7531)
+--- server/physics/Joint.hh	(revision 7599)
 +++ server/physics/Joint.hh	(working copy)
 @@ -156,6 +156,8 @@
      /// Name of this joint
@@ -315,9 +315,67 @@ Index: server/physics/Joint.hh
      /// Feedback data for this joint
      private: dJointFeedback *feedback;
  
+Index: server/physics/Body.cc
+===================================================================
+--- server/physics/Body.cc	(revision 7599)
++++ server/physics/Body.cc	(working copy)
+@@ -812,12 +812,17 @@
+     // setup this->mass as well
+     dMassSetParameters(&this->mass, this->bodyMass,
+                        this->cx, this->cy, this->cz,
+-                       //0,0,0,
+                        this->ixx,this->iyy,this->izz,
+                        this->ixy,this->ixz,this->iyz);
+ 
+     dMassTranslate( &this->mass, -this->cx, -this->cy, -this->cz);
+ 
++#define _I(i,j) I[(i)*4+(j)]
++
++    // check and make sure no inertias less than zero.  if less than zero, the inertia matrix + mass + cg combo is a bad one.
++    assert(this->mass._I(0,0)>0.0 && this->mass._I(1,1)>0.0 && this->mass._I(2,2)>0.0);
++
++
+     // dMatrix3 rot;
+     // dMassRotate(&this->mass, rot);
+ 
+@@ -825,18 +830,22 @@
+     if (this->mass.mass > 0)
+       dBodySetMass( this->bodyId, &this->mass );
+ 
+-    // std::cout << " c[0] " << this->mass.c[0] << std::endl;
+-    // std::cout << " c[1] " << this->mass.c[1] << std::endl;
+-    // std::cout << " c[2] " << this->mass.c[2] << std::endl;
+-    // std::cout << " I[0] " << this->mass.I[0] << std::endl;
+-    // std::cout << " I[1] " << this->mass.I[1] << std::endl;
+-    // std::cout << " I[2] " << this->mass.I[2] << std::endl;
+-    // std::cout << " I[3] " << this->mass.I[3] << std::endl;
+-    // std::cout << " I[4] " << this->mass.I[4] << std::endl;
+-    // std::cout << " I[5] " << this->mass.I[5] << std::endl;
+-    // std::cout << " I[6] " << this->mass.I[6] << std::endl;
+-    // std::cout << " I[7] " << this->mass.I[7] << std::endl;
+-    // std::cout << " I[8] " << this->mass.I[8] << std::endl;
++#ifdef DEBUG
++    std::cout << " name: " << this->GetName() << std::endl;
++    std::cout << " mass " << this->mass.mass << std::endl;
++    std::cout << " c[0] " << this->mass.c[0] << std::endl;
++    std::cout << " c[1] " << this->mass.c[1] << std::endl;
++    std::cout << " c[2] " << this->mass.c[2] << std::endl;
++    std::cout << " I(0,0) " << this->mass._I(0,0) << std::endl;
++    std::cout << " I(0,1) " << this->mass._I(0,1) << std::endl;
++    std::cout << " I(0,2) " << this->mass._I(0,2) << std::endl;
++    std::cout << " I(1,0) " << this->mass._I(1,0) << std::endl;
++    std::cout << " I(1,1) " << this->mass._I(1,1) << std::endl;
++    std::cout << " I(1,2) " << this->mass._I(1,2) << std::endl;
++    std::cout << " I(2,0) " << this->mass._I(2,0) << std::endl;
++    std::cout << " I(2,1) " << this->mass._I(2,1) << std::endl;
++    std::cout << " I(2,2) " << this->mass._I(2,2) << std::endl;
++#endif
+ 
+   }
+   else
 Index: server/physics/ContactParams.cc
 ===================================================================
---- server/physics/ContactParams.cc	(revision 7531)
+--- server/physics/ContactParams.cc	(revision 7599)
 +++ server/physics/ContactParams.cc	(working copy)
 @@ -35,11 +35,11 @@
  // Default constructor
@@ -338,7 +396,7 @@ Index: server/physics/ContactParams.cc
    this->mu2 = dInfinity;
 Index: server/physics/Joint.cc
 ===================================================================
---- server/physics/Joint.cc	(revision 7531)
+--- server/physics/Joint.cc	(revision 7599)
 +++ server/physics/Joint.cc	(working copy)
 @@ -30,6 +30,9 @@
  #include "Model.hh"
@@ -674,7 +732,7 @@ Index: server/physics/Joint.cc
  //////////////////////////////////////////////////////////////////////////////
 Index: server/Model.hh
 ===================================================================
---- server/Model.hh	(revision 7531)
+--- server/Model.hh	(revision 7599)
 +++ server/Model.hh	(working copy)
 @@ -39,6 +39,10 @@
  #include "Entity.hh"
@@ -717,7 +775,7 @@ Index: server/Model.hh
  }
 Index: server/Global.hh
 ===================================================================
---- server/Global.hh	(revision 7531)
+--- server/Global.hh	(revision 7599)
 +++ server/Global.hh	(working copy)
 @@ -88,4 +88,7 @@
  
@@ -729,7 +787,7 @@ Index: server/Global.hh
  #endif
 Index: server/rendering/UserCamera.hh
 ===================================================================
---- server/rendering/UserCamera.hh	(revision 7531)
+--- server/rendering/UserCamera.hh	(revision 7599)
 +++ server/rendering/UserCamera.hh	(working copy)
 @@ -81,6 +81,10 @@
      private: std::string name;
@@ -744,7 +802,7 @@ Index: server/rendering/UserCamera.hh
  
 Index: server/rendering/UserCamera.cc
 ===================================================================
---- server/rendering/UserCamera.cc	(revision 7531)
+--- server/rendering/UserCamera.cc	(revision 7599)
 +++ server/rendering/UserCamera.cc	(working copy)
 @@ -51,6 +51,10 @@
  
@@ -779,7 +837,7 @@ Index: server/rendering/UserCamera.cc
      if (!this->savePathnameP->GetValue().empty())
 Index: server/Model.cc
 ===================================================================
---- server/Model.cc	(revision 7531)
+--- server/Model.cc	(revision 7599)
 +++ server/Model.cc	(working copy)
 @@ -46,7 +46,12 @@
  #include "ControllerFactory.hh"
@@ -965,7 +1023,7 @@ Index: server/Model.cc
 +
 Index: SConstruct
 ===================================================================
---- SConstruct	(revision 7531)
+--- SConstruct	(revision 7599)
 +++ SConstruct	(working copy)
 @@ -5,7 +5,7 @@
  
