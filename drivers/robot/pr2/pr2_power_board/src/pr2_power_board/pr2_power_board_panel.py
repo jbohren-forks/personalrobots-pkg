@@ -313,14 +313,14 @@ class PowerBoardPanel(wx.Panel):
       interval = rospy.get_time() - self.last_message_time;
       sleep_time = 1000 * (self.timeout_interval - interval + 1);
       self.timer.Start(sleep_time, True)
-      print 'start_timer %f'%sleep_time
+      #print 'start_timer %f'%sleep_time
 
     def on_timer(self, event):
       self._mutex.acquire()
 
       interval = rospy.get_time() - self.last_message_time
       
-      print 'on_timer %f %f %f'%(rospy.get_time(), self.last_message_time, interval)
+      #print 'on_timer %f %f %f'%(rospy.get_time(), self.last_message_time, interval)
 
       # Consider that we have timed out after 5 seconds of ros time, or if
       # the ros time jumps back (in that case something fishy just happened
@@ -370,17 +370,17 @@ class PowerBoardPanel(wx.Panel):
       self.estop_status.SetBackgroundColour("White")
         
     def disable_panel(self): # Assumes lock held
-        print 'disable panel'
+        #print 'disable panel'
       
         self.panel_enabled = False
         self.set_widget_states()
                     
     def enable_panel(self): # Assumes lock held
-      print 'enable panel'
+      #print 'enable panel'
       self.last_message_time = rospy.get_time()
       self.start_timer()
       if not self.panel_enabled:
-        print 'enable panel activated'
+        #print 'enable panel activated'
         self.panel_enabled = True
         self.set_widget_states()
 
