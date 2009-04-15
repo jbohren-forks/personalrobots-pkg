@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import roslib
-roslib.load_manifest('amcl_player')
+roslib.load_manifest('amcl')
 
 import sys
 import time
@@ -53,5 +53,5 @@ class TestBasicLocalization(unittest.TestCase):
     self.assertTrue(abs(self.pose.position.y - target_y) <= tolerance_d)
 
 if __name__ == '__main__':
-  rostest.run('amcl_player', 'amcl_basic_localization', 
+  rostest.run('amcl', 'amcl_basic_localization', 
               TestBasicLocalization, sys.argv)
