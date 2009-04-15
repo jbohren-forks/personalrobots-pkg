@@ -125,7 +125,7 @@ void GripperCalibrationController::update()
     }
     break;
   case CLOSING:
-    if (fabs(joint_->velocity_) < 0.001)
+    if (fabs(joint_->velocity_) < 0.0005)
     {
       actuator_->state_.zero_offset_ = actuator_->state_.position_;
       state_ = CALIBRATED;
