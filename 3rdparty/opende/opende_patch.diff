@@ -39,12 +39,11 @@ Index: ode/src/quickstep.cpp
  	for (i=0; i<nb; i++) {
  		dMatrix3 tmp;
  
-@@ -596,6 +603,13 @@
+@@ -596,6 +603,12 @@
  		dMULTIPLY2_333 (tmp,body[i]->invI,body[i]->posr.R);
  		dMULTIPLY0_333 (invI+i*12,body[i]->posr.R,tmp);
  
-+    dRSetIdentity(tmp);
-+		dMULTIPLY0_333 (tmpI+i*12,body[i]->mass.I,tmp);
++		memcpy (tmpI+i*12, body[i]->mass.I,3*4*sizeof(dReal));
 +		tmpM[i*4+0] = body[i]->mass.mass;
 +		tmpM[i*4+1] = body[i]->mass.c[0];
 +		tmpM[i*4+2] = body[i]->mass.c[1];
@@ -53,7 +52,7 @@ Index: ode/src/quickstep.cpp
          if (body[i]->flags & dxBodyGyroscopic) {
              dMatrix3 I;
              // compute inertia tensor in global frame
-@@ -760,6 +774,76 @@
+@@ -760,6 +773,76 @@
  		dRealAllocaArray (cforce,nb*6);
  		SOR_LCP (m,nb,J,jb,body,invI,lambda,cforce,rhs,lo,hi,cfm,findex,&world->qs);
  
