@@ -499,7 +499,10 @@ void print_summary()
   double t_fail(0);
   double lplan(0);
   double rplan(0);
+  ssize_t n_expands(-1);
+  double t_expands(0);
   result::list_t resultlist(result_collection->getAll());
+  
   for (result::list_t::const_iterator ie(resultlist.begin()); ie != resultlist.end(); ++ie) {
     shared_ptr<result::entry> result(*ie);
     if ( ! result)
@@ -516,7 +519,19 @@ void print_summary()
       ++n_fail;
       t_fail += result->stats->actual_time_wall;
     }
+    
+    // if available, use planner specific extra info
+    mpglue::SBPLPlannerStats *
+      sbpl_stats(dynamic_cast<mpglue::SBPLPlannerStats*>(result->stats.get()));
+    if (sbpl_stats) {
+      if (0 > n_expands)
+	n_expands = sbpl_stats->number_of_expands;
+      else
+	n_expands += sbpl_stats->number_of_expands;
+      t_expands += sbpl_stats->actual_time_wall;
+    }
   }
+  
   rplan *= 180.0 / M_PI;
   double x0, y0, x1, y1;
   setup->getWorld()->getWorkspaceBounds(x0, y0, x1, y1);
@@ -533,6 +548,15 @@ void print_summary()
 	 << "    planning time success [s]: " << t_success << " / " << t_success / n_success << "\n"
 	 << "    plan length [m]:           " << lplan << " / " << lplan / n_success << "\n"
 	 << "    plan angle change [deg]:   " << rplan << " / " << rplan / n_success << "\n";
+  
+  // if available, show planner specific extra info
+  if (0 < n_expands) {
+    *logos << "  SBPL summary (total over successes and failures):\n"
+	   << "    number of expands:             " << n_expands << "\n"
+	   << "    time spent planning [s]:       " << t_expands << "\n"
+	   << "    average expansion speed [1/s]: " << n_expands / t_expands << "\n";
+  }
+  
   if (websiteMode) {
     string foo(baseFilename() + ".html");
     ofstream os(foo.c_str());
@@ -547,6 +571,17 @@ void print_summary()
 	 << "<tr><td><b>plan length [m]</b></td><td>" << lplan << "</td><td>" << lplan / n_success << "</td></tr>\n"
 	 << "<tr><td><b>plan angle change [deg]</b></td><td>" << rplan << "</td><td>" << rplan / n_success << "</td></tr>\n"
 	 << "</table>\n";
+    
+    // if available, show planner specific extra info
+    if (0 < n_expands) {
+       os << "<table border=\"1\" cellpadding=\"2\">\n"
+	  << "<tr><th colspan=\"2\">SBPL summary (total over successes and failures)</th></tr>\n"
+	  << "<tr><td>number of expands</td><td>" << n_expands << "</td></tr>\n"
+	  << "<tr><td>time spent planning [s]</td><td>" << t_expands << "</td></tr>\n"
+	  << "<tr><td>average expansion speed [1/s]</td><td>" << n_expands / t_expands
+	  << "</td></tr>\n"
+	  << "</table>\n";
+    }
   }
 }
 

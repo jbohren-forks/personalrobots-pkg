@@ -11,23 +11,25 @@ genplot = "%s/genplot.py" % foo[1]
 
 worldspec = []
 worldexpl = []
-worldspec.append("xml:../data/test-sideways-sliding.xml")
-worldexpl.append("test sideways sliding")
+worldspec.append("xml:../data/test-door-1.xml")
+worldexpl.append("first door")
+worldspec.append("xml:../data/test-door-2.xml")
+worldexpl.append("second door")
+worldspec.append("xml:../data/test-door-3.xml")
+worldexpl.append("third door")
+worldspec.append("xml:../data/test-door-4.xml")
+worldexpl.append("fourth door")
 
 plannerspec = []
 plannerexpl = []
-plannerspec.append("ad:xythetalat:../data/pr2.mprim")
-plannerexpl.append("AD planner without sideways motion")
-plannerspec.append("ad:xythetalat:../data/pr2sides.mprim")
-plannerexpl.append("AD planner with sideways motion")
-plannerspec.append("ara:xythetalat:../data/pr2.mprim")
-plannerexpl.append("ARA planner without sideways motion")
-plannerspec.append("ara:xythetalat:../data/pr2sides.mprim")
-plannerexpl.append("ARA planner with sideways motion")
+plannerspec.append("ad:xythetadoor:../data/pr2sides.mprim")
+plannerexpl.append("AD door planner with sideways motion")
+plannerspec.append("ad:xythetadoor:../data/pr2.mprim")
+plannerexpl.append("AD door planner without sideways motion")
 
 robotspec = []
 robotexpl = []
-for rot_speed in [60, 600, 6000]:
+for rot_speed in [600]:
     robotspec.append("pr2:325:460:600:%d" % rot_speed)
     robotexpl.append("rotation %g rad/s" % (1e-3 * rot_speed))
 
@@ -35,20 +37,9 @@ costmapspec = []
 costmapexpl = []
 costmapspec.append("sfl:25:325:460:550")
 costmapexpl.append("fully inflated")
-costmapspec.append("sfl:25:325:325:325")
-costmapexpl.append("inflated to inscribed")
-costmapspec.append("sfl:25:0:0:0")
-costmapexpl.append("point obstacles")
 
 out = open("index.html", 'w')
-print >>out, '''<html><body>
-
-<h1>Setup</h1>
-<ul>
- <li> see how lattice planning fares in Sachin's office </li>
- <li> vary the "time to turn 45 deg" parameter </li>
- <li> change the costmap's expansion parameters, but not the robot footprint </li>
-</ul>'''
+print >>out, '<html><body>'
 
 counter = 0
 for iplanner in xrange(len(plannerspec)):
@@ -82,25 +73,24 @@ for iplanner in xrange(len(plannerspec)):
                                            "-W"],
                                           stdout=conslog,
                                           stderr=subprocess.STDOUT)
+                print >>out, '  <td><table border="0" cellpadding="1">'
+                print >>out, '   <tr><td colspan="3">./mpbenchmark ' + args + '</td></tr>'
                 if 0 != retcode:
-                    print >>out, '  <td>mpbenchmark failed with code %d, see <a href="%s">console output</a></td>' % (retcode, conslogname)
-                else:
-                    print >>out, '  <td><table border="0" cellpadding="1">'
-                    print >>out, '   <tr><td colspan="3">./mpbenchmark ' + args + '</td></tr>'
-                    print >>out, '   <tr>'
-                    print >>out, '    <td><a href="' + basename + '.txt">log</a></td>'
-                    print >>out, '    <td><a href="' + conslogname + '">console</a></td>'
-                    print >>out, '    <td><a href="' + basename + '.result.xml">result</a></td>'
-                    print >>out, '   </tr><tr>'
-                    print >>out, '    <td colspan="3"><a href="' + basename + '.png">'
-                    print >>out, '     <img src="small-' + basename + '.png" alt="screenshot"></a></td>'
-                    print >>out, '   </tr><tr>'
-                    print >>out, '    <td colspan="3">'
-                    summary = open(basename + '.html')
-                    for line in summary:
-                        print >>out, '     ', line
-                    print >>out, '    </td>'
-                    print >>out, '   </tr>'
+                    print >>out, '   <tr><td>possibly broken: mpbenchmark <b>failed with code %d</b>, see <a href="%s">console output</a></td></tr>' % (retcode, conslogname)
+                print >>out, '   <tr>'
+                print >>out, '    <td><a href="' + basename + '.txt">log</a></td>'
+                print >>out, '    <td><a href="' + conslogname + '">console</a></td>'
+                print >>out, '    <td><a href="' + basename + '.result.xml">result</a></td>'
+                print >>out, '   </tr><tr>'
+                print >>out, '    <td colspan="3"><a href="' + basename + '.png">'
+                print >>out, '     <img src="small-' + basename + '.png" alt="screenshot"></a></td>'
+                print >>out, '   </tr><tr>'
+                print >>out, '    <td colspan="3">'
+                summary = open(basename + '.html')
+                for line in summary:
+                    print >>out, '     ', line
+                print >>out, '    </td>'
+                print >>out, '   </tr>'
                 plotlogname = "plot-%s.txt" % basename
                 plotlog = open(plotlogname, 'w')
                 retcode = subprocess.call([genplot,
