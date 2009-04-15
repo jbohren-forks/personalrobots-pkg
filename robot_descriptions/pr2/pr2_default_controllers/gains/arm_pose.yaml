@@ -1,16 +1,13 @@
 fb_trans:
-  p: 1500
-  i: 2800
-  d: 2.0
-  i_clamp: 40.0
-  old_p: 1200.0
-  old_i: 1000.0
-  old_d: 3.0
-  old_i_clamp: 3.0
+  p: 60
+  old_p: 20
+  i: 80
+  d: 0
+  i_clamp: 0.2
 fb_rot:
-  p: 21.0
-  i: 1.0
-  d: 0.3
+  p: 10
+  i: 0
+  d: 0
   i_clamp: 0.4
 ff_trans: 0.0
 ff_rot: 0.0

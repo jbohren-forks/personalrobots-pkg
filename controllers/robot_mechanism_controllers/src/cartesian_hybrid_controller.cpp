@@ -223,14 +223,6 @@ void CartesianHybridController::update()
 
   // Computes the desired wrench from the command
 
-  // Computes the rotational error
-  KDL::Vector rot_error =
-    diff(KDL::Rotation::RPY(
-           mode_[3] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[3] : 0.0,
-           mode_[4] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[4] : 0.0,
-           mode_[5] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[5] : 0.0),
-         tool.M.R);
-
   // Computes the filtered twist
   if (use_filter_)
   {
@@ -246,27 +238,59 @@ void CartesianHybridController::update()
     twist_meas_filtered_ = twist_meas_;
   }
 
+  // Computes the rotational error
+  KDL::Vector rot_error =
+    diff(KDL::Rotation::RPY(
+           mode_[3] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[3] : 0.0,
+           mode_[4] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[4] : 0.0,
+           mode_[5] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[5] : 0.0),
+         tool.M.R);
+
+  // Computes the desired pose
   for (int i = 0; i < 6; ++i)
   {
-    twist_desi_[i] = 0;
-    wrench_desi_[i] = 0;
-    pose_desi_[i] = 0;
+    if (mode_[i] == robot_msgs::TaskFrameFormalism::POSITION)
+      pose_desi_[i] = setpoint_[i];
+    else
+      pose_desi_[i] = 0.0;
+  }
 
-    switch(mode_[i])
+  // Computes the desired twist
+  for (int i = 0; i < 6; ++i)
+  {
+    switch (mode_[i])
     {
     case robot_msgs::TaskFrameFormalism::POSITION:
-      pose_desi_[i] = setpoint_[i];
       if (i < 3) { // Translational position
-        wrench_desi_[i] = pose_pids_[i].updatePid(tool.p.p[i] - setpoint_[i], twist_meas_filtered_[i], dt);
+        twist_desi_[i] = pose_pids_[i].updatePid(tool.p.p[i] - pose_desi_[i], twist_meas_filtered_[i], dt);
       }
       else { // Rotational position
-        wrench_desi_[i] = pose_pids_[i].updatePid(rot_error[i - 3], twist_meas_filtered_[i], dt);
+        twist_desi_[i] = pose_pids_[i].updatePid(rot_error[i - 3], twist_meas_filtered_[i], dt);
       }
-
       break;
     case robot_msgs::TaskFrameFormalism::VELOCITY:
       twist_desi_[i] = setpoint_[i];
-      wrench_desi_[i] = twist_pids_[i].updatePid(tool.GetTwist()[i] - setpoint_[i], dt);
+      break;
+    }
+  }
+
+  // Limits the velocity
+  if (saturated_velocity_ >= 0.0)
+  {
+    if (twist_desi_.vel.Norm() > saturated_velocity_)
+    {
+      twist_desi_.vel = saturated_velocity_ * twist_desi_.vel / twist_desi_.vel.Norm();
+    }
+  }
+
+  // Computes the desired wrench
+  for (int i = 0; i < 6; ++i)
+  {
+    switch (mode_[i])
+    {
+    case robot_msgs::TaskFrameFormalism::POSITION:
+    case robot_msgs::TaskFrameFormalism::VELOCITY:
+      wrench_desi_[i] = twist_pids_[i].updatePid(twist_meas_filtered_[i] - twist_desi_[i], dt);
       break;
     case robot_msgs::TaskFrameFormalism::FORCE:
       wrench_desi_[i] = setpoint_[i];
@@ -275,62 +299,12 @@ void CartesianHybridController::update()
       abort();
     }
   }
+
   static realtime_tools::RealtimePublisher<std_msgs::Float64MultiArray> debug("/d", 2);
   bool debug_locked = debug.trylock();
   if (debug_locked)
     debug.msg_.data.clear();
 
-#if 0
-  // Velocity saturation
-  if (saturated_velocity_ >= 0.0)
-  {
-    KDL::Vector &v = twist_meas_filtered_.vel;
-
-    if (v.Norm() > saturated_velocity_)
-    {
-      double restoring = -k_saturated_velocity_ * (v.Norm() - saturated_velocity_);
-      wrench_desi_.force += restoring * (v / v.Norm());
-      if (debug_locked) {
-        debug.msg_.data.push_back(v.Norm() - saturated_velocity_);
-        debug.msg_.data.push_back(restoring);
-      }
-    }
-    else if (debug_locked) {
-      debug.msg_.data.push_back(0);
-      debug.msg_.data.push_back(0);
-    }
-
-
-  }
-#else
-
-  // Velocity saturation
-  if (saturated_velocity_ >= 0.0)
-  {
-    KDL::Vector &v = twist_meas_filtered_.vel;
-
-    // Desired force along the direction of the current velocity
-    double fv = dot(wrench_desi_.force, twist_meas_filtered_.vel) / v.Norm();
-
-    // Max allowed force along the current velocity direction
-    double fv_max = -k_saturated_velocity_ * (v.Norm() - saturated_velocity_);
-
-    if (debug_locked) {
-      debug.msg_.data.push_back(v.Norm());
-      debug.msg_.data.push_back(v.Norm() - saturated_velocity_);
-      debug.msg_.data.push_back(fv);
-      debug.msg_.data.push_back(fv_max);
-
-      KDL::Vector diff = (v / v.Norm()) * (fv - fv_max);
-      debug.msg_.data.push_back(diff.x());
-      debug.msg_.data.push_back(diff.y());
-      debug.msg_.data.push_back(diff.z());
-    }
-    if (fv > fv_max)
-      debug.msg_.data.push_back(99);
-    wrench_desi_.force -= (v / v.Norm()) * (fv - fv_max);
-  }
-#endif
   if (debug_locked)
     debug.unlockAndPublish();
 
@@ -381,10 +355,6 @@ bool CartesianHybridController::starting()
       setpoint_[i] = frame.p.p[i];
     }
     frame.M.R.GetRPY(setpoint_[3], setpoint_[4], setpoint_[5]);
-
-    ROS_INFO("Starting pose: (%.2lf, %.2lf, %.2lf)  (%.3lf, %.3lf, %.3lf)",
-             setpoint_[0], setpoint_[1], setpoint_[2],
-             setpoint_[3], setpoint_[4], setpoint_[5]);
     break;
   }
   case robot_msgs::TaskFrameFormalism::VELOCITY:

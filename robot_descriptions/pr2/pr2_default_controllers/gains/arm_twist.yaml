@@ -1,11 +1,11 @@
 fb_trans:
-  p: 20.0
-  i: 0.5
+  p: 30.0
+  i: 0.0
   d: 0.0
   i_clamp: 1.0
 fb_rot:
   p: 1.5
-  i: 0.1
+  i: 0.0
   d: 0.0
   i_clamp: 0.2
 ff_trans: 20.0
