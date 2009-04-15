@@ -2967,7 +2967,8 @@ void save_images_cb(Fl_Menu_ *w, void *u)
 
 
 //
-// save the 3D point cloud
+// save the 3D point cloud as a .pcd file
+//   -- not sure if the ARRAY line is valid PCD syntax
 // format: w x h, then 1 line per point over full image, XYZA
 //  A is zero for a good point, -1 for a bad one
 //
@@ -2981,14 +2982,17 @@ save_3d_cb(Fl_Menu_ *w, void *u)
       return;			// no disparity image
     }
 
-  char *fname = fl_file_chooser("Save point file (.txt)", "{*.txt}", NULL);
+  char *fname = fl_file_chooser("Save point file (.pcd)", "{*.pcd}", NULL);
   if (fname == NULL)
     return;
 
 
   stIm->doCalcPts(true);
   FILE *fp = fopen(fname,"w");
-  fprintf(fp, "%d %d\n", stIm->imWidth, stIm->imHeight);
+  fprintf(fp, "COLUMNS x y z valid\n");
+  fprintf(fp, "POINTS %d\n", stIm->imWidth*stIm->imHeight);
+  fprintf(fp, "ARRAY %d %d\n", stIm->imWidth, stIm->imHeight);
+  fprintf(fp, "DATA ascii\n");
 
   pt_xyza_t *pts = stIm->imPtArray();
   for (int i=0; i<stIm->imHeight; i++)
