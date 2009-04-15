@@ -126,6 +126,7 @@ ImageData::releaseBuffers()
   imRectColorType = COLOR_CODING_NONE;
   imRectColorSize = 0;
 
+  initRect = false;
   if (rMapxy)
     cvReleaseMat(&rMapxy);
   if (rMapa)
@@ -147,7 +148,7 @@ ImageData::initRectify(bool force)
   if (!hasRectification || imWidth == 0 || imHeight == 0)
     return false;
 
-  if (initRect && !force)
+  if (initRect && !force && rMapxy != NULL && rMapa != NULL)
     return true;		// already done
 
   // set values of cal matrices
@@ -229,7 +230,7 @@ ImageData::doRectify()
       cvSetData(dstIm, imRect, imWidth);
 
       cvRemap(srcIm,dstIm,rMapxy,rMapa);
-      //      cvRemap(srcIm,dstIm,mx,my);
+//      cvRemap(srcIm,dstIm,mx,my);
     }
 
   // rectify color image
@@ -241,7 +242,7 @@ ImageData::doRectify()
 	{
 	  MEMFREE(imRectColor);
 	  imRectColorSize = imWidth*imHeight*3;
-	  imRectColor = (uint8_t *)MEMALIGN(imSize);
+	  imRectColor = (uint8_t *)MEMALIGN(imRectColorSize);
 	}
 
       // set up images
@@ -252,7 +253,7 @@ ImageData::doRectify()
       cvSetData(dstIm, imRectColor, imWidth*3);
 
       cvRemap(srcIm,dstIm,rMapxy,rMapa);
-      //      cvRemap(srcIm,dstIm,mx,my);
+//      cvRemap(srcIm,dstIm,mx,my);
     }
   return true;
 }
@@ -465,7 +466,7 @@ bool
 StereoData::doRectify()
 {
   bool res = imLeft->doRectify();
-  res = res && imRight->doRectify();
+  res = imRight->doRectify() && res;
   return res;
 }
 
@@ -767,7 +768,12 @@ StereoData::doCalcPts(bool isArray)
 		  ppt->A = 0;
 		}
 	      else
-		ppt->A = -1;	// invalid point
+		{
+		  ppt->X = 0.0; // X
+		  ppt->Y = 0.0; // Y
+		  ppt->Z = 0.0; // Z
+		  ppt->A = -1;	// invalid point
+		}
 	    }
 	}
     }
