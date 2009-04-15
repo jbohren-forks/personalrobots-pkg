@@ -110,16 +110,16 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlE
   }
   string output;
   if (!node_->getParam(controller_name_+"/output", output)){
-    ROS_ERROR("CartesianPoseController: No ouptut name found on parameter server");
+    ROS_ERROR("No ouptut name found on parameter server");
     return false;
   }
   if (!mc->getControllerByName<CartesianTwistController>(output, twist_controller_)){
-    ROS_ERROR("CartesianTwistController: could not connect to twist controller");
+    ROS_ERROR("Could not connect to twist controller \"%s\"", output.c_str());
     return false;
   }
 
   // subscribe to pose commands
-  command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&tf_, node_,  
+  command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&tf_, node_,
 								 boost::bind(&CartesianPoseController::command, this, _1),
 								 controller_name_ + "/command", root_name_, 1);
   // realtime publisher for control error
@@ -200,7 +200,7 @@ void CartesianPoseController::command(const tf::MessageNotifier<robot_msgs::Pose
   Stamped<Pose> pose_stamped;
   PoseStampedMsgToTF(*pose_msg, pose_stamped);
 
-  // convert to reference frame of root link of the controller chain  
+  // convert to reference frame of root link of the controller chain
   tf_.transformPose(root_name_, pose_stamped, pose_stamped);
   TransformToFrame(pose_stamped, pose_desi_);
 }
