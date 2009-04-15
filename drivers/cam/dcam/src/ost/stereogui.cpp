@@ -56,7 +56,7 @@ stereogui::stereogui() {
       o->labelsize(11);
       o->textsize(11);
     }
-    { Fl_Menu_Bar* o = new Fl_Menu_Bar(0, 0, 680, 20);
+    { Fl_Menu_Bar* o = new Fl_Menu_Bar(-5, 0, 1310, 20);
       o->menu(menu_);
     }
     { Fl_Group* o = new Fl_Group(5, 25, 1285, 485);
@@ -1072,12 +1072,12 @@ stereogui::stereogui() {
       }
       o->end();
     }
-    { Fl_Group* o = new Fl_Group(130, 200, 175, 55);
-      { Fl_Box* o = new Fl_Box(130, 200, 150, 50, "label");
+    { Fl_Group* o = new Fl_Group(125, 200, 180, 115);
+      { Fl_Box* o = new Fl_Box(125, 265, 150, 50, "label");
         o->box(FL_ENGRAVED_FRAME);
         o->labeltype(FL_NO_LABEL);
       }
-      { Fl_Value_Input* o = user_check_size = new Fl_Value_Input(145, 220, 30, 20, "Size mm");
+      { Fl_Value_Input* o = user_check_size = new Fl_Value_Input(140, 285, 30, 20, "Size mm");
         o->labelsize(11);
         o->maximum(1000);
         o->step(1);
@@ -1086,7 +1086,7 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)cal_check_size_cb);
         o->align(FL_ALIGN_TOP);
       }
-      { Fl_Value_Input* o = user_check_x = new Fl_Value_Input(190, 220, 30, 20, "Ints X");
+      { Fl_Value_Input* o = user_check_x = new Fl_Value_Input(185, 285, 30, 20, "Ints X");
         o->labelsize(11);
         o->maximum(100);
         o->step(1);
@@ -1095,7 +1095,7 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)cal_check_x_cb);
         o->align(FL_ALIGN_TOP);
       }
-      { Fl_Value_Input* o = user_check_y = new Fl_Value_Input(230, 220, 30, 20, "Ints Y");
+      { Fl_Value_Input* o = user_check_y = new Fl_Value_Input(225, 285, 30, 20, "Ints Y");
         o->labelsize(11);
         o->maximum(100);
         o->step(1);
@@ -1106,59 +1106,60 @@ stereogui::stereogui() {
       }
       o->end();
     }
-    { Fl_Group* o = new Fl_Group(120, 20, 180, 290);
-      { Fl_Button* o = calibrate_button = new Fl_Button(135, 20, 75, 25, "Calibrate");
+    { Fl_Group* o = new Fl_Group(0, 15, 300, 320);
+      { Fl_Button* o = calibrate_button = new Fl_Button(165, 20, 115, 25, "Calibrate");
         o->down_box(FL_DOWN_BOX);
-        o->labelsize(11);
+        o->labelsize(12);
         o->callback((Fl_Callback*)cal_calibrate_cb);
         o->user_data((void *)this);
       }
-      { Fl_Button* o = save_params_button = new Fl_Button(220, 20, 80, 25, "Save params");
+      { Fl_Button* o = save_params_button = new Fl_Button(165, 51, 115, 25, "Save params");
         o->down_box(FL_DOWN_BOX);
-        o->labelsize(11);
+        o->labelsize(12);
         o->callback((Fl_Callback*)cal_save_params_cb);
         o->user_data((void *)this);
       }
-      { Fl_Button* o = done_button = new Fl_Button(135, 50, 60, 25, "Done");
+      { Fl_Button* o = done_button = new Fl_Button(165, 83, 115, 25, "Transfer params");
         o->down_box(FL_DOWN_BOX);
-        o->labelsize(11);
+        o->labelsize(12);
         o->callback((Fl_Callback*)cal_ok_cb);
         o->user_data((void *)this);
       }
-      { Fl_Button* o = upload_params_button = new Fl_Button(130, 270, 130, 40, "Upload params");
+      { Fl_Button* o = upload_params_button = new Fl_Button(165, 115, 115, 25, "Upload params");
         o->down_box(FL_DOWN_BOX);
+        o->labelsize(12);
         o->callback((Fl_Callback*)cal_upload_params_cb);
         o->user_data((void *)this);
       }
       o->end();
     }
-    { Fl_Group* o = new Fl_Group(125, 105, 180, 95);
-      { Fl_Box* o = new Fl_Box(130, 105, 170, 85);
+    { Fl_Group* o = new Fl_Group(125, 105, 180, 150);
+      { Fl_Box* o = new Fl_Box(125, 170, 170, 85);
         o->box(FL_ENGRAVED_FRAME);
       }
-      { Fl_Check_Button* o = fixed_aspect_button = new Fl_Check_Button(210, 130, 85, 25, "Fixed Aspect");
+      { Fl_Check_Button* o = fixed_aspect_button = new Fl_Check_Button(205, 195, 85, 25, "Fixed Aspect");
         o->down_box(FL_DOWN_BOX);
         o->value(1);
         o->labelsize(11);
         o->callback((Fl_Callback*)cal_fixed_aspect_cb);
       }
-      { Fl_Check_Button* o = fixed_kappa2_button = new Fl_Check_Button(135, 110, 25, 25, "Kappa2");
+      { Fl_Check_Button* o = fixed_kappa2_button = new Fl_Check_Button(130, 175, 25, 25, "Kappa2");
         o->down_box(FL_DOWN_BOX);
         o->value(1);
         o->labelsize(11);
         o->callback((Fl_Callback*)cal_fixed_kappa2_cb);
       }
-      { Fl_Check_Button* o = fixed_kappa3_button = new Fl_Check_Button(135, 130, 25, 25, "Kappa3");
+      { Fl_Check_Button* o = fixed_kappa3_button = new Fl_Check_Button(130, 195, 25, 25, "Kappa3");
         o->down_box(FL_DOWN_BOX);
         o->labelsize(11);
         o->callback((Fl_Callback*)cal_fixed_kappa3_cb);
       }
-      { Fl_Check_Button* o = fixed_tau_button = new Fl_Check_Button(135, 150, 25, 25, "Tau1, Tau2");
+      { Fl_Check_Button* o = fixed_tau_button = new Fl_Check_Button(130, 215, 25, 25, "Tau1, Tau2");
         o->down_box(FL_DOWN_BOX);
         o->labelsize(11);
         o->callback((Fl_Callback*)cal_fixed_tau_cb);
       }
-      { Fl_Check_Button* o = zero_disparity_button = new Fl_Check_Button(210, 110, 85, 25, "Zero disparity");
+      { Fl_Check_Button* o = zero_disparity_button = new Fl_Check_Button(205, 175, 85, 25, "Zero disp");
         o->down_box(FL_DOWN_BOX);
         o->value(1);
         o->labelsize(11);

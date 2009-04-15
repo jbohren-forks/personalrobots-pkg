@@ -76,8 +76,10 @@ typedef enum {
   VIDERE_STOC_RECT_DISP,	// left rectified mono, right disparity
   VIDERE_STOC_RAW_DISP_MONO,	// left raw mono, right disparity
   VIDERE_STOC_RAW_DISP_RGGB,	// left raw color, right disparity
+  VIDERE_STOC_RAW_DISP_GRBG,	// left raw color, right disparity
   VIDERE_STOC_RAW_RAW_MONO,	// left and right raw, mono
   VIDERE_STOC_RAW_RAW_RGGB,	// left and right raw, color
+  VIDERE_STOC_RAW_RAW_GRBG,	// left and right raw, color
 
 
   COLOR_CODING_NONE		// no image info

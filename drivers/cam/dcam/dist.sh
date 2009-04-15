@@ -3,7 +3,7 @@
 echo Setting up dist-dcam distribution
 
 ROS_PACKAGE_PATH=~/code/ros-pkg
-mkdir dist-dcam dist-dcam/src dist-dcam/include dist-dcam/lib dist-dcam/bin dist-dcam/src/ost dist-dcam/src/acquire dist-dcam/src/dcam dist-dcam/src/imwin dist-dcam/src/stlib dist-dcam/include/dcam/ dist-dcam/include/imwin
+mkdir -p dist-dcam dist-dcam/src dist-dcam/include dist-dcam/lib dist-dcam/bin dist-dcam/src/ost dist-dcam/src/acquire dist-dcam/src/dcam dist-dcam/src/imwin dist-dcam/src/stlib dist-dcam/include/dcam/ dist-dcam/include/imwin
 cp include/dcam/*.h dist-dcam/include/dcam
 cp include/imwin/*.h dist-dcam/include/imwin
 cp src/acquire/*.cpp dist-dcam/src/acquire

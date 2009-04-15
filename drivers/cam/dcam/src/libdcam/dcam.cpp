@@ -798,7 +798,7 @@ dcam::Dcam::setRawType()
 	case PROC_MODE_NONE:
 	case PROC_MODE_TEST:
 	  if (isColor)
-	    rawType = VIDERE_STOC_RAW_RAW_RGGB;
+	    rawType = VIDERE_STOC_RAW_RAW_GRBG;
 	  else
 	    rawType = VIDERE_STOC_RAW_RAW_MONO;
 	  break;
@@ -813,7 +813,7 @@ dcam::Dcam::setRawType()
 
 	case PROC_MODE_DISPARITY_RAW:
 	  if (isColor)
-	    rawType = VIDERE_STOC_RAW_DISP_RGGB;
+	    rawType = VIDERE_STOC_RAW_DISP_GRBG;
 	  else
 	    rawType = VIDERE_STOC_RECT_DISP; // This is not what it SHOULD be, but what in fact comes out of the camera
 	  break;
@@ -823,7 +823,7 @@ dcam::Dcam::setRawType()
     {
       camIm->imRaw = camFrame->image;
       if (isColor)
-	rawType = VIDERE_STEREO_RGGB;
+	rawType = VIDERE_STEREO_GRBG;
       else
 	rawType = VIDERE_STEREO_MONO;
     }

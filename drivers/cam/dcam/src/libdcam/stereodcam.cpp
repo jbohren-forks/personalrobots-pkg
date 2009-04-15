@@ -157,14 +157,14 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 	  stIm->imRight->imType = COLOR_CODING_MONO8;
 	  break;
 
-	case VIDERE_STOC_RAW_RAW_RGGB:
+	case VIDERE_STOC_RAW_RAW_GRBG:
 	case VIDERE_STEREO_RGGB:
 	case VIDERE_STEREO_BGGR:
 	case VIDERE_STEREO_GRBG:
 	  stereoDeinterlace(camIm->imRaw, &stIm->imLeft->imRaw, &stIm->imLeft->imRawSize,
 			    &stIm->imRight->imRaw, &stIm->imRight->imRawSize);
-	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_RGGB;
-	  stIm->imRight->imRawType = COLOR_CODING_BAYER8_RGGB;
+	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_GRBG;
+	  stIm->imRight->imRawType = COLOR_CODING_BAYER8_GRBG;
 	  stIm->imLeft->doBayerColorRGB();
 	  stIm->imRight->doBayerColorRGB();
 	  break;
@@ -188,10 +188,10 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 	  stIm->doSpeckle();	// apply speckle filter
 	  break;
 
-	case VIDERE_STOC_RAW_DISP_RGGB:
+	case VIDERE_STOC_RAW_DISP_GRBG:
 	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->imRaw, &stIm->imLeft->imRawSize, 
 			    &stIm->imDisp, &stIm->imDispSize);
-	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_RGGB;
+	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_GRBG;
 	  stIm->imLeft->doBayerColorRGB();
 	  stIm->hasDisparity = true;
 	  stIm->doSpeckle();	// apply speckle filter

@@ -538,6 +538,8 @@ main(int argc, char **argv)	// no arguments
 	  cwin = stg->mainRight;
 	  if (stIm->hasDisparity)
 	    cwin->DisplayImage((unsigned char *)stIm->imDisp, w, h, w, DISPARITY, sp_dlen*16);
+	  else if (stIm->imRight->imRectColorType != COLOR_CODING_NONE)
+	    cwin->DisplayImage((unsigned char *)stIm->imRight->imRectColor, w, h, w, RGB24);
 	  else if (stIm->imRight->imRectType != COLOR_CODING_NONE)
 	    cwin->DisplayImage((unsigned char *)stIm->imRight->imRect, w, h, w);
 	  else if (stIm->imRight->imColorType != COLOR_CODING_NONE)
@@ -1162,7 +1164,7 @@ void cal_calibrate_single(void);
 void cal_calibrate_cb(Fl_Button*, void*)
 {
   int i, j, nframes;	
-  bool is_horz = true;			// true if horizontal epipolar lines
+  bool is_horz = true;		// true if horizontal epipolar lines
   vector<CvPoint3D32f> objectPoints; // points on the targets
   vector<CvPoint2D32f> points[2]; // points on the image, left is index 0, right 1
   vector<int> npoints;		// number of points in each image
@@ -1338,7 +1340,7 @@ void cal_calibrate_cb(Fl_Button*, void*)
     CvMat kstub;
     cvCopy(cvGetSubRect(&P_left,&kstub,cvRect(0,0,3,3)),Krect);
 
-    //    cvInitUndistortMap(&K_left, &D_left, mapx_left, mapy_left);
+#if 0
     cvInitUndistortRectifyMap(&K_left, &D_left, &R_left, Krect, mapx_left, mapy_left);
     cvConvertMaps(mapx_left,mapy_left,rMapxy_left,rMapa_left);
   
@@ -1373,7 +1375,6 @@ void cal_calibrate_cb(Fl_Button*, void*)
     rMapa_right  = cvCreateMat(imsize_left.height, imsize_left.width, CV_16SC1);
 
 
-    //    cvInitUndistortMap(&K_right, &D_right, mapx_right, mapy_right);
     cvInitUndistortRectifyMap(&K_right, &D_right, &R_right, Krect, mapx_right, mapy_right);
     cvConvertMaps(mapx_right,mapy_right,rMapxy_right,rMapa_right);
   
@@ -1399,10 +1400,10 @@ void cal_calibrate_cb(Fl_Button*, void*)
 	cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
       }
 
-
     // compute and show epipolar line RMS error
     double err = epi_scanline_error(is_horz);
     debug_message("RMS error from scanline: %f pixels\n\n", err);
+#endif
 }
 
 
@@ -1810,10 +1811,11 @@ void cal_capture_cb(Fl_Button*, void*)
   imsize_right = cvGetSize(img);
   debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
   cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
-  ret = FindCorners(&rightcorners[calInd], &nrightcorners[calInd], &goodright[calInd], img);
+  ret = FindCorners(&rightcorners[calInd], &nrightcorners[calInd], &goodright[calInd], img) && ret;
   cwin->display2DFeatures(rightcorners[calInd],nrightcorners[calInd],ret);
 
-  calInd++;
+  if (ret)
+    calInd++;
 }
 
 
@@ -2027,7 +2029,11 @@ void cal_upload_params_cb(Fl_Button*, void*)
     {
       cal_set_dev_params();	// set the parameters from the current values
       debug_message("[oST] Setting FW parameters");
-      dev->setParameters();	// set the parameters in FW firmware
+      int ret = fl_choice("Really upload, erasing old camera calibration?","No","Yes",NULL);
+      if (ret == 1)
+	dev->setParameters();	// set the parameters in FW firmware
+
+      return;
 
       debug_message("[oST] Setting STOC parameters");
       // ok, load up things here...
