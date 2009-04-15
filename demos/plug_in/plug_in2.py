@@ -37,11 +37,11 @@ import rospy
 from robot_msgs.msg import *
 from robot_srvs.srv import *
 import tf.transformations
-import tf, tf.TransformListener
+import tf
 
 CONTROLLER = 'arm_constraint'
 
-TF = tf.TransformListener.TransformListener()
+TF = tf.TransformListener()
 
 class Tracker:
     def __init__(self, topic, Msg):
@@ -70,6 +70,9 @@ def pose_to_matrix(p):
                                                             p.orientation.z, p.orientation.w]))
 
 def transform_to_matrix(t):
+    if hasattr(t, 'transform'):
+        t = t.transform
+    print t, type(t)
     return tf.transformations.concatenate_transforms(
         tf.transformations.translation_matrix([t.translation.x, t.translation.y, t.translation.z]),
         tf.transformations.rotation_matrix_from_quaternion([t.rotation.x, t.rotation.y,
@@ -101,22 +104,8 @@ def main():
 
     # Bring down all possible controllers, just in case
     print "Bringing down old controllers"
-    kill_and_spawn('<controllers></controllers>', ['arm_pose', CONTROLLER, 'arm_hybrid'])
-
-    rospy.set_param("/arm_pose/p", 15.0)
-    rospy.set_param("/arm_pose/i", 0.2)
-    rospy.set_param("/arm_pose/d", 0.0)
-    rospy.set_param("/arm_pose/i_clamp", 0.5)
-    rospy.set_param("/arm_pose/root_name", "torso_lift_link")
-    rospy.set_param("/arm_pose/tip_name", "r_gripper_tool_frame")
-    rospy.set_param("/arm_pose/twist/fb_trans/p", 15.0)
-    rospy.set_param("/arm_pose/twist/fb_trans/i", 0.5)
-    rospy.set_param("/arm_pose/twist/fb_trans/d", 0.0)
-    rospy.set_param("/arm_pose/twist/fb_trans/i_clamp", 1.0)
-    rospy.set_param("/arm_pose/twist/fb_rot/p", 1.0)
-    rospy.set_param("/arm_pose/twist/fb_rot/i", 0.1)
-    rospy.set_param("/arm_pose/twist/fb_rot/d", 0.0)
-    rospy.set_param("/arm_pose/twist/fb_rot/i_clamp", 0.2)
+    kill_and_spawn('<controllers></controllers>', ['r_arm_pose', 'r_arm_twist', 'r_arm_wrench',
+                                                   CONTROLLER, 'arm_hybrid'])
 
     ######  Finds the outlet
 
@@ -133,27 +122,37 @@ def main():
 
     ######  Stages the plug
 
-    if False:
+    if True:
 
         # Spawns the pose controller
         print "Spawning the pose controller"
-        pose_config = '<controller name="arm_pose" type="CartesianPoseControllerNode" />'
-        resp = kill_and_spawn(pose_config, [])
-        if len(resp.add_name) == 0 or not resp.add_ok[0]:
+        pose_config = '''
+<controllers>
+  <controller name="r_arm_wrench" type="CartesianWrenchController" />
+  <controller name="r_arm_twist" type="CartesianTwistController" />
+  <controller name="r_arm_pose" type="CartesianPoseController" />
+</controllers>'''
+        #resp = kill_and_spawn(pose_config, [])
+        resp = kill_and_spawn('<controller name="r_arm_wrench" type="CartesianWrenchController" />', [])
+        resp = kill_and_spawn('<controller name="r_arm_twist" type="CartesianTwistController" />', [])
+        resp = kill_and_spawn('<controller name="r_arm_pose" type="CartesianPoseController" />', [])
+        if len(resp.add_name) < 1 or not resp.add_ok[0]:
             raise "Failed to spawn the pose controller"
 
         # Commands the hand to near the outlet
         print "Staging the plug"
         staging_pose = PoseStamped()
         staging_pose.header.frame_id = 'outlet_pose'
-        staging_pose.pose.position = xyz(-0.12, 0.0, 0.0)
-        staging_pose.pose.orientation = rpy(0,0,0)
-        pub_pose = rospy.Publisher('/arm_pose/command', PoseStamped)
-        for i in range(50):
+        #staging_pose.pose.position = xyz(-0.12, 0.0, 0.0)
+        #staging_pose.pose.orientation = rpy(0,0,0)
+        staging_pose.pose.position = xyz(-0.08, 0.0, 0.04)
+        staging_pose.pose.orientation = rpy(0.0, 0.3, -0.1)
+        pub_pose = rospy.Publisher('/r_arm_pose/command', PoseStamped)
+        for i in range(20):
             staging_pose.header.stamp = rospy.get_rostime()
             pub_pose.publish(staging_pose)
             time.sleep(0.1)
-        time.sleep(2)
+        time.sleep(1)
 
     else:
         # trajectory controller is already spawned
@@ -220,20 +219,19 @@ def main():
 
     # Transforms the tool pose into the end-effector frame
     t = TF.get_transform(tool_pose.header.frame_id, 'r_gripper_tool_frame', tool_pose.header.stamp)
-    tool_pose_ee = matrix_to_transform(
-        tf.transformations.concatenate_transforms(transform_to_matrix(t),
-                                                  pose_to_matrix(tool_pose.pose)))
+    tool_pose_ee = t.transform * tf.pose_msg_to_bt(tool_pose.pose)
 
-    rospy.set_param("/arm_hybrid/tool_frame/translation/x", tool_pose_ee.translation.x)
-    rospy.set_param("/arm_hybrid/tool_frame/translation/y", tool_pose_ee.translation.y)
-    rospy.set_param("/arm_hybrid/tool_frame/translation/z", tool_pose_ee.translation.z)
-    rospy.set_param("/arm_hybrid/tool_frame/rotation/x", tool_pose_ee.rotation.x)
-    rospy.set_param("/arm_hybrid/tool_frame/rotation/y", tool_pose_ee.rotation.y)
-    rospy.set_param("/arm_hybrid/tool_frame/rotation/z", tool_pose_ee.rotation.z)
-    rospy.set_param("/arm_hybrid/tool_frame/rotation/w", tool_pose_ee.rotation.w)
+    rospy.set_param("/arm_hybrid/tool_frame/translation/x", tool_pose_ee.getOrigin().x())
+    rospy.set_param("/arm_hybrid/tool_frame/translation/y", tool_pose_ee.getOrigin().y())
+    rospy.set_param("/arm_hybrid/tool_frame/translation/z", tool_pose_ee.getOrigin().z())
+    rospy.set_param("/arm_hybrid/tool_frame/rotation/x", tool_pose_ee.getRotation().x())
+    rospy.set_param("/arm_hybrid/tool_frame/rotation/y", tool_pose_ee.getRotation().y())
+    rospy.set_param("/arm_hybrid/tool_frame/rotation/z", tool_pose_ee.getRotation().z())
+    rospy.set_param("/arm_hybrid/tool_frame/rotation/w", tool_pose_ee.getRotation().w())
 
     hybrid_config = '<controller name="arm_hybrid" type="CartesianHybridControllerNode" />'
-    resp = kill_and_spawn(hybrid_config, ['cartesian_trajectory_right', 'arm_pose'])
+    resp = kill_and_spawn(hybrid_config, ['cartesian_trajectory_right',
+                                          'r_arm_pose', 'r_arm_twist', 'r_arm_wrench'])
     if len(resp.add_name) == 0 or not resp.add_ok[0]:
         raise "Failed to spawn the hybrid controller"
 
