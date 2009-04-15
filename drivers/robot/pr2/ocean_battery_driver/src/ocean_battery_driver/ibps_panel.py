@@ -96,6 +96,9 @@ class BatteryPanel(wx.Panel):
         for message in self._messages:
             self.start_timer()
             ratio = message.energy_remaining / max(message.energy_capacity, 0.0001)
+            self.power_text.Enable()
+            self.energy_text.Enable()
+            self.status_text.Enable()
             self.power_text.SetValue('%.2f Watts'%message.power_consumption)
             self.energy_text.SetValue('%.2f of %.2f Joules    %.1f Percent'%(message.energy_remaining, message.energy_capacity, ratio*100.0 ))
             if ratio > 0.7:
@@ -119,7 +122,7 @@ class BatteryPanel(wx.Panel):
       # the simulation is happening in real time.
       interval = rospy.get_time() - self.last_message_time;
       sleep_time = 1000 * (self.timeout_interval - interval + 1);
-      self.timer.Start(sleep_time, False)
+      self.timer.Start(sleep_time, True)
       #print 'start_timer %f\n'%sleep_time
 
     def on_timer(self, event):
@@ -134,11 +137,9 @@ class BatteryPanel(wx.Panel):
       # and the previously displayed value is most likely stale).
       if interval > self.timeout_interval or interval < 0:
         #print 'timeout\n'
-        self.timer.Stop()
-
-        self.power_text.SetValue(self.power_text.GetValue()+' (stale)')
-        self.energy_text.SetValue(self.energy_text.GetValue()+' (stale)')
-        #self.status_text.SetValue(self.status_text.GetValue()+' (stale)')
+        self.power_text.Disable()
+        self.energy_text.Disable()
+        self.status_text.Disable()
         self.energy_text.SetBackgroundColour("White")
       else:
         self.start_timer()
