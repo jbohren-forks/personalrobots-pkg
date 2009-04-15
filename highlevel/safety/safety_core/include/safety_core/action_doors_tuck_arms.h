@@ -33,10 +33,10 @@
  *********************************************************************/
 
 
-/* Author: Melonee Wise */
+/* Author: Melonee Wise, Wim Meeussen */
 
-#ifndef ACTION_TUCK_ARMS_H
-#define ACTION_TUCK_ARMS_H
+#ifndef ACTION_DOORS_TUCK_ARMS_H
+#define ACTION_DOORS_TUCK_ARMS_H
 
 
 #include <ros/node.h>
@@ -51,11 +51,11 @@
 
 namespace safety_core{
 
-class TuckArmsAction: public robot_actions::Action<std_msgs::Empty, std_msgs::Empty>
+class DoorsTuckArmsAction: public robot_actions::Action<std_msgs::Empty, std_msgs::Empty>
 {
 public:
-  TuckArmsAction();
-  ~TuckArmsAction();
+  DoorsTuckArmsAction();
+  ~DoorsTuckArmsAction();
 
   robot_actions::ResultStatus execute(const std_msgs::Empty&, std_msgs::Empty&);
 
