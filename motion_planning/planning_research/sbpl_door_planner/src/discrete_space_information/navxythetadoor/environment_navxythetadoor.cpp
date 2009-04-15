@@ -30,6 +30,9 @@
 #include <sbpl/headers.h>
 #include <sbpl_door_planner/environment_navxythetadoor.h>
 
+template EnvironmentNAVXYTHETALAT<EnvNAVXYTHETADOORHashEntry_t>; 
+
+
 int EnvironmentNAVXYTHETADOOR::GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action)
 {
 
@@ -409,6 +412,335 @@ void EnvironmentNAVXYTHETADOOR::setRobotProperties(const double &min_workspace_r
   printf("Arm workspace radii: (min,max): %f %f\n",db_.arm_min_workspace_radius_,db_.arm_max_workspace_radius_);
   printf("Shoulder position: %f %f\n",db_.robot_shoulder_position_.x,db_.robot_shoulder_position_.y);
   printf("\n\n"); 
+}
+
+template<>
+void EnvironmentNAVXYTHETADOOR<EnvNAVXYTHETADOORHashEntry_t>::PrintState(int stateID, bool bVerbose, FILE* fOut /*=NULL*/)
+{
+#if DEBUG
+	if(stateID >= (int)StateID2CoordTable.size())
+	{
+		printf("ERROR in EnvNAVXYTHETALAT... function: stateID illegal (2)\n");
+		exit(1);
+	}
+#endif
+
+	if(fOut == NULL)
+		fOut = stdout;
+
+	EnvNAVLATHashEntry_t* HashEntry = StateID2CoordTable[stateID];
+
+	if(stateID == EnvNAVXYTHETALAT.goalstateid && bVerbose)
+	{
+		fprintf(fOut, "the state is a goal state\n");
+	}
+
+    if(bVerbose)
+    	fprintf(fOut, "X=%d Y=%d Theta=%d DoorInterval=%d\n", HashEntry->X, HashEntry->Y, HashEntry->Theta, (int)HashEntry->door_intervalind);
+    else
+    	fprintf(fOut, "%.3f %.3f %.3f %d\n", DISCXY2CONT(HashEntry->X, EnvNAVXYTHETALATCfg.cellsize_m), DISCXY2CONT(HashEntry->Y,EnvNAVXYTHETALATCfg.cellsize_m), 
+		DiscTheta2Cont(HashEntry->Theta, NAVXYTHETALAT_THETADIRS), (int)HashEntry->door_intervalind);
+
+}
+
+
+//returns the stateid if success, and -1 otherwise
+template<>
+int EnvironmentNAVXYTHETADOOR<EnvNAVXYTHETADOORHashEntry_t>::SetGoal(double x_m, double y_m, double theta_rad, unsigned char door_interval){
+
+	int x = CONTXY2DISC(x_m, EnvNAVXYTHETALATCfg.cellsize_m);
+	int y = CONTXY2DISC(y_m, EnvNAVXYTHETALATCfg.cellsize_m);
+	int theta = ContTheta2Disc(theta_rad, NAVXYTHETALAT_THETADIRS);
+
+	printf("env: setting goal to %.3f %.3f %.3f %d (%d %d %d %d)\n", x_m, y_m, theta_rad, door_interval, x, y, theta, door_interval);
+
+	if(!IsWithinMapCell(x,y))
+	{
+		printf("ERROR: trying to set a goal cell %d %d that is outside of map\n", x,y);
+		return -1;
+	}
+
+    if(!IsValidConfiguration(x,y,theta))
+	{
+		printf("WARNING: goal configuration is invalid\n");
+	}
+
+    EnvNAVLATHashEntry_t* OutHashEntry;
+    if((OutHashEntry = GetHashEntry(x, y, theta, door_interval)) == NULL){
+        //have to create a new entry
+        OutHashEntry = CreateNewHashEntry(x, y, theta, door_interval);
+    }
+
+	//need to recompute start heuristics?
+	if(EnvNAVXYTHETALAT.goalstateid != OutHashEntry->stateID)
+		bNeedtoRecomputeStartHeuristics = true; //because termination condition may not plan all the way to the new goal
+
+    EnvNAVXYTHETALAT.goalstateid = OutHashEntry->stateID;
+
+	EnvNAVXYTHETALATCfg.EndX_c = x;
+	EnvNAVXYTHETALATCfg.EndY_c = y;
+	EnvNAVXYTHETALATCfg.EndTheta = theta;
+	desired_door_intervalindex = door_interval;
+
+    return EnvNAVXYTHETALAT.goalstateid;    
+
+}
+
+//TODO-cont. here
+
+//returns the stateid if success, and -1 otherwise
+template<>
+int EnvironmentNAVXYTHETADOOR<EnvNAVXYTHETADOORHashEntry_t>::SetStart(double x_m, double y_m, double theta_rad, unsigned char door_interval){
+
+	int x = CONTXY2DISC(x_m, EnvNAVXYTHETALATCfg.cellsize_m);
+	int y = CONTXY2DISC(y_m, EnvNAVXYTHETALATCfg.cellsize_m); 
+	int theta = ContTheta2Disc(theta_rad, NAVXYTHETALAT_THETADIRS);
+
+	if(!IsWithinMapCell(x,y))
+	{
+		printf("ERROR: trying to set a start cell %d %d that is outside of map\n", x,y);
+		return -1;
+	}
+
+	printf("env: setting start to %.3f %.3f %.3f %d (%d %d %d %d)\n", x_m, y_m, theta_rad, door_interval, x, y, theta, door_interval);
+
+    if(!IsValidConfiguration(x,y,theta))
+	{
+		printf("WARNING: start configuration %d %d %d is invalid\n", x,y,theta);
+	}
+
+    EnvNAVLATHashEntry_t* OutHashEntry;
+    if((OutHashEntry = GetHashEntry(x, y, theta, door_interval)) == NULL){
+        //have to create a new entry
+        OutHashEntry = CreateNewHashEntry(x, y, theta, door_interval);
+    }
+
+	//need to recompute start heuristics?
+	if(EnvNAVXYTHETALAT.startstateid != OutHashEntry->stateID)
+		bNeedtoRecomputeStartHeuristics = true;
+
+	//set start
+    EnvNAVXYTHETALAT.startstateid = OutHashEntry->stateID;
+	EnvNAVXYTHETALATCfg.StartX_c = x;
+	EnvNAVXYTHETALATCfg.StartY_c = y;
+	EnvNAVXYTHETALATCfg.StartTheta = theta;
+	desired_door_intervalindex = door_interval;
+
+
+    return EnvNAVXYTHETALAT.startstateid;    
+
+}
+
+
+template<>
+void EnvironmentNAVXYTHETADOOR<EnvNAVXYTHETADOORHashEntry_t>::GetCoordFromState(int stateID, int& x, int& y, int& theta, unsigned char& door_interval) const {
+  EnvNAVLATHashEntry_t* HashEntry = StateID2CoordTable[stateID];
+  x = HashEntry->X;
+  y = HashEntry->Y;
+  theta = HashEntry->Theta;
+  door_interval = HashEntry->door_intervalind;
+}
+
+template<>
+int EnvironmentNAVXYTHETADOOR<EnvNAVXYTHETADOORHashEntry_t>::GetStateFromCoord(int x, int y, int theta, unsigned char door_interval) {
+
+   EnvNAVLATHashEntry_t* OutHashEntry;
+    if((OutHashEntry = GetHashEntry(x, y, theta, door_interval)) == NULL){
+        //have to create a new entry
+        OutHashEntry = CreateNewHashEntry(x, y, theta, door_interval);
+    }
+    return OutHashEntry->stateID;
+}
+
+
+template<>
+int EnvironmentNAVXYTHETADOOR<EnvNAVXYTHETADOORHashEntry_t>::ConvertStateIDPathintoXYThetaPath(vector<int>* stateIDPath, vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath, 
+																							vector<unsigned char>* door_intervalindPath)
+{
+	vector<EnvNAVXYTHETALATAction_t*> actionV;
+	vector<int> CostV;
+	vector<int> SuccIDV;
+	int targetx_c, targety_c, targettheta_c, targetdoorinterval;
+	int sourcex_c, sourcey_c, sourcetheta_c, sourcedoorinterval;
+
+	//printf("checks=%ld\n", checks);
+
+	xythetaPath->clear();
+	door_intervalindPath->clear();
+
+
+#if DEBUG
+	fprintf(fDeb, "converting stateid path into coordinates:\n");
+#endif
+
+	for(int pind = 0; pind < (int)(stateIDPath->size())-1; pind++)
+	{
+		int sourceID = stateIDPath->at(pind);
+		int targetID = stateIDPath->at(pind+1);
+
+		//get successors and pick the target via the cheapest action
+		SuccIDV.clear();
+		CostV.clear();
+		actionV.clear();
+		GetSuccs(sourceID, &SuccIDV, &CostV, &actionV);
+
+		//get source coordinates
+		GetCoordFromState(sourceID, sourcex_c, sourcey_c, sourcetheta_c, sourcedoorinterval);
+		
+
+		int bestcost = INFINITECOST;
+		int bestsind = -1;
+
+#if DEBUG
+		GetCoordFromState(targetID, targetx_c, targety_c, targettheta_c, targetdoorinterval);
+		fprintf(fDeb, "looking for %d %d %d %d -> %d %d %d %d (numofsuccs=%d)\n", sourcex_c, sourcey_c, sourcetheta_c, sourcedoorinterval,
+					targetx_c, targety_c, targettheta_c, targetdoorinterval, SuccIDV.size()); 
+#endif
+
+		for(int sind = 0; sind < (int)SuccIDV.size(); sind++)
+		{
+
+#if DEBUG
+		int x_c, y_c, theta_c, doorint;
+		GetCoordFromState(SuccIDV[sind], x_c, y_c, theta_c, doorint);
+		fprintf(fDeb, "succ: %d %d %d\n", x_c, y_c, theta_c, doorint); 
+#endif
+
+			if(SuccIDV[sind] == targetID && CostV[sind] <= bestcost)
+			{
+				bestcost = CostV[sind];
+				bestsind = sind;
+			}
+		}
+		if(bestsind == -1)
+		{
+			printf("ERROR: successor not found for transition:\n");
+			GetCoordFromState(targetID, targetx_c, targety_c, targettheta_c, targetdoorinterval);
+			printf("%d %d %d %d -> %d %d %d %d\n", sourcex_c, sourcey_c, sourcetheta_c, sourcedoorinterval,
+					targetx_c, targety_c, targettheta_c, targetdoorinterval); 
+			exit(1);
+		}
+
+		//now push in the actual path
+		double sourcex, sourcey;
+		sourcex = DISCXY2CONT(sourcex_c, EnvNAVXYTHETALATCfg.cellsize_m);
+		sourcey = DISCXY2CONT(sourcey_c, EnvNAVXYTHETALATCfg.cellsize_m);
+		for(int ipind = 0; ipind < ((int)actionV[bestsind]->intermptV.size())-1; ipind++)
+		{
+			//translate appropriately
+			EnvNAVXYTHETALAT3Dpt_t intermpt = actionV[bestsind]->intermptV[ipind];
+			intermpt.x += sourcex;
+			intermpt.y += sourcey;
+
+#if DEBUG
+			int nx = CONTXY2DISC(intermpt.x, EnvNAVXYTHETALATCfg.cellsize_m);
+			int ny = CONTXY2DISC(intermpt.y, EnvNAVXYTHETALATCfg.cellsize_m);
+			fprintf(fDeb, "%.3f %.3f %.3f (%d %d %d cost=%d) ", 
+				intermpt.x, intermpt.y, intermpt.theta, 
+				nx, ny, 
+				ContTheta2Disc(intermpt.theta, NAVXYTHETALAT_THETADIRS), EnvNAVXYTHETALATCfg.Grid2D[nx][ny]);
+			if(ipind == 0) fprintf(fDeb, "first (heur=%d)\n", GetStartHeuristic(sourceID));
+			else fprintf(fDeb, "\n");
+#endif
+
+			//store
+			xythetaPath->push_back(intermpt);
+		}
+	}
+}
+
+
+
+template<>
+EnvNAVXYTHETADOORHashEntry_t*  EnvironmentNAVXYTHETADOOR<EnvNAVXYTHETADOORHashEntry_t>::GetHashEntry(int X, int Y, int Theta, unsigned char door_interval)
+{
+
+#if TIME_DEBUG
+	clock_t currenttime = clock();
+#endif
+
+	int binid = GETHASHBIN(X, Y, Theta);
+	
+#if DEBUG
+	if ((int)Coord2StateIDHashTable[binid].size() > 500)
+	{
+		printf("WARNING: Hash table has a bin %d (X=%d Y=%d) of size %d\n", 
+			binid, X, Y, Coord2StateIDHashTable[binid].size());
+		
+		PrintHashTableHist();		
+	}
+#endif
+
+	//iterate over the states in the bin and select the perfect match
+	for(int ind = 0; ind < (int)Coord2StateIDHashTable[binid].size(); ind++)
+	{
+		if( Coord2StateIDHashTable[binid][ind]->X == X 
+			&& Coord2StateIDHashTable[binid][ind]->Y == Y
+			&& Coord2StateIDHashTable[binid][ind]->Theta == Theta
+			&& Coord2StateIDHashTable[binid][ind]->door_intervalind == door_interval)
+		{
+#if TIME_DEBUG
+			time_gethash += clock()-currenttime;
+#endif
+			return Coord2StateIDHashTable[binid][ind];
+		}
+	}
+
+#if TIME_DEBUG	
+	time_gethash += clock()-currenttime;
+#endif
+
+	return NULL;	  
+}
+
+
+template<>
+EnvNAVXYTHETADOORHashEntry_t* EnvironmentNAVXYTHETADOOR<EnvNAVXYTHETADOORHashEntry_t>::CreateNewHashEntry(int X, int Y, int Theta, unsigned char door_interval) 
+{
+	int i;
+
+#if TIME_DEBUG	
+	clock_t currenttime = clock();
+#endif
+
+	EnvNAVLATHashEntry_t* HashEntry = new EnvNAVLATHashEntry_t;
+
+	HashEntry->X = X;
+	HashEntry->Y = Y;
+	HashEntry->Theta = Theta;
+	HashEntry->door_intervalind = door_interval;
+
+	HashEntry->stateID = StateID2CoordTable.size();
+
+	//insert into the tables
+	StateID2CoordTable.push_back(HashEntry);
+
+
+	//get the hash table bin
+	i = GETHASHBIN(HashEntry->X, HashEntry->Y, HashEntry->Theta); 
+
+	//insert the entry into the bin
+	Coord2StateIDHashTable[i].push_back(HashEntry);
+
+	//insert into and initialize the mappings
+	int* entry = new int [NUMOFINDICES_STATEID2IND];
+	StateID2IndexMapping.push_back(entry);
+	for(i = 0; i < NUMOFINDICES_STATEID2IND; i++)
+	{
+		StateID2IndexMapping[HashEntry->stateID][i] = -1;
+	}
+
+	if(HashEntry->stateID != (int)StateID2IndexMapping.size()-1)
+	{
+		printf("ERROR in Env... function: last state has incorrect stateID\n");
+		exit(1);	
+	}
+
+#if TIME_DEBUG
+	time_createhash += clock()-currenttime;
+#endif
+
+	return HashEntry;
 }
 
 

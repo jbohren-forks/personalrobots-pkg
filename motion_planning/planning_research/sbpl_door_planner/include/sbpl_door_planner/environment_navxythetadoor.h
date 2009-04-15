@@ -35,12 +35,28 @@
 #ifndef __ENVIRONMENT_NAVXYTHETADOOR_H_
 #define __ENVIRONMENT_NAVXYTHETADOOR_H_
 
+#define ENVNAVXYTHETADOOR_DEFAULTDESIREDDOORINTERVALIND 1  
+#define ENVNAVXYTHETADOOR_DEFAULTSTARTDOORINTERVALIND 0
+
+
+typedef struct 
+{
+	int stateID;
+	int X;
+	int Y;
+	char Theta;
+	unsigned char door_intervalind;
+} EnvNAVXYTHETADOORHashEntry_t;
+
+
 
 class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
 {
   public:
 
-  EnvironmentNAVXYTHETADOOR() {};
+  EnvironmentNAVXYTHETADOOR() 
+  {desired_door_intervalindex = ENVNAVXYTHETADOOR_DEFAULTDESIREDDOORINTERVALIND;
+   start_door_intervalindex = ENVNAVXYTHETADOOR_DEFAULTSTARTDOORINTERVALIND;};
 
   ~EnvironmentNAVXYTHETADOOR() {};
 
@@ -49,6 +65,9 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
   door_base_collision_cost::DoorBaseCollisionCost db_; /*! Class used to compute free (valid) door angles given x, y, theta position of the robot */
 
   std::vector<int> desired_door_anglesV; 
+  //There can only be two door intervals: it is either adjacent to "door closed" (0) or adjacent to "door open" (1)
+  unsigned char desired_door_intervalindex;	
+  unsigned char start_door_intervalindex;	
 
   //this function sets the door angles at which a goal configuration is declared EVEN if goalx,goaly,goaltheta are not satisfied.
   //The goal is ALSO declared if goalx,goaly,goaltheta are satisfied but none of the desired door angles are satisfied
@@ -104,6 +123,20 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
   //returns the cost to getting to mincost desired door angles while staying at this pose
   //returns infinity if no desired goal angle is reachable
   int MinCostDesiredDoorAngle(int x, int y, int theta);
+
+   //overloaded functions to support door_interval
+   virtual void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
+   virtual int SetStart(double x, double y, double theta, unsigned char door_interval);
+   virtual int SetGoal(double x, double y, double theta, unsigned char door_interval);   
+   virtual void GetCoordFromState(int stateID, int& x, int& y, int& theta, unsigned char& door_interval) const;
+   virtual int GetStateFromCoord(int x, int y, int theta, unsigned char door_interval);
+   virtual void ConvertStateIDPathintoXYThetaPath(vector<int>* stateIDPath, vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath, vector<unsigned char>* door_intervalindPath); 
+   virtual EnvNAVXYTHETADOORHashEntry_t* GetHashEntry(int X, int Y, int Theta, unsigned char door_interval);
+   virtual EnvNAVXYTHETADOORHashEntry_t* CreateNewHashEntry(int X, int Y, int Theta, unsigned char door_interval);
+
+
+
+
 
 };
 
