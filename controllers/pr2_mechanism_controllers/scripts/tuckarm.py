@@ -36,8 +36,6 @@
 
 import roslib
 roslib.load_manifest('pr2_mechanism_controllers')
-roslib.load_manifest('mechanism_control')
-roslib.load_manifest('mechanism_bringup')
 
 import rospy
 
@@ -52,7 +50,7 @@ def go(side, positions):
   pub = rospy.Publisher(side + '_arm/trajectory_controller/trajectory_command', JointTraj)
 
   # HACK
-  sleep(2)
+  sleep(1)
 
   msg = JointTraj()
   msg.points = []
@@ -78,7 +76,7 @@ def set_params_right():
   rospy.set_param("right_arm/trajectory_controller/r_wrist_roll_joint/goal_reached_threshold", 0.1)
 
 def set_params_left():
-  rospy.set_param("left_arm/trajectory_controller/velocity_scaling_factor", 0.75)
+  rospy.set_param("left_arm/trajectory_controller/velocity_scaling_factor", 0.5)
   rospy.set_param("left_arm/trajectory_controller/trajectory_wait_timeout", 0.25)
 
   rospy.set_param("left_arm/trajectory_controller/l_shoulder_pan_joint/goal_reached_threshold", 0.1)
@@ -114,7 +112,7 @@ if __name__ == '__main__':
       mechanism.spawn_controller(xml_for_left.read())
       controllers.append('left_arm/trajectory_controller')
 
-      positions = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,1.57,-2.25,0.0,0.0,0.0]]  
+      positions = [[0.4,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,1.57,-2.25,0.0,0.0,0.0]]  
       go('left', positions)
 
       rospy.spin()
@@ -124,7 +122,7 @@ if __name__ == '__main__':
       set_params_right()
       resp = mechanism.spawn_controller(xml_for_right.read())
       controllers.append('right_arm/trajectory_controller')
-      positions = [[0.0,0.0,0.0,-1.57,0.0,0.0,0.0], [0.0,1.57,-1.57,-1.57,0.0,0.0,0.0]]    
+      positions = [[-0.4,0.0,0.0,-1.57,0.0,0.0,0.0], [0.0,1.57,-1.57,-1.57,0.0,0.0,0.0]]    
       go('right', positions)
 
       rospy.spin()
@@ -141,8 +139,8 @@ if __name__ == '__main__':
       controllers.append('right_arm/trajectory_controller')
       controllers.append('left_arm/trajectory_controller')
         
-      positions_l = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.05,1.57,-2.25,0.0,0.0,0.0]] 
-      positions_r = [[0.0,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,-1.57,-1.57,0.0,0.0,0.0]]
+      positions_l = [[0.4,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.05,1.57,-2.25,0.0,0.0,0.0]] 
+      positions_r = [[-0.4,0.0,0.0,-2.25,0.0,0.0,0.0], [0.0,1.57,-1.57,-1.57,0.0,0.0,0.0]]
       
       go('right', positions_r)
       sleep(0.5)
