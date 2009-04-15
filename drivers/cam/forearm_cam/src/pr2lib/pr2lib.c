@@ -1133,9 +1133,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 				// by 1000.
 				frame_time_us *= 1000;
 				frame_time_us /= (eof->ticks_per_sec/1000);
-//				debug("EOF frame #%u, time %llu tics_per_second %u, I2C ", vPkt->header.frame_number, 
-//           eof->ticks_per_sec, frame_time_us);
-        bool newline_needed = false;
+				debug("EOF frame #%u, time %llu, I2C ", vPkt->header.frame_number, frame_time_us);
 
 				// Correct to network byte order for frameHandler
 				eof->i2c_valid = ntohl(eof->i2c_valid);
@@ -1147,19 +1145,16 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 				for(int i=0; i<I2C_REGS_PER_FRAME; i++) {
 					if (eof->i2c_valid & (1UL << i)) {
 						debug("%u: %04X ", i, eof->i2c[i]);
-            newline_needed = true;
 					}
 				}
 
 				if(lineCount != height) {
 					debug("Short (%u/%u)", lineCount, height);
-          newline_needed = true;
 					// Flag packet as being short for the frameHandler
 					eof->header.line_number = IMAGER_LINENO_SHORT;
 					shortFrameCount++;
 				}
-				if (newline_needed)
-          debug("\n");
+				debug("\n");
 
 				// Move to the next frame
 				currentFrame = vPkt->header.frame_number+1;

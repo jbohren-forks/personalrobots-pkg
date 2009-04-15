@@ -20,8 +20,8 @@
 # define __mfc0(var) 0
 # define __mtc0(var1, var2)
 # define __nop()
-# define debug(...) printf(__VA_ARGS__)
-//# define debug(...)
+//# define debug(...) printf(__VA_ARGS__)
+# define debug(...)
 # define __asm(var)
 
 #include <stdio.h>
