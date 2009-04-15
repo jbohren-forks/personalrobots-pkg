@@ -8,6 +8,7 @@
 
 #include <opencv/cv.h>
 
+#include <boost/thread.hpp>
 
 class PlugTracker
 {
@@ -15,17 +16,20 @@ public:
   PlugTracker(ros::Node &node);
   ~PlugTracker();
 
-  void caminfo_cb();
-  void image_cb();
+  void activate();
+  void deactivate();
 
   void spin();
-
   
 private:
+  void processCamInfo();
+  void processImage();
+  
   CvRect fitToFrame(CvRect roi);
   void setRoi(CvRect roi);
 
   ros::Node &node_;
+  boost::thread active_thread_;
   
   prosilica_cam::PolledImage::Request req_;
   prosilica_cam::PolledImage::Response res_;

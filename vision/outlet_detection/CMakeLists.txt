@@ -26,6 +26,8 @@ rospack_add_executable(outlet_node src/outlet_node.cpp)
 target_link_libraries(outlet_node outlet)
 
 rospack_add_library(plugtracker src/plug_tracker.cpp src/cvcalibinit.cpp)
+rospack_link_boost(plugtracker thread)
+
 rospack_add_executable(plug_node src/plug_node.cpp)
 target_link_libraries(plug_node plugtracker)
 

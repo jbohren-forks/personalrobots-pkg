@@ -5,7 +5,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   ros::Node node("plug_tracker");
   PlugTracker tracker(node);
-  tracker.spin();
+  
+  node.spin();
 
   return 0;
 }

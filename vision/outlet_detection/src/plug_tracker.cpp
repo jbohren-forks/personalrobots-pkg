@@ -6,6 +6,8 @@
 #include <LinearMath/btVector3.h>
 #include <LinearMath/btMatrix3x3.h>
 
+#include <boost/bind.hpp>
+
 extern "C"
 int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
                                 CvPoint2D32f* out_corners, int* out_corner_count,
@@ -74,10 +76,17 @@ PlugTracker::PlugTracker(ros::Node &node)
   camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
   
   node_.advertise<robot_msgs::PoseStamped>("pose", 1);
+
+  activate();
 }
 
 PlugTracker::~PlugTracker()
 {
+  if (active_thread_.joinable()) {
+    active_thread_.interrupt();
+    active_thread_.join();
+  }
+  
   cvReleaseMat(&K_);
   cvReleaseMat(&grid_pts_);
   cvReleaseImage(&display_img_);
@@ -85,7 +94,18 @@ PlugTracker::~PlugTracker()
     cvDestroyWindow(wndname);
 }
 
-void PlugTracker::caminfo_cb()
+void PlugTracker::activate()
+{
+  boost::thread t(boost::bind(&PlugTracker::spin, this));
+  active_thread_.swap(t);
+}
+
+void PlugTracker::deactivate()
+{
+  active_thread_.interrupt();
+}
+
+void PlugTracker::processCamInfo()
 {
   if (K_ == NULL)
     K_ = cvCreateMat(3, 3, CV_64FC1);
@@ -94,7 +114,7 @@ void PlugTracker::caminfo_cb()
   frame_h_ = cam_info_.height;
 }
 
-void PlugTracker::image_cb()
+void PlugTracker::processImage()
 {
   if (!img_bridge_.fromImage(img_, "mono")) {
     ROS_ERROR("Failed to convert image");
@@ -203,11 +223,11 @@ void PlugTracker::image_cb()
 
 void PlugTracker::spin()
 {
-  while (node_.ok())
+  while (node_.ok() && !boost::this_thread::interruption_requested())
   {
     if (ros::service::call("/prosilica/poll", req_, res_)) {
-      caminfo_cb();
-      image_cb();
+      processCamInfo();
+      processImage();
       usleep(100000);
     } else {
       //ROS_WARN("Service call failed");
