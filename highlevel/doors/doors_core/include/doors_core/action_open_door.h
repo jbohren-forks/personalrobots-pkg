@@ -53,13 +53,13 @@ namespace door_handle_detector{
 class OpenDoorAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
 {
 public:
-  OpenDoorAction();
+  OpenDoorAction(ros::Node& node);
   ~OpenDoorAction();
 
   virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
 
 private:
-  ros::Node* node_;
+  ros::Node& node_;
 
   robot_msgs::TaskFrameFormalism tff_stop_, tff_handle_, tff_door_;
 

@@ -46,21 +46,25 @@ static const string fixed_frame = "odom_combined";
 
 
 
-OpenDoorAction::OpenDoorAction() : 
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("open_door"), 
-  node_(ros::Node::instance())
-{};
+OpenDoorAction::OpenDoorAction(Node& node) :
+  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("open_door"),
+  node_(node)
+{
+  node_.advertise<robot_msgs::TaskFrameFormalism>("r_arm_cartesian_tff_controller/command", 10);
+};
 
 
 
 OpenDoorAction::~OpenDoorAction()
-{};
+{
+  node_.unadvertise("r_arm_cartesian_tff_controller/command");
+};
 
 
 
 robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
 { 
-  feedback = goal;
+  ROS_INFO("OpenDoorAction: execute");
 
   // stop
   tff_stop_.mode.vel.x = tff_stop_.FORCE;
@@ -110,25 +114,25 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
   // turn handle
   for (unsigned int i=0; i<100; i++){
     tff_handle_.value.rot.x += -1.5/100.0;
-    node_->publish("cartesian_tff_right/command", tff_handle_);
+    node_.publish("r_arm_cartesian_tff_controller/command", tff_handle_);
     Duration().fromSec(4.0/100.0).sleep();
     if (isPreemptRequested()) {
-      node_->publish("cartesian_tff_right/command", tff_stop_);
+      node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
       return robot_actions::PREEMPTED;
     }
   }
   
   // open door
-  node_->publish("cartesian_tff_right/command", tff_door_);
+  node_.publish("r_arm_cartesian_tff_controller/command", tff_door_);
   for (unsigned int i=0; i<500; i++){
     Duration().fromSec(10.0/500.0).sleep();
     if (isPreemptRequested()) {
-      node_->publish("cartesian_tff_right/command", tff_stop_);
+      node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
       return robot_actions::PREEMPTED;
     }
   }
   
   // finish
-  node_->publish("cartesian_tff_right/command", tff_stop_);
+  node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
   return robot_actions::SUCCESS;
 }
