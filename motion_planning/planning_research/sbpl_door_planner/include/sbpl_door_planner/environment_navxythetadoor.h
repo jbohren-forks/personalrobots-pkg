@@ -35,8 +35,8 @@
 #ifndef __ENVIRONMENT_NAVXYTHETADOOR_H_
 #define __ENVIRONMENT_NAVXYTHETADOOR_H_
 
-#define ENVNAVXYTHETADOOR_DEFAULTDESIREDDOORINTERVALIND 1  
-#define ENVNAVXYTHETADOOR_DEFAULTSTARTDOORINTERVALIND 0
+#define ENVNAVXYTHETADOOR_DEFAULTDESIREDDOORINTERVALIND 1 //adjacent to door open  
+#define ENVNAVXYTHETADOOR_DEFAULTSTARTDOORINTERVALIND 1 //adjacent to door open
 
 
 typedef struct 
@@ -124,15 +124,18 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
 
   //overloaded functions to support door_interval  
   virtual void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
-  virtual int SetStart(double x, double y, double theta, unsigned char door_interval);
-  virtual int SetGoal(double x, double y, double theta, unsigned char door_interval);   
+  virtual int SetStart(double x, double y, double theta, unsigned char door_interval=ENVNAVXYTHETADOOR_DEFAULTSTARTDOORINTERVALIND);
+  virtual int SetGoal(double x, double y, double theta, unsigned char door_interval=ENVNAVXYTHETADOOR_DEFAULTDESIREDDOORINTERVALIND);   
+  virtual void SetGoalTolerance(double tol_x, double tol_y, double tol_theta) { /**< not used yet */ };
   virtual void GetCoordFromState(int stateID, int& x, int& y, int& theta, unsigned char& door_interval) const;
-  virtual int GetStateFromCoord(int x, int y, int theta, unsigned char door_interval);
+  virtual void GetCoordFromState(int stateID, int& x, int& y, int& theta) const;
+  virtual int GetStateFromCoord(int x, int y, int theta, unsigned char door_interval=ENVNAVXYTHETADOOR_DEFAULTSTARTDOORINTERVALIND);
   virtual void ConvertStateIDPathintoXYThetaPath(vector<int>* stateIDPath, 
 						 vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath, vector<unsigned char>* door_intervalindPath);
 
-
-  virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
+  virtual void GetActionCost(int SourceX, int SourceY, int SourceTheta, int SourceDoorIntervalIndex,
+		     EnvNAVXYTHETALATAction_t* action,
+		     int* pCosttoDoorInterval0, int* pCosttoDoorInterval1);
 
   //returns possible doorangle and associated costs (costs are used as multipliers, cost = 0 will be used as a
   //a multiplication factor of 1 (no penalty). Infinite cost should be indicated by INFINITECOST, or better if not
@@ -143,7 +146,7 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
 
   //returns the cost to getting to mincost desired door angles while staying at this pose
   //returns infinity if no desired goal angle is reachable
-  int MinCostDesiredDoorAngle(int x, int y, int theta);
+  int MinCostDesiredDoorAngle(int x, int y, int theta, int door_intervalind);
 
    //overloaded functions to support door_interval  
   virtual EnvNAVXYTHETADOORHashEntry_t*  GetHashEntry(int X, int Y, int Theta, 
@@ -170,5 +173,6 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
    unsigned int GETHASHBIN(unsigned int X, unsigned int Y, unsigned int Theta);
 };
 
+typedef class EnvironmentNAVXYTHETADOORLAT EnvironmentNAVXYTHETADOOR;
 
 #endif
