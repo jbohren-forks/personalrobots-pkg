@@ -216,7 +216,6 @@ void CartesianTrajectoryController::update()
   if (request_preempt_){
     twist_current_ = Twist::Zero();
     is_moving_ = false;
-    ROS_INFO("CartesianTrajectoryController: preempted trajectory");
   }
 
   // if we are moving
@@ -271,14 +270,19 @@ Frame CartesianTrajectoryController::getPose()
 bool CartesianTrajectoryController::moveTo(robot_srvs::MoveToPose::Request &req,
 					   robot_srvs::MoveToPose::Response &resp)
 {
-  ROS_INFO("CartesianTrajectoryController: service request for moveto");
   if (!moveTo(req.pose, 0.0))
     return false;
-  ROS_INFO("CartesianTrajectoryController: moveto command successful");
+
+  ros::Duration timeout = Duration().fromSec(3.0);
+  ros::Duration traj_duration = Duration().fromSec(max_duration_);
+  ros::Time start_time = ros::Time::now();
 
   while (is_moving_){
     Duration().fromSec(0.1).sleep();
-    ROS_INFO("CartesianTrajectoryController: waiting for moveto to complete");
+    if (ros::Time::now() > start_time + timeout + traj_duration){
+      ROS_ERROR("CartesianTrajectoryController: timeout");
+      return false;
+    }
   }
 
   ROS_INFO("CartesianTrajectoryController: moveto finished");

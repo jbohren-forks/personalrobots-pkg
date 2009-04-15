@@ -140,6 +140,8 @@ bool CartesianPoseController::starting()
   twist_ff_ = Twist::Zero();
   pose_desi_ = getPose();
   last_time_ = robot_state_->hw_->current_time_;
+
+  return true;
 }
 
 
