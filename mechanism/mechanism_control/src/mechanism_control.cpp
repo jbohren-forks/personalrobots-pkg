@@ -42,7 +42,11 @@ MechanismControl* MechanismControl::mechanism_control_ = NULL;
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
   state_(NULL), hw_(hw), initialized_(0),
+  switch_success_(false),
   current_controllers_list_(0), used_by_realtime_(-1), publisher_("/diagnostics", 1),
+  start_request_(0),
+  stop_request_(0),
+  please_switch_(false),
   loop_count_(0)
 {
   model_.hw_ = hw;
@@ -202,7 +206,7 @@ void MechanismControl::update()
       for (unsigned int i=0; i<stop_request_.size(); i++)
         stop_request_[i]->stopRequest();
     }
-
+    
     start_request_.clear();
     stop_request_.clear();
     please_switch_ = false;
@@ -294,6 +298,7 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
   // wait until switch is finished
   while (please_switch_)
     usleep(100);
+  ROS_INFO("MechanismControl: switch result = %i", switch_success_);
 
   controllers_lock_.unlock();
   return switch_success_;
