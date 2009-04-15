@@ -104,16 +104,16 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
   tff_door_.mode.rot.y = tff_door_.FORCE;
   tff_door_.mode.rot.z = tff_door_.POSITION;
   
-  tff_door_.value.vel.x = 0.25;
+  tff_door_.value.vel.x = 0.45;
   tff_door_.value.vel.y = 0.0;
   tff_door_.value.vel.z = 0.0;
   tff_door_.value.rot.x = 0.0;
   tff_door_.value.rot.y = 0.0;
   tff_door_.value.rot.z = 0.0;
   
-  // turn handle
+  // turn handle during 4 seconds
   for (unsigned int i=0; i<100; i++){
-    tff_handle_.value.rot.x += -1.5/100.0;
+    tff_handle_.value.rot.x += -2.0/100.0;
     node_.publish("r_arm_cartesian_tff_controller/command", tff_handle_);
     Duration().fromSec(4.0/100.0).sleep();
     if (isPreemptRequested()) {
@@ -123,16 +123,13 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
   }
   
   // open door
-  node_.publish("r_arm_cartesian_tff_controller/command", tff_door_);
-  for (unsigned int i=0; i<500; i++){
-    Duration().fromSec(10.0/500.0).sleep();
-    if (isPreemptRequested()) {
-      node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
-      return robot_actions::PREEMPTED;
-    }
+  Duration polling = Duration().fromSec(0.1);
+  while (!isPreemptRequested()){
+    node_.publish("r_arm_cartesian_tff_controller/command", tff_door_);
+    polling.sleep();
   }
-  
-  // finish
+
+  // preempted
   node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
-  return robot_actions::SUCCESS;
+  return robot_actions::PREEMPTED;
 }
