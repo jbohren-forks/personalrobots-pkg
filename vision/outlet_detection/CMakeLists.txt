@@ -25,7 +25,7 @@ add_definitions(-D_OUTLET_HR -D_TUNING -D_USE_OUTLET_TUPLE)
 rospack_add_executable(outlet_node src/outlet_node.cpp)
 target_link_libraries(outlet_node outlet)
 
-rospack_add_executable(plug_node src/plug_node.cpp src/cvcalibinit.cpp)
+rospack_add_executable(plug_node src/plug_tracker.cpp src/cvcalibinit.cpp)
 
 rospack_add_executable(calibrate_plug src/calibrate_plug.cpp)
 
