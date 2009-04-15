@@ -190,6 +190,10 @@ namespace robot_actions {
      * method.
      */
     void deactivate(const ResultStatus& result_status, const Feedback& feedback){
+      if(!isActive()){
+	ROS_DEBUG("[%s]Tried to deeactivate when already deactivated.\n", getName().c_str());
+      }
+
       _result_status = result_status;
       _status.value = result_status;
       _feedback.lock();
