@@ -604,7 +604,7 @@
     <joint name="${side}_gripper_joint" type="prismatic">
       <axis xyz="0 0 1" />
       <limit effort="10.0" velocity="0.02"
-             min="0.0" max="0.06"
+             min="0.0" max="0.09"
              k_velocity="500.0" k_position="20.0"
              safety_length_min="0.0" safety_length_max="0.001" />
     </joint>
