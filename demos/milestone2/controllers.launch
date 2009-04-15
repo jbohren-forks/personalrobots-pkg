@@ -36,7 +36,6 @@
   </group>
   <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/integration/r_arm_joint_trajectory_controller.xml" />
 
-
 <!-- Cartesian wrench controller -->
   <param name="r_arm_cartesian_wrench_controller/autostart" type="bool" value="false" />
   <param name="r_arm_cartesian_wrench_controller/root_name" type="string" value="torso_lift_link" />
