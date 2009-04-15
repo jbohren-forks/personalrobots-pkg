@@ -91,6 +91,7 @@ robot_actions::ResultStatus GraspDoorAction::execute(const robot_msgs::Door& goa
   gripper_pose.stamp_ = Time::now();
   PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
 
+  ROS_INFO("GraspDoorAction: calling moveto service 1");
   if (!ros::service::call("r_arm_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
     if (isPreemptRequested()){
       ROS_ERROR("GraspDoorAction: preempted");
@@ -101,7 +102,10 @@ robot_actions::ResultStatus GraspDoorAction::execute(const robot_msgs::Door& goa
       return robot_actions::ABORTED;
     }
   }
-  
+  else
+    ROS_INFO("GraspDoorAction: moveto service 1 success");  
+
+
   // move gripper over door handle
   gripper_pose.frame_id_ = fixed_frame;
   gripper_pose.setOrigin( Vector3(handle(0) + (normal(0) * 0.2 ), handle(1) + (normal(1) * 0.2),  handle(2) + (normal(2) * 0.2)));
@@ -109,6 +113,7 @@ robot_actions::ResultStatus GraspDoorAction::execute(const robot_msgs::Door& goa
   gripper_pose.stamp_ = Time::now();
   PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
 
+  ROS_INFO("GraspDoorAction: calling moveto service 2");
   if (!ros::service::call("r_arm_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
     if (isPreemptRequested()){
       ROS_ERROR("GraspDoorAction: preempted");
@@ -119,6 +124,8 @@ robot_actions::ResultStatus GraspDoorAction::execute(const robot_msgs::Door& goa
       return robot_actions::ABORTED;
     }
   }
+  else
+    ROS_INFO("GraspDoorAction: moveto service 2 success");  
   
   // close the gripper
   gripper_msg.data = -2.0;
