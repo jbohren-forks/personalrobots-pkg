@@ -12,44 +12,44 @@ int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
                                 int flags );
 
 
-PlugTracker::PlugTracker()
-  : ros::Node("plug_detector"), img_(res_.image), cam_info_(res_.cam_info),
-    tf_broadcaster_(*this), K_(NULL), display_img_(NULL)
+PlugTracker::PlugTracker(ros::Node &node)
+  : node_(node), img_(res_.image), cam_info_(res_.cam_info),
+    tf_broadcaster_(node), K_(NULL), display_img_(NULL)
 {
   double square_size;
-  if (!getParam("square_size", square_size)) {
+  if (!node_.getParam("square_size", square_size)) {
     ROS_FATAL("Square size unspecified");
-    shutdown();
+    node_.shutdown();
     return;
   }
   
-  if (!getParam("board_width", board_w_)) {
+  if (!node_.getParam("board_width", board_w_)) {
     ROS_FATAL("Board width unspecified");
-    shutdown();
+    node_.shutdown();
     return;
   }
 
-  if (!getParam("board_height", board_h_)) {
+  if (!node_.getParam("board_height", board_h_)) {
     ROS_FATAL("Board height unspecified");
-    shutdown();
+    node_.shutdown();
     return;
   }
 
   std::string policy;
-  param("roi_policy", policy, std::string("WholeFrame"));
+  node_.param("roi_policy", policy, std::string("WholeFrame"));
   if (policy == std::string("WholeFrame"))
     roi_policy_ = WholeFrame;
   else if (policy == std::string("LastImageLocation"))
     roi_policy_ = LastImageLocation;
   else {
     ROS_FATAL("Unknown ROI policy setting");
-    shutdown();
+    node_.shutdown();
     return;
   }
 
   req_.timeout_ms = 100;
 
-  param("display", display_, true);
+  node_.param("display", display_, true);
   if (display_) {
     cvNamedWindow(wndname, 0); // no autosize
     cvStartWindowThread();
@@ -73,7 +73,7 @@ PlugTracker::PlugTracker()
   camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
   camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
   
-  advertise<robot_msgs::PoseStamped>("pose", 1);
+  node_.advertise<robot_msgs::PoseStamped>("pose", 1);
 }
 
 PlugTracker::~PlugTracker()
@@ -158,7 +158,7 @@ void PlugTracker::image_cb()
   tf::PoseTFToMsg(plug_in_camera, pose_.pose);
   pose_.header.frame_id = "high_def_frame";
   pose_.header.stamp = img_.header.stamp;
-  publish("pose", pose_);
+  node_.publish("pose", pose_);
   tf_broadcaster_.sendTransform(plug_in_camera,
                                 ros::Time::now(), "plug_frame",
                                 "high_def_frame");
@@ -203,7 +203,7 @@ void PlugTracker::image_cb()
 
 void PlugTracker::spin()
 {
-  while (ok())
+  while (node_.ok())
   {
     if (ros::service::call("/prosilica/poll", req_, res_)) {
       caminfo_cb();
@@ -236,12 +236,3 @@ inline void PlugTracker::setRoi(CvRect roi)
 }
 
 const char PlugTracker::wndname[] = "Plug tracker";
-
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv);
-  PlugTracker tracker;
-  tracker.spin();
-
-  return 0;
-}

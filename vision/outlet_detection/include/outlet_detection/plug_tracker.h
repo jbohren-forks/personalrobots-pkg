@@ -9,11 +9,10 @@
 #include <opencv/cv.h>
 
 
-// TODO: don't inherit from Node
-class PlugTracker : public ros::Node
+class PlugTracker
 {
 public:
-  PlugTracker();
+  PlugTracker(ros::Node &node);
   ~PlugTracker();
 
   void caminfo_cb();
@@ -26,6 +25,8 @@ private:
   CvRect fitToFrame(CvRect roi);
   void setRoi(CvRect roi);
 
+  ros::Node &node_;
+  
   prosilica_cam::PolledImage::Request req_;
   prosilica_cam::PolledImage::Response res_;
   image_msgs::Image& img_;
