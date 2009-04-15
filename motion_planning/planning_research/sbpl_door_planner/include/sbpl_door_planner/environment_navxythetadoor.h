@@ -49,16 +49,15 @@ typedef struct
 } EnvNAVXYTHETADOORHashEntry_t;
 
 
-
-class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
+class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
 {
   public:
 
-  EnvironmentNAVXYTHETADOOR() 
+  EnvironmentNAVXYTHETADOORLAT() 
   {desired_door_intervalindex = ENVNAVXYTHETADOOR_DEFAULTDESIREDDOORINTERVALIND;
    start_door_intervalindex = ENVNAVXYTHETADOOR_DEFAULTSTARTDOORINTERVALIND;};
 
-  ~EnvironmentNAVXYTHETADOOR() {};
+  ~EnvironmentNAVXYTHETADOORLAT() {};
 
   void setDoorDiscretizationAngle(const double &door_angle_discretization_interval);
 
@@ -88,6 +87,18 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
     exit(1);
   };
 
+  void GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV)
+  {
+    printf("ERROR: GetPredsofChangedEdges not supported in navxythetadoor environment\n");
+    exit(1);
+  };
+
+  void GetSuccsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *succs_of_changededgesIDV)
+  {
+    printf("ERROR: GetSuccsofChangedEdges not supported in navxythetadoor environment\n");
+    exit(1); 
+  };
+
   void GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV){
     GetSuccs(SourceStateID, SuccIDV, CostV, NULL);
   }
@@ -109,7 +120,17 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
                                                    const double &min_workspace_angle, 
                                                    const double &max_workspace_angle,
                           const robot_msgs::Point32 &robot_shoulder_position);                        
-  protected:
+
+
+  //overloaded functions to support door_interval  
+  virtual void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
+  virtual int SetStart(double x, double y, double theta, unsigned char door_interval);
+  virtual int SetGoal(double x, double y, double theta, unsigned char door_interval);   
+  virtual void GetCoordFromState(int stateID, int& x, int& y, int& theta, unsigned char& door_interval) const;
+  virtual int GetStateFromCoord(int x, int y, int theta, unsigned char door_interval);
+  virtual void ConvertStateIDPathintoXYThetaPath(vector<int>* stateIDPath, 
+						 vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath, vector<unsigned char>* door_intervalindPath);
+
 
   virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
 
@@ -124,20 +145,30 @@ class EnvironmentNAVXYTHETADOOR : public EnvironmentNAVXYTHETALAT
   //returns infinity if no desired goal angle is reachable
   int MinCostDesiredDoorAngle(int x, int y, int theta);
 
-   //overloaded functions to support door_interval
-   virtual void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
-   virtual int SetStart(double x, double y, double theta, unsigned char door_interval);
-   virtual int SetGoal(double x, double y, double theta, unsigned char door_interval);   
-   virtual void GetCoordFromState(int stateID, int& x, int& y, int& theta, unsigned char& door_interval) const;
-   virtual int GetStateFromCoord(int x, int y, int theta, unsigned char door_interval);
-   virtual void ConvertStateIDPathintoXYThetaPath(vector<int>* stateIDPath, vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath, vector<unsigned char>* door_intervalindPath); 
-   virtual EnvNAVXYTHETADOORHashEntry_t* GetHashEntry(int X, int Y, int Theta, unsigned char door_interval);
+   //overloaded functions to support door_interval  
+  virtual EnvNAVXYTHETADOORHashEntry_t*  GetHashEntry(int X, int Y, int Theta, 
+						      unsigned char door_interval);
    virtual EnvNAVXYTHETADOORHashEntry_t* CreateNewHashEntry(int X, int Y, int Theta, unsigned char door_interval);
 
+   virtual int  GetFromToHeuristic(int FromStateID, int ToStateID);
+   virtual int  GetGoalHeuristic(int stateID);
+   virtual int  GetStartHeuristic(int stateID);
+   
+   virtual int	 SizeofCreatedEnv();
+
+   virtual void InitializeEnvironment();
+
+  protected:
 
 
+   //hash table of size x_size*y_size. Maps from coords to stateId	
+   int HashTableSize;
+   vector<EnvNAVXYTHETADOORHashEntry_t*>* Coord2StateIDHashTable;
+   //vector that maps from stateID to coords	
+   vector<EnvNAVXYTHETADOORHashEntry_t*> StateID2CoordTable;
 
-
+   unsigned int GETHASHBIN(unsigned int X, unsigned int Y, unsigned int Theta);
 };
+
 
 #endif

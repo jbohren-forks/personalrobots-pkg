@@ -28,9 +28,8 @@
  */
 
 #include <iostream>
-#include <sbpl_door_planner/environment_navxythetadoor.h>
 #include <sbpl/headers.h>
-
+#include <sbpl_door_planner/environment_navxythetadoor.h>
 
 void PrintUsage(char *argv[])
 {
@@ -65,7 +64,7 @@ int planxythetadoor(int argc, char *argv[])
   perimeterptsV.push_back(pt_m);
 
   //Initialize Environment (should be called before initializing anything else)
-  EnvironmentNAVXYTHETADOOR environment_navxythetadoor;
+  EnvironmentNAVXYTHETADOORLAT environment_navxythetadoor;
 
   if(argc == 3)
   {
@@ -205,7 +204,8 @@ int planxythetadoor(int argc, char *argv[])
 
   FILE* fSol = fopen("sol.txt", "w");
   vector<EnvNAVXYTHETALAT3Dpt_t> xythetaPath;
-  environment_navxythetadoor.ConvertStateIDPathintoXYThetaPath(&solution_stateIDs_V, &xythetaPath);
+  vector<unsigned char> doorintervalindPath;
+  environment_navxythetadoor.ConvertStateIDPathintoXYThetaPath(&solution_stateIDs_V, &xythetaPath, &doorintervalindPath);
   for(unsigned int i = 0; i < xythetaPath.size(); i++) {
     double door_angle;
     double door_angle_cost;
