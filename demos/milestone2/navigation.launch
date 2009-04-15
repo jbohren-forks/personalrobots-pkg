@@ -70,7 +70,7 @@
     <param name="trajectory_rollout/simple_attractor" value="false" />
 
     <param name="trajectory_rollout/yaw_goal_tolerance" value=".05" />
-    <param name="trajectory_rollout/xy_goal_tolerance" value=".05" />
+    <param name="trajectory_rollout/xy_goal_tolerance" value=".1" />
 
     <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 2 Hz. 
     This is way too slow for the real system, but necessary for rosstage, which does not reliably meet a 5Hz update rate. -->
