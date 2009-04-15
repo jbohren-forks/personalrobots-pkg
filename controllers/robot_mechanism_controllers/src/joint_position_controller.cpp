@@ -89,7 +89,7 @@ bool JointPositionController::initXml(mechanism::RobotState *robot, TiXmlElement
   TiXmlElement *p = j->FirstChildElement("pid");
   control_toolbox::Pid pid;
   if (p)
-  { 
+  {
     pid.initXml(p);
   }
   else
@@ -135,7 +135,7 @@ void JointPositionController::update()
   double time = robot_->hw_->current_time_;
   assert(joint_state_->joint_);
   dt_= time - last_time_;
-  
+
   if (!initialized_)
   {
     initialized_ = true;
@@ -157,9 +157,9 @@ void JointPositionController::update()
   }
 
   joint_state_->commanded_effort_ = pid_controller_.updatePid(error, dt_);
- 
-     
-   
+
+
+
   last_time_ = time;
 }
 
@@ -183,25 +183,25 @@ void JointPositionControllerNode::update()
 {
   static int count = 0;
   c_->update();
-  
+
   if(count % 10 == 0)
   {
     if(controller_state_publisher_->trylock())
     {
       double command, p,i,d,i_min,i_max;
       c_->getCommand(command);
-      controller_state_publisher_->msg_.set_point = command; 
-      controller_state_publisher_->msg_.process_value = c_->joint_state_->velocity_; 
+      controller_state_publisher_->msg_.set_point = command;
+      controller_state_publisher_->msg_.process_value = c_->joint_state_->velocity_;
       controller_state_publisher_->msg_.error = c_->joint_state_->position_ - command;
       controller_state_publisher_->msg_.time_step = c_->dt_;
-      
+
       c_->getGains(p,i,d,i_max,i_min);
-      controller_state_publisher_->msg_.p = p; 
-      controller_state_publisher_->msg_.i = i; 
-      controller_state_publisher_->msg_.d = d; 
-      controller_state_publisher_->msg_.i_clamp = i_max; 
-       
-      controller_state_publisher_->unlockAndPublish();      
+      controller_state_publisher_->msg_.p = p;
+      controller_state_publisher_->msg_.i = i;
+      controller_state_publisher_->msg_.d = d;
+      controller_state_publisher_->msg_.i_clamp = i_max;
+
+      controller_state_publisher_->unlockAndPublish();
     }
   }
   count++;
@@ -211,12 +211,12 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
 {
   assert(node_);
   service_prefix_ = config->Attribute("name");
-  
+
   //publishers
   if (controller_state_publisher_ != NULL)
     delete controller_state_publisher_ ;
   controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState> (service_prefix_+"/state", 1) ;
-  
+
   // Parses subcontroller configuration
   if (!c_->initXml(robot, config))
     return false;
@@ -226,7 +226,10 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   //services
   node_->advertiseService(service_prefix_ + "/get_command", &JointPositionControllerNode::getCommand, this);
   guard_get_command_.set(service_prefix_ + "/get_command");
-  
+
+
+  pid_tuner_.add(&c_->pid_controller_);
+  pid_tuner_.advertise(service_prefix_);
 
   return true;
 }

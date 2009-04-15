@@ -57,6 +57,7 @@
 #include <control_toolbox/pid.h>
 #include "misc_utils/advertised_service_guard.h"
 #include "misc_utils/subscription_guard.h"
+#include "control_toolbox/pid_tuner.h"
 
 // Services
 #include <std_msgs/Float64.h>
@@ -109,16 +110,16 @@ public:
   std::string getJointName();
   mechanism::JointState *joint_state_;        /**< Joint we're controlling. */
   double dt_;
-  
-  
+
+
 private:
   bool initialized_;
   mechanism::RobotState *robot_;              /**< Pointer to robot structure. */
   control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
   double last_time_;                          /**< Last time stamp of update. */
   double command_;                            /**< Last commanded position. */
-  
 
+  friend class JointPositionControllerNode;
 };
 
 /***************************************************/
@@ -161,7 +162,7 @@ private:
   realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState>* controller_state_publisher_ ;
   //controller
   JointPositionController *c_;                 /**< The controller. */
-
+  control_toolbox::PidTuner pid_tuner_;
 };
 }
 
