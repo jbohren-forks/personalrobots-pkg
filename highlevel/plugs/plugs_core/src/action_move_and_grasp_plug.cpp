@@ -86,9 +86,9 @@ void MoveAndGraspPlugAction::reset()
 {
   last_grasp_value_ = 10.0;
   grasp_count_ = 0;
-  gripper_cmd_.data = 0.04;
+  gripper_cmd_.data = 0.045;
   req_pose_.pose.header.frame_id = plug_stow_.header.frame_id; 
-  req_pose_.pose.pose.position.x = plug_stow_.plug_centroid.x;
+  req_pose_.pose.pose.position.x = plug_stow_.plug_centroid.x - 0.02;
   req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y;
   req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z + 0.05;
 
@@ -133,9 +133,12 @@ void MoveAndGraspPlugAction::moveToGrasp()
 
 void MoveAndGraspPlugAction::graspPlug()
 {
+  if (!isActive())
+    return;
+
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
   node_->subscribe(gripper_controller_ + "/state", controller_state_msg_, &MoveAndGraspPlugAction::checkGrasp, this, 1); 
-  deactivate(robot_actions::SUCCESS, empty_);
+  
   return;
 }
 
@@ -159,8 +162,9 @@ void MoveAndGraspPlugAction::checkGrasp()
   // The gripper is closed and stopped moving
   if(grasp_count_ > 20)
   {
+    ROS_INFO("error: %f",controller_state_msg_.error);
     // Something went wrong... no plug grasped in gripper
-    if(controller_state_msg_.error < 0.005)
+    if(controller_state_msg_.error < 0.025)
     {
       ROS_INFO("%s: Error, failed to grasp plug.", action_name_.c_str());
       node_->unsubscribe(gripper_controller_ + "/state");

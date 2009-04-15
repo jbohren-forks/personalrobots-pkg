@@ -89,7 +89,7 @@ void StowPlugAction::reset()
   req_pose_.pose.header.frame_id = plug_stow_.header.frame_id; 
   req_pose_.pose.pose.position.x = plug_stow_.plug_centroid.x;
   req_pose_.pose.pose.position.y = plug_stow_.plug_centroid.y;
-  req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z + 0.05;
+  req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z + 0.15;
 
   req_pose_.pose.pose.orientation.x = -0.19;
   req_pose_.pose.pose.orientation.y = 0.13;
@@ -112,8 +112,6 @@ void StowPlugAction::moveToStow()
   if (isPreemptRequested())
     return;
 
-  node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
-
   req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z - 0.1;
   req_pose_.pose.header.stamp = ros::Time();
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
@@ -122,6 +120,7 @@ void StowPlugAction::moveToStow()
     deactivate(robot_actions::ABORTED, empty_);
   }
 
+  node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
   return;
 }
 

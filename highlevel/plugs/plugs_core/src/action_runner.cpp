@@ -44,6 +44,7 @@
 
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
+#include <robot_actions/StowPlugState.h>
 #include <robot_actions/MoveAndGraspPlugState.h>
 
 
@@ -72,7 +73,7 @@ int main(int argc, char** argv)
   robot_actions::ActionRunner runner(10.0);
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(untuck_arms);
   runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp);
-  runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(stow_plug);
+  runner.connect<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
   runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(fine_outlet_detect);
 
   runner.run();
