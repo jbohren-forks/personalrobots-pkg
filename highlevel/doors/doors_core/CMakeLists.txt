@@ -25,6 +25,11 @@ rospack_add_executable(trigger_doors_detector
 		       src/action_detect_handle.cpp
                       )
 
+rospack_add_executable(trigger_doors_opener
+                       test/trigger_doors_opener.cpp
+		       src/action_open_door.cpp
+                      )
+
 rospack_add_library(executive_functions src/executive_functions.cpp)
 
 

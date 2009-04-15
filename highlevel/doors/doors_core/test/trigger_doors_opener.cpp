@@ -35,8 +35,7 @@
  *
  *********************************************************************/
 
-#include "doors_core/action_detect_door.h"
-#include "doors_core/action_detect_handle.h"
+#include "doors_core/action_open_door.h"
 #include <door_handle_detector/DetectDoorActionStatus.h>
 #include <robot_msgs/Door.h>
 #include <ros/node.h>
@@ -67,7 +66,7 @@ int
   my_door_.hinge = -1;
   my_door_.header.frame_id = "base_footprint";
 
-  door_open::OPenDoorAction door_opener(node);
+  door_handle_detector::OpenDoorAction door_opener(node);
   robot_actions::ActionRunner runner(10.0);
   runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(door_opener);
   runner.run();
