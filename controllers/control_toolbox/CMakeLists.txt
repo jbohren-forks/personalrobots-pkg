@@ -6,6 +6,7 @@ genmsg()
 gensrv()
 rospack_add_library(control_toolbox
  src/pid.cpp
+ src/pid_tuner.cpp
  src/serialchain_model.cpp
  src/sine_sweep.cpp
  src/ramp_output.cpp

@@ -15,8 +15,8 @@
   <depend package="roscpp" />
   <depend package="angles" />
   <export>
-    <cpp cflags="-I${prefix}/include -I${prefix}/include/control_toolbox/eigen2"
-	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcontrol_toolbox" />
+    <cpp cflags="-I${prefix}/include -I${prefix}/include/control_toolbox/eigen2 -I${prefix}/srv/cpp"
+         lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcontrol_toolbox" />
   </export>
 
 </package>
