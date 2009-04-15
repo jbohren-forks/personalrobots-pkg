@@ -1,4 +1,5 @@
 <launch>
+ <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />  
 
   <include file="$(find pr2_alpha)/prg.machine" />
 

@@ -3,6 +3,8 @@
 <param name="base_controller/odom_publish_rate" value="30.0"/>
 <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/base_controller.xml" output="screen"/>
 
+<node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/torso_lift_controller.xml" output="screen" />
+
 <!-- The robot pose EKF is launched with the base controller-->
 <param name="robot_pose_ekf/freq" value="30.0"/>
 <param name="robot_pose_ekf/sensor_timeout" value="1.0"/>
@@ -20,8 +22,16 @@
 <param name="max_vw" value="1.0" />
 <param name="max_vx" value="0.6" />
 <param name="max_vy" value="0.6" />
+
+<param name="max_vw_run" value="1.4" />
+<param name="max_vx_run" value="1.0" />
+<param name="max_vy_run" value="1.0" />
+<param name="run_button" value="5" type="int" />
+<param name="torso_dn_button" value="1" type="int" />
+<param name="torso_up_button" value="3" type="int" />
+
 <param name="deadman_button" value="4" type="int"/>
-<node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" output="screen"/>
+<node pkg="teleop_base" type="teleop_base" output="screen"/>
   </group>
 
 
