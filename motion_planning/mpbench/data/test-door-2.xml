@@ -1,0 +1,35 @@
+<setup>
+  
+  <defaults>
+    <start>
+      <from_scratch>true</from_scratch>
+      <use_initial_solution>false</use_initial_solution>
+      <allow_iteration>false</allow_iteration>
+      <alloc_time>inf</alloc_time>
+    </start>
+    <goal>
+      <tolerance>0.3  4</tolerance>
+    </goal>
+  </defaults>
+  
+  <world>
+    <addline>  0     5     5    5    </addline>
+
+    <!-- wall with door opening -->
+    <addline>  0     3     1    3    </addline>
+    <addline>  2     3     3    3    </addline>
+    <addline>  4     3     5    3    </addline>
+    <addline>  6     3     7    3    </addline>
+    <addline>  8     3     9    3    </addline>
+  </world>
+  
+  <task>
+    <description>go through a door...</description>
+    <!-- e.g. run like this:
+         ./mpbenchmark -w xml:data/test-door.xml -p ad:xythetadoor:data/pr2sides.mprim -c sfl:25 -->
+    <!-- hinge (x, y)  door-end (x, y)  handle-distance   angle range [rad] -->
+    <door> 3  3  4  3  0.8  2.1 </door>
+    <goal><pose>  3.5   3.0    1.55 </pose></goal>
+    <start><pose> 3.3   2.5    1.56 </pose></start>
+  </task>
+</setup>
