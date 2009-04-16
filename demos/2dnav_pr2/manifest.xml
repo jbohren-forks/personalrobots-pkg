@@ -1,0 +1,16 @@
+<package>
+  <description>Runs the navigation stack on the pr2</description>
+  <author>Eitan Marder-Eppstein</author>
+  <license>BSD</license>
+  <review status="na" notes=""/>
+  <url>http://pr.willowgarage.com/wiki</url>
+  <depend package="amcl"/>
+  <depend package="mechanism_control"/>
+  <depend package="robot_pose_ekf"/>
+  <depend package="teleop_base"/>
+  <depend package="semantic_point_annotator"/>
+  <depend package="laser_scan"/>
+  <depend package="pr2_mechanism_controllers"/>
+  <depend package="map_server"/>
+  <depend package="nav"/>
+</package>

@@ -1,0 +1,11 @@
+<include file="$(find 2dnav_pr2)/config/navfn_params.xml" ns="move_base_node"/>
+<include file="$(find 2dnav_pr2)/config/base_local_planner_params.xml" ns="move_base_node" />
+
+<node pkg="nav" type="move_base" respawn="false" name="move_base_node" output="screen" machine="three">
+  <param name="global_frame" value="map" />
+  <param name="robot_base_frame" value="base_link" />
+
+  <param name="inscribed_radius" value="0.325" />
+  <param name="circumscribed_radius" value="0.46" />
+  <param name="inflation_radius" value="0.55" />
+</node>
