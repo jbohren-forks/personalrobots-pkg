@@ -100,9 +100,27 @@ class TimeCache
 
   void interpolate(const TransformStorage& one, const TransformStorage& two, ros::Time time, TransformStorage& output);  
 
-
+  /** @brief Clear the list of stored values */
   void clearList() {   boost::mutex::scoped_lock lock(storage_lock_); storage_.clear(); };
 
+  /** @brief Get the length of the stored list */
+  unsigned int getListLength() {   boost::mutex::scoped_lock lock(storage_lock_); return storage_.size(); };
+
+  /** @brief Get the latest timestamp cached */
+  ros::Time getLatestTimestamp() 
+  {   
+    boost::mutex::scoped_lock lock(storage_lock_); 
+    if (storage_.empty()) return ros::Time(); //empty list case
+    return storage_.front().stamp_; 
+  };
+
+  /** @brief Get the oldest timestamp cached */
+  ros::Time getOldestTimestamp() 
+  {   
+    boost::mutex::scoped_lock lock(storage_lock_); 
+    if (storage_.empty()) return ros::Time(); //empty list case
+    return storage_.back().stamp_; 
+  };
  private:
   std::list<TransformStorage > storage_;
 

@@ -864,7 +864,11 @@ std::string Transformer::allFramesAsDot() const
     }
     if (parent_id != 0)
       mstream << "\"" << frameIDs_reverse[counter]   << "\"" << " -> " 
-              << "\"" << frameIDs_reverse[parent_id] << "\"" << ";" <<std::endl;
+              << "\"" << frameIDs_reverse[parent_id] << "\"" << "[label=\""
+              << getFrame(counter)->getListLength() << " Readings \\n"
+              << " Between " << getFrame(counter)->getLatestTimestamp().toSec() 
+              << " and " << getFrame(counter)->getOldestTimestamp().toSec()
+              <<"\"];" <<std::endl;
   }
   mstream << "}";
   return mstream.str();
