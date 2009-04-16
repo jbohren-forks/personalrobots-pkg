@@ -10,7 +10,6 @@
  <depend package="roscpp"/>
  <depend package="rosconsole"/>
  <depend package="std_msgs"/>
- <depend package="deprecated_msgs"/>
  <depend package="robot_msgs"/>
  <depend package="robot_actions"/>
  <depend package="base_local_planner"/>
