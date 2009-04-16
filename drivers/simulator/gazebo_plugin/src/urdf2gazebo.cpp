@@ -369,20 +369,20 @@ void URDF2Gazebo::convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, 
                           ROS_WARN("urdf2gazebo: limiting lowStop to <= 0 degrees");
                           *lowstop = 0.0;
                         }
-                        if (*lowstop < -(M_PI*0.9))
+                        if (*lowstop < -(M_PI))
                         {
-                          ROS_WARN("urdf2gazebo: limiting lowStop to >= -(180*0.9) degrees");
-                          *lowstop = -(M_PI*0.9);
+                          ROS_WARN("urdf2gazebo: limiting lowStop to >= -(180) degrees");
+                          *lowstop = -(M_PI);
                         }
                         if (*highstop < 0)
                         {
                           ROS_WARN("urdf2gazebo: limiting highStop to >= 0 degrees");
                           *highstop = 0.0;
                         }
-                        if (*highstop > (M_PI*0.9))
+                        if (*highstop > (M_PI))
                         {
-                          ROS_WARN("urdf2gazebo: limiting highStop to <= (180*0.9) degrees");
-                          *highstop = (M_PI*0.9);
+                          ROS_WARN("urdf2gazebo: limiting highStop to <= (180) degrees");
+                          *highstop = (M_PI);
                         }
                         addKeyValue(joint, "lowStop",  values2str(1, link->joint->limit    , rad2deg));
                         addKeyValue(joint, "highStop", values2str(1, link->joint->limit + 1, rad2deg));

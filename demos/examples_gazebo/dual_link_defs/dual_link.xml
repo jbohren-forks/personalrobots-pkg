@@ -21,21 +21,19 @@
     <axis xyz="0 0 1" />
     <anchor xyz="0 0 0" />
     <limit min="0.0" max="0.0" effort="100" velocity="5"
-           k_position="1.0" k_velocity="1.0"
+           k_position="0.0" k_velocity="0.0"
            safety_length_min="0.0" safety_length_max="0.0" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="10.0" />
+    <joint_properties damping="0.0" />
   </joint>
   
   <!-- joint blocks -->
   <joint name="link2_joint" type="revolute" >
     <axis xyz="0 1 0" />
-    <anchor xyz="0.0 0 0" />
-    <limit min="-3.0" max="3.0" effort="100" velocity="5"
-           k_position="1.0" k_velocity="1.0"
-           safety_length_min="0.0" safety_length_max="0.0" />
+    <anchor xyz="0 0 0" />
+    <limit effort="100" velocity="5" k_velocity="1000" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="0.0" />
+    <joint_properties damping="0.0" friction="0.0" />
   </joint>
 
 
@@ -102,9 +100,9 @@
     <origin xyz="0.0 0 0" rpy="0 0 0" />
     <joint name="link2_joint" />
     <inertial >
-      <mass value="1.0" />
-      <com xyz="0.1 0 0" /> 
-      <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="1.0"  iyz="0.0"  izz="1.0" />
+      <mass value="10.0" />
+      <com xyz="0.5 0 0" /> 
+      <inertia  ixx="0.01" ixy="0.0"  ixz="0.0"  iyy="10.0"  iyz="0.0"  izz="0.01" />
     </inertial>
     <visual >
       <origin xyz="0.5 0 0" rpy="0 0 0" />

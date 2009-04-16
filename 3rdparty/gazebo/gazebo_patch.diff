@@ -262,7 +262,40 @@ Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7599)
 +++ server/physics/Body.cc	(working copy)
-@@ -812,7 +812,6 @@
+@@ -809,15 +809,42 @@
+     this->comPose.pos.y = this->cy;
+     this->comPose.pos.z = this->cz;
+ 
++#if 0
++    // DEBUG: TESTING DYNAMICS, THIS SECTION IS NOT NEEDED
++    // apply parallel axis theorem, Huygens-Steiner Theorem, move CG to body ref frame
++    double ixx1,iyy1,izz1,ixy1,ixz1,iyz1;
++    double cx2 = pow(cx,2);
++    double cy2 = pow(cy,2);
++    double cz2 = pow(cz,2);
++    ixx1 = ixx + this->bodyMass*(cy2+cz2);
++    iyy1 = iyy + this->bodyMass*(cx2+cz2);
++    izz1 = izz + this->bodyMass*(cx2+cy2);
++    ixy1 = ixy - this->bodyMass*(cx*cy);
++    ixz1 = ixz - this->bodyMass*(cx*cz);
++    iyz1 = iyz - this->bodyMass*(cy*cz);
++
++    this->ixx = ixx1;
++    this->iyy = iyy1;
++    this->izz = izz1;
++    this->ixy = ixy1;
++    this->ixz = ixz1;
++    this->iyz = iyz1;
++    this->cx = this->cx - this->cx;
++    this->cy = this->cy - this->cy;
++    this->cz = this->cz - this->cz;
++#endif
++
++    // apply same hack as before, move cg to 0,0,0, taken care of by comPose.
++    this->cx = 0.0;
++    this->cy = 0.0;
++    this->cz = 0.0;
++
      // setup this->mass as well
      dMassSetParameters(&this->mass, this->bodyMass,
                         this->cx, this->cy, this->cz,
@@ -270,7 +303,12 @@ Index: server/physics/Body.cc
                         this->ixx,this->iyy,this->izz,
                         this->ixy,this->ixz,this->iyz);
  
-@@ -825,19 +824,27 @@
+-    dMassTranslate( &this->mass, -this->cx, -this->cy, -this->cz);
+-
+     // dMatrix3 rot;
+     // dMassRotate(&this->mass, rot);
+ 
+@@ -825,19 +852,32 @@
      if (this->mass.mass > 0)
        dBodySetMass( this->bodyId, &this->mass );
  
@@ -286,6 +324,7 @@ Index: server/physics/Body.cc
 -    // std::cout << " I[6] " << this->mass.I[6] << std::endl;
 -    // std::cout << " I[7] " << this->mass.I[7] << std::endl;
 -    // std::cout << " I[8] " << this->mass.I[8] << std::endl;
++#define DEBUG
 +#ifdef DEBUG
 +#define _I(i,j) I[(i)*4+(j)]
 +    std::cout << " name: " << this->GetName() << std::endl;
@@ -304,7 +343,11 @@ Index: server/physics/Body.cc
 +    std::cout << " I(2,2) " << this->mass._I(2,2) << std::endl;
  
 +    // check and make sure no inertias less than zero.  if less than zero, the inertia matrix + mass + cg combo is a bad one.
-+    assert(this->mass._I(0,0)>0.0 && this->mass._I(1,1)>0.0 && this->mass._I(2,2)>0.0);
++    if (this->mass._I(0,0) < 0.0 || this->mass._I(1,1) < 0.0 || this->mass._I(2,2) < 0.0)
++    {
++      //assert(0);
++      std::cout << "ERROR: ixx,iyy or izz < 0" << std::endl;
++    }
 +#endif
 +
    }

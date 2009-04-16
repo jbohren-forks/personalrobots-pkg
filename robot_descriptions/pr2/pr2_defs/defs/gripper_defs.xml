@@ -4,6 +4,7 @@
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
 
   <property name="M_PI" value="3.1415926535897931" />
+  <property name="scale" value="10.0" />
 
   <property name="gripper_max_angle" value="0.548" /> <!-- max gap size /2 -->
   <property name="gripper_min_angle" value="0.00" />
@@ -12,7 +13,7 @@
   <property name="finger_stop_kp"             value="100000.0" />
   <property name="finger_fudge_factor"        value="1.0" />
 
-  <property name="finger_damping"             value="3.0" />
+  <property name="finger_damping"             value="0.001" />
   <property name="finger_tip_damping"         value="0.001" />
 
   <property name="finger_kp"                  value="0.0" />
@@ -32,7 +33,7 @@
     <!-- IMPORTANT: k_velocity and k_position of 1 will induce instability on the acutal joint -->
     <limit effort="${finger_joint_effort_limit}" velocity="0.5"
            min="${gripper_min_angle}" max="${gripper_max_angle}"
-           k_velocity="0.5" k_position="0.5"
+           k_velocity="1.0" k_position="1.0"
            safety_length_min="0.0" safety_length_max="0.01" />
   </macro>
 
@@ -65,12 +66,12 @@
       <inertial>
         <mass value="0.17126" />
         <com xyz="${0.03598} 0.01730 -0.00164" />
-        <inertia  ixx= "0.00007756198"
-                  ixy= "0.00000149095"
-                  ixz="-0.00000983385"
-                  iyy= "0.00019708305"
-                  iyz="-0.00000306125"
-                  izz= "0.00018105446" />
+        <inertia  ixx= "{scale*0.00007756198}"
+                  ixy= "{scale*0.00000149095}"
+                  ixz="{-scale*0.00000983385}"
+                  iyy= "{scale*0.00019708305}"
+                  iyz="{-scale*0.00000306125}"
+                  izz= "{scale*0.00018105446}" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -147,12 +148,12 @@
       <inertial>
         <mass value="0.17389" />
         <com xyz="${0.03576} -0.01736 -0.00095" />
-        <inertia  ixx= "0.00007738410"
-                  ixy="-0.00000209309"
-                  ixz="-0.00000836228"
-                  iyy= "0.00019847383"
-                  iyz= "0.00000246110"
-                  izz= "0.00018106988" />
+        <inertia  ixx= "{scale*0.00007738410}"
+                  ixy="{-scale*0.00000209309}"
+                  ixz="{-scale*0.00000836228}"
+                  iyy= "{scale*0.00019847383}"
+                  iyz= "{scale*0.00000246110}"
+                  izz= "{scale*0.00018106988}" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -229,9 +230,9 @@
       <inertial>
         <mass value="0.04419" />
         <com xyz="0.00423 0.00284 0.0" />
-        <inertia  ixx="0.00000837047" ixy="0.00000583632" ixz="0.0"
-                  iyy="0.00000987067" iyz="0.0"
-                  izz="0.00001541768" />
+        <inertia  ixx="{scale*0.00000837047}" ixy="{scale*0.00000583632}" ixz="{scale*0.0}"
+                  iyy="{scale*0.00000987067}" iyz="{scale*0.0}"
+                  izz="{scale*0.00001541768}" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -309,9 +310,9 @@
       <inertial>
         <mass value="0.04419" />
         <com xyz="${0.00423} ${-0.00284} ${0.0}" />
-        <inertia  ixx="0.00000837047" ixy="-0.00000583632" ixz="0.0"
-                  iyy="0.00000987067" iyz="0.0"
-                  izz="0.00001541768" />
+        <inertia  ixx="{scale*0.00000837047)" ixy="{-scale*0.00000583632)" ixz="{scale*0.0)"
+                  iyy="{scale*0.00000987067)" iyz="{scale*0.0)"
+                  izz="{scale*0.00001541768)" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -580,10 +581,10 @@
       <actuator       name="${side}_gripper_motor" />
       <gap_joint      name="${side}_gripper_joint"                       mechanical_reduction="1.0" />
       <passive_joint  name="${side}_gripper_l_finger_joint"     >
-        <gazebo_mimic_pid p="0.001" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0001" i="0.0" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_joint"     >
-        <gazebo_mimic_pid p="0.001" i="0.0" d="0.0" iClamp="0.0" />
+        <gazebo_mimic_pid p="0.0001" i="0.0" d="0.0" iClamp="0.0" />
       </passive_joint>
       <passive_joint  name="${side}_gripper_r_finger_tip_joint" >
         <gazebo_mimic_pid p="0.00001" i="0.0" d="0.0" iClamp="0.0" />
