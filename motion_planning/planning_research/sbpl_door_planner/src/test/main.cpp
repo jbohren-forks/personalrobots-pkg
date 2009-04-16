@@ -209,13 +209,17 @@ int planxythetadoor(int argc, char *argv[])
   for(unsigned int i = 0; i < xythetaPath.size(); i++) {
     double door_angle;
     double door_angle_cost;
-    if(!environment_navxythetadoor.GetMinCostDoorAngle(xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta,door_angle,door_angle_cost))
+    if(!environment_navxythetadoor.GetMinCostDoorAngle(xythetaPath.at(i).x, xythetaPath.at(i).y, 
+						       xythetaPath.at(i).theta, doorintervalindPath.at(i),
+						       door_angle,door_angle_cost))
     {
-      fprintf(fSol, "%.3f %.3f %.3f %.3f %.3f\n", xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta,0.0,0.0);
+      fprintf(fSol, "%.3f %.3f %.3f %.3f %.3f\n", 
+	      xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta,0.0,0.0);
     }
     else
     {
-      fprintf(fSol, "%.3f %.3f %.3f %.3f %.3f\n", xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta,door_angle,door_angle_cost);
+      fprintf(fSol, "%.3f %.3f %.3f %.3f %.3f\n", 
+	      xythetaPath.at(i).x, xythetaPath.at(i).y, xythetaPath.at(i).theta,door_angle,door_angle_cost);
     }
   }
   fclose(fSol);

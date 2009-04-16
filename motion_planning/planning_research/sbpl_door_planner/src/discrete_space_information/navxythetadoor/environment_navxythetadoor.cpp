@@ -58,11 +58,11 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
 						 EnvNAVXYTHETALATAction_t* action,
 						 int* pCosttoDoorInterval0, int* pCosttoDoorInterval1)
 {
-  //TODO add support for both door intervals
 
     sbpl_2Dcell_t cell;
     vector<int> doorangleV, prevdoorangleV;
     vector<int> dooranglecostV, prevdooranglecostV;
+    vector<unsigned char> doorangleintV, prevdoorangleintV;
     int i;
 
 	
@@ -77,6 +77,8 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
     double sourcex = DISCXY2CONT(SourceX, EnvNAVXYTHETALATCfg.cellsize_m);
     double sourcey = DISCXY2CONT(SourceY, EnvNAVXYTHETALATCfg.cellsize_m);
 
+    //TODO compute cost multiplier for both door intervals, plus return as soon as both are infinite
+
     //iterate over intermediate poses and compute the cost multiplier due to door
     int doorcostmultiplier = 0;
     for(i = 0; i < (int)action->intermptV.size(); i++) 
@@ -90,9 +92,11 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
         //get the door intervals together with the costs
         doorangleV.clear();
         dooranglecostV.clear();
+	doorangleintV.clear();
 //        printf("\n\n\n Getting action cost\n\n\n");
-        GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV);
+        GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV, &doorangleintV);
 //        printf("Size angles: %d, costs: %d\n",doorangleV.size(),dooranglecostV.size());
+
         if(i > 0){
             //go over the previous interval and pick the common value with the smallest cost
             int mincost = INFINITECOST;
@@ -111,6 +115,7 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
 
         //store the old interval
         prevdoorangleV = doorangleV;
+	prevdoorangleintV = doorangleintV;
         prevdooranglecostV = dooranglecostV;
 
     }    
@@ -157,8 +162,9 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
 }
 
 void EnvironmentNAVXYTHETADOORLAT::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldrobotpose3D, 
-										 vector<int>* doorangleV, 
-										 vector<int>* dooranglecostV)
+						      vector<int>* doorangleV, 
+						      vector<int>* dooranglecostV,
+						      vector<unsigned char>* doorangleintV)
 {
 
     //dummy test
@@ -208,6 +214,7 @@ int EnvironmentNAVXYTHETADOORLAT::MinCostDesiredDoorAngle(int x, int y, int thet
 
   vector<int> doorangleV;
   vector<int> dooranglecostV;
+  vector<unsigned char> doorangleintV;
 
   //special case of no desired door angles
   if(desired_door_anglesV.size() == 0)
@@ -219,19 +226,19 @@ int EnvironmentNAVXYTHETADOORLAT::MinCostDesiredDoorAngle(int x, int y, int thet
   point3D.y = DISCXY2CONT(y, EnvNAVXYTHETALATCfg.cellsize_m);
   point3D.theta = DiscTheta2Cont(theta, NAVXYTHETALAT_THETADIRS);
 
-  //TODO - add door index to getvaliddoorangles call
-
   //get the door intervals together with the costs
   doorangleV.clear();
   dooranglecostV.clear();
-  GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV);
+  doorangleintV.clear();
+  GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV, &doorangleintV);
 
   //go over the interval and pick the desired angle with the smallest cost
   int mincost = INFINITECOST;
   int bestangle = -1;
   for(int cind = 0; cind < (int)doorangleV.size(); cind++){
     for(int dind = 0; dind < (int) desired_door_anglesV.size(); dind++){
-      if(doorangleV[cind] == desired_door_anglesV[dind] && dooranglecostV[cind] < mincost){
+      if(doorangleV[cind] == desired_door_anglesV[dind] && 
+	 doorangleintV[cind] == door_intervalind && dooranglecostV[cind] < mincost){
 	mincost = dooranglecostV[cind];
 	bestangle = desired_door_anglesV[dind];
       }
@@ -242,11 +249,12 @@ int EnvironmentNAVXYTHETADOORLAT::MinCostDesiredDoorAngle(int x, int y, int thet
 }
 
 
-bool EnvironmentNAVXYTHETADOORLAT::GetMinCostDoorAngle(double x, double y, double theta, 
+bool EnvironmentNAVXYTHETADOORLAT::GetMinCostDoorAngle(double x, double y, double theta, unsigned char door_interval,
 						       double &angle, double &door_angle_cost)
 {
   vector<int> doorangleV;
   vector<int> dooranglecostV;
+  vector<unsigned char> doorangleintV;
 
   //get the world 3d robot pose
   EnvNAVXYTHETALAT3Dpt_t point3D;
@@ -257,7 +265,8 @@ bool EnvironmentNAVXYTHETADOORLAT::GetMinCostDoorAngle(double x, double y, doubl
   //get the door intervals together with the costs
   doorangleV.clear();
   dooranglecostV.clear();
-  GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV);
+  doorangleintV.clear();
+  GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV, &doorangleintV);
 
   //go over the interval and pick the angle with the smallest cost
   int mincost = INFINITECOST;
@@ -265,7 +274,7 @@ bool EnvironmentNAVXYTHETADOORLAT::GetMinCostDoorAngle(double x, double y, doubl
   for(int cind = 0; cind < (int)doorangleV.size(); cind++)
   {
 //    printf("angles[%d]: %d %d\n",cind,doorangleV[cind],dooranglecostV[cind]);
-      if(dooranglecostV[cind] < mincost)
+      if(doorangleintV[cind] == door_interval && dooranglecostV[cind] < mincost)
       {
 	mincost = dooranglecostV[cind];
 	bestangle = doorangleV[cind];
@@ -503,86 +512,85 @@ void EnvironmentNAVXYTHETADOORLAT::PrintState(int stateID, bool bVerbose, FILE* 
 int EnvironmentNAVXYTHETADOORLAT::SetGoal(double x_m, double y_m, double theta_rad, 
 					  unsigned char door_interval /*=ENVNAVXYTHETADOOR_DEFAULTDESIREDDOORINTERVALIND*/){
 
-	int x = CONTXY2DISC(x_m, EnvNAVXYTHETALATCfg.cellsize_m);
-	int y = CONTXY2DISC(y_m, EnvNAVXYTHETALATCfg.cellsize_m);
-	int theta = ContTheta2Disc(theta_rad, NAVXYTHETALAT_THETADIRS);
-
-	printf("env: setting goal to %.3f %.3f %.3f %d (%d %d %d %d)\n", x_m, y_m, theta_rad, door_interval, x, y, theta, door_interval);
-
-	if(!IsWithinMapCell(x,y))
-	{
-		printf("ERROR: trying to set a goal cell %d %d that is outside of map\n", x,y);
-		return -1;
-	}
-
-    if(!IsValidConfiguration(x,y,theta))
-	{
-		printf("WARNING: goal configuration is invalid\n");
-	}
-
-    EnvNAVXYTHETADOORHashEntry_t* OutHashEntry;
-    if((OutHashEntry = GetHashEntry(x, y, theta, door_interval)) == NULL){
-        //have to create a new entry
-        OutHashEntry = CreateNewHashEntry(x, y, theta, door_interval);
+  int x = CONTXY2DISC(x_m, EnvNAVXYTHETALATCfg.cellsize_m);
+  int y = CONTXY2DISC(y_m, EnvNAVXYTHETALATCfg.cellsize_m);
+  int theta = ContTheta2Disc(theta_rad, NAVXYTHETALAT_THETADIRS);
+  
+  printf("env: setting goal to %.3f %.3f %.3f %d (%d %d %d %d)\n", x_m, y_m, theta_rad, door_interval, x, y, theta, door_interval);
+  
+  if(!IsWithinMapCell(x,y))
+    {
+      printf("ERROR: trying to set a goal cell %d %d that is outside of map\n", x,y);
+      return -1;
     }
-
-	//need to recompute start heuristics?
-	if(EnvNAVXYTHETALAT.goalstateid != OutHashEntry->stateID)
-		bNeedtoRecomputeStartHeuristics = true; //because termination condition may not plan all the way to the new goal
-
-    EnvNAVXYTHETALAT.goalstateid = OutHashEntry->stateID;
-
-	EnvNAVXYTHETALATCfg.EndX_c = x;
-	EnvNAVXYTHETALATCfg.EndY_c = y;
-	EnvNAVXYTHETALATCfg.EndTheta = theta;
-	desired_door_intervalindex = door_interval;
-
-    return EnvNAVXYTHETALAT.goalstateid;    
-
+  
+  if(!IsValidConfiguration(x,y,theta))
+    {
+      printf("WARNING: goal configuration is invalid\n");
+    }
+  
+  EnvNAVXYTHETADOORHashEntry_t* OutHashEntry;
+  if((OutHashEntry = GetHashEntry(x, y, theta, door_interval)) == NULL){
+    //have to create a new entry
+    OutHashEntry = CreateNewHashEntry(x, y, theta, door_interval);
+  }
+  
+  //need to recompute start heuristics?
+  if(EnvNAVXYTHETALAT.goalstateid != OutHashEntry->stateID)
+    bNeedtoRecomputeStartHeuristics = true; //because termination condition may not plan all the way to the new goal
+  
+  EnvNAVXYTHETALAT.goalstateid = OutHashEntry->stateID;
+  
+  EnvNAVXYTHETALATCfg.EndX_c = x;
+  EnvNAVXYTHETALATCfg.EndY_c = y;
+  EnvNAVXYTHETALATCfg.EndTheta = theta;
+  desired_door_intervalindex = door_interval;
+  
+  return EnvNAVXYTHETALAT.goalstateid;    
+  
 }
 
-//TODO-cont. here
 
 //returns the stateid if success, and -1 otherwise
 int EnvironmentNAVXYTHETADOORLAT::SetStart(double x_m, double y_m, double theta_rad, 
 					   unsigned char door_interval /*=ENVNAVXYTHETADOOR_DEFAULTSTARTDOORINTERVALIND*/){
 
-	int x = CONTXY2DISC(x_m, EnvNAVXYTHETALATCfg.cellsize_m);
-	int y = CONTXY2DISC(y_m, EnvNAVXYTHETALATCfg.cellsize_m); 
-	int theta = ContTheta2Disc(theta_rad, NAVXYTHETALAT_THETADIRS);
-
-	if(!IsWithinMapCell(x,y))
-	{
-		printf("ERROR: trying to set a start cell %d %d that is outside of map\n", x,y);
-		return -1;
-	}
-
-	printf("env: setting start to %.3f %.3f %.3f %d (%d %d %d %d)\n", x_m, y_m, theta_rad, door_interval, x, y, theta, door_interval);
-
-    if(!IsValidConfiguration(x,y,theta))
-	{
-		printf("WARNING: start configuration %d %d %d is invalid\n", x,y,theta);
-	}
-
-    EnvNAVXYTHETADOORHashEntry_t* OutHashEntry;
-    if((OutHashEntry = GetHashEntry(x, y, theta, door_interval)) == NULL){
-        //have to create a new entry
-        OutHashEntry = CreateNewHashEntry(x, y, theta, door_interval);
+  int x = CONTXY2DISC(x_m, EnvNAVXYTHETALATCfg.cellsize_m);
+  int y = CONTXY2DISC(y_m, EnvNAVXYTHETALATCfg.cellsize_m); 
+  int theta = ContTheta2Disc(theta_rad, NAVXYTHETALAT_THETADIRS);
+  
+  if(!IsWithinMapCell(x,y))
+    {
+      printf("ERROR: trying to set a start cell %d %d that is outside of map\n", x,y);
+      return -1;
     }
 
-	//need to recompute start heuristics?
-	if(EnvNAVXYTHETALAT.startstateid != OutHashEntry->stateID)
-		bNeedtoRecomputeStartHeuristics = true;
+  printf("env: setting start to %.3f %.3f %.3f %d (%d %d %d %d)\n", x_m, y_m, theta_rad, door_interval, x, y, theta, door_interval);
 
-	//set start
-    EnvNAVXYTHETALAT.startstateid = OutHashEntry->stateID;
-	EnvNAVXYTHETALATCfg.StartX_c = x;
-	EnvNAVXYTHETALATCfg.StartY_c = y;
-	EnvNAVXYTHETALATCfg.StartTheta = theta;
-	start_door_intervalindex = door_interval;
+  if(!IsValidConfiguration(x,y,theta))
+    {
+      printf("WARNING: start configuration %d %d %d is invalid\n", x,y,theta);
+    }
+
+  EnvNAVXYTHETADOORHashEntry_t* OutHashEntry;
+  if((OutHashEntry = GetHashEntry(x, y, theta, door_interval)) == NULL){
+    //have to create a new entry
+    OutHashEntry = CreateNewHashEntry(x, y, theta, door_interval);
+  }
+
+  //need to recompute start heuristics?
+  if(EnvNAVXYTHETALAT.startstateid != OutHashEntry->stateID)
+    bNeedtoRecomputeStartHeuristics = true;
+
+  //set start
+  EnvNAVXYTHETALAT.startstateid = OutHashEntry->stateID;
+  EnvNAVXYTHETALATCfg.StartX_c = x;
+  EnvNAVXYTHETALATCfg.StartY_c = y;
+  EnvNAVXYTHETALATCfg.StartTheta = theta;
+  start_door_intervalindex = door_interval;
 
 
-    return EnvNAVXYTHETALAT.startstateid;    
+  return EnvNAVXYTHETALAT.startstateid;    
 
 }
 
@@ -619,6 +627,8 @@ int EnvironmentNAVXYTHETADOORLAT::GetStateFromCoord(int x, int y, int theta,
 void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>* stateIDPath, 
 								 vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath,											       vector<unsigned char>* door_intervalindPath)
 {
+
+  //TODO Set interval index path
 	vector<EnvNAVXYTHETALATAction_t*> actionV;
 	vector<int> CostV;
 	vector<int> SuccIDV;
@@ -664,16 +674,16 @@ void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>
 		{
 
 #if DEBUG
-		int x_c, y_c, theta_c, doorint;
-		GetCoordFromState(SuccIDV[sind], x_c, y_c, theta_c, doorint);
-		fprintf(fDeb, "succ: %d %d %d\n", x_c, y_c, theta_c, doorint); 
+		  int x_c, y_c, theta_c, doorint;
+		  GetCoordFromState(SuccIDV[sind], x_c, y_c, theta_c, doorint);
+		  fprintf(fDeb, "succ: %d %d %d\n", x_c, y_c, theta_c, doorint); 
 #endif
 
-			if(SuccIDV[sind] == targetID && CostV[sind] <= bestcost)
-			{
-				bestcost = CostV[sind];
-				bestsind = sind;
-			}
+		  if(SuccIDV[sind] == targetID && CostV[sind] <= bestcost)
+		    {
+		      bestcost = CostV[sind];
+		      bestsind = sind;
+		    }
 		}
 		if(bestsind == -1)
 		{
@@ -690,24 +700,27 @@ void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>
 		sourcey = DISCXY2CONT(sourcey_c, EnvNAVXYTHETALATCfg.cellsize_m);
 		for(int ipind = 0; ipind < ((int)actionV[bestsind]->intermptV.size())-1; ipind++)
 		{
-			//translate appropriately
-			EnvNAVXYTHETALAT3Dpt_t intermpt = actionV[bestsind]->intermptV[ipind];
-			intermpt.x += sourcex;
-			intermpt.y += sourcey;
-
+		  //translate appropriately
+		  EnvNAVXYTHETALAT3Dpt_t intermpt = actionV[bestsind]->intermptV[ipind];
+		  intermpt.x += sourcex;
+		  intermpt.y += sourcey;
+		  
 #if DEBUG
-			int nx = CONTXY2DISC(intermpt.x, EnvNAVXYTHETALATCfg.cellsize_m);
-			int ny = CONTXY2DISC(intermpt.y, EnvNAVXYTHETALATCfg.cellsize_m);
-			fprintf(fDeb, "%.3f %.3f %.3f (%d %d %d cost=%d) ", 
-				intermpt.x, intermpt.y, intermpt.theta, 
-				nx, ny, 
-				ContTheta2Disc(intermpt.theta, NAVXYTHETALAT_THETADIRS), EnvNAVXYTHETALATCfg.Grid2D[nx][ny]);
-			if(ipind == 0) fprintf(fDeb, "first (heur=%d)\n", GetStartHeuristic(sourceID));
-			else fprintf(fDeb, "\n");
+		  int nx = CONTXY2DISC(intermpt.x, EnvNAVXYTHETALATCfg.cellsize_m);
+		  int ny = CONTXY2DISC(intermpt.y, EnvNAVXYTHETALATCfg.cellsize_m);
+		  fprintf(fDeb, "%.3f %.3f %.3f (%d %d %d cost=%d) ", 
+			  intermpt.x, intermpt.y, intermpt.theta, 
+			  nx, ny, 
+			  ContTheta2Disc(intermpt.theta, NAVXYTHETALAT_THETADIRS), EnvNAVXYTHETALATCfg.Grid2D[nx][ny]);
+		  if(ipind == 0) fprintf(fDeb, "first (heur=%d)\n", GetStartHeuristic(sourceID));
+		  else fprintf(fDeb, "\n");
 #endif
 
-			//store
-			xythetaPath->push_back(intermpt);
+		  //store
+		  xythetaPath->push_back(intermpt);
+		  
+		  //TODO - store door_interval into the path
+
 		}
 	}
 }
@@ -811,6 +824,7 @@ EnvNAVXYTHETADOORHashEntry_t*EnvironmentNAVXYTHETADOORLAT::CreateNewHashEntry(
 
 
 void EnvironmentNAVXYTHETADOORLAT::GetPathMinDoorAngle(const std::vector<EnvNAVXYTHETALAT3Dpt_t> &path, 
+						       const std::vector<unsigned char> &doorangleintpath,
 									 std::vector<double> &angle, std::vector<double> &angle_cost)
 {
   angle.resize(path.size());
@@ -820,7 +834,8 @@ void EnvironmentNAVXYTHETADOORLAT::GetPathMinDoorAngle(const std::vector<EnvNAVX
   {
     double door_angle;
     double door_angle_cost;
-    if(this->GetMinCostDoorAngle(path.at(i).x, path.at(i).y, path.at(i).theta,door_angle,door_angle_cost))
+    if(this->GetMinCostDoorAngle(path.at(i).x, path.at(i).y, path.at(i).theta,doorangleintpath.at(i),
+				 door_angle,door_angle_cost))
     {
       angle.at(i) = door_angle;
       angle_cost.at(i) = door_angle_cost;

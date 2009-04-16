@@ -75,7 +75,9 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
   //FInally, desired door angles should only be used when the search is done forward (no sense to set it in the backward search)
   void SetDesiredDoorAngles(vector<int> desired_door_anglesV);
 
-  void GetPathMinDoorAngle(const std::vector<EnvNAVXYTHETALAT3Dpt_t> &path, std::vector<double> &angle, std::vector<double> &angle_cost);
+  void GetPathMinDoorAngle(const std::vector<EnvNAVXYTHETALAT3Dpt_t> &path, 
+			   const std::vector<unsigned char> &door_intervalpath, 
+			   std::vector<double> &angle, std::vector<double> &angle_cost);
 
 
   void SetAllActionsandAllOutcomes(CMDPSTATE* state){
@@ -111,7 +113,7 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
   };
 
 
-  bool GetMinCostDoorAngle(double x, double y, double theta, double &angle, double &door_angle_cost);
+  bool GetMinCostDoorAngle(double x, double y, double theta, unsigned char door_interval, double &angle, double &door_angle_cost);
 
   void setDoorProperties(const robot_msgs::Door &door, double door_thickness);
 
@@ -141,7 +143,7 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
   //a multiplication factor of 1 (no penalty). Infinite cost should be indicated by INFINITECOST, or better if not
   //returned at all as a possible doorangle.
   void GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldrobotpose3D, vector<int>* doorangleV, 
-                          vector<int>* dooranglecostV);
+                          vector<int>* dooranglecostV, vector<unsigned char>* doorangleintV);
 
 
   //returns the cost to getting to mincost desired door angles while staying at this pose
