@@ -15,17 +15,6 @@
 #include "LabelStr.hh"
 #include <executive_trex_pr2/topological_map.h>
 #include <executive_trex_pr2/door_domain_constraints.hh>
-
-/*
-#include "CalcCommandConstraint.hh"
-#include "CalcGlobalPathConstraint.hh"
-#include "CalcArmInverseKinematicsConstraint.hh"
-#include "CalcInterpolatedEndEffectorPosConstraint.hh"
-#include "CalcGraspPositionConstraint.hh"
-#include "CalcCommandConstraintPlayback.hh"
-#include "CalcGlobalPathConstraintPlayback.hh"
-*/
-
 #include <math.h>
 
 namespace TREX{
@@ -41,20 +30,22 @@ namespace TREX{
   /**
    * @brief A base class constraint for posting an equality relation across matching
    * paramaters in a pair of tokens.
+   * @note This could go back to the EUROPA constraint engine
    */
   class ParamEqConstraint: public Constraint{
   public:
     ParamEqConstraint(const LabelStr& name,
 		       const LabelStr& propagatorName,
 		       const ConstraintEngineId& constraintEngine,
-		       const std::vector<ConstrainedVariableId>& variables);
+		      const std::vector<ConstrainedVariableId>& variables,
+		      const char* param_names)
+      : Constraint(name, propagatorName, constraintEngine, makeNewScope(param_names, variables)){}
 
   private:
 
     /**
      * @brief Takes a ':' delimited list of param names to use in applying the quality relation
      */
-    /*
     std::vector<ConstrainedVariableId> makeNewScope(const char* param_names, const std::vector<ConstrainedVariableId>& variables ){
       static const char* DELIMITER(":");
 
@@ -63,85 +54,82 @@ namespace TREX{
 	return variables;
 
       // Otherwise swap for parameters of both tokens
-      const std::vector<ConstrainedVariableId>& scope_a(TREX::getParentToken(variables[0])->parameters());
-      const std::vector<ConstrainedVariableId>& scope_b = TREX::getParentToken(variables[1])->parameters();
-      
+      const TokenId& token_a = TREX::getParentToken(variables[0]);
+      const TokenId& token_b = TREX::getParentToken(variables[1]);
+      std::vector<ConstrainedVariableId> new_scope;
       LabelStr param_names_lbl(param_names);
-      unsigned int param_count param_names_lbl.countElements(DELIMITER);
+      unsigned int param_count = param_names_lbl.countElements(DELIMITER);
       for(unsigned int i = 0; i < param_count; i++){
-	LabelStr param_name = param_names_lbl.getElement(DELIMITER, i);
-	ConstrainedVariableId var_a = scope_a->getVariable(
-      }
+	LabelStr param_name = param_names_lbl.getElement(i, DELIMITER);
+	ConstrainedVariableId var_a = token_a->getVariable(param_name);
+	ConstrainedVariableId var_b = token_b->getVariable(param_name);
+	checkError(var_a.isValid(), "No variable for " << param_name.toString() << " in " << token_a->toString());
+	checkError(var_b.isValid(), "No variable for " << param_name.toString() << " in " << token_b->toString());
 
-      for(unsigned int i = 0; i< params.size(); i++)
-	new_scope.push_back(params[i]);
+	// Insert the pair
+	new_scope.push_back(var_a);
+	new_scope.push_back(var_b);
+      }
 
       return new_scope;
     }
-    */
+   
     void handleExecute(){
-      debugMsg("trex:propagation:get_state",  "BEFORE: " << toString());
+      debugMsg("trex:debug:propagation:param_eq",  "BEFORE: " << toString());
 
-      // Iterate over all parameters of the source token. Any with a name match will be intersected
-      std::vector<ConstrainedVariableId>::const_iterator it = _source_token->parameters().begin();
-      while (it != _source_token->parameters().end()){
-	static const LabelStr STATUS("status");
-	ConstrainedVariableId v_source = *it;
-	if(v_source->getName() != STATUS){
-	  ConstrainedVariableId v_target = _target_token->getVariable(v_source->getName());
-	  if(v_target.isId()){
-	    AbstractDomain& target_dom = getCurrentDomain(v_target);
-	    if(target_dom.intersect(v_source->lastDomain()) && target_dom.isEmpty()){
-	      return;
-	    }
-	  }
-	}
-	++it;
+      unsigned int param_count = getScope().size() / 2;
+      for(unsigned int i = 0; i < param_count; i++){
+	unsigned int index = i * 2;
+	AbstractDomain& dom_a = getCurrentDomain(getScope()[index]);
+	AbstractDomain& dom_b = getCurrentDomain(getScope()[index+1]);
+
+	// Conduct mutual intersection
+	dom_a.intersect(dom_b);
+	if(dom_a.isEmpty())
+	  return;
+	dom_b.intersect(dom_a);
+	if(dom_b.isEmpty())
+	  return;
       }
 
-      debugMsg("trex:propagation:get_state",  "AFTER: " << toString());
-    }
-
-    std::string toString() const {
-      std::stringstream sstr;
-
-      sstr << Entity::toString() << std::endl;
-
-      std::vector<ConstrainedVariableId>::const_iterator it = _source_token->parameters().begin();
-      unsigned int i = 0;
-      while (it != _source_token->parameters().end()){
-	ConstrainedVariableId v_source = *it;
-	ConstrainedVariableId v_target = _target_token->getVariable(v_source->getName());
-	if(v_target.isId())
-	  sstr << " ARG[" << i++ << "]:" << v_target->toLongString() << std::endl;
-	++it;
-      }
-
-      return sstr.str();
+      debugMsg("trex:debug:propagation:param_eq",  "AFTER: " << toString());
     }
 
     const TokenId _target_token;
     const TokenId _source_token;
   };
 
-  /**
-   * @brief Assigns parameter values from one token to another, matching by name
-   * and skipping any intrinsic values: status
-   */
-  class GetStateConstraint: public Constraint{
+  class DoorMsgEqConstraint: public ParamEqConstraint {
   public:
-    GetStateConstraint(const LabelStr& name,
-		       const LabelStr& propagatorName,
-		       const ConstraintEngineId& constraintEngine,
-		       const std::vector<ConstrainedVariableId>& variables);
+    DoorMsgEqConstraint(const LabelStr& name,
+			const LabelStr& propagatorName,
+			const ConstraintEngineId& constraintEngine,
+			const std::vector<ConstrainedVariableId>& variables)
+      : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
+			  "time_stamp:frame_id:frame_p1_x:frame_p1_y:frame_p1_z:frame_p2_x:frame_p2_y:frame_p2_z:height:hinge:rot_dir:door_p1_x:door_p1_y:door_p1_z:door_p2_x:door_p2_y:door_p2_z:handle_x:handle_y:handle_z:normal_x:normal_y:normal_z")
+    {}
+  };
 
-  private:
-    std::vector<ConstrainedVariableId> makeNewScope(const std::vector<ConstrainedVariableId>& variables );
-    void handleExecute();
-    std::string toString() const;
+  class PlugStowMsgEqConstraint: public ParamEqConstraint {
+  public:
+    PlugStowMsgEqConstraint(const LabelStr& name,
+			const LabelStr& propagatorName,
+			const ConstraintEngineId& constraintEngine,
+			const std::vector<ConstrainedVariableId>& variables)
+      : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
+			  "time_stamp:frame_id:stowed:x:y:z")
+    {}
+  };
 
-    const TokenId _target_token;
-    const TokenId _source_token;
+  class PointMsgEqConstraint: public ParamEqConstraint {
+  public:
+    PointMsgEqConstraint(const LabelStr& name,
+			const LabelStr& propagatorName,
+			const ConstraintEngineId& constraintEngine,
+			const std::vector<ConstrainedVariableId>& variables)
+      : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
+			  "time_stamp:frame_id:x:y:z")
+    {}
   };
 
   class AllBoundsSetConstraint: public Constraint{
@@ -185,7 +173,7 @@ namespace TREX{
     const AbstractDomain& m_y;
     ObjectDomain& m_location;
   };
-
+    
   class RandomSelection: public Constraint{
   public:
     RandomSelection(const LabelStr& name,
@@ -213,8 +201,12 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::NearestLocation, "nearestReachableLocation", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::RandomSelection, "randomSelect", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::GetStateConstraint, "get_state", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::AllBoundsSetConstraint, "all_bounds_set", "Default");
+
+      // Constraints for message binding
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PlugStowMsgEqConstraint, "eq_plug_stow_msg", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PointMsgEqConstraint, "eq_point_msg", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::DoorMsgEqConstraint, "eq_door_msg", "Default");
 
       // Register topological map constraints
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
@@ -239,20 +231,6 @@ namespace TREX{
       EUROPA::SOLVERS::ComponentFactoryMgr* cfm = (EUROPA::SOLVERS::ComponentFactoryMgr*)assembly.getComponent("ComponentFactoryMgr");
       REGISTER_FLAW_FILTER(cfm, executive_trex_pr2::MapConnectorFilter, MapConnectorFilter);
       REGISTER_FLAW_HANDLER(cfm, executive_trex_pr2::MapConnectorSelector, MapConnectorSelector);
-
-      /*
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcArmInverseKinematicsConstraint, "calcArmInverseKinematics", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcGraspPositionConstraint, "calcGraspPosition", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcInterpolatedEndEffectorPosConstraint, "calcInterpolatedEndEffectorPos", "Default");
-
-      if (m_playback) {
-	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcCommandConstraintPlayback, "calcCommand", "Default");
-	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcGlobalPathConstraintPlayback, "calcGlobalPath", "Default");
-      } else {
-	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcCommandConstraint, "calcCommand", "Default");
-	REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcGlobalPathConstraint, "calcGlobalPath", "Default");
-      }
-      */
     }
 
   private:
@@ -266,72 +244,6 @@ namespace TREX{
     ROS_SCHEMA = new ROSSchema(playback);
   }
 
-
-  //*******************************************************************************************
-  GetStateConstraint::GetStateConstraint(const LabelStr& name,
-					 const LabelStr& propagatorName,
-					 const ConstraintEngineId& constraintEngine,
-					 const std::vector<ConstrainedVariableId>& variables)
-    :Constraint(name, propagatorName, constraintEngine, makeNewScope(variables)),
-     _target_token(TREX::getParentToken(variables[0])), 
-     _source_token(TREX::getParentToken(variables[1])){}
-
-
-  std::vector<ConstrainedVariableId> GetStateConstraint::makeNewScope(const std::vector<ConstrainedVariableId>& variables){
-    // If already mapped, then return without modification. This is the case when merging
-    if(variables.size() > 2)
-      return variables;
-
-    // Otherwise swap for parameters of both tokens
-    std::vector<ConstrainedVariableId> new_scope(TREX::getParentToken(variables[0])->parameters());
-
-    const std::vector<ConstrainedVariableId>& params = TREX::getParentToken(variables[1])->parameters();
-    for(unsigned int i = 0; i< params.size(); i++)
-      new_scope.push_back(params[i]);
-
-    return new_scope;
-  }
-
-  void GetStateConstraint::handleExecute(){
-    debugMsg("trex:propagation:get_state",  "BEFORE: " << toString());
-
-    // Iterate over all parameters of the source token. Any with a name match will be intersected
-    std::vector<ConstrainedVariableId>::const_iterator it = _source_token->parameters().begin();
-    while (it != _source_token->parameters().end()){
-      static const LabelStr STATUS("status");
-      ConstrainedVariableId v_source = *it;
-      if(v_source->getName() != STATUS){
-	ConstrainedVariableId v_target = _target_token->getVariable(v_source->getName());
-	if(v_target.isId()){
-	  AbstractDomain& target_dom = getCurrentDomain(v_target);
-	  if(target_dom.intersect(v_source->lastDomain()) && target_dom.isEmpty()){
-	    return;
-	  }
-	}
-      }
-      ++it;
-    }
-
-    debugMsg("trex:propagation:get_state",  "AFTER: " << toString());
-  }
-
-  std::string GetStateConstraint::toString() const {
-    std::stringstream sstr;
-
-    sstr << Entity::toString() << std::endl;
-
-    std::vector<ConstrainedVariableId>::const_iterator it = _source_token->parameters().begin();
-    unsigned int i = 0;
-    while (it != _source_token->parameters().end()){
-      ConstrainedVariableId v_source = *it;
-      ConstrainedVariableId v_target = _target_token->getVariable(v_source->getName());
-      if(v_target.isId())
-	sstr << " ARG[" << i++ << "]:" << v_target->toLongString() << std::endl;
-      ++it;
-    }
-
-    return sstr.str();
-  }
 
   //*******************************************************************************************
   AllBoundsSetConstraint::AllBoundsSetConstraint(const LabelStr& name,

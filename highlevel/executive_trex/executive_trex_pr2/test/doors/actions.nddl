@@ -109,7 +109,7 @@ DoorActions::OpenDoorByDoorState{
   cmd_grasp_handle before cmd_open_door;
 
   // We need feedback, so have to bind state at the end. Will use to transfer results of
-  // one command to another. Normally this will be done through a door state timeline
+  // one command to another.
   any(DetectDoor.Inactive feedback_detect_door);
   any(GraspHandle.Inactive feedback_grasp_handle);
 
@@ -126,11 +126,10 @@ DoorActions::OpenDoorByDoorState{
      cmd_open_door.status);
 
   // Flow feedback from one to another. Seeded by input parameters
-  get_state(cmd_detect_door.object, this.object);
-  get_state(cmd_grasp_handle.object, feedback_detect_door.object);
-  get_state(cmd_open_door.object, feedback_grasp_handle.object);
+  eq_door_msg(cmd_detect_door.object, this.object);
+  eq_door_msg(cmd_grasp_handle.object, feedback_detect_door.object);
+  eq_door_msg(cmd_open_door.object, feedback_grasp_handle.object);
  
-
   // Obtain the detection base location based on the door data from this initial state value
   door_get_robot_pose_for_door(cmd_move_to_detect.x, cmd_move_to_detect.y, cmd_move_to_detect.th, 
 			       cmd_detect_door.object, DETECTION_RANGE);

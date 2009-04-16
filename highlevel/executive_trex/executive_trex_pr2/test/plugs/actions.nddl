@@ -67,14 +67,9 @@ PlugActions::PickupAndRelease {
   cmd_detect_plug_on_base meets feedback_detect_plug_on_base;
 
   // Provides input to grasp
-  eq(cmd_move_and_grasp_plug.time_stamp, feedback_detect_plug_on_base.time_stamp);
-  eq(cmd_move_and_grasp_plug.frame_id, feedback_detect_plug_on_base.frame_id);
-  eq(cmd_move_and_grasp_plug.stowed, feedback_detect_plug_on_base.stowed);
-  eq(cmd_move_and_grasp_plug.x, feedback_detect_plug_on_base.x);
-  eq(cmd_move_and_grasp_plug.y, feedback_detect_plug_on_base.y);
-  eq(cmd_move_and_grasp_plug.z, feedback_detect_plug_on_base.z);
+  eq_plug_stow_msg(cmd_move_and_grasp_plug.object, feedback_detect_plug_on_base.object);
 
-  // Use a bogus point
+  // Use a bogus point. Do we even need a point
   eq(cmd_detect_outlet_fine.time_stamp, feedback_detect_plug_on_base.time_stamp);
   eq(cmd_detect_outlet_fine.frame_id, "torso_lift_link");
   eq(cmd_detect_outlet_fine.x, 0.0);
@@ -82,59 +77,10 @@ PlugActions::PickupAndRelease {
   eq(cmd_detect_outlet_fine.z, 0.0);
 
   // Stow it back where we got it
-  eq(cmd_stow_plug.time_stamp, feedback_detect_plug_on_base.time_stamp);
-  eq(cmd_stow_plug.frame_id, feedback_detect_plug_on_base.frame_id);
-  eq(cmd_stow_plug.stowed, feedback_detect_plug_on_base.stowed);
-  eq(cmd_stow_plug.x, feedback_detect_plug_on_base.x);
-  eq(cmd_stow_plug.y, feedback_detect_plug_on_base.y);
-  eq(cmd_stow_plug.z, feedback_detect_plug_on_base.z);
+  eq_plug_stow_msg(cmd_stow_plug.object, feedback_detect_plug_on_base.object);
 
   // End the action when the last command finishes
   concurrent(end, cmd_stow_plug.end);
-/*
-  contains(localize_plug_in_gripper.Active cmd_localize_plug_in_gripper);
-  contains(stow_plug.Active cmd_stow_plug);
-  contains(servo_to_outlet.Active cmd_servo_to_outlet);
-  contains(insert_plug.Active cmd_insert_plug);
-  contains(push_plug_in.Active cmd_push_plug_in);
-  contains(unplug.Active cmd_unplug);
-  contains(detect_plug_on_base.Active cmd_detect_plug_on_base_to_confirm);
-  contains(safety_tuck_arms.Active cmd_tuck_arms_again);
-*/
-
-/*
-  cmd_move_and_grasp_plug before cmd_localize_plug_in_gripper;
-  cmd_localize_plug_in_gripper before cmd_stow_plug;
-  cmd_stow_plug before cmd_servo_to_outlet;
-  cmd_servo_to_outlet before cmd_insert_plug;
-  cmd_insert_plug before cmd_push_plug_in;
-  cmd_push_plug_in before cmd_unplug;
-  cmd_unplug before cmd_detect_plug_on_base_to_confirm;
-  cmd_detect_plug_on_base_to_confirm before cmd_tuck_arms_again;
-
-  // require that the all execute successfully
-  eq(SUCCESS,
-     cmd_tuck_arms.status,
-     cmd_untuck_arms.status,
-     cmd_detect_plug_on_base.status,
-     cmd_move_and_grasp_plug.status,
-     cmd_localize_plug_in_gripper.status,
-     cmd_stow_plug.status,
-     cmd_insert_plug.status,
-     cmd_push_plug_in.status,
-     cmd_unplug.status,
-     cmd_detect_plug_on_base_to_confirm.status,
-     cmd_tuck_arms_again.status);
-*/
-
-
-/*
-  // Provides input to stow
-  get_state(cmd_stow_plug.object, feedback_detect_plug_on_base.object);
-
-  // Finally, the action ends when the tuck arms finishes
-  concurrent(end, cmd_tuck_arms_again.end);
-*/
 }
 
 PlugActions plug_actions = new PlugActions();

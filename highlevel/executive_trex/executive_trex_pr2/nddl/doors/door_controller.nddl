@@ -66,6 +66,11 @@ class DoorController extends AgentTimeline {
     float handle_x;
     float handle_y;
     float handle_z;
+
+    // Normal data
+    float normal_x;
+    float normal_y;
+    float normal_z;
   }
 
   DoorController(Mode _mode){
@@ -274,6 +279,9 @@ DoorController::Holds{
   defaultOnCommit(handle_x, p.handle_x);
   defaultOnCommit(handle_y, p.handle_y);
   defaultOnCommit(handle_z, p.handle_z);
+  defaultOnCommit(normal_x, p.normal_x);
+  defaultOnCommit(normal_y, p.normal_y);
+  defaultOnCommit(normal_z, p.normal_z);
 }
 
 /************************************************************************
@@ -287,7 +295,7 @@ DoorManipulationBehavior::Active{
   any(DoorController.Holds dc);
   precedes(dc.start, start);
   temporalDistance(start, [1 +inf], dc.end);
-  get_state(this.object, dc.object);
+  eq_door_msg(this.object, dc.object);
 }
 
 DoorManipulationBehavior::Inactive{
@@ -295,7 +303,7 @@ DoorManipulationBehavior::Inactive{
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
     eq(dc.active, true);
-    get_state(dc.object, this.object);
+    eq_door_msg(dc.object, this.object);
   }
 }
 
