@@ -157,7 +157,9 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 			   ground_dist_x1, ground_dist_x2);
 		PRINTF("Vertical distance between ground holes: %f\n", ground_dist_y);
 #endif // _VERBOSE
-	}	
+	}
+
+    cvReleaseMat(&homography);
 	
 	return 1;
 }

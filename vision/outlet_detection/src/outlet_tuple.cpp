@@ -21,6 +21,7 @@ using namespace std;
 
 #include "outlet_detection/outlet_tuple.h"
 #include <highgui.h>
+#include <cvwimage.h>
 
 const float pi = 3.1415926f;
 
@@ -261,8 +262,10 @@ int order_tuple2(vector<outlet_elem_t>& tuple)
 
 int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const char* output_path, const char* filename)
 {
-	IplImage* grey = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 1);
-	IplImage* binary = cvCloneImage(grey);
+    cv::WImageBuffer1_b grey_buf(img->width, img->height);
+    cv::WImageBuffer1_b binary_buf(img->width, img->height);
+    IplImage* grey = grey_buf.Ipl();
+	IplImage* binary = binary_buf.Ipl();
 	cvCvtColor(img, grey, CV_RGB2GRAY);
 	cvSmooth(grey, grey);
 	cvAdaptiveThreshold(grey, binary, 255, CV_ADAPTIVE_THRESH_MEAN_C, 
@@ -285,8 +288,9 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 #if defined(_VERBOSE_TUPLE)
 	IplImage* img1 = cvCloneImage(img);
 #endif //_VERBOSE_TUPLE
-	
-	IplImage* mask = cvCloneImage(grey);
+
+    cv::WImageBuffer1_b mask_buf( cvCloneImage(grey) );
+	IplImage* mask = mask_buf.Ipl();
 	for(CvSeq* seq = first; seq != NULL; seq = seq->h_next)
 	{
 		CvRect rect = cvBoundingRect(seq);
@@ -461,8 +465,6 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 #endif
 
 	cvReleaseMemStorage(&storage);
-	cvReleaseImage(&binary);
-	cvReleaseImage(&grey);
 	
 	return found_tuple;
 	
