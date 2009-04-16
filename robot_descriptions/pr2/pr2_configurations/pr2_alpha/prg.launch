@@ -48,7 +48,7 @@
 
 <!-- NTP monitoring script Warns to console if sync error -->
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="prg2" machine="realtime"/>
-  <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1" machine="two"/> 
+  <node pkg="runtime_monitor" type="ntp_monitor.py" args="fw1 7000" machine="two"/> 
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="prg2" machine="three"/>
   <node pkg="runtime_monitor" type="ntp_monitor.py" args="prg2" machine="four"/>   
 
