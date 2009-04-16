@@ -15,6 +15,9 @@
 #define _OUTLET_TUPLE_H
 
 #include <cv.h>
+#include <vector>
+
+using namespace std;
 
 inline CvPoint cvPoint(CvPoint2D32f point)
 {

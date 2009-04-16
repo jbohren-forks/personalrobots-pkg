@@ -69,9 +69,9 @@
 #include <tf/transform_listener.h>
 
 #include "CvStereoCamModel.h"
-#include "outlet_tuple.h"
+#include "outlet_detection/outlet_tuple.h"
 
-#include "outlet_spotting/OutletSpotting.h"
+#include "outlet_detection/OutletDetection.h"
 #include "robot_actions/action.h"
 #include "robot_actions/action_runner.h"
 #include "robot_actions/DetectOutletState.h"
@@ -867,8 +867,8 @@ private:
 			// if we made it this far, check the patch to see if it's an outlet
 			IplImage* patch = cvCreateImage(cvSize(bbs[t].width, bbs[t].height), IPL_DEPTH_8U, 1);
 			cvCopyPatch(left,patch, bbs[t]);
-			CvPoint2D32f centroids[4];
-			bool found = find_outlet_centroids(patch, centroids, 1);
+			outlet_tuple_t outlet_tuple;
+			bool found = find_outlet_centroids(patch, outlet_tuple, NULL, NULL);
 			cvReleaseImage(&patch);
 
 			if (!found) {
@@ -964,7 +964,7 @@ private:
     /**
      * \brief Service call to spot outlets
      */
-    bool outletSpottingService(outlet_spotting::OutletSpotting::Request & req, outlet_spotting::OutletSpotting::Response & resp)
+    bool outletSpottingService(outlet_detection::OutletDetection::Request & req, outlet_detection::OutletDetection::Response & resp)
     {
     	ROS_INFO("OutletSpotter: service called");
 

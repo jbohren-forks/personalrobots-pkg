@@ -2,7 +2,7 @@
   <description>
     Outlet detection and localization
   </description>
-  <author>Patrick Mihelich, Victor Eruhimov</author>
+  <author>Patrick Mihelich, Victor Eruhimov, Marius Muja, Gary Bradski</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
@@ -16,6 +16,10 @@
   <depend package="bullet"/>
   <depend package="tf"/>
   <depend package="eigen"/>
+  <depend package="topic_synchronizer"/>
+  <depend package="stereo_utils"/>
+  <depend package="point_cloud_mapping"/>
+  <depend package="robot_actions"/>
 
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib" />
   <sysdepend os="ubuntu" version="7.10-gutsy" package="python-matplotlib" />

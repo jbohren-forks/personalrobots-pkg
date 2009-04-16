@@ -28,7 +28,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "ros/node.h"
-#include "outlet_spotting/OutletSpotting.h"
+#include "outlet_detection/OutletDetection.h"
 #include <cstdlib>
 
 
@@ -37,8 +37,8 @@
 bool callDetector()
 {
 
-	outlet_spotting::OutletSpotting::Request req;
-	outlet_spotting::OutletSpotting::Response resp;
+	outlet_detection::OutletDetection::Request req;
+	outlet_detection::OutletDetection::Response resp;
 
 	req.point.header.frame_id = "base_link";
 
