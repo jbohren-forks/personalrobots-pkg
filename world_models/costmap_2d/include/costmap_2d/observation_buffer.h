@@ -58,11 +58,14 @@ namespace costmap_2d {
        * @param  topic_name The topic of the observations, used as an identifier for error and warning messages
        * @param  observation_keep_time Defines the persistance of observations in seconds, 0 means only keep the latest
        * @param  expected_update_rate How often this buffer is expected to be updated, 0 means there is no limit
+       * @param  min_obstacle_height The minimum height of a hitpoint to be considered legal
+       * @param  max_obstacle_height The minimum height of a hitpoint to be considered legal
        * @param  tf A reference to a TransformListener
        * @param  global_frame The frame to transform PointClouds into
        * @param  sensor_frame The frame of the origin of the sensor, special value frame_from_message means use the incoming message frame
        */
       ObservationBuffer(std::string topic_name, double observation_keep_time, double expected_update_rate, 
+          double min_obstacle_height, double max_obstacle_height,
           tf::TransformListener& tf, std::string global_frame, std::string sensor_frame);
 
       /**
@@ -103,6 +106,7 @@ namespace costmap_2d {
       std::string sensor_frame_;
       std::list<Observation> observation_list_;
       std::string topic_name_;
+      double min_obstacle_height_, max_obstacle_height_;
   };
 };
 #endif

@@ -42,9 +42,11 @@ using namespace robot_msgs;
 
 namespace costmap_2d {
   ObservationBuffer::ObservationBuffer(string topic_name, double observation_keep_time, double expected_update_rate, 
+      double min_obstacle_height, double max_obstacle_height,
       TransformListener& tf, string global_frame, string sensor_frame) : tf_(tf),
   observation_keep_time_(observation_keep_time), expected_update_rate_(expected_update_rate), last_updated_(ros::Time::now()),
-  global_frame_(global_frame), sensor_frame_(sensor_frame), topic_name_(topic_name)
+  global_frame_(global_frame), sensor_frame_(sensor_frame), topic_name_(topic_name), min_obstacle_height_(min_obstacle_height),
+  max_obstacle_height_(max_obstacle_height)
   {
   }
 
@@ -67,8 +69,26 @@ namespace costmap_2d {
       observation_list_.front().origin_.y = global_origin.getY();
       observation_list_.front().origin_.z = global_origin.getZ();
 
+      PointCloud global_frame_cloud;
+
       //transform the point cloud
-      tf_.transformPointCloud(global_frame_, cloud, observation_list_.front().cloud_);
+      tf_.transformPointCloud(global_frame_, cloud, global_frame_cloud);
+
+      //now we need to remove observations from the cloud that are below or above our height thresholds
+      PointCloud& observation_cloud = observation_list_.front().cloud_;
+      unsigned int cloud_size = global_frame_cloud.pts.size();
+      observation_cloud.set_pts_size(cloud_size);
+      unsigned int point_count = 0;
+      
+      //copy over the points that are within our height bounds
+      for(unsigned int i = 0; i < cloud_size; ++i){
+        if(global_frame_cloud.pts[i].z <= max_obstacle_height_ && global_frame_cloud.pts[i].z >= min_obstacle_height_){
+          observation_cloud.pts[point_count++] = global_frame_cloud.pts[i];
+        }
+      }
+
+      //resize the cloud for the number of legal points
+      observation_cloud.set_pts_size(point_count);
     }
     catch(TransformException& ex){
       //if an exception occurs, we need to remove the empty observation from the list

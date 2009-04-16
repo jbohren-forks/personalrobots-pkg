@@ -62,17 +62,19 @@ namespace costmap_2d {
     string topic;
     while(ss >> topic){
       //get the parameters for the specific topic
-      double observation_keep_time, expected_update_rate;
+      double observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height;
       string sensor_frame, data_type;
       ros_node_.param("~" + prefix + "/costmap/" + topic + "/sensor_frame", sensor_frame, string("frame_from_message"));
       ros_node_.param("~" + prefix + "/costmap/" + topic + "/observation_persistance", observation_keep_time, 0.0);
       ros_node_.param("~" + prefix + "/costmap/" + topic + "/expected_update_rate", expected_update_rate, 0.0);
       ros_node_.param("~" + prefix + "/costmap/" + topic + "/data_type", data_type, string("PointCloud"));
+      ros_node_.param("~" + prefix + "/costmap/" + topic + "/min_obstacle_height", min_obstacle_height, 0.5);
+      ros_node_.param("~" + prefix + "/costmap/" + topic + "/max_obstacle_height", max_obstacle_height, 2.0);
 
       ROS_ASSERT_MSG(data_type == "PointCloud" || data_type == "LaserScan", "Only topics that use point clouds or laser scans are currently supported");
 
       //create an observation buffer
-      observation_buffers_.push_back(new ObservationBuffer(topic, observation_keep_time, expected_update_rate, tf_, global_frame_, sensor_frame));
+      observation_buffers_.push_back(new ObservationBuffer(topic, observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height, tf_, global_frame_, sensor_frame));
 
       bool clearing;
       ros_node_.param("~" + prefix + "/costmap/" + topic + "/clearing", clearing, false);
