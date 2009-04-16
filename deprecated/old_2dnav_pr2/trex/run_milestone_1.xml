@@ -1,0 +1,6 @@
+<launch>
+  <param name="/trex/input_file" value="pr2.cfg"/>
+  <param name="/trex/path" value="$(find 2dnav_pr2)/trex:$(find executive_trex_pr2)/miles.3:$(find 2dnav_pr2)/trex/logs:$(find executive_trex_pr2)"/>
+  <param name="/trex/log_dir" value="$(find 2dnav_pr2)/trex/logs"/>
+  <node pkg="executive_trex_pr2" type="trexfast" output="screen" />
+</launch>

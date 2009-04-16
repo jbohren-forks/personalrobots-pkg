@@ -1,6 +1,6 @@
 #! /usr/bin/python
 import roslib
-roslib.load_manifest("old_2dnav_pr2")
+roslib.load_manifest("2dnav_pr2")
 import rospy
 import time
 import math
