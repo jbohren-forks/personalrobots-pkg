@@ -46,6 +46,11 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
   servoing_controller_("r_arm_hybrid_controller"),
   TF(*ros::Node::instance(),false, ros::Duration(10))
 {
+  node_.setParam("~roi_policy", "LastImageLocation");
+  node_.setParam("~display", "true");
+  node_.setParam("~square_size", 0.0042);
+  node_.setParam("~board_width", 3);
+  node_.setParam("~board_height",4);
 
   node_.param(action_name_ + "/arm_controller", arm_controller_, arm_controller_);
 
