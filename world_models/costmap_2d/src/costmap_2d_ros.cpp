@@ -76,7 +76,7 @@ namespace costmap_2d {
 
       bool clearing, marking;
       ros_node_.param("~" + prefix + "/costmap/" + topic + "/clearing", clearing, false);
-      ros_node_.param("~" + prefix + "/costmap/" + topic + "/clearing", marking, true);
+      ros_node_.param("~" + prefix + "/costmap/" + topic + "/marking", marking, true);
 
       //create an observation buffer
       observation_buffers_.push_back(new ObservationBuffer(topic, observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height, tf_, global_frame_, sensor_frame));
