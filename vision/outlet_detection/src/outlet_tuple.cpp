@@ -769,6 +769,7 @@ IplImage* find_templates(IplImage* img, IplImage* templ)
 	}
 	
 	cvReleaseImage(&templr);
+	cvReleaseImage(&dist);
 
 	return mask;
 }

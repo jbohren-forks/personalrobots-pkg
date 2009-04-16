@@ -599,6 +599,7 @@ void find_outlet_features(IplImage* src, vector<outlet_feature_t>& features, con
 	cvReleaseImage(&mask_black);
 	cvReleaseImage(&mask_white);
 	cvReleaseImage(&imgholes);
+	cvReleaseImage(&imgfeat);
 	cvReleaseMemStorage(&storage);	
 }
 
@@ -1275,6 +1276,7 @@ void find_outlet_features_fast(IplImage* src, vector<outlet_feature_t>& features
 	cvReleaseImage(&mask_black);
 	cvReleaseImage(&mask_white);
 	cvReleaseImage(&imgholes);
+	cvReleaseImage(&imgfeat);
 	cvReleaseMemStorage(&storage);	
 }
 
