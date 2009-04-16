@@ -19,26 +19,26 @@ PlugTracker::PlugTracker(ros::Node &node)
     tf_broadcaster_(node), K_(NULL), display_img_(NULL)
 {
   double square_size;
-  if (!node_.getParam("square_size", square_size)) {
+  if (!node_.getParam("~square_size", square_size)) {
     ROS_FATAL("Square size unspecified");
     node_.shutdown();
     return;
   }
   
-  if (!node_.getParam("board_width", board_w_)) {
+  if (!node_.getParam("~board_width", board_w_)) {
     ROS_FATAL("Board width unspecified");
     node_.shutdown();
     return;
   }
 
-  if (!node_.getParam("board_height", board_h_)) {
+  if (!node_.getParam("~board_height", board_h_)) {
     ROS_FATAL("Board height unspecified");
     node_.shutdown();
     return;
   }
 
   std::string policy;
-  node_.param("roi_policy", policy, std::string("WholeFrame"));
+  node_.param("~roi_policy", policy, std::string("WholeFrame"));
   if (policy == std::string("WholeFrame"))
     roi_policy_ = WholeFrame;
   else if (policy == std::string("LastImageLocation"))
@@ -51,7 +51,7 @@ PlugTracker::PlugTracker(ros::Node &node)
 
   req_.timeout_ms = 100;
 
-  node_.param("display", display_, true);
+  node_.param("~display", display_, true);
   if (display_) {
     cvNamedWindow(wndname, 0); // no autosize
     cvStartWindowThread();
