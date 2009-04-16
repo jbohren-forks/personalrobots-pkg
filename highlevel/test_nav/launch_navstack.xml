@@ -1,0 +1,34 @@
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+      <include file="$(find test_nav)/config/navfn_params.xml" ns="move_base_node"/>
+      <include file="$(find test_nav)/config/base_local_planner_params.xml" ns="move_base_node" />
+    <node pkg="nav" type="move_base" respawn="false" name="move_base_node" output="screen">
+      <param name="global_frame" value="map" />
+      <param name="robot_base_frame" value="base_link" />
+
+      <param name="inscribed_radius" value="0.325" />
+      <param name="circumscribed_radius" value="0.46" />
+      <param name="inflation_radius" value="0.55" />
+
+    </node>
+    <!--
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-empty-0.05.pgm 0.05" respawn="false" />
+    <node pkg="stage" type="stageros" name="stageros" args="$(optenv ROS_STAGE_GRAPHICS -g) $(find 2dnav_stage)/worlds/willow-pr2-5cm-fake.world" respawn="false" >
+      <param name="base_watchdog_timeout" value="0.2"/>
+    </node>
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.05.pgm 0.05" respawn="false" />
+    <node pkg="stage" type="stageros" name="stageros" args="$(optenv ROS_STAGE_GRAPHICS -g) $(find 2dnav_stage)/worlds/willow-pr2-5cm.world" respawn="false" >
+      <param name="base_watchdog_timeout" value="0.2"/>
+    </node>
+    -->
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.025.pgm 0.025" respawn="false" />
+    <node pkg="stage" type="stageros" name="stageros" args="$(optenv ROS_STAGE_GRAPHICS -g) $(find 2dnav_stage)/worlds/willow-pr2-2.5cm.world" respawn="false" >
+      <param name="base_watchdog_timeout" value="0.2"/>
+    </node>
+    <node pkg="fake_localization" type="fake_localization" respawn="false" />
+    <node pkg="nav_view" type="nav_view" respawn="false">
+      <remap from="goal" to="/move_base/activate" />
+    </node>
+  </group>
+</launch>

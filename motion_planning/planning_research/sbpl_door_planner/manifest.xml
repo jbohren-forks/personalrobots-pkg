@@ -9,7 +9,7 @@
     <depend package="rosconsole"/>
     <depend package="std_msgs"/>
     <depend package="robot_msgs"/>
-    <depend package="costmap_2d"/>
+    <depend package="angles"/>
     <depend package="tf"/>
   <url></url>
 

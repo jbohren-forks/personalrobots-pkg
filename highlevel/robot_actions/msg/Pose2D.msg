@@ -4,6 +4,7 @@ Header header
 # The planar pose to accomplish
 float32 x
 float32 y
+float32 z
 float32 th
 
 # A polyline that cannot be crossed

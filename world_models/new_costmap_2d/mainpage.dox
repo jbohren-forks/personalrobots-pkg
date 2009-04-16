@@ -1,0 +1,127 @@
+
+/** \mainpage
+
+@htmlinclude manifest.html
+
+@section summary Summary
+This pakages provides a 2D costmap that can be used for a wide range of planning and navigation tasks.
+
+@section usage Usage
+There are two main ways to use this package. The first is to create a costmap_2d::Costmap2D
+object and manage updating it yourself. The second, and encouraged method, is
+to use a ROS wrapper (costmap_2d::Costmap2DROS) for the costmap that manages the map for
+you, but allows you to get a copy of the underlying costmap_2d::Costmap2D object at any
+time. See below for an example of costmap_2d::Costmap2DROS construction and configuration.
+
+@subsection construction Costmap2DROS Construction
+To construct a costmap_2d::Costmap2DROS object, pass it a reference to a ros::Noe and a tf::TransformListener
+@verbatim
+#include <ros/node.h>
+#include <tf/transform_listener.h>
+#include <costmap_2d/costmap_2d_ros.h>
+
+int main(argc, char** argv){
+  ros::init(arc,argv);
+  ros::Node ros_node("costmap_runner");
+  tf::TransformListener tf(ros_node, true, ros::Duration(10));
+
+  //set parameters before construction of the Costmap2DROS object... we'll use the base laser to add data to this costmap
+  ros_node_.setParam("~costmap/observation_topics", "base_scan");
+  ros_node_.setParam("~costmap/base_scan/observation_persistance", 0.0);
+  ros_node_.setParam("~costmap/base_scan/expected_update_rate", 0.2);
+  ros_node_.setParam("~costmap/base_scan/data_type", "LaserScan");
+  ros_node_.setParam("~costmap/base_scan/clearing", "true");
+
+  //construct the costmap
+  costmap_2d::Costmap2DROS costmap_updater(ros_node, tf);
+
+  //do something here
+  ros_node.spin();
+  return(0);
+}
+@endverbatim
+
+@subsection example_use Using the Underlying Costmap2D
+To get a copy of the underlying costmap_2d::Costmap2D object, call the
+getCostMapCopy method. The copy may be used by the user without affecting the
+update rate of the map. Responsibility for deletion of the costmap_2d::Costmap2D copy also
+lies with the user. See the costmap_2d::Costmap2D section for details on using
+a costmap.
+
+@verbatim
+void doSomething(costmap_2d::Costmap2DROS& map_updater){
+  //get a copy of the underlying Costmap2D
+  costmap_2d::Costmap2D costmap;
+  map_updater.getCostMapCopy(costmap);
+
+  //do whatever you want with the map here
+  ROS_INFO("The size of the map in meters is: (%.2f, %.2f)", costmap.metersSizeX(), costmap.metersSizeY());
+}
+@endverbatim
+
+@subsection parameters Costmap2DROS Parameters
+There are a number of parameters that can be used to configure the costmap_2d::Costmap2DROS object
+<ul>
+<li><b>~costmap/global_frame</b>, <i>string</i> <br>The global frame for the costmap to operate in</li>
+<br><br>
+<li><b>~costmap/robot_base_frame</b>, <i>string</i> <br>The name of the frame for the base link of the robot</li>
+<br><br>
+<li><b>~costmap/update_frequency</b>, <i>double</i> <br>The frequency in Hz for the map to be updated</li>
+<br><br>
+<li><b>~costmap/publish_frequency</b>, <i>double</i> <br>The frequency in Hz for the map to be publish display information</li>
+<br><br>
+<li><b>~costmap/obstacle_range</b>, <i>double</i> <br>The maximum distance from the robot at which an obstacle will be inserted into the cost map</li>
+<br><br>
+<li><b>~costmap/max_obstacle_height</b>, <i>double</i> <br>The maximum height of an obstacle</li>
+<br><br>
+<li><b>~costmap/raytrace_range</b>, <i>double</i> <br>The range at which to raytrace out obstacles from the map using sensor data</li>
+<br><br>
+<li><b>~costmap/inscribed_radius</b>, <i>double</i> <br>The inscribed radius of the robot</li>
+<br><br>
+<li><b>~costmap/circumscribed_radius</b>, <i>double</i> <br>The circumscribed radius of the robot</li>
+<br><br>
+<li><b>~costmap/inflation_radius</b>, <i>double</i> <br>The radius to which the map inflates obstacle cost values</li>
+<br><br>
+<li><b>~costmap/observation_topics</b>, <i>string</i> <br>A list of topics to subscribe to separated by spaces</li>
+<br><br>
+<li>
+  <b>Each topic can also have parameters set on it</b><br><br>
+  <ul>
+  <li><b>~costmap/topic_name/sensor_frame</b>, <i>string</i> <br>The frame of the origin of the sensor. Set to "frame_from_message" to attempt to read the frame from sensor data.</li>
+  <br><br>
+  <li><b>~costmap/topic_name/observation_persistance</b>, <i>double</i> <br>How long to keep each sensor reading in seconds. A value of 0.0 will only keep the most recent reading.</li>
+  <br><br>
+  <li><b>~costmap/topic_name/expected_update_rate</b>, <i>double</i> <br>How often to expect a reading from a sensor in secongs. A value of 0.0 will allow infinite time between readings.</li>
+  <br><br>
+  <li><b>~costmap/topic_name/data_type</b>, <i>string</i> <br>The data_type associated with the topic, right now only PointCloud and LaserScan are supported natively.</li>
+  <br><br>
+  <li><b>~costmap/topic_name/clearing</b>, <i>bool</i> <br>Whether or not this observation should be used to clear out freespace</li>
+  </ul>
+</li>
+<br><br>
+<li><b>~costmap/static_map</b>, <i>bool</i> <br>Whether or not to use the static map to initialize the costmap</li>
+<br><br>
+<li><b>~costmap/rolling_window</b>, <i>bool</i> <br>Whether or not to use a rolling window version of the costmap</li>
+<br><br>
+<li> 
+  <b>The following parameters are only used if static_map is set to false</b><br><br>
+  <ul>
+  <li><b>~costmap/width</b>, <i>double</i> <br>The width of the map in meters</li>
+  <br><br>
+  <li><b>~costmap/height</b>, <i>double</i> <br>The height of the map in meters</li>
+  <br><br>
+  <li><b>~costmap/resolution</b>, <i>double</i> <br>The resolution of the map in meters/cell</li>
+  <br><br>
+  <li><b>~costmap/origin_x</b>, <i>double</i> <br>The x origin of the map in the global frame</li>
+  <br><br>
+  <li><b>~costmap/origin_y</b>, <i>double</i> <br>The y origin of the map in the global frame</li>
+  </ul>
+</li>
+<br><br>
+<li><b>~costmap/scaling_factor</b>, <i>double</i> <br>A scaling factor to apply to cost values during inflation, shoud be in the range [0, 1]</li>
+<br><br>
+<li><b>~costmap/lethal_cost_threshold</b>, <i>int</i> <br>The threshold value at which to consider a cost lethal when reading in a map</li>
+</ul>
+
+
+*/

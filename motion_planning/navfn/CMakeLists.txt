@@ -4,15 +4,18 @@ cmake_minimum_required (VERSION 2.4.6)
 ### might help:
 #set (CMAKE_VERBOSE_MAKEFILE ON)
 
+include ($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+
 ### Debug mode implies slower runtime, "of course"
 #set (ROS_BUILD_TYPE Debug)
 set (ROS_BUILD_TYPE Release)
 
-include ($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 add_definitions (-Wall)
 rospack (navfn)
+gensrv()
+genmsg()
 
-rospack_add_library (navfn src/navfn.cpp)
+rospack_add_library (navfn src/navfn.cpp src/navfn_ros.cpp)
 
 ### The problem with FindFLTK is that it only reports success if *all*
 ### fltk components are installed, but we only need the core library.

@@ -13,11 +13,12 @@
  <depend package="deprecated_msgs"/>
  <depend package="robot_msgs"/>
  <depend package="robot_actions"/>
- <depend package="trajectory_rollout"/>
- <depend package="new_costmap"/>
+ <depend package="base_local_planner"/>
+ <depend package="costmap_2d"/>
  <depend package="tf"/>
  <depend package="roslib"/>
  <depend package="navfn"/>
+ <depend package="angles"/>
 
  <export>
  <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib `rosboost-cfg --lflags thread` -lnav"/>

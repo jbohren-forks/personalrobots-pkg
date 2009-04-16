@@ -82,6 +82,7 @@ namespace robot_actions {
      */
     virtual void publish() = 0;
 
+
   protected:
 
   AbstractAdapter(): _initialized(false), _terminated(false) {}

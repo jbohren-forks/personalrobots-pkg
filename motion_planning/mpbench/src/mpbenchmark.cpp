@@ -34,7 +34,7 @@
 
 #include "setup.h"
 #include "gfx.h"
-#include <costmap_2d/costmap_2d.h>
+#include <old_costmap_2d/costmap_2d.h>
 #include <mpglue/sbpl_planner.h>
 #include <mpglue/navfn_planner.h>
 #include <sfl/util/numeric.hpp>

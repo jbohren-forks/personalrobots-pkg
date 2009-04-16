@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 2.4.6)
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+set(ROS_BUILD_TYPE Release)
+rospack(old_costmap_2d)
+genmsg()
+
+rospack_add_boost_directories()
+
+rospack_add_library(old_costmap_2d src/costmap_2d.cpp 
+			       src/obstacle_map_accessor.cpp 
+			       src/observation_buffer.cpp
+			       src/basic_observation_buffer.cpp
+                               src/costmap_node.cpp)
+rospack_link_boost(old_costmap_2d thread)
+
+
+# Test target for module tests to be included in gtest regression test harness
+rospack_add_gtest(utest src/test/module-tests.cpp)
+target_link_libraries(utest old_costmap_2d)
+
+# Target for benchmarking the costmap
+rospack_add_executable(benchmark src/test/benchmark.cpp )
+target_link_libraries(benchmark old_costmap_2d)
+
+# Target for running a standalone version of costmap
+rospack_add_executable(costmap_standalone src/costmap_standalone.cpp )
+target_link_libraries(costmap_standalone old_costmap_2d)

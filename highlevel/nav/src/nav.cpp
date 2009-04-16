@@ -36,8 +36,10 @@
 *********************************************************************/
 #include <ros/node.h>
 #include <navfn/navfn.h>
-#include <new_costmap/costmap_2d_ros.h>
-#include <new_costmap/costmap_2d.h>
+#include <navfn/NavfnPlan.h>
+#include <navfn/MapCell.h>
+#include <costmap_2d/costmap_2d_ros.h>
+#include <costmap_2d/costmap_2d.h>
 #include <robot_actions/Pose2D.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
@@ -46,7 +48,7 @@
 class PlannerTest {
   public:
     PlannerTest(ros::Node& ros_node, tf::TransformListener& tf) : ros_node_(ros_node), tf_(tf),
-    map_updater_(NULL), working_copy_(NULL), planner_(NULL) {
+    map_updater_(NULL) {
       ros_node_.advertise<robot_msgs::Polyline2D>("gui_path", 1);
       ros_node_.subscribe("goal", goal_msg_, &PlannerTest::goalCallback, this, 1);
 
@@ -57,28 +59,32 @@ class PlannerTest {
       ros_node_.setParam("~costmap/base_scan/data_type", "LaserScan");
 
       map_updater_ = new costmap_2d::Costmap2DROS(ros_node_, tf_);
-      planner_ = new NavFn(map_updater_->cellSizeX(), map_updater_->cellSizeY());
     }
 
     ~PlannerTest(){
       if(map_updater_ != NULL)
         delete map_updater_;
-
-      if(working_copy_ != NULL)
-        delete working_copy_;
-
-      if(planner_ != NULL)
-        delete planner_;
     }
 
     void goalCallback(){
       //update the working copy of the costmap we'll use for planning
-      if(working_copy_ != NULL) delete working_copy_;
-      working_copy_ = map_updater_->getCostMapCopy();
+      map_updater_->getCostMapCopy(working_copy_);
+
+      navfn::NavfnPlan::Request plan_req;
+      navfn::NavfnPlan::Response plan_res;
 
       //update the costmap that the planner will use
-      const unsigned char* planner_map = working_copy_->getCharMap();
-      planner_->setCostMap(planner_map);
+      const unsigned char* planner_map = working_copy_.getCharMap();
+
+
+      unsigned int map_size = working_copy_.cellSizeX() * working_copy_.cellSizeY();
+      plan_req.map_size_x = working_copy_.cellSizeX();
+      plan_req.map_size_y = working_copy_.cellSizeY();
+      plan_req.set_cost_map_size(map_size);
+
+      //copy the map over
+      for(unsigned int i = 0; i < map_size; ++i)
+        plan_req.cost_map[i] = planner_map[i];
 
       //get the current pose of the robot in map space
       tf::Stamped<tf::Pose> robot_pose, global_pose;
@@ -102,36 +108,43 @@ class PlannerTest {
       double wx = global_pose.getOrigin().x();
       double wy = global_pose.getOrigin().y();
 
-      int pos[2];
-      int goal[2];
+      navfn::MapCell start;
+      navfn::MapCell goal;
 
       unsigned int mx, my;
-      working_copy_->worldToMap(wx, wy, mx, my);
-      pos[0] = mx;
-      pos[1] = my;
+      working_copy_.worldToMap(wx, wy, mx, my);
+      start.x = mx;
+      start.y = my;
 
-      working_copy_->worldToMap(goal_msg_.x, goal_msg_.y, mx, my);
-      goal[0] = mx;
-      goal[1] = my;
+      working_copy_.worldToMap(goal_msg_.x, goal_msg_.y, mx, my);
+      goal.x = mx;
+      goal.y = my;
 
-      planner_->setStart(pos);
-      planner_->setGoal(goal);
-      bool success = planner_->calcNavFnAstar();
+      plan_req.start = start;
+      plan_req.goal = goal;
+
+      //for timing info
+      struct timeval time_start, time_end;
+      double start_t, end_t, t_diff;
+      gettimeofday(&time_start, NULL);
+      bool success = ros::service::call("navfn_server/planner", plan_req, plan_res);
+      gettimeofday(&time_end, NULL);
+      start_t = time_start.tv_sec + double(time_start.tv_usec) / 1e6;
+      end_t = time_end.tv_sec + double(time_end.tv_usec) / 1e6;
+      t_diff = end_t - start_t;
+      ROS_INFO("Planning time: %.9f", t_diff);
 
       // If good, extract plan and update
       if(success){
         // Extract the plan in world co-ordinates
-        float *x = planner_->getPathX();
-        float *y = planner_->getPathY();
-        int len = planner_->getPathLen();
         robot_msgs::Polyline2D gui_path_msg;
         gui_path_msg.header.frame_id = "map";
-        gui_path_msg.set_points_size(len);
-        for(int i=0; i < len; i++){
+        gui_path_msg.set_points_size(plan_res.plan.size());
+        for(unsigned int i=0; i < plan_res.plan.size(); i++){
           double wx, wy;
-          unsigned int mx = (unsigned int) x[i];
-          unsigned int my = (unsigned int) y[i];
-          working_copy_->mapToWorld(mx, my, wx, wy);
+          unsigned int mx = plan_res.plan[i].x;
+          unsigned int my = plan_res.plan[i].y;
+          working_copy_.mapToWorld(mx, my, wx, wy);
           gui_path_msg.points[i].x = wx;
           gui_path_msg.points[i].y = wy;
         }
@@ -144,6 +157,8 @@ class PlannerTest {
         ros_node_.publish("gui_path", gui_path_msg);
 
       }
+      
+
     }
 
   private:
@@ -151,8 +166,7 @@ class PlannerTest {
     tf::TransformListener& tf_;
     robot_actions::Pose2D goal_msg_;
     costmap_2d::Costmap2DROS* map_updater_;
-    costmap_2d::Costmap2D* working_copy_;
-    NavFn* planner_;
+    costmap_2d::Costmap2D working_copy_;
 };
 
 int main(int argc, char** argv){

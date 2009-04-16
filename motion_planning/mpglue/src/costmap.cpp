@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include <mpglue/costmap.h>
-#include <costmap_2d/obstacle_map_accessor.h>
+#include <old_costmap_2d/obstacle_map_accessor.h>
 #include <sfl/gplan/RWTravmap.hpp>
 #include <sfl/gplan/GridFrame.hpp>
 #include <math.h>
@@ -43,13 +43,13 @@ namespace {
   
   class cm2dCostmapAccessor: public mpglue::CostmapAccessor {
   public:
-    cm2dCostmapAccessor(costmap_2d::ObstacleMapAccessor const * cm): cm_(cm) {}
+    cm2dCostmapAccessor(old_costmap_2d::ObstacleMapAccessor const * cm): cm_(cm) {}
     
     virtual mpglue::cost_t getLethalCost() const
-    { return costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE; }
+    { return old_costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE; }
     
     virtual mpglue::cost_t getInscribedCost() const
-    { return costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE; }
+    { return old_costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE; }
     
     virtual mpglue::cost_t getPossiblyCircumcribedCost() const
     { return cm_->getCircumscribedCostLowerBound(); }
@@ -66,7 +66,7 @@ namespace {
     virtual bool isLethal(ssize_t index_x, ssize_t index_y,
 			  bool out_of_bounds_reply) const {
       if (isValidIndex(index_x, index_y))
-	return cm_->getCost(index_x, index_y) >= costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE;
+	return cm_->getCost(index_x, index_y) >= old_costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE;
       return out_of_bounds_reply;
     }
     
@@ -74,7 +74,7 @@ namespace {
 			     bool out_of_bounds_reply) const {
       if (isValidIndex(index_x, index_y))
 	return cm_->getCost(index_x, index_y)
-	  >= costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE;
+	  >= old_costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE;
       return out_of_bounds_reply;
     }
     
@@ -99,13 +99,13 @@ namespace {
       return true;
     }
     
-    costmap_2d::ObstacleMapAccessor const * cm_;
+    old_costmap_2d::ObstacleMapAccessor const * cm_;
   };
   
   
   class cm2dTransform: public mpglue::IndexTransform {
   public:
-    cm2dTransform(costmap_2d::ObstacleMapAccessor const * cm): cm_(cm) {}
+    cm2dTransform(old_costmap_2d::ObstacleMapAccessor const * cm): cm_(cm) {}
     
     virtual void globalToIndex(double global_x, double global_y,
 			       ssize_t * index_x, ssize_t * index_y) const {
@@ -121,7 +121,7 @@ namespace {
     
     virtual double getResolution() const { return cm_->getResolution(); }
     
-    costmap_2d::ObstacleMapAccessor const * cm_;
+    old_costmap_2d::ObstacleMapAccessor const * cm_;
   };
   
   
@@ -316,7 +316,7 @@ namespace mpglue {
   }
   
   
-  CostmapAccessor * createCostmapAccessor(costmap_2d::ObstacleMapAccessor const * cm)
+  CostmapAccessor * createCostmapAccessor(old_costmap_2d::ObstacleMapAccessor const * cm)
   { return new cm2dCostmapAccessor(cm); }
   
   CostmapAccessor * createCostmapAccessor(sfl::RDTravmap const * rdt,
@@ -327,7 +327,7 @@ namespace mpglue {
 					  int possibly_circumscribed_cost)
   { return new sflTravmapAccessor(rdt, possibly_circumscribed_cost); }
   
-  IndexTransform * createIndexTransform(costmap_2d::ObstacleMapAccessor const * cm)
+  IndexTransform * createIndexTransform(old_costmap_2d::ObstacleMapAccessor const * cm)
   { return new cm2dTransform(cm); }
   
   IndexTransform * createIndexTransform(sfl::GridFrame const * gf)

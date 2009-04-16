@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include <mpglue/sbpl_environment.h>
-#include <costmap_2d/costmap_2d.h>
+#include <old_costmap_2d/costmap_2d.h>
 #include <sbpl/headers.h>
 #include <sfl/util/strutil.hpp>
 
@@ -151,7 +151,7 @@ namespace {
     virtual unsigned char GetMapCost(int ix, int iy) const
     {
       if ( ! env_->IsWithinMapCell(ix, iy))
-	return costmap_2d::CostMap2D::NO_INFORMATION;
+	return old_costmap_2d::CostMap2D::NO_INFORMATION;
       return env_->GetMapCost(ix, iy);
     }
     
@@ -648,7 +648,7 @@ namespace {
   GetMapCost(int ix, int iy) const
   {
     if ( ! env_->IsWithinMapCell(ix, iy))
-      return costmap_2d::CostMap2D::NO_INFORMATION;
+      return old_costmap_2d::CostMap2D::NO_INFORMATION;
     return env_->GetMapCost(ix, iy);
   }
   

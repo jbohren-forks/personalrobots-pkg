@@ -41,7 +41,7 @@
 #include <mpglue/sbpl_environment.h>
 #include <mpglue/sbpl_planner.h>
 #include <mpglue/estar_planner.h>
-#include <costmap_2d/obstacle_map_accessor.h>
+#include <old_costmap_2d/obstacle_map_accessor.h>
 #include <sbpl/headers.h>
 // #include <sfl/gplan/Mapper2d.hpp>
 #include <sfl/util/numeric.hpp>
@@ -923,7 +923,7 @@ namespace mpbench {
       costmap_inscribed_radius(0.325),
       costmap_circumscribed_radius(0.46),
       costmap_inflation_radius(0.55),
-      costmap_obstacle_cost(costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE)
+      costmap_obstacle_cost(old_costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE)
   {
     sfl::tokenize(world_spec, ':', world_tok);
     sfl::tokenize(planner_spec, ':', planner_tok);

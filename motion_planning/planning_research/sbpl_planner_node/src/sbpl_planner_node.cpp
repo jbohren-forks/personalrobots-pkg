@@ -32,7 +32,7 @@
 
 using namespace std;
 using namespace ros;
-using namespace costmap_2d;
+using namespace old_costmap_2d;
 
 SBPLPlannerNode::SBPLPlannerNode()
 {

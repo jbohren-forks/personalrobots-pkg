@@ -1,0 +1,16 @@
+<package>
+  <description brief="Navigation stack tests">
+  Tests for the navigation stack
+  </description>
+ <author>Eitan Marder-Eppstein</author>
+ <license>BSD</license>
+ <review status="unreviewed" notes=""/>
+ <url>http://pr.willowgarage.com</url>
+
+ <depend package="nav"/>
+ <depend package="stage"/>
+ <depend package="map_server"/>
+ <depend package="fake_localization"/>
+ <depend package="nav_view"/>
+
+</package>

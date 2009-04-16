@@ -34,7 +34,7 @@
 
 #include "gfx.h"
 
-#include <costmap_2d/costmap_2d.h>
+#include <old_costmap_2d/costmap_2d.h>
 #include <npm/common/wrap_glu.hpp>
 #include <npm/common/wrap_glut.hpp>
 #include <npm/common/Manager.hpp>
