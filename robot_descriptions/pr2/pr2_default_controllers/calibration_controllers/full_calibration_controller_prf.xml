@@ -1,0 +1,22 @@
+<controllers>
+  <include filename="$(find pr2_defs)/defs/arm_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/gripper_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/base_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/head_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/body_defs.xml" />
+  
+  <!-- Arm calibration is done by calibrate_arms.py -->
+  <forearm_calibrator side="r" />
+  <gripper_calibrator side="r" />
+
+  <forearm_calibrator side="l" />
+  <gripper_calibrator side="l" />
+
+  <tilting_laser_calibrator name="laser_tilt" />
+
+  <base_calibrator />
+
+  <head_calibrator />
+
+  <torso_calibrator />
+</controllers>
