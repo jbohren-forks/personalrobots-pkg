@@ -43,7 +43,7 @@ using namespace robot_actions;
 
 namespace nav {
   MoveBaseAction::MoveBaseAction(ros::Node& ros_node, tf::TransformListener& tf) : 
-    Action<Pose2D, Pose2D>("move_base"), ros_node_(ros_node), tf_(tf),
+    Action<Pose2D, Pose2D>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
     run_planner_(true), tc_(NULL), planner_cost_map_ros_(NULL), controller_cost_map_ros_(NULL), 
     planner_(NULL), valid_plan_(false) {
 
