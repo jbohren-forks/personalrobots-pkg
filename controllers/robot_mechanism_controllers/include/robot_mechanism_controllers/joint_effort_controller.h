@@ -77,12 +77,12 @@ public:
   virtual bool starting() { command_ = 0.0; return true; }
   virtual void update();
 
-  mechanism::JointState *joint_state_;     /**< Joint we're controlling. */
+  mechanism::JointState *joint_state_;
 
-  double command_;                         /**< Last commanded effort. */
+  double command_;
 
 private:
-  mechanism::RobotState *robot_;           /**< Pointer to robot structure. */
+  mechanism::RobotState *robot_;
 };
 
 /***************************************************/
@@ -102,28 +102,23 @@ public:
   JointEffortControllerNode();
   ~JointEffortControllerNode();
 
-  void update();
-  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  // Topics
-  void setCommand();
-  // Services
-  bool getCommand(robot_srvs::GetValue::Request &req,
-		  robot_srvs::GetValue::Response &resp);
+  virtual bool starting() { return c_.starting(); }
+  virtual void update();
+
+  void command();
 
 private:
  //node stuff
-  std::string service_prefix_;                 /**< The name of the controller. */
+  std::string name_;
   ros::Node *node_;
-  AdvertisedServiceGuard guard_get_command_;   /**< Makes sure the advertise goes down neatly. */
 
   //msgs
-  std_msgs::Float64 cmd_;                      /**< The command from the subscription. */
-
-  SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
+  std_msgs::Float64 command_msg_;
 
   //controller
-  JointEffortController *c_;                 /**< The controller. */
+  JointEffortController c_;
 
 };
 }
