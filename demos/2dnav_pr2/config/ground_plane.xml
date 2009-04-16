@@ -1,4 +1,5 @@
 <node pkg="semantic_point_annotator" type="sac_inc_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen" >
+  <remap from="tilt_laser_cloud_filtered" to="tilt_scan_filtered" />
   <remap from="cloud_ground_filtered" to="gound_object_cloud" />
   <param name="z_threshold" value="0.1" />
   <param name="sac_min_points_per_model" value="6" />
