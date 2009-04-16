@@ -10,7 +10,7 @@
  *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
-   *   * Redistributions in binary form must reproduce the above
+ *   * Redistributions in binary form must reproduce the above
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
@@ -33,24 +33,43 @@
  *********************************************************************/
 
 
-#include <plugs_core/action_fine_outlet_detect.h>
+/* Author: Patrick Mihelich */
 
-using namespace plugs_core;
+#ifndef ACTION_DETECT_OUTLET_FINE_H
+#define ACTION_DETECT_OUTLET_FINE_H
 
-FineOutletDetectAction::FineOutletDetectAction()
-  : robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_fine"),
-    node_(ros::Node::instance())
+// ROS Stuff
+#include <ros/node.h>
+
+// Msgs
+#include <robot_msgs/PointStamped.h>
+#include <robot_msgs/PoseStamped.h>
+#include <robot_actions/DetectOutletState.h>
+
+// Srvs 
+#include <outlet_detection/OutletDetection.h>
+
+// Robot Action Stuff
+#include <robot_actions/action.h>
+
+
+namespace plugs_core{
+
+class DetectOutletFineAction
+  : public robot_actions::Action<robot_msgs::PointStamped,
+                                 robot_msgs::PoseStamped>
 {
-}
+public:
+  DetectOutletFineAction();
 
-robot_actions::ResultStatus FineOutletDetectAction::execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback){
+  virtual robot_actions::ResultStatus execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback);
 
-  req_.point = point;
-  bool success = ros::service::call("/outlet_detector/fine_outlet_detect", req_, res_);
-  feedback = res_.pose;
-  ROS_INFO("outlet pose frame_id: %s", res_.pose.header.frame_id.c_str());
-  if (success)
-    return robot_actions::SUCCESS;
-  else
-    return robot_actions::ABORTED;
+private:
+  ros::Node* node_;
+
+  outlet_detection::OutletDetection::Request req_;
+  outlet_detection::OutletDetection::Response res_;
+};
+
 }
+#endif

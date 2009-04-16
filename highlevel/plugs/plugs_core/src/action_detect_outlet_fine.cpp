@@ -10,7 +10,7 @@
  *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
+   *   * Redistributions in binary form must reproduce the above
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
@@ -33,43 +33,24 @@
  *********************************************************************/
 
 
-/* Author: Patrick Mihelich */
+#include <plugs_core/action_detect_outlet_fine.h>
 
-#ifndef ACTION_FINE_OUTLET_DETECT_H
-#define ACTION_FINE_OUTLET_DETECT_H
+using namespace plugs_core;
 
-// ROS Stuff
-#include <ros/node.h>
-
-// Msgs
-#include <robot_msgs/PointStamped.h>
-#include <robot_msgs/PoseStamped.h>
-#include <robot_actions/DetectOutletState.h>
-
-// Srvs 
-#include <outlet_detection/OutletDetection.h>
-
-// Robot Action Stuff
-#include <robot_actions/action.h>
-
-
-namespace plugs_core{
-
-class FineOutletDetectAction
-  : public robot_actions::Action<robot_msgs::PointStamped,
-                                 robot_msgs::PoseStamped>
+DetectOutletFineAction::DetectOutletFineAction()
+  : robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_fine"),
+    node_(ros::Node::instance())
 {
-public:
-  FineOutletDetectAction();
-
-  virtual robot_actions::ResultStatus execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback);
-
-private:
-  ros::Node* node_;
-
-  outlet_detection::OutletDetection::Request req_;
-  outlet_detection::OutletDetection::Response res_;
-};
-
 }
-#endif
+
+robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback){
+
+  req_.point = point;
+  bool success = ros::service::call("/outlet_detector/fine_outlet_detect", req_, res_);
+  feedback = res_.pose;
+  ROS_INFO("outlet pose frame_id: %s", res_.pose.header.frame_id.c_str());
+  if (success)
+    return robot_actions::SUCCESS;
+  else
+    return robot_actions::ABORTED;
+}

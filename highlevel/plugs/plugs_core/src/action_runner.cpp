@@ -39,7 +39,7 @@
 // Actions
 #include <plugs_core/action_untuck_arms.h>
 #include <plugs_core/action_move_and_grasp_plug.h>
-#include <plugs_core/action_fine_outlet_detect.h>
+#include <plugs_core/action_detect_outlet_fine.h>
 #include <plugs_core/action_stow_plug.h>
 
 // State Msgs
@@ -68,13 +68,13 @@ int main(int argc, char** argv)
   UntuckArmsAction untuck_arms;
   MoveAndGraspPlugAction move_and_grasp;
   StowPlugAction stow_plug;
-  FineOutletDetectAction fine_outlet_detect;
+  DetectOutletFineAction detect_outlet_fine;
 
   robot_actions::ActionRunner runner(10.0);
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(untuck_arms);
   runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp);
   runner.connect<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
-  runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(fine_outlet_detect);
+  runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_fine);
 
   runner.run();
 
