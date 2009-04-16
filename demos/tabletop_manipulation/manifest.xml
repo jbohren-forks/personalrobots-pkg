@@ -4,7 +4,7 @@
   <license>BSD</license>
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki</url>
-  <depend package="2dnav_pr2"/>
+  <depend package="old_2dnav_pr2"/>
   <depend package="laser_scan"/>
   <depend package="robot_self_filter"/>
   <depend package="point_cloud_assembler"/>

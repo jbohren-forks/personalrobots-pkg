@@ -1,6 +1,6 @@
 <launch>
 
-  <node pkg="map_server" type="map_server" args="$(find 2dnav_pr2)/maps/empty_0.05.pgm 0.05" respawn="true"/>
+  <node pkg="map_server" type="map_server" args="$(find old_2dnav_pr2)/maps/empty_0.05.pgm 0.05" respawn="true"/>
 
 
   <node name="move_base" pkg="highlevel_controllers" type="move_base_navfn" respawn="true" output="screen">
