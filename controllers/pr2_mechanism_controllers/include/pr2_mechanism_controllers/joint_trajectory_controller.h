@@ -112,6 +112,8 @@ namespace controller
 
     private:
 
+    std::string prefix_; /**< prefix (initialized to controller name + "/") for all controller & ROS interaction */
+
     boost::mutex arm_controller_lock_; /**< Mutex lock for sharing information between services and realtime */
 
     double last_time_; /**< last time update was called */
@@ -156,7 +158,9 @@ namespace controller
 
     double current_time_; /**< Current time */
 
-    bool trajectory_done_; /**< Indicates that the current trajectory is done */
+    bool current_trajectory_finished_; /**< Indicates that the current trajectory is done */
+
+    bool at_rest_; /**< Indicates that all the desired joint positions are set to the current joint positions */
 
     int num_joints_; /**< Number of joints controlled by this controller */
 
@@ -268,10 +272,10 @@ namespace controller
     void addJoint(const std::string &name);
 
     /**
-     * @brief Add a controller to control the base.
+     * @brief Add a virtual joint for a robot base
      * @param elt A tinyXML element required to initialize the base controller
      */
-    void addBaseController(TiXmlElement *elt);
+    void addRobotBaseJoint(TiXmlElement *elt);
 
     /**
      * @brief Set the commanded trajectory for the controller
@@ -323,7 +327,7 @@ namespace controller
     /**
      * @brief Check if the trajectory is done. If done, pop the next trajectory from the queue and use it. If no new trajectory is available, set the desired joint positions to the current joint positions
      */
-    void checkIfTrajectoryDone();
+    bool trajectoryDone();
 
     /** 
      * @brief Based on the current position of the base, update the velocity commands to be sent out to the base controller
@@ -348,9 +352,16 @@ namespace controller
     /**   
      * @brief Update the trajectory queue by removing trajectories that are done, set the current trajectory to be executed to the next trajectory on the queue.
      * If no new trajectory is available, set the desired joint positions to the current joint positions
+     * @param id  The id of the last trajectory
      * @param finish_status The status of the last trajectory
      */
-    void updateTrajectoryQueue(int finish_status);
+    void updateTrajectoryQueue(int id, int finish_status);
+
+    /**   
+     * @brief Get the next trajectory from the queue
+     & @param index The index of the requested trajectory
+     */
+    bool getTrajectoryFromQueue(int &index);
 
     /**   
      * @brief Convert a trajectory command (from the queue) and set the current desired trajectory to it
@@ -444,12 +455,14 @@ namespace controller
     /**   
      * @brief A map from trajectory ids to trajectory status
      */
-    std::map<int,int> joint_trajectory_status_;
+//    std::map<int,int> joint_trajectory_status_;
+    std::vector<int> joint_trajectory_status_;
 
     /**   
      * @brief A map from trajectory ids to trajectory times
      */
-    std::map<int,double>joint_trajectory_time_;
+    std::vector<double> joint_trajectory_time_;
+//    std::map<int,double>joint_trajectory_time_;
 
     /**   
      * @brief Enumeration of trajectory status
@@ -480,5 +493,18 @@ namespace controller
     trajectory::Trajectory::TPoint trajectory_point_; /**< Pre-allocated to size num_joints in the constructor to have a realtime safe container for the current position of the joints */
 
     int base_theta_index_; /**< Index corresponding to the rotational degree of freedom of a robot base */
+
+    int num_trajectory_available_;
+
+    int next_free_index_;
+
+    int max_trajectory_queue_size_;
+
+    int current_trajectory_index_;
+
+    bool trajectory_preempted_;
+
+    boost::mutex trajectory_queue_;
+
   };
 }

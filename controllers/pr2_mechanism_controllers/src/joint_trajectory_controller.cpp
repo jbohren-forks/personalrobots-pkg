@@ -45,15 +45,19 @@ JointTrajectoryController::JointTrajectoryController() : Controller(), node_(ros
 {
   controller_state_publisher_ = NULL;
   num_joints_ = 0;
-  refresh_rt_vals_= false;
   trajectory_type_ = "linear";
   trajectory_wait_time_= 0.0;
   max_update_time_= 0.0;
   watch_dog_active_ = false;
-  request_trajectory_id_ = 1; 
-  current_trajectory_id_ = 0; 
+  request_trajectory_id_ = 0; 
+  current_trajectory_id_ = -1; 
   trajectory_wait_timeout_ = 10.0;
   diagnostics_publisher_ = NULL;
+
+  num_trajectory_available_ = 0;
+  next_free_index_ = 0;
+  current_trajectory_index_ = 0;
+  trajectory_preempted_ = false;
 }
 
 
@@ -62,6 +66,8 @@ JointTrajectoryController::~JointTrajectoryController()
   for(unsigned int i=0; i<joint_pv_controllers_.size();++i)
     delete joint_pv_controllers_[i];
 
+
+  stopPublishers();
   unadvertiseServices();
   unsubscribeTopics();
 
@@ -71,14 +77,23 @@ JointTrajectoryController::~JointTrajectoryController()
 bool JointTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   name_ = config->Attribute("name");
+  prefix_ = name_ + "/";
+
+  getParams();
 
   loadXmlFile(robot,config);
 
-  getParams();
+  joint_trajectory_vector_.resize(max_trajectory_queue_size_);
+  joint_trajectory_id_.resize(max_trajectory_queue_size_);
+
+  subscribeTopics();
 
   advertiseServices();
 
   initializePublishers();
+
+  setTrajectoryCmdToCurrentValues();
+  at_rest_ = true;
 
   ROS_INFO("Loaded JointTrajectoryController: %s",name_.c_str());
   return true;
@@ -88,37 +103,30 @@ bool JointTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElem
 void JointTrajectoryController::getParams()
 {
   double scale;
-  node_->param<double>("~velocity_scaling_factor",scale,0.25);
-  node_->param<double>("~trajectory_wait_timeout",trajectory_wait_timeout_,10.0);
-  node_->param<double>("~trajectory_update_timeout",max_allowed_update_time_,0.2);
-  node_->param<std::string>("~listen_topic_name",listen_topic_name_,"command");
-  listen_topic_name_ = "~" + listen_topic_name_;
-  node_->param<double>("~at_rest_velocity_threshold_",at_rest_velocity_threshold_,1e-5);
-  node_->param<double>("~max_allowed_update_time_",max_allowed_update_time_,0.1);
-  node_->param<double>("~diagnostics_publish_delta_time",diagnostics_publish_delta_time_,1.0);
+  node_->param<double>(prefix_+"velocity_scaling_factor",scale,0.25);
+  node_->param<double>(prefix_+"trajectory_wait_timeout",trajectory_wait_timeout_,10.0);
+  node_->param<double>(prefix_+"trajectory_update_timeout",max_allowed_update_time_,0.2);
+  node_->param<std::string>(prefix_+"listen_topic_name",listen_topic_name_,"command");
+  node_->param<double>(prefix_+"at_rest_velocity_threshold_",at_rest_velocity_threshold_,1e-5);
+  node_->param<double>(prefix_+"max_allowed_update_time_",max_allowed_update_time_,0.1);
+  node_->param<double>(prefix_+"diagnostics_publish_delta_time",diagnostics_publish_delta_time_,1.0);
+  node_->param<int>(prefix_+"max_trajectory_queue_size",max_trajectory_queue_size_,100);
   velocity_scaling_factor_ = std::min(1.0,std::max(0.0,scale));
 
-  goal_reached_threshold_.resize(num_joints_);
-  max_allowable_joint_errors_.resize(num_joints_);
-  for(int i=0; i< num_joints_;i++)
-  {
-    node_->param<double>("~" + joint_name_[i] + "/goal_reached_threshold",goal_reached_threshold_[i],GOAL_REACHED_THRESHOLD);
-    node_->param<double>("~" + joint_name_[i] + "/joint_error_threshold",max_allowable_joint_errors_[i],MAX_ALLOWABLE_JOINT_ERROR_THRESHOLD);
-  }
 }
 
 void JointTrajectoryController::initializePublishers()
 {
   if (controller_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete controller_state_publisher_ ;
-  controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::ControllerState> ("~controller_state", 1) ;
+  controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::ControllerState> (prefix_+"controller_state", 1) ;
 
   if (diagnostics_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete diagnostics_publisher_ ;
   diagnostics_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::DiagnosticMessage> ("/diagnostics", 2) ;
 
   last_diagnostics_publish_time_ = robot_->hw_->current_time_;
-  node_->param<double>("~diagnostics_publish_delta_time",diagnostics_publish_delta_time_,0.05);
+  node_->param<double>(prefix_+"diagnostics_publish_delta_time",diagnostics_publish_delta_time_,0.05);
 
   controller_state_publisher_->msg_.name = name_; 
   ROS_INFO("Initialized publishers.");
@@ -135,31 +143,31 @@ void JointTrajectoryController::stopPublishers()
 
 void JointTrajectoryController::advertiseServices()
 {
-  node_->advertiseService("~TrajectoryStart", &JointTrajectoryController::setJointTrajSrv, this);
-  node_->advertiseService("~TrajectoryQuery", &JointTrajectoryController::queryJointTrajSrv, this);
-  node_->advertiseService("~TrajectoryCancel", &JointTrajectoryController::cancelJointTrajSrv, this);
+  node_->advertiseService(prefix_+"TrajectoryStart", &JointTrajectoryController::setJointTrajSrv, this);
+  node_->advertiseService(prefix_+"TrajectoryQuery", &JointTrajectoryController::queryJointTrajSrv, this);
+  node_->advertiseService(prefix_+"TrajectoryCancel", &JointTrajectoryController::cancelJointTrajSrv, this);
 
-  ROS_INFO("Service for setting trajectories : ~TrajectoryStart");
-  ROS_INFO("Service for querying trajectories : ~TrajectoryQuery");
-  ROS_INFO("Service for canceling trajectories : ~TrajectoryCancel");
+  ROS_INFO("Service for setting trajectories : %sTrajectoryStart",prefix_.c_str());
+  ROS_INFO("Service for querying trajectories : %sTrajectoryQuery",prefix_.c_str());
+  ROS_INFO("Service for canceling trajectories : %sTrajectoryCancel",prefix_.c_str());
 }
 
 void JointTrajectoryController::unadvertiseServices()
 {
-  node_->unadvertiseService("~TrajectoryStart");
-  node_->unadvertiseService("~TrajectoryQuery");
-  node_->unadvertiseService("~TrajectoryCancel");
+  node_->unadvertiseService(prefix_+"TrajectoryStart");
+  node_->unadvertiseService(prefix_+"TrajectoryQuery");
+  node_->unadvertiseService(prefix_+"TrajectoryCancel");
 }
 
 void JointTrajectoryController::subscribeTopics()
 {
-  node_->subscribe(listen_topic_name_, traj_msg_, &JointTrajectoryController::TrajectoryReceivedOnTopic, this, 1);
-  ROS_INFO("Listening to topic: %s",listen_topic_name_.c_str());
+  node_->subscribe(prefix_+listen_topic_name_, traj_msg_, &JointTrajectoryController::TrajectoryReceivedOnTopic, this, 1);
+  ROS_INFO("Listening to topic: %s%s",prefix_.c_str(),listen_topic_name_.c_str());
 }
 
 void JointTrajectoryController::unsubscribeTopics()
 {
-  node_->unsubscribe(listen_topic_name_);
+  node_->unsubscribe(prefix_ + listen_topic_name_);
 }
 
 bool JointTrajectoryController::loadXmlFile(mechanism::RobotState * robot, TiXmlElement * config)
@@ -168,6 +176,7 @@ bool JointTrajectoryController::loadXmlFile(mechanism::RobotState * robot, TiXml
 
   robot_ = robot->model_;
   robot_state_ = robot;
+  current_time_ = robot_->hw_->current_time_;
   TiXmlElement *elt = config->FirstChildElement("controller");
   while (elt)
   {
@@ -184,7 +193,7 @@ bool JointTrajectoryController::loadXmlFile(mechanism::RobotState * robot, TiXml
     }
     else if(static_cast<std::string>(elt->Attribute("type")) == std::string("BasePIDController"))
     {
-      addBaseController(elt);
+      addRobotBaseJoint(elt);
     }
     else if(static_cast<std::string>(elt->Attribute("type")) == std::string("BaseControllerNode"))
     {        
@@ -202,9 +211,16 @@ bool JointTrajectoryController::loadXmlFile(mechanism::RobotState * robot, TiXml
   joint_cmd_.resize(num_joints_);
   joint_cmd_dot_.resize(num_joints_);
 
-  current_time_ = robot_->hw_->current_time_;
-  last_time_ = robot_->hw_->current_time_;
-  last_traj_req_time_ = robot_->hw_->current_time_;
+  last_time_ = current_time_;
+  last_traj_req_time_ = current_time_;
+
+  goal_reached_threshold_.resize(num_joints_);
+  max_allowable_joint_errors_.resize(num_joints_);
+  for(int i=0; i< num_joints_;i++)
+  {
+    node_->param<double>(prefix_+ joint_name_[i] + "/goal_reached_threshold",goal_reached_threshold_[i],GOAL_REACHED_THRESHOLD);
+    node_->param<double>(prefix_+ joint_name_[i] + "/joint_error_threshold",max_allowable_joint_errors_[i],MAX_ALLOWABLE_JOINT_ERROR_THRESHOLD);
+  }
 
   ROS_INFO("Initialized joint trajectory controller");
 
@@ -231,11 +247,14 @@ void JointTrajectoryController::initTrajectory(TiXmlElement * config)
   {
     if(joint_type_[i] == mechanism::JOINT_CONTINUOUS)
     {
+      ROS_INFO("Setting joint %d to wrap",i);      
       joint_trajectory_->setJointWraps(i);
     }
   }
 
-  trajectory_start_time_ = robot_->hw_->current_time_;
+  trajectory_start_time_ = current_time_;
+  trajectory_end_time_ = current_time_;
+  current_trajectory_finished_ = true;
   joint_trajectory_->autocalc_timing_ = true;
 
   current_joint_position_vector_.resize(2);
@@ -243,12 +262,12 @@ void JointTrajectoryController::initTrajectory(TiXmlElement * config)
   current_joint_position_vector_[1].setDimension(num_joints_);
 
   trajectory_point_.setDimension(num_joints_);
+
 }
 
 void JointTrajectoryController::setTrajectoryCmdToCurrentValues()
 {
-  updateJointValues();
-  for(int i=0; i < num_joints_; i++)
+  for(int i=0; i < 2; i++)
   {
     for(int j=0; j < num_joints_; j++)
     {
@@ -256,11 +275,11 @@ void JointTrajectoryController::setTrajectoryCmdToCurrentValues()
     }
     current_joint_position_vector_[i].time_ = 0.0;    
   }
-  ROS_DEBUG("Size of trajectory points vector : %d",current_joint_position_vector_.size());
+//  ROS_DEBUG("Size of trajectory points vector : %d",current_joint_position_vector_.size());
 
   if(setTrajectoryCmd(current_joint_position_vector_))
   {
-    current_trajectory_id_ = 0;
+    current_trajectory_id_ = -1;
   }
 }
 
@@ -287,7 +306,7 @@ void JointTrajectoryController::addJoint(const std::string &name)
   num_joints_++;
 }
 
-void JointTrajectoryController::addBaseController(TiXmlElement *elt)
+void JointTrajectoryController::addRobotBaseJoint(TiXmlElement *elt)
 {
   TiXmlElement *pj = elt->FirstChildElement("joint");
   if(pj)
@@ -297,13 +316,13 @@ void JointTrajectoryController::addBaseController(TiXmlElement *elt)
 
     if(static_cast<std::string>(pj->Attribute("type")) == std::string("ROTARY_CONTINUOUS"))
     {
-      ROS_DEBUG("Adding joint %s with type: ROTARY_CONTINUOUS",joint_name.c_str());
+      ROS_INFO("Adding joint %s with type: ROTARY_CONTINUOUS and velocity limit: %f",joint_name.c_str(),velocity_limit);
       joint_type_.push_back(mechanism::JOINT_CONTINUOUS);
-      base_theta_index_ = joint_name.size();
+      base_theta_index_ = num_joints_;
     }
     else if(static_cast<std::string>(pj->Attribute("type")) == std::string("PRISMATIC_CONTINUOUS"))
     {
-      ROS_DEBUG("Adding joint %s with type: PRISMATIC_CONTINUOUS",joint_name.c_str());
+      ROS_INFO("Adding joint %s with type: PRISMATIC_CONTINUOUS and velocity limit: %f",joint_name.c_str(),velocity_limit);
       joint_type_.push_back(mechanism::JOINT_PRISMATIC);
     }
     else
@@ -342,12 +361,8 @@ bool JointTrajectoryController::setTrajectoryCmd(const std::vector<trajectory::T
     ROS_WARN("JointTrajectoryController:: No points in trajectory");
     return false;
   }
-  if(arm_controller_lock_.try_lock())
-  {
-    joint_trajectory_->setTrajectory(joint_trajectory);
-    refresh_rt_vals_ = true;
-    arm_controller_lock_.unlock();
-  }
+  joint_trajectory_->setTrajectory(joint_trajectory);
+
   return true;
 }
 
@@ -409,6 +424,7 @@ void JointTrajectoryController::checkWatchDog(double current_time)
     if(!watch_dog_active_)
     {
       watch_dog_active_ = true;
+      ROS_INFO("Setting watchdog");
       stopMotion();
     }
   }
@@ -422,17 +438,17 @@ void JointTrajectoryController::stopMotion()
 
 void JointTrajectoryController::resetTrajectoryTimes()
 {
-  trajectory_start_time_ = robot_->hw_->current_time_;
+  trajectory_start_time_ = current_time_;
   trajectory_wait_time_ = 0.0;
   trajectory_end_time_ = joint_trajectory_->getTotalTime()+trajectory_start_time_;
-  refresh_rt_vals_ = false;
-  trajectory_done_ = false;
+//  ROS_INFO("Resetting trajectory time");
+//  ROS_INFO("Trajectory time: %f",joint_trajectory_->getTotalTime());
 }
 
 void JointTrajectoryController::getJointCommands()
 {
   double sample_time(0.0);
-  sample_time = robot_->hw_->current_time_ - trajectory_start_time_;
+  sample_time = current_time_ - trajectory_start_time_;
   joint_trajectory_->sample(trajectory_point_,sample_time);
 
   for(int i=0; i < num_joints_; ++i)
@@ -442,28 +458,26 @@ void JointTrajectoryController::getJointCommands()
   }
 }
 
-
-void JointTrajectoryController::checkIfTrajectoryDone()
+bool JointTrajectoryController::trajectoryDone()
 {
-  if(robot_->hw_->current_time_ >= trajectory_end_time_ && trajectory_done_ == false)
+  if(current_time_ >= trajectory_end_time_ && current_trajectory_finished_ == false)
   {
-    trajectory_wait_time_ = robot_->hw_->current_time_ - trajectory_end_time_;
+    trajectory_wait_time_ = current_time_ - trajectory_end_time_;
     if(reachedGoalPosition(joint_cmd_))
     {
       trajectory_wait_time_ = 0.0;
-      trajectory_done_= true;
+      updateTrajectoryQueue(current_trajectory_id_,JointTrajectoryController::DONE);
+      return true;
+    }
+    if(trajectory_wait_time_ >= trajectory_wait_timeout_)
+    {
+      trajectory_wait_time_ = 0.0;
+      updateTrajectoryQueue(current_trajectory_id_,JointTrajectoryController::FAILED);
+      return true;
     }
   }
-  if(trajectory_done_)
-  {
-    updateTrajectoryQueue(JointTrajectoryController::DONE);
-  }
-  if(trajectory_wait_time_ >= trajectory_wait_timeout_)
-  {
-    updateTrajectoryQueue(JointTrajectoryController::FAILED);
-  }
+  return false;
 }
-
 
 void JointTrajectoryController::update(void)
 {
@@ -472,20 +486,42 @@ void JointTrajectoryController::update(void)
 #endif
   current_time_ = robot_->hw_->current_time_;
   updateJointValues();
-  checkIfTrajectoryDone();
+  int get_trajectory_index = 0;
 
-  checkWatchDog(current_time_);
-  if(refresh_rt_vals_)
+  if(trajectory_preempted_)
   {
-    resetTrajectoryTimes();
+//    ROS_INFO("Update from preempted");
+    updateTrajectoryQueue(current_trajectory_id_,JointTrajectoryController::CANCELED);
+    get_trajectory_index = current_trajectory_index_;
+//    ROS_INFO("Looking for trajectory with index %d",current_trajectory_index_);
+    trajectory_preempted_ = false;
+    current_trajectory_finished_ = true;
   }
-  if(arm_controller_lock_.try_lock())
+  else if(trajectoryDone())
   {
-    getJointCommands();
-    arm_controller_lock_.unlock();
+    get_trajectory_index = (current_trajectory_index_ + 1)%max_trajectory_queue_size_;
+    current_trajectory_finished_ = true;    
   }
 
-//  setJointCommands();
+  if(current_trajectory_finished_)
+  {
+    if(getTrajectoryFromQueue(get_trajectory_index))
+    {
+//      ROS_INFO("Updated to trajectory with index: %d",get_trajectory_index);
+      current_trajectory_index_ = get_trajectory_index;
+      at_rest_ = false;
+      current_trajectory_finished_ = false;
+      resetTrajectoryTimes();
+    }
+    else if(!at_rest_)
+    {
+      at_rest_ = true;
+      current_trajectory_id_ = -1;
+      setTrajectoryCmdToCurrentValues();
+    }
+  }
+
+  getJointCommands();
 
   updateJointControllers();
 
@@ -529,10 +565,11 @@ void JointTrajectoryController::updateBaseCommand(double time)
     error_dot = current_joint_velocity_[joint_index] - joint_cmd_dot_[joint_index];      
     cmd[i] = base_pid_controller_[i].updatePid(error, time - last_time_);
     cmd[i] += joint_cmd_dot_[joint_index];
-    if((int) i == base_theta_index_)
+    if(joint_index == base_theta_index_)
     {
       theta = current_joint_position_[joint_index];
     }
+//    ROS_INFO("Joint cmd: %d %f %f %f",i,error,error_dot,cmd[i]);
   }
 
   //Transform the cmd back into the base frame
@@ -565,9 +602,14 @@ bool JointTrajectoryController::reachedGoalPosition(std::vector<double> joint_cm
 
 void JointTrajectoryController::updateJointControllers(void)
 {
+  //compute errors
+  computeJointErrors();
+
   // Set the commands for all the joints
   for(unsigned int i=0;i<joint_pv_controllers_.size();++i)
+  {
     joint_pv_controllers_[i]->setCommand(joint_cmd_[i],joint_cmd_dot_[i]);
+  }
 
   // Set the commands for the base
   updateBaseCommand(current_time_);
@@ -575,9 +617,9 @@ void JointTrajectoryController::updateJointControllers(void)
   // Call update on all the controllers
   for(unsigned int i=0;i<joint_pv_controllers_.size();++i)
     joint_pv_controllers_[i]->update();  
+
   base_controller_node_.update();
 }
-
 
 void JointTrajectoryController::updateJointValues()
 {
@@ -597,31 +639,49 @@ void JointTrajectoryController::updateJointValues()
   }
 }
 
-//------ Arm controller node --------
-
-
-void JointTrajectoryController::updateTrajectoryQueue(int last_trajectory_finish_status)
+void JointTrajectoryController::updateTrajectoryQueue(int id, int finish_status)
 {
-  if(joint_trajectory_vector_.size() > 0)
+  if(num_trajectory_available_ > 0 && id >= 0)
   {
-    if(current_trajectory_id_ == joint_trajectory_id_.front())
-    {
-      joint_trajectory_status_[current_trajectory_id_] = last_trajectory_finish_status;
-      joint_trajectory_time_[current_trajectory_id_] = trajectory_end_time_ - trajectory_start_time_;
-      joint_trajectory_vector_.erase(joint_trajectory_vector_.begin());
-      joint_trajectory_id_.erase(joint_trajectory_id_.begin());
-    }
-    if(joint_trajectory_vector_.size() > 0)
-    {
-      setTrajectoryCmdFromMsg(joint_trajectory_vector_.front(),joint_trajectory_id_.front());
-    }
-    else
-    {
-      setTrajectoryCmdToCurrentValues();
-    }
+    joint_trajectory_status_[id] = finish_status;
+    joint_trajectory_time_[id] = trajectory_end_time_ - trajectory_start_time_;
+    if(finish_status != JointTrajectoryController::ACTIVE)
+      num_trajectory_available_--;
   }
 }
 
+bool JointTrajectoryController::getTrajectoryFromQueue(int &index)
+{
+  if(num_trajectory_available_ < 1)
+  {
+//    ROS_INFO("No trajectories available");
+    return false;
+  }
+  if(joint_trajectory_status_[index] == JointTrajectoryController::QUEUED)
+  {
+    setTrajectoryCmdFromMsg(joint_trajectory_vector_[index],joint_trajectory_id_[index]);
+    return true;
+  }
+  else
+  {
+// do a linear search from current index + 1
+    int iter = (index + 1)%max_trajectory_queue_size_;
+    int num_iterations = 0;
+    while(num_iterations < max_trajectory_queue_size_)
+    { 
+      if(joint_trajectory_status_[joint_trajectory_id_[iter]] == JointTrajectoryController::QUEUED)
+      {
+        setTrajectoryCmdFromMsg(joint_trajectory_vector_[iter],joint_trajectory_id_[iter]);
+        index = iter;
+        return true;
+      }
+      num_iterations++;
+      iter = (iter+1)%max_trajectory_queue_size_;
+    }
+  }
+//  ROS_INFO("No match found");
+  return false;
+}
 
 
 void JointTrajectoryController::setTrajectoryCmdFromMsg(robot_msgs::JointTraj traj_msg, int id)
@@ -657,13 +717,14 @@ void JointTrajectoryController::setTrajectoryCmdFromMsg(robot_msgs::JointTraj tr
         {
           tp[i+1].q_[j] = traj_msg.points[i].positions[j];
           tp[i+1].time_ = traj_msg.points[i].time;
+//          ROS_INFO("Trajectory: %d %d %f %f",i,j,tp[i+1].q_[j],tp[i+1].time_);
         }
       }
     }
   }
   else
   {
-    ROS_WARN("Trajectory message has no way points");
+//    ROS_WARN("Trajectory message has no way points");
     //set second point in trajectory to current position of the arm
     tp[1].setDimension((int) num_joints_);
 
@@ -676,6 +737,7 @@ void JointTrajectoryController::setTrajectoryCmdFromMsg(robot_msgs::JointTraj tr
 
   if(setTrajectoryCmd(tp))
   {
+//    ROS_INFO("Setting trajectory command");
     current_trajectory_id_ = id;
     joint_trajectory_status_[current_trajectory_id_] = JointTrajectoryController::ACTIVE;
   }
@@ -686,9 +748,9 @@ void JointTrajectoryController::TrajectoryReceivedOnTopic()
   // PREEMPTS anything on the queue
   this->ros_lock_.lock();
   last_traj_req_time_ = current_time_;
+//  ROS_INFO("Locked and setting command");
   preemptTrajectoryQueue(traj_msg_,request_trajectory_id_);
   request_trajectory_id_++;
-//  setTrajectoryCmdFromMsg(traj_msg_);
   this->ros_lock_.unlock();
 }
 
@@ -697,6 +759,7 @@ bool JointTrajectoryController::setJointTrajSrv(pr2_mechanism_controllers::Traje
                                                 pr2_mechanism_controllers::TrajectoryStart::Response &resp)
 {
   addTrajectoryToQueue(req.traj, request_trajectory_id_);
+  request_trajectory_id_++;
   last_traj_req_time_ = current_time_;
   resp.trajectoryid = request_trajectory_id_;
 
@@ -716,7 +779,6 @@ bool JointTrajectoryController::setJointTrajSrv(pr2_mechanism_controllers::Traje
       resp.timestamps[i] = timestamps[i];
     }
   }
-  request_trajectory_id_++;
   return true;
 }
 
@@ -741,12 +803,14 @@ bool JointTrajectoryController::queryJointTrajSrv(pr2_mechanism_controllers::Tra
     return true;
   }
 
-  std::map<int, int>::const_iterator it = joint_trajectory_status_.find((int)req.trajectoryid);
-  if(it == joint_trajectory_status_.end())
+  if(req.trajectoryid > joint_trajectory_status_.size())
+  {
     return false;
+  }
   else
-    resp.done = it->second;
-
+  {
+    resp.done = joint_trajectory_status_[req.trajectoryid];
+  }
 
   if(current_trajectory_id_ == (int)req.trajectoryid)
   {
@@ -757,11 +821,7 @@ bool JointTrajectoryController::queryJointTrajSrv(pr2_mechanism_controllers::Tra
   }
   else
   {
-    std::map<int, double>::const_iterator it_time = joint_trajectory_time_.find((int)req.trajectoryid);
-    if(it_time == joint_trajectory_time_.end())
-      return false;
-
-    resp.trajectorytime = it_time->second;
+    resp.trajectorytime = joint_trajectory_time_[req.trajectoryid];
   }
   return true;
 }
@@ -770,24 +830,16 @@ bool JointTrajectoryController::cancelJointTrajSrv(pr2_mechanism_controllers::Tr
                                                    pr2_mechanism_controllers::TrajectoryCancel::Response &resp)
 {
   int status = JointTrajectoryController::NUM_STATUS;
-
   std::vector<trajectory::Trajectory::TPoint> trajectory_points_vector;
-  std::map<int, int>::const_iterator it = joint_trajectory_status_.find((int)req.trajectoryid);
-
-  if(it == joint_trajectory_status_.end())
+  if(req.trajectoryid > joint_trajectory_status_.size())
+  {
     return false;
+  }
   else
-    status = it->second;
-
-  if(status == JointTrajectoryController::QUEUED)
   {
-    deleteTrajectoryFromQueue(req.trajectoryid);
+    status = joint_trajectory_status_[req.trajectoryid];
   }
-  else if(status == JointTrajectoryController::ACTIVE)
-  {
-    updateTrajectoryQueue(CANCELED);
-//    stopMotion();
-  }
+  deleteTrajectoryFromQueue(req.trajectoryid);
   return true;
 }
 
@@ -845,32 +897,62 @@ bool JointTrajectoryController::createTrajectoryFromMsg(const robot_msgs::JointT
 
 void JointTrajectoryController::addTrajectoryToQueue(robot_msgs::JointTraj new_traj, int id)
 {
-  joint_trajectory_vector_.push_back(new_traj);
-  joint_trajectory_id_.push_back(id);
-  joint_trajectory_time_[id] = 0.0;
-  joint_trajectory_status_[id] = JointTrajectoryController::QUEUED;
+  trajectory_queue_.try_lock();
+
+  joint_trajectory_vector_[next_free_index_] = new_traj;
+  joint_trajectory_id_[next_free_index_] = id;
+  joint_trajectory_time_.push_back(0.0);
+  joint_trajectory_status_.push_back(JointTrajectoryController::QUEUED);
+  num_trajectory_available_++;
+  next_free_index_ = (next_free_index_+1)%max_trajectory_queue_size_;
+  trajectory_queue_.unlock();
 }
 
 void JointTrajectoryController::preemptTrajectoryQueue(robot_msgs::JointTraj new_traj, int id)
 {
-  joint_trajectory_time_[id] = 0.0;
-  joint_trajectory_status_[id] = JointTrajectoryController::QUEUED;
-  setTrajectoryCmdFromMsg(new_traj,id);
+  int index = std::max(current_trajectory_index_,0);
+  trajectory_queue_.try_lock();
+//  ROS_INFO("Setting preempt command");
+  joint_trajectory_vector_[index] = new_traj;
+  joint_trajectory_id_[index] = id;
+  joint_trajectory_time_.push_back(0.0);
+  joint_trajectory_status_.push_back(JointTrajectoryController::QUEUED);
+  num_trajectory_available_++;
+  trajectory_queue_.unlock();
+
+  trajectory_preempted_ = true;
+//  ROS_INFO("Done setting preempt command");
 }
 
 void JointTrajectoryController::deleteTrajectoryFromQueue(int id)
 {
-// do a linear search
-  for(int i = 0; i < (int) joint_trajectory_vector_.size(); i++)
+  trajectory_queue_.lock();
+  if(id == joint_trajectory_id_[current_trajectory_index_])
   {
-    if(joint_trajectory_id_[i] == id)
+    joint_trajectory_vector_[current_trajectory_index_].set_points_size(0);
+    trajectory_queue_.unlock();
+    trajectory_preempted_ = true;
+    return;
+  }
+
+  if(num_trajectory_available_ < 1)
+    return;
+
+// do a linear search from current index + 1
+  int iter = (current_trajectory_index_ + 1)%max_trajectory_queue_size_;
+  int num_iterations = 0;
+  while(num_iterations < max_trajectory_queue_size_)
+  { 
+    if(joint_trajectory_id_[iter] == id)
     {
-      joint_trajectory_vector_.erase(joint_trajectory_vector_.begin()+i);
-      joint_trajectory_id_.erase(joint_trajectory_id_.begin()+i);
       joint_trajectory_status_[id] = JointTrajectoryController::DELETED;
+      num_trajectory_available_--;
       break;
     }
+    num_iterations++;
+    iter = (iter+1)%max_trajectory_queue_size_;
   }
+  trajectory_queue_.unlock();
 }
 
 void JointTrajectoryController::publishDiagnostics()
@@ -929,16 +1011,16 @@ void JointTrajectoryController::publishDiagnostics()
     values.push_back(v);
 
     v.label = "Trajectory Status:: ";
-    std::map<int, int>::const_iterator it = joint_trajectory_status_.find((int)current_trajectory_id_);
-    if(it == joint_trajectory_status_.end())
+
+    if(current_trajectory_id_ < 0)
     {
       v.label += "UNKNOWN";
       v.value = -1;
     }
     else
     {
-      v.label += JointTrajectoryStatusString[it->second];
-      v.value = it->second;
+      v.label += JointTrajectoryStatusString[joint_trajectory_status_[current_trajectory_id_]];
+      v.value = joint_trajectory_status_[current_trajectory_id_];
     }
     values.push_back(v);
 
