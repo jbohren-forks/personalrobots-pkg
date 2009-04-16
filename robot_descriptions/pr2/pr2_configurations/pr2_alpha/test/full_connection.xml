@@ -1,0 +1,23 @@
+<!-- This test is meant to be run manually on a PR2 robot, with four
+     computers connected in a LAN.  We assume that the env var ROBOT is
+     set to the robot's base name (e.g., pre, prf, prg). -->
+<launch>
+
+  <include file="$(find pr2_alpha)/test/prX.machine" />
+
+  <node machine="realtime" pkg="pr2_alpha" type="subpub.py"
+        args="realtime realtime_root two three four"/>
+  <node machine="realtime_root" pkg="pr2_alpha" type="subpub.py"
+        args="realtime_root realtime two three four"/>
+  <node machine="two" pkg="pr2_alpha" type="subpub.py"
+        args="two realtime_root realtime three four"/>
+  <node machine="three" pkg="pr2_alpha" type="subpub.py"
+        args="three two realtime_root realtime four"/>
+  <node machine="four" pkg="pr2_alpha" type="subpub.py"
+        args="four three two realtime_root realtime"/>
+
+  <test time-limit="10" test-name="pairwise_remote"
+        pkg="pr2_alpha" type="subpub_test.py"
+        args="realtime realtime_root two three four"/>
+
+</launch>
