@@ -54,7 +54,8 @@ unsigned int EnvironmentNAVXYTHETADOORLAT::GETHASHBIN(unsigned int X1, unsigned 
 	return inthash(inthash(X1)+(inthash(X2)<<1)+(inthash(Theta)<<2)) & (HashTableSize-1);
 }
 
-void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int SourceTheta, int SourceDoorIntervalIndex,
+void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int SourceTheta, 
+						 int SourceDoorIntervalIndex,
 						 EnvNAVXYTHETALATAction_t* action,
 						 int* pCosttoDoorInterval0, int* pCosttoDoorInterval1)
 {
@@ -77,9 +78,13 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
     double sourcex = DISCXY2CONT(SourceX, EnvNAVXYTHETALATCfg.cellsize_m);
     double sourcey = DISCXY2CONT(SourceY, EnvNAVXYTHETALATCfg.cellsize_m);
 
-    //TODO compute cost multiplier for both door intervals, plus return as soon as both are infinite
-
     //iterate over intermediate poses and compute the cost multiplier due to door
+    //active intervals indicate the interval that is currently reachable
+    *pCosttoDoorInterval0 = 0;
+    *pCosttoDoorInterval1 = 0;
+    bool interval_active[2];
+    interval_active[0] = interval_active[1] = false; //both inactive
+    interval_active[SourceDoorIntervalIndex] = true; //active interval
     int doorcostmultiplier = 0;
     for(i = 0; i < (int)action->intermptV.size(); i++) 
     {
@@ -97,75 +102,119 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
         GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV, &doorangleintV);
 //        printf("Size angles: %d, costs: %d\n",doorangleV.size(),dooranglecostV.size());
 
+
         if(i > 0){
-            //go over the previous interval and pick the common value with the smallest cost
-            int mincost = INFINITECOST;
-            int bestprevangle = -1;
-            for(int cind = 0; cind < (int)doorangleV.size(); cind++){
-                for(int pind = 0; pind < (int) prevdoorangleV.size(); pind++){
-                    if(doorangleV[cind] == prevdoorangleV[pind] && __min(dooranglecostV[cind], prevdooranglecostV[pind]) < mincost){
-                        mincost = __min(dooranglecostV[cind], prevdooranglecostV[pind]);
-                        bestprevangle = prevdoorangleV[pind];
-                    }
-                }
-            }
-            //is the worst case cost
-            doorcostmultiplier = __max(mincost, doorcostmultiplier);
-        }
+	  //go over the previous interval and pick the common value with the smallest cost
+	  int mincost[2];
+	  mincost[0] = mincost[1] = INFINITECOST;
+	  for(int cind = 0; cind < (int)doorangleV.size(); cind++){
+	    for(int pind = 0; pind < (int) prevdoorangleV.size(); pind++){
+	      if(doorangleV[cind] == prevdoorangleV[cind] && 
+		 interval_active[prevdoorangleintV[cind]] == true){
+		//activate new interval if possible
+		interval_active[doorangleintV[cind]] = true;
+		//track the best cost
+		if(__max(dooranglecostV[cind], prevdooranglecostV[pind]) < mincost[doorangleintV[cind]])
+		  mincost[doorangleintV[cind]] = __max(dooranglecostV[cind], prevdooranglecostV[pind]);
+	      }
+	    }//prevdoorangles
+	  }//current door angles
+	  if(mincost[0] == INFINITECOST)
+	    interval_active[0] = false; //nothing is reachable in this interval
+	  if(mincost[1] == INFINITECOST)
+	    interval_active[1] = false; //nothing is reachable in this interval
+
+	  //is the worst case cost (a bit incorrect: should take min only if intervals overlap, otherwise it should be
+	  //separate cost for each interval)
+	  doorcostmultiplier = __max(__min(mincost[0], mincost[1]), doorcostmultiplier);
+	    
+	}
+	else{
+	  //NOTE: it would be more efficient to return intervalindex = 2 to indicate overlap. then it would be linear
+	  for(int cind = 0; cind < (int)doorangleV.size(); cind++){
+	    for(int c2ind = cind+1; c2ind < (int)doorangleV.size(); c2ind++){
+	      if(doorangleV[cind] == doorangleV[c2ind] && 
+		 (doorangleintV[cind] == SourceDoorIntervalIndex || doorangleintV[c2ind] == SourceDoorIntervalIndex)){
+		interval_active[doorangleintV[cind]] = true;
+		interval_active[doorangleintV[c2ind]] = true;
+	      }	      
+	    }
+	  }
+	}//else
+
+	//    printf("\n\n\n Skipping previous step\n\n\n");
+	if(doorcostmultiplier >= INFINITECOST){
+	  *pCosttoDoorInterval0 = INFINITECOST;
+	  *pCosttoDoorInterval1 = INFINITECOST;
+	  return;
+	}
+
 
         //store the old interval
         prevdoorangleV = doorangleV;
 	prevdoorangleintV = doorangleintV;
         prevdooranglecostV = dooranglecostV;
 
-    }    
-//    printf("\n\n\n Skipping previous step\n\n\n");
-    if(doorcostmultiplier >= INFINITECOST){
-	*pCosttoDoorInterval0 = INFINITECOST;
-	*pCosttoDoorInterval1 = INFINITECOST;
-	return;
-    }
-
-
-	int currentmaxcost = 0;
-	for(i = 0; i < (int)action->intersectingcellsV.size(); i++) 
-	{
-		//get the cell in the map
-		cell = action->intersectingcellsV.at(i);
-		cell.x = cell.x + SourceX;
-		cell.y = cell.y + SourceY;
-		
-		//check validity
-		if(!IsValidCell(cell.x, cell.y)){
-		  *pCosttoDoorInterval0 = INFINITECOST;
-		  *pCosttoDoorInterval1 = INFINITECOST;
-		  return;
-		}
-
-		if(EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y] > currentmaxcost)
-			currentmaxcost = EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y];
-	}
-
-	//to ensure consistency of h2D:
-	currentmaxcost = __max(currentmaxcost, EnvNAVXYTHETALATCfg.Grid2D[SourceX][SourceY]);
-	if(!IsValidCell(SourceX + action->dX, SourceY + action->dY)){
+    }   
+ 
+  
+    int currentmaxcost = 0;
+    for(i = 0; i < (int)action->intersectingcellsV.size(); i++) 
+      {
+	//get the cell in the map
+	cell = action->intersectingcellsV.at(i);
+	cell.x = cell.x + SourceX;
+	cell.y = cell.y + SourceY;
+	
+	//check validity
+	if(!IsValidCell(cell.x, cell.y)){
 	  *pCosttoDoorInterval0 = INFINITECOST;
 	  *pCosttoDoorInterval1 = INFINITECOST;
 	  return;
 	}
+	
+	if(EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y] > currentmaxcost)
+	  currentmaxcost = EnvNAVXYTHETALATCfg.Grid2D[cell.x][cell.y];
+      }
+    
+    //to ensure consistency of h2D:
+    currentmaxcost = __max(currentmaxcost, EnvNAVXYTHETALATCfg.Grid2D[SourceX][SourceY]);
+    if(!IsValidCell(SourceX + action->dX, SourceY + action->dY)){
+      *pCosttoDoorInterval0 = INFINITECOST;
+      *pCosttoDoorInterval1 = INFINITECOST;
+      return;
+    }
+    
+    currentmaxcost = __max(currentmaxcost, EnvNAVXYTHETALATCfg.Grid2D[SourceX + action->dX][SourceY + action->dY]);
+    
+    //use cell cost as multiplicative factor
+    if(interval_active[0] == true)    
+      *pCosttoDoorInterval0 = action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1); 
+    else
+      *pCosttoDoorInterval0 = INFINITECOST;
+    if(interval_active[1] == true)     
+       *pCosttoDoorInterval1 =  action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1); 
+    else
+      *pCosttoDoorInterval1 = INFINITECOST;
 
-	currentmaxcost = __max(currentmaxcost, EnvNAVXYTHETALATCfg.Grid2D[SourceX + action->dX][SourceY + action->dY]);
+    if(*pCosttoDoorInterval0 == INFINITECOST && *pCosttoDoorInterval1 == INFINITECOST)
+      {
+	printf("ERROR: both costtodoorintervals are infinite\n");
+	exit(1);
+      }
 
-
-	*pCosttoDoorInterval0 = action->cost*(currentmaxcost+1)*(doorcostmultiplier + 1); //use cell cost as multiplicative factor
-	*pCosttoDoorInterval1 = *pCosttoDoorInterval1; 
 }
+
 
 void EnvironmentNAVXYTHETADOORLAT::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t worldrobotpose3D, 
 						      vector<int>* doorangleV, 
 						      vector<int>* dooranglecostV,
 						      vector<unsigned char>* doorangleintV)
 {
+
+  //TODO for Sachin: set doorangleintV vector. It would actually be computationally faster if you return 2 
+  //whenever an angle belongs to both intervals (as opposed to returning 2 different entries)
+  //Let me know if you can do it, and then I'll change my code to support it
 
     //dummy test
     doorangleV->clear();
@@ -208,7 +257,7 @@ void EnvironmentNAVXYTHETADOORLAT::SetDesiredDoorAngles(vector<int> desired_door
   printf("desired door angles are set to %d values\n", this->desired_door_anglesV.size());
 }
 
-
+//returns minimum cost angle within the specified door_angle_interval
 int EnvironmentNAVXYTHETADOORLAT::MinCostDesiredDoorAngle(int x, int y, int theta, int door_intervalind)
 {
 
@@ -237,8 +286,8 @@ int EnvironmentNAVXYTHETADOORLAT::MinCostDesiredDoorAngle(int x, int y, int thet
   int bestangle = -1;
   for(int cind = 0; cind < (int)doorangleV.size(); cind++){
     for(int dind = 0; dind < (int) desired_door_anglesV.size(); dind++){
-      if(doorangleV[cind] == desired_door_anglesV[dind] && 
-	 doorangleintV[cind] == door_intervalind && dooranglecostV[cind] < mincost){
+      if(doorangleintV[cind] == door_intervalind &&
+	 doorangleV[cind] == desired_door_anglesV[dind] && dooranglecostV[cind] < mincost){
 	mincost = dooranglecostV[cind];
 	bestangle = desired_door_anglesV[dind];
       }
@@ -248,8 +297,9 @@ int EnvironmentNAVXYTHETADOORLAT::MinCostDesiredDoorAngle(int x, int y, int thet
   return mincost;
 }
 
-
-bool EnvironmentNAVXYTHETADOORLAT::GetMinCostDoorAngle(double x, double y, double theta, unsigned char door_interval,
+//returns mininum cost angle within the specified door_angle_interval
+bool EnvironmentNAVXYTHETADOORLAT::GetMinCostDoorAngle(double x, double y, double theta, 
+						       unsigned char door_interval,
 						       double &angle, double &door_angle_cost)
 {
   vector<int> doorangleV;
@@ -285,7 +335,7 @@ bool EnvironmentNAVXYTHETADOORLAT::GetMinCostDoorAngle(double x, double y, doubl
   {    
     angle = angles::normalize_angle((double) angles::from_degrees(bestangle) + db_.door_frame_global_yaw_);
     door_angle_cost = mincost;
-//    printf("bestangle: %d\n",bestangle);
+    //    printf("bestangle: %d\n",bestangle);
     return true;
   }
   return false;
@@ -625,10 +675,9 @@ int EnvironmentNAVXYTHETADOORLAT::GetStateFromCoord(int x, int y, int theta,
 
 
 void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>* stateIDPath, 
-								 vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath,											       vector<unsigned char>* door_intervalindPath)
+								   vector<EnvNAVXYTHETALAT3Dpt_t>* xythetaPath,								      vector<unsigned char>* door_intervalindPath)
 {
 
-  //TODO Set interval index path
 	vector<EnvNAVXYTHETALATAction_t*> actionV;
 	vector<int> CostV;
 	vector<int> SuccIDV;
@@ -659,15 +708,15 @@ void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>
 
 		//get source coordinates
 		GetCoordFromState(sourceID, sourcex_c, sourcey_c, sourcetheta_c, sourcedoorinterval);
+		GetCoordFromState(targetID, targetx_c, targety_c, targettheta_c, targetdoorinterval);
 		
-
 		int bestcost = INFINITECOST;
 		int bestsind = -1;
 
 #if DEBUG
-		GetCoordFromState(targetID, targetx_c, targety_c, targettheta_c, targetdoorinterval);
-		fprintf(fDeb, "looking for %d %d %d %d -> %d %d %d %d (numofsuccs=%d)\n", sourcex_c, sourcey_c, sourcetheta_c, sourcedoorinterval,
-					targetx_c, targety_c, targettheta_c, targetdoorinterval, SuccIDV.size()); 
+		fprintf(fDeb, "looking for %d %d %d %d -> %d %d %d %d (numofsuccs=%d)\n", 
+			sourcex_c, sourcey_c, sourcetheta_c, sourcedoorinterval,
+			targetx_c, targety_c, targettheta_c, targetdoorinterval, SuccIDV.size()); 
 #endif
 
 		for(int sind = 0; sind < (int)SuccIDV.size(); sind++)
@@ -676,7 +725,7 @@ void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>
 #if DEBUG
 		  int x_c, y_c, theta_c, doorint;
 		  GetCoordFromState(SuccIDV[sind], x_c, y_c, theta_c, doorint);
-		  fprintf(fDeb, "succ: %d %d %d\n", x_c, y_c, theta_c, doorint); 
+		  fprintf(fDeb, "succ: %d %d %d %d\n", x_c, y_c, theta_c, doorint); 
 #endif
 
 		  if(SuccIDV[sind] == targetID && CostV[sind] <= bestcost)
@@ -688,9 +737,9 @@ void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>
 		if(bestsind == -1)
 		{
 			printf("ERROR: successor not found for transition:\n");
-			GetCoordFromState(targetID, targetx_c, targety_c, targettheta_c, targetdoorinterval);
-			printf("%d %d %d %d -> %d %d %d %d\n", sourcex_c, sourcey_c, sourcetheta_c, sourcedoorinterval,
-					targetx_c, targety_c, targettheta_c, targetdoorinterval); 
+			printf("%d %d %d %d -> %d %d %d %d\n", 
+			       sourcex_c, sourcey_c, sourcetheta_c, sourcedoorinterval,
+			       targetx_c, targety_c, targettheta_c, targetdoorinterval); 
 			exit(1);
 		}
 
@@ -698,6 +747,7 @@ void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>
 		double sourcex, sourcey;
 		sourcex = DISCXY2CONT(sourcex_c, EnvNAVXYTHETALATCfg.cellsize_m);
 		sourcey = DISCXY2CONT(sourcey_c, EnvNAVXYTHETALATCfg.cellsize_m);
+		int currentintervalind = sourcedoorinterval;
 		for(int ipind = 0; ipind < ((int)actionV[bestsind]->intermptV.size())-1; ipind++)
 		{
 		  //translate appropriately
@@ -719,10 +769,23 @@ void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>
 		  //store
 		  xythetaPath->push_back(intermpt);
 		  
-		  //TODO - store door_interval into the path
-
+		  //get the door angles and if there is one with the interval of the goal configuration return it
+		  //NOTE: relies on not having switch back and forth in between intervals within one action 
+		  //- should probably fix this
+		  if(currentintervalind != targetdoorinterval){
+		    vector<int> doorangleV, dooranglecostV;
+		    vector<unsigned char> doorangleintV;		    
+		    GetValidDoorAngles(intermpt, &doorangleV, &dooranglecostV, &doorangleintV);
+		    for(int d1ind = 0; d1ind < (int)doorangleV.size(); d1ind++){
+		      for(int d2ind = d1ind+1; d2ind < (int)doorangleV.size(); d2ind++){
+			if(doorangleV[d1ind] == doorangleV[d2ind] && doorangleintV[d1ind] != doorangleintV[d2ind])
+			  currentintervalind = targetdoorinterval; //transition into target interval			 
+			  }
+		    }
+		  }
+		  door_intervalindPath->push_back(currentintervalind);		  
 		}
-	}
+	}//over pind
 }
 
 
