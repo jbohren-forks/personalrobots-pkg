@@ -257,6 +257,10 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_safety_tuck_arms"))
     runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(safety_tuck_arms);
 
+  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> doors_tuck_arms("doors_tuck_arms");
+  if (getComponentParam("/trex/enable_doors_tuck_arms"))
+    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(doors_tuck_arms);
+
   // Miscellaneous
   runner.run();
 

@@ -12,6 +12,7 @@
 #include "CalcDistanceConstraint.hh"
 #include "OrienteeringSolver.hh"
 #include "Utilities.hh"
+#include "LabelStr.hh"
 #include <executive_trex_pr2/topological_map.h>
 #include <executive_trex_pr2/door_domain_constraints.hh>
 
@@ -36,6 +37,92 @@ namespace TREX{
     std::cout << "Handling signal..." << signalNo << std::endl;
     exit(0);
   }
+
+  /**
+   * @brief A base class constraint for posting an equality relation across matching
+   * paramaters in a pair of tokens.
+   */
+  class ParamEqConstraint: public Constraint{
+  public:
+    ParamEqConstraint(const LabelStr& name,
+		       const LabelStr& propagatorName,
+		       const ConstraintEngineId& constraintEngine,
+		       const std::vector<ConstrainedVariableId>& variables);
+
+  private:
+
+    /**
+     * @brief Takes a ':' delimited list of param names to use in applying the quality relation
+     */
+    /*
+    std::vector<ConstrainedVariableId> makeNewScope(const char* param_names, const std::vector<ConstrainedVariableId>& variables ){
+      static const char* DELIMITER(":");
+
+      // If already mapped, then return without modification. This is the case when merging
+      if(variables.size() > 2)
+	return variables;
+
+      // Otherwise swap for parameters of both tokens
+      const std::vector<ConstrainedVariableId>& scope_a(TREX::getParentToken(variables[0])->parameters());
+      const std::vector<ConstrainedVariableId>& scope_b = TREX::getParentToken(variables[1])->parameters();
+      
+      LabelStr param_names_lbl(param_names);
+      unsigned int param_count param_names_lbl.countElements(DELIMITER);
+      for(unsigned int i = 0; i < param_count; i++){
+	LabelStr param_name = param_names_lbl.getElement(DELIMITER, i);
+	ConstrainedVariableId var_a = scope_a->getVariable(
+      }
+
+      for(unsigned int i = 0; i< params.size(); i++)
+	new_scope.push_back(params[i]);
+
+      return new_scope;
+    }
+    */
+    void handleExecute(){
+      debugMsg("trex:propagation:get_state",  "BEFORE: " << toString());
+
+      // Iterate over all parameters of the source token. Any with a name match will be intersected
+      std::vector<ConstrainedVariableId>::const_iterator it = _source_token->parameters().begin();
+      while (it != _source_token->parameters().end()){
+	static const LabelStr STATUS("status");
+	ConstrainedVariableId v_source = *it;
+	if(v_source->getName() != STATUS){
+	  ConstrainedVariableId v_target = _target_token->getVariable(v_source->getName());
+	  if(v_target.isId()){
+	    AbstractDomain& target_dom = getCurrentDomain(v_target);
+	    if(target_dom.intersect(v_source->lastDomain()) && target_dom.isEmpty()){
+	      return;
+	    }
+	  }
+	}
+	++it;
+      }
+
+      debugMsg("trex:propagation:get_state",  "AFTER: " << toString());
+    }
+
+    std::string toString() const {
+      std::stringstream sstr;
+
+      sstr << Entity::toString() << std::endl;
+
+      std::vector<ConstrainedVariableId>::const_iterator it = _source_token->parameters().begin();
+      unsigned int i = 0;
+      while (it != _source_token->parameters().end()){
+	ConstrainedVariableId v_source = *it;
+	ConstrainedVariableId v_target = _target_token->getVariable(v_source->getName());
+	if(v_target.isId())
+	  sstr << " ARG[" << i++ << "]:" << v_target->toLongString() << std::endl;
+	++it;
+      }
+
+      return sstr.str();
+    }
+
+    const TokenId _target_token;
+    const TokenId _source_token;
+  };
 
   /**
    * @brief Assigns parameter values from one token to another, matching by name

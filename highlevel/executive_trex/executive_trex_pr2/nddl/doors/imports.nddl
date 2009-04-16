@@ -22,6 +22,7 @@ constraint get_door_grasp_base_position(x, y, th, door_x1, door_y1, door_x2, doo
 RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
 
 // Additional actions for the doro domain
+DoorsTuckArms doors_tuck_arms = new DoorsTuckArms(External);
 ReleaseDoor release_door = new ReleaseDoor(External);
 OpenDoor open_door = new OpenDoor(External);
 GraspHandle grasp_handle = new GraspHandle(External);
@@ -32,6 +33,10 @@ CheckDoorway check_doorway = new CheckDoorway(External);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
 
 // Controller requirements
+DoorsTuckArms::Active{
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
+}
+
 DetectDoor::Active{
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
   contained_by(right_arm_mechanism.use_joint_trajectory_controller);
