@@ -196,11 +196,14 @@ public:
 
   inline static std::string __s_getDataType() { return M::__s_getDataType(); }
   inline static std::string __s_getMD5Sum() { return M::__s_getMD5Sum(); }
-  inline static std::string __s_getMessageDefinition() { return M::__s_getMessageDefinition(); }
 
   virtual const std::string __getDataType() const { return M::__s_getDataType(); }
   virtual const std::string __getMD5Sum()   const { return M::__s_getMD5Sum(); }
+
+#if defined(ROSCPP_MESSAGE_HAS_DEFINITION)
+  inline static std::string __s_getMessageDefinition() { return M::__s_getMessageDefinition(); }
   virtual const std::string __getMessageDefinition()   const { return M::__s_getMessageDefinition(); }
+#endif
 
   // Topic buffer is for subscribing, not publishing
   virtual uint32_t serializationLength() const { return 0; }
