@@ -1,5 +1,6 @@
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
+#include <robot_actions/action_client.h>
 #include <robot_actions/message_adapter.h>
 #include <robot_actions/ActionStatus.h>
 #include <std_msgs/Float32.h>
@@ -150,24 +151,51 @@ TEST(robot_actions, many_goals) {
 }
 
 /**
- * Test - Here is an examnple using an action runner. 
+ * Test - Here is an example using an action runner. 
  */
 TEST(robot_actions, action_with_action_runner){
-  // First allocate it with an update rate of 10 Hz
-  robot_actions::ActionRunner runner(10.0);
 
   // Now connect actions
-  MyAction a, b;
+  MyAction a;
   Float32 g;
   robot_actions::ActionStatus foo;
+
+  // First allocate it with an update rate of 10 Hz
+  robot_actions::ActionRunner runner(10.0);
   runner.connect<Float32, RechargeState, Float32>(a);
-  runner.connect<Float32, RechargeState, Float32>(b);
 
   // Now run it.
   runner.run();
 
   ros::Duration duration(5);
   duration.sleep();
+}
+
+/**
+ * Test - Here is an example with the action client 
+ */
+TEST(robot_actions, action_client){
+
+  // Now connect actions
+  MyAction action;
+
+  // Now run it.
+  robot_actions::ActionRunner runner(10.0);
+  runner.connect<Float32, RechargeState, Float32>(action);
+  runner.run();
+
+  // Use a client to test the action
+  robot_actions::ActionClient<Float32, RechargeState, Float32> client("my_action");
+  ros::Duration duration(5);
+  duration.sleep();
+
+  Float32 g, f;
+  g.data = 5;
+  robot_actions::ResultStatus result = client.execute(g, f, ros::Duration(1));
+  ASSERT_EQ(result, robot_actions::SUCCESS);
+
+  result = client.execute(g, f, ros::Duration().fromSec(0.0001));
+  ASSERT_EQ(result, robot_actions::PREEMPTED);
 }
 
 int main(int argc, char** argv){  

@@ -119,19 +119,31 @@ namespace robot_actions {
      * via ROS paramaters
      */
   MessageAdapter(Action<Goal, Feedback>& action)
-    : _action(action), _update_topic(_action.getName() + "/feedback") {
+    : _action(action), 
+      _goal_topic(_action.getName() + "/activate"),
+      _preempt_topic(_action.getName() + "/preempt"),
+      _feedback_topic(_action.getName() + "/feedback") {
 
       // Connect the action to this container
       _action.connect(boost::bind(&MessageAdapter<Goal, State, Feedback>::notify, this, _1, _2, _3));
 
       // Advertize state updates
-      ros::Node::instance()->advertise<State>(_update_topic, QUEUE_MAX());
+      ros::Node::instance()->advertise<State>(_feedback_topic, QUEUE_MAX());
 
       // Subscribe to goal requests. 
-      ros::Node::instance()->subscribe(_action.getName() + "/activate", _request_msg, &MessageAdapter<Goal, State, Feedback>::requestHandler,  this, 1);
+      ros::Node::instance()->subscribe(_goal_topic, _request_msg, &MessageAdapter<Goal, State, Feedback>::requestHandler,  this, 1);
 
       // Subscribe to goal preemptions.
-      ros::Node::instance()->subscribe(_action.getName() + "/preempt", _preemption_msg, &MessageAdapter<Goal, State, Feedback>::preemptionHandler,  this, 1);
+      ros::Node::instance()->subscribe(_preempt_topic, _preemption_msg, &MessageAdapter<Goal, State, Feedback>::preemptionHandler,  this, 1);
+    }
+
+    /**
+     * @brief Do ROS cleanup
+     */
+    virtual ~MessageAdapter(){
+      ros::Node::instance()->unsubscribe(_request_msg);
+      ros::Node::instance()->unsubscribe(_preemption_msg);
+      ros::Node::instance()->unadvertise(_feedback_topic);
     }
 
     // Call back invoked from the action. Packages up as a state message and ships
@@ -140,7 +152,7 @@ namespace robot_actions {
       state_msg.status = status;
       state_msg.goal = goal;
       state_msg.feedback = feedback;
-      ros::Node::instance()->publish(_update_topic, state_msg);
+      ros::Node::instance()->publish(_feedback_topic, state_msg);
     }
 
     virtual void publish(){
@@ -181,7 +193,9 @@ namespace robot_actions {
     
     /** DATA MEMBERS **/
     Action<Goal, Feedback>& _action; /*! The action to do the real work */
-    const std::string _update_topic;
+    const std::string _goal_topic;
+    const std::string _preempt_topic;
+    const std::string _feedback_topic;
     Goal _request_msg; /*!< Message populated by handler for a request */
     std_msgs::Empty _preemption_msg; /*!< Message populated by handler for a preemption. */
     State _state_msg; /*!< Message published. */
