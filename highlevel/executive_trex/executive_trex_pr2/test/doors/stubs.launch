@@ -3,6 +3,7 @@
   <param name="/trex/enable_base_state_publisher" value="true"/>
   <param name="/trex/enable_switch_controllers" value="true"/>
   <param name="/trex/enable_safety_tuck_arms" value="true"/>
+  <param name="/trex/enable_doors_tuck_arms" value="true"/>
   <param name="/trex/enable_detect_plug_on_base" value="true"/>
   <param name="/trex/enable_detect_door" value="true"/>
   <param name="/trex/enable_detect_handle" value="true"/>
