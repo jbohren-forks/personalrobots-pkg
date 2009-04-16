@@ -82,20 +82,20 @@
   }
 
 
-  double getZYXYaw(int solution_number = 1) 
+  double getEulerZYXYaw(int solution_number = 1) 
   {
     double yaw, pitch, roll;
     self->getEulerZYX(yaw, pitch, roll, solution_number);
     return yaw;
   }
 
-  double getZYXPitch(int solution_number = 1) 
+  double getEulerZYXPitch(int solution_number = 1) 
   {
     double yaw, pitch, roll;
     self->getEulerZYX(yaw, pitch, roll, solution_number);
     return pitch;
   }
-  double getZYXRoll(int solution_number = 1) 
+  double getEulerZYXRoll(int solution_number = 1) 
   {
     double yaw, pitch, roll;
     self->getEulerZYX(yaw, pitch, roll, solution_number);
