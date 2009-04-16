@@ -30,9 +30,9 @@ rospack_add_executable(add_calibration_data src/add_calibration_data.cpp)
 target_link_libraries(add_calibration_data kinematic_calibration)
 rospack_link_boost(add_calibration_data thread)
 
-rospack_add_executable(camera_cal_sampler src/camera_cal_sampler.cpp)
-target_link_libraries(camera_cal_sampler kinematic_calibration)
-rospack_link_boost(camera_cal_sampler thread)
+#rospack_add_executable(camera_cal_sampler src/camera_cal_sampler.cpp)
+#target_link_libraries(camera_cal_sampler kinematic_calibration)
+#rospack_link_boost(camera_cal_sampler thread)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
