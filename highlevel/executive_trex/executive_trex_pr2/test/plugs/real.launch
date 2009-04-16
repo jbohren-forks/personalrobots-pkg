@@ -3,13 +3,11 @@
   <param name="/trex/enable_base_state_publisher" value="true"/>
   <param name="/trex/enable_move_base" value="true"/>
   <param name="/trex/enable_localize_plug_in_gripper" value="true"/>
-  <param name="/trex/enable_stow_plug" value="true"/>
   <param name="/trex/enable_push_plug_in" value="true"/>
   <param name="/trex/enable_unplug" value="true"/>
   <param name="/trex/enable_servo_to_outlet" value="true"/>
   <param name="/trex/enable_insert_plug" value="true"/>
   <param name="/trex/enable_detect_outlet_coarse" value="true"/>
-  <param name="/trex/enable_detect_outlet_fine" value="true"/>
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
 
   <param name="/trex/input_file" value="recharger.cfg"/>
