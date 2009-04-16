@@ -28,7 +28,7 @@
     </node>
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
     <node pkg="nav_view" type="nav_view" respawn="false">
-      <remap from="goal" to="/move_base/activate" />
+      <remap from="goal" to="/move_base_node/activate" />
     </node>
   </group>
 </launch>
