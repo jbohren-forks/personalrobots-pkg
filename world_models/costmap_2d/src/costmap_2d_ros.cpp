@@ -73,11 +73,17 @@ namespace costmap_2d {
 
       ROS_ASSERT_MSG(data_type == "PointCloud" || data_type == "LaserScan", "Only topics that use point clouds or laser scans are currently supported");
 
+
+      bool clearing, marking;
+      ros_node_.param("~" + prefix + "/costmap/" + topic + "/clearing", clearing, false);
+      ros_node_.param("~" + prefix + "/costmap/" + topic + "/clearing", marking, true);
+
       //create an observation buffer
       observation_buffers_.push_back(new ObservationBuffer(topic, observation_keep_time, expected_update_rate, min_obstacle_height, max_obstacle_height, tf_, global_frame_, sensor_frame));
 
-      bool clearing;
-      ros_node_.param("~" + prefix + "/costmap/" + topic + "/clearing", clearing, false);
+      //check if we'll add this buffer to our marking observation buffers
+      if(marking)
+        marking_buffers_.push_back(observation_buffers_.back());
 
       //check if we'll also add this buffer to our clearing observation buffers
       if(clearing)
@@ -235,8 +241,9 @@ namespace costmap_2d {
     //project the laser into a point cloud
     PointCloud base_cloud;
     base_cloud.header = message->header;
-    //we want all values... even those out of range
-    projector_.projectLaser(*message, base_cloud, -1.0, true);
+
+    //project the scan into a point cloud
+    projector_.projectLaser(*message, base_cloud);
 
     //buffer the point cloud
     observation_lock_.lock();
@@ -304,9 +311,9 @@ namespace costmap_2d {
     bool current = true;
     observation_lock_.lock();
     //get the marking observations
-    for(unsigned int i = 0; i < observation_buffers_.size(); ++i){
-      observation_buffers_[i]->getObservations(marking_observations);
-      current = current && observation_buffers_[i]->isCurrent();
+    for(unsigned int i = 0; i < marking_buffers_.size(); ++i){
+      marking_buffers_[i]->getObservations(marking_observations);
+      current = current && marking_buffers_[i]->isCurrent();
     }
     observation_lock_.unlock();
     return current;

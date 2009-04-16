@@ -205,6 +205,7 @@ namespace costmap_2d {
 
       std::vector<tf::MessageNotifierBase*> observation_notifiers_; ///< @brief Used to make sure that transforms are available for each sensor
       std::vector<ObservationBuffer*> observation_buffers_; ///< @brief Used to store observations from various sensors
+      std::vector<ObservationBuffer*> marking_buffers_; ///< @brief Used to store observation buffers used for marking obstacles
       std::vector<ObservationBuffer*> clearing_buffers_; ///< @brief Used to store observation buffers used for clearing obstacles
       bool rolling_window_; ///< @brief Whether or not the costmap should roll with the robot
       bool current_; ///< @brief Whether or not all the observation buffers are updating at the desired rate
