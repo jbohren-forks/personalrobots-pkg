@@ -16,7 +16,7 @@
   <node machine="four" pkg="pr2_alpha" type="subpub.py"
         args="four three two realtime_root realtime"/>
 
-  <test time-limit="10" test-name="pairwise_remote"
+  <test time-limit="10" test-name="full_connection"
         pkg="pr2_alpha" type="subpub_test.py"
         args="realtime realtime_root two three four"/>
 
