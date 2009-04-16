@@ -40,12 +40,16 @@
 #include <plugs_core/action_untuck_arms.h>
 #include <plugs_core/action_move_and_grasp_plug.h>
 #include <plugs_core/action_detect_outlet_fine.h>
+#include <plugs_core/action_localize_plug_in_gripper.h>
 #include <plugs_core/action_stow_plug.h>
 
 // State Msgs
 #include <robot_actions/NoArgumentsActionState.h>
-#include <robot_actions/StowPlugState.h>
 #include <robot_actions/MoveAndGraspPlugState.h>
+#include <robot_actions/DetectOutletState.h>
+#include <robot_actions/LocalizePlugInGripperState.h>
+#include <robot_actions/StowPlugState.h>
+
 
 
 #include <robot_actions/action.h>
@@ -67,26 +71,20 @@ int main(int argc, char** argv)
   
   UntuckArmsAction untuck_arms;
   MoveAndGraspPlugAction move_and_grasp;
-  StowPlugAction stow_plug;
   DetectOutletFineAction detect_outlet_fine;
+  LocalizePlugInGripperAction localize_plug_in_gripper(node);
+  StowPlugAction stow_plug;
+  
 
   robot_actions::ActionRunner runner(10.0);
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(untuck_arms);
   runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp);
-  runner.connect<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
   runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_fine);
+  runner.connect<robot_msgs::PoseStamped, robot_actions::LocalizePlugInGripperState, std_msgs::Empty>(localize_plug_in_gripper);
+  runner.connect<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
+  
 
   runner.run();
-
-  //untuck_arms.handleActivate(empty);
-  // plug_msg.header.frame_id = "torso_lift_link";
-  // plug_msg.stowed = 1;
-  // plug-msg.plug_centroid.x = 0.24;
-  // plug_msg.plug_centroid.y = 0.03;
-  // plug_msg.plug_centroid.z = -0.45;
-  // move_to_grasp.handleActivate(plug_msg);
-
-  //untuck_arms.handleActivate(empty);
 
   node.spin();
   return 0;

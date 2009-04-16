@@ -53,12 +53,14 @@ StowPlugAction::StowPlugAction() :
   if(gripper_controller_ == "" )
     {
       ROS_ERROR("%s: Aborted, gripper controller param was not set.", action_name_.c_str());
+      terminate();
       return;
     }
 
   if(arm_controller_ == "" )
     {
       ROS_ERROR("%s: Aborted, arm controller param was not set.", action_name_.c_str());
+      terminate();
       return;
     }
 

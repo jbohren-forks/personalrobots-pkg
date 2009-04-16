@@ -63,7 +63,7 @@ MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
       terminate();
       return;
     }
-
+ 
 };
 
 MoveAndGraspPlugAction::~MoveAndGraspPlugAction()
@@ -173,6 +173,14 @@ void MoveAndGraspPlugAction::checkGrasp()
     }
     else
     {
+      req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z + 0.07;
+      req_pose_.pose.header.stamp = ros::Time();
+      if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
+      {
+        ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
+        deactivate(robot_actions::ABORTED, empty_);
+        return;
+      }
       ROS_INFO("%s: succeeded.", action_name_.c_str());
       node_->unsubscribe(gripper_controller_ + "/state");
       deactivate(robot_actions::SUCCESS, empty_);
