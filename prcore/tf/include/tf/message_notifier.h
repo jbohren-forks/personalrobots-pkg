@@ -143,6 +143,9 @@ public:
    */
   ~MessageNotifier()
   {
+    NOTIFIER_DEBUG("Successful Transforms: %d, Failed Transforms: %d, Transform messages received: %d, Messages received: %d",
+                        successful_transform_count_, failed_transform_count_, transform_message_count_, incoming_message_count_);
+
     unsubscribeFromMessage();
 
     node_->unsubscribe("/tf_message", &MessageNotifier::incomingTFMessage, this);
@@ -155,9 +158,6 @@ public:
     thread_handle_.join();
 
     clear();
-
-    NOTIFIER_DEBUG("Successful Transforms: %d, Failed Transforms: %d, Transform messages received: %d, Messages received: %d",
-                    successful_transform_count_, failed_transform_count_, transform_message_count_, incoming_message_count_);
   }
 
   /**

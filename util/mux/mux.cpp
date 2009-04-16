@@ -49,8 +49,12 @@ public:
                             msgBuf = NULL; msgBufAlloc = 0; }
   virtual const string __getDataType() const { return string("*"); }
   virtual const string __getMD5Sum()   const { return string("*"); }
+  /// \todo Fill this in
+  virtual const string __getMessageDefinition()   const { return string(""); }
   static const string __s_getDataType() { return string("*"); }
   static const string __s_getMD5Sum()   { return string("*"); }
+  /// \todo Fill this in
+  static const string __s_getMessageDefinition()   { return string(""); }
   uint32_t serializationLength() const { return msgBufUsed; }
   virtual uint8_t *serialize(uint8_t *writePtr, uint32_t) const
   {
@@ -159,7 +163,7 @@ int main(int argc, char **argv)
     topics.push_back(argv[i]);
   Mux mux(argv[1], argv[2], topics);
   mux.spin();
-  
+
   return 0;
 }
 
