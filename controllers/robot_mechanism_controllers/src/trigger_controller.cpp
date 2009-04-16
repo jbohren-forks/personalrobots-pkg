@@ -76,7 +76,7 @@ TriggerController::~TriggerController()
 
 double TriggerController::getTick()
 {
-  return robot_->hw_->current_time_ * rep_rate_ - phase_; 
+  return getTick(robot_->hw_->current_time_, config_);
 }
 
 void TriggerController::update()
@@ -84,9 +84,9 @@ void TriggerController::update()
   double tick = getTick();
   bool active = false;
   
-  if (running_)
+  if (config_.running)
   {
-    if (pulsed_)
+    if (config_.pulsed)
     {
       active = (floor(prev_tick_) != floor(tick));
       //if (active)
@@ -94,13 +94,13 @@ void TriggerController::update()
     }
     else
     {
-      active = fmod(tick, 1) < duty_cycle_;
-      //if (active != fmod(prev_tick_, 1) < duty_cycle_)
+      active = fmod(tick, 1) < config_.duty_cycle;
+      //if (active != fmod(prev_tick_, 1) < config_.duty_cycle)
       //  ROS_INFO("Changed to: %i (%s)", active, actuator_name_.c_str()); // KILLME
     }
   }
 
-  actuator_command_->digital_out_ = active ^ active_low_;
+  actuator_command_->digital_out_ = active ^ config_.active_low;
 
   // ROS_INFO("digital out: %i (%s)", actuator_command_->digital_out_, actuator_name_.c_str());
   
@@ -137,23 +137,23 @@ bool TriggerController::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   
   // Get the startup configuration (pulsed or constant)
 
-  rep_rate_ =  1;
-  phase_ = 0;
-  running_ = false;
-  active_low_ = false;
-  pulsed_ = true;
-  duty_cycle_ = .5;
+  config_.rep_rate =  1;
+  config_.phase = 0;
+  config_.running = false;
+  config_.active_low = false;
+  config_.pulsed = true;
+  config_.duty_cycle = .5;
 
   TiXmlElement *w = config->FirstChildElement("waveform");
   if (w)
   {
     ROS_DEBUG("TriggerController::initXml reading pulsed configuration.");
-    if (w->Attribute("rep_rate"))   rep_rate_   = atof(w->Attribute("rep_rate"));
-    if (w->Attribute("phase"))      phase_      = atof(w->Attribute("phase"));
-    if (w->Attribute("duty_cycle")) duty_cycle_ = atof(w->Attribute("duty_cycle"));
-    if (w->Attribute("active_low")) active_low_ = atoi(w->Attribute("active_low"));
-    if (w->Attribute("running"))    running_    = atoi(w->Attribute("running"));
-    if (w->Attribute("pulsed"))     pulsed_     = atoi(w->Attribute("pulsed"));
+    if (w->Attribute("rep_rate"))   config_.rep_rate   = atof(w->Attribute("rep_rate"));
+    if (w->Attribute("phase"))      config_.phase      = atof(w->Attribute("phase"));
+    if (w->Attribute("duty_cycle")) config_.duty_cycle = atof(w->Attribute("duty_cycle"));
+    if (w->Attribute("active_low")) config_.active_low = atoi(w->Attribute("active_low"));
+    if (w->Attribute("running"))    config_.running    = atoi(w->Attribute("running"));
+    if (w->Attribute("pulsed"))     config_.pulsed     = atoi(w->Attribute("pulsed"));
     // FIXME Could I handle the booleans better?
   }
 
@@ -161,7 +161,7 @@ bool TriggerController::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   
   ROS_DEBUG("TriggerController::initXml completed successfully"
       " rr=%f ph=%f al=%i r=%i p=%i dc=%f.",
-      rep_rate_, phase_, active_low_, running_, pulsed_, duty_cycle_);
+      config_.rep_rate, config_.phase, config_.active_low, config_.running, config_.pulsed, config_.duty_cycle);
 
   return true;
 }
@@ -188,22 +188,22 @@ void TriggerControllerNode::update()
 }
 
 bool TriggerControllerNode::setWaveformSrv(
-    robot_mechanism_controllers::SetWaveform::Request &req,
+    trigger_configuration &req,
     robot_mechanism_controllers::SetWaveform::Response &resp)
 {
   // FIXME This should be safe despite the asynchronous barrier. Should I
   // be doing anything special to ensure that things get written in order?
-  c_->running_ = false; // Turn off pulsing before we start.
-  c_->rep_rate_ = req.rep_rate;
-  c_->phase_ = req.phase;
-  c_->duty_cycle_ = req.duty_cycle;
-  c_->active_low_ = !!req.active_low; // FIXME Could I pass these as bools?
-  c_->pulsed_ = !!req.pulsed;
-  c_->running_ = !!req.running;
+  c_->config_.running = false; // Turn off pulsing before we start.
+  c_->config_.rep_rate = req.rep_rate;
+  c_->config_.phase = req.phase;
+  c_->config_.duty_cycle = req.duty_cycle;
+  c_->config_.active_low = !!req.active_low;
+  c_->config_.pulsed = !!req.pulsed;
+  c_->config_.running = !!req.running;
   
   ROS_DEBUG("TriggerController::setWaveformSrv completed successfully"
-      " rr=%f ph=%f al=%i r=%i p=%i dc=%f.", c_->rep_rate_, c_->phase_, 
-      c_->active_low_, c_->running_, c_->pulsed_, c_->duty_cycle_);
+      " rr=%f ph=%f al=%i r=%i p=%i dc=%f.", c_->config_.rep_rate, c_->config_.phase, 
+      c_->config_.active_low, c_->config_.running, c_->config_.pulsed, c_->config_.duty_cycle);
 
   return true;
 }

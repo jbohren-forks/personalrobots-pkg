@@ -35,6 +35,17 @@
 #ifndef TRIGGER_CONTROLLER_H
 #define TRIGGER_CONTROLLER_H
 
+/**
+ *
+ * @mainpage
+ *
+ * @htmlinclude manifest.html
+ *
+ * @b Controller to output periodic pulses on the digital output pin of the
+ * motor controller boards.
+ *
+ * **/
+
 #include <ros/node.h>
 #include <mechanism_model/controller.h>
 #include <mechanism_model/robot.h>
@@ -47,6 +58,8 @@
   * 
   */
   
+typedef robot_mechanism_controllers::SetWaveform::Request trigger_configuration;
+
 namespace controller
 {
 
@@ -65,6 +78,158 @@ public:
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   
+  /**
+   * \brief Convert time to an unrolled phase (in cycles).
+   *
+   * At time 0, the unrolled phase is equal to -config.phase. Thereafter,
+   * phase increases at a rate of 1/config.rep_rate.
+   *
+   * \param t Time for which the phase should be evaluated.
+   *
+   * \param config Trigger configuration for which the phase should be evaluated.
+   *
+   * \return Unrolled phase in cycles.
+   */
+
+  static double getTick(double t, trigger_configuration const &config)
+  {
+    return  t * config.rep_rate - config.phase; 
+  }
+
+  /**
+   * \brief Convert time to an unrolled phase (in cycles).
+   *
+   * At time 0, the unrolled phase is equal to -config.phase. Thereafter,
+   * phase increases at a rate of 1/config.rep_rate. This function returns
+   * the unrolled phase.
+   *
+   * \param t Time for which the phase should be evaluated.
+   *
+   * \param config Trigger configuration for which the phase should be evaluated.
+   *
+   * \return Unrolled phase in cycles.
+   */
+
+  static double getTick(const ros::Time &t, trigger_configuration const &config)
+  {
+    return getTick(t.toSec(), config);
+  }
+
+  /**
+   * \brief Gets the ros::Time at which a cycle starts.
+   *
+   * This function takes an unrolled phase, and returns the time at which
+   * the current cycle started. That is, the most recent time at which the
+   * phase was integer.
+   *
+   * \param tick Unrolled phase.
+   *
+   * \param config Trigger configuration for which the cycle start should be evaluated.
+   *
+   * \return Cycle start time.
+   */
+
+  static double getTickStartTimeSecFromPhase(double tick, trigger_configuration const &config)
+  {
+    return (floor(tick) + config.phase) / config.rep_rate;
+  }
+
+  /**
+   * \brief Gets the ros::Time at which a cycle starts.
+   *
+   * This function takes an unrolled phase, and returns the time at which
+   * the current cycle started. That is, the most recent time at which the
+   * phase was integer.
+   *
+   * \param tick Unrolled phase.
+   *
+   * \param config Trigger configuration for which the cycle start should be evaluated.
+   *
+   * \return Cycle start time.
+   */
+
+  static ros::Time getTickStartTimeFromPhase(double tick, trigger_configuration const &config)
+  {
+    return ros::Time(getTickStartTimeSecFromPhase(tick, config));
+  }
+
+  /**
+   * \brief Gets the ros::Time at which a cycle starts.
+   *
+   * This function takes a time, and returns the time at which
+   * the current cycle started. That is, the most recent time at which the
+   * phase was integer.
+   *
+   * \param tick Time for which to perform the computation.
+   *
+   * \param config Trigger configuration for which the cycle start should be evaluated.
+   *
+   * \return Cycle start time.
+   */
+
+  static ros::Time getTickStartTime(ros::Time time, trigger_configuration const &config)
+  {
+    return ros::Time(getTickStartTimeSec(time.toSec(), config));
+  }
+
+  /**
+   * \brief Gets the ros::Time at which a cycle starts.
+   *
+   * This function takes a time, and returns the time at which
+   * the current cycle started. That is, the most recent time at which the
+   * phase was integer.
+   *
+   * \param tick Time for which to perform the computation.
+   *
+   * \param config Trigger configuration for which the cycle start should be evaluated.
+   *
+   * \return Cycle start time.
+   */
+
+  static double getTickStartTimeSec(double time, trigger_configuration const &config)
+  {
+    return getTickStartTimeSecFromPhase(getTick(time, config), config);
+  }
+
+  /**
+   * \brief Gets the time during which the output will be active during
+   * each cycle.
+   *
+   * This function determines how much time the output is active for during
+   * each cycle.
+   *
+   * \param config Trigger configuration for which the cycle start should be evaluated.
+   *
+   * \return Cycle start time.
+   */
+
+  static ros::Duration getTickDuration(trigger_configuration &config)
+  {
+    return ros::Duration(getTickDurationSec(config));
+  }
+
+  /**
+   * \brief Gets the time during which the output will be active during
+   * each cycle.
+   *
+   * This function determines how much time the output is active for during
+   * each cycle.
+   *
+   * \param config Trigger configuration for which the cycle start should be evaluated.
+   *
+   * \return Cycle start time.
+   */
+
+  static double getTickDurationSec(trigger_configuration &config)
+  {
+    if (!config.running)
+      return 0;
+    else if (config.pulsed)
+      return 1e-3; // @todo the update rate should be in an include file somewhere.
+    else
+      return config.duty_cycle / config.rep_rate;
+  }
+
 private:
   double getTick();
     
@@ -74,12 +239,7 @@ private:
   double prev_tick_;
   
   // Configuration of controller.
-  double rep_rate_;
-  double phase_;
-  double duty_cycle_;
-  bool active_low_;
-  bool running_;
-  bool pulsed_;
+  trigger_configuration config_;
   std::string actuator_name_;
 };
 
@@ -98,7 +258,7 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   
 private:
-  bool setWaveformSrv(robot_mechanism_controllers::SetWaveform::Request &req,
+  bool setWaveformSrv(trigger_configuration &req,
       robot_mechanism_controllers::SetWaveform::Response &resp);
   
   TriggerController * c_;
