@@ -227,7 +227,19 @@ void TransformListener::subscription_callback()
     TransformStampedMsgToTF(msg_in_.transforms[i], trans);
     try
     {
-      setTransform(trans);
+      std::map<std::string, std::string>* msg_header_map = msg_in_.__connection_header.get();
+      std::string authority;
+      std::map<std::string, std::string>::iterator it = msg_header_map->find("callerid");
+      if (it == msg_header_map->end())
+      {
+        ROS_WARN("Message recieved without callerid");
+        authority = "no callerid";
+      }
+      else 
+      {
+        authority = it->second;
+      }
+      setTransform(trans, authority);
     }
 
     catch (TransformException& ex)

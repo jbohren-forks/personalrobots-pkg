@@ -110,10 +110,12 @@ void Transformer::clear()
   }
 }
 
-void Transformer::setTransform(const Stamped<btTransform>& transform)
+void Transformer::setTransform(const Stamped<btTransform>& transform, const std::string& authority)
 {
-  getFrame(lookupOrInsertFrameNumber(transform.frame_id_))->insertData(TransformStorage(transform, lookupOrInsertFrameNumber(transform.parent_id_)));
-  //  printf("adding data to %d \n", lookupFrameNumber(transform.frame_id_));
+  unsigned int frame_number = lookupOrInsertFrameNumber(transform.frame_id_);
+  getFrame(frame_number)->insertData(TransformStorage(transform, lookupOrInsertFrameNumber(transform.parent_id_)));
+  
+  frame_authority_[frame_number] = authority;
 };
 
 
@@ -853,7 +855,7 @@ std::string Transformer::allFramesAsDot() const
 
   
   //  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
-  for (unsigned int counter = 1; counter < frames_.size(); counter ++)
+  for (unsigned int counter = 1; counter < frames_.size(); counter ++)//one referenced for 0 is no frame
   {
     unsigned int parent_id;
     if(  getFrame(counter)->getData(ros::Time(), temp))
@@ -863,12 +865,20 @@ std::string Transformer::allFramesAsDot() const
       parent_id = 0;
     }
     if (parent_id != 0)
+    {
+      std::string authority = "no recorded authority";
+      std::map<unsigned int, std::string>::const_iterator it = frame_authority_.find(counter);
+      if (it != frame_authority_.end())
+        authority = it->second;
+      
       mstream << "\"" << frameIDs_reverse[counter]   << "\"" << " -> " 
               << "\"" << frameIDs_reverse[parent_id] << "\"" << "[label=\""
+              << "Authority: " << authority << "\\n"
               << getFrame(counter)->getListLength() << " Readings \\n"
               << " Between " << getFrame(counter)->getLatestTimestamp().toSec() 
               << " and " << getFrame(counter)->getOldestTimestamp().toSec()
               <<"\"];" <<std::endl;
+    }
   }
   mstream << "}";
   return mstream.str();

@@ -99,7 +99,7 @@ public:
   /** \brief Clear all data */
   void clear();
 
-  void setTransform(const Stamped<btTransform>& transform);
+  void setTransform(const Stamped<btTransform>& transform, const std::string & authority = "default_authority");
 
   /*********** Accessors *************/
 
@@ -230,6 +230,7 @@ protected:
   boost::mutex frame_mutex_;
 
   std::map<std::string, unsigned int> frameIDs_;
+  std::map<unsigned int, std::string> frame_authority_;
   std::vector<std::string> frameIDs_reverse;
   
   /// How long to cache transform history
