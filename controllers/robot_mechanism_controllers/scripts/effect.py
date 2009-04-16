@@ -67,7 +67,7 @@ def main():
         print "Failed to spawn effort controller"
         sys.exit(1)
 
-    pub = rospy.Publisher("/%s/set_command" % CONTROLLER_NAME, Float64)
+    pub = rospy.Publisher("/%s/command" % CONTROLLER_NAME, Float64)
 
     try:
         print "Enter efforts:"
