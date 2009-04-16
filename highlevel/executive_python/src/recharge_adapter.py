@@ -37,26 +37,21 @@
 import roslib
 roslib.load_manifest('executive_python')
 import rospy
-from highlevel_controllers.msg import RechargeGoal, RechargeState
+from robot_actions.msg import RechargeState
+from std_msgs.msg import Float32
 
 class RechargeAdapter:
   def __init__(self, recharge_level, state_topic, goal_topic):
     self.recharge_level = recharge_level
     rospy.Subscriber(state_topic, RechargeState, self.update)
-    self.pub = rospy.Publisher(goal_topic, RechargeGoal)
+    self.pub = rospy.Publisher(goal_topic, Float32)
     self.state = None
     self.state_topic = state_topic
     self.goal_topic = goal_topic
 
   def charge(self, plug_in, pose):
-    goal = RechargeGoal()
-    goal.recharge_level = self.recharge_level
-    goal.enable = 1
-    goal.timeout = 0
-    goal.pose.x = pose[0]
-    goal.pose.y = pose[1]
-    goal.pose.th = pose[2]
-    goal.plugIn = plug_in
+    goal = Float32()
+    goal.data = self.recharge_level
     self.pub.publish(goal)
 
   def legalState(self):
