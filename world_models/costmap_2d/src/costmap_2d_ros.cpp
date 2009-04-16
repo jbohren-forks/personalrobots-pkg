@@ -68,7 +68,7 @@ namespace costmap_2d {
       ros_node_.param("~" + prefix + "/costmap/" + topic + "/observation_persistance", observation_keep_time, 0.0);
       ros_node_.param("~" + prefix + "/costmap/" + topic + "/expected_update_rate", expected_update_rate, 0.0);
       ros_node_.param("~" + prefix + "/costmap/" + topic + "/data_type", data_type, string("PointCloud"));
-      ros_node_.param("~" + prefix + "/costmap/" + topic + "/min_obstacle_height", min_obstacle_height, 0.5);
+      ros_node_.param("~" + prefix + "/costmap/" + topic + "/min_obstacle_height", min_obstacle_height, 0.05);
       ros_node_.param("~" + prefix + "/costmap/" + topic + "/max_obstacle_height", max_obstacle_height, 2.0);
 
       ROS_ASSERT_MSG(data_type == "PointCloud" || data_type == "LaserScan", "Only topics that use point clouds or laser scans are currently supported");
