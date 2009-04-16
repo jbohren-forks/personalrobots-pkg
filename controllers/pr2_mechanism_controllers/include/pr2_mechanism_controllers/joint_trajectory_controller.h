@@ -63,7 +63,7 @@
 namespace controller
 {
 
-    const std::string JointTrajectoryStatusString[7] = {"0 - ACTIVE","1 - DONE","2 - QUEUED","3 - DELETED","4 - FAILED","5 - CANCELED","6 - NUM_STATUS"};
+    const std::string JointTrajectoryStatusString[8] = {"0 - ACTIVE","1 - DONE","2 - QUEUED","3 - DELETED","4 - FAILED","5 - CANCELED","6 - DOES_NOT_EXIST","7 - NUM_STATUS"};
 
 #define GOAL_REACHED_THRESHOLD 0.01
 #define MAX_ALLOWABLE_JOINT_ERROR_THRESHOLD 0.2
@@ -109,6 +109,8 @@ namespace controller
      * to be realtime safe.
      */
     virtual void update(void); 
+
+    virtual bool starting(void);
 
     private:
 
@@ -307,7 +309,7 @@ namespace controller
      * (a) max_allowed_update_time_ which can be set using a ROS param call, e.g. <param name="max_allowed_update_time" type="double" value="0.1"/>
      * (b) max_allowable_joint_errors_ which can be set individually for each joint using a ROS param call, e.g. <param name="r_shoulder_pan_joint/joint_error_threshold" type="double" value="0.1"/>
      */
-    void checkWatchDog(double current_time);
+    bool checkWatchDog(double current_time);
 
     /**
      * @brief Stop the motion of all joints. In addition to setting all desired joint positions to the current position, it also sets velocities for the base to zero 
@@ -474,6 +476,7 @@ namespace controller
       DELETED, /*!< Trajectory has been deleted BEFORE execution. */
       FAILED, /*!< Trajectory execution has failed. This happens if the joints fail to get to the last desired position in the trajectory. */
       CANCELED, /*!< Trajectory has been canceled (preempted by other trajectory) while active */
+      DOES_NOT_EXIST, /*!< This trajectory does not exist yet */
       NUM_STATUS
     };
 
