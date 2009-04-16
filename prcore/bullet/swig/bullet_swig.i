@@ -81,6 +81,26 @@
     return py::vecTimesMatrix(v, *self);
   }
 
+
+  double getZYXYaw(int solution_number = 1) 
+  {
+    double yaw, pitch, roll;
+    self->getEulerZYX(yaw, pitch, roll, solution_number);
+    return yaw;
+  }
+
+  double getZYXPitch(int solution_number = 1) 
+  {
+    double yaw, pitch, roll;
+    self->getEulerZYX(yaw, pitch, roll, solution_number);
+    return pitch;
+  }
+  double getZYXRoll(int solution_number = 1) 
+  {
+    double yaw, pitch, roll;
+    self->getEulerZYX(yaw, pitch, roll, solution_number);
+    return roll;
+  }
 }
 
 %extend py::Transform
