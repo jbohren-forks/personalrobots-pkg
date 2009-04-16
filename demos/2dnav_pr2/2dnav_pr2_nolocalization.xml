@@ -31,7 +31,7 @@
     
     <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" machine="four"/>
 
-    <node pkg="map_server" type="map_server" args="$(find 2dnav_pr2)/maps/empty_0.05.pgm 0.05" respawn="true" machine="four" />
+    <node pkg="map_server" type="map_server" args="$(find old_2dnav_pr2)/maps/empty_0.05.pgm 0.05" respawn="true" machine="four" />
 
 
     <node pkg="highlevel_controllers" type="move_base_navfn" respawn="true" machine="four" output="screen" name="move_base_node">

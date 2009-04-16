@@ -19,6 +19,6 @@
     <include file="$(find highlevel_controllers)/test/launch_world_3d_map.xml"/>
     <include file="$(find highlevel_controllers)/test/launch_move_base.xml" />
     <node pkg="nav_view" type="nav_view" respawn="false" output="screen"/>
-    <node pkg="megamaid" type="playback" args="$(find 2dnav_pr2)/offline_bag1/topics.bag" respawn="false" output="screen"/>
+    <node pkg="megamaid" type="playback" args="$(find old_2dnav_pr2)/offline_bag1/topics.bag" respawn="false" output="screen"/>
   </group>
 </launch>

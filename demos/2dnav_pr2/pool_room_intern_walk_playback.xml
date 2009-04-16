@@ -20,6 +20,6 @@
     <include file="$(find highlevel_controllers)/test/launch_move_base.xml" />
     <node pkg="nav_view" type="nav_view" respawn="false" output="screen"/>
     <!-- <node pkg="glc" type="capture" respawn="false" args="$(find nav_view)/bin/nav_view" output="screen"/> -->
-    <node pkg="megamaid" type="playback" args="$(find 2dnav_pr2)/pool_room_intern_walk/topics.bag" respawn="false" output="screen"/>
+    <node pkg="megamaid" type="playback" args="$(find old_2dnav_pr2)/pool_room_intern_walk/topics.bag" respawn="false" output="screen"/>
   </group>
 </launch>
