@@ -169,6 +169,9 @@ namespace nav {
     std::vector<robot_actions::Pose2D> global_plan;
     bool valid_plan = planner_->makePlan(goal, global_plan);
 
+    //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
+    global_plan.push_back(goal);
+
     lock_.lock();
     //copy over the new global plan
     valid_plan_ = valid_plan;
@@ -196,31 +199,6 @@ namespace nav {
     catch(tf::ExtrapolationException& ex) {
       ROS_ERROR("Extrapolation Error: %s\n", ex.what());
     }
-  }
-
-  double MoveBaseAction::distance(double x1, double y1, double x2, double y2){
-    return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-  }
-
-  bool MoveBaseAction::goalPositionReached(){
-    double dist = distance(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), goal_.x, goal_.y);
-    return fabs(dist) <= xy_goal_tolerance_;
-  }
-
-  bool MoveBaseAction::goalOrientationReached(){
-    double useless_pitch, useless_roll, yaw;
-    global_pose_.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
-    return fabs(angles::shortest_angular_distance(yaw, goal_.th)) <= yaw_goal_tolerance_;
-  }
-
-  void MoveBaseAction::rotateToGoal(robot_msgs::PoseDot& cmd_vel){
-    double uselessPitch, uselessRoll, yaw;
-    global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
-    ROS_DEBUG("Moving to desired goal orientation\n");
-    cmd_vel.vel.vx = 0;
-    cmd_vel.vel.vy = 0;
-    double ang_diff = angles::shortest_angular_distance(yaw, goal_.th);
-    cmd_vel.ang_vel.vz = ang_diff > 0.0 ? std::max(min_abs_theta_vel_, ang_diff) : std::min(-1.0 * min_abs_theta_vel_, ang_diff);
   }
 
   void MoveBaseAction::prunePlan(){
@@ -259,6 +237,20 @@ namespace nav {
       //update the global pose
       updateGlobalPose();
 
+      //update feedback to correspond to our current position
+      double useless_pitch, useless_roll, yaw;
+      global_pose_.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
+      feedback.header.frame_id = global_frame_;
+      feedback.header.stamp = ros::Time::now();
+      feedback.x = global_pose_.getOrigin().x();
+      feedback.y = global_pose_.getOrigin().y();
+      feedback.z = 0.0;
+      feedback.th = yaw;
+
+      //push the feedback out
+      update(feedback);
+
+
       //make sure to update the cost_map we'll use for this cycle
       controller_cost_map_ros_->getCostMapCopy(controller_cost_map_);
 
@@ -268,61 +260,51 @@ namespace nav {
       //prune the plan before we pass it to the controller
       prunePlan();
 
+      struct timeval start, end;
+      double start_t, end_t, t_diff;
+      gettimeofday(&start, NULL);
+
+      //check that the observation buffers for the costmap are current
+      if(!controller_cost_map_ros_->isCurrent()){
+        ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
+        continue;
+      }
+
+      bool valid_control = false;
+      robot_msgs::PoseDot cmd_vel;
+      std::vector<robot_actions::Pose2D> local_plan;
+      //pass plan to controller
+      lock_.lock();
+      if(valid_plan_){
+        //get observations for the non-costmap controllers
+        std::vector<Observation> observations;
+        controller_cost_map_ros_->getMarkingObservations(observations);
+        valid_control = tc_->computeVelocityCommands(global_plan_, cmd_vel, local_plan, observations);
+        ros_node_.publish("cmd_vel", cmd_vel);
+      }
+      lock_.unlock();
+
       //check for success
-      if(goalPositionReached()){
-        if(goalOrientationReached()){
-          if(tc_->stopped())
-            return robot_actions::SUCCESS;
-        }
-        else{
-          //compute the velocity command we need to send for rotating to the goal
-          robot_msgs::PoseDot cmd_vel;
-          rotateToGoal(cmd_vel);
-          publishFootprint();
-          ros_node_.publish("cmd_vel", cmd_vel);
-        }
+      if(tc_->goalReached())
+        return robot_actions::SUCCESS;
+
+
+      //if we don't have a valid control... we need to re-plan explicitly
+      if(!valid_control){
+        makePlan(goal_);
       }
-      else {
-        struct timeval start, end;
-        double start_t, end_t, t_diff;
-        gettimeofday(&start, NULL);
 
-        //check that the observation buffers for the costmap are current
-        if(!controller_cost_map_ros_->isCurrent()){
-          ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
-          continue;
-        }
+      //for visualization purposes
+      publishPath(global_plan_, "gui_path", 0.0, 1.0, 0.0, 0.0);
+      publishPath(local_plan, "local_path", 0.0, 0.0, 1.0, 0.0);
+      publishFootprint();
 
-        bool valid_control = false;
-        robot_msgs::PoseDot cmd_vel;
-        std::vector<robot_actions::Pose2D> local_plan;
-        //pass plan to controller
-        lock_.lock();
-        if(valid_plan_){
-          //get observations for the non-costmap controllers
-          std::vector<Observation> observations;
-          controller_cost_map_ros_->getMarkingObservations(observations);
-          valid_control = tc_->computeVelocityCommands(global_plan_, cmd_vel, local_plan, observations);
-          ros_node_.publish("cmd_vel", cmd_vel);
-        }
-        lock_.unlock();
+      gettimeofday(&end, NULL);
+      start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+      end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+      t_diff = end_t - start_t;
+      ROS_DEBUG("Full control cycle: %.9f Valid control: %d, Vel Cmd (%.2f, %.2f, %.2f)", t_diff, valid_control, cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.vel.vz);
 
-        //if we don't have a valid control... we need to re-plan explicitly
-        if(!valid_control){
-          makePlan(goal_);
-        }
-
-        //for visualization purposes
-        publishPath(global_plan_, "gui_path", 0.0, 1.0, 0.0, 0.0);
-        publishPath(local_plan, "local_path", 0.0, 0.0, 1.0, 0.0);
-        publishFootprint();
-
-        gettimeofday(&end, NULL);
-        start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-        end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-        t_diff = end_t - start_t;
-        ROS_DEBUG("Full control cycle: %.9f Valid control: %d, Vel Cmd (%.2f, %.2f, %.2f)", t_diff, valid_control, cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.vel.vz);
-      }
       //sleep the remainder of the cycle
       if(!sleepLeftover(start_time, cycle_time))
         ROS_WARN("Controll loop missed its desired cycle time of %.4f", cycle_time.toSec());

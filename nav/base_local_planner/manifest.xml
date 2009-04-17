@@ -16,6 +16,7 @@
   <depend package="costmap_2d" />
   <depend package="robot_actions" />
   <depend package="voxel_grid" />
+  <depend package="angles" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

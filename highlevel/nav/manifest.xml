@@ -17,7 +17,6 @@
  <depend package="tf"/>
  <depend package="roslib"/>
  <depend package="navfn"/>
- <depend package="angles"/>
 
  <export>
  <cpp cflags="-I${prefix}/include `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib `rosboost-cfg --lflags thread` -lnav"/>

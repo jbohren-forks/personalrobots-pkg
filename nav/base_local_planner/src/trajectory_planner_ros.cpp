@@ -48,17 +48,20 @@ namespace base_local_planner {
   TrajectoryPlannerROS::TrajectoryPlannerROS(ros::Node& ros_node, tf::TransformListener& tf, 
       const Costmap2D& cost_map, std::vector<Point> footprint_spec, const Costmap2D* planner_map) 
     : world_model_(NULL), tc_(NULL), base_scan_notifier_(NULL), tf_(tf), laser_scans_(2), 
-    point_grid_(NULL), voxel_grid_(NULL), rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2){
+    point_grid_(NULL), voxel_grid_(NULL), rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2), goal_reached_(true){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int vx_samples, vtheta_samples;
     double pdist_scale, gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist;
     bool holonomic_robot, dwa, simple_attractor, heading_scoring;
     double heading_scoring_timestep;
-    double max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th;
+    double max_vel_x, min_vel_x, max_vel_th, min_vel_th;
     string world_model_type;
 
     ros_node.param("~base_local_planner/global_frame", global_frame_, string("map"));
     ros_node.param("~base_local_planner/robot_base_frame", robot_base_frame_, string("base_link"));
+
+    ros_node.param("~base_local_planner/yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
+    ros_node.param("~base_local_planner/xy_goal_tolerance", xy_goal_tolerance_, 0.10);
 
     string odom_topic;
     ros_node.param("~base_local_planner/odom_topic", odom_topic, string("odom"));
@@ -95,7 +98,7 @@ namespace base_local_planner {
     ros_node.param("~base_local_planner/min_vel_x", min_vel_x, 0.1);
     ros_node.param("~base_local_planner/max_vel_th", max_vel_th, 1.0);
     ros_node.param("~base_local_planner/min_vel_th", min_vel_th, -1.0);
-    ros_node.param("~base_local_planner/min_in_place_vel_th", min_in_place_vel_th, 0.4);
+    ros_node.param("~base_local_planner/min_in_place_vel_th", min_in_place_vel_th_, 0.4);
     ros_node.param("~base_local_planner/world_model", world_model_type, string("freespace"));
     ros_node.param("~base_local_planner/dwa", dwa, false);
     ros_node.param("~base_local_planner/heading_scoring", heading_scoring, false);
@@ -148,7 +151,7 @@ namespace base_local_planner {
     tc_ = new TrajectoryPlanner(*world_model_, cost_map, footprint_spec, inscribed_radius, circumscribed_radius,
         acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity, vx_samples, vtheta_samples, pdist_scale,
         gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, holonomic_robot,
-        max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th,
+        max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th_,
         dwa, heading_scoring, heading_scoring_timestep, simple_attractor);
   }
 
@@ -240,6 +243,31 @@ namespace base_local_planner {
       && abs(base_odom_.vel.y) <= trans_stopped_velocity_;
   }
 
+  double TrajectoryPlannerROS::distance(double x1, double y1, double x2, double y2){
+    return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+  }
+
+  bool TrajectoryPlannerROS::goalPositionReached(const tf::Stamped<tf::Pose>& global_pose, double goal_x, double goal_y){
+    double dist = distance(global_pose.getOrigin().x(), global_pose.getOrigin().y(), goal_x, goal_y);
+    return fabs(dist) <= xy_goal_tolerance_;
+  }
+
+  bool TrajectoryPlannerROS::goalOrientationReached(const tf::Stamped<tf::Pose>& global_pose, double goal_th){
+    double useless_pitch, useless_roll, yaw;
+    global_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
+    return fabs(angles::shortest_angular_distance(yaw, goal_th)) <= yaw_goal_tolerance_;
+  }
+
+  void TrajectoryPlannerROS::rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, double goal_th, robot_msgs::PoseDot& cmd_vel){
+    double uselessPitch, uselessRoll, yaw;
+    global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+    ROS_DEBUG("Moving to desired goal orientation\n");
+    cmd_vel.vel.vx = 0;
+    cmd_vel.vel.vy = 0;
+    double ang_diff = angles::shortest_angular_distance(yaw, goal_th);
+    cmd_vel.ang_vel.vz = ang_diff > 0.0 ? std::max(min_in_place_vel_th_, ang_diff) : std::min(-1.0 * min_in_place_vel_th_, ang_diff);
+  }
+
   void TrajectoryPlannerROS::odomCallback(){
     base_odom_.lock();
 
@@ -265,6 +293,10 @@ namespace base_local_planner {
     }
 
     base_odom_.unlock();
+  }
+
+  bool TrajectoryPlannerROS::goalReached(){
+    return goal_reached_;
   }
 
   bool TrajectoryPlannerROS::computeVelocityCommands(const std::vector<robot_actions::Pose2D>& global_plan, 
@@ -314,6 +346,36 @@ namespace base_local_planner {
     double start_t, end_t, t_diff;
     gettimeofday(&start, NULL);
     */
+
+    //we assume the global goal is the last point in the global plan
+    double goal_x = global_plan.back().x;
+    double goal_y = global_plan.back().y;
+    double goal_th = global_plan.back().th;
+
+    //assume at the beginning of our control cycle that we could have a new goal
+    goal_reached_ = false;
+
+    //check to see if we've reached the goal position
+    if(goalPositionReached(global_pose, goal_x, goal_y)){
+      //check to see if the goal orientation has been reached
+      if(goalOrientationReached(global_pose, goal_th)){
+        //set the velocity command to zero
+        cmd_vel.vel.vx = 0.0;
+        cmd_vel.vel.vy = 0.0;
+        cmd_vel.ang_vel.vz = 0.0;
+
+        //make sure that we're actually stopped before returning success
+        if(stopped())
+          goal_reached_ = true;
+      }
+      else {
+        //otherwise we need to rotate to the goal... compute the next velocity we should take
+        rotateToGoal(global_pose, goal_th, cmd_vel);
+      }
+
+      //we don't actually want to run the controller when we're just rotating to goal
+      return true;
+    }
 
     tc_->updatePlan(global_plan);
 

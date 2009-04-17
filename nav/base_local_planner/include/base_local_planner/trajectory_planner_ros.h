@@ -63,6 +63,8 @@
 
 #include <string>
 
+#include <angles/angles.h>
+
 namespace base_local_planner {
   /**
    * @class TrajectoryPlannerROS
@@ -118,16 +120,58 @@ namespace base_local_planner {
       void getLocalGoal(double& x, double& y);
 
       /**
+       * @brief  Check if the goal pose has been achieved
+       * @return True if achieved, false otherwise
+       */
+      bool goalReached();
+
+    private:
+      /**
        * @brief  Check whether the robot is stopped or not
        * @return True if the robot is stopped, false otherwise
        */
       bool stopped();
 
+      /**
+       * @brief  Check if the goal orientation has been achieved
+       * @param  global_pose The pose of the robot in the global frame
+       * @param  goal_x The desired x value for the goal
+       * @param  goal_y The desired y value for the goal
+       * @return True if achieved, false otherwise
+       */
+      bool goalOrientationReached(const tf::Stamped<tf::Pose>& global_pose, double goal_th);
+
+      /**
+       * @brief  Check if the goal position has been achieved
+       * @param  global_pose The pose of the robot in the global frame
+       * @param  goal_th The desired th value for the goal
+       * @return True if achieved, false otherwise
+       */
+      bool goalPositionReached(const tf::Stamped<tf::Pose>& global_pose, double goal_x, double goal_y);
+
+      /**
+       * @brief Once a goal position is reached... rotate to the goal orientation
+       * @param  global_pose The pose of the robot in the global frame
+       * @param  goal_th The desired th value for the goal
+       * @param  cmd_vel The velocity commands to be filled
+       */
+      void rotateToGoal(const tf::Stamped<tf::Pose>& global_pose, double goal_th, robot_msgs::PoseDot& cmd_vel);
+
+      /**
+       * @brief  Compute the distance between two points
+       * @param x1 The first x point 
+       * @param y1 The first y point 
+       * @param x2 The second x point 
+       * @param y2 The second y point 
+       * @return 
+       */
+      double distance(double x1, double y1, double x2, double y2);
+
       void baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
       void tiltScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
       void odomCallback();
 
-    private:
+
       WorldModel* world_model_; ///< @brief The world model that the controller will use
       TrajectoryPlanner* tc_; ///< @brief The trajectory controller
       tf::MessageNotifier<laser_scan::LaserScan>* base_scan_notifier_; ///< @brief Used to guarantee that a transform is available for base scans
@@ -143,6 +187,8 @@ namespace base_local_planner {
       deprecated_msgs::RobotBase2DOdom odom_msg_, base_odom_; ///< @brief Used to get the velocity of the robot
       std::string robot_base_frame_; ///< @brief Used as the base frame id of the robot
       double rot_stopped_velocity_, trans_stopped_velocity_;
+      double xy_goal_tolerance_, yaw_goal_tolerance_, min_in_place_vel_th_;
+      bool goal_reached_;
   };
 
 };
