@@ -458,8 +458,8 @@ LevMarqSparseBundleAdj::ErrorCode LevMarqSparseBundleAdj::optimize(
 
   // 1. Initialization of  \f$ \lambda \f$.
   lambdaLg10_ = -3;
-  const double LOG10= log(10.);
-  double lambda_plus_one = exp(lambdaLg10_*LOG10) + 1.0;
+  const double LOG10= ::log(10.);
+  double lambda_plus_one = ::exp(lambdaLg10_*LOG10) + 1.0;
   double scale = 1./param_delta_;
 
   if( term_criteria_.type & CV_TERMCRIT_ITER )
@@ -919,7 +919,7 @@ LevMarqSparseBundleAdj::ErrorCode LevMarqSparseBundleAdj::optimize(
       } else {
         lambdaLg10_ = MAX(lambdaLg10_-1, -16);
         // update lambda according to lambdalog10
-        lambda_plus_one = exp(lambdaLg10_*LOG10) + 1.0;
+        lambda_plus_one = ::exp(lambdaLg10_*LOG10) + 1.0;
 #if DEBUG==1
         printf("[LevMarqSBA] good update. num of iters=%d, change in param=%e <=> %e\n",
             iUpdates, param_change, term_criteria_.epsilon);
@@ -939,7 +939,7 @@ LevMarqSparseBundleAdj::ErrorCode LevMarqSparseBundleAdj::optimize(
       // influence of Gauss-Newton.
       lambdaLg10_++;
       // update lambda according to lambdalog10
-      lambda_plus_one = exp(lambdaLg10_*LOG10) + 1.0;
+      lambda_plus_one = ::exp(lambdaLg10_*LOG10) + 1.0;
       num_retractions_++;
 
       // back off from current parameters to previous ones
@@ -1202,7 +1202,7 @@ inline double LevMarqSparseBundleAdj::getParamChange(const PointTracks* tracks) 
 
   double param_diff_norm = frame_param_diff_sum_sq + point_param_diff_sum_sq;
   param_diff_norm /= frame_param_norm_sq + point_param_norm_sq;
-  param_diff_norm = sqrt(param_diff_norm);
+  param_diff_norm = ::sqrt(param_diff_norm);
 #if DEBUG2==1
   printf("parameter change (relative L2 norm of diff): %e\n", param_diff_norm);
 #endif

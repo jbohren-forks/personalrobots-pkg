@@ -221,8 +221,8 @@ bool LevMarq::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, dou
 
 void LevMarq::solve()
 {
-   const double LOG10 = log(10.);
-   double lambda = exp(lambdaLg10*LOG10);
+   const double LOG10 = ::log(10.);
+   double lambda = ::exp(lambdaLg10*LOG10);
 
    cvSetIdentity( JtJN, cvRealScalar(lambda) );
    cvAdd( JtJ, JtJN, JtJN );

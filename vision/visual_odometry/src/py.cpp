@@ -1080,7 +1080,7 @@ static PyMethodDef methods[] = {
   {"point_track", point_track, METH_VARARGS},
   {"frame_pose", frame_pose, METH_VARARGS},
   {"imWindow", mkimWindow, METH_VARARGS},
-  {"SVD", SVD, METH_VARARGS},
+  {"SVD", ::SVD, METH_VARARGS},
   {"polish", polish, METH_VARARGS},
 
   {"pose_estimator", pose_estimator, METH_VARARGS},
