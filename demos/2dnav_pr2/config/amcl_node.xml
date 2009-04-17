@@ -1,0 +1,17 @@
+<launch>
+<param name="laser_x_offset" type="double" value=".275" />
+<param name="pf_laser_max_beams" value="20"/>
+<param name="pf_min_samples" value="500"/>
+<param name="pf_max_samples" value="10000"/>
+<param name="pf_odom_drift_xx" value="0.2"/>
+<param name="pf_odom_drift_yy" value="0.2"/>
+<param name="pf_odom_drift_aa" value="0.2"/>
+<param name="pf_odom_drift_xa" value="0.2"/>
+<param name="pf_min_d" value="0.25"/>
+<param name="pf_min_a" value="0.524"/>
+<param name="pf_odom_frame_id" value="odom_combined"/>
+<param name="pf_transform_tolerance" value="0.2" />
+<node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="true" machine="three">
+  <remap from="scan" to="base_scan" />
+</node>
+</launch>
