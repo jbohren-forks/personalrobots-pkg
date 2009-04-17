@@ -1730,6 +1730,10 @@ CvPoint3D32f map_point(CvPoint3D32f point, CvMat* rotation_mat, CvMat* translati
 	cvMatMulAdd(rotation_mat, _point, translation_vector, _res);
 	
 	CvPoint3D32f res = cvPoint3D32f(cvmGet(_res, 0, 0), cvmGet(_res, 1, 0), cvmGet(_res, 2, 0));
+    
+    cvReleaseMat(&_res);
+    cvReleaseMat(&_point);
+    
 	return res;
 }
 

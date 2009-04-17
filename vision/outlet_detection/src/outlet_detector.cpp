@@ -55,10 +55,10 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 		PRINTF("find_outlet_centroids did not find a tuple\n");
 		return 0;
 	}
-	
+    	
 	vector<outlet_feature_t> features;	
 	detect_outlets(src, features, outlets, &outlet_tuple, output_path, filename);
-	
+    
 	CvPoint2D32f hor_dir = outlet_tuple.centers[1] - outlet_tuple.centers[0];
 	//	select_orient_outlets(hor_dir, outlets, 4);
 	
@@ -103,7 +103,7 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 */		
 	}
 	cvReleaseMat(&inv_homography);
-	
+    	
 	calc_origin_scale(outlet_tuple.centers, homography, &origin, &scale);
 
 	CvMat* rotation_vector = cvCreateMat(3, 1, CV_32FC1);
@@ -116,6 +116,7 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 	filter_outlets_size(outlets);
 	
 	filter_outlets_tuple(outlets, outlet_tuple.tuple_mask, hor_dir);
+    
 #if defined(_VERBOSE)
 	if(output_path && filename)
 	{
@@ -140,6 +141,7 @@ int detect_outlet_tuple(IplImage* src, CvMat* intrinsic_matrix, CvMat* distortio
 	}
 	else if(outlets.size() != 4)
 	{
+        cvReleaseMat(&homography);
 		PRINTF("Outlet tuple not found!\n");
 		return 0;
 	}

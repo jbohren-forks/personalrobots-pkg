@@ -32,6 +32,8 @@ int LoadCameraParams(char* filename, CvMat** intrinsic_matrix, CvMat** distortio
 	
     *intrinsic_matrix = (CvMat*)cvReadByName( fs,0,"camera_matrix");
 	*distortion_coeffs = (CvMat*)cvReadByName( fs,0,"distortion_coefficients");
+    
+    cvReleaseFileStorage(&fs);
 	
 	return 1;
 }
@@ -74,6 +76,7 @@ int main(int argc,char** argv)
 		
 	printf("Reading config file...\n");
 	
+    for(int iter = 0;; iter++) {
 	FILE* fp = fopen(config_filename, "rt");
 	if(fp == 0)
 	{
@@ -100,7 +103,7 @@ int main(int argc,char** argv)
 			printf("File %s not found, skipping...\n", filename);
 			continue;
 		}
-		
+        		
 		printf("\nImage %s:", buf);
 
 		int64 t1 = cvGetTickCount();
@@ -153,6 +156,13 @@ int main(int argc,char** argv)
 		
 		cvReleaseImage(&src);
 	}
+        
+    cvReleaseMat(&intrinsic_matrix);
+    cvReleaseMat(&distortion_params);
+    fclose(fp);
+        
+    printf("Finished iteration %d\n", iter);
+    }
 		
 	return 0;
 }
