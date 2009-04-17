@@ -42,7 +42,7 @@ bool callDetector()
 
 	req.point.header.frame_id = "base_link";
 
-	if (ros::service::call("outlet_spotting_service", req, resp))
+	if (ros::service::call("outlet_spotting/coarse_outlet_detect", req, resp))
 	{
 		printf("Outlet found\n");
 		return true;

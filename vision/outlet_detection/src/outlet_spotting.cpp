@@ -69,7 +69,7 @@
 #include <tf/transform_listener.h>
 
 #include "CvStereoCamModel.h"
-#include "outlet_detection/outlet_tuple.h"
+#include "outlet_detection/outlet_tuple_coarse.h"
 
 #include "outlet_detection/OutletDetection.h"
 #include "robot_actions/action.h"
@@ -178,7 +178,7 @@ public:
 		}
 
         advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
-        advertiseService("outlet_spotting_service", &OutletSpotting::outletSpottingService, this);
+        advertiseService("~coarse_outlet_detect", &OutletSpotting::outletSpottingService, this);
 	}
 
 	~OutletSpotting()
@@ -191,7 +191,7 @@ public:
 			cvReleaseImage(&disp);
 
 		unadvertise("visualizationMarker");
-		unadvertiseService("outlet_spotting_service");
+		unadvertiseService("~coarse_outlet_detect");
 	}
 
 private:
@@ -314,18 +314,18 @@ private:
 		if(num != NULL)
 		{
 			int N = *num, numFilled = 0, i=0;
-			CvMoments moments;
-			double M00, M01, M10;
 			//maskTemp = cvCloneImage(mask);
 			for(i=0, c=contours; c != NULL; c = c->h_next,i++ )
 			{
 				if(i < N) //Only process up to *num of them
 				{
+					double M00, M01, M10;
 					cvZero(maskTemp);
 					cvDrawContours(maskTemp,c,CV_CVX_WHITE, CV_CVX_WHITE,-1,CV_FILLED,8);
 					//Find the center of each contour
 					if(centers != NULL)
 					{
+						CvMoments moments;
 						cvMoments(maskTemp,&moments,1);
 						M00 = cvGetSpatialMoment(&moments,0,0);
 						M10 = cvGetSpatialMoment(&moments,1,0);
@@ -339,12 +339,12 @@ private:
 						bbs[i] = cvBoundingRect(c);
 					}
 
-					int area = bbs[i].width*bbs[i].height;
-					if (M00<fillFactor*area) {
-						--i;
-						printf("Contour shape too distorted... DELETED\n");
-						continue;
-					}
+//					int area = bbs[i].width*bbs[i].height;
+//					if (M00<fillFactor*area) {
+//						--i;
+//						printf("Contour shape too distorted... DELETED\n");
+//						continue;
+//					}
 
 
 					numFilled++;
@@ -867,8 +867,8 @@ private:
 			// if we made it this far, check the patch to see if it's an outlet
 			IplImage* patch = cvCreateImage(cvSize(bbs[t].width, bbs[t].height), IPL_DEPTH_8U, 1);
 			cvCopyPatch(left,patch, bbs[t]);
-			outlet_tuple_t outlet_tuple;
-			bool found = find_outlet_centroids(patch, outlet_tuple, NULL, NULL);
+			CvPoint2D32f centroids[4];
+			bool found = find_outlet_centroids(patch, centroids, 1);
 			cvReleaseImage(&patch);
 
 			if (!found) {
@@ -1049,7 +1049,6 @@ public:
 	{
 		while (ok())
 		{
-			cv_mutex.lock();
 			int key = cvWaitKey(3)&0x00FF;
 			if(key == 27) //ESC
 				break;
@@ -1057,7 +1056,6 @@ public:
 			if (key=='s')
 				save_patches ^= true;
 
-			cv_mutex.unlock();
 			usleep(10000);
 		}
 
@@ -1067,7 +1065,7 @@ public:
 
 	bool runOutletSpotter(const robot_msgs::PointStamped& request, robot_msgs::PoseStamped& pose)
 	{
-		bool found;
+		bool found = false;
         subscribeToData();
 
         {
@@ -1103,72 +1101,11 @@ public:
 
 
 
-
-
-class SpotOutletAction: public robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>
-{
-public:
-  SpotOutletAction(OutletSpotting& spotter) :
-	  robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_coarse"),
-	  spotter_(spotter)
-  {
-	  spotter_.advertise<robot_msgs::PointStamped>("head_controller/head_track_point",10);
-  }
-  ~SpotOutletAction()
-  {
-	  spotter_.unadvertise("head_controller/head_track_point");
-  }
-
-  virtual robot_actions::ResultStatus execute(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& outlet_pose)
-  {
-	  ROS_INFO("SpotOutletAction: executing");
-
-	  if (!spotOutlet(outlet_estimate, outlet_pose)){
-	    if (isPreemptRequested()){
-			  ROS_INFO("SpotOutletAction: Preempted");
-			  return robot_actions::PREEMPTED;
-		  }
-		  else{
-			  ROS_INFO("SpotOutletAction: Aborted");
-			  return robot_actions::ABORTED;
-		  }
-	  }
-	  else{
-		  ROS_INFO("SpotOutletAction: Succeeded");
-		  return robot_actions::SUCCESS;
-	  }
-
-  }
-
-private:
-
-	bool spotOutlet(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& pose)
-	{
-		// turn head to face outlet
-		spotter_.publish("head_controller/head_track_point", outlet_estimate);
-
-		return spotter_.runOutletSpotter(outlet_estimate, pose);
-
-	}
-
-	OutletSpotting& spotter_;
-	bool request_preempt_;
-
-};
-
-
-
-
-
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv);
 	OutletSpotting spotter;
 
-	SpotOutletAction spot_outlet(spotter);
-	robot_actions::ActionRunner runner(10.0);
-	runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(spot_outlet);
-	runner.run();
 
 	spotter.spin();
 
