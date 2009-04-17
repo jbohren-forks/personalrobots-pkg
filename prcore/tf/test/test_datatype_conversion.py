@@ -76,10 +76,16 @@ class PoseConversions(unittest.TestCase):
         
     # Test Pose conversions
     def test_msg_operator(self):
-        self.assertEquals(tf.pose_stamped_bt_to_msg(self.tfpose_stamped), tf.pose_stamped_bt_to_msg(self.tfpose_stamped), "pose msg test correctness")
+        self.assertEquals(self.msgpose_stamped, self.msgpose_stamped, "pose msg test correctness")
 
     def test_bt_operator(self):
-        self.assertEquals(tf.pose_stamped_msg_to_bt(self.msgpose_stamped), tf.pose_stamped_msg_to_bt(self.msgpose_stamped), "pose bt test correctness")
+        self.assertEquals(self.tfpose_stamped, self.tfpose_stamped, "pose bt test correctness")
+
+    def test_msg_operator_on_converted(self):
+        self.assertEquals(tf.pose_stamped_bt_to_msg(self.tfpose_stamped), tf.pose_stamped_bt_to_msg(self.tfpose_stamped), "pose msg test correctness after conversion")
+
+    def test_bt_operator_on_converted(self):
+        self.assertEquals(tf.pose_stamped_msg_to_bt(self.msgpose_stamped), tf.pose_stamped_msg_to_bt(self.msgpose_stamped), "pose bt test correctness after conversion")
 
     def test_to_msg(self):
         self.assertEquals(tf.pose_bt_to_msg(self.tfpose_stamped.pose), self.msgpose_stamped.pose, "pose tf to msg incorrect")
@@ -94,11 +100,17 @@ class PoseConversions(unittest.TestCase):
 
         
     # Test Point conversions
-    def test_msg_operator_equal_point(self):
-        self.assertEquals(tf.point_stamped_bt_to_msg(self.tfpoint_stamped), tf.point_stamped_bt_to_msg(self.tfpoint_stamped), "point msg test correctness")
-
     def test_bt_operator_equal_point(self):
-        self.assertEquals(tf.point_stamped_msg_to_bt(self.msgpoint_stamped), tf.point_stamped_msg_to_bt(self.msgpoint_stamped), "point bt test correctness")
+        self.assertEquals(self.tfpoint_stamped, self.tfpoint_stamped, "point tf test correctness")
+
+    def test_msg_operator_equal_point(self):
+        self.assertEquals(self.msgpoint_stamped, self.msgpoint_stamped, "point msg test correctness")
+
+    def test_msg_operator_equal_point_converted(self):
+        self.assertEquals(tf.point_stamped_bt_to_msg(self.tfpoint_stamped), tf.point_stamped_bt_to_msg(self.tfpoint_stamped), "point msg test correctness after conversion")
+
+    def test_bt_operator_equal_point_converted(self):
+        self.assertEquals(tf.point_stamped_msg_to_bt(self.msgpoint_stamped), tf.point_stamped_msg_to_bt(self.msgpoint_stamped), "point bt test correctness after conversion")
 
     def test_to_msg_point(self):
         self.assertEquals(tf.point_bt_to_msg(self.tfpoint_stamped.point), self.msgpoint_stamped.point, "point tf to msg incorrect")
@@ -112,10 +124,16 @@ class PoseConversions(unittest.TestCase):
         
     # Test Vector conversions
     def test_msg_operator_equal_vector(self):
-        self.assertEquals(tf.vector_stamped_bt_to_msg(self.tfvector_stamped), tf.vector_stamped_bt_to_msg(self.tfvector_stamped), "vector msg test correctness")
+        self.assertEquals(self.tfvector_stamped, self.tfvector_stamped, "vector bt test correctness")
 
-    def test_bt_operator_equal_vector(self):
-        self.assertEquals(tf.vector_stamped_msg_to_bt(self.msgvector_stamped), tf.vector_stamped_msg_to_bt(self.msgvector_stamped), "vector bt test correctness")
+    def test_msg_operator_equal_vector(self):
+        self.assertEquals(self.msgvector_stamped, self.msgvector_stamped, "vector msg test correctness")
+
+    def test_msg_operator_equal_vector_converted(self):
+        self.assertEquals(tf.vector_stamped_bt_to_msg(self.tfvector_stamped), tf.vector_stamped_bt_to_msg(self.tfvector_stamped), "vector msg test correctness after conversion")
+
+    def test_bt_operator_equal_vector_converted(self):
+        self.assertEquals(tf.vector_stamped_msg_to_bt(self.msgvector_stamped), tf.vector_stamped_msg_to_bt(self.msgvector_stamped), "vector bt test correctness after conversion")
 
     def test_to_msg_vector(self):
         self.assertEquals(tf.vector_bt_to_msg(self.tfvector_stamped.vector), self.msgvector_stamped.vector, "vector tf to msg incorrect")
@@ -128,11 +146,17 @@ class PoseConversions(unittest.TestCase):
         self.assertEquals(tf.vector_stamped_msg_to_bt(self.msgvector_stamped), self.tfvector_stamped, "vector stamped msg to tf incorrect")
 
     # Test Quaternion conversions
-    def test_msg_operator_equal_quaternion(self):
-        self.assertEquals(tf.quaternion_stamped_bt_to_msg(self.tfquaternion_stamped), tf.quaternion_stamped_bt_to_msg(self.tfquaternion_stamped), "quaternion msg test correctness")
-
     def test_bt_operator_equal_quaternion(self):
-        self.assertEquals(tf.quaternion_stamped_msg_to_bt(self.msgquaternion_stamped), tf.quaternion_stamped_msg_to_bt(self.msgquaternion_stamped), "quaternion bt test correctness")
+        self.assertEquals(self.tfquaternion_stamped, self.tfquaternion_stamped, "quaternion bt test correctness")
+
+    def test_msg_operator_equal_quaternion(self):
+        self.assertEquals(self.msgquaternion_stamped, self.msgquaternion_stamped, "quaternion msg test correctness")
+
+    def test_msg_operator_equal_quaternion_converted(self):
+        self.assertEquals(tf.quaternion_stamped_bt_to_msg(self.tfquaternion_stamped), tf.quaternion_stamped_bt_to_msg(self.tfquaternion_stamped), "quaternion msg test correctness after conversion")
+
+    def test_bt_operator_equal_quaternion_converted(self):
+        self.assertEquals(tf.quaternion_stamped_msg_to_bt(self.msgquaternion_stamped), tf.quaternion_stamped_msg_to_bt(self.msgquaternion_stamped), "quaternion bt test correctness after conversion")
 
     def test_to_msg_quaternion(self):
         self.assertEquals(tf.quaternion_bt_to_msg(self.tfquaternion_stamped.quaternion), self.msgquaternion_stamped.quaternion, "quaternion tf to msg incorrect")
