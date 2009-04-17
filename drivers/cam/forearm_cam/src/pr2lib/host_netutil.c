@@ -442,7 +442,7 @@ int wgWaitForPacket( int s, uint32_t type, size_t pktLen, uint32_t *wait_us ) {
 			// All valid WG command packets have magic_no == WG_MAGIC NO
 			// We also know the minimum packet size we're looking for
 			// So we can drop short or invalid packets at this stage
-			if( (r < pktLen) ||
+			if( ((unsigned int) r < pktLen) ||
 						gPkt.magic_no != htonl(WG_MAGIC_NO) ||
 						gPkt.type != htonl(type) ) {
 				debug("Dropping packet with magic #%08X, type 0x%02X (looking for 0x%02X), length %d (looking for %d)\n", ntohl(gPkt.magic_no), ntohl(gPkt.type), type, r, pktLen);

@@ -24,7 +24,7 @@
 
 
 #ifdef LIBRARY_BUILD
-#warning Building for LIBRARY
+//#warning Building for LIBRARY
 
 #define FLASH_MAX_PAGENO 4095
 #define FLASH_PAGE_SIZE 528

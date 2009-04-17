@@ -59,7 +59,7 @@ int pr2ImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t ver
 int pr2ImagerModeSelect( const IpCamList *camInfo, uint32_t mode );
 
 /// A FrameHandler function returns zero to continue to receive data, non-zero otherwise
-typedef int (*FrameHandler)(size_t width, size_t height, uint8_t *frameData, PacketEOF *eofInfo, void *userData);
+typedef int (*FrameHandler)(size_t width, size_t height, uint8_t *frameData, PacketEOF *eofInfo, struct timeval *startTime, void *userData);
 int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t width, FrameHandler frameHandler, void *userData );
 
 

@@ -1032,6 +1032,10 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 	// Will capture the time that the first line was received
 	struct timeval vidStartTime;
 
+	// Will capture the time that the first line was received
+	struct timeval frameStartTime;
+  bool frameStartTimeSet;
+
 	// Will capture the time that the video stopped
 	struct timeval vidStopTime;
 
@@ -1041,6 +1045,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 	do {
 		lineCount = 0;
 		frameComplete = false;
+    frameStartTimeSet = false;
 		// Ensure the buffer is cleared out. Makes viewing short packets less confusing; missing lines will be black.
 		memset(frame_buf, 0, width*height);
 
@@ -1090,6 +1095,13 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 				gettimeofday(&vidStartTime, NULL);
 
 			}
+	
+      // Store the start time for the frame.
+			if (!frameStartTimeSet)
+      {
+        gettimeofday(&frameStartTime, NULL);
+        frameStartTimeSet = true;
+      }
 
 			// Check for frames that ended with an error
 			if( (vPkt->header.line_number == IMAGER_LINENO_ERR) || 
@@ -1174,7 +1186,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 		} while(frameComplete == false);
 
 		if( frameComplete == true ) {
-			handlerReturn = frameHandler(width, height, frame_buf, eof, userData);
+			handlerReturn = frameHandler(width, height, frame_buf, eof, &frameStartTime, userData);
 		} else {
 			// We wind up here if a serious error has resulted in us 'break'ing out of the loop.
 			// We won't call frameHandler, we'll just exit directly.

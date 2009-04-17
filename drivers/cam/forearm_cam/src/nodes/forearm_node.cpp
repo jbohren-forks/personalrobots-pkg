@@ -39,6 +39,8 @@
 #include <image_msgs/CamInfo.h>
 #include <image_msgs/FillImage.h>
 #include <diagnostic_updater/diagnostic_updater.h>
+#include <robot_mechanism_controllers/SetWaveform.h>
+#include <robot_mechanism_controllers/trigger_controller.h>
 
 #include "pr2lib.h"
 #include "host_netutil.h"
@@ -56,8 +58,14 @@ private:
   int width_;
   int height_;
   double desired_freq_;
+  double trig_rate_;
+  double trig_phase_;
   bool started_video_;
   bool ext_trigger_;
+
+  std::string trig_controller_;
+  trigger_configuration trig_req_;
+  robot_mechanism_controllers::SetWaveform::Response trig_rsp_;
 
   DiagnosticUpdater<ForearmNode> diagnostic_;
   int count_;
@@ -133,6 +141,18 @@ public:
     // Stop video
     if ( started_video_ && pr2StopVid(camera_) != 0 )
       ROS_ERROR("Video Stop error");
+
+    // Stop Triggering
+    if (!trig_controller_.empty())
+    {   
+      ROS_DEBUG("Stopping triggering.");
+      trig_req_.running = 0;
+      if (!ros::service::call(trig_controller_, trig_req_, trig_rsp_))
+      { // This probably means that the trigger controller was turned off,
+        // so we don't really care.
+        ROS_DEBUG("Was not able to stop triggering.");
+      }
+    }
   }
 
   void configure(const std::string &if_name, const std::string &ip_address, int port)
@@ -198,11 +218,57 @@ public:
       return;
     }
 
-    // Select a video mode
+    // Select trigger mode.
     if ( pr2TriggerControl( camera_, ext_trigger_ ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
       ROS_FATAL("Trigger mode set error");
       node_.shutdown();
       return;
+    }
+
+    // Configure the triggering controller
+    if ( node_.hasParam("~trigger_controller") )
+    {
+      node_.getParam("~trigger_controller", trig_controller_);
+      ROS_INFO("Configuring controller \"%s\" for triggering.", trig_controller_.c_str());
+      trig_controller_ += "/set_waveform";
+
+      // How fast should we be triggering the camera? By default 1 Hz less
+      // than nominal.
+      node_.param("~trigger_rate", trig_rate_, desired_freq_ - 1.);
+
+      double trig_phase_;
+      node_.param("~trigger_phase", trig_phase_, 0.);
+
+      ROS_DEBUG("Setting trigger off.");
+      trig_req_.running = 0;
+      trig_req_.rep_rate = trig_rate_; 
+      trig_req_.phase = trig_phase_;
+      trig_req_.active_low = 0;
+      trig_req_.pulsed = 1;
+      trig_req_.duty_cycle = 0; // Unused in pulsed mode.
+      
+      if (!ros::service::call(trig_controller_, trig_req_, trig_rsp_))
+      {
+        ROS_FATAL("Unable to set trigger controller.");
+        node_.shutdown();
+        return;
+      }
+
+      ROS_DEBUG("Waiting for current frame to be guaranteed complete.");
+
+      // Wait twice the expected time just to be safe.
+      ros::Duration(2/desired_freq_).sleep();
+
+      ROS_DEBUG("Starting trigger.");
+
+      trig_req_.running = 1;
+      
+      if (!ros::service::call(trig_controller_, trig_req_, trig_rsp_))
+      {
+        ROS_FATAL("Unable to set trigger controller.");
+        node_.shutdown();
+        return;
+      }
     }
 
     // Select a video mode
@@ -213,6 +279,7 @@ public:
     }
 
     // Start video; send it to specified host port
+    // @todo TODO: Only start when somebody is listening?
     if ( pr2StartVid( camera_, (uint8_t *)&(localMac.sa_data[0]),
                       inet_ntoa(localIp), port) != 0 ) {
       ROS_FATAL("Video start error");
@@ -257,17 +324,58 @@ public:
   }
 
 private:
-  void publishImage(size_t width, size_t height, uint8_t *frameData)
+  void publishImage(size_t width, size_t height, uint8_t *frameData, ros::Time t)
   {
     fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
+    
+    image_.header.stamp = t; 
     node_.publish("~image_raw", image_);
   }
   
-  static int frameHandler(size_t width, size_t height, uint8_t *frameData,
-                          PacketEOF *eofInfo, void *userData)
+  int frameHandler(size_t width, size_t height, uint8_t *frameData,
+                          PacketEOF *eofInfo, struct timeval *startTimeval)
   {
-    ForearmNode &fa_node = *(ForearmNode*)userData;
-    if (!fa_node.node_.ok())
+    // If we are not in triggered mode then use the arrival time of the
+    // first packet as the image time.
+
+    double imageTime;
+    double frameStartTime = startTimeval->tv_sec + startTimeval->tv_usec / 1e6;
+    
+    if (!trig_controller_.empty())
+    {
+      double nowTime = ros::Time::now().toSec();
+      
+      // Assuming that there was no delay in receiving the first packet,
+      // this should tell us the time at which the first trigger after the
+      // image exposure occurred.
+      double pulseStartTime = 
+        controller::TriggerController::getTickStartTimeSec(frameStartTime, trig_req_);
+
+      // We can now compute when the exposure ended. By offsetting to the
+      // falling edge of the pulse, going back one pulse duration, and going
+      // forward one camera frame time.
+      double exposeEndTime = pulseStartTime + 
+        controller::TriggerController::getTickDurationSec(trig_req_) +
+        1 / desired_freq_ -
+        1 / trig_rate_;
+
+      static double lastExposeEndTime;
+      static double lastStartTime;
+      
+      if (fabs(exposeEndTime - lastExposeEndTime - 1 / trig_rate_) > 1e-4) 
+        ROS_INFO("Mistimed frame #%u first %f first-pulse %f now-first %f pulse-end %f end-last %f first-last %f", eofInfo->header.frame_number, frameStartTime, frameStartTime - pulseStartTime, nowTime - pulseStartTime, pulseStartTime - exposeEndTime, exposeEndTime - lastExposeEndTime, frameStartTime - lastStartTime);
+
+      lastExposeEndTime = exposeEndTime;
+      lastStartTime = frameStartTime;
+      imageTime = exposeEndTime;
+    }
+    else
+    {
+      // This offset is empirical, but fits quite nicely most of the time.
+      imageTime = frameStartTime - 0.0025;
+    }
+
+    if (!node_.ok())
       return 1;
     
     if (eofInfo == NULL) {
@@ -281,11 +389,18 @@ private:
       return 0;
     }
 
-    fa_node.publishImage(width, height, frameData);
-    fa_node.count_++;
-    fa_node.diagnostic_.update();
+    publishImage(width, height, frameData, ros::Time(imageTime));
+    count_++;
+    diagnostic_.update();
 
     return 0;
+  }
+
+  static int frameHandler(size_t width, size_t height, uint8_t *frameData,
+                          PacketEOF *eofInfo, struct timeval *startTimeval, void *userData)
+  {
+    ForearmNode &fa_node = *(ForearmNode*)userData;
+    return fa_node.frameHandler(width, height, frameData, eofInfo, startTimeval);
   }
 };
 
@@ -295,6 +410,6 @@ int main(int argc, char **argv)
   ros::Node n("forearm_node");
   ForearmNode fn(n);
   //n.spin();
-
+  
   return 0;
 }

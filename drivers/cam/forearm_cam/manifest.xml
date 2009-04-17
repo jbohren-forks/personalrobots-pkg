@@ -10,4 +10,5 @@
   <depend package="opencv_latest" />
   <depend package="stereo_image_proc" />
   <depend package="image_view" />
+  <depend package="robot_mechanism_controllers" />
 </package>
