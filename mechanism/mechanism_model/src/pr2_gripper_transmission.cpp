@@ -302,7 +302,7 @@ void PR2GripperTransmission::getAngleRateTorqueFromMinRateJoint(
 
   // obtain the physical location of passive joints in sim, and average them
   angle  = 0.0;
-  rate   = 1.0e16; // a ridiculously large value
+  double minRate   = 1.0e16; // a ridiculously large value
   torque = 0.0;
   minRateJointIndex = js.size();
 
@@ -315,16 +315,13 @@ void PR2GripperTransmission::getAngleRateTorqueFromMinRateJoint(
     //if (it == passive_joints_.begin())
     if (it != passive_joints_.end())
     {
-      if (abs(js[i]->velocity_) < rate)
+      if (abs(js[i]->velocity_) < minRate)
       {
-        rate              = js[i]->velocity_      ;
+        minRate              = abs(js[i]->velocity_)     ;
         minRateJointIndex = i;
 
         // std::cout << "propagatePositionBackwards js[" << i << "]:" << js[i]->joint_->name_
         //           << " minRateJointIndex:" << minRateJointIndex
-        //           << " angle:" << angle
-        //           << " rate:" << rate
-        //           << " torque:" << torque
         //           << " angle:"  << angles::shortest_angular_distance(theta0_,js[i]->position_) + theta0_
         //           << " rate:"   << js[i]->velocity_
         //           << " torque:" << js[i]->applied_effort_
@@ -335,6 +332,7 @@ void PR2GripperTransmission::getAngleRateTorqueFromMinRateJoint(
   assert(minRateJointIndex < js.size()); // some joint rate better be smaller than 1.0e16
 
   angle             = angles::shortest_angular_distance(theta0_,js[minRateJointIndex]->position_) + theta0_;
+  rate              = js[minRateJointIndex]->velocity_;
   torque            = js[minRateJointIndex]->applied_effort_;
 }
 
