@@ -38,5 +38,5 @@ setting pose: 30.329 34.644 3.142
       <param name="initial_pose_a" value="-0.006"/>
     </node>
   <test time-limit="180" test-name="basic_localization_small_loop_prf" pkg="amcl" 
-        type="basic_localization.py" args="16.387 27.779 0.005 0.25 0.25 66.0"/>
+        type="basic_localization.py" args="0 16.387 27.779 0.005 0.25 0.25 66.0"/>
 </launch>

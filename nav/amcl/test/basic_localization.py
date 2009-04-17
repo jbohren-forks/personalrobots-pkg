@@ -10,10 +10,9 @@ import math
 import unittest
 import rospy
 import rostest
-#import tf
 
-from robot_msgs.msg import PoseWithCovariance
 from tf.msg import tfMessage
+from std_srvs.srv import Empty
 
 class TestBasicLocalization(unittest.TestCase):
 
@@ -26,18 +25,24 @@ class TestBasicLocalization(unittest.TestCase):
         self.tf = t.transform
 
   def test_basic_localization(self):
-    target_x = float(sys.argv[1])
-    target_y = float(sys.argv[2])
-    target_a = float(sys.argv[3])
-    tolerance_d = float(sys.argv[4])
-    tolerance_a = float(sys.argv[5])
-    target_time = float(sys.argv[6])
+    global_localization = int(sys.argv[1])
+    target_x = float(sys.argv[2])
+    target_y = float(sys.argv[3])
+    target_a = float(sys.argv[4])
+    tolerance_d = float(sys.argv[5])
+    tolerance_a = float(sys.argv[6])
+    target_time = float(sys.argv[7])
+
+    if global_localization == 1:
+      rospy.wait_for_service('global_localization')
+      global_localization = rospy.ServiceProxy('global_localization', Empty)
+      resp = global_localization()
 
     rospy.init_node('test', anonymous=True)
     while(rospy.rostime.get_time() == 0.0):
       time.sleep(0.1)
     start_time = rospy.rostime.get_time()
-    # This should be replace by a pytf listener
+    # TODO: This should be replace by a pytf listener
     rospy.Subscriber('tf_message', tfMessage, self.tf_cb)
 
     while (rospy.rostime.get_time() - start_time) < target_time:
@@ -45,8 +50,8 @@ class TestBasicLocalization(unittest.TestCase):
     self.assertNotEquals(self.tf, None)
     self.assertTrue(abs(self.tf.translation.x - target_x) <= tolerance_d)
     self.assertTrue(abs(self.tf.translation.y - target_y) <= tolerance_d)
-    #TODO: check orientation
+    #TODO: Check orientation
 
 if __name__ == '__main__':
-  rostest.run('amcl', 'amcl_basic_localization', 
+  rostest.run('amcl', 'amcl_localization', 
               TestBasicLocalization, sys.argv)
