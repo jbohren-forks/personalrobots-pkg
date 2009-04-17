@@ -64,6 +64,7 @@ void CvMatUtils::saveMat(const char* filename, const CvMat *mat, const char* msg
 bool CvMatUtils::getVisualizableDisparityMap(cv::WImage1_16s& dispMap, cv::WImage3_b& canvas,
 		double maxDisp) {
 	bool status = true;
+#if 0 // pow breaks below - bug 1174
 
 	double minVal, maxVal;
 	int xim = dispMap.Width();
@@ -103,6 +104,7 @@ bool CvMatUtils::getVisualizableDisparityMap(cv::WImage1_16s& dispMap, cv::WImag
 		}
 	}
 
+#endif
 	return status;
 }
 
