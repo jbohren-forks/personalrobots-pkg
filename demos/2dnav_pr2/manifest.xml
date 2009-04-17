@@ -5,6 +5,7 @@
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki</url>
   <depend package="amcl"/>
+  <depend package="amcl_player"/>
   <depend package="mechanism_control"/>
   <depend package="robot_pose_ekf"/>
   <depend package="teleop_base"/>
