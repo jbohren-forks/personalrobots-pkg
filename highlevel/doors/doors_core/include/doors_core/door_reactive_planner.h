@@ -103,7 +103,7 @@ namespace door_reactive_planner
 
    int num_explore_paths_;
 
-   double min_inflated_cost_;
+   double max_inflated_cost_;
 
    int cell_distance_from_obstacles_;
 
@@ -129,6 +129,7 @@ namespace door_reactive_planner
 
    void getFinalPosition(const robot_actions::Pose2D &current_position, const double &delta_angle, const double &distance_to_centerline, robot_actions::Pose2D &end_position);
 
+   bool getPointCost(const robot_msgs::Point &position, double &cost);
 
    void checkPath(const std::vector<robot_actions::Pose2D> &path, const std::string &path_frame_id, std::vector<robot_actions::Pose2D> &return_path, std::string &costmap_frame_id);
 
