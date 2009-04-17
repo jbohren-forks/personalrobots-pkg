@@ -88,8 +88,10 @@ bool AMCLOdom::UpdateAction(pf_t *pf, AMCLSensorData *data)
   double delta_rot1_hat, delta_trans_hat, delta_rot2_hat;
   double delta_rot1_noise, delta_rot2_noise;
   
-  // Avoid passing -0.0 vs +0.0 into atan2()
-  if((ndata->delta.v[1] == 0.0) && (ndata->delta.v[0] == 0.0))
+  // Avoid computing a bearing from two poses that are extremely near each
+  // other (happens on in-place rotation).
+  if(sqrt(ndata->delta.v[1]*ndata->delta.v[1] + 
+          ndata->delta.v[0]*ndata->delta.v[0]) < 0.01)
     delta_rot1 = 0.0;
   else
     delta_rot1 = atan2(ndata->delta.v[1], ndata->delta.v[0]);

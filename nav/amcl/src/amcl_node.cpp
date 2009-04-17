@@ -92,6 +92,7 @@ Note that whichever mixture weights are in use should sum to 1.  The beam
 model uses all 4: z_hit, z_short, z_max, and z_rand.  The likelihood_field
 model uses only 2: z_hit and z_rand.
 
+  - @b "~laser_min_range" (double) : Minimum scan range to be considered; -1.0 will cause the laser's reported minimum range to be used, default: -1.0
   - @b "~laser_max_range" (double) : Maximum scan range to be considered; -1.0 will cause the laser's reported maximum range to be used, default: -1.0
   - @b "~laser_max_beams" (int) : How many evenly-spaced beams in each scan to be used when updating the filter, default: 30
   - @b "~laser_z_hit" (double) : Mixture weight for the z_hit part of the model, default: 0.95
@@ -208,6 +209,7 @@ class AmclNode
     double d_thresh_, a_thresh_;
     int resample_interval_;
     int resample_count_;
+    double laser_min_range_;
     double laser_max_range_;
 
     AMCLOdom* odom_;
@@ -257,6 +259,7 @@ AmclNode::AmclNode() :
   double alpha_slow, alpha_fast;
   double z_hit, z_short, z_max, z_rand, sigma_hit, lambda_short;
   double pf_err, pf_z;
+  ros::Node::instance()->param("~laser_min_range", laser_min_range_, -1.0);
   ros::Node::instance()->param("~laser_max_range", laser_max_range_, -1.0);
   ros::Node::instance()->param("~laser_max_beams", max_beams, 30);
   ros::Node::instance()->param("~min_particles", min_particles, 100);
@@ -588,10 +591,17 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     AMCLLaserData ldata;
     ldata.sensor = laser_;
     ldata.range_count = laser_scan->ranges.size();
+
+    // Apply min/max thresholds, if the user supplied them
     if(laser_max_range_ > 0.0)
       ldata.range_max = std::min(laser_scan->range_max, (float)laser_max_range_);
     else
       ldata.range_max = laser_scan->range_max;
+    double range_min;
+    if(laser_min_range_ > 0.0)
+      range_min = std::max(laser_scan->range_min, (float)laser_min_range_);
+    else
+      range_min = laser_scan->range_min;
     // The AMCLLaserData destructor will free this memory
     ldata.ranges = new double[ldata.range_count][2];
     ROS_ASSERT(ldata.ranges);
@@ -599,8 +609,8 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     {
       // amcl doesn't (yet) have a concept of min range.  So we'll map short
       // readings to max range.
-      if(laser_scan->ranges[i] <= laser_scan->range_min)
-        ldata.ranges[i][0] = laser_scan->range_max;
+      if(laser_scan->ranges[i] <= range_min)
+        ldata.ranges[i][0] = ldata.range_max;
       else
         ldata.ranges[i][0] = laser_scan->ranges[i];
       // Compute bearing

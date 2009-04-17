@@ -13,14 +13,17 @@ import rostest
 #import tf
 
 from robot_msgs.msg import PoseWithCovariance
+from tf.msg import tfMessage
 
 class TestBasicLocalization(unittest.TestCase):
 
   def setUp(self):
-    self.pose = None
+    self.tf = None
 
-  def pose_cb(self, msg):
-    self.pose = msg.pose
+  def tf_cb(self, msg):
+    for t in msg.transforms:
+      if t.parent_id == 'map':
+        self.tf = t.transform
 
   def test_basic_localization(self):
     target_x = float(sys.argv[1])
@@ -34,23 +37,15 @@ class TestBasicLocalization(unittest.TestCase):
     while(rospy.rostime.get_time() == 0.0):
       time.sleep(0.1)
     start_time = rospy.rostime.get_time()
-    rospy.Subscriber('amcl_pose', PoseWithCovariance, self.pose_cb)
+    # This should be replace by a pytf listener
+    rospy.Subscriber('tf_message', tfMessage, self.tf_cb)
 
     while (rospy.rostime.get_time() - start_time) < target_time:
       time.sleep(0.1)
-    self.assertNotEquals(self.pose, None)
-    #TODO: compare orientation using pytf
-    #tf_pose = tf.pose_stamped_msg_to_bt(self.pose)
-    #rotmat = tf_pose.getBasis()
-    #print (stderr, rotmat)
-    #yaw = 0.0
-    #pitch = 0.0
-    #roll = 0.0
-    #rotmat.getEulerZYX(yaw,pitch,roll)
-    #print (stderr, yaw)
-    
-    self.assertTrue(abs(self.pose.position.x - target_x) <= tolerance_d)
-    self.assertTrue(abs(self.pose.position.y - target_y) <= tolerance_d)
+    self.assertNotEquals(self.tf, None)
+    self.assertTrue(abs(self.tf.translation.x - target_x) <= tolerance_d)
+    self.assertTrue(abs(self.tf.translation.y - target_y) <= tolerance_d)
+    #TODO: check orientation
 
 if __name__ == '__main__':
   rostest.run('amcl', 'amcl_basic_localization', 

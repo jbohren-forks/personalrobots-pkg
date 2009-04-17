@@ -35,3 +35,4 @@ rospack_download_test_data(http://pr.willowgarage.com/data/amcl/willow-full.pgm 
 
 rospack_add_rostest(test/basic_localization_stage.xml)
 rospack_add_rostest(test/global_localization_stage.xml)
+rospack_add_rostest(test/basic_localization_small_loop_prf.xml)
