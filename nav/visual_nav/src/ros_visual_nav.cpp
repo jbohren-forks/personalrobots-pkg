@@ -47,6 +47,7 @@
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 #include <ros/node.h>
 #include <deprecated_msgs/Point2DFloat32.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
@@ -85,6 +86,7 @@ using std::map;
 using visual_nav::VisualNavGoal;
 using tf::MessageNotifier;
 using boost::shared_ptr;
+using boost::mutex;
 
 namespace po=boost::program_options;
 
@@ -94,6 +96,7 @@ namespace visual_nav
 using robot_msgs::VisualizationMarker; // the message class name
 using ros::Time;
 using deprecated_msgs::RobotBase2DOdom;
+using std::string;
 
 
 typedef map<int, NodeId> IdMap;
@@ -113,7 +116,7 @@ class RosVisualNavigator
 public:
 
   // Constructor
-  RosVisualNavigator (double exit_point_radius, const Pose& init_pose, const string& odom_frame, uint scan_period);
+  RosVisualNavigator (double exit_point_radius, const Pose& init_pose, uint scan_period);
 
   // Subscribe topics
   void setupTopics();
@@ -132,21 +135,6 @@ private:
   /******************************
    * Internal classes
    ******************************/
-
-  // RAII class to encapsulate lock on roadmap message and object, start_id_, and nav_odom_transform_
-  struct RoadmapLock
-  {
-    RoadmapLock (RosVisualNavigator* nav) : nav(nav) 
-    { 
-      ROS_DEBUG_NAMED("lock", "Acquiring RoadmapLock...");
-      nav->roadmap_message_.lock(); 
-      ROS_DEBUG_NAMED("lock", "Acquired RoadmapLock"); 
-    }
-    ~RoadmapLock () { nav->roadmap_message_.unlock(); ROS_DEBUG_NAMED("lock", "Released RoadmapLock"); }
-    RosVisualNavigator* nav;
-  };
-  friend struct RoadmapLock;
-
 
   // Used when converting ros message
   struct AddNodeToRoadmap
@@ -222,8 +210,11 @@ private:
   // Sends them
   tf::TransformBroadcaster tf_sender_;
 
+  // For now just have a single mutex
+  mutex node_mutex_;
+
   // Roadmap, and roadmap message used to populate it
-  // Access these only in scopes where a RoadmapLock has been declared
+  // Requires lock to access
   RoadmapPtr roadmap_;
   Roadmap roadmap_message_;
 
@@ -242,6 +233,9 @@ private:
   // has at least one odometry message been received?
   bool odom_received_;
 
+  // Timestamp of last received roadmap
+  Time roadmap_timestamp_;
+
   // the radius of the window used to find the exit point of the path 
   double exit_point_radius_;
 
@@ -254,11 +248,11 @@ private:
   // Is there a goal right now?
   bool have_goal_;
 
-  // Start node's (internal) id.  Access requires RoadmapLock.
+  // Start node's (internal) id.  Access requires lock.
   NodeId start_id_;
 
   // Transform between the nav frame (used by the visual roadmap) and the odometry frame (used to give goals to local controller)
-  // Access requires RoadmapLock
+  // Access requires lock
   Transform2D nav_odom_transform_;
 
   // Number of visualization markers currently being displayed by this node
@@ -267,16 +261,13 @@ private:
   // Initial pose in map frame
   const Pose init_map_pose_;
 
-  // Current pose in odom frame
-  Pose odom_pose_;
-
   // Name of odom frame
-  const string& odom_frame_;
+  string odom_frame_;
 
   // Used to project laser scans
   laser_scan::LaserProjection projector_;
 
-  // Previously observed scans
+  // Previously observed scans.  Requires lock.
   ObsScanVector observed_scans_;
 
   // How often to save scans
@@ -294,12 +285,11 @@ private:
  ************************************************************/
 
 // Constructor
-RosVisualNavigator::RosVisualNavigator (double exit_point_radius, const Pose& init_pose, const string& odom_frame, uint scan_period) : 
+RosVisualNavigator::RosVisualNavigator (double exit_point_radius, const Pose& init_pose, uint scan_period) : 
   node_("visual_navigator"), tf_listener_(node_), tf_sender_(node_), map_received_(false), 
   odom_received_(false), exit_point_radius_(exit_point_radius), have_goal_(false),
-  num_active_markers_(0), init_map_pose_(init_pose), odom_frame_(odom_frame), scan_counter_(1), scan_period_(scan_period)
+  num_active_markers_(0), init_map_pose_(init_pose), scan_counter_(1), scan_period_(scan_period)
 {
-  ROS_INFO_STREAM ("Starting RosVisualNavigator with exit_point_radius=" << exit_point_radius_ << ", goal_id=" << goal_id_ << ", init_pose=" << init_map_pose_ << ", odom_frame=" << odom_frame_);
 }
 
 
@@ -312,13 +302,16 @@ void RosVisualNavigator::setupTopics ()
   node_.advertise<Pose2D>("/move_base_node/activate", 1);
   node_.advertise<VisualizationMarker>( "visualizationMarker", 0 );
   node_.advertise<Polyline2D> ("vslam_laser", 1);
+  node_.param("~odom_frame", odom_frame_, string("odom"));
+
+  ROS_INFO_STREAM ("Started RosVisualNavigator with exit_point_radius=" << exit_point_radius_ << ", goal_id=" << goal_id_ << ", init_pose=" << init_map_pose_ << ", odom_frame=" << odom_frame_);
+  
 }
 
 
 
 void RosVisualNavigator::run ()
 {
-  // \todo Remove constant for duration
   Duration d(0.1); 
 
   // Wait for map and odom messages
@@ -356,35 +349,32 @@ void RosVisualNavigator::roadmapCallback ()
   vector<vslam::Node> nodes;
   vector<Edge> edges;
 
-  ROS_DEBUG_NAMED ("node", "In roadmap callback");
-  // No need to acquire lock since callback does this automatically
-
-  ROS_INFO_STREAM ("Time is " << Time::now() << " and roadmap stamp is " << roadmap_message_.header.stamp);
-
-
+  mutex::scoped_lock l(node_mutex_);
+  
   roadmap_message_.get_nodes_vec(nodes);
   roadmap_message_.get_edges_vec(edges);
 
   roadmap_ = RoadmapPtr(new VisualNavRoadmap);
+  roadmap_timestamp_ = roadmap_message_.header.stamp;
 
   for_each (nodes.begin(), nodes.end(), AddNodeToRoadmap(this));
   for_each (edges.begin(), edges.end(), AddEdgeToRoadmap(this));
 
-  // We're treating loc>=0 as denoting an actual map, loc<0 as initial empty map, and everything else as an error
+  // We're treating loc>=0 as denoting an actual map and loc<0 as initial empty map
   int localization=roadmap_message_.localization;
   if (localization<0) {
     ROS_DEBUG_NAMED ("node", "Treating localization %d as denoting empty roadmap", localization);
+    ROS_ASSERT (!map_received_);
   }
   else {
     start_id_=id_map_[localization];
     map_received_=true;
   }
-
 }
 
 void RosVisualNavigator::poseCallback ()
 {
-  ROS_INFO_STREAM ("Time is " << Time::now() << " and pose stamp is " << pose_message_.header.stamp);
+  // ROS_INFO_STREAM ("Time is " << Time::now() << " and pose stamp is " << pose_message_.header.stamp);
 }
 
 
@@ -411,15 +401,19 @@ void RosVisualNavigator::baseScanCallback(const Notifier::MessagePtr& message)
 {
   if (!(scan_counter_++%scan_period_)) {
     try {
-    robot_msgs::PointCloud point_cloud;
-    projector_.transformLaserScanToPointCloud ("vslam", point_cloud, *message, tf_listener_);
+      robot_msgs::PointCloud point_cloud;
+      projector_.transformLaserScanToPointCloud ("vslam", point_cloud, *message, tf_listener_);
 
-    vector<Point32> point_vec;
-    point_cloud.get_pts_vec(point_vec);
-    PointsPtr points(new PointSet());
-    transform(point_vec.begin(), point_vec.end(), inserter(*points, points->begin()), convertPoint);
-    observed_scans_.push_back(ObservedScan(start_id_, points, roadmap_->nodePose(start_id_)));
-    ROS_DEBUG_STREAM_NAMED ("scans", "Adding an observed scan at node " << start_id_ << " at pose " << roadmap_->nodePose(start_id_) << " with initial point " << *(points->begin()));
+      vector<Point32> point_vec;
+      point_cloud.get_pts_vec(point_vec);
+      PointsPtr points(new PointSet());
+      transform(point_vec.begin(), point_vec.end(), inserter(*points, points->begin()), convertPoint);
+
+      // Acquire lock as we are changing observed_scans_
+      mutex::scoped_lock l(node_mutex_);
+
+      observed_scans_.push_back(ObservedScan(start_id_, points, roadmap_->nodePose(start_id_)));
+      ROS_DEBUG_STREAM_NAMED ("scans", "Adding an observed scan at node " << start_id_ << " at pose " << roadmap_->nodePose(start_id_) << " with initial point " << *(points->begin()));
     }
     catch (tf::TransformException& e) {
       ROS_DEBUG_STREAM_NAMED ("scans", "Received tf exception " << e.what() << " when attempting to transform base scan, so skipping");
@@ -446,6 +440,8 @@ NodeId RosVisualNavigator::getInternalId(const uint id)
 void RosVisualNavigator::publishExitPoint ()
 {
   try {
+    
+    mutex::scoped_lock l(node_mutex_);
 
     PathPtr path = roadmap_->pathToGoal(start_id_, goal_id_);
     exit_point_ = roadmap_->pathExitPoint(path, exit_point_radius_);
@@ -474,27 +470,26 @@ void RosVisualNavigator::publishExitPoint ()
 // Update nav_odom_transform_ and publish it over tf_message
 void RosVisualNavigator::updateOdom ()
 {
-  RoadmapLock lock(this);
-
-  // Use tf to get the odom pose
-  StampedPose identity, odom_pose;
-  identity.setIdentity();
-  identity.frame_id_ = "base_footprint";
-  identity.stamp_ = Time(); // cause tf to use latest available
-
+  mutex::scoped_lock l(node_mutex_);
   
   try {
-    tf_listener_.transformPose(odom_frame_, identity, odom_pose);
-    odom_pose_ = Pose(odom_pose);
-    odom_received_=true;
-    // technically, we should look at the stamp of odom_pose set by tf, to make sure it wasn't too far in the past
+    if (map_received_ && tf_listener_.canTransform(odom_frame_, "base_footprint", roadmap_timestamp_)) {
+
+      // Use tf to get the odom pose
+      StampedPose identity, odom_pose;
+      identity.setIdentity();
+      identity.frame_id_ = "base_footprint";
+      identity.stamp_ = roadmap_timestamp_;
+      tf_listener_.transformPose(odom_frame_, identity, odom_pose);
+      odom_received_=true;
     
-    // If we have a roadmap as well, figure out the transform between them 
-    if (roadmap_) {
-      nav_odom_transform_ = getTransformBetween(roadmap_->nodePose(start_id_), odom_pose_);
-      ROS_DEBUG_STREAM_NAMED ("transform", "Odom pose is " << odom_pose_ << " and vslam pose is " << roadmap_->nodePose(start_id_) 
+      nav_odom_transform_ = getTransformBetween(roadmap_->nodePose(start_id_), Pose(odom_pose));
+      ROS_DEBUG_STREAM_NAMED ("transform", "Odom pose is " << Pose(odom_pose) << " and vslam pose is " << roadmap_->nodePose(start_id_) 
                               << " resulting in nav_odom_transform " << nav_odom_transform_);
       tf_sender_.sendTransform (nav_odom_transform_.convertToTf(), Time::now(), "vslam", odom_frame_);
+    }
+    else {
+      ROS_DEBUG_STREAM_NAMED ("transform", "Did not update nav-odom transform because roadmap either not received or transform does not exist at time " << roadmap_timestamp_);
     }
   }
 
@@ -503,7 +498,7 @@ void RosVisualNavigator::updateOdom ()
     ROS_WARN_STREAM_NAMED ("node", "Unexpectedly found that the node id " << e.id << " was unknown in the roadmap, so not updating nav_odom_transform");
   }
   catch (tf::TransformException& e) {
-    ROS_INFO_STREAM_NAMED ("node", "Received tf exception " << e.what() << " when attempting to get odom pose, so skipping");
+    ROS_ERROR_STREAM_NAMED ("node", "Received tf exception " << e.what() << " when attempting to get odom pose. This shouldn't have happened as we checked beforehand that transform is possible.");
   }
 }
 
@@ -527,7 +522,7 @@ struct DrawEdges
     marker.r=0;
     marker.g=0;
     marker.b=255;
-    ROS_DEBUG_STREAM_NAMED ("rviz", "Creating roadmap marker for graph.");
+    ROS_DEBUG_STREAM_NAMED ("rviz", "Creating roadmap marker for graph with " << roadmap->numNodes() << " nodes");
   }
 
   void operator() (NodeId n)
@@ -553,7 +548,7 @@ struct DrawEdges
 
   void publish ()
   {
-    ROS_DEBUG_STREAM_NAMED ("rviz", "Publishing graph with " << marker.get_points_size() << " points");
+    ROS_INFO_STREAM_NAMED ("rviz", "Publishing graph with " << marker.get_points_size() << " edges and " << roadmap->numNodes() << " nodes");
     marker.header.stamp = Time::now();
     Node::instance()->publish("visualizationMarker", marker);
   }
@@ -562,19 +557,15 @@ struct DrawEdges
   VisualizationMarker marker;
 };
 
-  
 
 
-
-
-
-Point2DFloat32 transformToMapFrame (tf::TransformListener* tf, const Point2D& p)
+Point2DFloat32 transformToMapFrame (tf::TransformListener* tf, const Point2D& p, const string& odom_frame)
 {
   PointStamped point, transformed_point;
   point.point.x = p.x;
   point.point.y = p.y;
   point.header.frame_id = "vslam";
-  tf->transformPoint("odom_offset", point, transformed_point);
+  tf->transformPoint(odom_frame, point, transformed_point);
   Point2DFloat32 visualized_point;
   visualized_point.x = transformed_point.point.x;
   visualized_point.y = transformed_point.point.y;
@@ -585,7 +576,6 @@ Point2DFloat32 transformToMapFrame (tf::TransformListener* tf, const Point2D& p)
 void RosVisualNavigator::publishVisualization () 
 {
   ROS_DEBUG_NAMED ("rviz", "Publishing visualization");
-  RoadmapLock lock(this);
 
   // Figure out and publish transform from vslam to map frame based on known pose of node 0
   // Commenting out as it was inducing a cycle in transform tree when fake_localization was used
@@ -602,7 +592,8 @@ void RosVisualNavigator::publishVisualization ()
   num_active_markers_=0;
 
 
-  /// Now add the new ones
+  /// Now add the new ones and publish, while holding lock
+  mutex::scoped_lock l(node_mutex_);
 
   // First, use a linelist marker to draw the skeleton
   NodeVector nodes = roadmap_->nodes();
@@ -622,19 +613,24 @@ void RosVisualNavigator::publishVisualization ()
   }
 
 
-  // Publish scans 
+  // Combine scans
   for (ObsScanVector::iterator iter=observed_scans_.begin(); iter!=observed_scans_.end(); ++iter) {
     roadmap_->attachScan(iter->id, *(iter->points), iter->pose);
   }
+
+  // Transform to the odom frame (note this is no longer necessary since rviz polylines now accept headers)
   PointSet points = roadmap_->overlayScans();
   Polyline2D scans;
+  scans.header.frame_id=odom_frame_;
   scans.set_points_size(points.size());
   scans.color.b=1.0;
-  transform (points.begin(), points.end(), scans.points.begin(), bind(transformToMapFrame, &tf_listener_, _1));
+  transform (points.begin(), points.end(), scans.points.begin(), bind(transformToMapFrame, &tf_listener_, _1, odom_frame_));
+  ROS_DEBUG_STREAM_COND_NAMED (points.size()>0, "scans", "First scan point in vslam frame is " << *(points.begin()) 
+                               << " and transformed version is " << scans.points[0].x << ", " << scans.points[0].y);
   ROS_DEBUG_STREAM_NAMED ("rviz", "Publishing scans with " << scans.get_points_size() << " points");
   node_.publish("vslam_laser", scans);
 
-  ROS_DEBUG_STREAM_NAMED ("rviz", "Finished publishing roadmap");
+  ROS_DEBUG_STREAM_NAMED ("rviz", "Finished publishing roadmap with " << roadmap_->numNodes() << " nodes");
 }
 
 
@@ -672,8 +668,8 @@ void RosVisualNavigator::publishNodeMarker (const Pose& pose, const uint r, cons
  ************************************************************/
 
 
-  using visual_nav::RosVisualNavigator;
-
+using visual_nav::RosVisualNavigator;
+using ros::Node;
 
 
 int main(int argc, char** argv)
@@ -683,20 +679,18 @@ int main(int argc, char** argv)
   string init_pose_str;
   visual_nav::Pose init_pose;
   uint scan_period;
-  string odom_frame("odom");
 
   // Declare the supported options.
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help,h", "produce help message")
     ("initial_map_pose,i", po::value<string>(&init_pose_str), "The initial pose in map frame.  Used to publish the vslam-map transform (purely for visualization).")
-    ("odom_frame,o", po::value<string>(&odom_frame), "Name of the odom frame.  Defaults to odom.")
     ("exit_radius,r", po::value<double>(&radius)->default_value(2.0), "exit radius of path")
     ("scan_period_,s", po::value<uint>(&scan_period)->default_value(50), "Store one in this many scans");
   
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
-  po::notify(vm);    
+  po::notify(vm);   
 
   if (vm.count("help")) {
     std::cout << desc << "\n";
@@ -714,7 +708,7 @@ int main(int argc, char** argv)
     init_pose.theta = atof(tokens[2].c_str());
   }
   
-  RosVisualNavigator nav(radius, init_pose, odom_frame, scan_period);
+  RosVisualNavigator nav(radius, init_pose, scan_period);
 
   nav.setupTopics();
 

@@ -73,7 +73,7 @@ struct Transform2D {
 struct Point2D {
   Point2D (double x=0.0, double y=0.0) : x(x), y(y) {}
   Point2D (const Point2D& p) : x(p.x), y(p.y) {}
-  Point2D& operator= (const Point2D& p) { x=p.x; y=p.y; return *this; }
+  Point2D& operator= (const Point2D& p) { if (this!=&p) { x=p.x; y=p.y; } return *this; }
   double x,y;
 };
 

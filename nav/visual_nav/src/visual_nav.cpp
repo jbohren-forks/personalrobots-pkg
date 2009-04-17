@@ -129,7 +129,12 @@ void VisualNavRoadmap::RoadmapImpl::attachScan (const NodeId i, const PointSet& 
   RoadmapVertex v = idVertex(i);
   Transform2D trans = getTransformBetween(pose_when_scanned, graph_[v].pose);
   node_scans_[v] = PointSet();
+  ROS_DEBUG_STREAM_NAMED ("scans", "Attaching scan taken at node " << i << " and pose " << pose_when_scanned << " and first point " << *(scan.begin()));
+
   std::transform (scan.begin(), scan.end(), inserter(node_scans_[v], node_scans_[v].begin()), bind(transformPoint, trans, _1));
+  
+  ROS_DEBUG_STREAM_COND_NAMED (node_scans_[v].size()>0, "scans", "Current pose of node is " << graph_[v].pose << " and transformed point is " << *(node_scans_[v].begin()));
+
 }
 
 
