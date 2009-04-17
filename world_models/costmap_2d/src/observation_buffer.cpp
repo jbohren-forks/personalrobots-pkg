@@ -73,6 +73,7 @@ namespace costmap_2d {
 
       //transform the point cloud
       tf_.transformPointCloud(global_frame_, cloud, global_frame_cloud);
+      global_frame_cloud.header.stamp = cloud.header.stamp;
 
       //now we need to remove observations from the cloud that are below or above our height thresholds
       PointCloud& observation_cloud = observation_list_.front().cloud_;
@@ -89,6 +90,7 @@ namespace costmap_2d {
 
       //resize the cloud for the number of legal points
       observation_cloud.set_pts_size(point_count);
+      observation_cloud.header.stamp = cloud.header.stamp;
     }
     catch(TransformException& ex){
       //if an exception occurs, we need to remove the empty observation from the list
@@ -131,6 +133,7 @@ namespace costmap_2d {
       for(obs_it = observation_list_.begin(); obs_it != observation_list_.end(); ++obs_it){
         Observation& obs = *obs_it;
         //check if the observation is out of date... and if it is, remove it and those that follow from the list
+        ros::Duration time_diff = last_updated_ - obs.cloud_.header.stamp;
         if((last_updated_ - obs.cloud_.header.stamp) > observation_keep_time_){
           observation_list_.erase(obs_it, observation_list_.end());
           return;
