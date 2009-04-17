@@ -270,6 +270,15 @@ NavFn::setCostMap(const COSTTYPE *cmap, bool isROS)
     }
 }
 
+bool
+NavFn::calcNavFnDijkstra()
+{
+  setupNavFn(true);
+
+  // calculate the nav fn and path
+  return propNavFnDijkstra(std::max(nx*ny/20,nx+ny));
+}
+
 
 //
 // calculate navigation function, given a costmap, goal, and start

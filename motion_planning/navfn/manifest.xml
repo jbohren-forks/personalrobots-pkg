@@ -8,6 +8,7 @@
  <depend package="rosconsole"/>
  <depend package="roscpp"/>
  <depend package="robot_actions"/>
+ <depend package="robot_msgs"/>
  <depend package="costmap_2d"/>
  <depend package="tf"/>
  <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/> <!-- actually optional -->

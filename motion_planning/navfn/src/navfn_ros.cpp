@@ -37,19 +37,44 @@
 #include <navfn/navfn_ros.h>
 
 namespace navfn {
-  NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, const costmap_2d::Costmap2D& cost_map) : ros_node_(ros_node), tf_(tf), cost_map_(cost_map) {
+  NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, const costmap_2d::Costmap2D& cost_map) : ros_node_(ros_node), tf_(tf), 
+  cost_map_(cost_map), planner_(cost_map.cellSizeX(), cost_map.cellSizeY()) {
     //read parameters for the planner
     ros_node_.param("~/navfn/global_frame", global_frame_, std::string("map"));
     ros_node_.param("~/navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
   }
 
-  bool NavfnROS::makePlan(const robot_actions::Pose2D& goal, std::vector<robot_actions::Pose2D>& plan){
-    unsigned int size_x = cost_map_.cellSizeX();
-    unsigned int size_y = cost_map_.cellSizeY();
+  double NavfnROS::getPointPotential(const robot_msgs::Point& world_point){
+    unsigned int mx, my;
+    if(!cost_map_.worldToMap(world_point.x, world_point.y, mx, my))
+      return DBL_MAX;
 
-    //create a new planner of the appropriate size
-    NavFn planner(size_x, size_y);
-    
+    unsigned int index = my * planner_.nx + mx;
+    return planner_.potarr[index];
+  }
+
+  bool NavfnROS::computePotential(const robot_msgs::Point& world_point){
+    planner_.setCostMap(cost_map_.getCharMap());
+
+    unsigned int mx, my;
+    if(!cost_map_.worldToMap(world_point.x, world_point.y, mx, my))
+      return false;
+
+    int map_start[2];
+    map_start[0] = 0;
+    map_start[1] = 0;
+
+    int map_goal[2];
+    map_goal[0] = mx;
+    map_goal[1] = my;
+
+    planner_.setStart(map_start);
+    planner_.setGoal(map_goal);
+
+    return planner_.calcNavFnDijkstra();
+  }
+
+  bool NavfnROS::makePlan(const robot_actions::Pose2D& goal, std::vector<robot_actions::Pose2D>& plan){
     //get the pose of the robot in the global frame
     tf::Stamped<tf::Pose> robot_pose, global_pose;
     global_pose.setIdentity();
@@ -72,7 +97,7 @@ namespace navfn {
     double wx = global_pose.getOrigin().x();
     double wy = global_pose.getOrigin().y();
 
-    planner.setCostMap(cost_map_.getCharMap());
+    planner_.setCostMap(cost_map_.getCharMap());
 
     unsigned int mx, my;
     if(!cost_map_.worldToMap(wx, wy, mx, my))
@@ -89,16 +114,16 @@ namespace navfn {
     map_goal[0] = mx;
     map_goal[1] = my;
 
-    planner.setStart(map_start);
-    planner.setGoal(map_goal);
+    planner_.setStart(map_start);
+    planner_.setGoal(map_goal);
 
-    bool success = planner.calcNavFnAstar();
+    bool success = planner_.calcNavFnAstar();
 
     if(success){
       //extract the plan
-      float *x = planner.getPathX();
-      float *y = planner.getPathY();
-      int len = planner.getPathLen();
+      float *x = planner_.getPathX();
+      float *y = planner_.getPathY();
+      int len = planner_.getPathLen();
       for(int i = 0; i < len; ++i){
         unsigned int cell_x, cell_y;
         cell_x = (unsigned int) x[i];

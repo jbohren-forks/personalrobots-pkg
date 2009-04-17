@@ -41,20 +41,51 @@
 #include <navfn/navfn.h>
 #include <costmap_2d/costmap_2d.h>
 #include <robot_actions/Pose2D.h>
+#include <robot_msgs/Point.h>
 #include <tf/transform_listener.h>
 #include <vector>
+#include <robot_msgs/Point.h>
 
 namespace navfn {
   class NavfnROS {
     public:
+      /**
+       * @brief  Constructor for the NavFnROS object
+       * @param  ros_node The a reference to the ros node running
+       * @param  tf A reference to a TransformListener
+       * @param  cos_map A reference to the costmap to use
+       */
       NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, const costmap_2d::Costmap2D& cost_map);
+
+      /**
+       * @brief Given a goal pose in the world, compute a plan
+       * @param goal The goal pose 
+       * @param plan The plan... filled by the planner
+       * @return True if a valid plan was found, false otherwise
+       */
       bool makePlan(const robot_actions::Pose2D& goal, std::vector<robot_actions::Pose2D>& plan);
+
+      /**
+       * @brief  Compute the full navigation function for the costmap given a point in the world to start from
+       * @param world_point The point to use for seeding the navigation function 
+       * @return True if the navigation function was computed successfully, false otherwise
+       */
+      bool computePotential(const robot_msgs::Point& world_point);
+
+      /**
+       * @brief Get the potential, or naviagation cost, at a given point in the world (Note: You should call computePotential first)
+       * @param world_point The point to get the potential for 
+       * @return The navigation function's value at that point in the world
+       */
+      double getPointPotential(const robot_msgs::Point& world_point);
+
       ~NavfnROS(){}
 
     private:
       ros::Node& ros_node_;
       tf::TransformListener& tf_;
       const costmap_2d::Costmap2D& cost_map_;
+      NavFn planner_;
       std::string global_frame_, robot_base_frame_;
   };
 };
