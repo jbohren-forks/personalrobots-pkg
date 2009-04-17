@@ -21,63 +21,63 @@
   <joint name="link1_joint" type="revolute" >
     <axis xyz="0 0 1" />
     <anchor xyz="0 0 0" />
-    <limit safety_length_min="0" safety_length_max="0" k_position="1.0" k_velocity="1.0" min="-.5" max="0.5" effort="10" velocity="50" />
+    <limit safety_length_min="0" safety_length_max="0" k_position="100.0" k_velocity="100.0" min="-.5" max="0.5" effort="10" velocity="50" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="1000.0" />
   </joint>
   
   <!-- joint blocks -->
   <joint name="link2_joint" type="revolute" >
     <axis xyz="0 1 0" />
     <anchor xyz="0.0 0 0" />
-    <limit safety_length_min="0" safety_length_max="0" k_position="1.0" k_velocity="1.0" min="-1" max="2" effort="5000" velocity="5" />
+    <limit safety_length_min="0" safety_length_max="0" k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="5000" velocity="50" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="1000.0" />
   </joint>
 
   <!-- joint blocks -->
   <joint name="link3_joint" type="revolute" >
     <axis xyz="0 1 0" />
     <anchor xyz="0.0 0 0" />
-    <limit safety_length_min="0" safety_length_max="0" k_position="1.0" k_velocity="1.0" min="-1" max="2" effort="5000" velocity="5" />
+    <limit safety_length_min="0" safety_length_max="0" k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="5000" velocity="50" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="1000.0" />
   </joint>
 
   <!-- joint blocks -->
   <joint name="link4_joint" type="revolute" >
     <axis xyz="0 1 0" />
     <anchor xyz="0.0 0 0" />
-    <limit safety_length_min="0" safety_length_max="0" k_position="1.0" k_velocity="1.0" min="-1" max="2" effort="2000" velocity="5" />
+    <limit safety_length_min="0" safety_length_max="0" k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="2000" velocity="50" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="1000.0" />
   </joint>
 
   <!-- joint blocks -->
   <joint name="link5_joint" type="revolute" >
     <axis xyz="0 1 0" />
     <anchor xyz="0.0 0 0" />
-    <limit safety_length_min="0" safety_length_max="0" k_position="1.0" k_velocity="1.0" min="-1" max="2" effort="500" velocity="5" />
+    <limit safety_length_min="0" safety_length_max="0" k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="500" velocity="50" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="100.0" />
   </joint>
 
   <!-- joint blocks -->
   <joint name="link6_joint" type="revolute" >
     <axis xyz="0 1 0" />
     <anchor xyz="0.0 0 0" />
-    <limit safety_length_min="0" safety_length_max="0" k_position="1.0" k_velocity="1.0" min="-1" max="2" effort="100" velocity="5" />
+    <limit safety_length_min="0" safety_length_max="0" k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="100" velocity="50" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="100.0" />
   </joint>
 
   <!-- joint blocks -->
   <joint name="link7_joint" type="revolute" >
     <axis xyz="0 1 0" />
     <anchor xyz="0.0 0 0" />
-    <limit safety_length_min="0" safety_length_max="0" k_position="1.0" k_velocity="1.0" min="-1" max="2" effort="100" velocity="5" />
+    <limit safety_length_min="0" safety_length_max="0" k_position="100.0" k_velocity="100.0" min="-1" max="2" effort="100" velocity="50" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="10.0" />
   </joint>
 
   <!-- link blocks -->
@@ -88,7 +88,7 @@
     <inertial>
       <mass value="1000" />
       <com xyz="0 0 0" />
-      <inertia ixx="100"  ixy="0"  ixz="0" iyy="100" iyz="0" izz="100" />
+      <inertia ixx="1000"  ixy="0"  ixz="0" iyy="1000" iyz="0" izz="1000" />
     </inertial> 
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
