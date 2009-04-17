@@ -347,6 +347,10 @@ namespace base_local_planner {
     gettimeofday(&start, NULL);
     */
 
+    //if the global plan passed in is empty... we won't do anything
+    if(global_plan.empty())
+      return false;
+
     //we assume the global goal is the last point in the global plan
     double goal_x = global_plan.back().x;
     double goal_y = global_plan.back().y;
