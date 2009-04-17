@@ -335,6 +335,14 @@ private:
   int frameHandler(size_t width, size_t height, uint8_t *frameData,
                           PacketEOF *eofInfo, struct timeval *startTimeval)
   {
+    if (!node_.ok())
+      return 1;
+    
+    if (eofInfo == NULL) {
+      ROS_WARN("Frame was missing EOF, no frame information available");
+      return 0;
+    }
+
     // If we are not in triggered mode then use the arrival time of the
     // first packet as the image time.
 
@@ -375,17 +383,9 @@ private:
       imageTime = frameStartTime - 0.0025;
     }
 
-    if (!node_.ok())
-      return 1;
-    
-    if (eofInfo == NULL) {
-      ROS_WARN("Frame was missing EOF, no frame information available");
-      return 0;
-    }
-
     // Check for short packet (video lines were missing)
     if (eofInfo->header.line_number == IMAGER_LINENO_SHORT) {
-      ROS_WARN("Short frame (video lines were missing)");
+      ROS_WARN("Short frame #%u (video lines were missing)", eofInfo->header.frame_number);
       return 0;
     }
 
