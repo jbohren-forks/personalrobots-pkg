@@ -67,7 +67,6 @@ public:
   KDL::Frame pose_desi_, pose_meas_;
   KDL::Twist twist_ff_;
 
-
 private:
   KDL::Frame getPose();
   void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
@@ -78,25 +77,22 @@ private:
 
   // robot structure
   mechanism::RobotState *robot_state_;       
-  mechanism::Chain robot_;
+  mechanism::Chain chain_;
 
   // pid controllers
   std::vector<control_toolbox::Pid> pid_controller_;     
 
   // kdl stuff for kinematics
-  KDL::Chain             chain_;
+  KDL::Chain             kdl_chain_;
   boost::scoped_ptr<KDL::ChainFkSolverPos> jnt_to_pose_solver_;
   KDL::JntArray          jnt_pos_;
 
-  // to get joint positions, velocities, and to set joint torques
-  std::vector<mechanism::JointState*> joints_; 
-
   // reatltime publisher
-  realtime_tools::RealtimePublisher<robot_msgs::Twist>* error_publisher_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Twist> > state_publisher_;
   unsigned int loop_count_;
 
   tf::TransformListener tf_;
-  tf::MessageNotifier<robot_msgs::PoseStamped>* command_notifier_;
+  boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PoseStamped> > command_notifier_;
 
   // twist controller
   CartesianTwistController* twist_controller_;

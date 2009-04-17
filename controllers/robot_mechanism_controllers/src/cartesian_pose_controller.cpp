@@ -52,15 +52,13 @@ CartesianPoseController::CartesianPoseController()
 : node_(ros::Node::instance()),
   robot_state_(NULL),
   jnt_to_pose_solver_(NULL),
-  error_publisher_(NULL),
+  state_publisher_(NULL),
   tf_(*node_),
   command_notifier_(NULL)
 {}
 
 CartesianPoseController::~CartesianPoseController()
-{
-  if (command_notifier_) delete command_notifier_;
-}
+{}
 
 
 bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
@@ -88,13 +86,13 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlE
   robot_state_ = robot_state;
 
   // create robot chain from root to tip
-  if (!robot_.init(robot_state_->model_, root_name_, tip_name))
+  if (!chain_.init(robot_state_->model_, root_name_, tip_name))
     return false;
-  robot_.toKDL(chain_);
+  chain_.toKDL(kdl_chain_);
 
   // create solver
-  jnt_to_pose_solver_.reset(new ChainFkSolverPos_recursive(chain_));
-  jnt_pos_.resize(chain_.getNrOfJoints());
+  jnt_to_pose_solver_.reset(new ChainFkSolverPos_recursive(kdl_chain_));
+  jnt_pos_.resize(kdl_chain_.getNrOfJoints());
 
   // create 6 identical pid controllers for x, y and z translation, and x, y, z rotation
   control_toolbox::Pid pid_controller;
@@ -119,11 +117,11 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlE
   }
 
   // subscribe to pose commands
-  command_notifier_ = new MessageNotifier<robot_msgs::PoseStamped>(&tf_, node_,
-								 boost::bind(&CartesianPoseController::command, this, _1),
-								 controller_name_ + "/command", root_name_, 1);
+  command_notifier_.reset(new MessageNotifier<robot_msgs::PoseStamped>(&tf_, node_,
+                                                                       boost::bind(&CartesianPoseController::command, this, _1),
+                                                                       controller_name_ + "/command", root_name_, 1));
   // realtime publisher for control error
-  error_publisher_ = new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/error", 1);
+  state_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/state/error", 1));
   loop_count_ = 0;
 
   return true;
@@ -164,18 +162,17 @@ void CartesianPoseController::update()
 
   // send feedback twist and feedforward twist to twist controller
   twist_controller_->twist_desi_ = twist_fb + twist_ff_;
-  twist_controller_->update();
 
   if (++loop_count_ % 100 == 0){
-    if (error_publisher_){
-      if (error_publisher_->trylock()){
-        error_publisher_->msg_.vel.x = twist_error.vel(0);
-        error_publisher_->msg_.vel.y = twist_error.vel(1);
-        error_publisher_->msg_.vel.z = twist_error.vel(2);
-        error_publisher_->msg_.rot.x = twist_error.rot(0);
-	error_publisher_->msg_.rot.y = twist_error.rot(1);
-        error_publisher_->msg_.rot.z = twist_error.rot(2);
-        error_publisher_->unlockAndPublish();
+    if (state_publisher_){
+      if (state_publisher_->trylock()){
+        state_publisher_->msg_.vel.x = twist_error.vel(0);
+        state_publisher_->msg_.vel.y = twist_error.vel(1);
+        state_publisher_->msg_.vel.z = twist_error.vel(2);
+        state_publisher_->msg_.rot.x = twist_error.rot(0);
+	state_publisher_->msg_.rot.y = twist_error.rot(1);
+        state_publisher_->msg_.rot.z = twist_error.rot(2);
+        state_publisher_->unlockAndPublish();
       }
     }
   }
@@ -185,7 +182,7 @@ void CartesianPoseController::update()
 Frame CartesianPoseController::getPose()
 {
   // get the joint positions and velocities
-  robot_.getPositions(robot_state_->joint_states_, jnt_pos_);
+  chain_.getPositions(robot_state_->joint_states_, jnt_pos_);
 
   // get cartesian pose
   Frame result;
@@ -218,5 +215,5 @@ void CartesianPoseController::TransformToFrame(const Transform& trans, Frame& fr
 
 
 
-}; // namespace
+} // namespace
 
