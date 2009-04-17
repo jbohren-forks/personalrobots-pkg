@@ -1,8 +1,9 @@
 <launch>
   <group ns="forearm">
+    <param name="if_name" type="str" value="eth0"/>
     <param name="ip_address" type="str" value="10.0.3.68"/>
     <!--param name="serial_number" type="int" value="2"/-->
-    <param name="video_mode" type="str" value="752x480x15"/>
+    <param name="video_mode" type="str" value="640x480x30"/>
     <param name="do_colorize" type="bool" value="True"/>
     <param name="do_rectify" type="bool" value="False"/>
   </group>

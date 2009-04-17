@@ -199,7 +199,7 @@ public:
         return;
       }
     }
-    ROS_INFO("Configured camera #%d, S/N #%u, IP address %s", 0,
+    ROS_INFO("Configured camera #%d, S/N #%u, IP address %s", index,
              camera_->serial, ip_address.c_str());
 
     // We are going to receive the video on this host, so we need our own MAC address
@@ -277,6 +277,15 @@ public:
       node_.shutdown();
       return;
     }
+
+    /*
+    // Set maximum course shutter width
+    if ( pr2SensorWrite( camera_, 0xBD, 240 ) != 0) {
+      ROS_FATAL("Sensor write error");
+      node_.shutdown();
+      return;
+    }
+    */
 
     // Start video; send it to specified host port
     // @todo TODO: Only start when somebody is listening?
