@@ -278,6 +278,24 @@ namespace costmap_2d {
        */
       bool circumscribedCell(unsigned int x, unsigned int y) const;
 
+      /**
+       * @brief  Given a distance... compute a cost
+       * @param  distance The distance from an obstacle in cells
+       * @return A cost value for the distance
+       */
+      inline unsigned char computeCost(double distance) const {
+        unsigned char cost = 0;
+        if(distance == 0)
+          cost = LETHAL_OBSTACLE;
+        else if(distance <= cell_inscribed_radius_)
+          cost = INSCRIBED_INFLATED_OBSTACLE;
+        else {
+          double factor = weight_ / (1 + pow(distance - cell_inscribed_radius_, 2));
+          cost = (unsigned char) ((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
+        }
+        return cost;
+      }
+
     private:
       /**
        * @brief  Given an index of a cell in the costmap, place it into a priority queue for obstacle inflation
@@ -432,23 +450,6 @@ namespace costmap_2d {
        */
       unsigned int cellDistance(double world_dist);
 
-      /**
-       * @brief  Given a distance... compute a cost
-       * @param  distance The distance from an obstacle in cells
-       * @return A cost value for the distance
-       */
-      inline unsigned char computeCost(double distance) const {
-        unsigned char cost = 0;
-        if(distance == 0)
-          cost = LETHAL_OBSTACLE;
-        else if(distance <= cell_inscribed_radius_)
-          cost = INSCRIBED_INFLATED_OBSTACLE;
-        else {
-          double factor = weight_ / (1 + pow(distance - cell_inscribed_radius_, 2));
-          cost = (unsigned char) ((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
-        }
-        return cost;
-      }
 
       /**
        * @brief  Lookup pre-computed costs
