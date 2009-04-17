@@ -63,6 +63,10 @@ public:
 private:
 	bool spotOutlet(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& pose);
 	ros::Node* node_;
+ 
+  std::string action_name_;
+
+  std::string head_controller_;
 
 };
 

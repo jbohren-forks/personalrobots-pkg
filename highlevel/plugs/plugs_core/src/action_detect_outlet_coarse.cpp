@@ -41,14 +41,25 @@ using namespace plugs_core;
 
 DetectOutletCoarseAction::DetectOutletCoarseAction()
 				: robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_coarse"),
-				node_(ros::Node::instance())
+          node_(ros::Node::instance()),
+          action_name_("detect_outlet_coarse"),
+          head_controller_("head_controller")
 {
-	node_->advertise<robot_msgs::PointStamped>("head_controller/head_track_point",10);
+  node_->param(action_name_ + "/head_controller", head_controller_, head_controller_);
+
+  if(head_controller_ == "" )
+    {
+      ROS_ERROR("%s: Aborted, head controller param was not set.", action_name_.c_str());
+      terminate();
+      return;
+    }
+
+	node_->advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
 }
 
 DetectOutletCoarseAction::~DetectOutletCoarseAction()
 {
-	node_->unadvertise("head_controller/head_track_point");
+	node_->unadvertise(head_controller_ + "/head_track_point");
 }
 
 
@@ -78,7 +89,7 @@ robot_actions::ResultStatus DetectOutletCoarseAction::execute(const robot_msgs::
 bool DetectOutletCoarseAction::spotOutlet(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& pose)
 {
 	// turn head to face outlet
-	node_->publish("head_controller/head_track_point", outlet_estimate);
+	node_->publish(head_controller_ + "/head_track_point", outlet_estimate);
 
 	outlet_detection::OutletDetection::Request req;
 	outlet_detection::OutletDetection::Response resp;
