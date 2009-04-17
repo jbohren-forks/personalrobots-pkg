@@ -8,6 +8,11 @@
 <depend package="hallway_tracker" />
 <depend package="topic_synchronizer" />
 <depend package="tf" />
+<depend package="std_msgs" />
+<depend package="base_local_planner"/>
+<depend package="costmap_2d"/>
+<depend package="angles"/>
+<depend package="navfn"/>
 <depend package="robot_msgs" />
 <depend package="robot_actions" />
 <depend package="deprecated_msgs" />

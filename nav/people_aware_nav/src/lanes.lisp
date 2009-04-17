@@ -83,21 +83,23 @@
 
 			 
 (defun goto (x y theta)
-  (send-move-goal x y theta)
-  (loop-at-most-every .1
-     (format t ".")
-     (when *move-base-result* 
-       (return-from goto *move-base-result*))
-     (when (person-on-path)
-       (return)))
+  (unwind-protect 
+       (progn
+	 (send-move-goal x y theta)
+	 (loop-at-most-every 1
+	      (format t ".")
+	      (when *move-base-result* 
+		(return-from goto *move-base-result*))
+	      (when (person-on-path)
+		(return)))
 
-  ;; Person on path
-  (move-to-right)
-  ;;(sleep 0)
-  (constrained-move x y theta)
-  (loop-at-most-every .1
-     (when *move-base-result*
-       (return *move-base-result*))))
+	 ;; Person on path
+	 (move-to-right)
+	 (constrained-move x y theta)
+	 (loop-at-most-every .1
+	    (when *move-base-result*
+	      (return *move-base-result*))))
+    (disable-nav)))
 
 
     
@@ -138,12 +140,15 @@
 				   :x x :y y :th th)))
 
 (defun disable-nav ()
+  (ros-info "Disabling nav")
   (let ((m (make-instance 'robot_actions:<Pose2D>)))
     (setf (roslib:frame_id-val (robot_actions:header-val m)) *global-frame*)
     (publish-on-topic "/move_base_node/preempt" m)))
 
 (defun person-on-path ()
-  (not (= 0 (people_aware_nav:value-val (call-service "is_person_on_path" 'people_aware_nav:PersonOnPath)))))
+  (let ((v (not (= 0 (people_aware_nav:value-val (call-service "is_person_on_path" 'people_aware_nav:PersonOnPath))))))
+    (when v (format t "~&Person is on path at time ~a" (ros-time)))
+    v))
 
 (defun spin-around ()
   (send-move-goal (aref (pose-position *robot-pose*) 0) (aref (pose-position *robot-pose*) 1)
@@ -210,6 +215,7 @@
 (defun waiting-pose (current-pose hallway)
   "Return the pose corresponding to 'shifting to the right lane' in the map frame"
   (declare (pose current-pose) (values pose))
+  (ros-info "Computing waiting pose given current pose ~a" current-pose)
   (let* ((hallway-pose (transform-pose (hallway-transform hallway) current-pose))
 	 (hallway-frame-position (pose-position hallway-pose))
 	 (facing-forward (<= 0.0 (pose-orientation hallway-pose) pi))
@@ -217,11 +223,12 @@
 				 (- (hallway-width hallway) *robot-radius* *wall-buffer*)
 				 (+ *robot-radius* *wall-buffer*)))
 	 (target-wall-y (+ (aref hallway-frame-position 1)
-			   (* (if facing-forward 2 -2)
+			   (* (if facing-forward 3 -3)
 			      (abs (- target-wall-offset (aref hallway-frame-position 0))))))
 	 (global-pose (transform-pose (inverse (hallway-transform hallway)) 
 				      (make-pose (vector target-wall-offset target-wall-y) 
 						 (/ pi (if facing-forward 2 -2))))))
+    (ros-info "Waiting pose is ~a" global-pose)
     global-pose))
 
     
@@ -232,11 +239,13 @@
     a))
 
 
+(defparameter *angle-offset* (+ (/ pi 2) .19))
+
 (defun line-behind (pose)
   (let ((pos (pose-position pose))
 	(theta (pose-orientation pose)))
-    (let ((th1 (+ theta (* pi .51)))
-	  (th2 (+ theta (* pi -.51))))
+    (let ((th1 (+ theta *angle-offset*))
+	  (th2 (+ theta (- *angle-offset*))))
       (make-instance 'robot_msgs:<Polyline2D>
 		     :points (vector (get-offset-point pos th1) (get-offset-point pos th2))))))
 

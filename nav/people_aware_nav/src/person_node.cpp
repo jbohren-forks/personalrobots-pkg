@@ -37,9 +37,13 @@
 #include <robot_msgs/Point.h>
 #include <robot_msgs/PointStamped.h>
 #include <robot_msgs/PointCloud.h>
+#include <people_aware_nav/ConstrainedGoal.h>
 #include <deprecated_msgs/Pose2DFloat32.h>
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
+
+namespace people_aware_nav
+{
 
 using robot_msgs::Point;
 using robot_msgs::PointStamped;
@@ -75,11 +79,22 @@ public:
     node_.subscribe("people_tracker_measurements", person_message_, &PersonPosSender::posCallback, this, 1);
     hallway_cloud_notifier_ = NotifierPtr(new Notifier(&tf_, &node_, bind(&PersonPosSender::hallwayCallback, this, _1),
                                                        "parallel_lines_model", global_frame_, 50));
-                                                       
-
+    node_.subscribe("goal", goal_message_, &PersonPosSender::goalCallback, this, 1);
+    node_.advertise<ConstrainedGoal>("move_base_node/activate", 1);
     node_.advertise<Point>("person_position", 1);
     node_.advertise<PointCloud>("hallway_points", 1);
     node_.advertise<Pose2DFloat32>("robot_pose", 1);
+  }
+
+  void goalCallback ()
+  {
+    ConstrainedGoal m;
+    m.header = goal_message_.header;
+    m.x = goal_message_.x;
+    m.y = goal_message_.y;
+    m.z = goal_message_.z;
+    m.th = goal_message_.th;
+    node_.publish("move_base_node/activate", m);
   }
 
   void posCallback ()
@@ -141,16 +156,19 @@ private:
   Node node_;
   string global_frame_;
   PositionMeasurement person_message_;
+  ConstrainedGoal goal_message_;
   PointCloud hallway_points_;
   tf::TransformListener tf_;
   NotifierPtr hallway_cloud_notifier_;
 };
   
+} // namespace
+
 
 int main (int argc, char** argv)
 {
   ros::init(argc, argv);
-  PersonPosSender sender;
+  people_aware_nav::PersonPosSender sender;
   sender.spin();
 }
 
