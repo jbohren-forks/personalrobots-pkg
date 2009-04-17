@@ -276,8 +276,17 @@ namespace nav {
         std::vector<Observation> observations;
         controller_cost_map_ros_->getMarkingObservations(observations);
         valid_control = tc_->computeVelocityCommands(global_plan_, cmd_vel, local_plan, observations);
-        ros_node_.publish("cmd_vel", cmd_vel);
       }
+      else{
+        //we don't have a valid plan... so we want to stop
+        cmd_vel.vel.vx = 0.0;
+        cmd_vel.vel.vy = 0.0;
+        cmd_vel.ang_vel.vz = 0.0;
+      }
+
+      //give the base the velocity command
+      ros_node_.publish("cmd_vel", cmd_vel);
+
       lock_.unlock();
 
       //check for success
@@ -299,7 +308,7 @@ namespace nav {
       start_t = start.tv_sec + double(start.tv_usec) / 1e6;
       end_t = end.tv_sec + double(end.tv_usec) / 1e6;
       t_diff = end_t - start_t;
-      ROS_DEBUG("Full control cycle: %.9f Valid control: %d, Vel Cmd (%.2f, %.2f, %.2f)", t_diff, valid_control, cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.vel.vz);
+      ROS_DEBUG("Full control cycle: %.9f Valid control: %d, Vel Cmd (%.2f, %.2f, %.2f)", t_diff, valid_control, cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
 
       //sleep the remainder of the cycle
       if(!sleepLeftover(start_time, cycle_time))
