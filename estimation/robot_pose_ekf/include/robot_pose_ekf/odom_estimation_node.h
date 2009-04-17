@@ -58,6 +58,41 @@
 namespace estimation
 {
 
+/** \brief This package fuses information from wheel odometry, the IMU, and visual odometry.
+ * 
+ * <b>Package Summary</b>
+ * This package fuses information from wheel odometry, the IMU, and visual odometry. 
+ * The basic idea is to use a loosely-coupled Extended Kalman Filter to fuse the 
+ * information from these sources. Each source gives a pose estimate and a covariance. 
+ * The sources operate at different rates and with different latencies.
+ *
+ * The robot_pose_ekf node automatically detects which sensors (wheel odometry, IMU, 
+ * visual odometry) are providing measurements, by listening to the topcis 'odom', 
+ * 'imu_data', and 'vo'. The node can deal with sensors being (de-)activated at any time. 
+ * The absolute pose estimate and the relative covariance is advertised on the 
+ * 'robot_pose_ekf/odom_estimated' topic. The pose estimate is also broadcasted to 
+ * the TransformArray, defining the transformation between 'odom_combined' and 'base_footprint'. 
+ *
+ *
+ * <b>Sensors</b>
+ * \arg Wheel odometry: The wheel odometry provides x, y and Yaw information of the 
+ * Base frame relative to the Odo frame. The wheel odometry is assumed to only provide 
+ * a pose in a horizontal plane. This means that when e.g. the robot drives up a ramp,
+ * the wheel odometry will not provide information about the z-component of the 
+ * transformation between the Odo frame and the Base Frame.
+ *
+ * \arg IMU: The IMU sensor provides information about the Roll, Pitch and Yaw angles of 
+ * the IMU frame relative to the Odo frame. We will not use the acceleration measurements 
+ * of the IMU sensor, because the sensor is mounted too high above the Base, and 
+ * therefore its measurements are too noisy to provide information about the Base accelerations.
+ *
+ * \arg Visual Odometry: The VO uses stereo vision to track features in the environment. 
+ * The VO node combines the motion of these features in a pose estimate of the camera's. 
+ * The VO message contains contains an integer describing the number of features that 
+ * was reliably tracked. The higher the value of this integer, the more reliable the 
+ * pose measurement. The VO is more accurate in tracking orientation changes than in position changes. 
+*/
+
 class OdomEstimationNode: public ros::Node
 {
 public:
