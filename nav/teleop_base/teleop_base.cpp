@@ -6,6 +6,8 @@
 #include "robot_msgs/PoseDot.h"
 #include "std_msgs/Float64.h"
 
+#define TORSO_TOPIC "/torso_lift_controller/command"
+
 using namespace ros;
 
 class TeleopBase : public Node
@@ -66,7 +68,7 @@ class TeleopBase : public Node
         printf("passthrough_button: %d\n", passthrough_button);
         
         if (torso_dn_button != 0)
-          advertise<std_msgs::Float64>("torso_lift_controller/set_command", 1);
+          advertise<std_msgs::Float64>(TORSO_TOPIC, 1);
           
         advertise<robot_msgs::PoseDot>("cmd_vel", 1);
         subscribe("joy", joy, &TeleopBase::joy_cb, 1);
@@ -79,7 +81,7 @@ class TeleopBase : public Node
     unsubscribe("joy");
     unsubscribe("cmd_passthrough");
     unadvertise("cmd_vel");
-    unadvertise("torso_lift_controller/set_command");
+    unadvertise(TORSO_TOPIC);
   }
 
       void joy_cb()
@@ -150,7 +152,7 @@ class TeleopBase : public Node
             publish("cmd_vel", cmd);
 
             torso_eff.data = req_torso;
-            publish("torso_lift_controller/set_command", torso_eff);
+            publish(TORSO_TOPIC, torso_eff);
 
             if (req_torso != 0)
               fprintf(stderr,"teleop_base:: %f, %f, %f. Torso effort: %f.\n",cmd.vel.vx,cmd.vel.vy,cmd.ang_vel.vz, torso_eff.data);
@@ -164,7 +166,7 @@ class TeleopBase : public Node
             if (!deadman_no_publish_)
            {
              publish("cmd_vel", cmd);//Only publish if deadman_no_publish is enabled
-             publish("torso_lift_controller/set_command", torso_eff);
+             publish(TORSO_TOPIC, torso_eff);
              //fprintf(stderr,"teleop_base:: deadman off\n");
            }
          }
