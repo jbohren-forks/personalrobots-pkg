@@ -1,0 +1,22 @@
+<launch>
+  <node pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i eth0 -x $(find forearm_cam)/mb_configuration.xml" output="screen"/>
+
+  <node pkg="mechanism_control" type="spawner.py" args="$(find forearm_cam)/trigger_controller.xml" />
+  
+  <group ns="forearm">
+    <param name="if_name" type="str" value="eth2"/>
+    <param name="ip_address" type="str" value="192.168.201.2"/>
+    <!--param name="serial_number" type="int" value="2"/-->
+    <param name="video_mode" type="str" value="640x480x30"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="False"/>
+    <param name="ext_trigger" type="bool" value="True"/>
+    <param name="trigger_controller" type="string" value="trig_controller"/>
+    <param name="trigger_rate" type="double" value="20"/>
+    <param name="trigger_phase" type="double" value="0"/>
+  </group>
+  <node name="forearm" pkg="forearm_cam" type="forearm_node" respawn="false" output="screen"/>
+  <node name="forearm_proc" pkg="stereo_image_proc" type="imageproc" respawn="false" output="screen">
+    <remap from="camera" to="forearm"/>
+  </node>
+</launch>
