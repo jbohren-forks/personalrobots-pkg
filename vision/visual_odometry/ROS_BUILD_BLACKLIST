@@ -1,0 +1,26 @@
+[ 11%] Building CXX object CMakeFiles/visual_odometry.dir/src/LevMarq2.o
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/vision/visual_odometry/src/LevMarq2.cpp:1:
+warning: ignoring #pragma warning 
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/vision/visual_odometry/src/LevMarq2.cpp:
+In member function 'void cv::willow::LevMarq::solve()':
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/vision/visual_odometry/src/LevMarq2.cpp:224:
+error: invalid initialization of reference of type 'const cv::Mat&' from
+expression of type 'double'
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/3rdparty/opencv_latest/opencv/include/opencv/cxcore.hpp:891:
+error: in passing argument 1 of 'void cv::log(const cv::Mat&, cv::Mat&)'
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/vision/visual_odometry/src/LevMarq2.cpp:225:
+error: invalid initialization of reference of type 'const cv::Mat&' from
+expression of type 'double'
+/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/3rdparty/opencv_latest/opencv/include/opencv/cxcore.hpp:890:
+error: in passing argument 1 of 'void cv::exp(const cv::Mat&, cv::Mat&)'
+make[3]: *** [CMakeFiles/visual_odometry.dir/src/LevMarq2.o] Error 1
+make[3]: Leaving directory
+`/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/vision/visual_odometry/build'
+make[2]: *** [CMakeFiles/visual_odometry.dir/all] Error 2
+make[1]: *** [all] Error 2
+make: *** [all] Error 2
+make[2]: Leaving directory
+`/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/vision/visual_odometry/build'
+make[1]: Leaving directory
+`/home/rosbuild/.hudson/jobs/personalrobots-stable-update/workspace/personalrobots/vision/visual_odometry/build'
+[rosmakeall-buildfail] Build of visual_odometry failed
