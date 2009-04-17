@@ -6,25 +6,33 @@
 <param name="navfn/costmap/max_obstacle_height" value="2.0" />
 <param name="navfn/costmap/raytrace_range" value="3.0" />
 
-<param name="navfn/costmap/observation_topics" value="base_scan_filtered tilt_scan_filtered ground_object_cloud" />
+<param name="navfn/costmap/observation_topics" value="base_scan_marking base_scan_clearing tilt_scan_filtered ground_object_cloud" />
 
-<param name="navfn/costmap/base_scan_filtered/sensor_frame" value="base_laser" />
-<param name="navfn/costmap/base_scan_filtered/observation_persistance" value="0.0" />
-<param name="navfn/costmap/base_scan_filtered/expected_update_rate" value="0.2" />
-<param name="navfn/costmap/base_scan_filtered/data_type" value="PointCloud" />
-<param name="navfn/costmap/base_scan_filtered/clearing" value="true" />
+<param name="navfn/costmap/base_scan_marking/sensor_frame" value="base_laser" />
+<param name="navfn/costmap/base_scan_marking/observation_persistance" value="0.0" />
+<param name="navfn/costmap/base_scan_marking/expected_update_rate" value="0.2" />
+<param name="navfn/costmap/base_scan_marking/data_type" value="PointCloud" />
+<param name="navfn/costmap/base_scan_marking/marking" value="true" />
+<param name="navfn/costmap/base_scan_marking/clearing" value="false" />
+<param name="navfn/costmap/base_scan_marking/min_obstacle_height" value="0.08" />
+<param name="navfn/costmap/base_scan_marking/max_obstacle_height" value="2.0" />
 
-<param name="navfn/costmap/tilt_scan_filtered/sensor_frame" value="frame_from_message" />
-<param name="navfn/costmap/tilt_scan_filtered/observation_persistance" value="0.0" />
-<param name="navfn/costmap/tilt_scan_filtered/expected_update_rate" value="0.2" />
-<param name="navfn/costmap/tilt_scan_filtered/data_type" value="PointCloud" />
-<param name="navfn/costmap/tilt_scan_filtered/clearing" value="false" />
+<param name="navfn/costmap/base_scan_clearing/sensor_frame" value="base_laser" />
+<param name="navfn/costmap/base_scan_clearing/observation_persistance" value="0.0" />
+<param name="navfn/costmap/base_scan_clearing/expected_update_rate" value="0.2" />
+<param name="navfn/costmap/base_scan_clearing/data_type" value="PointCloud" />
+<param name="navfn/costmap/base_scan_clearing/marking" value="false" />
+<param name="navfn/costmap/base_scan_clearing/clearing" value="true" />
+<param name="navfn/costmap/base_scan_clearing/min_obstacle_height" value="0.08" />
+<param name="navfn/costmap/base_scan_clearing/max_obstacle_height" value="2.0" />
 
 <param name="navfn/costmap/ground_object_cloud/sensor_frame" value="frame_from_message" />
-<param name="navfn/costmap/ground_object_cloud/observation_persistance" value="0.0" />
+<param name="navfn/costmap/ground_object_cloud/observation_persistance" value="2.0" />
 <param name="navfn/costmap/ground_object_cloud/expected_update_rate" value="0.2" />
 <param name="navfn/costmap/ground_object_cloud/data_type" value="PointCloud" />
 <param name="navfn/costmap/ground_object_cloud/clearing" value="false" />
+<param name="navfn/costmap/ground_object_cloud/min_obstacle_height" value="-0.10" />
+<param name="navfn/costmap/ground_object_cloud/max_obstacle_height" value="2.0" />
 
 <param name="navfn/costmap/static_map" value="true" />
 <param name="navfn/costmap/cost_scaling_factor" value="1.0" />

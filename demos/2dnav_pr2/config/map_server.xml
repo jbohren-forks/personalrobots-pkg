@@ -1,2 +1,4 @@
+<launch>
 <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.025.pgm 0.025" respawn="true" machine="three" />
 <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.05.pgm 0.05" respawn="false" machine="three" />-->
+</launch>
