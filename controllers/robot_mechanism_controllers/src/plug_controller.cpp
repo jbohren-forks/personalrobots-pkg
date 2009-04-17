@@ -34,6 +34,7 @@
 #include "urdf/parser.h"
 #include <algorithm>
 #include "robot_mechanism_controllers/plug_controller.h"
+#include "tf_conversions/tf_kdl.h"
 
 #define DEBUG 0 // easy debugging
 
@@ -72,9 +73,9 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   robot_ = robot;
-  
+
   controller_name_ = config->Attribute("name");
-  
+
   TiXmlElement *chain = config->FirstChildElement("chain");
   if (!chain) {
     ROS_ERROR("PlugController was not given a chain");
@@ -108,13 +109,13 @@ bool PlugController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
   node->param(controller_name_+"/f_limit_max"  , f_limit_max  , 100.0) ; /// max upper arm limit force
   node->param(controller_name_+"/upper_arm_dead_zone", upper_arm_dead_zone, 0.05);
 
-  roll_pid_.initParam(controller_name_+"/pose_pid"); 
-  pitch_pid_.initParam(controller_name_+"/pose_pid"); 
-  yaw_pid_.initParam(controller_name_+"/pose_pid"); 
-  line_pid_.initParam(controller_name_+"/line_pid"); 
+  roll_pid_.initParam(controller_name_+"/pose_pid");
+  pitch_pid_.initParam(controller_name_+"/pose_pid");
+  yaw_pid_.initParam(controller_name_+"/pose_pid");
+  line_pid_.initParam(controller_name_+"/line_pid");
   last_time_ = robot->model_->hw_->current_time_;
-  
-  
+
+
   // Constructs solvers and allocates matrices.
   unsigned int num_joints   = kdl_chain_.getNrOfJoints();
   jnt_to_jac_solver_.reset(new ChainJntToJacSolver(kdl_chain_));
@@ -335,7 +336,7 @@ void PlugController::setToolOffset(const tf::Transform &tool_offset)
   chain_.toKDL(new_kdl_chain);
 
   KDL::Frame tool_frame;
-  mechanism::TransformTFToKDL(tool_offset, tool_frame);
+  tf::TransformTFToKDL(tool_offset, tool_frame);
   new_kdl_chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::None), tool_frame));
 
   kdl_chain_ = new_kdl_chain;
@@ -391,7 +392,7 @@ bool PlugControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *con
   if (current_frame_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete current_frame_publisher_ ;
   current_frame_publisher_ = new realtime_tools::RealtimePublisher <robot_msgs::Transform> (topic_ + "/transform", 1) ;
-  
+
   if (internal_state_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete internal_state_publisher_ ;
   internal_state_publisher_ = new realtime_tools::RealtimePublisher <robot_mechanism_controllers::PlugInternalState> (topic_ + "/internal_state", 1) ;
@@ -413,7 +414,7 @@ void PlugControllerNode::update()
     if (current_frame_publisher_->trylock())
     {
       tf::Transform transform;
-      mechanism::TransformKDLToTF(controller_.endeffector_frame_, transform);
+      tf::TransformKDLToTF(controller_.endeffector_frame_, transform);
       tf::TransformTFToMsg(transform, current_frame_publisher_->msg_);
       current_frame_publisher_->unlockAndPublish() ;
      }
@@ -457,7 +458,7 @@ void PlugControllerNode::outletPose()
   controller_.outlet_norm_(1) = norm.y();
   controller_.outlet_norm_(2) = norm.z();
 
-  mechanism::TransformTFToKDL(outlet, controller_.desired_frame_);
+  tf::TransformTFToKDL(outlet, controller_.desired_frame_);
 }
 
 void PlugControllerNode::command()

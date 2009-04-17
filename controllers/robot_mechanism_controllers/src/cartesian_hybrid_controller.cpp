@@ -37,6 +37,7 @@
 #include <kdl/chainfksolvervel_recursive.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
 #include <kdl/jacobian.hpp>
+#include "tf_conversions/tf_kdl.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "control_toolbox/pid.h"
 #include "robot_msgs/VisualizationMarker.h"
@@ -49,7 +50,7 @@ namespace controller {
 void TransformKDLToMsg(const KDL::Frame &k, robot_msgs::Pose &m)
 {
   tf::Transform tf;
-  mechanism::TransformKDLToTF(k, tf);
+  tf::TransformKDLToTF(k, tf);
   tf::PoseTFToMsg(tf, m);
 }
 
@@ -443,7 +444,7 @@ void CartesianHybridControllerNode::update()
       pub_tf_->msg_.transforms[0].header.frame_id = name_ + "/tool_frame";
       pub_tf_->msg_.transforms[0].parent_id = c_.chain_.getLinkName();
       tf::Transform t;
-      mechanism::TransformKDLToTF(c_.tool_frame_offset_, t);
+      tf::TransformKDLToTF(c_.tool_frame_offset_, t);
       tf::TransformTFToMsg(t, pub_tf_->msg_.transforms[0].transform);
       pub_tf_->unlockAndPublish();
     }
@@ -470,7 +471,7 @@ void CartesianHybridControllerNode::command()
     ROS_WARN("Transform Exception %s", ex.what());
     return;
   }
-  mechanism::TransformTFToKDL(task_frame, c_.task_frame_offset_);
+  tf::TransformTFToKDL(task_frame, c_.task_frame_offset_);
 
   c_.mode_[0] = (int)command_msg_.mode.vel.x;
   c_.mode_[1] = (int)command_msg_.mode.vel.y;

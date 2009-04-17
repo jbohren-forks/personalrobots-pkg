@@ -40,11 +40,6 @@
 
 namespace mechanism {
 
-void TransformTFToKDL(const tf::Transform &t, KDL::Frame &k);
-void TransformKDLToTF(const KDL::Frame &k, tf::Transform &t);
-void RotationTFToKDL(const tf::Quaternion& t, KDL::Rotation& k);
-void VectorTFToKDL(const tf::Vector3& t, KDL::Vector& k);
-
 class Chain
 {
 public:

@@ -16,6 +16,7 @@
   <depend package="robot_srvs" />
   <depend package="robot_msgs" />
   <depend package="tf" />
+  <depend package="tf_conversions" />
   <depend package="kdl" />
   <depend package="angles" />
   <depend package="joy" />

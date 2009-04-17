@@ -30,36 +30,9 @@
 // Author: Stuart Glaser
 
 #include "mechanism_model/chain.h"
-
+#include "tf_conversions/tf_kdl.h"
 
 namespace mechanism {
-
-void TransformTFToKDL(const tf::Transform &t, KDL::Frame &k)
-{
-  for (unsigned int i = 0; i < 3; ++i)
-    k.p.data[i] = t.getOrigin()[i];
-  for (unsigned int i = 0; i < 9; ++i)
-    k.M.data[i] = t.getBasis()[i/3][i%3];
-}
-
-void TransformKDLToTF(const KDL::Frame &k, tf::Transform &t)
-{
-  t.setOrigin(tf::Vector3(k.p.data[0], k.p.data[1], k.p.data[2]));
-  t.setBasis(btMatrix3x3(k.M.data[0], k.M.data[1], k.M.data[2],
-                         k.M.data[3], k.M.data[4], k.M.data[5],
-                         k.M.data[6], k.M.data[7], k.M.data[8]));
-}
-
-void RotationTFToKDL(const tf::Quaternion& t, KDL::Rotation& k) 
-{
-  k.Quaternion(t[0], t[1], t[2], t[3]);
-}
-
-void VectorTFToKDL(const tf::Vector3& t, KDL::Vector& k) 
-{
-  k = KDL::Vector(t[0], t[1], t[2]);
-}
-
 
 bool Chain::init(Robot *robot, const std::string &root, const std::string &tip)
 {
@@ -163,32 +136,32 @@ void Chain::toKDL(KDL::Chain &chain)
   for (i = 0; i < link_indices_.size(); ++i)
   {
     // Here we create a KDL Segment for each part of the chain, between root and tip.
-    // A KDL Segment consists of a link and a joint. The joint is positioned at the 
+    // A KDL Segment consists of a link and a joint. The joint is positioned at the
     // beginning of the link, and connects this link to the previous link.
     KDL::Frame kdl_link;
     KDL::Vector pos;
     KDL::Rotation rot;
     KDL::Vector axis;
 
-    // Creates the link: a link is defined by a position and rotation, 
+    // Creates the link: a link is defined by a position and rotation,
     // relative to the reference frame of the previous link.
     if (i == 0){
       kdl_link = KDL::Frame::Identity();
     }
     // moving from root to ancestor
     else if (i<= reversed_index_){
-      VectorTFToKDL(robot_->links_[link_indices_[i-1]]->getOffset().getOrigin(), pos);
-      RotationTFToKDL(robot_->links_[link_indices_[i-1]]->getRotation().getRotation(), rot);
+      tf::VectorTFToKDL(robot_->links_[link_indices_[i-1]]->getOffset().getOrigin(), pos);
+      tf::RotationTFToKDL(robot_->links_[link_indices_[i-1]]->getRotation().getRotation(), rot);
       kdl_link = KDL::Frame(rot, pos).Inverse();
     }
     // moving from ancestor to tip
     else{
-      VectorTFToKDL(robot_->links_[link_indices_[i]]->getOffset().getOrigin(), pos);
-      RotationTFToKDL(robot_->links_[link_indices_[i]]->getRotation().getRotation(), rot);
+      tf::VectorTFToKDL(robot_->links_[link_indices_[i]]->getOffset().getOrigin(), pos);
+      tf::RotationTFToKDL(robot_->links_[link_indices_[i]]->getRotation().getRotation(), rot);
       kdl_link = KDL::Frame(rot, pos);
     }
 
-    // Creates the joint: a joint is defined by a position and an axis, 
+    // Creates the joint: a joint is defined by a position and an axis,
     // relative to the reference frame of the previous link.
     KDL::Joint kdl_joint;
     if (i == 0 || robot_->joints_[all_joint_indices_[i-1]]->type_ == JOINT_FIXED){
@@ -196,12 +169,12 @@ void Chain::toKDL(KDL::Chain &chain)
     }
     // moving from ancestor to tip
     else if (i<= reversed_index_){
-      VectorTFToKDL(robot_->joints_[all_joint_indices_[i-1]]->axis_, axis);
+      tf::VectorTFToKDL(robot_->joints_[all_joint_indices_[i-1]]->axis_, axis);
       kdl_joint = KDL::Joint(KDL::Vector::Zero(), kdl_link.M * axis * -1, KDL::Joint::RotAxis);
     }
     // moving from ancestor to tip
     else{
-      VectorTFToKDL(robot_->joints_[all_joint_indices_[i-1]]->axis_, axis);
+      tf::VectorTFToKDL(robot_->joints_[all_joint_indices_[i-1]]->axis_, axis);
       kdl_joint = KDL::Joint(kdl_link.p, axis, KDL::Joint::RotAxis);
   }
 
