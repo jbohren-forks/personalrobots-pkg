@@ -63,6 +63,7 @@ private:
   image_msgs::Image img_, rect_img_;
   image_msgs::CvBridge img_bridge_, rect_img_bridge_;
   image_msgs::CamInfo cam_info_;
+  std::string frame_id_;
   bool running_;
   DiagnosticUpdater<ProsilicaNode> diagnostic_;
   int count_;
@@ -88,6 +89,9 @@ public:
       ROS_WARN("Found no cameras on local subnet");
 
     unsigned long guid = 0;
+
+    // Specify which frame to add to message header
+    node_.param("~frame_id", frame_id_, std::string("NO_FRAME")) ;
 
     if (node_.hasParam("~guid"))
     {
@@ -477,8 +481,10 @@ private:
     node_.publish("~image", img_);
     if (calibrated_) {
       rect_img_.header.stamp = time;
+      rect_img_.header.frame_id = frame_id_;
       node_.publish("~image_rect", rect_img_);
       cam_info_.header.stamp = time;
+      cam_info_.header.frame_id = frame_id_;
       node_.publish("~cam_info", cam_info_);
     }
   }
