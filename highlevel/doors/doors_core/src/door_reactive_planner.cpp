@@ -313,15 +313,15 @@ void DoorReactivePlanner::transformPath(const std::vector<robot_actions::Pose2D>
   }
 }
 
-void DoorReactivePlanner::transform2DPose(const robot_actions::Pose2D &path_in, const std::string original_frame_id, robot_actions::Pose2D &path_out, const std::string &transform_frame_id)
+void DoorReactivePlanner::transform2DPose(const robot_actions::Pose2D &point_in, const std::string original_frame_id, robot_actions::Pose2D &point_out, const std::string &transform_frame_id)
 {
   btQuaternion qt;
   tf::Stamped<tf::Pose> pose;
   tf::Stamped<tf::Pose> transformed_pose;
   double useless_pitch, useless_roll, yaw;
 
-  qt.setEulerZYX(path_in.th, 0, 0);
-  pose.setData(btTransform(qt, btVector3(path_in.x, path_in.y, 0)));
+  qt.setEulerZYX(point_in.th, 0, 0);
+  pose.setData(btTransform(qt, btVector3(point_in.x, point_in.y, 0)));
   pose.frame_id_ = original_frame_id;
   pose.stamp_ = ros::Time();
 
@@ -342,8 +342,8 @@ void DoorReactivePlanner::transform2DPose(const robot_actions::Pose2D &path_in, 
     ROS_ERROR("Extrapolation Error: %s\n", ex.what());
   }
 
-  path_out.x = transformed_pose.getOrigin().x();
-  path_out.y = transformed_pose.getOrigin().y();
+  point_out.x = transformed_pose.getOrigin().x();
+  point_out.y = transformed_pose.getOrigin().y();
   transformed_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
-  path_out.th = (double)yaw;      
+  point_out.th = (double)yaw;      
 };
