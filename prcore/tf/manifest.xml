@@ -19,4 +19,6 @@
   </export>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
   <sysdepend os="ubuntu" version="7.10-gutsy" package="python-numpy"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="graphviz"/>
+  <sysdepend os="ubuntu" version="7.10-gutsy" package="graphviz"/>
 </package>
