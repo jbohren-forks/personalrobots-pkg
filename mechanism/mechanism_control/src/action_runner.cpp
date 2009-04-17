@@ -36,46 +36,20 @@
 #include "mechanism_control/action_mechanism_control.h"
 
 
-using namespace ros;
-using namespace std;
+// ----------------------------------
+//              MAIN
+// -----------------------------------
 
-namespace mechanism_control{
-
-ActionMechanismControl::ActionMechanismControl(Node& node): 
-  robot_actions::Action<robot_actions::SwitchControllers, std_msgs::Empty>("switch_controllers")
-{};
-  
-  
-ActionMechanismControl::~ActionMechanismControl(){};
-  
-  
-robot_actions::ResultStatus ActionMechanismControl::execute(const robot_actions::SwitchControllers& c, std_msgs::Empty&)
+int main(int argc, char** argv)
 {
-  ROS_INFO("ActionMechanismControl: received request to start %i controllers and stop %i controllers", 
-           c.start_controllers.size(), c.stop_controllers.size());
-  for (unsigned int i=0; i<c.start_controllers.size(); i++)
-    ROS_INFO("ActionMechanismControl:   - starting controller %s", c.start_controllers[i].c_str());
-  for (unsigned int i=0; i<c.stop_controllers.size(); i++)
-    ROS_INFO("ActionMechanismControl:   - stopping controller %s", c.stop_controllers[i].c_str());
-  robot_srvs::SwitchController::Request req;
-  robot_srvs::SwitchController::Response resp;
-  req.start_controllers = c.start_controllers;
-  req.stop_controllers  = c.stop_controllers;
-  if (!ros::service::call("switch_controller", req, resp)){
-    ROS_ERROR("ActionMechanismControl: failed to communicate with switch controllers");
-    return robot_actions::ABORTED;
-  }
-  else{
-    if (resp.ok){
-      ROS_INFO("ActionMechanismControl: controlers switched succesfully");
-      return robot_actions::SUCCESS;
-    }
-    else{
-      ROS_ERROR("ActionMechanismControl: failed to switch controllers");
-      return robot_actions::ABORTED;
-    }
-  }
-}
+  ros::init(argc,argv);
 
-}
+  ros::Node node("mechanism_control_action_container");
+  mechanism_control::ActionMechanismControl act(node);
+  robot_actions::ActionRunner runner(10.0);
+  runner.connect<robot_actions::SwitchControllers, robot_actions::SwitchControllersState,  std_msgs::Empty>(act);
+  runner.run();
 
+  node.spin();
+  return 0;
+}

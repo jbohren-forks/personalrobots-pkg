@@ -298,9 +298,19 @@ bool MechanismControl::switchController(const std::vector<std::string>& start_co
   // wait until switch is finished
   while (please_switch_)
     usleep(100);
-  ROS_INFO("MechanismControl: switch result = %i", switch_success_);
+
+  if (switch_success_)
+    ROS_INFO("MechanismControl: switching successful: result = %i", switch_success_);
+  else
+    ROS_INFO("MechanismControl: switching failed: result = %i", switch_success_);
 
   controllers_lock_.unlock();
+
+  if (switch_success_)
+    ROS_INFO("MechanismControl: switching successful: result = %i", switch_success_);
+  else
+    ROS_INFO("MechanismControl: switching failed: result = %i", switch_success_);
+
   return switch_success_;
 }
 

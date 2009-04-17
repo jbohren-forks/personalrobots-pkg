@@ -13,4 +13,8 @@ rospack_link_boost(mechanism_control thread)
 #rospack_add_rostest(test/test-mechanism-state-cpp.xml)
 #rospack_add_rostest(test/test-mechanism-state-py.xml)
 
-rospack_add_executable(action_mechanism_control src/action_mechanism_control.cpp)
+rospack_add_executable(action_runner src/action_runner.cpp
+				     src/action_mechanism_control.cpp)
+rospack_add_executable(action_runner_test test/action_runner_test.cpp
+					  src/action_mechanism_control.cpp)
+
