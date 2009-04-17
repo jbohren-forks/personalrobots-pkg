@@ -40,6 +40,7 @@
 #include <time.h>
 #include <iostream>
 #include <iomanip>
+#include <queue>
 
 
 #include "image_msgs/CvBridge.h"
@@ -102,6 +103,42 @@ public:
 
 };
 
+
+template<typename T>
+class Mat2D
+{
+public:
+	int width_;
+	int height_;
+	T* data_;
+
+	Mat2D(int width, int height) : width_(width), height_(height)
+	{
+		data_ = new T[width_*height_];
+	}
+
+	~Mat2D()
+	{
+		delete[] data_;
+	}
+
+	T* operator[](int index)
+	{
+		return data_+index*width_;
+	}
+
+};
+
+void on_edges_low(int);
+void on_edges_high(int);
+
+
+
+
+
+
+
+
 class RecognitionLambertian : public ros::Node
 {
 public:
@@ -142,6 +179,19 @@ public:
 	// display stereo images ?
 	bool display;
 
+	int edges_low;
+	int edges_high;
+
+
+	typedef pair<int,int> coordinate;
+	typedef vector<coordinate> template_coords_t;
+
+	vector<CvSize> template_sizes;
+	vector<template_coords_t> template_coords;
+
+	float min_scale;
+	float max_scale;
+	int count_scale;
 
 
 	CvHaarClassifierCascade* cascade;
@@ -163,25 +213,34 @@ public:
         stringstream ss;
         ss << getenv("ROS_ROOT") << "/../ros-pkg/vision/recognition_lambertian/data/";
         string path = ss.str();
-        string cascade_classifier;
-        param<string>("cascade_classifier", cascade_classifier, path + "handles_data.xml");
+        string template_path;
+        param<string>("template_path", template_path, path + "template.png");
+
+        edges_low = 50;
+        edges_high = 170;
+
+
+        min_scale = 0.7;
+        max_scale = 1.2;
+        count_scale = 7;
 
         if(display){
             cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
             cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
             cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 //            cvNamedWindow("disparity_original", CV_WINDOW_AUTOSIZE);
+        	cvNamedWindow("edges",1);
+        	cvCreateTrackbar("edges_low","edges",&edges_low, 500, &on_edges_low);
+        	cvCreateTrackbar("edges_high","edges",&edges_high, 500, &on_edges_high);
         }
 
-//        subscribeStereoData();
-
-        // load a cascade classifier
-        // invalid location until we get a detection
 
 //        advertise<robot_msgs::PointStamped>("handle_detector/handle_location", 1);
         advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
 
         subscribeStereoData();
+
+        loadTemplate(template_path);
     }
 
     ~RecognitionLambertian()
@@ -238,6 +297,54 @@ private:
 //        unsubscribe("stereo/disparity_info");
 //        unsubscribe("stereo/right/cam_info");
         unsubscribe("stereo/cloud");
+    }
+
+
+    void loadTemplate(string path)
+    {
+    	IplImage* templ = cvLoadImage(path.c_str(),CV_LOAD_IMAGE_GRAYSCALE);
+
+    	ROS_INFO("Loading templates");
+    	for(int i = 0; i < count_scale; ++i) {
+    		float scale = min_scale + (max_scale - min_scale)*i/count_scale;
+    		int width = int(templ->width*scale);
+    		int height = int(templ->height*scale);
+
+    		printf("Level: %d, scale: %f, width: %d, height: %d\n", i, scale, width, height);
+
+    		IplImage* templ_scale = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
+    		cvResize(templ, templ_scale, CV_INTER_NN);
+
+
+    		template_coords_t coords;
+        	extractTemplateCoords(templ_scale, coords);
+        	template_coords.push_back(coords);
+        	template_sizes.push_back(cvSize(width, height));
+
+
+        	CvPoint offs;
+        	offs.x = 0;
+        	offs.y = 0;
+//        	showMatch(templ_scale, offs,i);
+
+    		cvReleaseImage(&templ_scale);
+    	}
+
+    	cvReleaseImage(&templ);
+	}
+
+
+    void extractTemplateCoords(IplImage* templ_img, template_coords_t& coords)
+    {
+    	coords.clear();
+    	unsigned char* ptr = (unsigned char*) templ_img->imageData;
+    	for (int y=0;y<templ_img->height;++y) {
+    		for (int x=0;x<templ_img->width;++x) {
+    			if (*(ptr+y*templ_img->widthStep+x)!=0) {
+    				coords.push_back(make_pair(x,y));
+    			}
+    		}
+    	}
     }
 
     /////////////////////////////////////////////////
@@ -359,33 +466,137 @@ private:
     }
 
 
-    /**
-     * \brief Publishes a visualization marker for a point.
-     * @param p
-     */
-    void showHandleMarker(robot_msgs::PointStamped p)
+
+    float localChamferDistance(IplImage* dist_img, const vector<int>& templ_addr, CvPoint offset)
     {
-        robot_msgs::VisualizationMarker marker;
-        marker.header.frame_id = p.header.frame_id;
-        marker.header.stamp = ros::Time((uint64_t)(0ULL));
-        marker.id = 0;
-        marker.type = robot_msgs::VisualizationMarker::SPHERE;
-        marker.action = robot_msgs::VisualizationMarker::ADD;
-        marker.x = p.point.x;
-        marker.y = p.point.y;
-        marker.z = p.point.z;
-        marker.yaw = 0.0;
-        marker.pitch = 0.0;
-        marker.roll = 0.0;
-        marker.xScale = 0.1;
-        marker.yScale = 0.1;
-        marker.zScale = 0.1;
-        marker.alpha = 255;
-        marker.r = 0;
-        marker.g = 255;
-        marker.b = 0;
-        publish("visualizationMarker", marker);
+    	int x = offset.x;
+    	int y = offset.y;
+    	float sum = 0;
+
+    	float* ptr = (float*) dist_img->imageData;
+    	ptr += (y*dist_img->width+x);
+    	for (size_t i=0;i<templ_addr.size();++i) {
+    		sum += *(ptr+templ_addr[i]);
+    	}
+    	return sum/templ_addr.size();
+
+//    	IndexedIplImage<float> dist(dist_img);
+//    	for (size_t i=0;i<templ_coords.size();++i) {
+//    		int px = x+templ_coords[i].first;
+//    		int py = y+templ_coords[i].second;
+//    		if (px<dist_img->width && py<dist_img->height)
+//    			sum += dist.at(px,py);
+//    	}
+//    	return sum/templ_coords.size();
     }
+
+    void matchTemplate(IplImage* dist_img, const template_coords_t& coords, CvSize template_size, CvPoint& offset, float& dist)
+    {
+    	int width = dist_img->width;
+    	vector<int> templ_addr;
+    	templ_addr.clear();
+    	for (size_t i= 0; i<coords.size();++i) {
+    		templ_addr.push_back(coords[i].second*width+coords[i].first);
+    	}
+
+    	// sliding window
+    	for (int y=0;y<dist_img->height - template_size.height; y+=2) {
+    		for (int x=0;x<dist_img->width - template_size.width; x+=2) {
+				CvPoint test_offset;
+				test_offset.x = x;
+				test_offset.y = y;
+				float test_dist = localChamferDistance(dist_img, templ_addr, test_offset);
+
+				if (test_dist<dist) {
+					dist = test_dist;
+					offset = test_offset;
+				}
+    		}
+    	}
+    }
+
+
+    void matchTemplateScale(IplImage* dist_img, CvPoint& offset, float& dist, int& scale)
+    {
+    	for(int i = 0; i < count_scale; i++) {
+    		CvPoint test_offset;
+            test_offset.x = 0;
+            test_offset.y = 0;
+    		float test_dist = 1e10;
+
+    		matchTemplate(dist_img, template_coords[i], template_sizes[i], test_offset, test_dist);
+			if (test_dist<dist) {
+				dist = test_dist;
+				offset = test_offset;
+				scale = i;
+			}
+    	}
+    }
+
+
+    void showMatch(IplImage* img, CvPoint& offset, int scale)
+    {
+    	unsigned char* ptr = (unsigned char*) img->imageData;
+    	template_coords_t& templ_coords = template_coords[scale];
+    	for (size_t i=0;i<templ_coords.size();++i) {
+    		int x = offset.x + templ_coords[i].first;
+    		int y = offset.y + templ_coords[i].second;
+    		(ptr+y*img->widthStep+x*img->nChannels)[1] = 255;
+    	}
+    }
+
+    /**
+     * \brief Finds edges in an image
+     * @param img
+     */
+    void doChamferMatching(IplImage *img)
+    {
+    	// edge detection
+        IplImage *gray = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+        cvCvtColor(img, gray, CV_RGB2GRAY);
+        cvCanny(gray, gray, edges_high/2, edges_high);
+
+        if (display) {
+        	cvShowImage("edges", gray);
+        }
+
+
+//    	Mat2D<int> dt(left->width, left->height);
+        IplImage* dist_img = cvCreateImage(cvSize(left->width, left->height), IPL_DEPTH_32F, 1);
+
+        computeDistanceTransform2(gray,dist_img, -1);
+//    	computeDistanceTransform(gray,dt,20);
+
+        CvPoint offset;
+        offset.x = 0;
+        offset.y = 0;
+        float dist = 1e10;
+        int scale = 0;
+        matchTemplateScale(dist_img, offset, dist, scale);
+//        matchTemplate(dist_img, offset, dist);
+
+
+
+        IplImage* left_clone = cvCloneImage(left);
+        printf("Scale: %d\n", scale);
+        showMatch(left,offset, scale);
+
+
+        if(display){
+        	// show filtered disparity
+        	cvShowImage("disparity", disp);
+        	// show left image
+        	cvShowImage("left", left);
+        	cvShowImage("right", right);
+        }
+        cvCopy(left_clone, left);
+        cvReleaseImage(&left_clone);
+
+        cvReleaseImage(&gray);
+    }
+
+
+
 
 
     void runRecognitionLambertian()
@@ -398,15 +609,103 @@ private:
 //        printf("Woke up, processing images\n");
 
 
-        // do usefull stuff
+        // do useful stuff
+    	doChamferMatching(left);
 
-        if(display){
-        	// show filtered disparity
-        	cvShowImage("disparity", disp);
-        	// show left image
-        	cvShowImage("left", left);
-        	cvShowImage("right", right);
-        }
+    }
+
+
+    /**
+     *
+     * @param edges_img
+     * @param dist_img - IPL_DEPTH_32F image
+     */
+    void computeDistanceTransform2(IplImage* edges_img, IplImage* dist_img, float truncate)
+    {
+    	cvNot(edges_img, edges_img);
+    	cvDistTransform(edges_img, dist_img);
+    	cvNot(edges_img, edges_img);
+
+    	if (truncate>0) {
+    		cvMinS(dist_img, truncate, dist_img);
+    	}
+    }
+
+
+    void computeDistanceTransform(IplImage* edges_img, Mat2D<int>& dt, int truncate)
+    {
+    	int d[][2] = { {-1,-1},{ 0,-1},{ 1,-1},
+					  {-1,0},          { 1,0},
+					  {-1,1}, { 0,1},  { 1,1} };
+
+    	ROS_INFO("Computing distance transform");
+
+    	CvSize s = cvGetSize(edges_img);
+    	int w = s.width;
+    	int h = s.height;
+    	for (int i=0;i<h;++i) {
+    		for (int j=0;j<w;++j) {
+    			dt[i][j] = -1;
+    		}
+    	}
+
+    	queue<pair<int,int> > q;
+    	// initialize queue
+    	IndexedIplImage<unsigned char> edges(edges_img);
+    	for (int y=0;y<h;++y) {
+    		for (int x=0;x<w;++x) {
+    			if (edges.at(x,y)!=0) {
+    				q.push(make_pair(x,y));
+    				dt[y][x] = 0;
+    			}
+    		}
+    	}
+
+    	pair<int,int> crt;
+    	while (!q.empty()) {
+    		crt = q.front();
+    		q.pop();
+
+    		int x = crt.first;
+    		int y = crt.second;
+    		int dist = dt[y][x]+1;
+    		for (size_t i=0;i<sizeof(d)/sizeof(d[0]);++i) {
+    			int nx = x + d[i][0];
+    			int ny = y + d[i][1];
+
+    			if (nx<0 || ny<0 || nx>w || ny>h) continue;
+
+    			if (dt[ny][nx]==-1 || dt[ny][nx]>dist) {
+    				dt[ny][nx] = dist;
+    				q.push(make_pair(nx,ny));
+    			}
+    		}
+    	}
+
+    	// truncate dt
+    	if (truncate>0) {
+    		for (int i=0;i<h;++i) {
+    			for (int j=0;j<w;++j) {
+    				dt[i][j] = min( dt[i][j],truncate);
+    			}
+    		}
+    	}
+
+
+//    	int f = 1;
+//    	if (truncate>0) f = 255/truncate;
+//    	// display image
+//    	IplImage *dt_image = cvCreateImage(s, IPL_DEPTH_8U, 1);
+//		unsigned char* dt_p = (unsigned char*)dt_image->imageData;
+//
+//		for (int i=0;i<w*h;++i) {
+//			dt_p[i] = f*dt.data_[i];
+//    	}
+//
+//    	cvNamedWindow("dt",1);
+//    	cvShowImage("dt",dt_image);
+//    	cvReleaseImage(&dt_image);
+
     }
 
 
@@ -446,93 +745,6 @@ private:
 
         return result;
     }
-
-    /**
-     * \brief Computes a least-squares estimate of a plane.
-     *
-     * @param points The point cloud
-     * @return Plane in Hessian normal form
-     */
-    CvScalar estimatePlaneLS(robot_msgs::PointCloud points)
-    {
-        int cnt = points.pts.size();
-        CvMat *A = cvCreateMat(cnt, 3, CV_32FC1);
-        for(int i = 0;i < cnt;++i){
-            robot_msgs::Point32 p = points.pts[i];
-            cvmSet(A, i, 0, p.x);
-            cvmSet(A, i, 1, p.y);
-            cvmSet(A, i, 2, p.z);
-        }
-        vector<float> ones(cnt, 1);
-        CvMat B;
-        cvInitMatHeader(&B, cnt, 1, CV_32FC1, &ones[0]);
-        CvMat *X = cvCreateMat(3, 1, CV_32FC1);
-        int ok = cvSolve(A, &B, X, CV_SVD);
-        CvScalar plane;
-        if(ok){
-            float *xp = X->data.fl;
-            float d = sqrt(xp[0] * xp[0] + xp[1] * xp[1] + xp[2] * xp[2]);
-            plane.val[0] = xp[0] / d;
-            plane.val[1] = xp[1] / d;
-            plane.val[2] = xp[2] / d;
-            plane.val[3] = -1 / d;
-        }else{
-            plane.val[0] = plane.val[1] = plane.val[2] = plane.val[3] = -1;
-        }
-        cvReleaseMat(&A);
-        return plane;
-    }
-
-    /**
-     * \brief Filters cloud point, retains only regions that could contain a handle
-     */
-    void applyPositionPrior()
-    {
-        robot_msgs::PointCloud base_cloud;
-        tf_->setExtrapolationLimit(ros::Duration(2.0));
-        try {
-            tf_->transformPointCloud("base_link", cloud, base_cloud);
-        }
-        catch(tf::ExtrapolationException & ex){
-            tf_->clear();
-            ROS_WARN("TF exception: %s", ex.what());
-        }
-        catch(tf::LookupException & ex){
-            ROS_ERROR("Lookup exception: %s\n", ex.what());
-        }
-        catch(tf::ConnectivityException & ex){
-            ROS_ERROR("Connectivity exception: %s\n", ex.what());
-        }
-        int xchan = -1;
-        int ychan = -1;
-        for(size_t i = 0;i < base_cloud.chan.size();++i){
-            if(base_cloud.chan[i].name == "x"){
-                xchan = i;
-            }
-            if(base_cloud.chan[i].name == "y"){
-                ychan = i;
-            }
-        }
-
-        if(xchan != -1 && ychan != -1){
-            unsigned char *pd = (unsigned char*)(disp->imageData);
-            int ws = disp->widthStep;
-            for(size_t i = 0;i < base_cloud.get_pts_size();++i){
-                robot_msgs::Point32 crt_point = base_cloud.pts[i];
-                int x = (int)(base_cloud.chan[xchan].vals[i]);
-                int y = (int)(base_cloud.chan[ychan].vals[i]);
-
-				// pointer to the current pixel
-				unsigned char* crt_pd = pd+y*ws+x;
-				if (crt_point.z>max_height || crt_point.z<min_height) {
-					*crt_pd = 0;
-				}
-			}
-		}
-		else {
-			ROS_WARN("I can't find image coordinates in the point cloud, no filtering done.");
-		}
-	}
 
 
     /**
@@ -621,7 +833,27 @@ public:
 
 		return true;
 	}
+
+	void triggerEdgeDetection()
+	{
+		doChamferMatching(left);
+	}
 };
+
+RecognitionLambertian* node;
+
+void on_edges_low(int value)
+{
+	node->edges_low = value;
+	node->triggerEdgeDetection();
+}
+
+void on_edges_high(int value)
+{
+	node->edges_high = value;
+	node->triggerEdgeDetection();
+}
+
 
 int main(int argc, char **argv)
 {
@@ -629,8 +861,10 @@ int main(int argc, char **argv)
 		cout << "(" << i << "): " << argv[i] << endl;
 
 	ros::init(argc, argv);
-	RecognitionLambertian view;
-	view.spin();
+	node = new RecognitionLambertian();
+	node->spin();
+
+	delete node;
 
 	return 0;
 }

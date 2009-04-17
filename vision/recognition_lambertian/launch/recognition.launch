@@ -8,5 +8,6 @@
    <param name="display" type="bool" value="true" />
  </node>
 
+   <param name="/recognition_lambertian/display" type="bool" value="true" />
 </launch>
 
