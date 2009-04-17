@@ -71,10 +71,6 @@ namespace nav {
     ros_node_.param("~circumscribed_radius", circumscribed_radius_, 0.46);
     ros_node_.param("~inflation_radius", inflation_radius_, 0.55);
 
-    ros_node_.param("~xy_goal_tolerance", xy_goal_tolerance_, 0.1);
-    ros_node_.param("~yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
-    ros_node_.param("~base_local_planner/min_abs_theta_vel", min_abs_theta_vel_, 0.4);
-
     //pass on inlfation parameters to the planner's costmap if they're not set explicitly
     if(!ros_node_.hasParam("~navfn/costmap/inscribed_radius")) ros_node_.setParam("~navfn/costmap/inscribed_radius", inscribed_radius_);
     if(!ros_node_.hasParam("~navfn/costmap/circumscribed_radius")) ros_node_.setParam("~navfn/costmap/circumscribed_radius", circumscribed_radius_);

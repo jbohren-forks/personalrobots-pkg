@@ -138,7 +138,6 @@ namespace nav {
       robot_actions::Pose2D goal_;
 
       tf::Stamped<tf::Pose> global_pose_;
-      double xy_goal_tolerance_, yaw_goal_tolerance_, min_abs_theta_vel_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;
       double controller_frequency_;
 
