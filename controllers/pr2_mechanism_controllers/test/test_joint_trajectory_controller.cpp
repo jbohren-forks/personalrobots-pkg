@@ -58,23 +58,16 @@ int main( int argc, char** argv )
   robot_msgs::JointTraj cmd;
 
   int num_points = 1;
-  int num_joints = 10;
+  int num_joints = 3;
 
   cmd.set_points_size(num_points);
 
   for(int i=0; i<num_points; i++)
     cmd.points[i].set_positions_size(num_joints);
 
-  cmd.points[0].positions[0] = 0.0;
+  cmd.points[0].positions[0] = 2.0;
   cmd.points[0].positions[1] = 0.0;
   cmd.points[0].positions[2] = 0.0;
-  cmd.points[0].positions[3] = -0.0;
-  cmd.points[0].positions[4] = 0.0;
-  cmd.points[0].positions[5] = 0.0;
-  cmd.points[0].positions[6] = 0.0;
-  cmd.points[0].positions[7] = -2.0;
-  cmd.points[0].positions[8] = 0.0;
-  cmd.points[0].positions[9] = -0.0;
   cmd.points[0].time = 0.0;
 
   node->advertise<robot_msgs::JointTraj>("base/trajectory_controller/command",1);
