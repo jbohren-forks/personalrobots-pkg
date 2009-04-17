@@ -74,6 +74,36 @@
 
 using namespace std;
 
+
+template <typename T>
+class IndexedIplImage
+{
+public:
+	IplImage* img_;
+	T* p;
+
+	IndexedIplImage(IplImage* img) : img_(img)
+	{
+		p = (T*)img_->imageData;
+	}
+
+	operator IplImage*()
+	{
+		return img_;
+	}
+
+	T at(int x, int y, int chan = 0)
+	{
+		return *(p+y*img_->width+x*img_->nChannels+chan);
+	}
+
+	T integral_sum(const CvRect &r)
+	{
+		return at(r.x+r.width,r.y+r.height)-at(r.x+r.width,r.y)-at(r.x,r.y+r.height)+at(r.x,r.y);
+	}
+
+};
+
 class HandleDetector : public ros::Node
 {
 public:
@@ -416,6 +446,75 @@ private:
 //        printf("Show marker at: (%f,%f,%f)", marker.x, marker.y, marker.z);
 //    }
 
+
+
+    CvPoint getDisparityCenter(CvRect& r)
+    {
+		CvMoments moments;
+		double M00, M01, M10;
+
+        cvSetImageROI(disp, r);
+        cvSetImageCOI(disp, 1);
+    	cvMoments(disp,&moments,1);
+    	M00 = cvGetSpatialMoment(&moments,0,0);
+    	M10 = cvGetSpatialMoment(&moments,1,0);
+    	M01 = cvGetSpatialMoment(&moments,0,1);
+        cvResetImageROI(disp);
+        cvSetImageCOI(disp, 0);
+
+        CvPoint center;
+        center.x = r.x+(int)(M10/M00);
+        center.y = r.y+(int)(M01/M00);
+
+        return center;
+    }
+
+
+    void tryShrinkROI(CvRect& r)
+    {
+        cvSetImageROI(disp, r);
+    	IplImage* integral_patch = cvCreateImage(cvSize(r.width+1, r.height+1), IPL_DEPTH_32S, 1);
+    	cvIntegral(disp, integral_patch);
+    	IndexedIplImage<int> ipatch(integral_patch);
+
+    	CvRect r2 = r;
+    	CvRect p;
+    	p.x = 0;
+    	p.y = 0;
+    	p.height = r.height;
+    	p.width = 1;
+    	while (ipatch.integral_sum(p)==0 && p.x<r.width) {
+    		p.x++;
+    	}
+    	r2.x = r.x+p.x;
+
+    	p.x = r.width-1;
+    	while (ipatch.integral_sum(p)==0 && p.x>0) {
+    		p.x--;
+    	}
+    	r2.width = r.x-r2.x+p.x;
+
+    	p.x = 0;
+    	p.y = 0;
+    	p.height = 1;
+    	p.width = r.width;
+    	while (ipatch.integral_sum(p)==0 && p.y<r.height) {
+    		p.y++;
+    	}
+    	r2.y = r.y+p.y;
+
+    	p.y = r.height-1;
+    	while (ipatch.integral_sum(p)==0 && p.y>0) {
+    		p.y--;
+    	}
+    	r2.height = r.y-r2.y+p.y;
+
+    	r = r2;
+        cvResetImageROI(disp);
+        cvReleaseImage(&integral_patch);
+
+    }
+
     /**
      * \brief Determine if it's possible for handle to be in a specific ROI
      *
@@ -424,20 +523,33 @@ private:
      * @param r
      * @return
      */
-    bool handlePossibleHere(const CvRect &r)
+    bool handlePossibleHere(CvRect &r)
     {
-        const float nz_fraction = 0.1;
+
+//        CvPoint center = getDisparityCenter(r);
+//        cvCircle(left,center,10,CV_RGB(0,255,0));
+
+        tryShrinkROI(r);
+//        cvRectangle(disp, cvPoint(r.x, r.y), cvPoint(r.x + r.width, r.y + r.height), CV_RGB(255, 255, 255));
+
+        if (r.width<10 || r.height<10) {
+        	return false;
+        }
 
         cvSetImageROI(disp, r);
         cvSetImageCOI(disp, 1);
-        int cnt = cvCountNonZero(disp);
+
+        int cnt;
+        const float nz_fraction = 0.1;
+        cnt = cvCountNonZero(disp);
+        if (cnt < nz_fraction * r.width * r.height){
+        		cvResetImageROI(disp);
+        		cvSetImageCOI(disp, 0);
+        		return false;
+        }
         cvResetImageROI(disp);
         cvSetImageCOI(disp, 0);
 
-        if(cnt < nz_fraction * r.width * r.height){
-        	printf("Not enough coverage\n");
-            return false;
-        }
 
         // compute least-squares handle plane
         robot_msgs::PointCloud pc = filterPointCloud(r);
@@ -518,6 +630,7 @@ private:
                     handle_rect.push_back(*r);
 //                    if(display){
 //                        cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(0, 255, 0));
+//                        cvRectangle(disp, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 255, 255));
 //                    }
                 }
                 else{
