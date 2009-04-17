@@ -61,15 +61,13 @@ class PoseStamped
 public:
   PoseStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
-    parent_id("PARENT_ID_UNINITIALIZED"),
     _sec(0), _nsec(0) {pose = new py::Transform();};
   PoseStamped(const py::Transform& p, int stamp_sec, int stamp_nsec, const std::string& frame_id_in):
     frame_id(frame_id_in),
-    parent_id("PARENT_ID_UNINITIALIZED"), _sec(stamp_sec), _nsec(stamp_nsec)  {pose = new py::Transform(p);};
+    _sec(stamp_sec), _nsec(stamp_nsec)  {pose = new py::Transform(p);};
   ~PoseStamped(){delete pose;};
   py::Transform* pose;
   std::string frame_id;
-  std::string parent_id;
   int _sec;
   int _nsec;
 };
@@ -80,15 +78,13 @@ class PointStamped
 public:
   PointStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
-    parent_id("PARENT_ID_UNINITIALIZED"),
     _sec(0), _nsec(0) {point = new py::Vector3();};
   PointStamped(const py::Vector3& p, int sec, int nsec, const std::string& frame_id_in):
     frame_id(frame_id_in),
-    parent_id("PARENT_ID_UNINITIALIZED"), _sec(sec), _nsec(nsec)  {point = new py::Vector3(p);};
+    _sec(sec), _nsec(nsec)  {point = new py::Vector3(p);};
   ~PointStamped() {delete point;};
   py::Vector3* point;
   std::string frame_id;
-  std::string parent_id;
   int _sec;
   int _nsec;
 };
@@ -99,15 +95,13 @@ class VectorStamped
 public:
   VectorStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
-    parent_id("PARENT_ID_UNINITIALIZED"),
     _sec(0), _nsec(0) {vector = new py::Vector3();};
   VectorStamped(const py::Vector3& v, int sec, int nsec, const std::string& frame_id_in):
     frame_id(frame_id_in),
-    parent_id("PARENT_ID_UNINITIALIZED"), _sec(sec), _nsec(nsec)  {vector = new py::Vector3(v);};
+    _sec(sec), _nsec(nsec)  {vector = new py::Vector3(v);};
   ~VectorStamped() { delete vector;};
   py::Vector3* vector;
   std::string frame_id;
-  std::string parent_id;
   int _sec;
   int _nsec;
 };
@@ -118,15 +112,13 @@ class QuaternionStamped
 public:
   QuaternionStamped():
     frame_id("FRAME_ID_UNINITIALIZED"),
-    parent_id("PARENT_ID_UNINITIALIZED"),
     _sec(0), _nsec(0) {quaternion = new py::Quaternion();};
   QuaternionStamped(const py::Quaternion& q, int sec, int nsec, const std::string& frame_id_in):
     frame_id(frame_id_in),
-    parent_id("PARENT_ID_UNINITIALIZED"), _sec(sec), _nsec(nsec)  {quaternion = new py::Quaternion(q);};
+    _sec(sec), _nsec(nsec)  {quaternion = new py::Quaternion(q);};
   ~QuaternionStamped(){delete quaternion;};
   py::Quaternion* quaternion;
   std::string frame_id;
-  std::string parent_id;
   int _sec;
   int _nsec;
 };
