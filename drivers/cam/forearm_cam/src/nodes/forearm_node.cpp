@@ -41,6 +41,7 @@
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <robot_mechanism_controllers/SetWaveform.h>
 #include <robot_mechanism_controllers/trigger_controller.h>
+#include <stdlib.h>
 
 #include "pr2lib.h"
 #include "host_netutil.h"
@@ -161,6 +162,18 @@ public:
     IpCamList camList;
     pr2CamListInit(&camList);
 
+    // Set anti-spoofing filter off on camera interface. Needed to prevent
+    // the first reply from the camera from being filtered out.
+    // @todo Should we be setting rp_filter to zero here? This may violate
+    // the user's secutity preferences?
+    std::string rp_str = "sysctl net.ipv4.conf."+if_name+".rp_filter|grep -q 0||sysctl -q -w net.ipv4.conf."+if_name+".rp_filter=0";
+    ROS_DEBUG("Running \"%s\"", rp_str.c_str());
+    int retval = system(rp_str.c_str());
+    if (retval == -1 || !WIFEXITED(retval) || WEXITSTATUS(retval))
+    {
+      ROS_WARN("Unable to set rp_filter to 0 on interface. Camera discovery is likely to fail.");
+    }
+
     // Discover any connected cameras, wait for 0.5 second for replies
     if( pr2Discover(if_name.c_str(), &camList, SEC_TO_USEC(0.5)) == -1) {
       ROS_FATAL("Discover error");
@@ -189,7 +202,7 @@ public:
     camera_ = pr2CamListGetEntry(&camList, index);
 
     // Configure the camera with its IP address, wait up to 500ms for completion
-    int retval = pr2Configure(camera_, ip_address.c_str(), SEC_TO_USEC(0.5));
+    retval = pr2Configure(camera_, ip_address.c_str(), SEC_TO_USEC(0.5));
     if (retval != 0) {
       if (retval == ERR_CONFIG_ARPFAIL) {
         ROS_WARN("Unable to create ARP entry (are you root?), continuing anyway");
@@ -226,7 +239,7 @@ public:
     }
 
     // Configure the triggering controller
-    if ( node_.hasParam("~trigger_controller") )
+    if ( ext_trigger_ && node_.hasParam("~trigger_controller") )
     {
       node_.getParam("~trigger_controller", trig_controller_);
       ROS_INFO("Configuring controller \"%s\" for triggering.", trig_controller_.c_str());
@@ -394,14 +407,15 @@ private:
 
     // Check for short packet (video lines were missing)
     if (eofInfo->header.line_number == IMAGER_LINENO_SHORT) {
-      ROS_WARN("Short frame #%u (video lines were missing)", eofInfo->header.frame_number);
+      ROS_WARN("Short frame #%u (%i video lines were missing, last was %i)", eofInfo->header.frame_number, 
+          eofInfo->header.vert_resolution, eofInfo->header.horiz_resolution);
       return 0;
     }
 
     publishImage(width, height, frameData, ros::Time(imageTime));
     count_++;
     diagnostic_.update();
-
+  
     return 0;
   }
 
