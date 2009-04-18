@@ -45,7 +45,6 @@
 #include <costmap_2d/costmap_2d.h>
 #include <navfn/navfn_ros.h>
 #include <base_local_planner/trajectory_planner_ros.h>
-#include <angles/angles.h>
 #include <vector>
 #include <string>
 
@@ -111,34 +110,6 @@ using robot_actions::Pose2D;
       void prunePlan();
 
       /**
-       * @brief Once a goal is reached... rotate to the goal orientation
-       * @param  cmd_vel The velocity commands to be filled
-       */
-      void rotateToGoal(robot_msgs::PoseDot& cmd_vel);
-
-      /**
-       * @brief  Check if the goal orientation has been achieved
-       * @return True if achieved, false otherwise
-       */
-      bool goalOrientationReached();
-
-      /**
-       * @brief  Check if the goal position has been achieved
-       * @return True if achieved, false otherwise
-       */
-      bool goalPositionReached();
-
-      /**
-       * @brief  Compute the distance between two points
-       * @param x1 The first x point 
-       * @param y1 The first y point 
-       * @param x2 The second x point 
-       * @param y2 The second y point 
-       * @return 
-       */
-      double distance(double x1, double y1, double x2, double y2);
-
-      /**
        * @brief  Get the current pose of the robot in the global frame and set the global_pose_ variable
        */
       void updateGlobalPose();
@@ -170,7 +141,6 @@ using robot_actions::Pose2D;
       ConstrainedGoal goal_;
 
       tf::Stamped<tf::Pose> global_pose_;
-      double xy_goal_tolerance_, yaw_goal_tolerance_, min_abs_theta_vel_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;
       double controller_frequency_;
 
