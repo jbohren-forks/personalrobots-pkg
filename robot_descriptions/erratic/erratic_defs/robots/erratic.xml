@@ -1,0 +1,270 @@
+<?xml version="1.0"?>
+<robot name="erratic"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
+  <property name="M_PI" value="3.14159"/>
+
+  <property name="base_size_x" value="0.41" />
+  <property name="base_size_y" value="0.385" />
+  <property name="base_size_z" value="0.18" />
+
+
+  <property name="wheel_radius" value="0.075" />
+  <property name="wheel_length" value="0.02" />
+  <property name="caster_wheel_offset_y" value="0.17" />
+
+  <link name="base_link">
+    <parent name="world" />
+    <origin xyz="0 0 0.051" rpy="0 0 0" />
+    <joint name="base_joint" />
+    
+    <inertial>
+      <mass value="20" />
+      <com xyz="-0.1 0 ${base_size_z/2}" />
+      <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
+               iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
+    </inertial>
+    
+    <visual>
+      <origin xyz="-0.075 0 0.115" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material" value="Gazebo/Blue" />
+      </map>
+      <geometry name="base_visual">
+        <mesh scale="0.22 0.29 0.14" />
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="-0.075 0 0.115" rpy="0 0 0" />
+      <geometry name="box">
+        <box size="0.22 0.29 0.14" />
+      </geometry>
+    </collision>
+  </link>
+
+
+  <link name="base_top_link">
+    <parent name="base_link" />
+    <origin xyz="0 0 0.051" rpy="0 0 0" />
+    <joint name="base_top_joint" type="fixed" />
+    
+    <inertial>
+      <mass value="0.01"/>
+      <com xyz="0 0 ${base_size_z/2}" />
+      <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
+               iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
+    </inertial>
+
+    <visual>
+      <origin xyz="-0.08 0 0.13" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material" value="Gazebo/Blue" />
+      </map>
+      <geometry name="base_visual">
+        <mesh scale="${base_size_x} ${base_size_y} 0.01" />
+      </geometry>
+    </visual>
+    
+    
+    <collision>
+      <origin xyz="-0.08 0 0.13" rpy="0 0 0" />
+      <geometry name="box">
+        <box size="${base_size_x} ${base_size_y} 0.01" />
+      </geometry>
+    </collision>
+  </link>
+
+  
+  <macro name="erratic_wheel" params="suffix parent reflect">
+    <joint name="${parent}_${suffix}_wheel_joint" type="revolute">
+      <axis xyz="0 1 0" />
+      <anchor xyz="0 0 0" />
+      <limit effort="100" velocity="100" k_velocity="10" />
+      <calibration values="1.5 -1" />
+      <joint_properties damping="0.0" friction="0.0" />
+    </joint>
+    
+    <link name="${parent}_${suffix}_wheel_link">
+      <parent name="${parent}" />
+      <joint name="${parent}_${suffix}_wheel_joint" />
+      <origin xyz="0 ${reflect*caster_wheel_offset_y} ${wheel_radius}" rpy="0 0 0" />
+      <inertial>
+        <mass value="0.01" /> <!-- check jmh 20081205 -->
+        <com xyz=" 0 0 0 " />
+        <inertia  ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983"
+                  iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <!-- TODO should be different for left and right wheel-->
+          <elem key="material" value="Gazebo/Black" />
+        </map>
+        <geometry name="${parent}_${suffix}_wheel_visual">
+          <mesh scale="${wheel_radius*2} ${wheel_radius*2} ${wheel_length}" />
+        </geometry>
+	
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+        <geometry name="${parent}_${suffix}_wheel_collision">
+          <cylinder radius="${wheel_radius}" length="${wheel_length}" />
+        </geometry>
+        <map name="friction_coefficients" flag="gazebo">
+          <elem key="mu1" value="50.0" />
+          <elem key="mu2" value="50.0" />
+          <elem key="kp"  value="100000000.0" />
+          <elem key="kd"  value="1.0" />
+        </map>
+      </collision>
+    </link>
+  </macro>
+
+
+  <erratic_wheel suffix="left" parent="base_link" reflect="1"/>
+  <erratic_wheel suffix="right" parent="base_link" reflect="-1"/>
+  
+  <link name="base_caster_box_link">
+    <parent name="base_link" />
+    <origin xyz="0 0 0.051" rpy="0 0 0" />
+    <joint name="base_caster_box_joint" type="fixed" />
+    
+    <inertial>
+      <mass value="0.1"/>
+      <com xyz="0 0 ${base_size_z/2}" />
+      <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
+               iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
+    </inertial>
+
+    <visual>
+      <origin xyz="-0.23 0 0.08" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material" value="Gazebo/Black" />
+      </map>
+      <geometry name="base_visual">
+        <mesh scale="0.09 0.02 0.10" />
+      </geometry>
+    </visual>
+    
+    <collision>
+      <origin xyz="-0.23 0 0.08" rpy="0 0 0" />
+      <geometry name="box">
+        <box size="0.09 0.02 0.10" />
+      </geometry>
+    </collision>
+  </link>
+  
+  <link name="base_caster_support_link">
+    <parent name="base_caster_box_link" />
+    <origin xyz="-0.265 0 0.0" rpy="0 0 0" />
+
+    <!--<joint name="base_caster_support_joint" type="revolute">
+      <axis xyz="0 0 1" />
+      <anchor xyz="0.01 0 0" />
+      <limit effort="100" velocity="100" k_velocity="0" />
+      <calibration values="1.5 -1" />
+      <joint_properties damping="0.0" friction="0.0" />
+    </joint>-->
+    <joint name="base_caster_support_joint" type="fixed"/>
+    
+    <inertial>
+      <mass value="0.01"/>
+      <com xyz="0 0 0" />
+      <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
+               iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
+    </inertial>
+
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material" value="Gazebo/Grey" />
+      </map>
+      <geometry name="base_visual">
+        <mesh scale="0.03 0.02 0.06" />
+      </geometry>
+    </visual>
+    
+    <collision>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <geometry name="box">
+        <box size="0.03 0.02 0.06" />
+      </geometry>
+    </collision>
+  </link>
+
+
+
+
+
+
+
+
+  
+  
+  <joint name="caster_wheel_joint" type="revolute">
+    <axis xyz="0 1 0" />
+    <anchor xyz="0 0 0" />
+    <limit effort="100" velocity="100" k_velocity="0" />
+    <calibration values="1.5 -1" />
+    <joint_properties damping="0.0" friction="0.0" />
+  </joint>
+  
+  <link name="caster_wheel_link">
+    <parent name="base_caster_support_link" />
+    <joint name="caster_wheel_joint" />
+    <origin xyz="-0.02 0 -0.02" rpy="0 0 0" />
+    <inertial>
+      <mass value="0.01" /> 
+      <com xyz=" 0 0 0 " />
+      <inertia  ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983"
+                iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <!-- TODO should be different for left and right wheel-->
+        <elem key="material" value="Gazebo/Black" />
+      </map>
+      <geometry name="caster_wheel_visual">
+        <mesh scale="0.06 0.06 0.01" />
+      </geometry>
+      
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+      <geometry name="caster_wheel_collision">
+        <cylinder radius="0.03" length="0.01" />
+      </geometry>
+      <map name="friction_coefficients" flag="gazebo">
+        <elem key="mu1" value="50.0" />
+        <elem key="mu2" value="50.0" />
+        <elem key="kp"  value="100000000.0" />
+        <elem key="kd"  value="1.0" />
+      </map>
+    </collision>
+  </link>
+
+
+
+
+
+  <map name="base_link_gazebo_controller" flag="gazebo">
+    <verbatim key="base_link_gazebo_controller">
+      <controller:differential_position2d name="controller1">
+	<update>100</update>
+	<leftJoint>base_link_right_wheel_joint</leftJoint>
+	<rightJoint>base_link_left_wheel_joint</rightJoint>
+	<wheelSeparation>${caster_wheel_offset_y*2}</wheelSeparation>
+	<wheelDiameter>${wheel_radius*2}</wheelDiameter>
+	<torque>5</torque>
+	<interface:position name="position_iface_0"/>
+      </controller:differential_position2d>
+      
+    </verbatim>
+  </map>
+  
+  
+
+
+</robot>
