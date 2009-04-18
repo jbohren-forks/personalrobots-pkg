@@ -18,6 +18,9 @@
     <!-- wall with door opening -->
     <addline>  0     3     1    3    </addline>
     <addline>  2     3     3    3    </addline>
+    <addline>  4     3     5    3    </addline>
+    <addline>  6     3     7    3    </addline>
+    <addline>  8     3     9    3    </addline>
   </world>
   
   <task>
