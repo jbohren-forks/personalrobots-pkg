@@ -1,7 +1,7 @@
 #include <ros/node.h>
 #include <image_msgs/Image.h>
 #include <image_msgs/CamInfo.h>
-#include <image_msgs/CvBridge.h>
+#include <opencv_latest/CvBridge.h>
 #include <robot_msgs/PoseStamped.h>
 #include <prosilica_cam/PolledImage.h>
 #include <tf/transform_broadcaster.h>

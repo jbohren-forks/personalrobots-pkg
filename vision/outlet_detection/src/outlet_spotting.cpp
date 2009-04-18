@@ -41,7 +41,7 @@
 #include <string>
 #include <limits>
 
-#include "image_msgs/CvBridge.h"
+#include "opencv_latest/CvBridge.h"
 
 // opencv
 #include "opencv/cxcore.h"

@@ -48,7 +48,7 @@
 #include <robot_msgs/PointCloud.h>
 
 #include <image_msgs/Image.h>
-#include <image_msgs/CvBridge.h>
+#include <opencv_latest/CvBridge.h>
 #include <image_msgs/FillImage.h>
 #include <std_msgs/String.h>
 

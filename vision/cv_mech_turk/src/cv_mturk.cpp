@@ -11,7 +11,7 @@
 #include "opencv/highgui.h"
 #include "ros/node.h"
 #include "image_msgs/Image.h"
-#include "image_msgs/CvBridge.h"
+#include "opencv_latest/CvBridge.h"
 #include <stdlib.h>
 
 using namespace std;

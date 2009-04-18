@@ -38,7 +38,7 @@
 #include <image_msgs/Image.h>
 #include <image_msgs/CamInfo.h>
 #include <image_msgs/FillImage.h>
-#include <image_msgs/CvBridge.h>
+#include <opencv_latest/CvBridge.h>
 #include <diagnostic_updater/diagnostic_updater.h>
 
 #include <cv.h>

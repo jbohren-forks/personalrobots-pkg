@@ -38,7 +38,7 @@
 #define LED_DETECTION_LED_DETECTOR_H_
 
 
-#include "image_msgs/CvBridge.h"
+#include "opencv_latest/CvBridge.h"
 
 #include "image_msgs/Image.h"
 #include "image_msgs/CamInfo.h"

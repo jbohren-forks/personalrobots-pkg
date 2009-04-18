@@ -31,7 +31,7 @@
 
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
-#include "image_msgs/CvBridge.h"
+#include "opencv_latest/CvBridge.h"
 #include "image_msgs/Image.h"
 #include "math.h"
 

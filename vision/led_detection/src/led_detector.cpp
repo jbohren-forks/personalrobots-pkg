@@ -67,7 +67,7 @@ static void fillImageHelperCV(T& m, const IplImage* frame)
 
 /**
  * Converts an openCV IPL image into a ros image message
- * \todo Robustify and move this function into image_msgs/CvBridge.h
+ * \todo Robustify and move this function into opencv_latest/CvBridge.h
  * \param cv_image input: The IPL image to be converted
  * \param ros_image output: The location of the destination image
  */

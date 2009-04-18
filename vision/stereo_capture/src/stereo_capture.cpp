@@ -40,7 +40,7 @@
 #include <iomanip>
 
 
-#include "image_msgs/CvBridge.h"
+#include "opencv_latest/CvBridge.h"
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"

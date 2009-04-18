@@ -47,7 +47,7 @@
 #include "image_msgs/DisparityInfo.h"
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/Image.h"
-#include "image_msgs/CvBridge.h"
+#include "opencv_latest/CvBridge.h"
 #include "image_msgs/ColoredLine.h"
 #include "image_msgs/ColoredLines.h"
 #include "topic_synchronizer/topic_synchronizer.h"

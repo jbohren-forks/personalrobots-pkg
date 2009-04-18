@@ -53,7 +53,7 @@
 #include <robot_msgs/VisualizationMarker.h>
 
 
-#include "image_msgs/CvBridge.h"
+#include "opencv_latest/CvBridge.h"
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/DisparityInfo.h"
 #include "image_msgs/CamInfo.h"

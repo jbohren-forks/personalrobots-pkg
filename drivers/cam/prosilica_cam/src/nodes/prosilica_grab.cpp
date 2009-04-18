@@ -1,5 +1,5 @@
 #include "ros/node.h"
-#include "image_msgs/CvBridge.h"
+#include "opencv_latest/CvBridge.h"
 
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
