@@ -32,6 +32,7 @@
 #include <boost/scoped_ptr.hpp>
 #include "mechanism_model/robot.h"
 #include "mechanism_model/chain.h"
+#include "tf_conversions/tf_kdl.h"
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include "test_helpers.h"
 
@@ -112,21 +113,21 @@ TEST_F(ShortTreeTest, FKMatchOnTrees)
 
   // Compares the resulting transforms/frames
   tf::Transform from_kdl, from_mech ;
-  TransformKDLToTF(kdl_frames[0], from_kdl);
+  tf::TransformKDLToTF(kdl_frames[0], from_kdl);
 
   from_mech = tf::Transform(state->link_states_[0].abs_orientation_,
                             state->link_states_[0].abs_position_);
 
   EXPECT_TRANSFORMS_EQ(from_mech, from_kdl) << "...and this was for link " << 0 ;
 
-  TransformKDLToTF(kdl_frames[1], from_kdl);
+  tf::TransformKDLToTF(kdl_frames[1], from_kdl);
 
   from_mech = tf::Transform(state->link_states_[1].abs_orientation_,
                             state->link_states_[1].abs_position_);
 
   EXPECT_TRANSFORMS_EQ(from_mech, from_kdl) << "...and this was for link " << 1 ;
 
-  TransformKDLToTF(kdl_frames[2], from_kdl);
+  tf::TransformKDLToTF(kdl_frames[2], from_kdl);
 
   from_mech = tf::Transform(state->link_states_[2].abs_orientation_,
                             state->link_states_[2].abs_position_);

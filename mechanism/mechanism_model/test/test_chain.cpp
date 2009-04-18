@@ -32,6 +32,7 @@
 #include <boost/scoped_ptr.hpp>
 #include "mechanism_model/robot.h"
 #include "mechanism_model/chain.h"
+#include "tf_conversions/tf_kdl.h"
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include "test_helpers.h"
 
@@ -106,7 +107,7 @@ TEST_F(ShortChainTest, FKShouldMatchOnShortChainWhenStraight)
   for (unsigned int i = 0; i < model.links_.size(); ++i)
   {
     tf::Transform from_kdl;
-    TransformKDLToTF(kdl_frames[i], from_kdl);
+    tf::TransformKDLToTF(kdl_frames[i], from_kdl);
 
     tf::Transform from_mech(state->link_states_[i].abs_orientation_,
                             state->link_states_[i].abs_position_);
