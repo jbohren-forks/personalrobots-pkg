@@ -35,7 +35,7 @@
 //! \author Vijay Pradeep
 
 #include <gtest/gtest.h>
-#include <kinematic_calibration/msg_cache.h>
+#include "../deprecated/msg_cache.h"
 #include <robot_msgs/PointStamped.h>
 #include <ros/time.h>
 
