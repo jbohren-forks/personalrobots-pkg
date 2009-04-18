@@ -859,6 +859,14 @@ TEST(tf, Exceptions)
  }
  
 
+ ros::Duration timeout = ros::Duration().fromSec(2.0);
+ double eps = 0.2;
+ ros::Time start_time = ros::Time::now();
+ EXPECT_FALSE(mTR.canTransform("parent", "me", ros::Time().fromNSec(10000000), timeout));
+ ros::Time stop_time = ros::Time::now();
+ EXPECT_TRUE(fabs(((stop_time-start_time)-timeout).toSec()) < eps);
+
+
  mTR.setTransform( Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time().fromNSec(100000) , "me",  "parent"));
 
  //Extrapolation not valid with one value
@@ -898,6 +906,12 @@ TEST(tf, Exceptions)
    printf("%s\n",ex.what());
    EXPECT_FALSE("Other Exception Caught");
  }
+
+ start_time = ros::Time::now();
+ EXPECT_TRUE(mTR.canTransform("parent", "me", ros::Time().fromNSec(200000),timeout));
+ stop_time = ros::Time::now();
+ EXPECT_TRUE(fabs(((stop_time-start_time)).toSec()) < eps);
+
 
  //forward list
  EXPECT_TRUE(mTR.canTransform("me", "parent", ros::Time().fromNSec(200000)));
