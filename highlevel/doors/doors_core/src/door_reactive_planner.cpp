@@ -58,11 +58,11 @@ void DoorReactivePlanner::getParams()
   node_.param<double>("~door_reactive_planner/max_explore_distance",max_explore_distance_,2.0);
   node_.param<double>("~door_reactive_planner/max_explore_delta_angle",max_explore_delta_angle_,M_PI/4.0+0.1);
   node_.param<double>("~door_reactive_planner/door_goal_distance",door_goal_distance_,0.7);
-
   node_.param<int>("~door_reactive_planner/num_explore_paths",num_explore_paths_,32);
   node_.param<bool>("~door_reactive_planner/choose_straight_line_trajectory",choose_straight_line_trajectory_,false);
-  node_.param<double>("~door_reactive_planner/circumscribed_radius",circumscribed_radius_,0.46);
-  node_.param<double>("~door_reactive_planner/inscribed_radius",inscribed_radius_,0.325);
+
+  node_.param<double>("~door_reactive_planner/costmap/circumscribed_radius",circumscribed_radius_,0.46);
+  node_.param<double>("~door_reactive_planner/costmap/inscribed_radius",inscribed_radius_,0.325);
 
   max_inflated_cost_ = cost_map_->computeCost(min_distance_from_obstacles_);
   cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),1);
@@ -103,6 +103,14 @@ void DoorReactivePlanner::setDoor(robot_msgs::Door door_msg_in)
   goal_.th = centerline_angle_;
 
   door_information_set_ = true;
+}
+
+bool DoorReactivePlanner::getGoal(robot_actions::Pose2D &goal)
+{
+  if(!door_information_set_)
+    return false;
+  goal = goal_;
+  return true;
 }
 
 bool DoorReactivePlanner::computeOrientedFootprint(const robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint)
@@ -199,7 +207,7 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
   double delta_theta = max_explore_delta_angle_/num_explore_paths_;
   double distance_to_centerline;
 
-  best_path.clear();
+  best_path.resize(0);
   distance_to_centerline = (start.x-goal_.x)*vector_along_door_.x + (start.y-goal_.y)*vector_along_door_.y;
 
   for(int i=0; i < num_explore_paths_; i++)
@@ -214,6 +222,7 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
       double new_distance = distance(checked_path.back(),goal_);
       if( new_distance < max_distance_to_goal)
       {
+        best_path.resize(checked_path.size());
         best_path = checked_path;
         max_distance_to_goal = new_distance;
       }
@@ -233,11 +242,14 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
       double new_distance = distance(checked_path.back(),goal_);
       if(new_distance < max_distance_to_goal)
       {
+        best_path.resize(checked_path.size());
         best_path = checked_path;
         max_distance_to_goal = new_distance;
       }
     }
   } 
+  if(best_path.size() == 0)
+    return false;
   return true;
 }
 

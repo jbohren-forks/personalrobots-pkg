@@ -90,6 +90,22 @@ namespace door_reactive_planner
      */
     void setDoor(robot_msgs::Door door_msg_in);
 
+    /**
+     * @brief compute the oriented footprint for a particular position of the robot 
+     * @param position Position of the robot
+     * @param footprint_spec The footprint of the robot
+     * @param oriented_footprint The oriented footprint of the robot
+     */
+    bool computeOrientedFootprint(const robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint); 
+
+    std::vector<robot_msgs::Point> footprint_; /**< The footprint of the robot */
+
+    /**
+     * @brief Get the goal position from the planner
+     * @return The goal position for the planner
+     */
+    bool getGoal(robot_actions::Pose2D &goal);
+
     private:
 
     ros::Node &node_;/**< A reference to a ros node */
@@ -138,17 +154,7 @@ namespace door_reactive_planner
 
     bool door_information_set_ ; /**< Has door information been set before invoking the planner */
 
-    std::vector<robot_msgs::Point> footprint_; /**< The footprint of the robot */
-
     void getParams(); /**< Check ROS param server for parameters */
-
-    /**
-     * @brief compute the oriented footprint for a particular position of the robot 
-     * @param position Position of the robot
-     * @param footprint_spec The footprint of the robot
-     * @param oriented_footprint The oriented footprint of the robot
-     */
-    bool computeOrientedFootprint(const robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint); 
 
     /**
      * @brief Translational distance between two positions
@@ -209,6 +215,7 @@ namespace door_reactive_planner
      * @param frame_in The frame in which the output point is specified
      */
     void transform2DPose(const robot_actions::Pose2D &point_in, const std::string original_frame_id, robot_actions::Pose2D &point_out, const std::string &transform_frame_id);
+
   };
 }
 
