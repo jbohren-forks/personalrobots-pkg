@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <robot name="erratic"
+       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
        xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
   <property name="M_PI" value="3.14159"/>
@@ -265,6 +266,61 @@
   </map>
   
   
+  <sensor name="base_laser" type="laser">
+    <parent name="base_link"/>
+    <origin rpy="0 0 0" xyz="0.0 0 0.205"/>
+    <joint name="base_laser_joint" type="fixed"/>
+    <inertial>
+      <mass value="0.01"/>
+      <com xyz="0 0 0.0"/>
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+    </inertial>
+    
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+      <map flag="gazebo" name="gazebo_material">
+        <elem key="material" value="Gazebo/PioneerBody"/>
+      </map>
+      <geometry name="base_laser_visual">
+        <mesh scale=".1 .1 .05"/>
+      </geometry>
+    </visual>
+    
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+      <geometry name="base_laser_collision">
+        <cylinder size=".1 .1 .05"/>
+      </geometry>
+    </collision>
+    
+    <map flag="gazebo" name="sensor">
+      <verbatim key="sensor_base_laser_ray">
+        <sensor:ray name="base_laser">
+          <rayCount>640</rayCount>
+          <rangeCount>640</rangeCount>
+          <laserCount>1</laserCount>
+          <origin>0.0 0.0 0.0</origin>
+          <displayRays>false</displayRays>
+	  
+          <minAngle>-100</minAngle> <!-- scans own arms if -135~+135 -->
+          <maxAngle>100</maxAngle>
+	  
+          <minRange>0.05</minRange>
+          <maxRange>10.0</maxRange>
+          <updateRate>20.0</updateRate>
+          <controller:ros_laser name="ros_base_laser_controller" plugin="libros_laser.so">
+            <gaussianNoise>0.005</gaussianNoise>
+            <alwaysOn>true</alwaysOn>
+	    <updateRate>20.0</updateRate>
+	    <topicName>base_scan</topicName>
+	    <frameName>base_laser</frameName>
+	    <interface:laser name="ros_base_laser_iface"/>
+          </controller:ros_laser>
+        </sensor:ray>
+      </verbatim>
+    </map>
+  </sensor>
+
 
 
 </robot>
