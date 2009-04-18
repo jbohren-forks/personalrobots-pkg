@@ -270,10 +270,10 @@ namespace door_base_collision_cost
     local_door_open_angle_   = angles::shortest_angular_distance(door_frame_global_yaw_,global_door_open_angle_);
     local_door_closed_angle_ = angles::shortest_angular_distance(door_frame_global_yaw_,global_door_closed_angle_);
     local_door_min_angle_ = std::min<double>(local_door_open_angle_,local_door_closed_angle_);
-    local_door_max_angle_ = std::max<double>(local_door_open_angle_,local_door_closed_angle_);
+    local_door_max_angle_ = std::max<double>(local_door_open_angle_,local_door_closed_angle_);      
   }
 
-  void DoorBaseCollisionCost::getValidDoorAngles(const robot_msgs::Point32 &global_position, const double &global_yaw, std::vector<int> &valid_angles, std::vector<int> &valid_cost) 
+  void DoorBaseCollisionCost::getValidDoorAngles(const robot_msgs::Point32 &global_position, const double &global_yaw, std::vector<int> &valid_angles, std::vector<int> &valid_cost, std::vector<unsigned char> &valid_interval) 
   {
     double min_obstructed_angle(0.0),max_obstructed_angle(0.0);
     std::vector<robot_msgs::Point32> door_fp;
@@ -299,6 +299,13 @@ namespace door_base_collision_cost
         {
           valid_angles.push_back((int)(new_angle*180.0/M_PI));
           valid_cost.push_back((int) cost);
+          if(rot_dir_)
+            valid_interval.push_back(0);
+          else
+            valid_interval.push_back(1);
+#ifdef DEBUG
+          printf("Interval: %d\n",valid_interval.back());
+#endif
         }
       }
     }
@@ -316,6 +323,13 @@ namespace door_base_collision_cost
         {
           valid_angles.push_back((int)(new_angle*180.0/M_PI));
           valid_cost.push_back((int) cost);
+          if(rot_dir_)
+            valid_interval.push_back(1);
+          else
+            valid_interval.push_back(0);
+#ifdef DEBUG
+          printf("Interval: %d\n",valid_interval.back());
+#endif
         }
       }
     }

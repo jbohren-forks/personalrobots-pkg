@@ -48,8 +48,7 @@ namespace door_base_collision_cost
 
     void init();
 
-    void getValidDoorAngles(const robot_msgs::Point32 &global_position, const double &global_yaw, std::vector<int> &valid_angle, std::vector<int> &valid_cost);
-
+    void getValidDoorAngles(const robot_msgs::Point32 &global_position, const double &global_yaw, std::vector<int> &valid_angles, std::vector<int> &valid_cost, std::vector<unsigned char> &valid_door_interval);
 
     std::vector<robot_msgs::Point32> footprint_;/*! 2D footprint of the robot */
 
@@ -88,6 +87,7 @@ namespace door_base_collision_cost
     void writeToFile(std::string filename);
 
     void writeSolution(const std::string &filename, const robot_msgs::Point32 &robot_position, const double &robot_yaw, const std::vector<int> &angles, const std::vector<int> &angle_costs);
+
 
     void getDesiredDoorAngles(const std::vector<int> &desired_door_anglesV, std::vector<int> &local_desired_door_angles);
 

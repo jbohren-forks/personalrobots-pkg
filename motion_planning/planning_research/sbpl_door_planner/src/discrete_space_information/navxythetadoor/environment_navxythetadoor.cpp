@@ -217,6 +217,7 @@ void EnvironmentNAVXYTHETADOORLAT::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t wor
   //Let me know if you can do it, and then I'll change my code to support it
 
     //dummy test
+    doorangleintV->clear();
     doorangleV->clear();
     dooranglecostV->clear();
 
@@ -233,7 +234,7 @@ void EnvironmentNAVXYTHETADOORLAT::GetValidDoorAngles(EnvNAVXYTHETALAT3Dpt_t wor
     robot_global_pose.y = worldrobotpose3D.y;
     robot_global_yaw = worldrobotpose3D.theta;
 
-    db_.getValidDoorAngles(robot_global_pose,robot_global_yaw,*doorangleV,*dooranglecostV);
+    db_.getValidDoorAngles(robot_global_pose,robot_global_yaw,*doorangleV,*dooranglecostV,*doorangleintV);
 
 //    for(int i=0; i<doorangleV->size(); i++)
 //    {
@@ -483,15 +484,17 @@ void EnvironmentNAVXYTHETADOORLAT::setDoorProperties(const robot_msgs::Door &doo
 
   //Set default desired door angle to door open position
   vector<int> desired_door_angles;
-  desired_door_angles.resize(1);
-  desired_door_angles[0] = angles::to_degrees(db_.global_door_open_angle_);
+  desired_door_angles.resize(10);
+  for(int i=0; i<10; i++)
+    desired_door_angles[i] = angles::to_degrees(angles::normalize_angle(db_.global_door_open_angle_-db_.door_frame_global_yaw_)) - db_.rot_dir_*i;
+  SetDesiredDoorAngles(desired_door_angles);
+
   printf("\n\nDoor hinge position: %f %f %f\n",hinge_global_x,hinge_global_y,hinge_global_z);
   printf("Door edge  position: %f %f %f\n",edge_global_x,edge_global_y,edge_global_z);
   printf("Door global yaw: %f\n",db_.door_frame_global_yaw_);
   printf("Rotation direction: %d\n",db_.rot_dir_);
   printf("Handle position in door frame: %f %f\n",db_.door_handle_position_.x,db_.door_handle_position_.y);
   printf("Global door open angle: %f\n",db_.global_door_open_angle_);
-  SetDesiredDoorAngles(desired_door_angles);
 }
 
 
