@@ -249,7 +249,14 @@ private:
                     _pUndistortionMapX = cvCreateImage( cvSize(frame->width, frame->height), IPL_DEPTH_32F, 1);
                 if( _pUndistortionMapY == NULL )
                     _pUndistortionMapY = cvCreateImage( cvSize(frame->width, frame->height), IPL_DEPTH_32F, 1);
+
+#ifdef HAVE_CV_UNDISTORT_RECTIFY_MAP // for newer opencv versions, *have* to use cvInitUndistortRectifyMap
+                float feye[9] = {1,0,0,0,1,0,0,0,1};
+                CvMat eye = cvMat(3,3,CV_32FC1, feye);
+                cvInitUndistortRectifyMap(_intrinsic_matrix,_distortion_coeffs,&eye,_intrinsic_matrix,_pUndistortionMapX, _pUndistortionMapY);
+#else
                 cvInitUndistortMap( _intrinsic_matrix, _distortion_coeffs, _pUndistortionMapX, _pUndistortionMapY );
+#endif
                 _bHasCalibration = true;
             }
             else
