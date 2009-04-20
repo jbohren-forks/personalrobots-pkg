@@ -1,7 +1,8 @@
 (roslisp:ros-load-message-types "robot_msgs/PointCloud" "robot_msgs/Point" "deprecated_msgs/Pose2DFloat32" 
-				"robot_actions/Pose2D" "robot_actions/MoveBaseState" "deprecated_msgs/Point2DFloat32")
+				"robot_actions/Pose2D" "robot_actions/MoveBaseState" "std_msgs/Empty"
+				"people_aware_nav/ConstrainedGoal" "people_aware_nav/ConstrainedMoveBaseState"
+				)
 (roslisp:ros-load-service-types "people_aware_nav/PersonOnPath")
-
 
 (defpackage :lane-following
   (:nicknames :lanes)
@@ -14,10 +15,14 @@
 		:y-val
 		:z-val
 		:goal-val
+		:<Point32>
+		:<Polygon3D>
 		:<PointCloud>
 		:pts-val)
   (:import-from :deprecated_msgs
-		:<Pose2DFloat32>))
+		:<Pose2DFloat32>)
+  (:import-from :roslib
+		:<Header>))
 
 
 (in-package :lane-following)
@@ -31,7 +36,7 @@
 
 (defparameter *robot-radius* .32 "Circumscribed radius of robot in metres")
 (defparameter *wall-buffer* .2 "Additional buffer distance that we'd like to keep from wall")
-(defparameter *path-clear-wait-time* 6 "How many seconds robot will wait for person to move")
+(defvar *person-on-path-use-stub* nil)
 (defvar *global-frame*)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -46,12 +51,11 @@
 ;; State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defvar *node-lock* (make-mutex :name "lane changer lock"))
 (defvar *robot-pose* nil "Robot's current 3d pose.  Set by pose-callback.")
 (defvar *hallway* (make-hallway nil nil) "Configuration of the hallway we're in.  Set by hallway-callback.")
 (defvar *move-base-result* nil "Did move-base succeed?.  Set by send-move-goal and state-callback.")
-(defvar *person-on-path* nil "Is a person on the path?.") ;; Maybe get rid of this?
 (defvar *current-goal* '(0 0) "Current nav goal.  Set by send-move-goal.")
+(defvar *new-goal* nil "A new nav goal received on the goal topic.  Set by goal-callback and (to nil) by main")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main
@@ -59,50 +63,45 @@
 
 (defun main ()
   (with-ros-node ("lane_changer")
-
-    ;; 1. setup
     (setup-node)
-    (loop
-       (format t "~&Hallway state is ~a" *hallway*)
-       (format t "~&Robot pose is ~a" *robot-pose*)
-       (format t "~&Enter next goal: ")
-       (let ((x (read)))
-	 (format t "~&Result is: ~a"
-		 (if (listp x)
-		     (goto (first x) (second x) (or (third x) 0.0))
-		     (move-to-right)))))))
+    (loop-at-most-every 1
+	 (when *new-goal* (apply #'goto *new-goal*)))))
 
 
 (defun setup-node ()
   (subscribe "hallway_points" "robot_msgs/PointCloud" #'hallway-callback)
   (subscribe "robot_pose" "deprecated_msgs/Pose2DFloat32" #'pose-callback)
-  (subscribe "/move_base_node/feedback" "robot_actions/MoveBaseState" #'state-callback)
-  (advertise "/move_base_node/activate" "robot_actions/Pose2D")
-  (advertise "/move_base_node/preempt" "robot_actions/Pose2D")
-  (setq *global-frame* (get-param "global_frame_id")))
+  (subscribe "move_base_node/feedback" "people_aware_nav/ConstrainedMoveBaseState" #'state-callback)
+  (subscribe "goal" "robot_actions/Pose2D" #'goal-callback)
+  (advertise "move_base_node/activate" "people_aware_nav/ConstrainedGoal")
+  (advertise "move_base_node/preempt" "std_msgs/Empty")
+  (setq *global-frame* (get-param "global_frame_id" "map")))
 
-			 
+  
 (defun goto (x y theta)
-  (unwind-protect 
+  (ros-info "Initiating hallway move to goal ~a ~a ~a" x y theta)
+  (setq *new-goal* nil *move-base-result* nil)
+  (unwind-protect
        (progn
+	 ;; Initial move
 	 (send-move-goal x y theta)
 	 (loop-at-most-every 1
-	      (format t ".")
-	      (when *move-base-result* 
-		(return-from goto *move-base-result*))
-	      (when (person-on-path)
-		(return)))
+	      (cond
+		(*move-base-result* (return-from goto *move-base-result*))
+		(*new-goal* (return-from goto :preempted))
+		((person-on-path) (return))))
 
-	 ;; Person on path
+	 ;; If person is on path
 	 (move-to-right)
-	 (constrained-move x y theta)
-	 (loop-at-most-every .1
-	    (when *move-base-result*
-	      (return *move-base-result*))))
+	 (send-move-goal x y theta :constrained t)
+	 (loop-at-most-every 1
+	      (cond
+		(*move-base-result* (return-from goto *move-base-result*))
+		(*new-goal* (return-from goto :preempted)))))
+
+    ;; Cleanup: always disable nav before exiting
     (disable-nav)))
 
-
-    
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Callouts
@@ -120,39 +119,27 @@
      (when *move-base-result* 
        (return *move-base-result*))))
 
-(defun constrained-move (x y theta)
-  "Move to x, y, theta, with a timeout parameter set, and with a constraint not to move backwards.  Backwards is defined by drawing a line behind the robot, perpendicular to its current heading."
-  (ros-info "Initiating constrained move")
-  (setq *current-goal* (list x y)
-	*move-base-result* nil)
-  (publish-on-topic "/move_base_node/activate"
-		    (make-instance 'robot_actions:<Pose2D>
-				   :header (make-instance 'roslib:<Header> :frame_id *global-frame*)
-				   :x x :y y :th theta
-				   :boundary (line-behind *robot-pose*))))
 
-(defun send-move-goal (x y th)
+(defun send-move-goal (x y th &key (constrained nil))
   (setq *current-goal* (list x y)
 	*move-base-result* nil)
   (publish-on-topic "/move_base_node/activate" 
-		    (make-instance 'robot_actions:<Pose2D>
-				   :header (make-instance 'roslib:<Header> :frame_id *global-frame*)
-				   :x x :y y :th th)))
+		    (make-instance 'people_aware_nav:<ConstrainedGoal>
+				   :header (make-instance '<Header> :frame_id *global-frame*)
+				   :x x :y y :th th :forbidden (make-boundary *robot-pose* constrained))))
 
 (defun disable-nav ()
-  (ros-info "Disabling nav")
-  (let ((m (make-instance 'robot_actions:<Pose2D>)))
-    (setf (roslib:frame_id-val (robot_actions:header-val m)) *global-frame*)
-    (publish-on-topic "/move_base_node/preempt" m)))
+  (publish-on-topic "/move_base_node/preempt" (make-instance 'std_msgs:<Empty>))
+  (ros-info "Disabling nav"))
+
 
 (defun person-on-path ()
-  (let ((v (not (= 0 (people_aware_nav:value-val (call-service "is_person_on_path" 'people_aware_nav:PersonOnPath))))))
-    (when v (format t "~&Person is on path at time ~a" (ros-time)))
-    v))
+  (if *person-on-path-use-stub*
+      (y-or-n-p "Is person on path?")
+      (let ((v (not (= 0 (people_aware_nav:value-val (call-service "is_person_on_path" 'people_aware_nav:PersonOnPath))))))
+	(when v (format t "~&Person is on path at time ~a" (ros-time)))
+	v)))
 
-(defun spin-around ()
-  (send-move-goal (aref (pose-position *robot-pose*) 0) (aref (pose-position *robot-pose*) 1)
-		  (+ 3.14 (pose-orientation *robot-pose*))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -179,11 +166,19 @@
     (if (= (length points) 3)
 
 	(setf *hallway* (hallway-info (make-point (aref points 0))
-				       (make-point (aref points 1))
-				       (make-point (aref points 2))))
+				      (make-point (aref points 1))
+				      (make-point (aref points 2))))
 
 	(ros-error "Hallway cloud ~a had incorrect length.  Skipping." points))))
 
+
+(defun goal-callback (m)
+  (with-fields ((frame (frame_id header)) x y th) m
+    (if (equal frame *global-frame*)
+	(setq *new-goal* (list x y th))
+	(ros-error "Ignoring goal ~a ~a ~a as frame id ~a does not equal ~a"
+		   x y th frame *global-frame*))))
+  
 
 (defun pose-callback (pose)
   (declare (<Pose2DFloat32> pose) (values pose))
@@ -233,26 +228,30 @@
 
     
 (defun make-point (p)
-  (declare (robot_msgs:<Point32> p) (values point))
+  (declare (<Point32> p) (values point))
   (let ((a (make-array 2 :element-type 'float :initial-element 0.0)))
     (setf (aref a 0) (x-val p) (aref a 1) (y-val p))
     a))
 
 
 (defparameter *angle-offset* (+ (/ pi 2) .19))
+(defparameter *offset-length* 2)
 
-(defun line-behind (pose)
-  (let ((pos (pose-position pose))
-	(theta (pose-orientation pose)))
-    (let ((th1 (+ theta *angle-offset*))
-	  (th2 (+ theta (- *angle-offset*))))
-      (make-instance 'robot_msgs:<Polyline2D>
-		     :points (vector (get-offset-point pos th1) (get-offset-point pos th2))))))
+(defun make-boundary (pose constrained?)
+  (if constrained?
+      (let ((pos (pose-position pose))
+	    (theta (pose-orientation pose)))
+	(make-instance '<Polygon3D>
+		       :points (vector (get-offset-point pos (+ theta *angle-offset*))
+				       (get-offset-point pos (+ theta pi))
+				       (get-offset-point pos (- theta *angle-offset*)))))
+      ;; if not constrained, return an empty polygon
+      (make-instance '<Polygon3D>)))
 
-(defparameter *offset-length* 5)
+
 
 (defun get-offset-point (pos theta)
   (let ((x (aref pos 0))
 	(y (aref pos 1)))
-    (make-instance 'deprecated_msgs:<Point2DFloat32> :x (+ x (* *offset-length* (cos theta)))
+    (make-instance '<Point32> :x (+ x (* *offset-length* (cos theta)))
 		   :y (+ y (* *offset-length* (sin theta))))))

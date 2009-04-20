@@ -68,6 +68,8 @@ double getYaw(const StampedPose& tf_pose)
 }
 
 
+// A (misnamed) class which exists because there is currently no lispTF
+// It transforms the hallway message and robot pose into the global_frame (usually map) and republishes them
 class PersonPosSender
 {
 public:
@@ -76,39 +78,10 @@ public:
 
     node_.param("/global_frame_id", global_frame_, string("/map"));
 
-    node_.subscribe("people_tracker_measurements", person_message_, &PersonPosSender::posCallback, this, 1);
     hallway_cloud_notifier_ = NotifierPtr(new Notifier(&tf_, &node_, bind(&PersonPosSender::hallwayCallback, this, _1),
                                                        "parallel_lines_model", global_frame_, 50));
-    node_.subscribe("goal", goal_message_, &PersonPosSender::goalCallback, this, 1);
-    node_.advertise<ConstrainedGoal>("move_base_node/activate", 1);
-    node_.advertise<Point>("person_position", 1);
     node_.advertise<PointCloud>("hallway_points", 1);
     node_.advertise<Pose2DFloat32>("robot_pose", 1);
-  }
-
-  void goalCallback ()
-  {
-    ConstrainedGoal m;
-    m.header = goal_message_.header;
-    m.x = goal_message_.x;
-    m.y = goal_message_.y;
-    m.z = goal_message_.z;
-    m.th = goal_message_.th;
-    node_.publish("move_base_node/activate", m);
-  }
-
-  void posCallback ()
-  {
-    try {
-    PointStamped point, transformedPoint;
-    point.point = person_message_.pos;
-    point.header = person_message_.header;
-    tf_.transformPoint (global_frame_, Time(), point, global_frame_, transformedPoint);
-    node_.publish("person_position", transformedPoint.point);
-    }
-    catch (TransformException& e) {
-      ROS_INFO_STREAM ("Tf exception when transforming person position: " << e.what());
-    }
   }
 
   void hallwayCallback (const Notifier::MessagePtr& hallway_message)

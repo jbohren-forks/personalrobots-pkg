@@ -11,5 +11,7 @@ rospack_add_executable(is_person_on_path src/is_person_on_path.cpp)
 rospack_link_boost(is_person_on_path thread)
 rospack_add_lisp_executable(fake_person src/fake-person.lisp)
 
+rospack_add_lisp_executable(hallway_move src/move-down-hallway.lisp)
+
 rospack_add_executable(move_base_constrained src/move_base_constrained.cpp)
 rospack_link_boost(move_base_constrained thread)

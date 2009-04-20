@@ -34,11 +34,15 @@
 *
 *********************************************************************/
 #include <people_aware_nav/move_base_constrained.h>
+#include <robot_msgs/Polygon3D.h>
 
 using namespace base_local_planner;
 using namespace costmap_2d;
 using namespace navfn;
 using namespace robot_actions;
+using std::vector;
+using robot_msgs::Point;
+using robot_msgs::Point32;
 
 namespace people_aware_nav {
 
@@ -152,6 +156,10 @@ namespace people_aware_nav {
   }
 
   void MoveBaseConstrained::makePlan(const ConstrainedGoal& goal){
+
+    ROS_DEBUG_NAMED("move", "Entering makePlan with goal %f, %f and size %u", 
+                    goal.x, goal.y, goal.forbidden.get_points_size());
+
     //since this gets called on handle activate
     if(planner_cost_map_ros_ == NULL)
       return;
@@ -161,6 +169,19 @@ namespace people_aware_nav {
 
     //make sure we clear the robot's footprint from the cost map
     clearRobotFootprint(planner_cost_map_);
+
+    // set cost of forbidden region
+    vector<Point> polygon;
+    for (vector<Point32>::const_iterator iter = goal.forbidden.points.begin(); iter!=goal.forbidden.points.end(); ++iter) {
+      Point p;
+      p.x = iter->x;
+      p.y = iter->y;
+      p.z = iter->z;
+      polygon.push_back(p);
+    }
+    planner_cost_map_.setConvexPolygonCost(polygon, costmap_2d::LETHAL_OBSTACLE);
+
+    ROS_DEBUG_NAMED("move", "Modified costmap");
 
     std::vector<robot_actions::Pose2D> global_plan;
     
@@ -173,6 +194,8 @@ namespace people_aware_nav {
 
     bool valid_plan = planner_->makePlan(goal_pose, global_plan);
 
+    ROS_DEBUG_NAMED("move", "Planner found plan");
+
     //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
     global_plan.push_back(goal_pose);
 
@@ -183,6 +206,8 @@ namespace people_aware_nav {
     lock_.unlock();
 
     publishPath(global_plan, "gui_path", 0.0, 1.0, 0.0, 0.0);
+    
+    ROS_DEBUG_NAMED ("move", "Exiting makePlan");
   }
 
   void MoveBaseConstrained::updateGlobalPose(){
