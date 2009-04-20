@@ -457,12 +457,12 @@ void CartesianHybridControllerNode::command()
   tf::Stamped<tf::Transform> task_frame;
 
   try {
-    ROS_INFO("Waiting on transform (%.3lf vs %.3lf)", command_msg_.header.stamp.toSec(), ros::Time::now().toSec());
+    //ROS_INFO("Waiting on transform (%.3lf vs %.3lf)", command_msg_.header.stamp.toSec(), ros::Time::now().toSec());
     while (!TF.canTransform(c_.chain_.getLinkName(0), command_msg_.header.frame_id, command_msg_.header.stamp))
     {
       usleep(10000);
     }
-    ROS_INFO("Got transform.");
+    //ROS_INFO("Got transform.");
     TF.lookupTransform(c_.chain_.getLinkName(0), command_msg_.header.frame_id, command_msg_.header.stamp,
                        task_frame);
   }
