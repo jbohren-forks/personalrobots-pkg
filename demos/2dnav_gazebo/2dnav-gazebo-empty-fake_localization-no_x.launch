@@ -1,0 +1,18 @@
+<launch>
+  <group name="wg">
+
+    <!-- start up robot -->
+    <include file="$(find pr2_gazebo)/pr2_empty_no_x.launch"/>
+
+    <!-- Tug Arms For Navigation -->
+    <include file="$(find 2dnav_gazebo)/config/tuck_arms.launch"/>
+
+    <!-- load map -->
+    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map_blank.png 0.1" respawn="true" machine="three" />
+
+    <!-- nav-stack -->
+    <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.launch"/>
+
+  </group>
+</launch>
+

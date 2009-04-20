@@ -5,10 +5,10 @@
     <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_wg.launch"/>
 
     <!-- load map -->
-    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="false" output="screen" />
+    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="true" machine="three" />
 
     <!-- nav-stack -->
-    <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.xml"/>
+    <include file="$(find 2dnav_gazebo)/2dnav-stack-amcl.launch"/>
 
     <!-- for visualization -->
     <!--node pkg="rviz" type="rviz" respawn="false" output="screen" /-->

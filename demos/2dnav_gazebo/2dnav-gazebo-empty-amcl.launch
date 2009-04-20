@@ -1,0 +1,25 @@
+<launch>
+  <group name="wg">
+
+    <!-- start up robot -->
+    <include file="$(find pr2_gazebo)/pr2_empty.launch"/>
+
+    <!-- Tug Arms For Navigation -->
+    <include file="$(find 2dnav_gazebo)/config/tuck_arms.launch"/>
+
+    <!-- load map -->
+    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map_blank.png 0.1" respawn="true" machine="three" />
+
+    <!-- nav-stack -->
+    <include file="$(find 2dnav_gazebo)/2dnav-stack-amcl.launch"/>
+
+    <!-- for visualization -->
+    <node pkg="rviz" type="rviz" respawn="false" output="screen" />
+
+    <!-- for manual control -->
+    <!--node pkg="teleop_base" type="teleop_base_keyboard" respawn="false" output="screen" /-->
+    <!--node pkg="teleop_arm_keyboard" type="teleop_arm_keyboard" respawn="false" output="screen" /-->
+
+  </group>
+</launch>
+

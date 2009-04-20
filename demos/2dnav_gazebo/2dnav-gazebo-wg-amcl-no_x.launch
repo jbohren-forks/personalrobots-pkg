@@ -5,13 +5,13 @@
     <include file="$(find pr2_gazebo)/pr2_wg_no_x.launch"/>
 
     <!-- load map -->
-    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="false" output="screen" />
+    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="true" machine="three" />
 
     <!-- Tug Arms For Navigation -->
-    <node pkg="pr2_gazebo" type="tuck_arms.py" output="screen"/>
+    <include file="$(find 2dnav_gazebo)/config/tuck_arms.launch"/>
 
     <!-- nav-stack -->
-    <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.xml"/>
+    <include file="$(find 2dnav_gazebo)/2dnav-stack-amcl.launch"/>
 
     <!-- for visualization -->
     <!--node pkg="rviz" type="rviz" respawn="false" output="screen" /-->

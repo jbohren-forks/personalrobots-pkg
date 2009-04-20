@@ -1,0 +1,13 @@
+<launch>
+<!-- For ground plane detection -->
+<!-- subscribes to full_cloud and publishes "cloud_ground_filtered" -->
+<node pkg="semantic_point_annotator" type="sac_inc_ground_removal_node" name="sac_ground_removal" respawn="true" output="screen" >
+  <remap from="full_cloud" to="robotlinks_cloud_filtered" />
+  <param name="z_threshold" value="0.1" />
+  <param name="sac_min_points_per_model" value="6" />
+  <param name="sac_distance_threshold" value="0.03" />
+  <param name="planar_refine" value="1" />
+  <param name="clusters_growing_tolerance" value="0.15" />
+  <param name="clusters_min_pts" value="5" />
+</node>
+</launch>
