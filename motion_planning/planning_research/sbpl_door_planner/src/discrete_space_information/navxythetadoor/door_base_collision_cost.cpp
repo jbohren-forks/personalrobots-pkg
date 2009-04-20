@@ -287,7 +287,7 @@ namespace door_base_collision_cost
 #endif
     if(min_obstructed_angle > local_door_min_angle_)
     {
-      if(min_obstructed_angle > local_door_max_angle_)
+      if(min_obstructed_angle >= local_door_max_angle_)
         min_obstructed_angle = local_door_max_angle_;
 
       int num_intervals = (int) (angles::normalize_angle(min_obstructed_angle-local_door_min_angle_)/door_angle_discretization_interval_);
@@ -297,14 +297,35 @@ namespace door_base_collision_cost
         unsigned char cost = findWorkspaceCost(global_position,global_yaw,new_angle);
         if(cost < MAX_COST)
         {
-          valid_angles.push_back((int)(new_angle*180.0/M_PI));
-          valid_cost.push_back((int) cost);
-          if(rot_dir_)
-            valid_interval.push_back(0);
+          if(min_obstructed_angle == local_door_max_angle_)
+          {
+              valid_angles.push_back((int)(new_angle*180.0/M_PI));
+              valid_cost.push_back((int) cost);
+              valid_interval.push_back(1);
+              valid_angles.push_back((int)(new_angle*180.0/M_PI));
+              valid_cost.push_back((int) cost);
+              valid_interval.push_back(0);
+          }
           else
-            valid_interval.push_back(1);
+          {
+            if(local_door_min_angle_ == local_door_open_angle_)
+            {
+              valid_angles.push_back((int)(new_angle*180.0/M_PI));
+              valid_cost.push_back((int) cost);
+              valid_interval.push_back(1);
+            }
+            else if(local_door_min_angle_ == local_door_closed_angle_)
+            {
+              valid_angles.push_back((int)(new_angle*180.0/M_PI));
+              valid_cost.push_back((int) cost);
+              valid_interval.push_back(0);
+            }
+          }
 #ifdef DEBUG
           printf("Interval: %d\n",valid_interval.back());
+          printf("Min interval, rot_dir:%d num_intervals:%d\n",rot_dir_,num_intervals);
+          printf("\nMin %f; Max %f\n",min_obstructed_angle,max_obstructed_angle);
+          printf("\nLocal min: %f max: %f\n",local_door_min_angle_,local_door_max_angle_);
 #endif
         }
       }
@@ -312,8 +333,10 @@ namespace door_base_collision_cost
 
     if(max_obstructed_angle < local_door_max_angle_)
     {
-      if(max_obstructed_angle < local_door_min_angle_)
+      if(max_obstructed_angle <= local_door_min_angle_)
+      {
         max_obstructed_angle = local_door_min_angle_;
+      }
       int num_intervals = (int) (angles::normalize_angle(local_door_max_angle_-max_obstructed_angle)/door_angle_discretization_interval_);
       for(int i=0; i<num_intervals; i++)
       {
@@ -321,14 +344,35 @@ namespace door_base_collision_cost
         unsigned char cost = findWorkspaceCost(global_position,global_yaw,new_angle);
         if(cost < MAX_COST)
         {
-          valid_angles.push_back((int)(new_angle*180.0/M_PI));
-          valid_cost.push_back((int) cost);
-          if(rot_dir_)
-            valid_interval.push_back(1);
+          if(max_obstructed_angle == local_door_min_angle_)
+          {
+              valid_angles.push_back((int)(new_angle*180.0/M_PI));
+              valid_cost.push_back((int) cost);
+              valid_interval.push_back(1);
+              valid_angles.push_back((int)(new_angle*180.0/M_PI));
+              valid_cost.push_back((int) cost);
+              valid_interval.push_back(0);
+          }
           else
-            valid_interval.push_back(0);
+          {
+            if(local_door_max_angle_ == local_door_open_angle_)
+            {
+              valid_angles.push_back((int)(new_angle*180.0/M_PI));
+              valid_cost.push_back((int) cost);
+              valid_interval.push_back(1);
+            }
+            else if(local_door_max_angle_ == local_door_closed_angle_)
+            {
+              valid_angles.push_back((int)(new_angle*180.0/M_PI));
+              valid_cost.push_back((int) cost);
+              valid_interval.push_back(0);
+            }
+          }
 #ifdef DEBUG
           printf("Interval: %d\n",valid_interval.back());
+          printf("Max interval, rot_dir:%d\n",rot_dir_);
+          printf("\nMin %f; Max %f\n",min_obstructed_angle,max_obstructed_angle);
+          printf("\nLocal min: %f max: %f\n",local_door_min_angle_,local_door_max_angle_);
 #endif
         }
       }
