@@ -1,0 +1,7 @@
+
+<launch>
+  
+  <node  pkg="teleop_base" type="ground_truth_controller" name="ground_truth_controller" args="" output="screen">
+  <param name="xml_config" command="$(find xacro)/xacro.py '$(find teleop_base)/ground_truth_controller.xml'" />
+  </node>
+</launch>
