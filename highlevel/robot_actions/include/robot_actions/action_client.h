@@ -96,11 +96,9 @@ namespace robot_actions {
 
   template <class Goal, class State, class Feedback>
     ActionClient<Goal, State, Feedback>::~ActionClient(){
-    /*
     ros::Node::instance()->unadvertise(_goal_topic);
     ros::Node::instance()->unadvertise(_preempt_topic);
     ros::Node::instance()->unsubscribe(_state_update_msg);
-    */
   }
 
   template <class Goal, class State, class Feedback>
