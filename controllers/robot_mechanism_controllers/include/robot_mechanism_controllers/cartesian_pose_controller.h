@@ -69,7 +69,9 @@ public:
 
 private:
   KDL::Frame getPose();
-  void TransformToFrame(const tf::Transform& trans, KDL::Frame& frame);
+
+  void poseToFrame(const tf::Pose& pose, KDL::Frame& frame);
+  void frameToPose(const KDL::Frame& frame, tf::Pose& pose);
 
   ros::Node* node_;
   std::string controller_name_, root_name_;
@@ -88,7 +90,8 @@ private:
   KDL::JntArray          jnt_pos_;
 
   // reatltime publisher
-  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Twist> > state_publisher_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Twist> > state_error_publisher_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Pose> > state_pose_publisher_;
   unsigned int loop_count_;
 
   tf::TransformListener tf_;

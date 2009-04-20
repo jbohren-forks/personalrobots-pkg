@@ -52,7 +52,8 @@ CartesianPoseController::CartesianPoseController()
 : node_(ros::Node::instance()),
   robot_state_(NULL),
   jnt_to_pose_solver_(NULL),
-  state_publisher_(NULL),
+  state_error_publisher_(NULL),
+  state_pose_publisher_(NULL),
   tf_(*node_),
   command_notifier_(NULL)
 {}
@@ -121,7 +122,8 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlE
                                                                        boost::bind(&CartesianPoseController::command, this, _1),
                                                                        controller_name_ + "/command", root_name_, 1));
   // realtime publisher for control error
-  state_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/state/error", 1));
+  state_error_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/state/error", 1));
+  state_pose_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Pose>(controller_name_+"/state/pose", 1));
   loop_count_ = 0;
 
   return true;
@@ -164,20 +166,29 @@ void CartesianPoseController::update()
   twist_controller_->twist_desi_ = twist_fb + twist_ff_;
 
   if (++loop_count_ % 100 == 0){
-    if (state_publisher_){
-      if (state_publisher_->trylock()){
-        state_publisher_->msg_.vel.x = twist_error.vel(0);
-        state_publisher_->msg_.vel.y = twist_error.vel(1);
-        state_publisher_->msg_.vel.z = twist_error.vel(2);
-        state_publisher_->msg_.rot.x = twist_error.rot(0);
-	state_publisher_->msg_.rot.y = twist_error.rot(1);
-        state_publisher_->msg_.rot.z = twist_error.rot(2);
-        state_publisher_->unlockAndPublish();
+    if (state_error_publisher_){
+      if (state_error_publisher_->trylock()){
+        state_error_publisher_->msg_.vel.x = twist_error.vel(0);
+        state_error_publisher_->msg_.vel.y = twist_error.vel(1);
+        state_error_publisher_->msg_.vel.z = twist_error.vel(2);
+        state_error_publisher_->msg_.rot.x = twist_error.rot(0);
+	state_error_publisher_->msg_.rot.y = twist_error.rot(1);
+        state_error_publisher_->msg_.rot.z = twist_error.rot(2);
+        state_error_publisher_->unlockAndPublish();
+      }
+    }
+    if (state_pose_publisher_){
+      if (state_pose_publisher_->trylock()){
+	Pose tmp;
+	frameToPose(pose_meas_, tmp);
+	PoseTFToMsg(tmp, state_pose_publisher_->msg_);
+        state_pose_publisher_->unlockAndPublish();
       }
     }
   }
-
 }
+
+
 
 Frame CartesianPoseController::getPose()
 {
@@ -199,19 +210,33 @@ void CartesianPoseController::command(const tf::MessageNotifier<robot_msgs::Pose
 
   // convert to reference frame of root link of the controller chain
   tf_.transformPose(root_name_, pose_stamped, pose_stamped);
-  TransformToFrame(pose_stamped, pose_desi_);
+  poseToFrame(pose_stamped, pose_desi_);
 }
 
-void CartesianPoseController::TransformToFrame(const Transform& trans, Frame& frame)
+
+void CartesianPoseController::poseToFrame(const Pose& pose, Frame& frame)
 {
-  frame.p(0) = trans.getOrigin().x();
-  frame.p(1) = trans.getOrigin().y();
-  frame.p(2) = trans.getOrigin().z();
+  frame.p(0) = pose.getOrigin().x();
+  frame.p(1) = pose.getOrigin().y();
+  frame.p(2) = pose.getOrigin().z();
 
   double Rz, Ry, Rx;
-  trans.getBasis().getEulerZYX(Rz, Ry, Rx);
+  pose.getBasis().getEulerZYX(Rz, Ry, Rx);
   frame.M = Rotation::EulerZYX(Rz, Ry, Rx);
 }
+
+
+void CartesianPoseController::frameToPose(const Frame& frame, Pose& pose)
+{
+  pose.getOrigin()[0] = frame.p(0);
+  pose.getOrigin()[1] = frame.p(1);
+  pose.getOrigin()[2] = frame.p(2);
+
+  double Rz, Ry, Rx;
+  frame.M.GetEulerZYX(Rz, Ry, Rx);
+  pose.setRotation( Quaternion(Rz, Ry, Rx));
+}
+
 
 
 
