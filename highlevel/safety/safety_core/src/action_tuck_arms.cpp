@@ -37,6 +37,9 @@
 
 using namespace safety_core;
 
+static const unsigned int traj_size = 2;
+static const unsigned int num_joints = 7;
+
 TuckArmsAction::TuckArmsAction() :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("safety_tuck_arms"),
   action_name_("safety_tuck_arms"),
@@ -51,6 +54,7 @@ TuckArmsAction::TuckArmsAction() :
   if(which_arms_ == "")
   {
     ROS_ERROR("%s: Aborted, which arms param was not set.", action_name_.c_str());
+    terminate();
     return;
   }
 
@@ -62,6 +66,7 @@ TuckArmsAction::TuckArmsAction() :
     if(right_arm_controller_ == "")
     {
       ROS_ERROR("%s: Aborted, right arm controller param was not set.", action_name_.c_str());
+      terminate();
       return;
     }
   }
@@ -73,26 +78,28 @@ TuckArmsAction::TuckArmsAction() :
     if(left_arm_controller_ == "")
     {
       ROS_ERROR("%s: Aborted, left arm controller param was not set.", action_name_.c_str());
+      terminate();
       return;
     }
   }
 
-  double right_arm_traj[2][7] = {{0.0,0.0,0.0,-2.25,0.0,0.0,0.0},{0.0,1.57,-1.57,-2.25,0.0,0.0,0.0}};
-  double left_arm_traj[2][7] = {{0.0,0.0,0.0,-2.25,0.0,0.0,0.0}, {0.0,1.57,1.57,-2.25,0.0,0.0,0.0}};
+  // Default trajectory for tucking the arms
+  double right_arm_traj[traj_size][num_joints] = {{0.0,0.0,0.0,-2.25,0.0,0.0,0.0},{0.0,1.57,-1.57,-2.25,0.0,0.0,0.0}};
+  double left_arm_traj[traj_size][num_joints] = {{0.0,0.0,0.0,-2.25,0.0,0.0,0.0}, {0.0,1.57,1.57,-2.25,0.0,0.0,0.0}};
                      
   right_traj_req_.hastiming = 0;
   right_traj_req_.requesttiming = 0;
-  right_traj_req_.traj.set_points_size(2);
+  right_traj_req_.traj.set_points_size(traj_size);
      
   left_traj_req_.hastiming = 0;
   left_traj_req_.requesttiming = 0;
-  left_traj_req_.traj.set_points_size(2);  
+  left_traj_req_.traj.set_points_size(traj_size); 
                 
-  for (unsigned int i = 0 ; i < 2 ; ++i)
+  for (unsigned int i = 0 ; i < traj_size ; ++i)
   {
-    right_traj_req_.traj.points[i].set_positions_size(7);
-    left_traj_req_.traj.points[i].set_positions_size(7);
-    for (unsigned int j = 0 ; j < 7 ; ++j)
+    right_traj_req_.traj.points[i].set_positions_size(num_joints);
+    left_traj_req_.traj.points[i].set_positions_size(num_joints);
+    for (unsigned int j = 0 ; j < num_joints ; ++j)
     {
       right_traj_req_.traj.points[i].positions[j] = right_arm_traj[i][j];
       left_traj_req_.traj.points[i].positions[j] = left_arm_traj[i][j];
@@ -122,9 +129,10 @@ robot_actions::ResultStatus TuckArmsAction::execute(const std_msgs::Empty& empty
     
     while(!isTrajectoryDone() && !traj_error_)
     {
-      if (isPreemptRequested()){
-	cancelTrajectory();
-	ROS_INFO("%s: Preempted.", action_name_.c_str());
+      if (isPreemptRequested())
+      {
+	      cancelTrajectory();
+	      ROS_INFO("%s: Preempted.", action_name_.c_str());
         return robot_actions::PREEMPTED;
       }
 
@@ -146,9 +154,10 @@ robot_actions::ResultStatus TuckArmsAction::execute(const std_msgs::Empty& empty
     
     while(!isTrajectoryDone() && !traj_error_)
     {
-      if (isPreemptRequested()){
-	cancelTrajectory();
-	ROS_INFO("%s: Preempted.", action_name_.c_str());
+      if (isPreemptRequested())
+      {
+	      cancelTrajectory();
+	      ROS_INFO("%s: Preempted.", action_name_.c_str());
         return robot_actions::PREEMPTED;
       }
 
