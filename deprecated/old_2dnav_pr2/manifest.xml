@@ -2,7 +2,7 @@
   <description>A demo of  2-D navigation.</description>
   <author>Brian Gerkey</author>
   <license>BSD</license>
-  <review status="na" notes=""/>
+  <review status="deprecated" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
   <depend package="amcl_player"/>
   <depend package="hokuyo_node"/>
