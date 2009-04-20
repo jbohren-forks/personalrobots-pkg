@@ -149,6 +149,19 @@ class DetectOutletCoarse extends ROSAction {
  */
 class LocalizePlugInGripper extends ROSAction {
 
+  // Goal takes the ouput of outlet detection
+  predicate Active{
+    float time_stamp; // A double encoding is reliable
+    string frame_id;
+    float x;
+    float y;
+    float z;
+    float dx;
+    float dy;
+    float dz;
+    float dw;
+  }
+
   LocalizePlugInGripper(Mode _mode){super(_mode);}
 };
 

@@ -88,6 +88,15 @@ namespace executive_trex_pr2 {
     read<double>("z", obs, msg.plug_centroid.z);
   }
 
+  void AdapterUtilities::write(const TokenId& token, robot_msgs::PlugStow& msg){
+    getHeader(msg, token);
+
+    write<int8_t>("stowed", token, msg.stowed);
+    write<double>("x", token, msg.plug_centroid.x);
+    write<double>("y", token, msg.plug_centroid.y);
+    write<double>("z", token, msg.plug_centroid.z);
+  }
+
   void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::PointStamped& msg){
     setHeader(msg, obs);
     readPoint(obs, msg.point.x, msg.point.y, msg.point.z);
@@ -111,30 +120,17 @@ namespace executive_trex_pr2 {
     read<double>("dw", obs, msg.pose.orientation.w);
   }
 
-  void AdapterUtilities::write(const TokenId& token, robot_msgs::PlugStow& msg){
+
+  void AdapterUtilities::write(const TokenId& token, robot_msgs::PoseStamped& msg) {
     getHeader(msg, token);
 
-    write<int8_t>("stowed", token, msg.stowed);
-    write<double>("x", token, msg.plug_centroid.x);
-    write<double>("y", token, msg.plug_centroid.y);
-    write<double>("z", token, msg.plug_centroid.z);
+    writePoint(token, msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
+
+    write<double>("dx", token, msg.pose.orientation.x);
+    write<double>("dy", token, msg.pose.orientation.y);
+    write<double>("dz", token, msg.pose.orientation.z);
+    write<double>("dw", token, msg.pose.orientation.w);
   }
-
-
-  void AdapterUtilities::write(const TokenId& token, robot_actions::ServoToOutlet& msg) {
-    getHeader(msg, token);
-
-    write<float>("x", token, msg.x);
-    write<float>("y", token, msg.y);
-    write<float>("z", token, msg.z);
-
-    write<float>("dx", token, msg.dx);
-    write<float>("dy", token, msg.dy);
-    write<float>("dz", token, msg.dz);
-    write<float>("dw", token, msg.dw);
-  }
-
-
 
   void AdapterUtilities::readPose(ObservationByValue& obs, double x, double y, double th){
     read("x", obs, x);
@@ -154,7 +150,7 @@ namespace executive_trex_pr2 {
     read("z", obs, z);
   }
 
-  void AdapterUtilities::writePoint(const TokenId& token, float& x, float& y, float& z){
+  void AdapterUtilities::writePoint(const TokenId& token, double& x, double& y, double& z){
     write("x", token, x);
     write("y", token, y);
     write("z", token, z);

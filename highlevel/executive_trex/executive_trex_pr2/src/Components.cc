@@ -63,8 +63,8 @@ namespace TREX{
 	LabelStr param_name = param_names_lbl.getElement(i, DELIMITER);
 	ConstrainedVariableId var_a = token_a->getVariable(param_name);
 	ConstrainedVariableId var_b = token_b->getVariable(param_name);
-	checkError(var_a.isValid(), "No variable for " << param_name.toString() << " in " << token_a->toString());
-	checkError(var_b.isValid(), "No variable for " << param_name.toString() << " in " << token_b->toString());
+	checkError(var_a.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " in " << token_a->toString());
+	checkError(var_b.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " in " << token_b->toString());
 
 	// Insert the pair
 	new_scope.push_back(var_a);
@@ -129,6 +129,17 @@ namespace TREX{
 			const std::vector<ConstrainedVariableId>& variables)
       : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
 			  "time_stamp:frame_id:x:y:z")
+    {}
+  };
+
+  class PoseMsgEqConstraint: public ParamEqConstraint {
+  public:
+    PoseMsgEqConstraint(const LabelStr& name,
+			const LabelStr& propagatorName,
+			const ConstraintEngineId& constraintEngine,
+			const std::vector<ConstrainedVariableId>& variables)
+      : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
+			  "time_stamp:frame_id:x:y:z:dx:dy:dz:dw")
     {}
   };
 
@@ -206,6 +217,7 @@ namespace TREX{
       // Constraints for message binding
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PlugStowMsgEqConstraint, "eq_plug_stow_msg", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PointMsgEqConstraint, "eq_point_msg", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PoseMsgEqConstraint, "eq_pose_msg", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::DoorMsgEqConstraint, "eq_door_msg", "Default");
 
       // Register topological map constraints

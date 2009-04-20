@@ -73,9 +73,9 @@ namespace executive_trex_pr2 {
     static void write(const TokenId& token, robot_msgs::PointStamped& msg);
 
     /**
-     * @brief Stuff token data into a ServoToOutlet message
+     * @brief Stuff token data into a pose stamped message
      */
-    static void write(const TokenId& token, robot_actions::ServoToOutlet& msg);
+    static void write(const TokenId& token, robot_msgs::PoseStamped& msg);
 
     /**
      * @brief Bind intervals to the singleton, or the domain midpoint
@@ -178,7 +178,7 @@ namespace executive_trex_pr2 {
      * @param y The y position
      * @param z The z angle
      */
-    static void writePoint(const TokenId& token, float& x, float& y, float& z);
+    static void writePoint(const TokenId& token, double& x, double& y, double& z);
 
     /**
      * @brief A utility function that fills out x, y, and th 

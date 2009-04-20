@@ -64,3 +64,4 @@
 #include <robot_actions/ServoToOutlet.h>
 #include <robot_actions/ServoToOutletState.h>
 #include <robot_actions/DetectOutletState.h>
+#include <robot_actions/LocalizePlugInGripperState.h>

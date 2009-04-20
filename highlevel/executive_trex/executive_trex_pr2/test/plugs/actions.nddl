@@ -42,6 +42,7 @@ PlugActions::PickupAndRelease {
   contains(detect_plug_on_base.Active cmd_detect_plug_on_base);
   contains(move_and_grasp_plug.Active cmd_move_and_grasp_plug);
   contains(detect_outlet_fine.Active cmd_detect_outlet_fine);
+  contains(localize_plug_in_gripper.Active cmd_localize_plug_in_gripper);
   contains(stow_plug.Active cmd_stow_plug);
 
   // Sequence them
@@ -49,7 +50,8 @@ PlugActions::PickupAndRelease {
   cmd_untuck_arms before cmd_detect_plug_on_base;
   cmd_detect_plug_on_base before cmd_move_and_grasp_plug;
   cmd_move_and_grasp_plug before cmd_detect_outlet_fine;
-  cmd_detect_outlet_fine before cmd_stow_plug;
+  cmd_detect_outlet_fine before cmd_localize_plug_in_gripper;
+  cmd_localize_plug_in_gripper before cmd_stow_plug;
 
   // Constrain all to be successful
   eq(SUCCESS,
@@ -63,7 +65,7 @@ PlugActions::PickupAndRelease {
   // Bind parameters. Should be nice to say:
   // DetectPlugOnBase.Inactive feedback == detect_plug_on_base[cmd_detect_plug_on_base.end);
   // cmd_stow_plug.plug_state == feedback.plug_state
-  contains(detect_plug_on_base.Inactive feedback_detect_plug_on_base);
+  any(detect_plug_on_base.Inactive feedback_detect_plug_on_base);
   cmd_detect_plug_on_base meets feedback_detect_plug_on_base;
 
   // Provides input to grasp
@@ -75,6 +77,11 @@ PlugActions::PickupAndRelease {
   eq(cmd_detect_outlet_fine.x, 0.0);
   eq(cmd_detect_outlet_fine.y, 0.0);
   eq(cmd_detect_outlet_fine.z, 0.0);
+
+  // Feedback from outlet detction used to target plug localization in the gripper
+  any(detect_outlet_fine.Inactive feedback_detect_outlet_fine);
+  cmd_detect_outlet_fine meets feedback_detect_outlet_fine;
+  eq_pose_msg(feedback_detect_outlet_fine.object, cmd_localize_plug_in_gripper.object);
 
   // Stow it back where we got it
   eq_plug_stow_msg(cmd_stow_plug.object, feedback_detect_plug_on_base.object);

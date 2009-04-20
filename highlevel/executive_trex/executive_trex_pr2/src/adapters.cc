@@ -82,8 +82,8 @@ namespace TREX {
     }
 
     virtual void fillActiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){
-      //AdapterUtilities::setHeader(msg, *obs);
-      //AdapterUtilities::readPose(*obs, msg.x, msg.y, msg.th);
+      AdapterUtilities::setHeader(msg, *obs);
+      AdapterUtilities::readPose(*obs, msg.x, msg.y, msg.th);
     }
 
     virtual void fillInactiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){ 
@@ -257,13 +257,41 @@ namespace TREX {
       : ROSActionAdapter<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(agentName, configData){
     }
 
-    void fillDispatchParameters(robot_msgs::PlugStow& msg, const TokenId& goalToken){
+    virtual void fillActiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){
+      AdapterUtilities::read(*obs, msg);
+    }
+
+    virtual void fillDispatchParameters(robot_msgs::PlugStow& msg, const TokenId& goalToken){
       AdapterUtilities::write(goalToken, msg);
     }
   };
 
   // Allocate Factory
   TeleoReactor::ConcreteFactory<MoveAndGraspPlugAdapter> MoveAndGraspPlugAdapter_Factory("MoveAndGraspPlugAdapter");
+
+
+  /***********************************************************************
+   * @brief LocalizePlugInGripper 
+   **********************************************************************/
+  class LocalizePlugInGripperAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::LocalizePlugInGripperState, std_msgs::Empty> {
+  public:
+
+    LocalizePlugInGripperAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::LocalizePlugInGripperState, std_msgs::Empty>(agentName, configData){
+    }
+
+    virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){
+      AdapterUtilities::write(goalToken, msg);
+    }
+
+    virtual void fillActiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
+      AdapterUtilities::read(*obs, msg);
+    }
+  };
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<LocalizePlugInGripperAdapter> LocalizePlugInGripperAdapter_Factory("LocalizePlugInGripperAdapter");
+
 
   /***********************************************************************
    * @brief StowPlug 
@@ -275,8 +303,12 @@ namespace TREX {
       : ROSActionAdapter<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty>(agentName, configData){
     }
 
-    void fillDispatchParameters(robot_msgs::PlugStow& msg, const TokenId& goalToken){
+    virtual void fillDispatchParameters(robot_msgs::PlugStow& msg, const TokenId& goalToken){
       AdapterUtilities::write(goalToken, msg);
+    }
+
+    virtual void fillActiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){
+      AdapterUtilities::read(*obs, msg);
     }
   };
 
@@ -350,8 +382,12 @@ namespace TREX {
       : ROSActionAdapter<robot_actions::ServoToOutlet, robot_actions::ServoToOutletState, std_msgs::Empty>(agentName, configData){
     }
 
-    void fillDispatchParameters(robot_msgs::PlugStow& msg, const TokenId& goalToken){
+    virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){
       AdapterUtilities::write(goalToken, msg);
+    }
+
+    virtual void fillActiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
+      AdapterUtilities::read(*obs, msg);
     }
   };
 
@@ -368,12 +404,14 @@ namespace TREX {
       : ROSActionAdapter<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(agentName, configData){
     }
 
-    void fillDispatchParameters(robot_msgs::PointStamped& msg, const TokenId& goalToken){
+    virtual void fillDispatchParameters(robot_msgs::PointStamped& msg, const TokenId& goalToken){
       AdapterUtilities::write(goalToken, msg);
     }
+
     virtual void fillActiveObservationParameters(const robot_msgs::PointStamped& msg, ObservationByValue* obs){
       AdapterUtilities::read(*obs, msg);
     }
+
     virtual void fillInactiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
       AdapterUtilities::read(*obs, msg);
     }
