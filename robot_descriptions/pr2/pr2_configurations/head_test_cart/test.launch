@@ -1,5 +1,5 @@
 <launch>
-  <include file="$(find head_test_cart)/send_description.xml" />
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find head_test_cart)/test_head.xml'" />
 
   <machine name="xenomai_root" user="root" address="localhost" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
 

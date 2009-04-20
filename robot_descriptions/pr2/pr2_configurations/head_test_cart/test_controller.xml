@@ -8,7 +8,7 @@
     
     <controller name="head_tilt_controller" topic="head_tilt_controller" type="JointPositionController">
       <joint name="head_tilt_joint" >
-        <pid p="4.2" d=".4" i="2.0" iClamp="0.1" />
+        <pid p="35" d="1.0" i="16" iClamp="3.5" />
       </joint>
     </controller>
     

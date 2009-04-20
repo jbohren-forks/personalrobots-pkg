@@ -52,10 +52,11 @@ if __name__ == "__main__":
    sleep(1)
 
    while 1:
+       #point_head_client(0.0, -0.4)
        pan = random.uniform(-2.7, 2.7)
        print pan
-       tilt = random.uniform(-0.3, 0.8)
+       tilt = random.uniform(-0.4, 1.4)
        print tilt
+       #point_head_client(0.0, 1.2)
        point_head_client(pan, tilt)
-
 
