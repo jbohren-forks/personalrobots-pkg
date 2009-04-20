@@ -89,7 +89,11 @@ def generate(dot_graph):
     try:
         # Check version, make postscript if too old to make pdf
         args = ["dot", "-V"]
-        vstr = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[1]
+        try:
+            vstr = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[1]
+        except OSError, ex:
+            print "Warning: Could not execute `dot -V`.  Is graphviz installed?"
+            sys.exit(-1)
         v = distutils.version.StrictVersion('2.16')
         r = re.compile(".*version ([^ ]*).*")
         print vstr
