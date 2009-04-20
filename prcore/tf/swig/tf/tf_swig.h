@@ -48,6 +48,15 @@ public:
     frame_id(frame_id_in),
     parent_id(parent_id_in), _sec(sec), _nsec(nsec)  {transform = new py::Transform(t);};
   ~TransformStamped(){ delete transform;};
+  inline bool operator==(const TransformStamped& other) const
+  {
+    if( _sec != other._sec) return false;
+    else if ( _nsec != other._nsec) return false;
+    else if ( frame_id != other.frame_id) return false;
+    else if ( parent_id != other.parent_id) return false;
+    else if (! (*transform == *(other.transform))) return false;
+    else return true;
+  };
   py::Transform* transform;
   std::string frame_id;
   std::string parent_id;
@@ -66,6 +75,14 @@ public:
     frame_id(frame_id_in),
     _sec(stamp_sec), _nsec(stamp_nsec)  {pose = new py::Transform(p);};
   ~PoseStamped(){delete pose;};
+  inline bool operator==(const PoseStamped& other) const
+  {
+    if( _sec != other._sec) return false;
+    else if ( _nsec != other._nsec) return false;
+    else if ( frame_id != other.frame_id) return false;
+    else if (! (*pose == *(other.pose))) return false;
+    else return true;
+  };
   py::Transform* pose;
   std::string frame_id;
   int _sec;
@@ -83,6 +100,14 @@ public:
     frame_id(frame_id_in),
     _sec(sec), _nsec(nsec)  {point = new py::Vector3(p);};
   ~PointStamped() {delete point;};
+  inline bool operator==(const PointStamped& other) const
+  {
+    if( _sec != other._sec) return false;
+    else if ( _nsec != other._nsec) return false;
+    else if ( frame_id != other.frame_id) return false;
+    else if (! (*point == *(other.point))) return false; ///\todo failing one test
+    else return true;
+  };
   py::Vector3* point;
   std::string frame_id;
   int _sec;
@@ -100,6 +125,14 @@ public:
     frame_id(frame_id_in),
     _sec(sec), _nsec(nsec)  {vector = new py::Vector3(v);};
   ~VectorStamped() { delete vector;};
+  inline bool operator==(const VectorStamped& other) const
+  {
+    if( _sec != other._sec) return false;
+    else if ( _nsec != other._nsec) return false;
+    else if ( frame_id != other.frame_id) return false;
+    else if (! (*vector == *(other.vector))) return false; ///\todo failing one test
+    else return true;
+  };
   py::Vector3* vector;
   std::string frame_id;
   int _sec;
@@ -117,6 +150,14 @@ public:
     frame_id(frame_id_in),
     _sec(sec), _nsec(nsec)  {quaternion = new py::Quaternion(q);};
   ~QuaternionStamped(){delete quaternion;};
+  inline bool operator==(const QuaternionStamped& other) const
+  {
+    if( _sec != other._sec) return false;
+    else if ( _nsec != other._nsec) return false;
+    else if ( frame_id != other.frame_id) return false;
+    else if (! (*quaternion == *(other.quaternion))) return false; ///\todo failing one test
+    else return true;
+  };
   py::Quaternion* quaternion;
   std::string frame_id;
   int _sec;

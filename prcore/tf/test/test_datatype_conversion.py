@@ -75,10 +75,10 @@ class PoseConversions(unittest.TestCase):
         self.msgquaternion_stamped.header.stamp = roslib.rostime.Time(10,0)
         
     # Test Pose conversions
-    def test_msg_operator(self):
+    def test_msg_operator_equals_pose(self):
         self.assertEquals(self.msgpose_stamped, self.msgpose_stamped, "pose msg test correctness")
 
-    def test_bt_operator(self):
+    def test_bt_operator_equals_pose(self):
         self.assertEquals(self.tfpose_stamped, self.tfpose_stamped, "pose bt test correctness")
 
     def test_msg_operator_on_converted(self):
@@ -87,14 +87,14 @@ class PoseConversions(unittest.TestCase):
     def test_bt_operator_on_converted(self):
         self.assertEquals(tf.pose_stamped_msg_to_bt(self.msgpose_stamped), tf.pose_stamped_msg_to_bt(self.msgpose_stamped), "pose bt test correctness after conversion")
 
-    def test_to_msg(self):
+    def test_to_msg_pose(self):
         self.assertEquals(tf.pose_bt_to_msg(self.tfpose_stamped.pose), self.msgpose_stamped.pose, "pose tf to msg incorrect")
-    def test_to_tf(self):
+    def test_to_tf_pose(self):
         self.assertEquals(tf.pose_msg_to_bt(self.msgpose_stamped.pose), self.tfpose_stamped.pose, "pose stamped msg to tf incorrect")
 
-    def test_stamped_to_msg(self):
+    def test_stamped_to_msg_pose(self):
         self.assertEquals(tf.pose_stamped_bt_to_msg(self.tfpose_stamped), self.msgpose_stamped, "pose stamped tf to msg incorrect")
-    def test_stamped_to_tf(self):
+    def test_stamped_to_tf_pose(self):
         self.assertEquals(tf.pose_stamped_msg_to_bt(self.msgpose_stamped), self.tfpose_stamped, "pose stamped msg to tf incorrect")
         
 

@@ -200,6 +200,13 @@ public:
 		return identityTransform;
 	}
 	
+  /**@brief Test if two transforms have all elements equal */
+  bool operator==(const Transform& t2) const
+  {
+    return ( getBasis()  == t2.getBasis() &&
+             getOrigin() == t2.getOrigin() );
+  };
+
 private:
   ///Storage for the rotation
 	Matrix3x3 m_basis;
