@@ -8,6 +8,8 @@
 
 #include <boost/bind.hpp>
 
+// TODO: don't use "high_def_frame" explicitly
+
 extern "C"
 int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
                                 CvPoint2D32f* out_corners, int* out_corner_count,
@@ -16,7 +18,8 @@ int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
 
 PlugTracker::PlugTracker(ros::Node &node)
   : node_(node), img_(res_.image), cam_info_(res_.cam_info),
-    tf_broadcaster_(node), K_(NULL), grid_pts_(NULL)
+    tf_broadcaster_(node), tf_listener_(node),
+    K_(NULL), grid_pts_(NULL)
 {
   double square_size;
   if (!node_.getParam("~square_size", square_size)) {
@@ -43,7 +46,10 @@ PlugTracker::PlugTracker(ros::Node &node)
     roi_policy_ = WholeFrame;
   else if (policy == std::string("LastImageLocation"))
     roi_policy_ = LastImageLocation;
-  else {
+  else if (policy == std::string("GripperPosition")) {
+    roi_policy_ = GripperPosition;
+    node_.param("~gripper_frame", gripper_frame_id_, std::string(""));
+  } else {
     ROS_FATAL("Unknown ROI policy setting");
     node_.shutdown();
     return;
@@ -220,6 +226,9 @@ void PlugTracker::spin()
 {
   while (node_.ok() && !boost::this_thread::interruption_requested())
   {
+    if (roi_policy_ == GripperPosition)
+      setRoiToGripperPosition();
+    
     if (ros::service::call("/prosilica/poll", req_, res_)) {
       processCamInfo();
       processImage();
@@ -248,6 +257,38 @@ inline void PlugTracker::setRoi(CvRect roi)
   req_.region_y = roi.y;
   req_.width = roi.width;
   req_.height = roi.height;
+}
+
+void PlugTracker::setRoiToGripperPosition()
+{
+  // Get gripper position in high def frame
+  robot_msgs::PointStamped origin, gripper_in_high_def;
+  origin.header.frame_id = gripper_frame_id_;
+  origin.header.stamp = img_.header.stamp;
+  tf_listener_.transformPoint("high_def_frame", origin, gripper_in_high_def);
+
+  // Get intrinsic matrix of full frame (translate principal point)
+  K_->data.db[2] += req_.region_x;
+  K_->data.db[5] += req_.region_y;
+  
+  // Project to image coordinates
+  CvPoint3D64f object_pt = cvPoint3D64f(-gripper_in_high_def.point.y,
+                                        -gripper_in_high_def.point.z,
+                                        gripper_in_high_def.point.x);
+  CvMat object_points = cvMat(1, 1, CV_64FC3, &object_pt.x);
+  double zeros[] = {0, 0, 0};
+  CvMat rotation_vector = cvMat(3, 1, CV_64FC1, zeros);
+  CvMat translation_vector = cvMat(3, 1, CV_64FC1, zeros);
+  double point[2];
+  CvMat image_points = cvMat(1, 1, CV_64FC2, point);
+  cvProjectPoints2(&object_points, &rotation_vector, &translation_vector,
+                   K_, NULL, &image_points);
+  
+  // Request ROI around projected point
+  static const int ROI_SIZE = 400;
+  CvRect outlet_roi = cvRect(point[0] - ROI_SIZE/2, point[1] - ROI_SIZE/2,
+                             ROI_SIZE, ROI_SIZE);
+  setRoi( fitToFrame(outlet_roi) );
 }
 
 const char PlugTracker::wndname[] = "Plug tracker";
