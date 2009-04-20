@@ -158,6 +158,7 @@ public:
 	tf::TransformListener *tf_;
 
 	int frames_number_;
+	string target_frame_;
 
 	OutletSpotting() : ros::Node("stereo_view"),left(NULL), disp(NULL), disp_clone(NULL),
 		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(false)
@@ -168,6 +169,7 @@ public:
 		param ("~display", display, false);
 		param ("~save_patches", save_patches, false);
 		param ("~frames_number", frames_number_, 7);
+		param<string> ("~target_frame", target_frame_, "odom_combined");
 
 		if (display) {
 			ROS_INFO("Displaying images\n");
@@ -746,6 +748,7 @@ private:
         }
         catch(tf::TransformException & ex){
             ROS_ERROR("Transform exception: %s\n", ex.what());
+        	return false;
         }
         PointCloud outlet_vecinity = outletVecinity(laser_cloud, ps_cloud, 0.2);
 
@@ -771,6 +774,7 @@ private:
         }
         catch(tf::TransformException & ex){
             ROS_ERROR("Transform exception: %s\n", ex.what());
+        	return false;
         }
 
         double dist_thresh = 0.02;
@@ -783,10 +787,11 @@ private:
         }
 
 
+        PoseStamped temp_pose;
 
         // fill the outlet pose
-        pose.header.frame_id = laser_cloud.header.frame_id;
-        pose.header.stamp = laser_cloud.header.stamp;
+        temp_pose.header.frame_id = laser_cloud.header.frame_id;
+        temp_pose.header.stamp = laser_cloud.header.stamp;
 
         btVector3 position(ps_cloud.point.x,ps_cloud.point.y,ps_cloud.point.z);
         btVector3 normal(coeff[0],coeff[1],coeff[2]);
@@ -802,7 +807,17 @@ private:
         btQuaternion orientation;
         rotation.getRotation(orientation);
         tf::Transform outlet_pose(orientation, position);
-        tf::PoseTFToMsg(outlet_pose, pose.pose);
+        tf::PoseTFToMsg(outlet_pose, temp_pose.pose);
+
+
+
+        try {
+        	tf_->transformPose(target_frame_, temp_pose, pose);
+        }
+        catch(tf::TransformException & ex){
+        	ROS_ERROR("Transform exception: %s\n", ex.what());
+        	return false;
+        }
 
         ROS_INFO("OutletSpotter: finished computing outlet pose");
 
