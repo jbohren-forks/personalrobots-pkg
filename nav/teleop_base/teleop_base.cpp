@@ -81,7 +81,8 @@ class TeleopBase : public Node
     unsubscribe("joy");
     unsubscribe("cmd_passthrough");
     unadvertise("cmd_vel");
-    unadvertise(TORSO_TOPIC);
+    if (torso_dn_button != 0)
+      unadvertise(TORSO_TOPIC);
   }
 
       void joy_cb()
@@ -152,7 +153,8 @@ class TeleopBase : public Node
             publish("cmd_vel", cmd);
 
             torso_eff.data = req_torso;
-            publish(TORSO_TOPIC, torso_eff);
+	    if (torso_dn_button != 0)
+	      publish(TORSO_TOPIC, torso_eff);
 
             if (req_torso != 0)
               fprintf(stderr,"teleop_base:: %f, %f, %f. Torso effort: %f.\n",cmd.vel.vx,cmd.vel.vy,cmd.ang_vel.vz, torso_eff.data);
@@ -166,7 +168,8 @@ class TeleopBase : public Node
             if (!deadman_no_publish_)
            {
              publish("cmd_vel", cmd);//Only publish if deadman_no_publish is enabled
-             publish(TORSO_TOPIC, torso_eff);
+	     if (torso_dn_button != 0)
+	       publish(TORSO_TOPIC, torso_eff);
              //fprintf(stderr,"teleop_base:: deadman off\n");
            }
          }
