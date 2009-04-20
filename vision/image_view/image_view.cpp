@@ -32,12 +32,14 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "opencv/cv.h"
-#include "opencv/highgui.h"
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
-#include "ros/node.h"
-#include "image_msgs/Image.h"
-#include "opencv_latest/CvBridge.h"
+#include <ros/node.h>
+#include <image_msgs/Image.h>
+#include <opencv_latest/CvBridge.h>
+
+#include <boost/thread.hpp>
 
 class ImageView
 {
@@ -45,17 +47,23 @@ private:
   image_msgs::Image img_msg_;
   image_msgs::CvBridge img_bridge_;
   std::string window_name_;
+  std::string filename_format_;
+  int count_;
+  bool save_;
+  boost::mutex save_mutex_;
 
 public:
-  ImageView()
+  ImageView() : count_(0), save_(false)
   {
     ros::Node* node = ros::Node::instance();
 
     node->param("~window_name", window_name_, node->mapName("image"));
     bool autosize;
     node->param("~autosize", autosize, true);
+    node->param("~filename_format", filename_format_, std::string("frame%04i.png"));
     
     cvNamedWindow(window_name_.c_str(), autosize ? CV_WINDOW_AUTOSIZE : 0);
+    cvSetMouseCallback(window_name_.c_str(), &ImageView::mouse_cb, this);
     cvStartWindowThread();
 
     node->subscribe("image", img_msg_, &ImageView::image_cb, this, 1);
@@ -74,6 +82,30 @@ public:
     
     if (img_bridge_.fromImage(img_msg_, "bgr"))
       cvShowImage(window_name_.c_str(), img_bridge_.toIpl());
+
+    boost::lock_guard<boost::mutex> guard(save_mutex_);
+    if (save_) {
+      char filename[256];
+      if (snprintf(filename, sizeof(filename), filename_format_.c_str(),
+                   count_++) < (int)sizeof(filename)) {
+        cvSaveImage(filename, img_bridge_.toIpl());
+        ROS_INFO("Saved image %s", filename);
+      } else {
+        ROS_WARN("Couldn't save image, file name too long!");
+      }
+      save_ = false;
+    }
+  }
+
+  static void mouse_cb(int event, int x, int y, int flags, void* param)
+  {
+    if (event != CV_EVENT_LBUTTONDOWN)
+      return;
+    
+    ImageView *iv = (ImageView*)param;
+    iv->save_mutex_.lock();
+    iv->save_ = true;
+    iv->save_mutex_.unlock();
   }
 };
 
