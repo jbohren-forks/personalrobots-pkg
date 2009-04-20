@@ -18,17 +18,23 @@ class TestBasicLocalization(unittest.TestCase):
 
   def setUp(self):
     self.tf = None
+    self.target_x = None
+    self.target_y = None
+    self.target_a = None
 
   def tf_cb(self, msg):
     for t in msg.transforms:
       if t.parent_id == 'map':
         self.tf = t.transform
+        print 'Curr:\t %16.6f %16.6f' % (self.tf.translation.x, self.tf.translation.y)
+        print 'Target:\t %16.6f %16.6f' % (self.target_x, self.target_y)
+        print 'Diff:\t %16.6f %16.6f' % (abs(self.tf.translation.x-self.target_x),abs(self.tf.translation.y - self.target_y))
 
   def test_basic_localization(self):
     global_localization = int(sys.argv[1])
-    target_x = float(sys.argv[2])
-    target_y = float(sys.argv[3])
-    target_a = float(sys.argv[4])
+    self.target_x = float(sys.argv[2])
+    self.target_y = float(sys.argv[3])
+    self.target_a = float(sys.argv[4])
     tolerance_d = float(sys.argv[5])
     tolerance_a = float(sys.argv[6])
     target_time = float(sys.argv[7])
@@ -48,8 +54,8 @@ class TestBasicLocalization(unittest.TestCase):
     while (rospy.rostime.get_time() - start_time) < target_time:
       time.sleep(0.1)
     self.assertNotEquals(self.tf, None)
-    self.assertTrue(abs(self.tf.translation.x - target_x) <= tolerance_d)
-    self.assertTrue(abs(self.tf.translation.y - target_y) <= tolerance_d)
+    self.assertTrue(abs(self.tf.translation.x - self.target_x) <= tolerance_d)
+    self.assertTrue(abs(self.tf.translation.y - self.target_y) <= tolerance_d)
     #TODO: Check orientation
 
 if __name__ == '__main__':
