@@ -2,6 +2,9 @@
   <!-- Bring up the node we want to test. -->
   <include file="$(find pr2_gazebo)/pr2_empty.launch"/>
 
+  <!-- load controllers -->
+  <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
+
   <!-- Run hztest -->
   <!-- Test for publication of 'left axis camera image publish rate' topic -->
   <test test-name="hztest_test_axis_left_image" pkg="rostest" type="hztest" time-limit="60" name="axis_left_image_test">

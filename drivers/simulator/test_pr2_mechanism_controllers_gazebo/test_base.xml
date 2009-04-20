@@ -1,13 +1,14 @@
 <launch>
-  <master auto="start" />
+  <!-- send single_link.xml to param server -->
+  <include file="$(find pr2_gazebo)/pr2_empty_no_x.launch" />
 
-    <!-- send single_link.xml to param server -->
-    <include file="$(find pr2_gazebo)/pr2_empty_no_x.launch" />
+  <!-- load controllers -->
+  <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
 
-    <test test-name="test_pr2_mechanism_gazebo_test_base_vw1"      pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_vw_gt.py" />
-    <test test-name="test_pr2_mechanism_gazebo_test_base_odomxyw1" pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_odomxyw_gt.py" />
-    <test test-name="test_pr2_mechanism_gazebo_test_base_odomxy1"  pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_odomxy_gt.py" />
-    <test test-name="test_pr2_mechanism_gazebo_test_base_odomw1"   pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_odomw_gt.py" />
-    <test test-name="test_pr2_mechanism_gazebo_test_base_odomx1"   pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_odomx_gt.py" />
-    <test test-name="test_pr2_mechanism_gazebo_test_base_odomy1"   pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_odomy_gt.py" />
+  <test test-name="test_pr2_mechanism_gazebo_test_base_vw1"      pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_vw_gt.py" />
+  <test test-name="test_pr2_mechanism_gazebo_test_base_odomxyw1" pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_odomxyw_gt.py" />
+  <test test-name="test_pr2_mechanism_gazebo_test_base_odomxy1"  pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_odomxy_gt.py" />
+  <test test-name="test_pr2_mechanism_gazebo_test_base_odomw1"   pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_odomw_gt.py" />
+  <test test-name="test_pr2_mechanism_gazebo_test_base_odomx1"   pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_odomx_gt.py" />
+  <test test-name="test_pr2_mechanism_gazebo_test_base_odomy1"   pkg="test_pr2_mechanism_controllers_gazebo" type="test_base_odomy_gt.py" />
 </launch>

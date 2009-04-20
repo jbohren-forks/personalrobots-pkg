@@ -2,6 +2,10 @@
   <!-- Bring up the node we want to test. -->
   <include file="$(find pr2_gazebo)/pr2_empty_no_x.launch"/>
 
+  <!-- load controllers -->
+  <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
+
+
   <!-- Run hztest -->
   <!-- Test for publication of 'base_pose_ground_truth' topic. -->
   <test test-name="hztest_test_base_pose_ground_truth" pkg="rostest" type="hztest" time-limit="50" name="base_pose_ground_truth_test">
