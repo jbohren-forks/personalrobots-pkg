@@ -193,12 +193,13 @@ class NavStackTest(unittest.TestCase):
     def test_set_goal(self):
         print "LNK\n"
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
-        pub_goal = rospy.Publisher("/move_base_node/activate", Pose2D) #received by wavefront_player or equivalent
+        #pub_goal = rospy.Publisher("/move_base_node/activate", Pose2D) #received by wavefront_player or equivalent
+        pub_goal = rospy.Publisher("goal", Pose2D)
         rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
         rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
-        rospy.Subscriber("/move_base/feedback"   , MoveBaseState       , self.stateInput)
+        rospy.Subscriber("/move_base_node/feedback"   , MoveBaseState       , self.stateInput)
 
         # below only for debugging build 303, base not moving
         rospy.Subscriber("cmd_vel"               , PoseDot             , self.cmd_velInput)
@@ -264,12 +265,13 @@ class NavStackTest(unittest.TestCase):
             # send goal
             h = rospy.Header();
             h.stamp = rospy.get_rostime();
-            h.frame_id = "/map"
+            h.frame_id = "map"
             points = []; #[Point2DFloat32()];
             color  = ColorRGBA(0,0,0,0);
             boundary = Polyline2D(h,points,color);
+            print "publishing goal",self.publish_goal
             if self.publish_goal:
-              pub_goal.publish(Pose2D(h, self.target_x, self.target_y, self.target_t, boundary))
+              pub_goal.publish(Pose2D(h, self.target_x, self.target_y, 0, self.target_t, boundary))
             time.sleep(1.0)
 
             # compute angular error between deltas in odom and p3d

@@ -11,7 +11,7 @@
     -->
 
     <!-- nav-stack -->
-    <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.xml"/>
+    <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.launch"/>
 
     <!-- for visualization -->
     <!--
