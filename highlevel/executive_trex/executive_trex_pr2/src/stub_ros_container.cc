@@ -214,9 +214,9 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_insert_plug"))
     runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(insert_plug);
   
-  executive_trex_pr2::StubAction<robot_actions::ServoToOutlet, std_msgs::Empty> servo_to_outlet("servo_to_outlet");
+  executive_trex_pr2::StubAction<robot_msgs::PoseStamped, std_msgs::Empty> servo_to_outlet("servo_to_outlet");
   if (getComponentParam("/trex/enable_servo_to_outlet"))
-    runner.connect<robot_actions::ServoToOutlet, robot_actions::ServoToOutletState, std_msgs::Empty>(servo_to_outlet);
+    runner.connect<robot_msgs::PoseStamped, robot_actions::ServoToOutletState, std_msgs::Empty>(servo_to_outlet);
   
   executive_trex_pr2::StubAction<robot_msgs::PointStamped, robot_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
   if (getComponentParam("/trex/enable_detect_outlet_fine"))

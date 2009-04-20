@@ -375,11 +375,11 @@ namespace TREX {
   /***********************************************************************
    * @brief ServoToOutlet 
    **********************************************************************/
-  class ServoToOutletAdapter: public ROSActionAdapter<robot_actions::ServoToOutlet, robot_actions::ServoToOutletState, std_msgs::Empty> {
+  class ServoToOutletAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::ServoToOutletState, std_msgs::Empty> {
   public:
 
     ServoToOutletAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_actions::ServoToOutlet, robot_actions::ServoToOutletState, std_msgs::Empty>(agentName, configData){
+      : ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::ServoToOutletState, std_msgs::Empty>(agentName, configData){
     }
 
     virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){
