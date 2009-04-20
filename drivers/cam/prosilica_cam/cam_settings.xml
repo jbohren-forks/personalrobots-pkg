@@ -9,4 +9,5 @@
   <param name="gain" type="int" value="0"/>
   -->
   <param name="whitebal_auto" type="str" value="Auto"/>
+  <param name="frame_id" type="string" value="high_def_optical_frame" />
 </launch>
