@@ -11,8 +11,8 @@ def callback(data):
 
 def main():
     rospy.init_node('write_poses')
-    #rospy.Subscriber('/outlet_detector/pose', PoseStamped, callback)
-    rospy.Subscriber('/plug_detector/pose', PoseStamped, callback)
+    rospy.Subscriber('/outlet_detector/pose', PoseStamped, callback)
+    #rospy.Subscriber('/plug_detector/pose', PoseStamped, callback)
     rospy.spin()
 
 if __name__ == '__main__': main()

@@ -92,6 +92,7 @@ public:
     if (K_ == NULL)
       K_ = cvCreateMat(3, 3, CV_64FC1);
     memcpy(K_->data.db, &cam_info_.K[0], 9 * sizeof(double));
+    
     frame_w_ = cam_info_.width;
     frame_h_ = cam_info_.height;
   }
@@ -140,9 +141,42 @@ public:
       return false;
     }
 
-    // TODO: project to image, look in local ROI
+    // First try for speed: use ROI around projected estimate from request
+    // TODO: don't have K the first time, query for it somehow...
+    if (K_) {
+      // Get intrinsic matrix of full frame (translate principal point)
+      K_->data.db[2] += req_.region_x;
+      K_->data.db[5] += req_.region_y;
+      
+      // Project point onto image
+      CvPoint3D64f object_pt = cvPoint3D64f(-od_req.point.point.y,
+                                            -od_req.point.point.z,
+                                            od_req.point.point.x);
+      CvMat object_points = cvMat(1, 1, CV_64FC3, &object_pt.x);
+      double zeros[] = {0, 0, 0};
+      CvMat rotation_vector = cvMat(3, 1, CV_64FC1, zeros);
+      CvMat translation_vector = cvMat(3, 1, CV_64FC1, zeros);
+      double point[2];
+      CvMat image_points = cvMat(1, 1, CV_64FC2, point);
+      cvProjectPoints2(&object_points, &rotation_vector, &translation_vector,
+                       K_, NULL, &image_points);
 
-    // Fallback: search full frame
+      // Request ROI around projected point
+      static const int ROI_SIZE = 700;
+      CvRect outlet_roi = cvRect(point[0] - ROI_SIZE/2, point[1] - ROI_SIZE/2,
+                                 ROI_SIZE, ROI_SIZE);
+      setRoi( fitToFrame(outlet_roi) );
+      if (!ros::service::call("/prosilica/poll", req_, res_))
+        return false; // something bad happened
+      processCamInfo();
+
+      if (detectOutlet(od_res.pose))
+        return true;
+      else
+        ROS_WARN("Failed to detect outlet using estimate, trying again with full frame");
+    }    
+
+    // Slow fallback: search full frame
     req_.region_x = req_.region_y = req_.width = req_.height = 0;
     if (!ros::service::call("/prosilica/poll", req_, res_))
       return false;
@@ -210,11 +244,6 @@ public:
              holes[3].x(), holes[3].y(), holes[3].z(),
              holes[6].x(), holes[6].y(), holes[6].z(),
              holes[9].x(), holes[9].y(), holes[9].z());
-    
-    ROS_INFO("Ground hole distances:\n\td(TL,TR) = %.2fmm\n"
-             "\td(BL,BR) = %.2fmm\n\td(TL,BR) = %.2fmm\n\td(BL,TR) = %.2fmm",
-             1000*holes[0].distance(holes[3]), 1000*holes[6].distance(holes[9]),
-             1000*holes[0].distance(holes[6]), 1000*holes[3].distance(holes[9]));
     */
     
     if (display_) {
