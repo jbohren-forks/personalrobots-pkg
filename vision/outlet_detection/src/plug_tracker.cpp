@@ -16,7 +16,7 @@ int cvFindChessboardCorners_ex( const void* arr, CvSize pattern_size,
 
 PlugTracker::PlugTracker(ros::Node &node)
   : node_(node), img_(res_.image), cam_info_(res_.cam_info),
-    tf_broadcaster_(node), K_(NULL), display_img_(NULL)
+    tf_broadcaster_(node), K_(NULL), grid_pts_(NULL)
 {
   double square_size;
   if (!node_.getParam("~square_size", square_size)) {
@@ -89,7 +89,6 @@ PlugTracker::~PlugTracker()
   
   cvReleaseMat(&K_);
   cvReleaseMat(&grid_pts_);
-  cvReleaseImage(&display_img_);
   if (display_)
     cvDestroyWindow(wndname);
 }
@@ -209,15 +208,11 @@ void PlugTracker::processImage()
            pose_.pose.position.y, pose_.pose.position.z);
   */
   if (display_) {
-    if (!display_img_ || display_img_->width != image->width ||
-        display_img_->height != image->height) {
-      cvReleaseImage(&display_img_);
-      display_img_ = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 3);
-    }
-    cvCvtColor(image, display_img_, CV_GRAY2BGR);
-    cvDrawChessboardCorners(display_img_, cvSize(board_w_, board_h_),
+    display_img_.Allocate(image->width, image->height);
+    cvCvtColor(image, display_img_.Ipl(), CV_GRAY2BGR);
+    cvDrawChessboardCorners(display_img_.Ipl(), cvSize(board_w_, board_h_),
                             &corners[0], ncorners, 1);
-    cvShowImage(wndname, display_img_);
+    cvShowImage(wndname, display_img_.Ipl());
   }
 }
 

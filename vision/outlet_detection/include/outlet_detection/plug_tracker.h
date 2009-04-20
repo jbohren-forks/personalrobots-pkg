@@ -7,6 +7,7 @@
 #include <tf/transform_broadcaster.h>
 
 #include <opencv/cv.h>
+#include <opencv/cvwimage.h>
 
 #include <boost/thread.hpp>
 
@@ -50,7 +51,7 @@ private:
   static const float RESIZE_FACTOR_FOUND = 3.0f;
   
   bool display_;
-  IplImage* display_img_;
+  cv::WImageBuffer3_b display_img_;
 
   static const char wndname[];
 };

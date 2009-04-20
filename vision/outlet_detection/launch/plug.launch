@@ -10,6 +10,6 @@
     <!--param name="square_size" type="double" value="0.0215"/>
     <param name="board_width" type="int" value="6"/>
     <param name="board_height" type="int" value="9"/-->
-    <node pkg="outlet_detection" type="plug_node" respawn="false" output="screen"/>
   </group>
+  <node pkg="outlet_detection" type="plug_node" respawn="false" output="screen"/>
 </launch>
