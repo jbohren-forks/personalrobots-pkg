@@ -20,12 +20,17 @@ Clx = 320  # Center left image
 Crx = 320  # Center right image
 Cy = 240   # Center Y (both images)
 
+# Camera
 cam = camera.Camera((Fx, Fy, Tx, Clx, Crx, Cy))
-vo = VisualOdometer(
-  cam,
-  feature_detector = FeatureDetectorFast(),
-  descriptor_scheme = DescriptorSchemeSAD(),
-)
+
+# Feature Detector
+fd = FeatureDetectorFast(300)
+
+# Descriptor Scheme
+ds = DescriptorSchemeSAD()
+
+# Visual Odometer
+vo = VisualOdometer(cam)
 
 for i in range(100):
   # Left image
@@ -35,7 +40,7 @@ for i in range(100):
   rim = Image.open("%s/%06dR.png" % (sys.argv[1], i))
 
   # Combine the images to make a stereo frame
-  frame = SparseStereoFrame(lim, rim)
+  frame = SparseStereoFrame(lim, rim, feature_detector = fd, descriptor_scheme = ds)
 
   # Supply the stereo frame to the visual odometer
   pose = vo.handle_frame(frame)
@@ -43,4 +48,3 @@ for i in range(100):
   print
 
 vo.summarize_timers()
-
