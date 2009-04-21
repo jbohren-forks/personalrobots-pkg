@@ -438,7 +438,7 @@ AmclNode::getOdomPose(double& x, double& y, double& yaw,
   }
   catch(tf::TransformException e)
   {
-    //ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
+    ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
     return false;
   }
   x = odom_pose.getOrigin().x();
