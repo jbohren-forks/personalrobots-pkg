@@ -72,8 +72,8 @@ Subscribes to (name/type):
 - @b "gui_laser"/Polyline2D : re-projected laser scan from a planner.  Rendered as a set of points.
 
 Publishes to (name / type):
-- @b "goal"/Pose2D : goal for planner.  Sent on middle button click.
-- @b "initialpose"/Pose2DFloat32 : pose to initialize localization system.  Sent on SHIFT + middle button click.
+- @b "goal"/PoseStamped : goal for planner.  Sent on middle button click.
+- @b "initialpose"/PoseWithCovariance : pose to initialize localization system.  Sent on SHIFT + middle button click.
 
 <hr>
 
@@ -98,7 +98,7 @@ Publishes to (name / type):
 
 // messages and services
 #include "robot_msgs/ParticleCloud.h"
-#include "robot_actions/Pose2D.h"
+#include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/Polyline2D.h"
 #include "robot_msgs/PoseWithCovariance.h"
 #include "pr2_msgs/OccDiff.h"
@@ -117,7 +117,7 @@ class NavView : public ros::Node, public ros::SDLGL
 {
 public:
   robot_msgs::ParticleCloud cloud;
-  robot_actions::Pose2D goal;
+  robot_msgs::PoseStamped goal;
   robot_msgs::Polyline2D pathline;
   robot_msgs::Polyline2D local_path;
   robot_msgs::Polyline2D robot_footprint;
@@ -150,7 +150,7 @@ public:
   {
     param("max_frame_rate", max_frame_rate, 5.0);
     param("/global_frame_id", global_frame, std::string("map"));
-    advertise<robot_actions::Pose2D>("goal",1);
+    advertise<robot_msgs::PoseStamped>("goal",1);
     advertise<robot_msgs::PoseWithCovariance>("initialpose",1);
     subscribe("particlecloud", cloud, &NavView::generic_cb,1);
     subscribe("gui_path", pathline, &NavView::generic_cb,1);
@@ -303,14 +303,10 @@ NavView::mouse_button(int x, int y, int button, bool is_down)
       else
       {
         // Send out the goal
-        goal.header.frame_id = global_frame;
-        goal.x = gx;
-        goal.y = gy;
-        goal.th = ga;
-        printf("setting goal: %.3f %.3f %.3f\n",
-               goal.x,
-               goal.y,
-               goal.th);
+        tf::Stamped<tf::Pose> p = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(ga, 0.0, 0.0), tf::Point(gx, gy, 0.0)), ros::Time::now(), global_frame);
+        tf::PoseStampedTFToMsg(p, goal);
+        printf("setting goal: Position(%.3f, %.3f, %.3f), Orientation(%.3f, %.3f, %.3f, %.3f) = Angle: %.3f\n", goal.pose.position.x, goal.pose.position.y, goal.pose.position.z,
+            goal.pose.orientation.x, goal.pose.orientation.y, goal.pose.orientation.z, goal.pose.orientation.w, ga);
         publish("goal", goal);
       }
 
