@@ -40,7 +40,7 @@
 #include <ros/node.h>
 #include <navfn/navfn.h>
 #include <costmap_2d/costmap_2d.h>
-#include <robot_actions/Pose2D.h>
+#include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/Point.h>
 #include <tf/transform_listener.h>
 #include <vector>
@@ -63,7 +63,7 @@ namespace navfn {
        * @param plan The plan... filled by the planner
        * @return True if a valid plan was found, false otherwise
        */
-      bool makePlan(const robot_actions::Pose2D& goal, std::vector<robot_actions::Pose2D>& plan);
+      bool makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan);
 
       /**
        * @brief  Compute the full navigation function for the costmap given a point in the world to start from

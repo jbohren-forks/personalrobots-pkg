@@ -50,7 +50,7 @@
 #include <tf/transform_datatypes.h>
 
 #include <deprecated_msgs/RobotBase2DOdom.h>
-#include <robot_actions/Pose2D.h>
+#include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/Point.h>
 
@@ -100,15 +100,15 @@ namespace base_local_planner {
 
       /**
        * @brief  Given the current position, orientation, and velocity of the robot, compute velocity commands to send to the base
-       * @param global_plan The plan to pass to the controller
+       * @param orig_global_plan The plan to pass to the controller
        * @param cmd_vel Will be filled with the velocity command to be passed to the robot base
        * @param local_plan Will be set from the points of the selected trajectory for display purposes
        * @param observations A vector of updates from the robot's sensors in world space, is sometimes unused depending on the model
        * @return True if a valid trajectory was found, false otherwise
        */
-      bool computeVelocityCommands(const std::vector<robot_actions::Pose2D>& global_plan, 
+      bool computeVelocityCommands(const std::vector<robot_msgs::PoseStamped>& orig_global_plan, 
           robot_msgs::PoseDot& cmd_vel,
-          std::vector<robot_actions::Pose2D>& local_plan,
+          std::vector<robot_msgs::PoseStamped>& local_plan,
           const std::vector<costmap_2d::Observation>& observations = std::vector<costmap_2d::Observation>(0));
 
       /**

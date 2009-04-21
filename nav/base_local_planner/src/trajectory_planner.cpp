@@ -39,7 +39,6 @@
 
 using namespace std;
 using namespace robot_msgs;
-using namespace robot_actions;
 using namespace costmap_2d;
 
 namespace base_local_planner{
@@ -101,8 +100,8 @@ namespace base_local_planner{
     queue<MapCell*> path_dist_queue;
     queue<MapCell*> goal_dist_queue;
     for(unsigned int i = 0; i < global_plan_.size(); ++i){
-      double g_x = global_plan_[i].x;
-      double g_y = global_plan_[i].y;
+      double g_x = global_plan_[i].pose.position.x;
+      double g_y = global_plan_[i].pose.position.y;
       unsigned int map_x, map_y;
       if(cost_map_.worldToMap(g_x, g_y, map_x, map_y)){
         MapCell& current = map_(map_x, map_y);
@@ -295,8 +294,8 @@ namespace base_local_planner{
 
       //do we want to follow blindly
       if(simple_attractor_){
-        goal_dist = (x_i - global_plan_[global_plan_.size() -1].x) * (x_i - global_plan_[global_plan_.size() -1].x) + 
-          (y_i - global_plan_[global_plan_.size() -1].y) * (y_i - global_plan_[global_plan_.size() -1].y);
+        goal_dist = (x_i - global_plan_[global_plan_.size() -1].pose.position.x) * (x_i - global_plan_[global_plan_.size() -1].pose.position.x) + 
+          (y_i - global_plan_[global_plan_.size() -1].pose.position.y) * (y_i - global_plan_[global_plan_.size() -1].pose.position.y);
         path_dist = 0.0;
       }
       else{
@@ -339,7 +338,7 @@ namespace base_local_planner{
     unsigned int goal_cell_x, goal_cell_y;
     //find a clear line of sight from the robot's cell to a point on the path
     for(int i = global_plan_.size() - 1; i >=0; --i){
-      if(cost_map_.worldToMap(global_plan_[i].x, global_plan_[i].y, goal_cell_x, goal_cell_y)){
+      if(cost_map_.worldToMap(global_plan_[i].pose.position.x, global_plan_[i].pose.position.y, goal_cell_x, goal_cell_y)){
         if(lineCost(cell_x, goal_cell_x, cell_y, goal_cell_y) >= 0){
           double gx, gy;
           cost_map_.mapToWorld(goal_cell_x, goal_cell_y, gx, gy);
@@ -453,7 +452,7 @@ namespace base_local_planner{
     return cost;
   }
 
-  void TrajectoryPlanner::updatePlan(const vector<Pose2D>& new_plan){
+  void TrajectoryPlanner::updatePlan(const vector<PoseStamped>& new_plan){
     global_plan_.resize(new_plan.size());
     for(unsigned int i = 0; i < new_plan.size(); ++i){
       global_plan_[i] = new_plan[i];

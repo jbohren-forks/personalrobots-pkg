@@ -299,9 +299,9 @@ namespace base_local_planner {
     return goal_reached_;
   }
 
-  bool TrajectoryPlannerROS::computeVelocityCommands(const std::vector<robot_actions::Pose2D>& global_plan, 
+  bool TrajectoryPlannerROS::computeVelocityCommands(const std::vector<robot_msgs::PoseStamped>& orig_global_plan, 
       robot_msgs::PoseDot& cmd_vel,
-      std::vector<robot_actions::Pose2D>& local_plan,
+      std::vector<robot_msgs::PoseStamped>& local_plan,
       const std::vector<costmap_2d::Observation>& observations){
 
     tf::Stamped<tf::Pose> robot_pose, global_pose;
@@ -309,9 +309,17 @@ namespace base_local_planner {
     robot_pose.frame_id_ = robot_base_frame_;
     robot_pose.stamp_ = ros::Time();
 
+    std::vector<robot_msgs::PoseStamped> global_plan;
+
     //get the global pose of the robot
     try{
       tf_.transformPose(global_frame_, robot_pose, global_pose);
+      //transform the plan for the robot into the global frame for the controller
+      for(unsigned int i = 0; i < orig_global_plan.size(); ++i){
+        robot_msgs::PoseStamped new_pose;
+        tf_.transformPose(global_frame_, orig_global_plan[i], new_pose);
+        global_plan.push_back(new_pose);
+      }
     }
     catch(tf::LookupException& ex) {
       ROS_ERROR("No Transform available Error: %s\n", ex.what());
@@ -351,10 +359,16 @@ namespace base_local_planner {
     if(global_plan.empty())
       return false;
 
+    tf::Stamped<tf::Pose> goal_point;
+    tf::PoseStampedMsgToTF(global_plan.back(), goal_point);
     //we assume the global goal is the last point in the global plan
-    double goal_x = global_plan.back().x;
-    double goal_y = global_plan.back().y;
-    double goal_th = global_plan.back().th;
+    double goal_x = goal_point.getOrigin().getX();
+    double goal_y = goal_point.getOrigin().getY();
+
+    double uselessPitch, uselessRoll, yaw;
+    goal_point.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+
+    double goal_th = yaw;
 
     //assume at the beginning of our control cycle that we could have a new goal
     goal_reached_ = false;
@@ -399,7 +413,6 @@ namespace base_local_planner {
     //pass along drive commands
     cmd_vel.vel.vx = drive_cmds.getOrigin().getX();
     cmd_vel.vel.vy = drive_cmds.getOrigin().getY();
-    double uselessPitch, uselessRoll, yaw;
     drive_cmds.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
 
     cmd_vel.ang_vel.vz = yaw;
@@ -413,11 +426,10 @@ namespace base_local_planner {
       double p_x, p_y, p_th;
       path.getPoint(i, p_x, p_y, p_th);
 
-      robot_actions::Pose2D p;
-      p.x = p_x; 
-      p.y = p_y;
-      p.th = p_th;
-      local_plan.push_back(p);
+      tf::Stamped<tf::Pose> p = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(p_th, 0.0, 0.0), tf::Point(p_x, p_y, 0.0)), ros::Time::now(), global_frame_);
+      robot_msgs::PoseStamped pose;
+      tf::PoseStampedTFToMsg(p, pose);
+      local_plan.push_back(pose);
     }
 
     /* For Debugging

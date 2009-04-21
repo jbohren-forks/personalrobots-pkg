@@ -52,7 +52,7 @@
 #include <base_local_planner/trajectory.h>
 
 //we'll take in a path as a vector of poses
-#include <robot_actions/Pose2D.h>
+#include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/Point.h>
 #include <base_local_planner/Position2DInt.h>
 
@@ -140,7 +140,7 @@ namespace base_local_planner {
        * @brief  Update the plan that the controller is following
        * @param new_plan A new plan for the controller to follow 
        */
-      void updatePlan(const std::vector<robot_actions::Pose2D>& new_plan);
+      void updatePlan(const std::vector<robot_msgs::PoseStamped>& new_plan);
 
       /**
        * @brief  Used for display purposes, allows the footprint of the robot to be drawn in visualization tools
@@ -256,7 +256,7 @@ namespace base_local_planner {
 
       double inscribed_radius_, circumscribed_radius_; ///< @brief The inscribed and circumscribed radii of the robot
 
-      std::vector<robot_actions::Pose2D> global_plan_; ///< @brief The global path for the robot to follow
+      std::vector<robot_msgs::PoseStamped> global_plan_; ///< @brief The global path for the robot to follow
 
       bool stuck_left, stuck_right; ///< @brief Booleans to keep the robot from oscillating during rotation
       bool rotating_left, rotating_right; ///< @brief Booleans to keep track of the direction of rotation for the robot

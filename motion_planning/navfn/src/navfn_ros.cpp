@@ -74,15 +74,21 @@ namespace navfn {
     return planner_.calcNavFnDijkstra();
   }
 
-  bool NavfnROS::makePlan(const robot_actions::Pose2D& goal, std::vector<robot_actions::Pose2D>& plan){
+  bool NavfnROS::makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
     //get the pose of the robot in the global frame
-    tf::Stamped<tf::Pose> robot_pose, global_pose;
+    tf::Stamped<tf::Pose> robot_pose, global_pose, orig_goal, goal_pose;
+
+    //convert the goal message into tf::Stamped<tf::Pose>
+    tf::PoseStampedMsgToTF(goal, orig_goal);
+
     global_pose.setIdentity();
     robot_pose.setIdentity();
     robot_pose.frame_id_ = robot_base_frame_;
-    robot_pose.stamp_ = ros::Time();
+    robot_pose.stamp_ = ros::Time::now();
     try{
+      //transform both the goal and pose of the robot to the global frame
       tf_.transformPose(global_frame_, robot_pose, global_pose);
+      tf_.transformPose(global_frame_, orig_goal, goal_pose);
     }
     catch(tf::LookupException& ex) {
       ROS_ERROR("No Transform available Error: %s\n", ex.what());
@@ -107,7 +113,10 @@ namespace navfn {
     map_start[0] = mx;
     map_start[1] = my;
 
-    if(!cost_map_.worldToMap(goal.x, goal.y, mx, my))
+    wx = goal_pose.getOrigin().x();
+    wy = goal_pose.getOrigin().y();
+
+    if(!cost_map_.worldToMap(wx, wy, mx, my))
       return false;
 
     int map_goal[2];
@@ -133,9 +142,11 @@ namespace navfn {
         double world_x, world_y;
         cost_map_.mapToWorld(cell_x, cell_y, world_x, world_y);
 
-        robot_actions::Pose2D pose;
-        pose.x = world_x;
-        pose.y = world_y;
+        robot_msgs::PoseStamped pose;
+        pose.header.stamp = ros::Time::now();
+        pose.header.frame_id = global_frame_;
+        pose.pose.position.x = world_x;
+        pose.pose.position.y = world_y;
         plan.push_back(pose);
       }
     }

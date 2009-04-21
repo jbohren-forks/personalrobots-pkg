@@ -43,7 +43,7 @@ using namespace robot_actions;
 
 namespace nav {
   MoveBaseAction::MoveBaseAction(ros::Node& ros_node, tf::TransformListener& tf) : 
-    Action<Pose2D, Pose2D>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
+    Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
     run_planner_(true), tc_(NULL), planner_cost_map_ros_(NULL), controller_cost_map_ros_(NULL), 
     planner_(NULL), valid_plan_(false) {
 
@@ -151,7 +151,7 @@ namespace nav {
 
   }
 
-  void MoveBaseAction::makePlan(const robot_actions::Pose2D& goal){
+  void MoveBaseAction::makePlan(const robot_msgs::PoseStamped& goal){
     //since this gets called on handle activate
     if(planner_cost_map_ros_ == NULL)
       return;
@@ -162,7 +162,7 @@ namespace nav {
     //make sure we clear the robot's footprint from the cost map
     clearRobotFootprint(planner_cost_map_);
 
-    std::vector<robot_actions::Pose2D> global_plan;
+    std::vector<robot_msgs::PoseStamped> global_plan;
     bool valid_plan = planner_->makePlan(goal, global_plan);
 
     //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
@@ -199,15 +199,15 @@ namespace nav {
 
   void MoveBaseAction::prunePlan(){
     lock_.lock();
-    std::vector<robot_actions::Pose2D>::iterator it = global_plan_.begin();
+    std::vector<robot_msgs::PoseStamped>::iterator it = global_plan_.begin();
     while(it != global_plan_.end()){
-      const robot_actions::Pose2D& w = *it;
+      const robot_msgs::PoseStamped& w = *it;
       // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
-      double x_diff = global_pose_.getOrigin().x() - w.x;
-      double y_diff = global_pose_.getOrigin().y() - w.y;
+      double x_diff = global_pose_.getOrigin().x() - w.pose.position.x;
+      double y_diff = global_pose_.getOrigin().y() - w.pose.position.y;
       double distance = sqrt(x_diff * x_diff + y_diff * y_diff);
       if(distance < 1){
-        ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), w.x, w.y);
+        ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), w.pose.position.x, w.pose.position.y);
         break;
       }
       it = global_plan_.erase(it);
@@ -215,7 +215,7 @@ namespace nav {
     lock_.unlock();
   }
 
-  robot_actions::ResultStatus MoveBaseAction::execute(const robot_actions::Pose2D& goal, robot_actions::Pose2D& feedback){
+  robot_actions::ResultStatus MoveBaseAction::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
     //update the goal
     goal_ = goal;
 
@@ -234,14 +234,7 @@ namespace nav {
       updateGlobalPose();
 
       //update feedback to correspond to our current position
-      double useless_pitch, useless_roll, yaw;
-      global_pose_.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
-      feedback.header.frame_id = global_frame_;
-      feedback.header.stamp = ros::Time::now();
-      feedback.x = global_pose_.getOrigin().x();
-      feedback.y = global_pose_.getOrigin().y();
-      feedback.z = 0.0;
-      feedback.th = yaw;
+      tf::PoseStampedTFToMsg(global_pose_, feedback);
 
       //push the feedback out
       update(feedback);
@@ -268,7 +261,7 @@ namespace nav {
 
       bool valid_control = false;
       robot_msgs::PoseDot cmd_vel;
-      std::vector<robot_actions::Pose2D> local_plan;
+      std::vector<robot_msgs::PoseStamped> local_plan;
       //pass plan to controller
       lock_.lock();
       if(valid_plan_){
@@ -310,17 +303,22 @@ namespace nav {
       t_diff = end_t - start_t;
       ROS_DEBUG("Full control cycle: %.9f Valid control: %d, Vel Cmd (%.2f, %.2f, %.2f)", t_diff, valid_control, cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
 
+      ros::Duration actual;
       //sleep the remainder of the cycle
-      if(!sleepLeftover(start_time, cycle_time))
-        ROS_WARN("Controll loop missed its desired cycle time of %.4f", cycle_time.toSec());
+      if(!sleepLeftover(start_time, cycle_time, actual))
+        ROS_WARN("Controll loop missed its desired cycle time of %.4f... the loop actually took %.4f seconds", cycle_time.toSec(), actual.toSec());
     }
     return robot_actions::PREEMPTED;
   }
 
-  bool MoveBaseAction::sleepLeftover(ros::Time start, ros::Duration cycle_time){
+  bool MoveBaseAction::sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual){
     ros::Time expected_end = start + cycle_time;
+    ros::Time actual_end = ros::Time::now();
     ///@todo: because durations don't handle subtraction properly right now
-    ros::Duration sleep_time = ros::Duration((expected_end - ros::Time::now()).toSec()); 
+    ros::Duration sleep_time = ros::Duration((expected_end - actual_end).toSec()); 
+
+    //set the actual amount of time the loop took
+    actual = actual_end - start;
 
     if(sleep_time < ros::Duration(0.0)){
       return false;
@@ -353,14 +351,19 @@ namespace nav {
     ros_node_.publish("robot_footprint", footprint_msg);
   }
 
-  void MoveBaseAction::publishPath(const std::vector<robot_actions::Pose2D>& path, std::string topic, double r, double g, double b, double a){
-    // Extract the plan in world co-ordinates
+  void MoveBaseAction::publishPath(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a){
+    //given an empty path we won't do anything
+    if(path.empty())
+      return;
+
+    // Extract the plan in world co-ordinates, we assume the path is all in the same frame
     robot_msgs::Polyline2D gui_path_msg;
-    gui_path_msg.header.frame_id = global_frame_;
+    gui_path_msg.header.frame_id = path[0].header.frame_id;
+    gui_path_msg.header.stamp = path[0].header.stamp;
     gui_path_msg.set_points_size(path.size());
     for(unsigned int i=0; i < path.size(); i++){
-      gui_path_msg.points[i].x = path[i].x;
-      gui_path_msg.points[i].y = path[i].y;
+      gui_path_msg.points[i].x = path[i].pose.position.x;
+      gui_path_msg.points[i].y = path[i].pose.position.y;
     }
 
     gui_path_msg.color.r = r;
@@ -380,7 +383,7 @@ int main(int argc, char** argv){
   
   nav::MoveBaseAction move_base(ros_node, tf);
   robot_actions::ActionRunner runner(20.0);
-  runner.connect<Pose2D, MoveBaseState, Pose2D>(move_base);
+  runner.connect<robot_msgs::PoseStamped, MoveBaseStateNew, robot_msgs::PoseStamped>(move_base);
   runner.run();
 
   ros_node.spin();

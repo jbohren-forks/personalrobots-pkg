@@ -5,7 +5,6 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="robot_srvs"/>
-  <depend package="robot_actions"/>
   <depend package="pr2_msgs"/>
   <depend package="pr2_srvs"/>
   <depend package="tf"/>

@@ -160,12 +160,10 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
 
       if ( is_goal_ )
       {
-        robot_actions::Pose2D goal;
-        goal.x = pos_.x;
-        goal.y = pos_.y;
-        goal.th = angle;
-	goal.header.frame_id = panel_->getGlobalFrame();
-        printf("setting goal: %.3f %.3f %.3f\n", goal.x, goal.y, goal.th);
+        tf::Stamped<tf::Pose> p = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(pos_.x, pos_.y, 0.0)), ros::Time::now(), panel_->getGlobalFrame());
+        robot_msgs::PoseStamped goal;
+        tf::PoseStampedTFToMsg(p, goal);
+        printf("setting goal: %.3f %.3f %.3f\n", pos_.x, pos_.y, angle);
         ros_node_->publish( "goal", goal );
       }
       else

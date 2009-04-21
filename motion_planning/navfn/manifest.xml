@@ -7,7 +7,6 @@
  <url>http://pr.willowgarage.com</url>
  <depend package="rosconsole"/>
  <depend package="roscpp"/>
- <depend package="robot_actions"/>
  <depend package="robot_msgs"/>
  <depend package="costmap_2d"/>
  <depend package="tf"/>

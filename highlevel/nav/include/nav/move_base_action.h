@@ -38,8 +38,8 @@
 #define NAV_MOVE_BASE_ACTION_H_
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
-#include <robot_actions/MoveBaseState.h>
-#include <robot_actions/Pose2D.h>
+#include <robot_actions/MoveBaseStateNew.h>
+#include <robot_msgs/PoseStamped.h>
 #include <ros/node.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
@@ -53,7 +53,7 @@ namespace nav {
    * @class MoveBaseAction
    * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
    */
-  class MoveBaseAction : public robot_actions::Action<robot_actions::Pose2D, robot_actions::Pose2D> {
+  class MoveBaseAction : public robot_actions::Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped> {
     public:
       /**
        * @brief  Constructor for the actions
@@ -74,16 +74,17 @@ namespace nav {
        * @param feedback Feedback that the action gives to a higher-level monitor, in this case, the position of the robot
        * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
        */
-      virtual robot_actions::ResultStatus execute(const robot_actions::Pose2D& goal, robot_actions::Pose2D& feedback);
+      virtual robot_actions::ResultStatus execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback);
 
     private:
       /**
        * @brief  Sleeps for the remainder of a cycle
        * @param  start The start time of the cycle
        * @param  cycle_time The desired cycle time
+       * @param  actual Will be set to the actual cycle time of the loop
        * @return True if the desired cycle time is met, false otherwise
        */
-      bool sleepLeftover(ros::Time start, ros::Duration cycle_time);
+      bool sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual);
 
       /**
        * @brief  Publishes the footprint of the robot for visualization purposes
@@ -93,13 +94,13 @@ namespace nav {
       /**
        * @brief  Publish a path for visualization purposes
        */
-      void publishPath(const std::vector<robot_actions::Pose2D>& path, std::string topic, double r, double g, double b, double a);
+      void publishPath(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a);
 
       /**
        * @brief  Make a new global plan
        * @param  goal The goal to plan to
        */
-      void makePlan(const robot_actions::Pose2D& goal);
+      void makePlan(const robot_msgs::PoseStamped& goal);
 
       /**
        * @brief  Trim off parts of the global plan that are far enough behind the robot
@@ -130,12 +131,12 @@ namespace nav {
       costmap_2d::Costmap2D planner_cost_map_, controller_cost_map_;
 
       navfn::NavfnROS* planner_;
-      std::vector<robot_actions::Pose2D> global_plan_;
+      std::vector<robot_msgs::PoseStamped> global_plan_;
       std::vector<robot_msgs::Point> footprint_;
       std::string global_frame_, robot_base_frame_;
       bool valid_plan_;
       boost::recursive_mutex lock_;
-      robot_actions::Pose2D goal_;
+      robot_msgs::PoseStamped goal_;
 
       tf::Stamped<tf::Pose> global_pose_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;
