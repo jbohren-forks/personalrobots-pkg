@@ -36,12 +36,13 @@
 *********************************************************************/
 #include <doors_core/move_base_door_action.h>
 #include <doors_core/door_reactive_planner.h>
+#include <robot_actions/MoveBaseDoorState.h>
+
 
 using namespace base_local_planner;
 using namespace costmap_2d;
 using namespace robot_actions;
 using namespace door_reactive_planner;
-
 namespace nav 
 {
   MoveBaseDoorAction::MoveBaseDoorAction(ros::Node& ros_node, tf::TransformListener& tf) : 
@@ -67,16 +68,18 @@ namespace nav
     ros_node_.param("~circumscribed_radius", circumscribed_radius_, 0.46);
     ros_node_.param("~inflation_radius", inflation_radius_, 0.55);
 
-    //pass on inlfation parameters to the planner's costmap if they're not set explicitly
-    if(!ros_node_.hasParam("~door_reactive_planner/costmap/inscribed_radius")) ros_node_.setParam("~door_reactive_planner/costmap/inscribed_radius", inscribed_radius_);
-    if(!ros_node_.hasParam("~door_reactive_planner/costmap/circumscribed_radius")) ros_node_.setParam("~door_reactive_planner/costmap/circumscribed_radius", circumscribed_radius_);
-    if(!ros_node_.hasParam("~door_reactive_planner/costmap/inflation_radius")) ros_node_.setParam("~door_reactive_planner/costmap/inflation_radius", inflation_radius_);
+    empty_plan_.resize(0);
+
+    //pass on inflation parameters to the planner's costmap if they're not set explicitly
+    if(!ros_node_.hasParam("~costmap/inscribed_radius")) ros_node_.setParam("~costmap/inscribed_radius", inscribed_radius_);
+    if(!ros_node_.hasParam("~costmap/circumscribed_radius")) ros_node_.setParam("~costmap/circumscribed_radius", circumscribed_radius_);
+    if(!ros_node_.hasParam("~costmap/inflation_radius")) ros_node_.setParam("~costmap/inflation_radius", inflation_radius_);
+    if(!ros_node_.hasParam("~costmap/global_frame")) ros_node_.setParam("~costmap/global_frame", std::string("odom_combined"));
+    if(!ros_node_.hasParam("~costmap/robot_base_frame")) ros_node_.setParam("~costmap/robot_base_frame", std::string("base_link"));
 
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
-    planner_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("door_reactive_planner"));
+    planner_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, ros_node.getName());
     planner_cost_map_ros_->getCostMapCopy(planner_cost_map_);
-
-    empty_plan_.resize(0);
 
     //initialize the door opening planner
     planner_ = new DoorReactivePlanner(ros_node_, tf_,&planner_cost_map_,global_frame_,global_frame_);
@@ -107,7 +110,6 @@ namespace nav
   {
     double useless_pitch, useless_roll, yaw;
     global_pose_.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
-
 
     //get the oriented footprint of the robot
     std::vector<robot_msgs::Point> oriented_footprint;
@@ -369,11 +371,26 @@ int main(int argc, char** argv){
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   
   nav::MoveBaseDoorAction move_base_door(ros_node, tf);
-  robot_actions::ActionRunner runner(20.0);
-//  runner.connect<robot_msgs::Door, MoveBaseState, robot_actions::Pose2D>(move_base_door);
-  runner.run();
 
-  ros_node.spin();
+  robot_msgs::Door door;
+  double tmp; int tmp2;
+  ros_node.param("~p_door_frame_p1_x", tmp, 0.5); door.frame_p1.x = tmp;
+  ros_node.param("~p_door_frame_p1_y", tmp, -0.5); door.frame_p1.y = tmp;
+  ros_node.param("~p_door_frame_p2_x", tmp, 0.5); door.frame_p2.x = tmp;
+  ros_node.param("~p_door_frame_p2_y", tmp, 0.5); door.frame_p2.y = tmp;
+  ros_node.param("~p_door_hinge" , tmp2, 1); door.hinge = tmp2;
+  ros_node.param("~p_door_rot_dir" , tmp2, 1); door.rot_dir = tmp2;
+  door.header.frame_id = "base_link";
+  ros::Time my_time = ros::Time::now();
+  door.header.stamp = my_time;
+
+  robot_actions::Pose2D feedback;
+  move_base_door.execute(door,feedback);
+
+//  robot_actions::ActionRunner runner(20.0);
+//  runner.connect<robot_msgs::Door, MoveBaseDoorState, robot_actions::Pose2D>(move_base_door);
+//  runner.run();
+//  ros_node.spin();
 
   return(0);
 
