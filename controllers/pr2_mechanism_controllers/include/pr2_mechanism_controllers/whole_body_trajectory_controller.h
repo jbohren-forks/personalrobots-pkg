@@ -129,6 +129,8 @@ namespace controller
 
     private:
 
+    double alpha_filter_;
+
     double last_time_;
 
     std::vector<control_toolbox::Pid> base_pid_controller_;      /**< Internal PID controller. */

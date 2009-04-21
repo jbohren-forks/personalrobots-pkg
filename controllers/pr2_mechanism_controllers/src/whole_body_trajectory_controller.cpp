@@ -46,6 +46,7 @@ WholeBodyTrajectoryController::WholeBodyTrajectoryController() :
   refresh_rt_vals_(false),trajectory_type_("linear"),trajectory_wait_time_(0.0), max_update_time_(0.0)
 {
   controller_state_publisher_ = NULL;
+  alpha_filter_ = 0.5;
 }
 
 WholeBodyTrajectoryController::~WholeBodyTrajectoryController()
@@ -491,7 +492,7 @@ void WholeBodyTrajectoryController::updateJointValues()
   base_controller_node_.getOdometry(q[0], q[1], q[2], qdot[0], qdot[1], qdot[2]) ;
   for(unsigned int i=0;i< base_pid_controller_.size();++i){
     int joint_index = base_joint_index_[i];
-    current_joint_position_[joint_index] = q[i];
+    current_joint_position_[joint_index] = (1-alpha_filter_)*q[i] + alpha_filter_*current_joint_position_[joint_index];
     current_joint_velocity_[joint_index] = qdot[i];
   }
 }
@@ -507,7 +508,7 @@ ROS_REGISTER_CONTROLLER(WholeBodyTrajectoryControllerNode)
   c_ = new WholeBodyTrajectoryController();
   diagnostics_publisher_ = NULL;
 
-  c_->active_ = false;
+  c_->active_ = true;
 }
 
 WholeBodyTrajectoryControllerNode::~WholeBodyTrajectoryControllerNode()
