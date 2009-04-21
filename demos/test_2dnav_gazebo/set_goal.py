@@ -47,9 +47,9 @@ import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
 from std_msgs.msg import *
+from robot_actions.msg import *
 from robot_msgs.msg import *
 from deprecated_msgs.msg import *
-from robot_actions.msg import *
 from tf.transformations import *
 from numpy import *
 
@@ -179,11 +179,12 @@ class NavStackTest(unittest.TestCase):
         if self.publish_goal:
           print "target: ", self.target_x, ",", self.target_y, ",", self.target_t
           print "state.goal: (", state.goal.x, ",", state.goal.y, ",", state.goal.th,") status:",state.status.value, " comment:" , state.status.comment
-          if abs(state.goal.x-self.target_x)<FLOAT_TOL and \
-             abs(state.goal.y-self.target_y)<FLOAT_TOL and \
-             abs(shortest_angular_distance(state.goal.th,self.target_t))<FLOAT_TOL and \
+          state_eul = euler_from_quaternion(state.goal.pose.orientation)
+          if abs(state.goal.pose.position.x-self.target_x)<FLOAT_TOL and \
+             abs(state.goal.pose.position.y-self.target_y)<FLOAT_TOL and \
+             abs(shortest_angular_distance(state_eul[2],self.target_t))<FLOAT_TOL and \
              ( state.status.value == 4 ):
-            print "state goal is published: ", state.goal.x, ",", state.goal.y, ",", state.goal.th
+            print "state goal is published: ", state.goal.pose.position.x, ",", state.goal.pose.position.y, ",", state_eul
             self.publish_goal = False
     
     def cmd_velInput(self, cmd_vel):
@@ -193,13 +194,12 @@ class NavStackTest(unittest.TestCase):
     def test_set_goal(self):
         print "LNK\n"
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
-        #pub_goal = rospy.Publisher("/move_base_node/activate", Pose2D) #received by wavefront_player or equivalent
-        pub_goal = rospy.Publisher("goal", Pose2D)
+        pub_goal = rospy.Publisher("goal", PoseStamped)
         rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
         rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
-        rospy.Subscriber("/move_base_node/feedback"   , MoveBaseState       , self.stateInput)
+        rospy.Subscriber("/move_base_node/feedback"   , MoveBaseStateNew       , self.stateInput)
 
         # below only for debugging build 303, base not moving
         rospy.Subscriber("cmd_vel"               , PoseDot             , self.cmd_velInput)
@@ -266,12 +266,13 @@ class NavStackTest(unittest.TestCase):
             h = rospy.Header();
             h.stamp = rospy.get_rostime();
             h.frame_id = "map"
-            points = []; #[Point2DFloat32()];
-            color  = ColorRGBA(0,0,0,0);
-            boundary = Polyline2D(h,points,color);
+            p = Point(self.target_x, self.target_y, 0)
+            tmpq = quaternion_from_euler(0,0,self.target_t,'rxyz')
+            q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
+            pose = Pose(p,q)
             print "publishing goal",self.publish_goal
             if self.publish_goal:
-              pub_goal.publish(Pose2D(h, self.target_x, self.target_y, 0, self.target_t, boundary))
+              pub_goal.publish(PoseStamped(h, pose))
             time.sleep(1.0)
 
             # compute angular error between deltas in odom and p3d
