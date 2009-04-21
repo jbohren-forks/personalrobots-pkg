@@ -60,13 +60,18 @@ $ amcl scan:=base_scan
 
 @section topic ROS topics
 
-Subscribes to (name/type):
+Subscribes to (name type):
 - @b "scan" laser_scan/LaserScan : laser scans
 - @b "tf_message" tf/tfMessage : transforms
 
-Publishes to (name / type):
+Publishes to (name type):
 - @b "amcl_pose" robot_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
 - @b "particlecloud" robot_msgs/ParticleCloud : the set of pose estimates being maintained by the filter.
+- @b "tf_message" tf/tfMessage : publishes the transform from "odom" (which can be remapped via the ~odom_frame_id parameter) to "map"
+
+Offers services (name type):
+- @b "global_localization" std_srvs/Empty : Initiate global localization, wherein all particles are dispersed randomly through the free space in the map.
+
 
 <hr>
 
