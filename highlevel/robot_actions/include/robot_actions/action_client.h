@@ -43,6 +43,9 @@
 #ifndef H_robot_actions_ActionClient
 #define H_robot_actions_ActionClient
 
+#include "robot_actions/action.h"
+#include <std_msgs/Empty.h>
+
 namespace robot_actions {
 
   template <class Goal, class State, class Feedback> class ActionClient {
