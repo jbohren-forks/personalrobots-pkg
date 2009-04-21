@@ -319,8 +319,10 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
                                          std::vector<AddReq> &add_reqs,
                                          const int strictness)
 {
-  timespec start_time, end_time;
-  clock_gettime(CLOCK_REALTIME, &start_time);
+  //timespec start_time, end_time;
+  //clock_gettime(CLOCK_REALTIME, &start_time);
+  double start_time, end_time;
+  start_time = realtime_gettime();
 
 
   for (size_t i = 0; i < remove_reqs.size(); ++i)
@@ -399,12 +401,16 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
                 add_reqs[i].name.c_str(), add_reqs[i].type.c_str());
       continue;
     }
-    timespec init_start, init_end;
-    clock_gettime(CLOCK_REALTIME, &init_start);
+    //timespec init_start, init_end;
+    double init_start, init_end;
+    //clock_gettime(CLOCK_REALTIME, &init_start);
+    init_start = realtime_gettime();
     bool initialized = c->initXmlRequest(state_, add_reqs[i].config, add_reqs[i].name);
-    clock_gettime(CLOCK_REALTIME, &init_end);
-    double duration = 1.0e3 * (init_end.tv_sec - init_start.tv_sec) +
-      double(init_end.tv_nsec)/1.0e6 - double(init_start.tv_nsec)/1.0e6;
+    //clock_gettime(CLOCK_REALTIME, &init_end);
+    init_end = realtime_gettime();
+    //double duration = 1.0e3 * (init_end.tv_sec - init_start.tv_sec) +
+      //double(init_end.tv_nsec)/1.0e6 - double(init_start.tv_nsec)/1.0e6;
+    double duration = 1.0e3 * (init_end - init_start);
     ROS_DEBUG("  Initialized %s in %.3lf ms", add_reqs[i].name.c_str(), duration);
     if (!initialized)
     {
@@ -438,15 +444,17 @@ void MechanismControl::changeControllers(std::vector<RemoveReq> &remove_reqs,
   // Success!  Swaps in the new set of controllers.
   int former_current_controllers_list_ = current_controllers_list_;
   current_controllers_list_ = free_controllers_list;
-  clock_gettime(CLOCK_REALTIME, &end_time);
+  //clock_gettime(CLOCK_REALTIME, &end_time);
+  end_time = realtime_gettime();
 
   // Destroys the old controllers list when the realtime thread is finished with it.
   while (used_by_realtime_ == former_current_controllers_list_)
     usleep(200);
   from.clear();
 
-  double duration = 1.0e3 * (end_time.tv_sec - start_time.tv_sec) +
-    double(end_time.tv_nsec)/1.0e6 - double(start_time.tv_nsec)/1.0e6;
+  //double duration = 1.0e3 * (end_time.tv_sec - start_time.tv_sec) +
+    //double(end_time.tv_nsec)/1.0e6 - double(start_time.tv_nsec)/1.0e6;
+  double duration = 1.0e3 * (end_time - start_time);
   ROS_DEBUG("Controller replacement took %.3lf ms", duration);
 }
 
