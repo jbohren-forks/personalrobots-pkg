@@ -72,7 +72,7 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
   
   detector_ = new PlugTracker::PlugTracker(node);
   detector_->deactivate();
-  node_.subscribe ("~pose", plug_pose_msg_, &LocalizePlugInGripperAction::setToolFrame, this, 1);
+  node_.subscribe("~pose", plug_pose_msg_, &LocalizePlugInGripperAction::setToolFrame, this, 1);
 };
 
 LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
@@ -112,6 +112,7 @@ void LocalizePlugInGripperAction::moveToStage()
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
+    return;
   }
 
   if (isPreemptRequested())
@@ -133,6 +134,7 @@ void LocalizePlugInGripperAction::moveToStage()
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
+    return;
   }
 
   if (isPreemptRequested())
@@ -147,6 +149,7 @@ void LocalizePlugInGripperAction::moveToStage()
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
+    return;
   }
 
   detector_->activate();
@@ -162,6 +165,7 @@ void LocalizePlugInGripperAction::setToolFrame()
 
   if (isPreemptRequested())
   {
+    detector_->deactivate();
     deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
     return;
   }
@@ -179,6 +183,9 @@ void LocalizePlugInGripperAction::setToolFrame()
   node_.setParam(servoing_controller_ + "/tool_frame/rotation/w", plug_pose_.getRotation().w());
   
   
+  detector_->deactivate();
+  ROS_INFO("%s: succeeded.", action_name_.c_str());
+  deactivate(robot_actions::SUCCESS, empty_);
 
   return;
 }
