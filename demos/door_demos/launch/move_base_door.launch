@@ -6,7 +6,7 @@
   <group name="wg">
     <node pkg="doors_core" type="move_base_door" respawn="false" name="door_reactive_planner" output="screen">
 
-      <param name="min_distance_from_obstacles" value="0.02" />
+      <param name="min_distance_from_obstacles" value="0.05" />
       <param name="max_waypoint_distance" value="0.025" />
       <param name="max_waypoint_rot_distance" value="0.1" />
       <param name="max_explore_distance" value="2.0" />
@@ -15,7 +15,7 @@
       <param name="door_goal_distance" value="0.7" />
       <param name="num_explore_paths" value="32" />
       <param name="choose_straight_line_trajectory" value="true" type="bool" />
-      <param name="inscribed_radius" value="0.305" />
+      <param name="inscribed_radius" value="0.325" />
       <param name="circumscribed_radius" value="0.46" />
       <param name="inflation_radius" value="0.70" />
       <param name="control_frame" value="odom" />
