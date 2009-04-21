@@ -1,15 +1,19 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-      <include file="$(find test_nav)/config/navfn_params.xml" ns="move_base_node"/>
-      <include file="$(find test_nav)/config/base_local_planner_params.xml" ns="move_base_node" />
     <node pkg="nav" type="move_base" respawn="false" name="move_base_node" output="screen">
+      <remap from="/move_base_node/activate" to="/goal" />
       <param name="global_frame" value="map" />
       <param name="robot_base_frame" value="base_link" />
 
       <param name="inscribed_radius" value="0.325" />
       <param name="circumscribed_radius" value="0.46" />
       <param name="inflation_radius" value="0.55" />
+
+      <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="navfn" />
+      <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
+      <rosparam file="$(find test_nav)/config/navfn_params.yaml" command="load" />
+      <rosparam file="$(find test_nav)/config/base_local_planner_params.yaml" command="load" />
 
     </node>
     <!--
@@ -28,7 +32,6 @@
     </node>
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
     <node pkg="nav_view" type="nav_view" respawn="false">
-      <remap from="goal" to="/move_base_node/activate" />
     </node>
   </group>
 </launch>
