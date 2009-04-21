@@ -48,7 +48,7 @@ import os, os.path, threading, time
 import rospy, rostest
 from robot_msgs.msg import *
 
-TOLERANCE = 0.008
+TOLERANCE = 0.01
 TEST_DURATION = 20.0
 
 class E:
