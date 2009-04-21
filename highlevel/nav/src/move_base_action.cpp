@@ -166,7 +166,8 @@ namespace nav {
     bool valid_plan = planner_->makePlan(goal, global_plan);
 
     //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
-    global_plan.push_back(goal);
+    if(valid_plan)
+      global_plan.push_back(goal);
 
     lock_.lock();
     //copy over the new global plan
