@@ -206,7 +206,7 @@ void WholeBodyTrajectoryController::setTrajectoryCmd(const std::vector<trajector
 {
   if(joint_trajectory.size() < 1)
   {
-    ROS_WARN("WholeBodyTrajectoryController:: No points in trajectory");
+    //   ROS_WARN("WholeBodyTrajectoryController:: No points in trajectory");
     return;
   }
 
@@ -313,7 +313,7 @@ void WholeBodyTrajectoryController::stopMotion()
     tp[0].q_[j] = current_joint_position_[j];
     tp[0].time_ = 0.0;
   }
-  ROS_WARN("Trajectory message has no way points");
+//  ROS_WARN("Trajectory message has no way points");
   //set second point in trajectory to current position of the arm
   tp[1].setDimension((int) dimension_);
 
@@ -704,7 +704,7 @@ void WholeBodyTrajectoryControllerNode::setTrajectoryCmdFromMsg(robot_msgs::Join
   }
   else
   {
-    ROS_WARN("Trajectory message has no way points");
+    ROS_WARN("Trajectory message in command has no way points");
     //set second point in trajectory to current position of the arm
     tp[1].setDimension((int) c_->dimension_);
 
