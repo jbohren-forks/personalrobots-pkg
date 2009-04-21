@@ -9,12 +9,12 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  char buffer[512];
+  char buffer[prosilica::Camera::USER_MEMORY_SIZE];
   FILE* file = fopen(argv[2], "rb");
   assert(file);
   fseek(file, 0, SEEK_END);
   size_t size = ftell(file);
-  if (size > 512) {
+  if (size > prosilica::Camera::USER_MEMORY_SIZE) {
     printf("File is too big!\n");
     return -1;
   }
