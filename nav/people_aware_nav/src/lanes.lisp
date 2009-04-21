@@ -1,5 +1,5 @@
 (roslisp:ros-load-message-types "robot_msgs/PointCloud" "robot_msgs/Point" "deprecated_msgs/Pose2DFloat32" 
-				"robot_actions/Pose2D" "robot_actions/MoveBaseState" "std_msgs/Empty"
+				"robot_msgs/PoseStamped" "robot_actions/MoveBaseState" "std_msgs/Empty"
 				"people_aware_nav/ConstrainedGoal" "people_aware_nav/ConstrainedMoveBaseState"
 				)
 (roslisp:ros-load-service-types "people_aware_nav/PersonOnPath")
@@ -72,10 +72,11 @@
   (subscribe "hallway_points" "robot_msgs/PointCloud" #'hallway-callback)
   (subscribe "robot_pose" "deprecated_msgs/Pose2DFloat32" #'pose-callback)
   (subscribe "move_base_node/feedback" "people_aware_nav/ConstrainedMoveBaseState" #'state-callback)
-  (subscribe "goal" "robot_actions/Pose2D" #'goal-callback)
+  (subscribe "goal" "robot_msgs/PoseStamped" #'goal-callback)
   (advertise "move_base_node/activate" "people_aware_nav/ConstrainedGoal")
   (advertise "move_base_node/preempt" "std_msgs/Empty")
-  (setq *global-frame* (get-param "global_frame_id" "map")))
+  (setq *global-frame* (get-param "global_frame_id" "map")
+	*person-on-path-use-stub* (get-param "~person_on_path_use_stub" nil)))
 
   
 (defun goto (x y theta)
@@ -173,11 +174,15 @@
 
 
 (defun goal-callback (m)
-  (with-fields ((frame (frame_id header)) x y th) m
-    (if (equal frame *global-frame*)
-	(setq *new-goal* (list x y th))
-	(ros-error "Ignoring goal ~a ~a ~a as frame id ~a does not equal ~a"
-		   x y th frame *global-frame*))))
+  (with-fields ((frame (frame_id header)) 
+		(x (x position pose)) 
+		(y (y position pose))
+		(w (w orientation pose))) m
+    (let ((theta (* 2 (acos w))))
+      (if (equal frame *global-frame*)
+	  (setq *new-goal* (list x y theta)) 
+	  (ros-error "Ignoring goal ~a ~a ~a as frame id ~a does not equal ~a"
+		     x y theta frame *global-frame*)))))
   
 
 (defun pose-callback (pose)

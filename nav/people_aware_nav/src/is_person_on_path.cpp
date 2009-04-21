@@ -100,14 +100,14 @@ public:
     boost::mutex::scoped_lock l2(person_mutex_);
     person_pos_ = *person_pos_msg;
     got_person_pos_ = true;
-    ROS_INFO_STREAM ("Have seen person and got_person_ is " << got_person_pos_);
+    ROS_DEBUG_STREAM ("Have seen person and got_person_ is " << got_person_pos_);
   }
 
   // Path callback
   void pathCB(const tf::MessageNotifier<robot_msgs::Polyline2D>::MessagePtr& gui_path_msg)
   {
     boost::mutex::scoped_lock l(path_mutex_);
-    ROS_INFO_STREAM ("In path callback and got_path_ is " << got_path_);
+    ROS_DEBUG_STREAM ("In path callback and got_path_ is " << got_path_);
     path_ = *gui_path_msg;
     got_path_ = true;
   }
