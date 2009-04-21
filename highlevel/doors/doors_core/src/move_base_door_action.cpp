@@ -1,3 +1,4 @@
+
 /*********************************************************************
 *
 * Software License Agreement (BSD License)
@@ -144,7 +145,7 @@ namespace nav
     planner_cost_map_ros_->getCostMapCopy(planner_cost_map_);
 
     //make sure we clear the robot's footprint from the cost map
-    clearRobotFootprint(planner_cost_map_);
+    //clearRobotFootprint(planner_cost_map_);
 
     std::vector<robot_actions::Pose2D> global_plan;
     bool valid_plan = planner_->makePlan(getPose2D(global_pose_), global_plan);//makePlan(current_position, return_path);
@@ -271,7 +272,8 @@ namespace nav
         makePlan();
         //pass plan to controller
         lock_.lock();
-        if(valid_plan_){
+        if(valid_plan_)
+        {
           dispatchControl(global_plan_);
         }
         else
@@ -298,6 +300,7 @@ namespace nav
 
   void MoveBaseDoorAction::dispatchControl(const std::vector<robot_actions::Pose2D> &plan_in)
   {
+//    return;
     robot_msgs::JointTraj plan_out;
     if((int)plan_in.size() < 0)
     {
@@ -351,6 +354,7 @@ namespace nav
     for(unsigned int i = 0; i < footprint.size(); ++i){
       footprint_msg.points[i].x = footprint[i].x;
       footprint_msg.points[i].y = footprint[i].y;
+      ROS_DEBUG("Footprint:%d:: %f, %f\n",i,footprint[i].x,footprint[i].y);
     }
     ros_node_.publish("robot_footprint", footprint_msg);
   }

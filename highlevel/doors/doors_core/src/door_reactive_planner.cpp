@@ -50,24 +50,26 @@ DoorReactivePlanner::DoorReactivePlanner(ros::Node &ros_node, TransformListener 
 
 void DoorReactivePlanner::getParams()
 {
-  node_.param<double>("~door_reactive_planner/min_distance_from_obstacles_",min_distance_from_obstacles_,0.03);
-  node_.param<double>("~door_reactive_planner/max_waypoint_distance",dist_waypoints_max_,0.025);
-  node_.param<double>("~door_reactive_planner/max_waypoint_rot_distance",dist_rot_waypoints_max_,0.1);
+  node_.param<double>("~min_distance_from_obstacles",min_distance_from_obstacles_,0.03);
+  node_.param<double>("~max_waypoint_distance",dist_waypoints_max_,0.025);
+  node_.param<double>("~max_waypoint_rot_distance",dist_rot_waypoints_max_,0.1);
 
-  node_.param<double>("~door_reactive_planner/max_explore_distance",max_explore_distance_,2.0);
-  node_.param<double>("~door_reactive_planner/horizontal_explore_distance",horizontal_explore_distance_,0.15);
-  node_.param<double>("~door_reactive_planner/max_explore_distance",max_explore_distance_,2.0);
-  node_.param<double>("~door_reactive_planner/max_explore_delta_angle",max_explore_delta_angle_,M_PI/4.0+0.1);
-  node_.param<double>("~door_reactive_planner/door_goal_distance",door_goal_distance_,0.7);
-  node_.param<int>("~door_reactive_planner/num_explore_paths",num_explore_paths_,32);
-  node_.param<bool>("~door_reactive_planner/choose_straight_line_trajectory",choose_straight_line_trajectory_,false);
+  node_.param<double>("~max_explore_distance",max_explore_distance_,2.0);
+  node_.param<double>("~horizontal_explore_distance",horizontal_explore_distance_,0.15);
+  node_.param<double>("~max_explore_distance",max_explore_distance_,2.0);
+  node_.param<double>("~max_explore_delta_angle",max_explore_delta_angle_,M_PI/3.0+0.1);
+  node_.param<double>("~door_goal_distance",door_goal_distance_,0.7);
+  node_.param<int>("~num_explore_paths",num_explore_paths_,32);
+  node_.param<bool>("~choose_straight_line_trajectory",choose_straight_line_trajectory_,false);
 
-  node_.param<double>("~door_reactive_planner/costmap/circumscribed_radius",circumscribed_radius_,0.46);
-  node_.param<double>("~door_reactive_planner/costmap/inscribed_radius",inscribed_radius_,0.325);
+  node_.param<double>("~costmap/circumscribed_radius",circumscribed_radius_,0.46);
+  node_.param<double>("~costmap/inscribed_radius",inscribed_radius_,0.325);
 
-  max_inflated_cost_ = cost_map_->computeCost(min_distance_from_obstacles_);
-  cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),4);
+  min_distance_from_obstacles_ = min_distance_from_obstacles_ + inscribed_radius_;
+  cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),6);
+  max_inflated_cost_ = cost_map_->computeCost(cell_distance_from_obstacles_);
   ROS_INFO("Cell distance from obstacles is %d",cell_distance_from_obstacles_);
+  ROS_INFO("Max inflated cost: %d for a distance of %f m",cell_distance_from_obstacles_,min_distance_from_obstacles_); 
   robot_msgs::Point pt;
   //create a square footprint
   pt.x = inscribed_radius_;
@@ -150,7 +152,8 @@ bool DoorReactivePlanner::createLinearPath(const robot_actions::Pose2D &cp,const
 
   double delta_x = (fp.x-cp.x)/num_intervals;
   double delta_y = (fp.y-cp.y)/num_intervals;
-  double delta_theta = angles::normalize_angle((fp.th-cp.th)/num_intervals);
+//  double delta_theta = angles::normalize_angle((fp.th-cp.th)/num_intervals);
+  double delta_theta = angles::normalize_angle(fp.th);
 
 
   for(int i=0; i< num_intervals; i++)
@@ -288,7 +291,7 @@ void DoorReactivePlanner::checkPath(const std::vector<robot_actions::Pose2D> &pa
         continue;
       }
     }
-    ROS_INFO("Point %d: position: %f, %f, %f is in collision",i,out_pose.x,out_pose.y,out_pose.th);
+    ROS_DEBUG("Point %d: position: %f, %f, %f is in collision",i,out_pose.x,out_pose.y,out_pose.th);
     ROS_DEBUG("Radius inscribed: %f, circumscribed: %f",inscribed_radius_, circumscribed_radius_);
     for(int j=0; j < (int) oriented_footprint.size(); j++)
       ROS_DEBUG("Footprint point: %d is : %f,%f",j,oriented_footprint[j].x,oriented_footprint[j].y);
