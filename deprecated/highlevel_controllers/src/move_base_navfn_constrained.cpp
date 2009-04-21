@@ -67,6 +67,7 @@
 #include <highlevel_controllers/move_base.hh>
 #include <robot_actions/Pose2D.h>
 #include <navfn/navfn.h>
+#include <robot_msgs/Polyline2D.h>
 
 using namespace old_costmap_2d;
 using robot_msgs::Polyline2D;
@@ -184,7 +185,10 @@ namespace ros {
           boost::scoped_array<uchar> cost_map_ensure_delete(cost_map); // Exception-safe-ly make sure it's deleted at the end
           memcpy(cost_map, original_cost_map, height*width*sizeof(uchar));
           ROS_DEBUG_NAMED ("constraints", "Initialized duplicate costmap");
-          enforceConstraints(goalMsg.boundary, cost_map);
+	  // TODO: THE LINE BELOW WAS COMMENTED OUT TO MAKE THIS FILE BUILD
+	  // IT IS NOW IN A BROKEN STATE
+# warning move_base_navfn_constrained is BROKEN
+          //enforceConstraints(goalMsg.boundary, cost_map);
           planner_.setCostMap(cost_map, true);
         }
 
