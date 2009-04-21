@@ -6,7 +6,7 @@ import place_recognition
 
 import Image
 import time
-import timer
+from stereo_utils import timer
 import os
 
 from raytracer import object, sphere, isphere, render_stereo_scene, ray_camera, vec3, shadeLitCloud
@@ -15,7 +15,7 @@ from math import *
 import numpy
 import pylab
 
-import camera
+from stereo_utils import camera
 import random
 import math
 import sys
@@ -52,7 +52,7 @@ else:
 
 #scene += [object(isphere(vec3(0,0,0), 1000), shadeLitCloud, {'scale':0.001})]
 
-from stereo import ComputedDenseStereoFrame, SparseStereoFrame
+from stereo_utils.stereo import ComputedDenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris, from_xyz_euler
 
 #########################################################################

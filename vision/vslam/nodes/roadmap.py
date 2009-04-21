@@ -46,7 +46,7 @@ from skeleton import Skeleton
 import image_msgs.msg
 import deprecated_msgs.msg
 
-import camera
+from stereo_utils import camera
 import rospy
 import Image
 

@@ -18,12 +18,12 @@ import random
 import unittest
 import math
 
-from stereo import ComputedDenseStereoFrame, SparseStereoFrame
+from stereo_utils.stereo import ComputedDenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 import fast
 from math import *
 
-import camera
+import stereo_utils.camera as camera
 
 import numpy
 import numpy.linalg

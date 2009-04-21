@@ -5,7 +5,7 @@ import rospy
 
 import Image
 
-import camera
+from stereo_utils import camera
 import pylab, numpy
 
 from stereo import ComputedDenseStereoFrame, SparseStereoFrame

@@ -27,7 +27,7 @@ from skeleton import Skeleton
 
 from math import *
 
-import camera
+from stereo_utils import camera
 
 import numpy
 import numpy.linalg

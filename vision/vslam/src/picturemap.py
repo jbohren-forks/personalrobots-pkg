@@ -40,7 +40,6 @@ import vop
 
 import sys
 
-import visual_odometry as VO
 import Image as Image
 import ImageChops as ImageChops
 import ImageDraw as ImageDraw
@@ -86,11 +85,17 @@ class Timeline:
     else:
       return None
 
+  def __len__(self):
+    return len(self.q)
+
   def __iter__(self):
     return self.q.__iter__()
 
   def __delitem__(self, i):
     self.q.remove(i)
+
+  def __repr__(self):
+    return " ".join([ str(e[1]) for e in sorted(self.q) ])
 
 class Picture:
   def __init__(self, keypoints, descriptors, pose = None):
@@ -116,7 +121,7 @@ class PictureMap:
     self.verbose = 1
 
   def clear(self):
-    self.localizationOK = Timeline(10)
+    self.localizationOK = Timeline(1000)
     self.observations = Timeline(30)
 
   def newLocalization(self, t, l):
@@ -137,17 +142,26 @@ class PictureMap:
     return best
 
   def resolve(self, transformer):
+
     if self.isVerbosity(1):
       print "resolver"
       print "getLatestCommonTime", transformer.getLatestCommonTime('map', 'stereo_link')
-      print "obs earliest       ", min(self.observations)[0]
-      print "obs latest         ", max(self.observations)[0]
+      if len(self.observations) > 0:
+        print "obs earliest       ", min(self.observations)[0]
+        print "obs latest         ", max(self.observations)[0]
+
     for (t,(cam,picture,iskey)) in self.observations:
       # Add keys to the map if they are well-localized and TF can transform them
+      print iskey, transformer.canTransform('map', 'stereo_link', t)
       if iskey and transformer.canTransform('map', 'stereo_link', t):
         loc = self.localizationOK.query(t)
+        if loc == None:
+          if len(self.localizationOK.q) > 0:
+            print "No localizations for", t, "earliest", min(self.localizationOK.q), "latest", max(self.localizationOK.q)
         if loc != None:
           if loc == (True,True):
+            if self.isVerbosity(1):
+              print "PM adding frame"
             picture.pose = getpose(transformer, 'map', 'stereo_link', t)
             if not(cam in self.cameras):
               self.cameras.append(cam)

@@ -59,7 +59,7 @@ from reader import reader
 
 from math import *
 
-import camera
+from stereo_utils import camera
 import pylab, numpy
 from matplotlib.patches import Ellipse
 

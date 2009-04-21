@@ -36,7 +36,7 @@
 
 import vop
 import votools as VO
-from timer import Timer
+from stereo_utils.timer import Timer
 
 import os
 
@@ -169,6 +169,8 @@ import fast
 
 class FeatureDetector:
 
+  timing = []
+
   def name(self):
     return self.__class__.__name__
 
@@ -177,8 +179,15 @@ class FeatureDetector:
     self.cold = True
     self.target_count = target_count
 
+    self.calls = 0
+    self.timer = {}
+    for t in self.timing + ['detect']:
+      self.timer[t] = Timer()
+
   def detect(self, frame):
 
+    self.timer['detect'].start()
+    self.calls += 1
     features = self.get_features(frame, self.target_count)
     if len(features) < (self.target_count * 0.5) or len(features) > (self.target_count * 2.0):
         (lo,hi) = self.threshrange
@@ -196,7 +205,13 @@ class FeatureDetector:
         self.thresh *= 1.05
     if len(features) < (self.target_count * 0.9):
         self.thresh *= 0.95
+    self.timer['detect'].stop()
     return features
+
+  def summarize_timers(self):
+    print self.name()
+    for n,t in self.timer.items():
+      print "  %-20s %s" % (n, t.summ())
 
 # Feature detectors that return features in order (i.e. strongest first)
 # can be simpler.  Just always keep the threshold high enough to give
@@ -204,22 +219,33 @@ class FeatureDetector:
 
 class FeatureDetectorOrdered(FeatureDetector):
 
+  timing = ['get_features/False', 'get_features/True' ]
+
   def detect(self, frame):
 
+    self.calls += 1
+    self.timer['detect'].start()
+    self.timer['get_features/False'].start()
     features = self.get_features(frame, self.target_count)
+    self.timer['get_features/False'].stop()
     # Too few features, so lower threshold
     while (len(features) < self.target_count) and (self.thresh > self.threshrange[0]):
       self.thresh = float(max(self.threshrange[0], self.thresh / 2))
+      self.timer['get_features/False'].start()
       features = self.get_features(frame, self.target_count)
+      self.timer['get_features/False'].stop()
     # If starving, rerun 
     if (len(features) < 100) and (self.thresh <= self.threshrange[0]):
+      self.timer['get_features/True'].start()
       features = self.get_features(frame, self.target_count, True)
+      self.timer['get_features/True'].stop()
 
     # Try to be a bit more adaptive for next time
     if len(features) > (self.target_count * 2):
       self.thresh *= 2
     if len(features) < (self.target_count * 1.25):
       self.thresh *= 0.95
+    self.timer['detect'].stop()
     return features[:self.target_count]
 
 def FAST(imdata, xsize, ysize, thresh, barrier = 9):
@@ -295,27 +321,47 @@ class FeatureDetectorStar(FeatureDetector):
 
 class DescriptorScheme:
 
+  timing = []
+
+  def __init__(self):
+    self.calls = 0
+    self.timer = {}
+    for t in self.timing + ['Match']:
+      self.timer[t] = Timer()
+
   def name(self):
     return self.__class__.__name__
+
+  def desc2matcher(self, descriptors):
+    return descriptors
 
   def match0(self, af0kp, af0descriptors, af1kp, af1descriptors):
 
     if af0kp == [] or af1kp == []:
       return []
+    self.calls += 1
+    self.timer['Match'].start()
     Xs = vop.array([k[0] for k in af1kp])
     Ys = vop.array([k[1] for k in af1kp])
     pairs = []
+    matcher = self.desc2matcher(af1descriptors)
     for (i,(ki,di)) in enumerate(zip(af0kp, af0descriptors)):
       predX = (abs(Xs - ki[0]) < 64)
       predY = (abs(Ys - ki[1]) < 32)
       hits = vop.where(predX & predY, 1, 0).tostring()
-      best = self.search(di, af1descriptors, hits)
+      best = self.search(di, matcher, hits)
       if best != None:
         pairs.append((i, best[0], best[1]))
+    self.timer['Match'].stop()
     return pairs
 
   def match(self, af0, af1):
     return self.match0(af0.kp, af0.descriptors, af1.kp, af1.descriptors)
+
+  def summarize_timers(self):
+    print self.name()
+    for n,t in self.timer.items():
+      print "  %-20s %s" % (n, t.summ())
 
 class DescriptorSchemeSAD(DescriptorScheme):
 
@@ -334,22 +380,33 @@ class DescriptorSchemeSAD(DescriptorScheme):
 import calonder
 
 class DescriptorSchemeCalonder(DescriptorScheme):
+  timing = [ 'BuildMatcher', 'find' ]
+
   def __init__(self):
     self.cl = calonder.classifier()
     #self.cl.setThreshold(0.0)
     filename = '/u/prdata/calonder_trees/current.rtc'
     assert os.access(filename, os.R_OK)
     self.cl.read(filename)
+    DescriptorScheme.__init__(self)
 
   def collect0(self, frame, kp):
     im = Image.fromstring("L", frame.size, frame.rawdata)
     return self.cl.getSignatures(im, [ (x,y) for (x,y,d) in kp ])
 
-  def search(self, di, descriptors, hits):
+  def desc2matcher(self, descriptors):
+    self.timer['BuildMatcher'].start()
     matcher = calonder.BruteForceMatcher(self.cl.dimension())
     for sig in descriptors:
       matcher.addSignature(sig)
-    return matcher.findMatch(di, hits)
+    self.timer['BuildMatcher'].stop()
+    return matcher
+
+  def search(self, di, matcher, hits):
+    self.timer['find'].start()
+    r = matcher.findMatch(di, hits)
+    self.timer['find'].stop()
+    return r
 
 uniq_track_id = 100
 
@@ -435,9 +492,8 @@ class VisualOdometer:
     print ""
     if niter != 0:
       for n,t in self.timer.items():
-        print "%-20s %fms" % (n, 1e3 * t.sum / niter)
-      print "%-20s %fms" % ("TOTAL", self.average_time_per_frame())
-
+        print "  %-20s %fms (%s)" % (n, 1e3 * t.sum / niter, t.summ())
+      print "  %-20s %fms" % ("TOTAL", self.average_time_per_frame())
 
   def find_keypoints(self, frame):
     pass

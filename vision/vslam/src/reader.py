@@ -11,7 +11,7 @@ import os
 import Image
 import yaml
 
-import camera
+from stereo_utils import camera
 
 class dcamImage:
   def __init__(self, m):

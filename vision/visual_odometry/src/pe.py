@@ -1,7 +1,7 @@
 import random
 import vop
 import votools
-import camera
+from stereo_utils import camera
 
 def vop3(L):
   """ Turn a list of triplets into a triplet of vop arrays """
