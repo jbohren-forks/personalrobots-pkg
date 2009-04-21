@@ -33,8 +33,11 @@
 *********************************************************************/
 
 
-#include "laser_scan/laser_scan.h"
+#include <laser_scan/median_filter.h>
+#include <laser_scan/intensity_filter.h>
+#include <laser_scan/scan_shadows_filter.h>
 
+#include "laser_scan/laser_scan.h"
 #include "laser_scan/LaserScan.h"
 #include "point_cloud_assembler/base_assembler_srv.h"
 
@@ -63,6 +66,12 @@ public:
   {
     // ***** Set Laser Projection Method *****
     ros::Node::instance()->param("~ignore_laser_skew", ignore_laser_skew_, true) ;
+
+    // get filter xml from parameter server
+    std::string filter_xml;
+    node_.param("~filters", filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
+    ROS_INFO("Got parameter'~filters' as: %s\n", filter_xml.c_str());
+    filter_chain_.configureFromXMLString(1, filter_xml);
   }
 
   ~LaserScanAssemblerSrv()
@@ -77,16 +86,20 @@ public:
 
   void ConvertToCloud(const string& fixed_frame_id, const LaserScan& scan_in, PointCloud& cloud_out)
   {
+    // apply filters on laser scan
+    filter_chain_.update (scan_in, scan_filtered_);
+
+    // convert laser scan to point cloud
     if (ignore_laser_skew_)  // Do it the fast (approximate) way
     {
-      projector_.projectLaser(scan_in, cloud_out) ;
+      projector_.projectLaser(scan_filtered_, cloud_out) ;
       if (cloud_out.header.frame_id != fixed_frame_id)
         tf_->transformPointCloud(fixed_frame_id, cloud_out, cloud_out) ;
     }
     else                     // Do it the slower (more accurate) way
     {
       int mask = laser_scan::MASK_INTENSITY + laser_scan::MASK_DISTANCE + laser_scan::MASK_INDEX + laser_scan::MASK_TIMESTAMP;
-      projector_.transformLaserScanToPointCloud (fixed_frame_id, cloud_out, scan_in, *tf_, mask);
+      projector_.transformLaserScanToPointCloud (fixed_frame_id, cloud_out, scan_filtered_, *tf_, mask);
     }
     return ;
   }
@@ -94,6 +107,10 @@ public:
 private:
   bool ignore_laser_skew_ ;
   laser_scan::LaserProjection projector_ ;
+
+  filters::FilterChain<laser_scan::LaserScan> filter_chain_;
+  mutable LaserScan scan_filtered_;
+
 };
 
 }
