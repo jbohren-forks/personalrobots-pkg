@@ -1,11 +1,11 @@
 <launch>
-  <node pkg="kinematic_calibration" type="auto_arm_commander_original.py" name="arm_commander" output="screen">
+  <node pkg="kinematic_calibration" type="new_cmd_node.py" name="arm_commander" output="screen">
     <param name="joint_headers" type="string"
            textfile="$(find kinematic_calibration)/data/joint_names.txt" />
+
     <param name="joint_commands" type="string"
            textfile="$(find kinematic_calibration)/data/joint_pos.txt" />
-    <remap from="cal_sample" to="/tracker_node/cal_sample" />
-    <remap from="capture" to="/tracker_node/capture" />
+
   </node>
 
 </launch>
