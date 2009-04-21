@@ -123,7 +123,7 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlE
                                                                        controller_name_ + "/command", root_name_, 1));
   // realtime publisher for control error
   state_error_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/state/error", 1));
-  state_pose_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Pose>(controller_name_+"/state/pose", 1));
+  state_pose_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::PoseStamped>(controller_name_+"/state/pose", 1));
   loop_count_ = 0;
 
   return true;
@@ -181,7 +181,7 @@ void CartesianPoseController::update()
       if (state_pose_publisher_->trylock()){
 	Pose tmp;
 	frameToPose(pose_meas_, tmp);
-	PoseTFToMsg(tmp, state_pose_publisher_->msg_);
+	PoseStampedTFToMsg(Stamped<Pose>(tmp, ros::Time::now(), root_name_), state_pose_publisher_->msg_);
         state_pose_publisher_->unlockAndPublish();
       }
     }

@@ -91,7 +91,7 @@ private:
 
   // reatltime publisher
   boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Twist> > state_error_publisher_;
-  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Pose> > state_pose_publisher_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::PoseStamped> > state_pose_publisher_;
   unsigned int loop_count_;
 
   tf::TransformListener tf_;
