@@ -1,16 +1,12 @@
 <package>
   <description>A ROS node that uses the Player libwavefront_standalone library, which implements wavefront path-planning for a planar robot.</description>
   <author>Brian P. Gerkey</author>
-  <license>BSD</license>
+  <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
-  <depend package="player" />
   <depend package="laser_scan" />
   <depend package="robot_srvs" />
   <depend package="robot_msgs" />
   <depend package="robot_actions" />
   <depend package="tf"/>
-  <export>
-    <cpp cflags="-I${prefix}/srv/cpp"/>
-  </export>
 </package>

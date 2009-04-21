@@ -2,7 +2,7 @@
 
   <group name="wg">
     <include file="$(find 2dnav_erratic)/lowlevel.xml"/>    
-    <node pkg="wavefront_player" type="wavefront_player" respawn="false" output="screen" />
+    <node pkg="wavefront" type="wavefront" respawn="false" output="screen" />
   </group>
 </launch>
 

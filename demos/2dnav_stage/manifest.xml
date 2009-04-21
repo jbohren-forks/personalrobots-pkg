@@ -12,5 +12,5 @@
   <depend package="fake_localization"/>
   <depend package="stage"/>
   <depend package="map_server"/>
-  <depend package="wavefront_player"/>
+  <depend package="wavefront"/>
 </package>

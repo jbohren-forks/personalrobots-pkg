@@ -106,8 +106,7 @@ robot.
 
 #include <list>
 
-// The Player lib we're using
-#include <libstandalone_drivers/plan.h>
+#include "plan.h"
 
 // roscpp
 #include <ros/node.h>

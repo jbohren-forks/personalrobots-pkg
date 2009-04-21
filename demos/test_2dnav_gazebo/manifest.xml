@@ -9,7 +9,6 @@
   <depend package="map_server"/>
   <depend package="amcl_player"/>
   <depend package="fake_localization"/>
-  <depend package="wavefront_player"/>
   <depend package="teleop_arm_keyboard"/>
   <depend package="highlevel_controllers"/>
   <depend package="executive_trex_pr2"/>

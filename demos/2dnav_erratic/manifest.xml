@@ -8,6 +8,6 @@
   <depend package="erratic_player"/>
   <depend package="sicktoolbox_wrapper"/>
   <depend package="map_server"/>
-  <depend package="wavefront_player"/>
+  <depend package="wavefront"/>
   <depend package="highlevel_controllers"/>
 </package>
