@@ -55,7 +55,7 @@ TEST_DURATION   = 60.0
 
 TARGET_VW       =  0.5
 TARGET_DURATION = 2.0
-TARGET_TOL      = 0.08 #empirical test result john - 20081029
+TARGET_TOL      = 0.15 #empirical test result john - 20090420
 
 
 
