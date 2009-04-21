@@ -111,6 +111,21 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
   tff_door_.value.rot.y = 0.0;
   tff_door_.value.rot.z = 0.0;
   
+  // start monitoring tf position
+  node_.subscribe("r_arm_cartesian_tff_controller/state/position", tff_msg_,  &OpenDoorAction::tffCallback, this, 1);
+  Duration timeout = Duration().fromSec(3.0);
+  Duration poll = Duration().fromSec(0.1);
+  Time start_time = ros::Time::now();
+  tff_state_received_ = false;
+  while (!tff_state_received_){
+    if (start_time + timeout < ros::Time::now()){
+      ROS_ERROR("OpenDoorAction: failed to receive tff state");
+      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
+      return robot_actions::ABORTED;
+    }
+    poll.sleep();
+  }
+
   // turn handle during 4 seconds
   for (unsigned int i=0; i<100; i++){
     tff_handle_.value.rot.x += -2.0/100.0;
@@ -118,9 +133,19 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
     Duration().fromSec(4.0/100.0).sleep();
     if (isPreemptRequested()) {
       node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
+      ROS_ERROR("OpenDoorAction: preempted");
       return robot_actions::PREEMPTED;
     }
+    boost::mutex::scoped_lock lock(tff_mutex_);
+    if (fabs(tff_state_.rot.x) > M_PI/2.0 ||
+	fabs(tff_state_.vel.x) > 0.3){
+      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
+      node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
+      ROS_ERROR("OpenDoorAction: Gripper was not on door handle");
+      return robot_actions::ABORTED;
+    }
   }
+  node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
   
   // open door
   Duration polling = Duration().fromSec(0.1);
@@ -132,4 +157,12 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
   // preempted
   node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
   return robot_actions::PREEMPTED;
+}
+
+
+void OpenDoorAction::tffCallback()
+{
+  boost::mutex::scoped_lock lock(tff_mutex_);
+  tff_state_ = tff_msg_;
+  tff_state_received_ = true;
 }
