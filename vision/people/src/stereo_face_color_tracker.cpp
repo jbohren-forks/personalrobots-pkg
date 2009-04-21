@@ -230,19 +230,23 @@ public:
       tf::Stamped<tf::Point> loc(pt, init_pos_.header.stamp, init_pos_.header.frame_id);
       try
 	{
-	  tf.transformPoint("stereo_link", init_pos_.header.stamp, loc, "odom", loc); 
+	  tf.transformPoint("stereo_optical_frame", init_pos_.header.stamp, loc, "odom_combined", loc); 
 	  // Converts things through the fixed frame into a new time. Use this if you want to go to a different time than loc already has.
 	} 
       catch (tf::TransformException& ex)
 	{
 	}
 
-      people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
+      //people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
+      people_->setFaceCenter3D(loc[0],loc[1],loc[2],iperson);
       printf("From filter: ");
       people_->printFaceCenter3D(iperson);
-      cvmSet(center_3d,0,0,-loc[1]);
-      cvmSet(center_3d,0,1,-loc[2]);
-      cvmSet(center_3d,0,2,loc[0]);
+      //cvmSet(center_3d,0,0,-loc[1]);
+      //cvmSet(center_3d,0,1,-loc[2]);
+      //cvmSet(center_3d,0,2,loc[0]);      
+      cvmSet(center_3d,0,0,loc[0]);
+      cvmSet(center_3d,0,1,loc[1]);
+      cvmSet(center_3d,0,2,loc[2]);
       cvSet(size_3d,cvScalar(people_->getFaceSize3D(iperson)));
       people_->centerSizeToFourCorners(center_3d,size_3d,four_corners_3d);
       cam_model_->cartToDisp(four_corners_3d, four_corners_2d);
@@ -386,10 +390,13 @@ public:
       pos.header.stamp = limage_.header.stamp;
       pos.name = "stereo_face_color_tracker";
       pos.object_id = people_->getID(iperson);
-      pos.pos.x = cvmGet(end_points,iperson,2);
-      pos.pos.y = -1.0*cvmGet(end_points,iperson,0);
-      pos.pos.z = -1.0*cvmGet(end_points,iperson,1);
-      pos.header.frame_id = limage_.header.frame_id;//"stereo_link";
+      //pos.pos.x = cvmGet(end_points,iperson,2);
+      //pos.pos.y = -1.0*cvmGet(end_points,iperson,0);
+      //pos.pos.z = -1.0*cvmGet(end_points,iperson,1);
+      pos.pos.x = cvmGet(end_points,iperson,0);
+      pos.pos.y = cvmGet(end_points,iperson,1);
+      pos.pos.z = cvmGet(end_points,iperson,2);
+      pos.header.frame_id = limage_.header.frame_id;//"stereo_optical_frame";
       pos.reliability = 0.5;
       pos.initialization = 0;
       pos.covariance[0] = 0.09; pos.covariance[1] = 0.0;  pos.covariance[2] = 0.0;

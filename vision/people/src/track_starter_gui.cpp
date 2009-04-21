@@ -276,9 +276,12 @@ public:
 	  cvmSet(uvd_,0,1,gxys[i].xy.y);
 	  cvmSet(uvd_,0,2,d);
 	  cam_model_->dispToCart(uvd_, xyz_);
-	  pm.pos.x = cvmGet(xyz_,0,2);
-	  pm.pos.y = -1.0*cvmGet(xyz_,0,0);
-	  pm.pos.z = -1.0*cvmGet(xyz_,0,1);
+	  //pm.pos.x = cvmGet(xyz_,0,2);
+	  //pm.pos.y = -1.0*cvmGet(xyz_,0,0);
+	  //pm.pos.z = -1.0*cvmGet(xyz_,0,1);
+	  pm.pos.x = cvmGet(xyz_,0,0);
+	  pm.pos.y = cvmGet(xyz_,0,1);
+	  pm.pos.z = cvmGet(xyz_,0,2);
 	  printf("Publishing %f %f %f\n", cvmGet(xyz_,0,0),cvmGet(xyz_,0,1),cvmGet(xyz_,0,2));
 	  pm.header.frame_id = limage_.header.frame_id;//"stereo_link";
 	  pm.reliability = 1;

@@ -291,7 +291,7 @@ public:
 	  tf::PointMsgToTF((*it).second.pos.pos, pt);
 	  tf::Stamped<tf::Point> loc(pt, (*it).second.pos.header.stamp, (*it).second.pos.header.frame_id);
 	  try {
-     	    tf.transformPoint(limage_.header.frame_id, limage_.header.stamp, loc, "odom", loc);
+     	    tf.transformPoint(limage_.header.frame_id, limage_.header.stamp, loc, "odom_combined", loc);
 	    (*it).second.pos.header.stamp = limage_.header.stamp;
 	    (*it).second.pos.pos.x = loc[0];
             (*it).second.pos.pos.y = loc[1];
@@ -319,10 +319,13 @@ public:
 	  // Convert the face format to a PositionMeasurement msg.
 	  pos.header.stamp = limage_.header.stamp;
 	  pos.name = names_[0];
-	  pos.pos.x = one_face->center3d.val[2]; 
-	  pos.pos.y = -1.0*one_face->center3d.val[0];
-	  pos.pos.z = -1.0*one_face->center3d.val[1]; 
-	  pos.header.frame_id = limage_.header.frame_id;//"stereo_link";
+	  //pos.pos.x = one_face->center3d.val[2]; 
+	  //pos.pos.y = -1.0*one_face->center3d.val[0];
+	  //pos.pos.z = -1.0*one_face->center3d.val[1]; 
+	  pos.pos.x = one_face->center3d.val[0]; 
+	  pos.pos.y = one_face->center3d.val[1];
+	  pos.pos.z = one_face->center3d.val[2]; 
+	  pos.header.frame_id = limage_.header.frame_id;//"stereo_optical_frame";
 	  pos.reliability = reliabilities_[0];
 	  pos.initialization = 1;//0;
 	  pos.covariance[0] = 0.04; pos.covariance[1] = 0.0;  pos.covariance[2] = 0.0;
