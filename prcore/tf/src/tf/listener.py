@@ -95,13 +95,13 @@ class TransformListener:
     def callback(self, data):
         for transform in data.transforms:
             #print "Got data:", transform.header.frame_id
-            self.set_transform(tf.transform_stamped_msg_to_bt(transform))
+            self.set_transform(tf.transform_stamped_msg_to_bt(transform),"Waiting for ros 0.5")
 
     def frame_graph_service(self, req):
         return FrameGraphResponse(self.all_frames_as_dot())
         
-    def set_transform(self, transform_stamped):
-        self.transformer.setTransform(transform_stamped)
+    def set_transform(self, transform_stamped, default_authority="Default Authority"):
+        self.transformer.setTransform(transform_stamped, default_authority)
 
     def get_transform(self, frame_id, parent_id, time):
         return self.transformer.getTransform(frame_id, parent_id, time.to_seconds())

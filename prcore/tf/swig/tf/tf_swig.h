@@ -184,11 +184,11 @@ public:
 
   /** \brief Set a transform
    * Set a transform in the local library */
-  void setTransform(const TransformStamped& transform)
+  void setTransform(const TransformStamped& transform, const std::string& authority)
   {
     tf::Stamped<tf::Transform> tr;
     TransformStampedPytoBt(transform, tr);    
-    tf_.setTransform(tr);
+    tf_.setTransform(tr, authority);
   };
 
 
