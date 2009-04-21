@@ -220,9 +220,9 @@ public:
 
       for (int i = 0; i < stdata_->numPts; i++)
       {
-        cloud_.pts[i].y = -stdata_->imPts[3*i + 0];
-        cloud_.pts[i].z = -stdata_->imPts[3*i + 1];
-        cloud_.pts[i].x = stdata_->imPts[3*i + 2];
+        cloud_.pts[i].x = stdata_->imPts[3*i + 0];
+        cloud_.pts[i].y = stdata_->imPts[3*i + 1];
+        cloud_.pts[i].z = stdata_->imPts[3*i + 2];
       }
 
       for (int i = 0; i < stdata_->numPts; i++)

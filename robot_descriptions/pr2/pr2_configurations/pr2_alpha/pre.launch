@@ -51,6 +51,7 @@
   <param name="do_colorize" type="bool" value="False"/>
   <param name="do_rectify" type="bool" value="False"/>
   <param name="do_stereo" type="bool" value="False"/>
+  <param name="frame_id" type="string" value="stereo_optical_frame"/>
 </node>
 -->
 

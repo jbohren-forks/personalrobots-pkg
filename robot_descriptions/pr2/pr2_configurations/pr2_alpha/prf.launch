@@ -51,7 +51,7 @@
     <param name="do_stereo" type="bool" value="False"/>
     <param name="do_calc_points" type="bool" value="False"/>
     <param name="fps" type="double" value="15.0"/>
-    <param name="frame_id" type="string" value="stereo_link"/>
+    <param name="frame_id" type="string" value="stereo_optical_frame"/>
   </group>
   <node machine="three" pkg="dcam" type="stereodcam" respawn="false"/>
 
