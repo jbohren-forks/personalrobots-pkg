@@ -51,7 +51,7 @@ GraspDoorAction::GraspDoorAction(Node& node) :
   node_(node),
   tf_(node)
 {
-  node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/set_command",10);
+  node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
 };
 
 
@@ -83,7 +83,7 @@ robot_actions::ResultStatus GraspDoorAction::execute(const robot_msgs::Door& goa
 
   std_msgs::Float64 gripper_msg;
   gripper_msg.data = 2.0;
-  node_.publish("r_gripper_effort_controller/set_command", gripper_msg);
+  node_.publish("r_gripper_effort_controller/command", gripper_msg);
   
   // move gripper in front of door
   gripper_pose.setOrigin( Vector3(handle(0) + (normal(0) * -0.15), handle(1) + (normal(1) * -0.15), handle(2) + (normal(2) * -0.15)));
@@ -106,7 +106,7 @@ robot_actions::ResultStatus GraspDoorAction::execute(const robot_msgs::Door& goa
 
   // move gripper over door handle
   gripper_pose.frame_id_ = fixed_frame;
-  gripper_pose.setOrigin( Vector3(handle(0) + (normal(0) * 0.2 ), handle(1) + (normal(1) * 0.2),  handle(2) + (normal(2) * 0.2)));
+  gripper_pose.setOrigin( Vector3(handle(0) + (normal(0) * 0.05 ), handle(1) + (normal(1) * 0.05),  handle(2) + (normal(2) * 0.05)));
   gripper_pose.setRotation( Quaternion(getDoorAngle(goal), 0, M_PI/2.0) ); 
   gripper_pose.stamp_ = Time::now();
   PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
@@ -125,12 +125,12 @@ robot_actions::ResultStatus GraspDoorAction::execute(const robot_msgs::Door& goa
   
   // close the gripper during 4 seconds
   gripper_msg.data = -2.0;
-  node_.publish("r_gripper_effort_controller/set_command", gripper_msg);
+  node_.publish("r_gripper_effort_controller/command", gripper_msg);
   for (unsigned int i=0; i<100; i++){
     Duration().fromSec(4.0/100.0).sleep();
     if (isPreemptRequested()) {
       gripper_msg.data = 0.0;
-      node_.publish("r_gripper_effort_controller/set_command", gripper_msg);
+      node_.publish("r_gripper_effort_controller/command", gripper_msg);
       ROS_ERROR("GraspDoorAction: preempted");
       return robot_actions::PREEMPTED;
     }

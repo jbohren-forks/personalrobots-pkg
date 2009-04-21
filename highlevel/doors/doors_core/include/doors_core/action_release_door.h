@@ -30,53 +30,54 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
- *
- * $Id$
- *
  *********************************************************************/
 
-#include "doors_core/action_detect_door.h"
-#include "doors_core/action_detect_handle.h"
-#include <door_handle_detector/DetectDoorActionStatus.h>
-#include <robot_msgs/Door.h>
+
+/* Author: Wim Meeusen */
+
+#ifndef ACTION_RELEASE_HANDLE_H
+#define ACTION_RELEASE_HANDLE_H
+
+
 #include <ros/node.h>
-#include <robot_actions/action_runner.h>
+#include <robot_msgs/Door.h>
+#include <std_msgs/Float64.h>
+#include <std_msgs/String.h>
+#include <std_srvs/Empty.h>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <robot_srvs/MoveToPose.h>
+#include <kdl/frames.hpp>
+#include <robot_actions/action.h>
+#include <boost/thread/mutex.hpp>
 
-using namespace ros;
-using namespace std;
-using namespace door_handle_detector;
 
-// -----------------------------------
-//              MAIN
-// -----------------------------------
+namespace door_handle_detector{
 
-int
-  main (int argc, char **argv)
+class ReleaseHandleAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
 {
-  ros::init(argc, argv);
+public:
+  ReleaseHandleAction(ros::Node& node);
+  ~ReleaseHandleAction();
 
-  ros::Node node("name");
+  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
 
-  robot_msgs::Door my_door_;
+  void poseCallback();
 
-  my_door_.frame_p1.x = 1.0;
-  my_door_.frame_p1.y = -0.5;
-  my_door_.frame_p2.x = 1.0;
-  my_door_.frame_p2.y = 0.5;
-  my_door_.rot_dir = -1;
-  my_door_.hinge = -1;
-  my_door_.header.frame_id = "base_footprint";
 
-  door_handle_detector::DetectDoorAction door_detector(node);
-  door_handle_detector::DetectHandleAction handle_detector(node);
-  robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(door_detector);
-  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(handle_detector);
-  runner.run();
+private:
+  ros::Node& node_;
+  tf::TransformListener tf_; 
+  robot_msgs::PoseStamped pose_msg_;
+  tf::Stamped<tf::Pose> gripper_pose_;
+  bool pose_received_;
+  boost::mutex pose_mutex_;
 
-  robot_msgs::Door feedback;
-  door_detector.execute(my_door_, feedback);
-  handle_detector.execute(feedback, feedback);
+  std_srvs::Empty::Request  req_empty;
+  std_srvs::Empty::Response res_empty;
+  robot_srvs::MoveToPose::Request  req_moveto;
+  robot_srvs::MoveToPose::Response res_moveto;
+};
 
-  return (0);
 }
+#endif
