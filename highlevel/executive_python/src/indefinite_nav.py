@@ -40,7 +40,6 @@ import rospy
 import random
 from std_msgs.msg import *
 from robot_msgs.msg import *
-from highlevel_controllers.msg import *
 from battery_monitor_adapter import *
 from recharge_adapter import *
 from navigation_adapter import *
