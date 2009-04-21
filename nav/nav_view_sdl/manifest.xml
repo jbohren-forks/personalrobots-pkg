@@ -7,8 +7,6 @@
   <depend package="robot_srvs"/>
   <depend package="robot_msgs"/>
   <depend package="std_srvs"/>
-  <depend package="pr2_msgs"/>
-  <depend package="pr2_srvs"/>
   <depend package="sdlgl"/>
   <depend package="tf"/>
   <!-- <depend package="sdl_image"/> -->
