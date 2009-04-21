@@ -37,16 +37,15 @@
 
 /* Author: Wim Meeussen */
 
-#include "doors_core/action_detect_door.h"
-#include "doors_core/action_detect_handle.h"
 #include <door_handle_detector/DetectDoorActionStatus.h>
 #include <robot_msgs/Door.h>
 #include <ros/node.h>
-#include <robot_actions/action_runner.h>
+#include <robot_actions/action_client.h>
+
 
 using namespace ros;
 using namespace std;
-using namespace door_handle_detector;
+
 
 // -----------------------------------
 //              MAIN
@@ -59,26 +58,19 @@ int
 
   ros::Node node("name");
 
-  robot_msgs::Door my_door_;
+  robot_msgs::Door door;
 
-  my_door_.frame_p1.x = 1.0;
-  my_door_.frame_p1.y = -0.5;
-  my_door_.frame_p2.x = 1.0;
-  my_door_.frame_p2.y = 0.5;
-  my_door_.rot_dir = -1;
-  my_door_.hinge = -1;
-  my_door_.header.frame_id = "base_footprint";
+  door.frame_p1.x = 1.0;
+  door.frame_p1.y = -0.5;
+  door.frame_p2.x = 1.0;
+  door.frame_p2.y = 0.5;
+  door.rot_dir = -1;
+  door.hinge = -1;
+  door.header.frame_id = "base_footprint";
 
-  door_handle_detector::DetectDoorAction door_detector(node);
-  door_handle_detector::DetectHandleAction handle_detector(node);
-  robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(door_detector);
-  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(handle_detector);
-  runner.run();
+  robot_actions::ActionClient<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door> detect_door("detect_door");
 
-  robot_msgs::Door feedback;
-  door_detector.execute(my_door_, feedback);
-  handle_detector.execute(feedback, feedback);
+  detect_door.execute(door, door, Duration().fromSec(20));
 
   return (0);
 }

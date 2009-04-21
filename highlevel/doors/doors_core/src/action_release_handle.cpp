@@ -32,6 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/* Author: Wim Meeussen */
 
 #include "doors_core/action_release_handle.h"
 

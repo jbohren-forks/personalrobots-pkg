@@ -35,6 +35,8 @@
  *
  *********************************************************************/
 
+/* Author: Wim Meeussen */
+
 #include "doors_core/action_open_door.h"
 #include <door_handle_detector/DetectDoorActionStatus.h>
 #include <robot_msgs/Door.h>

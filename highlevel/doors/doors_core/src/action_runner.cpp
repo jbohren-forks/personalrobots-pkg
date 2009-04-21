@@ -32,6 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/* Author: Wim Meeussen */
+
 #include <robot_msgs/Door.h>
 #include "doors_core/action_detect_door.h"
 #include "doors_core/action_detect_handle.h"

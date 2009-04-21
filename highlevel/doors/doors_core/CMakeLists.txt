@@ -36,10 +36,15 @@ rospack_add_executable(trigger_handle_release
 		       src/action_release_handle.cpp
                       )
 
+rospack_add_executable(test_executive
+		       test/test_executive.cpp
+                      )
+
 rospack_add_executable(move_base_door
                        src/move_base_door_action.cpp
 		       src/door_reactive_planner.cpp
                       )
+
 
 rospack_add_library(executive_functions src/executive_functions.cpp)
 

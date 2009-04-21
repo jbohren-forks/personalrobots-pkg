@@ -32,6 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/* Author: Wim Meeussen */
+
 #include <door_handle_detector/DoorsDetectorCloud.h>
 #include <door_handle_detector/DoorsDetector.h>
 #include <door_handle_detector/door_functions.h>
