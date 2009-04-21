@@ -77,7 +77,7 @@ class ArmCommander() :
         arm_mapping = [self.joint_headers.index(x) for x in controlled_joints]
         self.cmds   = [[y[x] for x in arm_mapping] for y in self.joint_data]
 
-    def num_cmds() :
+    def num_cmds(self) :
         return len(self.cmds)
 
     def cmd_arm(self, cmd_index) :

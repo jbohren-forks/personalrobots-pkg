@@ -49,7 +49,8 @@ cams = [ImagePointStream(x) for x in cam_configs]
 map(lambda x: x.start(), cams)
 
 joints = arm_commander.get_traj_joint_names()
-for k in range(0,40) :
+num_cmds = arm_commander.num_cmds()
+for k in range(0,num_cmds) :
 
     # Command arm into the correct location
     print "Command traj %u" % k
