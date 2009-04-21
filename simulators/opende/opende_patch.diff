@@ -52,19 +52,7 @@ Index: ode/src/quickstep.cpp
          if (body[i]->flags & dxBodyGyroscopic) {
              dMatrix3 I;
              // compute inertia tensor in global frame
-@@ -729,6 +742,11 @@
- 		IFTIMING (dTimerNow ("compute rhs");)
- 		dRealAllocaArray (tmp1,nb*6);
- 		// put v/h + invM*fe into tmp1
-+		//
-+		// with damping or joint friction this becomes inv([M + ch])*fe + inv([M + ch])*M*v/h
-+		// so we need to create invM_with_damping as well as invM_with_damping*M
-+		// and do the same for both linear and angular inertias
-+		//
- 		for (i=0; i<nb; i++) {
- 			dReal body_invMass = body[i]->invMass;
- 			for (j=0; j<3; j++) tmp1[i*6+j] = body[i]->facc[j] * body_invMass + body[i]->lvel[j] * stepsize1;
-@@ -760,6 +778,76 @@
+@@ -760,6 +773,76 @@
  		dRealAllocaArray (cforce,nb*6);
  		SOR_LCP (m,nb,J,jb,body,invI,lambda,cforce,rhs,lo,hi,cfm,findex,&world->qs);
  
@@ -141,24 +129,3 @@ Index: ode/src/quickstep.cpp
  #ifdef WARM_STARTING
  		// save lambda for the next iteration
  		//@@@ note that this doesn't work for contact joints yet, as they are
-@@ -823,6 +911,20 @@
- 	}
- 
- #if 0
-+        for (i=0; i<nb; i++) {
-+                for (j=0; j<3; j++)
-+                {
-+                  if (body[i]->lvel[j] >  1) body[i]->lvel[j] =  1;  // hack; hard limit on velocity
-+                  if (body[i]->lvel[j] < -1) body[i]->lvel[j] = -1;  // hack; hard limit on velocity
-+                }
-+                for (j=0; j<3; j++)
-+                {
-+                  if (body[i]->avel[j] >  1) body[i]->avel[j] =  1;  // hack; hard limit on velocity
-+                  if (body[i]->avel[j] < -1) body[i]->avel[j] = -1;  // hack; hard limit on velocity
-+                }
-+        }
-+#endif
-+#if 0
- 	// check that the updated velocity obeys the constraint (this check needs unmodified J)
- 	dRealAllocaArray (vel,nb*6);
- 	for (i=0; i<nb; i++) {
