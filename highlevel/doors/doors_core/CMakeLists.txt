@@ -31,7 +31,7 @@ rospack_add_executable(trigger_doors_opener
 		       src/action_open_door.cpp
                       )
 
-rospack_add_executable(door_reactive_planner_action
+rospack_add_executable(move_base_door
                        src/move_base_door_action.cpp
 		       src/door_reactive_planner.cpp
                       )
