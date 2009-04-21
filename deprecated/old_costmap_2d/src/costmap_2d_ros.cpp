@@ -35,9 +35,7 @@
 // our ros messages
 #include <laser_scan/LaserScan.h>
 #include <robot_msgs/PointCloud.h>
-#include <pr2_msgs/OccDiff.h>
 #include <robot_srvs/StaticMap.h>
-#include <pr2_srvs/TransientObstacles.h>
 
 //Laser projection
 #include "laser_scan_utils/laser_scan.h"
@@ -74,13 +72,6 @@ public:
 
   rosTFClient tf_;
 
-  /** Callback invoked for getting the full list of obstacle
-      points plus a time stamp value
-   */
-  bool fullTransientObstacleCallback(pr2_srvs::TransientObstacles::Request  &req,
-                                     pr2_srvs::TransientObstacles::Response &res);
-
-  
 private:
   
   void drawCostMap(); 
@@ -147,8 +138,6 @@ CostMap2DRos::CostMap2DRos() :
                     "FRAMEID_ROBOT",
                     0.05, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
   
-  advertise<pr2_msgs::OccDiff>("transient_obstacles_diff");
-  advertiseService("transient_obstacles_full", &CostMap2DRos::fullTransientObstacleCallback);
   subscribe("scan", laser_msg_, &CostMap2DRos::laserReceived);
   
 }
@@ -156,35 +145,6 @@ CostMap2DRos::CostMap2DRos() :
 CostMap2DRos::~CostMap2DRos() {
 }
 
-bool CostMap2DRos::fullTransientObstacleCallback(pr2_srvs::TransientObstacles::Request  &req,
-                                                 pr2_srvs::TransientObstacles::Response &res)
-{
-  //request is empty, so we ignore it
-  
-  std::list<unsigned int> obstacle_indexes = costmap_.getOccupiedCellDataIndexList();
-  
-  res.obs.set_points_size(obstacle_indexes.size());
-  res.obs.color.a = 0.0;
-  res.obs.color.r = 0.0;
-  res.obs.color.b = 0.0;
-  res.obs.color.g = 1.0;
-
-  unsigned int pointcloud_ind = 0;
-
-  for(std::list<unsigned int>::iterator i = obstacle_indexes.begin();
-      i != obstacle_indexes.end();
-      i++) {
-    unsigned int mx, my;
-    double wx, wy;
-    costmap_.convertFromMapIndexToXY((*i), mx, my);
-    costmap_.convertFromIndexesToWorldCoord(mx, my, wx, wy);
-    res.obs.points[pointcloud_ind].x = wx;
-    res.obs.points[pointcloud_ind].y = wy;
-    pointcloud_ind++;
-  }
-
-  return true;
-}
 
 void CostMap2DRos::laserReceived() {
   
@@ -233,42 +193,6 @@ void CostMap2DRos::laserReceived() {
   //drawCostMap();
 }
 
-void CostMap2DRos::publishDiffData(const ros::Time ts,
-                                   const std::list<unsigned int>& occ_ids,
-                                   const std::list<unsigned int>& unocc_ids)
-{
-  pr2_msgs::OccDiff occ_diff;
-  occ_diff.header.stamp = ts;
-  occ_diff.set_occ_points_size(occ_ids.size());
-  occ_diff.set_unocc_points_size(unocc_ids.size());
-
-  size_t i = 0;
-  for(std::list<unsigned int>::const_iterator it = occ_ids.begin();
-      it != occ_ids.end();
-      it++, i++) {
-    unsigned int mx, my;
-    double wx, wy;
-    costmap_.convertFromMapIndexToXY((*it), mx, my);
-    costmap_.convertFromIndexesToWorldCoord(mx, my, wx, wy);
-    occ_diff.occ_points[i].x = wx;
-    occ_diff.occ_points[i].y = wy;
-  }
-
-  i = 0;
-  for(std::list<unsigned int>::const_iterator it = unocc_ids.begin();
-      it != unocc_ids.end();
-      it++, i++) {
-    unsigned int mx, my;
-    double wx, wy;
-    costmap_.convertFromMapIndexToXY((*it), mx, my);
-    costmap_.convertFromIndexesToWorldCoord(mx, my, wx, wy);
-    occ_diff.unocc_points[i].x = wx;
-    occ_diff.unocc_points[i].y = wy;
-  }
-  //std::cout << "New occ " << occ_ids.size() << " unocc " << unocc_ids.size() << std::endl;
-
-  publish("transient_obstacles_diff", occ_diff);
-}
 
 void CostMap2DRos::drawCostMap() 
 {
