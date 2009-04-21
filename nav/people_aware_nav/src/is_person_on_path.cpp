@@ -76,7 +76,7 @@ public:
     double robot_radius_m, person_radius_m;
     node_->param("~/fixed_frame", fixed_frame_, std::string("map"));
     node_->param("~costmap_2d/circumscribed_radius", robot_radius_m, 0.46);
-    node_->param("~/person_radius", person_radius_m, 0.5); 
+    node_->param("~/person_radius", person_radius_m, 0.8); 
     total_dist_sqr_m_ = robot_radius_m*robot_radius_m + person_radius_m*person_radius_m;
 
     message_notifier_person_ = new tf::MessageNotifier<robot_msgs::PositionMeasurement> (tf_, node_, boost::bind(&IsPersonOnPath::personPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
@@ -126,7 +126,7 @@ public:
       ROS_WARN_STREAM ("Unable to tell if person was on path.  Ret vals: Current time " << current_time << " Person stamp : " << person_stamp << " Path stamp : " << path_stamp);
     }
     resp.value = on_path ? 1 : 0;
-    ROS_DEBUG_STREAM_NAMED ("person_on_path", "Person on path value is " << (int) resp.value << " at distance " << dist);
+    ROS_INFO_STREAM_NAMED ("person_on_path", "Person on path value is " << (int) resp.value << " at distance " << dist);
 
 
     return true;
@@ -166,6 +166,7 @@ public:
       got_person_pos_ = false;
       return false;
     }
+    t_person_tf_stamped_point[2] = 0.0;
 
     ROS_DEBUG_STREAM_NAMED ("person_on_path", "Attempting to compute person-path dist to point " << t_person_tf_stamped_point[0] << ", " << t_person_tf_stamped_point[1]);
 
@@ -173,7 +174,8 @@ public:
 
     // Go through each line segment on the path and get the distance to the person.
     double min_dist = -1.0;
-    for (uint i=0; i<path_.points.size()-1; i++) {
+    int psize = (int)path_.points.size()-1;
+    for (int i=0; i<psize; i++) {
 
 
       // Two points on the line segment
@@ -235,13 +237,15 @@ public:
 	// Check that the point actually projects onto the line segment. If not, the closest distance is really to an endpoint.
 	double k = ( dot( t_person_tf_stamped_point, s) - dot(t_path_point1,s) ) / dotss;
 	if (k < 0) {
-          ROS_DEBUG_STREAM_NAMED ("person_on_path", "endpoint1");
+          ROS_DEBUG_STREAM_NAMED ( "person_on_path", "endpoint1");
 	  sqr_dist = dotdd;
 	}
 	else if (k > 1) {
-          ROS_DEBUG_STREAM_NAMED ("person_on_path", "endpoint2");
+          ROS_DEBUG_STREAM_NAMED ( "person_on_path", "endpoint2");
 	  d = t_person_tf_stamped_point - t_path_point2;
 	  dotdd = dot(d,d);
+          ROS_DEBUG_STREAM_NAMED ("person_on_path", "in endpoint2 case: d = " << d[0] << ", " << d[1] << " and dot product is " << dotdd << " and tf_person_stamped_point is " 
+                                  << t_person_tf_stamped_point[0] << ", " << t_person_tf_stamped_point[1] << " and path point is " << t_path_point2[0] << ", " << t_path_point2[1]);
 	  if (dotdd < 1E-10) {
 	    ROS_DEBUG_STREAM_NAMED("person_on_path", "Person is (almost) at line segment point 2. Returning distance of 0.");
 	    min_dist = 0.0;
@@ -257,7 +261,7 @@ public:
 	
       }
 
-      ROS_DEBUG_STREAM_NAMED ("person_on_path", "Sq. distance from " << t_path_point1[0] << ", " << t_path_point1[1] << " to " << t_path_point2[0] << ", " << t_path_point2[1] << " is " << sqr_dist);
+      ROS_DEBUG_STREAM_NAMED ( "person_on_path", "Sq. distance from " << t_path_point1[0] << ", " << t_path_point1[1] << " to " << t_path_point2[0] << ", " << t_path_point2[1] << " is " << sqr_dist);
 
 
     }
@@ -265,13 +269,12 @@ public:
     // The person is on the path if their min distance to one of the line segments is less than their radius plus the robot's radius.
     if (min_dist >= 0.0 && min_dist <= total_dist_sqr_m_) {
       *is_on_path = true;
-      *dist = sqrt(min_dist);
     }
     else {
       *is_on_path = false;
     }
 
-
+    *dist = min_dist < 0 ? -42.0 : sqrt(min_dist);
     *person_stamp = person_pos_.header.stamp;
     *path_stamp = path_.header.stamp;
 
