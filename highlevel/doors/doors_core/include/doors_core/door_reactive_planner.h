@@ -146,6 +146,8 @@ namespace door_reactive_planner
 
     int cell_distance_from_obstacles_; /**< Distance the robot should stay away from obstacles (in cells corresponding to the grid used for planning */
 
+    int cell_distance_robot_center_from_obstacles_;
+
     robot_msgs::Vector3 vector_along_door_; /**< A unit vector along the doorway*/
 
     double centerline_angle_; /**< Angle that the normal to the door makes in the path_frame when the door is closed */

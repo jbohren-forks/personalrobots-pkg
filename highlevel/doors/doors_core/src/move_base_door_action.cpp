@@ -266,7 +266,7 @@ namespace nav
 
         //check that the observation buffers for the costmap are current
         if(!planner_cost_map_ros_->isCurrent()){
-          ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
+          ROS_DEBUG("Sensor data is out of date, we're not going to allow commanding of the base for safety");
           continue;
         }
         makePlan();
@@ -302,19 +302,30 @@ namespace nav
   {
 //    return;
     robot_msgs::JointTraj plan_out;
-    if((int)plan_in.size() < 0)
+    if((int)plan_in.size() <= 0)
     {
       plan_out.set_points_size(0);;
     }
     else
     {
-      plan_out.set_points_size(plan_in.size());
-      for(int i=0; i<(int) plan_in.size(); i++)
+      if(plan_in.get_points_size() > 2)
       {
-        plan_out.points[i].set_positions_size(3);
-        plan_out.points[i].positions[0] = plan_in[i].x;
-        plan_out.points[i].positions[1] = plan_in[i].y;
-        plan_out.points[i].positions[2] = plan_in[i].th;
+        plan_out.set_points_size(2);
+        for(int i=0; i<(int) plan_in.size(); i++)
+        {
+          plan_out.points[i].set_positions_size(3);
+          plan_out.points[i].positions[0] = plan_in[i].x;
+          plan_out.points[i].positions[1] = plan_in[i].y;
+          plan_out.points[i].positions[2] = plan_in[i].th;
+        }
+
+        for(int i=0; i<(int) plan_in.size(); i++)
+        {
+          plan_out.points[i].set_positions_size(3);
+          plan_out.points[i].positions[0] = plan_in[i].x;
+          plan_out.points[i].positions[1] = plan_in[i].y;
+          plan_out.points[i].positions[2] = plan_in[i].th;
+        }
       }
     }
     ros_node_.publish(control_topic_name_,plan_out);
