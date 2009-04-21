@@ -1,0 +1,18 @@
+<!-- Launches the hallway movement nodes for the robot.  Requires environment variable ROBOT to be set. ->
+
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+
+    <param name="/global_frame_id" value="map"/>
+
+    <!-- The navigation stack and associated parameters -->
+    <include file="$(find people_aware_nav)/launch/nav.xml" />
+    <node pkg="people_aware_nav" type="person_pos_sender" output="screen" />
+    <node pkg="people_aware_nav" type="is_person_on_path" output="screen" />
+    <include file="$(find hallway_tracker)/launch/hallway_tracker.launch" /> 
+    <node pkg="people_aware_nav" type="hallway_move" name="hallway_move" output="screen"/>
+    <include file="$(find people)/face_detector.launch" />
+
+  </group>
+</launch>
