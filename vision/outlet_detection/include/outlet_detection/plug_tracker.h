@@ -1,3 +1,7 @@
+#warning License agreement
+#ifndef PLUG_TRACKER_H
+#define PLUG_TRACKER_H
+
 #include <ros/node.h>
 #include <image_msgs/Image.h>
 #include <image_msgs/CamInfo.h>
@@ -59,3 +63,5 @@ private:
 
   static const char wndname[];
 };
+
+#endif
