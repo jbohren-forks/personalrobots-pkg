@@ -339,21 +339,20 @@ namespace costmap_2d {
     global_pose.setIdentity();
     robot_pose.setIdentity();
     robot_pose.frame_id_ = robot_base_frame_;
-    robot_pose.stamp_ = ros::Time::now() - ros::Duration().fromSec(transform_tolerance_);
+    ros::Time current_time = ros::Time::now();
+    robot_pose.stamp_ = ros::Time();
     try{
       tf_.transformPose(global_frame_, robot_pose, global_pose);
     }
     catch(tf::LookupException& ex) {
       ROS_ERROR("No Transform available Error: %s\n", ex.what());
-      return;
     }
     catch(tf::ConnectivityException& ex) {
       ROS_ERROR("Connectivity Error: %s\n", ex.what());
-      return;
     }
     catch(tf::ExtrapolationException& ex) {
-      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-      return;
+      if (current_time - robot_pose.stamp_ > ros::Duration().fromSec(transform_tolerance_))
+        ROS_ERROR("Extrapolation Error: %s\n", ex.what());
     }
 
     double wx = global_pose.getOrigin().x();
@@ -390,21 +389,20 @@ namespace costmap_2d {
       global_pose.setIdentity();
       robot_pose.setIdentity();
       robot_pose.frame_id_ = robot_base_frame_;
-      robot_pose.stamp_ = ros::Time::now() - ros::Duration().fromSec(transform_tolerance_);
+      ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
+      robot_pose.stamp_ = ros::Time();
       try{
         tf_.transformPose(global_frame_, robot_pose, global_pose);
       }
       catch(tf::LookupException& ex) {
         ROS_ERROR("No Transform available Error: %s\n", ex.what());
-        return;
       }
       catch(tf::ConnectivityException& ex) {
         ROS_ERROR("Connectivity Error: %s\n", ex.what());
-        return;
       }
       catch(tf::ExtrapolationException& ex) {
-        ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-        return;
+        if (current_time - robot_pose.stamp_ > ros::Duration().fromSec(transform_tolerance_))
+          ROS_ERROR("Extrapolation Error: %s\n", ex.what());
       }
 
       double wx = global_pose.getOrigin().x();

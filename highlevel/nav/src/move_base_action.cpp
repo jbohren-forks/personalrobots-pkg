@@ -183,8 +183,8 @@ namespace nav {
     tf::Stamped<tf::Pose> robot_pose;
     robot_pose.setIdentity();
     robot_pose.frame_id_ = robot_base_frame_;
-    robot_pose.stamp_ = ros::Time::now() - ros::Duration().fromSec(transform_tolerance_);
-
+    ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
+    robot_pose.stamp_ = ros::Time();
     try{
       tf_.transformPose(global_frame_, robot_pose, global_pose_);
     }
@@ -195,7 +195,8 @@ namespace nav {
       ROS_ERROR("Connectivity Error: %s\n", ex.what());
     }
     catch(tf::ExtrapolationException& ex) {
-      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      if (current_time - robot_pose.stamp_ > ros::Duration().fromSec(transform_tolerance_))
+        ROS_ERROR("Extrapolation Error: %s\n", ex.what());
     }
   }
 

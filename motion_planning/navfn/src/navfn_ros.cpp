@@ -85,7 +85,8 @@ namespace navfn {
     global_pose.setIdentity();
     robot_pose.setIdentity();
     robot_pose.frame_id_ = robot_base_frame_;
-    robot_pose.stamp_ = ros::Time::now() - ros::Duration().fromSec(transform_tolerance_);
+    ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
+    robot_pose.stamp_ = ros::Time();
     try{
       //transform both the goal and pose of the robot to the global frame
       tf_.transformPose(global_frame_, robot_pose, global_pose);
@@ -100,8 +101,11 @@ namespace navfn {
       return false;
     }
     catch(tf::ExtrapolationException& ex) {
-      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-      return false;
+      if (current_time - robot_pose.stamp_ > ros::Duration().fromSec(transform_tolerance_))
+      {
+        ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+        return false;
+      }
     }
 
     double wx = global_pose.getOrigin().x();
