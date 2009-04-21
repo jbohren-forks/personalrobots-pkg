@@ -51,22 +51,26 @@ try:
     po.frame_id = "base_link"
     po2 = tfl.transform_pose("/map", po)
 
+    print "po2"
     print po2.pose
 
     # test transforming point
+    print "po"
     po = tf.PointStamped()
     po.frame_id = "base_link"
-    po2 = tfl.transform_point("/map", po)
+    po3 = tfl.transform_point("/map", po)
+    print "po3"
+    print po3
 
     # test transforming vector
     po = tf.VectorStamped()
     po.frame_id = "base_link"
-    po2 = tfl.transform_vector("/map", po)
+    po4 = tfl.transform_vector("/map", po)
 
     # test transforming quaternion
     po = tf.QuaternionStamped()
     po.frame_id = "base_link"
-    po2 = tfl.transform_quaternion("/map", po)
+    po5 = tfl.transform_quaternion("/map", po)
 
     tr = tf.TransformStamped()
 
@@ -116,6 +120,13 @@ try:
     print pointstamped.point
     print transform_stamped.transform * pointstamped.point
 
+    print "destructing", po2.pose.this
+    po2 = []
+    print "po2 sucessfull reassigned"
+    
+
+
+    print "done"
 
 except ValueError, e:
     print "Exception %s Improperly thrown: %s"%(type(e), e)
