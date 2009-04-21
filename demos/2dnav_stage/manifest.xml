@@ -13,5 +13,4 @@
   <depend package="stage"/>
   <depend package="map_server"/>
   <depend package="wavefront_player"/>
-  <depend package="highlevel_controllers"/>
 </package>
