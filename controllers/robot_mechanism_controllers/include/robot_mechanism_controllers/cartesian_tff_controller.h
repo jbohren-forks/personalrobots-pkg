@@ -40,6 +40,7 @@
 #include <kdl/frames.hpp>
 #include <ros/node.h>
 #include <robot_msgs/TaskFrameFormalism.h>
+#include <robot_msgs/Twist.h>
 #include <mechanism_model/controller.h>
 #include <tf/transform_datatypes.h>
 #include <control_toolbox/pid.h>
@@ -90,6 +91,8 @@ private:
   KDL::Frame pose_meas_, pose_meas_old_;
 
   robot_msgs::TaskFrameFormalism tff_msg_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::Twist> > state_position_publisher_;
+  unsigned int loop_count_;
 
   // internal wrench controller
   CartesianWrenchController* wrench_controller_;

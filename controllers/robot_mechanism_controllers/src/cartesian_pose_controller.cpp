@@ -121,10 +121,9 @@ bool CartesianPoseController::initXml(mechanism::RobotState *robot_state, TiXmlE
   command_notifier_.reset(new MessageNotifier<robot_msgs::PoseStamped>(&tf_, node_,
                                                                        boost::bind(&CartesianPoseController::command, this, _1),
                                                                        controller_name_ + "/command", root_name_, 1));
-  // realtime publisher for control error
+  // realtime publisher for control state
   state_error_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/state/error", 1));
   state_pose_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::PoseStamped>(controller_name_+"/state/pose", 1));
-  loop_count_ = 0;
 
   return true;
 }
@@ -141,6 +140,7 @@ bool CartesianPoseController::starting()
   pose_desi_ = getPose();
   last_time_ = robot_state_->hw_->current_time_;
 
+  loop_count_ = 0;
   return true;
 }
 

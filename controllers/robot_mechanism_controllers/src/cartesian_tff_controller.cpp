@@ -11,7 +11,7 @@
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
- *       contributors may be used to endorse or promote products derived from
+n *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -47,12 +47,13 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(CartesianTFFController)
 
 CartesianTFFController::CartesianTFFController()
-  : node_(ros::Node::instance()),
-    robot_state_(NULL),
-    jnt_to_twist_solver_(NULL),
-    mode_(6),
-    value_(6),
-    twist_to_wrench_(6)
+: node_(ros::Node::instance()),
+  robot_state_(NULL),
+  jnt_to_twist_solver_(NULL),
+  mode_(6),
+  value_(6),
+  twist_to_wrench_(6),
+  state_position_publisher_(NULL)
 {}
 
 
@@ -144,6 +145,9 @@ bool CartesianTFFController::initXml(mechanism::RobotState *robot_state, TiXmlEl
   node_->subscribe(controller_name_ + "/command", tff_msg_,
 		   &CartesianTFFController::command, this, 1);
 
+  // realtime publisher for control state
+  state_position_publisher_.reset(new realtime_tools::RealtimePublisher<robot_msgs::Twist>(controller_name_+"/state/position", 1));
+
   return true;
 }
 
@@ -173,6 +177,7 @@ bool CartesianTFFController::starting()
   pose_meas_old_ = frame_twist.value();
   position_ = Twist::Zero();
 
+  loop_count_ = 0;
   return true;
 }
 
@@ -210,6 +215,21 @@ void CartesianTFFController::update()
   
   // send wrench to wrench controller
   wrench_controller_->wrench_desi_ = (pose_meas_.M * wrench_desi_);
+
+  if (++loop_count_ % 100 == 0){
+    if (state_position_publisher_){
+      if (state_position_publisher_->trylock()){
+        state_position_publisher_->msg_.vel.x = position_.vel(0);
+        state_position_publisher_->msg_.vel.y = position_.vel(1);
+        state_position_publisher_->msg_.vel.z = position_.vel(2);
+        state_position_publisher_->msg_.rot.x = position_.rot(0);
+	state_position_publisher_->msg_.rot.y = position_.rot(1);
+        state_position_publisher_->msg_.rot.z = position_.rot(2);
+        state_position_publisher_->unlockAndPublish();
+      }
+    }
+  }
+
 }
 
 
