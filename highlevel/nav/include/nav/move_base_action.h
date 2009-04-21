@@ -141,6 +141,7 @@ namespace nav {
       tf::Stamped<tf::Pose> global_pose_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;
       double controller_frequency_;
+      double transform_tolerance_; // timeout before transform errors
 
   };
 };

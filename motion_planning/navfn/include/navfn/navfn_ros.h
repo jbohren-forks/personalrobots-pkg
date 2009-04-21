@@ -87,6 +87,7 @@ namespace navfn {
       const costmap_2d::Costmap2D& cost_map_;
       NavFn planner_;
       std::string global_frame_, robot_base_frame_;
+      double transform_tolerance_; // timeout before transform errors
   };
 };
 

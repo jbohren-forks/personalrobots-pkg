@@ -42,6 +42,7 @@ namespace navfn {
     //read parameters for the planner
     ros_node_.param("~/navfn/global_frame", global_frame_, std::string("map"));
     ros_node_.param("~/navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
+    ros_node_.param("~/navfn/transform_tolerance", transform_tolerance_, 0.1);
   }
 
   double NavfnROS::getPointPotential(const robot_msgs::Point& world_point){
@@ -84,7 +85,7 @@ namespace navfn {
     global_pose.setIdentity();
     robot_pose.setIdentity();
     robot_pose.frame_id_ = robot_base_frame_;
-    robot_pose.stamp_ = ros::Time::now();
+    robot_pose.stamp_ = ros::Time::now() - ros::Duration().fromSec(transform_tolerance_);
     try{
       //transform both the goal and pose of the robot to the global frame
       tf_.transformPose(global_frame_, robot_pose, global_pose);

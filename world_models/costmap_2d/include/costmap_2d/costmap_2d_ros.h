@@ -209,6 +209,7 @@ namespace costmap_2d {
       std::vector<ObservationBuffer*> clearing_buffers_; ///< @brief Used to store observation buffers used for clearing obstacles
       bool rolling_window_; ///< @brief Whether or not the costmap should roll with the robot
       bool current_; ///< @brief Whether or not all the observation buffers are updating at the desired rate
+      double transform_tolerance_; // timeout before transform errors
 
   };
 };

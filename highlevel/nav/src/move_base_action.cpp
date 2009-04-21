@@ -51,6 +51,7 @@ namespace nav {
     ros_node_.param("~global_frame", global_frame_, std::string("map"));
     ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
+    ros_node_.param("~transform_tolerance", transform_tolerance_, 0.1);
 
     //for display purposes
     ros_node_.advertise<robot_msgs::Polyline2D>("gui_path", 1);
@@ -182,7 +183,7 @@ namespace nav {
     tf::Stamped<tf::Pose> robot_pose;
     robot_pose.setIdentity();
     robot_pose.frame_id_ = robot_base_frame_;
-    robot_pose.stamp_ = ros::Time();
+    robot_pose.stamp_ = ros::Time::now() - ros::Duration().fromSec(transform_tolerance_);
 
     try{
       tf_.transformPose(global_frame_, robot_pose, global_pose_);
