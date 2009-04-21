@@ -35,8 +35,9 @@
 #include <robot_msgs/Door.h>
 #include "doors_core/action_detect_door.h"
 #include "doors_core/action_detect_handle.h"
-#include "doors_core/action_grasp_door.h"
+#include "doors_core/action_grasp_handle.h"
 #include "doors_core/action_open_door.h"
+#include "doors_core/action_release_handle.h"
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 #include <robot_actions/DoorActionState.h>
@@ -57,14 +58,16 @@ int main(int argc, char** argv)
 
   DetectDoorAction detect_door(node);
   DetectHandleAction detect_handle(node);
-  GraspDoorAction grasp(node);
+  GraspHandleAction grasp(node);
   OpenDoorAction open(node);
+  ReleaseHandleAction release(node);
 
   robot_actions::ActionRunner runner(10.0);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);  
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open);
+  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(release);
 
   runner.run();
   node.spin();

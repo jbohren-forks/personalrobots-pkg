@@ -35,8 +35,8 @@
 
 /* Author: Wim Meeusen */
 
-#ifndef ACTION_GRASP_DOOR_H
-#define ACTION_GRASP_DOOR_H
+#ifndef ACTION_GRASP_HANLDE_H
+#define ACTION_GRASP_HANDLE_H
 
 
 #include <ros/node.h>
@@ -52,11 +52,11 @@
 
 namespace door_handle_detector{
 
-class GraspDoorAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
+class GraspHandleAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
 {
 public:
-  GraspDoorAction(ros::Node& node);
-  ~GraspDoorAction();
+  GraspHandleAction(ros::Node& node);
+  ~GraspHandleAction();
 
   virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
 
