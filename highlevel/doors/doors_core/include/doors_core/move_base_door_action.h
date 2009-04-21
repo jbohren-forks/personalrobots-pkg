@@ -167,7 +167,7 @@ namespace nav {
       door_reactive_planner::DoorReactivePlanner* planner_;
       std::vector<robot_actions::Pose2D> global_plan_;
       std::vector<robot_msgs::Point> footprint_;
-      std::string global_frame_, robot_base_frame_;
+      std::string global_frame_, control_frame_, robot_base_frame_;
       bool valid_plan_;
       boost::recursive_mutex lock_;
       robot_msgs::Door door_;

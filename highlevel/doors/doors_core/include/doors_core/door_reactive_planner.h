@@ -116,7 +116,7 @@ namespace door_reactive_planner
 
     base_local_planner::CostmapModel *cost_map_model_; /**< Pointer to a CostmapModel used by the planner */
    
-    std::string path_frame_id_; /**< The name of the frame in which all planning and control is carried out */
+    std::string control_frame_id_; /**< The name of the frame in which all planning and control is carried out */
 
     std::string costmap_frame_id_; /**< The name of the frame in which the cost map exists */
 

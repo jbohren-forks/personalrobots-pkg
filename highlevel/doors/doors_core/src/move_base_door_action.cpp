@@ -52,11 +52,11 @@ namespace nav
   {
     //get some parameters that will be global to the move base door node
     ros_node_.param("~global_frame", global_frame_, std::string("odom_combined"));
+    ros_node_.param("~control_frame", control_frame_, std::string("odom"));
     ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
 
-    ros_node_.param("~control_topic_name", control_topic_name_, std::string("base/trajectory_controller/command"));
-
+    ros_node_.param("~control_topic_name", control_topic_name_, std::string("/base/trajectory_controller/trajectory_command"));
     //for display purposes
     ros_node_.advertise<robot_msgs::Polyline2D>("gui_path", 1);
     ros_node_.advertise<robot_msgs::Polyline2D>("local_path", 1);
@@ -78,12 +78,14 @@ namespace nav
     if(!ros_node_.hasParam("~costmap/robot_base_frame")) ros_node_.setParam("~costmap/robot_base_frame", std::string("base_link"));
 
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
-    planner_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, ros_node.getName());
+    planner_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, "");
     planner_cost_map_ros_->getCostMapCopy(planner_cost_map_);
 
     //initialize the door opening planner
-    planner_ = new DoorReactivePlanner(ros_node_, tf_,&planner_cost_map_,global_frame_,global_frame_);
+    planner_ = new DoorReactivePlanner(ros_node_, tf_,&planner_cost_map_,control_frame_,global_frame_);
     ROS_INFO("MAP SIZE: %d, %d", planner_cost_map_.cellSizeX(), planner_cost_map_.cellSizeY());
+
+    ros_node_.advertise<robot_msgs::JointTraj>(control_topic_name_, 1);
   }
 
   MoveBaseDoorAction::~MoveBaseDoorAction()
@@ -93,6 +95,12 @@ namespace nav
 
     if(planner_cost_map_ros_ != NULL)
       delete planner_cost_map_ros_;
+
+    ros_node_.unadvertise("gui_path");
+    ros_node_.unadvertise("local_path");
+    ros_node_.unadvertise("robot_footprint");
+    ros_node_.unadvertise(control_topic_name_);
+
   }
 
   robot_actions::Pose2D MoveBaseDoorAction::getPose2D(const tf::Stamped<tf::Pose> &pose)
@@ -245,6 +253,7 @@ namespace nav
       //check for success
       if(goalReached())
       {
+        ROS_INFO("REACHED GOAL");
         dispatchControl(empty_plan_);
         return robot_actions::SUCCESS;
       }
@@ -381,6 +390,9 @@ int main(int argc, char** argv){
   ros_node.param("~p_door_hinge" , tmp2, 1); door.hinge = tmp2;
   ros_node.param("~p_door_rot_dir" , tmp2, 1); door.rot_dir = tmp2;
   door.header.frame_id = "base_link";
+  door.normal.x = 1.0;
+  door.normal.y = 0.0;
+  door.normal.z = 0.0;
   ros::Time my_time = ros::Time::now();
   door.header.stamp = my_time;
 

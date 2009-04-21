@@ -39,12 +39,13 @@ using namespace ros;
 using namespace std;
 using namespace door_reactive_planner;
 
-DoorReactivePlanner::DoorReactivePlanner(ros::Node &ros_node, TransformListener &tf, costmap_2d::Costmap2D* cost_map, std::string path_frame_id, std::string costmap_frame_id):node_(ros_node),tf_(tf)
+DoorReactivePlanner::DoorReactivePlanner(ros::Node &ros_node, TransformListener &tf, costmap_2d::Costmap2D* cost_map, std::string control_frame_id, std::string costmap_frame_id):node_(ros_node),tf_(tf)
 {
   cost_map_ = cost_map;
   cost_map_model_ = new base_local_planner::CostmapModel(*cost_map_);
-  path_frame_id_ = path_frame_id;
+  control_frame_id_ = control_frame_id;
   costmap_frame_id_ = costmap_frame_id;
+  getParams();
 }
 
 void DoorReactivePlanner::getParams()
@@ -65,8 +66,8 @@ void DoorReactivePlanner::getParams()
   node_.param<double>("~door_reactive_planner/costmap/inscribed_radius",inscribed_radius_,0.325);
 
   max_inflated_cost_ = cost_map_->computeCost(min_distance_from_obstacles_);
-  cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),1);
-
+  cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),4);
+  ROS_INFO("Cell distance from obstacles is %d",cell_distance_from_obstacles_);
   robot_msgs::Point pt;
   //create a square footprint
   pt.x = inscribed_radius_;
@@ -87,7 +88,7 @@ void DoorReactivePlanner::setDoor(robot_msgs::Door door_msg_in)
 {
   //Assumption is that the normal points in the direction we want to travel through the door
   robot_msgs::Door door;
-  door_handle_detector::transformTo(tf_,path_frame_id_,door_msg_in,door);
+  door_handle_detector::transformTo(tf_,costmap_frame_id_,door_msg_in,door);
 
   vector_along_door_.x = door.normal.y;
   vector_along_door_.y = -door.normal.x;
@@ -191,13 +192,14 @@ void DoorReactivePlanner::getFinalPosition(const robot_actions::Pose2D &current_
 }
 
 
-bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vector<robot_actions::Pose2D> &best_path)
+bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vector<robot_actions::Pose2D> &best_path_control_frame)
 {
   if(!door_information_set_)
   {
     ROS_ERROR("Door information not set");
     return false;
   }
+  std::vector<robot_actions::Pose2D> best_path_costmap_frame;
   robot_actions::Pose2D end_position;
   std::vector<robot_actions::Pose2D> checked_path;
   std::vector<robot_actions::Pose2D> linear_path;
@@ -207,7 +209,7 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
   double delta_theta = max_explore_delta_angle_/num_explore_paths_;
   double distance_to_centerline;
 
-  best_path.resize(0);
+  best_path_costmap_frame.resize(0);
   distance_to_centerline = (start.x-goal_.x)*vector_along_door_.x + (start.y-goal_.y)*vector_along_door_.y;
 
   for(int i=0; i < num_explore_paths_; i++)
@@ -216,14 +218,14 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
     checked_path.clear();
     getFinalPosition(start,i*delta_theta, distance_to_centerline,end_position);
     createLinearPath(start,end_position,linear_path);
-    checkPath(linear_path,path_frame_id_,checked_path,costmap_frame_id_);
+    checkPath(linear_path,costmap_frame_id_,checked_path,costmap_frame_id_);
     if(checked_path.size() > 0)
     {
       double new_distance = distance(checked_path.back(),goal_);
       if( new_distance < max_distance_to_goal)
       {
-        best_path.resize(checked_path.size());
-        best_path = checked_path;
+        best_path_costmap_frame.resize(checked_path.size());
+        best_path_costmap_frame = checked_path;
         max_distance_to_goal = new_distance;
       }
       if(i == 0 && choose_straight_line_trajectory_)
@@ -236,24 +238,30 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
     checked_path.clear();
     getFinalPosition(start,-i*delta_theta,distance_to_centerline,end_position);
     createLinearPath(start,end_position,linear_path);
-    checkPath(linear_path,path_frame_id_,checked_path,costmap_frame_id_);
+    checkPath(linear_path,costmap_frame_id_,checked_path,costmap_frame_id_);
     if(checked_path.size() > 0)
     {
       double new_distance = distance(checked_path.back(),goal_);
       if(new_distance < max_distance_to_goal)
       {
-        best_path.resize(checked_path.size());
-        best_path = checked_path;
+        best_path_costmap_frame.resize(checked_path.size());
+        best_path_costmap_frame = checked_path;
         max_distance_to_goal = new_distance;
       }
     }
   } 
-  if(best_path.size() == 0)
+  if(best_path_costmap_frame.size() == 0)
+  {
+    best_path_control_frame.resize(0);
     return false;
+  }
+
+  best_path_control_frame.resize(best_path_costmap_frame.size());
+  transformPath(best_path_costmap_frame,costmap_frame_id_,best_path_control_frame,control_frame_id_);
   return true;
 }
 
-void DoorReactivePlanner::checkPath(const std::vector<robot_actions::Pose2D> &path, const std::string &path_frame_id, std::vector<robot_actions::Pose2D> &return_path, std::string &costmap_frame_id)
+void DoorReactivePlanner::checkPath(const std::vector<robot_actions::Pose2D> &path, const std::string &control_frame_id, std::vector<robot_actions::Pose2D> &return_path, std::string &costmap_frame_id)
 {
   double theta;
   double cost;
@@ -267,7 +275,7 @@ void DoorReactivePlanner::checkPath(const std::vector<robot_actions::Pose2D> &pa
     std::vector<robot_msgs::Point> oriented_footprint;
     robot_actions::Pose2D out_pose;
 
-    transform2DPose(path[i],path_frame_id, out_pose, costmap_frame_id);
+    transform2DPose(path[i],control_frame_id, out_pose, costmap_frame_id);
     computeOrientedFootprint(out_pose, footprint_, oriented_footprint);
     position.x = out_pose.x;
     position.y = out_pose.y;
@@ -280,7 +288,7 @@ void DoorReactivePlanner::checkPath(const std::vector<robot_actions::Pose2D> &pa
         continue;
       }
     }
-    ROS_DEBUG("Point %d: position: %f, %f, %f is in collision",i,out_pose.x,out_pose.y,out_pose.th);
+    ROS_INFO("Point %d: position: %f, %f, %f is in collision",i,out_pose.x,out_pose.y,out_pose.th);
     ROS_DEBUG("Radius inscribed: %f, circumscribed: %f",inscribed_radius_, circumscribed_radius_);
     for(int j=0; j < (int) oriented_footprint.size(); j++)
       ROS_DEBUG("Footprint point: %d is : %f,%f",j,oriented_footprint[j].x,oriented_footprint[j].y);
