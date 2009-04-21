@@ -28,6 +28,7 @@
 <!-- Laser scan assembler for tilt laser -->
 <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
   <remap from="scan_in" to="tilt_scan"/>
+  <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
   <param name="tf_cache_time_secs" type="double" value="10.0" />
   <param name="max_scans" type="int" value="1000" />
   <param name="ignore_laser_skew" type="bool" value="true" />
