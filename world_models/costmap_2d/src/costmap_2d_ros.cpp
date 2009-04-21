@@ -343,12 +343,15 @@ namespace costmap_2d {
     }
     catch(tf::LookupException& ex) {
       ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      return;
     }
     catch(tf::ConnectivityException& ex) {
       ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      return;
     }
     catch(tf::ExtrapolationException& ex) {
       ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      return;
     }
 
     double wx = global_pose.getOrigin().x();
@@ -391,12 +394,15 @@ namespace costmap_2d {
       }
       catch(tf::LookupException& ex) {
         ROS_ERROR("No Transform available Error: %s\n", ex.what());
+        return;
       }
       catch(tf::ConnectivityException& ex) {
         ROS_ERROR("Connectivity Error: %s\n", ex.what());
+        return;
       }
       catch(tf::ExtrapolationException& ex) {
         ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+        return;
       }
 
       double wx = global_pose.getOrigin().x();
