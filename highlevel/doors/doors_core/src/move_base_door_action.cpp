@@ -308,7 +308,7 @@ namespace nav
     }
     else
     {
-      if(plan_in.get_points_size() > 2)
+      if(plan_in.size() > 2)
       {
         plan_out.set_points_size(2);
         for(int i=0; i<(int) plan_in.size(); i++)
