@@ -88,7 +88,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const robot_msgs::Door&
   Duration poll = Duration().fromSec(0.1);
   Time start_time = ros::Time::now();
   while (!pose_received_){
-    if (start_time + timeout > ros::Time::now()){
+    if (start_time + timeout < ros::Time::now()){
       ROS_ERROR("ReleaseHandleAction: failed to receive robot pose");
       node_.unsubscribe("r_arm_cartesian_pose_controller/state/pose");
       return robot_actions::ABORTED;
