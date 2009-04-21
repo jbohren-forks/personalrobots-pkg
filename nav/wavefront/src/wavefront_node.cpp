@@ -73,8 +73,8 @@ $ wavefront_player
 
 Subscribes to (name/type):
 - @b "localizedpose"/RobotBase2DOdom : robot's map pose.  Only the position information is used (velocity is ignored).
-- @b "goal"/Pose2D : goal for the robot.
-- @b "scan"/LaserScan : laser scans.  Used to temporarily modify the map for dynamic obstacles.
+- @b "goal"/robot_msgs/PoseStamped : goal for the robot.
+- @b "scan"/laser_scan/LaserScan : laser scans.  Used to temporarily modify the map for dynamic obstacles.
 
 Publishes to (name / type):
 - @b "cmd_vel"/PoseDot : velocity commands to robot
@@ -114,7 +114,7 @@ robot.
 
 // The messages that we'll use
 #include <robot_actions/MoveBaseState.h>
-#include <robot_actions/Pose2D.h>
+#include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/PointCloud.h>
 #include <laser_scan/LaserScan.h>
@@ -201,7 +201,7 @@ class WavefrontNode: public ros::Node
     double tvmin, tvmax, avmin, avmax, amin, amax;
 
     // incoming/outgoing messages
-    robot_actions::Pose2D goalMsg;
+    robot_msgs::PoseStamped goalMsg;
     //MsgRobotBase2DOdom odomMsg;
     robot_msgs::Polyline2D polylineMsg;
     robot_msgs::Polyline2D pointcloudMsg;
@@ -388,16 +388,22 @@ WavefrontNode::goalReceived()
   this->enable = 1;
 
   if(this->enable){
-    printf("got new goal: %.3f %.3f %.3f\n",
-	   goalMsg.x,
-	   goalMsg.y,
-	   RTOD(goalMsg.th));
+    tf::Stamped<tf::Pose> goalPose;
+    tf::PoseStampedMsgToTF(goalMsg, goalPose);
+    
 
     // Populate goal data
-    this->goal[0] = goalMsg.x;
-    this->goal[1] = goalMsg.y;
-    this->goal[2] = goalMsg.th;
+    this->goal[0] = goalPose.getOrigin().getX();
+    this->goal[1] = goalPose.getOrigin().getY();
+    double yaw, pitch, roll;
+    goalPose.getBasis().getEulerZYX(yaw, pitch, roll);
+    this->goal[2] = yaw;
     this->planner_state = NEW_GOAL;
+
+    printf("got new goal: %.3f %.3f %.3f\n",
+	   goal[0],
+	   goal[1],
+	   RTOD(goal[2]));
 
     // Set state for actively pursuing a goal
     this->pstate.status.value = this->pstate.status.ACTIVE;
