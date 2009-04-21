@@ -219,10 +219,10 @@ public:
     in_lockout_ = false;
     motor_publisher_ = 0;
   }
-  ~WG0X();
+  virtual ~WG0X();
 
   EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
-  int initialize(Actuator *, bool allow_unprogrammed=true, bool motor_model=false);
+  virtual int initialize(Actuator *, bool allow_unprogrammed=true, bool motor_model=false);
   void initXml(TiXmlElement *);
 
   void convertCommand(ActuatorCommand &command, unsigned char *buffer);
@@ -332,7 +332,9 @@ struct WG06Pressure
 class WG06 : public WG0X
 {
 public:
-  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)), last_pressure_time_(0), publisher_("pressure", 1) {}
+  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)), last_pressure_time_(0) {}
+  ~WG06();
+  int initialize(Actuator *, bool allow_unprogrammed=true, bool motor_model=false);
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
   enum
   {
@@ -340,7 +342,7 @@ public:
   };
 private:
   uint32_t last_pressure_time_;
-  realtime_tools::RealtimePublisher<ethercat_hardware::PressureState> publisher_;
+  realtime_tools::RealtimePublisher<ethercat_hardware::PressureState> *pressure_publisher_;
 };
 
 #endif /* WG0X_H */

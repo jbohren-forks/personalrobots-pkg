@@ -105,6 +105,12 @@ WG0X::~WG0X()
   delete sh_->get_fmmu_config();
   delete sh_->get_pd_config();
 }
+  
+WG06::~WG06()
+{
+  if (pressure_publisher_) delete pressure_publisher_;
+}
+
 
 EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 {
@@ -178,6 +184,21 @@ EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   sh->set_pd_config(pd);
 
   return this;
+}
+
+int WG06::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_model)
+{
+  int retval = WG0X::initialize(actuator, motor_model);
+  
+  if (!retval)
+  {
+    string topic = "/pressure";
+    if (!actuator->name_.empty())
+      topic = topic + "/" + string(actuator->name_);
+    pressure_publisher_ = new realtime_tools::RealtimePublisher<ethercat_hardware::PressureState>(topic, 1);
+  }
+
+  return retval;
 }
 
 int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed, bool motor_model)
@@ -331,22 +352,22 @@ void WG0X::truncateCurrent(ActuatorCommand &command)
 {
   command.current_ = max(min(command.current_, actuator_info_.max_current_), -actuator_info_.max_current_);
 }
-
+  
 void WG06::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
 {
   WG06Pressure *p = (WG06Pressure *)(current_buffer + sizeof(WG0XCommand) + sizeof(WG0XStatus));
 
   if (p->timestamp_ != last_pressure_time_)
   {
-    if (publisher_.trylock())
+    if (pressure_publisher_->trylock())
     {
-      publisher_.msg_.set_data0_size(22);
-      publisher_.msg_.set_data1_size(22);
+      pressure_publisher_->msg_.set_data0_size(22);
+      pressure_publisher_->msg_.set_data1_size(22);
       for (int i = 0; i < 22; ++i ) {
-        publisher_.msg_.data0[i] = ((p->data0_[i] >> 8) & 0xff) | ((p->data0_[i] << 8) & 0xff00);
-        publisher_.msg_.data1[i] = ((p->data1_[i] >> 8) & 0xff) | ((p->data1_[i] << 8) & 0xff00);
+        pressure_publisher_->msg_.data0[i] = ((p->data0_[i] >> 8) & 0xff) | ((p->data0_[i] << 8) & 0xff00);
+        pressure_publisher_->msg_.data1[i] = ((p->data1_[i] >> 8) & 0xff) | ((p->data1_[i] << 8) & 0xff00);
       }
-      publisher_.unlockAndPublish();
+      pressure_publisher_->unlockAndPublish();
     }
   }
 
