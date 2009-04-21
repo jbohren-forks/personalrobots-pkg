@@ -10,7 +10,6 @@
   <depend package="robot_pose_ekf"/>
   <depend package="map_server"/>
   <depend package="executive_trex_pr2"/>
-  <depend package="trajectory_rollout"/>
   <depend package="highlevel_controllers"/>
   <depend package="pr2_alpha"/>
   <depend package="pr2_experimental_controllers"/>
