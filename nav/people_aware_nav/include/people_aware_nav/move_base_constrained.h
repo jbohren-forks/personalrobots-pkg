@@ -39,6 +39,7 @@
 #include <robot_actions/action_runner.h>
 #include <people_aware_nav/ConstrainedMoveBaseState.h>
 #include <robot_actions/Pose2D.h>
+#include <robot_msgs/PoseStamped.h>
 #include <people_aware_nav/ConstrainedGoal.h>
 #include <ros/node.h>
 #include <costmap_2d/costmap_2d_ros.h>
@@ -96,7 +97,7 @@ using robot_actions::Pose2D;
       /**
        * @brief  Publish a path for visualization purposes
        */
-      void publishPath(const std::vector<Pose2D>& path, std::string topic, double r, double g, double b, double a);
+      void publishPath(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a);
 
       /**
        * @brief  Make a new global plan
@@ -133,7 +134,7 @@ using robot_actions::Pose2D;
       costmap_2d::Costmap2D planner_cost_map_, controller_cost_map_;
 
       navfn::NavfnROS* planner_;
-      std::vector<Pose2D> global_plan_;
+      std::vector<robot_msgs::PoseStamped> global_plan_;
       std::vector<robot_msgs::Point> footprint_;
       std::string global_frame_, robot_base_frame_;
       bool valid_plan_;

@@ -183,14 +183,25 @@ namespace people_aware_nav {
 
     ROS_DEBUG_NAMED("move", "Modified costmap");
 
-    std::vector<robot_actions::Pose2D> global_plan;
     
+    /*
+    std::vector<robot_actions::Pose2D> global_plan;
+
     Pose2D goal_pose;
     goal_pose.header = goal.header;
     goal_pose.x = goal.x;
     goal_pose.y = goal.y;
     goal_pose.z = goal.z;
     goal_pose.th = goal.th;
+    */
+    
+    std::vector<robot_msgs::PoseStamped> global_plan;
+
+    robot_msgs::PoseStamped goal_pose;
+    goal_pose.header = goal.header;
+    tf::PoseTFToMsg(tf::Pose(btQuaternion(goal.th, 0, 0), 
+                             btVector3(goal.x, goal.y, goal.z)),
+                    goal_pose.pose);
 
     bool valid_plan = planner_->makePlan(goal_pose, global_plan);
 
@@ -233,15 +244,15 @@ namespace people_aware_nav {
 
   void MoveBaseConstrained::prunePlan(){
     lock_.lock();
-    std::vector<robot_actions::Pose2D>::iterator it = global_plan_.begin();
+    std::vector<robot_msgs::PoseStamped>::iterator it = global_plan_.begin();
     while(it != global_plan_.end()){
-      const robot_actions::Pose2D& w = *it;
+      const robot_msgs::PoseStamped& w = *it;
       // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
-      double x_diff = global_pose_.getOrigin().x() - w.x;
-      double y_diff = global_pose_.getOrigin().y() - w.y;
+      double x_diff = global_pose_.getOrigin().x() - w.pose.position.x;
+      double y_diff = global_pose_.getOrigin().y() - w.pose.position.y;
       double distance = sqrt(x_diff * x_diff + y_diff * y_diff);
       if(distance < 1){
-        ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), w.x, w.y);
+        ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), w.pose.position.x, w.pose.position.y);
         break;
       }
       it = global_plan_.erase(it);
@@ -302,7 +313,7 @@ namespace people_aware_nav {
 
       bool valid_control = false;
       robot_msgs::PoseDot cmd_vel;
-      std::vector<robot_actions::Pose2D> local_plan;
+      std::vector<robot_msgs::PoseStamped> local_plan;
       //pass plan to controller
       lock_.lock();
       if(valid_plan_){
@@ -387,14 +398,14 @@ namespace people_aware_nav {
     ros_node_.publish("robot_footprint", footprint_msg);
   }
 
-  void MoveBaseConstrained::publishPath(const std::vector<robot_actions::Pose2D>& path, std::string topic, double r, double g, double b, double a){
+  void MoveBaseConstrained::publishPath(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a){
     // Extract the plan in world co-ordinates
     robot_msgs::Polyline2D gui_path_msg;
     gui_path_msg.header.frame_id = global_frame_;
     gui_path_msg.set_points_size(path.size());
     for(unsigned int i=0; i < path.size(); i++){
-      gui_path_msg.points[i].x = path[i].x;
-      gui_path_msg.points[i].y = path[i].y;
+      gui_path_msg.points[i].x = path[i].pose.position.x;
+      gui_path_msg.points[i].y = path[i].pose.position.y;
     }
 
     gui_path_msg.color.r = r;
