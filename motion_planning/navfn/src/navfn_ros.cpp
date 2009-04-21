@@ -101,11 +101,9 @@ namespace navfn {
       return false;
     }
     catch(tf::ExtrapolationException& ex) {
+      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
       if (current_time - robot_pose.stamp_ > ros::Duration().fromSec(transform_tolerance_))
-      {
-        ROS_ERROR("Extrapolation Error: %s\n", ex.what());
         return false;
-      }
     }
 
     double wx = global_pose.getOrigin().x();

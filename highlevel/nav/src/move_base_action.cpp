@@ -190,13 +190,16 @@ namespace nav {
     }
     catch(tf::LookupException& ex) {
       ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      return; // kind of pointless unless there's more code added below this try catch block
     }
     catch(tf::ConnectivityException& ex) {
       ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      return;
     }
     catch(tf::ExtrapolationException& ex) {
+      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
       if (current_time - robot_pose.stamp_ > ros::Duration().fromSec(transform_tolerance_))
-        ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+        return;
     }
   }
 
