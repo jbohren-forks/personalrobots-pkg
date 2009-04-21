@@ -31,8 +31,8 @@ setting pose: 30.329 34.644 3.142
       <param name="odom_frame_id" value="odom"/>
       <param name="resample_interval" value="8"/>
       <param name="transform_tolerance" value="0.1"/>
-      <param name="recovery_alpha_slow" value="0.001"/>
-      <param name="recovery_alpha_fast" value="0.1"/>
+      <param name="recovery_alpha_slow" value="0.0"/>
+      <param name="recovery_alpha_fast" value="0.0"/>
       <param name="robot_x_start" value="0.0"/>
       <param name="robot_y_start" value="0.0"/>
       <param name="robot_th_start" value="0.0"/>
