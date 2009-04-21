@@ -36,7 +36,7 @@
 
   <rendering:gui>
     <type>fltk</type>
-    <size>1024 800</size>
+    <imageSize>1024 800</imageSize>
     <pos>0 0</pos>
     <frames>
       <row height="100%">
@@ -58,7 +58,7 @@
         <rpy>0 45 0</rpy>
         <sensor:camera name="test_camera_sensor">
             <alwaysOn>true</alwaysOn>
-            <size>1024 800</size>
+            <imageSize>1024 800</imageSize>
             <hfov>60</hfov>
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>

@@ -29,7 +29,7 @@
     <cfm>0.0000000001</cfm>
     <erp>0.2</erp>
     <quickStep>true</quickStep>
-    <quickStepIters>3</quickStepIters>
+    <quickStepIters>10</quickStepIters>
     <quickStepW>1.3</quickStepW>
   </physics:ode>
 
@@ -39,7 +39,7 @@
 
   <rendering:gui>
     <type>fltk</type>
-    <size>1024 800</size>
+    <imageSize>1024 800</imageSize>
     <pos>0 0</pos>
     <frames>
       <row height="100%">

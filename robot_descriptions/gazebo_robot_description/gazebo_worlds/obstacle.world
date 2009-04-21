@@ -31,8 +31,6 @@
     <quickStep>true</quickStep>
     <quickStepIters>3</quickStepIters>
     <quickStepW>1.3</quickStepW>
-    <quickStepIters>3</quickStepIters>
-    <quickStepW>1.3</quickStepW>
   </physics:ode>
 
   <geo:origin>
@@ -41,7 +39,7 @@
 
   <rendering:gui>
     <type>fltk</type>
-    <size>1024 800</size>
+    <imageSize>1024 800</imageSize>
     <pos>0 0</pos>
     <frames>
       <row height="100%">
