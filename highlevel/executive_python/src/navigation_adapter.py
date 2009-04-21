@@ -38,14 +38,15 @@ import roslib
 roslib.load_manifest('executive_python')
 import rospy
 import random
-from robot_actions.msg import Pose2D, MoveBaseState
+from robot_actions.msg import MoveBaseStateNew
+from robot_msgs.msg import PoseStamped
 
 class NavigationAdapter:
   def __init__(self, no_plan_limit, time_limit, state_topic, goal_topic):
     self.no_plan_limit = no_plan_limit
     self.time_limit = time_limit
-    rospy.Subscriber(state_topic, MoveBaseState, self.update)
-    self.pub = rospy.Publisher(goal_topic, Pose2D)
+    rospy.Subscriber(state_topic, MoveBaseStateNew, self.update)
+    self.pub = rospy.Publisher(goal_topic, PoseStamped)
     self.state = None
     self.start_time = rospy.get_time()
     self.last_plan_time = rospy.get_time()  
@@ -78,11 +79,15 @@ class NavigationAdapter:
   #Send a new goal to the move base node
   def sendGoal(self, goal_pts, frame):
     self.start_time = rospy.get_time()
-    goal = Pose2D()
+    goal = PoseStamped()
     goal.header.frame_id = frame
-    goal.x = goal_pts[0]
-    goal.y = goal_pts[1]
-    goal.th = goal_pts[2]
+    goal.pose.position.x = goal_pts[0][0]
+    goal.pose.position.y = goal_pts[0][1]
+    goal.pose.position.z = goal_pts[0][2]
+    goal.pose.orientation.x = goal_pts[1][0]
+    goal.pose.orientation.y = goal_pts[1][1]
+    goal.pose.orientation.z = goal_pts[1][2]
+    goal.pose.orientation.w = goal_pts[1][3]
 
     self.pub.publish(goal)
 

@@ -92,16 +92,18 @@ class IndefiniteNav:
 
 if __name__ == '__main__':
   try:
-    navigator = NavigationAdapter(30, 300, "/move_base_node/feedback", "/move_base_node/activate")
+    #navigator = NavigationAdapter(30, 300, "/move_base_node/feedback", "/move_base_node/activate")
+    navigator = NavigationAdapter(30, 300, "/move_base_node/feedback", "/goal")
 
     goals = [
-     [50.250, 6.863, 3.083], 
-     [18.550, 11.762, 2.554],
-     [53.550, 20.163, 0.00],
-     [18.850, 28.862, 0.00],
-     [47.250, 39.162, 1.571],
-     [11.450, 39.662, 0.00]
+     [[18.912, 28.568, 0.000], [0.000, 0.000, 0.000, 1.000]],
+     [[12.118, 39.812, 0.000], [0.000, 0.000, 0.000, 1.000]],
+     [[47.350, 40.655, 0.000], [0.000, 0.000, -0.707, 0.707]],
+     [[54.162, 20.087, 0.000], [0.000, 0.000, -0.160, 0.987]],
+     [[50.659, 6.916, 0.000], [0.000, 0.000, 0.924, -0.383]],
+     [[18.542, 12.301, 0.000], [0.000, 0.000, 0.906, -0.424]]
      ]
+
 
     indefinite_nav = IndefiniteNav(goals, navigator, 1.0)
     indefinite_nav.run()
