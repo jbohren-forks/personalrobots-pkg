@@ -311,14 +311,19 @@ namespace nav
       if(plan_in.size() > 2)
       {
         plan_out.set_points_size(2);
-        for(int i=0; i<(int) plan_in.size(); i++)
-        {
-          plan_out.points[i].set_positions_size(3);
-          plan_out.points[i].positions[0] = plan_in[i].x;
-          plan_out.points[i].positions[1] = plan_in[i].y;
-          plan_out.points[i].positions[2] = plan_in[i].th;
-        }
-
+          plan_out.points[0].set_positions_size(3);
+          plan_out.points[0].positions[0] = plan_in[0].x;
+          plan_out.points[0].positions[1] = plan_in[0].y;
+          plan_out.points[0].positions[2] = plan_in[0].th;
+          plan_out.points[1].set_positions_size(3);
+          plan_out.points[1].positions[0] = plan_in.back().x;
+          plan_out.points[1].positions[1] = plan_in.back().y;
+          plan_out.points[1].positions[2] = plan_in.back().th;
+        
+      }
+      else
+      {
+        plan_out.set_points_size(plan_in.size());
         for(int i=0; i<(int) plan_in.size(); i++)
         {
           plan_out.points[i].set_positions_size(3);
