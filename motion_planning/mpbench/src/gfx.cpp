@@ -43,6 +43,7 @@
 #include <npm/common/TraversabilityDrawing.hpp>
 #include <npm/common/SimpleImage.hpp>
 #include <boost/shared_ptr.hpp>
+#include <mpglue/sbpl_planner.h>
 
 extern "C" {
 #include <err.h>
@@ -684,7 +685,7 @@ namespace {
 	glVertex2d((*iw)->x, (*iw)->y);
       glEnd();
       if (animated) {
-	shared_ptr<waypoint_s> wpt((*plan)[animation_tick % plan->size()]);
+	waypoint_s const * wpt((*plan)[animation_tick % plan->size()].get());
 	glPushMatrix();
 	glTranslated(wpt->x, wpt->y, 0);
 	glPointSize(3);
@@ -705,6 +706,42 @@ namespace {
 	  drawFootprint();
 	}
 	glPopMatrix();
+	// maybe this is a door plan?
+	door_waypoint_s const * doorwpt(dynamic_cast<door_waypoint_s const *>(wpt));
+	if (doorwpt && result.door) { // 2nd condition "always" true though
+	  glColor3d(0.4, 0.4, 1);
+	  glLineWidth(3);
+	  glPushMatrix();
+	  glTranslated(result.door->px, result.door->py, 0);
+	  // min angle
+	  glPushMatrix();
+	  glRotated(180 * doorwpt->min_door_angle / M_PI, 0, 0, 1);
+	  glBegin(GL_LINES);
+	  glVertex2d(0, 0);
+	  glVertex2d(result.door->width, 0);
+	  glEnd();
+	  glPointSize(3);
+	  glColor3d(0.6, 0.6, 1);
+	  glBegin(GL_POINTS);
+	  glVertex2d(result.door->dhandle, 0);
+	  glEnd();
+	  glPopMatrix();
+	  // all valid angles, offset from the "shut" position
+	  glRotated(180 * result.door->th_shut / M_PI, 0, 0, 1);
+	  glLineWidth(1);
+	  glColor3d(0.2, 0.2, 1);
+	  glBegin(GL_LINES);
+	  for (size_t ii(0); ii < doorwpt->valid_angle.size(); ++ii) {
+	    glVertex2d(0, 0);
+	    glVertex2d(result.door->width * cos(M_PI * doorwpt->valid_angle[ii] / 180.0),
+		       result.door->width * sin(M_PI * doorwpt->valid_angle[ii] / 180.0));
+	  }
+	  glEnd();
+	  glPopMatrix();
+	  // 	  printf("DBG plotted doorwpt[%zu]: (%6.3f, %6.3f, %6.3f) door angle = %6.3f  (N valid angles: %zu)\n",
+	  // 		 animation_tick % plan->size(), doorwpt->x, doorwpt->y, doorwpt->theta, doorwpt->min_door_angle,
+	  // 		 doorwpt->valid_angle.size());
+	}
       }
     }
   }

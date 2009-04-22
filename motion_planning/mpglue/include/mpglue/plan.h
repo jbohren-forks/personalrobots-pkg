@@ -62,7 +62,8 @@ namespace mpglue {
     explicit waypoint_s(robot_msgs::Pose const & pose);
     waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose, double dr, double dtheta);
     explicit waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose);
-      
+    
+    virtual ~waypoint_s() {}
       
     bool ignoreTheta() const;
     

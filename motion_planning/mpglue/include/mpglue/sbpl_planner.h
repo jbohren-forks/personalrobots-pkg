@@ -71,14 +71,17 @@ namespace mpglue {
   
   
   struct door_waypoint_s: public waypoint_s {
-      door_waypoint_s(waypoint_s const & wpt, double _door_angle, double _cost)
-        : waypoint_s(wpt), door_angle(_door_angle), cost(_cost) {}
-      
-      door_waypoint_s(double x, double y, double theta, double dr, double dtheta, double _door_angle, double _cost)
-        : waypoint_s(x, y, theta, dr, dtheta), door_angle(_door_angle), cost(_cost) {}
-      
-      double door_angle;
-      double cost;
+    door_waypoint_s(waypoint_s const & wpt, double _min_door_angle, double _cost)
+      : waypoint_s(wpt), min_door_angle(_min_door_angle), cost(_cost) {}
+    
+    door_waypoint_s(double x, double y, double theta, double dr, double dtheta, double _min_door_angle, double _cost)
+      : waypoint_s(x, y, theta, dr, dtheta), min_door_angle(_min_door_angle), cost(_cost) {}
+    
+    double min_door_angle;
+    double cost;
+    std::vector<int> valid_angle; // for dbg... might be removed at some point
+    std::vector<int> valid_cost;
+    std::vector<unsigned char> valid_interval;
   };
   
   

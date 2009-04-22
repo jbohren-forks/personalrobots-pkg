@@ -210,7 +210,17 @@ namespace mpglue {
 	    double angle, door_angle_cost;
 	    doorenv->GetMinCostDoorAngle(xx, yy, th, door_interval, angle, door_angle_cost);
 	    shared_ptr<door_waypoint_s> doorwpt(new door_waypoint_s(xx, yy, th, dr, dtheta, angle, door_angle_cost));
+	    // dbg
+	    EnvNAVXYTHETALAT3Dpt_t wrp;
+	    wrp.x = xx;
+	    wrp.y = yy;
+	    wrp.theta = th;
+	    doorenv->GetValidDoorAngles(wrp, &doorwpt->valid_angle, &doorwpt->valid_cost, &doorwpt->valid_interval);
 	    plan->push_back(doorwpt);
+	    
+	    printf("DBG added doorwpt: (%6.3f, %6.3f, %6.3f) min angle = %6.3f in interval %u  (N valid angles: %zu)\n",
+		   xx, yy, th, angle, (unsigned int) door_interval, doorwpt->valid_angle.size());
+	    
 	  }
 	}
       }
