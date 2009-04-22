@@ -1,5 +1,6 @@
+
 <controller name="r_gripper_position_controller" type="JointPositionControllerNode">               
   <joint name="r_gripper_joint" >                                                       
-    <pid p="400.0" i="10" d="0.0" iClamp="0.02" \>                         
+    <pid p="400.0" i="10" d="0.02" iClamp="0.02" \>
   </joint>                                                                    
 </controller>

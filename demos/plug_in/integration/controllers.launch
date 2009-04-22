@@ -43,60 +43,83 @@
   
   <!-- Controller and Node Required for move and grasp -->
   <!-- Cartesian wrench controller -->
-  <!-- Cartesian wrench controller -->
-  <param name="r_arm_cartesian_wrench_controller/root_name" type="string" value="torso_lift_link" />
-  <param name="r_arm_cartesian_wrench_controller/tip_name" type="string" value="r_gripper_tool_frame" />
+  <group ns="r_arm_cartesian_wrench_controller" clear_params="true">
+    <param name="root_name" type="string" value="torso_lift_link" />
+    <param name="tip_name" type="string" value="r_gripper_tool_frame" />
+    <param name="autostart" value="false" type="bool" /> 
+  </group>
+
+  <!-- Cartesian twist controller -->
+  <group ns="r_arm_cartesian_twist_controller" clear_params="true">
+    <param name="root_name" type="string" value="torso_lift_link" />
+    <param name="tip_name" type="string" value="r_gripper_tool_frame" />
+    <param name="output" type="string" value="r_arm_cartesian_wrench_controller" />
+
+    <param name="ff_trans" value="0.0" />
+    <param name="ff_rot" value="0.0" />
+
+    <param name="fb_trans/p" value="20.0" />
+    <param name="fb_trans/i" value="0.5" />
+    <param name="fb_trans/d" value="0.0" />
+    <param name="fb_trans/i_clamp" value="1.0" />
+
+    <param name="fb_rot/p" value="0.5" />
+    <param name="fb_rot/i" value="0.1" />
+    <param name="fb_rot/d" value="0.0" />
+    <param name="fb_rot/i_clamp" value="0.2" />
+    <param name="autostart" value="false" type="bool" /> 
+  </group>
+
+  <!-- Cartesian pose controller -->
+  <group ns="r_arm_cartesian_pose_controller" clear_params="true">
+    <param name="root_name" type="string" value="torso_lift_link" />
+    <param name="tip_name" type="string" value="r_gripper_tool_frame" />
+    <param name="output" type="string" value="r_arm_cartesian_twist_controller" />
+
+    <param name="p" value="20.0" />
+    <param name="i" value="0.1" />
+    <param name="d" value="0.0" />
+    <param name="i_clamp" value="0.5" />
+    <param name="autostart" value="false" type="bool" /> 
+  </group>
+
+  <!-- Cartesian trajectory controller -->
+  <group ns="r_arm_cartesian_trajectory_controller" clear_params="true">
+    <param name="root_name" type="string" value="torso_lift_link" />
+    <param name="tip_name" type="string" value="r_gripper_tool_frame" />
+    <param name="output" type="string" value="r_arm_cartesian_pose_controller" />
+
+    <param name="max_vel_trans" value="0.4" />
+    <param name="max_vel_rot" value="1.0" />
+    <param name="max_acc_trans" value="0.2" />
+    <param name="max_acc_rot" value="0.4" />
+    <param name="autostart" value="false" type="bool" /> 
+  </group>
+
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_cartesian_wrench_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_twist_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_pose_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_trajectory_controller.xml" />
 
 
-<!-- Cartesian twist controller -->
-  <param name="r_arm_cartesian_twist_controller/root_name" type="string" value="torso_lift_link" />
-  <param name="r_arm_cartesian_twist_controller/tip_name" type="string" value="r_gripper_tool_frame" />
-  <param name="r_arm_cartesian_twist_controller/output" type="string" value="r_arm_cartesian_wrench_controller" />
-
-  <param name="r_arm_cartesian_twist_controller/ff_trans" value="0.0" />
-  <param name="r_arm_cartesian_twist_controller/ff_rot" value="0.0" />
-
-  <param name="r_arm_cartesian_twist_controller/fb_trans/p" value="20.0" />
-  <param name="r_arm_cartesian_twist_controller/fb_trans/i" value="0.5" />
-  <param name="r_arm_cartesian_twist_controller/fb_trans/d" value="0.0" />
-  <param name="r_arm_cartesian_twist_controller/fb_trans/i_clamp" value="1.0" />
-
-  <param name="r_arm_cartesian_twist_controller/fb_rot/p" value="0.5" />
-  <param name="r_arm_cartesian_twist_controller/fb_rot/i" value="0.1" />
-  <param name="r_arm_cartesian_twist_controller/fb_rot/d" value="0.0" />
-  <param name="r_arm_cartesian_twist_controller/fb_rot/i_clamp" value="0.2" />
-
-
-<!-- Cartesian pose controller -->
-  <param name="r_arm_cartesian_pose_controller/root_name" type="string" value="torso_lift_link" />
-  <param name="r_arm_cartesian_pose_controller/tip_name" type="string" value="r_gripper_tool_frame" />
-  <param name="r_arm_cartesian_pose_controller/output" type="string" value="r_arm_cartesian_twist_controller" />
-
-  <param name="r_arm_cartesian_pose_controller/p" value="20.0" />
-  <param name="r_arm_cartesian_pose_controller/i" value="0.1" />
-  <param name="r_arm_cartesian_pose_controller/d" value="0.0" />
-  <param name="r_arm_cartesian_pose_controller/i_clamp" value="0.5" />
-
-
-<!-- Cartesian trajectory controller -->
-  <param name="r_arm_cartesian_trajectory_controller/root_name" type="string" value="torso_lift_link" />
-  <param name="r_arm_cartesian_trajectory_controller/tip_name" type="string" value="r_gripper_tool_frame" />
-  <param name="r_arm_cartesian_trajectory_controller/output" type="string" value="r_arm_cartesian_pose_controller" />
-
-  <param name="r_arm_cartesian_trajectory_controller/max_vel_trans" value="0.4" />
-  <param name="r_arm_cartesian_trajectory_controller/max_vel_rot" value="1.0" />
-  <param name="r_arm_cartesian_trajectory_controller/max_acc_trans" value="0.2" />
-  <param name="r_arm_cartesian_trajectory_controller/max_acc_rot" value="0.4" />
-
-  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_cartesian_wrench_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_twist_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_pose_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_trajectory_controller.xml" />
-  
-  <param name="r_arm_cartesian_wrench_controller/autostart" value="false" type="bool" /> 
-  <param name="r_arm_cartesian_twist_controller/autostart" value="false" type="bool" /> 
-  <param name="r_arm_cartesian_pose_controller/autostart" value="false" type="bool" /> 
-  <param name="r_arm_cartesian_trajectory_controller/autostart" value="false" type="bool" /> 
-  
   <!--Gripper position controller-->
   <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/gripper_controller.xml"/>
   <param name="r_gripper_position_controller/autostart" value="false" type="bool" /> 
   
+  
+  <!-- Parameters for the controllers used in plugging in -->
+
+  <group ns="r_arm_hybrid_controller" clear_params="true">
+    <param name="type" value="CartesianHybridControllerNode" />
+    <param name="root_link" value="torso_lift_link" />
+    <param name="tip_link" value="r_gripper_tool_frame" />
+    <param name="initial_mode" value="3" />
+    <group ns="pose">
+      <rosparam file="$(find pr2_default_controllers)/gains/arm_pose.yaml" command="load" />
+    </group>
+    <group ns="twist">
+      <rosparam file="$(find pr2_default_controllers)/gains/arm_twist.yaml" command="load" />
+    </group>
+    <param name="twist_filter" command="./make_lowpass.m twist_filter 0.01" />
+    <param name="saturated_velocity" value="0.5" />
+    <param name="autostart" value="false" type="bool" />
+  </group>
+
 </launch>
