@@ -5,7 +5,6 @@
   <review status="NA" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
   <depend package="nav_view"/>
-  <depend package="nav_view_sdl"/>
   <depend package="amcl"/>
   <!-- TODO: remove amcl_player -->
   <depend package="amcl_player"/>
