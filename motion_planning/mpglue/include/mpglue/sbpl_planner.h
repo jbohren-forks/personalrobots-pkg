@@ -74,6 +74,9 @@ namespace mpglue {
       door_waypoint_s(waypoint_s const & wpt, double _door_angle, double _cost)
         : waypoint_s(wpt), door_angle(_door_angle), cost(_cost) {}
       
+      door_waypoint_s(double x, double y, double theta, double dr, double dtheta, double _door_angle, double _cost)
+        : waypoint_s(x, y, theta, dr, dtheta), door_angle(_door_angle), cost(_cost) {}
+      
       double door_angle;
       double cost;
   };

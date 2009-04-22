@@ -191,35 +191,42 @@ namespace mpglue {
     vector<int> solution;
     stats_.status = planner_->replan(stats_.allocated_time, &solution, &stats_.solution_cost);
     shared_ptr<waypoint_plan_t> plan;
+    // using the cell size as waypoint tolerance seems like a good
+    // heuristic
+    double const dr(itransform_->getResolution());
+    double const dtheta(environment_->GetAngularTolerance());
     if (1 == stats_.status) {
       plan.reset(new waypoint_plan_t());
-      if (1 < solution.size())
-	PlanConverter::convertSBPL(*environment_,
-				   solution,
-				   // using the cell size as waypoint
-				   // tolerance seems like a good
-				   // heuristic
-				   itransform_->getResolution(),
-				   environment_->GetAngularTolerance(),
-				   plan.get(),
-				   &stats_.plan_length,
-				   &stats_.plan_angle_change,
-				   0 // XXXX to do: if 3DKIN we actually want something here
-				   );
-      
-      // quick hack for door planner
+      // XXXX to do: can this be generalized?
       EnvironmentNAVXYTHETADOOR * doorenv(dynamic_cast<EnvironmentNAVXYTHETADOOR *>(environment_->getDSI()));
       if (doorenv) {
-	shared_ptr<waypoint_plan_t> doorplan(new waypoint_plan_t());
-	for (size_t ii(0); ii < plan->size(); ++ii) {
-	  double const theta(0.1); // get this from door environment...
-	  shared_ptr<door_waypoint_s> doorwpt(new door_waypoint_s(*(*plan)[ii], theta, 0.2));
-        doorplan->push_back(doorwpt);
+	for (size_t ii(0); ii < solution.size(); ++ii) {
+	  int xc, yc, thc;
+	  unsigned char door_interval;
+	  doorenv->GetCoordFromState(solution[ii], xc, yc, thc, door_interval);
+	  double xx, yy, th;
+	  if (doorenv->PoseDiscToCont(xc, yc, thc, xx, yy, th)) { // "always" succeeds
+	    // XXXX to do: should extract angle from state instead of recomputing...
+	    double angle, door_angle_cost;
+	    doorenv->GetMinCostDoorAngle(xx, yy, th, door_interval, angle, door_angle_cost);
+	    shared_ptr<door_waypoint_s> doorwpt(new door_waypoint_s(xx, yy, th, dr, dtheta, angle, door_angle_cost));
+	    plan->push_back(doorwpt);
+	  }
 	}
-	return doorplan;
+      }
+      else {			// not a door environment
+	if (1 < solution.size())
+	  PlanConverter::convertSBPL(*environment_,
+				     solution,
+				     dr,
+				     dtheta,
+				     plan.get(),
+				     &stats_.plan_length,
+				     &stats_.plan_angle_change,
+				     0 // XXXX to do: if 3DKIN we actually want something here
+				     );
       }
     }
-    
     return plan;
   }
   
