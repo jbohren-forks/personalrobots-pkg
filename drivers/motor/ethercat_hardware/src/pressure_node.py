@@ -136,5 +136,8 @@ class pressureVisualizer:
 
 
 if __name__ == '__main__':
-    pressureVisualizer('pressure', 'l_gripper_r_finger_tip_link',
-            'l_gripper_l_finger_tip_link', 0)
+    #@todo it would be nice to read an xml configuration file to get these parameters.
+    pressureVisualizer('pressure/r_gripper_motor', 'r_gripper_r_finger_tip_link',
+            'r_gripper_l_finger_tip_link', 0)
+    pressureVisualizer('pressure/l_gripper_motor', 'l_gripper_r_finger_tip_link',
+            'l_gripper_l_finger_tip_link', 22)
