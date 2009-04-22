@@ -45,6 +45,8 @@
 #include <robot_mechanism_controllers/trigger_controller.h>
 #include <stdlib.h>
 
+#include <boost/tokenizer.hpp>
+
 #include "pr2lib.h"
 #include "host_netutil.h"
 
@@ -56,6 +58,9 @@ private:
   ros::Node &node_;
   IpCamList* camera_;
   image_msgs::Image image_;
+  image_msgs::CamInfo cam_info_;
+  bool calibrated_;
+  std::string frame_id_;
 
   int video_mode_;
   int width_;
@@ -133,6 +138,11 @@ public:
     height_ = (video_mode_ <= MT9VMODE_640x480x12_5b1) ? 480 : 240;
     desired_freq_ = MODE_FPS[ video_mode_ ];
 
+    // Specify which frame to add to message header
+    node_.param("~frame_id", frame_id_, std::string("NO_FRAME"));
+    image_.header.frame_id = frame_id_;
+    cam_info_.header.frame_id = frame_id_;
+    
     diagnostic_.addUpdater( &ForearmNode::freqStatus );
     
     // Configure camera
@@ -314,6 +324,14 @@ public:
     }
     */
 
+    // Try to load camera intrinsics from flash memory
+    calibrated_ = loadIntrinsics(&cam_info_.D[0], &cam_info_.K[0],
+                                 &cam_info_.R[0], &cam_info_.P[0]);
+    if (calibrated_)
+      ROS_INFO("Loaded intrinsics from camera");
+    else
+      ROS_WARN("Failed to load intrinsics from camera");
+
     // Start video; send it to specified host port
     // @todo TODO: Only start when somebody is listening?
     if ( pr2StartVid( camera_, (uint8_t *)&(localMac.sa_data[0]),
@@ -328,6 +346,9 @@ public:
     // Receive frames through callback
     // TODO: start this in separate thread?
     node_.advertise<image_msgs::Image>("~image_raw", 1);
+    if (calibrated_)
+      node_.advertise<image_msgs::CamInfo>("~cam_info", 1);
+    
 #ifndef SIM_TEST
     pr2VidReceive( camera_->ifName, port, height_, width_,
                    &ForearmNode::frameHandler, this );
@@ -370,8 +391,12 @@ private:
   {
     fillImage(image_, "image", height, width, 1, "bayer_bggr", "uint8", frameData);
     
-    image_.header.stamp = t; 
+    image_.header.stamp = t;
     node_.publish("~image_raw", image_);
+    if (calibrated_) {
+      cam_info_.header.stamp = t;
+      node_.publish("~cam_info", cam_info_);
+    }
   }
   
   int frameHandler(size_t width, size_t height, uint8_t *frameData,
@@ -444,6 +469,92 @@ private:
   {
     ForearmNode &fa_node = *(ForearmNode*)userData;
     return fa_node.frameHandler(width, height, frameData, eofInfo, startTimeval);
+  }
+
+  // TODO: parsing is basically duplicated in prosilica_node
+  bool loadIntrinsics(double* D, double* K, double* R, double* P)
+  {
+    // FIXME: Hardcoding these until we get a response on flash read/write bug.
+    //        These values are good for PRF and possibly OK for the other cameras.
+#define FOREARM_FLASH_IS_BUGGY
+#ifdef FOREARM_FLASH_IS_BUGGY
+    static const double D_[] = {-0.34949, 0.13668, 0.00039, -0.00110, 0.00000};
+    static const double K_[] = {427.31441, 0.00000, 275.80804,
+                                0.00000, 427.37949, 238.88978,
+                                0.00000, 0.00000, 1.00000};
+    static const double R_[] = {1.00000, 0.00000, 0.00000,
+                                0.00000, 1.00000, 0.00000,
+                                0.00000, 0.00000, 1.00000};
+    static const double P_[] = {427.31441, 0.00000, 275.80804, 0.00000,
+                                0.00000, 427.37949, 238.88978, 0.00000,
+                                0.00000, 0.00000, 1.00000, 0.00000};
+    memcpy(D, D_, sizeof(D_));
+    memcpy(K, K_, sizeof(K_));
+    memcpy(R, R_, sizeof(R_));
+    memcpy(P, P_, sizeof(P_));
+    return true;
+#else
+    // Retrieve contents of user memory
+    static const int CALIBRATION_PAGE = 0;
+    std::string buffer(FLASH_PAGE_SIZE, '\0');
+    if (pr2FlashRead(camera_, CALIBRATION_PAGE, (uint8_t*)&buffer[0]) != 0) {
+      ROS_WARN("Flash read error");
+      return false;
+    }
+
+    // Separate into lines
+    typedef boost::tokenizer<boost::char_separator<char> > Tok;
+    boost::char_separator<char> sep("\n");
+    Tok tok(buffer, sep);
+
+    // Check "header"
+    Tok::iterator iter = tok.begin();
+    if (*iter++ != "# Forearm camera intrinsics") {
+      ROS_WARN("Header doesn't match");
+      return false;
+    }
+
+    // Read calibration matrices
+    int width = 0, height = 0;
+    int items_read = 0;
+    static const int EXPECTED_ITEMS = 9 + 5 + 9 + 12;
+    for (Tok::iterator ie = tok.end(); iter != ie; ++iter) {
+      if (*iter == "width") {
+        ++iter;
+        width = atoi(iter->c_str());
+      }
+      else if (*iter == "height") {
+        ++iter;
+        height = atoi(iter->c_str());
+      }
+      else if (*iter == "camera matrix")
+        for (int i = 0; i < 3; ++i) {
+          ++iter;
+          items_read += sscanf(iter->c_str(), "%lf %lf %lf",
+                               &K[3*i], &K[3*i+1], &K[3*i+2]);
+        }
+      else if (*iter == "distortion") {
+        ++iter;
+        items_read += sscanf(iter->c_str(), "%lf %lf %lf %lf %lf",
+                             D, D+1, D+2, D+3, D+4);
+      }
+      else if (*iter == "rectification")
+        for (int i = 0; i < 3; ++i) {
+          ++iter;
+          items_read += sscanf(iter->c_str(), "%lf %lf %lf",
+                               &R[3*i], &R[3*i+1], &R[3*i+2]);
+        }
+      else if (*iter == "projection")
+        for (int i = 0; i < 3; ++i) {
+          ++iter;
+          items_read += sscanf(iter->c_str(), "%lf %lf %lf %lf",
+                               &P[4*i], &P[4*i+1], &P[4*i+2], &P[4*i+3]);
+        }
+    }
+
+    // Check we got everything
+    return items_read == EXPECTED_ITEMS && width != 0 && height != 0;
+#endif
   }
 };
 

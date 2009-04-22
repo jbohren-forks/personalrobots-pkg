@@ -1,0 +1,2 @@
+rospack_add_executable(write_memory write_memory.cpp)
+target_link_libraries(write_memory forearmcam)
