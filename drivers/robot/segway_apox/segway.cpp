@@ -4,7 +4,7 @@
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
 #include "robot_msgs/PoseDot.h"
-#include "deprecated_msgs/RobotBase2DOdom.h"
+#include "robot_msgs/PoseStamped.h"
 #include "std_msgs/String.h"
 #include "rmp_frame.h"
 extern "C" {
@@ -34,7 +34,7 @@ class Segway : public Node
 		static const int max_x_stepsize = 5, max_yaw_stepsize = 2;
 
     robot_msgs::PoseDot cmd_vel;
-    deprecated_msgs::RobotBase2DOdom odom;
+    robot_msgs::PoseStamped odom;
     std_msgs::String op_mode;
 		rmp_frame_t rmp;
 		dgc_usbcan_p can;
@@ -68,7 +68,7 @@ Segway::Segway() :
   req_timeout(false)
 {
   odom.header.frame_id = "odom";
-  advertise<deprecated_msgs::RobotBase2DOdom>("odom", 1);
+  advertise<robot_msgs::PoseStamped>("odom", 1);
   subscribe("cmd_vel", cmd_vel, &Segway::cmd_vel_cb, 1);
   subscribe("operating_mode", op_mode, &Segway::op_mode_cb, 1);
 }
@@ -305,17 +305,20 @@ void Segway::main_loop()
           static int odom_count = 0;
           if (odom_count++ % 3 == 0) // send it at 5 hz or so
           {
-            odom.pos.x  = odom_x;
-            odom.pos.y  = odom_y;
-            odom.pos.th = odom_yaw;
+            odom.pose.position.x  = odom_x;
+            odom.pose.position.y  = odom_y;
+            odom.pose.position.z  = 0;
+            tf::Quaternion rot(odom_yaw, 0,0);
+            tf::QuaternionTFToMsg(rot, odom.pose.orientation);
+            odom.header.stamp = ros::Time::now();
             publish("odom", odom);
             tf.sendTransform(
               tf::Transform(tf::Quaternion(0, 0, 0), 
                             tf::Point(0.25, 0.0, 0.0)).inverse(), 
               ros::Time::now(), "base_laser", "base");
             tf.sendTransform(
-              tf::Transform(tf::Quaternion(odom.pos.th, 0, 0), 
-                            tf::Point(odom.pos.x, odom.pos.y, 0.0)).inverse(),
+              tf::Transform(rot, 
+                            tf::Point(odom.pose.position.x, odom.pose.position.y, 0.0)).inverse(),
               odom.header.stamp, "odom", "base");
           }
         }
