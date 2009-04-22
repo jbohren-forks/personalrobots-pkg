@@ -5,7 +5,7 @@
       <from_scratch>true</from_scratch>
       <use_initial_solution>true</use_initial_solution>
       <allow_iteration>true</allow_iteration>
-      <alloc_time>0.5</alloc_time>
+      <alloc_time>0.1</alloc_time>
     </start>
     <goal>
       <tolerance>0.3  4</tolerance>
@@ -13,14 +13,11 @@
   </defaults>
   
   <world>
-    <addline>  0     5     5    5    </addline>
+    <addline>  0     5     3    5    </addline>
 
     <!-- wall with door opening -->
     <addline>  0     3     1    3    </addline>
     <addline>  2     3     3    3    </addline>
-    <addline>  4     3     5    3    </addline>
-    <addline>  6     3     7    3    </addline>
-    <addline>  8     3     9    3    </addline>
   </world>
   
   <task>

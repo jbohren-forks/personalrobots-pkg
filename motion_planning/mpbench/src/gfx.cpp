@@ -94,6 +94,7 @@ typedef enum {
 
 static animation_mode_t animation_mode(ANIMATION_ON);
 static bool animation_reverse(false);
+static bool animation_capture(false);
 
 
 namespace npm {
@@ -480,6 +481,12 @@ void draw()
     make_screenshot("");
     made_first_screenshot = true;
   }
+  
+  if (animation_capture) {
+    char buf[1024];
+    snprintf(buf, 1023, "anim%05zu-", animation_tick);
+    make_screenshot(buf);
+  }
 }
 
 
@@ -496,6 +503,12 @@ void keyboard(unsigned char key, int mx, int my)
   switch (key) {
   case 'p':
     make_screenshot("");
+    break;
+  case 'P':
+    if (animation_capture)
+      animation_capture = false;
+    else
+      animation_capture = true;
     break;
   case 'q':
     errx(EXIT_SUCCESS, "key: q");
