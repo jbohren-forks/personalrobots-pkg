@@ -34,7 +34,7 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include <nav/move_base_action.h>
+#include <nav/move_base.h>
 
 using namespace base_local_planner;
 using namespace costmap_2d;
