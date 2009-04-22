@@ -15,7 +15,7 @@
       <param name="door_goal_distance" value="0.7" />
       <param name="num_explore_paths" value="32" />
       <param name="choose_straight_line_trajectory" value="true" type="bool" />
-      <param name="inscribed_radius" value="0.325" />
+      <param name="inscribed_radius" value="0.305" />
       <param name="circumscribed_radius" value="0.46" />
       <param name="inflation_radius" value="0.70" />
       <param name="control_frame" value="odom" />
