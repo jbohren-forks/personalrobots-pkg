@@ -16,4 +16,4 @@ rospack_link_boost(nav thread)
 rospack_add_executable(bin/move_base src/move_base_action.cpp)
 
 #local controller
-rospack_add_executable(bin/local_controller src/local_controller_action.cpp)
+rospack_add_executable(bin/move_base_local src/move_base_local.cpp)
