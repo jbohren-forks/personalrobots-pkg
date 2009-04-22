@@ -128,12 +128,12 @@ namespace navfn {
     }
     // check global pose timeout
     if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
-      ROS_ERROR("Transform timeout. global psoe stamp: %f current time: %f",global_pose.stamp_.toSec(),current_time.toSec());
+      ROS_ERROR("Transform timeout. global pose stamp: %f current time: %f",global_pose.stamp_.toSec(),current_time.toSec());
       return false;
     }
     // check goal pose timeout
     if (current_time.toSec() - goal_pose.stamp_.toSec() > transform_tolerance_) {
-      ROS_ERROR("Transform timeout. goal psoe stamp: %f current time: %f",goal_pose.stamp_.toSec(),current_time.toSec());
+      ROS_ERROR("Transform timeout. goal pose stamp: %f current time: %f",goal_pose.stamp_.toSec(),current_time.toSec());
       return false;
     }
 
