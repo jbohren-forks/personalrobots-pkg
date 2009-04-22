@@ -1,0 +1,14 @@
+<package>
+<description brief='Fingertip Pressure'>
+Package for publishing fingertip pressure sensor information.
+</description>
+<author>Blaise Gassend (email: blaise@willowgarage.com)</author>
+<license>BSD</license>
+<review status="unreviewed" notes=""/>
+<url>http://pr.willowgarage.com</url>
+<depend package='ethercat_hardware'/>
+<depend package='roscpp' />
+<depend package='rospy' />
+<depend package='robot_msgs' />
+<repository>http://pr.willowgarage.com/repos</repository>
+</package>
