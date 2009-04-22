@@ -37,10 +37,13 @@
 
 /* Author: Wim Meeussen */
 
-#include <door_handle_detector/DetectDoorActionStatus.h>
+
 #include <robot_msgs/Door.h>
 #include <ros/node.h>
 #include <robot_actions/action_client.h>
+#include <door_handle_detector/DetectDoorActionStatus.h>
+#include <robot_actions/NoArgumentsActionState.h>
+#include <robot_actions/SwitchControllersState.h>
 
 
 using namespace ros;
@@ -56,10 +59,9 @@ int
 {
   ros::init(argc, argv);
 
-  ros::Node node("name");
+  ros::Node node("test_executive");
 
   robot_msgs::Door door;
-
   door.frame_p1.x = 1.0;
   door.frame_p1.y = -0.5;
   door.frame_p2.x = 1.0;
@@ -68,9 +70,36 @@ int
   door.hinge = -1;
   door.header.frame_id = "base_footprint";
 
-  robot_actions::ActionClient<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door> detect_door("detect_door");
+  robot_actions::SwitchControllers switchlist;
+  std_msgs::Empty empty;
 
-  detect_door.execute(door, door, Duration().fromSec(20));
+  Duration timeout_short = Duration().fromSec(2.0);
+  Duration timeout_medium = Duration().fromSec(10.0);
+  Duration timeout_long = Duration().fromSec(20.0);
 
+  //robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> tuck_arm("doors_tuck_arms");
+  robot_actions::ActionClient<robot_actions::SwitchControllers, robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
+  //robot_actions::ActionClient<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door> detect_door("detect_door");
+  //robot_actions::ActionClient<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door> detect_handle("detect_handle");
+
+  // tuck arm
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  //if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+
+  /*
+  // detect door
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.start_controllers.push_back("laser_tilt_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  if (detect_door.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
+
+  // detect handle
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.start_controllers.push_back("head_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  if (detect_handle.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
+  */
   return (0);
 }

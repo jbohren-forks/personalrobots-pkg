@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc,argv); 
 
-  ros::Node node("name");
+  ros::Node node("door_domain_action_runner");
 
   DetectDoorAction detect_door(node);
   DetectHandleAction detect_handle(node);
