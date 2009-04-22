@@ -1,9 +1,0 @@
-<launch>
-<node pkg="nav" type="move_base" respawn="false" name="move_base_node" output="screen" machine="three">
-  <remap from="/move_base_node/activate" to="/goal" />
-  <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="navfn" />
-  <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
-  <rosparam file="$(find 2dnav_pr2)/config/navfn_params.yaml" command="load" />
-  <rosparam file="$(find 2dnav_pr2)/config/base_local_planner_params.yaml" command="load" />
-</node>
-</launch>
