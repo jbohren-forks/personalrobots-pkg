@@ -195,7 +195,6 @@ namespace costmap_2d {
       ros::Node& ros_node_; ///< @brief The ros node to use
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
       laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
-      boost::recursive_mutex observation_lock_; ///< @brief A lock for accessing data in callbacks safely
       boost::recursive_mutex map_lock_; ///< @brief A lock for accessing data in callbacks safely
       Costmap2D* costmap_; ///< @brief The underlying costmap to update
       std::string global_frame_; ///< @brief The global frame for the costmap

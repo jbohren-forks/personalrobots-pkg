@@ -248,16 +248,16 @@ namespace costmap_2d {
     projector_.projectLaser(*message, base_cloud);
 
     //buffer the point cloud
-    observation_lock_.lock();
+    buffer->lock();
     buffer->bufferCloud(base_cloud);
-    observation_lock_.unlock();
+    buffer->unlock();
   }
 
   void Costmap2DROS::pointCloudCallback(const tf::MessageNotifier<PointCloud>::MessagePtr& message, ObservationBuffer* buffer){
     //buffer the point cloud
-    observation_lock_.lock();
+    buffer->lock();
     buffer->bufferCloud(*message);
-    observation_lock_.unlock();
+    buffer->unlock();
   }
 
   void Costmap2DROS::mapUpdateLoop(double frequency){
@@ -311,25 +311,25 @@ namespace costmap_2d {
 
   bool Costmap2DROS::getMarkingObservations(std::vector<Observation>& marking_observations){
     bool current = true;
-    observation_lock_.lock();
     //get the marking observations
     for(unsigned int i = 0; i < marking_buffers_.size(); ++i){
+      marking_buffers_[i]->lock();
       marking_buffers_[i]->getObservations(marking_observations);
       current = current && marking_buffers_[i]->isCurrent();
+      marking_buffers_[i]->unlock();
     }
-    observation_lock_.unlock();
     return current;
   }
 
   bool Costmap2DROS::getClearingObservations(std::vector<Observation>& clearing_observations){
     bool current = true;
-    observation_lock_.lock();
     //get the clearing observations
     for(unsigned int i = 0; i < clearing_buffers_.size(); ++i){
+      clearing_buffers_[i]->lock();
       clearing_buffers_[i]->getObservations(clearing_observations);
       current = current && clearing_buffers_[i]->isCurrent();
+      clearing_buffers_[i]->unlock();
     }
-    observation_lock_.unlock();
     return current;
   }
 

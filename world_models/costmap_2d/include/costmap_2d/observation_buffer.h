@@ -45,6 +45,8 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 #include <robot_msgs/PointCloud.h>
+// Thread suppport
+#include <boost/thread.hpp>
 
 namespace costmap_2d {
   /**
@@ -92,6 +94,16 @@ namespace costmap_2d {
        */
       bool isCurrent() const;
 
+      /**
+       * @brief  Lock the observation buffer
+       */
+      inline void lock() { lock_.lock(); }
+
+      /**
+       * @brief  Lock the observation buffer
+       */
+      inline void unlock() { lock_.unlock(); }
+
     private:
       /**
        * @brief  Removes any stale observations from the buffer list
@@ -107,6 +119,7 @@ namespace costmap_2d {
       std::list<Observation> observation_list_;
       std::string topic_name_;
       double min_obstacle_height_, max_obstacle_height_;
+      boost::recursive_mutex lock_; ///< @brief A lock for accessing data in callbacks safely
   };
 };
 #endif
