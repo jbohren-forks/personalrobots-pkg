@@ -34,6 +34,8 @@
 
 // TODO: doxygen mainpage
 
+//#define SIM_TEST
+
 #include <ros/node.h>
 #include <image_msgs/Image.h>
 #include <image_msgs/CamInfo.h>
@@ -174,6 +176,7 @@ public:
       ROS_WARN("Unable to set rp_filter to 0 on interface. Camera discovery is likely to fail.");
     }
 
+#ifndef SIM_TEST
     // Discover any connected cameras, wait for 0.5 second for replies
     if( pr2Discover(if_name.c_str(), &camList, SEC_TO_USEC(0.5)) == -1) {
       ROS_FATAL("Discover error");
@@ -187,7 +190,7 @@ public:
       return;
     }
 
-    // Open camera with requested serial number, or first camera found if none requested
+    // Open camera with requested serial number, or list found cameras.
     int index = 0;
     if (node_.hasParam("~serial_number")) {
       int sn;
@@ -198,6 +201,17 @@ public:
         node_.shutdown();
         return;
       }
+    }
+    else
+    { // No camera was specified
+      for (int i = 0; i < pr2CamListNumEntries(&camList); i++)
+      {
+        camera_ = pr2CamListGetEntry(&camList, i);
+        ROS_FATAL("Found camera with S/N #%u", camera_->serial);
+      }
+      ROS_FATAL("No camera serial_number was specified. Specifying a serial number is now mandatory to avoid accidentally configuring a random camera elsewhere in the building.");
+      node_.shutdown();
+      return;
     }
     camera_ = pr2CamListGetEntry(&camList, index);
 
@@ -309,12 +323,18 @@ public:
       return;
     }
     started_video_ = true;
+#endif
 
     // Receive frames through callback
     // TODO: start this in separate thread?
     node_.advertise<image_msgs::Image>("~image_raw", 1);
+#ifndef SIM_TEST
     pr2VidReceive( camera_->ifName, port, height_, width_,
                    &ForearmNode::frameHandler, this );
+#else
+    pr2VidReceive( if_name.c_str(), port, height_, width_,
+                   &ForearmNode::frameHandler, this );
+#endif
   }
 
   void freqStatus(robot_msgs::DiagnosticStatus& status)
