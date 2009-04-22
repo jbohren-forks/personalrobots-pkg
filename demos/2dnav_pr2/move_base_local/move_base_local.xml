@@ -1,6 +1,6 @@
 <launch>
-<node pkg="nav" type="move_base_local" respawn="false" name="move_base_local_node" output="screen" machine="three">
-  <remap from="/move_base_local_node/activate" to="/goal" />
+<node pkg="nav" type="move_base_local" respawn="false" name="move_base_local" output="screen" machine="three">
+  <remap from="/move_base_local/activate" to="/goal" />
   <remap from="~base_local_planner/global_plan" to="/gui_path" />
   <remap from="~base_local_planner/local_plan" to="/local_path" />
   <remap from="~base_local_planner/robot_footprint" to="/robot_footprint" />
