@@ -63,7 +63,7 @@ void DoorReactivePlanner::getParams()
   node_.param<bool>("~choose_straight_line_trajectory",choose_straight_line_trajectory_,false);
 
   node_.param<double>("~costmap/circumscribed_radius",circumscribed_radius_,0.46);
-  node_.param<double>("~costmap/inscribed_radius",inscribed_radius_,0.325);
+  node_.param<double>("~costmap/inscribed_radius",inscribed_radius_,0.305);
 
   cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),6);
 
@@ -210,7 +210,7 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
   std::vector<robot_actions::Pose2D> checked_path;
   std::vector<robot_actions::Pose2D> linear_path;
 
-  double max_distance_to_goal(FLT_MAX);
+  double min_distance_to_goal(FLT_MAX);
 
   double delta_theta = max_explore_delta_angle_/num_explore_paths_;
   double distance_to_centerline;
@@ -228,11 +228,11 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
     if(checked_path.size() > 0)
     {
       double new_distance = distance(checked_path.back(),goal_);
-      if( new_distance < max_distance_to_goal)
+      if( new_distance < min_distance_to_goal)
       {
         best_path_costmap_frame.resize(checked_path.size());
         best_path_costmap_frame = checked_path;
-        max_distance_to_goal = new_distance;
+        min_distance_to_goal = new_distance;
       }
       if(i == 0 && choose_straight_line_trajectory_ && new_distance > 0.45)
       {
@@ -252,11 +252,11 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
     if(checked_path.size() > 0)
     {
       double new_distance = distance(checked_path.back(),goal_);
-      if(new_distance < max_distance_to_goal)
+      if(new_distance < min_distance_to_goal)
       {
         best_path_costmap_frame.resize(checked_path.size());
         best_path_costmap_frame = checked_path;
-        max_distance_to_goal = new_distance;
+        min_distance_to_goal = new_distance;
       }
     }
   } 
