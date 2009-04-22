@@ -146,7 +146,7 @@ namespace nav {
     }
     catch(tf::LookupException& ex) {
       ROS_ERROR("No Transform available Error: %s\n", ex.what());
-      return; // kind of pointless unless there's more code added below this try catch block
+      return;
     }
     catch(tf::ConnectivityException& ex) {
       ROS_ERROR("Connectivity Error: %s\n", ex.what());

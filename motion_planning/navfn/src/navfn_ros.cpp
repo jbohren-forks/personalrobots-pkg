@@ -124,8 +124,17 @@ namespace navfn {
     }
     catch(tf::ExtrapolationException& ex) {
       ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-      if (current_time - robot_pose.stamp_ > ros::Duration().fromSec(transform_tolerance_))
-        return false;
+      return false;
+    }
+    // check global pose timeout
+    if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
+      ROS_ERROR("Transform timeout. global psoe stamp: %f current time: %f",global_pose.stamp_.toSec(),current_time.toSec());
+      return false;
+    }
+    // check goal pose timeout
+    if (current_time.toSec() - goal_pose.stamp_.toSec() > transform_tolerance_) {
+      ROS_ERROR("Transform timeout. goal psoe stamp: %f current time: %f",goal_pose.stamp_.toSec(),current_time.toSec());
+      return false;
     }
 
     double wx = global_pose.getOrigin().x();
