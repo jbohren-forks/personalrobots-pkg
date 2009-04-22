@@ -31,8 +31,8 @@
 //
 // Author: Stuart Glaser
 
-#ifndef PID_TUNER_H
-#define PID_TUNER_H
+#ifndef PID_GAINS_SETTER_H
+#define PID_GAINS_SETTER_H
 
 #include <vector>
 #include <string>
@@ -42,13 +42,13 @@
 
 namespace control_toolbox {
 
-class PidTuner
+class PidGainsSetter
 {
 public:
-  PidTuner() {}
-  ~PidTuner();
+  PidGainsSetter() {}
+  ~PidGainsSetter();
 
-  PidTuner& add(Pid *pid);
+  PidGainsSetter& add(Pid *pid);
 
   void advertise(const std::string &ns);
 

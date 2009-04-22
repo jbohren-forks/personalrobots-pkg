@@ -27,11 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "control_toolbox/pid_tuner.h"
+#include "control_toolbox/pid_gains_setter.h"
 
 namespace control_toolbox {
 
-PidTuner::~PidTuner()
+PidGainsSetter::~PidGainsSetter()
 {
   if (!ns_.empty())
   {
@@ -40,24 +40,24 @@ PidTuner::~PidTuner()
   }
 }
 
-PidTuner& PidTuner::add(Pid *pid)
+PidGainsSetter& PidGainsSetter::add(Pid *pid)
 {
   assert(pid);
   pids_.push_back(pid);
   return *this;
 }
 
-void PidTuner::advertise(const std::string &ns)
+void PidGainsSetter::advertise(const std::string &ns)
 {
   ns_ = ns;
   ros::Node *node = ros::Node::instance();
   assert(node);
 
-  node->advertiseService(ns_ + "/set_gains", &PidTuner::setGains, this);
+  node->advertiseService(ns_ + "/set_gains", &PidGainsSetter::setGains, this);
 }
 
-bool PidTuner::setGains(control_toolbox::SetPidGains::Request &req,
-                        control_toolbox::SetPidGains::Response &resp)
+bool PidGainsSetter::setGains(control_toolbox::SetPidGains::Request &req,
+                              control_toolbox::SetPidGains::Response &resp)
 {
   for (size_t i = 0; i < pids_.size(); ++i)
     pids_[i]->setGains(req.p, req.i, req.d, req.i_clamp, -req.i_clamp);

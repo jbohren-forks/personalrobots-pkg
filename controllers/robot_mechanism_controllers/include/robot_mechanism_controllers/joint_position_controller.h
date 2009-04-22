@@ -57,7 +57,7 @@
 #include <control_toolbox/pid.h>
 #include "misc_utils/advertised_service_guard.h"
 #include "misc_utils/subscription_guard.h"
-#include "control_toolbox/pid_tuner.h"
+#include "control_toolbox/pid_gains_setter.h"
 
 // Services
 #include <std_msgs/Float64.h>
@@ -162,7 +162,7 @@ private:
   realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState>* controller_state_publisher_ ;
   //controller
   JointPositionController *c_;                 /**< The controller. */
-  control_toolbox::PidTuner pid_tuner_;
+  control_toolbox::PidGainsSetter pid_tuner_;
 };
 }
 
