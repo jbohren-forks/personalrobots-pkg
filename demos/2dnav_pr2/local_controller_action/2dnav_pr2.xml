@@ -6,6 +6,6 @@
     <include file="$(find 2dnav_pr2)/config/ground_plane.xml" />
 
     <!-- The naviagtion stack and associated parameters -->
-    <include file="$(find 2dnav_pr2)/local_controller/navstack.xml" />
+    <include file="$(find 2dnav_pr2)/local_controller_action/navstack.xml" />
   </group>
 </launch>
