@@ -65,9 +65,9 @@ namespace nav
 
     //pass on some parameters to the components of the move base node if they are not explicitly overridden 
     //(perhaps the controller and the planner could operate in different frames)
-    ros_node_.param("~inscribed_radius", inscribed_radius_, 0.325);
+    ros_node_.param("~inscribed_radius", inscribed_radius_, 0.305);
     ros_node_.param("~circumscribed_radius", circumscribed_radius_, 0.46);
-    ros_node_.param("~inflation_radius", inflation_radius_, 0.55);
+    ros_node_.param("~inflation_radius", inflation_radius_, 0.70);
 
     empty_plan_.resize(0);
 
@@ -266,7 +266,7 @@ namespace nav
 
         //check that the observation buffers for the costmap are current
         if(!planner_cost_map_ros_->isCurrent()){
-          ROS_DEBUG("Sensor data is out of date, we're not going to allow commanding of the base for safety");
+          ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
           continue;
         }
         makePlan();
@@ -293,44 +293,60 @@ namespace nav
         ROS_DEBUG("Full control cycle: %.9f", t_diff);
       }
       if(!sleepLeftover(start_time, cycle_time))      //sleep the remainder of the cycle
-        ROS_WARN("Controll loop missed its desired cycle time of %.4f", cycle_time.toSec());
+        ROS_WARN("Control loop missed its desired cycle time of %.4f", cycle_time.toSec());
     }
     return robot_actions::PREEMPTED;
   }
 
   void MoveBaseDoorAction::dispatchControl(const std::vector<robot_actions::Pose2D> &plan_in)
   {
-//    return;
     robot_msgs::JointTraj plan_out;
     if((int)plan_in.size() <= 0)
     {
-      plan_out.set_points_size(0);;
+      plan_out.set_points_size(0);
+      ROS_DEBUG("Sending empty plan");
     }
     else
     {
       if(plan_in.size() > 2)
       {
-        plan_out.set_points_size(2);
+          int index_plan = (int) plan_in.size() - 2;
+          plan_out.set_points_size(1);
           plan_out.points[0].set_positions_size(3);
-          plan_out.points[0].positions[0] = plan_in[0].x;
-          plan_out.points[0].positions[1] = plan_in[0].y;
-          plan_out.points[0].positions[2] = plan_in[0].th;
-          plan_out.points[1].set_positions_size(3);
-          plan_out.points[1].positions[0] = plan_in.back().x;
-          plan_out.points[1].positions[1] = plan_in.back().y;
-          plan_out.points[1].positions[2] = plan_in.back().th;
-        
+          plan_out.points[0].positions[0] = plan_in[index_plan].x;
+          plan_out.points[0].positions[1] = plan_in[index_plan].y;
+          plan_out.points[0].positions[2] = plan_in[index_plan].th;
+          plan_out.points[0].time = 0.0;        
+/*          plan_out.set_points_size(index_plan+1);
+        for(int i=0; i< index_plan+1; i++)
+        {
+          plan_out.points[i].set_positions_size(3);
+          plan_out.points[i].positions[0] = plan_in[i].x;
+          plan_out.points[i].positions[1] = plan_in[i].y;
+          plan_out.points[i].positions[2] = plan_in[i].th;
+          plan_out.points[i].time = 0.0;
+        }
+*/        ROS_INFO("Plan in had %d points, plan out has %d points",(int)plan_in.size(),(int)plan_out.points.size());
       }
       else
       {
-        plan_out.set_points_size(plan_in.size());
+          plan_out.set_points_size(1);
+          plan_out.points[0].set_positions_size(3);
+          plan_out.points[0].positions[0] = plan_in.back().x;
+          plan_out.points[0].positions[1] = plan_in.back().y;
+          plan_out.points[0].positions[2] = plan_in.back().th;
+          plan_out.points[0].time = 0.0;        
+/*        plan_out.set_points_size(plan_in.size());
         for(int i=0; i<(int) plan_in.size(); i++)
         {
           plan_out.points[i].set_positions_size(3);
           plan_out.points[i].positions[0] = plan_in[i].x;
           plan_out.points[i].positions[1] = plan_in[i].y;
           plan_out.points[i].positions[2] = plan_in[i].th;
+          plan_out.points[i].time = 0.0;
         }
+*/
+      ROS_INFO("Sending empty plan");
       }
     }
     ros_node_.publish(control_topic_name_,plan_out);

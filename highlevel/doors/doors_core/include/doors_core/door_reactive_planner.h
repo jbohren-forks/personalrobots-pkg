@@ -166,6 +166,14 @@ namespace door_reactive_planner
     double distance(const robot_actions::Pose2D &p, const robot_actions::Pose2D &q);
 
     /**
+     * @brief Translational projected distance between two positions
+     * @param p Position of the robot
+     * @param q Position of the robot
+     * @param angle angle of the vector to project onto of the robot
+     */
+    double projectedDistance(const robot_actions::Pose2D &p, const robot_actions::Pose2D &q, const double &angle);
+
+    /**
      * @brief Create a linear path between two positions
      * @param cp First position
      * @param fp Final position
@@ -189,7 +197,7 @@ namespace door_reactive_planner
      * @param cost cost of the input position
      * @return returns true if robot is not in collision when center of the robot is on the point, false otherwise
      */
-    bool getPointCost(const robot_msgs::Point &position, double &cost);
+    bool getPointCost(const robot_msgs::Point &position, const std::vector<robot_msgs::Point> &oriented_footprint, double &cost);
 
     /**
      * @brief Check for collisions along a path and remove all points beyond the first detected collision point

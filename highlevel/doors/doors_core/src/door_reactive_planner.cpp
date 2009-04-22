@@ -52,27 +52,30 @@ void DoorReactivePlanner::getParams()
 {
   node_.param<double>("~min_distance_from_obstacles",min_distance_from_obstacles_,0.03);
   node_.param<double>("~max_waypoint_distance",dist_waypoints_max_,0.025);
-  node_.param<double>("~max_waypoint_rot_distance",dist_rot_waypoints_max_,0.1);
+  node_.param<double>("~max_waypoint_rot_distance",dist_rot_waypoints_max_,0.2);
 
   node_.param<double>("~max_explore_distance",max_explore_distance_,2.0);
-  node_.param<double>("~horizontal_explore_distance",horizontal_explore_distance_,0.15);
+  node_.param<double>("~horizontal_explore_distance",horizontal_explore_distance_,0.10);
   node_.param<double>("~max_explore_distance",max_explore_distance_,2.0);
-  node_.param<double>("~max_explore_delta_angle",max_explore_delta_angle_,M_PI/3.0+0.1);
+  node_.param<double>("~max_explore_delta_angle",max_explore_delta_angle_,M_PI/4.0-0.1);
   node_.param<double>("~door_goal_distance",door_goal_distance_,0.7);
   node_.param<int>("~num_explore_paths",num_explore_paths_,32);
   node_.param<bool>("~choose_straight_line_trajectory",choose_straight_line_trajectory_,false);
 
-  node_.param<double>("~costmap/circumscribed_radius",circumscribed_radius_,0.46);
-  node_.param<double>("~costmap/inscribed_radius",inscribed_radius_,0.305);
+  node_.param<double>("~circumscribed_radius",circumscribed_radius_,0.46);
+  node_.param<double>("~inscribed_radius",inscribed_radius_,0.315);
+
+  double resolution;
+  node_.param<double>("~costmap/resolution",resolution,0.025);
 
   cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),6);
 
   min_distance_from_obstacles_ = min_distance_from_obstacles_ + inscribed_radius_;
-  cell_distance_robot_center_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),6);
+  cell_distance_robot_center_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),(int)inscribed_radius_/resolution);
   max_inflated_cost_ = cost_map_->computeCost(cell_distance_robot_center_from_obstacles_);
 
   ROS_INFO("Cell distance from obstacles is %d",cell_distance_from_obstacles_);
-  ROS_INFO("Max inflated cost: %f for a distance of %f m",max_inflated_cost_,min_distance_from_obstacles_); 
+  ROS_INFO("Max inflated cost: %f for a distance of %d (cells in costmap)",max_inflated_cost_,cell_distance_robot_center_from_obstacles_); 
   robot_msgs::Point pt;
   //create a square footprint
   pt.x = inscribed_radius_;
@@ -124,7 +127,7 @@ bool DoorReactivePlanner::computeOrientedFootprint(const robot_actions::Pose2D &
   if(footprint_spec.size() < 3)//if we have no footprint... do nothing
   {
     ROS_ERROR("No footprint available");
-    return -1.0;
+    return false;
   }
   double cos_th = cos(position.th);
   double sin_th = sin(position.th);
@@ -143,6 +146,11 @@ double DoorReactivePlanner::distance(const robot_actions::Pose2D &p, const robot
   return sqrt(pow(p.x-q.x,2)+pow(p.y-q.y,2));
 }
 
+double DoorReactivePlanner::projectedDistance(const robot_actions::Pose2D &p, const robot_actions::Pose2D &q, const double &angle)
+{
+  return ((q.x-p.x)*cos(angle)+(q.y-p.y)*sin(angle));
+}
+
 bool DoorReactivePlanner::createLinearPath(const robot_actions::Pose2D &cp,const robot_actions::Pose2D &fp, std::vector<robot_actions::Pose2D> &return_path)
 {
   ROS_DEBUG("Creating trajectory from: (%f,%f) to (%f,%f)",cp.x,cp.y,fp.x,fp.y);
@@ -155,15 +163,15 @@ bool DoorReactivePlanner::createLinearPath(const robot_actions::Pose2D &cp,const
 
   double delta_x = (fp.x-cp.x)/num_intervals;
   double delta_y = (fp.y-cp.y)/num_intervals;
-//  double delta_theta = angles::normalize_angle((fp.th-cp.th)/num_intervals);
-  double delta_theta = angles::normalize_angle(fp.th);
+  double delta_theta = angles::normalize_angle(fp.th-cp.th)/num_intervals;
+//  double delta_theta = angles::normalize_angle(fp.th);
 
 
   for(int i=0; i< num_intervals; i++)
   {
     temp.x = cp.x + i * delta_x;
     temp.y = cp.y + i * delta_y;
-    temp.th =  angles::normalize_angle(cp.th + i*delta_theta);
+    temp.th =  angles::normalize_angle(fp.th);
     return_path.push_back(temp);
   }
 
@@ -191,6 +199,15 @@ void DoorReactivePlanner::getFinalPosition(const robot_actions::Pose2D &current_
   }
   explore_distance = std::min<double>(max_explore_distance_,new_explore_distance);
 
+  if(distance_to_centerline >= horizontal_explore_distance_ && delta_angle < 0.5)
+  {     
+    explore_distance = 0.0;
+  }
+  else if(distance_to_centerline <= -horizontal_explore_distance_ && delta_angle > -0.5)
+  {
+    explore_distance = 0.0;
+  }
+
   global_explore_angle = centerline_angle_ + delta_angle;
   end_position.x = current_position.x + cos(global_explore_angle) * explore_distance;
   end_position.y = current_position.y + sin(global_explore_angle) * explore_distance;
@@ -217,7 +234,7 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
 
   best_path_costmap_frame.resize(0);
   distance_to_centerline = (start.x-goal_.x)*vector_along_door_.x + (start.y-goal_.y)*vector_along_door_.y;
-
+  ROS_INFO("Start: %f %f, goal: %f %f, dc: %f",start.x,start.y,goal_.x,goal_.y,distance_to_centerline); 
   for(int i=0; i < num_explore_paths_; i++)
   {
     linear_path.clear();
@@ -228,13 +245,15 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
     if(checked_path.size() > 0)
     {
       double new_distance = distance(checked_path.back(),goal_);
+      double current_distance = distance(start,goal_);
+//      double new_distance = projectedDistance(checked_path.back(),goal_,centerline_angle_);
       if( new_distance < min_distance_to_goal)
       {
         best_path_costmap_frame.resize(checked_path.size());
         best_path_costmap_frame = checked_path;
         min_distance_to_goal = new_distance;
       }
-      if(i == 0 && choose_straight_line_trajectory_ && new_distance > 0.45)
+      if(i == 0 && choose_straight_line_trajectory_ && current_distance > door_goal_distance_/2.0)
       {
         best_path_control_frame.resize(best_path_costmap_frame.size());
         transformPath(best_path_costmap_frame,costmap_frame_id_,best_path_control_frame,control_frame_id_);
@@ -252,6 +271,7 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
     if(checked_path.size() > 0)
     {
       double new_distance = distance(checked_path.back(),goal_);
+//      double new_distance = projectedDistance(checked_path.back(),goal_,centerline_angle_);
       if(new_distance < min_distance_to_goal)
       {
         best_path_costmap_frame.resize(checked_path.size());
@@ -292,7 +312,7 @@ void DoorReactivePlanner::checkPath(const std::vector<robot_actions::Pose2D> &pa
     position.x = out_pose.x;
     position.y = out_pose.y;
     theta = out_pose.th;
-    if(getPointCost(position, cost))
+    if(getPointCost(position, oriented_footprint, cost))
     {
       if(cost < max_inflated_cost_) 
       {
@@ -318,9 +338,9 @@ void DoorReactivePlanner::checkPath(const std::vector<robot_actions::Pose2D> &pa
   ROS_DEBUG("Return path has %d points",return_path.size());
 }
 
-bool DoorReactivePlanner::getPointCost(const robot_msgs::Point &position, double &cost)
+bool DoorReactivePlanner::getPointCost(const robot_msgs::Point &position, const std::vector<robot_msgs::Point> &oriented_footprint, double &cost)
 {
-  if(cost_map_model_->footprintCost(position,footprint_,inscribed_radius_,circumscribed_radius_) < 0)
+  if(cost_map_model_->footprintCost(position,oriented_footprint,inscribed_radius_,circumscribed_radius_) <= 0)
   {
     return false;
   }
