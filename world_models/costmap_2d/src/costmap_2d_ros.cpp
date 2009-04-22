@@ -360,7 +360,7 @@ namespace costmap_2d {
     if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
       ROS_ERROR("Transform timeout.");
         ROS_ERROR("   current time    : %f",current_time.toSec());
-        ROS_ERROR("   globalpose stamp: %f",global_pose.stamp_.toSec());
+        ROS_ERROR("   cost_map_ros global pose stamp: %f",global_pose.stamp_.toSec());
         ROS_ERROR("   tolerance       : %f",transform_tolerance_);
       return;
     }
