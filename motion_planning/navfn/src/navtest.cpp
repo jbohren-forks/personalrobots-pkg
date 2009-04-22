@@ -1,6 +1,7 @@
 //
 // simple timing test of the nav fn planner
-// 
+// expects a cost map in willow-full-0.05.pgm
+//
 
 #include <navfn/navfn.h>
 #include <navfn/navwin.h>
@@ -68,9 +69,9 @@ int main(int argc, char **argv)
   // try reading in a file
   int sx,sy;
   COSTTYPE *cmap = NULL;
-  //  cmap = readPGM("willow-full-0.05.pgm",&sx,&sy);
+  cmap = readPGM("willow-full-0.05.pgm",&sx,&sy);
   //  cmap = readPGM("initial_cost_map_1165_945.pgm",&sx,&sy,true);
-  cmap = readPGM("initial_cost_map_2332_1825.pgm",&sx,&sy,true);
+  //  cmap = readPGM("initial_cost_map_2332_1825.pgm",&sx,&sy,true);
   if (cmap)
     {
       nav = new NavFn(sx,sy);
@@ -79,7 +80,7 @@ int main(int argc, char **argv)
       COSTTYPE *cm = cmap + sy/6 * sx + sx - 10;
       for (int i=0; i<sx-20; i++, cm--)
 	{
-	  if (*cm == 0)
+	  if (*cm == COST_NEUTRAL)
 	    {
 	      goal[0] = sx-10-i;
 	      printf("[NavTest] Found goal at X = %d\n", sx - 10 -i);
@@ -92,7 +93,7 @@ int main(int argc, char **argv)
       cm = cmap + 5*sy/6 * sx + 10;
       for (int i=0; i<sx-20; i++, cm++)
 	{
-	  if (*cm == 0)
+	  if (*cm == COST_NEUTRAL)
 	    {
 	      start[0] = 10+i;
 	      printf("[NavTest] Found start at X = %d\n", start[0]);
@@ -244,7 +245,7 @@ readPGM(const char *fname, int *width, int *height, bool raw)
 {
   int fake_argc(1);
   char fake_arg[] = "foo";
-  pgm_init(&fake_argc, (char **)&fake_arg);
+  pm_init("navtest",0);
 
   FILE *pgmfile;
   pgmfile = fopen(fname,"r");
@@ -287,6 +288,7 @@ readPGM(const char *fname, int *width, int *height, bool raw)
       }
     else
       {
+	ftot = ncols*nrows;
 	for (int jj(ncols - 1); jj >= 0; --jj)
 	  {
 	    if (row[jj] < unknown_gray && ii < nrows-7 && ii > 7)
@@ -299,12 +301,13 @@ readPGM(const char *fname, int *width, int *height, bool raw)
 	      {
 		setcostunk(cmap,ii*ncols+jj,ncols);
 		utot++;
+		ftot--;
 	      }
 #endif
 	  }
       }
   }
-  printf("[NavTest] Found %d obstacle cells, %d free cells\n", otot, ftot);
+  printf("[NavTest] Found %d obstacle cells, %d free cells, %d unkown cells\n", otot, ftot, utot);
   pgm_freerow(row);
   *width = ncols;
   *height = nrows;

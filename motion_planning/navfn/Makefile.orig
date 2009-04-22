@@ -27,7 +27,7 @@ obj/%.o:src/%.cpp
 obj/%.o:src/%.c
 	$(GCC) $(CFLAGS) -c $< -o $@
 
-obj/navfn.o: include/navfn.h
+obj/navfn.o: include/navfn/navfn.h
 
 clean:
 	- rm obj/*.o
