@@ -1,7 +1,7 @@
 <launch>
 
 <!-- action interface to switch controllers -->
-  <node pkg="mechanism_control" type="action_mechanism_control" output="screen" />
+  <node pkg="mechanism_control" type="action_runner" output="screen" />
 
 <!-- Base controller: always running -->
   <param name="base_controller/autostart" type="bool" value="true" />
