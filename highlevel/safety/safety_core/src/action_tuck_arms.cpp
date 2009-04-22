@@ -35,7 +35,7 @@
 
 #include <safety_core/action_tuck_arms.h>
 
-using namespace safety_core;
+namespace safety_core{
 
 static const unsigned int traj_size = 2;
 static const unsigned int num_joints = 7;
@@ -215,7 +215,7 @@ void TuckArmsAction::cancelTrajectory()
   return;
 
 }
-
+}
 
 
 

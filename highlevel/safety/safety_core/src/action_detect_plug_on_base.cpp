@@ -36,7 +36,7 @@
 #include <safety_core/action_detect_plug_on_base.h>
 #include <math.h>
 
-using namespace safety_core;
+namespace safety_core{
 
 DetectPlugOnBaseAction::DetectPlugOnBaseAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Empty, robot_msgs::PlugStow>("detect_plug_on_base"),
@@ -160,4 +160,5 @@ void DetectPlugOnBaseAction::localizePlug()
       deactivate(robot_actions::SUCCESS, plug_stow_);   
     }
   }
+}
 }
