@@ -62,8 +62,8 @@ namespace base_local_planner {
     ros_node.advertise<robot_msgs::Polyline2D>("~base_local_planner/global_plan", 1);
     ros_node.advertise<robot_msgs::Polyline2D>("~base_local_planner/local_plan", 1);
 
-    ros_node.param("~base_local_planner/global_frame", global_frame_, string("map"));
-    ros_node.param("~base_local_planner/robot_base_frame", robot_base_frame_, string("base_link"));
+    ros_node.param("~base_local_planner/costmap/global_frame", global_frame_, string("map"));
+    ros_node.param("~base_local_planner/costmap/robot_base_frame", robot_base_frame_, string("base_link"));
 
     ros_node.param("~base_local_planner/yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
     ros_node.param("~base_local_planner/xy_goal_tolerance", xy_goal_tolerance_, 0.10);
