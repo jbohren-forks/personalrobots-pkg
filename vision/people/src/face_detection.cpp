@@ -39,6 +39,7 @@
 #include <fstream>
 
 #include "ros/node.h"
+#include "ros/console.h"
 #include <boost/thread/mutex.hpp>
 
 #include "CvStereoCamModel.h"
@@ -160,15 +161,22 @@ public:
     sync_.subscribe("stereo/right/cam_info",rcinfo_,1);
     sync_.ready();
 
+    ROS_INFO_STREAM_NAMED("face_detector","Subscribed to images");
+
     // Advertise a position measure message.
     advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
+
+    ROS_INFO_STREAM_NAMED("face_detector","Advertised people_tracker_measurements");
+
     // Advertise the rectangles to draw if stereo_view is running.
     if (do_display_ == "remote") {
       advertise<image_msgs::ColoredLines>("lines_to_draw",1);
+      ROS_INFO_STREAM_NAMED("face_detector","Advertising colored lines to draw remotely.");
     }
     // Subscribe to filter measurements.
     if (external_init_) {
       subscribe<robot_msgs::PositionMeasurement>("people_tracker_filter",pos_,&FaceDetector::pos_cb,1);
+      ROS_INFO_STREAM_NAMED("face_detector","Subscribed to the person filter messages.");
     }
 
   }
@@ -220,7 +228,7 @@ public:
    * If unsynced stereo msgs are received, do nothing. 
    */
   void image_cb_timeout(ros::Time t) {
-    //cout << "In timeout" << endl;
+    ROS_DEBUG_STREAM_NAMED("face_detector","In timeout.");
   }
 
   /*! 
@@ -233,11 +241,6 @@ public:
    */
   void image_cb_all(ros::Time t)
   {
-    // cout << "image callback" << endl;
-    //return;
-    struct timeval timeofday;
-    gettimeofday(&timeofday,NULL);
-    ros::Time startt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
 
     if (do_display_ == "local") {
       cv_mutex_.lock();
@@ -263,6 +266,7 @@ public:
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/(double)dispinfo_.dpp);
  
     im_size = cvGetSize(cv_image_left_);
+    struct timeval timeofday;
     gettimeofday(&timeofday,NULL);
     ros::Time starttdetect = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
 
@@ -270,7 +274,7 @@ public:
     gettimeofday(&timeofday,NULL);
     ros::Time endtdetect = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
     ros::Duration diffdetect = endtdetect - starttdetect;
-    //printf("Detection duration = %fsec\n", diffdetect.toSec());
+    ROS_DEBUG_STREAM_NAMED("face_detector","Detection duration = " << diffdetect.toSec() << "sec");
 
     image_msgs::ColoredLines all_cls;
     vector<image_msgs::ColoredLine> lines;   
@@ -355,7 +359,7 @@ public:
 	  else {
 	    pos.object_id = "";
 	  }
-	  cout << "Closest person: " << pos.object_id << endl;
+	  ROS_INFO_STREAM_NAMED("face_detector","Closest person: " << pos.object_id);
 	  publish("people_tracker_measurements",pos);
 	}
 
@@ -448,11 +452,6 @@ public:
       cv_mutex_.unlock();
     }
     // Done display
-
-    gettimeofday(&timeofday,NULL);
-    ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
-    ros::Duration diff = endt-startt;
-    //printf("Image callback duration = %fsec\n", diff.toSec());
   }
 
 
@@ -505,7 +504,7 @@ int main(int argc, char **argv)
 
   ifstream expfile(argv[1]);
   if (!expfile.is_open()) {
-    cerr << "File " << argv[1] << " cannot be opened" << endl;
+    ROS_ERROR_STREAM_NAMED("face_detector","File " << argv[1] << " cannot be opened.");
     return 0;
   }
   int numlines;
@@ -515,7 +514,7 @@ int main(int argc, char **argv)
   string names[numlines];
   for (int i=0; i<numlines; i++) {
     if (expfile.eof()) {
-      cerr << "File " << argv[1] << " has an incorrect number of lines." << endl;
+      ROS_ERROR_STREAM_NAMED("face_detector","File " << argv[1] << " has an incorrect number of lines.");
       return 0;
     }
     expfile >> names[i];
