@@ -30,8 +30,9 @@
 #include <cmath>
 #include "ros/node.h"
 #include "robot_msgs/PoseDot.h"
-#include "deprecated_msgs/RobotBase2DOdom.h"
+#include "robot_msgs/PoseStamped.h"
 #include "deadreckon/DriveDeadReckon.h"
+#include "tf/tf.h"
 using namespace std;
 using namespace ros;
 
@@ -39,7 +40,7 @@ class DeadReckon : public ros::Node
 {
 public:
   robot_msgs::PoseDot velMsg;
-  deprecated_msgs::RobotBase2DOdom odomMsg;
+  robot_msgs::PoseStamped odomMsg;
   double maxTV, maxRV, distEps, headEps, finalEps, tgtX, tgtY, tgtTh;
   enum
   {
@@ -69,9 +70,13 @@ public:
            req.bearing,
            req.finalRelHeading);
     odomMsg.lock();
-    tgtX  = odomMsg.pos.x + req.dist * cos(odomMsg.pos.th + req.bearing);
-    tgtY  = odomMsg.pos.y + req.dist * sin(odomMsg.pos.th + req.bearing);
-    tgtTh = normalizeAngle(odomMsg.pos.th + req.finalRelHeading);
+    tf::Pose odom_pose;
+    tf::PoseMsgToTF(odomMsg.pose, odom_pose);
+    double yaw, pitch, roll;
+    odom_pose.getBasis().getEulerZYX(yaw, pitch, roll);
+    tgtX  = odomMsg.pose.position.x + req.dist * cos(yaw + req.bearing);
+    tgtY  = odomMsg.pose.position.y + req.dist * sin(yaw + req.bearing);
+    tgtTh = normalizeAngle(yaw + req.finalRelHeading);
     odomMsg.unlock();
     drState = DR_FACE_TGT;
     while (drState != DR_IDLE && ok())
@@ -93,17 +98,23 @@ public:
   }
   void odom_cb()
   {
+    //Get euler angles out
+    tf::Pose odom_pose;
+    tf::PoseMsgToTF(odomMsg.pose, odom_pose);
+    double odom_yaw, odom_pitch, odom_roll;
+    odom_pose.getBasis().getEulerZYX(odom_yaw, odom_pitch, odom_roll);
+
     velMsg.vel.vx = velMsg.ang_vel.vz = 0;
-    double dx = tgtX - odomMsg.pos.x, dy = tgtY - odomMsg.pos.y;
+    double dx = tgtX - odomMsg.pose.position.x, dy = tgtY - odomMsg.pose.position.y;
     double distToGo = sqrt(dx*dx + dy*dy);
-    double bearing = normalizeAngle(atan2(dy, dx) - odomMsg.pos.th);
+    double bearing = normalizeAngle(atan2(dy, dx) - odom_yaw);
     bool backup = false;
     if (fabs(bearing) > M_PI/2)
     {
       backup = true;
       bearing = normalizeAngle(bearing + M_PI);
     }
-    double finalBearing = normalizeAngle(tgtTh - odomMsg.pos.th);
+    double finalBearing = normalizeAngle(tgtTh - odom_yaw);
     switch(drState)
     {
       case DR_FACE_TGT:

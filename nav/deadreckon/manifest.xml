@@ -7,7 +7,7 @@
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="robot_msgs"/>
-  <depend package="deprecated_msgs"/>
+  <depend package="tf"/>
   <export>
     <cpp cflags="-I${prefix}/srv/cpp" />
   </export>
