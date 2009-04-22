@@ -41,6 +41,13 @@ class DoorController extends AgentTimeline {
     // Door state
     string frame_id;
 
+    /**
+     * The following is essentially a Door message data structure. If we add support for 'struct'
+     * in NDDL then we can declare structured data types that directly map to the relevant ROS message types.
+     * This will be a generally useful feature of the language and will also make auto-generated NDDL/ROS
+     * bindings straightforward. Absent that structure, we would have to capture structure through nomenclature.
+     */
+
     // Points for the door frame
     float frame_p1_x;
     float frame_p1_y;
@@ -97,7 +104,7 @@ class DoorController extends AgentTimeline {
  * - DetectHandle
  * - CheckDoor
  *
- * Note the pattern that uses a flexible temporal interval for constraining the relationshop between the
+ * Note the pattern that uses a flexible temporal interval (end_bounds varaible) for constraining the relationshop between the
  * completion time of the selected action, and the end time of this control step. This flexibility accounts for
  * the fact that an exogenous event can trip the state forcing a planned preemption of the active command, and the
  * completion of the command should also bring about a completion of the given control step
@@ -117,11 +124,11 @@ DoorController::Holds {
 
   // If we are active, then we must evaluate different states based on current base, door , and handle state
   if(active == true){
-    // Target data derived from move behavior
+    // Target data derived from move behavior: all MoveBehavior.Active(target_x, target_y);
     contained_by(MoveBehavior.Active mb_active);
     eq(target_x, mb_active.x);
     eq(target_y, mb_active.y);
-    eq(target_th, mb_active.th);
+
     // The end bound defined here provides a margin of error around the connection between the end time of the
     // command issued here, and the end time of the control step.
     int end_bounds;
@@ -154,11 +161,11 @@ DoorController::Holds {
       addEq(last_checked_door, elapsed_time_since_last_check, start);
       testLEQ(recheck_doorway, DOOR_CHECK_INTERVAL, elapsed_time_since_last_check);
       if(recheck_doorway == true){
-	starts_before(CheckDoorway.Active cmd);
+	starts_before(CheckPath.Active cmd);
 	concurrent(cmd.end, end_bounds);
 	eq(cmd.x, target_x);
 	eq(cmd.y, target_y);
-	eq(cmd.th, target_th);
+	// Fill out rest of goal pose
       }
 
       if(recheck_doorway == false){
@@ -175,17 +182,19 @@ DoorController::Holds {
 	  temporalDistance(start, [1 +inf], bs.end);
 
 	  if(found_handle == true){
-	    // Are we in a grasp position? Now is a good time to find out. We use the available door state message
-	    float grasp_x, grasp_y, grasp_th;
-	    door_get_robot_pose_for_door(grasp_x, grasp_y, grasp_th, door_p1_x, door_p1_y, door_p2_x, door_p2_y, GRASP_RANGE);
+	    // Are we in a grasp position? Now is a good time to find out. We use the available door state message. It would be great
+	    // to have a structured data type here
+	    float grasp_x, grasp_y, grasp_z, grasp_qx, grasp_qy, grasp_qz, grasp_qw;
+	    door_get_robot_pose_for_door(grasp_x, grasp_y, grasp_z, grasp_qx, grasp_qy, grasp_qz, grasp_qw, object, GRASP_RANGE);
 
-	    // @todo We should probably treat position and orientation seperately for tolerances
+	    // @todo Include orientation
 	    float distanceAway;
 	    bool in_grasp_position; // True if far enough from the door to scan effectively, Can only be evaluated
-	    calcDistance(distanceAway, bs.x, bs.y, bs.th, grasp_x, grasp_y, grasp_th);
+	    calcDistance(distanceAway, bs.x, bs.y, grasp_x, grasp_y);
 	    testLEQ(in_grasp_position, distanceAway, GRASP_POSITION_ERROR);
 
 	    if(in_grasp_position == true){
+	      // @todo Need to add binding of door message data for parameters
 	      // GraspHandle(any, end_bounds] == Active();
 	      starts_before(GraspHandle.Active cmd);
 	      concurrent(cmd.end, end_bounds);
@@ -196,7 +205,11 @@ DoorController::Holds {
 	      concurrent(cmd.end, end_bounds);
 	      eq(cmd.x, grasp_x);
 	      eq(cmd.y, grasp_y);
-	      eq(cmd.th, grasp_th);
+	      eq(cmd.z, grasp_y);
+	      eq(cmd.qx, grasp_qx);
+	      eq(cmd.qy, grasp_qy);
+	      eq(cmd.qz, grasp_qz);
+	      eq(cmd.qw, grasp_qw);
 	    }
 	  }
 
@@ -215,10 +228,11 @@ DoorController::Holds {
 
 	      // Read data from the topological map
 	      map_get_door_state(this.object, door_id);
-	      float detect_x, detect_y, detect_th;
-	      door_get_robot_pose_for_door(detect_x, detect_y, detect_th, frame_p1_x, frame_p1_y, frame_p2_x, frame_p2_y, DETECTION_RANGE);
+	      float detect_x, detect_y, detect_z, detect_qx, detect_qy, detect_qz, detect_qw;
+	      door_get_robot_pose_for_door(detect_x, detect_y, detect_z, detect_qx, detect_qy, detect_qz, detect_qw, object, DETECTION_RANGE);
 	      float distanceAway;
-	      calcDistance(distanceAway, bs.x, bs.y, bs.th, detect_x, detect_y, detect_th);
+	      // @todo Add orientation
+	      calcDistance(distanceAway, bs.x, bs.y, detect_x, detect_y);
 	      testLEQ(in_detection_position, distanceAway, DETECTION_POSITION_ERROR);
 
 	      if(in_detection_position == true){
@@ -233,7 +247,11 @@ DoorController::Holds {
 		concurrent(cmd.end, end_bounds);
 		eq(cmd.x, detect_x);
 		eq(cmd.y, detect_y);
-		eq(cmd.th, detect_th);
+		eq(cmd.z, detect_y);
+		eq(cmd.qx, detect_qx);
+		eq(cmd.qy, detect_qy);
+		eq(cmd.qz, detect_qz);
+		eq(cmd.qw, detect_qw);
 	      }
 	    }
 	  }
@@ -346,11 +364,12 @@ DetectDoor::Inactive{
   }
 }
 
-CheckDoorway::Inactive{
+// FIXME = CheckPath vs detection of an open door
+CheckPath::Inactive{
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
-    eq(dc.doorway_clear, doorway_clear);
-    eq(dc.door_latched, door_latched);
+    eq(dc.doorway_clear, is_clear);
+    eq(dc.door_latched, true);
     eq(dc.last_checked_door, start);
   }
 }

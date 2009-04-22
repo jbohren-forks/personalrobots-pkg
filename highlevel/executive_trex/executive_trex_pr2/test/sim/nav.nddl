@@ -173,7 +173,6 @@ MoveBase::Active{
   eq(bc.active, true);
   eq(bc.x, x);
   eq(bc.y, y);
-  eq(bc.th, th);
 
 /*
   // For now, assume a constant duration, and write the end bounds thru magic so we are transported
@@ -193,7 +192,6 @@ MoveBase::Inactive{
   temporalDistance(start, [1 +inf], bs.end);
   eq(bs.x, x);
   eq(bs.y, y);
-  eq(bs.th, th);
 }
 
 BaseController base_controller = new BaseController();

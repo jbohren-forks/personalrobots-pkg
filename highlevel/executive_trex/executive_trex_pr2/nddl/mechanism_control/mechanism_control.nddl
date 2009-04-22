@@ -37,32 +37,36 @@ MechanismController::Holds {
   }
 }
 
-// Controller State Variables
+// Controllers
+
+// Arm controllers that are mutually exclusive
+MechanismController r_arm_joint_trajectory_controller = new MechanismController(Internal);
+MechanismController r_arm_cartesian_trajectory_controller = new MechanismController(Internal);
+MechanismController r_arm_cartesian_tff_controller = new MechanismController(Internal);
+
+// Additional ones
+MechanismController r_arm_cartesian_twist_controller = new MechanismController(Internal);
+MechanismController r_arm_cartesian_wrench_controller = new MechanismController(Internal);
+MechanismController r_arm_cartesian_pose_controller = new MechanismController(Internal);
 MechanismController head_controller = new MechanismController(Internal);
 MechanismController laser_tilt_controller = new MechanismController(Internal);
 MechanismController r_gripper_effort_controller = new MechanismController(Internal);
 MechanismController r_gripper_position_controller = new MechanismController(Internal);
-MechanismController r_arm_joint_trajectory_controller = new MechanismController(Internal);
-MechanismController r_arm_cartesian_trajectory_controller = new MechanismController(Internal);
-MechanismController r_arm_cartesian_twist_controller = new MechanismController(Internal);
-MechanismController r_arm_cartesian_wrench_controller = new MechanismController(Internal);
-MechanismController r_arm_cartesian_pose_controller = new MechanismController(Internal);
-MechanismController r_arm_cartesian_tff_controller = new MechanismController(Internal);
 
 HeadMechanism::use_head_controller{ 
-  starts(AgentActions.startEvent);
+  contains(AgentActions.startEvent);
   contained_by(head_controller.Holds c);
   eq(c.is_up, true);
 }
 
 TiltLaserMechanism::use_laser_tilt_controller{ 
-  starts(AgentActions.startEvent);
+  contains(AgentActions.startEvent);
   contained_by(laser_tilt_controller.Holds c);
   eq(c.is_up, true);
 }
 
 RightArmMechanism::use_composite_cartesian_controller{
-  starts(AgentActions.startEvent);
+  contains(AgentActions.startEvent);
   contained_by(r_arm_cartesian_wrench_controller.Holds c0);
   eq(c0.is_up, true);
   contained_by(r_arm_cartesian_twist_controller.Holds c1);
@@ -71,38 +75,84 @@ RightArmMechanism::use_composite_cartesian_controller{
   eq(c2.is_up, true);
   contained_by(r_arm_cartesian_trajectory_controller.Holds c3);
   eq(c3.is_up, true);
+
+  // We also require certain other controllers are down
+  contained_by(r_arm_cartesian_tff_controller.Holds down_0);
+  eq(down_0.is_up, false);
+  contained_by(r_arm_joint_trajectory_controller.Holds down_1);
+  eq(down_1.is_up, false);
 }
 
 RightArmMechanism::use_composite_tff_controller{
-  starts(AgentActions.startEvent);
+  contains(AgentActions.startEvent);
   contained_by(r_arm_cartesian_wrench_controller.Holds c0);
   eq(c0.is_up, true);
-  contained_by(r_arm_cartesian_tff_controller.Holds c3);
-  eq(c3.is_up, true);
+  contained_by(r_arm_cartesian_tff_controller.Holds c1);
+  eq(c1.is_up, true);
+
+  // All others should be down
+  contained_by(r_arm_joint_trajectory_controller.Holds c2);
+  eq(c2.is_up, false);
+  contained_by(r_arm_cartesian_twist_controller.Holds c3);
+  eq(c3.is_up, false);
+  contained_by(r_arm_cartesian_pose_controller.Holds c4);
+  eq(c4.is_up, false);
+  contained_by(r_arm_cartesian_trajectory_controller.Holds c5);
+  eq(c5.is_up, false);
 }
 
 RightArmMechanism::use_joint_trajectory_controller{
-  starts(AgentActions.startEvent);
+  contains(AgentActions.startEvent);
   contained_by(r_arm_joint_trajectory_controller.Holds c);
   eq(c.is_up, true);
+
+  // All others should be down
+  contained_by(r_arm_cartesian_wrench_controller.Holds c0);
+  eq(c0.is_up, false);
+  contained_by(r_arm_cartesian_twist_controller.Holds c1);
+  eq(c1.is_up, false);
+  contained_by(r_arm_cartesian_pose_controller.Holds c2);
+  eq(c2.is_up, false);
+  contained_by(r_arm_cartesian_trajectory_controller.Holds c3);
+  eq(c3.is_up, false);
+  contained_by(r_arm_cartesian_tff_controller.Holds c4);
+  eq(c4.is_up, false);
 }
 
 RightArmMechanism::use_cartesian_trajectory_controller{
-  starts(AgentActions.startEvent);
+  contains(AgentActions.startEvent);
   contained_by(r_arm_cartesian_trajectory_controller.Holds c);
   eq(c.is_up, true);
+
+  // All others should be down
+  contained_by(r_arm_cartesian_wrench_controller.Holds c0);
+  eq(c0.is_up, false);
+  contained_by(r_arm_cartesian_twist_controller.Holds c1);
+  eq(c1.is_up, false);
+  contained_by(r_arm_cartesian_pose_controller.Holds c2);
+  eq(c2.is_up, false);
+  contained_by(r_arm_joint_trajectory_controller.Holds c3);
+  eq(c3.is_up, false);
+  contained_by(r_arm_cartesian_tff_controller.Holds c4);
+  eq(c4.is_up, false);
 }
 
 RightGripperMechanism::use_effort_controller{
-  starts(AgentActions.startEvent);
+  contains(AgentActions.startEvent);
   contained_by(r_gripper_effort_controller.Holds c);
   eq(c.is_up, true);
+
+  contained_by(r_gripper_position_controller.Holds c1);
+  eq(c1.is_up, false);
 }
 
 RightGripperMechanism::use_position_controller{
-  starts(AgentActions.startEvent);
+  contains(AgentActions.startEvent);
   contained_by(r_gripper_position_controller.Holds c);
   eq(c.is_up, true);
+
+  contained_by(r_gripper_effort_controller.Holds c1);
+  eq(c1.is_up, false);
 }
 
 // Swap Command

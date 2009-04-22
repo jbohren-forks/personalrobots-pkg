@@ -10,10 +10,3 @@ MoveBase::Active{
   eq(ms.gripper_open, true);
   eq(ms.arm_stowed, true);
 }
-
-MoveBase::Inactive{
-  met_by(Active p);
-  eq(p.x, des_x);
-  eq(p.y, des_y);
-  eq(p.th, des_th);
-}

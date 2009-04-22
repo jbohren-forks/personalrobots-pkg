@@ -5,18 +5,14 @@
 /** External Functions to be integrated **/
 
 /**
- * @brief Obtain the base position a given distance normal to the door frame. Need the current position?
+ * @brief Obtain the base pose at a given distance normal to the door frame. The token object has all the parameters
+ * of a door message.
  */
-constraint  door_get_robot_pose_for_door(x, y, th, token_object, distance){
-  x <: numeric && y <: x && th <: x && token_object <: Object && distance <: x
+constraint  door_get_robot_pose_for_door(x, y, z, qx, qy, qz, qw, token_object, distance){
+  x <: numeric && y <: x && z <: x && 
+  qx <: x && qy <: x && qz <: x && qw <: x &&
+  token_object <: Object && distance <: x
 }
-
-// Compute the x, y, th base position based on the position and orientation of the door frame. Perhaps
-// we just want to use the 2 points for the door, or door frame. Why can z be greater than 0?
-constraint get_door_detection_base_position(x, y, th, door_x1, door_y1, door_x2, door_y2);
-
-// Given a current position, and a target handle position, compute a goal base position to enable a grasp
-constraint get_door_grasp_base_position(x, y, th, door_x1, door_y1, door_x2, door_y2);
 
 // Additional mechanisms used
 RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
@@ -29,7 +25,7 @@ GraspHandle grasp_handle = new GraspHandle(External);
 DetectHandle detect_handle = new DetectHandle(External);
 DetectDoor detect_door = new DetectDoor(External);
 OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
-CheckDoorway check_doorway = new CheckDoorway(External);
+CheckPath check_path = new CheckPath(External);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
 
 // Controller requirements

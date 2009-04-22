@@ -97,7 +97,6 @@ set(TREX_FILES src/Executive.cc
 	       src/CalcDistanceConstraint.cc 
 	       src/Components.cc
 	       src/BaseStateAdapter.cc
-	       src/BaseControllerAdapter.cc
 	       src/ArmStateAdapter.cc
 	       src/ArmControllerAdapter.cc
 	       src/EndEffectorControllerAdapter.cc

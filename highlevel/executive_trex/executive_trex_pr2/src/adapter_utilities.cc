@@ -114,10 +114,10 @@ namespace executive_trex_pr2 {
     setHeader(msg, obs);
 
     readPoint(obs, msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
-    read<double>("dx", obs, msg.pose.orientation.x);
-    read<double>("dy", obs, msg.pose.orientation.y);
-    read<double>("dz", obs, msg.pose.orientation.z);
-    read<double>("dw", obs, msg.pose.orientation.w);
+    read<double>("qx", obs, msg.pose.orientation.x);
+    read<double>("qy", obs, msg.pose.orientation.y);
+    read<double>("qz", obs, msg.pose.orientation.z);
+    read<double>("qw", obs, msg.pose.orientation.w);
   }
 
 
@@ -126,10 +126,10 @@ namespace executive_trex_pr2 {
 
     writePoint(token, msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
 
-    write<double>("dx", token, msg.pose.orientation.x);
-    write<double>("dy", token, msg.pose.orientation.y);
-    write<double>("dz", token, msg.pose.orientation.z);
-    write<double>("dw", token, msg.pose.orientation.w);
+    write<double>("qx", token, msg.pose.orientation.x);
+    write<double>("qy", token, msg.pose.orientation.y);
+    write<double>("qz", token, msg.pose.orientation.z);
+    write<double>("qw", token, msg.pose.orientation.w);
   }
 
   void AdapterUtilities::readPose(ObservationByValue& obs, double x, double y, double th){

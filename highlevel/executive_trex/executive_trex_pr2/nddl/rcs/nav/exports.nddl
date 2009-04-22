@@ -30,7 +30,7 @@ class BaseState extends ROSStateVariable {
 
 /**
  * MoveBase behavior will handle active control of vehicle to accomplish 
- * a waypoint.
+ * a waypoint. Takes a pose.
  */
 class MoveBase extends ROSAction {
 
@@ -39,10 +39,11 @@ class MoveBase extends ROSAction {
     string frame_id;
     float x;
     float y;
-    float th;
-    float des_x;
-    float des_y;
-    float des_th;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
   }
 
   // Parameters to get to the target
@@ -51,7 +52,11 @@ class MoveBase extends ROSAction {
     string frame_id;
     float x;
     float y;
-    float th;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
   }
 
   MoveBase(Mode _mode){
@@ -60,5 +65,35 @@ class MoveBase extends ROSAction {
 
   MoveBase(Mode _mode, int max_duration_){
     super(_mode, max_duration_);
+  }
+};
+
+
+/**
+ * This is a sensing action to see if there is a path to the goal.
+ */
+class CheckPath extends ROSAction {
+
+  /**
+   * The parameters here 
+   */
+  predicate Active{
+    float time_stamp;
+    string frame_id;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+  }
+
+  predicate Inactive{    
+    bool is_clear; // True if there is a clear path, otherwise false
+  }
+
+  CheckPath(Mode _mode){
+    super(_mode);
   }
 };

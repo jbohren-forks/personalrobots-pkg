@@ -39,7 +39,7 @@ DoorManipulationBehavior::Active{
   eq(s.status, SUCCESS);
 }
 
-CheckDoorway::Active {
+CheckPath::Active {
   eq(duration, 1);
 
   // Handle always free at the end
@@ -50,18 +50,20 @@ CheckDoorway::Active {
 /**
  * Update result parameters according to simulation control variables.
  */
-CheckDoorway::Inactive{
+CheckPath::Inactive{
   // DoorwayClearSV.Holds dc = doorway_cleared_sv(start);
   any(DoorwayClearSV.Holds dc);
   precedes(dc.start, start);
   temporalDistance(start, [1 +inf], dc.end);
-  eq(doorway_clear, dc.value);
+  eq(is_clear, dc.value);
 
-  // DoorwayLockedSV.Holds dl = doorway_locked_sv(start);
+  // PathLockedSV.Holds dl = doorway_locked_sv(start);
+/*
   any(DoorwayLockedSV.Holds dl);
   precedes(dl.start, start);
   temporalDistance(start, [1 +inf], dl.end);
   eq(door_latched, dl.value);
+*/
 }
 
 // External controllers specific to the door domain
@@ -71,7 +73,7 @@ GraspHandle grasp_handle = new GraspHandle(Internal);
 OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
 DetectDoor detect_door = new DetectDoor(Internal);
 DetectHandle detect_handle = new DetectHandle(Internal);
-CheckDoorway check_doorway = new CheckDoorway(Internal);
+CheckPath check_path = new CheckPath(Internal);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(Internal);
 
 

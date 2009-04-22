@@ -23,6 +23,16 @@ DetectPlugOnBase::Active{
   contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
 }
 
+DetectOutletCoarse::Active{
+  contained_by(head_mechanism.use_head_controller);
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+}
+
+DetectOutletFine::Active{
+  contained_by(head_mechanism.use_head_controller);
+  //@todo Priscillica camera?
+}
+
 PlugsUntuckArms::Active{
   contained_by(right_arm_mechanism.use_joint_trajectory_controller);
 }

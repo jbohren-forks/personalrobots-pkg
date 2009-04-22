@@ -53,9 +53,12 @@ eq_door_msg(cmd_detect_handle.object, feedback_detect_door.object);
 // Set params for move base
 eq(cmd_move_to_grasp.frame_id, feedback_detect_handle.frame_id);
 eq(cmd_move_to_grasp.time_stamp, feedback_detect_handle.time_stamp);
-door_get_robot_pose_for_door(cmd_move_to_grasp.x, cmd_move_to_grasp.y, cmd_move_to_grasp.th,
+
+door_get_robot_pose_for_door(cmd_move_to_grasp.x, cmd_move_to_grasp.y, cmd_move_to_grasp.z,
+			     cmd_move_to_grasp.qx, cmd_move_to_grasp.qy, cmd_move_to_grasp.qz, cmd_move_to_grasp.qw,
 			     feedback_detect_handle.object,
 			     GRASP_RANGE);
+
 
 // Set params for grasp handle
 eq_door_msg(cmd_grasp_handle.object, feedback_detect_handle.object);

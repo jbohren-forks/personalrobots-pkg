@@ -139,7 +139,7 @@ namespace TREX{
 			const ConstraintEngineId& constraintEngine,
 			const std::vector<ConstrainedVariableId>& variables)
       : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
-			  "time_stamp:frame_id:x:y:z:dx:dy:dz:dw")
+			  "time_stamp:frame_id:x:y:z:qx:qy:qz:qw")
     {}
   };
 

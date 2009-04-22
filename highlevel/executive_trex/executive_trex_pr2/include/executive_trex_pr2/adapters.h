@@ -50,10 +50,10 @@
 #include <robot_actions/action.h>
 #include <robot_actions/NoArgumentsActionState.h>
 #include <robot_actions/DoorActionState.h>
-#include <robot_actions/CheckDoorwayState.h>
+#include <robot_actions/CheckPathState.h>
 #include <robot_actions/NotifyDoorBlockedState.h>
 #include <robot_actions/ShellCommandState.h>
-#include <robot_actions/MoveBaseState.h>
+#include <robot_actions/MoveBaseStateNew.h>
 #include <robot_actions/Pose2D.h>
 #include <robot_actions/RechargeState.h>
 #include <robot_actions/DetectPlugOnBaseState.h>

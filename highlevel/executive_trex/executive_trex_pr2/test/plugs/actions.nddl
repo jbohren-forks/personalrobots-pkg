@@ -6,9 +6,9 @@
 class PlugActions extends AgentActions {
 
   /**
-   * Super simple - tuck, untuck, detect, tuck
+   * Super simple - detect outlet and move to position based on feedback
    */
-  predicate DetectPlug{}
+  predicate DetectOutlet{}
 
   /**
    * Will execute actions as far as grapping the plug, and staging it, and then putting it back
@@ -16,21 +16,32 @@ class PlugActions extends AgentActions {
   predicate PickupAndRelease{}
 };
 
-PlugActions::DetectPlug {
+PlugActions::DetectOutlet {
+  // Tuck arms
   contains(safety_tuck_arms.Active cmd_tuck_arms);
-  contains(plugs_untuck_arms.Active cmd_untuck_arms);
-  contains(detect_plug_on_base.Active cmd_detect_plug_on_base);
   contains(detect_outlet_coarse.Active cmd_detect_outlet_coarse);
-  contains(detect_outlet_fine.Active cmd_detect_outlet_fine);
-  contains(safety_tuck_arms.Active cmd_tuck_arms_again);
+  //contains(move_base.Active cmd_move_base);
 
-  cmd_tuck_arms before cmd_untuck_arms;
-  cmd_untuck_arms before cmd_detect_plug_on_base;
-  cmd_detect_plug_on_base before cmd_detect_outlet_coarse;
-  cmd_detect_outlet_coarse before cmd_detect_outlet_fine;
-  cmd_detect_outlet_fine before cmd_tuck_arms_again;
+  // Sequence
+  cmd_tuck_arms before cmd_detect_outlet_coarse;
+  //cmd_detect_outlet_coarse before cmd_move_base;
 
-  concurrent(end, cmd_tuck_arms_again.end);
+  // Initial values in the base_footprint frame. Used to point the head
+  eq(cmd_detect_outlet_coarse.frame_id, "base_footprint");
+  eq(cmd_detect_outlet_coarse.x, 0.0);
+  eq(cmd_detect_outlet_coarse.y, 0.0);
+  eq(cmd_detect_outlet_coarse.z, 0.0);
+
+  // Feedback paramater Bindings - obtain the point from the pose. The z value will be normal to the plug and we want to add the range
+  any(detect_outlet_coarse.Inactive feedback_detect_outlet_coarse);
+  cmd_detect_outlet_coarse meets feedback_detect_outlet_coarse;
+  //eq(cmd_move_base.frame_id, feedback_detect_outlet_coarse.frame_id);
+  //eq(cmd_move_base.time_stamp, feedback_detect_outlet_coarse.time_stamp);
+  //eq(cmd_move_base.x, feedback_detect_outlet_coarse.x);
+  //eq(cmd_move_base.y, feedback_detect_outlet_coarse.y);
+  //eq(cmd_move_base.th, 0.0);
+
+  concurrent(end, cmd_detect_outlet_coarse.end);
 }
 
 PlugActions::PickupAndRelease {

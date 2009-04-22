@@ -175,32 +175,6 @@ class ReleaseDoor extends DoorManipulationBehavior {
 };
 
 /**
- * This is a sensing action to see if there is a path to the goal.
- */
-class CheckDoorway extends ROSAction {
-
-  /**
-   * The parameters here 
-   */
-  predicate Active{
-    float time_stamp;
-    string frame_id;
-    float x; 
-    float y;
-    float th;
-  }
-
-  predicate Inactive{    
-    bool doorway_clear; // True if there is a clear path, otherwise false
-    bool door_latched; // True if there is a path for a very thin robot - basically a crack in the door
-  }
-
-  CheckDoorway(Mode _mode){
-    super(_mode);
-  }
-};
-
-/**
  * DetectDoor is activated to search for the door. It will assume it is in a suitable observation position facing the door
  */
 class DetectDoor extends DoorManipulationBehavior {

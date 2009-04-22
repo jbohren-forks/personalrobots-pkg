@@ -36,7 +36,11 @@ namespace executive_trex_pr2 {
   private:
     IntervalDomain& _x;
     IntervalDomain& _y;
-    IntervalDomain& _th;
+    IntervalDomain& _z;
+    IntervalDomain& _qx;
+    IntervalDomain& _qy;
+    IntervalDomain& _qz;
+    IntervalDomain& _qw;
     const TokenId _token_id;
     IntervalDomain& _range;
   };

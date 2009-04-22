@@ -12,15 +12,15 @@
   <param name="/trex/enable_release_door" value="true"/>
   <param name="/trex/enable_move_base" value="true"/>
   <param name="/trex/enable_open_door_without_grasp" value="true"/>
-  <param name="/trex/enable_check_doorway" value="true"/>
+  <param name="/trex/enable_check_path" value="true"/>
   <param name="/trex/enable_notify_door_blocked" value="true"/>
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
 
 
   <param name="/trex/input_file" value="doorman.cfg"/>
   <param name="/trex/path" value="$(find executive_trex_pr2)/cfg"/>
-  <param name="/trex/time_limit" value="60"/>
+  <param name="/trex/time_limit" value="30"/>
   <param name="/trex/log_dir" value="$(find executive_trex_pr2)/logs"/>
   <param name="/trex/play_back" value="0"/>
-  <node pkg="executive_trex_pr2" type="trexdebug"/>
+  <!--node pkg="executive_trex_pr2" type="trexdebug"/-->
 </launch>

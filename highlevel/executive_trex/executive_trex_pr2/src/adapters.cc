@@ -74,70 +74,56 @@ namespace TREX {
   /***********************************************************************
    * @brief MoveBase actions with a pose message for goal and feedback
    **********************************************************************/
-  class MoveBaseAdapter: public ROSActionAdapter<robot_actions::Pose2D, robot_actions::MoveBaseState, robot_actions::Pose2D> {
+  class MoveBaseAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped> {
   public:
 
     MoveBaseAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_actions::Pose2D, robot_actions::MoveBaseState,  robot_actions::Pose2D>(agentName, configData){
+      : ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew,  robot_msgs::PoseStamped>(agentName, configData){
     }
 
-    virtual void fillActiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){
-      AdapterUtilities::setHeader(msg, *obs);
-      AdapterUtilities::readPose(*obs, msg.x, msg.y, msg.th);
+    virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){
+      AdapterUtilities::write(goalToken, msg);
     }
 
-    virtual void fillInactiveObservationParameters(const robot_actions::Pose2D& msg, ObservationByValue* obs){ 
-      AdapterUtilities::setHeader(msg, *obs);
-      AdapterUtilities::readPose(*obs, msg.x, msg.y, msg.th);
+    virtual void fillActiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
+      AdapterUtilities::read(*obs, msg);
     }
 
-    void fillDispatchParameters(robot_actions::Pose2D& msg, const TokenId& goalToken){
-      msg.header.frame_id = AdapterUtilities::getFrame(goalToken);
-      AdapterUtilities::writePose(goalToken, msg.x, msg.y, msg.th);
+    virtual void fillInactiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
+      AdapterUtilities::read(*obs, msg);
     }
+
   };
 
   // Allocate Factory
-  TeleoReactor::ConcreteFactory<MoveBaseAdapter> MoveBaseAdapter_Factory("NewMoveBaseAdapter");
+  TeleoReactor::ConcreteFactory<MoveBaseAdapter> MoveBaseAdapter_Factory("MoveBaseAdapter");
 
   /***********************************************************************
-   * @brief CheckDoorway actions with a pose message for goal and feedback
+   * @brief CheckPath
    **********************************************************************/
-  class CheckDoorwayAdapter: public ROSActionAdapter<robot_actions::Pose2D, robot_actions::CheckDoorwayState, robot_actions::Pose2D> {
+  class CheckPathAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::CheckPathState, int8_t> {
   public:
 
-    CheckDoorwayAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_actions::Pose2D, robot_actions::CheckDoorwayState,  robot_actions::Pose2D>(agentName, configData){
+    CheckPathAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::CheckPathState, int8_t>(agentName, configData){
     }
 
-    void fillDispatchParameters(robot_actions::Pose2D& msg, const TokenId& goalToken){
-      msg.header.frame_id = AdapterUtilities::getFrame(goalToken);
-      AdapterUtilities::writePose(goalToken, msg.x, msg.y, msg.th);
+    virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){
+      AdapterUtilities::write(goalToken, msg);
     }
+
+    virtual void fillActiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
+      AdapterUtilities::read(*obs, msg);
+    }
+
+    virtual void fillInactiveObservationParameters(const int8_t& msg, ObservationByValue* obs){
+      AdapterUtilities::read<int8_t>("is_clear", *obs, msg);
+    }
+
   };
 
   // Allocate Factory
-  TeleoReactor::ConcreteFactory<CheckDoorwayAdapter> CheckDoorwayAdapter_Factory("CheckDoorwayAdapter");
-
-  /***********************************************************************
-   * @brief NotifyDoorBlocked action
-   **********************************************************************/
-  class NotifyDoorBlockedAdapter: public ROSActionAdapter<robot_actions::Pose2D, robot_actions::NotifyDoorBlockedState, robot_actions::Pose2D> {
-  public:
-
-    NotifyDoorBlockedAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_actions::Pose2D, robot_actions::NotifyDoorBlockedState,  robot_actions::Pose2D>(agentName, configData){
-    }
-
-    /**
-     * @todo Should take a door message and an ID?
-     */
-    void fillDispatchParameters(robot_actions::Pose2D& msg, const TokenId& goalToken){
-    }
-  };
-
-  // Allocate Factory
-  TeleoReactor::ConcreteFactory<NotifyDoorBlockedAdapter> NotifyDoorBlockedAdapter_Factory("NotifyDoorBlockedAdapter");
+  TeleoReactor::ConcreteFactory<CheckPathAdapter> CheckPathAdapter_Factory("CheckPathAdapter");
 
   /***********************************************************************
    * @brief NoArgumentsAction action

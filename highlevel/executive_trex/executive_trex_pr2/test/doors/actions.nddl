@@ -41,54 +41,6 @@ class DoorActions extends AgentActions{
   }
 };
 
-
-/**
- * This one uses the topological map throughout
- */
-DoorActions::OpenDoorById{
-  // Verify it is a valid id
-  neq(doorway_id, NO_KEY);
-
-  // Here is the basic sequence. First introduce the components
-  contains(MoveBase.Active cmd_move_to_detect);
-  contains(DetectDoor.Active cmd_detect_door);
-  contains(DetectHandle.Active cmd_detect_handle);
-  contains(MoveBase.Active cmd_go_to_grasp_position);
-  contains(GraspHandle.Active cmd_grasp_handle);
-  contains(OpenDoor.Active cmd_open_door);
-
-  // Impose ordering constraints
-  cmd_move_to_detect before cmd_detect_door;
-  cmd_detect_door before cmd_detect_handle;
-  cmd_detect_handle before cmd_go_to_grasp_position;
-  cmd_go_to_grasp_position before cmd_grasp_handle;
-  cmd_grasp_handle before cmd_open_door;
-
-  // Require that all actions are successul. If one fails, they all fail.
-  eq(SUCCESS, 
-     cmd_move_to_detect.status,
-     cmd_detect_door.status, 
-     cmd_go_to_grasp_position.status, 
-     cmd_grasp_handle.status, 
-     cmd_open_door.status);
-
-  // Get door data from the world model. This initial data is used to guide the door detector
-  map_get_door_state(cmd_detect_door.object, doorway_id);
-
-  // Obtain the detection base location based on the door data from this initial state value
-  door_get_robot_pose_for_door(cmd_move_to_detect.x, cmd_move_to_detect.y, cmd_move_to_detect.th, 
-			       cmd_detect_door.object, DETECTION_RANGE);
-
-  // Bindings below are conditional because the world model will be evolving as underlying actions execute. The guard will not evaluate
-  // until they have ended. Door State updates will flow from one action to another
-  if(cmd_detect_door.end){ map_get_door_state(cmd_grasp_handle.object, doorway_id); }
-  if(cmd_grasp_handle.end){ map_get_door_state(cmd_open_door.object, doorway_id); }
- 
-  // The base position for grasping is a function of the door state after we have detected the door, and thus the bound value in the door detection action
-  door_get_robot_pose_for_door(cmd_go_to_grasp_position.x, cmd_go_to_grasp_position.y, cmd_go_to_grasp_position.th, 
-			       cmd_grasp_handle.object, GRASP_RANGE);
-}
-
 DoorActions::OpenDoorByDoorState{
   // This action requires all bounds to be set
   all_bounds_set(this.object);
@@ -97,15 +49,15 @@ DoorActions::OpenDoorByDoorState{
   contains(MoveBase.Active cmd_move_to_detect);
   contains(DetectDoor.Active cmd_detect_door);
   contains(DetectHandle.Active cmd_detect_handle);
-  contains(MoveBase.Active cmd_go_to_grasp_position);
+  contains(MoveBase.Active cmd_move_to_grasp);
   contains(GraspHandle.Active cmd_grasp_handle);
   contains(OpenDoor.Active cmd_open_door);
 
   // Impose ordering constraints
   cmd_move_to_detect before cmd_detect_door;
   cmd_detect_door before cmd_detect_handle;
-  cmd_detect_handle before cmd_go_to_grasp_position;
-  cmd_go_to_grasp_position before cmd_grasp_handle;
+  cmd_detect_handle before cmd_move_to_grasp;
+  cmd_move_to_grasp before cmd_grasp_handle;
   cmd_grasp_handle before cmd_open_door;
 
   // We need feedback, so have to bind state at the end. Will use to transfer results of
@@ -121,7 +73,7 @@ DoorActions::OpenDoorByDoorState{
   eq(SUCCESS, 
      cmd_move_to_detect.status,
      cmd_detect_door.status, 
-     cmd_go_to_grasp_position.status, 
+     cmd_move_to_grasp.status, 
      cmd_grasp_handle.status, 
      cmd_open_door.status);
 
@@ -131,12 +83,14 @@ DoorActions::OpenDoorByDoorState{
   eq_door_msg(cmd_open_door.object, feedback_grasp_handle.object);
  
   // Obtain the detection base location based on the door data from this initial state value
-  door_get_robot_pose_for_door(cmd_move_to_detect.x, cmd_move_to_detect.y, cmd_move_to_detect.th, 
-			       cmd_detect_door.object, DETECTION_RANGE);
+  door_get_robot_pose_for_door(cmd_move_to_detect.x, cmd_move_to_detect.y, cmd_move_to_detect.z, 
+			       cmd_move_to_detect.qx, cmd_move_to_detect.qy, cmd_move_to_detect.qz, cmd_move_to_detect.qw,
+			       this.object, DETECTION_RANGE);
 
   // The base position for grasping is a function of the door state after we have detected the door, and thus the bound value in the door detection action
-  door_get_robot_pose_for_door(cmd_go_to_grasp_position.x, cmd_go_to_grasp_position.y, cmd_go_to_grasp_position.th, 
-			       cmd_grasp_handle.object, GRASP_RANGE);
+  door_get_robot_pose_for_door(cmd_move_to_grasp.x, cmd_move_to_grasp.y, cmd_move_to_grasp.z, 
+			       cmd_move_to_grasp.qx, cmd_move_to_grasp.qy, cmd_move_to_grasp.qz, cmd_move_to_grasp.qw,
+			       feedback_detect_door.object, GRASP_RANGE);
 }
 
 DoorActions door_actions = new DoorActions();

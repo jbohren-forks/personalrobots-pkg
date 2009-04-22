@@ -2,8 +2,9 @@
   <master auto="start"/>
   <param name="/trex/enable_detect_plug_on_base" value="true"/>
   <param name="/trex/enable_base_state_publisher" value="true"/>
+  <param name="/trex/enable_move_base" value="true"/>
   <param name="/trex/enable_release_door" value="true"/>
-  <param name="/trex/enable_check_doorway" value="true"/>
+  <param name="/trex/enable_check_path" value="true"/>
   <param name="/trex/enable_notify_door_blocked" value="true"/>
   <param name="/trex/enable_open_door_without_grasp" value="true"/>
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
