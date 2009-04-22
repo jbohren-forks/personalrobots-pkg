@@ -95,9 +95,9 @@ namespace robot_actions {
      */
     void update(const Feedback& feedback) {
       // Update local feedback state
-      _feedback.lock();
+      _goal.lock();
       _feedback = feedback;
-      _feedback.unlock();
+      _goal.unlock();
 
       makeCallback(_status, _goal, feedback);
     }
@@ -196,9 +196,9 @@ namespace robot_actions {
 
       _result_status = result_status;
       _status.value = result_status;
-      _feedback.lock();
+      _goal.lock();
       _feedback = feedback;
-      _feedback.unlock();
+      _goal.unlock();
       ROS_DEBUG("[%s]Deactivated\n", getName().c_str());
     }
 
@@ -214,9 +214,9 @@ namespace robot_actions {
       }
 
       // Write feedback
-      _feedback.lock();
+      _goal.lock();
       feedback = _feedback;
-      _feedback.unlock();
+      _goal.unlock();
 
       ROS_DEBUG("[%s]Completed\n", getName().c_str());
       return _result_status;

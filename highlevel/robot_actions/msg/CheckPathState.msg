@@ -6,5 +6,5 @@ ActionStatus status
 # Target position and orientation
 robot_msgs/PoseStamped goal
 
-# Actual position and orientation
-robot_msgs/PoseStamped feedback
+# Feedback indicates if it is clear (true) or not.
+byte feedback
