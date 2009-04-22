@@ -378,9 +378,6 @@ void init_layout_five()
   for (result::view3_t::const_iterator itask(resultview.begin()); itask != resultview.end(); ++itask)
     for (result::view2_t::const_iterator iepisode(itask->second.begin()); iepisode != itask->second.end(); ++iepisode) {
       nplots += iepisode->second.size(); // add up the number of iterations for each episode and each task
-      
-      cout << "DBG itask: " << itask->first << " iepisode: " << iepisode->first << "   nplots += " << iepisode->second.size() << "\n";
-      
     }
   
   size_t const ncols(static_cast<size_t>(ceil(sqrt(4.0 * nplots / 3.0))));
@@ -426,9 +423,6 @@ void init_layout_five()
 	  errx(EXIT_FAILURE, "no drawing called \"costmap_dark\"");
 	if ( ! view->AddDrawing(pdname.str()))
 	  errx(EXIT_FAILURE, "no drawing called \"%s\"", pdname.str().c_str());
-	
-	cout << "DBG " << pdname.str() << " ix=" << ix << " iy=" << iy << "\n";
-	
 	++ix;
 	if (ix >= ncols) {
 	  ix = 0;
