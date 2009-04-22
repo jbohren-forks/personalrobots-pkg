@@ -42,7 +42,7 @@ using namespace navfn;
 using namespace robot_actions;
 
 namespace nav {
-  MoveBaseAction::MoveBaseAction(ros::Node& ros_node, tf::TransformListener& tf) : 
+  MoveBase::MoveBase(ros::Node& ros_node, tf::TransformListener& tf) : 
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
     run_planner_(true), tc_(NULL), planner_cost_map_ros_(NULL), controller_cost_map_ros_(NULL), 
     planner_(NULL), valid_plan_(false), new_plan_(false) {
@@ -97,7 +97,7 @@ namespace nav {
     //TODO:spawn planning thread here?
   }
 
-  MoveBaseAction::~MoveBaseAction(){
+  MoveBase::~MoveBase(){
     if(planner_ != NULL)
       delete planner_;
 
@@ -112,7 +112,7 @@ namespace nav {
   }
 
 
-  void MoveBaseAction::makePlan(const robot_msgs::PoseStamped& goal){
+  void MoveBase::makePlan(const robot_msgs::PoseStamped& goal){
     //since this gets called on handle activate
     if(planner_cost_map_ros_ == NULL)
       return;
@@ -135,7 +135,7 @@ namespace nav {
     lock_.unlock();
   }
 
-  void MoveBaseAction::getRobotPose(std::string frame, tf::Stamped<tf::Pose>& pose){
+  void MoveBase::getRobotPose(std::string frame, tf::Stamped<tf::Pose>& pose){
     tf::Stamped<tf::Pose> robot_pose;
     robot_pose.setIdentity();
     robot_pose.frame_id_ = robot_base_frame_;
@@ -157,7 +157,7 @@ namespace nav {
     }
   }
 
-  robot_actions::ResultStatus MoveBaseAction::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
+  robot_actions::ResultStatus MoveBase::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
     //update the goal
     goal_ = goal;
 
@@ -242,7 +242,7 @@ namespace nav {
     return robot_actions::PREEMPTED;
   }
 
-  bool MoveBaseAction::sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual){
+  bool MoveBase::sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual){
     ros::Time expected_end = start + cycle_time;
     ros::Time actual_end = ros::Time::now();
     ///@todo: because durations don't handle subtraction properly right now
@@ -259,7 +259,7 @@ namespace nav {
     return true;
   }
 
-  void MoveBaseAction::resetCostMaps(){
+  void MoveBase::resetCostMaps(){
     planner_cost_map_ros_->resetMapOutsideWindow(5.0, 5.0);
     controller_cost_map_ros_->resetMapOutsideWindow(5.0, 5.0);
   }
@@ -271,7 +271,7 @@ int main(int argc, char** argv){
   ros::Node ros_node("move_base_node");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   
-  nav::MoveBaseAction move_base(ros_node, tf);
+  nav::MoveBase move_base(ros_node, tf);
   robot_actions::ActionRunner runner(20.0);
   runner.connect<robot_msgs::PoseStamped, MoveBaseStateNew, robot_msgs::PoseStamped>(move_base);
   runner.run();

@@ -50,10 +50,10 @@
 
 namespace nav {
   /**
-   * @class MoveBaseAction
+   * @class MoveBase
    * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
    */
-  class MoveBaseAction : public robot_actions::Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped> {
+  class MoveBase : public robot_actions::Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped> {
     public:
       /**
        * @brief  Constructor for the actions
@@ -61,12 +61,12 @@ namespace nav {
        * @param tf A reference to a TransformListener
        * @return 
        */
-      MoveBaseAction(ros::Node& ros_node, tf::TransformListener& tf);
+      MoveBase(ros::Node& ros_node, tf::TransformListener& tf);
 
       /**
        * @brief  Destructor - Cleans up
        */
-      virtual ~MoveBaseAction();
+      virtual ~MoveBase();
 
       /**
        * @brief  Runs whenever a new goal is sent to the move_base

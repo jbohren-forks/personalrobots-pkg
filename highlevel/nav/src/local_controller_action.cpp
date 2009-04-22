@@ -34,14 +34,14 @@
 *
 * Author: Eitan Marder-Eppstein
 *********************************************************************/
-#include <nav/local_controller_action.h>
+#include <nav/move_base_local.h>
 
 using namespace base_local_planner;
 using namespace costmap_2d;
 using namespace robot_actions;
 
 namespace nav {
-  LocalControllerAction::LocalControllerAction(ros::Node& ros_node, tf::TransformListener& tf) : 
+  MoveBaseLocal::MoveBaseLocal(ros::Node& ros_node, tf::TransformListener& tf) : 
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
     tc_(NULL), controller_cost_map_ros_(NULL) {
 
@@ -85,7 +85,7 @@ namespace nav {
     tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_cost_map_, footprint_, &controller_cost_map_);
   }
 
-  LocalControllerAction::~LocalControllerAction(){
+  MoveBaseLocal::~MoveBaseLocal(){
     if(tc_ != NULL)
       delete tc_;
 
@@ -93,7 +93,7 @@ namespace nav {
       delete controller_cost_map_ros_;
   }
 
-  void LocalControllerAction::getRobotPose(std::string frame, tf::Stamped<tf::Pose>& pose){
+  void MoveBaseLocal::getRobotPose(std::string frame, tf::Stamped<tf::Pose>& pose){
     tf::Stamped<tf::Pose> robot_pose;
     robot_pose.setIdentity();
     robot_pose.frame_id_ = robot_base_frame_;
@@ -115,7 +115,7 @@ namespace nav {
     }
   }
 
-  robot_actions::ResultStatus LocalControllerAction::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
+  robot_actions::ResultStatus MoveBaseLocal::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
     ros::Duration cycle_time = ros::Duration(1.0 / controller_frequency_);
     while(!isPreemptRequested()){
       struct timeval start, end;
@@ -184,7 +184,7 @@ namespace nav {
     return robot_actions::PREEMPTED;
   }
 
-  bool LocalControllerAction::sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual){
+  bool MoveBaseLocal::sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual){
     ros::Time expected_end = start + cycle_time;
     ros::Time actual_end = ros::Time::now();
     ///@todo: because durations don't handle subtraction properly right now
@@ -201,7 +201,7 @@ namespace nav {
     return true;
   }
 
-  void LocalControllerAction::resetCostMaps(){
+  void MoveBaseLocal::resetCostMaps(){
     controller_cost_map_ros_->resetMapOutsideWindow(5.0, 5.0);
   }
 
@@ -212,7 +212,7 @@ int main(int argc, char** argv){
   ros::Node ros_node("local_controller_node");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   
-  nav::LocalControllerAction move_base(ros_node, tf);
+  nav::MoveBaseLocal move_base(ros_node, tf);
   robot_actions::ActionRunner runner(20.0);
   runner.connect<robot_msgs::PoseStamped, MoveBaseStateNew, robot_msgs::PoseStamped>(move_base);
   runner.run();

@@ -49,10 +49,10 @@
 
 namespace nav {
   /**
-   * @class LocalControllerAction
+   * @class MoveBaseLocal
    * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
    */
-  class LocalControllerAction : public robot_actions::Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped> {
+  class MoveBaseLocal : public robot_actions::Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped> {
     public:
       /**
        * @brief  Constructor for the actions
@@ -60,12 +60,12 @@ namespace nav {
        * @param tf A reference to a TransformListener
        * @return 
        */
-      LocalControllerAction(ros::Node& ros_node, tf::TransformListener& tf);
+      MoveBaseLocal(ros::Node& ros_node, tf::TransformListener& tf);
 
       /**
        * @brief  Destructor - Cleans up
        */
-      virtual ~LocalControllerAction();
+      virtual ~MoveBaseLocal();
 
       /**
        * @brief  Runs whenever a new goal is sent to the move_base
