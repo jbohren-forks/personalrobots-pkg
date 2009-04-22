@@ -1,6 +1,6 @@
 //
 // simple timing test of the nav fn planner
-// expects a cost map in willow-full-0.05.pgm
+// expects a cost map in maps/willow-full-0.05.pgm
 //
 
 #include <navfn/navfn.h>
@@ -69,7 +69,8 @@ int main(int argc, char **argv)
   // try reading in a file
   int sx,sy;
   COSTTYPE *cmap = NULL;
-  cmap = readPGM("willow-full-0.05.pgm",&sx,&sy);
+  //  cmap = readPGM("maps/willow-full-0.05.pgm",&sx,&sy);
+  cmap = readPGM("maps/navfn_troubles.pgm",&sx,&sy,true);
   //  cmap = readPGM("initial_cost_map_1165_945.pgm",&sx,&sy,true);
   //  cmap = readPGM("initial_cost_map_2332_1825.pgm",&sx,&sy,true);
   if (cmap)
@@ -77,6 +78,7 @@ int main(int argc, char **argv)
       nav = new NavFn(sx,sy);
 
       // find goal
+      goal[0] = sx - 20;	// default
       COSTTYPE *cm = cmap + sy/6 * sx + sx - 10;
       for (int i=0; i<sx-20; i++, cm--)
 	{
@@ -90,6 +92,7 @@ int main(int argc, char **argv)
       goal[1] = sy/6;
 
       // find start
+      start[0] = 20;		// default
       cm = cmap + 5*sy/6 * sx + 10;
       for (int i=0; i<sx-20; i++, cm++)
 	{
@@ -101,6 +104,13 @@ int main(int argc, char **argv)
 	    }
 	}
       start[1] = 5*sy/6;
+
+      start[0] = 500;
+      start[1] = 250;
+
+      //      goal[0] = 500;
+      //      goal[1] = 250;
+
     }
   else
     {
@@ -295,6 +305,7 @@ readPGM(const char *fname, int *width, int *height, bool raw)
 	      {
 		setcostobs(cmap,ii*ncols+jj,ncols);
 		otot++;
+		ftot--;
 	      }
 #if 1
 	    else if (row[jj] <= unknown_gray)

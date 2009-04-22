@@ -7,8 +7,8 @@ cmake_minimum_required (VERSION 2.4.6)
 include ($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 ### Debug mode implies slower runtime, "of course"
-#set (ROS_BUILD_TYPE Debug)
-set (ROS_BUILD_TYPE Release)
+set (ROS_BUILD_TYPE Debug)
+#set (ROS_BUILD_TYPE Release)
 
 add_definitions (-Wall)
 rospack (navfn)
