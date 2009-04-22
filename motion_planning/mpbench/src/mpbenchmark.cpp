@@ -79,6 +79,8 @@ static string geometry;
 static bool websiteMode;
 static string customBaseFilename;
 
+static int layout_id(4);	// XXXX quick'n'dirty
+
 static shared_ptr<Setup> setup;
 static shared_ptr<ResultCollection> result_collection;
 static ostream * logos(0);
@@ -128,7 +130,7 @@ int main(int argc, char ** argv)
 			       *result_collection,
 			       *logos),
 	    "mpbench",
-	    3, // hack: layoutID
+	    layout_id,
 	    &argc, argv);
   }
 }
@@ -156,6 +158,7 @@ void usage(ostream & os)
      << "   -c  <spec>  costmap specification string (default " << d_costmap_spec << ")\n"
      << "   -g  <spec>  GLUT window size (default " << d_geometry << ")\n"
      << "   -x  <fname> set custom base filename\n"
+     << "   -L  <layoutID> quick (temporary?) way of switching layouts\n"
      << "   -X          dump filename base to stdout (use as last option)\n"
      << "   -W          run in website generation mode\n";
   SetupOptions::help(os, "help on setup options:", "  ");
@@ -296,6 +299,16 @@ void parse_options(int argc, char ** argv)
  	  exit(EXIT_FAILURE);
  	}
 	customBaseFilename = argv[ii];
+ 	break;
+
+      case 'L':
+	++ii;
+ 	if (ii >= argc) {
+ 	  warnx("-L requires layout_id argument");
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	sfl::string_to(argv[ii], layout_id);
  	break;
 	
       case 'X':

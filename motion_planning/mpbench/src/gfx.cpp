@@ -60,16 +60,27 @@ static int glut_handle(0);
 static bool made_first_screenshot(false);
 static gfx::Configuration const * configptr(0);
 static double glut_aspect(1); 	// desired width / height (defined in init_layout_X())
+static size_t animation_tick(0);
 
 GLUquadric * quadric(0);
 
 static void init_layout_one();
 static void init_layout_two();
 static void init_layout_three();
+static void init_layout_four();
 static void draw();
 static void reshape(int width, int height);
 static void keyboard(unsigned char key, int mx, int my);
-////static void timer(int handle);
+static void timer(int handle);
+static unsigned int animation_timer_ms(200);
+
+typedef enum {
+  ANIMATION_OFF,
+  ANIMATION_STEP,
+  ANIMATION_ON
+} animation_mode_t;
+
+static animation_mode_t animation_mode(ANIMATION_ON);
 
 
 namespace npm {
@@ -132,6 +143,9 @@ namespace mpbench {
       case 3:
 	init_layout_three();
 	break;
+      case 4:
+	init_layout_four();
+	break;
       default:
 	errx(EXIT_FAILURE, "mpbench::gfx::display(): invalid layoutID %zu", layoutID);
       }
@@ -163,7 +177,7 @@ namespace mpbench {
       glutDisplayFunc(draw);
       glutReshapeFunc(reshape);
       glutKeyboardFunc(keyboard);
-      ////glutTimerFunc(glut_timer_ms, timer, handle);
+      glutTimerFunc(animation_timer_ms, timer, glut_handle);
       
       // hm, should we deallocate this somewhere?
       quadric = gluNewQuadric();
@@ -182,12 +196,13 @@ namespace {
   public:
     PlanDrawing(std::string const & name,
 		ssize_t task_id, ssize_t episode_id,
-		bool detailed);
+		bool detailed, bool animated);
     virtual void Draw();
     
     ssize_t const task_id;
     ssize_t const episode_id;
     bool const detailed;
+    bool const animated;
   };
   
   class CostmapWrapProxy: public npm::TravProxyAPI {
@@ -231,7 +246,7 @@ void init_layout_one()
   
   new npm::TraversabilityDrawing("costmap", new CostmapWrapProxy(0));
   ////  new npm::TraversabilityDrawing("envwrap", new EnvWrapProxy());
-  new PlanDrawing("plan", -1, -1, false);
+  new PlanDrawing("plan", -1, -1, false, false);
   
   npm::View * view;
   
@@ -282,7 +297,7 @@ void init_layout_two()
     for (int iy(1); iy >= 0; --iy, ++itask) {
       ostringstream pdname;
       pdname << "plan" << itask;
-      new PlanDrawing(pdname.str(), itask, -1, true);
+      new PlanDrawing(pdname.str(), itask, -1, true, false);
       npm::View *
 	view(new npm::View(pdname.str(), npm::Instance<npm::UniqueManager<npm::View> >()));
       // beware of weird npm::View::Configure() param order: x, y, width, height
@@ -296,7 +311,7 @@ void init_layout_two()
 }
 
 
-void init_layout_three()
+static void init_layout_three_or_four(bool detailed, bool animated)
 {  
   double x0, y0, x1, y1;
   configptr->world.getWorkspaceBounds(x0, y0, x1, y1);
@@ -319,8 +334,7 @@ void init_layout_three()
 
   new npm::TraversabilityDrawing("costmap_dark", new CostmapWrapProxy(0),
 				 npm::TraversabilityDrawing::MINIMAL_DARK);
-  static bool const detailed(true);
-  new PlanDrawing("planner", -1, -1, detailed);
+  new PlanDrawing("planner", -1, -1, detailed, animated);
   view = new npm::View("planner", npm::Instance<npm::UniqueManager<npm::View> >());
   // beware of weird npm::View::Configure() param order: x, y, width, height
   view->Configure(v_width, 0, v_width, 1);
@@ -330,6 +344,18 @@ void init_layout_three()
     errx(EXIT_FAILURE, "no drawing called \"costmap_dark\"");
   if ( ! view->AddDrawing("planner"))
     errx(EXIT_FAILURE, "no drawing called \"planner\"");
+}
+
+
+void init_layout_three()
+{
+  init_layout_three_or_four(true, false);
+}
+
+
+void init_layout_four()
+{
+  init_layout_three_or_four(false, true);
 }
 
 
@@ -397,7 +423,27 @@ void keyboard(unsigned char key, int mx, int my)
     break;
   case 'q':
     errx(EXIT_SUCCESS, "key: q");
+  case ' ':
+    animation_mode = ANIMATION_STEP;
+    break;
+  case 'c':
+    if (ANIMATION_ON == animation_mode)
+      animation_mode = ANIMATION_OFF;
+    else
+      animation_mode = ANIMATION_ON;
+    break;    
   }
+}
+
+
+void timer(int handle)
+{
+  if ((ANIMATION_ON == animation_mode) || (ANIMATION_STEP == animation_mode))
+    ++animation_tick;
+  if (ANIMATION_STEP == animation_mode)
+    animation_mode = ANIMATION_OFF;
+  glutPostRedisplay();
+  glutTimerFunc(animation_timer_ms, timer, handle);
 }
 
 
@@ -406,13 +452,14 @@ namespace {
   PlanDrawing::
   PlanDrawing(std::string const & name,
 	      ssize_t _task_id, ssize_t _episode_id,
-	      bool _detailed)
+	      bool _detailed, bool _animated)
     : npm::Drawing(name,
 		   "the plans that ... were planned",
 		   npm::Instance<npm::UniqueManager<npm::Drawing> >()),
       task_id(_task_id),
       episode_id(_episode_id),
-      detailed(_detailed)
+      detailed(_detailed),
+      animated(_animated)
   {
   }
   
@@ -426,7 +473,7 @@ namespace {
   }
   
   
-  static void drawResult(result::entry const & result, bool detailed)
+  static void drawResult(result::entry const & result, bool detailed, bool animated)
   {
     typedef waypoint_plan_t::const_iterator wpi_t;
     shared_ptr<mpglue::waypoint_plan_t> plan(result.plan);
@@ -517,7 +564,7 @@ namespace {
     drawFootprint();
     glPopMatrix();
     
-    if (plan) {
+    if (plan && (plan->size() > 0)) {
       glColor3d(0.5, 1, 0.5);
       if (detailed)
 	glLineWidth(3);		// make it stand out among the rest
@@ -527,6 +574,24 @@ namespace {
       for (wpi_t iw(plan->begin()); iw != plan->end(); ++iw)
 	glVertex2d((*iw)->x, (*iw)->y);
       glEnd();
+      if (animated) {
+	shared_ptr<waypoint_s> wpt((*plan)[animation_tick % plan->size()]);
+	glColor3d(0.8, 1, 0.1);
+	glLineWidth(2);
+	glPushMatrix();
+	glTranslated(wpt->x, wpt->y, 0);
+	if (wpt->ignoreTheta()) {
+	  gluDisk(wrap_glu_quadric_instance(),
+		  configptr->inscribedRadius,
+		  configptr->inscribedRadius,
+		  36, 1);
+	}
+	else {
+	  glRotated(180 * wpt->theta / M_PI, 0, 0, 1);
+	  drawFootprint();
+	}
+	glPopMatrix();
+      }
     }
   }
   
@@ -563,7 +628,7 @@ namespace {
 	     i2 != i3->second.end(); ++i2)
 	  for (result::view1_t::const_iterator i1(i2->second.begin());
 	       i1 != i2->second.end(); ++i1)
-	    drawResult(*i1->second, detailed);
+	    drawResult(*i1->second, detailed, animated);
     }
     catch (std::exception const & ee) {
       cout << "EXCEPTION in [gfx.cpp anonymous] PlanDrawing::Draw(): " << ee.what() << "\n";
