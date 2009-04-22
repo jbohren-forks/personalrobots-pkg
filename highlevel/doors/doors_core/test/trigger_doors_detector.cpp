@@ -39,7 +39,7 @@
 
 #include "doors_core/action_detect_door.h"
 #include "doors_core/action_detect_handle.h"
-#include <door_handle_detector/DetectDoorActionStatus.h>
+#include <robot_actions/DoorActionState.h>
 #include <robot_msgs/Door.h>
 #include <ros/node.h>
 #include <robot_actions/action_runner.h>
@@ -72,8 +72,8 @@ int
   door_handle_detector::DetectDoorAction door_detector(node);
   door_handle_detector::DetectHandleAction handle_detector(node);
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(door_detector);
-  runner.connect<robot_msgs::Door, door_handle_detector::DetectDoorActionStatus, robot_msgs::Door>(handle_detector);
+  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(door_detector);
+  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(handle_detector);
   runner.run();
 
   robot_msgs::Door feedback;
