@@ -202,25 +202,17 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_plugs_untuck_arms"))
     runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(plugs_untuck_arms);
 
-  executive_trex_pr2::StubAction<robot_msgs::PoseStamped, std_msgs::Empty> localize_plug_in_gripper("localize_plug_in_gripper");
+  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> localize_plug_in_gripper("localize_plug_in_gripper");
   if (getComponentParam("/trex/enable_localize_plug_in_gripper"))
-    runner.connect<robot_msgs::PoseStamped, robot_actions::LocalizePlugInGripperState, std_msgs::Empty>(localize_plug_in_gripper);
+    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(localize_plug_in_gripper);
 
   executive_trex_pr2::SimpleStubAction<std_msgs::Empty> unplug("unplug");
   if (getComponentParam("/trex/enable_unplug"))
     runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(unplug);
-
-  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> push_plug_in("push_plug_in");
-  if (getComponentParam("/trex/enable_push_plug_in"))
-    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(push_plug_in);
-
-  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> insert_plug("insert_plug");
-  if (getComponentParam("/trex/enable_insert_plug"))
-    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(insert_plug);
   
-  executive_trex_pr2::StubAction<robot_msgs::PoseStamped, std_msgs::Empty> servo_to_outlet("servo_to_outlet");
-  if (getComponentParam("/trex/enable_servo_to_outlet"))
-    runner.connect<robot_msgs::PoseStamped, robot_actions::ServoToOutletState, std_msgs::Empty>(servo_to_outlet);
+  executive_trex_pr2::SimpleStubAction<std_msgs::Empty> plug_in("plug_in");
+  if (getComponentParam("/trex/enable_plug_in"))
+    runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(plug_in);
   
   executive_trex_pr2::StubAction<robot_msgs::PointStamped, robot_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
   if (getComponentParam("/trex/enable_detect_outlet_fine"))

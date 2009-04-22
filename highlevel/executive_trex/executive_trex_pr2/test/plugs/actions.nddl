@@ -17,29 +17,17 @@ class PlugActions extends AgentActions {
 };
 
 PlugActions::DetectOutlet {
-  // Tuck arms
-  contains(safety_tuck_arms.Active cmd_tuck_arms);
   contains(detect_outlet_coarse.Active cmd_detect_outlet_coarse);
-  //contains(move_base.Active cmd_move_base);
-
-  // Sequence
-  cmd_tuck_arms before cmd_detect_outlet_coarse;
-  //cmd_detect_outlet_coarse before cmd_move_base;
 
   // Initial values in the base_footprint frame. Used to point the head
   eq(cmd_detect_outlet_coarse.frame_id, "base_footprint");
-  eq(cmd_detect_outlet_coarse.x, 0.0);
+  eq(cmd_detect_outlet_coarse.x, 3.0);
   eq(cmd_detect_outlet_coarse.y, 0.0);
-  eq(cmd_detect_outlet_coarse.z, 0.0);
+  eq(cmd_detect_outlet_coarse.z, 0.5);
 
   // Feedback paramater Bindings - obtain the point from the pose. The z value will be normal to the plug and we want to add the range
-  any(detect_outlet_coarse.Inactive feedback_detect_outlet_coarse);
-  cmd_detect_outlet_coarse meets feedback_detect_outlet_coarse;
-  //eq(cmd_move_base.frame_id, feedback_detect_outlet_coarse.frame_id);
-  //eq(cmd_move_base.time_stamp, feedback_detect_outlet_coarse.time_stamp);
-  //eq(cmd_move_base.x, feedback_detect_outlet_coarse.x);
-  //eq(cmd_move_base.y, feedback_detect_outlet_coarse.y);
-  //eq(cmd_move_base.th, 0.0);
+  //any(detect_outlet_coarse.Inactive feedback_detect_outlet_coarse);
+  //cmd_detect_outlet_coarse meets feedback_detect_outlet_coarse;
 
   concurrent(end, cmd_detect_outlet_coarse.end);
 }
@@ -54,6 +42,8 @@ PlugActions::PickupAndRelease {
   contains(move_and_grasp_plug.Active cmd_move_and_grasp_plug);
   contains(detect_outlet_fine.Active cmd_detect_outlet_fine);
   contains(localize_plug_in_gripper.Active cmd_localize_plug_in_gripper);
+  contains(plug_in.Active cmd_plug_in);
+  contains(unplug.Active cmd_unplug);
   contains(stow_plug.Active cmd_stow_plug);
 
   // Sequence them
@@ -62,7 +52,9 @@ PlugActions::PickupAndRelease {
   cmd_detect_plug_on_base before cmd_move_and_grasp_plug;
   cmd_move_and_grasp_plug before cmd_detect_outlet_fine;
   cmd_detect_outlet_fine before cmd_localize_plug_in_gripper;
-  cmd_localize_plug_in_gripper before cmd_stow_plug;
+  cmd_localize_plug_in_gripper before cmd_plug_in;
+  cmd_plug_in before cmd_unplug;
+  cmd_unplug before cmd_stow_plug;
 
   // Constrain all to be successful
   eq(SUCCESS,
@@ -70,8 +62,11 @@ PlugActions::PickupAndRelease {
      cmd_untuck_arms.status,
      cmd_detect_plug_on_base.status,
      cmd_move_and_grasp_plug.status,
-     cmd_stow_plug.status,
-     cmd_detect_outlet_fine.status);
+     cmd_detect_outlet_fine.status,
+     cmd_localize_plug_in_gripper.status,
+     cmd_plug_in.status,
+     cmd_unplug.status,
+     cmd_stow_plug.status);
 
   // Bind parameters. Should be nice to say:
   // DetectPlugOnBase.Inactive feedback == detect_plug_on_base[cmd_detect_plug_on_base.end);

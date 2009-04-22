@@ -10,9 +10,7 @@ MoveAndGraspPlug move_and_grasp_plug = new MoveAndGraspPlug(External);
 LocalizePlugInGripper localize_plug_in_gripper = new LocalizePlugInGripper(External);
 StowPlug stow_plug = new StowPlug(External);
 Unplug unplug = new Unplug(External);
-PushPlugIn push_plug_in = new PushPlugIn(External);
-InsertPlug insert_plug = new InsertPlug(External);
-ServoToOutlet servo_to_outlet = new ServoToOutlet(External);
+PlugIn plug_in = new PlugIn(External);
 DetectOutletFine detect_outlet_fine = new DetectOutletFine(External);
 DetectOutletCoarse detect_outlet_coarse = new DetectOutletCoarse(External);
 
@@ -24,8 +22,8 @@ DetectPlugOnBase::Active{
 }
 
 DetectOutletCoarse::Active{
-  contained_by(head_mechanism.use_head_controller);
-  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+  //contained_by(head_mechanism.use_head_controller);
+  //contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
 }
 
 DetectOutletFine::Active{
@@ -48,6 +46,11 @@ LocalizePlugInGripper::Active{
   contained_by(right_gripper_mechanism.use_position_controller);
 }
 
+// Which Controllers
+PlugIn::Active{
+  //contained_by(head_mechanism.use_head_controller);
+  //contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+}
 // Check this with Melonee
 StowPlug::Active{
   contained_by(right_arm_mechanism.use_composite_cartesian_controller);

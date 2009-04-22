@@ -7,6 +7,6 @@
 
 close();
 
-rejectable(plug_actions.DetectOutlet action);
-//rejectable(plug_actions.PickupAndRelease action);
+//rejectable(plug_actions.DetectOutlet action);
+rejectable(plug_actions.PickupAndRelease action);
 

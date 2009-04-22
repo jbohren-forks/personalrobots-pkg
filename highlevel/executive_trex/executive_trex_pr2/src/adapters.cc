@@ -257,29 +257,6 @@ namespace TREX {
 
 
   /***********************************************************************
-   * @brief LocalizePlugInGripper 
-   **********************************************************************/
-  class LocalizePlugInGripperAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::LocalizePlugInGripperState, std_msgs::Empty> {
-  public:
-
-    LocalizePlugInGripperAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::LocalizePlugInGripperState, std_msgs::Empty>(agentName, configData){
-    }
-
-    virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){
-      AdapterUtilities::write(goalToken, msg);
-    }
-
-    virtual void fillActiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
-      AdapterUtilities::read(*obs, msg);
-    }
-  };
-
-  // Allocate Factory
-  TeleoReactor::ConcreteFactory<LocalizePlugInGripperAdapter> LocalizePlugInGripperAdapter_Factory("LocalizePlugInGripperAdapter");
-
-
-  /***********************************************************************
    * @brief StowPlug 
    **********************************************************************/
   class StowPlugAdapter: public ROSActionAdapter<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty> {
@@ -357,28 +334,6 @@ namespace TREX {
 
   // Allocate Factory
   TeleoReactor::ConcreteFactory<SwitchControllersAdapter> SwitchControllersAdapter_Factory("SwitchControllersAdapter");
-
-  /***********************************************************************
-   * @brief ServoToOutlet 
-   **********************************************************************/
-  class ServoToOutletAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::ServoToOutletState, std_msgs::Empty> {
-  public:
-
-    ServoToOutletAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::ServoToOutletState, std_msgs::Empty>(agentName, configData){
-    }
-
-    virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){
-      AdapterUtilities::write(goalToken, msg);
-    }
-
-    virtual void fillActiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
-      AdapterUtilities::read(*obs, msg);
-    }
-  };
-
-  // Allocate Factory
-  TeleoReactor::ConcreteFactory<ServoToOutletAdapter> ServoToOutletAdapter_Factory("ServoToOutletAdapter");
 
   /***********************************************************************
    * @brief DetectOutletAdapter

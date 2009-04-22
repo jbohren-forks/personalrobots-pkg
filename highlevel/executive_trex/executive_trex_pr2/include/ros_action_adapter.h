@@ -163,9 +163,6 @@ namespace TREX {
 
       // If we are disabling and it is already active then 
       // Set the goal and its frame
-      Goal goal_msg;
-
-      fillDispatchParameters(goal_msg, goal);
 
       TREX_INFO("ros:debug:dispatching",  
 		nameString().c_str() << (enableController ? _request_topic : _preempt_topic) << " WITH "  << goal->toLongString());
@@ -173,6 +170,8 @@ namespace TREX {
       // If this is a request to activate the action, send it. However, if it is a request to deactivate the action we need only send it
       // if the action is currently active
       if(enableController){
+	Goal goal_msg;
+	fillDispatchParameters(goal_msg, goal);
 	m_node->publishMsg<Goal>(_request_topic, goal_msg);
       }
       else {

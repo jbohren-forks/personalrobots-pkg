@@ -131,7 +131,7 @@ namespace executive_trex_pr2 {
       checkError(dom.isNumeric(), "time_stamp must be numeric.");
       if(dom.isSingleton()){
 	time_stamp_double = dom.getSingletonValue() + getEpoch();
-	debugMsg("ros", "Sett time stamp of " << time_stamp_double << " with additional offset of " << getEpoch());
+	debugMsg("ros", "Set time stamp of " << time_stamp_double << " with additional offset of " << getEpoch());
       }
 
       // The time stamp should be set to current time if the value
