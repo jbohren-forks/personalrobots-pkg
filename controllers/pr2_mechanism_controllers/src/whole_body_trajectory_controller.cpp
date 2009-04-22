@@ -96,7 +96,6 @@ bool WholeBodyTrajectoryController::initXml(mechanism::RobotState * robot, TiXml
     }
     else if(static_cast<std::string>(elt->Attribute("type")) == std::string("BasePIDController"))
     {
-
       TiXmlElement *pj = elt->FirstChildElement("joint");
       if(pj)
       {
@@ -520,6 +519,7 @@ WholeBodyTrajectoryControllerNode::~WholeBodyTrajectoryControllerNode()
   */
   node_->unadvertiseService(service_prefix_ + "/TrajectoryStart");
   node_->unadvertiseService(service_prefix_ + "/TrajectoryQuery");
+  node_->unadvertiseService(service_prefix_ + "/TrajectoryCancel");
 
   c_->controller_state_publisher_->stop();
   delete c_->controller_state_publisher_;
@@ -701,21 +701,13 @@ void WholeBodyTrajectoryControllerNode::setTrajectoryCmdFromMsg(robot_msgs::Join
         }
       }
     }
+    this->c_->setTrajectoryCmd(tp);
   }
   else
   {
-    ROS_WARN("Trajectory message in command has no way points");
-    //set second point in trajectory to current position of the arm
-    tp[1].setDimension((int) c_->dimension_);
-
-    for(int j=0; j < c_->dimension_; j++)
-    {
-      tp[1].q_[j] = c_->current_joint_position_[j];
-      tp[1].time_ = 0.0;
-    }
+    //ROS_WARN("Trajectory message in command has no way points");
+    c_->stopMotion();
   }
-
-  this->c_->setTrajectoryCmd(tp);
 }
 
 void WholeBodyTrajectoryControllerNode::CmdTrajectoryReceived()
