@@ -63,7 +63,8 @@
 
 
 
-namespace plugs_core{
+namespace plugs_core
+{
 
 class LocalizePlugInGripperAction: public robot_actions::Action<robot_msgs::PoseStamped, std_msgs::Empty>
 {

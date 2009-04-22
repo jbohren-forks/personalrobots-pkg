@@ -37,7 +37,8 @@
 
 #include <plugs_core/action_detect_outlet_coarse.h>
 
-using namespace plugs_core;
+namespace plugs_core
+{
 
 DetectOutletCoarseAction::DetectOutletCoarseAction()
 				: robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_coarse"),
@@ -103,4 +104,5 @@ bool DetectOutletCoarseAction::spotOutlet(const robot_msgs::PointStamped& outlet
 	else {
 		return false;
 	}
+}
 }

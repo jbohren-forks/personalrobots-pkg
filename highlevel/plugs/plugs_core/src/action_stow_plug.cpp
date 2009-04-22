@@ -36,7 +36,8 @@
 #include <plugs_core/action_stow_plug.h>
 
 
-using namespace plugs_core;
+namespace plugs_core
+{
 
 StowPlugAction::StowPlugAction() :
   robot_actions::Action<robot_msgs::PlugStow, std_msgs::Empty>("stow_plug"),
@@ -182,5 +183,6 @@ void StowPlugAction::checkGrasp()
   }
 
   return;
+}
 }
 

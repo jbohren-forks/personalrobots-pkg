@@ -35,7 +35,8 @@
 
 #include <plugs_core/action_untuck_arms.h>
 
-using namespace plugs_core;
+namespace plugs_core
+{
 
 UntuckArmsAction::UntuckArmsAction() :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("plugs_untuck_arms"),
@@ -210,7 +211,7 @@ void UntuckArmsAction::cancelTrajectory()
   return;
 
 }
-
+}
 
 
 

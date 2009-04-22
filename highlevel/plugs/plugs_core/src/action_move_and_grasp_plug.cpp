@@ -36,7 +36,8 @@
 #include <plugs_core/action_move_and_grasp_plug.h>
 
 
-using namespace plugs_core;
+namespace plugs_core
+{
 
 MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
   robot_actions::Action<robot_msgs::PlugStow, std_msgs::Empty>("move_and_grasp_plug"),
@@ -187,5 +188,6 @@ void MoveAndGraspPlugAction::checkGrasp()
       return;
     }
   }
+}
 }
 

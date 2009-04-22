@@ -35,7 +35,8 @@
 
 #include <plugs_core/action_detect_outlet_fine.h>
 
-using namespace plugs_core;
+namespace plugs_core
+{
 
 DetectOutletFineAction::DetectOutletFineAction()
   : robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_fine"),
@@ -48,9 +49,9 @@ robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::Po
   req_.point = point;
   bool success = ros::service::call("/outlet_detector/fine_outlet_detect", req_, res_);
   feedback = res_.pose;
-  ROS_INFO("outlet pose frame_id: %s", res_.pose.header.frame_id.c_str());
   if (success)
     return robot_actions::SUCCESS;
   else
     return robot_actions::ABORTED;
+}
 }
