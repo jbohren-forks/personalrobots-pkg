@@ -313,14 +313,15 @@ namespace people_aware_nav {
 
       bool valid_control = false;
       robot_msgs::PoseDot cmd_vel;
-      std::vector<robot_msgs::PoseStamped> local_plan;
+      //std::vector<robot_msgs::PoseStamped> local_plan;
       //pass plan to controller
       lock_.lock();
       if(valid_plan_){
         //get observations for the non-costmap controllers
         std::vector<Observation> observations;
         controller_cost_map_ros_->getMarkingObservations(observations);
-        valid_control = tc_->computeVelocityCommands(global_plan_, cmd_vel, local_plan, observations);
+        //valid_control = tc_->computeVelocityCommands(global_plan_, cmd_vel, local_plan, observations);
+        valid_control = tc_->computeVelocityCommands(cmd_vel, observations);
       }
       else{
         //we don't have a valid plan... so we want to stop
@@ -346,7 +347,7 @@ namespace people_aware_nav {
 
       //for visualization purposes
       publishPath(global_plan_, "gui_path", 0.0, 1.0, 0.0, 0.0);
-      publishPath(local_plan, "local_path", 0.0, 0.0, 1.0, 0.0);
+      //publishPath(local_plan, "local_path", 0.0, 0.0, 1.0, 0.0);
       publishFootprint();
 
       gettimeofday(&end, NULL);
