@@ -87,36 +87,17 @@ namespace nav {
       bool sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual);
 
       /**
-       * @brief  Publishes the footprint of the robot for visualization purposes
-       */
-      void publishFootprint();
-
-      /**
-       * @brief  Publish a path for visualization purposes
-       */
-      void publishPath(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a);
-
-      /**
        * @brief  Make a new global plan
        * @param  goal The goal to plan to
        */
       void makePlan(const robot_msgs::PoseStamped& goal);
 
       /**
-       * @brief  Trim off parts of the global plan that are far enough behind the robot
+       * @brief  Get the current pose of the robot in the specified frame
+       * @param  frame The frame to get the pose in
+       * @param  pose The pose returned
        */
-      void prunePlan();
-
-      /**
-       * @brief  Get the current pose of the robot in the global frame and set the global_pose_ variable
-       */
-      void updateGlobalPose();
-
-      /**
-       * @brief  Clear the footprint of the robot in a given cost map
-       * @param cost_map The costmap to apply the clearing opertaion on
-       */
-      void clearRobotFootprint(costmap_2d::Costmap2D& cost_map);
+      void getRobotPose(std::string frame, tf::Stamped<tf::Pose>& pose);
 
       /**
        * @brief  Resets the costmaps to the static map outside a given window
@@ -133,15 +114,13 @@ namespace nav {
       navfn::NavfnROS* planner_;
       std::vector<robot_msgs::PoseStamped> global_plan_;
       std::vector<robot_msgs::Point> footprint_;
-      std::string global_frame_, robot_base_frame_;
-      bool valid_plan_;
+      std::string robot_base_frame_;
+      bool valid_plan_, new_plan_;
       boost::recursive_mutex lock_;
       robot_msgs::PoseStamped goal_;
 
       tf::Stamped<tf::Pose> global_pose_;
-      double inscribed_radius_, circumscribed_radius_, inflation_radius_;
       double controller_frequency_;
-      double transform_tolerance_; // timeout before transform errors
 
   };
 };

@@ -37,12 +37,20 @@
 #include <navfn/navfn_ros.h>
 
 namespace navfn {
-  NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, const costmap_2d::Costmap2D& cost_map) : ros_node_(ros_node), tf_(tf), 
+  NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2D& cost_map) : ros_node_(ros_node), tf_(tf), 
   cost_map_(cost_map), planner_(cost_map.cellSizeX(), cost_map.cellSizeY()) {
+    //advertise our plan visualization
+    ros_node_.advertise<robot_msgs::Polyline2D>("~navfn/plan", 1);
+
     //read parameters for the planner
     ros_node_.param("~/navfn/global_frame", global_frame_, std::string("map"));
     ros_node_.param("~/navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~/navfn/transform_tolerance", transform_tolerance_, 0.1);
+
+    //we'll get the parameters for the robot radius from the costmap we're associated with
+    ros_node_.param("~navfn/costmap/inscribed_radius", inscribed_radius_, 0.325);
+    ros_node_.param("~navfn/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
+    ros_node_.param("~navfn/costmap/inflation_radius", circumscribed_radius_, 0.55);
   }
 
   double NavfnROS::getPointPotential(const robot_msgs::Point& world_point){
@@ -73,6 +81,20 @@ namespace navfn {
     planner_.setGoal(map_goal);
 
     return planner_.calcNavFnDijkstra();
+  }
+
+  void NavfnROS::clearRobotCell(const tf::Stamped<tf::Pose>& global_pose, unsigned int mx, unsigned int my){
+    double useless_pitch, useless_roll, yaw;
+    global_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
+
+    //set the associated costs in the cost map to be free
+    cost_map_.setCost(mx, my, costmap_2d::FREE_SPACE);
+
+    double max_inflation_dist = inflation_radius_ + inscribed_radius_;
+
+    //make sure to re-inflate obstacles in the affected region
+    cost_map_.reinflateWindow(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist, max_inflation_dist);
+
   }
 
   bool NavfnROS::makePlan(const robot_msgs::PoseStamped& goal, std::vector<robot_msgs::PoseStamped>& plan){
@@ -109,11 +131,14 @@ namespace navfn {
     double wx = global_pose.getOrigin().x();
     double wy = global_pose.getOrigin().y();
 
-    planner_.setCostMap(cost_map_.getCharMap());
-
     unsigned int mx, my;
     if(!cost_map_.worldToMap(wx, wy, mx, my))
       return false;
+
+    //clear the starting cell within the costmap because we know it can't be an obstacle
+    clearRobotCell(global_pose, mx, my);
+
+    planner_.setCostMap(cost_map_.getCharMap());
 
     int map_start[2];
     map_start[0] = mx;
@@ -157,6 +182,31 @@ namespace navfn {
       }
     }
 
+    //publish the plan for visualization purposes
+    publishPlan(plan, 0.0, 1.0, 0.0, 0.0);
     return success;
+  }
+
+  void NavfnROS::publishPlan(const std::vector<robot_msgs::PoseStamped>& path, double r, double g, double b, double a){
+    //given an empty path we won't do anything
+    if(path.empty())
+      return;
+
+    // Extract the plan in world co-ordinates, we assume the path is all in the same frame
+    robot_msgs::Polyline2D gui_path_msg;
+    gui_path_msg.header.frame_id = path[0].header.frame_id;
+    gui_path_msg.header.stamp = path[0].header.stamp;
+    gui_path_msg.set_points_size(path.size());
+    for(unsigned int i=0; i < path.size(); i++){
+      gui_path_msg.points[i].x = path[i].pose.position.x;
+      gui_path_msg.points[i].y = path[i].pose.position.y;
+    }
+
+    gui_path_msg.color.r = r;
+    gui_path_msg.color.g = g;
+    gui_path_msg.color.b = b;
+    gui_path_msg.color.a = a;
+
+    ros_node_.publish("~navfn/plan", gui_path_msg);
   }
 };

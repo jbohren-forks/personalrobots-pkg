@@ -42,6 +42,7 @@
 #include <costmap_2d/costmap_2d.h>
 #include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/Point.h>
+#include <robot_msgs/Polyline2D.h>
 #include <tf/transform_listener.h>
 #include <vector>
 #include <robot_msgs/Point.h>
@@ -55,7 +56,7 @@ namespace navfn {
        * @param  tf A reference to a TransformListener
        * @param  cos_map A reference to the costmap to use
        */
-      NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, const costmap_2d::Costmap2D& cost_map);
+      NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2D& cost_map);
 
       /**
        * @brief Given a goal pose in the world, compute a plan
@@ -79,15 +80,22 @@ namespace navfn {
        */
       double getPointPotential(const robot_msgs::Point& world_point);
 
+      /**
+       * @brief  Publish a path for visualization purposes
+       */
+      void publishPlan(const std::vector<robot_msgs::PoseStamped>& path, double r, double g, double b, double a);
+
       ~NavfnROS(){}
 
     private:
+      void clearRobotCell(const tf::Stamped<tf::Pose>& global_pose, unsigned int mx, unsigned int my);
       ros::Node& ros_node_;
       tf::TransformListener& tf_;
-      const costmap_2d::Costmap2D& cost_map_;
+      costmap_2d::Costmap2D& cost_map_;
       NavFn planner_;
       std::string global_frame_, robot_base_frame_;
       double transform_tolerance_; // timeout before transform errors
+      double inscribed_radius_, circumscribed_radius_, inflation_radius_;
   };
 };
 

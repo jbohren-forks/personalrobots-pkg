@@ -53,6 +53,7 @@
 #include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/Point.h>
+#include <robot_msgs/Polyline2D.h>
 
 #include <laser_scan/LaserScan.h>
 #include <tf/message_notifier.h>
@@ -81,7 +82,7 @@ namespace base_local_planner {
        * @param planner_map Used to size the map for the freespace controller... this will go away once a rolling window version of the point grid is in place
        */
       TrajectoryPlannerROS(ros::Node& ros_node, tf::TransformListener& tf,
-          const costmap_2d::Costmap2D& cost_map, std::vector<robot_msgs::Point> footprint_spec,
+          costmap_2d::Costmap2D& cost_map, std::vector<robot_msgs::Point> footprint_spec,
           const costmap_2d::Costmap2D* planner_map = NULL);
 
       /**
@@ -100,16 +101,18 @@ namespace base_local_planner {
 
       /**
        * @brief  Given the current position, orientation, and velocity of the robot, compute velocity commands to send to the base
-       * @param orig_global_plan The plan to pass to the controller
        * @param cmd_vel Will be filled with the velocity command to be passed to the robot base
-       * @param local_plan Will be set from the points of the selected trajectory for display purposes
        * @param observations A vector of updates from the robot's sensors in world space, is sometimes unused depending on the model
        * @return True if a valid trajectory was found, false otherwise
        */
-      bool computeVelocityCommands(const std::vector<robot_msgs::PoseStamped>& orig_global_plan, 
-          robot_msgs::PoseDot& cmd_vel,
-          std::vector<robot_msgs::PoseStamped>& local_plan,
+      bool computeVelocityCommands(robot_msgs::PoseDot& cmd_vel,
           const std::vector<costmap_2d::Observation>& observations = std::vector<costmap_2d::Observation>(0));
+
+      /**
+       * @brief  Update the plan that the controller is following
+       * @param orig_global_plan The plan to pass to the controller
+       */
+      void updatePlan(const std::vector<robot_msgs::PoseStamped>& orig_global_plan);
 
       /**
        * @brief  Returns the local goal the robot is pursuing
@@ -163,20 +166,45 @@ namespace base_local_planner {
        * @param y1 The first y point 
        * @param x2 The second x point 
        * @param y2 The second y point 
-       * @return 
        */
       double distance(double x1, double y1, double x2, double y2);
+
+      /**
+       * @brief  Trim off parts of the global plan that are far enough behind the robot
+       * @param global_pose The pose of the robot in the global frame
+       * @param plan The plan to be pruned
+       */
+      void prunePlan(const tf::Stamped<tf::Pose>& global_pose, std::vector<robot_msgs::PoseStamped>& plan);
+
+      /**
+       * @brief  Publishes the footprint of the robot for visualization purposes
+       * @param global_pose The pose of the robot in the global frame
+       */
+      void publishFootprint(const tf::Stamped<tf::Pose>& global_pose);
+
+      /**
+       * @brief  Clear the footprint of the robot in a given cost map
+       * @param global_pose The pose of the robot in the global frame
+       * @param cost_map The costmap to apply the clearing opertaion on
+       */
+      void clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose, costmap_2d::Costmap2D& cost_map);
+
+      /**
+       * @brief  Publish a plan for visualization purposes
+       */
+      void publishPlan(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a);
 
       void baseScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
       void tiltScanCallback(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& message);
       void odomCallback();
 
-
       WorldModel* world_model_; ///< @brief The world model that the controller will use
       TrajectoryPlanner* tc_; ///< @brief The trajectory controller
+      costmap_2d::Costmap2D& cost_map_; ///< @brief The costmap the controller will use
       tf::MessageNotifier<laser_scan::LaserScan>* base_scan_notifier_; ///< @brief Used to guarantee that a transform is available for base scans
       tf::MessageNotifier<laser_scan::LaserScan>* tilt_scan_notifier_; ///< @brief Used to guarantee that a transform is available for tilt scans
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
+      ros::Node& ros_node_; ///< @brief The ros node we're running under
       std::string global_frame_; ///< @brief The frame in which the controller will run
       laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
       boost::recursive_mutex obs_lock_; ///< @brief Lock for accessing data in callbacks safely
@@ -188,7 +216,9 @@ namespace base_local_planner {
       std::string robot_base_frame_; ///< @brief Used as the base frame id of the robot
       double rot_stopped_velocity_, trans_stopped_velocity_;
       double xy_goal_tolerance_, yaw_goal_tolerance_, min_in_place_vel_th_;
+      double inscribed_radius_, circumscribed_radius_, inflation_radius_; 
       bool goal_reached_;
+      std::vector<robot_msgs::PoseStamped> global_plan_;
   };
 
 };
