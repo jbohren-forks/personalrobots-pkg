@@ -64,10 +64,21 @@ static size_t animation_tick(0);
 
 GLUquadric * quadric(0);
 
+
 static void init_layout_one();
 static void init_layout_two();
 static void init_layout_three();
 static void init_layout_four();
+static void init_layout_five();
+typedef void (*init_layout_t)();
+static init_layout_t init_layout[] = {
+  init_layout_one,		// beware, this lies at index zero...
+  init_layout_two,
+  init_layout_three,
+  init_layout_four,
+  init_layout_five
+};
+
 static void draw();
 static void reshape(int width, int height);
 static void keyboard(unsigned char key, int mx, int my);
@@ -81,6 +92,7 @@ typedef enum {
 } animation_mode_t;
 
 static animation_mode_t animation_mode(ANIMATION_ON);
+static bool animation_reverse(false);
 
 
 namespace npm {
@@ -133,22 +145,11 @@ namespace mpbench {
       configptr = &config;
 
       // yes, this is a hack.
-      switch (layoutID) {
-      case 1:
-	init_layout_one();
-	break;
-      case 2:
-	init_layout_two();
-	break;
-      case 3:
-	init_layout_three();
-	break;
-      case 4:
-	init_layout_four();
-	break;
-      default:
-	errx(EXIT_FAILURE, "mpbench::gfx::display(): invalid layoutID %zu", layoutID);
-      }
+      --layoutID;		// if it was zero, it'll now be huge
+      static size_t nlayouts(sizeof(init_layout) / sizeof(init_layout_t));
+      if (layoutID >= nlayouts)
+	errx(EXIT_FAILURE, "mpbench::gfx::display(): invalid layoutID %zu", layoutID + 1);
+      init_layout[layoutID]();
       
       double x0, y0, x1, y1;
       configptr->world.getWorkspaceBounds(x0, y0, x1, y1);
@@ -195,12 +196,13 @@ namespace {
   class PlanDrawing: npm::Drawing {
   public:
     PlanDrawing(std::string const & name,
-		ssize_t task_id, ssize_t episode_id,
+		ssize_t task_id, ssize_t episode_id, ssize_t iteration_id,
 		bool detailed, bool animated);
     virtual void Draw();
     
     ssize_t const task_id;
     ssize_t const episode_id;
+    ssize_t const iteration_id;
     bool const detailed;
     bool const animated;
   };
@@ -246,7 +248,7 @@ void init_layout_one()
   
   new npm::TraversabilityDrawing("costmap", new CostmapWrapProxy(0));
   ////  new npm::TraversabilityDrawing("envwrap", new EnvWrapProxy());
-  new PlanDrawing("plan", -1, -1, false, false);
+  new PlanDrawing("plan", -1, -1, -1, false, false);
   
   npm::View * view;
   
@@ -297,7 +299,7 @@ void init_layout_two()
     for (int iy(1); iy >= 0; --iy, ++itask) {
       ostringstream pdname;
       pdname << "plan" << itask;
-      new PlanDrawing(pdname.str(), itask, -1, true, false);
+      new PlanDrawing(pdname.str(), itask, -1, -1, true, false);
       npm::View *
 	view(new npm::View(pdname.str(), npm::Instance<npm::UniqueManager<npm::View> >()));
       // beware of weird npm::View::Configure() param order: x, y, width, height
@@ -334,7 +336,7 @@ static void init_layout_three_or_four(bool detailed, bool animated)
 
   new npm::TraversabilityDrawing("costmap_dark", new CostmapWrapProxy(0),
 				 npm::TraversabilityDrawing::MINIMAL_DARK);
-  new PlanDrawing("planner", -1, -1, detailed, animated);
+  new PlanDrawing("planner", -1, -1, -1, detailed, animated);
   view = new npm::View("planner", npm::Instance<npm::UniqueManager<npm::View> >());
   // beware of weird npm::View::Configure() param order: x, y, width, height
   view->Configure(v_width, 0, v_width, 1);
@@ -356,6 +358,85 @@ void init_layout_three()
 void init_layout_four()
 {
   init_layout_three_or_four(false, true);
+}
+
+
+void init_layout_five()
+{
+  result::view3_t resultview;
+  try {
+    configptr->result.createView(result::TASK_ID, 0, numeric_limits<size_t>::max(),
+				 result::EPISODE_ID, 0, numeric_limits<size_t>::max(),
+				 result::ITERATION_ID, 0, numeric_limits<size_t>::max(),
+				 resultview);
+  }
+  catch (std::exception const & ee) {
+    errx(EXIT_FAILURE, "init_layout_five(): EXCEPTION %s", ee.what());
+  }
+  
+  size_t nplots(1);		// the first plot is just the travmap
+  for (result::view3_t::const_iterator itask(resultview.begin()); itask != resultview.end(); ++itask)
+    for (result::view2_t::const_iterator iepisode(itask->second.begin()); iepisode != itask->second.end(); ++iepisode) {
+      nplots += iepisode->second.size(); // add up the number of iterations for each episode and each task
+      
+      cout << "DBG itask: " << itask->first << " iepisode: " << iepisode->first << "   nplots += " << iepisode->second.size() << "\n";
+      
+    }
+  
+  size_t const ncols(static_cast<size_t>(ceil(sqrt(4.0 * nplots / 3.0))));
+  size_t nrows(nplots / ncols);
+  if (0 != nplots % ncols)
+    ++nrows;
+  
+  double x0, y0, x1, y1;
+  configptr->world.getWorkspaceBounds(x0, y0, x1, y1);
+  glut_aspect = ncols * (x1 - x0) / (y1 - y0) / nrows;
+  double const colwidth(1.0 / ncols);
+  double const rowheight(1.0 / nrows);
+  
+  new npm::StillCamera("travmap",
+		       x0, y0, x1, y1,
+   		       npm::Instance<npm::UniqueManager<npm::Camera> >());
+  new npm::TraversabilityDrawing("costmap", new CostmapWrapProxy(0));
+  npm::View * view(new npm::View("costmap", npm::Instance<npm::UniqueManager<npm::View> >()));
+  // beware of weird npm::View::Configure() param order: x, y, width, height
+  view->Configure(0, (nrows - 1) * rowheight, colwidth, rowheight);
+  view->SetCamera("travmap");
+  if ( ! view->AddDrawing("costmap"))
+    errx(EXIT_FAILURE, "no drawing called \"costmap\"");
+  
+  size_t ix(1);			// start at 1 because the travmap drawing comes at zero
+  size_t iy(nrows - 1);
+  new npm::TraversabilityDrawing("costmap_dark", new CostmapWrapProxy(0),
+				 npm::TraversabilityDrawing::MINIMAL_DARK);
+  for (result::view3_t::const_iterator itask(resultview.begin()); itask != resultview.end(); ++itask) {
+    size_t const task_id(itask->first);
+    for (result::view2_t::const_iterator iepisode(itask->second.begin()); iepisode != itask->second.end(); ++iepisode) {
+      size_t const episode_id(iepisode->first);
+      for (result::view1_t::const_iterator iiteration(iepisode->second.begin()); iiteration != iepisode->second.end(); ++iiteration) {
+	size_t const iteration_id(iiteration->first);
+	ostringstream pdname;
+	pdname << "plan_" << task_id << "_" << episode_id << "_" << iteration_id;
+	new PlanDrawing(pdname.str(), task_id, episode_id, iteration_id, false, true);
+	view = new npm::View(pdname.str(), npm::Instance<npm::UniqueManager<npm::View> >());
+	// beware of weird npm::View::Configure() param order: x, y, width, height
+	view->Configure(ix * colwidth, iy * rowheight, colwidth, rowheight);
+	view->SetCamera("travmap");
+	if ( ! view->AddDrawing("costmap_dark"))
+	  errx(EXIT_FAILURE, "no drawing called \"costmap_dark\"");
+	if ( ! view->AddDrawing(pdname.str()))
+	  errx(EXIT_FAILURE, "no drawing called \"%s\"", pdname.str().c_str());
+	
+	cout << "DBG " << pdname.str() << " ix=" << ix << " iy=" << iy << "\n";
+	
+	++ix;
+	if (ix >= ncols) {
+	  ix = 0;
+	  --iy;
+	}
+      }
+    }
+  }
 }
 
 
@@ -431,15 +512,27 @@ void keyboard(unsigned char key, int mx, int my)
       animation_mode = ANIMATION_OFF;
     else
       animation_mode = ANIMATION_ON;
-    break;    
+    break;
+  case '+':
+  case '>':
+    animation_reverse = false;
+    break;
+  case '-':
+  case '<':
+    animation_reverse = true;
+    break;
   }
 }
 
 
 void timer(int handle)
 {
-  if ((ANIMATION_ON == animation_mode) || (ANIMATION_STEP == animation_mode))
-    ++animation_tick;
+  if ((ANIMATION_ON == animation_mode) || (ANIMATION_STEP == animation_mode)) {
+    if (animation_reverse)
+      --animation_tick;
+    else
+      ++animation_tick;
+  }
   if (ANIMATION_STEP == animation_mode)
     animation_mode = ANIMATION_OFF;
   glutPostRedisplay();
@@ -451,13 +544,14 @@ namespace {
   
   PlanDrawing::
   PlanDrawing(std::string const & name,
-	      ssize_t _task_id, ssize_t _episode_id,
+	      ssize_t _task_id, ssize_t _episode_id, ssize_t _iteration_id,
 	      bool _detailed, bool _animated)
     : npm::Drawing(name,
 		   "the plans that ... were planned",
 		   npm::Instance<npm::UniqueManager<npm::Drawing> >()),
       task_id(_task_id),
       episode_id(_episode_id),
+      iteration_id(_iteration_id),
       detailed(_detailed),
       animated(_animated)
   {
@@ -485,7 +579,10 @@ namespace {
       // trace of thin footprints or inscribed circles along path
       double const llen(configptr->inscribedRadius / configptr->resolution / 2);
       size_t const skip(static_cast<size_t>(ceil(llen)));
-      glColor3d(0.5, 1, 0);
+      if (animated)
+	glColor3d(0.25, 0.5, 0);
+      else
+	glColor3d(0.5, 1, 0);
       glLineWidth(1);
       if (plan) {
 	for (wpi_t iw(plan->begin()); iw != plan->end(); /* this can segfault: iw += skip */) {
@@ -517,19 +614,28 @@ namespace {
       glPushMatrix();
       glTranslated(result.door->px, result.door->py, 0);
       glRotated(180 * result.door->th_shut / M_PI, 0, 0, 1);
-      glColor3d(0.2, 0.2, 1);
+      if (animated)
+	glColor3d(0.1, 0.1, 0.5);
+      else
+	glColor3d(0.2, 0.2, 1);
       GLint const slices(12);
       GLint const loops(1);
       GLdouble const start(90); // in deg, clockwise, zero is along y-axis
       double const sweep_rad(result.door->th_open - result.door->th_shut);
       GLdouble const sweep(-180 * sweep_rad / M_PI); // in deg, clockwise, from start angle
-      glLineWidth(3);
+      if (animated)
+	glLineWidth(1);
+      else
+	glLineWidth(3);
       gluPartialDisk(quadric, result.door->width, result.door->width,
 		     slices, loops, start, sweep);
       glLineWidth(1);
       gluPartialDisk(quadric, result.door->dhandle, result.door->dhandle,
 		     slices, loops, start, sweep);
-      glLineWidth(3);
+      if (animated)
+	glLineWidth(1);
+      else
+	glLineWidth(3);
       glBegin(GL_LINES);
       glVertex2d(result.door->width, 0);
       glVertex2d(0, 0);
@@ -545,8 +651,14 @@ namespace {
     episode::startspec const & start(result.start);
     glPushMatrix();
     glTranslated(start.px, start.py, 0);
-    glColor3d(1, 1, 0);
-    glLineWidth(3);
+    if (animated) {
+      glColor3d(1, 1, 0);
+      glLineWidth(1);
+    }
+    else {
+      glColor3d(0.5, 0.5, 0);
+      glLineWidth(3);
+    }
     glRotated(180 * start.pth / M_PI, 0, 0, 1);
     drawFootprint();
     glPopMatrix();
@@ -565,7 +677,10 @@ namespace {
     glPopMatrix();
     
     if (plan && (plan->size() > 0)) {
-      glColor3d(0.5, 1, 0.5);
+      if (animated)
+	glColor3d(0.25, 0.5, 0.25);
+      else
+	glColor3d(0.5, 1, 0.5);
       if (detailed)
 	glLineWidth(3);		// make it stand out among the rest
       else
@@ -576,10 +691,15 @@ namespace {
       glEnd();
       if (animated) {
 	shared_ptr<waypoint_s> wpt((*plan)[animation_tick % plan->size()]);
-	glColor3d(0.8, 1, 0.1);
-	glLineWidth(2);
 	glPushMatrix();
 	glTranslated(wpt->x, wpt->y, 0);
+	glPointSize(3);
+	glColor3d(0.5, 1, 0.5);
+	glBegin(GL_POINTS);
+	glVertex2d(0, 0);
+	glEnd();
+	glColor3d(0.8, 1, 0.1);
+	glLineWidth(2);
 	if (wpt->ignoreTheta()) {
 	  gluDisk(wrap_glu_quadric_instance(),
 		  configptr->inscribedRadius,
@@ -613,10 +733,10 @@ namespace {
     }
     size_t iteration_begin(0);
     size_t iteration_end(numeric_limits<size_t>::max());
-    //     if (iteration_id >= 0) {
-    //       iteration_begin = static_cast<size_t>(iteration_id);
-    //       iteration_end = iteration_begin + 1;
-    //     }
+    if (iteration_id >= 0) {
+      iteration_begin = static_cast<size_t>(iteration_id);
+      iteration_end = iteration_begin + 1;
+    }
     result::view3_t view;
     try {
       configptr->result.createView(result::TASK_ID, task_begin, task_end,
