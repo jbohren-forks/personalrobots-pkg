@@ -43,8 +43,8 @@ namespace navfn {
     ros_node_.advertise<robot_msgs::Polyline2D>("~navfn/plan", 1);
 
     //read parameters for the planner
-    ros_node_.param("~/navfn/global_frame", global_frame_, std::string("map"));
-    ros_node_.param("~/navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
+    ros_node_.param("~/navfn/costmap/global_frame", global_frame_, std::string("map"));
+    ros_node_.param("~/navfn/costmap/robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~/navfn/transform_tolerance", transform_tolerance_, 0.1);
 
     //we'll get the parameters for the robot radius from the costmap we're associated with
