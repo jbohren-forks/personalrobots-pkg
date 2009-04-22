@@ -61,11 +61,11 @@
 
 namespace plugs_core{
 
-class ServoToOutletAction: public robot_actions::Action<std_msgs::Empty, std_msgs::Empty>
+class PlugInAction: public robot_actions::Action<std_msgs::Empty, std_msgs::Empty>
 {
 public:
-  ServoToOutletAction(ros::Node& node);
-  ~ServoToOutletAction();
+  PlugInAction(ros::Node& node);
+  ~PlugInAction();
 
   robot_actions::ResultStatus execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback);
 

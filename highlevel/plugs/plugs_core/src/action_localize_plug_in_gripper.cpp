@@ -36,7 +36,8 @@
 #include <plugs_core/action_localize_plug_in_gripper.h>
 
 
-using namespace plugs_core;
+namespace plugs_core
+{
 
 LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
   robot_actions::Action<robot_msgs::PoseStamped, std_msgs::Empty>("localize_plug_in_gripper"),
@@ -189,4 +190,4 @@ void LocalizePlugInGripperAction::setToolFrame()
 
   return;
 }
-
+}

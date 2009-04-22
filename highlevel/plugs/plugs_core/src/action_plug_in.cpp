@@ -33,7 +33,7 @@
  *********************************************************************/
 
 
-#include <plugs_core/action_servo_to_outlet.h>
+#include <plugs_core/action_plug_in.h>
 
 
 namespace plugs_core {
@@ -42,7 +42,7 @@ const double MIN_STANDOFF = 0.035;
 const double SUCCESS_THRESHOLD = 0.025;
 enum {MEASURING, MOVING, INSERTING, FORCING, HOLDING};
 
-ServoToOutletAction::ServoToOutletAction(ros::Node& node) :
+PlugInAction::PlugInAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("servo_to_outlet"),
   action_name_("servo_to_outlet"),
   node_(node),
@@ -70,23 +70,23 @@ ServoToOutletAction::ServoToOutletAction(ros::Node& node) :
 
  TF_.reset(new tf::TransformListener(node));
 // notifier_.reset(new tf::MessageNotifier<robot_msgs::PoseStamped>(
-//               TF_.get(), &node, ServoToOutletAction::plugMeasurementCallback, "~pose", "outlet_pose", 100));
+//               TF_.get(), &node, PlugInAction::plugMeasurementCallback, "~pose", "outlet_pose", 100));
  notifier_.reset(new tf::MessageNotifier<robot_msgs::PoseStamped>(
                TF_.get(), &node,\
-boost::bind(&ServoToOutletAction::plugMeasurementCallback, this, _1),
-//ServoToOutletAction::plugMeasurementCallback,
+boost::bind(&PlugInAction::plugMeasurementCallback, this, _1),
+//PlugInAction::plugMeasurementCallback,
 "~pose", "outlet_pose", 100));
 
   tff_msg_.header.frame_id = "outlet_pose";
 
 };
 
-ServoToOutletAction::~ServoToOutletAction()
+PlugInAction::~PlugInAction()
 {
   if(detector_) delete detector_;
 };
 
-robot_actions::ResultStatus ServoToOutletAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
+robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 {
   reset();
   detector_->activate();
@@ -94,7 +94,7 @@ robot_actions::ResultStatus ServoToOutletAction::execute(const std_msgs::Empty& 
   return waitForDeactivation(feedback);
 }
 
-void ServoToOutletAction::reset()
+void PlugInAction::reset()
 {
   last_standoff_ = 1.0e10;
   g_state_ = MEASURING;
@@ -104,7 +104,7 @@ void ServoToOutletAction::reset()
 }
 
 
-void ServoToOutletAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg)
+void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg)
 {
   if (!isActive())
     return;
@@ -242,7 +242,7 @@ void ServoToOutletAction::plugMeasurementCallback(const tf::MessageNotifier<robo
   return;
 }
 
-void ServoToOutletAction::measure()
+void PlugInAction::measure()
 {
   if (!isActive())
     return;
@@ -263,7 +263,7 @@ void ServoToOutletAction::measure()
   return;
 }
 
-void ServoToOutletAction::move()
+void PlugInAction::move()
 {
   if (!isActive())
     return;
@@ -282,7 +282,7 @@ void ServoToOutletAction::move()
   return;
 }
 
-void ServoToOutletAction::insert()
+void PlugInAction::insert()
 {
   if (!isActive())
     return;
@@ -302,7 +302,7 @@ void ServoToOutletAction::insert()
   return;
 }
 
-void ServoToOutletAction::force()
+void PlugInAction::force()
 {
   if (!isActive())
     return;
@@ -329,7 +329,7 @@ void ServoToOutletAction::force()
   return;
 }
 
-void ServoToOutletAction::hold()
+void PlugInAction::hold()
 {
   if (!isActive())
     return;

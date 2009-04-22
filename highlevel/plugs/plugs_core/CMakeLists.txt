@@ -13,6 +13,6 @@ rospack_add_executable(action_runner src/action_untuck_arms.cpp
 						           src/action_detect_outlet_fine.cpp
 						           src/action_detect_outlet_coarse.cpp
                        src/action_localize_plug_in_gripper.cpp
-                       src/action_servo_to_outlet.cpp
+                       src/action_plug_in.cpp
                        src/action_stow_plug.cpp 
 				               src/action_runner.cpp)

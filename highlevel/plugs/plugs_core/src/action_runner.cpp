@@ -42,7 +42,7 @@
 #include <plugs_core/action_detect_outlet_fine.h>
 #include <plugs_core/action_detect_outlet_coarse.h>
 #include <plugs_core/action_localize_plug_in_gripper.h>
-#include <plugs_core/action_servo_to_outlet.h>
+#include <plugs_core/action_plug_in.h>
 #include <plugs_core/action_stow_plug.h>
 
 // State Msgs
@@ -76,7 +76,7 @@ int main(int argc, char** argv)
   DetectOutletFineAction detect_outlet_fine;
   DetectOutletCoarseAction detect_outlet_coarse;
   LocalizePlugInGripperAction localize_plug_in_gripper(node);
-  ServoToOutletAction servo_to_outlet(node);
+  PlugInAction plug_in(node);
   StowPlugAction stow_plug;
 
 
@@ -86,7 +86,7 @@ int main(int argc, char** argv)
   runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_fine);
   runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_coarse);
   runner.connect<robot_msgs::PoseStamped, robot_actions::LocalizePlugInGripperState, std_msgs::Empty>(localize_plug_in_gripper);
-  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(servo_to_outlet);
+  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(plug_in);
   runner.connect<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
 
 
