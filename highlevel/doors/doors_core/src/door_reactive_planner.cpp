@@ -234,7 +234,7 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
 
   best_path_costmap_frame.resize(0);
   distance_to_centerline = (start.x-goal_.x)*vector_along_door_.x + (start.y-goal_.y)*vector_along_door_.y;
-  ROS_INFO("Start: %f %f, goal: %f %f, dc: %f",start.x,start.y,goal_.x,goal_.y,distance_to_centerline); 
+  ROS_DEBUG("Start: %f %f, goal: %f %f, dc: %f",start.x,start.y,goal_.x,goal_.y,distance_to_centerline); 
   for(int i=0; i < num_explore_paths_; i++)
   {
     linear_path.clear();

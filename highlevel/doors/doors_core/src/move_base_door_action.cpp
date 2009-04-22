@@ -317,16 +317,7 @@ namespace nav
           plan_out.points[0].positions[1] = plan_in[index_plan].y;
           plan_out.points[0].positions[2] = plan_in[index_plan].th;
           plan_out.points[0].time = 0.0;        
-/*          plan_out.set_points_size(index_plan+1);
-        for(int i=0; i< index_plan+1; i++)
-        {
-          plan_out.points[i].set_positions_size(3);
-          plan_out.points[i].positions[0] = plan_in[i].x;
-          plan_out.points[i].positions[1] = plan_in[i].y;
-          plan_out.points[i].positions[2] = plan_in[i].th;
-          plan_out.points[i].time = 0.0;
-        }
-*/        ROS_INFO("Plan in had %d points, plan out has %d points",(int)plan_in.size(),(int)plan_out.points.size());
+        ROS_DEBUG("Plan in had %d points, plan out has %d points",(int)plan_in.size(),(int)plan_out.points.size());
       }
       else
       {
@@ -336,17 +327,7 @@ namespace nav
           plan_out.points[0].positions[1] = plan_in.back().y;
           plan_out.points[0].positions[2] = plan_in.back().th;
           plan_out.points[0].time = 0.0;        
-/*        plan_out.set_points_size(plan_in.size());
-        for(int i=0; i<(int) plan_in.size(); i++)
-        {
-          plan_out.points[i].set_positions_size(3);
-          plan_out.points[i].positions[0] = plan_in[i].x;
-          plan_out.points[i].positions[1] = plan_in[i].y;
-          plan_out.points[i].positions[2] = plan_in[i].th;
-          plan_out.points[i].time = 0.0;
-        }
-*/
-      ROS_INFO("Sending empty plan");
+          ROS_DEBUG("Sending empty plan");
       }
     }
     ros_node_.publish(control_topic_name_,plan_out);
