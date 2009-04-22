@@ -1,6 +1,5 @@
 <launch>
 
-  <param name="/door_reactive_planner/costmap/static_map" value="false" />
 
   <master auto="start"/>
   <group name="wg">
@@ -8,16 +7,16 @@
 
       <param name="min_distance_from_obstacles" value="0.05" />
       <param name="max_waypoint_distance" value="0.025" />
-      <param name="max_waypoint_rot_distance" value="0.1" />
+      <param name="max_waypoint_rot_distance" value="0.2" />
       <param name="max_explore_distance" value="2.0" />
-      <param name="horizontal_explore_distance" value="0.15" />
-      <param name="max_explore_delta_angle" value="1.2" />
+      <param name="horizontal_explore_distance" value="0.08" />
+      <param name="max_explore_delta_angle" value="1.0" />
       <param name="door_goal_distance" value="0.7" />
       <param name="num_explore_paths" value="32" />
       <param name="choose_straight_line_trajectory" value="true" type="bool" />
-      <param name="inscribed_radius" value="0.305" />
+      <param name="inscribed_radius" value="0.315" />
       <param name="circumscribed_radius" value="0.46" />
-      <param name="inflation_radius" value="0.70" />
+      <param name="inflation_radius" value="0.46" />
       <param name="control_frame" value="odom" />
 
       <!-- Start Costmap Parameters -->
@@ -37,12 +36,15 @@
       <param name="costmap/base_scan/data_type" value="LaserScan" />
       <param name="costmap/base_scan/clearing" value="true" />
 
-      <param name="costmap/rolling_window" value="true" />
+      <param name="costmap/rolling_window" value="false" />
+      <param name="costmap/static_map" value="false" />
 
       <!-- begin only used if static map is set to false -->
       <param name="costmap/width" value="6.0" />
       <param name="costmap/height" value="6.0" />
-      <param name="costmap/resolution" value="0.025" />
+      <param name="costmap/origin_x" value="-3.0" />
+      <param name="costmap/origin_y" value="-3.0" />
+      <param name="costmap/resolution" value="0.01" />
       <!-- end only used if static map is set to false -->
 
       <param name="costmap/cost_scaling_factor" value="1.0" />

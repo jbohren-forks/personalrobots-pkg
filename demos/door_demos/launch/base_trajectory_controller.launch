@@ -1,7 +1,7 @@
 <launch>
 <param name="base_controller/odom_publish_rate" value="30.0"/>
 
-  <param name="base/trajectory_controller/velocity_scaling_factor" type="double" value="0.15"/>
+  <param name="base/trajectory_controller/velocity_scaling_factor" type="double" value="0.20"/>
   <param name="base/trajectory_controller/trajectory_wait_timeout" type="double" value=".5"/>
   <param name="base/trajectory_controller/diagnostics_publish_delta_time" type="double" value="1"/>
 

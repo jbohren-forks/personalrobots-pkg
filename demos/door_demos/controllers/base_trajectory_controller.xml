@@ -8,8 +8,8 @@
 <!-- old controller -->
   <controller name="base_controller" topic="base_controller" type="BaseControllerNode">
     <map name="velocity_control" flag="base_control">
-      <elem key="kp_speed">1.0</elem>
-      <elem key="kp_caster_steer">1</elem>
+      <elem key="kp_speed">0.5</elem>
+      <elem key="kp_caster_steer">4.0</elem>
       <elem key="timeout">0.2</elem>
 
       <elem key="max_x_dot">0.7</elem>
@@ -86,19 +86,19 @@
 
     <controller name="base_x_controller" type="BasePIDController">
       <joint name="base_x" limit="1.0" type="PRISMATIC_CONTINUOUS">
-        <pid p="0.05" d="0." i="0.0" iClamp="0.0" />
+        <pid p="0.5" d="0." i="0.0" iClamp="0.0" />
       </joint>
     </controller>
 
     <controller name="base_y_controller" type="BasePIDController">
       <joint name="base_y" limit="1.0" type="PRISMATIC_CONTINUOUS">
-        <pid p="0.05" d="0." i="0.0" iClamp="0.0" />
+        <pid p="0.5" d="0." i="0.0" iClamp="0.0" />
       </joint>
     </controller>
 
     <controller name="base_w_controller" type="BasePIDController">
       <joint name="base_theta" limit="1.0" type="ROTARY_CONTINUOUS">
-        <pid p="0.05" d="0." i="0.0" iClamp="0.0" />
+        <pid p="0.5" d="0." i="0.0" iClamp="0.0" />
       </joint>
     </controller>
 
