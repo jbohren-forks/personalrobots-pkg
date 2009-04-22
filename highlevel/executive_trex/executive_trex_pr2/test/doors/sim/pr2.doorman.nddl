@@ -1,7 +1,7 @@
 #include "doors/door_controller.nddl"
 #include "test/locations.nddl"
 
-DoorController door_controller = new DoorController(Internal, false);
+DoorController door_controller = new DoorController(Internal);
 
 close();
 

@@ -181,9 +181,9 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_open_door_without_grasp"))
     runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door_without_grasp);
 
-  executive_trex_pr2::SimpleStubAction<robot_msgs::Door> release_door("release_door");
-  if (getComponentParam("/trex/enable_release_door"))
-    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(release_door);
+  executive_trex_pr2::SimpleStubAction<robot_msgs::Door> release_handle("release_handle");
+  if (getComponentParam("/trex/enable_release_handle"))
+    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(release_handle);
 
   /* Action stubs for plugs */
   executive_trex_pr2::StubAction<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");

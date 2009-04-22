@@ -18,7 +18,7 @@ float GRASP_POSITION_ERROR = 0.1;
  */
 class DoorController extends AgentTimeline {
 
-  bool integrated; // When true, force interaction wth MoveBehavior
+  //bool integrated; // When true, force interaction wth MoveBehavior
 
   /**
    * The parameters here 
@@ -82,27 +82,30 @@ class DoorController extends AgentTimeline {
 
   DoorController(Mode _mode){
     super(_mode, "Holds");
-    integrated = false;
+    //integrated = false;
   }
-
+  /*
   DoorController(Mode _mode, bool _integrated){
     super(_mode, "Holds");
     integrated = _integrated;
   }
+  */
 };
 
 
 /**
  * This rule fires essentially a TR-style decision tree to select
  * the next action to take. The action choices are(in reverse order):
- * - ReleaseDoor
+ * - ReleaseHandle
  * - OpenDoor
  * - GraspHandle
- * - MoveBase (x 2)
+ * - MoveBaseLocal
+ * - MoveBaseThruDoorway
+ * - UpdateCostMap
  * - OpenDoorWithoutGrasp
  * - DetectDoor
  * - DetectHandle
- * - CheckDoor
+ * - CheckPath
  *
  * Note the pattern that uses a flexible temporal interval (end_bounds varaible) for constraining the relationshop between the
  * completion time of the selected action, and the end time of this control step. This flexibility accounts for
@@ -146,8 +149,8 @@ DoorController::Holds {
       else {
 	// If true or maybe then we should release the door just to be safe. Could do a sensing action
 	// but I am expecting that releasing the door doubles as a sensing action
-	// ReleaseDoor([start, +inf], end + [-1, 1]] == Active;
-	starts_before(ReleaseDoor.Active cmd);
+	// ReleaseHandle([start, +inf], end + [-1, 1]] == Active;
+	starts_before(ReleaseHandle.Active cmd);
 	concurrent(cmd.end, end_bounds);
       }
     }
@@ -266,7 +269,8 @@ DoorController::Holds {
  */
 DoorController::Holds{
   // We will assume default values on commitment based on predecessor. We really want these values to be bound. These values carry
-  // forward from priors as they are updated by actions and we thus assume inertia
+  // forward from priors as they are updated by actions and we thus assume inertia (if we had the handle before and have no information
+  // to the contrary, then we still have the handle).
   met_by(Holds p);
   defaultOnCommit(active, p.active);
   defaultOnCommit(found_door, p.found_door);
@@ -307,7 +311,7 @@ DoorController::Holds{
  * feedback parameters on success or failure
  ***********************************************************************/
 
-// Derive input bounds form the behavior
+// Derive input bounds from the behavior
 DoorManipulationBehavior::Active{
   // DoorController(start) == Holds(door_state);
   any(DoorController.Holds dc);
@@ -325,7 +329,7 @@ DoorManipulationBehavior::Inactive{
   }
 }
 
-ReleaseDoor::Inactive{
+ReleaseHandle::Inactive{
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
     eq(dc.have_handle, FALSE);

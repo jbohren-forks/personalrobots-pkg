@@ -163,13 +163,13 @@ class OpenDoorWithoutGrasp extends DoorManipulationBehavior {
 /**
  * Behavior to extract the gripper from a grasp on the handle
  */
-class ReleaseDoor extends DoorManipulationBehavior {
+class ReleaseHandle extends DoorManipulationBehavior {
 
   // Redeclare because of bug in parser
   predicate Active{}
   predicate Inactive{}
 
-  ReleaseDoor(Mode _mode){
+  ReleaseHandle(Mode _mode){
     super(_mode);
   }
 };

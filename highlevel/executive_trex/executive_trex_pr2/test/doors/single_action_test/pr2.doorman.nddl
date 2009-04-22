@@ -1,5 +1,5 @@
 /**
- * Execute a single external action
+ * Execute a test of external actions in sequence
  */
 #include "doors/imports.nddl"
 #include "mechanism_control/exports.nddl"
@@ -15,8 +15,9 @@ rejectable(detect_handle.Inactive feedback_detect_handle);
 rejectable(move_base.Active cmd_move_to_grasp);
 rejectable(grasp_handle.Active cmd_grasp_handle);
 rejectable(open_door.Active cmd_open_door);
+rejectable(release_handle.Active cmd_release_handle);
 
-// Bind order
+// Impose a temporal order
 cmd_tuck_arms before cmd_detect_door;
 cmd_detect_door meets feedback_detect_door;
 cmd_detect_door before cmd_detect_handle;
@@ -24,8 +25,18 @@ cmd_detect_handle meets feedback_detect_handle;
 cmd_detect_handle before cmd_move_to_grasp;
 cmd_move_to_grasp before cmd_grasp_handle;
 cmd_grasp_handle before cmd_open_door;
+cmd_open_door before cmd_release_handle;
 
-eq(feedback_detect_door.status, SUCCESS);
+// All must succeed
+eq(SUCCESS,
+   cmd_tuck_arms.status,
+   cmd_detect_door.status,
+   cmd_detect_handle.status,
+   cmd_move_to_grasp.status,
+   cmd_grasp_handle.status,
+   cmd_open_door.status,
+   cmd_release_handle.status);
+
 
 // Input is for door detection
 cmd_detect_door.frame_id = "base_footprint";

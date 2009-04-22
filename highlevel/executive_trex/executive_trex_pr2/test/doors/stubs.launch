@@ -9,7 +9,7 @@
   <param name="/trex/enable_detect_handle" value="true"/>
   <param name="/trex/enable_grasp_handle" value="true"/>
   <param name="/trex/enable_open_door" value="true"/>
-  <param name="/trex/enable_release_door" value="true"/>
+  <param name="/trex/enable_release_handle" value="true"/>
   <param name="/trex/enable_move_base" value="true"/>
   <param name="/trex/enable_open_door_without_grasp" value="true"/>
   <param name="/trex/enable_check_path" value="true"/>

@@ -67,7 +67,7 @@ CheckPath::Inactive{
 }
 
 // External controllers specific to the door domain
-ReleaseDoor release_door = new ReleaseDoor(Internal);
+ReleaseHandle release_handle = new ReleaseHandle(Internal);
 OpenDoor open_door = new OpenDoor(Internal);
 GraspHandle grasp_handle = new GraspHandle(Internal);
 OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
@@ -75,7 +75,6 @@ DetectDoor detect_door = new DetectDoor(Internal);
 DetectHandle detect_handle = new DetectHandle(Internal);
 CheckPath check_path = new CheckPath(Internal);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(Internal);
-
 
 // Simulation Control Variables
 DoorwayClearSV doorway_clear_sv = new DoorwayClearSV();

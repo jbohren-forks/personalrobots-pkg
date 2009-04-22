@@ -19,7 +19,7 @@ RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(Extern
 
 // Additional actions for the doro domain
 DoorsTuckArms doors_tuck_arms = new DoorsTuckArms(External);
-ReleaseDoor release_door = new ReleaseDoor(External);
+ReleaseHandle release_handle = new ReleaseHandle(External);
 OpenDoor open_door = new OpenDoor(External);
 GraspHandle grasp_handle = new GraspHandle(External);
 DetectHandle detect_handle = new DetectHandle(External);
@@ -45,6 +45,11 @@ DetectHandle::Active{
 }
 
 GraspHandle::Active{
+  contained_by(right_arm_mechanism.use_composite_cartesian_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
+
+ReleaseHandle::Active{
   contained_by(right_arm_mechanism.use_composite_cartesian_controller);
   contained_by(right_gripper_mechanism.use_effort_controller);
 }
