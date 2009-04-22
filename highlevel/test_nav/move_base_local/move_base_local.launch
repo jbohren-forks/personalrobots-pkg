@@ -11,7 +11,7 @@
       <param name="robot_base_frame" value="base_link" />
 
       <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
-      <rosparam file="$(find test_nav)/config/local_controller_params.yaml" command="load" />
+      <rosparam file="$(find test_nav)/move_base_local/base_local_planner_params.yaml" command="load" />
 
     </node>
     <!--

@@ -16,8 +16,8 @@
 
       <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="navfn" />
       <rosparam file="$(find test_nav)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
-      <rosparam file="$(find test_nav)/config/navfn_params.yaml" command="load" />
-      <rosparam file="$(find test_nav)/config/base_local_planner_params.yaml" command="load" />
+      <rosparam file="$(find test_nav)/move_base/navfn_params.yaml" command="load" />
+      <rosparam file="$(find test_nav)/move_base/base_local_planner_params.yaml" command="load" />
 
     </node>
     <!--
