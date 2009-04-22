@@ -40,6 +40,8 @@ PlugTracker::PlugTracker(ros::Node &node)
     return;
   }
 
+  node_.param("~image_service", image_service_, std::string("/prosilica/poll"));
+
   std::string policy;
   node_.param("~roi_policy", policy, std::string("WholeFrame"));
   if (policy == std::string("WholeFrame"))
@@ -229,7 +231,7 @@ void PlugTracker::spin()
     if (roi_policy_ == GripperPosition)
       setRoiToGripperPosition();
     
-    if (ros::service::call("/prosilica/poll", req_, res_)) {
+    if (ros::service::call(image_service_, req_, res_)) {
       processCamInfo();
       processImage();
       usleep(100000);

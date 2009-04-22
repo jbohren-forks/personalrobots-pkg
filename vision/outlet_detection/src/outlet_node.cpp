@@ -28,6 +28,7 @@ private:
 
   prosilica_cam::PolledImage::Request req_;
   prosilica_cam::PolledImage::Response res_;
+  std::string image_service_;
   image_msgs::Image& img_;
   image_msgs::CamInfo& cam_info_;
   image_msgs::CvBridge img_bridge_;
@@ -48,6 +49,7 @@ public:
     : ros::Node("outlet_detector"), img_(res_.image), cam_info_(res_.cam_info),
       tf_broadcaster_(*this), tf_listener_(*this), K_(NULL)
   {
+    param("~image_service", image_service_, std::string("/prosilica/poll"));
     param("~display", display_, true);
     param("~service_mode", service_mode_, false);
 
@@ -166,7 +168,7 @@ public:
       CvRect outlet_roi = cvRect(point[0] - ROI_SIZE/2, point[1] - ROI_SIZE/2,
                                  ROI_SIZE, ROI_SIZE);
       setRoi( fitToFrame(outlet_roi) );
-      if (!ros::service::call("/prosilica/poll", req_, res_))
+      if (!ros::service::call(image_service_, req_, res_))
         return false; // something bad happened
       processCamInfo();
 
@@ -178,7 +180,7 @@ public:
 
     // Slow fallback: search full frame
     req_.region_x = req_.region_y = req_.width = req_.height = 0;
-    if (!ros::service::call("/prosilica/poll", req_, res_))
+    if (!ros::service::call(image_service_, req_, res_))
       return false;
     processCamInfo();
     return detectOutlet(od_res.pose);
@@ -261,7 +263,7 @@ public:
 
     while (ok())
     {
-      if (ros::service::call("/prosilica/poll", req_, res_)) {
+      if (ros::service::call(image_service_, req_, res_)) {
         processCamInfo();
         processImage();
         // TODO: figure out what's actually causing banding
