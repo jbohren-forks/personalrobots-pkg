@@ -9,11 +9,11 @@ rospack_add_boost_directories()
 
 
 # Library
-rospack_add_library(nav src/move_base_action.cpp)
+rospack_add_library(nav src/move_base.cpp)
 rospack_link_boost(nav thread)
 
 # move_base
-rospack_add_executable(bin/move_base src/move_base_action.cpp)
+rospack_add_executable(bin/move_base src/move_base.cpp)
 
 #local controller
 rospack_add_executable(bin/move_base_local src/move_base_local.cpp)
