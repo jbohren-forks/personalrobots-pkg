@@ -177,14 +177,16 @@ class NavStackTest(unittest.TestCase):
     
     def stateInput(self, state):
         if self.publish_goal:
+          state_eul = euler_from_quaternion([state.goal.pose.orientation.x,state.goal.pose.orientation.y,state.goal.pose.orientation.z,state.goal.pose.orientation.w])
           print "target: ", self.target_x, ",", self.target_y, ",", self.target_t
-          print "state.goal: (", state.goal.x, ",", state.goal.y, ",", state.goal.th,") status:",state.status.value, " comment:" , state.status.comment
-          state_eul = euler_from_quaternion(state.goal.pose.orientation)
+          print "state.goal: (", state.goal.pose.position.x, ",", state.goal.pose.position.y, ",", state.goal.pose.position.z \
+                           ,",", state_eul[0], ",", state_eul[1], ",", state_eul[2] \
+                           ,") status:",state.status.value, " comment:" , state.status.comment
           if abs(state.goal.pose.position.x-self.target_x)<FLOAT_TOL and \
              abs(state.goal.pose.position.y-self.target_y)<FLOAT_TOL and \
              abs(shortest_angular_distance(state_eul[2],self.target_t))<FLOAT_TOL and \
              ( state.status.value == 4 ):
-            print "state goal is published: ", state.goal.pose.position.x, ",", state.goal.pose.position.y, ",", state_eul
+            print "state goal has been published: ", state.goal.pose.position.x, ",", state.goal.pose.position.y, ",", state_eul[2]
             self.publish_goal = False
     
     def cmd_velInput(self, cmd_vel):
