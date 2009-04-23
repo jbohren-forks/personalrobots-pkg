@@ -57,7 +57,6 @@
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/VisualizationMarker.h"
-#include "robot_msgs/Planner2DGoal.h"
 
 
 #include <point_cloud_mapping/geometry/angles.h>
