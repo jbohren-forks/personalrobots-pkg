@@ -1,4 +1,5 @@
-<node pkg="amcl" type="amcl" name="amcl" respawn="true" machine="four">
+<launch>
+<node pkg="amcl" type="amcl" name="amcl" respawn="true" machine="three">
   <remap from="scan" to="base_scan" />
   <param name="laser_max_beams" value="30"/>
   <param name="min_particles" value="100"/>
@@ -29,3 +30,4 @@
   <param name="robot_y_start" value="0.0"/>
   <param name="robot_th_start" value="0.0"/>
 </node>
+</launch>
