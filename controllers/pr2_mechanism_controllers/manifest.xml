@@ -23,7 +23,6 @@
   <depend package="angles" />
   <depend package="control_toolbox" />
   <depend package="filters" />
-  <depend package="libKinematics" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
