@@ -8,7 +8,6 @@
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <depend package="tinyxml" />
-  <depend package="robot_kinematics" />
   <depend package="eigen" />
   <depend package="rosconsole" />
   <depend package="tf" />

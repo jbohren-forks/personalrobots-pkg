@@ -22,6 +22,7 @@
   <depend package="joy" />
   <depend package="eigen" />
   <depend package="filters" />
+  <depend package="robot_kinematics" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

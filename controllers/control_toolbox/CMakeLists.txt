@@ -7,7 +7,6 @@ gensrv()
 rospack_add_library(control_toolbox
  src/pid.cpp
  src/pid_gains_setter.cpp
- src/serialchain_model.cpp
  src/sine_sweep.cpp
  src/ramp_output.cpp
  src/base_position_pid.cpp

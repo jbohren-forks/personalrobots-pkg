@@ -23,8 +23,6 @@ set(_srcs
     src/joint_ud_calibration_controller.cpp
     src/joint_limit_calibration_controller.cpp
     src/joint_blind_calibration_controller.cpp
-    src/lqr_controller.cpp
-    src/ros_serialchain_model.cpp
     src/joint_chain_constraint_controller.cpp
     src/trigger_controller.cpp
 )
