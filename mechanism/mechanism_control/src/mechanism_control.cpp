@@ -111,13 +111,21 @@ void MechanismControl::publishDiagnostics()
         double m = extract_result<tag::max>(controllers[i].diagnostics->acc);
         controllers[i].diagnostics->max1.push_back(m);
         controllers[i].diagnostics->max = std::max(m, controllers[i].diagnostics->max);
+        std::string state;
+        if (controllers[i].c->state_ == RUNNING)
+          state = "Running";
+        else if (controllers[i].c->state_ == INITIALIZED)
+          state = "Stopped";
+        else
+          state = "Unknown";
         ADD_STRING_FMT(controllers[i].name,
-                       "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max)",
+                       "%.4f (avg) %.4f (stdev) %.4f (max) %.4f (1-min max) %.4f (life max) %s (state)",
                        mean(controllers[i].diagnostics->acc)*1e6,
                        sqrt(variance(controllers[i].diagnostics->acc))*1e6,
                        m*1e6,
                        *std::max_element(controllers[i].diagnostics->max1.begin(), controllers[i].diagnostics->max1.end())*1e6,
-                       controllers[i].diagnostics->max*1e6);
+                       controllers[i].diagnostics->max*1e6,
+                       state.c_str());
 
         controllers[i].diagnostics->acc = blank_statistics;  // clear
       }

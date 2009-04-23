@@ -135,6 +135,7 @@ private:
     double max;
     boost::circular_buffer<double> max1;
 
+
     Diagnostics() : max(0), max1(60) {}
   };
 
