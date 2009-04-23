@@ -65,9 +65,6 @@ SlamGMapping::SlamGMapping()
 
   got_first_scan_ = false;
 
-  node_->subscribe("base_scan", scan_, &SlamGMapping::laser_cb, this, -1);
-  node_->advertiseService("dynamic_map", &SlamGMapping::map_cb, this);
-  
   // Parameters used by our GMapping wrapper
   double tmp;
   node_->param("~/map_udpate_interval", tmp, 5.0);
@@ -100,6 +97,9 @@ SlamGMapping::SlamGMapping()
   node_->param("~/llsamplestep", llsamplestep_, 0.01);
   node_->param("~/lasamplerange", lasamplerange_, 0.005);
   node_->param("~/lasamplestep", lasamplestep_, 0.005);
+
+  node_->subscribe("base_scan", scan_, &SlamGMapping::laser_cb, this, -1);
+  node_->advertiseService("dynamic_map", &SlamGMapping::map_cb, this);
 }
 
 SlamGMapping::~SlamGMapping()
