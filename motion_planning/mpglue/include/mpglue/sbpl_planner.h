@@ -63,13 +63,16 @@ namespace mpglue {
 			   std::string const & title,
 			   std::string const & prefix) const;
     
-    virtual const char * const getClassName() const;
+    virtual char const * getClassName() const;
     
     virtual void dumpSubclassXML(std::ostream & os,
 				 std::string const & prefix) const;
   };
   
   
+  /**
+     Specialized waypoint for the SBPL door planner.
+  */
   struct door_waypoint_s: public waypoint_s {
     door_waypoint_s(waypoint_s const & wpt, double _min_door_angle, double _cost)
       : waypoint_s(wpt), min_door_angle(_min_door_angle), cost(_cost) {}
@@ -82,6 +85,7 @@ namespace mpglue {
     std::vector<int> valid_angle; // for dbg... might be removed at some point
     std::vector<int> valid_cost;
     std::vector<unsigned char> valid_interval;
+    std::vector<int> overlap_angle;
   };
   
   

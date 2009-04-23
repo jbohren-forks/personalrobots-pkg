@@ -37,6 +37,9 @@
 #include <sbpl/headers.h>
 #include <sstream>
 
+// just for a quick hack
+#include <set>
+
 using namespace boost;
 using namespace std;
 
@@ -79,7 +82,7 @@ namespace mpglue {
   }
   
   
-  const char * const SBPLPlannerStats::
+  char const * SBPLPlannerStats::
   getClassName() const
   {
     return "mpglue::SBPLPlannerStats";
@@ -216,10 +219,19 @@ namespace mpglue {
 	    wrp.y = yy;
 	    wrp.theta = th;
 	    doorenv->GetValidDoorAngles(wrp, &doorwpt->valid_angle, &doorwpt->valid_cost, &doorwpt->valid_interval);
+	    { // very quickly hacked overlap detection: these are not the droids you are looking for
+	      std::set<int> foo;
+	      for (size_t jj(0); jj < doorwpt->valid_angle.size(); ++jj) {
+		int const angle(doorwpt->valid_angle[jj]);
+		if (foo.end() != foo.find(angle))
+		  doorwpt->overlap_angle.push_back(angle);
+		foo.insert(angle);
+	      }
+	    }
 	    plan->push_back(doorwpt);
 	    
-	    printf("DBG added doorwpt: (%6.3f, %6.3f, %6.3f) min angle = %6.3f in interval %u  (N valid angles: %zu)\n",
-		   xx, yy, th, angle, (unsigned int) door_interval, doorwpt->valid_angle.size());
+	    printf("DBG doorwpt (%6.3f %6.3f %6.3f)  angle %6.3f  int %u  %zu valid  %zu overlap\n",
+		   xx, yy, th, angle, (unsigned int) door_interval, doorwpt->valid_angle.size(), doorwpt->overlap_angle.size());
 	    
 	  }
 	}

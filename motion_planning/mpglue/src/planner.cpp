@@ -151,7 +151,7 @@ namespace mpglue {
   }
   
   
-  const char * const CostmapPlannerStats::
+  char const * CostmapPlannerStats::
   getClassName() const
   {
     return "mpglue::CostmapPlannerStats";
@@ -347,7 +347,7 @@ namespace mpglue {
   }
   
   
-  const char * const AnytimeCostmapPlannerStats::
+  char const * AnytimeCostmapPlannerStats::
   getClassName() const
   {
     return "mpglue::AnytimeCostmapPlannerStats";
