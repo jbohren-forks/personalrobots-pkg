@@ -35,8 +35,11 @@
 #define CARTESIAN_TWIST_CONTROLLER_H
 
 #include <vector>
+#include <boost/scoped_ptr.hpp>
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
+#include <kdl/chainfksolver.hpp>
+#include <kdl/chainiksolvervel_pinv.hpp>
 #include <ros/node.h>
 #include <robot_msgs/Twist.h>
 #include <mechanism_model/controller.h>
@@ -44,7 +47,6 @@
 #include <robot_mechanism_controllers/cartesian_wrench_controller.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
 #include <control_toolbox/pid.h>
-#include <boost/scoped_ptr.hpp>
 
 namespace controller {
 

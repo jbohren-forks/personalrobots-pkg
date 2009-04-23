@@ -31,9 +31,9 @@
  * Author: Wim Meeussen
  */
 
-#include <algorithm>
-#include <robot_kinematics/robot_kinematics.h>
 #include "robot_mechanism_controllers/cartesian_twist_controller_ik.h"
+#include <algorithm>
+#include <kdl/chainfksolvervel_recursive.hpp>
 
 
 using namespace KDL;

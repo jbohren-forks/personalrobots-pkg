@@ -34,8 +34,8 @@
 
 
 #include <algorithm>
-#include <robot_kinematics/robot_kinematics.h>
 #include <mechanism_control/mechanism_control.h>
+#include "kdl/chainfksolverpos_recursive.hpp"
 #include "robot_mechanism_controllers/cartesian_pose_controller.h"
 
 

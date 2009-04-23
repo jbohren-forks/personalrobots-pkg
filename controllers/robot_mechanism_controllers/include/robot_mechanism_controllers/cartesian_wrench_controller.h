@@ -67,7 +67,7 @@ public:
   KDL::Wrench wrench_desi_;
 
 private:
-  bool publishDiagnostics(int level, const string& message);
+  bool publishDiagnostics(int level, const std::string& message);
 
   ros::Node* node_;
   std::string controller_name_;

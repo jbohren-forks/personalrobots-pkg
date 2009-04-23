@@ -91,11 +91,11 @@ public:
     // get controller
     controller::Controller* controller = getControllerByName(name);
     if (controller == NULL) return false;
-    
+
     // cast controller to ControllerType
     ControllerType* controller_type = dynamic_cast< ControllerType* >(controller);
     if (controller_type == NULL)  return false;
-  
+
     // copy result
     c = controller_type;
     return true;

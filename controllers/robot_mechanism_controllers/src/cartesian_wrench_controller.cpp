@@ -32,7 +32,6 @@
  */
 
 #include <algorithm>
-#include <robot_kinematics/robot_kinematics.h>
 #include <robot_mechanism_controllers/cartesian_wrench_controller.h>
 
 
@@ -156,7 +155,7 @@ void CartesianWrenchController::update()
 
 
 
-bool CartesianWrenchController::publishDiagnostics(int level, const string& message)
+bool CartesianWrenchController::publishDiagnostics(int level, const std::string& message)
 {
   if (diagnostics_time_ + diagnostics_interval_ < ros::Time::now())
   {

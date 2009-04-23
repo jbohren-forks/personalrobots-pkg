@@ -36,7 +36,7 @@
 /*! \class controller::JointChainConstraintController
     \brief Adds joint position constraints to any connected chain of joints.
 
-    Wrenches are in the cartesian frame in the root frame on the tip frame. 
+    Wrenches are in the cartesian frame in the root frame on the tip frame.
 
     Example config:<br>
 
@@ -51,6 +51,9 @@
 #define JOINT_CHAIN_CONSTRAINT_CONTROLLER_H
 
 #include <vector>
+#include <cstdio>
+#include <cstring>
+#include <string>
 #include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
 #include <kdl/chainjnttojacsolver.hpp>
@@ -63,15 +66,11 @@
 #include "mechanism_model/chain.h"
 
 #include "tf/transform_datatypes.h"
-#include <stdio.h>
-#include <string.h>
 #include "misc_utils/advertised_service_guard.h"
-
 
 #include "Eigen/Geometry"
 #include "Eigen/LU"
 #include "Eigen/Core"
-#include "robot_kinematics/robot_kinematics.h"
 
 
 namespace controller {
@@ -88,7 +87,7 @@ public:
   int joint_chain_index_;
   double joint_error_;
   bool remove_;
-  
+
   control_toolbox::Pid pid_;
 };
 
@@ -97,7 +96,7 @@ class JointChainConstraintController
 {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-  
+
   JointChainConstraintController();
   ~JointChainConstraintController();
 
@@ -107,14 +106,14 @@ public:
    * \param tip_name The tip of the chain.
    * \param *robot The robot.
    */
-  bool init(mechanism::RobotState *robot, const std::string& root_name, 
+  bool init(mechanism::RobotState *robot, const std::string& root_name,
             const std::string& tip_name, const std::string& controller_name);
 
   void update();
-  
+
   // input of the controller
   KDL::Wrench wrench_desired_;
-  
+
 
 private:
   void computeConstraintTorques();
@@ -136,22 +135,22 @@ private:
   KDL::ChainJntToJacSolver *jnt_to_jac_solver_;
   KDL::JntArray jnt_pos_, jnt_eff_;
   KDL::Jacobian chain_kdl_jacobian_;
-  
+
   Eigen::MatrixXf identity_;
   Eigen::MatrixXf chain_eigen_jacobian_;
   Eigen::MatrixXf task_torque_;
-  
+
   // joint constraint matrices and vectors
   Eigen::MatrixXf joint_constraint_torque_;
   Eigen::MatrixXf joint_constraint_jacobian_;
   Eigen::MatrixXf joint_constraint_null_space_;
-  
+
   double last_time_;
-  
+
   bool initialized_;
 
   AdvertisedServiceGuard change_constraints_guard_;
-  
+
 };
 
 
@@ -176,7 +175,7 @@ class JointChainConstraintControllerNode : public Controller
 
   robot_msgs::Wrench wrench_msg_;
 
-  
+
 };
 
 } // namespace

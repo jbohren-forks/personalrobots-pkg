@@ -39,26 +39,24 @@
 #include "mechanism_model/chain.h"
 #include "kdl/chain.hpp"
 #include "kdl/frames.hpp"
+#include "kdl/chainfksolver.hpp"
 #include "ros/node.h"
 #include "robot_msgs/Wrench.h"
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/Transform.h"
 #include "robot_mechanism_controllers/PlugInternalState.h"
 #include "robot_srvs/SetPoseStamped.h"
-#include <control_toolbox/pid.h>
+#include "control_toolbox/pid.h"
 #include "misc_utils/subscription_guard.h"
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
 #include "tf/transform_listener.h"
 #include "misc_utils/advertised_service_guard.h"
-
-#include <realtime_tools/realtime_publisher.h>
-
+#include "realtime_tools/realtime_publisher.h"
 
 #include "Eigen/Geometry"
 #include "Eigen/LU"
 #include "Eigen/Core"
-#include "robot_kinematics/robot_kinematics.h"
 
 #include <robot_msgs/VisualizationMarker.h>
 
@@ -80,7 +78,7 @@ public:
   void setToolOffset(const tf::Transform &);
 
   std::string root_name_;
-   
+
   // input of the controller
   KDL::Wrench wrench_desi_;
   Eigen::Matrix<float,6,1> task_wrench_;
@@ -133,10 +131,10 @@ private:
   double f_limit_max;
   double last_time_;
   bool initialized_;
-  
-  
-  
-  
+
+
+
+
   control_toolbox::Pid roll_pid_;       /**< Internal PID controller. */
   control_toolbox::Pid pitch_pid_;       /**< Internal PID controller. */
   control_toolbox::Pid yaw_pid_;       /**< Internal PID controller. */

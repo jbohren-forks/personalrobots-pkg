@@ -39,6 +39,7 @@
 #include "mechanism_model/chain.h"
 #include "kdl/chain.hpp"
 #include "kdl/frames.hpp"
+#include "kdl/chainfksolver.hpp"
 #include "ros/node.h"
 #include "robot_msgs/Wrench.h"
 #include "misc_utils/subscription_guard.h"
@@ -48,8 +49,6 @@
 #include "joy/Joy.h"
 #include "Eigen/LU"
 #include "Eigen/Core"
-#include "robot_kinematics/robot_kinematics.h"
-
 #include <robot_msgs/VisualizationMarker.h>
 
 
@@ -87,10 +86,10 @@ private:
   Eigen::MatrixXf joint_constraint_force_;
   Eigen::MatrixXf joint_constraint_jac_;
   Eigen::MatrixXf joint_constraint_null_space_;
-  
+
   Eigen::MatrixXf task_jac_;
   Eigen::MatrixXf identity_;
-  Eigen::MatrixXf identity_joint_; 
+  Eigen::MatrixXf identity_joint_;
   Eigen::MatrixXf constraint_null_space_;
   Eigen::MatrixXf constraint_torq_;
   Eigen::MatrixXf joint_constraint_torq_;
@@ -107,8 +106,8 @@ private:
   double f_x_max;
   double f_r_max;
   double f_pose_max;
-  double f_limit_max; 
-  
+  double f_limit_max;
+
   double desired_roll_;
   double desired_pitch_;
   double desired_yaw_;

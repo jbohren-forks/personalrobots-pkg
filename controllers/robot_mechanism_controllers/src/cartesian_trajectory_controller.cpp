@@ -34,8 +34,8 @@
 
 
 #include <algorithm>
-#include <robot_kinematics/robot_kinematics.h>
 #include <mechanism_control/mechanism_control.h>
+#include "kdl/chainfksolverpos_recursive.hpp"
 #include "robot_mechanism_controllers/cartesian_trajectory_controller.h"
 
 
@@ -116,7 +116,7 @@ bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot_state, 
     ROS_ERROR("CartesianTrajectoryController: could not get instance to mechanism control");
     return false;
   }
-  string output;
+  std::string output;
   if (!node_->getParam(controller_name_+"/output", output)){
     ROS_ERROR("CartesianTrajectoryController: No ouptut name found on parameter server");
     return false;

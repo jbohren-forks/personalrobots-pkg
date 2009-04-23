@@ -32,8 +32,8 @@
  */
 
 #include <algorithm>
-#include <robot_kinematics/robot_kinematics.h>
 #include <mechanism_control/mechanism_control.h>
+#include "kdl/chainfksolvervel_recursive.hpp"
 #include "robot_mechanism_controllers/cartesian_twist_controller.h"
 
 using namespace KDL;
@@ -89,7 +89,7 @@ bool CartesianTwistController::initXml(mechanism::RobotState *robot_state, TiXml
   chain_.toKDL(kdl_chain_);
 
   // create solver
-  jnt_to_twist_solver_.reset(new ChainFkSolverVel_recursive(kdl_chain_));
+  jnt_to_twist_solver_.reset(new KDL::ChainFkSolverVel_recursive(kdl_chain_));
   jnt_posvel_.resize(kdl_chain_.getNrOfJoints());
 
   // constructs 3 identical pid controllers: for the x,y and z translations
@@ -113,7 +113,7 @@ bool CartesianTwistController::initXml(mechanism::RobotState *robot_state, TiXml
     ROS_ERROR("CartesianTwistController: could not get instance to mechanism control");
     return false;
   }
-  string output;
+  std::string output;
   if (!node_->getParam(controller_name_+"/output", output)){
     ROS_ERROR("CartesianTwistController: No ouptut name found on parameter server");
     return false;

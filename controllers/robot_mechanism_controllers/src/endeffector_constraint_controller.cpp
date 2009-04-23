@@ -30,10 +30,13 @@
 /*
  * Author: Melonee Wise
  */
+
+#include "robot_mechanism_controllers/endeffector_constraint_controller.h"
+#include <algorithm>
 #include "angles/angles.h"
 #include "urdf/parser.h"
-#include <algorithm>
-#include "robot_mechanism_controllers/endeffector_constraint_controller.h"
+#include "kdl/chainfksolverpos_recursive.hpp"
+#include "kdl/chainjnttojacsolver.hpp"
 
 #define DEBUG 0 // easy debugging
 

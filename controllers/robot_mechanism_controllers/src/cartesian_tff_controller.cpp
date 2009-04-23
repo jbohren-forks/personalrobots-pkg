@@ -31,10 +31,10 @@ n *       contributors may be used to endorse or promote products derived from
  * Author: Wim Meeussen
  */
 
-#include <algorithm>
-#include <robot_kinematics/robot_kinematics.h>
-#include <mechanism_control/mechanism_control.h>
 #include "robot_mechanism_controllers/cartesian_tff_controller.h"
+#include <algorithm>
+#include <mechanism_control/mechanism_control.h>
+#include <kdl/chainfksolvervel_recursive.hpp>
 
 
 using namespace KDL;
@@ -131,7 +131,7 @@ bool CartesianTFFController::initXml(mechanism::RobotState *robot_state, TiXmlEl
     ROS_ERROR("CartesianTFFController: could not get instance to mechanism control");
     return false;
   }
-  string output;
+  std::string output;
   if (!node_->getParam(controller_name_+"/output", output)){
     ROS_ERROR("CartesianTFFController: No ouptut name found on parameter server");
     return false;
@@ -171,7 +171,7 @@ bool CartesianTFFController::starting()
   }
 
   // set initial position, twist
-  FrameVel frame_twist; 
+  FrameVel frame_twist;
   chain_.getVelocities(robot_state_->joint_states_, jnt_posvel_);
   jnt_to_twist_solver_->JntToCart(jnt_posvel_, frame_twist);
   pose_meas_old_ = frame_twist.value();
@@ -193,7 +193,7 @@ void CartesianTFFController::update()
   chain_.getVelocities(robot_state_->joint_states_, jnt_posvel_);
 
   // get cartesian twist and pose
-  FrameVel frame_twist; 
+  FrameVel frame_twist;
   jnt_to_twist_solver_->JntToCart(jnt_posvel_, frame_twist);
   pose_meas_ = frame_twist.value();
   twist_meas_ = pose_meas_.M.Inverse() * (frame_twist.deriv());
@@ -212,7 +212,7 @@ void CartesianTFFController::update()
     else if (mode_[i] == tff_msg_.POSITION)
       wrench_desi_[i] = twist_to_wrench_[i] * (pos_pid_controller_[i].updatePid(position_[i] - value_[i], dt));
   }
-  
+
   // send wrench to wrench controller
   wrench_controller_->wrench_desi_ = (pose_meas_.M * wrench_desi_);
 
