@@ -201,7 +201,8 @@ namespace mpglue {
     if (1 == stats_.status) {
       plan.reset(new waypoint_plan_t());
       // XXXX to do: can this be generalized?
-      EnvironmentNAVXYTHETADOOR * doorenv(dynamic_cast<EnvironmentNAVXYTHETADOOR *>(environment_->getDSI()));
+      EnvironmentNAVXYTHETADOOR *
+	doorenv(dynamic_cast<EnvironmentNAVXYTHETADOOR *>(environment_->getDSI()));
       if (doorenv) {
 	for (size_t ii(0); ii < solution.size(); ++ii) {
 	  int xc, yc, thc;
@@ -212,14 +213,18 @@ namespace mpglue {
 	    // XXXX to do: should extract angle from state instead of recomputing...
 	    double angle, door_angle_cost;
 	    doorenv->GetMinCostDoorAngle(xx, yy, th, door_interval, angle, door_angle_cost);
-	    shared_ptr<door_waypoint_s> doorwpt(new door_waypoint_s(xx, yy, th, dr, dtheta, angle, door_angle_cost));
+	    shared_ptr<door_waypoint_s>
+	      doorwpt(new door_waypoint_s(xx, yy, th, dr, dtheta,
+					  angle, door_interval, door_angle_cost));
 	    // dbg
 	    EnvNAVXYTHETALAT3Dpt_t wrp;
 	    wrp.x = xx;
 	    wrp.y = yy;
 	    wrp.theta = th;
-	    doorenv->GetValidDoorAngles(wrp, &doorwpt->valid_angle, &doorwpt->valid_cost, &doorwpt->valid_interval);
-	    { // very quickly hacked overlap detection: these are not the droids you are looking for
+	    doorenv->GetValidDoorAngles(wrp, &doorwpt->valid_angle,
+					&doorwpt->valid_cost, &doorwpt->valid_interval);
+	    { // XXXX very quickly hacked overlap detection: these are
+	      // not the codes you are looking for
 	      std::set<int> foo;
 	      for (size_t jj(0); jj < doorwpt->valid_angle.size(); ++jj) {
 		int const angle(doorwpt->valid_angle[jj]);
@@ -230,8 +235,9 @@ namespace mpglue {
 	    }
 	    plan->push_back(doorwpt);
 	    
-	    printf("DBG doorwpt (%6.3f %6.3f %6.3f)  angle %6.3f  int %u  %zu valid  %zu overlap\n",
-		   xx, yy, th, angle, (unsigned int) door_interval, doorwpt->valid_angle.size(), doorwpt->overlap_angle.size());
+	    printf("DBG doorwpt (%6.3f %6.3f %6.3f) angle %6.3f int %u (%zu valid %zu overlap)\n",
+		   xx, yy, th, angle, (unsigned int) door_interval,
+		   doorwpt->valid_angle.size(), doorwpt->overlap_angle.size());
 	    
 	  }
 	}

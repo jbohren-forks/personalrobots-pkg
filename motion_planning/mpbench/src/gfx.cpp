@@ -730,12 +730,21 @@ namespace {
 	    glPushMatrix();
 	    glRotated(180 * result.door->th_shut / M_PI, 0, 0, 1);
 	    glLineWidth(1);
-	    glColor3d(0.2, 0.2, 1);
+	    glColor3d(0.1, 0.1, 0.5);
 	    glBegin(GL_LINES);
 	    for (size_t ii(0); ii < doorwpt->valid_angle.size(); ++ii) {
 	      glVertex2d(0, 0);
 	      glVertex2d(result.door->width * cos(M_PI * doorwpt->valid_angle[ii] / 180.0),
 			 result.door->width * sin(M_PI * doorwpt->valid_angle[ii] / 180.0));
+	    }
+	    glEnd();
+	    // highlight the overlapping ones
+	    glColor3d(0.2, 0.2, 1);
+	    glBegin(GL_LINES);
+	    for (size_t ii(0); ii < doorwpt->overlap_angle.size(); ++ii) {
+	      glVertex2d(0, 0);
+	      glVertex2d(result.door->width * cos(M_PI * doorwpt->overlap_angle[ii] / 180.0),
+			 result.door->width * sin(M_PI * doorwpt->overlap_angle[ii] / 180.0));
 	    }
 	    glEnd();
 	    glPopMatrix();
@@ -744,7 +753,11 @@ namespace {
 	    glPushMatrix();
 	    glRotated(180 * doorwpt->min_door_angle / M_PI, 0, 0, 1);
 	    glLineWidth(3);
-	    glColor3d(0.6, 0.6, 1);
+	    // magentaish if interval 0, blueish otherwise
+	    if (0 == doorwpt->plan_interval)
+	      glColor3d(0.8, 0, 1);
+	    else
+	      glColor3d(0.6, 0.6, 1);
 	    glBegin(GL_LINES);
 	    glVertex2d(0, 0);
 	    glVertex2d(result.door->width, 0);
@@ -752,7 +765,6 @@ namespace {
 	    // circle around the handle
 	    glLineWidth(1);
 	    glTranslated(result.door->dhandle, 0, 0);
-	    glColor3d(0.6, 0.6, 1);
 	    gluDisk(wrap_glu_quadric_instance(),
 		    0.1, 0.1, 36, 1);
 	    glPopMatrix();
