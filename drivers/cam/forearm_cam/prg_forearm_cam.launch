@@ -4,7 +4,7 @@
     <param name="ip_address" type="str" value="10.68.7.68"/>
     <param name="serial_number" type="int" value="4"/>
     <param name="video_mode" type="str" value="640x480x30"/>
-    <!--param name="frame_id" type="str" value="???"/-->
+    <param name="frame_id" type="str" value="r_forearm_cam_optical_frame"/>
     <param name="do_colorize" type="bool" value="True"/>
     <param name="do_rectify" type="bool" value="True"/>
   </group>
