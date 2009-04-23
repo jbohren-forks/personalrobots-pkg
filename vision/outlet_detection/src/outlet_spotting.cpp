@@ -76,6 +76,7 @@
 #include "robot_actions/action_runner.h"
 #include "robot_actions/DetectOutletState.h"
 
+#include <point_cloud_assembler/BuildCloudAngle.h>
 
 #include <boost/thread.hpp>
 
@@ -113,6 +114,9 @@ public:
 };
 
 
+static const double scan_speed  = 0.1; // [m/sec]
+static const double scan_height = 0.4; //[m]
+
 class OutletSpotting : public ros::Node
 {
 public:
@@ -131,8 +135,8 @@ public:
 	robot_msgs::PointCloud cloud;
 	robot_msgs::PointCloud cloud_fetch;
 
-	robot_msgs::PointCloud laser_cloud;
-	robot_msgs::PointCloud laser_cloud_fetch;
+//	robot_msgs::PointCloud laser_cloud;
+//	robot_msgs::PointCloud laser_cloud_fetch;
 
 //	robot_msgs::PoseStamped outlet_pose;
 
@@ -147,8 +151,8 @@ public:
 	TopicSynchronizer<OutletSpotting> sync;
 
 
-	boost::mutex clound_point_mutex;
-	boost::condition_variable cloud_point_cv;
+//	boost::mutex clound_point_mutex;
+//	boost::condition_variable cloud_point_cv;
 
 	boost::mutex cv_mutex;
 	boost::condition_variable images_cv;
@@ -221,7 +225,7 @@ private:
 
 		sync.ready();
 
-		subscribe("full_cloud", laser_cloud_fetch, &OutletSpotting::laser_cloud_callback, 1);
+//		subscribe("full_cloud", laser_cloud_fetch, &OutletSpotting::laser_cloud_callback, 1);
     }
 
     void unsubscribeFromData()
@@ -233,7 +237,7 @@ private:
         unsubscribe("stereo/disparity_info");
         unsubscribe("stereo/right/cam_info");
         unsubscribe("stereo/cloud");
-        unsubscribe("full_cloud");
+//        unsubscribe("full_cloud");
     }
 
 
@@ -710,6 +714,36 @@ private:
     }
 
 
+
+
+    bool getLaserScan(PointStamped outlet_location, PointCloud& laser_scan)
+    {
+    	ROS_INFO("OutletSpotter: Getting laser scan...");
+    	tf_->transformPoint("base_footprint", outlet_location, outlet_location);
+
+    	// get laser height
+    	tf::Stamped<tf::Transform> tilt_stage;
+    	tf_->lookupTransform("base_footprint", "laser_tilt_link", ros::Time(), tilt_stage);
+    	double laser_height = tilt_stage.getOrigin()[2];
+    	double outlet_height = outlet_location.point.z;
+    	double dist = outlet_location.point.x;
+    	double outlet_bottom = outlet_height-(scan_height/2.0);
+    	double outlet_top = outlet_height+(scan_height/2.0);
+
+    	point_cloud_assembler::BuildCloudAngle::Request req_pointcloud;
+    	point_cloud_assembler::BuildCloudAngle::Response res_pointcloud;
+    	req_pointcloud.angle_begin = -atan2(outlet_top - laser_height, dist);
+    	req_pointcloud.angle_end = atan2(laser_height - outlet_bottom, dist);
+    	req_pointcloud.duration = scan_height/scan_speed;
+    	if (!ros::service::call("point_cloud_srv/single_sweep_cloud", req_pointcloud, res_pointcloud)){
+    		return false;
+    	}
+
+    	laser_scan = res_pointcloud.cloud;
+    	return true;
+    }
+
+
 	bool getPoseStamped(const CvRect& r, const CvPoint& p, PoseStamped& pose)
 	{
 		CvPoint cp = p;
@@ -734,23 +768,39 @@ private:
 
 		ROS_INFO("OutletSpotter: Found outlet bbox, I'm waiting for cloud point.");
 
-		boost::unique_lock<boost::mutex> lock(clound_point_mutex);
-		// waiting for the cloud point
-		while (!have_cloud_point_) {
-			cloud_point_cv.wait(lock);
+//		boost::unique_lock<boost::mutex> lock(clound_point_mutex);
+
+//		// waiting for the cloud point
+//		while (!have_cloud_point_) {
+//			cloud_point_cv.wait(lock);
+//		}
+
+
+		PointCloud laser_scan;
+		bool laser_found;
+		try {
+			laser_found = getLaserScan(ps_stereo, laser_scan);
+		}
+		catch(tf::TransformException & ex){
+			ROS_ERROR("Transform exception: %s\n", ex.what());
+			return false;
+		}
+
+		if (!laser_found) {
+			ROS_ERROR("OutletSpotter: Cannot get laser scan, aborting detection");
 		}
 
 		ROS_INFO("OutletSpotter: computing normal.");
 		// got a cloud point
 		PointStamped ps_cloud;
         try {
-            tf_->transformPoint(laser_cloud.header.frame_id, ps_stereo, ps_cloud);
+            tf_->transformPoint(laser_scan.header.frame_id, ps_stereo, ps_cloud);
         }
         catch(tf::TransformException & ex){
             ROS_ERROR("Transform exception: %s\n", ex.what());
         	return false;
         }
-        PointCloud outlet_vecinity = outletVecinity(laser_cloud, ps_cloud, 0.2);
+        PointCloud outlet_vecinity = outletVecinity(laser_scan, ps_cloud, 0.2);
 
         // fit a plate in the outlet cloud
         vector<int> indices(outlet_vecinity.pts.size());
@@ -770,7 +820,7 @@ private:
 
         PointStamped viewpoint;
         try {
-            tf_->transformPoint(laser_cloud.header.frame_id, stereo_viewpoint, viewpoint);
+            tf_->transformPoint(laser_scan.header.frame_id, stereo_viewpoint, viewpoint);
         }
         catch(tf::TransformException & ex){
             ROS_ERROR("Transform exception: %s\n", ex.what());
@@ -790,8 +840,8 @@ private:
         PoseStamped temp_pose;
 
         // fill the outlet pose
-        temp_pose.header.frame_id = laser_cloud.header.frame_id;
-        temp_pose.header.stamp = laser_cloud.header.stamp;
+        temp_pose.header.frame_id = laser_scan.header.frame_id;
+        temp_pose.header.stamp = laser_scan.header.stamp;
 
         btVector3 position(ps_cloud.point.x,ps_cloud.point.y,ps_cloud.point.z);
         btVector3 normal(coeff[0],coeff[1],coeff[2]);
@@ -988,18 +1038,18 @@ private:
     	return found;
     }
 
-    /**
-     *
-     */
-	void laser_cloud_callback()
-	{
-		boost::lock_guard<boost::mutex> lock(clound_point_mutex);
-		have_cloud_point_ = true;
-		ROS_INFO("OutletSpotter: received cloud point");
-		laser_cloud = laser_cloud_fetch;
-
-		cloud_point_cv.notify_all();
-	}
+//    /**
+//     *
+//     */
+//	void laser_cloud_callback()
+//	{
+//		boost::lock_guard<boost::mutex> lock(clound_point_mutex);
+//		have_cloud_point_ = true;
+//		ROS_INFO("OutletSpotter: received cloud point");
+////		laser_cloud = laser_cloud_fetch;
+//
+//		cloud_point_cv.notify_all();
+//	}
 
 
 	void image_cb_all(ros::Time t)
