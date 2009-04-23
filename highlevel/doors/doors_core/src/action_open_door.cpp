@@ -47,6 +47,129 @@ static const string fixed_frame = "odom_combined";
 
 
 
+// --------------
+// UNLATCH HANDLE
+// --------------
+UnlatchHandleAction::UnlatchHandleAction(Node& node) :
+  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("unlatch_handle"),
+  node_(node)
+{
+  node_.advertise<robot_msgs::TaskFrameFormalism>("r_arm_cartesian_tff_controller/command", 10);
+};
+
+
+
+UnlatchHandleAction::~UnlatchHandleAction()
+{
+  node_.unadvertise("r_arm_cartesian_tff_controller/command");
+};
+
+
+
+robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
+{ 
+  ROS_INFO("UnlatchHandleAction: execute");
+
+  // stop
+  tff_stop_.mode.vel.x = tff_stop_.FORCE;
+  tff_stop_.mode.vel.y = tff_stop_.FORCE;
+  tff_stop_.mode.vel.z = tff_stop_.FORCE;
+  tff_stop_.mode.rot.x = tff_stop_.FORCE;
+  tff_stop_.mode.rot.y = tff_stop_.FORCE;
+  tff_stop_.mode.rot.z = tff_stop_.FORCE;
+  
+  tff_stop_.value.vel.x = 0.0;
+  tff_stop_.value.vel.y = 0.0;
+  tff_stop_.value.vel.z = 0.0;
+  tff_stop_.value.rot.x = 0.0;
+  tff_stop_.value.rot.y = 0.0;
+  tff_stop_.value.rot.z = 0.0;
+  
+  // turn handle
+  tff_handle_.mode.vel.x = tff_handle_.FORCE;
+  tff_handle_.mode.vel.y = tff_handle_.FORCE;
+  tff_handle_.mode.vel.z = tff_handle_.FORCE;
+  tff_handle_.mode.rot.x = tff_handle_.FORCE;
+  tff_handle_.mode.rot.y = tff_handle_.FORCE;
+  tff_handle_.mode.rot.z = tff_handle_.POSITION;
+  
+  tff_handle_.value.vel.x = 10.0;
+  tff_handle_.value.vel.y = 0.0;
+  tff_handle_.value.vel.z = 0.0;
+  tff_handle_.value.rot.x = 0.0;
+  tff_handle_.value.rot.y = 0.0;
+  tff_handle_.value.rot.z = 0.0;
+  
+  // start monitoring tf position
+  node_.subscribe("r_arm_cartesian_tff_controller/state/position", tff_msg_,  &UnlatchHandleAction::tffCallback, this, 1);
+  Duration timeout = Duration().fromSec(3.0);
+  Duration poll = Duration().fromSec(0.1);
+  Time start_time = ros::Time::now();
+  tff_state_received_ = false;
+  while (!tff_state_received_){
+    if (start_time + timeout < ros::Time::now()){
+      ROS_ERROR("UnlatchHandleAction: failed to receive tff state");
+      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
+      return robot_actions::ABORTED;
+    }
+    poll.sleep();
+  }
+
+  double move_forward = 0;
+  double sleep_time = 0.1;
+  // turn handle and push door, until door moves forward
+  while (move_forward < 0.05){
+    // increase torque to turn handle
+    tff_handle_.value.rot.x += -0.5 * sleep_time; // add 0.5 Nm per second
+    node_.publish("r_arm_cartesian_tff_controller/command", tff_handle_);
+    Duration(sleep_time).sleep();
+
+    boost::mutex::scoped_lock lock(tff_mutex_);
+    // detect when gripper is not on hanlde
+    if (fabs(tff_state_.rot.x) > M_PI/2.0){
+      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
+      node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
+      ROS_ERROR("UnlatchHandleAction: Gripper was not on door handle");
+      return robot_actions::ABORTED;
+    }
+
+    // measure distance door moved forward
+    move_forward = fabs(tff_state_.vel.x);
+
+    // check if preempted
+    if (isPreemptRequested()) {
+      node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
+      ROS_ERROR("UnlatchHandleAction: preempted");
+      return robot_actions::PREEMPTED;
+    }
+
+  }
+  node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
+  
+  // keep pushing forward when finished
+  tff_handle_.value.rot.x = 0;
+  node_.publish("r_arm_cartesian_tff_controller/command", tff_handle_);
+  return robot_actions::SUCCESS;
+}
+
+
+void UnlatchHandleAction::tffCallback()
+{
+  boost::mutex::scoped_lock lock(tff_mutex_);
+  tff_state_ = tff_msg_;
+  tff_state_received_ = true;
+}
+
+
+
+
+
+
+
+
+// ---------
+// OPEN DOOR
+// ---------
 OpenDoorAction::OpenDoorAction(Node& node) :
   robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("open_door"),
   node_(node)
@@ -82,21 +205,6 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
   tff_stop_.value.rot.y = 0.0;
   tff_stop_.value.rot.z = 0.0;
   
-  // turn handle
-  tff_handle_.mode.vel.x = tff_handle_.FORCE;
-  tff_handle_.mode.vel.y = tff_handle_.FORCE;
-  tff_handle_.mode.vel.z = tff_handle_.FORCE;
-  tff_handle_.mode.rot.x = tff_handle_.FORCE;
-  tff_handle_.mode.rot.y = tff_handle_.FORCE;
-  tff_handle_.mode.rot.z = tff_handle_.POSITION;
-  
-  tff_handle_.value.vel.x = 10.0;
-  tff_handle_.value.vel.y = 0.0;
-  tff_handle_.value.vel.z = 0.0;
-  tff_handle_.value.rot.x = 0.0;
-  tff_handle_.value.rot.y = 0.0;
-  tff_handle_.value.rot.z = 0.0;
-  
   // open door
   tff_door_.mode.vel.x = tff_door_.VELOCITY;
   tff_door_.mode.vel.y = tff_door_.FORCE;
@@ -112,47 +220,10 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
   tff_door_.value.rot.y = 0.0;
   tff_door_.value.rot.z = 0.0;
   
-  // start monitoring tf position
-  node_.subscribe("r_arm_cartesian_tff_controller/state/position", tff_msg_,  &OpenDoorAction::tffCallback, this, 1);
-  Duration timeout = Duration().fromSec(3.0);
-  Duration poll = Duration().fromSec(0.1);
-  Time start_time = ros::Time::now();
-  tff_state_received_ = false;
-  while (!tff_state_received_){
-    if (start_time + timeout < ros::Time::now()){
-      ROS_ERROR("OpenDoorAction: failed to receive tff state");
-      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
-      return robot_actions::ABORTED;
-    }
-    poll.sleep();
-  }
-
-  // turn handle during 4 seconds
-  for (unsigned int i=0; i<100; i++){
-    tff_handle_.value.rot.x += -2.0/100.0;
-    node_.publish("r_arm_cartesian_tff_controller/command", tff_handle_);
-    Duration().fromSec(4.0/100.0).sleep();
-    if (isPreemptRequested()) {
-      node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
-      ROS_ERROR("OpenDoorAction: preempted");
-      return robot_actions::PREEMPTED;
-    }
-    boost::mutex::scoped_lock lock(tff_mutex_);
-    if (fabs(tff_state_.rot.x) > M_PI/2.0 ||
-	fabs(tff_state_.vel.x) > 0.3){
-      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
-      node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
-      ROS_ERROR("OpenDoorAction: Gripper was not on door handle");
-      return robot_actions::ABORTED;
-    }
-  }
-  node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
-  
   // open door
-  Duration polling = Duration().fromSec(0.1);
   while (!isPreemptRequested()){
     node_.publish("r_arm_cartesian_tff_controller/command", tff_door_);
-    polling.sleep();
+    Duration(0.1).sleep();
   }
 
   // preempted
@@ -160,10 +231,3 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
   return robot_actions::PREEMPTED;
 }
 
-
-void OpenDoorAction::tffCallback()
-{
-  boost::mutex::scoped_lock lock(tff_mutex_);
-  tff_state_ = tff_msg_;
-  tff_state_received_ = true;
-}
