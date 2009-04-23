@@ -25,18 +25,16 @@ rospack_add_executable(outlet_measure src/CalculateRealCoordinates.cpp src/Outle
 target_link_libraries(outlet_measure outlet)
 
 # Fine outlet detection node
-rospack_add_executable(outlet_node src/outlet_tracker.cpp)
+rospack_add_executable(outlet_node src/outlet_node.cpp src/outlet_tracker.cpp)
 target_link_libraries(outlet_node outlet)
+rospack_link_boost(outlet_node thread)
 
 # Far outlet spotting node
 rospack_add_executable(outlet_spotting src/outlet_spotting.cpp src/outlet_tuple_coarse.cpp)
 rospack_add_executable(test_spotting_service src/test_spotting_service.cpp)
 
 # Plug tracking
-rospack_add_library(plugtracker src/plug_tracker.cpp src/cvcalibinit.cpp)
-rospack_link_boost(plugtracker thread)
-
-rospack_add_executable(plug_node src/plug_node.cpp)
-target_link_libraries(plug_node plugtracker)
+rospack_add_executable(plug_node src/plug_node.cpp src/plug_tracker.cpp src/cvcalibinit.cpp)
+rospack_link_boost(plug_node thread)
 
 rospack_add_executable(calibrate_plug src/calibrate_plug.cpp)

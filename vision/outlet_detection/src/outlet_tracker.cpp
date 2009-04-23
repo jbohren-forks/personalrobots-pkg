@@ -257,16 +257,6 @@ void OutletTracker::setRoi(CvRect roi)
 
 const char OutletTracker::wndname[] = "Outlet tracker";
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv);
-  ros::Node node("outlet_detector");
-  OutletTracker tracker(node);
-  
-  node.spin();
-
-  return 0;
-}
 
 /*
 bool detectOutletService(outlet_detection::OutletDetection::Request &od_req,
