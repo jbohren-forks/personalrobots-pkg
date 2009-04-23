@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 
 <controllers>
+  <controller name="r_arm_hybrid_controller" type="CartesianHybridControllerNode"/>
   <!-- ========================================= -->
   <!-- right arm array -->
   <controller name="r_arm_joint_trajectory_controller" type="ArmTrajectoryControllerNode">

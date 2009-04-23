@@ -1,4 +1,5 @@
 <launch>
+        
   <group ns="prosilica">
     <include file="$(find prosilica_cam)/cam_settings.xml"/>
     <param name="acquisition_mode" type="str" value="Triggered"/>
@@ -30,7 +31,7 @@
   <param name="laser_tilt_controller/autostart" value="false" type="bool" /> 
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
   
-  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler">
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler" respawn="true">
     <remap from="scan_in" to="tilt_scan"/>
     <param name="tf_cache_time_secs" type="double" value="10.0" />
     <param name="max_scans" type="int" value="400" />
@@ -104,8 +105,8 @@
 
 
   <!--Gripper position controller-->
-  <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/gripper_controller.xml"/>
   <param name="r_gripper_position_controller/autostart" value="false" type="bool" /> 
+  <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/gripper_controller.xml"/>
   
   
   <!-- Parameters for the controllers used in plugging in -->
@@ -118,10 +119,10 @@
     <group ns="pose">
       <rosparam file="$(find pr2_default_controllers)/gains/arm_pose.yaml" command="load" />
     </group>
-    <group ns="twist">
+  <group ns="twist">
       <rosparam file="$(find pr2_default_controllers)/gains/arm_twist.yaml" command="load" />
     </group>
-    <param name="twist_filter" command="./make_lowpass.m twist_filter 0.01" />
+    <param name="twist_filter" command="./../make_lowpass.m twist_filter 0.01" />
     <param name="saturated_velocity" value="0.5" />
     <param name="autostart" value="false" type="bool" />
   </group>
