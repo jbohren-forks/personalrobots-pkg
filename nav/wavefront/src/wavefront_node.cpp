@@ -731,7 +731,7 @@ WavefrontNode::doOneCycle()
         ros::Time now = ros::Time::now();
         if((now - gui_path_last_publish_time) >= gui_publish_rate)
         {
-          this->polylineMsg.header.frame_id = "/map";
+          this->polylineMsg.header.frame_id = "map";
           this->polylineMsg.set_points_size(this->plan->path_count);
           this->polylineMsg.color.r = 0;
           this->polylineMsg.color.g = 1.0;
