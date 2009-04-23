@@ -49,7 +49,6 @@
 #include <robot_actions/NoArgumentsActionState.h>
 #include <robot_actions/MoveAndGraspPlugState.h>
 #include <robot_actions/DetectOutletState.h>
-#include <robot_actions/LocalizePlugInGripperState.h>
 #include <robot_actions/StowPlugState.h>
 
 
@@ -85,7 +84,7 @@ int main(int argc, char** argv)
   runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp);
   runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_fine);
   runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_coarse);
-  runner.connect<robot_msgs::PoseStamped, robot_actions::LocalizePlugInGripperState, std_msgs::Empty>(localize_plug_in_gripper);
+  runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(localize_plug_in_gripper);
   runner.connect<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty>(plug_in);
   runner.connect<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
 

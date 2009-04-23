@@ -67,8 +67,8 @@ public:
 private:
   ros::Node* node_;
 
-  outlet_detection::OutletDetection::Request req_;
-  outlet_detection::OutletDetection::Response res_;
+  robot_msgs::PoseStamped outlet_pose_msg_;
+  void foundOutlet();
 };
 
 }

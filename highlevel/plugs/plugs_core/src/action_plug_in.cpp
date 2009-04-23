@@ -43,8 +43,8 @@ const double SUCCESS_THRESHOLD = 0.025;
 enum {MEASURING, MOVING, INSERTING, FORCING, HOLDING};
 
 PlugInAction::PlugInAction(ros::Node& node) :
-  robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("servo_to_outlet"),
-  action_name_("servo_to_outlet"),
+  robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("plug_in"),
+  action_name_("plug_in"),
   node_(node),
   arm_controller_("r_arm_hybrid_controller") 
 {
@@ -117,13 +117,14 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
   tff_msg_.header.stamp = msg->header.stamp;
   // Both are transforms from the outlet to the estimated plug pose
   robot_msgs::PoseStamped viz_offset_msg;
+  usleep(10000);
   try {
     TF_->transformPose("outlet_pose", *(msg.get()), viz_offset_msg);
     TF_->lookupTransform("outlet_pose", arm_controller_ + "/tool_frame", msg->header.stamp, mech_offset_);
   }
   catch(tf::TransformException &ex)
   {
-    ROS_ERROR("%s: Error, transform exception.", action_name_.c_str());
+    ROS_ERROR("%s: Error, transform exception: %s", action_name_.c_str(), ex.what());
     return;
   }
 

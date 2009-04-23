@@ -42,16 +42,30 @@ DetectOutletFineAction::DetectOutletFineAction()
   : robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_fine"),
     node_(ros::Node::instance())
 {
+  node_->subscribe("outlet_detector/pose", outlet_pose_msg_, &DetectOutletFineAction::foundOutlet, this, 1);
+
 }
 
 robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback){
 
-  req_.point = point;
-  bool success = ros::service::call("/outlet_detector/fine_outlet_detect", req_, res_);
-  feedback = res_.pose;
-  if (success)
-    return robot_actions::SUCCESS;
-  else
-    return robot_actions::ABORTED;
+  return waitForDeactivation(feedback);
+
 }
+
+void DetectOutletFineAction::foundOutlet()
+{
+  if (!isActive())
+    return;
+
+  if (isPreemptRequested())
+    {
+      deactivate(robot_actions::PREEMPTED, outlet_pose_msg_);
+      return;
+    }
+
+  deactivate(robot_actions::SUCCESS, outlet_pose_msg_);
+
+  
+}
+
 }

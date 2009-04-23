@@ -66,13 +66,13 @@
 namespace plugs_core
 {
 
-class LocalizePlugInGripperAction: public robot_actions::Action<robot_msgs::PoseStamped, std_msgs::Empty>
+  class LocalizePlugInGripperAction: public robot_actions::Action<std_msgs::Empty, std_msgs::Empty>
 {
 public:
   LocalizePlugInGripperAction(ros::Node& node);
   ~LocalizePlugInGripperAction();
 
-  virtual robot_actions::ResultStatus execute(const robot_msgs::PoseStamped& outlet_pose, std_msgs::Empty&);
+  virtual robot_actions::ResultStatus execute(const std_msgs::Empty& empty, std_msgs::Empty&);
 
 private:
   

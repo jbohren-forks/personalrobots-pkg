@@ -40,7 +40,7 @@ namespace plugs_core
 {
 
 LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
-  robot_actions::Action<robot_msgs::PoseStamped, std_msgs::Empty>("localize_plug_in_gripper"),
+  robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("localize_plug_in_gripper"),
   action_name_("localize_plug_in_gripper"),
   node_(node),
   arm_controller_("r_arm_cartesian_trajectory_controller"),
@@ -81,9 +81,9 @@ LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
   if(detector_) delete detector_;
 };
 
-robot_actions::ResultStatus LocalizePlugInGripperAction::execute(const robot_msgs::PoseStamped& outlet_pose, std_msgs::Empty& feedback)
+  robot_actions::ResultStatus LocalizePlugInGripperAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 {
-  outlet_pose_ = outlet_pose;
+  //  outlet_pose_ = outlet_pose;
 
   reset();
   
