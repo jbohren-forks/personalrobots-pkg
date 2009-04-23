@@ -44,6 +44,11 @@ OutletTracker::OutletTracker(ros::Node &node)
 OutletTracker::~OutletTracker()
 {
   node_.unadvertise("~pose");
+
+  if (active_thread_.joinable()) {
+    active_thread_.interrupt();
+    active_thread_.join();
+  }
   
   cvReleaseMat(&K_);
   if (display_)
