@@ -1,6 +1,8 @@
 base_local_planner:
   #Independent settings for the local costmap
   costmap:
+    global_frame: map
+    robot_base_frame: base_link
     update_frequency: 5.0
     publish_frequency: 2.0
     static_map: false
@@ -10,8 +12,6 @@ base_local_planner:
     resolution: 0.025
     origin_x: 0.0
     origin_y: 0.0
-  global_frame: map
-  robot_base_frame: base_link
   world_model: freespace
   sim_time: 1.7
   sim_granularity: 0.05
