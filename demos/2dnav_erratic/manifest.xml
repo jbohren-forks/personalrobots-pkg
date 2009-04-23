@@ -9,5 +9,5 @@
   <depend package="sicktoolbox_wrapper"/>
   <depend package="map_server"/>
   <depend package="wavefront"/>
-  <depend package="highlevel_controllers"/>
+  <depend package="nav"/>
 </package>

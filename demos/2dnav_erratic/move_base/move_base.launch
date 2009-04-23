@@ -1,0 +1,16 @@
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+    <node pkg="nav" type="move_base" respawn="false" name="move_base_node" output="screen">
+      <remap from="/move_base_node/activate" to="/goal" />
+      <remap from="~base_local_planner/global_plan" to="/gui_path" />
+      <remap from="~base_local_planner/local_plan" to="/local_path" />
+      <remap from="~base_local_planner/robot_footprint" to="/robot_footprint" />
+
+      <rosparam file="$(find 2dnav_erratic)/config/costmap_common_params.yaml" command="load" ns="navfn" />
+      <rosparam file="$(find 2dnav_erratic)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
+      <rosparam file="$(find 2dnav_erratic)/move_base/navfn_params.yaml" command="load" />
+      <rosparam file="$(find 2dnav_erratic)/move_base/base_local_planner_params.yaml" command="load" />
+    </node>
+  </group>
+</launch>
