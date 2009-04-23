@@ -550,18 +550,18 @@ namespace base_local_planner {
   }
 
   void TrajectoryPlannerROS::publishPlan(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a){
-    //given an empty path we won't do anything
-    if(path.empty())
-      return;
-
-    // Extract the plan in world co-ordinates, we assume the path is all in the same frame
     robot_msgs::Polyline2D gui_path_msg;
-    gui_path_msg.header.frame_id = path[0].header.frame_id;
-    gui_path_msg.header.stamp = path[0].header.stamp;
-    gui_path_msg.set_points_size(path.size());
-    for(unsigned int i=0; i < path.size(); i++){
-      gui_path_msg.points[i].x = path[i].pose.position.x;
-      gui_path_msg.points[i].y = path[i].pose.position.y;
+    gui_path_msg.header.frame_id = global_frame_;
+
+    //given an empty path we won't do anything
+    if(!path.empty()){
+      // Extract the plan in world co-ordinates, we assume the path is all in the same frame
+      gui_path_msg.header.stamp = path[0].header.stamp;
+      gui_path_msg.set_points_size(path.size());
+      for(unsigned int i=0; i < path.size(); i++){
+        gui_path_msg.points[i].x = path[i].pose.position.x;
+        gui_path_msg.points[i].y = path[i].pose.position.y;
+      }
     }
 
     gui_path_msg.color.r = r;
