@@ -50,9 +50,9 @@ from std_msgs.msg import *
 from pr2_mechanism_controllers.msg import *
 
 
-CMD_POS_1      =  0.5
+CMD_POS_1      =  0.0
 CMD_POS_2      =  1.5
-CMD_POS_3      =  0.0
+CMD_POS_3      =  0.3
 CMD_POS_4      =  2.3
 CMD_POS_5      =  3.142
 CMD_POS_6      =  2.2
@@ -67,9 +67,9 @@ if __name__ == '__main__':
     rospy.init_node(NAME, anonymous=True)
     timeout_t = time.time() + 20.0 #publish for 20 seconds then stop
     while time.time() < timeout_t:
-        pub_l_arm.publish(JointPosCmd(['l_shoulder_pan_joint','l_shoulder_lift_joint','l_upper_arm_roll_joint','l_elbow_flex_joint','l_forearm_roll_joint','l_wrist_flex_joint','l_wrist_roll_joint'],[ CMD_POS_1,CMD_POS_2,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
+        pub_l_arm.publish(JointPosCmd(['l_shoulder_pan_joint','l_shoulder_lift_joint','l_upper_arm_roll_joint','l_elbow_flex_joint','l_forearm_roll_joint','l_wrist_flex_joint','l_wrist_roll_joint'],[ CMD_POS_1,CMD_POS_2, CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
         pub_l_gripper.publish(Float64(CMD_POS_8))
-        pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_rolr_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[-CMD_POS_1,CMD_POS_2,CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
+        pub_r_arm.publish(JointPosCmd(['r_shoulder_pan_joint','r_shoulder_lift_joint','r_upper_arm_roll_joint','r_elbow_flex_joint','r_forearm_roll_joint','r_wrist_flex_joint','r_wrist_roll_joint'],[ CMD_POS_1,CMD_POS_2,-CMD_POS_3,CMD_POS_4,CMD_POS_5,CMD_POS_6,CMD_POS_7],[0,0,0,0,0,0,0],0))
         pub_r_gripper.publish(Float64(CMD_POS_8))
         time.sleep(0.2)
 
