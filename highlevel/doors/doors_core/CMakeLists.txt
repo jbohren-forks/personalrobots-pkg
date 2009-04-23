@@ -37,6 +37,7 @@ rospack_add_executable(trigger_handle_release
                       )
 
 rospack_add_executable(test_executive
+                       src/executive_functions.cpp
 		       test/test_executive.cpp
                       )
 

@@ -55,7 +55,7 @@ namespace nav
     ros_node_.param("~global_frame", global_frame_, std::string("odom_combined"));
     ros_node_.param("~control_frame", control_frame_, std::string("odom"));
     ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
-    ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
+    ros_node_.param("~controller_frequency", controller_frequency_, 10.0);
 
     ros_node_.param("~control_topic_name", control_topic_name_, std::string("/base/trajectory_controller/trajectory_command"));
     //for display purposes
@@ -266,7 +266,7 @@ namespace nav
 
         //check that the observation buffers for the costmap are current
         if(!planner_cost_map_ros_->isCurrent()){
-          ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
+	  //         ROS_DEBUG("Sensor data is out of date, we're not going to allow commanding of the base for safety");
           continue;
         }
         makePlan();

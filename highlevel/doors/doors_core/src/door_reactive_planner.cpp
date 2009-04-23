@@ -68,7 +68,7 @@ void DoorReactivePlanner::getParams()
   double resolution;
   node_.param<double>("~costmap/resolution",resolution,0.025);
 
-  cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),6);
+  cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),4);
 
   min_distance_from_obstacles_ = min_distance_from_obstacles_ + inscribed_radius_;
   cell_distance_robot_center_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),(int)inscribed_radius_/resolution);
@@ -199,11 +199,11 @@ void DoorReactivePlanner::getFinalPosition(const robot_actions::Pose2D &current_
   }
   explore_distance = std::min<double>(max_explore_distance_,new_explore_distance);
 
-  if(distance_to_centerline >= horizontal_explore_distance_ && delta_angle < 0.5)
+  if(distance_to_centerline >= horizontal_explore_distance_ && delta_angle < 0)
   {     
     explore_distance = 0.0;
   }
-  else if(distance_to_centerline <= -horizontal_explore_distance_ && delta_angle > -0.5)
+  else if(distance_to_centerline <= -horizontal_explore_distance_ && delta_angle > 0)
   {
     explore_distance = 0.0;
   }

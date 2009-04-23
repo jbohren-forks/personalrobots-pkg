@@ -93,6 +93,7 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
   ROS_INFO("DetectHandleAction: detected handle position transformed to '%s'", fixed_frame.c_str());
 
 
+  /*
   // camera detection
   if (!cameraDetection(door, result_camera)){
     if (isPreemptRequested()){
@@ -113,8 +114,9 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
 
   cout << "result camera " << result_camera << endl;
   ROS_INFO("DetectHandleAction: detected handle position transformed to '%s'", fixed_frame.c_str());
+  */
 
-  //result_camera = result_laser;
+  result_camera = result_laser;
   double  error = sqrt(pow(result_laser.handle.x - result_camera.handle.x,2) +
 		       pow(result_laser.handle.y - result_camera.handle.y,2) +
 		       pow(result_laser.handle.z - result_camera.handle.z,2));
