@@ -78,6 +78,7 @@ Publishes to (name / type):
   - @b "~dist_eps" (double) : Goal distance tolerance (how close the robot must be to the goal before stopping), default: 1.0 meters
   - @b "~robot_radius" (double) : The robot's largest radius (the planner treats it as a circle), default: 0.175 meters
   - @b "~dist_penalty" (double) : Penalty factor for coming close to obstacles, default: 2.0
+  - @b "~gui_publish_rate" (double) : Maximum rate at which scans and paths are published for visualization, default: 1.0 Hz
 
 @todo There are many more parameters of the underlying planner, values
 for which are currently hardcoded. These should be exposed as ROS
@@ -174,6 +175,10 @@ class WavefrontNode: public ros::Node
     double dist_eps;
     double ang_eps;
     ros::Duration cycletime;
+
+    ros::Time gui_laser_last_publish_time;
+    ros::Time gui_path_last_publish_time;
+    ros::Duration gui_publish_rate;
 
     // Map update paramters (for adding obstacles)
     double laser_maxrange;
@@ -284,6 +289,9 @@ WavefrontNode::WavefrontNode() :
   param("~dist_eps", dist_eps, 1.0);
   param("~robot_radius", robot_radius, 0.175);
   param("~dist_penalty", dist_penalty, 2.0);
+  double tmp;
+  param("~gui_publish_rate", tmp, 1.0);
+  gui_publish_rate = ros::Duration(1.0/tmp);
 
   // get map via RPC
   robot_srvs::StaticMap::Request  req;
@@ -507,18 +515,24 @@ WavefrontNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::M
 
   // Draw the points
 
-  this->pointcloudMsg.header.frame_id = "/map";
-  this->pointcloudMsg.set_points_size(this->laser_hitpts_len);
-  this->pointcloudMsg.color.a = 0.0;
-  this->pointcloudMsg.color.r = 0.0;
-  this->pointcloudMsg.color.b = 1.0;
-  this->pointcloudMsg.color.g = 0.0;
-  for(unsigned int i=0;i<this->laser_hitpts_len;i++)
+  ros::Time now = ros::Time::now();
+  if((now - gui_laser_last_publish_time) >= gui_publish_rate)
   {
-    this->pointcloudMsg.points[i].x = this->laser_hitpts[2*i];
-    this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
+    this->pointcloudMsg.header.frame_id = "/map";
+    this->pointcloudMsg.set_points_size(this->laser_hitpts_len);
+    this->pointcloudMsg.color.a = 0.0;
+    this->pointcloudMsg.color.r = 0.0;
+    this->pointcloudMsg.color.b = 1.0;
+    this->pointcloudMsg.color.g = 0.0;
+    for(unsigned int i=0;i<this->laser_hitpts_len;i++)
+    {
+      this->pointcloudMsg.points[i].x = this->laser_hitpts[2*i];
+      this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
+    }
+    publish("gui_laser",this->pointcloudMsg);
+
+    gui_laser_last_publish_time = now;
   }
-  publish("gui_laser",this->pointcloudMsg);
   this->lock.unlock();
 }
 
@@ -714,20 +728,26 @@ WavefrontNode::doOneCycle()
 
         assert(this->plan->path_count);
 
-        this->polylineMsg.header.frame_id = "/map";
-        this->polylineMsg.set_points_size(this->plan->path_count);
-        this->polylineMsg.color.r = 0;
-        this->polylineMsg.color.g = 1.0;
-        this->polylineMsg.color.b = 0;
-        this->polylineMsg.color.a = 0;
-        for(int i=0;i<this->plan->path_count;i++)
+        ros::Time now = ros::Time::now();
+        if((now - gui_path_last_publish_time) >= gui_publish_rate)
         {
-          this->polylineMsg.points[i].x =
-                  PLAN_WXGX(this->plan,this->plan->path[i]->ci);
-          this->polylineMsg.points[i].y =
-                  PLAN_WYGY(this->plan,this->plan->path[i]->cj);
+          this->polylineMsg.header.frame_id = "/map";
+          this->polylineMsg.set_points_size(this->plan->path_count);
+          this->polylineMsg.color.r = 0;
+          this->polylineMsg.color.g = 1.0;
+          this->polylineMsg.color.b = 0;
+          this->polylineMsg.color.a = 0;
+          for(int i=0;i<this->plan->path_count;i++)
+          {
+            this->polylineMsg.points[i].x =
+                    PLAN_WXGX(this->plan,this->plan->path[i]->ci);
+            this->polylineMsg.points[i].y =
+                    PLAN_WYGY(this->plan,this->plan->path[i]->cj);
+          }
+          publish("gui_path", polylineMsg);
+
+          gui_path_last_publish_time = now;
         }
-        publish("gui_path", polylineMsg);
 
         //printf("computed velocities: %.3f %.3f\n", vx, RTOD(va));
         this->sendVelCmd(vx, 0.0, va);
