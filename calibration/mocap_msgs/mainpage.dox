@@ -1,0 +1,8 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b mocap_msgs contains messages for representating data from motion capture
+systems, such as phasespace. 
+
+*/

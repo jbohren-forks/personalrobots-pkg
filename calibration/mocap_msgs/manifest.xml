@@ -1,0 +1,18 @@
+<package>
+  <description brief="mocap_msgs">
+
+     Messages for motion capture, in particular, phase_space
+
+  </description>
+  <author>Ken Conley/ kwc@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/mocap_msgs</url>
+  <depend package="robot_msgs" />
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp" />
+  </export>
+
+</package>
+
+
