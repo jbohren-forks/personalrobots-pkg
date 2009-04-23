@@ -38,6 +38,7 @@
 (defparameter *wall-buffer* .2 "Additional buffer distance that we'd like to keep from wall")
 (defvar *person-on-path-use-stub* nil)
 (defvar *global-frame*)
+(defvar *master-uri* (make-uri "prg2" 11311))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Types
@@ -62,7 +63,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun main ()
-  (with-ros-node ("lane_changer")
+  (with-ros-node ("lane_changer" :master-uri *master-uri*)
     (setup-node)
     (loop-at-most-every 1
 	 (when *new-goal* (apply #'goto *new-goal*)))))
@@ -76,7 +77,7 @@
   (advertise "move_base_node/activate" "people_aware_nav/ConstrainedGoal")
   (advertise "move_base_node/preempt" "std_msgs/Empty")
   (setq *global-frame* (get-param "global_frame_id" "map")
-	*person-on-path-use-stub* (get-param "~person_on_path_use_stub" nil)))
+	*person-on-path-use-stub* (get-param "~person_on_path_use_stub" *person-on-path-use-stub*)))
 
   
 (defun goto (x y theta)
