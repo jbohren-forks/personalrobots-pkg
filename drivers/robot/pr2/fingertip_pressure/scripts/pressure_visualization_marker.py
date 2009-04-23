@@ -40,7 +40,7 @@
 # visualizationMarker
 
 import roslib
-roslib.load_manifest('ethercat_hardware')
+roslib.load_manifest('fingertip_pressure')
 import rospy
 
 from ethercat_hardware.msg import PressureState
