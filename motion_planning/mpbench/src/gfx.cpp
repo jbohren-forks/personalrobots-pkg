@@ -92,7 +92,7 @@ typedef enum {
   ANIMATION_ON
 } animation_mode_t;
 
-static animation_mode_t animation_mode(ANIMATION_ON);
+static animation_mode_t animation_mode(ANIMATION_OFF);
 static bool animation_reverse(false);
 static bool animation_capture(false);
 
@@ -509,6 +509,7 @@ void keyboard(unsigned char key, int mx, int my)
       animation_capture = false;
     else
       animation_capture = true;
+    animation_mode = ANIMATION_ON;
     break;
   case 'q':
     errx(EXIT_SUCCESS, "key: q");

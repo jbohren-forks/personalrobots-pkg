@@ -3,9 +3,9 @@
   <defaults>
     <start>
       <from_scratch>true</from_scratch>
-      <use_initial_solution>true</use_initial_solution>
-      <allow_iteration>true</allow_iteration>
-      <alloc_time>0.1</alloc_time>
+      <use_initial_solution>false</use_initial_solution>
+      <allow_iteration>false</allow_iteration>
+      <alloc_time>inf</alloc_time>
     </start>
     <goal>
       <tolerance>0.3  4</tolerance>
