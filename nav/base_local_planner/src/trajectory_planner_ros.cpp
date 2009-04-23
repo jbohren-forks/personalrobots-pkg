@@ -419,7 +419,6 @@ namespace base_local_planner {
       }
 
       //publish the robot footprint and an empty plan because we've reached our goal position
-      global_plan_.clear();
       publishFootprint(global_pose);
       publishPlan(global_plan_, "global_plan", 0.0, 1.0, 0.0, 0.0);
       publishPlan(local_plan, "local_plan", 0.0, 0.0, 1.0, 0.0);
