@@ -17,7 +17,7 @@
       <param name="inscribed_radius" value="0.315" />
       <param name="circumscribed_radius" value="0.46" />
       <param name="inflation_radius" value="0.46" />
-      <param name="control_frame" value="odom" />
+      <param name="control_frame" value="odom_combined" />
 
       <!-- Start Costmap Parameters -->
       <param name="costmap/global_frame" value="odom_combined" />
@@ -36,7 +36,7 @@
       <param name="costmap/base_scan/data_type" value="LaserScan" />
       <param name="costmap/base_scan/clearing" value="true" />
 
-      <param name="costmap/rolling_window" value="false" />
+      <param name="costmap/rolling_window" value="true" />
       <param name="costmap/static_map" value="false" />
 
       <!-- begin only used if static map is set to false -->
