@@ -1,0 +1,39 @@
+base_local_planner:
+  #Independent settings for the local costmap
+  costmap:
+    update_frequency: 5.0
+    publish_frequency: 2.0
+    static_map: false
+    rolling_window: true
+    width: 6.0
+    height: 6.0
+    resolution: 0.025
+    origin_x: 0.0
+    origin_y: 0.0
+  global_frame: map
+  robot_base_frame: base_link
+  world_model: freespace
+  sim_time: 1.7
+  sim_granularity: 0.05
+  dwa: true
+  vx_samples: 3
+  vtheta_samples: 20
+  max_vel_x: 0.65
+  min_vel_x: 0.1
+  max_vel_th: 1.0
+  min_vel_th: -1.0
+  min_in_place_vel_th: 0.4
+  xy_goal_tolerance: 0.1
+  yaw_goal_tolerance: 0.5
+  goal_distance_bias: 0.8
+  path_distance_bias: 0.6
+  occdist_scale: 0.05
+  heading_lookahead: 0.325
+  oscillation_reset_dist: 0.05
+  acc_limit_th: 3.2
+  acc_limit_x: 2.5
+  acc_limit_y: 2.5
+  heading_scoring: false
+  heading_scoring_timestep: 0.8
+  holonomic_robot: true
+  simple_attractor: false
