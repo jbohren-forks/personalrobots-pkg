@@ -107,7 +107,7 @@ namespace door_base_collision_cost
     }
     else
     {
-      double factor = 1.0/(1.0 + pow((angle - (arm_max_workspace_angle_+arm_min_workspace_angle_)/2.0),2) * pow((d - (arm_max_workspace_radius_ + arm_min_workspace_radius_))/2.0,2));
+      double factor = 1.0/(1.0 + pow((angle - (arm_max_workspace_angle_+arm_min_workspace_angle_)/2.0),2) * pow((d - (arm_max_workspace_radius_ + arm_min_workspace_radius_)/2.0),2));
       return (unsigned char)((1-factor)*MAX_COST);
     }
   }
