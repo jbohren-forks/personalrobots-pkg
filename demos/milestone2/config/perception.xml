@@ -17,14 +17,6 @@
   <param name="laser_max_range" value="30.0" />
 </node>
 
-<!-- for clearing we want preservative -->
-<node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="base_shadow_filter_preserve" >
-  <param name="scan_topic" value="base_scan" />
-  <param name="cloud_topic" value="base_scan_clearing" />
-  <param name="preservative" value="true" />
-  <param name="laser_max_range" value="30.0" />
-</node>
-
 <!-- Laser scan assembler for tilt laser -->
 <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
   <remap from="scan_in" to="tilt_scan"/>
