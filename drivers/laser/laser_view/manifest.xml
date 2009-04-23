@@ -1,8 +1,0 @@
-<package>
-  <author>Morgan Quigley</author>
-  <license>BSD</license>
-  <review status="unreviewed" notes=""/>
-  <depend package="roscpp"/>
-  <depend package="laser_scan"/>
-  <depend package="sdlgl"/>
-</package>

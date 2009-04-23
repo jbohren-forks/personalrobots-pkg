@@ -1,6 +1,0 @@
-#!/bin/bash
-rosrun shparam shparam set min_ang double -70
-rosrun shparam shparam set max_ang double  70
-rosrun shparam shparam set skip int 0
-xterm -e "rosrun hokuyourg_player hokuyourg_player" &
-xterm -e "rosrun laser_view laser_view laser:=scan" &
