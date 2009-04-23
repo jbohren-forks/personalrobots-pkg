@@ -74,6 +74,9 @@ namespace robot_actions {
      */
     ResultStatus execute(const Goal& goal, Feedback& feedback);
 
+    void preempt();
+
+
   private:
     void callbackHandler(); // Just a no-op
     State _state_update_msg;
@@ -164,5 +167,11 @@ namespace robot_actions {
   void ActionClient<Goal, State, Feedback>::callbackHandler(){
     _is_active = (_state_update_msg.status.value == _state_update_msg.status.ACTIVE);
   }
+
+  template <class Goal, class State, class Feedback>
+  void ActionClient<Goal, State, Feedback>::preempt(){
+    ros::Node::instance()->publish(_preempt_topic, std_msgs::Empty());
+  }
+
 }
 #endif
