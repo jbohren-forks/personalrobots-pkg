@@ -12,9 +12,10 @@ add_definitions(-Wall -O3 -DNDEBUG)
 #add_definitions(-Wall -O0 -g)
 
 # Outlet detection library
-rospack_add_library(outlet src/outlet_model.cpp src/planar.cpp src/outlet_tuple.cpp src/outlet_detector.cpp src/learning.cpp)
+rospack_add_library(outlet src/outlet_model.cpp src/planar.cpp src/outlet_tuple.cpp src/outlet_detector.cpp src/learning.cpp src/outlet_tracker.cpp)
 add_definitions(-D_OUTLET_HR -D_TUNING -D_USE_OUTLET_TUPLE)
 #add_definitions(-D_VERBOSE)
+rospack_link_boost(outlet thread)
 
 # Stand-alone outlet detection executables
 rospack_add_executable(outlet_model src/main.cpp)
@@ -25,16 +26,18 @@ rospack_add_executable(outlet_measure src/CalculateRealCoordinates.cpp src/Outle
 target_link_libraries(outlet_measure outlet)
 
 # Fine outlet detection node
-rospack_add_executable(outlet_node src/outlet_node.cpp src/outlet_tracker.cpp)
+rospack_add_executable(outlet_node src/outlet_node.cpp)
 target_link_libraries(outlet_node outlet)
-rospack_link_boost(outlet_node thread)
 
 # Far outlet spotting node
 rospack_add_executable(outlet_spotting src/outlet_spotting.cpp src/outlet_tuple_coarse.cpp)
 rospack_add_executable(test_spotting_service src/test_spotting_service.cpp)
 
 # Plug tracking
-rospack_add_executable(plug_node src/plug_node.cpp src/plug_tracker.cpp src/cvcalibinit.cpp)
-rospack_link_boost(plug_node thread)
+rospack_add_library(plug src/plug_tracker.cpp src/cvcalibinit.cpp)
+rospack_link_boost(plug thread)
+
+rospack_add_executable(plug_node src/plug_node.cpp)
+target_link_libraries(plug_node plug)
 
 rospack_add_executable(calibrate_plug src/calibrate_plug.cpp)
