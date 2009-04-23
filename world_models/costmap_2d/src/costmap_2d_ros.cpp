@@ -56,7 +56,7 @@ namespace costmap_2d {
     ros_node_.param("~" + prefix + "/costmap/global_frame", global_frame_, string("map"));
     ros_node_.param("~" + prefix + "/costmap/robot_base_frame", robot_base_frame_, string("base_link"));
 
-    ros_node_.param("~" + prefix + "/costmap/transform_tolerance", transform_tolerance_, 0.1);
+    ros_node_.param("~" + prefix + "/costmap/transform_tolerance", transform_tolerance_, 0.2);
 
     //now we need to split the topics based on whitespace which we can use a stringstream for
     stringstream ss(topics_string);
