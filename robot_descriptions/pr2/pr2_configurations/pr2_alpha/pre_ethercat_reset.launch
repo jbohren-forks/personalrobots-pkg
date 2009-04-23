@@ -1,4 +1,5 @@
 <launch>
+  <!-- Uses special defs file for Alpha 2.0 hardware on PRE -->
   <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pre.xacro.xml'" />
 
   <include file="$(find pr2_alpha)/pre.machine" />
