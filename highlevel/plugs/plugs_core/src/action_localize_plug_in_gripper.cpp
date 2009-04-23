@@ -73,7 +73,7 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
   
   detector_ = new PlugTracker::PlugTracker(node);
   detector_->deactivate();
-  node_.subscribe("~pose", plug_pose_msg_, &LocalizePlugInGripperAction::setToolFrame, this, 1);
+  node_.subscribe("~plug_pose", plug_pose_msg_, &LocalizePlugInGripperAction::setToolFrame, this, 1);
 };
 
 LocalizePlugInGripperAction::~LocalizePlugInGripperAction()

@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 
   UntuckArmsAction untuck_arms;
   MoveAndGraspPlugAction move_and_grasp;
-  DetectOutletFineAction detect_outlet_fine;
+  DetectOutletFineAction detect_outlet_fine(node);
   DetectOutletCoarseAction detect_outlet_coarse;
   LocalizePlugInGripperAction localize_plug_in_gripper(node);
   PlugInAction plug_in(node);

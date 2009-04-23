@@ -17,6 +17,7 @@
   <depend package="robot_mechanism_controllers" />
   <depend package="pr2_mechanism_controllers" />
   <depend package="outlet_detection" />
+  <depend package="safety_core" />
 
 
  <export>

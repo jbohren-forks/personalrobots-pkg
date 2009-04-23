@@ -52,7 +52,6 @@
 // Detection
 #include <outlet_detection/outlet_tracker.h>
 
-#include <boost/scoped_ptr.hpp>
 
 namespace plugs_core{
 
@@ -61,14 +60,15 @@ class DetectOutletFineAction
                                  robot_msgs::PoseStamped>
 {
 public:
-  DetectOutletFineAction();
-
+  DetectOutletFineAction(ros::Node& node);
+  ~DetectOutletFineAction();
   virtual robot_actions::ResultStatus execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback);
 
 private:
-  ros::Node* node_;
+  ros::Node& node_;
 
-  boost::scoped_ptr<OutletTracker> detector_;
+  OutletTracker::OutletTracker* detector_;
+  
   
   robot_msgs::PoseStamped outlet_pose_msg_;
   void foundOutlet();

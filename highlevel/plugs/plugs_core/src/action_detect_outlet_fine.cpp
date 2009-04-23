@@ -38,16 +38,21 @@
 namespace plugs_core
 {
 
-DetectOutletFineAction::DetectOutletFineAction()
+DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
   : robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_fine"),
-    node_(ros::Node::instance())
+    node_(node)
 {
-  detector_.reset(new OutletTracker(*node_));
-  detector_->deactivate();
-    
-  node_->subscribe("outlet_detector/pose", outlet_pose_msg_, &DetectOutletFineAction::foundOutlet, this, 1);
+  
+  detector_ = new OutletTracker::OutletTracker(node);
+  detector_->deactivate();  
+  node_.subscribe("~outlet_pose", outlet_pose_msg_, &DetectOutletFineAction::foundOutlet, this, 1);
 
 }
+
+DetectOutletFineAction::~DetectOutletFineAction()
+{
+  if(detector_) delete detector_;
+};
 
 robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback){
 
@@ -66,9 +71,9 @@ void DetectOutletFineAction::foundOutlet()
       deactivate(robot_actions::PREEMPTED, outlet_pose_msg_);
       return;
     }
-
+  
   deactivate(robot_actions::SUCCESS, outlet_pose_msg_);
-
+  detector_->deactivate();
   
 }
 
