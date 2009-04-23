@@ -1,7 +1,0 @@
-<launch>
-  <group ns="outlet_detector" clear_params="true">
-    <param name="display" type="bool" value="false"/>
-    <param name="service_mode" type="bool" value="true"/>
-  </group>
-  <node name="outlet_detector" pkg="outlet_detection" type="outlet_node" respawn="false" output="screen"/>
-</launch>
