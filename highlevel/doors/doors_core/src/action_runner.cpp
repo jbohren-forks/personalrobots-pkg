@@ -61,6 +61,7 @@ int main(int argc, char** argv)
   DetectDoorAction detect_door(node);
   DetectHandleAction detect_handle(node);
   GraspHandleAction grasp(node);
+  UnlatchHandleAction unlatch(node);
   OpenDoorAction open(node);
   ReleaseHandleAction release(node);
 
@@ -68,6 +69,7 @@ int main(int argc, char** argv)
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);  
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp);
+  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(unlatch);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open);
   runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(release);
 
