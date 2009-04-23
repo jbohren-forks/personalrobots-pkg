@@ -1,4 +1,0 @@
-<launch>
-  <node pkg="rosstage" type="rosstage" args="$(find 2dnav-stage)/willow-erratic.world" respawn="false"/>
-  <node pkg="deadreckon" type="deadreckon"/>
-</launch>
