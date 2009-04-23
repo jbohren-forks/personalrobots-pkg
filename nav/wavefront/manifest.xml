@@ -1,5 +1,5 @@
 <package>
-  <description>A ROS node that uses the Player libwavefront_standalone library, which implements wavefront path-planning for a planar robot.</description>
+  <description>A ROS node that uses the Player wavefront library, which implements wavefront path-planning for a planar robot.</description>
   <author>Brian P. Gerkey</author>
   <license>LGPL</license>
   <review status="unreviewed" notes=""/>

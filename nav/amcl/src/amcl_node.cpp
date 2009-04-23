@@ -84,10 +84,10 @@ Offers services (name type):
   - @b "~kld_z" (double) : Upper standard normal quantile for (1 - p), where p is the probability that the error on the estimated distrubition will be less than kld_err, default: 0.99
   - @b "~update_min_d" (double) : Translational movement required before performing a filter update, default: 0.2 meters
   - @b "~update_min_a" (double) : Rotational movement required before performing a filter update, default: M_PI/6.0 radians
-  - @b "~resample_interval" (int) : Number of filter updates required before resampling, default: 10
+  - @b "~resample_interval" (int) : Number of filter updates required before resampling, default: 2
   - @b "~transform_tolerance" (double) : Time with which to post-date the transform that is published, to indicate that this transform is valid into the future, default: 0.1 seconds
-  - @b "~recovery_alpha_slow" (double) : Exponential decay rate for the slow average weight filter, used in deciding when to recover by adding random poses, default: 0.001
-  - @b "~recovery_alpha_fast" (double) : Exponential decay rate for the fast average weight filter, used in deciding when to recover by adding random poses, default: 0.1
+  - @b "~recovery_alpha_slow" (double) : Exponential decay rate for the slow average weight filter, used in deciding when to recover by adding random poses, default: 0.0, which means disabled (a good value might be 0.001)
+  - @b "~recovery_alpha_fast" (double) : Exponential decay rate for the fast average weight filter, used in deciding when to recover by adding random poses, default: 0.0, which means disabled (a good value might be 0.1)
   - @b "~initial_pose_x" (double) : Initial pose estimate (x), used to initialize filter with Gaussian distribution, default: 0.0 meters
   - @b "~initial_pose_y" (double) : Initial pose estimate (y), used to initialize filter with Gaussian distribution, default: 0.0 meters
   - @b "~initial_pose_a" (double) : Initial pose estimate (yaw), used to initialize filter with Gaussian distribution, default: 0.0 radians
@@ -302,7 +302,7 @@ AmclNode::AmclNode() :
   ros::Node::instance()->param("~update_min_d", d_thresh_, 0.2);
   ros::Node::instance()->param("~update_min_a", a_thresh_, M_PI/6.0);
   ros::Node::instance()->param("~odom_frame_id", odom_frame_id_, std::string("odom"));
-  ros::Node::instance()->param("~resample_interval", resample_interval_, 10);
+  ros::Node::instance()->param("~resample_interval", resample_interval_, 2);
   double tmp_tol;
   ros::Node::instance()->param("~transform_tolerance", tmp_tol, 0.1);
   ros::Node::instance()->param("~recovery_alpha_slow", alpha_slow, 0.001);

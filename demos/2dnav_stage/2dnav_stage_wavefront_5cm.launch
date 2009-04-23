@@ -1,0 +1,17 @@
+<launch>
+
+  <group name="wg">
+    <node pkg="stage" type="stageros" args="$(find 2dnav_stage)/worlds/willow-pr2-5cm.world" respawn="false" output="screen"/>
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.05.pgm 0.05" respawn="false" output="screen"/>
+    <node pkg="amcl" type="amcl" respawn="false" output="screen">
+      <remap from="scan" to="base_scan" />
+    </node>
+    <node pkg="wavefront" type="wavefront" name="wavefront" respawn="false" output="screen">
+      <remap from="scan" to="base_scan" />
+      <param name="robot_radius" value="0.325"/>
+    </node>
+    <node pkg="nav_view" type="nav_view" respawn="false" output="screen"/>
+    <!--node pkg="nav_view_sdl" type="nav_view" respawn="false" output="screen"/> --><!-- You must have nav_view_sdl installed it is not a tracked dependency-->
+  </group>
+</launch>
+

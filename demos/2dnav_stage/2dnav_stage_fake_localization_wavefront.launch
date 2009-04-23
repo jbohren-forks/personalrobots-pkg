@@ -3,11 +3,11 @@
   <group name="wg">
     <node pkg="stage" type="stageros" args="$(find 2dnav_stage)/worlds/willow-pr2.world" respawn="false" />
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full.pgm 0.1" respawn="false" />
-    <node pkg="wavefront" type="wavefront" respawn="false" >
+    <node pkg="wavefront" type="wavefront" name="wavefront" respawn="false" >
       <remap from="scan" to="base_scan" />
+      <param name="robot_radius" value="0.325"/>
     </node>
     <node pkg="nav_view" type="nav_view" respawn="false"/>
-    <param name="max_publish_frequency" value="20.0"/>
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
   </group>
 </launch>

@@ -40,13 +40,15 @@
 
 @htmlinclude manifest.html
 
-@b odom_localization is simply forwards the odometry information 
+@b odom_localization Takes in ground truth pose information for a robot
+base (e.g., from a simulator or motion capture system) and republishes
+it as if a localization system were in use.
 
 <hr>
 
 @section usage Usage
 @verbatim
-$ odom_localization
+$ fake_localization
 @endverbatim
 
 <hr>
@@ -54,28 +56,26 @@ $ odom_localization
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "base_pose_ground_truth"/robot_msgs::PoseWithRatesStamped : robot's odometric pose.  Only the position information is used (velocity is ignored).
-- @b "initialpose"/Pose2DFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "base_pose_ground_truth" robot_msgs/PoseWithRatesStamped : robot's odometric pose.  Only the position information is used (velocity is ignored).
 
 Publishes to (name / type):
-- @b "localizedpose"/RobotBase2DOdom : robot's localized map pose.  Only the position information is set (no velocity).
-- @b "particlecloud"/ParticleCloud : fake set of particles being maintained by the filter (one paricle only).
+- @b "amcl_pose" robot_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
+- @b "particlecloud" robot_msgs/ParticleCloud : fake set of particles being maintained by the filter (one paricle only).
 
 <hr>
 
 @section parameters ROS parameters
 
-- None
+- "~odom_frame_id" (string) : The odometry frame to be used, default: "odom"
 
  **/
 
 #include <ros/node.h>
 #include <ros/time.h>
 
-#include <deprecated_msgs/RobotBase2DOdom.h>
 #include <robot_msgs/PoseWithRatesStamped.h>
 #include <robot_msgs/ParticleCloud.h>
-#include <deprecated_msgs/Pose2DFloat32.h>
+#include <robot_msgs/PoseWithCovariance.h>
 
 #include <angles/angles.h>
 
@@ -91,7 +91,7 @@ class FakeOdomNode: public ros::Node
 public:
     FakeOdomNode(void) : ros::Node("fake_localization")
     {
-      advertise<deprecated_msgs::RobotBase2DOdom>("localizedpose",1);
+      advertise<robot_msgs::PoseWithCovariance>("amcl_pose",1);
       advertise<robot_msgs::ParticleCloud>("particlecloud",1);
       m_tfServer = new tf::TransformBroadcaster(*this);	
       m_tfListener = new tf::TransformListener(*this);
@@ -99,8 +99,7 @@ public:
       
       m_base_pos_received = false;
 
-      param("pf_odom_frame_id", odom_frame_id_, std::string("odom"));
-      m_iniPos.x = m_iniPos.y = m_iniPos.th = 0.0;
+      param("~odom_frame_id", odom_frame_id_, std::string("odom"));
       m_particleCloud.set_particles_size(1);
       notifier = new tf::MessageNotifier<robot_msgs::PoseWithRatesStamped>(m_tfListener, this, 
                                                                            boost::bind(&FakeOdomNode::update, this, _1),
@@ -139,8 +138,7 @@ private:
     
     robot_msgs::PoseWithRatesStamped  m_basePosMsg;
     robot_msgs::ParticleCloud      m_particleCloud;
-    deprecated_msgs::RobotBase2DOdom      m_currentPos;
-    deprecated_msgs::Pose2DFloat32        m_iniPos;
+    robot_msgs::PoseWithCovariance      m_currentPos;
 
     //parameter for what odom to use
     std::string odom_frame_id_;
@@ -163,13 +161,13 @@ public:
 				message->pos.position.y,
                                 0.0*message->pos.position.z )); // zero height for base_footprint
 
-    double x = txi.getOrigin().x() + m_iniPos.x;
-    double y = txi.getOrigin().y() + m_iniPos.y;
+    double x = txi.getOrigin().x();
+    double y = txi.getOrigin().y();
     double z = txi.getOrigin().z();
 
     double yaw, pitch, roll;
     txi.getBasis().getEulerZYX(yaw, pitch, roll);
-    yaw = angles::normalize_angle(yaw + m_iniPos.th);
+    yaw = angles::normalize_angle(yaw);
 
     tf::Transform txo(tf::Quaternion(yaw, pitch, roll), tf::Point(x, y, z));
     
@@ -204,16 +202,16 @@ public:
     // Publish localized pose
     m_currentPos.header = message->header;
     m_currentPos.header.frame_id = "map"; ///\todo fixme hack
-    m_currentPos.pos.x = x;
-    m_currentPos.pos.y = y;
-    m_currentPos.pos.th = yaw;
-    publish("localizedpose", m_currentPos);
+    m_currentPos.pose.position.x = x;
+    m_currentPos.pose.position.y = y;
+    // Leave z as zero
+    tf::QuaternionTFToMsg(tf::Quaternion(yaw, 0.0, 0.0),
+                          m_currentPos.pose.orientation);
+    // Leave covariance as zero
+    publish("amcl_pose", m_currentPos);
 
     // The particle cloud is the current position. Quite convenient.
-    robot_msgs::Pose pos;
-    tf::PoseTFToMsg(tf::Pose(tf::Quaternion(m_currentPos.pos.th, 0, 0), tf::Vector3(m_currentPos.pos.x, m_currentPos.pos.y, 0)),
-                    pos);
-    m_particleCloud.particles[0] = pos;
+    m_particleCloud.particles[0] = m_currentPos.pose;
     publish("particlecloud", m_particleCloud);
   }   
 };

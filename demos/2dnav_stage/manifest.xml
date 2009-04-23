@@ -6,8 +6,6 @@
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
   <depend package="nav_view"/>
   <depend package="amcl"/>
-  <!-- TODO: remove amcl_player -->
-  <depend package="amcl_player"/>
   <depend package="fake_localization"/>
   <depend package="stage"/>
   <depend package="map_server"/>

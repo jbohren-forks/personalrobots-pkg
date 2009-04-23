@@ -1,31 +1,21 @@
 /*
- * wavefront_player
+ * wavefront
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <ORGANIZATION> nor the names of its
- *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ *  You should have received a copy of the GNU Lesser General Public
+ *  License along with this library; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 /**
@@ -34,7 +24,7 @@
 
 @htmlinclude manifest.html
 
-@b wavefront_player is a path-planning system for a robot moving in 2D.  It
+@b wavefront is a path-planning system for a robot moving in 2D.  It
 implements the wavefront algorithm (described in various places; Latombe's
 book is a good reference), which uses dynamic programming over an occupancy
 grid map to find the lowest-cost path from the robot's pose to the goal.
@@ -43,8 +33,7 @@ This node uses part of the Player @b wavefront driver.  For detailed
 documentation, consult <a
 href="http://playerstage.sourceforge.net/doc/Player-cvs/player/group__driver__wavefront.html">Player
 wavefront documentation</a>.  Note that this node does not actually wrap the @b
-wavefront driver, but rather calls into the underlying library, @b
-libwavefront_standalone.
+wavefront driver, but rather the underlying planner code.
 
 The planning algorithm assumes that the robot is circular and holonomic.
 Under these assumptions, it efficiently dilates obstacles and then plans
@@ -64,7 +53,7 @@ time to slow down.
 
 @section usage Usage
 @verbatim
-$ wavefront_player
+$ wavefront
 @endverbatim
 
 <hr>
@@ -72,30 +61,27 @@ $ wavefront_player
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "localizedpose"/RobotBase2DOdom : robot's map pose.  Only the position information is used (velocity is ignored).
-- @b "goal"/robot_msgs/PoseStamped : goal for the robot.
-- @b "scan"/laser_scan/LaserScan : laser scans.  Used to temporarily modify the map for dynamic obstacles.
+- @b "tf_message" tf/tfMessage: robot's pose in the "map" frame
+- @b "goal" robot_msgs/PoseStamped : goal for the robot.
+- @b "scan" laser_scan/LaserScan : laser scans.  Used to temporarily modify the map for dynamic obstacles.
 
 Publishes to (name / type):
-- @b "cmd_vel"/PoseDot : velocity commands to robot
-- @b "state"/Planner2DState : current planner state (e.g., goal reached, no
-path)
-- @b "gui_path"/Polyline2D : current global path (for visualization)
-- @b "gui_laser"/Polyline2D : re-projected laser scans (for visualization)
-
-@todo Start using libTF for transform management:
-  - subscribe to odometry and use transform to recover map pose.
+- @b "cmd_vel" robot_msgs/PoseDot : velocity commands to robot
+- @b "state" robot_actions/MoveBaseState : current planner state (e.g., goal reached, no path)
+- @b "gui_path" robot_msgs/Polyline2D : current global path (for visualization)
+- @b "gui_laser" robot_msgs/Polyline2D : re-projected laser scans (for visualization)
 
 <hr>
 
 @section parameters ROS parameters
 
-- None
+  - @b "~dist_eps" (double) : Goal distance tolerance (how close the robot must be to the goal before stopping), default: 1.0 meters
+  - @b "~robot_radius" (double) : The robot's largest radius (the planner treats it as a circle), default: 0.175 meters
+  - @b "~dist_penalty" (double) : Penalty factor for coming close to obstacles, default: 2.0
 
-@todo There are an enormous number of parameters, values for which are all
-currently hardcoded. These should be exposed as ROS parameters.  In
-particular, robot radius and safety distance must be changed for each
-robot.
+@todo There are many more parameters of the underlying planner, values
+for which are currently hardcoded. These should be exposed as ROS
+parameters.
 
  **/
 #include <stdio.h>
@@ -243,7 +229,7 @@ class WavefrontNode: public ros::Node
 
 #define _xy_tolerance 1e-3
 #define _th_tolerance 1e-3
-#define USAGE "USAGE: wavefront_player"
+#define USAGE "USAGE: wavefront"
 
 int
 main(int argc, char** argv)
@@ -264,7 +250,7 @@ main(int argc, char** argv)
 }
 
 WavefrontNode::WavefrontNode() :
-        ros::Node("wavefront_player"),
+        ros::Node("wavefront"),
         planner_state(NO_GOAL),
         enable(true),
         rotate_dir(0),
@@ -294,9 +280,9 @@ WavefrontNode::WavefrontNode() :
   ///\todo does this need to be initialized?  global_pose.setIdentity();
 
   // set a few parameters. leave defaults just as in the ctor initializer list
-  param("dist_eps", dist_eps, 1.0);
-  param("robot_radius", robot_radius, 0.175);
-  param("dist_penalty", dist_penalty, 2.0);
+  param("~dist_eps", dist_eps, 1.0);
+  param("~robot_radius", robot_radius, 0.175);
+  param("~dist_penalty", dist_penalty, 2.0);
 
   // get map via RPC
   robot_srvs::StaticMap::Request  req;
