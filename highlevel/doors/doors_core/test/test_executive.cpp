@@ -88,6 +88,7 @@ int
   robot_actions::ActionClient<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> detect_door("detect_door");
   robot_actions::ActionClient<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> detect_handle("detect_handle");
   robot_actions::ActionClient<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> grasp_handle("grasp_handle");
+  robot_actions::ActionClient<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> release_handle("release_handle");
   robot_actions::ActionClient<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> open_door("open_door");
   robot_actions::ActionClient<robot_msgs::Door, robot_actions::MoveBaseDoorState, robot_actions::Pose2D> move_base_door("move_base_door");
   robot_actions::ActionClient<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped> move_base_local("move_base_local");
@@ -140,17 +141,46 @@ int
   threads_.create_thread(boost::bind(&robot_actions::ActionClient<robot_msgs::Door, 
 				     robot_actions::DoorActionState, robot_msgs::Door>::execute, 
 				     &open_door, door, door, timeout_long));
+  Duration(4.0).sleep();
 
+  /*
   // move throught door
   robot_actions::Pose2D pose2d;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
   if (move_base_door.execute(door, pose2d, timeout_long) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
+  */
 
-  // preempt open door
+  // finish open door
   open_door.preempt();
+  threads_.join_all();
 
+  // release handle
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.stop_controllers.push_back("r_arm_cartesian_tff_controller");
+  switchlist.start_controllers.push_back("r_arm_cartesian_trajectory_controller");
+  switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
+  switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  if (release_handle.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
 
-  threads_.interrupt_all();
+  // tuck arm
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_wrench_controller");
+  switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+
+  // stop remaining controllers
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.stop_controllers.push_back("laser_tilt_controller");
+  switchlist.stop_controllers.push_back("head_controller");
+  switchlist.stop_controllers.push_back("r_gripper_effort_controller");
+  switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+
   return (0);
 }
