@@ -53,7 +53,7 @@ namespace nav
   {
     //get some parameters that will be global to the move base door node
     ros_node_.param("~global_frame", global_frame_, std::string("odom_combined"));
-    ros_node_.param("~control_frame", control_frame_, std::string("odom"));
+    ros_node_.param("~control_frame", control_frame_, std::string("odom_combined"));
     ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~controller_frequency", controller_frequency_, 10.0);
 
