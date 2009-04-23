@@ -42,12 +42,16 @@ DetectOutletFineAction::DetectOutletFineAction()
   : robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_fine"),
     node_(ros::Node::instance())
 {
+  detector_.reset(new OutletTracker(*node_));
+  detector_->deactivate();
+    
   node_->subscribe("outlet_detector/pose", outlet_pose_msg_, &DetectOutletFineAction::foundOutlet, this, 1);
 
 }
 
 robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback){
 
+  detector_->activate();
   return waitForDeactivation(feedback);
 
 }

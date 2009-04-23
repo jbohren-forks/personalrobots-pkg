@@ -46,12 +46,13 @@
 #include <robot_msgs/PoseStamped.h>
 #include <robot_actions/DetectOutletState.h>
 
-// Srvs 
-#include <outlet_detection/OutletDetection.h>
-
 // Robot Action Stuff
 #include <robot_actions/action.h>
 
+// Detection
+#include <outlet_detection/outlet_tracker.h>
+
+#include <boost/scoped_ptr.hpp>
 
 namespace plugs_core{
 
@@ -67,6 +68,8 @@ public:
 private:
   ros::Node* node_;
 
+  boost::scoped_ptr<OutletTracker> detector_;
+  
   robot_msgs::PoseStamped outlet_pose_msg_;
   void foundOutlet();
 };
