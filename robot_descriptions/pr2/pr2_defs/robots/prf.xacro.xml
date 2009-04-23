@@ -15,6 +15,7 @@
   <include filename="$(find pr2_defs)/defs/ptz_defs.xml" />
   <include filename="$(find pr2_defs)/defs/prosilica_defs.xml" />
   <include filename="$(find pr2_defs)/defs/gazebo_defs.xml" />
+  <include filename="$(find pr2_defs)/defs/mono_cam_defs.xml" />
 
   <pr2_base name="base" >
     <origin xyz="0 0 0.051" rpy="0 0 0" /> <!-- 5.1cm is the height of the base when wheels contact ground -->
@@ -63,6 +64,14 @@
   <pr2_ptz side="l" reflect="1" parent="torso_lift_link">
     <origin xyz="0.0 0.1975 0.2265" rpy="0 0 0" />
   </pr2_ptz>
+
+  <!-- Forearm Cam (Hand approximated values) -->
+
+
+  <mono_cam name="r_forearm_cam" parent="r_forearm_roll_link">
+    <origin xyz=".15 0 .07"
+            rpy="${-M_PI/2} ${-45*M_PI/180} 0" />
+  </mono_cam>
 
   <!-- Define groups of links; a link may be part of multiple groups -->
   <include filename="$(find pr2_defs)/robots/pr2_groups.xml" />

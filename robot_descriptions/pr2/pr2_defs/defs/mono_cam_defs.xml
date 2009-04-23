@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<root>
+  
+<macro name="mono_cam" params="name parent *origin">
+
+  <joint name="${name}_fixed_joint" type="fixed" />
+  <link name="${name}_frame">
+    <insert_block name="origin" />
+    <parent name="${parent}" />
+    <joint name="${name}_fixed_joint" />
+
+    <inertial>
+      <mass value="0.01" />
+      <com xyz="0 0 0" />
+      <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
+               iyy="0.001"  iyz="0.0"
+               izz="0.001" />
+    </inertial>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material" value="Gazebo/Blue" />
+      </map>
+      <geometry name="${name}_visual">
+        <mesh scale="0.01 0.01 0.01" />
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="${name}_collision">
+        <box size="0.01 0.01 0.01" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="${name}_optical_fixed_joint" type="fixed" />
+  <link name="${name}_optical_frame">
+    <parent name="${name}_frame" />
+    <joint name="${name}_optical_fixed_joint" />
+    <origin xyz="0 0 0}"
+            rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
+
+    <inertial>
+      <mass value="0.01" />
+      <com xyz="0 0 0" />
+      <inertia ixx="0.001"  ixy="0.0"  ixz="0.0"
+               iyy="0.001"  iyz="0.0"
+               izz="0.001" />
+    </inertial>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material" value="Gazebo/Blue" />
+      </map>
+      <geometry name="${name}_optical_visual">
+        <mesh scale="0.01 0.01 0.01" />
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="${name}_optical_collision">
+        <box size="0.01 0.01 0.01" />
+      </geometry>
+    </collision>
+  </link>
+</macro>
+</root>
