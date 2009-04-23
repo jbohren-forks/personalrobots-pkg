@@ -25,7 +25,7 @@ rospack_add_executable(outlet_measure src/CalculateRealCoordinates.cpp src/Outle
 target_link_libraries(outlet_measure outlet)
 
 # Fine outlet detection node
-rospack_add_executable(outlet_node src/outlet_node.cpp)
+rospack_add_executable(outlet_node src/outlet_tracker.cpp)
 target_link_libraries(outlet_node outlet)
 
 # Far outlet spotting node
