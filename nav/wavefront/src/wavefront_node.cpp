@@ -96,6 +96,7 @@ parameters.
 
 // roscpp
 #include <ros/node.h>
+#include <ros/time.h>
 #include "boost/thread/mutex.hpp"
 
 // The messages that we'll use
@@ -172,7 +173,7 @@ class WavefrontNode: public ros::Node
     double plan_halfwidth;
     double dist_eps;
     double ang_eps;
-    double cycletime;
+    ros::Duration cycletime;
 
     // Map update paramters (for adding obstacles)
     double laser_maxrange;
@@ -220,7 +221,7 @@ class WavefrontNode: public ros::Node
     // Execute a planning cycle
     void doOneCycle();
     // Sleep for the remaining time of the cycle
-    void sleep(double loopstart);
+    void sleep(const ros::Time& loopstart);
     // Compare two poses, tell whether they are close enough to be
     // considered the same, with tolerance
     bool comparePoses(double x1, double y1, double a1,
@@ -238,12 +239,12 @@ main(int argc, char** argv)
 
   WavefrontNode wn;
 
-  struct timeval curr;
+  ros::Time now;
   while(wn.ok())
   {
-    gettimeofday(&curr,NULL);
+    now = ros::Time::now();
     wn.doOneCycle();
-    wn.sleep(curr.tv_sec+curr.tv_usec/1e6);
+    wn.sleep(now);
   }
 
   return(0);
@@ -291,7 +292,8 @@ WavefrontNode::WavefrontNode() :
   while(!ros::service::call("/static_map", req, resp))
   {
     puts("request failed; trying again...");
-    usleep(1000000);
+    ros::Duration d(1.0);
+    d.sleep();
   }
   printf("Received a %d X %d map @ %.3f m/pix\n",
          resp.map.width,
@@ -758,17 +760,14 @@ WavefrontNode::doOneCycle()
 
 // Sleep for the remaining time of the cycle
 void
-WavefrontNode::sleep(double loopstart)
+WavefrontNode::sleep(const ros::Time& loopstart)
 {
-  struct timeval curr;
-  double currt,tdiff;
-  gettimeofday(&curr,NULL);
-  currt = curr.tv_sec + curr.tv_usec/1e6;
-  tdiff = this->cycletime - (currt-loopstart);
-  if(tdiff <= 0.0)
+  ros::Time now = ros::Time::now();
+  ros::Duration diff = this->cycletime - (now - loopstart);
+  if(diff.toSec() <= 0.0)
     puts("Wavefront missed deadline and not sleeping; check machine load");
   else
-    usleep((unsigned int)rint(tdiff*1e6));
+    diff.sleep();
 }
 
 bool
