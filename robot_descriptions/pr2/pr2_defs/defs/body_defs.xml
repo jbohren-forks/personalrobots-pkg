@@ -7,7 +7,7 @@
   <macro name="pr2_torso" params="name parent *origin">
 
     <joint name="${name}_joint" type="prismatic">
-      <limit min="0.0" max="0.31" effort="10000"
+      <limit min="0.0" max="0.32" effort="10000"
              velocity="0.015" k_velocity="400000"
              safety_length_min="0.005" safety_length_max="0.005" k_position="1000" />
       <calibration reference_position="0.00536" values="0 0" />
