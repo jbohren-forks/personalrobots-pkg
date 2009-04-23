@@ -324,7 +324,7 @@ bool EnvironmentNAVXYTHETADOORLAT::GetMinCostDoorAngle(double x, double y, doubl
   int bestangle = -INFINITECOST;
   for(int cind = 0; cind < (int)doorangleV.size(); cind++)
   {
-//    printf("angles[%d]: %d %d\n",cind,doorangleV[cind],dooranglecostV[cind]);
+    // printf("angles[%d]: %d %d\n",cind,doorangleV[cind],dooranglecostV[cind]);
     if(doorangleintV[cind] == door_interval && dooranglecostV[cind] < mincost)
     {
       mincost = dooranglecostV[cind];

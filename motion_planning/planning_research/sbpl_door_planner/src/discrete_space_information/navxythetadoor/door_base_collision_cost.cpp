@@ -72,7 +72,7 @@ namespace door_base_collision_cost
     robot_msgs::Point32 global_handle_position;
     robot_msgs::Point32 robot_handle_position;
 
-//Transform the handle position
+    //Transform the handle position
     transform2D(door_handle_position_,global_handle_position,door_frame_global_position_,door_frame_global_yaw_+door_angle);
     transform2DInverse(global_handle_position,robot_handle_position,robot_position, robot_yaw);
 
@@ -114,11 +114,15 @@ namespace door_base_collision_cost
 
   bool  DoorBaseCollisionCost::findAngleLimits(const double max_radius, const robot_msgs::Point32 &point, double &angle)
   {
+    double eps_distance = 0.001;
     double dx = point.x;
     double dy = point.y;
     double d = sqrt(dx*dx + dy*dy);
-    if(d > max_radius)
+    if(d > (max_radius+eps_distance))
     {
+#ifdef DEBUG
+      printf("Distance too high %f, max: %f\n",d,max_radius);
+#endif
       return false;
     }
     angle = atan2(dy,dx);
@@ -141,7 +145,12 @@ namespace door_base_collision_cost
     double d = sqrt(dx*dx+dy*dy);
 
     if(d < eps)
+    {
+#ifdef DEBUG
+      printf("No intersection found\n");
+#endif
       return false;
+    }
 
     robot_msgs::Point32 int_pt;
 
@@ -153,7 +162,7 @@ namespace door_base_collision_cost
     if(disc < 0)
       return false;
 
-    double t1 = (-b + sqrt(disc))/2*a;   
+    double t1 = (-b + sqrt(disc))/(2*a);   
     if(t1 >= 0 && t1 <= 1) // point is inside limits on the line segment
     {
       int_pt.x = p1.x+d*cost*t1;
@@ -161,7 +170,7 @@ namespace door_base_collision_cost
       intersection_points.push_back(int_pt);
     }
 
-    t1 = (-b - sqrt(disc))/2*a;   
+    t1 = (-b - sqrt(disc))/(2*a);   
     if(t1 >= 0 && t1 <= 1) // point is inside limits on the line segment
     {
       int_pt.x = p1.x+d*cost*t1;
@@ -184,10 +193,17 @@ namespace door_base_collision_cost
       int p1 = i;
       int p2 = (i+1)%((int) footprint.size());      
       intersection_points.resize(0);
+#ifdef DEBUG
+      printf("\nPoints: %d %d, %f %f, %f %f, \ncenter: %f, %f\n radius: %f\n",p1,p2,footprint[p1].x,footprint[p1].y,footprint[p2].x,footprint[p2].y,center.x,center.y,radius);
+#endif
       if (findCircleLineSegmentIntersection(footprint[p1],footprint[p2],center,radius,intersection_points))
       {
         for(int j=0; j< (int) intersection_points.size(); j++)
         {
+#ifdef DEBUG
+          printf("soln:%d:: %f, %f\n",j,intersection_points[j].x,intersection_points[j].y);
+          printf("angle: %f\n",atan2(intersection_points[j].y,intersection_points[j].x)*180.0/M_PI);
+#endif
           solution.push_back(intersection_points[j]);
         }
       }
@@ -207,6 +223,7 @@ namespace door_base_collision_cost
       if(findAngleLimits(max_radius,footprint[i],angle))
       {
 #ifdef DEBUG
+        printf("Angle vertex %d: %f\n",i,angle*180.0/M_PI); 
         if(isnan(angle))
         {
           printf("fp\n");
@@ -226,6 +243,7 @@ namespace door_base_collision_cost
       if(findAngleLimits(max_radius,solution[i],angle))
       {
 #ifdef DEBUG
+        printf("Angle edge %d: %f\n",i,angle*180.0/M_PI); 
         if(isnan(angle))
         {
           printf("circle: %f %f\n radius: %f\n %f %f\n",center.x,center.y,max_radius,footprint[i].x,footprint[i].y);
@@ -242,9 +260,20 @@ namespace door_base_collision_cost
       max_obstructed_angle = local_door_min_angle_;
       return;
     }
+
+#ifdef DEBUG
+    printf("\n\n\n");
+    for(int i=0; i<(int)obstructed_angles.size(); i++)
+    {
+      printf("obs angle: %d, %f\n",i,obstructed_angles[i]*180.0/M_PI);
+    }
+#endif
+
+
     std::sort(obstructed_angles.begin(),obstructed_angles.end());
     min_obstructed_angle = obstructed_angles[0];
     max_obstructed_angle = obstructed_angles[obstructed_angles.size()-1];
+
     if(isnan(max_obstructed_angle))
     {
       printf("Size: %d\n",obstructed_angles.size());

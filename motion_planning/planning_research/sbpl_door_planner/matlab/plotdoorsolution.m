@@ -9,8 +9,8 @@ door_p2 = rotZ(door_angle)*[door_length 0 0 1]';
 door_p2 = door_p2(1:2,1) + hinge_global_position(1:2)';
 
 initRobotBox = [local_footprint';
-    0 0 0 0;
-    1 1 1 1];
+    zeros(1,length(local_footprint));
+     ones(1,length(local_footprint))];
 
 a = load('sol.txt');
 figure(1)

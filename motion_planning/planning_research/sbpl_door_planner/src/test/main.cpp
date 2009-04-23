@@ -91,7 +91,7 @@ int planxythetadoor(int argc, char *argv[])
   }
 
   //Initialize the door information
-  environment_navxythetadoor.db_.footprint_.resize(4);
+  environment_navxythetadoor.db_.footprint_.resize(5);
   environment_navxythetadoor.db_.footprint_[0].x = halfwidth;
   environment_navxythetadoor.db_.footprint_[0].y = halfwidth;
 
@@ -103,6 +103,9 @@ int planxythetadoor(int argc, char *argv[])
 
   environment_navxythetadoor.db_.footprint_[3].x = halfwidth;
   environment_navxythetadoor.db_.footprint_[3].y = -halfwidth;
+
+  environment_navxythetadoor.db_.footprint_[4].x = halfwidth + halfwidth/2.0;
+  environment_navxythetadoor.db_.footprint_[4].y = 0;
 
   environment_navxythetadoor.db_.robot_shoulder_position_.x = -0.05;
   environment_navxythetadoor.db_.robot_shoulder_position_.y = -0.188;
