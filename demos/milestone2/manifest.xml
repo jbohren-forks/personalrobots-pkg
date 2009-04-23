@@ -15,6 +15,7 @@
   <depend package="pr2_experimental_controllers"/>
   <depend package="semantic_point_annotator"/>
   <depend package="2dnav_pr2"/>
+  <depend package="laser_scan"/>  
   <depend package="point_cloud_assembler"/>
   <depend package="door_handle_detector"/>
   <depend package="doors_core"/>
