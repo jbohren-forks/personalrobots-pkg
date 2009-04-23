@@ -36,14 +36,14 @@ OutletTracker::OutletTracker(ros::Node &node)
     cvStartWindowThread();
   }
   
-  node_.advertise<robot_msgs::PoseStamped>("~pose", 1);
+  node_.advertise<robot_msgs::PoseStamped>("~outlet_pose", 1);
 
   activate();
 }
 
 OutletTracker::~OutletTracker()
 {
-  node_.unadvertise("~pose");
+  node_.unadvertise("~outlet_pose");
 
   if (active_thread_.joinable()) {
     active_thread_.interrupt();
@@ -81,7 +81,7 @@ void OutletTracker::processImage()
   robot_msgs::PoseStamped pose;
   
   if (detectOutlet(pose)) {
-    node_.publish("~pose", pose);
+    node_.publish("~outlet_pose", pose);
     
     // Recenter ROI for next image request
     if (roi_policy_ == LastImageLocation) {

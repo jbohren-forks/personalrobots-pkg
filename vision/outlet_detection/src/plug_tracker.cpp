@@ -83,14 +83,14 @@ PlugTracker::PlugTracker(ros::Node &node)
   camera_in_cvcam_.getOrigin().setValue(0.0, 0.0, 0.0);
   camera_in_cvcam_.getBasis().setValue(0, 0, 1, -1, 0, 0, 0, -1, 0);
   
-  node_.advertise<robot_msgs::PoseStamped>("~pose", 1);
+  node_.advertise<robot_msgs::PoseStamped>("~plug_pose", 1);
 
   activate();
 }
 
 PlugTracker::~PlugTracker()
 {
-  node_.unadvertise("~pose");
+  node_.unadvertise("~plug_pose");
   
   if (active_thread_.joinable()) {
     active_thread_.interrupt();
@@ -187,7 +187,7 @@ void PlugTracker::processImage()
   tf::PoseTFToMsg(plug_in_camera, pose_.pose);
   pose_.header.frame_id = "high_def_frame";
   pose_.header.stamp = img_.header.stamp;
-  node_.publish("~pose", pose_);
+  node_.publish("~plug_pose", pose_);
   tf_broadcaster_.sendTransform(plug_in_camera,
                                 ros::Time::now(), "plug_frame",
                                 "high_def_frame");
