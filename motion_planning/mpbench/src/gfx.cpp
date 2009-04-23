@@ -723,34 +723,40 @@ namespace {
 	// maybe this is a door plan?
 	door_waypoint_s const * doorwpt(dynamic_cast<door_waypoint_s const *>(wpt));
 	if (doorwpt && result.door) { // 2nd condition "always" true though
-	  glColor3d(0.4, 0.4, 1);
 	  glLineWidth(3);
 	  glPushMatrix();
 	  glTranslated(result.door->px, result.door->py, 0);
-	  // min angle
-	  glPushMatrix();
-	  glRotated(180 * doorwpt->min_door_angle / M_PI, 0, 0, 1);
-	  glBegin(GL_LINES);
-	  glVertex2d(0, 0);
-	  glVertex2d(result.door->width, 0);
-	  glEnd();
-	  glPointSize(3);
-	  glColor3d(0.6, 0.6, 1);
-	  glBegin(GL_POINTS);
-	  glVertex2d(result.door->dhandle, 0);
-	  glEnd();
-	  glPopMatrix();
-	  // all valid angles, offset from the "shut" position
-	  glRotated(180 * result.door->th_shut / M_PI, 0, 0, 1);
-	  glLineWidth(1);
-	  glColor3d(0.2, 0.2, 1);
-	  glBegin(GL_LINES);
-	  for (size_t ii(0); ii < doorwpt->valid_angle.size(); ++ii) {
-	    glVertex2d(0, 0);
-	    glVertex2d(result.door->width * cos(M_PI * doorwpt->valid_angle[ii] / 180.0),
-		       result.door->width * sin(M_PI * doorwpt->valid_angle[ii] / 180.0));
+	  { // all valid angles, offset from the "shut" position
+	    glPushMatrix();
+	    glRotated(180 * result.door->th_shut / M_PI, 0, 0, 1);
+	    glLineWidth(1);
+	    glColor3d(0.2, 0.2, 1);
+	    glBegin(GL_LINES);
+	    for (size_t ii(0); ii < doorwpt->valid_angle.size(); ++ii) {
+	      glVertex2d(0, 0);
+	      glVertex2d(result.door->width * cos(M_PI * doorwpt->valid_angle[ii] / 180.0),
+			 result.door->width * sin(M_PI * doorwpt->valid_angle[ii] / 180.0));
+	    }
+	    glEnd();
+	    glPopMatrix();
 	  }
-	  glEnd();
+	  { // min angle
+	    glPushMatrix();
+	    glRotated(180 * doorwpt->min_door_angle / M_PI, 0, 0, 1);
+	    glLineWidth(3);
+	    glColor3d(0.6, 0.6, 1);
+	    glBegin(GL_LINES);
+	    glVertex2d(0, 0);
+	    glVertex2d(result.door->width, 0);
+	    glEnd();
+	    // circle around the handle
+	    glLineWidth(1);
+	    glTranslated(result.door->dhandle, 0, 0);
+	    glColor3d(0.6, 0.6, 1);
+	    gluDisk(wrap_glu_quadric_instance(),
+		    0.1, 0.1, 36, 1);
+	    glPopMatrix();
+	  }
 	  glPopMatrix();
 	  // 	  printf("DBG plotted doorwpt[%zu]: (%6.3f, %6.3f, %6.3f) door angle = %6.3f  (N valid angles: %zu)\n",
 	  // 		 animation_tick % plan->size(), doorwpt->x, doorwpt->y, doorwpt->theta, doorwpt->min_door_angle,
