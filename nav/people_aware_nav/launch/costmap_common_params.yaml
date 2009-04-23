@@ -8,7 +8,7 @@ costmap:
   cost_scaling_factor: 1.0
   lethal_cost_threshold: 100
 
-  observation_topics: base_scan_marking base_scan tilt_scan_filtered ground_object_cloud
+  observation_topics: base_scan_marking base_scan
 
   base_scan_marking: {sensor_frame: base_laser, data_type: PointCloud, expected_update_rate: 0.2,
     observation_persistance: 0.0, marking: true, clearing: false, min_obstacle_height: 0.08, max_obstalce_height: 2.0}
@@ -16,8 +16,3 @@ costmap:
   base_scan: {sensor_frame: base_laser, data_type: LaserScan, expected_update_rate: 0.2,
     observation_persistance: 0.0, marking: false, clearing: true, min_obstacle_height: 0.08, max_obstalce_height: 2.0}
 
-  tilt_scan_filtered: {sensor_frame: frame_from_message, data_type: PointCloud, expected_update_rate: 0.2,
-    observation_persistance: 2.0, marking: true, clearing: false, min_obstacle_height: 0.08, max_obstalce_height: 2.0}
-
-  ground_object_cloud: {sensor_frame: frame_from_message, data_type: PointCloud, expected_update_rate: 0.2,
-    observation_persistance: 2.0, marking: true, clearing: false, min_obstacle_height: -0.10, max_obstalce_height: 2.0}
