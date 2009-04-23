@@ -2,23 +2,23 @@
 #include <stdlib.h>
 #include "ros/node.h"
 #include "ros/publisher.h"
-#include "robot_msgs/Planner2DState.h"
-#include "robot_msgs/Planner2DGoal.h"
+#include "robot_actions/MoveBaseState.h"
+#include "robot_msgs/PoseStamped.h"
+#include "tf/tf.h"
 
 class WavefrontCLI : public ros::Node
 {
 public:
-  robot_msgs::Planner2DState wf_state;
-  robot_msgs::Planner2DGoal wf_goal;
+  robot_actions::MoveBaseState wf_state;
+  robot_msgs::PoseStamped wf_goal;
   enum { WF_IDLE, WF_SEEKING_GOAL, WF_DONE } state;
 
   WavefrontCLI(double x, double y, double th)
   : ros::Node("wavefront_cli"), state(WF_IDLE)
   {
-    wf_goal.goal.x  = x;
-    wf_goal.goal.y  = y;
-    wf_goal.goal.th = th;
-    wf_goal.enable = 1;
+    tf::Stamped<tf::Pose> p = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(th, 0.0, 0.0), tf::Point(x, y, 0.0)), ros::Time::now(), "map");
+    tf::PoseStampedTFToMsg(p, wf_goal);
+
     subscribe("state", wf_state, &WavefrontCLI::state_cb, 1);
     advertise("goal", wf_goal, &WavefrontCLI::goal_subscriber_callback, 1);
   }
@@ -31,7 +31,8 @@ public:
   }
   void deactivate_goal()
   {
-    wf_goal.enable = 0;
+    // Not sure what the right thing to do here is.
+    //wf_goal.enable = 0;
     publish("goal", wf_goal);
     ros::Duration().fromSec(0.5).sleep(); // hack to try and wait for the message to go
   }
