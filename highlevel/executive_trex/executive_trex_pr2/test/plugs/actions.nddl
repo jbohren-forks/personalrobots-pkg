@@ -78,7 +78,7 @@ PlugActions::PickupAndRelease {
   eq_plug_stow_msg(cmd_move_and_grasp_plug.object, feedback_detect_plug_on_base.object);
 
   // Use a bogus point. Do we even need a point
-  eq(cmd_detect_outlet_fine.time_stamp, feedback_detect_plug_on_base.time_stamp);
+  //eq(cmd_detect_outlet_fine.time_stamp, feedback_detect_plug_on_base.time_stamp);
   eq(cmd_detect_outlet_fine.frame_id, "torso_lift_link");
   eq(cmd_detect_outlet_fine.x, 0.0);
   eq(cmd_detect_outlet_fine.y, 0.0);
