@@ -15,7 +15,7 @@
              k_position="100" k_velocity="0.05"
              safety_length_min="0.0" safety_length_max="0.0" />
       <calibration reference_position="-0.35" values="0 0" />
-      <joint_properties damping="1.0" />
+      <joint_properties damping="0.2" />
     </joint>
 
     <link name="${name}_mount_link">
