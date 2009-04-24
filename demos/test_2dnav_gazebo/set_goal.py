@@ -76,6 +76,7 @@ class NavStackTest(unittest.TestCase):
         self.bumped  = False
         self.success = False
 
+        self.publish_initialpose = False
         self.publish_goal = True
 
         self.odom_xi = 0
@@ -189,6 +190,10 @@ class NavStackTest(unittest.TestCase):
             print "state goal has been published: ", state.goal.pose.position.x, ",", state.goal.pose.position.y, ",", state_eul[2]
             self.publish_goal = False
     
+    def amclInput(self, pose):
+          print "/amcl_pose received, stop setPose begin publishing goal",pose
+          self.publish_initialpose = False
+
     def cmd_velInput(self, cmd_vel):
           print "cmd_vel: ", cmd_vel.vel.vx, ",", cmd_vel.vel.vy, ",", cmd_vel.vel.vz \
                            , cmd_vel.ang_vel.vx, ",", cmd_vel.ang_vel.vy, ",", cmd_vel.ang_vel.vz
@@ -197,11 +202,13 @@ class NavStackTest(unittest.TestCase):
         print "LNK\n"
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
         pub_goal = rospy.Publisher("goal", PoseStamped)
+        pub_pose = rospy.Publisher("initialpose", PoseWithCovariance)
         rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
         rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
-        rospy.Subscriber("/move_base/feedback"   , MoveBaseStateNew       , self.stateInput)
+        rospy.Subscriber("/move_base/feedback"   , MoveBaseStateNew    , self.stateInput)
+        rospy.Subscriber("/amcl_pose"            , PoseWithCovariance  , self.amclInput)
 
         # below only for debugging build 303, base not moving
         rospy.Subscriber("cmd_vel"               , PoseDot             , self.cmd_velInput)
@@ -257,6 +264,15 @@ class NavStackTest(unittest.TestCase):
             if len(self.args) > i+1:
               self.test_timeout = float(self.args[i+1])
               print "test_timeout set to:",self.test_timeout
+          if self.args[i] == '-amcl':
+            if len(self.args) > i+3:
+              self.publish_initialpose = True
+              self.initialpose = [float(self.args[i+1]),float(self.args[i+2]),float(self.args[i+3])]
+              print "using amcl, will try to initialize pose to: ",self.initialpose
+            else:
+              self.publish_initialpose = False
+              print "using fake localization, need 3 arguments for amcl (x,y,th)"
+
         print " target:", self.target_x, self.target_y, self.target_t
         print "------------------------"
 
@@ -264,17 +280,35 @@ class NavStackTest(unittest.TestCase):
 
         # wait for result
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
-            # send goal
+
+            #create a temp header for publishers
             h = rospy.Header();
             h.stamp = rospy.get_rostime();
             h.frame_id = "map"
-            p = Point(self.target_x, self.target_y, 0)
-            tmpq = quaternion_from_euler(0,0,self.target_t,'rxyz')
-            q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
-            pose = Pose(p,q)
-            print "publishing goal",self.publish_goal
-            if self.publish_goal:
-              pub_goal.publish(PoseStamped(h, pose))
+            # publish initial pose until /amcl_pose is same as intialpose
+            if self.publish_initialpose:
+              p = Point(self.initialpose[0], self.initialpose[1], 0)
+              tmpq = quaternion_from_euler(0,0,self.initialpose[2],'rxyz')
+              q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
+              pose = Pose(p,q)
+              cov = [float64(0.5*0.5                  ),float64(0),float64(0),float64(0),float64(0),float64(0), \
+                     float64(0),float64(0.5*0.5                  ),float64(0),float64(0),float64(0),float64(0), \
+                     float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0), \
+                     float64(0),float64(0),float64(0),float64(math.pi/23.0*math.pi/12.0),float64(0),float64(0), \
+                     float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0), \
+                     float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0)  ]
+              print "publishing initialpose",h,p,cov[0]
+              pub_pose.publish(PoseWithCovariance(h, pose,cov))
+            else:
+              # send goal until state /move_base/feedback indicates goal is received
+              p = Point(self.target_x, self.target_y, 0)
+              tmpq = quaternion_from_euler(0,0,self.target_t,'rxyz')
+              q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
+              pose = Pose(p,q)
+              print "publishing goal",self.publish_goal
+              if self.publish_goal:
+                pub_goal.publish(PoseStamped(h, pose))
+
             time.sleep(1.0)
 
             # compute angular error between deltas in odom and p3d
