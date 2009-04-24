@@ -1,0 +1,15 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+  <include file="$(find 2dnav_pr2)/config/ground_plane.xml" />
+
+<!-- Local navigation in odom_combined -->
+  <include file="$(find 2dnav_pr2)/move_base_local/move_base_local.xml" />
+
+<!-- Navstack in map-->
+<!--
+  <include file="$(find 2dnav_pr2)/config/new_amcl_node.xml" />
+  <include file="$(find 2dnav_pr2)/config/map_server.xml" />
+  <include file="$(find 2dnav_pr2)/move_base/move_base.xml" />
+-->
+</launch>

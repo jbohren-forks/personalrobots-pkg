@@ -2,13 +2,13 @@
 
 
 <!-- controllers-->
-  <include file="$(find door_handle_detector)/launch/controllers.launch" />
+  <include file="$(find door_handle_detector)/launch/controllers.xml" />
 
 <!-- perception-->
-  <include file="$(find door_handle_detector)/launch/perception.launch" />
+  <include file="$(find door_handle_detector)/launch/perception.xml" />
 
 <!-- door domain -->
-  <include file="$(find door_handle_detector)/launch/door_handle_detector.launch" />
+  <include file="$(find door_handle_detector)/launch/door_handle_detector.xml" />
 
 <!-- Robot pose ekf -->
   <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" name="robot_pose_ekf">
