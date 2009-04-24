@@ -250,8 +250,11 @@ private:
       MessagePtr& message = *it;
 
       //Throw out messages which are too old
-      
-      if (message->header.stamp + tf_->getCacheLength() < ros::Time::now())
+      //! \todo combine getLatestCommonTime call with the canTransform call
+      ros::Time latest_transform_time ;
+      std::string error_string ;
+      tf_->getLatestCommonTime(message->header.frame_id, target_frame_, latest_transform_time, &error_string) ;
+      if (message->header.stamp + tf_->getCacheLength() < latest_transform_time)
       {
         it = messages_.erase(it);
 	--message_count_;
