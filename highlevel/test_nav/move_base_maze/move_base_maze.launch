@@ -1,6 +1,7 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
+  <param name="/use_sim_time" value="true"/>
     <node pkg="nav" type="move_base" respawn="false" name="move_base_node" output="screen">
       <remap from="/move_base_node/activate" to="/goal" />
       <remap from="~base_local_planner/global_plan" to="/gui_path" />

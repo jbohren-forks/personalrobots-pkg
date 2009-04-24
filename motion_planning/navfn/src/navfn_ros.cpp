@@ -46,6 +46,11 @@ namespace navfn {
     ros_node_.param("~/navfn/costmap/global_frame", global_frame_, std::string("map"));
     ros_node_.param("~/navfn/costmap/robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~/navfn/transform_tolerance", transform_tolerance_, 0.2);
+    
+    //we need to make sure that the transform between the robot base frame and the global frame is available
+    while(!tf_.canTransform(global_frame_, robot_base_frame_, ros::Time(), ros::Duration(5.0))){
+      ROS_WARN("Waiting on transform from %s to %s to become available before running the planner", robot_base_frame_.c_str(), global_frame_.c_str());
+    }
 
     //we'll get the parameters for the robot radius from the costmap we're associated with
     ros_node_.param("~navfn/costmap/inscribed_radius", inscribed_radius_, 0.325);

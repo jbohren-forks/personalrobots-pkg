@@ -67,6 +67,11 @@ namespace base_local_planner {
     ros_node.param("~base_local_planner/costmap/global_frame", global_frame_, string("map"));
     ros_node.param("~base_local_planner/costmap/robot_base_frame", robot_base_frame_, string("base_link"));
 
+    //we need to make sure that the transform between the robot base frame and the global frame is available
+    while(!tf_.canTransform(global_frame_, robot_base_frame_, ros::Time(), ros::Duration(5.0))){
+      ROS_WARN("Waiting on transform from %s to %s to become available before running the controller", robot_base_frame_.c_str(), global_frame_.c_str());
+    }
+
     ros_node.param("~base_local_planner/yaw_goal_tolerance", yaw_goal_tolerance_, 0.05);
     ros_node.param("~base_local_planner/xy_goal_tolerance", xy_goal_tolerance_, 0.10);
 
