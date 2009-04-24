@@ -65,7 +65,6 @@ int
   ros::init(argc, argv);
 
   ros::Node node("test_executive");
-  boost::thread_group threads_;
 
   robot_msgs::Door door;
   door.frame_p1.x = 1.0;
@@ -95,6 +94,8 @@ int
   robot_actions::ActionClient<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped> move_base_local("move_base_local");
 
   timeout_medium.sleep();
+  robot_msgs::Door tmp_door;
+
 
   // tuck arm
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -130,7 +131,7 @@ int
   switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_wrench_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  if (grasp_handle.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
+  if (grasp_handle.execute(door, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
 
   // unlatch handle
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -139,31 +140,25 @@ int
   switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_tff_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  if (unlatch_handle.execute(door, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
 
   // open door in separate thread
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
-  switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
-  switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
-  switchlist.start_controllers.push_back("r_arm_cartesian_tff_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  threads_.create_thread(boost::bind(&robot_actions::ActionClient<robot_msgs::Door, 
-				     robot_actions::DoorActionState, robot_msgs::Door>::execute, 
-				     &open_door, door, door, timeout_long));
+  boost::thread* thread = new boost::thread(boost::bind(&robot_actions::ActionClient<robot_msgs::Door, 
+							robot_actions::DoorActionState, robot_msgs::Door>::execute, 
+							&open_door, door, tmp_door, timeout_long));
 
-
-  Duration(4.0).sleep();
-  /*
   // move throught door
   robot_actions::Pose2D pose2d;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
   if (move_base_door.execute(door, pose2d, timeout_long) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
-  */
 
   // finish open door
   open_door.preempt();
-  threads_.join_all();
+  thread->join();
+  delete thread;
 
   // release handle
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();

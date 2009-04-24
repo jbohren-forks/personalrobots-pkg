@@ -1,4 +1,3 @@
-
 /*********************************************************************
 *
 * Software License Agreement (BSD License)
@@ -47,7 +46,7 @@ using namespace door_reactive_planner;
 namespace nav 
 {
   MoveBaseDoorAction::MoveBaseDoorAction(ros::Node& ros_node, tf::TransformListener& tf) : 
-    Action<robot_msgs::Door, robot_actions::Pose2D>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
+    Action<robot_msgs::Door, robot_actions::Pose2D>("move_base_door"), ros_node_(ros_node), tf_(tf),
     run_planner_(true), planner_cost_map_ros_(NULL),  
     planner_(NULL), valid_plan_(false) 
   {
@@ -55,7 +54,7 @@ namespace nav
     ros_node_.param("~global_frame", global_frame_, std::string("odom_combined"));
     ros_node_.param("~control_frame", control_frame_, std::string("odom_combined"));
     ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
-    ros_node_.param("~controller_frequency", controller_frequency_, 10.0);
+    ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
 
     ros_node_.param("~control_topic_name", control_topic_name_, std::string("/base/trajectory_controller/trajectory_command"));
     //for display purposes
@@ -266,7 +265,7 @@ namespace nav
 
         //check that the observation buffers for the costmap are current
         if(!planner_cost_map_ros_->isCurrent()){
-	  //         ROS_DEBUG("Sensor data is out of date, we're not going to allow commanding of the base for safety");
+	  ROS_DEBUG("Sensor data is out of date, we're not going to allow commanding of the base for safety");
           continue;
         }
         makePlan();
@@ -308,16 +307,16 @@ namespace nav
     }
     else
     {
-      if(plan_in.size() > 2)
+      if(plan_in.size() > 0)
       {
-          int index_plan = (int) plan_in.size() - 2;
+	  int index_plan = std::max((int) plan_in.size() - 1, 0);
           plan_out.set_points_size(1);
           plan_out.points[0].set_positions_size(3);
           plan_out.points[0].positions[0] = plan_in[index_plan].x;
           plan_out.points[0].positions[1] = plan_in[index_plan].y;
           plan_out.points[0].positions[2] = plan_in[index_plan].th;
           plan_out.points[0].time = 0.0;        
-        ROS_DEBUG("Plan in had %d points, plan out has %d points",(int)plan_in.size(),(int)plan_out.points.size());
+        ROS_INFO("Plan in had %d points, plan out has %d points",(int)plan_in.size(),(int)plan_out.points.size());
       }
       else
       {
@@ -395,11 +394,11 @@ namespace nav
 
 int main(int argc, char** argv){
   ros::init(argc, argv);
-  ros::Node ros_node("move_base_node");
+  ros::Node ros_node("move_base_door_action_runner");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
-  
   nav::MoveBaseDoorAction move_base_door(ros_node, tf);
 
+  /*
   robot_msgs::Door door;
   double tmp; int tmp2;
   ros_node.param("~p_door_frame_p1_x", tmp, 0.5); door.frame_p1.x = tmp;
@@ -417,11 +416,11 @@ int main(int argc, char** argv){
 
   robot_actions::Pose2D feedback;
   move_base_door.execute(door,feedback);
-
-//  robot_actions::ActionRunner runner(20.0);
-//  runner.connect<robot_msgs::Door, MoveBaseDoorState, robot_actions::Pose2D>(move_base_door);
-//  runner.run();
-//  ros_node.spin();
+  */
+  robot_actions::ActionRunner runner(20.0);
+  runner.connect<robot_msgs::Door, MoveBaseDoorState, robot_actions::Pose2D>(move_base_door);
+  runner.run();
+  ros_node.spin();
 
   return(0);
 
