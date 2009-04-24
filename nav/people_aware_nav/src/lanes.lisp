@@ -224,7 +224,7 @@
 				 (- (hallway-width hallway) *robot-radius* *wall-buffer*)
 				 (+ *robot-radius* *wall-buffer*)))
 	 (target-wall-y (+ (aref hallway-frame-position 1)
-			   (* (if facing-forward 3 -3)
+			   (* (if facing-forward 4 -4)
 			      (abs (- target-wall-offset (aref hallway-frame-position 0))))))
 	 (global-pose (transform-pose (inverse (hallway-transform hallway)) 
 				      (make-pose (vector target-wall-offset target-wall-y) 
