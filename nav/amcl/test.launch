@@ -38,5 +38,5 @@
     </node>
 <param name="robot_radius" value="0.325"/>
 <node pkg="nav_view" type="nav_view" respawn="false" output="screen"/>
-<!-- <node pkg="rosrecord" type="rosplay" args="-s 2 /u/prdata/videre-bags/vismap/kk_2009-02-23-17-18-13-topic.bag" /> -->
+<node pkg="rosrecord" type="rosplay" args="-s 2 /u/prdata/videre-bags/vismap/kk_2009-02-23-17-18-13-topic.bag" />
 </launch>
