@@ -38,28 +38,34 @@ constraint map_get_door_state(object, door_id) {object <: Object && door_id <: M
 class Location {
   float x;
   float y;
-  float th;
+  float z;
+  float qx;
+  float qy;
+  float qz;
+  float qw;
 
-  Location(float x_, float y_, float th_){
+  Location(float x_, float y_, float z_, float qx_, float qy_, float qz_, float qw_){
     x = x_;
     y = y_;
-    th = th_;
+    z = z_;
+    qx = qx_;
+    qy = qy_;
+    qz = qz_;
+    qw = qw_;
   }
 };
 
 class Waypoint extends Location {
-  Waypoint(float x, float y, float th){
-    super(x, y, th);
+  Waypoint(float x_, float y_, float z_, float qx_, float qy_, float qz_, float qw_){
+    super(x_, y_, z_, qx_, qy_, qz_, qw_);
   }
 };
 
-
 /**
- * The x, y, and theta values for a charging station. These describe the
- * target base pose for the robot when recharging.
+ * @brief Charging Stations
  */
 class ChargingStation extends Location {
-  ChargingStation(float x, float y, float th){
-    super(x, y, th);
+  ChargingStation(float x_, float y_, float z_, float qx_, float qy_, float qz_, float qw_){
+    super(x_, y_, z_, qx_, qy_, qz_, qw_);
   }
 };

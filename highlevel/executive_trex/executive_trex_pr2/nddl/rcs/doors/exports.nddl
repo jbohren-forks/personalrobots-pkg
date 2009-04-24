@@ -132,6 +132,21 @@ class GraspHandle extends DoorManipulationBehavior {
   }
 };
 
+
+/**
+ * Behavior to grasp the handle once in a position to do so
+ */
+class UnlatchHandle extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  UnlatchHandle(Mode _mode){
+    super(_mode);
+  }
+};
+
 /**
  * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
  */

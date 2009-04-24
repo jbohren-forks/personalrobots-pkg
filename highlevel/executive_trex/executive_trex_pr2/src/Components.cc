@@ -224,6 +224,8 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapInitializeFromFileConstraint, "map_initialize_from_file", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
+			  executive_trex_pr2::MapGetNextMoveConstraint, "map_get_next_move", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapConnectorConstraint, "map_connector", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
 			  executive_trex_pr2::MapGetRegionFromPositionConstraint, "map_get_region_from_position", "Default");

@@ -12,7 +12,7 @@ rejectable(door_controller.Holds g0);
 g0.active = true;
 eq(g0.target_x, inside_sachins_office.x);
 eq(g0.target_y, inside_sachins_office.y);
-eq(g0.target_th, inside_sachins_office.th);
+//eq(g0.target_th, inside_sachins_office.th);
 
 // Initial conditions for control flags
 eq(g0.found_door, false);

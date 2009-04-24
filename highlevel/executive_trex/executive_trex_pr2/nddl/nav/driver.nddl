@@ -1,0 +1,13 @@
+#include "nav.nddl"
+#include "imports.nddl"
+
+MoveBehavior doorman = new MoveBehavior(Internal, true);
+
+/**
+ * The MoveBehavior is completed by a successful termination of the movebase node.
+ */
+MoveBehavior::Active{
+  contains(MoveBase.Active mb);
+  concurrent(mb.end, end);
+  eq(mb.status, SUCCESS);
+}

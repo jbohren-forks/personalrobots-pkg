@@ -173,9 +173,18 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_grasp_handle"))
     runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp_handle);
 
+  // Unlatch Handle
+  executive_trex_pr2::SimpleStubAction<robot_msgs::Door> unlatch_handle("unlatch_handle");
+  if (getComponentParam("/trex/enable_unlatch_handle"))
+    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(unlatch_handle);
+
   executive_trex_pr2::SimpleStubAction<robot_msgs::Door> open_door("open_door");
   if (getComponentParam("/trex/enable_open_door"))
     runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door);
+
+  executive_trex_pr2::SimpleStubAction<robot_msgs::PoseStamped> move_base_door("move_base_door");
+  if (getComponentParam("/trex/enable_move_base_door"))
+    runner.connect<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped>(move_base_door);
 
   executive_trex_pr2::SimpleStubAction<robot_msgs::Door> open_door_without_grasp("open_door_without_grasp");
   if (getComponentParam("/trex/enable_open_door_without_grasp"))
@@ -227,11 +236,16 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_switch_controllers"))
     runner.connect<robot_actions::SwitchControllers, robot_actions::SwitchControllersState, std_msgs::Empty>(switch_controllers);
 
-  // Allocate other action stubs
+  // Navigation actions
   executive_trex_pr2::SimpleStubAction<robot_msgs::PoseStamped> move_base("move_base");
   if (getComponentParam("/trex/enable_move_base"))
     runner.connect<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped>(move_base);
 
+  executive_trex_pr2::SimpleStubAction<robot_msgs::PoseStamped> move_base_local("move_base_local");
+  if (getComponentParam("/trex/enable_move_base_local"))
+    runner.connect<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped>(move_base_local);
+
+  // Misc.
   executive_trex_pr2::SimpleStubAction<std_msgs::Float32> recharge("recharge_controller");
   if (getComponentParam("/trex/enable_recharge"))
     runner.connect<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32>(recharge);

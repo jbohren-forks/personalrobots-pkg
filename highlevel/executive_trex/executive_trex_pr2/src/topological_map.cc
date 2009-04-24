@@ -35,6 +35,101 @@ namespace executive_trex_pr2 {
     delete _map;
   }
 
+
+  //*******************************************************************************************
+  MapGetNextMoveConstraint::MapGetNextMoveConstraint(const LabelStr& name,
+						     const LabelStr& propagatorName,
+						     const ConstraintEngineId& constraintEngine,
+						     const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _next_x(static_cast<AbstractDomain&>(getCurrentDomain(variables[0]))),
+     _next_y(static_cast<AbstractDomain&>(getCurrentDomain(variables[1]))),
+     _thru_doorway(static_cast<BoolDomain&>(getCurrentDomain(variables[2]))),
+     _current_x(static_cast<AbstractDomain&>(getCurrentDomain(variables[3]))),
+     _current_y(static_cast<AbstractDomain&>(getCurrentDomain(variables[4]))),
+     _target_x(static_cast<AbstractDomain&>(getCurrentDomain(variables[5]))),
+     _target_y(static_cast<AbstractDomain&>(getCurrentDomain(variables[6]))){
+    checkError(variables.size() == 7, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
+    
+  //*******************************************************************************************
+  void MapGetNextMoveConstraint::handleExecute(){
+    // Wait till inputs are bound. 
+    if(!_current_x.isSingleton() || !_current_x.isSingleton() || !_target_x.isSingleton() || !_target_y.isSingleton()) 
+      return;
+
+    debugMsg("map:get_next_move",  "BEFORE: " << toString());
+
+
+    // Get next move by evaluating all options
+    double lowest_cost = PLUS_INFINITY;
+    double next_x, next_y;
+
+    // Obtain the values
+    double current_x = _current_x.getSingletonValue();
+    double current_y = _current_y.getSingletonValue();
+    double target_x = _target_x.getSingletonValue();
+    double target_y = _target_y.getSingletonValue();
+
+    unsigned int this_region =  TopologicalMapAdapter::instance()->getRegion(current_x, current_y);
+    condDebugMsg(this_region == 0, "map", "No region for <" << current_x << ", " << current_y <<">");
+    unsigned int final_region =  TopologicalMapAdapter::instance()->getRegion(target_x, target_y);
+    condDebugMsg(final_region == 0, "map", "No region for <" << target_x << ", " << target_y <<">");
+
+    // If the final region is bogus, then 
+    if(final_region == 0 || this_region == 0){
+      _thru_doorway.empty();
+      return;
+    }
+
+    // If the source point and final point can be connected without then we consider an option of going
+    // directly to the point rather than thru a connector.
+    if(this_region == final_region){
+      lowest_cost = TopologicalMapAdapter::instance()->cost(current_x, current_y, target_x, target_y);
+      next_x = target_x;
+      next_y = target_y;
+    }
+
+    std::vector< std::pair<topological_map::ConnectorId, double> > connector_cost_pairs;
+    ros::Time before = ros::Time::now();
+    TopologicalMapAdapter::instance()->getConnectorCosts(current_x, current_y, target_x, target_y, connector_cost_pairs);
+    ros::Duration elapsed = ros::Time::now() - before;
+    debugMsg("map:get_next_move", "connection_cost_latency is " << elapsed.toSec());
+
+    for(std::vector< std::pair<topological_map::ConnectorId, double> >::const_iterator it = connector_cost_pairs.begin(); it != connector_cost_pairs.end(); ++it){
+      if(it->second < lowest_cost){
+	lowest_cost = it->second;
+	TopologicalMapAdapter::instance()->getConnectorPosition(it->first, next_x, next_y);
+      }
+    }
+
+    if(lowest_cost == PLUS_INFINITY){
+      _thru_doorway.empty();
+    }
+    else {
+      _next_x.set(next_x);
+      _next_y.set(next_y);
+    }
+
+    // Finally, we have to set the flag for if we are moving thru a doorway
+    double distance = sqrt(pow(current_x - next_x, 2) + pow(current_y - next_y, 2));
+    bool is_doorway(false);
+    // If points are pretty close, check if it is a doorway
+    if(distance < 3){
+      double mid_x = (current_x + next_x) / 2;
+      double mid_y = (current_y + next_y) / 2;
+      unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(mid_x, mid_y);
+      if(!TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway)){
+	_thru_doorway.empty();
+      }
+    }
+
+    _thru_doorway.set(is_doorway);
+
+    debugMsg("map:get_next_move",  "AFTER: " << toString());
+  }
+
   //*******************************************************************************************
   MapConnectorConstraint::MapConnectorConstraint(const LabelStr& name,
 						 const LabelStr& propagatorName,
@@ -557,6 +652,12 @@ namespace executive_trex_pr2 {
       return PLUS_INFINITY;
 
     return cost(from_x, from_y, x, y);
+  }
+
+  void TopologicalMapAdapter::getConnectorCosts(double x0, double y0, double x1, double y1, std::vector< std::pair<topological_map::ConnectorId, double> >& results){
+    const topological_map::Point2D source_point(x0, y0);
+    const topological_map::Point2D target_point(x1, y1);
+    results = _map->connectorCosts(source_point, target_point);
   }
 
   void TopologicalMapAdapter::getLocalConnectionsForGoal(std::list<ConnectionCostPair>& results, double x0, double y0, double x1, double y1){

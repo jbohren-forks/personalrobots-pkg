@@ -12,9 +12,11 @@ rejectable(detect_door.Active cmd_detect_door);
 rejectable(detect_door.Inactive feedback_detect_door);
 rejectable(detect_handle.Active cmd_detect_handle);
 rejectable(detect_handle.Inactive feedback_detect_handle);
-rejectable(move_base.Active cmd_move_to_grasp);
+rejectable(move_base_local.Active cmd_move_to_grasp);
 rejectable(grasp_handle.Active cmd_grasp_handle);
+rejectable(unlatch_handle.Active cmd_unlatch_handle);
 rejectable(open_door.Active cmd_open_door);
+rejectable(move_base_door.Active cmd_move_base_door);
 rejectable(release_handle.Active cmd_release_handle);
 
 // Impose a temporal order
@@ -24,7 +26,12 @@ cmd_detect_door before cmd_detect_handle;
 cmd_detect_handle meets feedback_detect_handle;
 cmd_detect_handle before cmd_move_to_grasp;
 cmd_move_to_grasp before cmd_grasp_handle;
-cmd_grasp_handle before cmd_open_door;
+cmd_grasp_handle before cmd_unlatch_handle;
+cmd_unlatch_handle before cmd_open_door;
+
+// Final phase involves parallel activities, finishing up with releasing the handle
+cmd_open_door starts_before cmd_move_base_door;
+temporalDistance(cmd_move_base_door.end, [0, 1], cmd_open_door.end);
 cmd_open_door before cmd_release_handle;
 
 // All must succeed
@@ -34,11 +41,12 @@ eq(SUCCESS,
    cmd_detect_handle.status,
    cmd_move_to_grasp.status,
    cmd_grasp_handle.status,
+   cmd_unlatch_handle.status,
    cmd_open_door.status,
+   cmd_move_base_door.status,
    cmd_release_handle.status);
 
-
-// Input is for door detection
+// Input is for door detection.
 cmd_detect_door.frame_id = "base_footprint";
 cmd_detect_door.frame_p1_x =  1.5;
 cmd_detect_door.frame_p1_y = -0.5;
@@ -61,16 +69,25 @@ cmd_detect_door.rot_dir =  UNKNOWN;
 
 eq_door_msg(cmd_detect_handle.object, feedback_detect_door.object);
 
-// Set params for move base
+// Set params for move base local
 eq(cmd_move_to_grasp.frame_id, feedback_detect_handle.frame_id);
 eq(cmd_move_to_grasp.time_stamp, feedback_detect_handle.time_stamp);
-
 door_get_robot_pose_for_door(cmd_move_to_grasp.x, cmd_move_to_grasp.y, cmd_move_to_grasp.z,
 			     cmd_move_to_grasp.qx, cmd_move_to_grasp.qy, cmd_move_to_grasp.qz, cmd_move_to_grasp.qw,
 			     feedback_detect_handle.object,
 			     GRASP_RANGE);
 
+// The parameters for the final move base command can be derived from the door message, This time we will use a negative value
+// to indicate how far across the frame we want to be.
+float TRANSLATION_FROM_DOOR_FRAME = -1.0;
+eq(cmd_move_base_door.frame_id, feedback_detect_handle.frame_id);
+eq(cmd_move_base_door.time_stamp, feedback_detect_handle.time_stamp);
+door_get_robot_pose_for_door(cmd_move_base_door.x, cmd_move_base_door.y, cmd_move_base_door.z,
+			     cmd_move_base_door.qx, cmd_move_base_door.qy, cmd_move_base_door.qz, cmd_move_base_door.qw,
+			     feedback_detect_handle.object,
+			     TRANSLATION_FROM_DOOR_FRAME);
 
-// Set params for grasp handle
+// Set params from handle detection feedback.
 eq_door_msg(cmd_grasp_handle.object, feedback_detect_handle.object);
+eq_door_msg(cmd_unlatch_handle.object, feedback_detect_handle.object);
 eq_door_msg(cmd_open_door.object, feedback_detect_handle.object);

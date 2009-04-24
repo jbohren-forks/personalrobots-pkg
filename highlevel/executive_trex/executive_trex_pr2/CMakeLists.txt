@@ -27,13 +27,16 @@ rospack_add_nddl("test/doors/with_map/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/sim/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/sim/open_door.0/pr2.rcs.sim.nddl")
 
-
 # Plug Tests
 rospack_add_nddl("test/plugs/single_action_test/pr2.recharger.nddl")
 
 # Mechanism Control Tests
 rospack_add_nddl("test/mechanism_control/pr2.mechanism_control.nddl")
 rospack_add_nddl("test/mechanism_control/pr2.rcs.sim.nddl")
+
+# Master Tests
+rospack_add_nddl("test/master/pr2.master.nddl")
+rospack_add_nddl("test/master/pr2.sim.nddl")
 
 #rospack_add_nddl("test/model_tests/pr2.master.nddl")
 #rospack_add_nddl("test/model_tests/pr2.doorman.nddl")
@@ -121,19 +124,19 @@ rospack_add_gtest_build_flags(bin/trexdebug)
 set_target_properties(bin/trexdebug PROPERTIES EXCLUDE_FROM_ALL false)
 
 # trexfast is about an order of magnitude faster than trexdebug
-#rospack_add_library(executive_trex_pr2_o ${TREX_FILES})
-#target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph)
-#target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph)
-#rospack_add_executable(bin/trexfast src/main.cc)
-#target_link_libraries(bin/trexfast executive_trex_pr2_o)
-#rospack_link_boost(bin/trexfast thread)
-#rospack_add_gtest_build_flags(bin/trexfast)
+rospack_add_library(executive_trex_pr2_o ${TREX_FILES})
+target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph)
+target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph)
+rospack_add_executable(bin/trexfast src/main.cc)
+target_link_libraries(bin/trexfast executive_trex_pr2_o)
+rospack_link_boost(bin/trexfast thread)
+rospack_add_gtest_build_flags(bin/trexfast)
 # rospack_add_gtest_build_flags excludes the target from all, on the
 # assumption that it's only used as a unit test.  In this case that's not
 # true
-#set_target_properties(bin/trexfast PROPERTIES EXCLUDE_FROM_ALL false)
-#rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
-#rospack_add_compile_flags(executive_trex_pr2_o "-O3 -DEUROPA_FAST")
+set_target_properties(bin/trexfast PROPERTIES EXCLUDE_FROM_ALL false)
+rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
+rospack_add_compile_flags(executive_trex_pr2_o "-O3 -DEUROPA_FAST")
 
 # trexwatchdog is a safety process that will monitor pings from the executive
 # and dispense shutdown commands to highlevel controllers (deactivation) if pings are

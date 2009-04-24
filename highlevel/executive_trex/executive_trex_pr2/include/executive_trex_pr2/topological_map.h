@@ -62,6 +62,29 @@ namespace executive_trex_pr2 {
   };
 
   /**
+   * @brief Computes inputs for the next move
+   */
+  class MapGetNextMoveConstraint : public Constraint {
+  public:
+    
+    MapGetNextMoveConstraint(const LabelStr& name,
+			     const LabelStr& propagatorName,
+			     const ConstraintEngineId& constraintEngine,
+			     const std::vector<ConstrainedVariableId>& variables);
+    
+    virtual void handleExecute();
+    
+  private:
+    AbstractDomain& _next_x;
+    AbstractDomain& _next_y;
+    BoolDomain& _thru_doorway;
+    AbstractDomain& _current_x;
+    AbstractDomain& _current_y;
+    AbstractDomain& _target_x;
+    AbstractDomain& _target_y;
+  };
+
+  /**
    * @brief A relation: given a connector, bind the x, y the values. Given x, and y, bind the connector
    */
   class MapConnectorConstraint : public Constraint {
@@ -246,6 +269,11 @@ namespace executive_trex_pr2 {
      * @retun 0 if no connector found, otherwise the connector for the given point
      */
     virtual unsigned int getConnector(double x, double y);
+
+    /**
+     * @brief Get costs
+     */
+    virtual void getConnectorCosts(double x0, double y0, double x1, double y1, std::vector< std::pair<topological_map::ConnectorId, double> >& results);
 
     /**
      * @brief Get position details for a connector

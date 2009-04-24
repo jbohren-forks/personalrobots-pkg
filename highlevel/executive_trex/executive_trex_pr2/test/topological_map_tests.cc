@@ -21,8 +21,6 @@ using namespace EUROPA;
 TREX::Assembly assembly("pr2", "test");
 ConstraintEngineId ce(assembly.getConstraintEngine());
 
-
-
 /**
  * Utility to print rows and columns that are in doorways
  */
@@ -97,6 +95,25 @@ void pickPointInSpace(unsigned int W, unsigned int H, double& x, double& y){
 
 
 /**
+ * Test the function to get the next move
+ */
+TEST(executive_trex_pr2, map_get_next_move){
+  std::ifstream is("test/willow.tmap");
+  TopologicalMapAdapter map(is);
+  Variable<IntervalDomain> next_x(ce, IntervalDomain());
+  Variable<IntervalDomain> next_y(ce, IntervalDomain());
+  Variable<BoolDomain> thru_doorway(ce, BoolDomain());
+  Variable<IntervalDomain> current_x(ce, IntervalDomain());
+  Variable<IntervalDomain> current_y(ce, IntervalDomain());
+  Variable<IntervalDomain> target_x(ce, IntervalDomain());
+  Variable<IntervalDomain> target_y(ce, IntervalDomain());
+  MapGetNextMoveConstraint::MapGetNextMoveConstraint map_get_next_move("map_next_move", "Default", ce, 
+								  makeScope(next_x.getId(), next_y.getId(), thru_doorway.getId(), current_x.getId(), current_y.getId(), target_x.getId(), target_y.getId()));
+
+  ASSERT_TRUE(ce->propagate());
+}
+
+/**
  * Test reading a map in from a file
  */
 TEST(executive_trex_pr2, map_read_from_file){
@@ -111,9 +128,19 @@ TEST(executive_trex_pr2, map_read_from_file){
   ASSERT_EQ(map.isObstacle(16.5, 18.85), false);
   ASSERT_EQ(map.isObstacle(15.0, 22.15), false);
   ASSERT_EQ(map.isObstacle(21.15, 15.25), false);
+  ASSERT_EQ(map.isObstacle(47.350, 40.655), false);
+
+  /* INCLUDE THIS FOR TICKET:
+  ASSERT_EQ(map.isObstacle(54.162, 20.087), false);
+  ASSERT_EQ(map.isObstacle(12.118, 39.812), false);
+  ASSERT_EQ(map.isObstacle(18.912, 28.568), false);
+  ASSERT_EQ(map.isObstacle(18.542, 12.301), false);
+  ASSERT_EQ(map.isObstacle(50.659, 6.916), false);
+  */
 
   // Points that are ligitimately obstacles
   ASSERT_EQ(map.isObstacle(15.0, 25.2), true);
+
 
   robot_msgs::Door door_state;
   ASSERT_EQ(TopologicalMapAdapter::instance()->getDoorState(206, door_state), true);
@@ -150,8 +177,9 @@ TEST(executive_trex_pr2, map_accessor_regression_tests){
   ASSERT_TRUE(region_id > 0 || TopologicalMapAdapter::instance()->isObstacle(8.5, 0.5));
 }
 
+
 /**
- * Tesy the relation for map connector to point
+ * Test the relation for map connector to point
  */
 TEST(executive_trex_pr2, map_connector_constraint){
   TopologicalMapAdapter map(GRID_3_3_ALL_CONNECTED(), RESOLUTION);

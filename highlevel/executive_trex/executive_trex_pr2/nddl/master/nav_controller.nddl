@@ -1,0 +1,100 @@
+/**
+ * Implements the reactive controller for moving towards the next goal.
+ */
+
+// Given a current position, and topological map, and a goal position, compute the next goal such, and the modality required to get there.
+
+/**
+ * Navigation controller will iteratively work towards a goal. It will bite off chunks
+ */
+class NavController extends AgentTimeline {
+  predicate Holds {
+    bool active;
+  }
+
+  NavController(){
+    super(Internal, "Holds");
+  }
+};
+
+/**
+ * The Navigator turns a single navigation goal into something that runs the door controller
+ */
+class Navigator extends Behavior {
+
+  predicate Inactive {}
+
+  /**
+   * When active, we are pursuing a waypoint, although we may be pre-empted
+   */
+  predicate Active{
+    Location w;
+    bool recharging;
+  }
+
+  Navigator(){
+    super(Internal, "Inactive");
+  }
+};
+
+Navigator::Active{
+  starts(NavController.Holds nc);
+  eq(nc.active, true);
+}
+
+Navigator::Inactive {
+
+}
+
+NavController::Holds {
+
+  if(active == false){
+    contained_by(Navigator.Inactive);
+  }
+
+  met_by(Holds p);
+  defaultOnCommit(active, p.active);
+
+  if(active == true) {
+
+    if(start){
+      // Get the current position: bs(start).
+      any(BaseState.Holds bs);
+      precedes(bs.start, start);
+      temporal_distance(start, [1, +inf], bs.end);
+
+      // Get the target location
+      contained_by(Navigator.Active nav);
+
+      // Are we at the goal?
+      float distance;
+      calcDistance(distance, nav.w.x, nav.w.y, bs.y, bs.y);
+      bool at_goal;
+      testLEQ(at_goal, distance, XY_ERROR);
+
+      // If we are at_goal, terminate
+      if(at_goal == true){
+	eq(duration, 1);
+	meets(Holds s);
+	eq(s.active, false);
+      }
+      else {
+	// Take the next step towards the goal
+	contains(MoveBehavior.Active mb);
+	temporal_distance(mb.end, [-2, 2], end);
+
+	// Determine the next move. if we are doing planar navigation it will simply advance as far
+	// as possible before encountering a door
+	bool thru_doorway;
+	map_get_next_move(mb.x, mb.y, thru_doorway, bs.x, bs.y, nav.w.x, nav.w.y);
+
+	if(thru_doorway == true){
+	  eq(mb.object, doorman);
+	}
+	else{
+	  eq(mb.object, driver);
+	}
+      }
+    }
+  }
+}

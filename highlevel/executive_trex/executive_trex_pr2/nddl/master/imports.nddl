@@ -1,0 +1,121 @@
+#include "TREX.nddl"
+#include "rcs/exports.nddl"
+#include "rcs/nav/exports.nddl"
+#include "rcs/plugs/exports.nddl"
+#include "nav/exports.nddl"
+#include "plugs/exports.nddl"
+#include "world_model/topological_map.nddl"
+/**
+ * Navigation controller will iteratively work towards a goal. It will bite off chunks
+ */
+class NavController extends AgentTimeline {
+  predicate Holds {
+    bool active;
+  }
+
+  NavController(){
+    super(Internal, "Holds");
+  }
+};
+
+/**
+ * The Navigator turns a single navigation goal into something that runs the door controller
+ */
+class Navigator extends Behavior {
+
+  predicate Inactive {}
+
+  /**
+   * When active, we are pursuing a waypoint, although we may be pre-empted
+   */
+  predicate Active{
+    Location w;
+    bool recharging;
+  }
+
+  Navigator(){
+    super(Internal, "Inactive");
+  }
+};
+
+// Internal Timelines
+Navigator navigator = new Navigator();
+NavController nav_controller = new NavController();
+
+// External Timelines
+MoveBehavior driver = new MoveBehavior(External, false);
+MoveBehavior doorman = new MoveBehavior(External, true);
+Recharger recharger = new Recharger(External);
+BaseState base_state = new BaseState(External);
+BatteryState battery_state = new BatteryState(External);
+
+AgentActions actions = new AgentActions();
+
+/**
+ * Planning will generate subgoal so that it is robust to replanning. In real execution we
+ * could rely on subgoaling to a predecessor, and thus not doing it reactively
+ */
+Navigator::Active{
+  contains(NavController.Holds nc);
+  eq(nc.active, true);
+
+  contains(actions.startEvent a);
+  concurrent(a.start, nc.start);
+}
+
+Navigator::Inactive {
+
+}
+
+NavController::Holds {
+
+  if(active == false){
+    contained_by(Navigator.Inactive);
+  }
+
+  met_by(Holds p);
+  defaultOnCommit(active, p.active);
+
+  if(active == true) {
+
+    if(start){
+      // Get the current position: bs(start).
+      any(BaseState.Holds bs);
+      precedes(bs.start, start);
+      temporalDistance(start, [1, +inf], bs.end);
+
+      // Get the target location
+      contained_by(Navigator.Active nav);
+
+      // Are we at the goal?
+      float distance;
+      calcDistance(distance, nav.w.x, nav.w.y, bs.y, bs.y);
+      bool at_goal;
+      testLEQ(at_goal, distance, XY_ERROR);
+
+      // If we are at_goal, terminate
+      if(at_goal == true){
+	eq(duration, 1);
+	meets(Holds s);
+	eq(s.active, false);
+      }
+      else {
+	// Take the next step towards the goal
+	contains(MoveBehavior.Active mb);
+	temporalDistance(mb.end, [-2, 2], end);
+
+	// Determine the next move. if we are doing planar navigation it will simply advance as far
+	// as possible before encountering a door
+	bool thru_doorway;
+	map_get_next_move(mb.x, mb.y, thru_doorway, bs.x, bs.y, nav.w.x, nav.w.y);
+
+	if(thru_doorway == true){
+	  eq(mb.object, doorman);
+	}
+	else{
+	  eq(mb.object, driver);
+	}
+      }
+    }
+  }
+}

@@ -8,7 +8,7 @@
 #include "test/doors/actions.nddl"
 #include "world_model/topological_map.nddl"
 
-Location sachins_doorway = new Location(13.15, 25.25, 0.0);
+Location sachins_doorway = new Location(13.15, 25.25, 0.0, 0.0, 0.0, 0.0, 0.0);
 
 close();
 

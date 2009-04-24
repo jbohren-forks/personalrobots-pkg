@@ -18,8 +18,6 @@ float GRASP_POSITION_ERROR = 0.1;
  */
 class DoorController extends AgentTimeline {
 
-  //bool integrated; // When true, force interaction wth MoveBehavior
-
   /**
    * The parameters here 
    */
@@ -82,14 +80,7 @@ class DoorController extends AgentTimeline {
 
   DoorController(Mode _mode){
     super(_mode, "Holds");
-    //integrated = false;
   }
-  /*
-  DoorController(Mode _mode, bool _integrated){
-    super(_mode, "Holds");
-    integrated = _integrated;
-  }
-  */
 };
 
 
