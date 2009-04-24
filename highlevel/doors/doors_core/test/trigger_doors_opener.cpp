@@ -38,7 +38,7 @@
 /* Author: Wim Meeussen */
 
 #include "doors_core/action_open_door.h"
-#include <robot_actions/DoorActionState.h>
+#include <pr2_robot_actions/DoorActionState.h>
 #include <robot_msgs/Door.h>
 #include <ros/node.h>
 #include <robot_actions/action_runner.h>
@@ -70,7 +70,7 @@ int
 
   door_handle_detector::OpenDoorAction door_opener(node);
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(door_opener);
+  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(door_opener);
   runner.run();
 
   robot_msgs::Door feedback;

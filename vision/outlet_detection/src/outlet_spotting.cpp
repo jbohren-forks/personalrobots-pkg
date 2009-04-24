@@ -73,7 +73,7 @@
 #include "outlet_detection/OutletDetection.h"
 #include "robot_actions/action.h"
 #include "robot_actions/action_runner.h"
-#include "robot_actions/DetectOutletState.h"
+#include "pr2_robot_actions/DetectOutletState.h"
 
 #include <point_cloud_assembler/BuildCloudAngle.h>
 

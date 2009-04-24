@@ -2,14 +2,14 @@
 #include <stdlib.h>
 #include "ros/node.h"
 #include "ros/publisher.h"
-#include "robot_actions/MoveBaseState.h"
+#include "pr2_robot_actions/MoveBaseState.h"
 #include "robot_msgs/PoseStamped.h"
 #include "tf/tf.h"
 
 class WavefrontCLI : public ros::Node
 {
 public:
-  robot_actions::MoveBaseState wf_state;
+  pr2_robot_actions::MoveBaseState wf_state;
   robot_msgs::PoseStamped wf_goal;
   enum { WF_IDLE, WF_SEEKING_GOAL, WF_DONE } state;
 

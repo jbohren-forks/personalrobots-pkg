@@ -128,7 +128,7 @@ namespace ros {
   namespace highlevel_controllers {
 
     MoveBase::MoveBase()
-      : HighlevelController<robot_actions::MoveBaseState, robot_actions::Pose2D>("move_base", "feedback", "activate"),
+      : HighlevelController<pr2_robot_actions::MoveBaseState, pr2_robot_actions::Pose2D>("move_base", "feedback", "activate"),
         tf_(*ros::Node::instance(), true, ros::Duration(10)), // cache for 10 sec, no extrapolation
       controller_(NULL),
       costMap_(NULL),

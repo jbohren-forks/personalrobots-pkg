@@ -114,7 +114,7 @@ void DoorReactivePlanner::setDoor(robot_msgs::Door door_msg_in)
   door_information_set_ = true;
 }
 
-bool DoorReactivePlanner::getGoal(robot_actions::Pose2D &goal)
+bool DoorReactivePlanner::getGoal(pr2_robot_actions::Pose2D &goal)
 {
   if(!door_information_set_)
     return false;
@@ -122,7 +122,7 @@ bool DoorReactivePlanner::getGoal(robot_actions::Pose2D &goal)
   return true;
 }
 
-bool DoorReactivePlanner::computeOrientedFootprint(const robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint)
+bool DoorReactivePlanner::computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint)
 {
   if(footprint_spec.size() < 3)//if we have no footprint... do nothing
   {
@@ -141,20 +141,20 @@ bool DoorReactivePlanner::computeOrientedFootprint(const robot_actions::Pose2D &
   return true;
 }
 
-double DoorReactivePlanner::distance(const robot_actions::Pose2D &p, const robot_actions::Pose2D &q)
+double DoorReactivePlanner::distance(const pr2_robot_actions::Pose2D &p, const pr2_robot_actions::Pose2D &q)
 {
   return sqrt(pow(p.x-q.x,2)+pow(p.y-q.y,2));
 }
 
-double DoorReactivePlanner::projectedDistance(const robot_actions::Pose2D &p, const robot_actions::Pose2D &q, const double &angle)
+double DoorReactivePlanner::projectedDistance(const pr2_robot_actions::Pose2D &p, const pr2_robot_actions::Pose2D &q, const double &angle)
 {
   return ((q.x-p.x)*cos(angle)+(q.y-p.y)*sin(angle));
 }
 
-bool DoorReactivePlanner::createLinearPath(const robot_actions::Pose2D &cp,const robot_actions::Pose2D &fp, std::vector<robot_actions::Pose2D> &return_path)
+bool DoorReactivePlanner::createLinearPath(const pr2_robot_actions::Pose2D &cp,const pr2_robot_actions::Pose2D &fp, std::vector<pr2_robot_actions::Pose2D> &return_path)
 {
   ROS_DEBUG("Creating trajectory from: (%f,%f) to (%f,%f)",cp.x,cp.y,fp.x,fp.y);
-  robot_actions::Pose2D temp;
+  pr2_robot_actions::Pose2D temp;
   double dist_trans = distance(cp,fp);        
   double dist_rot = fabs(angles::normalize_angle(cp.th-fp.th));
 
@@ -182,7 +182,7 @@ bool DoorReactivePlanner::createLinearPath(const robot_actions::Pose2D &cp,const
   return true;
 }
 
-void DoorReactivePlanner::getFinalPosition(const robot_actions::Pose2D &current_position, const double &delta_angle, const double &distance_to_centerline, robot_actions::Pose2D &end_position)
+void DoorReactivePlanner::getFinalPosition(const pr2_robot_actions::Pose2D &current_position, const double &delta_angle, const double &distance_to_centerline, pr2_robot_actions::Pose2D &end_position)
 {
   double new_explore_distance;
   double global_explore_angle;
@@ -215,17 +215,17 @@ void DoorReactivePlanner::getFinalPosition(const robot_actions::Pose2D &current_
 }
 
 
-bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vector<robot_actions::Pose2D> &best_path_control_frame)
+bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::vector<pr2_robot_actions::Pose2D> &best_path_control_frame)
 {
   if(!door_information_set_)
   {
     ROS_ERROR("Door information not set");
     return false;
   }
-  std::vector<robot_actions::Pose2D> best_path_costmap_frame;
-  robot_actions::Pose2D end_position;
-  std::vector<robot_actions::Pose2D> checked_path;
-  std::vector<robot_actions::Pose2D> linear_path;
+  std::vector<pr2_robot_actions::Pose2D> best_path_costmap_frame;
+  pr2_robot_actions::Pose2D end_position;
+  std::vector<pr2_robot_actions::Pose2D> checked_path;
+  std::vector<pr2_robot_actions::Pose2D> linear_path;
 
   double min_distance_to_goal(FLT_MAX);
 
@@ -291,7 +291,7 @@ bool DoorReactivePlanner::makePlan(const robot_actions::Pose2D &start, std::vect
   return true;
 }
 
-void DoorReactivePlanner::checkPath(const std::vector<robot_actions::Pose2D> &path, const std::string &control_frame_id, std::vector<robot_actions::Pose2D> &return_path, std::string &costmap_frame_id)
+void DoorReactivePlanner::checkPath(const std::vector<pr2_robot_actions::Pose2D> &path, const std::string &control_frame_id, std::vector<pr2_robot_actions::Pose2D> &return_path, std::string &costmap_frame_id)
 {
   int index(0);
   double theta;
@@ -305,7 +305,7 @@ void DoorReactivePlanner::checkPath(const std::vector<robot_actions::Pose2D> &pa
   {
     index = i;
     std::vector<robot_msgs::Point> oriented_footprint;
-    robot_actions::Pose2D out_pose;
+    pr2_robot_actions::Pose2D out_pose;
 
     transform2DPose(path[i],control_frame_id, out_pose, costmap_frame_id);
     computeOrientedFootprint(out_pose, footprint_, oriented_footprint);
@@ -355,7 +355,7 @@ bool DoorReactivePlanner::getPointCost(const robot_msgs::Point &position, const 
   return true;
 }
 
-void DoorReactivePlanner::transformPath(const std::vector<robot_actions::Pose2D> &path_in, const std::string &frame_in, std::vector<robot_actions::Pose2D> &path_out, const std::string &frame_out)
+void DoorReactivePlanner::transformPath(const std::vector<pr2_robot_actions::Pose2D> &path_in, const std::string &frame_in, std::vector<pr2_robot_actions::Pose2D> &path_out, const std::string &frame_out)
 {
   path_out.resize((int) path_in.size());      
   for(int i=0; i < (int) path_out.size(); i++)
@@ -364,7 +364,7 @@ void DoorReactivePlanner::transformPath(const std::vector<robot_actions::Pose2D>
   }
 }
 
-void DoorReactivePlanner::transform2DPose(const robot_actions::Pose2D &point_in, const std::string original_frame_id, robot_actions::Pose2D &point_out, const std::string &transform_frame_id)
+void DoorReactivePlanner::transform2DPose(const pr2_robot_actions::Pose2D &point_in, const std::string original_frame_id, pr2_robot_actions::Pose2D &point_out, const std::string &transform_frame_id)
 {
   btQuaternion qt;
   tf::Stamped<tf::Pose> pose;

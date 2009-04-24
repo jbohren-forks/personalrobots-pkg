@@ -38,7 +38,7 @@ import roslib
 roslib.load_manifest('executive_python')
 import rospy
 import random
-from robot_actions.msg import MoveBaseStateNew
+from pr2_robot_actions.msg import MoveBaseStateNew
 from robot_msgs.msg import PoseStamped
 
 class NavigationAdapter:

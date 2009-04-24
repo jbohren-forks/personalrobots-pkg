@@ -47,7 +47,7 @@ int main(int argc, char** argv)
   ros::Node node("mechanism_control_action_container");
   mechanism_control::ActionMechanismControl act(node);
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_actions::SwitchControllers, robot_actions::SwitchControllersState,  std_msgs::Empty>(act);
+  runner.connect<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty>(act);
   runner.run();
 
   node.spin();

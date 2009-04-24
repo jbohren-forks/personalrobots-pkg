@@ -12,6 +12,7 @@
 <depend package="deprecated_msgs"/>
 <depend package="robot_msgs"/>
 <depend package="robot_actions"/>
+<depend package="pr2_robot_actions"/>
 <depend package="std_srvs"/>
 <depend package="opencv_latest"/>
 <depend package="stereo_utils"/>

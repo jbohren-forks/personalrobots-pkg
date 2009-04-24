@@ -41,8 +41,8 @@
 
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
-#include <robot_actions/MoveBaseState.h>
-#include <robot_actions/Pose2D.h>
+#include <pr2_robot_actions/MoveBaseState.h>
+#include <pr2_robot_actions/Pose2D.h>
 #include <robot_msgs/JointTraj.h>
 
 #include <ros/node.h>
@@ -62,7 +62,7 @@ namespace nav {
    * @class MoveBaseDoorAction
    * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
    */
-  class MoveBaseDoorAction : public robot_actions::Action<robot_msgs::Door, robot_actions::Pose2D> {
+  class MoveBaseDoorAction : public robot_actions::Action<robot_msgs::Door, pr2_robot_actions::Pose2D> {
     public:
       /**
        * @brief  Constructor for the actions
@@ -83,7 +83,7 @@ namespace nav {
        * @param feedback Feedback that the action gives to a higher-level monitor, in this case, the position of the robot
        * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
        */
-      virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_actions::Pose2D& feedback);
+      virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, pr2_robot_actions::Pose2D& feedback);
 
     private:
       /**
@@ -102,7 +102,7 @@ namespace nav {
       /**
        * @brief  Publish a path for visualization purposes
        */
-      void publishPath(const std::vector<robot_actions::Pose2D>& path, std::string topic, double r, double g, double b, double a);
+      void publishPath(const std::vector<pr2_robot_actions::Pose2D>& path, std::string topic, double r, double g, double b, double a);
 
       /**
        * @brief  Make a new global plan (the goal is specified using the setDoor() function while start is specified using the 
@@ -165,35 +165,35 @@ namespace nav {
       costmap_2d::Costmap2D planner_cost_map_;
 
       door_reactive_planner::DoorReactivePlanner* planner_;
-      std::vector<robot_actions::Pose2D> global_plan_;
+      std::vector<pr2_robot_actions::Pose2D> global_plan_;
       std::vector<robot_msgs::Point> footprint_;
       std::string global_frame_, control_frame_, robot_base_frame_;
       bool valid_plan_;
       boost::recursive_mutex lock_;
       robot_msgs::Door door_;
-      robot_actions::Pose2D goal_;
+      pr2_robot_actions::Pose2D goal_;
 
       tf::Stamped<tf::Pose> global_pose_;
       double xy_goal_tolerance_, yaw_goal_tolerance_, min_abs_theta_vel_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_;
       double controller_frequency_;
 
-      std::vector<robot_actions::Pose2D> empty_plan_;
+      std::vector<pr2_robot_actions::Pose2D> empty_plan_;
 
       std::string control_topic_name_;
 
     /**
-     * @brief Transform a tf::Stamped<tf::Pose> to robot_actions::Pose2D
+     * @brief Transform a tf::Stamped<tf::Pose> to pr2_robot_actions::Pose2D
      * @param pose The pose object to be transformed
-     * @return Transformed object of type robot_actions::Pose2D
+     * @return Transformed object of type pr2_robot_actions::Pose2D
      */
-    robot_actions::Pose2D getPose2D(const tf::Stamped<tf::Pose> &pose);
+    pr2_robot_actions::Pose2D getPose2D(const tf::Stamped<tf::Pose> &pose);
 
     /**
      * @brief dispatch control commands
      * @param plan_in The plan to be dispatched
      */
-    void dispatchControl(const std::vector<robot_actions::Pose2D> &plan_in);
+    void dispatchControl(const std::vector<pr2_robot_actions::Pose2D> &plan_in);
   };
 };
 #endif

@@ -62,7 +62,7 @@
 #include <tf/message_notifier.h>
 #include <visual_nav/visual_nav.h>
 #include <robot_msgs/Polyline.h>
-#include <robot_actions/Pose2D.h>
+#include <pr2_robot_actions/Pose2D.h>
 #include <robot_msgs/VisualizationMarker.h>
 #include <vslam/Roadmap.h>
 #include <visual_nav/exceptions.h>
@@ -71,7 +71,7 @@
 
 using std::string;
 using std::vector;
-using robot_actions::Pose2D;
+using pr2_robot_actions::Pose2D;
 using robot_msgs::Point;
 using robot_msgs::PointStamped;
 using robot_msgs::Point32;

@@ -56,11 +56,11 @@ int
   ros::Node node("mechanism_control_action_container");
   mechanism_control::ActionMechanismControl act(node);
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_actions::SwitchControllers, robot_actions::SwitchControllersState,  std_msgs::Empty>(act);
+  runner.connect<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty>(act);
   runner.run();
 
   std_msgs::Empty feedback;
-  robot_actions::SwitchControllers switch_controllers;
+  pr2_robot_actions::SwitchControllers switch_controllers;
   switch_controllers.start_controllers.push_back("r_arm_cartesian_pose_controller");
   act.execute(switch_controllers, feedback);
 

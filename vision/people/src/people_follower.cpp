@@ -70,7 +70,7 @@ namespace estimation
     people_notifier_ = new MessageNotifier<PositionMeasurement>(&robot_state_, this,  boost::bind(&PeopleFollower::callback, this, _1), 
                                                                "people_tracker_filter", fixed_frame_, 10);
     // advertise robot poses
-    advertise<robot_actions::Pose2D>("/move_base_node/activate", 10);
+    advertise<pr2_robot_actions::Pose2D>("/move_base_node/activate", 10);
 
     // initialize goal
     people_pos_.header.frame_id = fixed_frame_;

@@ -42,14 +42,14 @@ using namespace std;
 namespace mechanism_control{
 
 ActionMechanismControl::ActionMechanismControl(Node& node): 
-  robot_actions::Action<robot_actions::SwitchControllers, std_msgs::Empty>("switch_controllers")
+  robot_actions::Action<pr2_robot_actions::SwitchControllers, std_msgs::Empty>("switch_controllers")
 {};
   
   
 ActionMechanismControl::~ActionMechanismControl(){};
   
   
-robot_actions::ResultStatus ActionMechanismControl::execute(const robot_actions::SwitchControllers& c, std_msgs::Empty&)
+robot_actions::ResultStatus ActionMechanismControl::execute(const pr2_robot_actions::SwitchControllers& c, std_msgs::Empty&)
 {
   ROS_INFO("ActionMechanismControl: received request to start %i controllers and stop %i controllers", 
            c.start_controllers.size(), c.stop_controllers.size());

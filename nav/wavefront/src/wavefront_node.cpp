@@ -67,7 +67,7 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "cmd_vel" robot_msgs/PoseDot : velocity commands to robot
-- @b "state" robot_actions/MoveBaseState : current planner state (e.g., goal reached, no path)
+- @b "state" pr2_robot_actions/MoveBaseState : current planner state (e.g., goal reached, no path)
 - @b "gui_path" robot_msgs/Polyline : current global path (for visualization)
 - @b "gui_laser" robot_msgs/Polyline : re-projected laser scans (for visualization)
 
@@ -101,7 +101,7 @@ parameters.
 #include "boost/thread/mutex.hpp"
 
 // The messages that we'll use
-#include <robot_actions/MoveBaseState.h>
+#include <pr2_robot_actions/MoveBaseState.h>
 #include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/PointCloud.h>
@@ -197,7 +197,7 @@ class WavefrontNode: public ros::Node
     //MsgRobotBase2DOdom odomMsg;
     robot_msgs::Polyline polylineMsg;
     robot_msgs::Polyline pointcloudMsg;
-    robot_actions::MoveBaseState pstate;
+    pr2_robot_actions::MoveBaseState pstate;
     //MsgRobotBase2DOdom prevOdom;
     bool firstodom;
 
@@ -360,7 +360,7 @@ WavefrontNode::WavefrontNode() :
 
   this->firstodom = true;
 
-  advertise<robot_actions::MoveBaseState>("state",1);
+  advertise<pr2_robot_actions::MoveBaseState>("state",1);
   advertise<robot_msgs::Polyline>("gui_path",1);
   advertise<robot_msgs::Polyline>("gui_laser",1);
   advertise<robot_msgs::PoseDot>("cmd_vel",1);

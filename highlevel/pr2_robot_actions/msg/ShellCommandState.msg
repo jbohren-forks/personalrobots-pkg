@@ -1,5 +1,5 @@
 Header header
-ActionStatus status
+robot_actions/ActionStatus status
 
 # Goal parameters
 std_msgs/String goal

@@ -37,7 +37,7 @@
 import roslib
 roslib.load_manifest('executive_python')
 import rospy
-from robot_actions.msg import RechargeState
+from pr2_robot_actions.msg import RechargeState
 from std_msgs.msg import Float32
 
 class RechargeAdapter:

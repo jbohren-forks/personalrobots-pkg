@@ -42,7 +42,7 @@
 #include "doors_core/action_release_handle.h"
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
-#include <robot_actions/DoorActionState.h>
+#include <pr2_robot_actions/DoorActionState.h>
 
 
 using namespace door_handle_detector;
@@ -66,12 +66,12 @@ int main(int argc, char** argv)
   ReleaseHandleAction release(node);
 
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);  
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp);
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(unlatch);
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open);
-  runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(release);
+  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
+  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);  
+  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(grasp);
+  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(unlatch);
+  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(open);
+  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(release);
 
   runner.run();
   node.spin();

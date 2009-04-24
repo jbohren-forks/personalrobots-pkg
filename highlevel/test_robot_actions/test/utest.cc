@@ -4,10 +4,11 @@
 #include <robot_actions/message_adapter.h>
 #include <robot_actions/ActionStatus.h>
 #include <std_msgs/Float32.h>
-#include <robot_actions/RechargeState.h>
+#include <test_robot_actions/TestState.h>
 #include <gtest/gtest.h>
 
 using namespace robot_actions;
+using namespace test_robot_actions;
 using namespace std_msgs;
 
 /**
@@ -109,7 +110,7 @@ TEST(robot_actions, action_with_simple_container){
   ASSERT_EQ(c._value < g.data, true);
 
   // Message adapter connects an action to a ros message context
-  robot_actions::MessageAdapter<Float32, RechargeState, Float32> adapter(a);
+  robot_actions::MessageAdapter<Float32, TestState, Float32> adapter(a);
   robot_actions::AbstractAdapter& abstract_adapter(adapter); 
   abstract_adapter.initialize();
   abstract_adapter.terminate();
@@ -162,7 +163,7 @@ TEST(robot_actions, action_with_action_runner){
 
   // First allocate it with an update rate of 10 Hz
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<Float32, RechargeState, Float32>(a);
+  runner.connect<Float32, TestState, Float32>(a);
 
   // Now run it.
   runner.run();
@@ -181,11 +182,11 @@ TEST(robot_actions, action_client){
 
   // Now run it.
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<Float32, RechargeState, Float32>(action);
+  runner.connect<Float32, TestState, Float32>(action);
   runner.run();
 
   // Use a client to test the action
-  robot_actions::ActionClient<Float32, RechargeState, Float32> client("my_action");
+  robot_actions::ActionClient<Float32, TestState, Float32> client("my_action");
   ros::Duration duration(5);
   duration.sleep();
 

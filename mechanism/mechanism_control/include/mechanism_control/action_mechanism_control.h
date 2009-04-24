@@ -39,21 +39,21 @@
 #include <ros/node.h>
 #include <robot_srvs/SwitchController.h>
 #include <std_msgs/Empty.h>
-#include <robot_actions/SwitchControllers.h>
-#include <robot_actions/SwitchControllersState.h>
+#include <pr2_robot_actions/SwitchControllers.h>
+#include <pr2_robot_actions/SwitchControllersState.h>
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
 
 
 namespace mechanism_control{
 
-class ActionMechanismControl: public robot_actions::Action<robot_actions::SwitchControllers, std_msgs::Empty>{
+class ActionMechanismControl: public robot_actions::Action<pr2_robot_actions::SwitchControllers, std_msgs::Empty>{
 
 public: 
   ActionMechanismControl(ros::Node& node);
   ~ActionMechanismControl();
   
-  virtual robot_actions::ResultStatus execute(const robot_actions::SwitchControllers& c, std_msgs::Empty&);
+  virtual robot_actions::ResultStatus execute(const pr2_robot_actions::SwitchControllers& c, std_msgs::Empty&);
 
 
 };// class

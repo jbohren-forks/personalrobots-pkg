@@ -66,7 +66,7 @@
 
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
-#include <robot_actions/RechargeState.h>
+#include <pr2_robot_actions/RechargeState.h>
 #include <robot_msgs/BatteryState.h>
 #include <cstdlib>
 
@@ -268,7 +268,7 @@ main(int argc, char** argv)
 
   highlevel_controllers::RechargeController recharge_controller("rechargeController");
 
-  runner.connect<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32>(recharge_controller);
+  runner.connect<std_msgs::Float32, pr2_robot_actions::RechargeState, std_msgs::Float32>(recharge_controller);
 
   runner.run();
 

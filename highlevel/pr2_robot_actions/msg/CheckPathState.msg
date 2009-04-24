@@ -1,7 +1,7 @@
 Header header
 
 # Status
-ActionStatus status
+robot_actions/ActionStatus status
 
 # Target position and orientation
 robot_msgs/PoseStamped goal

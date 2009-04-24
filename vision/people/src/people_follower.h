@@ -49,7 +49,7 @@
 // messages
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/PositionMeasurement.h>
-#include <robot_actions/Pose2D.h>
+#include <pr2_robot_actions/Pose2D.h>
  
 // log files
 #include <fstream>
@@ -83,10 +83,10 @@ private:
 
   // list of distances and people poses
   std::list<double> distances_;
-  std::list<robot_actions::Pose2D> people_poses_;
+  std::list<pr2_robot_actions::Pose2D> people_poses_;
 
   // message
-  robot_actions::Pose2D people_pos_, robot_pos_;
+  pr2_robot_actions::Pose2D people_pos_, robot_pos_;
 
   ros::Time time_last_publish_;
 

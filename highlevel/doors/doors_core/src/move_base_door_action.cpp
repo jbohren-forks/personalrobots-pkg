@@ -36,7 +36,7 @@
 *********************************************************************/
 #include <doors_core/move_base_door_action.h>
 #include <doors_core/door_reactive_planner.h>
-#include <robot_actions/MoveBaseDoorState.h>
+#include <pr2_robot_actions/MoveBaseDoorState.h>
 
 
 using namespace base_local_planner;
@@ -46,7 +46,7 @@ using namespace door_reactive_planner;
 namespace nav 
 {
   MoveBaseDoorAction::MoveBaseDoorAction(ros::Node& ros_node, tf::TransformListener& tf) : 
-    Action<robot_msgs::Door, robot_actions::Pose2D>("move_base_door"), ros_node_(ros_node), tf_(tf),
+    Action<robot_msgs::Door, pr2_robot_actions::Pose2D>("move_base_door"), ros_node_(ros_node), tf_(tf),
     run_planner_(true), planner_cost_map_ros_(NULL),  
     planner_(NULL), valid_plan_(false) 
   {
@@ -103,9 +103,9 @@ namespace nav
 
   }
 
-  robot_actions::Pose2D MoveBaseDoorAction::getPose2D(const tf::Stamped<tf::Pose> &pose)
+  pr2_robot_actions::Pose2D MoveBaseDoorAction::getPose2D(const tf::Stamped<tf::Pose> &pose)
   {
-    robot_actions::Pose2D tmp_pose;
+    pr2_robot_actions::Pose2D tmp_pose;
     double useless_pitch, useless_roll, yaw;
     pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
     tmp_pose.x = pose.getOrigin().x();
@@ -121,7 +121,7 @@ namespace nav
 
     //get the oriented footprint of the robot
     std::vector<robot_msgs::Point> oriented_footprint;
-    robot_actions::Pose2D tmp_pose = getPose2D(global_pose_);
+    pr2_robot_actions::Pose2D tmp_pose = getPose2D(global_pose_);
     planner_->computeOrientedFootprint(tmp_pose, planner_->footprint_, oriented_footprint);
 
     //set the associated costs in the cost map to be free
@@ -146,7 +146,7 @@ namespace nav
     //make sure we clear the robot's footprint from the cost map
     //clearRobotFootprint(planner_cost_map_);
 
-    std::vector<robot_actions::Pose2D> global_plan;
+    std::vector<pr2_robot_actions::Pose2D> global_plan;
     bool valid_plan = planner_->makePlan(getPose2D(global_pose_), global_plan);//makePlan(current_position, return_path);
 
     lock_.lock();//copy over the new global plan
@@ -209,9 +209,9 @@ namespace nav
   void MoveBaseDoorAction::prunePlan()
   {
     lock_.lock();
-    std::vector<robot_actions::Pose2D>::iterator it = global_plan_.begin();
+    std::vector<pr2_robot_actions::Pose2D>::iterator it = global_plan_.begin();
     while(it != global_plan_.end()){
-      const robot_actions::Pose2D& w = *it;
+      const pr2_robot_actions::Pose2D& w = *it;
       // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
       double x_diff = global_pose_.getOrigin().x() - w.x;
       double y_diff = global_pose_.getOrigin().y() - w.y;
@@ -225,7 +225,7 @@ namespace nav
     lock_.unlock();
   }
 
-  robot_actions::ResultStatus MoveBaseDoorAction::execute(const robot_msgs::Door& door, robot_actions::Pose2D& feedback)
+  robot_actions::ResultStatus MoveBaseDoorAction::execute(const robot_msgs::Door& door, pr2_robot_actions::Pose2D& feedback)
   {
     door_ = door;
     planner_->setDoor(door);//set the goal into the planner
@@ -297,7 +297,7 @@ namespace nav
     return robot_actions::PREEMPTED;
   }
 
-  void MoveBaseDoorAction::dispatchControl(const std::vector<robot_actions::Pose2D> &plan_in)
+  void MoveBaseDoorAction::dispatchControl(const std::vector<pr2_robot_actions::Pose2D> &plan_in)
   {
     robot_msgs::JointTraj plan_out;
     if((int)plan_in.size() <= 0)
@@ -372,7 +372,7 @@ namespace nav
     ros_node_.publish("robot_footprint", footprint_msg);
   }
 
-  void MoveBaseDoorAction::publishPath(const std::vector<robot_actions::Pose2D>& path, std::string topic, double r, double g, double b, double a){
+  void MoveBaseDoorAction::publishPath(const std::vector<pr2_robot_actions::Pose2D>& path, std::string topic, double r, double g, double b, double a){
     // Extract the plan in world co-ordinates
     robot_msgs::Polyline gui_path_msg;
     gui_path_msg.header.frame_id = global_frame_;
@@ -414,11 +414,11 @@ int main(int argc, char** argv){
   ros::Time my_time = ros::Time::now();
   door.header.stamp = my_time;
 
-  robot_actions::Pose2D feedback;
+  pr2_robot_actions::Pose2D feedback;
   move_base_door.execute(door,feedback);
   */
   robot_actions::ActionRunner runner(20.0);
-  runner.connect<robot_msgs::Door, MoveBaseDoorState, robot_actions::Pose2D>(move_base_door);
+  runner.connect<robot_msgs::Door, pr2_robot_actions::MoveBaseDoorState, pr2_robot_actions::Pose2D>(move_base_door);
   runner.run();
   ros_node.spin();
 

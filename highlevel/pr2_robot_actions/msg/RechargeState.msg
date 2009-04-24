@@ -1,7 +1,7 @@
 Header header
 
 # Status
-ActionStatus status
+robot_actions/ActionStatus status
 
 # Target mimimum percentage recharge to achieve
 std_msgs/Float32 goal

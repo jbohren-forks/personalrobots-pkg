@@ -38,7 +38,7 @@
 #define NAV_MOVE_BASE_ACTION_H_
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
-#include <robot_actions/MoveBaseStateNew.h>
+#include <pr2_robot_actions/MoveBaseStateNew.h>
 #include <robot_msgs/PoseStamped.h>
 #include <ros/node.h>
 #include <costmap_2d/costmap_2d_ros.h>

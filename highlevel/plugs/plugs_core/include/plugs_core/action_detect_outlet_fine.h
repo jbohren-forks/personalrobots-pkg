@@ -44,7 +44,7 @@
 // Msgs
 #include <robot_msgs/PointStamped.h>
 #include <robot_msgs/PoseStamped.h>
-#include <robot_actions/DetectOutletState.h>
+#include <pr2_robot_actions/DetectOutletState.h>
 
 // Robot Action Stuff
 #include <robot_actions/action.h>

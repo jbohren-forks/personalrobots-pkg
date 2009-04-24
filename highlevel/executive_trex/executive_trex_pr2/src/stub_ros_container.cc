@@ -156,56 +156,56 @@ int main(int argc, char** argv){
 
   executive_trex_pr2::StubAction<robot_msgs::PoseStamped, int8_t> check_path("check_path");
   if (getComponentParam("/trex/enable_check_path"))
-    runner.connect<robot_msgs::PoseStamped, robot_actions::CheckPathState, int8_t>(check_path);
+    runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
 
   // Detect Door
   executive_trex_pr2::SimpleStubAction<robot_msgs::Door> detect_door("detect_door");
   if (getComponentParam("/trex/enable_detect_door"))
-    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
+    runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
 
   // Detect Handle
   executive_trex_pr2::SimpleStubAction<robot_msgs::Door> detect_handle("detect_handle");
   if (getComponentParam("/trex/enable_detect_handle"))
-    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);
+    runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);
 
   // Grasp Handle
   executive_trex_pr2::SimpleStubAction<robot_msgs::Door> grasp_handle("grasp_handle");
   if (getComponentParam("/trex/enable_grasp_handle"))
-    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(grasp_handle);
+    runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(grasp_handle);
 
   // Unlatch Handle
   executive_trex_pr2::SimpleStubAction<robot_msgs::Door> unlatch_handle("unlatch_handle");
   if (getComponentParam("/trex/enable_unlatch_handle"))
-    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(unlatch_handle);
+    runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(unlatch_handle);
 
   executive_trex_pr2::SimpleStubAction<robot_msgs::Door> open_door("open_door");
   if (getComponentParam("/trex/enable_open_door"))
-    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door);
+    runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(open_door);
 
   executive_trex_pr2::SimpleStubAction<robot_msgs::PoseStamped> move_base_door("move_base_door");
   if (getComponentParam("/trex/enable_move_base_door"))
-    runner.connect<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped>(move_base_door);
+    runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped>(move_base_door);
 
   executive_trex_pr2::SimpleStubAction<robot_msgs::Door> open_door_without_grasp("open_door_without_grasp");
   if (getComponentParam("/trex/enable_open_door_without_grasp"))
-    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(open_door_without_grasp);
+    runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(open_door_without_grasp);
 
   executive_trex_pr2::SimpleStubAction<robot_msgs::Door> release_handle("release_handle");
   if (getComponentParam("/trex/enable_release_handle"))
-    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(release_handle);
+    runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(release_handle);
 
   /* Action stubs for plugs */
   executive_trex_pr2::StubAction<std_msgs::Empty, robot_msgs::PlugStow> detect_plug_on_base("detect_plug_on_base");
   if (getComponentParam("/trex/enable_detect_plug_on_base"))
-    runner.connect<std_msgs::Empty, robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow>(detect_plug_on_base);
+    runner.connect<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow>(detect_plug_on_base);
 
   executive_trex_pr2::StubAction<robot_msgs::PlugStow, std_msgs::Empty> move_and_grasp_plug("move_and_grasp_plug");
   if (getComponentParam("/trex/enable_move_and_grasp_plug"))
-    runner.connect<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp_plug);
+    runner.connect<robot_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(move_and_grasp_plug);
 
   executive_trex_pr2::StubAction<robot_msgs::PlugStow, std_msgs::Empty> stow_plug("stow_plug");
   if (getComponentParam("/trex/enable_stow_plug"))
-    runner.connect<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
+    runner.connect<robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty>(stow_plug);
 
   executive_trex_pr2::SimpleStubAction<std_msgs::Empty> plugs_untuck_arms("plugs_untuck_arms");
   if (getComponentParam("/trex/enable_plugs_untuck_arms"))
@@ -225,39 +225,39 @@ int main(int argc, char** argv){
   
   executive_trex_pr2::StubAction<robot_msgs::PointStamped, robot_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
   if (getComponentParam("/trex/enable_detect_outlet_fine"))
-    runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_fine);
+    runner.connect<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_fine);
 
   executive_trex_pr2::StubAction<robot_msgs::PointStamped, robot_msgs::PoseStamped> detect_outlet_coarse("detect_outlet_coarse");
   if (getComponentParam("/trex/enable_detect_outlet_coarse"))
-    runner.connect<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_coarse);
+    runner.connect<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_coarse);
 
   /* Action stubs for resource management */
-  executive_trex_pr2::StubAction<robot_actions::SwitchControllers, std_msgs::Empty> switch_controllers("switch_controllers");
+  executive_trex_pr2::StubAction<pr2_robot_actions::SwitchControllers, std_msgs::Empty> switch_controllers("switch_controllers");
   if (getComponentParam("/trex/enable_switch_controllers"))
-    runner.connect<robot_actions::SwitchControllers, robot_actions::SwitchControllersState, std_msgs::Empty>(switch_controllers);
+    runner.connect<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState, std_msgs::Empty>(switch_controllers);
 
   // Navigation actions
   executive_trex_pr2::SimpleStubAction<robot_msgs::PoseStamped> move_base("move_base");
   if (getComponentParam("/trex/enable_move_base"))
-    runner.connect<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped>(move_base);
+    runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped>(move_base);
 
   executive_trex_pr2::SimpleStubAction<robot_msgs::PoseStamped> move_base_local("move_base_local");
   if (getComponentParam("/trex/enable_move_base_local"))
-    runner.connect<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped>(move_base_local);
+    runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped>(move_base_local);
 
   // Misc.
   executive_trex_pr2::SimpleStubAction<std_msgs::Float32> recharge("recharge_controller");
   if (getComponentParam("/trex/enable_recharge"))
-    runner.connect<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32>(recharge);
+    runner.connect<std_msgs::Float32, pr2_robot_actions::RechargeState, std_msgs::Float32>(recharge);
 
   executive_trex_pr2::SimpleStubAction<std_msgs::String> shell_command("shell_command");
   if (getComponentParam("/trex/enable_shell_command"))
-    runner.connect<std_msgs::String, robot_actions::ShellCommandState, std_msgs::String>(shell_command);
+    runner.connect<std_msgs::String, pr2_robot_actions::ShellCommandState, std_msgs::String>(shell_command);
 
 
   executive_trex_pr2::SimpleStubAction<robot_msgs::Door> notify_door_blocked("notify_door_blocked");
   if (getComponentParam("/trex/enable_notify_door_blocked"))
-    runner.connect<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(notify_door_blocked);
+    runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(notify_door_blocked);
 
   executive_trex_pr2::SimpleStubAction<std_msgs::Empty> safety_tuck_arms("safety_tuck_arms");
   if (getComponentParam("/trex/enable_safety_tuck_arms"))

@@ -12,7 +12,7 @@
 #include <std_msgs/String.h>
 #include <robot_msgs/Door.h>
 #include <robot_msgs/PlugStow.h>
-#include <robot_actions/ServoToOutlet.h>
+//#include <pr2_robot_actions/ServoToOutlet.h> //Not used?
 #include <robot_msgs/PointStamped.h>
 #include <robot_msgs/PoseStamped.h>
 

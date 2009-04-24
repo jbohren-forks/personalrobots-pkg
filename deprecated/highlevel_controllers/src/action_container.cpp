@@ -36,7 +36,7 @@
 
 #include <robot_actions/action_runner.h>
 #include <robot_actions/action.h>
-#include <robot_actions/ShellCommandState.h>
+#include <pr2_robot_actions/ShellCommandState.h>
 #include <std_msgs/String.h>
 #include <cstdlib>
 
@@ -83,7 +83,7 @@ int main(int argc, char** argv){
   robot_actions::ActionRunner runner(10.0);
 
   highlevel_controllers::ShellCommand shell_command;
-  runner.connect<std_msgs::String, robot_actions::ShellCommandState, std_msgs::String>(shell_command);
+  runner.connect<std_msgs::String, pr2_robot_actions::ShellCommandState, std_msgs::String>(shell_command);
 
   runner.run();
 

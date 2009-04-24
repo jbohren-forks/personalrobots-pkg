@@ -3,7 +3,7 @@
 Header header
 
 # Status
-ActionStatus status
+robot_actions/ActionStatus status
 
 # Goal
 robot_msgs/PlugStow goal

@@ -1,4 +1,0 @@
-<launch>
-  <master auto="start"/>
-  <test test-name="robot_actions_utest" pkg="robot_actions" type="utest" time-limit="60"/>
-</launch>

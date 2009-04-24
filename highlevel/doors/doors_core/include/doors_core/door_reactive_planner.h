@@ -37,7 +37,7 @@
 #include <ros/node.h>
 
 //messages
-#include <robot_actions/Pose2D.h>
+#include <pr2_robot_actions/Pose2D.h>
 #include <robot_msgs/Vector3.h>
 #include <robot_msgs/Point.h>
 
@@ -82,7 +82,7 @@ namespace door_reactive_planner
      * @param start The position from which the robot is starting
      * @param best_path The best path returned by the planner (note this could be a zero length path if no plan is found
      */
-    bool makePlan(const robot_actions::Pose2D &start, std::vector<robot_actions::Pose2D> &best_path);
+    bool makePlan(const pr2_robot_actions::Pose2D &start, std::vector<pr2_robot_actions::Pose2D> &best_path);
 
     /**
      * @brief Set door information for the planner
@@ -96,7 +96,7 @@ namespace door_reactive_planner
      * @param footprint_spec The footprint of the robot
      * @param oriented_footprint The oriented footprint of the robot
      */
-    bool computeOrientedFootprint(const robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint); 
+    bool computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint); 
 
     std::vector<robot_msgs::Point> footprint_; /**< The footprint of the robot */
 
@@ -104,7 +104,7 @@ namespace door_reactive_planner
      * @brief Get the goal position from the planner
      * @return The goal position for the planner
      */
-    bool getGoal(robot_actions::Pose2D &goal);
+    bool getGoal(pr2_robot_actions::Pose2D &goal);
 
     private:
 
@@ -152,7 +152,7 @@ namespace door_reactive_planner
 
     double centerline_angle_; /**< Angle that the normal to the door makes in the path_frame when the door is closed */
 
-    robot_actions::Pose2D goal_; /**< Goal position on the other side of the doorway */
+    pr2_robot_actions::Pose2D goal_; /**< Goal position on the other side of the doorway */
 
     bool door_information_set_ ; /**< Has door information been set before invoking the planner */
 
@@ -163,7 +163,7 @@ namespace door_reactive_planner
      * @param p Position of the robot
      * @param q Position of the robot
      */
-    double distance(const robot_actions::Pose2D &p, const robot_actions::Pose2D &q);
+    double distance(const pr2_robot_actions::Pose2D &p, const pr2_robot_actions::Pose2D &q);
 
     /**
      * @brief Translational projected distance between two positions
@@ -171,7 +171,7 @@ namespace door_reactive_planner
      * @param q Position of the robot
      * @param angle angle of the vector to project onto of the robot
      */
-    double projectedDistance(const robot_actions::Pose2D &p, const robot_actions::Pose2D &q, const double &angle);
+    double projectedDistance(const pr2_robot_actions::Pose2D &p, const pr2_robot_actions::Pose2D &q, const double &angle);
 
     /**
      * @brief Create a linear path between two positions
@@ -179,7 +179,7 @@ namespace door_reactive_planner
      * @param fp Final position
      * @param return_path The returned path
      */
-    bool createLinearPath(const robot_actions::Pose2D &cp,const robot_actions::Pose2D &fp, std::vector<robot_actions::Pose2D> &return_path);
+    bool createLinearPath(const pr2_robot_actions::Pose2D &cp,const pr2_robot_actions::Pose2D &fp, std::vector<pr2_robot_actions::Pose2D> &return_path);
 
     /**
      * @brief Get the final position corresponding to motion along a straight line at angle (delta_angle) from the centerline_angle. The final position
@@ -189,7 +189,7 @@ namespace door_reactive_planner
      * @param distance_to_centerline shortest distance from the current position to the centerline of the doorway
      * @param end_position final position returned by this function
      */
-    void getFinalPosition(const robot_actions::Pose2D &current_position, const double &delta_angle, const double &distance_to_centerline, robot_actions::Pose2D &end_position);
+    void getFinalPosition(const pr2_robot_actions::Pose2D &current_position, const double &delta_angle, const double &distance_to_centerline, pr2_robot_actions::Pose2D &end_position);
 
     /**
      * @brief The cost of a point in the cost map
@@ -206,7 +206,7 @@ namespace door_reactive_planner
      * @param return_path The checked path to be returned
      * @param costmap_frame_id The frame in which the map is specified
      */
-    void checkPath(const std::vector<robot_actions::Pose2D> &path, const std::string &path_frame_id, std::vector<robot_actions::Pose2D> &return_path, std::string &costmap_frame_id);
+    void checkPath(const std::vector<pr2_robot_actions::Pose2D> &path, const std::string &path_frame_id, std::vector<pr2_robot_actions::Pose2D> &return_path, std::string &costmap_frame_id);
 
     /**
      * @brief Transform a path from one frame to another frame
@@ -215,7 +215,7 @@ namespace door_reactive_planner
      * @param path_out The transformed path
      * @param frame_in The frame in which the output path is specified
      */
-    void transformPath(const std::vector<robot_actions::Pose2D> &path_in, const std::string &frame_in, std::vector<robot_actions::Pose2D> &path_out, const std::string &frame_out);
+    void transformPath(const std::vector<pr2_robot_actions::Pose2D> &path_in, const std::string &frame_in, std::vector<pr2_robot_actions::Pose2D> &path_out, const std::string &frame_out);
 
     /**
      * @brief Transform a 2D point from one frame to another
@@ -224,7 +224,7 @@ namespace door_reactive_planner
      * @param path_out The transformed point
      * @param frame_in The frame in which the output point is specified
      */
-    void transform2DPose(const robot_actions::Pose2D &point_in, const std::string original_frame_id, robot_actions::Pose2D &point_out, const std::string &transform_frame_id);
+    void transform2DPose(const pr2_robot_actions::Pose2D &point_in, const std::string original_frame_id, pr2_robot_actions::Pose2D &point_out, const std::string &transform_frame_id);
 
   };
 }

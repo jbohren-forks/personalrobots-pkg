@@ -7,6 +7,7 @@
 <depend package="rosconsole" />
 <depend package="robot_msgs" />
 <depend package="robot_actions" />
+<depend package="pr2_robot_actions" />
 <depend package="deprecated_msgs" />
 <depend package="vslam" />
 <depend package="rviz" />

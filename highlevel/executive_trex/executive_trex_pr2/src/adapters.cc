@@ -48,11 +48,11 @@ namespace TREX {
   /***********************************************************************
    * @brief Door actions operate with a door message for goal and feedback
    ***********************************************************************/
-  class DoorActionAdapter: public ROSActionAdapter<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> {
+  class DoorActionAdapter: public ROSActionAdapter<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> {
   public:
 
     DoorActionAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door>(agentName, configData){
+      : ROSActionAdapter<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(agentName, configData){
     }
     
     virtual void fillActiveObservationParameters(const robot_msgs::Door& msg, ObservationByValue* obs){
@@ -74,11 +74,11 @@ namespace TREX {
   /***********************************************************************
    * @brief MoveBase actions with a pose message for goal and feedback
    **********************************************************************/
-  class MoveBaseAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped> {
+  class MoveBaseAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped> {
   public:
 
     MoveBaseAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew,  robot_msgs::PoseStamped>(agentName, configData){
+      : ROSActionAdapter<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew,  robot_msgs::PoseStamped>(agentName, configData){
     }
 
     virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){
@@ -101,11 +101,11 @@ namespace TREX {
   /***********************************************************************
    * @brief CheckPath
    **********************************************************************/
-  class CheckPathAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::CheckPathState, int8_t> {
+  class CheckPathAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t> {
   public:
 
     CheckPathAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PoseStamped, robot_actions::CheckPathState, int8_t>(agentName, configData){
+      : ROSActionAdapter<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(agentName, configData){
     }
 
     virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){
@@ -143,11 +143,11 @@ namespace TREX {
   /***********************************************************************
    * @@brief Recharge action
    **********************************************************************/
-  class RechargeAdapter: public ROSActionAdapter<std_msgs::Float32, robot_actions::RechargeState, std_msgs::Float32> {
+  class RechargeAdapter: public ROSActionAdapter<std_msgs::Float32, pr2_robot_actions::RechargeState, std_msgs::Float32> {
   public:
 
     RechargeAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<std_msgs::Float32, robot_actions::RechargeState,  std_msgs::Float32>(agentName, configData){}
+      : ROSActionAdapter<std_msgs::Float32, pr2_robot_actions::RechargeState,  std_msgs::Float32>(agentName, configData){}
     
     virtual void fillActiveObservationParameters(const std_msgs::Float32& msg, ObservationByValue* obs){
       AdapterUtilities::read<float>("recharge_level", *obs, msg.data);
@@ -170,11 +170,11 @@ namespace TREX {
    * @brief ShellCommand action will take system commands in strings and 
    * ship them for execution.
    **********************************************************************/
-  class ShellCommandAdapter: public ROSActionAdapter<std_msgs::String, robot_actions::ShellCommandState, std_msgs::String> {
+  class ShellCommandAdapter: public ROSActionAdapter<std_msgs::String, pr2_robot_actions::ShellCommandState, std_msgs::String> {
   public:
 
     ShellCommandAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<std_msgs::String, robot_actions::ShellCommandState, std_msgs::String>(agentName, configData){
+      : ROSActionAdapter<std_msgs::String, pr2_robot_actions::ShellCommandState, std_msgs::String>(agentName, configData){
     }
     
     virtual void fillActiveObservationParameters(const std_msgs::String& msg, ObservationByValue* obs){
@@ -218,11 +218,11 @@ namespace TREX {
   /***********************************************************************
    * @brief DetectPlugOnBase 
    **********************************************************************/
-  class DetectPlugOnBaseAdapter: public ROSActionAdapter<std_msgs::Empty, robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow> {
+  class DetectPlugOnBaseAdapter: public ROSActionAdapter<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow> {
   public:
 
     DetectPlugOnBaseAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<std_msgs::Empty, robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow>(agentName, configData){
+      : ROSActionAdapter<std_msgs::Empty, pr2_robot_actions::DetectPlugOnBaseState, robot_msgs::PlugStow>(agentName, configData){
     }
 
     virtual void fillInactiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){
@@ -236,11 +236,11 @@ namespace TREX {
   /***********************************************************************
    * @brief MoveAndGraspPlug 
    **********************************************************************/
-  class MoveAndGraspPlugAdapter: public ROSActionAdapter<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty> {
+  class MoveAndGraspPlugAdapter: public ROSActionAdapter<robot_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty> {
   public:
 
     MoveAndGraspPlugAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PlugStow, robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(agentName, configData){
+      : ROSActionAdapter<robot_msgs::PlugStow, pr2_robot_actions::MoveAndGraspPlugState, std_msgs::Empty>(agentName, configData){
     }
 
     virtual void fillActiveObservationParameters(const robot_msgs::PlugStow& msg, ObservationByValue* obs){
@@ -259,11 +259,11 @@ namespace TREX {
   /***********************************************************************
    * @brief StowPlug 
    **********************************************************************/
-  class StowPlugAdapter: public ROSActionAdapter<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty> {
+  class StowPlugAdapter: public ROSActionAdapter<robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty> {
   public:
 
     StowPlugAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PlugStow, robot_actions::StowPlugState, std_msgs::Empty>(agentName, configData){
+      : ROSActionAdapter<robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty>(agentName, configData){
     }
 
     virtual void fillDispatchParameters(robot_msgs::PlugStow& msg, const TokenId& goalToken){
@@ -282,14 +282,14 @@ namespace TREX {
   /***********************************************************************
    * @brief SwtichControllers action
    **********************************************************************/
-  class SwitchControllersAdapter: public ROSActionAdapter<robot_actions::SwitchControllers, robot_actions::SwitchControllersState, std_msgs::Empty> {
+  class SwitchControllersAdapter: public ROSActionAdapter<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState, std_msgs::Empty> {
   public:
 
     SwitchControllersAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_actions::SwitchControllers, robot_actions::SwitchControllersState, std_msgs::Empty>(agentName, configData){
+      : ROSActionAdapter<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState, std_msgs::Empty>(agentName, configData){
     }
 
-    void fillDispatchParameters(robot_actions::SwitchControllers& msg, const TokenId& goalToken){
+    void fillDispatchParameters(pr2_robot_actions::SwitchControllers& msg, const TokenId& goalToken){
       // The token will have a set of merged tokens on it. These merged tokens all are derived from a master of type
       // 'MechanismController' which will be in a state of up or down. If it is up, we will append to the stop list, and if down, we
       // will append to the start list
@@ -309,7 +309,7 @@ namespace TREX {
      * The Master Token is an instance of a MechanismController. It has a paramater indicating if it is up or down. The timeline name
      * should correspond to the actual controller name.
      */
-    void handleMasterToken(const TokenId& master_token, robot_actions::SwitchControllers& msg){
+    void handleMasterToken(const TokenId& master_token, pr2_robot_actions::SwitchControllers& msg){
       if(master_token.isId() && master_token->getPlanDatabase()->getSchema()->isA(master_token->getPredicateName(), "MechanismController.Holds")){
 	ConstrainedVariableId param = master_token->getVariable("is_up");
 	checkError(param.isValid(), "Trying to dispatch controller switch but could find no variable named 'is_up' in token " << master_token->toString() << 
@@ -338,11 +338,11 @@ namespace TREX {
   /***********************************************************************
    * @brief DetectOutletAdapter
    **********************************************************************/
-  class DetectOutletAdapter: public ROSActionAdapter<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped> {
+  class DetectOutletAdapter: public ROSActionAdapter<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped> {
   public:
 
     DetectOutletAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PointStamped, robot_actions::DetectOutletState, robot_msgs::PoseStamped>(agentName, configData){
+      : ROSActionAdapter<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>(agentName, configData){
     }
 
     virtual void fillDispatchParameters(robot_msgs::PointStamped& msg, const TokenId& goalToken){

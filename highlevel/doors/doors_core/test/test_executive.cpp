@@ -42,12 +42,12 @@
 #include <robot_msgs/Door.h>
 #include <ros/node.h>
 #include <robot_actions/action_client.h>
-#include <robot_actions/Pose2D.h>
-#include <robot_actions/DoorActionState.h>
+#include <pr2_robot_actions/Pose2D.h>
+#include <pr2_robot_actions/DoorActionState.h>
 #include <robot_actions/NoArgumentsActionState.h>
-#include <robot_actions/SwitchControllersState.h>
-#include <robot_actions/MoveBaseStateNew.h>
-#include <robot_actions/MoveBaseDoorState.h>
+#include <pr2_robot_actions/SwitchControllersState.h>
+#include <pr2_robot_actions/MoveBaseStateNew.h>
+#include <pr2_robot_actions/MoveBaseDoorState.h>
 #include "doors_core/executive_functions.h"
 
 
@@ -75,7 +75,7 @@ int
   door.hinge = -1;
   door.header.frame_id = "base_footprint";
 
-  robot_actions::SwitchControllers switchlist;
+  pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
 
   Duration timeout_short = Duration().fromSec(2.0);
@@ -83,15 +83,15 @@ int
   Duration timeout_long = Duration().fromSec(20.0);
 
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> tuck_arm("doors_tuck_arms");
-  robot_actions::ActionClient<robot_actions::SwitchControllers, robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
-  robot_actions::ActionClient<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> detect_door("detect_door");
-  robot_actions::ActionClient<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> detect_handle("detect_handle");
-  robot_actions::ActionClient<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> grasp_handle("grasp_handle");
-  robot_actions::ActionClient<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> unlatch_handle("unlatch_handle");
-  robot_actions::ActionClient<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> open_door("open_door");
-  robot_actions::ActionClient<robot_msgs::Door, robot_actions::DoorActionState, robot_msgs::Door> release_handle("release_handle");
-  robot_actions::ActionClient<robot_msgs::Door, robot_actions::MoveBaseDoorState, robot_actions::Pose2D> move_base_door("move_base_door");
-  robot_actions::ActionClient<robot_msgs::PoseStamped, robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped> move_base_local("move_base_local");
+  robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
+  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> detect_door("detect_door");
+  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> detect_handle("detect_handle");
+  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> grasp_handle("grasp_handle");
+  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> unlatch_handle("unlatch_handle");
+  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> open_door("open_door");
+  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> release_handle("release_handle");
+  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::MoveBaseDoorState, pr2_robot_actions::Pose2D> move_base_door("move_base_door");
+  robot_actions::ActionClient<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped> move_base_local("move_base_local");
 
   timeout_medium.sleep();
   robot_msgs::Door tmp_door;
@@ -146,11 +146,11 @@ int
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   boost::thread* thread = new boost::thread(boost::bind(&robot_actions::ActionClient<robot_msgs::Door, 
-							robot_actions::DoorActionState, robot_msgs::Door>::execute, 
+							pr2_robot_actions::DoorActionState, robot_msgs::Door>::execute, 
 							&open_door, door, tmp_door, timeout_long));
 
   // move throught door
-  robot_actions::Pose2D pose2d;
+  pr2_robot_actions::Pose2D pose2d;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
   if (move_base_door.execute(door, pose2d, timeout_long) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
