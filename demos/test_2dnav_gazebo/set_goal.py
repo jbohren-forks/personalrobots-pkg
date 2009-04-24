@@ -191,6 +191,7 @@ class NavStackTest(unittest.TestCase):
             self.publish_goal = False
     
     def amclInput(self, pose):
+        if self.publish_initialpose:
           print "/amcl_pose received, stop setPose begin publishing goal",pose
           self.publish_initialpose = False
 
