@@ -1,0 +1,42 @@
+<launch>
+<master auto="start"/>
+<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.025.pgm 0.025" respawn="false" />
+    <node pkg="amcl" type="amcl" name="amcl" respawn="false" output="screen">
+      <remap from="scan" to="base_scan" />
+      <!-- Publish scans from best pose at a max of 1 Hz -->
+      <param name="gui_publish_rate" value="10.0"/>
+      <param name="laser_max_beams" value="30"/>
+      <param name="min_particles" value="3000"/>
+      <param name="max_particles" value="5000"/>
+      <param name="kld_err" value="0.05"/>
+      <param name="kld_z" value="0.99"/>
+      <param name="odom_alpha1" value="0.2"/>
+      <param name="odom_alpha2" value="0.2"/>
+      <!-- translation std dev, m -->
+      <param name="odom_alpha3" value="0.8"/>
+      <param name="odom_alpha4" value="0.2"/>
+      <param name="laser_z_hit" value="0.5"/>
+      <param name="laser_z_short" value="0.05"/>
+      <param name="laser_z_max" value="0.05"/>
+      <param name="laser_z_rand" value="0.5"/>
+      <param name="laser_sigma_hit" value="0.2"/>
+      <param name="laser_lambda_short" value="0.1"/>
+      <param name="laser_lambda_short" value="0.1"/>
+      <param name="laser_model_type" value="likelihood_field"/>
+      <param name="laser_model_type" value="beam"/>
+<!--       <param name="laser_likelihood_max_dist" value="2.0"/> -->
+      <param name="update_min_d" value="0.2"/>
+      <param name="update_min_a" value="0.5"/>
+      <param name="odom_frame_id" value="odom_combined"/>
+      <param name="resample_interval" value="1"/>
+      <param name="transform_tolerance" value="0.1"/>
+      <param name="recovery_alpha_slow" value="0.0"/>
+      <param name="recovery_alpha_fast" value="0.0"/>
+      <param name="initial_pose_x" value="13.158"/>
+      <param name="initial_pose_y" value="28.98"/>
+      <param name="initial_pose_a" value="-1.60"/>
+    </node>
+<param name="robot_radius" value="0.325"/>
+<node pkg="nav_view" type="nav_view" respawn="false" output="screen"/>
+<!-- <node pkg="rosrecord" type="rosplay" args="-s 2 /u/prdata/videre-bags/vismap/kk_2009-02-23-17-18-13-topic.bag" /> -->
+</launch>

@@ -166,7 +166,10 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
 
       assert(pz <= 1.0);
       assert(pz >= 0.0);
-      p *= pz;
+      //      p *= pz;
+      // here we have an ad-hoc weighting scheme for combining beam probs
+      // works well, though...
+      p += pz*pz*pz;
     }
 
     sample->weight *= p;
@@ -232,6 +235,7 @@ double AMCLLaser::LikelihoodFieldModel(AMCLLaserData *data, pf_sample_set_t* set
       else
         z = self->map->cells[MAP_INDEX(self->map,mi,mj)].occ_dist;
       // Gaussian model
+      // NOTE: this should have a normalization of 1/(sqrt(2pi)*sigma)
       pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit));
       // Part 2: random measurements
       pz += self->z_rand * 1.0/data->range_max;
@@ -240,7 +244,10 @@ double AMCLLaser::LikelihoodFieldModel(AMCLLaserData *data, pf_sample_set_t* set
 
       assert(pz <= 1.0);
       assert(pz >= 0.0);
-      p *= pz;
+      //      p *= pz;
+      // here we have an ad-hoc weighting scheme for combining beam probs
+      // works well, though...
+      p += pz*pz*pz;
     }
 
     sample->weight *= p;

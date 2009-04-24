@@ -493,7 +493,7 @@ void pf_cluster_stats(pf_t *pf, pf_sample_set_t *set)
 
     cluster->cov = pf_matrix_zero();
 
-    // Covariance in linear compontents
+    // Covariance in linear components
     for (j = 0; j < 2; j++)
       for (k = 0; k < 2; k++)
         cluster->cov.m[j][k] = cluster->c[j][k] / cluster->weight -
