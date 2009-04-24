@@ -46,7 +46,7 @@ using namespace robot_msgs;
 using namespace laser_scan;
 
 
-static const unsigned int last_seq = 4100 ;
+static const unsigned int last_seq = 76500 ;
 
 int g_argc;
 char** g_argv;
@@ -119,7 +119,7 @@ TEST_F(TestAssembler, test)
 
   usleep(1e6) ;
 
-  ASSERT_EQ(cloud_counter_, (unsigned int)4) ;
+  ASSERT_EQ(cloud_counter_, (unsigned int)5) ;
 
   cloud_mutex_.lock() ;
   ASSERT_TRUE(safe_cloud_.get_pts_size() > 0) ;

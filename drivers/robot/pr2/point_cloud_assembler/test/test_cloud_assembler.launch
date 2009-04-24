@@ -19,7 +19,7 @@
     <remap from="full_cloud" to="snapshot_cloud" />
   </node>
 
-  <node pkg="rosrecord" type="rosplay" args="$(find point_cloud_assembler)/test/test_assembler.bag" />
+  <node pkg="rosrecord" type="rosplay" args="-b 5 -r 2 $(find point_cloud_assembler)/test/test_assembler.bag" />
 
   <test test-name="test_cloud_assembler" pkg="point_cloud_assembler" type="test_assembler" />
 
