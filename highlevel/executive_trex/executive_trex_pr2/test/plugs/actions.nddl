@@ -17,7 +17,19 @@ class PlugActions extends AgentActions {
 };
 
 PlugActions::DetectOutlet {
+
+  // Subgoals
   contains(detect_outlet_coarse.Active cmd_detect_outlet_coarse);
+  contains(move_base.Active cmd_move_to_outlet);
+
+  // Sequence
+  cmd_detect_outlet_coarse before cmd_move_to_outlet;
+  
+  // They all succeed
+  eq(SUCCESS, cmd_detect_outlet_coarse.status, cmd_move_to_outlet.status);
+
+
+  // Params
 
   // Initial values in the base_footprint frame. Used to point the head
   eq(cmd_detect_outlet_coarse.frame_id, "base_footprint");
@@ -25,11 +37,14 @@ PlugActions::DetectOutlet {
   eq(cmd_detect_outlet_coarse.y, 0.0);
   eq(cmd_detect_outlet_coarse.z, 0.5);
 
-  // Feedback paramater Bindings - obtain the point from the pose. The z value will be normal to the plug and we want to add the range
-  //any(detect_outlet_coarse.Inactive feedback_detect_outlet_coarse);
-  //cmd_detect_outlet_coarse meets feedback_detect_outlet_coarse;
+  // Use detect outlet feedback to determine where to move base
+  any(detect_outlet_coarse.Inactive feedback_detect_outlet_coarse);
+  cmd_detect_outlet_coarse meets feedback_detect_outlet_coarse;
+  addEq(feedback_detect_outlet_coarse.x, 1.0, cmd_move_to_outlet.x);
+  addEq(feedback_detect_outlet_coarse.y, 1.0, cmd_move_to_outlet.y);
+  eq(cmd_move_to_outlet.z, 0.0);
 
-  concurrent(end, cmd_detect_outlet_coarse.end);
+  concurrent(end, cmd_move_to_outlet.end);
 }
 
 PlugActions::PickupAndRelease {
