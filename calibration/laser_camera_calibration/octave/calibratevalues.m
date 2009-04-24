@@ -121,5 +121,5 @@ for i = 1:length(calibdata)
         F(i) = 1000;
     end
 end
-%F'
+%F(F>median(F)) = median(F); % robustness measure
 sqrt(sum(F.^2))

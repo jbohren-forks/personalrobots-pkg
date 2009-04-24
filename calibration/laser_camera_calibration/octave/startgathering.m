@@ -146,19 +146,28 @@ end
 
 %% threshold length of line
 laserdir = laserline(1:2)-laserline(3:4);
-if( norm(laserdir) < 0.6 || norm(laserdir) > 1.5 )
+minlinelength = 0.6;
+maxlinelength = 1.5;
+if( norm(laserdir) < minlinelength || norm(laserdir) > maxlinelength )
     display(sprintf('line not right size %f', norm(laserdir)));
     return;
 end
 
-if( min(norm(laserline(1:2)),norm(laserline(3:4))) > 2 )
-    display('line is too far');
+distthresh = 2; % specify max valid distance of checkerboard, currently 2m
+if( min(norm(laserline(1:2)),norm(laserline(3:4))) > distthresh )
+    display(sprintf('line is too far, dist=%f', min(norm(laserline(1:2)),norm(laserline(3:4)))));
     return;
 end
 
 %% ground can still be detected as checkerboard, so look for discontinuities
 Nlaser = [laserdir(2);-laserdir(1);0]/norm(laserdir);
 Nlaser(3) = -dot(Nlaser(1:2),laserline(1:2));
+
+anglethresh = pi*3/8; % specify max out of plane rotation
+if( abs(Nlaser(2)) > sin(anglethresh) )
+    display(sprintf('line is rotated out of plane too mcuh: %frad', asin(abs(Nlaser(2)))));
+    return;
+end
 
 testpoints = [];
 iprevline = ilaserline-1;

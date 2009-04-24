@@ -87,7 +87,7 @@ while(i <= length(S))
     % find the error from lines
     dists = abs(L(1:2)'*localpts + L(3));
     
-    meandist = mean(abs(dists));
+    meandist = mean(abs(dists),2);
     distthresh = max(meandist, thresh);
 
     % split and start
