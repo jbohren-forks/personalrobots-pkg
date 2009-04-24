@@ -14,7 +14,6 @@
 		:x-val
 		:y-val
 		:z-val
-		:goal-val
 		:<Point32>
 		:<Polygon3D>
 		:<PointCloud>
@@ -26,8 +25,6 @@
 
 
 (in-package :lane-following)
-
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -79,7 +76,6 @@
   (setq *global-frame* (get-param "global_frame_id" "map")
 	*person-on-path-use-stub* (get-param "~person_on_path_use_stub" *person-on-path-use-stub*)))
 
-  
 (defun goto (x y theta)
   (ros-info "Initiating hallway move to goal ~a ~a ~a" x y theta)
   (setq *new-goal* nil *move-base-result* nil)
