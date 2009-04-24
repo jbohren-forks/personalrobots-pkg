@@ -7,7 +7,6 @@
   <depend package="nav_view"/>
   <depend package="gazebo_plugin"/>
   <depend package="map_server"/>
-  <depend package="amcl_player"/>
   <depend package="fake_localization"/>
   <depend package="teleop_arm_keyboard"/>
   <depend package="executive_trex_pr2"/>
