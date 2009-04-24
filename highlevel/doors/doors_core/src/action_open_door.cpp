@@ -149,6 +149,7 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door&
   // keep pushing forward when finished
   tff_handle_.value.rot.x = 0;
   node_.publish("r_arm_cartesian_tff_controller/command", tff_handle_);
+  feedback = goal;
   return robot_actions::SUCCESS;
 }
 

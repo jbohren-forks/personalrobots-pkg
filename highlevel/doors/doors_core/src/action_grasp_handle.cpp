@@ -137,6 +137,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const robot_msgs::Door& g
     }
   }
   
+  feedback = goal;
   return robot_actions::SUCCESS;
 }
 
