@@ -21,4 +21,4 @@ rospack_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_cloud_assembler.launch
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 # Download needed data file
-rospack_download_test_data(http://pr.willowgarage.com/data/point_cloud_assembler/test_assembler.bag test/test_assembler.bag)
+rospack_download_test_data(http://pr.willowgarage.com/data/point_cloud_assembler/test_assembler_2009_04_24.bag test/test_assembler_2009_04_24.bag)
