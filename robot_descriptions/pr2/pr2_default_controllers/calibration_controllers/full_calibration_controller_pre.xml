@@ -12,13 +12,12 @@
   <forearm_calibrator side="l" />
   <gripper_calibrator side="l" />
 
-  <tilting_laser_calibrator name="laser_tilt" />
-
   <!-- New calibrators for Alpha2, IDE hardware -->
   <!--base_calibrator_alpha2 /-->
   <base_calibrator /> <!-- New casters are in the shop, have A1's -->
 
   <head_calibrator_alpha2b />
+  <tilting_laser_calibrator name="laser_tilt" />
 
   <torso_limit_calibrator />
 </controllers>
