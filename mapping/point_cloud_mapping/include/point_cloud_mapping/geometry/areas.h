@@ -37,7 +37,7 @@
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Polygon3D.h>
-#include <robot_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline.h>
 
 #include <point_cloud_mapping/geometry/nearest.h>
 
@@ -80,7 +80,7 @@ namespace cloud_geometry
     double compute2DPolygonalArea (const robot_msgs::PointCloud &points, const std::vector<double> &normal);
     double compute2DPolygonalArea (const robot_msgs::Polygon3D &polygon, const std::vector<double> &normal);
     void convexHull2D (const robot_msgs::PointCloud &points, const std::vector<int> &indices, const std::vector<double> &coeff, robot_msgs::Polygon3D &hull);
-    void convexHull2D (const std::vector<robot_msgs::Point32> &points, robot_msgs::Polyline2D &hull);
+    void convexHull2D (const std::vector<robot_msgs::Point32> &points, robot_msgs::Polyline &hull);
 
     bool isPointIn2DPolygon (const robot_msgs::Point32 &point, const robot_msgs::Polygon3D &polygon);
   }

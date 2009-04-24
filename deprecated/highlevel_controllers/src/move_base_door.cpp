@@ -69,7 +69,7 @@
 
 #include <robot_msgs/JointTraj.h>
 #include <angles/angles.h>
-#include <robot_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline.h>
 
 using namespace old_costmap_2d;
 using namespace deprecated_msgs;
@@ -297,13 +297,14 @@ namespace ros
 
     void MoveBaseDoor::publishTraj(robot_msgs::JointTraj &traj, std::string path_type, std::string publish_frame_id) 
     {
-      robot_msgs::Polyline2D gui_path_msg;
+      robot_msgs::Polyline gui_path_msg;
       gui_path_msg.header.frame_id = publish_frame_id;
       gui_path_msg.set_points_size(traj.points.size());
       for(int i=0; i< (int) traj.points.size(); i++)
       {
         gui_path_msg.points[i].x = traj.points[i].positions[0];
         gui_path_msg.points[i].y = traj.points[i].positions[1];
+        gui_path_msg.points[i].z = 0;        
       }
 
       if(path_type == std::string("full path"))

@@ -507,7 +507,7 @@ void NavViewPanel::processParticleCloud()
   queueRender();
 }
 
-void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, robot_msgs::Polyline2D& path, Ogre::RenderOperation::OperationType op, float depth, bool loop )
+void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, robot_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop )
 {
   path.lock();
 
@@ -532,13 +532,13 @@ void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, robot_
     object->begin( "BaseWhiteNoLighting", op );
     for( int i=0; i < num_points; ++i)
     {
-      object->position(path.points[i].x, path.points[i].y, 0.0f);
+      object->position(path.points[i].x, path.points[i].y, path.points[i].z);
       object->colour( color );
     }
 
     if ( loop )
     {
-      object->position(path.points[0].x, path.points[0].y, 0.0f);
+      object->position(path.points[0].x, path.points[0].y, path.points[0].z);
       object->colour( color );
     }
 

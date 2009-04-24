@@ -68,7 +68,7 @@ Publishes to (name type):
 - @b "amcl_pose" robot_msgs/PoseWithCovariance : robot's estimated pose in the map, with covariance
 - @b "particlecloud" robot_msgs/ParticleCloud : the set of pose estimates being maintained by the filter.
 - @b "tf_message" tf/tfMessage : publishes the transform from "odom" (which can be remapped via the ~odom_frame_id parameter) to "map"
-- @b "gui_laser" robot_msgs/Polyline2D : re-projected laser scans (for visualization)
+- @b "gui_laser" robot_msgs/Polyline : re-projected laser scans (for visualization)
 
 Offers services (name type):
 - @b "global_localization" std_srvs/Empty : Initiate global localization, wherein all particles are dispersed randomly through the free space in the map.
@@ -144,7 +144,7 @@ Robotics, p136.
 #include "robot_msgs/Pose.h"
 #include "robot_srvs/StaticMap.h"
 #include "std_srvs/Empty.h"
-#include "robot_msgs/Polyline2D.h"
+#include "robot_msgs/Polyline.h"
 
 // For transform support
 #include "tf/transform_broadcaster.h"
@@ -369,7 +369,7 @@ AmclNode::AmclNode() :
 
   ros::Node::instance()->advertise<robot_msgs::PoseWithCovariance>("amcl_pose",2);
   ros::Node::instance()->advertise<robot_msgs::ParticleCloud>("particlecloud",2);
-  ros::Node::instance()->advertise<robot_msgs::Polyline2D>("gui_laser",2);
+  ros::Node::instance()->advertise<robot_msgs::Polyline>("gui_laser",2);
   ros::Node::instance()->advertiseService("global_localization",
                                           &AmclNode::globalLocalizationCallback,
                                           this);
@@ -741,7 +741,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
       if((gui_publish_rate.toSec() > 0.0) &&
          (now - gui_laser_last_publish_time) >= gui_publish_rate)
       {
-        robot_msgs::Polyline2D point_cloud;
+        robot_msgs::Polyline point_cloud;
         point_cloud.header = laser_scan->header;
         point_cloud.header.frame_id = "map";
         point_cloud.set_points_size(laser_scan->ranges.size());
@@ -760,6 +760,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
           lp.setY(laser_scan->ranges[i] * 
                   sin(laser_scan->angle_min +
                       i * laser_scan->angle_increment));
+          lp.setZ(0); ///\todo Brian please verify --Tully
 
           try
           {
@@ -773,6 +774,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
 
           point_cloud.points[i].x = gp.x();
           point_cloud.points[i].y = gp.y();
+          point_cloud.points[i].z = gp.z();
         }
 
         ros::Node::instance()->publish("gui_laser", point_cloud);

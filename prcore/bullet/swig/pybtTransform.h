@@ -57,14 +57,14 @@ public:
 	{
 	}
   /**@brief Assignment Operator */
-  /* Comment for swig I'm not sure why it's complaining Warning 362
+  // Comment for swig I'm not sure why it's complaining Warning 362
 	SIMD_FORCE_INLINE Transform& operator=(const Transform& other)
 	{
 		m_basis = other.m_basis;
 		m_origin = other.m_origin;
 		return *this;
 	}
-  */
+  
 
   /**@brief Set the current transform as the value of the product of two transforms
    * @param t1 Transform 1

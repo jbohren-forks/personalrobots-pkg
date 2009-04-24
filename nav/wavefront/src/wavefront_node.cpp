@@ -68,8 +68,8 @@ Subscribes to (name/type):
 Publishes to (name / type):
 - @b "cmd_vel" robot_msgs/PoseDot : velocity commands to robot
 - @b "state" robot_actions/MoveBaseState : current planner state (e.g., goal reached, no path)
-- @b "gui_path" robot_msgs/Polyline2D : current global path (for visualization)
-- @b "gui_laser" robot_msgs/Polyline2D : re-projected laser scans (for visualization)
+- @b "gui_path" robot_msgs/Polyline : current global path (for visualization)
+- @b "gui_laser" robot_msgs/Polyline : re-projected laser scans (for visualization)
 
 <hr>
 
@@ -109,7 +109,7 @@ parameters.
 #include <robot_srvs/StaticMap.h>
 
 // For GUI debug
-#include <robot_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline.h>
 
 // For transform support
 #include <tf/transform_listener.h>
@@ -195,8 +195,8 @@ class WavefrontNode: public ros::Node
     // incoming/outgoing messages
     robot_msgs::PoseStamped goalMsg;
     //MsgRobotBase2DOdom odomMsg;
-    robot_msgs::Polyline2D polylineMsg;
-    robot_msgs::Polyline2D pointcloudMsg;
+    robot_msgs::Polyline polylineMsg;
+    robot_msgs::Polyline pointcloudMsg;
     robot_actions::MoveBaseState pstate;
     //MsgRobotBase2DOdom prevOdom;
     bool firstodom;
@@ -361,8 +361,8 @@ WavefrontNode::WavefrontNode() :
   this->firstodom = true;
 
   advertise<robot_actions::MoveBaseState>("state",1);
-  advertise<robot_msgs::Polyline2D>("gui_path",1);
-  advertise<robot_msgs::Polyline2D>("gui_laser",1);
+  advertise<robot_msgs::Polyline>("gui_path",1);
+  advertise<robot_msgs::Polyline>("gui_laser",1);
   advertise<robot_msgs::PoseDot>("cmd_vel",1);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
 
@@ -528,6 +528,7 @@ WavefrontNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::M
     {
       this->pointcloudMsg.points[i].x = this->laser_hitpts[2*i];
       this->pointcloudMsg.points[i].y = this->laser_hitpts[2*i+1];
+      this->pointcloudMsg.points[i].z = 0;
     }
     publish("gui_laser",this->pointcloudMsg);
 
@@ -743,6 +744,7 @@ WavefrontNode::doOneCycle()
                     PLAN_WXGX(this->plan,this->plan->path[i]->ci);
             this->polylineMsg.points[i].y =
                     PLAN_WYGY(this->plan,this->plan->path[i]->cj);
+            this->polylineMsg.points[i].z = 0;
           }
           publish("gui_path", polylineMsg);
 

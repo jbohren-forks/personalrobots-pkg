@@ -46,7 +46,7 @@
 #include <deprecated_msgs/RobotBase2DOdom.h>
 
 //for GUI debugging
-#include <robot_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline.h>
 #include <deprecated_msgs/Point2DFloat32.h>
 
 
@@ -161,7 +161,7 @@ namespace trajectory_rollout {
       deprecated_msgs::RobotBase2DOdom odom_msg_;
 
       //outgoing messages
-      robot_msgs::Polyline2D poly_line_msg_;
+      robot_msgs::Polyline poly_line_msg_;
       robot_msgs::PoseDot cmd_vel_msg_;
 
       //since both odomReceived and processPlan access robot_vel we need to lock
@@ -177,8 +177,8 @@ namespace trajectory_rollout {
       double cycle_time_;
 
       //for debugging output
-      robot_msgs::Polyline2D path_msg;
-      robot_msgs::Polyline2D footprint_msg;
+      robot_msgs::Polyline path_msg;
+      robot_msgs::Polyline footprint_msg;
 
 
   };

@@ -52,10 +52,10 @@ namespace trajectory_rollout{
     robot_vel_.stamp_ = ros::Time();
 
     //so we can draw the local path
-    advertise<robot_msgs::Polyline2D>("local_path", 10);
+    advertise<robot_msgs::Polyline>("local_path", 10);
 
     //so we can draw the robot footprint to help with debugging
-    advertise<robot_msgs::Polyline2D>("robot_footprint", 10);
+    advertise<robot_msgs::Polyline>("robot_footprint", 10);
 
     advertise<robot_msgs::PoseDot>("cmd_vel", 1);
     subscribe("wavefront_plan", plan_msg_, &GovernorNode::planReceived, 1);
@@ -166,6 +166,7 @@ namespace trajectory_rollout{
         path.getPoint(i, pt_x, pt_y, pt_th);
         path_msg.points[i].x = pt_x;
         path_msg.points[i].y = pt_y;
+        path_msg.points[i].z = 0;
 
         //so we can draw the footprint on the map
         if(i == 0){
@@ -188,6 +189,7 @@ namespace trajectory_rollout{
       for(unsigned int i = 0; i < footprint.size(); ++i){
         footprint_msg.points[i].x = footprint[i].x;
         footprint_msg.points[i].y = footprint[i].y;
+        footprint_msg.points[i].z = 0;
         //printf("(%.2f, %.2f)\n", footprint_msg.points[i].x, footprint_msg.points[i].y);
       }
       publish("robot_footprint", footprint_msg);

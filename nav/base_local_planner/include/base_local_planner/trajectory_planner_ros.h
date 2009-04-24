@@ -53,7 +53,6 @@
 #include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/Point.h>
-#include <robot_msgs/Polyline2D.h>
 
 #include <laser_scan/LaserScan.h>
 #include <tf/message_notifier.h>

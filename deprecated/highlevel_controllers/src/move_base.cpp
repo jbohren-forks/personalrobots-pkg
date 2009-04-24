@@ -64,11 +64,11 @@
  * - @b "odom"/deprecated_msgs::RobotBase2DOdom : for tracking position
 
  * Publishes to (name / type):
- * - @b "raw_obstacles"robot_msgs::Polyline2D : contains all workspace obstacles in a window around the robot
- * - @b "inflated_obstacles"/robot_msgs::Polyline2D : contains c-space expansion, up to the inscribed radius of the robot
- * - @b "gui_path"/robot_msgs::Polyline2D : the global path currently being followed
- * - @b "local_path"/robot_msgs::Polyline2D : the local trajectory currently being followed
- * - @b "robot_footprint"/robot_msgs::Polyline2D : the footprint of the robot based on current position and orientation
+ * - @b "raw_obstacles"robot_msgs::Polyline : contains all workspace obstacles in a window around the robot
+ * - @b "inflated_obstacles"/robot_msgs::Polyline : contains c-space expansion, up to the inscribed radius of the robot
+ * - @b "gui_path"/robot_msgs::Polyline : the global path currently being followed
+ * - @b "local_path"/robot_msgs::Polyline : the local trajectory currently being followed
+ * - @b "robot_footprint"/robot_msgs::Polyline : the footprint of the robot based on current position and orientation
  * - @b "cmd_vel"/robot_msgs::PoseDot : for dispatching velocity commands to the base controller
  * - @b "head_controller/head_track_point"/robot_msgs::PointStamped : publishes a local goal to the head controller
  *  <hr>
@@ -113,7 +113,7 @@
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/PointCloud.h>
 #include <deprecated_msgs/Pose2DFloat32.h>
-#include <robot_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline.h>
 #include <robot_srvs/StaticMap.h>
 #include <robot_msgs/PointStamped.h>
 #include <algorithm>
@@ -336,17 +336,17 @@ namespace ros {
           footprint_, inscribedRadius, circumscribedRadius);
 
       // Advertize messages to publish cost map updates
-      ros::Node::instance()->advertise<robot_msgs::Polyline2D>("raw_obstacles", 1);
-      ros::Node::instance()->advertise<robot_msgs::Polyline2D>("inflated_obstacles", 1);
+      ros::Node::instance()->advertise<robot_msgs::Polyline>("raw_obstacles", 1);
+      ros::Node::instance()->advertise<robot_msgs::Polyline>("inflated_obstacles", 1);
 
       // Advertize message to publish the global plan
-      ros::Node::instance()->advertise<robot_msgs::Polyline2D>("gui_path", 1);
+      ros::Node::instance()->advertise<robot_msgs::Polyline>("gui_path", 1);
 
       // Advertize message to publish local plan
-      ros::Node::instance()->advertise<robot_msgs::Polyline2D>("local_path", 1);
+      ros::Node::instance()->advertise<robot_msgs::Polyline>("local_path", 1);
 
       // Advertize message to publish robot footprint
-      ros::Node::instance()->advertise<robot_msgs::Polyline2D>("robot_footprint", 1);
+      ros::Node::instance()->advertise<robot_msgs::Polyline>("robot_footprint", 1);
 
       // Advertize message to publish velocity cmds
       ros::Node::instance()->advertise<robot_msgs::PoseDot>("cmd_vel", 1);
@@ -646,7 +646,7 @@ namespace ros {
 
     void MoveBase::publishFootprint(double x, double y, double th){
       std::vector<deprecated_msgs::Point2DFloat32> footprint = controller_->drawFootprint(x, y, th);
-      robot_msgs::Polyline2D footprint_msg;
+      robot_msgs::Polyline footprint_msg;
       footprint_msg.header.frame_id = global_frame_;
       footprint_msg.set_points_size(footprint.size());
       footprint_msg.color.r = 1.0;
@@ -656,12 +656,13 @@ namespace ros {
       for(unsigned int i = 0; i < footprint.size(); ++i){
         footprint_msg.points[i].x = footprint[i].x;
         footprint_msg.points[i].y = footprint[i].y;
+        footprint_msg.points[i].z = 0;
       }
       ros::Node::instance()->publish("robot_footprint", footprint_msg);
     }
 
     void MoveBase::publishPath(bool isGlobal, const std::list<deprecated_msgs::Pose2DFloat32>& path) {
-      robot_msgs::Polyline2D guiPathMsg;
+      robot_msgs::Polyline guiPathMsg;
       guiPathMsg.header.frame_id = global_frame_;
       guiPathMsg.set_points_size(path.size());
 
@@ -670,6 +671,7 @@ namespace ros {
         const deprecated_msgs::Pose2DFloat32& w = *it;
         guiPathMsg.points[i].x = w.x;
         guiPathMsg.points[i].y = w.y;
+        guiPathMsg.points[i].z = 0;
         i++;
       }
 
@@ -904,7 +906,7 @@ namespace ros {
       }
 
       // First publish raw obstacles in red
-      robot_msgs::Polyline2D pointCloudMsg;
+      robot_msgs::Polyline pointCloudMsg;
       pointCloudMsg.header.frame_id = global_frame_;
       unsigned int pointCount = rawObstacles.size();
       pointCloudMsg.set_points_size(pointCount);
@@ -916,6 +918,7 @@ namespace ros {
       for(unsigned int i=0;i<pointCount;i++){
         pointCloudMsg.points[i].x = rawObstacles[i].first;
         pointCloudMsg.points[i].y = rawObstacles[i].second;
+        pointCloudMsg.points[i].z = 0;
       }
 
       if (!ros::Node::instance()->ok()) {
@@ -934,6 +937,7 @@ namespace ros {
       for(unsigned int i=0;i<pointCount;i++){
         pointCloudMsg.points[i].x = inflatedObstacles[i].first;
         pointCloudMsg.points[i].y = inflatedObstacles[i].second;
+        pointCloudMsg.points[i].z = 0;
       }
 
       if (!ros::Node::instance()->ok()) {
@@ -970,7 +974,7 @@ namespace ros {
       }
 
       // First publish raw obstacles in red
-      robot_msgs::Polyline2D pointCloudMsg;
+      robot_msgs::Polyline pointCloudMsg;
       pointCloudMsg.header.frame_id = global_frame_;
       unsigned int pointCount = rawObstacles.size();
       pointCloudMsg.set_points_size(pointCount);
@@ -982,6 +986,7 @@ namespace ros {
       for(unsigned int i=0;i<pointCount;i++){
         pointCloudMsg.points[i].x = rawObstacles[i].first;
         pointCloudMsg.points[i].y = rawObstacles[i].second;
+        pointCloudMsg.points[i].z = 0;
       }
 
       ros::Node::instance()->publish("raw_obstacles", pointCloudMsg);
@@ -997,6 +1002,7 @@ namespace ros {
       for(unsigned int i=0;i<pointCount;i++){
         pointCloudMsg.points[i].x = inflatedObstacles[i].first;
         pointCloudMsg.points[i].y = inflatedObstacles[i].second;
+        pointCloudMsg.points[i].z = 0;;
       }
 
       ros::Node::instance()->publish("inflated_obstacles", pointCloudMsg);

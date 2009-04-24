@@ -34,7 +34,7 @@
 
 #include "robot_msgs/ParticleCloud.h"
 #include "robot_msgs/PoseStamped.h"
-#include "robot_msgs/Polyline2D.h"
+#include "robot_msgs/Polyline.h"
 #include "robot_msgs/PoseWithCovariance.h"
 #include "robot_srvs/StaticMap.h"
 
@@ -87,12 +87,12 @@ Mouse controls:
 
 Subscribes to (name/type):
 - @b "particlecloud"robot_msgs/ParticleCloud : a set particles from a probabilistic localization system.  Rendered is a set of small arrows.
-- @b "gui_path"/Polyline2D : a path from a planner.  Rendered as a dashed line.
-- @b "gui_laser"/Polyline2D : re-projected laser scan from a planner.  Rendered as a set of points.
-- @b "local_path"/Polyline2D : local path from a planner.  Rendered as a dashed line.
-- @b "robot_footprint"/Polyline2D : Box "footprint" around the robot.  Rendered as a dashed line
-- @b "raw_obstacles"/Polyline2D : Raw obstacle data.  Rendered as points
-- @b "inflated_obstacles"/Polyline2D : Inflated obstacle data. Rendered as points
+- @b "gui_path"/Polyline : a path from a planner.  Rendered as a dashed line.
+- @b "gui_laser"/Polyline : re-projected laser scan from a planner.  Rendered as a set of points.
+- @b "local_path"/Polyline : local path from a planner.  Rendered as a dashed line.
+- @b "robot_footprint"/Polyline : Box "footprint" around the robot.  Rendered as a dashed line
+- @b "raw_obstacles"/Polyline : Raw obstacle data.  Rendered as points
+- @b "inflated_obstacles"/Polyline : Inflated obstacle data. Rendered as points
 
 Publishes to (name / type):
 - @b "goal"/PoseStamped : goal for planner.  Sent when using the Goal tool
@@ -189,7 +189,7 @@ protected:
   void createRadiusObject();
   void updateRadiusPosition();
 
-  void createObjectFromPolyLine( Ogre::ManualObject*& object, robot_msgs::Polyline2D& path, Ogre::RenderOperation::OperationType op, float depth, bool loop );
+  void createObjectFromPolyLine( Ogre::ManualObject*& object, robot_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop );
 
   void createTransientObject();
 
@@ -208,12 +208,12 @@ protected:
 
   robot_msgs::ParticleCloud cloud_;
   robot_msgs::PoseStamped goal_;
-  robot_msgs::Polyline2D path_line_;
-  robot_msgs::Polyline2D local_path_;
-  robot_msgs::Polyline2D robot_footprint_;
-  robot_msgs::Polyline2D laser_scan_;
-  robot_msgs::Polyline2D inflated_obstacles_;
-  robot_msgs::Polyline2D raw_obstacles_;
+  robot_msgs::Polyline path_line_;
+  robot_msgs::Polyline local_path_;
+  robot_msgs::Polyline robot_footprint_;
+  robot_msgs::Polyline laser_scan_;
+  robot_msgs::Polyline inflated_obstacles_;
+  robot_msgs::Polyline raw_obstacles_;
 
   Ogre::ManualObject* map_object_;
   Ogre::MaterialPtr map_material_;

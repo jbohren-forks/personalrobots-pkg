@@ -40,7 +40,7 @@
 
 #include <ros/node.h>
 #include <robot_msgs/PositionMeasurement.h>
-#include <robot_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline.h>
 //#include <topic_synchronizer/topic_synchronizer.h>
 #include "tf/transform_listener.h"
 #include <tf/message_notifier.h>
@@ -56,9 +56,9 @@ public:
   ros::Node *node_;
   tf::TransformListener *tf_;
   tf::MessageNotifier<robot_msgs::PositionMeasurement>* message_notifier_person_;
-  tf::MessageNotifier<robot_msgs::Polyline2D>* message_notifier_path_;
+  tf::MessageNotifier<robot_msgs::Polyline>* message_notifier_path_;
   robot_msgs::PositionMeasurement person_pos_;
-  robot_msgs::Polyline2D path_;
+  robot_msgs::Polyline path_;
   bool got_person_pos_, got_path_;
   std::string fixed_frame_;
   double total_dist_sqr_m_;
@@ -80,7 +80,7 @@ public:
     total_dist_sqr_m_ = robot_radius_m*robot_radius_m + person_radius_m*person_radius_m;
 
     message_notifier_person_ = new tf::MessageNotifier<robot_msgs::PositionMeasurement> (tf_, node_, boost::bind(&IsPersonOnPath::personPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
-    message_notifier_path_ = new tf::MessageNotifier<robot_msgs::Polyline2D>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "gui_path", fixed_frame_, 1);
+    message_notifier_path_ = new tf::MessageNotifier<robot_msgs::Polyline>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "gui_path", fixed_frame_, 1);
 
     node_->advertiseService ("is_person_on_path", &IsPersonOnPath::personOnPathCB, this);
     path_mutex_.lock();
@@ -104,7 +104,7 @@ public:
   }
 
   // Path callback
-  void pathCB(const tf::MessageNotifier<robot_msgs::Polyline2D>::MessagePtr& gui_path_msg)
+  void pathCB(const tf::MessageNotifier<robot_msgs::Polyline>::MessagePtr& gui_path_msg)
   {
     boost::mutex::scoped_lock l(path_mutex_);
     ROS_DEBUG_STREAM ("In path callback and got_path_ is " << got_path_);
@@ -182,12 +182,12 @@ public:
       tf::Point tpt1;
       tpt1[0] = path_.points[i].x;
       tpt1[1] = path_.points[i].y;
-      tpt1[2] = 0.0;
+      tpt1[2] = path_.points[i].z;
       tf::Stamped<tf::Point> t_path_point1(tpt1, path_.header.stamp, path_.header.frame_id);
       tf::Point tpt2;
       tpt2[0] = path_.points[i+1].x;
       tpt2[1] = path_.points[i+1].y;
-      tpt2[2] = 0.0;
+      tpt2[2] = path_.points[i+1].z;
       tf::Stamped<tf::Point> t_path_point2(tpt2, path_.header.stamp, path_.header.frame_id);
       
       // Try to transform the line endpoints to the current time

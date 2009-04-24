@@ -42,7 +42,7 @@
 #include <costmap_2d/costmap_2d.h>
 #include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/Point.h>
-#include <robot_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline.h>
 #include <tf/transform_listener.h>
 #include <vector>
 #include <robot_msgs/Point.h>

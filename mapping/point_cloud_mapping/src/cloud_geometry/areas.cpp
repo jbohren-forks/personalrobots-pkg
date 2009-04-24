@@ -165,7 +165,7 @@ namespace cloud_geometry
 
       std::sort (epoints_demean.begin (), epoints_demean.end (), comparePoint2D);
 
-      robot_msgs::Polyline2D hull_2d;
+      robot_msgs::Polyline hull_2d;
       convexHull2D (epoints_demean, hull_2d);
 
       int nr_points_hull = hull_2d.points.size ();
@@ -211,10 +211,10 @@ namespace cloud_geometry
       * \note (code snippet inspired from http://www.softsurfer.com/Archive/algorithm_0109/algorithm_0109.htm)
       *        Copyright 2001, softSurfer (www.softsurfer.com)
       * \param points the 2D projected point cloud representing a planar model
-      * \param hull the resultant 2D convex hull model as a \a Polyline2D
+      * \param hull the resultant 2D convex hull model as a \a Polyline
       */
     void
-      convexHull2D (const std::vector<robot_msgs::Point32> &points, robot_msgs::Polyline2D &hull)
+      convexHull2D (const std::vector<robot_msgs::Point32> &points, robot_msgs::Polyline &hull)
     {
       int nr_points = points.size ();
       hull.points.resize (nr_points + 1);
@@ -237,17 +237,20 @@ namespace cloud_geometry
         ++top;
         hull.points[top].x = points[0].x;
         hull.points[top].y = points[0].y;
+        hull.points[top].z = points[0].z;
         // A nontrivial segment
         if (points[minmax].y != points[0].y)
         {
           ++top;
           hull.points[top].x = points[minmax].x;
           hull.points[top].y = points[minmax].y;
+          hull.points[top].z = points[minmax].z;
         }
         ++top;
         // Add the polygon's endpoint
         hull.points[top].x = points[0].x;
         hull.points[top].y = points[0].y;
+        hull.points[top].z = points[0].z;
         hull.points.resize (top + 1);
         return;
       }
@@ -263,6 +266,7 @@ namespace cloud_geometry
       // Add the polygon's endpoint
       hull.points[top].x = points[0].x;
       hull.points[top].y = points[0].y;
+      hull.points[top].z = points[0].z;
 
       i = minmax;
       while (++i <= maxmin)
@@ -286,6 +290,7 @@ namespace cloud_geometry
         ++top;
         hull.points[top].x = points[i].x;
         hull.points[top].y = points[i].y;
+        hull.points[top].z = points[i].z;
       }
 
       // Next, compute the upper hull above the bottom hull
@@ -295,6 +300,7 @@ namespace cloud_geometry
         // Add the point with max X and max Y coordinates to the hull
         hull.points[top].x = points[nr_points - 1].x;
         hull.points[top].y = points[nr_points - 1].y;
+        hull.points[top].z = points[nr_points - 1].z;
       }
       // The bottom point of the upper hull stack
       bot = top;
@@ -322,6 +328,7 @@ namespace cloud_geometry
 
         hull.points[top].x = points[i].x;
         hull.points[top].y = points[i].y;
+        hull.points[top].z = points[i].z;
       }
 
       if (minmax != 0)
@@ -330,6 +337,7 @@ namespace cloud_geometry
         // Add the polygon's endpoint
         hull.points[top].x = points[0].x;
         hull.points[top].y = points[0].y;
+        hull.points[top].z = points[0].z;
       }
       hull.points.resize (top + 1);
       return;

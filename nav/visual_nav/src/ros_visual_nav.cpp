@@ -49,8 +49,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <ros/node.h>
-#include <deprecated_msgs/Point2DFloat32.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
+#include <robot_msgs/Point.h>
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/PointStamped.h>
 #include <laser_scan/laser_scan.h>
@@ -61,7 +61,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/message_notifier.h>
 #include <visual_nav/visual_nav.h>
-#include <robot_msgs/Polyline2D.h>
+#include <robot_msgs/Polyline.h>
 #include <robot_actions/Pose2D.h>
 #include <robot_msgs/VisualizationMarker.h>
 #include <vslam/Roadmap.h>
@@ -69,7 +69,6 @@
 #include <visual_nav/VisualNavGoal.h>
 
 
-using deprecated_msgs::Point2DFloat32;
 using std::string;
 using std::vector;
 using robot_actions::Pose2D;
@@ -79,7 +78,7 @@ using robot_msgs::Point32;
 using laser_scan::LaserScan;
 using ros::Duration;
 using vslam::Roadmap;
-using robot_msgs::Polyline2D;
+using robot_msgs::Polyline;
 using ros::Node;
 using vslam::Edge;
 using std::map;
@@ -301,7 +300,7 @@ void RosVisualNavigator::setupTopics ()
   base_scan_notifier_ = NotifierPtr(new Notifier(&tf_listener_, ros::Node::instance(),  bind(&RosVisualNavigator::baseScanCallback, this, _1), "base_scan", "vslam", 50));
   node_.advertise<Pose2D>("/move_base_node/activate", 1);
   node_.advertise<VisualizationMarker>( "visualizationMarker", 0 );
-  node_.advertise<Polyline2D> ("vslam_laser", 1);
+  node_.advertise<Polyline> ("vslam_laser", 1);
   node_.param("~odom_frame", odom_frame_, string("odom"));
 
   ROS_INFO_STREAM ("Started RosVisualNavigator with exit_point_radius=" << exit_point_radius_ << ", goal_id=" << goal_id_ << ", init_pose=" << init_map_pose_ << ", odom_frame=" << odom_frame_);
@@ -559,16 +558,17 @@ struct DrawEdges
 
 
 
-Point2DFloat32 transformToMapFrame (tf::TransformListener* tf, const Point2D& p, const string& odom_frame)
+Point transformToMapFrame (tf::TransformListener* tf, const Point2D& p, const string& odom_frame)
 {
   PointStamped point, transformed_point;
   point.point.x = p.x;
   point.point.y = p.y;
   point.header.frame_id = "vslam";
   tf->transformPoint(odom_frame, point, transformed_point);
-  Point2DFloat32 visualized_point;
+  Point visualized_point;
   visualized_point.x = transformed_point.point.x;
   visualized_point.y = transformed_point.point.y;
+  visualized_point.z = transformed_point.point.z;
   return visualized_point;
 }
 
@@ -620,13 +620,13 @@ void RosVisualNavigator::publishVisualization ()
 
   // Transform to the odom frame (note this is no longer necessary since rviz polylines now accept headers)
   PointSet points = roadmap_->overlayScans();
-  Polyline2D scans;
+  Polyline scans;
   scans.header.frame_id=odom_frame_;
   scans.set_points_size(points.size());
   scans.color.b=1.0;
   transform (points.begin(), points.end(), scans.points.begin(), bind(transformToMapFrame, &tf_listener_, _1, odom_frame_));
   ROS_DEBUG_STREAM_COND_NAMED (points.size()>0, "scans", "First scan point in vslam frame is " << *(points.begin()) 
-                               << " and transformed version is " << scans.points[0].x << ", " << scans.points[0].y);
+                               << " and transformed version is " << scans.points[0].x << ", " << scans.points[0].y << ", " << scans.points[0].z);
   ROS_DEBUG_STREAM_NAMED ("rviz", "Publishing scans with " << scans.get_points_size() << " points");
   node_.publish("vslam_laser", scans);
 

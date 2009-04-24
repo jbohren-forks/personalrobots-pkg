@@ -44,8 +44,8 @@ namespace costmap_2d {
 
   Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix) : ros_node_(ros_node), 
   tf_(tf), costmap_(NULL), visualizer_thread_(NULL), map_update_thread_(NULL){
-    ros_node_.advertise<robot_msgs::Polyline2D>("raw_obstacles", 1);
-    ros_node_.advertise<robot_msgs::Polyline2D>("inflated_obstacles", 1);
+    ros_node_.advertise<robot_msgs::Polyline>("raw_obstacles", 1);
+    ros_node_.advertise<robot_msgs::Polyline>("inflated_obstacles", 1);
 
     
     string topics_string;
@@ -455,7 +455,7 @@ namespace costmap_2d {
     map_lock_.unlock();
 
     // First publish raw obstacles in red
-    Polyline2D obstacle_msg;
+    Polyline obstacle_msg;
     obstacle_msg.header.frame_id = global_frame_;
     unsigned int pointCount = raw_obstacles.size();
     obstacle_msg.set_points_size(pointCount);
@@ -467,6 +467,7 @@ namespace costmap_2d {
     for(unsigned int i=0;i<pointCount;i++){
       obstacle_msg.points[i].x = raw_obstacles[i].first;
       obstacle_msg.points[i].y = raw_obstacles[i].second;
+      obstacle_msg.points[i].z = 0;
     }
 
     ros::Node::instance()->publish("raw_obstacles", obstacle_msg);
@@ -482,6 +483,7 @@ namespace costmap_2d {
     for(unsigned int i=0;i<pointCount;i++){
       obstacle_msg.points[i].x = inflated_obstacles[i].first;
       obstacle_msg.points[i].y = inflated_obstacles[i].second;
+      obstacle_msg.points[i].z = 0;
     }
 
     ros::Node::instance()->publish("inflated_obstacles", obstacle_msg);
