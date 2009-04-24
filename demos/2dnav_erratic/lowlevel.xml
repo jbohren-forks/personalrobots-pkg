@@ -12,6 +12,6 @@
     <param name="pf_transform_tolerance" value="0.5" />
 
      <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full.pgm 0.1" respawn="false"/>
-     <node pkg="amcl_player" type="amcl_player" respawn="false" output="screen"/>
+     <node pkg="amcl" type="amcl" respawn="false" output="screen"/>
    </group>
 </launch>
