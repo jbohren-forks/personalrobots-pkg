@@ -269,7 +269,7 @@ int find_outlet_centroids(IplImage* img, outlet_tuple_t& outlet_tuple, const cha
 	cvCvtColor(img, grey, CV_RGB2GRAY);
 	cvSmooth(grey, grey);
 	cvAdaptiveThreshold(grey, binary, 255, CV_ADAPTIVE_THRESH_MEAN_C, 
-						CV_THRESH_BINARY_INV, 15, 0);
+						CV_THRESH_BINARY_INV, 15, -1);
 	cvErode(binary, binary, 0, 1);
 	cvDilate(binary, binary, 0, 1);
 
