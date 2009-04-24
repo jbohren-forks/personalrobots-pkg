@@ -11,7 +11,6 @@
   <depend package="gazebo_plugin"/>
   <depend package="map_server"/>
   <depend package="amcl"/>
-  <depend package="amcl_player"/>
   <depend package="fake_localization"/>
   <depend package="teleop_base"/>
   <depend package="teleop_arm_keyboard"/>
