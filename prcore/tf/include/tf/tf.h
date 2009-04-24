@@ -207,6 +207,9 @@ public:
    * default is zero */
   void setExtrapolationLimit(const ros::Duration& distance);
 
+  /**@brief Get the duration over which this transformer will cache */
+  ros::Duration getCacheLength() { return cache_time;}
+
 protected:
 
   /** \brief The internal storage class for ReferenceTransform.  

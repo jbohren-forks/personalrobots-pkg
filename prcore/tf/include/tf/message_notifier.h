@@ -249,6 +249,15 @@ private:
     {
       MessagePtr& message = *it;
 
+      //Throw out messages which are too old
+      if (message->header.stamp + tf_->getCacheLength() < ros::Time::now())
+      {
+        it = messages_.erase(it);
+        failed_transform_count_ ++;
+        NOTIFIER_DEBUG("Discarding Message %d , Out of the back of Cache Time.  Message Count now: %d", i, message_count_);
+        continue;
+      }
+
       bool ready = false;
       if (time_tolerance_ != ros::Duration(0.0))
       {
