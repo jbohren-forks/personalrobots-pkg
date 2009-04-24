@@ -62,7 +62,7 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 		const int max_size = 20;
 		
 #if 0
-		if(abs(rect.x - 56) < 5 && abs(rect.y - 147) < 5)
+		if(abs(rect.x - 187) < 5 && abs(rect.y - 250) < 5)
 		{
 			int w = 1;
 		}
@@ -1892,7 +1892,7 @@ void filter_features_distance_mask(vector<outlet_feature_t>& features, IplImage*
 {
 	vector<outlet_feature_t> filtered;
 	
-	const double dist_factor = 0.6;
+	const double dist_factor = 0.5;
 	double dist_max = 0;
 	cvMinMaxLoc(distance_map, 0, &dist_max);
 	double dist_min = dist_max*dist_factor;
@@ -1908,7 +1908,7 @@ void filter_features_distance_mask(vector<outlet_feature_t>& features, IplImage*
 		}
 		
 #if 0
-		if(abs(center.x - 1816) < 5 && abs(center.y - 421) < 5)
+		if(abs(center.x - 207) < 5 && abs(center.y - 185) < 5)
 		{
 			int w = 1;
 		}
