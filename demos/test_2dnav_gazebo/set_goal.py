@@ -200,6 +200,7 @@ class NavStackTest(unittest.TestCase):
     
     def test_set_goal(self):
         print "LNK\n"
+
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
         pub_goal = rospy.Publisher("goal", PoseStamped)
         pub_pose = rospy.Publisher("initialpose", PoseWithCovariance)
@@ -376,7 +377,24 @@ class NavStackTest(unittest.TestCase):
 
         self.assert_(self.success)
         
+def print_usage(exit_code = 0):
+    print '''Commands:
+    -x <x target position>  - target x location
+    -y <y target position>  - target y location
+    -th <target yaw> - target robot yaw
+    -nav_xy_tol <tol> - target xy location error tolerance, set to 0 to disable, default = 0.7 m
+    -nav_t_tol <tol> - target yaw error tolerance, set to 0 to disable, default = 0.1 rad
+    -odom_xy_tol <tol> - odom and ground truth xy drift error tolerance, set to 0 to disable, default = 0.1 m
+    -odom_t_tol <tol> - odom and ground truth yaw drift error tolerance, set to 0 to disable, default = 0.1 rad
+    -timeout <seconds> - test timeout in seconds. default to 50 seconds
+    -amcl <x initial position> <y initial position> <initial yaw> - initial pose for amcl.  If unspecified, assume fake localization is used.
+'''
+
 if __name__ == '__main__':
-    rostest.run(PKG, sys.argv[0], NavStackTest, sys.argv) #, text_mode=True)
+    #print usage if not arguments
+    if len(sys.argv) == 1:
+      print_usage()
+    else:
+      rostest.run(PKG, sys.argv[0], NavStackTest, sys.argv) #, text_mode=True)
 
 
