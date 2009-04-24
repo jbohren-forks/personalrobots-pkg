@@ -59,6 +59,7 @@ import time
 import math
 import Queue
 import threading
+import pickle
 
 import vslam.msg
 
@@ -116,6 +117,10 @@ class PicmapNode:
     t = threading.Thread(target=self.worker)
     t.start()
 
+  def start(self):
+    rospy.spin()
+    pickle.dump(self.pm, open("/tmp/final_pm.pickle", "w"))
+
   def handle_tf_queue(self, msg):
     print "  queued transform", min([ t.header.stamp.to_seconds() for t in msg.transforms ])
     self.tfq.put(msg)
@@ -158,10 +163,10 @@ class PicmapNode:
     pair = [ dcamImage(i) for i in [ msg.left_image, msg.right_image ] ]
     af = SparseStereoFrame(pair[0], pair[1], feature_detector = self.fd, descriptor_scheme = self.ds)
     af.t = msg.header.stamp.to_seconds()
-    # self.v.show(msg.left_image.uint8_data.data, [])
 
     self.vo.handle_frame(af)
 
+    self.v.show(msg.left_image.uint8_data.data, [])
     k = self.vo.keyframe
     if (not (k.id in self.keys)):
       self.keys.add(k.id)
@@ -195,7 +200,7 @@ class PicmapNode:
 
 def main(args):
   rms = PicmapNode(args)
-  rospy.spin()
+  rms.start()
 
 if __name__ == '__main__':
   main(sys.argv)

@@ -2,7 +2,7 @@
   <description>
     Visual odometry.
   </description>
-  <author>Jindong (JD) Chen</author>
+  <author>James Bowman</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
@@ -22,6 +22,7 @@
   <depend package="calonder_descriptor"/>
   <depend package="tf"/>
   <depend package="image_synthesizer"/>
+  <depend package="opencvpython"/>
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-L${prefix}/lib -lvisual_odometry -Wl,-rpath,${prefix}/lib" />
   </export>

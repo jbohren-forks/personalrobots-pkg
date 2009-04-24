@@ -47,9 +47,14 @@ class ComputedDenseStereoFrame(Frame):
 class DenseStereoFrame(Frame):
   """ Dense Stereo directly from the camera.  lf is the left frame, rf is the disparity frame """
 
-  def __init__(self, lf, rf):
+  def __init__(self, lf, rf, **kwargs):
+    Frame.__init__(self, **kwargs)
     self.rawdata = lf.tostring()
     self.size = lf.size
+
+    (w, h) = self.size
+    self.lgrad = " " * (w * h)
+    VO.ost_do_prefilter_norm(self.rawdata, self.lgrad, w, h, 31, scratch)
 
     # initialize buffer with 'illegal' because dense_stereo leaves pixel untouched it cannot compute - e.g. non-overlapping parts of image
     disp = chr(255) * (2 * self.size[0] * self.size[1])
@@ -80,6 +85,7 @@ def do_stereo_sparse(refpat, rgrad, x, y, xim, yim, ftzero, dlen, tfilter_thresh
   return (0.5 + 16*v)
 
 class SparseStereoFrame(Frame):
+
   def __init__(self, lf, rf, use_grad_img = True, **kwargs):
     Frame.__init__(self, **kwargs)
     self.externals = []

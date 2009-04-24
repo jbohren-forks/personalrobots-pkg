@@ -35,6 +35,8 @@ import array
 from pe import PoseEstimator
 from raytracer import object, sphere, isphere, render_stereo_scene, ray_camera, vec3, shadeLitCloud
 
+import cv
+
 def rotation(angle, x, y, z):
   return numpy.array([
     [ 1 + (1-cos(angle))*(x*x-1)         ,    -z*sin(angle)+(1-cos(angle))*x*y   ,    y*sin(angle)+(1-cos(angle))*x*z  ],

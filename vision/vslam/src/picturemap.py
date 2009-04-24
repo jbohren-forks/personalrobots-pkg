@@ -57,7 +57,7 @@ import numpy
 from visualodometer import DescriptorSchemeCalonder, Pose
 from pe import PoseEstimator
 from skeleton import Skeleton
-from reader import reader
+from stereo_utils.reader import reader
 
 from tf import transformations
 
@@ -159,6 +159,7 @@ class PictureMap:
           if len(self.localizationOK.q) > 0:
             print "No localizations for", t, "earliest", min(self.localizationOK.q), "latest", max(self.localizationOK.q)
         if loc != None:
+          print "Have localization", loc
           if loc == (True,True):
             if self.isVerbosity(1):
               print "PM adding frame"
@@ -177,6 +178,7 @@ class PictureMap:
       if not iskey and transformer.canTransform('stereo_link', 'base_link', t):
         loc = self.localizationOK.query(t)
         if loc != None:
+          r = None
           if (loc[0] == False or loc[1] == False):
             kp = picture.keypoints
             descriptors = picture.descriptors
@@ -200,18 +202,15 @@ class PictureMap:
               cam_in_map = (m2s * rel_pose)
               base_in_map = cam_in_map * getpose(transformer, 'stereo_link', 'base_link', t)
               r = (t, base_in_map)
-            else:
-              r = None
-            del self.observations[(t,(cam,picture,iskey))]
-            return r
+          del self.observations[(t,(cam,picture,iskey))]
+          return r
     return None
 
   def __getstate__(self):
     return (self.cameras, self.pics)
 
   def __setstate__(self, st):
-    self.__init__()
+    self.__init__(DescriptorSchemeCalonder())
     (self.cameras, self.pics) = st
     for p in self.pics:
       self.vt.add(None, p[1].descriptors)
-
