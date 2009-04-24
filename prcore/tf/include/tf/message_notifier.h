@@ -254,6 +254,7 @@ private:
       if (message->header.stamp + tf_->getCacheLength() < ros::Time::now())
       {
         it = messages_.erase(it);
+	--message_count_;
         failed_transform_count_ ++;
         NOTIFIER_DEBUG("Discarding Message %d , Out of the back of Cache Time.  Message Count now: %d", i, message_count_);
         continue;
