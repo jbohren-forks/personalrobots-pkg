@@ -155,7 +155,7 @@ namespace TREX {
 	}
       } else if(cmd == 'R' || cmd == 'r'){
 	std::cout << "Reading debug.cfg." << std::endl;
-	std::ifstream config("Debug.cfg");
+	std::ifstream config(findFile("Debug.cfg").c_str());
 	DebugMessage::readConfigFile(config);
 	cmdValid = false;
       } else if(cmdString == "PW"){
