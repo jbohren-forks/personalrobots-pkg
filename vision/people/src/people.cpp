@@ -65,7 +65,6 @@ People::People():
 #if __PEOPLE_DISPLAY__
   cvNamedWindow("Real face hist",CV_WINDOW_AUTOSIZE);
   cvNamedWindow("Current face hist", CV_WINDOW_AUTOSIZE);
-  //cvNamedWindow("blue", CV_WINDOW_AUTOSIZE);
 #endif
 
 }
@@ -112,7 +111,6 @@ People::~People() {
 #if __PEOPLE_DISPLAY__
   cvDestroyWindow("Real face hist");
   cvDestroyWindow("Current face hist");
-  //cvDestroyWindow("blue");
 #endif
 
   }
@@ -200,7 +198,6 @@ bool People::isWithinTrackingFilterUpdateTimeThresh(ros::Time time, int iperson)
 void People::killIfFilterUpdateTimeout(ros::Time time){
   for (uint iperson=0; iperson<list_.size(); iperson++) {
     if ((time - list_[iperson].last_tracking_filter_update_time) > ros::Duration().fromSec(TRACKING_FILTER_TIMEOUT_S)) {
-      cout << "Removing person " << list_[iperson].id << endl;
       freePerson(iperson);
       list_.erase(list_.begin()+iperson);
       iperson--;
@@ -417,7 +414,6 @@ vector<Box2D3D> People::detectAllFaces(IplImage *image, double threshold, IplIma
 
   face_detection_ready_cond_.notify_all();
 
-  printf("notified all\n");
   boost::mutex::scoped_lock fdmlock(face_done_mutex_);
   while (num_threads_to_wait_for_ > 0) {
     face_detection_done_cond_.wait(fdmlock);
