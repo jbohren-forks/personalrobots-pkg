@@ -18,8 +18,9 @@
 
   <!-- New casters have different encoder ticks, gear ratios -->
   <!--pr2_base_alpha2 name="base" >
-    <origin xyz="0 0 0.051" rpy="0 0 0" /> <!-- 5.1cm is the height of the base when wheels contact ground -->
-  </pr2_base_alpha2-->
+    <origin xyz="0 0 0.051" rpy="0 0 0" /--> 
+<!-- 5.1cm is the height of the base when wheels contact ground -->
+  <!--/pr2_base_alpha2-->
     
   <!-- Reverting to old casters while Alpha 2's are in the shop -->
   <pr2_base name="base">
