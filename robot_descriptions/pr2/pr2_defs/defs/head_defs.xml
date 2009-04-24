@@ -558,7 +558,7 @@
 
     <joint name="${name}_joint" type="revolute">
       <axis xyz="0 1 0" />
-      <limit min="-0.52" max="1.42" effort="30"
+      <limit min="-0.52" max="1.42" effort="12"
              velocity="10" k_velocity="100"
              safety_length_min="0.02" safety_length_max="0.02" k_position="100" />
       <calibration reference_position="${0.0+cal_head_tilt_flag}" values="0 0" />
@@ -606,8 +606,8 @@
   <!-- Motor must be configured with 148877 motor -->
     <joint name="${name}_joint" type="revolute">
       <axis xyz="0 1 0" />
-      <limit min="-0.52" max="1.50" effort="50.0"
-             velocity="10" k_velocity="15"
+      <limit min="-0.53" max="1.45" effort="12.0"
+             velocity="10" k_velocity="10"
              safety_length_min="0.02" safety_length_max="0.02" k_position="100" />
       <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" values="0 0" />
       <joint_properties damping="1.0" />
@@ -652,8 +652,8 @@
  <macro name="pr2_head_tilt_alpha2b" params="name parent *origin">
     <joint name="${name}_joint" type="revolute">
       <axis xyz="0 1 0" />
-      <limit min="-0.52" max="1.35" effort="35.0"
-             velocity="10" k_velocity="1.5"
+      <limit min="-0.53" max="1.45" effort="12.0"
+             velocity="10" k_velocity="10"
              safety_length_min="0.02" safety_length_max="0.02" k_position="100" />
       <calibration reference_position="${0.0+cal_head_tilt_flag_alpha2}" values="0 0" />
       <joint_properties damping="1.0" />
@@ -702,7 +702,8 @@
     </pr2_head_pan_alpha2>
 
     <pr2_head_tilt_alpha2 name="${name}_tilt" parent="${name}_pan_link">
-      <origin xyz="0.058 0 0" rpy="0 0 0" />
+      <!-- Tilt axis moves forward on Alpha 2.0 head, pan moves back -->
+      <origin xyz="0.068 0 0" rpy="0 0 0" />
     </pr2_head_tilt_alpha2>
 
     <!-- Head plate frame -->
@@ -748,7 +749,8 @@
     </pr2_head_pan_alpha2>
 
     <pr2_head_tilt_alpha2a name="${name}_tilt" parent="${name}_pan_link">
-      <origin xyz="0.058 0 0" rpy="0 0 0" />
+      <!-- Head tilt axis moves 1 cm fwd, pan moves 1cm back in A2 -->
+      <origin xyz="0.068 0 0" rpy="0 0 0" />
     </pr2_head_tilt_alpha2a>
 
     <!-- Head plate frame -->
@@ -792,7 +794,8 @@
     </pr2_head_pan_alpha2>
 
     <pr2_head_tilt_alpha2b name="${name}_tilt" parent="${name}_pan_link">
-      <origin xyz="0.058 0 0" rpy="0 0 0" />
+      <!-- Head tilt axis moves 1 cm fwd, pan moves 1cm back in A2 -->
+      <origin xyz="0.068 0 0" rpy="0 0 0" />
     </pr2_head_tilt_alpha2b>
 
     <!-- Head plate frame -->
