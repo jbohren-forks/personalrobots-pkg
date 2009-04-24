@@ -51,8 +51,8 @@ try:
     po.frame_id = "base_link"
     po2 = tfl.transform_pose("/map", po)
 
-    print "po2"
-    print po2.pose
+    print "po2.pose"
+    print po2.pose.this
 
     # test transforming point
     print "po"
@@ -120,7 +120,17 @@ try:
     print pointstamped.point
     print transform_stamped.transform * pointstamped.point
 
-    print "destructing", po2.pose.this
+    pose_only = transform_stamped.transform
+    print "destructing pose_only", pose_only.this    
+    pose_only = []
+
+    po2_copy = po2
+    print "destructing po2_copy.pose", po2_copy.pose.this
+    print po2_copy.frame_id
+    po2_copy = []    
+
+    print po2.frame_id
+    print "destructing po2.pose", po2.pose.this
     po2 = []
     print "po2 sucessfull reassigned"
     

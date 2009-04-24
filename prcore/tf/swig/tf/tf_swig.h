@@ -47,6 +47,14 @@ public:
   TransformStamped(const py::Transform& t, int sec, int nsec, const std::string& frame_id_in, const std::string& parent_id_in):
     frame_id(frame_id_in),
     parent_id(parent_id_in), _sec(sec), _nsec(nsec)  {transform = new py::Transform(t);};
+  TransformStamped(const TransformStamped& other)
+  {
+    transform = new py::Transform(*(other.transform));
+    frame_id = other.frame_id;
+    parent_id = other.parent_id;
+    _sec = other._sec;
+    _nsec = other._nsec;
+  };
   ~TransformStamped(){ delete transform;};
   inline bool operator==(const TransformStamped& other) const
   {
@@ -74,6 +82,19 @@ public:
   PoseStamped(const py::Transform& p, int stamp_sec, int stamp_nsec, const std::string& frame_id_in):
     frame_id(frame_id_in),
     _sec(stamp_sec), _nsec(stamp_nsec)  {pose = new py::Transform(p);};
+
+  PoseStamped& copy(const PoseStamped& other){ *this = other; return *this;};
+
+  PoseStamped& operator=(const PoseStamped& other)
+  {
+    printf("PoseStamped Operator= Called on pose %p\n",pose);
+    *pose = *other.pose;
+    frame_id = other.frame_id;
+    frame_id = "assigned";
+    _sec = other._sec;
+    _nsec = other._nsec;
+    return *this;
+  };
   ~PoseStamped(){delete pose;};
   inline bool operator==(const PoseStamped& other) const
   {
