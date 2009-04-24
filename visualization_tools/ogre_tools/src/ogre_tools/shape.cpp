@@ -90,7 +90,10 @@ Shape::Shape( Type type, Ogre::SceneManager* scene_manager, Ogre::SceneNode* par
   material_->getTechnique(0)->setAmbient( 0.5, 0.5, 0.5 );
 
   entity_->setMaterialName(material_name_);
+
+#if (OGRE_VERSION_MAJOR <= 1 && OGRE_VERSION_MINOR <= 4)
   entity_->setNormaliseNormals(true);
+#endif
 }
 
 Shape::~Shape()

@@ -53,7 +53,7 @@ public:
    */
   wxOgreRenderWindow (Ogre::Root* ogre_root, wxWindow* parent, wxWindowID id = wxID_ANY,
                       const wxPoint &pos = wxDefaultPosition, const wxSize &size = wxDefaultSize,
-                      long style = wxSUNKEN_BORDER, const wxValidator &validator = wxDefaultValidator);
+                      long style = wxSUNKEN_BORDER, const wxValidator &validator = wxDefaultValidator, bool create_render_window = true);
 
   /** Virtual destructor.
    */
@@ -96,6 +96,15 @@ public:
    */
   void setOrthoScale( float scale );
 
+  /**
+   * \brief
+   */
+  void setAutoRender(bool auto_render) { auto_render_ = auto_render; }
+
+  /** Creates an Ogre render window for this widget.
+   */
+  virtual void createRenderWindow ();
+
 protected:
   /** Painting event callback.
     @param evt Data regarding the painting event.
@@ -114,10 +123,6 @@ protected:
    */
   virtual void onMouseEvents (wxMouseEvent &evt);
 
-  /** Creates an Ogre render window for this widget.
-   */
-  virtual void createRenderWindow ();
-
   /** Gets the handle for the render window.
   	@return The render window handle.
    */
@@ -132,6 +137,7 @@ protected:
   boost::function<void ()> post_render_callback_;     ///< Functor which is called after each render
 
   float ortho_scale_;
+  bool auto_render_;
 };
 
 } // namespace ogre_tools

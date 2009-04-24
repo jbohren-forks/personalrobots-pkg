@@ -389,4 +389,11 @@ void PointCloud::_updateRenderQueue( Ogre::RenderQueue* queue )
   }
 }
 
+#if (OGRE_VERSION_MAJOR >= 1 && OGRE_VERSION_MINOR >= 6)
+void PointCloud::visitRenderables(Ogre::Renderable::Visitor* visitor, bool debugRenderables)
+{
+
+}
+#endif
+
 } // namespace ogre_tools

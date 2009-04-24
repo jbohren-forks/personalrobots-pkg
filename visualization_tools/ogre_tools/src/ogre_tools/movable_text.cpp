@@ -523,10 +523,8 @@ const Quaternion& MovableText::getWorldOrientation(void) const
   return const_cast<Quaternion&> (mpCam->getDerivedOrientation());
 }
 
-#if 0
-// Add to build on Shoggoth:
-void MovableText::visitRenderables(Ogre::Renderable::Visitor* visitor,
-    bool debugRenderables)
+#if (OGRE_VERSION_MAJOR >= 1 && OGRE_VERSION_MINOR >= 6)
+void MovableText::visitRenderables(Ogre::Renderable::Visitor* visitor, bool debugRenderables)
 {
 }
 #endif

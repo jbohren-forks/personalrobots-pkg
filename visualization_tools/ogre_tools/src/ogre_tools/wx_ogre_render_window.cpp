@@ -30,17 +30,19 @@ END_EVENT_TABLE ()
 unsigned int wxOgreRenderWindow::sm_NextRenderWindowId = 1;
 //------------------------------------------------------------------------------
 wxOgreRenderWindow::wxOgreRenderWindow (Ogre::Root* ogre_root, wxWindow *parent, wxWindowID id,
-                                        const wxPoint &pos, const wxSize &size, long style, const wxValidator &validator)
+                                        const wxPoint &pos, const wxSize &size, long style, const wxValidator &validator, bool create_render_window)
     : wxControl( parent, id, pos, size, style, validator )
     , render_window_( 0 )
     , ogre_root_( ogre_root )
     , ortho_scale_( 1.0f )
+    , auto_render_(true)
 {
   SetBackgroundStyle(wxBG_STYLE_CUSTOM);
 
-  createRenderWindow();
-
-  viewport_ = render_window_->addViewport( NULL );
+  if (create_render_window)
+  {
+    createRenderWindow();
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -124,23 +126,28 @@ void wxOgreRenderWindow::onPaint (wxPaintEvent &evt)
 {
   evt.Skip();
 
-  if ( pre_render_callback_ )
+  if (auto_render_)
   {
-    pre_render_callback_();
-  }
+    if ( pre_render_callback_ )
+    {
+      pre_render_callback_();
+    }
 
-  if( !ogre_root_->_fireFrameStarted() )
-  {
-    return;
-  }
+    if( ogre_root_->_fireFrameStarted() )
+    {
+#if (OGRE_VERSION_MAJOR >= 1 && OGRE_VERSION_MINOR >= 6)
+      ogre_root_->_fireFrameRenderingQueued();
+#endif
 
-  render_window_->update();
+      render_window_->update();
 
-  ogre_root_->_fireFrameEnded();
+      ogre_root_->_fireFrameEnded();
+    }
 
-  if ( post_render_callback_ )
-  {
-    post_render_callback_();
+    if ( post_render_callback_ )
+    {
+      post_render_callback_();
+    }
   }
 }
 
@@ -188,6 +195,10 @@ void wxOgreRenderWindow::createRenderWindow ()
                      width, height, false, &params);
 
   render_window_->setActive (true);
+  render_window_->setVisible(true);
+  render_window_->setAutoUpdated(true);
+
+  viewport_ = render_window_->addViewport( NULL );
 }
 //------------------------------------------------------------------------------
 std::string wxOgreRenderWindow::getOgreHandle () const
@@ -199,7 +210,7 @@ std::string wxOgreRenderWindow::getOgreHandle () const
   handle = Ogre::StringConverter::toString((size_t)((HWND)GetHandle()));
 #elif defined(__WXGTK__)
   // Handle for GTK-based systems
-
+  std::stringstream str;
   GtkWidget *widget = m_wxwindow;
   gtk_widget_set_double_buffered (widget, FALSE);
   gtk_widget_realize( widget );
@@ -209,8 +220,6 @@ std::string wxOgreRenderWindow::getOgreHandle () const
   GdkWindow *gdkWin = GTK_PIZZA (widget)->bin_window;
   Display* display = GDK_WINDOW_XDISPLAY(gdkWin);
   Window wid = GDK_WINDOW_XWINDOW(gdkWin);
-
-  std::stringstream str;
 
   // Display
   str << (unsigned long)display << ':';
@@ -227,6 +236,7 @@ std::string wxOgreRenderWindow::getOgreHandle () const
   // Retrieve XVisualInfo
   int attrlist[] = { GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, GLX_STENCIL_SIZE, 8, None };
   XVisualInfo* vi = glXChooseVisual(display, DefaultScreen(display), attrlist);
+  XSync(GDK_WINDOW_XDISPLAY(widget->window), False);
   str << (unsigned long)vi;
 
   handle = str.str();

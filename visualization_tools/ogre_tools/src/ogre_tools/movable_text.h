@@ -107,10 +107,8 @@ public:
       const Ogre::ColourValue &color = Ogre::ColourValue::White);
   virtual ~MovableText();
 
-#if 0
-  // Add to build on Shoggoth:
-  virtual void visitRenderables(Ogre::Renderable::Visitor* visitor,
-      bool debugRenderables = false);
+#if (OGRE_VERSION_MAJOR >= 1 && OGRE_VERSION_MINOR >= 6)
+  virtual void visitRenderables(Ogre::Renderable::Visitor* visitor, bool debugRenderables = false);
 #endif
 
   // Set settings

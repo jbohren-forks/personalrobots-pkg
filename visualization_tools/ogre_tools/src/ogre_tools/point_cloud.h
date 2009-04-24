@@ -143,6 +143,9 @@ public:
   virtual void getWorldTransforms( Ogre::Matrix4* xform ) const;
   virtual void _updateRenderQueue( Ogre::RenderQueue* queue );
   virtual void _notifyCurrentCamera( Ogre::Camera* camera );
+#if (OGRE_VERSION_MAJOR >= 1 && OGRE_VERSION_MINOR >= 6)
+  virtual void visitRenderables(Ogre::Renderable::Visitor* visitor, bool debugRenderables);
+#endif
 
 private:
   /**

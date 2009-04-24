@@ -47,7 +47,7 @@ CameraBase::CameraBase( Ogre::SceneManager* scene_manager )
 {
   std::stringstream ss;
   static uint32_t count = 0;
-  ss << "FPSCamera" << count++;
+  ss << "CameraBase" << count++;
   camera_ = scene_manager_->createCamera( ss.str() );
 }
 
