@@ -41,7 +41,6 @@
 #include <ros/node.h>
 #include <robot_msgs/PositionMeasurement.h>
 #include <robot_msgs/Polyline.h>
-//#include <topic_synchronizer/topic_synchronizer.h>
 #include "tf/transform_listener.h"
 #include <tf/message_notifier.h>
 #include <people_aware_nav/PersonOnPath.h>
@@ -106,7 +105,7 @@ public:
   // Path callback
   void pathCB(const tf::MessageNotifier<robot_msgs::Polyline>::MessagePtr& gui_path_msg)
   {
-    boost::mutex::scoped_lock l(path_mutex_);
+    boost::mutex::scoped_lock l1(path_mutex_);
     ROS_DEBUG_STREAM ("In path callback and got_path_ is " << got_path_);
     path_ = *gui_path_msg;
     got_path_ = true;
@@ -115,7 +114,7 @@ public:
   // Service callback
   bool personOnPathCB (people_aware_nav::PersonOnPath::Request& req, people_aware_nav::PersonOnPath::Response& resp)
   {
-    boost::mutex::scoped_lock l(path_mutex_);
+    boost::mutex::scoped_lock l1(path_mutex_);
     boost::mutex::scoped_lock l2(person_mutex_);
     
     bool on_path;
@@ -170,25 +169,34 @@ public:
 
     ROS_DEBUG_STREAM_NAMED ("person_on_path", "Attempting to compute person-path dist to point " << t_person_tf_stamped_point[0] << ", " << t_person_tf_stamped_point[1]);
 
+    int psize = (int)path_.points.size();
+    std::vector<tf::Stamped<tf::Point> > t_path_points;
+    for (int i=0; i<psize; ++i) {
+      tf::Point tpt;
+      tpt[0] = path_.points[i].x;
+      tpt[1] = path_.points[i].y;
+      tpt[2] = 0.0;
+      tf::Stamped<tf::Point> t_path_point(tpt, path_.header.stamp, path_.header.frame_id);
+      try {
+	tf_->transformPoint(fixed_frame_, *current_time, t_path_point, fixed_frame_, t_path_point);
+      }
+      catch (tf::TransformException& ex) {
+	ROS_INFO_STREAM("Unable to do path transformation " << ex.what());
+	return false;
+      }
+      t_path_points.push_back(t_path_point);
+    }
+    t_path_points.resize(psize);
 
 
     // Go through each line segment on the path and get the distance to the person.
     double min_dist = -1.0;
-    int psize = (int)path_.points.size()-1;
-    for (int i=0; i<psize; i++) {
-
+    psize = (int)path_.points.size()-1;
+    for (int i=0; i<psize; ++i) {
 
       // Two points on the line segment
-      tf::Point tpt1;
-      tpt1[0] = path_.points[i].x;
-      tpt1[1] = path_.points[i].y;
-      tpt1[2] = path_.points[i].z;
-      tf::Stamped<tf::Point> t_path_point1(tpt1, path_.header.stamp, path_.header.frame_id);
-      tf::Point tpt2;
-      tpt2[0] = path_.points[i+1].x;
-      tpt2[1] = path_.points[i+1].y;
-      tpt2[2] = path_.points[i+1].z;
-      tf::Stamped<tf::Point> t_path_point2(tpt2, path_.header.stamp, path_.header.frame_id);
+      tf::Stamped<tf::Point> t_path_point1 = t_path_points[i];
+      tf::Stamped<tf::Point> t_path_point2 = t_path_points[i+1];
       
       // Try to transform the line endpoints to the current time
       try {
@@ -213,19 +221,19 @@ public:
       double dotss, dotdd;
       s = t_path_point2 - t_path_point1;
 
+      d = t_person_tf_stamped_point - t_path_point1;
+      dotdd = dot(d,d);
+      if (dotdd < 1E-10) {
+	ROS_DEBUG_STREAM_NAMED("person_on_path", "The person is (almost) at line segment point 1. Returning distance of 0.");
+	min_dist = 0.0;
+	break;
+      }
+
       // Check that the length of the line isn't 0.
       dotss = dot(s,s);
       if (dotss < 1E-10) {
 	ROS_DEBUG_STREAM_NAMED("person_on_path","Line segment length is too small, skipping.");
 	continue;
-      }
-
-      d = t_person_tf_stamped_point - t_path_point1;
-      dotdd = dot(d,d);
-      if (dotdd < 1E-10) {
-	ROS_DEBUG_STREAM_NAMED("person_on_path", "Person is (almost) at line segment point 1. Returning distance of 0.");
-	min_dist = 0.0;
-	break;
       }
 
       tf::Vector3 c;
@@ -247,7 +255,7 @@ public:
           ROS_DEBUG_STREAM_NAMED ("person_on_path", "in endpoint2 case: d = " << d[0] << ", " << d[1] << " and dot product is " << dotdd << " and tf_person_stamped_point is " 
                                   << t_person_tf_stamped_point[0] << ", " << t_person_tf_stamped_point[1] << " and path point is " << t_path_point2[0] << ", " << t_path_point2[1]);
 	  if (dotdd < 1E-10) {
-	    ROS_DEBUG_STREAM_NAMED("person_on_path", "Person is (almost) at line segment point 2. Returning distance of 0.");
+	    ROS_DEBUG_STREAM_NAMED("person_on_path", "The person is (almost) at line segment point 2. Returning distance of 0.");
 	    min_dist = 0.0;
 	    break;
 	  }
