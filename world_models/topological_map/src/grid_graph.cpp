@@ -178,32 +178,45 @@ ReachableCost extractCost (const GridGraph* g, const GridDistances& distances, c
   }
 }
 
+// Approximation to Dijkstra
 ReachableCostVector GridGraph::singleSourceCosts (const Cell2D& source, const vector<Cell2D>& dests)
 {
+  ROS_DEBUG_NAMED ("grid_graph_shortest_path", "Computing single source costs");
   GridDistances distances;
   GridGraphVertex start = cellVertex(source);
+  typedef pair<GridGraphVertex, double> QueueItem;
+  queue<QueueItem> q;
+  set<GridGraphVertex> visited;
+  
+  q.push(QueueItem(start,0.0));
+  visited.insert(start);
+  while (!q.empty()) {
+    
+    GridGraphVertex v;
+    double d;
+    tie(v,d) = q.front();
+    q.pop();
 
-
-  resetIndices();
-  ROS_DEBUG_NAMED ("grid_graph_shortest_path", "Computing single source costs");
-
-  typedef map<GridGraphVertex, GridGraphVertex> GridPreds;
-  GridPreds predecessors;
-  boost::dijkstra_shortest_paths (graph_, start,
-                                  weight_map(get(&EdgeCost::cost, graph_)).
-                                  vertex_index_map(get(&CellInfo::index, graph_)).
-                                  distance_map(associative_property_map<GridDistances>(distances)).
-                                  predecessor_map(associative_property_map<GridPreds>(predecessors)). // to avoid warnings
-                                  visitor(GraphSearchVisitor()));
-
-   
-  ReachableCostVector v(dests.size());
-  transform (dests.begin(), dests.end(), v.begin(), bind(extractCost, this, distances, _1));
-  for (uint i=0; i<dests.size(); ++i) {
-    ROS_DEBUG_STREAM_NAMED ("grid_graph_shortest_path", " connector " << dests[i] << " ; cost " << v[i].second);
+    GridGraphAdjacencyIterator iter, end;
+    for (tie(iter,end)=adjacent_vertices(v, graph_); iter!=end; iter++) {
+      if (visited.find(*iter)==visited.end()) {
+        double cost = d+graph_[edge(v,*iter,graph_).first].cost;
+        q.push(QueueItem(*iter, cost));
+        visited.insert(*iter);
+        distances[*iter] = cost;
+      }
+    }
+  }
+  ReachableCostVector costs;
+  for (vector<Cell2D>::const_iterator iter=dests.begin(); iter!=dests.end(); ++iter) {
+    GridDistances::iterator pos = distances.find(cellVertex(*iter));
+    if (pos==distances.end()) 
+      costs.push_back(ReachableCost(false,-42.0));
+    else
+      costs.push_back(ReachableCost(true, pos->second));
   }
   ROS_DEBUG_NAMED ("grid_graph_shortest_path", "Done computing single source costs");
-  return v;
+  return costs;
 }
 
    
@@ -243,6 +256,7 @@ tuple<bool, double, GridPath> GridGraph::shortestPath (const Cell2D& cell1, cons
   set<GridGraphVertex> visited;
   map<GridGraphVertex,GridGraphVertex> predecessor_map;
   GridGraphVertex goal=cellVertex(cell2), start=cellVertex(cell1);
+  
 
   q.push(QueueItem(start,0));
   visited.insert(start);

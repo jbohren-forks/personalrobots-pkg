@@ -27,10 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
+#include <ctime>
+#include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include <getopt.h>
+#include <vector>
 #include <sysexits.h>
 #include <topological_map/topological_map.h>
 #include <ros/time.h>
@@ -38,6 +40,9 @@
 typedef unsigned int uint;
 typedef const uint cuint;
 
+
+using std::printf;
+using std::pair;
 using std::cout;
 using std::endl;
 using std::ifstream;
@@ -49,6 +54,8 @@ using topological_map::TopologicalMapPtr;
 using topological_map::topologicalMapFromGrid;
 using topological_map::Point2D;
 using topological_map::Cell2D;
+using topological_map::ConnectorId;
+using std::vector;
 using ros::Time;
 
 void setV (topological_map::OccupancyGrid& grid, cuint r0, cuint dr, cuint rmax, cuint c0, cuint dc, cuint cmax, bool val) 
@@ -92,21 +99,19 @@ int main (int argc, char* argv[])
   ifstream str3("local/gen.out");
   topological_map::TopologicalMap m3(str3);
 
-  robot_msgs::Door d = m3.regionDoor(206);
-  cout << "Door at " << d.frame_p1.x << ", " << d.frame_p1.y << " and " << d.frame_p2.x << ", " << d.frame_p2.y << endl;
-  cout << "Open prob at 0.0 is " << m3.doorOpenProb(43, Time(0.0)) << endl;
-  cout << "Open prob at 1.0 is " << m3.doorOpenProb(43, Time(1.0)) << endl;
-  m3.observeDoorTraversal(43, false, Time(0.5));
-  cout << "Open prob at 1.0 is " << m3.doorOpenProb(43, Time(1.0)) << endl;
-  cout << "Open prob at 2.0 is " << m3.doorOpenProb(43, Time(2.0)) << endl;
-  cout << "Open prob at 100.0 is " << m3.doorOpenProb(43, Time(100.0)) << endl;
-  m3.observeDoorTraversal(43, true, Time(60.0));
-  cout << "Open prob at 60.0 is " << m3.doorOpenProb(43, Time(60.0)) << endl;
-  cout << "Open prob at 100.0 is " << m3.doorOpenProb(43, Time(100.0)) << endl;
-  cout << "Open prob at 60.0 is " << m3.doorOpenProb(45, Time(60.0)) << endl;
-  cout << "Open prob at 10.0 is " << m3.doorOpenProb(43, Time(10.0)) << endl;
+  time_t start, end;
 
+  Point2D p1(18.55, 11.76);
+  Point2D p2(47.35, 40.655);
 
+  time(&start);
+  typedef vector<pair<ConnectorId, double> > CCV;
+  CCV vec = m3.connectorCosts(p1,p2);
+  time(&end);
+  for (CCV::iterator iter=vec.begin(); iter!=vec.end(); ++iter) {
+    cout << "Through " << iter->first << " takes " << iter->second << endl;
+  }
+  printf ("It took %f seconds\n",  difftime(end, start));
 
 //   std::ifstream str3("local/willow.tmap");
 //   tmap::TopologicalMap m2(str3);

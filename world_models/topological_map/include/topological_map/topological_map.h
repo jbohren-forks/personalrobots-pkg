@@ -73,6 +73,7 @@ uint numCols(const OccupancyGrid& grid);
 const double DEFAULT_DOOR_OPEN_PRIOR_PROB = 0.95;
 const double DEFAULT_DOOR_REVERSION_RATE = 1000;
 const double DEFAULT_RESOLUTION=1.0;
+const double DEFAULT_LOCKED_DOOR_COST=100;
 
 /// \brief A facade object to the topological map and high-level world model information
 ///

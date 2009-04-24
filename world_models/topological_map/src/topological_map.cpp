@@ -792,6 +792,7 @@ TopologicalMap::MapImpl::TemporaryRoadmapNode::TemporaryRoadmapNode (Topological
   RegionIsolator i(m->grid_graph_.get(), *(m->regionCells(r)));
 
   vector<ConnectorDesc> connector_descs = m->adjacentConnectorCells(r);
+
   vector<ConnectorId> connector_ids(connector_descs.size());
   vector<Cell2D> connector_cells(connector_descs.size());
   transform(connector_descs.begin(), connector_descs.end(), connector_ids.begin(), getId);
