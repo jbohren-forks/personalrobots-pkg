@@ -91,19 +91,19 @@ rospack_add_nddl("test/master/pr2.sim.nddl")
 #rospack_add_nddl("plugs.0/pr2.safety.nddl")
 #rospack_add_nddl("plugs.0/pr2.rcs.sim.nddl")
 
-set(TREX_FILES src/Executive.cc
-	       src/Monitor.cc
-	       src/ROSAdapter.cc 
-	       src/Logger.cc 
-               src/LogClock.cc 
-	       src/CalcAngleDiffConstraint.cc 
-	       src/CalcDistanceConstraint.cc 
-	       src/Components.cc
-	       src/BaseStateAdapter.cc
-	       src/ArmStateAdapter.cc
-	       src/ArmControllerAdapter.cc
-	       src/EndEffectorControllerAdapter.cc
-	       src/BatteryStateAdapter.cc
+set(TREX_FILES src/executive.cc
+	       src/monitor.cc
+	       src/ros_adapter.cc 
+	       src/logger.cc 
+               src/logclock.cc 
+	       src/calc_angle_diff_constraint.cc 
+	       src/calc_distance_constraint.cc 
+	       src/components.cc
+	       src/base_state_adapter.cc
+	       src/arm_state_adapter.cc
+	       src/arm_controller_adapter.cc
+	       src/end_effector_controller_adapter.cc
+	       src/battery_state_adapter.cc
 	       src/topological_map.cc
 	       src/door_domain_constraints.cc
 	       src/adapter_utilities.cc
@@ -141,7 +141,7 @@ rospack_add_compile_flags(executive_trex_pr2_o "-O3 -DEUROPA_FAST")
 # trexwatchdog is a safety process that will monitor pings from the executive
 # and dispense shutdown commands to highlevel controllers (deactivation) if pings are
 # not received in time
-rospack_add_executable(bin/trexwatchdog src/WatchDog.cc)
+rospack_add_executable(bin/trexwatchdog src/watch_dog.cc)
 
 # Test target for unit tests on topological map integration components
 rospack_add_gtest(test/topological_map_tests test/topological_map_tests.cc)
