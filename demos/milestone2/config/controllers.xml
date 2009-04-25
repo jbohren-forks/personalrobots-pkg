@@ -38,7 +38,7 @@
     <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.25" type="double" /> 
     <param name="autostart" type="bool" value="false" /> 
   </group>
-  <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/integration/r_arm_joint_trajectory_controller.xml" />
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_joint_trajectory_controller.xml" />
 
 <!-- Cartesian wrench controller -->
   <param name="r_arm_cartesian_wrench_controller/autostart" type="bool" value="false" />
