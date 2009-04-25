@@ -11,7 +11,7 @@
       <param name="max_explore_distance" value="2.0" />
       <param name="horizontal_explore_distance" value="0.08" />
       <param name="max_explore_delta_angle" value="1.0" />
-      <param name="door_goal_distance" value="0.7" />
+      <param name="door_goal_distance" value="0.6" />
       <param name="num_explore_paths" value="32" />
       <param name="choose_straight_line_trajectory" value="true" type="bool" />
       <param name="inscribed_radius" value="0.315" />
