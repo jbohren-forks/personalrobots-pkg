@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+
+<controllers>
+  <controller name="r_arm_joint_trajectory_controller" type="JointTrajectoryController">
+    <controller name="r_shoulder_pan_controller" topic="r_shoulder_pan_controller" type="JointPDController">
+      <joint name="r_shoulder_pan_joint" >
+        <pid p="140.0" d="30.0" i="0.8" iClamp="100.0" />
+      </joint>
+    </controller>
+    <controller name="r_shoulder_lift_controller" topic="r_shoulder_pitch_controller" type="JointPDController">
+      <joint name="r_shoulder_lift_joint" >
+        <pid p="70.0" d="20.0" i="0.0" iClamp="100.0" />
+      </joint>
+    </controller>
+    <controller name="r_upperarm_roll_controller" topic="r_upperarm_roll_controller" type="JointPDController">
+      <joint name="r_upper_arm_roll_joint" >
+        <pid p="50.0" d="5.0" i="0.2" iClamp="100.0" />
+      </joint>
+    </controller>
+    <controller name="r_elbow_controller" topic="r_elbow_flex_controller" type="JointPDController">
+      <joint name="r_elbow_flex_joint" >
+        <pid p="100.0" d="5.0" i="0.5" iClamp="100.0" />
+      </joint>
+    </controller>
+    <controller name="r_forearm_roll_controller" topic="r_forearm_roll_controller" type="JointPDController">
+      <joint name="r_forearm_roll_joint" >
+        <pid p="10.0" d="2.0" i="0.1" iClamp="10.0" />
+      </joint>
+    </controller>
+    <controller name="r_wrist_flex_controller" type="JointPDController">
+      <joint name="r_wrist_flex_joint">
+        <pid p="10" i="0.1" d="0.5" iClamp="10.0" />
+      </joint>
+    </controller>
+    <controller name="r_wrist_roll_controller" type="JointPDController">
+      <joint name="r_wrist_roll_joint">
+        <pid p="10" i="0.1" d="0.5" iClamp="10.0" />
+      </joint>
+    </controller>
+    <trajectory interpolation="cubic" />
+  </controller>
+</controllers>
