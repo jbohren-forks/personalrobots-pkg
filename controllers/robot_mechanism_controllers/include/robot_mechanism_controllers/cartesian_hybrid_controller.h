@@ -100,6 +100,9 @@ public:
 
   void command();
 
+  bool setToolFrame(robot_srvs::SetPoseStamped::Request &req,
+                    robot_srvs::SetPoseStamped::Response &resp);
+
 private:
   std::string name_;
   tf::TransformListener TF;

@@ -388,6 +388,7 @@ CartesianHybridControllerNode::~CartesianHybridControllerNode()
 {
   ros::Node *node = ros::Node::instance();
   node->unsubscribe(name_ + "/command");
+  node->unadvertiseService(name_ + "/set_tool_frame");
 }
 
 bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
@@ -408,6 +409,8 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   pub_state_.reset(new realtime_tools::RealtimePublisher<robot_msgs::CartesianState>(name_ + "/state", 1));
   pub_tf_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("/tf_message", 5));
   pub_tf_->msg_.transforms.resize(1);
+
+  node->advertiseService(name_ + "/set_tool_frame", &CartesianHybridControllerNode::setToolFrame, this);
 
   return true;
 
@@ -485,6 +488,26 @@ void CartesianHybridControllerNode::command()
   c_.setpoint_[3] = command_msg_.value.rot.x;
   c_.setpoint_[4] = command_msg_.value.rot.y;
   c_.setpoint_[5] = command_msg_.value.rot.z;
+}
+
+bool CartesianHybridControllerNode::setToolFrame(
+  robot_srvs::SetPoseStamped::Request &req,
+  robot_srvs::SetPoseStamped::Response &resp)
+{
+  if (!TF.canTransform(c_.chain_.getLinkName(-1), req.p.header.frame_id,
+                       req.p.header.stamp, ros::Duration(3.0)))
+  {
+    ROS_ERROR("Cannot transform %s -> %s at %lf", c_.chain_.getLinkName(-1).c_str(),
+              req.p.header.frame_id.c_str(), req.p.header.stamp.toSec());
+    return false;
+  }
+
+  robot_msgs::PoseStamped tool_in_tip_msg;
+  tf::Transform tool_in_tip;
+  TF.transformPose(c_.chain_.getLinkName(-1), req.p, tool_in_tip_msg);
+  tf::PoseMsgToTF(tool_in_tip_msg.pose, tool_in_tip);
+  tf::TransformTFToKDL(tool_in_tip, c_.tool_frame_offset_);
+  return true;
 }
 
 }
