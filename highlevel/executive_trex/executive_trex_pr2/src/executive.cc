@@ -31,10 +31,10 @@
 #include <ros/console.h>
 
 #include "Nddl.hh"
-#include "Components.hh"
+#include "executive_trex_pr2/components.hh"
 #include "Logger.hh"
 #include "Agent.hh"
-#include "LogClock.hh"
+#include "executive_trex_pr2/logclock.hh"
 #include "Debug.hh"
 #include "Utilities.hh"
 #include <signal.h>

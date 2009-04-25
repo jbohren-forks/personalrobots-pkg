@@ -1,7 +1,7 @@
-#include "LogClock.hh"
+#include "executive_trex_pr2/logclock.hh"
 #include "Agent.hh"
 #include "LogManager.hh"
-#include "Components.hh"
+#include "executive_trex_pr2/components.hh"
 #include "Utilities.hh"
 #include "ros/time.h"
 #include <errno.h>
