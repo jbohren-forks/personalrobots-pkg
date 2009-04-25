@@ -212,7 +212,7 @@ void HysteresisController::update()
     status->message = "Starting to turn around on loop " + loop_str;
     break;
   case MOVING:
-    if (fabs(joint_->velocity_) < 0.003 && fabs(joint_->commanded_effort_) > max_effort_ && joint_->joint_->type_!=mechanism::JOINT_CONTINUOUS)
+    if (fabs(joint_->velocity_) < 0.001 && fabs(joint_->commanded_effort_) > max_effort_ && joint_->joint_->type_!=mechanism::JOINT_CONTINUOUS)
     {
       velocity_controller_->setCommand(0.0);
       if (loop_count_ < 3)
