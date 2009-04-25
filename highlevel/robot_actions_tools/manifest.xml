@@ -1,0 +1,12 @@
+<package>
+  <description brief="This package contains tools for robot_actions."/>
+ <author>Tony Pratkanis</author>
+ <license>BSD</license>
+ <review status="unreviewed" notes=""/>
+ <url>http://pr.willowgarage.com</url>
+
+ <depend package="rospy"/>
+ <depend package="roslib"/>
+ <depend package="robot_actions"/>
+
+</package>
