@@ -36,7 +36,7 @@
 *********************************************************************/
 
 #include <robot_msgs/PoseDot.h>
-#include <robot_actions/Pose2D.h>
+#include <pr2_robot_actions/Pose2D.h>
 #include <robot_msgs/JointTrajPoint.h>
 #include <robot_msgs/JointTraj.h>
 #include <trajectory/trajectory.h>

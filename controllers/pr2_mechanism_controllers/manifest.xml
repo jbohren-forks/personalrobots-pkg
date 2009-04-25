@@ -18,6 +18,7 @@
   <depend package="pr2_msgs" />
   <depend package="robot_msgs" />
   <depend package="robot_kinematics" />
+  <depend package="robot_actions" />
   <depend package="rosconsole" />
   <depend package="trajectory" />
   <depend package="angles" />
