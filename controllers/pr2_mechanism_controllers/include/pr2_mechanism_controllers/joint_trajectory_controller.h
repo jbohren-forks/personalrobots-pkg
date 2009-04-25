@@ -138,7 +138,7 @@ namespace controller
 
     std::vector<double> max_allowable_joint_errors_;  /**< max allowable joint errors. These are loaded through the ROS Param server. e.g. <param name="r_shoulder_pan_joint/joint_error_threshold" type="double" value="0.1"/>*/
 
-    controller::BaseControllerNode base_controller_node_; /**< internal controller used to start up a controller for a robot base */
+    controller::BaseControllerNode *base_controller_node_; /**< internal controller used to start up a controller for a robot base */
 
     std::vector<JointPDController *> joint_pv_controllers_; /**< internal set of controllers used to control individual joints */
 

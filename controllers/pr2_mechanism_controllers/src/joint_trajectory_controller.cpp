@@ -58,6 +58,7 @@ JointTrajectoryController::JointTrajectoryController() : Controller(), node_(ros
   next_free_index_ = 0;
   current_trajectory_index_ = 0;
   trajectory_preempted_ = false;
+  base_controller_node_ = NULL;
 }
 
 
@@ -187,7 +188,7 @@ bool JointTrajectoryController::loadXmlFile(mechanism::RobotState * robot, TiXml
   TiXmlElement *elt = config->FirstChildElement("controller");
   while (elt)
   {
-    if(static_cast<std::string>(elt->Attribute("type")) == std::string("JointPVController"))
+    if(static_cast<std::string>(elt->Attribute("type")) == std::string("JointPDController"))
     {
       JointPDController * jpc = new JointPDController();
       ROS_INFO("Joint PD Controller: %s , %s",(elt->Attribute("type")),(elt->Attribute("name")));
@@ -204,7 +205,9 @@ bool JointTrajectoryController::loadXmlFile(mechanism::RobotState * robot, TiXml
     }
     else if(static_cast<std::string>(elt->Attribute("type")) == std::string("BaseControllerNode"))
     {        
-      base_controller_node_.initXml(robot,elt);
+      ROS_INFO("Creating base controller node");
+      base_controller_node_ = new BaseControllerNode();
+      base_controller_node_->initXml(robot,elt);
     }
     else
     {
@@ -438,7 +441,7 @@ bool JointTrajectoryController::checkWatchDog(double current_time)
 void JointTrajectoryController::stopMotion()
 {
   setTrajectoryCmdToCurrentValues();
-  base_controller_node_.setCommand(0.0,0.0,0.0);
+  base_controller_node_->setCommand(0.0,0.0,0.0);
 }
 
 void JointTrajectoryController::resetTrajectoryTimes()
@@ -602,7 +605,7 @@ void JointTrajectoryController::updateBaseCommand(double time)
   double vy = -cmd[0]*sin(theta) + cmd[1]*cos(theta);
   double vw = cmd[2];
 
-  base_controller_node_.setCommand(vx,vy,vw);
+  base_controller_node_->setCommand(vx,vy,vw);
 
 }
 
@@ -636,14 +639,20 @@ void JointTrajectoryController::updateJointControllers(void)
     joint_pv_controllers_[i]->setCommand(joint_cmd_[i],joint_cmd_dot_[i]);
   }
 
+  if(base_controller_node_)
+    {
   // Set the commands for the base
   updateBaseCommand(current_time_);
+    }
 
   // Call update on all the controllers
   for(unsigned int i=0;i<joint_pv_controllers_.size();++i)
     joint_pv_controllers_[i]->update();  
 
-  base_controller_node_.update();
+  if(base_controller_node_)
+    {
+  base_controller_node_->update();
+    }
 }
 
 void JointTrajectoryController::updateJointValues()
@@ -656,12 +665,15 @@ void JointTrajectoryController::updateJointValues()
     current_joint_velocity_[i] = joint_pv_controllers_[i]->joint_state_->velocity_;
   }
 
-  base_controller_node_.getOdometry(q[0], q[1], q[2], qdot[0], qdot[1], qdot[2]) ;
-  for(unsigned int i=0;i< base_pid_controller_.size();++i){
-    int joint_index = base_joint_index_[i];
-    current_joint_position_[joint_index] = q[i];
-    current_joint_velocity_[joint_index] = qdot[i];
-  }
+  if(base_controller_node_)
+    {
+      base_controller_node_->getOdometry(q[0], q[1], q[2], qdot[0], qdot[1], qdot[2]) ;
+      for(unsigned int i=0;i< base_pid_controller_.size();++i){
+	int joint_index = base_joint_index_[i];
+	current_joint_position_[joint_index] = q[i];
+	current_joint_velocity_[joint_index] = qdot[i];
+      }
+    }
 }
 
 void JointTrajectoryController::updateTrajectoryQueue(int id, int finish_status)
@@ -683,12 +695,17 @@ bool JointTrajectoryController::getTrajectoryFromQueue(int &index)
     return false;
   }
   if(joint_trajectory_status_[joint_trajectory_id_[index]] == JointTrajectoryController::QUEUED)
-  {
-    setTrajectoryCmdFromMsg(joint_trajectory_vector_[index],joint_trajectory_id_[index]);
-    return true;
-  }
+    {
+      if(trajectory_queue_.try_lock())
+	{
+	  setTrajectoryCmdFromMsg(joint_trajectory_vector_[index],joint_trajectory_id_[index]);
+	  trajectory_queue_.unlock();	
+	  return true;
+	}
+      return false;
+    }
   else
-  {
+    {
 // do a linear search from current index + 1
     int iter = (index + 1)%max_trajectory_queue_size_;
     int num_iterations = 0;
@@ -784,7 +801,6 @@ bool JointTrajectoryController::setJointTrajSrv(pr2_mechanism_controllers::Traje
                                                 pr2_mechanism_controllers::TrajectoryStart::Response &resp)
 {
   addTrajectoryToQueue(req.traj, request_trajectory_id_);
-  request_trajectory_id_++;
   last_traj_req_time_ = current_time_;
   resp.trajectoryid = request_trajectory_id_;
 
@@ -804,6 +820,7 @@ bool JointTrajectoryController::setJointTrajSrv(pr2_mechanism_controllers::Traje
       resp.timestamps[i] = timestamps[i];
     }
   }
+  request_trajectory_id_++;
   return true;
 }
 
@@ -817,11 +834,11 @@ bool JointTrajectoryController::queryJointTrajSrv(pr2_mechanism_controllers::Tra
     resp.jointnames[i] = joint_name_[i];
     resp.jointpositions[i] = current_joint_position_[i];
   }
-
   if(req.trajectoryid >= joint_trajectory_status_.size())
   {
     resp.trajectorytime = 0.0;
     resp.done = JointTrajectoryController::DOES_NOT_EXIST;
+    ROS_DEBUG("Query joint traj with id: %d, status: DOES_NOT_EXIST, size of status vector: %d",req.trajectoryid,joint_trajectory_status_.size());
     return false;
   }
   else
@@ -914,7 +931,7 @@ bool JointTrajectoryController::createTrajectoryFromMsg(const robot_msgs::JointT
 
 void JointTrajectoryController::addTrajectoryToQueue(robot_msgs::JointTraj new_traj, int id)
 {
-  trajectory_queue_.try_lock();
+  trajectory_queue_.lock();
 
   joint_trajectory_vector_[next_free_index_] = new_traj;
   joint_trajectory_id_[next_free_index_] = id;
@@ -991,7 +1008,7 @@ void JointTrajectoryController::publishDiagnostics()
     vector<robot_msgs::DiagnosticString> strings;
     robot_msgs::DiagnosticStatus status;
     robot_msgs::DiagnosticValue v;
-
+    robot_msgs::DiagnosticString s;
     status.name = "Whole Body Trajectory Controller";
     status.level = 0;
     if(watch_dog_active_)
@@ -1067,6 +1084,46 @@ void JointTrajectoryController::publishDiagnostics()
     v.label = "Next queue free index";
     v.value = next_free_index_;
     values.push_back(v);
+
+    v.label = "Number joints";
+    v.value = num_joints_;
+    values.push_back(v);
+
+    v.label = "Velocity scaling factor";
+    v.value = velocity_scaling_factor_;
+    values.push_back(v);
+
+    v.label = "Trajectory wait timeout";
+    v.value = trajectory_wait_timeout_;
+    values.push_back(v);
+
+    v.label = "Max allowed update time";
+    v.value = max_allowed_update_time_;
+    values.push_back(v);
+
+    v.label = "Diagnostics publish time";
+    v.value = diagnostics_publish_delta_time_;
+    values.push_back(v);
+
+    v.label = "Max trajectory queue size";
+    v.value = max_trajectory_queue_size_;
+    values.push_back(v);
+
+    s.label = "Listen topic name";
+    s.value = listen_topic_name_;
+    strings.push_back(s);
+
+    s.label = "Trajectory set service";
+    s.value = name_ + "/TrajectoryStart";
+    strings.push_back(s);
+
+    s.label = "Trajectory query service";
+    s.value = name_ + "/TrajectoryQuery";
+    strings.push_back(s);
+
+    s.label = "Trajectory cancel service";
+    s.value = name_ + "/TrajectoryCancel";
+    strings.push_back(s);
 
     status.set_values_vec(values);
     status.set_strings_vec(strings);

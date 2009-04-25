@@ -5,6 +5,8 @@ genmsg()
 gensrv()
 #rospack_add_library(pr2_controllers src/base_controller.cpp src/laser_scanner_controller.cpp  src/arm_position_controller.cpp src/arm_velocity_controller.cpp src/arm_pd_controller.cpp src/head_pan_tilt_controller.cpp)
 
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
 rospack_add_boost_directories()
 
 rospack_add_library( pr2_mechanism_controllers
@@ -27,6 +29,7 @@ rospack_add_library( pr2_mechanism_controllers
   src/gripper_calibration_controller.cpp
   src/arm_trajectory_controller.cpp
   src/whole_body_trajectory_controller.cpp
+  src/joint_trajectory_controller.cpp
   )
 rospack_link_boost(pr2_mechanism_controllers thread)
 
@@ -46,6 +49,10 @@ target_link_libraries(testOdom pr2_mechanism_controllers)
 rospack_add_executable(testTraj test/test_arm_trajectory_controller.cpp)
 rospack_declare_test(testTraj)
 target_link_libraries(testTraj pr2_mechanism_controllers)
+
+rospack_add_executable(base_trajectory_controller src/base_trajectory_controller.cpp)
+rospack_declare_test(base_trajectory)
+
 
 rospack_add_executable(testTrajServ EXCLUDE_FROM_ALL test/test_arm_trajectory_service.cpp)
 rospack_declare_test(testTrajServ)

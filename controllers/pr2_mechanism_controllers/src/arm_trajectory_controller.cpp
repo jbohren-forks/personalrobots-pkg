@@ -296,7 +296,7 @@ ArmTrajectoryControllerNode::~ArmTrajectoryControllerNode()
   */
   node_->unadvertiseService(service_prefix_ + "/TrajectoryStart");
   node_->unadvertiseService(service_prefix_ + "/TrajectoryQuery");
-
+  node_->unadvertiseService(service_prefix_ + "/TrajectoryCancel");
   c_->controller_state_publisher_->stop();
   delete c_->controller_state_publisher_;
 
