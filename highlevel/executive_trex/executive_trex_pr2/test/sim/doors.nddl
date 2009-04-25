@@ -1,3 +1,5 @@
+#include "rcs/safety/exports.nddl"
+
 /**
  * A simulation control variable governing when the doorway will be clear.
  */
@@ -52,30 +54,25 @@ CheckPath::Active {
  */
 CheckPath::Inactive{
   // DoorwayClearSV.Holds dc = doorway_cleared_sv(start);
-  any(DoorwayClearSV.Holds dc);
-  precedes(dc.start, start);
-  temporalDistance(start, [1 +inf], dc.end);
+  starts_during(DoorwayClearSV.Holds dc);
   eq(is_clear, dc.value);
-
-  // PathLockedSV.Holds dl = doorway_locked_sv(start);
-/*
-  any(DoorwayLockedSV.Holds dl);
-  precedes(dl.start, start);
-  temporalDistance(start, [1 +inf], dl.end);
-  eq(door_latched, dl.value);
-*/
 }
 
 // External controllers specific to the door domain
 ReleaseHandle release_handle = new ReleaseHandle(Internal);
 OpenDoor open_door = new OpenDoor(Internal);
 GraspHandle grasp_handle = new GraspHandle(Internal);
+UnlatchHandle unlatch_handle = new UnlatchHandle(Internal);
 OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
 DetectDoor detect_door = new DetectDoor(Internal);
 DetectHandle detect_handle = new DetectHandle(Internal);
 CheckPath check_path = new CheckPath(Internal);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(Internal);
+MoveBase move_base_local = new MoveBase(Internal);
+MoveBaseDoor move_base_door = new MoveBaseDoor(Internal);
+SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(Internal);
+DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(Internal);
+DoorsTuckArms doors_tuck_arms = new DoorsTuckArms(Internal);
 
 // Simulation Control Variables
 DoorwayClearSV doorway_clear_sv = new DoorwayClearSV();
-DoorwayLockedSV doorway_locked_sv = new DoorwayLockedSV();

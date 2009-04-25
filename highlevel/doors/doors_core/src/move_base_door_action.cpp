@@ -46,7 +46,7 @@ using namespace door_reactive_planner;
 namespace nav 
 {
   MoveBaseDoorAction::MoveBaseDoorAction(ros::Node& ros_node, tf::TransformListener& tf) : 
-    Action<robot_msgs::Door, pr2_robot_actions::Pose2D>("move_base_door"), ros_node_(ros_node), tf_(tf),
+    Action<robot_msgs::Door, robot_msgs::Door>("move_base_door"), ros_node_(ros_node), tf_(tf),
     run_planner_(true), planner_cost_map_ros_(NULL),  
     planner_(NULL), valid_plan_(false) 
   {
@@ -225,7 +225,7 @@ namespace nav
     lock_.unlock();
   }
 
-  robot_actions::ResultStatus MoveBaseDoorAction::execute(const robot_msgs::Door& door, pr2_robot_actions::Pose2D& feedback)
+  robot_actions::ResultStatus MoveBaseDoorAction::execute(const robot_msgs::Door& door, robot_msgs::Door& feedback)
   {
     door_ = door;
     planner_->setDoor(door);//set the goal into the planner
@@ -418,7 +418,7 @@ int main(int argc, char** argv){
   move_base_door.execute(door,feedback);
   */
   robot_actions::ActionRunner runner(20.0);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::MoveBaseDoorState, pr2_robot_actions::Pose2D>(move_base_door);
+  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(move_base_door);
   runner.run();
   ros_node.spin();
 

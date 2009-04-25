@@ -54,17 +54,15 @@ namespace TREX{
 	return variables;
 
       // Otherwise swap for parameters of both tokens
-      const TokenId& token_a = TREX::getParentToken(variables[0]);
-      const TokenId& token_b = TREX::getParentToken(variables[1]);
       std::vector<ConstrainedVariableId> new_scope;
       LabelStr param_names_lbl(param_names);
       unsigned int param_count = param_names_lbl.countElements(DELIMITER);
       for(unsigned int i = 0; i < param_count; i++){
 	LabelStr param_name = param_names_lbl.getElement(i, DELIMITER);
-	ConstrainedVariableId var_a = token_a->getVariable(param_name);
-	ConstrainedVariableId var_b = token_b->getVariable(param_name);
-	checkError(var_a.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " in " << token_a->toString());
-	checkError(var_b.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " in " << token_b->toString());
+	ConstrainedVariableId var_a = getVariableByName(variables[0], param_name);
+	ConstrainedVariableId var_b = getVariableByName(variables[1], param_name);
+	checkError(var_a.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[0])->toString());
+	checkError(var_b.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[1])->toString());
 
 	// Insert the pair
 	new_scope.push_back(var_a);
@@ -74,6 +72,28 @@ namespace TREX{
       return new_scope;
     }
    
+    EntityId parentOf(const ConstrainedVariableId& var){
+      // If it has a parent, that parent should be a token
+      if(var->parent().isId()){
+	return TREX::getParentToken(var);
+      }
+
+      checkError(var->lastDomain().isSingleton(), var->toString() << " should be bound.");
+      return var->lastDomain().getSingletonValue();
+    }
+
+    ConstrainedVariableId getVariableByName(const ConstrainedVariableId& var, const LabelStr& param_name){
+      // If it has a parent, that parent should be a token
+      if(var->parent().isId()){
+	const TokenId& token = TREX::getParentToken(var);
+	return token->getVariable(param_name);
+      }
+
+      checkError(var->lastDomain().isSingleton(), var->toString() << " should be bound.");
+      ObjectId object = var->lastDomain().getSingletonValue();
+      return object->getVariable(param_name);
+    }
+
     void handleExecute(){
       debugMsg("trex:debug:propagation:param_eq",  "BEFORE: " << toString());
 

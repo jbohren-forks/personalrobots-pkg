@@ -41,7 +41,7 @@
 
 #include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
-#include <pr2_robot_actions/MoveBaseState.h>
+#include <pr2_robot_actions/DoorActionState.h>
 #include <pr2_robot_actions/Pose2D.h>
 #include <robot_msgs/JointTraj.h>
 
@@ -62,7 +62,7 @@ namespace nav {
    * @class MoveBaseDoorAction
    * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
    */
-  class MoveBaseDoorAction : public robot_actions::Action<robot_msgs::Door, pr2_robot_actions::Pose2D> {
+  class MoveBaseDoorAction : public robot_actions::Action<robot_msgs::Door, robot_msgs::Door> {
     public:
       /**
        * @brief  Constructor for the actions
@@ -83,7 +83,7 @@ namespace nav {
        * @param feedback Feedback that the action gives to a higher-level monitor, in this case, the position of the robot
        * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
        */
-      virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, pr2_robot_actions::Pose2D& feedback);
+      virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
 
     private:
       /**

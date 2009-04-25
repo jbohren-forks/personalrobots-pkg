@@ -12,8 +12,3 @@ eq(f0.th, 0.0);
 fact(doorway_clear_sv.Holds f2);
 f2.end = 70;
 f2.value = false;
-
-// We will make sure that the doorway is not unlocked until tick 20. This will hold up opening the doorway
-fact(doorway_locked_sv.Holds f3);
-f3.end = 45;
-f3.value = true;

@@ -14,6 +14,11 @@ constraint  door_get_robot_pose_for_door(x, y, z, qx, qy, qz, qw, token_object, 
   token_object <: Object && distance <: x
 }
 
+// Control constants for distances from door for detection, grasping and moving through the doorway
+float DETECTION_RANGE = 1.5;
+float GRASP_RANGE = 0.6;
+float DOORWAY_CLEARANCE_RANGE = -0.4;
+
 // Additional mechanisms used
 RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
 
@@ -29,7 +34,7 @@ OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External
 CheckPath check_path = new CheckPath(External);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
 MoveBase move_base_local = new MoveBase(External);
-MoveBase move_base_door = new MoveBase(External);
+MoveBase move_base_door = new MoveBaseDoor(External);
 
 // Controller requirements
 DoorsTuckArms::Active{
@@ -53,20 +58,25 @@ GraspHandle::Active{
 }
 
 UnlatchHandle::Active{
-  contained_by(right_arm_mechanism.use_composite_cartesian_controller);
+  contained_by(right_arm_mechanism.use_composite_tff_controller);
   contained_by(right_gripper_mechanism.use_effort_controller);
 }
 
-ReleaseHandle::Active{
-  contained_by(right_arm_mechanism.use_composite_cartesian_controller);
-  contained_by(right_gripper_mechanism.use_effort_controller);
-}
 
 OpenDoor::Active{
   contained_by(right_arm_mechanism.use_composite_tff_controller);
   contained_by(right_gripper_mechanism.use_effort_controller);
 }
 
+// Controller requirements
+MoveBaseDoor::Active{
+  contained_by(head_mechanism.use_head_controller);
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+}
 
+ReleaseHandle::Active{
+  contained_by(right_arm_mechanism.use_composite_cartesian_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
 
 

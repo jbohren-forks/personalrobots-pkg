@@ -69,7 +69,7 @@ namespace TREX {
   }; 
 
   // Allocate Factory
-  TeleoReactor::ConcreteFactory<DoorActionAdapter> DoorActionAdapter_Factory("DoorActionAdapter");
+  TeleoReactor::ConcreteFactory<DoorActionAdapter>  DoorActionAdapter_Factory("DoorActionAdapter");
 
   /***********************************************************************
    * @brief MoveBase actions with a pose message for goal and feedback

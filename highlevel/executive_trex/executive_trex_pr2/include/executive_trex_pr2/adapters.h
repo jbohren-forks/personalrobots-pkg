@@ -54,7 +54,6 @@
 #include <pr2_robot_actions/NotifyDoorBlockedState.h>
 #include <pr2_robot_actions/ShellCommandState.h>
 #include <pr2_robot_actions/MoveBaseStateNew.h>
-#include <pr2_robot_actions/Pose2D.h>
 #include <pr2_robot_actions/RechargeState.h>
 #include <pr2_robot_actions/DetectPlugOnBaseState.h>
 #include <pr2_robot_actions/MoveAndGraspPlugState.h>

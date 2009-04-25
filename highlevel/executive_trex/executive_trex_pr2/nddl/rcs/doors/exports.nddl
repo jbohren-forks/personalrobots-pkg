@@ -14,15 +14,7 @@ typedef int [-1, 2] HINGE_FRAME;
 int CLOCKWISE = 1;
 int COUNTER_CLOCKWISE = 2;
 
-// Control constants for distances from door for detection and grasping respective
-float DETECTION_RANGE = 1.5;
-float GRASP_RANGE = 0.6;
-
 typedef int [-1, 2] ROTATION_DIRECTION;
-
-int DOOR_CHECK_INTERVAL = 5; // Wait 5 seconds before checking the doorway is clear again
-
-enum MAYBE_TRUE_OR_FALSE {TRUE, FALSE, MAYBE} ;
 
 /**
  * @brief 
@@ -228,6 +220,21 @@ class NotifyDoorBlocked extends DoorManipulationBehavior {
   predicate Inactive{}
 
   NotifyDoorBlocked(Mode _mode){
+    super(_mode);
+  }
+
+};
+
+/**
+ * 
+ */
+class MoveBaseDoor extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  MoveBaseDoor(Mode _mode){
     super(_mode);
   }
 

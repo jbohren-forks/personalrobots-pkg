@@ -18,6 +18,7 @@ rejectable(unlatch_handle.Active cmd_unlatch_handle);
 rejectable(open_door.Active cmd_open_door);
 rejectable(move_base_door.Active cmd_move_base_door);
 rejectable(release_handle.Active cmd_release_handle);
+rejectable(doors_tuck_arms.Active cmd_tuck_arms_final);
 
 // Impose a temporal order
 cmd_tuck_arms before cmd_detect_door;
@@ -28,6 +29,8 @@ cmd_detect_handle before cmd_move_to_grasp;
 cmd_move_to_grasp before cmd_grasp_handle;
 cmd_grasp_handle before cmd_unlatch_handle;
 cmd_unlatch_handle before cmd_open_door;
+cmd_open_door before cmd_release_handle;
+cmd_release_handle before cmd_tuck_arms_final;
 
 // Final phase involves parallel activities, finishing up with releasing the handle
 cmd_open_door starts_before cmd_move_base_door;
@@ -42,7 +45,6 @@ eq(SUCCESS,
    cmd_move_to_grasp.status,
    cmd_grasp_handle.status,
    cmd_unlatch_handle.status,
-   cmd_open_door.status,
    cmd_move_base_door.status,
    cmd_release_handle.status);
 
@@ -68,6 +70,7 @@ cmd_detect_door.hinge =  UNKNOWN;
 cmd_detect_door.rot_dir =  UNKNOWN;
 
 eq_door_msg(cmd_detect_handle.object, feedback_detect_door.object);
+eq_door_msg(cmd_move_base_door.object, feedback_detect_door.object);
 
 // Set params for move base local
 eq(cmd_move_to_grasp.frame_id, feedback_detect_handle.frame_id);
@@ -79,6 +82,7 @@ door_get_robot_pose_for_door(cmd_move_to_grasp.x, cmd_move_to_grasp.y, cmd_move_
 
 // The parameters for the final move base command can be derived from the door message, This time we will use a negative value
 // to indicate how far across the frame we want to be.
+/*
 float TRANSLATION_FROM_DOOR_FRAME = -1.0;
 eq(cmd_move_base_door.frame_id, feedback_detect_handle.frame_id);
 eq(cmd_move_base_door.time_stamp, feedback_detect_handle.time_stamp);
@@ -86,7 +90,7 @@ door_get_robot_pose_for_door(cmd_move_base_door.x, cmd_move_base_door.y, cmd_mov
 			     cmd_move_base_door.qx, cmd_move_base_door.qy, cmd_move_base_door.qz, cmd_move_base_door.qw,
 			     feedback_detect_handle.object,
 			     TRANSLATION_FROM_DOOR_FRAME);
-
+*/
 // Set params from handle detection feedback.
 eq_door_msg(cmd_grasp_handle.object, feedback_detect_handle.object);
 eq_door_msg(cmd_unlatch_handle.object, feedback_detect_handle.object);
