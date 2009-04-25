@@ -24,5 +24,6 @@ rospack_add_rostest(test_2dnav_empty_rotation.xml)
 rospack_add_rostest(test_2dnav_empty_odom.xml)
 rospack_add_rostest(test_2dnav_empty_diagonal.xml)
 rospack_add_rostest(test_2dnav_empty_axis.xml)
+rospack_add_rostest(test_2dnav_empty_amcl_axis.xml)
 
 endif(CMAKE_SYSTEM_NAME MATCHES "Linux" AND _is32bit)
