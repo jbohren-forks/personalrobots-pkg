@@ -214,14 +214,14 @@ void MechanismControl::update()
       for (unsigned int i=0; i<stop_request_.size(); i++)
         stop_request_[i]->stopRequest();
     }
-    
+
     start_request_.clear();
     stop_request_.clear();
     please_switch_ = false;
   }
 }
 
-controller::Controller* MechanismControl::getControllerByName(const std::string& name) 
+controller::Controller* MechanismControl::getControllerByName(const std::string& name)
 {
   std::vector<ControllerSpec> &controllers = controllers_lists_[current_controllers_list_];
   for (size_t i = 0; i < controllers.size(); ++i)
@@ -491,8 +491,15 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
 {
   if (!mc_->initXml(config))
     return false;
-  publisher_.msg_.set_joint_states_size(mc_->model_.joints_.size());
   publisher_.msg_.set_actuator_states_size(mc_->hw_->actuators_.size());
+  int joints_size = 0;
+  for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
+  {
+    int type = mc_->state_->joint_states_[i].joint_->type_;
+    if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
+      ++joints_size;
+  }
+  publisher_.msg_.set_joint_states_size(joints_size);
 
   // Counts the number of transforms
   int num_transforms = 0;
@@ -530,17 +537,22 @@ void MechanismControlNode::update()
     cycles_since_publish_ = 0;
     if (publisher_.trylock())
     {
-      assert(mc_->model_.joints_.size() == publisher_.msg_.get_joint_states_size());
+      unsigned int j = 0;
       for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
       {
-        robot_msgs::JointState *out = &publisher_.msg_.joint_states[i];
-        mechanism::JointState *in = &mc_->state_->joint_states_[i];
-        out->name = mc_->model_.joints_[i]->name_;
-        out->position = in->position_;
-        out->velocity = in->velocity_;
-        out->applied_effort = in->applied_effort_;
-        out->commanded_effort = in->commanded_effort_;
-        out->is_calibrated = in->calibrated_;
+        int type = mc_->state_->joint_states_[i].joint_->type_;
+        if (type == JOINT_ROTARY || type == JOINT_CONTINUOUS || type == JOINT_PRISMATIC)
+        {
+          assert(j < publisher_.msg_.get_joint_states_size());
+          robot_msgs::JointState *out = &publisher_.msg_.joint_states[j++];
+          mechanism::JointState *in = &mc_->state_->joint_states_[i];
+          out->name = mc_->model_.joints_[i]->name_;
+          out->position = in->position_;
+          out->velocity = in->velocity_;
+          out->applied_effort = in->applied_effort_;
+          out->commanded_effort = in->commanded_effort_;
+          out->is_calibrated = in->calibrated_;
+        }
       }
 
       for (unsigned int i = 0; i < mc_->hw_->actuators_.size(); ++i)
