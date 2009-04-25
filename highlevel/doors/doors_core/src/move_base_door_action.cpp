@@ -36,7 +36,6 @@
 *********************************************************************/
 #include <doors_core/move_base_door_action.h>
 #include <doors_core/door_reactive_planner.h>
-#include <pr2_robot_actions/MoveBaseDoorState.h>
 
 
 using namespace base_local_planner;

@@ -47,7 +47,7 @@
 #include <robot_actions/NoArgumentsActionState.h>
 #include <pr2_robot_actions/SwitchControllersState.h>
 #include <pr2_robot_actions/MoveBaseStateNew.h>
-#include <pr2_robot_actions/MoveBaseDoorState.h>
+//#include <pr2_robot_actions/MoveBaseDoorState.h>
 #include "doors_core/executive_functions.h"
 
 
@@ -90,7 +90,7 @@ int
   robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> unlatch_handle("unlatch_handle");
   robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> open_door("open_door");
   robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> release_handle("release_handle");
-  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::MoveBaseDoorState, pr2_robot_actions::Pose2D> move_base_door("move_base_door");
+  //robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::MoveBaseDoorState, pr2_robot_actions::Pose2D> move_base_door("move_base_door");
   robot_actions::ActionClient<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped> move_base_local("move_base_local");
 
   timeout_medium.sleep();
@@ -153,7 +153,7 @@ int
   pr2_robot_actions::Pose2D pose2d;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
-  if (move_base_door.execute(door, pose2d, timeout_long) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
+  //if (move_base_door.execute(door, pose2d, timeout_long) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
 
   // finish open door
   open_door.preempt();
