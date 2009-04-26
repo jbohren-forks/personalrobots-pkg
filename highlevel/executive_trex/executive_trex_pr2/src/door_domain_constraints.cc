@@ -50,7 +50,7 @@ namespace executive_trex_pr2 {
     // Wait till all inputs are bound
     const std::vector<ConstrainedVariableId>& params = _token_id->parameters();
     for(unsigned int i = 0; i< params.size(); i++){
-      ConstrainedVariableId param = params[0];
+      ConstrainedVariableId param = params[i];
       if(!param->lastDomain().isSingleton()){
 	debugMsg("trex:propagation:doors:get_robot_pose_for_door",  
 		 "Skipping propagation since" << param->toString() << " is unbound.");
@@ -67,6 +67,16 @@ namespace executive_trex_pr2 {
     // Extract xy, and theta, which is yaw
     tf::Point position = tf_stamped_pose.getOrigin();
     tf::Quaternion quaternian = tf_stamped_pose.getRotation();
+
+    debugMsg("trex:propagation:doors:get_robot_pose_for_door", "Results prior to intersection are: " << std::endl <<
+	     " x=" << position.getX() << std::endl << 
+	     " y=" << position.getY() << std::endl << 
+	     " z=" << position.getZ() << std::endl << 
+	     " qx=" << quaternian.getX() << std::endl << 
+	     " qy=" << quaternian.getY() << std::endl << 
+	     " qz=" << quaternian.getZ() << std::endl << 
+	     " qw=" << quaternian.getW());
+
     _x.set(position.getX());
     _y.set(position.getY());
     _z.set(position.getZ());

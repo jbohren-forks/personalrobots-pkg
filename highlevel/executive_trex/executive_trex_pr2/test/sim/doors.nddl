@@ -12,6 +12,25 @@ class DoorwayClearSV extends AgentTimeline {
   DoorwayClearSV(){ super(Internal, "Holds");}
 };
 
+ReleaseHandle release_handle = new ReleaseHandle(Internal);
+OpenDoor open_door = new OpenDoor(Internal);
+GraspHandle grasp_handle = new GraspHandle(Internal);
+UnlatchHandle unlatch_handle = new UnlatchHandle(Internal);
+OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
+DetectDoor detect_door = new DetectDoor(Internal);
+DetectHandle detect_handle = new DetectHandle(Internal);
+CheckPath check_path = new CheckPath(Internal);
+NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(Internal);
+MoveBase move_base_local = new MoveBase(Internal);
+MoveBaseDoor move_base_door = new MoveBaseDoor(Internal);
+SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(Internal);
+DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(Internal);
+DoorsTuckArms doors_tuck_arms = new DoorsTuckArms(Internal);
+
+// Simulation Control Variables
+DoorwayClearSV doorway_clear_sv = new DoorwayClearSV();
+
+
 DoorwayClearSV::Holds{  default(value, true); }
 
 /**
@@ -34,11 +53,35 @@ DoorwayLockedSV::Holds{  default(value, false); }
  */
 
 DoorManipulationBehavior::Active{
+  if(object == open_door){
+  }
+  else {
+    eq(duration, 1);
+  }
+
+  // Handle always free at the end
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+MoveBase::Active{
   eq(duration, 1);
 
   // Handle always free at the end
   meets(Inactive s);
   eq(s.status, SUCCESS);
+}
+
+DoorsTuckArms::Active{
+  eq(duration, 1);
+  // Handle always free at the end
+  meets(Inactive s);
+  eq(s.status, SUCCESS);
+}
+
+OpenDoor::Active {
+  contains(move_base_door.Active mb);
+  temporalDistance(mb.end, 1, end);
 }
 
 CheckPath::Active {
@@ -58,21 +101,4 @@ CheckPath::Inactive{
   eq(is_clear, dc.value);
 }
 
-// External controllers specific to the door domain
-ReleaseHandle release_handle = new ReleaseHandle(Internal);
-OpenDoor open_door = new OpenDoor(Internal);
-GraspHandle grasp_handle = new GraspHandle(Internal);
-UnlatchHandle unlatch_handle = new UnlatchHandle(Internal);
-OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(Internal);
-DetectDoor detect_door = new DetectDoor(Internal);
-DetectHandle detect_handle = new DetectHandle(Internal);
-CheckPath check_path = new CheckPath(Internal);
-NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(Internal);
-MoveBase move_base_local = new MoveBase(Internal);
-MoveBaseDoor move_base_door = new MoveBaseDoor(Internal);
-SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(Internal);
-DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(Internal);
-DoorsTuckArms doors_tuck_arms = new DoorsTuckArms(Internal);
 
-// Simulation Control Variables
-DoorwayClearSV doorway_clear_sv = new DoorwayClearSV();

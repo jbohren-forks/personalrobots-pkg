@@ -1,4 +1,9 @@
 /**
+ * An error bound for time when preempting or when terminating.
+ */
+typedef int [-1, 1] TIME_ERROR_BOUND;
+
+/**
  * Defines core interfaces for ROS integration
  */
 

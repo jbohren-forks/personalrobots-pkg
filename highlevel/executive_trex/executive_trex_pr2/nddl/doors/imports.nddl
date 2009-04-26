@@ -34,7 +34,7 @@ OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External
 CheckPath check_path = new CheckPath(External);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
 MoveBase move_base_local = new MoveBase(External);
-MoveBase move_base_door = new MoveBaseDoor(External);
+MoveBaseDoor move_base_door = new MoveBaseDoor(External);
 
 // Controller requirements
 DoorsTuckArms::Active{

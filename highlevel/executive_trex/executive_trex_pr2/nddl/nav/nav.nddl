@@ -1,5 +1,6 @@
-#include "rcs/exports.nddl"
-#include "nav/exports.nddl"
+// Navigation specific
+MoveBase move_base = new MoveBase(External);
+BaseState base_state = new BaseState(External);
 
 /**
  * Must be in a valid mobility state

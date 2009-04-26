@@ -1,6 +1,6 @@
 // This simple test will execute three navigation goals and we should expect that
 // the base controller is only loaded once
-#include "nav/imports.nddl"
+#include "nav/driver.nddl"
 
 close();
 

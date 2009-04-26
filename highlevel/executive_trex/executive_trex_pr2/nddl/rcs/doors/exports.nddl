@@ -20,6 +20,8 @@ typedef int [-1, 2] ROTATION_DIRECTION;
  * @brief 
  */
 class DoorsTuckArms extends ROSAction {
+  predicate Inactive{}
+  predicate Active{}
   DoorsTuckArms(Mode _mode){super(_mode);}
 };
 

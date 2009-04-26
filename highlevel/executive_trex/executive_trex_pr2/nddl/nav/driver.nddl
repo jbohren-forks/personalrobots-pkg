@@ -1,5 +1,19 @@
-#include "nav.nddl"
-#include "imports.nddl"
+#include "nav/imports.nddl"
+#include "nav/exports.nddl"
+
+// Driver specific
+MoveBase move_base = new MoveBase(External);
+BaseState base_state = new BaseState(External);
+
+/**
+ * Must be in a valid mobility state
+ */
+MoveBase::Active{
+  contained_by(MobilityStatus.Holds ms);
+  eq(ms.stuck, false);
+  eq(ms.gripper_open, true);
+  eq(ms.arm_stowed, true);
+}
 
 MoveBehavior doorman = new MoveBehavior(Internal, true);
 

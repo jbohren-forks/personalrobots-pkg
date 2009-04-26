@@ -5,12 +5,11 @@
 #include "rcs/exports.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/safety/exports.nddl"
+#include "nav/exports.nddl"
 
 // Tier 2 interface points - other domains
 #include "mechanism_control/exports.nddl"
 #include "safety/exports.nddl"
-#include "nav/nav.nddl"
-
 // Mechanisms used for driving and tucking arms
 HeadMechanism head_mechanism = new HeadMechanism(External);
 TiltLaserMechanism laser_tilt_mechanism = new TiltLaserMechanism(External);
@@ -20,10 +19,6 @@ RightArmMechanism right_arm_mechanism = new RightArmMechanism(External);
 MobilityStatus mobility_status = new MobilityStatus(External);
 SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
 DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(External);
-
-// Navigation specific
-MoveBase move_base = new MoveBase(External);
-BaseState base_state = new BaseState(External);
 
 // Controller requirements for actions
 DetectPlugOnBase::Active{
