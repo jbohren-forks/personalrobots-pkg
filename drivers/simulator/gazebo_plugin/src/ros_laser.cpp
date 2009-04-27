@@ -175,7 +175,7 @@ void RosLaser::PutLaserData()
     /*                                                             */
     /***************************************************************/
     if (r == maxRange)
-      this->laserMsg.ranges[i]        = r + minRange; // no noise if at max range
+      this->laserMsg.ranges[i]        = r; // no noise if at max range
     else
       this->laserMsg.ranges[i]        = r + minRange + this->GaussianKernel(0,this->gaussianNoise) ;
     this->laserMsg.intensities[i]   = intensity + this->GaussianKernel(0,this->gaussianNoise) ;
