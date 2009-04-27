@@ -8,8 +8,7 @@ float32 height               ## Height of the door
 
 int32 hinge                  ## is the hinge at frame_p1 (=1), frame_p2 (=2) or unknown (=-1)
 int32 rot_dir                ## does the door rotate open clockwise (=1), counterclockwise (=2), or unknown (=-1)
-int32 latched                ## is the door latched (=1), unlatched (=2), or unknown (=-1)
-int32 locked                 ## is the door locked (=1), unlocked (=2), or unknown (=-1)
+int32 latch_state            ## is the door locked (=1), latched (=2), unlatched (=3), or unknown (=-1)
 
 Vector3 normal               ## <a,b,c> plane coefficients, i.e., the door plane normal
 
