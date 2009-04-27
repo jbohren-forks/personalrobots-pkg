@@ -64,10 +64,10 @@ OccupancyGrid loadOccupancyGrid (const string& filename)
 
   OccupancyGrid grid(boost::extents[height][width]);
   uint ind=0;
-  for (uint r=0; r<height; ++r) {
+  for (uint r=height; r>0; --r) {
     for (uint c=0; c<width; ++c) {
       unsigned char val = maxgrey - data[ind++];
-      grid[r][c] = val>(float)maxgrey*.1;
+      grid[r-1][c] = val>(float)maxgrey*.1;
     }
   }
 

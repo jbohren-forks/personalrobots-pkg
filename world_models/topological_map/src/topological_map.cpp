@@ -104,6 +104,7 @@ bool TopologicalMap::MapImpl::isObstacle (const Point2D& p) const
 {
   if (pointOnMap(p)) {
     Cell2D cell = containingCell(p);
+    ROS_INFO_STREAM ("Cell is " << cell);
     return (*grid_)[cell.r][cell.c];
   }
   return false;

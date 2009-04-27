@@ -43,7 +43,7 @@ namespace topological_map
 
 void DoorSensorFusion::observeTrainingExample (bool door_exists, const CueVector& cues)
 {
-  uint ind = cueVectorIndex(cues);
+  const uint ind = cueVectorIndex(cues);
   if (door_exists) {
     observeTrainingExample(&positive_examples_, ind);
   }
@@ -56,11 +56,10 @@ void DoorSensorFusion::observeTrainingExample (bool door_exists, const CueVector
 
 double DoorSensorFusion::posteriorProbOfDoor (double prior_prob, const CueVector& cues) const
 {
-  uint ind = cueVectorIndex(cues);
-  double prob_given_true = likelihood(positive_examples_, ind);
-  double prob_given_false = likelihood(negative_examples_, ind);
-  
-  double denominator = prior_prob*prob_given_true + (1-prior_prob)*prob_given_false;
+  const uint ind = cueVectorIndex(cues);
+  const double prob_given_true = likelihood(positive_examples_, ind);
+  const double prob_given_false = likelihood(negative_examples_, ind);
+  const double denominator = prior_prob*prob_given_true + (1-prior_prob)*prob_given_false;
   ROS_DEBUG_STREAM_NAMED ("door_sensor_fusion", "Prob given true: " << prob_given_true << "; Prob given false: " << prob_given_false);
 
   if (fabs(denominator)<1e-6) {
@@ -74,10 +73,7 @@ double DoorSensorFusion::posteriorProbOfDoor (double prior_prob, const CueVector
 
 double DoorSensorFusion::likelihood (const Counts& examples, const uint ind) const
 {
-  if (examples.total==0) {
-    return 0.0;
-  }
-  return (double)examples.counts[ind]/examples.total;
+  return examples.total ? (double)examples.counts[ind]/examples.total : 0.0;
 }
 
 
@@ -88,7 +84,7 @@ uint DoorSensorFusion::cueVectorIndex (const CueVector& cues) const
   for (uint i=0; i<num_cues_; i++) {
     ROS_ASSERT_MSG(cues[i] != UNKNOWN, "UNKNOWN not currently supported");
     total += mult * (cues[i]==POSITIVE ? 1 : 0);
-    mult *= 2;
+    mult <<= 1;
   }
   return total;
 }
@@ -126,6 +122,7 @@ void DoorSensorFusion::observeTrainingExample (Counts* counts, const uint ind)
 
 
 namespace tmap=topological_map;
+
 
 int main (int, char**)
 {
