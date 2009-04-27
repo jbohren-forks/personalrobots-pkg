@@ -292,7 +292,8 @@ namespace costmap_2d {
         else {
           //make sure cost falls off by Euclidean distance
           double euclidean_distance = distance * resolution_;
-          double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
+          //double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
+          double factor = weight_ / (1 + pow(euclidean_distance - inscribed_radius_, 2));
           cost = (unsigned char) ((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
         }
         return cost;
