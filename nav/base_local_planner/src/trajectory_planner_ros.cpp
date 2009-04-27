@@ -92,7 +92,7 @@ namespace base_local_planner {
     //we'll get the parameters for the robot radius from the costmap we're associated with
     ros_node.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius_, 0.325);
     ros_node.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
-    ros_node.param("~base_local_planner/costmap/inflation_radius", circumscribed_radius_, 0.55);
+    ros_node.param("~base_local_planner/costmap/inflation_radius", inflation_radius_, 0.55);
     
     ros_node.param("~base_local_planner/acc_lim_x", acc_lim_x, 2.5);
     ros_node.param("~base_local_planner/acc_lim_y", acc_lim_y, 2.5);
