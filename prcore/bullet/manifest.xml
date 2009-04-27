@@ -14,6 +14,9 @@ The Bullet Physics Engine
 <sysdepend os="ubuntu" version="7.10-gutsy" package="libglut3-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="swig"/>
 <sysdepend os="ubuntu" version="7.10-gutsy" package="swig"/>
+<rosdep name="libxext"/>
+<rosdep name="glut"/>
+<rosdep name="swig"/>
 <export>
 <cpp cflags="-I${prefix}/build/include -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX  -I${prefix}/swig" lflags="-L${prefix}/build/lib -lLinearMath -lBulletCollision -lBulletDynamics" />
   <doxymaker external="http://www.continuousphysics.com/Bullet/BulletFull/index.html" />
