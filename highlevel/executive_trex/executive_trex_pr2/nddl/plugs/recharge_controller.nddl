@@ -2,6 +2,35 @@
 
 enum BOOL {yes, no, maybe};
 
+class PlugState extends AgentTimeline {
+  predicate Holds{
+    string frame_id;
+    float time_stamp;
+    bool stowed;
+    float x;
+    float y;
+    float z;
+  }
+
+  PlugState(){super(Internal, "Holds");}
+};
+
+class OutletState extends AgentTimeline {
+  predicate Holds{
+    string frame_id;
+    float time_stamp;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+  }
+
+  OutletState(){super(Internal, "Holds");}
+};
+
 class RechargeController extends AgentTimeline {
 
   predicate Holds {
@@ -16,31 +45,14 @@ class RechargeController extends AgentTimeline {
     bool plug_in_hand;
     bool plugged_in;
     bool ready_to_grasp;
-
-    // Plug State
-    string plug_frame_id;
-    float plug_time_stamp;
-    bool plug_stowed;
-    float plug_x;
-    float plug_y;
-    float plug_z;
-
-    // Outlet State
-    string outlet_frame_id;
-    float outlet_time_stamp;
-    float outlet_x;
-    float outlet_y;
-    float outlet_z;
-    float outlet_qx;
-    float outlet_qy;
-    float outlet_qz;
-    float outlet_qw;
   }
   
   RechargeController(){ super(Internal, "Holds"); }
 };
 
 // Internal Timelines
+OutletState outlet_state = new OutletState();
+PlugState plug_state = new PlugState();
 Recharger recharger = new Recharger(Internal);
 RechargeController recharge_controller = new RechargeController();
 
@@ -177,25 +189,6 @@ RechargeController::Holds {
   defaultOnCommit(plug_in_hand, p.plug_in_hand);
   defaultOnCommit(plugged_in, p.plugged_in);
   defaultOnCommit(ready_to_grasp, p.ready_to_grasp);
-
-  // Plug State
-  defaultOnCommit(plug_frame_id, p.plug_frame_id);
-  defaultOnCommit(plug_time_stamp, p.plug_time_stamp);
-  defaultOnCommit(plug_stowed, p.plug_stowed);
-  defaultOnCommit(plug_x, p.plug_x);
-  defaultOnCommit(plug_y, p.plug_y);
-  defaultOnCommit(plug_z, p.plug_z);
-
-  // Outlet State
-  defaultOnCommit(outlet_frame_id, p.outlet_frame_id);
-  defaultOnCommit(outlet_time_stamp, p.outlet_time_stamp);
-  defaultOnCommit(outlet_x, p.outlet_x);
-  defaultOnCommit(outlet_y, p.outlet_y);
-  defaultOnCommit(outlet_z, p.outlet_z);
-  defaultOnCommit(outlet_qx, p.outlet_qx);
-  defaultOnCommit(outlet_qy, p.outlet_qy);
-  defaultOnCommit(outlet_qz, p.outlet_qz);
-  defaultOnCommit(outlet_qw, p.outlet_qw);
 }
 
 /**************************************************
@@ -221,6 +214,10 @@ DetectPlugOnBase::Inactive{
     starts(RechargeController.Holds rc);
     eq(rc.plug_is_stowed, yes);
     eq(rc.ready_to_grasp, true);
+
+    // Update PlugState
+    starts(plug_state.Holds ps);
+    eq_plug_stow_msg(ps.object, object);
   }
 }
 
@@ -229,6 +226,11 @@ PlugsUntuckArms::Inactive{
     starts(RechargeController.Holds rc);
     eq(rc.arms_tucked, false);
   }
+}
+
+StowPlug::Active{
+  starts_during(plug_state.Holds ps);
+  eq_plug_stow_msg(ps.object, object);
 }
 
 // If we stow successfully, declare maybe. Requires confirmation!
@@ -255,11 +257,25 @@ PlugIn::Inactive{
   }
 }
 
+
+DetectOutletFine::Active{
+  starts_during(outlet_state.Holds os);
+  eq_point_msg(os.object, object);
+}
+
 DetectOutletFine::Inactive{
   if(status == SUCCESS){
     starts(RechargeController.Holds rc);
     eq(rc.outlet_detected_fine, true);
+
+    starts(outlet_state.Holds os);
+    eq_pose_msg(os.object, object);
   }
+}
+
+DetectOutletCoarse::Active{
+  starts_during(outlet_state.Holds os);
+  eq_point_msg(os.object, object);
 }
 
 DetectOutletCoarse::Inactive{
@@ -267,7 +283,15 @@ DetectOutletCoarse::Inactive{
     starts(RechargeController.Holds rc);
     eq(rc.outlet_detected_coarse, true);
     eq(rc.in_position, false);
+
+    starts(outlet_state.Holds os);
+    eq_pose_msg(os.object, object);
   }
+}
+
+LocalizePlugInGripper::Active{
+  starts_during(outlet_state.Holds os);
+  eq_pose_msg(os.object, object);
 }
 
 LocalizePlugInGripper::Inactive{
