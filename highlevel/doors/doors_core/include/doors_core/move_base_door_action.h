@@ -50,6 +50,7 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
 #include <robot_msgs/Door.h>
+#include <robot_msgs/DiagnosticMessage.h>
 
 #include <angles/angles.h>
 #include <vector>
@@ -194,6 +195,19 @@ namespace nav {
      * @param plan_in The plan to be dispatched
      */
     void dispatchControl(const std::vector<pr2_robot_actions::Pose2D> &plan_in);
+
+    int plan_size_;
+
+    std::string plan_state_;
+
+    void publishDiagnostics(bool force);
+
+    double current_distance_to_goal_;
+
+    double diagnostics_expected_publish_time_;
+
+    ros::Time last_diagnostics_publish_time_;
+
   };
 };
 #endif

@@ -54,12 +54,13 @@ namespace nav
     ros_node_.param("~control_frame", control_frame_, std::string("odom_combined"));
     ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
-
-    ros_node_.param("~control_topic_name", control_topic_name_, std::string("/base/trajectory_controller/trajectory_command"));
+    ros_node_.param("diagnostics_expected_publish_time",diagnostics_expected_publish_time_,0.2);
+    ros_node_.param("~control_topic_name", control_topic_name_, std::string("/base/trajectory_controller/command"));
     //for display purposes
-    ros_node_.advertise<robot_msgs::Polyline>("gui_path", 1);
-    ros_node_.advertise<robot_msgs::Polyline>("local_path", 1);
-    ros_node_.advertise<robot_msgs::Polyline>("robot_footprint", 1);
+    ros_node_.advertise<robot_msgs::Polyline>("~gui_path", 1);
+    ros_node_.advertise<robot_msgs::Polyline>("~local_path", 1);
+    ros_node_.advertise<robot_msgs::Polyline>("~robot_footprint", 1);
+    ros_node_.advertise<robot_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
 
     //pass on some parameters to the components of the move base node if they are not explicitly overridden 
     //(perhaps the controller and the planner could operate in different frames)
@@ -85,6 +86,9 @@ namespace nav
     ROS_INFO("MAP SIZE: %d, %d", planner_cost_map_.cellSizeX(), planner_cost_map_.cellSizeY());
 
     ros_node_.advertise<robot_msgs::JointTraj>(control_topic_name_, 1);
+    last_diagnostics_publish_time_ = ros::Time::now();
+
+    ROS_INFO("Move base door action initialized");
   }
 
   MoveBaseDoorAction::~MoveBaseDoorAction()
@@ -95,11 +99,11 @@ namespace nav
     if(planner_cost_map_ros_ != NULL)
       delete planner_cost_map_ros_;
 
-    ros_node_.unadvertise("gui_path");
-    ros_node_.unadvertise("local_path");
-    ros_node_.unadvertise("robot_footprint");
+    ros_node_.unadvertise("~gui_path");
+    ros_node_.unadvertise("~local_path");
+    ros_node_.unadvertise("~robot_footprint");
     ros_node_.unadvertise(control_topic_name_);
-
+    ros_node_.unadvertise("/diagnostics");
   }
 
   pr2_robot_actions::Pose2D MoveBaseDoorAction::getPose2D(const tf::Stamped<tf::Pose> &pose)
@@ -153,7 +157,7 @@ namespace nav
     global_plan_ = global_plan;
     lock_.unlock();
 
-    publishPath(global_plan, "gui_path", 0.0, 1.0, 0.0, 0.0);
+    publishPath(global_plan, "~gui_path", 0.0, 1.0, 0.0, 0.0);
   }
 
   void MoveBaseDoorAction::updateGlobalPose()
@@ -254,6 +258,8 @@ namespace nav
       {
         ROS_INFO("REACHED GOAL");
         dispatchControl(empty_plan_);
+        plan_state_ = "REACHED GOAL";
+        publishDiagnostics(true);
         return robot_actions::SUCCESS;
       }
       else 
@@ -265,6 +271,7 @@ namespace nav
         //check that the observation buffers for the costmap are current
         if(!planner_cost_map_ros_->isCurrent()){
 	  ROS_DEBUG("Sensor data is out of date, we're not going to allow commanding of the base for safety");
+          plan_state_ = "Sensor data out of date";
           continue;
         }
         makePlan();
@@ -272,16 +279,18 @@ namespace nav
         lock_.lock();
         if(valid_plan_)
         {
+          plan_state_ = "Plan valid";
           dispatchControl(global_plan_);
         }
         else
         {
+          plan_state_ = "Plan invalid";
           dispatchControl(empty_plan_);
         }
         lock_.unlock();
 
         //for visualization purposes
-        publishPath(global_plan_, "gui_path", 0.0, 1.0, 0.0, 0.0);
+        //publishPath(global_plan_, "~gui_path", 0.0, 1.0, 0.0, 0.0);
         publishFootprint();
 
         gettimeofday(&end, NULL);
@@ -291,7 +300,12 @@ namespace nav
         ROS_DEBUG("Full control cycle: %.9f", t_diff);
       }
       if(!sleepLeftover(start_time, cycle_time))      //sleep the remainder of the cycle
+      {
         ROS_WARN("Control loop missed its desired cycle time of %.4f", cycle_time.toSec());
+        plan_state_ = "Control loop missed cycle time";
+      }
+        publishDiagnostics(false);
+
     }
     return robot_actions::PREEMPTED;
   }
@@ -299,34 +313,24 @@ namespace nav
   void MoveBaseDoorAction::dispatchControl(const std::vector<pr2_robot_actions::Pose2D> &plan_in)
   {
     robot_msgs::JointTraj plan_out;
+    current_distance_to_goal_ = distance(global_pose_.getOrigin().x(),global_pose_.getOrigin().y(),goal_.x,goal_.y);
     if((int)plan_in.size() <= 0)
     {
+      plan_size_ = 0;
       plan_out.set_points_size(0);
       ROS_DEBUG("Sending empty plan");
     }
     else
     {
-      if(plan_in.size() > 0)
-      {
 	  int index_plan = std::max((int) plan_in.size() - 1, 0);
+          plan_size_ = plan_in.size();
           plan_out.set_points_size(1);
           plan_out.points[0].set_positions_size(3);
           plan_out.points[0].positions[0] = plan_in[index_plan].x;
           plan_out.points[0].positions[1] = plan_in[index_plan].y;
           plan_out.points[0].positions[2] = plan_in[index_plan].th;
           plan_out.points[0].time = 0.0;        
-        ROS_INFO("Plan in had %d points, plan out has %d points",(int)plan_in.size(),(int)plan_out.points.size());
-      }
-      else
-      {
-          plan_out.set_points_size(1);
-          plan_out.points[0].set_positions_size(3);
-          plan_out.points[0].positions[0] = plan_in.back().x;
-          plan_out.points[0].positions[1] = plan_in.back().y;
-          plan_out.points[0].positions[2] = plan_in.back().th;
-          plan_out.points[0].time = 0.0;        
-          ROS_DEBUG("Sending empty plan");
-      }
+          ROS_DEBUG("Plan in had %d points, plan out has %d points",(int)plan_in.size(),(int)plan_out.points.size());
     }
     ros_node_.publish(control_topic_name_,plan_out);
   }
@@ -368,7 +372,7 @@ namespace nav
       footprint_msg.points[i].z = footprint[i].z;
       ROS_DEBUG("Footprint:%d:: %f, %f\n",i,footprint[i].x,footprint[i].y);
     }
-    ros_node_.publish("robot_footprint", footprint_msg);
+    ros_node_.publish("~robot_footprint", footprint_msg);
   }
 
   void MoveBaseDoorAction::publishPath(const std::vector<pr2_robot_actions::Pose2D>& path, std::string topic, double r, double g, double b, double a){
@@ -389,6 +393,27 @@ namespace nav
 
     ros_node_.publish(topic, gui_path_msg);
   }
+
+  void MoveBaseDoorAction::publishDiagnostics(bool force)
+  {
+    if((ros::Time::now() - last_diagnostics_publish_time_).toSec() <= diagnostics_expected_publish_time_ && !force)
+    {
+      return;
+    }
+
+    robot_msgs::DiagnosticMessage message;
+    std::vector<robot_msgs::DiagnosticStatus> statuses;
+
+    robot_msgs::DiagnosticStatus status_planner = planner_->getDiagnostics();
+    status_planner.message = plan_state_;
+
+    statuses.push_back(status_planner);
+
+    message.header.stamp = ros::Time::now();
+    message.status = statuses;
+    ros_node_.publish("/diagnostics",message);
+    last_diagnostics_publish_time_ = message.header.stamp;
+  }
 };
 
 int main(int argc, char** argv){
@@ -397,7 +422,7 @@ int main(int argc, char** argv){
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   nav::MoveBaseDoorAction move_base_door(ros_node, tf);
 
-  /*
+/*
   robot_msgs::Door door;
   double tmp; int tmp2;
   ros_node.param("~p_door_frame_p1_x", tmp, 0.5); door.frame_p1.x = tmp;
@@ -413,9 +438,8 @@ int main(int argc, char** argv){
   ros::Time my_time = ros::Time::now();
   door.header.stamp = my_time;
 
-  pr2_robot_actions::Pose2D feedback;
-  move_base_door.execute(door,feedback);
-  */
+  move_base_door.execute(door,door);
+*/
   robot_actions::ActionRunner runner(20.0);
   runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(move_base_door);
   runner.run();

@@ -163,7 +163,7 @@ bool DoorReactivePlanner::createLinearPath(const pr2_robot_actions::Pose2D &cp,c
 
   double delta_x = (fp.x-cp.x)/num_intervals;
   double delta_y = (fp.y-cp.y)/num_intervals;
-  double delta_theta = angles::normalize_angle(fp.th-cp.th)/num_intervals;
+//  double delta_theta = angles::normalize_angle(fp.th-cp.th)/num_intervals;
 //  double delta_theta = angles::normalize_angle(fp.th);
 
 
@@ -232,8 +232,10 @@ bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::
   double delta_theta = max_explore_delta_angle_/num_explore_paths_;
   double distance_to_centerline;
 
+  current_position_ = start;
   best_path_costmap_frame.resize(0);
   distance_to_centerline = (start.x-goal_.x)*vector_along_door_.x + (start.y-goal_.y)*vector_along_door_.y;
+  centerline_distance_ = distance_to_centerline;
   ROS_DEBUG("Start: %f %f, goal: %f %f, dc: %f",start.x,start.y,goal_.x,goal_.y,distance_to_centerline); 
   for(int i=0; i < num_explore_paths_; i++)
   {
@@ -257,6 +259,8 @@ bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::
       {
         best_path_control_frame.resize(best_path_costmap_frame.size());
         transformPath(best_path_costmap_frame,costmap_frame_id_,best_path_control_frame,control_frame_id_);
+        delta_angle_ = i*delta_theta;
+        distance_to_goal_ = new_distance;
         return true;
       }
     }
@@ -277,18 +281,85 @@ bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::
         best_path_costmap_frame.resize(checked_path.size());
         best_path_costmap_frame = checked_path;
         min_distance_to_goal = new_distance;
+        delta_angle_ = -i*delta_theta;
+        distance_to_goal_ = new_distance;
       }
     }
   } 
   if(best_path_costmap_frame.size() == 0)
   {
     best_path_control_frame.resize(0);
+    plan_length_ = 0;
     return false;
   }
-
+  plan_length_ = best_path_costmap_frame.size();
   best_path_control_frame.resize(best_path_costmap_frame.size());
   transformPath(best_path_costmap_frame,costmap_frame_id_,best_path_control_frame,control_frame_id_);
   return true;
+}
+
+robot_msgs::DiagnosticStatus DoorReactivePlanner::getDiagnostics()
+{
+  vector<robot_msgs::DiagnosticValue> values;
+  vector<robot_msgs::DiagnosticString> strings;
+  robot_msgs::DiagnosticStatus status;
+  robot_msgs::DiagnosticValue v;
+  robot_msgs::DiagnosticString s;
+  status.name = "Door Reactive Planner";
+  status.level = 0;
+
+  v.label = "Goal x";
+  v.value = goal_.x;
+  values.push_back(v);
+
+  v.label = "Goal y";
+  v.value = goal_.y;
+  values.push_back(v);
+
+  v.label = "Goal theta";
+  v.value = goal_.th;
+  values.push_back(v);
+
+  v.label = "Centerline angle";
+  v.value = centerline_angle_;
+  values.push_back(v);
+
+  v.label = "Sideslip.x";
+  v.value = vector_along_door_.x;
+  values.push_back(v);
+
+  v.label = "Sideslip.y";
+  v.value = vector_along_door_.y;
+  values.push_back(v);
+
+  v.label = "Plan delta angle";
+  v.value = delta_angle_;
+  values.push_back(v);
+
+  v.label = "Plan length";
+  v.value = plan_length_;
+  values.push_back(v);
+
+  v.label = "Centerline distance";
+  v.value = centerline_distance_;
+  values.push_back(v);
+
+  v.label = "Current x";
+  v.value = current_position_.x;
+  values.push_back(v);
+
+  v.label = "Current y";
+  v.value = current_position_.y;
+  values.push_back(v);
+
+  v.label = "Current th";
+  v.value = current_position_.th;
+  values.push_back(v);
+
+  status.set_values_vec(values);
+  status.set_strings_vec(strings);
+
+  return status;
 }
 
 void DoorReactivePlanner::checkPath(const std::vector<pr2_robot_actions::Pose2D> &path, const std::string &control_frame_id, std::vector<pr2_robot_actions::Pose2D> &return_path, std::string &costmap_frame_id)

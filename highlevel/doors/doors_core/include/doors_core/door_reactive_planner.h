@@ -40,6 +40,7 @@
 #include <pr2_robot_actions/Pose2D.h>
 #include <robot_msgs/Vector3.h>
 #include <robot_msgs/Point.h>
+#include <robot_msgs/DiagnosticStatus.h>
 
 // For transform support
 #include <tf/transform_listener.h>
@@ -105,6 +106,8 @@ namespace door_reactive_planner
      * @return The goal position for the planner
      */
     bool getGoal(pr2_robot_actions::Pose2D &goal);
+
+    robot_msgs::DiagnosticStatus getDiagnostics();
 
     private:
 
@@ -226,6 +229,16 @@ namespace door_reactive_planner
      */
     void transform2DPose(const pr2_robot_actions::Pose2D &point_in, const std::string original_frame_id, pr2_robot_actions::Pose2D &point_out, const std::string &transform_frame_id);
 
+    double delta_angle_;
+
+    double distance_to_goal_;
+
+    double centerline_distance_;
+
+    int plan_length_;
+
+    pr2_robot_actions::Pose2D current_position_;
+    
   };
 }
 
