@@ -84,6 +84,7 @@ public:
 			printf("ERROR: failed to open debug file for environment\n");
 			exit(1);
 		}
+		printf("env debug on\n");
 #endif
 
 	}

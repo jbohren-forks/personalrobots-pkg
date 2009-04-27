@@ -42,6 +42,7 @@ static long int checks = 0; //TODO-debugmax
 //-----------------constructors/destructors-------------------------------
 EnvironmentNAVXYTHETALATTICE::EnvironmentNAVXYTHETALATTICE()
 {
+  printf("u1\n");
 	EnvNAVXYTHETALATCfg.obsthresh = ENVNAVXYTHETALAT_DEFAULTOBSTHRESH;
 	EnvNAVXYTHETALATCfg.cost_inscribed_thresh = EnvNAVXYTHETALATCfg.obsthresh; //the value that pretty much makes it disabled
 	EnvNAVXYTHETALATCfg.cost_possibly_circumscribed_thresh = -1; //the value that pretty much makes it disabled
@@ -1441,6 +1442,8 @@ bool EnvironmentNAVXYTHETALATTICE::InitializeEnv(int width, int height,
 		width, height, startx, starty, starttheta, goalx, goaly, goaltheta, cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs, obsthresh);
 
 	printf("perimeter has size=%d\n", perimeterptsV.size());
+	PrintVars();
+
 	for(int i = 0; i < (int)perimeterptsV.size(); i++)
 	{
 		printf("perimeter(%d) = %.4f %.4f\n", i, perimeterptsV.at(i).x, perimeterptsV.at(i).y);
@@ -1665,6 +1668,7 @@ bool EnvironmentNAVXYTHETALATTICE::SetEnvParameter(const char* parameter, int va
 	}
 
 	printf("setting parameter %s to %d\n", parameter, value);
+	PrintVars();
 
 	if(strcmp(parameter, "cost_inscribed") == 0)
 	{

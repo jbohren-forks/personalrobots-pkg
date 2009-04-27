@@ -45,6 +45,7 @@ ARAPlanner::ARAPlanner(DiscreteSpaceInformation* environment, bool bSearchForwar
     MaxMemoryCounter = 0;
     
     fDeb = fopen("debug.txt", "w");
+    printf("debug on\n");
     
     pSearchStateSpace_ = new ARASearchStateSpace_t;
     
@@ -873,93 +874,97 @@ int ARAPlanner::getHeurValue(ARASearchStateSpace_t* pSearchStateSpace, int State
 
 vector<int> ARAPlanner::GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, int& solcost)
 {
-    vector<int> SuccIDV;
-    vector<int> CostV;
-	vector<int> wholePathIds;
-	ARAState* searchstateinfo;
-	CMDPSTATE* state = NULL; 
-	CMDPSTATE* goalstate = NULL;
-	CMDPSTATE* startstate=NULL;
-
-	if(bforwardsearch)
-	{	
-		startstate = pSearchStateSpace->searchstartstate;
-		goalstate = pSearchStateSpace->searchgoalstate;
-
-		//reconstruct the path by setting bestnextstate pointers appropriately
-		ReconstructPath(pSearchStateSpace);
-	}
-	else
+  vector<int> SuccIDV;
+  vector<int> CostV;
+  vector<int> wholePathIds;
+  ARAState* searchstateinfo;
+  CMDPSTATE* state = NULL; 
+  CMDPSTATE* goalstate = NULL;
+  CMDPSTATE* startstate=NULL;
+  
+  if(bforwardsearch)
+    {	
+      startstate = pSearchStateSpace->searchstartstate;
+      goalstate = pSearchStateSpace->searchgoalstate;
+      
+      //reconstruct the path by setting bestnextstate pointers appropriately
+      ReconstructPath(pSearchStateSpace);
+    }
+  else
+    {
+      startstate = pSearchStateSpace->searchgoalstate;
+      goalstate = pSearchStateSpace->searchstartstate;
+    }
+  
+  
+  state = startstate;
+  
+  wholePathIds.push_back(state->StateID);
+  solcost = 0;
+  
+  FILE* fOut = stdout;
+  while(state->StateID != goalstate->StateID)
+    {
+      if(state->PlannerSpecificData == NULL)
 	{
-		startstate = pSearchStateSpace->searchgoalstate;
-		goalstate = pSearchStateSpace->searchstartstate;
+	  fprintf(fOut, "path does not exist since search data does not exist\n");
+	  break;
 	}
-
-
-	state = startstate;
-
-	wholePathIds.push_back(state->StateID);
-    solcost = 0;
-
-	FILE* fOut = stdout;
-	while(state->StateID != goalstate->StateID)
+      
+      searchstateinfo = (ARAState*)state->PlannerSpecificData;
+      
+      if(searchstateinfo->bestnextstate == NULL)
 	{
-		if(state->PlannerSpecificData == NULL)
-		{
-			fprintf(fOut, "path does not exist since search data does not exist\n");
-			break;
-		}
-
-		searchstateinfo = (ARAState*)state->PlannerSpecificData;
-
-		if(searchstateinfo->bestnextstate == NULL)
-		{
-			fprintf(fOut, "path does not exist since bestnextstate == NULL\n");
-			break;
-		}
-		if(searchstateinfo->g == INFINITECOST)
-		{
-			fprintf(fOut, "path does not exist since bestnextstate == NULL\n");
-			break;
-		}
-
-        environment_->GetSuccs(state->StateID, &SuccIDV, &CostV);
-        int actioncost = INFINITECOST;
-        for(int i = 0; i < (int)SuccIDV.size(); i++)
+	  fprintf(fOut, "path does not exist since bestnextstate == NULL\n");
+	  break;
+	}
+      if(searchstateinfo->g == INFINITECOST)
+	{
+	  fprintf(fOut, "path does not exist since bestnextstate == NULL\n");
+	  break;
+	}
+      
+      environment_->GetSuccs(state->StateID, &SuccIDV, &CostV);
+      int actioncost = INFINITECOST;
+      for(int i = 0; i < (int)SuccIDV.size(); i++)
         {   
-
-            if(SuccIDV.at(i) == searchstateinfo->bestnextstate->StateID)
-                actioncost = CostV.at(i);
-
+	  
+	  if(SuccIDV.at(i) == searchstateinfo->bestnextstate->StateID)
+	    actioncost = CostV.at(i);
+	  
         }
-		if(actioncost == INFINITECOST)
-			printf("WARNING: actioncost = %d\n", actioncost);
-
-        solcost += actioncost;
-
-        //fprintf(fDeb, "actioncost=%d between states %d and %d\n", 
-        //        actioncost, state->StateID, searchstateinfo->bestnextstate->StateID);
-        //environment_->PrintState(state->StateID, false, fDeb);
-        //environment_->PrintState(searchstateinfo->bestnextstate->StateID, false, fDeb);
-
-
+      if(actioncost == INFINITECOST)
+	printf("WARNING: actioncost = %d\n", actioncost);
+      
+      solcost += actioncost;
+      
+      //fprintf(fDeb, "actioncost=%d between states %d and %d\n", 
+      //        actioncost, state->StateID, searchstateinfo->bestnextstate->StateID);
+      //environment_->PrintState(state->StateID, false, fDeb);
+      //environment_->PrintState(searchstateinfo->bestnextstate->StateID, false, fDeb);
+      
+      
 #if DEBUG
-		ARAState* nextstateinfo = (ARAState*)(searchstateinfo->bestnextstate->PlannerSpecificData);
-		if(actioncost != abs(searchstateinfo->g - nextstateinfo->g) && pSearchStateSpace->eps_satisfied <= 1.001)
-		{
-			fprintf(fDeb, "ERROR: actioncost=%d is not matching the difference in g-values of %d\n", actioncost,abs(searchstateinfo->g - nextstateinfo->g));
-			printf("ERROR: actioncost=%d is not matching the difference in g-values of %d\n", actioncost,abs(searchstateinfo->g - nextstateinfo->g));
-			PrintSearchState(searchstateinfo, fDeb);
-			PrintSearchState(nextstateinfo, fDeb);
-		}
-#endif
-
-
-		state = searchstateinfo->bestnextstate;
-
-		wholePathIds.push_back(state->StateID);
+      ARAState* nextstateinfo = (ARAState*)(searchstateinfo->bestnextstate->PlannerSpecificData);
+      if(actioncost != abs((int)(searchstateinfo->g - nextstateinfo->g)) && pSearchStateSpace->eps_satisfied <= 1.001)
+	{
+	  fprintf(fDeb, "ERROR: actioncost=%d is not matching the difference in g-values of %d\n", 
+		  actioncost, abs((int)(searchstateinfo->g - nextstateinfo->g)));
+	  printf("ERROR: actioncost=%d is not matching the difference in g-values of %d\n", 
+		 actioncost,abs((int)(searchstateinfo->g - nextstateinfo->g)));
+	  PrintSearchState(searchstateinfo, fDeb);
+	  PrintSearchState(nextstateinfo, fDeb);
 	}
-	return wholePathIds;
+#endif
+      
+      
+      state = searchstateinfo->bestnextstate;
+      
+      wholePathIds.push_back(state->StateID);
+    }
+
+
+  return wholePathIds;
 }
 
 
@@ -1063,7 +1068,7 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 	printf("MaxMemoryCounter = %d\n", MaxMemoryCounter);
 
 	int solcost = INFINITECOST;
-    bool ret = false;
+	bool ret = false;
 	if(PathCost == INFINITECOST)
 	{
 		printf("could not find a solution\n");
@@ -1100,26 +1105,26 @@ int ARAPlanner::replan(double allocated_time_secs, vector<int>* solution_stateID
 //returns 1 if found a solution, and 0 otherwise
 int ARAPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs_V, int* psolcost)
 {
-    vector<int> pathIds; 
-    bool bFound = false;
-	int PathCost;
-	bool bFirstSolution = this->bsearchuntilfirstsolution;
-	bool bOptimalSolution = false;
-	*psolcost = 0;
-
-	printf("planner: replan called (bFirstSol=%d, bOptSol=%d)\n", bFirstSolution, bOptimalSolution);
-
-    //plan
-    if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, bFirstSolution, bOptimalSolution, allocated_time_secs)) == false) 
+  vector<int> pathIds; 
+  bool bFound = false;
+  int PathCost;
+  bool bFirstSolution = this->bsearchuntilfirstsolution;
+  bool bOptimalSolution = false;
+  *psolcost = 0;
+  
+  printf("planner: replan called (bFirstSol=%d, bOptSol=%d)\n", bFirstSolution, bOptimalSolution);
+  
+  //plan
+  if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, bFirstSolution, bOptimalSolution, allocated_time_secs)) == false) 
     {
-        printf("failed to find a solution\n");
+      printf("failed to find a solution\n");
     }
-
-    //copy the solution
-    *solution_stateIDs_V = pathIds;
-	*psolcost = PathCost;
-
-	return (int)bFound;
+  
+  //copy the solution
+  *solution_stateIDs_V = pathIds;
+  *psolcost = PathCost;
+  
+  return (int)bFound;
 
 }
 

@@ -45,7 +45,8 @@ ADPlanner::ADPlanner(DiscreteSpaceInformation* environment, bool bForwardSearch)
     MaxMemoryCounter = 0;
     
     fDeb = fopen("debug.txt", "w");
-    
+    printf("debug on\n");    
+
     pSearchStateSpace_ = new ADSearchStateSpace_t;
     
     
@@ -992,93 +993,93 @@ void ADPlanner::PrintSearchState(ADState* searchstateinfo, FILE* fOut)
 
 void ADPlanner::PrintSearchPath(ADSearchStateSpace_t* pSearchStateSpace, FILE* fOut)
 {
-	ADState* searchstateinfo;
-	CMDPSTATE* state = pSearchStateSpace->searchgoalstate;
-	CMDPSTATE* nextstate = NULL;
+  ADState* searchstateinfo;
+  CMDPSTATE* state = pSearchStateSpace->searchgoalstate;
+  CMDPSTATE* nextstate = NULL;
 
-	if(fOut == NULL)
-		fOut = stdout;
+  if(fOut == NULL)
+    fOut = stdout;
 
-	int PathCost = ((ADState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g;
+  int PathCost = ((ADState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g;
 
-	fprintf(fOut, "Printing a path from state %d to the goal state %d\n", 
-			state->StateID, pSearchStateSpace->searchstartstate->StateID);
-	fprintf(fOut, "Path cost = %d:\n", PathCost);
-			
-	
-	environment_->PrintState(state->StateID, false, fOut);
+  fprintf(fOut, "Printing a path from state %d to the search start state %d\n", 
+	  state->StateID, pSearchStateSpace->searchstartstate->StateID);
+  fprintf(fOut, "Path cost = %d:\n", PathCost);
+				
+  environment_->PrintState(state->StateID, true, fOut);
 
-	int costFromStart = 0;
-	int steps = 0;
-	const int max_steps = 100000;
-	while(state->StateID != pSearchStateSpace->searchstartstate->StateID && steps < max_steps)
+  int costFromStart = 0;
+  int steps = 0;
+  const int max_steps = 100000;
+  while(state->StateID != pSearchStateSpace->searchstartstate->StateID && steps < max_steps)
+    {
+      steps++;
+
+      fprintf(fOut, "state %d ", state->StateID);
+
+      if(state->PlannerSpecificData == NULL)
 	{
-		steps++;
+	  fprintf(fOut, "path does not exist since search data does not exist\n");
+	  break;
+	}
 
-		fprintf(fOut, "state %d ", state->StateID);
+      searchstateinfo = (ADState*)state->PlannerSpecificData;
 
-		if(state->PlannerSpecificData == NULL)
-		{
-			fprintf(fOut, "path does not exist since search data does not exist\n");
-			break;
-		}
+      if(bforwardsearch)
+	nextstate = searchstateinfo->bestpredstate;
+      else
+	nextstate = searchstateinfo->bestnextstate;
 
-		searchstateinfo = (ADState*)state->PlannerSpecificData;
+      if(nextstate == NULL)
+	{
+	  fprintf(fOut, "path does not exist since nextstate == NULL\n");
+	  break;
+	}
+      if(searchstateinfo->g == INFINITECOST)
+	{
+	  fprintf(fOut, "path does not exist since state->g == NULL\n");
+	  break;
+	}
 
-		if(bforwardsearch)
-			nextstate = searchstateinfo->bestpredstate;
-		else
-			nextstate = searchstateinfo->bestnextstate;
-
-		if(nextstate == NULL)
-		{
-			fprintf(fOut, "path does not exist since nextstate == NULL\n");
-			break;
-		}
-		if(searchstateinfo->g == INFINITECOST)
-		{
-			fprintf(fOut, "path does not exist since state->g == NULL\n");
-			break;
-		}
-
-		int costToGoal = PathCost - costFromStart;
-		if(!bforwardsearch)
-		{
-			//otherwise this cost is not even set
-			costFromStart += searchstateinfo->costtobestnextstate;
-		}
+      int costToGoal = PathCost - costFromStart;
+      if(!bforwardsearch)
+	{
+	  //otherwise this cost is not even set
+	  costFromStart += searchstateinfo->costtobestnextstate;
+	}
 
 
 #if DEBUG
-		if(searchstateinfo->g > searchstateinfo->v){
-			fprintf(fOut, "ERROR: underconsistent state %d is encountered\n", state->StateID);
-			exit(1);
-		}
+      if(searchstateinfo->g > searchstateinfo->v){
+	fprintf(fOut, "ERROR: underconsistent state %d is encountered\n", state->StateID);
+	exit(1);
+      }
 
-		if(!bforwardsearch) //otherwise this cost is not even set
-		{
-			if(nextstate->PlannerSpecificData != NULL && searchstateinfo->g < searchstateinfo->costtobestnextstate + ((ADState*)(nextstate->PlannerSpecificData))->g)
-			{
-				fprintf(fOut, "ERROR: g(source) < c(source,target) + g(target)\n");
-				exit(1);
-			}
-		}
+      if(!bforwardsearch) //otherwise this cost is not even set
+	{
+	  if(nextstate->PlannerSpecificData != NULL && searchstateinfo->g < searchstateinfo->costtobestnextstate + ((ADState*)(nextstate->PlannerSpecificData))->g)
+	    {
+	      fprintf(fOut, "ERROR: g(source) < c(source,target) + g(target)\n");
+	      exit(1);
+	    }
+	}
+
 #endif
 
-		PrintSearchState(searchstateinfo, fDeb);	
-		fprintf(fOut, "-->state %d ctg = %d  ", 
-			nextstate->StateID, costToGoal);
+      //PrintSearchState(searchstateinfo, fOut);	
+      fprintf(fOut, "-->state %d ctg = %d  ", 
+	      nextstate->StateID, costToGoal);
 
-		state = nextstate;
+      state = nextstate;
 
-		environment_->PrintState(state->StateID, false, fOut);
+      environment_->PrintState(state->StateID, true, fOut);
 
-	}
+    }
 
-	if(state->StateID != pSearchStateSpace->searchstartstate->StateID){
-		printf("ERROR: Failed to printsearchpath, max_steps reached\n");
-		return;
-	}
+  if(state->StateID != pSearchStateSpace->searchstartstate->StateID){
+    printf("ERROR: Failed to printsearchpath, max_steps reached\n");
+    return;
+  }
 
 }
 
@@ -1092,106 +1093,108 @@ int ADPlanner::getHeurValue(ADSearchStateSpace_t* pSearchStateSpace, int StateID
 
 vector<int> ADPlanner::GetSearchPath(ADSearchStateSpace_t* pSearchStateSpace, int& solcost)
 {
-    vector<int> SuccIDV;
-    vector<int> CostV;
-	vector<int> wholePathIds;
-	ADState* searchstateinfo;
-	CMDPSTATE* state = NULL; 
-	CMDPSTATE* goalstate = NULL;
-	CMDPSTATE* startstate=NULL;
+  vector<int> SuccIDV;
+  vector<int> CostV;
+  vector<int> wholePathIds;
+  ADState* searchstateinfo;
+  CMDPSTATE* state = NULL; 
+  CMDPSTATE* goalstate = NULL;
+  CMDPSTATE* startstate=NULL;
 
-	if(bforwardsearch)
-	{
-		startstate = pSearchStateSpace->searchstartstate;
-		goalstate = pSearchStateSpace->searchgoalstate;
-
-		//reconstruct the path by setting bestnextstate pointers appropriately
-		if(ReconstructPath(pSearchStateSpace) != 1){
-			solcost = INFINITECOST;
-			return wholePathIds;
-		}
-	}
-	else
-	{
-		startstate = pSearchStateSpace->searchgoalstate;
-		goalstate = pSearchStateSpace->searchstartstate;
-	}
+  if(bforwardsearch)
+    {
+      startstate = pSearchStateSpace->searchstartstate;
+      goalstate = pSearchStateSpace->searchgoalstate;
+      
+      //reconstruct the path by setting bestnextstate pointers appropriately
+      if(ReconstructPath(pSearchStateSpace) != 1){
+	solcost = INFINITECOST;
+	return wholePathIds;
+      }
+    }
+  else
+    {
+      startstate = pSearchStateSpace->searchgoalstate;
+      goalstate = pSearchStateSpace->searchstartstate;
+    }
 
 
 #if DEBUG
-		//PrintSearchPath(pSearchStateSpace, fDeb);
+  //PrintSearchPath(pSearchStateSpace, fDeb);
 #endif
 
 
-	state = startstate;
+  state = startstate;
 
-	wholePathIds.push_back(state->StateID);
-    solcost = 0;
+  wholePathIds.push_back(state->StateID);
+  solcost = 0;
 
-	FILE* fOut = stdout;
-	int steps = 0;
-	const int max_steps = 100000;
-	while(state->StateID != goalstate->StateID && steps < max_steps)
+  FILE* fOut = stdout;
+  int steps = 0;
+  const int max_steps = 100000;
+  while(state->StateID != goalstate->StateID && steps < max_steps)
+    {
+      steps++;
+
+      if(state->PlannerSpecificData == NULL)
 	{
-		steps++;
+	  fprintf(fOut, "path does not exist since search data does not exist\n");
+	  break;
+	}
 
-		if(state->PlannerSpecificData == NULL)
-		{
-			fprintf(fOut, "path does not exist since search data does not exist\n");
-			break;
-		}
+      searchstateinfo = (ADState*)state->PlannerSpecificData;
 
-		searchstateinfo = (ADState*)state->PlannerSpecificData;
+      if(searchstateinfo->bestnextstate == NULL)
+	{
+	  fprintf(fOut, "path does not exist since bestnextstate == NULL\n");
+	  break;
+	}
+      if(searchstateinfo->g == INFINITECOST)
+	{
+	  fprintf(fOut, "path does not exist since bestnextstate == NULL\n");
+	  break;
+	}
 
-		if(searchstateinfo->bestnextstate == NULL)
-		{
-			fprintf(fOut, "path does not exist since bestnextstate == NULL\n");
-			break;
-		}
-		if(searchstateinfo->g == INFINITECOST)
-		{
-			fprintf(fOut, "path does not exist since bestnextstate == NULL\n");
-			break;
-		}
-
-        environment_->GetSuccs(state->StateID, &SuccIDV, &CostV);
-        int actioncost = INFINITECOST;
-        for(int i = 0; i < (int)SuccIDV.size(); i++)
+      environment_->GetSuccs(state->StateID, &SuccIDV, &CostV);
+      int actioncost = INFINITECOST;
+      for(int i = 0; i < (int)SuccIDV.size(); i++)
         {   
-            if(SuccIDV.at(i) == searchstateinfo->bestnextstate->StateID)
-                actioncost = CostV.at(i);
+	  if(SuccIDV.at(i) == searchstateinfo->bestnextstate->StateID)
+	    actioncost = CostV.at(i);
 
         }
-        solcost += actioncost;
+      solcost += actioncost;
 
-		if(searchstateinfo->v < searchstateinfo->g)
-		{
-			printf("ERROR: underconsistent state on the path\n");
-			PrintSearchState(searchstateinfo, stdout);
-			//fprintf(fDeb, "ERROR: underconsistent state on the path\n");
-			//PrintSearchState(searchstateinfo, fDeb);
-			exit(1);
-		}
-
-        //fprintf(fDeb, "actioncost=%d between states %d and %d\n", 
-        //        actioncost, state->StateID, searchstateinfo->bestnextstate->StateID);
-        //environment_->PrintState(state->StateID, false, fDeb);
-        //environment_->PrintState(searchstateinfo->bestnextstate->StateID, false, fDeb);
-
-
-		state = searchstateinfo->bestnextstate;
-
-		wholePathIds.push_back(state->StateID);
+      if(searchstateinfo->v < searchstateinfo->g)
+	{
+	  printf("ERROR: underconsistent state on the path\n");
+	  PrintSearchState(searchstateinfo, stdout);
+	  //fprintf(fDeb, "ERROR: underconsistent state on the path\n");
+	  //PrintSearchState(searchstateinfo, fDeb);
+	  exit(1);
 	}
 
-	if(state->StateID != goalstate->StateID){
-		printf("ERROR: Failed to getsearchpath, steps processed=%d\n", steps);
-		wholePathIds.clear();
-		solcost = INFINITECOST;
-		return wholePathIds;
-	}
+      //fprintf(fDeb, "actioncost=%d between states %d and %d\n", 
+      //        actioncost, state->StateID, searchstateinfo->bestnextstate->StateID);
+      //environment_->PrintState(state->StateID, false, fDeb);
+      //environment_->PrintState(searchstateinfo->bestnextstate->StateID, false, fDeb);
 
-	return wholePathIds;
+
+      state = searchstateinfo->bestnextstate;
+
+      wholePathIds.push_back(state->StateID);
+    }
+
+  if(state->StateID != goalstate->StateID){
+    printf("ERROR: Failed to getsearchpath, steps processed=%d\n", steps);
+    wholePathIds.clear();
+    solcost = INFINITECOST;
+    return wholePathIds;
+  }
+
+  //PrintSearchPath(pSearchStateSpace, stdout); 
+	
+  return wholePathIds;
 }
 
 
@@ -1354,7 +1357,7 @@ void ADPlanner::Update_SearchSuccs_of_ChangedEdges(vector<int> const * statesIDV
 			numofstatesaffected++;
 
 #if DEBUG
-			fprintf(fDeb, "the state after update\n", stateID);
+			fprintf(fDeb, "the state %d after update\n", stateID);
 			PrintSearchState(searchstateinfo, fDeb);
 			fprintf(fDeb, "\n");
 #endif

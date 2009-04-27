@@ -247,6 +247,8 @@ public:
   bool PoseDiscToCont(int ix, int iy, int ith,
 		      double &px, double &py, double &pth) const;
 
+  virtual void PrintVars(){printf("no vars printed\n");};
+
  protected:
 
   virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
@@ -337,6 +339,8 @@ class EnvironmentNAVXYTHETALAT : public EnvironmentNAVXYTHETALATTICE
   virtual int  GetStartHeuristic(int stateID);
 
   virtual int	 SizeofCreatedEnv();
+
+  virtual void PrintVars(){printf("no vars printed\n");};
 
  protected:
 
