@@ -253,9 +253,13 @@ void EnvironmentNAVXYTHETADOORLAT::SetDesiredDoorAngles(vector<int> desired_door
   db_.getDesiredDoorAngles(desired_door_anglesV, desired_door_angles_local);
 
   this->desired_door_anglesV.clear();
-  this->desired_door_anglesV = desired_door_anglesV;
+  this->desired_door_anglesV = desired_door_angles_local;
 
   printf("desired door angles are set to %d values\n", this->desired_door_anglesV.size());
+  for(int i=0; i < (int)this->desired_door_anglesV.size(); i++)
+  {
+    printf("In door local frame: %d degrees\n",desired_door_angles_local[i]);
+  }
 }
 
 //returns minimum cost angle within the specified door_angle_interval
@@ -486,7 +490,7 @@ void EnvironmentNAVXYTHETADOORLAT::setDoorProperties(const robot_msgs::Door &doo
   vector<int> desired_door_angles;
   desired_door_angles.resize(10);
   for(int i=0; i<10; i++)
-    desired_door_angles[i] = angles::to_degrees(angles::normalize_angle(db_.global_door_open_angle_-db_.door_frame_global_yaw_)) - db_.rot_dir_*i;
+    desired_door_angles[i] = angles::to_degrees(angles::normalize_angle(db_.global_door_open_angle_)) - db_.rot_dir_*i;
   SetDesiredDoorAngles(desired_door_angles);
 
   printf("\n\nDoor hinge position: %f %f %f\n",hinge_global_x,hinge_global_y,hinge_global_z);
