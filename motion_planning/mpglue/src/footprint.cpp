@@ -49,7 +49,7 @@ namespace mpglue {
   void initSimpleFootprint(footprint_t & footprint,
 			   double inscribedRadius, double circumscribedRadius)
   {
-    deprecated_msgs::Point2DFloat32 pt;
+    robot_msgs::Point pt; //Only using X and Y coordinates
     
     //create a square footprint
     pt.x = inscribedRadius;
