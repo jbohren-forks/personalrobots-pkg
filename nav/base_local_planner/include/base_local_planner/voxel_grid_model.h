@@ -39,7 +39,6 @@
 #include <vector>
 #include <list>
 #include <cfloat>
-#include <deprecated_msgs/Point2DFloat32.h>
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/Point32.h>
 #include <costmap_2d/observation.h>
