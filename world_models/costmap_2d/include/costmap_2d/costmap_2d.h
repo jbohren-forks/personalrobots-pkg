@@ -77,7 +77,7 @@ namespace costmap_2d {
       Costmap2D(unsigned int cells_size_x, unsigned int cells_size_y, 
           double resolution, double origin_x, double origin_y, double inscribed_radius = 0.0,
           double circumscribed_radius = 0.0, double inflation_radius = 0.0, double obstacle_range = 0.0,
-          double max_obstacle_height = 0.0, double raytrace_range = 0.0, double weight = 1.0,
+          double max_obstacle_height = 0.0, double raytrace_range = 0.0, double weight = 25.0,
           const std::vector<unsigned char>& static_data = std::vector<unsigned char>(0), unsigned char lethal_threshold = 0);
 
       /**
@@ -292,8 +292,7 @@ namespace costmap_2d {
         else {
           //make sure cost falls off by Euclidean distance
           double euclidean_distance = distance * resolution_;
-          //double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
-          double factor = weight_ / (1 + pow(euclidean_distance - inscribed_radius_, 2));
+          double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
           cost = (unsigned char) ((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
         }
         return cost;
