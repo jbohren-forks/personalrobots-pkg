@@ -10,8 +10,8 @@
   <depend package="robot_pose_ekf"/>
   <depend package="map_server"/>
   <depend package="executive_trex_pr2"/>
-  <depend package="trajectory_rollout"/>
-  <depend package="highlevel_controllers"/>
+  <!--depend package="trajectory_rollout"/>
+  <depend package="highlevel_controllers"/ THese need to be replaced commented to suppress warnings.  See ticket:1234-->
   <depend package="pr2_alpha"/>
   <depend package="pr2_experimental_controllers"/>
   <depend package="semantic_point_annotator"/>
