@@ -268,7 +268,7 @@ namespace nav {
 
 int main(int argc, char** argv){
   ros::init(argc, argv);
-  ros::Node ros_node("move_base_node");
+  ros::Node ros_node("move_base");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   
   nav::MoveBase move_base(ros_node, tf);

@@ -210,7 +210,7 @@ namespace nav {
 
 int main(int argc, char** argv){
   ros::init(argc, argv);
-  ros::Node ros_node("local_controller_node");
+  ros::Node ros_node("move_base_local");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   
   nav::MoveBaseLocal move_base(ros_node, tf);
