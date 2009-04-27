@@ -30,4 +30,8 @@
   <sysdepend package="py25-yaml" os="macports" />
   <sysdepend package="PyYAML" os="centos" version="5.2"/>
 
+  <rosdep name="sdl-image"/>
+  <rosdep name="python-imaging"/>
+  <rosdep name="python-yaml"/>
+
 </package>
