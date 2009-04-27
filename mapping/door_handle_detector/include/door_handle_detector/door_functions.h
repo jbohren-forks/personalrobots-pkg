@@ -42,12 +42,13 @@
 
 namespace door_handle_detector{
 
-// convert door message to frame
-bool transformTo(const tf::Transformer& tf, const std::string& goal_frame, const robot_msgs::Door& door_in, robot_msgs::Door& door_out);
+/// convert door message from its original frame/time, to the goal frame at time::now.
+bool transformTo(const tf::Transformer& tf, const std::string& goal_frame, const robot_msgs::Door& door_in, 
+                 robot_msgs::Door& door_out, const std::string& fixed_frame="odom_combined");
 bool transformPointTo(const tf::Transformer& tf, const std::string& source_frame, const std::string& goal_frame, const ros::Time& time,
-                      const robot_msgs::Point32& point_in, robot_msgs::Point32& point_out);
+                      const robot_msgs::Point32& point_in, robot_msgs::Point32& point_out, const std::string& fixed_frame);
 bool transformVectorTo(const tf::Transformer& tf, const std::string& source_frame, const std::string& goal_frame, const ros::Time& time,
-                       const robot_msgs::Vector3& point_in, robot_msgs::Vector3& point_out);
+                       const robot_msgs::Vector3& point_in, robot_msgs::Vector3& point_out, const std::string& fixed_frame);
 
 std::ostream& operator<< (std::ostream& os, const robot_msgs::Door& d);
 

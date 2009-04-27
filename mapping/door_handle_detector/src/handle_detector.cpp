@@ -102,7 +102,7 @@ bool HandleDetector::detectHandle (const robot_msgs::Door& door, PointCloud poin
 
   // transform the door message into the parameter_frame, and work there
   Door door_tr;
-  if (!transformTo(tf_, parameter_frame_, door, door_tr)){
+  if (!transformTo(tf_, parameter_frame_, door, door_tr, fixed_frame_)){
      ROS_ERROR ("HandleDetector: Could not transform door message from frame '%s' to frame '%s'.",
                 door.header.frame_id.c_str (), parameter_frame_.c_str ());
      return false;
@@ -270,14 +270,16 @@ bool HandleDetector::detectHandle (const robot_msgs::Door& door, PointCloud poin
   pmap.polygons[0] = polygon;
   node_->publish ("~handle_polygon", pmap);
 
-  // Reply door message in same frame as request door message
+  // Reply door message 
   result.resize(1);
   result[0] = door_tr;
-  tf::Stamped<Point32> handle (handle_center, pointcloud.header.stamp, parameter_frame_);
-  transformPoint (&tf_, pointcloud.header.frame_id, handle, handle);
-  result[0].header.stamp = pointcloud.header.stamp;
-  result[0].header.frame_id = pointcloud.header.frame_id;
-  result[0].handle = handle;
+  result[0].handle = handle_center;
+  if (!transformTo(tf_, fixed_frame_, result[0], result[0], fixed_frame_)){
+    ROS_ERROR ("HandleDetector: Could not transform door message from frame '%s' to frame '%s'.",
+               result[0].header.frame_id.c_str (), fixed_frame_.c_str ());
+     return false;
+  }
+  ROS_INFO("HandleDetector: Door message transformed to '%s'", fixed_frame_.c_str());
 
   ROS_INFO ("Handle detected. Result in frame %s \n  Handle = [%f, %f, %f]. \n  Total time: %f.",
             result[0].header.frame_id.c_str (),
@@ -285,6 +287,10 @@ bool HandleDetector::detectHandle (const robot_msgs::Door& door, PointCloud poin
             duration.toSec ());
   return (true);
 }
+
+
+
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
