@@ -124,22 +124,20 @@ TEST(executive_trex_pr2, map_read_from_file){
 
 
   // Here is a set of points that should be OK
-  ASSERT_EQ(map.isObstacle(19.45, 18.3), false);
-  ASSERT_EQ(map.isObstacle(16.5, 18.85), false);
-  ASSERT_EQ(map.isObstacle(15.0, 22.15), false);
-  ASSERT_EQ(map.isObstacle(21.15, 15.25), false);
-  ASSERT_EQ(map.isObstacle(47.350, 40.655), false);
+  ASSERT_EQ(map.isObstacle(19.45, 28.95), false);
+  ASSERT_EQ(map.isObstacle(16.5, 28.4), false);
+  ASSERT_EQ(map.isObstacle(15.0, 25.1), false);
+  ASSERT_EQ(map.isObstacle(21.15, 32.0), false);
+  ASSERT_EQ(map.isObstacle(47.350,  6.595), false);
 
-  /* INCLUDE THIS FOR TICKET:
   ASSERT_EQ(map.isObstacle(54.162, 20.087), false);
   ASSERT_EQ(map.isObstacle(12.118, 39.812), false);
   ASSERT_EQ(map.isObstacle(18.912, 28.568), false);
   ASSERT_EQ(map.isObstacle(18.542, 12.301), false);
   ASSERT_EQ(map.isObstacle(50.659, 6.916), false);
-  */
 
   // Points that are ligitimately obstacles
-  ASSERT_EQ(map.isObstacle(15.0, 25.2), true);
+  ASSERT_EQ(map.isObstacle(15.0, 22.05), true);
 
 
   robot_msgs::Door door_state;
