@@ -290,7 +290,9 @@ namespace costmap_2d {
         else if(distance <= cell_inscribed_radius_)
           cost = INSCRIBED_INFLATED_OBSTACLE;
         else {
-          double factor = weight_ / (1 + pow(distance - cell_inscribed_radius_, 2));
+          //make sure cost falls off by Euclidean distance
+          double euclidean_distance = distance * resolution_;
+          double factor = exp(-1.0 * weight_ * (euclidean_distance - inscribed_radius_));
           cost = (unsigned char) ((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
         }
         return cost;
