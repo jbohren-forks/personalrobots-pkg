@@ -55,6 +55,13 @@ from tf.transformations import *
 from numpy import *
 
 FLOAT_TOL = 0.0001
+AMCL_TOL  = 0.5
+COV = [float64(0.5*0.5                  ),float64(0),float64(0),float64(0),float64(0),float64(0), \
+       float64(0),float64(0.5*0.5                  ),float64(0),float64(0),float64(0),float64(0), \
+       float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0), \
+       float64(0),float64(0),float64(0),float64(math.pi/23.0*math.pi/12.0),float64(0),float64(0), \
+       float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0), \
+       float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0)  ]
 
 def normalize_angle_positive(angle):
     return math.fmod(math.fmod(angle, 2*math.pi) + 2*math.pi, 2*math.pi)
@@ -191,10 +198,17 @@ class NavStackTest(unittest.TestCase):
             print "state goal has been published: ", state.goal.pose.position.x, ",", state.goal.pose.position.y, ",", state_eul[2]
             self.publish_goal = False
     
-    def amclInput(self, pose):
+    def amclInput(self, amcl_pose):
         if self.publish_initialpose:
-          print "/amcl_pose received, stop setPose begin publishing goal",pose
-          self.publish_initialpose = False
+          print "/amcl_pose received, ",amcl_pose
+          amcl_eul = euler_from_quaternion([amcl_pose.pose.orientation.x,amcl_pose.pose.orientation.y,amcl_pose.pose.orientation.z,amcl_pose.pose.orientation.w])
+          if abs(amcl_pose.pose.position.x    - self.initialpose[0]) < AMCL_TOL and \
+             abs(amcl_pose.pose.position.y    - self.initialpose[1]) < AMCL_TOL and \
+             abs(amcl_eul[2]                  - self.initialpose[2]) < AMCL_TOL:
+            print "initial_pose matches, stop setPose begin publishing goal."
+            self.publish_initialpose = False
+          else:
+            print "initial_pose mismatch, continue setPose."
 
     def cmd_velInput(self, cmd_vel):
           print "cmd_vel: ", cmd_vel.vel.vx, ",", cmd_vel.vel.vy, ",", cmd_vel.vel.vz \
@@ -294,14 +308,8 @@ class NavStackTest(unittest.TestCase):
               tmpq = quaternion_from_euler(0,0,self.initialpose[2],'rxyz')
               q = Quaternion(tmpq[0],tmpq[1],tmpq[2],tmpq[3])
               pose = Pose(p,q)
-              cov = [float64(0.5*0.5                  ),float64(0),float64(0),float64(0),float64(0),float64(0), \
-                     float64(0),float64(0.5*0.5                  ),float64(0),float64(0),float64(0),float64(0), \
-                     float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0), \
-                     float64(0),float64(0),float64(0),float64(math.pi/23.0*math.pi/12.0),float64(0),float64(0), \
-                     float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0), \
-                     float64(0                        ),float64(0),float64(0),float64(0),float64(0),float64(0)  ]
-              print "publishing initialpose",h,p,cov[0]
-              pub_pose.publish(PoseWithCovariance(h, pose,cov))
+              print "publishing initialpose",h,p,COV[0]
+              pub_pose.publish(PoseWithCovariance(h, pose,COV))
             else:
               # send goal until state /move_base/feedback indicates goal is received
               p = Point(self.target_x, self.target_y, 0)
