@@ -46,16 +46,4 @@
   </node>
 
 
-<!-- Battery monitor -->
-  <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com raschemmel@willowgarage.com pr2-users@lists.willowgarage.com"/>
-  <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
-  <param name="recharge/subject_unplug" value="Robot Needs To Be Unplugged"/>
-  <param name="recharge/body_plugin" value="Hello, could you please plug me in?\nThanks, PR2"/>
-  <param name="recharge/body_unplug" value="Hello, could you please unplug me?\nThanks, PR2"/>
-  <param name="recharge/mail_client" value="mailx -s"/>
-  <node pkg="highlevel_controllers" type="recharge_controller" respawn="true" machine="four" />
-
-
-  <!-- For telling the robot to go charge -->
-    <node pkg="highlevel_controllers" type="joy_batt_sender" respawn="true" machine="four" />
 </launch>
