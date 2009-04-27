@@ -433,6 +433,13 @@ int Transformer::getLatestCommonTime(const std::string& source, const std::strin
   }
   if (retval == NO_ERROR)
   {
+    //Set time to latest timestamp of frameid in case of target and source frame id are the same
+    if (lists.inverseTransforms.size() == 0 && lists.forwardTransforms.size() == 0)
+    {
+      time = getFrame(lookupFrameNumber(dest))->getLatestTimestamp();
+      return retval;
+    }
+      
     for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
       if (time > lists.inverseTransforms[i].stamp_)
