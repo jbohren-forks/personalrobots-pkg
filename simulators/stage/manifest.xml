@@ -28,6 +28,12 @@ way.  This package also provides stageros, a ROS node that uses Stage.
 <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="pkg-config"/>
+<rosdep name="autoconf"/>
+<rosdep name="automake"/>
+<rosdep name="libtool"/>
+<rosdep name="gtk2"/>
+<rosdep name="fltk"/>
+<rosdep name="pkg-config"/>
 </package>
 
 
