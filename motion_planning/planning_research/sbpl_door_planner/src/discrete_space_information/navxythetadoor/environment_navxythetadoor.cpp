@@ -65,6 +65,11 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
   vector<int> dooranglecostV, prevdooranglecostV;
   vector<unsigned char> doorangleintV, prevdoorangleintV;
   int i;
+  bool bPrint = false; //TODO-debugmax
+
+  
+  //if(SourceX == 55 && SourceY == 84 && SourceTheta == 4 && SourceDoorIntervalIndex == 0)
+  //  bPrint = true; 
 
 	
   if(!IsValidCell(SourceX, SourceY))
@@ -102,6 +107,16 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
     GetValidDoorAngles(point3D, &doorangleV, &dooranglecostV, &doorangleintV);
 //        printf("Size angles: %d, costs: %d\n",doorangleV.size(),dooranglecostV.size());
 
+    if(bPrint){
+      printf("pt %d: %f %f %f\n", i, point3D.x, point3D.y, point3D.theta);
+      printf("interval active: %d %d doorcostmultiplier: %d\n", interval_active[0], interval_active[1],doorcostmultiplier);      
+      printf("possible door angles:\n");
+      for(int aind = 0; aind < (int)doorangleV.size(); aind++){
+	printf("doorangle=%d doorangleint=%d dooranglecost=%d\n", 
+	       doorangleV.at(aind), doorangleintV.at(aind), dooranglecostV.at(aind));
+      }
+      printf("--------------\n");
+    }
 
     if(i > 0){
       //go over the previous interval and pick the common value with the smallest cost
@@ -109,10 +124,16 @@ void EnvironmentNAVXYTHETADOORLAT::GetActionCost(int SourceX, int SourceY, int S
       mincost[0] = mincost[1] = INFINITECOST;
       for(int cind = 0; cind < (int)doorangleV.size(); cind++){
         for(int pind = 0; pind < (int) prevdoorangleV.size(); pind++){
-          if(doorangleV[cind] == prevdoorangleV[cind] && 
-             interval_active[prevdoorangleintV[cind]] == true){
+          if(doorangleV[cind] == prevdoorangleV[pind] && 
+             interval_active[prevdoorangleintV[pind]] == true){
             //activate new interval if possible
             interval_active[doorangleintV[cind]] = true;
+	    
+	    if(bPrint && doorangleintV[cind] == 1){
+	      printf("activating interval %d: angle %d is same as previous angle with prevdoorangleint %d\n", 
+		     doorangleintV[cind], doorangleV[cind], prevdoorangleintV[pind]); 
+	    }
+
             //track the best cost
             if(__max(dooranglecostV[cind], prevdooranglecostV[pind]) < mincost[doorangleintV[cind]])
               mincost[doorangleintV[cind]] = __max(dooranglecostV[cind], prevdooranglecostV[pind]);
@@ -255,7 +276,12 @@ void EnvironmentNAVXYTHETADOORLAT::SetDesiredDoorAngles(vector<int> desired_door
   this->desired_door_anglesV.clear();
   this->desired_door_anglesV = desired_door_angles_local;
 
-  printf("desired door angles are set to %d values\n", this->desired_door_anglesV.size());
+  printf("desired door angles are set to %d values:\n", this->desired_door_anglesV.size());
+  for(int dind = 0; dind < (int)this->desired_door_anglesV.size(); dind++){
+    printf(" %d", this->desired_door_anglesV.at(dind));
+  }
+  printf("\n");
+
   for(int i=0; i < (int)this->desired_door_anglesV.size(); i++)
   {
     printf("In door local frame: %d degrees\n",desired_door_angles_local[i]);
@@ -273,6 +299,12 @@ int EnvironmentNAVXYTHETADOORLAT::MinCostDesiredDoorAngle(int x, int y, int thet
   //special case of no desired door angles
   if(desired_door_anglesV.size() == 0)
     return INFINITECOST;
+
+  //only allow for door angles in the desired dor interval
+  if(desired_door_intervalindex != door_intervalind)
+    return INFINITECOST;
+
+  //printf("searching for desired angle at %d %d %d %d\n", x,y,theta,door_intervalind);
 
   //get the world 3d robot pose
   EnvNAVXYTHETALAT3Dpt_t point3D;
@@ -375,6 +407,8 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
     
   //get X, Y for the state
   EnvNAVXYTHETADOORHashEntry_t* HashEntry = StateID2CoordTable[SourceStateID];
+
+  //printf("getting successors of %d %d %d %d\n", HashEntry->X, HashEntry->Y, HashEntry->Theta, HashEntry->door_intervalind);
     
   //iterate through actions
   for (aind = 0; aind < EnvNAVXYTHETALATCfg.actionwidth; aind++)
@@ -410,6 +444,9 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
         CostV->push_back(costtodoorinterval[dind]);
         if(actionV != NULL)
           actionV->push_back(nav3daction);	  
+
+	//printf("goal succ set at %d %d %d %d\n", newX,newY,newTheta,dind);
+
       }
       else{		
 	EnvNAVXYTHETADOORHashEntry_t* OutHashEntry;
@@ -423,6 +460,9 @@ void EnvironmentNAVXYTHETADOORLAT::GetSuccs(int SourceStateID, vector<int>* Succ
 	CostV->push_back(costtodoorinterval[dind]);
 	if(actionV != NULL)
 	  actionV->push_back(nav3daction);
+
+	//printf("normal succ set at %d %d %d %d\n", newX,newY,newTheta,dind);
+
       }
     }//over door intervals
   }
@@ -557,9 +597,12 @@ void EnvironmentNAVXYTHETADOORLAT::PrintState(int stateID, bool bVerbose, FILE* 
   }
 
   if(bVerbose)
-    fprintf(fOut, "X=%d Y=%d Theta=%d DoorInterval=%d\n", HashEntry->X, HashEntry->Y, HashEntry->Theta, (int)HashEntry->door_intervalind);
+    fprintf(fOut, "X=%d Y=%d Theta=%d DoorInterval=%d\n", 
+	    HashEntry->X, HashEntry->Y, HashEntry->Theta, (int)HashEntry->door_intervalind);
   else
-    fprintf(fOut, "%.3f %.3f %.3f %d\n", DISCXY2CONT(HashEntry->X, EnvNAVXYTHETALATCfg.cellsize_m), DISCXY2CONT(HashEntry->Y,EnvNAVXYTHETALATCfg.cellsize_m), 
+    fprintf(fOut, "%.3f %.3f %.3f %d\n", 
+	    DISCXY2CONT(HashEntry->X, EnvNAVXYTHETALATCfg.cellsize_m), 
+	    DISCXY2CONT(HashEntry->Y,EnvNAVXYTHETALATCfg.cellsize_m), 
             DiscTheta2Cont(HashEntry->Theta, NAVXYTHETALAT_THETADIRS), (int)HashEntry->door_intervalind);
 
 }
@@ -698,6 +741,7 @@ void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>
   door_intervalindPath->clear();
 
 
+  printf("Converting stateID path into actual coordinates\n");
 #if DEBUG
   fprintf(fDeb, "converting stateid path into coordinates:\n");
 #endif
@@ -730,7 +774,8 @@ void EnvironmentNAVXYTHETADOORLAT::ConvertStateIDPathintoXYThetaPath(vector<int>
     {
 
 #if DEBUG
-      int x_c, y_c, theta_c, doorint;
+      int x_c, y_c, theta_c;
+      unsigned char doorint;
       GetCoordFromState(SuccIDV[sind], x_c, y_c, theta_c, doorint);
       fprintf(fDeb, "succ: %d %d %d %d\n", x_c, y_c, theta_c, doorint); 
 #endif
@@ -814,7 +859,6 @@ EnvNAVXYTHETADOORHashEntry_t* EnvironmentNAVXYTHETADOORLAT::GetHashEntry(
     printf("WARNING: Hash table has a bin %d (X=%d Y=%d) of size %d\n", 
            binid, X, Y, Coord2StateIDHashTable[binid].size());
 		
-    PrintHashTableHist();		
   }
 #endif
 
@@ -853,6 +897,7 @@ EnvNAVXYTHETADOORHashEntry_t*EnvironmentNAVXYTHETADOORLAT::CreateNewHashEntry(
 
   EnvNAVXYTHETADOORHashEntry_t* HashEntry = new EnvNAVXYTHETADOORHashEntry_t;
 
+
   HashEntry->X = X;
   HashEntry->Y = Y;
   HashEntry->Theta = Theta;
@@ -863,9 +908,9 @@ EnvNAVXYTHETADOORHashEntry_t*EnvironmentNAVXYTHETADOORLAT::CreateNewHashEntry(
   //insert into the tables
   StateID2CoordTable.push_back(HashEntry);
 
-
   //get the hash table bin
   i = GETHASHBIN(HashEntry->X, HashEntry->Y, HashEntry->Theta); 
+
 
   //insert the entry into the bin
   Coord2StateIDHashTable[i].push_back(HashEntry);
@@ -1031,6 +1076,8 @@ void EnvironmentNAVXYTHETADOORLAT::InitializeEnvironment()
   //initialize the map from StateID to Coord
   StateID2CoordTable.clear();
 
+  printf("start door interval=%d goal door interval=%d\n", start_door_intervalindex, desired_door_intervalindex);
+
   //create start state 
   HashEntry = CreateNewHashEntry(EnvNAVXYTHETALATCfg.StartX_c, EnvNAVXYTHETALATCfg.StartY_c, EnvNAVXYTHETALATCfg.StartTheta, 
                                  start_door_intervalindex);
@@ -1039,9 +1086,11 @@ void EnvironmentNAVXYTHETADOORLAT::InitializeEnvironment()
   //create goal state 
   HashEntry = CreateNewHashEntry(EnvNAVXYTHETALATCfg.EndX_c, EnvNAVXYTHETALATCfg.EndY_c, EnvNAVXYTHETALATCfg.EndTheta,
                                  desired_door_intervalindex);
+
   EnvNAVXYTHETALAT.goalstateid = HashEntry->stateID;
 
   //initialized
   EnvNAVXYTHETALAT.bInitialized = true;
+  printf("done initializing environment\n");
 
 }

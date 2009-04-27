@@ -55,7 +55,12 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
 
   EnvironmentNAVXYTHETADOORLAT() 
   {desired_door_intervalindex = ENVNAVXYTHETADOOR_DEFAULTDESIREDDOORINTERVALIND;
-   start_door_intervalindex = ENVNAVXYTHETADOOR_DEFAULTSTARTDOORINTERVALIND;};
+   start_door_intervalindex = ENVNAVXYTHETADOOR_DEFAULTSTARTDOORINTERVALIND;
+
+   printf("constr: start door interval=%d goal door interval=%d\n", 
+	  (int)start_door_intervalindex, (int)desired_door_intervalindex);
+   PrintVars();
+};
 
   ~EnvironmentNAVXYTHETADOORLAT() {};
 
@@ -162,6 +167,12 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
    virtual int	 SizeofCreatedEnv();
 
    virtual void InitializeEnvironment();
+
+   virtual void PrintVars()
+   {
+     printf("printvars: start door interval=%d goal door interval=%d\n", 
+	    (int)start_door_intervalindex, (int)desired_door_intervalindex);
+   };
 
   protected:
 
