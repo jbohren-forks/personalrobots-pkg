@@ -35,6 +35,8 @@
 * Author: Sachin Chitta
 *********************************************************************/
 #include <pr2_mechanism_controllers/base_trajectory_controller.h>
+#include <robot_msgs/DiagnosticMessage.h>
+#include <robot_msgs/DiagnosticStatus.h>
 
 namespace pr2_mechanism_controllers
 {
@@ -47,7 +49,8 @@ namespace pr2_mechanism_controllers
     ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~control_topic_name", control_topic_name_, std::string("cmd_vel"));
     ros_node_.param("~controller_frequency", controller_frequency_, 100.0);
-    ros_node_.param("~path_input_topic_name", path_input_topic_name_, std::string("/base/trajectory_controller/trajectory_command"));
+    ros_node_.param("~path_input_topic_name", path_input_topic_name_, std::string("/base/trajectory_controller/command"));
+    ros_node_.param("diagnostics_expected_publish_time",diagnostics_expected_publish_time_,0.2);
 
     ros_node_.param("~trajectory_type", trajectory_type_, std::string("linear"));
 
@@ -79,7 +82,9 @@ namespace pr2_mechanism_controllers
 
     ros_node_.advertise<robot_msgs::PoseDot>(control_topic_name_, 1);
     ros_node_.subscribe(path_input_topic_name_,path_msg_in_, &BaseTrajectoryController::pathCallback, this, 1);
+    ros_node_.advertise<robot_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
 
+    last_diagnostics_publish_time_ = ros::Time::now();
     current_time_ = ros::Time::now().toSec();
     last_update_time_ = 0;
     trajectory_start_time_ = current_time_;
@@ -103,6 +108,7 @@ namespace pr2_mechanism_controllers
   {
     ros_node_.unadvertise(control_topic_name_);
     ros_node_.unsubscribe(path_input_topic_name_);
+    ros_node_.unadvertise("/diagnostics") ;
   }
 
   trajectory::Trajectory::TPoint BaseTrajectoryController::getPose2D(const tf::Stamped<tf::Pose> &pose)
@@ -182,6 +188,7 @@ namespace pr2_mechanism_controllers
       if((int) path_msg_.points[0].get_positions_size() != dimension_)
       {
         stop_motion_ = true;
+        control_state_ = "Input trajectory has wrong dimension - MOTION STOPPED";
         ROS_WARN("Dimension of input trajectory = %d does not match number of controlled joints = %d",(int) path_msg_.points.size(), dimension_);
       }
       else
@@ -212,6 +219,7 @@ namespace pr2_mechanism_controllers
     }
     else
     {
+      control_state_ = "No waypoints - MOTION STOPPED";
       ROS_DEBUG("Trajectory has no waypoints");
       stop_motion_ = true;
     }
@@ -224,6 +232,9 @@ namespace pr2_mechanism_controllers
     ros::Duration cycle_time = ros::Duration(1.0 / controller_frequency_);
     while(1)
     {
+
+      publishDiagnostics(false);
+
       //get the start time of the loop
       ros::Time start_time = ros::Time::now();
       current_time_ = ros::Time::now().toSec();
@@ -240,6 +251,7 @@ namespace pr2_mechanism_controllers
       if(goalReached())//check for success
       {
         ROS_DEBUG("REACHED GOAL");
+        control_state_ = "REACHED GOAL";
         stop_motion_ = true;
       }
 
@@ -247,6 +259,7 @@ namespace pr2_mechanism_controllers
       {
         ROS_DEBUG("No path update in %f seconds. Stopping motion.",current_time_-path_updated_time_);
         stop_motion_ = true;
+        control_state_ = "WATCHDOG - MOTION STOPPED";
       }
 
       struct timeval start, end;
@@ -261,12 +274,92 @@ namespace pr2_mechanism_controllers
       t_diff = end_t - start_t;
       ROS_DEBUG("Full control cycle: %.9f", t_diff);
 
-
       last_update_time_ = current_time_;
 
       if(!sleepLeftover(start_time, cycle_time))      //sleep the remainder of the cycle
         ROS_WARN("Control loop missed its desired cycle time of %.4f", cycle_time.toSec());
     }
+  }
+
+  void BaseTrajectoryController::publishDiagnostics(bool force)
+  {
+    if((ros::Time::now() - last_diagnostics_publish_time_).toSec() <= diagnostics_expected_publish_time_ && !force)
+    {
+      return;
+    }
+
+    robot_msgs::DiagnosticMessage message;
+    std::vector<robot_msgs::DiagnosticStatus> statuses;
+    std::vector<robot_msgs::DiagnosticValue> values;
+    std::vector<robot_msgs::DiagnosticString> strings;
+
+    robot_msgs::DiagnosticStatus status;
+    robot_msgs::DiagnosticValue v;
+    robot_msgs::DiagnosticString s;
+    status.name = ros_node_.getName();
+    status.message = control_state_;
+
+    v.label = "Error.x";
+    v.value = error_x_;
+    values.push_back(v);
+
+    v.label = "Error.y";
+    v.value = error_y_;
+    values.push_back(v);
+
+    v.label = "Error.th";
+    v.value = error_th_;
+    values.push_back(v);
+
+    v.label = "Goal.x";
+    v.value = goal_.q_[0];
+    values.push_back(v);
+
+    v.label = "Goal.y";
+    v.value = goal_.q_[1];
+    values.push_back(v);
+
+    v.label = "Goal.th";
+    v.value = goal_.q_[2];
+    values.push_back(v);
+
+    v.label = "Number of waypoints";
+    v.value = path_msg_.get_points_size();
+    values.push_back(v);
+
+    v.label = "Controller frequency (Hz)";
+    v.value = controller_frequency_;
+    values.push_back(v);
+
+    v.label = "Max update delta time (s)";
+    v.value = max_update_time_;
+    values.push_back(v);
+
+    s.label = "Control topic name";
+    s.value = control_topic_name_;
+    strings.push_back(s);
+
+    s.label = "Global frame";
+    s.value = global_frame_;
+    strings.push_back(s);
+
+    s.label = "Path input topic name";
+    s.value = path_input_topic_name_;
+    strings.push_back(s);
+
+    s.label = "Trajectory type";
+    s.value = trajectory_type_;
+    strings.push_back(s);
+
+    status.set_values_vec(values);
+    status.set_strings_vec(strings);
+
+    statuses.push_back(status);
+
+    message.header.stamp = ros::Time::now();
+    message.status = statuses;
+    ros_node_.publish("/diagnostics",message);
+    last_diagnostics_publish_time_ = message.header.stamp;
   }
 
   void BaseTrajectoryController::updateControl()
@@ -287,6 +380,7 @@ namespace pr2_mechanism_controllers
     }
     else
     {
+      control_state_ = "ACTIVE - OK";
       stop_motion_count_ = 0;
       cmd_vel = getCommand();
       ros_node_.publish(control_topic_name_,cmd_vel);
@@ -318,6 +412,14 @@ namespace pr2_mechanism_controllers
     cmd_vel.ang_vel.vz = cmd[2];
 
     cmd_vel = checkCmd(cmd_vel);
+
+    error_x_ = error_x;
+    error_y_ = error_y;
+    error_th_ = error_theta;
+
+    cmd_vel_.vel.vx = cmd_vel.vel.vx;
+    cmd_vel_.vel.vy = cmd_vel.vel.vy;
+    cmd_vel_.ang_vel.vz = cmd_vel.ang_vel.vz;
 
     return cmd_vel;
   }
@@ -360,7 +462,7 @@ namespace pr2_mechanism_controllers
 
 int main(int argc, char** argv){
   ros::init(argc, argv);
-  ros::Node ros_node("move_base_node");
+  ros::Node ros_node("/base/trajectory_controller");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   pr2_mechanism_controllers::BaseTrajectoryController move_base(ros_node, tf);
   move_base.spin();

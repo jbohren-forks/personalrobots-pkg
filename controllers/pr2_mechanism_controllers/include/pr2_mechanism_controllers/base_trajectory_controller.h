@@ -116,6 +116,16 @@ namespace pr2_mechanism_controllers
 
     robot_msgs::PoseDot checkCmd(const robot_msgs::PoseDot &cmd);
 
-  };
+    double diagnostics_expected_publish_time_;
+
+    ros::Time last_diagnostics_publish_time_;
+
+    void publishDiagnostics(bool force);
+
+    robot_msgs::PoseDot cmd_vel_;
+    double error_x_,error_y_,error_th_;
+
+    std::string control_state_;
+ };
 };
 
