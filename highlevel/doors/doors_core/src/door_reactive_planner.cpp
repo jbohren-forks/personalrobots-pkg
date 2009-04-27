@@ -68,14 +68,14 @@ void DoorReactivePlanner::getParams()
   double resolution;
   node_.param<double>("~costmap/resolution",resolution,0.025);
 
-  cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),4);
+  cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),2);
 
   min_distance_from_obstacles_ = min_distance_from_obstacles_ + inscribed_radius_;
-  cell_distance_robot_center_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),(int)inscribed_radius_/resolution);
-  max_inflated_cost_ = cost_map_->computeCost(cell_distance_robot_center_from_obstacles_);
+  //  cell_distance_robot_center_from_obstacles_ = 0;
+  max_inflated_cost_ = cost_map_->computeCost((int)(min_distance_from_obstacles_/resolution));
 
   ROS_INFO("Cell distance from obstacles is %d",cell_distance_from_obstacles_);
-  ROS_INFO("Max inflated cost: %f for a distance of %d (cells in costmap)",max_inflated_cost_,cell_distance_robot_center_from_obstacles_); 
+  ROS_INFO("Max inflated cost: %f for a distance of %d (cells in costmap)",max_inflated_cost_,(int) (min_distance_from_obstacles_/resolution)); 
   robot_msgs::Point pt;
   //create a square footprint
   pt.x = inscribed_radius_;

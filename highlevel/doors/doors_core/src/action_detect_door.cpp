@@ -35,6 +35,7 @@
 /* Author: Wim Meeussen */
 
 #include <door_handle_detector/DoorsDetectorCloud.h>
+#include <door_handle_detector/door_functions.h>
 #include <point_cloud_assembler/BuildCloudAngle.h>
 #include "doors_core/action_detect_door.h"
 
@@ -62,8 +63,12 @@ robot_actions::ResultStatus DetectDoorAction::execute(const robot_msgs::Door& go
 {
   ROS_INFO("DetectDoorAction: execute");
 
+  // transform door message to time fixed frame
+  robot_msgs::Door goal_tr;
+  transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame);
+
   robot_msgs::Door result_laser;
-  if (!laserDetection(goal, result_laser)){
+  if (!laserDetection(goal_tr, result_laser)){
     if (isPreemptRequested()){
       ROS_ERROR("DetectDoorAction: Preempted");
       return robot_actions::PREEMPTED;
