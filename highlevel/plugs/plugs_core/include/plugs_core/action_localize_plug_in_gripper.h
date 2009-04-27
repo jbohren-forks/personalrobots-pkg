@@ -49,7 +49,7 @@
 
 // Srvs 
 #include <robot_srvs/MoveToPose.h>
-
+#include "robot_srvs/SetPoseStamped.h"
 //TF
 #include <tf/tf.h>
 #include <tf/transform_listener.h>

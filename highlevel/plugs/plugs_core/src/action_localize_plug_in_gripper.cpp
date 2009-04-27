@@ -48,7 +48,7 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
   TF(*ros::Node::instance(),false, ros::Duration(10))
 {
   node_.setParam("~roi_policy", "LastImageLocation");
-  node_.setParam("~display", "true");
+  node_.setParam("~display", "false");
   node_.setParam("~square_size", 0.0042);
   node_.setParam("~board_width", 3);
   node_.setParam("~board_height",4);
@@ -170,24 +170,19 @@ void LocalizePlugInGripperAction::setToolFrame()
     deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
     return;
   }
-
-  // Transforms the plug pose into the end-effector frame
-  tf::PoseStampedMsgToTF(plug_pose_msg_, plug_pose_);
-  TF.transformPose("r_gripper_tool_frame", plug_pose_, plug_pose_);
- 
-  node_.setParam(servoing_controller_ + "/tool_frame/translation/x", plug_pose_.getOrigin().x());
-  node_.setParam(servoing_controller_ + "/tool_frame/translation/y", plug_pose_.getOrigin().y());
-  node_.setParam(servoing_controller_ + "/tool_frame/translation/z", plug_pose_.getOrigin().z());
-  node_.setParam(servoing_controller_ + "/tool_frame/rotation/x", plug_pose_.getRotation().x());
-  node_.setParam(servoing_controller_ + "/tool_frame/rotation/y", plug_pose_.getRotation().y());
-  node_.setParam(servoing_controller_ + "/tool_frame/rotation/z", plug_pose_.getRotation().z());
-  node_.setParam(servoing_controller_ + "/tool_frame/rotation/w", plug_pose_.getRotation().w());
-  
+  robot_srvs::SetPoseStamped::Request req_tool;
+  req_tool.p = plug_pose_msg_;
+  robot_srvs::SetPoseStamped::Response res_tool;
+  if (!ros::service::call(servoing_controller_ + "/set_tool_frame", req_tool, res_tool))
+  {
+    ROS_ERROR("%s: Failed to set tool frame.", action_name_.c_str());
+    deactivate(robot_actions::ABORTED, empty_);
+    return;
+  }
+   
   
   detector_->deactivate();
   ROS_INFO("%s: succeeded.", action_name_.c_str());
   deactivate(robot_actions::SUCCESS, empty_);
-
-  return;
 }
 }
