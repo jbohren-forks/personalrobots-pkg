@@ -462,7 +462,7 @@ namespace pr2_mechanism_controllers
 
 int main(int argc, char** argv){
   ros::init(argc, argv);
-  ros::Node ros_node("/base/trajectory_controller");
+  ros::Node ros_node("base/trajectory_controller");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   pr2_mechanism_controllers::BaseTrajectoryController move_base(ros_node, tf);
   move_base.spin();
