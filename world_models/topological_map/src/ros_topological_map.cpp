@@ -38,7 +38,8 @@
 
 #include <topological_map/ros_topological_map.h>
 #include <fstream>
-
+#include "robot_srvs/StaticMap.h"
+#include "LinearMath/btMatrix3x3.h"
 
 using std::string;
 
@@ -59,11 +60,18 @@ void RosTopologicalMap::loadMap (void)
     usleep(1000000);
   }
   sleep(2);
-  ROS_INFO ("Received a %d by %d map at %f m/pix.  Origin is %f, %f, %f.  \n", resp.map.width, resp.map.height, resp.map.resolution, resp.map.origin.x, resp.map.origin.y, resp.map.origin.th);
+  btQuaternion q(resp.map.info.origin.orientation.x, 
+                 resp.map.info.origin.orientation.y, 
+                 resp.map.info.origin.orientation.z, 
+                 resp.map.info.origin.orientation.w) ;
+  double yaw, pitch, roll;
+  btMatrix3x3(q).getEulerZYX(yaw, pitch, roll);
+      
+  ROS_INFO ("Received a %d by %d map at %f m/pix.  Origin is %f, %f, %f.  \n", resp.map.info.width, resp.map.info.height, resp.map.info.resolution, resp.map.info.origin.position.x, resp.map.info.origin.position.y, yaw);
 
-  num_cols_ = resp.map.width;
-  num_rows_ = resp.map.height;
-  resolution_ = resp.map.resolution;
+  num_cols_ = resp.map.info.width;
+  num_rows_ = resp.map.info.height;
+  resolution_ = resp.map.info.resolution;
 
   occupancy_grid_.resize(boost::extents[num_rows_][num_cols_]);
   
