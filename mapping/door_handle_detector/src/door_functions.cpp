@@ -44,27 +44,28 @@ namespace door_handle_detector{
 bool transformTo(const tf::Transformer& tf, const string& goal_frame, const robot_msgs::Door& door_in, robot_msgs::Door& door_out, const std::string& fixed_frame)
 {
   door_out = door_in;
-  if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.frame_p1, door_out.frame_p1, fixed_frame)) return false;
-  if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.frame_p2, door_out.frame_p2, fixed_frame)) return false;
-  if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.door_p1, door_out.door_p1, fixed_frame)) return false;
-  if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.door_p2, door_out.door_p2, fixed_frame)) return false;
-  if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.handle, door_out.handle, fixed_frame)) return false;
-  if (!transformVectorTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.normal, door_out.normal, fixed_frame)) return false;
+  ros::Time time_now = ros::Time::now();
+  if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.frame_p1, door_out.frame_p1, fixed_frame, time_now)) return false;
+  if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.frame_p2, door_out.frame_p2, fixed_frame, time_now)) return false;
+  if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.door_p1, door_out.door_p1, fixed_frame, time_now)) return false;
+  if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.door_p2, door_out.door_p2, fixed_frame, time_now)) return false;
+  if (!transformPointTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.handle, door_out.handle, fixed_frame, time_now)) return false;
+  if (!transformVectorTo(tf, door_in.header.frame_id, goal_frame, door_in.header.stamp, door_in.normal, door_out.normal, fixed_frame, time_now)) return false;
   door_out.header.frame_id = goal_frame;
+  door_out.header.stamp = time_now;
   return true;
 }
 
 
 
-bool transformPointTo(const tf::Transformer& tf, const string& source_frame, const string& goal_frame, const Time& time,
-                      const robot_msgs::Point32& point_in, robot_msgs::Point32& point_out, const std::string& fixed_frame)
+bool transformPointTo(const tf::Transformer& tf, const string& source_frame, const string& goal_frame, const Time& time_source,
+                      const robot_msgs::Point32& point_in, robot_msgs::Point32& point_out, const std::string& fixed_frame, const Time& time_goal)
 {
-  ros::Duration timeout = Duration().fromSec(2.0);
-  ros::Time time_now = ros::Time::now();
-  if (!tf.canTransform(source_frame, fixed_frame, time, timeout)) return false;
-  if (!tf.canTransform(goal_frame, fixed_frame, time_now, timeout)) return false;
-  tf::Stamped<tf::Point> pnt(tf::Vector3(point_in.x, point_in.y, point_in.z), time, source_frame);
-  tf.transformPoint(goal_frame, time_now, pnt, fixed_frame, pnt);
+  ros::Duration timeout = Duration().fromSec(5.0);
+  if (!tf.canTransform(source_frame, fixed_frame, time_source, timeout)) return false;
+  if (!tf.canTransform(goal_frame, fixed_frame, time_goal, timeout)) return false;
+  tf::Stamped<tf::Point> pnt(tf::Vector3(point_in.x, point_in.y, point_in.z), time_source, source_frame);
+  tf.transformPoint(goal_frame, time_goal, pnt, fixed_frame, pnt);
   point_out.x = pnt[0];
   point_out.y = pnt[1];
   point_out.z = pnt[2];
@@ -72,15 +73,14 @@ bool transformPointTo(const tf::Transformer& tf, const string& source_frame, con
   return true;
 }
 
-bool transformVectorTo(const tf::Transformer& tf, const string& source_frame, const string& goal_frame, const Time& time,
-                       const robot_msgs::Vector3& point_in, robot_msgs::Vector3& point_out, const std::string& fixed_frame)
+bool transformVectorTo(const tf::Transformer& tf, const string& source_frame, const string& goal_frame, const Time& time_source,
+                       const robot_msgs::Vector3& point_in, robot_msgs::Vector3& point_out, const std::string& fixed_frame, const Time& time_goal)
 {
   ros::Duration timeout = Duration().fromSec(2.0);
-  ros::Time time_now = ros::Time::now();
-  if (!tf.canTransform(source_frame, fixed_frame, time, timeout)) return false;
-  if (!tf.canTransform(goal_frame, fixed_frame, time_now, timeout)) return false;
-  tf::Stamped<tf::Point> pnt(tf::Vector3(point_in.x, point_in.y, point_in.z), time, source_frame);
-  tf.transformVector(goal_frame, time_now, pnt, fixed_frame, pnt);
+  if (!tf.canTransform(source_frame, fixed_frame, time_source, timeout)) return false;
+  if (!tf.canTransform(goal_frame, fixed_frame, time_goal, timeout)) return false;
+  tf::Stamped<tf::Point> pnt(tf::Vector3(point_in.x, point_in.y, point_in.z), time_source, source_frame);
+  tf.transformVector(goal_frame, time_goal, pnt, fixed_frame, pnt);
   point_out.x = pnt[0];
   point_out.y = pnt[1];
   point_out.z = pnt[2];
