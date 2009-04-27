@@ -66,6 +66,9 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door&
 { 
   ROS_INFO("UnlatchHandleAction: execute");
 
+  // default feedback
+  feedback = goal;
+
   // stop
   tff_stop_.mode.vel.x = tff_stop_.FORCE;
   tff_stop_.mode.vel.y = tff_stop_.FORCE;
@@ -129,6 +132,15 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door&
       return robot_actions::ABORTED;
     }
 
+    // detect when door in locked
+    if (tff_handle_.value.rot.x > 2.5 && fabs(tff_state_.rot.x < M_PI/6.0)){
+      node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
+      node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
+      ROS_INFO("UnlatchHandleAction: Door is locked");
+      feedback.latch_state = 1; // locked
+      return robot_actions::SUCCESS;
+    }
+
     // measure distance door moved forward
     move_forward = fabs(tff_state_.vel.x);
 
@@ -145,7 +157,7 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door&
   // keep pushing forward when finished
   tff_handle_.value.rot.x = 0;
   node_.publish("r_arm_cartesian_tff_controller/command", tff_handle_);
-  feedback = goal;
+  feedback.latch_state = 3; // unlatched
   return robot_actions::SUCCESS;
 }
 
