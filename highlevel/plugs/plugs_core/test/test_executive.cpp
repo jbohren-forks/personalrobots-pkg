@@ -98,7 +98,7 @@ int
 
   Duration timeout_short = Duration().fromSec(2.0);
   Duration timeout_medium = Duration().fromSec(10.0);
-  Duration timeout_long = Duration().fromSec(20.0);
+  Duration timeout_long = Duration().fromSec(300.0);
 
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> tuck_arm("safety_tuck_arms");
   robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
@@ -147,6 +147,7 @@ int
   // plug in
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_wrench_controller");
   switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
   switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_hybrid_controller");

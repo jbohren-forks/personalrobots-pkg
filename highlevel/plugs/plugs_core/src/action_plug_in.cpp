@@ -75,7 +75,7 @@ PlugInAction::PlugInAction(ros::Node& node) :
                TF_.get(), &node,\
 boost::bind(&PlugInAction::plugMeasurementCallback, this, _1),
 //PlugInAction::plugMeasurementCallback,
-"~pose", "outlet_pose", 100));
+"~plug_pose", "outlet_pose", 100));
 
   tff_msg_.header.frame_id = "outlet_pose";
 
@@ -147,7 +147,10 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
       if (viz_offset.getOrigin().length() > 0.5 ||
           viz_offset.getRotation().getAngle() > (M_PI/4.0))
       {
-        ROS_ERROR("%s: Error, Crazy vision offset!!!.", action_name_.c_str());
+        double ypr[3];
+        btMatrix3x3(viz_offset.getRotation()).getEulerYPR(ypr[2], ypr[1], ypr[0]);
+        ROS_ERROR("%s: Error, Crazy vision offset (%lf, (%lf, %lf, %lf))!!!.",
+                  action_name_.c_str(), viz_offset.getOrigin().length(), ypr[0], ypr[1], ypr[2]);
         g_state_ = MEASURING;
         break;
       }
@@ -281,13 +284,15 @@ void PlugInAction::move()
   mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
   node_.publish(arm_controller_ + "/command", tff_msg_);
   return;
+
 }
 
 void PlugInAction::insert()
 {
   if (!isActive())
     return;
-  
+  g_started_inserting_ = ros::Time::now();
+
   tff_msg_.mode.vel.x = 2;
   tff_msg_.mode.vel.y = 3;
   tff_msg_.mode.vel.z = 3;
