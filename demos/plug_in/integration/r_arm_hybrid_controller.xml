@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+
+  <controller name="r_arm_hybrid_controller" type="CartesianHybridControllerNode"/>
+

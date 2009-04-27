@@ -23,7 +23,7 @@
   </group>
   
  
-  <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/integration/r_arm_joint_trajectory_controller.xml" />
+  <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_joint_trajectory_controller.xml" />
   
   <!-- Controller and Node Required for plug on base detection -->
   
@@ -126,5 +126,7 @@
     <param name="saturated_velocity" value="0.5" />
     <param name="autostart" value="false" type="bool" />
   </group>
+
+ <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/integration/r_arm_hybrid_controller.xml"/>
 
 </launch>
