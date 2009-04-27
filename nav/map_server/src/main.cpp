@@ -146,15 +146,15 @@ int main(int argc, char **argv)
     printf("[map_server] loading map from image \"%s\"\n", fname);
     map_server::loadMapFromFile(&ms.map_resp_,fname,res,negate);
     printf("[map_server] read a %d X %d map @ %.3lf m/cell\n",
-           ms.map_resp_.map.width,
-           ms.map_resp_.map.height,
-           ms.map_resp_.map.resolution);
-
+           ms.map_resp_.map.info.width,
+           ms.map_resp_.map.info.height,
+           ms.map_resp_.map.info.resolution);
+    ///\todo This could be optimzed regarding ticket:937
     ms.meta_data_message_.map_load_time = ros::Time::now();
-    ms.meta_data_message_.resolution = ms.map_resp_.map.resolution;
-    ms.meta_data_message_.width = ms.map_resp_.map.width;
-    ms.meta_data_message_.height = ms.map_resp_.map.height;
-    ms.meta_data_message_.origin = ms.map_resp_.map.origin;
+    ms.meta_data_message_.resolution = ms.map_resp_.map.info.resolution;
+    ms.meta_data_message_.width = ms.map_resp_.map.info.width;
+    ms.meta_data_message_.height = ms.map_resp_.map.info.height;
+    ms.meta_data_message_.origin = ms.map_resp_.map.info.origin;
     ms.advertiseService("static_map", &MapServer::mapCallback);
     ms.advertise("map_metadata", ms.meta_data_message_, &MapServer::metadataSubscriptionCallback, 1);
 

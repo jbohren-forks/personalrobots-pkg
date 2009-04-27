@@ -304,13 +304,13 @@ WavefrontNode::WavefrontNode() :
     d.sleep();
   }
   printf("Received a %d X %d map @ %.3f m/pix\n",
-         resp.map.width,
-         resp.map.height,
-         resp.map.resolution);
+         resp.map.info.width,
+         resp.map.info.height,
+         resp.map.info.resolution);
   char* mapdata;
   int sx, sy;
-  sx = resp.map.width;
-  sy = resp.map.height;
+  sx = resp.map.info.width;
+  sy = resp.map.info.height;
   // Convert to player format
   mapdata = new char[sx*sy];
   for(int i=0;i<sx*sy;i++)
@@ -342,7 +342,7 @@ WavefrontNode::WavefrontNode() :
   }
   delete[] mapdata;
 
-  this->plan->scale = resp.map.resolution;
+  this->plan->scale = resp.map.info.resolution;
   this->plan->size_x = sx;
   this->plan->size_y = sy;
   this->plan->origin_x = 0.0;

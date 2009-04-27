@@ -114,12 +114,12 @@ CostMap2DRos::CostMap2DRos() :
     usleep(1000000);
   }
   printf("Received a %d X %d map @ %.3f m/pix\n",
-         resp.map.width,
-         resp.map.height,
-         resp.map.resolution);
+         resp.map.info.width,
+         resp.map.info.height,
+         resp.map.info.resolution);
   int sx, sy;
-  sx = resp.map.width;
-  sy = resp.map.height;
+  sx = resp.map.info.width;
+  sy = resp.map.info.height;
   // Convert to player format
   unsigned char* mapdata = new unsigned char[sx*sy];
   for(int i=0;i<sx*sy;i++)
@@ -131,7 +131,7 @@ CostMap2DRos::CostMap2DRos() :
     else
       mapdata[i] = 0;
   }
-  costmap_.setStaticMap(sx, sy, resp.map.resolution, mapdata);
+  costmap_.setStaticMap(sx, sy, resp.map.info.resolution, mapdata);
   delete[] mapdata;
   
   tf_.setWithEulers("FRAMEID_LASER",

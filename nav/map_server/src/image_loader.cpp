@@ -74,17 +74,21 @@ loadMapFromFile(robot_srvs::StaticMap::Response* resp,
   }
 
   // Copy the image data into the map structure
-  resp->map.width = img->w;
-  resp->map.height = img->h;
-  resp->map.resolution = res;
+  resp->map.info.width = img->w;
+  resp->map.info.height = img->h;
+  resp->map.info.resolution = res;
   /// @todo Make the map's origin configurable, probably from within the
   /// comment section of the image file.
-  resp->map.origin.x = 0.0;
-  resp->map.origin.y = 0.0;
-  resp->map.origin.th = 0.0;
+  resp->map.info.origin.position.x = 0.0;
+  resp->map.info.origin.position.y = 0.0;
+  resp->map.info.origin.position.z = 0.0;
+  resp->map.info.origin.orientation.x = 0.0;
+  resp->map.info.origin.orientation.y = 0.0;
+  resp->map.info.origin.orientation.z = 0.0;
+  resp->map.info.origin.orientation.w = 1.0;
 
   // Allocate space to hold the data
-  resp->map.set_data_size(resp->map.width * resp->map.height);
+  resp->map.set_data_size(resp->map.info.width * resp->map.info.height);
 
   // Get values that we'll need to iterate through the pixels
   rowstride = img->pitch;
@@ -92,9 +96,9 @@ loadMapFromFile(robot_srvs::StaticMap::Response* resp,
 
   // Copy pixel data into the map structure
   pixels = (unsigned char*)(img->pixels);
-  for(j = 0; j < resp->map.height; j++)
+  for(j = 0; j < resp->map.info.height; j++)
   {
-    for (i = 0; i < resp->map.width; i++)
+    for (i = 0; i < resp->map.info.width; i++)
     {
       // Compute mean of RGB for this pixel
       p = pixels + j*rowstride + i*n_channels;
@@ -117,11 +121,11 @@ loadMapFromFile(robot_srvs::StaticMap::Response* resp,
       /// @todo Make the color thresholds configurable, probably from
       /// within the comments section of the image file.
       if(occ > 0.65)
-        resp->map.data[MAP_IDX(resp->map.width,i,resp->map.height - j - 1)] = +100;
+        resp->map.data[MAP_IDX(resp->map.info.width,i,resp->map.info.height - j - 1)] = +100;
       else if(occ < 0.1)
-        resp->map.data[MAP_IDX(resp->map.width,i,resp->map.height - j - 1)] = 0;
+        resp->map.data[MAP_IDX(resp->map.info.width,i,resp->map.info.height - j - 1)] = 0;
       else
-        resp->map.data[MAP_IDX(resp->map.width,i,resp->map.height - j - 1)] = -1;
+        resp->map.data[MAP_IDX(resp->map.info.width,i,resp->map.info.height - j - 1)] = -1;
     }
   }
 

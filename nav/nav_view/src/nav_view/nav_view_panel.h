@@ -36,7 +36,6 @@
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/Polyline.h"
 #include "robot_msgs/PoseWithCovariance.h"
-#include "robot_srvs/StaticMap.h"
 
 #include <OGRE/OgreTexture.h>
 #include <OGRE/OgreMaterial.h>

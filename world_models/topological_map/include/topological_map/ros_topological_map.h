@@ -40,7 +40,6 @@
 #include <ros/node.h>
 #include <string>
 #include <ros/console.h>
-#include <robot_srvs/StaticMap.h>
 #include "topological_map.h"
 
 using std::string;

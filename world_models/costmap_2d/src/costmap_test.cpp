@@ -80,12 +80,12 @@ class CostmapTester {
         usleep(1000000);
       }
       ROS_INFO("Received a %d X %d map at %f m/pix\n",
-          map_resp.map.width, map_resp.map.height, map_resp.map.resolution);
+          map_resp.map.info.width, map_resp.map.info.height, map_resp.map.info.resolution);
 
       // We are treating cells with no information as lethal obstacles based on the input data. This is not ideal but
       // our planner and controller do not reason about the no obstacle case
       std::vector<unsigned char> input_data;
-      unsigned int numCells = map_resp.map.width * map_resp.map.height;
+      unsigned int numCells = map_resp.map.info.width * map_resp.map.info.height;
       for(unsigned int i = 0; i < numCells; i++){
         input_data.push_back((unsigned char) map_resp.map.data[i]);
       }
@@ -93,8 +93,8 @@ class CostmapTester {
       struct timeval start, end;
       double start_t, end_t, t_diff;
       gettimeofday(&start, NULL);
-      new_costmap_ = new Costmap2D((unsigned int)map_resp.map.width, (unsigned int)map_resp.map.height,
-          map_resp.map.resolution, 0.0, 0.0, 0.325, 0.46, 0.55, 2.5, 2.0, 3.0, 1.0, input_data, 100);
+      new_costmap_ = new Costmap2D((unsigned int)map_resp.map.info.width, (unsigned int)map_resp.map.info.height,
+          map_resp.map.info.resolution, 0.0, 0.0, 0.325, 0.46, 0.55, 2.5, 2.0, 3.0, 1.0, input_data, 100);
       gettimeofday(&end, NULL);
       start_t = start.tv_sec + double(start.tv_usec) / 1e6;
       end_t = end.tv_sec + double(end.tv_usec) / 1e6;

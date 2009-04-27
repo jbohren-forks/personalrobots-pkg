@@ -400,15 +400,15 @@ AmclNode::requestMap()
     d.sleep();
   }
   ROS_INFO("Received a %d X %d map @ %.3f m/pix\n",
-           resp.map.width,
-           resp.map.height,
-           resp.map.resolution);
+           resp.map.info.width,
+           resp.map.info.height,
+           resp.map.info.resolution);
 
-  map->size_x = resp.map.width;
-  map->size_y = resp.map.height;
-  map->scale = resp.map.resolution;
-  map->origin_x = resp.map.origin.x + (map->size_x / 2) * map->scale;
-  map->origin_y = resp.map.origin.y + (map->size_y / 2) * map->scale;
+  map->size_x = resp.map.info.width;
+  map->size_y = resp.map.info.height;
+  map->scale = resp.map.info.resolution;
+  map->origin_x = resp.map.info.origin.position.x + (map->size_x / 2) * map->scale;
+  map->origin_y = resp.map.info.origin.position.y + (map->size_y / 2) * map->scale;
   // Convert to player format
   map->cells = (map_cell_t*)malloc(sizeof(map_cell_t)*map->size_x*map->size_y);
   ROS_ASSERT(map->cells);

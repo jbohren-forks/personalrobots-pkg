@@ -264,12 +264,12 @@ namespace old_costmap_2d
     }
 
     ROS_DEBUG("Received a %d X %d map at %f m/pix\n",
-              resp.map.width, resp.map.height, resp.map.resolution);
+              resp.map.info.width, resp.map.info.height, resp.map.info.resolution);
 
     // We are treating cells with no information as lethal obstacles based on the input data. This is not ideal but
     // our planner and controller do not reason about the no obstacle case
     std::vector<unsigned char> inputData;
-    unsigned int numCells = resp.map.width * resp.map.height;
+    unsigned int numCells = resp.map.info.width * resp.map.info.height;
     for(unsigned int i = 0; i < numCells; i++){
       inputData.push_back((unsigned char) resp.map.data[i]);
     }
@@ -282,20 +282,25 @@ namespace old_costmap_2d
     ros::Node::instance()->param("~costmap_2d/raytrace_range", rayTraceRange, 10.0);
     ros::Node::instance()->param("~costmap_2d/obstacle_range", obstacleRange, 10.0);
 
-    costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
-                             inputData , resp.map.resolution,
+    costMap_ = new CostMap2D((unsigned int)resp.map.info.width, (unsigned int)resp.map.info.height,
+                             inputData , resp.map.info.resolution,
                              lethalObstacleThreshold, maxZ_, zLB, zUB,
                              inflationRadius, circumscribedRadius, inscribedRadius, weight,
                              obstacleRange, rayTraceRange, raytraceWindow);
 
     // set up costmap service response
-    costmap_response_.map.width=resp.map.width;
-    costmap_response_.map.height=resp.map.height;
-    costmap_response_.map.resolution=resp.map.resolution;
-    costmap_response_.map.origin.x = 0.0;
-    costmap_response_.map.origin.y = 0.0;
-    costmap_response_.map.origin.th = 0.0;
-    costmap_response_.map.set_data_size(resp.map.width*resp.map.height);
+    costmap_response_.map.info.width=resp.map.info.width;
+    costmap_response_.map.info.height=resp.map.info.height;
+    costmap_response_.map.info.resolution=resp.map.info.resolution;
+    costmap_response_.map.info.origin.position.x = 0.0;
+    costmap_response_.map.info.origin.position.y = 0.0;
+    costmap_response_.map.info.origin.position.z = 0.0;
+    costmap_response_.map.info.origin.orientation.x = 0.0;
+    costmap_response_.map.info.origin.orientation.y = 0.0;
+    costmap_response_.map.info.origin.orientation.z = 0.0;
+    costmap_response_.map.info.origin.orientation.w = 1.0;
+
+    costmap_response_.map.set_data_size(resp.map.info.width*resp.map.info.height);
 
     ros::Node::instance()->param("~costmap_2d/local_access_mapsize", local_access_mapsize_, 4.0);
     global_map_accessor_ = new CostMapAccessor(*costMap_);
@@ -699,7 +704,7 @@ namespace old_costmap_2d
   {
     const unsigned char* costmap = getCostMap().getMap();
     res = costmap_response_;
-    copy(costmap, costmap+res.map.width*res.map.height, res.map.data.begin());
+    copy(costmap, costmap+res.map.info.width*res.map.info.height, res.map.data.begin());
     return true;
   }
 

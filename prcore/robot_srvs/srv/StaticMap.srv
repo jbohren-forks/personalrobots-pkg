@@ -1,2 +1,2 @@
 ---
-robot_msgs/OccMap2D map
+robot_msgs/OccGrid map

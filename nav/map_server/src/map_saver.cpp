@@ -57,7 +57,7 @@ Uses (name/type):
 
 #include "ros/node.h"
 #include "robot_srvs/StaticMap.h"
-
+#include "LinearMath/btMatrix3x3.h"
 using namespace std;
  
 /**
@@ -82,18 +82,18 @@ MapGenerator::MapGenerator(string servname) : ros::Node("map_generator") {
     usleep(1000000);
   }
   printf("Received a %d X %d map @ %.3f m/pix\n",
-         resp.map.width,
-         resp.map.height,
-         resp.map.resolution);
+         resp.map.info.width,
+         resp.map.info.height,
+         resp.map.info.resolution);
 
 
   FILE* out = fopen("map.pgm", "w");
 
   fprintf(out, "P5\n# CREATOR: Map_generator.cpp %.3f m/pix\n%d %d\n255\n",
-	  resp.map.resolution, resp.map.width, resp.map.height);
-  for(unsigned int y = 0; y < resp.map.height; y++) {
-    for(unsigned int x = 0; x < resp.map.width; x++) {
-      unsigned int i = x + (resp.map.height - y - 1) * resp.map.width;
+	  resp.map.info.resolution, resp.map.info.width, resp.map.info.height);
+  for(unsigned int y = 0; y < resp.map.info.height; y++) {
+    for(unsigned int x = 0; x < resp.map.info.width; x++) {
+      unsigned int i = x + (resp.map.info.height - y - 1) * resp.map.info.width;
       if (resp.map.data[i] == 0) { //occ [0,0.1)
 	fputc(254, out);
       } else if (resp.map.data[i] == +100) { //occ (0.65,1]
@@ -120,9 +120,13 @@ MapGenerator::MapGenerator(string servname) : ros::Node("map_generator") {
     unknown: [129]
   */
 
+  robot_msgs::Quaternion & orientation = resp.map.info.origin.orientation;
+  btMatrix3x3 mat(btQuaternion(orientation.x, orientation.y, orientation.z, orientation.w));
+  double yaw, pitch, roll;
+  mat.getEulerZYX(yaw, pitch, roll);
 
   fprintf(yaml, "resolution: %f\norigin: [%f, %f, %f]\n#\nvacant: [254]\noccupied: [0]\ninterpolate: 0\nunknown: [206]\n",
-	  resp.map.resolution, resp.map.origin.x, resp.map.origin.y, resp.map.origin.th);
+	  resp.map.info.resolution, resp.map.info.origin.position.x, resp.map.info.origin.position.y, yaw);
 
   fclose(yaml);
 

@@ -41,7 +41,6 @@
 #include <ros/console.h>
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/observation_buffer.h>
-#include <robot_srvs/StaticMap.h>
 #include <robot_msgs/Polyline.h>
 #include <map>
 #include <vector>

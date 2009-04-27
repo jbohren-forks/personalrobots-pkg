@@ -250,13 +250,13 @@ AmclNode::AmclNode() :
     usleep(1000000);
   }
   printf("Received a %d X %d map @ %.3f m/pix\n",
-         resp.map.width,
-         resp.map.height,
-         resp.map.resolution);
+         resp.map.info.width,
+         resp.map.info.height,
+         resp.map.info.resolution);
 
-  this->sx = resp.map.width;
-  this->sy = resp.map.height;
-  this->resolution = resp.map.resolution;
+  this->sx = resp.map.info.width;
+  this->sy = resp.map.info.height;
+  this->resolution = resp.map.info.resolution;
   // Convert to player format
   this->mapdata = new char[this->sx*this->sy];
   for(int i=0;i<this->sx*this->sy;i++)

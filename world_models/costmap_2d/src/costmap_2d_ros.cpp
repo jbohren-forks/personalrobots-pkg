@@ -36,6 +36,9 @@
  *********************************************************************/
 #include <costmap_2d/costmap_2d_ros.h>
 
+#include <robot_srvs/StaticMap.h>
+
+
 using namespace std;
 using namespace tf;
 using namespace robot_msgs;
@@ -141,7 +144,7 @@ namespace costmap_2d {
         usleep(1000000);
       }
       ROS_INFO("Received a %d X %d map at %f m/pix\n",
-          map_resp.map.width, map_resp.map.height, map_resp.map.resolution);
+          map_resp.map.info.width, map_resp.map.info.height, map_resp.map.info.resolution);
 
       //check if the user has set any parameters that will be overwritten
       bool user_map_params = false;
@@ -156,16 +159,16 @@ namespace costmap_2d {
 
       // We are treating cells with no information as lethal obstacles based on the input data. This is not ideal but
       // our planner and controller do not reason about the no obstacle case
-      unsigned int numCells = map_resp.map.width * map_resp.map.height;
+      unsigned int numCells = map_resp.map.info.width * map_resp.map.info.height;
       for(unsigned int i = 0; i < numCells; i++){
         input_data.push_back((unsigned char) map_resp.map.data[i]);
       }
 
-      map_width = (unsigned int)map_resp.map.width;
-      map_height = (unsigned int)map_resp.map.height;
-      map_resolution = map_resp.map.resolution;
-      map_origin_x = map_resp.map.origin.x;
-      map_origin_y = map_resp.map.origin.y;
+      map_width = (unsigned int)map_resp.map.info.width;
+      map_height = (unsigned int)map_resp.map.info.height;
+      map_resolution = map_resp.map.info.resolution;
+      map_origin_x = map_resp.map.info.origin.position.x;
+      map_origin_y = map_resp.map.info.origin.position.y;
 
     }
 

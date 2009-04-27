@@ -31,6 +31,8 @@
 
 #include "ogre_tools/wx_ogre_render_window.h"
 
+#include "robot_srvs/StaticMap.h"
+
 #include "ros/common.h"
 #include "ros/node.h"
 #include <tf/transform_listener.h>
@@ -207,15 +209,15 @@ void NavViewPanel::loadMap()
     return;
   }
   printf("Received a %d X %d map @ %.3f m/pix\n",
-         resp.map.width,
-         resp.map.height,
-         resp.map.resolution);
+         resp.map.info.width,
+         resp.map.info.height,
+         resp.map.info.resolution);
 
-  map_resolution_ = resp.map.resolution;
+  map_resolution_ = resp.map.info.resolution;
 
   // Pad dimensions to power of 2
-  map_width_ = resp.map.width;//(int)pow(2,ceil(log2(resp.map.width)));
-  map_height_ = resp.map.height;//(int)pow(2,ceil(log2(resp.map.height)));
+  map_width_ = resp.map.info.width;//(int)pow(2,ceil(log2(resp.map.info.width)));
+  map_height_ = resp.map.info.height;//(int)pow(2,ceil(log2(resp.map.info.height)));
 
   //printf("Padded dimensions to %d X %d\n", map_width_, map_height_);
 
@@ -224,14 +226,14 @@ void NavViewPanel::loadMap()
   unsigned char* pixels = new unsigned char[pixels_size];
   memset(pixels, 255, pixels_size);
 
-  for(unsigned int j=0;j<resp.map.height;j++)
+  for(unsigned int j=0;j<resp.map.info.height;j++)
   {
-    for(unsigned int i=0;i<resp.map.width;i++)
+    for(unsigned int i=0;i<resp.map.info.width;i++)
     {
       unsigned char val;
-      if(resp.map.data[j*resp.map.width+i] == 100)
+      if(resp.map.data[j*resp.map.info.width+i] == 100)
         val = 0;
-      else if(resp.map.data[j*resp.map.width+i] == 0)
+      else if(resp.map.data[j*resp.map.info.width+i] == 0)
         val = 255;
       else
         val = 127;

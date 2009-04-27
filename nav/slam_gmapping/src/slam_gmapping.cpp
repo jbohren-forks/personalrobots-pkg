@@ -314,23 +314,27 @@ SlamGMapping::updateMap()
   /// @todo Dynamically determine bounding box for map
   GMapping::Point wmin(-100.0, -100.0);
   GMapping::Point wmax(100.0, 100.0);
-  map_.map.resolution = delta_;
-  map_.map.origin.x = wmin.x;
-  map_.map.origin.y = wmin.y;
-  map_.map.origin.th = 0.0;
+  map_.map.info.resolution = delta_;
+  map_.map.info.origin.position.x = wmin.x;
+  map_.map.info.origin.position.y = wmin.y;
+  map_.map.info.origin.position.z = 0.0;
+  map_.map.info.origin.orientation.x = 0.0;
+  map_.map.info.origin.orientation.y = 0.0;
+  map_.map.info.origin.orientation.z = 0.0;
+  map_.map.info.origin.orientation.w = 1.0;
 
   GMapping::Point center;
   center.x=(wmin.x + wmax.x) / 2.0;
   center.y=(wmin.y + wmax.y) / 2.0;
 
   GMapping::ScanMatcherMap smap(center, wmin.x, wmin.y, wmax.x, wmax.y, 
-                                map_.map.resolution);
+                                map_.map.info.resolution);
 
   GMapping::IntPoint imin = smap.world2map(wmin);
   GMapping::IntPoint imax = smap.world2map(wmax);
-  map_.map.width = imax.x - imin.x;
-  map_.map.height = imax.y - imin.y;
-  map_.map.data.resize(map_.map.width * map_.map.height);
+  map_.map.info.width = imax.x - imin.x;
+  map_.map.info.height = imax.y - imin.y;
+  map_.map.data.resize(map_.map.info.width * map_.map.info.height);
 
   ROS_DEBUG("Trajectory tree:");
   for(GMapping::GridSlamProcessor::TNode* n = best.node;
@@ -360,11 +364,11 @@ SlamGMapping::updateMap()
       double occ=smap.cell(p);
       assert(occ <= 1.0);
       if(occ < 0)
-        map_.map.data[MAP_IDX(map_.map.width, x, y)] = -1;
+        map_.map.data[MAP_IDX(map_.map.info.width, x, y)] = -1;
       else if(occ > 0.1)
-        map_.map.data[MAP_IDX(map_.map.width, x, y)] = (int)round(occ*100.0);
+        map_.map.data[MAP_IDX(map_.map.info.width, x, y)] = (int)round(occ*100.0);
       else
-        map_.map.data[MAP_IDX(map_.map.width, x, y)] = 0;
+        map_.map.data[MAP_IDX(map_.map.info.width, x, y)] = 0;
     }
   }
   got_map_ = true;

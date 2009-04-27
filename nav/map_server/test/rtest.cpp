@@ -94,10 +94,10 @@ TEST_F(MapClientTest, retrieve_valid_bmp)
       }
     }
     ASSERT_TRUE(call_result);
-    ASSERT_FLOAT_EQ(resp.map.resolution, g_valid_image_res);
-    ASSERT_EQ(resp.map.width, g_valid_image_width);
-    ASSERT_EQ(resp.map.height, g_valid_image_height);
-    for(unsigned int i=0; i < resp.map.width * resp.map.height; i++)
+    ASSERT_FLOAT_EQ(resp.map.info.resolution, g_valid_image_res);
+    ASSERT_EQ(resp.map.info.width, g_valid_image_width);
+    ASSERT_EQ(resp.map.info.height, g_valid_image_height);
+    for(unsigned int i=0; i < resp.map.info.width * resp.map.info.height; i++)
       ASSERT_EQ(g_valid_image_content[i], resp.map.data[i]);
   }
   catch(...)
