@@ -55,7 +55,7 @@ namespace navfn {
     //we'll get the parameters for the robot radius from the costmap we're associated with
     ros_node_.param("~navfn/costmap/inscribed_radius", inscribed_radius_, 0.325);
     ros_node_.param("~navfn/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
-    ros_node_.param("~navfn/costmap/inflation_radius", circumscribed_radius_, 0.55);
+    ros_node_.param("~navfn/costmap/inflation_radius", inflation_radius_, 0.55);
   }
 
   double NavfnROS::getPointPotential(const robot_msgs::Point& world_point){
