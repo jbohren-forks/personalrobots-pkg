@@ -32,49 +32,49 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Author: Wim Meeussen */
+/* Author: Wim Meeusen */
 
+#ifndef ACTION_UNLATCH_HANDLE_H
+#define ACTION_UNLATCH_HANDLE_H
+
+#include <ros/node.h>
 #include <robot_msgs/Door.h>
-#include "doors_core/action_detect_door.h"
-#include "doors_core/action_detect_handle.h"
-#include "doors_core/action_grasp_handle.h"
-#include "doors_core/action_unlatch_handle.h"
-#include "doors_core/action_open_door.h"
-#include "doors_core/action_release_handle.h"
+#include <robot_msgs/TaskFrameFormalism.h>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <robot_srvs/MoveToPose.h>
+#include <kdl/frames.hpp>
 #include <robot_actions/action.h>
-#include <robot_actions/action_runner.h>
-#include <pr2_robot_actions/DoorActionState.h>
+#include <boost/thread/mutex.hpp>
 
 
-using namespace door_handle_detector;
+namespace door_handle_detector{
 
 
-// -----------------------------------
-//              MAIN
-// -----------------------------------
-
-int main(int argc, char** argv)
+class UnlatchHandleAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
 {
-  ros::init(argc,argv); 
+public:
+  UnlatchHandleAction(ros::Node& node);
+  ~UnlatchHandleAction();
 
-  ros::Node node("door_domain_action_runner");
+  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
 
-  DetectDoorAction detect_door(node);
-  DetectHandleAction detect_handle(node);
-  GraspHandleAction grasp(node);
-  UnlatchHandleAction unlatch(node);
-  OpenDoorAction open(node);
-  ReleaseHandleAction release(node);
+private:
+  void tffCallback();
 
-  robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);  
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(grasp);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(unlatch);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(open);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(release);
+  ros::Node& node_;
 
-  runner.run();
-  node.spin();
-  return 0;
+  robot_msgs::TaskFrameFormalism tff_stop_, tff_handle_, tff_door_;
+
+  robot_msgs::Twist tff_msg_, tff_state_;
+  bool tff_state_received_;
+  boost::mutex tff_mutex_;
+
+};
+
+
 }
+
+
+
+#endif

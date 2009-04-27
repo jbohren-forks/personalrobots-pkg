@@ -54,6 +54,8 @@ using namespace ros;
 using namespace std;
 
 
+
+
 // -----------------------------------
 //              MAIN
 // -----------------------------------
@@ -79,7 +81,7 @@ int
 
   Duration timeout_short = Duration().fromSec(2.0);
   Duration timeout_medium = Duration().fromSec(10.0);
-  Duration timeout_long = Duration().fromSec(20.0);
+  Duration timeout_long = Duration().fromSec(40.0);
 
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> tuck_arm("doors_tuck_arms");
   robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
@@ -112,7 +114,7 @@ int
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.start_controllers.push_back("head_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  if (detect_handle.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
+  while (detect_handle.execute(door, door, timeout_long) != robot_actions::SUCCESS);
 
   // approach door
   robot_msgs::PoseStamped goal_msg;

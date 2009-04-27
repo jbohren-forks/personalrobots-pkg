@@ -13,7 +13,8 @@ rospack_add_executable(action_runner
                        src/action_detect_door.cpp 
 		       src/action_detect_handle.cpp 	     
 		       src/action_grasp_handle.cpp 
-		       src/action_open_door.cpp 
+		       src/action_open_door.cpp
+       		       src/action_unlatch_handle.cpp		
 		       src/action_release_handle.cpp 
 		       src/action_runner.cpp
                       )
