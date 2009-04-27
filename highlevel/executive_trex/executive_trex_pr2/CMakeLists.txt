@@ -144,8 +144,8 @@ rospack_add_compile_flags(executive_trex_pr2_o "-O3 -DEUROPA_FAST")
 rospack_add_executable(bin/trexwatchdog src/watch_dog.cc)
 
 # Test target for unit tests on topological map integration components
-rospack_add_gtest(test/topological_map_tests test/topological_map_tests.cc)
-target_link_libraries(test/topological_map_tests executive_trex_pr2_g)
+#rospack_add_gtest(test/topological_map_tests test/topological_map_tests.cc)
+#target_link_libraries(test/topological_map_tests executive_trex_pr2_g)
 
 # stub_ros__container impements stub state publishers and actions to allow easy testing of the ROS adapters for the model
 rospack_add_executable(bin/stub_ros_container src/stub_ros_container.cc)
