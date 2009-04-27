@@ -7,6 +7,8 @@
  * @brief 
  */
 class PlugsUntuckArms extends ROSAction {
+  predicate Active{}
+  predicate Inactive{}
   PlugsUntuckArms(Mode _mode){super(_mode);}
 };
 
@@ -34,6 +36,9 @@ class StowPlug extends ROSAction {
  * @brief For unplugging from the socket. Just using a force controller so no args required.
  */
 class Unplug extends ROSAction {
+
+  predicate Active{}
+  predicate Inactive{}
 
   Unplug(Mode _mode){super(_mode);}
 };
@@ -128,6 +133,8 @@ class LocalizePlugInGripper extends ROSAction {
     float qw;
   }
 
+  predicate Inactive{}
+
   LocalizePlugInGripper(Mode _mode){super(_mode);}
 };
 
@@ -143,6 +150,8 @@ class MoveAndGraspPlug extends ROSAction {
     float y;
     float z;
   }
+
+  predicate Inactive{}
 
   MoveAndGraspPlug(Mode _mode){super(_mode);}
 };

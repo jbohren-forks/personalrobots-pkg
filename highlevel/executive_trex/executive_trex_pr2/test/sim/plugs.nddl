@@ -1,0 +1,17 @@
+#include "rcs/safety/exports.nddl"
+
+DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(Internal);
+SafetyTuckArms saftey_tuck_arms = new SafetyTuckArms(Internal);
+PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(Internal);
+MoveAndGraspPlug move_and_grasp_plug = new MoveAndGraspPlug(Internal);
+LocalizePlugInGripper localize_plug_in_gripper = new LocalizePlugInGripper(Internal);
+StowPlug stow_plug = new StowPlug(Internal);
+Unplug unplug = new Unplug(Internal);
+PlugIn plug_in = new PlugIn(Internal);
+DetectOutletFine detect_outlet_fine = new DetectOutletFine(Internal);
+DetectOutletCoarse detect_outlet_coarse = new DetectOutletCoarse(Internal);
+
+
+
+
+

@@ -1,4 +1,4 @@
-;/**
+/**
  * Encapsulates the task of unplugging the robot.
  */
 class Recharger extends Behavior {

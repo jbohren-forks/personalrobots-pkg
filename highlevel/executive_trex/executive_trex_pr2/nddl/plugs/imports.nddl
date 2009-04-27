@@ -1,7 +1,8 @@
 #include "nav/imports.nddl"
 #include "rcs/plugs/exports.nddl"
+#include "plugs/exports.nddl"
 
-// Mechanisms
+// Mechanisms (in addition to those required by default)
 RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
 
 // Actions
@@ -24,7 +25,7 @@ DetectPlugOnBase::Active{
 
 DetectOutletCoarse::Active{
   contained_by(head_mechanism.use_head_controller);
-  //contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
+  contained_by(laser_tilt_mechanism.use_laser_tilt_controller);
 }
 
 DetectOutletFine::Active{

@@ -1,7 +1,7 @@
 /**
  * Execute a single external action
  */
-#include "plugs/imports.nddl"
+#include "plugs/recharger.nddl"
 #include "mechanism_control/exports.nddl"
 #include "test/plugs/actions.nddl"
 

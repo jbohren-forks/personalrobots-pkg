@@ -29,4 +29,11 @@ class DetectPlugOnBase extends ROSAction {
 /**
  * @brief This is a general utility for tucking arms.
  */
-class SafetyTuckArms extends  ROSAction {}
+class SafetyTuckArms extends  ROSAction {
+
+  predicate Active {}
+
+  predicate Inactive {}
+
+  SafetyTuckArms(Mode _mode){ super(_mode);}
+}
