@@ -23,6 +23,8 @@ rospack_add_executable(action_runner src/action_untuck_arms.cpp
 rospack_add_executable(test_executive
                        test/test_executive.cpp)
 
+rospack_add_executable(test_executive_hybrid
+                       test/test_executive_hybrid.cpp)
 
 
 # check for OpenMP
