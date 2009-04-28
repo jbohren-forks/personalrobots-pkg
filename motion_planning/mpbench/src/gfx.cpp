@@ -84,7 +84,7 @@ static void draw();
 static void reshape(int width, int height);
 static void keyboard(unsigned char key, int mx, int my);
 static void timer(int handle);
-static unsigned int animation_timer_ms(200);
+static unsigned int animation_timer_ms(50);
 
 typedef enum {
   ANIMATION_OFF,
@@ -530,6 +530,16 @@ void keyboard(unsigned char key, int mx, int my)
   case '<':
     animation_reverse = true;
     break;
+  case 'f':
+    if (animation_timer_ms > 4) {
+      animation_timer_ms /= 2;
+      cout << "animation_timer set to " << animation_timer_ms << "ms\n";
+    }
+    break;
+  case 's':
+    animation_timer_ms *= 2;
+    cout << "animation_timer set to " << animation_timer_ms << "ms\n";
+    break;    
   }
 }
 
@@ -755,7 +765,7 @@ namespace {
 	    glLineWidth(3);
 	    // magentaish if interval 0, blueish otherwise
 	    if (0 == doorwpt->plan_interval)
-	      glColor3d(0.8, 0, 1);
+	      glColor3d(1.0, 0.5, 1);
 	    else
 	      glColor3d(0.6, 0.6, 1);
 	    glBegin(GL_LINES);
