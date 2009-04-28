@@ -141,7 +141,8 @@ TEST(executive_trex_pr2, map_read_from_file){
 
 
   robot_msgs::Door door_state;
-  ASSERT_EQ(TopologicalMapAdapter::instance()->getDoorState(206, door_state), true);
+  unsigned int door_region_id = TopologicalMapAdapter::instance()->getRegion(50,30);
+  ASSERT_EQ(TopologicalMapAdapter::instance()->getDoorState(door_region_id, door_state), true);
 }
 
 TEST(executive_trex_pr2, map_accessor){
