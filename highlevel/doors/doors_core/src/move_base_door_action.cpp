@@ -147,7 +147,7 @@ namespace nav
     planner_cost_map_ros_->getCostMapCopy(planner_cost_map_);
 
     //make sure we clear the robot's footprint from the cost map
-    //clearRobotFootprint(planner_cost_map_);
+    clearRobotFootprint(planner_cost_map_);
 
     std::vector<pr2_robot_actions::Pose2D> global_plan;
     bool valid_plan = planner_->makePlan(getPose2D(global_pose_), global_plan);//makePlan(current_position, return_path);

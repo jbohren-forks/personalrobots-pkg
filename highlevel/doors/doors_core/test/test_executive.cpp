@@ -154,7 +154,7 @@ int
   pr2_robot_actions::Pose2D pose2d;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
-  if (move_base_door.execute(door, tmp_door, timeout_long) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
+  if (move_base_door.execute(door, tmp_door) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
 
   // finish open door
   open_door.preempt();

@@ -51,7 +51,7 @@ DoorReactivePlanner::DoorReactivePlanner(ros::Node &ros_node, TransformListener 
 void DoorReactivePlanner::getParams()
 {
   node_.param<double>("~min_distance_from_obstacles",min_distance_from_obstacles_,0.03);
-  node_.param<double>("~max_waypoint_distance",dist_waypoints_max_,0.025);
+  node_.param<double>("~max_waypoint_distance",dist_waypoints_max_,0.01);
   node_.param<double>("~max_waypoint_rot_distance",dist_rot_waypoints_max_,0.2);
 
   node_.param<double>("~max_explore_distance",max_explore_distance_,2.0);
@@ -63,12 +63,12 @@ void DoorReactivePlanner::getParams()
   node_.param<bool>("~choose_straight_line_trajectory",choose_straight_line_trajectory_,false);
 
   node_.param<double>("~circumscribed_radius",circumscribed_radius_,0.46);
-  node_.param<double>("~inscribed_radius",inscribed_radius_,0.315);
+  node_.param<double>("~inscribed_radius",inscribed_radius_,0.305);
 
   double resolution;
   node_.param<double>("~costmap/resolution",resolution,0.025);
 
-  cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),2);
+  cell_distance_from_obstacles_ = std::max<int>((int) (min_distance_from_obstacles_/dist_waypoints_max_),10);
 
   min_distance_from_obstacles_ = min_distance_from_obstacles_ + inscribed_radius_;
   //  cell_distance_robot_center_from_obstacles_ = 0;
