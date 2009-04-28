@@ -162,8 +162,8 @@ public:
         // define node parameters
 
 
-        param("~min_height", min_height, 0.7);
-        param("~max_height", max_height, 1.0);
+        param("~min_height", min_height, 0.8);
+        param("~max_height", max_height, 1.2);
         param("~frames_no", frames_no, 10);
         param("~timeout", image_timeout_, 3.0);		// timeout (in seconds) until an image must be received, otherwise abort
 
@@ -574,6 +574,8 @@ private:
             return false;
         }
 
+
+
         robot_msgs::PointStamped pin, pout;
         pin.header.frame_id = cloud.header.frame_id;
         pin.header.stamp = cloud.header.stamp;
@@ -598,7 +600,7 @@ private:
             return false;
         }
 
-        printf("Handle at: (%d,%d,%d,%d)\n", r.x,r.y,r.width, r.height);
+        ROS_INFO("Handle at: (%d,%d,%d,%d)", r.x,r.y,r.width, r.height);
 
 
         return true;
@@ -736,9 +738,9 @@ private:
 
         handle_stereo.header.frame_id = cloud.header.frame_id;
         handle_stereo.header.stamp = cloud.header.stamp;
-        handle_stereo.point.x = p.z;
-        handle_stereo.point.y = -p.x;
-        handle_stereo.point.z = -p.y;
+        handle_stereo.point.x = p.x;
+        handle_stereo.point.y = p.y;
+        handle_stereo.point.z = p.z;
 
         try {
         	tf_->transformPoint(handle.header.frame_id, handle_stereo, handle);
@@ -748,7 +750,7 @@ private:
         }
 
 
-        printf("Clustered Handle at: (%d,%d,%d,%d)\n", bbox.x,bbox.y,bbox.width, bbox.height);
+        ROS_INFO("Clustered Handle at: (%d,%d,%d,%d)", bbox.x,bbox.y,bbox.width, bbox.height);
 
 
         if(display){
