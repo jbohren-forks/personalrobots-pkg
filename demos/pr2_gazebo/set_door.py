@@ -55,7 +55,7 @@ if __name__ == '__main__':
     rospy.init_node(NAME, anonymous=True)
     timeout_t = time.time() + 20.0 #publish for 20 seconds then stop
     while time.time() < timeout_t:
-        pub_door.publish(Float64(0.1))
-        pub_handle.publish(Float64(-1.57))
+        pub_door.publish(Float64(0.0))
+        pub_handle.publish(Float64(0.0))
         time.sleep(0.5)
 
