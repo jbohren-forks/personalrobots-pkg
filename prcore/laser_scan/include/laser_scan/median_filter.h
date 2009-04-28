@@ -45,7 +45,7 @@
 
 namespace laser_scan{
 
-/** \brief A class to provide median filtering of laser scans */
+/** \brief A class to provide median filtering of laser scans in time*/
 template <typename T>
 class LaserMedianFilter : public filters::FilterBase<T> 
 {
