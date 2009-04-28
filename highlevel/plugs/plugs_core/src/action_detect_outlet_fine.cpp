@@ -42,7 +42,7 @@ DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
   : robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_fine"),
     node_(node)
 {
-  node_.setParam("~display", "false");
+  node_.setParam("~display", 0);
   detector_ = new OutletTracker::OutletTracker(node);
   detector_->deactivate();  
   node_.subscribe("~outlet_pose", outlet_pose_msg_, &DetectOutletFineAction::foundOutlet, this, 1);

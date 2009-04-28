@@ -48,7 +48,7 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
   TF(*ros::Node::instance(),false, ros::Duration(10))
 {
   node_.setParam("~roi_policy", "LastImageLocation");
-  node_.setParam("~display", "true");
+  node_.setParam("~display", 0);
   node_.setParam("~square_size", 0.0042);
   node_.setParam("~board_width", 3);
   node_.setParam("~board_height",4);
