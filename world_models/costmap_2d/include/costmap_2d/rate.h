@@ -62,8 +62,8 @@ namespace costmap_2d {
       void reset();
 
       /**
-       * @brief  Get the actual run time from start to sleep
-       * @return The time from start to sleep
+       * @brief  Get the actual run time of a cycle from start to sleep
+       * @return The runtime of the cycle
        */
       ros::Duration cycleTime();
 
