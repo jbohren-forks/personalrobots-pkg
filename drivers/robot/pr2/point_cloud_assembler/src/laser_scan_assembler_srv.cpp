@@ -70,7 +70,7 @@ public:
     // get filter xml from parameter server
     std::string filter_xml;
     node_.param("~filters", filter_xml, std::string("<filters><!--Filter Parameter Not Set--></filters>"));
-    ROS_INFO("Got parameter'~filters' as: %s\n", filter_xml.c_str());
+    ROS_DEBUG("Got parameter'~filters' as: %s\n", filter_xml.c_str());
     filter_chain_.configureFromXMLString(1, filter_xml);
   }
 
