@@ -43,6 +43,7 @@
 #include <ros/node.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
+#include <costmap_2d/rate.h>
 #include <navfn/navfn_ros.h>
 #include <base_local_planner/trajectory_planner_ros.h>
 #include <vector>
@@ -77,15 +78,6 @@ namespace nav {
       virtual robot_actions::ResultStatus execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback);
 
     private:
-      /**
-       * @brief  Sleeps for the remainder of a cycle
-       * @param  start The start time of the cycle
-       * @param  cycle_time The desired cycle time
-       * @param  actual Will be set to the actual cycle time of the loop
-       * @return True if the desired cycle time is met, false otherwise
-       */
-      bool sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual);
-
       /**
        * @brief  Make a new global plan
        * @param  goal The goal to plan to

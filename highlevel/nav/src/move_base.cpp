@@ -164,14 +164,11 @@ namespace nav {
     //first... make a plan to the goal
     makePlan(goal_);
 
-    ros::Duration cycle_time = ros::Duration(1.0 / controller_frequency_);
+    costmap_2d::Rate r(controller_frequency_);
     while(!isPreemptRequested()){
       struct timeval start, end;
       double start_t, end_t, t_diff;
       gettimeofday(&start, NULL);
-
-      //get the start time of the loop
-      ros::Time start_time = ros::Time::now();
 
       //update feedback to correspond to our current position
       tf::Stamped<tf::Pose> global_pose;
@@ -234,29 +231,11 @@ namespace nav {
       t_diff = end_t - start_t;
       ROS_DEBUG("Full control cycle: %.9f Valid control: %d, Vel Cmd (%.2f, %.2f, %.2f)", t_diff, valid_control, cmd_vel.vel.vx, cmd_vel.vel.vy, cmd_vel.ang_vel.vz);
 
-      ros::Duration actual;
       //sleep the remainder of the cycle
-      if(!sleepLeftover(start_time, cycle_time, actual))
-        ROS_WARN("Controll loop missed its desired cycle time of %.4f... the loop actually took %.4f seconds", cycle_time.toSec(), actual.toSec());
+      if(!r.sleep())
+        ROS_WARN("Controll loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
     }
     return robot_actions::PREEMPTED;
-  }
-
-  bool MoveBase::sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual){
-    ros::Time expected_end = start + cycle_time;
-    ros::Time actual_end = ros::Time::now();
-    ///@todo: because durations don't handle subtraction properly right now
-    ros::Duration sleep_time = ros::Duration((expected_end - actual_end).toSec()); 
-
-    //set the actual amount of time the loop took
-    actual = actual_end - start;
-
-    if(sleep_time < ros::Duration(0.0)){
-      return false;
-    }
-
-    sleep_time.sleep();
-    return true;
   }
 
   void MoveBase::resetCostMaps(){
