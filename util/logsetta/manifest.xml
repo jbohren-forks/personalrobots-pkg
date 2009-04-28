@@ -16,5 +16,6 @@
   <depend package="laser_scan"/>
   <depend package="imu_node"/>
   <depend package="rosrecord"/>
-<depend package="robot_msgs"/>
+  <depend package="robot_msgs"/>
+  <depend package="deprecated_msgs"/>
 </package>
