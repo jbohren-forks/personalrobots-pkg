@@ -43,6 +43,7 @@
 #include <costmap_2d/cell_data.h>
 #include <costmap_2d/cost_values.h>
 #include <robot_msgs/PointCloud.h>
+#include <boost/thread.hpp>
 
 namespace costmap_2d {
   //convenient for storing x/y point pairs
@@ -239,6 +240,16 @@ namespace costmap_2d {
        * @return The resolution of the costmap
        */
       double resolution() const;
+
+      /**
+       * @brief  Locks the costmap
+       */
+      void lock() { lock_.lock(); }
+
+      /**
+       * @brief  Unlocks the costmap
+       */
+      void unlock() { lock_.unlock(); }
 
       /**
        * @brief  Sets the cost of a convex polygon to a desired value
@@ -505,6 +516,7 @@ namespace costmap_2d {
       double weight_;
       unsigned char circumscribed_cost_lb_;
       std::priority_queue<CellData> inflation_queue_;
+      boost::recursive_mutex lock_; ///< @brief A lock for accessing data in callbacks safely
 
       //functors for raytracing actions
       class ClearCell {

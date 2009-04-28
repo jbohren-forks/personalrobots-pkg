@@ -36,7 +36,9 @@
 *********************************************************************/
 #ifndef COSTMAP_RATE_H_
 #define COSTMAP_RATE_H_
+
 #include <ros/time.h>
+
 namespace costmap_2d {
   /**
    * @class Rate
@@ -72,40 +74,6 @@ namespace costmap_2d {
       ros::Duration expected_cycle_time_, actual_cycle_time_;
   };
 
-  Rate::Rate(double frequency) : start_(ros::Time::now()), expected_cycle_time_(1.0 / frequency), actual_cycle_time_(0.0) {}
-
-  bool Rate::sleep(){
-    ros::Time expected_end = start_ + expected_cycle_time_;
-
-    ros::Time actual_end = ros::Time::now();
-
-    //calculate the time we'll sleep for
-    ros::Duration sleep_time = expected_end - actual_end; 
-
-    //set the actual amount of time the loop took in case the user wants to know
-    actual_cycle_time_ = actual_end - start_;
-
-    //if we've taken too much time we won't sleep
-    if(sleep_time < ros::Duration(0.0)){
-      //make sure to reset our start time
-      start_ = ros::Time::now();
-      return false;
-    }
-
-    sleep_time.sleep();
-
-    //make sure to reset our start time
-    start_ = ros::Time::now();
-    return true;
-  }
-
-  void Rate::reset(){
-    start_ = ros::Time::now();
-  }
-
-  ros::Duration Rate::cycleTime(){
-    return actual_cycle_time_;
-  }
-
 };
+
 #endif
