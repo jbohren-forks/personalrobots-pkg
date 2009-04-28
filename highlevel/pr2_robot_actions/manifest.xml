@@ -8,7 +8,6 @@
  <depend package="robot_actions"/>
  <depend package="std_msgs"/>
  <depend package="robot_msgs"/>
- <depend package="deprecated_msgs"/><!-- For pose2d to polyline2d to point2dfloat32-->
 
 
  <export>
