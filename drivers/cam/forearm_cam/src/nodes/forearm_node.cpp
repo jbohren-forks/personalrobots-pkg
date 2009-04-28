@@ -190,7 +190,7 @@ private:
   std::string serial_number_;
   std::string hwinfo_;
   std::string mode_name_;
-  trigger_configuration trig_req_;
+  controller::trigger_configuration trig_req_;
   robot_mechanism_controllers::SetWaveform::Response trig_rsp_;
 
   DiagnosticUpdater<ForearmNode> diagnostic_;

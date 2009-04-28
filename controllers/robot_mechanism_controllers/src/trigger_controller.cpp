@@ -99,6 +99,9 @@ void TriggerController::update()
       //  ROS_INFO("Changed to: %i (%s)", active, actuator_name_.c_str()); // KILLME
     }
   }
+  
+  //if (actuator_command_->digital_out_ && !(active ^ config_.active_low))
+  //    ROS_DEBUG("digital out falling at time %f", robot_->hw_->current_time_);
 
   actuator_command_->digital_out_ = active ^ config_.active_low;
 

@@ -58,10 +58,9 @@
   * 
   */
   
-typedef robot_mechanism_controllers::SetWaveform::Request trigger_configuration;
-
 namespace controller
 {
+typedef robot_mechanism_controllers::SetWaveform::Request trigger_configuration;
 
 class TriggerControllerNode;
 
