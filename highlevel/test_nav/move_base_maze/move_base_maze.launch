@@ -3,11 +3,6 @@
   <group name="wg">
   <param name="/use_sim_time" value="true"/>
     <node pkg="nav" type="move_base" respawn="false" name="move_base_node" output="screen">
-      <remap from="/move_base_node/activate" to="/goal" />
-      <remap from="~base_local_planner/global_plan" to="/gui_path" />
-      <remap from="~base_local_planner/local_plan" to="/local_path" />
-      <remap from="~base_local_planner/robot_footprint" to="/robot_footprint" />
-
       <param name="global_frame" value="map" />
       <param name="robot_base_frame" value="base_link" />
 
@@ -27,6 +22,12 @@
     </node>
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
     <node pkg="nav_view" type="nav_view" respawn="false">
+      <remap from="goal" to="/move_base/activate" />
+      <remap from="raw_obstacles" to="/move_base/base_local_planner/costmap/raw_obstacles" />
+      <remap from="inflated_obstacles" to="/move_base/base_local_planner/costmap/inflated_obstacles" />
+      <remap from="gui_path" to="/move_base/base_local_planner/global_plan" />
+      <remap from="local_path" to="/move_base/base_local_planner/local_plan" />
+      <remap from="robot_footprint" to="/move_base/base_local_planner/robot_footprint"/>
     </node>
   </group>
 </launch>
