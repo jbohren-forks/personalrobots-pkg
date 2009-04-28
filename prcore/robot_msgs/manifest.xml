@@ -7,7 +7,6 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/robot_msgs</url>
   <depend package="std_msgs"/>
-  <depend package="deprecated_msgs"/>
   <export>
     <cpp cflags="-I${prefix}/msg/cpp"/>
   </export>
