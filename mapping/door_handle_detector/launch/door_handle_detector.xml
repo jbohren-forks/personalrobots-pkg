@@ -16,7 +16,7 @@
 <!-- Door detector -->
   <param name="/doors_detector_node/parameter_frame" type="string" value="base_footprint" />
   <param name="/doors_detector_node/fixed_frame" type="string" value="odom_combined" />
-  <param name="/doors_detector_node/door_min_height" value="1.1" />
+  <param name="/doors_detector_node/door_min_height" value="1.5" />
   <param name="/doors_detector_node/door_max_height" value="3.0" />
   <param name="/doors_detector_node/door_min_width" value="0.75" />
   <param name="/doors_detector_node/door_max_width" value="1.2" />

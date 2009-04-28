@@ -135,9 +135,9 @@ public:
 	tf::TransformListener *tf_;
 
 
-	// minimum height to look at (in base_link frame)
+	// minimum height to look at (in base_footprint frame)
 	double min_height;
-	// maximum height to look at (in base_link frame)
+	// maximum height to look at (in base_footprint frame)
 	double max_height;
 	// no. of frames to detect handle in
 	int frames_no;
@@ -581,7 +581,7 @@ private:
         pin.point.y = p.y;
         pin.point.z = p.z;
         try {
-            tf_->transformPoint("base_link", pin, pout);
+            tf_->transformPoint("base_footprint", pin, pout);
         }
         catch(tf::LookupException & ex){
             ROS_ERROR("Lookup exception: %s\n", ex.what());
@@ -948,7 +948,7 @@ private:
         robot_msgs::PointCloud base_cloud;
         tf_->setExtrapolationLimit(ros::Duration(2.0));
         try {
-            tf_->transformPointCloud("base_link", cloud, base_cloud);
+            tf_->transformPointCloud("base_footprint", cloud, base_cloud);
         }
         catch(tf::ExtrapolationException & ex){
             tf_->clear();

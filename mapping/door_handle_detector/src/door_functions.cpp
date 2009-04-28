@@ -33,6 +33,7 @@
  *********************************************************************/
 
 #include <door_handle_detector/door_functions.h>
+#include <kdl/frames.hpp>
 
 using namespace ros;
 using namespace std;
@@ -40,6 +41,15 @@ using namespace tf;
 
 
 namespace door_handle_detector{
+
+double getDoorAngle(const robot_msgs::Door& door)
+{
+  KDL::Vector frame_vec(door.frame_p1.x-door.frame_p2.x, door.frame_p1.y-door.frame_p2.y, door.frame_p1.z-door.frame_p2.z);
+  KDL::Vector door_vec(door.door_p1.x-door.door_p2.x, door.door_p1.y-door.door_p2.y, door.door_p1.z-door.door_p2.z);
+  return acos(dot(frame_vec, door_vec)/(frame_vec.Norm()*door_vec.Norm()));
+}
+
+
 
 bool transformTo(const tf::Transformer& tf, const string& goal_frame, const robot_msgs::Door& door_in, robot_msgs::Door& door_out, const std::string& fixed_frame)
 {
@@ -62,8 +72,10 @@ bool transformPointTo(const tf::Transformer& tf, const string& source_frame, con
                       const robot_msgs::Point32& point_in, robot_msgs::Point32& point_out, const std::string& fixed_frame, const Time& time_goal)
 {
   ros::Duration timeout = Duration().fromSec(5.0);
-  if (!tf.canTransform(source_frame, fixed_frame, time_source, timeout)) return false;
-  if (!tf.canTransform(goal_frame, fixed_frame, time_goal, timeout)) return false;
+  if (source_frame != goal_frame){
+    if (!tf.canTransform(source_frame, fixed_frame, time_source, timeout)) return false;
+    if (!tf.canTransform(goal_frame, fixed_frame, time_goal, timeout)) return false;
+  }
   tf::Stamped<tf::Point> pnt(tf::Vector3(point_in.x, point_in.y, point_in.z), time_source, source_frame);
   tf.transformPoint(goal_frame, time_goal, pnt, fixed_frame, pnt);
   point_out.x = pnt[0];
@@ -77,8 +89,10 @@ bool transformVectorTo(const tf::Transformer& tf, const string& source_frame, co
                        const robot_msgs::Vector3& point_in, robot_msgs::Vector3& point_out, const std::string& fixed_frame, const Time& time_goal)
 {
   ros::Duration timeout = Duration().fromSec(2.0);
-  if (!tf.canTransform(source_frame, fixed_frame, time_source, timeout)) return false;
-  if (!tf.canTransform(goal_frame, fixed_frame, time_goal, timeout)) return false;
+  if (source_frame != goal_frame){
+    if (!tf.canTransform(source_frame, fixed_frame, time_source, timeout)) return false;
+    if (!tf.canTransform(goal_frame, fixed_frame, time_goal, timeout)) return false;
+  }
   tf::Stamped<tf::Point> pnt(tf::Vector3(point_in.x, point_in.y, point_in.z), time_source, source_frame);
   tf.transformVector(goal_frame, time_goal, pnt, fixed_frame, pnt);
   point_out.x = pnt[0];
@@ -109,7 +123,6 @@ std::ostream& operator<< (std::ostream& os, const robot_msgs::Door& d)
   os << " - latch_state " << d.latch_state << endl;
   os << " - hinge side " << d.hinge << endl;
   os << " - rot_dir " << d.rot_dir << endl;
-  os << " - angle " << d.angle << endl;
 
   return os;
 }

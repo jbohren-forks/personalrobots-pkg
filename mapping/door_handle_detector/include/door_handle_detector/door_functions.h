@@ -42,6 +42,10 @@
 
 namespace door_handle_detector{
 
+/// get the door angle
+double getDoorAngle(const robot_msgs::Door& door);
+
+
 /// convert door message from its original frame/time, to the goal frame at time::now.
 bool transformTo(const tf::Transformer& tf, const std::string& goal_frame, const robot_msgs::Door& door_in, 
                  robot_msgs::Door& door_out, const std::string& fixed_frame="odom_combined");

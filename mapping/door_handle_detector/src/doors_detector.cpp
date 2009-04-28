@@ -448,11 +448,17 @@ bool
     result[nr_d].normal.y = -coeff[cc][1];
     result[nr_d].normal.z = -coeff[cc][2];
 
-    // Need min/max Z
+    // get door height
     cloud_geometry::statistics::getMinMax (pmap_.polygons[cc], min_p, max_p);
     result[nr_d].height = fabs (max_p.z - min_p.z);
 
-    cout << "transform door to " << fixed_frame_ << endl;
+    // check if door is latched
+    if (door_handle_detector::getDoorAngle(result[nr_d]) > 15.0*M_PI/180.0)
+      result[nr_d].latch_state = Door::UNLATCHED;
+    else
+      result[nr_d].latch_state = Door::LATCHED;
+
+    // transform door message
     if (!transformTo(tf_, fixed_frame_, result[nr_d], result[nr_d], fixed_frame_)){
       ROS_ERROR ("DoorsDetector: could not tranform door from '%s' frame to '%s' frame", 
 		 result[nr_d].header.frame_id.c_str(), fixed_frame_.c_str());
