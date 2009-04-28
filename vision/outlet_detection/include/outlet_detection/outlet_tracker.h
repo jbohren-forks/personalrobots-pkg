@@ -84,7 +84,7 @@ private:
   std::vector<outlet_t> outlets_;
   tf::TransformBroadcaster tf_broadcaster_;
   CvMat* K_;
-  bool display_;
+  int display_;
 
   // TODO: policy to listen from coarse outlet detection?
   enum { WholeFrame, LastImageLocation } roi_policy_;

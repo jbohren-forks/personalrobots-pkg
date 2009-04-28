@@ -16,7 +16,7 @@ OutletTracker::OutletTracker(ros::Node &node)
     tf_broadcaster_(node_), K_(NULL)
 {
   node_.param("~image_service", image_service_, std::string("/prosilica/poll"));
-  node_.param("~display", display_, true);
+  node_.param("~display", display_, 1);
 
   std::string policy;
   node_.param("~roi_policy", policy, std::string("WholeFrame"));

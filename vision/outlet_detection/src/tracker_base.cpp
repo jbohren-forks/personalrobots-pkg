@@ -41,8 +41,8 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
   node_.param("~resize_factor_found", resize_factor_found_, 1.2);
   node_.param("~resize_factor_failed", resize_factor_failed_, 1.2);
   node_.param("~target_roi_size", target_roi_size_, 400);
-  
-  node_.param("~display", display_, true);
+
+  node_.param("~display", display_, 1);
   if (display_) {
     cvNamedWindow(window_name_.c_str(), 0); // no autosize
     cvStartWindowThread();

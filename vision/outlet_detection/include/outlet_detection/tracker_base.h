@@ -96,7 +96,7 @@ protected:
   double resize_factor_failed_;
   int target_roi_size_;
   
-  bool display_;
+  /*bool*/ int display_;
   std::string window_name_;
   int save_count_;
   std::string save_prefix_;

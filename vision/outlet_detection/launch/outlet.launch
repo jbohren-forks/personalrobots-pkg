@@ -1,6 +1,6 @@
 <launch>
   <group ns="outlet_detector" clear_params="true">
-    <param name="display" type="bool" value="true"/>
+    <param name="display" type="int" value="1"/>
     <param name="roi_policy" type="str" value="LastImageLocation"/>
   </group>
   <node name="outlet_detector" pkg="outlet_detection" type="outlet_node" respawn="false" output="screen"/>
