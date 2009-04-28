@@ -460,7 +460,7 @@ namespace costmap_2d {
        * @param cost The cost
        */
       inline void updateCellCost(unsigned int index, unsigned char cost){
-        unsigned char* cell_cost = &cost_map_[index];
+        unsigned char* cell_cost = &costmap_[index];
         if(*cell_cost == NO_INFORMATION)
           *cell_cost = cost;
         else
@@ -515,7 +515,7 @@ namespace costmap_2d {
       double origin_x_;
       double origin_y_;
       unsigned char* static_map_;
-      unsigned char* cost_map_;
+      unsigned char* costmap_;
       unsigned char* markers_;
       double sq_obstacle_range_;
       double max_obstacle_height_;
@@ -532,38 +532,38 @@ namespace costmap_2d {
       //functors for raytracing actions
       class ClearCell {
         public:
-          ClearCell(unsigned char* cost_map) : cost_map_(cost_map) {}
+          ClearCell(unsigned char* costmap) : costmap_(costmap) {}
           inline void operator()(unsigned int offset){
-            cost_map_[offset] = 0;
+            costmap_[offset] = 0;
           }
         private:
-          unsigned char* cost_map_;
+          unsigned char* costmap_;
       };
 
       class MarkCell {
         public:
-          MarkCell(unsigned char* cost_map) : cost_map_(cost_map) {}
+          MarkCell(unsigned char* costmap) : costmap_(costmap) {}
           inline void operator()(unsigned int offset){
-            cost_map_[offset] = LETHAL_OBSTACLE;
+            costmap_[offset] = LETHAL_OBSTACLE;
           }
         private:
-          unsigned char* cost_map_;
+          unsigned char* costmap_;
       };
 
       class PolygonOutlineCells {
         public:
-          PolygonOutlineCells(const Costmap2D& cost_map, const unsigned char* char_map, std::vector<MapLocation>& cells) 
-            : cost_map_(cost_map), char_map_(char_map), cells_(cells){}
+          PolygonOutlineCells(const Costmap2D& costmap, const unsigned char* char_map, std::vector<MapLocation>& cells) 
+            : costmap_(costmap), char_map_(char_map), cells_(cells){}
 
           //just push the relevant cells back onto the list
           inline void operator()(unsigned int offset){
             MapLocation loc;
-            cost_map_.indexToCells(offset, loc.x, loc.y);
+            costmap_.indexToCells(offset, loc.x, loc.y);
             cells_.push_back(loc);
           }
 
         private:
-          const Costmap2D& cost_map_;
+          const Costmap2D& costmap_;
           const unsigned char* char_map_;
           std::vector<MapLocation>& cells_;
       };

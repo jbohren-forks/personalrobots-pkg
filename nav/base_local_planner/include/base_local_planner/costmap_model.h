@@ -51,10 +51,10 @@ namespace base_local_planner {
     public:
       /**
        * @brief  Constructor for the CostmapModel
-       * @param cost_map The costmap that should be used
+       * @param costmap The costmap that should be used
        * @return 
        */
-      CostmapModel(const costmap_2d::Costmap2D& cost_map);
+      CostmapModel(const costmap_2d::Costmap2D& costmap);
 
       /**
        * @brief  Destructor for the world model
@@ -100,7 +100,7 @@ namespace base_local_planner {
        */
       double pointCost(int x, int y);
 
-      const costmap_2d::Costmap2D& cost_map_; ///< @brief Allows access of costmap obstacle information
+      const costmap_2d::Costmap2D& costmap_; ///< @brief Allows access of costmap obstacle information
 
   };
 };

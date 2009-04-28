@@ -46,12 +46,12 @@ namespace costmap_2d{
       double max_obstacle_height, double raytrace_range, double weight,
       const std::vector<unsigned char>& static_data, unsigned char lethal_threshold) : size_x_(cells_size_x),
   size_y_(cells_size_y), resolution_(resolution), origin_x_(origin_x), origin_y_(origin_y), static_map_(NULL),
-  cost_map_(NULL), markers_(NULL), sq_obstacle_range_(obstacle_range * obstacle_range), 
+  costmap_(NULL), markers_(NULL), sq_obstacle_range_(obstacle_range * obstacle_range), 
   max_obstacle_height_(max_obstacle_height), raytrace_range_(raytrace_range), cached_costs_(NULL), cached_distances_(NULL), 
   inscribed_radius_(inscribed_radius), circumscribed_radius_(circumscribed_radius), inflation_radius_(inflation_radius),
   weight_(weight), inflation_queue_(){
-    //creat the cost_map, static_map, and markers
-    cost_map_ = new unsigned char[size_x_ * size_y_];
+    //creat the costmap, static_map, and markers
+    costmap_ = new unsigned char[size_x_ * size_y_];
     static_map_ = new unsigned char[size_x_ * size_y_];
     markers_ = new unsigned char[size_x_ * size_y_];
     memset(markers_, 0, size_x_ * size_y_ * sizeof(unsigned char));
@@ -87,8 +87,8 @@ namespace costmap_2d{
         for(unsigned int j = 0; j < size_y_; ++j){
           unsigned int index = getIndex(i, j);
           //if the static value is above the threshold... it is a lethal obstacle... otherwise just take the cost
-          cost_map_[index] = static_data[index] >= lethal_threshold ? LETHAL_OBSTACLE : static_data[index];
-          if(cost_map_[index] == LETHAL_OBSTACLE){
+          costmap_[index] = static_data[index] >= lethal_threshold ? LETHAL_OBSTACLE : static_data[index];
+          if(costmap_[index] == LETHAL_OBSTACLE){
             unsigned int mx, my;
             indexToCells(index, mx, my);
             enqueue(index, mx, my, mx, my, inflation_queue_);
@@ -99,12 +99,12 @@ namespace costmap_2d{
       inflateObstacles(inflation_queue_);
 
       //we also want to keep a copy of the current costmap as the static map
-      memcpy(static_map_, cost_map_, size_x_ * size_y_ * sizeof(unsigned char));
+      memcpy(static_map_, costmap_, size_x_ * size_y_ * sizeof(unsigned char));
     }
     else{
       //everything is unknown initially if we don't have a static map
       memset(static_map_, NO_INFORMATION, size_x_ * size_y_ * sizeof(unsigned char));
-      memset(cost_map_, NO_INFORMATION, size_x_ * size_y_ * sizeof(unsigned char));
+      memset(costmap_, NO_INFORMATION, size_x_ * size_y_ * sizeof(unsigned char));
     }
   }
 
@@ -114,7 +114,7 @@ namespace costmap_2d{
       return *this;
 
     //clean up old data
-    if(cost_map_ != NULL) delete[] cost_map_;
+    if(costmap_ != NULL) delete[] costmap_;
     if(static_map_ != NULL) delete[] static_map_;
     if(markers_ != NULL) delete[] markers_;
 
@@ -139,7 +139,7 @@ namespace costmap_2d{
     origin_y_ = map.origin_y_;
 
     //initialize our various maps
-    cost_map_ = new unsigned char[size_x_ * size_y_];
+    costmap_ = new unsigned char[size_x_ * size_y_];
     static_map_ = new unsigned char[size_x_ * size_y_];
     markers_ = new unsigned char[size_x_ * size_y_];
 
@@ -150,7 +150,7 @@ namespace costmap_2d{
     memcpy(static_map_, map.static_map_, size_x_ * size_y_ * sizeof(unsigned char));
 
     //copy the cost map
-    memcpy(cost_map_, map.cost_map_, size_x_ * size_y_ * sizeof(unsigned char));
+    memcpy(costmap_, map.costmap_, size_x_ * size_y_ * sizeof(unsigned char));
 
     sq_obstacle_range_ = map.sq_obstacle_range_;
     max_obstacle_height_ = map.max_obstacle_height_;
@@ -184,16 +184,16 @@ namespace costmap_2d{
     return *this;
   }
 
-  Costmap2D::Costmap2D(const Costmap2D& map) : static_map_(NULL), cost_map_(NULL), markers_(NULL), cached_costs_(NULL), cached_distances_(NULL) {
+  Costmap2D::Costmap2D(const Costmap2D& map) : static_map_(NULL), costmap_(NULL), markers_(NULL), cached_costs_(NULL), cached_distances_(NULL) {
     *this = map;
   }
 
   //just initialize everything to NULL by default
   Costmap2D::Costmap2D() : size_x_(0), size_y_(0), resolution_(0.0), origin_x_(0.0), origin_y_(0.0), static_map_(NULL),
-  cost_map_(NULL), markers_(NULL), cached_costs_(NULL), cached_distances_(NULL) {}
+  costmap_(NULL), markers_(NULL), cached_costs_(NULL), cached_distances_(NULL) {}
 
   Costmap2D::~Costmap2D(){
-    if(cost_map_ != NULL) delete[] cost_map_;
+    if(costmap_ != NULL) delete[] costmap_;
     if(static_map_ != NULL) delete[] static_map_;
     if(markers_ != NULL) delete[] markers_;
 
@@ -219,22 +219,22 @@ namespace costmap_2d{
 
   unsigned char* Costmap2D::getCharMapCopy() const {
     unsigned char* map_copy = new unsigned char[size_x_ * size_y_];
-    memcpy(map_copy, cost_map_, size_x_ * size_y_ * sizeof(unsigned char));
+    memcpy(map_copy, costmap_, size_x_ * size_y_ * sizeof(unsigned char));
     return map_copy;
   }
 
   const unsigned char* Costmap2D::getCharMap() const {
-    return cost_map_;
+    return costmap_;
   }
 
   unsigned char Costmap2D::getCost(unsigned int mx, unsigned int my) const {
     ROS_ASSERT_MSG(mx < size_x_ && my < size_y_, "You cannot get the cost of a cell that is outside the bounds of the costmap");
-    return cost_map_[getIndex(mx, my)];
+    return costmap_[getIndex(mx, my)];
   }
 
   void Costmap2D::setCost(unsigned int mx, unsigned int my, unsigned char cost) {
     ROS_ASSERT_MSG(mx < size_x_ && my < size_y_, "You cannot set the cost of a cell that is outside the bounds of the costmap");
-    cost_map_[getIndex(mx, my)] = cost;
+    costmap_[getIndex(mx, my)] = cost;
   }
 
   void Costmap2D::mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const {
@@ -289,30 +289,30 @@ namespace costmap_2d{
     unsigned char local_map[cell_size_x * cell_size_y];
 
     //copy the local window in the costmap to the local map
-    unsigned char* cost_map_cell = &cost_map_[getIndex(start_x, start_y)];
+    unsigned char* costmap_cell = &costmap_[getIndex(start_x, start_y)];
     unsigned char* local_map_cell = local_map;
     for(unsigned int y = 0; y < cell_size_y; ++y){
       for(unsigned int x = 0; x < cell_size_x; ++x){
-        *local_map_cell = *cost_map_cell;
+        *local_map_cell = *costmap_cell;
         local_map_cell++;
-        cost_map_cell++;
+        costmap_cell++;
       }
-      cost_map_cell += size_x_ - cell_size_x;
+      costmap_cell += size_x_ - cell_size_x;
     }
 
     //now we'll reset the costmap to the static map
-    memcpy(cost_map_, static_map_, size_x_ * size_y_ * sizeof(unsigned char));
+    memcpy(costmap_, static_map_, size_x_ * size_y_ * sizeof(unsigned char));
 
     //now we want to copy the local map back into the costmap
-    cost_map_cell = &cost_map_[getIndex(start_x, start_y)];
+    costmap_cell = &costmap_[getIndex(start_x, start_y)];
     local_map_cell = local_map;
     for(unsigned int y = 0; y < cell_size_y; ++y){
       for(unsigned int x = 0; x < cell_size_x; ++x){
-        *cost_map_cell = *local_map_cell;
+        *costmap_cell = *local_map_cell;
         local_map_cell++;
-        cost_map_cell++;
+        costmap_cell++;
       }
-      cost_map_cell += size_x_ - cell_size_x;
+      costmap_cell += size_x_ - cell_size_x;
     }
   }
 
@@ -423,7 +423,7 @@ namespace costmap_2d{
 
   void Costmap2D::raytraceFreespace(const Observation& clearing_observation){
     //create the functor that we'll use to clear cells from the costmap
-    ClearCell clearer(cost_map_);
+    ClearCell clearer(costmap_);
 
     double ox = clearing_observation.origin_.x;
     double oy = clearing_observation.origin_.y;
@@ -514,7 +514,7 @@ namespace costmap_2d{
 
     //we know that we want to clear all non-lethal obstacles in this window to get it ready for inflation
     unsigned int index = getIndex(map_sx, map_sy);
-    unsigned char* current = &cost_map_[index];
+    unsigned char* current = &costmap_[index];
     for(unsigned int j = map_sy; j <= map_ey; ++j){
       for(unsigned int i = map_sx; i <= map_ex; ++i){
         //if the cell is a lethal obstacle... we'll keep it and queue it, otherwise... we'll clear it
@@ -557,7 +557,7 @@ namespace costmap_2d{
 
     //we know that we want to clear all non-lethal obstacles in this window to get it ready for inflation
     unsigned int index = getIndex(map_sx, map_sy);
-    unsigned char* current = &cost_map_[index];
+    unsigned char* current = &costmap_[index];
     for(unsigned int j = map_sy; j <= map_ey; ++j){
       for(unsigned int i = map_sx; i <= map_ex; ++i){
         //if the cell is a lethal obstacle... we'll keep it and queue it, otherwise... we'll clear it
@@ -603,19 +603,19 @@ namespace costmap_2d{
     unsigned char local_map[cell_size_x * cell_size_y];
 
     //copy the local window in the costmap to the local map
-    unsigned char* cost_map_cell = &cost_map_[getIndex(lower_left_x, lower_left_y)];
+    unsigned char* costmap_cell = &costmap_[getIndex(lower_left_x, lower_left_y)];
     unsigned char* local_map_cell = local_map;
     for(unsigned int y = 0; y < cell_size_y; ++y){
       for(unsigned int x = 0; x < cell_size_x; ++x){
-        *local_map_cell = *cost_map_cell;
+        *local_map_cell = *costmap_cell;
         local_map_cell++;
-        cost_map_cell++;
+        costmap_cell++;
       }
-      cost_map_cell += size_x_ - cell_size_x;
+      costmap_cell += size_x_ - cell_size_x;
     }
 
     //now we'll set the costmap to be completely unknown
-    memset(cost_map_, NO_INFORMATION, size_x_ * size_y_ * sizeof(unsigned char));
+    memset(costmap_, NO_INFORMATION, size_x_ * size_y_ * sizeof(unsigned char));
 
     //update the origin with the appropriate world coordinates
     origin_x_ = new_grid_ox;
@@ -626,15 +626,15 @@ namespace costmap_2d{
     int start_y = lower_left_y - cell_oy;
 
     //now we want to copy the overlapping information back into the map, but in its new location
-    cost_map_cell = &cost_map_[getIndex(start_x, start_y)];
+    costmap_cell = &costmap_[getIndex(start_x, start_y)];
     local_map_cell = local_map;
     for(unsigned int y = 0; y < cell_size_y; ++y){
       for(unsigned int x = 0; x < cell_size_x; ++x){
-        *cost_map_cell = *local_map_cell;
+        *costmap_cell = *local_map_cell;
         local_map_cell++;
-        cost_map_cell++;
+        costmap_cell++;
       }
-      cost_map_cell += size_x_ - cell_size_x;
+      costmap_cell += size_x_ - cell_size_x;
     }
 
   }
@@ -659,13 +659,13 @@ namespace costmap_2d{
     //set the cost of those cells
     for(unsigned int i = 0; i < polygon_cells.size(); ++i){
       unsigned int index = getIndex(polygon_cells[i].x, polygon_cells[i].y);
-      cost_map_[index] = cost_value;
+      costmap_[index] = cost_value;
     }
     return true;
   }
 
   void Costmap2D::polygonOutlineCells(const std::vector<MapLocation>& polygon, std::vector<MapLocation>& polygon_cells){
-    PolygonOutlineCells cell_gatherer(*this, cost_map_, polygon_cells);
+    PolygonOutlineCells cell_gatherer(*this, costmap_, polygon_cells);
     for(unsigned int i = 0; i < polygon.size() - 1; ++i){
       raytraceLine(cell_gatherer, polygon[i].x, polygon[i].y, polygon[i + 1].x, polygon[i + 1].y); 
     }

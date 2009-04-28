@@ -157,7 +157,7 @@ namespace nav {
       /**
        * @brief  Resets the costmaps to the static map outside a given window
        */
-      void resetCostMaps();
+      void resetCostmaps();
 
       ros::Node& ros_node_;
       tf::TransformListener& tf_;

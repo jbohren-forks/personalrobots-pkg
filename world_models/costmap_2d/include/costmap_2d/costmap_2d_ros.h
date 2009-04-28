@@ -138,9 +138,9 @@ namespace costmap_2d {
 
       /**
        * @brief  Returns a copy of the underlying costmap
-       * @param cost_map A reference to the map to populate
+       * @param costmap A reference to the map to populate
        */
-      void getCostMapCopy(Costmap2D& cost_map);
+      void getCostmapCopy(Costmap2D& costmap);
 
       /**
        * @brief  Returns a copy of the underlying unsigned character array <B>(NOTE: THE USER IS RESPONSIBLE FOR DELETION)</B>

@@ -336,7 +336,7 @@ namespace costmap_2d {
     }
     // check global_pose timeout
     if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
-      ROS_ERROR("CostMap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
+      ROS_ERROR("Costmap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
           current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
       tf_.canTransform(global_frame_, robot_base_frame_, ros::Time(2.0));
       return;
@@ -394,7 +394,7 @@ namespace costmap_2d {
     }
     // check global_pose timeout
     if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
-      ROS_ERROR("CostMap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
+      ROS_ERROR("Costmap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
           current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
       tf_.canTransform(global_frame_, robot_base_frame_, ros::Time(2.0));
       return;
@@ -409,12 +409,12 @@ namespace costmap_2d {
 
   }
 
-  void Costmap2DROS::getCostMapCopy(Costmap2D& cost_map){
-    cost_map.lock();
+  void Costmap2DROS::getCostmapCopy(Costmap2D& costmap){
+    costmap.lock();
     costmap_->lock();
-    cost_map = *costmap_;
+    costmap = *costmap_;
     costmap_->unlock();
-    cost_map.unlock();
+    costmap.unlock();
   }
 
   unsigned char* Costmap2DROS::getCharMapCopy(){

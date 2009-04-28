@@ -67,11 +67,11 @@ namespace base_local_planner {
           for (unsigned int y = 0; y < size_y_; y++){
             unsigned int ind = x + (y * size_x_);
             if(map_(x, y).occ_state == 1)
-              cost_map_[ind] = costmap_2d::LETHAL_OBSTACLE;
+              costmap_[ind] = costmap_2d::LETHAL_OBSTACLE;
             else if(map_(x, y).occ_dist < outer_radius_)
-              cost_map_[ind] = costmap_2d::INSCRIBED_INFLATED_OBSTACLE/2;
+              costmap_[ind] = costmap_2d::INSCRIBED_INFLATED_OBSTACLE/2;
             else 
-              cost_map_[ind] = 0;
+              costmap_[ind] = 0;
           }
         }
       }

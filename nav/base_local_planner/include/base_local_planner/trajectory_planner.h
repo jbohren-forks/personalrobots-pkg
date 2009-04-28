@@ -73,7 +73,7 @@ namespace base_local_planner {
       /**
        * @brief  Constructs a trajectory controller
        * @param world_model The WorldModel the trajectory controller uses to check for collisions 
-       * @param cost_map A reference to the CostMap the controller should use
+       * @param costmap A reference to the Costmap the controller should use
        * @param footprint_spec A polygon representing the footprint of the robot. (Must be convex)
        * @param inscribed_radius The radius of the inscribed circle of the robot
        * @param circumscribed_radius The radius of the circumscribed circle of the robot
@@ -102,7 +102,7 @@ namespace base_local_planner {
        * @param y_vels A vector of the y velocities the controller will explore
        */
       TrajectoryPlanner(WorldModel& world_model, 
-          const costmap_2d::Costmap2D& cost_map, 
+          const costmap_2d::Costmap2D& costmap, 
           std::vector<robot_msgs::Point> footprint_spec,
           double inscribed_radius, double circumscribed_radius,
           double acc_lim_x = 1.0, double acc_lim_y = 1.0, double acc_lim_theta = 1.0,
@@ -249,7 +249,7 @@ namespace base_local_planner {
       void setPathCells();
 
       MapGrid map_; ///< @brief The local map grid where we propagate goal and path distance 
-      const costmap_2d::Costmap2D& cost_map_; ///< @brief Provides access to cost map information
+      const costmap_2d::Costmap2D& costmap_; ///< @brief Provides access to cost map information
       WorldModel& world_model_; ///< @brief The world model that the controller uses for collision detection
 
       std::vector<robot_msgs::Point> footprint_spec_; ///< @brief The footprint specification of the robot
@@ -304,7 +304,7 @@ namespace base_local_planner {
         check_cell->path_mark = true;
 
         //if the cell is an obstacle set the max path distance
-        unsigned char cost = cost_map_.getCost(check_cell->cx, check_cell->cy);
+        unsigned char cost = costmap_.getCost(check_cell->cx, check_cell->cy);
         if(!map_(check_cell->cx, check_cell->cy).within_robot && (cost == costmap_2d::LETHAL_OBSTACLE || cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)){
           check_cell->path_dist = map_.map_.size();
           return;
@@ -328,7 +328,7 @@ namespace base_local_planner {
         check_cell->goal_mark = true;
 
         //if the cell is an obstacle set the max goal distance
-        unsigned char cost = cost_map_.getCost(check_cell->cx, check_cell->cy);
+        unsigned char cost = costmap_.getCost(check_cell->cx, check_cell->cy);
         if(!map_(check_cell->cx, check_cell->cy).within_robot && (cost == costmap_2d::LETHAL_OBSTACLE || cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)){
           check_cell->goal_dist = map_.map_.size();
           return;

@@ -65,7 +65,7 @@ namespace people_aware_nav {
 
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
     planner_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("navfn"));
-    planner_cost_map_ros_->getCostMapCopy(planner_cost_map_);
+    planner_cost_map_ros_->getCostmapCopy(planner_cost_map_);
 
     //initialize the NavFn planner
     planner_ = new NavfnROS(ros_node_, tf_, planner_cost_map_);
@@ -73,7 +73,7 @@ namespace people_aware_nav {
 
     //create the ros wrapper for the controller's cost_map... and initializer a pointer we'll use with the underlying map
     controller_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"));
-    controller_cost_map_ros_->getCostMapCopy(controller_cost_map_);
+    controller_cost_map_ros_->getCostmapCopy(controller_cost_map_);
 
     robot_msgs::Point pt;
     //create a square footprint
@@ -122,7 +122,7 @@ void MoveBaseConstrained::makePlan(const people_aware_nav::ConstrainedGoal& goal
       return;
 
     //update the copy of the costmap the planner uses
-    planner_cost_map_ros_->getCostMapCopy(planner_cost_map_);
+    planner_cost_map_ros_->getCostmapCopy(planner_cost_map_);
 
 
     // set cost of forbidden region
@@ -209,7 +209,7 @@ void MoveBaseConstrained::makePlan(const people_aware_nav::ConstrainedGoal& goal
       update(feedback);
 
       //make sure to update the cost_map we'll use for this cycle
-      controller_cost_map_ros_->getCostMapCopy(controller_cost_map_);
+      controller_cost_map_ros_->getCostmapCopy(controller_cost_map_);
 
       //check that the observation buffers for the costmap are current
       if(!controller_cost_map_ros_->isCurrent()){
@@ -286,7 +286,7 @@ void MoveBaseConstrained::makePlan(const people_aware_nav::ConstrainedGoal& goal
     return true;
   }
 
-  void MoveBaseConstrained::resetCostMaps(){
+  void MoveBaseConstrained::resetCostmaps(){
     planner_cost_map_ros_->resetMapOutsideWindow(5.0, 5.0);
     controller_cost_map_ros_->resetMapOutsideWindow(5.0, 5.0);
   }

@@ -77,12 +77,12 @@ namespace base_local_planner {
        * @brief  Constructs the ros wrapper
        * @param ros_node The node that is running the controller, used to get parameters from the parameter server
        * @param tf A reference to a transform listener
-       * @param cost_map The cost map to use for assigning costs to trajectories
+       * @param costmap The cost map to use for assigning costs to trajectories
        * @param footprint_spec A polygon representing the footprint of the robot. (Must be convex)
        * @param planner_map Used to size the map for the freespace controller... this will go away once a rolling window version of the point grid is in place
        */
       TrajectoryPlannerROS(ros::Node& ros_node, tf::TransformListener& tf,
-          costmap_2d::Costmap2D& cost_map, std::vector<robot_msgs::Point> footprint_spec,
+          costmap_2d::Costmap2D& costmap, std::vector<robot_msgs::Point> footprint_spec,
           const costmap_2d::Costmap2D* planner_map = NULL);
 
       /**
@@ -130,9 +130,9 @@ namespace base_local_planner {
 
       /**
        * @brief  Clear the footprint of the robot in a given cost map
-       * @param cost_map The costmap to apply the clearing opertaion on
+       * @param costmap The costmap to apply the clearing opertaion on
        */
-      void clearRobotFootprint(costmap_2d::Costmap2D& cost_map);
+      void clearRobotFootprint(costmap_2d::Costmap2D& costmap);
 
     private:
       /**
@@ -191,9 +191,9 @@ namespace base_local_planner {
       /**
        * @brief  Clear the footprint of the robot in a given cost map
        * @param global_pose The pose of the robot in the global frame
-       * @param cost_map The costmap to apply the clearing opertaion on
+       * @param costmap The costmap to apply the clearing opertaion on
        */
-      void clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose, costmap_2d::Costmap2D& cost_map);
+      void clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose, costmap_2d::Costmap2D& costmap);
 
       /**
        * @brief  Publish a plan for visualization purposes
@@ -206,7 +206,7 @@ namespace base_local_planner {
 
       WorldModel* world_model_; ///< @brief The world model that the controller will use
       TrajectoryPlanner* tc_; ///< @brief The trajectory controller
-      costmap_2d::Costmap2D& cost_map_; ///< @brief The costmap the controller will use
+      costmap_2d::Costmap2D& costmap_; ///< @brief The costmap the controller will use
       tf::MessageNotifier<laser_scan::LaserScan>* base_scan_notifier_; ///< @brief Used to guarantee that a transform is available for base scans
       tf::MessageNotifier<laser_scan::LaserScan>* tilt_scan_notifier_; ///< @brief Used to guarantee that a transform is available for tilt scans
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds

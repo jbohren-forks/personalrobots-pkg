@@ -95,13 +95,13 @@ namespace nav {
       /**
        * @brief  Resets the costmaps to the static map outside a given window
        */
-      void resetCostMaps();
+      void resetCostmaps();
 
       ros::Node& ros_node_;
       tf::TransformListener& tf_;
       base_local_planner::TrajectoryPlannerROS* tc_;
-      costmap_2d::Costmap2DROS* controller_cost_map_ros_;
-      costmap_2d::Costmap2D controller_cost_map_;
+      costmap_2d::Costmap2DROS* controller_costmap_ros_;
+      costmap_2d::Costmap2D controller_costmap_;
 
       std::vector<robot_msgs::Point> footprint_;
       std::string robot_base_frame_;

@@ -43,7 +43,7 @@ using namespace costmap_2d;
 
 namespace base_local_planner{
   TrajectoryPlanner::TrajectoryPlanner(WorldModel& world_model, 
-      const Costmap2D& cost_map, 
+      const Costmap2D& costmap, 
       std::vector<Point> footprint_spec,
       double inscribed_radius, double circumscribed_radius,
       double acc_lim_x, double acc_lim_y, double acc_lim_theta,
@@ -56,7 +56,7 @@ namespace base_local_planner{
       double max_vel_th, double min_vel_th, double min_in_place_vel_th,
       bool dwa, bool heading_scoring, double heading_scoring_timestep, bool simple_attractor,
       vector<double> y_vels)
-    : map_(cost_map.cellSizeX(), cost_map.cellSizeY()), cost_map_(cost_map), 
+    : map_(costmap.cellSizeX(), costmap.cellSizeY()), costmap_(costmap), 
     world_model_(world_model), footprint_spec_(footprint_spec),
     inscribed_radius_(inscribed_radius), circumscribed_radius_(circumscribed_radius),
     goal_x_(0), goal_y_(0),
@@ -103,7 +103,7 @@ namespace base_local_planner{
       double g_x = global_plan_[i].pose.position.x;
       double g_y = global_plan_[i].pose.position.y;
       unsigned int map_x, map_y;
-      if(cost_map_.worldToMap(g_x, g_y, map_x, map_y)){
+      if(costmap_.worldToMap(g_x, g_y, map_x, map_y)){
         MapCell& current = map_(map_x, map_y);
         current.path_dist = 0.0;
         current.path_mark = true;
@@ -120,7 +120,7 @@ namespace base_local_planner{
 
     if(local_goal_x >= 0 && local_goal_y >= 0){
       MapCell& current = map_(local_goal_x, local_goal_y);
-      cost_map_.mapToWorld(local_goal_x, local_goal_y, goal_x_, goal_y_);
+      costmap_.mapToWorld(local_goal_x, local_goal_y, goal_x_, goal_y_);
       current.goal_dist = 0.0;
       current.goal_mark = true;
       goal_dist_queue.push(&current);
@@ -259,7 +259,7 @@ namespace base_local_planner{
       unsigned int cell_x, cell_y;
 
       //we don't want a path that goes off the know map
-      if(!cost_map_.worldToMap(x_i, y_i, cell_x, cell_y)){
+      if(!costmap_.worldToMap(x_i, y_i, cell_x, cell_y)){
         traj.cost_ = -1.0;
         return;
       }
@@ -273,7 +273,7 @@ namespace base_local_planner{
         return;
       }
 
-      occ_cost += cost_map_.getCost(cell_x, cell_y);
+      occ_cost += costmap_.getCost(cell_x, cell_y);
 
       double cell_pdist = map_(cell_x, cell_y).path_dist;
       double cell_gdist = map_(cell_x, cell_y).goal_dist;
@@ -338,10 +338,10 @@ namespace base_local_planner{
     unsigned int goal_cell_x, goal_cell_y;
     //find a clear line of sight from the robot's cell to a point on the path
     for(int i = global_plan_.size() - 1; i >=0; --i){
-      if(cost_map_.worldToMap(global_plan_[i].pose.position.x, global_plan_[i].pose.position.y, goal_cell_x, goal_cell_y)){
+      if(costmap_.worldToMap(global_plan_[i].pose.position.x, global_plan_[i].pose.position.y, goal_cell_x, goal_cell_y)){
         if(lineCost(cell_x, goal_cell_x, cell_y, goal_cell_y) >= 0){
           double gx, gy;
-          cost_map_.mapToWorld(goal_cell_x, goal_cell_y, gx, gy);
+          costmap_.mapToWorld(goal_cell_x, goal_cell_y, gx, gy);
           double v1_x = gx - x;
           double v1_y = gy - y;
           double v2_x = cos(heading);
@@ -443,7 +443,7 @@ namespace base_local_planner{
   }
 
   double TrajectoryPlanner::pointCost(int x, int y){
-    unsigned char cost = cost_map_.getCost(x, y);
+    unsigned char cost = costmap_.getCost(x, y);
     //if the cell is in an obstacle the path is invalid
     if(cost == LETHAL_OBSTACLE || cost == INSCRIBED_INFLATED_OBSTACLE){
       return -1;
@@ -583,7 +583,7 @@ namespace base_local_planner{
         unsigned int cell_x, cell_y;
 
         //make sure that we'll be looking at a legal cell
-        if(cost_map_.worldToMap(x_r, y_r, cell_x, cell_y)){
+        if(costmap_.worldToMap(x_r, y_r, cell_x, cell_y)){
           double ahead_gdist = map_(cell_x, cell_y).goal_dist;
           if(ahead_gdist < heading_dist){
             //if we haven't already tried rotating left since we've moved forward
@@ -679,7 +679,7 @@ namespace base_local_planner{
           unsigned int cell_x, cell_y;
 
           //make sure that we'll be looking at a legal cell
-          if(cost_map_.worldToMap(x_r, y_r, cell_x, cell_y)){
+          if(costmap_.worldToMap(x_r, y_r, cell_x, cell_y)){
             double ahead_gdist = map_(cell_x, cell_y).goal_dist;
             if(ahead_gdist < heading_dist){
               //if we haven't already tried strafing left since we've moved forward
@@ -976,7 +976,7 @@ namespace base_local_planner{
     Point pt;
     for(unsigned int i = 0; i < footprint_cells.size(); ++i){
       double pt_x, pt_y;
-      cost_map_.mapToWorld(footprint_cells[i].x, footprint_cells[i].y, pt_x, pt_y);
+      costmap_.mapToWorld(footprint_cells[i].x, footprint_cells[i].y, pt_x, pt_y);
       pt.x = pt_x;
       pt.y = pt_y;
       footprint_pts.push_back(pt);
@@ -1003,12 +1003,12 @@ namespace base_local_planner{
       //find the cell coordinates of the first segment point
       new_x = x_i + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
       new_y = y_i + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
-      cost_map_.worldToMap(new_x, new_y, x0, y0);
+      costmap_.worldToMap(new_x, new_y, x0, y0);
 
       //find the cell coordinates of the second segment point
       new_x = x_i + (footprint_spec_[i + 1].x * cos_th - footprint_spec_[i + 1].y * sin_th);
       new_y = y_i + (footprint_spec_[i + 1].x * sin_th + footprint_spec_[i + 1].y * cos_th);
-      cost_map_.worldToMap(new_x, new_y, x1, y1);
+      costmap_.worldToMap(new_x, new_y, x1, y1);
 
       getLineCells(x0, x1, y0, y1, footprint_cells);
     }
@@ -1016,11 +1016,11 @@ namespace base_local_planner{
     //we need to close the loop, so we also have to raytrace from the last pt to first pt
     new_x = x_i + (footprint_spec_[last_index].x * cos_th - footprint_spec_[last_index].y * sin_th);
     new_y = y_i + (footprint_spec_[last_index].x * sin_th + footprint_spec_[last_index].y * cos_th);
-    cost_map_.worldToMap(new_x, new_y, x0, y0);
+    costmap_.worldToMap(new_x, new_y, x0, y0);
 
     new_x = x_i + (footprint_spec_[0].x * cos_th - footprint_spec_[0].y * sin_th);
     new_y = y_i + (footprint_spec_[0].x * sin_th + footprint_spec_[0].y * cos_th);
-    cost_map_.worldToMap(new_x, new_y, x1, y1);
+    costmap_.worldToMap(new_x, new_y, x1, y1);
 
     getLineCells(x0, x1, y0, y1, footprint_cells);
 

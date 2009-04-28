@@ -44,7 +44,7 @@ using namespace pr2_robot_actions;
 namespace nav {
   MoveBaseLocal::MoveBaseLocal(ros::Node& ros_node, tf::TransformListener& tf) : 
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
-    tc_(NULL), controller_cost_map_ros_(NULL) {
+    tc_(NULL), controller_costmap_ros_(NULL) {
 
     //get some parameters that will be global to the move base node
     ros_node_.param("~base_local_planner/robot_base_frame", robot_base_frame_, std::string("base_link"));
@@ -58,9 +58,9 @@ namespace nav {
     ros_node_.param("~base_local_planner/costmap/inscribed_radius", inscribed_radius, 0.325);
     ros_node_.param("~base_local_planner/costmap/circumscribed_radius", circumscribed_radius, 0.46);
 
-    //create the ros wrapper for the controller's cost_map... and initializer a pointer we'll use with the underlying map
-    controller_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"));
-    controller_cost_map_ros_->getCostMapCopy(controller_cost_map_);
+    //create the ros wrapper for the controller's costmap... and initializer a pointer we'll use with the underlying map
+    controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"));
+    controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
     robot_msgs::Point pt;
     //create a square footprint
@@ -83,15 +83,15 @@ namespace nav {
     footprint_.push_back(pt);
 
     //create a trajectory controller
-    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_cost_map_, footprint_, &controller_cost_map_);
+    tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_, &controller_costmap_);
   }
 
   MoveBaseLocal::~MoveBaseLocal(){
     if(tc_ != NULL)
       delete tc_;
 
-    if(controller_cost_map_ros_ != NULL)
-      delete controller_cost_map_ros_;
+    if(controller_costmap_ros_ != NULL)
+      delete controller_costmap_ros_;
   }
 
   void MoveBaseLocal::getRobotPose(std::string frame, tf::Stamped<tf::Pose>& pose){
@@ -134,11 +134,11 @@ namespace nav {
       //push the feedback out
       update(feedback);
 
-      //make sure to update the cost_map we'll use for this cycle
-      controller_cost_map_ros_->getCostMapCopy(controller_cost_map_);
+      //make sure to update the costmap we'll use for this cycle
+      controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
       //check that the observation buffers for the costmap are current
-      if(!controller_cost_map_ros_->isCurrent()){
+      if(!controller_costmap_ros_->isCurrent()){
         ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
         continue;
       }
@@ -155,7 +155,7 @@ namespace nav {
       tc_->updatePlan(global_plan);
       //get observations for the non-costmap controllers
       std::vector<Observation> observations;
-      controller_cost_map_ros_->getMarkingObservations(observations);
+      controller_costmap_ros_->getMarkingObservations(observations);
       valid_control = tc_->computeVelocityCommands(cmd_vel, observations);
 
       //give the base the velocity command
@@ -202,8 +202,8 @@ namespace nav {
     return true;
   }
 
-  void MoveBaseLocal::resetCostMaps(){
-    controller_cost_map_ros_->resetMapOutsideWindow(5.0, 5.0);
+  void MoveBaseLocal::resetCostmaps(){
+    controller_costmap_ros_->resetMapOutsideWindow(5.0, 5.0);
   }
 
 };

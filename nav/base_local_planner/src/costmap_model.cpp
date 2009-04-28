@@ -41,7 +41,7 @@ using namespace robot_msgs;
 using namespace costmap_2d;
 
 namespace base_local_planner {
-  CostmapModel::CostmapModel(const Costmap2D& ma) : cost_map_(ma) {}
+  CostmapModel::CostmapModel(const Costmap2D& ma) : costmap_(ma) {}
 
   double CostmapModel::footprintCost(const Point& position, const vector<Point>& footprint, 
       double inscribed_radius, double circumscribed_radius){
@@ -52,19 +52,19 @@ namespace base_local_planner {
     unsigned int cell_x, cell_y;
 
     //get the cell coord of the center point of the robot
-    if(!cost_map_.worldToMap(position.x, position.y, cell_x, cell_y))
+    if(!costmap_.worldToMap(position.x, position.y, cell_x, cell_y))
       return -1.0;
 
     //for circular robots the circumscribed radius will equal the inscribed radius and we can do a point check
     if(circumscribed_radius == inscribed_radius){
-      unsigned char cost = cost_map_.getCost(cell_x, cell_y);
+      unsigned char cost = costmap_.getCost(cell_x, cell_y);
       if(cost == LETHAL_OBSTACLE || cost == INSCRIBED_INFLATED_OBSTACLE)
         return -1.0;
       return 1.0;
     }
 
     //for non-circular robots... we can still save time by checking if the circumscribed circle is clear of obstacles
-    if(!cost_map_.circumscribedCell(cell_x, cell_y))
+    if(!costmap_.circumscribedCell(cell_x, cell_y))
       return 1.0;
 
     //now we really have to lay down the footprint in the costmap grid
@@ -74,11 +74,11 @@ namespace base_local_planner {
     //we need to rasterize each line in the footprint
     for(unsigned int i = 0; i < footprint.size() - 1; ++i){
       //get the cell coord of the first point
-      if(!cost_map_.worldToMap(footprint[i].x, footprint[i].y, x0, y0))
+      if(!costmap_.worldToMap(footprint[i].x, footprint[i].y, x0, y0))
         return -1.0;
 
       //get the cell coord of the second point
-      if(!cost_map_.worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1))
+      if(!costmap_.worldToMap(footprint[i + 1].x, footprint[i + 1].y, x1, y1))
         return -1.0;
 
       line_cost = lineCost(x0, x1, y0, y1);
@@ -90,11 +90,11 @@ namespace base_local_planner {
 
     //we also need to connect the first point in the footprint to the last point
     //get the cell coord of the last point
-    if(!cost_map_.worldToMap(footprint.back().x, footprint.back().y, x0, y0))
+    if(!costmap_.worldToMap(footprint.back().x, footprint.back().y, x0, y0))
       return -1.0;
 
     //get the cell coord of the first point
-    if(!cost_map_.worldToMap(footprint.front().x, footprint.front().y, x1, y1))
+    if(!costmap_.worldToMap(footprint.front().x, footprint.front().y, x1, y1))
       return -1.0;
 
     line_cost = lineCost(x0, x1, y0, y1);
@@ -189,11 +189,11 @@ namespace base_local_planner {
 
   double CostmapModel::pointCost(int x, int y){
     //if the cell is in an obstacle the path is invalid
-    if(cost_map_.getCost(x, y) == LETHAL_OBSTACLE){
+    if(costmap_.getCost(x, y) == LETHAL_OBSTACLE){
       return -1;
     }
 
-    return cost_map_.getCost(x, y);
+    return costmap_.getCost(x, y);
   }
 
 };

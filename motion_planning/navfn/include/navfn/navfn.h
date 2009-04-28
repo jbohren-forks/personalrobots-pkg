@@ -50,7 +50,7 @@
 #define COST_OBS 254		// 255 and 254 for forbidden regions
 #define COST_OBS_ROS 253	// ROS values of 253 are obstacles
 #define COST_NEUTRAL 50		// Set this to "open space" value
-#define COST_FACTOR 3		// Used for translating costs in NavFn::setCostMap()
+#define COST_FACTOR 3		// Used for translating costs in NavFn::setCostmap()
 
 // Define the cost type in the case that it is not set. However, this allows
 // clients to modify it without changing the file. Arguably, it is better to require it to
@@ -104,7 +104,7 @@ class NavFn
   void setNavArr(int nx, int ny); /**< sets or resets the size of the map */
   int nx, ny, ns;		/**< size of grid, in pixels */
 
-  void setCostMap(const COSTTYPE *cmap, bool isROS=true); /**< sets up the cost map */
+  void setCostmap(const COSTTYPE *cmap, bool isROS=true); /**< sets up the cost map */
   bool calcNavFnAstar();	/**< calculates a plan, returns true if found */
   bool calcNavFnDijkstra();	/**< calculates the full navigation function */
   float *getPathX();		/**< x-coordinates of path */

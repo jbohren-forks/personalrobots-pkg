@@ -37,8 +37,8 @@
 #include <navfn/navfn_ros.h>
 
 namespace navfn {
-  NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2D& cost_map) : ros_node_(ros_node), tf_(tf), 
-  cost_map_(cost_map), planner_(cost_map.cellSizeX(), cost_map.cellSizeY()) {
+  NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2D& costmap) : ros_node_(ros_node), tf_(tf), 
+  costmap_(costmap), planner_(costmap.cellSizeX(), costmap.cellSizeY()) {
     //advertise our plan visualization
     ros_node_.advertise<robot_msgs::Polyline>("~navfn/plan", 1);
 
@@ -60,7 +60,7 @@ namespace navfn {
 
   double NavfnROS::getPointPotential(const robot_msgs::Point& world_point){
     unsigned int mx, my;
-    if(!cost_map_.worldToMap(world_point.x, world_point.y, mx, my))
+    if(!costmap_.worldToMap(world_point.x, world_point.y, mx, my))
       return DBL_MAX;
 
     unsigned int index = my * planner_.nx + mx;
@@ -68,10 +68,10 @@ namespace navfn {
   }
 
   bool NavfnROS::computePotential(const robot_msgs::Point& world_point){
-    planner_.setCostMap(cost_map_.getCharMap());
+    planner_.setCostmap(costmap_.getCharMap());
 
     unsigned int mx, my;
-    if(!cost_map_.worldToMap(world_point.x, world_point.y, mx, my))
+    if(!costmap_.worldToMap(world_point.x, world_point.y, mx, my))
       return false;
 
     int map_start[2];
@@ -93,12 +93,12 @@ namespace navfn {
     global_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
 
     //set the associated costs in the cost map to be free
-    cost_map_.setCost(mx, my, costmap_2d::FREE_SPACE);
+    costmap_.setCost(mx, my, costmap_2d::FREE_SPACE);
 
     double max_inflation_dist = inflation_radius_ + inscribed_radius_;
 
     //make sure to re-inflate obstacles in the affected region
-    cost_map_.reinflateWindow(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist, max_inflation_dist);
+    costmap_.reinflateWindow(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist, max_inflation_dist);
 
   }
 
@@ -143,13 +143,13 @@ namespace navfn {
     double wy = global_pose.getOrigin().y();
 
     unsigned int mx, my;
-    if(!cost_map_.worldToMap(wx, wy, mx, my))
+    if(!costmap_.worldToMap(wx, wy, mx, my))
       return false;
 
     //clear the starting cell within the costmap because we know it can't be an obstacle
     clearRobotCell(global_pose, mx, my);
 
-    planner_.setCostMap(cost_map_.getCharMap());
+    planner_.setCostmap(costmap_.getCharMap());
 
     int map_start[2];
     map_start[0] = mx;
@@ -158,7 +158,7 @@ namespace navfn {
     wx = goal_pose.getOrigin().x();
     wy = goal_pose.getOrigin().y();
 
-    if(!cost_map_.worldToMap(wx, wy, mx, my))
+    if(!costmap_.worldToMap(wx, wy, mx, my))
       return false;
 
     int map_goal[2];
@@ -182,7 +182,7 @@ namespace navfn {
 
         //convert the plan to world coordinates
         double world_x, world_y;
-        cost_map_.mapToWorld(cell_x, cell_y, world_x, world_y);
+        costmap_.mapToWorld(cell_x, cell_y, world_x, world_y);
 
         robot_msgs::PoseStamped pose;
         pose.header.stamp = ros::Time::now();

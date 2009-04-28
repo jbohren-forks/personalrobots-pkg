@@ -37,8 +37,8 @@
 #include <costmap_2d/costmap_2d_publisher.h>
 
 namespace costmap_2d {
-  Costmap2DPublisher::Costmap2DPublisher(ros::Node& ros_node, Costmap2D& cost_map, double publish_frequency, std::string global_frame, std::string topic_prefix) 
-    : ros_node_(ros_node), cost_map_(cost_map), global_frame_(global_frame), 
+  Costmap2DPublisher::Costmap2DPublisher(ros::Node& ros_node, Costmap2D& costmap, double publish_frequency, std::string global_frame, std::string topic_prefix) 
+    : ros_node_(ros_node), costmap_(costmap), global_frame_(global_frame), 
     topic_prefix_(topic_prefix), visualizer_thread_(NULL){
     ros_node_.advertise<robot_msgs::Polyline>("~" + topic_prefix_ + "/raw_obstacles", 1);
     ros_node_.advertise<robot_msgs::Polyline>("~" + topic_prefix_ + "/inflated_obstacles", 1);
@@ -59,28 +59,28 @@ namespace costmap_2d {
 
     costmap_2d::Rate r(frequency);
     while(ros_node_.ok()){
-      publishCostMap();
+      publishCostmap();
       if(!r.sleep())
         ROS_WARN("Map publishing loop missed its desired rate of %.4f the actual time the loop took was %.4f sec", frequency, r.cycleTime().toSec());
     }
   }
 
-  void Costmap2DPublisher::publishCostMap(){
-    cost_map_.lock();
+  void Costmap2DPublisher::publishCostmap(){
+    costmap_.lock();
     std::vector< std::pair<double, double> > raw_obstacles, inflated_obstacles;
-    for(unsigned int i = 0; i < cost_map_.cellSizeX(); i++){
-      for(unsigned int j = 0; j < cost_map_.cellSizeY(); j++){
+    for(unsigned int i = 0; i < costmap_.cellSizeX(); i++){
+      for(unsigned int j = 0; j < costmap_.cellSizeY(); j++){
         double wx, wy;
-        cost_map_.mapToWorld(i, j, wx, wy);
+        costmap_.mapToWorld(i, j, wx, wy);
         std::pair<double, double> p(wx, wy);
 
-        if(cost_map_.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
+        if(costmap_.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
           raw_obstacles.push_back(p);
-        else if(cost_map_.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+        else if(costmap_.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
           inflated_obstacles.push_back(p);
       }
     }
-    cost_map_.unlock();
+    costmap_.unlock();
 
     // First publish raw obstacles in red
     robot_msgs::Polyline obstacle_msg;

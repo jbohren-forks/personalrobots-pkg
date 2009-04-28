@@ -79,7 +79,7 @@ namespace nav
 
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
     planner_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, "");
-    planner_cost_map_ros_->getCostMapCopy(planner_cost_map_);
+    planner_cost_map_ros_->getCostmapCopy(planner_cost_map_);
 
     //initialize the door opening planner
     planner_ = new DoorReactivePlanner(ros_node_, tf_,&planner_cost_map_,control_frame_,global_frame_);
@@ -144,7 +144,7 @@ namespace nav
       return;
 
     //make a plan for controller
-    planner_cost_map_ros_->getCostMapCopy(planner_cost_map_);
+    planner_cost_map_ros_->getCostmapCopy(planner_cost_map_);
 
     //make sure we clear the robot's footprint from the cost map
     clearRobotFootprint(planner_cost_map_);
@@ -248,7 +248,7 @@ namespace nav
       updateGlobalPose();
 
       //make sure to update the cost_map we'll use for this cycle
-      //controller_cost_map_ros_->getCostMapCopy(controller_cost_map_);
+      //controller_cost_map_ros_->getCostmapCopy(controller_cost_map_);
 
       //make sure that we clear the robot footprint in the cost map
       //clearRobotFootprint(controller_cost_map_);
@@ -349,7 +349,7 @@ namespace nav
     return true;
   }
 
-  void MoveBaseDoorAction::resetCostMaps(){
+  void MoveBaseDoorAction::resetCostmaps(){
     planner_cost_map_ros_->resetMapOutsideWindow(5.0, 5.0);
   }
 

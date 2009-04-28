@@ -71,8 +71,8 @@ int main(int argc, char **argv)
   COSTTYPE *cmap = NULL;
   //  cmap = readPGM("maps/willow-full-0.05.pgm",&sx,&sy);
   cmap = readPGM("maps/navfn_troubles.pgm",&sx,&sy,true);
-  //  cmap = readPGM("initial_cost_map_1165_945.pgm",&sx,&sy,true);
-  //  cmap = readPGM("initial_cost_map_2332_1825.pgm",&sx,&sy,true);
+  //  cmap = readPGM("initial_costmap_1165_945.pgm",&sx,&sy,true);
+  //  cmap = readPGM("initial_costmap_2332_1825.pgm",&sx,&sy,true);
   if (cmap)
     {
       nav = new NavFn(sx,sy);
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
   // set up cost map from file, if it exists
   if (cmap)
     {
-      nav->setCostMap(cmap);
+      nav->setCostmap(cmap);
       nav->setupNavFn(true);
     }
   else
@@ -171,7 +171,7 @@ int main(int argc, char **argv)
   // set up cost map from file, if it exists
   if (cmap)
     {
-      nav->setCostMap(cmap);
+      nav->setCostmap(cmap);
       nav->setupNavFn(true);
     }
   else

@@ -103,7 +103,7 @@ class CostmapTester {
 
 
       //create a separate thread to publish cost data to the visualizer
-      visualizer_thread_ = new boost::thread(boost::bind(&CostmapTester::publishCostMap, this));
+      visualizer_thread_ = new boost::thread(boost::bind(&CostmapTester::publishCostmap, this));
       window_reset_thread_ = new boost::thread(boost::bind(&CostmapTester::resetWindow, this));
 
     }
@@ -205,7 +205,7 @@ class CostmapTester {
       }
     }
 
-    void publishCostMap(){
+    void publishCostmap(){
       while(ros_node_.ok()){
         ROS_INFO("publishing map");
         lock_.lock();

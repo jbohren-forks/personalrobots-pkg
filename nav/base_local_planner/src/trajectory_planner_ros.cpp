@@ -48,8 +48,8 @@ using namespace laser_scan;
 
 namespace base_local_planner {
   TrajectoryPlannerROS::TrajectoryPlannerROS(ros::Node& ros_node, tf::TransformListener& tf, 
-      Costmap2D& cost_map, std::vector<Point> footprint_spec, const Costmap2D* planner_map) 
-    : world_model_(NULL), tc_(NULL), cost_map_(cost_map), base_scan_notifier_(NULL), tf_(tf), ros_node_(ros_node), laser_scans_(2), 
+      Costmap2D& costmap, std::vector<Point> footprint_spec, const Costmap2D* planner_map) 
+    : world_model_(NULL), tc_(NULL), costmap_(costmap), base_scan_notifier_(NULL), tf_(tf), ros_node_(ros_node), laser_scans_(2), 
     point_grid_(NULL), voxel_grid_(NULL), rot_stopped_velocity_(1e-2), trans_stopped_velocity_(1e-2), goal_reached_(true), costmap_publisher_(NULL){
     double acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity;
     int vx_samples, vtheta_samples;
@@ -69,7 +69,7 @@ namespace base_local_planner {
 
     double map_publish_frequency;
     ros_node.param("~base_local_planner/costmap_visualization_rate", map_publish_frequency, 2.0);
-    costmap_publisher_ = new costmap_2d::Costmap2DPublisher(ros_node, cost_map, map_publish_frequency, global_frame_, "base_local_planner");
+    costmap_publisher_ = new costmap_2d::Costmap2DPublisher(ros_node, costmap, map_publish_frequency, global_frame_, "base_local_planner");
 
     //we need to make sure that the transform between the robot base frame and the global frame is available
     while(!tf_.canTransform(global_frame_, robot_base_frame_, ros::Time(), ros::Duration(5.0))){
@@ -161,11 +161,11 @@ namespace base_local_planner {
       */
     }
     else{
-      world_model_ = new CostmapModel(cost_map); 
+      world_model_ = new CostmapModel(costmap); 
       ROS_INFO("Costmap\n");
     }
 
-    tc_ = new TrajectoryPlanner(*world_model_, cost_map, footprint_spec, inscribed_radius_, circumscribed_radius_,
+    tc_ = new TrajectoryPlanner(*world_model_, costmap, footprint_spec, inscribed_radius_, circumscribed_radius_,
         acc_lim_x, acc_lim_y, acc_lim_theta, sim_time, sim_granularity, vx_samples, vtheta_samples, pdist_scale,
         gdist_scale, occdist_scale, heading_lookahead, oscillation_reset_dist, holonomic_robot,
         max_vel_x, min_vel_x, max_vel_th, min_vel_th, min_in_place_vel_th_,
@@ -373,7 +373,7 @@ namespace base_local_planner {
     prunePlan(global_pose, global_plan_);
 
     //we also want to clear the robot footprint from the costmap we're using
-    clearRobotFootprint(global_pose, cost_map_);
+    clearRobotFootprint(global_pose, costmap_);
 
     // Set current velocities from odometry
     robot_msgs::PoseDot global_vel;
@@ -526,7 +526,7 @@ namespace base_local_planner {
     }
   }
 
-  void TrajectoryPlannerROS::clearRobotFootprint(Costmap2D& cost_map){
+  void TrajectoryPlannerROS::clearRobotFootprint(Costmap2D& costmap){
     tf::Stamped<tf::Pose> robot_pose, global_pose;
     robot_pose.setIdentity();
     robot_pose.frame_id_ = robot_base_frame_;
@@ -549,29 +549,29 @@ namespace base_local_planner {
       return;
     }
 
-    clearRobotFootprint(global_pose, cost_map);
+    clearRobotFootprint(global_pose, costmap);
   }
 
-  void TrajectoryPlannerROS::clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose, Costmap2D& cost_map){
+  void TrajectoryPlannerROS::clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose, Costmap2D& costmap){
     double useless_pitch, useless_roll, yaw;
     global_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
 
     //get the oriented footprint of the robot
     std::vector<robot_msgs::Point> oriented_footprint = drawFootprint(global_pose.getOrigin().x(), global_pose.getOrigin().y(), yaw);
 
-    cost_map.lock();
+    costmap.lock();
     //set the associated costs in the cost map to be free
-    if(!cost_map.setConvexPolygonCost(oriented_footprint, costmap_2d::FREE_SPACE))
+    if(!costmap.setConvexPolygonCost(oriented_footprint, costmap_2d::FREE_SPACE))
       return;
 
     double max_inflation_dist = inflation_radius_ + circumscribed_radius_;
 
     //clear all non-lethal obstacles out to the maximum inflation distance of an obstacle in the robot footprint
-    cost_map.clearNonLethal(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist, max_inflation_dist);
+    costmap.clearNonLethal(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist, max_inflation_dist);
 
     //make sure to re-inflate obstacles in the affected region... plus those obstalces that could 
-    cost_map.reinflateWindow(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist + inflation_radius_, max_inflation_dist + inflation_radius_, false);
-    cost_map.unlock();
+    costmap.reinflateWindow(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist + inflation_radius_, max_inflation_dist + inflation_radius_, false);
+    costmap.unlock();
 
   }
 

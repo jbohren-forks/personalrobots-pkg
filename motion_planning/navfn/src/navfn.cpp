@@ -223,7 +223,7 @@ NavFn::setNavArr(int xs, int ys)
 //
 
 void
-NavFn::setCostMap(const COSTTYPE *cmap, bool isROS)
+NavFn::setCostmap(const COSTTYPE *cmap, bool isROS)
 {
   COSTTYPE *cm = costarr;
   if (isROS)			// ROS-type cost array
