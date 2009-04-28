@@ -70,9 +70,9 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
   tff_msg_.mode.vel.x = 3;
   tff_msg_.mode.vel.y = 3;
   tff_msg_.mode.vel.z = 3;
-  tff_msg_.mode.rot.x = 3;
-  tff_msg_.mode.rot.y = 3;
-  tff_msg_.mode.rot.z = 3;
+  tff_msg_.mode.rot.x = 2;
+  tff_msg_.mode.rot.y = 2;
+  tff_msg_.mode.rot.z = 2;
   tff_msg_.value.vel.x = -0.1;  // backs off 10cm
   tff_msg_.value.vel.y = 0.0;
   tff_msg_.value.vel.z = 0.0;

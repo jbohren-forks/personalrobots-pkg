@@ -48,7 +48,7 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
   TF(*ros::Node::instance(),false, ros::Duration(10))
 {
   node_.setParam("~roi_policy", "LastImageLocation");
-  node_.setParam("~display", "false");
+  node_.setParam("~display", "true");
   node_.setParam("~square_size", 0.0042);
   node_.setParam("~board_width", 3);
   node_.setParam("~board_height",4);
@@ -125,7 +125,7 @@ void LocalizePlugInGripperAction::moveToStage()
   req_pose_.pose.header.frame_id = "outlet_pose"; 
   req_pose_.pose.pose.position.x = -0.12;
   req_pose_.pose.pose.position.y = 0.00;
-  req_pose_.pose.pose.position.z = 0.04;
+  req_pose_.pose.pose.position.z = 0.08;
   req_pose_.pose.pose.orientation.x = 0.00;
   req_pose_.pose.pose.orientation.y = 0.14;
   req_pose_.pose.pose.orientation.z = 0.00;
@@ -144,7 +144,7 @@ void LocalizePlugInGripperAction::moveToStage()
     return;
   }
 
-  req_pose_.pose.pose.position.x = -0.07;
+  req_pose_.pose.pose.position.x = -0.05;
   req_pose_.pose.header.stamp = ros::Time();
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {

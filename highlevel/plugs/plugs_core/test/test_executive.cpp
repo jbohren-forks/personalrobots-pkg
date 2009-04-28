@@ -65,7 +65,7 @@
 #include <plugs_core/action_localize_plug_in_gripper.h>
 #include <plugs_core/action_plug_in.h>
 #include <plugs_core/action_stow_plug.h>
-
+#include <plugs_core/action_unplug.h>
 
 using namespace ros;
 using namespace std;
@@ -97,7 +97,7 @@ int
   point.point.z=0;
 
   Duration timeout_short = Duration().fromSec(2.0);
-  Duration timeout_medium = Duration().fromSec(10.0);
+  Duration timeout_medium = Duration().fromSec(20.0);
   Duration timeout_long = Duration().fromSec(300.0);
 
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> tuck_arm("safety_tuck_arms");
@@ -108,18 +108,20 @@ int
   robot_actions::ActionClient<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped> detect_outlet_fine("detect_outlet_fine");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> localize_plug_in_gripper("localize_plug_in_gripper");
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> plug_in("plug_in");
-  
+  robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> unplug("unplug");
+  robot_actions::ActionClient< robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty> stow_plug("stow_plug");
+
 
   timeout_medium.sleep();
 
   // tuck arm
-  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
-  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-  if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  //  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  //switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
+  //if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  //if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
 
   // untuck arm
-  if (untuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  // if (untuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
 
   // detect plug on base
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -152,14 +154,34 @@ int
   switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_hybrid_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  if (plug_in.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
+  //if (plug_in.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
+
+  timeout_medium.sleep();
+
+  //unplug
+  if (unplug.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
+
+  //stow plug
+   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.stop_controllers.push_back("r_arm_hybrid_controller");
+  switchlist.start_controllers.push_back("r_arm_cartesian_trajectory_controller");
+  switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
+  switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
+  switchlist.start_controllers.push_back("r_arm_cartesian_wrench_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  if (stow_plug.execute(plug_stow, empty, timeout_long) != robot_actions::SUCCESS) return -1;
+
+
 
 
   // stop remaining controllers
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.stop_controllers.push_back("laser_tilt_controller");
   switchlist.stop_controllers.push_back("r_gripper_position_controller");
-  switchlist.stop_controllers.push_back("r_arm_hybrid_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_wrench_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
 
   return (0);

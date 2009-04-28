@@ -165,7 +165,7 @@ void MoveAndGraspPlugAction::checkGrasp()
   {
     ROS_INFO("error: %f",controller_state_msg_.error);
     // Something went wrong... no plug grasped in gripper
-    if(controller_state_msg_.error < 0.025)
+    if(controller_state_msg_.error < 0.022)
     {
       ROS_INFO("%s: Error, failed to grasp plug.", action_name_.c_str());
       node_->unsubscribe(gripper_controller_ + "/state");
