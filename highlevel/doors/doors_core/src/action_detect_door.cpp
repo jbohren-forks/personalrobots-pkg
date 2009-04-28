@@ -104,7 +104,7 @@ bool DetectDoorAction::laserDetection(const robot_msgs::Door& door_in, robot_msg
   if (isPreemptRequested()) return false;
 
   if (!tf_.canTransform("base_footprint", doorpoint.frame_id_, ros::Time(), ros::Duration().fromSec(5.0))){
-    ROS_ERROR("DetectDoorAction: error getting transform from 'base_footprint' to '%s'", doorpoint.frame_id_.c_str());
+    ROS_ERROR("DetectDoorAction: error getting transform from '%s' to 'base_footprint'", doorpoint.frame_id_.c_str());
     return false;
   }
 
