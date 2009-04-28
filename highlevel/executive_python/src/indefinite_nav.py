@@ -91,8 +91,7 @@ class IndefiniteNav:
 
 if __name__ == '__main__':
   try:
-    #navigator = NavigationAdapter(30, 300, "/move_base_node/feedback", "/move_base_node/activate")
-    navigator = NavigationAdapter(30, 300, "/move_base_node/feedback", "/goal")
+    navigator = NavigationAdapter(30, 300, "/move_base/feedback", "/move_base/activate")
 
     goals = [
      [[18.912, 28.568, 0.000], [0.000, 0.000, 0.000, 1.000]],
