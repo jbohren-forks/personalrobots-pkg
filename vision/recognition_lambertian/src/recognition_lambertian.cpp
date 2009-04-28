@@ -74,65 +74,610 @@
 
 using namespace std;
 
-template <typename T>
-class IndexedIplImage
-{
-public:
-	IplImage* img_;
-	T* p;
-
-	IndexedIplImage(IplImage* img) : img_(img)
-	{
-		p = (T*)img_->imageData;
-	}
-
-	operator IplImage*()
-	{
-		return img_;
-	}
-
-	T at(int x, int y, int chan = 0)
-	{
-		return *(p+y*img_->width+x*img_->nChannels+chan);
-	}
-
-	T integral_sum(const CvRect &r)
-	{
-		return at(r.x+r.width+1,r.y+r.height+1)-at(r.x+r.width+1,r.y)-at(r.x,r.y+r.height+1)+at(r.x,r.y);
-	}
-
-};
-
-
-template<typename T>
-class Mat2D
-{
-public:
-	int width_;
-	int height_;
-	T* data_;
-
-	Mat2D(int width, int height) : width_(width), height_(height)
-	{
-		data_ = new T[width_*height_];
-	}
-
-	~Mat2D()
-	{
-		delete[] data_;
-	}
-
-	T* operator[](int index)
-	{
-		return data_+index*width_;
-	}
-
-};
 
 void on_edges_low(int);
 void on_edges_high(int);
 
 
+#define CV_PIXEL(type,img,x,y) (((type*)(img->imageData+y*img->widthStep))+x*img->nChannels)
+
+
+typedef pair<int,int> coordinate_t;
+typedef float orientation_t;;
+typedef vector<coordinate_t> template_coords_t;
+typedef vector<orientation_t> template_orientations_t;
+
+
+class ChamferTemplate
+{
+public:
+	template_coords_t coords;
+	template_orientations_t orientations;
+	CvSize size;
+};
+
+class ChamferMatch
+{
+public:
+	CvPoint offset;
+	float distance;
+	const ChamferTemplate* tpl;
+};
+
+class ChamferMatching
+{
+
+
+	float min_scale;
+	float max_scale;
+	int count_scale;
+
+	vector<ChamferTemplate*> templates;
+
+public:
+	ChamferMatching() : min_scale(1), max_scale(1), count_scale(1)
+	{
+
+	}
+
+	~ChamferMatching()
+	{
+		for (size_t i = 0; i<templates.size(); i++) {
+			delete templates[i];
+		}
+	}
+
+	void addTemplateFromImage(IplImage* templ)
+	{
+		ROS_INFO("Loading templates");
+		for(int i = 0; i < count_scale; ++i) {
+			float scale = min_scale + (max_scale - min_scale)*i/count_scale;
+			int width = int(templ->width*scale);
+			int height = int(templ->height*scale);
+
+			printf("Level: %d, scale: %f, width: %d, height: %d\n", i, scale, width, height);
+
+			// resize edge image to the required scale
+			IplImage* templ_scale = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
+			cvResize(templ, templ_scale, CV_INTER_NN);
+
+			ChamferTemplate* cmt = new ChamferTemplate();
+			extractTemplatePoints(templ_scale, *cmt);
+			cmt->size = cvSize(width, height);
+
+			templates.push_back(cmt);
+
+			cvReleaseImage(&templ_scale);
+		}
+	}
+
+
+	ChamferMatch matchEdgeImage(IplImage* edge_img)
+	{
+		ChamferMatch cm;
+
+		cm.distance = 1e10; // very big distance
+		IplImage* dist_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
+		IplImage* dir_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
+		ROS_INFO("Computing distance transform");
+		computeDistanceTransform(edge_img,dist_img, -1);
+
+		computeImageDirections(dist_img, dir_img , edge_img);
+
+		ROS_INFO("Template matching");
+		matchTemplates(dist_img,cm);
+
+		ROS_INFO("Finishing");
+		cvReleaseImage(&dist_img);
+		cvReleaseImage(&dir_img);
+
+		return cm;
+	}
+
+
+	ChamferMatch matchImage(IplImage* img, int edge_threshold = 160)
+	{
+		IplImage *edge_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+		cvCvtColor(img, edge_img, CV_RGB2GRAY);
+		cvCanny(edge_img, edge_img, edge_threshold/2, edge_threshold);
+
+		ChamferMatch cm = matchEdgeImage(edge_img);
+
+		cvReleaseImage(&edge_img);
+		return cm;
+	}
+
+private:
+
+
+	bool findFirstContourPoint(IplImage* templ_img, coordinate_t& p)
+	{
+		unsigned char* ptr = (unsigned char*) templ_img->imageData;
+		for (int y=0;y<templ_img->height;++y) {
+			for (int x=0;x<templ_img->width;++x) {
+				if (*(ptr+y*templ_img->widthStep+x)!=0) {
+					p.first = x;
+					p.second = y;
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+
+	/**
+	 * Method that extracts a single continuous contour from an image given a starting point.
+	 * When it extracts the contour it tries to maintain the same direction (at a T-join for example).
+	 *
+	 * @param templ_img
+	 * @param coords
+	 * @param crt
+	 */
+	void followContour(IplImage* templ_img, template_coords_t& coords, int direction = -1)
+	{
+		const int dir[][2] = { {-1,-1}, {-1,0}, {-1,1}, {0,1}, {1,1}, {1,0}, {1,-1}, {0,-1} };
+//		const int pos[] = { 0, 1, 2, 7, -1, 3, 6, 5, 4};
+		coordinate_t next;
+		coordinate_t next_temp;
+		unsigned char* ptr;
+		unsigned char* ptr_temp;
+
+		assert (direction==-1 || !coords.empty());
+
+		coordinate_t crt = coords.back();
+//		printf("Enter followContour, point: (%d,%d)\n", crt.first, crt.second);
+
+		// mark the current pixel as visited
+		CV_PIXEL(unsigned char, templ_img, crt.first, crt.second)[0] = 0;
+		if (direction==-1) {
+//			printf("Initial point\n");
+			for (int j = 0 ;j<7; ++j) {
+				next.first = crt.first + dir[j][1];
+				next.second = crt.second + dir[j][0];
+				ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
+				if (*ptr!=0) {
+//					*ptr = 0;
+					coords.push_back(next);
+					followContour(templ_img, coords,j);
+					// try to continue contour in the other direction
+//					printf("Reversing direction");
+					reverse(coords.begin(), coords.end());
+					followContour(templ_img, coords, (j+4)%8);
+					break;
+				}
+			}
+		}
+		else {
+			coordinate_t prev = coords.at(coords.size()-2);
+//			printf("Prev point: (%d,%d)\n", prev.first, prev.second);
+			int k = direction;
+//			printf("Direction %d, offset (%d,%d)\n", k, dir[k][0], dir[k][1]);
+			next.first = crt.first + dir[k][1];
+			next.second = crt.second + dir[k][0];
+			ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
+
+			if (*ptr!=0) {
+//				*ptr = 0;
+				next_temp.first = crt.first + dir[(k+7)%8][1];
+				next_temp.second = crt.second + dir[(k+7)%8][0];
+				ptr_temp = CV_PIXEL(unsigned char, templ_img,  next_temp.first, next_temp.second);
+				if (*ptr_temp!=0) {
+					*ptr_temp=0;
+					coords.push_back(next_temp);
+				}
+				next_temp.first = crt.first + dir[(k+1)%8][1];
+				next_temp.second = crt.second + dir[(k+1)%8][0];
+				ptr_temp = CV_PIXEL(unsigned char, templ_img,  next_temp.first, next_temp.second);
+				if (*ptr_temp!=0) {
+					*ptr_temp=0;
+					coords.push_back(next_temp);
+				}
+				coords.push_back(next);
+				followContour(templ_img, coords, k);
+			} else {
+				int p = k;
+				int n = k;
+
+				for (int j = 0 ;j<3; ++j) {
+					p = (p + 7) % 8;
+					n = (n + 1) % 8;
+					next.first = crt.first + dir[p][1];
+					next.second = crt.second + dir[p][0];
+					ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
+					if (*ptr!=0) {
+//						*ptr = 0;
+						next_temp.first = crt.first + dir[(p+7)%8][1];
+						next_temp.second = crt.second + dir[(p+7)%8][0];
+						ptr_temp = CV_PIXEL(unsigned char, templ_img,  next_temp.first, next_temp.second);
+						if (*ptr_temp!=0) {
+							*ptr_temp=0;
+							coords.push_back(next_temp);
+						}
+						coords.push_back(next);
+						followContour(templ_img, coords, p);
+						break;
+					}
+					next.first = crt.first + dir[n][1];
+					next.second = crt.second + dir[n][0];
+					ptr = CV_PIXEL(unsigned char, templ_img, next.first, next.second);
+					if (*ptr!=0) {
+//						*ptr = 0;
+						next_temp.first = crt.first + dir[(n+1)%8][1];
+						next_temp.second = crt.second + dir[(n+1)%8][0];
+						ptr_temp = CV_PIXEL(unsigned char, templ_img,  next_temp.first, next_temp.second);
+						if (*ptr_temp!=0) {
+							*ptr_temp=0;
+							coords.push_back(next_temp);
+						}
+						coords.push_back(next);
+						followContour(templ_img, coords, n);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	bool findContour(IplImage* templ_img, template_coords_t& coords)
+	{
+		coordinate_t start_point;
+
+		bool found = findFirstContourPoint(templ_img,start_point);
+		if (found) {
+			coords.push_back(start_point);
+			followContour(templ_img, coords);
+			return true;
+		}
+
+		return false;
+	}
+
+
+	float getAngle(coordinate_t a, coordinate_t b, int& dx, int& dy)
+	{
+		dx = b.first-a.first;
+		dy = -(b.second-a.second);  // in image coordinated Y axis points downward
+
+		return atan2(dy,dx);
+	}
+
+	float r2d(float rad)
+	{
+		return 180*rad/M_PI;
+	}
+
+	void findContourOrientations(const template_coords_t& coords, template_orientations_t& orientations)
+	{
+		const int M = 5;
+		int coords_size = coords.size();
+
+		vector<float> angles(2*M);
+		orientations.insert(orientations.begin(), coords_size, float(-3*M_PI)); // mark as invalid in the beginning
+
+		if (coords_size<2*M+1) {  // if contour not long enough to estimate orientations, abort
+			return;
+		}
+
+		for (int i=M;i<coords_size-M;++i) {
+			coordinate_t crt = coords[i];
+			coordinate_t other;
+			int k = 0;
+			int dx, dy;
+			// compute previous M angles
+			for (int j=M;j>0;--j) {
+				other = coords[i-j];
+				angles[k++] = getAngle(other,crt, dx, dy);
+			}
+			// compute next M angles
+			for (int j=1;j<=M;++j) {
+				other = coords[i+j];
+				angles[k++] = getAngle(crt, other, dx, dy);
+			}
+
+			// sort angles
+			sort(angles.begin(), angles.end());
+
+			// average them to compute tangent
+			orientations[i] = (angles[M-1]+angles[M])/2;
+		}
+	}
+
+
+	void drawContour(IplImage* templ_color, const template_coords_t& coords, const template_orientations_t& orientations)
+	{
+//		IplImage* templ_color = cvCreateImage(cvSize(templ_img->width, templ_img->height), IPL_DEPTH_8U, 3);
+//		cvCvtColor(templ_img, templ_color, CV_GRAY2RGB);
+
+
+		for (size_t i=0;i<coords.size();++i) {
+
+			int x = coords[i].first;
+    		int y = coords[i].second;
+    		CV_PIXEL(unsigned char, templ_color,x,y)[1] = 255;
+
+//    		if (x==101 && y==55)
+    		if (i%3==0) {
+    			if (orientations[i] < -M_PI) {
+    				continue;
+    			}
+    			CvPoint p1;
+    			p1.x = x;
+    			p1.y = y;
+    			CvPoint p2;
+    			p2.x = x + 10*sin(orientations[i]);
+    			p2.y = y + 10*cos(orientations[i]);
+
+    			cvLine(templ_color, p1,p2, CV_RGB(255,0,0));
+    		}
+		}
+
+		cvNamedWindow("templ",1);
+		cvShowImage("templ",templ_color);
+
+//		cvReleaseImage(&templ_color);
+//		cvWaitKey(0);
+	}
+
+
+	void extractTemplatePoints(IplImage* templ_img, ChamferTemplate& ct)
+    {
+		IplImage* templ_color = cvCreateImage(cvSize(templ_img->width, templ_img->height), IPL_DEPTH_8U, 3);
+		cvCvtColor(templ_img, templ_color, CV_GRAY2RGB);
+
+		template_coords_t coords;
+		template_orientations_t orientations;
+
+		while (findContour(templ_img, coords)) {
+			findContourOrientations(coords, orientations);
+
+			drawContour(templ_color, coords, orientations);
+
+			ct.coords.insert(ct.coords.end(), coords.begin(), coords.end());
+			ct.orientations.insert(ct.orientations.end(), orientations.begin(), orientations.end());
+			coords.clear();
+			orientations.clear();
+		}
+
+
+//		cvNamedWindow("templ",1);
+//		cvShowImage("templ",templ_color);
+
+		cvReleaseImage(&templ_color);
+    }
+
+
+
+    /**
+     * @param edges_img - input images
+     * @param dist_img - output distance image (IPL_DEPTH_32F)
+     */
+    void computeDistanceTransform_(IplImage* edges_img, IplImage* dist_img, float truncate)
+    {
+    	cvNot(edges_img, edges_img);
+    	cvDistTransform(edges_img, dist_img);
+    	cvNot(edges_img, edges_img);
+
+    	if (truncate>0) {
+    		cvMinS(dist_img, truncate, dist_img);
+    	}
+    }
+
+
+    /**
+     * Alternative version of computeDistanceTransform, will probably be used to compute distance
+     * transform annotated with edge orientation.
+     */
+    void computeDistanceTransform(IplImage* edges_img, IplImage* dist_img, int truncate)
+    {
+    	int d[][2] = { {-1,-1},{ 0,-1},{ 1,-1},
+					  {-1,0},          { 1,0},
+					  {-1,1}, { 0,1},  { 1,1} };
+
+    	ROS_INFO("Computing distance transform");
+
+    	CvSize s = cvGetSize(edges_img);
+    	int w = s.width;
+    	int h = s.height;
+    	for (int i=0;i<h;++i) {
+    		for (int j=0;j<w;++j) {
+    			CV_PIXEL(float, dist_img, j, i)[0] = -1;
+    		}
+    	}
+
+    	queue<pair<int,int> > q;
+    	// initialize queue
+    	for (int y=0;y<h;++y) {
+    		for (int x=0;x<w;++x) {
+    			if (CV_PIXEL(unsigned char, edges_img, x,y)[0]!=0) {
+    				q.push(make_pair(x,y));
+        			CV_PIXEL(float, dist_img, x, y)[0] = 0;
+    			}
+    		}
+    	}
+
+    	pair<int,int> crt;
+    	while (!q.empty()) {
+    		crt = q.front();
+    		q.pop();
+
+    		int x = crt.first;
+    		int y = crt.second;
+    		float dist = CV_PIXEL(float, dist_img, x, y)[0] + 1;
+
+    		for (size_t i=0;i<sizeof(d)/sizeof(d[0]);++i) {
+    			int nx = x + d[i][0];
+    			int ny = y + d[i][1];
+
+
+    			float* dt = CV_PIXEL(float, dist_img, nx, ny);
+
+    			if (nx<0 || ny<0 || nx>w || ny>h) continue;
+
+    			if (*dt==-1 || *dt>dist) {
+    				*dt = dist;
+    				q.push(make_pair(nx,ny));
+    			}
+    		}
+    	}
+
+    	// truncate dt
+    	if (truncate>0) {
+    		cvMinS(dist_img, truncate, dist_img);
+    	}
+
+
+//    	int f = 1;
+//    	if (truncate>0) f = 255/truncate;
+//    	// display image
+//    	IplImage *dt_image = cvCreateImage(s, IPL_DEPTH_8U, 1);
+//		unsigned char* dt_p = (unsigned char*)dt_image->imageData;
+//
+//		for (int i=0;i<w*h;++i) {
+//			dt_p[i] = f*dt.data_[i];
+//    	}
+//
+//    	cvNamedWindow("dt",1);
+//    	cvShowImage("dt",dt_image);
+//    	cvReleaseImage(&dt_image);
+
+    }
+
+
+    void computeImageDirections(IplImage* dist_img, IplImage* dir_img, IplImage* img)
+    {
+
+//		template_coords_t coords;
+//
+//		while (findContour(img, coords)) {
+//			drawContour(img, coords);
+//			coords.clear();
+//		}
+    	IplImage* dx = cvCreateImage(cvSize(dist_img->width, dist_img->height), IPL_DEPTH_32F, 1);
+    	IplImage* dy = cvCreateImage(cvSize(dist_img->width, dist_img->height), IPL_DEPTH_32F, 1);
+
+    	IplImage* img2 = cvCloneImage(img);
+
+    	cvSobel(dist_img,dx,1,0,-1);
+    	cvSobel(dist_img,dy,0,1,-1);
+
+    	float* d_ptr = (float*)dir_img->imageData;
+    	float* x_ptr = (float*)dx->imageData;
+    	float* y_ptr = (float*)dy->imageData;
+
+    	for (int y = 0; y< dist_img->height;++y) {
+    		for (int x = 0; x<dist_img->width;++x) {
+
+    			*d_ptr = atan2(*y_ptr,*x_ptr);
+
+    			d_ptr++;
+    			x_ptr++;
+    			y_ptr++;
+    		}
+
+    	}
+
+    	cvNamedWindow("dir",1);
+    	cvShowImage("dir",img2);
+
+
+//
+//    	IplImage* img_clone = cvCloneImage(img);
+//    	IplImage* img_color = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 3);
+//    	cvCvtColor(img, img_color, CV_GRAY2RGB);
+//
+//
+//    	static CvMemStorage*	mem_storage	= NULL;
+//    	static CvSeq*			contours	= NULL;
+//
+//    	if( mem_storage==NULL ) mem_storage = cvCreateMemStorage(0);
+//    	else cvClearMemStorage(mem_storage);
+//
+//    	CvContourScanner scanner = cvStartFindContours(img_clone,mem_storage,sizeof(CvContour),CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
+//    	CvSeq* c;
+//    	cvNamedWindow("contours",1);
+//    	while( (c = cvFindNextContour( scanner )) != NULL )
+//    	{
+//    		cvDrawContours(img_color, c, CV_RGB(255,0,0), CV_RGB(0,255,0), 5);
+//        	cvShowImage("contours",img_color);
+//
+//        	CvChainPtReader cpr;
+//        	cvStartReadChainPoints((CvChain*)c,&cpr);
+//        	CvPoint p = cvReadChainPoint(&cpr);
+//        	while (p.x!=0) {
+//        		printf("%d, %d\n", p.x,p.y);
+//        		p = cvReadChainPoint(&cpr);
+//        	}
+//
+//        	cvWaitKey(0);
+//    	}
+//    	contours = cvEndFindContours( &scanner );
+
+
+
+
+    	cvReleaseImage(&img2);
+    	cvReleaseImage(&dx);
+    	cvReleaseImage(&dy);
+    }
+
+
+    float localChamferDistance(IplImage* dist_img, const vector<int>& templ_addr, CvPoint offset)
+    {
+    	int x = offset.x;
+    	int y = offset.y;
+    	float sum = 0;
+
+    	float* ptr = (float*) dist_img->imageData;
+    	ptr += (y*dist_img->width+x);
+    	for (size_t i=0;i<templ_addr.size();++i) {
+    		sum += *(ptr+templ_addr[i]);
+    	}
+    	return sum/templ_addr.size();
+    }
+
+
+
+    void matchTemplate(IplImage* dist_img, const ChamferTemplate& tpl, ChamferMatch& cm)
+    {
+    	int width = dist_img->width;
+
+    	const template_coords_t& coords = tpl.coords;
+    	// compute template address offsets
+    	vector<int> templ_addr;
+    	templ_addr.clear();
+    	for (size_t i= 0; i<coords.size();++i) {
+    		templ_addr.push_back(coords[i].second*width+coords[i].first);
+    	}
+
+    	// do sliding window
+    	for (int y=0;y<dist_img->height - tpl.size.height; y+=2) {
+    		for (int x=0;x<dist_img->width - tpl.size.width; x+=2) {
+ 				CvPoint test_offset;
+ 				test_offset.x = x;
+ 				test_offset.y = y;
+ 				float test_dist = localChamferDistance(dist_img, templ_addr, test_offset);
+
+ 				if (test_dist<cm.distance) {
+ 					cm.distance = test_dist;
+ 					cm.offset = test_offset;
+ 					cm.tpl = &tpl;
+ 				}
+    		}
+    	}
+    }
+
+
+    void matchTemplates(IplImage* dist_img, ChamferMatch& cm)
+    {
+ 	   for(size_t i = 0; i < templates.size(); i++) {
+ 		   matchTemplate(dist_img, *templates[i],cm);
+ 	   }
+    }
+
+
+
+};
 
 
 
@@ -183,19 +728,7 @@ public:
 	int edges_high;
 
 
-	typedef pair<int,int> coordinate;
-	typedef vector<coordinate> template_coords_t;
-
-	vector<CvSize> template_sizes;
-	vector<template_coords_t> template_coords;
-
-	float min_scale;
-	float max_scale;
-	int count_scale;
-
-
-	CvHaarClassifierCascade* cascade;
-	CvMemStorage* storage;
+	ChamferMatching* cm;
 
     RecognitionLambertian()
     :ros::Node("stereo_view"), left(NULL), right(NULL), disp(NULL), disp_clone(NULL), sync(this, &RecognitionLambertian::image_cb_all, ros::Duration().fromSec(0.1), &RecognitionLambertian::image_cb_timeout)
@@ -219,11 +752,6 @@ public:
         edges_low = 50;
         edges_high = 170;
 
-
-        min_scale = 0.7;
-        max_scale = 1.2;
-        count_scale = 7;
-
         if(display){
             cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
             cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
@@ -240,6 +768,8 @@ public:
 
         subscribeStereoData();
 
+        cm = new ChamferMatching();
+
         loadTemplate(template_path);
     }
 
@@ -254,9 +784,8 @@ public:
         if(disp){
             cvReleaseImage(&disp);
         }
-        if(storage){
-            cvReleaseMemStorage(&storage);
-        }
+
+        delete cm;
 
         unsubscribeStereoData();
     }
@@ -304,246 +833,23 @@ private:
     {
     	IplImage* templ = cvLoadImage(path.c_str(),CV_LOAD_IMAGE_GRAYSCALE);
 
-    	ROS_INFO("Loading templates");
-    	for(int i = 0; i < count_scale; ++i) {
-    		float scale = min_scale + (max_scale - min_scale)*i/count_scale;
-    		int width = int(templ->width*scale);
-    		int height = int(templ->height*scale);
-
-    		printf("Level: %d, scale: %f, width: %d, height: %d\n", i, scale, width, height);
-
-    		IplImage* templ_scale = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
-    		cvResize(templ, templ_scale, CV_INTER_NN);
-
-
-    		template_coords_t coords;
-        	extractTemplateCoords(templ_scale, coords);
-        	template_coords.push_back(coords);
-        	template_sizes.push_back(cvSize(width, height));
-
-
-        	CvPoint offs;
-        	offs.x = 0;
-        	offs.y = 0;
-//        	showMatch(templ_scale, offs,i);
-
-    		cvReleaseImage(&templ_scale);
-    	}
+        cm->addTemplateFromImage(templ);
 
     	cvReleaseImage(&templ);
 	}
 
 
-    void extractTemplateCoords(IplImage* templ_img, template_coords_t& coords)
+
+    void showMatch(IplImage* img, const ChamferMatch& match)
     {
-    	coords.clear();
-    	unsigned char* ptr = (unsigned char*) templ_img->imageData;
-    	for (int y=0;y<templ_img->height;++y) {
-    		for (int x=0;x<templ_img->width;++x) {
-    			if (*(ptr+y*templ_img->widthStep+x)!=0) {
-    				coords.push_back(make_pair(x,y));
-    			}
-    		}
-    	}
-    }
-
-    /////////////////////////////////////////////////
-    // Analyze the disparity image that values should not be too far off from one another
-    // Id  -- 8 bit, 1 channel disparity image
-    // R   -- rectangular region of interest
-    // vertical -- This is a return that tells whether something is on a wall (descending disparities) or not.
-    // minDisparity -- disregard disparities less than this
-    //
-    double disparitySTD(IplImage *Id, const CvRect & R, double & meanDisparity, double minDisparity = 0.5)
-    {
-        int ws = Id->widthStep;
-        unsigned char *p = (unsigned char*)(Id->imageData);
-        int rx = R.x;
-        int ry = R.y;
-        int rw = R.width;
-        int rh = R.height;
-        int nchan = Id->nChannels;
-        p += ws * ry + rx * nchan; //Put at start of box
-        double mean = 0.0, var = 0.0;
-        double val;
-        int cnt = 0;
-        //For vertical objects, Disparities should decrease from top to bottom, measure that
-        for(int Y = 0;Y < rh;++Y){
-            for(int X = 0;X < rw;X++, p += nchan){
-                val = (double)*p;
-                if(val < minDisparity)
-                    continue;
-
-                mean += val;
-                var += val * val;
-                cnt++;
-            }
-            p += ws - (rw * nchan);
-        }
-
-        if(cnt == 0){
-            return 10000000.0;
-        }
-        //DO THE VARIANCE MATH
-        mean = mean / (double)cnt;
-        var = (var / (double)cnt) - mean * mean;
-        meanDisparity = mean;
-        return (sqrt(var));
-    }
-
-    /**
-     * \brief Transforms a disparity image pixel to real-world point
-     *
-     * @param cam_model Camera model
-     * @param x coordinate in the disparity image
-     * @param y coordinate in the disparity image
-     * @param d disparity pixel value
-     * @return point in 3D space
-     */
-    robot_msgs::Point disparityTo3D(CvStereoCamModel & cam_model, int x, int y, double d)
-    {
-        CvMat *uvd = cvCreateMat(1, 3, CV_32FC1);
-        cvmSet(uvd, 0, 0, x);
-        cvmSet(uvd, 0, 1, y);
-        cvmSet(uvd, 0, 2, d);
-        CvMat *xyz = cvCreateMat(1, 3, CV_32FC1);
-        cam_model.dispToCart(uvd, xyz);
-        robot_msgs::Point result;
-        result.x = cvmGet(xyz, 0, 0);
-        result.y = cvmGet(xyz, 0, 1);
-        result.z = cvmGet(xyz, 0, 2);
-        return result;
-    }
-
-    /**
-	 * \brief Computes distance between two 3D points
-	 *
-	 * @param a
-	 * @param b
-	 * @return
-	 */
-    double distance3D(robot_msgs::Point a, robot_msgs::Point b)
-    {
-        return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z));
-    }
-
-    /**
-     * \brief Computes size and center of ROI in real-world
-     *
-     * Given a disparity images and a ROI in the image this function computes the approximate real-world size
-     * and center of the ROI.
-     *
-     * This function is just an approximation, it uses the mean value of the disparity in the ROI and assumes
-     * the ROI is flat region perpendicular on the camera z axis. It could be improved by finding a dominant plane
-     * in the and using only those disparity values.
-     *
-     * @param R
-     * @param meanDisparity
-     * @param dx
-     * @param dy
-     * @param center
-     */
-    void getROIDimensions(const CvRect& r, double & dx, double & dy, robot_msgs::Point & center)
-    {
-        // initialize stereo camera model
-        double Fx = rcinfo.P[0];
-        double Fy = rcinfo.P[5];
-        double Clx = rcinfo.P[2];
-        double Crx = Clx;
-        double Cy = rcinfo.P[6];
-        double Tx = -rcinfo.P[3] / Fx;
-        CvStereoCamModel cam_model(Fx, Fy, Tx, Clx, Crx, Cy, 4.0 / (double)dispinfo.dpp);
-
-        double mean = 0;
-        disparitySTD(disp, r, mean);
-
-        robot_msgs::Point p1 = disparityTo3D(cam_model, r.x, r.y, mean);
-        robot_msgs::Point p2 = disparityTo3D(cam_model, r.x + r.width, r.y, mean);
-        robot_msgs::Point p3 = disparityTo3D(cam_model, r.x, r.y + r.height, mean);
-        center = disparityTo3D(cam_model, r.x + r.width / 2, r.y + r.height / 2, mean);
-        dx = distance3D(p1, p2);
-        dy = distance3D(p1, p3);
-    }
-
-
-
-    float localChamferDistance(IplImage* dist_img, const vector<int>& templ_addr, CvPoint offset)
-    {
-    	int x = offset.x;
-    	int y = offset.y;
-    	float sum = 0;
-
-    	float* ptr = (float*) dist_img->imageData;
-    	ptr += (y*dist_img->width+x);
-    	for (size_t i=0;i<templ_addr.size();++i) {
-    		sum += *(ptr+templ_addr[i]);
-    	}
-    	return sum/templ_addr.size();
-
-//    	IndexedIplImage<float> dist(dist_img);
-//    	for (size_t i=0;i<templ_coords.size();++i) {
-//    		int px = x+templ_coords[i].first;
-//    		int py = y+templ_coords[i].second;
-//    		if (px<dist_img->width && py<dist_img->height)
-//    			sum += dist.at(px,py);
-//    	}
-//    	return sum/templ_coords.size();
-    }
-
-    void matchTemplate(IplImage* dist_img, const template_coords_t& coords, CvSize template_size, CvPoint& offset, float& dist)
-    {
-    	int width = dist_img->width;
-    	vector<int> templ_addr;
-    	templ_addr.clear();
-    	for (size_t i= 0; i<coords.size();++i) {
-    		templ_addr.push_back(coords[i].second*width+coords[i].first);
-    	}
-
-    	// sliding window
-    	for (int y=0;y<dist_img->height - template_size.height; y+=2) {
-    		for (int x=0;x<dist_img->width - template_size.width; x+=2) {
-				CvPoint test_offset;
-				test_offset.x = x;
-				test_offset.y = y;
-				float test_dist = localChamferDistance(dist_img, templ_addr, test_offset);
-
-				if (test_dist<dist) {
-					dist = test_dist;
-					offset = test_offset;
-				}
-    		}
-    	}
-    }
-
-
-    void matchTemplateScale(IplImage* dist_img, CvPoint& offset, float& dist, int& scale)
-    {
-    	for(int i = 0; i < count_scale; i++) {
-    		CvPoint test_offset;
-            test_offset.x = 0;
-            test_offset.y = 0;
-    		float test_dist = 1e10;
-
-    		matchTemplate(dist_img, template_coords[i], template_sizes[i], test_offset, test_dist);
-			if (test_dist<dist) {
-				dist = test_dist;
-				offset = test_offset;
-				scale = i;
-			}
-    	}
-    }
-
-
-    void showMatch(IplImage* img, CvPoint& offset, int scale)
-    {
-    	unsigned char* ptr = (unsigned char*) img->imageData;
-    	template_coords_t& templ_coords = template_coords[scale];
+    	const template_coords_t& templ_coords = match.tpl->coords;
     	for (size_t i=0;i<templ_coords.size();++i) {
-    		int x = offset.x + templ_coords[i].first;
-    		int y = offset.y + templ_coords[i].second;
-    		(ptr+y*img->widthStep+x*img->nChannels)[1] = 255;
+    		int x = match.offset.x + templ_coords[i].first;
+    		int y = match.offset.y + templ_coords[i].second;
+    		CV_PIXEL(unsigned char, img,x,y)[1] = 255;
     	}
     }
+
 
     /**
      * \brief Finds edges in an image
@@ -561,27 +867,10 @@ private:
         }
 
 
-//    	Mat2D<int> dt(left->width, left->height);
-        IplImage* dist_img = cvCreateImage(cvSize(left->width, left->height), IPL_DEPTH_32F, 1);
-
-        computeDistanceTransform2(gray,dist_img, -1);
-//    	computeDistanceTransform(gray,dt,20);
-
-        CvPoint offset;
-        offset.x = 0;
-        offset.y = 0;
-        float dist = 1e10;
-        int scale = 0;
-        matchTemplateScale(dist_img, offset, dist, scale);
-//        matchTemplate(dist_img, offset, dist);
-
-
+        ChamferMatch match = cm->matchEdgeImage(gray);
 
         IplImage* left_clone = cvCloneImage(left);
-        printf("Scale: %d\n", scale);
-        showMatch(left,offset, scale);
-
-
+        showMatch(left,match);
         if(display){
         	// show filtered disparity
         	cvShowImage("disparity", disp);
@@ -615,98 +904,6 @@ private:
     }
 
 
-    /**
-     *
-     * @param edges_img
-     * @param dist_img - IPL_DEPTH_32F image
-     */
-    void computeDistanceTransform2(IplImage* edges_img, IplImage* dist_img, float truncate)
-    {
-    	cvNot(edges_img, edges_img);
-    	cvDistTransform(edges_img, dist_img);
-    	cvNot(edges_img, edges_img);
-
-    	if (truncate>0) {
-    		cvMinS(dist_img, truncate, dist_img);
-    	}
-    }
-
-
-    void computeDistanceTransform(IplImage* edges_img, Mat2D<int>& dt, int truncate)
-    {
-    	int d[][2] = { {-1,-1},{ 0,-1},{ 1,-1},
-					  {-1,0},          { 1,0},
-					  {-1,1}, { 0,1},  { 1,1} };
-
-    	ROS_INFO("Computing distance transform");
-
-    	CvSize s = cvGetSize(edges_img);
-    	int w = s.width;
-    	int h = s.height;
-    	for (int i=0;i<h;++i) {
-    		for (int j=0;j<w;++j) {
-    			dt[i][j] = -1;
-    		}
-    	}
-
-    	queue<pair<int,int> > q;
-    	// initialize queue
-    	IndexedIplImage<unsigned char> edges(edges_img);
-    	for (int y=0;y<h;++y) {
-    		for (int x=0;x<w;++x) {
-    			if (edges.at(x,y)!=0) {
-    				q.push(make_pair(x,y));
-    				dt[y][x] = 0;
-    			}
-    		}
-    	}
-
-    	pair<int,int> crt;
-    	while (!q.empty()) {
-    		crt = q.front();
-    		q.pop();
-
-    		int x = crt.first;
-    		int y = crt.second;
-    		int dist = dt[y][x]+1;
-    		for (size_t i=0;i<sizeof(d)/sizeof(d[0]);++i) {
-    			int nx = x + d[i][0];
-    			int ny = y + d[i][1];
-
-    			if (nx<0 || ny<0 || nx>w || ny>h) continue;
-
-    			if (dt[ny][nx]==-1 || dt[ny][nx]>dist) {
-    				dt[ny][nx] = dist;
-    				q.push(make_pair(nx,ny));
-    			}
-    		}
-    	}
-
-    	// truncate dt
-    	if (truncate>0) {
-    		for (int i=0;i<h;++i) {
-    			for (int j=0;j<w;++j) {
-    				dt[i][j] = min( dt[i][j],truncate);
-    			}
-    		}
-    	}
-
-
-//    	int f = 1;
-//    	if (truncate>0) f = 255/truncate;
-//    	// display image
-//    	IplImage *dt_image = cvCreateImage(s, IPL_DEPTH_8U, 1);
-//		unsigned char* dt_p = (unsigned char*)dt_image->imageData;
-//
-//		for (int i=0;i<w*h;++i) {
-//			dt_p[i] = f*dt.data_[i];
-//    	}
-//
-//    	cvNamedWindow("dt",1);
-//    	cvShowImage("dt",dt_image);
-//    	cvReleaseImage(&dt_image);
-
-    }
 
 
 
