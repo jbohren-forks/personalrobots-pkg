@@ -273,9 +273,8 @@ namespace costmap_2d {
     if(frequency == 0.0)
       return;
 
-    ros::Duration cycle_time = ros::Duration(1.0 / frequency);
+    costmap_2d::Rate r(frequency);
     while(ros_node_.ok()){
-      ros::Time start_time = ros::Time::now();
       struct timeval start, end;
       double start_t, end_t, t_diff;
       gettimeofday(&start, NULL);
@@ -285,8 +284,8 @@ namespace costmap_2d {
       end_t = end.tv_sec + double(end.tv_usec) / 1e6;
       t_diff = end_t - start_t;
       ROS_DEBUG("Map update time: %.9f", t_diff);
-      if(!sleepLeftover(start_time, cycle_time))
-        ROS_WARN("Map update loop missed its desired cycle time of %.4f", cycle_time.toSec());
+      if(!r.sleep())
+        ROS_WARN("Map update loop missed its desired rate of %.4f the actual time the loop took was %.4f sec", frequency, r.cycleTime().toSec());
     }
   }
 
@@ -295,26 +294,12 @@ namespace costmap_2d {
     if(frequency == 0.0)
       return;
 
-    ros::Duration cycle_time = ros::Duration(1.0 / frequency);
+    costmap_2d::Rate r(frequency);
     while(ros_node_.ok()){
-      ros::Time start_time = ros::Time::now();
       publishCostMap(*costmap_);
-      if(!sleepLeftover(start_time, cycle_time))
-        ROS_WARN("Map publishing loop missed its desired cycle time of %.4f", cycle_time.toSec());
+      if(!r.sleep())
+        ROS_WARN("Map publishing loop missed its desired rate of %.4f the actual time the loop took was %.4f sec", frequency, r.cycleTime().toSec());
     }
-  }
-
-  bool Costmap2DROS::sleepLeftover(ros::Time start, ros::Duration cycle_time){
-    ros::Time expected_end = start + cycle_time;
-    ///@todo: because durations don't handle subtraction properly right now
-    ros::Duration sleep_time = ros::Duration((expected_end - ros::Time::now()).toSec()); 
-
-    if(sleep_time < ros::Duration(0.0)){
-      return false;
-    }
-
-    sleep_time.sleep();
-    return true;
   }
 
   bool Costmap2DROS::getMarkingObservations(std::vector<Observation>& marking_observations){

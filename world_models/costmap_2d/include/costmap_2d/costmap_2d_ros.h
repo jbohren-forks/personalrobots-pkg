@@ -60,6 +60,8 @@
 // Thread suppport
 #include <boost/thread.hpp>
 
+#include <costmap_2d/rate.h>
+
 
 namespace costmap_2d {
 
@@ -171,14 +173,6 @@ namespace costmap_2d {
       bool isCurrent() {return current_;}
 
     private:
-      /**
-       * @brief  Sleeps for the remaining cycle time of a update loop
-       * @param  start The time the loop started
-       * @param  cycle_time How long the loop is supposed to take
-       * @return True if the cycle was completed in time false if it took too long
-       */
-      bool sleepLeftover(ros::Time start, ros::Duration cycle_time);
-
       /**
        * @brief  The loop that handles updating the costmap
        * @param  frequency The rate at which to run the loop
