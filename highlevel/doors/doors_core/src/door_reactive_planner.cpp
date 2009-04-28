@@ -97,7 +97,7 @@ void DoorReactivePlanner::setDoor(robot_msgs::Door door_msg_in)
   //Assumption is that the normal points in the direction we want to travel through the door
   robot_msgs::Door door;
   if (!door_handle_detector::transformTo(tf_,costmap_frame_id_,door_msg_in,door)){
-    ROS_ERROR("DoorReactivePlanner: Could not transform door message from %s to %s", door_msg_in.header.frame_id.c_str, costmap_frame_id_.c_str());
+    ROS_ERROR("DoorReactivePlanner: Could not transform door message from %s to %s", door_msg_in.header.frame_id.c_str(), costmap_frame_id_.c_str());
     return;
   }
 
