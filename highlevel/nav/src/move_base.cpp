@@ -120,6 +120,9 @@ namespace nav {
     //update the copy of the costmap the planner uses
     planner_cost_map_ros_->getCostMapCopy(planner_cost_map_);
 
+    //since we have a controller that knows the full footprint of the robot... we may as well clear it
+    tc_->clearRobotFootprint(planner_cost_map_);
+
     std::vector<robot_msgs::PoseStamped> global_plan;
     bool valid_plan = planner_->makePlan(goal, global_plan);
 
@@ -223,6 +226,12 @@ namespace nav {
       //if we don't have a valid control... we need to re-plan explicitly
       if(!valid_control){
         makePlan(goal_);
+
+        //if planning fails here... try to revert to the static map outside a given area
+        if(!valid_plan_){
+          resetCostMaps();
+        }
+
       }
 
       gettimeofday(&end, NULL);
