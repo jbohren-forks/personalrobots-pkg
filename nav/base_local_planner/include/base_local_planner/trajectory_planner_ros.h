@@ -39,6 +39,7 @@
 
 #include <ros/node.h>
 #include <costmap_2d/costmap_2d.h>
+#include <costmap_2d/costmap_2d_publisher.h>
 #include <base_local_planner/world_model.h>
 #include <base_local_planner/point_grid.h>
 #include <base_local_planner/costmap_model.h>
@@ -223,6 +224,7 @@ namespace base_local_planner {
       double xy_goal_tolerance_, yaw_goal_tolerance_, min_in_place_vel_th_;
       double inscribed_radius_, circumscribed_radius_, inflation_radius_; 
       bool goal_reached_;
+      costmap_2d::Costmap2DPublisher* costmap_publisher_;
       std::vector<robot_msgs::PoseStamped> global_plan_;
   };
 
