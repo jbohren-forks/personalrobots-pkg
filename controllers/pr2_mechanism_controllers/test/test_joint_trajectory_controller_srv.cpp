@@ -61,7 +61,7 @@ int main( int argc, char** argv )
   pr2_mechanism_controllers::TrajectoryQuery::Response res_q;
 
   int num_points = 3;
-  int num_joints = 3;
+  int num_joints = 7;
 
   req.traj.set_points_size(num_points);
   req.requesttiming = 1;
@@ -73,56 +73,61 @@ int main( int argc, char** argv )
   req.traj.points[0].positions[0] = 0.5;
   req.traj.points[0].positions[1] = 0.5;
   req.traj.points[0].positions[2] = 0.2;
-/*  req.traj.points[0].positions[3] = -0.5;
-    req.traj.points[0].positions[4] = 0.4;
-    req.traj.points[0].positions[5] = 0.0;
-    req.traj.points[0].positions[6] = 0.0;*/
+  req.traj.points[0].positions[3] = -0.5;
+  req.traj.points[0].positions[4] = 0.4;
+  req.traj.points[0].positions[5] = 0.0;
+  req.traj.points[0].positions[6] = 0.0;
   req.traj.points[0].time = 0.0;
 
   req.traj.points[1].positions[0] = 0.0;
   req.traj.points[1].positions[1] = 0.0;
   req.traj.points[1].positions[2] = 0.0;
-/*  req.traj.points[1].positions[3] = 0.0;
-    req.traj.points[1].positions[4] = 0.0;
-    req.traj.points[1].positions[5] = 0.0;
-    req.traj.points[1].positions[6] = 0.0;
-*/  req.traj.points[1].time = 0.0;
+  req.traj.points[1].positions[3] = 0.0;
+  req.traj.points[1].positions[4] = 0.0;
+  req.traj.points[1].positions[5] = 0.0;
+  req.traj.points[1].positions[6] = 0.0;
+  req.traj.points[1].time = 0.0;
 
   req.traj.points[2].positions[0] = -0.5;
-    req.traj.points[2].positions[1] = 0.3;
-    req.traj.points[2].positions[2] = 0.2;
-/*    req.traj.points[2].positions[3] = -1.0;
-    req.traj.points[2].positions[4] = -0.4;
-    req.traj.points[2].positions[5] = 0.0;
-    req.traj.points[2].positions[6] = 0.0;
-*/  req.traj.points[2].time = 0.0;
+  req.traj.points[2].positions[1] = 0.3;
+  req.traj.points[2].positions[2] = 0.2;
+  req.traj.points[2].positions[3] = -1.0;
+  req.traj.points[2].positions[4] = -0.4;
+  req.traj.points[2].positions[5] = 0.0;
+  req.traj.points[2].positions[6] = 0.0;
+  req.traj.points[2].time = 0.0;
 
-    for(int i=0; i < 10; i++)
-    {
-  if (ros::service::call("base/trajectory_controller/TrajectoryStart", req, res))
+
+  int num_tries = 0;
+
+  if (ros::service::call("r_arm_joint_trajectory_controller/TrajectoryStart", req, res))
   {
     ROS_INFO("Done");
   }
   sleep(0.1);
-  req_q.trajectoryid = atoi(argv[1]);
+  req_q.trajectoryid = res.trajectoryid;
 
-  if(ros::service::call("base/trajectory_controller/TrajectoryQuery", req_q, res_q))  
+  if(ros::service::call("r_arm_joint_trajectory_controller/TrajectoryQuery", req_q, res_q))  
   {
-    ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
-  }
-  else
-  {
-    ROS_INFO("service call failed");
-  }
-  sleep(0.1);
-  if(ros::service::call("base/trajectory_controller/TrajectoryQuery", req_q, res_q))  
-  {
-    ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
-  }
-  else
-  {
-    ROS_INFO("service call failed");
-  }
-
+    while(res_q.done != 1 && num_tries < 1000)
+    {
+      num_tries++;
+      ros::service::call("r_arm_joint_trajectory_controller/TrajectoryQuery", req_q, res_q);
+      ROS_INFO("response:: id::%d, %f, %d",res.trajectoryid,res_q.trajectorytime,res_q.done);
+      usleep(1e5);
     }
+  }
+  else
+  {
+    ROS_INFO("service call failed");
+  }
+  usleep(1e4);
+  if(ros::service::call("r_arm_joint_trajectory_controller/TrajectoryQuery", req_q, res_q))  
+  {
+    ROS_INFO("response:: %f, %d",res_q.trajectorytime,res_q.done);
+  }
+  else
+  {
+    ROS_INFO("service call failed");
+  }
 }
