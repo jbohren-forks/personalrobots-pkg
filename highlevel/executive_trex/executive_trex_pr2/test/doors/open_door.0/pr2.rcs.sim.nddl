@@ -1,4 +1,4 @@
-#include "test/doors/sim/sim.nddl";
+#include "test/doors/sim.nddl";
 
 // We will make sure that the doorway is not clear until tick 50. This will hold up exit. The default value will kick in to
 // Transition to true.
