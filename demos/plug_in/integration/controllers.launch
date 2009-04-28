@@ -5,20 +5,20 @@
     <param name="acquisition_mode" type="str" value="Triggered"/>
   </group>
   <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="false"/>
-  
+  <node pkg="plug_in" type="outlet_pose_filter.py"/>
   <!-- Controller Required for tuck and untuck -->
 
   <group ns="r_arm_joint_trajectory_controller" clear_params="true">
-    <param name="velocity_scaling_factor" value="0.75" type="double" />
+    <param name="velocity_scaling_factor" value="0.25" type="double" />
     <param name="trajectory_wait_timeout" value="10.0" type="double" />
     
-    <param name="r_shoulder_pan_joint/goal_reached_threshold" value="0.25" type="double" />
-    <param name="r_shoulder_lift_joint/goal_reached_threshold" value="0.25" type="double" />
-    <param name="r_upper_arm_roll_joint/goal_reached_threshold" value="0.25" type="double" />
-    <param name="r_elbow_flex_joint/goal_reached_threshold" value="0.25" type="double" />
-    <param name="r_forearm_roll_joint/goal_reached_threshold" value="0.25" type="double" />
-    <param name="r_wrist_flex_joint/goal_reached_threshold" value="0.25" type="double" />
-    <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.25" type="double" /> 
+    <param name="r_shoulder_pan_joint/goal_reached_threshold" value="0.05" type="double" />
+    <param name="r_shoulder_lift_joint/goal_reached_threshold" value="0.05" type="double" />
+    <param name="r_upper_arm_roll_joint/goal_reached_threshold" value="0.05" type="double" />
+    <param name="r_elbow_flex_joint/goal_reached_threshold" value="0.05" type="double" />
+    <param name="r_forearm_roll_joint/goal_reached_threshold" value="0.05" type="double" />
+    <param name="r_wrist_flex_joint/goal_reached_threshold" value="0.05" type="double" />
+    <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.05" type="double" /> 
     <param name="autostart" value="false" type="bool" /> 
   </group>
   

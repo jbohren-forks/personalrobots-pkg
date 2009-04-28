@@ -1,5 +1,5 @@
 <launch>
   <node pkg="mechanism_control" type="action_runner" />
   <node pkg="safety_core" type="action_runner" />
-<!--  <node pkg="plugs_core" type="action_runner" />-->
+  <node pkg="plugs_core" type="action_runner" />
 </launch>
