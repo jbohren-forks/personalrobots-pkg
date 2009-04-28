@@ -519,6 +519,32 @@ namespace base_local_planner {
     }
   }
 
+  void TrajectoryPlannerROS::clearRobotFootprint(Costmap2D& cost_map){
+    tf::Stamped<tf::Pose> robot_pose, global_pose;
+    robot_pose.setIdentity();
+    robot_pose.frame_id_ = robot_base_frame_;
+    robot_pose.stamp_ = ros::Time();
+
+    //get the global pose of the robot
+    try{
+      tf_.transformPose(global_frame_, robot_pose, global_pose);
+    }
+    catch(tf::LookupException& ex) {
+      ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      return;
+    }
+    catch(tf::ConnectivityException& ex) {
+      ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      return;
+    }
+    catch(tf::ExtrapolationException& ex) {
+      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      return;
+    }
+
+    clearRobotFootprint(global_pose, cost_map);
+  }
+
   void TrajectoryPlannerROS::clearRobotFootprint(const tf::Stamped<tf::Pose>& global_pose, Costmap2D& cost_map){
     double useless_pitch, useless_roll, yaw;
     global_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);

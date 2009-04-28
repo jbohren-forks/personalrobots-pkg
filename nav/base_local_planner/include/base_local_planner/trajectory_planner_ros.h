@@ -127,6 +127,12 @@ namespace base_local_planner {
        */
       bool goalReached();
 
+      /**
+       * @brief  Clear the footprint of the robot in a given cost map
+       * @param cost_map The costmap to apply the clearing opertaion on
+       */
+      void clearRobotFootprint(costmap_2d::Costmap2D& cost_map);
+
     private:
       /**
        * @brief  Check whether the robot is stopped or not
