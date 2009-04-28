@@ -164,7 +164,7 @@ public:
 
         param("~min_height", min_height, 0.7);
         param("~max_height", max_height, 1.0);
-        param("~frames_no", frames_no, 7);
+        param("~frames_no", frames_no, 10);
         param("~timeout", image_timeout_, 3.0);		// timeout (in seconds) until an image must be received, otherwise abort
 
 
@@ -526,11 +526,7 @@ private:
     bool handlePossibleHere(CvRect &r)
     {
 
-//        CvPoint center = getDisparityCenter(r);
-//        cvCircle(left,center,10,CV_RGB(0,255,0));
-
         tryShrinkROI(r);
-//        cvRectangle(disp, cvPoint(r.x, r.y), cvPoint(r.x + r.width, r.y + r.height), CV_RGB(255, 255, 255));
 
         if (r.width<10 || r.height<10) {
         	return false;
@@ -538,7 +534,6 @@ private:
 
         cvSetImageROI(disp, r);
         cvSetImageCOI(disp, 1);
-
         int cnt;
         const float nz_fraction = 0.1;
         cnt = cvCountNonZero(disp);
@@ -567,7 +562,7 @@ private:
         }
         sum /= cnt;
         if(max_dist > 0.1 || sum < 0.002){
-        	printf("Not enough depth variation: %f, %f\n", max_dist, sum);
+        	ROS_INFO("Not enough depth variation for handle candidate: %f, %f\n", max_dist, sum);
             return false;
         }
 
@@ -582,9 +577,9 @@ private:
         robot_msgs::PointStamped pin, pout;
         pin.header.frame_id = cloud.header.frame_id;
         pin.header.stamp = cloud.header.stamp;
-        pin.point.x = p.z;
-        pin.point.y = -p.x;
-        pin.point.z = -p.y;
+        pin.point.x = p.x;
+        pin.point.y = p.y;
+        pin.point.z = p.z;
         try {
             tf_->transformPoint("base_link", pin, pout);
         }
@@ -599,6 +594,7 @@ private:
         }
 
         if(pout.point.z > max_height || pout.point.z < min_height){
+        	printf("Height not within admissable range: %f\n", pout.point.z);
             return false;
         }
 
@@ -623,18 +619,21 @@ private:
             //|CV_HAAR_DO_CANNY_PRUNING
             //|CV_HAAR_SCALE_IMAGE
             cvSize(10, 10));
+
             for(int i = 0;i < (handles ? handles->total : 0);i++){
                 CvRect *r = (CvRect*)cvGetSeqElem(handles, i);
 
                 if(handlePossibleHere(*r)){
                     handle_rect.push_back(*r);
-//                    if(display){
-//                        cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(0, 255, 0));
-//                        cvRectangle(disp, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 255, 255));
-//                    }
+                    if(display){
+                        cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(0, 255, 0));
+                        cvRectangle(disp, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 255, 255));
+                    }
                 }
                 else{
-//                	cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 0, 0));
+                	if (display) {
+                		cvRectangle(left, cvPoint(r->x, r->y), cvPoint(r->x + r->width, r->y + r->height), CV_RGB(255, 0, 0));
+                	}
                 }
             }
 
@@ -777,7 +776,7 @@ private:
 
         for (int i=0;i<frames_no;++i) {
 
-        	printf("Waiting for images\n");
+//        	printf("Waiting for images\n");
         	// block until images are available to process
         	got_images_ = false;
         	preempted_ = false;
@@ -787,7 +786,7 @@ private:
         	}
         	if (preempted_) break;
 
-        	printf("Woke up, processing images\n");
+//        	printf("Woke up, processing images\n");
 
         	if(display){
         		// show original disparity
@@ -1001,19 +1000,19 @@ private:
     {
         boost::lock_guard<boost::mutex> lock(cv_mutex);
         if(limage.header.stamp != t) {
-            printf("Timed out waiting for left image\n");
+//            printf("Timed out waiting for left image\n");
         }
 
         if(dimage.header.stamp != t) {
-            printf("Timed out waiting for disparity image\n");
+//            printf("Timed out waiting for disparity image\n");
         }
 
         if(stinfo.header.stamp != t) {
-            printf("Timed out waiting for stereo info\n");
+//            printf("Timed out waiting for stereo info\n");
         }
 
         if(cloud_fetch.header.stamp != t) {
-        	printf("Timed out waiting for point cloud\n");
+//        	printf("Timed out waiting for point cloud\n");
         }
         if ((ros::Time::now()-start_image_wait_) > ros::Duration(image_timeout_)) {
         	ROS_INFO("No images for %f seconds, timing out...", image_timeout_);
