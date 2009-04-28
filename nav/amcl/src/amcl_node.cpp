@@ -119,6 +119,7 @@ Robotics, p136.
   - @b "~odom_alpha3" (double) : Translation-related noise parameter, default: 0.2
   - @b "~odom_alpha4" (double) : Rotation-related noise parameter, default: 0.2
   - @b "~odom_frame_id" (string) : Which frame to use for odometry, default: "odom"
+  - @b "~base_frame_id" (string) : Which frame to use for the robot base, default: "base_link"
 
  **/
 
@@ -195,10 +196,12 @@ class AmclNode
     void laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::MessagePtr& laser_scan);
     void initialPoseReceived();
 
-    double getYaw(robot_msgs::Pose& p);
+    double getYaw(tf::Pose& t);
 
     //parameter for what odom to use
     std::string odom_frame_id_;
+    //parameter for what base to use
+    std::string base_frame_id_;
 
     ros::Time gui_laser_last_publish_time;
     ros::Duration gui_publish_rate;
@@ -313,6 +316,7 @@ AmclNode::AmclNode() :
   ros::Node::instance()->param("~update_min_d", d_thresh_, 0.2);
   ros::Node::instance()->param("~update_min_a", a_thresh_, M_PI/6.0);
   ros::Node::instance()->param("~odom_frame_id", odom_frame_id_, std::string("odom"));
+  ros::Node::instance()->param("~base_frame_id", base_frame_id_, std::string("base_link"));
   ros::Node::instance()->param("~resample_interval", resample_interval_, 2);
   double tmp_tol;
   ros::Node::instance()->param("~transform_tolerance", tmp_tol, 0.1);
@@ -789,11 +793,10 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
         gui_laser_last_publish_time = now;
       }
     
-      double yaw = getYaw(p.pose);
       ROS_INFO("New pose: %6.3f %6.3f %6.3f",
-               p.pose.position.x,
-               p.pose.position.y,
-               yaw);
+               hyps[max_weight_hyp].pf_pose_mean.v[0],
+               hyps[max_weight_hyp].pf_pose_mean.v[1],
+               hyps[max_weight_hyp].pf_pose_mean.v[2]);
 
       // subtracting base to odom from map to base and send map to odom instead
       tf::Stamped<tf::Pose> odom_to_map;
@@ -850,10 +853,8 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
 }
 
 double
-AmclNode::getYaw(robot_msgs::Pose& p)
+AmclNode::getYaw(tf::Pose& t)
 {
-  tf::Stamped<tf::Transform> t;
-  tf::PoseMsgToTF(p, t);
   double yaw, pitch, roll;
   btMatrix3x3 mat = t.getBasis();
   mat.getEulerZYX(yaw,pitch,roll);
@@ -863,15 +864,35 @@ AmclNode::getYaw(robot_msgs::Pose& p)
 void 
 AmclNode::initialPoseReceived()
 {
-  ROS_INFO("Setting pose: %.3f %.3f %.3f", 
-           initial_pose_.pose.position.x,
-           initial_pose_.pose.position.y,
-           getYaw(initial_pose_.pose));
+  // In case the client sent us a pose estimate in the past, integrate the
+  // intervening odometric change.
+  tf::Stamped<tf::Transform> tx_odom;
+  try
+  {
+    tf_->lookupTransform(base_frame_id_, ros::Time::now(),
+                         base_frame_id_, initial_pose_.header.stamp,
+                         "map", tx_odom);
+  }
+  catch(tf::TransformException e)
+  {
+    ROS_WARN("Failed to transform initial pose in time (%s)", e.what());
+    tx_odom.setIdentity();
+  }
+
+  tf::Pose pose_old, pose_new;
+  tf::PoseMsgToTF(initial_pose_.pose, pose_old);
+  pose_new = tx_odom.inverse() * pose_old;
+
+  ROS_INFO("Setting pose (%.6f): %.3f %.3f %.3f", 
+           ros::Time::now().toSec(),
+           pose_new.getOrigin().x(),
+           pose_new.getOrigin().y(),
+           getYaw(pose_new));
   // Re-initialize the filter
   pf_vector_t pf_init_pose_mean = pf_vector_zero();
-  pf_init_pose_mean.v[0] = initial_pose_.pose.position.x;
-  pf_init_pose_mean.v[1] = initial_pose_.pose.position.y;
-  pf_init_pose_mean.v[2] = getYaw(initial_pose_.pose);
+  pf_init_pose_mean.v[0] = pose_new.getOrigin().x();
+  pf_init_pose_mean.v[1] = pose_new.getOrigin().y();
+  pf_init_pose_mean.v[2] = getYaw(pose_new);
   pf_matrix_t pf_init_pose_cov = pf_matrix_zero();
   // Copy in the covariance, converting from 6-D to 3-D
   for(int i=0; i<2; i++)
