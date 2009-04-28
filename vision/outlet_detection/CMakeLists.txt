@@ -41,3 +41,5 @@ rospack_add_executable(plug_node src/plug_node.cpp)
 target_link_libraries(plug_node plug)
 
 #rospack_add_executable(calibrate_plug src/calibrate_plug.cpp)
+
+rospack_add_library(outlet_executive_functions src/outlet_executive_functions.cpp)

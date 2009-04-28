@@ -61,9 +61,12 @@
 
 #include <point_cloud_mapping/geometry/angles.h>
 #include <point_cloud_mapping/sample_consensus/sac_model_plane.h>
+#include <point_cloud_mapping/sample_consensus/sac_model_line.h>
 #include <point_cloud_mapping/sample_consensus/sac.h>
 #include <point_cloud_mapping/sample_consensus/ransac.h>
 #include <point_cloud_mapping/sample_consensus/lmeds.h>
+#include <point_cloud_mapping/geometry/statistics.h>
+
 #include "topic_synchronizer/topic_synchronizer.h"
 #include <tf/transform_listener.h>
 
@@ -134,8 +137,8 @@ public:
 	robot_msgs::PointCloud cloud;
 	robot_msgs::PointCloud cloud_fetch;
 
-//	robot_msgs::PointCloud laser_cloud;
-//	robot_msgs::PointCloud laser_cloud_fetch;
+	robot_msgs::PointCloud base_cloud_;
+	robot_msgs::PointCloud base_cloud_fetch_;
 
 //	robot_msgs::PoseStamped outlet_pose;
 
@@ -150,8 +153,8 @@ public:
 	TopicSynchronizer<OutletSpotting> sync;
 
 
-//	boost::mutex clound_point_mutex;
-//	boost::condition_variable cloud_point_cv;
+	boost::mutex clound_point_mutex;
+	boost::condition_variable cloud_point_cv;
 
 	boost::mutex cv_mutex;
 	boost::condition_variable images_cv;
@@ -162,6 +165,7 @@ public:
 
 	int frames_number_;
 	string target_frame_;
+	string base_scan_topic_;
 
 	OutletSpotting() : ros::Node("stereo_view"),left(NULL), disp(NULL), disp_clone(NULL),
 		sync(this, &OutletSpotting::image_cb_all, ros::Duration().fromSec(0.1), &OutletSpotting::image_cb_timeout), have_cloud_point_(false)
@@ -173,6 +177,7 @@ public:
 		param ("~save_patches", save_patches, false);
 		param ("~frames_number", frames_number_, 7);
 		param<string> ("~target_frame", target_frame_, "odom_combined");
+		param<string> ("~base_scan_topic", base_scan_topic_, "base_scan_filtered");
 
 		if (display) {
 			ROS_INFO("Displaying images\n");
@@ -224,7 +229,7 @@ private:
 
 		sync.ready();
 
-//		subscribe("full_cloud", laser_cloud_fetch, &OutletSpotting::laser_cloud_callback, 1);
+		subscribe(base_scan_topic_, base_cloud_fetch_, &OutletSpotting::laser_callback, 1);
     }
 
     void unsubscribeFromData()
@@ -647,101 +652,169 @@ private:
     	return result;
     }
 
+//
+//    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//    /** \brief Find a plane model in a point cloud given via a set of point indices with SAmple Consensus methods
+//      * \param points the point cloud message
+//      * \param indices a pointer to a set of point cloud indices to test
+//      * \param inliers the resultant planar inliers
+//      * \param coeff the resultant plane coefficients
+//      * \param viewpoint_cloud a point to the pose where the data was acquired from (for normal flipping)
+//      * \param dist_thresh the maximum allowed distance threshold of an inlier to the model
+//      * \param min_pts the minimum number of points allowed as inliers for a plane model
+//      */
+//    bool
+//      fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
+//                   const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
+//    {
+//      if ((int)indices.size () < min_pts)
+//      {
+//        inliers.resize (0);
+//        coeff.resize (0);
+//        return (false);
+//      }
+//
+//      // Create and initialize the SAC model
+//      sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
+//      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+//      //sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
+//      sac->setMaxIterations (500);
+//      model->setDataSet (&points, indices);
+//
+//      // Search for the best plane
+//      if (sac->computeModel ())
+//      {
+//        // Obtain the inliers and the planar model coefficients
+//        if ((int)sac->getInliers ().size () < min_pts)
+//        {
+//          //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
+//          inliers.resize (0);
+//          coeff.resize (0);
+//          return (false);
+//        }
+//        sac->computeCoefficients (coeff);          // Compute the model coefficients
+//        sac->refineCoefficients (coeff);           // Refine them using least-squares
+//        model->selectWithinDistance (coeff, dist_thresh, inliers);
+//        //inliers = sac->getInliers ();
+//
+//        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint_cloud);
+//
+//        //ROS_DEBUG ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
+//        //           coeff[0], coeff[1], coeff[2], coeff[3]);
+//
+//        // Project the inliers onto the model
+//        model->projectPointsInPlace (inliers, coeff);
+//      }
+//      else
+//      {
+//        ROS_ERROR ("Could not compute a plane model.");
+//        return (false);
+//      }
+//      sort (inliers.begin (), inliers.end ());
+//
+//      delete sac;
+//      delete model;
+//      return (true);
+//    }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /** \brief Find a plane model in a point cloud given via a set of point indices with SAmple Consensus methods
-      * \param points the point cloud message
-      * \param indices a pointer to a set of point cloud indices to test
-      * \param inliers the resultant planar inliers
-      * \param coeff the resultant plane coefficients
-      * \param viewpoint_cloud a point to the pose where the data was acquired from (for normal flipping)
-      * \param dist_thresh the maximum allowed distance threshold of an inlier to the model
-      * \param min_pts the minimum number of points allowed as inliers for a plane model
-      */
-    bool
-      fitSACPlane (PointCloud &points, vector<int> indices, vector<int> &inliers, vector<double> &coeff,
-                   const robot_msgs::PointStamped &viewpoint_cloud, double dist_thresh, int min_pts)
+
+
+
+    bool fitSACLine(PointCloud& points, vector<int> indices, vector<double> &coeff, double dist_thresh, int min_pts, vector<Point32> &line_segment)
     {
-      if ((int)indices.size () < min_pts)
-      {
-        inliers.resize (0);
-        coeff.resize (0);
-        return (false);
-      }
+    	Point32 minP, maxP;
 
-      // Create and initialize the SAC model
-      sample_consensus::SACModelPlane *model = new sample_consensus::SACModelPlane ();
-      sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
-      //sample_consensus::SAC *sac             = new sample_consensus::LMedS (model, dist_thresh);
-      sac->setMaxIterations (500);
-      model->setDataSet (&points, indices);
+    	// Create and initialize the SAC model
+    	sample_consensus::SACModelLine *model = new sample_consensus::SACModelLine ();
+    	sample_consensus::SAC *sac             = new sample_consensus::RANSAC (model, dist_thresh);
+    	sac->setMaxIterations (100);
+    	model->setDataSet (&points, indices);
 
-      // Search for the best plane
-      if (sac->computeModel ())
-      {
-        // Obtain the inliers and the planar model coefficients
-        if ((int)sac->getInliers ().size () < min_pts)
-        {
-          //ROS_ERROR ("fitSACPlane: Inliers.size (%d) < sac_min_points_per_model (%d)!", sac->getInliers ().size (), sac_min_points_per_model_);
-          inliers.resize (0);
-          coeff.resize (0);
-          return (false);
-        }
-        sac->computeCoefficients (coeff);          // Compute the model coefficients
-        sac->refineCoefficients (coeff);           // Refine them using least-squares
-        model->selectWithinDistance (coeff, dist_thresh, inliers);
-        //inliers = sac->getInliers ();
+    	if(sac->computeModel())
+    	{
+    		if((int) sac->getInliers().size() < min_pts) {
+    			coeff.resize (0);
+    			return (false);
+    		}
+    		sac->computeCoefficients (coeff);
 
-        cloud_geometry::angles::flipNormalTowardsViewpoint (coeff, points.pts.at (inliers[0]), viewpoint_cloud);
-
-        //ROS_DEBUG ("Found a model supported by %d inliers: [%g, %g, %g, %g]\n", sac->getInliers ().size (),
-        //           coeff[0], coeff[1], coeff[2], coeff[3]);
-
-        // Project the inliers onto the model
-        model->projectPointsInPlace (inliers, coeff);
-      }
-      else
-      {
-        ROS_ERROR ("Could not compute a plane model.");
-        return (false);
-      }
-      sort (inliers.begin (), inliers.end ());
-
-      delete sac;
-      delete model;
-      return (true);
-    }
+    		Point32 minP, maxP;
+    		cloud_geometry::statistics::getLargestDiagonalPoints(points, sac->getInliers(), minP, maxP);
+    		line_segment.push_back(minP);
+    		line_segment.push_back(maxP);
 
 
-
-
-    bool getLaserScan(PointStamped outlet_location, PointCloud& laser_scan)
-    {
-    	ROS_INFO("OutletSpotter: Getting laser scan...");
-    	tf_->transformPoint("base_footprint", outlet_location, outlet_location);
-
-    	// get laser height
-    	tf::Stamped<tf::Transform> tilt_stage;
-    	tf_->lookupTransform("base_footprint", "laser_tilt_link", ros::Time(), tilt_stage);
-    	double laser_height = tilt_stage.getOrigin()[2];
-    	double outlet_height = outlet_location.point.z;
-    	double dist = outlet_location.point.x;
-    	double outlet_bottom = outlet_height-(scan_height/2.0);
-    	double outlet_top = outlet_height+(scan_height/2.0);
-
-    	point_cloud_assembler::BuildCloudAngle::Request req_pointcloud;
-    	point_cloud_assembler::BuildCloudAngle::Response res_pointcloud;
-    	req_pointcloud.angle_begin = -atan2(outlet_top - laser_height, dist);
-    	req_pointcloud.angle_end = atan2(laser_height - outlet_bottom, dist);
-    	req_pointcloud.duration = scan_height/scan_speed;
-    	if (!ros::service::call("point_cloud_srv/single_sweep_cloud", req_pointcloud, res_pointcloud)){
-    		return false;
+    		fprintf (stderr, "> Found a model supported by %d inliers: [%g, %g, %g, %g]\n", (int)sac->getInliers ().size (), coeff[0], coeff[1], coeff[2], coeff[3]);
     	}
 
-    	laser_scan = res_pointcloud.cloud;
+    	delete sac;
+    	delete model;
     	return true;
     }
 
+
+//    bool getLaserScan(PointStamped outlet_location, PointCloud& laser_scan)
+//    {
+//    	ROS_INFO("OutletSpotter: Getting laser scan...");
+//    	tf_->transformPoint("base_footprint", outlet_location, outlet_location);
+//
+//    	// get laser height
+//    	tf::Stamped<tf::Transform> tilt_stage;
+//    	tf_->lookupTransform("base_footprint", "laser_tilt_link", ros::Time(), tilt_stage);
+//    	double laser_height = tilt_stage.getOrigin()[2];
+//    	double outlet_height = outlet_location.point.z;
+//    	double dist = outlet_location.point.x;
+//    	double outlet_bottom = outlet_height-(scan_height/2.0);
+//    	double outlet_top = outlet_height+(scan_height/2.0);
+//
+//    	point_cloud_assembler::BuildCloudAngle::Request req_pointcloud;
+//    	point_cloud_assembler::BuildCloudAngle::Response res_pointcloud;
+//    	req_pointcloud.angle_begin = -atan2(outlet_top - laser_height, dist);
+//    	req_pointcloud.angle_end = atan2(laser_height - outlet_bottom, dist);
+//    	req_pointcloud.duration = scan_height/scan_speed;
+//    	if (!ros::service::call("point_cloud_srv/single_sweep_cloud", req_pointcloud, res_pointcloud)){
+//    		return false;
+//    	}
+//
+//    	laser_scan = res_pointcloud.cloud;
+//    	return true;
+//    }
+
+
+    void showLineMarker(const vector<Point32>& line_segment)
+    {
+    	robot_msgs::VisualizationMarker marker;
+    	marker.header.frame_id = base_cloud_.header.frame_id;
+    	marker.header.stamp = ros::Time((uint64_t)0ULL);
+    	marker.id = 102;
+    	marker.type = robot_msgs::VisualizationMarker::LINE_STRIP;
+    	marker.action = robot_msgs::VisualizationMarker::ADD;
+    	marker.x = 0.0;
+    	marker.y = 0.0;
+    	marker.z = 0.0;
+    	marker.yaw = 0.0;
+    	marker.pitch = 0.0;
+    	marker.roll = 0.0;
+    	marker.xScale = 0.01;
+    	marker.yScale = 0.1;
+    	marker.zScale = 0.1;
+    	marker.alpha = 255;
+    	marker.r = 0;
+    	marker.g = 255;
+    	marker.b = 0;
+    	marker.set_points_size(2);
+
+    	marker.points[0].x = line_segment[0].x;
+    	marker.points[0].y = line_segment[0].y;
+    	marker.points[0].z = line_segment[0].z;
+
+    	marker.points[1].x = line_segment[1].x;
+    	marker.points[1].y = line_segment[1].y;
+    	marker.points[1].z = line_segment[1].z;
+
+    	publish( "visualizationMarker", marker );
+
+    }
 
 	bool getPoseStamped(const CvRect& r, const CvPoint& p, PoseStamped& pose)
 	{
@@ -767,89 +840,75 @@ private:
 
 		ROS_INFO("OutletSpotter: Found outlet bbox, I'm waiting for cloud point.");
 
-//		boost::unique_lock<boost::mutex> lock(clound_point_mutex);
+		boost::unique_lock<boost::mutex> lock(clound_point_mutex);
 
-//		// waiting for the cloud point
-//		while (!have_cloud_point_) {
-//			cloud_point_cv.wait(lock);
+		// waiting for the cloud point
+		while (!have_cloud_point_) {
+			cloud_point_cv.wait(lock);
+		}
+
+
+//		PointCloud laser_scan;
+//		bool laser_found;
+//		try {
+//			laser_found = getLaserScan(ps_stereo, laser_scan);
+//		}
+//		catch(tf::TransformException & ex){
+//			ROS_ERROR("Transform exception: %s\n", ex.what());
+//			return false;
 //		}
 
+//		if (!laser_found) {
+//			ROS_ERROR("OutletSpotter: Cannot get laser scan, aborting detection");
+//		}
 
-		PointCloud laser_scan;
-		bool laser_found;
-		try {
-			laser_found = getLaserScan(ps_stereo, laser_scan);
-		}
-		catch(tf::TransformException & ex){
-			ROS_ERROR("Transform exception: %s\n", ex.what());
-			return false;
-		}
+		ROS_INFO("OutletSpotter: fit line in base point cloud.");
 
-		if (!laser_found) {
-			ROS_ERROR("OutletSpotter: Cannot get laser scan, aborting detection");
-		}
-
-		ROS_INFO("OutletSpotter: computing normal.");
 		// got a cloud point
+		// transform outlet location to cloud frame
 		PointStamped ps_cloud;
         try {
-            tf_->transformPoint(laser_scan.header.frame_id, ps_stereo, ps_cloud);
+            tf_->transformPoint(base_cloud_.header.frame_id, ps_stereo, ps_cloud);
         }
         catch(tf::TransformException & ex){
             ROS_ERROR("Transform exception: %s\n", ex.what());
         	return false;
         }
-        PointCloud outlet_vecinity = outletVecinity(laser_scan, ps_cloud, 0.2);
+        PointCloud outlet_vecinity = outletVecinity(base_cloud_, ps_cloud, 0.4);
 
-        // fit a plate in the outlet cloud
+        // fit a line in the outlet cloud
         vector<int> indices(outlet_vecinity.pts.size());
         for (size_t i=0;i<outlet_vecinity.get_pts_size();++i) {
         	indices[i] = i;
         }
-        vector<int> inliers;
         vector<double> coeff(4);	// plane coefficients
 
-        // find viewpoint in laser frame
-        PointStamped stereo_viewpoint;
-        stereo_viewpoint.header.frame_id = cloud.header.frame_id;
-        stereo_viewpoint.header.stamp = cloud.header.stamp;
-        stereo_viewpoint.point.x = 0;
-        stereo_viewpoint.point.x = 0;
-        stereo_viewpoint.point.x = 0;
-
-        PointStamped viewpoint;
-        try {
-            tf_->transformPoint(laser_scan.header.frame_id, stereo_viewpoint, viewpoint);
-        }
-        catch(tf::TransformException & ex){
-            ROS_ERROR("Transform exception: %s\n", ex.what());
-        	return false;
-        }
-
         double dist_thresh = 0.02;
-        int min_pts = 50;
+        int min_pts = 10;
 
-		ROS_INFO("OutletSpotter: finding wall plane");
-        if ( !fitSACPlane (outlet_vecinity, indices, inliers, coeff, viewpoint, dist_thresh, min_pts) || inliers.size()==0) {
-        	ROS_ERROR ("Cannot find outlet plane in laser scan, aborting...");
+        vector<Point32> line_segment;
+		ROS_INFO("OutletSpotter: finding wall orientation");
+        if ( !fitSACLine(outlet_vecinity, indices, coeff, dist_thresh, min_pts, line_segment) ) {
+        	ROS_ERROR ("Cannot find line in laser scan, aborting...");
         	return false;
         }
 
+        showLineMarker(line_segment);
 
         PoseStamped temp_pose;
 
         // fill the outlet pose
-        temp_pose.header.frame_id = laser_scan.header.frame_id;
-        temp_pose.header.stamp = laser_scan.header.stamp;
+        temp_pose.header.frame_id = base_cloud_.header.frame_id;
+        temp_pose.header.stamp = base_cloud_.header.stamp;
 
         btVector3 position(ps_cloud.point.x,ps_cloud.point.y,ps_cloud.point.z);
-        btVector3 normal(coeff[0],coeff[1],coeff[2]);
         btVector3 up(0,0,1);
-        btVector3 left = normal.cross(up).normalized();
+        btVector3 left(line_segment[1].x-line_segment[0].x,line_segment[1].y-line_segment[0].y,line_segment[1].z-line_segment[0].z);
+        btVector3 normal = left.cross(up).normalized();
 
 
         btMatrix3x3 rotation;
-        rotation[0] = -normal; // x
+        rotation[0] = normal; // x
         rotation[1] = left; // y
         rotation[2] = up;     // z
         rotation = rotation.transpose();
@@ -887,10 +946,10 @@ private:
 		bool vertical = false;
 
 		disp_clone = cvCloneImage(disp);
-
-		cvErode(disp,disp,NULL, Nerode); //Probably 1
-		cvDilate(disp,disp,NULL,Ndialate); //Probably 9
-		cvErode(disp,disp,NULL, Ndialate);
+//
+//		cvErode(disp,disp,NULL, Nerode); //Probably 1
+//		cvDilate(disp,disp,NULL,Ndialate); //Probably 9
+//		cvErode(disp,disp,NULL, Ndialate);
 
 		cvconnectedDisparityComponents(disp, 1, areaTooSmall*areaTooSmall,
 				areaTooLarge*areaTooLarge,(float)(aspectLimit)/100.0, fillFactor,
@@ -1037,18 +1096,17 @@ private:
     	return found;
     }
 
-//    /**
-//     *
-//     */
-//	void laser_cloud_callback()
-//	{
-//		boost::lock_guard<boost::mutex> lock(clound_point_mutex);
-//		have_cloud_point_ = true;
-//		ROS_INFO("OutletSpotter: received cloud point");
-////		laser_cloud = laser_cloud_fetch;
-//
-//		cloud_point_cv.notify_all();
-//	}
+    /**
+     *
+     */
+	void laser_callback()
+	{
+		boost::lock_guard<boost::mutex> lock(clound_point_mutex);
+		have_cloud_point_ = true;
+		base_cloud_ = base_cloud_fetch_;
+
+		cloud_point_cv.notify_all();
+	}
 
 
 	void image_cb_all(ros::Time t)

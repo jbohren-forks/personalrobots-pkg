@@ -27,6 +27,7 @@
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
   <node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting" respawn="false" output="screen">
     <param name="display" type="bool" value="True"/>
+    <param name="save_patches" type="bool" value="False"/>
   </node>
 </launch>
 
