@@ -1,0 +1,37 @@
+#include "doors/door_controller.nddl"
+
+close();
+
+rejectable(door_controller.Holds g0);
+
+// Initial conditions for control flags
+g0.active = true;
+g0.arms_tucked = false;
+g0.in_detection_position = false;
+g0.found_door = false;
+g0.found_handle = false;
+g0.have_handle = false;
+g0.door_latched = false;
+g0.doorway_clear = false;
+g0.check_doorway = true;
+
+// Initialize the controller with a door message.
+g0.frame_id = "base_footprint";
+g0.frame_p1_x =  1.5;
+g0.frame_p1_y = -0.5;
+g0.frame_p1_z =  1.0;
+g0.frame_p2_x =  1.5;
+g0.frame_p2_y =  0.5;
+g0.frame_p2_z =  1.0;
+g0.door_p1_x =  1.5;
+g0.door_p1_y = -0.5;
+g0.door_p1_z =  1.0;
+g0.door_p2_x =  1.5;
+g0.door_p2_y =  0.5;
+g0.door_p2_z =  1.0;
+g0.handle_x =  1.5;
+g0.handle_y =  0.5;
+g0.handle_z =  1.0;
+g0.height =  2.5;
+g0.hinge =  UNKNOWN;
+g0.rot_dir =  UNKNOWN;

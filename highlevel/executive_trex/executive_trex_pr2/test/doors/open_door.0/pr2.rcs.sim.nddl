@@ -1,0 +1,7 @@
+#include "test/doors/sim/sim.nddl";
+
+// We will make sure that the doorway is not clear until tick 50. This will hold up exit. The default value will kick in to
+// Transition to true.
+fact(doorway_clear_sv.Holds f2);
+f2.end = 70;
+f2.value = false;
