@@ -114,35 +114,42 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door&
     poll.sleep();
   }
 
-  double move_forward = 0;
   double sleep_time = 0.1;
-  // turn handle and push door, until door moves forward
-  while (move_forward < 0.05){
-    // increase torque to turn handle
-    tff_handle_.value.rot.x += -0.5 * sleep_time; // add 0.5 Nm per second
-    node_.publish("r_arm_cartesian_tff_controller/command", tff_handle_);
-    Duration(sleep_time).sleep();
+  ros::Duration wait_after_door_moved = Duration().fromSec(1.0);
+  ros::Time time_door_moved;
 
+  // turn handle and push door, until door moves forward
+  while (time_door_moved == ros::Time() || ros::Time::now() < time_door_moved + wait_after_door_moved){
+    Duration(sleep_time).sleep();
     boost::mutex::scoped_lock lock(tff_mutex_);
+
+    // increase torque to turn handle until door is open
+    if (fabs(tff_state_.vel.x) < 0.05)
+      tff_handle_.value.rot.x += -0.5 * sleep_time; // add 0.5 Nm per second
+    else{
+      tff_handle_.value.rot.x = 0;
+      if (time_door_moved == Time())
+	time_door_moved = ros::Time::now();
+    }
+    node_.publish("r_arm_cartesian_tff_controller/command", tff_handle_);
+
     // detect when gripper is not on hanlde
-    if (fabs(tff_state_.rot.x) > M_PI/2.0){
+    if (fabs(tff_state_.rot.x) > M_PI/2.0 || fabs(tff_state_.vel.y) > 0.1 || fabs(tff_state_.vel.z) > 0.1 || 
+	fabs(tff_state_.rot.y) > M_PI/8.0 || fabs(tff_state_.rot.z) > M_PI/8.0){
       node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
       node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
       ROS_ERROR("UnlatchHandleAction: Gripper was not on door handle");
       return robot_actions::ABORTED;
     }
 
-    // detect when door in locked
+    // detect when door is locked
     if (tff_handle_.value.rot.x > 2.5 && fabs(tff_state_.rot.x < M_PI/6.0)){
       node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
       node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
       ROS_INFO("UnlatchHandleAction: Door is locked");
-      feedback.latch_state = 1; // locked
+      feedback.latch_state = robot_msgs::Door::LOCKED;
       return robot_actions::SUCCESS;
     }
-
-    // measure distance door moved forward
-    move_forward = fabs(tff_state_.vel.x);
 
     // check if preempted
     if (isPreemptRequested()) {
@@ -150,14 +157,11 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door&
       ROS_ERROR("UnlatchHandleAction: preempted");
       return robot_actions::PREEMPTED;
     }
-
   }
-  node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
   
-  // keep pushing forward when finished
-  tff_handle_.value.rot.x = 0;
-  node_.publish("r_arm_cartesian_tff_controller/command", tff_handle_);
-  feedback.latch_state = 3; // unlatched
+  // finished
+  node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
+  feedback.latch_state = robot_msgs::Door::UNLATCHED;
   return robot_actions::SUCCESS;
 }
 
