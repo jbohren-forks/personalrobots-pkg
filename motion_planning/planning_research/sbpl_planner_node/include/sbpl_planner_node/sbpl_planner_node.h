@@ -97,7 +97,7 @@ class SBPLPlannerNode
   bool replan(const robot_msgs::JointTrajPoint &start, const robot_msgs::JointTrajPoint &goal, robot_msgs::JointTraj &path);
   bool planPath(sbpl_planner_node::PlanPathSrv::Request &req, sbpl_planner_node::PlanPathSrv::Response &resp);
 
- std::vector<deprecated_msgs::Point2DFloat32> footprint_;
+ std::vector<robot_msgs::Point> footprint_;
 
  boost::recursive_mutex lock_; /*!< Lock for access to class members in callbacks */
 };
