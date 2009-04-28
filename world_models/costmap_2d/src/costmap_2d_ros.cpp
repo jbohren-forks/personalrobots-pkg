@@ -385,46 +385,43 @@ namespace costmap_2d {
   }
 
   void Costmap2DROS::resetMapOutsideWindow(double size_x, double size_y){
-    while(ros_node_.ok()){
-      tf::Stamped<tf::Pose> robot_pose, global_pose;
-      global_pose.setIdentity();
-      robot_pose.setIdentity();
-      robot_pose.frame_id_ = robot_base_frame_;
-      ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
-      robot_pose.stamp_ = ros::Time();
-      try{
-        tf_.transformPose(global_frame_, robot_pose, global_pose);
-      }
-      catch(tf::LookupException& ex) {
-        ROS_ERROR("No Transform available Error: %s\n", ex.what());
-        return;
-      }
-      catch(tf::ConnectivityException& ex) {
-        ROS_ERROR("Connectivity Error: %s\n", ex.what());
-        return;
-      }
-      catch(tf::ExtrapolationException& ex) {
-        ROS_ERROR("Extrapolation Error: %s\n", ex.what());
-        return;
-      }
-      // check global_pose timeout
-      if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
-        ROS_ERROR("Transform timeout.");
-        ROS_ERROR("   current time    : %f",current_time.toSec());
-        ROS_ERROR("   globalpose stamp: %f",global_pose.stamp_.toSec());
-        ROS_ERROR("   tolerance       : %f",transform_tolerance_);
-        return;
-      }
-
-      double wx = global_pose.getOrigin().x();
-      double wy = global_pose.getOrigin().y();
-      costmap_->lock();
-      ROS_DEBUG("Resetting map outside window");
-      costmap_->resetMapOutsideWindow(wx, wy, size_x, size_y);
-      costmap_->unlock();
-
-      usleep(1e6/0.2);
+    tf::Stamped<tf::Pose> robot_pose, global_pose;
+    global_pose.setIdentity();
+    robot_pose.setIdentity();
+    robot_pose.frame_id_ = robot_base_frame_;
+    ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
+    robot_pose.stamp_ = ros::Time();
+    try{
+      tf_.transformPose(global_frame_, robot_pose, global_pose);
     }
+    catch(tf::LookupException& ex) {
+      ROS_ERROR("No Transform available Error: %s\n", ex.what());
+      return;
+    }
+    catch(tf::ConnectivityException& ex) {
+      ROS_ERROR("Connectivity Error: %s\n", ex.what());
+      return;
+    }
+    catch(tf::ExtrapolationException& ex) {
+      ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      return;
+    }
+    // check global_pose timeout
+    if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
+      ROS_ERROR("Transform timeout.");
+      ROS_ERROR("   current time    : %f",current_time.toSec());
+      ROS_ERROR("   globalpose stamp: %f",global_pose.stamp_.toSec());
+      ROS_ERROR("   tolerance       : %f",transform_tolerance_);
+      return;
+    }
+
+    double wx = global_pose.getOrigin().x();
+    double wy = global_pose.getOrigin().y();
+    costmap_->lock();
+    ROS_DEBUG("Resetting map outside window");
+    costmap_->resetMapOutsideWindow(wx, wy, size_x, size_y);
+    costmap_->unlock();
+
   }
 
   void Costmap2DROS::publishCostMap(Costmap2D& map){
