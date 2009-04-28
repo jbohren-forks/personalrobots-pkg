@@ -101,7 +101,6 @@ bool JointTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElem
 bool JointTrajectoryController::starting()
 {
   current_time_ = robot_->hw_->current_time_;
-  at_rest_ = true;
   updateJointValues();
   last_time_ = current_time_;
   setTrajectoryCmdToCurrentValues();
@@ -113,7 +112,6 @@ void JointTrajectoryController::getParams()
   double scale;
   node_->param<double>(prefix_+"velocity_scaling_factor",scale,0.25);
   node_->param<double>(prefix_+"trajectory_wait_timeout",trajectory_wait_timeout_,10.0);
-  node_->param<double>(prefix_+"trajectory_update_timeout",max_allowed_update_time_,0.2);
   node_->param<std::string>(prefix_+"listen_topic_name",listen_topic_name_,"command");
   node_->param<double>(prefix_+"at_rest_velocity_threshold_",at_rest_velocity_threshold_,1e-5);
   node_->param<double>(prefix_+"max_allowed_update_time_",max_allowed_update_time_,100.0);
@@ -264,7 +262,6 @@ void JointTrajectoryController::initTrajectory(TiXmlElement * config)
 
   trajectory_start_time_ = current_time_;
   trajectory_end_time_ = current_time_;
-  current_trajectory_finished_ = true;
   joint_trajectory_->autocalc_timing_ = true;
 
   current_joint_position_vector_.resize(2);
@@ -371,8 +368,8 @@ bool JointTrajectoryController::setTrajectoryCmd(const std::vector<trajectory::T
     ROS_WARN("JointTrajectoryController:: No points in trajectory");
     return false;
   }
+  goal_ = joint_trajectory.back();
   joint_trajectory_->setTrajectory(joint_trajectory);
-
   return true;
 }
 
@@ -422,26 +419,24 @@ void JointTrajectoryController::computeJointErrors()
 
 bool JointTrajectoryController::checkWatchDog(double current_time)
 {
-  if(current_time - last_traj_req_time_ < max_allowed_update_time_ && errorsWithinThreshold())
+  if(current_time - last_traj_req_time_ < max_allowed_update_time_)
   {
     if(watch_dog_active_)
     {
       watch_dog_active_ = false;
-      current_trajectory_finished_ = true;
-      return false;
     }
     return false;
   }
-  else
-  {
-    return true;
-  }
+  return true;
 }
 
 void JointTrajectoryController::stopMotion()
 {
   setTrajectoryCmdToCurrentValues();
-  base_controller_node_->setCommand(0.0,0.0,0.0);
+  if(base_controller_node_)
+  {
+    base_controller_node_->setCommand(0.0,0.0,0.0);
+  }
 }
 
 void JointTrajectoryController::resetTrajectoryTimes()
@@ -468,15 +463,19 @@ void JointTrajectoryController::getJointCommands()
 
 bool JointTrajectoryController::trajectoryDone()
 {
-  if(current_time_ >= trajectory_end_time_ && current_trajectory_finished_ == false)
+
+  if(current_trajectory_id_ == -1)
+    return false;
+
+  if(reachedGoalPosition(joint_cmd_))
+  {
+     updateTrajectoryQueue(current_trajectory_id_,JointTrajectoryController::DONE);
+     return true;
+  }    
+
+  if(current_time_ >= trajectory_end_time_)
   {
     trajectory_wait_time_ = current_time_ - trajectory_end_time_;
-    if(reachedGoalPosition(joint_cmd_))
-    {
-      trajectory_wait_time_ = 0.0;
-      updateTrajectoryQueue(current_trajectory_id_,JointTrajectoryController::DONE);
-      return true;
-    }
     if(trajectory_wait_time_ >= trajectory_wait_timeout_)
     {
       trajectory_wait_time_ = 0.0;
@@ -512,9 +511,7 @@ void JointTrajectoryController::update(void)
       watch_dog_active_ = true;
       updateTrajectoryQueue(current_trajectory_id_,JointTrajectoryController::CANCELED);
       setTrajectoryCmdToCurrentValues();
-      at_rest_ = true;
       current_trajectory_id_ = -1;
-      current_trajectory_finished_ = false;
     }
   }
   else if(trajectory_preempted_)
@@ -522,29 +519,38 @@ void JointTrajectoryController::update(void)
     updateTrajectoryQueue(current_trajectory_id_,JointTrajectoryController::CANCELED);
     get_trajectory_index = current_trajectory_index_;
     trajectory_preempted_ = false;
-    current_trajectory_finished_ = true;
+    if(getTrajectoryFromQueue(get_trajectory_index))
+    {
+      current_trajectory_index_ = get_trajectory_index;
+      resetTrajectoryTimes();
+    }
+    else
+    {
+      setTrajectoryCmdToCurrentValues();
+      current_trajectory_id_ = -1;
+    }
   }
   else if(trajectoryDone())
   {
     get_trajectory_index = (current_trajectory_index_ + 1)%max_trajectory_queue_size_;
-    current_trajectory_finished_ = true;    
-  }
-
-  if(current_trajectory_finished_)
-  {
     if(getTrajectoryFromQueue(get_trajectory_index))
     {
-//      ROS_INFO("Updated to trajectory with index: %d",get_trajectory_index);
       current_trajectory_index_ = get_trajectory_index;
-      at_rest_ = false;
-      current_trajectory_finished_ = false;
       resetTrajectoryTimes();
     }
-    else if(!at_rest_)
+    else
     {
-      at_rest_ = true;
-      current_trajectory_id_ = -1;
       setTrajectoryCmdToCurrentValues();
+      current_trajectory_id_ = -1;
+    }
+  }
+  else if(current_trajectory_id_ == -1)
+  {
+    get_trajectory_index = (current_trajectory_index_)%max_trajectory_queue_size_;
+    if(getTrajectoryFromQueue(get_trajectory_index))
+    {
+      current_trajectory_index_ = get_trajectory_index;
+      resetTrajectoryTimes();
     }
   }
 
@@ -617,11 +623,11 @@ bool JointTrajectoryController::reachedGoalPosition(std::vector<double> joint_cm
   {
     if(joint_type_[i] == mechanism::JOINT_CONTINUOUS || joint_type_[i] == mechanism::JOINT_ROTARY)
     {
-      error = fabs(angles::shortest_angular_distance(joint_cmd_[i], current_joint_position_[i]));
+      error = fabs(angles::shortest_angular_distance(goal_.q_[i], current_joint_position_[i]));
     }
     else //prismatic
     {
-      error = fabs(current_joint_position_[i] - joint_cmd_[i]);
+      error = fabs(current_joint_position_[i] - goal_.q_[i]);
     }
     return_val = return_val && (error <= goal_reached_threshold_[i]);
   }
@@ -695,27 +701,36 @@ bool JointTrajectoryController::getTrajectoryFromQueue(int &index)
     return false;
   }
   if(joint_trajectory_status_[joint_trajectory_id_[index]] == JointTrajectoryController::QUEUED)
+  {
+    if(trajectory_queue_.try_lock())
     {
-      if(trajectory_queue_.try_lock())
-	{
-	  setTrajectoryCmdFromMsg(joint_trajectory_vector_[index],joint_trajectory_id_[index]);
-	  trajectory_queue_.unlock();	
-	  return true;
-	}
-      return false;
+      setTrajectoryCmdFromMsg(joint_trajectory_vector_[index],joint_trajectory_id_[index]);
+      trajectory_queue_.unlock();	
+      return true;
     }
+    return false;
+  }
   else
-    {
+  {
 // do a linear search from current index + 1
     int iter = (index + 1)%max_trajectory_queue_size_;
     int num_iterations = 0;
     while(num_iterations < max_trajectory_queue_size_)
-    { 
+    {
+      if(iter >= (int)joint_trajectory_status_.size())
+      {
+        iter = 0;
+        continue;
+      }
       if(joint_trajectory_status_[joint_trajectory_id_[iter]] == JointTrajectoryController::QUEUED)
       {
-        setTrajectoryCmdFromMsg(joint_trajectory_vector_[iter],joint_trajectory_id_[iter]);
-        index = iter;
-        return true;
+        if(trajectory_queue_.try_lock())
+        {
+          setTrajectoryCmdFromMsg(joint_trajectory_vector_[iter],joint_trajectory_id_[iter]);
+          index = iter;
+	  trajectory_queue_.unlock();	
+          return true;
+        }
       }
       num_iterations++;
       iter = (iter+1)%max_trajectory_queue_size_;

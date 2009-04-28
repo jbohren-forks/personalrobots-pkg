@@ -65,7 +65,7 @@ namespace controller
 
     const std::string JointTrajectoryStatusString[8] = {"0 - ACTIVE","1 - DONE","2 - QUEUED","3 - DELETED","4 - FAILED","5 - CANCELED","6 - DOES_NOT_EXIST","7 - NUM_STATUS"};
 
-#define GOAL_REACHED_THRESHOLD 0.01
+#define GOAL_REACHED_THRESHOLD 0.2
 #define MAX_ALLOWABLE_JOINT_ERROR_THRESHOLD 0.2
   // comment this out if the controller is not supposed to publish its own max execution time
 #define PUBLISH_MAX_TIME
@@ -159,10 +159,6 @@ namespace controller
     double trajectory_end_time_;  /**< End time for the current trajectory */
 
     double current_time_; /**< Current time */
-
-    bool current_trajectory_finished_; /**< Indicates that the current trajectory is done */
-
-    bool at_rest_; /**< Indicates that all the desired joint positions are set to the current joint positions */
 
     int num_joints_; /**< Number of joints controlled by this controller */
 
@@ -509,5 +505,6 @@ namespace controller
 
     boost::mutex trajectory_queue_;
 
+    trajectory::Trajectory::TPoint goal_;
   };
 }
