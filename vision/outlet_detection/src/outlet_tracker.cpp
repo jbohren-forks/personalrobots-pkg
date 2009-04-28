@@ -176,7 +176,17 @@ bool OutletTracker::detectOutlet(robot_msgs::PoseStamped &pose)
 
   return true;
 }
-  
+
+// DEBUG ONLY
+void saveImage(IplImage* image)
+{
+  static int count = 0;
+  char filename[32];
+  snprintf(filename, 32, "out%03i.png", count++);
+  cvSaveImage(filename, image);
+  ROS_INFO("Saved %s", filename);
+}
+
 void OutletTracker::spin()
 {
   while (node_.ok() && !boost::this_thread::interruption_requested())
@@ -184,6 +194,8 @@ void OutletTracker::spin()
     if (ros::service::call(image_service_, req_, res_)) {
       processCamInfo();
       processImage();
+      //saveImage(img_bridge_.toIpl());
+      //cvWaitKey(0);
       // TODO: figure out what's actually causing banding
       usleep(100000); // hack to (mostly) get rid of banding
     } else {

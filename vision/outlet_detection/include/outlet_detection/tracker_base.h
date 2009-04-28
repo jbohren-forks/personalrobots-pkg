@@ -32,30 +32,74 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef PLUG_TRACKER_H
-#define PLUG_TRACKER_H
+#ifndef TRACKER_BASE_H
+#define TRACKER_BASE_H
 
-#include "outlet_detection/tracker_base.h"
+#include <ros/node.h>
+#include <image_msgs/Image.h>
+#include <image_msgs/CamInfo.h>
+#include <opencv_latest/CvBridge.h>
+#include <prosilica_cam/PolledImage.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 
-class PlugTracker : public TrackerBase
+#include <opencv/cv.h>
+#include <opencv/cvwimage.h>
+#include <opencv/highgui.h>
+
+#include <boost/thread.hpp>
+
+class TrackerBase
 {
 public:
-  PlugTracker(ros::Node &node);
-  ~PlugTracker();
+  TrackerBase(ros::Node &node, std::string prefix);
+  virtual ~TrackerBase();
 
+  void activate();
+  void deactivate();
+
+  void spin();
+  
 protected:
-  virtual bool detectObject(tf::Transform &pose);
-  virtual CvRect getBoundingBox();
+  virtual bool detectObject(tf::Transform &pose) = 0;
+  virtual CvRect getBoundingBox() = 0;
   virtual IplImage* getDisplayImage(bool success);
 
-  int board_w_, board_h_;
-  CvMat *grid_pts_;
-  int ncorners_;
-  std::vector<CvPoint2D32f> corners_;
-
-  tf::Transform plug_in_board_, camera_in_cvcam_;
+  void processCamInfo();
+  void processImage();
   
-  cv::WImageBuffer3_b display_img_;
+  CvRect fitToFrame(CvRect roi);
+  void setRoi(CvRect roi);
+  void setRoiToTargetFrame();
+
+  void saveImage();
+
+  ros::Node &node_;
+  boost::thread active_thread_;
+  
+  prosilica_cam::PolledImage::Request req_;
+  prosilica_cam::PolledImage::Response res_;
+  std::string image_service_;
+  image_msgs::Image& img_;
+  image_msgs::CamInfo& cam_info_;
+  image_msgs::CvBridge img_bridge_;
+  std::string topic_name_;
+  tf::TransformBroadcaster tf_broadcaster_;
+  tf::TransformListener tf_listener_;
+  std::string target_frame_id_;
+  std::string object_frame_id_;
+  CvMat *K_;
+
+  enum { FullResolution, LastImageLocation, TargetFrame } roi_policy_;
+  int frame_w_, frame_h_;
+  double resize_factor_found_;
+  double resize_factor_failed_;
+  int target_roi_size_;
+  
+  bool display_;
+  std::string window_name_;
+  int save_count_;
+  std::string save_prefix_;
 };
 
 #endif

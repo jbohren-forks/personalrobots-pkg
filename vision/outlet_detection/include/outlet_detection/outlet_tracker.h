@@ -49,7 +49,6 @@
 #include <boost/thread.hpp>
 
 #include "outlet_detection/outlet_detector.h"
-#include "outlet_detection/OutletDetection.h"
 
 
 class OutletTracker

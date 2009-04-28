@@ -2,6 +2,9 @@
   <group ns="plug_detector" clear_params="true">
     <param name="display" type="bool" value="false"/>
     <param name="roi_policy" type="str" value="LastImageLocation"/>
+    <param name="resize_factor_found" type="double" value="3.0"/>
+    <param name="resize_factor_failed" type="double" value="1.2"/>
+    <param name="target_roi_size" type="int" value="400"/>
     <param name="square_size" type="double" value="0.0042"/>
     <param name="board_width" type="int" value="3"/>
     <param name="board_height" type="int" value="4"/>
