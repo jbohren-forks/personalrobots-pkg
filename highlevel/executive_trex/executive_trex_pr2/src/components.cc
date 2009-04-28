@@ -105,10 +105,10 @@ namespace TREX{
 
 	// Conduct mutual intersection
 	dom_a.intersect(dom_b);
-	if(dom_a.isEmpty())
+	if(dom_a.isClosed() && dom_a.isEmpty())
 	  return;
 	dom_b.intersect(dom_a);
-	if(dom_b.isEmpty())
+	if(dom_b.isClosed() && dom_b.isEmpty())
 	  return;
       }
 
