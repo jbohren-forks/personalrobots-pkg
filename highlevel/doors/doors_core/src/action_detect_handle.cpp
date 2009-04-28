@@ -37,6 +37,7 @@
 #include <door_handle_detector/DoorsDetectorCloud.h>
 #include <door_handle_detector/DoorsDetector.h>
 #include <door_handle_detector/door_functions.h>
+#include <robot_msgs/Door.h>
 #include <point_cloud_assembler/BuildCloudAngle.h>
 #include "doors_core/action_detect_handle.h"
 
@@ -48,7 +49,7 @@ using namespace door_handle_detector;
 static const string fixed_frame = "odom_combined";
 static const double scan_speed  = 0.1; // [m/sec]
 static const double scan_height = 0.4; //[m]
-
+static const unsigned int max_retries = 5;
 
 DetectHandleAction::DetectHandleAction(Node& node): 
   robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_handle"),
@@ -74,77 +75,82 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
   robot_msgs::Door goal_tr;
   transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame);
 
-  // laser detection
-  robot_msgs::Door result_laser, result_camera;
-  if (!laserDetection(goal_tr, result_laser)){
+  // try to detect handle 
+  for (unsigned int nr_tries=0; nr_tries<max_retries; nr_tries++){
+
+    // check for preemption
     if (isPreemptRequested()){
       ROS_INFO("DetectHandleAction: Preempted");
       return robot_actions::PREEMPTED;
     }
-    else{
-      ROS_ERROR("DetectHandleAction: Aborted laser detection");
-      return robot_actions::ABORTED;
-    }
-  }
-  if (!door_handle_detector::transformTo(tf_, fixed_frame, result_laser, result_laser, fixed_frame)){
-    ROS_ERROR ("DetectHandleAction: Could not transform laser door message from frame %s to frame %s.",
-	       result_laser.header.frame_id.c_str (), fixed_frame.c_str ());
-    return robot_actions::ABORTED;
-  }
-  cout << "result laser " << result_laser << endl;
-  ROS_INFO("DetectHandleAction: detected handle position transformed to '%s'", fixed_frame.c_str());
 
-  /*
-  // camera detection
-  if (!cameraDetection(goal_tr, result_camera)){
+    // laser detection
+    robot_msgs::Door result_laser, result_camera;
+    if (!laserDetection(goal_tr, result_laser))
+      break;
+
+    // check for preemption
     if (isPreemptRequested()){
       ROS_INFO("DetectHandleAction: Preempted");
       return robot_actions::PREEMPTED;
     }
-    else{
-      ROS_ERROR("DetectHandleAction: Aborted camera detection");
+
+    // camera detection
+    //if (!cameraDetection(goal_tr, result_camera))
+    //  break;
+    result_camera = result_laser;
+
+    // check for preemption
+    if (isPreemptRequested()){
+      ROS_INFO("DetectHandleAction: Preempted");
+      return robot_actions::PREEMPTED;
+    }
+
+    // transform laser data
+    if (!door_handle_detector::transformTo(tf_, fixed_frame, result_laser, result_laser, fixed_frame)){
+      ROS_ERROR ("DetectHandleAction: Could not transform laser door message from frame %s to frame %s.",
+		 result_laser.header.frame_id.c_str (), fixed_frame.c_str ());
       return robot_actions::ABORTED;
     }
-  }
+    ROS_INFO("DetectHandleAction: detected handle position transformed to '%s'", fixed_frame.c_str());
 
-  if (!door_handle_detector::transformTo(tf_, fixed_frame, result_camera, result_camera, fixed_frame)){
-    ROS_ERROR ("DetectHandleAction: Could not transform camera door message from frame %s to frame %s.",
-	       result_camera.header.frame_id.c_str (), fixed_frame.c_str ());
-    return robot_actions::ABORTED;
-  }
-
-  cout << "result camera " << result_camera << endl;
-  ROS_INFO("DetectHandleAction: detected handle position transformed to '%s'", fixed_frame.c_str());
-  */
-
-  result_camera = result_laser;
-  double  error = sqrt(pow(result_laser.handle.x - result_camera.handle.x,2) +
-		       pow(result_laser.handle.y - result_camera.handle.y,2) +
-		       pow(result_laser.handle.z - result_camera.handle.z,2));
-  ROS_INFO("DetectHandleAction: difference between laser and camera result = %f", error);
-
-  if (error > 0.1){
-      ROS_ERROR("DetectHandleAction: Aborted because error between laser and camera result is too big");
+    // transform camera data
+    if (!door_handle_detector::transformTo(tf_, fixed_frame, result_camera, result_camera, fixed_frame)){
+      ROS_ERROR ("DetectHandleAction: Could not transform camera door message from frame %s to frame %s.",
+		 result_camera.header.frame_id.c_str (), fixed_frame.c_str ());
       return robot_actions::ABORTED;
+    }
+    ROS_INFO("DetectHandleAction: detected handle position transformed to '%s'", fixed_frame.c_str());
+
+    double  error = sqrt(pow(result_laser.handle.x - result_camera.handle.x,2) +
+			 pow(result_laser.handle.y - result_camera.handle.y,2) +
+			 pow(result_laser.handle.z - result_camera.handle.z,2));
+    ROS_INFO("DetectHandleAction: difference between laser and camera result = %f", error);
+
+    // success
+    if (error < 0.1){
+      // store handle position
+      feedback = result_laser;
+      feedback.handle.x = (result_laser.handle.x + result_camera.handle.x)/2.0;
+      feedback.handle.y = (result_laser.handle.y + result_camera.handle.y)/2.0;
+      feedback.handle.z = (result_laser.handle.z + result_camera.handle.z)/2.0;
+      
+      // store hinge side
+      if (pow(feedback.handle.x-result_laser.door_p1.x,2)+pow(feedback.handle.y-result_laser.door_p1.y,2) <
+	  pow(feedback.handle.x-result_laser.door_p2.x,2)+pow(feedback.handle.y-result_laser.door_p2.y,2))
+	feedback.hinge = robot_msgs::Door::HINGE_P1;
+      else
+	feedback.hinge = robot_msgs::Door::HINGE_P2;
+
+      ROS_INFO("DetectHandleAction: Found handle in %i tries", nr_tries+1);
+      return robot_actions::SUCCESS;
+    }
   }
-
-  // store handle position
-  feedback = result_laser;
-  feedback.handle.x = (result_laser.handle.x + result_camera.handle.x)/2.0;
-  feedback.handle.y = (result_laser.handle.y + result_camera.handle.y)/2.0;
-  feedback.handle.z = (result_laser.handle.z + result_camera.handle.z)/2.0;
-
-  // store hinge side
-  if (pow(feedback.handle.x-result_laser.door_p1.x,2)+pow(feedback.handle.y-result_laser.door_p1.y,2) <
-      pow(feedback.handle.x-result_laser.door_p2.x,2)+pow(feedback.handle.y-result_laser.door_p2.y,2))
-    feedback.hinge = 2;
-  else
-    feedback.hinge = 1;
-
-  cout << "feedback laser+camera " << feedback << endl;
-  ROS_INFO("DetectHandleAction: Succeeded");
-  return robot_actions::SUCCESS;
+  ROS_ERROR("DetectHandleAction: Did not find hanlde in %i tries", max_retries);
+  return robot_actions::ABORTED;
 }
+
+
 
 
 bool DetectHandleAction::laserDetection(const robot_msgs::Door& door_in,
