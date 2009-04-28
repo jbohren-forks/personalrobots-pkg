@@ -12,6 +12,7 @@ base_local_planner:
     resolution: 0.025
     origin_x: 0.0
     origin_y: 0.0
+  costmap_visualization_rate: 2.0
   world_model: freespace
   sim_time: 1.7
   sim_granularity: 0.05
