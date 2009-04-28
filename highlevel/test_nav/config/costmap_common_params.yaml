@@ -5,7 +5,7 @@ costmap:
   inscribed_radius: 0.325
   circumscribed_radius: 0.46
   inflation_radius: 0.55
-  cost_scaling_factor: 1.0
+  cost_scaling_factor: 25.0
   lethal_cost_threshold: 100
   observation_topics: base_scan
   base_scan: {sensor_frame: frame_from_message, data_type: LaserScan, expected_update_rate: 0.2,
