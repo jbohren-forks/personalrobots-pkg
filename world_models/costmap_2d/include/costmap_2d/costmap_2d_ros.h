@@ -40,6 +40,7 @@
 #include <ros/node.h>
 #include <ros/console.h>
 #include <costmap_2d/costmap_2d.h>
+#include <costmap_2d/costmap_2d_publisher.h>
 #include <costmap_2d/observation_buffer.h>
 #include <robot_msgs/Polyline.h>
 #include <map>
@@ -188,11 +189,9 @@ namespace costmap_2d {
       ros::Node& ros_node_; ///< @brief The ros node to use
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds
       laser_scan::LaserProjection projector_; ///< @brief Used to project laser scans into point clouds
-      boost::recursive_mutex map_lock_; ///< @brief A lock for accessing data in callbacks safely
       Costmap2D* costmap_; ///< @brief The underlying costmap to update
       std::string global_frame_; ///< @brief The global frame for the costmap
       std::string robot_base_frame_; ///< @brief The frame_id of the robot base
-      boost::thread* visualizer_thread_; ///< @brief A thread for publising to the visualizer
       boost::thread* map_update_thread_; ///< @brief A thread for updating the map
 
       std::vector<tf::MessageNotifierBase*> observation_notifiers_; ///< @brief Used to make sure that transforms are available for each sensor
@@ -202,6 +201,7 @@ namespace costmap_2d {
       bool rolling_window_; ///< @brief Whether or not the costmap should roll with the robot
       bool current_; ///< @brief Whether or not all the observation buffers are updating at the desired rate
       double transform_tolerance_; // timeout before transform errors
+      Costmap2DPublisher* costmap_publisher_;
 
   };
 };

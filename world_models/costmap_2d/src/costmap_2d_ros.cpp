@@ -46,10 +46,7 @@ using namespace robot_msgs;
 namespace costmap_2d {
 
   Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix) : ros_node_(ros_node), 
-  tf_(tf), costmap_(NULL), visualizer_thread_(NULL), map_update_thread_(NULL){
-    ros_node_.advertise<robot_msgs::Polyline>("raw_obstacles", 1);
-    ros_node_.advertise<robot_msgs::Polyline>("inflated_obstacles", 1);
-
+  tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL){
     
     string topics_string;
     //get the topics that we'll subscribe to from the parameter server
@@ -211,14 +208,15 @@ namespace costmap_2d {
     //create a separate thread to publish cost data to the visualizer
     double map_publish_frequency;
     ros_node_.param("~" + prefix + "/costmap/publish_frequency", map_publish_frequency, 2.0);
-    visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapPublishLoop, this, map_publish_frequency));
+
+    //create a publisher for the costmap if desired
+    costmap_publisher_ = new Costmap2DPublisher(ros_node_, *costmap_, map_publish_frequency, global_frame_, prefix + "/costmap");
 
   }
 
   Costmap2DROS::~Costmap2DROS(){
-    if(visualizer_thread_ != NULL){
-      visualizer_thread_->join();
-      delete visualizer_thread_;
+    if(costmap_publisher_ != NULL){
+      delete costmap_publisher_;
     }
 
     if(map_update_thread_ != NULL){
@@ -373,7 +371,7 @@ namespace costmap_2d {
     //update the global current status
     current_ = current;
 
-    map_lock_.lock();
+    costmap_->lock();
     //if we're using a rolling buffer costmap... we need to update the origin using the robot's position
     if(rolling_window_){
       double origin_x = wx - costmap_->metersSizeX() / 2;
@@ -381,7 +379,7 @@ namespace costmap_2d {
       costmap_->updateOrigin(origin_x, origin_y);
     }
     costmap_->updateWorld(wx, wy, observations, clearing_observations);
-    map_lock_.unlock();
+    costmap_->unlock();
 
 
   }
@@ -420,10 +418,10 @@ namespace costmap_2d {
 
       double wx = global_pose.getOrigin().x();
       double wy = global_pose.getOrigin().y();
-      map_lock_.lock();
+      costmap_->lock();
       ROS_DEBUG("Resetting map outside window");
       costmap_->resetMapOutsideWindow(wx, wy, size_x, size_y);
-      map_lock_.unlock();
+      costmap_->unlock();
 
       usleep(1e6/0.2);
     }
@@ -431,7 +429,7 @@ namespace costmap_2d {
 
   void Costmap2DROS::publishCostMap(Costmap2D& map){
     ROS_DEBUG("publishing map");
-    map_lock_.lock();
+    costmap_->lock();
     std::vector< std::pair<double, double> > raw_obstacles, inflated_obstacles;
     for(unsigned int i = 0; i<map.cellSizeX(); i++){
       for(unsigned int j = 0; j<map.cellSizeY();j++){
@@ -445,7 +443,7 @@ namespace costmap_2d {
           inflated_obstacles.push_back(p);
       }
     }
-    map_lock_.unlock();
+    costmap_->unlock();
 
     // First publish raw obstacles in red
     Polyline obstacle_msg;
@@ -483,29 +481,29 @@ namespace costmap_2d {
   }
 
   void Costmap2DROS::getCostMapCopy(Costmap2D& cost_map){
-    map_lock_.lock();
+    costmap_->lock();
     cost_map = *costmap_;
-    map_lock_.unlock();
+    costmap_->unlock();
   }
 
   unsigned char* Costmap2DROS::getCharMapCopy(){
-    map_lock_.lock();
+    costmap_->lock();
     unsigned char* new_map = costmap_->getCharMapCopy();
-    map_lock_.unlock();
+    costmap_->unlock();
     return new_map;
   }
 
   unsigned int Costmap2DROS::cellSizeX() {
-    map_lock_.lock();
+    costmap_->lock();
     unsigned int size_x = costmap_->cellSizeX();
-    map_lock_.unlock();
+    costmap_->unlock();
     return size_x;
   }
 
   unsigned int Costmap2DROS::cellSizeY() {
-    map_lock_.lock();
+    costmap_->lock();
     unsigned int size_y = costmap_->cellSizeY();
-    map_lock_.unlock();
+    costmap_->unlock();
     return size_y;
   }
 
