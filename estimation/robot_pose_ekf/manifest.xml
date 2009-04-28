@@ -8,6 +8,7 @@
 <depend package="bfl" />
 <depend package="std_msgs" />
 <depend package="robot_msgs" />
+<depend package="deprecated_msgs" />
 <depend package="tf" />
 <depend package="gtest"/>
 </package>
