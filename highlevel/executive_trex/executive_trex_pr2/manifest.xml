@@ -8,6 +8,7 @@
   <depend package="rosconsole"/>
   <depend package="topological_map" />
   <depend package="doors_core" />
+  <depend package="outlet_detection" />
   <depend package="robot_actions" />
   <depend package="pr2_robot_actions" />
   <depend package="pr2_msgs" />

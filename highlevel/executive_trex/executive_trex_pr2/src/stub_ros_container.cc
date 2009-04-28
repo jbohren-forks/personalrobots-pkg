@@ -56,14 +56,20 @@ namespace executive_trex_pr2 {
   public:
 
     StubAction(const std::string& name): robot_actions::Action<Goal, Feedback>(name) {}
+    StubAction(const std::string& name, const Feedback& default_feedback) : 
+      robot_actions::Action<Goal, Feedback>(name), default_feedback_(default_feedback) {}
 
   protected:
 
     virtual robot_actions::ResultStatus execute(const Goal& goal, Feedback& feedback){
       ROS_DEBUG("Executing %s\n", robot_actions::Action<Goal, Feedback>::getName().c_str());
+      feedback = default_feedback_;
       return robot_actions::SUCCESS;
     }
+  private:
+    Feedback default_feedback_;
   };
+
 
   template <class T> class SimpleStubAction: public robot_actions::Action<T,T> {
   public:
@@ -227,7 +233,9 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_detect_outlet_fine"))
     runner.connect<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_fine);
 
-  executive_trex_pr2::StubAction<robot_msgs::PointStamped, robot_msgs::PoseStamped> detect_outlet_coarse("detect_outlet_coarse");
+  robot_msgs::PoseStamped outlet_feedback;
+  outlet_feedback.pose.orientation.x = 1.0;
+  executive_trex_pr2::StubAction<robot_msgs::PointStamped, robot_msgs::PoseStamped> detect_outlet_coarse("detect_outlet_coarse", outlet_feedback);
   if (getComponentParam("/trex/enable_detect_outlet_coarse"))
     runner.connect<robot_msgs::PointStamped, pr2_robot_actions::DetectOutletState, robot_msgs::PoseStamped>(detect_outlet_coarse);
 

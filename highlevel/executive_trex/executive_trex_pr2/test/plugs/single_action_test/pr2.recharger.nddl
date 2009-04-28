@@ -8,5 +8,5 @@
 close();
 
 rejectable(plug_actions.DetectOutlet detect_outlet_action);
-rejectable(plug_actions.PickupAndRelease pickup_release_action);
+//rejectable(plug_actions.PickupAndRelease pickup_release_action);
 

@@ -40,10 +40,13 @@ PlugActions::DetectOutlet {
   // Use detect outlet feedback to determine where to move base
   any(detect_outlet_coarse.Inactive feedback_detect_outlet_coarse);
   cmd_detect_outlet_coarse meets feedback_detect_outlet_coarse;
-  addEq(feedback_detect_outlet_coarse.x, 1.0, cmd_move_to_outlet.x);
-  addEq(feedback_detect_outlet_coarse.y, 1.0, cmd_move_to_outlet.y);
-  eq(cmd_move_to_outlet.z, 0.0);
-
+  plugs_get_offset_pose(feedback_detect_outlet_coarse.x, feedback_detect_outlet_coarse.y, 
+                        feedback_detect_outlet_coarse.z, feedback_detect_outlet_coarse.qx, 
+                        feedback_detect_outlet_coarse.qy, feedback_detect_outlet_coarse.qz,
+                        feedback_detect_outlet_coarse.qw, 0.9, cmd_move_to_outlet.x, cmd_move_to_outlet.y,
+                        cmd_move_to_outlet.z, cmd_move_to_outlet.qx, cmd_move_to_outlet.qy,
+                        cmd_move_to_outlet.qz, cmd_move_to_outlet.qw);
+  eq(cmd_move_to_outlet.frame_id, feedback_detect_outlet_coarse.frame_id);
   concurrent(end, cmd_move_to_outlet.end);
 }
 

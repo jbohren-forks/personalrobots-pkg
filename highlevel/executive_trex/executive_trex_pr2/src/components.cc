@@ -10,6 +10,7 @@
 #include "Agent.hh"
 #include "executive_trex_pr2/calc_angle_diff_constraint.hh"
 #include "executive_trex_pr2/calc_distance_constraint.hh"
+#include <outlet_detection/outlet_executive_functions.h>
 #include "OrienteeringSolver.hh"
 #include "Utilities.hh"
 #include "LabelStr.hh"
@@ -190,6 +191,17 @@ namespace TREX{
     const AbstractDomain& m_source;
   };
 
+  class PlugsGetOffsetPose: public Constraint{
+  public:
+    PlugsGetOffsetPose(const LabelStr& name, const LabelStr& propagatorName,
+                       const ConstraintEngineId& constraintEngine,
+                       const std::vector<ConstrainedVariableId>& vars);
+  private:
+    void handleExecute();
+    const AbstractDomain &x, &y, &z, &qx, &qy, &qz, &qw, &dist;
+    AbstractDomain &x2, &y2, &z2, &qx2, &qy2, &qz2, &qw2;
+  };
+
 
   class NearestLocation: public Constraint{
   public:
@@ -229,6 +241,7 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::SubsetOfConstraint, "in", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::CalcDistanceConstraint, "calcDistance", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), FloorFunction, "calcFloor", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), PlugsGetOffsetPose, "plugs_get_offset_pose", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::NearestLocation, "nearestReachableLocation", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::RandomSelection, "randomSelect", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
@@ -338,6 +351,63 @@ namespace TREX{
       m_target.set(f);
     }
   }
+
+
+  PlugsGetOffsetPose::PlugsGetOffsetPose(const LabelStr& name,
+                                         const LabelStr& propagatorName,
+                                         const ConstraintEngineId& constraintEngine,
+                                         const std::vector<ConstrainedVariableId>& vars)
+    : Constraint(name, propagatorName, constraintEngine, vars),
+      x(getCurrentDomain(vars[0])),
+      y(getCurrentDomain(vars[1])),
+      z(getCurrentDomain(vars[2])),
+      qx(getCurrentDomain(vars[3])),
+      qy(getCurrentDomain(vars[4])),
+      qz(getCurrentDomain(vars[5])),
+      qw(getCurrentDomain(vars[6])),
+      dist(getCurrentDomain(vars[7])),
+      x2(getCurrentDomain(vars[8])),
+      y2(getCurrentDomain(vars[9])),
+      z2(getCurrentDomain(vars[10])),
+      qx2(getCurrentDomain(vars[11])),
+      qy2(getCurrentDomain(vars[12])),
+      qz2(getCurrentDomain(vars[13])),
+      qw2(getCurrentDomain(vars[14]))
+  {
+    checkError(vars.size()==15, "Invalid arg count: " << vars.size());
+  }
+
+  void PlugsGetOffsetPose::handleExecute()
+  {
+    using robot_msgs::Pose;
+    debugMsg("trex:debug:propagation:world_model:plugs_get_offset_pose", "BEFORE: " << toString());
+    if (x.isSingleton() && y.isSingleton() && z.isSingleton() && qx.isSingleton() &&
+        qy.isSingleton() && qz.isSingleton() && qw.isSingleton() && dist.isSingleton()) {
+      Pose outletPose;
+      outletPose.position.x=x.getSingletonValue();
+      outletPose.position.y=y.getSingletonValue();
+      outletPose.position.z=z.getSingletonValue();
+      outletPose.orientation.x=qx.getSingletonValue();
+      outletPose.orientation.y=qy.getSingletonValue();
+      outletPose.orientation.z=qz.getSingletonValue();
+      outletPose.orientation.w=qw.getSingletonValue();
+
+      Pose targetPose = transformOutletPose(outletPose, dist.getSingletonValue());
+
+      x2.set(targetPose.position.x);
+      y2.set(targetPose.position.y);
+      z2.set(targetPose.position.z);
+      qx2.set(targetPose.orientation.x);
+      qy2.set(targetPose.orientation.y);
+      qz2.set(targetPose.orientation.z);
+      qw2.set(targetPose.orientation.w);
+    }
+    debugMsg("trex:debug:propagation:world_model:plugs_get_offset_pose", "AFTER: " << toString());
+  }
+
+  
+                        
+                      
 
   NearestLocation::NearestLocation(const LabelStr& name,
 				   const LabelStr& propagatorName,
