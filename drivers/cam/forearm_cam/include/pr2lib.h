@@ -39,6 +39,27 @@ extern "C" {
 #define MT9VMODE_320x240x25b2 		9
 
 
+/*
+ * The pr2FrameInfo structure is returned to the frame handler
+ */  
+typedef struct
+{
+  size_t width;
+  size_t height;
+
+  uint32_t frame_number;
+
+  size_t lastMissingLine;
+  size_t missingLines;
+  int shortFrame;
+
+  uint8_t *frameData;
+  PacketEOF *eofInfo;
+
+  struct timeval startTime;
+} pr2FrameInfo;
+
+
 
 int pr2LibVersion( void );
 
@@ -59,10 +80,8 @@ int pr2ImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t ver
 int pr2ImagerModeSelect( const IpCamList *camInfo, uint32_t mode );
 
 /// A FrameHandler function returns zero to continue to receive data, non-zero otherwise
-typedef int (*FrameHandler)(size_t width, size_t height, uint8_t *frameData, PacketEOF *eofInfo, struct timeval *startTime, void *userData);
+typedef int (*FrameHandler)(pr2FrameInfo *frame_info, void *userData);
 int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t width, FrameHandler frameHandler, void *userData );
-
-
 
 #define CONFIG_PRODUCT_ID 6805018
 #define ERR_TIMEOUT 100

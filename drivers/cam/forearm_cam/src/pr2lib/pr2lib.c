@@ -120,17 +120,17 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, unsigned wait_us) {
 			memcpy(&tmpListItem->mac, aPkt.mac, sizeof(aPkt.mac));
 			strncpy(tmpListItem->ifName, ifName, sizeof(tmpListItem->ifName));
 			tmpListItem->status = CamStatusDiscovered;
+			char pcb_rev = 0x0A + (0x0000000F & ntohl(aPkt.hw_version));
+			int hdl_rev = 0x00000FFF & (ntohl(aPkt.hw_version)>>4);
+		  snprintf(tmpListItem->hwinfo, PR2_CAMINFO_LEN, "PCB rev %X : HDL rev %3X : FW rev %3X", pcb_rev, hdl_rev, ntohl(aPkt.fw_version));
 
 			// If this camera is already in the list, we don't want to add another copy
 			if( pr2CamListAdd( ipCamList, tmpListItem ) == CAMLIST_ADD_DUP) {
 				free(tmpListItem);
 			} else {
-				printf("MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n", aPkt.mac[0], aPkt.mac[1], aPkt.mac[2], aPkt.mac[3], aPkt.mac[4], aPkt.mac[5]);
-				printf("Product #%07u : Unit #%04u\n", ntohl(aPkt.product_id), ntohl(aPkt.ser_no));
-
-				char pcb_rev = 0x0A + (0x0000000F & ntohl(aPkt.hw_version));
-				int hdl_rev = 0x00000FFF & (ntohl(aPkt.hw_version)>>4);
-				printf("PCB rev %X : HDL rev %3X : FW rev %3X\n", pcb_rev, hdl_rev, ntohl(aPkt.fw_version));
+				debug("MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n", aPkt.mac[0], aPkt.mac[1], aPkt.mac[2], aPkt.mac[3], aPkt.mac[4], aPkt.mac[5]);
+				debug("Product #%07u : Unit #%04u\n", ntohl(aPkt.product_id), ntohl(aPkt.ser_no));
+				debug("%s\n", tmpListItem->hwinfo);
 				newCamCount++;
 			}
 		}
@@ -990,6 +990,15 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 		return -1;
 	}
 
+  socklen_t bufsizesize = sizeof(bufsize);
+	if( getsockopt(s, SOL_SOCKET,SO_RCVBUF, &bufsize, &bufsizesize) == 0) {
+		debug("Receive buffer size is: %i (%i)\n", bufsize, bufsizesize);
+	}
+  else
+  {
+		perror("Can't read receive buffer size");
+  }
+
 	// We receive data one line at a time; lines will be reassembled into this buffer as they arrive
 	uint8_t *frame_buf;
 	frame_buf = malloc(sizeof(uint8_t)*width*height);
@@ -1005,14 +1014,14 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 		return -1;
 	}
 
-	// Tracks the frame number currently being assembled
-	uint32_t currentFrame=0;
-
-	// Flag to indicate that 'currentFrame' has not yet been set
+	// Flag to indicate that 'frameInfo.frame_number' has not yet been set
 	bool firstPacket = true;
 
 	// Flag to indicate the current frame is complete (either EOF received or first line of next frame received)
 	bool frameComplete;
+
+  // Flag to indicate that we have set the 'frameInfo.startTime' timeval for this frame.
+  bool frameStartTimeSet;
 
 	// Holds return code from frameHandler
 	int handlerReturn;
@@ -1032,21 +1041,26 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 	// Will capture the time that the first line was received
 	struct timeval vidStartTime;
 
-	// Will capture the time that the first line was received
-	struct timeval frameStartTime;
-  bool frameStartTimeSet;
-
 	// Will capture the time that the video stopped
 	struct timeval vidStopTime;
 
 	// Points to an EOF structure for passing to frameHandler;
 	PacketEOF *eof = NULL;
 
+  // Information structure to pass to the frame handler.
+  pr2FrameInfo frameInfo;
+  
+  frameInfo.width = width;
+  frameInfo.height = height;
+
 	do {
-		lineCount = 0;
+    lineCount = 0;
 		frameComplete = false;
     frameStartTimeSet = false;
-		// Ensure the buffer is cleared out. Makes viewing short packets less confusing; missing lines will be black.
+		frameInfo.lastMissingLine = -1;
+    frameInfo.missingLines = 0;
+    frameInfo.shortFrame = false;
+    // Ensure the buffer is cleared out. Makes viewing short packets less confusing; missing lines will be black.
 		memset(frame_buf, 0, width*height);
 
 		// We detect a dropped EOF by unexpectedly receiving a line from the next frame before getting the EOF from this frame.
@@ -1056,13 +1070,16 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 				memcpy(&(frame_buf[vPkt->header.line_number*width]), vPkt->data, width);
 				lineCount++;
 			}
-			currentFrame = vPkt->header.frame_number;
+			frameInfo.frame_number = vPkt->header.frame_number;
 		}
-
 
 		do {
 			// Wait forever for video packets to arrive; could use select() with a timeout here if a timeout is needed
-			if( recvfrom( s, vPkt, sizeof(HeaderVideoLine)+width, 0, NULL, NULL )  == -1 ) {
+      struct sockaddr_in fromaddr;
+      socklen_t fromaddrlen = sizeof(struct sockaddr_in);
+      fromaddr.sin_family = AF_INET;
+
+      if( recvfrom( s, vPkt, sizeof(HeaderVideoLine)+width, 0, (struct sockaddr *) &fromaddr, &fromaddrlen )  == -1 ) {
 				perror("pr2VidReceive unable to receive from socket");
 				break;
 			}
@@ -1073,6 +1090,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 			vPkt->header.horiz_resolution = ntohs(vPkt->header.horiz_resolution);
 			vPkt->header.vert_resolution = ntohs(vPkt->header.vert_resolution);
 
+			//debug("frame: #%i line: %i\n", vPkt->header.frame_number, 0x3FF & vPkt->header.line_number);
 
 			// Check to make sure the frame number information is consistent within the packet
 			uint16_t temp = (vPkt->header.line_number>>10) & 0x003F;
@@ -1089,7 +1107,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 			// First time through we need to initialize the number of the first frame we received
 			if(firstPacket == true) {
 				firstPacket = false;
-				currentFrame = vPkt->header.frame_number;
+				frameInfo.frame_number = vPkt->header.frame_number;
 
 				// Grab the time that the first line was received
 				gettimeofday(&vidStartTime, NULL);
@@ -1099,7 +1117,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
       // Store the start time for the frame.
 			if (!frameStartTimeSet)
       {
-        gettimeofday(&frameStartTime, NULL);
+        gettimeofday(&frameInfo.startTime, NULL);
         frameStartTimeSet = true;
       }
 
@@ -1114,9 +1132,9 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 			} else if (vPkt->header.line_number == IMAGER_LINENO_ABORT) {
 				debug("Video aborted\n");
 				break;  //don't process last frame
-			} else if(vPkt->header.frame_number != currentFrame) {
+			} else if(vPkt->header.frame_number != frameInfo.frame_number) {
 				// If we have received a line from the next frame, we must have missed the EOF somehow
-				debug ("Frame #%u missing EOF\n", currentFrame);
+				debug ("Frame #%u missing EOF, got %i lines\n", frameInfo.frame_number, lineCount);
 
 				frameComplete = true;
 
@@ -1145,7 +1163,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 				// by 1000.
 				frame_time_us *= 1000;
 				frame_time_us /= (eof->ticks_per_sec/1000);
-				debug("EOF frame #%u, time %llu, I2C ", vPkt->header.frame_number, frame_time_us);
+				//debug("EOF frame #%u, time %llu, I2C ", vPkt->header.frame_number, frame_time_us);
 
 				// Correct to network byte order for frameHandler
 				eof->i2c_valid = ntohl(eof->i2c_valid);
@@ -1153,23 +1171,23 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 					eof->i2c[i] = ntohs(eof->i2c[i]);
 				}
 
-
 				for(int i=0; i<I2C_REGS_PER_FRAME; i++) {
 					if (eof->i2c_valid & (1UL << i)) {
-						debug("%u: %04X ", i, eof->i2c[i]);
+						//debug("%u: %04X ", i, eof->i2c[i]);
 					}
 				}
 
 				if(lineCount != height) {
-					debug("Short (%u/%u)", lineCount, height);
+          //debug("Short (%u/%u)", lineCount, height);
 					// Flag packet as being short for the frameHandler
 					eof->header.line_number = IMAGER_LINENO_SHORT;
-					shortFrameCount++;
+          shortFrameCount++;
+          frameInfo.shortFrame = true;
 				}
-				debug("\n");
+        // debug("\n");
 
 				// Move to the next frame
-				currentFrame = vPkt->header.frame_number+1;
+				frameInfo.frame_number = vPkt->header.frame_number+1;
 				frameCount++;
 			} else {
 
@@ -1180,13 +1198,24 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 					debug("Invalid line number received: %u (max %u)\n", vPkt->header.line_number, vPkt->header.vert_resolution);
 					break;
 				}
+			  if (lineCount + frameInfo.missingLines < vPkt->header.line_number)
+        {
+          int missedLines = vPkt->header.line_number - lineCount - frameInfo.missingLines; 
+          frameInfo.lastMissingLine = vPkt->header.line_number - 1;
+          debug("Frame #%i missed %i line(s) starting at %i src port %i\n", vPkt->header.frame_number, 
+              missedLines, lineCount + frameInfo.missingLines, ntohs(fromaddr.sin_port));
+          frameInfo.missingLines += missedLines;
+        }
 				memcpy(&(frame_buf[vPkt->header.line_number*width]), vPkt->data, width);
 				lineCount++;
-			}
+      }
 		} while(frameComplete == false);
 
 		if( frameComplete == true ) {
-			handlerReturn = frameHandler(width, height, frame_buf, eof, &frameStartTime, userData);
+      frameInfo.frameData = frame_buf;
+      frameInfo.eofInfo = eof;
+      frameInfo.frame_number = frameInfo.frame_number; 
+			handlerReturn = frameHandler(&frameInfo, userData);
 		} else {
 			// We wind up here if a serious error has resulted in us 'break'ing out of the loop.
 			// We won't call frameHandler, we'll just exit directly.
@@ -1199,10 +1228,9 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 	struct timeval totalTime;
 	timersub(&vidStopTime, &vidStartTime, &totalTime);
 	
-
 	debug("Video statistics:\n");
 	debug("Total run time was %llu usec\n", (long long int)totalTime.tv_sec*1000*1000+totalTime.tv_usec);
-	debug("Total frames received: %u (%f fps)\n", frameCount, (float)frameCount*1000/((float)(totalTime.tv_sec*1000*1000+totalTime.tv_usec)/1000));
+	debug("Total frames received: %u (%f fps)\n", frameCount, frameCount/((double) totalTime.tv_sec+totalTime.tv_usec/1e6));
 	debug("Short frames: %u, Missing EOFs: %u\n", shortFrameCount, missingEofCount);
 
 	close(s);

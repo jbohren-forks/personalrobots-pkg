@@ -250,6 +250,8 @@ static inline void list_splice_init(struct list_head *list,
 
 typedef enum { CamStatusDiscovered, CamStatusConfigured, CamStatusVideo, CamStatusError, CamStatusMissing } IpCamStatus;
 
+#define PR2_CAMINFO_LEN 100
+
 typedef struct {
 	uint32_t serial;
 
@@ -260,6 +262,8 @@ typedef struct {
 	IpCamStatus status;
 
 	struct list_head list;
+
+  char hwinfo[PR2_CAMINFO_LEN];
 } IpCamList;
 
 int pr2CamListInit( IpCamList *ipCamList );
