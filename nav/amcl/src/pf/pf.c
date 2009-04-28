@@ -94,6 +94,9 @@ pf_t *pf_alloc(int min_samples, int max_samples,
     set->cluster_count = 0;
     set->cluster_max_count = max_samples;
     set->clusters = calloc(set->cluster_max_count, sizeof(pf_cluster_t));
+
+    set->mean = pf_vector_zero();
+    set->cov = pf_matrix_zero();
   }
 
   pf->w_slow = 0.0;
@@ -425,9 +428,14 @@ int pf_resample_limit(pf_t *pf, int k)
 // Re-compute the cluster statistics for a sample set
 void pf_cluster_stats(pf_t *pf, pf_sample_set_t *set)
 {
-  int i, j, k, c;
+  int i, j, k, cidx;
   pf_sample_t *sample;
   pf_cluster_t *cluster;
+  
+  // Workspace
+  double m[4], c[2][2];
+  size_t count;
+  double weight;
 
   // Cluster the samples
   pf_kdtree_cluster(set->kdtree);
@@ -449,6 +457,17 @@ void pf_cluster_stats(pf_t *pf, pf_sample_set_t *set)
       for (k = 0; k < 2; k++)
         cluster->c[j][k] = 0.0;
   }
+
+  // Initialize overall filter stats
+  count = 0;
+  weight = 0.0;
+  set->mean = pf_vector_zero();
+  set->cov = pf_matrix_zero();
+  for (j = 0; j < 4; j++)
+    m[j] = 0.0;
+  for (j = 0; j < 2; j++)
+    for (k = 0; k < 2; k++)
+      c[j][k] = 0.0;
   
   // Compute cluster stats
   for (i = 0; i < set->sample_count; i++)
@@ -458,17 +477,20 @@ void pf_cluster_stats(pf_t *pf, pf_sample_set_t *set)
     //printf("%d %f %f %f\n", i, sample->pose.v[0], sample->pose.v[1], sample->pose.v[2]);
 
     // Get the cluster label for this sample
-    c = pf_kdtree_get_cluster(set->kdtree, sample->pose);
-    assert(c >= 0);
-    if (c >= set->cluster_max_count)
+    cidx = pf_kdtree_get_cluster(set->kdtree, sample->pose);
+    assert(cidx >= 0);
+    if (cidx >= set->cluster_max_count)
       continue;
-    if (c + 1 > set->cluster_count)
-      set->cluster_count = c + 1;
+    if (cidx + 1 > set->cluster_count)
+      set->cluster_count = cidx + 1;
     
-    cluster = set->clusters + c;
+    cluster = set->clusters + cidx;
 
     cluster->count += 1;
     cluster->weight += sample->weight;
+
+    count += 1;
+    weight += sample->weight;
 
     // Compute mean
     cluster->m[0] += sample->weight * sample->pose.v[0];
@@ -476,10 +498,18 @@ void pf_cluster_stats(pf_t *pf, pf_sample_set_t *set)
     cluster->m[2] += sample->weight * cos(sample->pose.v[2]);
     cluster->m[3] += sample->weight * sin(sample->pose.v[2]);
 
+    m[0] += sample->weight * sample->pose.v[0];
+    m[1] += sample->weight * sample->pose.v[1];
+    m[2] += sample->weight * cos(sample->pose.v[2]);
+    m[3] += sample->weight * sin(sample->pose.v[2]);
+
     // Compute covariance in linear components
     for (j = 0; j < 2; j++)
       for (k = 0; k < 2; k++)
+      {
         cluster->c[j][k] += sample->weight * sample->pose.v[j] * sample->pose.v[k];
+        c[j][k] += sample->weight * sample->pose.v[j] * sample->pose.v[k];
+      }
   }
 
   // Normalize
@@ -508,6 +538,20 @@ void pf_cluster_stats(pf_t *pf, pf_sample_set_t *set)
            //cluster->mean.v[0], cluster->mean.v[1], cluster->mean.v[2]);
     //pf_matrix_fprintf(cluster->cov, stdout, "%e");
   }
+
+  // Compute overall filter stats
+  set->mean.v[0] = m[0] / weight;
+  set->mean.v[1] = m[1] / weight;
+  set->mean.v[2] = atan2(m[3], m[2]);
+
+  // Covariance in linear components
+  for (j = 0; j < 2; j++)
+    for (k = 0; k < 2; k++)
+      set->cov.m[j][k] = c[j][k] / weight - set->mean.v[j] * set->mean.v[k];
+
+  // Covariance in angular components; I think this is the correct
+  // formula for circular statistics.
+  set->cov.m[2][2] = -2 * log(sqrt(m[2] * m[2] + m[3] * m[3]));
 
   return;
 }

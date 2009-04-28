@@ -99,7 +99,11 @@ typedef struct _pf_sample_set_t
   // Clusters
   int cluster_count, cluster_max_count;
   pf_cluster_t *clusters;
-  
+
+  // Filter statistics
+  pf_vector_t mean;
+  pf_matrix_t cov;
+
 } pf_sample_set_t;
 
 

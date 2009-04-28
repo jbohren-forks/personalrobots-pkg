@@ -716,14 +716,21 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
       tf::QuaternionTFToMsg(tf::Quaternion(hyps[max_weight_hyp].pf_pose_mean.v[2], 0.0, 0.0),
                             p.pose.orientation);
       // Copy in the covariance, converting from 3-D to 6-D
+      pf_sample_set_t* set = pf_->sets + pf_->current_set;
       for(int i=0; i<2; i++)
       {
         for(int j=0; j<2; j++)
         {
-          p.covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
+          // Report the overall filter covariance, rather than the
+          // covariance for the highest-weight cluster
+          //p.covariance[6*i+j] = hyps[max_weight_hyp].pf_pose_cov.m[i][j];
+          p.covariance[6*i+j] = set->cov.m[i][j];
         }
       }
-      p.covariance[6*3+3] = hyps[max_weight_hyp].pf_pose_cov.m[2][2];
+      // Report the overall filter covariance, rather than the
+      // covariance for the highest-weight cluster
+      //p.covariance[6*3+3] = hyps[max_weight_hyp].pf_pose_cov.m[2][2];
+      p.covariance[6*3+3] = set->cov.m[2][2];
 
       /*
          printf("cov:\n");
