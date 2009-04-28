@@ -412,9 +412,11 @@ namespace costmap_2d {
   }
 
   void Costmap2DROS::getCostMapCopy(Costmap2D& cost_map){
+    cost_map.lock();
     costmap_->lock();
     cost_map = *costmap_;
     costmap_->unlock();
+    cost_map.unlock();
   }
 
   unsigned char* Costmap2DROS::getCharMapCopy(){

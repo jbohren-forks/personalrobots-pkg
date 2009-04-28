@@ -339,7 +339,7 @@ namespace costmap_2d{
     inflateObstacles(inflation_queue_);
   }
   
-  void Costmap2D::reinflateWindow(double wx, double wy, double w_size_x, double w_size_y){
+  void Costmap2D::reinflateWindow(double wx, double wy, double w_size_x, double w_size_y, bool clear){
     //reset the markers for inflation
     memset(markers_, 0, size_x_ * size_y_ * sizeof(unsigned char));
 
@@ -347,7 +347,7 @@ namespace costmap_2d{
     ROS_ASSERT_MSG(inflation_queue_.empty(), "The inflation queue must be empty at the beginning of inflation");
 
     //reset the inflation window.. clears all costs except lethal costs and adds them to the queue for re-propagation
-    resetInflationWindow(wx, wy, w_size_x, w_size_y, inflation_queue_);
+    resetInflationWindow(wx, wy, w_size_x, w_size_y, inflation_queue_, clear);
 
     //inflate the obstacles
     inflateObstacles(inflation_queue_);
@@ -486,8 +486,50 @@ namespace costmap_2d{
     }
   }
 
+  void Costmap2D::clearNonLethal(double wx, double wy, double w_size_x, double w_size_y){
+    //get the cell coordinates of the center point of the window
+    unsigned int mx, my;
+    if(!worldToMap(wx, wy, mx, my))
+      return;
+
+    //compute the bounds of the window
+    double start_x = wx - w_size_x / 2;
+    double start_y = wy - w_size_y / 2;
+    double end_x = start_x + w_size_x;
+    double end_y = start_y + w_size_y;
+
+    //scale the window based on the bounds of the costmap
+    start_x = max(origin_x_, start_x);
+    start_y = max(origin_y_, start_y);
+
+    end_x = min(origin_x_ + metersSizeX(), end_x);
+    end_y = min(origin_y_ + metersSizeY(), end_y);
+
+    //get the map coordinates of the bounds of the window
+    unsigned int map_sx, map_sy, map_ex, map_ey;
+
+    //check for legality just in case
+    if(!worldToMap(start_x, start_y, map_sx, map_sy) || !worldToMap(end_x, end_y, map_ex, map_ey))
+      return;
+
+    //we know that we want to clear all non-lethal obstacles in this window to get it ready for inflation
+    unsigned int index = getIndex(map_sx, map_sy);
+    unsigned char* current = &cost_map_[index];
+    for(unsigned int j = map_sy; j <= map_ey; ++j){
+      for(unsigned int i = map_sx; i <= map_ex; ++i){
+        //if the cell is a lethal obstacle... we'll keep it and queue it, otherwise... we'll clear it
+        if(*current != LETHAL_OBSTACLE)
+          *current = 0;
+        current++;
+        index++;
+      }
+      current += size_x_ - (map_ex - map_sx) - 1;
+      index += size_x_ - (map_ex - map_sx) - 1;
+    }
+  }
+
   void Costmap2D::resetInflationWindow(double wx, double wy, double w_size_x, double w_size_y,
-      priority_queue<CellData>& inflation_queue){
+      priority_queue<CellData>& inflation_queue, bool clear){
     //get the cell coordinates of the center point of the window
     unsigned int mx, my;
     if(!worldToMap(wx, wy, mx, my))
@@ -521,7 +563,7 @@ namespace costmap_2d{
         //if the cell is a lethal obstacle... we'll keep it and queue it, otherwise... we'll clear it
         if(*current == LETHAL_OBSTACLE)
           enqueue(index, i, j, i, j, inflation_queue);
-        else
+        else if(clear)
           *current = 0;
         current++;
         index++;

@@ -119,8 +119,18 @@ namespace costmap_2d {
        * @param wy The y coordinate of the center point of the window in world space (meters)
        * @param w_size_x The x size of the window in meters
        * @param w_size_y The y size of the window in meters
+       * @param clear When set to true, will clear all non-lethal obstacles before inflation
        */
-      void reinflateWindow(double wx, double wy, double w_size_x, double w_size_y);
+      void reinflateWindow(double wx, double wy, double w_size_x, double w_size_y, bool clear = true);
+
+      /**
+       * @brief  Clears non lethal obstacles in a specified window
+       * @param wx The x coordinate of the center point of the window in world space (meters)
+       * @param wy The y coordinate of the center point of the window in world space (meters)
+       * @param w_size_x The x size of the window in meters
+       * @param w_size_y The y size of the window in meters
+       */
+      void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y);
 
       /**
        * @brief  Update the costmap with new observations
@@ -367,9 +377,10 @@ namespace costmap_2d {
        * @param w_size_x The x size of the window in meters
        * @param w_size_y The y size of the window in meters
        * @param inflation_queue The priority queue to push items back onto for propogation
+       * @param clear When set to true, will clear all non-lethal obstacles before inflation
        */
       void resetInflationWindow(double wx, double wy, double w_size_x, double w_size_y,
-          std::priority_queue<CellData>& inflation_queue );
+          std::priority_queue<CellData>& inflation_queue, bool clear = true );
 
       /**
        * @brief  Raytrace a line and apply some action at each step
