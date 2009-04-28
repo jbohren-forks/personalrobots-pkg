@@ -45,10 +45,10 @@ TEST(MapServer, loadValidPNG)
   {
     robot_srvs::StaticMap::Response map_resp;
     map_server::loadMapFromFile(&map_resp, g_valid_png_file, g_valid_image_res, false);
-    EXPECT_FLOAT_EQ(map_resp.map.resolution, g_valid_image_res);
-    EXPECT_EQ(map_resp.map.width, g_valid_image_width);
-    EXPECT_EQ(map_resp.map.height, g_valid_image_height);
-    for(unsigned int i=0; i < map_resp.map.width * map_resp.map.height; i++)
+    EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
+    EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
+    EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
+    for(unsigned int i=0; i < map_resp.map.info.width * map_resp.map.info.height; i++)
       EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
   }
   catch(...)
@@ -65,10 +65,10 @@ TEST(MapServer, loadValidBMP)
   {
     robot_srvs::StaticMap::Response map_resp;
     map_server::loadMapFromFile(&map_resp, g_valid_bmp_file, g_valid_image_res, false);
-    EXPECT_FLOAT_EQ(map_resp.map.resolution, g_valid_image_res);
-    EXPECT_EQ(map_resp.map.width, g_valid_image_width);
-    EXPECT_EQ(map_resp.map.height, g_valid_image_height);
-    for(unsigned int i=0; i < map_resp.map.width * map_resp.map.height; i++)
+    EXPECT_FLOAT_EQ(map_resp.map.info.resolution, g_valid_image_res);
+    EXPECT_EQ(map_resp.map.info.width, g_valid_image_width);
+    EXPECT_EQ(map_resp.map.info.height, g_valid_image_height);
+    for(unsigned int i=0; i < map_resp.map.info.width * map_resp.map.info.height; i++)
       EXPECT_EQ(g_valid_image_content[i], map_resp.map.data[i]);
   }
   catch(...)
