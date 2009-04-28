@@ -109,8 +109,8 @@ protected:
   filters::FilterBase<T > * tf_filter_;
 };
 
-ROS_REGISTER_FILTER(IIRFilter, double)
-ROS_REGISTER_FILTER(IIRFilter, float)
+FILTERS_REGISTER_FILTER(IIRFilter, double)
+FILTERS_REGISTER_FILTER(IIRFilter, float)
 
 template <typename T>
 IIRFilter<T>::IIRFilter()

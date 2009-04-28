@@ -148,7 +148,7 @@ public:
 
 } ;
 typedef laser_scan::LaserScan laser_scan_laser_scan;
-ROS_REGISTER_FILTER(ScanShadowsFilter, laser_scan_laser_scan);
+FILTERS_REGISTER_FILTER(ScanShadowsFilter, laser_scan_laser_scan);
 }
 
 #endif //LASER_SCAN_SHADOWS_FILTER_H

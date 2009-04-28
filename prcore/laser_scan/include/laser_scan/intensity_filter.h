@@ -117,7 +117,7 @@ public:
   }
 } ;
 
-ROS_REGISTER_FILTER(LaserScanIntensityFilter, LaserScan);
+FILTERS_REGISTER_FILTER(LaserScanIntensityFilter, LaserScan);
 }
 
 #endif // LASER_SCAN_INTENSITY_FILTER_H

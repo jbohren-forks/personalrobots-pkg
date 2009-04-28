@@ -39,7 +39,7 @@ The requirments for using an indivudual filter only are:
 The requirements for making a filter:
  - A filter must be a templated class (MyFilterType<T>) derived from filters::FilterBase<T>
  - The filter must implement the methods configure() and update(const std::vector<T>& data_in, std::vector<T>& data_out) and have a default constructor and destructor.
- - For every valid template value you must call ROS_REGISTER_FILTER(MyFilterType, TemplateType)
+ - For every valid template value you must call FILTERS_REGISTER_FILTER(MyFilterType, TemplateType)
 
 
 Here are the filters generic filters which are currently implemented and realtime safe:

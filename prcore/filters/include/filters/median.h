@@ -205,8 +205,8 @@ bool MedianFilter<T>::update(const T& data_in, T& data_out)
   return true;
 };
 
-ROS_REGISTER_FILTER(MedianFilter, double)
-ROS_REGISTER_FILTER(MedianFilter, float)
+FILTERS_REGISTER_FILTER(MedianFilter, double)
+FILTERS_REGISTER_FILTER(MedianFilter, float)
 }
 
 

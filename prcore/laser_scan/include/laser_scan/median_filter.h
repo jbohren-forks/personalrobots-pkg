@@ -80,7 +80,7 @@ private:
 
 typedef laser_scan::LaserScan laser_scan_laser_scan;
 
-ROS_REGISTER_FILTER(LaserMedianFilter, laser_scan_laser_scan);
+FILTERS_REGISTER_FILTER(LaserMedianFilter, laser_scan_laser_scan);
 
 template <typename T>
 LaserMedianFilter<T>::LaserMedianFilter():

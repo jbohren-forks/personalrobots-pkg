@@ -63,8 +63,8 @@ public:
 };
 
 
-ROS_REGISTER_FILTER(TestFilter, double)
-ROS_REGISTER_FILTER(TestFilter, float)
+FILTERS_REGISTER_FILTER(TestFilter, double)
+FILTERS_REGISTER_FILTER(TestFilter, float)
 
 
 static std::string mean_filter_5 = "<filter type=\"MeanFilter\" name=\"mean_test_5\"> <params number_of_observations=\"5\"/></filter>";

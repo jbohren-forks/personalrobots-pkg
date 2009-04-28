@@ -110,8 +110,8 @@ protected:
   
 };
 
-ROS_REGISTER_FILTER(TransferFunctionFilter, double)
-ROS_REGISTER_FILTER(TransferFunctionFilter, float)
+FILTERS_REGISTER_FILTER(TransferFunctionFilter, double)
+FILTERS_REGISTER_FILTER(TransferFunctionFilter, float)
 
 template <typename T>
 TransferFunctionFilter<T>::TransferFunctionFilter()

@@ -336,7 +336,7 @@ class FilterFactory : public Loki::SingletonHolder < Loki::Factory< filters::Fil
   
 
 /** The Macro which makes registering a Filter with it's type easy */
-#define ROS_REGISTER_FILTER(c,t) \
+#define FILTERS_REGISTER_FILTER(c,t) \
   filters::FilterBase<t> * Filters_New_##c##__##t() {return new c< t >;}; \
   bool ROS_FILTER_## c ## _ ## t =                                                    \
     filters::FilterFactory<t>::Instance().Register(filters::getFilterID<t>(std::string(#c)), Filters_New_##c##__##t); 

@@ -177,8 +177,8 @@ bool MeanFilter<T>::update(const std::vector<T> & data_in, std::vector<T>& data_
   return true;
 };
 
-ROS_REGISTER_FILTER(MeanFilter, double)
-ROS_REGISTER_FILTER(MeanFilter, float)
+FILTERS_REGISTER_FILTER(MeanFilter, double)
+FILTERS_REGISTER_FILTER(MeanFilter, float)
 
 }
 

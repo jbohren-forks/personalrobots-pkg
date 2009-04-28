@@ -59,9 +59,9 @@ public:
 
 };
 
-ROS_REGISTER_FILTER(TestFilter, double)
-ROS_REGISTER_FILTER(TestFilter, float)
-ROS_REGISTER_FILTER(TestFilter, int)
+FILTERS_REGISTER_FILTER(TestFilter, double)
+FILTERS_REGISTER_FILTER(TestFilter, float)
+FILTERS_REGISTER_FILTER(TestFilter, int)
 
 
 
