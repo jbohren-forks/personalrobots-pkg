@@ -207,7 +207,7 @@ namespace costmap_2d {
     
     //create a separate thread to publish cost data to the visualizer
     double map_publish_frequency;
-    ros_node_.param("~" + prefix + "/costmap/publish_frequency", map_publish_frequency, 2.0);
+    ros_node_.param("~" + prefix + "/costmap/publish_frequency", map_publish_frequency, 0.0);
 
     //create a publisher for the costmap if desired
     costmap_publisher_ = new Costmap2DPublisher(ros_node_, *costmap_, map_publish_frequency, global_frame_, prefix + "/costmap");
@@ -284,19 +284,6 @@ namespace costmap_2d {
       ROS_DEBUG("Map update time: %.9f", t_diff);
       if(!r.sleep())
         ROS_WARN("Map update loop missed its desired rate of %.4f the actual time the loop took was %.4f sec", frequency, r.cycleTime().toSec());
-    }
-  }
-
-  void Costmap2DROS::mapPublishLoop(double frequency){
-    //the user might not want to run the loop every cycle
-    if(frequency == 0.0)
-      return;
-
-    costmap_2d::Rate r(frequency);
-    while(ros_node_.ok()){
-      publishCostMap(*costmap_);
-      if(!r.sleep())
-        ROS_WARN("Map publishing loop missed its desired rate of %.4f the actual time the loop took was %.4f sec", frequency, r.cycleTime().toSec());
     }
   }
 
@@ -422,59 +409,6 @@ namespace costmap_2d {
     costmap_->resetMapOutsideWindow(wx, wy, size_x, size_y);
     costmap_->unlock();
 
-  }
-
-  void Costmap2DROS::publishCostMap(Costmap2D& map){
-    ROS_DEBUG("publishing map");
-    costmap_->lock();
-    std::vector< std::pair<double, double> > raw_obstacles, inflated_obstacles;
-    for(unsigned int i = 0; i<map.cellSizeX(); i++){
-      for(unsigned int j = 0; j<map.cellSizeY();j++){
-        double wx, wy;
-        map.mapToWorld(i, j, wx, wy);
-        std::pair<double, double> p(wx, wy);
-
-        if(map.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
-          raw_obstacles.push_back(p);
-        else if(map.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
-          inflated_obstacles.push_back(p);
-      }
-    }
-    costmap_->unlock();
-
-    // First publish raw obstacles in red
-    Polyline obstacle_msg;
-    obstacle_msg.header.frame_id = global_frame_;
-    unsigned int pointCount = raw_obstacles.size();
-    obstacle_msg.set_points_size(pointCount);
-    obstacle_msg.color.a = 0.0;
-    obstacle_msg.color.r = 1.0;
-    obstacle_msg.color.b = 0.0;
-    obstacle_msg.color.g = 0.0;
-
-    for(unsigned int i=0;i<pointCount;i++){
-      obstacle_msg.points[i].x = raw_obstacles[i].first;
-      obstacle_msg.points[i].y = raw_obstacles[i].second;
-      obstacle_msg.points[i].z = 0;
-    }
-
-    ros::Node::instance()->publish("raw_obstacles", obstacle_msg);
-
-    // Now do inflated obstacles in blue
-    pointCount = inflated_obstacles.size();
-    obstacle_msg.set_points_size(pointCount);
-    obstacle_msg.color.a = 0.0;
-    obstacle_msg.color.r = 0.0;
-    obstacle_msg.color.b = 1.0;
-    obstacle_msg.color.g = 0.0;
-
-    for(unsigned int i=0;i<pointCount;i++){
-      obstacle_msg.points[i].x = inflated_obstacles[i].first;
-      obstacle_msg.points[i].y = inflated_obstacles[i].second;
-      obstacle_msg.points[i].z = 0;
-    }
-
-    ros::Node::instance()->publish("inflated_obstacles", obstacle_msg);
   }
 
   void Costmap2DROS::getCostMapCopy(Costmap2D& cost_map){

@@ -137,13 +137,6 @@ namespace costmap_2d {
       void resetMapOutsideWindow(double size_x, double size_y);
 
       /**
-       * @brief  Publish the underlying costmap to the visualizer
-       * If you want to publish the map outside of the publish loop that runs, you can call this.
-       * @param map The map to be published
-       */
-      void publishCostMap(Costmap2D& map);
-
-      /**
        * @brief  Returns a copy of the underlying costmap
        * @param cost_map A reference to the map to populate
        */
@@ -179,12 +172,6 @@ namespace costmap_2d {
        * @param  frequency The rate at which to run the loop
        */
       void mapUpdateLoop(double frequency);
-
-      /**
-       * @brief  The loop that handles displaying the costmap
-       * @param  frequency The rate at which to run the loop
-       */
-      void mapPublishLoop(double frequency);
 
       ros::Node& ros_node_; ///< @brief The ros node to use
       tf::TransformListener& tf_; ///< @brief Used for transforming point clouds

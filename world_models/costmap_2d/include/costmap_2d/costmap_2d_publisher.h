@@ -48,9 +48,11 @@ namespace costmap_2d {
     public:
       Costmap2DPublisher(ros::Node& ros_node, Costmap2D& cost_map, double publish_frequency, std::string global_frame, std::string topic_prefix = std::string(""));
       ~Costmap2DPublisher();
+
+      void publishCostMap();
+
     private:
       void mapPublishLoop(double frequency);
-      void publishCostMap();
 
       ros::Node& ros_node_;
       Costmap2D& cost_map_;
