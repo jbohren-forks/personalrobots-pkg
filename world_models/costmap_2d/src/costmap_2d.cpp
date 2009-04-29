@@ -266,7 +266,7 @@ namespace costmap_2d{
     double start_point_x = wx - w_size_x / 2;
     double start_point_y = wy - w_size_y / 2;
     double end_point_x = start_point_x + w_size_x;
-    double end_point_y = start_point_x + w_size_y;
+    double end_point_y = start_point_y + w_size_y;
 
     //check start bounds
     start_point_x = max(origin_x_, start_point_x);
@@ -282,11 +282,12 @@ namespace costmap_2d{
     if(!worldToMap(start_point_x, start_point_y, start_x, start_y) || !worldToMap(end_point_x, end_point_y, end_x, end_y))
       return;
 
+    ROS_ASSERT(end_x > start_x && end_y > start_y);
     unsigned int cell_size_x = end_x - start_x;
     unsigned int cell_size_y = end_y - start_y;
 
     //we need a map to store the obstacles in the window temporarily
-    unsigned char local_map[cell_size_x * cell_size_y];
+    unsigned char* local_map = new unsigned char[cell_size_x * cell_size_y];
 
     //copy the local window in the costmap to the local map
     unsigned char* costmap_cell = &costmap_[getIndex(start_x, start_y)];
@@ -314,6 +315,9 @@ namespace costmap_2d{
       }
       costmap_cell += size_x_ - cell_size_x;
     }
+
+    //clean up
+    delete local_map;
   }
 
   void Costmap2D::updateWorld(double robot_x, double robot_y, 
@@ -600,7 +604,7 @@ namespace costmap_2d{
     unsigned int cell_size_y = upper_right_y - lower_left_y;
 
     //we need a map to store the obstacles in the window temporarily
-    unsigned char local_map[cell_size_x * cell_size_y];
+    unsigned char* local_map = new unsigned char[cell_size_x * cell_size_y];
 
     //copy the local window in the costmap to the local map
     unsigned char* costmap_cell = &costmap_[getIndex(lower_left_x, lower_left_y)];
@@ -636,6 +640,9 @@ namespace costmap_2d{
       }
       costmap_cell += size_x_ - cell_size_x;
     }
+
+    //make sure to clean up
+    delete local_map;
 
   }
 
