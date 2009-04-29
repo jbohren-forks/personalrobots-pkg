@@ -801,7 +801,7 @@ class stereogui {open
     }
     Fl_Window cal_window {
       label Calibration open
-      xywh {591 314 305 340} type Single visible
+      xywh {591 314 305 340} type Single hide
     } {
       Fl_Group {} {open
         xywh {10 20 160 300}
@@ -888,7 +888,7 @@ class stereogui {open
       } {
         Fl_Button calibrate_button {
           label Calibrate
-          callback cal_calibrate_cb selected
+          callback cal_calibrate_cb
           xywh {165 20 115 25} down_box DOWN_BOX labelsize 12
           code0 {o->user_data((void *)this);}
         }
@@ -994,8 +994,8 @@ class stereogui {open
         }
         Fl_Counter {} {
           label {Window:}
-          callback corrsize_cb
-          xywh {75 60 55 20} type Simple labelsize 11 align 4 minimum 7 maximum 21 step 1 value 15
+          callback corrsize_cb selected
+          xywh {75 60 55 20} type Simple labelsize 11 align 4 minimum 5 maximum 21 step 1 value 15
         }
         Fl_Counter {} {
           label {X off:}

@@ -2967,10 +2967,39 @@ void save_images_cb(Fl_Menu_ *w, void *u)
 
 
 //
+// add a suffix if no one is present
+// always returns a newly-minted char string
+//
+
+char *
+add_suffix(char *fname, char *suf)
+{
+  int n = strlen(fname);
+  if (n < 5) return strdup(fname);
+
+  // find suffix
+  int sufn = n;
+  for (int i=n-1; i>n-4; i--)
+    {
+      if (fname[i] == '.')
+	{
+	  sufn = i;
+	  break;
+	}
+    }
+  
+  if (sufn == n) return strdup(fname); // have a suffix
+  char *fn = new char[n+strlen(suf)+1];
+  sprintf(fn,"%s.%s",fname,suf);
+  return fn;
+}
+
+
+//
 // save the 3D point cloud as a .pcd file
 //   -- not sure if the ARRAY line is valid PCD syntax
 // format: w x h, then 1 line per point over full image, XYZA
-//  A is zero for a good point, -1 for a bad one
+//  A is the disparity for a good point, 0 for a bad one
 //
 
 void
@@ -2986,19 +3015,22 @@ save_3d_cb(Fl_Menu_ *w, void *u)
   if (fname == NULL)
     return;
 
+  fname = add_suffix(fname,"pcd");
 
   stIm->doCalcPts(true);
   FILE *fp = fopen(fname,"w");
-  fprintf(fp, "COLUMNS x y z valid\n");
+  fprintf(fp, "COLUMNS x y z d\n");
   fprintf(fp, "POINTS %d\n", stIm->imWidth*stIm->imHeight);
   fprintf(fp, "ARRAY %d %d\n", stIm->imWidth, stIm->imHeight);
   fprintf(fp, "DATA ascii\n");
 
   pt_xyza_t *pts = stIm->imPtArray();
+  int16_t *ds = stIm->imDisp;
   for (int i=0; i<stIm->imHeight; i++)
-    for (int j=0; j<stIm->imWidth; j++, pts++)
-      fprintf(fp, "%f %f %f %d\n", pts->X, pts->Y, pts->Z, pts->A);
+    for (int j=0; j<stIm->imWidth; j++, pts++, ds++)
+      fprintf(fp, "%f %f %f %d\n", pts->X, pts->Y, pts->Z, *ds);
   fclose(fp);
+  delete[](fname);
 }
 
 
