@@ -70,7 +70,7 @@ int main(int argc, char **argv)
   int sx,sy;
   COSTTYPE *cmap = NULL;
   //  cmap = readPGM("maps/willow-full-0.05.pgm",&sx,&sy);
-  cmap = readPGM("maps/navfn_troubles.pgm",&sx,&sy,true);
+  cmap = readPGM("maps/navfn_test1.pgm",&sx,&sy,true);
   //  cmap = readPGM("initial_costmap_1165_945.pgm",&sx,&sy,true);
   //  cmap = readPGM("initial_costmap_2332_1825.pgm",&sx,&sy,true);
   if (cmap)
@@ -105,11 +105,11 @@ int main(int argc, char **argv)
 	}
       start[1] = 5*sy/6;
 
-      start[0] = 500;
-      start[1] = 250;
+      start[0] = 547;
+      start[1] = 590;
 
-      //      goal[0] = 500;
-      //      goal[1] = 250;
+      goal[0] = 368;
+      goal[1] = 525;
 
     }
   else
@@ -171,7 +171,8 @@ int main(int argc, char **argv)
   // set up cost map from file, if it exists
   if (cmap)
     {
-      nav->setCostmap(cmap);
+      //      nav->setCostMap(cmap);
+      memcpy(nav->costarr,cmap,sx*sy);
       nav->setupNavFn(true);
     }
   else
@@ -282,7 +283,7 @@ readPGM(const char *fname, int *width, int *height, bool raw)
   int otot = 0;
   int utot = 0;
   int ftot = 0;
-  for (int ii(nrows - 1); ii >= 0; --ii) {
+  for (int ii = 0; ii < nrows; ii++) {
     pgm_readpgmrow(pgmfile, row, ncols, maxval, format);
     if (raw)			// raw costmap from ROS
       {
@@ -318,7 +319,7 @@ readPGM(const char *fname, int *width, int *height, bool raw)
 	  }
       }
   }
-  printf("[NavTest] Found %d obstacle cells, %d free cells, %d unkown cells\n", otot, ftot, utot);
+  printf("[NavTest] Found %d obstacle cells, %d free cells, %d unknown cells\n", otot, ftot, utot);
   pgm_freerow(row);
   *width = ncols;
   *height = nrows;

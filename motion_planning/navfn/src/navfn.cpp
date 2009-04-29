@@ -35,6 +35,9 @@
 // Navigation function computation
 // Uses Dijkstra's method
 // Modified for Euclidean-distance computation
+// 
+// Path calculation uses no interpolation when pot field is at max in
+//   nearby cells
 //
 
 #include <navfn/navfn.h>
@@ -824,43 +827,92 @@ NavFn::calcPath(int n, int *st)
       pathy[npath] = stc/nx + dy;
       npath++;
 
-      // get grad at four positions near cell
       int stcnx = stc+nx;
-      gradCell(stc);
-      gradCell(stc+1);
-      gradCell(stcnx);
-      gradCell(stcnx+1);
+      int stcpx = stc-nx;
 
-      
-      // show gradients
-      //      ROS_INFO("[Path] %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f\n",
-      //	     gradx[stc], grady[stc], gradx[stc+1], grady[stc+1], 
-      //	     gradx[stcnx], grady[stcnx], gradx[stcnx+1], grady[stcnx+1]);
+      // check for potentials at eight positions near cell
+      if (potarr[stc] >= POT_HIGH ||
+	  potarr[stc+1] >= POT_HIGH ||
+	  potarr[stc-1] >= POT_HIGH ||
+	  potarr[stcnx] >= POT_HIGH ||
+	  potarr[stcnx+1] >= POT_HIGH ||
+	  potarr[stcnx-1] >= POT_HIGH ||
+	  potarr[stcpx] >= POT_HIGH ||
+	  potarr[stcpx+1] >= POT_HIGH ||
+	  potarr[stcpx-1] >= POT_HIGH)
 
-      // get interpolated gradient
-      float x1 = (1.0-dx)*gradx[stc] + dx*gradx[stc+1];
-      float x2 = (1.0-dx)*gradx[stcnx] + dx*gradx[stcnx+1];
-      float x = (1.0-dy)*x1 + dy*x2; // interpolated x
-      float y1 = (1.0-dx)*grady[stc] + dx*grady[stc+1];
-      float y2 = (1.0-dx)*grady[stcnx] + dx*grady[stcnx+1];
-      float y = (1.0-dy)*y1 + dy*y2; // interpolated y
-
-      // check for zero gradient, failed
-      if (x == 0.0 && y == 0.0)
 	{
-	  ROS_DEBUG("[PathCalc] Zero gradient\n");	  
-	  return 0;
+	  ROS_DEBUG("[Path] Pot fn boundary, following grid (%0.1f/%d)", potarr[stc], npath);
+	  // check eight neighbors to find the lowest
+	  int minc = stc;
+	  int minp = potarr[stc];
+	  int st = stcpx - 1;
+	  if (potarr[st] < minp) {minp = potarr[st]; minc = st; }
+	  st++;
+	  if (potarr[st] < minp) {minp = potarr[st]; minc = st; }
+	  st++;
+	  if (potarr[st] < minp) {minp = potarr[st]; minc = st; }
+	  st = stc-1;
+	  if (potarr[st] < minp) {minp = potarr[st]; minc = st; }
+	  st = stc+1;
+	  if (potarr[st] < minp) {minp = potarr[st]; minc = st; }
+	  st = stcnx-1;
+	  if (potarr[st] < minp) {minp = potarr[st]; minc = st; }
+	  st++;
+	  if (potarr[st] < minp) {minp = potarr[st]; minc = st; }
+	  st++;
+	  if (potarr[st] < minp) {minp = potarr[st]; minc = st; }
+	  stc = minc;
+	  dx = 0;
+	  dy = 0;
+
+	  ROS_DEBUG("[Path] Pot: %0.1f  pos: %0.1f,%0.1f",
+	     potarr[stc], pathx[npath-1], pathy[npath-1]);
 	}
 
-      // move in the right direction
-      dx += x*pathStep;
-      dy += y*pathStep;
+      // have a good gradient here
+      else			
+	{
 
-      // check for overflow
-      if (dx > 1.0) { stc++; dx -= 1.0; }
-      if (dx < -1.0) { stc--; dx += 1.0; }
-      if (dy > 1.0) { stc+=nx; dy -= 1.0; }
-      if (dy < -1.0) { stc-=nx; dy += 1.0; }
+	  // get grad at four positions near cell
+	  gradCell(stc);
+	  gradCell(stc+1);
+	  gradCell(stcnx);
+	  gradCell(stcnx+1);
+
+      
+	  // show gradients
+	  ROS_DEBUG("[Path] %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f  %0.2f,%0.2f\n",
+		    gradx[stc], grady[stc], gradx[stc+1], grady[stc+1], 
+		    gradx[stcnx], grady[stcnx], gradx[stcnx+1], grady[stcnx+1]);
+
+	  // get interpolated gradient
+	  float x1 = (1.0-dx)*gradx[stc] + dx*gradx[stc+1];
+	  float x2 = (1.0-dx)*gradx[stcnx] + dx*gradx[stcnx+1];
+	  float x = (1.0-dy)*x1 + dy*x2; // interpolated x
+	  float y1 = (1.0-dx)*grady[stc] + dx*grady[stc+1];
+	  float y2 = (1.0-dx)*grady[stcnx] + dx*grady[stcnx+1];
+	  float y = (1.0-dy)*y1 + dy*y2; // interpolated y
+
+	  // check for zero gradient, failed
+	  if (x == 0.0 && y == 0.0)
+	    {
+	      ROS_DEBUG("[PathCalc] Zero gradient");	  
+	      return 0;
+	    }
+
+	  // move in the right direction
+	  float ss = pathStep/sqrt(x*x+y*y);
+	  dx += x*ss;
+	  dy += y*ss;
+
+	  // check for overflow
+	  if (dx > 1.0) { stc++; dx -= 1.0; }
+	  if (dx < -1.0) { stc--; dx += 1.0; }
+	  if (dy > 1.0) { stc+=nx; dy -= 1.0; }
+	  if (dy < -1.0) { stc-=nx; dy += 1.0; }
+
+	}
 
       //      ROS_INFO("[Path] Pot: %0.1f  grad: %0.1f,%0.1f  pos: %0.1f,%0.1f\n",
       //	     potarr[stc], x, y, pathx[npath-1], pathy[npath-1]);
