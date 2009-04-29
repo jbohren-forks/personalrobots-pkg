@@ -88,10 +88,8 @@ bool transformPointTo(const tf::Transformer& tf, const string& source_frame, con
                       const robot_msgs::Point32& point_in, robot_msgs::Point32& point_out, const std::string& fixed_frame, const Time& time_goal)
 {
   ros::Duration timeout = Duration().fromSec(5.0);
-  if (source_frame != goal_frame){
-    if (!tf.canTransform(source_frame, fixed_frame, time_source, timeout)) return false;
-    if (!tf.canTransform(goal_frame, fixed_frame, time_goal, timeout)) return false;
-  }
+  if (!tf.canTransform(source_frame, fixed_frame, time_source, timeout)) return false;
+  if (!tf.canTransform(goal_frame, fixed_frame, time_goal, timeout)) return false;
   tf::Stamped<tf::Point> pnt(tf::Vector3(point_in.x, point_in.y, point_in.z), time_source, source_frame);
   tf.transformPoint(goal_frame, time_goal, pnt, fixed_frame, pnt);
   point_out.x = pnt[0];
@@ -105,10 +103,8 @@ bool transformVectorTo(const tf::Transformer& tf, const string& source_frame, co
                        const robot_msgs::Vector3& point_in, robot_msgs::Vector3& point_out, const std::string& fixed_frame, const Time& time_goal)
 {
   ros::Duration timeout = Duration().fromSec(2.0);
-  if (source_frame != goal_frame){
-    if (!tf.canTransform(source_frame, fixed_frame, time_source, timeout)) return false;
-    if (!tf.canTransform(goal_frame, fixed_frame, time_goal, timeout)) return false;
-  }
+  if (!tf.canTransform(source_frame, fixed_frame, time_source, timeout)) return false;
+  if (!tf.canTransform(goal_frame, fixed_frame, time_goal, timeout)) return false;
   tf::Stamped<tf::Point> pnt(tf::Vector3(point_in.x, point_in.y, point_in.z), time_source, source_frame);
   tf.transformVector(goal_frame, time_goal, pnt, fixed_frame, pnt);
   point_out.x = pnt[0];
