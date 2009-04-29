@@ -16,7 +16,7 @@
 
 <!-- door domain -->
   <include file="$(find door_handle_detector)/launch/door_handle_detector.xml" />  
-  <node pkg="doors_core" type="action_runner" output="screen" />
+  <include file="$(find doors_core)/launch/door_actions.xml" />  
 
 
 <!-- Safety -->
