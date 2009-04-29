@@ -49,6 +49,9 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
 {
   node_.setParam("~roi_policy", "LastImageLocation");
   node_.setParam("~display", 0);
+  node_.setParam("~resize_factor_found", 3.0);
+  node_.setParam("~resize_factor_failed", 1.2);
+  node_.setParam("~display", "true");
   node_.setParam("~square_size", 0.0042);
   node_.setParam("~board_width", 3);
   node_.setParam("~board_height",4);
@@ -70,7 +73,7 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
       terminate();
       return;
     }
-  
+
   detector_ = new PlugTracker::PlugTracker(node);
   detector_->deactivate();
   node_.subscribe("~plug_pose", plug_pose_msg_, &LocalizePlugInGripperAction::setToolFrame, this, 1);
@@ -86,7 +89,7 @@ LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
   //  outlet_pose_ = outlet_pose;
 
   reset();
-  
+
   moveToStage();
 
   return waitForDeactivation(feedback);
@@ -95,7 +98,7 @@ LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
 void LocalizePlugInGripperAction::reset()
 {
 
-  req_pose_.pose.header.frame_id = "base_link"; 
+  req_pose_.pose.header.frame_id = "base_link";
   req_pose_.pose.pose.position.x = 0.33;
   req_pose_.pose.pose.position.y = -0.09;
   req_pose_.pose.pose.position.z = 0.37;
@@ -107,7 +110,7 @@ void LocalizePlugInGripperAction::reset()
 }
 
 void LocalizePlugInGripperAction::moveToStage()
-{ 
+{
   req_pose_.pose.header.stamp = ros::Time();
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
@@ -122,7 +125,7 @@ void LocalizePlugInGripperAction::moveToStage()
     return;
   }
 
-  req_pose_.pose.header.frame_id = "outlet_pose"; 
+  req_pose_.pose.header.frame_id = "outlet_pose";
   req_pose_.pose.pose.position.x = -0.12;
   req_pose_.pose.pose.position.y = 0.00;
   req_pose_.pose.pose.position.z = 0.08;
@@ -179,8 +182,8 @@ void LocalizePlugInGripperAction::setToolFrame()
     deactivate(robot_actions::ABORTED, empty_);
     return;
   }
-   
-  
+
+
   detector_->deactivate();
   ROS_INFO("%s: succeeded.", action_name_.c_str());
   deactivate(robot_actions::SUCCESS, empty_);
