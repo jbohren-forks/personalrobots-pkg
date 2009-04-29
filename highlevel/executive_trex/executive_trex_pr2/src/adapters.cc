@@ -90,7 +90,7 @@ namespace TREX {
     }
 
     virtual void fillInactiveObservationParameters(const robot_msgs::PoseStamped& msg, ObservationByValue* obs){
-      AdapterUtilities::read(*obs, msg);
+      //AdapterUtilities::read(*obs, msg);
     }
 
   };
@@ -117,7 +117,8 @@ namespace TREX {
     }
 
     virtual void fillInactiveObservationParameters(const int8_t& msg, ObservationByValue* obs){
-      AdapterUtilities::read<int8_t>("is_clear", *obs, msg);
+      bool bool_value (msg < 1 ? false : true);
+      AdapterUtilities::read<bool>("is_clear", *obs, bool_value);
     }
 
   };

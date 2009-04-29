@@ -92,6 +92,12 @@ CheckPath::Active {
   eq(s.status, SUCCESS);
 }
 
+
+UnlatchHandle::Inactive{
+  if(status == SUCCESS){
+    eq(latch_state, LATCH_STATE_UNLATCHED);
+  }
+}
 /**
  * Update result parameters according to simulation control variables.
  */

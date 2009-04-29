@@ -11,6 +11,9 @@ namespace executive_trex_pr2 {
   void AdapterUtilities::write(const TokenId& token, robot_msgs::Door& msg){
     getHeader(msg, token);
 
+    // Latch state
+    write<int32_t>("latch_state", token, msg.latch_state);
+
     // Frame Data
     write<float>("frame_p1_x", token, msg.frame_p1.x);
     write<float>("frame_p1_y", token, msg.frame_p1.y);
@@ -44,6 +47,9 @@ namespace executive_trex_pr2 {
   // Read Observation from Door Message
   void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::Door& msg){
     setHeader(msg, obs);
+
+    // Latch state
+    read<int32_t>("latch_state", obs, msg.latch_state);
 
     // Frame Data
     read<float>("frame_p1_x", obs, msg.frame_p1.x);

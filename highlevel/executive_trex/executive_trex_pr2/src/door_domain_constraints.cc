@@ -32,7 +32,7 @@ namespace executive_trex_pr2 {
 
     // Add all the parameters
     std::vector<ConstrainedVariableId> new_scope(variables);
-    TokenId token = TREX::getParentToken(variables[3]);
+    TokenId token = TREX::getParentToken(variables[7]);
     const std::vector<ConstrainedVariableId>& params = token->parameters();
     for(unsigned int i = 0; i< params.size(); i++)
       new_scope.push_back(params[i]);

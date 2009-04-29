@@ -112,7 +112,7 @@ namespace executive_trex_pr2 {
      */
     template <class T>  static void setHeader(const T& msg, ObservationByValue& obs){
       obs.push_back("frame_id", new StringDomain(msg.header.frame_id, "string"));
-      debugMsg("ros", "Cutting time stamp of " << msg.header.stamp.toSec() << " by " << getEpoch());
+      debugMsg("ros:debug", "Cutting time stamp of " << msg.header.stamp.toSec() << " by " << getEpoch());
       double time_stamp = std::max(msg.header.stamp.toSec() - getEpoch(), 0.0);
       read<double>("time_stamp", obs, time_stamp);
     }
@@ -135,6 +135,7 @@ namespace executive_trex_pr2 {
       }
 
       // The time stamp should be set to current time if the value
+      debugMsg("ros:debug", "Set time stamp of " << time_stamp_double);
       msg.header.stamp.fromSec(time_stamp_double);
     }
 

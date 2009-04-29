@@ -1,5 +1,6 @@
 #include "doors/imports.nddl"
 
+
 /**
  * This is an internal controller which will monitor state variables and HLC status. It can also generate
  * next steps for this meta level control. This pattern exploits reactive planning based on feedback from the
@@ -15,11 +16,10 @@ class DoorController extends AgentTimeline {
 
     // Control variables
     bool arms_tucked;
-    bool in_detection_position;
+    bool in_position;
     bool found_door;
     bool found_handle; // Should Cover this!
     bool have_handle;
-    bool door_latched;
     bool doorway_clear;
     bool check_doorway;
 
@@ -33,6 +33,9 @@ class DoorController extends AgentTimeline {
      * This will be a generally useful feature of the language and will also make auto-generated NDDL/ROS
      * bindings straightforward. Absent that structure, we would have to capture structure through nomenclature.
      */
+
+    // Overall latched state
+    LatchState latch_state;
 
     // Points for the door frame
     float frame_p1_x;
@@ -99,11 +102,11 @@ DoorController::Holds {
   if(active == false){
     // Reset control flags
     eq(arms_tucked, false);
-    eq(in_detection_position, false);
+    eq(in_position, false);
     eq(found_door, false);
     eq(found_handle, false);
     eq(have_handle, false);
-    eq(door_latched, true);
+    eq(latch_state, UNKNOWN);
     eq(doorway_clear, false);
     eq(check_doorway, true);
     contained_by(doorman.Inactive);
@@ -146,11 +149,11 @@ DoorController::Holds {
       if(check_doorway == true){
 	starts_before(check_path.Active cmd);
 	concurrent(cmd.end, end_bounds);
+	eq(cmd.frame_id, frame_id);
 	door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, DOORWAY_CLEARANCE_RANGE);
       }
       else {
-	// If latched then open it - with 2 actions together
-	if(door_latched == true) {
+	if(latch_state == LATCH_STATE_UNLATCHED) {
 	  starts_before(open_door.Active cmd_open_door);
 	  starts_before(move_base_door.Active cmd_move_base_door);
 	  cmd_open_door starts_before cmd_move_base_door;
@@ -165,34 +168,33 @@ DoorController::Holds {
 	  }
 	  else {
 	    if(found_handle == true){
-	      // Don't have the handle, but could grasp it!
-	      starts_before(grasp_handle.Active cmd);
-	      concurrent(cmd.end, end_bounds);
-	    }
-	    else {
-
-	      if(found_door == true){
-		// If in detection position we can detect it, otherwsie we ahev to moce
-		if(in_detection_position == true){
-		  starts_before(detect_handle.Active cmd);
+	      if(in_position == true){
+		// Don't have the handle, but could grasp it!
+		starts_before(grasp_handle.Active cmd);
+		concurrent(cmd.end, end_bounds);
+	      }
+	      else {
+		// Move to the grasp position. Checking to tuck arms may be unnecessary
+		if(arms_tucked == true){
+		  starts_before(move_base_local.Active cmd);
+		  concurrent(cmd.end, end_bounds);
+		  eq(cmd.frame_id, frame_id);
+		  door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, GRASP_RANGE);
+		}
+		else {
+		  starts_before(doors_tuck_arms.Active cmd);
 		  concurrent(cmd.end, end_bounds);
 		}
-		else{
-		  // Move to the grasp position
-		  if(arms_tucked == true){
-		    starts_before(move_base_local.Active cmd);
-		    concurrent(cmd.end, end_bounds);
-		    door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, GRASP_RANGE);
-		  }
-		  else {
-		    starts_before(doors_tuck_arms.Active cmd);
-		    concurrent(cmd.end, end_bounds);
-		  }
-		}
+	      }
+	    }
+	    else {
+	      if(found_door == true){
+		starts_before(detect_handle.Active cmd);
+		concurrent(cmd.end, end_bounds);
 	      }
 	      else {
 		// If in detection position, we can detect the door
-		if(in_detection_position == true){
+		if(in_position == true){
 		  starts_before(detect_door.Active cmd);
 		  concurrent(cmd.end, end_bounds);
 		}
@@ -201,6 +203,7 @@ DoorController::Holds {
 		  if(arms_tucked == true){
 		    starts_before(move_base_local.Active cmd);
 		    concurrent(cmd.end, end_bounds);
+		    eq(cmd.frame_id, frame_id);
 		    door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, DETECTION_RANGE);
 		  }
 		  else {
@@ -228,14 +231,16 @@ DoorController::Holds{
   defaultOnCommit(active, p.active);
   defaultOnCommit(arms_tucked, p.arms_tucked);
   defaultOnCommit(found_door, p.found_door);
-  defaultOnCommit(in_detection_position, p.in_detection_position);
+  defaultOnCommit(in_position, p.in_position);
   defaultOnCommit(found_handle, p.found_handle);
   defaultOnCommit(have_handle, p.have_handle);
-  defaultOnCommit(door_latched, p.door_latched);
   defaultOnCommit(doorway_clear, p.doorway_clear);
   defaultOnCommit(check_doorway, p.check_doorway);
 
   // Door State Data
+  defaultOnCommit(frame_id, p.frame_id);
+  defaultOnCommit(time_stamp, p.time_stamp);
+  defaultOnCommit(latch_state, p.latch_state);
   defaultOnCommit(hinge, p.hinge);
   defaultOnCommit(rot_dir, p.rot_dir);
   defaultOnCommit(frame_p1_x, p.frame_p1_x);
@@ -268,7 +273,9 @@ DoorController::Holds{
 
 // Derive input bounds from the behavior
 DoorManipulationBehavior::Active{
-  starts_during(DoorController.Holds dc);
+  any(DoorController.Holds dc);
+  precedes(dc.start, start);
+  temporalDistance(start, [1 +inf], dc.end);
   eq_door_msg(this.object, dc.object);
 }
 
@@ -276,9 +283,9 @@ DoorManipulationBehavior::Inactive{
   // If successful, then the completion of the action starts a new step in the controller. This is true for all
   // door actions except move_base_door.
   if(status == SUCCESS){
-    if(object == move_base_door){
-    }
-    else {
+    bool is_move_base_door;
+    testEQ(is_move_base_door, move_base_door, object);
+    if(is_move_base_door == false){
       starts(DoorController.Holds dc);
       eq(dc.active, true);
       eq_door_msg(dc.object, this.object);
@@ -317,9 +324,10 @@ OpenDoor::Inactive{
 }
 
 UnlatchHandle::Inactive{
-  if(status == SUCCESS){
+  if(status == ABORTED){
     starts(DoorController.Holds dc);
-    eq(dc.door_latched, true);
+    eq(dc.arms_tucked, false);
+    eq(dc.found_handle, false);
   }
 }
 
@@ -339,9 +347,16 @@ OpenDoorWithoutGrasp::Inactive{
 }
 
 DetectHandle::Inactive{
+
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
     eq(dc.found_handle, true);
+  }
+
+  if(status == ABORTED){
+    starts(DoorController.Holds dc);
+    eq(dc.in_position, false);
+    eq(dc.found_door, false);
   }
 }
 
@@ -349,7 +364,7 @@ DetectDoor::Inactive{
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
     eq(dc.found_door, true);
-    eq(dc.in_detection_position, false);
+    eq(dc.in_position, false);
   }
 }
 
@@ -364,6 +379,6 @@ CheckPath::Inactive{
 MoveBase::Inactive {
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
-    eq(dc.in_detection_position, true);
+    eq(dc.in_position, true);
   }
 }

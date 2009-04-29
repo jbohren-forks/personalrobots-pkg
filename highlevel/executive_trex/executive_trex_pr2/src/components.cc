@@ -104,12 +104,7 @@ namespace TREX{
 	AbstractDomain& dom_a = getCurrentDomain(getScope()[index]);
 	AbstractDomain& dom_b = getCurrentDomain(getScope()[index+1]);
 
-	// Conduct mutual intersection
-	dom_a.intersect(dom_b);
-	if(dom_a.isClosed() && dom_a.isEmpty())
-	  return;
-	dom_b.intersect(dom_a);
-	if(dom_b.isClosed() && dom_b.isEmpty())
+	if(dom_a.intersect(dom_b) && dom_a.isEmpty())
 	  return;
       }
 
@@ -127,7 +122,7 @@ namespace TREX{
 			const ConstraintEngineId& constraintEngine,
 			const std::vector<ConstrainedVariableId>& variables)
       : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
-			  "time_stamp:frame_id:frame_p1_x:frame_p1_y:frame_p1_z:frame_p2_x:frame_p2_y:frame_p2_z:height:hinge:rot_dir:door_p1_x:door_p1_y:door_p1_z:door_p2_x:door_p2_y:door_p2_z:handle_x:handle_y:handle_z:normal_x:normal_y:normal_z")
+			  "frame_id:time_stamp:latch_state:frame_p1_x:frame_p1_y:frame_p1_z:frame_p2_x:frame_p2_y:frame_p2_z:height:hinge:rot_dir:door_p1_x:door_p1_y:door_p1_z:door_p2_x:door_p2_y:door_p2_z:handle_x:handle_y:handle_z:normal_x:normal_y:normal_z")
     {}
   };
 
@@ -138,7 +133,7 @@ namespace TREX{
 			const ConstraintEngineId& constraintEngine,
 			const std::vector<ConstrainedVariableId>& variables)
       : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
-			  "time_stamp:frame_id:stowed:x:y:z")
+			  "frame_id:time_stamp:stowed:x:y:z")
     {}
   };
 
@@ -149,7 +144,7 @@ namespace TREX{
 			const ConstraintEngineId& constraintEngine,
 			const std::vector<ConstrainedVariableId>& variables)
       : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
-			  "time_stamp:frame_id:x:y:z")
+			  "frame_id:time_stamp:x:y:z")
     {}
   };
 
@@ -160,7 +155,7 @@ namespace TREX{
 			const ConstraintEngineId& constraintEngine,
 			const std::vector<ConstrainedVariableId>& variables)
       : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
-			  "time_stamp:frame_id:x:y:z:qx:qy:qz:qw")
+			  "frame_id:time_stamp:x:y:z:qx:qy:qz:qw")
     {}
   };
 
@@ -427,7 +422,7 @@ namespace TREX{
     unsigned int iterations = 0;
     double minDistance = PLUS_INFINITY;
 
-    debugMsg("trex:propagation:world_model:nearest_location",  "BEFORE: " << toString());
+    debugMsg("trex:debug:propagation:world_model:nearest_location",  "BEFORE: " << toString());
 
     if(m_x.isSingleton() && m_y.isSingleton()){
       std::list<ObjectId> locations = m_location.makeObjectList();      
@@ -455,7 +450,7 @@ namespace TREX{
       m_location.set(nearestLocation);
     }
 
-    debugMsg("trex:propagation:world_model:nearest_location",  "AFTER: " << toString() 
+    debugMsg("trex:debug:propagation:world_model:nearest_location",  "AFTER: " << toString() 
 	      <<  std::endl << std::endl << "After " << iterations << " iterations, found a location within " << minDistance << " meters.");
   }
 
