@@ -87,7 +87,7 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
     // laser detection
     robot_msgs::Door result_laser, result_camera;
     if (!laserDetection(goal_tr, result_laser))
-      break;
+      continue;
 
     // check for preemption
     if (isPreemptRequested()){
@@ -97,7 +97,7 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
 
     // camera detection
     //if (!cameraDetection(goal_tr, result_camera))
-    //  break;
+    //  continue;
     result_camera = result_laser;
 
     // check for preemption

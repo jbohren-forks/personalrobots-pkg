@@ -76,16 +76,16 @@ protected:
     my_door_1.hinge = robot_msgs::Door::HINGE_P2;
     my_door_1.header.frame_id = "base_footprint";
     
-    my_door_2.frame_p1.x = 1.0;
-    my_door_2.frame_p1.y = -0.5;
-    my_door_2.frame_p2.x = 1.0;
-    my_door_2.frame_p2.y = 0.5;
-    my_door_2.door_p1.x = 1.5;
-    my_door_2.door_p1.y = 0.0;
-    my_door_2.door_p2.x = 1.0;
-    my_door_2.door_p2.y = 0.5;
-    my_door_2.normal.x = 0.7;
-    my_door_2.normal.y = 0.7;
+    my_door_2.frame_p1.x = -0.198;
+    my_door_2.frame_p1.y = -1.08;
+    my_door_2.frame_p2.x = 0.76;
+    my_door_2.frame_p2.y = -0.82;
+    my_door_2.door_p1.x = -0.08;
+    my_door_2.door_p1.y = -1.12;
+    my_door_2.door_p2.x = 0.70;
+    my_door_2.door_p2.y = -0.87;
+    my_door_2.normal.x = 0.29;
+    my_door_2.normal.y = -0.95;
     my_door_2.normal.z = 0.0;
     my_door_2.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
     my_door_2.hinge = robot_msgs::Door::HINGE_P2;
@@ -104,6 +104,10 @@ protected:
 TEST_F(TestEKF, test)
 {
   tf::Stamped<tf::Pose> pose;
+
+  pose = getRobotPose(my_door_2, 0.6);
+  cout << "pose = " << pose.getOrigin()[0] << ", "  <<pose.getOrigin()[1] << ", " <<pose.getOrigin()[2] << endl;
+
   pose = getRobotPose(my_door_1, 0.7);
   ASSERT_TRUE(pose.getOrigin()[0] == 0.3);
   ASSERT_TRUE(pose.getOrigin()[1] == 0.0);
