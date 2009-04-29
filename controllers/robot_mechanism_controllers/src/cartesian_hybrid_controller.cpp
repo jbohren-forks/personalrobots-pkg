@@ -195,7 +195,6 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
   // Default commands
 
   task_frame_offset_ = KDL::Frame::Identity();
-  tool_frame_offset_ = KDL::Frame::Identity();
 
   return true;
 }
@@ -336,7 +335,7 @@ void CartesianHybridController::update()
 bool CartesianHybridController::starting()
 {
   task_frame_offset_ = KDL::Frame::Identity();
-  tool_frame_offset_ = KDL::Frame::Identity();
+  //tool_frame_offset_ = KDL::Frame::Identity();
 
 
   switch(initial_mode_)
@@ -348,6 +347,7 @@ bool CartesianHybridController::starting()
     KDL::FrameVel frame;
     KDL::ChainFkSolverVel_recursive fkvel_solver(kdl_chain_);
     fkvel_solver.JntToCart(jnt_vel, frame);
+    frame = frame * tool_frame_offset_;
 
     for (size_t i = 0; i < 6; ++i) {
       mode_[i] = initial_mode_;
@@ -507,6 +507,10 @@ bool CartesianHybridControllerNode::setToolFrame(
   TF.transformPose(c_.chain_.getLinkName(-1), req.p, tool_in_tip_msg);
   tf::PoseMsgToTF(tool_in_tip_msg.pose, tool_in_tip);
   tf::TransformTFToKDL(tool_in_tip, c_.tool_frame_offset_);
+  double rpy[3]; c_.tool_frame_offset_.M.GetRPY(rpy[0], rpy[1], rpy[2]);
+  ROS_INFO("(%.3lf, %.3lf, %.3lf)@(%.2lf, %.2lf, %.2lf)",
+           c_.tool_frame_offset_.p[0], c_.tool_frame_offset_.p[1], c_.tool_frame_offset_.p[2],
+           rpy[0], rpy[1], rpy[2]);
   return true;
 }
 
