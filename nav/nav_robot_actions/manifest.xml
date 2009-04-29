@@ -1,0 +1,17 @@
+<package>
+  <description brief="This package contains core interfaces for robot actions"/>
+ <author>Conor McGann</author>
+ <license>BSD</license>
+ <review status="unreviewed" notes=""/>
+ <url>http://pr.willowgarage.com</url>
+
+ <depend package="robot_actions"/>
+ <depend package="std_msgs"/>
+ <depend package="robot_msgs"/>
+
+
+ <export>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib  -lrobot_actions"/>
+ </export>
+
+</package>
