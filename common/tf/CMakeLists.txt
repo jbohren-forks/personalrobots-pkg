@@ -14,6 +14,9 @@ rospack_link_boost(tf thread)
 rospack_add_executable(tf_echo src/tf_echo.cpp)
 target_link_libraries(tf_echo tf)
 
+rospack_add_executable(change_notifier src/change_notifier.cpp)
+target_link_libraries(change_notifier tf)
+
 rospack_add_executable(tf_monitor src/tf_monitor.cpp)
 target_link_libraries(tf_monitor tf)
 
