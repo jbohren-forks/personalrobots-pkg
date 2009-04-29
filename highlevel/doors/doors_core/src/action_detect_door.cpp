@@ -65,7 +65,11 @@ robot_actions::ResultStatus DetectDoorAction::execute(const robot_msgs::Door& go
 
   // transform door message to time fixed frame
   robot_msgs::Door goal_tr;
-  transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame);
+  if (!transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame)){
+    ROS_ERROR("DetectDoorAction: Could not tranform door message from '%s' to '%s' at time %f",
+	      goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());
+    return robot_actions::ABORTED;
+  }
 
   robot_msgs::Door result_laser;
   if (!laserDetection(goal_tr, result_laser)){
