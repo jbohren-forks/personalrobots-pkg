@@ -64,6 +64,12 @@ int main(int argc, char ** argv)
   unsigned int counter = 0;
 
   Stamped<Transform> tmp;
+  cout << "Waiting for first transfrom to become afailable" << flush;
+  while (node_.ok() && !tf_.canTransform(framea, frameb, Time(), Duration(1.0)))
+    cout << "." << flush;
+  cout << endl;
+
+
   while (node_.ok()){
     tf_.lookupTransform(framea, frameb, Time(), tmp);
     double diff = (Time::now() - tmp.stamp_).toSec();
