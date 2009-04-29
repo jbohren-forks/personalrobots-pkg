@@ -224,7 +224,7 @@ class NavStackTest(unittest.TestCase):
         rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
         rospy.Subscriber("base_bumper/info"      , String              , self.bumpedInput)
         rospy.Subscriber("torso_lift_bumper/info", String              , self.bumpedInput)
-        rospy.Subscriber("/move_base/feedback"   , MoveBaseStateNew    , self.stateInput)
+        rospy.Subscriber("/move_base/feedback"   , MoveBaseState       , self.stateInput)
         rospy.Subscriber("/amcl_pose"            , PoseWithCovariance  , self.amclInput)
 
         # below only for debugging build 303, base not moving
