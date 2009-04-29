@@ -128,33 +128,34 @@ int
   switchlist.start_controllers.push_back("laser_tilt_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   if (detect_plug_on_base.execute(empty, plug_stow, timeout_long) != robot_actions::SUCCESS) return -1;
+#endif
 
   // move and grasp plug
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
-  switchlist.start_controllers.push_back("r_gripper_position_controller");
+  //switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
+  //switchlist.start_controllers.push_back("r_gripper_position_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_trajectory_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_wrench_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  if (move_and_grasp_plug.execute(plug_stow, empty, timeout_long) != robot_actions::SUCCESS) return -1;
+  //if (move_and_grasp_plug.execute(plug_stow, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
   // detect outlet fine
   if (detect_outlet_fine.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -1;
   
   // localize plug in gripper
   if (localize_plug_in_gripper.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
-#endif
+
   // plug in
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  // switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
-  //switchlist.stop_controllers.push_back("r_arm_cartesian_wrench_controller");
-  //switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
-  //switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_wrench_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_hybrid_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  //if (plug_in.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
+  if (plug_in.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
   timeout_long.sleep();
 #if 0
@@ -172,17 +173,18 @@ int
   if (stow_plug.execute(plug_stow, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
 
-
+#endif
 
   // stop remaining controllers
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  switchlist.stop_controllers.push_back("laser_tilt_controller");
-  switchlist.stop_controllers.push_back("r_gripper_position_controller");
-  switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
-  switchlist.stop_controllers.push_back("r_arm_cartesian_wrench_controller");
-  switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
-  switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
+  switchlist.stop_controllers.push_back("r_arm_hybrid_controller");
+  //switchlist.stop_controllers.push_back("laser_tilt_controller");
+  //switchlist.stop_controllers.push_back("r_gripper_position_controller");
+  //switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
+  //switchlist.stop_controllers.push_back("r_arm_cartesian_wrench_controller");
+  //switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
+  //switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-#endif
+
   return (0);
 }
