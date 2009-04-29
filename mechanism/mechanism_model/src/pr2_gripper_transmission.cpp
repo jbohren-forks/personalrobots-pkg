@@ -320,13 +320,13 @@ void PR2GripperTransmission::getAngleRateTorqueFromMinRateJoint(
         minRate              = abs(js[i]->velocity_)     ;
         minRateJointIndex = i;
 
-        // std::cout << "propagatePositionBackwards js[" << i << "]:" << js[i]->joint_->name_
-        //           << " minRateJointIndex:" << minRateJointIndex
-        //           << " angle:"  << angles::shortest_angular_distance(theta0_,js[i]->position_) + theta0_
-        //           << " rate:"   << js[i]->velocity_
-        //           << " torque:" << js[i]->applied_effort_
-        //           << std::endl;
       }
+      // std::cout << "propagatePositionBackwards js[" << i << "]:" << js[i]->joint_->name_
+      //           << " minRateJointIndex:" << minRateJointIndex
+      //           << " angle:"  << angles::shortest_angular_distance(theta0_,js[i]->position_) + theta0_
+      //           << " rate:"   << js[i]->velocity_
+      //           << " torque:" << js[i]->applied_effort_
+      //           << std::endl;
     }
   }
   assert(minRateJointIndex < js.size()); // some joint rate better be smaller than 1.0e16
@@ -516,8 +516,12 @@ void PR2GripperTransmission::propagateEffortBackwards(
         unsigned int index = it - passive_joints_.begin();
         double MIMICT = pids_[index]->updatePid(finger_MR_error_,0.001); //FIXME: get time and use current_time_ - last_time_
 
+        // FIXME: hackery, due to transmission values, MT is too large for the damping available
+        // with the given time step size in sim, so until implicit damping is implemented,
+        // we'll scale MT with inverse of velocity
+        double scale = exp(-abs(js[i]->velocity_));
         // sum joint torques from actuator motor and mimic constraint and convert to joint torques
-        js[i]->commanded_effort_   = (MT + MIMICT) / dtheta_dMR;
+        js[i]->commanded_effort_   = (scale*MT + MIMICT) / dtheta_dMR;
 
         double pp,ii,dd,ii11,ii22;
         pids_[index]->getGains(pp,ii,dd,ii11,ii22);
