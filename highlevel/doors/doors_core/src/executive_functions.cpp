@@ -33,6 +33,7 @@
  *********************************************************************/
 
 #include <kdl/frames.hpp>
+#include <door_handle_detector/door_functions.h>
 #include "doors_core/executive_functions.h"
 
 
@@ -40,27 +41,45 @@ using namespace KDL;
 using namespace ros;
 using namespace std;
 using namespace tf;
+using namespace door_handle_detector;
 
 
 
 
 Stamped<Pose> getRobotPose(const robot_msgs::Door& door, double dist)
 {
-  Vector normal(door.normal.x, door.normal.y, door.normal.z);
   Vector x_axis(1,0,0);
-  double dot      = normal(0) * x_axis(0) + normal(1) * x_axis(1);
-  double perp_dot = normal(1) * x_axis(0) - normal(0) * x_axis(1);
-  double z_angle = atan2(perp_dot, dot);
 
-  Vector center((door.door_p1.x + door.door_p2.x)/2.0, 
-                (door.door_p1.y + door.door_p2.y)/2.0,
-                (door.door_p1.z + door.door_p2.z)/2.0);
-  Vector robot_pos = center - (normal * dist);
+  // get vector from hinge to center of door
+  Vector hinge;
+  if (door.hinge == robot_msgs::Door::HINGE_P1)
+    hinge = Vector(door.door_p1.x, door.door_p1.y, door.door_p1.z);
+  else if (door.hinge == robot_msgs::Door::HINGE_P2)
+    hinge = Vector(door.door_p2.x, door.door_p2.y, door.door_p2.z);
+  else
+    ROS_ERROR("GetRobotPose: door hinge side not specified");
+
+  // calculate angle between the frame and x-axis
+  Vector frame_vec(door.frame_p1.x - door.frame_p2.x, door.frame_p1.y - door.frame_p2.y, door.frame_p1.z - door.frame_p2.z);
+  double angle_frame_x = getVectorAngle(x_axis, frame_vec);
+
+  // get vector to center of frame
+  double door_width = Vector(door.door_p1.x - door.door_p2.x, door.door_p1.y - door.door_p2.y, door.door_p1.z - door.door_p2.z).Norm();
+  Vector frame_center = hinge + Vector(cos(angle_frame_x)*door_width/2.0, sin(angle_frame_x)*door_width/2.0, 0);
+
+  // get normal on frame
+  Vector normal_door(door.normal.x, door.normal.y, door.normal.z);
+  Rotation rot_frame_door = Rotation::RotZ(getDoorAngle(door));
+  Vector normal_frame = rot_frame_door * normal_door;
+  double angle_normal_frame = getVectorAngle(x_axis, normal_frame);
+
+  // get robot pos
+  Vector robot_pos = frame_center - (normal_frame * dist);
 
   Stamped<Pose> robot_pose;
   robot_pose.frame_id_ = door.header.frame_id;
   robot_pose.setOrigin( Vector3(robot_pos(0), robot_pos(1), robot_pos(2)));
-  robot_pose.setRotation( Quaternion(z_angle, 0, 0) ); 
+  robot_pose.setRotation( Quaternion(angle_normal_frame, 0, 0) ); 
 
   return robot_pose;  
 }
