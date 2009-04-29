@@ -317,7 +317,7 @@ namespace costmap_2d{
     }
 
     //clean up
-    delete local_map;
+    delete[] local_map;
   }
 
   void Costmap2D::updateWorld(double robot_x, double robot_y, 
@@ -642,7 +642,7 @@ namespace costmap_2d{
     }
 
     //make sure to clean up
-    delete local_map;
+    delete[] local_map;
 
   }
 
