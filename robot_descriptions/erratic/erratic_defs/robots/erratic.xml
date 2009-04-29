@@ -20,10 +20,11 @@
     <joint name="base_joint" />
     
     <inertial>
-      <mass value="20" />
+      <mass value="10" />
       <com xyz="-0.1 0 ${base_size_z/2}" />
-      <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
-               iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0" />
     </inertial>
     
     <visual>
@@ -53,8 +54,9 @@
     <inertial>
       <mass value="0.01"/>
       <com xyz="0 0 ${base_size_z/2}" />
-      <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
-               iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
+      <inertia ixx="0.0652232699207" ixy="0.0" ixz="0.0"
+               iyy="0.0669473158652" iyz="0.0"
+               izz="0.0683196351726" />
     </inertial>
 
     <visual>
@@ -93,8 +95,9 @@
       <inertial>
         <mass value="0.01" /> <!-- check jmh 20081205 -->
         <com xyz=" 0 0 0 " />
-        <inertia  ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983"
-                  iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943" />
+        <inertia  ixx="0.012411765597" ixy="0.0" ixz="0.0"
+                  iyy="0.015218160428" iyz="0.0"
+                  izz="0.011763977943" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
@@ -134,8 +137,9 @@
     <inertial>
       <mass value="0.1"/>
       <com xyz="0 0 ${base_size_z/2}" />
-      <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
-               iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0"
+               iyy="0.01" iyz="0.0"
+               izz="0.01" />
     </inertial>
 
     <visual>
@@ -160,20 +164,22 @@
     <parent name="base_caster_box_link" />
     <origin xyz="-0.265 0 0.0" rpy="0 0 0" />
 
-    <!--<joint name="base_caster_support_joint" type="revolute">
+    <joint name="base_caster_support_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0.01 0 0" />
       <limit effort="100" velocity="100" k_velocity="0" />
       <calibration values="1.5 -1" />
       <joint_properties damping="0.0" friction="0.0" />
-    </joint>-->
+    </joint>
+    <!--
     <joint name="base_caster_support_joint" type="fixed"/>
-    
+    -->
     <inertial>
       <mass value="0.01"/>
       <com xyz="0 0 0" />
-      <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
-               iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
+      <inertia ixx="0.01" ixy="0.0" ixz="0.0"
+               iyy="0.01" iyz="0.0"
+               izz="0.01" />
     </inertial>
 
     <visual>
