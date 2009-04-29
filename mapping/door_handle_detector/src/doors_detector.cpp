@@ -137,8 +137,8 @@ bool
   // transform the door message into the parameter_frame, and work there
   Door door_tr;
   if (!transformTo(tf_, parameter_frame_, door, door_tr, fixed_frame_)){
-     ROS_ERROR ("DoorDetector: Could not transform door message from frame %s to frame %s.",
-                door.header.frame_id.c_str (), parameter_frame_.c_str ());
+     ROS_ERROR ("DoorDetector: Could not transform door message from '%s' to '%s' at time %f.",
+                door.header.frame_id.c_str (), parameter_frame_.c_str (), door.header.stamp.toSec());
      return false;
    }
    ROS_INFO("DoorDetector: door message transformed to parameter frame");
@@ -486,8 +486,8 @@ bool
 
     // transform door message
     if (!transformTo(tf_, fixed_frame_, result[nr_d], result[nr_d], fixed_frame_)){
-      ROS_ERROR ("DoorsDetector: could not tranform door from '%s' frame to '%s' frame", 
-		 result[nr_d].header.frame_id.c_str(), fixed_frame_.c_str());
+      ROS_ERROR ("DoorsDetector: could not tranform door from '%s' to '%s' at time %f", 
+		 result[nr_d].header.frame_id.c_str(), fixed_frame_.c_str(), result[nr_d].header.stamp.toSec());
       return false;
     }
     cout << "found door " << result[nr_d] << endl;
