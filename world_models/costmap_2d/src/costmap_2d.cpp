@@ -522,8 +522,8 @@ namespace costmap_2d{
     for(unsigned int j = map_sy; j <= map_ey; ++j){
       for(unsigned int i = map_sx; i <= map_ex; ++i){
         //if the cell is a lethal obstacle... we'll keep it and queue it, otherwise... we'll clear it
-        if(*current != LETHAL_OBSTACLE)
-          *current = 0;
+        if(*current != LETHAL_OBSTACLE && *current != NO_INFORMATION)
+          *current = FREE_SPACE;
         current++;
         index++;
       }
@@ -567,8 +567,8 @@ namespace costmap_2d{
         //if the cell is a lethal obstacle... we'll keep it and queue it, otherwise... we'll clear it
         if(*current == LETHAL_OBSTACLE)
           enqueue(index, i, j, i, j, inflation_queue);
-        else if(clear)
-          *current = 0;
+        else if(clear && *current != NO_INFORMATION)
+          *current = FREE_SPACE;
         current++;
         index++;
       }

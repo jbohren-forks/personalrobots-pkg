@@ -461,9 +461,7 @@ namespace costmap_2d {
        */
       inline void updateCellCost(unsigned int index, unsigned char cost){
         unsigned char* cell_cost = &costmap_[index];
-        if(*cell_cost == NO_INFORMATION)
-          *cell_cost = cost;
-        else
+        if(*cell_cost != NO_INFORMATION)
           *cell_cost = std::max(cost, *cell_cost);
       }
 

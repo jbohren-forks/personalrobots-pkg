@@ -74,7 +74,7 @@ namespace costmap_2d {
         costmap_.mapToWorld(i, j, wx, wy);
         std::pair<double, double> p(wx, wy);
 
-        if(costmap_.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE)
+        if(costmap_.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE || costmap_.getCost(i, j) == costmap_2d::NO_INFORMATION)
           raw_obstacles.push_back(p);
         else if(costmap_.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
           inflated_obstacles.push_back(p);
