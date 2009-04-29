@@ -305,7 +305,7 @@ namespace base_local_planner {
 
         //if the cell is an obstacle set the max path distance
         unsigned char cost = costmap_.getCost(check_cell->cx, check_cell->cy);
-        if(!map_(check_cell->cx, check_cell->cy).within_robot && (cost == costmap_2d::LETHAL_OBSTACLE || cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)){
+        if(!map_(check_cell->cx, check_cell->cy).within_robot && (cost == costmap_2d::LETHAL_OBSTACLE || cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE || cost == costmap_2d::NO_INFORMATION)){
           check_cell->path_dist = map_.map_.size();
           return;
         }
@@ -329,7 +329,7 @@ namespace base_local_planner {
 
         //if the cell is an obstacle set the max goal distance
         unsigned char cost = costmap_.getCost(check_cell->cx, check_cell->cy);
-        if(!map_(check_cell->cx, check_cell->cy).within_robot && (cost == costmap_2d::LETHAL_OBSTACLE || cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)){
+        if(!map_(check_cell->cx, check_cell->cy).within_robot && (cost == costmap_2d::LETHAL_OBSTACLE || cost == costmap_2d::INSCRIBED_INFLATED_OBSTACLE || cost == costmap_2d::NO_INFORMATION)){
           check_cell->goal_dist = map_.map_.size();
           return;
         }

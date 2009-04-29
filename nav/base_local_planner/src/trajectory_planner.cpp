@@ -103,7 +103,7 @@ namespace base_local_planner{
       double g_x = global_plan_[i].pose.position.x;
       double g_y = global_plan_[i].pose.position.y;
       unsigned int map_x, map_y;
-      if(costmap_.worldToMap(g_x, g_y, map_x, map_y)){
+      if(costmap_.worldToMap(g_x, g_y, map_x, map_y) && costmap_.getCost(map_x, map_y) != costmap_2d::NO_INFORMATION){
         MapCell& current = map_(map_x, map_y);
         current.path_dist = 0.0;
         current.path_mark = true;
