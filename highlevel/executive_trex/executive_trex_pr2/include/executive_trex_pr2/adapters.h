@@ -53,7 +53,7 @@
 #include <pr2_robot_actions/CheckPathState.h>
 #include <pr2_robot_actions/NotifyDoorBlockedState.h>
 #include <pr2_robot_actions/ShellCommandState.h>
-#include <pr2_robot_actions/MoveBaseStateNew.h>
+#include <nav_robot_actions/MoveBaseState.h>
 #include <pr2_robot_actions/RechargeState.h>
 #include <pr2_robot_actions/DetectPlugOnBaseState.h>
 #include <pr2_robot_actions/MoveAndGraspPlugState.h>

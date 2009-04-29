@@ -74,11 +74,11 @@ namespace TREX {
   /***********************************************************************
    * @brief MoveBase actions with a pose message for goal and feedback
    **********************************************************************/
-  class MoveBaseAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped> {
+  class MoveBaseAdapter: public ROSActionAdapter<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped> {
   public:
 
     MoveBaseAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew,  robot_msgs::PoseStamped>(agentName, configData){
+      : ROSActionAdapter<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState,  robot_msgs::PoseStamped>(agentName, configData){
     }
 
     virtual void fillDispatchParameters(robot_msgs::PoseStamped& msg, const TokenId& goalToken){

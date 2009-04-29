@@ -261,7 +261,7 @@ int main(int argc, char** argv){
   
   nav::MoveBase move_base(ros_node, tf);
   robot_actions::ActionRunner runner(20.0);
-  runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped>(move_base);
+  runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base);
   runner.run();
 
   ros_node.spin();

@@ -48,7 +48,7 @@ import os, os.path, threading, time
 import rospy, rostest
 from std_msgs.msg import *
 from robot_actions.msg import *
-from pr2_robot_actions.msg import *
+from nav_robot_actions.msg import *
 from robot_msgs.msg import *
 from deprecated_msgs.msg import *
 from tf.transformations import *

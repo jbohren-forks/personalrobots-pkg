@@ -67,7 +67,7 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "cmd_vel" robot_msgs/PoseDot : velocity commands to robot
-- @b "state" pr2_robot_actions/MoveBaseState : current planner state (e.g., goal reached, no path)
+- @b "state" nav_robot_actions/MoveBaseState : current planner state (e.g., goal reached, no path)
 - @b "gui_path" robot_msgs/Polyline : current global path (for visualization)
 - @b "gui_laser" robot_msgs/Polyline : re-projected laser scans (for visualization)
 
@@ -101,7 +101,7 @@ parameters.
 #include "boost/thread/mutex.hpp"
 
 // The messages that we'll use
-#include <pr2_robot_actions/MoveBaseState.h>
+#include <nav_robot_actions/MoveBaseState.h>
 #include <robot_msgs/PoseStamped.h>
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/PointCloud.h>
@@ -149,7 +149,7 @@ class WavefrontNode: public ros::Node
       REACHED_GOAL
     } planner_state;
 
-  tf::Stamped<btTransform> global_pose;
+  tf::Stamped<btTransform> global_pose_;
 
     // If we can't reach the goal, note when it happened and keep trying a bit
     //ros::Time stuck_time;
@@ -157,6 +157,7 @@ class WavefrontNode: public ros::Node
     bool enable;
     // Current goal
     double goal[3];
+  tf::Stamped<tf::Pose> goalPose_;
     // Direction that we're rotating in order to assume the goal
     // orientation
     int rotate_dir;
@@ -197,7 +198,7 @@ class WavefrontNode: public ros::Node
     //MsgRobotBase2DOdom odomMsg;
     robot_msgs::Polyline polylineMsg;
     robot_msgs::Polyline pointcloudMsg;
-    pr2_robot_actions::MoveBaseState pstate;
+    nav_robot_actions::MoveBaseState pstate;
     //MsgRobotBase2DOdom prevOdom;
     bool firstodom;
 
@@ -283,7 +284,7 @@ WavefrontNode::WavefrontNode() :
         tf(*this, true, ros::Duration(10)) // cache for 10 sec, no extrapolation
 {
   // Initialize global pose. Will be set in control loop based on actual data.
-  ///\todo does this need to be initialized?  global_pose.setIdentity();
+  ///\todo does this need to be initialized?  global_pose_.setIdentity();
 
   // set a few parameters. leave defaults just as in the ctor initializer list
   param("~dist_eps", dist_eps, 1.0);
@@ -360,7 +361,7 @@ WavefrontNode::WavefrontNode() :
 
   this->firstodom = true;
 
-  advertise<pr2_robot_actions::MoveBaseState>("state",1);
+  advertise<nav_robot_actions::MoveBaseState>("state",1);
   advertise<robot_msgs::Polyline>("gui_path",1);
   advertise<robot_msgs::Polyline>("gui_laser",1);
   advertise<robot_msgs::PoseDot>("cmd_vel",1);
@@ -384,15 +385,14 @@ WavefrontNode::goalReceived()
   this->enable = 1;
 
   if(this->enable){
-    tf::Stamped<tf::Pose> goalPose;
-    tf::PoseStampedMsgToTF(goalMsg, goalPose);
+    tf::PoseStampedMsgToTF(goalMsg, this->goalPose_);
     
 
     // Populate goal data
-    this->goal[0] = goalPose.getOrigin().getX();
-    this->goal[1] = goalPose.getOrigin().getY();
+    this->goal[0] = this->goalPose_.getOrigin().getX();
+    this->goal[1] = this->goalPose_.getOrigin().getY();
     double yaw, pitch, roll;
-    goalPose.getBasis().getEulerZYX(yaw, pitch, roll);
+    this->goalPose_.getBasis().getEulerZYX(yaw, pitch, roll);
     this->goal[2] = yaw;
     this->planner_state = NEW_GOAL;
 
@@ -412,17 +412,12 @@ WavefrontNode::goalReceived()
     this->pstate.status.value = this->pstate.status.SUCCESS;
   }
 
-  double yaw,pitch,roll;
-  btMatrix3x3 mat =  global_pose.getBasis();
-  mat.getEulerZYX(yaw, pitch, roll);
+  robot_msgs::PoseStamped pose_msg;
+  tf::PoseStampedTFToMsg(global_pose_, pose_msg);
 
   // Fill out and publish response
-  this->pstate.feedback.x = global_pose.getOrigin().x();
-  this->pstate.feedback.y = global_pose.getOrigin().y();
-  this->pstate.feedback.th = yaw;
-  this->pstate.goal.x = this->goal[0];
-  this->pstate.goal.y = this->goal[1];
-  this->pstate.goal.th = this->goal[2];
+  this->pstate.feedback = pose_msg;
+  this->pstate.goal = goalMsg;
   publish("state",this->pstate);
   this->lock.unlock();
 }
@@ -579,7 +574,7 @@ WavefrontNode::doOneCycle()
   //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
   try
   {
-    this->tf.transformPose("/map", robotPose, global_pose);
+    this->tf.transformPose("/map", robotPose, global_pose_);
   }
   catch(tf::LookupException& ex)
   {
@@ -626,12 +621,12 @@ WavefrontNode::doOneCycle()
       {
 
         double yaw,pitch,roll; //fixme make cleaner namespace
-        btMatrix3x3 mat =  global_pose.getBasis();
+        btMatrix3x3 mat =  global_pose_.getBasis();
         mat.getEulerZYX(yaw, pitch, roll);
 
         // Are we done?
         if(plan_check_done(this->plan,
-                           global_pose.getOrigin().x(), global_pose.getOrigin().y(), yaw,
+                           global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
                            this->goal[0], this->goal[1], this->goal[2],
                            this->dist_eps, this->ang_eps))
         {
@@ -651,11 +646,11 @@ WavefrontNode::doOneCycle()
 
         // Try a local plan
         if((this->planner_state == NEW_GOAL) ||
-           (plan_do_local(this->plan, global_pose.getOrigin().x(), global_pose.getOrigin().y(),
+           (plan_do_local(this->plan, global_pose_.getOrigin().x(), global_pose_.getOrigin().y(),
                          this->plan_halfwidth) < 0))
         {
           // Fallback on global plan
-          if(plan_do_global(this->plan, global_pose.getOrigin().x(), global_pose.getOrigin().y(),
+          if(plan_do_global(this->plan, global_pose_.getOrigin().x(), global_pose_.getOrigin().y(),
                             this->goal[0], this->goal[1]) < 0)
           {
             // no global plan
@@ -685,7 +680,7 @@ WavefrontNode::doOneCycle()
           {
             // global plan succeeded; now try the local plan again
             this->printed_warning = false;
-            if(plan_do_local(this->plan, global_pose.getOrigin().x(), global_pose.getOrigin().y(),
+            if(plan_do_local(this->plan, global_pose_.getOrigin().x(), global_pose_.getOrigin().y(),
                              this->plan_halfwidth) < 0)
             {
               // no local plan; better luck next time through
@@ -706,12 +701,12 @@ WavefrontNode::doOneCycle()
 
         //    double yaw,pitch,roll; //used temporarily earlier fixme make cleaner
         //btMatrix3x3
-        mat =  global_pose.getBasis();
+        mat =  global_pose_.getBasis();
         mat.getEulerZYX(yaw, pitch, roll);
 
         if(plan_compute_diffdrive_cmds(this->plan, &vx, &va,
                                        &this->rotate_dir,
-                                       global_pose.getOrigin().x(), global_pose.getOrigin().y(),
+                                       global_pose_.getOrigin().x(), global_pose_.getOrigin().y(),
                                        yaw,
                                        this->goal[0], this->goal[1],
                                        this->goal[2],
@@ -759,21 +754,16 @@ WavefrontNode::doOneCycle()
     default:
       assert(0);
   }
-  double yaw,pitch,roll;
-  btMatrix3x3 mat =  global_pose.getBasis();
-  mat.getEulerZYX(yaw, pitch, roll);
-
   if(this->enable && (this->planner_state == PURSUING_GOAL))
     this->pstate.status.value = this->pstate.status.ACTIVE;
   else
     this->pstate.status.value = this->pstate.status.SUCCESS;
 
-  this->pstate.feedback.x = global_pose.getOrigin().x();
-  this->pstate.feedback.y = global_pose.getOrigin().y();
-  this->pstate.feedback.th = yaw;
-  this->pstate.goal.x = this->goal[0];
-  this->pstate.goal.y = this->goal[1];
-  this->pstate.goal.th = this->goal[2];
+  robot_msgs::PoseStamped pose_out;
+  tf::PoseStampedTFToMsg(global_pose_, pose_out);
+  this->pstate.feedback = pose_out;
+  tf::PoseStampedTFToMsg(this->goalPose_, pose_out);
+  this->pstate.goal = pose_out;
 
   publish("state",this->pstate);
 

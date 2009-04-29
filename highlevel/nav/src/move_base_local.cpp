@@ -39,7 +39,7 @@
 using namespace base_local_planner;
 using namespace costmap_2d;
 using namespace robot_actions;
-using namespace pr2_robot_actions;
+using namespace nav_robot_actions;
 
 namespace nav {
   MoveBaseLocal::MoveBaseLocal(ros::Node& ros_node, tf::TransformListener& tf) : 
@@ -215,7 +215,7 @@ int main(int argc, char** argv){
   
   nav::MoveBaseLocal move_base(ros_node, tf);
   robot_actions::ActionRunner runner(20.0);
-  runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped>(move_base);
+  runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base);
   runner.run();
 
   ros_node.spin();

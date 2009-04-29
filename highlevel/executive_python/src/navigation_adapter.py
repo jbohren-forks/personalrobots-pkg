@@ -38,14 +38,14 @@ import roslib
 roslib.load_manifest('executive_python')
 import rospy
 import random
-from pr2_robot_actions.msg import MoveBaseStateNew
+from nav_robot_actions.msg import MoveBaseState
 from robot_msgs.msg import PoseStamped
 
 class NavigationAdapter:
   def __init__(self, no_plan_limit, time_limit, state_topic, goal_topic):
     self.no_plan_limit = no_plan_limit
     self.time_limit = time_limit
-    rospy.Subscriber(state_topic, MoveBaseStateNew, self.update)
+    rospy.Subscriber(state_topic, MoveBaseState, self.update)
     self.pub = rospy.Publisher(goal_topic, PoseStamped)
     self.state = None
     self.start_time = rospy.get_time()

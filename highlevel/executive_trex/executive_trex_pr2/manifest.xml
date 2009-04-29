@@ -10,6 +10,7 @@
   <depend package="doors_core" />
   <depend package="outlet_detection" />
   <depend package="robot_actions" />
+  <depend package="nav_robot_actions" />
   <depend package="pr2_robot_actions" />
   <depend package="pr2_msgs" />
   <depend package="std_msgs" />

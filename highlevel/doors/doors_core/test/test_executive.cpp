@@ -46,7 +46,7 @@
 #include <pr2_robot_actions/DoorActionState.h>
 #include <robot_actions/NoArgumentsActionState.h>
 #include <pr2_robot_actions/SwitchControllersState.h>
-#include <pr2_robot_actions/MoveBaseStateNew.h>
+#include <nav_robot_actions/MoveBaseState.h>
 #include "doors_core/executive_functions.h"
 
 
@@ -92,7 +92,7 @@ int
   robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> open_door("open_door");
   robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> release_handle("release_handle");
   robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> move_base_door("move_base_door");
-  robot_actions::ActionClient<robot_msgs::PoseStamped, pr2_robot_actions::MoveBaseStateNew, robot_msgs::PoseStamped> move_base_local("move_base_local");
+  robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped> move_base_local("move_base_local");
 
   timeout_medium.sleep();
   robot_msgs::Door tmp_door;
