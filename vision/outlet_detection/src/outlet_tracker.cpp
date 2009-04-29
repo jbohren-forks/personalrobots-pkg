@@ -1,10 +1,5 @@
 #include "outlet_detection/outlet_tracker.h"
 
-#include <LinearMath/btVector3.h>
-#include <LinearMath/btMatrix3x3.h>
-
-#include <opencv/highgui.h>
-
 #include <Eigen/Core>
 #include <Eigen/QR>
 
@@ -12,102 +7,16 @@ static void changeAxes(CvPoint3D32f src, btVector3 &dst);
 static btVector3 fitPlane(btVector3 *holes, int num_holes);
 
 OutletTracker::OutletTracker(ros::Node &node)
-  : node_(node), img_(res_.image), cam_info_(res_.cam_info),
-    tf_broadcaster_(node_), K_(NULL)
+  : TrackerBase(node, "outlet")
 {
-  node_.param("~image_service", image_service_, std::string("/prosilica/poll"));
-  node_.param("~display", display_, 1);
-
-  std::string policy;
-  node_.param("~roi_policy", policy, std::string("WholeFrame"));
-  if (policy == std::string("WholeFrame"))
-    roi_policy_ = WholeFrame;
-  else if (policy == std::string("LastImageLocation"))
-    roi_policy_ = LastImageLocation;
-  else {
-    ROS_FATAL("Unknown ROI policy setting");
-    node_.shutdown();
-  }
-
-  req_.timeout_ms = 100;
-
-  if (display_) {
-    cvNamedWindow(wndname, 0); // no autosize
-    cvStartWindowThread();
-  }
-  
-  node_.advertise<robot_msgs::PoseStamped>("~outlet_pose", 1);
-
   activate();
 }
 
 OutletTracker::~OutletTracker()
 {
-  node_.unadvertise("~outlet_pose");
-
-  if (active_thread_.joinable()) {
-    active_thread_.interrupt();
-    active_thread_.join();
-  }
-  
-  cvReleaseMat(&K_);
-  if (display_)
-    cvDestroyWindow(wndname);
-}
-
-void OutletTracker::activate()
-{
-  boost::thread t(boost::bind(&OutletTracker::spin, this));
-  active_thread_.swap(t);
-}
-
-void OutletTracker::deactivate()
-{
-  active_thread_.interrupt();
-}
-
-void OutletTracker::processCamInfo()
-{
-  if (K_ == NULL)
-    K_ = cvCreateMat(3, 3, CV_64FC1);
-  memcpy(K_->data.db, &cam_info_.K[0], 9 * sizeof(double));
-  
-  frame_w_ = cam_info_.width;
-  frame_h_ = cam_info_.height;
-}
-
-void OutletTracker::processImage()
-{
-  robot_msgs::PoseStamped pose;
-  
-  if (detectOutlet(pose)) {
-    node_.publish("~outlet_pose", pose);
-    
-    // Recenter ROI for next image request
-    if (roi_policy_ == LastImageLocation) {
-      CvRect tuple_roi[4];
-      for (int i = 0; i < 4; i++)
-        tuple_roi[i] = outlet_rect(outlets_[i]);
-      CvRect outlet_roi;
-      calc_bounding_rect(4, tuple_roi, outlet_roi);
-      outlet_roi.x += req_.region_x;
-      outlet_roi.y += req_.region_y;
-      outlet_roi = fitToFrame(resize_rect(outlet_roi, RESIZE_FACTOR));
-      setRoi(outlet_roi);
-    }
-  }
-  else {
-    // Expand ROI for next image
-    if (roi_policy_ == LastImageLocation) {
-      CvRect outlet_roi = cvRect(req_.region_x, req_.region_y,
-                                 req_.width, req_.height);
-      outlet_roi = fitToFrame(resize_rect(outlet_roi, RESIZE_FACTOR));
-      setRoi(outlet_roi);
-    }
-  }
 }
   
-bool OutletTracker::detectOutlet(robot_msgs::PoseStamped &pose)
+bool OutletTracker::detectObject(tf::Transform &pose)
 {
   if (!img_bridge_.fromImage(img_, "bgr")) {
     ROS_ERROR("Failed to convert image");
@@ -116,12 +25,8 @@ bool OutletTracker::detectOutlet(robot_msgs::PoseStamped &pose)
 
   IplImage* image = img_bridge_.toIpl();
   outlets_.clear();
-  if (!detect_outlet_tuple(image, K_, NULL, outlets_)) {
-    //ROS_WARN("Failed to detect outlet");
-    if (display_)
-      cvShowImage(wndname, image);
+  if (!detect_outlet_tuple(image, K_, NULL, outlets_))
     return false;
-  }
 
   // Change data representation and coordinate frame
   btVector3 holes[12];
@@ -149,61 +54,27 @@ bool OutletTracker::detectOutlet(robot_msgs::PoseStamped &pose)
   rotation = rotation.transpose();
   btQuaternion orientation;
   rotation.getRotation(orientation);
-  tf::Transform outlet_pose(orientation, holes[0]);
-  
-  // Publish to TF
-  tf_broadcaster_.sendTransform(outlet_pose, ros::Time::now(),
-                                "outlet_frame", "high_def_frame");
-
-  // Fill returned pose
-  tf::PoseTFToMsg(outlet_pose, pose.pose);
-  pose.header.frame_id = "high_def_frame";
-  pose.header.stamp = img_.header.stamp;
-
-  /*
-  ROS_INFO("Ground TL: %.5f %.5f %.5f, Ground TR: %.5f %.5f %.5f, "
-           "Ground BR: %.5f %.5f %.5f, Ground BL: %.5f %.5f %.5f",
-           holes[0].x(), holes[0].y(), holes[0].z(),
-           holes[3].x(), holes[3].y(), holes[3].z(),
-           holes[6].x(), holes[6].y(), holes[6].z(),
-           holes[9].x(), holes[9].y(), holes[9].z());
-  */
-  
-  if (display_) {
-    draw_outlets(image, outlets_);
-    cvShowImage(wndname, image);
-  }
+  pose = tf::Transform(orientation, holes[0]);
 
   return true;
 }
 
-// DEBUG ONLY
-void saveImage(IplImage* image)
+CvRect OutletTracker::getBoundingBox()
 {
-  static int count = 0;
-  char filename[32];
-  snprintf(filename, 32, "out%03i.png", count++);
-  cvSaveImage(filename, image);
-  ROS_INFO("Saved %s", filename);
+  CvRect tuple_roi[4];
+  for (int i = 0; i < 4; i++)
+    tuple_roi[i] = outlet_rect(outlets_[i]);
+  CvRect outlet_roi;
+  calc_bounding_rect(4, tuple_roi, outlet_roi);
+  return outlet_roi;
 }
 
-void OutletTracker::spin()
+IplImage* OutletTracker::getDisplayImage(bool success)
 {
-  while (node_.ok() && !boost::this_thread::interruption_requested())
-  {
-    if (ros::service::call(image_service_, req_, res_)) {
-      processCamInfo();
-      processImage();
-      //saveImage(img_bridge_.toIpl());
-      //cvWaitKey(0);
-      // TODO: figure out what's actually causing banding
-      usleep(100000); // hack to (mostly) get rid of banding
-    } else {
-      //ROS_WARN("Service call failed");
-      // TODO: wait for service to become available
-      usleep(100000);
-    }
-  }
+  IplImage* image = img_bridge_.toIpl();
+  if (success)
+    draw_outlets(image, outlets_);
+  return image;
 }
 
 static void changeAxes(CvPoint3D32f src, btVector3 &dst)
@@ -253,26 +124,6 @@ static btVector3 fitPlane(btVector3 *holes, int num_holes)
 
   return btVector3(normal.x(), normal.y(), normal.z());
 }
-
-CvRect OutletTracker::fitToFrame(CvRect roi)
-{
-  CvRect fit;
-  fit.x = std::max(roi.x, 0);
-  fit.y = std::max(roi.y, 0);
-  fit.width = std::min(roi.x + roi.width, frame_w_) - fit.x;
-  fit.height = std::min(roi.y + roi.height, frame_h_) - fit.y;
-  return fit;
-}
-
-void OutletTracker::setRoi(CvRect roi)
-{
-  req_.region_x = roi.x;
-  req_.region_y = roi.y;
-  req_.width = roi.width;
-  req_.height = roi.height;
-}
-
-const char OutletTracker::wndname[] = "Outlet tracker";
 
 
 /*

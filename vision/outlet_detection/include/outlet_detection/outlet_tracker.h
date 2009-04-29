@@ -35,63 +35,23 @@
 #ifndef OUTLET_TRACKER_H
 #define OUTLET_TRACKER_H
 
-#include <ros/node.h>
-#include <image_msgs/Image.h>
-#include <image_msgs/CamInfo.h>
-#include <opencv_latest/CvBridge.h>
-#include <robot_msgs/PoseStamped.h>
-#include <prosilica_cam/PolledImage.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
-
-#include <opencv/cv.h>
-
-#include <boost/thread.hpp>
-
+#include "outlet_detection/tracker_base.h"
 #include "outlet_detection/outlet_detector.h"
 
-
-class OutletTracker
+class OutletTracker : public TrackerBase
 {
 public:
   OutletTracker(ros::Node &node);
   ~OutletTracker();
-
-  void activate();
-  void deactivate();
-
-  void spin();
   
-private:
-  void processCamInfo();
-  void processImage();
-
-  bool detectOutlet(robot_msgs::PoseStamped &pose);
-
-  // TODO: separate out these functions, shared with plug_tracker
-  CvRect fitToFrame(CvRect roi);
-  void setRoi(CvRect roi);
-
-  ros::Node &node_;
-  boost::thread active_thread_;
-
-  prosilica_cam::PolledImage::Request req_;
-  prosilica_cam::PolledImage::Response res_;
-  std::string image_service_;
-  image_msgs::Image& img_;
-  image_msgs::CamInfo& cam_info_;
-  image_msgs::CvBridge img_bridge_;
+protected:
+  virtual bool detectObject(tf::Transform &pose);
+  virtual CvRect getBoundingBox();
+  virtual IplImage* getDisplayImage(bool success);
+  
   std::vector<outlet_t> outlets_;
-  tf::TransformBroadcaster tf_broadcaster_;
-  CvMat* K_;
-  int display_;
 
-  // TODO: policy to listen from coarse outlet detection?
-  enum { WholeFrame, LastImageLocation } roi_policy_;
-  int frame_w_, frame_h_;
   static const float RESIZE_FACTOR = 1.2f;
-
-  static const char wndname[];
 };
 
 #endif

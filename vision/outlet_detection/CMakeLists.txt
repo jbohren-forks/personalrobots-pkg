@@ -12,7 +12,7 @@ add_definitions(-Wall -O3 -DNDEBUG)
 #add_definitions(-Wall -O0 -g)
 
 # Outlet detection library
-rospack_add_library(outlet src/outlet_model.cpp src/planar.cpp src/outlet_tuple.cpp src/outlet_detector.cpp src/learning.cpp src/outlet_tracker.cpp)
+rospack_add_library(outlet src/outlet_model.cpp src/planar.cpp src/outlet_tuple.cpp src/outlet_detector.cpp src/learning.cpp src/tracker_base.cpp src/outlet_tracker.cpp)
 add_definitions(-D_OUTLET_HR -D_TUNING -D_USE_OUTLET_TUPLE)
 #add_definitions(-D_VERBOSE)
 rospack_link_boost(outlet thread)
