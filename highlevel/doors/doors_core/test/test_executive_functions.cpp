@@ -30,51 +30,94 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
+ *
+ * $Id$
+ *
  *********************************************************************/
 
 /* Author: Wim Meeussen */
 
 #include <robot_msgs/Door.h>
-#include "doors_core/action_detect_door.h"
-#include "doors_core/action_detect_handle.h"
-#include "doors_core/action_grasp_handle.h"
-#include "doors_core/action_unlatch_handle.h"
-#include "doors_core/action_open_door.h"
-#include "doors_core/action_release_handle.h"
-#include <robot_actions/action.h>
-#include <robot_actions/action_runner.h>
-#include <pr2_robot_actions/DoorActionState.h>
+#include <ros/node.h>
+#include <gtest/gtest.h>
+#include "doors_core/executive_functions.h"
+
+using namespace ros;
+using namespace std;
 
 
-using namespace door_handle_detector;
 
 
-// -----------------------------------
-//              MAIN
-// -----------------------------------
+
+int g_argc;
+char** g_argv;
+
+class TestEKF : public testing::Test
+{
+public:
+  robot_msgs::Door my_door_1, my_door_2;
+
+protected:
+  /// constructor
+  TestEKF()
+  {
+    my_door_1.frame_p1.x = 1.0;
+    my_door_1.frame_p1.y = -0.5;
+    my_door_1.frame_p2.x = 1.0;
+    my_door_1.frame_p2.y = 0.5;
+    my_door_1.door_p1.x = 1.0;
+    my_door_1.door_p1.y = -0.5;
+    my_door_1.door_p2.x = 1.0;
+    my_door_1.door_p2.y = 0.5;
+    my_door_1.normal.x = 1.0;
+    my_door_1.normal.y = 0.0;
+    my_door_1.normal.z = 0.0;
+    my_door_1.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+    my_door_1.hinge = robot_msgs::Door::HINGE_P2;
+    my_door_1.header.frame_id = "base_footprint";
+    
+    my_door_2.frame_p1.x = 1.0;
+    my_door_2.frame_p1.y = -0.5;
+    my_door_2.frame_p2.x = 1.0;
+    my_door_2.frame_p2.y = 0.5;
+    my_door_2.door_p1.x = 1.5;
+    my_door_2.door_p1.y = 0.0;
+    my_door_2.door_p2.x = 1.0;
+    my_door_2.door_p2.y = 0.5;
+    my_door_2.normal.x = 0.7;
+    my_door_2.normal.y = 0.7;
+    my_door_2.normal.z = 0.0;
+    my_door_2.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+    my_door_2.hinge = robot_msgs::Door::HINGE_P2;
+    my_door_2.header.frame_id = "base_footprint";
+  }
+  
+
+  /// Destructor
+  ~TestEKF()
+  {}
+};
+
+
+
+
+TEST_F(TestEKF, test)
+{
+  tf::Stamped<tf::Pose> pose;
+  pose = getRobotPose(my_door_1, 0.7);
+  ASSERT_TRUE(pose.getOrigin()[0] == 0.3);
+  ASSERT_TRUE(pose.getOrigin()[1] == 0.0);
+  ASSERT_TRUE(pose.getOrigin()[2] == 0.0);
+  SUCCEED();
+}
+
+
+
 
 int main(int argc, char** argv)
 {
-  ros::init(argc,argv); 
-
-  ros::Node node("door_domain_action_runner");
-
-  DetectDoorAction detect_door(node);
-  DetectHandleAction detect_handle(node);
-  GraspHandleAction grasp(node);
-  UnlatchHandleAction unlatch(node);
-  OpenDoorAction open(node);
-  ReleaseHandleAction release(node);
-
-  robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(detect_door);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(detect_handle);  
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(grasp);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(unlatch);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(open);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(release);
-
-  runner.run();
-  node.spin();
-  return 0;
+  testing::InitGoogleTest(&argc, argv);
+  g_argc = argc;
+  g_argv = argv;
+  return RUN_ALL_TESTS();
 }

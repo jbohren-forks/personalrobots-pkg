@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="doors_core" type="action_runner_detect_door" output="screen" />
+  <node pkg="doors_core" type="action_runner_detect_handle" output="screen" />
+  <node pkg="doors_core" type="action_runner_grasp_handle" output="screen" />
+  <node pkg="doors_core" type="action_runner_open_door" output="screen" />
+  <node pkg="doors_core" type="action_runner_unlatch_handle" output="screen" />
+  <node pkg="doors_core" type="action_runner_release_handle" output="screen" />
+</launch>

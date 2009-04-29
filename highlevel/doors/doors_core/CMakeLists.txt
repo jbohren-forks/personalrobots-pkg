@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 2.4.6)
 
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-set(ROS_BUILD_TYPE RelWithDebInfo)
+#set(ROS_BUILD_TYPE RelWithDebInfo)
+set(ROS_BUILD_TYPE Debug)
 rospack(doors_core)
 gensrv()
 genmsg()
@@ -9,18 +10,42 @@ genmsg()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 # executive interface
-rospack_add_executable(action_runner 
+rospack_add_executable(action_runner_detect_door
                        src/action_detect_door.cpp 
-		       src/action_detect_handle.cpp 	     
-		       src/action_grasp_handle.cpp 
-		       src/action_open_door.cpp
-       		       src/action_unlatch_handle.cpp		
-		       src/action_release_handle.cpp 
-		       src/action_runner.cpp
+		       src/action_runner_detect_door.cpp
                       )
 
+rospack_add_executable(action_runner_detect_handle
+		       src/action_detect_handle.cpp 	     
+		       src/action_runner_detect_handle.cpp
+                      )
+
+rospack_add_executable(action_runner_grasp_handle
+		       src/action_grasp_handle.cpp 
+		       src/action_runner_grasp_handle.cpp
+                      )
+
+rospack_add_executable(action_runner_open_door
+		       src/action_open_door.cpp
+		       src/action_runner_open_door.cpp
+                      )
+
+rospack_add_executable(action_runner_unlatch_handle
+       		       src/action_unlatch_handle.cpp		
+		       src/action_runner_unlatch_handle.cpp
+                      )
+
+rospack_add_executable(action_runner_release_handle
+		       src/action_release_handle.cpp 
+		       src/action_runner_release_handle.cpp
+                      )
 
 # test
+rospack_add_executable(test_executive_functions
+                       test/test_executive_functions.cpp
+		       src/executive_functions.cpp
+                      )
+
 rospack_add_executable(trigger_doors_detector 
                        test/trigger_doors_detector.cpp
 		       src/action_detect_door.cpp
@@ -49,6 +74,8 @@ rospack_add_executable(move_base_door
 
 
 rospack_add_library(executive_functions src/executive_functions.cpp)
+
+rospack_add_rostest(test/test_executive_functions.launch)
 
 
 # check for OpenMP
