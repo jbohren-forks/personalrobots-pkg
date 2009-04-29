@@ -65,7 +65,7 @@
 #include <string>
 #include <queue>
 
-namespace std_msgs {
+namespace old_costmap_2d {
   class Point2DFloat32;
 };
 

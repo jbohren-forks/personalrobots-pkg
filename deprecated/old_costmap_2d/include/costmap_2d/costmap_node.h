@@ -65,7 +65,7 @@
 #include "robot_srvs/StaticMap.h"
 
 //we'll take in a path as a vector of points
-#include <deprecated_msgs/Point2DFloat32.h>
+#include <old_costmap_2d/Point2DFloat32.h>
 
 #include <list>
 
@@ -79,7 +79,7 @@ namespace costmap_2d {
 
     public:
       
-    typedef std::vector<deprecated_msgs::Point2DFloat32> footprint_t;
+    typedef std::vector<old_costmap_2d::Point2DFloat32> footprint_t;
       
     /**
      * @brief Constructor
