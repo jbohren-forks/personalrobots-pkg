@@ -83,7 +83,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const robot_msgs::Door& g
   }
 
   std_msgs::Float64 gripper_msg;
-  gripper_msg.data = 2.0;
+  gripper_msg.data = 20.0;
   node_.publish("r_gripper_effort_controller/command", gripper_msg);
   
   // move gripper in front of door
@@ -125,7 +125,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const robot_msgs::Door& g
   }
   
   // close the gripper during 4 seconds
-  gripper_msg.data = -2.0;
+  gripper_msg.data = -20.0;
   node_.publish("r_gripper_effort_controller/command", gripper_msg);
   for (unsigned int i=0; i<100; i++){
     Duration().fromSec(4.0/100.0).sleep();
