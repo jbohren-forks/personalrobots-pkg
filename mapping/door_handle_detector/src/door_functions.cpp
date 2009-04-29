@@ -46,7 +46,23 @@ double getDoorAngle(const robot_msgs::Door& door)
 {
   KDL::Vector frame_vec(door.frame_p1.x-door.frame_p2.x, door.frame_p1.y-door.frame_p2.y, door.frame_p1.z-door.frame_p2.z);
   KDL::Vector door_vec(door.door_p1.x-door.door_p2.x, door.door_p1.y-door.door_p2.y, door.door_p1.z-door.door_p2.z);
-  return acos(dot(frame_vec, door_vec)/(frame_vec.Norm()*door_vec.Norm()));
+  double angle = fabs(getVectorAngle(frame_vec, door_vec));
+  if (door.rot_dir == robot_msgs::Door::ROT_DIR_CLOCKWISE)
+    return angle;
+  else if (door.rot_dir == robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE)
+    return -angle;
+  else{
+    ROS_ERROR("getDoorAngle: Door rot dir is not defined");
+    return 0;
+  }
+}
+
+
+double getVectorAngle(const KDL::Vector& v1, const KDL::Vector& v2)
+{
+  double dot      = v2(0) * v1(0) + v2(1) * v1(1);
+  double perp_dot = v2(1) * v1(0) - v2(0) * v1(1);
+  return atan2(perp_dot, dot);
 }
 
 

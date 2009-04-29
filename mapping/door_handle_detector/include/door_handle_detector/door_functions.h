@@ -39,12 +39,13 @@
 #include <tf/tf.h>
 #include <string.h>
 #include <robot_msgs/Door.h>
+#include <kdl/frames.hpp>
 
 namespace door_handle_detector{
 
 /// get the door angle
 double getDoorAngle(const robot_msgs::Door& door);
-
+double getVectorAngle(const KDL::Vector& v1, const KDL::Vector& v2);
 
 /// convert door message from its original frame/time, to the goal frame at time::now.
 bool transformTo(const tf::Transformer& tf, const std::string& goal_frame, const robot_msgs::Door& door_in, 
