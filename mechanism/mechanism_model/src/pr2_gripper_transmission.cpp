@@ -519,7 +519,7 @@ void PR2GripperTransmission::propagateEffortBackwards(
         // FIXME: hackery, due to transmission values, MT is too large for the damping available
         // with the given time step size in sim, so until implicit damping is implemented,
         // we'll scale MT with inverse of velocity
-        double scale = exp(-abs(js[i]->velocity_));
+        double scale = exp(-abs(js[i]->velocity_*100.0));
         // sum joint torques from actuator motor and mimic constraint and convert to joint torques
         js[i]->commanded_effort_   = (scale*MT + MIMICT) / dtheta_dMR;
 
