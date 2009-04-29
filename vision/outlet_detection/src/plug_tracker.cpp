@@ -73,7 +73,9 @@ bool PlugTracker::detectObject(tf::Transform &pose)
                                    CV_CALIB_CB_ADAPTIVE_THRESH) )
     return false;
 
-  cvFindCornerSubPix(image, &corners_[0], ncorners_, cvSize(11,11), cvSize(-1,-1),
+  //static const int RADIUS = 5;
+  static const int RADIUS = 11;
+  cvFindCornerSubPix(image, &corners_[0], ncorners_, cvSize(RADIUS,RADIUS), cvSize(-1,-1),
                      cvTermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
 
   double rot[3], trans[3];
