@@ -125,7 +125,7 @@ struct XmlException: public TopologicalMapException
 
 struct XmlRootException: public XmlException
 {
-  XmlRootException(const string& filename, const string& name) : XmlException(filename, format("Root name was %1% instead of doormap") % name) {}
+  XmlRootException(const string& filename, const string& name, const string& expected) : XmlException(filename, format("Root name was %1% instead of %2%") % name % expected) {}
 };
 
 struct GridFileTypeException: public TopologicalMapException
@@ -147,6 +147,16 @@ struct ObservationOutOfSequenceException: public TopologicalMapException
 {
   ObservationOutOfSequenceException (const ros::Time& stamp1, const ros::Time& stamp2) : 
     TopologicalMapException (format ("Observations at %1% and %2% are out of sequence") % stamp1 % stamp2) {}
+};
+
+struct NoOutletException: public TopologicalMapException
+{
+  NoOutletException (double x, double y) : TopologicalMapException (format ("Could not find outlet near (%1%, %2%)") % x % y) {}
+};
+
+struct UnknownOutletException: public TopologicalMapException
+{
+  UnknownOutletException (OutletId id) : TopologicalMapException (format ("Unknown outlet id %1%") % id) {}
 };
 
 } // namespace topological_map

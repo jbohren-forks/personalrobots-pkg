@@ -57,6 +57,7 @@ typedef shared_ptr<DoorInfo> DoorInfoPtr;
 typedef map<RegionId, DoorInfoPtr> RegionDoorMap;
 typedef boost::multi_array<int, 2> ObstacleDistanceArray;
 typedef shared_ptr<OccupancyGrid> GridPtr;
+typedef vector<OutletInfo> OutletVector;
 
 // Implementation details for top map
 class TopologicalMap::MapImpl
@@ -102,6 +103,22 @@ public:
   /// \throws ObservationOutOfSequenceExceptioon
   /// \throws NoDoorInRegionException
   double doorOpenProb (RegionId id, const ros::Time& stamp);
+
+  /// \return The id of the nearest outlet to this 2d-position
+  /// \throws NoOutletException
+  OutletId nearestOutlet (const Point2D& p) const;
+
+  /// \return (copy of) stored information about a given outlet
+  /// \throws UnknownOutletException
+  OutletInfo outletInfo (OutletId id) const;
+
+  /// \post Outlet is observed blocked
+  /// \throws UnknownOutletException
+  void observeOutletBlocked (OutletId id);
+
+  /// \post New outlet added
+  /// \return id of new outlet
+  OutletId addOutlet (const OutletInfo& outlet);
 
   /// \return set of cells in region given id
   /// \throws UnknownRegionException
@@ -180,7 +197,6 @@ public:
 
 private: 
 
-
   // During the lifetime of an instance of this class, a temporary node will exist in the connector graph at point p
   struct TemporaryRoadmapNode {
     TemporaryRoadmapNode (MapImpl* m, const Point2D& p);
@@ -217,8 +233,10 @@ private:
 
   shared_ptr<TemporaryRoadmapNode> goal_;
   
-  const double resolution_;
+  OutletVector outlets_;
  
+  const double resolution_;
+
 };
 
 

@@ -180,6 +180,20 @@ TEST(TopologicalMap, BasicAPI)
   EXPECT_TRUE(isRearrangement(n3,en32,2));
   EXPECT_TRUE(isRearrangement(n5,en5,1));
   EXPECT_EQ(3u, m2.allRegions().size());
+
+
+  // Outlets
+  m.addOutlet(OutletInfo(1,2,3,4,5,6,4,"orange"));
+  m.addOutlet(OutletInfo(10,20,30,40,50,60,1,"white"));
+  EXPECT_EQ(m.outletInfo(0).origin_z, 3);
+  EXPECT_EQ(m.outletInfo(1).sockets_color, "white");
+  EXPECT_EQ(m.nearestOutlet(Point2D(3,4)), 0);
+  EXPECT_EQ(m.nearestOutlet(Point2D(15,16)), 1);
+  EXPECT_EQ(m.outletInfo(0).blocked, false);
+  EXPECT_EQ(m.outletInfo(1).blocked, false);
+  m.observeOutletBlocked(1);
+  EXPECT_EQ(m.outletInfo(0).blocked, false);
+  EXPECT_EQ(m.outletInfo(1).blocked, true);
 }
 
 

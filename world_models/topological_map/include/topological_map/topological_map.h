@@ -40,6 +40,7 @@
 #include <boost/multi_array.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <robot_msgs/Door.h>
+#include <topological_map/outlet_info.h>
 #include <ros/time.h>
 
 namespace topological_map
@@ -60,6 +61,7 @@ typedef unsigned int ConnectorId;
 typedef vector<RegionId> RegionIdVector;
 typedef set<RegionId> RegionIdSet;
 typedef pair<RegionId, RegionId> RegionPair;
+typedef unsigned int OutletId;
 
 typedef boost::multi_array<bool, 2> OccupancyGrid;
 typedef OccupancyGrid::size_type occ_grid_size;
@@ -156,6 +158,22 @@ public:
   /// \throws ObservationOutOfSequenceExceptioon
   /// \throws NoDoorInRegionException
   double doorOpenProb (RegionId id, const ros::Time& stamp);
+
+  /// \return The id of the nearest outlet to this point
+  /// \throws NoOutletException
+  OutletId nearestOutlet (const Point2D& p) const;
+
+  /// \return (copy of) stored information about a given outlet
+  /// \throws UnknownOutletException
+  OutletInfo outletInfo (OutletId id) const;
+
+  /// \post Outlet is observed blocked
+  /// \throws UnknownOutletException
+  void observeOutletBlocked (OutletId id);
+
+  /// \post New outlet added
+  /// \return id of new outlet
+  OutletId addOutlet (const OutletInfo& outlet);
 
   /// \return Is this point in an obstacle cell?
   /// \throws UnknownPointException

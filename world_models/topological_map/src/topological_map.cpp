@@ -44,6 +44,8 @@
 #include <topological_map/door_info.h>
 #include <algorithm>
 #include <cmath>
+#include <boost/bind.hpp>
+#include <boost/ref.hpp>
 #include <ros/console.h>
 #include <ros/assert.h>
 #include <topological_map/exception.h>
@@ -59,6 +61,8 @@ using boost::make_tuple;
 using boost::tuples::ignore;
 using boost::extents;
 using boost::multi_array;
+using boost::bind;
+using boost::ref;
 using std::endl;
 using std::map;
 using std::vector;
@@ -104,7 +108,6 @@ bool TopologicalMap::MapImpl::isObstacle (const Point2D& p) const
 {
   if (pointOnMap(p)) {
     Cell2D cell = containingCell(p);
-    ROS_INFO_STREAM ("Cell is " << cell);
     return (*grid_)[cell.r][cell.c];
   }
   return false;
@@ -231,7 +234,40 @@ void writeRegionDoorMap (const RegionDoorMap& m, ostream& str)
     iter->second->writeToStream(str);
   }
 }
+
+void writeOutlet (ostream& str, const OutletInfo& outlet)
+{    
+    str << endl << outlet.origin_x << " " << outlet.origin_y << " " << outlet.origin_z << " "
+        << outlet.origin_roll << " " << outlet.origin_pitch << " " << outlet.origin_yaw << " " 
+        << outlet.sockets_size << " " << outlet.sockets_color;
+
+}
+
+void writeOutlets (const OutletVector& outlets, ostream& str)
+{
+  str << endl << outlets.size();
+  for_each (outlets.begin(), outlets.end(), bind(writeOutlet, ref(str), _1));
+}
+
+OutletInfo readOutlet (istream& str)
+{
+  return OutletInfo(str);
+}
     
+OutletVector readOutlets (istream& str)
+{
+  ROS_DEBUG_NAMED ("io", "Reading outlets");
+  
+  uint num_outlets;
+  str >> num_outlets;
+  OutletVector outlets(num_outlets);
+
+  generate(outlets.begin(), outlets.end(), bind(readOutlet, ref(str)));
+
+  ROS_DEBUG_NAMED ("io", "Done reading outlets");
+  return outlets;
+}
+
     
 
 
@@ -251,6 +287,7 @@ void TopologicalMap::MapImpl::writeToStream (ostream& stream)
   roadmap_->writeToStream(stream);
   writeRegionConnectorMap(region_connector_map_, stream);
   writeRegionDoorMap(region_door_map_, stream);
+  writeOutlets(outlets_, stream);
   stream << endl << resolution_;
 
   // Add the goal back in if necessary
@@ -389,7 +426,8 @@ TopologicalMap::MapImpl::MapImpl (istream& str, double door_open_prior_prob, dou
   grid_(readGrid(str)), obstacle_distances_(computeObstacleDistances(grid_)), region_graph_(readRegionGraph(str)), 
   roadmap_(readRoadmap(str)), grid_graph_(new GridGraph(grid_)),
   region_connector_map_(readRegionConnectorMap(str)), door_open_prior_prob_(door_open_prior_prob),
-  door_reversion_rate_(door_reversion_rate), region_door_map_(readRegionDoorMap(str, door_open_prior_prob_)), resolution_(readResolution(str))
+  door_reversion_rate_(door_reversion_rate), region_door_map_(readRegionDoorMap(str, door_open_prior_prob_)), 
+  outlets_(readOutlets(str)), resolution_(readResolution(str))
 {
 }
 
@@ -408,6 +446,30 @@ int TopologicalMap::MapImpl::regionType (const RegionId id) const
 {
   return region_graph_->regionType(id);
 }
+
+
+RegionIdVector TopologicalMap::MapImpl::neighbors (const RegionId id) const
+{
+  return region_graph_->neighbors(id);
+}
+
+
+RegionPtr TopologicalMap::MapImpl::regionCells (const RegionId id) const 
+{
+  return region_graph_->regionCells(id);
+}
+
+
+const RegionIdSet& TopologicalMap::MapImpl::allRegions () const
+{
+  return region_graph_->allRegions();
+}
+
+
+
+/****************************************
+ * Doors
+ ****************************************/
 
 Door TopologicalMap::MapImpl::regionDoor (RegionId id) const
 {
@@ -454,7 +516,6 @@ void TopologicalMap::MapImpl::observeDoorTraversal (RegionId id, bool succeeded,
 
 double TopologicalMap::MapImpl::doorOpenProb (RegionId id, const ros::Time& stamp)
 {
-  ROS_INFO ("Type is %u", region_graph_->regionType(id));
   if (region_graph_->regionType(id)!=DOORWAY) {
     throw NoDoorInRegionException(id);
   }
@@ -469,22 +530,66 @@ double TopologicalMap::MapImpl::doorOpenProb (RegionId id, const ros::Time& stam
   return w*door->getOpenProb()+(1-w)*door_open_prior_prob_;
 }
 
-RegionIdVector TopologicalMap::MapImpl::neighbors (const RegionId id) const
+
+/****************************************
+ * Outlets
+ ****************************************/
+
+OutletInfo& getOutletInfo (OutletVector& outlets, const OutletId id)
 {
-  return region_graph_->neighbors(id);
+  if (id>=outlets.size())
+    throw UnknownOutletException(id);
+  else
+    return outlets[id];
 }
 
-
-RegionPtr TopologicalMap::MapImpl::regionCells (const RegionId id) const 
+const OutletInfo& getOutletInfo (const OutletVector& outlets, const OutletId id)
 {
-  return region_graph_->regionCells(id);
+  if (id>=outlets.size())
+    throw UnknownOutletException(id);
+  else
+    return outlets[id];
 }
 
-
-const RegionIdSet& TopologicalMap::MapImpl::allRegions () const
+struct CloserTo
 {
-  return region_graph_->allRegions();
+  CloserTo(const double x, const double y) : x(x), y(y) {}
+  bool operator() (const OutletInfo& o1, const OutletInfo& o2) 
+  {
+    return sqDist(o1.origin_x, o1.origin_y)<sqDist(o2.origin_x,o2.origin_y);
+  }
+  double sqDist(double x2, double y2)
+  {
+    return (pow(x2-x,2)+pow(y2-y,2));
+  }
+  double x, y;
+};
+  
+
+OutletId TopologicalMap::MapImpl::nearestOutlet (const Point2D& p) const
+{
+  OutletVector::const_iterator pos = min_element(outlets_.begin(), outlets_.end(), CloserTo(p.x, p.y));
+  if (pos==outlets_.end()) 
+    throw NoOutletException(p.x, p.y);
+  return pos-outlets_.begin();
 }
+
+void TopologicalMap::MapImpl::observeOutletBlocked (const OutletId id)
+{
+  getOutletInfo(outlets_,id).blocked=true;
+}
+
+OutletInfo TopologicalMap::MapImpl::outletInfo (const OutletId id) const
+{
+  return getOutletInfo(outlets_,id); // Returns a copy
+}
+
+OutletId TopologicalMap::MapImpl::addOutlet (const OutletInfo& outlet)
+{
+  outlets_.push_back(outlet);
+  return outlets_.size()-1;
+}
+
 
 
 
@@ -863,6 +968,26 @@ double TopologicalMap::doorOpenProb (RegionId id, const ros::Time& stamp)
   return map_impl_->doorOpenProb(id, stamp);
 }
 
+OutletId TopologicalMap::nearestOutlet (const Point2D& p) const
+{
+  return map_impl_->nearestOutlet(p);
+}
+
+void TopologicalMap::observeOutletBlocked (const OutletId id)
+{
+  map_impl_->observeOutletBlocked(id);
+}
+
+OutletInfo TopologicalMap::outletInfo (const OutletId id) const
+{
+  return map_impl_->outletInfo(id);
+}
+
+
+OutletId TopologicalMap::addOutlet (const OutletInfo& outlet)
+{
+  return map_impl_->addOutlet(outlet);
+}
 
 RegionIdVector TopologicalMap::neighbors (const RegionId id) const
 {

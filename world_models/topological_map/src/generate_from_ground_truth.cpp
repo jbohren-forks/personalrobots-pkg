@@ -41,6 +41,8 @@
 #include <topological_map/topological_map.h>
 #include <utility>
 #include <boost/program_options.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/bind.hpp>
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -59,10 +61,13 @@ using std::string;
 using std::vector;
 using boost::tie;
 using boost::shared_ptr;
+using boost::bind;
 using robot_msgs::Door;
 
 namespace topological_map
 {
+
+typedef vector<OutletInfo> OutletVector;
 
 /************************************************************
  * Constants
@@ -240,7 +245,7 @@ struct AddRegions
 };
 
 
-TopologicalMapPtr groundTruthTopologicalMap (const OccupancyGrid& grid, const DoorFrameVector& door_info, 
+TopologicalMapPtr groundTruthTopologicalMap (const OccupancyGrid& grid, const DoorFrameVector& door_info, const OutletVector& outlets,
                                              const double resolution, const double width)
 {
   shared_ptr<OccupancyGrid> grid_ptr(new OccupancyGrid(grid));
@@ -259,6 +264,9 @@ TopologicalMapPtr groundTruthTopologicalMap (const OccupancyGrid& grid, const Do
   ROS_DEBUG_STREAM_NAMED("ground_truth_map", "Found " << comps.size() << " connected components. Creating map from grid");
   TopologicalMapPtr map(new TopologicalMap(grid, resolution));
   
+  ROS_DEBUG_NAMED("ground_truth_map", "Adding %u outlets", outlets.size());
+  for_each (outlets.begin(), outlets.end(), bind(&TopologicalMap::addOutlet, map, _1));
+
   ROS_DEBUG_NAMED("ground_truth_map", "Done creating map from grid.  Adding door regions");
   for_each (comps.begin(), comps.end(), AddRegions(map, door_regions, door_info));
 
@@ -276,7 +284,7 @@ DoorFrameVector loadDoorsFromFile (const string& filename, const double resoluti
   TiXmlHandle root=TiXmlHandle(&doc).FirstChildElement();
   const string& root_name=root.Element()->ValueStr();
   if (root_name!=string("doormap")) {
-    throw XmlRootException(filename, root_name);
+    throw XmlRootException(filename, root_name, string("doormap"));
   }
 
   TiXmlElement* next_door;
@@ -302,6 +310,68 @@ DoorFrameVector loadDoorsFromFile (const string& filename, const double resoluti
 }
 
 
+OutletVector loadOutletsFromFile (const string& filename)
+{
+  TiXmlDocument doc(filename);
+  if (!doc.LoadFile()) {
+    throw XmlException(filename, "Unable to open");
+  }
+
+  TiXmlHandle root=TiXmlHandle(&doc).FirstChildElement();
+  const string& root_name=root.Element()->ValueStr();
+  if (root_name!=string("outlets")) {
+    throw XmlRootException(filename, root_name, string("outlets"));
+  }
+
+  TiXmlElement* next_outlet;
+  OutletVector outlets;
+  for (next_outlet=root.FirstChild().Element(); next_outlet; next_outlet=next_outlet->NextSiblingElement())
+  {
+    TiXmlHandle outlet_handle(next_outlet);
+    TiXmlHandle origin = outlet_handle.FirstChildElement("origin");
+    TiXmlHandle sockets = outlet_handle.FirstChildElement("sockets");
+    
+    typedef boost::tokenizer<boost::char_separator<char> > Tokenizer;
+    boost::char_separator<char> sep(" ");
+
+
+    const string xyz_str = origin.ToElement()->Attribute("xyz");
+    Tokenizer xyz_tok(xyz_str, sep);
+    Tokenizer::iterator pos=xyz_tok.begin(), end=xyz_tok.end();
+    ROS_ASSERT_MSG(pos!=end, "Invalid xyz element");
+    const double x=atof((pos++)->c_str());
+    ROS_ASSERT_MSG(pos!=end, "Invalid xyz element");
+    const double y=atof((pos++)->c_str());
+    ROS_ASSERT_MSG(pos!=end, "Invalid xyz element");
+    const double z=atof((pos++)->c_str());
+
+    const string rpy_str = origin.ToElement()->Attribute("rpy");
+    Tokenizer rpy_tok(rpy_str, sep);
+    pos=rpy_tok.begin(), end=rpy_tok.end();
+    ROS_ASSERT_MSG(pos!=end, "Invalid rpy element");
+    const double roll=atof((pos++)->c_str());
+    ROS_ASSERT_MSG(pos!=end, "Invalid rpy element");
+    const double pitch=atof((pos++)->c_str());
+    ROS_ASSERT_MSG(pos!=end, "Invalid rpy element");
+    const double yaw=atof((pos++)->c_str());
+
+    const uint size = atoi(sockets.ToElement()->Attribute("size"));
+    const string color = sockets.ToElement()->Attribute("color");
+    
+    ROS_DEBUG_STREAM_NAMED ("load_outlets", "Read outlet with xyz " << x << ", " << y << ", " << z  << " rpy = " 
+                            << roll << ", " << pitch << ", " << yaw << " size = " << size << " color = " << color);
+
+    outlets.push_back(OutletInfo(x,y,z,roll,pitch,yaw,size,color));
+  }
+
+  return outlets;
+}
+
+
+
+
+
+
 
 } // namespace
 
@@ -316,11 +386,13 @@ int main(int argc, char** argv)
 {
 
   string door_file("");
+  string outlet_file("");
   string ppm_file("");
   string top_map_file("");
   string static_map_file("");
   double resolution(-1), width(-1);
   unsigned inflation_radius = 0;
+
 
 
   // Declare the supported options.
@@ -333,20 +405,22 @@ int main(int argc, char** argv)
     ("static_map_file,m", po::value<string>(&static_map_file), "pgm file containing the static map.  Required.")
     ("ppm_output_file,p", po::value<string>(&ppm_file), "Name of .ppm output file.")
     ("topological_map_output_file,t", po::value<string>(&top_map_file), "Name of topological map output file")
+    ("outlet_file,o", po::value<string>(&outlet_file), "xml file containing outlet locations.  Required.")
     ("door_file,d", po::value<string>(&door_file), "xml file containing door locations.  Required.");
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);    
 
-  if (vm.count("help") || !vm.count("door_file") || !vm.count("resolution") || !vm.count("static_map_file") || !vm.count("width")) {
+  if (vm.count("help") || !vm.count("door_file") || !vm.count("resolution") || !vm.count("static_map_file") || !vm.count("width") || !vm.count("outlet_file")) {
     std::cout << desc;
     return 1;
   }
   
   tmap::DoorFrameVector doors = tmap::loadDoorsFromFile(door_file, resolution);
   tmap::OccupancyGrid grid = tmap::loadOccupancyGrid(static_map_file);
+  tmap::OutletVector outlets = tmap::loadOutletsFromFile(outlet_file);
   grid = tmap::inflateObstacles(grid, inflation_radius);
-  tmap::TopologicalMapPtr tmap = groundTruthTopologicalMap(grid, doors, resolution, width);
+  tmap::TopologicalMapPtr tmap = groundTruthTopologicalMap(grid, doors, outlets, resolution, width);
 
   if (vm.count("ppm_output_file")) {
     ofstream stream(ppm_file.c_str());
