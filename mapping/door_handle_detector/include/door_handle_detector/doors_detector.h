@@ -86,6 +86,8 @@ private:
   /** \brief Main point cloud callback.*/
   void cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::MessagePtr& cloud);
 
+  double dist(const robot_msgs::Point32& p1, const robot_msgs::Point32& p2) const;
+
   mutable ros::Node* node_;
   mutable int global_marker_id_;
 

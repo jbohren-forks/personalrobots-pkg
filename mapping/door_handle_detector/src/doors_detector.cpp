@@ -440,10 +440,35 @@ bool
     // Get the min_p and max_p of selected cluster
     cloud_geometry::statistics::getLargestXYPoints (pmap_.polygons[cc], min_p, max_p);
 
-    // Reply doors message in same frame as request doors message
-    result[nr_d].door_p1 = min_p;
-    result[nr_d].door_p2 = max_p;
-    result[nr_d].door_p2.z = min_p.z;
+    // get door p1 and p2 that match frame p1 and p2
+    if (result[nr_d].hinge == Door::HINGE_P1){
+      if (dist(min_p, result[nr_d].frame_p1) < dist(max_p, result[nr_d].frame_p1)){
+	result[nr_d].door_p1 = min_p;
+	result[nr_d].door_p2 = max_p;
+	result[nr_d].door_p2.z = min_p.z;
+      }
+      else{
+	result[nr_d].door_p1 = max_p;
+	result[nr_d].door_p2 = min_p;
+	result[nr_d].door_p2.z = min_p.z;
+      }
+    }
+    else if (result[nr_d].hinge == Door::HINGE_P2){
+      if (dist(min_p, result[nr_d].frame_p2) < dist(max_p, result[nr_d].frame_p2)){
+	result[nr_d].door_p1 = max_p;
+	result[nr_d].door_p2 = min_p;
+	result[nr_d].door_p2.z = min_p.z;
+      }
+      else{
+	result[nr_d].door_p1 = min_p;
+	result[nr_d].door_p2 = max_p;
+	result[nr_d].door_p2.z = min_p.z;
+      }
+    }
+    else
+      ROS_ERROR("DoorsDetector: Hinge side is not defined");
+
+    // get door normal
     result[nr_d].normal.x = -coeff[cc][0];
     result[nr_d].normal.y = -coeff[cc][1];
     result[nr_d].normal.z = -coeff[cc][2];
@@ -453,7 +478,8 @@ bool
     result[nr_d].height = fabs (max_p.z - min_p.z);
 
     // check if door is latched
-    if (door_handle_detector::getDoorAngle(result[nr_d]) > 15.0*M_PI/180.0)
+    double angle = door_handle_detector::getDoorAngle(result[nr_d]);
+    if (fabs(angle) > 15.0*M_PI/180.0)
       result[nr_d].latch_state = Door::UNLATCHED;
     else
       result[nr_d].latch_state = Door::LATCHED;
@@ -545,6 +571,12 @@ void DoorDetector::cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::
   ROS_INFO ("Received %d data points in frame %s with %d channels (%s).", (int)pointcloud_.pts.size (), pointcloud_.header.frame_id.c_str (),
             (int)pointcloud_.chan.size (), cloud_geometry::getAvailableChannels (pointcloud_).c_str ());
   num_clouds_received_++;
+}
+
+
+double DoorDetector::dist(const robot_msgs::Point32& p1, const robot_msgs::Point32& p2) const
+{
+  return sqrt(((p1.x-p2.x)*(p1.x-p2.x)) + ((p1.y-p2.y)*(p1.y-p2.y)) + ((p1.z-p2.z)*(p1.z-p2.z)));
 }
 
 
