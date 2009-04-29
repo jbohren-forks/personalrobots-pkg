@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<controllers>
+  <controller name="r_gripper_controller" topic="r_gripper_controller" type="JointPositionControllerNode">
+    <joint name="r_gripper_joint">
+        <pid p="1.0" d="0.0" i="0.0" iClamp="0" />
+    </joint>
+  </controller>
+</controllers>

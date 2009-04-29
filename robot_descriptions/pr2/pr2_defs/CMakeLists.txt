@@ -54,13 +54,21 @@ add_custom_command(
   ARGS ${pr2rarm} > ${pr2rarm_expanded}
   DEPENDS ${pr2rarm} ${def_files})
 
-set(pr2gripper "${CMAKE_CURRENT_SOURCE_DIR}/robots/gripper.xacro.xml")
-set(pr2gripper_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/gripper.expanded.xml")
+set(pr2lgripper "${CMAKE_CURRENT_SOURCE_DIR}/robots/l_gripper.xacro.xml")
+set(pr2lgripper_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/l_gripper.expanded.xml")
 add_custom_command(
-  OUTPUT ${pr2gripper_expanded}
+  OUTPUT ${pr2lgripper_expanded}
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
-  ARGS ${pr2gripper} > ${pr2gripper_expanded}
-  DEPENDS ${pr2gripper} ${def_files})
+  ARGS ${pr2lgripper} > ${pr2lgripper_expanded}
+  DEPENDS ${pr2lgripper} ${def_files})
+
+set(pr2rgripper "${CMAKE_CURRENT_SOURCE_DIR}/robots/r_gripper.xacro.xml")
+set(pr2rgripper_expanded "${CMAKE_CURRENT_SOURCE_DIR}/robots/r_gripper.expanded.xml")
+add_custom_command(
+  OUTPUT ${pr2rgripper_expanded}
+  COMMAND ${xacro_PACKAGE_PATH}/xacro.py
+  ARGS ${pr2rgripper} > ${pr2rgripper_expanded}
+  DEPENDS ${pr2rgripper} ${def_files})
 
 
 
@@ -132,6 +140,6 @@ set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv ${basepath}/convex
 
 endforeach(it)
 
-add_custom_target(media_files ALL DEPENDS ${pr2robot_expanded} ${pr2prototype1_expanded} ${pr2larm_expanded} ${pr2rarm_expanded} ${pr2gripper_expanded} ${pr2_gen_files})
+add_custom_target(media_files ALL DEPENDS ${pr2robot_expanded} ${pr2prototype1_expanded} ${pr2larm_expanded} ${pr2rarm_expanded} ${pr2lgripper_expanded} ${pr2rgripper_expanded} ${pr2_gen_files})
 
 #TODO; stop bin and lib from being generated
