@@ -15,7 +15,7 @@
              k_position="100" k_velocity="0.05"
              safety_length_min="0.0" safety_length_max="0.0" />
       <calibration reference_position="-0.35" values="0 0" />
-      <joint_properties damping="0.2" />
+      <joint_properties damping="0.01" />
     </joint>
 
     <link name="${name}_mount_link">
@@ -23,11 +23,11 @@
       <insert_block name="origin" />
       <joint name="${name}_mount_joint" />
       <inertial>
-        <mass value="0.1" />
+        <mass value="0.01" />
         <com xyz="0 0 0" />
-        <inertia ixx="0.001" ixy="0" ixz="0" 
-		 iyy="0.001" iyz="0" 
-		 izz="0.001" />
+        <inertia ixx="0.0001" ixy="0" ixz="0" 
+		 iyy="0.0001" iyz="0" 
+		 izz="0.0001" />
       </inertial>
 
       <visual>
