@@ -76,6 +76,7 @@ Stamped<Pose> getRobotPose(const robot_msgs::Door& door, double dist)
 
   Stamped<Pose> robot_pose;
   robot_pose.frame_id_ = door.header.frame_id;
+  robot_pose.stamp_ = door.header.stamp;
   robot_pose.setOrigin( Vector3(robot_pos(0), robot_pos(1), robot_pos(2)));
   robot_pose.setRotation( Quaternion(getVectorAngle(x_axis, normal_frame), 0, 0) ); 
 
@@ -103,23 +104,25 @@ Stamped<Pose> getGripperPose(const robot_msgs::Door& door, double angle, double 
   Rotation rot_frame_angle = Rotation::RotZ(angle);
   frame_vec = rot_frame_angle * frame_vec;
 
-  // get the normal on the frame from the given normal on the door
+  // get the normal on the resulting door at "angle"
   Vector normal_door(door.normal.x, door.normal.y, door.normal.z);
-  double door_angle = getDoorAngle(door);
-  Rotation rot_frame_door = Rotation::RotZ(door_angle);
-  Vector normal_frame = rot_frame_door * normal_door;
+  Rotation rot_door_res = Rotation::RotZ(-getDoorAngle(door)+angle);
+  Vector normal_res = rot_door_res * normal_door;
 
   // get gripper pos
   Vector gripper_pos = hinge + frame_vec;
 
   Stamped<Pose> gripper_pose;
   gripper_pose.frame_id_ = door.header.frame_id;
+  gripper_pose.stamp_ = door.header.stamp;
   gripper_pose.setOrigin( Vector3(gripper_pos(0), gripper_pos(1), gripper_height));
-  gripper_pose.setRotation( Quaternion(getVectorAngle(x_axis, normal_frame), 0, 0) ); 
+  gripper_pose.setRotation( Quaternion(getVectorAngle(x_axis, normal_res), 0, 0) ); 
 
+  /*
   cout << "gripper pose is " << gripper_pose.getOrigin()[0] << ", " 
        << gripper_pose.getOrigin()[1] << ", " << gripper_pose.getOrigin()[2] << endl;
   cout << door << endl;
+  */
 
   return gripper_pose;  
 }

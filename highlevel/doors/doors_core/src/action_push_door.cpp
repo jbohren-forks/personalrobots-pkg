@@ -35,8 +35,9 @@
 /* Author: Wim Meeussen */
 
 #include <door_handle_detector/door_functions.h>
+#include <robot_msgs/PoseStamped.h>
 #include "doors_core/executive_functions.h"
-#include "doors_core/action_touch_door.h"
+#include "doors_core/action_push_door.h"
 
 using namespace tf;
 using namespace KDL;
@@ -45,27 +46,29 @@ using namespace std;
 using namespace door_handle_detector;
 
 static const string fixed_frame = "odom_combined";
-static const double touch_dist = 0.6;
+static const double push_dist = 0.6;
+static const double push_vel  = 5.0 * M_PI/180.0;  // 5 [deg/sec]
 
 
 
-TouchDoorAction::TouchDoorAction(Node& node) : 
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("touch_door"), 
+PushDoorAction::PushDoorAction(Node& node) : 
+  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("push_door"), 
   node_(node),
   tf_(node)
 {
   node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
+  node_.advertise<robot_msgs::PoseStamped>("r_arm_cartesian_pose_controller/command",2);
 };
 
 
-TouchDoorAction::~TouchDoorAction()
+PushDoorAction::~PushDoorAction()
 {};
 
 
 
-robot_actions::ResultStatus TouchDoorAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
+robot_actions::ResultStatus PushDoorAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
 {
-  ROS_INFO("TouchDoorAction: execute");
+  ROS_INFO("PushDoorAction: execute");
  
   // set default feedback
   feedback = goal;
@@ -73,38 +76,48 @@ robot_actions::ResultStatus TouchDoorAction::execute(const robot_msgs::Door& goa
   // transform door message to time fixed frame
   robot_msgs::Door goal_tr;
   if (!transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame)){
-    ROS_ERROR("TouchDoorAction: Could not tranform door message from '%s' to '%s' at time %f",
+    ROS_ERROR("PushDoorAction: Could not tranform door message from '%s' to '%s' at time %f",
 	      goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());
     return robot_actions::ABORTED;
   }
 
-  // check for preemption
-  if (isPreemptRequested()) {
-    ROS_ERROR("TouchDoorAction: preempted");
-    return robot_actions::PREEMPTED;
-  }
-
-  // close the gripper while moving to touch the door
+  // close the gripper 
   std_msgs::Float64 gripper_msg;
   gripper_msg.data = -20.0;
   node_.publish("r_gripper_effort_controller/command", gripper_msg);
   
-  // move gripper in front of door
-  //Stamped<Pose> gripper_pose = getGripperPose(goal_tr, getDoorAngle(goal_tr), touch_dist);
-  Stamped<Pose> gripper_pose = getGripperPose(goal_tr, 0.0, touch_dist);
-  gripper_pose.stamp_ = Time::now();
-  PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
+  // angle step
+  Duration sleep_time(0.01);
+  double angle_step, angle=0;
+  if (goal_tr.rot_dir == robot_msgs::Door::ROT_DIR_CLOCKWISE)
+    angle_step = -push_vel*sleep_time.toSec();
+  else if (goal_tr.rot_dir == robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE)
+    angle_step = push_vel*sleep_time.toSec();
+  else{
+    ROS_ERROR("PushDoorAction: door rotation direction not specified");
+    return robot_actions::ABORTED;
+  }
 
-  ROS_INFO("TouchDoorAction: move to touch the door at distance %f from hinge", touch_dist);
-  if (!ros::service::call("r_arm_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
-    if (isPreemptRequested()){
-      ROS_ERROR("TouchDoorAction: preempted");
+  // push door
+  Stamped<Pose> gripper_pose;
+  robot_msgs::PoseStamped gripper_pose_msg;
+  while (fabs(angle) < M_PI/2.0){
+    // define griper pose
+    gripper_pose = getGripperPose(goal_tr, angle, push_dist);
+    gripper_pose.stamp_ = Time::now();
+    PoseStampedTFToMsg(gripper_pose, gripper_pose_msg);
+    node_.publish("r_arm_cartesian_pose_controller/command", gripper_pose_msg);
+
+    // increase angle
+    angle += angle_step;
+
+    // check for preemption
+    if (isPreemptRequested()) {
+      ROS_ERROR("PushDoorAction: preempted");
       return robot_actions::PREEMPTED;
     }
-    else{
-      ROS_ERROR("TouchDoorAction: move_to command failed");
-      return robot_actions::ABORTED;
-    }
+
+    sleep_time.sleep();
   }
 
   feedback = goal_tr;

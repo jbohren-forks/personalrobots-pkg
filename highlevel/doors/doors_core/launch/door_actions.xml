@@ -4,6 +4,7 @@
   <node pkg="doors_core" type="action_runner_grasp_handle" output="screen" />
   <node pkg="doors_core" type="action_runner_touch_door" output="screen" />
   <node pkg="doors_core" type="action_runner_open_door" output="screen" />
+  <node pkg="doors_core" type="action_runner_push_door" output="screen" />
   <node pkg="doors_core" type="action_runner_unlatch_handle" output="screen" />
   <node pkg="doors_core" type="action_runner_release_handle" output="screen" />
 </launch>

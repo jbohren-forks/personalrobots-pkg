@@ -31,6 +31,12 @@ rospack_add_executable(action_runner_touch_door
 		       src/action_runner_touch_door.cpp
                       )
 
+rospack_add_executable(action_runner_push_door
+		       src/action_push_door.cpp 
+		       src/executive_functions.cpp 
+		       src/action_runner_push_door.cpp
+                      )
+
 rospack_add_executable(action_runner_open_door
 		       src/action_open_door.cpp
 		       src/action_runner_open_door.cpp
