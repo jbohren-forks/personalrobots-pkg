@@ -135,7 +135,7 @@ std::ostream& operator<< (std::ostream& os, const robot_msgs::Door& d)
   os << " - latch_state " << d.latch_state << endl;
   os << " - hinge side " << d.hinge << endl;
   os << " - rot_dir " << d.rot_dir << endl;
-
+  os << " - angle " << getDoorAngle(d) << endl;
   return os;
 }
 

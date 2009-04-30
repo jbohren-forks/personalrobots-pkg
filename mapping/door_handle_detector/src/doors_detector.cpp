@@ -479,6 +479,7 @@ bool
 
     // check if door is latched
     double angle = door_handle_detector::getDoorAngle(result[nr_d]);
+    ROS_INFO("DoorsDetector: Door angle relative to frame is %f [deg]", angle*180.0/M_PI);
     if (fabs(angle) > 15.0*M_PI/180.0)
       result[nr_d].latch_state = Door::UNLATCHED;
     else
