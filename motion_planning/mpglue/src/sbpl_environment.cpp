@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include <mpglue/sbpl_environment.h>
-#include <old_costmap_2d/costmap_2d.h>
+#include <costmap_2d/cost_values.h>
 #include <sbpl/headers.h>
 #include <sfl/util/strutil.hpp>
 
@@ -104,8 +104,8 @@ namespace {
     virtual int SetStart(double px, double py, double pth);
     virtual int SetGoal(double px, double py, double pth);
     virtual void SetGoalTolerance(double tol_xy, double tol_th);
-    virtual deprecated_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
-    virtual int GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const;
+    virtual rfct_pose GetPoseFromState(int stateID) const throw(invalid_state);
+    virtual int GetStateFromPose(rfct_pose const & pose) const;
     
     virtual double GetAngularTolerance() const;
     
@@ -151,7 +151,7 @@ namespace {
     virtual unsigned char GetMapCost(int ix, int iy) const
     {
       if ( ! env_->IsWithinMapCell(ix, iy))
-	return old_costmap_2d::CostMap2D::NO_INFORMATION;
+	return costmap_2d::NO_INFORMATION;
       return env_->GetMapCost(ix, iy);
     }
     
@@ -171,7 +171,7 @@ namespace {
     virtual void SetGoalTolerance(double tol_xy, double tol_th)
     { env_->SetGoalTolerance(tol_xy, tol_xy, tol_th); }
     
-    virtual deprecated_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state)
+    virtual rfct_pose GetPoseFromState(int stateID) const throw(invalid_state)
     {
       if (0 > stateID)
 	throw invalid_state("SBPLEnvironmentDSI::GetPoseFromState()", stateID);
@@ -181,14 +181,11 @@ namespace {
       // PoseDiscToCont() retval
       double px, py, pth;
       env_->PoseDiscToCont(ix, iy, ith, px, py, pth);
-      deprecated_msgs::Pose2DFloat32 pose;
-      pose.x = px;
-      pose.y = py;
-      pose.th = pth;
+      rfct_pose pose(px, py, pth);
       return pose;
     }
     
-    virtual int GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const
+    virtual int GetStateFromPose(rfct_pose const & pose) const
     {
       int ix, iy, ith;
       if ( ! env_->PoseContToDisc(pose.x, pose.y, pose.th, ix, iy, ith))
@@ -648,7 +645,7 @@ namespace {
   GetMapCost(int ix, int iy) const
   {
     if ( ! env_->IsWithinMapCell(ix, iy))
-      return old_costmap_2d::CostMap2D::NO_INFORMATION;
+      return costmap_2d::NO_INFORMATION;
     return env_->GetMapCost(ix, iy);
   }
   
@@ -689,7 +686,7 @@ namespace {
   
   /** \note Always sets pose.th == -42 so people can detect that it is
       undefined. */
-  deprecated_msgs::Pose2DFloat32 SBPLEnvironment2D::
+  rfct_pose SBPLEnvironment2D::
   GetPoseFromState(int stateID) const
     throw(invalid_state)
   {
@@ -701,16 +698,13 @@ namespace {
     // wouldn't have a stateID)
     double px, py;
     it_->indexToGlobal(ix, iy, &px, &py);
-    deprecated_msgs::Pose2DFloat32 pose;
-    pose.x = px;
-    pose.y = py;
-    pose.th = -42;
+    rfct_pose pose(px, py, -42);
     return pose;
   }
   
   
   int SBPLEnvironment2D::
-  GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const
+  GetStateFromPose(rfct_pose const & pose) const
   {
     ssize_t ix, iy;
     it_->globalToIndex(pose.x, pose.y, &ix, &iy);

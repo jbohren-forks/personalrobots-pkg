@@ -74,7 +74,6 @@ namespace mpbench {
 	one small) and then calls exit(). */
     void display(Configuration const & config,
 		 char const * windowName,
-		 /** XXXX temporary hack */
 		 size_t layoutID,
 		 int * argc, char ** argv);
     

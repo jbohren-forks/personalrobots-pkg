@@ -8,7 +8,7 @@
  <depend package="std_msgs"/>
  <depend package="robot_msgs"/>
  <depend package="roscpp"/>
- <depend package="old_costmap_2d"/>
+ <depend package="costmap_2d"/>
  <depend package="sbpl"/>
  <depend package="sbpl_door_planner"/>
  <depend package="libsunflower"/>

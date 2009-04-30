@@ -60,12 +60,6 @@ namespace mpglue {
       theta(atan2(pose.orientation.z, pose.orientation.w)),
       dr(default_dr), dtheta(default_dtheta) {}
   
-  waypoint_s::waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose, double _dr, double _dtheta)
-    : x(pose.x), y(pose.y), theta(pose.th), dr(_dr), dtheta(_dtheta) {}
-  
-  waypoint_s::waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose)
-    : x(pose.x), y(pose.y), theta(pose.th), dr(default_dr), dtheta(default_dtheta) {}
-  
   bool waypoint_s::ignoreTheta() const
   {
     return dtheta >= M_PI;
@@ -145,8 +139,10 @@ namespace mpglue {
 	      double * optDirectionChangeRad)
   {
     PlanConverter pc(plan, dr, dtheta);
-    for (raw_sbpl_plan_t::const_iterator it(raw.begin()); it != raw.end(); ++it)
-      pc.addWaypoint(waypoint_s(environment.GetPoseFromState(*it), dr, dtheta));
+    for (raw_sbpl_plan_t::const_iterator it(raw.begin()); it != raw.end(); ++it) {
+      rfct_pose pose(environment.GetPoseFromState(*it));
+      pc.addWaypoint(waypoint_s(pose.x, pose.y, pose.th, dr, dtheta));
+    }
     if (optPlanLengthM)
       *optPlanLengthM = pc.plan_length;
     if (optTangentChangeRad)

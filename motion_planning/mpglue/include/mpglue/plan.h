@@ -36,16 +36,11 @@
 #define MPGLUE_PLAN_HPP
 
 #include <robot_msgs/Pose.h>
-#include <deprecated_msgs/Pose2DFloat32.h>
 #include <vector>
 
 namespace mpglue {
   
   typedef std::vector<int> raw_sbpl_plan_t;
-  
-  namespace deprecated {
-    typedef std::vector<deprecated_msgs::Pose2DFloat32> waypoint_plan_t;
-  }
   
   class SBPLEnvironment;
   class IndexTransform;
@@ -60,8 +55,6 @@ namespace mpglue {
     waypoint_s(waypoint_s const & orig);
     waypoint_s(robot_msgs::Pose const & pose, double dr, double dtheta);
     explicit waypoint_s(robot_msgs::Pose const & pose);
-    waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose, double dr, double dtheta);
-    explicit waypoint_s(deprecated_msgs::Pose2DFloat32 const & pose);
     
     virtual ~waypoint_s() {}
       

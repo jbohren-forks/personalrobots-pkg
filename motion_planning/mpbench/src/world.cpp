@@ -218,7 +218,7 @@ namespace mpbench {
   boost::shared_ptr<mpglue::IndexTransform const> World::
   getIndexTransform() const
   {
-    return getCostmapper(0)->getIndexTransform(); // XXXX all transforms "should be" equal
+    return getCostmapper(0)->getIndexTransform(); // all transforms are equal
   }
   
   

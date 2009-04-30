@@ -33,95 +33,100 @@
  *********************************************************************/
 
 #include <mpglue/costmap.h>
-#include <old_costmap_2d/obstacle_map_accessor.h>
+#include <costmap_2d/costmap_2d.h>
 #include <sfl/gplan/RWTravmap.hpp>
 #include <sfl/gplan/GridFrame.hpp>
 #include <math.h>
+
 
 namespace {
   
   
   class cm2dCostmapAccessor: public mpglue::CostmapAccessor {
   public:
-    cm2dCostmapAccessor(old_costmap_2d::ObstacleMapAccessor const * cm): cm_(cm) {}
+    cm2dCostmapAccessor(mpglue::costmap_2d_getter * get_costmap): get_costmap_(get_costmap) {}
     
     virtual mpglue::cost_t getLethalCost() const
-    { return old_costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE; }
+    { return costmap_2d::LETHAL_OBSTACLE; }
     
     virtual mpglue::cost_t getInscribedCost() const
-    { return old_costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE; }
+    { return costmap_2d::INSCRIBED_INFLATED_OBSTACLE; }
     
     virtual mpglue::cost_t getPossiblyCircumcribedCost() const
-    { return cm_->getCircumscribedCostLowerBound(); }
+    { return (*get_costmap_)()->getCircumscribedCost(); }
     
     virtual ssize_t getXBegin() const { return 0; }
-    virtual ssize_t getXEnd() const { return cm_->getWidth(); }
+    virtual ssize_t getXEnd() const { return (*get_costmap_)()->cellSizeX(); }
     virtual ssize_t getYBegin() const { return 0; }
-    virtual ssize_t getYEnd() const { return cm_->getHeight(); }
+    virtual ssize_t getYEnd() const { return (*get_costmap_)()->cellSizeY(); }
     
-    virtual bool isValidIndex(ssize_t index_x, ssize_t index_y) const
-    { return (index_x >= 0) && (static_cast<size_t>(index_x) < cm_->getWidth())
-	&&   (index_y >= 0) && (static_cast<size_t>(index_y) < cm_->getHeight()); }
+    virtual bool isValidIndex(ssize_t index_x, ssize_t index_y) const {
+      costmap_2d::Costmap2D const * cm((*get_costmap_)());
+      return (index_x >= 0) && (static_cast<size_t>(index_x) < cm->cellSizeX())
+	&&   (index_y >= 0) && (static_cast<size_t>(index_y) < cm->cellSizeY()); }
     
     virtual bool isLethal(ssize_t index_x, ssize_t index_y,
 			  bool out_of_bounds_reply) const {
       if (isValidIndex(index_x, index_y))
-	return cm_->getCost(index_x, index_y) >= old_costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE;
+	return (*get_costmap_)()->getCost(index_x, index_y)
+	  >= costmap_2d::LETHAL_OBSTACLE;
       return out_of_bounds_reply;
     }
     
     virtual bool isInscribed(ssize_t index_x, ssize_t index_y,
 			     bool out_of_bounds_reply) const {
       if (isValidIndex(index_x, index_y))
-	return cm_->getCost(index_x, index_y)
-	  >= old_costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE;
+	return (*get_costmap_)()->getCost(index_x, index_y)
+	  >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
       return out_of_bounds_reply;
     }
     
     virtual bool isPossiblyCircumcribed(ssize_t index_x, ssize_t index_y,
 					bool out_of_bounds_reply) const {
+      costmap_2d::Costmap2D const * cm((*get_costmap_)());
       if (isValidIndex(index_x, index_y))
-	return cm_->isCircumscribedCell(index_x, index_y);
+	return cm->getCost(index_x, index_y)
+	  >= cm->getCircumscribedCost();
       return out_of_bounds_reply;
     }
     
     virtual bool isFreespace(ssize_t index_x, ssize_t index_y,
 			     bool out_of_bounds_reply) const {
       if (isValidIndex(index_x, index_y))
-	return cm_->getCost(index_x, index_y) == 0;
+	return (*get_costmap_)()->getCost(index_x, index_y) == 0;
       return out_of_bounds_reply;
     }
     
     virtual bool getCost(ssize_t index_x, ssize_t index_y, mpglue::cost_t * cost) const {
       if ( ! isValidIndex(index_x, index_y))
 	return false;
-      *cost = cm_->getCost(index_x, index_y);
+      *cost = (*get_costmap_)()->getCost(index_x, index_y);
       return true;
     }
     
-    old_costmap_2d::ObstacleMapAccessor const * cm_;
+    mpglue::costmap_2d_getter * get_costmap_;
   };
   
   
   class cm2dTransform: public mpglue::IndexTransform {
   public:
-    cm2dTransform(old_costmap_2d::ObstacleMapAccessor const * cm): cm_(cm) {}
+    cm2dTransform(mpglue::costmap_2d_getter * get_costmap): get_costmap_(get_costmap) {}
     
     virtual void globalToIndex(double global_x, double global_y,
 			       ssize_t * index_x, ssize_t * index_y) const {
-      unsigned int ix, iy;
-      cm_->WC_MC(global_x, global_y, ix, iy);
+      int ix, iy;
+      (*get_costmap_)()->worldToMapNoBounds(global_x, global_y, ix, iy);
       *index_x = ix;
       *index_y = iy;
     }
     
     virtual void indexToGlobal(ssize_t index_x, ssize_t index_y,
 			       double * global_x, double * global_y) const
-    { cm_->MC_WC(index_x, index_y, *global_x, *global_y); }
+    { (*get_costmap_)()->mapToWorld(index_x, index_y, *global_x, *global_y); }
     
-    virtual double getResolution() const { return cm_->getResolution(); }
+    virtual double getResolution() const { return (*get_costmap_)()->resolution(); }
     
-    old_costmap_2d::ObstacleMapAccessor const * cm_;
+    mpglue::costmap_2d_getter * get_costmap_;
   };
   
   
@@ -316,21 +321,35 @@ namespace mpglue {
   }
   
   
-  CostmapAccessor * createCostmapAccessor(old_costmap_2d::ObstacleMapAccessor const * cm)
-  { return new cm2dCostmapAccessor(cm); }
+  CostmapAccessor * createCostmapAccessor(costmap_2d_getter * get_costmap)
+  {
+    return new cm2dCostmapAccessor(get_costmap);
+  }
+  
   
   CostmapAccessor * createCostmapAccessor(sfl::RDTravmap const * rdt,
 					  int possibly_circumscribed_cost)
-  { return new sflRDTAccessor(rdt, possibly_circumscribed_cost); }
+  {
+    return new sflRDTAccessor(rdt, possibly_circumscribed_cost);
+  }
+  
   
   CostmapAccessor * createCostmapAccessor(sfl::TraversabilityMap const * rdt,
 					  int possibly_circumscribed_cost)
-  { return new sflTravmapAccessor(rdt, possibly_circumscribed_cost); }
+  {
+    return new sflTravmapAccessor(rdt, possibly_circumscribed_cost);
+  }
   
-  IndexTransform * createIndexTransform(old_costmap_2d::ObstacleMapAccessor const * cm)
-  { return new cm2dTransform(cm); }
+  
+  IndexTransform * createIndexTransform(costmap_2d_getter * get_costmap)
+  {
+    return new cm2dTransform(get_costmap);
+  }
+  
   
   IndexTransform * createIndexTransform(sfl::GridFrame const * gf)
-  { return new sflTransform(gf); }
+  {
+    return new sflTransform(gf);
+  }
   
 }

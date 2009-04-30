@@ -322,8 +322,7 @@ static void init_layout_three_or_four(bool detailed, bool animated)
   new npm::StillCamera("travmap",
 		       x0, y0, x1, y1,
    		       npm::Instance<npm::UniqueManager<npm::Camera> >());
-  size_t const nplanners(1);	// XXXX to do: will be nsetups... one day
-  double const ncols(nplanners + 1.0);
+  double const ncols(2.0);
   glut_aspect = ncols * (x1 - x0) / (y1 - y0);
   
   new npm::TraversabilityDrawing("costmap", new CostmapWrapProxy(0));

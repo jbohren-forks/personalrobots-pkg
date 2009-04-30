@@ -824,7 +824,7 @@ void print_gnuplot()
 	     << "#  3 log(count)\n";
   // XXXX to do: would make more sense to plot costhist for each
   // snapshot, or all combined, but for now just take the last episode
-  // of the first planner
+  // of the first planner (costs do not change currently anyway)
   boost::shared_ptr<CostmapAccessor const> cm(setup->getWorld()->getCostmap(0));
   typedef map<int, size_t> hist_t;
   hist_t hist;

@@ -39,10 +39,8 @@
 
 #include <unistd.h>
 
-namespace old_costmap_2d {
-  // CostMap2D is actually a subclass of ObstacleMapAccessor, so it
-  // suffices to forward-declare that.
-  class ObstacleMapAccessor;
+namespace costmap_2d {
+  class Costmap2D;
 }
 
 namespace sfl {
@@ -115,10 +113,25 @@ namespace mpglue {
     
     virtual ~IndexTransform() {}
     
+    /**
+       Transform a global (x, y) point into costmap indices.
+       
+       \note The computed indices are not guaranteed to lie within the
+       map bounds, you have to check that separately (i.e. using
+       CostmapAccessor::isValidIndex()). The idea behind this is that
+       you can thus easily determine by how much you'd have to grow
+       the costmap.
+    */
     virtual void globalToIndex(double global_x, double global_y,
 			       index_t * index_x, index_t * index_y) const = 0;
+    
+    /**
+       Compute the global coordinates (x, y) of the center of a cell
+       given by its indices.
+    */
     virtual void indexToGlobal(index_t index_x, index_t index_y,
 			       double * global_x, double * global_y) const = 0;
+    
     virtual double getResolution() const = 0;
     
     template<typename other_index_t>
@@ -137,16 +150,58 @@ namespace mpglue {
   { return dis_glob + res * (idx - dis_idx); }
   
   
-  CostmapAccessor * createCostmapAccessor(old_costmap_2d::ObstacleMapAccessor const * cm);
-
+  /**
+     The recommended way of using the costmap_2d package is to
+     instantiate a costmap_2d::Costmap2DROS and the, whenever you need
+     access to the actual data, create a copy of the underlying
+     costmap_2d::Costmap2D object by calling
+     costmap_2d::Costmap2DROS::getCostMapCopy(). There is (currently)
+     no way to know from the outside when the underlying
+     costmap_2d::Costmap2D has actually changed, and the typical use
+     case is for clients to grab a copy at the beginning of their
+     cycle and work with that.
+     
+     In order to keep the mpglue::CostmapAccessor independent of when
+     you actually refresh your copy of the costmap_2d::Costmap2D
+     object, you have to subclass the mpglue::costmap_2d_getter functor,
+     which should return a pointer to your costmap_2d::Costmap2D,
+     assuming that your code knows when it has to get a fresh copy.
+     
+     \see http://pr.willowgarage.com/pr-docs/ros-packages/costmap_2d/html/index.html
+  */
+  struct costmap_2d_getter {
+    virtual ~costmap_2d_getter() {}
+    virtual costmap_2d::Costmap2D const * operator () () = 0;
+  };
+  
+  
+  /**
+     Create a CostmapAccessor wrapper for a costmap_2d::Costmap2D or
+     costmap_2d::Costmap2DROS.
+     
+     \note The calling code retains ownership of the costmap_2d_getter object.
+     
+     \see mpglue::costmap_2d_getter for the reason of yet another indirection.
+  */
+  CostmapAccessor * createCostmapAccessor(costmap_2d_getter * get_costmap);
+  
   CostmapAccessor * createCostmapAccessor(sfl::RDTravmap const * rdt,
 					  int possibly_circumscribed_cost);
 
   CostmapAccessor * createCostmapAccessor(sfl::TraversabilityMap const * rdt,
 					  int possibly_circumscribed_cost);
   
-  IndexTransform * createIndexTransform(old_costmap_2d::ObstacleMapAccessor const * cm);
-
+  
+  /**
+     Create an IndexTransform wrapper for a costmap_2d::Costmap2D or
+     costmap_2d::Costmap2DROS.
+     
+     \note The calling code retains ownership of the costmap_2d_getter object.
+     
+     \see mpglue::costmap_2d_getter for the reason of yet another indirection.
+  */
+  IndexTransform * createIndexTransform(mpglue::costmap_2d_getter * get_costmap);
+  
   IndexTransform * createIndexTransform(sfl::GridFrame const * gf);
   
 }

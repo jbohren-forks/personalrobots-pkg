@@ -37,7 +37,6 @@
 
 #include <mpglue/costmap.h>
 #include <mpglue/footprint.h>
-#include <deprecated_msgs/Pose2DFloat32.h>
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>
 #include <string>
@@ -66,6 +65,11 @@ using std::vector;
 #include <sbpl_door_planner/environment_navxythetadoor.h>
 
 namespace mpglue {
+  
+  struct rfct_pose {
+    rfct_pose(double _x, double _y, double _th): x(_x), y(_y), th(_th) {}
+    double x, y, th;
+  };
   
   
   /** Helper class for abstracting away the usage (or not) of the
@@ -149,7 +153,7 @@ namespace mpglue {
     virtual int SetStart(double px, double py, double pth) = 0;
     
     /** \note see SetStart(double, double, double) */
-    int SetStart(deprecated_msgs::Pose2DFloat32 const & start)
+    int SetStart(rfct_pose const & start)
     { return SetStart(start.x, start.y, start.th); }
     
     /** \return The stateID of the goal, or -1 if it lies outside the map. */
@@ -158,14 +162,14 @@ namespace mpglue {
     virtual void SetGoalTolerance(double tol_xy, double tol_th) = 0;
     
     /** \note see SetGoal(double, double, double) */
-    int SetGoal(deprecated_msgs::Pose2DFloat32 const & goal)
+    int SetGoal(rfct_pose const & goal)
     { return SetGoal(goal.x, goal.y, goal.th) ; }
     
-    virtual deprecated_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state) = 0;
+    virtual rfct_pose GetPoseFromState(int stateID) const throw(invalid_state) = 0;
     
     /** \return the stateID of a pose, or -1 if the pose lies outside
 	of the map. */
-    virtual int GetStateFromPose(deprecated_msgs::Pose2DFloat32 const & pose) const = 0;
+    virtual int GetStateFromPose(rfct_pose const & pose) const = 0;
     
     boost::shared_ptr<CostmapAccessor const> getCostmap() const { return cm_; }
     boost::shared_ptr<IndexTransform const> getIndexTransform() const { return it_; }
