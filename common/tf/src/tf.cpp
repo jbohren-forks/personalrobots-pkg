@@ -828,6 +828,31 @@ std::string Transformer::chainAsString(const std::string & target_frame, ros::Ti
   return mstream.str();
 }
 
+void Transformer::chainAsVector(const std::string & target_frame, ros::Time target_time, const std::string & source_frame, ros::Time source_time, const std::string& fixed_frame, std::vector<std::string>& output) const
+{
+  std::string error_string;
+  TransformLists lists;
+  ///\todo check return code
+  try
+  {
+    lookupLists(lookupFrameNumber(target_frame), target_time, lookupFrameNumber(source_frame), lists, &error_string);
+  }
+  catch (tf::LookupException &ex)
+  {
+    return;
+  }
+
+  output.clear(); //empty vector
+  for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
+    {
+      output.push_back(lists.inverseTransforms[i].frame_id_);
+    }
+  for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++)
+    {
+      output.push_back(lists.forwardTransforms[i].frame_id_);
+    }
+}
+
 std::string Transformer::allFramesAsString() const
 {
   std::stringstream mstream;
