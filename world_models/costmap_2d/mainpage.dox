@@ -14,7 +14,7 @@ you, but allows you to get a copy of the underlying costmap_2d::Costmap2D object
 time. See below for an example of costmap_2d::Costmap2DROS construction and configuration.
 
 @subsection construction Costmap2DROS Construction
-To construct a costmap_2d::Costmap2DROS object, pass it a reference to a ros::Noe and a tf::TransformListener
+To construct a costmap_2d::Costmap2DROS object, pass it a reference to a ros::Node and a tf::TransformListener
 @verbatim
 #include <ros/node.h>
 #include <tf/transform_listener.h>
@@ -43,7 +43,7 @@ int main(argc, char** argv){
 
 @subsection example_use Using the Underlying Costmap2D
 To get a copy of the underlying costmap_2d::Costmap2D object, call the
-getCostMapCopy method. The copy may be used by the user without affecting the
+getCostmapCopy method. The copy may be used by the user without affecting the
 update rate of the map. Responsibility for deletion of the costmap_2d::Costmap2D copy also
 lies with the user. See the costmap_2d::Costmap2D section for details on using
 a costmap.
@@ -52,7 +52,7 @@ a costmap.
 void doSomething(costmap_2d::Costmap2DROS& map_updater){
   //get a copy of the underlying Costmap2D
   costmap_2d::Costmap2D costmap;
-  map_updater.getCostMapCopy(costmap);
+  map_updater.getCostmapCopy(costmap);
 
   //do whatever you want with the map here
   ROS_INFO("The size of the map in meters is: (%.2f, %.2f)", costmap.metersSizeX(), costmap.metersSizeY());
