@@ -30,7 +30,7 @@ if (NAVFN_HAVE_FLTK AND NOT APPLE)
   target_link_libraries (navtest navfn fltk netpbm)
 else (NAVFN_HAVE_FLTK)
   message (STATUS "FLTK not found: cannot build navtest")
-endif (NAVFN_HAVE_FLTK)
+endif (NAVFN_HAVE_FLTK AND NOT APPLE)
 
 ### For some reason (on cmake-2.4.7 at least) the "check" for pgm.h
 ### always succeeds, even if pgm.h is not installed. It seems to be

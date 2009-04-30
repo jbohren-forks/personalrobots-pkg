@@ -792,6 +792,9 @@ float NavFn::getLastPathCost()
 int
 NavFn::calcPath(int n, int *st)
 {
+  // test write
+  savemap("test");
+
   // check path arrays
   if (npathbuf < n)
     {
@@ -880,6 +883,7 @@ NavFn::calcPath(int n, int *st)
 	  if (potarr[stc] >= POT_HIGH)
 	    {
 	      ROS_DEBUG("[PathCalc] No path found, high potential");
+	      savemap("navfn_highpot");
 	      return 0;
 	    }
 	}
@@ -933,6 +937,8 @@ NavFn::calcPath(int n, int *st)
     }
 
   //  return npath;			// out of cycles, return failure
+  ROS_DEBUG("[PathCalc] No path found, path too long");
+  savemap("navfn_pathlong");
   return 0;			// out of cycles, return failure
 }
 
@@ -1007,4 +1013,41 @@ NavFn::display(void fn(NavFn *nav), int n)
 {
   displayFn = fn;
   displayInt = n;
+}
+
+
+//
+// debug writes
+// saves costmap and start/goal
+//
+
+void 
+NavFn::savemap(const char *fname)
+{
+  char fn[4096];
+
+  ROS_INFO("[NavFn] Saving costmap and start/goal points");
+  // write start and goal points
+  sprintf(fn,"%s.txt",fname);
+  FILE *fp = fopen(fn,"w");
+  if (!fp)
+    {
+      ROS_WARN("Can't open file %s", fn);
+      return;
+    }
+  fprintf(fp,"Goal: %d %d\nStart: %d %d\n",goal[0],goal[1],start[0],start[1]);
+  fclose(fp);
+	  
+  // write cost array
+  if (!costarr) return;
+  sprintf(fn,"%s.pgm",fname);
+  fp = fopen(fn,"wb");
+  if (!fp)
+    {
+      ROS_WARN("Can't open file %s", fn);
+      return;
+    }
+  fprintf(fp,"P5\n%d\n%d\n%d\n", nx, ny, 0xff);
+  fwrite(costarr,1,nx*ny,fp);
+  fclose(fp);
 }

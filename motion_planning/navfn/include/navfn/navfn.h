@@ -166,6 +166,10 @@ class NavFn
   void display(void fn(NavFn *nav), int n = 100); /**< <n> is the number of cycles between updates  */
   int displayInt;		/**< save second argument of display() above */
   void (*displayFn)(NavFn *nav); /**< display function itself */
+
+  /** save costmap */
+  void savemap(const char *fname); /**< write out costmap and start/goal states as fname.pgm and fname.txt */
+
 };
 
 
