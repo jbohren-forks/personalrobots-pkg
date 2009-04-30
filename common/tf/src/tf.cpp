@@ -885,6 +885,7 @@ std::string Transformer::allFramesAsDot() const
 
   TransformStorage temp;
 
+  ros::Time current_time = ros::Time::now();
   
   //  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   for (unsigned int counter = 1; counter < frames_.size(); counter ++)//one referenced for 0 is no frame
@@ -902,13 +903,20 @@ std::string Transformer::allFramesAsDot() const
       std::map<unsigned int, std::string>::const_iterator it = frame_authority_.find(counter);
       if (it != frame_authority_.end())
         authority = it->second;
-      
+
+      double rate = getFrame(counter)->getListLength() / std::max((getFrame(counter)->getLatestTimestamp().toSec() - 
+                                                                   getFrame(counter)->getOldestTimestamp().toSec() ), 0.0001);
+
+      mstream << std::fixed; //fixed point notation
+      mstream.precision(3); //3 decimal places
       mstream << "\"" << frameIDs_reverse[counter]   << "\"" << " -> " 
               << "\"" << frameIDs_reverse[parent_id] << "\"" << "[label=\""
               << "Authority: " << authority << "\\n"
-              << getFrame(counter)->getListLength() << " Readings \\n"
+              << getFrame(counter)->getListLength() << " Readings at average rate " << rate <<" Hz\\n"
               << " Between " << getFrame(counter)->getLatestTimestamp().toSec() 
               << " and " << getFrame(counter)->getOldestTimestamp().toSec()
+              << " \\nSeconds in the past: " << (current_time - getFrame(counter)->getLatestTimestamp()).toSec() 
+              << " and " << (current_time - getFrame(counter)->getOldestTimestamp()).toSec()
               <<"\"];" <<std::endl;
     }
   }
