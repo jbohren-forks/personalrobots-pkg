@@ -106,6 +106,9 @@ void PlugInAction::reset()
 
 void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg)
 {
+
+  ROS_INFO("recieved plug_pose Msg in callback");
+
   if (!isActive())
     return;
   
@@ -214,7 +217,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
       }
       case MOVING: 
       {
-        printf("MOVING");
+        ROS_DEBUG("MOVING");
         move();
         break;
       }
@@ -282,6 +285,7 @@ void PlugInAction::move()
   tff_msg_.value.vel.y = mech_offset_desi_.getOrigin().y();
   tff_msg_.value.vel.z = mech_offset_desi_.getOrigin().z();
   mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
+  ROS_DEBUG("plublishing command to hybrid controller to move");
   node_.publish(arm_controller_ + "/command", tff_msg_);
   return;
 
