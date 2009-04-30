@@ -104,6 +104,7 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
 
   // preempted
   node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
+  ROS_INFO("ActionOpenDoor: Preempted");
   return robot_actions::PREEMPTED;
 }
 
