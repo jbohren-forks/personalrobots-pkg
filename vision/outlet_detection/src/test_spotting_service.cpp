@@ -45,6 +45,13 @@ bool callDetector()
 	if (ros::service::call("outlet_spotting/coarse_outlet_detect", req, resp))
 	{
 		printf("Outlet found\n");
+        printf("Pose: (%f,%f,%f,%f)\n",resp.pose.pose.orientation.x,
+                                        resp.pose.pose.orientation.y,
+                                        resp.pose.pose.orientation.z,
+                                        resp.pose.pose.orientation.w);
+
+
+
 		return true;
 	}
 	else

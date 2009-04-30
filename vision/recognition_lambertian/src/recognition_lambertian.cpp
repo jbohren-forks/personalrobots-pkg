@@ -160,9 +160,8 @@ public:
 		IplImage* dist_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
 		IplImage* dir_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
 		ROS_INFO("Computing distance transform");
-		computeDistanceTransform(edge_img,dist_img, -1);
-
-		computeImageDirections(dist_img, dir_img , edge_img);
+		computeDistanceTransform(edge_img,dist_img, NULL, NULL);
+		computeImageDirections(edge_img, dir_img );
 
 		ROS_INFO("Template matching");
 		matchTemplates(dist_img,cm);
@@ -448,54 +447,52 @@ private:
 
 
 
-    /**
-     * @param edges_img - input images
-     * @param dist_img - output distance image (IPL_DEPTH_32F)
-     */
-    void computeDistanceTransform_(IplImage* edges_img, IplImage* dist_img, float truncate)
-    {
-    	cvNot(edges_img, edges_img);
-    	cvDistTransform(edges_img, dist_img);
-    	cvNot(edges_img, edges_img);
-
-    	if (truncate>0) {
-    		cvMinS(dist_img, truncate, dist_img);
-    	}
-    }
+//    /**
+//     * @param edges_img - input images
+//     * @param dist_img - output distance image (IPL_DEPTH_32F)
+//     */
+//    void computeDistanceTransform_(IplImage* edges_img, IplImage* dist_img, float truncate)
+//    {
+//    	cvNot(edges_img, edges_img);
+//    	cvDistTransform(edges_img, dist_img);
+//    	cvNot(edges_img, edges_img);
+//
+//    	if (truncate>0) {
+//    		cvMinS(dist_img, truncate, dist_img);
+//    	}
+//    }
 
 
     /**
      * Alternative version of computeDistanceTransform, will probably be used to compute distance
      * transform annotated with edge orientation.
      */
-    void computeDistanceTransform(IplImage* edges_img, IplImage* dist_img, int truncate)
+    void computeDistanceTransform(IplImage* edges_img, IplImage* dist_img, IplImage* annotate_img, IplImage* orientations, float truncate = -1, float a = 1.0, float b = 0.5 )
     {
-    	int d[][2] = { {-1,-1},{ 0,-1},{ 1,-1},
+    	int d[][2] = { {-1,-1}, { 0,-1}, { 1,-1},
 					  {-1,0},          { 1,0},
-					  {-1,1}, { 0,1},  { 1,1} };
+					  {-1,1}, { 0,1}, { 1,1} };
 
     	ROS_INFO("Computing distance transform");
 
     	CvSize s = cvGetSize(edges_img);
     	int w = s.width;
     	int h = s.height;
-    	for (int i=0;i<h;++i) {
-    		for (int j=0;j<w;++j) {
-    			CV_PIXEL(float, dist_img, j, i)[0] = -1;
-    		}
-    	}
-
+    	// set distance to the edge pixels to 0 and put them in the queue
     	queue<pair<int,int> > q;
-    	// initialize queue
     	for (int y=0;y<h;++y) {
     		for (int x=0;x<w;++x) {
     			if (CV_PIXEL(unsigned char, edges_img, x,y)[0]!=0) {
     				q.push(make_pair(x,y));
         			CV_PIXEL(float, dist_img, x, y)[0] = 0;
     			}
+    			else {
+    				CV_PIXEL(float, dist_img, x, y)[0] = -1;
+    			}
     		}
     	}
 
+    	// breadth first computation of distance transform
     	pair<int,int> crt;
     	while (!q.empty()) {
     		crt = q.front();
@@ -503,122 +500,64 @@ private:
 
     		int x = crt.first;
     		int y = crt.second;
-    		float dist = CV_PIXEL(float, dist_img, x, y)[0] + 1;
+    		float dist = CV_PIXEL(float, dist_img, x, y)[0];
 
     		for (size_t i=0;i<sizeof(d)/sizeof(d[0]);++i) {
     			int nx = x + d[i][0];
     			int ny = y + d[i][1];
 
+    			if (nx<0 || ny<0 || nx>w || ny>h) continue;
+
+    			if (abs(d[i][0]+d[i][1])==1) {
+    				dist += a;
+    			}
+    			else {
+    				dist += b;
+    			}
 
     			float* dt = CV_PIXEL(float, dist_img, nx, ny);
-
-    			if (nx<0 || ny<0 || nx>w || ny>h) continue;
 
     			if (*dt==-1 || *dt>dist) {
     				*dt = dist;
     				q.push(make_pair(nx,ny));
+
+    				if (annotate_img!=NULL) {
+    					int *aptr = CV_PIXEL(int,annotate_img,nx,ny);
+    					aptr[0] = x;
+    					aptr[1] = y;
+    				}
+
+
     			}
     		}
+
     	}
 
     	// truncate dt
     	if (truncate>0) {
     		cvMinS(dist_img, truncate, dist_img);
     	}
-
-
-//    	int f = 1;
-//    	if (truncate>0) f = 255/truncate;
-//    	// display image
-//    	IplImage *dt_image = cvCreateImage(s, IPL_DEPTH_8U, 1);
-//		unsigned char* dt_p = (unsigned char*)dt_image->imageData;
-//
-//		for (int i=0;i<w*h;++i) {
-//			dt_p[i] = f*dt.data_[i];
-//    	}
-//
-//    	cvNamedWindow("dt",1);
-//    	cvShowImage("dt",dt_image);
-//    	cvReleaseImage(&dt_image);
-
     }
 
 
-    void computeImageDirections(IplImage* dist_img, IplImage* dir_img, IplImage* img)
+    void computeImageDirections(IplImage* edge_img, IplImage* dir_img)
     {
+    	IplImage* img_color = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_8U, 3);
+    	cvCvtColor(edge_img, img_color, CV_GRAY2RGB);
 
-//		template_coords_t coords;
-//
-//		while (findContour(img, coords)) {
-//			drawContour(img, coords);
-//			coords.clear();
-//		}
-    	IplImage* dx = cvCreateImage(cvSize(dist_img->width, dist_img->height), IPL_DEPTH_32F, 1);
-    	IplImage* dy = cvCreateImage(cvSize(dist_img->width, dist_img->height), IPL_DEPTH_32F, 1);
+    	template_coords_t coords;
+    	template_orientations_t orientations;
 
-    	IplImage* img2 = cvCloneImage(img);
+    	while (findContour(edge_img, coords)) {
+    		findContourOrientations(coords, orientations);
 
-    	cvSobel(dist_img,dx,1,0,-1);
-    	cvSobel(dist_img,dy,0,1,-1);
+    		drawContour(img_color, coords, orientations);
 
-    	float* d_ptr = (float*)dir_img->imageData;
-    	float* x_ptr = (float*)dx->imageData;
-    	float* y_ptr = (float*)dy->imageData;
-
-    	for (int y = 0; y< dist_img->height;++y) {
-    		for (int x = 0; x<dist_img->width;++x) {
-
-    			*d_ptr = atan2(*y_ptr,*x_ptr);
-
-    			d_ptr++;
-    			x_ptr++;
-    			y_ptr++;
-    		}
-
+    		coords.clear();
+    		orientations.clear();
     	}
 
-    	cvNamedWindow("dir",1);
-    	cvShowImage("dir",img2);
-
-
-//
-//    	IplImage* img_clone = cvCloneImage(img);
-//    	IplImage* img_color = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 3);
-//    	cvCvtColor(img, img_color, CV_GRAY2RGB);
-//
-//
-//    	static CvMemStorage*	mem_storage	= NULL;
-//    	static CvSeq*			contours	= NULL;
-//
-//    	if( mem_storage==NULL ) mem_storage = cvCreateMemStorage(0);
-//    	else cvClearMemStorage(mem_storage);
-//
-//    	CvContourScanner scanner = cvStartFindContours(img_clone,mem_storage,sizeof(CvContour),CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
-//    	CvSeq* c;
-//    	cvNamedWindow("contours",1);
-//    	while( (c = cvFindNextContour( scanner )) != NULL )
-//    	{
-//    		cvDrawContours(img_color, c, CV_RGB(255,0,0), CV_RGB(0,255,0), 5);
-//        	cvShowImage("contours",img_color);
-//
-//        	CvChainPtReader cpr;
-//        	cvStartReadChainPoints((CvChain*)c,&cpr);
-//        	CvPoint p = cvReadChainPoint(&cpr);
-//        	while (p.x!=0) {
-//        		printf("%d, %d\n", p.x,p.y);
-//        		p = cvReadChainPoint(&cpr);
-//        	}
-//
-//        	cvWaitKey(0);
-//    	}
-//    	contours = cvEndFindContours( &scanner );
-
-
-
-
-    	cvReleaseImage(&img2);
-    	cvReleaseImage(&dx);
-    	cvReleaseImage(&dy);
+    	cvReleaseImage(&img_color);
     }
 
 
