@@ -15,8 +15,8 @@
   <depend package="pr2_robot_actions" />
   <depend package="plug_onbase_detector" />
   <depend package="std_msgs" />
-  <depend package="pr2_mechanism_controllers" />
-
+  <depend package="pr2_srvs" />
+  <depend package="pr2_mechanism_controllers"/>
 
  <export>
     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
