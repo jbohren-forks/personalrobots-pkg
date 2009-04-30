@@ -163,7 +163,7 @@ namespace executive_trex_pr2 {
   }
 
   StringDomain* AdapterUtilities::toStringDomain(const std_msgs::String& msg){
-    return new StringDomain(LabelStr(msg.data), "string");
+    return new StringDomain(LabelStr(msg.data), StringDT::instance());
   }
 
   // bind a string

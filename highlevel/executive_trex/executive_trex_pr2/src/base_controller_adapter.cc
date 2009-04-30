@@ -1,5 +1,5 @@
 #include "ROSControllerAdapter.hh"
-#include "IntervalDomain.hh"
+#include "Domains.hh"
 #include "Token.hh"
 #include <robot_actions/Pose2D.h>
 #include <robot_actions/MoveBaseState.h>

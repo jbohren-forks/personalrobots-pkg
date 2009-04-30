@@ -23,6 +23,7 @@ float DOORWAY_CLEARANCE_RANGE = -0.4;
 RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);
 
 // Additional actions for the doro domain
+StopAction stop_action = new StopAction(External);
 DoorsTuckArms doors_tuck_arms = new DoorsTuckArms(External);
 ReleaseHandle release_handle = new ReleaseHandle(External);
 OpenDoor open_door = new OpenDoor(External);

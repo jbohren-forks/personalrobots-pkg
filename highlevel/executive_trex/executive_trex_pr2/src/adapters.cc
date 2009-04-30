@@ -195,10 +195,32 @@ namespace TREX {
   // Allocate Factory
   TeleoReactor::ConcreteFactory<ShellCommandAdapter> ShellCommandAdapter_Factory("ShellCommandAdapter");
 
+  /***********************************************************************
+   * @brief StopAction action 
+   **********************************************************************/
+  class StopActionAdapter: public ROSActionAdapter<std_msgs::String, pr2_robot_actions::StopActionState, std_msgs::Empty> {
+  public:
+
+    StopActionAdapter(const LabelStr& agentName, const TiXmlElement& configData)
+      : ROSActionAdapter<std_msgs::String, pr2_robot_actions::StopActionState, std_msgs::Empty>(agentName, configData){
+    }
+    
+    virtual void fillActiveObservationParameters(const std_msgs::String& msg, ObservationByValue* obs){
+      obs->push_back("action_name", AdapterUtilities::toStringDomain(msg));
+    }
+
+    void fillDispatchParameters(std_msgs::String& msg, const TokenId& goalToken){
+      const StringDomain& dom = static_cast<const StringDomain&>(goalToken->getVariable("action_name")->lastDomain());
+      AdapterUtilities::write(dom, msg);
+    }
+  };  
+
+  // Allocate Factory
+  TeleoReactor::ConcreteFactory<StopActionAdapter> StopActionAdapter_Factory("StopActionAdapter");
+
 
   /***********************************************************************
-   * @brief ShellCommand action will take system commands in strings and 
-   * ship them for execution.
+   * @brief 
    **********************************************************************/
   class BaseStateAdapter: public ROSStateAdapter<deprecated_msgs::RobotBase2DOdom> {
   public:

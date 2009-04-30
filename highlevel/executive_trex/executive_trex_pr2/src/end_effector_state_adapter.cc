@@ -1,5 +1,5 @@
 #include "ROSStateAdapter.hh"
-#include "IntervalDomain.hh"
+#include "Domains.hh"
 #include <mechanism_control/MechanismState.h>
 #include <vector>
 #include <rosTF/rosTF.h>

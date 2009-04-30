@@ -55,9 +55,11 @@ namespace executive_trex_pr2 {
   class StubAction: public robot_actions::Action<Goal, Feedback> {
   public:
 
-    StubAction(const std::string& name): robot_actions::Action<Goal, Feedback>(name) {}
+    StubAction(const std::string& name): robot_actions::Action<Goal, Feedback>(name) {
+    }
     StubAction(const std::string& name, const Feedback& default_feedback) : 
-      robot_actions::Action<Goal, Feedback>(name), default_feedback_(default_feedback) {}
+      robot_actions::Action<Goal, Feedback>(name), default_feedback_(default_feedback) {
+    }
 
   protected:
 
@@ -73,13 +75,27 @@ namespace executive_trex_pr2 {
 
   template <class T> class SimpleStubAction: public robot_actions::Action<T,T> {
   public:
-    SimpleStubAction(const std::string& name): robot_actions::Action<T, T>(name) {}
+    SimpleStubAction(const std::string& name): robot_actions::Action<T, T>(name) {
+      _duration.fromSec(1.0);
+    }
+    SimpleStubAction(const std::string& name, double secs): robot_actions::Action<T, T>(name) {
+      _duration.fromSec(secs);
+    }
 
     virtual robot_actions::ResultStatus execute(const T& goal, T& feedback){
       feedback = goal;
       ROS_DEBUG("Executing %s\n", robot_actions::Action<T, T>::getName().c_str());
+      _duration.sleep();
+
+      if(robot_actions::Action<T, T>::isPreemptRequested())
+	return robot_actions::PREEMPTED;
+
       return robot_actions::SUCCESS;
     }
+
+  private:
+
+    ros::Duration _duration;
   };
 
   /**
@@ -184,7 +200,7 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_unlatch_handle"))
     runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(unlatch_handle);
 
-  executive_trex_pr2::SimpleStubAction<robot_msgs::Door> open_door("open_door");
+  executive_trex_pr2::SimpleStubAction<robot_msgs::Door> open_door("open_door", 5.0);
   if (getComponentParam("/trex/enable_open_door"))
     runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(open_door);
 

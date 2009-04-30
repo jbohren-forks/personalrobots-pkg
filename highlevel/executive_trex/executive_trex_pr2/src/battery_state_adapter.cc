@@ -1,5 +1,5 @@
 #include "ROSStateAdapter.hh"
-#include "IntervalDomain.hh"
+#include "Domains.hh"
 #include <robot_msgs/BatteryState.h>
 
 namespace TREX {

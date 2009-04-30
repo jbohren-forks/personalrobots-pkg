@@ -23,6 +23,20 @@ int LATCH_STATE_LATCHED = 2;
 int LATCH_STATE_UNLATCHED = 3;
 
 /**
+ * @brief This is a general utility for tucking arms.
+ */
+class StopAction extends  ROSAction {
+
+  predicate Active {
+    string action_name;
+  }
+
+  predicate Inactive {}
+
+  StopAction(Mode _mode){ super(_mode);}
+};
+
+/**
  * @brief 
  */
 class DoorsTuckArms extends ROSAction {

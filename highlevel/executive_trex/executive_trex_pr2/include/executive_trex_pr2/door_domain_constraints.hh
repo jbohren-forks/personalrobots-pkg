@@ -8,11 +8,10 @@
 #define EXECUTIVE_TREX_PR2_DOOR_DOMAIN_CONSTRAINTS_H_
 
 #include "Constraint.hh"
-#include "IntervalDomain.hh"
+#include "Domains.hh"
 #include "ConstrainedVariable.hh"
 #include "Utilities.hh"
 #include "Token.hh"
-#include "StringDomain.hh"
 
 using namespace EUROPA;
 

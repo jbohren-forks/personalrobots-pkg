@@ -1,5 +1,5 @@
 #include "ROSStateAdapter.hh"
-#include "IntervalDomain.hh"
+#include "Domains.hh"
 #include <deprecated_msgs/RobotBase2DOdom.h>
 
 namespace TREX {

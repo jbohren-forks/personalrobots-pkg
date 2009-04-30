@@ -1,8 +1,7 @@
 #ifndef H_ADAPTER_UTILITIES
 #define H_ADAPTER_UTILITIES
 
-#include "IntervalDomain.hh"
-#include "StringDomain.hh"
+#include "Domains.hh"
 #include "Token.hh"
 #include "Observer.hh"
 
@@ -111,7 +110,7 @@ namespace executive_trex_pr2 {
      * @brief Sets a frame and time stamp in the head of an observation. Assumes the parameter name is 'frame_id'.
      */
     template <class T>  static void setHeader(const T& msg, ObservationByValue& obs){
-      obs.push_back("frame_id", new StringDomain(msg.header.frame_id, "string"));
+      obs.push_back("frame_id", new StringDomain(msg.header.frame_id, StringDT::instance()));
       debugMsg("ros:debug", "Cutting time stamp of " << msg.header.stamp.toSec() << " by " << getEpoch());
       double time_stamp = std::max(msg.header.stamp.toSec() - getEpoch(), 0.0);
       read<double>("time_stamp", obs, time_stamp);

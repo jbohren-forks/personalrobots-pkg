@@ -151,4 +151,7 @@ target_link_libraries(test/topological_map_tests executive_trex_pr2_g)
 # stub_ros__container impements stub state publishers and actions to allow easy testing of the ROS adapters for the model
 rospack_add_executable(bin/stub_ros_container src/stub_ros_container.cc)
 
+# Implementation of actions that we actually use
+rospack_add_executable(bin/actions src/actions.cc)
+
 #rospack_add_executable(test/groundtruthtransform test/groundtruthtransform.cpp)

@@ -2,7 +2,7 @@
 #include "Adapter.hh"
 #include "Token.hh"
 #include "TokenVariable.hh"
-#include "SymbolDomain.hh"
+#include "Domains.hh"
 #include "Executive.hh"
 #include <vector>
 #include <executive_trex_pr2/TrexMonitor.h>

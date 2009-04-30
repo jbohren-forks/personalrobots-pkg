@@ -1,5 +1,5 @@
 #include "ROSControllerAdapter.hh"
-#include "IntervalDomain.hh"
+#include "Domains.hh"
 #include "Token.hh"
 #include <pr2_msgs/MoveEndEffectorState.h>
 #include <pr2_msgs/MoveEndEffectorGoal.h>

@@ -4,8 +4,7 @@
 #include "ROSAdapter.hh"
 #include "Token.hh"
 #include "TokenVariable.hh"
-#include "SymbolDomain.hh"
-#include "StringDomain.hh"
+#include "Domains.hh"
 #include <std_msgs/Empty.h>
 
 namespace TREX {
@@ -128,12 +127,14 @@ namespace TREX {
 
     const SymbolDomain& getResultStatus(const State& state_msg){
       static std::vector<EUROPA::SymbolDomain> RESULT_STATES;
+      static EUROPA::SymbolDT dt;
       if(RESULT_STATES.empty()){
-	RESULT_STATES.push_back(SymbolDomain(LabelStr("UNDEFINED"), "ResultStatus"));
-	RESULT_STATES.push_back(SymbolDomain(LabelStr("SUCCESS"), "ResultStatus"));
-	RESULT_STATES.push_back(SymbolDomain(LabelStr("ABORTED"), "ResultStatus"));
-	RESULT_STATES.push_back(SymbolDomain(LabelStr("PREEMPTED"), "ResultStatus"));
-	RESULT_STATES.push_back(SymbolDomain(LabelStr("ACTIVE"), "ResultStatus"));
+	dt.setName("ResultStatus");
+	RESULT_STATES.push_back(SymbolDomain(LabelStr("UNDEFINED"), dt.getId()));
+	RESULT_STATES.push_back(SymbolDomain(LabelStr("SUCCESS"), dt.getId()));
+	RESULT_STATES.push_back(SymbolDomain(LabelStr("ABORTED"), dt.getId()));
+	RESULT_STATES.push_back(SymbolDomain(LabelStr("PREEMPTED"), dt.getId()));
+	RESULT_STATES.push_back(SymbolDomain(LabelStr("ACTIVE"), dt.getId()));
       }
 
       return RESULT_STATES[state_msg.status.value];

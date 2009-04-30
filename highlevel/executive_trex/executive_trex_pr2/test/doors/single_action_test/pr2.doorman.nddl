@@ -34,7 +34,10 @@ cmd_release_handle before cmd_tuck_arms_final;
 
 // Final phase involves parallel activities, finishing up with releasing the handle
 cmd_open_door starts_before cmd_move_base_door;
-temporalDistance(cmd_move_base_door.end, [0, 1], cmd_open_door.end);
+rejectable(stop_action.Active cmd_stop_open_door);
+cmd_move_base_door before cmd_stop_open_door;
+cmd_stop_open_door.action_name="open_door";
+
 cmd_open_door before cmd_release_handle;
 
 // All must succeed

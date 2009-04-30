@@ -1,5 +1,5 @@
 #include "ros_action_adapter.h"
-#include "StringDomain.hh"
+#include "Domains.hh"
 #include "Token.hh"
 #include <std_msgs/String.h>
 #include <robot_actions/ShellCommandState.h>

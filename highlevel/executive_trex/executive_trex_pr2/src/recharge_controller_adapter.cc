@@ -1,6 +1,5 @@
 #include "ROSControllerAdapter.hh"
-#include "IntervalDomain.hh"
-#include "BoolDomain.hh"
+#include "Domains.hh"
 #include "Token.hh"
 #include <robot_actions/RechargeGoal.h>
 #include <robot_actions/RechargeState.h>

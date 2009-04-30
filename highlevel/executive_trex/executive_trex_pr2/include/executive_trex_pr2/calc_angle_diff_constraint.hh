@@ -7,9 +7,7 @@
 #include "ConstraintEngine.hh"
 #include "Constraints.hh"
 #include "Constraint.hh"
-#include "IntervalDomain.hh"
-#include "IntervalIntDomain.hh"
-#include "BoolDomain.hh"
+#include "Domains.hh"
 #include "Logger.hh"
 
 using namespace EUROPA;

@@ -95,6 +95,7 @@ DoorController door_controller = new DoorController();
  * completion time of the selected action, and the end time of this control step. This flexibility accounts for
  * the fact that an exogenous event can trip the state forcing a planned preemption of the active command, and the
  * completion of the command should also bring about a completion of the given control step
+ *
  */
 DoorController::Holds {
 
@@ -153,64 +154,67 @@ DoorController::Holds {
 	door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, DOORWAY_CLEARANCE_RANGE);
       }
       else {
-	if(latch_state == LATCH_STATE_UNLATCHED) {
-	  starts_before(open_door.Active cmd_open_door);
-	  starts_before(move_base_door.Active cmd_move_base_door);
-	  cmd_open_door starts_before cmd_move_base_door;
-	  temporalDistance(cmd_move_base_door.end, [0, 1], cmd_open_door.end);
-	  concurrent(cmd_open_door.end, end_bounds);
-	}
-	else {
-	  // Door is not latched. If we have the handle then we need to unlatch it
-	  if(have_handle == true){
-	    starts_before(unlatch_handle.Active cmd);
-	    concurrent(cmd.end, end_bounds);
-	  }
-	  else {
-	    if(found_handle == true){
-	      if(in_position == true){
+	if(found_handle == true){
+	  if(in_position == true){
+	    if(latch_state == LATCH_STATE_UNLATCHED) {
+	      starts_before(open_door.Active cmd_open_door);
+	      starts_before(move_base_door.Active cmd_move_base_door);
+	      cmd_open_door starts_before cmd_move_base_door;
+	      concurrent(cmd_open_door.end, end_bounds);
+	      // Force preemption of the open door action
+	      starts_before(stop_action.Active cmd_stop_action);
+	      eq(cmd_stop_action.action_name,"open_door");
+	      cmd_move_base_door before cmd_stop_action;
+	    }
+	    else{
+	      if(have_handle == true){
+		starts_before(unlatch_handle.Active cmd);
+		concurrent(cmd.end, end_bounds);
+	      }
+	      else {
 		// Don't have the handle, but could grasp it!
 		starts_before(grasp_handle.Active cmd);
 		concurrent(cmd.end, end_bounds);
 	      }
-	      else {
-		// Move to the grasp position. Checking to tuck arms may be unnecessary
-		if(arms_tucked == true){
-		  starts_before(move_base_local.Active cmd);
-		  concurrent(cmd.end, end_bounds);
-		  eq(cmd.frame_id, frame_id);
-		  door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, GRASP_RANGE);
-		}
-		else {
-		  starts_before(doors_tuck_arms.Active cmd);
-		  concurrent(cmd.end, end_bounds);
-		}
-	      }
+	    }
+	  }
+	  else { // Not in position
+
+	    // Move to the grasp position. Checking to tuck arms may be unnecessary
+	    if(arms_tucked == true){
+	      starts_before(move_base_local.Active cmd);
+	      concurrent(cmd.end, end_bounds);
+	      eq(cmd.frame_id, frame_id);
+	      door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, GRASP_RANGE);
 	    }
 	    else {
-	      if(found_door == true){
-		starts_before(detect_handle.Active cmd);
+	      starts_before(doors_tuck_arms.Active cmd);
+	      concurrent(cmd.end, end_bounds);
+	    }
+	  }
+	}
+	else { // Found handle == false
+	  if(found_door == true){
+	    starts_before(detect_handle.Active cmd);
+	    concurrent(cmd.end, end_bounds);
+	  }
+	  else {
+	    // If in detection position, we can detect the door
+	    if(in_position == true){
+	      starts_before(detect_door.Active cmd);
+	      concurrent(cmd.end, end_bounds);
+	    }
+	    else {
+	      // Should move to detection position
+	      if(arms_tucked == true){
+		starts_before(move_base_local.Active cmd);
 		concurrent(cmd.end, end_bounds);
+		eq(cmd.frame_id, frame_id);
+		door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, DETECTION_RANGE);
 	      }
 	      else {
-		// If in detection position, we can detect the door
-		if(in_position == true){
-		  starts_before(detect_door.Active cmd);
-		  concurrent(cmd.end, end_bounds);
-		}
-		else {
-		  // Should move to detection position
-		  if(arms_tucked == true){
-		    starts_before(move_base_local.Active cmd);
-		    concurrent(cmd.end, end_bounds);
-		    eq(cmd.frame_id, frame_id);
-		    door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, DETECTION_RANGE);
-		  }
-		  else {
-		    starts_before(doors_tuck_arms.Active cmd);
-		    concurrent(cmd.end, end_bounds);
-		  }
-		}
+		starts_before(doors_tuck_arms.Active cmd);
+		concurrent(cmd.end, end_bounds);
 	      }
 	    }
 	  }
@@ -371,7 +375,7 @@ DetectDoor::Inactive{
 CheckPath::Inactive{
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
-    eq(dc.doorway_clear, is_clear);
+    eq(dc.doorway_clear, false);
     eq(dc.check_doorway, false);
   }
 }

@@ -2,7 +2,7 @@
 #define H_ROSStateAdapter
 
 #include "ROSAdapter.hh"
-#include "StringDomain.hh"
+#include "Domains.hh"
 
 namespace TREX {
 

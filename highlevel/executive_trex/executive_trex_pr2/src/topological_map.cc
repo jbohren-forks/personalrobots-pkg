@@ -8,7 +8,7 @@
 #include "ConstrainedVariable.hh"
 #include "Utilities.hh"
 #include "Token.hh"
-#include "StringDomain.hh"
+#include "Domains.hh"
 
 using namespace EUROPA;
 using namespace TREX;
