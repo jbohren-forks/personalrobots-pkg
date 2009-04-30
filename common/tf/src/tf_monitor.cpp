@@ -62,7 +62,12 @@ public:
       if (it == delay_map.end())
         delay_map[message_.transforms[i].header.frame_id] = std::vector<double>(1,(ros::Time::now() - message_.transforms[i].header.stamp).toSec());
       else
+      {
         it->second.push_back((ros::Time::now() - message_.transforms[i].header.stamp).toSec());
+        if (it->second.size() > 1000) 
+          it->second.erase(it->second.begin());
+      }
+      
     } 
   };
 
