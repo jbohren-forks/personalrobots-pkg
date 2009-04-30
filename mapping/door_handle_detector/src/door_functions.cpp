@@ -42,26 +42,31 @@ using namespace tf;
 
 namespace door_handle_detector{
 
+static const double eps_angle = 5.0*M_PI/180.0;
+
 double getDoorAngle(const robot_msgs::Door& door)
 {
   KDL::Vector frame_vec(door.frame_p1.x-door.frame_p2.x, door.frame_p1.y-door.frame_p2.y, door.frame_p1.z-door.frame_p2.z);
   KDL::Vector door_vec(door.door_p1.x-door.door_p2.x, door.door_p1.y-door.door_p2.y, door.door_p1.z-door.door_p2.z);
-  double angle = fabs(getVectorAngle(frame_vec, door_vec));
-  if (door.rot_dir == robot_msgs::Door::ROT_DIR_CLOCKWISE)
-    return angle;
-  else if (door.rot_dir == robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE)
-    return -angle;
-  else{
-    ROS_ERROR("getDoorAngle: Door rot dir is not defined");
-    return 0;
-  }
+  double angle = getVectorAngle(frame_vec, door_vec);
+
+  // check
+  if (door.rot_dir == robot_msgs::Door::ROT_DIR_CLOCKWISE && angle > eps_angle)
+    ROS_ERROR("Door angle is positive, but door turns clockwise");
+
+  if (door.rot_dir == robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE && angle < -eps_angle)
+    ROS_ERROR("Door angle is negative, but door turns counter-clockwise");
+
+  return angle;
 }
 
 
 double getVectorAngle(const KDL::Vector& v1, const KDL::Vector& v2)
 {
-  double dot      = v2(0) * v1(0) + v2(1) * v1(1);
-  double perp_dot = v2(1) * v1(0) - v2(0) * v1(1);
+  KDL::Vector v1_norm = v1; v1_norm.Normalize();
+  KDL::Vector v2_norm = v2; v2_norm.Normalize();
+  double dot      = v2_norm(0) * v1_norm(0) + v2_norm(1) * v1_norm(1);
+  double perp_dot = v2_norm(1) * v1_norm(0) - v2_norm(0) * v1_norm(1);
   return atan2(perp_dot, dot);
 }
 
@@ -135,7 +140,7 @@ std::ostream& operator<< (std::ostream& os, const robot_msgs::Door& d)
   os << " - latch_state " << d.latch_state << endl;
   os << " - hinge side " << d.hinge << endl;
   os << " - rot_dir " << d.rot_dir << endl;
-  os << " - angle " << getDoorAngle(d) << endl;
+  os << " - angle [deg] " << getDoorAngle(d)*180.0/M_PI << endl;
   return os;
 }
 
