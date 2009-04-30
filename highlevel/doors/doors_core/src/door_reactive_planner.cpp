@@ -32,7 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <doors_core/door_reactive_planner.h>
+#include "doors_core/door_reactive_planner.h"
+#include "doors_core/executive_functions.h"
 
 using namespace tf;
 using namespace ros;
@@ -59,6 +60,8 @@ void DoorReactivePlanner::getParams()
   node_.param<double>("~max_explore_distance",max_explore_distance_,2.0);
   node_.param<double>("~max_explore_delta_angle",max_explore_delta_angle_,M_PI/4.0-0.1);
   node_.param<double>("~door_goal_distance",door_goal_distance_,0.7);
+  node_.param<double>("~carrot_distance",carrot_distance_,0.3);
+
   node_.param<int>("~num_explore_paths",num_explore_paths_,32);
   node_.param<bool>("~choose_straight_line_trajectory",choose_straight_line_trajectory_,false);
 
@@ -101,18 +104,24 @@ void DoorReactivePlanner::setDoor(robot_msgs::Door door_msg_in)
     return;
   }
 
-  vector_along_door_.x = door.normal.y;
-  vector_along_door_.y = -door.normal.x;
-  vector_along_door_.z = 0.0;    
-
-  centerline_angle_ = atan2(door.normal.y,door.normal.x);
-
-  double door_midpoint_x = 0.5*(door.frame_p1.x + door.frame_p2.x);
-  double door_midpoint_y = 0.5*(door.frame_p1.y + door.frame_p2.y);
-
-  goal_.x = door_midpoint_x + door_goal_distance_*door.normal.x;
-  goal_.y = door_midpoint_y + door_goal_distance_*door.normal.y;
+  tf::Stamped<tf::Pose> tmp = getRobotPose(door,-door_goal_distance_);
+  tf::Vector3 tmp_normal = getFrameNormal(door);
+  
+  centerline_angle_ = atan2(tmp_normal[1],tmp_normal[0]);
+  
+  goal_.x = tmp.getOrigin()[0];
+  goal_.y = tmp.getOrigin()[1];
   goal_.th = centerline_angle_;
+
+  tf::Stamped<tf::Pose> tmp_2 = getRobotPose(door,-door_goal_distance_-carrot_distance_);
+
+  carrot_.x = tmp_2.getOrigin()[0];
+  carrot_.y = tmp_2.getOrigin()[1];
+  carrot_.th = centerline_angle_;
+
+  vector_along_door_.x = tmp_normal[1];
+  vector_along_door_.y = -tmp_normal[0];
+  vector_along_door_.z = 0.0;    
 
   door_information_set_ = true;
 }
@@ -249,7 +258,7 @@ bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::
     checkPath(linear_path,costmap_frame_id_,checked_path,costmap_frame_id_);
     if(checked_path.size() > 0)
     {
-      double new_distance = distance(checked_path.back(),goal_);
+      double new_distance = distance(checked_path.back(),carrot_);
       double current_distance = distance(start,goal_);
 //      double new_distance = projectedDistance(checked_path.back(),goal_,centerline_angle_);
       if( new_distance < min_distance_to_goal)
@@ -277,7 +286,7 @@ bool DoorReactivePlanner::makePlan(const pr2_robot_actions::Pose2D &start, std::
     checkPath(linear_path,costmap_frame_id_,checked_path,costmap_frame_id_);
     if(checked_path.size() > 0)
     {
-      double new_distance = distance(checked_path.back(),goal_);
+      double new_distance = distance(checked_path.back(),carrot_);
 //      double new_distance = projectedDistance(checked_path.back(),goal_,centerline_angle_);
       if(new_distance < min_distance_to_goal)
       {
@@ -321,6 +330,18 @@ robot_msgs::DiagnosticStatus DoorReactivePlanner::getDiagnostics()
 
   v.label = "Goal theta";
   v.value = goal_.th;
+  values.push_back(v);
+
+  v.label = "Carrot x";
+  v.value = carrot_.x;
+  values.push_back(v);
+
+  v.label = "Carrot y";
+  v.value = carrot_.y;
+  values.push_back(v);
+
+  v.label = "Carrot theta";
+  v.value = carrot_.th;
   values.push_back(v);
 
   v.label = "Centerline angle";

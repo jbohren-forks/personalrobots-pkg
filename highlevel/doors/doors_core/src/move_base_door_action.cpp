@@ -54,6 +54,8 @@ namespace nav
     ros_node_.param("~control_frame", control_frame_, std::string("odom_combined"));
     ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
+    ros_node_.param("~xy_goal_tolerance", xy_goal_tolerance_, 0.05);
+    ros_node_.param("~yaw_goal_tolerance", yaw_goal_tolerance_, 0.1);
     ros_node_.param("diagnostics_expected_publish_time",diagnostics_expected_publish_time_,0.2);
     ros_node_.param("~control_topic_name", control_topic_name_, std::string("/base/trajectory_controller/command"));
     //for display purposes

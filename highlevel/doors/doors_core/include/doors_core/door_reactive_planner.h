@@ -157,6 +157,9 @@ namespace door_reactive_planner
 
     pr2_robot_actions::Pose2D goal_; /**< Goal position on the other side of the doorway */
 
+      pr2_robot_actions::Pose2D carrot_;
+      double carrot_distance_;
+
     bool door_information_set_ ; /**< Has door information been set before invoking the planner */
 
     void getParams(); /**< Check ROS param server for parameters */

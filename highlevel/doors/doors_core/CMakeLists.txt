@@ -70,6 +70,7 @@ rospack_add_executable(test_executive
 rospack_add_executable(move_base_door
                        src/move_base_door_action.cpp
 		       src/door_reactive_planner.cpp
+		       src/executive_functions.cpp
                       )
 
 
