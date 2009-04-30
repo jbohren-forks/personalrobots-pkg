@@ -24,6 +24,7 @@
   <depend package="stereo_utils"/>
   <depend package="tf"/>
   <depend package="visualization_msgs" />
+  <depend package="prosilica_cam"/>
 
 
  <export>
