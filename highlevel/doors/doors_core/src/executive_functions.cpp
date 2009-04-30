@@ -50,7 +50,7 @@ Stamped<Pose> getRobotPose(const robot_msgs::Door& door, double dist)
 {
   Vector x_axis(1,0,0);
 
-  // get vector from hinge to center of door
+  // get hinge point
   Vector hinge;
   if (door.hinge == robot_msgs::Door::HINGE_P1)
     hinge = Vector(door.door_p1.x, door.door_p1.y, door.door_p1.z);
@@ -71,7 +71,6 @@ Stamped<Pose> getRobotPose(const robot_msgs::Door& door, double dist)
   Vector normal_door(door.normal.x, door.normal.y, door.normal.z);
   Rotation rot_frame_door = Rotation::RotZ(getDoorAngle(door));
   Vector normal_frame = rot_frame_door * normal_door;
-  double angle_normal_frame = getVectorAngle(x_axis, normal_frame);
 
   // get robot pos
   Vector robot_pos = frame_center - (normal_frame * dist);
@@ -79,11 +78,59 @@ Stamped<Pose> getRobotPose(const robot_msgs::Door& door, double dist)
   Stamped<Pose> robot_pose;
   robot_pose.frame_id_ = door.header.frame_id;
   robot_pose.setOrigin( Vector3(robot_pos(0), robot_pos(1), robot_pos(2)));
-  robot_pose.setRotation( Quaternion(angle_normal_frame, 0, 0) ); 
+  robot_pose.setRotation( Quaternion(getVectorAngle(x_axis, normal_frame), 0, 0) ); 
 
   return robot_pose;  
 }
 
 
+Stamped<Pose> getGripperPose(const robot_msgs::Door& door, double angle, double dist)
+{
+  Vector x_axis(1,0,0);
+
+  // get hinge point
+  Vector hinge;
+  if (door.hinge == robot_msgs::Door::HINGE_P1)
+    hinge = Vector(door.door_p1.x, door.door_p1.y, door.door_p1.z);
+  else if (door.hinge == robot_msgs::Door::HINGE_P2)
+    hinge = Vector(door.door_p2.x, door.door_p2.y, door.door_p2.z);
+  else
+    ROS_ERROR("GetRobotPose: door hinge side not specified");
+
+  // get vector from hinge to goal point
+  Vector frame_vec(door.frame_p1.x - door.frame_p2.x, door.frame_p1.y - door.frame_p2.y, door.frame_p1.z - door.frame_p2.z);
+  frame_vec.Normalize();
+  frame_vec = frame_vec * dist;
+  Rotation rot_frame_angle = Rotation::RotZ(angle);
+  frame_vec = rot_frame_angle * frame_vec;
+
+  // get the normal on the frame from the given normal on the door
+  Vector normal_door(door.normal.x, door.normal.y, door.normal.z);
+  double door_angle = getDoorAngle(door);
+  Rotation rot_frame_door = Rotation::RotZ(door_angle);
+  Vector normal_frame = rot_frame_door * normal_door;
+
+  // get gripper pos
+  Vector gripper_pos = hinge + frame_vec;
+
+  Stamped<Pose> gripper_pose;
+  gripper_pose.frame_id_ = door.header.frame_id;
+  gripper_pose.setOrigin( Vector3(gripper_pos(0), gripper_pos(1), gripper_pos(2)));
+  gripper_pose.setRotation( Quaternion(getVectorAngle(x_axis, normal_frame), 0, 0) ); 
+
+  return gripper_pose;  
+}
 
 
+
+tf::Vector3 getFrameNormal(const robot_msgs::Door& door)
+{
+  Vector normal_door(door.normal.x, door.normal.y, door.normal.z);
+  Rotation rot_frame_door = Rotation::RotZ(getDoorAngle(door));
+  Vector normal_frame = rot_frame_door * normal_door;
+  tf::Vector3 res;
+  res[0] = normal_door(0);
+  res[1] = normal_door(1);
+  res[2] = normal_door(2);
+  return res;
+}

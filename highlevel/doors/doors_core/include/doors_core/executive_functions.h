@@ -41,6 +41,8 @@
 
 // calculate the robot pose in front of the door
 tf::Stamped<tf::Pose> getRobotPose(const robot_msgs::Door& door, double dist);
+tf::Stamped<tf::Pose> getGripperPose(const robot_msgs::Door& door, double angle, double dist);
+tf::Vector3 getFrameNormal(const robot_msgs::Door& door);
 
 
 #endif

@@ -40,11 +40,12 @@
 #include <robot_msgs/Door.h>
 #include <ros/node.h>
 #include <gtest/gtest.h>
+#include <door_handle_detector/door_functions.h>
 #include "doors_core/executive_functions.h"
 
 using namespace ros;
 using namespace std;
-
+using namespace door_handle_detector;
 
 
 
@@ -106,6 +107,10 @@ TEST_F(TestEKF, test)
   tf::Stamped<tf::Pose> pose;
 
   pose = getRobotPose(my_door_2, 0.6);
+  cout << "pose = " << pose.getOrigin()[0] << ", "  <<pose.getOrigin()[1] << ", " <<pose.getOrigin()[2] << endl;
+
+  pose = getGripperPose(my_door_2, M_PI/4.0, 0.4);
+  cout << "door = " << my_door_2 << endl;
   cout << "pose = " << pose.getOrigin()[0] << ", "  <<pose.getOrigin()[1] << ", " <<pose.getOrigin()[2] << endl;
 
   pose = getRobotPose(my_door_1, 0.7);
