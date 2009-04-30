@@ -11,8 +11,8 @@
   <depend package="robot_msgs"/>
   <depend package="laser_scan"/>
   <depend package="tf"/>
+  <depend package="pr2_srvs"/>
   <depend package="pr2_mechanism_controllers"/>
-
   # For Testing
   <depend package="rostest"/>
   <depend package="gtest"/>
