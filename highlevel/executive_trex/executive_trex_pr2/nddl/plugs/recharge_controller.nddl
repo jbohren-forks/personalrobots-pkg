@@ -125,7 +125,7 @@ RechargeController::Holds {
 	    if(outlet_detected_coarse == true){
 	      if(in_position == false){
 		// Here, compute parameters based on the DETECTION_RANGE
-		starts_before(move_base.Active cmd);
+		starts_before(move_base_local.Active cmd);
 		concurrent(cmd.end, end_bounds);
 	      }
 	      else {
@@ -155,7 +155,7 @@ RechargeController::Holds {
 	      else {
 		if(arms_tucked == true){
 		  // Here, compute parameters based on the PLUG_IN_RANGE
-		  starts_before(move_base.Active cmd);
+		  starts_before(move_base_local.Active cmd);
 		  concurrent(cmd.end, end_bounds);
 		}
 		else {
