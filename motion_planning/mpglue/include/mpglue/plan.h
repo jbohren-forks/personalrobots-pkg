@@ -35,8 +35,13 @@
 #ifndef MPGLUE_PLAN_HPP
 #define MPGLUE_PLAN_HPP
 
-#include <robot_msgs/Pose.h>
+#include <boost/shared_ptr.hpp>
 #include <vector>
+
+namespace robot_msgs {
+  class Pose;
+  class JointTraj;
+}
 
 namespace mpglue {
   
@@ -85,6 +90,9 @@ namespace mpglue {
     void addWaypoint(waypoint_s const & wp);
     
     void addWaypoint(boost::shared_ptr<waypoint_s> wp);
+    
+    static void convertToJointTraj(waypoint_plan_t const * plan,
+				   robot_msgs::JointTraj * jointTraj);
     
     /**
        Convert a plan from a raw state ID sequence (as computed by

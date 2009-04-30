@@ -34,6 +34,8 @@
 
 #include <mpglue/plan.h>
 #include <mpglue/sbpl_environment.h>
+#include <robot_msgs/Pose.h>
+#include <robot_msgs/JointTraj.h>
 #include <sfl/util/numeric.hpp>
 
 namespace mpglue {
@@ -125,6 +127,22 @@ namespace mpglue {
     prevx_ = wp->x;
     prevy_ = wp->y;
     prevdir_ = wp->theta;
+  }
+  
+  
+  void PlanConverter::
+  convertToJointTraj(waypoint_plan_t const * plan,
+		     robot_msgs::JointTraj * jointTraj)
+  {
+    for (waypoint_plan_t::const_iterator ip(plan->begin()); ip != plan->end(); ++ip) {
+      robot_msgs::JointTrajPoint pt;
+      pt.positions.push_back((*ip)->x);
+      pt.positions.push_back((*ip)->y);
+      if ( ! (*ip)->ignoreTheta())
+	pt.positions.push_back((*ip)->theta);
+      pt.time = 0;
+      jointTraj->points.push_back(pt);
+    }
   }
   
   

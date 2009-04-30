@@ -207,6 +207,9 @@ bool SBPLPlannerNode::replan(const robot_msgs::JointTrajPoint &start, const robo
       ROS_ERROR("No plan found\n");
       return false;
     }
+    
+    path.points.clear();	// just paranoid
+    mpglue::PlanConverter::convertToJointTraj(plan.get(), &path);
     return true;
   }
   catch (std::runtime_error const & ee) {
