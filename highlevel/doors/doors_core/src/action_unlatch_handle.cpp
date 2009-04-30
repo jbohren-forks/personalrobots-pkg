@@ -92,7 +92,7 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door&
   tff_handle_.mode.rot.y = tff_handle_.FORCE;
   tff_handle_.mode.rot.z = tff_handle_.POSITION;
   
-  tff_handle_.value.vel.x = 15.0;
+  tff_handle_.value.vel.x = 20.0;
   tff_handle_.value.vel.y = 0.0;
   tff_handle_.value.vel.z = 0.0;
   tff_handle_.value.rot.x = 0.0;
