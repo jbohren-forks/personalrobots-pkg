@@ -17,8 +17,10 @@ set(robot_files )
 # process all urdf files
 set(PR2_OUTPUT ${openrave_robot_description_PACKAGE_PATH}/robots/pr2.robot.xml)
 set(PR2_INPUT ${pr2_defs_PACKAGE_PATH}/robots/pr2.expanded.xml)
-set(PR2_GRIPPER_OUTPUT ${openrave_robot_description_PACKAGE_PATH}/robots/pr2_gripper.robot.xml)
-set(PR2_GRIPPER_INPUT ${pr2_defs_PACKAGE_PATH}/robots/gripper.expanded.xml)
+set(PR2_L_GRIPPER_OUTPUT ${openrave_robot_description_PACKAGE_PATH}/robots/pr2_l_gripper.robot.xml)
+set(PR2_L_GRIPPER_INPUT ${pr2_defs_PACKAGE_PATH}/robots/l_gripper.expanded.xml)
+set(PR2_R_GRIPPER_OUTPUT ${openrave_robot_description_PACKAGE_PATH}/robots/pr2_r_gripper.robot.xml)
+set(PR2_R_GRIPPER_INPUT ${pr2_defs_PACKAGE_PATH}/robots/r_gripper.expanded.xml)
 set(MODELS ${openrave_robot_description_PACKAGE_PATH}/models)
 
 ## create the models directory
@@ -33,11 +35,16 @@ add_custom_command(
   ARGS ${PR2_INPUT} ${PR2_OUTPUT} ../models
   DEPENDS  ${PR2_INPUT} ${MODELS} urdf2openrave)
 add_custom_command(
-  OUTPUT ${PR2_GRIPPER_OUTPUT}
+  OUTPUT ${PR2_L_GRIPPER_OUTPUT}
   COMMAND ${urdf2openrave_exe}
-  ARGS ${PR2_GRIPPER_INPUT} ${PR2_GRIPPER_OUTPUT} ../models
-  DEPENDS  ${PR2_GRIPPER_INPUT} ${MODELS} urdf2openrave)
-set(robot_files ${robot_files} ${PR2_OUTPUT} ${PR2_GRIPPER_OUTPUT})
+  ARGS ${PR2_L_GRIPPER_INPUT} ${PR2_L_GRIPPER_OUTPUT} ../models
+  DEPENDS  ${PR2_L_GRIPPER_INPUT} ${MODELS} urdf2openrave)
+add_custom_command(
+  OUTPUT ${PR2_R_GRIPPER_OUTPUT}
+  COMMAND ${urdf2openrave_exe}
+  ARGS ${PR2_R_GRIPPER_INPUT} ${PR2_R_GRIPPER_OUTPUT} ../models
+  DEPENDS  ${PR2_R_GRIPPER_INPUT} ${MODELS} urdf2openrave)
+set(robot_files ${robot_files} ${PR2_OUTPUT} ${PR2_L_GRIPPER_OUTPUT} ${PR2_L_GRIPPER_OUTPUT})
 
 add_custom_target(urdf_robots ALL DEPENDS ${robot_files})
 add_dependencies(urdf_robots urdf2openrave)
