@@ -44,6 +44,7 @@ using namespace tf;
 using namespace door_handle_detector;
 
 
+static const double gripper_height = 0.8;
 
 
 Stamped<Pose> getRobotPose(const robot_msgs::Door& door, double dist)
@@ -59,18 +60,16 @@ Stamped<Pose> getRobotPose(const robot_msgs::Door& door, double dist)
   else
     ROS_ERROR("GetRobotPose: door hinge side not specified");
 
-  // calculate angle between the frame and x-axis
-  Vector frame_vec(door.frame_p1.x - door.frame_p2.x, door.frame_p1.y - door.frame_p2.y, door.frame_p1.z - door.frame_p2.z);
-  double angle_frame_x = getVectorAngle(x_axis, frame_vec);
-
   // get vector to center of frame
+  Vector frame_vec(door.frame_p1.x - door.frame_p2.x, door.frame_p1.y - door.frame_p2.y, door.frame_p1.z - door.frame_p2.z);
+  frame_vec.Normalize();
   double door_width = Vector(door.door_p1.x - door.door_p2.x, door.door_p1.y - door.door_p2.y, door.door_p1.z - door.door_p2.z).Norm();
-  Vector frame_center = hinge + Vector(cos(angle_frame_x)*door_width/2.0, sin(angle_frame_x)*door_width/2.0, 0);
+  Vector frame_center = hinge + (frame_vec * door_width / 2.0);
 
   // get normal on frame
   Vector normal_door(door.normal.x, door.normal.y, door.normal.z);
-  Rotation rot_frame_door = Rotation::RotZ(getDoorAngle(door));
-  Vector normal_frame = rot_frame_door * normal_door;
+  Rotation rot_door_frame = Rotation::RotZ(-getDoorAngle(door));
+  Vector normal_frame = rot_door_frame * normal_door;
 
   // get robot pos
   Vector robot_pos = frame_center - (normal_frame * dist);
@@ -115,8 +114,12 @@ Stamped<Pose> getGripperPose(const robot_msgs::Door& door, double angle, double 
 
   Stamped<Pose> gripper_pose;
   gripper_pose.frame_id_ = door.header.frame_id;
-  gripper_pose.setOrigin( Vector3(gripper_pos(0), gripper_pos(1), gripper_pos(2)));
+  gripper_pose.setOrigin( Vector3(gripper_pos(0), gripper_pos(1), gripper_height));
   gripper_pose.setRotation( Quaternion(getVectorAngle(x_axis, normal_frame), 0, 0) ); 
+
+  cout << "gripper pose is " << gripper_pose.getOrigin()[0] << ", " 
+       << gripper_pose.getOrigin()[1] << ", " << gripper_pose.getOrigin()[2] << endl;
+  cout << door << endl;
 
   return gripper_pose;  
 }
