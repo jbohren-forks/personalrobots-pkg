@@ -102,7 +102,7 @@ namespace robot_actions {
     // wait until we have at least 1 subscriber per advertised topic
     ros::Time start_time = ros::Time::now();
     ros::Duration timeout(10.0);
-    while (ros::Node::instance()->numSubscribers(_goal_topic) < 1 || ros::Node::instance()->numSubscribers(_preempt_topic)){
+    while (ros::Node::instance()->numSubscribers(_goal_topic) < 1 || ros::Node::instance()->numSubscribers(_preempt_topic) < 1 ){
       if (ros::Time::now() > start_time+timeout){
 	ROS_ERROR("Action client did not receive subscribers on the %s or %s topic", _goal_topic.c_str(), _preempt_topic.c_str());
 	break;
