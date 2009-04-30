@@ -48,8 +48,7 @@
 #include <robot_msgs/CollisionMap.h>
 
 // Costmap used for the map representation
-#include <old_costmap_2d/costmap_2d.h>
-#include <old_costmap_2d/costmap_node.h>
+#include <costmap_2d/costmap_2d_ros.h>
 
 // MPGlue and sbpl headers
 #include <mpglue/sbpl_planner.h>
@@ -70,7 +69,9 @@ class SBPLPlannerNode
 
       
   private:
-
+  
+  boost::shared_ptr<mpglue::CostmapAccessor> cm_access_;
+  boost::shared_ptr<mpglue::IndexTransform> cm_index_;
   boost::shared_ptr<mpglue::SBPLEnvironment> env_;
   boost::shared_ptr<mpglue::SBPLPlannerWrap> pWrap_;
 
@@ -84,16 +85,22 @@ class SBPLPlannerNode
   std::string plan_stats_file_;
   std::string environment_type_;
   std::string cost_map_topic_;
-
-  const old_costmap_2d::CostMapAccessor *cost_map_accessor_; /**< Read-only access to global cost map */
-//  old_costmap_2d::CostMap2DMsg cost_map_msg_; /**< The cost map maintained incrementally from laser scans */
-//  old_costmap_2d::CostMap2D* cost_map_; /**< The cost map mainatined incrementally from laser scans */
-
-  old_costmap_2d::CostMapNode cost_map_node_;
-
+  
+  tf::TransformListener tf_;	          /**< for our costmap_2d::Costmap2DROS instance */
+  costmap_2d::Costmap2DROS cost_map_ros_; /**< manages the cost map for us */
+  costmap_2d::Costmap2D cost_map_;        /**< local copy of the costmap underlying cost_map_ros_ */
+  
+  friend struct cm_getter;
+  struct cm_getter: public mpglue::costmap_2d_getter {
+    cm_getter(SBPLPlannerNode * spn): spn_(spn) {}
+    virtual costmap_2d::Costmap2D const * operator () () { return &spn_->cost_map_; }
+    SBPLPlannerNode * spn_;
+  };
+  cm_getter cm_getter_;	                   /**< for mpglue to get at our costmap instance */
+  
   bool initializePlannerAndEnvironment();
   void costMapCallBack();
-
+  
   bool replan(const robot_msgs::JointTrajPoint &start, const robot_msgs::JointTrajPoint &goal, robot_msgs::JointTraj &path);
   bool planPath(sbpl_planner_node::PlanPathSrv::Request &req, sbpl_planner_node::PlanPathSrv::Response &resp);
 

@@ -32,9 +32,14 @@
 
 using namespace std;
 using namespace ros;
-using namespace old_costmap_2d;
 
 SBPLPlannerNode::SBPLPlannerNode()
+  : tf_(*ros::Node::instance(),
+	true,			// interpolating
+	ros::Duration(10)	// max_cache_time   XXXX tune this! (get as param?)
+	),
+    cost_map_ros_(*ros::Node::instance(), tf_),
+    cm_getter_(this)
 {
   ros::Node::instance()->param("~allocated_time", allocated_time_, 1.0);
   ros::Node::instance()->param("~forward_search", forward_search_, true);
@@ -50,8 +55,6 @@ SBPLPlannerNode::SBPLPlannerNode()
   ros::Node::instance()->advertiseService("~GetPlan", &SBPLPlannerNode::planPath, this);
 
   initializePlannerAndEnvironment();
-
-  cost_map_accessor_ = &(cost_map_node_.getCostMap());
 };
 
 SBPLPlannerNode::~SBPLPlannerNode()
@@ -76,16 +79,16 @@ bool SBPLPlannerNode::initializePlannerAndEnvironment()
     // called no matter what.
     // sentry<SBPLPlannerNode> guard(this);
   
-    boost::shared_ptr<mpglue::CostmapAccessor> mcm(mpglue::createCostmapAccessor(cost_map_accessor_));
-    boost::shared_ptr<mpglue::IndexTransform> mit(mpglue::createIndexTransform(cost_map_accessor_));
-	
+    cm_access_.reset(mpglue::createCostmapAccessor(&cm_getter_));
+    cm_index_.reset(mpglue::createIndexTransform(&cm_getter_));
+    
     if ("2D" == environment_type_)
     {
-      env_.reset(mpglue::SBPLEnvironment::create2D(mcm, mit, false));
+      env_.reset(mpglue::SBPLEnvironment::create2D(cm_access_, cm_index_, false));
     }
     else if ("2D16" == environment_type_)
     {
-      env_.reset(mpglue::SBPLEnvironment::create2D(mcm, mit, true));
+      env_.reset(mpglue::SBPLEnvironment::create2D(cm_access_, cm_index_, true));
     }
     else if ("3DKIN" == environment_type_) 
     {
@@ -99,7 +102,7 @@ bool SBPLPlannerNode::initializePlannerAndEnvironment()
       ros::Node::instance()->param("~nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
       ros::Node::instance()->param("~timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
       // Could also sanity check the other parameters...
-      env_.reset(mpglue::SBPLEnvironment::create3DKIN(mcm, mit, footprint_, nominalvel_mpersecs,timetoturn45degsinplace_secs, 0));
+      env_.reset(mpglue::SBPLEnvironment::create3DKIN(cm_access_, cm_index_, footprint_, nominalvel_mpersecs,timetoturn45degsinplace_secs, 0));
     }
     else if ("XYThetaLattice" == environment_type_) 
     {
@@ -115,7 +118,7 @@ bool SBPLPlannerNode::initializePlannerAndEnvironment()
       ros::Node::instance()->param("~nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
       ros::Node::instance()->param("~timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
       // Could also sanity check the other parameters...
-      env_.reset(mpglue::SBPLEnvironment::createXYThetaLattice(mcm, mit, footprint_, nominalvel_mpersecs,timetoturn45degsinplace_secs, filename, 0));
+      env_.reset(mpglue::SBPLEnvironment::createXYThetaLattice(cm_access_, cm_index_, footprint_, nominalvel_mpersecs,timetoturn45degsinplace_secs, filename, 0));
     }
     else 
     {
@@ -155,29 +158,31 @@ void SBPLPlannerNode::costMapCallBack()
 
 bool SBPLPlannerNode::replan(const robot_msgs::JointTrajPoint &start, const robot_msgs::JointTrajPoint &goal, robot_msgs::JointTraj &path)
 {
+  ROS_INFO("[replan] getting fresh copy of costmap");
+  lock_.lock();
+  cost_map_ros_.getCostmapCopy(cost_map_);
+  lock_.unlock();
+  
+  // XXXX this is where we would cut out the doors in our local copy
+  
   ROS_INFO("[replan] replanning...");
   try {
     // Update costs
-    lock_.lock();
-    const CostMapAccessor& cm = *cost_map_accessor_;
-    unsigned int x =  cm.getWidth();
-    while(x > 0){
-      x--;
-      unsigned int y =  cm.getHeight();
-      while(y > 0)
-      {
-        y--;
-        // Note that ompl::EnvironmentWrapper::UpdateCost() will
-        // check if the cost has actually changed, and do nothing
-        // if it hasn't.  It internally maintains a list of the
-        // cells that have actually changed, and this list is what
-        // gets "flushed" to the planner (a couple of lines
-        // further down).
-        env_->UpdateCost(x, y, (unsigned char) cm.getCost(x, y));
+    for (mpglue::index_t ix(cm_access_->getXBegin()); ix < cm_access_->getXEnd(); ++ix) {
+      for (mpglue::index_t iy(cm_access_->getYBegin()); iy < cm_access_->getYEnd(); ++iy) {
+	mpglue::cost_t cost;
+	if (cm_access_->getCost(ix, iy, &cost)) { // always succeeds though
+	  // Note that ompl::EnvironmentWrapper::UpdateCost() will
+	  // check if the cost has actually changed, and do nothing
+	  // if it hasn't.  It internally maintains a list of the
+	  // cells that have actually changed, and this list is what
+	  // gets "flushed" to the planner (a couple of lines
+	  // further down).
+	  env_->UpdateCost(ix, iy, cost);
+	}
       }
     }
-    lock_.unlock();
-	
+    
     // Tell the planner about the changed costs. Again, the called
     // code checks whether anything has really changed before
     // embarking on expensive computations.
