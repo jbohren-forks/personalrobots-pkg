@@ -35,7 +35,8 @@
 /* Author: Wim Meeussen */
 
 #include <door_handle_detector/door_functions.h>
-#include "doors_core/action_grasp_handle.h"
+#include "doors_core/executive_functions.h"
+#include "doors_core/action_touch_door.h"
 
 using namespace tf;
 using namespace KDL;
@@ -44,12 +45,12 @@ using namespace std;
 using namespace door_handle_detector;
 
 static const string fixed_frame = "odom_combined";
+static const double touch_dist = 0.6;
 
 
 
-
-GraspHandleAction::GraspHandleAction(Node& node) : 
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("grasp_handle"), 
+TouchDoorAction::TouchDoorAction(Node& node) : 
+  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("touch_door"), 
   node_(node),
   tf_(node)
 {
@@ -57,105 +58,56 @@ GraspHandleAction::GraspHandleAction(Node& node) :
 };
 
 
-GraspHandleAction::~GraspHandleAction()
+TouchDoorAction::~TouchDoorAction()
 {};
 
 
 
-robot_actions::ResultStatus GraspHandleAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
+robot_actions::ResultStatus TouchDoorAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
 {
-  ROS_INFO("GraspHandleAction: execute");
-
+  ROS_INFO("TouchDoorAction: execute");
+ 
   // set default feedback
   feedback = goal;
  
   // transform door message to time fixed frame
   robot_msgs::Door goal_tr;
   if (!transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame)){
-    ROS_ERROR("GraspHandleAction: Could not tranform door message from '%s' to '%s' at time %f",
+    ROS_ERROR("TouchDoorAction: Could not tranform door message from '%s' to '%s' at time %f",
 	      goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());
     return robot_actions::ABORTED;
   }
 
-  Vector normal(goal_tr.normal.x, goal_tr.normal.y, goal_tr.normal.z);
-  Vector handle(goal_tr.handle.x, goal_tr.handle.y, goal_tr.handle.z);
-  Stamped<Pose> gripper_pose;
-  gripper_pose.frame_id_ = fixed_frame;
-  
   // check for preemption
   if (isPreemptRequested()) {
-    ROS_ERROR("GraspHandleAction: preempted");
+    ROS_ERROR("TouchDoorAction: preempted");
     return robot_actions::PREEMPTED;
   }
 
-  // open the gripper while moving in front of the door
+  // close the gripper while moving to touch the door
   std_msgs::Float64 gripper_msg;
-  gripper_msg.data = 20.0;
+  gripper_msg.data = -20.0;
   node_.publish("r_gripper_effort_controller/command", gripper_msg);
   
   // move gripper in front of door
-  gripper_pose.setOrigin( Vector3(handle(0) + (normal(0) * -0.15), handle(1) + (normal(1) * -0.15), handle(2) + (normal(2) * -0.15)));
-  gripper_pose.setRotation( Quaternion(getDoorAngle(goal_tr), 0, M_PI/2.0) ); 
+  Stamped<Pose> gripper_pose = getGripperPose(goal_tr, getDoorAngle(goal_tr), touch_dist);
   gripper_pose.stamp_ = Time::now();
   PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
 
-  ROS_INFO("GraspHandleAction: move in front of handle");
+  ROS_INFO("TouchDoorAction: move to touch the door at distance %f from hinge", touch_dist);
   if (!ros::service::call("r_arm_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
     if (isPreemptRequested()){
-      ROS_ERROR("GraspHandleAction: preempted");
+      ROS_ERROR("TouchDoorAction: preempted");
       return robot_actions::PREEMPTED;
     }
     else{
-      ROS_ERROR("GraspHandleAction: move_to command failed");
+      ROS_ERROR("TouchDoorAction: move_to command failed");
       return robot_actions::ABORTED;
     }
   }
 
-
-  // move gripper over door handle
-  gripper_pose.frame_id_ = fixed_frame;
-  gripper_pose.setOrigin( Vector3(handle(0) + (normal(0) * 0.05 ), handle(1) + (normal(1) * 0.05),  handle(2) + (normal(2) * 0.05)));
-  gripper_pose.setRotation( Quaternion(getDoorAngle(goal_tr), 0, M_PI/2.0) ); 
-  gripper_pose.stamp_ = Time::now();
-  PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
-
-  ROS_INFO("GraspHandleAction: move over handle");
-  if (!ros::service::call("r_arm_cartesian_trajectory_controller/move_to", req_moveto, res_moveto)){
-    if (isPreemptRequested()){
-      ROS_ERROR("GraspHandleAction: preempted");
-      return robot_actions::PREEMPTED;
-    }
-    else{
-      ROS_ERROR("GraspHandleAction: move_to command failed");
-      return robot_actions::ABORTED;
-    }
-  }
-  
-  // close the gripper during 4 seconds
-  gripper_msg.data = -20.0;
-  node_.publish("r_gripper_effort_controller/command", gripper_msg);
-  for (unsigned int i=0; i<100; i++){
-    Duration().fromSec(4.0/100.0).sleep();
-    if (isPreemptRequested()) {
-      gripper_msg.data = 0.0;
-      node_.publish("r_gripper_effort_controller/command", gripper_msg);
-      ROS_ERROR("GraspHandleAction: preempted");
-      return robot_actions::PREEMPTED;
-    }
-  }
-  
   feedback = goal_tr;
   return robot_actions::SUCCESS;
-}
-
-
-double GraspHandleAction::getDoorAngle(const robot_msgs::Door& door)
-{
-  Vector normal(door.normal.x, door.normal.y, door.normal.z);
-  Vector x_axis(1,0,0);
-  double dot      = normal(0) * x_axis(0) + normal(1) * x_axis(1);
-  double perp_dot = normal(1) * x_axis(0) - normal(0) * x_axis(1);
-  return atan2(perp_dot, dot);
 }
 
 

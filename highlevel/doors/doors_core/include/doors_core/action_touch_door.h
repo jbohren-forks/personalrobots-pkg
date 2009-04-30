@@ -35,8 +35,8 @@
 
 /* Author: Wim Meeusen */
 
-#ifndef ACTION_GRASP_HANLDE_H
-#define ACTION_GRASP_HANDLE_H
+#ifndef ACTION_TOUCH_DOOR_H
+#define ACTION_TOUCH_DOOR_H
 
 
 #include <ros/node.h>
@@ -52,19 +52,16 @@
 
 namespace door_handle_detector{
 
-class GraspHandleAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
+class TouchDoorAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
 {
 public:
-  GraspHandleAction(ros::Node& node);
-  ~GraspHandleAction();
+  TouchDoorAction(ros::Node& node);
+  ~TouchDoorAction();
 
   virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
 
 
 private:
-  // get angle between the door normal and the x-axis
-  double getDoorAngle(const robot_msgs::Door& door);
-
   ros::Node& node_;
   tf::TransformListener tf_; 
 

@@ -32,45 +32,34 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/* Author: Wim Meeussen */
 
-/* Author: Wim Meeusen */
-
-#ifndef ACTION_GRASP_HANLDE_H
-#define ACTION_GRASP_HANDLE_H
-
-
-#include <ros/node.h>
 #include <robot_msgs/Door.h>
-#include <std_msgs/Float64.h>
-#include <std_msgs/String.h>
-#include <std_srvs/Empty.h>
-#include <tf/tf.h>
-#include <tf/transform_listener.h>
-#include <robot_srvs/MoveToPose.h>
-#include <kdl/frames.hpp>
+#include "doors_core/action_touch_door.h"
 #include <robot_actions/action.h>
+#include <robot_actions/action_runner.h>
+#include <pr2_robot_actions/DoorActionState.h>
 
-namespace door_handle_detector{
 
-class GraspHandleAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
+using namespace door_handle_detector;
+
+
+// -----------------------------------
+//              MAIN
+// -----------------------------------
+
+int main(int argc, char** argv)
 {
-public:
-  GraspHandleAction(ros::Node& node);
-  ~GraspHandleAction();
+  ros::init(argc,argv); 
 
-  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
+  ros::Node node("action_runner_touch_door");
 
+  TouchDoorAction touch(node);
 
-private:
-  // get angle between the door normal and the x-axis
-  double getDoorAngle(const robot_msgs::Door& door);
+  robot_actions::ActionRunner runner(10.0);
+  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(touch);
 
-  ros::Node& node_;
-  tf::TransformListener tf_; 
-
-  robot_srvs::MoveToPose::Request  req_moveto;
-  robot_srvs::MoveToPose::Response res_moveto;
-};
-
+  runner.run();
+  node.spin();
+  return 0;
 }
-#endif
