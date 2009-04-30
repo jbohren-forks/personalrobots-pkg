@@ -13,8 +13,8 @@
   <gripper_calibrator side="l" />
 
   <!-- New calibrators for Alpha2, IDE hardware -->
-  <!--base_calibrator_alpha2 /-->
-  <base_calibrator /> <!-- New casters are in the shop, have A1's -->
+  <base_calibrator_alpha2 />
+  <!--base_calibrator /--> <!-- New casters are in the shop, have A1's -->
 
   <head_calibrator_alpha2b />
   <tilting_laser_calibrator name="laser_tilt" />
