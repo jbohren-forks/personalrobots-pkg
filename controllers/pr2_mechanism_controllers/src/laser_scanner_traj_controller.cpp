@@ -132,7 +132,7 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
 
   // Set to hold the current position
 
-  pr2_mechanism_controllers::PeriodicCmd cmd ;
+  pr2_msgs::PeriodicCmd cmd ;
   cmd.profile = "linear" ;
   cmd.period = 1.0 ;
   cmd.amplitude = 0.0 ;
@@ -252,7 +252,7 @@ bool LaserScannerTrajController::setTrajectory(const std::vector<trajectory::Tra
   return true;
 }
 
-bool LaserScannerTrajController::setPeriodicCmd(const pr2_mechanism_controllers::PeriodicCmd& cmd)
+bool LaserScannerTrajController::setPeriodicCmd(const pr2_msgs::PeriodicCmd& cmd)
 {
   if (cmd.profile == "linear" ||
       cmd.profile == "blended_linear")
@@ -422,8 +422,8 @@ bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXml
   return true ;
 }
 
-bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_mechanism_controllers::SetPeriodicCmd::Request &req, 
-                                                    pr2_mechanism_controllers::SetPeriodicCmd::Response &res)
+bool LaserScannerTrajControllerNode::setPeriodicSrv(pr2_srvs::SetPeriodicCmd::Request &req, 
+                                                    pr2_srvs::SetPeriodicCmd::Response &res)
 {
   ROS_INFO("LaserScannerTrajControllerNode: set periodic command");
 

@@ -11,8 +11,8 @@ import string
 import rospy
 from std_msgs import *
 
-from pr2_mechanism_controllers.msg import PeriodicCmd
-from pr2_mechanism_controllers.srv import *
+from pr2_msgs.msg import PeriodicCmd
+from pr2_srvs.srv import *
 from time import sleep
 
 def print_usage(exit_code = 0):

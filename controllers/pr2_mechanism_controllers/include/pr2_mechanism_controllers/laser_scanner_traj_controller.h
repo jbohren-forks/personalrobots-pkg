@@ -46,14 +46,14 @@
 
 // Messages
 #include <pr2_mechanism_controllers/LaserScannerSignal.h>
-#include <pr2_mechanism_controllers/PeriodicCmd.h>
+#include <pr2_msgs/PeriodicCmd.h>
 #include <pr2_mechanism_controllers/TrackLinkCmd.h>
 
 // Services
 #include <robot_mechanism_controllers/SetCommand.h>
 #include <robot_mechanism_controllers/GetCommand.h>
 #include <pr2_mechanism_controllers/SetProfile.h>
-#include <pr2_mechanism_controllers/SetPeriodicCmd.h>
+#include <pr2_srvs/SetPeriodicCmd.h>
 
 #include "boost/thread/mutex.hpp"
 #include "trajectory/trajectory.h"
@@ -71,7 +71,7 @@ public:
 
   virtual void update() ;
 
-  bool setPeriodicCmd(const pr2_mechanism_controllers::PeriodicCmd& cmd) ;
+  bool setPeriodicCmd(const pr2_msgs::PeriodicCmd& cmd) ;
 
   bool setTrackLinkCmd(const pr2_mechanism_controllers::TrackLinkCmd& track_link_cmd) ;
 
@@ -132,8 +132,8 @@ public:
   // Message Callbacks
   void setPeriodicCmd() ;
   void setTrackLinkCmd() ;
-  bool setPeriodicSrv(pr2_mechanism_controllers::SetPeriodicCmd::Request &req, 
-                      pr2_mechanism_controllers::SetPeriodicCmd::Response &res);
+  bool setPeriodicSrv(pr2_srvs::SetPeriodicCmd::Request &req, 
+                      pr2_srvs::SetPeriodicCmd::Response &res);
 
 private:
   ros::Node *node_ ;
@@ -143,7 +143,7 @@ private:
 
   double prev_profile_time_ ;                                                    //!< The time in the current profile when update() was last called
 
-  pr2_mechanism_controllers::PeriodicCmd cmd_ ;
+  pr2_msgs::PeriodicCmd cmd_ ;
   pr2_mechanism_controllers::TrackLinkCmd track_link_cmd_ ;
 
   pr2_mechanism_controllers::LaserScannerSignal m_scanner_signal_ ;              //!< Stores the message that we want to send at the end of each sweep, and halfway through each sweep

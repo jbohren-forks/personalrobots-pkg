@@ -265,6 +265,7 @@ bool ArmTrajectoryController::reachedGoalPosition(std::vector<double> joint_cmd)
     error = fabs(joint_pd_controllers_[i]->joint_state_->position_ - joint_cmd[i]);
    }
     return_val = return_val && (error <= goal_reached_threshold_[i]);
+    //ROS_INFO("joint error: %f threshold: %f",error, goal_reached_threshold_[i]);
   }
   return return_val;
 }
