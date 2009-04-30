@@ -90,14 +90,25 @@ namespace robot_actions {
   ActionClient<Goal, State, Feedback>::ActionClient(const std::string& name)
     : _goal_topic(name + "/activate"), _preempt_topic(name + "/preempt"), _feedback_topic(name + "/feedback"),_is_active(false){
 
+    // Subscribe to state updates
+    ros::Node::instance()->subscribe(_feedback_topic, _state_update_msg, &ActionClient<Goal, State, Feedback>::callbackHandler,  this, 1);
+
     // Advertize goal requests. 
     ros::Node::instance()->advertise<Goal>(_goal_topic, 1);
 
     // Advertize goal preemptions.
     ros::Node::instance()->advertise<std_msgs::Empty>(_preempt_topic, 1);
 
-    // Subscribe to state updates
-    ros::Node::instance()->subscribe(_feedback_topic, _state_update_msg, &ActionClient<Goal, State, Feedback>::callbackHandler,  this, 1);
+    // wait until we have at least 1 subscriber per advertised topic
+    ros::Time start_time = ros::Time::now();
+    ros::Duration timeout(10.0);
+    while (ros::Node::instance()->numSubscribers(_goal_topic) < 1 || ros::Node::instance()->numSubscribers(_preempt_topic)){
+      if (ros::Time::now() > start_time+timeout){
+	ROS_ERROR("Action client did not receive subscribers on the %s or %s topic", _goal_topic.c_str(), _preempt_topic.c_str());
+	break;
+      }
+      ros::Duration(0.1).sleep();
+    }
   }
 
   template <class Goal, class State, class Feedback>
