@@ -1,0 +1,42 @@
+
+<launch>
+
+
+ <include file="$(find outlet_detection)/launch/outlet_coarse_detection/controllers.launch" />
+ <include file="$(find outlet_detection)/launch/outlet_coarse_detection/perception.launch" />
+
+ <node pkg="plugs_core" type="action_runner" output="screen" />
+
+
+
+<!-- Robot pose ekf -->
+  <node pkg="robot_pose_ekf" type="robot_pose_ekf" args="robot_pose_ekf" name="robot_pose_ekf">
+    <param name="freq" value="30.0"/>
+    <param name="sensor_timeout" value="1.0"/>
+    <param name="odom_used" value="true"/>
+    <param name="imu_used" value="true"/>
+    <param name="vo_used" value="false"/>
+  </node>
+
+<!-- Joystick -->
+  <param name="axis_vx" value="3" type="int"/>
+  <param name="axis_vy" value="2" type="int"/>
+  <param name="axis_vw" value="0" type="int"/>
+  <param name="pan" value="4" type="int"/>
+  <param name="tilt" value="5" type="int"/>
+  <param name="max_vw" value="1.0" />
+  <param name="max_vx" value="0.6" />
+  <param name="max_vy" value="0.6" />
+  <param name="deadman_button" value="4" type="int"/>
+  <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" output="screen"/>
+
+
+
+
+  <node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting" respawn="false" output="screen">
+    <param name="display" type="bool" value="True"/>
+    <param name="base_scan_topic" value="base_scan_marking" />
+    </node>
+
+</launch>
+

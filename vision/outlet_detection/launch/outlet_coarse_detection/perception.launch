@@ -1,0 +1,41 @@
+<launch>
+  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+ <param name="stereo/videre_mode" type="str" value="none"/>
+  <param name="stereo/do_colorize" type="bool" value="True"/>
+  <param name="stereo/do_rectify" type="bool" value="True"/>
+  <param name="stereo/do_stereo" type="bool" value="True"/>
+  <param name="stereo/do_calc_points" type="bool" value="True"/>
+  <param name="stereo/do_keep_coords" type="bool" value="True"/>
+
+
+<!-- Stereo image processing -->
+ <node pkg="stereo_image_proc" type="stereoproc" respawn="false" />
+
+<!-- Filter for tilt laser shadowing/veiling -->
+<node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="tilt_shadow_filter">
+  <param name="scan_topic" value="tilt_scan" />
+  <param name="cloud_topic" value="tilt_scan_filtered" />
+</node>
+
+<!-- Filter for base laser shadowing/veiling -->
+<node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="base_shadow_filter_non_preserve" >
+  <param name="scan_topic" value="base_scan" />
+  <param name="cloud_topic" value="base_scan_marking" />
+  <param name="laser_max_range" value="30.0" />
+</node>
+
+<!-- Laser scan assembler for tilt laser -->
+<node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
+  <remap from="scan_in" to="tilt_scan"/>
+  <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
+  <param name="tf_cache_time_secs" type="double" value="10.0" />
+  <param name="max_scans" type="int" value="1000" />
+  <param name="ignore_laser_skew" type="bool" value="true" />
+  <param name="fixed_frame" type="string" value="odom_combined" />
+  <param name="downsample_factor" type="int" value="1" />
+</node>
+
+<!-- Generate single sweep scan -->
+<node pkg="point_cloud_assembler" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
+
+</launch>

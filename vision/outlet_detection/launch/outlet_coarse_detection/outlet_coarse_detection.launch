@@ -1,0 +1,8 @@
+
+<launch>
+
+  <node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting" respawn="false" output="screen">
+    <param name="display" type="bool" value="False"/>
+    </node>
+</launch>
+
