@@ -932,7 +932,8 @@ NavFn::calcPath(int n, int *st)
       //	     potarr[stc], x, y, pathx[npath-1], pathy[npath-1]);
     }
 
-  return npath;			// out of cycles, return failure
+  //  return npath;			// out of cycles, return failure
+  return 0;			// out of cycles, return failure
 }
 
 
