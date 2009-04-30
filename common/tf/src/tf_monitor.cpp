@@ -39,6 +39,107 @@ using namespace ros;
 using namespace std;
 
 
+class TFMonitor
+{
+public:
+  std::string framea_, frameb_;
+  
+  Node node_;
+  std::vector<std::string> chain_;
+  std::map<std::string, std::vector<double> > delay_map;
+  
+  TransformListener tf_;
+
+  tf::tfMessage message_;
+
+  boost::mutex map_lock_;
+  void callback()
+  {
+    boost::mutex::scoped_lock my_lock(map_lock_);  
+    for (unsigned int i = 0; i < message_.transforms.size(); i++)
+    {
+      std::map<std::string, std::vector<double> >::iterator it = delay_map.find(message_.transforms[i].header.frame_id);
+      if (it == delay_map.end())
+        delay_map[message_.transforms[i].header.frame_id] = std::vector<double>(1,(ros::Time::now() - message_.transforms[i].header.stamp).toSec());
+      else
+        it->second.push_back((ros::Time::now() - message_.transforms[i].header.stamp).toSec());
+    } 
+  };
+
+  TFMonitor(std::string framea, std::string frameb):
+    framea_(framea), frameb_(frameb),
+    node_("tf_monitor", ros::Node::ANONYMOUS_NAME),
+    tf_(node_)
+  {
+    
+  cout << "Waiting for first transfrom to become available" << flush;
+  while (node_.ok() && !tf_.canTransform(framea_, frameb_, Time(), Duration(1.0)))
+    cout << "." << flush;
+  cout << endl;
+  
+  tf_.chainAsVector(framea_, ros::Time(), frameb_, ros::Time(), frameb_, chain_);
+  cout << "Chain currently is:" <<endl;
+  for (unsigned int i = 0; i < chain_.size(); i++)
+  {
+    cout << chain_[i] <<", ";
+  }
+  cout <<endl;
+
+  node_.subscribe("tf_message", message_, &TFMonitor::callback, this, 100);
+    
+  }
+
+  
+  void spin()
+  {  
+    
+    // create tf listener
+    double max_diff = 0;
+    double avg_diff = 0;
+    double lowpass = 0.01;
+    unsigned int counter = 0;
+    
+  
+
+  while (node_.ok()){
+    Stamped<Transform> tmp;
+
+    tf_.lookupTransform(framea_, frameb_, Time(), tmp);
+    double diff = (Time::now() - tmp.stamp_).toSec();
+    avg_diff = lowpass * diff + (1-lowpass)*avg_diff;
+    if (diff > max_diff) max_diff = diff;
+    Duration(0.01).sleep();
+    counter++;
+    if (counter > 100){
+      counter = 0;
+      cout << "Net delay " << framea_ << " to " << frameb_ << "    avg = " << avg_diff <<": max = " << max_diff << endl;
+      boost::mutex::scoped_lock lock(map_lock_);  
+      for ( unsigned int i = 0 ; i < chain_.size(); i++)
+      {
+        std::map<std::string, std::vector<double> >::iterator it = delay_map.begin();
+        for ( ; it != delay_map.end() ; ++it)
+        {
+          if (it->first != chain_[i])
+            continue;
+          double average_delay = 0;
+          double max_delay = 0;
+          for (unsigned int i = 0; i < it->second.size(); i++)
+          {
+            average_delay += it->second[i];
+            max_delay = std::max(max_delay, it->second[i]);
+          }
+          average_delay /= it->second.size();
+          cout << "Frame: " << it->first << " Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
+        }
+      }
+      
+    }
+  }
+
+  }
+};
+
+
 int main(int argc, char ** argv)
 {
   //Initialize ROS
@@ -53,35 +154,9 @@ int main(int argc, char ** argv)
     ROS_INFO("TF_Monitor: usage: tf_monitor framea frameb");
     return -1;
   }
-
-  Node node_("tf_monitor");
-
-  // create tf listener
-  TransformListener tf_(node_);
-  double max_diff = 0;
-  double avg_diff = 0;
-  double lowpass = 0.01;
-  unsigned int counter = 0;
-
-  Stamped<Transform> tmp;
-  cout << "Waiting for first transfrom to become afailable" << flush;
-  while (node_.ok() && !tf_.canTransform(framea, frameb, Time(), Duration(1.0)))
-    cout << "." << flush;
-  cout << endl;
-
-
-  while (node_.ok()){
-    tf_.lookupTransform(framea, frameb, Time(), tmp);
-    double diff = (Time::now() - tmp.stamp_).toSec();
-    avg_diff = lowpass * diff + (1-lowpass)*avg_diff;
-    if (diff > max_diff) max_diff = diff;
-    Duration(0.01).sleep();
-    counter++;
-    if (counter > 100){
-      counter = 0;
-      cout << "max = " << max_diff << "    avg = " << avg_diff << endl;
-    }
-  }
+  TFMonitor monitor(framea, frameb);
+  monitor.spin();
 
   return 0;
+
 }
