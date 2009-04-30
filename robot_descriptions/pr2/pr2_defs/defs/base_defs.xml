@@ -566,7 +566,7 @@
               wheel_l="${suffix}_caster_l_wheel_joint"
               wheel_r="${suffix}_caster_r_wheel_joint" />
       <caster_pid p="6" i="0" d="0" iClamp="0" />
-      <wheel_pid p="4" i="0" d="0" iClamp="0" />
+      <wheel_pid p="6" i="0" d="0" iClamp="0" />
     </controller>
   </macro>
 
