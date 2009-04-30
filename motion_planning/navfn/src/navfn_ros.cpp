@@ -40,7 +40,7 @@ namespace navfn {
   NavfnROS::NavfnROS(ros::Node& ros_node, tf::TransformListener& tf, costmap_2d::Costmap2D& costmap) : ros_node_(ros_node), tf_(tf), 
   costmap_(costmap), planner_(costmap.cellSizeX(), costmap.cellSizeY()) {
     //advertise our plan visualization
-    ros_node_.advertise<robot_msgs::Polyline>("~navfn/plan", 1);
+    ros_node_.advertise<visualization_msgs::Polyline>("~navfn/plan", 1);
 
     //read parameters for the planner
     ros_node_.param("~/navfn/costmap/global_frame", global_frame_, std::string("map"));
@@ -204,7 +204,7 @@ namespace navfn {
       return;
 
     // Extract the plan in world co-ordinates, we assume the path is all in the same frame
-    robot_msgs::Polyline gui_path_msg;
+    visualization_msgs::Polyline gui_path_msg;
     gui_path_msg.header.frame_id = path[0].header.frame_id;
     gui_path_msg.header.stamp = path[0].header.stamp;
     gui_path_msg.set_points_size(path.size());

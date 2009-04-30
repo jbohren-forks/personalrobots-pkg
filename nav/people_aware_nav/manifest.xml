@@ -19,4 +19,5 @@
 <depend package="deprecated_msgs" />
 <depend package="rosconsole" />
 <depend package="roscpp" />
+<depend package="visualization_msgs"/>
 </package>

@@ -52,7 +52,7 @@
 
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/Door.h>
-#include <robot_msgs/VisualizationMarker.h>
+#include <visualization_msgs/VisualizationMarker.h>
 
 #include <std_msgs/String.h>
 
@@ -348,7 +348,7 @@ class DoorTracker
         node_->param("~publish_all_candidates" , publish_all_candidates_, false); 
 
 //      node_->subscribe(door_msg_topic_,door_msg_in_, &DoorTracker::doorMsgCallBack,this,1);
-        node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+        node_->advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
         node_->advertise<robot_msgs::Door>( "~door_message", 0 );
         node_->advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
 
@@ -457,12 +457,12 @@ class DoorTracker
 
     void publishLine(const Point32 &min_p, const Point32 &max_p, const int &id, const std::string &frame_id)
     {   
-      robot_msgs::VisualizationMarker marker;
+      visualization_msgs::VisualizationMarker marker;
       marker.header.frame_id = frame_id;
       marker.header.stamp = ros::Time();
       marker.id = id;
-      marker.type = robot_msgs::VisualizationMarker::LINE_STRIP;
-      marker.action = robot_msgs::VisualizationMarker::ADD;
+      marker.type = visualization_msgs::VisualizationMarker::LINE_STRIP;
+      marker.action = visualization_msgs::VisualizationMarker::ADD;
       marker.x = 0.0;
       marker.y = 0.0;
       marker.z = 0.0;

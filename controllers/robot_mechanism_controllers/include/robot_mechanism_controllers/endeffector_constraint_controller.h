@@ -49,7 +49,7 @@
 #include "joy/Joy.h"
 #include "Eigen/LU"
 #include "Eigen/Core"
-#include <robot_msgs/VisualizationMarker.h>
+#include <visualization_msgs/VisualizationMarker.h>
 
 
 namespace controller {

@@ -10,5 +10,6 @@ Package for publishing fingertip pressure sensor information.
 <depend package='roscpp' />
 <depend package='rospy' />
 <depend package='robot_msgs' />
+<depend package="visualization_msgs" />
 <repository>http://pr.willowgarage.com/repos</repository>
 </package>

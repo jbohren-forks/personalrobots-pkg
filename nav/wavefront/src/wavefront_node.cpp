@@ -68,8 +68,8 @@ Subscribes to (name/type):
 Publishes to (name / type):
 - @b "cmd_vel" robot_msgs/PoseDot : velocity commands to robot
 - @b "state" nav_robot_actions/MoveBaseState : current planner state (e.g., goal reached, no path)
-- @b "gui_path" robot_msgs/Polyline : current global path (for visualization)
-- @b "gui_laser" robot_msgs/Polyline : re-projected laser scans (for visualization)
+- @b "gui_path" visualization_msgs/Polyline : current global path (for visualization)
+- @b "gui_laser" visualization_msgs/Polyline : re-projected laser scans (for visualization)
 
 <hr>
 
@@ -109,7 +109,7 @@ parameters.
 #include <robot_srvs/StaticMap.h>
 
 // For GUI debug
-#include <robot_msgs/Polyline.h>
+#include <visualization_msgs/Polyline.h>
 
 // For transform support
 #include <tf/transform_listener.h>
@@ -196,8 +196,8 @@ class WavefrontNode: public ros::Node
     // incoming/outgoing messages
     robot_msgs::PoseStamped goalMsg;
     //MsgRobotBase2DOdom odomMsg;
-    robot_msgs::Polyline polylineMsg;
-    robot_msgs::Polyline pointcloudMsg;
+    visualization_msgs::Polyline polylineMsg;
+    visualization_msgs::Polyline pointcloudMsg;
     nav_robot_actions::MoveBaseState pstate;
     //MsgRobotBase2DOdom prevOdom;
     bool firstodom;
@@ -362,8 +362,8 @@ WavefrontNode::WavefrontNode() :
   this->firstodom = true;
 
   advertise<nav_robot_actions::MoveBaseState>("state",1);
-  advertise<robot_msgs::Polyline>("gui_path",1);
-  advertise<robot_msgs::Polyline>("gui_laser",1);
+  advertise<visualization_msgs::Polyline>("gui_path",1);
+  advertise<visualization_msgs::Polyline>("gui_laser",1);
   advertise<robot_msgs::PoseDot>("cmd_vel",1);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
 
@@ -386,7 +386,7 @@ WavefrontNode::goalReceived()
 
   if(this->enable){
     tf::PoseStampedMsgToTF(goalMsg, this->goalPose_);
-    
+
 
     // Populate goal data
     this->goal[0] = this->goalPose_.getOrigin().getX();

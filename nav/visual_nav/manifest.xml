@@ -12,6 +12,7 @@
 <depend package="vslam" />
 <depend package="rviz" />
 <depend package="tf" />
+<depend package="visualization_msgs" />
 <export>
 <cpp cflags="-I${prefix}/include" />
 </export>

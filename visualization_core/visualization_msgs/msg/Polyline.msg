@@ -1,3 +1,3 @@
 Header header
-Point[] points
+robot_msgs/Point[] points
 std_msgs/ColorRGBA color

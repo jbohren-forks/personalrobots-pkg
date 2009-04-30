@@ -125,7 +125,7 @@ roslib.load_manifest('tabletop_manipulation')
 import rospy
 import random
 import sys
-from robot_msgs.msg import VisualizationMarker
+from visualization_msgs.msg import VisualizationMarker
 from robot_msgs.msg import AttachedObject, PoseConstraint
 from robot_srvs.srv import FindTable, FindTableRequest, SubtractObjectFromCollisionMap, SubtractObjectFromCollisionMapRequest, RecordStaticMapTrigger, RecordStaticMapTriggerRequest
 from pr2_mechanism_controllers.srv import SetProfile, SetProfileRequest

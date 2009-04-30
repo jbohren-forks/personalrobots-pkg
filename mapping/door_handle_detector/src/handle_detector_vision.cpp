@@ -57,7 +57,7 @@
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PointStamped.h"
 #include "robot_msgs/Door.h"
-#include "robot_msgs/VisualizationMarker.h"
+#include "visualization_msgs/VisualizationMarker.h"
 #include "door_handle_detector/DoorsDetector.h"
 #include "std_srvs/Empty.h"
 
@@ -189,7 +189,7 @@ public:
         // invalid location until we get a detection
 
 //        advertise<robot_msgs::PointStamped>("handle_detector/handle_location", 1);
-        advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
+        advertise<visualization_msgs::VisualizationMarker>("visualizationMarker", 1);
         advertiseService("door_handle_vision_detector", &HandleDetector::detectHandleSrv, this);
         advertiseService("door_handle_vision_preempt", &HandleDetector::preempt, this);
     }
@@ -384,12 +384,12 @@ private:
      */
     void showHandleMarker(robot_msgs::PointStamped p)
     {
-        robot_msgs::VisualizationMarker marker;
+        visualization_msgs::VisualizationMarker marker;
         marker.header.frame_id = p.header.frame_id;
         marker.header.stamp = ros::Time((uint64_t)(0ULL));
         marker.id = 0;
-        marker.type = robot_msgs::VisualizationMarker::SPHERE;
-        marker.action = robot_msgs::VisualizationMarker::ADD;
+        marker.type = visualization_msgs::VisualizationMarker::SPHERE;
+        marker.action = visualization_msgs::VisualizationMarker::ADD;
         marker.x = p.point.x;
         marker.y = p.point.y;
         marker.z = p.point.z;
@@ -422,12 +422,12 @@ private:
 //    	}
 //
 //
-//        robot_msgs::VisualizationMarker marker;
+//        visualization_msgs::VisualizationMarker marker;
 //        marker.header.frame_id = pc.header.frame_id;
 //        marker.header.stamp = pc.header.stamp;
 //        marker.id = 1211;
-//        marker.type = robot_msgs::VisualizationMarker::SPHERE;
-//        marker.action = robot_msgs::VisualizationMarker::ADD;
+//        marker.type = visualization_msgs::VisualizationMarker::SPHERE;
+//        marker.action = visualization_msgs::VisualizationMarker::ADD;
 //        marker.x = pc.pts[min_i].x;
 //        marker.y = pc.pts[min_i].y;
 //        marker.z = pc.pts[min_i].z;

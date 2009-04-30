@@ -10,4 +10,5 @@
   <depend package="robot_actions" />
   <depend package="nav_robot_actions" />
   <depend package="tf"/>
+  <depend package="visualization_msgs"/>
 </package>

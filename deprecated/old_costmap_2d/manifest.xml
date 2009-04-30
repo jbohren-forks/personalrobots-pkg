@@ -14,6 +14,7 @@
 <depend package="robot_filter" />
 <depend package="robot_srvs" />
 <depend package="angles" />
+<depend package="visualization_msgs"/>
 <export>
   <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp `rosboost-cfg --cflags`" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib `rosboost-cfg --lflags thread` -lold_costmap_2d"/>
 </export>

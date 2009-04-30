@@ -50,7 +50,7 @@
 
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/Door.h>
-#include <robot_msgs/VisualizationMarker.h>
+#include <visualization_msgs/VisualizationMarker.h>
 
 
 #include "opencv_latest/CvBridge.h"
@@ -177,7 +177,7 @@ class DoorStereo : public ros::Node
     	  cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
       }
 
-      advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+      advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
       advertise<robot_msgs::PointCloud>( "filtered_cloud", 0 );
 
       subscribeStereoData();
@@ -259,12 +259,12 @@ class DoorStereo : public ros::Node
       //Publish all the lines as visualization markers
       for(unsigned int i=0; i < inliers.size(); i++)
       {
-        robot_msgs::VisualizationMarker marker;
+        visualization_msgs::VisualizationMarker marker;
         marker.header.frame_id = cloud.header.frame_id;
         marker.header.stamp = ros::Time((uint64_t)0ULL);
         marker.id = i;
-        marker.type = robot_msgs::VisualizationMarker::LINE_STRIP;
-        marker.action = robot_msgs::VisualizationMarker::ADD;
+        marker.type = visualization_msgs::VisualizationMarker::LINE_STRIP;
+        marker.action = visualization_msgs::VisualizationMarker::ADD;
         marker.x = 0.0;
         marker.y = 0.0;
         marker.z = 0.0;

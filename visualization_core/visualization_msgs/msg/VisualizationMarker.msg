@@ -33,4 +33,4 @@ int32 r 		# red color value (0-255) (if available)
 int32 g 		# green color value
 int32 b 		# blue color value
 #These are only used if the object type is LINE_STRIP or LINE_LIST
-Point[] points
+robot_msgs/Point[] points

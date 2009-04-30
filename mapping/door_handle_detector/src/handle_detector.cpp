@@ -67,7 +67,7 @@ HandleDetector::HandleDetector (ros::Node* anode) : node_ (anode), tf_ (*anode)
   node_->param ("~input_cloud_topic", input_cloud_topic_, string ("/snapshot_cloud"));
   node_->advertiseService ("handle_detector", &HandleDetector::detectHandleSrv, this);
   node_->advertiseService ("handle_detector_cloud", &HandleDetector::detectHandleCloudSrv, this);
-  node_->advertise<robot_msgs::VisualizationMarker> ("visualizationMarker", 100);
+  node_->advertise<visualization_msgs::VisualizationMarker> ("visualizationMarker", 100);
 
   node_->advertise<PolygonalMap> ("~handle_polygon", 1);
   node_->advertise<PointCloud> ("~handle_regions", 1);

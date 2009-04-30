@@ -219,7 +219,7 @@ bool HeadServoingControllerNode::initXml(mechanism::RobotState * robot, TiXmlEle
   //services
   node_->advertiseService(service_prefix_ + "/get_command_array", &HeadServoingControllerNode::getJointCmd, this);
   guard_get_command_array_.set(service_prefix_ + "/get_command_array");
-  node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+  node_->advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
   return true;
 
 }
@@ -357,7 +357,7 @@ void HeadServoingControllerNode::frameTrackPoint()
 
   c_->setJointCmd(pos,names);
 
-  robot_msgs::VisualizationMarker marker;
+  visualization_msgs::VisualizationMarker marker;
   marker.header.frame_id = "stereo";
   marker.id = 0;
   marker.type = 0; 

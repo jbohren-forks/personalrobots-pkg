@@ -59,9 +59,9 @@ namespace nav
     ros_node_.param("diagnostics_expected_publish_time",diagnostics_expected_publish_time_,0.2);
     ros_node_.param("~control_topic_name", control_topic_name_, std::string("/base/trajectory_controller/command"));
     //for display purposes
-    ros_node_.advertise<robot_msgs::Polyline>("~gui_path", 1);
-    ros_node_.advertise<robot_msgs::Polyline>("~local_path", 1);
-    ros_node_.advertise<robot_msgs::Polyline>("~robot_footprint", 1);
+    ros_node_.advertise<visualization_msgs::Polyline>("~gui_path", 1);
+    ros_node_.advertise<visualization_msgs::Polyline>("~local_path", 1);
+    ros_node_.advertise<visualization_msgs::Polyline>("~robot_footprint", 1);
     ros_node_.advertise<robot_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
 
     //pass on some parameters to the components of the move base node if they are not explicitly overridden 
@@ -361,7 +361,7 @@ namespace nav
     std::vector<robot_msgs::Point> footprint;
     planner_->computeOrientedFootprint(getPose2D(global_pose_), planner_->footprint_, footprint);
 
-    robot_msgs::Polyline footprint_msg;
+    visualization_msgs::Polyline footprint_msg;
     footprint_msg.header.frame_id = global_frame_;
     footprint_msg.set_points_size(footprint.size());
     footprint_msg.color.r = 1.0;
@@ -379,7 +379,7 @@ namespace nav
 
   void MoveBaseDoorAction::publishPath(const std::vector<pr2_robot_actions::Pose2D>& path, std::string topic, double r, double g, double b, double a){
     // Extract the plan in world co-ordinates
-    robot_msgs::Polyline gui_path_msg;
+    visualization_msgs::Polyline gui_path_msg;
     gui_path_msg.header.frame_id = global_frame_;
     gui_path_msg.set_points_size(path.size());
     for(unsigned int i=0; i < path.size(); i++){

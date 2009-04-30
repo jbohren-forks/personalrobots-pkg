@@ -47,7 +47,7 @@
 
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/Door.h>
-#include <robot_msgs/VisualizationMarker.h>
+#include <visualization_msgs/VisualizationMarker.h>
 
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
@@ -105,7 +105,7 @@ class DoorDatabase
       node_->param<double>("~p_angle_difference_threshold",angle_difference_threshold_,M_PI/12.0);
       node_->param<double>("~p_door_point_distance_threshold",door_point_distance_threshold_,0.25);
 
-      node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+      node_->advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
 
       double tmp; int tmp2;
 
@@ -300,12 +300,12 @@ class DoorDatabase
 
     void publishPoint(const Point32 &point, const int &id, const std::string &frame_id)
     {   
-      robot_msgs::VisualizationMarker marker;
+      visualization_msgs::VisualizationMarker marker;
       marker.header.frame_id = frame_id;
       marker.header.stamp = ros::Time();
       marker.id = id;
-      marker.type = robot_msgs::VisualizationMarker::SPHERE;
-      marker.action = robot_msgs::VisualizationMarker::ADD;
+      marker.type = visualization_msgs::VisualizationMarker::SPHERE;
+      marker.action = visualization_msgs::VisualizationMarker::ADD;
       marker.x = point.x;
       marker.y = point.y;
       marker.z = point.z;

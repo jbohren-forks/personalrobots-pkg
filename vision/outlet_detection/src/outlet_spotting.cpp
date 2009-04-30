@@ -56,7 +56,7 @@
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PoseStamped.h"
-#include "robot_msgs/VisualizationMarker.h"
+#include "visualization_msgs/VisualizationMarker.h"
 
 
 #include <point_cloud_mapping/geometry/angles.h>
@@ -187,7 +187,7 @@ public:
 			cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 		}
 
-        advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 1);
+        advertise<visualization_msgs::VisualizationMarker>("visualizationMarker", 1);
         advertiseService("~coarse_outlet_detect", &OutletSpotting::outletSpottingService, this);
 	}
 
@@ -575,12 +575,12 @@ private:
      */
     void showMarkers(robot_msgs::PoseStamped pose)
     {
-        robot_msgs::VisualizationMarker marker;
+        visualization_msgs::VisualizationMarker marker;
         marker.header.frame_id = pose.header.frame_id;
         marker.header.stamp = ros::Time((uint64_t)(0ULL));
         marker.id = 101;
-        marker.type = robot_msgs::VisualizationMarker::SPHERE;
-        marker.action = robot_msgs::VisualizationMarker::ADD;
+        marker.type = visualization_msgs::VisualizationMarker::SPHERE;
+        marker.action = visualization_msgs::VisualizationMarker::ADD;
 
         marker.x = pose.pose.position.x;
         marker.y = pose.pose.position.y;
@@ -609,8 +609,8 @@ private:
         marker.header.frame_id = pose.header.frame_id;
         marker.header.stamp = ros::Time((uint64_t)(0ULL));
         marker.id = 102;
-        marker.type = robot_msgs::VisualizationMarker::SPHERE;
-        marker.action = robot_msgs::VisualizationMarker::ADD;
+        marker.type = visualization_msgs::VisualizationMarker::SPHERE;
+        marker.action = visualization_msgs::VisualizationMarker::ADD;
 
         marker.x = normal.x();
         marker.y = normal.y();
@@ -783,12 +783,12 @@ private:
 
     void showLineMarker(const vector<Point32>& line_segment)
     {
-    	robot_msgs::VisualizationMarker marker;
+    	visualization_msgs::VisualizationMarker marker;
     	marker.header.frame_id = base_cloud_.header.frame_id;
     	marker.header.stamp = ros::Time((uint64_t)0ULL);
     	marker.id = 102;
-    	marker.type = robot_msgs::VisualizationMarker::LINE_STRIP;
-    	marker.action = robot_msgs::VisualizationMarker::ADD;
+    	marker.type = visualization_msgs::VisualizationMarker::LINE_STRIP;
+    	marker.action = visualization_msgs::VisualizationMarker::ADD;
     	marker.x = 0.0;
     	marker.y = 0.0;
     	marker.z = 0.0;

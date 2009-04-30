@@ -61,9 +61,9 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/message_notifier.h>
 #include <visual_nav/visual_nav.h>
-#include <robot_msgs/Polyline.h>
+#include <visualization_msgs/Polyline.h>
 #include <pr2_robot_actions/Pose2D.h>
-#include <robot_msgs/VisualizationMarker.h>
+#include <visualization_msgs/VisualizationMarker.h>
 #include <vslam/Roadmap.h>
 #include <visual_nav/exceptions.h>
 #include <visual_nav/VisualNavGoal.h>
@@ -78,7 +78,7 @@ using robot_msgs::Point32;
 using laser_scan::LaserScan;
 using ros::Duration;
 using vslam::Roadmap;
-using robot_msgs::Polyline;
+using visualization_msgs::Polyline;
 using ros::Node;
 using vslam::Edge;
 using std::map;
@@ -92,7 +92,7 @@ namespace po=boost::program_options;
 namespace visual_nav
 {
 
-using robot_msgs::VisualizationMarker; // the message class name
+using visualization_msgs::VisualizationMarker; // the message class name
 using ros::Time;
 using deprecated_msgs::RobotBase2DOdom;
 using std::string;

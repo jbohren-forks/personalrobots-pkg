@@ -49,7 +49,7 @@
 #include <robot_msgs/JointCmd.h>
 #include <robot_srvs/GetJointCmd.h>
 #include <robot_msgs/PointStamped.h>
-#include <robot_msgs/VisualizationMarker.h>
+#include <visualization_msgs/VisualizationMarker.h>
 
 // Math utils
 #include <math.h>

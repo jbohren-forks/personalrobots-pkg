@@ -12,6 +12,7 @@
   <depend package="roslib"/>
 
   <depend package="robot_msgs"/>
+  <depend package="visualization_msgs" />
   <depend package="planning_models"/>
   <depend package="collision_space"/>
   

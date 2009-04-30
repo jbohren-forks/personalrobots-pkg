@@ -39,7 +39,7 @@
 #include <new_costmap/costmap_2d.h>
 #include <new_costmap/observation_buffer.h>
 #include <robot_srvs/StaticMap.h>
-#include <robot_msgs/Polyline.h>
+#include <visualization_msgs/Polyline.h>
 #include <map>
 #include <vector>
 
@@ -62,8 +62,8 @@ using namespace robot_msgs;
 class CostmapTester {
   public:
     CostmapTester(ros::Node& ros_node) : ros_node_(ros_node), base_scan_notifier_(NULL), tf_(ros_node, true, ros::Duration(10)), global_frame_("map"), freq_(5), base_scan_buffer_(NULL) {
-      ros_node.advertise<robot_msgs::Polyline>("raw_obstacles", 1);
-      ros_node.advertise<robot_msgs::Polyline>("inflated_obstacles", 1);
+      ros_node.advertise<visualization_msgs::Polyline>("raw_obstacles", 1);
+      ros_node.advertise<visualization_msgs::Polyline>("inflated_obstacles", 1);
       
       base_scan_buffer_ = new ObservationBuffer(0.0, 0.2, tf_, "map", "base_laser");
 
@@ -225,7 +225,7 @@ class CostmapTester {
         lock_.unlock();
 
         // First publish raw obstacles in red
-        robot_msgs::Polyline obstacle_msg;
+        visualization_msgs::Polyline obstacle_msg;
         obstacle_msg.header.frame_id = global_frame_;
         unsigned int pointCount = raw_obstacles.size();
         obstacle_msg.set_points_size(pointCount);

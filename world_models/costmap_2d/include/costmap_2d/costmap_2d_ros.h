@@ -42,7 +42,7 @@
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/costmap_2d_publisher.h>
 #include <costmap_2d/observation_buffer.h>
-#include <robot_msgs/Polyline.h>
+#include <visualization_msgs/Polyline.h>
 #include <map>
 #include <vector>
 #include <string>

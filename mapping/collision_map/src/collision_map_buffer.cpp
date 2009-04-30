@@ -46,7 +46,7 @@ dimension, orientation) useful for collision detection.
 #include <robot_msgs/Point.h>
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/PoseStamped.h>
-#include <robot_msgs/VisualizationMarker.h>
+#include <visualization_msgs/VisualizationMarker.h>
 
 #include <Eigen/Core>
 #include <point_cloud_mapping/geometry/point.h>
@@ -66,6 +66,7 @@ using namespace std;
 using namespace robot_msgs;
 using namespace robot_msgs;
 using namespace robot_srvs;
+using namespace visualization_msgs;
 
 struct Leaf
 {
@@ -187,7 +188,7 @@ class CollisionMapperBuffer
       subtract_object_ = false;
 
       m_id_ = 0;
-      node_.advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 100);
+      node_.advertise<visualization_msgs::VisualizationMarker>("visualizationMarker", 100);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

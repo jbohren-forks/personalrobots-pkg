@@ -40,7 +40,7 @@
 
 #include <ros/node.h>
 #include <robot_msgs/PositionMeasurement.h>
-#include <robot_msgs/Polyline.h>
+#include <visualization_msgs/Polyline.h>
 #include "tf/transform_listener.h"
 #include <tf/message_notifier.h>
 #include <people_aware_nav/PersonOnPath.h>
@@ -55,9 +55,9 @@ public:
   ros::Node *node_;
   tf::TransformListener *tf_;
   tf::MessageNotifier<robot_msgs::PositionMeasurement>* message_notifier_person_;
-  tf::MessageNotifier<robot_msgs::Polyline>* message_notifier_path_;
+  tf::MessageNotifier<visualization_msgs::Polyline>* message_notifier_path_;
   robot_msgs::PositionMeasurement person_pos_;
-  robot_msgs::Polyline path_;
+  visualization_msgs::Polyline path_;
   bool got_person_pos_, got_path_;
   std::string fixed_frame_;
   double total_dist_sqr_m_;
@@ -79,7 +79,7 @@ public:
     total_dist_sqr_m_ = robot_radius_m*robot_radius_m + person_radius_m*person_radius_m;
 
     message_notifier_person_ = new tf::MessageNotifier<robot_msgs::PositionMeasurement> (tf_, node_, boost::bind(&IsPersonOnPath::personPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
-    message_notifier_path_ = new tf::MessageNotifier<robot_msgs::Polyline>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "/move_base_node/navfn/plan", fixed_frame_, 1);
+    message_notifier_path_ = new tf::MessageNotifier<visualization_msgs::Polyline>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "/move_base_node/navfn/plan", fixed_frame_, 1);
 
     node_->advertiseService ("is_person_on_path", &IsPersonOnPath::personOnPathCB, this);
     path_mutex_.lock();
@@ -103,7 +103,7 @@ public:
   }
 
   // Path callback
-  void pathCB(const tf::MessageNotifier<robot_msgs::Polyline>::MessagePtr& gui_path_msg)
+  void pathCB(const tf::MessageNotifier<visualization_msgs::Polyline>::MessagePtr& gui_path_msg)
   {
     boost::mutex::scoped_lock l1(path_mutex_);
     ROS_DEBUG_STREAM ("In path callback and got_path_ is " << got_path_);

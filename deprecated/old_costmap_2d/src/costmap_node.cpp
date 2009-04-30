@@ -63,8 +63,8 @@
  * - @b "obstacle_cloud"/robot_msgs::PointCloud : low obstacles near the ground
 
  * Publishes to (name / type):
- * - @b "raw_obstacles"robot_msgs::Polyline : contains all workspace obstacles in a window around the robot
- * - @b "inflated_obstacles"/robot_msgs::Polyline : contains c-space expansion, up to the inscribed radius of the robot
+ * - @b "raw_obstacles"visualization_msgs::Polyline : contains all workspace obstacles in a window around the robot
+ * - @b "inflated_obstacles"/visualization_msgs::Polyline : contains c-space expansion, up to the inscribed radius of the robot
  *  <hr>
  *
  * @section parameters ROS parameters (in addition to base class parameters):
@@ -104,7 +104,7 @@
 #include <robot_msgs/PoseDot.h>
 #include <robot_msgs/PointCloud.h>
 #include <deprecated_msgs/Pose2DFloat32.h>
-#include <robot_msgs/Polyline.h>
+#include <visualization_msgs/Polyline.h>
 #include <robot_srvs/StaticMap.h>
 #include <robot_msgs/PointStamped.h>
 #include <algorithm>
@@ -307,8 +307,8 @@ namespace old_costmap_2d
     local_map_accessor_ = new CostMapAccessor(*costMap_, local_access_mapsize_, 0.0, 0.0);
 
     // Advertize messages to publish cost map updates
-    ros::Node::instance()->advertise<robot_msgs::Polyline>("raw_obstacles", 1);
-    ros::Node::instance()->advertise<robot_msgs::Polyline>("inflated_obstacles", 1);
+    ros::Node::instance()->advertise<visualization_msgs::Polyline>("raw_obstacles", 1);
+    ros::Node::instance()->advertise<visualization_msgs::Polyline>("inflated_obstacles", 1);
 
     // Advertise costmap service
     // Might be worth eventually having a dedicated node provide this service and all
@@ -522,7 +522,7 @@ namespace old_costmap_2d
     }
 
     // First publish raw obstacles in red
-    robot_msgs::Polyline pointCloudMsg;
+    visualization_msgs::Polyline pointCloudMsg;
     pointCloudMsg.header.frame_id = global_frame_;
     unsigned int pointCount = rawObstacles.size();
     pointCloudMsg.set_points_size(pointCount);
@@ -590,7 +590,7 @@ namespace old_costmap_2d
     }
 
     // First publish raw obstacles in red
-    robot_msgs::Polyline pointCloudMsg;
+    visualization_msgs::Polyline pointCloudMsg;
     pointCloudMsg.header.frame_id = global_frame_;
     unsigned int pointCount = rawObstacles.size();
     pointCloudMsg.set_points_size(pointCount);

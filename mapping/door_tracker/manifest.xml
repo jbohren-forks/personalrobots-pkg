@@ -17,5 +17,6 @@
   <depend package="std_msgs" />
   <depend package="door_handle_detector" />
   <depend package="filters" />
+  <depend package="visualization_msgs" />
 
 </package>

@@ -53,7 +53,7 @@
 
 #include <robot_msgs/Point32.h>
 //#include <robot_msgs/Hallway.h>
-#include <robot_msgs/VisualizationMarker.h>
+#include <visualization_msgs/VisualizationMarker.h>
 
 // Sample Consensus
 #include <point_cloud_mapping/sample_consensus/sac.h>
@@ -147,7 +147,7 @@ public:
 
     // Visualization: 
     // The visualization markers are the two lines. The start/end points are arbitrary.
-    node_->advertise<robot_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+    node_->advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
     // A point cloud of model inliers.
     node_->advertise<robot_msgs::PointCloud>("parallel_lines_inliers",10);
 
@@ -270,12 +270,12 @@ public:
    */
   void visualization(std::vector<double> coeffs, std::vector<int> inliers) {
      // First line:
-    robot_msgs::VisualizationMarker marker;
+    visualization_msgs::VisualizationMarker marker;
     marker.header.frame_id = fixed_frame_;
     marker.header.stamp = cloud_.header.stamp;
     marker.id = 0;
-    marker.type = robot_msgs::VisualizationMarker::LINE_STRIP;
-    marker.action = robot_msgs::VisualizationMarker::ADD;
+    marker.type = visualization_msgs::VisualizationMarker::LINE_STRIP;
+    marker.action = visualization_msgs::VisualizationMarker::ADD;
     marker.x = 0.0;
     marker.y = 0.0;
     marker.z = 0.0;

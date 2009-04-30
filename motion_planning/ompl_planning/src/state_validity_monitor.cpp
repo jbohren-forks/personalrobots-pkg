@@ -86,7 +86,7 @@ Provides (name/type):
 #include "kinematic_planning/CollisionSpaceMonitor.h"
 
 #include <std_msgs/Byte.h>
-#include <robot_msgs/VisualizationMarker.h>
+#include <visualization_msgs/VisualizationMarker.h>
 
 #include <iostream>
 #include <sstream>

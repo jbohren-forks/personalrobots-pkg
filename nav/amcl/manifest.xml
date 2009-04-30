@@ -11,6 +11,7 @@
   <depend package="robot_msgs" />
   <depend package="std_srvs" />
   <depend package="laser_scan" />
+  <depend package="visualization_msgs"/>
   
   <!-- For tests -->
   <depend package="map_server"/>

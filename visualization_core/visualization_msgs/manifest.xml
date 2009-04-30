@@ -1,0 +1,21 @@
+<package>
+  <description brief="Visualization Messages">
+
+    A place to put all visualization-specific messages.
+
+  </description>
+  <author>Josh Faust/jfaust@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/visualization_msgs</url>
+
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+
+  <depend package="robot_msgs"/>
+  <depend package="std_msgs"/>
+
+</package>
+
+

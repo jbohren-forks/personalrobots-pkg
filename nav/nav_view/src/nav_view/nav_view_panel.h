@@ -34,7 +34,7 @@
 
 #include "robot_msgs/ParticleCloud.h"
 #include "robot_msgs/PoseStamped.h"
-#include "robot_msgs/Polyline.h"
+#include "visualization_msgs/Polyline.h"
 #include "robot_msgs/PoseWithCovariance.h"
 
 #include <OGRE/OgreTexture.h>
@@ -188,7 +188,7 @@ protected:
   void createRadiusObject();
   void updateRadiusPosition();
 
-  void createObjectFromPolyLine( Ogre::ManualObject*& object, robot_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop );
+  void createObjectFromPolyLine( Ogre::ManualObject*& object, visualization_msgs::Polyline& path, Ogre::RenderOperation::OperationType op, float depth, bool loop );
 
   void createTransientObject();
 
@@ -207,12 +207,12 @@ protected:
 
   robot_msgs::ParticleCloud cloud_;
   robot_msgs::PoseStamped goal_;
-  robot_msgs::Polyline path_line_;
-  robot_msgs::Polyline local_path_;
-  robot_msgs::Polyline robot_footprint_;
-  robot_msgs::Polyline laser_scan_;
-  robot_msgs::Polyline inflated_obstacles_;
-  robot_msgs::Polyline raw_obstacles_;
+  visualization_msgs::Polyline path_line_;
+  visualization_msgs::Polyline local_path_;
+  visualization_msgs::Polyline robot_footprint_;
+  visualization_msgs::Polyline laser_scan_;
+  visualization_msgs::Polyline inflated_obstacles_;
+  visualization_msgs::Polyline raw_obstacles_;
 
   Ogre::ManualObject* map_object_;
   Ogre::MaterialPtr map_material_;

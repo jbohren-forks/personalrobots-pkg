@@ -53,7 +53,7 @@
 #include <old_costmap_2d/costmap_2d.h>
 
 // For GUI debug
-#include <robot_msgs/Polyline.h>
+#include <visualization_msgs/Polyline.h>
 
 //window length for remembering laser data (seconds)
 static const double WINDOW_LENGTH = 1.0;
@@ -90,7 +90,7 @@ private:
 
   //laser scan message
   laser_scan::LaserScan laser_msg_;
-  robot_msgs::Polyline pointcloud_msg_;
+  visualization_msgs::Polyline pointcloud_msg_;
 
   //projector for the laser
   laser_scan::LaserProjection projector_;

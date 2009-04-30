@@ -40,8 +40,8 @@ namespace costmap_2d {
   Costmap2DPublisher::Costmap2DPublisher(ros::Node& ros_node, Costmap2D& costmap, double publish_frequency, std::string global_frame, std::string topic_prefix) 
     : ros_node_(ros_node), costmap_(costmap), global_frame_(global_frame), 
     topic_prefix_(topic_prefix), visualizer_thread_(NULL){
-    ros_node_.advertise<robot_msgs::Polyline>("~" + topic_prefix_ + "/raw_obstacles", 1);
-    ros_node_.advertise<robot_msgs::Polyline>("~" + topic_prefix_ + "/inflated_obstacles", 1);
+    ros_node_.advertise<visualization_msgs::Polyline>("~" + topic_prefix_ + "/raw_obstacles", 1);
+    ros_node_.advertise<visualization_msgs::Polyline>("~" + topic_prefix_ + "/inflated_obstacles", 1);
     visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DPublisher::mapPublishLoop, this, publish_frequency));
   }
 
@@ -83,7 +83,7 @@ namespace costmap_2d {
     costmap_.unlock();
 
     // First publish raw obstacles in red
-    robot_msgs::Polyline obstacle_msg;
+    visualization_msgs::Polyline obstacle_msg;
     obstacle_msg.header.frame_id = global_frame_;
     unsigned int pointCount = raw_obstacles.size();
     obstacle_msg.set_points_size(pointCount);

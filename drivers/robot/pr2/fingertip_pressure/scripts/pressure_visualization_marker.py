@@ -44,7 +44,7 @@ roslib.load_manifest('fingertip_pressure')
 import rospy
 
 from ethercat_hardware.msg import PressureState
-from robot_msgs.msg import VisualizationMarker
+from visualization_msgs.msg import VisualizationMarker
 
 positions = [ # x, y, z, xscale, yscale, zscale 
         ( 0.026, 0.007, 0.000, 0.010, 0.010, 0.015),

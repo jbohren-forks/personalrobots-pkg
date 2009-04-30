@@ -16,4 +16,5 @@
   <depend package="std_msgs" />
   <depend package="laser_scan" />
   <depend package="filters" />
+  <depend package="visualization_msgs" />
 </package>

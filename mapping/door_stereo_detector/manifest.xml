@@ -18,5 +18,6 @@
   <depend package="opencv_latest" />
   <depend package="image_msgs" />
   <depend package="topic_synchronizer" />
+  <depend package="visualization_msgs" />
 
 </package>

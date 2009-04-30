@@ -85,7 +85,7 @@ Provides (name/type):
 #include "kinematic_planning/CollisionSpaceMonitor.h"
 
 #include <std_msgs/Byte.h>
-#include <robot_msgs/VisualizationMarker.h>
+#include <visualization_msgs/VisualizationMarker.h>
 
 #include <iostream>
 #include <sstream>
@@ -101,7 +101,7 @@ public:
     {
 	id_   = 0;
 	
-	m_node->advertise<robot_msgs::VisualizationMarker>("visualizationMarker", 10240);
+	m_node->advertise<visualization_msgs::VisualizationMarker>("visualizationMarker", 10240);
 	m_node->advertise<robot_msgs::AttachedObject>("attach_object", 1);
     }
     
@@ -151,12 +151,12 @@ private:
     
     void sendPoint(double x, double y, double z, double radius, const roslib::Header &header, int color)
     {
-	robot_msgs::VisualizationMarker mk;
+	visualization_msgs::VisualizationMarker mk;
 	mk.header = header;
 	
 	mk.id = id_++;
-	mk.type = robot_msgs::VisualizationMarker::SPHERE;
-	mk.action = robot_msgs::VisualizationMarker::ADD;
+	mk.type = visualization_msgs::VisualizationMarker::SPHERE;
+	mk.action = visualization_msgs::VisualizationMarker::ADD;
 	mk.x = x;
 	mk.y = y;
 	mk.z = z;

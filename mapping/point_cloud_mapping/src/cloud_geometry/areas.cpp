@@ -165,7 +165,7 @@ namespace cloud_geometry
 
       std::sort (epoints_demean.begin (), epoints_demean.end (), comparePoint2D);
 
-      robot_msgs::Polyline hull_2d;
+      visualization_msgs::Polyline hull_2d;
       convexHull2D (epoints_demean, hull_2d);
 
       int nr_points_hull = hull_2d.points.size ();
@@ -214,7 +214,7 @@ namespace cloud_geometry
       * \param hull the resultant 2D convex hull model as a \a Polyline
       */
     void
-      convexHull2D (const std::vector<robot_msgs::Point32> &points, robot_msgs::Polyline &hull)
+      convexHull2D (const std::vector<robot_msgs::Point32> &points, visualization_msgs::Polyline &hull)
     {
       int nr_points = points.size ();
       hull.points.resize (nr_points + 1);

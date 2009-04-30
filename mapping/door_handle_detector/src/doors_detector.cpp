@@ -104,7 +104,7 @@ DoorDetector::DoorDetector (ros::Node* anode)
   node_->param ("~input_cloud_topic", input_cloud_topic_, string ("/snapshot_cloud"));
   node_->advertiseService ("doors_detector", &DoorDetector::detectDoorSrv, this);
   node_->advertiseService ("doors_detector_cloud", &DoorDetector::detectDoorCloudSrv, this);
-  node_->advertise<robot_msgs::VisualizationMarker> ("visualizationMarker", 100);
+  node_->advertise<visualization_msgs::VisualizationMarker> ("visualizationMarker", 100);
   node_->advertise<PolygonalMap> ("~door_frames", 1);
   node_->advertise<PointCloud> ("~door_regions", 1);
 

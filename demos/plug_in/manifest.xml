@@ -21,4 +21,6 @@
   <depend package="pytf" />
  
   <depend package="tf" />
+  
+  <depend package="visualization_msgs" />
 </package>

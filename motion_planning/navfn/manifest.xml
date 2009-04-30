@@ -10,6 +10,7 @@
  <depend package="robot_msgs"/>
  <depend package="costmap_2d"/>
  <depend package="tf"/>
+ <depend package="visualization_msgs"/>
  <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/> <!-- actually optional -->
  <sysdepend os="ubuntu" version="7.04-feisty" package="libnetpbm10-dev"/>
  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/> <!-- actually optional -->

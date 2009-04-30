@@ -40,7 +40,7 @@
 #include "tf_conversions/tf_kdl.h"
 #include "realtime_tools/realtime_publisher.h"
 #include "control_toolbox/pid.h"
-#include "robot_msgs/VisualizationMarker.h"
+#include "visualization_msgs/VisualizationMarker.h"
 #include "angles/angles.h"
 
 #include "std_msgs/Float64MultiArray.h"

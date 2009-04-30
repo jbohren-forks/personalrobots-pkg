@@ -39,7 +39,7 @@
 #include <ros/console.h>
 #include <sys/time.h>
 
-#include "robot_msgs/Polyline.h"
+#include "visualization_msgs/Polyline.h"
 
 using namespace std;
 using namespace robot_msgs;
@@ -60,9 +60,9 @@ namespace base_local_planner {
     string world_model_type;
 
     //adverstise the fact that we'll publish the robot footprint
-    ros_node.advertise<robot_msgs::Polyline>("~base_local_planner/robot_footprint", 1);
-    ros_node.advertise<robot_msgs::Polyline>("~base_local_planner/global_plan", 1);
-    ros_node.advertise<robot_msgs::Polyline>("~base_local_planner/local_plan", 1);
+    ros_node.advertise<visualization_msgs::Polyline>("~base_local_planner/robot_footprint", 1);
+    ros_node.advertise<visualization_msgs::Polyline>("~base_local_planner/global_plan", 1);
+    ros_node.advertise<visualization_msgs::Polyline>("~base_local_planner/local_plan", 1);
 
     ros_node.param("~base_local_planner/costmap/global_frame", global_frame_, string("map"));
     ros_node.param("~base_local_planner/costmap/robot_base_frame", robot_base_frame_, string("base_link"));
@@ -579,7 +579,7 @@ namespace base_local_planner {
     double useless_pitch, useless_roll, yaw;
     global_pose.getBasis().getEulerZYX(yaw, useless_pitch, useless_roll);
     std::vector<robot_msgs::Point> footprint = drawFootprint(global_pose.getOrigin().x(), global_pose.getOrigin().y(), yaw);
-    robot_msgs::Polyline footprint_msg;
+    visualization_msgs::Polyline footprint_msg;
     footprint_msg.header.frame_id = global_frame_;
     footprint_msg.set_points_size(footprint.size());
     footprint_msg.color.r = 1.0;
@@ -595,7 +595,7 @@ namespace base_local_planner {
   }
 
   void TrajectoryPlannerROS::publishPlan(const std::vector<robot_msgs::PoseStamped>& path, std::string topic, double r, double g, double b, double a){
-    robot_msgs::Polyline gui_path_msg;
+    visualization_msgs::Polyline gui_path_msg;
     gui_path_msg.header.frame_id = global_frame_;
 
     //given an empty path we won't do anything

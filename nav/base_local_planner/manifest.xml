@@ -17,6 +17,7 @@
   <depend package="costmap_2d" />
   <depend package="voxel_grid" />
   <depend package="angles" />
+  <depend package="visualization_msgs"/>
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

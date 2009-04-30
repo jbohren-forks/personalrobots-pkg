@@ -41,7 +41,7 @@
 #include <robot_msgs/Polygon3D.h>
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/PointStamped.h>
-#include <robot_msgs/VisualizationMarker.h>
+#include <visualization_msgs/VisualizationMarker.h>
 #include <robot_msgs/Door.h>
 
 #include <tf/transform_listener.h>
@@ -155,14 +155,14 @@ inline void
   sendMarker (float px, float py, float pz, std::string frame_id, ros::Node *anode, int &id,
               int r, int g, int b, double radius = 0.03)
 {
-  robot_msgs::VisualizationMarker mk;
+  visualization_msgs::VisualizationMarker mk;
   mk.header.stamp = ros::Time::now ();
 
   mk.header.frame_id = frame_id;
 
   mk.id = id++;
-  mk.type = robot_msgs::VisualizationMarker::SPHERE;
-  mk.action = robot_msgs::VisualizationMarker::ADD;
+  mk.type = visualization_msgs::VisualizationMarker::SPHERE;
+  mk.action = visualization_msgs::VisualizationMarker::ADD;
   mk.x = px;
   mk.y = py;
   mk.z = pz;
