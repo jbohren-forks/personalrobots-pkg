@@ -176,6 +176,16 @@ namespace costmap_2d {
       bool worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const;
 
       /**
+       * @brief  Convert from map coordinates to world coordinates without checking for legal bounds
+       * @param  wx The x world coordinate
+       * @param  wy The y world coordinate
+       * @param  mx Will be set to the associated map x coordinate
+       * @param  my Will be set to the associated map y coordinate
+       * @note   The returned map coordinates <b>are not guaranteed to lie within the map.</b>
+       */
+      void worldToMapNoBounds(double wx, double wy, int& mx, int& my) const;
+
+      /**
        * @brief  Given two map coordinates... compute the associated index
        * @param mx The x coordinate 
        * @param my The y coordinate 
@@ -318,6 +328,14 @@ namespace costmap_2d {
         }
         return cost;
       }
+    
+      /***
+       * @brief Get the lower bound of cost for cells inside the circumscribed radius
+       * @return the circumscribed_cost_lb_ attribute, which gets initialized to computeCost(cell_circumscribed_radius_)
+       */
+      inline unsigned char getCircumscribedCost() const {
+        return circumscribed_cost_lb_;
+      }
 
     private:
       /**
@@ -444,15 +462,6 @@ namespace costmap_2d {
        * @param  inflation_queue A priority queue contatining the cell data for the actual obstacles
        */
       void inflateObstacles(std::priority_queue<CellData>& inflation_queue);
-
-      /**
-       * @brief  Convert from map coordinates to world coordinates without checking for legal bounds
-       * @param  wx The x world coordinate
-       * @param  wy The y world coordinate
-       * @param  mx Will be set to the associated map x coordinate
-       * @param  my Will be set to the associated map y coordinate
-       */
-      void worldToMapNoBounds(double wx, double wy, int& mx, int& my) const;
 
       /**
        * @brief  Takes the max of existing cost and the new cost... keeps static map obstacles from being overridden prematurely
