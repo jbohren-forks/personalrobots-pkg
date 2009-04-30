@@ -61,7 +61,7 @@ public:
 
 private:
   ros::Node& node_;
-  robot_msgs::TaskFrameFormalism tff_stop_, tff_door_;
+  robot_msgs::TaskFrameFormalism tff_door_;
 };
 
 }

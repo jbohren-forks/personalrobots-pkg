@@ -66,21 +66,6 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
 { 
   ROS_INFO("OpenDoorAction: execute");
 
-  // stop
-  tff_stop_.mode.vel.x = tff_stop_.FORCE;
-  tff_stop_.mode.vel.y = tff_stop_.FORCE;
-  tff_stop_.mode.vel.z = tff_stop_.FORCE;
-  tff_stop_.mode.rot.x = tff_stop_.FORCE;
-  tff_stop_.mode.rot.y = tff_stop_.FORCE;
-  tff_stop_.mode.rot.z = tff_stop_.FORCE;
-  
-  tff_stop_.value.vel.x = 0.0;
-  tff_stop_.value.vel.y = 0.0;
-  tff_stop_.value.vel.z = 0.0;
-  tff_stop_.value.rot.x = 0.0;
-  tff_stop_.value.rot.y = 0.0;
-  tff_stop_.value.rot.z = 0.0;
-  
   // open door
   tff_door_.mode.vel.x = tff_door_.VELOCITY;
   tff_door_.mode.vel.y = tff_door_.FORCE;
@@ -103,7 +88,6 @@ robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal
   }
 
   // preempted
-  node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
   ROS_INFO("ActionOpenDoor: Preempted");
   return robot_actions::PREEMPTED;
 }
