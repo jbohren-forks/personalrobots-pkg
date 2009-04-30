@@ -786,6 +786,7 @@ float NavFn::getLastPathCost()
 // Some sanity checks:
 //  1. Stuck at same index position
 //  2. Doesn't get near goal
+//  3. Surrounded by high potentials
 //
 
 int
@@ -825,7 +826,7 @@ NavFn::calcPath(int n, int *st)
 
       if (stc < nx || stc > ns-nx) // would be out of bounds
 	{
-	  ROS_DEBUG("[PathCalc] Out of bounds\n");
+	  ROS_DEBUG("[PathCalc] Out of bounds");
 	  return 0;
 	}
 
@@ -875,6 +876,12 @@ NavFn::calcPath(int n, int *st)
 
 	  ROS_DEBUG("[Path] Pot: %0.1f  pos: %0.1f,%0.1f",
 	     potarr[stc], pathx[npath-1], pathy[npath-1]);
+	  
+	  if (potarr[stc] >= POT_HIGH)
+	    {
+	      ROS_DEBUG("[PathCalc] No path found, high potential");
+	      return 0;
+	    }
 	}
 
       // have a good gradient here
@@ -925,7 +932,7 @@ NavFn::calcPath(int n, int *st)
       //	     potarr[stc], x, y, pathx[npath-1], pathy[npath-1]);
     }
 
-  return 0;			// out of cycles, return failure
+  return npath;			// out of cycles, return failure
 }
 
 
