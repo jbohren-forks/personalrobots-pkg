@@ -1060,6 +1060,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 		frameInfo.lastMissingLine = -1;
     frameInfo.missingLines = 0;
     frameInfo.shortFrame = false;
+    frameInfo.frame_number = vPkt->header.frame_number+1;
     // Ensure the buffer is cleared out. Makes viewing short packets less confusing; missing lines will be black.
 		memset(frame_buf, 0, width*height);
 
@@ -1070,7 +1071,8 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 				memcpy(&(frame_buf[vPkt->header.line_number*width]), vPkt->data, width);
 				lineCount++;
 			}
-			frameInfo.frame_number = vPkt->header.frame_number;
+			frameInfo.frame_number &= ~0xFFFF;
+			frameInfo.frame_number |= vPkt->header.frame_number;
 		}
 
 		do {
@@ -1083,7 +1085,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 				perror("pr2VidReceive unable to receive from socket");
 				break;
 			}
-
+				
 			// Convert fields to host byte order for easier processing
 			vPkt->header.frame_number = ntohl(vPkt->header.frame_number);
 			vPkt->header.line_number = ntohs(vPkt->header.line_number);
@@ -1132,7 +1134,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 			} else if (vPkt->header.line_number == IMAGER_LINENO_ABORT) {
 				debug("Video aborted\n");
 				break;  //don't process last frame
-			} else if(vPkt->header.frame_number != frameInfo.frame_number) {
+			} else if((vPkt->header.frame_number - frameInfo.frame_number) & 0xFFFF) { // The camera only sends 16 bits of frame number
 				// If we have received a line from the next frame, we must have missed the EOF somehow
 				debug ("Frame #%u missing EOF, got %i lines\n", frameInfo.frame_number, lineCount);
 
@@ -1187,7 +1189,6 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
         // debug("\n");
 
 				// Move to the next frame
-				frameInfo.frame_number = vPkt->header.frame_number+1;
 				frameCount++;
 			} else {
 

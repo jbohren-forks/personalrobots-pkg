@@ -35,6 +35,8 @@
 // TODO: doxygen mainpage
 
 //#define SIM_TEST
+// TODO: Timeout receiving packet.
+// TODO: Check that partial EOF missing frames get caught.
 
 #include <ros/node.h>
 #include <image_msgs/Image.h>
@@ -45,6 +47,7 @@
 #include <robot_mechanism_controllers/trigger_controller.h>
 #include <stdlib.h>
 #include <limits>
+#include <math.h>
 
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
@@ -87,11 +90,13 @@ static const double MODE_FPS[] = {15, 12.5, 30, 25, 15, 12.5, 60, 50, 30, 25};
 class FrameTimeFilter
 {
 public:  
-  FrameTimeFilter(double frame_rate = 1., double locked_threshold = 1e-3, int max_recovery_frames = 10, double max_skew = 1.001, double max_skipped_frames = 100)
+  FrameTimeFilter(double frame_rate = 1., double late_locked_threshold = 1e-3, double early_locked_threshold = 3e-3, int early_recovery_frames = 5, int max_recovery_frames = 10, double max_skew = 1.001, double max_skipped_frames = 100)
   {
     frame_period_ = max_skew / frame_rate;
     max_recovery_frames_ = max_recovery_frames;
-    locked_threshold_ = locked_threshold;
+    early_recovery_frames_ = early_recovery_frames;
+    late_locked_threshold_ = late_locked_threshold;
+    early_locked_threshold_ = early_locked_threshold;
     max_skipped_frames_ = max_skipped_frames;
     last_frame_number_ = 0; // Don't really care about this value.
     reset_filter();
@@ -100,7 +105,7 @@ public:
   void reset_filter()
   {
     relock_time_ = anticipated_time_ = std::numeric_limits<double>::infinity();
-    unlocked_count_ = locked_threshold_;
+    unlocked_count_ = late_locked_threshold_;
   }
 
   double run(double in_time, int frame_number)
@@ -110,7 +115,7 @@ public:
 
     if (delta > max_skipped_frames_)
     {
-      ROS_WARN("FrameTimeFilter missed too many frames. Resetting.");
+      ROS_WARN("FrameTimeFilter missed too many frames from #%u to #%u. Resetting.", last_frame_number_, frame_number);
       reset_filter();
     }
 
@@ -119,30 +124,38 @@ public:
 
     if (out_time < relock_time_)
       relock_time_ = out_time;
+      
+    //ROS_DEBUG("in: %f ant: %f", in_time, anticipated_time_);
 
+    bool early_trigger = false;
+    if (out_time < anticipated_time_ - early_locked_threshold_ && finite(anticipated_time_))
+    {
+      ROS_WARN("FrameTimeFilter saw frame #%u was early by %f.", frame_number, anticipated_time_ - out_time);
+      early_trigger = true;
+    }
     if (out_time < anticipated_time_)
     {
       anticipated_time_ = out_time;
       relock_time_ = std::numeric_limits<double>::infinity();
       unlocked_count_ = 0;
     }
-    else if (out_time > anticipated_time_ + locked_threshold_)
+    else if (out_time > anticipated_time_ + late_locked_threshold_)
     {
       unlocked_count_++;
       if (unlocked_count_ > max_recovery_frames_)
       {
-        ROS_WARN("FrameTimeFilter lost lock, shifting by %f.", relock_time_ - anticipated_time_);
+        ROS_WARN("FrameTimeFilter lost lock at frame #%u, shifting by %f.", frame_number, relock_time_ - anticipated_time_);
         anticipated_time_ = relock_time_;
         relock_time_ = std::numeric_limits<double>::infinity();
       }
-      else
-        ROS_DEBUG("FrameTimeFilter losing lock %i/%i, off by %f.", unlocked_count_, max_recovery_frames_, anticipated_time_ - out_time);
+      //else 
+      //  ROS_DEBUG("FrameTimeFilter losing lock at frame #%u, lock %i/%i, off by %f.", frame_number, unlocked_count_, max_recovery_frames_, anticipated_time_ - out_time);
       out_time = anticipated_time_;
     }
     
     last_frame_number_ = frame_number;
 
-    return out_time;
+    return early_trigger ? -out_time : out_time;
   }
   
 private:  
@@ -150,7 +163,9 @@ private:
   int unlocked_count_;
   int last_frame_number_;
   int max_skipped_frames_;
-  double locked_threshold_;
+  int early_recovery_frames_;
+  double early_locked_threshold_;
+  double late_locked_threshold_;
   double anticipated_time_;
   double relock_time_;
   double frame_period_;
@@ -173,12 +188,14 @@ private:
   double imager_freq_;
   double trig_rate_;
   double trig_phase_;
+  double first_packet_offset_;
   bool started_video_;
   bool ext_trigger_;
   int missed_eof_count_;
   int missed_line_count_;
   double last_image_time_;
   unsigned int last_frame_number_;
+  int misfire_blank_;
   
   boost::mutex diagnostics_lock_;
 
@@ -207,6 +224,7 @@ public:
     : node_(node), camera_(NULL), started_video_(false),
       diagnostic_(this, &node_), count_(0)
   {
+    misfire_blank_ = 0;
     image_thread_ = NULL;
     diagnostic_thread_ = NULL;
 
@@ -429,7 +447,7 @@ public:
       node_.shutdown();
       return;
     }
-
+      
     // Select trigger mode.
     if ( pr2TriggerControl( camera_, ext_trigger_ ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
       ROS_FATAL("Trigger mode set error");
@@ -437,57 +455,65 @@ public:
       return;
     }
 
-    // Configure the triggering controller
-    if ( ext_trigger_ && node_.hasParam("~trigger_controller") )
+    if (ext_trigger_)
     {
-      node_.getParam("~trigger_controller", trig_controller_);
-      ROS_INFO("Configuring controller \"%s\" for triggering.", trig_controller_.c_str());
-      trig_controller_cmd_ = trig_controller_ + "/set_waveform";
-
       // How fast should we be triggering the camera? By default 1 Hz less
       // than nominal.
       node_.param("~trigger_rate", trig_rate_, imager_freq_ - 1.);
       desired_freq_ = trig_rate_;
 
-      double trig_phase_;
-      node_.param("~trigger_phase", trig_phase_, 0.);
-
-      ROS_DEBUG("Setting trigger off.");
-      trig_req_.running = 0;
-      trig_req_.rep_rate = trig_rate_; 
-      trig_req_.phase = trig_phase_;
-      trig_req_.active_low = 0;
-      trig_req_.pulsed = 1;
-      trig_req_.duty_cycle = 0; // Unused in pulsed mode.
-      
-      if (!ros::service::call(trig_controller_cmd_, trig_req_, trig_rsp_))
+      // Configure the triggering controller
+      if (node_.hasParam("~trigger_controller") )
       {
-        ROS_FATAL("Unable to set trigger controller.");
-        node_.shutdown();
-        return;
+        node_.getParam("~trigger_controller", trig_controller_);
+        ROS_INFO("Configuring controller \"%s\" for triggering.", trig_controller_.c_str());
+        trig_controller_cmd_ = trig_controller_ + "/set_waveform";
+
+        double trig_phase_;
+        node_.param("~trigger_phase", trig_phase_, 0.);
+
+        ROS_DEBUG("Setting trigger off.");
+        trig_req_.running = 0;
+        trig_req_.rep_rate = trig_rate_; 
+        trig_req_.phase = trig_phase_;
+        trig_req_.active_low = 0;
+        trig_req_.pulsed = 1;
+        trig_req_.duty_cycle = 0; // Unused in pulsed mode.
+
+        if (!ros::service::call(trig_controller_cmd_, trig_req_, trig_rsp_))
+        {
+          ROS_FATAL("Unable to set trigger controller.");
+          node_.shutdown();
+          return;
+        }
+
+        ROS_DEBUG("Waiting for current frame to be guaranteed complete.");
+
+        // Wait twice the expected time just to be safe.
+        ros::Duration(2/imager_freq_).sleep();
+
+        ROS_DEBUG("Starting trigger.");
+
+        trig_req_.running = 1;
+
+        if (!ros::service::call(trig_controller_cmd_, trig_req_, trig_rsp_))
+        {
+          ROS_FATAL("Unable to set trigger controller.");
+          node_.shutdown();
+          return;
+        }
       }
-
-      ROS_DEBUG("Waiting for current frame to be guaranteed complete.");
-
-      // Wait twice the expected time just to be safe.
-      ros::Duration(2/imager_freq_).sleep();
-
-      ROS_DEBUG("Starting trigger.");
-
-      trig_req_.running = 1;
-      
-      if (!ros::service::call(trig_controller_cmd_, trig_req_, trig_rsp_))
+      else
       {
-        ROS_FATAL("Unable to set trigger controller.");
-        node_.shutdown();
-        return;
+        ROS_WARN("External triggering is selected, but no \"trigger_controller\" was specified.");
       }
     }
 
-    if (ext_trigger_ && trig_controller_cmd_.empty())
-    {
-      ROS_WARN("External triggering is selected, but no \"trigger_controller\" was specified.");
-    }
+    // First packet offset parameter
+
+    node_.param("~first_packet_offset", first_packet_offset_, 0.0025);
+    if (!node_.hasParam("~first_packet_offset") && trig_controller_.empty())
+      ROS_WARN("first_packet_offset not specified. Using default value of %f ms.", first_packet_offset_);
 
     // Select a video mode
     if ( pr2ImagerModeSelect( camera_, video_mode_ ) != 0) {
@@ -513,7 +539,7 @@ public:
     else
       ROS_WARN("Failed to load intrinsics from camera");
 
-    frameTimeFilter_ = FrameTimeFilter(desired_freq_);//, ext_trigger_ ? 0.001 : 0.002);
+    frameTimeFilter_ = FrameTimeFilter(desired_freq_, 0.001, 0.5 / imager_freq_); 
     
     // Start video; send it to specified host port
     // @todo TODO: Only start when somebody is listening?
@@ -597,11 +623,13 @@ public:
       status.message = "Frames are streaming.";
     }
     
-    status.set_values_size(2);
+    status.set_values_size(3);
     status.values[0].label = "Missing image line frames";
     status.values[0].value = missed_line_count_;
     status.values[1].label = "Missing EOF frames";
     status.values[1].value = missed_eof_count_;
+    status.values[2].label = "First packet offset";
+    status.values[2].value = first_packet_offset_;
     status.set_strings_size(8);
     status.strings[0].label = "Interface";
     status.strings[0].value = if_name_;
@@ -653,11 +681,24 @@ private:
     return exposeEndTime;
   }
 
+  double getExternallyTriggeredFrameTime(double firstPacketTime)
+  {
+    // We can now compute when the exposure ended. By offsetting by the
+    // empirically determined first packet offset, going back one pulse
+    // duration, and going forward one camera frame time.
+    
+    double exposeEndTime = firstPacketTime - first_packet_offset_ + 
+      1 / imager_freq_ - 
+      1 / trig_rate_;
+
+    return exposeEndTime;
+  }
+
   double getFreeRunningFrameTime(double firstPacketTime)
   {
     // This offset is empirical, but fits quite nicely most of the time.
     
-    return firstPacketTime - 0.0025;
+    return firstPacketTime - first_packet_offset_;
   }
   
 //    double nowTime = ros::Time::now().toSec();
@@ -685,21 +726,33 @@ private:
     if (frame_info->eofInfo == NULL) {
       // We no longer use the eofInfo.
       missed_eof_count_++;
-      ROS_WARN("Frame was missing EOF");
+      ROS_WARN("Frame %u was missing EOF", frame_info->frame_number);
     }
 
     // If we are not in triggered mode then use the arrival time of the
     // first packet as the image time.
 
-    double imageTime;
+    double unfilteredImageTime;
     double frameStartTime = frame_info->startTime.tv_sec + frame_info->startTime.tv_usec / 1e6;
     
     if (!trig_controller_.empty())
-      imageTime = getTriggeredFrameTime(frameStartTime);
+      unfilteredImageTime = getTriggeredFrameTime(frameStartTime);
+    else if (ext_trigger_)
+      unfilteredImageTime = getExternallyTriggeredFrameTime(frameStartTime);
     else
-      imageTime = getFreeRunningFrameTime(frameStartTime);
+      unfilteredImageTime = getFreeRunningFrameTime(frameStartTime);
 
-    imageTime = frameTimeFilter_.run(imageTime, frame_info->frame_number);
+    //ROS_DEBUG("first_packet %f unfilteredImageTime %f frame_id %u", frameStartTime, unfilteredImageTime, frame_info->frame_number);
+    
+    double imageTime = frameTimeFilter_.run(unfilteredImageTime, frame_info->frame_number);
+    if (imageTime < 0) // Signals an early frame arrival.
+    {
+      imageTime = -imageTime;
+      if (!trig_controller_.empty())
+        misfire_blank_ = 1 + imager_freq_ / (imager_freq_ - desired_freq_);
+    }
+
+    //ROS_DEBUG("imageTime %f", imageTime);
     
     // Check for short packet (video lines were missing)
     if (frame_info->shortFrame) {
@@ -707,6 +760,11 @@ private:
       ROS_WARN("Short frame #%u (%i video lines were missing, last was %i)", frame_info->frame_number, 
           frame_info->missingLines, frame_info->lastMissingLine);
       return 0;
+    }
+
+    if (misfire_blank_ > 0)
+    {
+      ROS_WARN("Dropping frame #%u because of mistrigger event.", frame_info->frame_number);
     }
 
     last_image_time_ = imageTime;
