@@ -66,7 +66,7 @@ TiltLaserMechanism::use_laser_tilt_controller{
   eq(c.is_up, true);
 }
 
-RightArmMechanism::use_composite_cartesian_controller{
+RightArmMechanism::use_composite_cartesian_trajectory_controller{
   contains(AgentActions.startEvent);
   contained_by(r_arm_cartesian_wrench_controller.Holds c0);
   eq(c0.is_up, true);
@@ -84,6 +84,26 @@ RightArmMechanism::use_composite_cartesian_controller{
   eq(down_1.is_up, false);
   contained_by(r_arm_hybrid_controller.Holds c5);
   eq(c5.is_up, false);
+}
+
+RightArmMechanism::use_composite_cartesian_pose_controller{
+  contains(AgentActions.startEvent);
+  contained_by(r_arm_cartesian_wrench_controller.Holds c0);
+  eq(c0.is_up, true);
+  contained_by(r_arm_cartesian_twist_controller.Holds c1);
+  eq(c1.is_up, true);
+  contained_by(r_arm_cartesian_pose_controller.Holds c2);
+  eq(c2.is_up, true);
+
+  // We also require certain other controllers are down
+  contained_by(r_arm_cartesian_tff_controller.Holds down_0);
+  eq(down_0.is_up, false);
+  contained_by(r_arm_joint_trajectory_controller.Holds down_1);
+  eq(down_1.is_up, false);
+  contained_by(r_arm_hybrid_controller.Holds c5);
+  eq(c5.is_up, false);
+  contained_by(r_arm_cartesian_trajectory_controller.Holds c3);
+  eq(c3.is_up, false);
 }
 
 RightArmMechanism::use_composite_tff_controller{

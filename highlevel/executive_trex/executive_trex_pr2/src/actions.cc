@@ -52,26 +52,36 @@ namespace executive_trex_pr2 {
       ROS_DEBUG("Initializing %s\n", getName().c_str());
     }
 
+    ~StopAction(){
+
+      for(std::set<std::string>::const_iterator it = _active_topics.begin(); it != _active_topics.end(); ++it){
+	const std::string& topic = *it;
+
+	ROS_DEBUG("Unadvertizing %s\n", topic.c_str());
+	ros::Node::instance()->unadvertise(topic);
+      }
+    }
+
   protected:
 
     virtual robot_actions::ResultStatus execute(const std_msgs::String& goal, std_msgs::Empty& feedback){
 
       ROS_DEBUG("Executing %s\n", getName().c_str());
+
+      // Formulate preemption topic
       std::string preempt_topic(goal.data + "/preempt");
-      ros::Node::instance()->advertise<std_msgs::Empty>(preempt_topic, 1);
+      advertiseIfNeeded(preempt_topic);
 
-      const ros::Time start_time = ros::Time::now();
-      ros::Duration duration_bound(1.0);
-
-      // Wait for activation. If we do not activate in time, we will preempt. Will not block for preemption
-      // callback since the action may be bogus.
+      const ros::Time START_TIME = ros::Time::now();
+      const ros::Duration DURATION_BOUND(1.0);
       ros::Duration SLEEP_DURATION(0.010);
+
       while(true){
 	// Check if we need to preempt. If we do, we publish the preemption but will not terminate until
 	// inactive
-	ros::Duration elapsed_time = ros::Time::now() - start_time;
+	ros::Duration elapsed_time = ros::Time::now() - START_TIME;
 
-	if(elapsed_time > duration_bound){
+	if(elapsed_time > DURATION_BOUND){
 	  break;
 	}
 
@@ -79,13 +89,31 @@ namespace executive_trex_pr2 {
 	ros::Node::instance()->publish(preempt_topic, std_msgs::Empty());
 	SLEEP_DURATION.sleep();
       }
-    
-
-      ROS_DEBUG("Unadvertizing %s\n", preempt_topic.c_str());
-      ros::Node::instance()->unadvertise(preempt_topic);
 
       return robot_actions::SUCCESS;
     }
+
+    void advertiseIfNeeded(const std::string& topic){
+      if(_active_topics.find(topic) == _active_topics.end()){
+	ros::Node::instance()->advertise<std_msgs::Empty>(topic, 1);;
+	_active_topics.insert(topic);
+	const ros::Time START_TIME = ros::Time::now();
+	ros::Duration SLEEP_DURATION(0.010);
+	const ros::Duration DURATION_BOUND(10.0);
+	while(ros::Node::instance()->numSubscribers(topic) < 1){
+	  ros::Duration elapsed_time = ros::Time::now() - START_TIME;
+
+	  if(elapsed_time > DURATION_BOUND){
+	    ROS_ERROR("Timed out waiting for subscribers for topic %s\n", topic.c_str());
+	    break;
+	  }
+
+	  SLEEP_DURATION.sleep();
+	}
+      }
+    }
+
+    std::set<std::string> _active_topics;
   };
 }
 

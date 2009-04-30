@@ -16,9 +16,15 @@
 #include "LabelStr.hh"
 #include <executive_trex_pr2/topological_map.h>
 #include <executive_trex_pr2/door_domain_constraints.hh>
+#include <tf/transform_listener.h>
 #include <math.h>
 
 namespace TREX{
+
+  tf::TransformListener& getTransformListener(){
+    static tf::TransformListener tf(*ros::Node::instance(), true, ros::Duration(10));
+    return tf;
+  }
 
   /**
    * @brief Handle cleanup on process termination signals.
@@ -158,7 +164,65 @@ namespace TREX{
 			  "frame_id:time_stamp:x:y:z:qx:qy:qz:qw")
     {}
   };
+  
+  class TFGetRobotPoseConstraint: public Constraint {
+  public:
+    TFGetRobotPoseConstraint(const LabelStr& name,
+			const LabelStr& propagatorName,
+			const ConstraintEngineId& constraintEngine,
+			const std::vector<ConstrainedVariableId>& variables)
+      : Constraint(name, propagatorName, constraintEngine, variables),
+	_x(static_cast<IntervalDomain&>(getCurrentDomain(variables[0]))),
+	_y(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+	_z(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
+	_qx(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
+	_qy(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))),
+	_qz(static_cast<IntervalDomain&>(getCurrentDomain(variables[5]))),
+	_qw(static_cast<IntervalDomain&>(getCurrentDomain(variables[6]))),
+	_frame_id(static_cast<StringDomain&>(getCurrentDomain(variables[7]))),
+	_frame(LabelStr(_frame_id.getSingletonValue()).toString()){
+      checkError(!_frame_id.isSingleton(), "The frame has not been specified for tf to get robot pose. See model for error.");
+      condDebugMsg(!_frame_id.isSingleton(), "trex:error:tf_get_robot_pose",  "Frame has not been specified" << variables[7]->toLongString());
+    }
+    
+  private:
+    void handleExecute(){
+      debugMsg("trex:debug:propagation:tf_get_robot_pose",  "BEFORE: " << toString());
+      tf::Stamped<tf::Pose> pose;
+      getPose(pose);
+      //_x.set(pose.getPosition().X());
 
+
+      debugMsg("trex:debug:propagation:tf_get_robot_pose",  "AFTER: " << toString());
+    }
+    
+    void getPose(tf::Stamped<tf::Pose>& pose){
+      tf::Stamped<tf::Pose> robot_pose;
+      robot_pose.setIdentity();
+      robot_pose.frame_id_ = "base_footprint";
+      robot_pose.stamp_ = ros::Time();
+
+      try{
+	getTransformListener().transformPose(_frame, robot_pose, pose);
+      }
+      catch(tf::LookupException& ex) {
+	ROS_ERROR("No Transform available Error: %s\n", ex.what());
+	return;
+      }
+      catch(tf::ConnectivityException& ex) {
+	ROS_ERROR("Connectivity Error: %s\n", ex.what());
+	return;
+      }
+      catch(tf::ExtrapolationException& ex) {
+	ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      }
+    }
+    
+    IntervalDomain& _x, _y, _z, _qx, _qy, _qz, _qw; // Pose is the output
+    StringDomain& _frame_id;
+    const std::string _frame;
+  };
+  
   class AllBoundsSetConstraint: public Constraint{
   public:
     AllBoundsSetConstraint(const LabelStr& name,
@@ -279,13 +343,11 @@ namespace TREX{
     const bool m_playback;
   };
 
-  ROSSchema* ROS_SCHEMA = NULL;
 
   void initROSExecutive(bool playback){
     initTREX();
-    ROS_SCHEMA = new ROSSchema(playback);
+    new ROSSchema(playback);
   }
-
 
   //*******************************************************************************************
   AllBoundsSetConstraint::AllBoundsSetConstraint(const LabelStr& name,

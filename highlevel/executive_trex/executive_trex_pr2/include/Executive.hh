@@ -39,7 +39,7 @@ namespace TREX{
      * @brief Main execution leak
      */
     void run();
-
+    /*
     template<class T>
     void registerPublisher(const std::string &topic, size_t max_queue){
       ros::Node::instance()->advertise<T>(topic, max_queue);
@@ -54,7 +54,7 @@ namespace TREX{
     void publishMsg(const std::string &_topic, M &msg){
       ros::Node::instance()->publish(_topic, msg);
     }
-
+    */
   private:
 
     /**

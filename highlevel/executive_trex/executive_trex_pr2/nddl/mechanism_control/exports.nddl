@@ -23,7 +23,8 @@ class HeadMechanism extends Mechanism {
 class RightArmMechanism extends Mechanism {
   predicate use_cartesian_trajectory_controller{}
   predicate use_joint_trajectory_controller{}
-  predicate use_composite_cartesian_controller{}
+  predicate use_composite_cartesian_pose_controller{}
+  predicate use_composite_cartesian_trajectory_controller{}
   predicate use_composite_tff_controller{}
   predicate use_hybrid_controller{}
   RightArmMechanism(Mode _mode){ super(_mode); }

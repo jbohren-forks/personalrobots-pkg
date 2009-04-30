@@ -20,6 +20,8 @@ class MoveBehavior extends Behavior {
 
   // Parameters to get to the target
   predicate Active {
+    string frame_id;
+    float time_stamp;
     float x;
     float y;
     float z;

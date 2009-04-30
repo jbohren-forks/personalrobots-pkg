@@ -31,7 +31,7 @@ namespace TREX {
 	m_topic_name = "/trex/debug";
 	ROS_ERROR("No topic for monitor, setting default: %s.", m_topic_name.c_str());
       }
-      m_node->registerPublisher<executive_trex_pr2::TrexMonitor>(m_topic_name, 10);
+      ros::Node::instance()->advertise<executive_trex_pr2::TrexMonitor>(m_topic_name, 10);
     }
 
     ~Monitor() { 
@@ -68,7 +68,7 @@ namespace TREX {
 	  msg.variable_types[i] = msg.TYPE_UNKNOWN;
 	}
       }
-      m_node->publishMsg<executive_trex_pr2::TrexMonitor>(m_topic_name, msg);
+      ros::Node::instance()->publish(m_topic_name, msg);
     }
 
     void queryTimelineModes(std::list<LabelStr>& externals, std::list<LabelStr>& internals){

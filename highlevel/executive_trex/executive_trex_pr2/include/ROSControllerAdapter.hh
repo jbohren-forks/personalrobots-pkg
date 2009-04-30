@@ -48,14 +48,14 @@ namespace TREX {
       ROS_INFO("[%s][%d]Registering subscriber for %s on topic: %s", 
 		nameString().c_str(), getCurrentTick(), timelineName.c_str(), stateTopic.c_str());
 
-      m_node->registerSubscriber(stateTopic, stateMsg, &TREX::ROSControllerAdapter<S, G>::handleCallback, this, QUEUE_MAX());
+      ros::Node::instance()->subscribe(stateTopic, stateMsg, &TREX::ROSControllerAdapter<S, G>::handleCallback, this, QUEUE_MAX());
     }
 
     void registerPublishers(){
       ROS_INFO("[%s][%d]Registering publisher for %s on topic: %s", 
 	       nameString().c_str(), getCurrentTick(), timelineName.c_str(), goalTopic.c_str());
 
-      m_node->registerPublisher<G>(goalTopic, QUEUE_MAX());
+      ros::Node::instance()->advertise<G>(goalTopic, QUEUE_MAX());
     }
 
     Observation* getObservation(){
@@ -139,7 +139,7 @@ namespace TREX {
       ROS_DEBUG("[%s][%d]%s goal %s", 
 		nameString().c_str(), getCurrentTick(), (enableController ? "Dispatching" : "Recalling"), goal->toString().c_str());
 
-      m_node->publishMsg<G>(goalTopic, goalMsg);
+      ros::Node::instance()->publish(goalTopic, goalMsg);
 
       // Ensure pre-emption is controllable. We do not want to rely on the asynchronous
       // call back since it could in theory fail to publish the new state prior to

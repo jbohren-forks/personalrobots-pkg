@@ -32,7 +32,7 @@ namespace TREX {
   private:
     void registerSubscribers() {
       TREX_INFO("ros:debug", nameString() << "Registering subscriber for " << timelineName << " on topic " << stateTopic);
-      m_node->registerSubscriber(stateTopic, stateMsg, &TREX::ROSStateAdapter<S>::handleCallback, this, QUEUE_MAX());
+      ros::Node::instance()->subscribe(stateTopic, stateMsg, &TREX::ROSStateAdapter<S>::handleCallback, this, QUEUE_MAX());
     }
 
     const std::string predicate;

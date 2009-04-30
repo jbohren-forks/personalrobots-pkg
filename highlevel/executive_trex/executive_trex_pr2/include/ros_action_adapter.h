@@ -58,7 +58,7 @@ namespace TREX {
       ROS_INFO("%sRegistering subscriber for %s on topic: %s", 
 		nameString().c_str(), timelineName.c_str(), _feedback_topic.c_str());
 
-      m_node->registerSubscriber(_feedback_topic, _state_msg, &TREX::ROSActionAdapter<Goal, State, Feedback>::handleCallback, this, QUEUE_MAX());
+      ros::Node::instance()->subscribe(_feedback_topic, _state_msg, &TREX::ROSActionAdapter<Goal, State, Feedback>::handleCallback, this, QUEUE_MAX());
     }
 
     void registerPublishers(){
@@ -67,13 +67,13 @@ namespace TREX {
       ROS_INFO("%sRegistering publisher for %s on topic: %s", 
 	       nameString().c_str(), timelineName.c_str(), _request_topic.c_str());
 
-      m_node->registerPublisher<Goal>(_request_topic, QUEUE_MAX());
+      ros::Node::instance()->advertise<Goal>(_request_topic, QUEUE_MAX());
 
       // Preemption dispatch setup
       ROS_INFO("%sRegistering publisher for %s on topic: %s", 
 	       nameString().c_str(), timelineName.c_str(), _preempt_topic.c_str());
 
-      m_node->registerPublisher<std_msgs::Empty>(_preempt_topic, QUEUE_MAX());
+      ros::Node::instance()->advertise<std_msgs::Empty>(_preempt_topic, QUEUE_MAX());
     }
 
     Observation* getObservation(){
@@ -173,11 +173,11 @@ namespace TREX {
       if(enableController){
 	Goal goal_msg;
 	fillDispatchParameters(goal_msg, goal);
-	m_node->publishMsg<Goal>(_request_topic, goal_msg);
+	ros::Node::instance()->publish(_request_topic, goal_msg);
       }
       else {
 	std_msgs::Empty recall_msg;
-	m_node->publishMsg<std_msgs::Empty>(_preempt_topic, recall_msg);
+	ros::Node::instance()->publish(_preempt_topic, recall_msg);
       }
 
       return true;

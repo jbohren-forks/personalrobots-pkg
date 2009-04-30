@@ -31,7 +31,8 @@ GraspHandle grasp_handle = new GraspHandle(External);
 UnlatchHandle unlatch_handle = new UnlatchHandle(External);
 DetectHandle detect_handle = new DetectHandle(External);
 DetectDoor detect_door = new DetectDoor(External);
-OpenDoorWithoutGrasp open_door_without_grasp = new OpenDoorWithoutGrasp(External);
+TouchDoor touch_door = new TouchDoor(External);
+PushDoor push_door = new PushDoor(External);
 CheckPath check_path = new CheckPath(External);
 NotifyDoorBlocked notify_door_blocked = new NotifyDoorBlocked(External);
 MoveBase move_base_local = new MoveBase(External);
@@ -54,7 +55,7 @@ DetectHandle::Active{
 }
 
 GraspHandle::Active{
-  contained_by(right_arm_mechanism.use_composite_cartesian_controller);
+  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
   contained_by(right_gripper_mechanism.use_effort_controller);
 }
 
@@ -63,9 +64,18 @@ UnlatchHandle::Active{
   contained_by(right_gripper_mechanism.use_effort_controller);
 }
 
-
 OpenDoor::Active{
   contained_by(right_arm_mechanism.use_composite_tff_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
+
+TouchDoor::Active{
+  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
+  contained_by(right_gripper_mechanism.use_effort_controller);
+}
+
+PushDoor::Active{
+  contained_by(right_arm_mechanism.use_composite_cartesian_pose_controller);
   contained_by(right_gripper_mechanism.use_effort_controller);
 }
 
@@ -76,7 +86,7 @@ MoveBaseDoor::Active{
 }
 
 ReleaseHandle::Active{
-  contained_by(right_arm_mechanism.use_composite_cartesian_controller);
+  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
   contained_by(right_gripper_mechanism.use_effort_controller);
 }
 

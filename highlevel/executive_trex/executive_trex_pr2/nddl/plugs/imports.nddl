@@ -39,13 +39,13 @@ PlugsUntuckArms::Active{
 }
 
 MoveAndGraspPlug::Active{
-  contained_by(right_arm_mechanism.use_composite_cartesian_controller);
+  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
   contained_by(right_gripper_mechanism.use_position_controller);
 }
 
 // Check this with Melonee
 LocalizePlugInGripper::Active{
-  contained_by(right_arm_mechanism.use_composite_cartesian_controller);
+  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
   contained_by(right_gripper_mechanism.use_position_controller);
 }
 
@@ -56,6 +56,6 @@ PlugIn::Active{
 
 // Check this with Melonee
 StowPlug::Active{
-  contained_by(right_arm_mechanism.use_composite_cartesian_controller);
+  contained_by(right_arm_mechanism.use_composite_cartesian_trajectory_controller);
   contained_by(right_gripper_mechanism.use_position_controller);
 }

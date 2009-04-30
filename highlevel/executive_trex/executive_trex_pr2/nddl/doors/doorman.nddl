@@ -1,10 +1,8 @@
 /**
- * This file defines the door controller behavior as an implementation of the MoveBehavior for
- * traversing a doorway. It lays out the higher level logic that aggregates door domain actions
+ * Provides full functionality of the doorman. Here we integrate with the topological map.
  */
-
-
-
+#include "doors/imports.nddl"
+#include "world_model/topological_map.nddl"
 
 MoveBehavior::Inactive {
   // Only apply this condition when it has started. Do not want to plan it in advance.
@@ -15,50 +13,30 @@ MoveBehavior::Inactive {
 
   // If it has been aborted, send an update with current the current current and target positions
   if(status == ABORTED){
-    any(BaseState.Holds bs);
-    precedes(bs.start, start);
-    temporalDistance(start, [1 +inf], bs.end);
-    starts_before(NotifyDoorBlocked.Active cmd);
-    precedes(cmd.end, end);
+
   }
 }
 
 MoveBehavior::Active {
-  starts_before(DoorController.Holds dc);
-  precedes(dc.end, end);
+  starts(DoorController.Holds dc);
 
-  // Initialize controller variables. We begin by assuming the worst. Note that the test for being in detection
-  // position is derived from base state data directly and thus not subject to setting as a free control variable
-  eq(dc.active, true);
+  // Initialize controller variables. We begin by assuming the worst.
+  eq(dc.active, true);	 
+  eq(dc.arms_tucked, false);
+  eq(dc.in_position, false);
   eq(dc.found_door, false);
-  eq(dc.found_handle, false);
-  eq(dc.have_handle, MAYBE);
-  eq(dc.door_latched, true);
+  eq(dc.must_find_handle, true);
+  eq(dc.have_handle, false);
+  eq(dc.latch_state, UNKNOWN);
   eq(dc.doorway_clear, false);
-  eq(dc.last_checked_door, FORCE_DOOR_CHECK);
-}
+  eq(dc.check_doorway, true);
 
-
-/** 
- * In full integration we apply additional rules to tie the door controller with a MoveBehavior. This is not the case
- * under certain test conditions where we wish to enter the state machine at any point
- */
-DoorController::Holds {
-
-  if(object.integrated == true){
-    // If inactive, the move behavior must also be inactive
-    if(active == false){
-      contained_by(MoveBehavior.Inactive);
-
-    }
-  
-    // If active, constrain with respect to a containing move behavior
-    if(active == true){
-      // MoveBehavior(all) == Active(target_x, target_y, target_th)   
-      contained_by(MoveBehavior.Active dm);
-      eq(dm.x, target_x);
-      eq(dm.y, target_y);
-      eq(dm.th, target_th);
-    }
-  }
+  // Initialize door message from the topological map
+  MAP_KEY doorway_id;
+  neq(doorway_id, NO_KEY);
+  float current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw;
+  tf_get_robot_pose(current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw, "map");
+  map_get_doorway_from_points(doorway_id, current_x, current_y, x, y);
+  map_get_door_state(dc.object, doorway_id);
+  eq(dc.frame_id, frame_id);
 }

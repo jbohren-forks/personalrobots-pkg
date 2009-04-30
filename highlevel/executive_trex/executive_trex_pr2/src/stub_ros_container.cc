@@ -208,9 +208,13 @@ int main(int argc, char** argv){
   if (getComponentParam("/trex/enable_move_base_door"))
     runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(move_base_door);
 
-  executive_trex_pr2::SimpleStubAction<robot_msgs::Door> open_door_without_grasp("open_door_without_grasp");
-  if (getComponentParam("/trex/enable_open_door_without_grasp"))
-    runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(open_door_without_grasp);
+  executive_trex_pr2::SimpleStubAction<robot_msgs::Door> touch_door("touch_door");
+  if (getComponentParam("/trex/enable_touch_door"))
+    runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(touch_door);
+
+  executive_trex_pr2::SimpleStubAction<robot_msgs::Door> push_door("push_door");
+  if (getComponentParam("/trex/enable_push_door"))
+    runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(push_door);
 
   executive_trex_pr2::SimpleStubAction<robot_msgs::Door> release_handle("release_handle");
   if (getComponentParam("/trex/enable_release_handle"))

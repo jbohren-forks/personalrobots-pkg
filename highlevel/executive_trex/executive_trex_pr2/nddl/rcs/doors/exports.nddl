@@ -46,6 +46,7 @@ class DoorsTuckArms extends ROSAction {
 };
 
 class DoorManipulationBehavior extends ROSAction {
+  bool update_controller; // If true, will force an update on successful termination
 
   /**
    * The parameters here 
@@ -134,6 +135,12 @@ class DoorManipulationBehavior extends ROSAction {
 
   DoorManipulationBehavior(Mode _mode){
     super(_mode);
+    update_controller = true;
+  }
+
+  DoorManipulationBehavior(Mode _mode, bool _update_controller){
+    super(_mode);
+    update_controller = _update_controller;
   }
 }
 
@@ -162,34 +169,6 @@ class UnlatchHandle extends DoorManipulationBehavior {
   predicate Inactive{}
 
   UnlatchHandle(Mode _mode){
-    super(_mode);
-  }
-};
-
-/**
- * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
- */
-class OpenDoor extends DoorManipulationBehavior {
-
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
-
-  OpenDoor(Mode _mode){
-    super(_mode);
-  }
-};
-
-/**
- * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
- */
-class OpenDoorWithoutGrasp extends DoorManipulationBehavior {
-
-  // Redeclare because of bug in parser
-  predicate Active{}
-  predicate Inactive{}
-
-  OpenDoorWithoutGrasp(Mode _mode){
     super(_mode);
   }
 };
@@ -265,4 +244,46 @@ class MoveBaseDoor extends DoorManipulationBehavior {
     super(_mode);
   }
 
+};
+
+/**
+ * Use this to make contact with the door prior to pushing
+ */
+class TouchDoor extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  TouchDoor(Mode _mode){
+    super(_mode, false);
+  }
+};
+
+/**
+ * Use this to push a door open while moving. Does not require the handle to be grasped
+ */
+class PushDoor extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  PushDoor(Mode _mode){
+    super(_mode, false);
+  }
+};
+
+/**
+ * Behavior to open the door, assuming it is ajar, and assuming it has a grasp on the handle
+ */
+class OpenDoor extends DoorManipulationBehavior {
+
+  // Redeclare because of bug in parser
+  predicate Active{}
+  predicate Inactive{}
+
+  OpenDoor(Mode _mode){
+    super(_mode, false);
+  }
 };

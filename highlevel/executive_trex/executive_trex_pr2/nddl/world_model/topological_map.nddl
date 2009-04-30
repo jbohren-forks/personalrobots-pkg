@@ -28,6 +28,8 @@ constraint map_is_doorway(result, region_id) { result <: bool && region_id <: MA
 // data types I would not have to do it like this!
 constraint map_get_door_state(object, door_id) {object <: Object && door_id <: MAP_KEY}
 
+// A function to get door state based on the 
+
 /***********************************************************************
  * Types related to a semantic view of the map
  ***********************************************************************/
