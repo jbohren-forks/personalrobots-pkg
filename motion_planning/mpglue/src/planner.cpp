@@ -39,6 +39,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <fstream>
+#include <limits> // provides std::numeric_limits
 
 using sfl::to_string;
 using namespace boost;
