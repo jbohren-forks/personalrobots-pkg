@@ -359,12 +359,8 @@ bool
 
     goodness_factor[cc] *= (area / (door_frame * door_height));
 
-    // ---[ Compute the distance from the door to the prior of the door
-    double door_distance = fmax (0.001,
-                                 fmin (cloud_geometry::distances::pointToPointXYDistance (door_tr.door_p1, min_p),
-                                       fmin (cloud_geometry::distances::pointToPointXYDistance (door_tr.door_p1, max_p),
-                                             fmin (cloud_geometry::distances::pointToPointXYDistance (door_tr.door_p2, min_p),
-                                                   cloud_geometry::distances::pointToPointXYDistance (door_tr.door_p2, max_p)))));
+    // ---[ Compute the distance from the door hinge to the prior of the door hinge
+    double door_distance = fmax (0.001, fmin(distToHinge(door_tr, min_p), distToHinge(door_tr, max_p)));
     goodness_factor[cc] /= door_distance;
     ROS_WARN ("A: Door candidate (%d, %d hull points, %d points) accepted with: average point density (%g), area (%g), width (%g), height (%g).\n Planar coefficients: [%g %g %g %g]",
               cc, (int)pmap_.polygons[cc].points.size (), (int)inliers.size (), density, area, door_frame, door_height, coeff[cc][0], coeff[cc][1], coeff[cc][2], coeff[cc][3]);
@@ -441,32 +437,18 @@ bool
     cloud_geometry::statistics::getLargestXYPoints (pmap_.polygons[cc], min_p, max_p);
 
     // get door p1 and p2 that match frame p1 and p2
-    if (result[nr_d].hinge == Door::HINGE_P1){
-      if (dist(min_p, result[nr_d].frame_p1) < dist(max_p, result[nr_d].frame_p1)){
-	result[nr_d].door_p1 = min_p;
-	result[nr_d].door_p2 = max_p;
-	result[nr_d].door_p2.z = min_p.z;
-      }
-      else{
-	result[nr_d].door_p1 = max_p;
-	result[nr_d].door_p2 = min_p;
-	result[nr_d].door_p2.z = min_p.z;
-      }
+    double d_min_p = distToHinge(result[nr_d], min_p);
+    double d_max_p = distToHinge(result[nr_d], max_p);
+    if ( (d_min_p < d_max_p && result[nr_d].hinge == Door::HINGE_P1) || (d_min_p >= d_max_p && result[nr_d].hinge == Door::HINGE_P2) ){
+      result[nr_d].door_p1 = min_p;
+      result[nr_d].door_p2 = max_p;
+      result[nr_d].door_p2.z = min_p.z;
     }
-    else if (result[nr_d].hinge == Door::HINGE_P2){
-      if (dist(min_p, result[nr_d].frame_p2) < dist(max_p, result[nr_d].frame_p2)){
-	result[nr_d].door_p1 = max_p;
-	result[nr_d].door_p2 = min_p;
-	result[nr_d].door_p2.z = min_p.z;
-      }
-      else{
-	result[nr_d].door_p1 = min_p;
-	result[nr_d].door_p2 = max_p;
-	result[nr_d].door_p2.z = min_p.z;
-      }
+    else{
+      result[nr_d].door_p1 = max_p;
+      result[nr_d].door_p2 = min_p;
+      result[nr_d].door_p2.z = min_p.z;
     }
-    else
-      ROS_ERROR("DoorsDetector: Hinge side is not defined");
 
     // get door normal
     result[nr_d].normal.x = -coeff[cc][0];
@@ -575,12 +557,17 @@ void DoorDetector::cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::
 }
 
 
-double DoorDetector::dist(const robot_msgs::Point32& p1, const robot_msgs::Point32& p2) const
+double DoorDetector::distToHinge(const robot_msgs::Door& door, robot_msgs::Point32& pnt) const
 {
-  return sqrt(((p1.x-p2.x)*(p1.x-p2.x)) + ((p1.y-p2.y)*(p1.y-p2.y)) + ((p1.z-p2.z)*(p1.z-p2.z)));
+  double dist=-1;
+  if (door.hinge == Door::HINGE_P1)
+    dist = cloud_geometry::distances::pointToPointXYDistance(door.frame_p1, pnt);
+  else if (door.hinge == Door::HINGE_P2)
+    dist = cloud_geometry::distances::pointToPointXYDistance(door.frame_p2, pnt);
+  else
+    ROS_ERROR("DoorsDetector: Hinge side is not specified");
+  return dist;
 }
-
-
 
 
 
