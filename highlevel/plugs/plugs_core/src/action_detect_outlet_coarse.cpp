@@ -99,6 +99,13 @@ bool DetectOutletCoarseAction::spotOutlet(const robot_msgs::PointStamped& outlet
 
 	if (ros::service::call("outlet_spotting/coarse_outlet_detect", req, resp)) {
 		pose = resp.pose;
+
+        robot_msgs::PointStamped outlet_final_position;
+        outlet_final_position.header.frame_id = pose.header.frame_id;
+        outlet_final_position.header.stamp = pose.header.stamp;
+        outlet_final_position.point = pose.pose.position;
+
+        node_->publish(head_controller_ + "/head_track_point", outlet_final_position);
 		return true;
 	}
 	else {
