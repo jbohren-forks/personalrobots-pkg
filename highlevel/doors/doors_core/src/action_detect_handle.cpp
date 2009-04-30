@@ -49,7 +49,7 @@ using namespace door_handle_detector;
 static const string fixed_frame = "odom_combined";
 static const double scan_speed  = 0.1; // [m/sec]
 static const double scan_height = 0.4; //[m]
-static const unsigned int max_retries = 5;
+static const unsigned int max_retries = 3;
 
 DetectHandleAction::DetectHandleAction(Node& node): 
   robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_handle"),
@@ -96,9 +96,9 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
     }
 
     // camera detection
-    //if (!cameraDetection(goal_tr, result_camera))
-    //  continue;
-    result_camera = result_laser;
+    if (!cameraDetection(goal_tr, result_camera))
+      continue;
+    //result_camera = result_laser;
 
     // check for preemption
     if (isPreemptRequested()){
@@ -136,12 +136,15 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
       feedback.handle.z = (result_laser.handle.z + result_camera.handle.z)/2.0;
       
       // store hinge side
-      if (pow(feedback.handle.x-result_laser.door_p1.x,2)+pow(feedback.handle.y-result_laser.door_p1.y,2) <
-	  pow(feedback.handle.x-result_laser.door_p2.x,2)+pow(feedback.handle.y-result_laser.door_p2.y,2))
-	feedback.hinge = robot_msgs::Door::HINGE_P1;
-      else
-	feedback.hinge = robot_msgs::Door::HINGE_P2;
-
+      /*
+      if (feedback.hinge ==  robot_msgs::Door::UNKNOWN){
+	if (pow(feedback.handle.x-result_laser.door_p1.x,2)+pow(feedback.handle.y-result_laser.door_p1.y,2) <
+	    pow(feedback.handle.x-result_laser.door_p2.x,2)+pow(feedback.handle.y-result_laser.door_p2.y,2))
+	  feedback.hinge = robot_msgs::Door::HINGE_P2;
+	else
+	  feedback.hinge = robot_msgs::Door::HINGE_P1;
+      }
+      */
       ROS_INFO("DetectHandleAction: Found handle in %i tries", nr_tries+1);
       return robot_actions::SUCCESS;
     }
