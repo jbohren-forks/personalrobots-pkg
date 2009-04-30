@@ -39,6 +39,9 @@
 // Path calculation uses no interpolation when pot field is at max in
 //   nearby cells
 //
+// Path calc has sanity check that it succeeded
+//
+
 
 #include <navfn/navfn.h>
 #include <ros/console.h>
@@ -778,7 +781,11 @@ float NavFn::getLastPathCost()
 //
 // Path construction
 // Find gradient at array points, interpolate path
-// Use step size of one pixel - should we use 1/2 pixel?
+// Use step size of pathStep, usually 0.5 pixel
+//
+// Some sanity checks:
+//  1. Stuck at same index position
+//  2. Doesn't get near goal
 //
 
 int
@@ -918,7 +925,7 @@ NavFn::calcPath(int n, int *st)
       //	     potarr[stc], x, y, pathx[npath-1], pathy[npath-1]);
     }
 
-  return npath;			// out of cycles
+  return 0;			// out of cycles, return failure
 }
 
 
