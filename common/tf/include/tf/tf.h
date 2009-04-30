@@ -169,6 +169,12 @@ public:
    */
   std::string chainAsString(const std::string & target_frame, ros::Time target_time, const std::string & source_frame, ros::Time source_time, const std::string & fixed_frame) const;
 
+  /** \brief Debugging function that will print the spanning chain of transforms.
+   * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
+   * TransformReference::MaxDepthException
+   */
+  void chainAsVector(const std::string & target_frame, ros::Time target_time, const std::string & source_frame, ros::Time source_time, const std::string & fixed_frame, std::vector<std::string>& output) const;
+
   /** \brief A way to see what frames have been cached 
    * Useful for debugging 
    */
