@@ -132,11 +132,11 @@ Stamped<Pose> getGripperPose(const robot_msgs::Door& door, double angle, double 
 tf::Vector3 getFrameNormal(const robot_msgs::Door& door)
 {
   Vector normal_door(door.normal.x, door.normal.y, door.normal.z);
-  Rotation rot_frame_door = Rotation::RotZ(getDoorAngle(door));
-  Vector normal_frame = rot_frame_door * normal_door;
+  Rotation rot_door_frame = Rotation::RotZ(-getDoorAngle(door));
+  Vector normal_frame = rot_door_frame * normal_door;
   tf::Vector3 res;
-  res[0] = normal_door(0);
-  res[1] = normal_door(1);
-  res[2] = normal_door(2);
+  res[0] = normal_frame(0);
+  res[1] = normal_frame(1);
+  res[2] = normal_frame(2);
   return res;
 }

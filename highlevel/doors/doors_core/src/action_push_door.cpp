@@ -46,7 +46,7 @@ using namespace std;
 using namespace door_handle_detector;
 
 static const string fixed_frame = "odom_combined";
-static const double push_dist = 0.6;
+static const double push_dist = 0.75;
 static const double push_vel  = 5.0 * M_PI/180.0;  // 5 [deg/sec]
 
 
@@ -57,12 +57,15 @@ PushDoorAction::PushDoorAction(Node& node) :
   tf_(node)
 {
   node_.advertise<std_msgs::Float64>("r_gripper_effort_controller/command",10);
-  node_.advertise<robot_msgs::PoseStamped>("r_arm_cartesian_pose_controller/command",2);
+  node_.advertise<robot_msgs::PoseStamped>("r_arm_cartesian_pose_controller/command",20);
 };
 
 
 PushDoorAction::~PushDoorAction()
-{};
+{
+  node_.unadvertise("r_gripper_effort_controller/command");
+  node_.unadvertise("r_arm_cartesian_pose_controller/command");
+};
 
 
 

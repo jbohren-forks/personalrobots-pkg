@@ -68,6 +68,7 @@ int
   ros::init(argc, argv);
 
   ros::Node node("test_executive");
+  boost::thread* thread;
 
   robot_msgs::Door door;
   door.frame_p1.x = 1.0;
@@ -105,7 +106,6 @@ int
   robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> move_base_door("move_base_door");
   robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped> move_base_local("move_base_local");
 
-  timeout_medium.sleep();
   robot_msgs::Door tmp_door;
 
   cout << "before " << door << endl;
@@ -123,9 +123,10 @@ int
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   if (detect_door.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
   cout << "detect door " << door << endl;
+  bool open_by_pushing = (door.latch_state == robot_msgs::Door::UNLATCHED);
 
   // detect handle if door is latched
-  if (door.latch_state == robot_msgs::Door::LATCHED){
+  if (!open_by_pushing){
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     switchlist.start_controllers.push_back("head_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
@@ -134,21 +135,16 @@ int
   }
 
   // approach door
-  double approach_dist;
-  if (door.latch_state == robot_msgs::Door::LATCHED)
-    approach_dist = 0.6;
-  else
-    approach_dist = 0.5;
   robot_msgs::PoseStamped goal_msg;
-  tf::PoseStampedTFToMsg(getRobotPose(door, approach_dist), goal_msg);
+  tf::PoseStampedTFToMsg(getRobotPose(door, 0.6), goal_msg);
   cout << "move to pose " << goal_msg.pose.position.x << ", " << goal_msg.pose.position.y << ", "<< goal_msg.pose.position.z << endl;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   if (move_base_local.execute(goal_msg, goal_msg, timeout_long) != robot_actions::SUCCESS) return -1;
   cout << "door approach finished" << endl;
 
-  // push door
-  if (door.latch_state == robot_msgs::Door::UNLATCHED){
+  // touch door
+  if (open_by_pushing){
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
     switchlist.start_controllers.push_back("r_gripper_effort_controller");
@@ -160,13 +156,13 @@ int
     if (touch_door.execute(door, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
     cout << "door touched" << endl;
 
+    // push door in separate thread
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-    cout << "before door pushing" << endl;
-    if (push_door.execute(door, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
-    cout << "door pushed" << endl;
-    return 0;
+    thread = new boost::thread(boost::bind(&robot_actions::ActionClient<robot_msgs::Door, 
+					   pr2_robot_actions::DoorActionState, robot_msgs::Door>::execute, 
+					   &push_door, door, tmp_door, timeout_long));
   }
   else{
     // grasp handle
@@ -188,34 +184,39 @@ int
     switchlist.start_controllers.push_back("r_arm_cartesian_tff_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
     if (unlatch_handle.execute(door, tmp_door, timeout_long) != robot_actions::SUCCESS) return -1;
-  }    
 
-  // open door in separate thread
-  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  boost::thread* thread = new boost::thread(boost::bind(&robot_actions::ActionClient<robot_msgs::Door, 
-							pr2_robot_actions::DoorActionState, robot_msgs::Door>::execute, 
-							&open_door, door, tmp_door, timeout_long));
+    // open door in separate thread
+    switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+    if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+    thread = new boost::thread(boost::bind(&robot_actions::ActionClient<robot_msgs::Door, 
+					   pr2_robot_actions::DoorActionState, robot_msgs::Door>::execute, 
+					   &open_door, door, tmp_door, timeout_long));
+  }    
 
   // move throught door
   pr2_robot_actions::Pose2D pose2d;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
-  if (move_base_door.execute(door, tmp_door) != robot_actions::SUCCESS) {open_door.preempt(); return -1;};
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  if (move_base_door.execute(door, tmp_door) != robot_actions::SUCCESS) return -1;
 
-  // finish open door
-  open_door.preempt();
+  // preempt open/push door
+  if (open_by_pushing)
+    push_door.preempt();
+  else
+    open_door.preempt();
   thread->join();
   delete thread;
 
   // release handle
-  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  switchlist.stop_controllers.push_back("r_arm_cartesian_tff_controller");
-  switchlist.start_controllers.push_back("r_arm_cartesian_trajectory_controller");
-  switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
-  switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
-  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  if (release_handle.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
+  if (!open_by_pushing){
+    switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+    switchlist.stop_controllers.push_back("r_arm_cartesian_tff_controller");
+    switchlist.start_controllers.push_back("r_arm_cartesian_trajectory_controller");
+    switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
+    switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
+    if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+    if (release_handle.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
+  }
 
   // tuck arm
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();

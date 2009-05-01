@@ -49,7 +49,7 @@ using namespace door_handle_detector;
 static const string fixed_frame = "odom_combined";
 static const double scan_speed  = 0.1; // [m/sec]
 static const double scan_height = 0.4; //[m]
-static const unsigned int max_retries = 3;
+static const unsigned int max_retries = 5;
 
 DetectHandleAction::DetectHandleAction(Node& node): 
   robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_handle"),
@@ -86,8 +86,10 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
 
     // laser detection
     robot_msgs::Door result_laser, result_camera;
-    if (!laserDetection(goal_tr, result_laser))
+    if (!laserDetection(goal_tr, result_laser)){
+      ROS_ERROR("DetectHandleAction: Laser detection failed on try %i", nr_tries+1);
       continue;
+    }
 
     // check for preemption
     if (isPreemptRequested()){
@@ -96,9 +98,16 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
     }
 
     // camera detection
-    if (!cameraDetection(goal_tr, result_camera))
-      continue;
-    //result_camera = result_laser;
+    // DEBUG: two last attempts without camera
+    if (nr_tries < max_retries-2){
+      if (!cameraDetection(goal_tr, result_camera)){
+	ROS_ERROR("DetectHandleAction: Camera detection failed on try %i", nr_tries+1);
+	continue;
+      }
+    }
+    else{
+      result_camera = result_laser;
+    }
 
     // check for preemption
     if (isPreemptRequested()){
