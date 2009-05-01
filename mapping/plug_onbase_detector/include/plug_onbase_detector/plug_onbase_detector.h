@@ -127,7 +127,7 @@ class PlugOnBaseDetector
       active_ = true;
 
       // Check to see if the default/given topic exists in the list of published topics on the server yet, and issue a warning otherwise
-      string cloud_topic ("snapshot_cloud");
+      string cloud_topic ("plug_snapshot_cloud");
       vector<pair<string, string> > t_list;
       node_.getPublishedTopics (&t_list);
       bool topic_found = false;
@@ -372,7 +372,7 @@ class PlugOnBaseDetector
       reverse (clusters.begin (), clusters.end ());
 
       // Destroy the tree
-      delete tree;
+      // delete tree;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
