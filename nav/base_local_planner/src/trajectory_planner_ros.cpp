@@ -328,7 +328,14 @@ namespace base_local_planner {
     try{
       for(unsigned int i = 0; i < orig_global_plan.size(); ++i){
         robot_msgs::PoseStamped new_pose;
-        tf_.transformPose(global_frame_, orig_global_plan[i], new_pose);
+        ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
+        tf_.transformPose(global_frame_, ros::Time(), orig_global_plan[i], orig_global_plan[i].header.frame_id, new_pose);
+        // check global_pose timeout
+        if (current_time.toSec() - new_pose.header.stamp.toSec() > transform_tolerance_) {
+          ROS_ERROR("TrajectoryPlannerROS transform timeout updating plan. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
+              current_time.toSec() ,new_pose.header.stamp.toSec() ,transform_tolerance_);
+          return;
+        }
         global_plan_.push_back(new_pose);
       }
     }
