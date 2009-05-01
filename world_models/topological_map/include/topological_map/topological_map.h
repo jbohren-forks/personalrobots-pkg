@@ -72,10 +72,10 @@ uint numCols(const OccupancyGrid& grid);
 
 
 // Constants
-const double DEFAULT_DOOR_OPEN_PRIOR_PROB = 0.95;
-const double DEFAULT_DOOR_REVERSION_RATE = 1000;
+const double DEFAULT_DOOR_OPEN_PRIOR_PROB = 1.0;
+const double DEFAULT_DOOR_REVERSION_RATE = 1e9;
 const double DEFAULT_RESOLUTION=1.0;
-const double DEFAULT_LOCKED_DOOR_COST=100;
+const double DEFAULT_LOCKED_DOOR_COST=1e9;
 const double DOOR_OPEN_PROB_THRESHOLD=1e-3;
 
 /// \brief A facade object to the topological map and high-level world model information
@@ -89,11 +89,12 @@ class TopologicalMap
 {
 public:
 
-  /// Default constructor makes an empty map (see also topologicalMapFromGrid)
+  /// \brief Default constructor makes an empty map (see also topologicalMapFromGrid)
   /// \param resolution m/cell in grid
-  /// \param door_open_prior_prob Unobserved doors revert over time to this probability of being open
+  /// \param door_open_prior_prob Unobserved doors revert over time to this probability of being open.
   /// \param door_reversion_rate If you don't observe the door for this many seconds, its probability will return about halfway to its prior value
   /// \param locked_door_cost Cost of locked door
+  /// The default values of the parameters cause doors to start out open for sure, and once observed locked, they stay that way for about 1e8 seconds
   TopologicalMap(const OccupancyGrid&, double resolution=DEFAULT_RESOLUTION, double door_open_prior_prob=DEFAULT_DOOR_OPEN_PRIOR_PROB, 
                  double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE, double locked_door_cost=DEFAULT_LOCKED_DOOR_COST);
 
@@ -102,6 +103,7 @@ public:
   /// \param door_open_prior_prob Unobserved doors revert over time to this probability of being open
   /// \param door_reversion_rate If you don't observe the door for this many seconds, its probability will return about halfway to its prior value
   /// \param locked_door_cost Cost of locked door
+  /// The default values of the parameters cause doors to start out open for sure, and once observed locked, they stay that way for about 1e8 seconds
   TopologicalMap(istream& stream, double door_open_prior_prob=DEFAULT_DOOR_OPEN_PRIOR_PROB, double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE, 
                  double locked_door_cost=DEFAULT_LOCKED_DOOR_COST);
 
@@ -204,7 +206,8 @@ public:
   pair<bool, double> distanceBetween (const Point2D& p1, const Point2D& p2);
 
   /// \return A vector of pairs.  There's one pair per connector in the containing region of p1, consisting of that connector's id 
-  /// and the cost of the best path from p1 to p2 through that id
+  /// and the cost of the best path from p1 to p2 through that id.  The costs will be taken at the time of the most recent door traversal
+  /// observation, or time 0 if no door observations have been made.
   vector<pair<ConnectorId, double> > connectorCosts (const Point2D& p1, const Point2D& p2);
 
   /// \return A vector of pairs.  There's one pair per connector in the containing region of p1, consisting of that connector's id 
