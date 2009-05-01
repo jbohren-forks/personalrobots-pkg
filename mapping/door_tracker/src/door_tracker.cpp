@@ -52,7 +52,7 @@
 
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/Door.h>
-#include <visualization_msgs/VisualizationMarker.h>
+#include <visualization_msgs/Marker.h>
 
 #include <std_msgs/String.h>
 
@@ -345,10 +345,10 @@ class DoorTracker
         node_->param("~p_door_rot_dir" , tmp2, -1); door_msg_.rot_dir = tmp2;
         door_msg_.header.frame_id = "base_link";
 
-        node_->param("~publish_all_candidates" , publish_all_candidates_, false); 
+        node_->param("~publish_all_candidates" , publish_all_candidates_, false);
 
 //      node_->subscribe(door_msg_topic_,door_msg_in_, &DoorTracker::doorMsgCallBack,this,1);
-        node_->advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+        node_->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
         node_->advertise<robot_msgs::Door>( "~door_message", 0 );
         node_->advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
 
@@ -367,7 +367,7 @@ class DoorTracker
 //        node_->unsubscribe(door_msg_topic_,&DoorTracker::doorMsgCallBack,this);
         node_->unadvertise("~doors_detector");
         node_->unadvertise("~door_message");
-        node_->unadvertise("visualizationMarker");
+        node_->unadvertise("visualization_marker");
         delete message_notifier_;
         delete tf_;
       }
@@ -456,26 +456,20 @@ class DoorTracker
     }
 
     void publishLine(const Point32 &min_p, const Point32 &max_p, const int &id, const std::string &frame_id)
-    {   
-      visualization_msgs::VisualizationMarker marker;
+    {
+      visualization_msgs::Marker marker;
       marker.header.frame_id = frame_id;
       marker.header.stamp = ros::Time();
+      marker.ns = "door_tracker";
       marker.id = id;
-      marker.type = visualization_msgs::VisualizationMarker::LINE_STRIP;
-      marker.action = visualization_msgs::VisualizationMarker::ADD;
-      marker.x = 0.0;
-      marker.y = 0.0;
-      marker.z = 0.0;
-      marker.yaw = 0.0;
-      marker.pitch = 0.0;
-      marker.roll = 0.0;
-      marker.xScale = 0.01;
-      marker.yScale = 0.1;
-      marker.zScale = 0.1;
-      marker.alpha = 255;
-      marker.r = 0;
-      marker.g = 0;
-      marker.b = 255;
+      marker.type = visualization_msgs::Marker::LINE_STRIP;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker.pose.orientation.w = 1.0;
+      marker.scale.x = 0.01;
+      marker.scale.y = 0.1;
+      marker.scale.z = 0.1;
+      marker.color.a = 1.0;
+      marker.color.b = 1.0;
       marker.set_points_size(2);
 
       marker.points[0].x = min_p.x;
@@ -487,7 +481,7 @@ class DoorTracker
       marker.points[1].z = max_p.z;
       ROS_DEBUG("Publishing line between: p1: %f %f %f, p2: %f %f %f",marker.points[0].x,marker.points[0].y,marker.points[0].z,marker.points[1].x,marker.points[1].y,marker.points[1].z);
 
-      node_->publish( "visualizationMarker", marker );
+      node_->publish( "visualization_marker", marker );
     }
 
 
@@ -546,11 +540,11 @@ class DoorTracker
           ROS_DEBUG("This candidate line has the wrong width: %f which is outside the (min,max) limits: (%f,%f)",door_frame_width,door_min_width_,door_max_width_);
           continue;
         }
- 
+
         Point32 temp_min,temp_max;
         transform2DInverse(line_segment_min[i],temp_min,global_x_,global_y_,global_yaw_);
         transform2DInverse(line_segment_max[i],temp_max,global_x_,global_y_,global_yaw_);
- 
+
         double door_pt_angle_1 = atan2(temp_max.y,temp_max.x);
         double door_pt_angle_2 = atan2(temp_min.y,temp_min.x);
 
@@ -582,7 +576,7 @@ class DoorTracker
         door_tmp.door_p2.z = line_segment_max[inliers_size_max_index].z;
         door_tmp.header = cloud.header;
         door_tmp.header.frame_id = fixed_frame_;
-        node_->publish( "~door_message", door_tmp);        
+        node_->publish( "~door_message", door_tmp);
       }
       ROS_DEBUG("Done finding door");
 
@@ -677,7 +671,7 @@ class DoorTracker
 
           vector<int> inliers_local;
           model->selectWithinDistance(new_coeff, sac_distance_threshold_,inliers_local);
-          
+
           // Split the inliers into clusters
           vector<vector<int> > clusters;
           findClusters (*points, inliers_local, euclidean_cluster_distance_tolerance_, clusters, -1, 1, 2,

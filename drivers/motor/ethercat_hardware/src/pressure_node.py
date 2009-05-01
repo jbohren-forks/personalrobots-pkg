@@ -37,14 +37,14 @@
 # Author: Blaise Gassend
 
 # Reads fingertip pressure data from /pressure and publishes it as a
-# visualizationMarker
+# visualization_marker
 
 import roslib
 roslib.load_manifest('ethercat_hardware')
 import rospy
 
 from ethercat_hardware.msg import PressureState
-from visualization_msgs.msg import VisualizationMarker
+from visualization_msgs.msg import Marker
 
 positions = [ # x, y, z, xscale, yscale, zscale 
         ( 0.026, 0.007, 0.000, 0.010, 0.010, 0.015),
@@ -77,14 +77,14 @@ def color(data):
         return (0,0,0)
     if data < 3000:
         x = (data-1000)/2000.
-        return 0,0,255*x
+        return 0,0,x
     if data < 6000:
         x = (data-3000)/3000.
-        return 255*x,0,255*(1-x)
+        return x,0,(1-x)
     if data < 10000:
         x = (data-6000)/4000.
-        return 255,255*x,255*x
-    return 255,255,255
+        return 1.0,x,x
+    return 1.0,1.0,1.0
 
 class pressureVisualizer:
     def callback(self, pressurestate):
@@ -101,21 +101,22 @@ class pressureVisualizer:
             self.makeVisualization(self.data1, self.frame1, self.startid + numsensors,-1)
 
     def makeVisualization(self, data, frame, sensorstartid, ydir):
-        mk = VisualizationMarker()
+        mk = Marker()
         mk.header.frame_id = frame
         # @todo Make timestamp come from when data is collected in hardware
-        mk.header.stamp = rospy.get_rostime() 
-        mk.type = VisualizationMarker.SPHERE
-        mk.action = VisualizationMarker.ADD
+        mk.header.stamp = rospy.get_rostime()
+        mk.ns = "pressure_node"
+        mk.type = Marker.SPHERE
+        mk.action = Marker.ADD
         mk.points = []
         for i in range(0,numsensors):
             mk.id = sensorstartid + i
-            (mk.x, mk.y, mk.z, mk.xScale, mk.yScale, mk.zScale) = positions[i]
-            mk.y = mk.y * ydir
-            mk.z = mk.z * ydir
-            mk.roll = mk.pitch = mk.yaw = 0
-            mk.alpha = 255
-            (mk.r, mk.g, mk.b) = color(data[i])
+            (mk.pose.positions.x, mk.pose.positions.y, mk.pose.positions.z, mk.scale.x, mk.scale.y, mk.scale.z) = positions[i]
+            mk.pose.positions.y = mk.pose.positions.y * ydir
+            mk.pose.positions.z = mk.pose.positions.z * ydir
+            mk.pose.orientation.w = 1.0
+            mk.color.a = 1.0
+            (mk.color.r, mk.color.g, mk.color.b) = color(data[i])
             self.vis_pub.publish(mk)
 
     def __init__(self, source, frame0, frame1, startid):
@@ -126,8 +127,8 @@ class pressureVisualizer:
 
         rospy.init_node('pressureVisualizer', anonymous=True)
         
-        self.vis_pub = rospy.Publisher('visualizationMarker',
-                VisualizationMarker)
+        self.vis_pub = rospy.Publisher('visualization_marker',
+                Marker)
         rospy.Subscriber(source, PressureState, self.callback)
         
         while not rospy.is_shutdown():

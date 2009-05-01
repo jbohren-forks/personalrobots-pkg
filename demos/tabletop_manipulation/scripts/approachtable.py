@@ -38,9 +38,11 @@ roslib.load_manifest('tabletop_manipulation')
 import rospy
 from robot_srvs.srv import FindTable, FindTableRequest
 from robot_msgs.msg import Polygon3D, Point
-from visualization_msgs.msg import VisualizationMarker
+from visualization_msgs.msg import Marker
 from deprecated_msgs.msg import RobotBase2DOdom
 from tf.msg import tfMessage
+import bullet
+import tf
 
 from movebase import MoveBase
 from detecttable import DetectTable
@@ -59,7 +61,7 @@ class ApproachTable:
     self.vm = None
     rospy.Subscriber('odom', RobotBase2DOdom, self.odomCallback)
     rospy.Subscriber('tf_message', tfMessage, self.tfCallback)
-    self.pub_vis = rospy.Publisher("visualizationMarker", VisualizationMarker)
+    self.pub_vis = rospy.Publisher("visualization_marker", Marker)
     self.global_frame = rospy.get_param('/global_frame_id')
 
   # Hack to get around the fact that we don't have pytf
@@ -85,9 +87,10 @@ class ApproachTable:
       print '[ApproachTable] Failed to detect table'
       return False
   
-    self.vm = VisualizationMarker()
+    self.vm = Marker()
     self.vm.header.frame_id = resp.table.header.frame_id
-    self.vm.z = resp.table.table.points[0].z
+    self.vm.ns = "approachtable";
+    self.vm.pose.position.z = resp.table.table.points[0].z
   
     approach_pose = self.computeApproachPose(self.robot_position, resp.table.table, standoff, True)
     
@@ -95,21 +98,17 @@ class ApproachTable:
       return False
   
     self.vm.id = 1000
-    self.vm.type = VisualizationMarker.ARROW
-    self.vm.action = VisualizationMarker.ADD
-    self.vm.x = approach_pose[0]
-    self.vm.y = approach_pose[1]
+    self.vm.type = Marker.ARROW
+    self.vm.action = Marker.ADD
+    self.vm.pose.position.x = approach_pose[0]
+    self.vm.pose.position.y = approach_pose[1]
     #self.vm.z = 0.0
-    self.vm.roll = 0.0
-    self.vm.pitch = 0.0
-    self.vm.yaw = approach_pose[2]
-    self.vm.xScale = 0.6
-    self.vm.yScale = 0.25
-    self.vm.zScale = 0.1
-    self.vm.alpha = 128
-    self.vm.r = 255
-    self.vm.g = 0
-    self.vm.b = 0
+    self.vm.pose.orientation = tf.quaternion_bt_to_msg(bullet.Quaternion(approach_pose[2], 0.0, 0.0))
+    self.vm.scale.x = 0.6
+    self.vm.scale.y = 0.25
+    self.vm.scale.z = 0.1
+    self.vm.color.a = 0.5
+    self.vm.color.r = 1.0
     self.vm.points = []
     self.pub_vis.publish(self.vm)
 
@@ -209,78 +208,58 @@ class ApproachTable:
     goala = atan2(sin(goala),cos(goala))
   
     self.vm.id = 1001
-    self.vm.type = VisualizationMarker.SPHERE
-    self.vm.action = VisualizationMarker.ADD
-    self.vm.x = midp.x
-    self.vm.y = midp.y
+    self.vm.type = Marker.SPHERE
+    self.vm.action = Marker.ADD
+    self.vm.pose.position.x = midp.x
+    self.vm.pose.position.y = midp.y
     #self.vm.z = 0.0
-    self.vm.roll = 0.0
-    self.vm.pitch = 0.0
-    self.vm.yaw = 0.0
-    self.vm.xScale = 0.05
-    self.vm.yScale = 0.05
-    self.vm.zScale = 0.05
-    self.vm.alpha = 128
-    self.vm.r = 0
-    self.vm.g = 0
-    self.vm.b = 255
+    self.vm.pose.orientation.x = 0.0
+    self.vm.pose.orientation.y = 0.0
+    self.vm.pose.orientation.z = 0.0
+    self.vm.pose.orientation.w = 1.0
+    self.vm.scale.x = 0.05
+    self.vm.scale.y = 0.05
+    self.vm.scale.z = 0.05
+    self.vm.color.a = 0.5
+    self.vm.color.r = 0.0
+    self.vm.color.g = 0.0
+    self.vm.color.b = 1.0
     self.vm.points = []
     self.pub_vis.publish(self.vm)
   
     self.vm.id = 1002
-    self.vm.type = VisualizationMarker.SPHERE
-    self.vm.action = VisualizationMarker.ADD
-    self.vm.x = closestp[0].x
-    self.vm.y = closestp[0].y
+    self.vm.type = Marker.SPHERE
+    self.vm.action = Marker.ADD
+    self.vm.pose.position.x = closestp[0].x
+    self.vm.pose.position.y = closestp[0].y
     #self.vm.z = 0.0
-    self.vm.roll = 0.0
-    self.vm.pitch = 0.0
-    self.vm.yaw = 0.0
-    self.vm.xScale = 0.05
-    self.vm.yScale = 0.05
-    self.vm.zScale = 0.05
-    self.vm.alpha = 128
-    self.vm.r = 0
-    self.vm.g = 255
-    self.vm.b = 0
+    self.vm.color.r = 0.0
+    self.vm.color.g = 1.0
+    self.vm.color.b = 0.0
     self.vm.points = []
     self.pub_vis.publish(self.vm)
   
     self.vm.id = 1003
-    self.vm.type = VisualizationMarker.SPHERE
-    self.vm.action = VisualizationMarker.ADD
-    self.vm.x = closestp[1].x
-    self.vm.y = closestp[1].y
+    self.vm.type = Marker.SPHERE
+    self.vm.action = Marker.ADD
+    self.vm.pose.position.x = closestp[1].x
+    self.vm.pose.position.y = closestp[1].y
     #self.vm.z = 0.0
-    self.vm.roll = 0.0
-    self.vm.pitch = 0.0
-    self.vm.yaw = 0.0
-    self.vm.xScale = 0.05
-    self.vm.yScale = 0.05
-    self.vm.zScale = 0.05
-    self.vm.alpha = 128
-    self.vm.r = 255
-    self.vm.g = 0
-    self.vm.b = 255
+    self.vm.color.r = 1.0
+    self.vm.color.g = 0.0
+    self.vm.color.b = 1.0
     self.vm.points = []
     self.pub_vis.publish(self.vm)
   
     self.vm.id = 1004
-    self.vm.type = VisualizationMarker.SPHERE
-    self.vm.action = VisualizationMarker.ADD
-    self.vm.x = farthestp.x
-    self.vm.y = farthestp.y
+    self.vm.type = Marker.SPHERE
+    self.vm.action = Marker.ADD
+    self.vm.pose.position.x = farthestp.x
+    self.vm.pose.position.y = farthestp.y
     #self.vm.z = 0.0
-    self.vm.roll = 0.0
-    self.vm.pitch = 0.0
-    self.vm.yaw = 0.0
-    self.vm.xScale = 0.05
-    self.vm.yScale = 0.05
-    self.vm.zScale = 0.05
-    self.vm.alpha = 128
-    self.vm.r = 255
-    self.vm.g = 255
-    self.vm.b = 255
+    self.vm.color.r = 1.0
+    self.vm.color.g = 01
+    self.vm.color.b = 1.0
     self.vm.points = []
     self.pub_vis.publish(self.vm)
   

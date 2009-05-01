@@ -41,7 +41,7 @@
 #include <robot_msgs/Polygon3D.h>
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/PointStamped.h>
-#include <visualization_msgs/VisualizationMarker.h>
+#include <visualization_msgs/Marker.h>
 #include <robot_msgs/Door.h>
 
 #include <tf/transform_listener.h>
@@ -155,27 +155,26 @@ inline void
   sendMarker (float px, float py, float pz, std::string frame_id, ros::Node *anode, int &id,
               int r, int g, int b, double radius = 0.03)
 {
-  visualization_msgs::VisualizationMarker mk;
+  visualization_msgs::Marker mk;
   mk.header.stamp = ros::Time::now ();
 
   mk.header.frame_id = frame_id;
 
   mk.id = id++;
-  mk.type = visualization_msgs::VisualizationMarker::SPHERE;
-  mk.action = visualization_msgs::VisualizationMarker::ADD;
-  mk.x = px;
-  mk.y = py;
-  mk.z = pz;
+  mk.ns = "geometric_helper";
+  mk.type = visualization_msgs::Marker::SPHERE;
+  mk.action = visualization_msgs::Marker::ADD;
+  mk.pose.position.x = px;
+  mk.pose.position.y = py;
+  mk.pose.position.z = pz;
+  mk.pose.orientation.w = 1.0;
+  mk.scale.x = mk.scale.y = mk.scale.z = radius * 2.0;
+  mk.color.a = 1.0;
+  mk.color.r = r;
+  mk.color.g = g;
+  mk.color.b = b;
 
-  mk.roll = mk.pitch = mk.yaw = 0;
-  mk.xScale = mk.yScale = mk.zScale = radius * 2.0;
-
-  mk.alpha = 255;
-  mk.r = r;
-  mk.g = g;
-  mk.b = b;
-
-  anode->publish ("visualizationMarker", mk);
+  anode->publish ("visualization_marker", mk);
 }
 
 void obtainCloudIndicesSet (robot_msgs::PointCloud *points, std::vector<int> &indices, robot_msgs::Door& door,

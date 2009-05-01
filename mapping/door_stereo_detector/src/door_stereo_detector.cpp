@@ -50,7 +50,7 @@
 
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/Door.h>
-#include <visualization_msgs/VisualizationMarker.h>
+#include <visualization_msgs/Marker.h>
 
 
 #include "opencv_latest/CvBridge.h"
@@ -177,7 +177,7 @@ class DoorStereo : public ros::Node
     	  cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
       }
 
-      advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+      advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
       advertise<robot_msgs::PointCloud>( "filtered_cloud", 0 );
 
       subscribeStereoData();
@@ -186,7 +186,7 @@ class DoorStereo : public ros::Node
 
     ~DoorStereo()
     {
-      unadvertise("visualizationMarker");
+      unadvertise("visualization_marker");
       unsubscribeStereoData();
     }
 
@@ -259,25 +259,19 @@ class DoorStereo : public ros::Node
       //Publish all the lines as visualization markers
       for(unsigned int i=0; i < inliers.size(); i++)
       {
-        visualization_msgs::VisualizationMarker marker;
+        visualization_msgs::Marker marker;
         marker.header.frame_id = cloud.header.frame_id;
         marker.header.stamp = ros::Time((uint64_t)0ULL);
+        marker.ns = "door_stereo_detector";
         marker.id = i;
-        marker.type = visualization_msgs::VisualizationMarker::LINE_STRIP;
-        marker.action = visualization_msgs::VisualizationMarker::ADD;
-        marker.x = 0.0;
-        marker.y = 0.0;
-        marker.z = 0.0;
-        marker.yaw = 0.0;
-        marker.pitch = 0.0;
-        marker.roll = 0.0;
-        marker.xScale = 0.01;
-        marker.yScale = 0.1;
-        marker.zScale = 0.1;
-        marker.alpha = 255;
-        marker.r = 0;
-        marker.g = 255;
-        marker.b = 0;
+        marker.type = visualization_msgs::Marker::LINE_STRIP;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = 0.01;
+        marker.scale.y = 0.1;
+        marker.scale.z = 0.1;
+        marker.color.a = 1.0;
+        marker.color.g = 1.0;
         marker.set_points_size(2);
 
         marker.points[0].x = line_segment_min[i].x;
@@ -288,7 +282,7 @@ class DoorStereo : public ros::Node
         marker.points[1].y = line_segment_max[i].y;
         marker.points[1].z = line_segment_max[i].z;
 
-        publish( "visualizationMarker", marker );
+        publish( "visualization_marker", marker );
       }
    }
 

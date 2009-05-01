@@ -73,15 +73,15 @@ bool HeadServoingController::initXml(mechanism::RobotState * robot, TiXmlElement
 
     elt = elt->NextSiblingElement("controller");
   }
-  
+
   TiXmlElement *cd = config->FirstChildElement("controller_defaults");
   if (cd)
   {
-    
-     //TODO: make init function for this 
+
+     //TODO: make init function for this
     max_velocity_ = atof(cd->Attribute("max_velocity"));
     gain_ = atof(cd->Attribute("gain"));
- 
+
   }
   else
   {
@@ -93,7 +93,7 @@ bool HeadServoingController::initXml(mechanism::RobotState * robot, TiXmlElement
 
   fprintf(stderr,"HeadServoingController:: num_joints_: %d\n",num_joints_);
 
-  
+
   set_pts_.resize(num_joints_);
   for(unsigned int i=0; i < num_joints_;++i)
   {
@@ -158,8 +158,8 @@ int HeadServoingController::getJointControllerByName(std::string name)
 void HeadServoingController::update(void)
 {
   double error(0);
-  
-	
+
+
   for(unsigned int i=0; i < num_joints_;++i)
   {
     angles::shortest_angular_distance_with_limits(joint_velocity_controllers_[i]->joint_state_->position_,set_pts_[i], joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_min_, joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_max_, error);
@@ -219,7 +219,7 @@ bool HeadServoingControllerNode::initXml(mechanism::RobotState * robot, TiXmlEle
   //services
   node_->advertiseService(service_prefix_ + "/get_command_array", &HeadServoingControllerNode::getJointCmd, this);
   guard_get_command_array_.set(service_prefix_ + "/get_command_array");
-  node_->advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+  node_->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
   return true;
 
 }
@@ -357,44 +357,36 @@ void HeadServoingControllerNode::frameTrackPoint()
 
   c_->setJointCmd(pos,names);
 
-  visualization_msgs::VisualizationMarker marker;
+  visualization_msgs::Marker marker;
   marker.header.frame_id = "stereo";
+  marker.ns = "head_servoing_controller";
   marker.id = 0;
-  marker.type = 0; 
+  marker.type = 0;
   marker.action = 0;
-  marker.x = 0;
-  marker.y = 0;
-  marker.z = 0;
-  marker.yaw = 0;
-  marker.pitch = 0;
-  marker.roll = 0.0;
-  marker.xScale = 2;
-  marker.yScale = 0.05;
-  marker.zScale = 0.05;
-  marker.alpha = 255;
-  marker.r = 0;
-  marker.g = 255;
-  marker.b = 0;
-  node_->publish("visualizationMarker", marker );
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 2;
+  marker.scale.y = 0.05;
+  marker.scale.z = 0.05;
+  marker.color.g = 1.0;
+  marker.color.a = 1.0;
+  node_->publish("visualization_marker", marker );
 
-  marker.header.frame_id = "head_pan";
+  marker.header.frame_id = "head_pan_link";
+  marker.ns = "head_servoing_controller";
   marker.id = 1;
-  marker.type = 2; 
+  marker.type = 2;
   marker.action = 0;
-  marker.x = pan_point.x();
-  marker.y = pan_point.y();
-  marker.z = pan_point.z();
-  marker.yaw = 0;
-  marker.pitch = 0;
-  marker.roll = 0.0;
-  marker.xScale = 0.1;
-  marker.yScale = 0.1;
-  marker.zScale = 0.1;
-  marker.alpha = 255;
-  marker.r = 255;
-  marker.g = 0;
-  marker.b = 0;
-  node_->publish("visualizationMarker", marker ); 
+  marker.pose.position.x = pan_point.x();
+  marker.pose.position.y = pan_point.y();
+  marker.pose.position.z = pan_point.z();
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.1;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.a = 1.0;
+  node_->publish("visualization_marker", marker );
 
 
 }

@@ -125,7 +125,7 @@ roslib.load_manifest('tabletop_manipulation')
 import rospy
 import random
 import sys
-from visualization_msgs.msg import VisualizationMarker
+from visualization_msgs.msg import Marker
 from robot_msgs.msg import AttachedObject, PoseConstraint
 from robot_srvs.srv import FindTable, FindTableRequest, SubtractObjectFromCollisionMap, SubtractObjectFromCollisionMapRequest, RecordStaticMapTrigger, RecordStaticMapTriggerRequest
 from pr2_mechanism_controllers.srv import SetProfile, SetProfileRequest
@@ -165,7 +165,7 @@ class Executive:
     self.laser_tilt_profile_amplitude = 0.75
     self.laser_tilt_profile_offset = 0.30
 
-    self.vis_pub = rospy.Publisher("visualizationMarker", VisualizationMarker)
+    self.vis_pub = rospy.Publisher("visualization_marker", Marker)
     self.attached_obj_pub = rospy.Publisher("attach_object", AttachedObject)
 
     print 'Waiting for service: ' + self.laser_tilt_profile_controller + '/set_profile'
@@ -239,22 +239,22 @@ class Executive:
   def drawObjectVisMarker(self, obj):
     # TODO: use bounds instead of this hardcoded radius
     radius = 2.0
-
-    mk = VisualizationMarker()
+    mk = Marker()
     mk.header.frame_id = obj.frame_id
+    mk.ns = "executive"
     mk.id = self.vmk_id
     #self.vmk_id += 1
-    mk.type = VisualizationMarker.SPHERE
-    mk.action = VisualizationMarker.ADD # same as modify
-    mk.x = obj.center.x
-    mk.y = obj.center.y
-    mk.z = obj.center.z
-    mk.roll = mk.pitch = mk.yaw = 0
-    mk.xScale = mk.yScale = mk.zScale = radius * 2.0
-    mk.alpha = 255
-    mk.r = 255
-    mk.g = 10
-    mk.b = 10
+    mk.type = Marker.SPHERE
+    mk.action = Marker.ADD # same as modify
+    mk.pose.position.x = obj.center.x
+    mk.pose.position.y = obj.center.y
+    mk.pose.position.z = obj.center.z
+    mk.pose.orientation.w = 1.0
+    mk.scale.x = mk.scale.y = mk.scale.z = radius * 2.0
+    mk.color.a = 1.0
+    mk.color.r = 1.0
+    mk.color.g = 0.04
+    mk.color.b = 0.04
 
     vis_pub.publish(mk)
 

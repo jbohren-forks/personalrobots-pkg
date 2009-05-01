@@ -49,7 +49,7 @@
 #include "joy/Joy.h"
 #include "Eigen/LU"
 #include "Eigen/Core"
-#include <visualization_msgs/VisualizationMarker.h>
+#include <visualization_msgs/Marker.h>
 
 
 namespace controller {

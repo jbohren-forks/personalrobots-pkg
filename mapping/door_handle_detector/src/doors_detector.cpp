@@ -104,7 +104,7 @@ DoorDetector::DoorDetector (ros::Node* anode)
   node_->param ("~input_cloud_topic", input_cloud_topic_, string ("/snapshot_cloud"));
   node_->advertiseService ("doors_detector", &DoorDetector::detectDoorSrv, this);
   node_->advertiseService ("doors_detector_cloud", &DoorDetector::detectDoorCloudSrv, this);
-  node_->advertise<visualization_msgs::VisualizationMarker> ("visualizationMarker", 100);
+  node_->advertise<visualization_msgs::Marker> ("visualization_marker", 100);
   node_->advertise<PolygonalMap> ("~door_frames", 1);
   node_->advertise<PointCloud> ("~door_regions", 1);
 
@@ -469,7 +469,7 @@ bool
 
     // transform door message
     if (!transformTo(tf_, fixed_frame_, result[nr_d], result[nr_d], fixed_frame_)){
-      ROS_ERROR ("DoorsDetector: could not tranform door from '%s' to '%s' at time %f", 
+      ROS_ERROR ("DoorsDetector: could not tranform door from '%s' to '%s' at time %f",
 		 result[nr_d].header.frame_id.c_str(), fixed_frame_.c_str(), result[nr_d].header.stamp.toSec());
       return false;
     }

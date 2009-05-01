@@ -35,14 +35,14 @@ import roslib
 roslib.load_manifest('visual_odometry')
 
 from robot_msgs.msg import Point
-from visualization_msgs.msg import VisualizationMarker
+from visualization_msgs.msg import Marker
 import rospy
 from visualodometer import Pose
 
 import numpy
 from math import pi
 
-vm_pub = rospy.Publisher("/visualizationMarker", VisualizationMarker)
+vm_pub = rospy.Publisher("/visualization_marker", Marker)
 
 tableh = 2.5
 
@@ -51,83 +51,73 @@ class Marker:
     self.id = uniqid
 
   def floor(self):
-    marker = VisualizationMarker()
-    marker.header.frame_id = "base"
+    marker = Marker()
+    marker.header.frame_id = "base_link"
+    marker.ns = "visual_odometry"
     marker.id = self.id + 99999
     marker.type = 1
     marker.action = 0
-    marker.x = 0
-    marker.y = 0
-    marker.z = -(5 + tableh + .1)
-    marker.yaw = 0
-    marker.pitch = 0
-    marker.roll = 0
-    marker.xScale = 10
-    marker.yScale = 10 
-    marker.zScale = 10
-    marker.alpha = 255
-    marker.r = 0.3 * 255
-    marker.g = 0.4 * 255
-    marker.b = 0.7 * 255
+    marker.pose.position.z = -(5 + tableh + .1)
+    marker.pose.orientation.w = 1.0
+    marker.scale.x = 10
+    marker.scale.y = 10
+    marker.scale.z = 10
+    marker.color.a = 1.0
+    marker.color.r = 0.3
+    marker.color.g = 0.4
+    marker.color.b = 0.7
     marker.points = []
     vm_pub.publish(marker)
 
   def update(self, offset, x, y, z, r, color):
-    marker = VisualizationMarker()
-    marker.header.frame_id = "base"
+    marker = Marker()
+    marker.header.frame_id = "base_link"
+    marker.ns = "visual_odometry"
     marker.id = self.id + offset
     marker.type = 2
     marker.action = 0
-    marker.x = x
-    marker.y = y
-    marker.z = z
-    marker.yaw = 0
-    marker.pitch = 0
-    marker.roll = 0
-    marker.xScale = r
-    marker.yScale = r
-    marker.zScale = r
-    marker.alpha = 255
-    marker.r = color[0]
-    marker.g = color[1]
-    marker.b = color[2]
+    marker.pose.position.x = x
+    marker.pose.position.y = y
+    marker.pose.position.z = z
+    marker.pose.orientation.w = 1.0
+    marker.scale.x = marker.scale.y = marker.scale.z = r
+    marker.color.a = 1.0
+    marker.color.r = color[0]
+    marker.color.g = color[1]
+    marker.color.b = color[2]
     marker.points = []
     vm_pub.publish(marker)
-    marker.zScale = 0
-    marker.z = -tableh
+    marker.scale.z = 0
+    marker.pose.position.z = -tableh
     marker.id += 200
-    marker.r = 0
-    marker.g = 0
-    marker.b = 0
+    marker.color.r = 0.0
+    marker.color.g = 0.0
+    marker.color.b = 0.0
     vm_pub.publish(marker)
 
   def linestrip(self, offset, points, color):
-    marker = VisualizationMarker()
-    marker.header.frame_id = "base"
+    marker = Marker()
+    marker.header.frame_id = "base_link"
+    marker.ns = "visual_odometry"
     marker.id = self.id + offset
     marker.type = 4
     marker.action = 0
-    marker.x = 0
-    marker.y = 0
-    marker.z = 0
-    marker.yaw = 0
-    marker.pitch = 0
-    marker.roll = 0
-    marker.xScale = .1
-    marker.yScale = 1
-    marker.zScale = 1
-    marker.alpha = 255
-    marker.r = color[0]
-    marker.g = color[1]
-    marker.b = color[2]
+    marker.pose.orientation.w = 1.0
+    marker.scale.x = 0.1
+    marker.scale.y = 1
+    marker.scale.z = 1
+    marker.color.a = 1.0
+    marker.color.r = color[0]
+    marker.color.g = color[1]
+    marker.color.b = color[2]
     marker.points = points
     vm_pub.publish(marker)
 
     marker.points = [Point(p.x, p.y, -tableh) for p in points]
     marker.id += 200
-    marker.r = 0
-    marker.g = 0
-    marker.b = 0
+    marker.color.r = 0
+    marker.color.g = 0
+    marker.color.b = 0
     vm_pub.publish(marker)
 
   def frompose(self, ipose, cam, color):

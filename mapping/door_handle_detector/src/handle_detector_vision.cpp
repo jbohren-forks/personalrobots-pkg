@@ -57,7 +57,7 @@
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PointStamped.h"
 #include "robot_msgs/Door.h"
-#include "visualization_msgs/VisualizationMarker.h"
+#include "visualization_msgs/Marker.h"
 #include "door_handle_detector/DoorsDetector.h"
 #include "std_srvs/Empty.h"
 
@@ -189,7 +189,7 @@ public:
         // invalid location until we get a detection
 
 //        advertise<robot_msgs::PointStamped>("handle_detector/handle_location", 1);
-        advertise<visualization_msgs::VisualizationMarker>("visualizationMarker", 1);
+        advertise<visualization_msgs::Marker>("visualization_marker", 1);
         advertiseService("door_handle_vision_detector", &HandleDetector::detectHandleSrv, this);
         advertiseService("door_handle_vision_preempt", &HandleDetector::preempt, this);
     }
@@ -208,7 +208,7 @@ public:
         if(storage){
             cvReleaseMemStorage(&storage);
         }
-        unadvertise("visualizationMarker");
+        unadvertise("visualization_marker");
         unadvertiseService("door_handle_vision_detector");
         unadvertiseService("door_handle_vision_preempt");
     }
@@ -384,26 +384,21 @@ private:
      */
     void showHandleMarker(robot_msgs::PointStamped p)
     {
-        visualization_msgs::VisualizationMarker marker;
+        visualization_msgs::Marker marker;
         marker.header.frame_id = p.header.frame_id;
-        marker.header.stamp = ros::Time((uint64_t)(0ULL));
+        marker.header.stamp = ros::Time();
+        marker.ns = "handle_detector_vision";
         marker.id = 0;
-        marker.type = visualization_msgs::VisualizationMarker::SPHERE;
-        marker.action = visualization_msgs::VisualizationMarker::ADD;
-        marker.x = p.point.x;
-        marker.y = p.point.y;
-        marker.z = p.point.z;
-        marker.yaw = 0.0;
-        marker.pitch = 0.0;
-        marker.roll = 0.0;
-        marker.xScale = 0.1;
-        marker.yScale = 0.1;
-        marker.zScale = 0.1;
-        marker.alpha = 255;
-        marker.r = 0;
-        marker.g = 255;
-        marker.b = 0;
-        publish("visualizationMarker", marker);
+        marker.type = visualization_msgs::Marker::SPHERE;
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.pose.position.x = p.point.x;
+        marker.pose.position.y = p.point.y;
+        marker.pose.position.z = p.point.z;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = marker.scale.y = marker.scale.z = 0.1;
+        marker.color.g = 1.0;
+        marker.color.a = 1.0;
+        publish("visualization_marker", marker);
     }
 
 
@@ -441,7 +436,7 @@ private:
 //        marker.r = 255;
 //        marker.g = 0;
 //        marker.b = 0;
-//        publish("visualizationMarker", marker);
+//        publish("visualization_marker", marker);
 //
 //        printf("Show marker at: (%f,%f,%f)", marker.x, marker.y, marker.z);
 //    }

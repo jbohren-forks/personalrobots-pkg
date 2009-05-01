@@ -194,7 +194,7 @@ bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   //services
   node_->advertiseService(service_prefix_ + "/get_command_array", &HeadPanTiltControllerNode::getJointCmd, this);
   guard_get_command_array_.set(service_prefix_ + "/get_command_array");
-  node_->advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+  node_->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
   return true;
 
 }
@@ -340,44 +340,36 @@ void HeadPanTiltControllerNode::frameTrackPoint()
 
   c_->setJointCmd(pos,names);
 
-  visualization_msgs::VisualizationMarker marker;
+  visualization_msgs::Marker marker;
   marker.header.frame_id = "stereo";
+  marker.ns = "head_pan_tilt_controller";
   marker.id = 0;
   marker.type = 0;
   marker.action = 0;
-  marker.x = 0;
-  marker.y = 0;
-  marker.z = 0;
-  marker.yaw = 0;
-  marker.pitch = 0;
-  marker.roll = 0.0;
-  marker.xScale = 2;
-  marker.yScale = 0.05;
-  marker.zScale = 0.05;
-  marker.alpha = 255;
-  marker.r = 0;
-  marker.g = 255;
-  marker.b = 0;
-  node_->publish("visualizationMarker", marker );
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 2;
+  marker.scale.y = 0.05;
+  marker.scale.z = 0.05;
+  marker.color.g = 1.0;
+  marker.color.a = 1.0;
+  node_->publish("visualization_marker", marker );
 
   marker.header.frame_id = "head_pan_link";
+  marker.ns = "head_pan_tilt_controller";
   marker.id = 1;
   marker.type = 2;
   marker.action = 0;
-  marker.x = pan_point.x();
-  marker.y = pan_point.y();
-  marker.z = pan_point.z();
-  marker.yaw = 0;
-  marker.pitch = 0;
-  marker.roll = 0.0;
-  marker.xScale = 0.1;
-  marker.yScale = 0.1;
-  marker.zScale = 0.1;
-  marker.alpha = 255;
-  marker.r = 255;
-  marker.g = 0;
-  marker.b = 0;
-  node_->publish("visualizationMarker", marker );
+  marker.pose.position.x = pan_point.x();
+  marker.pose.position.y = pan_point.y();
+  marker.pose.position.z = pan_point.z();
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.1;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.a = 1.0;
+  node_->publish("visualization_marker", marker );
 
 
 }

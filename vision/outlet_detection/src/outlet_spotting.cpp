@@ -56,7 +56,7 @@
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PoseStamped.h"
-#include "visualization_msgs/VisualizationMarker.h"
+#include "visualization_msgs/Marker.h"
 
 
 #include <point_cloud_mapping/geometry/angles.h>
@@ -187,7 +187,7 @@ public:
 			cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 		}
 
-        advertise<visualization_msgs::VisualizationMarker>("visualizationMarker", 1);
+        advertise<visualization_msgs::Marker>("visualization_marker", 1);
         advertiseService("~coarse_outlet_detect", &OutletSpotting::outletSpottingService, this);
 	}
 
@@ -200,7 +200,7 @@ public:
 		if (disp)
 			cvReleaseImage(&disp);
 
-		unadvertise("visualizationMarker");
+		unadvertise("visualization_marker");
 		unadvertiseService("~coarse_outlet_detect");
 	}
 
@@ -575,28 +575,22 @@ private:
      */
     void showMarkers(robot_msgs::PoseStamped pose)
     {
-        visualization_msgs::VisualizationMarker marker;
+        visualization_msgs::Marker marker;
         marker.header.frame_id = pose.header.frame_id;
         marker.header.stamp = ros::Time((uint64_t)(0ULL));
+        marker.ns = "outlet_spotting";
         marker.id = 101;
-        marker.type = visualization_msgs::VisualizationMarker::SPHERE;
-        marker.action = visualization_msgs::VisualizationMarker::ADD;
+        marker.type = visualization_msgs::Marker::SPHERE;
+        marker.action = visualization_msgs::Marker::ADD;
 
-        marker.x = pose.pose.position.x;
-        marker.y = pose.pose.position.y;
-        marker.z = pose.pose.position.z;
-        marker.yaw = 0.0;
-        marker.pitch = 0.0;
-        marker.roll = 0.0;
-        marker.xScale = 0.1;
-        marker.yScale = 0.1;
-        marker.zScale = 0.1;
-        marker.alpha = 255;
-        marker.r = 0;
-        marker.g = 255;
-        marker.b = 0;
+        marker.pose = pose.pose;
+        marker.scale.x = 0.1;
+        marker.scale.y = 0.1;
+        marker.scale.z = 0.1;
+        marker.color.a = 1.0;
+        marker.color.g = 1.0;
 
-        publish("visualizationMarker", marker);
+        publish("visualization_marker", marker);
 
 
         tf::Pose tf_pose;
@@ -609,24 +603,25 @@ private:
         marker.header.frame_id = pose.header.frame_id;
         marker.header.stamp = ros::Time((uint64_t)(0ULL));
         marker.id = 102;
-        marker.type = visualization_msgs::VisualizationMarker::SPHERE;
-        marker.action = visualization_msgs::VisualizationMarker::ADD;
+        marker.type = visualization_msgs::Marker::SPHERE;
+        marker.action = visualization_msgs::Marker::ADD;
 
-        marker.x = normal.x();
-        marker.y = normal.y();
-        marker.z = normal.z();
-        marker.yaw = 0.0;
-        marker.pitch = 0.0;
-        marker.roll = 0.0;
-        marker.xScale = 0.1;
-        marker.yScale = 0.1;
-        marker.zScale = 0.1;
-        marker.alpha = 255;
-        marker.r = 0;
-        marker.g = 255;
-        marker.b = 0;
+        marker.pose.position.x = normal.x();
+        marker.pose.position.y = normal.y();
+        marker.pose.position.z = normal.z();
+        marker.pose.orientation.x = 0.0;
+        marker.pose.orientation.y = 0.0;
+        marker.pose.orientation.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = 0.1;
+        marker.scale.y = 0.1;
+        marker.scale.z = 0.1;
+        marker.color.a = 1.0;
+        marker.color.r = 0.0;
+        marker.color.g = 1.0;
+        marker.color.b = 0.0;
 
-        publish("visualizationMarker", marker);
+        publish("visualization_marker", marker);
     }
 
 
@@ -783,25 +778,17 @@ private:
 
     void showLineMarker(const vector<Point32>& line_segment)
     {
-    	visualization_msgs::VisualizationMarker marker;
+    	visualization_msgs::Marker marker;
     	marker.header.frame_id = base_cloud_.header.frame_id;
     	marker.header.stamp = ros::Time((uint64_t)0ULL);
+    	marker.ns = "outlet_spotting";
     	marker.id = 102;
-    	marker.type = visualization_msgs::VisualizationMarker::LINE_STRIP;
-    	marker.action = visualization_msgs::VisualizationMarker::ADD;
-    	marker.x = 0.0;
-    	marker.y = 0.0;
-    	marker.z = 0.0;
-    	marker.yaw = 0.0;
-    	marker.pitch = 0.0;
-    	marker.roll = 0.0;
-    	marker.xScale = 0.01;
-    	marker.yScale = 0.1;
-    	marker.zScale = 0.1;
-    	marker.alpha = 255;
-    	marker.r = 0;
-    	marker.g = 255;
-    	marker.b = 0;
+    	marker.type = visualization_msgs::Marker::LINE_STRIP;
+    	marker.action = visualization_msgs::Marker::ADD;
+    	marker.pose.orientation.w = 1.0;
+    	marker.scale.x = 0.01;
+    	marker.color.a = 1.0;
+    	marker.color.g = 1.0;
     	marker.set_points_size(2);
 
     	marker.points[0].x = line_segment[0].x;
@@ -812,7 +799,7 @@ private:
     	marker.points[1].y = line_segment[1].y;
     	marker.points[1].z = line_segment[1].z;
 
-    	publish( "visualizationMarker", marker );
+    	publish( "visualization_marker", marker );
 
     }
 

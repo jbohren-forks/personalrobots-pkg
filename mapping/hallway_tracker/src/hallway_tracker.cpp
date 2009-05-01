@@ -53,7 +53,7 @@
 
 #include <robot_msgs/Point32.h>
 //#include <robot_msgs/Hallway.h>
-#include <visualization_msgs/VisualizationMarker.h>
+#include <visualization_msgs/Marker.h>
 
 // Sample Consensus
 #include <point_cloud_mapping/sample_consensus/sac.h>
@@ -99,7 +99,7 @@ public:
 
   ros::Node *node_;
 
-  PointCloud cloud_;                 
+  PointCloud cloud_;
   laser_scan::LaserProjection projector_; // Used to project laser scans into point clouds
 
   tf::TransformListener *tf_;
@@ -120,12 +120,12 @@ public:
   HallwayTracker():message_notifier_(NULL)
   {
     node_ = ros::Node::instance();
-    tf_ = new tf::TransformListener(*node_);          
-           
-    // Get params from the param server. 
-    node_->param("~p_base_laser_topic", base_laser_topic_, string("base_scan")); 
-    node_->param("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);  
-    node_->param("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm 
+    tf_ = new tf::TransformListener(*node_);
+
+    // Get params from the param server.
+    node_->param("~p_base_laser_topic", base_laser_topic_, string("base_scan"));
+    node_->param("~p_sac_min_points_per_model", sac_min_points_per_model_, 50);
+    node_->param("~p_sac_distance_threshold", sac_distance_threshold_, 0.03);     // 3 cm
     //node_->param("~p_eps_angle", eps_angle_, 10.0);                              // 10 degrees
     node_->param("~p_fixed_frame", fixed_frame_, string("odom_combined"));
     node_->param("~p_min_hallway_width_m", min_hallway_width_m_, 1.0);
@@ -145,9 +145,9 @@ public:
     filter_chain_.configure(1, config);
 
 
-    // Visualization: 
+    // Visualization:
     // The visualization markers are the two lines. The start/end points are arbitrary.
-    node_->advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+    node_->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     // A point cloud of model inliers.
     node_->advertise<robot_msgs::PointCloud>("parallel_lines_inliers",10);
 
@@ -161,7 +161,7 @@ public:
 
   ~HallwayTracker()
   {
-    node_->unadvertise("visualizationMarker");
+    node_->unadvertise("visualization_marker");
     node_->unadvertise("parallel_lines_inliers");
     delete message_notifier_;
   }
@@ -199,7 +199,7 @@ public:
 
     int cloud_size = cloud_.pts.size();
     vector<int> possible_hallway_points;
-    possible_hallway_points.resize(cloud_size);  
+    possible_hallway_points.resize(cloud_size);
 
     // Keep only points that are within max_point_dist_m_ of the robot.
     int iind = 0;
@@ -260,7 +260,7 @@ public:
     }
     else {
       // No parallel lines were found.
-    }  
+    }
 
   }
 
@@ -270,25 +270,19 @@ public:
    */
   void visualization(std::vector<double> coeffs, std::vector<int> inliers) {
      // First line:
-    visualization_msgs::VisualizationMarker marker;
+    visualization_msgs::Marker marker;
     marker.header.frame_id = fixed_frame_;
     marker.header.stamp = cloud_.header.stamp;
+    marker.ns = "hallway_tracker";
     marker.id = 0;
-    marker.type = visualization_msgs::VisualizationMarker::LINE_STRIP;
-    marker.action = visualization_msgs::VisualizationMarker::ADD;
-    marker.x = 0.0;
-    marker.y = 0.0;
-    marker.z = 0.0;
-    marker.yaw = 0.0;
-    marker.pitch = 0.0;
-    marker.roll = 0.0;
-    marker.xScale = 0.05;//0.01;
-    marker.yScale = 0.05;//0.1;
-    marker.zScale = 0.05;//0.1;
-    marker.alpha = 255;
-    marker.r = 0;
-    marker.g = 255;
-    marker.b = 0;
+    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 0.05;//0.01;
+    marker.scale.y = 0.05;//0.1;
+    marker.scale.z = 0.05;//0.1;
+    marker.color.a = 1.0;
+    marker.color.g = 1.0;
     marker.set_points_size(2);
 
     robot_msgs::Point32 d;
@@ -308,7 +302,7 @@ public:
     marker.points[1].y = coeffs[1] + 6*d.y;
     marker.points[1].z = coeffs[2] + 6*d.z;
 
-    node_->publish( "visualizationMarker", marker );
+    node_->publish( "visualization_marker", marker );
 
     // Second line:
     marker.id = 1;
@@ -321,10 +315,10 @@ public:
     marker.points[1].y = coeffs[7] + 6*d.y;
     marker.points[1].z = coeffs[8] + 6*d.z;
 
-    node_->publish( "visualizationMarker", marker );
+    node_->publish( "visualization_marker", marker );
 
     // Inlier cloud
-    robot_msgs::PointCloud  inlier_cloud; 
+    robot_msgs::PointCloud  inlier_cloud;
     inlier_cloud.header.frame_id = fixed_frame_;
     inlier_cloud.header.stamp = cloud_.header.stamp;
     inlier_cloud.pts.resize(inliers.size());
@@ -332,7 +326,7 @@ public:
       inlier_cloud.pts[i]  = cloud_.pts[inliers[i]];
     }
     node_->publish("parallel_lines_inliers", inlier_cloud);
-  }   
+  }
 
 };
 

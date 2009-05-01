@@ -361,7 +361,7 @@ bool EndeffectorConstraintControllerNode::initXml(mechanism::RobotState *robot, 
   node_->subscribe(topic_ + "/command", wrench_msg_,
                   &EndeffectorConstraintControllerNode::command, this, 1);
   guard_command_.set(topic_ + "/command");
-  node_->advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+  node_->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
 
   return true;
@@ -379,45 +379,43 @@ void EndeffectorConstraintControllerNode::update()
 
     // Debugging code.  Not currently realtime safe
 
-    visualization_msgs::VisualizationMarker marker;
-    marker.header.frame_id = "torso_lift_link";
-    marker.id = 0;
-    marker.type = visualization_msgs::VisualizationMarker::CUBE;
-    marker.action = 0;
-    marker.x = 0.6;
-    marker.y = 0;
-    marker.z = 0;
-    marker.yaw = 0;
-    marker.pitch = 0;
-    marker.roll = 0.0;
-    marker.xScale = 0.01;
-    marker.yScale = 10;
-    marker.zScale = 10;
-    marker.alpha = 200;
-    marker.r = 0;
-    marker.g = 255;
-    marker.b = 0;
-    node_->publish("visualizationMarker", marker );
+    {
+      visualization_msgs::Marker marker;
+      marker.header.frame_id = "torso_lift_link";
+      marker.ns = "endeffector_constraint_controller";
+      marker.id = 0;
+      marker.type = visualization_msgs::Marker::CUBE;
+      marker.action = 0;
+      marker.pose.position.x = 0.6;
+      marker.pose.position.y = 0;
+      marker.pose.position.z = 0;
+      marker.pose.orientation.w = 1.0;
+      marker.scale.x = 0.01;
+      marker.scale.y = 10;
+      marker.scale.z = 10;
+      marker.color.g = 1.0;
+      marker.color.a = 0.7;
+      node_->publish("visualization_marker", marker );
+    }
 
-    visualization_msgs::VisualizationMarker marker;
-    marker.header.frame_id = "torso_lift_link";
-    marker.id = 1;
-    marker.type = visualization_msgs::VisualizationMarker::SPHERE;
-    marker.action = 0;
-    marker.x = 0.6;
-    marker.y = 0;
-    marker.z = 1;
-    marker.yaw = 0;
-    marker.pitch = 0;
-    marker.roll = 0.0;
-    marker.xScale = 0.01;
-    marker.yScale = 0.4;
-    marker.zScale = 0.4;
-    marker.alpha = 200;
-    marker.r = 255;
-    marker.g = 0;
-    marker.b = 0;
-    node_->publish("visualizationMarker", marker );
+    {
+      visualization_msgs::Marker marker;
+      marker.header.frame_id = "torso_lift_link";
+      marker.ns = "endeffector_constraint_controller";
+      marker.id = 1;
+      marker.type = visualization_msgs::Marker::SPHERE;
+      marker.action = 0;
+      marker.pose.position.x = 0.6;
+      marker.pose.position.y = 0;
+      marker.pose.position.z = 1;
+      marker.pose.orientation.w = 1.0;
+      marker.scale.x = 0.01;
+      marker.scale.y = 0.4;
+      marker.scale.z = 0.4;
+      marker.color.r = 1.0;
+      marker.color.a = 0.7;
+      node_->publish("visualization_marker", marker );
+    }
 #endif
   }
 

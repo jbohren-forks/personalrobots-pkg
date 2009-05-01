@@ -46,7 +46,7 @@ dimension, orientation) useful for collision detection.
 #include <robot_msgs/Point.h>
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/PoseStamped.h>
-#include <visualization_msgs/VisualizationMarker.h>
+#include <visualization_msgs/Marker.h>
 
 #include <Eigen/Core>
 #include <point_cloud_mapping/geometry/point.h>
@@ -188,7 +188,7 @@ class CollisionMapperBuffer
       subtract_object_ = false;
 
       m_id_ = 0;
-      node_.advertise<visualization_msgs::VisualizationMarker>("visualizationMarker", 100);
+      node_.advertise<visualization_msgs::Marker>("visualization_marker", 100);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -375,27 +375,28 @@ class CollisionMapperBuffer
     void
       sendMarker (Point32 pt, const std::string &frame_id, double radius = 0.02)
     {
-      VisualizationMarker mk;
+      Marker mk;
       mk.header.stamp = ros::Time::now();
 
       mk.header.frame_id = frame_id;
 
+      mk.ns = "collision_map_buffer";
       mk.id = ++m_id_;
-      mk.type = VisualizationMarker::SPHERE;
-      mk.action = VisualizationMarker::ADD;
-      mk.x = pt.x;
-      mk.y = pt.y;
-      mk.z = pt.z;
+      mk.type = Marker::SPHERE;
+      mk.action = Marker::ADD;
+      mk.pose.position.x = pt.x;
+      mk.pose.position.y = pt.y;
+      mk.pose.position.z = pt.z;
 
-      mk.roll = mk.pitch = mk.yaw = 0;
-      mk.xScale = mk.yScale = mk.zScale = radius * 2.0;
+      mk.pose.orientation.w = 1.0;
+      mk.scale.x = mk.scale.y = mk.scale.z = radius * 2.0;
 
-      mk.alpha = 255;
-      mk.r = 255;
-      mk.g = 10;
-      mk.b = 10;
+      mk.color.a = 1.0;
+      mk.color.r = 1.0;
+      mk.color.g = 0.04;
+      mk.color.b = 0.04;
 
-      node_.publish ("visualizationMarker", mk);
+      node_.publish ("visualization_marker", mk);
     }
 
 

@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -86,7 +86,7 @@ Provides (name/type):
 #include "kinematic_planning/CollisionSpaceMonitor.h"
 
 #include <std_msgs/Byte.h>
-#include <visualization_msgs/VisualizationMarker.h>
+#include <visualization_msgs/Marker.h>
 
 #include <iostream>
 #include <sstream>
@@ -97,32 +97,32 @@ using namespace kinematic_planning;
 class StateValidityMonitor : public CollisionSpaceMonitor
 {
 public:
-    
+
     StateValidityMonitor(ros::Node *node) : CollisionSpaceMonitor(node),
 					    last_(-1)
     {
-	m_node->advertise<std_msgs::Byte>("state_validity", 1);	
+	m_node->advertise<std_msgs::Byte>("state_validity", 1);
     }
-    
+
     virtual ~StateValidityMonitor(void)
     {
     }
-    
+
     void run(void)
     {
 	loadRobotDescription();
 	waitForState();
 	m_node->spin();
     }
-    
+
 protected:
-    
+
     void afterWorldUpdate(void)
     {
 	CollisionSpaceMonitor::afterWorldUpdate();
 	last_ = -1;
     }
-    
+
     void stateUpdate(void)
     {
 	CollisionSpaceMonitor::stateUpdate();
@@ -139,28 +139,28 @@ protected:
 	    if (last_ != msg.data)
 	    {
 		last_ = msg.data;
-		m_node->publish("state_validity", msg);		
+		m_node->publish("state_validity", msg);
 		if (invalid)
 		    ROS_WARN("State is in collision");
 		else
 		    ROS_INFO("State is valid");
-	    }	    
+	    }
 	}
     }
-    
+
 private:
-    
+
     int        last_;
-    
+
 };
 
 int main(int argc, char **argv)
-{ 
+{
     ros::init(argc, argv);
-    
+
     ros::Node node("state_validity_monitor");
     StateValidityMonitor validator(&node);
-    validator.run();	
+    validator.run();
 
-    return 0;    
+    return 0;
 }

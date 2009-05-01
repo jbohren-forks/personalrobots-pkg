@@ -47,7 +47,7 @@
 
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/Door.h>
-#include <visualization_msgs/VisualizationMarker.h>
+#include <visualization_msgs/Marker.h>
 
 #include <tf/transform_listener.h>
 #include <tf/message_notifier.h>
@@ -100,12 +100,12 @@ class DoorDatabase
       tf_ = new tf::TransformListener(*node_);
 
       node_->param<std::string>("~p_door_msg_topic_", door_msg_topic_,"/door_tracker_node/door_message");
-      node_->param<std::string>("~door_database_frame", door_database_frame_,"map"); 
-      node_->param<int>("~p_min_angles_per_door",min_angles_per_door_, 4); 
+      node_->param<std::string>("~door_database_frame", door_database_frame_,"map");
+      node_->param<int>("~p_min_angles_per_door",min_angles_per_door_, 4);
       node_->param<double>("~p_angle_difference_threshold",angle_difference_threshold_,M_PI/12.0);
       node_->param<double>("~p_door_point_distance_threshold",door_point_distance_threshold_,0.25);
 
-      node_->advertise<visualization_msgs::VisualizationMarker>( "visualizationMarker", 0 );
+      node_->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
       double tmp; int tmp2;
 
@@ -124,7 +124,7 @@ class DoorDatabase
 
     ~DoorDatabase()
     {
-      node_->unadvertise("visualizationMarker");
+      node_->unadvertise("visualization_marker");
       delete message_notifier_;
     }
 
@@ -157,7 +157,7 @@ class DoorDatabase
         lhs(i,2) = -x1*db.coeff[i].data[0]*cos(db.angles[i]) + y1*db.coeff[i].data[0]*sin(db.angles[i])-y1*db.coeff[i].data[1]*cos(db.angles[i])-x1*db.coeff[i].data[1]*sin(db.angles[i]);
         ROS_INFO(" Matrix elements are: %f %f %f %f",lhs(i,0),lhs(i,1),lhs(i,2),db.angles[i]);
       }
-      
+
       VectorXf rhs;
       rhs = VectorXf::Zero((int) db.angles.size());
       for(int i=0; i< (int) db.angles.size(); i++)
@@ -194,7 +194,7 @@ class DoorDatabase
     void updateDatabase(const robot_msgs::Door &door)
     {
       // (a) check if it's already in the database
-      // (b) Add it in if it's not 
+      // (b) Add it in if it's not
       if(!inDatabase(database_,door))
         addToDatabase(database_,door);
     }
@@ -215,7 +215,7 @@ class DoorDatabase
       database[index].angles[0] = door_angle;
       database[index].set_coeff_size(1);
       database[index].coeff[0];
-      database[index].coeff[0] = generateLinearCoeff(door.door_p1,door.door_p2); 
+      database[index].coeff[0] = generateLinearCoeff(door.door_p1,door.door_p2);
       ROS_INFO("Adding new door to database: p1: %f, %f, %f, p2: %f, %f, %f",door.door_p1.x,door.door_p1.y,door.door_p1.z,door.door_p2.x,door.door_p2.y,door.door_p2.z);
       ROS_INFO("There are %d candidate doors in the database now.",index+1);
     }
@@ -299,29 +299,26 @@ class DoorDatabase
     }
 
     void publishPoint(const Point32 &point, const int &id, const std::string &frame_id)
-    {   
-      visualization_msgs::VisualizationMarker marker;
+    {
+      visualization_msgs::Marker marker;
       marker.header.frame_id = frame_id;
       marker.header.stamp = ros::Time();
+      marker.ns = "door_database";
       marker.id = id;
-      marker.type = visualization_msgs::VisualizationMarker::SPHERE;
-      marker.action = visualization_msgs::VisualizationMarker::ADD;
-      marker.x = point.x;
-      marker.y = point.y;
-      marker.z = point.z;
-      marker.yaw = 0.0;
-      marker.pitch = 0.0;
-      marker.roll = 0.0;
-      marker.xScale = 0.1;
-      marker.yScale = 0.1;
-      marker.zScale = 0.1;
-      marker.alpha = 255;
-      marker.r = 0;
-      marker.g = 255;
-      marker.b = 0;
+      marker.type = visualization_msgs::Marker::SPHERE;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker.pose.position.x = point.x;
+      marker.pose.position.y = point.y;
+      marker.pose.position.z = point.z;
+      marker.pose.orientation.w = 1.0;
+      marker.scale.x = 0.1;
+      marker.scale.y = 0.1;
+      marker.scale.z = 0.1;
+      marker.color.a = 1.0;
+      marker.color.g = 1.0;
 //      ROS_DEBUG("Publishing line between: p1: %f %f %f, p2: %f %f %f",marker.points[0].x,marker.points[0].y,marker.points[0].z,marker.points[1].x,marker.points[1].y,marker.points[1].z);
 
-      node_->publish( "visualizationMarker", marker );
+      node_->publish( "visualization_marker", marker );
     }
 
     void publishDoors()
@@ -354,7 +351,7 @@ class DoorDatabase
       {
         hinge_index_p1 = 1;
         hinge_index_p2 = 0;
-        return true; 
+        return true;
       }
       else if(distance(door1.door_p2,door2.door_p2) < door_point_distance_threshold_)
       {
