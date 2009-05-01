@@ -71,7 +71,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const robot_msgs::Door&
  
   // open the gripper during 4 seconds
   std_msgs::Float64 gripper_msg;
-  gripper_msg.data = 2.0;
+  gripper_msg.data = 20.0;
   for (unsigned int i=0; i<100; i++){
     Duration().fromSec(4.0/100.0).sleep();
     node_.publish("r_gripper_effort_controller/command", gripper_msg);
