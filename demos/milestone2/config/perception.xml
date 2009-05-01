@@ -1,34 +1,84 @@
 <launch>
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
-<!-- Stereo image processing -->
-   <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" />
+  <!-- Prosilica camera setup -->
+  <group ns="prosilica">
+    <include file="$(find prosilica_cam)/cam_settings.xml"/>
+    <param name="acquisition_mode" type="str" value="Triggered"/>
+  </group>
+  <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="false"/>
 
-<!-- Filter for tilt laser shadowing/veiling -->
-<node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="tilt_shadow_filter">
-  <param name="scan_topic" value="tilt_scan" />
-  <param name="cloud_topic" value="tilt_scan_filtered" />
-</node>
+  <!-- Stereo image processing -->
+  <group ns="sterro" clear_params="true">
+    <param name="videre_mode" type="str" value="none"/>
+    <param name="do_colorize" type="bool" value="True"/>
+    <param name="do_rectify" type="bool" value="True"/>
+    <param name="do_stereo" type="bool" value="True"/>
+    <param name="do_calc_points" type="bool" value="True"/>
+    <param name="do_keep_coords" type="bool" value="True"/>
+  </group>
+  <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" />
 
-<!-- Filter for base laser shadowing/veiling -->
-<node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="base_shadow_filter_non_preserve" >
-  <param name="scan_topic" value="base_scan" />
-  <param name="cloud_topic" value="base_scan_marking" />
-  <param name="laser_max_range" value="30.0" />
-</node>
+  <!-- Filter for tilt laser shadowing/veiling -->
+  <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="tilt_shadow_filter">
+    <param name="scan_topic" value="tilt_scan" />
+    <param name="cloud_topic" value="tilt_scan_filtered" />
+  </node>
 
-<!-- Laser scan assembler for tilt laser -->
-<node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
-  <remap from="scan_in" to="tilt_scan"/>
-  <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
-  <param name="tf_cache_time_secs" type="double" value="10.0" />
-  <param name="max_scans" type="int" value="1000" />
-  <param name="ignore_laser_skew" type="bool" value="true" />
-  <param name="fixed_frame" type="string" value="odom_combined" />
-  <param name="downsample_factor" type="int" value="1" />
-</node>
+  <!-- Filter for base laser shadowing/veiling -->
+  <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="base_shadow_filter_non_preserve" >
+    <param name="scan_topic" value="base_scan" />
+    <param name="cloud_topic" value="base_scan_marking" />
+    <param name="laser_max_range" value="30.0" />
+  </node>
 
-<!-- Generate single sweep scan -->
-<node pkg="point_cloud_assembler" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
+  <!-- Laser scan assembler for tilt laser -->
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
+    <remap from="scan_in" to="tilt_scan"/>
+    <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
+    <param name="tf_cache_time_secs" type="double" value="10.0" />
+    <param name="max_scans" type="int" value="1000" />
+    <param name="ignore_laser_skew" type="bool" value="true" />
+    <param name="fixed_frame" type="string" value="odom_combined" />
+    <param name="downsample_factor" type="int" value="1" />
+  </node>
+
+  <!-- Point cloud assembler for tilt laser -->
+  <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" name="point_cloud_assembler" respawn="true">
+    <remap from="scan_in" to="tilt_laser_cloud_filtered" />
+    <param name="tf_cache_time_secs" type="double" value="10.0" />
+    <param name="tf_extrap_limit" type="double" value="0.01" />
+    <param name="max_scans" type="int" value="400" />
+    <param name="fixed_frame" type="string" value="odom_combined" />
+  </node>
+
+  <!-- point cloud snapshotter for tilt laser -->
+  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" name="snapshotter" respawn="true" >
+    <remap from="build_cloud" to="point_cloud_assembler/build_cloud" />
+    <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+    <remap from="full_cloud" to="full_cloud" />
+  </node>
+
+
+  <!-- Setup for detecting the plug on the base -->
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="plugs_laser_scan_assembler" respawn="true">
+    <remap from="scan_in" to="tilt_scan"/>
+    <param name="tf_cache_time_secs" type="double" value="10.0" />
+    <param name="max_scans" type="int" value="400" />
+    <param name="ignore_laser_skew" type="bool" value="true" />
+    <param name="fixed_frame" type="string" value="torso_lift_link" />
+    <param name="downsample_factor" type="int" value="2" />
+  </node>
+
+  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="plugs_snapshotter">
+    <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+    <remap from="build_cloud" to="plugs_laser_scan_assembler/build_cloud" />
+    <remap from="full_cloud" to="plug_snapshot_cloud" />
+  </node> 
+
+  <!-- Generate single sweep scan -->
+  <node pkg="point_cloud_assembler" type="point_cloud_srv" output="screen" name="point_cloud_srv" />
+
+
 
 </launch>
