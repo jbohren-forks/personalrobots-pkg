@@ -1,4 +1,4 @@
-all: propgrid
+all: installed
 
 VERSION 	= wxpropgrid-1.4.4
 TARBALL		= $(VERSION)-src.tar.gz
@@ -9,22 +9,25 @@ WXPROPGRID_ROOT = $(shell rospack find wxpropgrid)
 
 include $(shell rospack find mk)/download_unpack_build.mk
 
-propgrid: $(SOURCE_DIR)/unpacked
+installed: $(SOURCE_DIR)/unpacked
 	cd $(SOURCE_DIR) && \
 		export CFLAGS='-g -D__NOTWXPYTHON__ -g' && \
 		export CXXFLAGS='-g -D__NOTWXPYTHON__ -g' && \
 		./configure --prefix=$(WXPROPGRID_ROOT)/propgrid_install && \
 		make && \
 		make install
+	touch installed
 
 clean:
-	cd $(SOURCE_DIR) && \
+	-cd $(SOURCE_DIR) && \
 		make clean && \
 		rm -f Makefile
-	rm -rf propgrid_install
+	-rm -rf propgrid_install
+	-rm -f installed
 
 wipe: clean
-	rm -rf build
-	rm -rf $(TARBALL)
+	-rm -rf build
+	-rm -rf $(TARBALL)
+
 
 .PHONY: clean
