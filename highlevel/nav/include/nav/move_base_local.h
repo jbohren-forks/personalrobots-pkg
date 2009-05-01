@@ -97,9 +97,7 @@ namespace nav {
        * @brief  Resets the costmaps to the static map outside a given window
        */
       void resetCostmaps();
-      std::string action_name_;
       ros::Node& ros_node_;
-      std::string laser_controller_;
       tf::TransformListener& tf_; 
       pr2_srvs::SetPeriodicCmd::Request req_laser_;
       pr2_srvs::SetPeriodicCmd::Response res_laser_;
@@ -112,6 +110,9 @@ namespace nav {
       std::string robot_base_frame_;
 
       double controller_frequency_;
+
+      std::string action_name_;
+      std::string laser_controller_;
 
   };
 };
