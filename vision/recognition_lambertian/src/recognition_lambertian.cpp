@@ -158,17 +158,20 @@ public:
 
 		cm.distance = 1e10; // very big distance
 		IplImage* dist_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
-		IplImage* dir_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
+		IplImage* orientation_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
+		IplImage* annotated_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32S, 2);
 		ROS_INFO("Computing distance transform");
-		computeDistanceTransform(edge_img,dist_img, NULL, NULL);
-		computeImageDirections(edge_img, dir_img );
+		computeDistanceTransform(edge_img,dist_img, annotated_img);
+		computeImageDirections(edge_img, orientation_img );
+		fillNonContourOrientations(annotated_img, orientation_img);
 
 		ROS_INFO("Template matching");
-		matchTemplates(dist_img,cm);
+		matchTemplates(dist_img, orientation_img, cm);
 
 		ROS_INFO("Finishing");
 		cvReleaseImage(&dist_img);
-		cvReleaseImage(&dir_img);
+		cvReleaseImage(&orientation_img);
+		cvReleaseImage(&annotated_img);
 
 		return cm;
 	}
@@ -467,7 +470,7 @@ private:
      * Alternative version of computeDistanceTransform, will probably be used to compute distance
      * transform annotated with edge orientation.
      */
-    void computeDistanceTransform(IplImage* edges_img, IplImage* dist_img, IplImage* annotate_img, IplImage* orientations, float truncate = -1, float a = 1.0, float b = 0.5 )
+    void computeDistanceTransform(IplImage* edges_img, IplImage* dist_img, IplImage* annotate_img, float truncate = -1, float a = 1.0, float b = 0.5 )
     {
     	int d[][2] = { {-1,-1}, { 0,-1}, { 1,-1},
 					  {-1,0},          { 1,0},
@@ -485,6 +488,12 @@ private:
     			if (CV_PIXEL(unsigned char, edges_img, x,y)[0]!=0) {
     				q.push(make_pair(x,y));
         			CV_PIXEL(float, dist_img, x, y)[0] = 0;
+
+        			if (annotate_img!=NULL) {
+        				int *aptr = CV_PIXEL(int,annotate_img,x,y);
+        				aptr[0] = x;
+        				aptr[1] = y;
+        			}
     			}
     			else {
     				CV_PIXEL(float, dist_img, x, y)[0] = -1;
@@ -523,8 +532,9 @@ private:
 
     				if (annotate_img!=NULL) {
     					int *aptr = CV_PIXEL(int,annotate_img,nx,ny);
-    					aptr[0] = x;
-    					aptr[1] = y;
+    					int *optr = CV_PIXEL(int,annotate_img,x,y);
+    					aptr[0] = optr[0];
+    					aptr[1] = optr[1];
     				}
 
 
@@ -540,7 +550,7 @@ private:
     }
 
 
-    void computeImageDirections(IplImage* edge_img, IplImage* dir_img)
+    void computeImageDirections(IplImage* edge_img, IplImage* orientation_img)
     {
     	IplImage* img_color = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_8U, 3);
     	cvCvtColor(edge_img, img_color, CV_GRAY2RGB);
@@ -553,11 +563,68 @@ private:
 
     		drawContour(img_color, coords, orientations);
 
+
+    		// set orientation pixel in orientation image
+    		for (size_t i = 0; i<coords.size();++i) {
+    			int x = coords[i].first;
+    			int y = coords[i].second;
+    			CV_PIXEL(float, orientation_img, x, y)[0] = orientations[i];
+    		}
+
     		coords.clear();
     		orientations.clear();
     	}
 
     	cvReleaseImage(&img_color);
+    }
+
+
+    void fillNonContourOrientations(IplImage* annotated_img, IplImage* orientation_img)
+    {
+    	int width = annotated_img->width;
+    	int height = annotated_img->height;
+
+    	assert(orientation_img->width==width && orientation_img->height==height);
+
+
+    	cvNamedWindow("dense_orientation",1);
+
+    	IplImage* img_color = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
+
+
+    	for (int y=0;y<height;++y) {
+    		for (int x=0;x<width;++x) {
+    			int* ptr = CV_PIXEL(int, annotated_img, x,y);
+    			int xorig = ptr[0];
+    			int yorig = ptr[1];
+
+
+    			if (x!=xorig && y!=yorig) {
+    				float val = CV_PIXEL(float,orientation_img,xorig,yorig)[0];
+//    				printf("(%d, %d, %f)\n", xorig, yorig, val);
+    				CV_PIXEL(float,orientation_img,x,y)[0] = val;
+    			}
+    		}
+    	}
+
+
+    	for (int y=0;y<height;y+=5) {
+    		for (int x=0;x<width;x+=5) {
+
+    			CvPoint p1;
+    			p1.x = x;
+    			p1.y = y;
+    			CvPoint p2;
+    			float val = CV_PIXEL(float,orientation_img,x,y)[0];
+    			p2.x = x + 8*sin(val);
+    			p2.y = y + 8*cos(val);
+
+    			cvLine(img_color, p1,p2, CV_RGB(255,0,0));
+
+
+    		}
+    	}
+    	cvShowImage("dense_orientation", img_color);
     }
 
 
@@ -571,13 +638,14 @@ private:
     	ptr += (y*dist_img->width+x);
     	for (size_t i=0;i<templ_addr.size();++i) {
     		sum += *(ptr+templ_addr[i]);
+
     	}
     	return sum/templ_addr.size();
     }
 
 
 
-    void matchTemplate(IplImage* dist_img, const ChamferTemplate& tpl, ChamferMatch& cm)
+    void matchTemplate(IplImage* dist_img, IplImage* orientation_img, const ChamferTemplate& tpl, ChamferMatch& cm)
     {
     	int width = dist_img->width;
 
@@ -607,10 +675,10 @@ private:
     }
 
 
-    void matchTemplates(IplImage* dist_img, ChamferMatch& cm)
+    void matchTemplates(IplImage* dist_img, IplImage* orientation_img, ChamferMatch& cm)
     {
  	   for(size_t i = 0; i < templates.size(); i++) {
- 		   matchTemplate(dist_img, *templates[i],cm);
+ 		   matchTemplate(dist_img, orientation_img, *templates[i],cm);
  	   }
     }
 
