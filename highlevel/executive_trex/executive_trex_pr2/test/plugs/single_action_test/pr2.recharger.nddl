@@ -1,12 +1,12 @@
 /**
  * Execute a single external action
  */
-#include "plugs/recharger.nddl"
+#include "plugs/imports.nddl"
 #include "mechanism_control/exports.nddl"
 #include "test/plugs/actions.nddl"
 
 close();
 
-rejectable(plug_actions.DetectOutlet detect_outlet_action);
-//rejectable(plug_actions.PickupAndRelease pickup_release_action);
+//rejectable(plug_actions.DetectOutlet detect_outlet_action);
+rejectable(plug_actions.PickupAndRelease pickup_release_action);
 
