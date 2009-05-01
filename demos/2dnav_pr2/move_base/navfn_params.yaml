@@ -1,4 +1,5 @@
 navfn:
+  transform_tolerance: 0.2
   #Independent settings for the planner's costmap
   costmap: 
     global_frame: map
