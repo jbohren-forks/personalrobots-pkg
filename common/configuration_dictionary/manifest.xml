@@ -1,0 +1,14 @@
+<package>
+  <description brief='Configuration Dictionary Object'>
+
+    Dictionary representation for abstracting configuration information.
+
+  </description>
+  <author>Eric Berger</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp"/>
+  <export>
+    <cpp cflags="-I${prefix}/include"/>
+  </export>
+</package>
