@@ -160,7 +160,7 @@ DoorController::Holds {
 		cmd_open_door starts_before cmd_move_base_door;
 
 		// Force preemption of the open door action
-		contains_start(stop_action.Active cmd_stop_action);
+		any(stop_action.Active cmd_stop_action);
 		cmd_move_base_door before cmd_stop_action;
 		eq(cmd_stop_action.action_name,"open_door");
 	      }
@@ -280,13 +280,15 @@ DoorManipulationBehavior::Active{
 }
 
 DoorManipulationBehavior::Inactive{
-  // If successful, then the completion of the action starts a new step in the controller. This is true for all
-  // door actions except move_base_door.
-  if(status == SUCCESS){
-    if(object.update_controller == true){
+  if(object.update_controller == true){
+    if(start){
       starts(DoorController.Holds dc);
-      eq(dc.active, true);
-      eq_door_msg(dc.object, this.object);
+      // If successful, then the completion of the action starts a new step in the controller. This is true for all
+      // door actions except move_base_door.
+      if(status == SUCCESS){
+	eq(dc.active, true); 
+	eq_door_msg(dc.object, this.object);
+      }
     }
   }
 }
@@ -309,12 +311,13 @@ ReleaseHandle::Inactive{
 }
 
 MoveBaseDoor::Inactive{
-  starts(DoorController.Holds dc);
-
-  if(status == ABORTED){
-  }
-  else {
-    eq(dc.doorway_clear, true);
+  if(start){
+    starts(DoorController.Holds dc);
+    if(status == ABORTED){
+    }
+    else {
+      eq(dc.doorway_clear, true);
+    }
   }
 }
 
