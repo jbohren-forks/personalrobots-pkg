@@ -139,8 +139,8 @@ int
   // tuck arm
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
-  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-  if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  if (tuck_arm.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
   
   printf("Calling Outlet Detect Coarse action\n");
 
@@ -154,7 +154,7 @@ int
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   // move base
   if (move_base_local.execute(pose, pose, timeout_long) != robot_actions::SUCCESS) return -1;
-
+  printf("untuck arm\n");
   // untuck arm
   if (untuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
 

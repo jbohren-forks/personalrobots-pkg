@@ -66,8 +66,10 @@ DetectOutletCoarseAction::~DetectOutletCoarseAction()
 
 robot_actions::ResultStatus DetectOutletCoarseAction::execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback){
 
-	ROS_INFO("DetectOutletCoarseAction: executing");
 
+  ROS_DEBUG("%s: executing.", action_name_.c_str());
+
+	
 	if (!spotOutlet(point, feedback)){
 		if (isPreemptRequested()){
 			ROS_INFO("DetectOutletCoarseAction: Preempted");
@@ -79,7 +81,7 @@ robot_actions::ResultStatus DetectOutletCoarseAction::execute(const robot_msgs::
 		}
 	}
 	else{
-		ROS_INFO("DetectOutletCoarseAction: Succeeded");
+          ROS_DEBUG("%s: succeeded.", action_name_.c_str());
 		return robot_actions::SUCCESS;
 	}
 

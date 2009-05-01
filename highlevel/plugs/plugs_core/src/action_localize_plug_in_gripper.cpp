@@ -87,6 +87,7 @@ LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
 
   robot_actions::ResultStatus LocalizePlugInGripperAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 {
+  ROS_DEBUG("%s: executing.", action_name_.c_str());  
   //  outlet_pose_ = outlet_pose;
 
   reset();

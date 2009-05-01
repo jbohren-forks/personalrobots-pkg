@@ -115,13 +115,13 @@ int
   timeout_medium.sleep();
 
   // tuck arm
-  //  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  //switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
-  //if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-  //if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
 
   // untuck arm
-  // if (untuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+   if (untuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
 
   // detect plug on base
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -170,8 +170,6 @@ int
   switchlist.start_controllers.push_back("r_arm_cartesian_wrench_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   if (stow_plug.execute(plug_stow, empty, timeout_long) != robot_actions::SUCCESS) return -1;
-
-
 
 
   // stop remaining controllers
