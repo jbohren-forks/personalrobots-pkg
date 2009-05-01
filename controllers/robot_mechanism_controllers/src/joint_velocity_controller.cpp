@@ -97,7 +97,7 @@ bool JointVelocityController::initXml(mechanism::RobotState *robot, TiXmlElement
 void JointVelocityController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
 {
   pid_controller_.setGains(p,i,d,i_max,i_min);
-  
+
 }
 
 void JointVelocityController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
@@ -127,11 +127,11 @@ void JointVelocityController::update()
   assert(robot_ != NULL);
   double error(0);
   double time = robot_->hw_->current_time_;
- 
+
   error =joint_state_->velocity_ - command_;
   dt_= time - last_time_;
-  joint_state_->commanded_effort_ = pid_controller_.updatePid(error, dt_);
-   
+  joint_state_->commanded_effort_ += pid_controller_.updatePid(error, dt_);
+
   last_time_ = time;
 }
 
@@ -155,25 +155,25 @@ void JointVelocityControllerNode::update()
 {
   static int count = 0;
   c_->update();
-  
+
   if(count % 10 == 0)
   {
     if(controller_state_publisher_->trylock())
     {
       double command, p,i,d,i_min,i_max;
       c_->getCommand(command);
-      controller_state_publisher_->msg_.set_point = command; 
-      controller_state_publisher_->msg_.process_value = c_->joint_state_->velocity_; 
+      controller_state_publisher_->msg_.set_point = command;
+      controller_state_publisher_->msg_.process_value = c_->joint_state_->velocity_;
       controller_state_publisher_->msg_.error = c_->joint_state_->velocity_ - command;
       controller_state_publisher_->msg_.time_step = c_->dt_;
-      
+
       c_->getGains(p,i,d,i_max,i_min);
-      controller_state_publisher_->msg_.p = p; 
-      controller_state_publisher_->msg_.i = i; 
-      controller_state_publisher_->msg_.d = d; 
-      controller_state_publisher_->msg_.i_clamp = i_max; 
-       
-      controller_state_publisher_->unlockAndPublish();      
+      controller_state_publisher_->msg_.p = p;
+      controller_state_publisher_->msg_.i = i;
+      controller_state_publisher_->msg_.d = d;
+      controller_state_publisher_->msg_.i_clamp = i_max;
+
+      controller_state_publisher_->unlockAndPublish();
     }
   }
   count++;
@@ -187,8 +187,8 @@ bool JointVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   if (controller_state_publisher_ != NULL)
     delete controller_state_publisher_ ;
   controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState> (service_prefix_+"/state", 1) ;
-  
-  
+
+
   // Parses subcontroller configuration
   if (!c_->initXml(robot, config))
     return false;
