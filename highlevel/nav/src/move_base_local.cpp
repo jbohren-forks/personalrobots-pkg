@@ -44,7 +44,20 @@ using namespace nav_robot_actions;
 namespace nav {
   MoveBaseLocal::MoveBaseLocal(ros::Node& ros_node, tf::TransformListener& tf) : 
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
-    tc_(NULL), controller_costmap_ros_(NULL) {
+    tc_(NULL), controller_costmap_ros_(NULL), action_name_("move_base_local"), laser_controller_("laser_tilt_controller") {
+
+    //get the laser controller name
+    ros_node_.param(action_name_ + "/laser_tilt_controller", laser_controller_, laser_controller_);
+    if(laser_controller_ == "")
+    {
+      ROS_ERROR("%s: tilt_laser_controller param was not set.",action_name_.c_str());
+      terminate();
+      return;
+    }
+    req_laser_.command.profile = "linear";
+    req_laser_.command.period = 2;
+    req_laser_.command.amplitude = 0.65;
+    req_laser_.command.offset = 0.25;
 
     //get some parameters that will be global to the move base node
     ros_node_.param("~base_local_planner/robot_base_frame", robot_base_frame_, std::string("base_link"));
@@ -117,6 +130,11 @@ namespace nav {
   }
 
   robot_actions::ResultStatus MoveBaseLocal::execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback){
+    if (!ros::service::call(laser_controller_ + "/set_periodic_cmd", req_laser_, res_laser_))
+    {
+      ROS_ERROR("%s: Failed to start laser.", action_name_.c_str());
+      return robot_actions::ABORTED;
+    }    
     ros::Duration cycle_time = ros::Duration(1.0 / controller_frequency_);
     while(!isPreemptRequested()){
       struct timeval start, end;
