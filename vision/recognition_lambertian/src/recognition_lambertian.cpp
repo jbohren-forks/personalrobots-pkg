@@ -59,7 +59,6 @@
 #include "robot_msgs/PointStamped.h"
 #include "robot_msgs/Door.h"
 #include "visualization_msgs/Marker.h"
-#include "recognition_lambertian/DoorsDetector.h"
 
 #include <string>
 
