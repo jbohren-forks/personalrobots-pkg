@@ -80,7 +80,7 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <limit effort="100" velocity="100" k_velocity="10" />
-      <calibration values="1.5 -1" />
+      <calibration reference_position="0.0" values="1.5 -1" />
       <joint_properties damping="0.0" friction="0.0" />
     </joint>
 
@@ -192,12 +192,12 @@
     </transmission>
   </macro>
 
-  <macro name="pr2_caster_alpha2" params="suffix parent *origin">
+  <macro name="pr2_caster_alpha2" params="suffix parent *origin ref_position">
     <joint name="${suffix}_caster_rotation_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <limit effort="100" velocity="100" k_velocity="10" />
-      <calibration values="1.5 -1" />
+      <calibration reference_position="${ref_position}" values="1.5 -1" />
       <joint_properties damping="0.0" friction="0.0" />
     </joint>
 
@@ -354,16 +354,16 @@
     </sensor>
 
 
-    <pr2_caster_alpha2 suffix="fl" parent="${name}_link">
+    <pr2_caster_alpha2 suffix="fl" parent="${name}_link" ref_position="${cal_caster_fl}" >
       <origin xyz="${caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster_alpha2>
-    <pr2_caster_alpha2 suffix="fr" parent="${name}_link">
+    <pr2_caster_alpha2 suffix="fr" parent="${name}_link" ref_position="${cal_caster_fr}" >
       <origin xyz="${caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster_alpha2>
-    <pr2_caster_alpha2 suffix="bl" parent="${name}_link">
+    <pr2_caster_alpha2 suffix="bl" parent="${name}_link" ref_position="${cal_caster_bl}" >
       <origin xyz="${-caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster_alpha2>
-    <pr2_caster_alpha2 suffix="br" parent="${name}_link">
+    <pr2_caster_alpha2 suffix="br" parent="${name}_link" ref_position="${cal_caster_br}"  >
       <origin xyz="${-caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster_alpha2>
 
