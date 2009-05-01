@@ -15,7 +15,7 @@
 
   <property name="M_PI" value="3.1415926535897931" />
   <property name="wall_x_loc" value="1.25" />
-  <property name="handle_height" value="0.9" />
+  <property name="handle_height" value="0.87" />
 
   <!-- joint blocks -->
   <joint name="door_joint" type="revolute" >
@@ -191,7 +191,7 @@
 
   <link name="handle_link">
     <parent name="door_link" />
-    <origin xyz="-0.10 -0.8 ${handle_height}" rpy="${1*M_PI/2.0} 0 0" />
+    <origin xyz="-0.11 -0.8 ${handle_height}" rpy="${1*M_PI/2.0} 0 0" />
     <joint name="handle_joint" />
     <inertial >
       <mass value="0.1" />
@@ -206,13 +206,13 @@
         <elem key="material" value="Gazebo/Black" />
       </map>
       <geometry name="sholder_roll_mesh_file">
-        <mesh scale="0.04 0.04 0.2" />
+        <mesh scale="0.02 0.02 0.12" />
       </geometry>
     </visual>
     <collision >
       <origin xyz="0.0 0.1 0.0" rpy="${0*M_PI/2.0} 0 0" />
       <geometry name="handle_collision_geom">
-        <cylinder radius="0.02" length="0.2" />
+        <cylinder radius="0.01" length="0.12" />
       </geometry>
       <map name="handle_intensity" flag="gazebo">
         <elem key="laserRetro" value="100.0" />
