@@ -219,11 +219,13 @@ private:
   boost::thread *diagnostic_thread_;
 
 public:
+  int exit_status_;
 
   ForearmNode(ros::Node &node)
     : node_(node), camera_(NULL), started_video_(false),
       diagnostic_(this, &node_), count_(0)
   {
+    exit_status_ = 0;
     misfire_blank_ = 0;
     image_thread_ = NULL;
     diagnostic_thread_ = NULL;
@@ -240,6 +242,7 @@ public:
       node_.getParam("~ip_address", ip_address_);
     else {
       ROS_FATAL("IP address not specified");
+      exit_status_ = 1;
       node_.shutdown();
       return;
     }
@@ -272,6 +275,7 @@ public:
       video_mode_ = MT9VMODE_320x240x25b2;
     else {
       ROS_FATAL("Unknown video mode %s", mode_name_.c_str());
+      exit_status_ = 1;
       node_.shutdown();
       return;
     }
@@ -289,6 +293,8 @@ public:
     node_.param("~frame_id", frame_id_, std::string("NO_FRAME"));
     image_.header.frame_id = frame_id_;
     cam_info_.header.frame_id = frame_id_;
+    cam_info_.width = width_;
+    cam_info_.height = height_;
     
     // Configure camera
     configure(if_name_, ip_address_, port);
@@ -374,12 +380,14 @@ public:
     // Discover any connected cameras, wait for 0.5 second for replies
     if( pr2Discover(if_name.c_str(), &camList, SEC_TO_USEC(0.5)) == -1) {
       ROS_FATAL("Discover error");
+      exit_status_ = 1;
       node_.shutdown();
       return;
     }
 
     if (pr2CamListNumEntries(&camList) == 0) {
       ROS_FATAL("No cameras found");
+      exit_status_ = 1;
       node_.shutdown();
       return;
     }
@@ -392,12 +400,16 @@ public:
       index = pr2CamListFind(&camList, sn);
       if (index == -1) {
         ROS_FATAL("Couldn't find camera with S/N %i", sn);
+        exit_status_ = 1;
       }
       else
         camera_ = pr2CamListGetEntry(&camList, index);
     }
-    else  
+    else
+    {
       ROS_FATAL("No camera serial_number was specified. Specifying a serial number is now mandatory to avoid accidentally configuring a random camera elsewhere in the building.");
+      exit_status_ = 1;
+    }
 
     // List found cameras if we were unable to open the requested one or
     // none was specified. 
@@ -407,6 +419,7 @@ public:
       {
         camera_ = pr2CamListGetEntry(&camList, i);
         ROS_FATAL("Found camera with S/N #%u", camera_->serial);
+        exit_status_ = 1;
       }
       node_.shutdown();
       return;
@@ -419,6 +432,7 @@ public:
         ROS_WARN("Unable to create ARP entry (are you root?), continuing anyway");
       } else {
         ROS_FATAL("IP address configuration failed");
+        exit_status_ = 1;
         node_.shutdown();
         return;
       }
@@ -436,6 +450,7 @@ public:
     sockaddr localMac;
     if ( wgEthGetLocalMac(camera_->ifName, &localMac) != 0 ) {
       ROS_FATAL("Unable to get local MAC address for interface %s", camera_->ifName);
+      exit_status_ = 1;
       node_.shutdown();
       return;
     }
@@ -444,13 +459,15 @@ public:
     in_addr localIp;
     if ( wgIpGetLocalAddr(camera_->ifName, &localIp) != 0) {
       ROS_FATAL("Unable to get local IP address for interface %s", camera_->ifName);
+      exit_status_ = 1;
       node_.shutdown();
       return;
     }
       
     // Select trigger mode.
     if ( pr2TriggerControl( camera_, ext_trigger_ ? TRIG_STATE_EXTERNAL : TRIG_STATE_INTERNAL ) != 0) {
-      ROS_FATAL("Trigger mode set error");
+      ROS_FATAL("Trigger mode set error. Is %s accessible from interface %s? (Try running route to check.)", ip_address.c_str(), if_name.c_str());
+      exit_status_ = 1;
       node_.shutdown();
       return;
     }
@@ -483,6 +500,7 @@ public:
         if (!ros::service::call(trig_controller_cmd_, trig_req_, trig_rsp_))
         {
           ROS_FATAL("Unable to set trigger controller.");
+          exit_status_ = 1;
           node_.shutdown();
           return;
         }
@@ -499,6 +517,7 @@ public:
         if (!ros::service::call(trig_controller_cmd_, trig_req_, trig_rsp_))
         {
           ROS_FATAL("Unable to set trigger controller.");
+          exit_status_ = 1;
           node_.shutdown();
           return;
         }
@@ -518,6 +537,7 @@ public:
     // Select a video mode
     if ( pr2ImagerModeSelect( camera_, video_mode_ ) != 0) {
       ROS_FATAL("Mode select error");
+      exit_status_ = 1;
       node_.shutdown();
       return;
     }
@@ -526,6 +546,7 @@ public:
     // Set maximum course shutter width
     if ( pr2SensorWrite( camera_, 0xBD, 240 ) != 0) {
       ROS_FATAL("Sensor write error");
+      exit_status_ = 1;
       node_.shutdown();
       return;
     }
@@ -546,6 +567,7 @@ public:
     if ( pr2StartVid( camera_, (uint8_t *)&(localMac.sa_data[0]),
                       inet_ntoa(localIp), port) != 0 ) {
       ROS_FATAL("Video start error");
+      exit_status_ = 1;
       node_.shutdown();
       return;
     }
@@ -878,5 +900,5 @@ int main(int argc, char **argv)
   n.spin();
   ROS_DEBUG("Exited from n.spin()");
   
-  return 0;
+  return fn.exit_status_;
 }
