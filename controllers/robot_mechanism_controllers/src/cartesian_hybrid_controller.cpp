@@ -238,14 +238,6 @@ void CartesianHybridController::update()
     twist_meas_filtered_ = twist_meas_;
   }
 
-  // Computes the rotational error
-  KDL::Vector rot_error =
-    diff(KDL::Rotation::RPY(
-           mode_[3] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[3] : 0.0,
-           mode_[4] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[4] : 0.0,
-           mode_[5] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[5] : 0.0),
-         tool.M.R);
-
   // Computes the desired pose
   for (int i = 0; i < 6; ++i)
   {
@@ -255,18 +247,22 @@ void CartesianHybridController::update()
       pose_desi_[i] = 0.0;
   }
 
+  // Computes the pose error
+  pose_error_.vel = tool.p.p - pose_desi_.vel;
+  pose_error_.rot =
+    diff(KDL::Rotation::RPY(
+           mode_[3] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[3] : 0.0,
+           mode_[4] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[4] : 0.0,
+           mode_[5] == robot_msgs::TaskFrameFormalism::POSITION ? setpoint_[5] : 0.0),
+         tool.M.R);
+
   // Computes the desired twist
   for (int i = 0; i < 6; ++i)
   {
     switch (mode_[i])
     {
     case robot_msgs::TaskFrameFormalism::POSITION:
-      if (i < 3) { // Translational position
-        twist_desi_[i] = pose_pids_[i].updatePid(tool.p.p[i] - pose_desi_[i], twist_meas_filtered_[i], dt);
-      }
-      else { // Rotational position
-        twist_desi_[i] = pose_pids_[i].updatePid(rot_error[i - 3], twist_meas_filtered_[i], dt);
-      }
+      twist_desi_[i] = pose_pids_[i].updatePid(pose_error_[i], twist_meas_filtered_[i], dt);
       break;
     case robot_msgs::TaskFrameFormalism::VELOCITY:
       twist_desi_[i] = setpoint_[i];
@@ -290,6 +286,11 @@ void CartesianHybridController::update()
     }
   }
 
+  for (int i = 0; i < 6; ++i)
+  {
+    twist_error_[i] = twist_meas_filtered_[i] - twist_desi_[i];
+  }
+
   // Computes the desired wrench
   for (int i = 0; i < 6; ++i)
   {
@@ -297,7 +298,7 @@ void CartesianHybridController::update()
     {
     case robot_msgs::TaskFrameFormalism::POSITION:
     case robot_msgs::TaskFrameFormalism::VELOCITY:
-      wrench_desi_[i] = twist_pids_[i].updatePid(twist_meas_filtered_[i] - twist_desi_[i], dt);
+      wrench_desi_[i] = twist_pids_[i].updatePid(twist_error_[i], dt);
       break;
     case robot_msgs::TaskFrameFormalism::FORCE:
       wrench_desi_[i] = setpoint_[i];
@@ -306,14 +307,6 @@ void CartesianHybridController::update()
       abort();
     }
   }
-
-  static realtime_tools::RealtimePublisher<std_msgs::Float64MultiArray> debug("/d", 2);
-  bool debug_locked = debug.trylock();
-  if (debug_locked)
-    debug.msg_.data.clear();
-
-  if (debug_locked)
-    debug.unlockAndPublish();
 
   // Transforms the wrench from the task frame to the chain root frame
   KDL::Wrench wrench_in_root;
@@ -413,7 +406,7 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 
   node->subscribe(name_ + "/command", command_msg_, &CartesianHybridControllerNode::command, this, 5);
 
-  pub_state_.reset(new realtime_tools::RealtimePublisher<robot_msgs::CartesianState>(name_ + "/state", 1));
+  pub_state_.reset(new realtime_tools::RealtimePublisher<robot_mechanism_controllers::CartesianHybridState>(name_ + "/state", 1));
   pub_tf_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("/tf_message", 5));
   pub_tf_->msg_.transforms.resize(1);
 
@@ -437,14 +430,22 @@ void CartesianHybridControllerNode::update()
     if (pub_state_->trylock())
     {
       pub_state_->msg_.header.frame_id = task_frame_name_;
-      TransformKDLToMsg(c_.pose_meas_, pub_state_->msg_.last_pose_meas.pose);
-      pub_state_->msg_.last_pose_meas.header.frame_id = task_frame_name_;
-      pub_state_->msg_.last_pose_meas.header.stamp = ros::Time(c_.last_time_);
-      TwistKDLToMsg(last_pose_desi, pub_state_->msg_.last_pose_desi);
-      //TwistKDLToMsg(c_.twist_meas_, pub_state_->msg_.last_twist_meas);
-      TwistKDLToMsg(c_.twist_meas_filtered_, pub_state_->msg_.last_twist_meas);
-      TwistKDLToMsg(last_twist_desi, pub_state_->msg_.last_twist_desi);
-      WrenchKDLToMsg(last_wrench_desi, pub_state_->msg_.last_wrench_desi);
+
+      TwistKDLToMsg(c_.pose_error_, pub_state_->msg_.pose_error);
+      TwistKDLToMsg(c_.twist_error_, pub_state_->msg_.twist_error);
+
+      TwistKDLToMsg(c_.pose_desi_, pub_state_->msg_.last_pose_desi);
+      TwistKDLToMsg(c_.twist_meas_, pub_state_->msg_.last_twist_meas);
+      TwistKDLToMsg(c_.twist_meas_filtered_, pub_state_->msg_.last_twist_meas_filtered);
+      TwistKDLToMsg(c_.twist_desi_, pub_state_->msg_.last_twist_desi);
+      WrenchKDLToMsg(c_.wrench_desi_, pub_state_->msg_.last_wrench_desi);
+
+      KDL::Twist last_pose_meas;
+      last_pose_meas.vel = c_.pose_meas_.p;
+      c_.pose_meas_.M.GetRPY(last_pose_meas.rot[0],
+                             last_pose_meas.rot[1],
+                             last_pose_meas.rot[2]);
+      TwistKDLToMsg(last_pose_meas, pub_state_->msg_.last_pose_meas);
 
       pub_state_->unlockAndPublish();
     }

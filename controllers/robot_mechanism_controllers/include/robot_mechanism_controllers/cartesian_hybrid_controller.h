@@ -43,7 +43,7 @@
 
 #include "robot_srvs/SetPoseStamped.h"
 #include "robot_msgs/TaskFrameFormalism.h"
-#include "robot_msgs/CartesianState.h"
+#include "robot_mechanism_controllers/CartesianHybridState.h"
 
 namespace controller {
 
@@ -56,6 +56,9 @@ public:
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   virtual void update(void);
   virtual bool starting();
+
+  KDL::Twist pose_error_;
+  KDL::Twist twist_error_;
 
   KDL::Twist pose_desi_;
   KDL::Twist twist_desi_;
@@ -112,7 +115,7 @@ private:
   std::string task_frame_name_;
 
   unsigned int loop_count_;
-  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_msgs::CartesianState> > pub_state_;
+  boost::scoped_ptr<realtime_tools::RealtimePublisher<robot_mechanism_controllers::CartesianHybridState> > pub_state_;
   boost::scoped_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > pub_tf_;
 };
 
