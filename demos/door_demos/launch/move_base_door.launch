@@ -4,7 +4,7 @@
 
   <master auto="start"/>
   <group name="wg">
-    <node machines="realtime" pkg="doors_core" type="move_base_door" respawn="false" name="door_reactive_planner" output="screen">
+    <node machines="realtime" pkg="doors_core" type="move_base_door" respawn="false" name="door_reactive_planner">
 
       <param name="min_distance_from_obstacles" value="0.05" />
       <param name="max_waypoint_distance" value="0.01" />
@@ -12,7 +12,7 @@
       <param name="max_explore_distance" value="2.0" />
       <param name="horizontal_explore_distance" value="0.1" />
       <param name="max_explore_delta_angle" value="1.0" />
-      <param name="door_goal_distance" value="0.475" />
+      <param name="door_goal_distance" value="0.4" />
       <param name="num_explore_paths" value="32" />
       <param name="choose_straight_line_trajectory" value="true" type="bool" />
       <param name="inscribed_radius" value="0.305" />
