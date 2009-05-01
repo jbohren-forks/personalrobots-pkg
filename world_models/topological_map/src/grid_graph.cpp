@@ -42,12 +42,16 @@ namespace topological_map
 
 using boost::associative_property_map;
 using boost::make_tuple;
+using boost::tuples::ignore;
 using boost::tie;
 using boost::bind;
 using boost::shared_ptr;
 using boost::edge;
+using boost::ref;
 using std::pair;
+using std::make_pair;
 using std::queue;
+using std::priority_queue;
 
 
 /************************************************************
@@ -155,12 +159,25 @@ vector<Cell2D> GridGraph::neighbors (const Cell2D& cell) const
  * Shortest paths
  ************************************************************/
 
+typedef vector<Cell2D> CellVector;
+
+struct DijkstraDone {};
+
 struct GraphSearchVisitor : public boost::default_dijkstra_visitor
 {
-  void discover_vertex(const GridGraphVertex& v, const Grid& graph) const
+  GraphSearchVisitor(const vector<Cell2D>& dests) : dests(dests.begin(), dests.end()), n(0) {}
+  void discover_vertex(const GridGraphVertex& v, const Grid& graph) 
   {
-    ROS_DEBUG_STREAM_NAMED("dijkstra", "Discovering vertex " << graph[v].cell);
+    ROS_INFO_STREAM_COND (!(++n%10000), "Node " << n);
   }
+  
+  void initialize_vertex(const GridGraphVertex& v, const Grid& graph)
+  {
+    ROS_INFO_STREAM_COND (!(++n%10000), "Initialization " << n);
+  }
+
+  set<Cell2D> dests;
+  uint n;
 };
 
 typedef map<GridGraphVertex, double> GridDistances;
@@ -178,33 +195,43 @@ ReachableCost extractCost (const GridGraph* g, const GridDistances& distances, c
   }
 }
 
-// Approximation to Dijkstra
+
+struct QueueItem
+{
+  QueueItem(const GridGraphVertex& v, const double d) : v(v), d(d) {}
+  GridGraphVertex v;
+  double d;
+};
+
+inline
+bool operator< (const QueueItem& q1, const QueueItem& q2)
+{
+  return q1.d > q2.d;
+}
+
+// Homegrown version of dijkstra_shortest_paths for efficiency
 ReachableCostVector GridGraph::singleSourceCosts (const Cell2D& source, const vector<Cell2D>& dests)
 {
+  uint n=0;
   ROS_DEBUG_NAMED ("grid_graph_shortest_path", "Computing single source costs");
   GridDistances distances;
   GridGraphVertex start = cellVertex(source);
-  typedef pair<GridGraphVertex, double> QueueItem;
-  queue<QueueItem> q;
-  set<GridGraphVertex> visited;
+  priority_queue<QueueItem> q;
   
   q.push(QueueItem(start,0.0));
-  visited.insert(start);
+  
   while (!q.empty()) {
-    
-    GridGraphVertex v;
-    double d;
-    tie(v,d) = q.front();
+    double d=q.top().d;
+    GridGraphVertex v=q.top().v;
     q.pop();
-
-    GridGraphAdjacencyIterator iter, end;
-    for (tie(iter,end)=adjacent_vertices(v, graph_); iter!=end; iter++) {
-      if (visited.find(*iter)==visited.end()) {
-        double cost = d+graph_[edge(v,*iter,graph_).first].cost;
-        q.push(QueueItem(*iter, cost));
-        visited.insert(*iter);
-        distances[*iter] = cost;
-      }
+    ROS_DEBUG_COND_NAMED (!(++n%10000), "grid_graph_shortest_path", " Node %u", n);
+    if (distances.find(v)==distances.end()) {
+      distances[v] = d;
+      
+      GridGraphAdjacencyIterator iter, end;
+      for (tie(iter, end)=adjacent_vertices(v, graph_); iter!=end; iter++) 
+        if (distances.find(*iter)==distances.end()) 
+          q.push(QueueItem(*iter,d+graph_[edge(v,*iter,graph_).first].cost));
     }
   }
   ReachableCostVector costs;
@@ -221,27 +248,34 @@ ReachableCostVector GridGraph::singleSourceCosts (const Cell2D& source, const ve
 
    
 
+// ReachableCostVector GridGraph::singleSourceCosts (const Cell2D& source, const vector<Cell2D>& dests)
+// {
+//   GridDistances distances;
+//   GridGraphVertex start = cellVertex(source);
 
-//   catch (GridGraphVertex& e) {
-//     // Extract path from predecessor map
-//     vector<GridGraphVertex> reverse_path(1,finish);
-//     GridGraphVertex current = finish;
 
-//     while (current!=predecessors[current]) {
-//       reverse_path.push_back(current=predecessors[current]);
-//     }
-//     GridPath path(reverse_path.size());
-//     ROS_ASSERT_MSG (current==start, "Unexpectedly could not find shortest path");
+//   resetIndices();
+//   ROS_DEBUG_NAMED ("grid_graph_shortest_path", "Computing single source costs");
 
-//     // Put it in source-to-goal order, replace vertex descriptors with cells, and return
-//     transform(reverse_path.rbegin(), reverse_path.rend(), path.begin(), TransformVertexToCell(graph_));
-//     ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Found path with cost " << distances[finish]);
-//     return make_tuple(true, distances[finish], path);
+//   typedef map<GridGraphVertex, GridGraphVertex> GridPreds;
+//   GridPreds predecessors;
+//   boost::dijkstra_shortest_paths (graph_, start,
+//                                   weight_map(get(&EdgeCost::cost, graph_)).
+//                                   vertex_index_map(get(&CellInfo::index, graph_)).
+//                                   distance_map(associative_property_map<GridDistances>(distances)));
+//   //                                  visitor(GraphSearchVisitor(dests)));
+
+
+   
+//   ReachableCostVector v(dests.size());
+//   transform (dests.begin(), dests.end(), v.begin(), bind(extractCost, this, ref(distances), _1));
+//   for (uint i=0; i<dests.size(); ++i) {
+//     ROS_DEBUG_STREAM_NAMED ("grid_graph_shortest_path", " connector " << dests[i] << " ; cost " << v[i].second);
 //   }
+//   ROS_DEBUG_NAMED ("grid_graph_shortest_path", "Done computing single source costs");
+//   return v;
+// }
 
-//   // Else, we must not have found a path
-//   ROS_DEBUG_STREAM_NAMED("grid_graph_shortest_path", "Did not find a path");
-//   return make_tuple(false, -1, GridPath());
   
 
 
@@ -342,6 +376,27 @@ tuple<bool, double, GridPath> GridGraph::shortestPath (const Cell2D& cell1, cons
 }
 
 
+
+pair<bool, double> GridGraph::distanceBetween (const Cell2D& cell1, const Cell2D& cell2)
+{
+  bool found;
+  double distance;
+  GridGraphCache::iterator pos = cache_.find(make_pair(cell1, cell2));
+
+  // If not in cache, add it
+  // In general case, should probably keep cache size bounded, but not an issue currently
+  if (pos==cache_.end()) {
+    tie(found, distance, ignore) = shortestPath(cell1, cell2);
+    cache_[make_pair(cell1, cell2)] = make_pair(found, distance);
+    pos = cache_.find(make_pair(cell1, cell2));
+  }
+  ROS_ASSERT (pos!=cache_.end());
+
+  return pos->second;
+}
+
+
+
 /************************************************************
  * Connected comps
  ************************************************************/
@@ -354,8 +409,10 @@ MutableRegionPtr makeEmptyRegion()
 vector<MutableRegionPtr> GridGraph::connectedComponents ()
 {
   resetIndices();
+  ROS_DEBUG_NAMED ("connected_comps", "Beginning connected components on grid");
   int num_comps=connected_components(graph_, get(&CellInfo::component, graph_), 
                                      vertex_index_map(get(&CellInfo::index, graph_)));
+  ROS_DEBUG_NAMED ("connected_comps", "Computed connected components on grid");
   vector<MutableRegionPtr> regions(num_comps);
   generate(regions.begin(), regions.end(), makeEmptyRegion);
 

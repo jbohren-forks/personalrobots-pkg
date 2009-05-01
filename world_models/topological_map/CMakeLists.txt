@@ -1,15 +1,18 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+
+set(ROS_BUILD_TYPE Release)
+#set(ROS_BUILD_STATIC_LIBS true)
+#set(ROS_BUILD_SHARED_LIBS false)
+
 rospack(topological_map)
 gensrv()
 
 rospack_add_boost_directories()
 
-set(ROS_COMPILE_FLAGS "-O3 " ${ROS_COMPILE_FLAGS})
-
 #uncomment for profiling/gdb
-set(ROS_COMPILE_FLAGS "-g -pg " ${ROS_COMPILE_FLAGS})
-set(ROS_LINK_FLAGS "-g -pg " ${ROS_LINK_FLAGS})
+#set(ROS_COMPILE_FLAGS "O3 -g -pg " ${ROS_COMPILE_FLAGS})
+#set(ROS_LINK_FLAGS "-O3 -g -pg " ${ROS_LINK_FLAGS})
 
 
 rospack_add_library(topological_graph src/region.cpp src/topological_map.cpp src/creation.cpp src/region_graph.cpp src/connector_roadmap.cpp 

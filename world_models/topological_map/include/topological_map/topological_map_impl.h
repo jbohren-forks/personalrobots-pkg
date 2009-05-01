@@ -65,10 +65,10 @@ class TopologicalMap::MapImpl
 public:
 
   /// Default constructor creates empty graph
-  MapImpl(const OccupancyGrid& grid, double resolution, double door_open_prior_prob, double door_reversion_rate);
+  MapImpl(const OccupancyGrid& grid, double resolution, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost);
 
   /// Constructor that reads from a stream
-  MapImpl(istream& stream, double door_open_prior_prob, double door_reversion_rate);
+  MapImpl(istream& stream, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost);
 
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
@@ -103,6 +103,11 @@ public:
   /// \throws ObservationOutOfSequenceExceptioon
   /// \throws NoDoorInRegionException
   double doorOpenProb (RegionId id, const ros::Time& stamp);
+
+  /// \return If probability of door being open is less than DOOR_OPEN_PROB_THRESHOLD, return false, otherwise return true
+  /// \throws ObservationOutOfSequenceExceptioon
+  /// \throws NoDoorInRegionException
+  bool isDoorOpen (RegionId id, const Time& stamp);
 
   /// \return The id of the nearest outlet to this 2d-position
   /// \throws NoOutletException
@@ -169,6 +174,11 @@ public:
   /// and the cost of the best path from p1 to p2 through that id
   vector<pair<ConnectorId, double> > connectorCosts (const Point2D& p1, const Point2D& p2);
 
+  /// \return A vector of pairs.  There's one pair per connector in the containing region of p1, consisting of that connector's id 
+  /// and the cost of the best path from p1 to p2 through that id
+  /// \param time Door costs are measured at this time
+  vector<pair<ConnectorId, double> > connectorCosts (const Point2D& p1, const Point2D& p2, const Time& time);
+
   /// \post New region has been added
   /// \return Id of new region
   /// \throws OverlappingRegionException
@@ -194,7 +204,6 @@ public:
   /// \post Sets the rate at which door states revert to their prior probability after an observation.
   /// \param rate must be > 0.  
   void setDoorReversionRate (double rate) { ROS_ASSERT (rate>0.0); door_reversion_rate_ = rate; }
-
 private: 
 
   // During the lifetime of an instance of this class, a temporary node will exist in the connector graph at point p
@@ -215,6 +224,9 @@ private:
   tuple<ConnectorId, Cell2D, Cell2D> connectorCellsBetween (const RegionId r1, const RegionId r2) const;
   Point2D findBorderPoint(const Cell2D& cell1, const Cell2D& cell2) const;
   bool pointOnMap (const Point2D& p) const;
+  void setDoorCost (RegionId id, const Time& t);
+  void setDoorCosts (const Time& t);
+
 
   GridPtr grid_;
   ObstacleDistanceArray obstacle_distances_;
@@ -228,6 +240,7 @@ private:
 
   double door_open_prior_prob_;
   double door_reversion_rate_;
+  double locked_door_cost_;
 
   RegionDoorMap region_door_map_;
 

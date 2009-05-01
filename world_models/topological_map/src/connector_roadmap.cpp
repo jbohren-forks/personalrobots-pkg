@@ -171,6 +171,7 @@ ConnectorCosts Roadmap::connectorCosts (const ConnectorId i, const ConnectorId j
       ConnectorId id = graph_[*adj_iter].id;
       double edge_cost = graph_[edge(*adj_iter, v, graph_).first].cost;
       ROS_DEBUG_STREAM_NAMED ("roadmap_shortest_path", " Connector " << id << " has cost " << edge_cost+pos->second << "=" << edge_cost << "+" << pos->second);
+      shortestPath(id,j);
       costs.push_back(ConnectorCost(id, edge_cost+pos->second));
     }
   }
@@ -231,7 +232,8 @@ ConnectorIdVector Roadmap::shortestPath (const ConnectorId i, const ConnectorId 
   RoadmapVertex current = w;
 
   while (current!=predecessors[current]) {
-    ROS_DEBUG_NAMED("dijkstra", "Predecessor of %d is %d", graph_[current].id, graph_[predecessors[current]].id);
+    ROS_DEBUG_NAMED("roadmap_dijkstra", "  Predecessor of %d is %d with cost %f", graph_[current].id, 
+                    graph_[predecessors[current]].id, graph_[edge(current, predecessors[current], graph_).first].cost);
     reverse_path.push_back(current=predecessors[current]);
   }
   if (current!=v){
@@ -280,7 +282,7 @@ Roadmap::Roadmap (istream& stream)
       ConnectorId neighbor_id;
       double cost;
       stream >> neighbor_id >> cost;
-      // Set the cost only if neighbor already exist in graph
+      // Set the cost only if neighbor already exists in graph
       if (idExists(neighbor_id)) {
         setCost(id, neighbor_id, cost);
       }

@@ -30,6 +30,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include <getopt.h>
 #include <sysexits.h>
 #include <topological_map/topological_map.h>
@@ -38,8 +39,10 @@
 typedef unsigned int uint;
 typedef const uint cuint;
 
+using std::vector;
 using std::cout;
 using std::endl;
+using std::pair;
 using std::ifstream;
 using std::ofstream;
 using boost::extents;
@@ -50,7 +53,9 @@ using tmap::topologicalMapFromGrid;
 using tmap::Point2D;
 using tmap::Cell2D;
 using tmap::RegionId;
+using tmap::ConnectorId;
 using ros::Time;
+using tmap::TopologicalMap;
 
 void setV (tmap::OccupancyGrid& grid, cuint r0, cuint dr, cuint rmax, cuint c0, cuint dc, cuint cmax, bool val) 
 {
@@ -59,6 +64,20 @@ void setV (tmap::OccupancyGrid& grid, cuint r0, cuint dr, cuint rmax, cuint c0, 
       grid[r][c] = val;
 }
 
+
+
+void printConnectorCosts (TopologicalMap& m, const Point2D& p1, const Point2D& p2, double t)
+{
+  typedef vector<pair<ConnectorId, double> > CCosts;
+
+  CCosts cc = m.connectorCosts(p1,p2, Time(t));
+
+  for (CCosts::iterator iter=cc.begin(); iter!=cc.end(); ++iter) {
+    ConnectorId i = iter->first;
+    cout << "Connector " << i << " at " << m.connectorPosition(i) << " has cost " << iter->second << endl;
+  }
+
+}
 
 int main (int argc, char* argv[])
 {
@@ -88,45 +107,41 @@ int main (int argc, char* argv[])
   m->writePpm(str2);
   m->connectorCosts(Point2D(1,1), Point2D(10,10));
 
-  ifstream str3("local/willow-test.tmap");
-  tmap::TopologicalMap m3(str3);
+  ifstream str3("local/willow.tmap");
+  TopologicalMap m3(str3, 1.0, 1e9, 1e9);
 
   Point2D p1(1,1), p2(30,30);
   cout << "Nearest outlet to " << p1 << " is " << m3.nearestOutlet(p1) << endl;
   cout << "Nearest outlet to " << p2 << " is " << m3.nearestOutlet(p2) << endl;
 
-  Point2D p(18.5,34.95);
-  cout << "Obstacle at " << p << " is " << m3.isObstacle(p) << endl;
-  p = Point2D(54.162, 20.087);
-  cout << "Obstacle at " << p << " is " << m3.isObstacle(p) << endl;
-  p = Point2D(12.118, 39.812);
-  cout << "Obstacle at " << p << " is " << m3.isObstacle(p) << endl;
-  p = Point2D(18.912, 28.568);
-  cout << "Obstacle at " << p << " is " << m3.isObstacle(p) << endl;
-  p = Point2D(18.542, 12.301);
-  cout << "Obstacle at " << p << " is " << m3.isObstacle(p) << endl;
-  p = Point2D(50.659, 6.916);
-  cout << "Obstacle at " << p << " is " << m3.isObstacle(p) << endl;
-
+  cout << "Outlet 1 blocked is " << m3.outletInfo(1).blocked << endl;
+  cout << "Outlet 0 blocked is " << m3.outletInfo(0).blocked << endl;
+  m3.observeOutletBlocked(1);
+  cout << "Outlet 1 blocked is " << m3.outletInfo(1).blocked << endl;
+  cout << "Outlet 0 blocked is " << m3.outletInfo(0).blocked << endl;
 
   
-  RegionId door1 = m3.containingRegion(Point2D(50,30));
-  RegionId door2 = m3.containingRegion(Point2D(50,17.25));
-  robot_msgs::Door d = m3.regionDoor(m3.containingRegion(Point2D(50,30)));
+  
+  p1 = Point2D(25,21);
+  p2 = Point2D(15,25);
+  printConnectorCosts(m3,p1,p2, 0);
+
+  RegionId door1 = m3.containingRegion(Point2D(21.5,20.5));
+  RegionId door2 = m3.containingRegion(Point2D(50,30));
+  robot_msgs::Door d = m3.regionDoor(m3.containingRegion(Point2D(50,17.25)));
   cout << "Door at " << d.frame_p1.x << ", " << d.frame_p1.y << " and " << d.frame_p2.x << ", " << d.frame_p2.y << endl;
   cout << "Open prob at 0.0 is " << m3.doorOpenProb(door1, Time(0.0)) << endl;
-  cout << "Open prob at 1.0 is " << m3.doorOpenProb(door1, Time(1.0)) << endl;
-  m3.observeDoorTraversal(door1, false, Time(0.5));
-  cout << "Open prob at 1.0 is " << m3.doorOpenProb(door1, Time(1.0)) << endl;
-  cout << "Open prob at 2.0 is " << m3.doorOpenProb(door1, Time(2.0)) << endl;
-  cout << "Open prob at 100.0 is " << m3.doorOpenProb(door1, Time(100.0)) << endl;
-  m3.observeDoorTraversal(door1, true, Time(60.0));
-  cout << "Open prob at 60.0 is " << m3.doorOpenProb(door1, Time(60.0)) << endl;
-  cout << "Open prob at 100.0 is " << m3.doorOpenProb(door1, Time(100.0)) << endl;
-  cout << "Open prob at 60.0 is " << m3.doorOpenProb(door2, Time(60.0)) << endl;
 
-  std::ofstream str4("local/willow-test2.tmap");
-  m3.writeToStream(str4);
+  cout << "Open prob at 1.0 is " << m3.doorOpenProb(door1, Time(1.0)) << endl;
+  m3.observeDoorTraversal(door1, false, Time(60.0));
+  printConnectorCosts(m3,p1,p2, 60);
+  cout << "Open prob at 60.0 is " << m3.doorOpenProb(door1, Time(60.0)) << " and open is " << m3.isDoorOpen(door1, Time(60.0)) << endl;
+  cout << "Open prob at 1000.0 is " << m3.doorOpenProb(door1, Time(1000.0)) << " and open is " << m3.isDoorOpen(door1, Time(1000.0)) << endl;
+  cout << "Open prob at 50000.0 is " << m3.doorOpenProb(door1, Time(50000.0)) << " and open is " << m3.isDoorOpen(door1, Time(50000.0)) << endl;
+  cout << "Open prob at 1000000.0 is " << m3.doorOpenProb(door1, Time(1000000.0)) << " and open is " << m3.isDoorOpen(door1, Time(1000000.0)) << endl;
+  cout << "Open prob at 10000000.0 is " << m3.doorOpenProb(door1, Time(10000000.0)) << " and open is " << m3.isDoorOpen(door1, Time(10000000.0)) << endl;
+
+
 
 
 //   std::ifstream str3("local/willow.tmap");

@@ -41,16 +41,6 @@ ostream& operator<< (ostream& str, const Cell2D& c)
   return str;
 }
 
-int operator< (const Cell2D& c, const Cell2D& c2)
-{
-  return (c.r<c2.r) || ((c.r==c2.r) && (c.c<c2.c));
-}
-
-bool operator== (const Cell2D& c, const Cell2D& c2)
-{
-  return (c.r==c2.r) && (c.c==c2.c);
-}
-
 vector<Cell2D> cellNeighbors (const Cell2D& p)
 {
   int r=p.r;

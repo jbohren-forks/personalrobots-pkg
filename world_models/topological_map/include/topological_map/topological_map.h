@@ -52,7 +52,7 @@ using std::ostream;
 using std::istream;
 using std::set;
 using std::pair;
-
+using ros::Time;
 
 
 
@@ -76,6 +76,7 @@ const double DEFAULT_DOOR_OPEN_PRIOR_PROB = 0.95;
 const double DEFAULT_DOOR_REVERSION_RATE = 1000;
 const double DEFAULT_RESOLUTION=1.0;
 const double DEFAULT_LOCKED_DOOR_COST=100;
+const double DOOR_OPEN_PROB_THRESHOLD=1e-3;
 
 /// \brief A facade object to the topological map and high-level world model information
 ///
@@ -92,14 +93,17 @@ public:
   /// \param resolution m/cell in grid
   /// \param door_open_prior_prob Unobserved doors revert over time to this probability of being open
   /// \param door_reversion_rate If you don't observe the door for this many seconds, its probability will return about halfway to its prior value
+  /// \param locked_door_cost Cost of locked door
   TopologicalMap(const OccupancyGrid&, double resolution=DEFAULT_RESOLUTION, double door_open_prior_prob=DEFAULT_DOOR_OPEN_PRIOR_PROB, 
-                 double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE);
+                 double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE, double locked_door_cost=DEFAULT_LOCKED_DOOR_COST);
 
   /// Constructor that reads map from a stream
   /// \todo identify error conditions
   /// \param door_open_prior_prob Unobserved doors revert over time to this probability of being open
   /// \param door_reversion_rate If you don't observe the door for this many seconds, its probability will return about halfway to its prior value
-  TopologicalMap(istream& stream, double door_open_prior_prob=DEFAULT_DOOR_OPEN_PRIOR_PROB, double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE);
+  /// \param locked_door_cost Cost of locked door
+  TopologicalMap(istream& stream, double door_open_prior_prob=DEFAULT_DOOR_OPEN_PRIOR_PROB, double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE, 
+                 double locked_door_cost=DEFAULT_LOCKED_DOOR_COST);
 
   /// \post Topological map is written to \a stream in format that can be read back using the stream constructor.  All state is saved except for the currently set goal.
   /// \todo Identify error conditions
@@ -151,13 +155,18 @@ public:
   /// \param stamp time when the attempted traversal finished
   /// \throws ObservationOutOfSequenceException
   /// \throws NoDoorInRegionException
-  void observeDoorTraversal (RegionId id, bool succeeded, const ros::Time& stamp);
+  void observeDoorTraversal (RegionId id, bool succeeded, const Time& stamp);
 
   /// \return Probability that this door is open at the given time
   /// \pre \a stamp must be greater than the stamp of the last observation to this door (or 0 if there are no observations yet)
   /// \throws ObservationOutOfSequenceExceptioon
   /// \throws NoDoorInRegionException
-  double doorOpenProb (RegionId id, const ros::Time& stamp);
+  double doorOpenProb (RegionId id, const Time& stamp);
+
+  /// \return If probability of door being open is less than DOOR_OPEN_PROB_THRESHOLD, return false, otherwise return true
+  /// \throws ObservationOutOfSequenceExceptioon
+  /// \throws NoDoorInRegionException
+  bool isDoorOpen (RegionId id, const Time& stamp);
 
   /// \return The id of the nearest outlet to this point
   /// \throws NoOutletException
@@ -197,6 +206,11 @@ public:
   /// \return A vector of pairs.  There's one pair per connector in the containing region of p1, consisting of that connector's id 
   /// and the cost of the best path from p1 to p2 through that id
   vector<pair<ConnectorId, double> > connectorCosts (const Point2D& p1, const Point2D& p2);
+
+  /// \return A vector of pairs.  There's one pair per connector in the containing region of p1, consisting of that connector's id 
+  /// and the cost of the best path from p1 to p2 through that id
+  /// \param time Door costs are measured at this time
+  vector<pair<ConnectorId, double> > connectorCosts (const Point2D& p1, const Point2D& p2, const Time& time);
 
   /// \post New region has been added.  Based on cell2d connectivity, the region is connected to existing regions, and connectors are added, as necessary.
   /// \return Id of new region, which will be 1+the highest previously seen region id (or 0)

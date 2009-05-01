@@ -49,8 +49,21 @@ struct Cell2D
 };
 
 ostream& operator<< (ostream& str, const Cell2D& c);
-int operator< (const Cell2D& c, const Cell2D& c2);
-bool operator== (const Cell2D& c, const Cell2D& c2);
+
+inline 
+int operator< (const Cell2D& c, const Cell2D& c2)
+{
+  return (c.r<c2.r) || ((c.r==c2.r) && (c.c<c2.c));
+}
+
+
+inline
+bool operator== (const Cell2D& c, const Cell2D& c2)
+{
+  return (c.r==c2.r) && (c.c==c2.c);
+}
+
+
 
 std::vector<Cell2D> cellNeighbors (const Cell2D& c);
 

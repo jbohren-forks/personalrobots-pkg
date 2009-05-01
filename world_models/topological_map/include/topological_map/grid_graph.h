@@ -51,6 +51,7 @@ using boost::graph_traits;
 using boost::multi_array;
 using boost::tuple;
 using std::map;
+using std::pair;
 using std::vector;
 
 struct CellInfo
@@ -76,6 +77,7 @@ typedef graph_traits<Grid>::vertex_iterator GridGraphIterator;
 typedef pair<GridGraphAdjacencyIterator, GridGraphAdjacencyIterator> AdjIterPair;
 typedef map<Cell2D, GridGraphVertex> CellVertexMap;
 typedef vector<Cell2D> GridPath;
+typedef map<pair<Cell2D, Cell2D>, pair<bool, double> > GridGraphCache;
 
 /// Internally used class for representing a graph over 2d cells
 class GridGraph
@@ -112,6 +114,9 @@ public:
   // Return values: 1) The path 2) The cost 3) Was a path found?  1) and 2) aren't valid if 3) is false.
   tuple<bool, double, GridPath> shortestPath (const Cell2D& cell1, const Cell2D& cell2);
 
+  // As in shortestPath except 1) don't return the path 2) caches for speed
+  pair<bool, double> distanceBetween (const Cell2D& cell1, const Cell2D& cell2);
+
   // Costs from a given source to a vector of destinations
   vector<pair<bool, double> > singleSourceCosts (const Cell2D& source, const vector<Cell2D>& dests);
 
@@ -126,6 +131,7 @@ private:
   
   Grid graph_;
   CellVertexMap cell_vertex_map_;
+  GridGraphCache cache_;
 
 };
 
