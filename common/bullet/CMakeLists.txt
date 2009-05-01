@@ -5,6 +5,8 @@ rospack(bullet)
 
 rospack_add_boost_directories()
 
+MAKE_DIRECTORY(${PROJECT_SOURCE_DIR}/src/)
+
 # Build Bullet
 execute_process(COMMAND cmake -E chdir ${PROJECT_SOURCE_DIR} make -f Makefile.bullet
                 RESULT_VARIABLE _make_failed)
