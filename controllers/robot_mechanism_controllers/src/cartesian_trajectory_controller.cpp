@@ -122,7 +122,7 @@ bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot_state, 
     return false;
   }
   if (!mc->getControllerByName<CartesianPoseController>(output, pose_controller_)){
-    ROS_ERROR("CartesianPoseController: could not connect to pose controller");
+    ROS_ERROR("CartesianTrajectoryController: could not connect to pose controller");
     return false;
   }
 
@@ -270,8 +270,10 @@ Frame CartesianTrajectoryController::getPose()
 bool CartesianTrajectoryController::moveTo(robot_srvs::MoveToPose::Request &req,
 					   robot_srvs::MoveToPose::Response &resp)
 {
-  if (!moveTo(req.pose, 0.0))
+  if (!moveTo(req.pose, 0.0)){
+    ROS_ERROR("CartesianTrajectoryController: not starting trajectory because previous one is still running");
     return false;
+  }
 
   ros::Duration timeout = Duration().fromSec(3.0);
   ros::Duration traj_duration = Duration().fromSec(max_duration_);
