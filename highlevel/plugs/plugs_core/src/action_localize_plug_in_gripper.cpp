@@ -43,6 +43,7 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("localize_plug_in_gripper"),
   action_name_("localize_plug_in_gripper"),
   node_(node),
+  detector_(NULL),
   arm_controller_("r_arm_cartesian_trajectory_controller"),
   servoing_controller_("r_arm_hybrid_controller"),
   TF(*ros::Node::instance(),false, ros::Duration(10))
@@ -59,24 +60,24 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
   node_.param(action_name_ + "/arm_controller", arm_controller_, arm_controller_);
 
   if(arm_controller_ == "" )
-    {
-      ROS_ERROR("%s: Aborted, arm controller param was not set.", action_name_.c_str());
-      terminate();
-      return;
-    }
+  {
+    ROS_ERROR("%s: Aborted, arm controller param was not set.", action_name_.c_str());
+    terminate();
+    return;
+  }
 
   node_.param(action_name_ + "/servoing_controller", servoing_controller_, servoing_controller_);
 
   if(servoing_controller_ == "" )
-    {
-      ROS_ERROR("%s: Aborted, servoing controller param was not set.", action_name_.c_str());
-      terminate();
-      return;
-    }
+  {
+    ROS_ERROR("%s: Aborted, servoing controller param was not set.", action_name_.c_str());
+    terminate();
+    return;
+  }
 
-  detector_ = new PlugTracker::PlugTracker(node);
-  detector_->deactivate();
-  node_.subscribe("~plug_pose", plug_pose_msg_, &LocalizePlugInGripperAction::setToolFrame, this, 1);
+  //detector_ = new PlugTracker::PlugTracker(node);
+  //detector_->deactivate();
+  node_.subscribe("/plug_detector/plug_pose", plug_pose_msg_, &LocalizePlugInGripperAction::setToolFrame, this, 1);
 };
 
 LocalizePlugInGripperAction::~LocalizePlugInGripperAction()
@@ -156,7 +157,8 @@ void LocalizePlugInGripperAction::moveToStage()
     return;
   }
 
-  detector_->activate();
+  if (detector_)
+    detector_->activate();
   return;
 }
 
@@ -169,7 +171,8 @@ void LocalizePlugInGripperAction::setToolFrame()
 
   if (isPreemptRequested())
   {
-    detector_->deactivate();
+    if (detector_)
+      detector_->deactivate();
     deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
     return;
   }
@@ -183,8 +186,8 @@ void LocalizePlugInGripperAction::setToolFrame()
     return;
   }
 
-
-  detector_->deactivate();
+  if (detector_)
+    detector_->deactivate();
   ROS_INFO("%s: succeeded.", action_name_.c_str());
   deactivate(robot_actions::SUCCESS, empty_);
 }

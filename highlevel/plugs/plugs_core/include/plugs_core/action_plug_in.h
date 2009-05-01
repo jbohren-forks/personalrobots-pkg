@@ -46,6 +46,7 @@
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/CartesianState.h"
 #include "robot_msgs/TaskFrameFormalism.h"
+#include "plugs_core/PlugInState.h"
 
 //TF
 #include <tf/transform_listener.h>
@@ -70,7 +71,7 @@ public:
   robot_actions::ResultStatus execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback);
 
 private:
-  
+
   void reset();
   void plugMeasurementCallback(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg);
   void measure();
@@ -79,28 +80,27 @@ private:
   void force();
   void insert();
 
-  
+
   std::string action_name_;
 
   ros::Node& node_;
 
   std::string arm_controller_;
-  
+
   PlugTracker::PlugTracker* detector_;
   std_msgs::Empty empty_;
-  
+
   boost::scoped_ptr<tf::MessageNotifier<robot_msgs::PoseStamped> > notifier_;
   boost::scoped_ptr<tf::TransformListener> TF_;
-  
-  double last_standoff_;  
+
+  double last_standoff_;
   ros::Time g_started_inserting_, g_started_forcing_, g_stopped_forcing_;
   int g_state_;
   int prev_state_;
-  
+
   tf::Stamped<tf::Transform> mech_offset_;
   tf::Pose mech_offset_desi_;
-  robot_msgs::TaskFrameFormalism tff_msg_; 
-
+  robot_msgs::TaskFrameFormalism tff_msg_;
 };
 
 }

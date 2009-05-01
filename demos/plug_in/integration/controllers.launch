@@ -1,5 +1,5 @@
 <launch>
-        
+
   <group ns="prosilica">
     <include file="$(find prosilica_cam)/cam_settings.xml"/>
     <param name="acquisition_mode" type="str" value="Triggered"/>
@@ -11,26 +11,26 @@
   <group ns="r_arm_joint_trajectory_controller" clear_params="true">
     <param name="velocity_scaling_factor" value="0.25" type="double" />
     <param name="trajectory_wait_timeout" value="10.0" type="double" />
-    
+
     <param name="r_shoulder_pan_joint/goal_reached_threshold" value="0.05" type="double" />
     <param name="r_shoulder_lift_joint/goal_reached_threshold" value="0.05" type="double" />
     <param name="r_upper_arm_roll_joint/goal_reached_threshold" value="0.05" type="double" />
     <param name="r_elbow_flex_joint/goal_reached_threshold" value="0.05" type="double" />
     <param name="r_forearm_roll_joint/goal_reached_threshold" value="0.05" type="double" />
     <param name="r_wrist_flex_joint/goal_reached_threshold" value="0.05" type="double" />
-    <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.05" type="double" /> 
-    <param name="autostart" value="false" type="bool" /> 
+    <param name="r_wrist_roll_joint/goal_reached_threshold" value="0.05" type="double" />
+    <param name="autostart" value="false" type="bool" />
   </group>
-  
- 
+
+
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_joint_trajectory_controller.xml" />
-  
+
   <!-- Controller and Node Required for plug on base detection -->
-  
-  
-  <param name="laser_tilt_controller/autostart" value="false" type="bool" /> 
+
+
+  <param name="laser_tilt_controller/autostart" value="false" type="bool" />
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
-  
+
   <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="laser_scan_assembler" respawn="true">
     <remap from="scan_in" to="tilt_scan"/>
     <param name="tf_cache_time_secs" type="double" value="10.0" />
@@ -44,14 +44,14 @@
     <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
     <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
     <remap from="full_cloud" to="snapshot_cloud" />
-  </node>  
-  
+  </node>
+
   <!-- Controller and Node Required for move and grasp -->
   <!-- Cartesian wrench controller -->
   <group ns="r_arm_cartesian_wrench_controller" clear_params="true">
     <param name="root_name" type="string" value="torso_lift_link" />
     <param name="tip_name" type="string" value="r_gripper_tool_frame" />
-    <param name="autostart" value="false" type="bool" /> 
+    <param name="autostart" value="false" type="bool" />
   </group>
 
   <!-- Cartesian twist controller -->
@@ -72,7 +72,7 @@
     <param name="fb_rot/i" value="0.1" />
     <param name="fb_rot/d" value="0.0" />
     <param name="fb_rot/i_clamp" value="0.2" />
-    <param name="autostart" value="false" type="bool" /> 
+    <param name="autostart" value="false" type="bool" />
   </group>
 
   <!-- Cartesian pose controller -->
@@ -85,7 +85,7 @@
     <param name="i" value="0.1" />
     <param name="d" value="0.0" />
     <param name="i_clamp" value="0.5" />
-    <param name="autostart" value="false" type="bool" /> 
+    <param name="autostart" value="false" type="bool" />
   </group>
 
   <!-- Cartesian trajectory controller -->
@@ -98,17 +98,17 @@
     <param name="max_vel_rot" value="1.0" />
     <param name="max_acc_trans" value="0.2" />
     <param name="max_acc_rot" value="0.4" />
-    <param name="autostart" value="false" type="bool" /> 
+    <param name="autostart" value="false" type="bool" />
   </group>
 
     <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_default_controllers)/r_arm_cartesian_wrench_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_twist_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_pose_controller.xml $(find pr2_default_controllers)/r_arm_cartesian_trajectory_controller.xml" />
 
 
   <!--Gripper position controller-->
-  <param name="r_gripper_position_controller/autostart" value="false" type="bool" /> 
+  <param name="r_gripper_position_controller/autostart" value="false" type="bool" />
   <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/gripper_controller.xml"/>
-  
-  
+
+
   <!-- Parameters for the controllers used in plugging in -->
 
   <group ns="r_arm_hybrid_controller" clear_params="true">
@@ -123,10 +123,14 @@
       <rosparam file="$(find pr2_default_controllers)/gains/arm_twist.yaml" command="load" />
     </group>
     <param name="twist_filter" command="./../make_lowpass.m twist_filter 0.01" />
-    <param name="saturated_velocity" value="0.5" />
+    <param name="saturated_velocity" value="0.4" />
+    <!--<param name="saturated_rot_velocity" value="0.8" />-->
     <param name="autostart" value="false" type="bool" />
   </group>
 
  <node pkg="mechanism_control" type="spawner.py" args="$(find plug_in)/integration/r_arm_hybrid_controller.xml"/>
+
+ <!-- Plug tracking node -->
+ <include file="$(find outlet_detection)/launch/plug.launch" />
 
 </launch>

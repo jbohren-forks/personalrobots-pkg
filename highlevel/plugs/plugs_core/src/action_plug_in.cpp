@@ -27,7 +27,7 @@
  *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
  *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING INeco 
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING INeco
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
@@ -46,7 +46,8 @@ PlugInAction::PlugInAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("plug_in"),
   action_name_("plug_in"),
   node_(node),
-  arm_controller_("r_arm_hybrid_controller") 
+  arm_controller_("r_arm_hybrid_controller"),
+  detector_(NULL)
 {
   node_.setParam("~roi_policy", "LastImageLocation");
   node_.setParam("~display", 0);
@@ -57,28 +58,26 @@ PlugInAction::PlugInAction(ros::Node& node) :
   node_.param(action_name_ + "/arm_controller", arm_controller_, arm_controller_);
 
   if(arm_controller_ == "" )
-    {
-      ROS_ERROR("%s: Aborted, arm controller param was not set.", action_name_.c_str());
-      terminate();
-      return;
-    }
+  {
+    ROS_ERROR("%s: Aborted, arm controller param was not set.", action_name_.c_str());
+    terminate();
+    return;
+  }
 
- node_.advertise<robot_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
+  node_.advertise<robot_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
 
- detector_ = new PlugTracker::PlugTracker(node);
- detector_->deactivate();
+  //detector_ = new PlugTracker::PlugTracker(node);
+  //detector_->deactivate();
 
- TF_.reset(new tf::TransformListener(node));
-// notifier_.reset(new tf::MessageNotifier<robot_msgs::PoseStamped>(
-//               TF_.get(), &node, PlugInAction::plugMeasurementCallback, "~pose", "outlet_pose", 100));
- notifier_.reset(new tf::MessageNotifier<robot_msgs::PoseStamped>(
-               TF_.get(), &node,\
-boost::bind(&PlugInAction::plugMeasurementCallback, this, _1),
-//PlugInAction::plugMeasurementCallback,
-"~plug_pose", "outlet_pose", 100));
+  TF_.reset(new tf::TransformListener(node));
+  notifier_.reset(new tf::MessageNotifier<robot_msgs::PoseStamped>(
+                    TF_.get(), &node,
+                    boost::bind(&PlugInAction::plugMeasurementCallback, this, _1),
+                    "/plug_detector/plug_pose", "outlet_pose", 100));
 
   tff_msg_.header.frame_id = "outlet_pose";
 
+  node_.advertise<plugs_core::PlugInState>(action_name_ + "/state", 10);
 };
 
 PlugInAction::~PlugInAction()
@@ -89,7 +88,8 @@ PlugInAction::~PlugInAction()
 robot_actions::ResultStatus PlugInAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 {
   reset();
-  detector_->activate();
+  if (detector_)
+    detector_->activate();
 
   return waitForDeactivation(feedback);
 }
@@ -103,18 +103,27 @@ void PlugInAction::reset()
   g_stopped_forcing_ = ros::Time::now();
 }
 
+void PoseTFToMsg(const tf::Pose &p, robot_msgs::Twist &t)
+{
+  t.vel.x = p.getOrigin().x();
+  t.vel.y = p.getOrigin().y();
+  t.vel.z = p.getOrigin().z();
+  btMatrix3x3(p.getRotation()).getEulerYPR(t.rot.x, t.rot.y, t.rot.z);
+}
 
 void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs::PoseStamped>::MessagePtr &msg)
 {
+  plugs_core::PlugInState state_msg;
 
   ROS_INFO("recieved plug_pose Msg in callback");
 
   if (!isActive())
     return;
-  
+
   if (isPreemptRequested()){
     deactivate(robot_actions::PREEMPTED, empty_);
-    detector_->deactivate();
+    if (detector_)
+      detector_->deactivate();
     return;
   }
   tff_msg_.header.stamp = msg->header.stamp;
@@ -133,22 +142,25 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 
   tf::Pose viz_offset;
   tf::PoseMsgToTF(viz_offset_msg.pose, viz_offset);
-  double standoff = std::max(MIN_STANDOFF, viz_offset.getOrigin().length()  * 2.5/4.0);  
-  
+  PoseTFToMsg(viz_offset, state_msg.viz_offset);
+  double standoff = std::max(MIN_STANDOFF, viz_offset.getOrigin().length()  * 2.5/4.0);
+
   // Computes the offset for movement
   tf::Pose viz_offset_desi;
   viz_offset_desi.setIdentity();
   viz_offset_desi.getOrigin().setX(-standoff);
+  viz_offset_desi.getOrigin().setY(-0.003);
   viz_offset_desi.getOrigin().setZ(-0.004);
+  PoseTFToMsg(viz_offset.inverse() * viz_offset_desi, state_msg.viz_error);
   mech_offset_desi_ = viz_offset.inverse() * viz_offset_desi * mech_offset_;
 
   prev_state_ = g_state_;
 
   switch (g_state_) {
-    case MEASURING: 
+    case MEASURING:
     {
       if (viz_offset.getOrigin().length() > 0.5 ||
-          viz_offset.getRotation().getAngle() > (M_PI/4.0))
+          viz_offset.getRotation().getAngle() > (M_PI/6.0))
       {
         double ypr[3];
         btMatrix3x3(viz_offset.getRotation()).getEulerYPR(ypr[2], ypr[1], ypr[0]);
@@ -160,7 +172,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 
       double error = sqrt(pow(viz_offset.getOrigin().y() - viz_offset_desi.getOrigin().y(), 2) +
                           pow(viz_offset.getOrigin().z() - viz_offset_desi.getOrigin().z(), 2));
-      ROS_DEBUG("%s: Error = %0.6lf.", action_name_.c_str(), error);  
+      ROS_DEBUG("%s: Error = %0.6lf.", action_name_.c_str(), error);
       if (error < 0.002 && last_standoff_ < MIN_STANDOFF + 0.002)
         g_state_ = INSERTING;
       else
@@ -174,7 +186,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
       break;
     }
 
-    case INSERTING: 
+    case INSERTING:
     {
       tf::Vector3 offset = viz_offset.getOrigin() - viz_offset_desi.getOrigin();
       ROS_DEBUG("%s: Offset: (% 0.3lf, % 0.3lf, % 0.3lf)", action_name_.c_str(), offset.x(), offset.y(), offset.z());
@@ -191,22 +203,25 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
       }
       break;
     }
-    case FORCING: 
+    case FORCING:
     {
       if (ros::Time::now() > g_started_forcing_ + ros::Duration(1.0))
         g_state_ = HOLDING;
       break;
     }
-    case HOLDING: 
+    case HOLDING:
     {
       break;
     }
   }
 
+  state_msg.state = prev_state_;
+  state_msg.next_state = g_state_;
+
   if (g_state_ != prev_state_)
   {
     switch (g_state_) {
-      case MEASURING: 
+      case MEASURING:
       {
         ROS_DEBUG("MEASURING");
         if (prev_state_ == INSERTING || prev_state_ == FORCING)
@@ -215,36 +230,37 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
         }
         break;
       }
-      case MOVING: 
+      case MOVING:
       {
         ROS_DEBUG("MOVING");
         move();
         break;
       }
-      case INSERTING: 
+      case INSERTING:
       {
         ROS_DEBUG("INSERTING");
         insert();
         break;
       }
-      case FORCING: 
+      case FORCING:
       {
         ROS_DEBUG("FORCING");
         force();
         break;
       }
-      case HOLDING: 
+      case HOLDING:
       {
         ROS_DEBUG("HOLDING");
         hold();
         deactivate(robot_actions::SUCCESS, empty_);
-        detector_->deactivate();
+        if (detector_)
+          detector_->deactivate();
         break;
       }
     }
   }
 
-    
+
   last_standoff_ = standoff;
   return;
 }
@@ -316,7 +332,7 @@ void PlugInAction::force()
 {
   if (!isActive())
     return;
-  
+
   g_started_forcing_ = ros::Time::now();
 
   tff_msg_.mode.vel.x = 1;
@@ -335,6 +351,19 @@ void PlugInAction::force()
   tff_msg_.mode.vel.z = 2;
   tff_msg_.value.vel.y = 0.0;
   tff_msg_.value.vel.z = 0.0;
+
+
+  tff_msg_.mode.vel.x = 1;
+  tff_msg_.mode.vel.y = 3;
+  tff_msg_.mode.vel.z = 3;
+  tff_msg_.mode.rot.x = 3;
+  tff_msg_.mode.rot.y = 3;
+  tff_msg_.mode.rot.z = 3;
+  tff_msg_.value.vel.x = 30;
+  tff_msg_.value.vel.y = mech_offset_.getOrigin().y();
+  tff_msg_.value.vel.z = mech_offset_.getOrigin().z();
+  mech_offset_desi_.getBasis().getEulerZYX(tff_msg_.value.rot.z, tff_msg_.value.rot.y, tff_msg_.value.rot.x);
+
   node_.publish(arm_controller_ + "/command", tff_msg_);
   return;
 }
@@ -343,7 +372,7 @@ void PlugInAction::hold()
 {
   if (!isActive())
     return;
-  
+
   tff_msg_.mode.vel.x = 1;
   tff_msg_.mode.vel.y = 3;
   tff_msg_.mode.vel.z = 3;

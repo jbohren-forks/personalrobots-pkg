@@ -1,13 +1,13 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -83,14 +83,14 @@ int
   ros::Node node("test_executive");
   boost::thread_group threads_;
 
-  
+
 
   pr2_robot_actions::SwitchControllers switchlist;
   std_msgs::Empty empty;
-  robot_msgs::PlugStow plug_stow; 
+  robot_msgs::PlugStow plug_stow;
   robot_msgs::PointStamped point;
   robot_msgs::PoseStamped pose;
-  
+
   point.header.frame_id = "torso_lift_link";
   point.point.x=0;
   point.point.y=0;
@@ -112,7 +112,7 @@ int
   robot_actions::ActionClient< robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty> stow_plug("stow_plug");
 
 
-  timeout_medium.sleep();
+  timeout_short.sleep();
 #if 0
   // tuck arm
   //  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -143,7 +143,7 @@ int
 
   // detect outlet fine
   if (detect_outlet_fine.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -1;
-  
+
   // localize plug in gripper
   if (localize_plug_in_gripper.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
@@ -157,11 +157,12 @@ int
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   if (plug_in.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
-  timeout_long.sleep();
-#if 0
+  Duration().fromSec(5.0).sleep();
+
   //unplug
   if (unplug.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
+#if 0
   //stow plug
    switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.stop_controllers.push_back("r_arm_hybrid_controller");
@@ -175,6 +176,7 @@ int
 
 #endif
 
+  timeout_long.sleep();
   // stop remaining controllers
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.stop_controllers.push_back("r_arm_hybrid_controller");
