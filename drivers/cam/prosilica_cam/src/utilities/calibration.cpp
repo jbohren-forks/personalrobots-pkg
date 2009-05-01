@@ -8,8 +8,8 @@
 //static const int CHESSBOARD_FLAGS = CV_CALIB_CB_ADAPTIVE_THRESH;
 static const int CHESSBOARD_FLAGS = CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE;
 
-static const int SUBPIX_RANGE = 15;
-//static const int SUBPIX_RANGE = 11;
+//static const int SUBPIX_RANGE = 15;
+static const int SUBPIX_RANGE = 11;
 //static const int SUBPIX_RANGE = 5;
 
 extern "C"
@@ -472,8 +472,8 @@ int main( int argc, char** argv )
         }
 
         cvShowImage( "Image View", view );
-        key = cvWaitKey(capture ? 50 : 500);
-        //key = cvWaitKey(0);
+        //key = cvWaitKey(capture ? 50 : 500);
+        key = cvWaitKey(0);
 
         if( key == 27 )
             break;

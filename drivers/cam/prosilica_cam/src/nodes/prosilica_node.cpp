@@ -93,6 +93,27 @@ public:
     // Specify which frame to add to message header
     node_.param("~frame_id", frame_id_, std::string("NO_FRAME")) ;
 
+    // Acquisition control
+    size_t buffer_size;
+    std::string mode_str;
+    node_.param("~acquisition_mode", mode_str, std::string("Continuous"));
+    if (mode_str == std::string("Continuous")) {
+      mode_ = prosilica::Continuous;
+      desired_freq_ = 1; // make sure we get _something_
+      buffer_size = prosilica::Camera::DEFAULT_BUFFER_SIZE;
+    }
+    else if (mode_str == std::string("Triggered")) {
+      mode_ = prosilica::Triggered;
+      desired_freq_ = 0;
+      buffer_size = 1;
+    }
+    else {
+      ROS_FATAL("Unknown setting");
+      node_.shutdown();
+      return;
+    }
+
+    // Determine which camera to use
     if (node_.hasParam("~guid"))
     {
       std::string guid_str;
@@ -104,7 +125,7 @@ public:
     {
       std::string ip_str;
       node_.getParam("~ip_address", ip_str);
-      cam_.reset( new prosilica::Camera(ip_str.c_str()) );
+      cam_.reset( new prosilica::Camera(ip_str.c_str(), buffer_size) );
       
       // Verify Guid is the one expected
       unsigned long cam_guid = cam_->guid();
@@ -114,32 +135,15 @@ public:
     }
     else if (guid != 0)
     {
-      cam_.reset( new prosilica::Camera(guid) );
+      cam_.reset( new prosilica::Camera(guid, buffer_size) );
     }
     else {
       guid = prosilica::getGuid(0);
-      cam_.reset( new prosilica::Camera(guid) );
+      cam_.reset( new prosilica::Camera(guid, buffer_size) );
     }
     ROS_INFO("Found camera, guid = %lu", guid);
 
     cam_->setFrameCallback(boost::bind(&ProsilicaNode::publishImage, this, _1));
-
-    // Acquisition control
-    std::string mode_str;
-    node_.param("~acquisition_mode", mode_str, std::string("Continuous"));
-    if (mode_str == std::string("Continuous")) {
-      mode_ = prosilica::Continuous;
-      desired_freq_ = 1; // make sure we get _something_
-    }
-    else if (mode_str == std::string("Triggered")) {
-      mode_ = prosilica::Triggered;
-      desired_freq_ = 0;
-    }
-    else {
-      ROS_FATAL("Unknown setting");
-      node_.shutdown();
-      return;
-    }
     
     // Feature control
     std::string auto_setting;
@@ -223,7 +227,7 @@ public:
 
     cam_->start(mode_);
     if (mode_ == prosilica::Triggered)
-      node_.advertiseService("~poll", &ProsilicaNode::triggeredGrab, this);
+      node_.advertiseService("~poll", &ProsilicaNode::triggeredGrab, this, 0);
     
     running_ = true;
 
