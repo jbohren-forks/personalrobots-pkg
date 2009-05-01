@@ -210,7 +210,7 @@ bool DetectHandleAction::laserDetection(const robot_msgs::Door& door_in,
 
   // detect handle
   if (isPreemptRequested()) return false;
-  ROS_INFO("DetectHandleAction: detect the handle in a pointcloud of size %i", res_pointcloud.cloud.pts.size());
+  ROS_INFO("DetectHandleAction: start detecting the handle using the laser, in a pointcloud of size %i", res_pointcloud.cloud.pts.size());
   door_handle_detector::DoorsDetectorCloud::Request  req_handledetect;
   door_handle_detector::DoorsDetectorCloud::Response res_handledetect;
   req_handledetect.door = door_in;
@@ -244,7 +244,7 @@ bool DetectHandleAction::cameraDetection(const robot_msgs::Door& door_in,
 
   // detect handle
   if (isPreemptRequested()) return false;
-  ROS_INFO("DetectHandleAction: detect the handle");
+  ROS_INFO("DetectHandleAction: start detecting the handle using the camera");
   door_handle_detector::DoorsDetector::Request  req_handledetect;
   door_handle_detector::DoorsDetector::Response res_handledetect;
   req_handledetect.door = door_in;
