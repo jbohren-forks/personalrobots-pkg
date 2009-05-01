@@ -1,0 +1,1 @@
+rospack_add_executable(ledwiz_node ledwiz_node.cpp)
