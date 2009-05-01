@@ -29,6 +29,7 @@
 #define CONFIGURATION_DICTONARY_H
 #include <string>
 #include <map>
+#include <ros/node.h>
 
 class ConfigurationDictionary{
 public:
@@ -39,6 +40,8 @@ public:
   bool getParam(const std::string &key, ConfigurationDictionary &value);
 
   bool hasKey(const std::string &key);
+
+  std::string AsYaml();
 
 protected:
   std::map<std::string, bool> bool_values;
@@ -57,6 +60,10 @@ public:
   void setParam(const std::string &key, ConfigurationDictionary &value);
 
   void deleteParam(const std::string &key);
+
+  bool loadFromParamServer(ros::Node *n, std::string &name);
+  bool loadFromYaml(std::string &yaml);
+  bool loadFromYamlFile(std::string &filename);
 };
 
 #endif

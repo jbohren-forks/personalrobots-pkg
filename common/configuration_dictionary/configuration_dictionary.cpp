@@ -61,6 +61,11 @@ bool ConfigurationDictionary::hasKey(const std::string &key){
   return false;
 }
 
+std::string ConfigurationDictionary::AsYaml(){
+  return std::string("This would be a yaml representation.\n");
+}
+
+
 void MutableConfigurationDictionary::setParam(const std::string &key, bool value){
   if(hasKey(key)){
     deleteParam(key);
@@ -94,4 +99,19 @@ void MutableConfigurationDictionary::deleteParam(const std::string &key){
   int_values.erase(key);
   double_values.erase(key);
   string_values.erase(key);
+}
+
+bool MutableConfigurationDictionary::loadFromParamServer(ros::Node *n, std::string &name){
+  printf("Not implemented yet.\n");
+  return false;
+}
+
+bool MutableConfigurationDictionary::loadFromYaml(std::string &yaml){
+  printf("Not implemented yet.\n");
+  return false;
+}
+
+bool loadFromYamlFile(std::string *filename){
+  printf("Not implemented yet.\n");
+  return false;
 }
