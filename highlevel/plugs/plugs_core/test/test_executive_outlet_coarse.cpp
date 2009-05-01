@@ -135,40 +135,30 @@ int
 
 
   timeout_medium.sleep();
-
+  
+  // tuck arm
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  
   printf("Calling Outlet Detect Coarse action\n");
 
-
+  // detect outlet coarse
   if (detect_outlet_coarse.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -1;
-  
-  printf("Got pose: (%f,%f,%f),(%f, %f,%f,%f)\n", pose.pose.position.x,pose.pose.position.y,pose.pose.position.z,
-            pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w);
 
   pose.pose = transformOutletPose(pose.pose, 0.6);
 
-  printf("Transformed pose: (%f,%f,%f),(%f, %f,%f,%f)\n", pose.pose.position.x,pose.pose.position.y,pose.pose.position.z,
-            pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w);
-
-//  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-//  switchlist.start_controllers.push_back("laser_tilt_controller");
-//  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  
- if (move_base_local.execute(pose, pose, timeout_long) != robot_actions::SUCCESS) return -1;
-
-
-#if 0
-  // tuck arm
-  //  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-  //switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
-  //if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-  //if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-
-  // untuck arm
-  // if (untuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
-
-  // detect plug on base
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.start_controllers.push_back("laser_tilt_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  // move base
+  if (move_base_local.execute(pose, pose, timeout_long) != robot_actions::SUCCESS) return -1;
+
+  // untuck arm
+  if (untuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+
+  // detect plug on base
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   if (detect_plug_on_base.execute(empty, plug_stow, timeout_long) != robot_actions::SUCCESS) return -1;
 
@@ -189,6 +179,7 @@ int
   // localize plug in gripper
   if (localize_plug_in_gripper.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
+#if 0
   // plug in
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
@@ -198,20 +189,22 @@ int
   switchlist.start_controllers.push_back("r_arm_hybrid_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   //if (plug_in.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
-
+#endif
   timeout_medium.sleep();
 
   //unplug
   if (unplug.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
   //stow plug
-   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  #if 0
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.stop_controllers.push_back("r_arm_hybrid_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_trajectory_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_wrench_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  #endif
   if (stow_plug.execute(plug_stow, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
 
@@ -227,13 +220,9 @@ int
   switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
 
-#endif
 
-//  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
-//  switchlist.stop_controllers.push_back("laser_tilt_controller");
-//
   timeout_medium.sleep();
-//  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+
 
   return (0);
 }
