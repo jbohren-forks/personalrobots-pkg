@@ -338,7 +338,6 @@ namespace costmap_2d {
     if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
       ROS_ERROR("Costmap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
           current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
-      tf_.canTransform(global_frame_, robot_base_frame_, ros::Time(2.0));
       return;
     }
 
@@ -396,7 +395,6 @@ namespace costmap_2d {
     if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
       ROS_ERROR("Costmap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
           current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
-      tf_.canTransform(global_frame_, robot_base_frame_, ros::Time(2.0));
       return;
     }
 
