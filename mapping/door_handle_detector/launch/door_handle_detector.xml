@@ -3,6 +3,7 @@
 <!-- Handle detector Camera -->
  <node pkg="door_handle_detector" name="handle_detector_vision" type="handle_detector_vision" respawn="true">
    <param name="display" type="bool" value="false" />
+   <param name="cascade_classifier" value="$(find door_handle_detector)/data/handles_data.xml" />
  </node>
 
 <!-- Handle detector Laser -->
