@@ -472,18 +472,29 @@ namespace cloud_geometry
       for (unsigned int d = orig_dims; d < points.chan.size (); d++)
         points.chan[d].vals.resize (nr_points);
 
+      // Peter: timing the different pieces of this
+      ros::Time ts = ros::Time::now();
       cloud_kdtree::KdTree *kdtree = new cloud_kdtree::KdTreeANN (points);
+      ROS_INFO("KdTree created in %f seconds", (ros::Time::now () - ts).toSec ());
+
+      double total_search_time = 0.0, total_normal_time = 0.0;
 
 //#pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < nr_points; i++)                     // Get the nearest neighbors for all the point indices in the bounds
       {
         std::vector<int> nn_indices;
         std::vector<float> nn_distances;
+
+	ros::Time ts_search = ros::Time::now();
         kdtree->nearestKSearch (points.pts[i], k, nn_indices, nn_distances);
+	total_search_time += (ros::Time::now () - ts_search).toSec ();
 
         Eigen::Vector4d plane_parameters;                     // Compute the point normals (nx, ny, nz), surface curvature estimates (c)
         double curvature;
+
+	ros::Time ts_normal = ros::Time::now();
         computePointNormal (points, nn_indices, plane_parameters, curvature);
+	total_normal_time += (ros::Time::now () - ts_normal).toSec ();
 
         cloud_geometry::angles::flipNormalTowardsViewpoint (plane_parameters, points.pts[i], viewpoint);
 
@@ -492,6 +503,8 @@ namespace cloud_geometry
         points.chan[orig_dims + 2].vals[i] = plane_parameters (2);
         points.chan[orig_dims + 3].vals[i] = curvature;
       }
+      ROS_INFO("Breakdown: %f seconds to search, %f seconds to compute normals", total_search_time, total_normal_time);
+
       delete kdtree;                                          // Delete the kd-tree
     }
 

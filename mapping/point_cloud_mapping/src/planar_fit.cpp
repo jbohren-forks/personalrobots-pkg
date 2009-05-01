@@ -45,6 +45,8 @@ This node should be used for testing different planar segmentation strategies.
 // ROS messages
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/PointStamped.h>
+// For the normals visualization
+#include <visualization_msgs/Marker.h>
 
 #include <tf/transform_listener.h>
 
@@ -80,6 +82,7 @@ class PlanarFit
 
     // ROS messages
     PointCloud cloud_, cloud_down_, cloud_plane_, cloud_outliers_;
+    
 
     tf::TransformListener tf_;
 
@@ -111,6 +114,9 @@ class PlanarFit
     double euclidean_cluster_angle_tolerance_, euclidean_cluster_distance_tolerance_;
     int euclidean_cluster_min_pts_;
 
+    // Normal line markers
+    int publish_normal_lines_as_markers_;
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     PlanarFit (ros::Node& anode) : node_ (anode),  tf_ (anode)
     {
@@ -134,6 +140,8 @@ class PlanarFit
       node_.param ("~euclidean_cluster_min_pts", euclidean_cluster_min_pts_, 500);
       node_.param ("~euclidean_cluster_distance_tolerance", euclidean_cluster_distance_tolerance_, 0.05);
 
+      node_.param ("~publish_normal_lines_as_markers", publish_normal_lines_as_markers_, 1);
+
       string cloud_topic ("tilt_laser_cloud");
 
       vector<pair<string, string> > t_list;
@@ -154,6 +162,10 @@ class PlanarFit
       node_.advertise<PointCloud> ("~normals", 1);
       node_.advertise<PointCloud> ("~plane", 1);
       node_.advertise<PointCloud> ("~outliers", 1);
+
+      // A channel to visualize the normals as cute little lines 
+      //node_.advertise<PolyLine> ("~normal_lines", 1);
+      node_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -216,6 +228,7 @@ class PlanarFit
         node_.getParam ("~euclidean_cluster_angle_tolerance", euclidean_cluster_angle_tolerance_);
         euclidean_cluster_angle_tolerance_ = angles::from_degrees (euclidean_cluster_angle_tolerance_);
       }
+      if (node_.hasParam ("~publish_normal_lines_as_markers")) node_.getParam ("~publish_normal_lines_as_markers", publish_normal_lines_as_markers_);
     }
 
 
@@ -234,6 +247,9 @@ class PlanarFit
       }
 
       cloud_down_.header = cloud_.header;
+      cloud_down_.chan.clear();
+
+      //ROS_INFO ("Original: %d channels, Downsampled: %d channels", cloud_.chan.size(), cloud_down_.chan.size());
 
       ros::Time ts = ros::Time::now ();
       // Figure out the viewpoint value in the cloud_frame frame
@@ -273,14 +289,23 @@ class PlanarFit
             cloud_geometry::nearest::computePointCloudNormals (cloud_down_, k_, viewpoint_cloud);               // Estimate point normals in the downsampled point cloud using a K-nearest search
         }
         node_.publish ("~normals", cloud_down_);
+	if (publish_normal_lines_as_markers_)
+	{
+	  publishNormalLines (cloud_down_, 0, 1, 2, 0.01, 0.0005);
+	}
       } // if (downsample)
       else
       {
+	int first_normal_index = cloud_.chan.size();
         if (radius_or_knn_ == 1)             // Use a radius search
           cloud_geometry::nearest::computePointCloudNormals (cloud_, radius_, viewpoint_cloud);    // Estimate point normals using a fixed radius search
         else if (radius_or_knn_ == 2)        // Use a k-nearest neighbors search
           cloud_geometry::nearest::computePointCloudNormals (cloud_, k_, viewpoint_cloud);         // Estimate point normals using a K-nearest search
         node_.publish ("~normals", cloud_);
+	if (publish_normal_lines_as_markers_)
+	{
+	  publishNormalLines (cloud_, first_normal_index, first_normal_index+1, first_normal_index+2, 0.01, 0.0005);
+	}
       }
       ROS_INFO ("Normals estimated in %g seconds.", (ros::Time::now () - ts).toSec ());
 
@@ -545,6 +570,61 @@ class PlanarFit
       // Destroy the tree
       delete tree;
     }
+	
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /** \brief Publish the normals as cute little lines
+      * \NOTE: assumes normalized point normals !
+      * \param points pointer to the point cloud message
+      * \param nx_idx the index of the x normal
+      * \param ny_idx the index of the y normal
+      * \param nz_idx the index of the z normal
+      * \param length the length of the normal lines
+      * \param width the width of the normal lines
+      */
+  
+  void publishNormalLines (PointCloud &points, int nx_idx, int ny_idx, int nz_idx, double length, double width)
+  {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "base_link";
+    marker.header.stamp = ros::Time();
+    marker.ns = "normal_lines_ns";
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::LINE_LIST;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = 0;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = 0;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = width;
+    marker.scale.y = 1;
+    marker.scale.z = 1;
+    marker.color.a = 1.0;
+    marker.color.r = 1.0;
+    marker.color.g = 1.0;
+    marker.color.b = 1.0;
+
+    int nr_points = points.pts.size();
+    
+    marker.points.resize(2 * nr_points);
+    for (int i = 0; i < nr_points; i++)
+      {
+	marker.points[2*i].x = points.pts[i].x;
+	marker.points[2*i].y = points.pts[i].y;
+	marker.points[2*i].z = points.pts[i].z;
+	marker.points[2*i+1].x = points.pts[i].x + points.chan[nx_idx].vals[i] * length;
+	marker.points[2*i+1].y = points.pts[i].y + points.chan[ny_idx].vals[i] * length;
+	marker.points[2*i+1].z = points.pts[i].z + points.chan[nz_idx].vals[i] * length;
+      }
+
+    node_.publish("visualization_marker", marker);
+
+    ROS_INFO ("Published %d normal lines", nr_points);
+  }
 };
 
 /* ---[ */

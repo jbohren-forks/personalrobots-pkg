@@ -73,7 +73,6 @@ class PCDGenerator
       cloud_topic_ = "cloud_pcd";
       node_.advertise<robot_msgs::PointCloud> (cloud_topic_.c_str (), 1);
       ROS_INFO ("Publishing data on topic %s.", node_.mapName (cloud_topic_).c_str ());
-      
     }
 
     ////////////////////////////////////////////////////////////////////////////////

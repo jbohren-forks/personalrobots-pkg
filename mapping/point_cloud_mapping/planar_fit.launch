@@ -17,11 +17,14 @@
    <param name="/planar_fit/use_clustering"                       value="1" />
    <param name="/planar_fit/euclidean_cluster_angle_tolerance"    value="30" />
    <param name="/planar_fit/euclidean_cluster_min_pts"            value="500" />
-   <param name="/planar_fit/euclidean_cluster_distance_tolerance" value="0.03" />
+   <param name="/planar_fit/euclidean_cluster_distance_tolerance" value="0.1" />
 
   <!-- Planar fitting parameters -->
   <param name="/planar_fit/sac_distance_threshold" value="0.02" />
   <param name="/planar_fit/sac_maximum_iterations" value="100" />
+
+  <!-- Display normal lines as markers -->
+  <param name="/planar_fit/display_normal_lines_as_markers" value = "1" />
 
   <node pkg="point_cloud_mapping" type="planar_fit_node" name="planar_fit" output="screen" respawn="true">
     <remap from="tilt_laser_cloud" to="cloud_pcd" />

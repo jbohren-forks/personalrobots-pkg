@@ -49,12 +49,19 @@ namespace cloud_io
   * \param points the resulting point array
   */
   int
-    loadPCDFile (const char* file_name, robot_msgs::PointCloud &points)
+  loadPCDFile (const char* file_name, robot_msgs::PointCloud &points)
   {
     bool binary_data = false;
     int nr_points = 0;
     std::ifstream fs;
     std::string line;
+
+    int specified_channel_count = 0;
+    // for reading image 2d coordinates if ARRAY is specified
+    int array_width = 0;
+    int array_height = 0;
+    int x = 0;
+    int y = 0;
 
     int idx = 0;
     // Open file
@@ -81,6 +88,7 @@ namespace cloud_io
       if (line_type.substr (0, 7) == "COLUMNS")
       {
         int remaining_tokens = st.size () - (1 + 3);
+	specified_channel_count = st.size() - 1; // need this to make ARRAY work
         points.set_chan_size (remaining_tokens);
         for (int i = 0; i < remaining_tokens; i++)
         {
@@ -113,6 +121,22 @@ namespace cloud_io
         continue;
       }
 
+      // load array dimensions from disparity image if present
+      // this assumes that you will already have seen the "real" channel names
+      if (line_type.substr (0, 5) == "ARRAY")
+      {
+	array_width = atoi (st.at(1).c_str());
+	array_height = atoi (st.at(2).c_str());
+	points.set_chan_size (specified_channel_count + 2);
+	points.chan[specified_channel_count].name = "array_width";
+	points.chan[specified_channel_count+1].name = "array_height";
+	points.chan[specified_channel_count].set_vals_size(1);
+	points.chan[specified_channel_count+1].set_vals_size(1);
+	points.chan[specified_channel_count].vals[0] = array_width;
+	points.chan[specified_channel_count+1].vals[0] = array_height;
+	continue;
+      }
+
       // Nothing of the above? We must have points then
       // Convert the first token to float and use it as the first point coordinate
       if (idx >= nr_points)
@@ -125,9 +149,9 @@ namespace cloud_io
       points.pts[idx].x = atof (st.at (0).c_str ());
       points.pts[idx].y = atof (st.at (1).c_str ());
       points.pts[idx].z = atof (st.at (2).c_str ());
-      for (unsigned int i = 0; i < points.get_chan_size (); i++)
+      for (unsigned int i = 0; i < specified_channel_count-3; i++)
         points.chan[i].vals[idx] = atof (st.at (i+3).c_str ());
-
+      
       idx++;
     }
     // Close file
