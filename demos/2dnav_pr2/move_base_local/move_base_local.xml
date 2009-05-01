@@ -1,4 +1,5 @@
 <launch>
+<include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 <node pkg="nav" type="move_base_local" respawn="false" name="move_base_local" output="screen" machine="three">
   <param name="controller_frequency" value="20.0" />
 
