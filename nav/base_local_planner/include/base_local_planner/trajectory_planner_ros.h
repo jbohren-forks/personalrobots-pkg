@@ -226,6 +226,7 @@ namespace base_local_planner {
       bool goal_reached_;
       costmap_2d::Costmap2DPublisher* costmap_publisher_;
       std::vector<robot_msgs::PoseStamped> global_plan_;
+      double transform_tolerance_;
   };
 
 };

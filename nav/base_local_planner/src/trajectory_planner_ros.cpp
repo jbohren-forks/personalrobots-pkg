@@ -66,6 +66,7 @@ namespace base_local_planner {
 
     ros_node.param("~base_local_planner/costmap/global_frame", global_frame_, string("map"));
     ros_node.param("~base_local_planner/costmap/robot_base_frame", robot_base_frame_, string("base_link"));
+    ros_node.param("~base_local_planner/transform_tolerance", transform_tolerance_, 0.2);
 
     double map_publish_frequency;
     ros_node.param("~base_local_planner/costmap_visualization_rate", map_publish_frequency, 2.0);
@@ -351,6 +352,7 @@ namespace base_local_planner {
     robot_pose.setIdentity();
     robot_pose.frame_id_ = robot_base_frame_;
     robot_pose.stamp_ = ros::Time();
+    ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
 
     //get the global pose of the robot
     try{
@@ -366,6 +368,12 @@ namespace base_local_planner {
     }
     catch(tf::ExtrapolationException& ex) {
       ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      return false;
+    }
+    // check global_pose timeout
+    if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
+      ROS_ERROR("TrajectoryPlannerROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
+          current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
       return false;
     }
 
@@ -531,6 +539,7 @@ namespace base_local_planner {
     robot_pose.setIdentity();
     robot_pose.frame_id_ = robot_base_frame_;
     robot_pose.stamp_ = ros::Time();
+    ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
 
     //get the global pose of the robot
     try{
@@ -546,6 +555,12 @@ namespace base_local_planner {
     }
     catch(tf::ExtrapolationException& ex) {
       ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      return;
+    }
+    // check global_pose timeout
+    if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_) {
+      ROS_ERROR("TrajcetoryPlannerROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
+          current_time.toSec() ,global_pose.stamp_.toSec() ,transform_tolerance_);
       return;
     }
 
