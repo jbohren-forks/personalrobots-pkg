@@ -1,5 +1,7 @@
 <launch>
-<node pkg="nav" type="move_base" respawn="true" name="move_base" machine="three">
+<include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+<node pkg="nav" type="move_base" respawn="false" name="move_base" output="screen" machine="three">
   <remap from="/move_base/activate" to="/goal" />
   <remap from="~base_local_planner/global_plan" to="/gui_path" />
   <remap from="~base_local_planner/local_plan" to="/local_path" />
