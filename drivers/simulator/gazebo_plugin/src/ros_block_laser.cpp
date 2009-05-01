@@ -196,10 +196,10 @@ void RosBlockLaser::PutLaserData()
       j3 = hja + vjb * rayCount;
       j4 = hjb + vjb * rayCount;
       // range readings of 4 corners
-      r1 = std::min(this->myParent->GetRange(j1) , maxRange);
-      r2 = std::min(this->myParent->GetRange(j2) , maxRange);
-      r3 = std::min(this->myParent->GetRange(j3) , maxRange);
-      r4 = std::min(this->myParent->GetRange(j4) , maxRange);
+      r1 = std::min(this->myParent->GetRange(j1) , maxRange-minRange);
+      r2 = std::min(this->myParent->GetRange(j2) , maxRange-minRange);
+      r3 = std::min(this->myParent->GetRange(j3) , maxRange-minRange);
+      r4 = std::min(this->myParent->GetRange(j4) , maxRange-minRange);
 
       // Range is linear interpolation if values are close,
       // and min if they are very different
@@ -226,7 +226,7 @@ void RosBlockLaser::PutLaserData()
       /*  point scan from laser                                      */
       /*                                                             */
       /***************************************************************/
-      if (r == maxRange)
+      if (r == maxRange - minRange)
       {
         // no noise if at max range
         this->cloudMsg.pts[n].x      = (r+minRange) * cos(pAngle)*cos(yAngle);

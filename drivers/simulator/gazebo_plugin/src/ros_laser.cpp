@@ -157,8 +157,8 @@ void RosLaser::PutLaserData()
     assert(ja >= 0 && ja < rayCount);
     assert(jb >= 0 && jb < rayCount);
 
-    ra = std::min(this->myParent->GetRange(ja) , maxRange);
-    rb = std::min(this->myParent->GetRange(jb) , maxRange);
+    ra = std::min(this->myParent->GetRange(ja) , maxRange-minRange); // length of ray
+    rb = std::min(this->myParent->GetRange(jb) , maxRange-minRange); // length of ray
 
     // Range is linear interpolation if values are close,
     // and min if they are very different
@@ -174,10 +174,7 @@ void RosLaser::PutLaserData()
     /*  point scan from laser                                      */
     /*                                                             */
     /***************************************************************/
-    if (r == maxRange)
-      this->laserMsg.ranges[i]        = r; // no noise if at max range
-    else
-      this->laserMsg.ranges[i]        = r + minRange + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->laserMsg.ranges[i]        = std::min(r + minRange + this->GaussianKernel(0,this->gaussianNoise), maxRange);
     this->laserMsg.intensities[i]   = intensity + this->GaussianKernel(0,this->gaussianNoise) ;
   }
 
