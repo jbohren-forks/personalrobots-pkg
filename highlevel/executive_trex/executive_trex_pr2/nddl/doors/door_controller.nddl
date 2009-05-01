@@ -155,13 +155,14 @@ DoorController::Holds {
 	      // Moving the base set up here. Used in either case
 	      contains_start(move_base_door.Active cmd_move_base_door);
 
+
+	      // Set up a preemption as needed. Will make this conditional shortly
+	      any(stop_action.Active cmd_stop_action);
+	      cmd_move_base_door before cmd_stop_action;
+
 	      if(have_handle == true){
 		contains_start(open_door.Active cmd_open_door);
 		cmd_open_door starts_before cmd_move_base_door;
-
-		// Force preemption of the open door action
-		any(stop_action.Active cmd_stop_action);
-		cmd_move_base_door before cmd_stop_action;
 		eq(cmd_stop_action.action_name,"open_door");
 	      }
 	      else {
@@ -169,6 +170,7 @@ DoorController::Holds {
 		contains_start(push_door.Active cmd_push_door);
 		cmd_touch_door before cmd_push_door;
 		cmd_push_door starts_before cmd_move_base_door;
+		eq(cmd_stop_action.action_name,"push_door");
 	      }
 	    }
 	    else{
@@ -286,8 +288,12 @@ DoorManipulationBehavior::Inactive{
       // If successful, then the completion of the action starts a new step in the controller. This is true for all
       // door actions except move_base_door.
       if(status == SUCCESS){
-	eq(dc.active, true); 
 	eq_door_msg(dc.object, this.object);
+      }
+      if(status == UNDEFINED){
+      }
+      else{
+	eq(dc.active, true);
       }
     }
   }
@@ -313,10 +319,17 @@ ReleaseHandle::Inactive{
 MoveBaseDoor::Inactive{
   if(start){
     starts(DoorController.Holds dc);
+    eq(dc.arms_tucked, false);
     if(status == ABORTED){
     }
     else {
       eq(dc.doorway_clear, true);
+    }
+
+    if(status == UNDEFINED){
+    }
+    else{
+      eq(dc.active, true);
     }
   }
 }
