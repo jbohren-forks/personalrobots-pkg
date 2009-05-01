@@ -557,16 +557,16 @@ private:
         }
         sum /= cnt;
         if(max_dist > 0.1 || sum < 0.002){
-        	ROS_INFO("Not enough depth variation for handle candidate: %f, %f\n", max_dist, sum);
-            return false;
+	  ROS_DEBUG("Not enough depth variation for handle candidate: %f, %f\n", max_dist, sum);
+	  return false;
         }
 
         double dx, dy;
         robot_msgs::Point p;
         getROIDimensions(r, dx, dy, p);
         if(dx > 0.25 || dy > 0.15){
-            ROS_INFO("Too big, discarding");
-            return false;
+	  ROS_DEBUG("Too big, discarding");
+	  return false;
         }
 
 
