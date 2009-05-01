@@ -354,6 +354,9 @@ namespace base_local_planner {
   }
 
   bool TrajectoryPlannerROS::computeVelocityCommands(robot_msgs::PoseDot& cmd_vel, const std::vector<costmap_2d::Observation>& observations){
+    //assume at the beginning of our control cycle that we could have a new goal
+    goal_reached_ = false;
+
     std::vector<robot_msgs::PoseStamped> local_plan;
     tf::Stamped<tf::Pose> robot_pose, global_pose;
     robot_pose.setIdentity();
@@ -425,9 +428,6 @@ namespace base_local_planner {
     goal_point.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
 
     double goal_th = yaw;
-
-    //assume at the beginning of our control cycle that we could have a new goal
-    goal_reached_ = false;
 
     //check to see if we've reached the goal position
     if(goalPositionReached(global_pose, goal_x, goal_y)){
