@@ -71,6 +71,9 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
 {
   ROS_INFO("DetectHandleAction: execute");
 
+  // default feedback
+  feedback = goal;
+
   // transform door message to time fixed frame
   robot_msgs::Door goal_tr;
   transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame);
