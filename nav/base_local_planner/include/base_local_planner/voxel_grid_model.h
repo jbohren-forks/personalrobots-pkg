@@ -160,7 +160,7 @@ namespace base_local_planner {
         obstacle_grid_.markVoxel(cell_x, cell_y, cell_z);
       }
 
-      VoxelGrid obstacle_grid_;
+      voxel_grid::VoxelGrid obstacle_grid_;
       double xy_resolution_;
       double z_resolution_;
       double origin_x_;
