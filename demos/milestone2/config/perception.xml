@@ -9,14 +9,6 @@
   <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="false"/>
 
   <!-- Stereo image processing -->
-  <group ns="sterro" clear_params="true">
-    <param name="videre_mode" type="str" value="none"/>
-    <param name="do_colorize" type="bool" value="True"/>
-    <param name="do_rectify" type="bool" value="True"/>
-    <param name="do_stereo" type="bool" value="True"/>
-    <param name="do_calc_points" type="bool" value="True"/>
-    <param name="do_keep_coords" type="bool" value="True"/>
-  </group>
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" />
 
   <!-- Filter for tilt laser shadowing/veiling -->
@@ -43,24 +35,7 @@
     <param name="downsample_factor" type="int" value="1" />
   </node>
 
-  <!-- Point cloud assembler for tilt laser -->
-  <node pkg="point_cloud_assembler" type="point_cloud_assembler_srv" name="point_cloud_assembler" respawn="true">
-    <remap from="scan_in" to="tilt_laser_cloud_filtered" />
-    <param name="tf_cache_time_secs" type="double" value="10.0" />
-    <param name="tf_extrap_limit" type="double" value="0.01" />
-    <param name="max_scans" type="int" value="400" />
-    <param name="fixed_frame" type="string" value="odom_combined" />
-  </node>
-
-  <!-- point cloud snapshotter for tilt laser -->
-  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" name="snapshotter" respawn="true" >
-    <remap from="build_cloud" to="point_cloud_assembler/build_cloud" />
-    <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
-    <remap from="full_cloud" to="full_cloud" />
-  </node>
-
-
-  <!-- Setup for detecting the plug on the base -->
+   <!-- Setup for detecting the plug on the base -->
   <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen"  name="plugs_laser_scan_assembler" respawn="true">
     <remap from="scan_in" to="tilt_scan"/>
     <param name="tf_cache_time_secs" type="double" value="10.0" />
