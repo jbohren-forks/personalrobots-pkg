@@ -49,7 +49,7 @@ using namespace door_handle_detector;
 static const string fixed_frame = "odom_combined";
 static const double scan_speed  = 0.1; // [m/sec]
 static const double scan_height = 0.4; //[m]
-static const unsigned int max_retries = 5;
+static const unsigned int max_retries = 7;
 
 DetectHandleAction::DetectHandleAction(Node& node): 
   robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_handle"),

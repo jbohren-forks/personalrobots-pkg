@@ -45,7 +45,7 @@ using namespace std;
 using namespace door_handle_detector;
 
 static const string fixed_frame = "odom_combined";
-static const double touch_dist = 0.75;
+static const double touch_dist = 0.65;
 
 
 

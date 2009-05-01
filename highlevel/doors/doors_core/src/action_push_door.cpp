@@ -46,7 +46,7 @@ using namespace std;
 using namespace door_handle_detector;
 
 static const string fixed_frame = "odom_combined";
-static const double push_dist = 0.75;
+static const double push_dist = 0.65;
 static const double push_vel  = 5.0 * M_PI/180.0;  // 5 [deg/sec]
 
 
