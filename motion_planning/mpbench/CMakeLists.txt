@@ -14,7 +14,7 @@ rospack (mpbench)
 
 LIST (APPEND MPBENCH_LIBS
       mpbench
-      old_costmap_2d
+      costmap_2d
       sunflower
       mpglue
       nepumuk
