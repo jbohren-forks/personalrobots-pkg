@@ -81,8 +81,7 @@ public:
 
   int initial_mode_;
 
-  double saturated_velocity_;
-  double k_saturated_velocity_;
+  double saturated_velocity_, saturated_rot_velocity_;
 
   bool use_filter_;
   filters::FilterChain<double> twist_filter_;

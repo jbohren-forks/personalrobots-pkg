@@ -162,7 +162,7 @@ bool CartesianHybridController::initXml(mechanism::RobotState *robot, TiXmlEleme
   // Saturated velocity
 
   node->param(name + "/saturated_velocity", saturated_velocity_, -1.0);
-  node->param(name + "/k_saturated_velocity", k_saturated_velocity_, 0.0);
+  node->param(name + "/saturated_rot_velocity", saturated_rot_velocity_, -1.0);
 
   // Tool frame
 
@@ -282,6 +282,13 @@ void CartesianHybridController::update()
       twist_desi_.vel = saturated_velocity_ * twist_desi_.vel / twist_desi_.vel.Norm();
     }
   }
+  if (saturated_rot_velocity_ >= 0.0)
+  {
+    if (twist_desi_.rot.Norm() > saturated_rot_velocity_)
+    {
+      twist_desi_.rot = saturated_rot_velocity_ * twist_desi_.rot / twist_desi_.rot.Norm();
+    }
+  }
 
   // Computes the desired wrench
   for (int i = 0; i < 6; ++i)
@@ -329,7 +336,7 @@ void CartesianHybridController::update()
       jnt_eff(i) += jacobian(j,i) * wrench_in_root(j);
   }
 
-  chain_.setEfforts(jnt_eff, robot_->joint_states_);
+  chain_.addEfforts(jnt_eff, robot_->joint_states_);
 }
 
 bool CartesianHybridController::starting()
