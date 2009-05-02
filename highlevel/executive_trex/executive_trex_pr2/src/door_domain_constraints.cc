@@ -1,5 +1,6 @@
 #include <executive_trex_pr2/door_domain_constraints.hh>
 #include <executive_trex_pr2/adapter_utilities.h>
+#include <executive_trex_pr2/components.hh>
 #include <doors_core/executive_functions.h>
 
 #include "Debug.hh"
@@ -45,23 +46,17 @@ namespace executive_trex_pr2 {
    * @todo Integarte proper code from Wim. Also assumes good data
    */
   void GetRobotPoseForDoorConstraint::handleExecute(){
-    debugMsg("trex:propagation:doors:get_robot_pose_for_door",  "BEFORE: " << toString());
+    debugMsg("trex:debug:propagation:doors:get_robot_pose_for_door",  "BEFORE: " << toString());
 
-    // Wait till all inputs are bound
-    const std::vector<ConstrainedVariableId>& params = _token_id->parameters();
-    for(unsigned int i = 0; i< params.size(); i++){
-      ConstrainedVariableId param = params[i];
-      if(!param->lastDomain().isSingleton()){
-	debugMsg("trex:propagation:doors:get_robot_pose_for_door",  
-		 "Skipping propagation since" << param->toString() << " is unbound.");
-	return;
-      }
-    }
+    static const std::string REQUIRED_PARAMS("frame_id:frame_p1_x:frame_p1_y:frame_p1_z:frame_p2_x:frame_p2_y:frame_p2_z:height:hinge:rot_dir:door_p1_x:door_p1_y:door_p1_z:door_p2_x:door_p2_y:door_p2_z:handle_x:handle_y:handle_z:normal_x:normal_y:normal_z");
 
-    robot_msgs::Door msg;
-    AdapterUtilities::write(_token_id, msg);
+    // If required inputs are not bound, then do nothing
+    if(!allSingletons(getScope(), REQUIRED_PARAMS))
+      return;
 
     // Now make the calculation - How this works without knowledge of robot position is beyond me. Have to check with Wim.
+    robot_msgs::Door msg;
+    AdapterUtilities::write(_token_id, msg);
     tf::Stamped<tf::Pose> tf_stamped_pose = getRobotPose(msg, _range.getSingletonValue());
 
     // Extract xy, and theta, which is yaw
@@ -85,6 +80,6 @@ namespace executive_trex_pr2 {
     _qz.set(quaternian.getZ());
     _qw.set(quaternian.getW());
 
-    debugMsg("trex:propagation:doors:get_robot_pose_for_door",  "AFTER: " << toString());
+    debugMsg("trex:debug:propagation:doors:get_robot_pose_for_door",  "AFTER: " << toString());
   } 
 }

@@ -1,28 +1,8 @@
 #include "doors/imports.nddl"
 
+class DoorState extends AgentTimeline {
 
-/**
- * This is an internal controller which will monitor state variables and HLC status. It can also generate
- * next steps for this meta level control. This pattern exploits reactive planning based on feedback from the
- * environment.
- */
-class DoorController extends AgentTimeline {
-
-  /**
-   * The parameters here 
-   */
   predicate Holds{
-    bool active;
-
-    // Control variables
-    bool arms_tucked;
-    bool in_position;
-    bool found_door;
-    bool must_find_handle;
-    bool have_handle;
-    bool doorway_clear;
-    bool check_doorway;
-
     // Door state
     string frame_id;
     float time_stamp;
@@ -69,36 +49,76 @@ class DoorController extends AgentTimeline {
     float normal_z;
   }
 
+  DoorState(){
+    super(Internal, "Holds");
+  }
+};
+
+/**
+ * This is an internal controller which will select actions for execution based on control state variables using a
+ * Teleo-reactive tree structure.
+ */
+class DoorController extends AgentTimeline {
+
+  /**
+   * The parameters here 
+   */
+  predicate Holds{
+    bool active;
+
+    // Control variables
+    bool arms_tucked;
+    bool in_position;
+    bool found_door;
+    bool must_find_handle;
+    bool have_handle;
+    bool doorway_clear;
+    bool check_doorway;
+    bool finishing;
+    LatchState latch_state;
+  }
+
   DoorController(){
     super(Internal, "Holds");
   }
 };
 
+
 MoveBehavior doorman = new MoveBehavior(Internal, true);
 DoorController door_controller = new DoorController();
+DoorState door_state = new DoorState();
 
 /**
- * This rule fires essentially a TR-style decision tree to select
- * the next action to take. The action choices are(in reverse order):
- * - release_handle
- * - check_path
- * - open_door
- * - move_base_door
- * - unlatch_handle
- * - grasp_handle
- * - detect_handle
- * - move_base_local
- * - detect_door
- * - move_base_local
- *
- * Note the pattern that uses a flexible temporal interval (end_bounds varaible) for constraining the relationshop between the
- * completion time of the selected action, and the end time of this control step. This flexibility accounts for
- * the fact that an exogenous event can trip the state forcing a planned preemption of the active command, and the
- * completion of the command should also bring about a completion of the given control step
- *
+ * Set default values for soor state. These will be set on activation. If the door state is update explcitly then these
+ * values will already be filled out
  */
-DoorController::Holds {
+DoorState::Holds{
+  defaultOnCommit(frame_id, "map");
+  defaultOnCommit(latch_state, UNKNOWN);
+  defaultOnCommit(frame_p1_x, 0.0);
+  defaultOnCommit(frame_p1_y, 0.0);
+  defaultOnCommit(frame_p1_z, 0.0);
+  defaultOnCommit(frame_p2_x, 0.0);
+  defaultOnCommit(frame_p2_y, 0.0);
+  defaultOnCommit(frame_p2_z, 0.0);
+  defaultOnCommit(door_p1_x, 0.0);
+  defaultOnCommit(door_p1_y, 0.0);
+  defaultOnCommit(door_p1_z, 0.0);
+  defaultOnCommit(door_p2_x, 0.0);
+  defaultOnCommit(door_p2_y, 0.0);
+  defaultOnCommit(door_p2_z, 0.0);
+  defaultOnCommit(height, 0.0);
+  defaultOnCommit(hinge, UNKNOWN);
+  defaultOnCommit(rot_dir, UNKNOWN);
+  defaultOnCommit(handle_x, 0.0);
+  defaultOnCommit(handle_y, 0.0);
+  defaultOnCommit(handle_z, 0.0);
+  defaultOnCommit(normal_x, 0.0);
+  defaultOnCommit(normal_y, 0.0);
+  defaultOnCommit(normal_z, 0.0);
+}
 
+DoorController::Holds{
   // Bind values for inactive case
   if(active == false){
     // Reset control flags
@@ -110,51 +130,97 @@ DoorController::Holds {
     eq(latch_state, UNKNOWN);
     eq(doorway_clear, false);
     eq(check_doorway, true);
+    eq(finishing, false);
     contained_by(doorman.Inactive);
   }
-  else {
 
-    // Is the doorway clear? No special checks are required for this. We can do it any time
-    if(doorway_clear == true){
+  // We will assume default values on commitment based on predecessor. We really want these values to be bound. These values carry
+  // forward from priors as they are updated by actions and we thus assume inertia (if we had the handle before and have no information
+  // to the contrary, then we still have the handle).
+  met_by(Holds p);
+  defaultOnCommit(active, p.active);
+  defaultOnCommit(arms_tucked, p.arms_tucked);
+  defaultOnCommit(found_door, p.found_door);
+  defaultOnCommit(in_position, p.in_position);
+  defaultOnCommit(must_find_handle, p.must_find_handle);
+  defaultOnCommit(have_handle, p.have_handle);
+  defaultOnCommit(latch_state, p.latch_state);
+  defaultOnCommit(doorway_clear, p.doorway_clear);
+  defaultOnCommit(check_doorway, p.check_doorway);
+  defaultOnCommit(finishing, p.finishing);
+}
 
-      // If we do not have the handle then we are good to go, so we just terminate with success
-      if(have_handle == false){
-
-	// TODO - This will go away when we integrate with navigation as that will require the arm to be stowed anyway.
-	// Alternatively we could stow the arms with a different stow action
-	if(arms_tucked == true){
-	  meets(doorman.Inactive mb_inactive);
-	  eq(mb_inactive.status, SUCCESS);
-	  eq(duration, 1);
+DoorController::Holds {
+  if(active == true){
+    if(have_handle == false){
+      if(arms_tucked == true){
+	if(doorway_clear == true){
 	  meets(Holds s);
 	  eq(s.active, false);
+	  meets(doorman.Inactive dm);
+	  eq(dm.status, SUCCESS);
+	  eq(duration, 1);
 	}
-	else {
-	  contains_start(doors_tuck_arms.Active cmd);
+	if(latch_state == LATCH_STATE_LOCKED){
+	  meets(Holds s);
+	  eq(s.active, false);
+	  meets(doorman.Inactive dm);
+	  eq(dm.status, ABORTED);
+	  eq(duration, 1);
 	}
-      }
-      else {
-	// If we have the handle, we have to release it. We should not have to tuck arms here
-	// but we might have to.
-	contains_start(release_handle.Active cmd);
       }
     }
+  }
+}
 
-    if(doorway_clear == false){
+/**
+ * This rule fires essentially a TR-style decision tree to select
+ * the next action to take. The action choices are(in reverse order):
+ * - release_handle
+ * - check_path
+ * - open_door
+ * - push_door
+ * - touch_door
+ * - move_base_door
+ * - unlatch_handle
+ * - grasp_handle
+ * - detect_handle
+ * - move_base_local
+ * - detect_door
+ * - move_base_local
+ *
+ */
+DoorController::Holds {
+  contained_by(door_state.Holds ds);
 
+  if(active == true){
+    meets(Holds s);
+    if(finishing == true){
+      if(have_handle == false){
+	if(arms_tucked == false){
+	  contains_start(doors_tuck_arms.Active cmd);
+	  concurrent(cmd.end, end);
+	}
+      }
+      else{
+	contains_start(release_handle.Active cmd);
+	concurrent(cmd.end, end);
+      }
+    }
+    else{
       if(check_doorway == true){
 	contains_start(check_path.Active cmd);
-	eq(cmd.frame_id, frame_id);
-	door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, DOORWAY_CLEARANCE_RANGE);
+	concurrent(cmd.end, end);
+	eq(cmd.frame_id, ds.frame_id);
+	door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, DOORWAY_CLEARANCE_RANGE);
       }
       else {
 	if(must_find_handle == false){
 	  if(in_position == true){
 	    if(latch_state == LATCH_STATE_UNLATCHED) {	
-
 	      // Moving the base set up here. Used in either case
 	      contains_start(move_base_door.Active cmd_move_base_door);
-
+	      concurrent(cmd_move_base_door.end, end);
 
 	      // Set up a preemption as needed. Will make this conditional shortly
 	      any(stop_action.Active cmd_stop_action);
@@ -168,18 +234,27 @@ DoorController::Holds {
 	      else {
 		contains_start(touch_door.Active cmd_touch_door);
 		contains_start(push_door.Active cmd_push_door);
+
 		cmd_touch_door before cmd_push_door;
 		cmd_push_door starts_before cmd_move_base_door;
 		eq(cmd_stop_action.action_name,"push_door");
+
+		// By starting this action we can cause the arms to become untucked
+		eq(s.arms_tucked, false);
 	      }
 	    }
 	    else{
 	      if(have_handle == true){
 		contains_start(unlatch_handle.Active cmd);
+		concurrent(cmd.end, end);
 	      }
 	      else {
 		// Don't have the handle, but could grasp it!
 		contains_start(grasp_handle.Active cmd);
+		concurrent(cmd.end, end);
+
+		// By starting this action we can cause the arms to become untucked
+		eq(s.arms_tucked, false);
 	      }
 	    }
 	  }
@@ -187,32 +262,38 @@ DoorController::Holds {
 	    // Move to the grasp position. Checking to tuck arms may be unnecessary
 	    if(arms_tucked == true){
 	      contains_start(move_base_local.Active cmd);
-	      eq(cmd.frame_id, frame_id);
-	      door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, GRASP_RANGE);
+	      concurrent(cmd.end, end);
+	      eq(cmd.frame_id, ds.frame_id);
+	      door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, GRASP_RANGE);
 	    }
 	    else {
 	      contains_start(doors_tuck_arms.Active cmd);
+	      concurrent(cmd.end, end);
 	    }
 	  }
 	}
 	else { // Found handle == false
 	  if(found_door == true){
 	    contains_start(detect_handle.Active cmd);
+	    concurrent(cmd.end, end);
 	  }
 	  else {
 	    // If in detection position, we can detect the door
 	    if(in_position == true){
 	      contains_start(detect_door.Active cmd);
+	      concurrent(cmd.end, end);
 	    }
 	    else {
 	      // Should move to detection position
 	      if(arms_tucked == true){
 		contains_start(move_base_local.Active cmd);
-		eq(cmd.frame_id, frame_id);
-		door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, object, DETECTION_RANGE);
+		concurrent(cmd.end, end);
+		eq(cmd.frame_id, ds.frame_id);
+		door_get_robot_pose_for_door(cmd.x, cmd.y, cmd.z, cmd.qx, cmd.qy, cmd.qz, cmd.qw, ds.object, DETECTION_RANGE);
 	      }
 	      else {
 		contains_start(doors_tuck_arms.Active cmd);
+		concurrent(cmd.end, end);
 	      }
 	    }
 	  }
@@ -220,52 +301,6 @@ DoorController::Holds {
       }
     }
   }
-}
-
-/**
- * Defines update rule for default values
- */
-DoorController::Holds{
-  // We will assume default values on commitment based on predecessor. We really want these values to be bound. These values carry
-  // forward from priors as they are updated by actions and we thus assume inertia (if we had the handle before and have no information
-  // to the contrary, then we still have the handle).
-  met_by(Holds p);
-  defaultOnCommit(active, p.active);
-  defaultOnCommit(arms_tucked, p.arms_tucked);
-  defaultOnCommit(found_door, p.found_door);
-  defaultOnCommit(in_position, p.in_position);
-  defaultOnCommit(must_find_handle, p.must_find_handle);
-  defaultOnCommit(have_handle, p.have_handle);
-  defaultOnCommit(doorway_clear, p.doorway_clear);
-  defaultOnCommit(check_doorway, p.check_doorway);
-
-  // Door State Data
-  defaultOnCommit(frame_id, p.frame_id);
-  defaultOnCommit(time_stamp, p.time_stamp);
-  defaultOnCommit(latch_state, p.latch_state);
-  defaultOnCommit(hinge, p.hinge);
-  defaultOnCommit(rot_dir, p.rot_dir);
-  defaultOnCommit(frame_p1_x, p.frame_p1_x);
-  defaultOnCommit(frame_p1_y, p.frame_p1_y);
-  defaultOnCommit(frame_p1_z, p.frame_p1_z);
-  defaultOnCommit(frame_p2_x, p.frame_p2_x);
-  defaultOnCommit(frame_p2_y, p.frame_p2_y);
-  defaultOnCommit(frame_p2_z, p.frame_p2_z);
-  defaultOnCommit(door_p1_x, p.door_p1_x);
-  defaultOnCommit(door_p1_y, p.door_p1_y);
-  defaultOnCommit(door_p1_z, p.door_p1_z);
-  defaultOnCommit(door_p2_x, p.door_p2_x);
-  defaultOnCommit(door_p2_y, p.door_p2_y);
-  defaultOnCommit(door_p2_z, p.door_p2_z);
-  defaultOnCommit(height, p.height);
-  defaultOnCommit(hinge, p.hinge);
-  defaultOnCommit(rot_dir, p.rot_dir);
-  defaultOnCommit(handle_x, p.handle_x);
-  defaultOnCommit(handle_y, p.handle_y);
-  defaultOnCommit(handle_z, p.handle_z);
-  defaultOnCommit(normal_x, p.normal_x);
-  defaultOnCommit(normal_y, p.normal_y);
-  defaultOnCommit(normal_z, p.normal_z);
 }
 
 /************************************************************************
@@ -275,28 +310,8 @@ DoorController::Holds{
 
 // Derive input bounds from the behavior
 DoorManipulationBehavior::Active{
-  any(DoorController.Holds dc);
-  precedes(dc.start, start);
-  temporalDistance(start, [1 +inf], dc.end);
-  eq_door_msg(this.object, dc.object);
-}
-
-DoorManipulationBehavior::Inactive{
-  if(object.update_controller == true){
-    if(start){
-      starts(DoorController.Holds dc);
-      // If successful, then the completion of the action starts a new step in the controller. This is true for all
-      // door actions except move_base_door.
-      if(status == SUCCESS){
-	eq_door_msg(dc.object, this.object);
-      }
-      if(status == UNDEFINED){
-      }
-      else{
-	eq(dc.active, true);
-      }
-    }
-  }
+  starts_during(DoorState.Holds ds);
+  eq_door_msg(this.object, ds.object);
 }
 
 DoorsTuckArms::Inactive {
@@ -306,9 +321,6 @@ DoorsTuckArms::Inactive {
   }
 }
 
-/**
- * On success, have_handle = false
- */
 ReleaseHandle::Inactive{
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
@@ -317,28 +329,31 @@ ReleaseHandle::Inactive{
 }
 
 MoveBaseDoor::Inactive{
-  if(start){
+  if(status == SUCCESS){
     starts(DoorController.Holds dc);
-    eq(dc.arms_tucked, false);
-    if(status == ABORTED){
-    }
-    else {
-      eq(dc.doorway_clear, true);
-    }
-
-    if(status == UNDEFINED){
-    }
-    else{
-      eq(dc.active, true);
-    }
+    eq(dc.doorway_clear, true);
+    eq(dc.finishing, true);
   }
 }
 
 UnlatchHandle::Inactive{
-  if(status == ABORTED){
+  if(status == SUCCESS){
+    starts(DoorState.Holds ds);
+    eq_door_msg(ds.object, this.object);
     starts(DoorController.Holds dc);
-    eq(dc.arms_tucked, false);
-    eq(dc.must_find_handle, true);
+    eq(dc.latch_state, LATCH_STATE_UNLATCHED);
+  }
+  else{
+    if(status == UNDEFINED){}
+    else{
+      starts(DoorController.Holds dc);
+      eq(dc.must_find_handle, true);
+      eq(dc.in_position, false);
+      eq(dc.latch_state, latch_state);
+      if(latch_state == LATCH_STATE_LOCKED){
+	eq(dc.finishing, true);
+      }
+    }
   }
 }
 
@@ -346,21 +361,24 @@ GraspHandle::Inactive{
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
     eq(dc.have_handle, true);
-    eq(dc.arms_tucked, false);
   }
 }
 
 DetectHandle::Inactive{
-
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
     eq(dc.must_find_handle, false);
+    starts(DoorState.Holds ds);
+    eq_door_msg(ds.object, this.object);
+    eq(dc.latch_state, ds.latch_state);
   }
-
-  if(status == ABORTED){
-    starts(DoorController.Holds dc);
-    eq(dc.in_position, false);
-    eq(dc.found_door, false);
+  else {
+    if(status == UNDEFINED){}
+    else {
+      starts(DoorController.Holds dc);
+      eq(dc.in_position, false);
+      eq(dc.found_door, false);
+    }
   }
 }
 
@@ -369,9 +387,16 @@ DetectDoor::Inactive{
     starts(DoorController.Holds dc);
     eq(dc.found_door, true);
     eq(dc.in_position, false);
+    starts(DoorState.Holds ds);
+    eq_door_msg(ds.object, this.object);
+    eq(dc.latch_state, ds.latch_state);
 
     if(latch_state == LATCH_STATE_UNLATCHED){
       eq(dc.must_find_handle, false);
+    }
+
+    if(latch_state == LATCH_STATE_LOCKED){
+      eq(dc.finishing, true);
     }
   }
 }
