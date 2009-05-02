@@ -145,7 +145,12 @@ namespace robot_actions {
      * @brief Connect the action to a container for handling outbound messages
      * @todo Implement with a functor object and bost bind perhaps
      */
-    void connect(const boost::function< void(const ActionStatus&, const Goal&, const Feedback&) >& callback){ _callback = callback; }
+    void connect(const boost::function< void(const ActionStatus&, const Goal&, const Feedback&) >& callback){
+      _callback = callback;
+
+      if(_action_thread == NULL)
+	_action_thread = new boost::thread(boost::bind(&Action<Goal, Feedback>::runLoop, this));
+    }
 
     /**
      * @brief Call to terminate an action - prevent it from runLoopning again.
@@ -174,15 +179,15 @@ namespace robot_actions {
     Action(const std::string& name)
       : _name(name), _preempt_request(false), _result_status(SUCCESS), _terminated(false), _action_thread(NULL), _callback(NULL){
       _status.value = ActionStatus::UNDEFINED; 
-      _action_thread = new boost::thread(boost::bind(&Action<Goal, Feedback>::runLoop, this));
     }
 
     virtual ~Action(){
       terminate();
-      _action_thread->join();
-      delete _action_thread;
+      if(_action_thread != NULL){
+	_action_thread->join();
+	delete _action_thread;
+      }
     }
-
 
     /**
      * @brief Called by the derived class to deactivate the node. Used when actions leverage call
