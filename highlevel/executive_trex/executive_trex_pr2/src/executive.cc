@@ -93,12 +93,14 @@ namespace TREX {
 
     // ROS Parameters for running the agent
     double ping_frequency(1.0);
+    double update_rate(1.0);
     std::string input_file;
     std::string path;
     int time_limit(0);
     std::string start_dir;
     std::string log_dir;
     ros::Node::instance()->param("/trex/ping_frequency", ping_frequency, ping_frequency);
+    ros::Node::instance()->param("/trex/update_rate", update_rate, update_rate);
     ros::Node::instance()->param("/trex/input_file", input_file, input_file);
     ros::Node::instance()->param("/trex/path", path, path);
     ros::Node::instance()->param("/trex/time_limit", time_limit, time_limit);
@@ -147,8 +149,9 @@ namespace TREX {
     if (playback_) {
       agent_clock_ = new TREX::PlaybackClock((time_limit == 0 ? finalTick : time_limit), warp, input_xml_root_);
     } else {
-      // Allocate a real time clock with 1 second per tick
-      agent_clock_ = new TREX::LogClock(1.0);
+      // Allocate a real time clock based on input of update_rate
+      const double tick_duration = (update_rate <= 0 ? 1.0 : 1.0 / update_rate);
+      agent_clock_ = new TREX::LogClock(tick_duration);
     }
 
     // Allocate the agent
