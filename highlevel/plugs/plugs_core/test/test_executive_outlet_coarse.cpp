@@ -109,6 +109,7 @@ int
   std_msgs::Empty empty;
   robot_msgs::PlugStow plug_stow; 
   robot_msgs::PointStamped point;
+  robot_msgs::PointStamped fine_outlet_point;
   robot_msgs::PoseStamped pose;
   
   point.header.frame_id = "odom_combined";
@@ -146,6 +147,8 @@ int
 
   // detect outlet coarse
   if (detect_outlet_coarse.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -1;
+  fine_outlet_point.header = pose.header;
+  fine_outlet_point.point = pose.pose.position;
 
   pose.pose = transformOutletPose(pose.pose, 0.6);
 
@@ -174,7 +177,7 @@ int
   if (move_and_grasp_plug.execute(plug_stow, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
   // detect outlet fine
-  if (detect_outlet_fine.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -1;
+  if (detect_outlet_fine.execute(fine_outlet_point, pose, timeout_long) != robot_actions::SUCCESS) return -1;
   
   // localize plug in gripper
   if (localize_plug_in_gripper.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;

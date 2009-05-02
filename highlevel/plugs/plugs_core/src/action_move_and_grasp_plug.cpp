@@ -73,6 +73,7 @@ MoveAndGraspPlugAction::~MoveAndGraspPlugAction()
 
 robot_actions::ResultStatus MoveAndGraspPlugAction::execute(const robot_msgs::PlugStow& plug_stow, std_msgs::Empty& feedback)
 {
+  ROS_DEBUG("%s: executing.", action_name_.c_str());
   plug_stow_ = plug_stow;
 
   reset();
@@ -107,11 +108,13 @@ void MoveAndGraspPlugAction::moveToGrasp()
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
+    ROS_DEBUG("%s: aborted.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
     return;
   }
   
   if (isPreemptRequested()){
+    ROS_DEBUG("%s: preempted.", action_name_.c_str());
     deactivate(robot_actions::PREEMPTED, empty_);
     return;
   }
@@ -123,6 +126,7 @@ void MoveAndGraspPlugAction::moveToGrasp()
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
+    ROS_DEBUG("%s: aborted.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
     return;
   }
@@ -168,6 +172,7 @@ void MoveAndGraspPlugAction::checkGrasp()
     if(controller_state_msg_.error < 0.022)
     {
       ROS_INFO("%s: Error, failed to grasp plug.", action_name_.c_str());
+      ROS_DEBUG("%s: aborted.", action_name_.c_str());
       node_->unsubscribe(gripper_controller_ + "/state");
       deactivate(robot_actions::ABORTED, empty_);
       return;
@@ -179,6 +184,7 @@ void MoveAndGraspPlugAction::checkGrasp()
       if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
       {
         ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
+        ROS_DEBUG("%s: aborted.", action_name_.c_str());
         deactivate(robot_actions::ABORTED, empty_);
         return;
       }

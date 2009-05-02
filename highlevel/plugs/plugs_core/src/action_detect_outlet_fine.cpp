@@ -40,8 +40,20 @@ namespace plugs_core
 
 DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
   : robot_actions::Action<robot_msgs::PointStamped, robot_msgs::PoseStamped>("detect_outlet_fine"),
-    node_(node)
+    node_(node),
+    action_name_("detect_outlet_fine"),
+    head_controller_("head_controller"),
+    detector_(NULL)    
 {
+  node_.param(action_name_ + "/head_controller", head_controller_, head_controller_);
+
+  if(head_controller_ == "" )
+    {
+      ROS_ERROR("%s: Aborted, head controller param was not set.", action_name_.c_str());
+      terminate();
+      return;
+    }
+  node_.advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
   node_.setParam("~display", 0);
   detector_ = new OutletTracker::OutletTracker(node);
   detector_->deactivate();  
@@ -52,9 +64,14 @@ DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
 DetectOutletFineAction::~DetectOutletFineAction()
 {
   if(detector_) delete detector_;
+  node_.unadvertise(head_controller_ + "/head_track_point");
 };
 
-robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback){
+robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& feedback)
+{
+  ROS_DEBUG("%s: executing.", action_name_.c_str());
+  // point the head at the outlet
+  node_.publish(head_controller_ + "/head_track_point", outlet_estimate);
 
   detector_->activate();
   return waitForDeactivation(feedback);
@@ -68,10 +85,11 @@ void DetectOutletFineAction::foundOutlet()
 
   if (isPreemptRequested())
     {
+      ROS_DEBUG("%s: preempted.", action_name_.c_str());
       deactivate(robot_actions::PREEMPTED, outlet_pose_msg_);
       return;
     }
-  
+  ROS_DEBUG("%s: succeeded.", action_name_.c_str());
   deactivate(robot_actions::SUCCESS, outlet_pose_msg_);
   detector_->deactivate();
   

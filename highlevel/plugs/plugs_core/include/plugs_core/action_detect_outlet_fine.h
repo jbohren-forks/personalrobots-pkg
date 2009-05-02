@@ -62,16 +62,19 @@ class DetectOutletFineAction
 public:
   DetectOutletFineAction(ros::Node& node);
   ~DetectOutletFineAction();
-  virtual robot_actions::ResultStatus execute(const robot_msgs::PointStamped& point, robot_msgs::PoseStamped& feedback);
+  virtual robot_actions::ResultStatus execute(const robot_msgs::PointStamped& outlet_estimate, robot_msgs::PoseStamped& feedback);
 
 private:
   ros::Node& node_;
+  std::string action_name_;
+  std::string head_controller_;
 
   OutletTracker::OutletTracker* detector_;
   
   
   robot_msgs::PoseStamped outlet_pose_msg_;
   void foundOutlet();
+  
 };
 
 }

@@ -73,6 +73,7 @@ StowPlugAction::~StowPlugAction()
 
 robot_actions::ResultStatus StowPlugAction::execute(const robot_msgs::PlugStow& plug_stow, std_msgs::Empty& feedback)
 {
+  ROS_DEBUG("%s: executing.", action_name_.c_str());
   plug_stow_ = plug_stow;
 
   reset();
@@ -108,18 +109,23 @@ void StowPlugAction::moveToStow()
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
+    ROS_DEBUG("%s: aborted.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
     return;
   }
   
   if (isPreemptRequested())
+  {
+    ROS_DEBUG("%s: preempted.", action_name_.c_str());
+    deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
     return;
-
+  }
   req_pose_.pose.pose.position.z = plug_stow_.plug_centroid.z - 0.1;
   req_pose_.pose.header.stamp = ros::Time();
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
+    ROS_DEBUG("%s: aborted.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
   }
 
@@ -132,8 +138,11 @@ void StowPlugAction::releasePlug()
 {
   
   if (isPreemptRequested())
+  {
+    ROS_DEBUG("%s: preempted.", action_name_.c_str());
+    deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
     return;
-
+  }
   node_->publish(gripper_controller_ + "/set_command", gripper_cmd_);
 
   // DO U REALLY WANT TO SUBSCRIBE EACH TIME? WHAT HAPPENS IF U DO NOT?
@@ -146,6 +155,7 @@ void StowPlugAction::checkGrasp()
     return;
 
   if (isPreemptRequested()){
+    ROS_DEBUG("%s: preempted.", action_name_.c_str());
     deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
     return;
   }
@@ -169,6 +179,7 @@ void StowPlugAction::checkGrasp()
     if(controller_state_msg_.error > 0.005)
     {
       ROS_INFO("%s: Error, failed to release plug.", action_name_.c_str());
+      ROS_DEBUG("%s: aborted.", action_name_.c_str());
       node_->unsubscribe(gripper_controller_ + "/state");
       deactivate(robot_actions::ABORTED, std_msgs::Empty());
       return;

@@ -64,7 +64,7 @@ UnplugAction::~UnplugAction()
 
 robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 {
- 
+  ROS_DEBUG("%s: executing.", action_name_.c_str());
   tff_msg_.header.frame_id = "outlet_pose";
   tff_msg_.header.stamp = ros::Time::now();
   tff_msg_.mode.vel.x = 3;
@@ -79,8 +79,11 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
   tff_msg_.value.rot.x = 0.0;
   tff_msg_.value.rot.y = 0.0;
   tff_msg_.value.rot.z = 0.0;
+
+  node_->publish(arm_controller_ + "/command", tff_msg_);
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
+  ROS_DEBUG("%s: succeeded.", action_name_.c_str());
   deactivate(robot_actions::SUCCESS, feedback);
   return waitForDeactivation(feedback);
 }

@@ -70,18 +70,22 @@ robot_actions::ResultStatus DetectOutletCoarseAction::execute(const robot_msgs::
   ROS_DEBUG("%s: executing.", action_name_.c_str());
 
 	
-	if (!spotOutlet(point, feedback)){
-		if (isPreemptRequested()){
-			ROS_INFO("DetectOutletCoarseAction: Preempted");
+	if (!spotOutlet(point, feedback))
+  {
+		if (isPreemptRequested())
+    {
+			ROS_DEBUG("%s: preempted.", action_name_.c_str());
 			return robot_actions::PREEMPTED;
 		}
-		else{
-			ROS_INFO("DetectOutletCoarseAction: Aborted");
+		else
+    {
+			ROS_DEBUG("%s: aborted.", action_name_.c_str());
 			return robot_actions::ABORTED;
 		}
 	}
-	else{
-          ROS_DEBUG("%s: succeeded.", action_name_.c_str());
+	else
+  {
+    ROS_DEBUG("%s: succeeded.", action_name_.c_str());
 		return robot_actions::SUCCESS;
 	}
 

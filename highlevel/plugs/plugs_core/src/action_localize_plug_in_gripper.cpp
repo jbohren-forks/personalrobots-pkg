@@ -43,9 +43,9 @@ LocalizePlugInGripperAction::LocalizePlugInGripperAction(ros::Node& node) :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("localize_plug_in_gripper"),
   action_name_("localize_plug_in_gripper"),
   node_(node),
-  detector_(NULL),
   arm_controller_("r_arm_cartesian_trajectory_controller"),
   servoing_controller_("r_arm_hybrid_controller"),
+  detector_(NULL),
   TF(*ros::Node::instance(),false, ros::Duration(10))
 {
   node_.setParam("~roi_policy", "LastImageLocation");
@@ -117,12 +117,14 @@ void LocalizePlugInGripperAction::moveToStage()
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
+    ROS_DEBUG("%s: aborted.", action_name_.c_str());  
     deactivate(robot_actions::ABORTED, empty_);
     return;
   }
 
   if (isPreemptRequested())
   {
+    ROS_DEBUG("%s: prempted.", action_name_.c_str());
     deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
     return;
   }
@@ -139,12 +141,14 @@ void LocalizePlugInGripperAction::moveToStage()
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
+    ROS_DEBUG("%s: aborted.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
     return;
   }
 
   if (isPreemptRequested())
   {
+    ROS_DEBUG("%s: prempted.", action_name_.c_str());
     deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
     return;
   }
@@ -154,6 +158,7 @@ void LocalizePlugInGripperAction::moveToStage()
   if (!ros::service::call(arm_controller_ + "/move_to", req_pose_, res_pose_))
   {
     ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
+    ROS_DEBUG("%s: aborted.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
     return;
   }
@@ -174,6 +179,7 @@ void LocalizePlugInGripperAction::setToolFrame()
   {
     if (detector_)
       detector_->deactivate();
+    ROS_DEBUG("%s: prempted.", action_name_.c_str());
     deactivate(robot_actions::PREEMPTED, std_msgs::Empty());
     return;
   }
@@ -183,6 +189,7 @@ void LocalizePlugInGripperAction::setToolFrame()
   if (!ros::service::call(servoing_controller_ + "/set_tool_frame", req_tool, res_tool))
   {
     ROS_ERROR("%s: Failed to set tool frame.", action_name_.c_str());
+    ROS_DEBUG("%s: aborted.", action_name_.c_str());
     deactivate(robot_actions::ABORTED, empty_);
     return;
   }

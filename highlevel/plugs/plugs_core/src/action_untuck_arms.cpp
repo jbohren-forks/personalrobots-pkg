@@ -117,9 +117,11 @@ UntuckArmsAction::~UntuckArmsAction()
 
 robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback)
 { 
+  ROS_DEBUG("%s: executing.", action_name_.c_str());
   if(!ros::service::call(right_arm_controller_ + "/TrajectoryStart", right_traj_req_, traj_res_))
     {
       ROS_ERROR("%s: Aborted, failed to start right arm trajectory.", action_name_.c_str());
+      ROS_DEBUG("%s: aborted.", action_name_.c_str());
       return robot_actions::ABORTED;
     }
 
@@ -128,9 +130,10 @@ robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& emp
     
   while(!isTrajectoryDone() && !traj_error_)
     {
-      if (isPreemptRequested()){
-	cancelTrajectory();
-	ROS_INFO("%s: Preempted.", action_name_.c_str());
+      if (isPreemptRequested())
+      {
+	      cancelTrajectory();
+	      ROS_DEBUG("%s: preempted.", action_name_.c_str());
         return robot_actions::PREEMPTED;
       }
 
@@ -143,6 +146,7 @@ robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& emp
       if(!ros::service::call(left_arm_controller_ + "/TrajectoryStart", left_traj_req_, traj_res_))
 	{
 	  ROS_ERROR("%s: Aborted, failed to start left arm  trajectory.", action_name_.c_str());
+    ROS_DEBUG("%s: aborted.", action_name_.c_str());
 	  return robot_actions::ABORTED;
 	}  
       traj_id_ = traj_res_.trajectoryid;
@@ -152,7 +156,7 @@ robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& emp
 	{
 	  if (isPreemptRequested()){
 	    cancelTrajectory();
-	    ROS_INFO("%s: Preempted.", action_name_.c_str());
+	    ROS_INFO("%s: preempted.", action_name_.c_str());
 	    return robot_actions::PREEMPTED;
 	  }
 
@@ -163,9 +167,10 @@ robot_actions::ResultStatus UntuckArmsAction::execute(const std_msgs::Empty& emp
   if(traj_error_)
     {
       ROS_ERROR("%s: Aborted, trajectory controller failed to reach goal.", action_name_.c_str());
+      ROS_DEBUG("%s: aborted.", action_name_.c_str());
       return robot_actions::ABORTED;
     }
-  
+  ROS_DEBUG("%s: succeded.", action_name_.c_str());
   return robot_actions::SUCCESS;
 }
 
