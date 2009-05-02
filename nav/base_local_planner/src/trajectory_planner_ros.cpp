@@ -70,7 +70,10 @@ namespace base_local_planner {
 
     double map_publish_frequency;
     ros_node.param("~base_local_planner/costmap_visualization_rate", map_publish_frequency, 2.0);
-    costmap_publisher_ = new costmap_2d::Costmap2DPublisher(ros_node, costmap, map_publish_frequency, global_frame_, "base_local_planner");
+    costmap_publisher_ = new costmap_2d::Costmap2DPublisher(ros_node, map_publish_frequency, global_frame_, "base_local_planner");
+
+    if(costmap_publisher_->active())
+      costmap_publisher_->updateCostmapData(costmap_);
 
     //we need to make sure that the transform between the robot base frame and the global frame is available
     while(!tf_.canTransform(global_frame_, robot_base_frame_, ros::Time(), ros::Duration(5.0))){
@@ -395,6 +398,10 @@ namespace base_local_planner {
     //we also want to clear the robot footprint from the costmap we're using
     clearRobotFootprint(global_pose, costmap_);
 
+    //after clearing the footprint... we want to push the changes to the costmap publisher
+    if(costmap_publisher_->active())
+      costmap_publisher_->updateCostmapData(costmap_);
+
     // Set current velocities from odometry
     robot_msgs::PoseDot global_vel;
     global_vel.vel.vx = base_odom_.vel.x;
@@ -583,7 +590,6 @@ namespace base_local_planner {
     //get the oriented footprint of the robot
     std::vector<robot_msgs::Point> oriented_footprint = drawFootprint(global_pose.getOrigin().x(), global_pose.getOrigin().y(), yaw);
 
-    costmap.lock();
     //set the associated costs in the cost map to be free
     if(!costmap.setConvexPolygonCost(oriented_footprint, costmap_2d::FREE_SPACE))
       return;
@@ -595,7 +601,6 @@ namespace base_local_planner {
 
     //make sure to re-inflate obstacles in the affected region... plus those obstalces that could 
     costmap.reinflateWindow(global_pose.getOrigin().x(), global_pose.getOrigin().y(), max_inflation_dist + inflation_radius_, max_inflation_dist + inflation_radius_, false);
-    costmap.unlock();
 
   }
 
