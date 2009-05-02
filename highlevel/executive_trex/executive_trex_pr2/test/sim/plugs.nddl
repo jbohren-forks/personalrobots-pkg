@@ -11,6 +11,14 @@ PlugIn plug_in = new PlugIn(Internal);
 DetectOutletFine detect_outlet_fine = new DetectOutletFine(Internal);
 DetectOutletCoarse detect_outlet_coarse = new DetectOutletCoarse(Internal);
 
+// Placeholder for a more extensive model to test controller logic
+
+Behavior::Active{
+  eq(duration, 1);
+  meets(Active s);
+  eq(s.status, SUCCESS);
+}
+
 
 
 

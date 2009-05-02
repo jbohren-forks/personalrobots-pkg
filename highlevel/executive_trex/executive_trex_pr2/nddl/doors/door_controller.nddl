@@ -47,6 +47,31 @@ class DoorState extends AgentTimeline {
     float normal_x;
     float normal_y;
     float normal_z;
+
+    // Default Values
+    defaultOnCommit(frame_id, "map");
+    defaultOnCommit(latch_state, UNKNOWN);
+    defaultOnCommit(frame_p1_x, 0.0);
+    defaultOnCommit(frame_p1_y, 0.0);
+    defaultOnCommit(frame_p1_z, 0.0);
+    defaultOnCommit(frame_p2_x, 0.0);
+    defaultOnCommit(frame_p2_y, 0.0);
+    defaultOnCommit(frame_p2_z, 0.0);
+    defaultOnCommit(door_p1_x, 0.0);
+    defaultOnCommit(door_p1_y, 0.0);
+    defaultOnCommit(door_p1_z, 0.0);
+    defaultOnCommit(door_p2_x, 0.0);
+    defaultOnCommit(door_p2_y, 0.0);
+    defaultOnCommit(door_p2_z, 0.0);
+    defaultOnCommit(height, 0.0);
+    defaultOnCommit(hinge, UNKNOWN);
+    defaultOnCommit(rot_dir, UNKNOWN);
+    defaultOnCommit(handle_x, 0.0);
+    defaultOnCommit(handle_y, 0.0);
+    defaultOnCommit(handle_z, 0.0);
+    defaultOnCommit(normal_x, 0.0);
+    defaultOnCommit(normal_y, 0.0);
+    defaultOnCommit(normal_z, 0.0);
   }
 
   DoorState(){
@@ -87,36 +112,6 @@ class DoorController extends AgentTimeline {
 MoveBehavior doorman = new MoveBehavior(Internal, true);
 DoorController door_controller = new DoorController();
 DoorState door_state = new DoorState();
-
-/**
- * Set default values for soor state. These will be set on activation. If the door state is update explcitly then these
- * values will already be filled out
- */
-DoorState::Holds{
-  defaultOnCommit(frame_id, "map");
-  defaultOnCommit(latch_state, UNKNOWN);
-  defaultOnCommit(frame_p1_x, 0.0);
-  defaultOnCommit(frame_p1_y, 0.0);
-  defaultOnCommit(frame_p1_z, 0.0);
-  defaultOnCommit(frame_p2_x, 0.0);
-  defaultOnCommit(frame_p2_y, 0.0);
-  defaultOnCommit(frame_p2_z, 0.0);
-  defaultOnCommit(door_p1_x, 0.0);
-  defaultOnCommit(door_p1_y, 0.0);
-  defaultOnCommit(door_p1_z, 0.0);
-  defaultOnCommit(door_p2_x, 0.0);
-  defaultOnCommit(door_p2_y, 0.0);
-  defaultOnCommit(door_p2_z, 0.0);
-  defaultOnCommit(height, 0.0);
-  defaultOnCommit(hinge, UNKNOWN);
-  defaultOnCommit(rot_dir, UNKNOWN);
-  defaultOnCommit(handle_x, 0.0);
-  defaultOnCommit(handle_y, 0.0);
-  defaultOnCommit(handle_z, 0.0);
-  defaultOnCommit(normal_x, 0.0);
-  defaultOnCommit(normal_y, 0.0);
-  defaultOnCommit(normal_z, 0.0);
-}
 
 DoorController::Holds{
   // Bind values for inactive case

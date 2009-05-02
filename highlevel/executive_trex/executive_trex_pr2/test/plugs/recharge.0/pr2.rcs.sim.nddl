@@ -1,2 +1,3 @@
 #include "test/plugs/sim.nddl"
 
+close();

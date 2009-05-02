@@ -2,6 +2,9 @@
 
 enum BOOL {yes, no, maybe};
 
+/**
+ * @todo Get better default values
+ */
 class PlugState extends AgentTimeline {
   predicate Holds{
     string frame_id;
@@ -10,6 +13,11 @@ class PlugState extends AgentTimeline {
     float x;
     float y;
     float z;
+    defaultOnCommit(frame_id, "base_footprint");
+    defaultOnCommit(stowed, true);
+    defaultOnCommit(x, 0.0);
+    defaultOnCommit(y, 0.0);
+    defaultOnCommit(z, 0.0);
   }
 
   PlugState(){super(Internal, "Holds");}
@@ -26,6 +34,15 @@ class OutletState extends AgentTimeline {
     float qy;
     float qz;
     float qw;
+    defaultOnCommit(frame_id, "base_footprint");
+    defaultOnCommit(x, 0.0);
+    defaultOnCommit(y, 0.0);
+    defaultOnCommit(z, 0.0);
+    defaultOnCommit(qx, 0.0);
+    defaultOnCommit(qy, 0.0);
+    defaultOnCommit(qz, 0.0);
+    defaultOnCommit(qw, 1.0);
+
   }
 
   OutletState(){super(Internal, "Holds");}
@@ -56,10 +73,7 @@ PlugState plug_state = new PlugState();
 Recharger recharger = new Recharger(Internal);
 RechargeController recharge_controller = new RechargeController();
 
-/**
- * Main control loop
- */
-RechargeController::Holds {
+RechargeController::Holds{
   if(active == false){
     eq(in_position, false);
     eq(outlet_detected_coarse, false);
@@ -73,98 +87,13 @@ RechargeController::Holds {
     eq(ready_to_grasp, false);
     contained_by(recharger.Inactive);
   }
-  else {
 
-    if(recharged == true){
-      // handle the logic for finishing up
-      if(plug_is_stowed == yes){
-	meets(Recharger.Inactive rc_inactive);
-	eq(rc_inactive.status, SUCCESS);
-	eq(duration, 1);
-	meets(Holds s);
-	eq(s.active, false);
-      }
-      else{
-	if(plug_is_stowed == maybe){
-	  contains_start(detect_plug_on_base.Active cmd);
-	}
-	else {
-	  if(plugged_in == false){
-	    contains_start(stow_plug.Active cmd);
-	  }
-	  else {
-	    contains_start(unplug.Active cmd);
-	  }
-	}
-      }
-    }
-    else {
-      if(ready_to_plug_in == true){
-	contains_start(plug_in.Active cmd);
-      }
-      else {
-	if(outlet_detected_fine == true){
-	  contains_start(localize_plug_in_gripper.Active cmd);
-	}
-	else {
-	  if(plug_in_hand == true){
-	    contains_start(detect_outlet_fine.Active cmd);
-	  }
-	  else {
-	    if(outlet_detected_coarse == true){
-	      if(in_position == false){
-		// Here, compute parameters based on the DETECTION_RANGE
-		contains_start(move_base_local.Active cmd);
-	      }
-	      else {
-		if(ready_to_grasp == true){
-		  contains_start(move_and_grasp_plug.Active cmd);
-		}
-		else {
-		  if(plug_is_stowed == maybe){
-		    if(arms_tucked == false){
-		      contains_start(detect_plug_on_base.Active cmd);
-		    }
-		    else {
-		      contains_start(plugs_untuck_arms.Active cmd);
-		    }
-		  }
-		}
-	      }
-	    }
-	    else {
-	      if(in_position == true){
-		contains_start(detect_outlet_coarse.Active cmd);
-	      }
-	      else {
-		if(arms_tucked == true){
-		  // Here, compute parameters based on the PLUG_IN_RANGE
-		  contains_start(move_base_local.Active cmd);
-		}
-		else {
-		  contains_start(safety_tuck_arms.Active cmd);
-		}
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  }
-}
-
-/**
- * Default Handling
- */
-RechargeController::Holds {
   met_by(Holds p);
-
-  // Control State
   defaultOnCommit(active, p.active);
+  defaultOnCommit(arms_tucked, p.arms_tucked);
   defaultOnCommit(in_position, p.in_position);
   defaultOnCommit(outlet_detected_coarse, p.outlet_detected_coarse);
   defaultOnCommit(outlet_detected_fine, p.outlet_detected_fine);
-  defaultOnCommit(arms_tucked, p.arms_tucked);
   defaultOnCommit(recharged, p.recharged);
   defaultOnCommit(plug_is_stowed, p.plug_is_stowed);
   defaultOnCommit(ready_to_plug_in, p.ready_to_plug_in);
@@ -173,27 +102,122 @@ RechargeController::Holds {
   defaultOnCommit(ready_to_grasp, p.ready_to_grasp);
 }
 
+/**
+ * Main control loop
+ */
+RechargeController::Holds {
+  if(active == true){
+    meets(Holds s); // Successor
+    if(recharged == true){
+      if(plug_is_stowed == yes){
+	meets(Recharger.Inactive rc_inactive);
+	eq(rc_inactive.status, SUCCESS);
+	eq(duration, 1);
+	eq(s.active, false);
+      }
+      else{
+	if(plug_is_stowed == maybe){
+	  contains_start(detect_plug_on_base.Active cmd);
+	  concurrent(cmd.end, end);
+	}
+	else {
+	  if(plugged_in == false){
+	    contains_start(stow_plug.Active cmd);
+	    concurrent(cmd.end, end);
+	  }
+	  else {
+	    contains_start(unplug.Active cmd);
+	    concurrent(cmd.end, end);
+	  }
+	}
+      }
+    }
+    else {
+      if(ready_to_plug_in == true){
+	contains_start(plug_in.Active cmd);
+	concurrent(cmd.end, end);
+      }
+      else {
+	if(outlet_detected_fine == true){
+	  contains_start(localize_plug_in_gripper.Active cmd);
+	  concurrent(cmd.end, end);
+	}
+	else {
+	  if(plug_in_hand == true){
+	    contains_start(detect_outlet_fine.Active cmd);
+	    concurrent(cmd.end, end);
+	  }
+	  else {
+	    if(outlet_detected_coarse == true){
+	      if(in_position == false){
+		// Here, compute parameters based on the DETECTION_RANGE
+		contains_start(move_base_local.Active cmd);
+		concurrent(cmd.end, end);
+	      }
+	      else {
+		if(ready_to_grasp == true){
+		  contains_start(move_and_grasp_plug.Active cmd);
+		  concurrent(cmd.end, end);
+		}
+		else {
+		  if(plug_is_stowed == maybe){
+		    if(arms_tucked == false){
+		      contains_start(detect_plug_on_base.Active cmd);
+		      concurrent(cmd.end, end);
+		    }
+		    else {
+		      contains_start(plugs_untuck_arms.Active cmd);
+		      concurrent(cmd.end, end);
+		    }
+		  }
+		}
+	      }
+	    }
+	    else {
+	      if(in_position == true){
+		contains_start(detect_outlet_coarse.Active cmd);
+		concurrent(cmd.end, end);
+	      }
+	      else {
+		if(arms_tucked == true){
+		  // Here, compute parameters based on the PLUG_IN_RANGE
+		  contains_start(move_base_local.Active cmd);
+		  concurrent(cmd.end, end);
+		}
+		else {
+		  contains_start(safety_tuck_arms.Active cmd);
+		  concurrent(cmd.end, end);
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+}
+
 /**************************************************
  * Update Rules
  *************************************************/
 
 SafetyTuckArms::Inactive {
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
+    starts(RechargeController.Holds rc);
     eq(rc.arms_tucked, true);
   }
 }
 
 MoveBase::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
+    starts(RechargeController.Holds rc);
     eq(rc.in_position, true);
   }
 }
 
 DetectPlugOnBase::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
+    starts(RechargeController.Holds rc);
     eq(rc.plug_is_stowed, yes);
     eq(rc.ready_to_grasp, true);
 
@@ -204,8 +228,8 @@ DetectPlugOnBase::Inactive{
 }
 
 PlugsUntuckArms::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
+    starts(RechargeController.Holds rc);
     eq(rc.arms_tucked, false);
   }
 }
@@ -217,23 +241,23 @@ StowPlug::Active{
 
 // If we stow successfully, declare maybe. Requires confirmation!
 StowPlug::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
+    starts(RechargeController.Holds rc);
     eq(rc.plug_is_stowed, maybe);
     eq(rc.plug_in_hand, false);
   }
 }
 
 Unplug::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
+    starts(RechargeController.Holds rc);
     eq(rc.plugged_in, false);
   }
 }
 
 PlugIn::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
+    starts(RechargeController.Holds rc);
     eq(rc.plugged_in, true);
     eq(rc.recharged, true);
   }
@@ -245,8 +269,8 @@ DetectOutletFine::Active{
 }
 
 DetectOutletFine::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
+    starts(RechargeController.Holds rc);
     eq(rc.outlet_detected_fine, true);
 
     // Update outlet state with feedback
@@ -261,8 +285,8 @@ DetectOutletCoarse::Active{
 }
 
 DetectOutletCoarse::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
+    starts(RechargeController.Holds rc);
     eq(rc.outlet_detected_coarse, true);
     eq(rc.in_position, false);
 
@@ -278,16 +302,15 @@ LocalizePlugInGripper::Active{
 }
 
 LocalizePlugInGripper::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
+    starts(RechargeController.Holds rc);
     eq(rc.ready_to_plug_in, true);
   }
 }
 
 MoveAndGraspPlug::Inactive{
-  starts(RechargeController.Holds rc);
   if(status == SUCCESS){
-    eq(rc.arms_tucked, false);
+    starts(RechargeController.Holds rc);
     eq(rc.plug_in_hand, true);
     eq(rc.ready_to_grasp, false);
     eq(rc.plug_is_stowed, no);
