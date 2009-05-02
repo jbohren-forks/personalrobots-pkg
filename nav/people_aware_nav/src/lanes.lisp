@@ -134,7 +134,7 @@
 (defun person-on-path ()
   (if *person-on-path-use-stub*
       (y-or-n-p "Is person on path?")
-      (let ((v (not (= 0 (people_aware_nav:value-val (call-service "is_person_on_path" 'people_aware_nav:PersonOnPath))))))
+      (let ((v (not (= 0 (people_aware_nav-srv:value-val (call-service "is_person_on_path" 'people_aware_nav-srv:PersonOnPath))))))
 	(when v (format t "~&Person is on path at time ~a" (ros-time)))
 	v)))
 
