@@ -76,10 +76,10 @@ class PlanarFit
    **/
   void
     segmentPlanes (PointCloud &points, double z_min, double z_max, double support, double min_area, int n_max,
-                   vector<int> &indices)
+                   vector<vector<int> > &indices, vector<vector<double> > &models)
   {
     // This should be given as a parameter as well, or set global, etc
-    double sac_distance_threshold_ = 0.007;
+    double sac_distance_threshold_ = 0.007;        // 2cm distance threshold for inliers (point-to-plane distance)
 
     vector<int> indices_in_bounds;
     // Get the point indices within z_min <-> z_max
@@ -93,9 +93,11 @@ class PlanarFit
 
     // Use the entire data to estimate the plane equation.
     // NOTE: if this is slow, we can downsample first, then fit (check mapping/point_cloud_mapping/src/planar_fit.cpp)
-    vector<vector<int> > inliers;
-    vector<vector<double> > models;
-    fitSACPlanes (&points, indices_in_bounds, inliers, models, viewpoint, sac_distance_threshold_, n_max);
+ //   vector<vector<int> > inliers;
+    indices.clear(); //Points that are in plane
+    models.clear();  //Plane equations
+//    vector<vector<double> > models;
+    fitSACPlanes (&points, indices_in_bounds, indices, models, viewpoint, sac_distance_threshold_, n_max);
 
     // Check the list of planar areas found against the minimally imposed area
     for (unsigned int i = 0; i < models.size (); i++)
@@ -103,7 +105,7 @@ class PlanarFit
       // Compute the convex hull of the area
       // NOTE: this is faster than computing the concave (alpha) hull, so let's see how this works out
       Polygon3D polygon;
-      cloud_geometry::areas::convexHull2D (points, inliers[i], models[i], polygon);
+      cloud_geometry::areas::convexHull2D (points, indices[i], models[i], polygon);
 
       // Compute the area of the polygon
       double area = cloud_geometry::areas::compute2DPolygonalArea (polygon, models[i]);
@@ -112,21 +114,21 @@ class PlanarFit
       if (area < min_area)
       {
         models[i].resize (0);
-        inliers[i].resize (0);
+        indices[i].resize (0);
         continue;
       }
     }
 
-    // Copy all the planar models inliers to indices
-    for (unsigned int i = 0; i < inliers.size (); i++)
-    {
-      if (inliers[i].size () == 0) continue;
-
-      int old_indices_size = indices.size ();
-      indices.resize (old_indices_size + inliers[i].size ());
-      for (unsigned int j = 0; j < inliers[i].size (); j++)
-        indices[old_indices_size + j] = inliers[i][j];
-    }
+//    // Copy all the planar models inliers to indices
+//    for (unsigned int i = 0; i < inliers.size (); i++)
+//    {
+//      if (inliers[i].size () == 0) continue;
+//
+//      int old_indices_size = indices.size ();
+//      indices.resize (old_indices_size + inliers[i].size ());
+//      for (unsigned int j = 0; j < inliers[i].size (); j++)
+//        indices[old_indices_size + j] = inliers[i][j];
+//    }
   }
 
   protected:
@@ -144,12 +146,12 @@ class PlanarFit
     PlanarFit (ros::Node& anode) : node_ (anode)
     {
       node_.param ("~z_min", z_min_, 0.5);
-      node_.param ("~z_max", z_max_, 2.0);
+      node_.param ("~z_max", z_max_, 1.5);
       node_.param ("~support", support_, 0.1);
       node_.param ("~min_area", min_area_, 0.2);
       node_.param ("~n_max", n_max_, 1);
 
-      string cloud_topic ("stereo/cloud");
+      string cloud_topic ("cloud_pcd");
 
       vector<pair<string, string> > t_list;
       node_.getPublishedTopics (&t_list);
@@ -184,12 +186,15 @@ class PlanarFit
 
       ros::Time ts = ros::Time::now ();
 
-      vector<int> indices;
-      segmentPlanes (cloud_, z_min_, z_max_, support_, min_area_, n_max_, indices);
+      vector<vector<int> > indices;
+      vector<vector<double> > models;
+      segmentPlanes (cloud_, z_min_, z_max_, support_, min_area_, n_max_, indices, models);
 
-      cloud_geometry::getPointCloud (cloud_, indices, cloud_plane_);
-      cloud_geometry::getPointCloudOutside (cloud_, indices, cloud_outliers_);
-      ROS_INFO ("Planar model found with %d / %d inliers in %g seconds.\n", (int)indices.size (), (int)cloud_.pts.size (), (ros::Time::now () - ts).toSec ());
+      if((int)indices.size() > 0){
+      cloud_geometry::getPointCloud (cloud_, indices[0], cloud_plane_);
+      cloud_geometry::getPointCloudOutside (cloud_, indices[0], cloud_outliers_);
+      ROS_INFO ("Planar model found with %d / %d inliers in %g seconds.\n", (int)indices[0].size (), (int)cloud_.pts.size (), (ros::Time::now () - ts).toSec ());
+      }
 
       node_.publish ("~plane", cloud_plane_);
       node_.publish ("~outliers", cloud_outliers_);
