@@ -15,29 +15,8 @@
     <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen"/>
 
     <!-- start arm controller -->
-    <!--
-    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_default_controller.xml" respawn="false"  />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_cartesian_pos_controller.xml" respawn="false"  />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_trajectory_controller.xml" respawn="false"  />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_wrench_controller.xml" respawn="false"  />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_twist_controller.xml" respawn="false"  />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find arm_gazebo)/r_arm_cartesian_twist_controller.xml" respawn="false"  />
-    -->
     <include file="$(find arm_life_test)/teleop_arm.launch"/>
     <node pkg="spacenav_node" type="spacenav_node" args="" respawn="false" output="screen" />
-
-    <!-- send arm a command -->
-    <!-- open gripper .5 radians
-    <node pkg="robot_mechanism_controllers" type="control.py" args="set r_gripper_controller 0.5" respawn="false" output="screen" />
-    -->
-    <!-- tests
-    <node pkg="robot_mechanism_controllers" type="control.py" args="set r_gripper_controller 0.5" respawn="false" output="screen" />
-    -->
-
-    <!-- for visualization -->
-    <!--
-    <node pkg="rviz" type="rviz" respawn="false" output="screen" />
-    -->
 
     <param name="robotdesc/table" command="$(find xacro)/xacro.py '$(find examples_gazebo)/table_defs/table_defs.xml'" />
     <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/table" respawn="false" output="screen" />
