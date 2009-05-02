@@ -125,7 +125,6 @@ class PlugOnBaseDetector
       base_xy_max_ *= base_xy_max_;
 
       active_ = true;
-
       // Check to see if the default/given topic exists in the list of published topics on the server yet, and issue a warning otherwise
       string cloud_topic ("plug_snapshot_cloud");
       vector<pair<string, string> > t_list;
