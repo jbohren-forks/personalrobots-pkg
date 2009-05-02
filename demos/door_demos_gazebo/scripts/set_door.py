@@ -34,7 +34,7 @@
 
 ## Gazebo tug arms for navigation
 
-PKG = 'pr2_gazebo'
+PKG = 'door_demos_gazebo'
 NAME = 'set_door'
 
 import math

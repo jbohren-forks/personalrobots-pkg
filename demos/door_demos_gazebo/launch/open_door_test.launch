@@ -1,8 +1,7 @@
 <launch>
-  <include file="$(find pr2_gazebo)/pr2_door.launch" />
+  <include file="$(find door_demos_gazebo)/launch/pr2_and_door.launch" />
   <node pkg="pr2_mechanism_controllers" type="tuckarm.py" args="l" output="screen" />
   <include file="$(find milestone2)/milestone2.launch" />
-
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
   <include file="$(find executive_trex_pr2)/test/doors/open_door.0/run_real.launch" />
 </launch>

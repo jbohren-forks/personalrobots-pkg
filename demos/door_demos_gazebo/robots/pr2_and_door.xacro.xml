@@ -2,7 +2,7 @@
 <robot name="pr2">
 
   <!-- declare the path where all models/textures/materials are stored -->
+  <include filename="$(find door_demos_gazebo)/door_defs/door_defs.xml" />
   <include filename="$(find pr2_defs)/robots/pr2.xacro.xml" />
-  <include filename="$(find examples_gazebo)/door_defs/door_defs.xml" />
 
 </robot>
