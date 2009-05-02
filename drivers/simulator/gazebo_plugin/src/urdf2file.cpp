@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     
     TiXmlDocument doc;
     
-    URDF2Gazebo u2g;
+    URDF2Gazebo u2g(std::string("pr2_model"));
     u2g.convert(wgxml, doc, enforce_limits);
     
     if (!doc.SaveFile(argv[2]))

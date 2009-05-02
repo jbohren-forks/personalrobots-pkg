@@ -55,6 +55,7 @@ namespace urdf2gazebo
   {
     public:
       URDF2Gazebo();
+      URDF2Gazebo(std::string robot_model_name);
       ~URDF2Gazebo();
 
       std::string values2str(unsigned int count, const double *values, double (*conv)(double));
@@ -72,6 +73,8 @@ namespace urdf2gazebo
       void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTransform &transform, bool enforce_limits);
 
       void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enforce_limits);
+
+      std::string robot_model_name_;
   };
 }
 

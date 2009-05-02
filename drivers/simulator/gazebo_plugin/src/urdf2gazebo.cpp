@@ -39,6 +39,11 @@ using namespace urdf2gazebo;
 
 URDF2Gazebo::URDF2Gazebo()
 {
+  robot_model_name_ = "pr2_model";
+}
+URDF2Gazebo::URDF2Gazebo(std::string robot_model_name)
+{
+  robot_model_name_ = robot_model_name;
 }
 
 URDF2Gazebo::~URDF2Gazebo()
@@ -429,7 +434,7 @@ void URDF2Gazebo::convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enfo
     robot->SetAttribute("xmlns:physics", "http://playerstage.sourceforge.net/gazebo/xmlschema/#physics");
     
     // Create a node to enclose the robot body
-    robot->SetAttribute("name", "pr2_model");
+    robot->SetAttribute("name", robot_model_name_);
     
     /* set the transform for the whole model to identity */
     addKeyValue(robot, "xyz", "0 0 0");

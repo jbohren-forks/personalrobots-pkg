@@ -51,7 +51,7 @@ using namespace urdf2gazebo;
 
 void usage(const char *progname)
 {
-    printf("\nUsage: %s param_name [initial x y z roll pitch yaw]\n", progname);
+    printf("\nUsage: %s xml_param_name [initial x y z roll pitch yaw]\n", progname);
     printf("  e.g. read robotdesc/pr2 from param server and send to gazebo factory to spawn robot\n\n");
 }
 
@@ -117,13 +117,15 @@ int main(int argc, char **argv)
     }
 
 
+    std::string xml_param_name = std::string(argv[1]);
+
     // Load parameter server string for pr2 robot description
     ros::init(argc,argv);
-    ros::Node* rosnode = new ros::Node(argv[1],ros::Node::DONT_HANDLE_SIGINT);
+    ros::Node* rosnode = new ros::Node(xml_param_name.c_str(),ros::Node::DONT_HANDLE_SIGINT);
     ROS_INFO("-------------------- starting node for pr2 param server factory \n");
     std::string xml_content;
-    rosnode->getParam(argv[1],xml_content);
-    ROS_DEBUG("%s content\n%s\n", argv[1], xml_content.c_str());
+    rosnode->getParam(xml_param_name.c_str(),xml_content);
+    ROS_DEBUG("%s content\n%s\n", xml_param_name.c_str(), xml_content.c_str());
 
     // Parse URDF from param server
     bool enforce_limits = true;
@@ -134,10 +136,12 @@ int main(int argc, char **argv)
         exit(2);
     }
 
+
+    std::string robot_model_name("pr2_model");
     //
     // init a parser library
     //
-    URDF2Gazebo u2g;
+    URDF2Gazebo u2g(robot_model_name);
     // do the number crunching to make gazebo.model file
     TiXmlDocument doc;
     u2g.convert(wgxml, doc, enforce_limits);
@@ -180,11 +184,19 @@ int main(int argc, char **argv)
     ROS_DEBUG("converted to gazebo format\n%s\n",xml_string.c_str());
     //std::cout << " ------------------- xml ------------------- " << std::endl;
 
-    factoryIface->Lock(1);
-    ROS_INFO("Creating Robot in Gazebo\n");
-    strcpy((char*)factoryIface->data->newModel, xml_string.c_str());
-    factoryIface->Unlock();
-    usleep(1000000);
+    bool writing_iface = true;
+    while (writing_iface)
+    {
+      factoryIface->Lock(1);
+      if (strcmp((char*)factoryIface->data->newModel,"")==0)
+      {
+        ROS_INFO("Creating Robot Model Name:%s in Gazebo\n",robot_model_name.c_str());
+        // don't overwrite data, only write if iface data is empty
+        strcpy((char*)factoryIface->data->newModel, xml_string.c_str());
+        writing_iface = false;
+      }
+      factoryIface->Unlock();
+    }
 
     rosnode->shutdown();
 
