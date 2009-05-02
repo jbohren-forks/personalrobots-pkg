@@ -37,9 +37,9 @@
 #include <costmap_2d/costmap_2d_publisher.h>
 
 namespace costmap_2d {
-  Costmap2DPublisher::Costmap2DPublisher(ros::Node& ros_node, Costmap2D& costmap, double publish_frequency, std::string global_frame, std::string topic_prefix) 
-    : ros_node_(ros_node), costmap_(costmap), global_frame_(global_frame), 
-    topic_prefix_(topic_prefix), visualizer_thread_(NULL){
+  Costmap2DPublisher::Costmap2DPublisher(ros::Node& ros_node, double publish_frequency, std::string global_frame, std::string topic_prefix) 
+    : ros_node_(ros_node), global_frame_(global_frame), 
+    topic_prefix_(topic_prefix), visualizer_thread_(NULL), active_(false){
     ros_node_.advertise<visualization_msgs::Polyline>("~" + topic_prefix_ + "/raw_obstacles", 1);
     ros_node_.advertise<visualization_msgs::Polyline>("~" + topic_prefix_ + "/inflated_obstacles", 1);
     visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DPublisher::mapPublishLoop, this, publish_frequency));
@@ -57,6 +57,7 @@ namespace costmap_2d {
     if(frequency == 0.0)
       return;
 
+    active_ = true;
     costmap_2d::Rate r(frequency);
     while(ros_node_.ok()){
       publishCostmap();
@@ -65,22 +66,33 @@ namespace costmap_2d {
     }
   }
 
-  void Costmap2DPublisher::publishCostmap(){
-    costmap_.lock();
+  void Costmap2DPublisher::updateCostmapData(const Costmap2D& costmap){
     std::vector< std::pair<double, double> > raw_obstacles, inflated_obstacles;
-    for(unsigned int i = 0; i < costmap_.cellSizeX(); i++){
-      for(unsigned int j = 0; j < costmap_.cellSizeY(); j++){
+    for(unsigned int i = 0; i < costmap.cellSizeX(); i++){
+      for(unsigned int j = 0; j < costmap.cellSizeY(); j++){
         double wx, wy;
-        costmap_.mapToWorld(i, j, wx, wy);
+        costmap.mapToWorld(i, j, wx, wy);
         std::pair<double, double> p(wx, wy);
 
-        if(costmap_.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE || costmap_.getCost(i, j) == costmap_2d::NO_INFORMATION)
+        if(costmap.getCost(i, j) == costmap_2d::LETHAL_OBSTACLE || costmap.getCost(i, j) == costmap_2d::NO_INFORMATION)
           raw_obstacles.push_back(p);
-        else if(costmap_.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
+        else if(costmap.getCost(i, j) == costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
           inflated_obstacles.push_back(p);
       }
     }
-    costmap_.unlock();
+    lock_.lock();
+    raw_obstacles_ = raw_obstacles;
+    inflated_obstacles_ = inflated_obstacles;
+    lock_.unlock();
+  }
+
+  void Costmap2DPublisher::publishCostmap(){
+    std::vector< std::pair<double, double> > raw_obstacles, inflated_obstacles;
+
+    lock_.lock();
+    raw_obstacles = raw_obstacles_;
+    inflated_obstacles = inflated_obstacles_;
+    lock_.unlock();
 
     // First publish raw obstacles in red
     visualization_msgs::Polyline obstacle_msg;

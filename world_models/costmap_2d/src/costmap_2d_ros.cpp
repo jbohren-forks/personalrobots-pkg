@@ -199,18 +199,18 @@ namespace costmap_2d {
     t_diff = end_t - start_t;
     ROS_DEBUG("New map construction time: %.9f", t_diff);
 
+    double map_publish_frequency;
+    ros_node_.param("~" + prefix + "/costmap/publish_frequency", map_publish_frequency, 0.0);
+
+    //create a publisher for the costmap if desired
+    costmap_publisher_ = new Costmap2DPublisher(ros_node_, map_publish_frequency, global_frame_, prefix + "/costmap");
+    if(costmap_publisher_->active())
+      costmap_publisher_->updateCostmapData(*costmap_);
 
     //create a thread to handle updating the map
     double map_update_frequency;
     ros_node_.param("~" + prefix + "/costmap/update_frequency", map_update_frequency, 5.0);
     map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
-    
-    //create a separate thread to publish cost data to the visualizer
-    double map_publish_frequency;
-    ros_node_.param("~" + prefix + "/costmap/publish_frequency", map_publish_frequency, 0.0);
-
-    //create a publisher for the costmap if desired
-    costmap_publisher_ = new Costmap2DPublisher(ros_node_, *costmap_, map_publish_frequency, global_frame_, prefix + "/costmap");
 
   }
 
@@ -227,16 +227,16 @@ namespace costmap_2d {
     if(costmap_ != NULL)
       delete costmap_;
 
-    //clean up observation buffers
-    for(unsigned int i = 0; i < observation_buffers_.size(); ++i){
-      if(observation_buffers_[i] != NULL)
-        delete observation_buffers_[i];
-    }
-
     //clean up message notifiers
     for(unsigned int i = 0; i < observation_notifiers_.size(); ++i){
       if(observation_notifiers_[i] != NULL)
         delete observation_notifiers_[i];
+    }
+
+    //clean up observation buffers
+    for(unsigned int i = 0; i < observation_buffers_.size(); ++i){
+      if(observation_buffers_[i] != NULL)
+        delete observation_buffers_[i];
     }
   }
 
@@ -364,8 +364,12 @@ namespace costmap_2d {
       costmap_->updateOrigin(origin_x, origin_y);
     }
     costmap_->updateWorld(wx, wy, observations, clearing_observations);
-    costmap_->unlock();
+    
+    //if we have an active publisher... we'll update its costmap data
+    if(costmap_publisher_->active())
+      costmap_publisher_->updateCostmapData(*costmap_);
 
+    costmap_->unlock();
 
   }
 

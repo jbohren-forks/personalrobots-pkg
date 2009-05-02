@@ -46,18 +46,22 @@
 namespace costmap_2d {
   class Costmap2DPublisher {
     public:
-      Costmap2DPublisher(ros::Node& ros_node, Costmap2D& costmap, double publish_frequency, std::string global_frame, std::string topic_prefix = std::string(""));
+      Costmap2DPublisher(ros::Node& ros_node, double publish_frequency, std::string global_frame, std::string topic_prefix = std::string(""));
       ~Costmap2DPublisher();
 
       void publishCostmap();
+      void updateCostmapData(const Costmap2D& costmap);
+      bool active() {return active_;}
 
     private:
       void mapPublishLoop(double frequency);
 
       ros::Node& ros_node_;
-      Costmap2D& costmap_;
       std::string global_frame_,topic_prefix_;
       boost::thread* visualizer_thread_; ///< @brief A thread for publising to the visualizer
+      std::vector< std::pair<double, double> > raw_obstacles_, inflated_obstacles_;
+      boost::recursive_mutex lock_; ///< @brief A lock
+      bool active_;
   };
 };
 #endif
