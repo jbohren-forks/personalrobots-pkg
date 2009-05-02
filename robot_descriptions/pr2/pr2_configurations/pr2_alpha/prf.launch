@@ -11,12 +11,12 @@
 <!--  <node machine="four" pkg="spacenav_node" type="spacenav_node" /> -->
 
 <!-- Power Board Control Node -->
-  <node pkg="pr2_power_board" type="power_node"  respawn="true"/>
+ <node pkg="pr2_power_board" type="power_node"  respawn="true"/>
 
 <!-- Battery Monitor -->
   <node machine="two" pkg="ocean_battery_driver" type="monitor" respawn="true"/>
 <!-- Battery Assertions -->
-<include file="$(find ocean_battery_driver)/expected_batteries.launch"/>
+  <include file="$(find ocean_battery_driver)/expected_batteries.launch"/>
 
 <!-- Base Laser -->
   <node machine="two" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
@@ -44,15 +44,20 @@
 
 <!-- Stereo cam -->
   <group ns="stereo">
-    <param name="videre_mode" type="str" value="disparity_raw"/>
+    <param name="videre_mode" type="str" value="none"/>
     <param name="do_colorize" type="bool" value="True"/>
     <param name="do_rectify" type="bool" value="True"/>
-    <param name="do_stereo" type="bool" value="False"/>
-    <param name="do_calc_points" type="bool" value="False"/>
+    <param name="do_stereo" type="bool" value="True"/>
+    <param name="do_calc_points" type="bool" value="True"/>
+    <param name="stereo/do_keep_coords" type="bool" value="True"/>
     <param name="fps" type="double" value="15.0"/>
     <param name="frame_id" type="string" value="stereo_optical_frame"/>
+    <param name="exposure_auto" type="bool" value="true"/>
+    <param name="brightness_auto" type="bool" value="true"/>
+    <param name="gain_auto" type="bool" value="true"/>
   </group>
   <node machine="three" pkg="dcam" type="stereodcam" respawn="false"/>
+  
 
 <!-- Runtime Diagnostics Logging -->
   <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prf_runtime_automatic /diagnostics" />
