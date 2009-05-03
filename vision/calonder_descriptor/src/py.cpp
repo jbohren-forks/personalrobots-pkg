@@ -126,6 +126,7 @@ static int signature_init(PyObject *self, PyObject *args, PyObject *kwds)
   object->size = len;
   posix_memalign((void**)&object->data, 16, object->size * sizeof(SigType));
   memcpy(object->data, s, object->size * sizeof(SigType));
+  return 0;
 }
 
 static char doc_signature_MODULE[] = "doc for signature\n";
