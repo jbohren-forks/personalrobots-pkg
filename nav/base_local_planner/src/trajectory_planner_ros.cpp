@@ -333,7 +333,7 @@ namespace base_local_planner {
         robot_msgs::PoseStamped new_pose;
         ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
 	new_pose = orig_global_plan[i];
-	new_pose.header.stamp = ros::Time();
+	new_pose.header.stamp = ros::Time::now();
 	tf_.transformPose(global_frame_, new_pose, new_pose);
         // check global_pose timeout
         if (current_time.toSec() - new_pose.header.stamp.toSec() > transform_tolerance_) {
