@@ -1,6 +1,7 @@
 #include "nav/imports.nddl"
 #include "rcs/plugs/exports.nddl"
 #include "plugs/exports.nddl"
+#include "mechanism_control/exports.nddl"
 
 // Mechanisms (in addition to those required by default)
 RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);

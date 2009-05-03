@@ -48,6 +48,7 @@ constraint map_get_nearest_outlet(outlet_id, x, y){ outlet_id <: MAP_KEY && x <:
  * A predefined location to go to
  */
 class Location {
+  string frame_id;
   float x;
   float y;
   float z;
@@ -57,6 +58,7 @@ class Location {
   float qw;
 
   Location(float x_, float y_, float z_, float qx_, float qy_, float qz_, float qw_){
+    frame_id = "map";
     x = x_;
     y = y_;
     z = z_;

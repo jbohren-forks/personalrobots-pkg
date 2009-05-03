@@ -78,7 +78,6 @@ RechargeController::Holds{
     eq(in_position, false);
     eq(outlet_detected_coarse, false);
     eq(outlet_detected_fine, false);
-    eq(arms_tucked, false);
     eq(recharged, false);
     eq(plug_is_stowed, maybe);
     eq(ready_to_plug_in, false);
@@ -90,7 +89,6 @@ RechargeController::Holds{
 
   met_by(Holds p);
   defaultOnCommit(active, p.active);
-  defaultOnCommit(arms_tucked, p.arms_tucked);
   defaultOnCommit(in_position, p.in_position);
   defaultOnCommit(outlet_detected_coarse, p.outlet_detected_coarse);
   defaultOnCommit(outlet_detected_fine, p.outlet_detected_fine);
@@ -100,6 +98,10 @@ RechargeController::Holds{
   defaultOnCommit(plug_in_hand, p.plug_in_hand);
   defaultOnCommit(plugged_in, p.plugged_in);
   defaultOnCommit(ready_to_grasp, p.ready_to_grasp);
+
+  // Derive arms_tucked from external safety monotor
+  starts_during(mobility_status.Holds mb);
+  eq(arms_tucked, mb.arms_tucked);
 }
 
 /**
@@ -204,7 +206,6 @@ RechargeController::Holds {
 SafetyTuckArms::Inactive {
   if(status == SUCCESS){
     starts(RechargeController.Holds rc);
-    eq(rc.arms_tucked, true);
   }
 }
 
@@ -230,13 +231,12 @@ DetectPlugOnBase::Inactive{
 PlugsUntuckArms::Inactive{
   if(status == SUCCESS){
     starts(RechargeController.Holds rc);
-    eq(rc.arms_tucked, false);
   }
 }
 
 StowPlug::Active{
   starts_during(plug_state.Holds ps);
-  eq_plug_stow_msg(ps.object, object);
+  eq_plug_stow_msg(object, ps.object);
 }
 
 // If we stow successfully, declare maybe. Requires confirmation!

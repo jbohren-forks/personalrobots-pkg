@@ -1,4 +1,6 @@
 #include "rcs/safety/exports.nddl"
+#include "rcs/doors/exports.nddl"
+#include "rcs/plugs/exports.nddl"
 
 /**
  * A simulation control variable governing when the doorway will be clear.
@@ -28,6 +30,8 @@ SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(Internal);
 DetectPlugOnBase detect_plug_on_base = new DetectPlugOnBase(Internal);
 DoorsTuckArms doors_tuck_arms = new DoorsTuckArms(Internal);
 StopAction stop_action = new StopAction(Internal);
+
+PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(Internal);
 
 // Simulation Control Variables
 DoorwayClearSV doorway_clear_sv = new DoorwayClearSV();

@@ -7,7 +7,6 @@
 #include "test/sim/mechanism_control.nddl"
 #include "test/sim/plugs.nddl"
 
-SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(Internal);
 MoveBase move_base = new MoveBase(Internal);
 
 Behavior::Active{

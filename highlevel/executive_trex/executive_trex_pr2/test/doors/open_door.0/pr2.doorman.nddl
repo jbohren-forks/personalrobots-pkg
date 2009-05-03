@@ -6,7 +6,6 @@ rejectable(door_controller.Holds g0);
 
 // Initial conditions for control flags
 g0.active = true;
-g0.arms_tucked = false;
 g0.in_position = false;
 g0.found_door = false;
 g0.must_find_handle = true;

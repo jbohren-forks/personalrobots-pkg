@@ -10,7 +10,6 @@ MoveBehavior driver = new MoveBehavior(Internal, false);
 MoveBehavior doorman = new MoveBehavior(Internal, true);
 Recharger recharger = new Recharger(Internal);
 BaseState base_state = new BaseState(Internal);
-BatteryState battery_state = new BatteryState(Internal);
 
 Behavior::Active{
   temporalDistance(dispatch_time, [0, 2], start);
@@ -28,25 +27,9 @@ MoveBehavior::Active{
   eq(duration, 3);
 }
 
-/**
- * @brief Succeeds with a full battery
- */
-Recharger::Active{
-  any(battery_state.Holds bs_start);
-  precedes(bs_start.start, start);
-  temporal_distance(start, [1 +inf], bs_start.end);
-  meets(battery_state.Holds bs_end);
-  eq(bs_end.energy_remaining, bs_start.energy_capacity);
-}
-
 close();
 
 // Initial conditions
 fact(base_state.Holds bs);
 bs.x = 18.55;
 bs.y = 11.76;
-
-fact(battery_state.Holds bat_state);
-bat_state.energy_remaining = 100.0;
-bat_state.energy_capacity = 100.0;
-bat_state.power_consumption = 10.0;

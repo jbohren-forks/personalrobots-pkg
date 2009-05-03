@@ -32,14 +32,57 @@
 
 // Model inputs
 #include "rcs/exports.nddl"
+#include "rcs/plugs/exports.nddl"
+#include "rcs/doors/exports.nddl"
+#include "rcs/safety/exports.nddl"
 #include "safety/exports.nddl"
 
 MobilityStatus::Holds{
   defaultOnCommit(stuck, false);
   defaultOnCommit(gripper_open, true);
-  defaultOnCommit(arm_stowed, true);
+  defaultOnCommit(arms_tucked, true);
 }
 
 
-/** Timelines **/
+// Internal Timelines
 MobilityStatus mobility_status = new MobilityStatus(Internal);
+
+// Actions cauuing arms to be tucked
+DoorsTuckArms doors_tuck_arms = new DoorsTuckArms(External);
+SafetyTuckArms safety_tuck_arms = new SafetyTuckArms(External);
+
+// Actions causing arms to become untucked. Required to be untucked from beginning to end
+TouchDoor touch_door = new TouchDoor(External);
+GraspHandle grasp_handle = new GraspHandle(External);
+PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(External);
+
+DoorsTuckArms::Inactive{
+  if(status == SUCCESS){
+    contained_by(mobility_status.Holds mb);
+    eq(mb.arms_tucked, true);
+  }
+}
+
+SafetyTuckArms::Inactive{
+  if(status == SUCCESS){
+    contained_by(mobility_status.Holds mb);
+    eq(mb.arms_tucked, true);
+  }
+}
+
+
+TouchDoor::Active{
+  contained_by(mobility_status.Holds mb);
+  eq(mb.arms_tucked, false);
+}
+
+
+GraspHandle::Active{
+  contained_by(mobility_status.Holds mb);
+  eq(mb.arms_tucked, false);
+}
+
+PlugsUntuckArms::Active{
+  contained_by(mobility_status.Holds mb);
+  eq(mb.arms_tucked, false);
+}

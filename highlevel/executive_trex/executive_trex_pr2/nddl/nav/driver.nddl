@@ -1,27 +1,54 @@
 #include "nav/imports.nddl"
 #include "nav/exports.nddl"
 
-// Driver specific
-MoveBase move_base = new MoveBase(External);
-BaseState base_state = new BaseState(External);
 
-/**
- * Must be in a valid mobility state
- */
-MoveBase::Active{
-  contained_by(MobilityStatus.Holds ms);
-  eq(ms.stuck, false);
-  eq(ms.gripper_open, true);
-  eq(ms.arm_stowed, true);
+class NavController extends AgentTimeline{
+  predicate Holds{
+    bool active;
+  }
+
+  NavController(){
+    super(Internal, "Holds");
+  }
+};
+
+MoveBehavior driver = new MoveBehavior(Internal, true);
+NavController nav_controller = new NavController();
+MoveBase move_base = new MoveBase(External);
+
+MoveBehavior::Active{
+  starts(NavController.Holds nc);
+  eq(nc.active, true);
 }
 
-MoveBehavior doorman = new MoveBehavior(Internal, true);
+NavController::Holds{
+  met_by(Holds p);
+  defaultOnCommit(active, p.active);
 
-/**
- * The MoveBehavior is completed by a successful termination of the movebase node.
- */
-MoveBehavior::Active{
-  contains(MoveBase.Active mb);
-  concurrent(mb.end, end);
-  eq(mb.status, SUCCESS);
+  if(active == true){
+    contained_by(driver.Active d);
+    starts_during(mobility_status.Holds ms);
+
+    if(ms.arms_tucked == false){
+      contains_start(safety_tuck_arms.Active cmd);
+      concurrent(cmd.end, end);
+    }
+    else {
+      contains_start(move_base.Active cmd);
+      concurrent(cmd.end, end);
+      eq_pose_msg(cmd.object, d.object);
+    }
+  }
+  else {
+    contained_by(driver.Inactive);
+  }
+}
+
+MoveBase::Inactive{
+  if(status == SUCCESS){
+    starts(nav_controller.Holds nc);
+    eq(nc.active, false);
+    starts(driver.Inactive d);
+    eq(d.status, SUCCESS);
+  }
 }

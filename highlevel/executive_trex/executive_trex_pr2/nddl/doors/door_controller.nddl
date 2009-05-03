@@ -92,7 +92,6 @@ class DoorController extends AgentTimeline {
     bool active;
 
     // Control variables
-    bool arms_tucked;
     bool in_position;
     bool found_door;
     bool must_find_handle;
@@ -117,7 +116,6 @@ DoorController::Holds{
   // Bind values for inactive case
   if(active == false){
     // Reset control flags
-    eq(arms_tucked, false);
     eq(in_position, false);
     eq(found_door, false);
     eq(must_find_handle, true);
@@ -134,7 +132,6 @@ DoorController::Holds{
   // to the contrary, then we still have the handle).
   met_by(Holds p);
   defaultOnCommit(active, p.active);
-  defaultOnCommit(arms_tucked, p.arms_tucked);
   defaultOnCommit(found_door, p.found_door);
   defaultOnCommit(in_position, p.in_position);
   defaultOnCommit(must_find_handle, p.must_find_handle);
@@ -143,29 +140,6 @@ DoorController::Holds{
   defaultOnCommit(doorway_clear, p.doorway_clear);
   defaultOnCommit(check_doorway, p.check_doorway);
   defaultOnCommit(finishing, p.finishing);
-}
-
-DoorController::Holds {
-  if(active == true){
-    if(have_handle == false){
-      if(arms_tucked == true){
-	if(doorway_clear == true){
-	  meets(Holds s);
-	  eq(s.active, false);
-	  meets(doorman.Inactive dm);
-	  eq(dm.status, SUCCESS);
-	  eq(duration, 1);
-	}
-	if(latch_state == LATCH_STATE_LOCKED){
-	  meets(Holds s);
-	  eq(s.active, false);
-	  meets(doorman.Inactive dm);
-	  eq(dm.status, ABORTED);
-	  eq(duration, 1);
-	}
-      }
-    }
-  }
 }
 
 /**
@@ -188,10 +162,31 @@ DoorController::Holds {
 DoorController::Holds {
   contained_by(door_state.Holds ds);
 
+  // Derive arms_tucked from external safety monotor.
+  // TODO: Analyze bu that arises wgen I include guards directly on mb.arms_tucked. The local variable
+  // below is just a workaround
+  starts_during(mobility_status.Holds ms);
+  bool arms_tucked;
+  eq(arms_tucked, ms.arms_tucked);
+
   if(active == true){
     meets(Holds s);
     if(finishing == true){
       if(have_handle == false){
+	if(arms_tucked == true){
+	  if(doorway_clear == true){
+	    eq(s.active, false);
+	    meets(doorman.Inactive dm);
+	    eq(dm.status, SUCCESS);
+	    eq(duration, 1);
+	  }
+	  if(latch_state == LATCH_STATE_LOCKED){
+	    eq(s.active, false);
+	    meets(doorman.Inactive dm);
+	    eq(dm.status, ABORTED);
+	    eq(duration, 1);
+	  }
+	}
 	if(arms_tucked == false){
 	  contains_start(doors_tuck_arms.Active cmd);
 	  concurrent(cmd.end, end);
@@ -233,9 +228,6 @@ DoorController::Holds {
 		cmd_touch_door before cmd_push_door;
 		cmd_push_door starts_before cmd_move_base_door;
 		eq(cmd_stop_action.action_name,"push_door");
-
-		// By starting this action we can cause the arms to become untucked
-		eq(s.arms_tucked, false);
 	      }
 	    }
 	    else{
@@ -247,9 +239,6 @@ DoorController::Holds {
 		// Don't have the handle, but could grasp it!
 		contains_start(grasp_handle.Active cmd);
 		concurrent(cmd.end, end);
-
-		// By starting this action we can cause the arms to become untucked
-		eq(s.arms_tucked, false);
 	      }
 	    }
 	  }
@@ -312,7 +301,6 @@ DoorManipulationBehavior::Active{
 DoorsTuckArms::Inactive {
   if(status == SUCCESS){
     starts(DoorController.Holds dc);
-    eq(dc.arms_tucked, true);
   }
 }
 

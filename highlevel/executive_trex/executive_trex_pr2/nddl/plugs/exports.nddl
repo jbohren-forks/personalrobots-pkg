@@ -22,7 +22,6 @@ class Recharger extends Behavior {
     float qy;
     float qz;
     float qw;
-    UNIT_FLOAT recharge_level;
   }
 
   Recharger(Mode _mode){

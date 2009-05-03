@@ -155,32 +155,3 @@ class MoveAndGraspPlug extends ROSAction {
 
   MoveAndGraspPlug(Mode _mode){super(_mode);}
 };
-
-/**
- * Monitors battery state information
- * @see BatteryState.msg
- */
-class BatteryState extends ROSStateVariable {
-  float discharge_limit; // Percentage of total capacity we are allowed to draw down before recharging
-  float recharge_level; // Percentage of total capacity we expect to be at or better than after recharging
-
-  predicate Holds {
-    float energy_remaining; // Remaining energy in Joules
-    float energy_capacity; // Total energy capacity
-    float power_consumption; // Power load in Watts
-    UNIT_FLOAT percentage_remaining; // Derived value - energy_remaining/ energy_capacity
-    mulEq(energy_capacity, percentage_remaining, energy_remaining);
-  }
-
-  BatteryState(Mode _mode, float ds, float rc){
-    super(_mode, "Holds", true);
-    discharge_limit = ds;
-    recharge_level = rc;
-  }
-
-  BatteryState(Mode _mode){
-    super(_mode, "Holds", true);
-    discharge_limit = 0.1;
-    recharge_level = 0.9;
-  }
-};

@@ -63,7 +63,7 @@ namespace executive_trex_pr2 {
     tf::Point position = tf_stamped_pose.getOrigin();
     tf::Quaternion quaternian = tf_stamped_pose.getRotation();
 
-    debugMsg("trex:propagation:doors:get_robot_pose_for_door", "Results prior to intersection are: " << std::endl <<
+    debugMsg("trex:debug:propagation:doors:get_robot_pose_for_door", "Results prior to intersection are: " << std::endl <<
 	     " x=" << position.getX() << std::endl << 
 	     " y=" << position.getY() << std::endl << 
 	     " z=" << position.getZ() << std::endl << 

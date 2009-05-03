@@ -22,7 +22,6 @@ MoveBehavior::Active {
 
   // Initialize controller variables. We begin by assuming the worst.
   eq(dc.active, true);	 
-  eq(dc.arms_tucked, false);
   eq(dc.in_position, false);
   eq(dc.found_door, false);
   eq(dc.must_find_handle, true);

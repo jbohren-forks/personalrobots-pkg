@@ -5,6 +5,7 @@
   <param name="/trex/enable_move_base" value="true"/>
   <param name="/trex/enable_check_path" value="true"/>
   <param name="/trex/enable_notify_door_blocked" value="true"/>
+  <param name="/trex/enable_plugs_untuck_arms" value="true"/>
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
   <node pkg="executive_trex_pr2" type="actions" respawn="false" />
 

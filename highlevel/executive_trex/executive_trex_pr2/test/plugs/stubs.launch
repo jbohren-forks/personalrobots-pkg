@@ -13,9 +13,12 @@
   <param name="/trex/enable_move_base_local" value="true"/>
   <param name="/trex/enable_detect_outlet_coarse" value="true"/>
   <param name="/trex/enable_detect_outlet_fine" value="true"/>
+  <param name="/trex/enable_doors_tuck_arms" value="true"/>
+  <param name="/trex/enable_doors_touch_door" value="true"/>
+  <param name="/trex/enable_doors_grasp_handle" value="true"/>
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
 
-  <param name="/trex/update_rate" value="10"/>
+  <param name="/trex/update_rate" value="3"/>
   <param name="/trex/input_file" value="recharger.cfg"/>
   <param name="/trex/path" value="$(find executive_trex_pr2)/cfg"/>
   <param name="/trex/time_limit" value="120"/>

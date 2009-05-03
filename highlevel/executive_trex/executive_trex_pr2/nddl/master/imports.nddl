@@ -5,6 +5,7 @@
 #include "rcs/plugs/exports.nddl"
 #include "nav/exports.nddl"
 #include "plugs/exports.nddl"
+
 /**
  * Navigation controller will iteratively work towards a goal. It will bite off chunks
  */
@@ -47,7 +48,6 @@ MoveBehavior driver = new MoveBehavior(External, false);
 MoveBehavior doorman = new MoveBehavior(External, true);
 Recharger recharger = new Recharger(External);
 BaseState base_state = new BaseState(External);
-BatteryState battery_state = new BatteryState(External);
 
 AgentActions actions = new AgentActions();
 
