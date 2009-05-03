@@ -5,15 +5,15 @@
 #include "world_model/topological_map.nddl"
 
 MoveBehavior::Inactive {
-  // Only apply this condition when it has started. Do not want to plan it in advance.
-  if(start){
-    equals(DoorController.Holds dc);
-    eq(dc.active, false);
-  }
-
   // If it has been aborted, send an update with current the current current and target positions
   if(status == ABORTED){
-
+    met_by(Active p);
+    MAP_KEY doorway_id;
+    neq(doorway_id, NO_KEY);
+    float current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw;
+    tf_get_robot_pose(current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw, "map");
+    map_get_doorway_from_points(doorway_id, current_x, current_y, p.x, p.y);
+    map_notify_door_blocked(doorway_id);
   }
 }
 

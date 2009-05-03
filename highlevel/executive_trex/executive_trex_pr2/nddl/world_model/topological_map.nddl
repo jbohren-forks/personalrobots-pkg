@@ -28,7 +28,17 @@ constraint map_is_doorway(result, region_id) { result <: bool && region_id <: MA
 // data types I would not have to do it like this!
 constraint map_get_door_state(object, door_id) {object <: Object && door_id <: MAP_KEY}
 
-// A function to get door state based on the 
+// A function to get all outlet state - venetually perhaps an outlet message
+constraint map_get_outlet_state(x, y, z, qx, qy, qz, qw, outlet_id) { x <: numeric && y <: x && z <: x && qx <:x && qy <: x && qz <: x && qw <: x && outlet_id <: MAP_KEY}
+
+// A call to indicate the outlet is blocked
+constraint map_notify_outlet_blocked(outlet_id){ outlet_id <: MAP_KEY }
+
+// A call to indicate the door is blocked
+constraint map_notify_door_blocked(door_id){ door_id <: MAP_KEY }
+
+// A function to get the nearest outlet given a 2D point
+constraint map_get_nearest_outlet(outlet_id, x, y){ outlet_id <: MAP_KEY && x <: numeric && y <: numeric }
 
 /***********************************************************************
  * Types related to a semantic view of the map

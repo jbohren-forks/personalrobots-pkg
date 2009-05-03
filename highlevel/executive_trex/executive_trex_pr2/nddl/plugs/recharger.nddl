@@ -1,3 +1,38 @@
 #include "plugs/recharge_controller.nddl"
+#include "world_model/topological_map.nddl"
 
-// Add rules for MoveBehavior
+Recharger::Active{
+  // Start the recharge controller
+  starts(RechargeController.Holds dc);
+
+  // Initialize control variables
+  eq(dc.active, true);
+  eq(dc.in_position, false);
+  eq(dc.outlet_detected_coarse, false);
+  eq(dc.outlet_detected_fine, false);
+  eq(dc.arms_tucked, false);
+  eq(dc.recharged, false);
+  eq(dc.plug_is_stowed, maybe);
+  eq(dc.ready_to_plug_in, false);
+  eq(dc.plug_in_hand, false);
+  eq(dc.plugged_in, false);
+  eq(dc.ready_to_grasp, false);
+
+  // Set the outlet state based on nearest socket
+  MAP_KEY outlet_id;
+  neq(outlet_id, NO_KEY);
+  map_get_nearest_outlet(outlet_id, x, y);
+  starts(outlet_state.Holds os);
+  map_get_outlet_state(os.x, os.y, os.z, os.qx, os.qy, os.qz, os.qw, outlet_id);
+}
+
+Recharger::Inactive {
+  if(recharger == ABORTED){
+    // Fail, indicating that the outlet was not accessible
+    met_by(Active p);
+    MAP_KEY outlet_id;
+    neq(outlet_id, NO_KEY);
+    map_get_nearest_outlet(outlet_id, p.x, p.y);
+    map_notify_outlet_blocked(outlet_id);
+  }
+}

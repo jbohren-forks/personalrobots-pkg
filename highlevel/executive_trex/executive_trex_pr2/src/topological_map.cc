@@ -3,8 +3,6 @@
  */
 #include <executive_trex_pr2/topological_map.h>
 #include <ros/console.h>
-#include <robot_msgs/Door.h>
-#include <robot_msgs/Pose.h>
 #include "ConstrainedVariable.hh"
 #include "Utilities.hh"
 #include "Token.hh"
@@ -14,6 +12,7 @@ using namespace EUROPA;
 using namespace TREX;
 
 namespace executive_trex_pr2 {
+
 
   //*******************************************************************************************
   MapInitializeFromFileConstraint::MapInitializeFromFileConstraint(const LabelStr& name,
@@ -35,6 +34,120 @@ namespace executive_trex_pr2 {
     delete _map;
   }
 
+  //*******************************************************************************************
+  MapNotifyDoorBlockedConstraint::MapNotifyDoorBlockedConstraint(const LabelStr& name,
+								 const LabelStr& propagatorName,
+								 const ConstraintEngineId& constraintEngine,
+								 const std::vector<ConstrainedVariableId>& variables)
+    : Constraint(name, propagatorName, constraintEngine, variables), 
+      _doorway(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))){
+    checkError(variables.size() == 1, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+  }
+
+  void MapNotifyDoorBlockedConstraint::handleExecute(){
+    if(TopologicalMapAdapter::instance() == NULL){
+      debugMsg("map", "No topological map present!");
+      return;
+    }
+
+    if(_doorway.isSingleton()){
+      debugMsg("map", "Notification that doorway [" << _doorway.getSingletonValue() << "] is blocked.");
+      TopologicalMapAdapter::instance()->observeDoorBlocked(_doorway.getSingletonValue());
+    }
+  }
+
+  //*******************************************************************************************
+  MapNotifyOutletBlockedConstraint::MapNotifyOutletBlockedConstraint(const LabelStr& name,
+								     const LabelStr& propagatorName,
+								     const ConstraintEngineId& constraintEngine,
+								     const std::vector<ConstrainedVariableId>& variables)
+    : Constraint(name, propagatorName, constraintEngine, variables), 
+      _outlet(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))){
+    checkError(variables.size() == 1, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
+
+  void MapNotifyOutletBlockedConstraint::handleExecute(){
+    if(_outlet.isSingleton()){
+      debugMsg("map", "Notification that outlet [" << _outlet.getSingletonValue() << "] is blocked.");
+      TopologicalMapAdapter::instance()->observeOutletBlocked(_outlet.getSingletonValue());
+    }
+  }
+
+  //*******************************************************************************************
+  MapGetNearestOutletConstraint::MapGetNearestOutletConstraint(const LabelStr& name,
+							       const LabelStr& propagatorName,
+							       const ConstraintEngineId& constraintEngine,
+							       const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _outlet(static_cast<IntervalIntDomain&>(getCurrentDomain(variables[0]))),
+     _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))){
+    checkError(variables.size() == 3, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
+    
+  /**
+   * If the position is bound, we can make a region query. The result should be intersected on the domain.
+   */
+  void MapGetNearestOutletConstraint::handleExecute(){
+    // Wait till inputs are bound.
+    if(!_x.isSingleton() || !_y.isSingleton())
+      return;
+
+    debugMsg("map:get_nearest_outlet",  "BEFORE: " << toString());
+
+    double x = _x.getSingletonValue();
+    double y = _y.getSingletonValue();
+    unsigned int outlet_id = TopologicalMapAdapter::instance()->getNearestOutlet(x, y);
+
+    checkError(outlet_id > 0, "No outlet found for <" << x << ", " << y << ">");
+
+    _outlet.set(outlet_id);
+
+    debugMsg("map:get_nearest_outlet",  "AFTER: " << toString());
+  }
+
+  //*******************************************************************************************
+  MapGetOutletStateConstraint::MapGetOutletStateConstraint(const LabelStr& name,
+							    const LabelStr& propagatorName,
+							    const ConstraintEngineId& constraintEngine,
+							    const std::vector<ConstrainedVariableId>& variables)
+    :Constraint(name, propagatorName, constraintEngine, variables),
+     _x(static_cast<IntervalDomain&>(getCurrentDomain(variables[0]))),
+     _y(static_cast<IntervalDomain&>(getCurrentDomain(variables[1]))),
+     _z(static_cast<IntervalDomain&>(getCurrentDomain(variables[2]))),
+     _qx(static_cast<IntervalDomain&>(getCurrentDomain(variables[3]))),
+     _qy(static_cast<IntervalDomain&>(getCurrentDomain(variables[4]))),
+     _qz(static_cast<IntervalDomain&>(getCurrentDomain(variables[5]))),
+     _qw(static_cast<IntervalDomain&>(getCurrentDomain(variables[6]))),
+     _outlet(static_cast<const IntervalIntDomain&>(getCurrentDomain(variables[7]))){
+    checkError(variables.size() == 8, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+    checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
+  }
+    
+  /**
+   * If the position is bound, we can make a region query. The result should be intersected on the domain.
+   */
+  void MapGetOutletStateConstraint::handleExecute(){
+
+    // Wait till inputs are bound.
+    if(!_outlet.isSingleton())
+      return;
+
+    debugMsg("map:get_outlet_state",  "BEFORE: " << toString());
+    robot_msgs::Pose outlet_pose;
+    TopologicalMapAdapter::instance()->getOutletState(_outlet.getSingletonValue(), outlet_pose);
+    _x.set(outlet_pose.position.x);
+    _y.set(outlet_pose.position.y);
+    _z.set(outlet_pose.position.z);
+    _qx.set(outlet_pose.orientation.x);
+    _qy.set(outlet_pose.orientation.y);
+    _qz.set(outlet_pose.orientation.z);
+    _qw.set(outlet_pose.orientation.w);
+
+    debugMsg("map:get_outlet_state",  "AFTER: " << toString());
+  }
 
   //*******************************************************************************************
   MapGetNextMoveConstraint::MapGetNextMoveConstraint(const LabelStr& name,
@@ -744,5 +857,32 @@ namespace executive_trex_pr2 {
     // Footer
     of << "showpage\n%%%%EOF\n";
     of.close();
+  }
+
+  void TopologicalMapAdapter::observeDoorBlocked(unsigned int door_id){
+    _map->observeDoorTraversal(door_id, false, ros::Time::now());
+  }
+
+  unsigned int TopologicalMapAdapter::getNearestOutlet(double x, double y){
+    topological_map::Point2D p(x, y);
+    return _map->nearestOutlet(p);
+  }
+
+  /**
+   * @todo Outlet data should be a pose message
+   */
+  void TopologicalMapAdapter::getOutletState(unsigned int outlet_id, robot_msgs::Pose& outlet_pose){
+    topological_map::OutletInfo outlet_info = _map->outletInfo(outlet_id);
+    outlet_pose.position.x = outlet_info.origin_x;
+    outlet_pose.position.y = outlet_info.origin_y;
+    outlet_pose.position.z = outlet_info.origin_z;
+    outlet_pose.orientation.x = 0.0;
+    outlet_pose.orientation.y = 0.0;
+    outlet_pose.orientation.z = 0.0;
+    outlet_pose.orientation.w = 1.0;
+  }
+
+  void TopologicalMapAdapter::observeOutletBlocked(unsigned int outlet_id){
+    _map->observeOutletBlocked(outlet_id);
   }
 }

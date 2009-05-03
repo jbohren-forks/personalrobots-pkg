@@ -340,7 +340,14 @@ namespace TREX{
 			  executive_trex_pr2::MapIsDoorwayConstraint, "map_is_doorway", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
 			  executive_trex_pr2::MapGetDoorStateConstraint, "map_get_door_state", "Default");
-
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::MapNotifyDoorBlockedConstraint, "map_notify_door_blocked", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::MapGetNearestOutletConstraint, "map_get_nearest_outlet", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::MapGetOutletStateConstraint, "map_get_outlet_state", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  executive_trex_pr2::MapNotifyOutletBlockedConstraint, "map_notify_outlet_blocked", "Default");
 
       // Register functions for calculations in the door domain
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 

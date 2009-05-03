@@ -1,10 +1,10 @@
 #include "TREX.nddl"
+#include "world_model/topological_map.nddl"
 #include "rcs/exports.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/plugs/exports.nddl"
 #include "nav/exports.nddl"
 #include "plugs/exports.nddl"
-#include "world_model/topological_map.nddl"
 
 MoveBehavior driver = new MoveBehavior(Internal, false);
 MoveBehavior doorman = new MoveBehavior(Internal, true);

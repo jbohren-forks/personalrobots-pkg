@@ -28,9 +28,10 @@ rospack_add_nddl("test/doors/open_door.0/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/open_door.0/pr2.rcs.sim.nddl")
 
 # Plug Tests
+rospack_add_nddl("test/plugs/pr2.rcs.sim.nddl")
 rospack_add_nddl("test/plugs/single_action_test/pr2.recharger.nddl")
 rospack_add_nddl("test/plugs/recharge.0/pr2.recharger.nddl")
-rospack_add_nddl("test/plugs/recharge.0/pr2.rcs.sim.nddl")
+rospack_add_nddl("test/plugs/recharge.1/pr2.recharger.nddl")
 
 # Mechanism Control Tests
 rospack_add_nddl("test/mechanism_control/pr2.mechanism_control.nddl")

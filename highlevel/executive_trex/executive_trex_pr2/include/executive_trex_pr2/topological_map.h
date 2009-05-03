@@ -17,6 +17,8 @@
 #include "FlawFilter.hh"
 #include "UnboundVariableDecisionPoint.hh"
 #include <topological_map/topological_map.h>
+#include <robot_msgs/Door.h>
+#include <robot_msgs/Pose.h>
 
 using namespace EUROPA;
 using namespace TREX;
@@ -25,14 +27,13 @@ namespace executive_trex_pr2 {
   
   class TopologicalMapAdapter;
 
-
   /**
    * @brief Simple container class for a connection cost pair
    */
   class ConnectionCostPair {
   public:
-    ConnectionCostPair():id(0), cost(0){}
-    ConnectionCostPair(unsigned int id_, double cost_):id(id_), cost(cost_) {}
+  ConnectionCostPair():id(0), cost(0){}
+  ConnectionCostPair(unsigned int id_, double cost_):id(id_), cost(cost_) {}
 
     unsigned int id;
     double cost;  
@@ -180,6 +181,24 @@ namespace executive_trex_pr2 {
     IntervalIntDomain& _door_id;
   };
 
+
+  /**
+   * @brief Updates the map to indicate the given doorway is blocked. This operation is monotonic. the doorway will never
+   * be recognized as unblocked.
+   */
+  class MapNotifyDoorBlockedConstraint : public Constraint {
+  public:
+    
+    MapNotifyDoorBlockedConstraint(const LabelStr& name,
+				   const LabelStr& propagatorName,
+				   const ConstraintEngineId& constraintEngine,
+				   const std::vector<ConstrainedVariableId>& variables);
+    virtual void handleExecute();
+    
+  private:
+    IntervalIntDomain& _doorway;
+  };
+
   /**
    * @brief A filter to exclude variable binding decisions unless they are on a parameter variable
    * of a token for has all required variables, and the source and final destination are already singletons
@@ -200,6 +219,66 @@ namespace executive_trex_pr2 {
     const LabelStr _target_connector;
   };
 
+
+  /**
+   * @brief A function: given an x,y position, find the nearest outlet.
+   */
+  class MapGetNearestOutletConstraint : public Constraint {
+  public:
+    
+    MapGetNearestOutletConstraint(const LabelStr& name,
+				  const LabelStr& propagatorName,
+				  const ConstraintEngineId& constraintEngine,
+				  const std::vector<ConstrainedVariableId>& variables);
+    virtual void handleExecute();
+    
+  private:
+    IntervalIntDomain& _outlet;
+    IntervalDomain& _x;
+    IntervalDomain& _y;
+  };
+
+
+
+  /**
+   * @brief A function: Get the outlet position and orientation.
+   */
+  class MapGetOutletStateConstraint : public Constraint {
+  public:
+    
+    MapGetOutletStateConstraint(const LabelStr& name,
+				const LabelStr& propagatorName,
+				const ConstraintEngineId& constraintEngine,
+				const std::vector<ConstrainedVariableId>& variables);
+    virtual void handleExecute();
+    
+  private:
+    IntervalDomain& _x;
+    IntervalDomain& _y;
+    IntervalDomain& _z;
+    IntervalDomain& _qx;
+    IntervalDomain& _qy;
+    IntervalDomain& _qz;
+    IntervalDomain& _qw;
+    const IntervalIntDomain& _outlet;
+  };
+
+  /**
+   * @brief Updates the map to indicate the given outlet is blocked. This operation is monotonic. the outlet will never
+   * be recognized as unblocked.
+   */
+  class MapNotifyOutletBlockedConstraint : public Constraint {
+  public:
+    
+    MapNotifyOutletBlockedConstraint(const LabelStr& name,
+				     const LabelStr& propagatorName,
+				     const ConstraintEngineId& constraintEngine,
+				     const std::vector<ConstrainedVariableId>& variables);
+    virtual void handleExecute();
+    
+  private:
+    IntervalIntDomain& _outlet;
+  };
 
   /**
    * @brief Implements a sort based on minimizing g_cost + h_cost for target selection
@@ -305,6 +384,11 @@ namespace executive_trex_pr2 {
     virtual bool isDoorway(unsigned int region_id, bool& result);
 
     /**
+     * @brief Door blocked
+     */
+    virtual void observeDoorBlocked(unsigned int door_id);
+
+    /**
      * @brief Test if a point is in collision
      * @return true if it is in an obstacle
      */
@@ -323,9 +407,24 @@ namespace executive_trex_pr2 {
     virtual double cost(double to_x, double to_y, unsigned int connector_id);
 
     /**
-     * @broef Query for local connectors with costs to goal data as well
+     * @brief Query for local connectors with costs to goal data as well
      */
     virtual void getLocalConnectionsForGoal(std::list<ConnectionCostPair>& results, double x0, double y0, double x1, double y1);
+
+    /**
+     * @brief Get the nearest outlet given a 2d point
+     */
+    virtual unsigned int getNearestOutlet(double x, double y);
+
+    /**
+     * @brief Query detailed outlet data. Might want to think about adding and OutletState msg
+     */
+    virtual void getOutletState(unsigned int outlet_id, robot_msgs::Pose& outlet_pose);
+
+    /**
+     * @brief Outlet blocked
+     */
+    virtual void observeOutletBlocked(unsigned int outlet_id);
 
   private:
     static TopologicalMapAdapter* _singleton;

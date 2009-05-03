@@ -13,6 +13,15 @@ class Recharger extends Behavior {
    * until such time as the battery has been recharged to the required level
    */
   predicate Active {
+    string frame_id;
+    float time_stamp;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
     UNIT_FLOAT recharge_level;
   }
 

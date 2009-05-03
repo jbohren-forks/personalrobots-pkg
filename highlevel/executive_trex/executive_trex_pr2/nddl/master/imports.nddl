@@ -1,10 +1,10 @@
 #include "TREX.nddl"
+#include "world_model/topological_map.nddl"
 #include "rcs/exports.nddl"
 #include "rcs/nav/exports.nddl"
 #include "rcs/plugs/exports.nddl"
 #include "nav/exports.nddl"
 #include "plugs/exports.nddl"
-#include "world_model/topological_map.nddl"
 /**
  * Navigation controller will iteratively work towards a goal. It will bite off chunks
  */
