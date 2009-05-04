@@ -20,7 +20,11 @@ namespace TREX {
 	_feedback_topic(timelineName + "/feedback"){
     }
    
-    virtual ~ROSActionAdapter(){}
+    virtual ~ROSActionAdapter()
+      {
+	unregisterSubscribers();
+	unregisterPublishers();      
+      }
 
   protected:
 
@@ -61,6 +65,13 @@ namespace TREX {
       ros::Node::instance()->subscribe(_feedback_topic, _state_msg, &TREX::ROSActionAdapter<Goal, State, Feedback>::handleCallback, this, QUEUE_MAX());
     }
 
+    void unregisterSubscribers() {
+      ROS_INFO("%sUn-Registering subscriber for %s on topic: %s", 
+		nameString().c_str(), timelineName.c_str(), _feedback_topic.c_str());
+
+      ros::Node::instance()->unsubscribe(_feedback_topic);
+    }
+
     void registerPublishers(){
 
       // Request dispatch setup
@@ -74,6 +85,21 @@ namespace TREX {
 	       nameString().c_str(), timelineName.c_str(), _preempt_topic.c_str());
 
       ros::Node::instance()->advertise<std_msgs::Empty>(_preempt_topic, QUEUE_MAX());
+    }
+
+    void unregisterPublishers(){
+
+      // Request dispatch setup
+      ROS_INFO("%sUn-Registering publisher for %s on topic: %s", 
+	       nameString().c_str(), timelineName.c_str(), _request_topic.c_str());
+
+      ros::Node::instance()->unadvertise(_request_topic);
+
+      // Preemption dispatch setup
+      ROS_INFO("%sUn-Registering publisher for %s on topic: %s", 
+	       nameString().c_str(), timelineName.c_str(), _preempt_topic.c_str());
+
+      ros::Node::instance()->unadvertise(_preempt_topic);
     }
 
     Observation* getObservation(){
