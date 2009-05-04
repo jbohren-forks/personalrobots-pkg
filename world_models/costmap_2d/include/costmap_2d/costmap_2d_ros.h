@@ -180,13 +180,23 @@ namespace costmap_2d {
       /**
        * @brief  Stops the costmap from updating, but sensor data still comes in over the wire
        */
-      void pause() {stop_updates_ = true;}
+      void pause() {
+        stop_updates_ = true;
+        initialized_ = false;
+      }
 
 
       /**
        * @brief  Resumes costmap updates
        */
-      void resume(){stop_updates_ = false;}
+      void resume(){
+        stop_updates_ = false;
+
+        //block until the costmap is re-initialized.. meaning one update cycle has run
+        Rate r(100.0);
+        while(!initialized_)
+          r.sleep();
+      }
 
     private:
       /**
@@ -211,7 +221,7 @@ namespace costmap_2d {
       bool current_; ///< @brief Whether or not all the observation buffers are updating at the desired rate
       double transform_tolerance_; // timeout before transform errors
       Costmap2DPublisher* costmap_publisher_;
-      bool stop_updates_;
+      bool stop_updates_, initialized_;
 
   };
 };
