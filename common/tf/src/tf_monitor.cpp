@@ -1,3 +1,5 @@
+
+
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
@@ -47,6 +49,7 @@ public:
   Node node_;
   std::vector<std::string> chain_;
   std::map<std::string, std::vector<double> > delay_map;
+  std::map<std::string, std::vector<double> > authority_map;
   
   TransformListener tf_;
 
@@ -55,20 +58,55 @@ public:
   boost::mutex map_lock_;
   void callback()
   {
+    double average_offset = 0;
     boost::mutex::scoped_lock my_lock(map_lock_);  
     for (unsigned int i = 0; i < message_.transforms.size(); i++)
     {
+      double offset = (ros::Time::now() - message_.transforms[i].header.stamp).toSec();
+      average_offset  += offset;
+      
       std::map<std::string, std::vector<double> >::iterator it = delay_map.find(message_.transforms[i].header.frame_id);
       if (it == delay_map.end())
-        delay_map[message_.transforms[i].header.frame_id] = std::vector<double>(1,(ros::Time::now() - message_.transforms[i].header.stamp).toSec());
+      {
+        delay_map[message_.transforms[i].header.frame_id] = std::vector<double>(1,offset);
+      }
       else
       {
-        it->second.push_back((ros::Time::now() - message_.transforms[i].header.stamp).toSec());
+        it->second.push_back(offset);
         if (it->second.size() > 1000) 
           it->second.erase(it->second.begin());
       }
       
     } 
+    
+    average_offset /= max((size_t) 1, message_.transforms.size());
+    std::string authority;
+    std::map<std::string, std::string>* msg_header_map = message_.__connection_header.get();
+    std::map<std::string, std::string>::iterator it = msg_header_map->find("callerid");
+    if (it == msg_header_map->end())
+    {
+      ROS_WARN("Message recieved without callerid");
+      authority = "no callerid";
+    }
+    else
+    {
+      authority = it->second;
+    }
+
+    //create the authority log
+    std::map<std::string, std::vector<double> >::iterator it2 = authority_map.find(authority);
+    if (it2 == authority_map.end())
+    {
+      authority_map[authority] = std::vector<double>(1,average_offset);
+    }
+    else
+    {
+      it2->second.push_back(average_offset);
+      if (it2->second.size() > 1000) 
+        it2->second.erase(it2->second.begin());
+    }
+    
+    
   };
 
   TFMonitor(std::string framea, std::string frameb):
@@ -117,6 +155,7 @@ public:
     counter++;
     if (counter > 100){
       counter = 0;
+      cout << "=================================================" << std::endl;
       cout << "Net delay " << framea_ << " to " << frameb_ << "    avg = " << avg_diff <<": max = " << max_diff << endl;
       boost::mutex::scoped_lock lock(map_lock_);  
       for ( unsigned int i = 0 ; i < chain_.size(); i++)
@@ -136,6 +175,20 @@ public:
           average_delay /= it->second.size();
           cout << "Frame: " << it->first << " Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
         }
+      }
+      cout << "-------------------------------------------------" << std::endl;
+      std::map<std::string, std::vector<double> >::iterator it = authority_map.begin();
+      for ( ; it != authority_map.end() ; ++it)
+      {
+        double average_delay = 0;
+        double max_delay = 0;
+        for (unsigned int i = 0; i < it->second.size(); i++)
+        {
+          average_delay += it->second[i];
+          max_delay = std::max(max_delay, it->second[i]);
+        }
+        average_delay /= it->second.size();
+        cout << "Authority: " << it->first << " Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
       }
       
     }
