@@ -222,6 +222,29 @@ public:
     ++incoming_message_count_;
   }
 
+  /**
+   * \brief Subscribe to the message topic
+   */
+  void subscribeToMessage()
+  {
+    if (!topic_.empty())
+    {
+      node_->subscribe(topic_, message_, &MessageNotifier::incomingMessage,
+          this, queue_size_);
+    }
+  }
+
+  /**
+   * \brief Unsubscribe from the message topic
+   */
+  void unsubscribeFromMessage()
+  {
+    if (!topic_.empty())
+    {
+      node_->unsubscribe(topic_, &MessageNotifier::incomingMessage, this);
+    }
+  }
+
 private:
 
   typedef std::vector<MessagePtr> V_Message;
@@ -385,28 +408,6 @@ private:
     }
   }
 
-  /**
-   * \brief Subscribe to the message topic
-   */
-  void subscribeToMessage()
-  {
-    if (!topic_.empty())
-    {
-      node_->subscribe(topic_, message_, &MessageNotifier::incomingMessage,
-          this, queue_size_);
-    }
-  }
-
-  /**
-   * \brief Unsubscribe from the message topic
-   */
-  void unsubscribeFromMessage()
-  {
-    if (!topic_.empty())
-    {
-      node_->unsubscribe(topic_, &MessageNotifier::incomingMessage, this);
-    }
-  }
 
   /**
    * \class MessageDeleter

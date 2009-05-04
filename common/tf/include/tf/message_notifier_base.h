@@ -83,6 +83,16 @@ namespace tf {
        */
       virtual void clear() = 0;
 
+      /**
+       * \brief Subscribe to the message topic
+       */
+      virtual void subscribeToMessage() = 0;
+
+      /**
+       * \brief Unsubscribe from the message topic
+       */
+      virtual void unsubscribeFromMessage() = 0;
+
 
     protected:
       MessageNotifierBase(){}
