@@ -1,0 +1,18 @@
+<package>
+<description brief='PR2 inverse kinematics solver'>
+</description>
+<author>Sachin Chitta sachinc@willowgarage.com</author>
+<license>BSD</license>
+<review status="unreviewed" notes=""/>
+<url>http://pr.willowgarage.com</url>
+<depend package="roscpp"/>
+<depend package="kdl"/>
+<depend package="eigen"/>
+<depend package="angles"/>
+<depend package="mechanism_model"/>
+<depend package="wg_robot_description_parser"/>
+
+<export>
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2_ik"/>
+</export>
+</package>
