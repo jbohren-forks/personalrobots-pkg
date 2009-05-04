@@ -187,12 +187,17 @@ namespace nav {
       ros_node_.publish("cmd_vel", cmd_vel);
 
       //check for success
-      if(tc_->goalReached())
+      if(tc_->goalReached()){
+        //stop costmap updates
+        controller_costmap_ros_->stop();
         return robot_actions::SUCCESS;
+      }
 
 
       //if we don't have a valid control... we'll abort
       if(!valid_control){
+        //stop costmap updates
+        controller_costmap_ros_->stop();
         return robot_actions::ABORTED;
       }
 
