@@ -78,15 +78,6 @@ namespace nav {
 
     private:
       /**
-       * @brief  Sleeps for the remainder of a cycle
-       * @param  start The start time of the cycle
-       * @param  cycle_time The desired cycle time
-       * @param  actual Will be set to the actual cycle time of the loop
-       * @return True if the desired cycle time is met, false otherwise
-       */
-      bool sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual);
-
-      /**
        * @brief  Get the current pose of the robot in the specified frame
        * @param  frame The frame to get the pose in
        * @param  pose The pose returned

@@ -75,6 +75,9 @@ namespace nav {
     controller_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("base_local_planner"));
     controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
+    //initially we'll stop all updates on the costmap
+    controller_costmap_ros_->stop();
+
     robot_msgs::Point pt;
     //create a square footprint
     pt.x = inscribed_radius + .01;
@@ -135,7 +138,11 @@ namespace nav {
       ROS_ERROR("%s: Failed to start laser.", action_name_.c_str());
       return robot_actions::ABORTED;
     }    
-    ros::Duration cycle_time = ros::Duration(1.0 / controller_frequency_);
+
+    //start the controller's costmap
+    controller_costmap_ros_->start();
+
+    costmap_2d::Rate r(controller_frequency_);
     while(!isPreemptRequested()){
       struct timeval start, end;
       double start_t, end_t, t_diff;
@@ -197,27 +204,14 @@ namespace nav {
 
       ros::Duration actual;
       //sleep the remainder of the cycle
-      if(!sleepLeftover(start_time, cycle_time, actual))
-        ROS_WARN("Controll loop missed its desired cycle time of %.4f... the loop actually took %.4f seconds", cycle_time.toSec(), actual.toSec());
+      if(!r.sleep())
+        ROS_WARN("Controll loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
     }
+
+    //stop the controller's costmap
+    controller_costmap_ros_->stop();
+
     return robot_actions::PREEMPTED;
-  }
-
-  bool MoveBaseLocal::sleepLeftover(ros::Time start, ros::Duration cycle_time, ros::Duration& actual){
-    ros::Time expected_end = start + cycle_time;
-    ros::Time actual_end = ros::Time::now();
-    ///@todo: because durations don't handle subtraction properly right now
-    ros::Duration sleep_time = ros::Duration((expected_end - actual_end).toSec()); 
-
-    //set the actual amount of time the loop took
-    actual = actual_end - start;
-
-    if(sleep_time < ros::Duration(0.0)){
-      return false;
-    }
-
-    sleep_time.sleep();
-    return true;
   }
 
   void MoveBaseLocal::resetCostmaps(){
