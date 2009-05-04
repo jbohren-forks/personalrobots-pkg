@@ -26,12 +26,12 @@
     </node>
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
     <node pkg="nav_view" type="nav_view" respawn="false">
-      <remap from="goal" to="/move_base/activate" />
-      <remap from="raw_obstacles" to="/move_base/base_local_planner/raw_obstacles" />
-      <remap from="inflated_obstacles" to="/move_base/base_local_planner/inflated_obstacles" />
-      <remap from="gui_path" to="/move_base/base_local_planner/global_plan" />
-      <remap from="local_path" to="/move_base/base_local_planner/local_plan" />
-      <remap from="robot_footprint" to="/move_base/base_local_planner/robot_footprint"/>
+      <remap from="goal" to="/move_base_local/activate" />
+      <remap from="raw_obstacles" to="/move_base_local/base_local_planner/raw_obstacles" />
+      <remap from="inflated_obstacles" to="/move_base_local/base_local_planner/inflated_obstacles" />
+      <remap from="gui_path" to="/move_base_local/base_local_planner/global_plan" />
+      <remap from="local_path" to="/move_base_local/base_local_planner/local_plan" />
+      <remap from="robot_footprint" to="/move_base_local/base_local_planner/robot_footprint"/>
     </node>
   </group>
 </launch>
