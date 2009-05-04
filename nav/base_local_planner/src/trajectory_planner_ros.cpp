@@ -333,7 +333,7 @@ namespace base_local_planner {
         robot_msgs::PoseStamped new_pose;
         ros::Time current_time = ros::Time::now(); // save time for checking tf delay later
 	new_pose = orig_global_plan[i];
-	new_pose.header.stamp = ros::Time::now();
+	new_pose.header.stamp = ros::Time();
 	tf_.transformPose(global_frame_, new_pose, new_pose);
         // check global_pose timeout
         if (current_time.toSec() - new_pose.header.stamp.toSec() > transform_tolerance_) {
@@ -354,6 +354,8 @@ namespace base_local_planner {
     }
     catch(tf::ExtrapolationException& ex) {
       ROS_ERROR("Extrapolation Error: %s\n", ex.what());
+      if (orig_global_plan.size() > 0)
+        ROS_ERROR("Global Frame: %s Plan Frame size %d: %s\n", global_frame_.c_str(),orig_global_plan.size(), orig_global_plan[0].header.frame_id.c_str());
       return;
     }
   }
