@@ -72,7 +72,7 @@ Stamped<Pose> getRobotPose(const robot_msgs::Door& door, double dist)
   Vector normal_frame = rot_door_frame * normal_door;
 
   // get robot pos
-  Vector robot_pos = frame_center - (normal_frame * dist);
+  Vector robot_pos = frame_center + (normal_frame * dist);
 
   Stamped<Pose> robot_pose;
   robot_pose.frame_id_ = door.header.frame_id;
