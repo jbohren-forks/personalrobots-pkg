@@ -104,7 +104,7 @@ void DoorReactivePlanner::setDoor(robot_msgs::Door door_msg_in)
     return;
   }
 
-  tf::Stamped<tf::Pose> tmp = getRobotPose(door,-door_goal_distance_);
+  tf::Stamped<tf::Pose> tmp = getRobotPose(door,door_goal_distance_);
   tf::Vector3 tmp_normal = getFrameNormal(door);
   
   centerline_angle_ = atan2(tmp_normal[1],tmp_normal[0]);
@@ -113,7 +113,7 @@ void DoorReactivePlanner::setDoor(robot_msgs::Door door_msg_in)
   goal_.y = tmp.getOrigin()[1];
   goal_.th = centerline_angle_;
 
-  tf::Stamped<tf::Pose> tmp_2 = getRobotPose(door,-door_goal_distance_-carrot_distance_);
+  tf::Stamped<tf::Pose> tmp_2 = getRobotPose(door,door_goal_distance_+carrot_distance_);
 
   carrot_.x = tmp_2.getOrigin()[0];
   carrot_.y = tmp_2.getOrigin()[1];
