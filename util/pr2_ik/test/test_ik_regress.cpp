@@ -62,7 +62,7 @@ bool NOT_NEAR(const double &v1, const double &v2, const double &NEAR)
       return true;
    return false;
 }
-/*
+
 TEST(PR2IK, inverseKinematics)
 {
   int num_tests = 1000000;
@@ -120,7 +120,7 @@ srand ( time(NULL) ); // initialize random seed:
   EXPECT_EQ(num_solutions,num_tests);
   delete jnt_to_pose_solver;
 }
-*/
+
 
 TEST(PR2IK, inverseKinematicsSearch)
 {
