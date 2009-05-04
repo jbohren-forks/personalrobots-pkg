@@ -53,7 +53,8 @@ int main(int argc, char **argv)
 //   const double ja[7] = {-0.087379,1.225220,-2.439131,-1.610891,-2.395076,1.585149,0.031105};
    const double ja[7] = {0.566087,1.358282,-2.673285,-0.969307,-1.835188,1.585149,1.648559};
   
-   double init =  -1.970823;
+//   double init =  -1.970823;
+   double init =  -2.670823;
 
    input(0) = ja[0];
    input(1) = ja[1];
@@ -76,7 +77,7 @@ int main(int argc, char **argv)
 
    KDL::Chain kdl_chain;
    KDL::ChainFkSolverPos_recursive *jnt_to_pose_solver;
-   KDL::JntArray jnt_pos_out;
+   std::vector<KDL::JntArray> jnt_pos_out;
    KDL::Frame p_out;
    KDL::Frame p_ik;
 
@@ -85,12 +86,12 @@ int main(int argc, char **argv)
    ik.chain_.toKDL(kdl_chain);
 
    jnt_to_pose_solver = new KDL::ChainFkSolverPos_recursive(kdl_chain);
-   jnt_pos_out.resize(7);
+//   jnt_pos_out.resize(7);
 
    if(jnt_to_pose_solver->JntToCart(input,p_out) >=0)
    {
 
-      bool ik_valid = (ik.CartToJnt(guess,p_out,jnt_pos_out) >= 0);
+     bool ik_valid = (ik.CartToJntSearch(guess,p_out,jnt_pos_out,10) >= 0);
       if(ik_valid) 
          ROS_INFO("True");
       for(int j=0; j<7; j++)

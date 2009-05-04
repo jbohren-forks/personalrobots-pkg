@@ -148,7 +148,7 @@ bool PR2IK::solveQuadratic(const double &a, const double &b, const double &c, do
     return true;
   }
 #ifdef DEBUG
-  printf("Discriminant: %f",discriminant);
+  printf("Discriminant: %f\n",discriminant);
 #endif
   if (discriminant >= 0)
   {      
@@ -225,12 +225,23 @@ bool PR2IK::solveCosineEqn(const double &a, const double &b, const double &c, do
 
   if(fabs(denom) < IK_EPS) // should never happen, wouldn't make sense but make sure it is checked nonetheless
   {
+#ifdef DEBUG
+    std::cout << "denom: " << denom << std::endl;
+#endif
     return false;
   }
   double rhs_ratio = c/denom;
 
+//  if(fabs(rhs_ratio)-1 < 0.01)
+//  { 
+//    rhs_ratio = std::min<double>(std::max<double>(rhs_ratio,-1.0),1.0);
+//  }
+//  else 
   if(rhs_ratio < -1 || rhs_ratio > 1)
   {
+#ifdef DEBUG
+    std::cout << "rhs_ratio: " << rhs_ratio << std::endl;
+#endif
     return false;
   }
   double acos_term = acos(rhs_ratio);
@@ -532,7 +543,9 @@ void PR2IK::computeIKEfficientTheta3(const Eigen::Matrix4f &g_in, const double &
 
   if(!solveQuadratic(b1*b1-d2,2*b0*b1-d1,b0*b0-d0,&theta4[0],&theta4[1]))
   {
+#ifdef DEBUG
      printf("No solution to quadratic eqn\n");
+#endif
     return;
   }
   theta4[0] = acos(theta4[0]);
@@ -581,7 +594,12 @@ void PR2IK::computeIKEfficientTheta3(const Eigen::Matrix4f &g_in, const double &
       bt = x;
       ct = (ap_[1]-ap_[3])*sin(t3)*sin(t4);
       if(!solveCosineEqn(at,bt,ct,theta1[0],theta1[1]))
+      {
+#ifdef DEBUG
+        std::cout << "could not solve cosine equation for t1" << std::endl;
+#endif
         continue;
+      }
 
       for(int kk =0; kk < 2; kk++)
       {           

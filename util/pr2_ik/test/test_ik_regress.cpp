@@ -39,7 +39,7 @@
 
 #include <gtest/gtest.h>
 
-#define IK_NEAR 0.1
+#define IK_NEAR 1e-4
 using namespace pr2_ik;
 using namespace KDL;
 
@@ -62,7 +62,7 @@ bool NOT_NEAR(const double &v1, const double &v2, const double &NEAR)
       return true;
    return false;
 }
-
+/*
 TEST(PR2IK, inverseKinematics)
 {
   int num_tests = 1000000;
@@ -79,8 +79,8 @@ TEST(PR2IK, inverseKinematics)
   KDL::Frame p_out;
   KDL::Frame p_ik;
 
-/* initialize random seed: */
-  srand ( time(NULL) );
+srand ( time(NULL) ); // initialize random seed: 
+
 
   ik.chain_.toKDL(kdl_chain);
 
@@ -120,6 +120,95 @@ TEST(PR2IK, inverseKinematics)
   EXPECT_EQ(num_solutions,num_tests);
   delete jnt_to_pose_solver;
 }
+*/
+
+TEST(PR2IK, inverseKinematicsSearch)
+{
+  int num_tests = 10000;
+  PR2IKSolver ik;
+  if(!ik.active_)
+  {
+    ROS_FATAL("ik not initialized");
+    exit(1);
+  }
+  KDL::Chain kdl_chain;
+  KDL::ChainFkSolverPos_recursive *jnt_to_pose_solver;
+  KDL::JntArray jnt_pos_in;
+  KDL::JntArray jnt_pos_test;
+  std::vector<KDL::JntArray> jnt_pos_out;
+  KDL::Frame p_out;
+  KDL::Frame p_ik;
+
+/* initialize random seed: */
+  srand ( time(NULL) );
+
+  ik.chain_.toKDL(kdl_chain);
+
+  jnt_to_pose_solver = new KDL::ChainFkSolverPos_recursive(kdl_chain);
+  jnt_pos_in.resize(7);
+  jnt_pos_test.resize(7);
+
+  int num_solutions(0);
+
+  for(int kk = 0; kk < num_tests; kk++)
+  {
+    for(int i=0; i < 7; i++)
+    {
+      jnt_pos_in(i) = gen_rand(std::max(ik.pr2_ik_->min_angles_[i],-M_PI),std::min(ik.pr2_ik_->max_angles_[i],M_PI));
+      EXPECT_TRUE((jnt_pos_in(i) <= ik.pr2_ik_->max_angles_[i]));
+      EXPECT_TRUE((jnt_pos_in(i) >= ik.pr2_ik_->min_angles_[i]));
+    }
+    jnt_pos_test = jnt_pos_in;
+    if(jnt_to_pose_solver->JntToCart(jnt_pos_in,p_out) >=0)
+    {
+      jnt_pos_test(2) = gen_rand(std::max(ik.pr2_ik_->min_angles_[2],-M_PI),std::min(ik.pr2_ik_->max_angles_[2],M_PI));
+      bool ik_valid = (ik.CartToJntSearch(jnt_pos_test,p_out,jnt_pos_out,10) >= 0);
+      EXPECT_TRUE(ik_valid);
+      if(ik_valid)
+      {
+        num_solutions++;
+        jnt_to_pose_solver->JntToCart(jnt_pos_out[0],p_ik);
+        for(int j=0; j< 3; j++)
+        {
+          EXPECT_NEAR(p_ik.M(j,0),p_out.M(j,0),IK_NEAR);
+          EXPECT_NEAR(p_ik.M(j,1),p_out.M(j,1),IK_NEAR); 
+          EXPECT_NEAR(p_ik.M(j,2),p_out.M(j,2),IK_NEAR); 
+          EXPECT_NEAR(p_ik.p(j),p_out.p(j),IK_NEAR);
+        }
+      }
+      else
+      {
+        ROS_INFO("Failed solution");
+        for(int m=0; m < 3; m++)
+        {
+          printf("%f %f %f %f\n",p_out.M(m,0),p_out.M(m,1),p_out.M(m,2),p_out.p(m));
+        }
+        printf("\n");
+        ROS_INFO("Original joint values");
+          for(int n = 0; n< 7; n++)
+          {
+            printf("%f ",jnt_pos_in(n));
+          }
+          printf("\n");
+          ROS_INFO("Guess: %f",jnt_pos_test(2));
+        ROS_INFO("Solution");
+        for(int m=0; m < (int) ik.pr2_ik_->solution_ik_.size(); m++)
+        {
+          for(int n = 0; n< 7; n++)
+          {
+            printf("%f ",ik.pr2_ik_->solution_ik_[m][n]);
+          }
+          printf("\n");
+        }
+        ROS_INFO("\n\n\n");
+        exit(1);
+      }
+    }
+  }
+  EXPECT_EQ(num_solutions,num_tests);
+  delete jnt_to_pose_solver;
+}
+
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);

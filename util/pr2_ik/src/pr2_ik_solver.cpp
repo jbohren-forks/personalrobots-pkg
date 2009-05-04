@@ -168,6 +168,8 @@ PR2IKSolver::PR2IKSolver():ChainIkSolverPos()
     ROS_INFO("Joint: %d, angle limits: (%f,%f)",i,min_angles[i],max_angles[i]);
   }
 
+  ros::Node::instance()->param<double>("~search_discretization_angle",search_discretization_angle_,0.001);
+
   // create robot chain from root to tip
   if (!chain_.init(&robot_model_, root_name, tip_name))
     ROS_ERROR("Could not initialize chain object");
@@ -249,4 +251,97 @@ int PR2IKSolver::CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, 
   else
     return -1;
 }
+
+int PR2IKSolver::CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, std::vector<KDL::JntArray> &q_out)
+{
+  Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
+  KDL::JntArray q;
+
+  if(pr2_ik_->free_angle_ == 0)
+  {
+    pr2_ik_->computeIKEfficient(b,q_init(0));
+  }
+  else
+  {
+    pr2_ik_->computeIKEfficientTheta3(b,q_init(2));
+  }
+  
+  if(pr2_ik_->solution_ik_.size() < 1)
+    return -1;
+
+  q.resize(7);
+  q_out.clear();
+  for(int i=0; i< (int) pr2_ik_->solution_ik_.size(); i++)
+  {     
+    for(int j=0; j < 7; j++)
+    {   
+      q(j) = pr2_ik_->solution_ik_[i][j];
+    }
+    q_out.push_back(q);
+  }
+  return 1;
+}
+
+bool PR2IKSolver::getCount(int &count, int max_count, int min_count)
+{
+  if(count > 0)
+  {
+    if(-count >= min_count)
+    {   
+      count = -count;
+      return true;
+    }
+    else if(count+1 <= max_count)
+    {
+      count = count+1;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+  else
+  {
+    if(1-count <= max_count)
+    {
+      count = 1-count;
+      return true;
+    }
+    else if(count-1 >= min_count)
+    {
+      count = count -1;
+      return true;
+    }
+    else
+      return false;
+  }
+}
+
+int PR2IKSolver::CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame& p_in, std::vector<KDL::JntArray> &q_out, const double &timeout)
+{
+  KDL::JntArray q_init = q_in;
+  Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
+  double initial_guess = q_init(pr2_ik_->free_angle_);
+
+  ros::Time start_time = ros::Time::now();
+  double loop_time = 0;
+  int count = 0;
+
+  int num_positive_increments = (pr2_ik_->max_angles_[pr2_ik_->free_angle_]-initial_guess)/search_discretization_angle_;
+  int num_negative_increments = (initial_guess-pr2_ik_->min_angles_[pr2_ik_->free_angle_])/search_discretization_angle_;
+  ROS_DEBUG("%f %f %f %d %d \n\n",initial_guess,pr2_ik_->max_angles_[pr2_ik_->free_angle_],pr2_ik_->min_angles_[pr2_ik_->free_angle_],num_positive_increments,num_negative_increments);
+  while(loop_time < timeout)
+  {
+    if(CartToJnt(q_init,p_in,q_out) > 0)
+      return 1;
+    if(!getCount(count,num_positive_increments,-num_negative_increments))
+      return -1;
+    q_init(pr2_ik_->free_angle_) = initial_guess + search_discretization_angle_ * count;
+    ROS_DEBUG("%d, %f",count,q_init(pr2_ik_->free_angle_));
+    loop_time = (ros::Time::now()-start_time).toSec();
+  }
+  return -1;
+}
+
 

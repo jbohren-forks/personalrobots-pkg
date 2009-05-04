@@ -57,6 +57,10 @@ namespace pr2_ik
 
     int CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, KDL::JntArray& q_out);
 
+    int CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, std::vector<KDL::JntArray> &q_out);
+  
+    int CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame& p_in, std::vector<KDL::JntArray> &q_out, const double &timeout);
+
     private:
 
     mechanism::Robot robot_model_;
@@ -67,5 +71,8 @@ namespace pr2_ik
 
     double computeEuclideanDistance(const std::vector<double> &array_1, const KDL::JntArray &array_2);
 
+    bool getCount(int &count, int max_count, int min_count);
+
+    double search_discretization_angle_;
   };
 }
