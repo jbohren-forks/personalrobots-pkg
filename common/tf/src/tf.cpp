@@ -436,7 +436,7 @@ int Transformer::getLatestCommonTime(const std::string& source, const std::strin
     //Set time to latest timestamp of frameid in case of target and source frame id are the same
     if (lists.inverseTransforms.size() == 0 && lists.forwardTransforms.size() == 0)
     {
-      time = getFrame(lookupFrameNumber(dest))->getLatestTimestamp();
+      time = ros::Time::now();
       return retval;
     }
       
