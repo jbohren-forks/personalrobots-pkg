@@ -27,6 +27,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+// Priority for goals
+typedef int [0 5] PRIORITY;
+
+class M2Goals extends Behavior {
+  predicate Active{
+    string frame_id;
+    float time_stamp;
+    float x;
+    float y;
+    float z;
+    float qx;
+    float qy;
+    float qz;
+    float qw;
+    PRIORITY priority;
+    default(priority, 0);
+  }
+
+  predicate Inactive{}
+
+  M2Goals(){
+    super(Internal);
+  }
+};
+
 // TREX base class declaration and definitions
 #include "TREX.nddl"
 
@@ -38,11 +64,6 @@
 #include "safety.exports.nddl"
 #include "topological_map.exports.nddl"
 
-// Priority for goals
-typedef int [0 5] PRIORITY;
-
-// Constaint for time delay before resuming work after unplugging
-int WAIT_TIME_AFTER_UNPLUGGING = 5; 
 
 /**
  * This is an abstract state variable which reflects if we are 

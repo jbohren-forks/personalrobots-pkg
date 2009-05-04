@@ -58,31 +58,31 @@ PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(External);
 
 DoorsTuckArms::Inactive{
   if(status == SUCCESS){
-    contained_by(mobility_status.Holds mb);
+    starts_during(mobility_status.Holds mb);
     eq(mb.arms_tucked, true);
   }
 }
 
 SafetyTuckArms::Inactive{
   if(status == SUCCESS){
-    contained_by(mobility_status.Holds mb);
+    starts_during(mobility_status.Holds mb);
     eq(mb.arms_tucked, true);
   }
 }
 
 
 TouchDoor::Active{
-  contained_by(mobility_status.Holds mb);
+  starts_during(mobility_status.Holds mb);
   eq(mb.arms_tucked, false);
 }
 
 
 GraspHandle::Active{
-  contained_by(mobility_status.Holds mb);
+  starts_during(mobility_status.Holds mb);
   eq(mb.arms_tucked, false);
 }
 
 PlugsUntuckArms::Active{
-  contained_by(mobility_status.Holds mb);
+  starts_during(mobility_status.Holds mb);
   eq(mb.arms_tucked, false);
 }

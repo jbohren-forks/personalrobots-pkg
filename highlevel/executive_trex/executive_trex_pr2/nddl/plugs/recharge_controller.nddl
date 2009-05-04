@@ -55,7 +55,6 @@ class RechargeController extends AgentTimeline {
     bool in_position;
     bool outlet_detected_coarse;
     bool outlet_detected_fine;
-    bool arms_tucked;
     bool recharged;
     BOOL plug_is_stowed;
     bool ready_to_plug_in;
@@ -98,10 +97,6 @@ RechargeController::Holds{
   defaultOnCommit(plug_in_hand, p.plug_in_hand);
   defaultOnCommit(plugged_in, p.plugged_in);
   defaultOnCommit(ready_to_grasp, p.ready_to_grasp);
-
-  // Derive arms_tucked from external safety monotor
-  starts_during(mobility_status.Holds mb);
-  eq(arms_tucked, mb.arms_tucked);
 }
 
 /**
@@ -109,7 +104,12 @@ RechargeController::Holds{
  */
 RechargeController::Holds {
   if(active == true){
+    // Derive arms_tucked from external safety monotor
+    bool arms_tucked;
+    starts_during(mobility_status.Holds mb);
+    eq(arms_tucked, mb.arms_tucked);
     meets(Holds s); // Successor
+
     if(recharged == true){
       if(plug_is_stowed == yes){
 	meets(Recharger.Inactive rc_inactive);

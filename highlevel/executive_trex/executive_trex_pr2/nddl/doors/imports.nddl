@@ -15,9 +15,9 @@ constraint  door_get_robot_pose_for_door(x, y, z, qx, qy, qz, qw, token_object, 
 }
 
 // Control constants for distances from door for detection, grasping and moving through the doorway
-float DETECTION_RANGE = 1.0;
-float GRASP_RANGE = 0.6;
-float DOORWAY_CLEARANCE_RANGE = -0.4;
+float DETECTION_RANGE = -1.0;
+float GRASP_RANGE = -0.6;
+float DOORWAY_CLEARANCE_RANGE = 0.4;
 
 // Additional mechanisms used
 RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(External);

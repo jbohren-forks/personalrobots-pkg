@@ -162,15 +162,16 @@ DoorController::Holds{
 DoorController::Holds {
   contained_by(door_state.Holds ds);
 
-  // Derive arms_tucked from external safety monotor.
-  // TODO: Analyze bu that arises wgen I include guards directly on mb.arms_tucked. The local variable
-  // below is just a workaround
-  starts_during(mobility_status.Holds ms);
-  bool arms_tucked;
-  eq(arms_tucked, ms.arms_tucked);
-
   if(active == true){
     meets(Holds s);
+
+    // Derive arms_tucked from external safety monotor.
+    // TODO: Analyze bu that arises wgen I include guards directly on mb.arms_tucked. The local variable
+    // below is just a workaround
+    starts_during(mobility_status.Holds ms);
+    bool arms_tucked;
+    eq(arms_tucked, ms.arms_tucked);
+
     if(finishing == true){
       if(have_handle == false){
 	if(arms_tucked == true){

@@ -9,7 +9,7 @@
 /**
  * Navigation controller will iteratively work towards a goal. It will bite off chunks
  */
-class NavController extends AgentTimeline {
+class Controller extends AgentTimeline {
   predicate Holds {
     bool active;
   }

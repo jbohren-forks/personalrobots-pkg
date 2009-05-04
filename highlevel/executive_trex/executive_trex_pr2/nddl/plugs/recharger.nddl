@@ -10,7 +10,6 @@ Recharger::Active{
   eq(dc.in_position, false);
   eq(dc.outlet_detected_coarse, false);
   eq(dc.outlet_detected_fine, false);
-  eq(dc.arms_tucked, false);
   eq(dc.recharged, false);
   eq(dc.plug_is_stowed, maybe);
   eq(dc.ready_to_plug_in, false);
