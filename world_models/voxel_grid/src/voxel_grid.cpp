@@ -41,17 +41,17 @@
 namespace voxel_grid {
   VoxelGrid::VoxelGrid(unsigned int size_x, unsigned int size_y, unsigned int size_z)
   {
-    this->size_x = size_x; 
-    this->size_y = size_y; 
-    this->size_z = size_z; 
+    size_x_ = size_x; 
+    size_y_ = size_y; 
+    size_z_ = size_z; 
 
-    if(size_z > 16)
+    if(size_z_ > 16)
       ROS_INFO("Error, this implementation can only support up to 16 z values"); 
 
-    data = new uint32_t[size_x * size_y];
+    data_ = new uint32_t[size_x_ * size_y_];
     uint32_t unknown_col = ~((uint32_t)0)>>16;
-    uint32_t* col = data;
-    for(unsigned int i = 0; i < size_x * size_y; ++i){
+    uint32_t* col = data_;
+    for(unsigned int i = 0; i < size_x_ * size_y_; ++i){
       *col = unknown_col;
       ++col;
     }
@@ -59,56 +59,66 @@ namespace voxel_grid {
 
   VoxelGrid::~VoxelGrid()
   {
-    delete [] data;
+    delete [] data_;
   }
 
-  void VoxelGrid::markVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1){
-    if(x0 >= size_x || y0 >= size_y || z0 >= size_z || x1>=size_x || y1>=size_y || z1>=size_z){
-      ROS_INFO("Error, line endpoint out of bounds. (%d, %d, %d) to (%d, %d, %d),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
-          size_x, size_y, size_z);
-      return;
+  void VoxelGrid::reset(){
+    uint32_t unknown_col = ~((uint32_t)0)>>16;
+    uint32_t* col = data_;
+    for(unsigned int i = 0; i < size_x_ * size_y_; ++i){
+      *col = unknown_col;
+      ++col;
     }
-
-    MarkVoxel mv(data);
-    raytraceLine(mv, x0, y0, z0, x1, y1, z1);
   }
 
-  void VoxelGrid::clearVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1){
-    if(x0 >= size_x || y0 >= size_y || z0 >= size_z || x1>=size_x || y1>=size_y || z1>=size_z){
+  void VoxelGrid::markVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned int max_length){
+    if(x0 >= size_x_ || y0 >= size_y_ || z0 >= size_z_ || x1>=size_x_ || y1>=size_y_ || z1>=size_z_){
       ROS_INFO("Error, line endpoint out of bounds. (%d, %d, %d) to (%d, %d, %d),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
-          size_x, size_y, size_z);
+          size_x_, size_y_, size_z_);
       return;
     }
 
-    ClearVoxel cv(data);
-    raytraceLine(cv, x0, y0, z0, x1, y1, z1);
+    MarkVoxel mv(data_);
+    raytraceLine(mv, x0, y0, z0, x1, y1, z1, max_length);
   }
 
-  void VoxelGrid::clearVoxelLineInMap(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned char *map_2d, unsigned int unknown_threshold, unsigned int mark_threshold){
-    cost_map = map_2d;
-    if(map_2d == 0){
-      clearVoxelLine(x0, y0, z0, x1, y1, z1);
-      return;
-    }
-
-    if(x0 >= size_x || y0 >= size_y || z0 >= size_z || x1>=size_x || y1>=size_y || z1>=size_z){
+  void VoxelGrid::clearVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned int max_length){
+    if(x0 >= size_x_ || y0 >= size_y_ || z0 >= size_z_ || x1>=size_x_ || y1>=size_y_ || z1>=size_z_){
       ROS_INFO("Error, line endpoint out of bounds. (%d, %d, %d) to (%d, %d, %d),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
-          size_x, size_y, size_z);
+          size_x_, size_y_, size_z_);
       return;
     }
 
-    ClearVoxelInMap cvm(data, cost_map, unknown_threshold, mark_threshold);
-    raytraceLine(cvm, x0, y0, z0, x1, y1, z1);
+    ClearVoxel cv(data_);
+    raytraceLine(cv, x0, y0, z0, x1, y1, z1, max_length);
+  }
+
+  void VoxelGrid::clearVoxelLineInMap(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned char *map_2d, 
+      unsigned int unknown_threshold, unsigned int mark_threshold, unsigned int max_length){
+    costmap = map_2d;
+    if(map_2d == NULL){
+      clearVoxelLine(x0, y0, z0, x1, y1, z1, max_length);
+      return;
+    }
+
+    if(x0 >= size_x_ || y0 >= size_y_ || z0 >= size_z_ || x1>=size_x_ || y1>=size_y_ || z1>=size_z_){
+      ROS_INFO("Error, line endpoint out of bounds. (%d, %d, %d) to (%d, %d, %d),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
+          size_x_, size_y_, size_z_);
+      return;
+    }
+
+    ClearVoxelInMap cvm(data_, costmap, unknown_threshold, mark_threshold);
+    raytraceLine(cvm, x0, y0, z0, x1, y1, z1, max_length);
   }
 
   VoxelStatus VoxelGrid::getVoxel(unsigned int x, unsigned int y, unsigned int z)
   {
-    if(x >= size_x || y >= size_y || z >= size_z){
+    if(x >= size_x_ || y >= size_y_ || z >= size_z_){
       ROS_INFO("Error, voxel out of bounds. (%d, %d, %d)\n", x, y, z);
       return UNKNOWN;
     }
     uint32_t full_mask = ((uint32_t)1<<z<<16) | (1<<z);
-    uint32_t result = data[y * size_x + x] & full_mask; 
+    uint32_t result = data_[y * size_x_ + x] & full_mask; 
     unsigned int bits = numBits(result);
 
     // known marked: 11 = 2 bits, unknown: 01 = 1 bit, known free: 00 = 0 bits
@@ -124,12 +134,12 @@ namespace voxel_grid {
 
   VoxelStatus VoxelGrid::getVoxelColumn(unsigned int x, unsigned int y, unsigned int unknown_threshold, unsigned int marked_threshold)
   {
-    if(x >= size_x || y >= size_y){
+    if(x >= size_x_ || y >= size_y_){
       ROS_INFO("Error, voxel out of bounds. (%d, %d)\n", x, y);
       return UNKNOWN;
     }
     
-    uint32_t* col = &data[y * size_x + x];
+    uint32_t* col = &data_[y * size_x_ + x];
 
     unsigned int unknown_bits = uint16_t(*col>>16) ^ uint16_t(*col);
     unsigned int marked_bits = *col>>16;
@@ -147,22 +157,22 @@ namespace voxel_grid {
   }
 
   unsigned int VoxelGrid::sizeX(){
-    return size_x;
+    return size_x_;
   }
 
   unsigned int VoxelGrid::sizeY(){
-    return size_y;
+    return size_y_;
   }
 
   unsigned int VoxelGrid::sizeZ(){
-    return size_z;
+    return size_z_;
   }
 
   void VoxelGrid::printVoxelGrid(){
-    for(unsigned int z = 0; z < size_z; z++){
+    for(unsigned int z = 0; z < size_z_; z++){
       printf("Layer z = %d:\n",z);
-      for(unsigned int y = 0; y < size_y; y++){
-        for(unsigned int x = 0 ; x < size_x; x++){
+      for(unsigned int y = 0; y < size_y_; y++){
+        for(unsigned int x = 0 ; x < size_x_; x++){
           printf((getVoxel(x, y, z)) == voxel_grid::MARKED? "#" : " ");
         }
         printf("|\n");
@@ -172,8 +182,8 @@ namespace voxel_grid {
 
   void VoxelGrid::printColumnGrid(){
     printf("Column view:\n");
-    for(unsigned int y = 0; y < size_y; y++){
-      for(unsigned int x = 0 ; x < size_x; x++){
+    for(unsigned int y = 0; y < size_y_; y++){
+      for(unsigned int x = 0 ; x < size_x_; x++){
         printf((getVoxelColumn(x, y, 16, 0) == voxel_grid::MARKED)? "#" : " ");
       }
       printf("|\n");
@@ -183,8 +193,8 @@ namespace voxel_grid {
 
   int main(int argc, char *argv[]){
     ROS_INFO("Initializing voxel grid.\n");
-    int size_x = 50, size_y = 10, size_z = 5;
-    //int size_x = 1000, size_y = 1000, size_z = 5;
+    //int size_x = 50, size_y = 10, size_z = 5;
+    int size_x = 1000, size_y = 1000, size_z = 5;
     voxel_grid::VoxelGrid *v = new voxel_grid::VoxelGrid(size_x, size_y, size_z);
 
     unsigned char *costMap = new unsigned char[size_x * size_y]; //initialize cost map
@@ -232,7 +242,6 @@ namespace voxel_grid {
 
     //Visualize the output
     /*
-    */
     v->printVoxelGrid();
     v->printColumnGrid();
 
@@ -242,4 +251,5 @@ namespace voxel_grid {
         printf((costMap[y * size_x + x] > 0 ? "#" : " "));
       }printf("|\n");
     }
+    */
   }

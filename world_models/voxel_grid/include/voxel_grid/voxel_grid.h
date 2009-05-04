@@ -41,6 +41,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <math.h>
+#include <limits.h>
+#include <algorithm>
 
 
 /**
@@ -66,31 +69,34 @@ namespace voxel_grid {
 
       ~VoxelGrid();
 
+      void reset();
+      uint32_t* getData() {return data_;}
+
       inline void markVoxel(unsigned int x, unsigned int y, unsigned int z){
-        if(x >= size_x || y >= size_y || z >= size_z){
+        if(x >= size_x_ || y >= size_y_ || z >= size_z_){
           printf("Error, voxel out of bounds.\n");
           return;
         }
         uint32_t full_mask = ((uint32_t)1<<z<<16) | (1<<z);
-        data[y * size_x + x] |= full_mask; //clear unknown and mark cell
+        data_[y * size_x_ + x] |= full_mask; //clear unknown and mark cell
       }
 
       inline void clearVoxel(unsigned int x, unsigned int y, unsigned int z){
-        if(x >= size_x || y >= size_y || z >= size_z){
+        if(x >= size_x_ || y >= size_y_ || z >= size_z_){
           printf("Error, voxel out of bounds.\n");
           return;
         }
         uint32_t full_mask = ((uint32_t)1<<z<<16) | (1<<z);
-        data[y * size_x + x] &= ~(full_mask); //clear unknown and clear cell
+        data_[y * size_x_ + x] &= ~(full_mask); //clear unknown and clear cell
       }
 
       inline void clearVoxelInMap(unsigned int x, unsigned int y, unsigned int z){
-        if(x >= size_x || y >= size_y || z >= size_z){
+        if(x >= size_x_ || y >= size_y_ || z >= size_z_){
           printf("Error, voxel out of bounds.\n");
           return;
         }
-        int index = y * size_x + x;
-        uint32_t* col = &data[index];
+        int index = y * size_x_ + x;
+        uint32_t* col = &data_[index];
         uint32_t full_mask = ((uint32_t)1<<z<<16) | (1<<z);
         *col &= ~(full_mask); //clear unknown and clear cell
 
@@ -99,7 +105,7 @@ namespace voxel_grid {
 
         //make sure the number of bits in each is below our thesholds
         if(bitsBelowThreshold(unknown_bits, 1) && bitsBelowThreshold(marked_bits, 1))
-          cost_map[index] = 0;
+          costmap[index] = 0;
       }
 
       inline bool bitsBelowThreshold(unsigned int n, unsigned int bit_threshold){
@@ -122,9 +128,10 @@ namespace voxel_grid {
         
       }
 
-      void markVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1);
-      void clearVoxelLine(unsigned int x0, unsigned int y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1);
-      void clearVoxelLineInMap(unsigned int x0, unsigned int y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned char *map_2d, unsigned int unknown_threshold, unsigned int mark_threshold);
+      void markVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned int max_length = UINT_MAX);
+      void clearVoxelLine(unsigned int x0, unsigned int y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned int max_length = UINT_MAX);
+      void clearVoxelLineInMap(unsigned int x0, unsigned int y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned char *map_2d, 
+          unsigned int unknown_threshold, unsigned int mark_threshold, unsigned int max_length = UINT_MAX);
 
       VoxelStatus getVoxel(unsigned int x, unsigned int y, unsigned int z);
       VoxelStatus getVoxelColumn(unsigned int x, unsigned int y, 
@@ -138,7 +145,7 @@ namespace voxel_grid {
 
       template <class ActionType>
         inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int z0, 
-            unsigned int x1, unsigned int y1, unsigned int z1){
+            unsigned int x1, unsigned int y1, unsigned int z1, unsigned int max_length = UINT_MAX){
 
           int dx = x1 - x0;
           int dy = y1 - y0;
@@ -149,21 +156,26 @@ namespace voxel_grid {
           unsigned int abs_dz = abs(dz);
 
           int offset_dx = sign(dx);
-          int offset_dy = sign(dy) * size_x;
+          int offset_dy = sign(dy) * size_x_;
           int offset_dz = sign(dz);
 
           unsigned int z_mask = 1 << 16 << z0 | 1 << z0;
-          unsigned int offset = y0 * size_x + x0;
+          unsigned int offset = y0 * size_x_ + x0;
 
           GridOffset grid_off(offset);
           ZOffset z_off(z_mask);
+
+          //we need to chose how much to scale our dominant dimension, based on the maximum length of the line
+          double dist = sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1) + (z0 - z1) * (z0 - z1));
+          double scale = std::min(1.0,  max_length / dist);
+
 
           //is x dominant
           if(abs_dx >= max(abs_dy, abs_dz)){
             int error_y = abs_dx / 2;
             int error_z = abs_dx / 2;
 
-            bresenham3D(at, grid_off, grid_off, z_off, abs_dx, abs_dy, abs_dz, error_y, error_z, offset_dx, offset_dy, offset_dz, offset, z_mask);
+            bresenham3D(at, grid_off, grid_off, z_off, abs_dx, abs_dy, abs_dz, error_y, error_z, offset_dx, offset_dy, offset_dz, offset, z_mask, (unsigned int)(scale * abs_dx));
             return;
           }
 
@@ -172,7 +184,7 @@ namespace voxel_grid {
             int error_x = abs_dy / 2;
             int error_z = abs_dy / 2;
 
-            bresenham3D(at, grid_off, grid_off, z_off, abs_dy, abs_dx, abs_dz, error_x, error_z, offset_dy, offset_dx, offset_dz, offset, z_mask);
+            bresenham3D(at, grid_off, grid_off, z_off, abs_dy, abs_dx, abs_dz, error_x, error_z, offset_dy, offset_dx, offset_dz, offset, z_mask, (unsigned int)(scale * abs_dy));
             return;
           }
 
@@ -180,7 +192,7 @@ namespace voxel_grid {
           int error_x = abs_dz / 2;
           int error_y = abs_dz / 2;
 
-          bresenham3D(at, z_off, grid_off, grid_off, abs_dz, abs_dx, abs_dy, error_x, error_y, offset_dz, offset_dx, offset_dy, offset, z_mask);
+          bresenham3D(at, z_off, grid_off, grid_off, abs_dz, abs_dx, abs_dy, error_x, error_y, offset_dz, offset_dx, offset_dy, offset, z_mask, (unsigned int)(scale * abs_dz));
         }
 
     private:
@@ -190,8 +202,9 @@ namespace voxel_grid {
         inline void bresenham3D(ActionType at, OffA off_a, OffB off_b, OffC off_c,
             unsigned int abs_da, unsigned int abs_db, unsigned int abs_dc,
             int error_b, int error_c, int offset_a, int offset_b, int offset_c, unsigned int &offset,
-            unsigned int &z_mask){
-          for(unsigned int i = 0; i < abs_da; ++i){
+            unsigned int &z_mask, unsigned int max_length = UINT_MAX){
+          unsigned int end = std::min(max_length, abs_da);
+          for(unsigned int i = 0; i < end; ++i){
             at(offset, z_mask);
             off_a(offset_a);
             error_b += abs_db;
@@ -216,9 +229,9 @@ namespace voxel_grid {
         return x > y ? x : y;
       }
 
-      unsigned int size_x, size_y, size_z;
-      uint32_t *data;
-      unsigned char *cost_map;
+      unsigned int size_x_, size_y_, size_z_;
+      uint32_t *data_;
+      unsigned char *costmap;
 
       //Aren't functors so much fun... used to recreate the Bresenham macro Eric wrote in the original version, but in "proper" c++
       class MarkVoxel {
@@ -243,8 +256,8 @@ namespace voxel_grid {
 
       class ClearVoxelInMap {
         public:
-          ClearVoxelInMap(uint32_t* data, unsigned char *cost_map, 
-              unsigned int unknown_clear_threshold, unsigned int marked_clear_threshold): data_(data), cost_map_(cost_map),
+          ClearVoxelInMap(uint32_t* data, unsigned char *costmap, 
+              unsigned int unknown_clear_threshold, unsigned int marked_clear_threshold): data_(data), costmap_(costmap),
         unknown_clear_threshold_(unknown_clear_threshold), marked_clear_threshold_(marked_clear_threshold){}
           inline void operator()(unsigned int offset, unsigned int z_mask){
             uint32_t* col = &data_[offset];
@@ -255,7 +268,7 @@ namespace voxel_grid {
 
             //make sure the number of bits in each is below our thesholds
             if(bitsBelowThreshold(unknown_bits, unknown_clear_threshold_) && bitsBelowThreshold(marked_bits, marked_clear_threshold_))
-              cost_map_[offset] = 0;
+              costmap_[offset] = 0;
           }
         private:
           inline bool bitsBelowThreshold(unsigned int n, unsigned int bit_threshold){
@@ -269,7 +282,7 @@ namespace voxel_grid {
             return true;
           }
           uint32_t* data_;
-          unsigned char *cost_map_;
+          unsigned char *costmap_;
           unsigned int unknown_clear_threshold_, marked_clear_threshold_;
       };
 
