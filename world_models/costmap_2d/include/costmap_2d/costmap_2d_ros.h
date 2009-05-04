@@ -166,6 +166,28 @@ namespace costmap_2d {
        */
       bool isCurrent() {return current_;}
 
+      /**
+       * @brief  Subscribes to sensor topics and starts costmap updates
+       */
+      void start();
+
+      /**
+       * @brief  Stops costmap updates and unsubscribes from sensor topics
+       */
+      void stop();
+
+
+      /**
+       * @brief  Stops the costmap from updating, but sensor data still comes in over the wire
+       */
+      void pause() {stop_updates_ = true;}
+
+
+      /**
+       * @brief  Resumes costmap updates
+       */
+      void resume(){stop_updates_ = false;}
+
     private:
       /**
        * @brief  The loop that handles updating the costmap
@@ -189,6 +211,7 @@ namespace costmap_2d {
       bool current_; ///< @brief Whether or not all the observation buffers are updating at the desired rate
       double transform_tolerance_; // timeout before transform errors
       Costmap2DPublisher* costmap_publisher_;
+      bool stop_updates_;
 
   };
 };

@@ -46,7 +46,7 @@ using namespace robot_msgs;
 namespace costmap_2d {
 
   Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix) : ros_node_(ros_node), 
-  tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL){
+  tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false){
     
     string topics_string;
     //get the topics that we'll subscribe to from the parameter server
@@ -240,6 +240,24 @@ namespace costmap_2d {
     }
   }
 
+  void Costmap2DROS::start(){
+    //unsubscribe from topics
+    for(unsigned int i = 0; i < observation_notifiers_.size(); ++i){
+      if(observation_notifiers_[i] != NULL)
+        observation_notifiers_[i]->subscribeToMessage();
+    }
+    stop_updates_ = false;
+  }
+
+  void Costmap2DROS::stop(){
+    stop_updates_ = true;
+    //unsubscribe from topics
+    for(unsigned int i = 0; i < observation_notifiers_.size(); ++i){
+      if(observation_notifiers_[i] != NULL)
+        observation_notifiers_[i]->unsubscribeFromMessage();
+    }
+  }
+
   void Costmap2DROS::addObservationBuffer(ObservationBuffer* buffer){
     if(buffer != NULL)
       observation_buffers_.push_back(buffer);
@@ -276,7 +294,8 @@ namespace costmap_2d {
       struct timeval start, end;
       double start_t, end_t, t_diff;
       gettimeofday(&start, NULL);
-      updateMap();
+      if(!stop_updates_)
+        updateMap();
       gettimeofday(&end, NULL);
       start_t = start.tv_sec + double(start.tv_usec) / 1e6;
       end_t = end.tv_sec + double(end.tv_usec) / 1e6;

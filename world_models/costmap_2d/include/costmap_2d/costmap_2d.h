@@ -337,7 +337,6 @@ namespace costmap_2d {
         return circumscribed_cost_lb_;
       }
 
-    private:
       /**
        * @brief  Given an index of a cell in the costmap, place it into a priority queue for obstacle inflation
        * @param  index The index of the cell
@@ -368,6 +367,8 @@ namespace costmap_2d {
           *marked = 1;
         }
       }
+
+    private:
 
       /**
        * @brief  Insert new obstacles into the cost map
@@ -445,7 +446,8 @@ namespace costmap_2d {
       template <class ActionType>
         inline void bresenham2D(ActionType at, unsigned int abs_da, unsigned int abs_db, int error_b, int offset_a, int offset_b, 
             unsigned int offset, unsigned int max_length){
-          for(unsigned int i = 0; i < std::min(max_length, abs_da); ++i){
+          unsigned int end = std::min(max_length, abs_da);
+          for(unsigned int i = 0; i < end; ++i){
             at(offset);
             offset += offset_a;
             error_b += abs_db;
@@ -473,14 +475,6 @@ namespace costmap_2d {
         if(*cell_cost != NO_INFORMATION)
           *cell_cost = std::max(cost, *cell_cost);
       }
-
-      /**
-       * @brief  Given distance in the world... convert it to cells
-       * @param  world_dist The world distance
-       * @return The equivalent cell distance
-       */
-      unsigned int cellDistance(double world_dist);
-
 
       /**
        * @brief  Lookup pre-computed costs
@@ -516,6 +510,14 @@ namespace costmap_2d {
 
 
     protected:
+      /**
+       * @brief  Given distance in the world... convert it to cells
+       * @param  world_dist The world distance
+       * @return The equivalent cell distance
+       */
+      unsigned int cellDistance(double world_dist);
+
+
       unsigned int size_x_;
       unsigned int size_y_;
       double resolution_;
