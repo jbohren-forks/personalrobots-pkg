@@ -238,7 +238,10 @@ public:
       laser_.laserOn();
 
       if (calibrate_time_)
+      {
         laser_.calcLatency(true, min_ang_, max_ang_, cluster_, skip_);
+        calibrate_time_ = false; // @todo Hack so that if there is a transmission the slow calibration process does not happen again.
+      }
 
       hokuyo::LaserConfig config;
      
@@ -286,6 +289,7 @@ public:
 
   int publishScan()
   {
+    //ROS_DEBUG("publishScan");
     try
     {
       int status = laser_.serviceScan(scan_);
@@ -319,6 +323,8 @@ public:
     publish("scan", scan_msg_);
 
     count_++;
+    
+    //ROS_DEBUG("publishScan done");
 
     return(0);
   }

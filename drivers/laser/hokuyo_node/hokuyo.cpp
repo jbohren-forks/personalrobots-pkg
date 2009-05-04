@@ -32,6 +32,8 @@
 
 #include <fcntl.h>
 
+#include "ros/console.h"
+
 #if POSIX_TIMERS <= 0
 #include <sys/time.h>
 #endif
@@ -380,10 +382,12 @@ hokuyo::Laser::readTime(int timeout)
 
   if (laser_time == last_time_)
   {
-    if (++time_repeat_count_ > 1)
+    if (++time_repeat_count_ > 2)
     {
       HOKUYO_EXCEPT_ARGS(hokuyo::RepeatedTimeException, "The timestamp has not changed for %d reads", time_repeat_count_);
     }
+    else if (time_repeat_count_ > 0)
+      ROS_WARN("The timestamp has not changed for %d reads. Ignoring for now.", time_repeat_count_);
   }
   else
   {
@@ -670,6 +674,8 @@ hokuyo::Laser::getStatus()
 long long
 hokuyo::Laser::calcLatency(bool intensity, double min_ang, double max_ang, int clustering, int skip, int num, int timeout)
 {
+  ROS_DEBUG("Entering calcLatency.");
+
   if (!portOpen())
     HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
@@ -744,6 +750,8 @@ hokuyo::Laser::calcLatency(bool intensity, double min_ang, double max_ang, int c
   offset_ = tmp_offset2;
 
   stopScanning();
+  
+  ROS_DEBUG("Leaving calcLatency.");
 
   return offset_;
 }
