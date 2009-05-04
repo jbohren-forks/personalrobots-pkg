@@ -1,0 +1,14 @@
+<package>
+  <description brief="led_demo">
+
+     led_demo
+
+  </description>
+  <author>Melonee Wise/ YOUR E-MAIL HERE</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/led_demo</url>
+  <depend package="ledwiz"/>
+</package>
+
+
