@@ -104,10 +104,11 @@ namespace pr2_ik
      * @brief This method searches for and returns the first set of solutions it finds. 
      *
      * @return < 0 if no solution is found
-     * @param q_init The initial guess for the inverse kinematics solution. The solver uses the joint value q_init(pr2_ik_->free_angle_) as 
+     * @param q_in The initial guess for the inverse kinematics solution. The solver uses the joint value q_init(pr2_ik_->free_angle_) as 
      * as an input to the inverse kinematics. pr2_ik_->free_angle_ can either be 0 or 2 corresponding to the shoulder pan or shoulder roll angle 
      * @param p_in A KDL::Frame representation of the position of the end-effector for which the IK is being solved.
      * @param q_out A std::vector of KDL::JntArray containing all found solutions.  
+     * @param timeout The amount of time (in seconds) to spend looking for a solution.
      */
     int CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame& p_in, std::vector<KDL::JntArray> &q_out, const double &timeout);
 

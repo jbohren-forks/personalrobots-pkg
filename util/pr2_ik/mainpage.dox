@@ -88,7 +88,7 @@ is yours to make sure they are correct.
 @subsection parameters PR2IKSolver parameters
 There are a number of parameters that can be used to configure the solver
 <ul>
-<li><b>~free_angle</b>, <i>double</i> <br>The free angle specified by the user. This can either be 0 or 2 corresponding to the shoulder pan or shoulder roll.</li>
+<li><b>~free_angle</b>, <i>int</i> <br>The free angle specified by the user. This can either be 0 or 2 corresponding to the shoulder pan or shoulder roll.</li>
 <br><br>
 <li><b>~urdf_xml</b>, <i>string</i> <br>The string name of the URDF parameter on the ROS param server, defaults to <i>/robotdesc/pr2</i></li>
 <br><br>
