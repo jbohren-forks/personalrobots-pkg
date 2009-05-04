@@ -18,6 +18,8 @@ rospack_add_library(pr2_ik
 rospack_add_executable(test_ik_simple test/test_ik_simple.cpp)
 target_link_libraries(test_ik_simple pr2_ik)
 
-#rospack_add_gtest(pr2_ik_regression_test test/test_ik_regress.cpp)
-#target_link_libraries(pr2_ik_regression_test pr2_ik)
-#rospack_declare_test(bin/pr2_ik_regression_test)
+rospack_add_executable(pr2_ik_regression_test test/test_ik_regress.cpp)
+target_link_libraries(pr2_ik_regression_test gtest)
+target_link_libraries(pr2_ik_regression_test pr2_ik)
+
+#rospack_add_rostest(test_pr2_ik.xml)

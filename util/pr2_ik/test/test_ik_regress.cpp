@@ -65,7 +65,7 @@ bool NOT_NEAR(const double &v1, const double &v2, const double &NEAR)
 
 TEST(PR2IK, inverseKinematics)
 {
-  int num_tests = 1000000;
+  int num_tests = 10000;
   PR2IKSolver ik;
   if(!ik.active_)
   {
@@ -124,7 +124,7 @@ srand ( time(NULL) ); // initialize random seed:
 
 TEST(PR2IK, inverseKinematicsSearch)
 {
-  int num_tests = 10000;
+  int num_tests = 100;
   PR2IKSolver ik;
   if(!ik.active_)
   {
