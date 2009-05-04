@@ -144,7 +144,7 @@ static PyObject *signature_repr(PyObject *self)
   sprintf(str, "<signature(%d ", ps->size);
   char *d = str + strlen(str);
   size_t i;
-  for (i = 0; i < ps->size; i++) {
+  for (i = 0; i < (size_t)ps->size; i++) {
     sprintf(d, "%02x", ps->data[i]);
     d += 2;
   }
@@ -152,6 +152,32 @@ static PyObject *signature_repr(PyObject *self)
   return PyString_FromString(str);
 }
 
+// Sequence protocol for signature
+Py_ssize_t signature_length(PyObject *self)
+{
+  signature_t *object = (signature_t*)self;
+  return object->size;
+}
+
+PyObject* signature_item(PyObject *self, Py_ssize_t i)
+{
+  signature_t *object = (signature_t*)self;
+  if (i >= object->size)
+    return NULL;
+  return PyInt_FromLong(object->data[i]);
+}
+
+static PySequenceMethods signature_SequenceMethods =
+{
+  signature_length,   /*length*/
+  NULL,               /*concat*/
+  NULL,               /*repeat*/
+  signature_item,     /*item*/
+  NULL,               /*ass_item*/
+  NULL,               /*contains*/
+  NULL,               /*inplace_concat*/
+  NULL                /*inplace_repeat*/
+};
 
 static PyTypeObject signature_Type = {
   PyObject_HEAD_INIT(&PyType_Type)
@@ -168,7 +194,7 @@ static PyTypeObject signature_Type = {
   NULL,                                   /*compare*/
   NULL,                                   /*repr*/
   NULL,                                   /*as_number*/
-  NULL,                                   /*as_sequence*/
+  &signature_SequenceMethods,             /*as_sequence*/
   NULL,                                   /*as_mapping*/
   (hashfunc)NULL,                         /*hash*/
   (ternaryfunc)NULL,                      /*call*/
