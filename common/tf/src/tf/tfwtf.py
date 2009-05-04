@@ -32,6 +32,8 @@
 #
 # Revision $Id$
 
+import time
+
 from roswtf.rules import warning_rule, error_rule
 import roslib.scriptutil
 import rospy
@@ -116,7 +118,7 @@ def roswtf_plugin_online(ctx):
     
     print "running tf checks, this will take a second..."
     sub = rospy.Subscriber('/tf_message', tf.msg.tfMessage, _tf_handle)
-    rospy.sleep(1.0)
+    time.sleep(1.0)
     sub.unregister()
     print "... tf checks complete"    
 
