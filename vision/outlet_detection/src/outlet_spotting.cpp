@@ -116,6 +116,9 @@ public:
 };
 
 
+#define CV_PIXEL(type,img,x,y) (((type*)(img->imageData+y*img->widthStep))+x*img->nChannels)
+
+
 static const double scan_speed  = 0.1; // [m/sec]
 static const double scan_height = 0.4; //[m]
 
@@ -558,6 +561,7 @@ private:
 			for (size_t i=0;i<pc.pts.size();++i) {
 				int x = (int)pc.chan[xchan].vals[i];
 				int y = (int)pc.chan[ychan].vals[i];
+
 				if (x==p.x && y==p.y) {
 					center_point = pc.pts[i];
 					return true;
@@ -806,8 +810,10 @@ private:
 	bool getPoseStamped(const CvRect& r, const CvPoint& p, PoseStamped& pose)
 	{
 		CvPoint cp = p;
-		bool found = findCenterPoint(disp, r, cp);
+		bool found = findCenterPoint(disp_clone, r, cp);
+
 		if (!found) {
+			ROS_INFO("OutletSpotter: Cannot find patch center point");
 			return false;
 		}
 
@@ -815,6 +821,7 @@ private:
 		robot_msgs::Point32 center_point;
 		found = find3DPoint(outlet_cloud, cp, center_point);
 		if (!found) {
+			ROS_INFO("OutletSpotter: Cannot find 3D point for patch");
 			return false;
 		}
 
@@ -868,7 +875,7 @@ private:
         for (size_t i=0;i<outlet_vecinity.get_pts_size();++i) {
         	indices[i] = i;
         }
-        vector<double> coeff(4);	// plane coefficients
+        vector<double> coeff(4);	// line coefficients
 
         double dist_thresh = 0.02;
         int min_pts = 10;
@@ -880,7 +887,7 @@ private:
         	return false;
         }
 
-        showLineMarker(line_segment);
+//        showLineMarker(line_segment);
 
         PoseStamped temp_pose;
 
@@ -950,6 +957,11 @@ private:
 //			printf("Box %d: w=%d, h=%d\n",t,wi,hi);
 			double meanDisparity;
 			double Disp = disparitySTD(disp_clone, bbs[t],vertical,meanDisparity);
+
+//
+//			CvPoint p2 = cvPoint(bbs[t].x+wi,bbs[t].y+hi);
+//			cvRectangle(disp_clone, pt1, p2, CV_RGB(255,0,0));
+
 //			printf("** STD = %lf, vertical=%d\n",Disp,vertical);
 			if(Disp >= 4.8) {
 				if (save_patches) savePatch(left,bbs[t],"outlet_high_std");
