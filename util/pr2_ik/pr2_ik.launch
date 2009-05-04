@@ -1,7 +1,7 @@
 <launch>
   <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
-  <group ns="pr2_ik_regression_test">
+  <node pkg="pr2_ik" type="test_ik_simple" name="pr2_ik_node" output="screen">
       <param name="tip_name" value="r_wrist_roll_link" />     
       <param name="root_name" value="torso_lift_link" />  
-  </group>
+  </node>
 </launch>

@@ -45,24 +45,83 @@ namespace pr2_ik
   {
     public:
     
+    /** @class PR2IKSolver
+     *  @brief ROS/KDL based interface for the inverse kinematics of the PR2 arm
+     *  @author Sachin Chitta <sachinc@willowgarage.com>
+     *
+     *  This class provides a ROS/KDL based interface to the inverse kinematics of the PR2 arm. It inherits from the KDL::ChainIkSolverPos class
+     *  but also exposes additional functionality to return the multiple solutions from an inverse kinematics computation. It uses an instance of
+     *  a ros::Node to find the robot description. It can thus be used only if the robot description is available on a ROS param server.
+     *
+     *  To use this wrapper, you must have a roscore running with a robot description available from the ROS param server. 
+     */
     PR2IKSolver();
 
     ~PR2IKSolver();
 
+    /** 
+     * @brief A point to the inverse kinematics solver 
+     */ 
     PR2IK *pr2_ik_;
 
+    /**
+     * @brief Indicates whether the solver has been successfully initialized
+     */
     bool active_;
 
+    /**
+     * @brief A mechanism::Chain object (automatically created when the solver is constructed.
+     */
     mechanism::Chain chain_;
 
+    /**
+     * @brief The KDL solver interface that is required to be implemented. NOTE: This method only returns a solution if a
+     * solution if it exists for the free parameter value passed in. To search for a solution in the entire workspace use the CartToJntSearch 
+     * method detailed below.
+     *
+     * @return < 0 if no solution is found
+     * @param q_init The initial guess for the inverse kinematics solution. The solver uses the joint value q_init(pr2_ik_->free_angle_) as 
+     * as an input to the inverse kinematics. pr2_ik_->free_angle_ can either be 0 or 2 corresponding to the shoulder pan or shoulder roll angle 
+     * @param p_in A KDL::Frame representation of the position of the end-effector for which the IK is being solved.
+     * @param q_out A single inverse kinematic solution (if it exists).  
+     */
     int CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, KDL::JntArray& q_out);
 
+    /**
+     * @brief An extension of the KDL solver interface to return all solutions found. NOTE: This method only returns a solution if a
+     * solution if it exists for the free parameter value passed in. To search for a solution in the entire workspace use the CartToJntSearch 
+     * method detailed below.
+     *
+     * @return < 0 if no solution is found
+     * @param q_init The initial guess for the inverse kinematics solution. The solver uses the joint value q_init(pr2_ik_->free_angle_) as 
+     * as an input to the inverse kinematics. pr2_ik_->free_angle_ can either be 0 or 2 corresponding to the shoulder pan or shoulder roll angle 
+     * @param p_in A KDL::Frame representation of the position of the end-effector for which the IK is being solved.
+     * @param q_out A std::vector of KDL::JntArray containing all found solutions.  
+     */
     int CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, std::vector<KDL::JntArray> &q_out);
   
+    /**
+     * @brief This method searches for and returns the first set of solutions it finds. 
+     *
+     * @return < 0 if no solution is found
+     * @param q_init The initial guess for the inverse kinematics solution. The solver uses the joint value q_init(pr2_ik_->free_angle_) as 
+     * as an input to the inverse kinematics. pr2_ik_->free_angle_ can either be 0 or 2 corresponding to the shoulder pan or shoulder roll angle 
+     * @param p_in A KDL::Frame representation of the position of the end-effector for which the IK is being solved.
+     * @param q_out A std::vector of KDL::JntArray containing all found solutions.  
+     */
     int CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame& p_in, std::vector<KDL::JntArray> &q_out, const double &timeout);
 
     private:
 
+    /**
+     * @brief This method searches for and returns the first set of solutions it finds. 
+     *
+     * @return < 0 if no solution is found
+     * @param q_init The initial guess for the inverse kinematics solution. The solver uses the joint value q_init(pr2_ik_->free_angle_) as 
+     * as an input to the inverse kinematics. pr2_ik_->free_angle_ can either be 0 or 2 corresponding to the shoulder pan or shoulder roll angle 
+     * @param p_in A KDL::Frame representation of the position of the end-effector for which the IK is being solved.
+     * @param q_out A std::vector of KDL::JntArray containing all found solutions.  
+     */
     mechanism::Robot robot_model_;
 
     double distance(const tf::Transform &transform);

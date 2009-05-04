@@ -1,0 +1,102 @@
+
+/** \mainpage
+
+@htmlinclude manifest.html
+
+@section summary Summary
+This package provides a convenient interface to an implementation of the inverse kinematics of the PR2 arm. 
+
+@section usage Usage
+This package wraps the PR2 IK solver as a KDL solver. It also uses an instance of a ROS Node to get the robot description 
+from the parameter server. The main way to use this package is to create an object of type pr2_ik::PR2IKSolver().
+An example for the configuration parameters required by this node is given below. 
+
+
+@subsection construction PR2IKSolver Construction
+To construct a pr2_ik::PR2IKSolver object, use the (empty) constructor. The following code snippet illustrates how to use 
+the solver. The internal chain object is used to construct a KDL chain. The KDL chain is then used for forward kinematic
+calculations that are fed into the IK solver which spits out a solution. 
+
+@verbatim
+#include <ros/node.h>
+#include <pr2_ik/pr2_ik_solver.h>
+#include <kdl/chainfksolverpos_recursive.hpp>
+
+int main(int argc, char **argv)
+{
+   ros::init (argc, argv);
+   ros::Node n("pr2_ik_node");
+
+   pr2_ik::PR2IKSolver ik;
+   if(!ik.active_)
+   {
+      ROS_FATAL("ik not initialized");
+      exit(1);
+   }
+
+   KDL::JntArray input;
+   input.resize(7);
+   input(0) = 0.5;
+   input(1) = 1.3;
+   input(2) = -2.0;
+   input(3) = -0.9;
+   input(4) = -1.8;
+   input(5) = 1.2;
+   input(6) = 1.6;
+
+   KDL::Chain kdl_chain;
+   KDL::ChainFkSolverPos_recursive *jnt_to_pose_solver;
+
+   ik.chain_.toKDL(kdl_chain);
+   jnt_to_pose_solver = new KDL::ChainFkSolverPos_recursive(kdl_chain);
+
+   KDL::JntArray jnt_pos_out;
+   KDL::Frame p_out;
+
+   jnt_pos_out.resize(7);
+   bool ik_valid = false;
+   if(jnt_to_pose_solver->JntToCart(input,p_out) >=0)
+      ik_valid = (ik.CartToJnt(input,p_out,jnt_pos_out) >= 0);
+
+   if(ik_valid)
+   {
+     for(int i=0; i<7; i++)
+     {
+       ROS_INFO("%d %f",i,jnt_pos_out(i));
+     }
+   }
+
+   delete jnt_to_pose_solver;
+}
+@endverbatim
+
+The configuration file for executing this program is given below. The important parameters that must be present in the correct
+namespace are the names of the root and tip of the arm. NO internal checking is done for these names, so the responsibility
+is yours to make sure they are correct.
+
+@verbatim
+<launch>
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find pr2_defs)/robots/pr2.xacro.xml'" />
+  <node pkg="pr2_ik" type="test_ik_simple" name="pr2_ik_node" output="screen">
+      <param name="tip_name" value="r_wrist_roll_link" />     
+      <param name="root_name" value="torso_lift_link" />  
+  </node>
+</launch>
+@endverbatim
+
+
+@subsection parameters PR2IKSolver parameters
+There are a number of parameters that can be used to configure the solver
+<ul>
+<li><b>~free_angle</b>, <i>double</i> <br>The free angle specified by the user. This can either be 0 or 2 corresponding to the shoulder pan or shoulder roll.</li>
+<br><br>
+<li><b>~urdf_xml</b>, <i>string</i> <br>The string name of the URDF parameter on the ROS param server, defaults to <i>/robotdesc/pr2</i></li>
+<br><br>
+<li><b>~root_name</b>, <i>string</i> <br>The string name of the root link of the PR2 arm. This is usually <i>torso_lift_link</i></li>
+<br><br>
+<li><b>~tip_name</b>, <i>string</i> <br>The string name of the tip link of the PR2 arm. For the right arm this is usually <i>r_wrist_roll_link</i> and for the left arm it is usually <i>l_wrist_roll_link</i> </li>
+<br><br>
+<li><b>~search_discretization_angle</b>, <i>double</i> <br>The discretization angle to be used when <i>searching</i> for an inverse kinematics solution.</li>
+</ul>
+
+*/
