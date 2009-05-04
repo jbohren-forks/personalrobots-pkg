@@ -9,6 +9,7 @@
 <depend package="robot_msgs" />
 <depend package="laser_scan" />
 <depend package="tf" />
+<depend package="voxel_grid" />
 <depend package="robot_srvs" />
 <depend package="visualization_msgs" />
 <export>
