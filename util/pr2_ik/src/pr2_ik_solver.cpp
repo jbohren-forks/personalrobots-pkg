@@ -328,8 +328,8 @@ int PR2IKSolver::CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame& p_
   double loop_time = 0;
   int count = 0;
 
-  int num_positive_increments = (int)(pr2_ik_->max_angles_[pr2_ik_->free_angle_]-initial_guess)/search_discretization_angle_;
-  int num_negative_increments = (int)(initial_guess-pr2_ik_->min_angles_[pr2_ik_->free_angle_])/search_discretization_angle_;
+  int num_positive_increments = (int)((pr2_ik_->max_angles_[pr2_ik_->free_angle_]-initial_guess)/search_discretization_angle_);
+  int num_negative_increments = (int)((initial_guess-pr2_ik_->min_angles_[pr2_ik_->free_angle_])/search_discretization_angle_);
   ROS_DEBUG("%f %f %f %d %d \n\n",initial_guess,pr2_ik_->max_angles_[pr2_ik_->free_angle_],pr2_ik_->min_angles_[pr2_ik_->free_angle_],num_positive_increments,num_negative_increments);
   while(loop_time < timeout)
   {
