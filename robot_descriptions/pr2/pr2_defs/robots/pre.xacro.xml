@@ -17,15 +17,14 @@
   <include filename="$(find pr2_defs)/defs/gazebo_defs.xml" />
 
   <!-- New casters have different encoder ticks, gear ratios -->
-  <pr2_base_alpha2 name="base" >
-    <origin xyz="0 0 0.051" rpy="0 0 0" /> 
-<!-- 5.1cm is the height of the base when wheels contact ground -->
-  </pr2_base_alpha2>
+  <!--pr2_base_alpha2 name="base" >
+    <origin xyz="0 0 0.051" rpy="0 0 0" /--> 
+  <!--/pr2_base_alpha2-->
     
   <!-- Reverting to old casters while Alpha 2's are in the shop -->
-  <!--pr2_base name="base">
+  <pr2_base name="base">
     <origin xyz="0 0 0.051" rpy="0 0 0" />
-  </pr2_base-->
+  </pr2_base>
 
   <pr2_torso name="torso_lift" parent="base_link">
     <origin xyz="-0.05 0 0.739675" rpy="0 0 0" />
