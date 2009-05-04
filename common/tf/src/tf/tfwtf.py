@@ -1,19 +1,49 @@
+# Software License Agreement (BSD License)
+#
+# Copyright (c) 2009, Willow Garage, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#  * Neither the name of Willow Garage, Inc. nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# Revision $Id$
+
 from roswtf.rules import warning_rule, error_rule
-
-#def roswtf_plugin_static(ctx):
-#    for r in tf_warnings:
-#        warning_rule(r, r[0](ctx), ctx)
-#    for r in tf_errors:
-#        error_rule(r, r[0](ctx), ctx)
-        
-import tf.msg
-
+import roslib.scriptutil
 import rospy
 
+import tf.msg
+
+
+# global list of messages received
 _msgs = []
 
-def _tf_handle(msg):
-    _msgs.append((msg, rospy.get_rostime(), msg._connection_header['callerid']))
+################################################################################
+# RULES
 
 def rostime_delta(ctx):
     deltas = {}
@@ -48,17 +78,14 @@ def reparenting(ctx):
                 parent_id_map[frame_id] = t.parent_id
     return errors
 
-import roslib.scriptutil
 def no_msgs(ctx):
-    # check to see if tf_message is being published, then warn if there are no messages
-    if not _msgs:
-        master = roslib.scriptutil.get_master()
-        if master is not None:
-            code, msg, val = master.getPublishedTopics('/roswtf', '/')
-            if code == 1:
-                if filter(lambda x: x[0] == '/tf_message', val):
-                    return True
+    return not _msgs
 
+################################################################################
+# roswtf PLUGIN
+
+# tf_warnings and tf_errors declare the rules that we actually check
+                
 tf_warnings = [
   (no_msgs, "No tf messages"),
   (rostime_delta, "Received out-of-date/future transforms:"),  
@@ -67,7 +94,26 @@ tf_errors = [
   (reparenting, "TF re-parenting contention:"),
 ]
 
+# rospy subscriber callback for tf_message
+def _tf_handle(msg):
+    _msgs.append((msg, rospy.get_rostime(), msg._connection_header['callerid']))
+
+# @return bool: True if tf_message has a publisher
+def is_tf_message_active():
+    master = roslib.scriptutil.get_master()
+    if master is not None:
+        code, msg, val = master.getPublishedTopics('/roswtf', '/')
+        if code == 1:
+            if filter(lambda x: x[0] == '/tf_message', val):
+                return True
+    return False
+
+# roswtf entry point for online checks
 def roswtf_plugin_online(ctx):
+    # don't run plugin if tf isn't active as these checks take awhile
+    if not is_tf_message_active():
+        return
+    
     print "running tf checks, this will take a second..."
     sub = rospy.Subscriber('/tf_message', tf.msg.tfMessage, _tf_handle)
     rospy.sleep(1.0)
@@ -80,3 +126,10 @@ def roswtf_plugin_online(ctx):
         error_rule(r, r[0](ctx), ctx)
 
     
+# currently no static checks for tf
+#def roswtf_plugin_static(ctx):
+#    for r in tf_warnings:
+#        warning_rule(r, r[0](ctx), ctx)
+#    for r in tf_errors:
+#        error_rule(r, r[0](ctx), ctx)
+        
