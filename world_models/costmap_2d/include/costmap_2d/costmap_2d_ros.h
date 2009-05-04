@@ -193,7 +193,7 @@ namespace costmap_2d {
         stop_updates_ = false;
 
         //block until the costmap is re-initialized.. meaning one update cycle has run
-        Rate r(100.0);
+        costmap_2d::Rate r(100.0);
         while(!initialized_)
           r.sleep();
       }
