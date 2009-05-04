@@ -2,12 +2,7 @@
 <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
 <node pkg="nav" type="move_base" respawn="false" name="move_base" output="screen" machine="three">
-  <remap from="/move_base/activate" to="/goal" />
-  <remap from="~base_local_planner/global_plan" to="/gui_path" />
-  <remap from="~base_local_planner/local_plan" to="/local_path" />
-  <remap from="~base_local_planner/robot_footprint" to="/robot_footprint" />
-
-  <param name="controller_frequency" value="20.0" />
+  <param name="controller_frequency" value="10.0" />
 
   <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="navfn" />
   <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="base_local_planner" />
