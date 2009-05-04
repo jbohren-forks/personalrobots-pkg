@@ -61,7 +61,7 @@ namespace costmap_2d {
       boost::thread* visualizer_thread_; ///< @brief A thread for publising to the visualizer
       std::vector< std::pair<double, double> > raw_obstacles_, inflated_obstacles_;
       boost::recursive_mutex lock_; ///< @brief A lock
-      bool active_;
+      bool active_, new_data_;
   };
 };
 #endif

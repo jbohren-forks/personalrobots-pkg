@@ -39,7 +39,7 @@
 namespace costmap_2d {
   Costmap2DPublisher::Costmap2DPublisher(ros::Node& ros_node, double publish_frequency, std::string global_frame, std::string topic_prefix) 
     : ros_node_(ros_node), global_frame_(global_frame), 
-    topic_prefix_(topic_prefix), visualizer_thread_(NULL), active_(false){
+    topic_prefix_(topic_prefix), visualizer_thread_(NULL), active_(false), new_data_(false){
     ros_node_.advertise<visualization_msgs::Polyline>("~" + topic_prefix_ + "/raw_obstacles", 1);
     ros_node_.advertise<visualization_msgs::Polyline>("~" + topic_prefix_ + "/inflated_obstacles", 1);
     visualizer_thread_ = new boost::thread(boost::bind(&Costmap2DPublisher::mapPublishLoop, this, publish_frequency));
@@ -60,7 +60,12 @@ namespace costmap_2d {
     active_ = true;
     costmap_2d::Rate r(frequency);
     while(ros_node_.ok()){
-      publishCostmap();
+      //check if we have new data to publish
+      if(new_data_){
+        //we are about to publish the latest data
+        new_data_ = false;
+        publishCostmap();
+      }
       if(!r.sleep())
         ROS_WARN("Map publishing loop missed its desired rate of %.4f the actual time the loop took was %.4f sec", frequency, r.cycleTime().toSec());
     }
@@ -84,6 +89,9 @@ namespace costmap_2d {
     raw_obstacles_ = raw_obstacles;
     inflated_obstacles_ = inflated_obstacles;
     lock_.unlock();
+    
+    //let the publisher know we have new data to publish
+    new_data_ = true;
   }
 
   void Costmap2DPublisher::publishCostmap(){
