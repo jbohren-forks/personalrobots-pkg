@@ -387,7 +387,7 @@ hokuyo::Laser::readTime(int timeout)
       HOKUYO_EXCEPT_ARGS(hokuyo::RepeatedTimeException, "The timestamp has not changed for %d reads", time_repeat_count_);
     }
     else if (time_repeat_count_ > 0)
-      ROS_WARN("The timestamp has not changed for %d reads. Ignoring for now.", time_repeat_count_);
+      ROS_DEBUG("The timestamp has not changed for %d reads. Ignoring for now.", time_repeat_count_);
   }
   else
   {
