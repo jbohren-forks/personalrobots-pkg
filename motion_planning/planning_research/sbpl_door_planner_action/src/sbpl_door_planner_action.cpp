@@ -80,8 +80,8 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
   pt.x = -1 * (inscribed_radius);
   pt.y = inscribed_radius;
   footprint_.push_back(pt);
-  pt.x = inscribed_radius_;
-  pt.y = inscribed_radius_;
+  pt.x = inscribed_radius;
+  pt.y = inscribed_radius;
   footprint_.push_back(pt);
 };
 
