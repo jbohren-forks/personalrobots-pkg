@@ -1,0 +1,12 @@
+<package>
+  <description brief="Navigation Services">
+  </description>
+  <author>Eitan Marder-Eppstein</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="robot_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/srv/cpp"/>
+  </export>
+</package>
+
