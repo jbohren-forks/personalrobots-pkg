@@ -180,6 +180,7 @@ namespace navfn {
       float *x = planner_.getPathX();
       float *y = planner_.getPathY();
       int len = planner_.getPathLen();
+      ros::Time plan_time = ros::Time::now();
       for(int i = 0; i < len; ++i){
         unsigned int cell_x, cell_y;
         cell_x = (unsigned int) x[i];
@@ -190,7 +191,7 @@ namespace navfn {
         costmap_.mapToWorld(cell_x, cell_y, world_x, world_y);
 
         robot_msgs::PoseStamped pose;
-        pose.header.stamp = ros::Time::now();
+        pose.header.stamp = plan_time;
         pose.header.frame_id = global_frame_;
         pose.pose.position.x = world_x;
         pose.pose.position.y = world_y;
