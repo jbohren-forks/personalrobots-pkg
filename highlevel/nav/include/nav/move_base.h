@@ -48,6 +48,7 @@
 #include <base_local_planner/trajectory_planner_ros.h>
 #include <vector>
 #include <string>
+#include <nav_srvs/Plan.h>
 
 namespace nav {
   /**
@@ -78,6 +79,14 @@ namespace nav {
       virtual robot_actions::ResultStatus execute(const robot_msgs::PoseStamped& goal, robot_msgs::PoseStamped& feedback);
 
     private:
+      /**
+       * @brief  A service call that can be made when the action is inactive that will return a plan
+       * @param  req The goal request
+       * @param  resp The plan request
+       * @return True if planning succeeded, false otherwise
+       */
+      bool planService(nav_srvs::Plan::Request &req, nav_srvs::Plan::Response &resp);
+
       /**
        * @brief  Make a new global plan
        * @param  goal The goal to plan to

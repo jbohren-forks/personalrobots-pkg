@@ -94,7 +94,45 @@ namespace nav {
     //create a trajectory controller
     tc_ = new TrajectoryPlannerROS(ros_node_, tf_, controller_costmap_, footprint_, &planner_costmap_);
 
+    //advertise a service for getting a plan
+    ros_node_.advertiseService("~make_plan", &MoveBase::planService, this);
+
     //TODO:spawn planning thread here?
+  }
+
+  bool MoveBase::planService(nav_srvs::Plan::Request &req, nav_srvs::Plan::Response &resp){
+    if(isActive()){
+      ROS_ERROR("move_base must be in an inactive state to make a plan for an external user");
+      return false;
+    }
+
+    //make sure we have a costmap for our planner
+    if(planner_costmap_ros_ == NULL){
+      ROS_ERROR("move_base cannot make a plan for you because it doesn't have a costmap");
+      return false;
+    }
+
+    //update the copy of the costmap the planner uses
+    planner_costmap_ros_->getCostmapCopy(planner_costmap_);
+
+    //since we have a controller that knows the full footprint of the robot... we may as well clear it
+    tc_->clearRobotFootprint(planner_costmap_);
+
+    std::vector<robot_msgs::PoseStamped> global_plan;
+    bool valid_plan = planner_->makePlan(req.goal, global_plan);
+
+    //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
+    if(valid_plan)
+      global_plan.push_back(req.goal);
+
+    //copy the plan into a message to send out
+    resp.plan.set_poses_size(global_plan.size());
+    for(unsigned int i = 0; i < global_plan.size(); ++i){
+      resp.plan.poses[i] = global_plan[i];
+    }
+
+    return true;
+    
   }
 
   MoveBase::~MoveBase(){
