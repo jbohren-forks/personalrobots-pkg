@@ -166,7 +166,7 @@ DoorController::Holds {
     meets(Holds s);
 
     // Derive arms_tucked from external safety monotor.
-    // TODO: Analyze bu that arises wgen I include guards directly on mb.arms_tucked. The local variable
+    // TODO: Analyze bug that arises when I include guards directly on mb.arms_tucked. The local variable
     // below is just a workaround
     starts_during(mobility_status.Holds ms);
     bool arms_tucked;
@@ -325,18 +325,19 @@ UnlatchHandle::Inactive{
     starts(DoorState.Holds ds);
     eq_door_msg(ds.object, this.object);
     starts(DoorController.Holds dc);
-    eq(dc.latch_state, LATCH_STATE_UNLATCHED);
+    eq(dc.latch_state, latch_state);
+    if(latch_state == LATCH_STATE_LOCKED){
+      eq(dc.finishing, true);
+    }
   }
   else{
     if(status == UNDEFINED){}
     else{
       starts(DoorController.Holds dc);
       eq(dc.must_find_handle, true);
+      eq(dc.found_door, false);
       eq(dc.in_position, false);
-      eq(dc.latch_state, latch_state);
-      if(latch_state == LATCH_STATE_LOCKED){
-	eq(dc.finishing, true);
-      }
+      eq(dc.have_handle, false);
     }
   }
 }
