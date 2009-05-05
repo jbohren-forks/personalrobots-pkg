@@ -49,7 +49,7 @@
     <param name="do_rectify" type="bool" value="True"/>
     <param name="do_stereo" type="bool" value="True"/>
     <param name="do_calc_points" type="bool" value="True"/>
-    <param name="stereo/do_keep_coords" type="bool" value="True"/>
+    <param name="do_keep_coords" type="bool" value="True"/>
     <param name="fps" type="double" value="15.0"/>
     <param name="frame_id" type="string" value="stereo_optical_frame"/>
     <param name="exposure_auto" type="bool" value="true"/>
