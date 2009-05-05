@@ -14,7 +14,7 @@
     <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.launch"/>
 
     <!-- for visualization -->
-    <node pkg="rviz" type="rviz" respawn="false" output="screen" />
+    <include file="$(find 2dnav_pr2)/rviz_launch.launch"/>
 
     <!-- for manual control -->
     <!--node pkg="teleop_base" type="teleop_base_keyboard" respawn="false" output="screen" /-->
