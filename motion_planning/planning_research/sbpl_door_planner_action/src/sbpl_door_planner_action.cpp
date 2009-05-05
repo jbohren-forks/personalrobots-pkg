@@ -53,6 +53,7 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
   ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
 
   cost_map_ros_ = new costmap_2d::Costmap2DROS(ros_node_,tf_,std::string(""));
+  cost_map_ros_->getCostmapCopy(cost_map_);
 
   sleep(10.0);
   ros_node_.param<double>("~door_thickness", door_env_.door_thickness, 0.05);

@@ -4,7 +4,7 @@
 
   <master auto="start"/>
   <group name="wg">
-    <node pkg="sbpl_door_planner_action" type="door_planner_action" respawn="false" name="sbpl_door_planner">
+    <node pkg="sbpl_door_planner_action" type="door_planner_action" respawn="false" name="sbpl_door_planner" output="screen">
 
       <!-- Start Costmap Parameters -->
       <param name="costmap/global_frame" value="odom_combined" />
@@ -31,7 +31,7 @@
       <param name="costmap/height" value="6.0" />
       <param name="costmap/origin_x" value="-3.0" />
       <param name="costmap/origin_y" value="-3.0" />
-      <param name="costmap/resolution" value="0.01" />
+      <param name="costmap/resolution" value="0.025" />
       <!-- end only used if static map is set to false -->
 
       <param name="costmap/cost_scaling_factor" value="1.0" />
