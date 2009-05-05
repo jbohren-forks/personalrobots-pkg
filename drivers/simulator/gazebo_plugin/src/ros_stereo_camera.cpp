@@ -38,6 +38,8 @@
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
 
+#include "image_msgs/Image.h"
+#include "image_msgs/FillImage.h"
 using namespace gazebo;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("ros_stereocamera", RosStereoCamera);
@@ -113,8 +115,8 @@ void RosStereoCamera::LoadChild(XMLConfigNode *node)
   ROS_DEBUG("================= %s", this->leftCloudTopicName.c_str());
   rosnode->advertise<robot_msgs::PointCloud>(this->leftCloudTopicName, 1);
   rosnode->advertise<robot_msgs::PointCloud>(this->rightCloudTopicName, 1);
-  rosnode->advertise<deprecated_msgs::Image>(this->leftTopicName, 1);
-  rosnode->advertise<deprecated_msgs::Image>(this->rightTopicName, 1);
+  rosnode->advertise<image_msgs::Image>(this->leftTopicName, 1);
+  rosnode->advertise<image_msgs::Image>(this->rightTopicName, 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -347,18 +349,11 @@ void RosStereoCamera::PutCameraData(CameraData *camera_data, unsigned int camera
     int    height           = this->myParent->GetImageHeight();
     int    depth            = 3;
 
-    this->imageMsg[camera].width       = width;
-    this->imageMsg[camera].height      = height;
-    this->imageMsg[camera].compression = "raw";
-    this->imageMsg[camera].colorspace  = "rgb24";
-
-    // on first pass, the sensor does not update after cameraIface is opened.
-    uint32_t       buf_size = (width) * (height) * (depth);
-
-    this->imageMsg[camera].set_data_size(buf_size);
-    ///\todo FIXME checkme John
-    memcpy(&(this->imageMsg[camera].data[0]), rgb_src, buf_size);
-    //    this->imageMsg[camera].data        = (unsigned char*)rgb_src;
+    // copy from src to imageMsg
+    fillImage(this->imageMsg[camera]   ,"image_raw" ,
+              height ,width    ,depth,
+              "rgb"  ,"uint8"     ,
+              (void*)rgb_src );
 
     // publish to ros
     if (camera==0)

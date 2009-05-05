@@ -43,6 +43,8 @@
 #include <gazebo/ControllerFactory.hh>
 #include "MonoCameraSensor.hh"
 
+#include "image_msgs/Image.h"
+#include "image_msgs/FillImage.h"
 using namespace gazebo;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("ros_camera", RosCamera);
@@ -74,17 +76,9 @@ RosCamera::RosCamera(Entity *parent)
   }
 
   // set buffer size
-  int    width            = this->myParent->GetImageWidth();
-  int    height           = this->myParent->GetImageHeight();
-  int    depth            = 3;
-  this->imageMsg.width       = width;
-  this->imageMsg.height      = height;
-  this->imageMsg.compression = "raw";
-  this->imageMsg.colorspace  = "rgb24";
-  buf_size = (width) * (height) * (depth);
-  this->lock.lock();
-  this->imageMsg.set_data_size(buf_size);
-  this->lock.unlock();
+  this->width            = this->myParent->GetImageWidth();
+  this->height           = this->myParent->GetImageHeight();
+  this->depth            = 3;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -103,7 +97,7 @@ void RosCamera::LoadChild(XMLConfigNode *node)
   this->frameName = node->GetString("frameName","default_ros_camera",0); //read from xml file
 
   ROS_DEBUG("================= %s", this->topicName.c_str());
-  rosnode->advertise<deprecated_msgs::Image>(this->topicName,1);
+  rosnode->advertise<image_msgs::Image>(this->topicName,1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -159,7 +153,10 @@ void RosCamera::PutCameraData()
     if (this->rosnode->numSubscribers(this->topicName) > 0)
     {
       // copy from src to imageMsg
-      memcpy(&(this->imageMsg.data[0]), src, buf_size);
+      fillImage(this->imageMsg   ,"image_raw" ,
+                this->height     ,this->width ,this->depth,
+                "rgb"            ,"uint8"     ,
+                (void*)src );
 
       //tmpT2 = Simulator::Instance()->GetWallTime();
 
@@ -168,7 +165,6 @@ void RosCamera::PutCameraData()
     }
 
     //double tmpT3 = Simulator::Instance()->GetWallTime();
-    //std::cout << "buf_size: " << buf_size << " - " << tmpT1 - tmpT0 << " : " << tmpT2 - tmpT1 << " : " << tmpT3 - tmpT2 << std::endl;
 
     this->lock.unlock();
   }
