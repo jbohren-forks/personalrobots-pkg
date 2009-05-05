@@ -2,7 +2,9 @@
  * Execute a single external action
  */
 #include "plugs/imports.nddl"
+#include "safety/exports.nddl"
 #include "test/plugs/actions.nddl"
+
 
 close();
 
