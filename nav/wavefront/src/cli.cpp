@@ -36,7 +36,12 @@ public:
     publish("goal", wf_goal);
     ros::Duration().fromSec(0.5).sleep(); // hack to try and wait for the message to go
   }
+
+#if ROS_VERSION_MINIMUM(0, 5, 0)
+  void goal_subscriber_callback(const ros::SingleSubscriberPublisher& pub)
+#else
   void goal_subscriber_callback(const ros::PublisherPtr& pub)
+#endif
   {
     publish("goal", wf_goal);
   }
@@ -66,6 +71,6 @@ int main(int argc, char **argv)
   }
   else
     printf("success\n");
-  
+
   return 0;
 }

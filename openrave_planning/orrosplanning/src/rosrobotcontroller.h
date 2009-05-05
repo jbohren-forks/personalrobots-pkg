@@ -30,6 +30,8 @@
 #include <pr2_mechanism_controllers/TrajectoryWait.h>
 #include <pr2_mechanism_controllers/TrajectoryQuery.h>
 
+#include "ros/node.h"
+
 class ROSRobotController : public ControllerBase
 {
     enum ControllerState {
@@ -51,20 +53,24 @@ class ROSRobotController : public ControllerBase
         {
             assert(pnode != NULL);
             Destroy();
-            
+
             _srvTrajectoryStart = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryStart::Request, pr2_mechanism_controllers::TrajectoryStart::Response>(_strTrajectoryServiceDir+"TrajectoryStart", true);
             _srvTrajectoryCancel = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryCancel::Request, pr2_mechanism_controllers::TrajectoryCancel::Response>(_strTrajectoryServiceDir+"TrajectoryCancel", true);
             _srvTrajectoryWait = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryWait::Request, pr2_mechanism_controllers::TrajectoryWait::Response>(_strTrajectoryServiceDir+"TrajectoryWait", true);
             _srvTrajectoryQuery = ros::service::createHandle<pr2_mechanism_controllers::TrajectoryQuery::Request, pr2_mechanism_controllers::TrajectoryQuery::Response>(_strTrajectoryServiceDir+"TrajectoryQuery", true);
-        
+
             if( !_srvTrajectoryQuery ) {
                 RAVELOG_ERRORA("failed to find %s service\n", (_strTrajectoryServiceDir+"TrajectoryQuery").c_str());
                 return false;
             }
-        
+
             pr2_mechanism_controllers::TrajectoryQuery::Request req;
             pr2_mechanism_controllers::TrajectoryQuery::Response res;
+#if ROS_VERSION_MINIMUM(0, 5, 0)
+            if( !_srvTrajectoryQuery.call(req,res) ) {
+#else
             if( !_srvTrajectoryQuery->call(req,res) ) {
+#endif
                 RAVELOG_ERRORA("failed to query trajectory service %s\n", _strTrajectoryServiceDir.c_str());
                 return false;
             }
@@ -83,7 +89,7 @@ class ROSRobotController : public ControllerBase
             _vjointmap.reserve(res.jointnames.size());
             FOREACH(itname, res.jointnames) {
                 vector<string>::iterator itindex = find(vrobotjoints.begin(), vrobotjoints.end(), *itname);
-                if( itindex == vrobotjoints.end() ) {            
+                if( itindex == vrobotjoints.end() ) {
                     RAVELOG_ERRORA("failed to find joint %s\n", itname->c_str());
                     Destroy();
                     return false;
@@ -102,10 +108,18 @@ class ROSRobotController : public ControllerBase
         {
             _vjointmap.clear();
             _listTrajectories.clear();
+
+#if ROS_VERSION_MINIMUM(0, 5, 0)
+            _srvTrajectoryStart = ros::ServiceClient();
+            _srvTrajectoryCancel = ros::ServiceClient();
+            _srvTrajectoryWait = ros::ServiceClient();
+            _srvTrajectoryQuery = ros::ServiceClient();
+#else
             _srvTrajectoryStart.reset();
             _srvTrajectoryCancel.reset();
             _srvTrajectoryWait.reset();
             _srvTrajectoryQuery.reset();
+#endif
             return true;
         }
 
@@ -120,7 +134,11 @@ class ROSRobotController : public ControllerBase
         // trajectory services
         RobotBase* _probot;
         string _strTrajectoryServiceDir;
+#if ROS_VERSION_MINIMUM(0, 5, 0)
+        ros::ServiceClient _srvTrajectoryStart, _srvTrajectoryCancel, _srvTrajectoryWait, _srvTrajectoryQuery;
+#else
         service::ServiceHandlePtr _srvTrajectoryStart, _srvTrajectoryCancel, _srvTrajectoryWait, _srvTrajectoryQuery;
+#endif
         vector<int> _vjointmap;
         list<uint32_t> _listTrajectories; ///< trajectories currently pending for completion
     };
@@ -235,9 +253,9 @@ public:
         bool bSuccess = true;
         pr2_mechanism_controllers::TrajectoryStart::Request req;
         pr2_mechanism_controllers::TrajectoryStart::Response res;
-        
+
         vector<dReal> vnewvalues;
-        
+
         {
             RobotBase::RobotStateSaver saver(_probot);
             _probot->SetJointValues(NULL, NULL, pValues,true);
@@ -276,7 +294,11 @@ public:
             (*ittrajcontroller)->GetTrajPoint(_vcurvalues, req.traj.points[0]);
             (*ittrajcontroller)->GetTrajPoint(vnewvalues, req.traj.points[1]);
 
+#if ROS_VERSION_MINIMUM(0, 5, 0)
+            if( (*ittrajcontroller)->_srvTrajectoryStart.call(req,res) )
+#else
             if( (*ittrajcontroller)->_srvTrajectoryStart->call(req,res) )
+#endif
                 (*ittrajcontroller)->_listTrajectories.push_back(res.trajectoryid);
             else {
                 RAVELOG_ERRORA("failed to start trajectory\n");
@@ -301,7 +323,7 @@ public:
         bool bSuccess = true;
         pr2_mechanism_controllers::TrajectoryStart::Request req;
         pr2_mechanism_controllers::TrajectoryStart::Response res;
-        
+
         FOREACH(ittrajcontroller, _listControllers) {
             if( !(*ittrajcontroller)->_srvTrajectoryStart ) {
                 RAVELOG_ERRORA("no start trajectory service\n");
@@ -313,11 +335,15 @@ public:
             _bIsDone = false;
             req.hastiming = 0;
             req.traj.points.resize(ptraj->GetPoints().size());
-            typeof(req.traj.points.begin()) ittraj = req.traj.points.begin(); 
+            typeof(req.traj.points.begin()) ittraj = req.traj.points.begin();
             FOREACHC(itpoint, ptraj->GetPoints())
                 (*ittrajcontroller)->GetTrajPoint(itpoint->q, *ittraj++);
 
+#if ROS_VERSION_MINIMUM(0, 5, 0)
+            if( (*ittrajcontroller)->_srvTrajectoryStart.call(req,res) )
+#else
             if( (*ittrajcontroller)->_srvTrajectoryStart->call(req,res) )
+#endif
                 (*ittrajcontroller)->_listTrajectories.push_back(res.trajectoryid);
             else {
                 RAVELOG_ERRORA("failed to start trajectory\n");
@@ -415,7 +441,7 @@ public:
         FOREACHC(itj, _mapjoints)
             vel[itj->second] = _mstate.joint_states[itj->first].velocity;
     }
-    
+
     virtual void GetTorque(std::vector<dReal>& torque) const
     {
         torque.resize(0);
@@ -485,7 +511,7 @@ private:
                                 break;
                             }
                         }
-                    
+
                         if( !bAdded ) {
                             RAVELOG_WARNA("could not find robot joint %s in mechanism state\n", itj->first.c_str());
                             break;
@@ -510,7 +536,7 @@ private:
 
             _mstate = _mstate_cb;
         }
-        
+
         // do some monitoring of the joint state (try to look for stalls)
     }
 
@@ -523,7 +549,7 @@ private:
 
             // check if the first trajectory is done
             boost::mutex::scoped_lock lock(_mutexTrajectories);
-            
+
             if( _listControllers.size() > 0 ) {
                 bool bPopTrajectory = true;
 
@@ -535,11 +561,15 @@ private:
                         break;
                     }
                     req.trajectoryid = (*ittraj)->_listTrajectories.front();
+#if ROS_VERSION_MINIMUM(0, 5, 0)
+                    if( !(*ittraj)->_srvTrajectoryQuery.call(req,res) ) {
+#else
                     if( !(*ittraj)->_srvTrajectoryQuery->call(req,res) ) {
+#endif
                         RAVELOG_ERRORA("trajectory query failed\n");
                         bPopTrajectory = false;
                     }
-                    
+
                     if( !(res.done == pr2_mechanism_controllers::TrajectoryQuery::Response::State_Done ||
                         res.done == pr2_mechanism_controllers::TrajectoryQuery::Response::State_Deleted ||
                         res.done == pr2_mechanism_controllers::TrajectoryQuery::Response::State_Failed ||
@@ -568,7 +598,7 @@ private:
     RobotBase* _probot;           ///< robot owning this controller
 
     string _topic;
-    
+
     robot_msgs::MechanismState _mstate_cb, _mstate;
     vector<dReal> _vecdesired;
     set< pair<string, int> > _setEnabledJoints; // set of enabled joints and their indices
@@ -577,7 +607,7 @@ private:
 
     ofstream flog;
     int logid;
-    
+
     map<int, int> _mapjoints; ///< maps mechanism state joints to robot joints
     list<boost::shared_ptr<TrajectoryController> > _listControllers;
 

@@ -118,7 +118,11 @@ class MapServer : public ros::Node
      */
     robot_srvs::StaticMap::Response map_resp_;
 
+#if ROS_VERSION_MINIMUM(0, 5, 0)
+    void metadataSubscriptionCallback(const ros::SingleSubscriberPublisher& pub)
+#else
     void metadataSubscriptionCallback(const ros::PublisherPtr& pub)
+#endif
     {
       publish( "map_metadata", meta_data_message_ );
     }
@@ -164,7 +168,7 @@ int main(int argc, char **argv)
   {
     fprintf(stderr, "%s\n", e.what());
   }
-  
+
   return 0;
 }
 
