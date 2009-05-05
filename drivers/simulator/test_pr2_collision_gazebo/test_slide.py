@@ -51,6 +51,8 @@ TARGET_Y = 0.0 + 25.65 #contains offset specified in P3D for base, alternatively
 TARGET_Z = 3.8
 TARGET_RAD = 4.5
 CUP_HEIGHT = 4.0
+MIN_HITS = 200.0
+MIN_RUNS = 20.0
 
 class TestSlide(unittest.TestCase):
     def __init__(self, *args):
@@ -59,33 +61,33 @@ class TestSlide(unittest.TestCase):
         self.fail = False
         self.hits = 0
         self.runs = 0
+        self.print_header = False
         
     def positionInput(self, p3d):
+        if not self.print_header: 
+          self.print_header = True
+          print "runs   hits   x   y   z    dx    dy    dz    dr   r_tol"
+
         self.runs = self.runs + 1
-        print "run #", self.runs
         #if (pos.frame == 1):
-        print "x ", p3d.pos.position.x
-        print "y ", p3d.pos.position.y
-        print "z ", p3d.pos.position.z
         dx = p3d.pos.position.x - TARGET_X
         dy = p3d.pos.position.y - TARGET_Y
         dz = p3d.pos.position.z - TARGET_Z
         d = math.sqrt((dx * dx) + (dy * dy)) #+ (dz * dz))
-        print "Error: " + str(dx) + " " + str(dy) + " " + str(dz)
-        print "D: dx:" + str(dx) + " dy:" + str(dy) + " dz:" + str(dz) + " d:" + str(d) + " : " + str(TARGET_RAD)
+
+        print self.runs, self.hits, \
+              p3d.pos.position.x , p3d.pos.position.y , p3d.pos.position.z, \
+              dx , dy , dz , d, TARGET_RAD
+
         if (d < TARGET_RAD and abs(dz) < CUP_HEIGHT):
-            #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(p3d.pos.position.x) + " " + str(p3d.pos.position.y)
-            #print "DONE"
             self.hits = self.hits + 1
-            print "goal hits: " + str(self.hits)
-            print "total runs: " + str(self.runs)
             if (self.runs > 10 and self.runs < 50):
                 print "Got to goal too quickly! (",self.runs,")"
                 self.success = False
                 self.fail = True
 
-            if (self.hits > 200):
-                if (self.runs > 20):
+            if (self.hits > MIN_HITS):
+                if (self.runs > MIN_RUNS):
                     self.success = True
 
         

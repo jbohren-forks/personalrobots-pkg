@@ -18,5 +18,5 @@
     <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
 
     <!-- test -->
-    <test test-name="pr2_test_slide" pkg="test_pr2_collision_gazebo" type="test_slide.py" time-limit="80" />
+    <test test-name="pr2_test_slide" pkg="test_pr2_collision_gazebo" type="test_slide.py" time-limit="120" />
 </launch>
