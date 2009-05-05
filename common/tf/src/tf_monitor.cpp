@@ -50,6 +50,7 @@ public:
   std::vector<std::string> chain_;
   std::map<std::string, std::vector<double> > delay_map;
   std::map<std::string, std::vector<double> > authority_map;
+  std::map<std::string, std::vector<double> > authority_frequency_map;
   
   TransformListener tf_;
 
@@ -106,6 +107,18 @@ public:
         it2->second.erase(it2->second.begin());
     }
     
+    //create the authority frequency log
+    std::map<std::string, std::vector<double> >::iterator it3 = authority_frequency_map.find(authority);
+    if (it3 == authority_frequency_map.end())
+    {
+      authority_frequency_map[authority] = std::vector<double>(1,ros::Time::now().toSec());
+    }
+    else
+    {
+      it3->second.push_back(ros::Time::now().toSec());
+      if (it3->second.size() > 1000) 
+        it3->second.erase(it3->second.begin());
+    }
     
   };
 
@@ -178,7 +191,8 @@ public:
       }
       cout << "-------------------------------------------------" << std::endl;
       std::map<std::string, std::vector<double> >::iterator it = authority_map.begin();
-      for ( ; it != authority_map.end() ; ++it)
+      std::map<std::string, std::vector<double> >::iterator it2 = authority_frequency_map.begin();
+      for ( ; it != authority_map.end() ; ++it, ++it2)
       {
         double average_delay = 0;
         double max_delay = 0;
@@ -188,7 +202,8 @@ public:
           max_delay = std::max(max_delay, it->second[i]);
         }
         average_delay /= it->second.size();
-        cout << "Authority: " << it->first << " Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
+        double frequency = (it2->second.back() - it2->second.front())/std::max((size_t)1, it2->second.size());
+        cout << "Authority: " << it->first << " " << cout.precision(4) << frequency <<" Hz, Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
       }
       
     }
