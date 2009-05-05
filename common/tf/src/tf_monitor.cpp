@@ -48,6 +48,7 @@ public:
   
   Node node_;
   std::vector<std::string> chain_;
+  std::map<std::string, std::string> frame_authority_map;
   std::map<std::string, std::vector<double> > delay_map;
   std::map<std::string, std::vector<double> > authority_map;
   std::map<std::string, std::vector<double> > authority_frequency_map;
@@ -59,10 +60,27 @@ public:
   boost::mutex map_lock_;
   void callback()
   {
+    //Lookup the authority 
+    std::string authority;
+    std::map<std::string, std::string>* msg_header_map = message_.__connection_header.get();
+    std::map<std::string, std::string>::iterator it = msg_header_map->find("callerid");
+    if (it == msg_header_map->end())
+    {
+      ROS_WARN("Message recieved without callerid");
+      authority = "no callerid";
+    }
+    else
+    {
+      authority = it->second;
+    }
+
+
     double average_offset = 0;
     boost::mutex::scoped_lock my_lock(map_lock_);  
     for (unsigned int i = 0; i < message_.transforms.size(); i++)
     {
+      frame_authority_map[message_.transforms[i].header.frame_id] = authority;
+
       double offset = (ros::Time::now() - message_.transforms[i].header.stamp).toSec();
       average_offset  += offset;
       
@@ -81,18 +99,6 @@ public:
     } 
     
     average_offset /= max((size_t) 1, message_.transforms.size());
-    std::string authority;
-    std::map<std::string, std::string>* msg_header_map = message_.__connection_header.get();
-    std::map<std::string, std::string>::iterator it = msg_header_map->find("callerid");
-    if (it == msg_header_map->end())
-    {
-      ROS_WARN("Message recieved without callerid");
-      authority = "no callerid";
-    }
-    else
-    {
-      authority = it->second;
-    }
 
     //create the authority log
     std::map<std::string, std::vector<double> >::iterator it2 = authority_map.find(authority);
@@ -186,7 +192,7 @@ public:
             max_delay = std::max(max_delay, it->second[i]);
           }
           average_delay /= it->second.size();
-          cout << "Frame: " << it->first << " Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
+          cout << "Frame: " << it->first <<" published by "<< frame_authority_map[it->first] << " Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
         }
       }
       cout << "-------------------------------------------------" << std::endl;
