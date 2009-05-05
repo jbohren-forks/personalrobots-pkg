@@ -258,6 +258,8 @@ typedef struct {
 	char ifName[9];
 	uint8_t mac[6];
 	IPAddress ip;
+  uint32_t hw_version;
+  uint32_t fw_version;
 
 	IpCamStatus status;
 

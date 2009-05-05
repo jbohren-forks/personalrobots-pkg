@@ -1,3 +1,7 @@
 rospack_add_executable(write_memory write_memory.cpp)
 target_link_libraries(write_memory forearmcam)
+
 rospack_add_executable(fcam_sim fcam_sim.c)
+
+rospack_add_executable(discover discover.cpp)
+target_link_libraries(discover forearmcam)

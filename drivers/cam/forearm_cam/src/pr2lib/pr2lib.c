@@ -100,8 +100,11 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, unsigned wait_us) {
 		if( !wgWaitForPacket(s, PKTT_ANNOUNCE, sizeof(PacketAnnounce), &wait_us)  && (wait_us != 0) ) {
 			// We've received an Announce packet, so pull it out of the receive queue
 			PacketAnnounce aPkt;
+      struct sockaddr_in fromaddr;
+      fromaddr.sin_family = AF_INET;
+      socklen_t fromlen = sizeof(fromaddr);
 
-			if( recvfrom( s, &aPkt, sizeof(PacketAnnounce), 0, NULL, NULL )  == -1 ) {
+			if( recvfrom( s, &aPkt, sizeof(PacketAnnounce), 0, (struct sockaddr *) &fromaddr, &fromlen)  == -1 ) {
 				perror("wgDiscover unable to receive from socket");
 				return -1;
 			}
@@ -116,6 +119,9 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, unsigned wait_us) {
 			pr2CamListInit( tmpListItem );
 
 			// Initialize the new list item's data fields (byte order corrected)
+      tmpListItem->hw_version = aPkt.hw_version;
+      tmpListItem->fw_version = aPkt.fw_version;
+      tmpListItem->ip = fromaddr.sin_addr.s_addr;
 			tmpListItem->serial = ntohl(aPkt.ser_no);
 			memcpy(&tmpListItem->mac, aPkt.mac, sizeof(aPkt.mac));
 			strncpy(tmpListItem->ifName, ifName, sizeof(tmpListItem->ifName));

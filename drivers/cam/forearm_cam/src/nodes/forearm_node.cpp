@@ -330,6 +330,7 @@ public:
       if (frameless_updates >= 2)
       {
         ROS_WARN("No frames are arriving. Attempting to restart image stream.");
+        pr2Reset(camera_);
         if ( pr2StartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]), inet_ntoa(localIp_), port_) != 0 )
         {
           ROS_ERROR("Failed to restart image stream. Will retry later.");
@@ -459,7 +460,7 @@ public:
         return;
       }
     }
-    ROS_INFO("Configured camera #%d, S/N #%u, IP address %s", index,
+    ROS_INFO("Configured camera, S/N #%u, IP address %s",
              camera_->serial, ip_address.c_str());
       
     serial_number_ = str(boost::format("%i") % camera_->serial);
