@@ -218,7 +218,7 @@ class NavStackTest(unittest.TestCase):
         print "LNK\n"
 
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
-        pub_goal = rospy.Publisher("goal", PoseStamped)
+        pub_goal = rospy.Publisher("/move_base/activate", PoseStamped)
         pub_pose = rospy.Publisher("initialpose", PoseWithCovariance)
         rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
         rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
