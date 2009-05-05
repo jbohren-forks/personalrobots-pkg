@@ -1,0 +1,17 @@
+/**
+ * Go to, and then go thru, the doorway at Sachins office
+ */
+#include "master/master.nddl"
+#include "test/locations.nddl"
+
+close();
+
+map_initialize_from_file("willow.tmap");
+
+rejectable(driver.Active g0);
+eq_pose_msg(g0.object, outside_sachins_office);
+
+rejectable(doorman.Active g1);
+eq_pose_msg(g0.object, inside_sachins_office);
+
+g0 before g1;

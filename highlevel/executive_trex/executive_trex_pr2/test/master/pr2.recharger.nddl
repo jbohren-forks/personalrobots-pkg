@@ -1,0 +1,6 @@
+#include "plugs/recharge_controller.nddl"
+
+close();
+
+fact(recharge_controller.Holds f);
+f.active = false;

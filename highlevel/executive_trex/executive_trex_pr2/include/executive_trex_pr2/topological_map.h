@@ -76,6 +76,11 @@ namespace executive_trex_pr2 {
   private:
     AbstractDomain& _next_x;
     AbstractDomain& _next_y;
+    AbstractDomain& _next_z;
+    AbstractDomain& _next_qx;
+    AbstractDomain& _next_qy;
+    AbstractDomain& _next_qz;
+    AbstractDomain& _next_qw;
     BoolDomain& _thru_doorway;
     AbstractDomain& _current_x;
     AbstractDomain& _current_y;

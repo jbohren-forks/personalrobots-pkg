@@ -27,6 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "TREX.nddl"
+#include "world_model/topological_map.nddl"
+#include "rcs/exports.nddl"
+#include "rcs/nav/exports.nddl"
+#include "rcs/plugs/exports.nddl"
+#include "nav/exports.nddl"
+#include "plugs/exports.nddl"
 
 // Priority for goals
 typedef int [0 5] PRIORITY;
@@ -42,10 +49,7 @@ class M2Goals extends Behavior {
     float qy;
     float qz;
     float qw;
-    MAP_KEY outlet_id;
-
-    // Populate parameters from outlet id
-    map_get_outlet_state(x, y, z, qx, qy, qz, qw, outlet_id);
+    bool recharge;
   }
 
   predicate Inactive{}
@@ -58,9 +62,6 @@ class M2Goals extends Behavior {
 class M2Controller extends AgentTimeline {
   predicate Holds {
     bool active;
-    bool at_doorway;
-    bool recharged;
-    bool at_charging_station;
   }
 
   M2Controller(){
@@ -87,56 +88,101 @@ M2Goals::Active{
   if(start){
     starts(m2_controller.Holds mc);
     eq(mc.active, true);
-    eq(mc.at_charging_station, false);
-    eq(mc.recharged, false);
   }
 }
 
-
+/**
+ * The loop for master level control. It uses the doorman, driver and recharger. 
+ */
 M2Controller::Holds{
   if(active == false){
     contained_by(m2_goals.Inactive);
-    eq(mc.recharged, false);
-    eq(mc.at_charging_station, false);
   }
 
   // Default based on predecessors
   met_by(Holds p);
-  defaultOnCommit(at_recharging_station, p.at_recharging_station);
-  defaultOnCommit(recharged, p.recharged);
+  defaultOnCommit(active, p.active);
 
   if(active == true){
-    meets(Holds s);
     contained_by(m2_goals.Active m2_active);
 
-    if(at_charging_station == true){
-      if(recharged == true){
-	eq(duration, 1);
-	eq(s.active, false);
-      }
-      else {
+    float current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw;
+    tf_get_robot_pose(current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw, "map");
+
+    // Are we at the goal?
+    float distance;
+    calcDistance(distance, current_x, current_y, m2_active.x, m2_active.y);
+    bool at_goal;
+    testLEQ(at_goal, distance, 1.5);
+
+    if(at_goal == true){
+      bool recharge_required;
+      eq(recharge_required, m2_active.recharge);
+      if(recharge_required == true){
 	contains_start(recharger.Active cmd);
 	concurrent(cmd.end, end);
+	eq_pose_msg(cmd.object, m2_active.object);
+      }
+      else {
+	meets(Holds s);
+	eq(s.active, false);
+	meets(m2_goals.Inactive m2_inactive);
+	eq(m2_inactive.status, SUCCESS);
       }
     }
     else{
-      // Have to get to the charging station. We want the next position to get to
+      // Take the next step towards the goal. This will either navigate to the goal, or navigate to the
+      // next connector along the way. It would be ideal to be able to specify for the nav stack that
+      // we do not care about orientation, and that we want to get as close as possible to the goal, but the criteria
+      // for success is based on a given error bound. Thus we could get close if possible, but permit a successful termination
+      // when we cannot get any closer but are within that bound. This is desirable since the precise approach is based
+      // on cacluations that deal with position of approach and location of the socket or door and these are encoded internally
+      // in the domains
+      contains_start(MoveBehavior.Active cmd);
+      concurrent(cmd.end, end);
+      eq(cmd.frame_id, "map");
+
+      // Determine the next map point to go for. It will either be the outlet
+      // or it will be a doorway en-route to the outlet
+      bool thru_doorway;
+      map_get_next_move(cmd.x, cmd.y, cmd.y, cmd.qx, cmd.qy, cmd.qz, cmd.qw,
+			thru_doorway, current_x, current_y, m2_active.x, m2_active.y);
+
+      if(thru_doorway == true){
+	eq(cmd.object, doorman);
+      }
+      else{
+	eq(cmd.object, driver);
+      }
     }
   }
 }
 
 MoveBehavior::Inactive{
   if(start){
-    contained_by(m2_controller.Holds mc);
-    if(status == SUCCESS){
-      if(object == driver){
-	eq(mc.at_recharge
-      }
-      if(object == doorman){
-
+    starts(m2_controller.Holds mc);
+    if(mc.active == true){
+      if(status == ABORTED){
+	eq(mc.active, false);
+	starts_during(m2_goals.Inactive m2_inactive);
+	eq(m2_inactive.status, ABORTED);
       }
     }
   }
 }
 
+Recharger::Inactive{
+  if(start){
+    starts(m2_controller.Holds mc);
+    if(mc.active == true){
+      if(status == UNDEFINED){}
+      else{
+	starts_during(m2_goals.Inactive m2_inactive);
+	eq(mc.active, false);
+	eq(m2_inactive.status, status);
+      }
+    }
+  }
+
+}
 

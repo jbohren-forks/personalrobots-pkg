@@ -1,8 +1,10 @@
 <launch>
   <master auto="start"/>
-  <param name="/trex/enable_base_state_publisher" value="true"/>
   <param name="/trex/enable_switch_controllers" value="true"/>
   <param name="/trex/enable_safety_tuck_arms" value="true"/>
+  <param name="/trex/enable_move_base" value="true"/>
+  <param name="/trex/enable_move_base_local" value="true"/>
+
   <param name="/trex/enable_doors_tuck_arms" value="true"/>
   <param name="/trex/enable_detect_plug_on_base" value="true"/>
   <param name="/trex/enable_detect_door" value="true"/>
@@ -13,20 +15,30 @@
   <param name="/trex/enable_touch_door" value="true"/>
   <param name="/trex/enable_push_door" value="true"/>
   <param name="/trex/enable_release_handle" value="true"/>
-  <param name="/trex/enable_move_base" value="true"/>
-  <param name="/trex/enable_move_base_local" value="true"/>
   <param name="/trex/enable_move_base_door" value="true"/>
   <param name="/trex/enable_check_path" value="true"/>
-  <param name="/trex/enable_notify_door_blocked" value="true"/>
+
   <param name="/trex/enable_plugs_untuck_arms" value="true"/>
+  <param name="/trex/enable_detect_plug_on_base" value="true"/>
+  <param name="/trex/enable_move_and_grasp_plug" value="true"/>
+  <param name="/trex/enable_localize_plug_in_gripper" value="true"/>
+  <param name="/trex/enable_stow_plug" value="true"/>
+  <param name="/trex/enable_unplug" value="true"/>
+  <param name="/trex/enable_plug_in" value="true"/>
+  <param name="/trex/enable_move_base_local" value="true"/>
+  <param name="/trex/enable_detect_outlet_coarse" value="true"/>
+  <param name="/trex/enable_detect_outlet_fine" value="true"/>
+  <param name="/trex/enable_doors_tuck_arms" value="true"/>
+  <param name="/trex/enable_doors_touch_door" value="true"/>
+  <param name="/trex/enable_doors_grasp_handle" value="true"/>
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
   <node pkg="executive_trex_pr2" type="actions" respawn="false" />
 
-  <param name="/trex/update_rate" value="10"/>
-  <param name="/trex/input_file" value="doorman.cfg"/>
+  <param name="/trex/update_rate" value="1"/>
+  <param name="/trex/input_file" value="master.cfg"/>
   <param name="/trex/path" value="$(find executive_trex_pr2)/cfg"/>
-  <param name="/trex/time_limit" value="500"/>
+  <param name="/trex/time_limit" value="200"/>
   <param name="/trex/log_dir" value="$(find executive_trex_pr2)/logs"/>
   <param name="/trex/play_back" value="0"/>
-  <!--node pkg="executive_trex_pr2" type="trexdebug"/-->
+  <!--node pkg="executive_trex_pr2" type="trexfast"/-->
 </launch>

@@ -1,0 +1,18 @@
+/**
+ * Drive to a charging station using the nav stack and then plug in.
+ */
+
+#include "master/master.nddl"
+#include "test/locations.nddl"
+
+close();
+
+map_initialize_from_file("willow.tmap");
+
+rejectable(driver.Active g0);
+eq_pose_msg(g0.object, map_outlet_1);
+
+rejectable(recharger.Active g1);
+eq_pose_msg(g0.object, map_outlet_1);
+
+g0 before g1;

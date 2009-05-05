@@ -157,12 +157,17 @@ namespace executive_trex_pr2 {
     :Constraint(name, propagatorName, constraintEngine, variables),
      _next_x(static_cast<AbstractDomain&>(getCurrentDomain(variables[0]))),
      _next_y(static_cast<AbstractDomain&>(getCurrentDomain(variables[1]))),
-     _thru_doorway(static_cast<BoolDomain&>(getCurrentDomain(variables[2]))),
-     _current_x(static_cast<AbstractDomain&>(getCurrentDomain(variables[3]))),
-     _current_y(static_cast<AbstractDomain&>(getCurrentDomain(variables[4]))),
-     _target_x(static_cast<AbstractDomain&>(getCurrentDomain(variables[5]))),
-     _target_y(static_cast<AbstractDomain&>(getCurrentDomain(variables[6]))){
-    checkError(variables.size() == 7, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
+     _next_z(static_cast<AbstractDomain&>(getCurrentDomain(variables[2]))),
+     _next_qx(static_cast<AbstractDomain&>(getCurrentDomain(variables[3]))),
+     _next_qy(static_cast<AbstractDomain&>(getCurrentDomain(variables[4]))),
+     _next_qz(static_cast<AbstractDomain&>(getCurrentDomain(variables[5]))),
+     _next_qw(static_cast<AbstractDomain&>(getCurrentDomain(variables[6]))),
+     _thru_doorway(static_cast<BoolDomain&>(getCurrentDomain(variables[7]))),
+     _current_x(static_cast<AbstractDomain&>(getCurrentDomain(variables[8]))),
+     _current_y(static_cast<AbstractDomain&>(getCurrentDomain(variables[9]))),
+     _target_x(static_cast<AbstractDomain&>(getCurrentDomain(variables[10]))),
+     _target_y(static_cast<AbstractDomain&>(getCurrentDomain(variables[11]))){
+    checkError(variables.size() == 12, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
     checkError(TopologicalMapAdapter::instance() != NULL, "Failed to allocate topological map accessor. Some configuration error.");
   }
     
@@ -173,7 +178,6 @@ namespace executive_trex_pr2 {
       return;
 
     debugMsg("map:get_next_move",  "BEFORE: " << toString());
-
 
     // Get next move by evaluating all options
     double lowest_cost = PLUS_INFINITY;
@@ -190,13 +194,13 @@ namespace executive_trex_pr2 {
     unsigned int final_region =  TopologicalMapAdapter::instance()->getRegion(target_x, target_y);
     condDebugMsg(final_region == 0, "map", "No region for <" << target_x << ", " << target_y <<">");
 
-    // If the final region is bogus, then 
+    // If the final region is bogus, then force a conflict.
     if(final_region == 0 || this_region == 0){
       _thru_doorway.empty();
       return;
     }
 
-    // If the source point and final point can be connected without then we consider an option of going
+    // If the source point and final point can be connected without traversing a region then we consider an option of going
     // directly to the point rather than thru a connector.
     if(this_region == final_region){
       lowest_cost = TopologicalMapAdapter::instance()->cost(current_x, current_y, target_x, target_y);

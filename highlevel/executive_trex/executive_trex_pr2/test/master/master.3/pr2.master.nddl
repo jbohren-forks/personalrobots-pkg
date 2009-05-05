@@ -1,0 +1,14 @@
+/**
+ * Just go to a charging station and recharge, iterating as needed between doorman and driver
+ */
+#include "master/master.nddl"
+#include "test/locations.nddl"
+
+close();
+
+map_initialize_from_file("willow.tmap");
+
+rejectable(m2_goals.Active g0);
+eq_pose_msg(g0.object, map_outlet_1);
+g0.recharge = true;
+

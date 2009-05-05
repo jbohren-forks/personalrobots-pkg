@@ -1,0 +1,6 @@
+#include "doors/door_controller.nddl"
+
+close();
+
+fact(door_controller.Holds f);
+f.active = false;
