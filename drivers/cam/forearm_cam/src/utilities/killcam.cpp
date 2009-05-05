@@ -58,28 +58,14 @@ int discover(const std::string &if_name)
     fprintf(stderr, "Unable to set rp_filter to 0 on interface. Camera discovery is likely to fail.\n");
   }
 
-  // Discover any connected cameras, wait for 0.5 second for replies
-  if( pr2Discover(if_name.c_str(), &camList, SEC_TO_USEC(0.5)) == -1) {
-    fprintf(stderr, "Discover error.\n");
-    return -1;
-  }
+  IpCamList camera;
+  strncpy(camera.ifName, if_name.c_str(), sizeof(camera.ifName));
+  camera.ifName[sizeof(camera.ifName) - 1] = 0;
+  camera.serial = -1;
+    
+  pr2Configure(&camera, "127.0.0.1", SEC_TO_USEC(0));
 
-  if (pr2CamListNumEntries(&camList) == 0) {
-    printf("No cameras found\n");
-    return 0;
-  }
-
-  for (int i = 0; i < pr2CamListNumEntries(&camList); i++)
-  {
-    IpCamList *camera = pr2CamListGetEntry(&camList, i);
-    uint8_t *mac = camera->mac;
-    uint8_t *ip = (uint8_t *) &camera->ip;
-    char pcb_rev = 0x0A + (0x0000000F & ntohl(camera->hw_version));
-    int hdl_rev = 0x00000FFF & (ntohl(camera->hw_version)>>4);
-    printf("Found camera with S/N #%u, MAC: %02x:%02x:%02x:%02x:%02x:%02x, IP: %i.%i.%i.%i, PCB rev %X : HDL rev %3X : FW rev %3X\n", 
-        camera->serial, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], ip[0], ip[1], ip[2], ip[3], 
-        pcb_rev, hdl_rev, ntohl(camera->fw_version));
-  }
+  printf("Killer configure packet has been requested.\n");
 
   return 0;
 }
