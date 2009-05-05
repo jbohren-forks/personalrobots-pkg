@@ -22,4 +22,4 @@ rospack_add_executable(pr2_ik_regression_test EXCLUDE_FROM_ALL test/test_ik_regr
 rospack_declare_test(pr2_ik_regression_test)
 target_link_libraries(pr2_ik_regression_test pr2_ik gtest)
 
-#rospack_add_rostest(test_pr2_ik.xml)
+rospack_add_rostest(test_pr2_ik.xml)
