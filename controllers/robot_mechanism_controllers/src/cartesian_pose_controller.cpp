@@ -157,10 +157,10 @@ void CartesianPoseController::update()
   pose_meas_ = getPose();
 
   // pose feedback into twist
-  Twist twist_error = diff(pose_desi_, pose_meas_);
+  twist_error_ = diff(pose_desi_, pose_meas_);
   Twist twist_fb;
   for (unsigned int i=0; i<6; i++)
-    twist_fb(i) = pid_controller_[i].updatePid(twist_error(i), dt);
+    twist_fb(i) = pid_controller_[i].updatePid(twist_error_(i), dt);
 
   // send feedback twist and feedforward twist to twist controller
   twist_controller_->twist_desi_ = twist_fb + twist_ff_;
@@ -168,12 +168,12 @@ void CartesianPoseController::update()
   if (++loop_count_ % 100 == 0){
     if (state_error_publisher_){
       if (state_error_publisher_->trylock()){
-        state_error_publisher_->msg_.vel.x = twist_error.vel(0);
-        state_error_publisher_->msg_.vel.y = twist_error.vel(1);
-        state_error_publisher_->msg_.vel.z = twist_error.vel(2);
-        state_error_publisher_->msg_.rot.x = twist_error.rot(0);
-	state_error_publisher_->msg_.rot.y = twist_error.rot(1);
-        state_error_publisher_->msg_.rot.z = twist_error.rot(2);
+        state_error_publisher_->msg_.vel.x = twist_error_.vel(0);
+        state_error_publisher_->msg_.vel.y = twist_error_.vel(1);
+        state_error_publisher_->msg_.vel.z = twist_error_.vel(2);
+        state_error_publisher_->msg_.rot.x = twist_error_.rot(0);
+	state_error_publisher_->msg_.rot.y = twist_error_.rot(1);
+        state_error_publisher_->msg_.rot.z = twist_error_.rot(2);
         state_error_publisher_->unlockAndPublish();
       }
     }

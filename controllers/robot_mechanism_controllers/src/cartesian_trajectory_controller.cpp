@@ -140,7 +140,7 @@ bool CartesianTrajectoryController::initXml(mechanism::RobotState *robot_state, 
 
 
 
-bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, double duration)
+bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, const robot_msgs::Twist& tolerance, double duration)
 {
   // don't do anything when still moving
   if (is_moving_) return false;
@@ -159,7 +159,6 @@ bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, 
   tf_.transformPose(root_name_, pose_stamped, pose_stamped);
 
   // trajectory from pose_begin to pose_end
-  request_preempt_ = false;
   TransformToFrame(pose_stamped, pose_end_);
   pose_begin_ = pose_current_;
 
@@ -176,7 +175,18 @@ bool CartesianTrajectoryController::moveTo(const robot_msgs::PoseStamped& pose, 
   for (unsigned int i=0; i<6; i++)
     motion_profile_[i].SetProfileDuration( 0, twist_move(i), max_duration_ );
 
+  // set tolerance
+  tolerance_.vel(0) = tolerance.vel.x;
+  tolerance_.vel(1) = tolerance.vel.y;
+  tolerance_.vel(2) = tolerance.vel.z;
+  tolerance_.rot(0) = tolerance.rot.x;
+  tolerance_.rot(1) = tolerance.rot.y;
+  tolerance_.rot(2) = tolerance.rot.z;
+
   time_passed_ = 0;
+
+  exceed_tolerance_ = false;
+  request_preempt_ = false;
   is_moving_ = true;
 
   ROS_INFO("CartesianTrajectoryController: %s will move to new pose in %f seconds", controller_name_.c_str(), max_duration_);
@@ -222,12 +232,19 @@ void CartesianTrajectoryController::update()
   if (is_moving_){
     time_passed_ += dt;
 
+    // check tolerance
+    for (unsigned int i=0; i<6; i++){
+      if (tolerance_[i] != 0 && pose_controller_->twist_error_[i] > tolerance_[i]){
+	exceed_tolerance_ = true;
+	is_moving_ = false;
+      }
+    }
+
     // ended trajectory
     if (time_passed_ > max_duration_){
       twist_current_ = Twist::Zero();
       pose_current_  = pose_end_;
       is_moving_ = false;
-      ROS_INFO("CartesianTrajectoryController: finshed trajectory");
     }
     // still in trajectory
     else{
@@ -270,7 +287,7 @@ Frame CartesianTrajectoryController::getPose()
 bool CartesianTrajectoryController::moveTo(robot_srvs::MoveToPose::Request &req,
 					   robot_srvs::MoveToPose::Response &resp)
 {
-  if (!moveTo(req.pose, 0.0)){
+  if (!moveTo(req.pose, req.tolerance, 0.0)){
     ROS_ERROR("CartesianTrajectoryController: not starting trajectory because previous one is still running");
     return false;
   }
@@ -287,19 +304,26 @@ bool CartesianTrajectoryController::moveTo(robot_srvs::MoveToPose::Request &req,
     }
   }
 
-  ROS_INFO("CartesianTrajectoryController: moveto finished");
 
-  if (request_preempt_)
+  if (request_preempt_){
+    ROS_ERROR("CartesianTrajectoryController: trajectory preempted");
     return false;
-  else
+  }
+  else if (exceed_tolerance_){
+    return false;
+    ROS_ERROR("CartesianTrajectoryController: exceeded trajectory tolerance");
+  }
+  else{
+    ROS_INFO("CartesianTrajectoryController: moveto finished successfully");
     return true;
+  }
 }
 
 
 
 void CartesianTrajectoryController::command(const MessageNotifier<robot_msgs::PoseStamped>::MessagePtr& pose_msg)
 {
-  moveTo(*pose_msg, 0.0);
+  moveTo(*pose_msg);
 }
 
 

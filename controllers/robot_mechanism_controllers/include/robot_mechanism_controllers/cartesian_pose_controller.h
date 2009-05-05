@@ -67,6 +67,9 @@ public:
   KDL::Frame pose_desi_, pose_meas_;
   KDL::Twist twist_ff_;
 
+  // state output
+  KDL::Twist twist_error_;
+
 private:
   KDL::Frame getPose();
 

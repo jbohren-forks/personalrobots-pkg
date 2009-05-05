@@ -62,7 +62,7 @@ public:
 
   bool starting();
   void update();
-  bool moveTo(const robot_msgs::PoseStamped& pose, double duration=0);
+  bool moveTo(const robot_msgs::PoseStamped& pose, const robot_msgs::Twist& tolerance=robot_msgs::Twist(), double duration=0);
 
 
 private:
@@ -79,9 +79,10 @@ private:
   ros::Node* node_;
   std::string controller_name_;
   double last_time_, time_started_, time_passed_, max_duration_;
-  bool is_moving_, request_preempt_;
+  bool is_moving_, request_preempt_, exceed_tolerance_;
+
   KDL::Frame pose_begin_, pose_end_, pose_current_;
-  KDL::Twist twist_current_;
+  KDL::Twist twist_current_, tolerance_;
 
   // robot structure
   mechanism::RobotState *robot_state_;       
