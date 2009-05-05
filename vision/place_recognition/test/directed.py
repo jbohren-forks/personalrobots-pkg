@@ -4,6 +4,7 @@ import rostest
 import pylab, numpy
 import Image
 import starfeature
+import fast
 import calonder
 
 import sys
@@ -26,24 +27,28 @@ if 1:
   cl = calonder.classifier()
   cl.read('/u/prdata/calonder_trees/current.rtc')
 
-  print "adding..."
-  for i in ims:
-    vt.add(i)
-    
   def kp_d(frame):
-    sd = starfeature.star_detector(frame.size[0], frame.size[1], 5, 10.0, 10.0)
-    kp = [ (x,y) for (x,y,s,r) in sd.detect(frame.tostring()) ]
+    #sd = starfeature.star_detector(frame.size[0], frame.size[1], 5, 10.0, 10.0)
+    #kp = [ (x,y) for (x,y,s,r) in sd.detect(frame.tostring()) ]
+    fkp = fast.fast(frame.tostring(), frame.size[0], frame.size[1], 15, 9)
+    fkp = [ (x,y,r) for (x,y,r) in fast.nonmax(fkp) if (16 <= x and 16 <= y and x <= frame.size[0]-16 and y <= frame.size[1]-16) ]
+    kp = [ (x,y) for (x,y,r) in sorted(fkp, key = lambda x:(x[2],x[0],x[1]), reverse = True)[:500] ]
+    print 'kp_d gave %d points' % len(kp)
 
     descriptors = []
-    matcher = calonder.BruteForceMatcher(176)
     for (x,y) in kp:
       patch = frame.crop((x-16,y-16,x+16,y+16))
       sig = cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
       descriptors.append(sig)
     return descriptors
 
-  #M = vt.query(ims)
+  print "adding..."
+  for i in ims:
+    #vt.add(i)
+    vt.add(i, kp_d(i))
+
   print "Do query"
+  #M = [ vt.topN(i, None, 10) for i in ims[:100] ]
   M = [ vt.topN(i, kp_d(i), 10) for i in ims[:100] ]
 
   pylab.pcolor(numpy.array(M))

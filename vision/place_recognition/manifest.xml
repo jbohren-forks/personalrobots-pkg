@@ -9,6 +9,7 @@
   <depend package="opencv_latest"/>
   <depend package="eigen"/>
   <depend package="star_detector"/>
+  <depend package="fast_detector"/>
   <depend package="calonder_descriptor"/>
   <depend package="visual_odometry"/>
 

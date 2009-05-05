@@ -12,6 +12,7 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <star_detector/detector.h>
+#include <fast.h>
 #include <calonder_descriptor/rtree_classifier.h>
 #include <calonder_descriptor/matcher.h>
 #include <Cv3DPoseEstimateStereo.h>
@@ -75,6 +76,44 @@ typedef struct {
   int size;
 } signature_t;
 
+struct FilterBorder
+{
+  FilterBorder(int width, int height)
+    : w(width), h(height)
+  {}
+
+  inline bool operator() (Keypoint const& pt) {
+    return pt.x < 16 || pt.x >= w - 16 ||
+           pt.y < 16 || pt.y >= h - 16;
+  }
+
+  int w, h;
+};
+
+static std::vector<Keypoint> fastKeypoints(IplImage *image, int threshold, int barrier)
+{
+  int num_corners = 0, num_nonmax = 0;
+  unsigned char* imdata = (unsigned char*)image->imageData;
+  xyr* corners = fast_corner_detect_9(imdata, image->width, image->height, threshold, &num_corners);
+  xyr* nm = fast_nonmax(imdata, image->width, image->height, corners, num_corners, barrier, &num_nonmax);
+
+  // Copy keypoints over
+  std::vector<Keypoint> keypts;
+  keypts.reserve(num_nonmax);
+  for (int i = 0; i < num_nonmax; ++i)
+    keypts.push_back( Keypoint(nm[i].x, nm[i].y, 3, nm[i].r) );
+
+  // Filter keypoints too close to border
+  keypts.erase( std::remove_if(keypts.begin(), keypts.end(),
+                               FilterBorder(image->width, image->height)),
+                keypts.end());
+
+  free(corners);
+  free(nm);
+
+  return keypts;
+}
+
 static FeatureMatrix extract_float_features(PyObject *self, PyObject *pim,
                                             PyObject *descriptors)
 {
@@ -84,11 +123,6 @@ static FeatureMatrix extract_float_features(PyObject *self, PyObject *pim,
   FeatureMatrix image_features;
 
   if (descriptors == NULL || descriptors == Py_None) {
-    // Prepare keypoint detector, classifier
-    // TODO: use FAST instead?
-    StarDetector detector(cvSize(640, 480), 5, 10.0);
-    std::vector<Keypoint> pts;
-
     // Compute features and their descriptors for each object (image)
 
     CvArr *cva;
@@ -98,8 +132,13 @@ static FeatureMatrix extract_float_features(PyObject *self, PyObject *pim,
     cv::WImageBuffer1_b left( (IplImage*)local );
 
     // Find keypoints
+
+    std::vector<Keypoint> pts;
+    StarDetector detector(cvSize(640, 480), 5, 10.0);
     detector.DetectPoints(left.Ipl(), std::back_inserter(pts));
     printf("[Star detector gave %d points, dimension %d]\n", (int)(pts.size()), dimension);
+    //std::vector<Keypoint> pts = fastKeypoints(left.Ipl(), 20, 9);
+    //printf("[Fast detector gave %d points, dimension %d]\n", pts.size(), dimension);
 
     // Compute descriptors
     image_features.resize(pts.size(), dimension);
@@ -145,11 +184,6 @@ static sig_data_t* extract_features(PyObject *self, PyObject *pim,
   sig_data_t *image_features;
 
   if (descriptors == NULL || descriptors == Py_None) {
-    // Prepare keypoint detector, classifier
-    // TODO: use FAST instead?
-    StarDetector detector(cvSize(640, 480), 5, 10.0);
-    std::vector<Keypoint> pts;
-
     // Compute features and their descriptors for each object (image)
 
     CvArr *cva;
@@ -159,8 +193,12 @@ static sig_data_t* extract_features(PyObject *self, PyObject *pim,
     cv::WImageBuffer1_b left( (IplImage*)local );
 
     // Find keypoints
+    std::vector<Keypoint> pts;
+    StarDetector detector(cvSize(640, 480), 5, 10.0);
     detector.DetectPoints(left.Ipl(), std::back_inserter(pts));
     printf("[Star detector gave %d points, dimension %d]\n", (int)(pts.size()), dimension);
+    //std::vector<Keypoint> pts = fastKeypoints(left.Ipl(), 20, 9);
+    //printf("[Fast detector gave %d points, dimension %d]\n", pts.size(), dimension);
 
     // Compute descriptors
     *num_features = pts.size();
