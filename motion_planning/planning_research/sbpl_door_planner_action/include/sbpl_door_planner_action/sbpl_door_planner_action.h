@@ -123,7 +123,7 @@ class SBPLDoorPlanner : public robot_actions::Action<robot_msgs::Door, robot_msg
   
   bool initializePlannerAndEnvironment(const robot_msgs::Door &door);
   
-  bool plan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, robot_msgs::JointTraj &path);
+  bool makePlan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, robot_msgs::JointTraj &path);
 
   std::vector<robot_msgs::Point> footprint_;
 

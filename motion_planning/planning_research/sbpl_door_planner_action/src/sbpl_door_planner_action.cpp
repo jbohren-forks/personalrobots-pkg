@@ -158,7 +158,7 @@ bool SBPLDoorPlanner::removeDoor()
   return false;
 }
 
-bool SBPLDoorPlanner::plan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, robot_msgs::JointTraj &path)
+bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, robot_msgs::JointTraj &path)
 {
   ROS_INFO("[replan] getting fresh copy of costmap");
   lock_.lock();
@@ -237,7 +237,7 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const robot_msgs::Door& doo
 
   if(!isPreemptRequested())
   {
-    if(!plan(global_pose_2D_, goal_, path))
+    if(!makePlan(global_pose_2D_, goal_, path))
     {
       return robot_actions::ABORTED;      
     }
