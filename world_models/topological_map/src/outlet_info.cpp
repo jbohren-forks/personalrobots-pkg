@@ -32,18 +32,16 @@
 namespace topological_map
 {
 
-OutletInfo::OutletInfo (double origin_x, double origin_y, double origin_z,
-                        double origin_roll, double origin_pitch, double origin_yaw,
-                        uint sockets_size, string sockets_color)
-  : origin_x(origin_x), origin_y(origin_y), origin_z(origin_z),
-    origin_roll(origin_roll), origin_pitch(origin_pitch), origin_yaw(origin_yaw),
+OutletInfo::OutletInfo (double x, double y, double z, double qx, double qy,
+                        double qz, double qw, uint sockets_size, string sockets_color)
+  : x(x), y(y), z(z), qx(qx), qy(qy), qz(qz), qw(qw),
     sockets_size(sockets_size), sockets_color(sockets_color), blocked(false)
 {}
 
 
 OutletInfo::OutletInfo (istream& str) : blocked(false)
 {
-  str >> origin_x >> origin_y >> origin_z >> origin_roll >> origin_pitch >> origin_yaw >> sockets_size;
+  str >> x >> y >> z >> qx >> qy >> qz >> qw >> sockets_size;
   getline (str, sockets_color);
 }
 

@@ -9,6 +9,7 @@
 <depend package="robot_srvs" />
 <depend package="rosconsole" />
 <depend package="tinyxml" />
+<depend package="tf" />
 <depend package="sbpl" />
 <depend package="navfn" />
 <depend package="eigen"/>

@@ -238,8 +238,8 @@ void writeRegionDoorMap (const RegionDoorMap& m, ostream& str)
 
 void writeOutlet (ostream& str, const OutletInfo& outlet)
 {    
-    str << endl << outlet.origin_x << " " << outlet.origin_y << " " << outlet.origin_z << " "
-        << outlet.origin_roll << " " << outlet.origin_pitch << " " << outlet.origin_yaw << " " 
+    str << endl << outlet.x << " " << outlet.y << " " << outlet.z << " "
+        << outlet.qx << " " << outlet.qy << " " << outlet.qz << " " << outlet.qw << " "
         << outlet.sockets_size << " " << outlet.sockets_color;
 
 }
@@ -611,7 +611,7 @@ struct CloserTo
   CloserTo(const double x, const double y) : x(x), y(y) {}
   bool operator() (const OutletInfo& o1, const OutletInfo& o2) 
   {
-    return sqDist(o1.origin_x, o1.origin_y)<sqDist(o2.origin_x,o2.origin_y);
+    return sqDist(o1.x, o1.y)<sqDist(o2.x,o2.y);
   }
   double sqDist(double x2, double y2)
   {

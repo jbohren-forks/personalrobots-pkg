@@ -43,17 +43,20 @@ typedef unsigned int uint;
 struct OutletInfo
 {
   OutletInfo () {} // Do not use — only for STL purposes
-  OutletInfo (double origin_x, double origin_y, double origin_z,
-              double origin_roll, double origin_pitch, double origin_yaw,
+  OutletInfo (double x, double y, double z,
+              double qx, double qy, double qz, double qw,
               uint sockets_size, string sockets_color);
   OutletInfo (istream& str);
 
-  double origin_x;
-  double origin_y;
-  double origin_z;
-  double origin_roll;
-  double origin_pitch;
-  double origin_yaw;
+  double x;
+  double y;
+  double z;
+  
+  double qx;
+  double qy;
+  double qz;
+  double qw;
+
   uint sockets_size;
   string sockets_color;
   bool blocked;

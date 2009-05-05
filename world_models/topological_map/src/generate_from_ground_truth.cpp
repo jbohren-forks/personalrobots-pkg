@@ -52,6 +52,7 @@
 #include <topological_map/grid_utils.h>
 #include <topological_map/grid_graph.h>
 #include <topological_map/exception.h>
+#include <tf/transform_datatypes.h>
 
 
 using std::min;
@@ -310,6 +311,9 @@ DoorFrameVector loadDoorsFromFile (const string& filename, const double resoluti
 }
 
 
+
+
+
 OutletVector loadOutletsFromFile (const string& filename)
 {
   TiXmlDocument doc(filename);
@@ -355,13 +359,15 @@ OutletVector loadOutletsFromFile (const string& filename)
     ROS_ASSERT_MSG(pos!=end, "Invalid rpy element");
     const double yaw=atof((pos++)->c_str());
 
+    tf::Quaternion q(yaw, pitch, roll);
+
     const uint size = atoi(sockets.ToElement()->Attribute("size"));
     const string color = sockets.ToElement()->Attribute("color");
     
-    ROS_DEBUG_STREAM_NAMED ("load_outlets", "Read outlet with xyz " << x << ", " << y << ", " << z  << " rpy = " 
-                            << roll << ", " << pitch << ", " << yaw << " size = " << size << " color = " << color);
+    ROS_DEBUG_STREAM_NAMED ("load_outlets", "Read outlet with xyz " << x << ", " << y << ", " << z  << " orientation = " 
+                            << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << " size = " << size << " color = " << color);
 
-    outlets.push_back(OutletInfo(x,y,z,roll,pitch,yaw,size,color));
+    outlets.push_back(OutletInfo(x,y,z,q.x(),q.y(),q.z(),q.w(),size,color));
   }
 
   return outlets;
