@@ -1,0 +1,26 @@
+<package>
+  <description brief="Doorway Planner Action">
+
+  </description>
+  <author>Sachin Chitta/schitta@willowgarage.com</author>
+  <license>BSD</license>
+    <depend package="sbpl" />
+    <depend package="roscpp"/>
+    <depend package="rosconsole"/>
+    <depend package="std_msgs"/>
+    <depend package="robot_msgs"/>
+    <depend package="angles"/>
+    <depend package="tf"/>
+    <depend package="robot_actions" />
+    <depend package="pr2_robot_actions" />
+    <depend package="costmap_2d"/>
+    <depend package="mpglue"/>
+    <depend package="door_handle_detector"/>
+  <url></url>
+
+  <export>
+      <cpp cflags="-I${prefix}/include  -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsbpl_door_planner_action"/>
+  </export>
+
+</package>
+
