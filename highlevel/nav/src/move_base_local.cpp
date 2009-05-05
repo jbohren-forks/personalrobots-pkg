@@ -162,15 +162,22 @@ namespace nav {
       //make sure to update the costmap we'll use for this cycle
       controller_costmap_ros_->getCostmapCopy(controller_costmap_);
 
+      robot_msgs::PoseDot cmd_vel;
+
       //check that the observation buffers for the costmap are current
       if(!controller_costmap_ros_->isCurrent()){
         ROS_WARN("Sensor data is out of date, we're not going to allow commanding of the base for safety");
+        cmd_vel.vel.vx = 0.0;
+        cmd_vel.vel.vy = 0.0;
+        cmd_vel.ang_vel.vz = 0.0;
+        //give the base the velocity command
+        ros_node_.publish("cmd_vel", cmd_vel);
+        r.sleep();
         continue;
       }
 
 
       bool valid_control = false;
-      robot_msgs::PoseDot cmd_vel;
       //pass plan to controller
       std::vector<robot_msgs::PoseStamped> global_plan;
       robot_msgs::PoseStamped robot_start;
