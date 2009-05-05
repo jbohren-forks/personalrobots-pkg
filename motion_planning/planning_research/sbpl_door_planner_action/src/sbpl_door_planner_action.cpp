@@ -33,6 +33,7 @@
 using namespace std;
 using namespace ros;
 using namespace robot_actions;
+using namespace door_handle_detector;
 
 SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf) : 
   Action<robot_msgs::Door, robot_msgs::Door>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
@@ -51,8 +52,9 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
   ros_node_.param("~global_frame", global_frame_, std::string("odom_combined"));
   ros_node_.param("~robot_base_frame", robot_base_frame_, std::string("base_link"));
 
-  cost_map_ros_ = new costmap_2d::Costmap2DROS(ros_node_,tf_,std::string(" "));
+  cost_map_ros_ = new costmap_2d::Costmap2DROS(ros_node_,tf_,std::string(""));
 
+  sleep(10.0);
   ros_node_.param<double>("~door_thickness", door_env_.door_thickness, 0.05);
   ros_node_.param<double>("~arm/min_workspace_angle",   door_env_.arm_min_workspace_angle, -M_PI);
   ros_node_.param<double>("~arm/max_workspace_angle",   door_env_.arm_max_workspace_angle, M_PI);
@@ -113,13 +115,14 @@ bool SBPLDoorPlanner::initializePlannerAndEnvironment(const robot_msgs::Door &do
     cm_access_.reset(mpglue::createCostmapAccessor(&cm_getter_));
     cm_index_.reset(mpglue::createIndexTransform(&cm_getter_));
     
-    FILE *env_config_fp;
-    std::string filename = "sbpl_env_cfg_tmp.txt";
-    std::string env_config_string;
-    ros::Node::instance()->param<std::string>("~env_config_file", env_config_string, " ");
-    env_config_fp = fopen(filename.c_str(),"wt");
-    fprintf(env_config_fp,"%s",env_config_string.c_str());
-    fclose(env_config_fp);
+    FILE *action_fp;
+    std::string filename = "sbpl_action_tmp.txt";
+    std::string sbpl_action_string;
+    if(!ros::Node::instance()->getParam("~sbpl_action_file", sbpl_action_string))
+      return false;
+    action_fp = fopen(filename.c_str(),"wt");
+    fprintf(action_fp,"%s",sbpl_action_string.c_str());
+    fclose(action_fp);
 
     double nominalvel_mpersecs, timetoturn45degsinplace_secs;
     ros::Node::instance()->param("~nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
@@ -218,22 +221,35 @@ bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2
   catch (std::runtime_error const & ee) {
     ROS_ERROR("runtime_error in makePlan(): %s\n", ee.what());
   }
-      
   return false;
 }
 
-robot_actions::ResultStatus SBPLDoorPlanner::execute(const robot_msgs::Door& door, robot_msgs::Door& feedback)
+robot_actions::ResultStatus SBPLDoorPlanner::execute(const robot_msgs::Door& door_msg_in, robot_msgs::Door& feedback)
 {
   robot_msgs::JointTraj path;
+  robot_msgs::Door door;
   if(!updateGlobalPose())
   {
     return robot_actions::ABORTED;
   }
 
-  if(!initializePlannerAndEnvironment(door))
+  ROS_INFO("Current position: %f %f %f",global_pose_2D_.x,global_pose_2D_.y,global_pose_2D_.th);
+
+  if (!door_handle_detector::transformTo(tf_,global_frame_,door_msg_in,door))
   {
     return robot_actions::ABORTED;
   }
+  cout  << door;
+
+  ROS_INFO("Initializing planner and environment");
+   
+  if(!initializePlannerAndEnvironment(door))
+  {
+    ROS_ERROR("Door planner and environment not initialized");
+    return robot_actions::ABORTED;
+  }
+
+  ROS_INFO("Door planner and environment initialized");
 
   if(!isPreemptRequested())
   {

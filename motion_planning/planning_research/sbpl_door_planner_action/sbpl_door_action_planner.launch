@@ -4,7 +4,7 @@
 
   <master auto="start"/>
   <group name="wg">
-    <node pkg="sbpl_door_planner_action" type="" respawn="false" name="door_reactive_planner">
+    <node pkg="sbpl_door_planner_action" type="door_planner_action" respawn="false" name="sbpl_door_planner">
 
       <!-- Start Costmap Parameters -->
       <param name="costmap/global_frame" value="odom_combined" />
@@ -39,6 +39,8 @@
       <!-- End Costmap Parameters -->
      <remap from="raw_obstacles" to="~raw_obstacles" />
      <remap from="inflated_obstacles" to="~inflated_obstacles" />
+
+     <param name="sbpl_action_file" textfile="$(find mpbench)/data/pr2.mprim" />
     </node>
   </group>
 </launch>
