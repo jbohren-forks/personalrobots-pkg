@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
-<root>
+<root xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+      xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+      xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
   
 <macro name="prosilica_cam" params="name parent *origin">
   <joint name="${name}_fixed_joint" type="fixed" />
@@ -32,6 +34,27 @@
         <box size="0.01 0.01 0.01" />
       </geometry>
     </collision>
+
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_${name}_camera">
+        <sensor:camera name="${name}_sensor">
+          <imageWidth>1024</imageWidth>
+          <imageHeight>800</imageHeight>
+          <hfov>30</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <updateRate>20.0</updateRate>
+          <controller:ros_camera name="${name}_controller" plugin="libros_camera.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>20.0</updateRate>
+            <topicName>${name}/image_raw</topicName>
+            <frameName>${name}_link</frameName>
+            <interface:camera name="${name}_iface" />
+          </controller:ros_camera>
+        </sensor:camera>
+      </verbatim>
+    </map>
+
   </link>
 
   <joint name="${name}_optical_fixed_joint" type="fixed" />
