@@ -143,7 +143,7 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door&
     }
 
     // detect when door is locked
-    if (tff_handle_.value.rot.x > 2.5 && fabs(tff_state_.rot.x < M_PI/6.0)){
+    if (fabs(tff_handle_.value.rot.x) > 3.5 && fabs(tff_state_.rot.x < M_PI/6.0)){
       node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
       node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
       ROS_INFO("UnlatchHandleAction: Door is locked");

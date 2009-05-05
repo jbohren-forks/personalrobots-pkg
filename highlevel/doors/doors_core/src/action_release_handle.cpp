@@ -70,6 +70,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const robot_msgs::Door&
   pose_received_ = false;
  
   // open the gripper during 4 seconds
+  ROS_INFO("ReleaseHandleAction: open the gripper");
   std_msgs::Float64 gripper_msg;
   gripper_msg.data = 20.0;
   for (unsigned int i=0; i<100; i++){
@@ -85,6 +86,7 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const robot_msgs::Door&
   }
 
   // receive robot pose message
+  ROS_INFO("ReleaseHandleAction: get current robot pose");
   Duration timeout = Duration().fromSec(2.0);
   Duration poll = Duration().fromSec(0.1);
   Time start_time = ros::Time::now();
@@ -96,9 +98,10 @@ robot_actions::ResultStatus ReleaseHandleAction::execute(const robot_msgs::Door&
     }
     poll.sleep();
   }
-  boost::mutex::scoped_lock lock(pose_mutex_);
   node_.unsubscribe("r_arm_cartesian_pose_controller/state/pose");
-  
+  boost::mutex::scoped_lock lock(pose_mutex_);
+
+
   // move gripper away from the door
   Pose offset(Quaternion(0,0,0), Vector3(-0.2,0,0));
   Pose gripper_goal = gripper_pose_ * offset;
