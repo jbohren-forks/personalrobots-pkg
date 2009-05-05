@@ -877,13 +877,13 @@ namespace executive_trex_pr2 {
    */
   void TopologicalMapAdapter::getOutletState(unsigned int outlet_id, robot_msgs::Pose& outlet_pose){
     topological_map::OutletInfo outlet_info = _map->outletInfo(outlet_id);
-    outlet_pose.position.x = outlet_info.origin_x;
-    outlet_pose.position.y = outlet_info.origin_y;
-    outlet_pose.position.z = outlet_info.origin_z;
-    outlet_pose.orientation.x = 0.0;
-    outlet_pose.orientation.y = 0.0;
-    outlet_pose.orientation.z = 0.0;
-    outlet_pose.orientation.w = 1.0;
+    outlet_pose.position.x = outlet_info.x;
+    outlet_pose.position.y = outlet_info.y;
+    outlet_pose.position.z = outlet_info.z;
+    outlet_pose.orientation.x = outlet_info.qx;
+    outlet_pose.orientation.y = outlet_info.qy;
+    outlet_pose.orientation.z = outlet_info.qz;
+    outlet_pose.orientation.w = outlet_info.qw;
   }
 
   void TopologicalMapAdapter::observeOutletBlocked(unsigned int outlet_id){
