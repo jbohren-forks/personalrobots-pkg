@@ -196,6 +196,9 @@ private:
   double last_image_time_;
   unsigned int last_frame_number_;
   int misfire_blank_;
+  sockaddr localMac_;
+  in_addr localIp_;
+  int port_;
   
   boost::mutex diagnostics_lock_;
 
@@ -247,8 +250,7 @@ public:
       return;
     }
 
-    int port;
-    node_.param("~port", port, 9090);
+    node_.param("~port", port_, 9090);
 
     node_.param("~ext_trigger", ext_trigger_, false);
 
@@ -297,7 +299,7 @@ public:
     cam_info_.height = height_;
     
     // Configure camera
-    configure(if_name_, ip_address_, port);
+    configure(if_name_, ip_address_, port_);
 
     if (node_.ok())
     {
@@ -310,6 +312,8 @@ public:
 
   void diagnosticsLoop()
   {
+    int frameless_updates = 0;
+    
     while (node_.ok())
     {
       { 
@@ -317,6 +321,20 @@ public:
         diagnostic_.update();
       }
       sleep(1);
+
+      if (count_ == 0 && started_video_)
+        frameless_updates++;
+      else
+        frameless_updates = 0;
+
+      if (frameless_updates >= 2)
+      {
+        ROS_WARN("No frames are arriving. Attempting to restart image stream.");
+        if ( pr2StartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]), inet_ntoa(localIp_), port_) != 0 )
+        {
+          ROS_ERROR("Failed to restart image stream. Will retry later.");
+        }
+      }
     }
 
     ROS_DEBUG("Diagnostic thread exiting.");
@@ -328,14 +346,18 @@ public:
     node_.shutdown();
     if (image_thread_)
     {
-      image_thread_->join();
-      delete image_thread_;
+      if (image_thread_->timed_join((boost::posix_time::milliseconds) 1000))
+        delete image_thread_;
+      else
+        ROS_DEBUG("image_thread_ did not die after one second. Proceeding with shutdown.");
     }
 
     if (diagnostic_thread_)
     {
-      diagnostic_thread_->join();
-      delete diagnostic_thread_;
+      if (diagnostic_thread_->timed_join((boost::posix_time::milliseconds) 1000))
+        delete diagnostic_thread_;
+      else
+        ROS_DEBUG("diagnostic_thread_ did not die after one second. Proceeding with shutdown.");
     }
 
     // Stop video
@@ -358,7 +380,7 @@ public:
     ROS_DEBUG("ForearmNode constructor exiting.");
   }
 
-  void configure(const std::string &if_name, const std::string &ip_address, int port)
+  void configure(const std::string &if_name, const std::string &ip_address, int port_)
   {
     // Create a new IpCamList to hold the camera list
     IpCamList camList;
@@ -447,8 +469,7 @@ public:
         (int) camera_->mac[3] % (int) camera_->mac[4] % (int) camera_->mac[5] );
 
     // We are going to receive the video on this host, so we need our own MAC address
-    sockaddr localMac;
-    if ( wgEthGetLocalMac(camera_->ifName, &localMac) != 0 ) {
+    if ( wgEthGetLocalMac(camera_->ifName, &localMac_) != 0 ) {
       ROS_FATAL("Unable to get local MAC address for interface %s", camera_->ifName);
       exit_status_ = 1;
       node_.shutdown();
@@ -456,8 +477,7 @@ public:
     }
 
     // We also need our local IP address
-    in_addr localIp;
-    if ( wgIpGetLocalAddr(camera_->ifName, &localIp) != 0) {
+    if ( wgIpGetLocalAddr(camera_->ifName, &localIp_) != 0) {
       ROS_FATAL("Unable to get local IP address for interface %s", camera_->ifName);
       exit_status_ = 1;
       node_.shutdown();
@@ -564,8 +584,8 @@ public:
     
     // Start video; send it to specified host port
     // @todo TODO: Only start when somebody is listening?
-    if ( pr2StartVid( camera_, (uint8_t *)&(localMac.sa_data[0]),
-                      inet_ntoa(localIp), port) != 0 ) {
+    if ( pr2StartVid( camera_, (uint8_t *)&(localMac_.sa_data[0]),
+                      inet_ntoa(localIp_), port_) != 0 ) {
       ROS_FATAL("Video start error");
       exit_status_ = 1;
       node_.shutdown();
@@ -581,7 +601,7 @@ public:
       node_.advertise<image_msgs::CamInfo>("~cam_info", 1);
     
 
-    image_thread_ = new boost::thread(boost::bind(&ForearmNode::imageThread, this, port));
+    image_thread_ = new boost::thread(boost::bind(&ForearmNode::imageThread, this, port_));
   }
 
   void imageThread(int port)
