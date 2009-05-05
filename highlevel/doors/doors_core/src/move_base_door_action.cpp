@@ -83,6 +83,9 @@ namespace nav
     planner_cost_map_ros_ = new Costmap2DROS(ros_node_, tf_, "");
     planner_cost_map_ros_->getCostmapCopy(planner_cost_map_);
 
+    //we'll stop our costmap from running until we are activated
+    planner_cost_map_ros_->stop();
+
     //initialize the door opening planner
     planner_ = new DoorReactivePlanner(ros_node_, tf_,&planner_cost_map_,control_frame_,global_frame_);
     ROS_INFO("MAP SIZE: %d, %d", planner_cost_map_.cellSizeX(), planner_cost_map_.cellSizeY());
@@ -232,10 +235,16 @@ namespace nav
 
   robot_actions::ResultStatus MoveBaseDoorAction::execute(const robot_msgs::Door& door, robot_msgs::Door& feedback)
   {
+    //we'll start our costmap up now that we're active
+    planner_cost_map_ros_->start();
+
     door_ = door;
     planner_->setDoor(door);//set the goal into the planner
-    if(!planner_->getGoal(goal_))
+    if(!planner_->getGoal(goal_)){
+      //make sure to stop the costmap from running on return
+      planner_cost_map_ros_->stop();
       return robot_actions::ABORTED;
+    }
 
     updateGlobalPose();    //update the global pose
     makePlan();    //first... make a plan
@@ -262,6 +271,8 @@ namespace nav
         dispatchControl(empty_plan_);
         plan_state_ = "REACHED GOAL";
         publishDiagnostics(true);
+        //make sure to stop the costmap from running on return
+        planner_cost_map_ros_->stop();
         return robot_actions::SUCCESS;
       }
       else 
@@ -309,6 +320,8 @@ namespace nav
         publishDiagnostics(false);
 
     }
+    //make sure to stop the costmap from running on return
+    planner_cost_map_ros_->stop();
     return robot_actions::PREEMPTED;
   }
 
