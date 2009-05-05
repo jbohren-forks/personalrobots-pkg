@@ -183,9 +183,9 @@ TEST(TopologicalMap, BasicAPI)
 
 
   // Outlets
-  m.addOutlet(OutletInfo(1,2,3,4,5,6,4,"orange"));
-  m.addOutlet(OutletInfo(10,20,30,40,50,60,1,"white"));
-  EXPECT_EQ(m.outletInfo(0).origin_z, 3);
+  m.addOutlet(OutletInfo(1,2,3,4,5,6,7,4,"orange"));
+  m.addOutlet(OutletInfo(10,20,30,40,50,60,70,1,"white"));
+  EXPECT_EQ(m.outletInfo(0).z, 3);
   EXPECT_EQ(m.outletInfo(1).sockets_color, "white");
   EXPECT_EQ(m.nearestOutlet(Point2D(3,4)), 0);
   EXPECT_EQ(m.nearestOutlet(Point2D(15,16)), 1);

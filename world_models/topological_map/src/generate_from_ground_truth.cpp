@@ -53,6 +53,7 @@
 #include <topological_map/grid_graph.h>
 #include <topological_map/exception.h>
 #include <tf/transform_datatypes.h>
+#include <ros/time.h>
 
 
 using std::min;
@@ -192,6 +193,7 @@ struct Contains
 Door initialDoorEstimate (const DoorFramePoints& frame_points)
 {
   Door msg;
+  msg.header.frame_id="map";
   msg.frame_p1.x = frame_points.p1.x;
   msg.frame_p1.y = frame_points.p1.y;
   msg.frame_p1.z = 0.0;
@@ -206,12 +208,8 @@ Door initialDoorEstimate (const DoorFramePoints& frame_points)
   msg.door_p2.y = frame_points.p2.y;
   msg.door_p2.z = 0.0;
 
-  msg.handle.x = .6;
-  msg.handle.y = 0;
-  msg.handle.z = 1.0;
-
-  msg.hinge = -1;
-  msg.rot_dir = -1;
+  msg.hinge = Door::HINGE_P1;
+  msg.rot_dir = Door::ROT_DIR_COUNTERCLOCKWISE;
   return msg;
 }
 

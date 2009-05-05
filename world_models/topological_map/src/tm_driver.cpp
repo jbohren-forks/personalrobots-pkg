@@ -56,6 +56,7 @@ using tmap::RegionId;
 using tmap::ConnectorId;
 using ros::Time;
 using tmap::TopologicalMap;
+using tmap::OutletInfo;
 
 void setV (tmap::OccupancyGrid& grid, cuint r0, cuint dr, cuint rmax, cuint c0, cuint dc, cuint cmax, bool val) 
 {
@@ -63,7 +64,6 @@ void setV (tmap::OccupancyGrid& grid, cuint r0, cuint dr, cuint rmax, cuint c0, 
     for (uint c=c0; c<cmax; c+=dc) 
       grid[r][c] = val;
 }
-
 
 
 void printConnectorCosts (TopologicalMap& m, const Point2D& p1, const Point2D& p2, double t)
@@ -106,6 +106,12 @@ int main (int argc, char* argv[])
   ofstream str2("local/out.ppm");
   m->writePpm(str2);
   m->connectorCosts(Point2D(1,1), Point2D(10,10));
+
+  m->addOutlet(OutletInfo(1,2,3,4,5,6,7,8, "green"));
+  m->addOutlet(OutletInfo(4,7,9,3,3.5,12,7.253,1, "blue"));
+  //str = ofstream("local/gui-input.xml");
+  // m->writeOutletsAndMap(str);
+
 
   ifstream str3("local/willow.tmap");
   TopologicalMap m3(str3, 1.0, 1e9, 1e9);
