@@ -9,10 +9,10 @@
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
   <node pkg="executive_trex_pr2" type="actions" respawn="false" />
 
-  <param name="/trex/update_rate" value="10"/>
+  <param name="/trex/update_rate" value="1.0"/>
   <param name="/trex/input_file" value="doorman.cfg"/>
   <param name="/trex/path" value="$(find executive_trex_pr2)/cfg"/>
-  <param name="/trex/time_limit" value="500"/>
+  <param name="/trex/time_limit" value="200"/>
   <param name="/trex/log_dir" value="$(find executive_trex_pr2)/logs"/>
   <param name="/trex/play_back" value="0"/>
   <!--node pkg="executive_trex_pr2" type="trexfast" respawn="false" /-->

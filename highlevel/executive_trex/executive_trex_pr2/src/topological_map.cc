@@ -347,31 +347,10 @@ namespace executive_trex_pr2 {
 
     debugMsg("map:get_doorway_from_points",  "BEFORE: " << toString());
 
-    double x1 = _x1.getSingletonValue();
-    double y1 = _y1.getSingletonValue();
-    double x2 = _x2.getSingletonValue();
-    double y2 = _y2.getSingletonValue();
-    double x = (x1 + x2) / 2;
-    double y = (y1 + y2) / 2;
-    unsigned int region_id = TopologicalMapAdapter::instance()->getRegion(x, y);
-
-    checkError(region_id > 0, "No region at midpoint given by <" << x << ", " << y << ">");
-
-    condDebugMsg(region_id == 0, "map:get_doorway_from_points", 
-		 "isObstacle(" << x << ", " << y << ") == " << (TopologicalMapAdapter::instance()->isObstacle(x, y) ? "TRUE" : "FALSE"));
-
-    // Check if it is a doorway
-    bool is_doorway(true);
-    TopologicalMapAdapter::instance()->isDoorway(region_id, is_doorway);
-
-
-    condDebugMsg(is_doorway == false, "map:get_doorway_from_points", "region " << region_id << "containing <" << x << ", " << y << "> is not a doorway");
+    unsigned int region_id = TopologicalMapAdapter::instance()->getNearestDoorway(_x2.getSingletonValue(), _y2.getSingletonValue());
 
     // If it is not a doorway, then set to zero
-    if(is_doorway == false)
-      _region.set(0);
-    else
-      _region.set(region_id);
+    getCurrentDomain(getScope()[0]).set(region_id);
 
     debugMsg("map:get_doorway_from_points",  "AFTER: " << toString());
   }
@@ -425,13 +404,13 @@ namespace executive_trex_pr2 {
     unsigned int id = (unsigned int)_door_id.getSingletonValue();
 
     robot_msgs::Door door_state;
-    if(!TopologicalMapAdapter::instance()->getDoorState(id, door_state))
+    if(!TopologicalMapAdapter::instance()->getDoorState(id, door_state)){
+      debugMsg("map:get_door_state",  "No door message available for " << id);
       _door_id.empty();
+    }
     else {
       static const LabelStr MAP_FRAME("map");
-      double timestamp = ros::Time::now().toSec();
       if(!apply(MAP_FRAME, "frame_id") ||
-	 !apply(timestamp, "time_stamp") ||
 	 !apply(door_state.frame_p1.x, "frame_p1_x") ||
 	 !apply(door_state.frame_p1.y, "frame_p1_y") ||
 	 !apply(door_state.frame_p1.z, "frame_p1_z") ||
@@ -449,7 +428,8 @@ namespace executive_trex_pr2 {
 	 !apply(door_state.door_p2.z, "door_p2_z") ||
 	 !apply(door_state.handle.x, "handle_x") ||
 	 !apply(door_state.handle.y, "handle_y") ||
-	 !apply(door_state.handle.z, "handle_z")) {
+	 !apply(door_state.handle.z, "handle_z")||
+	 !apply(door_state.latch_state, "latch_state")) {
       }
     }
       
@@ -458,6 +438,8 @@ namespace executive_trex_pr2 {
   
   std::string MapGetDoorStateConstraint::toString() const {
     std::stringstream ss;
+    ss << Constraint::toString() << std::endl;
+
     for(std::vector<ConstrainedVariableId>::const_iterator it = _token_id->parameters().begin(); it != _token_id->parameters().end(); ++it){
       ConstrainedVariableId var = *it;
       ss << var->getName().toString() << " == " << var->lastDomain().toString() << std::endl;
@@ -474,6 +456,7 @@ namespace executive_trex_pr2 {
     ROS_ASSERT(var.isValid());
 
     AbstractDomain& dom = getCurrentDomain(var);
+    debugMsg("map:get_door_state", "Setting " << value << " for " << param_name << " in " << dom.toString());
     dom.set(value);
     return !dom.isEmpty();
   }
@@ -658,6 +641,33 @@ namespace executive_trex_pr2 {
     _singleton = NULL;
   }
 
+  unsigned int TopologicalMapAdapter::getNearestDoorway(double x, double y){
+    const topological_map::RegionIdSet& all_regions = _map->allRegions();
+    double distance = PLUS_INFINITY;
+    unsigned int nearest_doorway = 0;
+    for(topological_map::RegionIdSet::const_iterator it = all_regions.begin(); it != all_regions.end(); ++it){
+      bool is_doorway(false);
+      topological_map::RegionId region_id = *it;
+      isDoorway(region_id, is_doorway);
+      if(is_doorway){
+	robot_msgs::Door door_msg;
+	getDoorState(region_id, door_msg);
+	double frame_center_x = (door_msg.frame_p1.x + door_msg.frame_p2.x) / 2.0;
+	double frame_center_y = (door_msg.frame_p1.y + door_msg.frame_p2.y) / 2.0;
+	double distance_to_frame = sqrt(pow(x - frame_center_x, 2) + pow(y - frame_center_y, 2));
+	if(distance_to_frame < distance){
+	  distance = distance_to_frame;
+	  nearest_doorway = region_id;
+	}
+      }
+    }
+
+    debugMsg("map:getNearestDoorway", 
+	     "Found doorway " << nearest_doorway << " within " << distance << " meters from <" << x << ", " << y << ">");
+
+    return nearest_doorway;
+  }
+
   unsigned int TopologicalMapAdapter::getRegion(double x, double y){
     unsigned int result = 0;
     try{
@@ -720,6 +730,18 @@ namespace executive_trex_pr2 {
 
       // Fill the door message and return
       door_state =_map->regionDoor(doorway_id);
+
+      // Hack to work around bug
+      /*
+      door_state.frame_p1.x = 13.8;
+      door_state.frame_p1.y = 21.4;
+      door_state.frame_p2.x = 13.8;
+      door_state.frame_p2.y = 22.3;
+      door_state.door_p1.x = 13.8;
+      door_state.door_p1.y = 21.4;
+      door_state.door_p2.x = 13.8;
+      door_state.door_p2.y = 22.3;
+      */
       return true;
     }
     catch(...){}

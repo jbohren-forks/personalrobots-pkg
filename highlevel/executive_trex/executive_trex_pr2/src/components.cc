@@ -81,8 +81,8 @@ namespace TREX{
 	LabelStr param_name = param_names_lbl.getElement(i, DELIMITER);
 	ConstrainedVariableId var_a = getVariableByName(variables[0], param_name);
 	ConstrainedVariableId var_b = getVariableByName(variables[1], param_name);
-	checkError(var_a.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[0])->toString());
-	checkError(var_b.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[1])->toString());
+	checkError(var_a.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[0])->toLongString());
+	checkError(var_b.isValid(), "In param_eq constrint - no variable for " << param_name.toString() << " for " << parentOf(variables[1])->toLongString());
 
 	// Insert the pair
 	new_scope.push_back(var_a);
@@ -111,7 +111,8 @@ namespace TREX{
 
       checkError(var->lastDomain().isSingleton(), var->toString() << " should be bound.");
       ObjectId object = var->lastDomain().getSingletonValue();
-      return object->getVariable(param_name);
+      std::string object_name = object->getName().toString() + "." + param_name.toString();
+      return object->getVariable(object_name.c_str());
     }
 
     void handleExecute(){
@@ -177,6 +178,17 @@ namespace TREX{
 			  "frame_id:time_stamp:x:y:z:qx:qy:qz:qw")
     {}
   };
+
+  class MapPoseMsgEqConstraint: public ParamEqConstraint {
+  public:
+    MapPoseMsgEqConstraint(const LabelStr& name,
+			   const LabelStr& propagatorName,
+			   const ConstraintEngineId& constraintEngine,
+			   const std::vector<ConstrainedVariableId>& variables)
+      : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
+			  "frame_id:x:y:z:qx:qy:qz:qw")
+    {}
+  };
   
   class TFGetRobotPoseConstraint: public Constraint {
   public:
@@ -194,7 +206,7 @@ namespace TREX{
 	_qw(static_cast<IntervalDomain&>(getCurrentDomain(variables[6]))),
 	_frame_id(static_cast<StringDomain&>(getCurrentDomain(variables[7]))),
 	_frame(LabelStr(_frame_id.getSingletonValue()).toString()){
-      checkError(!_frame_id.isSingleton(), "The frame has not been specified for tf to get robot pose. See model for error.");
+      checkError(_frame_id.isSingleton(), "The frame has not been specified for tf to get robot pose. See model for error." << _frame_id.toString());
       condDebugMsg(!_frame_id.isSingleton(), "trex:error:tf_get_robot_pose",  "Frame has not been specified" << variables[7]->toLongString());
     }
     
@@ -203,8 +215,23 @@ namespace TREX{
       debugMsg("trex:debug:propagation:tf_get_robot_pose",  "BEFORE: " << toString());
       tf::Stamped<tf::Pose> pose;
       getPose(pose);
-      //_x.set(pose.getPosition().X());
 
+      debugMsg("trex:debug:propagation:tf_get_robot_pose", "Compute pose <" << 
+	       pose.getOrigin().x() << ", " <<
+	       pose.getOrigin().y() << ", " <<
+	       pose.getOrigin().z() << ", " <<
+	       pose.getRotation().x() << ", " <<
+	       pose.getRotation().y() << ", " <<
+	       pose.getRotation().z() << ", " <<
+	       pose.getRotation().w() << ", >");
+
+      getCurrentDomain(getScope()[0]).set(pose.getOrigin().x());
+      getCurrentDomain(getScope()[1]).set(pose.getOrigin().y());
+      getCurrentDomain(getScope()[2]).set(pose.getOrigin().z());
+      getCurrentDomain(getScope()[3]).set(pose.getRotation().x());
+      getCurrentDomain(getScope()[4]).set(pose.getRotation().y());
+      getCurrentDomain(getScope()[5]).set(pose.getRotation().z());
+      getCurrentDomain(getScope()[6]).set(pose.getRotation().w());
 
       debugMsg("trex:debug:propagation:tf_get_robot_pose",  "AFTER: " << toString());
     }
@@ -323,6 +350,7 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PlugStowMsgEqConstraint, "eq_plug_stow_msg", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PointMsgEqConstraint, "eq_point_msg", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::PoseMsgEqConstraint, "eq_pose_msg", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::MapPoseMsgEqConstraint, "eq_map_pose_msg", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::DoorMsgEqConstraint, "eq_door_msg", "Default");
 
       // Register topological map constraints
@@ -348,6 +376,9 @@ namespace TREX{
 			  executive_trex_pr2::MapGetOutletStateConstraint, "map_get_outlet_state", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
 			  executive_trex_pr2::MapNotifyOutletBlockedConstraint, "map_notify_outlet_blocked", "Default");
+
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+			  TREX::TFGetRobotPoseConstraint, "tf_get_robot_pose", "Default");
 
       // Register functions for calculations in the door domain
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 

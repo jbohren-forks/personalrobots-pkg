@@ -431,6 +431,10 @@ namespace executive_trex_pr2 {
      */
     virtual void observeOutletBlocked(unsigned int outlet_id);
 
+    /**
+     */
+    virtual unsigned int getNearestDoorway(double x, double y);
+
   private:
     static TopologicalMapAdapter* _singleton;
 

@@ -1,5 +1,5 @@
 <launch>
   <master auto="start"/>
-  <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/doors/open_door.0"/>
+  <param name="/trex/start_dir" value="$(find executive_trex_pr2)/test/doors/open_door.1"/>
   <include file="$(find executive_trex_pr2)/test/doors/real.launch" />
 </launch>

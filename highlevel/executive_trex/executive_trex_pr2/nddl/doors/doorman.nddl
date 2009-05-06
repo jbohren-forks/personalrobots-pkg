@@ -1,7 +1,7 @@
 /**
  * Provides full functionality of the doorman. Here we integrate with the topological map.
  */
-#include "doors/imports.nddl"
+#include "doors/door_controller.nddl"
 #include "world_model/topological_map.nddl"
 
 MoveBehavior::Inactive {
@@ -29,6 +29,7 @@ MoveBehavior::Active {
   eq(dc.latch_state, UNKNOWN);
   eq(dc.doorway_clear, false);
   eq(dc.check_doorway, true);
+  eq(dc.finishing, false);
 
   // Initialize door message from the topological map
   MAP_KEY doorway_id;
@@ -36,6 +37,7 @@ MoveBehavior::Active {
   float current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw;
   tf_get_robot_pose(current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw, "map");
   map_get_doorway_from_points(doorway_id, current_x, current_y, x, y);
-  map_get_door_state(dc.object, doorway_id);
-  eq(dc.frame_id, frame_id);
+  starts(door_state.Holds ds);
+  map_get_door_state(ds.object, doorway_id);
+  eq(ds.frame_id, frame_id);
 }

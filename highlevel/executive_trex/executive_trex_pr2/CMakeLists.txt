@@ -26,6 +26,7 @@ rospack_add_nddl("test/doors/without_map/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/with_map/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/open_door.0/pr2.doorman.nddl")
 rospack_add_nddl("test/doors/open_door.0/pr2.rcs.sim.nddl")
+rospack_add_nddl("test/doors/open_door.1/pr2.doorman.nddl")
 
 # Plug Tests
 rospack_add_nddl("test/plugs/pr2.rcs.sim.nddl")
