@@ -44,7 +44,7 @@ add_custom_command(
   COMMAND ${urdf2openrave_exe}
   ARGS ${PR2_R_GRIPPER_INPUT} ${PR2_R_GRIPPER_OUTPUT} ../models
   DEPENDS  ${PR2_R_GRIPPER_INPUT} ${MODELS} urdf2openrave)
-set(robot_files ${robot_files} ${PR2_OUTPUT} ${PR2_L_GRIPPER_OUTPUT} ${PR2_L_GRIPPER_OUTPUT})
+set(robot_files ${robot_files} ${PR2_OUTPUT} ${PR2_L_GRIPPER_OUTPUT} ${PR2_R_GRIPPER_OUTPUT})
 
 add_custom_target(urdf_robots ALL DEPENDS ${robot_files})
 add_dependencies(urdf_robots urdf2openrave)
