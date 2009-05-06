@@ -1,6 +1,6 @@
 <package>
   <description>
-    The highlevel controllers for the door domain
+   Door functions package
   </description>
 
   <author>Wim Meeussen</author>
@@ -11,21 +11,13 @@
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <depend package="robot_msgs" />
-  <depend package="robot_srvs" />
-  <depend package="nav_srvs" />
-  <depend package="robot_actions" />
-  <depend package="nav_robot_actions" />
-  <depend package="pr2_robot_actions" />
-  <depend package="kdl" />
-  <depend package="angles" />
-  <depend package="door_handle_detector" />
+  <depend package="kdl"/>
   <depend package="tf"/>
-  <depend package="costmap_2d"/>
-  <depend package="base_local_planner"/>
-  <depend package="visualization_msgs"/>
+  <depend package="gtest"/>
+
 
  <export>
-    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib "/>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ldoor_functions"/>
  </export>
 
 
