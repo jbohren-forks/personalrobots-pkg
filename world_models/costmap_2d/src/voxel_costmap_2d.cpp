@@ -43,10 +43,10 @@ namespace costmap_2d{
   VoxelCostmap2D::VoxelCostmap2D(unsigned int cells_size_x, unsigned int cells_size_y, unsigned int cells_size_z,
       double xy_resolution, double z_resolution, double origin_x, double origin_y, double origin_z, double inscribed_radius,
       double circumscribed_radius, double inflation_radius, double obstacle_range,
-      double max_obstacle_height, double raytrace_range, double weight,
+      double raytrace_range, double weight,
       const std::vector<unsigned char>& static_data, unsigned char lethal_threshold, unsigned int unknown_threshold, unsigned int mark_threshold) 
     : Costmap2D(cells_size_x, cells_size_y, xy_resolution, origin_x, origin_y, inscribed_radius, circumscribed_radius,
-        inflation_radius, obstacle_range, max_obstacle_height, raytrace_range, weight, static_data, lethal_threshold),
+        inflation_radius, obstacle_range, (cells_size_z * z_resolution - origin_z), raytrace_range, weight, static_data, lethal_threshold),
     voxel_grid_(cells_size_x, cells_size_y, cells_size_z), xy_resolution_(xy_resolution), z_resolution_(z_resolution),
     origin_z_(origin_z), unknown_threshold_(unknown_threshold), mark_threshold_(mark_threshold)
   {
@@ -166,12 +166,6 @@ namespace costmap_2d{
     }
   }
 
-  void VoxelCostmap2D::raytraceFreespace(const std::vector<Observation>& clearing_observations){
-    for(unsigned int i = 0; i < clearing_observations.size(); ++i){
-      raytraceFreespace(clearing_observations[i]);
-    }
-  }
-
   void VoxelCostmap2D::raytraceFreespace(const Observation& clearing_observation){
     if(clearing_observation.cloud_.pts.size() == 0)
       return;
@@ -193,13 +187,6 @@ namespace costmap_2d{
       double wpy = clearing_observation.cloud_.pts[i].y;
       double wpz = clearing_observation.cloud_.pts[i].z;
 
-      double distance = dist(ox, oy, oz, wpx, wpy, wpz);
-      double scaling_fact = raytrace_range_ / distance;
-      scaling_fact = scaling_fact > 1.0 ? 1.0 : scaling_fact;
-      wpx = scaling_fact * (wpx - ox) + ox;
-      wpy = scaling_fact * (wpy - oy) + oy;
-      wpz = scaling_fact * (wpz - oz) + oz;
-
       double a = wpx - ox;
       double b = wpy - oy;
       double c = wpz - oz;
@@ -212,9 +199,9 @@ namespace costmap_2d{
         wpz = oz + c * t;
       }
       //and we can only raytrace down to the floor
-      else if(wpz < 0.0){
+      else if(wpz < origin_z_){
         //we know we want the vector's z value to be 0.0
-        double t = (0.0 - oz) / c;
+        double t = (origin_z_ - oz) / c;
         wpx = ox + a * t;
         wpy = oy + b * t;
         wpz = oz + c * t;

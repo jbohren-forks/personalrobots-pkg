@@ -187,12 +187,39 @@ namespace costmap_2d {
 
     unsigned char lethal_threshold = max(min(temp_lethal_threshold, 255), 0);
 
+    std::string map_type;
+    ros_node_.param("~" + prefix + "/costmap/map_type", map_type, std::string("costmap"));
+
     struct timeval start, end;
     double start_t, end_t, t_diff;
     gettimeofday(&start, NULL);
-    costmap_ = new Costmap2D(map_width, map_height,
-        map_resolution, map_origin_x, map_origin_y, inscribed_radius, circumscribed_radius, inflation_radius, 
-        obstacle_range, max_obstacle_height, raytrace_range, cost_scale, input_data, lethal_threshold);
+    if(map_type == "costmap"){
+      costmap_ = new Costmap2D(map_width, map_height,
+          map_resolution, map_origin_x, map_origin_y, inscribed_radius, circumscribed_radius, inflation_radius, 
+          obstacle_range, max_obstacle_height, raytrace_range, cost_scale, input_data, lethal_threshold);
+    }
+    else if(map_type == "voxel"){
+
+      int z_voxels;
+      ros_node_.param("~" + prefix + "/costmap/z_voxels", z_voxels, 10);
+
+      double z_resolution, map_origin_z;
+      ros_node_.param("~" + prefix + "/costmap/z_resolution", z_resolution, 0.2);
+      ros_node_.param("~" + prefix + "/costmap/origin_z", map_origin_z, 0.0);
+
+      int unknown_threshold, mark_threshold;
+      ros_node_.param("~" + prefix + "/costmap/unknown_threshold", unknown_threshold, 0);
+      ros_node_.param("~" + prefix + "/costmap/mark_threshold", mark_threshold, 0);
+
+      ROS_ASSERT(z_voxels >= 0 && unknown_threshold >= 0 && mark_threshold >= 0);
+
+      costmap_ = new VoxelCostmap2D(map_width, map_height, z_voxels, map_resolution, z_resolution, map_origin_x, map_origin_y, map_origin_z, inscribed_radius,
+          circumscribed_radius, inflation_radius, obstacle_range, raytrace_range, cost_scale, input_data, lethal_threshold, unknown_threshold, mark_threshold);
+    }
+    else{
+      ROS_ASSERT_MSG(false, "Unsuported map type");
+    }
+
     gettimeofday(&end, NULL);
     start_t = start.tv_sec + double(start.tv_usec) / 1e6;
     end_t = end.tv_sec + double(end.tv_usec) / 1e6;

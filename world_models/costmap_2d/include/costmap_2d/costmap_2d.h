@@ -102,7 +102,7 @@ namespace costmap_2d {
       /**
        * @brief  Destructor
        */
-      ~Costmap2D();
+      virtual ~Costmap2D();
 
       /**
        * @brief  Revert to the static map outside of a specified window centered at a world coordinate
@@ -111,7 +111,7 @@ namespace costmap_2d {
        * @param w_size_x The x size of the window in meters
        * @param w_size_y The y size of the window in meters
        */
-      void resetMapOutsideWindow(double wx, double wy, double w_size_x, double w_size_y);
+      virtual void resetMapOutsideWindow(double wx, double wy, double w_size_x, double w_size_y);
 
       /**
        * @brief Re-inflate obstacles within a given window
@@ -299,7 +299,7 @@ namespace costmap_2d {
        * @param  new_origin_x The x coordinate of the new origin
        * @param  new_origin_y The y coordinate of the new origin
        */
-      void updateOrigin(double new_origin_x, double new_origin_y);
+      virtual void updateOrigin(double new_origin_x, double new_origin_y);
 
       /**
        * @brief  Check if a cell falls within the circumscribed radius of the robot
@@ -375,7 +375,7 @@ namespace costmap_2d {
        * @param obstacles The point clouds of obstacles to insert into the map 
        * @param inflation_queue The queue to place the obstacles into for inflation
        */
-      void updateObstacles(const std::vector<Observation>& observations, std::priority_queue<CellData>& inflation_queue);
+      virtual void updateObstacles(const std::vector<Observation>& observations, std::priority_queue<CellData>& inflation_queue);
 
       /**
        * @brief  Clear freespace based on any number of observations
@@ -387,7 +387,7 @@ namespace costmap_2d {
        * @brief  Clear freespace from an observation
        * @param clearing_observation The observation used to raytrace 
        */
-      void raytraceFreespace(const Observation& clearing_observation);
+      virtual void raytraceFreespace(const Observation& clearing_observation);
 
       /**
        * @brief  Provides support for re-inflating obstacles within a certain window (used after raytracing)

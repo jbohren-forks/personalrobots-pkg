@@ -68,7 +68,6 @@ namespace costmap_2d {
        * @param  circumscribed_radius The circumscribed radius of the robot
        * @param  inflation_radius How far out to inflate obstacles
        * @param  obstacle_range The maximum range at which obstacles will be put into the costmap
-       * @param  max_obstacle_height The maximum height of obstacles that will be considered
        * @param  raytrace_range The maximum distance we'll raytrace out to
        * @param  weight The scaling factor for the cost function. Should be 0 < weight <= 1. Lower values reduce effective cost.
        * @param  static_data Data used to initialize the costmap
@@ -79,7 +78,7 @@ namespace costmap_2d {
       VoxelCostmap2D(unsigned int cells_size_x, unsigned int cells_size_y, unsigned int cells_size_z,
           double xy_resolution, double z_resolution, double origin_x, double origin_y, double origin_z_ = 0.0, double inscribed_radius = 0.0,
           double circumscribed_radius = 0.0, double inflation_radius = 0.0, double obstacle_range = 0.0,
-          double max_obstacle_height = 0.0, double raytrace_range = 0.0, double weight = 25.0,
+          double raytrace_range = 0.0, double weight = 25.0,
           const std::vector<unsigned char>& static_data = std::vector<unsigned char>(0), unsigned char lethal_threshold = 0,
           unsigned int unknown_threshold = 0, unsigned int mark_threshold = 0);
 
@@ -113,12 +112,6 @@ namespace costmap_2d {
        * @param inflation_queue The queue to place the obstacles into for inflation
        */
       void updateObstacles(const std::vector<Observation>& observations, std::priority_queue<CellData>& inflation_queue);
-
-      /**
-       * @brief  Clear freespace based on any number of observations
-       * @param clearing_observations The observations used to raytrace 
-       */
-      void raytraceFreespace(const std::vector<Observation>& clearing_observations);
 
       /**
        * @brief  Clear freespace from an observation
