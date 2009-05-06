@@ -138,6 +138,20 @@ Index: server/physics/MapGeom.hh
  
      private: QuadNode *root;
  
+Index: server/physics/Body.hh
+===================================================================
+--- server/physics/Body.hh	(revision 7599)
++++ server/physics/Body.hh	(working copy)
+@@ -188,6 +188,9 @@
+   
+     /// List of attached sensors
+     private: std::vector< Sensor* > sensors;
++
++    /// Returns list of sensors
++    public:  std::vector< Sensor* > &GetSensors();
+     
+     /// ODE body handle
+     private: dBodyID bodyId;
 Index: server/physics/MapGeom.cc
 ===================================================================
 --- server/physics/MapGeom.cc	(revision 7599)
@@ -353,6 +367,17 @@ Index: server/physics/Body.cc
    }
    else
    {
+@@ -1078,3 +1118,10 @@
+   }
+ 
+ }
++
++////////////////////////////////////////////////////////////////////////////////
++// Get all children
++std::vector< Sensor* > &Body::GetSensors() 
++{
++  return this->sensors;
++}
 Index: server/physics/Joint.hh
 ===================================================================
 --- server/physics/Joint.hh	(revision 7599)
