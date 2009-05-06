@@ -49,10 +49,11 @@ try:
     # test transforming pose
     po = tf.PoseStamped()
     po.frame_id = "base_link"
+    print "calling transform pose"
     po2 = tfl.transform_pose("/map", po)
 
-    print "po2.pose"
-    print po2.pose.this
+    print "po2.pose.this", po2.pose.this
+    print "po.pose.this", po2.pose.this
 
     # test transforming point
     print "po"
@@ -120,17 +121,18 @@ try:
     print pointstamped.point
     print transform_stamped.transform * pointstamped.point
 
-    pose_only = transform_stamped.transform
+    pose_only = bullet.Transform()
+    pose_only.copy(transform_stamped.transform)
     print "destructing pose_only", pose_only.this    
     pose_only = []
 
-    po2_copy = po2
-    print "destructing po2_copy.pose", po2_copy.pose.this
-    print po2_copy.frame_id
+    po2_copy = tf.PoseStamped()
+    po2_copy.copy(po2)
+    print "destructing po2_copy po2_copy.pose is", po2_copy.pose.this
     po2_copy = []    
 
     print po2.frame_id
-    print "destructing po2.pose", po2.pose.this
+    print "destructing po2  po2.pose is", po2.pose.this
     po2 = []
     print "po2 sucessfull reassigned"
     

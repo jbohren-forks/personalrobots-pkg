@@ -55,6 +55,14 @@ public:
     _sec = other._sec;
     _nsec = other._nsec;
   };
+  TransformStamped& copy(const TransformStamped& other)
+  {
+    *transform = *other.transform;
+    frame_id = other.frame_id;
+    _sec = other._sec;
+    _nsec = other._nsec;
+    return *this;
+  };
   ~TransformStamped(){ delete transform;};
   inline bool operator==(const TransformStamped& other) const
   {
@@ -83,14 +91,10 @@ public:
     frame_id(frame_id_in),
     _sec(stamp_sec), _nsec(stamp_nsec)  {pose = new py::Transform(p);};
 
-  PoseStamped& copy(const PoseStamped& other){ *this = other; return *this;};
-
-  PoseStamped& operator=(const PoseStamped& other)
+  PoseStamped& copy(const PoseStamped& other)
   {
-    printf("PoseStamped Operator= Called on pose %p\n",pose);
     *pose = *other.pose;
     frame_id = other.frame_id;
-    frame_id = "assigned";
     _sec = other._sec;
     _nsec = other._nsec;
     return *this;
@@ -120,6 +124,16 @@ public:
   PointStamped(const py::Vector3& p, int sec, int nsec, const std::string& frame_id_in):
     frame_id(frame_id_in),
     _sec(sec), _nsec(nsec)  {point = new py::Vector3(p);};
+
+  PointStamped& copy(const PointStamped& other)
+  {
+    *point = *other.point;
+    frame_id = other.frame_id;
+    _sec = other._sec;
+    _nsec = other._nsec;
+    return *this;
+  };
+
   ~PointStamped() {delete point;};
   inline bool operator==(const PointStamped& other) const
   {
@@ -145,6 +159,16 @@ public:
   VectorStamped(const py::Vector3& v, int sec, int nsec, const std::string& frame_id_in):
     frame_id(frame_id_in),
     _sec(sec), _nsec(nsec)  {vector = new py::Vector3(v);};
+
+  VectorStamped& copy(const VectorStamped& other)
+  {
+    *vector = *other.vector;
+    frame_id = other.frame_id;
+    _sec = other._sec;
+    _nsec = other._nsec;
+    return *this;
+  };
+
   ~VectorStamped() { delete vector;};
   inline bool operator==(const VectorStamped& other) const
   {
@@ -170,6 +194,16 @@ public:
   QuaternionStamped(const py::Quaternion& q, int sec, int nsec, const std::string& frame_id_in):
     frame_id(frame_id_in),
     _sec(sec), _nsec(nsec)  {quaternion = new py::Quaternion(q);};
+
+  QuaternionStamped& copy(const QuaternionStamped& other)
+  {
+    *quaternion = *other.quaternion;
+    frame_id = other.frame_id;
+    _sec = other._sec;
+    _nsec = other._nsec;
+    return *this;
+  };
+
   ~QuaternionStamped(){delete quaternion;};
   inline bool operator==(const QuaternionStamped& other) const
   {
@@ -332,15 +366,16 @@ public:
     PointStampedBttoPy(temp_output, stamped_out);
   };
   /** \brief Transform a Stamped Pose into the target frame */
-  void transformPose(const std::string& target_frame, const PoseStamped& stamped_in, PoseStamped& stamped_out) const
+  PoseStamped& transformPose(const std::string& target_frame, const PoseStamped& stamped_in) const
   {
+    PoseStamped* stamped_out = new PoseStamped();
     tf::Stamped<tf::Pose> temp_output, temp_input;
     PoseStampedPytoBt(stamped_in, temp_input);
     tf_.transformPose(target_frame, 
                             temp_input,
                             temp_output);
-    PoseStampedBttoPy(temp_output, stamped_out);
-
+    PoseStampedBttoPy(temp_output, *stamped_out);
+    return *stamped_out;
   };
 
   /** \brief Transform a Stamped Quaternion into the target frame */

@@ -131,9 +131,8 @@ class TransformListener:
         self.transformer.setExtrapolationLimit(limit.to_seconds())
 
     def transform_pose(self, target_frame, pose):
-        pose_out = tf.PoseStamped()
-        self.transformer.transformPose(target_frame, pose, pose_out)
-        return pose_out
+        return self.transformer.transformPose(target_frame, pose)
+
 
     def transform_pose_in_time(self, target_frame, target_time, fixed_frame, pose):
         pose_out = tf.PoseStamped()
