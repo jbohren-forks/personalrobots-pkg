@@ -89,6 +89,13 @@ RosStereoCamera::RosStereoCamera(Entity *parent)
     rosnode = new ros::Node("ros_gazebo",ros::Node::DONT_HANDLE_SIGINT);
     ROS_DEBUG("Starting node in stereo camera");
   }
+
+  // RawStereo.msg
+  this->leftImageMsg  = &(this->rawStereoMsg.left_image);
+  this->rightImageMsg = &(this->rawStereoMsg.right_image);
+  this->leftCamInfoMsg  = &(this->rawStereoMsg.left_info);
+  this->rightCamInfoMsg = &(this->rawStereoMsg.right_info);
+  this->stereoInfoMsg = &(this->rawStereoMsg.stereo_info);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -229,38 +236,74 @@ void RosStereoCamera::PutCameraData()
     if (this->rosnode->numSubscribers(this->topicName) > 0)
     {
       this->lock.lock();
-      // RawStereo.msg
-      this->leftImageMsg  = &(this->rawStereoMsg.left_image);
-      this->rightImageMsg = &(this->rawStereoMsg.right_image);
       // setup header
-      this->leftImageMsg->header.frame_id = this->leftFrameName;
-      this->leftImageMsg->header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
-      this->leftImageMsg->header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->leftImageMsg->header.stamp.sec) );
+      this->rawStereoMsg.header.frame_id = this->leftFrameName;
+      this->rawStereoMsg.header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
+      this->rawStereoMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->rawStereoMsg.header.stamp.sec) );
 
       // copy from src to leftImageMsg
+      this->leftImageMsg->header = this->rawStereoMsg.header;
       fillImage(*(this->leftImageMsg)   ,"image_raw" ,
-                this->leftCamera->GetImageHeight()     ,
+                this->leftCamera->GetImageHeight(),
                 this->leftCamera->GetImageWidth() ,
                 3,
                 "rgb"            ,"uint8"     ,
                 (void*)left_src );
 
-      // setup header
-      this->rightImageMsg->header.frame_id = this->rightFrameName;
-      this->rightImageMsg->header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
-      this->rightImageMsg->header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->rightImageMsg->header.stamp.sec) );
-
       // copy from src to rightImageMsg
+      this->rightImageMsg->header = this->rawStereoMsg.header;
       fillImage(*(this->rightImageMsg)   ,"image_raw" ,
-                this->rightCamera->GetImageHeight()     ,
+                this->rightCamera->GetImageHeight(),
                 this->rightCamera->GetImageWidth() ,
                 3,
                 "rgb"            ,"uint8"     ,
                 (void*)right_src );
 
       // fill StereoInfo stereo_info
+      this->stereoInfoMsg->header = this->rawStereoMsg.header;
+      this->stereoInfoMsg->height = this->leftCamera->GetImageHeight();
+      this->stereoInfoMsg->width  = this->leftCamera->GetImageWidth() ;
+      this->stereoInfoMsg->T[0]  = 0.0;
+      this->stereoInfoMsg->T[1]  = 0.0;
+      this->stereoInfoMsg->T[2]  = 0.0;
+      this->stereoInfoMsg->Om[0] = 0.0;
+      this->stereoInfoMsg->Om[1] = 0.0;
+      this->stereoInfoMsg->Om[2] = 0.0;
+      this->stereoInfoMsg->RP[0] = 0.0;
+      this->stereoInfoMsg->RP[1] = 0.0;
+      this->stereoInfoMsg->RP[2] = 0.0;
+      this->stereoInfoMsg->RP[3] = 0.0;
+      this->stereoInfoMsg->RP[4] = 0.0;
+      this->stereoInfoMsg->RP[5] = 0.0;
+      this->stereoInfoMsg->RP[6] = 0.0;
+      this->stereoInfoMsg->RP[7] = 0.0;
+      this->stereoInfoMsg->RP[8] = 0.0;
+      this->stereoInfoMsg->RP[9] = 0.0;
+      this->stereoInfoMsg->RP[10] = 0.0;
+      this->stereoInfoMsg->RP[11] = 0.0;
+      this->stereoInfoMsg->RP[12] = 0.0;
+      this->stereoInfoMsg->RP[13] = 0.0;
+      this->stereoInfoMsg->RP[14] = 0.0;
+      this->stereoInfoMsg->RP[15] = 0.0;
+
       // fill CamInfo left_info
+      this->leftCamInfoMsg->header = this->rawStereoMsg.header;
+      this->leftCamInfoMsg->height = this->leftCamera->GetImageHeight();
+      this->leftCamInfoMsg->width  = this->leftCamera->GetImageWidth() ;
+      this->leftCamInfoMsg->D[0] = 0.0;
+      this->leftCamInfoMsg->K[0] = 0.0;
+      this->leftCamInfoMsg->R[0] = 0.0;
+      this->leftCamInfoMsg->P[0] = 0.0;
+
       // fill CamInfo right_info
+      this->rightCamInfoMsg->header = this->rawStereoMsg.header;
+      this->rightCamInfoMsg->height = this->rightCamera->GetImageHeight();
+      this->rightCamInfoMsg->width  = this->rightCamera->GetImageWidth() ;
+      this->rightCamInfoMsg->D[0] = 0.0;
+      this->rightCamInfoMsg->K[0] = 0.0;
+      this->rightCamInfoMsg->R[0] = 0.0;
+      this->rightCamInfoMsg->P[0] = 0.0;
+
       // fill uint8 left_type
       this->rawStereoMsg.left_type = this->rawStereoMsg.IMAGE_RECT_COLOR;
       // fill uint8 right_type

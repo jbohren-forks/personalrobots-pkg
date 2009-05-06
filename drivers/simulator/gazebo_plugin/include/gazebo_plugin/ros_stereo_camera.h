@@ -182,9 +182,12 @@ class RosStereoCamera : public Controller
 
   /// \brief ros message
   /// \brief construct raw stereo message
+  private: image_msgs::RawStereo rawStereoMsg;
   private: image_msgs::Image* leftImageMsg;
   private: image_msgs::Image* rightImageMsg;
-  private: image_msgs::RawStereo rawStereoMsg;
+  private: image_msgs::CamInfo* leftCamInfoMsg;
+  private: image_msgs::CamInfo* rightCamInfoMsg;
+  private: image_msgs::StereoInfo* stereoInfoMsg;
 
   /// \brief A mutex to lock access to fields that are used in message callbacks
   private: boost::mutex lock;
