@@ -40,6 +40,23 @@
 #include <gazebo/Param.hh>
 #include <gazebo/Controller.hh>
 #include <StereoCameraSensor.hh>
+#include <MonoCameraSensor.hh>
+
+
+// raw_stereo components
+#include <cstdio>
+
+#include "ros/node.h"
+
+#include "image_msgs/RawStereo.h"
+#include "cam_bridge.h"
+
+#include "diagnostic_updater/diagnostic_updater.h"
+
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
+
+#include "std_msgs/Empty.h"
 
 namespace gazebo
 {
@@ -78,6 +95,7 @@ namespace gazebo
           <rightCloudTopicName>stereo_right_cloud</rightCloudTopicName>
           <leftTopicName>stereo_left_image</leftTopicName>
           <rightTopicName>stereo_right_image</rightTopicName>
+          <stereoTopicName>stereo_right_image</stereoTopicName>
           <leftFrameName>stereo_left</leftFrameName>
           <rightFrameName>stereo_right</rightFrameName>
         </controller:ros_stereocamera>
@@ -95,14 +113,11 @@ namespace gazebo
 class RosStereoCamera : public Controller
 {
   /// \brief Constructor
-  /// \param parent The parent entity, must be a Model or a Sensor
+  /// \param parent The parent entity, must be a Model
   public: RosStereoCamera(Entity *parent);
 
   /// \brief Destructor
   public: virtual ~RosStereoCamera();
-
-  /// \brief True if a stereo iface is connected
-  public: bool StereoIfaceConnected() const;
 
   /// \brief Load the controller
   /// \param node XML config node
@@ -122,44 +137,63 @@ class RosStereoCamera : public Controller
   /// \brief Finalize the controller
   protected: virtual void FiniChild();
 
-  /// \brief Put stereo data to the iface
-  private: void PutStereoData();
+  /// \brief The parent sensor
+  private: Entity *myParent;
 
-  /// \brief Put camera data to the iface
-  private: void PutCameraData(CameraData *camera_data, unsigned int camera);
-
-  /// \brief The camera interface
-  private: StereoCameraIface *stereoIface;
-  private: std::map< std::string, CameraIface*> cameraIfaces;
-
+  /// \brief parameters
   private: ParamT<std::string> *leftCameraNameP;
   private: ParamT<std::string> *rightCameraNameP;
+  private: ParamT<std::string> *topicNameP;
+  private: ParamT<std::string> *leftFrameNameP;
+  private: ParamT<std::string> *rightFrameNameP;
+  private: ParamT<double> *CxPrimeP;           // rectified optical center x, for sim, CxPrime == Cx
+  private: ParamT<double> *CxP;            // optical center x
+  private: ParamT<double> *CyP;            // optical center y
+  private: ParamT<double> *focal_lengthP;  // also known as focal length
+  private: ParamT<double> *distortion_k1P; // linear distortion
+  private: ParamT<double> *distortion_k2P; // quadratic distortion
+  private: ParamT<double> *distortion_k3P; // cubic distortion
+  private: ParamT<double> *distortion_t1P; // tangential distortion
+  private: ParamT<double> *distortion_t2P; // tangential distortion
+  private: ParamT<double> *baselineP;      // shift from left camera to right camera.  we treat LEFT camera as origin
 
-  /// \brief The parent sensor
-  private: StereoCameraSensor *myParent;
+  /// \brief Pointer to Mono Left and Right Cameras
+  private: MonoCameraSensor *leftCamera;
+  private: MonoCameraSensor *rightCamera;
+  /// \brief Stereo Node stuff
+  private: std::string leftCameraName;
+  private: std::string rightCameraName;
+  private: std::string topicName;
+  private: std::string leftFrameName;
+  private: std::string rightFrameName;
+  private: double CxPrime;
+  private: double Cx;
+  private: double Cy;
+  private: double focal_length;
+  private: double distortion_k1;
+  private: double distortion_k2;
+  private: double distortion_k3;
+  private: double distortion_t1;
+  private: double distortion_t2;
+  private: double baseline;
 
   /// \brief pointer to ros node
   private: ros::Node *rosnode;
 
   /// \brief ros message
-  private: robot_msgs::PointCloud leftCloudMsg;
-  private: robot_msgs::PointCloud rightCloudMsg;
-  /// \brief ros message
-  private: image_msgs::Image imageMsg[2];
-
-  /// \brief topic name
-  private: std::string leftCloudTopicName;
-  private: std::string rightCloudTopicName;
-  private: std::string leftTopicName;
-  private: std::string rightTopicName;
-
-  /// \brief frame transform name, should match link name
-  /// \brief FIXME: extract link name directly?
-  private: std::string leftFrameName;
-  private: std::string rightFrameName;
+  /// \brief construct raw stereo message
+  private: image_msgs::Image leftImageMsg, rightImageMsg;
+  private: image_msgs::RawStereo rawStereoMsg;
 
   /// \brief A mutex to lock access to fields that are used in message callbacks
   private: boost::mutex lock;
+
+  /// \brief Put camera data to the iface
+  private: void PutCameraData();
+
+  /// \brief The camera interface
+  private: StereoCameraIface *stereoIface;
+  private: std::map< std::string, CameraIface*> cameraIfaces;
 
 };
 

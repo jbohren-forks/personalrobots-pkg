@@ -37,9 +37,13 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
+#include <gazebo/Model.hh>
 
 #include "image_msgs/Image.h"
 #include "image_msgs/FillImage.h"
+
+
+
 using namespace gazebo;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("ros_stereocamera", RosStereoCamera);
@@ -49,17 +53,35 @@ GZ_REGISTER_DYNAMIC_CONTROLLER("ros_stereocamera", RosStereoCamera);
 RosStereoCamera::RosStereoCamera(Entity *parent)
     : Controller(parent)
 {
-  this->myParent = dynamic_cast<StereoCameraSensor*>(this->parent);
+  this->myParent = parent;
+
+  if (!dynamic_cast<Model*>(this->myParent))
+    gzthrow("RosStereoCamera controller requires a Model as its parent");
 
   Param::Begin(&this->parameters);
-  this->leftCameraNameP = new ParamT<std::string>("leftcamera","", 1);
-  this->rightCameraNameP = new ParamT<std::string>("rightcamera","", 1);
+  // camera sensor names
+  this->leftCameraNameP = new ParamT<std::string>("leftCamera","", 1);
+  this->rightCameraNameP = new ParamT<std::string>("rightCamera","", 1);
+  // raw_stereo topic name
+  this->topicNameP = new ParamT<std::string>("topicName","stereo/raw_stereo", 0);
+  // camera frame names
+  this->leftFrameNameP = new ParamT<std::string>("leftFrameName","stereo_link", 0);
+  this->rightFrameNameP = new ParamT<std::string>("rightFrameName","stereo_r_link", 0);
+  // camera parameters 
+  this->CxPrimeP = new ParamT<double>("CxPrime",320, 0); // for 640x480 image
+  this->CxP  = new ParamT<double>("Cx" ,320, 0); // for 640x480 image
+  this->CyP  = new ParamT<double>("Cy" ,240, 0); // for 640x480 image
+  this->focal_lengthP  = new ParamT<double>("focal_length" ,554.256, 0); // == image_width(px) / (2*tan( hfov(radian) /2))
+  this->distortion_k1P  = new ParamT<double>("distortion_k1" ,0, 0);
+  this->distortion_k2P  = new ParamT<double>("distortion_k2" ,0, 0);
+  this->distortion_k3P  = new ParamT<double>("distortion_k3" ,0, 0);
+  this->distortion_t1P  = new ParamT<double>("distortion_t1" ,0, 0);
+  this->distortion_t2P  = new ParamT<double>("distortion_t2" ,0, 0);
+  this->baselineP  = new ParamT<double>("baseline" ,0.05, 0); // distance from left to right camera
   Param::End();
 
-  if (!this->myParent)
-    gzthrow("RosStereoCamera controller requires a Stereo Camera Sensor as its parent");
-
-  rosnode = ros::g_node; // comes from where?
+  // get ros node instance if it exists
+  rosnode = ros::g_node;
   int argc = 0;
   char** argv = NULL;
   if (rosnode == NULL)
@@ -77,46 +99,58 @@ RosStereoCamera::~RosStereoCamera()
 {
   delete this->leftCameraNameP;
   delete this->rightCameraNameP;
+  delete this->leftFrameNameP;
+  delete this->rightFrameNameP;
+  delete this->topicNameP;
+  delete this->CxPrimeP;
+  delete this->CxP;
+  delete this->CyP;
+  delete this->focal_lengthP;
+  delete this->distortion_k1P;
+  delete this->distortion_k2P;
+  delete this->distortion_k3P;
+  delete this->distortion_t1P;
+  delete this->distortion_t2P;
+  delete this->baselineP;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
 void RosStereoCamera::LoadChild(XMLConfigNode *node)
 {
-  std::vector<Iface*>::iterator iter;
-
-  for (iter = this->ifaces.begin(); iter != this->ifaces.end(); iter++)
-  {
-    if ((*iter)->GetType() == "stereo")
-      this->stereoIface = dynamic_cast<StereoCameraIface*>(*iter);
-    else if ((*iter)->GetType() == "camera")
-    {
-      CameraIface *ciface = dynamic_cast<CameraIface*>(*iter);
-      this->cameraIfaces[ciface->GetId()] = ciface;
-    }
-  }
-
   this->leftCameraNameP->Load(node);
   this->rightCameraNameP->Load(node);
+  this->topicNameP->Load(node);
+  this->leftFrameNameP->Load(node);
+  this->rightFrameNameP->Load(node);
+  this->CxPrimeP->Load(node);
+  this->CxP->Load(node);
+  this->CyP->Load(node);
+  this->focal_lengthP->Load(node);
+  this->distortion_k1P->Load(node);
+  this->distortion_k2P->Load(node);
+  this->distortion_k3P->Load(node);
+  this->distortion_t1P->Load(node);
+  this->distortion_t2P->Load(node);
+  this->baselineP->Load(node);
 
-  if (!this->stereoIface)
-    gzthrow("RosStereoCamera controller requires a StereoCameraIface");
+  this->leftCameraName = this->leftCameraNameP->GetValue();
+  this->rightCameraName = this->rightCameraNameP->GetValue();
+  this->topicName = this->topicNameP->GetValue();
+  this->leftFrameName = this->leftFrameNameP->GetValue();
+  this->rightFrameName = this->rightFrameNameP->GetValue();
+  this->CxPrime = this->CxPrimeP->GetValue();
+  this->Cx = this->CxP->GetValue();
+  this->Cy = this->CyP->GetValue();
+  this->focal_length = this->focal_lengthP->GetValue();
+  this->distortion_k1 = this->distortion_k1P->GetValue();
+  this->distortion_k2 = this->distortion_k2P->GetValue();
+  this->distortion_k3 = this->distortion_k3P->GetValue();
+  this->distortion_t1 = this->distortion_t1P->GetValue();
+  this->distortion_t2 = this->distortion_t2P->GetValue();
+  this->baseline = this->baselineP->GetValue();
 
-  // set parent sensor to active automatically
-  this->myParent->SetActive(true);
 
-  this->leftCloudTopicName = node->GetString("leftCloudTopicName","default_ros_stereocamera_left_cloud",0); //read from xml file
-  this->rightCloudTopicName = node->GetString("rightCloudTopicName","default_ros_stereocamera_right_cloud",0); //read from xml file
-  this->leftTopicName = node->GetString("leftTopicName","default_ros_stereocamera_left_image",0); //read from xml file
-  this->rightTopicName = node->GetString("rightTopicName","default_ros_stereocamera_right_image",0); //read from xml file
-  this->leftFrameName = node->GetString("leftFrameName","default_ros_stereocamera_left_frame",0); //read from xml file
-  this->rightFrameName = node->GetString("rightFrameName","default_ros_stereocamera_right_frame",0); //read from xml file
-
-  ROS_DEBUG("================= %s", this->leftCloudTopicName.c_str());
-  rosnode->advertise<robot_msgs::PointCloud>(this->leftCloudTopicName, 1);
-  rosnode->advertise<robot_msgs::PointCloud>(this->rightCloudTopicName, 1);
-  rosnode->advertise<image_msgs::Image>(this->leftTopicName, 1);
-  rosnode->advertise<image_msgs::Image>(this->rightTopicName, 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -131,236 +165,70 @@ void RosStereoCamera::SaveChild(std::string &prefix, std::ostream &stream)
 // Initialize the controller
 void RosStereoCamera::InitChild()
 {
-}
+  // iterate through children of the model parent to find left and right camera sensors
+  std::vector<Entity*> children = this->myParent->GetChildren();
+  std::vector<Entity*>::iterator iter;
 
-////////////////////////////////////////////////////////////////////////////////
-/// True if a stereo iface is connected
-bool RosStereoCamera::StereoIfaceConnected() const
-{
-  // always on
-  return true;
+  this->leftCamera = NULL;
+  this->rightCamera = NULL;
+  for (iter = children.begin(); iter != children.end(); iter++)
+  {
+    if (dynamic_cast<MonoCameraSensor*>(*iter))
+      if ((*iter)->GetName() == this->leftCameraName)
+        this->leftCamera = dynamic_cast<MonoCameraSensor*>(*iter);
+      else if ((*iter)->GetName() == this->rightCameraName)
+        this->rightCamera = dynamic_cast<MonoCameraSensor*>(*iter);
+  }
+
+  if (!this->leftCamera || !this->rightCamera)
+    gzthrow("RosStereoCamera controller requires 2 MonoCameraSensor's");
+
+  // set parent sensor to active automatically
+  this->leftCamera->SetActive(true);
+  this->rightCamera->SetActive(true);
+
+  // advertise node topics
+  rosnode->advertise<image_msgs::RawStereo>(this->topicName, 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
 void RosStereoCamera::UpdateChild()
 {
-  std::map< std::string, CameraIface*>::iterator iter;
 
-  for (iter = this->cameraIfaces.begin(); 
-       iter != this->cameraIfaces.end(); iter++)
-  {
-    iter->second->Lock(1);
+  if (!this->leftCamera->IsActive())
+    this->leftCamera->SetActive(true);
 
-    if ( true || iter->second->data->head.openCount > 0)
-    {
-      if (**(this->leftCameraNameP) == iter->first)
-        this->PutCameraData( iter->second->data, 0 );
-      else
-        this->PutCameraData( iter->second->data, 1 );
-    }
+  if (!this->rightCamera->IsActive())
+    this->rightCamera->SetActive(true);
 
-    iter->second->Unlock();
-    iter->second->Post();
-  }
-
-  if (this->stereoIface)
-  {
-    this->stereoIface->Lock(1);
-    if (true || this->stereoIface->data->head.openCount > 0)
-      this->PutStereoData();
-    this->stereoIface->Unlock();
-
-    this->stereoIface->Post();
-  }
+  this->PutCameraData();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
 void RosStereoCamera::FiniChild()
 {
-  rosnode->unadvertise(this->leftCloudTopicName);
-  rosnode->unadvertise(this->rightCloudTopicName);
-  rosnode->unadvertise(this->leftTopicName);
-  rosnode->unadvertise(this->rightTopicName);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Put stereo data to the interface
-void RosStereoCamera::PutStereoData()
-{
-  //StereoCameraData* stereo_data = new StereoCameraData();
-  StereoCameraData* stereo_data = this->stereoIface->data;
-  int sizeFloat;
-
-  const float *disp_src;
-  float *disp_dst;
-
-  // Data timestamp
-  stereo_data->head.time = Simulator::Instance()->GetSimTime();
-
-  stereo_data->width = this->myParent->GetImageWidth();
-  stereo_data->height = this->myParent->GetImageHeight();
-  stereo_data->farClip = this->myParent->GetFarClip();
-  stereo_data->nearClip = this->myParent->GetNearClip();
-
-  stereo_data->hfov = *(this->myParent->GetHFOV());
-  stereo_data->vfov = *(this->myParent->GetVFOV());
-
-  stereo_data->right_depth_size = stereo_data->width * stereo_data->height * sizeof(float);
-  stereo_data->left_depth_size = stereo_data->width * stereo_data->height * sizeof(float);
-
-  assert (stereo_data->right_depth_size <= sizeof(stereo_data->right_depth));
-  assert (stereo_data->left_depth_size <= sizeof(stereo_data->left_depth));
-
-  sizeFloat  = stereo_data->width * stereo_data->height;
-
-  // Copy the left depth data to the interface
-  disp_src = this->myParent->GetDepthData(0);
-  disp_dst = stereo_data->left_depth;
-  memcpy(disp_dst, disp_src, stereo_data->left_depth_size);
-
-  // Copy into ros
-  if (disp_src)
-  {
-    this->lock.lock();
-    // copy data into point cloud
-    this->leftCloudMsg.header.frame_id = this->leftFrameName;
-    this->leftCloudMsg.header.stamp.sec = (unsigned long)floor(stereo_data->head.time);
-    this->leftCloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  stereo_data->head.time - this->leftCloudMsg.header.stamp.sec) );
-    this->leftCloudMsg.set_pts_size(sizeFloat);
-    this->leftCloudMsg.set_chan_size(sizeFloat);
-    ROS_DEBUG(" stereo size %d", sizeFloat);
-
-    // which way first?
-    for (unsigned int c=0; c< stereo_data->width; c++)
-    for (unsigned int r=0; r< stereo_data->height; r++)
-    {
-      // direct access of image element
-      int n = stereo_data->width * r + c;
-      // get angles in image frame, from [-hfov/2,-vfov/2] to [hfov/2,vfov/2]
-      double a = stereo_data->hfov * ((double)c - (double)stereo_data->width/2.0)/((double)stereo_data->width/2.0);
-      double b = stereo_data->vfov * ((double)r - (double)stereo_data->height/2.0)/((double)stereo_data->height/2.0);
-      // analytical solution for 2 transforms
-      this->leftCloudMsg.pts[n].x =  cos(b)*cos(a)*disp_src[n];
-      this->leftCloudMsg.pts[n].y =         sin(a)*disp_src[n];
-      this->leftCloudMsg.pts[n].z = -sin(b)*cos(a)*disp_src[n];
-      // std::cout << " cloud (" << r << "," << c << ") "
-      //           << " x:" << this->leftCloudMsg.pts[n].x
-      //           << " y:" << this->leftCloudMsg.pts[n].y
-      //           << " z:" << this->leftCloudMsg.pts[n].z
-      //           << std::endl;
-      this->leftCloudMsg.chan[n].set_vals_size(1);
-      this->leftCloudMsg.chan[n].vals[0] = 255;
-    }
-    rosnode->publish(this->leftCloudTopicName,this->leftCloudMsg);
-    this->lock.unlock();
-
-  }
-
-  // Copy the right depth data to the interface
-  disp_src = this->myParent->GetDepthData(1);
-  disp_dst = stereo_data->right_depth;
-  memcpy(disp_dst, disp_src, stereo_data->right_depth_size);
-
-  // Copy into ros
-  if (disp_src)
-  {
-    this->lock.lock();
-    // copy data into point cloud
-    this->rightCloudMsg.header.frame_id = this->rightFrameName;
-    this->rightCloudMsg.header.stamp.sec = (unsigned long)floor(stereo_data->head.time);
-    this->rightCloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  stereo_data->head.time - this->rightCloudMsg.header.stamp.sec) );
-    this->rightCloudMsg.set_pts_size(sizeFloat);
-    this->rightCloudMsg.set_chan_size(sizeFloat);
-
-    // which way first?
-    for (unsigned int c=0; c< stereo_data->width; c++)
-    for (unsigned int r=0; r< stereo_data->height; r++)
-    {
-      // direct access of image element
-      int n = stereo_data->width * r + c;
-      // get angles in image frame, from [-hfov/2,-vfov/2] to [hfov/2,vfov/2]
-      double a = stereo_data->hfov * ((double)c - (double)stereo_data->width/2.0)/((double)stereo_data->width/2.0);
-      double b = stereo_data->vfov * ((double)r - (double)stereo_data->height/2.0)/((double)stereo_data->height/2.0);
-      // analytical solution for 2 transforms
-      this->rightCloudMsg.pts[n].x =  cos(b)*cos(a)*disp_src[n];
-      this->rightCloudMsg.pts[n].y =         sin(a)*disp_src[n];
-      this->rightCloudMsg.pts[n].z = -sin(b)*cos(a)*disp_src[n];
-      // std::cout << " cloud (" << r << "," << c << ") "
-      //           << " x:" << this->rightCloudMsg.pts[n].x
-      //           << " y:" << this->rightCloudMsg.pts[n].y
-      //           << " z:" << this->rightCloudMsg.pts[n].z
-      //           << std::endl;
-      this->rightCloudMsg.chan[n].set_vals_size(1);
-      this->rightCloudMsg.chan[n].vals[0] = 255;
-    }
-    rosnode->publish(this->rightCloudTopicName,this->rightCloudMsg);
-    this->lock.unlock();
-  }
+  rosnode->unadvertise(this->topicName);
+  this->leftCamera->SetActive(false);
+  this->rightCamera->SetActive(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Put camera data to the interface
-void RosStereoCamera::PutCameraData(CameraData *camera_data, unsigned int camera)
+void RosStereoCamera::PutCameraData()
 {
   //CameraData *camera_data = new CameraData();
-  const unsigned char *rgb_src = NULL;
-  unsigned char *rgb_dst = NULL;
-  Pose3d cameraPose;
+  const unsigned char *left_src = NULL;
+  const unsigned char *right_src = NULL;
+  // Get a pointer to image data
+  left_src = this->leftCamera->GetImageData(0);
 
-  camera_data->head.time = Simulator::Instance()->GetSimTime();
 
-  camera_data->width = this->myParent->GetImageWidth();
-  camera_data->height = this->myParent->GetImageHeight();
-  camera_data->image_size = camera_data->width * camera_data->height * 3;
-  assert (camera_data->image_size <= sizeof(camera_data->image));
-
-  camera_data->hfov = *(this->myParent->GetHFOV());
-  camera_data->vfov = *(this->myParent->GetVFOV());
-
-  // Set the pose of the camera
-  cameraPose = this->myParent->GetWorldPose();
-  camera_data->camera_pose.pos.x = cameraPose.pos.x;
-  camera_data->camera_pose.pos.y = cameraPose.pos.y;
-  camera_data->camera_pose.pos.z = cameraPose.pos.z;
-  camera_data->camera_pose.roll = cameraPose.rot.GetRoll();
-  camera_data->camera_pose.pitch = cameraPose.rot.GetPitch();
-  camera_data->camera_pose.yaw = cameraPose.rot.GetYaw();
-
-  // Copy the pixel data to the interface
-  rgb_src = this->myParent->GetImageData(camera);
-  rgb_dst = camera_data->image;
-
-  memcpy(rgb_dst, rgb_src, camera_data->image_size);
-
-  if (rgb_src)
+  if (left_src && right_src)
   {
     this->lock.lock();
-    // copy data into image
-    if (camera==0)
-      this->imageMsg[camera].header.frame_id = this->leftFrameName;
-    else
-      this->imageMsg[camera].header.frame_id = this->rightFrameName;
-    this->imageMsg[camera].header.stamp.sec = (unsigned long)floor(camera_data->head.time);
-    this->imageMsg[camera].header.stamp.nsec = (unsigned long)floor(  1e9 * (  camera_data->head.time - this->imageMsg[camera].header.stamp.sec) );
-
-    int    width            = this->myParent->GetImageWidth();
-    int    height           = this->myParent->GetImageHeight();
-    int    depth            = 3;
-
-    // copy from src to imageMsg
-    fillImage(this->imageMsg[camera]   ,"image_raw" ,
-              height ,width    ,depth,
-              "rgb"  ,"uint8"     ,
-              (void*)rgb_src );
-
-    // publish to ros
-    if (camera==0)
-      rosnode->publish(this->leftTopicName,this->imageMsg[camera]);
-    else
-      rosnode->publish(this->rightTopicName,this->imageMsg[camera]);
-
+    rosnode->publish(this->topicName,this->rawStereoMsg);
     this->lock.unlock();
   }
 
