@@ -165,6 +165,8 @@ int PoseTool::processMouseEvent( wxMouseEvent& event, int last_x, int last_y, fl
         tf::PoseStampedTFToMsg(p, goal);
         printf("setting goal: Position(%.3f, %.3f, %.3f), Orientation(%.3f, %.3f, %.3f, %.3f) = Angle: %.3f\n", goal.pose.position.x, goal.pose.position.y, goal.pose.position.z,
             goal.pose.orientation.x, goal.pose.orientation.y, goal.pose.orientation.z, goal.pose.orientation.w, angle);
+        goal.header.stamp = ros::Time::now();
+        goal.header.frame_id = "map";
         ros_node_->publish( "goal", goal );
       }
       else
