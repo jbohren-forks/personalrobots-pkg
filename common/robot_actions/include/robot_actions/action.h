@@ -49,6 +49,8 @@
 #include <robot_actions/ActionStatus.h>
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
+#include <ros/node.h>
+#include <robot_msgs/DiagnosticMessage.h>
 
 namespace robot_actions {
 
@@ -168,6 +170,7 @@ namespace robot_actions {
      */
     void publish(){
       makeCallback(_status, _goal, _feedback);
+      publishDiagnostics();
     }
 
   protected:
@@ -177,8 +180,9 @@ namespace robot_actions {
      * @param name The action name
      */
     Action(const std::string& name)
-      : _name(name), _preempt_request(false), _result_status(SUCCESS), _terminated(false), _action_thread(NULL), _callback(NULL){
+      : _name(name), _preempt_request(false), _result_status(SUCCESS), _terminated(false), _action_thread(NULL), _callback(NULL),_diagnostics_statuses(1){
       _status.value = ActionStatus::UNDEFINED; 
+      ros::Node::instance()->advertise<robot_msgs::DiagnosticMessage> ("/diagnostics", 1) ;
     }
 
     virtual ~Action(){
@@ -187,6 +191,7 @@ namespace robot_actions {
 	_action_thread->join();
 	delete _action_thread;
       }
+      ros::Node::instance()->unadvertise("/diagnostics") ;
     }
 
     /**
@@ -254,6 +259,29 @@ namespace robot_actions {
 	ROS_WARN("No callback registered for action %s", _name.c_str());
     }
 
+    void publishDiagnostics(){
+      robot_msgs::DiagnosticStatus diagnostics_status; 
+      if (_status.value == ActionStatus::ACTIVE){
+        if (isPreemptRequested())
+          diagnostics_status.message = "Active and requested preempt";
+        else
+          diagnostics_status.message = "Active";
+      }
+      else if (_status.value == ActionStatus::UNDEFINED)
+        diagnostics_status.message = "Undefined";
+      else if (_status.value == ActionStatus::PREEMPTED)
+        diagnostics_status.message = "Preempted";
+      else
+        diagnostics_status.message = "xxxxx";
+      diagnostics_status.level = 0;
+      diagnostics_status.name = "Action: " + _name;
+      _diagnostics_statuses[0] = diagnostics_status;
+      _diagnostics_message.status = _diagnostics_statuses;
+      _diagnostics_message.header.stamp = ros::Time::now();
+      ros::Node::instance()->publish("/diagnostics",_diagnostics_message);
+
+    }
+
 
     const std::string _name; /*!< Name for the action */
     bool _preempt_request; /*!< True when preemption has been requested. */
@@ -264,6 +292,8 @@ namespace robot_actions {
     bool _terminated;
     boost::thread* _action_thread; /*!< Thread running the action */
     boost::function< void(const ActionStatus&, const Goal&, const Feedback&) > _callback; /*!< Callback function for sending updates */
+    robot_msgs::DiagnosticMessage _diagnostics_message;
+    std::vector<robot_msgs::DiagnosticStatus> _diagnostics_statuses;
   };
 }
 #endif
