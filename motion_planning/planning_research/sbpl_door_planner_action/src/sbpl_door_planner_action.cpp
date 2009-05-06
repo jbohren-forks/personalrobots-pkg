@@ -251,7 +251,11 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const robot_msgs::Door& doo
   }
 
   ROS_INFO("Door planner and environment initialized");
+  goal_.x = (door.frame_p1.x+door.frame_p2.x)/2.0;
+  goal_.y = (door.frame_p1.x+door.frame_p2.x)/2.0;
+  goal_.th = 0.0;
 
+  ROS_INFO("Goal: %f %f %f",goal_.x,goal_.y,goal_.th);
   if(!isPreemptRequested())
   {
     if(!makePlan(global_pose_2D_, goal_, path))
