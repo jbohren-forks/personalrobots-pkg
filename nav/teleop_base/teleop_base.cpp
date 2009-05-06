@@ -50,7 +50,14 @@ class TeleopBase : public Node
         if (!hasParam("max_pan") || !getParam("max_pan", max_pan))
           ROS_WARN("maximum pan not set. Assuming 0.6");
         if (!hasParam("max_tilt") || !getParam("max_tilt", max_tilt))
-          ROS_WARN("maximum tilt not set. Assuming 0.4");
+          ROS_WARN("maximum tilt not set. Assuming 1.4");
+        if (!hasParam("min_tilt") || !getParam("min_tilt", max_tilt))
+          ROS_WARN("maximum tilt not set. Assuming -0.4");
+
+        if (!hasParam("tilt_step") || !getParam("tilt_step", tilt_step))
+          ROS_WARN("tilt step not set. Assuming 0.1");
+        if (!hasParam("pan_step") || !getParam("pan_step", pan_step))
+          ROS_WARN("pan step not set. Assuming 0.1");
 
         param<int>("axis_pan", axis_pan, 0);
         param<int>("axis_tilt", axis_tilt, 2);
@@ -74,6 +81,10 @@ class TeleopBase : public Node
         printf("max_vy_run: %.3f m/s\n", max_vy_run);
         printf("max_vw_run: %.3f deg/s\n", max_vw_run*180.0/M_PI);
         
+        printf("tilt step: %.3f rad\n", tilt_step);
+        printf("pan step: %.3f rad\n", pan_step);
+        
+
         printf("axis_vx: %d\n", axis_vx);
         printf("axis_vy: %d\n", axis_vy);
         printf("axis_vw: %d\n", axis_vw);
