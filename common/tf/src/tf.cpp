@@ -168,81 +168,11 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
 void Transformer::lookupTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
                      const ros::Time& source_time, const std::string& fixed_frame, Stamped<btTransform>& transform) const
 {
-  std::string mapped_target_frame = remap(tf_prefix_, target_frame);
-  std::string mapped_source_frame = remap(tf_prefix_, source_frame);
-  std::string mapped_fixed_frame = remap(tf_prefix_, fixed_frame);
-  int retval = NO_ERROR;
-  ros::Time temp_target_time, temp_source_time;
-  std::string error_string;
-  //If getting the latest get the latest common time
-  if (target_time == ros::Time())
-    retval = getLatestCommonTime(mapped_target_frame, mapped_fixed_frame, temp_target_time, &error_string);
-  else
-    temp_target_time = target_time;
-
-  //If getting the latest get the latest common time
-  if (source_time == ros::Time() && retval == NO_ERROR)
-    retval = getLatestCommonTime(mapped_fixed_frame, mapped_source_frame, temp_source_time, &error_string);
-  else
-    temp_source_time = source_time;
-
-
-  //calculate first leg
-  TransformLists t_list;
-  if (retval == NO_ERROR)
-    try 
-    {
-      retval = lookupLists(lookupFrameNumber( mapped_fixed_frame), temp_source_time, lookupFrameNumber( mapped_source_frame), t_list, &error_string);
-    }
-    catch (tf::LookupException &ex)
-    {
-      error_string = ex.what();
-      retval = LOOKUP_ERROR;
-    }
-  if (retval != NO_ERROR)
-  {
-    if (retval == LOOKUP_ERROR)
-      throw LookupException(error_string);
-    if (retval == CONNECTIVITY_ERROR)
-      throw ConnectivityException(error_string);
-  }
-
-  if (test_extrapolation(temp_source_time, t_list, &error_string))
-    throw ExtrapolationException(error_string);
-
-
-  btTransform temp1 = computeTransformFromList(t_list);
-
-
-  TransformLists t_list2;
-  ///\todo check return
-  try
-  {
-    retval =  lookupLists(lookupFrameNumber( mapped_target_frame), temp_target_time, lookupFrameNumber( mapped_fixed_frame), t_list2, &error_string);
-  }
-  catch (tf::LookupException &ex)
-  {
-    error_string = ex.what();
-    retval = LOOKUP_ERROR;
-  }
-
-  if (retval != NO_ERROR)
-  {
-    if (retval == LOOKUP_ERROR)
-      throw LookupException(error_string);
-    if (retval == CONNECTIVITY_ERROR)
-      throw ConnectivityException(error_string);
-  }
-
-  if (test_extrapolation(temp_target_time, t_list, &error_string))
-    throw ExtrapolationException(error_string);
-
-
-
-  btTransform temp = computeTransformFromList(t_list2);
-
-  transform.setData( temp1 * temp); ///\todo check order here
-  transform.stamp_ = temp_target_time;
+  tf::Stamped<tf::Transform> temp1, temp2;
+  lookupTransform(fixed_frame, source_frame, source_time, temp1);
+  lookupTransform(target_frame, fixed_frame, target_time, temp2);
+  transform.setData( temp2 * temp1);
+  transform.stamp_ = temp2.stamp_;
   transform.frame_id_ = target_frame;
 
 };
