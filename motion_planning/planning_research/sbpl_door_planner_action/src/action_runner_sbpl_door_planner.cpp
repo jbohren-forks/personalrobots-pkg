@@ -70,6 +70,8 @@ int main(int argc, char** argv)
   door.normal.x = 1.0;
   door.normal.y = 0.0;
   door.normal.z = 0.0;
+  door.door_p1 = door.frame_p1;
+  door.door_p2 = door.frame_p2;
   ros::Time my_time = ros::Time::now();
   door.header.stamp = my_time;
   open.execute(door, feedback);
