@@ -7,10 +7,11 @@ close();
 map_initialize_from_file("willow.tmap");
 
 // Assume the robot is located just near Sachins office. On the outside. We will set the navigation target to just inside sachins office.
-//rejectable(doorman.Active g0);
-//eq_map_pose_msg(g0.object, inside_sachins_office);
+rejectable(doorman.Active g0);
+eq_map_pose_msg(g0.object, inside_sachins_office);
 
 // Initialize door message from the topological map
+/*
 MAP_KEY doorway_id;
 neq(doorway_id, NO_KEY);
 float current_x, current_y, current_z, current_qx, current_qy, current_qz, current_qw;
@@ -34,3 +35,4 @@ g0.have_handle = false;
 g0.doorway_clear = false;
 g0.check_doorway = true;
 g0.finishing = false;
+*/

@@ -102,13 +102,31 @@ TEST(executive_trex_pr2, map_get_next_move){
   TopologicalMapAdapter map(is);
   Variable<IntervalDomain> next_x(ce, IntervalDomain());
   Variable<IntervalDomain> next_y(ce, IntervalDomain());
+  Variable<IntervalDomain> next_z(ce, IntervalDomain());
+  Variable<IntervalDomain> next_qx(ce, IntervalDomain());
+  Variable<IntervalDomain> next_qy(ce, IntervalDomain());
+  Variable<IntervalDomain> next_qz(ce, IntervalDomain());
+  Variable<IntervalDomain> next_qw(ce, IntervalDomain());
   Variable<BoolDomain> thru_doorway(ce, BoolDomain());
   Variable<IntervalDomain> current_x(ce, IntervalDomain());
   Variable<IntervalDomain> current_y(ce, IntervalDomain());
   Variable<IntervalDomain> target_x(ce, IntervalDomain());
   Variable<IntervalDomain> target_y(ce, IntervalDomain());
-  MapGetNextMoveConstraint::MapGetNextMoveConstraint map_get_next_move("map_next_move", "Default", ce, 
-								  makeScope(next_x.getId(), next_y.getId(), thru_doorway.getId(), current_x.getId(), current_y.getId(), target_x.getId(), target_y.getId()));
+  std::vector<ConstrainedVariableId> scope;
+  scope.push_back(next_x.getId());
+  scope.push_back(next_y.getId());
+  scope.push_back(next_x.getId());
+  scope.push_back(next_qx.getId());
+  scope.push_back(next_qy.getId());
+  scope.push_back(next_qz.getId());
+  scope.push_back(next_qw.getId());
+  scope.push_back(thru_doorway.getId());
+  scope.push_back(current_x.getId());
+  scope.push_back(current_y.getId());
+  scope.push_back(target_x.getId());
+  scope.push_back(target_y.getId());
+
+  MapGetNextMoveConstraint::MapGetNextMoveConstraint map_get_next_move("map_next_move", "Default", ce, scope);
 
   ASSERT_TRUE(ce->propagate());
 }
