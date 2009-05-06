@@ -127,7 +127,7 @@ namespace costmap_2d{
 
     //clean up
     delete[] local_map;
-    delete[] local_voxel;
+    delete[] local_voxel_map;
   }
 
   void VoxelCostmap2D::updateObstacles(const vector<Observation>& observations, priority_queue<CellData>& inflation_queue){
