@@ -63,6 +63,10 @@ namespace nav {
     ros_node_.param("~base_local_planner/robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
 
+    double controller_patience;
+    ros_node_.param("~controller_patience", controller_patience, 0.5);
+    controller_patience_ = ros::Duration(controller_patience);
+
     //for comanding the base
     ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
 
@@ -142,6 +146,9 @@ namespace nav {
     //start the controller's costmap
     controller_costmap_ros_->start();
 
+    //for keeping track of the last valid control
+    ros::Time last_valid_control = ros::Time::now();
+
     costmap_2d::Rate r(controller_frequency_);
     while(!isPreemptRequested()){
       struct timeval start, end;
@@ -202,10 +209,13 @@ namespace nav {
 
 
       //if we don't have a valid control... we'll abort
-      if(!valid_control){
+      if(!valid_control && (ros::Time::now() - last_valid_control) > controller_patience_){
         //stop costmap updates
         controller_costmap_ros_->stop();
         return robot_actions::ABORTED;
+      }
+      else{
+        last_valid_control = ros::Time::now();
       }
 
       gettimeofday(&end, NULL);
