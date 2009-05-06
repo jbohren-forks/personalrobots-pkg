@@ -1,7 +1,7 @@
 
 <launch>
 
-  <node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting" respawn="false" output="screen">
+  <node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting" respawn="true" output="screen">
     <param name="display" type="bool" value="False"/>
     <param name="base_scan_topic" value="base_scan_marking" />
     </node>

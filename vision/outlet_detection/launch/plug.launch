@@ -20,5 +20,5 @@
     <param name="board_height" type="int" value="9"/>
     -->
   </group>
-  <node pkg="outlet_detection" type="plug_node" respawn="false" output="screen"/>
+  <node machine="three"  pkg="outlet_detection" type="plug_node" respawn="false" output="screen"/>
 </launch>
