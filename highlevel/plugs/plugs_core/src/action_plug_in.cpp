@@ -39,7 +39,7 @@
 namespace plugs_core {
 
 const double MIN_STANDOFF = 0.035;
-const double SUCCESS_THRESHOLD = 0.025;
+const double SUCCESS_THRESHOLD = -0.012; //0.025;
 enum {MEASURING, MOVING, INSERTING, FORCING, HOLDING};
 
 PlugInAction::PlugInAction(ros::Node& node) :
@@ -115,7 +115,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 {
   plugs_core::PlugInState state_msg;
 
-  ROS_INFO("recieved plug_pose Msg in callback");
+  //ROS_INFO("recieved plug_pose Msg in callback");
 
   if (!isActive())
     return;
@@ -188,7 +188,8 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 
     case INSERTING:
     {
-      tf::Vector3 offset = viz_offset.getOrigin() - viz_offset_desi.getOrigin();
+      //tf::Vector3 offset = viz_offset.getOrigin() - viz_offset_desi.getOrigin();
+      tf::Vector3 offset = viz_offset.getOrigin();
       ROS_DEBUG("%s: Offset: (% 0.3lf, % 0.3lf, % 0.3lf)", action_name_.c_str(), offset.x(), offset.y(), offset.z());
       if (g_started_inserting_ + ros::Duration(5.0) < ros::Time::now())
       {
@@ -262,6 +263,8 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 
 
   last_standoff_ = standoff;
+
+  node_.publish(action_name_ + "/state", state_msg);
   return;
 }
 
