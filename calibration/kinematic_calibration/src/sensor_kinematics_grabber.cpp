@@ -37,7 +37,7 @@
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
 #include "robot_msgs/MechanismState.h"
-#include "robot_msgs/MocapSnapshot.h"
+#include "mocap_msgs/MocapSnapshot.h"
 
 #include "topic_synchronizer/topic_synchronizer.h"
 
