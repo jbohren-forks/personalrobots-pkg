@@ -119,8 +119,15 @@ uint64_t getGuid(size_t i)
 Camera::Camera(unsigned long guid, size_t bufferSize)
   : bufferSize_(bufferSize), mode_(None)
 {
-  CHECK_ERR( PvCameraOpen(guid, ePvAccessMaster, &handle_),
-             "Unable to open requested camera" );
+  tPvErr e = PvCameraOpen(guid, ePvAccessMaster, &handle_);
+  // Restarting the camera too quickly may trigger an access denied error
+  if (e == ePvErrAccessDenied) {
+    printf("Error opening camera, waiting and retrying...\n");
+    boost::this_thread::sleep(boost::posix_time::seconds(5));
+    e = PvCameraOpen(guid, ePvAccessMaster, &handle_);
+  }
+  CHECK_ERR( e, "Unable to open requested camera" );
+  
   setup();
 }
 
@@ -128,8 +135,15 @@ Camera::Camera(const char* ip_address, size_t bufferSize)
   : bufferSize_(bufferSize), mode_(None)
 {
   unsigned long addr = inet_addr(ip_address);
-  CHECK_ERR( PvCameraOpenByAddr(addr, ePvAccessMaster, &handle_),
-             "Unable to open requested camera" );
+  tPvErr e = PvCameraOpenByAddr(addr, ePvAccessMaster, &handle_);
+  // Restarting the camera too quickly may trigger an access denied error
+  if (e == ePvErrAccessDenied) {
+    printf("Error opening camera, waiting and retrying...\n");
+    boost::this_thread::sleep(boost::posix_time::seconds(5));
+    e = PvCameraOpenByAddr(addr, ePvAccessMaster, &handle_);
+  }
+  CHECK_ERR( e, "Unable to open requested camera" );
+  
   setup();
 }
 
