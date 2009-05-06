@@ -48,7 +48,7 @@ namespace costmap_2d{
     : Costmap2D(cells_size_x, cells_size_y, xy_resolution, origin_x, origin_y, inscribed_radius, circumscribed_radius,
         inflation_radius, obstacle_range, (cells_size_z * z_resolution - origin_z), raytrace_range, weight, static_data, lethal_threshold),
     voxel_grid_(cells_size_x, cells_size_y, cells_size_z), xy_resolution_(xy_resolution), z_resolution_(z_resolution),
-    origin_z_(origin_z), unknown_threshold_(unknown_threshold), mark_threshold_(mark_threshold)
+    origin_z_(origin_z), unknown_threshold_(unknown_threshold + (16 - cells_size_z)), mark_threshold_(mark_threshold)
   {
   }
 
