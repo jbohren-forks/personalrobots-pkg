@@ -1,0 +1,17 @@
+<package>
+  <description brief="Move the arm through predefined setpoints">
+     Utilities and scripts for moving the arm through a set of predefined joint angles in order to collect data for arm characterizations and calibrations
+  </description>
+  <author>Vijay Pradeep/ vpradeep@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/auto_arm_commander</url>
+
+  <depend package="pr2_mechanism_controllers" />
+  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
+
+
+</package>
+
+
