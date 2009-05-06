@@ -271,6 +271,10 @@ namespace robot_actions {
         diagnostics_status.message = "Undefined";
       else if (_status.value == ActionStatus::PREEMPTED)
         diagnostics_status.message = "Preempted";
+      else if (_status.value == ActionStatus::ABORTED)
+        diagnostics_status.message = "Aborted";
+      else if (_status.value == ActionStatus::SUCCESS)
+        diagnostics_status.message = "Succeeded";
       else
         diagnostics_status.message = "xxxxx";
       diagnostics_status.level = 0;
