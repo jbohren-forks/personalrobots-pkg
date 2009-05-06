@@ -96,7 +96,7 @@ int
   point.point.y=0;
   point.point.z=0;
 
-  Duration timeout_short = Duration().fromSec(2.0);
+  Duration timeout_short = Duration().fromSec(3.0);
   Duration timeout_medium = Duration().fromSec(20.0);
   Duration timeout_long = Duration().fromSec(300.0);
 
@@ -138,14 +138,14 @@ int
   switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_wrench_controller");
-  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -2;
   //if (move_and_grasp_plug.execute(plug_stow, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
   // detect outlet fine
-  if (detect_outlet_fine.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -1;
+  if (detect_outlet_fine.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -3;
 
   // localize plug in gripper
-  if (localize_plug_in_gripper.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
+  if (localize_plug_in_gripper.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -4;
 
   // plug in
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -154,13 +154,13 @@ int
   switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
   switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_hybrid_controller");
-  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  if (plug_in.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -5;
+  if (plug_in.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -6;
 
   Duration().fromSec(5.0).sleep();
 
   //unplug
-  if (unplug.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
+  if (unplug.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -7;
 
 #if 0
   //stow plug
@@ -170,12 +170,16 @@ int
   switchlist.start_controllers.push_back("r_arm_cartesian_pose_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.start_controllers.push_back("r_arm_cartesian_wrench_controller");
-  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-  if (stow_plug.execute(plug_stow, empty, timeout_long) != robot_actions::SUCCESS) return -1;
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -8;
+  if (stow_plug.execute(plug_stow, empty, timeout_long) != robot_actions::SUCCESS) return -9;
 
 
 #endif
 
+  timeout_long.sleep();
+  timeout_long.sleep();
+  timeout_long.sleep();
+  timeout_long.sleep();
   timeout_long.sleep();
   // stop remaining controllers
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
