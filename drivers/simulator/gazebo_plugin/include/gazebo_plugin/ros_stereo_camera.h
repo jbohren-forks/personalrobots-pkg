@@ -28,41 +28,24 @@
 #ifndef ROS_STEREO_CAMERA_HH
 #define ROS_STEREO_CAMERA_HH
 
-#include <map>
-
 #include <ros/node.h>
 #include "boost/thread/mutex.hpp"
-#include <robot_msgs/PointCloud.h>
-#include <image_msgs/Image.h>
 
 #include <Generic_Camera.hh>
 #include <gazebo/gazebo.h>
 #include <gazebo/Param.hh>
 #include <gazebo/Controller.hh>
-#include <StereoCameraSensor.hh>
-#include <MonoCameraSensor.hh>
-
 
 // raw_stereo components
-#include <cstdio>
-
-#include "ros/node.h"
-
+#include <image_msgs/Image.h>
 #include "image_msgs/RawStereo.h"
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/DisparityInfo.h"
 
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
-
-#include "std_msgs/Empty.h"
-
 namespace gazebo
 {
-  class CameraIface;
-  class StereoCameraIface;
-
+  class MonoCameraSensor;
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
 /** \defgroup RosStereoCamera ROS stereo camera controller plugin
@@ -192,12 +175,8 @@ class RosStereoCamera : public Controller
   /// \brief A mutex to lock access to fields that are used in message callbacks
   private: boost::mutex lock;
 
-  /// \brief Put camera data to the iface
+  /// \brief Put camera data somewhere
   private: void PutCameraData();
-
-  /// \brief The camera interface
-  private: StereoCameraIface *stereoIface;
-  private: std::map< std::string, CameraIface*> cameraIfaces;
 
 };
 

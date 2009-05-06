@@ -38,13 +38,15 @@
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
 #include <gazebo/Model.hh>
+#include "MonoCameraSensor.hh"
+#include "Body.hh"
 
 #include "image_msgs/Image.h"
 #include "image_msgs/FillImage.h"
 
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("ros_stereocamera", RosStereoCamera);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_stereo_camera", RosStereoCamera);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -96,6 +98,7 @@ RosStereoCamera::RosStereoCamera(Entity *parent)
   this->leftCamInfoMsg  = &(this->rawStereoMsg.left_info);
   this->rightCamInfoMsg = &(this->rawStereoMsg.right_info);
   this->stereoInfoMsg = &(this->rawStereoMsg.stereo_info);
+  ROS_DEBUG("stereo: done with constuctor");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -155,6 +158,7 @@ void RosStereoCamera::LoadChild(XMLConfigNode *node)
   this->distortion_t2 = this->distortion_t2P->GetValue();
   this->baseline = this->baselineP->GetValue();
 
+  ROS_DEBUG("stereo: done with Loading params from XML");
 
 }
 
@@ -170,30 +174,57 @@ void RosStereoCamera::SaveChild(std::string &prefix, std::ostream &stream)
 // Initialize the controller
 void RosStereoCamera::InitChild()
 {
+  ROS_DEBUG("stereo: running InitChild");
+
+  // advertise node topics
+  ROS_DEBUG("stereo: advertise topicName %s\n",this->topicName.c_str());
+  rosnode->advertise<image_msgs::RawStereo>(this->topicName, 1);
+
   // iterate through children of the model parent to find left and right camera sensors
-  std::vector<Entity*> children = this->myParent->GetChildren();
+  std::vector<Entity*> sibling = this->myParent->GetChildren();
   std::vector<Entity*>::iterator iter;
 
   this->leftCamera = NULL;
   this->rightCamera = NULL;
-  for (iter = children.begin(); iter != children.end(); iter++)
+
+  ROS_DEBUG("stereo: children of model parent %d\n",sibling.size());
+
+  for (iter = sibling.begin(); iter != sibling.end(); iter++)
   {
-    if (dynamic_cast<MonoCameraSensor*>(*iter))
-      if ((*iter)->GetName() == this->leftCameraName)
-        this->leftCamera = dynamic_cast<MonoCameraSensor*>(*iter);
-      else if ((*iter)->GetName() == this->rightCameraName)
-        this->rightCamera = dynamic_cast<MonoCameraSensor*>(*iter);
+    Body* body = dynamic_cast<Body*>(*iter);
+    if (body)
+    {
+      ROS_DEBUG("stereo: children body %s\n",(*iter)->GetName().c_str());
+      std::vector<Sensor*> sensors = body->GetSensors();
+      std::vector<Sensor*>::iterator sensorIter;
+      for (sensorIter = sensors.begin(); sensorIter != sensors.end(); sensorIter++)
+      {
+        ROS_DEBUG("stereo: children sensor %s\n",(*sensorIter)->GetName().c_str());
+        MonoCameraSensor* mcs = dynamic_cast<MonoCameraSensor*>(*sensorIter);
+        if (mcs != NULL)
+        {
+          ROS_DEBUG("stereo: sensors %s is a MCS compare with %s and %s\n",mcs->GetName().c_str(),this->leftCameraName.c_str(),this->rightCameraName.c_str());
+          if (mcs->GetName() == this->leftCameraName)
+            this->leftCamera = mcs;
+          else if (mcs->GetName() == this->rightCameraName)
+            this->rightCamera = mcs;
+        }
+      }
+    }
   }
 
   if (!this->leftCamera || !this->rightCamera)
-    gzthrow("RosStereoCamera controller requires 2 MonoCameraSensor's");
+  {
+    ROS_ERROR("RosStereoCamera controller requires 2 MonoCameraSensors");
+    gzthrow("RosStereoCamera controller requires 2 MonoCameraSensors");
+  }
 
   // set parent sensor to active automatically
   this->leftCamera->SetActive(true);
   this->rightCamera->SetActive(true);
 
-  // advertise node topics
-  rosnode->advertise<image_msgs::RawStereo>(this->topicName, 1);
+  ROS_DEBUG("stereo: set sensors active\n");
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
