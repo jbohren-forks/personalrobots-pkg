@@ -316,78 +316,7 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
 bool Transformer::canTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
                      const ros::Time& source_time, const std::string& fixed_frame) const
 {
-  std::string mapped_target_frame = remap(tf_prefix_, target_frame);
-  std::string mapped_source_frame = remap(tf_prefix_, source_frame);
-  std::string mapped_fixed_frame = remap(tf_prefix_, fixed_frame);
-
-  ros::Time mapped_source_time = source_time;
-  ros::Time mapped_target_time = target_time;
-
-  if (mapped_source_time == ros::Time())
-    if (NO_ERROR != getLatestCommonTime(mapped_source_frame, mapped_fixed_frame, mapped_source_time, NULL))
-      {
-	return false;
-      }
-    
-
-  //calculate first leg
-  TransformLists t_list;
-
-  int retval;
-  try 
-  {
-    retval = lookupLists(lookupFrameNumber( mapped_fixed_frame), mapped_source_time, lookupFrameNumber( mapped_source_frame), t_list, NULL);
-  }
-  catch (tf::LookupException &ex)
-  {
-    return false;
-  }
-  ///\todo WRITE HELPER FUNCITON TO RETHROW
-  if (retval != NO_ERROR)
-  {
-    if (retval == LOOKUP_ERROR)
-      return false;
-    if (retval == CONNECTIVITY_ERROR)
-      return false;
-  }
-
-  if (test_extrapolation(mapped_source_time, t_list, NULL))
-    {
-      	printf("filaing here21");
-	return false;
-    }
-
-  btTransform temp1 = computeTransformFromList(t_list);
-
-  if  (mapped_target_time == ros::Time())
-    if (NO_ERROR != getLatestCommonTime(mapped_fixed_frame, mapped_target_frame, mapped_target_time, NULL))
-      {
-	return false;
-      }
-
-
-  TransformLists t_list2;
-  try
-  {
-    retval =  lookupLists(lookupFrameNumber( mapped_target_frame), mapped_target_time, lookupFrameNumber( mapped_fixed_frame), t_list2, NULL);
-  }
-  catch (tf::LookupException &ex)
-  {
-    return false;
-  }
-  ///\todo WRITE HELPER FUNCITON TO RETHROW
-  if (retval != NO_ERROR)
-  {
-    if (retval == LOOKUP_ERROR)
-      return false;
-    if (retval == CONNECTIVITY_ERROR)
-      return false;
-  }
-
-  if (test_extrapolation(mapped_target_time, t_list, NULL))
-    return false;
-
-  return true;
+  return canTransform(target_frame, fixed_frame, target_time) && canTransform(fixed_frame, source_frame, source_time);
 };
 
 bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::string& parent) const
