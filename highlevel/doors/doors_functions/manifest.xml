@@ -1,0 +1,32 @@
+<package>
+  <description>
+    The highlevel controllers for the door domain
+  </description>
+
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="robot_msgs" />
+  <depend package="robot_srvs" />
+  <depend package="nav_srvs" />
+  <depend package="robot_actions" />
+  <depend package="nav_robot_actions" />
+  <depend package="pr2_robot_actions" />
+  <depend package="kdl" />
+  <depend package="angles" />
+  <depend package="door_handle_detector" />
+  <depend package="tf"/>
+  <depend package="costmap_2d"/>
+  <depend package="base_local_planner"/>
+  <depend package="visualization_msgs"/>
+
+ <export>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib "/>
+ </export>
+
+
+</package>
