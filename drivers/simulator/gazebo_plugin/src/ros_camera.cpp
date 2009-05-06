@@ -78,7 +78,7 @@ RosCamera::RosCamera(Entity *parent)
   // set buffer size
   this->width            = this->myParent->GetImageWidth();
   this->height           = this->myParent->GetImageHeight();
-  this->depth            = 3;
+  this->depth            = 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,6 +116,8 @@ void RosCamera::UpdateChild()
   // do this first so there's chance for sensor to run 1 frame after activate
   if (this->myParent->IsActive())
     this->PutCameraData();
+  else
+    this->myParent->SetActive(true); // as long as this plugin is running, parent is active
 
 }
 
@@ -124,6 +126,7 @@ void RosCamera::UpdateChild()
 void RosCamera::FiniChild()
 {
   rosnode->unadvertise(this->topicName);
+  this->myParent->SetActive(false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -155,7 +158,7 @@ void RosCamera::PutCameraData()
       // copy from src to imageMsg
       fillImage(this->imageMsg   ,"image_raw" ,
                 this->height     ,this->width ,this->depth,
-                "rgb"            ,"uint8"     ,
+                "mono"            ,"uint8"     ,
                 (void*)src );
 
       //tmpT2 = Simulator::Instance()->GetWallTime();

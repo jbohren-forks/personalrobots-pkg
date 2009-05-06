@@ -127,8 +127,7 @@ class RosStereoCamera : public Controller
   private: ParamT<std::string> *leftCameraNameP;
   private: ParamT<std::string> *rightCameraNameP;
   private: ParamT<std::string> *topicNameP;
-  private: ParamT<std::string> *leftFrameNameP;
-  private: ParamT<std::string> *rightFrameNameP;
+  private: ParamT<std::string> *frameNameP;
   private: ParamT<double> *CxPrimeP;           // rectified optical center x, for sim, CxPrime == Cx
   private: ParamT<double> *CxP;            // optical center x
   private: ParamT<double> *CyP;            // optical center y
@@ -147,8 +146,7 @@ class RosStereoCamera : public Controller
   private: std::string leftCameraName;
   private: std::string rightCameraName;
   private: std::string topicName;
-  private: std::string leftFrameName;
-  private: std::string rightFrameName;
+  private: std::string frameName;
   private: double CxPrime;
   private: double Cx;
   private: double Cy;

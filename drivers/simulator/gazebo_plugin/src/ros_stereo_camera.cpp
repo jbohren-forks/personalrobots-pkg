@@ -65,8 +65,7 @@ RosStereoCamera::RosStereoCamera(Entity *parent)
   // raw_stereo topic name
   this->topicNameP = new ParamT<std::string>("topicName","stereo/raw_stereo", 0);
   // camera frame names
-  this->leftFrameNameP = new ParamT<std::string>("leftFrameName","stereo_link", 0);
-  this->rightFrameNameP = new ParamT<std::string>("rightFrameName","stereo_r_link", 0);
+  this->frameNameP = new ParamT<std::string>("frameName","stereo_link", 0);
   // camera parameters 
   this->CxPrimeP = new ParamT<double>("CxPrime",320, 0); // for 640x480 image
   this->CxP  = new ParamT<double>("Cx" ,320, 0); // for 640x480 image
@@ -107,8 +106,7 @@ RosStereoCamera::~RosStereoCamera()
 {
   delete this->leftCameraNameP;
   delete this->rightCameraNameP;
-  delete this->leftFrameNameP;
-  delete this->rightFrameNameP;
+  delete this->frameNameP;
   delete this->topicNameP;
   delete this->CxPrimeP;
   delete this->CxP;
@@ -129,8 +127,7 @@ void RosStereoCamera::LoadChild(XMLConfigNode *node)
   this->leftCameraNameP->Load(node);
   this->rightCameraNameP->Load(node);
   this->topicNameP->Load(node);
-  this->leftFrameNameP->Load(node);
-  this->rightFrameNameP->Load(node);
+  this->frameNameP->Load(node);
   this->CxPrimeP->Load(node);
   this->CxP->Load(node);
   this->CyP->Load(node);
@@ -145,8 +142,7 @@ void RosStereoCamera::LoadChild(XMLConfigNode *node)
   this->leftCameraName = this->leftCameraNameP->GetValue();
   this->rightCameraName = this->rightCameraNameP->GetValue();
   this->topicName = this->topicNameP->GetValue();
-  this->leftFrameName = this->leftFrameNameP->GetValue();
-  this->rightFrameName = this->rightFrameNameP->GetValue();
+  this->frameName = this->frameNameP->GetValue();
   this->CxPrime = this->CxPrimeP->GetValue();
   this->Cx = this->CxP->GetValue();
   this->Cy = this->CyP->GetValue();
@@ -268,7 +264,7 @@ void RosStereoCamera::PutCameraData()
     {
       this->lock.lock();
       // setup header
-      this->rawStereoMsg.header.frame_id = this->leftFrameName;
+      this->rawStereoMsg.header.frame_id = this->frameName;
       this->rawStereoMsg.header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
       this->rawStereoMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->rawStereoMsg.header.stamp.sec) );
 
@@ -277,8 +273,8 @@ void RosStereoCamera::PutCameraData()
       fillImage(*(this->leftImageMsg)   ,"image_raw" ,
                 this->leftCamera->GetImageHeight(),
                 this->leftCamera->GetImageWidth() ,
-                3,
-                "rgb"            ,"uint8"     ,
+                1,
+                "mono"            ,"uint8"     ,
                 (void*)left_src );
 
       // copy from src to rightImageMsg
@@ -286,8 +282,8 @@ void RosStereoCamera::PutCameraData()
       fillImage(*(this->rightImageMsg)   ,"image_raw" ,
                 this->rightCamera->GetImageHeight(),
                 this->rightCamera->GetImageWidth() ,
-                3,
-                "rgb"            ,"uint8"     ,
+                1,
+                "mono"            ,"uint8"     ,
                 (void*)right_src );
 
       // fill StereoInfo stereo_info
@@ -409,9 +405,9 @@ void RosStereoCamera::PutCameraData()
       this->rightCamInfoMsg->P[11] = 0.0;
 
       // fill uint8 left_type
-      this->rawStereoMsg.left_type = this->rawStereoMsg.IMAGE_RECT_COLOR;
+      this->rawStereoMsg.left_type = this->rawStereoMsg.IMAGE_RAW;
       // fill uint8 right_type
-      this->rawStereoMsg.right_type = this->rawStereoMsg.IMAGE_RECT_COLOR;
+      this->rawStereoMsg.right_type = this->rawStereoMsg.IMAGE_RAW;
       // fill uint8 has_disparity
       this->rawStereoMsg.has_disparity = 0;
       // publish to ros
