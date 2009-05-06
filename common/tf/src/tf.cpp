@@ -196,9 +196,6 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
 bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
                                const ros::Time& time) const
 {
-  if (target_frame == source_frame)
-    return true;
-
   std::string mapped_target_frame = remap(tf_prefix_, target_frame);
   std::string mapped_source_frame = remap(tf_prefix_, source_frame);
 

@@ -1268,6 +1268,90 @@ TEST(tf, remap)
 
 }
 
+TEST(tf, canTransform)
+{
+  Transformer mTR;
+  //Create a two link tree between times 10 and 20
+  for (int i = 10; i < 20; i++)
+  {
+    mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,0,0), btVector3(0,0,0)), ros::Time().fromSec(i), "child",  "parent"));
+    mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,0,0), btVector3(0,0,0)), ros::Time().fromSec(i), "other_child",  "parent"));
+  }
+
+  // four different timestamps related to tf state
+  ros::Time zero_time = ros::Time().fromSec(0);
+  ros::Time old_time = ros::Time().fromSec(5);
+  ros::Time valid_time = ros::Time().fromSec(15);
+  ros::Time future_time = ros::Time().fromSec(25);
+
+  // Basic API Tests
+
+  //Valid data should pass
+  EXPECT_TRUE(mTR.canTransform("child", "parent", valid_time));
+  EXPECT_TRUE(mTR.canTransform("child", "other_child", valid_time));
+
+  //zero data should pass
+  EXPECT_TRUE(mTR.canTransform("child", "parent", zero_time));
+  EXPECT_TRUE(mTR.canTransform("child", "other_child", zero_time));
+
+  //Old data should fail
+  EXPECT_FALSE(mTR.canTransform("child", "parent", old_time));
+  EXPECT_FALSE(mTR.canTransform("child", "other_child", old_time));
+
+  //Future data should fail
+  EXPECT_FALSE(mTR.canTransform("child", "parent", future_time));
+  EXPECT_FALSE(mTR.canTransform("child", "other_child", future_time));
+
+  //Same Frame should pass for all times
+  EXPECT_TRUE(mTR.canTransform("child", "child", zero_time));
+  EXPECT_TRUE(mTR.canTransform("child", "child", old_time));
+  EXPECT_TRUE(mTR.canTransform("child", "child", valid_time));
+  EXPECT_TRUE(mTR.canTransform("child", "child", future_time));
+
+  // Advanced API Tests
+
+  // Source = Fixed
+  //zero data in fixed frame should pass
+  EXPECT_TRUE(mTR.canTransform("child", zero_time, "parent", valid_time, "child"));
+  EXPECT_TRUE(mTR.canTransform("child", zero_time, "other_child", valid_time, "child"));
+  //Old data in fixed frame should pass
+  EXPECT_TRUE(mTR.canTransform("child", old_time, "parent", valid_time, "child"));
+  EXPECT_TRUE(mTR.canTransform("child", old_time, "other_child", valid_time, "child"));
+  //valid data in fixed frame should pass
+  EXPECT_TRUE(mTR.canTransform("child", valid_time, "parent", valid_time, "child"));
+  EXPECT_TRUE(mTR.canTransform("child", valid_time, "other_child", valid_time, "child"));
+  //future data in fixed frame should pass
+  EXPECT_TRUE(mTR.canTransform("child", future_time, "parent", valid_time, "child"));
+  EXPECT_TRUE(mTR.canTransform("child", future_time, "other_child", valid_time, "child"));
+
+  //transforming through fixed into the past
+  EXPECT_FALSE(mTR.canTransform("child", valid_time, "parent", old_time, "child"));
+  EXPECT_FALSE(mTR.canTransform("child", valid_time, "other_child", old_time, "child"));
+  //transforming through fixed into the future
+  EXPECT_FALSE(mTR.canTransform("child", valid_time, "parent", future_time, "child"));
+  EXPECT_FALSE(mTR.canTransform("child", valid_time, "other_child", future_time, "child"));
+
+  // Target = Fixed
+  //zero data in fixed frame should pass
+  EXPECT_TRUE(mTR.canTransform("child", zero_time, "parent", valid_time, "parent"));
+  //Old data in fixed frame should pass
+  EXPECT_FALSE(mTR.canTransform("child", old_time, "parent", valid_time, "parent"));
+  //valid data in fixed frame should pass
+  EXPECT_TRUE(mTR.canTransform("child", valid_time, "parent", valid_time, "parent"));
+  //future data in fixed frame should pass
+  EXPECT_FALSE(mTR.canTransform("child", future_time, "parent", valid_time, "parent"));
+
+  //transforming through fixed into the zero
+  EXPECT_TRUE(mTR.canTransform("child", valid_time, "parent", zero_time, "parent"));
+  //transforming through fixed into the past
+  EXPECT_TRUE(mTR.canTransform("child", valid_time, "parent", old_time, "parent"));
+  //transforming through fixed into the valid
+  EXPECT_TRUE(mTR.canTransform("child", valid_time, "parent", valid_time, "parent"));
+  //transforming through fixed into the future
+  EXPECT_TRUE(mTR.canTransform("child", valid_time, "parent", future_time, "parent"));
+
+}
+
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
