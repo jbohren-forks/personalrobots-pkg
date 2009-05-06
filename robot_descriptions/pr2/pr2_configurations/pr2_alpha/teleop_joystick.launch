@@ -30,6 +30,9 @@
 <param name="max_vw_run" value="1.4" />
 <param name="max_vx_run" value="1.0" />
 <param name="max_vy_run" value="1.0" />
+<param name="tilt_step" value="0.1" />
+<param name="pan_step" value="0.1" />
+
 
 <param name="run_button" value="5" type="int" />
 <param name="torso_dn_button" value="1" type="int" />
