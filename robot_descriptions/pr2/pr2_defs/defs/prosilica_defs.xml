@@ -40,7 +40,7 @@
         <sensor:camera name="${name}_sensor">
           <imageWidth>1024</imageWidth>
           <imageHeight>800</imageHeight>
-          <hfov>30</hfov>
+          <hfov>60</hfov>
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>
           <updateRate>20.0</updateRate>
