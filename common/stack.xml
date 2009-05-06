@@ -1,4 +1,4 @@
-<stack version="0.5">
+<stack name="common" version="0.5">
   <description brief="common code for personal robots">
     A set of code and messages that are widely useful to all robots. Things
     like generic robot messages (i.e., kinematics, transforms), a generic 
