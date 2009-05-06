@@ -310,10 +310,22 @@ public:
     if (!frame)
       return false;
 
-    if (calibrated_)
-      return processFrame(frame, img_, res.image, res.cam_info);
-    else
-      return processFrame(frame, res.image, img_, res.cam_info);
+    bool success;
+    if (calibrated_) {
+      success = processFrame(frame, img_, res.image, res.cam_info);
+      if (success) {
+        node_.publish("~image", img_);
+        node_.publish("~image_rect", res.image);
+        node_.publish("~cam_info", res.cam_info);
+      }
+    }
+    else {
+      success = processFrame(frame, res.image, img_, res.cam_info);
+      if (success)
+        node_.publish("~image", res.image);
+    }
+
+    return success;
   }
 
 private:
@@ -446,12 +458,22 @@ private:
   bool processFrame(tPvFrame* frame, image_msgs::Image &img, image_msgs::Image &rect_img,
                     image_msgs::CamInfo &cam_info)
   {
+    ros::Time time = ros::Time::now();
+    
     if (!frameToImage(frame, img))
       return false;
 
+    img_.header.stamp = time;
+    img_.header.frame_id = frame_id_;
+    
     if (calibrated_) {
       if (!rectifyFrame(frame, img, rect_img))
         return false;
+
+      rect_img_.header.stamp = time;
+      rect_img_.header.frame_id = frame_id_;
+      cam_info_.header.stamp = time;
+      cam_info_.header.frame_id = frame_id_;
       
       // Camera info (uses full-frame width/height)
       cam_info.width = undistortY_.Width();
@@ -476,19 +498,12 @@ private:
   
   void publishImage(tPvFrame* frame)
   {
-    ros::Time time = ros::Time::now();
-    
     if (!processFrame(frame, img_, rect_img_, cam_info_))
       return;
 
-    img_.header.stamp = time;
     node_.publish("~image", img_);
     if (calibrated_) {
-      rect_img_.header.stamp = time;
-      rect_img_.header.frame_id = frame_id_;
       node_.publish("~image_rect", rect_img_);
-      cam_info_.header.stamp = time;
-      cam_info_.header.frame_id = frame_id_;
       node_.publish("~cam_info", cam_info_);
     }
   }
