@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <errno.h>
 #include <unistd.h>
 #include <stdbool.h>
 
@@ -106,6 +107,7 @@ int pr2Discover(const char *ifName, IpCamList *ipCamList, unsigned wait_us) {
 
 			if( recvfrom( s, &aPkt, sizeof(PacketAnnounce), 0, (struct sockaddr *) &fromaddr, &fromlen)  == -1 ) {
 				perror("wgDiscover unable to receive from socket");
+        close(s);
 				return -1;
 			}
 
@@ -191,6 +193,7 @@ int pr2Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
 
 	if(wgSendUDPBcast(s, camInfo->ifName, &cPkt, sizeof(cPkt)) == -1) {
 		printf("Unable to send broadcast\n");
+    close(s);
 		return -1;
 	}
 
@@ -198,6 +201,7 @@ int pr2Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
 	// 'Connect' insures we will only receive datagram replies from the camera's new IP
 	IPAddress camIP = newIP.s_addr;
 	if( wgSocketConnect(s, &camIP) ) {
+    close(s);
 		return -1;
 	}
 
@@ -208,6 +212,7 @@ int pr2Configure( IpCamList *camInfo, const char *ipAddress, unsigned wait_us) {
 
 			if( recvfrom( s, &aPkt, sizeof(PacketAnnounce), 0, NULL, NULL )  == -1 ) {
 				perror("wgDiscover unable to receive from socket");
+        close(s);
 				return -1;
 			}
 
@@ -276,19 +281,19 @@ int pr2StartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipA
 	}
 
 	if(wgSendUDP(s, &camInfo->ip, &vPkt, sizeof(vPkt)) == -1) {
-		return -1;
+    goto err_out;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) ) {
-		return -1;
+    goto err_out;
 	}
 
 	// Wait for a status reply
 	uint32_t type, code;
 	if( pr2StatusWait( s, STD_REPLY_TIMEOUT, &type, &code ) == -1) {
-		return -1;
-	}
+    goto err_out;
+  }
 
 	close(s);
 	if(type == PKT_STATUST_OK) {
@@ -297,6 +302,10 @@ int pr2StartVid( const IpCamList *camInfo, const uint8_t mac[6], const char *ipA
 		debug("Error: wgStatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
+
+err_out:
+  close(s);
+  return -1;
 }
 
 /**
@@ -327,17 +336,17 @@ int pr2StopVid( const IpCamList *camInfo ) {
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &vPkt, sizeof(vPkt)) == -1 ) {
-		return -1;
+    goto err_out;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) == -1) {
-		return -1;
+    goto err_out;
 	}
 
 	uint32_t type, code;
 	if(pr2StatusWait( s, STD_REPLY_TIMEOUT, &type, &code ) == -1) {
-		return -1;
+    goto err_out;
 	}
 
 	close(s);
@@ -347,6 +356,10 @@ int pr2StopVid( const IpCamList *camInfo ) {
 		debug("Error: pr2StatusWait returned status %d, code %d\n", type, code);
 		return 1;
 	}
+
+err_out:
+  close(s);
+  return -1;
 }
 
 /**
@@ -373,7 +386,8 @@ int pr2Reset( IpCamList *camInfo ) {
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &gPkt, sizeof(gPkt)) == -1 ) {
-		return -1;
+	  close(s);
+    return -1;
 	}
 
 
@@ -416,11 +430,13 @@ int pr2GetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &gPkt, sizeof(gPkt)) == -1 ) {
+    close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) ) {
+    close(s);
 		return -1;
 	}
 
@@ -430,6 +446,7 @@ int pr2GetTimer( const IpCamList *camInfo, uint64_t *time_us ) {
 			PacketTimer tPkt;
 			if( recvfrom( s, &tPkt, sizeof(PacketTimer), 0, NULL, NULL )  == -1 ) {
 				perror("GetTime unable to receive from socket");
+        close(s);
 				return -1;
 			}
 
@@ -491,12 +508,14 @@ int pr2FlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataO
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
+    close(s);
 		return -1;
 	}
 
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) ) {
+    close(s);
 		return -1;
 	}
 
@@ -506,6 +525,7 @@ int pr2FlashRead( const IpCamList *camInfo, uint32_t address, uint8_t *pageDataO
 			PacketFlashPayload fPkt;
 			if( recvfrom( s, &fPkt, sizeof(PacketFlashPayload), 0, NULL, NULL )  == -1 ) {
 				perror("GetTime unable to receive from socket");
+        close(s);
 				return -1;
 			}
 
@@ -558,11 +578,13 @@ int pr2FlashWrite( const IpCamList *camInfo, uint32_t address, const uint8_t *pa
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
+    close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) ) {
+    close(s);
 		return -1;
 	}
 
@@ -612,11 +634,13 @@ int pr2TriggerControl( const IpCamList *camInfo, uint32_t triggerType ) {
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &tPkt, sizeof(tPkt)) == -1 ) {
+    close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) ) {
+    close(s);
 		return -1;
 	}
 
@@ -667,11 +691,13 @@ int pr2ConfigureBoard( const IpCamList *camInfo, uint32_t serial, MACAddress *ma
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &sPkt, sizeof(sPkt)) == -1 ) {
+    close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) ) {
+    close(s);
 		return -1;
 	}
 	// Wait for response
@@ -718,11 +744,13 @@ int pr2SensorWrite( const IpCamList *camInfo, uint8_t reg, uint16_t data ) {
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &sPkt, sizeof(sPkt)) == -1 ) {
+    close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) ) {
+    close(s);
 		return -1;
 	}
 
@@ -768,11 +796,13 @@ int pr2SensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data ) {
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
+    close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) ) {
+    close(s);
 		return -1;
 	}
 
@@ -782,6 +812,7 @@ int pr2SensorRead( const IpCamList *camInfo, uint8_t reg, uint16_t *data ) {
 			PacketSensorData sPkt;
 			if( recvfrom( s, &sPkt, sizeof(PacketSensorData), 0, NULL, NULL )  == -1 ) {
 				perror("SensorRead unable to receive from socket");
+        close(s);
 				return -1;
 			}
 
@@ -827,11 +858,13 @@ int pr2SensorSelect( const IpCamList *camInfo, uint8_t index, uint32_t reg ) {
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &sPkt, sizeof(sPkt)) == -1 ) {
+    close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) ) {
+    close(s);
 		return -1;
 	}
 
@@ -878,11 +911,13 @@ int pr2ImagerModeSelect( const IpCamList *camInfo, uint32_t mode ) {
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &mPkt, sizeof(mPkt)) == -1 ) {
+    close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) ) {
+    close(s);
 		return -1;
 	}
 
@@ -934,11 +969,13 @@ int pr2ImagerSetRes( const IpCamList *camInfo, uint16_t horizontal, uint16_t ver
 	}
 
 	if(	wgSendUDP(s, &camInfo->ip, &rPkt, sizeof(rPkt)) == -1 ) {
+    close(s);
 		return -1;
 	}
 
 	// 'Connect' insures we will only receive datagram replies from the camera we've specified
 	if( wgSocketConnect(s, &camInfo->ip) ) {
+    close(s);
 		return -1;
 	}
 
@@ -993,6 +1030,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 
 	if( setsockopt(s, SOL_SOCKET,SO_RCVBUF, &bufsize, sizeof(bufsize)) == -1) {
 		perror("Can't set rcvbuf option");
+    close(s);
 		return -1;
 	}
 
@@ -1010,6 +1048,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 	frame_buf = malloc(sizeof(uint8_t)*width*height);
 	if(frame_buf == NULL) {
 		perror("Can't malloc frame buffer");
+    close(s);
 		return -1;
 	}
 
@@ -1017,6 +1056,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 	PacketVideoLine *vPkt=malloc(sizeof(PacketVideoLine));
 	if(vPkt == NULL) {
 		perror("Can't malloc line packet buffer");
+    close(s);
 		return -1;
 	}
 
@@ -1084,9 +1124,39 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 		do {
 			// Wait forever for video packets to arrive; could use select() with a timeout here if a timeout is needed
       struct sockaddr_in fromaddr;
+      struct timeval readtimeout;
+      fd_set set;
       socklen_t fromaddrlen = sizeof(struct sockaddr_in);
       fromaddr.sin_family = AF_INET;
 
+      // Wait for either a packet to be received or for timeout
+      handlerReturn = 0;
+      do {
+        readtimeout.tv_sec = 1;
+        readtimeout.tv_usec = 0;
+      
+        FD_ZERO(&set);
+        FD_SET(s, &set);
+        
+        if( select(s+1, &set, NULL, NULL, &readtimeout) == -1 ) {
+          perror("pr2VidReceive select failed");
+          close(s);
+          return -1;
+        }
+
+        // Call the frame handler with NULL to see if we should bail out. 
+        if(! FD_ISSET(s, &set) && errno != EINTR) {
+          debug("Select timed out. Calling handler.");
+          handlerReturn = frameHandler(NULL, userData);
+          if (handlerReturn)
+            break;
+        }
+      } while (! FD_ISSET(s, &set));
+      
+      // We timed out, and the handler returned nonzero.
+      if (handlerReturn) 
+        break;
+      
       if( recvfrom( s, vPkt, sizeof(HeaderVideoLine)+width, 0, (struct sockaddr *) &fromaddr, &fromaddrlen )  == -1 ) {
 				perror("pr2VidReceive unable to receive from socket");
 				break;
@@ -1109,6 +1179,7 @@ int pr2VidReceive( const char *ifName, uint16_t port, size_t height, size_t widt
 			// Validate that the frame is the size we expected
 			if( (vPkt->header.horiz_resolution != width) || (vPkt->header.vert_resolution != height) ) {
 				debug("Invalid frame size received: %u x %u, expected %u x %u\n", vPkt->header.horiz_resolution, vPkt->header.vert_resolution, width, height);
+        close(s);
 				return 1;
 			}
 

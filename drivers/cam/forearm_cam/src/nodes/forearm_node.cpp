@@ -312,7 +312,7 @@ public:
 
   void diagnosticsLoop()
   {
-    int frameless_updates = 0;
+    //int frameless_updates = 0;
     
     while (node_.ok())
     {
@@ -322,7 +322,7 @@ public:
       }
       sleep(1);
 
-      if (count_ == 0 && started_video_)
+      /*if (count_ == 0 && started_video_)
         frameless_updates++;
       else
         frameless_updates = 0;
@@ -335,7 +335,7 @@ public:
         {
           ROS_ERROR("Failed to restart image stream. Will retry later.");
         }
-      }
+      }*/
     }
 
     ROS_DEBUG("Diagnostic thread exiting.");
@@ -347,18 +347,18 @@ public:
     node_.shutdown();
     if (image_thread_)
     {
-      if (image_thread_->timed_join((boost::posix_time::milliseconds) 1000))
+      if (image_thread_->timed_join((boost::posix_time::milliseconds) 2000))
         delete image_thread_;
       else
-        ROS_DEBUG("image_thread_ did not die after one second. Proceeding with shutdown.");
+        ROS_DEBUG("image_thread_ did not die after two seconds. Proceeding with shutdown.");
     }
 
     if (diagnostic_thread_)
     {
-      if (diagnostic_thread_->timed_join((boost::posix_time::milliseconds) 1000))
+      if (diagnostic_thread_->timed_join((boost::posix_time::milliseconds) 2000))
         delete diagnostic_thread_;
       else
-        ROS_DEBUG("diagnostic_thread_ did not die after one second. Proceeding with shutdown.");
+        ROS_DEBUG("diagnostic_thread_ did not die after two seconds. Proceeding with shutdown.");
     }
 
     // Stop video
@@ -378,7 +378,7 @@ public:
       }
     }
   
-    ROS_DEBUG("ForearmNode constructor exiting.");
+    ROS_DEBUG("ForearmNode destructor exiting.");
   }
 
   void configure(const std::string &if_name, const std::string &ip_address, int port_)
@@ -766,6 +766,13 @@ private:
     if (!node_.ok())
       return 1;
     
+    if (frame_info == NULL)
+    {
+      // The select call in the driver timed out.
+      ROS_WARN("No data have arrived for more than one second.");
+      return 0;
+    }
+
     if (frame_info->eofInfo == NULL) {
       // We no longer use the eofInfo.
       missed_eof_count_++;
@@ -911,7 +918,11 @@ private:
   }
 };
 
-
+#define __CHECK_FD_FREE__
+#ifdef __CHECK_FD_FREE__
+#include <sys/types.h>          /* See NOTES */
+#include <sys/socket.h>
+#endif
 
 int main(int argc, char **argv)
 {
@@ -920,6 +931,12 @@ int main(int argc, char **argv)
   ForearmNode fn(n);
   n.spin();
   ROS_DEBUG("Exited from n.spin()");
-  
+	
+#ifdef __CHECK_FD_FREE__
+  int s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  ROS_DEBUG("First free file descriptor is: %i", s); 
+  if (s != -1)
+    close(s);
+#endif  
   return fn.exit_status_;
 }
