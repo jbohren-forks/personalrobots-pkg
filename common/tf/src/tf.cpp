@@ -180,7 +180,7 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
 
 
 bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
-                               const ros::Time& time, ros::Duration timeout) const
+                               const ros::Time& time, const ros::Duration& timeout) const
 {
   ros::Time start_time = ros::Time::now();
   while (!canTransform(target_frame, source_frame, time))
@@ -248,6 +248,13 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
 {
   return canTransform(target_frame, fixed_frame, target_time) && canTransform(fixed_frame, source_frame, source_time);
 };
+
+bool Transformer::canTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
+			       const ros::Time& source_time, const std::string& fixed_frame, const ros::Duration& timeout) const
+{
+  return canTransform(target_frame, fixed_frame, target_time, timeout) && canTransform(fixed_frame, source_frame, source_time, timeout);
+};
+
 
 bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::string& parent) const
 {
