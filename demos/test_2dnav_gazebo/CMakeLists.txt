@@ -19,7 +19,7 @@ endif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux" AND _is32bit)
 
-rospack_add_rostest(test_2dnav_wg.xml)
+#rospack_add_rostest(test_2dnav_wg.xml)
 rospack_add_rostest(test_2dnav_empty_rotation.xml)
 rospack_add_rostest(test_2dnav_empty_odom.xml)
 rospack_add_rostest(test_2dnav_empty_diagonal.xml)
