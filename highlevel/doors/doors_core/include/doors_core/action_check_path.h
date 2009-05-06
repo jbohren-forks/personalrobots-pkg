@@ -30,55 +30,40 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
- *
- * $Id$
- *
  *********************************************************************/
 
-/* Author: Wim Meeussen */
 
-#include "doors_core/action_detect_door.h"
-#include "doors_core/action_detect_handle.h"
-#include <pr2_robot_actions/DoorActionState.h>
-#include <robot_msgs/Door.h>
+/* Author: Wim Meeusen */
+
+#ifndef ACTION_CHECK_PATH_H
+#define ACTION_CHECK_PATH_H
+
+
 #include <ros/node.h>
-#include <robot_actions/action_runner.h>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <nav_srvs/Plan.h>
+#include <robot_actions/action.h>
 
-using namespace ros;
-using namespace std;
-using namespace door_handle_detector;
+namespace door_handle_detector{
 
-// -----------------------------------
-//              MAIN
-// -----------------------------------
-
-int
-  main (int argc, char **argv)
+class CheckPathAction: public robot_actions::Action<robot_msgs::PoseStamped, int8_t>
 {
-  ros::init(argc, argv);
+public:
+  CheckPathAction(ros::Node& node);
+  ~CheckPathAction();
 
-  ros::Node node("trigger_detect_door");
+  virtual robot_actions::ResultStatus execute(const robot_msgs::PoseStamped& goal, int8_t& feedback);
 
-  robot_msgs::Door my_door_;
 
-  my_door_.frame_p1.x = 1.0;
-  my_door_.frame_p1.y = -0.5;
-  my_door_.frame_p2.x = 1.0;
-  my_door_.frame_p2.y = 0.5;
-  my_door_.rot_dir = -1;
-  my_door_.hinge = -1;
-  my_door_.header.frame_id = "base_footprint";
 
-  door_handle_detector::DetectDoorAction door_detector(node);
-  door_handle_detector::DetectHandleAction handle_detector(node);
-  robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(door_detector);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(handle_detector);
-  runner.run();
+private:
+  ros::Node& node_;
+  tf::TransformListener tf_; 
 
-  robot_msgs::Door feedback;
-  door_detector.execute(my_door_, feedback);
-  handle_detector.execute(feedback, feedback);
+  nav_srvs::Plan::Request  req_plan;
+  nav_srvs::Plan::Response res_plan;
+};
 
-  return (0);
 }
+#endif

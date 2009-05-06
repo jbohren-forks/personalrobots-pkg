@@ -10,6 +10,11 @@ genmsg()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 # executive interface
+rospack_add_executable(action_runner_check_path
+                       src/action_check_path.cpp 
+		       src/action_runner_check_path.cpp
+                      )
+
 rospack_add_executable(action_runner_detect_door
                        src/action_detect_door.cpp 
 		       src/action_runner_detect_door.cpp
@@ -56,6 +61,11 @@ rospack_add_executable(action_runner_release_handle
 rospack_add_executable(test_executive_functions
                        test/test_executive_functions.cpp
 		       src/executive_functions.cpp
+                      )
+
+rospack_add_executable(trigger_check_path
+                       test/trigger_check_path.cpp
+		       src/action_check_path.cpp
                       )
 
 rospack_add_executable(trigger_doors_detector 

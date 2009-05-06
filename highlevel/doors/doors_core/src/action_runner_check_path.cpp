@@ -30,55 +30,35 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
- *
- * $Id$
- *
  *********************************************************************/
 
 /* Author: Wim Meeussen */
 
-#include "doors_core/action_detect_door.h"
-#include "doors_core/action_detect_handle.h"
-#include <pr2_robot_actions/DoorActionState.h>
-#include <robot_msgs/Door.h>
-#include <ros/node.h>
+#include "doors_core/action_check_path.h"
+#include <robot_actions/action.h>
 #include <robot_actions/action_runner.h>
+#include <pr2_robot_actions/CheckPathState.h>
 
-using namespace ros;
-using namespace std;
+
 using namespace door_handle_detector;
+
 
 // -----------------------------------
 //              MAIN
 // -----------------------------------
 
-int
-  main (int argc, char **argv)
+int main(int argc, char** argv)
 {
-  ros::init(argc, argv);
+  ros::init(argc,argv); 
 
-  ros::Node node("trigger_detect_door");
+  ros::Node node("action_runner_check_path");
 
-  robot_msgs::Door my_door_;
+  CheckPathAction check_path(node);
 
-  my_door_.frame_p1.x = 1.0;
-  my_door_.frame_p1.y = -0.5;
-  my_door_.frame_p2.x = 1.0;
-  my_door_.frame_p2.y = 0.5;
-  my_door_.rot_dir = -1;
-  my_door_.hinge = -1;
-  my_door_.header.frame_id = "base_footprint";
-
-  door_handle_detector::DetectDoorAction door_detector(node);
-  door_handle_detector::DetectHandleAction handle_detector(node);
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(door_detector);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(handle_detector);
+  runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
+
   runner.run();
-
-  robot_msgs::Door feedback;
-  door_detector.execute(my_door_, feedback);
-  handle_detector.execute(feedback, feedback);
-
-  return (0);
+  node.spin();
+  return 0;
 }

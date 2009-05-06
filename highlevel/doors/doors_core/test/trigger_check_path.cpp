@@ -37,16 +37,13 @@
 
 /* Author: Wim Meeussen */
 
-#include "doors_core/action_detect_door.h"
-#include "doors_core/action_detect_handle.h"
-#include <pr2_robot_actions/DoorActionState.h>
-#include <robot_msgs/Door.h>
+#include "doors_core/action_check_path.h"
+#include <pr2_robot_actions/CheckPathState.h>
 #include <ros/node.h>
 #include <robot_actions/action_runner.h>
 
 using namespace ros;
 using namespace std;
-using namespace door_handle_detector;
 
 // -----------------------------------
 //              MAIN
@@ -57,28 +54,24 @@ int
 {
   ros::init(argc, argv);
 
-  ros::Node node("trigger_detect_door");
+  robot_msgs::PoseStamped pose;
+  pose.header.frame_id = "base_footprint";
+  pose.pose.position.x = 2.0;
+  pose.pose.position.y = 0.0;
+  pose.pose.position.z = 0.0;
+  pose.pose.orientation.x = 0.0;
+  pose.pose.orientation.y = 0.0;
+  pose.pose.orientation.z = 0.0;
+  pose.pose.orientation.w = 1.0;
 
-  robot_msgs::Door my_door_;
-
-  my_door_.frame_p1.x = 1.0;
-  my_door_.frame_p1.y = -0.5;
-  my_door_.frame_p2.x = 1.0;
-  my_door_.frame_p2.y = 0.5;
-  my_door_.rot_dir = -1;
-  my_door_.hinge = -1;
-  my_door_.header.frame_id = "base_footprint";
-
-  door_handle_detector::DetectDoorAction door_detector(node);
-  door_handle_detector::DetectHandleAction handle_detector(node);
+  ros::Node node("trigger_check_path");
+  door_handle_detector::CheckPathAction check_path(node);
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(door_detector);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(handle_detector);
+  runner.connect<robot_msgs::PoseStamped, pr2_robot_actions::CheckPathState, int8_t>(check_path);
   runner.run();
 
-  robot_msgs::Door feedback;
-  door_detector.execute(my_door_, feedback);
-  handle_detector.execute(feedback, feedback);
+  int8_t feedback;
+  check_path.execute(pose, feedback);
 
   return (0);
 }

@@ -12,6 +12,7 @@
   <depend package="std_msgs" />
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
+  <depend package="nav_srvs" />
   <depend package="robot_actions" />
   <depend package="nav_robot_actions" />
   <depend package="pr2_robot_actions" />
