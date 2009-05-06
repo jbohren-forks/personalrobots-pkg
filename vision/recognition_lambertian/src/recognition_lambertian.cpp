@@ -111,10 +111,12 @@ class ChamferMatching
 	float max_scale;
 	int count_scale;
 
+	float truncate;
+
 	vector<ChamferTemplate*> templates;
 
 public:
-	ChamferMatching() : min_scale(1), max_scale(1), count_scale(1)
+	ChamferMatching() : min_scale(1), max_scale(1), count_scale(1), truncate(20)
 	{
 
 	}
@@ -160,8 +162,10 @@ public:
 		IplImage* orientation_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
 		IplImage* annotated_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32S, 2);
 		ROS_INFO("Computing distance transform");
-		computeDistanceTransform(edge_img,dist_img, annotated_img);
-		computeImageDirections(edge_img, orientation_img );
+		IplImage* edge_clone = cvCloneImage(edge_img);
+		computeImageDirections(edge_clone, orientation_img );
+		cvReleaseImage(&edge_clone);
+		computeDistanceTransform(edge_img,dist_img, annotated_img, orientation_img, truncate);
 		fillNonContourOrientations(annotated_img, orientation_img);
 
 		ROS_INFO("Template matching");
@@ -339,8 +343,13 @@ private:
 	{
 		dx = b.first-a.first;
 		dy = -(b.second-a.second);  // in image coordinated Y axis points downward
+		float angle = atan2(dy,dx);
 
-		return atan2(dy,dx);
+		if (angle<0) {
+			angle+=M_PI;
+		}
+
+		return angle;
 	}
 
 	float r2d(float rad)
@@ -469,7 +478,7 @@ private:
      * Alternative version of computeDistanceTransform, will probably be used to compute distance
      * transform annotated with edge orientation.
      */
-    void computeDistanceTransform(IplImage* edges_img, IplImage* dist_img, IplImage* annotate_img, float truncate = -1, float a = 1.0, float b = 0.5 )
+    void computeDistanceTransform(IplImage* edges_img, IplImage* dist_img, IplImage* annotate_img, IplImage* orientation_img, float truncate = -1, float a = 1.0, float b = 0.5 )
     {
     	int d[][2] = { {-1,-1}, { 0,-1}, { 1,-1},
 					  {-1,0},          { 1,0},
@@ -484,7 +493,11 @@ private:
     	queue<pair<int,int> > q;
     	for (int y=0;y<h;++y) {
     		for (int x=0;x<w;++x) {
-    			if (CV_PIXEL(unsigned char, edges_img, x,y)[0]!=0) {
+
+    			unsigned char edge_val = CV_PIXEL(unsigned char, edges_img, x,y)[0];
+    			float orientation_val =  CV_PIXEL(float, orientation_img, x,y)[0];
+
+    			if ( (edge_val!=0) && !(orientation_val<-M_PI) ) {
     				q.push(make_pair(x,y));
         			CV_PIXEL(float, dist_img, x, y)[0] = 0;
 
@@ -508,19 +521,20 @@ private:
 
     		int x = crt.first;
     		int y = crt.second;
-    		float dist = CV_PIXEL(float, dist_img, x, y)[0];
+    		float dist_orig = CV_PIXEL(float, dist_img, x, y)[0];
+    		float dist;
 
     		for (size_t i=0;i<sizeof(d)/sizeof(d[0]);++i) {
     			int nx = x + d[i][0];
     			int ny = y + d[i][1];
 
-    			if (nx<0 || ny<0 || nx>w || ny>h) continue;
+    			if (nx<0 || ny<0 || nx>=w || ny>=h) continue;
 
     			if (abs(d[i][0]+d[i][1])==1) {
-    				dist += a;
+    				dist = dist_orig+a;
     			}
     			else {
-    				dist += b;
+    				dist = dist_orig+b;
     			}
 
     			float* dt = CV_PIXEL(float, dist_img, nx, ny);
@@ -534,6 +548,7 @@ private:
     					int *optr = CV_PIXEL(int,annotate_img,x,y);
     					aptr[0] = optr[0];
     					aptr[1] = optr[1];
+
     				}
 
 
@@ -585,61 +600,46 @@ private:
 
     	assert(orientation_img->width==width && orientation_img->height==height);
 
-
-    	cvNamedWindow("dense_orientation",1);
-
-    	IplImage* img_color = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
-
-
     	for (int y=0;y<height;++y) {
     		for (int x=0;x<width;++x) {
     			int* ptr = CV_PIXEL(int, annotated_img, x,y);
     			int xorig = ptr[0];
     			int yorig = ptr[1];
 
-
-    			if (x!=xorig && y!=yorig) {
+    			if (x!=xorig || y!=yorig) {
     				float val = CV_PIXEL(float,orientation_img,xorig,yorig)[0];
-//    				printf("(%d, %d, %f)\n", xorig, yorig, val);
     				CV_PIXEL(float,orientation_img,x,y)[0] = val;
     			}
     		}
     	}
-
-
-    	for (int y=0;y<height;y+=5) {
-    		for (int x=0;x<width;x+=5) {
-
-    			CvPoint p1;
-    			p1.x = x;
-    			p1.y = y;
-    			CvPoint p2;
-    			float val = CV_PIXEL(float,orientation_img,x,y)[0];
-    			p2.x = x + 8*sin(val);
-    			p2.y = y + 8*cos(val);
-
-    			cvLine(img_color, p1,p2, CV_RGB(255,0,0));
-
-
-    		}
-    	}
-    	cvShowImage("dense_orientation", img_color);
     }
 
 
-    float localChamferDistance(IplImage* dist_img, const vector<int>& templ_addr, CvPoint offset)
+    float orientation_diff(float o1, float o2)
+    {
+    	return fabs(o1-o2);
+    }
+
+    float localChamferDistance(IplImage* dist_img, IplImage* orientation_img, const vector<int>& templ_addr, const vector<float>& templ_orientations, CvPoint offset, float alpha = 0.7)
     {
     	int x = offset.x;
     	int y = offset.y;
-    	float sum = 0;
+    	float sum_distance = 0;
+    	float sum_orientation = 0;
+
+    	float beta = 1-alpha;
 
     	float* ptr = (float*) dist_img->imageData;
+    	float* optr = (float*) orientation_img->imageData;
     	ptr += (y*dist_img->width+x);
+    	optr += (y*orientation_img->width+x);
     	for (size_t i=0;i<templ_addr.size();++i) {
-    		sum += *(ptr+templ_addr[i]);
-
+    		sum_distance += *(ptr+templ_addr[i]);
     	}
-    	return sum/templ_addr.size();
+    	for (size_t i=0;i<templ_addr.size();++i) {
+    		sum_orientation += orientation_diff(templ_orientations[i], *(optr+templ_addr[i]));
+    	}
+    	return (beta*sum_distance/truncate+alpha*sum_orientation/M_PI)/templ_addr.size();
     }
 
 
@@ -662,7 +662,7 @@ private:
  				CvPoint test_offset;
  				test_offset.x = x;
  				test_offset.y = y;
- 				float test_dist = localChamferDistance(dist_img, templ_addr, test_offset);
+ 				float test_dist = localChamferDistance(dist_img, orientation_img, templ_addr, tpl.orientations, test_offset);
 
  				if (test_dist<cm.distance) {
  					cm.distance = test_dist;
