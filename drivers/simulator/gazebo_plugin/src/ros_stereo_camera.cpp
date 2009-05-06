@@ -258,6 +258,15 @@ void RosStereoCamera::PutCameraData()
                 "rgb"            ,"uint8"     ,
                 (void*)right_src );
 
+      // fill StereoInfo stereo_info
+      // fill CamInfo left_info
+      // fill CamInfo right_info
+      // fill uint8 left_type
+      this->rawStereoMsg.left_type = this->rawStereoMsg.IMAGE_RECT_COLOR;
+      // fill uint8 right_type
+      this->rawStereoMsg.right_type = this->rawStereoMsg.IMAGE_RECT_COLOR;
+      // fill uint8 has_disparity
+      this->rawStereoMsg.has_disparity = 0;
       // publish to ros
       rosnode->publish(this->topicName,this->rawStereoMsg);
       this->lock.unlock();

@@ -49,6 +49,9 @@
 #include "ros/node.h"
 
 #include "image_msgs/RawStereo.h"
+#include "image_msgs/StereoInfo.h"
+#include "image_msgs/CamInfo.h"
+#include "image_msgs/DisparityInfo.h"
 
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
