@@ -62,7 +62,7 @@ namespace pr2_phase_space
  * @section topic ROS topics
  * Subscribes to (name [type]):
  * - @b "phase_space_snapshot" [phase_space/MocapSnapshot] : The current state of the phasespace system,
- *               which is normally published by robot_msgs::MocapSnapshot
+ *               which is normally published by mocap_msgs::MocapSnapshot
  *
  * Publishes to (name [type]):
  * - @b "cmd" [robot_msgs/PoseStamped] : The commanded pose, with an associated timestamp and frame_id. You will
