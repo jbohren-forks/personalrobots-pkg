@@ -1,5 +1,0 @@
-<launch>
-    <!-- test -->
-    <test test-name="test_eigen_tf"  pkg="tf_conversions" type="test_eigen_tf"  time-limit="30" />
-
-</launch>

@@ -13,8 +13,5 @@ rospack_add_library(tf_conversions
     src/tf_eigen.cpp
     )
 
-rospack_add_executable(test_eigen_tf EXCLUDE_FROM_ALL test/test_eigen_tf.cpp)
-rospack_declare_test(test_eigen_tf)
+rospack_add_gtest(test_eigen_tf test/test_eigen_tf.cpp)
 target_link_libraries(test_eigen_tf tf_conversions gtest)
-
-rospack_add_rostest(test_eigen_tf.xml)
