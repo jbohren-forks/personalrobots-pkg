@@ -445,7 +445,7 @@ namespace base_local_planner{
   double TrajectoryPlanner::pointCost(int x, int y){
     unsigned char cost = costmap_.getCost(x, y);
     //if the cell is in an obstacle the path is invalid
-    if(cost == LETHAL_OBSTACLE || cost == INSCRIBED_INFLATED_OBSTACLE){
+    if(cost == LETHAL_OBSTACLE || cost == INSCRIBED_INFLATED_OBSTACLE || cost == NO_INFORMATION){
       return -1;
     }
 

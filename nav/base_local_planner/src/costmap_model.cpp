@@ -58,7 +58,7 @@ namespace base_local_planner {
     //for circular robots the circumscribed radius will equal the inscribed radius and we can do a point check
     if(circumscribed_radius == inscribed_radius){
       unsigned char cost = costmap_.getCost(cell_x, cell_y);
-      if(cost == LETHAL_OBSTACLE || cost == INSCRIBED_INFLATED_OBSTACLE)
+      if(cost == LETHAL_OBSTACLE || cost == INSCRIBED_INFLATED_OBSTACLE || cost == NO_INFORMATION)
         return -1.0;
       return 1.0;
     }
@@ -188,12 +188,13 @@ namespace base_local_planner {
   }
 
   double CostmapModel::pointCost(int x, int y){
+    unsigned char cost = costmap_.getCost(x, y);
     //if the cell is in an obstacle the path is invalid
-    if(costmap_.getCost(x, y) == LETHAL_OBSTACLE){
+    if(cost == LETHAL_OBSTACLE || cost == NO_INFORMATION){
       return -1;
     }
 
-    return costmap_.getCost(x, y);
+    return cost;
   }
 
 };
