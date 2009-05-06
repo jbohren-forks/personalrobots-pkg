@@ -42,8 +42,6 @@
 #include "image_msgs/Image.h"
 #include "image_msgs/FillImage.h"
 
-
-
 using namespace gazebo;
 
 GZ_REGISTER_DYNAMIC_CONTROLLER("ros_stereocamera", RosStereoCamera);
@@ -223,13 +221,49 @@ void RosStereoCamera::PutCameraData()
   const unsigned char *right_src = NULL;
   // Get a pointer to image data
   left_src = this->leftCamera->GetImageData(0);
-
+  right_src = this->rightCamera->GetImageData(0);
 
   if (left_src && right_src)
   {
-    this->lock.lock();
-    rosnode->publish(this->topicName,this->rawStereoMsg);
-    this->lock.unlock();
+    /// @todo: don't bother if there are no subscribers
+    if (this->rosnode->numSubscribers(this->topicName) > 0)
+    {
+      this->lock.lock();
+      // RawStereo.msg
+      this->leftImageMsg  = &(this->rawStereoMsg.left_image);
+      this->rightImageMsg = &(this->rawStereoMsg.right_image);
+      // setup header
+      this->leftImageMsg->header.frame_id = this->leftFrameName;
+      this->leftImageMsg->header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
+      this->leftImageMsg->header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->leftImageMsg->header.stamp.sec) );
+
+      // copy from src to leftImageMsg
+      fillImage(*(this->leftImageMsg)   ,"image_raw" ,
+                this->leftCamera->GetImageHeight()     ,
+                this->leftCamera->GetImageWidth() ,
+                3,
+                "rgb"            ,"uint8"     ,
+                (void*)left_src );
+
+      // setup header
+      this->rightImageMsg->header.frame_id = this->rightFrameName;
+      this->rightImageMsg->header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
+      this->rightImageMsg->header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->rightImageMsg->header.stamp.sec) );
+
+      // copy from src to rightImageMsg
+      fillImage(*(this->rightImageMsg)   ,"image_raw" ,
+                this->rightCamera->GetImageHeight()     ,
+                this->rightCamera->GetImageWidth() ,
+                3,
+                "rgb"            ,"uint8"     ,
+                (void*)right_src );
+
+      // publish to ros
+      rosnode->publish(this->topicName,this->rawStereoMsg);
+      this->lock.unlock();
+    }
+
+
   }
 
 }
