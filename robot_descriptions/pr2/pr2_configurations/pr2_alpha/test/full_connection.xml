@@ -7,7 +7,7 @@
 
   <node machine="realtime" pkg="pr2_alpha" type="subpub.py"
         args="realtime realtime_root two three four"/>
-  <node machine="realtime_root" pkg="pr2_alpha" type="subpub.py"
+  <node machine="realtime_root" pkg="pr2_alpha" type="subpub_root.py"
         args="realtime_root realtime two three four"/>
   <node machine="two" pkg="pr2_alpha" type="subpub.py"
         args="two realtime_root realtime three four"/>
