@@ -2,12 +2,12 @@
 <controllers>
   <controller name="door_controller" topic="door_controller" type="JointPositionControllerNode">
     <joint name="door_joint" >
-      <pid p="2000" d="1" i="100.0" iClamp="1000" />
+      <pid p="0" d="0" i="0.0" iClamp="0" />
     </joint>
   </controller>
   <controller name="handle_controller" topic="handle_controller" type="JointPositionControllerNode">
     <joint name="handle_joint" >
-      <pid p="10.0" d="0.0" i="0.0" iClamp="0" />
+      <pid p="0.01" d="0.0" i="0.0" iClamp="0" />
     </joint>
   </controller>
 </controllers>
