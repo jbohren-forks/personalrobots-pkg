@@ -103,7 +103,11 @@ namespace costmap_2d {
        */
       void updateOrigin(double new_origin_x, double new_origin_y);
 
-      //void getPoints(robot_msgs::PointCloud& cloud);
+      /**
+       * @brief Returns a point cloud for visualizing the voxel grid
+       * @param cloud The point cloud to fill
+       */
+      void getPoints(robot_msgs::PointCloud& cloud);
 
     private:
       /**

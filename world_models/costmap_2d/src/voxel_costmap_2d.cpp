@@ -116,6 +116,7 @@ namespace costmap_2d{
     for(unsigned int y = 0; y < cell_size_y; ++y){
       for(unsigned int x = 0; x < cell_size_x; ++x){
         *costmap_cell = *local_map_cell;
+        *voxel_grid_cell = *local_voxel;
         local_map_cell++;
         costmap_cell++;
         local_voxel++;
@@ -191,12 +192,12 @@ namespace costmap_2d{
       double b = wpy - oy;
       double c = wpz - oz;
       //we can only raytrace to a maximum z height
-      if(wpz >= max_obstacle_height_){
+      if(wpz > max_obstacle_height_){
         //we know we want the vector's z value to be max_z
-        double t = (max_obstacle_height_ - .01 - oz) / c;
+        double t = (max_obstacle_height_ - oz) / c;
         wpx = ox + a * t;
         wpy = oy + b * t;
-        wpz = oz + c * t;
+        wpz = max_obstacle_height_;
       }
       //and we can only raytrace down to the floor
       else if(wpz < origin_z_){
@@ -204,7 +205,7 @@ namespace costmap_2d{
         double t = (origin_z_ - oz) / c;
         wpx = ox + a * t;
         wpy = oy + b * t;
-        wpz = oz + c * t;
+        wpz = origin_z_;
       }
 
       //the minimum value to raytrace from is the origin
@@ -282,6 +283,7 @@ namespace costmap_2d{
     for(unsigned int y = 0; y < cell_size_y; ++y){
       for(unsigned int x = 0; x < cell_size_x; ++x){
         *local_map_cell = *costmap_cell;
+        *local_voxel = *voxel_grid_cell;
         local_map_cell++;
         costmap_cell++;
         local_voxel++;
@@ -313,6 +315,7 @@ namespace costmap_2d{
     for(unsigned int y = 0; y < cell_size_y; ++y){
       for(unsigned int x = 0; x < cell_size_x; ++x){
         *costmap_cell = *local_map_cell;
+        *voxel_grid_cell = *local_voxel;
         local_map_cell++;
         costmap_cell++;
         local_voxel++;
@@ -326,6 +329,24 @@ namespace costmap_2d{
     delete[] local_map;
     delete[] local_voxel_map;
 
+  }
+
+  void VoxelCostmap2D::getPoints(PointCloud& cloud){
+    for(unsigned int i = 0; i < voxel_grid_.sizeX(); ++i){
+      for(unsigned int j = 0; j < voxel_grid_.sizeY(); ++j){
+        for(unsigned int k = 0; k < voxel_grid_.sizeZ(); ++k){
+          if(voxel_grid_.getVoxel(i, j, k) == voxel_grid::MARKED){
+            double wx, wy, wz;
+            mapToWorld3D(i, j, k, wx, wy, wz);
+            Point32 pt;
+            pt.x = wx;
+            pt.y = wy;
+            pt.z = wz;
+            cloud.pts.push_back(pt);
+          }
+        }
+      }
+    }
   }
 
 
