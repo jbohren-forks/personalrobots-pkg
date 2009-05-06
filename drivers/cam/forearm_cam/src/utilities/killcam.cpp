@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <string.h>
 
 #include "pr2lib.h"
 #include "host_netutil.h"
