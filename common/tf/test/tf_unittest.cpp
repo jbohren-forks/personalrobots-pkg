@@ -1352,6 +1352,162 @@ TEST(tf, canTransform)
 
 }
 
+TEST(tf, lookupTransform)
+{
+  Transformer mTR;
+  //Create a two link tree between times 10 and 20
+  for (int i = 10; i < 20; i++)
+  {
+    mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,0,0), btVector3(0,0,0)), ros::Time().fromSec(i), "child",  "parent"));
+    mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(1,0,0), btVector3(0,0,0)), ros::Time().fromSec(i), "other_child",  "parent"));
+  }
+
+  // four different timestamps related to tf state
+  ros::Time zero_time = ros::Time().fromSec(0);
+  ros::Time old_time = ros::Time().fromSec(5);
+  ros::Time valid_time = ros::Time().fromSec(15);
+  ros::Time future_time = ros::Time().fromSec(25);
+
+  //output
+  tf::Stamped<tf::Transform> output;
+
+  // Basic API Tests
+
+  try
+  {
+    //Valid data should pass
+    mTR.lookupTransform("child", "parent", valid_time, output);
+    mTR.lookupTransform("child", "other_child", valid_time, output);
+    
+    //zero data should pass
+    mTR.lookupTransform("child", "parent", zero_time, output);
+    mTR.lookupTransform("child", "other_child", zero_time, output);
+  }
+  catch (tf::TransformException &ex)
+  {
+    printf("Exception improperly thrown: %s", ex.what());
+    EXPECT_FALSE("Exception thrown");
+  }
+  try
+  {
+    //Old data should fail
+    mTR.lookupTransform("child", "parent", old_time, output);
+    EXPECT_FALSE("Exception should have been thrown");
+  }
+  catch (tf::TransformException)
+  {
+    EXPECT_TRUE("Exception Thrown Correctly");
+  }
+  try {
+    //Future data should fail
+    mTR.lookupTransform("child", "parent", future_time, output);
+    EXPECT_FALSE("Exception should have been thrown");
+  }
+  catch (tf::TransformException)
+  {
+    EXPECT_TRUE("Exception Thrown Correctly");
+  }
+    
+  try {
+    //Same Frame should pass for all times
+    mTR.lookupTransform("child", "child", zero_time, output);
+    mTR.lookupTransform("child", "child", old_time, output);
+    mTR.lookupTransform("child", "child", valid_time, output);
+    mTR.lookupTransform("child", "child", future_time, output);
+    
+    // Advanced API Tests
+    
+    // Source = Fixed
+    //zero data in fixed frame should pass
+    mTR.lookupTransform("child", zero_time, "parent", valid_time, "child", output);
+    mTR.lookupTransform("child", zero_time, "other_child", valid_time, "child", output);
+    //Old data in fixed frame should pass
+    mTR.lookupTransform("child", old_time, "parent", valid_time, "child", output);
+    mTR.lookupTransform("child", old_time, "other_child", valid_time, "child", output);
+    //valid data in fixed frame should pass
+    mTR.lookupTransform("child", valid_time, "parent", valid_time, "child", output);
+    mTR.lookupTransform("child", valid_time, "other_child", valid_time, "child", output);
+    //future data in fixed frame should pass
+    mTR.lookupTransform("child", future_time, "parent", valid_time, "child", output);
+    mTR.lookupTransform("child", future_time, "other_child", valid_time, "child", output);
+  }
+  catch (tf::TransformException &ex)
+  {
+    printf("Exception improperly thrown: %s", ex.what());
+    EXPECT_FALSE("Exception incorrectly thrown");
+  }
+
+  try {
+    //transforming through fixed into the past
+    mTR.lookupTransform("child", valid_time, "parent", old_time, "child", output);
+    EXPECT_FALSE("Exception should have been thrown");
+  }
+  catch (tf::TransformException)
+  {
+    EXPECT_TRUE("Exception Thrown Correctly");
+  }
+
+  try {
+    //transforming through fixed into the future
+    mTR.lookupTransform("child", valid_time, "parent", future_time, "child", output);
+    EXPECT_FALSE("Exception should have been thrown");
+  }
+  catch (tf::TransformException)
+  {
+    EXPECT_TRUE("Exception Thrown Correctly");
+  }
+
+  try {
+    // Target = Fixed
+    //zero data in fixed frame should pass
+    mTR.lookupTransform("child", zero_time, "parent", valid_time, "parent", output);
+    //valid data in fixed frame should pass
+    mTR.lookupTransform("child", valid_time, "parent", valid_time, "parent", output);
+  }
+  catch (tf::TransformException &ex)
+  {
+    printf("Exception improperly thrown: %s", ex.what());
+    EXPECT_FALSE("Exception incorrectly thrown");
+  }
+
+  try {
+  //Old data in fixed frame should pass
+  mTR.lookupTransform("child", old_time, "parent", valid_time, "parent", output);
+      EXPECT_FALSE("Exception should have been thrown");
+  }
+  catch (tf::TransformException)
+  {
+    EXPECT_TRUE("Exception Thrown Correctly");
+  }
+  try {
+    //future data in fixed frame should pass
+    mTR.lookupTransform("child", future_time, "parent", valid_time, "parent", output);
+    EXPECT_FALSE("Exception should have been thrown");
+  }
+  catch (tf::TransformException)
+  {
+    EXPECT_TRUE("Exception Thrown Correctly");
+  }
+
+  try {
+    //transforming through fixed into the zero
+    mTR.lookupTransform("child", valid_time, "parent", zero_time, "parent", output);
+    //transforming through fixed into the past
+    mTR.lookupTransform("child", valid_time, "parent", old_time, "parent", output);
+    //transforming through fixed into the valid
+    mTR.lookupTransform("child", valid_time, "parent", valid_time, "parent", output);
+    //transforming through fixed into the future
+    mTR.lookupTransform("child", valid_time, "parent", future_time, "parent", output);
+  }
+  catch (tf::TransformException &ex)
+  {
+    printf("Exception improperly thrown: %s", ex.what());
+    EXPECT_FALSE("Exception improperly thrown");
+  }
+
+  
+}
+
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
