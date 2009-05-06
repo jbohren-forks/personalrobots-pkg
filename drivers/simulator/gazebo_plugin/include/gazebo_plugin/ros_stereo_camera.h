@@ -49,9 +49,6 @@
 #include "ros/node.h"
 
 #include "image_msgs/RawStereo.h"
-#include "cam_bridge.h"
-
-#include "diagnostic_updater/diagnostic_updater.h"
 
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
