@@ -25,9 +25,10 @@
 <!--  <node pkg="dcam" type="stereodcam" respawn="false"/> -->
   <!--remap from="stereo" to="stereo_link" /-->
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false"/>
-  <!--node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting" respawn="false" output="screen">
+  <node pkg="outlet_detection" name="outlet_spotting" type="outlet_spotting" respawn="true" output="screen">
     <param name="display" type="bool" value="True"/>
     <param name="save_patches" type="bool" value="False"/>
-  </node-->
+    <param name="base_scan_topic" value="base_scan_marking" />
+  </node>
 </launch>
 
