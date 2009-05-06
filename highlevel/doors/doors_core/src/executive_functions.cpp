@@ -52,16 +52,20 @@ Stamped<Pose> getRobotPose(const robot_msgs::Door& door, double dist)
   Vector x_axis(1,0,0);
 
   // get hinge point
-  Vector hinge;
-  if (door.hinge == robot_msgs::Door::HINGE_P1)
+  Vector hinge, frame_vec;
+  if (door.hinge == robot_msgs::Door::HINGE_P1){
     hinge = Vector(door.door_p1.x, door.door_p1.y, door.door_p1.z);
-  else if (door.hinge == robot_msgs::Door::HINGE_P2)
+    frame_vec = Vector(door.frame_p2.x - door.frame_p1.x, door.frame_p2.y - door.frame_p1.y, door.frame_p2.z - door.frame_p1.z);
+  }
+  else if (door.hinge == robot_msgs::Door::HINGE_P2){
     hinge = Vector(door.door_p2.x, door.door_p2.y, door.door_p2.z);
+    frame_vec = Vector(door.frame_p1.x - door.frame_p2.x, door.frame_p1.y - door.frame_p2.y, door.frame_p1.z - door.frame_p2.z);
+  }
   else
     ROS_ERROR("GetRobotPose: door hinge side not specified");
 
   // get vector to center of frame
-  Vector frame_vec(door.frame_p1.x - door.frame_p2.x, door.frame_p1.y - door.frame_p2.y, door.frame_p1.z - door.frame_p2.z);
+
   frame_vec.Normalize();
   double door_width = Vector(door.door_p1.x - door.door_p2.x, door.door_p1.y - door.door_p2.y, door.door_p1.z - door.door_p2.z).Norm();
   Vector frame_center = hinge + (frame_vec * door_width / 2.0);
