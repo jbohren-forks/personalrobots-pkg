@@ -41,9 +41,9 @@
 #include "ros/node.h"
 
 // Messages
-#include "robot_msgs/MocapSnapshot.h"
-#include "robot_msgs/MocapMarker.h"
-#include "robot_msgs/MocapBody.h"
+#include "mocap_msgs/MocapSnapshot.h"
+#include "mocap_msgs/MocapMarker.h"
+#include "mocap_msgs/MocapBody.h"
 
 #include "robot_msgs/TransformWithRateStamped.h"
 
@@ -84,7 +84,7 @@ public :
   
 private :
   
-  robot_msgs::MocapSnapshot snapshot_ ;
+  mocap_msgs::MocapSnapshot snapshot_ ;
   
   int publish_count_ ;
   
