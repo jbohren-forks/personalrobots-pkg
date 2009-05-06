@@ -263,46 +263,119 @@ void RosStereoCamera::PutCameraData()
       this->stereoInfoMsg->header = this->rawStereoMsg.header;
       this->stereoInfoMsg->height = this->leftCamera->GetImageHeight();
       this->stereoInfoMsg->width  = this->leftCamera->GetImageWidth() ;
-      this->stereoInfoMsg->T[0]  = 0.0;
+      // pose of right cam in left cam coords
+      this->stereoInfoMsg->T[0]  = this->baseline;
       this->stereoInfoMsg->T[1]  = 0.0;
       this->stereoInfoMsg->T[2]  = 0.0;
+      // rotation
       this->stereoInfoMsg->Om[0] = 0.0;
       this->stereoInfoMsg->Om[1] = 0.0;
       this->stereoInfoMsg->Om[2] = 0.0;
-      this->stereoInfoMsg->RP[0] = 0.0;
+      // reprojection matrix, see videre manual
+      this->stereoInfoMsg->RP[0] = 1.0;
       this->stereoInfoMsg->RP[1] = 0.0;
       this->stereoInfoMsg->RP[2] = 0.0;
-      this->stereoInfoMsg->RP[3] = 0.0;
+      this->stereoInfoMsg->RP[3] = -this->Cx;
       this->stereoInfoMsg->RP[4] = 0.0;
-      this->stereoInfoMsg->RP[5] = 0.0;
+      this->stereoInfoMsg->RP[5] = 1.0;
       this->stereoInfoMsg->RP[6] = 0.0;
-      this->stereoInfoMsg->RP[7] = 0.0;
+      this->stereoInfoMsg->RP[7] = -this->Cy;
       this->stereoInfoMsg->RP[8] = 0.0;
       this->stereoInfoMsg->RP[9] = 0.0;
       this->stereoInfoMsg->RP[10] = 0.0;
-      this->stereoInfoMsg->RP[11] = 0.0;
+      this->stereoInfoMsg->RP[11] = this->focal_length;
       this->stereoInfoMsg->RP[12] = 0.0;
       this->stereoInfoMsg->RP[13] = 0.0;
-      this->stereoInfoMsg->RP[14] = 0.0;
-      this->stereoInfoMsg->RP[15] = 0.0;
+      this->stereoInfoMsg->RP[14] = -1.0/this->baseline;
+      this->stereoInfoMsg->RP[15] = (this->Cx-this->CxPrime)/this->baseline;
 
       // fill CamInfo left_info
       this->leftCamInfoMsg->header = this->rawStereoMsg.header;
       this->leftCamInfoMsg->height = this->leftCamera->GetImageHeight();
       this->leftCamInfoMsg->width  = this->leftCamera->GetImageWidth() ;
+      // distortion
       this->leftCamInfoMsg->D[0] = 0.0;
-      this->leftCamInfoMsg->K[0] = 0.0;
-      this->leftCamInfoMsg->R[0] = 0.0;
-      this->leftCamInfoMsg->P[0] = 0.0;
+      this->leftCamInfoMsg->D[1] = 0.0;
+      this->leftCamInfoMsg->D[2] = 0.0;
+      this->leftCamInfoMsg->D[3] = 0.0;
+      this->leftCamInfoMsg->D[4] = 0.0;
+      // original camera matrix
+      this->leftCamInfoMsg->K[0] = this->focal_length;
+      this->leftCamInfoMsg->K[1] = 0.0;
+      this->leftCamInfoMsg->K[2] = this->Cx;
+      this->leftCamInfoMsg->K[3] = 0.0;
+      this->leftCamInfoMsg->K[4] = this->focal_length;
+      this->leftCamInfoMsg->K[5] = this->Cy;
+      this->leftCamInfoMsg->K[6] = 0.0;
+      this->leftCamInfoMsg->K[7] = 0.0;
+      this->leftCamInfoMsg->K[8] = 1.0;
+      // rectification
+      this->leftCamInfoMsg->R[0] = 1.0;
+      this->leftCamInfoMsg->R[1] = 0.0;
+      this->leftCamInfoMsg->R[2] = 0.0;
+      this->leftCamInfoMsg->R[3] = 0.0;
+      this->leftCamInfoMsg->R[4] = 1.0;
+      this->leftCamInfoMsg->R[5] = 0.0;
+      this->leftCamInfoMsg->R[6] = 0.0;
+      this->leftCamInfoMsg->R[7] = 0.0;
+      this->leftCamInfoMsg->R[8] = 1.0;
+      // camera projection matrix (same as camera matrix due to lack of distortion/rectification) (is this generated?)
+      this->leftCamInfoMsg->P[0] = this->focal_length;
+      this->leftCamInfoMsg->P[1] = 0.0;
+      this->leftCamInfoMsg->P[2] = this->Cx;
+      this->leftCamInfoMsg->P[3] = 0.0;
+      this->leftCamInfoMsg->P[4] = 0.0;
+      this->leftCamInfoMsg->P[5] = this->focal_length;
+      this->leftCamInfoMsg->P[6] = this->Cy;
+      this->leftCamInfoMsg->P[7] = 0.0;
+      this->leftCamInfoMsg->P[8] = 0.0;
+      this->leftCamInfoMsg->P[9] = 0.0;
+      this->leftCamInfoMsg->P[10] = 1.0;
+      this->leftCamInfoMsg->P[11] = 0.0;
 
       // fill CamInfo right_info
       this->rightCamInfoMsg->header = this->rawStereoMsg.header;
       this->rightCamInfoMsg->height = this->rightCamera->GetImageHeight();
       this->rightCamInfoMsg->width  = this->rightCamera->GetImageWidth() ;
+      // distortion
       this->rightCamInfoMsg->D[0] = 0.0;
-      this->rightCamInfoMsg->K[0] = 0.0;
-      this->rightCamInfoMsg->R[0] = 0.0;
-      this->rightCamInfoMsg->P[0] = 0.0;
+      this->rightCamInfoMsg->D[1] = 0.0;
+      this->rightCamInfoMsg->D[2] = 0.0;
+      this->rightCamInfoMsg->D[3] = 0.0;
+      this->rightCamInfoMsg->D[4] = 0.0;
+      // original camera matrix
+      this->rightCamInfoMsg->K[0] = this->focal_length;
+      this->rightCamInfoMsg->K[1] = 0.0;
+      this->rightCamInfoMsg->K[2] = this->Cx;
+      this->rightCamInfoMsg->K[3] = 0.0;
+      this->rightCamInfoMsg->K[4] = this->focal_length;
+      this->rightCamInfoMsg->K[5] = this->Cy;
+      this->rightCamInfoMsg->K[6] = 0.0;
+      this->rightCamInfoMsg->K[7] = 0.0;
+      this->rightCamInfoMsg->K[8] = 1.0;
+      // rectification
+      this->rightCamInfoMsg->R[0] = 1.0;
+      this->rightCamInfoMsg->R[1] = 0.0;
+      this->rightCamInfoMsg->R[2] = 0.0;
+      this->rightCamInfoMsg->R[3] = 0.0;
+      this->rightCamInfoMsg->R[4] = 1.0;
+      this->rightCamInfoMsg->R[5] = 0.0;
+      this->rightCamInfoMsg->R[6] = 0.0;
+      this->rightCamInfoMsg->R[7] = 0.0;
+      this->rightCamInfoMsg->R[8] = 1.0;
+      // camera projection matrix (same as camera matrix due to lack of distortion/rectification) (is this generated?)
+      this->rightCamInfoMsg->P[0] = this->focal_length;
+      this->rightCamInfoMsg->P[1] = 0.0;
+      this->rightCamInfoMsg->P[2] = this->Cx;
+      this->rightCamInfoMsg->P[3] = -this->focal_length*this->baseline;
+      this->rightCamInfoMsg->P[4] = 0.0;
+      this->rightCamInfoMsg->P[5] = this->focal_length;
+      this->rightCamInfoMsg->P[6] = this->Cy;
+      this->rightCamInfoMsg->P[7] = 0.0;
+      this->rightCamInfoMsg->P[8] = 0.0;
+      this->rightCamInfoMsg->P[9] = 0.0;
+      this->rightCamInfoMsg->P[10] = 1.0;
+      this->rightCamInfoMsg->P[11] = 0.0;
 
       // fill uint8 left_type
       this->rawStereoMsg.left_type = this->rawStereoMsg.IMAGE_RECT_COLOR;
