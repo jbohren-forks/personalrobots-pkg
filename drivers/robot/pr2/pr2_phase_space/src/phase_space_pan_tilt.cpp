@@ -43,9 +43,9 @@
 #include "ros/node.h"
 
 // Messages
-#include "robot_msgs/MocapSnapshot.h"
-#include "robot_msgs/MocapMarker.h"
-#include "robot_msgs/MocapBody.h"
+#include "mocap_msgs/MocapSnapshot.h"
+#include "mocap_msgs/MocapMarker.h"
+#include "mocap_msgs/MocapBody.h"
 
 #include "robot_msgs/PointStamped.h"
 
@@ -79,7 +79,7 @@ public :
       if (snapshot_.get_markers_size() == 0)
         return ;
 
-      robot_msgs::MocapMarker& cur_marker = snapshot_.markers[0] ;
+      mocap_msgs::MocapMarker& cur_marker = snapshot_.markers[0] ;
       
       robot_msgs::PointStamped target_point ;
       target_point.header = snapshot_.header ;
@@ -93,7 +93,7 @@ public :
   
 private :
   const string topic ;
-  robot_msgs::MocapSnapshot snapshot_ ;
+  mocap_msgs::MocapSnapshot snapshot_ ;
   
   int publish_count_ ;
   

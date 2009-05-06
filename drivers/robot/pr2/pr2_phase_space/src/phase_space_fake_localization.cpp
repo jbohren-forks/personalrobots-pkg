@@ -41,9 +41,9 @@
 #include "ros/node.h"
 
 // Messages
-#include "robot_msgs/MocapSnapshot.h"
-#include "robot_msgs/MocapMarker.h"
-#include "robot_msgs/MocapBody.h"
+#include "mocap_msgs/MocapSnapshot.h"
+#include "mocap_msgs/MocapMarker.h"
+#include "mocap_msgs/MocapBody.h"
 
 #include "robot_msgs/Transform.h"
 #include "deprecated_msgs/RobotBase2DOdom.h"
@@ -101,7 +101,7 @@ public :
     {
       if (snapshot_.bodies[i].id == base_id_)                                       // Check if we found the robot base in the list of rigid bodies
       {
-        const robot_msgs::MocapBody& body = snapshot_.bodies[0] ;
+        const mocap_msgs::MocapBody& body = snapshot_.bodies[0] ;
 
         // Build Transform Message
         tf::Transform mytf;
@@ -150,7 +150,7 @@ public :
 
 private:
 
-  robot_msgs::MocapSnapshot snapshot_;
+  mocap_msgs::MocapSnapshot snapshot_;
   deprecated_msgs::RobotBase2DOdom m_currentPos;
   tf::TransformBroadcaster *m_tfServer;
   unsigned int publish_success_count_ ;

@@ -47,9 +47,9 @@
 // Messages
 #include "std_msgs/Float64.h"
 #include "robot_msgs/PoseStamped.h"
-#include "robot_msgs/MocapSnapshot.h"
-#include "robot_msgs/MocapMarker.h"
-#include "robot_msgs/MocapBody.h"
+#include "mocap_msgs/MocapSnapshot.h"
+#include "mocap_msgs/MocapMarker.h"
+#include "mocap_msgs/MocapBody.h"
 
 #include "tf/transform_datatypes.h"
 
@@ -65,7 +65,7 @@ public :
   ros::Node* node_ ;
   int left_id_ ;
   int right_id_ ;
-  robot_msgs::MocapSnapshot snapshot_ ;
+  mocap_msgs::MocapSnapshot snapshot_ ;
   string frame_id_ ;
   unsigned int prev_seq_num ;
 

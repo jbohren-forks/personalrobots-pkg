@@ -43,9 +43,9 @@
 #include "ros/node.h"
 
 // Messages
-#include "robot_msgs/MocapSnapshot.h"
-#include "robot_msgs/MocapMarker.h"
-#include "robot_msgs/MocapBody.h"
+#include "mocap_msgs/MocapSnapshot.h"
+#include "mocap_msgs/MocapMarker.h"
+#include "mocap_msgs/MocapBody.h"
 
 #include "robot_msgs/PoseStamped.h"
 
@@ -134,7 +134,7 @@ public :
     {
       if (snapshot_.bodies[i].id == body_id_)                   // Did we find our body?
       {
-        const robot_msgs::MocapBody& cur_body = snapshot_.bodies[i] ;
+        const mocap_msgs::MocapBody& cur_body = snapshot_.bodies[i] ;
 
         // Define our starting frame
         tf::Quaternion rot_phasespace ;
@@ -166,7 +166,7 @@ public :
   }
 
 private :
-  robot_msgs::MocapSnapshot snapshot_ ;
+  mocap_msgs::MocapSnapshot snapshot_ ;
 
   tf::Transform transform_ ;
 
