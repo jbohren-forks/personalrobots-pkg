@@ -25,6 +25,7 @@
   <depend package="tf"/>
   <depend package="visualization_msgs" />
   <depend package="prosilica_cam"/>
+  <depend package="eigen"/>
 
 
  <export>
