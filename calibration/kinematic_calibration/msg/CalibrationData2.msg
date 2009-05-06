@@ -14,7 +14,7 @@ robot_msgs/MechanismState mechanism_state
 robot_msgs/PointCloud laser_cloud
 
 # Data that we captured from phasespace
-robot_msgs/MocapSnapshot mocap_snapshot
+mocap_msgs/MocapSnapshot mocap_snapshot
 
 # Data from multiple monocular cameras
 image_msgs/Image[] image

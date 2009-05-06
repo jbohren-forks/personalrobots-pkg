@@ -57,7 +57,7 @@ static const bool DEBUG_ON = true ;
 
 PhaseSpaceNode::PhaseSpaceNode() : ros::Node("phase_space")
 {
-  advertise<robot_msgs::MocapSnapshot>("phase_space_snapshot", 1) ;
+  advertise<mocap_msgs::MocapSnapshot>("phase_space_snapshot", 1) ;
 }
 
 PhaseSpaceNode::~PhaseSpaceNode()
@@ -88,7 +88,7 @@ bool PhaseSpaceNode::spin()
   while (ok())             // While the node has not been shutdown
   {
     usleep(1) ;
-    robot_msgs::MocapSnapshot snapshot ;
+    mocap_msgs::MocapSnapshot snapshot ;
 
     snapshot.header.frame_id = "phase_space" ;
 
@@ -112,7 +112,7 @@ bool PhaseSpaceNode::spin()
   return true ;
 }
 
-int PhaseSpaceNode::grabMarkers(robot_msgs::MocapSnapshot& snapshot)
+int PhaseSpaceNode::grabMarkers(mocap_msgs::MocapSnapshot& snapshot)
 {
   OWLMarker markers[MAX_NUM_MARKERS] ;
 
@@ -147,7 +147,7 @@ int PhaseSpaceNode::grabMarkers(robot_msgs::MocapSnapshot& snapshot)
   return n ;
 }
 
-int PhaseSpaceNode::grabBodies(robot_msgs::MocapSnapshot& snapshot)
+int PhaseSpaceNode::grabBodies(mocap_msgs::MocapSnapshot& snapshot)
 {
   OWLRigid bodies[MAX_NUM_BODIES] ;
   int n = owlGetRigids(bodies, MAX_NUM_BODIES) ;
@@ -173,7 +173,7 @@ int PhaseSpaceNode::grabBodies(robot_msgs::MocapSnapshot& snapshot)
   return n ;
 }
 
-void PhaseSpaceNode::grabTime(robot_msgs::MocapSnapshot& snapshot)
+void PhaseSpaceNode::grabTime(mocap_msgs::MocapSnapshot& snapshot)
 {
   int timeVal[3] ;
   timeVal[0] = 0 ;
@@ -193,7 +193,7 @@ void PhaseSpaceNode::shutdownOwlClient()
   owlDone() ;             // OWL API-call to perform system cleanup before client termination
 }
   
-void PhaseSpaceNode::copyMarkerToMessage(const OWLMarker& owl_marker, robot_msgs::MocapMarker& msg_marker)
+void PhaseSpaceNode::copyMarkerToMessage(const OWLMarker& owl_marker, mocap_msgs::MocapMarker& msg_marker)
 {
   msg_marker.id         = owl_marker.id ;
 
@@ -204,7 +204,7 @@ void PhaseSpaceNode::copyMarkerToMessage(const OWLMarker& owl_marker, robot_msgs
   msg_marker.condition  = owl_marker.cond ;
 }
 
-void PhaseSpaceNode::copyBodyToMessage(const OWLRigid& owl_body, robot_msgs::MocapBody& msg_body)
+void PhaseSpaceNode::copyBodyToMessage(const OWLRigid& owl_body, mocap_msgs::MocapBody& msg_body)
 {
   msg_body.id = owl_body.id ;
   
@@ -236,7 +236,7 @@ void PhaseSpaceNode::owlPrintError(const char *s, int n)
     printf("%s: 0x%x\n", s, n);
 }
 
-void PhaseSpaceNode::dispSnapshot(const robot_msgs::MocapSnapshot& s)
+void PhaseSpaceNode::dispSnapshot(const mocap_msgs::MocapSnapshot& s)
 {
   printf("rosTF_frame: %s   Frame #%u\n", s.header.frame_id.c_str(), s.frameNum) ;
   printf("  Time: %lf\n", s.header.stamp.toSec()) ;

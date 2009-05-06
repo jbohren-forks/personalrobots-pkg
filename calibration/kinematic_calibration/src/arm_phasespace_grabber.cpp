@@ -37,7 +37,7 @@
 #include "ros/node.h"
 #include "boost/thread/mutex.hpp"
 #include "robot_msgs/MechanismState.h"
-#include "robot_msgs/MocapSnapshot.h"
+#include "mocap_msgs/MocapSnapshot.h"
 #include "robot_kinematics/robot_kinematics.h"
 
 #include "kdl/chain.hpp"
@@ -111,7 +111,7 @@ public:
         case ' ':
         {
           printf("Capturing...\n") ;
-          robot_msgs::MocapMarker cur_marker ;
+          mocap_msgs::MocapMarker cur_marker ;
 
           //GetMarker(cur_marker, marker_id_) ;
 
@@ -238,7 +238,7 @@ public:
     return true ;
   }
 
-    void GetMarker(robot_msgs::MocapMarker& marker, int id)
+    void GetMarker(mocap_msgs::MocapMarker& marker, int id)
   {
     bool marker_found = false ;
 
@@ -304,10 +304,10 @@ public:
   }
 
 private:
-    robot_msgs::MocapSnapshot snapshot_ ;
+    mocap_msgs::MocapSnapshot snapshot_ ;
   robot_msgs::MechanismState mech_state_ ;
 
-    robot_msgs::MocapSnapshot safe_snapshot_ ;
+    mocap_msgs::MocapSnapshot safe_snapshot_ ;
   int marker_id_ ;
 
   robot_msgs::MechanismState safe_mech_state_ ;

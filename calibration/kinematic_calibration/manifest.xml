@@ -6,6 +6,7 @@
   <depend package="kdl" />
   <depend package="phase_space" />
   <depend package="robot_msgs" />
+  <depend package="mocap_msgs" />
   <depend package="std_msgs" />
   <depend package="robot_kinematics" />
   <depend package="topic_synchronizer" />

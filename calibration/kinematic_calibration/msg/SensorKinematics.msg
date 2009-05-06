@@ -19,4 +19,4 @@ robot_msgs/MechanismState mechanism_state
 robot_msgs/PointCloud laser_cloud
 
 # Data that we captured from phasespace
-robot_msgs/MocapSnapshot phase_space_snapshot
+mocap_msgs/MocapSnapshot phase_space_snapshot
