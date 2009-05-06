@@ -30,7 +30,7 @@
 
 <!-- Joint Trajectory controller -->
   <group ns="r_arm_joint_trajectory_controller" clear_params="true">
-    <param name="velocity_scaling_factor" value="0.25" type="double" />
+    <param name="velocity_scaling_factor" value="0.50" type="double" />
     <param name="trajectory_wait_timeout" value="10.0" type="double" />
     
     <param name="r_shoulder_pan_joint/goal_reached_threshold" value="0.25" type="double" />

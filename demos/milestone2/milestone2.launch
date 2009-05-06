@@ -19,11 +19,12 @@
   <include file="$(find doors_core)/launch/door_actions.xml" />  
 
 <!-- plug domain -->
-<!--
+
   <include file="$(find outlet_detection)/launch/plug.launch" />
   <include file="$(find outlet_detection)/launch/outlet_coarse_detection/outlet_coarse_detection.launch" />
   <node pkg="plug_in" type="outlet_pose_filter.py"/>
--->
+  <node pkg="plugs_core" type="action_runner" output="screen" />
+
   
 <!-- Safety -->
   <node pkg="safety_core" type="action_runner" output="screen" />
