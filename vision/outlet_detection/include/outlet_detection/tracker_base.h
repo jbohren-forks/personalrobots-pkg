@@ -98,6 +98,7 @@ protected:
   
   /*bool*/ int display_;
   std::string window_name_;
+  /*bool*/ int save_failures_;
   int save_count_;
   std::string save_prefix_;
 };

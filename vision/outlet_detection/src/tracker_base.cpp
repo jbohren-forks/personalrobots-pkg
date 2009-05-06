@@ -42,6 +42,8 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
   node_.param("~resize_factor_failed", resize_factor_failed_, 1.2);
   node_.param("~target_roi_size", target_roi_size_, 400);
 
+  node_.param("~save_failures", save_failures_, 0);
+  
   node_.param("~display", display_, 1);
   if (display_) {
     cvNamedWindow(window_name_.c_str(), 0); // no autosize
@@ -117,7 +119,8 @@ void TrackerBase::processImage()
   }
   else {
     // Save failure for debugging
-    //saveImage();
+    if (save_failures_)
+      saveImage();
     
     // Expand ROI for next image
     if (roi_policy_ == LastImageLocation) {
