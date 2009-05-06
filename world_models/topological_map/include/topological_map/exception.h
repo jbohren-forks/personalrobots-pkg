@@ -45,6 +45,7 @@ class TopologicalMapException: public std::runtime_error
 { 
 public:
   TopologicalMapException(const format& error_string) : std::runtime_error(error_string.str()) {};
+  TopologicalMapException(const char* str) : std::runtime_error(str) {};
 };
 
 /// \brief Exception denoting unknown grid cell

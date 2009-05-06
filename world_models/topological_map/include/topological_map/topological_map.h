@@ -108,8 +108,10 @@ public:
                  double locked_door_cost=DEFAULT_LOCKED_DOOR_COST);
 
   /// \post Topological map is written to \a stream in format that can be read back using the stream constructor.  All state is saved except for the currently set goal.
-  /// \todo Identify error conditions
   void writeToStream (ostream& stream) const;
+
+  /// \post Occupancy grid and outlet info written to \a filename
+  void writeGridAndOutletData (const string& filename) const;
 
   /// \return Id of region containing a grid cell \a p
   /// \throws UnknownGridCellException
@@ -256,6 +258,21 @@ TopologicalMapPtr topologicalMapFromGrid (const OccupancyGrid& grid, double reso
                                           uint bottleneck_skip, uint inflation_radius, const string& ppm_output_dir);
 
 enum RegionType { OPEN, DOORWAY };
+
+
+
+
+
+
+
+
+/************************************************************
+ * Visualization
+ ************************************************************/
+
+/// \pre A ros node instance is running
+/// \post Publishes the topological map info to the visualization_market topic. 
+void visualizeTopologicalMap (const TopologicalMap& tmap);
 
 
 

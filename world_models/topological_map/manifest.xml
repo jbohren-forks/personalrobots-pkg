@@ -10,6 +10,7 @@
 <depend package="rosconsole" />
 <depend package="tinyxml" />
 <depend package="tf" />
+<depend package="roslib" />
 <depend package="sbpl" />
 <depend package="navfn" />
 <depend package="eigen"/>

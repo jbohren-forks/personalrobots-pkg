@@ -48,6 +48,7 @@
 #include <boost/ref.hpp>
 #include <ros/console.h>
 #include <ros/assert.h>
+#include <tinyxml/tinyxml.h>
 #include <topological_map/exception.h>
 
 
@@ -138,14 +139,19 @@ Cell2D TopologicalMap::MapImpl::containingCell (const Point2D& p) const
 
 GridPtr readGrid(istream& stream)
 {
+  if (!stream.good()) {
+    throw TopologicalMapException ("Input stream for reading topological map was not good");
+  }
   uint nr, nc;
   stream >> nr >> nc;
+  ROS_DEBUG_STREAM_NAMED ("io", "About to read " << nr << "x" << nc << " grid");
   GridPtr grid(new OccupancyGrid(extents[nr][nc]));
   for (uint r=0; r<nr; r++) {
     for (uint c=0; c<nc; c++) {
       stream >> (*grid)[r][c];
     }
   }
+  ROS_DEBUG_STREAM_NAMED ("io", "Done reading grid");
   return grid;
 }
 
@@ -299,6 +305,13 @@ void TopologicalMap::MapImpl::writeToStream (ostream& stream)
 }
 
 
+void TopologicalMap::MapImpl::writeGridAndOutletData (const string& filename) const
+{
+  TiXmlDocument doc;
+  TiXmlElement* resElt = new TiXmlElement("resolution");
+  doc.LinkEndChild(resElt);
+  doc.SaveFile(filename);
+}
 
 
 typedef unsigned char uchar;
@@ -1165,6 +1178,10 @@ void TopologicalMap::writePpm (ostream& str) const
 }
   
   
+void TopologicalMap::writeGridAndOutletData (const string& filename) const
+{
+  map_impl_->writeGridAndOutletData (filename);
+}
   
   
 

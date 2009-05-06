@@ -35,6 +35,8 @@
 #include <sysexits.h>
 #include <topological_map/topological_map.h>
 #include <ros/time.h>
+#include <ros/node.h>
+#include <ros/assert.h>
 
 typedef unsigned int uint;
 typedef const uint cuint;
@@ -81,6 +83,8 @@ void printConnectorCosts (TopologicalMap& m, const Point2D& p1, const Point2D& p
 
 int main (int argc, char* argv[])
 {
+
+  ros::init(argc, argv); 
   
   OccupancyGrid grid(extents[21][24]);
   setV(grid, 0, 1, 21, 0, 1, 24, false);
@@ -115,6 +119,8 @@ int main (int argc, char* argv[])
 
   ifstream str3("local/willow.tmap");
   TopologicalMap m3(str3, 1.0, 1e9, 1e9);
+
+  tmap::visualizeTopologicalMap(m3);
 
   Point2D p1(1,1), p2(30,30);
   cout << "Nearest outlet to " << p1 << " is " << m3.nearestOutlet(p1) << endl;

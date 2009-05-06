@@ -14,7 +14,7 @@ rospack_add_boost_directories()
 
 
 rospack_add_library(topological_graph src/region.cpp src/topological_map.cpp src/creation.cpp src/region_graph.cpp src/connector_roadmap.cpp 
-				      src/grid_graph.cpp src/grid_utils.cpp src/door_info.cpp src/outlet_info.cpp)
+				      src/grid_graph.cpp src/grid_utils.cpp src/door_info.cpp src/outlet_info.cpp src/visualization.cpp)
 
 #rospack_add_executable(bin/ros_topological_map src/ros_topological_map.cpp)
 #target_link_libraries(bin/ros_topological_map topological_graph)

@@ -191,6 +191,9 @@ public:
   /// write map to \a stream in human-readable form
   void writeToStream (ostream& stream);
 
+  /// \post Occupancy grid and outlet info written to \a filename
+  void writeGridAndOutletData (const string& filename) const;
+
   /// write map in ppm format
   void writePpm (ostream& str) const;
 
