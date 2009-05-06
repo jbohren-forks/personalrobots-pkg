@@ -4,4 +4,5 @@
   <include file="$(find milestone2)/milestone2.launch" />
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
   <include file="$(find executive_trex_pr2)/test/doors/open_door.0/run_real.launch" />
+  <include file="$(find 2dnav_pr2)/rviz_launch.launch" />
 </launch>
