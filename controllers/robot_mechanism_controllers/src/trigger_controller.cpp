@@ -33,7 +33,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Example .xml configuration file
+/** Example .xml configuration file
 <controllers>
 <controller name="cam_controller" type="TriggerControllerNode"> 
   <actuator name="fl_caster_l_wheel_motor" />
