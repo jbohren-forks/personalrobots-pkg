@@ -484,7 +484,7 @@ namespace mpglue {
 		       double nominalvel_mpersecs,
 		       double timetoturn45degsinplace_secs,
 		       std::string const & motor_primitive_filename,
-                    std::ostream * dbgos, robot_msgs::Door door) throw(std::exception)
+                    std::ostream * dbgos, door_msgs::Door door) throw(std::exception)
   {
     EnvironmentNAVXYTHETADOOR * env(new EnvironmentNAVXYTHETADOOR());
     if ( ! env->SetEnvParameter("cost_inscribed", cm->getInscribedCost())) {

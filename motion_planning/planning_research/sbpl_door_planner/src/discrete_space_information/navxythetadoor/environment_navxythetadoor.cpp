@@ -29,6 +29,7 @@
 
 #include <sbpl/headers.h>
 #include <sbpl_door_planner/environment_navxythetadoor.h>
+#include <door_msgs/Door.h>
 
 
 static unsigned int inthash(unsigned int key)
@@ -479,7 +480,7 @@ void EnvironmentNAVXYTHETADOORLAT::setDoorDiscretizationAngle(const double &door
 }
 
 
-void EnvironmentNAVXYTHETADOORLAT::setDoorProperties(const robot_msgs::Door &door, 
+void EnvironmentNAVXYTHETADOORLAT::setDoorProperties(const door_msgs::Door &door, 
                                                      double door_thickness)
 {
 
