@@ -157,6 +157,7 @@ static struct
   char *interface_;
   char *name_;
   bool program_;
+  bool help_;
   int device_;
   string motor_;
   string actuators_;
@@ -257,6 +258,7 @@ int main(int argc, char *argv[])
   // Parse options
   g_options.program_name_ = argv[0];
   g_options.device_ = -1;
+  g_options.help_ = false;
   while (1)
   {
     static struct option long_options[] = {
@@ -274,7 +276,7 @@ int main(int argc, char *argv[])
     switch (c)
     {
       case 'h':
-        Usage();
+        g_options.help_ = true;
         break;
       case 'd':
         g_options.device_ = atoi(optarg);
@@ -297,14 +299,6 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (optind < argc)
-  {
-    Usage("Extra arguments");
-  }
-
-  if (!g_options.interface_)
-    Usage("You must specify a network interface");
-
   // Parse configuration file
   string filename = "actuators.conf";
   if (g_options.actuators_ != "")
@@ -319,6 +313,17 @@ int main(int argc, char *argv[])
   {
     Usage("Unable to load configuration file");
   }
+
+  if (g_options.help_)
+    Usage();
+
+  if (optind < argc)
+  {
+    Usage("Extra arguments");
+  }
+
+  if (!g_options.interface_)
+    Usage("You must specify a network interface");
 
   init(g_options.interface_);
 
