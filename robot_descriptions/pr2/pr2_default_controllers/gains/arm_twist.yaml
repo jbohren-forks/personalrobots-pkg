@@ -8,5 +8,5 @@ fb_rot:
   i: 0.0
   d: 0.0
   i_clamp: 0.2
-ff_trans: 20.0
-ff_rot: 5.0
+ff_trans: 0.0
+ff_rot: 0.0

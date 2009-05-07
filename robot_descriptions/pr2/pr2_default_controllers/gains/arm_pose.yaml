@@ -1,6 +1,5 @@
 fb_trans:
   p: 60
-  old_p: 20
   i: 80
   d: 0
   i_clamp: 0.2
