@@ -91,6 +91,7 @@ class pressureVisualizer:
         #print "callback"
         self.data0 = pressurestate.data0
         self.data1 = pressurestate.data1
+        self.datatimestamp = pressurestate.header.stamp
         self.dataready = True
 
     def publish(self):
@@ -103,8 +104,7 @@ class pressureVisualizer:
     def makeVisualization(self, data, frame, sensorstartid, ydir):
         mk = Marker()
         mk.header.frame_id = frame
-        # @todo Make timestamp come from when data is collected in hardware
-        mk.header.stamp = rospy.get_rostime()
+        mk.header.stamp = self.datatimestamp
         mk.ns = "pressure_node"
         mk.type = Marker.SPHERE
         mk.action = Marker.ADD
