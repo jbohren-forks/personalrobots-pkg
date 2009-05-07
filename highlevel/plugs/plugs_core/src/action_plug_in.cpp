@@ -39,7 +39,7 @@
 namespace plugs_core {
 
 const double MIN_STANDOFF = 0.035;
-const double SUCCESS_THRESHOLD = -0.012; //0.025;
+const double SUCCESS_THRESHOLD = 0.025;
 enum {MEASURING, MOVING, INSERTING, FORCING, HOLDING};
 
 PlugInAction::PlugInAction(ros::Node& node) :
@@ -115,7 +115,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 {
   plugs_core::PlugInState state_msg;
 
-  //ROS_INFO("recieved plug_pose Msg in callback");
+  ROS_INFO("recieved plug_pose Msg in callback");
 
   if (!isActive())
     return;
@@ -159,6 +159,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
   switch (g_state_) {
     case MEASURING:
     {
+#if 0
       if (viz_offset.getOrigin().length() > 0.5 ||
           viz_offset.getRotation().getAngle() > (M_PI/6.0))
       {
@@ -166,6 +167,17 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
         btMatrix3x3(viz_offset.getRotation()).getEulerYPR(ypr[2], ypr[1], ypr[0]);
         ROS_ERROR("%s: Error, Crazy vision offset (%lf, (%lf, %lf, %lf))!!!.",
                   action_name_.c_str(), viz_offset.getOrigin().length(), ypr[0], ypr[1], ypr[2]);
+        g_state_ = MEASURING;
+        break;
+      }
+#endif
+
+      tf::Transform diff = viz_offset * prev_viz_offset_.inverse();
+      if (diff.getOrigin().length() > 0.002 ||
+          diff.getRotation().getAngle() > 0.035)
+      {
+        ROS_WARN("Vision estimate of the plug wasn't stable: %lf, %lf",
+                 diff.getOrigin().length(), diff.getRotation().getAngle());
         g_state_ = MEASURING;
         break;
       }
@@ -188,8 +200,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 
     case INSERTING:
     {
-      //tf::Vector3 offset = viz_offset.getOrigin() - viz_offset_desi.getOrigin();
-      tf::Vector3 offset = viz_offset.getOrigin();
+      tf::Vector3 offset = viz_offset.getOrigin() - viz_offset_desi.getOrigin();
       ROS_DEBUG("%s: Offset: (% 0.3lf, % 0.3lf, % 0.3lf)", action_name_.c_str(), offset.x(), offset.y(), offset.z());
       if (g_started_inserting_ + ros::Duration(5.0) < ros::Time::now())
       {
@@ -263,8 +274,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 
 
   last_standoff_ = standoff;
-
-  node_.publish(action_name_ + "/state", state_msg);
+  prev_viz_offset_ = viz_offset;
   return;
 }
 

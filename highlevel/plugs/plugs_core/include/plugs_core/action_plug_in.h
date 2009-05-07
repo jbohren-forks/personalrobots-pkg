@@ -97,6 +97,7 @@ private:
   ros::Time g_started_inserting_, g_started_forcing_, g_stopped_forcing_;
   int g_state_;
   int prev_state_;
+  tf::Pose prev_viz_offset_;
 
   tf::Stamped<tf::Transform> mech_offset_;
   tf::Pose mech_offset_desi_;
