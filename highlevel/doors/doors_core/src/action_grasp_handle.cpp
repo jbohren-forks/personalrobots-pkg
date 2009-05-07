@@ -50,7 +50,7 @@ static const string fixed_frame = "odom_combined";
 
 
 GraspHandleAction::GraspHandleAction(Node& node) : 
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("grasp_handle"), 
+  robot_actions::Action<door_msgs::Door, door_msgs::Door>("grasp_handle"), 
   node_(node),
   tf_(node)
 {
@@ -63,7 +63,7 @@ GraspHandleAction::~GraspHandleAction()
 
 
 
-robot_actions::ResultStatus GraspHandleAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
+robot_actions::ResultStatus GraspHandleAction::execute(const door_msgs::Door& goal, door_msgs::Door& feedback)
 {
   ROS_INFO("GraspHandleAction: execute");
 
@@ -71,7 +71,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const robot_msgs::Door& g
   feedback = goal;
  
   // transform door message to time fixed frame
-  robot_msgs::Door goal_tr;
+  door_msgs::Door goal_tr;
   if (!transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame)){
     ROS_ERROR("GraspHandleAction: Could not tranform door message from '%s' to '%s' at time %f",
 	      goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());

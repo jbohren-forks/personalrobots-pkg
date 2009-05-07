@@ -64,7 +64,7 @@ using std::vector;
 using boost::tie;
 using boost::shared_ptr;
 using boost::bind;
-using robot_msgs::Door;
+using door_msgs::Door;
 
 namespace topological_map
 {

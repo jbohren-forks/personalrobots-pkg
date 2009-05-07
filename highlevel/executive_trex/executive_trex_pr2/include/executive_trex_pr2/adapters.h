@@ -43,7 +43,7 @@
 #include <std_msgs/Empty.h>
 #include <deprecated_msgs/RobotBase2DOdom.h>
 #include <robot_msgs/Pose.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <robot_msgs/BatteryState.h>
 #include <robot_msgs/PlugStow.h>
 #include <robot_actions/action_runner.h>

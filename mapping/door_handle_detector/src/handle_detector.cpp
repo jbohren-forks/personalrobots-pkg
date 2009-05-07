@@ -35,6 +35,7 @@
 using namespace std;
 using namespace ros;
 using namespace robot_msgs;
+using namespace door_msgs;
 using namespace door_handle_detector;
 using namespace door_functions;
 
@@ -82,8 +83,8 @@ HandleDetector::HandleDetector (ros::Node* anode) : node_ (anode), tf_ (*anode)
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool HandleDetector::detectHandle (const robot_msgs::Door& door, PointCloud pointcloud,
-                                   std::vector<robot_msgs::Door>& result) const
+bool HandleDetector::detectHandle (const door_msgs::Door& door, PointCloud pointcloud,
+                                   std::vector<door_msgs::Door>& result) const
 {
   ROS_INFO ("HandleDetector: Start detecting handle in a point cloud of size %i", (int)pointcloud.pts.size ());
 

@@ -62,12 +62,12 @@
 #include <robot_actions/action_runner.h>
 #include <pr2_robot_actions/DoorActionState.h>
 #include <pr2_robot_actions/Pose2D.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <door_handle_detector/door_functions.h>
 
 typedef struct
 {
-    robot_msgs::Door door;
+    door_msgs::Door door;
     double door_thickness;
     double arm_min_workspace_angle;
     double arm_max_workspace_angle;
@@ -77,7 +77,7 @@ typedef struct
     robot_msgs::Point32 shoulder;
 }DoorEnvProperties;
 
-class SBPLDoorPlanner : public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
+class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
   public:
   SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf);
@@ -90,7 +90,7 @@ class SBPLDoorPlanner : public robot_actions::Action<robot_msgs::Door, robot_msg
    * @param feedback Feedback that the action gives to a higher-level monitor, in this case, the position of the robot
    * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
    */
-  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
+  virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
 
   private:
 
@@ -122,7 +122,7 @@ class SBPLDoorPlanner : public robot_actions::Action<robot_msgs::Door, robot_msg
   };
   cm_getter cm_getter_;	                   /**< for mpglue to get at our costmap instance */
   
-  bool initializePlannerAndEnvironment(const robot_msgs::Door &door);
+  bool initializePlannerAndEnvironment(const door_msgs::Door &door);
   
   bool makePlan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, robot_msgs::JointTraj &path);
 
@@ -158,7 +158,7 @@ class SBPLDoorPlanner : public robot_actions::Action<robot_msgs::Door, robot_msg
 
   void publishFootprint(const pr2_robot_actions::Pose2D &position);
 
-  void publishDoor(const robot_msgs::Door &door);
+  void publishDoor(const door_msgs::Door &door);
 
   costmap_2d::Costmap2DPublisher* costmap_publisher_;
 

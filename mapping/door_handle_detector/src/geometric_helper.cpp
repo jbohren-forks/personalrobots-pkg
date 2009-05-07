@@ -47,7 +47,7 @@ using namespace robot_msgs;
   * \param frame_multiplier multiply the ||frame_p1-frame_p2|| distance by this number to wrap all possible situations in X-Y
   */
 void
-  obtainCloudIndicesSet (const robot_msgs::PointCloud &points, vector<int> &indices, robot_msgs::Door& door,
+  obtainCloudIndicesSet (const robot_msgs::PointCloud &points, vector<int> &indices, door_msgs::Door& door,
                          tf::TransformListener *tf, std::string parameter_frame,
                          double min_z_bounds, double max_z_bounds, double frame_multiplier)
 {

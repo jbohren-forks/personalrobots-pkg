@@ -29,7 +29,7 @@
 
 #include <sbpl/headers.h>
 #include <sbpl_door_planner/door_base_collision_cost.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <angles/angles.h>
 
 #ifndef __ENVIRONMENT_NAVXYTHETADOOR_H_
@@ -120,7 +120,7 @@ class EnvironmentNAVXYTHETADOORLAT : public EnvironmentNAVXYTHETALATTICE
 
   bool GetMinCostDoorAngle(double x, double y, double theta, unsigned char door_interval, double &angle, double &door_angle_cost);
 
-  void setDoorProperties(const robot_msgs::Door &door, double door_thickness);
+  void setDoorProperties(const door_msgs::Door &door, double door_thickness);
 
   void setRobotProperties(const double &min_workspace_radius, 
                                                    const double &max_workspace_radius, 

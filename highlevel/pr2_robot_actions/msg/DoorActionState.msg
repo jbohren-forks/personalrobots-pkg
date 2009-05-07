@@ -4,7 +4,7 @@ Header header
 robot_actions/ActionStatus status
 
 # Goal
-robot_msgs/Door goal
+door_msgs/Door goal
 
 # Feedback
-robot_msgs/Door feedback
+door_msgs/Door feedback

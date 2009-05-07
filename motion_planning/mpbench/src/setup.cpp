@@ -49,7 +49,7 @@
 // #include <errno.h>
 // #include <cstring>
 // #include <err.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 
 #ifdef MPBENCH_HAVE_NETPGM
 extern "C" {
@@ -814,7 +814,7 @@ namespace mpbench {
 	  throw runtime_error("mpbench::Setup::getPlanner(" + to_string(task_id)
 			      + "): door planner requires a door for this task");
 
-        robot_msgs::Door doormsg;
+        door_msgs::Door doormsg;
         doormsg.frame_p1.x = spec->door->px; // hinge
         doormsg.frame_p1.y = spec->door->py;
         doormsg.frame_p2.x = spec->door->px + spec->door->width * cos(spec->door->th_shut); // other end

@@ -32,13 +32,13 @@
 
 #include <iostream>
 #include <boost/shared_ptr.hpp>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <ros/time.h>
 
 namespace topological_map
 {
 
-using robot_msgs::Door;
+using door_msgs::Door;
 using ros::Time;
 
 class DoorInfo

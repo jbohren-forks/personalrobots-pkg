@@ -47,7 +47,7 @@ static const string fixed_frame = "odom_combined";
 
 
 OpenDoorAction::OpenDoorAction(Node& node) :
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("open_door"),
+  robot_actions::Action<door_msgs::Door, door_msgs::Door>("open_door"),
   node_(node)
 {
   node_.advertise<robot_msgs::TaskFrameFormalism>("r_arm_cartesian_tff_controller/command", 10);
@@ -62,7 +62,7 @@ OpenDoorAction::~OpenDoorAction()
 
 
 
-robot_actions::ResultStatus OpenDoorAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
+robot_actions::ResultStatus OpenDoorAction::execute(const door_msgs::Door& goal, door_msgs::Door& feedback)
 { 
   ROS_INFO("OpenDoorAction: execute");
 

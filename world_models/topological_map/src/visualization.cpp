@@ -32,7 +32,7 @@
 #include <ros/node.h>
 #include <ros/console.h>
 #include <ros/assert.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <robot_msgs/Point.h>
 #include <visualization_msgs/Marker.h>
 
@@ -40,7 +40,7 @@ namespace topological_map
 {
 
 using ros::Node;
-using robot_msgs::Door;
+using door_msgs::Door;
 using robot_msgs::Point;
 using visualization_msgs::Marker;
 

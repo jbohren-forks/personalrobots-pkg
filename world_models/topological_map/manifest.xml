@@ -4,6 +4,7 @@
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <depend package="roscpp" />
+<depend package="door_msgs" />
 <depend package="tinyxml" />
 <depend package="deprecated_msgs" />
 <depend package="robot_srvs" />

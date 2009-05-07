@@ -48,7 +48,7 @@ static const string fixed_frame = "odom_combined";
 
 
 ReleaseHandleAction::ReleaseHandleAction(Node& node) : 
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("release_handle"), 
+  robot_actions::Action<door_msgs::Door, door_msgs::Door>("release_handle"), 
   node_(node),
   tf_(node)
 {
@@ -61,7 +61,7 @@ ReleaseHandleAction::~ReleaseHandleAction()
 
 
 
-robot_actions::ResultStatus ReleaseHandleAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
+robot_actions::ResultStatus ReleaseHandleAction::execute(const door_msgs::Door& goal, door_msgs::Door& feedback)
 {
   ROS_INFO("ReleaseHandleAction: execute");
 

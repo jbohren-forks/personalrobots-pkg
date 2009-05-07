@@ -45,7 +45,7 @@ namespace door_functions{
   static const double eps_angle = 5.0*M_PI/180.0;
   static const double gripper_height = 0.8;
 
-  tf::Stamped<tf::Pose> getRobotPose(const robot_msgs::Door& door, double dist)
+  tf::Stamped<tf::Pose> getRobotPose(const door_msgs::Door& door, double dist)
   {
     Vector x_axis(1,0,0);
     
@@ -67,17 +67,17 @@ namespace door_functions{
   }
   
   
-  tf::Stamped<tf::Pose> getGripperPose(const robot_msgs::Door& door, double angle, double dist)
+  tf::Stamped<tf::Pose> getGripperPose(const door_msgs::Door& door, double angle, double dist)
   {
     Vector x_axis(1,0,0);
     
     // get hinge point
     Vector hinge, frame_vec;
-    if (door.hinge == robot_msgs::Door::HINGE_P1){
+    if (door.hinge == door_msgs::Door::HINGE_P1){
       hinge = Vector(door.door_p1.x, door.door_p1.y, door.door_p1.z);
       frame_vec = Vector(door.frame_p2.x - door.frame_p1.x, door.frame_p2.y - door.frame_p1.y, door.frame_p2.z - door.frame_p1.z);
     }
-    else if (door.hinge == robot_msgs::Door::HINGE_P2){
+    else if (door.hinge == door_msgs::Door::HINGE_P2){
       hinge = Vector(door.door_p2.x, door.door_p2.y, door.door_p2.z);
       frame_vec = Vector(door.frame_p1.x - door.frame_p2.x, door.frame_p1.y - door.frame_p2.y, door.frame_p1.z - door.frame_p2.z);
     }
@@ -98,17 +98,17 @@ namespace door_functions{
     return gripper_pose;  
   }
 
-  double getDoorAngle(const robot_msgs::Door& door)
+  double getDoorAngle(const door_msgs::Door& door)
   {
     Vector frame_vec(door.frame_p1.x-door.frame_p2.x, door.frame_p1.y-door.frame_p2.y, door.frame_p1.z-door.frame_p2.z);
     Vector door_vec(door.door_p1.x-door.door_p2.x, door.door_p1.y-door.door_p2.y, door.door_p1.z-door.door_p2.z);
     double angle = getVectorAngle(frame_vec, door_vec);
 
     // validity check
-    if (door.rot_dir == robot_msgs::Door::ROT_DIR_CLOCKWISE && angle > eps_angle)
+    if (door.rot_dir == door_msgs::Door::ROT_DIR_CLOCKWISE && angle > eps_angle)
       ROS_ERROR("Door angle is positive, but door message specifies it turns clockwise");
 
-    if (door.rot_dir == robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE && angle < -eps_angle)
+    if (door.rot_dir == door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE && angle < -eps_angle)
       ROS_ERROR("Door angle is negative, but door message specifies it turns counter-clockwise");
 
     return angle;
@@ -125,7 +125,7 @@ namespace door_functions{
   }
 
 
-  Vector getDoorNormal(const robot_msgs::Door& door)
+  Vector getDoorNormal(const door_msgs::Door& door)
   {
     Vector frame_normal = getFrameNormal(door);
     Rotation rot_frame_door = Rotation::RotZ(getDoorAngle(door));
@@ -133,7 +133,7 @@ namespace door_functions{
   }
 
 
-  Vector getFrameNormal(const robot_msgs::Door& door)
+  Vector getFrameNormal(const door_msgs::Door& door)
   {
     // normal on frame
     Vector p12(door.frame_p1.x-door.frame_p2.x, door.frame_p1.y-door.frame_p2.y, door.frame_p1.z-door.frame_p2.z);
@@ -150,7 +150,7 @@ namespace door_functions{
   }
 
 
-  bool transformTo(const tf::Transformer& tf, const string& goal_frame, const robot_msgs::Door& door_in, robot_msgs::Door& door_out, const std::string& fixed_frame)
+  bool transformTo(const tf::Transformer& tf, const string& goal_frame, const door_msgs::Door& door_in, door_msgs::Door& door_out, const std::string& fixed_frame)
   {
     door_out = door_in;
     ros::Time time_now = ros::Time::now();
@@ -193,7 +193,7 @@ namespace door_functions{
     return true;
   }
 
-  std::vector<robot_msgs::Point> getPolygon(const robot_msgs::Door& door, const double &door_thickness)
+  std::vector<robot_msgs::Point> getPolygon(const door_msgs::Door& door, const double &door_thickness)
   {
     std::vector<robot_msgs::Point> door_polygon;
     robot_msgs::Point tmp;
@@ -216,7 +216,7 @@ namespace door_functions{
     return door_polygon;
   }
 
-  std::ostream& operator<< (std::ostream& os, const robot_msgs::Door& d)
+  std::ostream& operator<< (std::ostream& os, const door_msgs::Door& d)
   {
     os << "Door message in " << d.header.frame_id << " at time " << d.header.stamp.toSec() << endl;
     os << " - frame (" 

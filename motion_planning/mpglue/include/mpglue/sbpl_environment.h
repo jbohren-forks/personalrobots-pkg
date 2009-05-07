@@ -41,7 +41,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 
 class SBPLPlanner;		/**< see motion_planning/sbpl/src/planners/planner.h */
 class DiscreteSpaceInformation; /**< see motion_planning/sbpl/src/discrete_space_information/environment.h */
@@ -114,7 +114,7 @@ namespace mpglue {
 						  double nominalvel_mpersecs,
 						  double timetoturn45degsinplace_secs,
 						  std::string const & motor_primitive_filename,
-						  std::ostream * dbgos, robot_msgs::Door door) throw(std::exception);
+						  std::ostream * dbgos, door_msgs::Door door) throw(std::exception);
     
     virtual DiscreteSpaceInformation * getDSI() = 0;
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg) = 0;

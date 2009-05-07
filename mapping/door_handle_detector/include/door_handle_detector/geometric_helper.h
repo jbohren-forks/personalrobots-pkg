@@ -42,7 +42,7 @@
 #include <robot_msgs/Point32.h>
 #include <robot_msgs/PointStamped.h>
 #include <visualization_msgs/Marker.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 
 #include <tf/transform_listener.h>
 
@@ -126,7 +126,7 @@ inline bool
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Comparison operator for a vector of vectors
 inline bool
-  compareDoorsWeight (const robot_msgs::Door &a, const robot_msgs::Door &b)
+  compareDoorsWeight (const door_msgs::Door &a, const door_msgs::Door &b)
 {
   return (a.weight < b.weight);
 }
@@ -177,7 +177,7 @@ inline void
   anode->publish ("visualization_marker", mk);
 }
 
-void obtainCloudIndicesSet (robot_msgs::PointCloud *points, std::vector<int> &indices, robot_msgs::Door& door,
+void obtainCloudIndicesSet (robot_msgs::PointCloud *points, std::vector<int> &indices, door_msgs::Door& door,
                             tf::TransformListener *tf, std::string fixed_param_frame, double min_z_bounds, double max_z_bounds, double frame_multiplier);
 
 

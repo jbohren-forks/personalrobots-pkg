@@ -134,8 +134,8 @@ private:
 
 
 
-  bool detectHandle (const robot_msgs::Door& door, robot_msgs::PointCloud pointcloud,
-                     std::vector<robot_msgs::Door>& result) const;
+  bool detectHandle (const door_msgs::Door& door, robot_msgs::PointCloud pointcloud,
+                     std::vector<door_msgs::Door>& result) const;
 
   mutable ros::Node* node_;
 

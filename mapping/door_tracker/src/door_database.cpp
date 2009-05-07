@@ -46,7 +46,7 @@
 // ROS messages
 
 #include <robot_msgs/Point32.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <visualization_msgs/Marker.h>
 
 #include <tf/transform_listener.h>
@@ -75,11 +75,11 @@ class DoorDatabase
 
     ros::Node *node_;
 
-    tf::MessageNotifier<robot_msgs::Door>* message_notifier_;
+    tf::MessageNotifier<door_msgs::Door>* message_notifier_;
 
     tf::TransformListener *tf_;
 
-    robot_msgs::Door door_msg_;
+    door_msgs::Door door_msg_;
 
     boost::mutex door_msg_mutex_ ;
 
@@ -118,7 +118,7 @@ class DoorDatabase
       door_msg_.header.frame_id = "base_link";
 
       node_->subscribe(door_msg_topic_,door_msg_, &DoorDatabase::doorMsgCallBack,this,1);
-//    message_notifier_ = new tf::MessageNotifier<robot_msgs::Door> (tf_, node_,  boost::bind(&DoorDatabase::doorMsgCallBack, this, _1), door_msg_topic_.c_str (), door_database_frame_, 1);
+//    message_notifier_ = new tf::MessageNotifier<door_msgs::Door> (tf_, node_,  boost::bind(&DoorDatabase::doorMsgCallBack, this, _1), door_msg_topic_.c_str (), door_database_frame_, 1);
       hinge_number_ = 0;
     };
 
@@ -128,7 +128,7 @@ class DoorDatabase
       delete message_notifier_;
     }
 
-//    void doorMsgCallBack(const tf::MessageNotifier<robot_msgs::Door>::MessagePtr& door)
+//    void doorMsgCallBack(const tf::MessageNotifier<door_msgs::Door>::MessagePtr& door)
     void doorMsgCallBack()
     {
       updateDatabase(door_msg_);
@@ -191,7 +191,7 @@ class DoorDatabase
       return cf;
     }
 
-    void updateDatabase(const robot_msgs::Door &door)
+    void updateDatabase(const door_msgs::Door &door)
     {
       // (a) check if it's already in the database
       // (b) Add it in if it's not
@@ -199,7 +199,7 @@ class DoorDatabase
         addToDatabase(database_,door);
     }
 
-    void addToDatabase(std::vector<door_tracker::DoorDatabaseObject> &database, const robot_msgs::Door &door)
+    void addToDatabase(std::vector<door_tracker::DoorDatabaseObject> &database, const door_msgs::Door &door)
     {
       database.resize(database.size()+1);
 
@@ -226,7 +226,7 @@ class DoorDatabase
       return dist;
     }
 
-    void updateDoorInfo(door_tracker::DoorDatabaseObject &db, const robot_msgs::Door door, int index_p1, int index_p2)
+    void updateDoorInfo(door_tracker::DoorDatabaseObject &db, const door_msgs::Door door, int index_p1, int index_p2)
     {
       double dx = door.door_p2.x - door.door_p1.x;
       double dy = door.door_p2.y - door.door_p1.y;
@@ -280,7 +280,7 @@ class DoorDatabase
       }
     }
 
-    bool inDatabase(std::vector<door_tracker::DoorDatabaseObject> &database, const robot_msgs::Door &door)
+    bool inDatabase(std::vector<door_tracker::DoorDatabaseObject> &database, const door_msgs::Door &door)
     {
       int index_p1 = -1;
       int index_p2 = -1;
@@ -333,7 +333,7 @@ class DoorDatabase
       }
     }
 
-    bool sameDoor(const robot_msgs::Door &door1, const robot_msgs::Door &door2, int &hinge_index_p1, int &hinge_index_p2)
+    bool sameDoor(const door_msgs::Door &door1, const door_msgs::Door &door2, int &hinge_index_p1, int &hinge_index_p2)
     {
       if(distance(door1.door_p1,door2.door_p1) < door_point_distance_threshold_)
       {

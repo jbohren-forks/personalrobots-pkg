@@ -41,7 +41,7 @@
 #include "doors_core/action_detect_handle.h"
 #include <door_functions/door_functions.h>
 #include <pr2_robot_actions/DoorActionState.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <ros/node.h>
 #include <robot_actions/action_runner.h>
 
@@ -61,24 +61,24 @@ int
 
   ros::Node node("trigger_detect_door");
 
-  robot_msgs::Door my_door_;
+  door_msgs::Door my_door_;
 
   my_door_.frame_p1.x = 1.0;
   my_door_.frame_p1.y = -0.5;
   my_door_.frame_p2.x = 1.0;
   my_door_.frame_p2.y = 0.5;
-  my_door_.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-  my_door_.hinge = robot_msgs::Door::HINGE_P2;
+  my_door_.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+  my_door_.hinge = door_msgs::Door::HINGE_P2;
   my_door_.header.frame_id = "base_footprint";
 
   door_handle_detector::DetectDoorAction door_detector(node);
   door_handle_detector::DetectHandleAction handle_detector(node);
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(door_detector);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(handle_detector);
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(door_detector);
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(handle_detector);
   runner.run();
 
-  robot_msgs::Door feedback;
+  door_msgs::Door feedback;
   cout << "door in " << my_door_ << endl;
   door_detector.execute(my_door_, feedback);
   cout << "door out " << feedback << endl;

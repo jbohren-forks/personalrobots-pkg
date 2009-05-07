@@ -55,7 +55,7 @@ namespace executive_trex_pr2 {
       return;
 
     // Now make the calculation - How this works without knowledge of robot position is beyond me. Have to check with Wim.
-    robot_msgs::Door msg;
+    door_msgs::Door msg;
     AdapterUtilities::write(_token_id, msg);
     tf::Stamped<tf::Pose> tf_stamped_pose = door_functions::getRobotPose(msg, _range.getSingletonValue());
 

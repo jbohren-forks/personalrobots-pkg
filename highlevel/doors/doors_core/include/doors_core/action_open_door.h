@@ -38,7 +38,7 @@
 #define ACTION_OPEN_DOOR_H
 
 #include <ros/node.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <robot_msgs/TaskFrameFormalism.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -51,13 +51,13 @@
 namespace door_handle_detector{
 
 
-class OpenDoorAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
+class OpenDoorAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
   OpenDoorAction(ros::Node& node);
   ~OpenDoorAction();
 
-  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
+  virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
 
 private:
   ros::Node& node_;

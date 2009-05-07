@@ -39,7 +39,7 @@
 
 
 #include <boost/thread/thread.hpp>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <ros/node.h>
 #include <robot_actions/action_client.h>
 #include <pr2_robot_actions/Pose2D.h>
@@ -69,7 +69,7 @@ int
   ros::Node node("test_executive");
   boost::thread* thread;
 
-  robot_msgs::Door door;
+  door_msgs::Door door;
   door.frame_p1.x = 1.0;
   door.frame_p1.y = -0.5;
   door.frame_p2.x = 1.0;
@@ -81,8 +81,8 @@ int
   door.travel_dir.x = 1.0;
   door.travel_dir.y = 0.0;
   door.travel_dir.z = 0.0;
-  door.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-  door.hinge = robot_msgs::Door::HINGE_P2;
+  door.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+  door.hinge = door_msgs::Door::HINGE_P2;
   door.header.frame_id = "base_footprint";
     
   pr2_robot_actions::SwitchControllers switchlist;
@@ -94,18 +94,18 @@ int
 
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> tuck_arm("doors_tuck_arms");
   robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
-  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> detect_door("detect_door");
-  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> detect_handle("detect_handle");
-  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> grasp_handle("grasp_handle");
-  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> touch_door("touch_door");
-  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> unlatch_handle("unlatch_handle");
-  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> open_door("open_door");
-  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> push_door("push_door");
-  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> release_handle("release_handle");
-  robot_actions::ActionClient<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> move_base_door("move_base_door");
+  robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> detect_door("detect_door");
+  robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> detect_handle("detect_handle");
+  robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> grasp_handle("grasp_handle");
+  robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> touch_door("touch_door");
+  robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> unlatch_handle("unlatch_handle");
+  robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> open_door("open_door");
+  robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> push_door("push_door");
+  robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> release_handle("release_handle");
+  robot_actions::ActionClient<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> move_base_door("move_base_door");
   robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped> move_base_local("move_base_local");
 
-  robot_msgs::Door tmp_door;
+  door_msgs::Door tmp_door;
 
   cout << "before " << door << endl;
 
@@ -122,7 +122,7 @@ int
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   if (detect_door.execute(door, door, timeout_long) != robot_actions::SUCCESS) return -1;
   cout << "detect door " << door << endl;
-  bool open_by_pushing = (door.latch_state == robot_msgs::Door::UNLATCHED);
+  bool open_by_pushing = (door.latch_state == door_msgs::Door::UNLATCHED);
 
   // detect handle if door is latched
   if (!open_by_pushing){
@@ -159,8 +159,8 @@ int
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-    thread = new boost::thread(boost::bind(&robot_actions::ActionClient<robot_msgs::Door, 
-					   pr2_robot_actions::DoorActionState, robot_msgs::Door>::execute, 
+    thread = new boost::thread(boost::bind(&robot_actions::ActionClient<door_msgs::Door, 
+					   pr2_robot_actions::DoorActionState, door_msgs::Door>::execute, 
 					   &push_door, door, tmp_door, timeout_long));
   }
   else{
@@ -187,8 +187,8 @@ int
     // open door in separate thread
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-    thread = new boost::thread(boost::bind(&robot_actions::ActionClient<robot_msgs::Door, 
-					   pr2_robot_actions::DoorActionState, robot_msgs::Door>::execute, 
+    thread = new boost::thread(boost::bind(&robot_actions::ActionClient<door_msgs::Door, 
+					   pr2_robot_actions::DoorActionState, door_msgs::Door>::execute, 
 					   &open_door, door, tmp_door, timeout_long));
   }    
 

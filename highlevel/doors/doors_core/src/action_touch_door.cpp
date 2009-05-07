@@ -50,7 +50,7 @@ static const double touch_dist = 0.65;
 
 
 TouchDoorAction::TouchDoorAction(Node& node) : 
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("touch_door"), 
+  robot_actions::Action<door_msgs::Door, door_msgs::Door>("touch_door"), 
   node_(node),
   tf_(node)
 {
@@ -65,7 +65,7 @@ TouchDoorAction::~TouchDoorAction()
 
 
 
-robot_actions::ResultStatus TouchDoorAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
+robot_actions::ResultStatus TouchDoorAction::execute(const door_msgs::Door& goal, door_msgs::Door& feedback)
 {
   ROS_INFO("TouchDoorAction: execute");
  
@@ -73,7 +73,7 @@ robot_actions::ResultStatus TouchDoorAction::execute(const robot_msgs::Door& goa
   feedback = goal;
  
   // transform door message to time fixed frame
-  robot_msgs::Door goal_tr;
+  door_msgs::Door goal_tr;
   if (!transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame)){
     ROS_ERROR("TouchDoorAction: Could not tranform door message from '%s' to '%s' at time %f",
 	      goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());

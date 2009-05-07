@@ -38,7 +38,7 @@
 #define ACTION_UNLATCH_HANDLE_H
 
 #include <ros/node.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <robot_msgs/TaskFrameFormalism.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -51,13 +51,13 @@
 namespace door_handle_detector{
 
 
-class UnlatchHandleAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
+class UnlatchHandleAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
   UnlatchHandleAction(ros::Node& node);
   ~UnlatchHandleAction();
 
-  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
+  virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
 
 private:
   void tffCallback();

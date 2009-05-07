@@ -9,7 +9,7 @@
 #include <robot_msgs/Pose.h>
 #include <robot_msgs/Point32.h>
 #include <std_msgs/String.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <robot_msgs/PlugStow.h>
 //#include <pr2_robot_actions/ServoToOutlet.h> //Not used?
 #include <robot_msgs/PointStamped.h>
@@ -39,12 +39,12 @@ namespace executive_trex_pr2 {
     /**
      * @brief Stuff token data into a door message
      */
-    static void write(const TokenId& token, robot_msgs::Door& msg);
+    static void write(const TokenId& token, door_msgs::Door& msg);
 
     /**
      * @brief Read door message into the observation
      */
-    static void read(ObservationByValue& obs, const robot_msgs::Door& msg);
+    static void read(ObservationByValue& obs, const door_msgs::Door& msg);
 
     /**
      * @brief Read plug stow message

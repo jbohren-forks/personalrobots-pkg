@@ -44,7 +44,7 @@ using std::ostream;
 using std::istream;
 using boost::tuple;
 using boost::shared_ptr;
-using robot_msgs::Door;
+using door_msgs::Door;
 using ros::Time;
 
 class RegionGraph;

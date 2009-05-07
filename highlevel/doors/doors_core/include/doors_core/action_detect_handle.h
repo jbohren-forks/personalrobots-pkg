@@ -39,25 +39,25 @@
 
 
 #include <ros/node.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <robot_actions/action.h>
 #include <tf/transform_listener.h>
 
 namespace door_handle_detector{
 
 
-class DetectHandleAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
+class DetectHandleAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
   DetectHandleAction(ros::Node& node);
   ~DetectHandleAction();
 
 
-  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
+  virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
 
 private:
-  bool laserDetection(const robot_msgs::Door& door_in, robot_msgs::Door& door_out);
-  bool cameraDetection(const robot_msgs::Door& door, robot_msgs::Door& door_out);
+  bool laserDetection(const door_msgs::Door& door_in, door_msgs::Door& door_out);
+  bool cameraDetection(const door_msgs::Door& door, door_msgs::Door& door_out);
 
   ros::Node& node_;
   tf::TransformListener tf_;

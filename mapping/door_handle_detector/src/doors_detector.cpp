@@ -34,6 +34,7 @@
 
 using namespace std;
 using namespace robot_msgs;
+using namespace door_msgs;
 using namespace ros;
 using namespace door_handle_detector;
 using namespace door_functions;
@@ -118,16 +119,16 @@ DoorDetector::DoorDetector (ros::Node* anode)
 /** \brief This is the main door detection function */
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool
-  DoorDetector::detectDoors(const robot_msgs::Door& door, PointCloud pointcloud, std::vector<robot_msgs::Door>& result) const
+  DoorDetector::detectDoors(const door_msgs::Door& door, PointCloud pointcloud, std::vector<door_msgs::Door>& result) const
 {
   ROS_INFO ("DoorDetector: Start detecting doors in a point cloud of size %i", (int)pointcloud.pts.size ());
 
   // check if door message specifies hinge side and rot dir
-  if (door.rot_dir == robot_msgs::Door::UNKNOWN){
+  if (door.rot_dir == door_msgs::Door::UNKNOWN){
     ROS_ERROR("DoorDetector: Door rotation direction not specified");
     return false;
   }
-  if (door.hinge == robot_msgs::Door::UNKNOWN){
+  if (door.hinge == door_msgs::Door::UNKNOWN){
     ROS_ERROR("DoorDetector: Door hinge side not specified");
     return false;
   }
@@ -582,7 +583,7 @@ void DoorDetector::cloud_cb (const tf::MessageNotifier<robot_msgs::PointCloud>::
 }
 
 
-double DoorDetector::distToHinge(const robot_msgs::Door& door, robot_msgs::Point32& pnt) const
+double DoorDetector::distToHinge(const door_msgs::Door& door, robot_msgs::Point32& pnt) const
 {
   double dist=-1;
   if (door.hinge == Door::HINGE_P1)

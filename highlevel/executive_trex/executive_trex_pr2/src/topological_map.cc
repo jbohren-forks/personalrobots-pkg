@@ -403,7 +403,7 @@ namespace executive_trex_pr2 {
 
     unsigned int id = (unsigned int)_door_id.getSingletonValue();
 
-    robot_msgs::Door door_state;
+    door_msgs::Door door_state;
     if(!TopologicalMapAdapter::instance()->getDoorState(id, door_state)){
       debugMsg("map:get_door_state",  "No door message available for " << id);
       _door_id.empty();
@@ -650,7 +650,7 @@ namespace executive_trex_pr2 {
       topological_map::RegionId region_id = *it;
       isDoorway(region_id, is_doorway);
       if(is_doorway){
-	robot_msgs::Door door_msg;
+	door_msgs::Door door_msg;
 	getDoorState(region_id, door_msg);
 	double frame_center_x = (door_msg.frame_p1.x + door_msg.frame_p2.x) / 2.0;
 	double frame_center_y = (door_msg.frame_p1.y + door_msg.frame_p2.y) / 2.0;
@@ -721,7 +721,7 @@ namespace executive_trex_pr2 {
     return false;
   }
 
-  bool TopologicalMapAdapter::getDoorState(unsigned int doorway_id, robot_msgs::Door& door_state){
+  bool TopologicalMapAdapter::getDoorState(unsigned int doorway_id, door_msgs::Door& door_state){
     try{
       // Check if it is a valid doorway id
       bool is_doorway(false);

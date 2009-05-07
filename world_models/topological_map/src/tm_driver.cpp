@@ -144,7 +144,7 @@ int main (int argc, char* argv[])
 
   RegionId door1 = m3.containingRegion(Point2D(21.5-dx,20.5));
   RegionId door2 = m3.containingRegion(Point2D(50-dx,30));
-  robot_msgs::Door d = m3.regionDoor(m3.containingRegion(Point2D(50-dx,17.25)));
+  door_msgs::Door d = m3.regionDoor(m3.containingRegion(Point2D(50-dx,17.25)));
   cout << "Door at " << d.frame_p1.x << ", " << d.frame_p1.y << " and " << d.frame_p2.x << ", " << d.frame_p2.y << endl;
   cout << "Open prob at 0.0 is " << m3.doorOpenProb(door1, Time(0.0)) << endl;
 

@@ -39,7 +39,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/multi_array.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <topological_map/outlet_info.h>
 #include <ros/time.h>
 #include <tf/transform_datatypes.h>
@@ -149,12 +149,12 @@ public:
 
   /// \return Info about door in region \a id stored in a Door message object
   /// \throws UnknownRegionException
-  robot_msgs::Door regionDoor (RegionId id) const;
+  door_msgs::Door regionDoor (RegionId id) const;
 
   /// \post Door info for region \a id has been updated to take \a msg into account.  If there's no door, one will be added, else the existing one will be updated.
   /// \throws UnknownRegionException
   /// \throws NotDoorwayRegionException
-  void observeDoorMessage (RegionId id, const robot_msgs::Door& msg);
+  void observeDoorMessage (RegionId id, const door_msgs::Door& msg);
 
   /// \post New evidence about attempted door traversal has been incorporated
   /// \pre \a stamp must be greater than the stamp of the last call to this function for this door

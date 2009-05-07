@@ -48,22 +48,22 @@ namespace TREX {
   /***********************************************************************
    * @brief Door actions operate with a door message for goal and feedback
    ***********************************************************************/
-  class DoorActionAdapter: public ROSActionAdapter<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door> {
+  class DoorActionAdapter: public ROSActionAdapter<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door> {
   public:
 
     DoorActionAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSActionAdapter<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(agentName, configData){
+      : ROSActionAdapter<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(agentName, configData){
     }
     
-    virtual void fillActiveObservationParameters(const robot_msgs::Door& msg, ObservationByValue* obs){
+    virtual void fillActiveObservationParameters(const door_msgs::Door& msg, ObservationByValue* obs){
       AdapterUtilities::read(*obs, msg);
     }
 
-    virtual void fillInactiveObservationParameters(const robot_msgs::Door& msg, ObservationByValue* obs){ 
+    virtual void fillInactiveObservationParameters(const door_msgs::Door& msg, ObservationByValue* obs){ 
       AdapterUtilities::read(*obs, msg);
     }
 
-    void fillDispatchParameters(robot_msgs::Door& msg, const TokenId& goalToken){
+    void fillDispatchParameters(door_msgs::Door& msg, const TokenId& goalToken){
       AdapterUtilities::write(goalToken, msg);
     }
   }; 

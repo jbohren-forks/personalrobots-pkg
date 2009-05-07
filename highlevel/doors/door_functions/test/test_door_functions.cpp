@@ -37,7 +37,7 @@
 
 /* Author: Wim Meeussen */
 
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <ros/node.h>
 #include <gtest/gtest.h>
 #include <kdl/frames.hpp>
@@ -58,7 +58,7 @@ char** g_argv;
 class TestEKF : public testing::Test
 {
 public:
-  robot_msgs::Door my_door_1, my_door_2, my_door_3, my_door_4, my_door_5, my_door_6;
+  door_msgs::Door my_door_1, my_door_2, my_door_3, my_door_4, my_door_5, my_door_6;
 
 protected:
   /// constructor
@@ -75,8 +75,8 @@ protected:
     my_door_1.travel_dir.x = 1.0;
     my_door_1.travel_dir.y = 0.0;
     my_door_1.travel_dir.z = 0.0;
-    my_door_1.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-    my_door_1.hinge = robot_msgs::Door::HINGE_P2;
+    my_door_1.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+    my_door_1.hinge = door_msgs::Door::HINGE_P2;
     my_door_1.header.frame_id = "base_footprint";
     
     my_door_2.frame_p2.x = 1.0;
@@ -90,8 +90,8 @@ protected:
     my_door_2.travel_dir.x = 1.0;
     my_door_2.travel_dir.y = 0.0;
     my_door_2.travel_dir.z = 0.0;
-    my_door_2.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-    my_door_2.hinge = robot_msgs::Door::HINGE_P1;
+    my_door_2.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+    my_door_2.hinge = door_msgs::Door::HINGE_P1;
     my_door_2.header.frame_id = "base_footprint";
 
     my_door_3.frame_p1.x = 1.0;
@@ -105,8 +105,8 @@ protected:
     my_door_3.travel_dir.x = 1.0;
     my_door_3.travel_dir.y = 0.0;
     my_door_3.travel_dir.z = 0.0;
-    my_door_3.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-    my_door_3.hinge = robot_msgs::Door::HINGE_P2;
+    my_door_3.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+    my_door_3.hinge = door_msgs::Door::HINGE_P2;
     my_door_3.header.frame_id = "base_footprint";
 
     my_door_4.frame_p2.x = 1.0;
@@ -120,8 +120,8 @@ protected:
     my_door_4.travel_dir.x = 1.0;
     my_door_4.travel_dir.y = 0.0;
     my_door_4.travel_dir.z = 0.0;
-    my_door_4.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-    my_door_4.hinge = robot_msgs::Door::HINGE_P2;
+    my_door_4.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+    my_door_4.hinge = door_msgs::Door::HINGE_P2;
     my_door_4.header.frame_id = "base_footprint";
 
     my_door_5.frame_p1.x = 1.0;
@@ -135,8 +135,8 @@ protected:
     my_door_5.travel_dir.x = 1.0;
     my_door_5.travel_dir.y = 0.0;
     my_door_5.travel_dir.z = 0.0;
-    my_door_5.rot_dir = robot_msgs::Door::ROT_DIR_CLOCKWISE;
-    my_door_5.hinge = robot_msgs::Door::HINGE_P2;
+    my_door_5.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
+    my_door_5.hinge = door_msgs::Door::HINGE_P2;
     my_door_5.header.frame_id = "base_footprint";
 
     my_door_6.frame_p2.x = 1.0;
@@ -150,8 +150,8 @@ protected:
     my_door_6.travel_dir.x = 1.0;
     my_door_6.travel_dir.y = 0.0;
     my_door_6.travel_dir.z = 0.0;
-    my_door_6.rot_dir = robot_msgs::Door::ROT_DIR_CLOCKWISE;
-    my_door_6.hinge = robot_msgs::Door::HINGE_P2;
+    my_door_6.rot_dir = door_msgs::Door::ROT_DIR_CLOCKWISE;
+    my_door_6.hinge = door_msgs::Door::HINGE_P2;
     my_door_6.header.frame_id = "base_footprint";
   }
   

@@ -37,7 +37,7 @@
 #include <door_handle_detector/DoorsDetectorCloud.h>
 #include <door_handle_detector/DoorsDetector.h>
 #include <door_functions/door_functions.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <point_cloud_assembler/BuildCloudAngle.h>
 #include "doors_core/action_detect_handle.h"
 
@@ -53,7 +53,7 @@ static const double scan_height = 0.4; //[m]
 static const unsigned int max_retries = 7;
 
 DetectHandleAction::DetectHandleAction(Node& node): 
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("detect_handle"),
+  robot_actions::Action<door_msgs::Door, door_msgs::Door>("detect_handle"),
   node_(node),
   tf_(node)
 {
@@ -68,7 +68,7 @@ DetectHandleAction::~DetectHandleAction()
 
 
 
-robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
+robot_actions::ResultStatus DetectHandleAction::execute(const door_msgs::Door& goal, door_msgs::Door& feedback)
 {
   ROS_INFO("DetectHandleAction: execute");
 
@@ -76,7 +76,7 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
   feedback = goal;
 
   // transform door message to time fixed frame
-  robot_msgs::Door goal_tr;
+  door_msgs::Door goal_tr;
   transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame);
 
   // try to detect handle 
@@ -89,7 +89,7 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
     }
 
     // laser detection
-    robot_msgs::Door result_laser, result_camera;
+    door_msgs::Door result_laser, result_camera;
     if (!laserDetection(goal_tr, result_laser)){
       ROS_ERROR("DetectHandleAction: Laser detection failed on try %i", nr_tries+1);
       continue;
@@ -150,12 +150,12 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
       
       // store hinge side
       /*
-      if (feedback.hinge ==  robot_msgs::Door::UNKNOWN){
+      if (feedback.hinge ==  door_msgs::Door::UNKNOWN){
 	if (pow(feedback.handle.x-result_laser.door_p1.x,2)+pow(feedback.handle.y-result_laser.door_p1.y,2) <
 	    pow(feedback.handle.x-result_laser.door_p2.x,2)+pow(feedback.handle.y-result_laser.door_p2.y,2))
-	  feedback.hinge = robot_msgs::Door::HINGE_P2;
+	  feedback.hinge = door_msgs::Door::HINGE_P2;
 	else
-	  feedback.hinge = robot_msgs::Door::HINGE_P1;
+	  feedback.hinge = door_msgs::Door::HINGE_P1;
       }
       */
       ROS_INFO("DetectHandleAction: Found handle in %i tries", nr_tries+1);
@@ -169,8 +169,8 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
 
 
 
-bool DetectHandleAction::laserDetection(const robot_msgs::Door& door_in,
-                                        robot_msgs::Door& door_out)
+bool DetectHandleAction::laserDetection(const door_msgs::Door& door_in,
+                                        door_msgs::Door& door_out)
 {
   // check where robot is relative to the door
   if (isPreemptRequested()) return false;
@@ -225,8 +225,8 @@ bool DetectHandleAction::laserDetection(const robot_msgs::Door& door_in,
   return true;
 }
 
-bool DetectHandleAction::cameraDetection(const robot_msgs::Door& door_in,
-                                         robot_msgs::Door& door_out)
+bool DetectHandleAction::cameraDetection(const door_msgs::Door& door_in,
+                                         door_msgs::Door& door_out)
 {
   // make the head point towards the door
   if (isPreemptRequested()) return false;

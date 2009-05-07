@@ -49,7 +49,7 @@
 
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <robot_msgs/DiagnosticMessage.h>
 
 #include <angles/angles.h>
@@ -63,7 +63,7 @@ namespace nav {
    * @class MoveBaseDoorAction
    * @brief A class adhering to the robot_actions::Action interface that moves the robot base to a goal location.
    */
-  class MoveBaseDoorAction : public robot_actions::Action<robot_msgs::Door, robot_msgs::Door> {
+  class MoveBaseDoorAction : public robot_actions::Action<door_msgs::Door, door_msgs::Door> {
     public:
       /**
        * @brief  Constructor for the actions
@@ -84,7 +84,7 @@ namespace nav {
        * @param feedback Feedback that the action gives to a higher-level monitor, in this case, the position of the robot
        * @return The result of the execution, ie: Success, Preempted, Aborted, etc.
        */
-      virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
+      virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
 
     private:
       /**
@@ -171,7 +171,7 @@ namespace nav {
       std::string global_frame_, control_frame_, robot_base_frame_;
       bool valid_plan_;
       boost::recursive_mutex lock_;
-      robot_msgs::Door door_;
+      door_msgs::Door door_;
       pr2_robot_actions::Pose2D goal_;
 
       tf::Stamped<tf::Pose> global_pose_;

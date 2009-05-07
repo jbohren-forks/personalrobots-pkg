@@ -17,7 +17,7 @@
 #include "FlawFilter.hh"
 #include "UnboundVariableDecisionPoint.hh"
 #include <topological_map/topological_map.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <robot_msgs/Pose.h>
 
 using namespace EUROPA;
@@ -379,7 +379,7 @@ namespace executive_trex_pr2 {
      * @brief Get the door position information (2 points at its base, given the id
      * @return true if the door id is a valid doorway, otherwise false. If a valid id, then it will the door message
      */
-    virtual bool getDoorState(unsigned int doorway_id, robot_msgs::Door& door_state);
+    virtual bool getDoorState(unsigned int doorway_id, door_msgs::Door& door_state);
 
     /**
      * @brief Test if a given region is a doorway

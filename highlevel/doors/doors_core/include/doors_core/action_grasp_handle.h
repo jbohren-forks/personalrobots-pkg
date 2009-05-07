@@ -40,7 +40,7 @@
 
 
 #include <ros/node.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
@@ -52,13 +52,13 @@
 
 namespace door_handle_detector{
 
-class GraspHandleAction: public robot_actions::Action<robot_msgs::Door, robot_msgs::Door>
+class GraspHandleAction: public robot_actions::Action<door_msgs::Door, door_msgs::Door>
 {
 public:
   GraspHandleAction(ros::Node& node);
   ~GraspHandleAction();
 
-  virtual robot_actions::ResultStatus execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback);
+  virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
 
 
 private:

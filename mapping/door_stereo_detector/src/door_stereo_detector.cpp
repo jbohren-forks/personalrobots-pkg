@@ -49,7 +49,6 @@
 #include <robot_msgs/PolygonalMap.h>
 
 #include <robot_msgs/Point32.h>
-#include <robot_msgs/Door.h>
 #include <visualization_msgs/Marker.h>
 
 

@@ -37,7 +37,7 @@
 
 /* Author: Wim Meeussen */
 
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <ros/node.h>
 #include <gtest/gtest.h>
 #include <door_handle_detector/door_functions.h>
@@ -56,7 +56,7 @@ char** g_argv;
 class TestEKF : public testing::Test
 {
 public:
-  robot_msgs::Door my_door_1, my_door_2;
+  door_msgs::Door my_door_1, my_door_2;
 
 protected:
   /// constructor
@@ -73,8 +73,8 @@ protected:
     my_door_1.normal.x = 1.0;
     my_door_1.normal.y = 0.0;
     my_door_1.normal.z = 0.0;
-    my_door_1.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-    my_door_1.hinge = robot_msgs::Door::HINGE_P2;
+    my_door_1.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+    my_door_1.hinge = door_msgs::Door::HINGE_P2;
     my_door_1.header.frame_id = "base_footprint";
     
     my_door_2.frame_p1.x = -0.198;
@@ -88,8 +88,8 @@ protected:
     my_door_2.normal.x = 0.29;
     my_door_2.normal.y = -0.95;
     my_door_2.normal.z = 0.0;
-    my_door_2.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
-    my_door_2.hinge = robot_msgs::Door::HINGE_P2;
+    my_door_2.rot_dir = door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+    my_door_2.hinge = door_msgs::Door::HINGE_P2;
     my_door_2.header.frame_id = "base_footprint";
   }
   

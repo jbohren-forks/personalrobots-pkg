@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include <ros/node.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <checkerboard_detector/ObjectDetection.h>
 
 #include <tf/tf.h>
@@ -53,7 +53,7 @@ class DoorCheckerboardDetectorNode : public ros::Node
     double door_width_;
     double door_checkerboard_x_offset_, door_checkerboard_z_offset_, checkerboard_handle_z_offset_, checkerboard_handle_x_offset_;
     tf::TransformListener tf_; /**< Used to do transforms */
-    robot_msgs::Door door_msg_;
+    door_msgs::Door door_msg_;
 
     DoorCheckerboardDetectorNode(std::string node_name):ros::Node(node_name),tf_(*this, false, ros::Duration(10))
     {
@@ -70,7 +70,7 @@ class DoorCheckerboardDetectorNode : public ros::Node
       this->param<double>("door_checkerboard_detector/checkerboard_handle_x_offset",checkerboard_handle_x_offset_,0.0);
 
       subscribe(listen_topic_, checkerboard_msg_,  &DoorCheckerboardDetectorNode::doorCallback,1);
-      advertise<robot_msgs::Door>(publish_topic_,1);
+      advertise<door_msgs::Door>(publish_topic_,1);
       advertiseService("door_handle_checkerboard_detector", &DoorCheckerboardDetectorNode::detectDoor, this);
 
     }

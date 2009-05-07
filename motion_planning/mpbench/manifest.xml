@@ -9,5 +9,6 @@
  <depend package="nepumuk"/>
  <depend package="mpglue"/>
  <depend package="costmap_2d"/>
+ <depend package="door_msgs"/>
  <sysdepend os="ubuntu" version="7.04-feisty" package="libexpat1-dev"/>
 </package>

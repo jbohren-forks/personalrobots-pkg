@@ -51,7 +51,7 @@
 #include <robot_msgs/PolygonalMap.h>
 
 #include <robot_msgs/Point32.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <visualization_msgs/Marker.h>
 
 #include <std_msgs/String.h>
@@ -111,9 +111,9 @@ class DoorTracker
 
     tf::MessageNotifier<laser_scan::LaserScan>* message_notifier_;
 
-    robot_msgs::Door door_msg_;
+    door_msgs::Door door_msg_;
 
-    robot_msgs::Door door_msg_in_;
+    door_msgs::Door door_msg_in_;
 
     boost::mutex door_msg_mutex_ ;
 
@@ -349,7 +349,7 @@ class DoorTracker
 
 //      node_->subscribe(door_msg_topic_,door_msg_in_, &DoorTracker::doorMsgCallBack,this,1);
         node_->advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
-        node_->advertise<robot_msgs::Door>( "~door_message", 0 );
+        node_->advertise<door_msgs::Door>( "~door_message", 0 );
         node_->advertiseService ("~doors_detector", &DoorTracker::detectDoorService, this);
 
         message_notifier_ = new tf::MessageNotifier<laser_scan::LaserScan> (tf_, node_,  boost::bind(&DoorTracker::laserCallBack, this, _1), base_laser_topic_.c_str (), fixed_frame_, 1);
@@ -567,7 +567,7 @@ class DoorTracker
       if(inliers_size_max_index > -1)
       {
         publishLine(line_segment_min[inliers_size_max_index],line_segment_max[inliers_size_max_index],0, cloud.header.frame_id);
-        robot_msgs::Door door_tmp;
+        door_msgs::Door door_tmp;
         door_tmp.door_p1.x = line_segment_min[inliers_size_max_index].x;
         door_tmp.door_p1.y = line_segment_min[inliers_size_max_index].y;
         door_tmp.door_p1.z = line_segment_min[inliers_size_max_index].z;
@@ -710,7 +710,7 @@ class DoorTracker
     }
 
 
-    void obtainCloudIndicesSet(robot_msgs::PointCloud *points, vector<int> &indices, robot_msgs::Door door_msg, tf::TransformListener *tf, double frame_multiplier)
+    void obtainCloudIndicesSet(robot_msgs::PointCloud *points, vector<int> &indices, door_msgs::Door door_msg, tf::TransformListener *tf, double frame_multiplier)
     {
       // frames used
       string cloud_frame = points->header.frame_id;

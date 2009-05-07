@@ -52,7 +52,7 @@ static const double push_vel  = 10.0 * M_PI/180.0;  // 10 [deg/sec]
 
 
 PushDoorAction::PushDoorAction(Node& node) : 
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("push_door"), 
+  robot_actions::Action<door_msgs::Door, door_msgs::Door>("push_door"), 
   node_(node),
   tf_(node)
 {
@@ -69,7 +69,7 @@ PushDoorAction::~PushDoorAction()
 
 
 
-robot_actions::ResultStatus PushDoorAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
+robot_actions::ResultStatus PushDoorAction::execute(const door_msgs::Door& goal, door_msgs::Door& feedback)
 {
   ROS_INFO("PushDoorAction: execute");
  
@@ -77,7 +77,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const robot_msgs::Door& goal
   feedback = goal;
  
   // transform door message to time fixed frame
-  robot_msgs::Door goal_tr;
+  door_msgs::Door goal_tr;
   if (!transformTo(tf_, fixed_frame, goal, goal_tr, fixed_frame)){
     ROS_ERROR("PushDoorAction: Could not tranform door message from '%s' to '%s' at time %f",
 	      goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());
@@ -92,9 +92,9 @@ robot_actions::ResultStatus PushDoorAction::execute(const robot_msgs::Door& goal
   // angle step
   Duration sleep_time(0.01);
   double angle_step, angle=0;
-  if (goal_tr.rot_dir == robot_msgs::Door::ROT_DIR_CLOCKWISE)
+  if (goal_tr.rot_dir == door_msgs::Door::ROT_DIR_CLOCKWISE)
     angle_step = -push_vel*sleep_time.toSec();
-  else if (goal_tr.rot_dir == robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE)
+  else if (goal_tr.rot_dir == door_msgs::Door::ROT_DIR_COUNTERCLOCKWISE)
     angle_step = push_vel*sleep_time.toSec();
   else{
     ROS_ERROR("PushDoorAction: door rotation direction not specified");

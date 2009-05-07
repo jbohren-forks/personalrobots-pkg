@@ -56,7 +56,7 @@
 #include "robot_msgs/PointCloud.h"
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/PointStamped.h"
-#include "robot_msgs/Door.h"
+#include "door_msgs/Door.h"
 #include "visualization_msgs/Marker.h"
 #include "door_handle_detector/DoorsDetector.h"
 #include "std_srvs/Empty.h"

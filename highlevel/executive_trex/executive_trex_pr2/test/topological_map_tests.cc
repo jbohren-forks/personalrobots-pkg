@@ -7,7 +7,7 @@
  */
 
 #include <ros/console.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <executive_trex_pr2/topological_map.h>
 #include <set>
 #include <gtest/gtest.h>
@@ -158,7 +158,7 @@ TEST(executive_trex_pr2, map_read_from_file){
   ASSERT_EQ(map.isObstacle(15.0, 22.05), true);
 
 
-  robot_msgs::Door door_state;
+  door_msgs::Door door_state;
   unsigned int door_region_id = TopologicalMapAdapter::instance()->getRegion(50,30);
   ASSERT_EQ(TopologicalMapAdapter::instance()->getDoorState(door_region_id, door_state), true);
 }

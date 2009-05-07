@@ -37,7 +37,7 @@
 
 #include "doors_core/action_release_handle.h"
 #include <pr2_robot_actions/DoorActionState.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <ros/node.h>
 #include <robot_actions/action_runner.h>
 
@@ -56,7 +56,7 @@ int
 
   ros::Node node("name");
 
-  robot_msgs::Door my_door_;
+  door_msgs::Door my_door_;
 
   my_door_.frame_p1.x = 1.0;
   my_door_.frame_p1.y = -0.5;
@@ -68,10 +68,10 @@ int
 
   door_handle_detector::ReleaseHandleAction release_handle(node);
   robot_actions::ActionRunner runner(10.0);
-  runner.connect<robot_msgs::Door, pr2_robot_actions::DoorActionState, robot_msgs::Door>(release_handle);
+  runner.connect<door_msgs::Door, pr2_robot_actions::DoorActionState, door_msgs::Door>(release_handle);
   runner.run();
 
-  robot_msgs::Door feedback;
+  door_msgs::Door feedback;
   release_handle.execute(my_door_, feedback);
 
   return (0);

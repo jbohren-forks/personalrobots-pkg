@@ -39,7 +39,7 @@
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
 
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 #include <std_msgs/String.h>
 #include <door_handle_detector/DoorDetector.h>
 
@@ -64,9 +64,9 @@ class TestDoorDetectionNode : public PR2ArmNode
     double door_width_;
     tf::TransformListener tf_; /**< Used to do transforms */
 
-    robot_msgs::Door door_msg_from_checkerboard_;
-    robot_msgs::Door door_msg_from_detector_;
-    robot_msgs::Door door_msg_to_detector_;
+    door_msgs::Door door_msg_from_checkerboard_;
+    door_msgs::Door door_msg_from_detector_;
+    door_msgs::Door door_msg_to_detector_;
 
     TestDoorDetectionNode(std::string node_name, std::string arm_name, std::string gripper_name):PR2ArmNode(node_name,arm_name,gripper_name),tf_(*this, false, ros::Duration(10))
                          //    TestDoorDetectionNode(std::string node_name):ros::Node(node_name),tf_(*this, false, ros::Duration(10))
@@ -179,7 +179,7 @@ class TestDoorDetectionNode : public PR2ArmNode
       return(sqrt(pow((p1.x-p2.x),2) + pow((p1.y-p2.y),2)));
     }
 
-    bool compareDoorMsgs(robot_msgs::Door msg_1, robot_msgs::Door msg_2, std::string &print_string)
+    bool compareDoorMsgs(door_msgs::Door msg_1, door_msgs::Door msg_2, std::string &print_string)
     {
       if (fabs(msg_1.header.stamp.toSec() - msg_2.header.stamp.toSec()) > MAX_COMPARE_TIME)      //First check the times to make sure they are fairly recent w.r.t each other
       {
@@ -236,7 +236,7 @@ class TestDoorDetectionNode : public PR2ArmNode
     }
 
 
-    bool detectDoor(const robot_msgs::Door& door_estimate,  robot_msgs::Door& door_detection)
+    bool detectDoor(const door_msgs::Door& door_estimate,  door_msgs::Door& door_detection)
     {
       door_handle_detector::DoorDetector::Request  req;
       door_handle_detector::DoorDetector::Response res;
@@ -249,7 +249,7 @@ class TestDoorDetectionNode : public PR2ArmNode
         return false;
     }
 
-    bool detectDoorCheckerboard(const robot_msgs::Door& door_estimate,  robot_msgs::Door& door_detection)
+    bool detectDoorCheckerboard(const door_msgs::Door& door_estimate,  door_msgs::Door& door_detection)
     {
       door_handle_detector::DoorDetector::Request  req;
       door_handle_detector::DoorDetector::Response res;

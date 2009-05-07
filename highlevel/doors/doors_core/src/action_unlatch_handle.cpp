@@ -47,7 +47,7 @@ static const string fixed_frame = "odom_combined";
 
 
 UnlatchHandleAction::UnlatchHandleAction(Node& node) :
-  robot_actions::Action<robot_msgs::Door, robot_msgs::Door>("unlatch_handle"),
+  robot_actions::Action<door_msgs::Door, door_msgs::Door>("unlatch_handle"),
   node_(node)
 {
   node_.advertise<robot_msgs::TaskFrameFormalism>("r_arm_cartesian_tff_controller/command", 10);
@@ -62,7 +62,7 @@ UnlatchHandleAction::~UnlatchHandleAction()
 
 
 
-robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door& goal, robot_msgs::Door& feedback)
+robot_actions::ResultStatus UnlatchHandleAction::execute(const door_msgs::Door& goal, door_msgs::Door& feedback)
 { 
   ROS_INFO("UnlatchHandleAction: execute");
 
@@ -147,7 +147,7 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door&
       node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
       node_.publish("r_arm_cartesian_tff_controller/command", tff_stop_);
       ROS_INFO("UnlatchHandleAction: Door is locked");
-      feedback.latch_state = robot_msgs::Door::LOCKED;
+      feedback.latch_state = door_msgs::Door::LOCKED;
       return robot_actions::SUCCESS;
     }
 
@@ -161,7 +161,7 @@ robot_actions::ResultStatus UnlatchHandleAction::execute(const robot_msgs::Door&
   
   // finished
   node_.unsubscribe("r_arm_cartesian_tff_controller/state/position");
-  feedback.latch_state = robot_msgs::Door::UNLATCHED;
+  feedback.latch_state = door_msgs::Door::UNLATCHED;
   return robot_actions::SUCCESS;
 }
 

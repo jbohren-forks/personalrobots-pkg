@@ -8,7 +8,7 @@ namespace executive_trex_pr2 {
   /**
    * Write token to the message
    */
-  void AdapterUtilities::write(const TokenId& token, robot_msgs::Door& msg){
+  void AdapterUtilities::write(const TokenId& token, door_msgs::Door& msg){
     getHeader(msg, token);
 
     // Latch state
@@ -45,7 +45,7 @@ namespace executive_trex_pr2 {
   }
 
   // Read Observation from Door Message
-  void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::Door& msg){
+  void AdapterUtilities::read(ObservationByValue& obs, const door_msgs::Door& msg){
     setHeader(msg, obs);
 
     // Latch state

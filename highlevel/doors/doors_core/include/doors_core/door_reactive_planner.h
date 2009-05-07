@@ -41,7 +41,7 @@
 #include <robot_msgs/Vector3.h>
 #include <robot_msgs/Point.h>
 #include <robot_msgs/DiagnosticStatus.h>
-#include <robot_msgs/Door.h>
+#include <door_msgs/Door.h>
 
 // For transform support
 #include <tf/transform_listener.h>
@@ -87,7 +87,7 @@ namespace door_reactive_planner
      * @brief Set door information for the planner
      * @param door_msg_in The door message containing information about the door
      */
-    void setDoor(robot_msgs::Door door_msg_in);
+    void setDoor(door_msgs::Door door_msg_in);
 
     /**
      * @brief compute the oriented footprint for a particular position of the robot 
