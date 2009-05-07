@@ -85,6 +85,7 @@ int main (int argc, char* argv[])
 {
 
   ros::init(argc, argv); 
+  ros::Node node("tm_driver");
   
   OccupancyGrid grid(extents[21][24]);
   setV(grid, 0, 1, 21, 0, 1, 24, false);
@@ -117,7 +118,7 @@ int main (int argc, char* argv[])
   // m->writeOutletsAndMap(str);
 
 
-  ifstream str3("local/willow.tmap");
+  ifstream str3("/u/bhaskara/local/top/willow.tmap");
   TopologicalMap m3(str3, 1.0, 1e9, 1e9);
 
   tmap::visualizeTopologicalMap(m3);
