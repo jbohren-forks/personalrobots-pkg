@@ -68,6 +68,8 @@ private:
   DiagnosticUpdater<ProsilicaNode> diagnostic_;
   int count_;
   double desired_freq_;
+  image_msgs::Image thumbnail_;
+  int thumbnail_size_;
   
   boost::mutex grab_mutex_;
 
@@ -211,6 +213,9 @@ public:
       node_.advertise<image_msgs::CamInfo>("~cam_info", 1);
     }
 
+    node_.param("~thumbnail_size", thumbnail_size_, 128);
+    node_.advertise<image_msgs::Image>("~thumbnail", 1);
+
     diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
   }
 
@@ -310,20 +315,11 @@ public:
     if (!frame)
       return false;
 
-    bool success;
-    if (calibrated_) {
-      success = processFrame(frame, img_, res.image, res.cam_info);
-      if (success) {
-        node_.publish("~image", img_);
-        node_.publish("~image_rect", res.image);
-        node_.publish("~cam_info", res.cam_info);
-      }
-    }
-    else {
-      success = processFrame(frame, res.image, img_, res.cam_info);
-      if (success)
-        node_.publish("~image", res.image);
-    }
+    image_msgs::Image &image = calibrated_ ? img_ : res.image;
+    image_msgs::Image &rect_image = calibrated_ ? res.image : rect_img_;
+    bool success = processFrame(frame, image, rect_image, res.cam_info);
+    if (success)
+      publishTopics(image, rect_image, res.cam_info);
 
     return success;
   }
@@ -495,17 +491,38 @@ private:
     count_++;
     return true;
   }
+
+  void publishTopics(image_msgs::Image &img, image_msgs::Image &rect_img,
+                     image_msgs::CamInfo &cam_info)
+  {
+    node_.publish("~image", img);
+    if (calibrated_) {
+      node_.publish("~image_rect", rect_img);
+      node_.publish("~cam_info", cam_info);
+    }
+
+    if (node_.numSubscribers("~thumbnail") > 0) {
+      int width  = img.uint8_data.layout.dim[1].size;
+      int height = img.uint8_data.layout.dim[0].size;
+      float aspect = std::sqrt((float)width / height);
+      int scaled_width  = thumbnail_size_ * aspect + 0.5;
+      int scaled_height = thumbnail_size_ / aspect + 0.5;
+      
+      setBgrLayout(thumbnail_, scaled_width, scaled_height);
+      if (!rect_img_bridge_.fromImage(thumbnail_, "bgr"))
+        return;
+      cvResize(img_bridge_.toIpl(), rect_img_bridge_.toIpl());
+
+      node_.publish("~thumbnail", thumbnail_);
+    }
+  }
   
   void publishImage(tPvFrame* frame)
   {
     if (!processFrame(frame, img_, rect_img_, cam_info_))
       return;
 
-    node_.publish("~image", img_);
-    if (calibrated_) {
-      node_.publish("~image_rect", rect_img_);
-      node_.publish("~cam_info", cam_info_);
-    }
+    publishTopics(img_, rect_img_, cam_info_);
   }
 
   void loadIntrinsics()
