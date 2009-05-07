@@ -48,6 +48,9 @@
 #include <tf/tf.h>
 #include <ros/node.h>
 
+#include <deprecated_msgs/RobotBase2DOdom.h>
+#include <angles/angles.h>
+
 typedef Eigen::Matrix<float, 3, 1> OdomMatrix3x1;
 typedef Eigen::Matrix<float, 16, 1> OdomMatrix16x1;
 typedef Eigen::Matrix<float, 16, 3> OdomMatrix16x3;
@@ -161,9 +164,13 @@ namespace controller
 
       double expected_publish_time_;
 
-      realtime_tools::RealtimePublisher <pr2_msgs::Odometry>* odometry_publisher_ ;  //!< Publishes the odometry msg from the update() realtime loop
+      realtime_tools::RealtimePublisher <pr2_msgs::Odometry>* odometry_publisher_ ;  
 
-      realtime_tools::RealtimePublisher <tf::tfMessage>* transform_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
+      realtime_tools::RealtimePublisher <deprecated_msgs::RobotBase2DOdom>* old_odometry_publisher_ ;  
+
+      realtime_tools::RealtimePublisher <tf::tfMessage>* transform_publisher_ ;  
+
+      void getOldOdometryMessage(deprecated_msgs::RobotBase2DOdom &msg);
 
    };
 }

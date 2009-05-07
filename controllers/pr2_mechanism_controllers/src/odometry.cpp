@@ -44,8 +44,10 @@ Odometry::Odometry()
 Odometry::~Odometry()
 {
   odometry_publisher_->stop();
+  old_odometry_publisher_->stop();
   transform_publisher_->stop();
 
+  delete old_odometry_publisher_;
   delete odometry_publisher_;
   delete transform_publisher_;
 }
@@ -60,33 +62,34 @@ void Odometry::init()
   ros::Node::instance()->param("~wheel_radius",wheel_radius_,0.070);
 
   ros::Node::instance()->param<std::string>("~ils_weight_type",ils_weight_type_,"Gaussian");
-  ros::Node::instance()->param<int>("~ils_max_iterations",ils_max_iterations_,0);
+  ros::Node::instance()->param<int>("~ils_max_iterations",ils_max_iterations_,3);
   ros::Node::instance()->param<std::string>("~xml_wheel_name",xml_wheel_name_,"wheel");
   ros::Node::instance()->param<std::string>("~odom_frame",odom_frame_,"odom");
   ros::Node::instance()->param("~expected_publish_time",expected_publish_time_,0.03);
 
   odometry_publisher_ = NULL;
   transform_publisher_ = NULL;
+  old_odometry_publisher_ = NULL;
   num_wheels_ = 0;
 }
 
 void Wheel::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
-   std::string name = config->Attribute("name");
-   mechanism::Link *link = robot_state->model_->getLink(name);
-   joint_ = robot_state->getJointState(link->joint_name_);
-   tf::Transform offset = link->getOffset();
-   offset_.x = offset.getOrigin().x();
-   offset_.y = offset.getOrigin().y();
-   offset_.z = offset.getOrigin().z();
-   link = robot_state->model_->getLink(link->parent_name_);
-   offset = link->getOffset();
-   steer_offset_.x = offset.getOrigin().x();
-   steer_offset_.y = offset.getOrigin().y();
-   steer_offset_.z = offset.getOrigin().z();
-   steer_ = robot_state->getJointState(link->joint_name_);
-   assert(steer_);
-   ROS_INFO("Loaded wheel: %s with parent caster joint: %s",name.c_str(),link->joint_name_.c_str());
+  std::string name = config->Attribute("name");
+  mechanism::Link *link = robot_state->model_->getLink(name);
+  joint_ = robot_state->getJointState(link->joint_name_);
+  tf::Transform offset = link->getOffset();
+  offset_.x = offset.getOrigin().x();
+  offset_.y = offset.getOrigin().y();
+  offset_.z = offset.getOrigin().z();
+  link = robot_state->model_->getLink(link->parent_name_);
+  offset = link->getOffset();
+  steer_offset_.x = offset.getOrigin().x();
+  steer_offset_.y = offset.getOrigin().y();
+  steer_offset_.z = offset.getOrigin().z();
+  steer_ = robot_state->getJointState(link->joint_name_);
+  assert(steer_);
+  ROS_INFO("Loaded wheel: %s with parent caster joint: %s",name.c_str(),link->joint_name_.c_str());
 }
 
 bool Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
@@ -94,10 +97,10 @@ bool Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
   TiXmlElement *elt = config->FirstChildElement(xml_wheel_name_);
   Wheel tmp;
   while(elt){
-     tmp.initXml(robot_state,elt);
-     wheel_.push_back(tmp);
-     elt = elt->NextSiblingElement(xml_wheel_name_);
-     num_wheels_++;
+    tmp.initXml(robot_state,elt);
+    wheel_.push_back(tmp);
+    elt = elt->NextSiblingElement(xml_wheel_name_);
+    num_wheels_++;
   }
 
   cbv_lhs_ = Eigen::MatrixXf::Zero(16,3);
@@ -119,6 +122,10 @@ bool Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
   if (odometry_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete odometry_publisher_ ;
   odometry_publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::Odometry> ("/base/"+odom_frame_, 1) ;
+
+  if (old_odometry_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete old_odometry_publisher_ ;
+  old_odometry_publisher_ = new realtime_tools::RealtimePublisher <deprecated_msgs::RobotBase2DOdom> ("odom", 1) ;
 
   if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_ ;
@@ -147,10 +154,10 @@ robot_msgs::PoseDot Odometry::pointVel2D(const robot_msgs::Point& pos, const rob
 
 void Odometry::update()
 {
-   current_time_ = robot_state_->hw_->current_time_;
-   updateOdometry();
-   publish();
-   last_time_ = current_time_;
+  current_time_ = robot_state_->hw_->current_time_;
+  updateOdometry();
+  publish();
+  last_time_ = current_time_;
 }
 
 void Odometry::updateOdometry()
@@ -176,9 +183,9 @@ void Odometry::updateOdometry()
 
 void Odometry::getOdometry(robot_msgs::Point &odom, robot_msgs::PoseDot &odom_vel)
 {
-   odom = odom_;
-   odom_vel = odom_vel_;
-   return;
+  odom = odom_;
+  odom_vel = odom_vel_;
+  return;
 }
 
 void Odometry::getOdometryMessage(pr2_msgs::Odometry &msg)
@@ -201,6 +208,23 @@ void Odometry::getOdometryMessage(pr2_msgs::Odometry &msg)
   msg.residual = odometry_residual_max_;
 }
 
+
+void Odometry::getOldOdometryMessage(deprecated_msgs::RobotBase2DOdom &msg)
+{
+  msg.header.frame_id   = "odom";
+  msg.header.stamp.fromSec(current_time_);
+
+  msg.pos.x  = odom_.x;
+  msg.pos.y  = odom_.y;
+  msg.pos.th = angles::normalize_angle(odom_.z);
+
+  msg.vel.x  = odom_vel_.vel.vx;
+  msg.vel.y  = odom_vel_.vel.vy;
+  msg.vel.th = odom_vel_.ang_vel.vz;
+
+  msg.residual = odometry_residual_max_;
+}
+
 void Odometry::getOdometry(double &x, double &y, double &yaw, double &vx, double &vy, double &vw)
 {
   x = odom_.x;
@@ -213,13 +237,13 @@ void Odometry::getOdometry(double &x, double &y, double &yaw, double &vx, double
 
 void Wheel::updatePosition()
 {
-   robot_msgs::Point result = steer_offset_;
-   double costh = cos(steer_->position_);
-   double sinth = sin(steer_->position_);
-   result.x += costh*offset_.x-sinth*offset_.y;
-   result.y += sinth*offset_.x+costh*offset_.y;
-   result.z = 0.0;
-   position_ = result;
+  robot_msgs::Point result = steer_offset_;
+  double costh = cos(steer_->position_);
+  double sinth = sin(steer_->position_);
+  result.x += costh*offset_.x-sinth*offset_.y;
+  result.y += sinth*offset_.x+costh*offset_.y;
+  result.z = 0.0;
+  position_ = result;
 }
 
 void Odometry::computeBaseVelocity()
@@ -301,7 +325,6 @@ Eigen::MatrixXf Odometry::iterativeLeastSquares(Eigen::MatrixXf lhs, Eigen::Matr
   return fit_soln_;
 };
 
-
 Eigen::MatrixXf Odometry::findWeightMatrix(Eigen::MatrixXf residual, std::string weight_type)
 {
   Eigen::MatrixXf w_fit = Eigen::MatrixXf::Identity(16,16);
@@ -352,47 +375,55 @@ void Odometry::publish()
   if(fabs(last_publish_time_ - current_time_) < expected_publish_time_)
     return;
 
-    if (odometry_publisher_->trylock())
-    {
-      getOdometryMessage(odometry_publisher_->msg_);
-      odometry_publisher_->unlockAndPublish() ;
-      last_publish_time_ = current_time_;
-    }
+  if (odometry_publisher_->trylock())
+  {
+    getOdometryMessage(odometry_publisher_->msg_);
+    odometry_publisher_->unlockAndPublish() ;
+  }
 
-    if (transform_publisher_->trylock())
-    {
-      double x(0.),y(0.0),yaw(0.0),vx(0.0),vy(0.0),vyaw(0.0);
-      this->getOdometry(x,y,yaw,vx,vy,vyaw);
+  /* if (old_odometry_publisher_->trylock())
+  {
+    getOldOdometryMessage(old_odometry_publisher_->msg_);
+    old_odometry_publisher_->unlockAndPublish() ;
+    }*/
 
-      robot_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
-      out.header.stamp.fromSec(current_time_);
-      out.header.frame_id = "odom";
-      out.parent_id = "base_footprint";
-      out.transform.translation.x = -x*cos(yaw) - y*sin(yaw);
-      out.transform.translation.y = +x*sin(yaw) - y*cos(yaw);
-      out.transform.translation.z = 0;
-      tf::Quaternion quat_trans = tf::Quaternion(-yaw,0.0,0.0);
+  if (transform_publisher_->trylock())
+  {
+    double x(0.),y(0.0),yaw(0.0),vx(0.0),vy(0.0),vyaw(0.0);
+    this->getOdometry(x,y,yaw,vx,vy,vyaw);
 
-      out.transform.rotation.x = quat_trans.x();
-      out.transform.rotation.y = quat_trans.y();
-      out.transform.rotation.z = quat_trans.z();
-      out.transform.rotation.w = quat_trans.w();
+    robot_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
+    out.header.stamp.fromSec(current_time_);
+    out.header.frame_id = "odom";
+    out.parent_id = "base_footprint";
+    out.transform.translation.x = -x*cos(yaw) - y*sin(yaw);
+    out.transform.translation.y = +x*sin(yaw) - y*cos(yaw);
+    out.transform.translation.z = 0;
+    tf::Quaternion quat_trans = tf::Quaternion(-yaw,0.0,0.0);
 
-      robot_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
-      out2.header.stamp.fromSec(current_time_);
-      out2.header.frame_id = "base_link";
-      out2.parent_id = "base_footprint";
-      out2.transform.translation.x = 0;
-      out2.transform.translation.y = 0;
+    out.transform.rotation.x = quat_trans.x();
+    out.transform.rotation.y = quat_trans.y();
+    out.transform.rotation.z = quat_trans.z();
+    out.transform.rotation.w = quat_trans.w();
 
-      // FIXME: this is the offset between base_link origin and the ideal floor
-      out2.transform.translation.z = 0.051; // FIXME: this is hardcoded, considering we are deprecating base_footprint soon, I will not get this from URDF.
+    robot_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
+    out2.header.stamp.fromSec(current_time_);
+    out2.header.frame_id = "base_link";
+    out2.parent_id = "base_footprint";
+    out2.transform.translation.x = 0;
+    out2.transform.translation.y = 0;
 
-      out2.transform.rotation.x = 0;
-      out2.transform.rotation.y = 0;
-      out2.transform.rotation.z = 0;
-      out2.transform.rotation.w = 1;
+    // FIXME: this is the offset between base_link origin and the ideal floor
+    out2.transform.translation.z = 0.051; // FIXME: this is hardcoded, considering we are deprecating base_footprint soon, I will not get this from URDF.
 
-      transform_publisher_->unlockAndPublish() ;
-    }
+    out2.transform.rotation.x = 0;
+    out2.transform.rotation.y = 0;
+    out2.transform.rotation.z = 0;
+    out2.transform.rotation.w = 1;
+
+    transform_publisher_->unlockAndPublish() ;
+  }
+
+    last_publish_time_ = current_time_;
+
 };
