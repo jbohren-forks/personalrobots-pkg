@@ -1,0 +1,9 @@
+<package>
+  <description>Launch files for milestone II executive</description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="na" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/FIXME</url>
+
+  <depend package="executive_trex_pr2"/>
+</package>

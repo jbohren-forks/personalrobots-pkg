@@ -1,0 +1,18 @@
+<package>
+  <description>Launch files for milestone II.</description>
+  <author>Wim Meeussen</author>
+  <license>BSD</license>
+  <review status="na" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/FIXME</url>
+
+  <depend package="doors_core"/>
+  <depend package="plugs_core"/>
+  <depend package="safety_core"/>
+  <depend package="2dnav_pr2"/>
+
+  <depend package="robot_pose_ekf"/>
+  <depend package="stereo_image_proc"/>
+  <depend package="pr2_alpha"/>
+
+  <depend package="pr2_experimental_controllers"/>
+</package>

@@ -3,15 +3,15 @@
 
 
 <!-- controllers-->
-  <include file="$(find milestone2)/config/controllers.xml" />
+  <include file="$(find milestone2_actions)/config/controllers.xml" />
 
 
 <!-- perception-->
-  <include file="$(find milestone2)/config/perception.xml" />
+  <include file="$(find milestone2_actions)/config/perception.xml" />
 
 
 <!-- navigation-->
-  <include file="$(find milestone2)/config/navigation.xml" />
+  <include file="$(find milestone2_actions)/config/navigation.xml" />
 
 
 <!-- door domain -->
@@ -19,7 +19,6 @@
   <include file="$(find doors_core)/launch/door_actions.xml" />  
 
 <!-- plug domain -->
-
   <include file="$(find outlet_detection)/launch/plug.launch" />
   <include file="$(find outlet_detection)/launch/outlet_coarse_detection/outlet_coarse_detection.launch" />
   <node machine = "four" pkg="plug_in" type="outlet_pose_filter.py"/>
