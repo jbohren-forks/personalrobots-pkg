@@ -49,6 +49,7 @@
 
 // Costmap used for the map representation
 #include <costmap_2d/costmap_2d_ros.h>
+#include <costmap_2d/costmap_2d_publisher.h>
 
 // MPGlue and sbpl headers
 #include <mpglue/sbpl_planner.h>
@@ -147,4 +148,19 @@ class SBPLDoorPlanner : public robot_actions::Action<robot_msgs::Door, robot_msg
 
   void publishPath(const robot_msgs::JointTraj &path, std::string topic, double r, double g, double b, double a);
 
+  bool computeOrientedFootprint(const pr2_robot_actions::Pose2D &position, const std::vector<robot_msgs::Point>& footprint_spec, std::vector<robot_msgs::Point>& oriented_footprint);
+
+  bool clearRobotFootprint(costmap_2d::Costmap2D& cost_map);
+
+  double inflation_radius_;
+
+  double inscribed_radius_;
+
+  void publishFootprint(const pr2_robot_actions::Pose2D &position);
+
+  void publishDoor(const robot_msgs::Door &door);
+
+  costmap_2d::Costmap2DPublisher* costmap_publisher_;
+
+  bool animate_;
 };
