@@ -21,7 +21,7 @@ int32 LATCHED=2
 int32 UNLATCHED=3
 int32 latch_state            
 
-Vector3 normal               ## <a,b,c> plane coefficients, i.e., the door plane normal
+Vector3 travel_dir           ## vector pointing in the direction the robot is going to travel through the door
 float32 weight               ## @Sachin: what do we use this for?
 
 
