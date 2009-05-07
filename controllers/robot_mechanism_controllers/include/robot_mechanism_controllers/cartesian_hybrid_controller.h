@@ -38,6 +38,7 @@
 #include "mechanism_model/chain.h"
 #include "control_toolbox/pid.h"
 #include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
 #include "realtime_tools/realtime_publisher.h"
 #include "filters/filter_chain.h"
 
@@ -100,7 +101,7 @@ public:
   virtual void update(void);
   virtual bool starting() { return c_.starting(); }
 
-  void command();
+  void command(const tf::MessageNotifier<robot_msgs::TaskFrameFormalism>::MessagePtr& tff_msg);
 
   bool setToolFrame(robot_srvs::SetPoseStamped::Request &req,
                     robot_srvs::SetPoseStamped::Response &resp);
@@ -110,7 +111,8 @@ private:
   tf::TransformListener TF;
   CartesianHybridController c_;
   ros::Node *node_;
-  robot_msgs::TaskFrameFormalism command_msg_;
+  //robot_msgs::TaskFrameFormalism command_msg_;
+  boost::scoped_ptr<tf::MessageNotifier<robot_msgs::TaskFrameFormalism> > command_notifier_;
 
   std::string task_frame_name_;
 

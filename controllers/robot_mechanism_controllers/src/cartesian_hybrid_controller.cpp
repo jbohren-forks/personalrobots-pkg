@@ -404,7 +404,11 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 
   task_frame_name_ = c_.chain_.getLinkName(0);
 
-  node->subscribe(name_ + "/command", command_msg_, &CartesianHybridControllerNode::command, this, 5);
+  //node->subscribe(name_ + "/command", command_msg_, &CartesianHybridControllerNode::command, this, 5);
+  command_notifier_.reset(new tf::MessageNotifier<robot_msgs::TaskFrameFormalism>(
+                            &TF, node,
+                            boost::bind(&CartesianHybridControllerNode::command, this, _1),
+                                        name_ + "/command", c_.chain_.getLinkName(0), 10));
 
   pub_state_.reset(new realtime_tools::RealtimePublisher<robot_mechanism_controllers::CartesianHybridState>(name_ + "/state", 1));
   pub_tf_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("/tf_message", 5));
@@ -462,19 +466,14 @@ void CartesianHybridControllerNode::update()
   }
 }
 
-void CartesianHybridControllerNode::command()
+void CartesianHybridControllerNode::command(
+  const tf::MessageNotifier<robot_msgs::TaskFrameFormalism>::MessagePtr& tff_msg)
 {
-  task_frame_name_ = command_msg_.header.frame_id;
+  task_frame_name_ = tff_msg->header.frame_id;
   tf::Stamped<tf::Transform> task_frame;
 
   try {
-    //ROS_INFO("Waiting on transform (%.3lf vs %.3lf)", command_msg_.header.stamp.toSec(), ros::Time::now().toSec());
-    while (!TF.canTransform(c_.chain_.getLinkName(0), command_msg_.header.frame_id, command_msg_.header.stamp))
-    {
-      usleep(10000);
-    }
-    //ROS_INFO("Got transform.");
-    TF.lookupTransform(c_.chain_.getLinkName(0), command_msg_.header.frame_id, command_msg_.header.stamp,
+    TF.lookupTransform(c_.chain_.getLinkName(0), tff_msg->header.frame_id, tff_msg->header.stamp,
                        task_frame);
   }
   catch (tf::TransformException &ex)
@@ -484,18 +483,18 @@ void CartesianHybridControllerNode::command()
   }
   tf::TransformTFToKDL(task_frame, c_.task_frame_offset_);
 
-  c_.mode_[0] = (int)command_msg_.mode.vel.x;
-  c_.mode_[1] = (int)command_msg_.mode.vel.y;
-  c_.mode_[2] = (int)command_msg_.mode.vel.z;
-  c_.mode_[3] = (int)command_msg_.mode.rot.x;
-  c_.mode_[4] = (int)command_msg_.mode.rot.y;
-  c_.mode_[5] = (int)command_msg_.mode.rot.z;
-  c_.setpoint_[0] = command_msg_.value.vel.x;
-  c_.setpoint_[1] = command_msg_.value.vel.y;
-  c_.setpoint_[2] = command_msg_.value.vel.z;
-  c_.setpoint_[3] = command_msg_.value.rot.x;
-  c_.setpoint_[4] = command_msg_.value.rot.y;
-  c_.setpoint_[5] = command_msg_.value.rot.z;
+  c_.mode_[0] = (int)tff_msg->mode.vel.x;
+  c_.mode_[1] = (int)tff_msg->mode.vel.y;
+  c_.mode_[2] = (int)tff_msg->mode.vel.z;
+  c_.mode_[3] = (int)tff_msg->mode.rot.x;
+  c_.mode_[4] = (int)tff_msg->mode.rot.y;
+  c_.mode_[5] = (int)tff_msg->mode.rot.z;
+  c_.setpoint_[0] = tff_msg->value.vel.x;
+  c_.setpoint_[1] = tff_msg->value.vel.y;
+  c_.setpoint_[2] = tff_msg->value.vel.z;
+  c_.setpoint_[3] = tff_msg->value.rot.x;
+  c_.setpoint_[4] = tff_msg->value.rot.y;
+  c_.setpoint_[5] = tff_msg->value.rot.z;
 }
 
 bool CartesianHybridControllerNode::setToolFrame(
