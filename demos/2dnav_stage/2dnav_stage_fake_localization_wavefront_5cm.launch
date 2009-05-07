@@ -1,6 +1,6 @@
 <launch>
 
-  <group ns="wg">
+  <group>
     <node pkg="stage" type="stageros" args="$(find 2dnav_stage)/worlds/willow-pr2-5cm.world" respawn="false" />
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.05.pgm 0.05" respawn="false" />
     <node pkg="wavefront" type="wavefront" respawn="false" >
