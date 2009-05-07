@@ -9,7 +9,7 @@ from std_msgs.msg import Empty
 from pr2_mechanism_controllers.srv import *
 from pr2_mechanism_controllers.msg import *
 from robot_msgs.msg import *
-from image_msgs.msg import *
+from kinematic_calibration.msg import *
 
 from kinematic_calibration.arm_commander import ArmCommander
 from kinematic_calibration.settler import *
