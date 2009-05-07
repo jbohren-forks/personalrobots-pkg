@@ -113,8 +113,8 @@ int
   robot_msgs::PoseStamped pose;
   
   point.header.frame_id = "odom_combined";
-  point.point.x=0;
-  point.point.y=0;
+  point.point.x=3.373;
+  point.point.y=0.543;
   point.point.z=0;
 
   Duration timeout_short = Duration().fromSec(2.0);
@@ -140,6 +140,7 @@ int
   // tuck arm
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
+  switchlist.start_controllers.push_back("head_controller");
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   if (tuck_arm.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
   
@@ -147,6 +148,7 @@ int
 
   // detect outlet coarse
   if (detect_outlet_coarse.execute(point, pose, timeout_long) != robot_actions::SUCCESS) return -1;
+  
   fine_outlet_point.header = pose.header;
   fine_outlet_point.point = pose.pose.position;
 
@@ -162,7 +164,7 @@ int
   if (untuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
 
   // detect plug on base
-  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
+  // if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   if (detect_plug_on_base.execute(empty, plug_stow, timeout_long) != robot_actions::SUCCESS) return -1;
 
   // move and grasp plug
@@ -215,6 +217,7 @@ int
 
   // stop remaining controllers
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.stop_controllers.push_back("head_tilt_controller");
   switchlist.stop_controllers.push_back("laser_tilt_controller");
   switchlist.stop_controllers.push_back("r_gripper_position_controller");
   switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");

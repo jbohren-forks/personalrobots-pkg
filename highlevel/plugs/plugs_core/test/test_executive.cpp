@@ -96,9 +96,9 @@ int
   point.point.y=0;
   point.point.z=0;
 
-  Duration timeout_short = Duration().fromSec(2.0);
-  Duration timeout_medium = Duration().fromSec(20.0);
-  Duration timeout_long = Duration().fromSec(300.0);
+  Duration timeout_short = Duration().fromSec(3.0);
+  Duration timeout_medium = Duration().fromSec(40.0);
+  Duration timeout_long = Duration().fromSec(70.0);
 
   robot_actions::ActionClient<std_msgs::Empty, robot_actions::NoArgumentsActionState, std_msgs::Empty> tuck_arm("safety_tuck_arms");
   robot_actions::ActionClient<pr2_robot_actions::SwitchControllers, pr2_robot_actions::SwitchControllersState,  std_msgs::Empty> switch_controllers("switch_controllers");
@@ -112,12 +112,23 @@ int
   robot_actions::ActionClient< robot_msgs::PlugStow, pr2_robot_actions::StowPlugState, std_msgs::Empty> stow_plug("stow_plug");
 
 
-  timeout_medium.sleep();
+  timeout_short.sleep();
+
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.stop_controllers.push_back("laser_tilt_controller");
+  switchlist.stop_controllers.push_back("r_gripper_position_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_trajectory_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_wrench_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_pose_controller");
+  switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
+  switchlist.stop_controllers.push_back("r_arm_hybrid_controller");
+  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+
 
   // tuck arm
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
-  if (switch_controllers.execute(switchlist, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
+  if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   if (tuck_arm.execute(empty, empty, timeout_medium) != robot_actions::SUCCESS) return -1;
 
   // untuck arm
@@ -156,10 +167,10 @@ int
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
   //if (plug_in.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
-  timeout_medium.sleep();
+  timeout_short.sleep();
 
   //unplug
-  if (unplug.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
+  // if (unplug.execute(empty, empty, timeout_long) != robot_actions::SUCCESS) return -1;
 
   //stow plug
    switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();

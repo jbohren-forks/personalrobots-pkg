@@ -54,7 +54,7 @@ DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
       return;
     }
   node_.advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
-  node_.setParam("~display", 0);
+  node_.setParam("~display", 1);
   detector_ = new OutletTracker::OutletTracker(node);
   detector_->deactivate();  
   node_.subscribe("~outlet_pose", outlet_pose_msg_, &DetectOutletFineAction::foundOutlet, this, 1);
@@ -71,6 +71,7 @@ robot_actions::ResultStatus DetectOutletFineAction::execute(const robot_msgs::Po
 {
   ROS_DEBUG("%s: executing.", action_name_.c_str());
   // point the head at the outlet
+  node_.publish(head_controller_ + "/head_track_point", outlet_estimate);
   node_.publish(head_controller_ + "/head_track_point", outlet_estimate);
 
   detector_->activate();

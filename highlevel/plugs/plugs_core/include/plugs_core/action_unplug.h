@@ -46,6 +46,7 @@
 #include "robot_msgs/PoseStamped.h"
 #include "robot_msgs/CartesianState.h"
 #include "robot_msgs/TaskFrameFormalism.h"
+#include "robot_mechanism_controllers/CartesianHybridState.h"
 
 //TF
 #include <tf/transform_listener.h>
@@ -69,6 +70,7 @@ public:
 
   robot_actions::ResultStatus execute(const std_msgs::Empty& empty, std_msgs::Empty& feedback);
 
+  void checkUnplug();
 private:
   
   std::string action_name_;
@@ -79,7 +81,8 @@ private:
   
   std_msgs::Empty empty_;
 
-  robot_msgs::TaskFrameFormalism tff_msg_; 
+  robot_msgs::TaskFrameFormalism tff_msg_;
+  robot_mechanism_controllers::CartesianHybridState controller_state_msg_;
 
 };
 

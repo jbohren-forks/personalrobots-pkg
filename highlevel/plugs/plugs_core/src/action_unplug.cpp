@@ -56,6 +56,9 @@ UnplugAction::UnplugAction() :
 
  node_->advertise<robot_msgs::TaskFrameFormalism>(arm_controller_ + "/command", 2);
 
+ node_->subscribe(arm_controller_ + "/state", controller_state_msg_, &UnplugAction::checkUnplug, this, 1);
+
+
 };
 
 UnplugAction::~UnplugAction()
@@ -81,11 +84,24 @@ robot_actions::ResultStatus UnplugAction::execute(const std_msgs::Empty& empty, 
   tff_msg_.value.rot.z = 0.0;
 
   node_->publish(arm_controller_ + "/command", tff_msg_);
+
+  return waitForDeactivation(feedback);
+}
+
+void  UnplugAction::checkUnplug()
+{
+  if (!isActive())
+    return;
+
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
-  ROS_DEBUG("%s: succeeded.", action_name_.c_str());
-  deactivate(robot_actions::SUCCESS, feedback);
-  return waitForDeactivation(feedback);
+  if(fabs(controller_state_msg_.last_pose_meas.vel.x + 0.1) < 0.02)
+  {
+    ROS_DEBUG("%s: succeeded.", action_name_.c_str());
+    deactivate(robot_actions::SUCCESS, empty_);
+  }
+
+  return;
 }
 
 }

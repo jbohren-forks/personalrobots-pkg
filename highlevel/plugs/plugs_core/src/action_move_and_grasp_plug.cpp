@@ -49,7 +49,7 @@ MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
 
   node_->param(action_name_ + "/gripper_controller", gripper_controller_, gripper_controller_);
   node_->param(action_name_ + "/arm_controller", arm_controller_, arm_controller_);
-  node_->advertise<std_msgs::Float64>(gripper_controller_ + "/command", 1);
+  node_->advertise<std_msgs::Float64>(gripper_controller_ + "/set_command", 1);
 
   if(gripper_controller_ == "" )
     {
@@ -98,6 +98,14 @@ void MoveAndGraspPlugAction::reset()
   req_pose_.pose.pose.orientation.y = 0.13;
   req_pose_.pose.pose.orientation.z = 0.68;
   req_pose_.pose.pose.orientation.w = 0.68;
+
+  //  req_pose_.tolerance.vel.x = 0.05;
+  //req_pose_.tolerance.vel.y = 0.05;
+  //req_pose_.tolerance.vel.z = 0.05;
+  //req_pose_.tolerance.rot.x = 0.05;
+  //req_pose_.tolerance.rot.y = 0.05;
+  //req_pose_.tolerance.rot.z = 0.05;
+
 }
 
 
@@ -165,7 +173,7 @@ void MoveAndGraspPlugAction::checkGrasp()
   }
 
   // The gripper is closed and stopped moving
-  if(grasp_count_ > 20)
+  if(grasp_count_ > 50)
   {
     ROS_INFO("error: %f",controller_state_msg_.error);
     // Something went wrong... no plug grasped in gripper
