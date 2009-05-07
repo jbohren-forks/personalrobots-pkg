@@ -42,6 +42,7 @@
 #include <robot_msgs/Door.h>
 #include <topological_map/outlet_info.h>
 #include <ros/time.h>
+#include <tf/transform_datatypes.h>
 
 namespace topological_map
 {
@@ -55,13 +56,13 @@ using std::pair;
 using ros::Time;
 
 
-
 typedef unsigned int RegionId;
 typedef unsigned int ConnectorId;
 typedef vector<RegionId> RegionIdVector;
 typedef set<RegionId> RegionIdSet;
 typedef pair<RegionId, RegionId> RegionPair;
 typedef unsigned int OutletId;
+
 
 typedef boost::multi_array<bool, 2> OccupancyGrid;
 typedef OccupancyGrid::size_type occ_grid_size;
@@ -94,18 +95,20 @@ public:
   /// \param door_open_prior_prob Unobserved doors revert over time to this probability of being open.
   /// \param door_reversion_rate If you don't observe the door for this many seconds, its probability will return about halfway to its prior value
   /// \param locked_door_cost Cost of locked door
+  /// \param transform Transform from the outside world's coordinates to the topological map frame
   /// The default values of the parameters cause doors to start out open for sure, and once observed locked, they stay that way for about 1e8 seconds
   TopologicalMap(const OccupancyGrid&, double resolution=DEFAULT_RESOLUTION, double door_open_prior_prob=DEFAULT_DOOR_OPEN_PRIOR_PROB, 
-                 double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE, double locked_door_cost=DEFAULT_LOCKED_DOOR_COST);
+                 double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE, double locked_door_cost=DEFAULT_LOCKED_DOOR_COST, const tf::Transform& transform=tf::Transform::getIdentity());
 
   /// Constructor that reads map from a stream
   /// \todo identify error conditions
   /// \param door_open_prior_prob Unobserved doors revert over time to this probability of being open
   /// \param door_reversion_rate If you don't observe the door for this many seconds, its probability will return about halfway to its prior value
   /// \param locked_door_cost Cost of locked door
+  /// \param transform Transform from the outside world's coordinates to the topological map frame
   /// The default values of the parameters cause doors to start out open for sure, and once observed locked, they stay that way for about 1e8 seconds
   TopologicalMap(istream& stream, double door_open_prior_prob=DEFAULT_DOOR_OPEN_PRIOR_PROB, double door_reversion_rate=DEFAULT_DOOR_REVERSION_RATE, 
-                 double locked_door_cost=DEFAULT_LOCKED_DOOR_COST);
+                 double locked_door_cost=DEFAULT_LOCKED_DOOR_COST, const tf::Transform& transform=tf::Transform::getIdentity());
 
   /// \post Topological map is written to \a stream in format that can be read back using the stream constructor.  All state is saved except for the currently set goal.
   void writeToStream (ostream& stream) const;
@@ -261,18 +264,6 @@ enum RegionType { OPEN, DOORWAY };
 
 
 
-
-
-
-
-
-/************************************************************
- * Visualization
- ************************************************************/
-
-/// \pre A ros node instance is running
-/// \post Publishes the topological map info to the visualization_market topic. 
-void visualizeTopologicalMap (const TopologicalMap& tmap);
 
 
 

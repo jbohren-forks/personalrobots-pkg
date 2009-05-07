@@ -28,7 +28,7 @@
  */
 
 
-#include <topological_map/topological_map.h>
+#include <topological_map/visualization.h>
 #include <ros/node.h>
 #include <ros/console.h>
 #include <ros/assert.h>
@@ -45,6 +45,18 @@ using robot_msgs::Point;
 using visualization_msgs::Marker;
 
 
+Visualizer::Visualizer (const TopologicalMap& tmap) : tmap(tmap) 
+{
+  Node::instance()->advertise<Marker>("visualization_marker", 0);
+}
+
+Visualizer::~Visualizer () 
+{
+  Node::instance()->unadvertise("visualization_marker");
+}
+
+
+
 // Functor for drawing individual doors and publishing them as a group to visualization_marker
 struct DrawDoors
 {
@@ -52,15 +64,17 @@ struct DrawDoors
   {
     marker.header.frame_id = "map";
     marker.ns = "topological_map";
-    marker.id=0;
+    marker.id=1;
     marker.type=Marker::LINE_LIST;
     marker.action=Marker::ADD;
     marker.color.a=1.0;
     marker.scale.x=0.2;
+    marker.scale.y=0.2;
+    marker.scale.z=0.2;
     marker.pose.orientation.w=1.0;
     marker.color.r=0;
     marker.color.g=0;
-    marker.color.b=255;
+    marker.color.b=1.0;
   }
 
   void operator() (const RegionId id)
@@ -79,7 +93,7 @@ struct DrawDoors
     }
   }
 
-  void publish()
+  ~DrawDoors ()
   {
     Node::instance()->publish("visualization_marker", marker);
   }
@@ -91,14 +105,10 @@ struct DrawDoors
 
 
 
-void visualizeTopologicalMap (const TopologicalMap& tmap) 
+void Visualizer::visualize ()
 {
-  Node::instance()->advertise<Marker>("visualization_marker", 0);
-
   const RegionIdSet& r = tmap.allRegions();
-  for_each(r.begin(), r.end(), DrawDoors(tmap)).publish();
-
-  Node::instance()->unadvertise("visualization_marker");
+  for_each(r.begin(), r.end(), DrawDoors(tmap));
 }
 
 

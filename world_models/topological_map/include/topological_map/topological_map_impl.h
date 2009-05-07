@@ -65,10 +65,10 @@ class TopologicalMap::MapImpl
 public:
 
   /// Default constructor creates empty graph
-  MapImpl(const OccupancyGrid& grid, double resolution, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost);
+  MapImpl(const OccupancyGrid& grid, double resolution, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost, const tf::Transform& transform);
 
   /// Constructor that reads from a stream
-  MapImpl(istream& stream, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost);
+  MapImpl(istream& stream, double door_open_prior_prob, double door_reversion_rate, double locked_door_cost, const tf::Transform& transform);
 
   /// \return Id of region containing \a p
   /// \throws UnknownCell2DException
@@ -230,6 +230,8 @@ private:
   void setDoorCost (RegionId id, const Time& t);
   void setDoorCosts (const Time& t);
 
+  Point2D transformPoint(const Point2D& p) const;
+  Point2D inverseTransformPoint(const Point2D& p) const;
 
   GridPtr grid_;
   ObstacleDistanceArray obstacle_distances_;
@@ -252,6 +254,8 @@ private:
   OutletVector outlets_;
  
   const double resolution_;
+
+  const tf::Transform& transform_;
 
 };
 

@@ -34,6 +34,7 @@
 #include <getopt.h>
 #include <sysexits.h>
 #include <topological_map/topological_map.h>
+#include <topological_map/visualization.h>
 #include <ros/time.h>
 #include <ros/node.h>
 #include <ros/assert.h>
@@ -42,6 +43,8 @@ typedef unsigned int uint;
 typedef const uint cuint;
 
 using std::vector;
+
+using ros::Duration;
 using std::cout;
 using std::endl;
 using std::pair;
@@ -119,11 +122,11 @@ int main (int argc, char* argv[])
 
 
   ifstream str3("/u/bhaskara/local/top/willow.tmap");
-  TopologicalMap m3(str3, 1.0, 1e9, 1e9);
+  double dx=-1;
+  tf::Transform trans(tf::Quaternion::getIdentity(), tf::Vector3(dx,0,0));
+  TopologicalMap m3(str3, 1.0, 1e9, 1e9, trans);
 
-  tmap::visualizeTopologicalMap(m3);
-
-  Point2D p1(1,1), p2(30,30);
+  Point2D p1(1-dx,1), p2(30-dx,30);
   cout << "Nearest outlet to " << p1 << " is " << m3.nearestOutlet(p1) << endl;
   cout << "Nearest outlet to " << p2 << " is " << m3.nearestOutlet(p2) << endl;
 
@@ -135,13 +138,13 @@ int main (int argc, char* argv[])
 
   
   
-  p1 = Point2D(25,21);
-  p2 = Point2D(15,25);
+  p1 = Point2D(25-dx,21);
+  p2 = Point2D(15-dx,25);
   printConnectorCosts(m3,p1,p2, 0);
 
-  RegionId door1 = m3.containingRegion(Point2D(21.5,20.5));
-  RegionId door2 = m3.containingRegion(Point2D(50,30));
-  robot_msgs::Door d = m3.regionDoor(m3.containingRegion(Point2D(50,17.25)));
+  RegionId door1 = m3.containingRegion(Point2D(21.5-dx,20.5));
+  RegionId door2 = m3.containingRegion(Point2D(50-dx,30));
+  robot_msgs::Door d = m3.regionDoor(m3.containingRegion(Point2D(50-dx,17.25)));
   cout << "Door at " << d.frame_p1.x << ", " << d.frame_p1.y << " and " << d.frame_p2.x << ", " << d.frame_p2.y << endl;
   cout << "Open prob at 0.0 is " << m3.doorOpenProb(door1, Time(0.0)) << endl;
 
@@ -155,7 +158,12 @@ int main (int argc, char* argv[])
   cout << "Open prob at 10000000.0 is " << m3.doorOpenProb(door1, Time(10000000.0)) << " and open is " << m3.isDoorOpen(door1, Time(10000000.0)) << endl;
 
 
-
+  tmap::Visualizer v(m3);
+  Duration dur(1);
+  while (true) {
+    dur.sleep();
+    v.visualize();
+  }
 
 //   std::ifstream str3("local/willow.tmap");
 //   tmap::TopologicalMap m2(str3);
