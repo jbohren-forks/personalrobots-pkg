@@ -3,7 +3,6 @@
   <param name="/trex/enable_detect_plug_on_base" value="true"/>
   <param name="/trex/enable_base_state_publisher" value="true"/>
   <param name="/trex/enable_move_base" value="true"/>
-  <param name="/trex/enable_check_path" value="true"/>
   <param name="/trex/enable_notify_door_blocked" value="true"/>
   <param name="/trex/enable_plugs_untuck_arms" value="true"/>
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
@@ -15,5 +14,5 @@
   <param name="/trex/time_limit" value="200"/>
   <param name="/trex/log_dir" value="$(find executive_trex_pr2)/logs"/>
   <param name="/trex/play_back" value="0"/>
-  <!--node pkg="executive_trex_pr2" type="trexfast" respawn="false" /-->
+  <node pkg="executive_trex_pr2" type="trexfast" respawn="false" />
 </launch>
