@@ -287,6 +287,7 @@ Frame CartesianTrajectoryController::getPose()
 bool CartesianTrajectoryController::moveTo(robot_srvs::MoveToPose::Request &req,
 					   robot_srvs::MoveToPose::Response &resp)
 {
+  ROS_INFO("in cartesian traj move_to service");
   if (!moveTo(req.pose, req.tolerance, 0.0)){
     ROS_ERROR("CartesianTrajectoryController: not starting trajectory because previous one is still running");
     return false;
@@ -310,8 +311,8 @@ bool CartesianTrajectoryController::moveTo(robot_srvs::MoveToPose::Request &req,
     return false;
   }
   else if (exceed_tolerance_){
-    return false;
     ROS_ERROR("CartesianTrajectoryController: exceeded trajectory tolerance");
+    return false;
   }
   else{
     ROS_INFO("CartesianTrajectoryController: moveto finished successfully");
