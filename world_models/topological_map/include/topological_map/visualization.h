@@ -47,6 +47,7 @@ private:
   const TopologicalMap& tmap_;
   ros::NodeHandle node_;
   ros::Publisher marker_pub_;
+  ros::Publisher connector_pub_;
 };
 
 

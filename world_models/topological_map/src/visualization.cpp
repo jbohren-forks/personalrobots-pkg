@@ -30,14 +30,20 @@
 
 #include <topological_map/visualization.h>
 #include <string>
+#include <set>
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
+#include <boost/foreach.hpp>
 #include <ros/node.h>
 #include <ros/console.h>
 #include <ros/assert.h>
 #include <door_msgs/Door.h>
 #include <robot_msgs/Point.h>
+#include <robot_msgs/Point32.h>
+#include <robot_msgs/PointCloud.h>
 #include <visualization_msgs/Marker.h>
+
+#define foreach BOOST_FOREACH
 
 namespace topological_map
 {
@@ -46,29 +52,34 @@ using ros::NodeHandle;
 using ros::Publisher;
 using door_msgs::Door;
 using robot_msgs::Point;
+using robot_msgs::Point32;
+using robot_msgs::PointCloud;
 using visualization_msgs::Marker;
+using std::set;
 using std::string;
 using boost::bind;
 using boost::ref;
 
 
 const string MARKER_TOPIC("visualization_marker");
+const string CONNECTOR_TOPIC("~connectors");
 const string MARKER_NS("topological_map");
-const string MARKER_FRAME("map");
+const string VISUALIZER_FRAME("map");
 
 
-Visualizer::Visualizer (const TopologicalMap& tmap) : tmap_(tmap), node_(), marker_pub_(node_.advertise<Marker>(MARKER_TOPIC, 0))
-{
-}
+typedef set<ConnectorId> ConnectorSet;
 
 
+/************************************************************
+ * Helpers
+ ************************************************************/
 
 // Functor for drawing individual doors and publishing them as a group to visualization_marker
 struct DrawDoors
 {
   DrawDoors (const TopologicalMap& tmap, const Publisher& pub) : tmap(tmap), pub(pub)
   {
-    marker.header.frame_id = MARKER_FRAME;
+    marker.header.frame_id = VISUALIZER_FRAME;
     marker.ns = MARKER_NS;
     marker.id=1;
     marker.type=Marker::LINE_LIST;
@@ -117,7 +128,7 @@ void drawOutlet (const OutletId id, const TopologicalMap& m, const Publisher& pu
   Marker marker;
   marker.id = id+100;
   marker.ns = MARKER_NS;
-  marker.header.frame_id=MARKER_FRAME;
+  marker.header.frame_id=VISUALIZER_FRAME;
   marker.type = Marker::ARROW;
   marker.action=Marker::ADD;
   marker.color.a=1.0;
@@ -137,24 +148,67 @@ void drawOutlet (const OutletId id, const TopologicalMap& m, const Publisher& pu
 
 
 
-
-void Visualizer::visualize ()
+ConnectorSet getConnectors (const TopologicalMap& tmap)
 {
-  const RegionIdSet& regions = tmap_.allRegions();
-  for_each(regions.begin(), regions.end(), DrawDoors(tmap_, marker_pub_));
-
-  const OutletIdSet& outlets = tmap_.allOutlets();
-  for_each(outlets.begin(), outlets.end(), bind(drawOutlet, _1, ref(tmap_), marker_pub_));
+  ConnectorSet connectors;
+  foreach (RegionId r, tmap.allRegions()) {
+    foreach (ConnectorId c, tmap.adjacentConnectors(r)) {
+      connectors.insert(c);
+    }
+  }
+  return connectors;
 }
 
 
+struct DrawConnectors
+{
+  DrawConnectors (const TopologicalMap& tmap, const Publisher& pub) : tmap(tmap), pub(pub)
+  {
+    cloud.header.frame_id=VISUALIZER_FRAME;
+  }
+  void operator() (const ConnectorId id)
+  {
+    Point2D p = tmap.connectorPosition(id);
+    Point32 p2;
+    p2.x=p.x;
+    p2.y=p.y;
+    cloud.pts.push_back(p2);
+  }
+  ~DrawConnectors ()
+  {
+    pub.publish(cloud);
+  }
+
+  const TopologicalMap& tmap;
+  const Publisher& pub;
+  PointCloud cloud;
+};
 
 
 
 
+/************************************************************
+ * Top level 
+ ************************************************************/
+
+void Visualizer::visualize ()
+{
+  const RegionIdSet regions = tmap_.allRegions();
+  for_each(regions.begin(), regions.end(), DrawDoors(tmap_, marker_pub_));
+
+  foreach (OutletId id, tmap_.allOutlets()) 
+    drawOutlet (id, tmap_, marker_pub_);
+
+  const ConnectorSet connectors = getConnectors(tmap_);
+  for_each (connectors.begin(), connectors.end(), DrawConnectors(tmap_, connector_pub_));
+}
 
 
-
+Visualizer::Visualizer (const TopologicalMap& tmap) 
+  : tmap_(tmap), node_(), marker_pub_(node_.advertise<Marker>(MARKER_TOPIC, 0)),
+    connector_pub_(node_.advertise<PointCloud>(CONNECTOR_TOPIC, 0))
+{
+}
 
 
 
