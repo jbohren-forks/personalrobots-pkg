@@ -41,7 +41,7 @@
 #include <robot_msgs/Door.h>
 #include <kdl/frames.hpp>
 
-namespace door_handle_detector{
+namespace door_functions{
 
 /// get robot and gripper pose
   tf::Stamped<tf::Pose> getRobotPose(const robot_msgs::Door& door, double dist);

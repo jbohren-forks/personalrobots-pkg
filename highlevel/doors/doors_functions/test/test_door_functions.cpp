@@ -47,7 +47,7 @@
 using namespace ros;
 using namespace std;
 using namespace KDL;
-using namespace door_handle_detector;
+using namespace door_functions;
 
 
 

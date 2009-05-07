@@ -40,7 +40,7 @@ using namespace std;
 using namespace KDL;
 
 
-namespace door_handle_detector{
+namespace door_functions{
 
   static const double eps_angle = 5.0*M_PI/180.0;
   static const double gripper_height = 0.8;
