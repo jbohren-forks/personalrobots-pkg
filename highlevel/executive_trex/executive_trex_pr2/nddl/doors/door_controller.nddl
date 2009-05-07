@@ -43,10 +43,10 @@ class DoorState extends AgentTimeline {
     float handle_y;
     float handle_z;
 
-    // Normal data
-    float normal_x;
-    float normal_y;
-    float normal_z;
+    // Travel direction data
+    float travel_dir_x;
+    float travel_dir_y;
+    float travel_dir_z;
 
     // Default Values
     defaultOnCommit(frame_id, "map");
@@ -69,9 +69,9 @@ class DoorState extends AgentTimeline {
     defaultOnCommit(handle_x, 0.0);
     defaultOnCommit(handle_y, 0.0);
     defaultOnCommit(handle_z, 0.0);
-    defaultOnCommit(normal_x, 0.0);
-    defaultOnCommit(normal_y, 0.0);
-    defaultOnCommit(normal_z, 0.0);
+    defaultOnCommit(travel_dir_x, 0.0);
+    defaultOnCommit(travel_dir_y, 0.0);
+    defaultOnCommit(travel_dir_z, 0.0);
   }
 
   DoorState(){

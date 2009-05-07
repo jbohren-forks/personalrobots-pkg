@@ -142,7 +142,7 @@ namespace TREX{
 			const ConstraintEngineId& constraintEngine,
 			const std::vector<ConstrainedVariableId>& variables)
       : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
-			  "frame_id:time_stamp:latch_state:frame_p1_x:frame_p1_y:frame_p1_z:frame_p2_x:frame_p2_y:frame_p2_z:height:hinge:rot_dir:door_p1_x:door_p1_y:door_p1_z:door_p2_x:door_p2_y:door_p2_z:handle_x:handle_y:handle_z:normal_x:normal_y:normal_z")
+			  "frame_id:time_stamp:latch_state:frame_p1_x:frame_p1_y:frame_p1_z:frame_p2_x:frame_p2_y:frame_p2_z:height:hinge:rot_dir:door_p1_x:door_p1_y:door_p1_z:door_p2_x:door_p2_y:door_p2_z:handle_x:handle_y:handle_z:travel_dir_x:travel_dir_y:travel_dir_z")
     {}
   };
 

@@ -20,9 +20,9 @@ map_get_doorway_from_points(doorway_id, 0.0, 0.0, current_x, current_y);
 fact(door_state.Holds ds);
 map_get_door_state(ds.object, doorway_id);
 eq(ds.frame_id, "map");
-eq(ds.normal_x, -1.0);
-eq(ds.normal_y, 0.0);
-eq(ds.normal_z, 0.0);
+eq(ds.travel_dir_x, -1.0);
+eq(ds.travel_dir_y, 0.0);
+eq(ds.travel_dir_z, 0.0);
 
 rejectable(door_controller.Holds g0);
 

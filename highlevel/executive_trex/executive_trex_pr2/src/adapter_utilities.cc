@@ -38,10 +38,10 @@ namespace executive_trex_pr2 {
     write<float>("handle_y", token, msg.handle.y);
     write<float>("handle_z", token, msg.handle.z);
 
-    // Normal
-    write<double>("normal_x", token, msg.normal.x);
-    write<double>("normal_y", token, msg.normal.y);
-    write<double>("normal_z", token, msg.normal.z);
+    // Travel Dir
+    write<double>("travel_dir_x", token, msg.travel_dir.x);
+    write<double>("travel_dir_y", token, msg.travel_dir.y);
+    write<double>("travel_dir_z", token, msg.travel_dir.z);
   }
 
   // Read Observation from Door Message
@@ -81,9 +81,9 @@ namespace executive_trex_pr2 {
     read<float>("handle_z", obs, msg.handle.z);
 
     // Normal Data
-    read<double>("normal_x", obs, msg.normal.x);
-    read<double>("normal_y", obs, msg.normal.y);
-    read<double>("normal_z", obs, msg.normal.z);
+    read<double>("travel_dir_x", obs, msg.travel_dir.x);
+    read<double>("travel_dir_y", obs, msg.travel_dir.y);
+    read<double>("travel_dir_z", obs, msg.travel_dir.z);
   }
 
   void AdapterUtilities::read(ObservationByValue& obs, const robot_msgs::PlugStow& msg){

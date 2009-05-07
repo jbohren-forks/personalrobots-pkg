@@ -84,10 +84,10 @@ class DoorManipulationBehavior extends ROSAction {
     float handle_y;
     float handle_z;
 
-    // Normal
-    float normal_x;
-    float normal_y;
-    float normal_z;
+    // Travel direction
+    float travel_dir_x;
+    float travel_dir_y;
+    float travel_dir_z;
   }
 
   predicate Inactive{
@@ -123,10 +123,10 @@ class DoorManipulationBehavior extends ROSAction {
     float handle_y;
     float handle_z;
 
-    // Normal
-    float normal_x;
-    float normal_y;
-    float normal_z;
+    // Travel directions
+    float travel_dir_x;
+    float travel_dir_y;
+    float travel_dir_z;
 
     // Commit to unknown values if nothing set
     defaultOnCommit(hinge, UNKNOWN);
