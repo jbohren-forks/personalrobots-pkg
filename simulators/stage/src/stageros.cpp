@@ -268,7 +268,7 @@ StageNode::SubscribeModels()
                                         mapName(BASE_POSE_GROUND_TRUTH,r), 10);
     subscribe(mapName(CMD_VEL,r), velMsgs[r], &StageNode::cmdvelReceived, 10);
   }
-  advertise<roslib::Time>("time",10);
+  advertise<roslib::Time>("/time",10);
   return(0);
 }
 
@@ -382,7 +382,7 @@ StageNode::Update()
   }
 
   this->timeMsg.rostime = sim_time;
-  publish("time", this->timeMsg);
+  publish("/time", this->timeMsg);
 }
 
 int 
