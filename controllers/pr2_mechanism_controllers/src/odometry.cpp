@@ -60,7 +60,7 @@ void Odometry::init()
   ros::Node::instance()->param("~wheel_radius",wheel_radius_,0.070);
 
   ros::Node::instance()->param<std::string>("~ils_weight_type",ils_weight_type_,"Gaussian");
-  ros::Node::instance()->param<int>("~ils_max_iterations",ils_max_iterations_,3);
+  ros::Node::instance()->param<int>("~ils_max_iterations",ils_max_iterations_,0);
   ros::Node::instance()->param<std::string>("~xml_wheel_name",xml_wheel_name_,"wheel");
   ros::Node::instance()->param<std::string>("~odom_frame",odom_frame_,"odom");
   ros::Node::instance()->param("~expected_publish_time",expected_publish_time_,0.03);
@@ -99,21 +99,6 @@ bool Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
      elt = elt->NextSiblingElement(xml_wheel_name_);
      num_wheels_++;
   }
-
-/*  cbv_lhs_ = OdomMatrix16x3::Zero();
-  cbv_rhs_ = OdomMatrix16x1::Zero();
-  cbv_soln_= OdomMatrix3x1::Zero();
-
-  fit_lhs_ = OdomMatrix16x3::Zero();
-  fit_rhs_ = OdomMatrix16x1::Zero();
-  fit_soln_ = OdomMatrix3x1::Zero();
-
-  fit_residual_ = OdomMatrix16x1::Zero();
-  odometry_residual_ = OdomMatrix16x1::Zero();
-
-  weight_matrix_ = OdomMatrix16x16::Identity();
-
-*/
 
   cbv_lhs_ = Eigen::MatrixXf::Zero(16,3);
   cbv_rhs_ = Eigen::MatrixXf::Zero(16,1);
@@ -293,14 +278,7 @@ Eigen::MatrixXf Odometry::iterativeLeastSquares(Eigen::MatrixXf lhs, Eigen::Matr
     fit_lhs_ = weight_matrix_ * lhs;
     fit_rhs_ = weight_matrix_ * rhs;
 
-    Eigen::MatrixXf mlhs(16,3);
-    Eigen::MatrixXf mrhs(16,1);
-    Eigen::VectorXf soln; 
-//    mlhs.svd().solve(mrhs,&soln);
-
     fit_lhs_.svd().solve(fit_rhs_,&fit_soln_);
-
-
     fit_residual_ = rhs - lhs * fit_soln_;
 
     for(int j=0; j < num_wheels_; j++)
@@ -371,6 +349,9 @@ Eigen::MatrixXf Odometry::findWeightMatrix(Eigen::MatrixXf residual, std::string
 
 void Odometry::publish()
 {
+  if(fabs(last_publish_time_ - current_time_) < expected_publish_time_)
+    return;
+
     if (odometry_publisher_->trylock())
     {
       getOdometryMessage(odometry_publisher_->msg_);
@@ -385,9 +366,6 @@ void Odometry::publish()
 
       robot_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
       out.header.stamp.fromSec(current_time_);
-//      out.header.stamp.sec  = (unsigned long)floor(current_time_);
-//      out.header.stamp.nsec = (unsigned long)floor(  1e9 * (current_time_ - out.header.stamp.sec) );
-
       out.header.frame_id = "odom";
       out.parent_id = "base_footprint";
       out.transform.translation.x = -x*cos(yaw) - y*sin(yaw);
@@ -402,8 +380,6 @@ void Odometry::publish()
 
       robot_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
       out2.header.stamp.fromSec(current_time_);
-//      out2.header.stamp.sec  = (unsigned long)floor(current_time_);
-//      out2.header.stamp.nsec = (unsigned long)floor(  1e9 * (current_time_ - out.header.stamp.sec) );
       out2.header.frame_id = "base_link";
       out2.parent_id = "base_footprint";
       out2.transform.translation.x = 0;
