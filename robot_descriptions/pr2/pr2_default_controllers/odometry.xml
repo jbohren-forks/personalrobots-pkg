@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<controllers>
+  <controller name="odometry" type="Odometry">
+   <wheel name="fl_caster_l_wheel_link"/>
+   <wheel name="fl_caster_r_wheel_link"/>
+   <wheel name="fr_caster_l_wheel_link"/>
+   <wheel name="fr_caster_r_wheel_link"/>
+   <wheel name="bl_caster_l_wheel_link"/>
+   <wheel name="bl_caster_r_wheel_link"/>
+   <wheel name="br_caster_l_wheel_link"/>
+   <wheel name="br_caster_r_wheel_link"/>
+  </controller-->
+</controllers>
