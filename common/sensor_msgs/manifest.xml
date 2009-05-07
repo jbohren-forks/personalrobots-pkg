@@ -1,0 +1,14 @@
+<package>
+  <description brief="sensor_msgs">
+
+     sensor_msgs
+
+  </description>
+  <author>Tully Foote/ YOUR E-MAIL HERE</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/sensor_msgs</url>
+
+</package>
+
+
