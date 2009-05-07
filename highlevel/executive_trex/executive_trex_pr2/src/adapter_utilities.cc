@@ -80,7 +80,7 @@ namespace executive_trex_pr2 {
     read<float>("handle_y", obs, msg.handle.y);
     read<float>("handle_z", obs, msg.handle.z);
 
-    // Normal Data
+    // Travel dir Data
     read<double>("travel_dir_x", obs, msg.travel_dir.x);
     read<double>("travel_dir_y", obs, msg.travel_dir.y);
     read<double>("travel_dir_z", obs, msg.travel_dir.z);
