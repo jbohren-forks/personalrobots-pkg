@@ -29,13 +29,14 @@
  */
 
 #include "door_handle_detector/doors_detector.h"
-#include "door_handle_detector/door_functions.h"
+#include <door_functions/door_functions.h>
 
 
 using namespace std;
 using namespace robot_msgs;
 using namespace ros;
 using namespace door_handle_detector;
+using namespace door_functions;
 
 #define DEBUG_FAILURES 0
 
@@ -120,6 +121,16 @@ bool
   DoorDetector::detectDoors(const robot_msgs::Door& door, PointCloud pointcloud, std::vector<robot_msgs::Door>& result) const
 {
   ROS_INFO ("DoorDetector: Start detecting doors in a point cloud of size %i", (int)pointcloud.pts.size ());
+
+  // check if door message specifies hinge side and rot dir
+  if (door.rot_dir == robot_msgs::Door::UNKNOWN){
+    ROS_ERROR("DoorDetector: Door rotation direction not specified");
+    return false;
+  }
+  if (door.hinge == robot_msgs::Door::UNKNOWN){
+    ROS_ERROR("DoorDetector: Door hinge side not specified");
+    return false;
+  }
 
   Time ts = Time::now();
   Duration duration;
@@ -450,17 +461,31 @@ bool
       result[nr_d].door_p2.z = min_p.z;
     }
 
-    // get door normal
-    result[nr_d].normal.x = -coeff[cc][0];
-    result[nr_d].normal.y = -coeff[cc][1];
-    result[nr_d].normal.z = -coeff[cc][2];
+    // get frame p1 and p2 from detected door, keeping the orientation of the door frame
+    Point32 frame_vec;
+    double door_width = cloud_geometry::distances::pointToPointXYDistance( result[nr_d].door_p1,  result[nr_d].door_p2);
+    double frame_width = cloud_geometry::distances::pointToPointXYDistance( result[nr_d].frame_p1,  result[nr_d].frame_p2);
+    frame_vec.x = (result[nr_d].frame_p1.x - result[nr_d].frame_p2.x)*door_width/frame_width;
+    frame_vec.y = (result[nr_d].frame_p1.y - result[nr_d].frame_p2.y)*door_width/frame_width;
+    if (result[nr_d].hinge == Door::HINGE_P1){
+      result[nr_d].frame_p1 = result[nr_d].door_p1;
+      result[nr_d].frame_p2 = result[nr_d].door_p1;
+      result[nr_d].frame_p2.x = result[nr_d].frame_p2.x - frame_vec.x;
+      result[nr_d].frame_p2.y = result[nr_d].frame_p2.y - frame_vec.y;
+    }
+    else{
+      result[nr_d].frame_p2 = result[nr_d].door_p2;
+      result[nr_d].frame_p1 = result[nr_d].door_p2;
+      result[nr_d].frame_p1.x = result[nr_d].frame_p1.x + frame_vec.x;
+      result[nr_d].frame_p1.y = result[nr_d].frame_p1.y + frame_vec.y;
+    }
 
     // get door height
     cloud_geometry::statistics::getMinMax (pmap_.polygons[cc], min_p, max_p);
     result[nr_d].height = fabs (max_p.z - min_p.z);
 
     // check if door is latched
-    double angle = door_handle_detector::getDoorAngle(result[nr_d]);
+    double angle = getDoorAngle(result[nr_d]);
     ROS_INFO("DoorsDetector: Door angle relative to frame is %f [deg]", angle*180.0/M_PI);
     if (fabs(angle) > 10.0*M_PI/180.0)
       result[nr_d].latch_state = Door::UNLATCHED;
@@ -568,6 +593,7 @@ double DoorDetector::distToHinge(const robot_msgs::Door& door, robot_msgs::Point
     ROS_ERROR("DoorsDetector: Hinge side is not specified");
   return dist;
 }
+
 
 
 

@@ -29,13 +29,14 @@
  */
 
 #include <door_handle_detector/handle_detector.h>
-#include <door_handle_detector/door_functions.h>
+#include <door_functions/door_functions.h>
 
 
 using namespace std;
 using namespace ros;
 using namespace robot_msgs;
 using namespace door_handle_detector;
+using namespace door_functions;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 HandleDetector::HandleDetector (ros::Node* anode) : node_ (anode), tf_ (*anode)
@@ -123,10 +124,15 @@ bool HandleDetector::detectHandle (const robot_msgs::Door& door, PointCloud poin
   pt.y = (door_tr.door_p2.y + door_tr.door_p1.y) / 2.0;
   pt.z = (door_tr.door_p2.z + door_tr.door_p1.z) / 2.0 + door_tr.height / 2.0;
   vector<double> coeff (4);
-  coeff[0] = door_tr.normal.x;
-  coeff[1] = door_tr.normal.y;
-  coeff[2] = door_tr.normal.z;
-  coeff[3] = - cloud_geometry::dot (door_tr.normal, pt);
+  KDL::Vector door_normal = getDoorNormal(door_tr);
+  Point32 door_normal_pnt;
+  door_normal_pnt.x = door_normal(0);
+  door_normal_pnt.y = door_normal(1);
+  door_normal_pnt.z = door_normal(2);
+  coeff[0] = door_normal(0);
+  coeff[1] = door_normal(1);
+  coeff[2] = door_normal(2);
+  coeff[3] = - cloud_geometry::dot (door_normal_pnt, pt);
 
   // ---[ Optimization: select a subset of the points for faster processing
   // Select points close to the door plane (assumes door did not move since detection !)
