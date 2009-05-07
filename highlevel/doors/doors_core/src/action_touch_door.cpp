@@ -34,8 +34,7 @@
 
 /* Author: Wim Meeussen */
 
-#include <door_handle_detector/door_functions.h>
-#include "doors_core/executive_functions.h"
+#include <door_functions/door_functions.h>
 #include "doors_core/action_touch_door.h"
 
 using namespace tf;
@@ -43,6 +42,7 @@ using namespace KDL;
 using namespace ros;
 using namespace std;
 using namespace door_handle_detector;
+using namespace door_functions;
 
 static const string fixed_frame = "odom_combined";
 static const double touch_dist = 0.65;

@@ -33,12 +33,13 @@
  *********************************************************************/
 
 #include "doors_core/door_reactive_planner.h"
-#include "doors_core/executive_functions.h"
+#include <door_functions/door_functions.h>
 
 using namespace tf;
 using namespace ros;
 using namespace std;
 using namespace door_reactive_planner;
+using namespace door_functions;
 
 DoorReactivePlanner::DoorReactivePlanner(ros::Node &ros_node, TransformListener &tf, costmap_2d::Costmap2D* cost_map, std::string control_frame_id, std::string costmap_frame_id):node_(ros_node),tf_(tf)
 {
@@ -99,15 +100,15 @@ void DoorReactivePlanner::setDoor(robot_msgs::Door door_msg_in)
 {
   //Assumption is that the normal points in the direction we want to travel through the door
   robot_msgs::Door door;
-  if (!door_handle_detector::transformTo(tf_,costmap_frame_id_,door_msg_in,door)){
+  if (!transformTo(tf_,costmap_frame_id_,door_msg_in,door)){
     ROS_ERROR("DoorReactivePlanner: Could not transform door message from %s to %s", door_msg_in.header.frame_id.c_str(), costmap_frame_id_.c_str());
     return;
   }
 
   tf::Stamped<tf::Pose> tmp = getRobotPose(door,door_goal_distance_);
-  tf::Vector3 tmp_normal = getFrameNormal(door);
+  KDL::Vector tmp_normal = getFrameNormal(door);
   
-  centerline_angle_ = atan2(tmp_normal[1],tmp_normal[0]);
+  centerline_angle_ = atan2(tmp_normal(1),tmp_normal(0));
   
   goal_.x = tmp.getOrigin()[0];
   goal_.y = tmp.getOrigin()[1];
@@ -119,8 +120,8 @@ void DoorReactivePlanner::setDoor(robot_msgs::Door door_msg_in)
   carrot_.y = tmp_2.getOrigin()[1];
   carrot_.th = centerline_angle_;
 
-  vector_along_door_.x = tmp_normal[1];
-  vector_along_door_.y = -tmp_normal[0];
+  vector_along_door_.x = tmp_normal(1);
+  vector_along_door_.y = -tmp_normal(0);
   vector_along_door_.z = 0.0;    
 
   door_information_set_ = true;

@@ -41,14 +41,12 @@
 #include <robot_msgs/Vector3.h>
 #include <robot_msgs/Point.h>
 #include <robot_msgs/DiagnosticStatus.h>
+#include <robot_msgs/Door.h>
 
 // For transform support
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/message_notifier.h>
-
-// door helper functions
-#include <door_handle_detector/door_functions.h>
 
 // costmap
 #include <costmap_2d/costmap_2d.h>

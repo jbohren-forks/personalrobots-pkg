@@ -39,6 +39,7 @@
 
 #include "doors_core/action_detect_door.h"
 #include "doors_core/action_detect_handle.h"
+#include <door_functions/door_functions.h>
 #include <pr2_robot_actions/DoorActionState.h>
 #include <robot_msgs/Door.h>
 #include <ros/node.h>
@@ -47,6 +48,7 @@
 using namespace ros;
 using namespace std;
 using namespace door_handle_detector;
+using namespace door_functions;
 
 // -----------------------------------
 //              MAIN
@@ -65,8 +67,8 @@ int
   my_door_.frame_p1.y = -0.5;
   my_door_.frame_p2.x = 1.0;
   my_door_.frame_p2.y = 0.5;
-  my_door_.rot_dir = -1;
-  my_door_.hinge = -1;
+  my_door_.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
+  my_door_.hinge = robot_msgs::Door::HINGE_P2;
   my_door_.header.frame_id = "base_footprint";
 
   door_handle_detector::DetectDoorAction door_detector(node);
@@ -77,8 +79,10 @@ int
   runner.run();
 
   robot_msgs::Door feedback;
+  cout << "door in " << my_door_ << endl;
   door_detector.execute(my_door_, feedback);
-  handle_detector.execute(feedback, feedback);
+  cout << "door out " << feedback << endl;
+  //handle_detector.execute(feedback, feedback);
 
   return (0);
 }

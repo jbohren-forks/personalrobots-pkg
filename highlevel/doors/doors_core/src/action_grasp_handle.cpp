@@ -30,11 +30,11 @@
  *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
+ ******************************p***************************************/
 
 /* Author: Wim Meeussen */
 
-#include <door_handle_detector/door_functions.h>
+#include <door_functions/door_functions.h>
 #include "doors_core/action_grasp_handle.h"
 
 using namespace tf;
@@ -42,6 +42,7 @@ using namespace KDL;
 using namespace ros;
 using namespace std;
 using namespace door_handle_detector;
+using namespace door_functions;
 
 static const string fixed_frame = "odom_combined";
 
@@ -77,7 +78,8 @@ robot_actions::ResultStatus GraspHandleAction::execute(const robot_msgs::Door& g
     return robot_actions::ABORTED;
   }
 
-  Vector normal(goal_tr.normal.x, goal_tr.normal.y, goal_tr.normal.z);
+  Vector x_axis(1,0,0);
+  Vector normal = getDoorNormal(goal_tr);
   Vector handle(goal_tr.handle.x, goal_tr.handle.y, goal_tr.handle.z);
   Stamped<Pose> gripper_pose;
   gripper_pose.frame_id_ = fixed_frame;
@@ -95,7 +97,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const robot_msgs::Door& g
   
   // move gripper in front of door
   gripper_pose.setOrigin( Vector3(handle(0) + (normal(0) * -0.15), handle(1) + (normal(1) * -0.15), handle(2) + (normal(2) * -0.15)));
-  gripper_pose.setRotation( Quaternion(getDoorAngle(goal_tr), 0, M_PI/2.0) ); 
+  gripper_pose.setRotation( Quaternion(getVectorAngle(x_axis, normal), 0, M_PI/2.0) ); 
   gripper_pose.stamp_ = Time::now();
   PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
 
@@ -115,7 +117,7 @@ robot_actions::ResultStatus GraspHandleAction::execute(const robot_msgs::Door& g
   // move gripper over door handle
   gripper_pose.frame_id_ = fixed_frame;
   gripper_pose.setOrigin( Vector3(handle(0) + (normal(0) * 0.05 ), handle(1) + (normal(1) * 0.05),  handle(2) + (normal(2) * 0.05)));
-  gripper_pose.setRotation( Quaternion(getDoorAngle(goal_tr), 0, M_PI/2.0) ); 
+  gripper_pose.setRotation( Quaternion(getVectorAngle(x_axis, normal), 0, M_PI/2.0) ); 
   gripper_pose.stamp_ = Time::now();
   PoseStampedTFToMsg(gripper_pose, req_moveto.pose);
 
@@ -146,16 +148,6 @@ robot_actions::ResultStatus GraspHandleAction::execute(const robot_msgs::Door& g
   
   feedback = goal_tr;
   return robot_actions::SUCCESS;
-}
-
-
-double GraspHandleAction::getDoorAngle(const robot_msgs::Door& door)
-{
-  Vector normal(door.normal.x, door.normal.y, door.normal.z);
-  Vector x_axis(1,0,0);
-  double dot      = normal(0) * x_axis(0) + normal(1) * x_axis(1);
-  double perp_dot = normal(1) * x_axis(0) - normal(0) * x_axis(1);
-  return atan2(perp_dot, dot);
 }
 
 

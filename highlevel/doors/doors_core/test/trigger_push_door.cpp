@@ -67,9 +67,9 @@ int
   door.door_p1.y = -0.5;
   door.door_p2.x = 1.0;
   door.door_p2.y = 0.5;
-  door.normal.x = 1.0;
-  door.normal.y = 0.0;
-  door.normal.z = 0.0;
+  door.travel_dir.x = 1.0;
+  door.travel_dir.y = 0.0;
+  door.travel_dir.z = 0.0;
   door.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
   door.hinge = robot_msgs::Door::HINGE_P2;
   door.header.frame_id = "odom_combined";

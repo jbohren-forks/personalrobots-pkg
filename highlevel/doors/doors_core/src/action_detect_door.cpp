@@ -35,7 +35,7 @@
 /* Author: Wim Meeussen */
 
 #include <door_handle_detector/DoorsDetectorCloud.h>
-#include <door_handle_detector/door_functions.h>
+#include <door_functions/door_functions.h>
 #include <point_cloud_assembler/BuildCloudAngle.h>
 #include "doors_core/action_detect_door.h"
 
@@ -43,7 +43,7 @@
 using namespace ros;
 using namespace std;
 using namespace door_handle_detector;
-
+using namespace door_functions;
 
 static const string fixed_frame = "odom_combined";
 
@@ -70,7 +70,7 @@ robot_actions::ResultStatus DetectDoorAction::execute(const robot_msgs::Door& go
 	      goal.header.frame_id.c_str(), fixed_frame.c_str(), goal.header.stamp.toSec());
     return robot_actions::ABORTED;
   }
-
+  ROS_INFO("DetectDoorAction: goal message transformed to frame %s", fixed_frame.c_str());
   robot_msgs::Door result_laser;
   if (!laserDetection(goal_tr, result_laser)){
     if (isPreemptRequested()){

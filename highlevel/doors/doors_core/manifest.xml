@@ -23,9 +23,10 @@
   <depend package="costmap_2d"/>
   <depend package="base_local_planner"/>
   <depend package="visualization_msgs"/>
+  <depend package="door_functions"/>
 
  <export>
-    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib  -lexecutive_functions"/>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib "/>
  </export>
 
 

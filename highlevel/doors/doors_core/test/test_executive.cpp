@@ -47,13 +47,12 @@
 #include <robot_actions/NoArgumentsActionState.h>
 #include <pr2_robot_actions/SwitchControllersState.h>
 #include <nav_robot_actions/MoveBaseState.h>
-#include <door_handle_detector/door_functions.h>
-#include "doors_core/executive_functions.h"
+#include <door_functions/door_functions.h>
 
 
 using namespace ros;
 using namespace std;
-using namespace door_handle_detector;
+using namespace door_functions;
 
 
 
@@ -79,9 +78,9 @@ int
   door.door_p1.y = -0.5;
   door.door_p2.x = 1.0;
   door.door_p2.y = 0.5;
-  door.normal.x = 1.0;
-  door.normal.y = 0.0;
-  door.normal.z = 0.0;
+  door.travel_dir.x = 1.0;
+  door.travel_dir.y = 0.0;
+  door.travel_dir.z = 0.0;
   door.rot_dir = robot_msgs::Door::ROT_DIR_COUNTERCLOCKWISE;
   door.hinge = robot_msgs::Door::HINGE_P2;
   door.header.frame_id = "base_footprint";
@@ -136,7 +135,7 @@ int
 
   // approach door
   robot_msgs::PoseStamped goal_msg;
-  tf::PoseStampedTFToMsg(getRobotPose(door, 0.6), goal_msg);
+  tf::PoseStampedTFToMsg(getRobotPose(door, -0.6), goal_msg);
   cout << "move to pose " << goal_msg.pose.position.x << ", " << goal_msg.pose.position.y << ", "<< goal_msg.pose.position.z << endl;
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;

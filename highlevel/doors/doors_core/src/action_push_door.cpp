@@ -34,9 +34,8 @@
 
 /* Author: Wim Meeussen */
 
-#include <door_handle_detector/door_functions.h>
+#include <door_functions/door_functions.h>
 #include <robot_msgs/PoseStamped.h>
-#include "doors_core/executive_functions.h"
 #include "doors_core/action_push_door.h"
 
 using namespace tf;
@@ -44,10 +43,11 @@ using namespace KDL;
 using namespace ros;
 using namespace std;
 using namespace door_handle_detector;
+using namespace door_functions;
 
 static const string fixed_frame = "odom_combined";
 static const double push_dist = 0.65;
-static const double push_vel  = 5.0 * M_PI/180.0;  // 5 [deg/sec]
+static const double push_vel  = 10.0 * M_PI/180.0;  // 10 [deg/sec]
 
 
 
@@ -104,7 +104,7 @@ robot_actions::ResultStatus PushDoorAction::execute(const robot_msgs::Door& goal
   // push door
   Stamped<Pose> gripper_pose;
   robot_msgs::PoseStamped gripper_pose_msg;
-  while (fabs(angle) < M_PI/2.0){
+  while (!isPreemptRequested()){
     // define griper pose
     gripper_pose = getGripperPose(goal_tr, angle, push_dist);
     gripper_pose.stamp_ = Time::now();
@@ -112,19 +112,13 @@ robot_actions::ResultStatus PushDoorAction::execute(const robot_msgs::Door& goal
     node_.publish("r_arm_cartesian_pose_controller/command", gripper_pose_msg);
 
     // increase angle
-    angle += angle_step;
-
-    // check for preemption
-    if (isPreemptRequested()) {
-      ROS_ERROR("PushDoorAction: preempted");
-      return robot_actions::PREEMPTED;
-    }
+    if (fabs(angle) < M_PI/2.0)
+      angle += angle_step;
 
     sleep_time.sleep();
   }
-
-  feedback = goal_tr;
-  return robot_actions::SUCCESS;
+  ROS_ERROR("PushDoorAction: preempted");
+  return robot_actions::PREEMPTED;
 }
 
 

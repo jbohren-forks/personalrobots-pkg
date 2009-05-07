@@ -36,12 +36,16 @@
 *********************************************************************/
 #include <doors_core/move_base_door_action.h>
 #include <doors_core/door_reactive_planner.h>
+#include <door_functions/door_functions.h>
+#include <kdl/frames.hpp>
 
 
 using namespace base_local_planner;
 using namespace costmap_2d;
 using namespace robot_actions;
 using namespace door_reactive_planner;
+using namespace door_functions;
+
 namespace nav 
 {
   MoveBaseDoorAction::MoveBaseDoorAction(ros::Node& ros_node, tf::TransformListener& tf) : 
@@ -206,7 +210,8 @@ namespace nav
 
   bool MoveBaseDoorAction::goalReached()
   {
-    double goal_projection = door_.normal.x*(global_pose_.getOrigin().x()-goal_.x) + door_.normal.y*(global_pose_.getOrigin().y()-goal_.y);
+    KDL::Vector normal = getDoorNormal(door_);
+    double goal_projection = normal(0)*(global_pose_.getOrigin().x()-goal_.x) + normal(1)*(global_pose_.getOrigin().y()-goal_.y);
     if((goalPositionReached() && goalOrientationReached()) || goal_projection > 0)
     { 
       return true;

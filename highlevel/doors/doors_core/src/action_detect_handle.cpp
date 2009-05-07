@@ -36,7 +36,7 @@
 
 #include <door_handle_detector/DoorsDetectorCloud.h>
 #include <door_handle_detector/DoorsDetector.h>
-#include <door_handle_detector/door_functions.h>
+#include <door_functions/door_functions.h>
 #include <robot_msgs/Door.h>
 #include <point_cloud_assembler/BuildCloudAngle.h>
 #include "doors_core/action_detect_handle.h"
@@ -44,6 +44,7 @@
 using namespace ros;
 using namespace std;
 using namespace door_handle_detector;
+using namespace door_functions;
 
 
 static const string fixed_frame = "odom_combined";
@@ -119,7 +120,7 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
     }
 
     // transform laser data
-    if (!door_handle_detector::transformTo(tf_, fixed_frame, result_laser, result_laser, fixed_frame)){
+    if (!transformTo(tf_, fixed_frame, result_laser, result_laser, fixed_frame)){
       ROS_ERROR ("DetectHandleAction: Could not transform laser door message from frame %s to frame %s.",
 		 result_laser.header.frame_id.c_str (), fixed_frame.c_str ());
       return robot_actions::ABORTED;
@@ -127,7 +128,7 @@ robot_actions::ResultStatus DetectHandleAction::execute(const robot_msgs::Door& 
     ROS_INFO("DetectHandleAction: detected handle position transformed to '%s'", fixed_frame.c_str());
 
     // transform camera data
-    if (!door_handle_detector::transformTo(tf_, fixed_frame, result_camera, result_camera, fixed_frame)){
+    if (!transformTo(tf_, fixed_frame, result_camera, result_camera, fixed_frame)){
       ROS_ERROR ("DetectHandleAction: Could not transform camera door message from frame %s to frame %s.",
 		 result_camera.header.frame_id.c_str (), fixed_frame.c_str ());
       return robot_actions::ABORTED;

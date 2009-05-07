@@ -32,13 +32,11 @@ rospack_add_executable(action_runner_grasp_handle
 
 rospack_add_executable(action_runner_touch_door
 		       src/action_touch_door.cpp 
-		       src/executive_functions.cpp 
 		       src/action_runner_touch_door.cpp
                       )
 
 rospack_add_executable(action_runner_push_door
 		       src/action_push_door.cpp 
-		       src/executive_functions.cpp 
 		       src/action_runner_push_door.cpp
                       )
 
@@ -58,11 +56,6 @@ rospack_add_executable(action_runner_release_handle
                       )
 
 # test
-rospack_add_executable(test_executive_functions
-                       test/test_executive_functions.cpp
-		       src/executive_functions.cpp
-                      )
-
 rospack_add_executable(trigger_check_path
                        test/trigger_check_path.cpp
 		       src/action_check_path.cpp
@@ -77,7 +70,6 @@ rospack_add_executable(trigger_doors_detector
 rospack_add_executable(trigger_push_door
                        test/trigger_push_door.cpp
 		       src/action_push_door.cpp
-		       src/executive_functions.cpp
                       )
 
 rospack_add_executable(trigger_doors_opener
@@ -91,20 +83,13 @@ rospack_add_executable(trigger_handle_release
                       )
 
 rospack_add_executable(test_executive
-                       src/executive_functions.cpp
 		       test/test_executive.cpp
                       )
 
 rospack_add_executable(move_base_door
                        src/move_base_door_action.cpp
 		       src/door_reactive_planner.cpp
-		       src/executive_functions.cpp
                       )
-
-
-rospack_add_library(executive_functions src/executive_functions.cpp)
-
-rospack_add_rostest(test/test_executive_functions.launch)
 
 
 # check for OpenMP
