@@ -31,6 +31,7 @@
 #define TOPOLOGICAL_MAP_VISUALIZATION_H
 
 #include <topological_map/topological_map.h>
+#include <ros/ros.h>
 
 namespace topological_map
 {
@@ -40,11 +41,12 @@ class Visualizer
 {
 public:
   Visualizer(const TopologicalMap& tmap);
-  ~Visualizer();
   void visualize();
   
 private:
-  const TopologicalMap& tmap;
+  const TopologicalMap& tmap_;
+  ros::NodeHandle node_;
+  ros::Publisher marker_pub_;
 };
 
 

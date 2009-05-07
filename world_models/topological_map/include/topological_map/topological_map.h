@@ -62,6 +62,7 @@ typedef vector<RegionId> RegionIdVector;
 typedef set<RegionId> RegionIdSet;
 typedef pair<RegionId, RegionId> RegionPair;
 typedef unsigned int OutletId;
+typedef set<OutletId> OutletIdSet;
 
 
 typedef boost::multi_array<bool, 2> OccupancyGrid;
@@ -190,6 +191,9 @@ public:
   /// \post New outlet added
   /// \return id of new outlet
   OutletId addOutlet (const OutletInfo& outlet);
+
+  /// \return ids of all existing outlets
+  OutletIdSet allOutlets() const;
 
   /// \return Is this point in an obstacle cell?
   /// \throws UnknownPointException

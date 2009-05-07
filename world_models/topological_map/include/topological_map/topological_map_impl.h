@@ -42,6 +42,7 @@ namespace topological_map
 using std::map;
 using std::ostream;
 using std::istream;
+using std::set;
 using boost::tuple;
 using boost::shared_ptr;
 using door_msgs::Door;
@@ -124,6 +125,9 @@ public:
   /// \post New outlet added
   /// \return id of new outlet
   OutletId addOutlet (const OutletInfo& outlet);
+
+  /// \return ids of all existing outlets
+  OutletIdSet allOutlets() const;
 
   /// \return set of cells in region given id
   /// \throws UnknownRegionException

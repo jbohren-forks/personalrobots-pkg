@@ -46,6 +46,7 @@
 #include <cmath>
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
+#include <boost/iterator/counting_iterator.hpp>
 #include <ros/console.h>
 #include <ros/assert.h>
 #include <tinyxml/tinyxml.h>
@@ -81,6 +82,7 @@ namespace topological_map
 {
 
 typedef pair<bool, double> ReachableCost;
+typedef boost::counting_iterator<unsigned int> Counter;
 
 /************************************************************
  * Utility
@@ -706,6 +708,8 @@ struct CloserTo
 OutletId TopologicalMap::MapImpl::nearestOutlet (const Point2D& p) const
 {
   Point2D p2 = transformPoint(p);
+  //For now, assume outlet data is untransformed
+  //Point2D p2=p;
   OutletVector::const_iterator pos = min_element(outlets_.begin(), outlets_.end(), CloserTo(p2.x, p2.y));
   if (pos==outlets_.end()) 
     throw NoOutletException(p2.x, p2.y);
@@ -719,7 +723,8 @@ void TopologicalMap::MapImpl::observeOutletBlocked (const OutletId id)
 
 OutletInfo TopologicalMap::MapImpl::outletInfo (const OutletId id) const
 {
-  return transformOutlet(transform_, getOutletInfo(outlets_,id)); // makes a copy
+  return getOutletInfo(outlets_,id);
+  //return transformOutlet(transform_.inverse(), getOutletInfo(outlets_,id)); // makes a copy
 }
 
 OutletId TopologicalMap::MapImpl::addOutlet (const OutletInfo& outlet)
@@ -727,6 +732,13 @@ OutletId TopologicalMap::MapImpl::addOutlet (const OutletInfo& outlet)
   outlets_.push_back(transformOutlet(transform_.inverse(), outlet));
   return outlets_.size()-1;
 }
+
+OutletIdSet TopologicalMap::MapImpl::allOutlets () const
+{
+  // For now, outlet ids are 0,...,num_outlets-1
+  return OutletIdSet(Counter(0), Counter(outlets_.size()));
+}
+  
 
 
 
@@ -1145,6 +1157,11 @@ OutletInfo TopologicalMap::outletInfo (const OutletId id) const
 OutletId TopologicalMap::addOutlet (const OutletInfo& outlet)
 {
   return map_impl_->addOutlet(outlet);
+}
+
+OutletIdSet TopologicalMap::allOutlets () const
+{ 
+  return map_impl_->allOutlets();
 }
 
 RegionIdVector TopologicalMap::neighbors (const RegionId id) const

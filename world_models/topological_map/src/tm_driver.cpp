@@ -36,7 +36,7 @@
 #include <topological_map/topological_map.h>
 #include <topological_map/visualization.h>
 #include <ros/time.h>
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <ros/assert.h>
 
 typedef unsigned int uint;
@@ -87,8 +87,7 @@ void printConnectorCosts (TopologicalMap& m, const Point2D& p1, const Point2D& p
 int main (int argc, char* argv[])
 {
 
-  ros::init(argc, argv); 
-  ros::Node node("tm_driver");
+  ros::init(argc, argv, "tm_driver"); 
   
   OccupancyGrid grid(extents[21][24]);
   setV(grid, 0, 1, 21, 0, 1, 24, false);
@@ -122,9 +121,16 @@ int main (int argc, char* argv[])
 
 
   ifstream str3("/u/bhaskara/local/top/willow.tmap");
-  double dx=-1;
-  tf::Transform trans(tf::Quaternion::getIdentity(), tf::Vector3(dx,0,0));
+  double dx=-.4;
+  tf::Transform trans(tf::Quaternion(.015,0,0), tf::Vector3(dx,0,0));
   TopologicalMap m3(str3, 1.0, 1e9, 1e9, trans);
+
+  tmap::Visualizer v(m3);
+  Duration dur(1);
+  while (true) {
+    dur.sleep();
+    v.visualize();
+  }
 
   Point2D p1(1-dx,1), p2(30-dx,30);
   cout << "Nearest outlet to " << p1 << " is " << m3.nearestOutlet(p1) << endl;
@@ -158,12 +164,6 @@ int main (int argc, char* argv[])
   cout << "Open prob at 10000000.0 is " << m3.doorOpenProb(door1, Time(10000000.0)) << " and open is " << m3.isDoorOpen(door1, Time(10000000.0)) << endl;
 
 
-  tmap::Visualizer v(m3);
-  Duration dur(1);
-  while (true) {
-    dur.sleep();
-    v.visualize();
-  }
 
 //   std::ifstream str3("local/willow.tmap");
 //   tmap::TopologicalMap m2(str3);

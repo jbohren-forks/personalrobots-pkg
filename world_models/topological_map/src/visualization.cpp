@@ -29,6 +29,9 @@
 
 
 #include <topological_map/visualization.h>
+#include <string>
+#include <boost/bind.hpp>
+#include <boost/ref.hpp>
 #include <ros/node.h>
 #include <ros/console.h>
 #include <ros/assert.h>
@@ -39,20 +42,23 @@
 namespace topological_map
 {
 
-using ros::Node;
+using ros::NodeHandle;
+using ros::Publisher;
 using door_msgs::Door;
 using robot_msgs::Point;
 using visualization_msgs::Marker;
+using std::string;
+using boost::bind;
+using boost::ref;
 
 
-Visualizer::Visualizer (const TopologicalMap& tmap) : tmap(tmap) 
+const string MARKER_TOPIC("visualization_marker");
+const string MARKER_NS("topological_map");
+const string MARKER_FRAME("map");
+
+
+Visualizer::Visualizer (const TopologicalMap& tmap) : tmap_(tmap), node_(), marker_pub_(node_.advertise<Marker>(MARKER_TOPIC, 0))
 {
-  Node::instance()->advertise<Marker>("visualization_marker", 0);
-}
-
-Visualizer::~Visualizer () 
-{
-  Node::instance()->unadvertise("visualization_marker");
 }
 
 
@@ -60,10 +66,10 @@ Visualizer::~Visualizer ()
 // Functor for drawing individual doors and publishing them as a group to visualization_marker
 struct DrawDoors
 {
-  DrawDoors (const TopologicalMap& tmap) : tmap(tmap) 
+  DrawDoors (const TopologicalMap& tmap, const Publisher& pub) : tmap(tmap), pub(pub)
   {
-    marker.header.frame_id = "map";
-    marker.ns = "topological_map";
+    marker.header.frame_id = MARKER_FRAME;
+    marker.ns = MARKER_NS;
     marker.id=1;
     marker.type=Marker::LINE_LIST;
     marker.action=Marker::ADD;
@@ -95,20 +101,50 @@ struct DrawDoors
 
   ~DrawDoors ()
   {
-    Node::instance()->publish("visualization_marker", marker);
+    pub.publish(marker);
   }
 
   const TopologicalMap& tmap;
   Marker marker;
+  const Publisher& pub;
 };
+
+
+
+void drawOutlet (const OutletId id, const TopologicalMap& m, const Publisher& pub)
+{
+  OutletInfo outlet = m.outletInfo(id);
+  Marker marker;
+  marker.id = id+100;
+  marker.ns = MARKER_NS;
+  marker.header.frame_id=MARKER_FRAME;
+  marker.type = Marker::ARROW;
+  marker.action=Marker::ADD;
+  marker.color.a=1.0;
+  marker.color.g=1.0;
+  marker.scale.x=1.0;
+  marker.scale.y=0.1;
+  marker.scale.z=0.1;
+  marker.pose.position.x=outlet.x;
+  marker.pose.position.y=outlet.y;
+  marker.pose.position.z=outlet.z;
+  marker.pose.orientation.x=outlet.qx;
+  marker.pose.orientation.y=outlet.qy;
+  marker.pose.orientation.z=outlet.qz;
+  marker.pose.orientation.w=outlet.qw;
+  pub.publish(marker);
+}
 
 
 
 
 void Visualizer::visualize ()
 {
-  const RegionIdSet& r = tmap.allRegions();
-  for_each(r.begin(), r.end(), DrawDoors(tmap));
+  const RegionIdSet& regions = tmap_.allRegions();
+  for_each(regions.begin(), regions.end(), DrawDoors(tmap_, marker_pub_));
+
+  const OutletIdSet& outlets = tmap_.allOutlets();
+  for_each(outlets.begin(), outlets.end(), bind(drawOutlet, _1, ref(tmap_), marker_pub_));
 }
 
 
