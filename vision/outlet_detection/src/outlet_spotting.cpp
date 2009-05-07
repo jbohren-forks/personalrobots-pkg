@@ -635,15 +635,21 @@ private:
     }
 
 
-    PointCloud outletVecinity(PointCloud laser_cloud, PointStamped ps_cloud, double distance)
+    PointCloud outletVecinity(PointCloud laser_cloud, PointStamped ps_cloud, double distance, Point32& closest)
     {
     	PointCloud result;
+    	double dist = 1e10;
     	result.header.frame_id = laser_cloud.header.frame_id;
     	result.header.stamp = laser_cloud.header.stamp;
 
     	double d = distance*distance;
     	for (size_t i=0; i<laser_cloud.get_pts_size(); ++i) {
-    		if (squaredPointDistance(laser_cloud.pts[i],ps_cloud.point)<d) {
+    		double crt_dist =squaredPointDistance(laser_cloud.pts[i],ps_cloud.point);
+    		if (crt_dist<dist) {
+    			closest = laser_cloud.pts[i];
+    			dist = crt_dist;
+    		}
+    		if (crt_dist<d) {
     			result.pts.push_back(laser_cloud.pts[i]);
     		}
     	}
@@ -868,7 +874,8 @@ private:
             ROS_ERROR("Transform exception: %s\n", ex.what());
         	return false;
         }
-        PointCloud outlet_vecinity = outletVecinity(base_cloud_, ps_cloud, 0.4);
+        Point32 closest;
+        PointCloud outlet_vecinity = outletVecinity(base_cloud_, ps_cloud, 0.4, closest);
 
         // fit a line in the outlet cloud
         vector<int> indices(outlet_vecinity.pts.size());
@@ -895,7 +902,8 @@ private:
         temp_pose.header.frame_id = base_cloud_.header.frame_id;
         temp_pose.header.stamp = base_cloud_.header.stamp;
 
-        btVector3 position(ps_cloud.point.x,ps_cloud.point.y,ps_cloud.point.z);
+//        btVector3 position(ps_cloud.point.x,ps_cloud.point.y,ps_cloud.point.z);
+        btVector3 position(closest.x,closest.y,closest.z);
         btVector3 up(0,0,1);
         btVector3 left(line_segment[1].x-line_segment[0].x,line_segment[1].y-line_segment[0].y,line_segment[1].z-line_segment[0].z);
         btVector3 normal = left.cross(up).normalized();
