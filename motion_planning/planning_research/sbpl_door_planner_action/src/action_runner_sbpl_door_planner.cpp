@@ -67,9 +67,9 @@ int main(int argc, char** argv)
   node.param("~p_door_hinge" , tmp2, 0); door.hinge = tmp2;
   node.param("~p_door_rot_dir" , tmp2, 1); door.rot_dir = tmp2;
   door.header.frame_id = "base_link";
-  door.normal.x = 1.0;
-  door.normal.y = 0.0;
-  door.normal.z = 0.0;
+  door.travel_dir.x = 1.0;
+  door.travel_dir.y = 0.0;
+  door.travel_dir.z = 0.0;
   door.door_p1 = door.frame_p1;
   door.door_p2 = door.frame_p2;
 

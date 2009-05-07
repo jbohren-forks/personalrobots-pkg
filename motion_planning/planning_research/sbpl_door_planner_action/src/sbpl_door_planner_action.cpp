@@ -28,15 +28,16 @@
  */
 
 #include <sbpl_door_planner_action/sbpl_door_planner_action.h>
+#include "door_msgs/Door.h"
 #include <ros/node.h>
 
 using namespace std;
 using namespace ros;
 using namespace robot_actions;
-using namespace door_handle_detector;
+using namespace door_functions;
 
 SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf) : 
-  Action<robot_msgs::Door, robot_msgs::Door>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
+  Action<door_msgs::Door, door_msgs::Door>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
   cost_map_ros_(NULL),cm_getter_(this)
 {
   ros_node_.param("~allocated_time", allocated_time_, 1.0);
@@ -118,7 +119,7 @@ void PrintUsage(char *argv[])
 
 
 
-bool SBPLDoorPlanner::initializePlannerAndEnvironment(const robot_msgs::Door &door)
+bool SBPLDoorPlanner::initializePlannerAndEnvironment(const door_msgs::Door &door)
 {
   door_env_.door = door;
   // First set up the environment
@@ -172,7 +173,7 @@ bool SBPLDoorPlanner::initializePlannerAndEnvironment(const robot_msgs::Door &do
 
 bool SBPLDoorPlanner::removeDoor()
 {
-  const std::vector<robot_msgs::Point> door_polygon = door_handle_detector::getPolygon(door_env_.door,door_env_.door_thickness); 
+  const std::vector<robot_msgs::Point> door_polygon = door_functions::getPolygon(door_env_.door,door_env_.door_thickness); 
   if(cost_map_.setConvexPolygonCost(door_polygon,costmap_2d::FREE_SPACE))
     return true;
     return false;
@@ -249,10 +250,10 @@ bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2
   return false;
 }
 
-robot_actions::ResultStatus SBPLDoorPlanner::execute(const robot_msgs::Door& door_msg_in, robot_msgs::Door& feedback)
+robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door_msg_in, door_msgs::Door& feedback)
 {
   robot_msgs::JointTraj path;
-  robot_msgs::Door door;
+  door_msgs::Door door;
   if(!updateGlobalPose())
   {
     return robot_actions::ABORTED;
@@ -260,7 +261,7 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const robot_msgs::Door& doo
 
   ROS_INFO("Current position: %f %f %f",global_pose_2D_.x,global_pose_2D_.y,global_pose_2D_.th);
 
-  if (!door_handle_detector::transformTo(tf_,global_frame_,door_msg_in,door))
+  if (!door_functions::transformTo(tf_,global_frame_,door_msg_in,door))
   {
     return robot_actions::ABORTED;
   }
@@ -277,7 +278,7 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const robot_msgs::Door& doo
   ROS_INFO("Door planner and environment initialized");
   goal_.x = (door.frame_p1.x+door.frame_p2.x)/2.0;
   goal_.y = (door.frame_p1.y+door.frame_p2.y)/2.0;
-  goal_.th = atan2(door.normal.y,door.normal.x);
+  goal_.th = atan2(door.travel_dir.y,door.travel_dir.x);
 
   ROS_INFO("Goal: %f %f %f",goal_.x,goal_.y,goal_.th);
   if(!isPreemptRequested())
@@ -452,7 +453,7 @@ void SBPLDoorPlanner::publishFootprint(const pr2_robot_actions::Pose2D &position
 }
 
 
-void SBPLDoorPlanner::publishDoor(const robot_msgs::Door &door)
+void SBPLDoorPlanner::publishDoor(const door_msgs::Door &door)
 {
   visualization_msgs::Polyline marker_door;
   marker_door.header.frame_id = global_frame_;

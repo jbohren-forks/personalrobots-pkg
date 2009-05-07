@@ -63,7 +63,7 @@
 #include <pr2_robot_actions/DoorActionState.h>
 #include <pr2_robot_actions/Pose2D.h>
 #include <door_msgs/Door.h>
-#include <door_handle_detector/door_functions.h>
+#include <door_functions/door_functions.h>
 
 typedef struct
 {

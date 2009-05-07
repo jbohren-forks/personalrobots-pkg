@@ -16,6 +16,8 @@
     <depend package="costmap_2d"/>
     <depend package="mpglue"/>
     <depend package="door_handle_detector"/>
+    <depend package="door_functions"/>
+    <depend package="door_msgs"/>
   <url></url>
 
   <export>
