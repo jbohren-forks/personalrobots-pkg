@@ -44,6 +44,7 @@
 
 using namespace led_detection ;
 using namespace image_msgs ;
+using namespace kinematic_calibration ;
 using namespace robot_msgs ;
 
 // ******************** Helper Functions (Hack) ********************8
@@ -169,7 +170,7 @@ bool LedDetector::findLed(Image& image, const CamInfo& info, const Pose* led_pos
 
 bool LedDetector::findLed(const IplImage* image, const image_msgs::CamInfo& info,
                           const robot_msgs::Pose* led_pose,
-                          image_msgs::ImagePoint& led_pix, IplImage* debug_image)
+                          kinematic_calibration::ImagePoint& led_pix, IplImage* debug_image)
 {
   IplImage* working = cvCloneImage(image) ;
   int smooth_type = CV_GAUSSIAN ;
