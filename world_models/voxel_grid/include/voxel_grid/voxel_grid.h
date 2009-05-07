@@ -128,9 +128,9 @@ namespace voxel_grid {
         
       }
 
-      void markVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned int max_length = UINT_MAX);
-      void clearVoxelLine(unsigned int x0, unsigned int y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned int max_length = UINT_MAX);
-      void clearVoxelLineInMap(unsigned int x0, unsigned int y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned char *map_2d, 
+      void markVoxelLine(double x0, double y0, double z0, double x1, double y1, double z1, unsigned int max_length = UINT_MAX);
+      void clearVoxelLine(double x0, double y0, double z0, double x1, double y1, double z1, unsigned int max_length = UINT_MAX);
+      void clearVoxelLineInMap(double x0, double y0, double z0, double x1, double y1, double z1, unsigned char *map_2d, 
           unsigned int unknown_threshold, unsigned int mark_threshold, unsigned int max_length = UINT_MAX);
 
       VoxelStatus getVoxel(unsigned int x, unsigned int y, unsigned int z);

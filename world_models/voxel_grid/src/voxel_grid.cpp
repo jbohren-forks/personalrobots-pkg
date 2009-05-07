@@ -71,9 +71,9 @@ namespace voxel_grid {
     }
   }
 
-  void VoxelGrid::markVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned int max_length){
+  void VoxelGrid::markVoxelLine(double x0, double y0, double z0, double x1, double y1, double z1, unsigned int max_length){
     if(x0 >= size_x_ || y0 >= size_y_ || z0 >= size_z_ || x1>=size_x_ || y1>=size_y_ || z1>=size_z_){
-      ROS_INFO("Error, line endpoint out of bounds. (%d, %d, %d) to (%d, %d, %d),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
+      ROS_INFO("Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
           size_x_, size_y_, size_z_);
       return;
     }
@@ -82,9 +82,9 @@ namespace voxel_grid {
     raytraceLine(mv, x0, y0, z0, x1, y1, z1, max_length);
   }
 
-  void VoxelGrid::clearVoxelLine(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned int max_length){
+  void VoxelGrid::clearVoxelLine(double x0, double y0, double z0, double x1, double y1, double z1, unsigned int max_length){
     if(x0 >= size_x_ || y0 >= size_y_ || z0 >= size_z_ || x1>=size_x_ || y1>=size_y_ || z1>=size_z_){
-      ROS_INFO("Error, line endpoint out of bounds. (%d, %d, %d) to (%d, %d, %d),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
+      ROS_INFO("Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
           size_x_, size_y_, size_z_);
       return;
     }
@@ -93,7 +93,7 @@ namespace voxel_grid {
     raytraceLine(cv, x0, y0, z0, x1, y1, z1, max_length);
   }
 
-  void VoxelGrid::clearVoxelLineInMap(unsigned int x0, unsigned y0, unsigned int z0, unsigned int x1, unsigned int y1, unsigned int z1, unsigned char *map_2d, 
+  void VoxelGrid::clearVoxelLineInMap(double x0, double y0, double z0, double x1, double y1, double z1, unsigned char *map_2d, 
       unsigned int unknown_threshold, unsigned int mark_threshold, unsigned int max_length){
     costmap = map_2d;
     if(map_2d == NULL){
@@ -102,7 +102,7 @@ namespace voxel_grid {
     }
 
     if(x0 >= size_x_ || y0 >= size_y_ || z0 >= size_z_ || x1>=size_x_ || y1>=size_y_ || z1>=size_z_){
-      ROS_INFO("Error, line endpoint out of bounds. (%d, %d, %d) to (%d, %d, %d),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
+      ROS_INFO("Error, line endpoint out of bounds. (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f),  size: (%d, %d, %d)", x0, y0, z0, x1, y1, z1, 
           size_x_, size_y_, size_z_);
       return;
     }
