@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include "doors_functions/door_functions.h"
+#include "door_functions/door_functions.h"
 #include <kdl/frames.hpp>
 
 using namespace ros;

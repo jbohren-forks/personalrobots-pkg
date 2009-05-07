@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.4.6)
 
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 set(ROS_BUILD_TYPE RelWithDebInfo)
-rospack(doors_functions)
+rospack(door_functions)
 gensrv()
 genmsg()
 

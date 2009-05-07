@@ -41,7 +41,7 @@
 #include <ros/node.h>
 #include <gtest/gtest.h>
 #include <kdl/frames.hpp>
-#include "doors_functions/door_functions.h"
+#include "door_functions/door_functions.h"
 
 
 using namespace ros;
