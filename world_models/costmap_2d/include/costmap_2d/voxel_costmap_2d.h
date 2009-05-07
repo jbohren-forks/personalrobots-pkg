@@ -123,6 +123,15 @@ namespace costmap_2d {
        */
       void raytraceFreespace(const Observation& clearing_observation);
 
+      inline bool worldToMap3DFloat(double wx, double wy, double wz, double& mx, double& my, double& mz){
+        if(wx < origin_x_ || wy < origin_y_ || wz < origin_z_)
+          return false;
+        mx = ((wx - origin_x_) / xy_resolution_);
+        my = ((wy - origin_y_) / xy_resolution_);
+        mz = ((wz - origin_z_) / z_resolution_);
+        return true;
+      }
+
       inline bool worldToMap3D(double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz){
         if(wx < origin_x_ || wy < origin_y_ || wz < origin_z_)
           return false;
