@@ -144,12 +144,12 @@ namespace voxel_grid {
       unsigned int sizeZ();
 
       template <class ActionType>
-        inline void raytraceLine(ActionType at, unsigned int x0, unsigned int y0, unsigned int z0, 
-            unsigned int x1, unsigned int y1, unsigned int z1, unsigned int max_length = UINT_MAX){
+        inline void raytraceLine(ActionType at, double x0, double y0, double z0, 
+            double x1, double y1, double z1, unsigned int max_length = UINT_MAX){
 
-          int dx = x1 - x0;
-          int dy = y1 - y0;
-          int dz = z1 - z0;
+          int dx = (unsigned int)(x1 - x0);
+          int dy = (unsigned int)(y1 - y0);
+          int dz = (unsigned int)(z1 - z0);
 
           unsigned int abs_dx = abs(dx);
           unsigned int abs_dy = abs(dy);
@@ -159,8 +159,8 @@ namespace voxel_grid {
           int offset_dy = sign(dy) * size_x_;
           int offset_dz = sign(dz);
 
-          unsigned int z_mask = 1 << 16 << z0 | 1 << z0;
-          unsigned int offset = y0 * size_x_ + x0;
+          unsigned int z_mask = 1 << 16 << (unsigned int)z0 | 1 << (unsigned int)z0;
+          unsigned int offset = (unsigned int)y0 * size_x_ + (unsigned int)x0;
 
           GridOffset grid_off(offset);
           ZOffset z_off(z_mask);
@@ -172,8 +172,8 @@ namespace voxel_grid {
 
           //is x dominant
           if(abs_dx >= max(abs_dy, abs_dz)){
-            int error_y = abs_dx / 2;
-            int error_z = abs_dx / 2;
+            int error_y = abs_dx * fabs(((y1 - y0) / (x1 - x0)) * ((int(x0) + 0.5) - x0) + y0 - int(y0));
+            int error_z = abs_dx * fabs(((z1 - z0) / (x1 - x0)) * ((int(x0) + 0.5) - x0) + z0 - int(z0));
 
             bresenham3D(at, grid_off, grid_off, z_off, abs_dx, abs_dy, abs_dz, error_y, error_z, offset_dx, offset_dy, offset_dz, offset, z_mask, (unsigned int)(scale * abs_dx));
             return;
@@ -181,16 +181,16 @@ namespace voxel_grid {
 
           //y is dominant
           if(abs_dy >= abs_dz){
-            int error_x = abs_dy / 2;
-            int error_z = abs_dy / 2;
+            int error_x = abs_dy * fabs(((x1 - x0) / (y1 - y0)) * ((int(y0) + 0.5) - y0) + x0 - int(x0));
+            int error_z = abs_dy * fabs(((z1 - z0) / (y1 - y0)) * ((int(y0) + 0.5) - y0) + z0 - int(z0));
 
             bresenham3D(at, grid_off, grid_off, z_off, abs_dy, abs_dx, abs_dz, error_x, error_z, offset_dy, offset_dx, offset_dz, offset, z_mask, (unsigned int)(scale * abs_dy));
             return;
           }
 
           //otherwise, z is dominant
-          int error_x = abs_dz / 2;
-          int error_y = abs_dz / 2;
+          int error_x = abs_dz * fabs(((x1 - x0) / (z1 - z0)) * ((int(z0) + 0.5) - z0) + x0 - int(x0));
+          int error_y = abs_dz * fabs(((y1 - y0) / (z1 - z0)) * ((int(z0) + 0.5) - z0) + y0 - int(y0));
 
           bresenham3D(at, z_off, grid_off, grid_off, abs_dz, abs_dx, abs_dy, error_x, error_y, offset_dz, offset_dx, offset_dy, offset, z_mask, (unsigned int)(scale * abs_dz));
         }
