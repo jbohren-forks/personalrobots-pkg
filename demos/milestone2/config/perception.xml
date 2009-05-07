@@ -2,11 +2,11 @@
   <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
   <!-- Prosilica camera setup -->
-  <group ns="prosilica">
+  <!--<group ns="prosilica">
     <include file="$(find prosilica_cam)/cam_settings.xml"/>
     <param name="acquisition_mode" type="str" value="Triggered"/>
   </group>
-  <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="false"/>
+  <node machine="two" name="prosilica" pkg="prosilica_cam" type="prosilica_node" output="screen" respawn="false"/>-->
 
   <!-- Stereo image processing -->
   <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" />
