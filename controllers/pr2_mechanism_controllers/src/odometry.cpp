@@ -32,13 +32,22 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #include <pr2_mechanism_controllers/odometry.h>
-#include <ros/node.h>
 
 using namespace controller;
+ROS_REGISTER_CONTROLLER(Odometry)
 
 Odometry::Odometry()
 {
   init();
+}
+
+Odometry::~Odometry()
+{
+  odometry_publisher_->stop();
+  transform_publisher_->stop();
+
+  delete odometry_publisher_;
+  delete transform_publisher_;
 }
 
 void Odometry::init()
@@ -48,12 +57,17 @@ void Odometry::init()
   ros::Node::instance()->param("~odom/x",odom_.x,0.0);
   ros::Node::instance()->param("~odom/y",odom_.y,0.0);
   ros::Node::instance()->param("~odom/z",odom_.z,0.0);
-  ros::Node::instance()->param("~wheel_radius",wheel_radius_,0.0);
+  ros::Node::instance()->param("~wheel_radius",wheel_radius_,0.070);
 
   ros::Node::instance()->param<std::string>("~ils_weight_type",ils_weight_type_,"Gaussian");
   ros::Node::instance()->param<int>("~ils_max_iterations",ils_max_iterations_,3);
   ros::Node::instance()->param<std::string>("~xml_wheel_name",xml_wheel_name_,"wheel");
   ros::Node::instance()->param<std::string>("~odom_frame",odom_frame_,"odom");
+  ros::Node::instance()->param("~expected_publish_time",expected_publish_time_,0.03);
+
+  odometry_publisher_ = NULL;
+  transform_publisher_ = NULL;
+  num_wheels_ = 0;
 }
 
 void Wheel::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
@@ -71,6 +85,8 @@ void Wheel::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
    steer_offset_.y = offset.getOrigin().y();
    steer_offset_.z = offset.getOrigin().z();
    steer_ = robot_state->getJointState(link->joint_name_);
+   assert(steer_);
+   ROS_INFO("Loaded wheel: %s with parent caster joint: %s",name.c_str(),link->joint_name_.c_str());
 }
 
 bool Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
@@ -83,16 +99,46 @@ bool Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
      elt = elt->NextSiblingElement(xml_wheel_name_);
      num_wheels_++;
   }
-  cbv_rhs_ = Eigen::MatrixXf::Zero(2*num_wheels_,1);
-  cbv_lhs_ = Eigen::MatrixXf::Zero(2*num_wheels_,3);
+
+/*  cbv_lhs_ = OdomMatrix16x3::Zero();
+  cbv_rhs_ = OdomMatrix16x1::Zero();
+  cbv_soln_= OdomMatrix3x1::Zero();
+
+  fit_lhs_ = OdomMatrix16x3::Zero();
+  fit_rhs_ = OdomMatrix16x1::Zero();
+  fit_soln_ = OdomMatrix3x1::Zero();
+
+  fit_residual_ = OdomMatrix16x1::Zero();
+  odometry_residual_ = OdomMatrix16x1::Zero();
+
+  weight_matrix_ = OdomMatrix16x16::Identity();
+
+*/
+
+  cbv_lhs_ = Eigen::MatrixXf::Zero(16,3);
+  cbv_rhs_ = Eigen::MatrixXf::Zero(16,1);
   cbv_soln_= Eigen::MatrixXf::Zero(3,1);
-  weight_matrix_ = Eigen::MatrixXf::Identity(2*num_wheels_,2*num_wheels_);
-  fit_lhs_ = Eigen::MatrixXf::Zero(2*num_wheels_,3);
-  fit_rhs_ = Eigen::MatrixXf::Zero(2*num_wheels_,1);
-  fit_residual_ = Eigen::MatrixXf::Zero(2*num_wheels_,1);
-  fit_soln_ = Eigen::Vector3f::Zero();
-  odometry_residual_ = Eigen::MatrixXf::Zero(2*num_wheels_,1);
+
+  fit_lhs_ = Eigen::MatrixXf::Zero(16,3);
+  fit_rhs_ = Eigen::MatrixXf::Zero(16,1);
+  fit_soln_ = Eigen::MatrixXf::Zero(3,1);
+
+  fit_residual_ =  Eigen::MatrixXf::Zero(16,1);
+  odometry_residual_ = Eigen::MatrixXf::Zero(16,1);
+
+  weight_matrix_ = Eigen::MatrixXf::Identity(16,16);
+
+  
   robot_state_ = robot_state;
+
+  if (odometry_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete odometry_publisher_ ;
+  odometry_publisher_ = new realtime_tools::RealtimePublisher <pr2_msgs::Odometry> ("/base/"+odom_frame_, 1) ;
+
+  if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete transform_publisher_ ;
+  transform_publisher_ = new realtime_tools::RealtimePublisher <tf::tfMessage> ("~tf_message", 1) ;
+  transform_publisher_->msg_.set_transforms_size(2);
 
   ROS_INFO("Odometry::initXml initialized");
   return true;
@@ -101,6 +147,7 @@ bool Odometry::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 bool Odometry::starting()
 {
   last_time_ = robot_state_->hw_->current_time_;
+  last_publish_time_ = robot_state_->hw_->current_time_;
   return true;
 }
 
@@ -117,7 +164,7 @@ void Odometry::update()
 {
    current_time_ = robot_state_->hw_->current_time_;
    updateOdometry();
-//   publish(time);
+   publish();
    last_time_ = current_time_;
 }
 
@@ -132,7 +179,7 @@ void Odometry::updateOdometry()
 
   double odom_delta_x = (odom_vel_.vel.vx * costh - odom_vel_.vel.vx * sinth)*dt;
   double odom_delta_y = (odom_vel_.vel.vx * sinth + odom_vel_.vel.vy * costh)*dt;
-  double odom_delta_th = odom_vel_.vel.vz*dt;
+  double odom_delta_th = odom_vel_.ang_vel.vz*dt;
 
   odom_.x += odom_delta_x;
   odom_.y += odom_delta_y;
@@ -142,26 +189,41 @@ void Odometry::updateOdometry()
   odometer_angle_ += fabs(odom_delta_th);
 }
 
-
-pr2_msgs::Odometry Odometry::getOdometryMessage()
-{
-  pr2_msgs::Odometry msg;
-  msg.header.frame_id   = odom_frame_;
-  msg.header.stamp  = ros::Time(current_time_);
-
-  msg.odom = odom_;
-  msg.odom_vel = odom_vel_;
-  msg.angle = odometer_angle_;
-  msg.distance = odometer_distance_;
-  msg.residual = odometry_residual_max_;
-  return msg;
-}
-
 void Odometry::getOdometry(robot_msgs::Point &odom, robot_msgs::PoseDot &odom_vel)
 {
    odom = odom_;
    odom_vel = odom_vel_;
    return;
+}
+
+void Odometry::getOdometryMessage(pr2_msgs::Odometry &msg)
+{
+  msg.header.frame_id   = odom_frame_;
+  msg.header.stamp.fromSec(current_time_);
+  msg.odom.position.x = odom_.x;
+  msg.odom.position.y = odom_.y;
+  msg.odom.position.z = 0.0;
+
+  tf::Quaternion quat_trans = tf::Quaternion(odom_.z,0.0,0.0);
+  msg.odom.orientation.x = quat_trans.x();
+  msg.odom.orientation.y = quat_trans.y();
+  msg.odom.orientation.z = quat_trans.z();
+  msg.odom.orientation.w = quat_trans.w();
+
+  msg.odom_vel = odom_vel_;
+  msg.angle = odometer_angle_;
+  msg.distance = odometer_distance_;
+  msg.residual = odometry_residual_max_;
+}
+
+void Odometry::getOdometry(double &x, double &y, double &yaw, double &vx, double &vy, double &vw)
+{
+  x = odom_.x;
+  y = odom_.y;
+  yaw = odom_.z;
+  vx = odom_vel_.vel.vx;
+  vy = odom_vel_.vel.vy;
+  vw = odom_vel_.ang_vel.vz;
 }
 
 void Wheel::updatePosition()
@@ -174,8 +236,6 @@ void Wheel::updatePosition()
    result.z = 0.0;
    position_ = result;
 }
-
-
 
 void Odometry::computeBaseVelocity()
 {
@@ -227,12 +287,20 @@ double Odometry::getCorrectedWheelSpeed(int index)
 
 Eigen::MatrixXf Odometry::iterativeLeastSquares(Eigen::MatrixXf lhs, Eigen::MatrixXf rhs, std::string weight_type, int max_iter)
 {
-  weight_matrix_ = Eigen::MatrixXf::Identity(2*num_wheels_,2*num_wheels_);
+  weight_matrix_ = Eigen::MatrixXf::Identity(16,16);
   for(int i=0; i < max_iter; i++)
   {
     fit_lhs_ = weight_matrix_ * lhs;
     fit_rhs_ = weight_matrix_ * rhs;
+
+    Eigen::MatrixXf mlhs(16,3);
+    Eigen::MatrixXf mrhs(16,1);
+    Eigen::VectorXf soln; 
+//    mlhs.svd().solve(mrhs,&soln);
+
     fit_lhs_.svd().solve(fit_rhs_,&fit_soln_);
+
+
     fit_residual_ = rhs - lhs * fit_soln_;
 
     for(int j=0; j < num_wheels_; j++)
@@ -258,20 +326,20 @@ Eigen::MatrixXf Odometry::iterativeLeastSquares(Eigen::MatrixXf lhs, Eigen::Matr
 
 Eigen::MatrixXf Odometry::findWeightMatrix(Eigen::MatrixXf residual, std::string weight_type)
 {
-  Eigen::MatrixXf w_fit = Eigen::MatrixXf::Identity(2*num_wheels_,2*num_wheels_);
+  Eigen::MatrixXf w_fit = Eigen::MatrixXf::Identity(16,16);
   double epsilon = 0;
   double g_sigma = 0.1;
 
   if(weight_type == std::string("BubeLagan"))
   {
-    for(int i=0; i < 2*num_wheels_; i++) //NEWMAT indexing starts from 1
+    for(int i=0; i < 2*num_wheels_; i++) 
     {
       if(fabs(residual(i,0) > epsilon))
         epsilon = fabs(residual(i,0));
     }
     epsilon = epsilon/100.0;
   }
-  for(int i=0; i < 2*num_wheels_; i++) //NEWMAT indexing starts from 1
+  for(int i=0; i < 2*num_wheels_; i++) 
   {
     if(weight_type == std::string("L1norm"))
     {
@@ -299,4 +367,56 @@ Eigen::MatrixXf Odometry::findWeightMatrix(Eigen::MatrixXf residual, std::string
     }
   }
   return w_fit;
+};
+
+void Odometry::publish()
+{
+    if (odometry_publisher_->trylock())
+    {
+      getOdometryMessage(odometry_publisher_->msg_);
+      odometry_publisher_->unlockAndPublish() ;
+      last_publish_time_ = current_time_;
+    }
+
+    if (transform_publisher_->trylock())
+    {
+      double x(0.),y(0.0),yaw(0.0),vx(0.0),vy(0.0),vyaw(0.0);
+      this->getOdometry(x,y,yaw,vx,vy,vyaw);
+
+      robot_msgs::TransformStamped &out = transform_publisher_->msg_.transforms[0];
+      out.header.stamp.fromSec(current_time_);
+//      out.header.stamp.sec  = (unsigned long)floor(current_time_);
+//      out.header.stamp.nsec = (unsigned long)floor(  1e9 * (current_time_ - out.header.stamp.sec) );
+
+      out.header.frame_id = "odom";
+      out.parent_id = "base_footprint";
+      out.transform.translation.x = -x*cos(yaw) - y*sin(yaw);
+      out.transform.translation.y = +x*sin(yaw) - y*cos(yaw);
+      out.transform.translation.z = 0;
+      tf::Quaternion quat_trans = tf::Quaternion(-yaw,0.0,0.0);
+
+      out.transform.rotation.x = quat_trans.x();
+      out.transform.rotation.y = quat_trans.y();
+      out.transform.rotation.z = quat_trans.z();
+      out.transform.rotation.w = quat_trans.w();
+
+      robot_msgs::TransformStamped &out2 = transform_publisher_->msg_.transforms[1];
+      out2.header.stamp.fromSec(current_time_);
+//      out2.header.stamp.sec  = (unsigned long)floor(current_time_);
+//      out2.header.stamp.nsec = (unsigned long)floor(  1e9 * (current_time_ - out.header.stamp.sec) );
+      out2.header.frame_id = "base_link";
+      out2.parent_id = "base_footprint";
+      out2.transform.translation.x = 0;
+      out2.transform.translation.y = 0;
+
+      // FIXME: this is the offset between base_link origin and the ideal floor
+      out2.transform.translation.z = 0.051; // FIXME: this is hardcoded, considering we are deprecating base_footprint soon, I will not get this from URDF.
+
+      out2.transform.rotation.x = 0;
+      out2.transform.rotation.y = 0;
+      out2.transform.rotation.z = 0;
+      out2.transform.rotation.w = 1;
+
+      transform_publisher_->unlockAndPublish() ;
+    }
 };

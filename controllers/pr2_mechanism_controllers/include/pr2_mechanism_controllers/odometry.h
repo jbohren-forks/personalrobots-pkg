@@ -42,7 +42,16 @@
 
 #include <mechanism_model/robot.h>
 #include <mechanism_model/controller.h>
+#include <realtime_tools/realtime_publisher.h>
 
+#include <tf/tfMessage.h>
+#include <tf/tf.h>
+#include <ros/node.h>
+
+typedef Eigen::Matrix<float, 3, 1> OdomMatrix3x1;
+typedef Eigen::Matrix<float, 16, 1> OdomMatrix16x1;
+typedef Eigen::Matrix<float, 16, 3> OdomMatrix16x3;
+typedef Eigen::Matrix<float, 16, 16> OdomMatrix16x16;
 
 namespace controller
 {
@@ -74,13 +83,17 @@ namespace controller
 
       Odometry();
 
-      ~Odometry(){};
+      ~Odometry();
 
       bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
 
       bool starting();
 
       void update();
+
+      void publish();
+
+      EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
      private:
 
@@ -90,15 +103,15 @@ namespace controller
 
       void updateOdometry();
 
-      pr2_msgs::Odometry getOdometryMessage();
+      void getOdometryMessage(pr2_msgs::Odometry &msg);
+
+      void getOdometry(double &x, double &y, double &yaw, double &vx, double &vy, double &vw);
 
       void getOdometry(robot_msgs::Point &odom, robot_msgs::PoseDot &odom_vel);
 
       void computeBaseVelocity();
 
       double getCorrectedWheelSpeed(int index);
-
-      Eigen::Vector3f solve(Eigen::MatrixXf lhs, Eigen::MatrixXf rhs);
 
       Eigen::MatrixXf iterativeLeastSquares(Eigen::MatrixXf lhs, Eigen::MatrixXf rhs, std::string weight_type, int max_iter);
 
@@ -114,9 +127,19 @@ namespace controller
 
       int num_wheels_;
 
-      Eigen::MatrixXf cbv_rhs_,cbv_lhs_,cbv_soln_,odometry_residual_;
+//      OdomMatrix16x1 cbv_rhs_, fit_rhs_, fit_residual_, odometry_residual_;
 
-      Eigen::MatrixXf weight_matrix_, fit_lhs_, fit_rhs_, fit_residual_, fit_soln_;
+      Eigen::MatrixXf cbv_rhs_, fit_rhs_, fit_residual_, odometry_residual_;
+
+      Eigen::MatrixXf cbv_lhs_, fit_lhs_;
+      
+      Eigen::MatrixXf cbv_soln_,fit_soln_,  weight_matrix_;
+
+//      OdomMatrix16x3 cbv_lhs_, fit_lhs_;
+      
+//      OdomMatrix3x1 cbv_soln_,fit_soln_;
+
+//      OdomMatrix16x16 weight_matrix_;
 
       robot_msgs::Point odom_;
 
@@ -133,5 +156,14 @@ namespace controller
       std::string odom_frame_;
 
       mechanism::RobotState *robot_state_;
+
+      double last_publish_time_;
+
+      double expected_publish_time_;
+
+      realtime_tools::RealtimePublisher <pr2_msgs::Odometry>* odometry_publisher_ ;  //!< Publishes the odometry msg from the update() realtime loop
+
+      realtime_tools::RealtimePublisher <tf::tfMessage>* transform_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
+
    };
 }
