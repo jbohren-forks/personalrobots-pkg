@@ -45,6 +45,7 @@ class TFMonitor
 {
 public:
   std::string framea_, frameb_;
+  bool using_specific_chain_;
   
   Node node_;
   std::vector<std::string> chain_;
@@ -128,29 +129,46 @@ public:
     
   };
 
-  TFMonitor(std::string framea, std::string frameb):
+  TFMonitor(bool using_specific_chain, std::string framea  = "", std::string frameb = ""):
     framea_(framea), frameb_(frameb),
+    using_specific_chain_(using_specific_chain),
     node_("tf_monitor", ros::Node::ANONYMOUS_NAME),
     tf_(node_)
   {
     
-  cout << "Waiting for first transfrom to become available" << flush;
-  while (node_.ok() && !tf_.canTransform(framea_, frameb_, Time(), Duration(1.0)))
-    cout << "." << flush;
-  cout << endl;
-  
-  tf_.chainAsVector(framea_, ros::Time(), frameb_, ros::Time(), frameb_, chain_);
-  cout << "Chain currently is:" <<endl;
-  for (unsigned int i = 0; i < chain_.size(); i++)
-  {
-    cout << chain_[i] <<", ";
-  }
-  cout <<endl;
-
+    if (using_specific_chain_)
+    {
+      cout << "Waiting for first transfrom to become available" << flush;
+      while (node_.ok() && !tf_.canTransform(framea_, frameb_, Time(), Duration(1.0)))
+        cout << "." << flush;
+      cout << endl;
+      
+      tf_.chainAsVector(framea_, ros::Time(), frameb_, ros::Time(), frameb_, chain_);
+      cout << "Chain currently is:" <<endl;
+      for (unsigned int i = 0; i < chain_.size(); i++)
+      {
+        cout << chain_[i] <<", ";
+      }
+      cout <<endl;
+    }
   node_.subscribe("tf_message", message_, &TFMonitor::callback, this, 100);
     
   }
 
+  std::string outputFrameInfo(const std::map<std::string, std::vector<double> >::iterator& it, const std::string& frame_authority)
+  {
+    std::stringstream ss;
+    double average_delay = 0;
+    double max_delay = 0;
+    for (unsigned int i = 0; i < it->second.size(); i++)
+    {
+      average_delay += it->second[i];
+      max_delay = std::max(max_delay, it->second[i]);
+    }
+    average_delay /= it->second.size();
+    ss << "Frame: " << it->first <<" published by "<< frame_authority << " Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
+    return ss.str();
+  }
   
   void spin()
   {  
@@ -165,51 +183,53 @@ public:
 
   while (node_.ok()){
     Stamped<Transform> tmp;
-
-    tf_.lookupTransform(framea_, frameb_, Time(), tmp);
-    double diff = (Time::now() - tmp.stamp_).toSec();
-    avg_diff = lowpass * diff + (1-lowpass)*avg_diff;
-    if (diff > max_diff) max_diff = diff;
-    Duration(0.01).sleep();
     counter++;
-    if (counter > 100){
+    //    printf("looping %d\n", counter);
+    if (using_specific_chain_)
+    {
+      tf_.lookupTransform(framea_, frameb_, Time(), tmp);
+      double diff = (Time::now() - tmp.stamp_).toSec();
+      avg_diff = lowpass * diff + (1-lowpass)*avg_diff;
+      if (diff > max_diff) max_diff = diff;
+    }
+    Duration(0.01).sleep();
+    if (counter > 20){
       counter = 0;
-      cout << "=================================================" << std::endl;
-      cout << "Net delay " << framea_ << " to " << frameb_ << "    avg = " << avg_diff <<": max = " << max_diff << endl;
+      std::cout << "=================================================\n" << std::endl;
+      if (using_specific_chain_)
+        cerr << "Net delay " << framea_ << " to " << frameb_ << "    avg = " << avg_diff <<": max = " << max_diff << endl;
       boost::mutex::scoped_lock lock(map_lock_);  
-      for ( unsigned int i = 0 ; i < chain_.size(); i++)
+      std::map<std::string, std::vector<double> >::iterator it = delay_map.begin();
+      for ( ; it != delay_map.end() ; ++it)
       {
-        std::map<std::string, std::vector<double> >::iterator it = delay_map.begin();
-        for ( ; it != delay_map.end() ; ++it)
+        if (using_specific_chain_ )
         {
-          if (it->first != chain_[i])
-            continue;
-          double average_delay = 0;
-          double max_delay = 0;
-          for (unsigned int i = 0; i < it->second.size(); i++)
+          for ( unsigned int i = 0 ; i < chain_.size(); i++)
           {
-            average_delay += it->second[i];
-            max_delay = std::max(max_delay, it->second[i]);
+            if (it->first != chain_[i])
+              continue;
+            
+            cout << outputFrameInfo(it, frame_authority_map[it->first]);
           }
-          average_delay /= it->second.size();
-          cout << "Frame: " << it->first <<" published by "<< frame_authority_map[it->first] << " Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
         }
-      }
-      cout << "-------------------------------------------------" << std::endl;
-      std::map<std::string, std::vector<double> >::iterator it = authority_map.begin();
+        else
+          cout << outputFrameInfo(it, frame_authority_map[it->first]);
+      }          
+        cerr << "-------------------------------------------------" << std::endl;
+      std::map<std::string, std::vector<double> >::iterator it1 = authority_map.begin();
       std::map<std::string, std::vector<double> >::iterator it2 = authority_frequency_map.begin();
-      for ( ; it != authority_map.end() ; ++it, ++it2)
+      for ( ; it1 != authority_map.end() ; ++it1, ++it2)
       {
         double average_delay = 0;
         double max_delay = 0;
-        for (unsigned int i = 0; i < it->second.size(); i++)
+        for (unsigned int i = 0; i < it1->second.size(); i++)
         {
-          average_delay += it->second[i];
-          max_delay = std::max(max_delay, it->second[i]);
+          average_delay += it1->second[i];
+          max_delay = std::max(max_delay, it1->second[i]);
         }
-        average_delay /= it->second.size();
+        average_delay /= it1->second.size();
         double frequency = (it2->second.back() - it2->second.front())/std::max((size_t)1, it2->second.size());
-        cout << "Authority: " << it->first << " " << cout.precision(4) << frequency <<" Hz, Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
+        cerr << "Authority: " << it1->first << " " << cerr.precision(4) << frequency <<" Hz, Average Delay: " << average_delay << " Max Delay: " << max_delay << std::endl;
       }
       
     }
@@ -225,15 +245,18 @@ int main(int argc, char ** argv)
   init(argc, argv);
 
   string framea, frameb;
+  bool using_specific_chain = true;
   if (argc == 3){
     framea = argv[1];
     frameb = argv[2];
   }
+  else if (argc == 1)
+    using_specific_chain = false;
   else{
     ROS_INFO("TF_Monitor: usage: tf_monitor framea frameb");
     return -1;
   }
-  TFMonitor monitor(framea, frameb);
+  TFMonitor monitor(using_specific_chain, framea, frameb);
   monitor.spin();
 
   return 0;
