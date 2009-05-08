@@ -26,6 +26,7 @@ class PoseEstimator:
       self.default_camera = camera.Camera(camparams)
     else:
       self.default_camera = None
+    self.inl = []
 
   def setInlierErrorThreshold(self, t):
     self.iet = t
@@ -47,6 +48,9 @@ class PoseEstimator:
     Pose Estimator.  Given uvd points and cameras for two poses, along
     with a list of matching point pairs, returns the relative pose
     """
+
+    if len(pairs) < 3:
+      return (0, None, None)
 
     # Compute the arrays for xyz for RANSAC sampling.
     (p0_x, p0_y, p0_z) = cam0.pix2cam(*vop3(cp0))
@@ -81,12 +85,36 @@ class PoseEstimator:
               p0_y[a], p0_y[b], p0_y[c],
               p0_z[a], p0_z[b], p0_z[c] ]
 
-      ((_,a),(_,b),(_,c)) = triple
-      p1s = [ p1_x[a], p1_x[b], p1_x[c],
-              p1_y[a], p1_y[b], p1_y[c],
-              p1_z[a], p1_z[b], p1_z[c] ]
+      ((_,aa),(_,bb),(_,cc)) = triple
+      p1s = [ p1_x[aa], p1_x[bb], p1_x[cc],
+              p1_y[aa], p1_y[bb], p1_y[cc],
+              p1_z[aa], p1_z[bb], p1_z[cc] ]
+
+      def toofar(d0, d1):
+        return d0==0 or d1==0 or (d1/d0)>1.1 or (d0/d1)>1.1
+
+      if False:
+        # Rufus: Check if there is any scale change between the pairs
+        p0s_dist_ab = (p0_x[a]-p0_x[b])**2 + (p0_y[a]-p0_y[b])**2 + (p0_z[a]-p0_z[b])**2
+        p1s_dist_ab = (p1_x[aa]-p1_x[bb])**2 + (p1_y[aa]-p1_y[bb])**2 + (p1_z[aa]-p1_z[bb])**2
+
+        if toofar(p1s_dist_ab, p0s_dist_ab):
+          continue
+
+        p0s_dist_cb = (p0_x[c]-p0_x[b])**2 + (p0_y[c]-p0_y[b])**2 + (p0_z[c]-p0_z[b])**2
+        p1s_dist_cb = (p1_x[cc]-p1_x[bb])**2 + (p1_y[cc]-p1_y[bb])**2 + (p1_z[cc]-p1_z[bb])**2
+
+        if toofar(p1s_dist_cb, p0s_dist_cb):
+          continue
+
+        p0s_dist_ac = (p0_x[a]-p0_x[c])**2 + (p0_y[a]-p0_y[c])**2 + (p0_z[a]-p0_z[c])**2
+        p1s_dist_ac = (p1_x[aa]-p1_x[cc])**2 + (p1_y[aa]-p1_y[cc])**2 + (p1_z[aa]-p1_z[cc])**2
+
+        if toofar(p1s_dist_ac, p0s_dist_ac):
+          continue
 
       R,T,RT = votools.SVD(p0s, p1s)
+      #R,T,RT = votools.SVDe(p0s, p1s)
 
       # Check inliers for RT: xyz0 -> uvd0 vs uvd1
       (u0,v0,d0) = cam0.cam2pix(*xform(RT, x0, y0, z0))
