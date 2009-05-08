@@ -1,0 +1,7 @@
+<launch>
+  <group ns="prosilica">
+    <include file="cam_settings.xml"/>
+    <param name="acquisition_mode" type="str" value="Continuous"/>
+  </group>
+  <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" respawn="false" output="screen"/>
+</launch>

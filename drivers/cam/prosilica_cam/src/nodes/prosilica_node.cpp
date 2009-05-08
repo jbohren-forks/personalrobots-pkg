@@ -222,6 +222,7 @@ public:
   ~ProsilicaNode()
   {
     stop();
+    cam_.reset(); // must destroy Camera before calling prosilica::fini
     prosilica::fini();
   }
 

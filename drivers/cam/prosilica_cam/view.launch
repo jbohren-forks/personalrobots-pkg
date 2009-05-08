@@ -1,10 +1,4 @@
 <launch>
-  <group ns="prosilica">
-    <include file="cam_settings.xml"/>
-    <param name="acquisition_mode" type="str" value="Continuous"/>
-  </group>
-  <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" respawn="false" output="screen"/>
-  
   <group ns="prosilica_view">
     <param name="window_name" type="str" value="Prosilica camera"/>
     <param name="autosize" type="bool" value="false"/>
