@@ -42,7 +42,7 @@ class TestDirected(unittest.TestCase):
       if 0:
         for i in range(1000000):
           print i
-          sigs = cl1.getSignatures(im, kp)
+          sigs = cl1.getSignatures(im.size, im.tostring(), kp)
           #for (x,y) in kp:
           #  patch = im.crop((x,y,x+32,y+32))
           #  sig = cl1.getSignature(patch.tostring(), patch.size[0], patch.size[1])

@@ -373,25 +373,30 @@ PyObject *getSignatures(PyObject *self, PyObject *args)
 {
   classifier_t *pc = (classifier_t*)self;
 
-  PyObject *pim, *coords;
-  if (!PyArg_ParseTuple(args, "OO", &pim, &coords))
+  PyObject *coords;
+
+  char *imgdata;
+  int imgdata_size, w, h;
+  if (!PyArg_ParseTuple(args, "(ii)s#O", &w, &h, &imgdata, &imgdata_size, &coords))
     return NULL;
 
-  IplImage *cva;
-  PyObject *imob = im2arr((CvArr**)&cva, pim);
-  if (!imob) assert(0);
-
-  PyObject *r = PyList_New(0);
-
+  IplImage *cva = cvCreateImageHeader(cvSize(w, h), IPL_DEPTH_8U, 1);
+  cvSetData(cva, imgdata, w);
   IplImage *input = cvCreateImage(cvSize(32, 32), IPL_DEPTH_8U, 1);
 
-  PyObject *iterator = PyObject_GetIter(coords);
-  PyObject *t;
-  assert(iterator != NULL);
-  while ((t = PyIter_Next(iterator)) != NULL) {
+  PyObject *fi = PySequence_Fast(coords, "coords");
+  if (fi == NULL)
+    return NULL;
+  PyObject *r = PyList_New(PySequence_Fast_GET_SIZE(fi));
+  for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(fi); i++) {
+    PyObject *t = PySequence_Fast_GET_ITEM(fi, i);
+    if (!PyTuple_Check(t)) {
+      PyErr_SetString(PyExc_TypeError, "Expected tuple");
+      return NULL;
+    }
     int x, y;
-    if (!PyArg_ParseTuple(t, "ii", &x, &y))
-        return NULL;
+    x = PyInt_AS_LONG(PyTuple_GET_ITEM(t, 0));
+    y = PyInt_AS_LONG(PyTuple_GET_ITEM(t, 1));
 
     cvSetImageROI(cva, cvRect(x - 16, y - 16, 32, 32));
     cvCopy(cva, input);
@@ -400,11 +405,11 @@ PyObject *getSignatures(PyObject *self, PyObject *args)
     object->size = pc->classifier->classes();
     posix_memalign((void**)&object->data, 16, object->size * sizeof(SigType));
     pc->classifier->getSignature(input, object->data);
-    PyList_Append(r, (PyObject*)object);
-    Py_DECREF((PyObject*)object);
+    PyList_SET_ITEM(r, i, (PyObject*)object);
   }
-  Py_DECREF(imob);
+  Py_DECREF(fi);
   cvReleaseImage(&input);
+  cvReleaseImageHeader(&cva);
   return r;
 }
 
