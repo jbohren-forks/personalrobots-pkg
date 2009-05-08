@@ -148,8 +148,9 @@ RegionPtr getDoorCells (const Point2D& p1, const Point2D& p2, double width, doub
 
 struct DoorFramePoints
 {
-  DoorFramePoints (const Point2D& p1, const Point2D& p2) : p1(p1), p2(p2) {}
+  DoorFramePoints (const Point2D& p1, const Point2D& p2, bool clockwise) : p1(p1), p2(p2), clockwise(clockwise) {}
   Point2D p1, p2;
+  bool clockwise;
 };  
 
 
@@ -209,7 +210,7 @@ Door initialDoorEstimate (const DoorFramePoints& frame_points)
   msg.door_p2.z = 0.0;
 
   msg.hinge = Door::HINGE_P1;
-  msg.rot_dir = Door::ROT_DIR_COUNTERCLOCKWISE;
+  msg.rot_dir = frame_points.clockwise ? Door::ROT_DIR_CLOCKWISE : Door::ROT_DIR_COUNTERCLOCKWISE;
   return msg;
 }
 
@@ -232,8 +233,8 @@ struct AddRegions
         DoorFramePoints frame_points = door_info[pos-door_regions.begin()];
         map->observeDoorMessage(id, initialDoorEstimate(frame_points));
         Door msg = map->regionDoor(id);
-        ROS_DEBUG_NAMED ("door_info", "Added door info for region %u at %f, %f and %f, %f", 
-                         id, msg.frame_p1.x, msg.frame_p1.y, msg.frame_p2.x, msg.frame_p2.y);
+        ROS_DEBUG_NAMED ("door_info", "Added door info for region %u at %f, %f and %f, %f with direction %u", 
+                         id, msg.frame_p1.x, msg.frame_p1.y, msg.frame_p2.x, msg.frame_p2.y, msg.rot_dir);
       }
     }
   }
@@ -293,16 +294,20 @@ DoorFrameVector loadDoorsFromFile (const string& filename, const double resoluti
 
     TiXmlHandle hinge = door_handle.FirstChildElement("hinge");
     TiXmlHandle end = door_handle.FirstChildElement("end");
+    TiXmlHandle orientation_node = door_handle.FirstChildElement("orientation");
     
     uint c1 = atoi(hinge.FirstChildElement("row").FirstChild().Node()->Value());
     uint c2 = atoi(end.FirstChildElement("row").FirstChild().Node()->Value());
     uint r1 = atoi(hinge.FirstChildElement("column").FirstChild().Node()->Value());
     uint r2 = atoi(end.FirstChildElement("column").FirstChild().Node()->Value());
+
+    string orientation = orientation_node.FirstChild().Node()->Value();
+    bool clockwise = (orientation=="clockwise");
     
     Point2D p1 = cellToPoint(Cell2D(r1,c1), resolution);
     Point2D p2 = cellToPoint(Cell2D(r2,c2), resolution);
     
-    doors.push_back(DoorFramePoints(p1,p2));
+    doors.push_back(DoorFramePoints(p1,p2,clockwise));
   }
   
   return doors;

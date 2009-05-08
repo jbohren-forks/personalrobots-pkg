@@ -46,12 +46,16 @@
 #include <cmath>
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
+#include <boost/foreach.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/iterator/counting_iterator.hpp>
 #include <ros/console.h>
 #include <ros/assert.h>
 #include <tinyxml/tinyxml.h>
 #include <topological_map/exception.h>
 
+
+#define foreach BOOST_FOREACH
 
 // For debugging
 #include <iostream>
@@ -65,11 +69,13 @@ using boost::extents;
 using boost::multi_array;
 using boost::bind;
 using boost::ref;
+using boost::shared_ptr;
 using std::endl;
 using std::map;
 using std::vector;
 using std::set;
 using std::min;
+using std::stringstream;
 using std::max;
 using ros::Time;
 using tf::Transform;
@@ -356,13 +362,64 @@ void TopologicalMap::MapImpl::writeToStream (ostream& stream)
   ROS_INFO ("Done writing topological map");
 }
 
+template <typename T>
+TiXmlText* makeXmlTextElt(T x)
+{
+  stringstream out;
+  out << x;
+  return new TiXmlText(out.str());
+}
+
+template <typename T>
+TiXmlElement* makeXmlElt (const char* name, T x)
+{
+  TiXmlElement* elt = new TiXmlElement(name);
+  elt->LinkEndChild(makeXmlTextElt(x));
+  return elt;
+}
 
 void TopologicalMap::MapImpl::writeGridAndOutletData (const string& filename) const
 {
+
+  ROS_DEBUG_NAMED ("io", "About to write gui input data");
   TiXmlDocument doc;
-  TiXmlElement* resElt = new TiXmlElement("resolution");
-  doc.LinkEndChild(resElt);
+  TiXmlElement* top = new TiXmlElement("map_and_outlets");
+  doc.LinkEndChild(top);
+  
+  const uint nr = numRows(*grid_);
+  const uint nc = numCols(*grid_);
+
+  top->LinkEndChild(makeXmlElt("resolution", resolution_));
+  top->LinkEndChild(makeXmlElt("rows", nr));
+  top->LinkEndChild(makeXmlElt("columns", nc));
+
+  TiXmlElement* outlets = new TiXmlElement("outlets");
+  top->LinkEndChild(outlets);
+  foreach (uint id, allOutlets()) {
+    TiXmlElement* outlet = new TiXmlElement("outlet");
+    outlets->LinkEndChild(outlet);
+
+    OutletInfo outlet_info = transformOutlet(transform_, outletInfo(id));
+    Point2D p(outlet_info.x, outlet_info.y);
+    Cell2D cell = containingCell(p);
+    outlet->LinkEndChild(makeXmlElt("row", cell.r));
+    outlet->LinkEndChild(makeXmlElt("column", cell.c));
+  }
+
+  TiXmlElement* map = new TiXmlElement("grid");
+  for (uint r=0; r<nr; ++r) {
+    TiXmlElement* row = new TiXmlElement("row");
+    map->LinkEndChild(row);
+    for (uint c=0; c<nc; ++c) {
+      TiXmlElement* cell = new TiXmlElement((*grid_)[r][c] ? "o" : "f");
+      row->LinkEndChild(cell);
+    }
+  }
+  top->LinkEndChild(map);
+
   doc.SaveFile(filename);
+  ROS_DEBUG_NAMED ("io", "Done writing gui input data");
+
 }
 
 
@@ -729,7 +786,7 @@ OutletInfo TopologicalMap::MapImpl::outletInfo (const OutletId id) const
 
 OutletId TopologicalMap::MapImpl::addOutlet (const OutletInfo& outlet)
 {
-  outlets_.push_back(transformOutlet(transform_.inverse(), outlet));
+  outlets_.push_back(outlet);
   return outlets_.size()-1;
 }
 

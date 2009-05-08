@@ -87,7 +87,6 @@ void printConnectorCosts (TopologicalMap& m, const Point2D& p1, const Point2D& p
 int main (int argc, char* argv[])
 {
 
-  ros::init(argc, argv, "tm_driver"); 
   
   OccupancyGrid grid(extents[21][24]);
   setV(grid, 0, 1, 21, 0, 1, 24, false);
@@ -105,6 +104,8 @@ int main (int argc, char* argv[])
   
 
   TopologicalMapPtr m = topologicalMapFromGrid (grid, 1.0, 2, 1, 1, 0, "local");
+  m->writeGridAndOutletData("local/gui_input.xml");
+
 
   cout << *m;
 
@@ -125,12 +126,17 @@ int main (int argc, char* argv[])
   tf::Transform trans(tf::Quaternion(.015,0,0), tf::Vector3(dx,0,0));
   TopologicalMap m3(str3, 1.0, 1e9, 1e9, trans);
 
+  ros::init(argc, argv, "tm_driver"); 
   tmap::Visualizer v(m3);
+
+
+
   Duration dur(1);
   while (true) {
     dur.sleep();
     v.visualize();
   }
+
 
   Point2D p1(1-dx,1), p2(30-dx,30);
   cout << "Nearest outlet to " << p1 << " is " << m3.nearestOutlet(p1) << endl;

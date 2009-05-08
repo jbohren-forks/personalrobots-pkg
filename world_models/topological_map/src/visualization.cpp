@@ -92,6 +92,19 @@ struct DrawDoors
     marker.color.r=0;
     marker.color.g=0;
     marker.color.b=1.0;
+    hinge_marker.header.frame_id = VISUALIZER_FRAME;
+    hinge_marker.ns = MARKER_NS;
+    hinge_marker.id=1000;
+    hinge_marker.type=Marker::SPHERE;
+    hinge_marker.action=Marker::ADD;
+    hinge_marker.color.a=1.0;
+    hinge_marker.scale.x=0.6;
+    hinge_marker.scale.y=0.6;
+    hinge_marker.scale.z=0.6;
+    hinge_marker.pose.orientation.x=1.0;
+    hinge_marker.color.r=0;
+    hinge_marker.color.g=0;
+    hinge_marker.color.b=0.0;
   }
 
   void operator() (const RegionId id)
@@ -107,6 +120,19 @@ struct DrawDoors
       
       marker.points.push_back(p1);
       marker.points.push_back(p2);
+
+      hinge_marker.pose.position.x = p1.x;
+      hinge_marker.pose.position.y = p1.y;
+      hinge_marker.id++;
+      if (d.rot_dir == Door::ROT_DIR_CLOCKWISE) {
+        hinge_marker.color.r=1;
+        hinge_marker.color.g=0;
+      }
+      else {
+        hinge_marker.color.r=0;
+        hinge_marker.color.g=1;
+      }
+      pub.publish(hinge_marker);
     }
   }
 
@@ -117,6 +143,7 @@ struct DrawDoors
 
   const TopologicalMap& tmap;
   Marker marker;
+  Marker hinge_marker;
   const Publisher& pub;
 };
 
