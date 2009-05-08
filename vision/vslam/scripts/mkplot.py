@@ -52,14 +52,12 @@ import math
 import copy
 import pickle
 
-from stereo import DenseStereoFrame, SparseStereoFrame
+from stereo_utils.stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 from skeleton import Skeleton
-from reader import reader
+from stereo_utils.reader import reader
 
 from math import *
-
-from stereo_utils import camera
 
 import numpy
 import numpy.linalg
@@ -85,6 +83,7 @@ def planar(x, y, z):
   return (a, b, c)
   return sqrt(sum((y - (a*x + b*z + c)) ** 2) / len(x))
 
+random.seed(8)
 vos = None
 framecounter = 0
 first_pair = None
@@ -113,11 +112,14 @@ inl_history = [0,0]
 for cam,l_image,r_image,label in playlist(args):
   print framecounter
   if vos == None:
+    #fd = FeatureDetectorFast(300)
+    fd = FeatureDetectorStar(300)
+    ds = DescriptorSchemeCalonder()
     vos = [
-      VisualOdometer(cam, scavenge = False, feature_detector = FeatureDetectorFast(),
-                          descriptor_scheme = DescriptorSchemeCalonder(),
+      VisualOdometer(cam, scavenge = False,
                           inlier_error_threshold = 3.0, sba = None,
                           inlier_thresh = 100,
+                          ransac_iters = 500,
                           position_keypoint_thresh = 0.2, angle_keypoint_thresh = 0.15)
     ]
     vo_x = [ [] for i in vos]
@@ -130,11 +132,12 @@ for cam,l_image,r_image,label in playlist(args):
       skel.load(skel_load_filename)
       vos[0].num_frames = max(skel.nodes) + 1
       framecounter = max(skel.nodes) + 1
+    skel.node_vdist = 5
     oe_x = []
     oe_y = []
     oe_home = None
   for i,vo in enumerate(vos):
-    af = SparseStereoFrame(l_image, r_image)
+    af = SparseStereoFrame(l_image, r_image, feature_detector = fd, descriptor_scheme = ds)
     vopose = vo.handle_frame(af)
     log_dead_reckon.append(vopose)
     inl_history.append(vo.inl)
@@ -163,11 +166,11 @@ for cam,l_image,r_image,label in playlist(args):
     if len(skel.nodes) > 1771:
       break
 
-  print framecounter, "kp", len(af.kp), "inliers:", vo.inl
+  print framecounter, "kp", len(af.features()), "inliers:", vo.inl
   inliers.append(vo.inl)
 
   framecounter += 1
-  if framecounter > 500:
+  if framecounter > 99999:
     break
 
   def ground_truth(p, q):
@@ -204,6 +207,8 @@ for i in sorted(skel.nodes):
   print >>f, i, skel.newpose(i).tolist()
 f.close()
 
+fd.summarize_timers()
+ds.summarize_timers()
 for vo in vos:
   print vo.name()
   print "distance from start:", vo.pose.distance()
@@ -216,8 +221,9 @@ skel.dump_timers('skel_timers.pickle')
 skel.trim()
 print "Saving as mkplot_snap"
 skel.save("mkplot_snap")
-#skel.plot('blue', True)
-#pylab.show()
+skel.plot('blue', True)
+pylab.savefig("mkplot.eps")
+pylab.show()
 sys.exit(0)
 
 colors = [ 'red', 'black', 'magenta', 'cyan', 'orange', 'brown', 'purple', 'olive', 'gray' ]
@@ -258,16 +264,16 @@ skel.plot('blue')
 print vos[0].log_keyframes
 
 
-
-xlim = pylab.xlim()
-ylim = pylab.ylim()
-xrange = xlim[1] - xlim[0]
-yrange = ylim[1] - ylim[0]
-r = max(xrange, yrange) * 0.75
-mid = sum(xlim) / 2
-pylab.xlim(mid - r, mid + r)
-mid = sum(ylim) / 2
-pylab.ylim(mid - r, mid + r)
+def square_aspect():
+  xlim = pylab.xlim()
+  ylim = pylab.ylim()
+  xrange = xlim[1] - xlim[0]
+  yrange = ylim[1] - ylim[0]
+  r = max(xrange, yrange) * 0.75
+  mid = sum(xlim) / 2
+  pylab.xlim(mid - r, mid + r)
+  mid = sum(ylim) / 2
+  pylab.ylim(mid - r, mid + r)
 pylab.legend()
 pylab.savefig("foo.png", dpi=200)
 #pylab.show()
