@@ -83,6 +83,7 @@ namespace people
     color_calib::Calibration *lcolor_cal_;
     TopicSynchronizer<StereoColorTracker> *sync_;
 
+    bool on_robot_; // If true, use tf. Otherwise, ignore the frame.
     tf::TransformListener *tf_;
     tf::MessageNotifier<robot_msgs::PositionMeasurement>* message_notifier_person_;
     string fixed_frame_;
@@ -100,6 +101,13 @@ namespace people
 
     robot_msgs::PositionMeasurement current_pos_;
     robot_msgs::PositionMeasurement pos_;
+    struct RestampedPositionMeasurement {
+      ros::Time restamp;
+      robot_msgs::PositionMeasurement pos;
+      double dist;
+    };
+    map<string, RestampedPositionMeasurement> current_pos_list_; /**< Queue of updated people positions from the filter. */
+
 
     bool quit_;
 
@@ -130,10 +138,9 @@ namespace people
 	cvNamedWindow("Current Hist", CV_WINDOW_AUTOSIZE);
 	cvNamedWindow("New Hist", CV_WINDOW_AUTOSIZE);
 	cvNamedWindow("Backprojection",CV_WINDOW_AUTOSIZE);
-      }
+      } 
 
-      tf_ = new tf::TransformListener(*node_); 
-
+      node_->param("/people/color_tracker/on_robot", on_robot_, true);
       node_->param("/people/color_tracker/fixed_frame", fixed_frame_, std::string("map"));
       node_->param("/people/color_tracker/display", do_display_, true);
       node_->param("/people/color_tracker/adapt_hist", adapt_hist_, false);
@@ -167,8 +174,13 @@ namespace people
       sync_->ready();
 
       // Subscribe to the tracker measurements to initialize your position.
-      //message_notifier_person_ = new tf::MessageNotifier<robot_msgs::PositionMeasurement> (tf_, node_, boost::bind(&StereoColorTracker::initPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
-      node_->subscribe("people_tracker_measurements",pos_,&StereoColorTracker::initPosCB2,this,1);
+      if (on_robot_) {
+	tf_ = new tf::TransformListener(*node_); 
+	message_notifier_person_ = new tf::MessageNotifier<robot_msgs::PositionMeasurement> (tf_, node_, boost::bind(&StereoColorTracker::initPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
+      }
+      else {
+	node_->subscribe("people_tracker_measurements",pos_,&StereoColorTracker::initPosCB2,this,1);
+      }
     }
   
     /////////////////////////////////////////////////////////////////////
@@ -284,23 +296,23 @@ namespace people
       // Transform the last known position to the current time.
       boost::mutex::scoped_lock pos_lock(pos_mutex_);
 
-      
-      tf::Point pt;
-      tf::PointMsgToTF(current_pos_.pos, pt);
-      tf::Stamped<tf::Point> loc(pt, current_pos_.header.stamp, current_pos_.header.frame_id);
-      try
-	{
-	  tf_->transformPoint(limage_.header.frame_id, last_image_time_, loc, fixed_frame_, loc); 
-	} 
-      catch (tf::TransformException& ex)
-	{
-	  ROS_DEBUG_STREAM_NAMED("color_tracker","TF exception " << ex.what());
-	}   
-      current_pos_.header.stamp = limage_.header.stamp;
-      current_pos_.pos.x = loc[0];
-      current_pos_.pos.y = loc[1];
-      current_pos_.pos.z = loc[2];
-      
+      if (on_robot_) {      
+	tf::Point pt;
+	tf::PointMsgToTF(current_pos_.pos, pt);
+	tf::Stamped<tf::Point> loc(pt, current_pos_.header.stamp, current_pos_.header.frame_id);
+	try
+	  {
+	    tf_->transformPoint(limage_.header.frame_id, last_image_time_, loc, fixed_frame_, loc); 
+	  } 
+	catch (tf::TransformException& ex)
+	  {
+	    ROS_DEBUG_STREAM_NAMED("color_tracker","TF exception " << ex.what());
+	  }   
+	current_pos_.header.stamp = limage_.header.stamp;
+	current_pos_.pos.x = loc[0];
+	current_pos_.pos.y = loc[1];
+	current_pos_.pos.z = loc[2];
+      }
 
       // Image size
       CvSize im_size = cvGetSize(cv_image_left_);
