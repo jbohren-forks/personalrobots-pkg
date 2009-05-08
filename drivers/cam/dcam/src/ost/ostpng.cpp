@@ -55,11 +55,7 @@
 
 
 #include <stdlib.h>
-#ifdef __APPLE__
-#include <malloc/malloc.h>
-#else
 #include <malloc.h>
-#endif
 #include <stdarg.h>
 #include <math.h>
 #include <vector>
@@ -79,13 +75,8 @@
 using namespace std;
 
 // alignment on allocation, for image buffers
-#ifdef __APPLE__
-#define MEMALIGN(x) malloc(x)
-#define MEMFREE(x) {if (x) free(x);}
-#else
 #define MEMALIGN(x) memalign(16,x)
 #define MEMFREE(x) {if (x) free(x);}
-#endif
 
 //
 // Load a PNG file into a grayscale buffer

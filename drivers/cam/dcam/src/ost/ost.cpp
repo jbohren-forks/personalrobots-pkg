@@ -54,11 +54,7 @@
 
 
 #include <stdlib.h>
-#ifdef __APPLE__
-#include <malloc/malloc.h>
-#else
 #include <malloc.h>
-#endif
 #include <stdarg.h>
 #include <math.h>
 #include <vector>

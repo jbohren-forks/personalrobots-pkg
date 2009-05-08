@@ -59,13 +59,8 @@
 
 #include "FL/Fl_Gl_Window.H"
 #include "FL/gl.h"
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#include <OpenGL/glu.h>
-#else
 #include <GL/glut.h>
 #include <GL/glu.h>
-#endif
 #include "image.h"
 
 using namespace cam;
