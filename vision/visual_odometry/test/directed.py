@@ -326,11 +326,6 @@ class TestDirected(unittest.TestCase):
       rf = im.crop((x, 0, x + 640, 480))
       af = SparseStereoFrame(lf, rf)
 
-      vo.find_keypoints(af)
-
-      vo.find_disparities(af)
-      vo.collect_descriptors(af)
-
       if prev_af:
         pairs = vo.temporal_match(prev_af, af)
         pose = vo.solve(prev_af.kp, af.kp, pairs)
@@ -356,8 +351,6 @@ class TestDirected(unittest.TestCase):
       for gradient in [ False, True ]:
         af = SparseStereoFrame(lf, rf, gradient, feature_detector = fd, descriptor_scheme = ds)
         vo = VisualOdometer(cam)
-        vo.find_keypoints(af)
-        vo.find_disparities(af)
         error = offset - sum([d for (x,y,d) in af.features()]) / len(af.features())
         self.assert_(abs(error) < 0.5) 
 
