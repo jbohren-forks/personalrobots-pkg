@@ -47,29 +47,29 @@ rospack_add_nddl("test/master/master.1/pr2.master.nddl")
 rospack_add_nddl("test/master/master.2/pr2.master.nddl")
 rospack_add_nddl("test/master/master.3/pr2.master.nddl")
 
-set(TREX_FILES src/executive.cc
-	       src/monitor.cc
-	       src/ros_adapter.cc 
-	       src/logger.cc 
-               src/logclock.cc 
-	       src/calc_angle_diff_constraint.cc 
-	       src/calc_distance_constraint.cc 
-	       src/components.cc
-	       src/base_state_adapter.cc
-	       src/arm_state_adapter.cc
-	       src/arm_controller_adapter.cc
-	       src/end_effector_controller_adapter.cc
-	       src/battery_state_adapter.cc
-	       src/topological_map.cc
-	       src/door_domain_constraints.cc
-	       src/adapter_utilities.cc
-	       src/adapters.cc)
+set(TREX_FILES src/executive.cpp
+	       src/monitor.cpp
+	       src/ros_adapter.cpp 
+	       src/logger.cpp 
+               src/logclock.cpp 
+	       src/calc_angle_diff_constraint.cpp 
+	       src/calc_distance_constraint.cpp 
+	       src/components.cpp
+	       src/base_state_adapter.cpp
+	       src/arm_state_adapter.cpp
+	       src/arm_controller_adapter.cpp
+	       src/end_effector_controller_adapter.cpp
+	       src/battery_state_adapter.cpp
+	       src/topological_map.cpp
+	       src/door_domain_constraints.cpp
+	       src/adapter_utilities.cpp
+	       src/adapters.cpp)
 
 # trexdebug builds with a large number of run-time error checking running which is expensive
 # but gives good feedback in discovering problems.
 rospack_add_library(executive_trex_pr2_g ${TREX_FILES})
 target_link_libraries(executive_trex_pr2_g Utils_g TREX_g topological_graph outlet_executive_functions)
-rospack_add_executable(bin/trexdebug src/main.cc)
+rospack_add_executable(bin/trexdebug src/main.cpp)
 target_link_libraries(bin/trexdebug executive_trex_pr2_g )
 rospack_link_boost(bin/trexdebug thread)
 rospack_add_gtest_build_flags(bin/trexdebug)
@@ -82,7 +82,7 @@ set_target_properties(bin/trexdebug PROPERTIES EXCLUDE_FROM_ALL false)
 # trexfast is about an order of magnitude faster than trexdebug
 rospack_add_library(executive_trex_pr2_o ${TREX_FILES})
 target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph outlet_executive_functions)
-rospack_add_executable(bin/trexfast src/main.cc)
+rospack_add_executable(bin/trexfast src/main.cpp)
 target_link_libraries(bin/trexfast executive_trex_pr2_o)
 rospack_link_boost(bin/trexfast thread)
 rospack_add_gtest_build_flags(bin/trexfast)
@@ -96,16 +96,16 @@ rospack_add_compile_flags(executive_trex_pr2_o "-O3 -DEUROPA_FAST")
 # trexwatchdog is a safety process that will monitor pings from the executive
 # and dispense shutdown commands to highlevel controllers (deactivation) if pings are
 # not received in time
-rospack_add_executable(bin/trexwatchdog src/watch_dog.cc)
+rospack_add_executable(bin/trexwatchdog src/watch_dog.cpp)
 
 # Test target for unit tests on topological map integration components
-rospack_add_gtest(test/topological_map_tests test/topological_map_tests.cc)
+rospack_add_gtest(test/topological_map_tests test/topological_map_tests.cpp)
 target_link_libraries(test/topological_map_tests executive_trex_pr2_g)
 
 # stub_ros__container impements stub state publishers and actions to allow easy testing of the ROS adapters for the model
-rospack_add_executable(bin/stub_ros_container src/stub_ros_container.cc)
+rospack_add_executable(bin/stub_ros_container src/stub_ros_container.cpp)
 
 # Implementation of actions that we actually use
-rospack_add_executable(bin/actions src/actions.cc)
+rospack_add_executable(bin/actions src/actions.cpp)
 
 #rospack_add_executable(test/groundtruthtransform test/groundtruthtransform.cpp)
