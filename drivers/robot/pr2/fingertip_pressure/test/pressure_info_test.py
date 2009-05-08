@@ -68,10 +68,44 @@ class PressureInfoTest(unittest.TestCase):
         self.msg = msg
 
     def test_array_sizes(self):
-        self.assertEquals(len(self.msg.sensor), 2)
-        self.assertEquals(len(self.msg.sensor[1].center), 22)
-        self.assertEquals(len(self.msg.sensor[1].halfside1), 22)
-        self.assertEquals(len(self.msg.sensor[1].halfside2), 22)
+        self.assertEquals(len(self.msg.sensor), 2, "Should have two PressureInfoElements")
+        self.assertEquals(len(self.msg.sensor[1].center), 22, "Should have 22 centers.")
+        self.assertEquals(len(self.msg.sensor[1].halfside1), 22, "Should have 22 halfside1")
+        self.assertEquals(len(self.msg.sensor[1].halfside2), 22, "Should have 22 halfside2")
+        self.assertEquals(len(self.msg.sensor[1].force_per_unit), 22, "Should have 22 pressure")
+
+    def test_cross_products(self):
+        for j in range(0,2):
+            yori = [1, -1][j]
+            for i in range(0,22):
+                a = self.msg.sensor[j].halfside1[i]
+                b = self.msg.sensor[j].halfside2[i]
+                c = self.msg.sensor[j].center[i]
+                c.y = c.y - yori * .005 # Ensure that we are inside the sensor
+                det = a.x * b.y * c.z + b.x * c.y * a.z + c.x * a.y * b.z\
+                     -a.x * c.y * b.z - b.x * a.y * c.z - c.x * b.y * a.z
+                self.assertTrue(det > 0, 
+                        "Wrong orientation for sensor %i on tip %i, det=%e, %e %e %e %e %e %e %e %e %e"%(i, j, det, a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z))
+
+    def test_bounding_box(self):
+        for j in range(0,2):
+            yori = [1, -1][j]
+            for i in range(0,22):
+                a = self.msg.sensor[j].halfside1[i]
+                b = self.msg.sensor[j].halfside2[i]
+                c = self.msg.sensor[j].center[i]
+                msg = "Bound box error sensor %i, tip %i, %e %e %e %e %e %e %e %e %e"%(i, j, a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z)
+                self.assertTrue(c.x - abs(a.x) > 0, msg)
+                self.assertTrue(c.x - abs(b.x) > 0, msg)
+                self.assertTrue(c.x + abs(a.x) <= 0.035, msg)
+                self.assertTrue(c.x + abs(b.x) <= 0.035, msg)
+                self.assertTrue(yori * c.y - abs(a.y) >= 0, msg)
+                self.assertTrue(yori * c.y - abs(b.y) >= 0, msg)
+                self.assertTrue(yori * c.y + abs(a.y) < 11, msg)
+                self.assertTrue(yori * c.y + abs(b.y) < 11, msg)
+                self.assertTrue(abs(c.z) + abs(a.z) <= 11.5, msg)
+                self.assertTrue(abs(c.z) + abs(b.z) <= 11.5, msg)
+
 
 if __name__ == '__main__':
     import rostest

@@ -47,34 +47,83 @@ import rospy
 from fingertip_pressure.msg import PressureInfo, PressureInfoElement
 from robot_msgs.msg import Vector3
 
-force_per_unit_table = [
+force_per_unit_table = [ 
+        500, # 0 bottom
+        350, # 1 side
+        600, # 2 corner
+        600, # 3 front
+        600, # 4 front
+        600, # 5 corner
+        350, # 6 side
+        2000, 2000, 2000, 
+        2000, 2000, 2000, 
+        2000, 2000, 2000, 
+        2000, 2000, 2000, 
+        2000, 2000, 2000, 
         ]
 
 # coordinates are in mm here, and get converted to meters for publishing.
 coordinates = [
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ( 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ),
-        ]
+        # center             half-side 1        half-side 2
+        [ 29.3, 11.0,  0.0,   0.0,  0.0,  6.7,   2.8,  0.0,  0.0 ],    # 0
+        [ 16.5,  5.2, 11.5,  12.0,  0.0,  0.0,   0.0,  3.0,  0.0 ],    # 1
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 2 fused 
+        [ 35.0,  4.7,  7.1,   0.0,  0.0,  7.1,   0.0, -2.5,  0.0 ],    # 3 CHK x
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 4 mirrored 
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 5 mirrored 
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 6 mirrored 
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 7 translated
+        [ 30.0,  0.0,  0.0,   0.0,  0.0, -5.0,   5.0,  0.0,  0.0 ],    # 8 CHK
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 9 translated 
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 10
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 11 translated 
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 12 translated 
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 13 translated 
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 14 translated  
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 15 translated  
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 16 translated  
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 17 translated  
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 18 translated  
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 19 translated  
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 20 translated  
+        [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 21 translated  
+        ]                                                                                 
+
+# Generate #2 to go from #1 to #3
+coordinates[2][0] = (coordinates[1][0] + coordinates[1][3] + coordinates[3][0]) / 2
+coordinates[2][1] = coordinates[3][1]
+coordinates[2][2] = (coordinates[1][2] + coordinates[3][2] + coordinates[3][6]) / 2
+coordinates[2][3] = (coordinates[1][0] + coordinates[1][3] - coordinates[3][0]) / 2
+coordinates[2][3] = 0
+coordinates[2][3] = -(coordinates[1][2] - coordinates[3][2] - coordinates[3][6]) / 2
+for i in range(6,9):
+    coordinates[2][i] = coordinates[3][i]
+
+# Same sensor on other side.
+def mirror(src, dest):
+    coordinates[dest] = list(coordinates[src])
+    coordinates[dest][2] = -coordinates[dest][2]
+    coordinates[dest][5] = -coordinates[dest][5]
+    # Flip half-edge 2 this way so that cross product points out.
+    coordinates[dest][6] = -coordinates[dest][6]
+    coordinates[dest][7] = -coordinates[dest][7]
+
+# Generate one sidewall from the other
+mirror(1, 6)
+mirror(2, 5)
+mirror(3, 4)
+
+# Step 2 * dim times half-side k.
+def translate(src, dest, dir, k):
+    coordinates[dest] = list(coordinates[src])
+    for i in range(0,3):
+        coordinates[dest][i] = coordinates[dest][i] + dir * coordinates[dest][i + 3 * k]
+
+# Generate the main array from #8
+translate(8, 7, 1, 1)
+translate(8, 9, -1, 1)
+for i in range(10, 22):
+   translate(i-3, i, -1, 2)
 
 def multorientation(data, ori):
     for i in range(0, len(data)):
@@ -85,9 +134,9 @@ def extractvec(i):
     out = [];
     for j in range(0,len(coordinates)):
         v = Vector3()
-        v.x = coordinates[j][i];
-        v.y = coordinates[j][i+1];
-        v.z = coordinates[j][i+2];
+        v.x = coordinates[j][i] / 1000.;
+        v.y = coordinates[j][i+1] / 1000.;
+        v.z = coordinates[j][i+2] / 1000.;
         out.append(v)
     return out
 
@@ -96,11 +145,15 @@ def pressureInformation(frame_id, orientation):
     msg.frame_id = frame_id
     msg.force_per_unit = force_per_unit_table
     msg.center = extractvec(0)
-    msg.halfside1 = extractvec(5)
+    msg.halfside1 = extractvec(3)
     msg.halfside2 = extractvec(6)
     multorientation(msg.center, orientation)
     multorientation(msg.halfside1, orientation)
-    multorientation(msg.center, orientation)
+    multorientation(msg.halfside2, orientation)
+    print "%e %e %e  %e %e %e  %e %e %e"%(msg.center[7].x, msg.center[7].y,
+            msg.center[7].z, msg.halfside1[7].x, msg.halfside1[7].y,
+            msg.halfside1[7].z, msg.halfside2[7].x, msg.halfside2[7].y,
+            msg.halfside2[7].z)
     return msg
 
 def pressureInformationPublisher(topicname, info):
