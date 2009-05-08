@@ -650,7 +650,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
     }
 
     pf_sample_set_t* set = pf_->sets + pf_->current_set;
-    ROS_INFO("Num samples: %d\n", set->sample_count);
+    ROS_DEBUG("Num samples: %d\n", set->sample_count);
 
     // Publish the resulting cloud
     // TODO: set maximum rate for publishing
@@ -793,7 +793,7 @@ AmclNode::laserReceived(const tf::MessageNotifier<laser_scan::LaserScan>::Messag
         gui_laser_last_publish_time = now;
       }
 
-      ROS_INFO("New pose: %6.3f %6.3f %6.3f",
+      ROS_DEBUG("New pose: %6.3f %6.3f %6.3f",
                hyps[max_weight_hyp].pf_pose_mean.v[0],
                hyps[max_weight_hyp].pf_pose_mean.v[1],
                hyps[max_weight_hyp].pf_pose_mean.v[2]);
