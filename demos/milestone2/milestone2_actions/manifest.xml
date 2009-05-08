@@ -10,7 +10,6 @@
   <depend package="safety_core"/>
   <depend package="2dnav_pr2"/>
 
-  <depend package="robot_pose_ekf"/>
   <depend package="stereo_image_proc"/>
   <depend package="pr2_alpha"/>
 
