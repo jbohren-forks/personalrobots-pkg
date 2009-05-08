@@ -215,6 +215,70 @@
         <cellpos>14,0</cellpos>
         <cellspan>1,10</cellspan>
       </object>
+      <object class="sizeritem">
+        <object class="wxPanel">
+          <object class="wxBoxSizer">
+            <orient>wxVERTICAL</orient>
+            <object class="sizeritem">
+              <object class="wxRadioButton" name="button_N">
+                <label>N</label>
+                <font>
+                  <size>6</size>
+                  <style>normal</style>
+                  <weight>normal</weight>
+                  <underlined>0</underlined>
+                  <family>swiss</family>
+                  <face>Sans</face>
+                  <encoding>UTF-8</encoding>
+                </font>
+                <XRCED>
+                  <events>EVT_RADIOBUTTON</events>
+                </XRCED>
+              </object>
+            </object>
+            <object class="sizeritem">
+              <object class="wxRadioButton" name="button_kPa">
+                <label>kPa</label>
+                <font>
+                  <size>6</size>
+                  <style>normal</style>
+                  <weight>normal</weight>
+                  <underlined>0</underlined>
+                  <family>swiss</family>
+                  <face>Sans</face>
+                  <encoding>UTF-8</encoding>
+                </font>
+                <XRCED>
+                  <events>EVT_RADIOBUTTON</events>
+                </XRCED>
+              </object>
+            </object>
+          </object>
+        </object>
+        <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+        <cellpos>0,0</cellpos>
+        <cellspan>2,2</cellspan>
+      </object>
+      <object class="sizeritem">
+        <object class="wxCheckBox" name="button_Zero">
+          <label>Zero</label>
+          <font>
+            <size>6</size>
+            <style>normal</style>
+            <weight>normal</weight>
+            <underlined>0</underlined>
+            <family>swiss</family>
+            <face>Sans</face>
+            <encoding>UTF-8</encoding>
+          </font>
+          <XRCED>
+            <events>EVT_CHECKBOX</events>
+          </XRCED>
+        </object>
+        <flag>wxALIGN_CENTRE_VERTICAL|wxALIGN_CENTRE_HORIZONTAL</flag>
+        <cellpos>0,8</cellpos>
+        <cellspan>2,2</cellspan>
+      </object>
     </object>
     <style>wxSUNKEN_BORDER</style>
   </object>

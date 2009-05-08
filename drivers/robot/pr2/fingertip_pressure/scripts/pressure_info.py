@@ -48,24 +48,24 @@ from fingertip_pressure.msg import PressureInfo, PressureInfoElement
 from robot_msgs.msg import Vector3
 
 force_per_unit_table = [ 
-        500, # 0 bottom
-        350, # 1 side
+        600, # 0 bottom
+        400, # 1 side
         600, # 2 corner
         600, # 3 front
         600, # 4 front
         600, # 5 corner
-        350, # 6 side
-        2000, 2000, 2000, 
-        2000, 2000, 2000, 
-        2000, 2000, 2000, 
-        2000, 2000, 2000, 
-        2000, 2000, 2000, 
+        400, # 6 side
+        1600, 1600, 1600, 
+        1600, 1600, 1600, 
+        1600, 1600, 1600, 
+        1600, 1600, 1600, 
+        1600, 1600, 1600, 
         ]
 
 # coordinates are in mm here, and get converted to meters for publishing.
 coordinates = [
         # center             half-side 1        half-side 2
-        [ 29.3, 11.0,  0.0,   0.0,  0.0,  6.7,   2.8,  0.0,  0.0 ],    # 0
+        [ 29.3, 11.0,  0.0,   0.0,  0.0, 10.0,   2.8,  0.0,  0.0 ],    # 0
         [ 16.5,  5.2, 11.5,  12.0,  0.0,  0.0,   0.0,  3.0,  0.0 ],    # 1
         [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 2 fused 
         [ 35.0,  4.7,  7.1,   0.0,  0.0,  7.1,   0.0, -2.5,  0.0 ],    # 3 CHK x

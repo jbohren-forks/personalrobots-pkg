@@ -113,7 +113,7 @@ class pressureVisualizer:
             mk.points[3].z = -h1.z + h2.z
             mk.points[4] = mk.points[0]
             mk.color.a = 1.0
-            (mk.color.r, mk.color.g, mk.color.b) = color(data[i])
+            (mk.color.r, mk.color.g, mk.color.b) = color(data[i] / 6000.)
             self.vis_pub.publish(mk)
 
     def __init__(self, source):

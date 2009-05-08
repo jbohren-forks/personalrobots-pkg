@@ -104,7 +104,7 @@ class pressureVisualizer:
             mk.pose.position.z = mk.pose.position.z * ydir
             mk.pose.orientation.w = 1.0
             mk.color.a = 1.0
-            (mk.color.r, mk.color.g, mk.color.b) = color(data[i])
+            (mk.color.r, mk.color.g, mk.color.b) = color(data[i]/6000.)
             self.vis_pub.publish(mk)
 
     def __init__(self, source, frame0, frame1):

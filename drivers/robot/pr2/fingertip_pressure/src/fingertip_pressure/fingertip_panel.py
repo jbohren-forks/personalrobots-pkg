@@ -40,9 +40,11 @@ roslib.load_manifest(PKG)
 import sys
 import rospy
 from ethercat_hardware.msg import PressureState
+import math
 
 from fingertip_pressure.colormap import color
 from fingertip_pressure.msg import PressureInfo
+from robot_msgs.msg import Vector3
 
 import wx
 import threading
@@ -83,7 +85,9 @@ class GripperPressurePanel(wx.Panel):
         self.Bind(wx.EVT_TIMER, self.on_timer, self.timer)
 
     def info_callback(self, message):
+        self._mutex.acquire()
         self.new_info_ = message
+        self._mutex.release()
 
     def message_callback(self, message):
         #print 'message_callback'
@@ -115,17 +119,19 @@ class GripperPressurePanel(wx.Panel):
             self.Refresh()
 
         if self.new_info_ != None:
-            self.panel0.new_frame(self.new_info_.sensor[0].frame_id)
-            self.panel1.new_frame(self.new_info_.sensor[1].frame_id)
-            self.panel0.set_scalings(self.new_info_.sensor[0].force_per_unit)
-            self.panel1.set_scalings(self.new_info_.sensor[1].force_per_unit)
+            self.panel0.set_info(self.new_info_.sensor[0])
+            self.panel1.set_info(self.new_info_.sensor[1])
             self.new_info_ = None
             self.Refresh()
 
         self._mutex.release()
 
 class FingertipPressurePanel:
+    Newton = 'N';
+    kPascal = 'kPa';
+
     def __init__(self, parent): 
+        self._mutex = threading.Lock()
         xrc_path = roslib.packages.get_pkg_dir(PKG) + '/ui/fingertip_panel.xrc'
         panelxrc = xrc.XmlResource(xrc_path)
             
@@ -135,6 +141,8 @@ class FingertipPressurePanel:
         bag.SetEmptyCellSize(wx.Size(0,0)) 
 
         self.scalings = None
+        self.zeros = [0 for i in range(0,22)]
+        self.recentmean = [0 for i in range(0,22)]
 
         self.pad = []
         for i in range(0, NUMSENSORS):
@@ -146,22 +154,69 @@ class FingertipPressurePanel:
             self.pad[i].SetMinSize(wx.Size(40,35))
         self.frame_id_box = xrc.XRCCTRL(self.panel, 'frame_id')
 
-    def set_scalings(self, new_scalings):
-        self.scalings = new_scalings
+        self.panel.Bind(wx.EVT_RADIOBUTTON, self.set_Newton, id=xrc.XRCID('button_N'))
+        self.panel.Bind(wx.EVT_RADIOBUTTON, self.set_kPascal, id=xrc.XRCID('button_kPa'))
+        self.unit = self.Newton
+        
+        self.panel.Bind(wx.EVT_CHECKBOX, self.set_Zero, id=xrc.XRCID('button_Zero'))
+
+    def set_Newton(self, event):
+        self._mutex.acquire()
+        self.unit = self.Newton
+        self._mutex.release()
+
+    def set_kPascal(self, event):
+        self._mutex.acquire()
+        self.unit = self.kPascal     
+        self._mutex.release()
+
+    def set_Zero(self, event):
+        self._mutex.acquire()
+        cb = event.GetEventObject()
+        if cb.IsChecked():
+            self.zeros = list(self.recentmean);
+        else:
+            self.zeros = [0 for i in range(0,22)]
+        self._mutex.release()
+
+    def calc_area(self,u,v):
+        w = Vector3()
+        w.x = u.y * v.z - u.z * v.y
+        w.y = u.z * v.x - u.x * v.z
+        w.z = u.x * v.y - u.y * v.x
+        return math.sqrt(w.x*w.x + w.y*w.y + w.z*w.z)
+
+    def set_info(self, info):
+        self._mutex.acquire()
+        self.scalings = info.force_per_unit
+        self.areas = [self.calc_area(info.halfside1[i], info.halfside2[i]) * 4 for i in range(0,22)]
+        self.frame_id_box.SetValue(info.frame_id)
+        self._mutex.release()
 
     def new_message(self, data):
+        self._mutex.acquire()
         #print "FingertipPressurePanel new_message"
         for i in range(0, NUMSENSORS):
             #print repr(color(data[i]))
             #print txtcolor(data[i])
-            (colb,colf)=txtcolor(data[i])
+            self.recentmean[i] = 0.8 * self.recentmean[i] + 0.2 * data[i]
+            dat = data[i] - self.zeros[i]
+            if self.scalings != None:
+                if self.unit == self.kPascal:
+                    val = dat / self.scalings[i] / self.areas[i] / 1e3
+                    colval = val / 30.
+                    scaled = '%.0f'%val
+                else:
+                    val = dat / self.scalings[i]
+                    colval = val / 3.
+                    scaled = '%.2f'%val
+            else:
+                val = dat
+                colval = val / 6000.
+                scaled = '??'
+            (colb,colf)=txtcolor(colval)
             self.pad[i].SetBackgroundColour(colb)
             self.pad[i].SetForegroundColour(colf)
-            if self.scalings != None:
-                scaled = '%5.2f'%(data[i]/self.scalings[i])
-            else:
-                scaled = '??'
-            self.pad[i].SetValue('#%i\n%i\n%s N'%(i,data[i],scaled))
+            self.pad[i].SetValue('#%i\n%i\n%s %s'%(i,dat,scaled,self.unit))
+        self._mutex.release()
            
-    def new_frame(self, frame_id):
-        self.frame_id_box.SetValue(frame_id)
