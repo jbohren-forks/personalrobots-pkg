@@ -9,21 +9,25 @@
   <review status="experimental" notes="beta"/>
 
   <depend package="roscpp" />
+
   <depend package="std_msgs" />
   <depend package="robot_msgs" />
   <depend package="door_msgs" />
+  <depend package="visualization_msgs"/>
+
   <depend package="robot_srvs" />
   <depend package="nav_srvs" />
+
   <depend package="robot_actions" />
   <depend package="nav_robot_actions" />
   <depend package="pr2_robot_actions" />
+
   <depend package="kdl" />
-  <depend package="angles" />
-  <depend package="door_handle_detector" />
   <depend package="tf"/>
+  <depend package="door_handle_detector" />
+
   <depend package="costmap_2d"/>
   <depend package="base_local_planner"/>
-  <depend package="visualization_msgs"/>
   <depend package="door_functions"/>
   <depend package="point_cloud_assembler"/>
 
