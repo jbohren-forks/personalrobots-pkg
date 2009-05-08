@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <controllers>
-  <controller name="odometry" type="Odometry">
+  <controller name="base_odometry" type="Odometry">
    <wheel name="fl_caster_l_wheel_link"/>
    <wheel name="fl_caster_r_wheel_link"/>
    <wheel name="fr_caster_l_wheel_link"/>
