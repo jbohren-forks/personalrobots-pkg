@@ -51,6 +51,7 @@ namespace door_functions{
   double getVectorAngle(const KDL::Vector& v1, const KDL::Vector& v2);
   KDL::Vector getDoorNormal(const door_msgs::Door& door);
   KDL::Vector getFrameNormal(const door_msgs::Door& door);
+  double getFrameAngle(const door_msgs::Door& door);
 
 
 /// convert door message from its original frame/time, to the goal frame at time::now.
@@ -63,5 +64,6 @@ namespace door_functions{
 
     std::ostream& operator<< (std::ostream& os, const door_msgs::Door& d);
     std::vector<robot_msgs::Point> getPolygon(const door_msgs::Door& door, const double &door_thickness);
+    door_msgs::Door rotateDoor(const door_msgs::Door& door, const double &angle);
 }
 #endif

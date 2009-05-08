@@ -216,6 +216,56 @@ namespace door_functions{
     return door_polygon;
   }
 
+  door_msgs::Door rotateDoor(const door_msgs::Door& door, const double &angle)
+  {
+    door_msgs::Door result = door;
+    robot_msgs::Point32 hinge = door.frame_p1;
+    robot_msgs::Point32 edge = door.frame_p2;
+    if(door.hinge == 1)
+    {
+      hinge = door.frame_p2;
+      edge = door.frame_p1;
+    }
+    double handle_distance = sqrt(pow(door.handle.y-hinge.y,2) + pow(door.handle.x-hinge.x,2)); //assumes handle is flush with door
+    double door_frame_global_yaw = atan2(edge.y-hinge.y,edge.x-hinge.x);
+    double door_length = sqrt(pow(edge.y-hinge.y,2) + pow(edge.x-hinge.x,2));
+
+    double sth = sin(door_frame_global_yaw+angle);
+    double cth = cos(door_frame_global_yaw+angle);
+
+    robot_msgs::Point32 new_edge;
+    new_edge.x = hinge.x + cth *door_length;
+    new_edge.y = hinge.y + sth *door_length;
+    robot_msgs::Point32 new_handle = door.handle;
+    new_handle.x = hinge.x + cth*handle_distance;
+    new_handle.y = hinge.y + sth*handle_distance;
+
+    result.door_p1 = hinge;
+    result.door_p2 = new_edge;
+    if(door.hinge == 1)
+    {
+      result.door_p2 = hinge;
+      result.door_p1 = new_edge;
+    }
+    result.handle = new_handle;
+    return result;
+  }
+
+  double getFrameAngle(const door_msgs::Door& door)
+  {
+    double result;
+    if(door.hinge == 0)
+    {   
+      result =  atan2(door.frame_p2.y - door.frame_p1.y, door.frame_p2.x - door.frame_p1.x);
+    }
+    else
+    {
+      result =  atan2(door.frame_p1.y - door.frame_p2.y, door.frame_p1.x - door.frame_p2.x);
+    }
+    ROS_INFO("Door frame angle:: %f",result); 
+    return result;
+  }
+
   std::ostream& operator<< (std::ostream& os, const door_msgs::Door& d)
   {
     os << "Door message in " << d.header.frame_id << " at time " << d.header.stamp.toSec() << endl;
