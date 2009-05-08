@@ -262,7 +262,6 @@ namespace door_functions{
     {
       result =  atan2(door.frame_p1.y - door.frame_p2.y, door.frame_p1.x - door.frame_p2.x);
     }
-    ROS_INFO("Door frame angle:: %f",result); 
     return result;
   }
 
