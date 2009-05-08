@@ -1,6 +1,7 @@
 base_local_planner:
   #Independent settings for the local costmap
   costmap:
+#publish_voxel_map: true
     global_frame: map
     robot_base_frame: base_link
     update_frequency: 5.0
@@ -14,7 +15,7 @@ base_local_planner:
     origin_y: 0.0
   transform_tolerance: 0.2
   costmap_visualization_rate: 2.0
-  world_model: freespace
+  world_model: costmap
   sim_time: 1.7
   sim_granularity: 0.05
   dwa: true

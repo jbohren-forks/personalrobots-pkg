@@ -1,7 +1,7 @@
 <launch>
   <group name="wg">
     <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
-    <include file="$(find 2dnav_pr2)/config/amcl_node.xml" />
+    <include file="$(find 2dnav_pr2)/config/new_amcl_node.xml" />
     <include file="$(find 2dnav_pr2)/config/base_odom_teleop.xml" />
     <include file="$(find 2dnav_pr2)/config/lasers_and_filters.xml" />
     <include file="$(find 2dnav_pr2)/config/map_server.xml" />

@@ -2,6 +2,9 @@
 <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
 
 <node pkg="nav" type="move_base" respawn="false" name="move_base" output="screen" machine="three">
+  <!--
+  <remap from="cmd_vel" to="/bs" />
+  -->
   <param name="controller_frequency" value="10.0" />
 
   <rosparam file="$(find 2dnav_pr2)/config/costmap_common_params.yaml" command="load" ns="navfn" />
