@@ -1,4 +1,4 @@
-#include "ROSControllerAdapter.hh"
+#include "executive_trex_pr2/ros_controller_adapter.hh"
 #include "Domains.hh"
 #include "Token.hh"
 #include <pr2_msgs/MoveArmState.h>

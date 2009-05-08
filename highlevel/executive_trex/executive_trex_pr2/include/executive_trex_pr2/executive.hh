@@ -10,7 +10,7 @@
 #include "Agent.hh"
 #include "Debug.hh"
 #include "LogManager.hh"
-#include "Logger.hh"
+#include "executive_trex_pr2/logger.hh"
 
 namespace TREX{
   class Executive;

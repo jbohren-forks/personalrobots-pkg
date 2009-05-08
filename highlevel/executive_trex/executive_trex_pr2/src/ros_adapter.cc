@@ -1,4 +1,4 @@
-#include "ROSAdapter.hh"
+#include "executive_trex_pr2/ros_adapter.hh"
 #include "Agent.hh"
 #include "Observer.hh"
 #include "Object.hh"

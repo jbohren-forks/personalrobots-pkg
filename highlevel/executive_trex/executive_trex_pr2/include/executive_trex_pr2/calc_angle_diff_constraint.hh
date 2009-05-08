@@ -8,7 +8,7 @@
 #include "Constraints.hh"
 #include "Constraint.hh"
 #include "Domains.hh"
-#include "Logger.hh"
+#include "executive_trex_pr2/logger.hh"
 
 using namespace EUROPA;
 namespace TREX {

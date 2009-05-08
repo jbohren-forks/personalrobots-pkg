@@ -38,8 +38,8 @@
 
 #include <executive_trex_pr2/adapter_utilities.h>
 #include <executive_trex_pr2/adapters.h>
-#include "ros_action_adapter.h"
-#include "ROSStateAdapter.hh"
+#include "executive_trex_pr2/ros_action_adapter.h"
+#include "executive_trex_pr2/ros_state_adapter.hh"
 
 using namespace executive_trex_pr2;
 

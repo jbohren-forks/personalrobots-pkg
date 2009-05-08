@@ -1,7 +1,7 @@
 #ifndef H_ROSControllerAdapter
 #define H_ROSControllerAdapter
 
-#include "ROSAdapter.hh"
+#include "executive_trex_pr2/ros_adapter.hh"
 #include "Token.hh"
 #include "TokenVariable.hh"
 #include "Domains.hh"

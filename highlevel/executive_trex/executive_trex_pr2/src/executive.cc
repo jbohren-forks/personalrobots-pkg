@@ -32,7 +32,7 @@
 
 #include "Nddl.hh"
 #include "executive_trex_pr2/components.hh"
-#include "Logger.hh"
+#include "executive_trex_pr2/logger.hh"
 #include "Agent.hh"
 #include "executive_trex_pr2/logclock.hh"
 #include "Debug.hh"
@@ -41,7 +41,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include "Executive.hh"
+#include "executive_trex_pr2/executive.hh"
 
 
 
