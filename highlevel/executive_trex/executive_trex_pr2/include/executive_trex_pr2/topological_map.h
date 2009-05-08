@@ -13,7 +13,7 @@
 #include "Constraints.hh"
 #include "Constraint.hh"
 #include "Domains.hh"
-#include "executive_trex_pr2/logger.hh"
+#include "executive_trex_pr2/logger.h"
 #include "FlawFilter.hh"
 #include "UnboundVariableDecisionPoint.hh"
 #include <topological_map/topological_map.h>

@@ -1,4 +1,4 @@
-#include "executive_trex_pr2/calc_angle_diff_constraint.hh"
+#include "executive_trex_pr2/calc_angle_diff_constraint.h"
 #include "Logger.hh"
 #include <math.h>
 

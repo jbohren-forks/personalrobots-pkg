@@ -1,7 +1,7 @@
 #ifndef H_ROSStateAdapter
 #define H_ROSStateAdapter
 
-#include "executive_trex_pr2/ros_adapter.hh"
+#include "executive_trex_pr2/ros_adapter.h"
 #include "Domains.hh"
 
 namespace TREX {

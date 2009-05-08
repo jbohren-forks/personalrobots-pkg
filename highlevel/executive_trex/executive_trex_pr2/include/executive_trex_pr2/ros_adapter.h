@@ -1,7 +1,7 @@
 #ifndef H_ROSAdapter
 #define H_ROSAdapter
 
-#include "executive_trex_pr2/executive.hh"
+#include "executive_trex_pr2/executive.h"
 #include "Adapter.hh"
 #include "Debug.hh"
 

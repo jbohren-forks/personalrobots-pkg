@@ -1,4 +1,4 @@
-#include "executive_trex_pr2/logger.hh"
+#include "executive_trex_pr2/logger.h"
 #include "Debug.hh"
 #include "Observer.hh"
 

@@ -1,4 +1,4 @@
-#include "executive_trex_pr2/components.hh"
+#include "executive_trex_pr2/components.h"
 #include "GoalManager.hh"
 #include "PlanDatabase.hh"
 #include "Token.hh"
@@ -8,14 +8,14 @@
 #include "Constraints.hh"
 #include "Timeline.hh"
 #include "Agent.hh"
-#include "executive_trex_pr2/calc_angle_diff_constraint.hh"
-#include "executive_trex_pr2/calc_distance_constraint.hh"
+#include "executive_trex_pr2/calc_angle_diff_constraint.h"
+#include "executive_trex_pr2/calc_distance_constraint.h"
 #include <outlet_detection/outlet_executive_functions.h>
 #include "OrienteeringSolver.hh"
 #include "Utilities.hh"
 #include "LabelStr.hh"
 #include <executive_trex_pr2/topological_map.h>
-#include <executive_trex_pr2/door_domain_constraints.hh>
+#include <executive_trex_pr2/door_domain_constraints.h>
 #include <tf/transform_listener.h>
 #include <math.h>
 

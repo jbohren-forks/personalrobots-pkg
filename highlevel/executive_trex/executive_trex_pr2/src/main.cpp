@@ -85,17 +85,17 @@ Publishes to (name/type):
 
 #include "TestMonitor.hh"
 #include "Nddl.hh"
-#include "executive_trex_pr2/components.hh"
-#include "executive_trex_pr2/logger.hh"
+#include "executive_trex_pr2/components.h"
+#include "executive_trex_pr2/logger.h"
 #include "Agent.hh"
-#include "executive_trex_pr2/logclock.hh"
+#include "executive_trex_pr2/logclock.h"
 #include "Debug.hh"
 #include "Utilities.hh"
 #include <signal.h>
 #include <unistd.h>
 #include <signal.h>
 
-#include "executive_trex_pr2/executive.hh"
+#include "executive_trex_pr2/executive.h"
 
 
 

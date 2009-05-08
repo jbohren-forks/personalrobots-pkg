@@ -3,7 +3,7 @@
 #include "Token.hh"
 #include "TokenVariable.hh"
 #include "Domains.hh"
-#include "executive_trex_pr2/executive.hh"
+#include "executive_trex_pr2/executive.h"
 #include <vector>
 #include <executive_trex_pr2/TrexMonitor.h>
 
