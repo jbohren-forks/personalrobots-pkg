@@ -6,7 +6,7 @@
   
   <!-- Test for publication of 'scan' topic -->
   <!-- Run hztest -->
-  <test test-name="hztest_test_scan" pkg="rostest" type="hztest" name="scan_test">
+  <test test-name="hztest_fingertip_test_markr_sphere" pkg="rostest" type="hztest" name="scan_test">
     <param name="topic" value="/visualization_marker" />  
     <param name="hz" value="880" />
     <param name="hzerror" value="88" />

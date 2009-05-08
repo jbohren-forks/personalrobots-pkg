@@ -5,7 +5,7 @@
   
   <!-- Test for publication of 'scan' topic -->
   <!-- Run hztest -->
-  <test test-name="hztest_test_scan1" pkg="rostest" type="hztest" name="scan_test">
+  <test test-name="hztest_r_gripper_motor_info" pkg="rostest" type="hztest" name="scan_test">
     <!-- The topic to listen for -->
     <param name="topic" value="/pressure/r_gripper_motor_info" />  
     <!-- 
@@ -30,7 +30,7 @@
   </test>
 
   <!-- Run hztest -->
-  <test test-name="hztest_test_scan2" pkg="rostest" type="hztest" name="scan_test">
+  <test test-name="hztest_l_gripper_motor_info" pkg="rostest" type="hztest" name="scan_test">
     <!-- The topic to listen for -->
     <param name="topic" value="/pressure/l_gripper_motor_info" />  
     <!-- 
