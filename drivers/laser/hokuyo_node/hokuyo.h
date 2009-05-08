@@ -18,6 +18,9 @@
  *
  */
 
+/*! \mainpage
+ *  \htmlinclude manifest.html
+ */
 
 #ifndef HOKUYO_HH
 #define HOKUYO_HH
@@ -132,7 +135,7 @@ namespace hokuyo
      * \param port_name   A character array containing the name of the port
      *
      */
-    void open(const char * port_name);
+    void open(const char * port_name, bool LaserIsHokuyoModel04LX = false);
 
     //! Close the port
     /*!
@@ -143,8 +146,10 @@ namespace hokuyo
     //! Check whether the port is open
     bool portOpen() {  return laser_port_ != NULL; }
 
-
     //! Sends an SCIP2.0 command to the hokuyo device
+	// sets up model 04LX to work in SCIP 2.0 mode
+    void setToSCIP2();
+
     /*!
      *  This function allows commands to be sent directly to the hokuyo.
      *  Possible commands can be found in the hokuyo documentation.  It

@@ -89,7 +89,7 @@ hokuyo::Laser::~Laser ()
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-hokuyo::Laser::open(const char * port_name)
+hokuyo::Laser::open(const char * port_name, bool LaserIsHokuyoModel04LX)
 {
   if (portOpen())
     close();
@@ -132,6 +132,15 @@ hokuyo::Laser::open(const char * port_name)
     tcflush (laser_fd_, TCIFLUSH);
     tcsetattr (laser_fd_, TCSANOW, &newtio);
     usleep (200000);
+
+    //if we have a Hokyo model 04LX laser rangefinder, we have to tell it to go to SCIP2 mode
+    if (LaserIsHokuyoModel04LX)
+	 {
+		laserFlush();
+    setToSCIP2();
+		laserFlush();
+	 }
+
 
     // Just in case a previous failure mode has left our Hokuyo
     // spewing data, we send the TM2 and QT commands to be safe.
@@ -191,12 +200,28 @@ hokuyo::Laser::close ()
     HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "Failed to close port properly -- error = %d: %s\n", errno, strerror(errno));
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void
+hokuyo::Laser::setToSCIP2()
+{
+	if (!portOpen())
+	    HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
+	const char * cmd = "SCIP2.0";
+	char buf[100];
+	laserWrite(cmd);
+  	laserWrite("\n");
+
+	laserReadline(buf, 100, 1000);
+	//ROS_INFO("Laser comm protocol changed to %s \n", buf);
+	printf ("Laser comm protocol changed to %s \n", buf);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 int
 hokuyo::Laser::sendCmd(const char* cmd, int timeout)
 {
-  if (!portOpen())
+if (!portOpen())
     HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
   char buf[100]; 

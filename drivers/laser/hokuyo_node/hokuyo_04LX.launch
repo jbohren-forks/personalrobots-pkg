@@ -1,0 +1,6 @@
+<launch>
+  <group ns="hokuyo">
+    <param name="hokuyoLaserModel04LX" type="bool" value="true"/>
+  </group>
+  <node name="hokuyo" pkg="hokuyo_node" type="hokuyo_node" respawn="false" output="screen"/>
+</launch>

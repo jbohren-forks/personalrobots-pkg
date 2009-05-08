@@ -1,6 +1,8 @@
 <package>
-  <description>A ROS node to provide access to SCIP2.0-compliant Hokuyo laser devices.</description>
-  <author>Brian P. Gerkey, Jeremy Leibs</author>
+  <description>A ROS node to provide access to SCIP2.0-compliant Hokuyo laser devices as well as the 
+    Hokuyo model 04LX.</description>
+  <author>Brian P. Gerkey, Jeremy Leibs with a patch by Dan Barry to
+    support the Hokuyo 04LX</author>
   <license>LGPL</license>
   <review status="API cleared" notes="Tully to code review"/>
   <depend package="roscpp" />

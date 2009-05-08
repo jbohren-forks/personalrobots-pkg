@@ -92,6 +92,7 @@ Reads the following parameters from the parameter server
 - @b "~port"            : @b [string] the port where the hokuyo device can be found (Default: "/dev/ttyACM0")
 - @b "~autostart"       : @b [bool]   whether the node should automatically start the hokuyo (Default: true)
 - @b "~calibrate_time"  : @b [bool]   whether the node should calibrate the hokuyo's time offset (Default: true)
+- @b "~hokuyoLaserModel04LX" : @b [bool]	whether the laser is a hokuyo mode 04LX by setting boolean LaserIsHokuyoModel04LX (Default: false)
 - @b "~frame_id"        : @b [string] the frame in which laser scans will be returned (Default: "FRAMEID_LASER")
  **/
 
@@ -139,6 +140,7 @@ public:
   string port_;
   bool autostart_;
   bool calibrate_time_;
+  bool LaserIsHokuyoModel04LX;
   string frameid_;
   string device_id_;
   string device_status_;
@@ -194,6 +196,7 @@ public:
     param("~port", port_, string("/dev/ttyACM0"));
     param("~autostart", autostart_, true);
     param("~calibrate_time", calibrate_time_, true);
+	 param("~hokuyoLaserModel04LX", LaserIsHokuyoModel04LX, false);  // LaserIsHokuyoModel04LX must be set to true via this parameter for a model 04LX rangefinder
     param("~frameid", frameid_, string("FRAMEID_LASER"));
 
     self_test_.setPretest( &HokuyoNode::pretest );
@@ -229,7 +232,7 @@ public:
       device_id_ = std::string("unknown");
       device_status_ = std::string("unknown");
 
-      laser_.open(port_.c_str());
+      laser_.open(port_.c_str(), LaserIsHokuyoModel04LX);
 
       device_id_ = laser_.getID();
       device_status_ = laser_.getStatus();
@@ -239,7 +242,8 @@ public:
 
       if (calibrate_time_)
       {
-        laser_.calcLatency(true, min_ang_, max_ang_, cluster_, skip_);
+       // first parameter false when 04LX laser used because 04LX sensor only accepts MD commands, not ME commands
+        laser_.calcLatency(!LaserIsHokuyoModel04LX, min_ang_, max_ang_, cluster_, skip_);
         calibrate_time_ = false; // @todo Hack so that if there is a transmission the slow calibration process does not happen again.
       }
 
@@ -252,7 +256,8 @@ public:
       setParam("~min_range", (double)(config.min_range));
       setParam("~max_range", (double)(config.max_range));
 
-      int status = laser_.requestScans(intensity_, min_ang_, max_ang_, cluster_, skip_);
+	// first parameter false when 04LX laser used because 04LX sensor only accepts MD commands, not ME commands
+	int status = laser_.requestScans(!LaserIsHokuyoModel04LX && intensity_, min_ang_, max_ang_, cluster_, skip_);
 
       if (status != 0) {
         ROS_WARN("Failed to request scans from device.  Status: %d.", status);
@@ -442,7 +447,7 @@ public:
   {
     status.name = "Connection Test";
 
-    laser_.open(port_.c_str());
+    laser_.open(port_.c_str(), LaserIsHokuyoModel04LX);
 
     status.level = 0;
     status.message = "Connected successfully.";
@@ -614,10 +619,10 @@ public:
 
     if (running_)
     {
-      laser_.open(port_.c_str());
+      laser_.open(port_.c_str(), LaserIsHokuyoModel04LX);
       laser_.laserOn();
 
-      int res = laser_.requestScans(true, min_ang_, max_ang_, cluster_, skip_);
+      int res = laser_.requestScans(!LaserIsHokuyoModel04LX, min_ang_, max_ang_, cluster_, skip_);
 
       if (res != 0)
       {
