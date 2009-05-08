@@ -45,6 +45,7 @@ import rospy
 
 from ethercat_hardware.msg import PressureState
 from visualization_msgs.msg import Marker
+from fingertip_pressure.colormap import color
 
 positions = [ # x, y, z, xscale, yscale, zscale 
         ( 0.026, 0.007, 0.000, 0.010, 0.010, 0.015),
@@ -71,20 +72,6 @@ positions = [ # x, y, z, xscale, yscale, zscale
         ( 0.001, 0.012, 0.006, 0.010, 0.010, 0.010),
         ]
 numsensors = len(positions);
-
-def color(data):
-    if data < 1000:
-        return (0,0,0)
-    if data < 3000:
-        x = (data-1000)/2000.
-        return 0,0,x
-    if data < 6000:
-        x = (data-3000)/3000.
-        return x,0,(1-x)
-    if data < 10000:
-        x = (data-6000)/4000.
-        return 1.0,x,x
-    return 1.0,1.0,1.0
 
 class pressureVisualizer:
     def callback(self, pressurestate):
@@ -138,7 +125,7 @@ if __name__ == '__main__':
     pv1 = pressureVisualizer('pressure/r_gripper_motor', 'r_gripper_r_finger_tip_link', 'r_gripper_l_finger_tip_link')
     pv2 = pressureVisualizer('pressure/l_gripper_motor', 'l_gripper_r_finger_tip_link', 'l_gripper_l_finger_tip_link')
     while not rospy.is_shutdown():
-        rospy.sleep(0.02)
+        rospy.sleep(0.09)
         pv1.publish()
         pv2.publish()
 

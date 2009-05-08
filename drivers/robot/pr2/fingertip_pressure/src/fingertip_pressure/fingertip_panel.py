@@ -41,26 +41,15 @@ import sys
 import rospy
 from ethercat_hardware.msg import PressureState
 
+from fingertip_pressure.colormap import color
+from fingertip_pressure.msg import PressureInfo
+
 import wx
 import threading
 from wx import xrc
 
 NUMSENSORS = 22
 RATE = 5. #Hz 
-
-def color(data):
-    if data < 1000:
-        return (0,0,0)
-    if data < 3000:
-        x = (data-1000)/2000.
-        return 0,0,255*x
-    if data < 6000:
-        x = (data-3000)/3000.
-        return 255*x,0,255*(1-x)
-    if data < 10000:
-        x = (data-6000)/4000.
-        return 255,255*x,255*x
-    return 255,255,255
 
 def txtcolor(data):
     (r,g,b)=color(data)
@@ -86,10 +75,15 @@ class GripperPressurePanel(wx.Panel):
         # Set up subscription
         self._mutex = threading.Lock()
         self.new_message_ = None
+        self.new_info_ = None
         rospy.Subscriber(topic, PressureState, self.message_callback)
+        rospy.Subscriber(topic+"_info", PressureInfo, self.info_callback)
 
         self.timer = wx.Timer(self, 1)
         self.Bind(wx.EVT_TIMER, self.on_timer, self.timer)
+
+    def info_callback(self, message):
+        self.new_info_ = message
 
     def message_callback(self, message):
         #print 'message_callback'
@@ -116,8 +110,14 @@ class GripperPressurePanel(wx.Panel):
             self.panel0.new_message(self.new_message_.data0)
             self.panel1.new_message(self.new_message_.data1)
             
-            new_message_ = None
+            self.new_message_ = None
         
+            self.Refresh()
+
+        if self.new_info_ != None:
+            self.panel0.new_frame(self.new_info_.sensor[0].frame_id)
+            self.panel1.new_frame(self.new_info_.sensor[0].frame_id)
+            self.new_info_ = None
             self.Refresh()
 
         self._mutex.release()
@@ -140,6 +140,7 @@ class FingertipPressurePanel:
             font.SetPointSize(6)
             self.pad[i].SetFont(font)
             self.pad[i].SetMinSize(wx.Size(40,30))
+        self.frame_id_box = xrc.XRCCTRL(self.panel, 'frame_id')
 
     def new_message(self, data):
         #print "FingertipPressurePanel new_message"
@@ -151,4 +152,5 @@ class FingertipPressurePanel:
             self.pad[i].SetForegroundColour(colf)
             self.pad[i].SetValue('#%i\n%i'%(i,data[i]))
            
-
+    def new_frame(self, frame_id):
+        self.frame_id_box.SetValue(frame_id)

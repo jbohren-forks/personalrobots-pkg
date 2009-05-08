@@ -21,8 +21,8 @@
         </object>
         <flag>wxRIGHT|wxEXPAND</flag>
         <border>5</border>
-        <cellpos>4,0</cellpos>
-        <cellspan>10,2</cellspan>
+        <cellpos>6,0</cellpos>
+        <cellspan>8,2</cellspan>
       </object>
       <object class="sizeritem">
         <object class="wxTextCtrl" name="pad2">
@@ -31,7 +31,7 @@
         <flag>wxBOTTOM|wxRIGHT|wxEXPAND</flag>
         <border>5</border>
         <cellpos>2,0</cellpos>
-        <cellspan>2,2</cellspan>
+        <cellspan>4,2</cellspan>
       </object>
       <object class="sizeritem">
         <object class="wxTextCtrl" name="pad3">
@@ -58,7 +58,7 @@
         <flag>wxBOTTOM|wxLEFT|wxEXPAND</flag>
         <border>5</border>
         <cellpos>2,8</cellpos>
-        <cellspan>2,2</cellspan>
+        <cellspan>4,2</cellspan>
       </object>
       <object class="sizeritem">
         <object class="wxTextCtrl" name="pad6">
@@ -66,8 +66,8 @@
         </object>
         <flag>wxLEFT|wxEXPAND</flag>
         <border>5</border>
-        <cellpos>4,8</cellpos>
-        <cellspan>10,2</cellspan>
+        <cellpos>6,8</cellpos>
+        <cellspan>8,2</cellspan>
       </object>
       <object class="sizeritem">
         <flag>wxEXPAND</flag>
@@ -207,6 +207,14 @@
       <vgap>0</vgap>
       <growablecols>1,2,3,4,5,6,7,8,9,10</growablecols>
       <growablerows>1,2,3,4,5,6,7,8,9,10,11,12,13,14</growablerows>
+      <object class="sizeritem">
+        <object class="wxTextCtrl" name="frame_id">
+          <style>wxTE_CENTRE</style>
+        </object>
+        <flag>wxEXPAND</flag>
+        <cellpos>14,0</cellpos>
+        <cellspan>1,10</cellspan>
+      </object>
     </object>
     <style>wxSUNKEN_BORDER</style>
   </object>

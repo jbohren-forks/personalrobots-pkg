@@ -47,20 +47,7 @@ from fingertip_pressure.msg import PressureInfo, PressureInfoElement
 from ethercat_hardware.msg import PressureState
 from visualization_msgs.msg import Marker
 from robot_msgs.msg import Vector3
-
-def color(data):
-    if data < 1000:
-        return (0,0,0)
-    if data < 3000:
-        x = (data-1000)/2000.
-        return 0,0,x
-    if data < 6000:
-        x = (data-3000)/3000.
-        return x,0,(1-x)
-    if data < 10000:
-        x = (data-6000)/4000.
-        return 1.0,x,x
-    return 1.0,1.0,1.0
+from fingertip_pressure.colormap import color
 
 #def norm(v):
 #    return sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
@@ -147,6 +134,6 @@ if __name__ == '__main__':
     pv2 = pressureVisualizer('pressure/l_gripper_motor')
     
     while not rospy.is_shutdown():
-        rospy.sleep(0.02)
+        rospy.sleep(0.09)
         pv1.publish()
         pv2.publish()
