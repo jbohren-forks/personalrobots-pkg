@@ -547,9 +547,9 @@ void SBPLDoorPlanner::publishDoor(const door_msgs::Door &door_in, const double &
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
   marker.pose.orientation.w = 1.0;
-  marker.scale.x = 0.1;
-  marker.scale.y = 0.1;
-  marker.scale.z = 0.1;
+  marker.scale.x = 0.03;
+  marker.scale.y = 0.03;
+  marker.scale.z = 0.03;
   marker.color.a = 1.0;
   marker.color.r = 1.0;
   marker.color.g = 1.0;

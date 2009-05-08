@@ -73,7 +73,7 @@ int main(int argc, char** argv)
   door.door_p1 = door.frame_p1;
   door.door_p2 = door.frame_p2;
 
-  door.handle.x = 0.65;
+  door.handle.x = 0.60;
   door.handle.y = -0.4;
   door.handle.z = 0.0;
 
