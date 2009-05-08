@@ -36,7 +36,13 @@
 #define IMAGE_H
 
 #include <stdlib.h>
+
+#ifdef __APPLE__
+#include <malloc/malloc.h>
+#else
 #include <malloc.h>
+#endif
+
 #include <stdarg.h>
 #include <math.h>
 #include <ctype.h>
@@ -62,8 +68,14 @@
 
 
 // alignment on allocation
+#ifdef __APPLE__
+#define MEMALIGN(x) malloc(x)
+#define MEMFREE(x) {if (x) free(x);}
+#else
 #define MEMALIGN(x) memalign(16,x)
 #define MEMFREE(x) {if (x) free(x);}
+#endif
+
 
 #ifndef COLOR_CODING_T
 typedef enum {
