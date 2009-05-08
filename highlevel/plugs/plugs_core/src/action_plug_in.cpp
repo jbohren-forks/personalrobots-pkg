@@ -115,7 +115,7 @@ void PlugInAction::plugMeasurementCallback(const tf::MessageNotifier<robot_msgs:
 {
   plugs_core::PlugInState state_msg;
 
-  ROS_INFO("recieved plug_pose Msg in callback");
+  //ROS_INFO("recieved plug_pose Msg in callback");
 
   if (!isActive())
     return;
