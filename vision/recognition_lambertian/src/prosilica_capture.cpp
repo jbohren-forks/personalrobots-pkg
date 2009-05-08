@@ -96,6 +96,7 @@ class ProsilicaCapture {
 	joy::Joy joy;
 	int capture_button_;
 	bool display_;
+	string data_root_;
 
 public:
 	ProsilicaCapture(ros::Node& node) : index(0), node_(node)
@@ -108,6 +109,7 @@ public:
 		node.param<string>("~base_laser", base_laser_topic_, "base_scan_marking");
 		node.param("~capture_button", capture_button_, 0);
 		node.param("~display", display_, false);
+		node.param<string>("~data_root", data_root_, "./");
 		node.subscribe<robot_msgs::PointCloud,ProsilicaCapture>(base_laser_topic_, base_cloud_, &ProsilicaCapture::laser_callback, this, 1);
 		node.subscribe<joy::Joy,ProsilicaCapture>("joy", joy, &ProsilicaCapture::joy_callback, this, 1);
 
@@ -374,17 +376,17 @@ public:
 	{
 		ROS_INFO("Saving data");
 		if (image!=NULL) {
-			char filename[160];
+			char filename[512];
 			// saving image
-			sprintf(filename, "frame%04u.jpg", index);
+			sprintf(filename, "%s/frame%04u.jpg", data_root_.c_str(), index);
 			cvSaveImage( filename, rectified );
 			ROS_INFO("Saved image %s", filename);
 
-			sprintf(filename, "rectified_frame%04u.jpg", index);
+			sprintf(filename, "%s/rectified_frame%04u.jpg", data_root_.c_str(), index);
 			cvSaveImage( filename, rectified );
 			ROS_INFO("Saved image %s", filename);
 
-			sprintf(filename, "base_laser%04u.jpg", index);
+			sprintf(filename, "%s/base_laser%04u.jpg", data_root_.c_str(), index);
 			cloud_io::savePCDFile (filename, base_cloud_, true);
 			ROS_INFO("Saved base point cloud %s", filename);
 			index++;
