@@ -1,4 +1,3 @@
 <launch>
-  <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
   <include file="$(find executive_trex_pr2)/test/doors/open_door.0/run_real.launch" />
 </launch>
