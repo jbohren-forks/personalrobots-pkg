@@ -80,8 +80,8 @@ DoorsTuckArmsAction::DoorsTuckArmsAction() :
     }
   }
 
-  double right_arm_traj[traj_size][num_joints] = {-1.07621251944, 1.34846354569, -2.07980536409, -2.05782565971, -1.98392338094, 1.16916459815, -7.72305424724};
-  double left_arm_traj[traj_size][num_joints] = {0,0,0,0,0,0,0};
+  double right_arm_traj[traj_size][num_joints] = {{-1.07621251944, 1.34846354569, -2.07980536409, -2.05782565971, -1.98392338094, 1.16916459815, -7.72305424724}};
+  double left_arm_traj[traj_size][num_joints] = {{0,0,0,0,0,0,0}};
                      
   right_traj_req_.hastiming = 0;
   right_traj_req_.requesttiming = 0;
