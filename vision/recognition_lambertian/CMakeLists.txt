@@ -11,7 +11,7 @@ rospack_add_boost_directories()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 
-rospack_add_executable(recognition_lambertian src/recognition_lambertian.cpp)
+rospack_add_executable(recognition_lambertian src/recognition_lambertian.cpp src/chamfer_matching.cpp)
 rospack_add_executable (plane_fit src/plane_fit.cpp)
 rospack_add_executable (publish_scene src/publish_scene.cpp)
 rospack_add_executable (prosilica_capture src/prosilica_capture.cpp)
