@@ -60,18 +60,18 @@ public:
   PointCloud cloud_msg_ ;
   boost::mutex cloud_mutex_ ;
   PointCloud safe_cloud_ ;
-  double cloud_counter_ ;
+  int cloud_counter_ ;
 
   LaserScan scan_msg_ ;
   boost::mutex scan_mutex_ ;
   LaserScan safe_scan_ ;
-  double scan_counter_ ;
+  int scan_counter_ ;
 
 
   void CloudCallback()
   {
-    cloud_counter_++;
     cloud_mutex_.lock() ;
+    cloud_counter_++ ;
     safe_cloud_ = cloud_msg_ ;
     cloud_mutex_.unlock() ;
     ROS_INFO("Got Cloud with %u points", cloud_msg_.get_pts_size()) ;
@@ -79,8 +79,8 @@ public:
 
   void ScanCallback()
   {
-    scan_counter_++ ;
     scan_mutex_.lock() ;
+    scan_counter_++ ;
     safe_scan_ = scan_msg_ ;
     scan_mutex_.unlock() ;
   }
@@ -112,18 +112,37 @@ TEST_F(TestAssembler, test)
                                (TestAssembler*)this, 10)) ;
 
   // wait while bag is played back
-  while (scan_counter_ == 0 && cloud_counter_ == 0)
+
+  int local_scan_counter_ ;
+
+  scan_mutex_.lock() ;
+  local_scan_counter_ = scan_counter_ ;
+  scan_mutex_.unlock() ;
+
+  while (scan_counter_ == 0)
     usleep(1e6) ;
-  while( scan_msg_.header.seq < last_seq)
+
+  bool waiting = true ;
+  while( waiting )
+  {
     usleep(1e4) ;
+
+    scan_mutex_.lock() ;
+    waiting = (scan_msg_.header.seq < last_seq) ;
+    scan_mutex_.unlock() ;
+
+  }
 
   usleep(1e6) ;
 
   ASSERT_EQ(cloud_counter_, (unsigned int)5) ;
 
+  unsigned int cloud_size ;
   cloud_mutex_.lock() ;
-  ASSERT_TRUE(safe_cloud_.get_pts_size() > 0) ;
+  cloud_size = safe_cloud_.get_pts_size() ;
   cloud_mutex_.unlock() ;
+
+  ASSERT_TRUE(cloud_size > 0) ;
 
   SUCCEED();
 }
