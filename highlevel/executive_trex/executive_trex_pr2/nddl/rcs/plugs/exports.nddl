@@ -12,6 +12,16 @@ class PlugsUntuckArms extends ROSAction {
   PlugsUntuckArms(Mode _mode){super(_mode);}
 };
 
+
+/**
+ * @brief Tuck arms after plugged in
+ */
+class PlugsTuckArms extends ROSAction {
+  predicate Active{}
+  predicate Inactive{}
+  PlugsTuckArms(Mode _mode){super(_mode);}
+};
+
 /**
  * @brief For placing the plug back on the base.
  * Leaves the arm in a free position out of the way so that we can confirm that the plug is stowed

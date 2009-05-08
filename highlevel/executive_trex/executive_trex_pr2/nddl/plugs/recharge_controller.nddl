@@ -35,7 +35,7 @@ class OutletState extends AgentTimeline {
     float qz;
     float qw;
     defaultOnCommit(frame_id, "base_footprint");
-    defaultOnCommit(x, 0.0);
+    defaultOnCommit(x, 3.0);
     defaultOnCommit(y, 0.0);
     defaultOnCommit(z, 0.0);
     defaultOnCommit(qx, 0.0);
@@ -112,10 +112,15 @@ RechargeController::Holds {
 
     if(recharged == true){
       if(plug_is_stowed == yes){
-	meets(Recharger.Inactive rc_inactive);
-	eq(rc_inactive.status, SUCCESS);
-	eq(duration, 1);
-	eq(s.active, false);
+        if (arms_tucked == true) {
+          meets(Recharger.Inactive rc_inactive);
+          eq(rc_inactive.status, SUCCESS);
+          eq(duration, 1);
+          eq(s.active, false);
+        }
+        else {
+          //contains_start(tuck_arms.Active cmd);
+        }
       }
       else{
 	if(plug_is_stowed == maybe){
@@ -146,19 +151,37 @@ RechargeController::Holds {
 	}
 	else {
 	  if(plug_in_hand == true){
+            starts_during(detect_outlet_coarse.Inactive coarse_feedback);
 	    contains_start(detect_outlet_fine.Active cmd);
+            eq(cmd.x, coarse_feedback.x);
+            eq(cmd.y, coarse_feedback.y);
+            eq(cmd.z, coarse_feedback.z);
+            eq(cmd.frame_id, coarse_feedback.frame_id);
 	    concurrent(cmd.end, end);
 	  }
 	  else {
 	    if(outlet_detected_coarse == true){
 	      if(in_position == false){
-		// Here, compute parameters based on the DETECTION_RANGE
+		// Here, compute parameters based on the PLUG_IN_RANGE
 		contains_start(move_base_local.Active cmd);
+                starts_during(detect_outlet_coarse.Inactive feedback);
+                plugs_get_offset_pose(feedback.x, feedback.y, 
+                                      feedback.z, feedback.qx, 
+                                      feedback.qy, feedback.qz,
+                                      feedback.qw, 0.5, cmd.x, cmd.y,
+                                      cmd.z, cmd.qx, cmd.qy,
+                                      cmd.qz, cmd.qw);
+                eq(cmd.frame_id, feedback.frame_id);
 		concurrent(cmd.end, end);
 	      }
 	      else {
 		if(ready_to_grasp == true){
 		  contains_start(move_and_grasp_plug.Active cmd);
+                  starts_during(detect_plug_on_base.Inactive feedback);
+                  eq(cmd.x, feedback.x);
+                  eq(cmd.y, feedback.y);
+                  eq(cmd.z, feedback.z);
+                  eq(cmd.frame_id, feedback.frame_id);
 		  concurrent(cmd.end, end);
 		}
 		else {
@@ -182,8 +205,13 @@ RechargeController::Holds {
 	      }
 	      else {
 		if(arms_tucked == true){
-		  // Here, compute parameters based on the PLUG_IN_RANGE
+		  // Here, compute parameters based on the DETECTION_RANGE
 		  contains_start(move_base_local.Active cmd);
+                  starts_during (outlet_state.Holds os);
+                  plugs_get_offset_pose(os.x, os.y, os.z, os.qx, os.qy, os.qz,
+                                        os.qw, 3.0, cmd.x, cmd.y, cmd.z,
+                                        cmd.qx, cmd.qy, cmd.qz, cmd.qw);
+                  eq(cmd.frame_id, os.frame_id);
 		  concurrent(cmd.end, end);
 		}
 		else {
@@ -314,5 +342,9 @@ MoveAndGraspPlug::Inactive{
     eq(rc.plug_in_hand, true);
     eq(rc.ready_to_grasp, false);
     eq(rc.plug_is_stowed, no);
+  }
+  if (status == ABORTED) {
+    starts(RechargeController.Holds rc);
+    eq(rc.ready_to_grasp, false);
   }
 }
