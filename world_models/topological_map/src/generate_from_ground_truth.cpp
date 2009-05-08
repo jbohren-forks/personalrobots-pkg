@@ -102,7 +102,7 @@ struct LineProjector
     double offset_y=p.y-y1;
     
     double proportion = (offset_x*dx + offset_y*dy)/squared_dist;
-    double dist = offset_x*offset_x + offset_y*offset_y - squared_dist*proportion*proportion;
+    double dist = sqrt(offset_x*offset_x + offset_y*offset_y - squared_dist*proportion*proportion);
 
     return std::make_pair(proportion, dist);
   }
@@ -137,9 +137,9 @@ RegionPtr getDoorCells (const Point2D& p1, const Point2D& p2, double width, doub
       Point2D p=cellCenter(Cell2D(r, c), resolution);
       double d, l;
       tie(l,d) = project(p);
-      if ((d<width*width) && (l > -length_error_threshold) && (l < 1+length_error_threshold)) {
+      
+      if ((l > -length_error_threshold) && (l < 1+length_error_threshold) && (d <= width*(1-3*pow(l-.5,2))))
         region->insert(Cell2D(r,c));
-      }
     }
   }
   return region;

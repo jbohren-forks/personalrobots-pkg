@@ -120,11 +120,12 @@ int main (int argc, char* argv[])
   //str = ofstream("local/gui-input.xml");
   // m->writeOutletsAndMap(str);
 
-
+  
   ifstream str3("/u/bhaskara/local/top/willow.tmap");
   double dx=-.4;
   tf::Transform trans(tf::Quaternion(.015,0,0), tf::Vector3(dx,0,0));
   TopologicalMap m3(str3, 1.0, 1e9, 1e9, trans);
+  
 
   ros::init(argc, argv, "tm_driver"); 
   tmap::Visualizer v(m3);
@@ -135,6 +136,7 @@ int main (int argc, char* argv[])
   while (true) {
     dur.sleep();
     v.visualize();
+    ros::spinOnce();
   }
 
 

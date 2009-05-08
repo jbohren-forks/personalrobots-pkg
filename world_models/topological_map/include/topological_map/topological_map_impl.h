@@ -259,7 +259,7 @@ private:
  
   const double resolution_;
 
-  const tf::Transform& transform_;
+  const tf::Transform transform_;
 
 };
 
