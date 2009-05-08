@@ -9,7 +9,7 @@
   <test test-name="hztest_test_scan" pkg="rostest" type="hztest" name="scan_test">
     <param name="topic" value="/visualization_marker" />  
     <param name="hz" value="880" />
-    <param name="hzerror" value="30" />
+    <param name="hzerror" value="40" />
     <param name="test_duration" value="3.0" />
     <param name="check_intervals" value="false" />    
   </test>
