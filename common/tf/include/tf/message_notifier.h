@@ -282,7 +282,7 @@ private:
         it = messages_.erase(it);
 	--message_count_;
         failed_transform_count_ ++;
-        NOTIFIER_DEBUG("Discarding Message %d , Out of the back of Cache Time.  Message Count now: %d", i, message_count_);
+        NOTIFIER_DEBUG("Discarding Message %d , Out of the back of Cache Time(stamp: %.3f + cache_length: %.3f < latest_transform_time %.3f.  Message Count now: %d", i, message->header.stamp.toSec(),  tf_->getCacheLength().toSec(), latest_transform_time.toSec(), message_count_);
         continue;
       }
       
