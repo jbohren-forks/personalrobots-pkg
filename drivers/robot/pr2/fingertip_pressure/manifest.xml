@@ -11,5 +11,6 @@ Package for publishing fingertip pressure sensor information.
 <depend package='robot_msgs' />
 <depend package='visualization_msgs' />
 <depend package='rostest' />
+<depend package='wxswig' />
 <repository>http://pr.willowgarage.com/repos</repository>
 </package>

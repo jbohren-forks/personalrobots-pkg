@@ -150,24 +150,32 @@ def pressureInformation(frame_id, orientation):
     multorientation(msg.center, orientation)
     multorientation(msg.halfside1, orientation)
     multorientation(msg.halfside2, orientation)
-    print "%e %e %e  %e %e %e  %e %e %e"%(msg.center[7].x, msg.center[7].y,
-            msg.center[7].z, msg.halfside1[7].x, msg.halfside1[7].y,
-            msg.halfside1[7].z, msg.halfside2[7].x, msg.halfside2[7].y,
-            msg.halfside2[7].z)
+    #print "%e %e %e  %e %e %e  %e %e %e"%(msg.center[7].x, msg.center[7].y,
+    #        msg.center[7].z, msg.halfside1[7].x, msg.halfside1[7].y,
+    #        msg.halfside1[7].z, msg.halfside2[7].x, msg.halfside2[7].y,
+    #        msg.halfside2[7].z)
     return msg
 
-def pressureInformationPublisher(topicname, info):
-    rospy.init_node('pressure_info', anonymous=True)
+class pressureInformationPublisher:
+    def __init__(self, dest, frame0, frame1):
+        self.info = []
+        self.info.append(pressureInformation(frame0, 1))
+        self.info.append(pressureInformation(frame1, -1))
+        self.publisher = rospy.Publisher(dest, PressureInfo)
 
-    publisher = rospy.Publisher(topicname, PressureInfo)
+    def publish(self):
+        self.publisher.publish(self.info)
+
+    
+if __name__ == '__main__':
+    #@todo it would be nice to read an xml configuration file to get these parameters.
+    rospy.init_node('pressure_info')
+    pip1=pressureInformationPublisher('pressure/r_gripper_motor_info', 
+            'r_gripper_r_finger_tip_link', 'r_gripper_l_finger_tip_link')
+    pip2=pressureInformationPublisher('pressure/l_gripper_motor_info', 
+            'l_gripper_r_finger_tip_link', 'l_gripper_l_finger_tip_link')
     
     while not rospy.is_shutdown():
         rospy.sleep(1)
-        publisher.publish(info)
-
-if __name__ == '__main__':
-    #@todo it would be nice to read an xml configuration file to get these parameters.
-    info = []
-    info.append(pressureInformation('r_gripper_r_finger_tip_link', 1))
-    info.append(pressureInformation('r_gripper_l_finger_tip_link', -1))
-    pressureInformationPublisher('pressure/r_gripper_motor_info', info)
+        pip1.publish()
+        pip2.publish()

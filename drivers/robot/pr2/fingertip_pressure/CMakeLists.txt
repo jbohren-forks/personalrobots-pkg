@@ -6,3 +6,5 @@ genmsg()
 add_definitions(-Wall)
 
 rospack_add_rostest(test/pressure_info_tests.xml)
+rospack_add_rostest(test/test_marker.xml)
+rospack_add_rostest(test/test_marker_sphere.xml)
