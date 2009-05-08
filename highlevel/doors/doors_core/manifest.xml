@@ -25,6 +25,7 @@
   <depend package="base_local_planner"/>
   <depend package="visualization_msgs"/>
   <depend package="door_functions"/>
+  <depend package="point_cloud_assembler"/>
 
  <export>
     <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib "/>
