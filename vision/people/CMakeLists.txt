@@ -45,6 +45,10 @@ rospack_add_executable(stereo_face_color_tracker
                        src/utils.cpp)
 rospack_link_boost(stereo_face_color_tracker thread)
 
+rospack_add_executable(stereo_color_tracker
+		      src/stereo_color_tracker.cpp)
+rospack_link_boost(stereo_color_tracker thread)
+
 rospack_add_executable(track_starter_gui
                        src/track_starter_gui.cpp 
                        src/utils.cpp)
