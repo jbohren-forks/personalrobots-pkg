@@ -31,7 +31,6 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: test_executive.cpp 14337 2009-04-23 18:40:13Z meeussen $
  *
  *********************************************************************/
 
@@ -106,24 +105,42 @@ int
 
   Duration(4.0).sleep();
 
+  // Takes down controllers that might already be up
+  switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
+  switchlist.stop_controllers.push_back("r_arm_joint_trajectory_controller");
+  switchlist.stop_controllers.push_back("head_controller");
+  switchlist.stop_controllers.push_back("laser_tilt_controller");
+  if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -1;
+
   // Tuck arms
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
   switchlist.start_controllers.push_back("r_arm_joint_trajectory_controller");
+  switchlist.start_controllers.push_back("head_controller");
+  switchlist.start_controllers.push_back("laser_tilt_controller");
   if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -1;
   if (tuck_arm.execute(empty, empty, Duration(20.0)) != robot_actions::SUCCESS) return -2;
 
   // Executes detect outlet (coarse)
-  robot_msgs::PointStamped junk;
-  junk.header.frame_id = "odom_combined";  // Necessary?
+  robot_msgs::PointStamped guess;
+  guess.header.frame_id = "odom_combined";  // Necessary?
+  guess.point.x = 4.0;
+  guess.point.y = 0.0;
+  guess.point.z = 0.4;
   robot_msgs::PoseStamped coarse_outlet_pose_msg;
-  if (detect_outlet_coarse.execute(junk, coarse_outlet_pose_msg, Duration(300.0)) != robot_actions::SUCCESS)
-    return -3;
+  int tries = 0;
+  while (detect_outlet_coarse.execute(guess, coarse_outlet_pose_msg, Duration(300.0)) != robot_actions::SUCCESS)
+  {
+    ++tries;
+    if (tries > 5)
+      return -3;
+    Duration(1.0).sleep();
+  }
 
   // Determines the desired base position
   tf::Pose coarse_outlet_pose;
   tf::PoseMsgToTF(coarse_outlet_pose_msg.pose, coarse_outlet_pose);
 
-  tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-0.6, 0.0, 0.0));
+  tf::Pose desi_offset(tf::Quaternion(0,0,0), tf::Vector3(-0.5, 0.25, 0.0));
   tf::Pose target = coarse_outlet_pose * desi_offset;
 
   robot_msgs::PoseStamped target_msg;

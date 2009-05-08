@@ -23,7 +23,9 @@ rospack_add_executable(action_runner src/action_untuck_arms.cpp
 rospack_add_executable(test_executive test/test_executive.cpp)
 rospack_add_executable(test_executive_outlet_coarse test/test_executive_outlet_coarse.cpp)
 rospack_add_executable(test_executive_hybrid test/test_executive_hybrid.cpp)
+
 rospack_add_executable(test_approach test/test_approach.cpp)
+rospack_add_executable(test_state_stow test/test_stage_stow.cpp)
 
 
 # check for OpenMP
