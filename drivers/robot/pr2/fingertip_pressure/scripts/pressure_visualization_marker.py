@@ -88,7 +88,7 @@ class pressureVisualizer:
         mk.ns = "pressure/" + mk.header.frame_id + "/line"
         mk.type = Marker.LINE_STRIP
         mk.action = Marker.ADD
-        mk.lifetime = rospy.Duration(1)
+        #mk.lifetime = rospy.Duration(1)
         mk.points = []
         for i in range(0,5):
             mk.points.append(Vector3())

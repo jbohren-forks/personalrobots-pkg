@@ -73,7 +73,7 @@ coordinates = [
         [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 5 mirrored 
         [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 6 mirrored 
         [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 7 translated
-        [ 30.5,  0.0,  0.0,   0.0,  0.0, -5.6,   6.0,  0.0,  0.0 ],    # 8 CHK
+        [ 30.5,  0.0,  0.0,   0.0,  0.0, -2.8,   3.0,  0.0,  0.0 ],    # 8 CHK
         [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 9 translated 
         [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 10
         [  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,  0.0 ],    # 11 translated 
@@ -117,7 +117,7 @@ mirror(3, 4)
 def translate(src, dest, dir, k):
     coordinates[dest] = list(coordinates[src])
     for i in range(0,3):
-        coordinates[dest][i] = coordinates[dest][i] + dir * coordinates[dest][i + 3 * k]
+        coordinates[dest][i] = coordinates[dest][i] + 2 * dir * coordinates[dest][i + 3 * k]
 
 # Generate the main array from #8
 translate(8, 7, 1, 1)

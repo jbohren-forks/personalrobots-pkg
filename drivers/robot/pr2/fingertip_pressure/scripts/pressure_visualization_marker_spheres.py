@@ -95,7 +95,7 @@ class pressureVisualizer:
         mk.ns = "pressure/" + frame + "/sphere"
         mk.type = Marker.SPHERE
         mk.action = Marker.ADD
-        mk.lifetime = rospy.Duration(1)
+        #mk.lifetime = rospy.Duration(1)
         mk.points = []
         for i in range(0,numsensors):
             mk.id = i
