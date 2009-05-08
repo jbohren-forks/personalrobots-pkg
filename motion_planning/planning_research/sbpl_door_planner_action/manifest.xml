@@ -4,6 +4,7 @@
   </description>
   <author>Sachin Chitta/schitta@willowgarage.com</author>
   <license>BSD</license>
+    <depend package="kdl" />
     <depend package="sbpl" />
     <depend package="roscpp"/>
     <depend package="rosconsole"/>

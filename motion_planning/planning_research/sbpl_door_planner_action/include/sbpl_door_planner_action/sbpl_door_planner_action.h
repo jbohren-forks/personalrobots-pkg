@@ -40,6 +40,7 @@
 
 /** TF **/
 #include <tf/tf.h>
+#include <tf/transform_datatypes.h>
 
 /** Messages needed for trajectory control and collision map**/
 #include <robot_msgs/Pose.h>
@@ -158,9 +159,18 @@ class SBPLDoorPlanner : public robot_actions::Action<door_msgs::Door, door_msgs:
 
   void publishFootprint(const pr2_robot_actions::Pose2D &position);
 
-  void publishDoor(const door_msgs::Door &door);
+  void publishDoor(const door_msgs::Door &door_in, const double &angle);
 
   costmap_2d::Costmap2DPublisher* costmap_publisher_;
 
   bool animate_;
+
+  double handle_hinge_distance_;
+
+  void animate(const robot_msgs::JointTraj &path);
+
+  tf::Stamped<tf::Pose> getGlobalHandlePosition(const door_msgs::Door &door, const double &local_angle);
+
+  double getHandleHingeDistance(const door_msgs::Door &door);
+
 };

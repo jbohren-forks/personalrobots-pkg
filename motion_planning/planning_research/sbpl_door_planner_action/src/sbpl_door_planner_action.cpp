@@ -28,11 +28,14 @@
  */
 
 #include <sbpl_door_planner_action/sbpl_door_planner_action.h>
+#include <kdl/frames.hpp>
 #include "door_msgs/Door.h"
 #include <ros/node.h>
+#include <visualization_msgs/Marker.h>
 
 using namespace std;
 using namespace ros;
+using namespace KDL;
 using namespace robot_actions;
 using namespace door_functions;
 
@@ -42,7 +45,7 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
 {
   ros_node_.param("~allocated_time", allocated_time_, 1.0);
   ros_node_.param("~forward_search", forward_search_, true);
-  ros_node_.param("~animate", animate_, false);
+  ros_node_.param("~animate", animate_, true);
 
   ros_node_.param("~planner_type", planner_type_, string("ARAPlanner"));
   ros_node_.param("~plan_stats_file", plan_stats_file_, string("/tmp/move_base_sbpl.log"));
@@ -76,10 +79,11 @@ SBPLDoorPlanner::SBPLDoorPlanner(ros::Node& ros_node, tf::TransformListener& tf)
   ros_node_.advertise<visualization_msgs::Polyline>("~global_plan", 1);
   ros_node_.advertise<visualization_msgs::Polyline>("~door/frame", 1);
   ros_node_.advertise<visualization_msgs::Polyline>("~door/door", 1);
+  ros_node_.advertise<visualization_msgs::Marker>( "visualization_marker",1);
 
   costmap_publisher_ = new costmap_2d::Costmap2DPublisher(ros_node_, 1.0, global_frame_, "costmap_publisher");
   if(costmap_publisher_->active())
-      costmap_publisher_->updateCostmapData(cost_map_);
+    costmap_publisher_->updateCostmapData(cost_map_);
 
 
   robot_msgs::Point pt;
@@ -104,9 +108,10 @@ SBPLDoorPlanner::~SBPLDoorPlanner()
   ros_node_.unadvertise("~global_plan");
   ros_node_.unadvertise("~door/frame");
   ros_node_.unadvertise("~door/door");
+  ros_node_.unadvertise("visualization_marker");
 
   if(costmap_publisher_ != NULL)
-      delete costmap_publisher_;
+    delete costmap_publisher_;
 
   if(cost_map_ros_ != NULL)
     delete cost_map_ros_;
@@ -176,23 +181,23 @@ bool SBPLDoorPlanner::removeDoor()
   const std::vector<robot_msgs::Point> door_polygon = door_functions::getPolygon(door_env_.door,door_env_.door_thickness); 
   if(cost_map_.setConvexPolygonCost(door_polygon,costmap_2d::FREE_SPACE))
     return true;
-    return false;
+  return false;
 }
 
 bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2_robot_actions::Pose2D &goal, robot_msgs::JointTraj &path)
 {
   ROS_INFO("[replan] getting fresh copy of costmap");
-    lock_.lock();
-    cost_map_ros_->getCostmapCopy(cost_map_);
-    ROS_INFO("Getting local cost map copy");
-    lock_.unlock();
-    // XXXX this is where we would cut out the doors in our local copy
-    clearRobotFootprint(cost_map_);
-    removeDoor();
+  lock_.lock();
+  cost_map_ros_->getCostmapCopy(cost_map_);
+  ROS_INFO("Getting local cost map copy");
+  lock_.unlock();
+  // XXXX this is where we would cut out the doors in our local copy
+  clearRobotFootprint(cost_map_);
+  removeDoor();
 
-    //after clearing the footprint... we want to push the changes to the costmap publisher
-    if(costmap_publisher_->active())
-      costmap_publisher_->updateCostmapData(cost_map_);
+  //after clearing the footprint... we want to push the changes to the costmap publisher
+  if(costmap_publisher_->active())
+    costmap_publisher_->updateCostmapData(cost_map_);
   
   ROS_INFO("[replan] replanning...");
   try {
@@ -233,15 +238,31 @@ bool SBPLDoorPlanner::makePlan(const pr2_robot_actions::Pose2D &start, const pr2
     // null pointer.  On planner errors, the createPlan() method
     // throws a std::exception.
     boost::shared_ptr<mpglue::waypoint_plan_t> plan(pWrap_->createPlan());
-	
     if (plan->empty()) 
     {
       ROS_ERROR("No plan found\n");
       return false;
     }
-    
-    path.points.clear();	// just paranoid
-    mpglue::PlanConverter::convertToJointTraj(plan.get(), &path);
+    else
+    {
+      path.points.clear();
+      ROS_INFO("Found a path with %d points",(int) plan->size());
+      for(int i=0; i < (int) plan->size(); i++)
+      {
+        robot_msgs::JointTrajPoint path_point;
+        mpglue::waypoint_s const * wpt((*plan)[i].get());
+        mpglue::door_waypoint_s const * doorwpt(dynamic_cast<mpglue::door_waypoint_s const *>(wpt));	
+        path_point.positions.push_back(doorwpt->x);
+        path_point.positions.push_back(doorwpt->y);
+        path_point.positions.push_back(doorwpt->theta);
+        path_point.positions.push_back(doorwpt->min_door_angle);
+        path_point.positions.push_back(doorwpt->plan_interval);
+        path.points.push_back(path_point);
+        ROS_INFO("Path point: %f %f %f %f %d",doorwpt->x,doorwpt->y,doorwpt->theta,doorwpt->min_door_angle,(int)doorwpt->plan_interval);
+      }
+    }
+    //path.points.clear();// just paranoid
+    //mpglue::PlanConverter::convertToJointTraj(plan.get(), &path);
     return true;
   }
   catch (std::runtime_error const & ee) {
@@ -259,7 +280,7 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
     return robot_actions::ABORTED;
   }
 
-  ROS_INFO("Current position: %f %f %f",global_pose_2D_.x,global_pose_2D_.y,global_pose_2D_.th);
+  ROS_DEBUG("Current position: %f %f %f",global_pose_2D_.x,global_pose_2D_.y,global_pose_2D_.th);
 
   if (!door_functions::transformTo(tf_,global_frame_,door_msg_in,door))
   {
@@ -267,7 +288,7 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
   }
   cout  << door;
 
-  ROS_INFO("Initializing planner and environment");
+  ROS_DEBUG("Initializing planner and environment");
    
   if(!initializePlannerAndEnvironment(door))
   {
@@ -275,12 +296,14 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
     return robot_actions::ABORTED;
   }
 
-  ROS_INFO("Door planner and environment initialized");
+  ROS_DEBUG("Door planner and environment initialized");
   goal_.x = (door.frame_p1.x+door.frame_p2.x)/2.0;
   goal_.y = (door.frame_p1.y+door.frame_p2.y)/2.0;
-  goal_.th = atan2(door.travel_dir.y,door.travel_dir.x);
+//  goal_.th = atan2(door.normal.y,door.normal.x);
+  KDL::Vector door_normal = getFrameNormal(door);
+  goal_.th = atan2(door_normal(1),door_normal(0));
 
-  ROS_INFO("Goal: %f %f %f",goal_.x,goal_.y,goal_.th);
+  ROS_DEBUG("Goal: %f %f %f",goal_.x,goal_.y,goal_.th);
   if(!isPreemptRequested())
   {
     if(!makePlan(global_pose_2D_, goal_, path))
@@ -289,63 +312,80 @@ robot_actions::ResultStatus SBPLDoorPlanner::execute(const door_msgs::Door& door
     }
     else
     {
-      ROS_INFO("Found solution");
+      ROS_DEBUG("Found solution");
     }
-
   }
 
   if(!isPreemptRequested())
-  {
     publishPath(path,"global_plan",0,1,0,0);
-  }
-  ROS_INFO("Done planning");
 
-  if(animate_)
-  {
-    publishDoor(door_env_.door);
+  handle_hinge_distance_ = getHandleHingeDistance(door);
 
-    for(int i=0; i < (int) path.get_points_size(); i++)
-    {
-      pr2_robot_actions::Pose2D draw;
-      draw.x = path.points[i].positions[0];
-      draw.y = path.points[i].positions[1];
-      draw.th = path.points[i].positions[2];
-      publishFootprint(draw);
-      sleep(1.0);
-    }
-  }
+  animate(path);
   return robot_actions::SUCCESS;
 }
 
-/*std::vector<double> SBPLDoorPlanner::getPlanDoorAngle(const robot_msgs::JointTraj &path, const double &door_goal_angle)
-{
 
+void SBPLDoorPlanner::animate(const robot_msgs::JointTraj &path)
+{
+  if(!animate_)
+  {
+    return;
+  }
+  for(int i=0; i < (int) path.get_points_size(); i++)
+  {
+    pr2_robot_actions::Pose2D draw;
+    draw.x = path.points[i].positions[0];
+    draw.y = path.points[i].positions[1];
+    draw.th = path.points[i].positions[2];
+    publishFootprint(draw);
+    publishDoor(door_env_.door,path.points[i].positions[3]);
+    sleep(1.0);
+  }
 }
-*/
+
+tf::Stamped<tf::Pose> SBPLDoorPlanner::getGlobalHandlePosition(const door_msgs::Door &door, const double &local_angle)
+{
+  door_msgs::Door door_in = door;
+  door_in.header.stamp = ros::Time::now();
+  tf::Stamped<tf::Pose> handle_pose = getGripperPose(door_in,local_angle,handle_hinge_distance_);
+  return handle_pose;
+}
+
+double SBPLDoorPlanner::getHandleHingeDistance(const door_msgs::Door &door)
+{
+  robot_msgs::Point32 hinge;
+  if(door.hinge == 0)
+    hinge = door.frame_p1;
+  else
+    hinge = door.frame_p2;
+  double result = sqrt((hinge.x-door.handle.x)*(hinge.x-door.handle.x)+(hinge.y-door.handle.y)*(hinge.y-door.handle.y));
+  return result;
+}
 
 void SBPLDoorPlanner::publishPath(const robot_msgs::JointTraj &path, std::string topic, double r, double g, double b, double a)
 {
-    visualization_msgs::Polyline gui_path_msg;
-    gui_path_msg.header.frame_id = global_frame_;
+  visualization_msgs::Polyline gui_path_msg;
+  gui_path_msg.header.frame_id = global_frame_;
 
-    //given an empty path we won't do anything
-    if(path.get_points_size() > 0){
-      // Extract the plan in world co-ordinates, we assume the path is all in the same frame
-      gui_path_msg.header.stamp = door_env_.door.header.stamp;
-      gui_path_msg.set_points_size(path.get_points_size());
-      for(unsigned int i=0; i < path.get_points_size(); i++){
-        gui_path_msg.points[i].x = path.points[i].positions[0];
-        gui_path_msg.points[i].y = path.points[i].positions[1];
-        gui_path_msg.points[i].z = path.points[i].positions[2];
-      }
+  //given an empty path we won't do anything
+  if(path.get_points_size() > 0){
+    // Extract the plan in world co-ordinates, we assume the path is all in the same frame
+    gui_path_msg.header.stamp = door_env_.door.header.stamp;
+    gui_path_msg.set_points_size(path.get_points_size());
+    for(unsigned int i=0; i < path.get_points_size(); i++){
+      gui_path_msg.points[i].x = path.points[i].positions[0];
+      gui_path_msg.points[i].y = path.points[i].positions[1];
+      gui_path_msg.points[i].z = path.points[i].positions[2];
     }
+  }
 
-    gui_path_msg.color.r = r;
-    gui_path_msg.color.g = g;
-    gui_path_msg.color.b = b;
-    gui_path_msg.color.a = a;
+  gui_path_msg.color.r = r;
+  gui_path_msg.color.g = g;
+  gui_path_msg.color.b = b;
+  gui_path_msg.color.a = a;
 
-    ros_node_.publish("~" + topic, gui_path_msg);
+  ros_node_.publish("~" + topic, gui_path_msg);
 }
 
 bool SBPLDoorPlanner::updateGlobalPose()
@@ -408,25 +448,25 @@ bool SBPLDoorPlanner::computeOrientedFootprint(const pr2_robot_actions::Pose2D &
 
 bool SBPLDoorPlanner::clearRobotFootprint(costmap_2d::Costmap2D& cost_map)
 {
-    std::vector<robot_msgs::Point> oriented_footprint;
-    computeOrientedFootprint(global_pose_2D_,footprint_,oriented_footprint);
+  std::vector<robot_msgs::Point> oriented_footprint;
+  computeOrientedFootprint(global_pose_2D_,footprint_,oriented_footprint);
 
-    //set the associated costs in the cost map to be free
-    if(!cost_map_.setConvexPolygonCost(oriented_footprint, costmap_2d::FREE_SPACE))
-    {
-      ROS_INFO("Could not clear footprint");
-      return false;
-    }
-    double max_inflation_dist = inflation_radius_ + inscribed_radius_;
-    //make sure to re-inflate obstacles in the affected region
-    cost_map.reinflateWindow(global_pose_2D_.x, global_pose_2D_.y, max_inflation_dist, max_inflation_dist);
-    return true;
+  //set the associated costs in the cost map to be free
+  if(!cost_map_.setConvexPolygonCost(oriented_footprint, costmap_2d::FREE_SPACE))
+  {
+    ROS_INFO("Could not clear footprint");
+    return false;
+  }
+  double max_inflation_dist = inflation_radius_ + inscribed_radius_;
+  //make sure to re-inflate obstacles in the affected region
+  cost_map.reinflateWindow(global_pose_2D_.x, global_pose_2D_.y, max_inflation_dist, max_inflation_dist);
+  return true;
 }
 
 void SBPLDoorPlanner::publishFootprint(const pr2_robot_actions::Pose2D &position)
 {
-   std::vector<robot_msgs::Point> oriented_footprint;
-   computeOrientedFootprint(position,footprint_,oriented_footprint);
+  std::vector<robot_msgs::Point> oriented_footprint;
+  computeOrientedFootprint(position,footprint_,oriented_footprint);
 
   visualization_msgs::Polyline robot_polygon;
   robot_polygon.header.frame_id = global_frame_;
@@ -453,11 +493,13 @@ void SBPLDoorPlanner::publishFootprint(const pr2_robot_actions::Pose2D &position
 }
 
 
-void SBPLDoorPlanner::publishDoor(const door_msgs::Door &door)
+void SBPLDoorPlanner::publishDoor(const door_msgs::Door &door_in, const double &angle)
 {
+  door_msgs::Door door = rotateDoor(door_in,angles::normalize_angle(angle-getFrameAngle(door_in)));
+
   visualization_msgs::Polyline marker_door;
   marker_door.header.frame_id = global_frame_;
-  marker_door.header.stamp = door.header.stamp;
+  marker_door.header.stamp = ros::Time();
   marker_door.set_points_size(2);
 
   marker_door.points[0].x = door.door_p1.x;
@@ -470,7 +512,7 @@ void SBPLDoorPlanner::publishDoor(const door_msgs::Door &door)
 
   visualization_msgs::Polyline marker_frame;
   marker_frame.header.frame_id = global_frame_;
-  marker_frame.header.stamp = door.header.stamp;
+  marker_frame.header.stamp =  ros::Time();
   marker_frame.set_points_size(2);
 
   marker_frame.points[0].x = door.frame_p1.x;
@@ -491,6 +533,29 @@ void SBPLDoorPlanner::publishDoor(const door_msgs::Door &door)
   marker_frame.color.b = 0;
   marker_frame.color.a = 0;
 
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = global_frame_;
+  marker.header.stamp = ros::Time();
+  marker.ns = "~";
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.position.x = door.handle.x;
+  marker.pose.position.y = door.handle.y;
+  marker.pose.position.z = 0.5;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.1;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
+  marker.color.a = 1.0;
+  marker.color.r = 1.0;
+  marker.color.g = 1.0;
+  marker.color.b = 1.0;
+
+  ros_node_.publish( "visualization_marker", marker );
   ros_node_.publish("~door/frame", marker_frame);
   ros_node_.publish("~door/door", marker_door);
 }
