@@ -165,9 +165,25 @@ def from_xyz_euler(xyz, euler):
   R = transformations.rotation_matrix_from_euler(euler[0], euler[1], euler[2], 'sxyz')
   return Pose(R[:3,:3], xyz)
 
+########################################################################
+class TimedClass:
+
+  def __init__(self, timing):
+    self.calls = 0
+    self.timer = {}
+    for t in timing:
+      self.timer[t] = Timer()
+
+  def summarize_timers(self):
+    print
+    print self.name()
+    for n,t in self.timer.items():
+      print "  %-20s %s" % (n, t.summ())
+  
+########################################################################
 import fast
 
-class FeatureDetector:
+class FeatureDetector(TimedClass):
 
   timing = []
 
@@ -179,10 +195,7 @@ class FeatureDetector:
     self.cold = True
     self.target_count = target_count
 
-    self.calls = 0
-    self.timer = {}
-    for t in self.timing + ['detect']:
-      self.timer[t] = Timer()
+    TimedClass.__init__(self, self.timing + ['detect'])
 
   def detect(self, frame):
 
@@ -207,11 +220,6 @@ class FeatureDetector:
         self.thresh *= 0.95
     self.timer['detect'].stop()
     return features
-
-  def summarize_timers(self):
-    print self.name()
-    for n,t in self.timer.items():
-      print "  %-20s %s" % (n, t.summ())
 
 # Feature detectors that return features in order (i.e. strongest first)
 # can be simpler.  Just always keep the threshold high enough to give
@@ -319,15 +327,12 @@ class FeatureDetectorStar(FeatureDetector):
 
 ########################################################################
 
-class DescriptorScheme:
+class DescriptorScheme(TimedClass):
 
   timing = []
 
   def __init__(self):
-    self.calls = 0
-    self.timer = {}
-    for t in self.timing + ['Match']:
-      self.timer[t] = Timer()
+    TimedClass.__init__(self, self.timing + ['Match'])
 
   def name(self):
     return self.__class__.__name__
@@ -358,11 +363,6 @@ class DescriptorScheme:
   def match(self, af0, af1):
     return self.match0(af0.kp, af0.descriptors, af1.kp, af1.descriptors)
 
-  def summarize_timers(self):
-    print self.name()
-    for n,t in self.timer.items():
-      print "  %-20s %s" % (n, t.summ())
-
 class DescriptorSchemeSAD(DescriptorScheme):
 
   def collect0(self, frame, kp):
@@ -380,7 +380,7 @@ class DescriptorSchemeSAD(DescriptorScheme):
 import calonder
 
 class DescriptorSchemeCalonder(DescriptorScheme):
-  timing = [ 'BuildMatcher', 'find' ]
+  timing = [ 'BuildMatcher', 'Collect', 'find' ]
 
   def __init__(self):
     self.cl = calonder.classifier()
@@ -391,8 +391,10 @@ class DescriptorSchemeCalonder(DescriptorScheme):
     DescriptorScheme.__init__(self)
 
   def collect0(self, frame, kp):
-    im = Image.fromstring("L", frame.size, frame.rawdata)
-    return self.cl.getSignatures(im, [ (x,y) for (x,y,d) in kp ])
+    self.timer['Collect'].start()
+    r = self.cl.getSignatures(frame.size, frame.rawdata, [ (x,y) for (x,y,d) in kp ])
+    self.timer['Collect'].stop()
+    return r
 
   def desc2matcher(self, descriptors):
     self.timer['BuildMatcher'].start()
@@ -431,13 +433,11 @@ class Track:
 
 import pe
 
-class VisualOdometer:
+class VisualOdometer(TimedClass):
 
   def __init__(self, cam, **kwargs):
     self.cam = cam
-    self.timer = {}
-    for t in ['feature', 'disparity', 'descriptor_collection', 'temporal_match', 'solve', 'tracks', 'sba' ]:
-      self.timer[t] = Timer()
+    TimedClass.__init__(self, ['temporal_match', 'solve'])
 
     #self.pe = VO.pose_estimator(*self.cam.params)
     self.pe = pe.PoseEstimator(*self.cam.params)
@@ -483,6 +483,7 @@ class VisualOdometer:
     return 1e3 * sum([t.sum for t in self.timer.values()]) / niter
 
   def summarize_timers(self):
+    TimedClass.summarize_timers(self)
     niter = self.num_frames
     print ""
     print "total number of keyframes/frames:", len(self.log_keyframes), "/", niter
@@ -494,16 +495,6 @@ class VisualOdometer:
       for n,t in self.timer.items():
         print "  %-20s %fms (%s)" % (n, 1e3 * t.sum / niter, t.summ())
       print "  %-20s %fms" % ("TOTAL", self.average_time_per_frame())
-
-  def find_keypoints(self, frame):
-    pass
-
-  def find_disparities(self, frame):
-    pass
-
-  lgrad = " " * (640 * 480)
-  def collect_descriptors(self, frame):
-    pass
 
   def temporal_match(self, af0, af1, want_distances = False):
     """ Match features between two frames.  Returns a list of pairs of indices into the features in the two frames, and optionally a distance value for each pair, if want_distances in True.  """
@@ -579,16 +570,18 @@ class VisualOdometer:
       return (0, None)
 
   def scavenger(self, diff_pose, af0, af1):
-    Xs = vop.array([k[0] for k in af1.kp])
-    Ys = vop.array([k[1] for k in af1.kp])
+    Xs = vop.array([k[0] for k in af1.features()])
+    Ys = vop.array([k[1] for k in af1.features()])
     pairs = []
     fwd_pose = ~diff_pose
-    for (i,(ki,di)) in enumerate(zip(af0.kp,af0.descriptors)):
+    ds = af1.descriptor_scheme
+    matcher = ds.desc2matcher(af1.descriptors())
+    for (i,(ki,di)) in enumerate(zip(af0.features(),af0.descriptors())):
       (x,y,d) = self.cam.cam2pix(*fwd_pose.xform(*self.cam.pix2cam(*ki)))
       predX = (abs(Xs - x) < 4)
       predY = (abs(Ys - y) < 4)
       hits = vop.where(predX & predY, 1, 0).tostring()
-      best = self.descriptor_scheme.search(di, af1, hits)
+      best = ds.search(di, matcher, hits)
       if best != None:
         pairs.append((i, best[0], best[1]))
     self.pairs = [(i0,i1) for (i0,i1,d) in pairs]
@@ -596,13 +589,13 @@ class VisualOdometer:
       import pylab
       f0,f1 = af0,af1
       for (a,b) in self.pairs:
-        pylab.plot([ f0.kp[a][0], f1.kp[b][0] ], [ f0.kp[a][1], f1.kp[b][1] ])
+        pylab.plot([ f0.features()[a][0], f1.features()[b][0] ], [ f0.features()[a][1], f1.features()[b][1] ])
       pylab.imshow(numpy.fromstring(af0.lf.tostring(), numpy.uint8).reshape(480,640), cmap=pylab.cm.gray)
-      pylab.scatter([x for (x,y,d) in f0.kp], [y for (x,y,d) in f0.kp], label = '%d kp' % f0.id, c = 'red')
-      pylab.scatter([x for (x,y,d) in f1.kp], [y for (x,y,d) in f1.kp], label = '%d kp' % f1.id, c = 'green')
+      pylab.scatter([x for (x,y,d) in f0.features()], [y for (x,y,d) in f0.features()], label = '%d kp' % f0.id, c = 'red')
+      pylab.scatter([x for (x,y,d) in f1.features()], [y for (x,y,d) in f1.features()], label = '%d kp' % f1.id, c = 'green')
       pylab.legend()
       pylab.show()
-    solution = self.solve(af0.kp, af1.kp, self.pairs)
+    solution = self.solve(af0.features(), af1.features(), self.pairs)
     return solution
 
   def maintain_tracks(self, f0, f1):
@@ -739,7 +732,6 @@ class VisualOdometer:
   def add_external_frame(self, frame, fext):
     self.find_keypoints(fext)
     self.find_disparities(fext)
-    self.collect_descriptors(fext)
     fext.id = self.ext_frames
     self.ext_frames += 1
     frame.externals.append((fext, VO.frame_pose(fext.id, fext.pose.tolist())))
@@ -748,7 +740,6 @@ class VisualOdometer:
   def setup_frame(self, frame):
     self.find_keypoints(frame)
     self.find_disparities(frame)
-    self.collect_descriptors(frame)
     frame.id = self.num_frames
     frame.ref_frame_id = None
 
@@ -758,8 +749,8 @@ class VisualOdometer:
     solution = self.solve(frame1.kp, frame2.kp, self.pairs)
     self.inl = solution[0]
 
-  def change_keyframe(self, newkey):
-    print "Change keyframe from", self.keyframe.id, "to", newkey.id
+  def change_keyframe(self, newkey, reason):
+    print "Change keyframe from", self.keyframe.id, "to", newkey.id, ":", reason
     self.log_keyframes.append(newkey.id)
     self.log_keyposes.append(newkey.pose)
     oldkey = self.keyframe
@@ -801,9 +792,13 @@ class VisualOdometer:
       self.outl = len(self.pairs) - inl
       frame.diff_pose = diff_pose
 #      print "frame", frame.id, "key:", ref.id, "inliers:", inl, "angle_thresh", self.angle_thresh
-      is_far = (self.inl < self.inlier_thresh) or Pose().further_than(diff_pose, self.position_thresh, self.angle_thresh)
-      if (self.keyframe != self.prev_frame) and is_far: 
-        self.change_keyframe(self.prev_frame)
+      newkey_reason = None
+      if (self.inl < self.inlier_thresh):
+        newkey_reason = "Too few inliers (%d < %d)" % (self.inl, self.inlier_thresh)
+      elif Pose().further_than(diff_pose, self.position_thresh, self.angle_thresh):
+        newkey_reason = "Passed position thresh"
+      if (self.keyframe != self.prev_frame) and newkey_reason:
+        self.change_keyframe(self.prev_frame, newkey_reason)
         return self.handle_frame_0(frame)
       Tok = ref.pose
       Tkp = diff_pose
