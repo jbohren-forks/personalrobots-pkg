@@ -89,15 +89,16 @@ class reader:
       self.f += 1
 
 class CVreader(reader):
-  
+
   def from_msg(self, m):
     ma = m.uint8_data # MultiArray
+    if len(ma.layout.dim) == 0:
+      return None
     dim = dict([ (d.label,d.size) for d in ma.layout.dim ])
     (w,h) = (dim['width'], dim['height'])
     im = cv.CreateImageHeader((w,h), cv.IPL_DEPTH_8U, dim['channel'])
     cv.SetData(im, ma.data, dim['width'] * dim['channel'])
     return im
-
 
   def from_file(self, filename):
     return cv.LoadImage(filename, cv.CV_LOAD_IMAGE_UNCHANGED)

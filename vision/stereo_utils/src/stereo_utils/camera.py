@@ -30,10 +30,10 @@ class Camera:
     ])
 
     self.Q = numpy.array([
-      [ 1, 0,  0, -Crx ],
+      [ 1, 0,  0, -Clx ],
       [ 0, 1,  0, -Cy ],
       [ 0, 0,  0,  Fx ],
-      [ 0, 0, 1 / Tx, 0 ]
+      [ 0, 0, 1 / Tx, (Crx-Clx)/Tx ]
     ])
 
   def __cmp__(self, other):
@@ -67,10 +67,10 @@ class Camera:
       return (x / w, y / w, z / w)
     else:
       (Fx, Fy, Tx, Clx, Crx, Cy) = self.params
-      x = u - Crx
+      x = u - Clx
       y = v - Cy
       z = Fx
-      w = d / Tx
+      w = (d + (Crx-Clx)) / Tx
       return (x / w, y / w, z / w)
 
   def cam2pixLR(self, X, Y, Z):

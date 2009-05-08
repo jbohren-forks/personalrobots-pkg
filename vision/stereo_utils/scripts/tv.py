@@ -53,15 +53,16 @@ cv.NamedWindow("tv", 1)
 for cam,l_image,r_image,label in playlist(sys.argv[1:]):
   ipl = l_image
   msg = "%4d" % framecounter
-  size,_ = cv.GetTextSize(msg, font)
+  (w,h),baseline = cv.GetTextSize(msg, font)
+  (_, imageh) = cv.GetSize(l_image)
 
   # Gray out the top-left rectangle
-  cv.SetImageROI(ipl, (0, 0, size[0] + 1, size[1] + 3))
+  cv.SetImageROI(ipl, (0, imageh+baseline, w + 1, imageh))
   cv.ConvertScale(ipl, ipl, 0.75)
   cv.ResetImageROI(ipl)
 
   # Draw the time
-  cv.PutText(ipl, msg, (0,1+size[1]), font, (255,255,255))
+  cv.PutText(ipl, msg, (0,imageh+baseline), font, (255,255,255))
 
   cv.ShowImage("tv", ipl)
 
