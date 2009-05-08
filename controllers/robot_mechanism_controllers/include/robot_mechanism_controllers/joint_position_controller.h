@@ -65,6 +65,7 @@
 
 //Realtime publisher
 #include <robot_mechanism_controllers/JointControllerState.h>
+#include <robot_mechanism_controllers/JointTuningMsg.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_tools.h>
 
@@ -160,6 +161,7 @@ private:
   std_msgs::Float64 cmd_;                      /**< The command from the subscription. */
   //publisher
   realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState>* controller_state_publisher_ ;
+  realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointTuningMsg>* tuning_publisher_ ;
   //controller
   JointPositionController *c_;                 /**< The controller. */
   control_toolbox::PidGainsSetter pid_tuner_;

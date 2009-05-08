@@ -170,10 +170,15 @@ JointPositionControllerNode::JointPositionControllerNode(): node_(ros::Node::ins
 {
   c_ = new JointPositionController();
   controller_state_publisher_ = NULL;
+  tuning_publisher_ = NULL;
 }
 
 JointPositionControllerNode::~JointPositionControllerNode()
 {
+  if(tuning_publisher_){
+    tuning_publisher_->stop();
+    delete tuning_publisher_;
+  }
   controller_state_publisher_->stop();
   delete controller_state_publisher_;
   delete c_;
@@ -183,6 +188,23 @@ void JointPositionControllerNode::update()
 {
   static int count = 0;
   c_->update();
+
+  if(count % 1 == 0)
+  {
+    if(tuning_publisher_ && tuning_publisher_->trylock())
+    {
+      double command;
+      c_->getCommand(command);
+      tuning_publisher_->msg_.set_point       = command;
+      tuning_publisher_->msg_.position        = c_->joint_state_->position_;
+      tuning_publisher_->msg_.velocity        = c_->joint_state_->velocity_;
+      tuning_publisher_->msg_.torque_measured = c_->joint_state_->applied_effort_;
+      tuning_publisher_->msg_.torque          = c_->joint_state_->commanded_effort_;
+      tuning_publisher_->msg_.time_step       = c_->dt_;
+
+      tuning_publisher_->unlockAndPublish();
+    } 
+  }
 
   if(count % 10 == 0)
   {
@@ -216,6 +238,15 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   if (controller_state_publisher_ != NULL)
     delete controller_state_publisher_ ;
   controller_state_publisher_ = new realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointControllerState> (service_prefix_+"/state", 1) ;
+
+  if (tuning_publisher_ != NULL){
+    delete tuning_publisher_ ;
+    tuning_publisher_ = NULL;
+  }
+  TiXmlElement *j = config->FirstChildElement("joint");
+  if (j && j->Attribute("tuning") && std::string(j->Attribute("tuning")) == "true"){
+    tuning_publisher_ = new realtime_tools::RealtimePublisher <robot_mechanism_controllers::JointTuningMsg> (service_prefix_+"/tuning", 1) ;
+  }
 
   // Parses subcontroller configuration
   if (!c_->initXml(robot, config))
