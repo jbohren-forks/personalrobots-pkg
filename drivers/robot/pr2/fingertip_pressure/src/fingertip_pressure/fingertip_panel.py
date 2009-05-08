@@ -116,7 +116,9 @@ class GripperPressurePanel(wx.Panel):
 
         if self.new_info_ != None:
             self.panel0.new_frame(self.new_info_.sensor[0].frame_id)
-            self.panel1.new_frame(self.new_info_.sensor[0].frame_id)
+            self.panel1.new_frame(self.new_info_.sensor[1].frame_id)
+            self.panel0.set_scalings(self.new_info_.sensor[0].force_per_unit)
+            self.panel1.set_scalings(self.new_info_.sensor[1].force_per_unit)
             self.new_info_ = None
             self.Refresh()
 
@@ -132,6 +134,8 @@ class FingertipPressurePanel:
         bag =self.panel.GetSizer()
         bag.SetEmptyCellSize(wx.Size(0,0)) 
 
+        self.scalings = None
+
         self.pad = []
         for i in range(0, NUMSENSORS):
             self.pad.append(xrc.XRCCTRL(self.panel, 'pad%i'%i))
@@ -139,8 +143,11 @@ class FingertipPressurePanel:
             font = self.pad[i].GetFont()
             font.SetPointSize(6)
             self.pad[i].SetFont(font)
-            self.pad[i].SetMinSize(wx.Size(40,30))
+            self.pad[i].SetMinSize(wx.Size(40,35))
         self.frame_id_box = xrc.XRCCTRL(self.panel, 'frame_id')
+
+    def set_scalings(self, new_scalings):
+        self.scalings = new_scalings
 
     def new_message(self, data):
         #print "FingertipPressurePanel new_message"
@@ -150,7 +157,11 @@ class FingertipPressurePanel:
             (colb,colf)=txtcolor(data[i])
             self.pad[i].SetBackgroundColour(colb)
             self.pad[i].SetForegroundColour(colf)
-            self.pad[i].SetValue('#%i\n%i'%(i,data[i]))
+            if self.scalings != None:
+                scaled = '%5.2f'%(data[i]/self.scalings[i])
+            else:
+                scaled = '??'
+            self.pad[i].SetValue('#%i\n%i\n%s N'%(i,data[i],scaled))
            
     def new_frame(self, frame_id):
         self.frame_id_box.SetValue(frame_id)
