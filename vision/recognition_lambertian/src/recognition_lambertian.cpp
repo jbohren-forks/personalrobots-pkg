@@ -242,14 +242,9 @@ private:
 
 
 
-    void showMatch(IplImage* img, const ChamferMatch& match)
+    void showMatch(IplImage* img, ChamferMatch& match)
     {
-    	const template_coords_t& templ_coords = match.tpl->coords;
-    	for (size_t i=0;i<templ_coords.size();++i) {
-    		int x = match.offset.x + templ_coords[i].first;
-    		int y = match.offset.y + templ_coords[i].second;
-    		CV_PIXEL(unsigned char, img,x,y)[1] = 255;
-    	}
+    	match.show(img);
     }
 
 

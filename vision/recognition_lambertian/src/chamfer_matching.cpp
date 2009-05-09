@@ -35,6 +35,7 @@
 // Author: Marius Muja
 
 #include <queue>
+#include <algorithm>
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
@@ -316,7 +317,7 @@ void ChamferTemplate::rescale(float scale)
 
 
 
-void ChamferTemplate::show()
+void ChamferTemplate::show() const
 {
 	IplImage* templ_color = cvCreateImage(size, IPL_DEPTH_8U, 3);
 
@@ -383,7 +384,6 @@ ChamferMatch ChamferMatching::matchEdgeImage(IplImage* edge_img)
 {
 	ChamferMatch cm;
 
-	cm.distance = 1e10; // very big distance
 	IplImage* dist_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
 	IplImage* orientation_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32F, 1);
 	IplImage* annotated_img = cvCreateImage(cvSize(edge_img->width, edge_img->height), IPL_DEPTH_32S, 2);
@@ -609,20 +609,17 @@ void ChamferMatching::matchTemplate(IplImage* dist_img, IplImage* orientation_im
 		templ_addr.push_back(coords[i].second*width+coords[i].first);
 	}
 
+
 	// do sliding window
 	for (int y=0;y<dist_img->height - tpl.size.height; y+=2) {
 		for (int x=0;x<dist_img->width - tpl.size.width; x+=2) {
-				CvPoint test_offset;
-				test_offset.x = x;
-				test_offset.y = y;
-				float test_dist = localChamferDistance(dist_img, orientation_img, templ_addr, tpl.orientations, test_offset);
+				CvPoint offset;
+				offset.x = x;
+				offset.y = y;
+				float cost = localChamferDistance(dist_img, orientation_img, templ_addr, tpl.orientations, offset);
 
-				if (test_dist<cm.distance) {
-	 		    	printf("Distance: %f\n", cm.distance);
-					cm.distance = test_dist;
-					cm.offset = test_offset;
-					cm.tpl = &tpl;
-				}
+				cm.addMatch(cost, offset, tpl);
+
 		}
 	}
 
@@ -638,3 +635,59 @@ void ChamferMatching::matchTemplates(IplImage* dist_img, IplImage* orientation_i
 
 
 
+void ChamferMatch::addMatch(float cost, CvPoint offset, const ChamferTemplate& tpl)
+{
+	if (cost<0.5) {
+		ChamferMatchInstance cmi;
+		cmi.cost = cost;
+		cmi.offset = offset;
+		cmi.tpl = &tpl;
+		matches.push_back(cmi);
+	}
+}
+
+
+template<typename T>
+class CostComparator
+{
+public:
+	bool operator()(const T& a, const T& b)
+	{
+		return a.cost<b.cost;
+	}
+};
+
+
+struct MatchCenter {
+	int x;
+	int y;
+	int count;
+};
+
+
+//void ChamferMatch::getMatches()
+//{
+//	vector<MatchCenter> centers;
+//
+//	for (size_t i=0;i<matches.size();++i) {
+//		for (size_t j=0;j<matches.size();++j) {
+//
+//		}
+//	}
+//}
+
+void ChamferMatch::show(IplImage* img)
+{
+	CostComparator<ChamferMatchInstance> less;
+	sort(matches.begin(), matches.end(), less);
+
+	for (size_t i=0;i<2;++i) {
+		ChamferMatchInstance match = matches[i];
+		const template_coords_t& templ_coords = match.tpl->coords;
+		for (size_t i=0;i<templ_coords.size();++i) {
+			int x = match.offset.x + templ_coords[i].first;
+			int y = match.offset.y + templ_coords[i].second;
+			CV_PIXEL(unsigned char, img,x,y)[1] = 255;
+		}
+	}
+}

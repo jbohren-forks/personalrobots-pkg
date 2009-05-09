@@ -96,7 +96,7 @@ public:
 	 */
 	void rescale(float scale);
 
-	void show();
+	void show() const;
 };
 
 
@@ -105,11 +105,22 @@ public:
  */
 class ChamferMatch
 {
+	class ChamferMatchInstance {
+	public:
+		float cost;
+		CvPoint offset;
+		const ChamferTemplate* tpl;
+	};
+
+	vector<ChamferMatchInstance> matches;
+
 public:
-	CvPoint offset;
-	float distance;
-	const ChamferTemplate* tpl;
+
+	void addMatch(float cost, CvPoint offset, const ChamferTemplate& tpl);
+	void show(IplImage* img);
 };
+
+
 
 
 
