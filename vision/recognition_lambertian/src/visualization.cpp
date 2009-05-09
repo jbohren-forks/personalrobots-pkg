@@ -50,7 +50,7 @@ void publishNormals(ros::Node* node, robot_msgs::PointCloud points, vector<robot
 	marker.type = visualization_msgs::Marker::LINE_LIST;
 	marker.action = visualization_msgs::Marker::ADD;
 	marker.pose.orientation.w = 1.0;
-	marker.scale.x = 0.01;
+	marker.scale.x = 0.002;
 	marker.color.a = 1.0;
 	marker.color.g = 1.0;
 
