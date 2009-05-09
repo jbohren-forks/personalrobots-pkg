@@ -109,7 +109,7 @@ public:
 	ros::Time transform_expiration = ros::Time::now();
 	tf::Stamped<tf::Transform> tmp_tf_stamped(latest_tf.inverse(),
 						  transform_expiration,
-						  "odom", "base_link");
+						  "base_link", "odom");
 	tfb.sendTransform(tmp_tf_stamped);
 	
 
