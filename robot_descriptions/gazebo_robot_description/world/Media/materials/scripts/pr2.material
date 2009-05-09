@@ -170,4 +170,20 @@ material PR2/bl_caster_r_wheel_link
 }
 
 
+material PR2/Shiny
+{
+	technique
+	{
+		pass
+		{
+			ambient 0.75 0.75 0.75
+			texture_unit
+			{
+				texture Chrome.jpg
+				env_map spherical
+			}
+		}
+	}
+}
+
 

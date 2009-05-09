@@ -204,7 +204,7 @@
     <visual >
       <origin xyz="0.0 ${handle_length/2-0.01} 0.0" rpy="${1*M_PI/2} 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Black" />
+        <elem key="material" value="PR2/Shiny" />
       </map>
       <geometry name="sholder_roll_mesh_file">
         <mesh scale="0.02 0.02 ${handle_length}" />
@@ -239,7 +239,7 @@
     <visual >
       <origin xyz="0.025 0.0 0.0" rpy="0 ${1*M_PI/2.0} 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Black" />
+        <elem key="material" value="PR2/Shiny" />
       </map>
       <geometry name="sholder_roll_mesh_file">
         <mesh scale="0.02 0.02 0.05" />
@@ -275,7 +275,7 @@
     <visual >
       <origin xyz="0.025 0.0 0.0" rpy="0 ${1*M_PI/2.0} 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Black" />
+        <elem key="material" value="PR2/Shiny" />
       </map>
       <geometry name="sholder_roll_mesh_file">
         <mesh scale="0.02 0.02 0.05" />
@@ -311,7 +311,7 @@
     <visual >
       <origin xyz="0.06 0.0 0.0" rpy="0 ${1*M_PI/2.0} 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/Black" />
+        <elem key="material" value="PR2/Shiny" />
       </map>
       <geometry name="sholder_roll_mesh_file">
         <mesh scale="0.06 0.06 0.02" />
@@ -327,6 +327,41 @@
       </map>
     </collision>
     <map name="handle3_options" flag="gazebo">
+      <elem key="turnGravityOff" value="true" />
+      <elem key="selfCollide" value="true" />
+    </map>
+  </link>
+
+  <link name="keyhold_link">
+    <parent name="door_link" />
+    <origin xyz="-0.11 -0.8 ${handle_height-0.05+0.15}" rpy="${0*M_PI/2.0} 0 0" />
+    <joint name="keyhold_joint" type="fixed" />
+    <inertial >
+      <mass value="0.1" />
+      <com xyz="0.0 0.0 0.0" /> 
+      <inertia  ixx="0.01"  ixy="0.0"  ixz="0.0"
+                iyy="0.01" iyz="0.0"
+                izz="0.001" />
+    </inertial>
+    <visual >
+      <origin xyz="0.0 0.0 0.0" rpy="0 ${1*M_PI/2.0} 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material" value="PR2/Shiny" />
+      </map>
+      <geometry name="sholder_roll_mesh_file">
+        <mesh scale="0.06 0.06 0.02" />
+      </geometry>
+    </visual>
+    <collision >
+      <origin xyz="0.0 0.0 0.0" rpy="0 ${1*M_PI/2.0} 0" />
+      <geometry name="keyhold_collision_geom">
+        <cylinder radius="0.03" length="0.02" />
+      </geometry>
+      <map name="keyhold_intensity" flag="gazebo">
+        <elem key="laserRetro" value="100.0" />
+      </map>
+    </collision>
+    <map name="keyhold_options" flag="gazebo">
       <elem key="turnGravityOff" value="true" />
       <elem key="selfCollide" value="true" />
     </map>
