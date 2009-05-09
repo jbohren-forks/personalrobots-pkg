@@ -14,6 +14,33 @@
   <property name="wheel_length" value="0.02" />
   <property name="caster_wheel_offset_y" value="0.17" />
 
+  <map name="sensor" flag="gazebo">
+    <verbatim key="ros_time_controller">
+      <controller:ros_time name="ros_time" plugin="libros_time.so">
+	<alwaysOn>true</alwaysOn>
+	<updateRate>1000.0</updateRate>
+	<interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
+      </controller:ros_time>
+    </verbatim>
+  </map>
+
+
+  <map name="sensor" flag="gazebo">
+    <verbatim key="base_controller">
+      <controller:ros_p3d name="p3d_base_controller" plugin="libros_p3d.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>100.0</updateRate>
+        <bodyName>base_link</bodyName>
+        <topicName>base_pose_ground_truth</topicName>
+        <gaussianNoise>0.01</gaussianNoise>
+        <frameName>map</frameName>
+        <xyzOffsets>25.7 25.7 0</xyzOffsets> <!-- initialize odometry for fake localization-->
+        <rpyOffsets>0 0 0</rpyOffsets>
+        <interface:position name="p3d_base_position"/>
+      </controller:ros_p3d>
+    </verbatim>
+  </map>
+
   <link name="base_link">
     <parent name="world" />
     <origin xyz="0 0 0.051" rpy="0 0 0" />
