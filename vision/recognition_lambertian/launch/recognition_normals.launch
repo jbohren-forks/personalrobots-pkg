@@ -1,0 +1,13 @@
+
+<launch>
+
+ <node pkg="recognition_lambertian" name="plane_fit" type="plane_fit" respawn="false"/>
+ <node pkg="recognition_lambertian" name="publish_scene" type="publish_scene" respawn="false" output="screen"/>
+ <node pkg="recognition_lambertian" type="publish_stereo_data.py" respawn="false"/>
+ <!--node pkg="recognition_lambertian" name="rec_lam_normal_features" type="rec_lam_normal_features" respawn="false" output="screen">
+   <param name="display" type="bool" value="true" />
+ </node-->
+
+   <param name="/recognition_lambertian/display" type="bool" value="true" />
+</launch>
+
