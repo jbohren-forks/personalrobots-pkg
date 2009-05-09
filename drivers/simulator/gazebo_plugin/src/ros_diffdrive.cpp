@@ -28,7 +28,9 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <ros/node.h>
+#include "tf/transform_broadcaster.h"
 #include <robot_msgs/PoseDot.h>
+#include <deprecated_msgs/RobotBase2DOdom.h>
 
 gazebo::PositionIface *posIface = NULL;
 robot_msgs::PoseDot cmd_msg;
@@ -86,8 +88,51 @@ public:
     
     ros::Node n("gazebo_diffdrive");
     ros::Node::instance()->subscribe("/cmd_vel", cmd_msg, &DiffDrive::cmdVelCallBack, this, 10);
+    ros::Node::instance()->advertise<deprecated_msgs::RobotBase2DOdom>("odom", 1);
+   
+    deprecated_msgs::RobotBase2DOdom odom;
+    tf::TransformBroadcaster tfb(*ros::Node::instance());
+
+    ros::Duration d; d.fromSec(0.01);
     
-    n.spin();
+    while(n.ok()) { 
+      if (posIface) {
+	posIface->Lock(1);
+	
+	btQuaternion qt; qt.setEulerZYX(posIface->data->pose.yaw, posIface->data->pose.pitch, posIface->data->pose.roll);
+	btVector3 vt(posIface->data->pose.pos.x, posIface->data->pose.pos.y, posIface->data->pose.pos.z);
+
+	tf::Transform latest_tf(qt, vt);
+
+	// We want to send a transform that is good up until a
+	// tolerance time so that odom can be used
+	ros::Time transform_expiration = ros::Time::now();
+	tf::Stamped<tf::Transform> tmp_tf_stamped(latest_tf.inverse(),
+						  transform_expiration,
+						  "odom", "base_link");
+	tfb.sendTransform(tmp_tf_stamped);
+	
+
+	
+	odom.pos.x = posIface->data->pose.pos.x;
+	odom.pos.y = posIface->data->pose.pos.y;
+	odom.pos.th = posIface->data->pose.yaw;
+	odom.vel.x = posIface->data->velocity.pos.x;
+	odom.vel.y = posIface->data->velocity.pos.y;
+	odom.vel.th = posIface->data->velocity.yaw;
+	odom.stall = 0;
+	
+	odom.header.frame_id = "odom"; 
+	
+	odom.header.stamp = transform_expiration;
+	 
+	ros::Node::instance()->publish("odom", odom); 
+
+
+	posIface->Unlock();
+      }
+      d.sleep();
+    }
   }
 };
 
