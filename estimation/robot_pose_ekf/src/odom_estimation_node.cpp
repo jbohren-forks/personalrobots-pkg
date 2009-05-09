@@ -241,6 +241,10 @@ namespace estimation
     vo_ = *vo;
     vo_stamp_ = vo_.header.stamp;
     vo_time_  = Time::now();
+    if (!robot_state_.canTransform("stereo_link","base_link", vo_stamp_)){
+      ROS_ERROR("Cannot transform between stereo_link and base_link. Ignoring the incoming VO message");
+      return;
+    }
     robot_state_.lookupTransform("stereo_link","base_link", vo_stamp_, camera_base_);
     PoseMsgToTF(vo_.pose, vo_meas_);
     

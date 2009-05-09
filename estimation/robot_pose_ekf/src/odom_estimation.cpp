@@ -188,6 +188,10 @@ namespace estimation
     // process odom measurement
     // ------------------------
     if (odom_active){
+      if (!transformer_.canTransform("base_footprint","wheelodom", filter_time)){
+        ROS_ERROR("filter time older than odom message buffer");
+        return false;
+      }
       transformer_.lookupTransform("base_footprint","wheelodom", filter_time, odom_meas_);
       if (odom_initialized_){
 	// convert absolute odom measurements to relative odom measurements in horizontal plane
@@ -211,6 +215,10 @@ namespace estimation
     // process imu measurement
     // -----------------------
     if (imu_active){
+      if (!transformer_.canTransform("base_footprint","imu", filter_time)){
+        ROS_ERROR("filter time older than imu message buffer");
+        return false;
+      }
       transformer_.lookupTransform("base_footprint","imu", filter_time, imu_meas_);
       if (imu_initialized_){
 	// convert absolute imu yaw measurement to relative imu yaw measurement 
@@ -234,6 +242,10 @@ namespace estimation
     // process vo measurement
     // ----------------------
     if (vo_active){
+      if (!transformer_.canTransform("base_footprint","vo", filter_time)){
+        ROS_ERROR("filter time older than vo message buffer");
+        return false;
+      }
       transformer_.lookupTransform("base_footprint","vo", filter_time, vo_meas_);
       if (vo_initialized_){
 	// convert absolute vo measurements to relative vo measurements
@@ -284,6 +296,10 @@ namespace estimation
   void OdomEstimation::getEstimate(Time time, Transform& estimate)
   {
     Stamped<Transform> tmp;
+    if (!transformer_.canTransform("base_footprint","odom", time)){
+      ROS_ERROR("Cannot get transform at time %f", time.toSec());
+      return;
+    }
     transformer_.lookupTransform("base_footprint","odom", time, tmp);
     estimate = tmp;
   };
@@ -291,10 +307,11 @@ namespace estimation
   // get filter posterior at time 'time' as Stamped Transform
   void OdomEstimation::getEstimate(Time time, Stamped<Transform>& estimate)
   {
+    if (!transformer_.canTransform("base_footprint","odom", time)){
+      ROS_ERROR("Cannot get transform at time %f", time.toSec());
+      return;
+    }
     transformer_.lookupTransform("base_footprint","odom", time, estimate);
-
-    // TODO: REMOVE WHEN TF BUG FIXED
-    //estimate.stamp_ = filter_time_old_;
   };
 
   // get most recent filter posterior as PoseWithCovariance
@@ -302,6 +319,10 @@ namespace estimation
   {
     // pose
     Stamped<Transform> tmp;
+    if (!transformer_.canTransform("base_footprint","odom", ros::Time())){
+      ROS_ERROR("Cannot get transform at time %f", 0.0);
+      return;
+    }
     transformer_.lookupTransform("base_footprint","odom", ros::Time(), tmp);
     PoseTFToMsg(tmp, estimate.pose);
 
