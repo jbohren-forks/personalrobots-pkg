@@ -186,4 +186,18 @@ material PR2/Shiny
 	}
 }
 
+material PR2/Plug
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture plug_texture.jpg
+			}
+		}
+	}
+}
+
 

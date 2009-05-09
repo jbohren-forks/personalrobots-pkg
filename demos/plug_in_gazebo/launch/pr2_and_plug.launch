@@ -1,0 +1,24 @@
+<launch>
+  <group name="gazebo">
+    <include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+    <!-- start gazebo -->
+    <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen" machine="five">
+      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(optenv LD_LIBRARY_PATH)" />
+      <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+      <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+      <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+    </node>
+
+    <!-- send pr2.xml to param server -->
+    <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
+    <param ns="pr2" name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find plug_in_gazebo)/robots/pr2_and_plug.xacro.xml'" />
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" machine="five" />
+
+    <!-- uncomment for visualization -->
+    <!--
+    <node pkg="rviz" type="rviz" output="screen"/>
+    -->
+
+  </group>
+</launch>
+

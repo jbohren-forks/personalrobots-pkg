@@ -1,0 +1,11 @@
+<package>
+  <description>Launch files for pluggin in in Gazebo.</description>
+  <author>John Hsu</author>
+  <license>BSD</license>
+  <review status="na" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/FIXME</url>
+  <depend package="milestone2"/>
+  <depend package="plugs_core"/>
+  <depend package="pr2_gazebo"/>
+  <depend package="pr2_mechanism_controllers"/>
+</package>
