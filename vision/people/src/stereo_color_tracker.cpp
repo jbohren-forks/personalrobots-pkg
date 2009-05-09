@@ -99,12 +99,11 @@ namespace people
     double kernel_size_m_;
     double object_radius_m_;
 
-    robot_msgs::PositionMeasurement current_pos_;
     robot_msgs::PositionMeasurement pos_;
     struct RestampedPositionMeasurement {
       ros::Time restamp;
       robot_msgs::PositionMeasurement pos;
-      double dist;
+      CvHistogram *hist;
     };
     map<string, RestampedPositionMeasurement> current_pos_list_; /**< Queue of updated people positions from the filter. */
 
@@ -123,7 +122,6 @@ namespace people
       cv_image_disp_(NULL),
       cam_model_(NULL),
       initialized_(false),
-      current_hist_(NULL),
       uvd_(NULL),
       xyz_(NULL),
       XYZ_(NULL),
@@ -131,7 +129,8 @@ namespace people
       g_plane_norm_(NULL),
       b_plane_norm_(NULL),
       r_bins_mat_(NULL),
-      g_bins_mat_(NULL)
+      g_bins_mat_(NULL),
+      last_blob_num_(0)
     { 
 
       if (DEBUG_DISPLAY) {
@@ -195,8 +194,11 @@ namespace people
       cvReleaseMat(&XYZ_); XYZ_ = 0;
       cvReleaseImage(&r_bins_mat_); r_bins_mat_=0;
       cvReleaseImage(&g_bins_mat_); g_bins_mat_=0;
-
-      cvReleaseHist(&current_hist_); current_hist_ = 0;
+      
+      map<string, RestampedPositionMeasurement>::iterator it;
+      for (it = current_pos_list_.begin(); it != current_pos_list_.end(); it++) {
+	cvReleaseHist(&((*it).second.hist)); (*it).second.hist = 0;
+      }
 
       delete cam_model_;
     }
@@ -212,12 +214,36 @@ namespace people
 	  ROS_WARN("The initial position has an invalid z-value. Please choose another point.");
 	}
 	else {
-	  current_pos_ = *person_pos_msg;
+
+	  map<string, RestampedPositionMeasurement>::iterator it;
+
+	  if (person_pos_msg->object_id == "") {
+	    stringstream ss;
+	    ss << "sct_" << last_blob_num_;
+	    last_blob_num_++;
+	    person_pos_msg->object_id = ss.str();
+	    it = current_pos_list_.end();
+	  }
+	  else {
+	    it = current_pos_list_.find(person_pos_msg->object_id);
+	  }
+	  RestampedPositionMeasurement rpm;
+	  rpm.pos = *person_pos_msg;
+	  rpm.restamp = person_pos_msg->header.stamp;
+	  rpm.hist = NULL;
+	  if (it == current_pos_list_.end()) {
+	    current_pos_list_.insert(pair<string, RestampedPositionMeasurement>(person_pos_msg->object_id, rpm));
+	  }
+	  else {
+	    (*it).second = rpm;
+	  }
 	  initialized_ = true;
-	  ROS_INFO_STREAM_NAMED("color_tracker","Track initialized.");
+	  ROS_INFO_STREAM_NAMED("color_tracker","Track for person " << person_pos_msg->object_id << " initialized.");
 	}
       }
     }   
+
+
     /////////////////////////////////////////////////////////////////////
     // Initialize the person's position.
     void initPosCB2()
@@ -229,9 +255,31 @@ namespace people
 	  ROS_WARN("The initial position has an invalid z-value. Please choose another point.");
 	}
 	else {
-	  current_pos_ = pos_;
+
+	  map<string, RestampedPositionMeasurement>::iterator it;
+
+	  if (pos_.object_id == "") {
+	    stringstream ss;
+	    ss << "sct_" << last_blob_num_;
+	    last_blob_num_++;
+	    pos_.object_id = ss.str();
+	    it = current_pos_list_.end();
+	  }
+	  else {
+	    it = current_pos_list_.find(pos_.object_id);
+	  }
+	  RestampedPositionMeasurement rpm;
+	  rpm.pos = pos_;
+	  rpm.restamp = pos_.header.stamp;
+	  rpm.hist = NULL;
+	  if (it == current_pos_list_.end()) {
+	    current_pos_list_.insert(pair<string, RestampedPositionMeasurement>(pos_.object_id, rpm));
+	  }
+	  else {
+	    (*it).second = rpm;
+	  }
 	  initialized_ = true;
-	  ROS_INFO_STREAM_NAMED("color_tracker","Track initialized.");
+	  ROS_INFO_STREAM_NAMED("color_tracker","Track for person " << pos_.object_id << " initialized.");
 	}
       }
     }
@@ -281,7 +329,6 @@ namespace people
 	return;
       }
 
-
       // Convert the stereo calibration into a camera model. Only done once.
       if (!cam_model_) {
 	double Fx = rcinfo_.P[0];
@@ -292,26 +339,35 @@ namespace people
 	double Tx = -rcinfo_.P[3]/Fx;
 	cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/dispinfo_.dpp);
       }
-  
+      cout << "cam model" << endl;
+
       // Transform the last known position to the current time.
       boost::mutex::scoped_lock pos_lock(pos_mutex_);
 
-      if (on_robot_) {      
-	tf::Point pt;
-	tf::PointMsgToTF(current_pos_.pos, pt);
-	tf::Stamped<tf::Point> loc(pt, current_pos_.header.stamp, current_pos_.header.frame_id);
-	try
-	  {
-	    tf_->transformPoint(limage_.header.frame_id, last_image_time_, loc, fixed_frame_, loc); 
-	  } 
-	catch (tf::TransformException& ex)
-	  {
-	    ROS_DEBUG_STREAM_NAMED("color_tracker","TF exception " << ex.what());
-	  }   
-	current_pos_.header.stamp = limage_.header.stamp;
-	current_pos_.pos.x = loc[0];
-	current_pos_.pos.y = loc[1];
-	current_pos_.pos.z = loc[2];
+      map<string, RestampedPositionMeasurement>::iterator it;
+      if (on_robot_) {  
+	for (it = current_pos_list_.begin(); it != current_pos_list_.end(); it++) {
+	  tf::Point pt;
+	  tf::PointMsgToTF((*it).second.pos.pos, pt);
+	  tf::Stamped<tf::Point> loc(pt, (*it).second.pos.header.stamp, (*it).second.pos.header.frame_id);
+	  try
+	    {
+	      tf_->transformPoint(limage_.header.frame_id, last_image_time_, loc, fixed_frame_, loc); 
+	    } 
+	  catch (tf::TransformException& ex)
+	    {
+	      ROS_DEBUG_STREAM_NAMED("color_tracker","TF exception " << ex.what());
+	    }   
+	  (*it).second.pos.header.stamp = limage_.header.stamp;
+	  (*it).second.pos.pos.x = loc[0];
+	  (*it).second.pos.pos.y = loc[1];
+	  (*it).second.pos.pos.z = loc[2];
+	}
+      }
+      else {
+	for (it = current_pos_list_.begin(); it != current_pos_list_.end(); it++) {
+	  (*it).second.pos.header.stamp = limage_.header.stamp;
+	}
       }
 
       // Image size
@@ -330,9 +386,6 @@ namespace people
      
       ////////////////////////////////
       // Get a 3d point for each pixel
-
-      gettimeofday(&timeofday,NULL);
-      ros::Time startt_dtoz = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
 
       float *fptr = (float*)(uvd_->data.ptr);
       ushort *cptr;
@@ -367,270 +420,281 @@ namespace people
 	}
       }
     
-      // Get the 2d point and bbox of the current location.
-      // (tl,tr,bl,br)
-      float txyz[3] = {current_pos_.pos.x, current_pos_.pos.y, current_pos_.pos.z};
-      CvMat *centerxyz = cvCreateMatHeader(1,3,CV_32FC1);
-      cvInitMatHeader(centerxyz,1,3,CV_32FC1,txyz);
-      CvMat *centeruvd = cvCreateMat(1,3,CV_32FC1);
-      CvMat *uvds = cvCreateMat(2,3,CV_32FC1);
-      centerSize3DToLTRB2D(centerxyz,object_radius_m_,uvds);
-      cam_model_->cartToDisp(centerxyz, centeruvd);
+      RestampedPositionMeasurement *current_pos;
+      for (it = current_pos_list_.begin(); it != current_pos_list_.end(); it++) {
+	current_pos = &((*it).second);
 
-      // Compute the histogram at the current location.
-      int hsizes[2] = {128,128};
-      CvHistogram *new_hist = cvCreateHist(2, hsizes, CV_HIST_ARRAY);
-
-      int num_points_in_kernel = computeRGHist(uvds, centerxyz, im_size, new_hist);
-      // If there are no points in this kernel, this is an invalid position.
-      if (num_points_in_kernel == 0) {
-	ROS_DEBUG_STREAM_NAMED("color_tracker","No points in kernel" << cvmGet(centerxyz,0,0) << " " << cvmGet(centerxyz,0,1) << " " << cvmGet(centerxyz,0,2));
-	cvReleaseMat(&centerxyz); centerxyz=0;
-	cvReleaseMat(&centeruvd); centeruvd=0;
-	cvReleaseMat(&uvds); uvds=0;
-	return;
-      }
-
-
-      // If this is the first frame, set the histogram and return.
-      if (current_hist_==NULL) {
-	current_hist_ = new_hist;
-	publishPoint(centerxyz,uvds);
-	cvReleaseMat(&centerxyz); centerxyz=0;
-	cvReleaseMat(&centeruvd); centeruvd=0;
-	cvReleaseMat(&uvds); uvds=0;
+	// Get the 2d point and bbox of the current location.
+	// (tl,tr,bl,br)
+	float txyz[3] = {current_pos->pos.pos.x, current_pos->pos.pos.y, current_pos->pos.pos.z};
+	CvMat *centerxyz = cvCreateMatHeader(1,3,CV_32FC1);
+	cvInitMatHeader(centerxyz,1,3,CV_32FC1,txyz);
+	CvMat *centeruvd = cvCreateMat(1,3,CV_32FC1);
+	CvMat *uvds = cvCreateMat(2,3,CV_32FC1);
+	centerSize3DToLTRB2D(centerxyz,object_radius_m_,uvds);
+	cam_model_->cartToDisp(centerxyz, centeruvd);
 	
-	
-	// Timing
-	gettimeofday(&timeofday,NULL);
-	ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
-	ros::Duration diff = endt-startt;
-	ROS_DEBUG_STREAM_NAMED("color_tracker","Start " << startt.toSec() << " End " << endt.toSec() << " Duration " << diff.toSec() );
+	// Compute the histogram at the current location.
+	int hsizes[2] = {128,128};
+	CvHistogram *new_hist = cvCreateHist(2, hsizes, CV_HIST_ARRAY);
 
-	return; 
-      }   
-
-      //// Debug display
-      if (DEBUG_DISPLAY) {
-	showHistogram(current_hist_,"Current Hist");
-	showHistogram(new_hist,"New Hist");
-
-	IplImage *hist_ratio = cvCreateImage(im_size, IPL_DEPTH_32F, 1);
-	float tmax = 0.0;
-	for (int v=0; v<=im_size.height; ++v) {
-	  rptr = (uchar*)(r_bins_mat_->imageData + v*r_bins_mat_->widthStep);
-	  gptr = (uchar*)(g_bins_mat_->imageData + v*g_bins_mat_->widthStep);
-	  fptr = (float*)(hist_ratio->imageData + v*hist_ratio->widthStep);
-	  for (int u = 0; u<=im_size.width; ++u) {
-	    (*fptr) = sqrt(cvQueryHistValue_2D(current_hist_, *rptr, *gptr)/cvQueryHistValue_2D(new_hist, *rptr, *gptr));
-	    if ((*fptr)/1000.0>tmax) {
-	      tmax = (*fptr)/1000.0;
-	    }
-	    rptr++; gptr++; fptr++;
-	  }
-	}
-      
-	for (int v=0; v<=im_size.height; ++v) {
-	  fptr = (float*)(hist_ratio->imageData + v*hist_ratio->widthStep);
-	  for (int u = 0; u<=im_size.width; ++u) {
-	    (*fptr) = (*fptr)/tmax;
-	    fptr++;
-	  }
-	}
-
-	cout << "Max ratio val " << tmax << endl;
-
-	cvShowImage("Backprojection",hist_ratio);
-	cvWaitKey(7);
-
-	cvReleaseImage(&hist_ratio); hist_ratio = 0;
-      }
-      ////
-
-      // Find the blob in the current frame
-
-      
-      /*** Mean shift iterations. ***/
-      double EPS = 0.01*0.01; // Squared!!!
-      CvMat *curr_point = cvCloneMat(centerxyz);
-      CvMat *next_point = cvCloneMat(centerxyz);
-      cvSetZero(next_point);
-      double bhat_coeff, bhat_coeff_new;
-      double total_weight = 0.0;
-      num_points_in_kernel = 0;
-      double wi = 0.0;
-      float cp[3];
-      int u1, u2, v1, v2;
-      float dx, dy, dz, d;
-      float *xptr, *nptr;
-      double denom = kernel_size_m_*kernel_size_m_;
-
-      // Compute the Bhattacharya coeff of the start hist vs the true face hist.
-      bhat_coeff = cvCompareHist( current_hist_, new_hist, CV_COMP_BHATTACHARYYA);
-      
-      int iter;
-      for (iter = 0; iter < 10; iter++) {
-
-	// Compute the next location of the center
-	d = 0.0; // d = total distance moved (squared)
-	total_weight = 0.0;
-	num_points_in_kernel = 0;
-	wi = 0.0;
-	cvSetZero(next_point); 
-	fptr = (float*)(curr_point->data.ptr);
-	cp[0] = (*fptr); fptr++;
-	cp[1] = (*fptr); fptr++;
-	cp[2] = (*fptr); fptr++; 
-	fptr = NULL;
-	
-	// For each pixel within the kernel distance of the current position...
-	if (cp[2]==0.0) {
-	  // The current point should never have a z-val of 0. 
-	  ROS_DEBUG_STREAM_NAMED("color_tracker","Current point has z=0");
-	  break;
-	}
-
-	centerSize3DToLTRB2D(curr_point, kernel_size_m_, uvds);
-	      
-	u1 = MAX((int)cvmGet(uvds,0,0),0);
-	u2 = MIN((int)cvmGet(uvds,1,0),im_size.width);
-	v1 = MAX((int)cvmGet(uvds,0,1),0);
-	v2 = MIN((int)cvmGet(uvds,1,1),im_size.height);
-
-	for (int v=v1; v<=v2; ++v) {
-	  xptr = (float*)(XYZ_->data.ptr + v*XYZ_->step) + 3*u1;
-	  rptr = (uchar*)(r_bins_mat_->imageData + v*r_bins_mat_->widthStep) + u1;
-	  gptr = (uchar*)(g_bins_mat_->imageData + v*g_bins_mat_->widthStep) + u1;
-	  for (int u = u1; u<=u2; ++u) {
-	    if (*(xptr+2) != 0.0) {
-	      dx = (*xptr)-cp[0];
-	      dy = (*(xptr+1))-cp[1];
-	      dz = (*(xptr+2))-cp[2]; 
-	      d = (dx*dx + dy*dy + dz*dz)/denom;
-	      if (d <= 1.0){
-		wi = sqrt(cvQueryHistValue_2D(current_hist_, *rptr, *gptr)/cvQueryHistValue_2D(new_hist, *rptr, *gptr));
-		total_weight += wi;
-		nptr = (float *)(next_point->data.ptr);
-		(*nptr) += wi*dx; ++nptr;
-		(*nptr) += wi*dy; ++nptr;  
-		(*nptr) += wi*dz;
-		num_points_in_kernel++;
-	      }
-	    }	  
-
-	    xptr+=3;
-	    ++rptr; ++gptr;
-	  }
-	}
-
-	// If there are no points in this kernel, don't move the point.
-	if (num_points_in_kernel == 0) {
-	  ROS_DEBUG_STREAM_NAMED("color_tracker","No points in kernel" << cvmGet(curr_point,0,0) << " " << cvmGet(curr_point,0,1) << " " << cvmGet(curr_point,0,2));
-	  break;
-	}
-	// Move the point
-	d = 0.0;      
-	nptr = (float *)(next_point->data.ptr);
-	for (int i=0; i<3; i++) {
-	  (*nptr) /= total_weight;
-	  d += (*nptr)*(*nptr);
-	  (*nptr) += cp[i];
-	  nptr++;
-	} 
-	
-	// This next loop backtracks the mean shift move if the new Bhattacharyya coeff is worse than the old one.
-	// This is necessary because the move above isn't guaranteed to give a higher coeff value.
-	bhat_coeff_new = 0.0;
-
-	// Compute the histogram and Bhattacharya coeff at the new position.
-	// Convert 3d point-size to 2d rectangle
-	centerSize3DToLTRB2D(next_point, object_radius_m_, uvds); 
-	num_points_in_kernel = computeRGHist(uvds, next_point, im_size, new_hist);      
+	int num_points_in_kernel = computeRGHist(uvds, centerxyz, im_size, new_hist);
 	// If there are no points in this kernel, this is an invalid position.
 	if (num_points_in_kernel == 0) {
 	  ROS_DEBUG_STREAM_NAMED("color_tracker","No points in kernel" << cvmGet(centerxyz,0,0) << " " << cvmGet(centerxyz,0,1) << " " << cvmGet(centerxyz,0,2));
-	  break;
+	  cvReleaseMat(&centerxyz); centerxyz=0;
+	  cvReleaseMat(&centeruvd); centeruvd=0;
+	  cvReleaseMat(&uvds); uvds=0;
+	  continue;
 	}
-	bhat_coeff_new = cvCompareHist( current_hist_, new_hist, CV_COMP_BHATTACHARYYA); 
+
+	// If this is the first frame, set the histogram and continue to the next blob.
+	if (current_pos->hist == NULL) {
+	  current_pos->hist = new_hist;
+	  publishPoint(centerxyz,uvds,&(current_pos->pos));
+	  cvReleaseMat(&centerxyz); centerxyz=0;
+	  cvReleaseMat(&centeruvd); centeruvd=0;
+	  cvReleaseMat(&uvds); uvds=0;
 	
-	while (true) {
-	  // If you've moved far but the Bhattacharyya coeff is worse, backtrack half way.
-	  if ((d <= EPS) || (bhat_coeff <= bhat_coeff_new)) {
+	  cout << "first frame " << endl;
+	  // Timing
+	  gettimeofday(&timeofday,NULL);
+	  ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
+	  ros::Duration diff = endt-startt;
+	  ROS_DEBUG_STREAM_NAMED("color_tracker","Start " << startt.toSec() << " End " << endt.toSec() << " Duration " << diff.toSec() );
+	  
+	  continue;
+	}   
+
+	CvHistogram *current_hist = current_pos->hist;
+
+	//// Debug display
+	if (DEBUG_DISPLAY) {
+	  showHistogram(current_hist,"Current Hist");
+	  showHistogram(new_hist,"New Hist");
+
+	  IplImage *hist_ratio = cvCreateImage(im_size, IPL_DEPTH_32F, 1);
+	  float tmax = 0.0;
+	  for (int v=0; v<=im_size.height; ++v) {
+	    rptr = (uchar*)(r_bins_mat_->imageData + v*r_bins_mat_->widthStep);
+	    gptr = (uchar*)(g_bins_mat_->imageData + v*g_bins_mat_->widthStep);
+	    fptr = (float*)(hist_ratio->imageData + v*hist_ratio->widthStep);
+	    for (int u = 0; u<=im_size.width; ++u) {
+	      (*fptr) = sqrt(cvQueryHistValue_2D(current_hist, *rptr, *gptr)/cvQueryHistValue_2D(new_hist, *rptr, *gptr));
+	      if ((*fptr)/1000.0>tmax) {
+		tmax = (*fptr)/1000.0;
+	      }
+	      rptr++; gptr++; fptr++;
+	    }
+	  }
+      
+	  for (int v=0; v<=im_size.height; ++v) {
+	    fptr = (float*)(hist_ratio->imageData + v*hist_ratio->widthStep);
+	    for (int u = 0; u<=im_size.width; ++u) {
+	      (*fptr) = (*fptr)/tmax;
+	      fptr++;
+	    }
+	  }
+
+	  cout << "Max ratio val " << tmax << endl;
+
+	  cvShowImage("Backprojection",hist_ratio);
+	  cvWaitKey(7);
+
+	  cvReleaseImage(&hist_ratio); hist_ratio = 0;
+	}
+	////
+
+	// Find the blob in the current frame
+
+      
+	/*** Mean shift iterations. ***/
+	double EPS = 0.01*0.01; // Squared!!!
+	CvMat *curr_point = cvCloneMat(centerxyz);
+	CvMat *next_point = cvCloneMat(centerxyz);
+	cvSetZero(next_point);
+	double bhat_coeff, bhat_coeff_new;
+	double total_weight = 0.0;
+	num_points_in_kernel = 0;
+	double wi = 0.0;
+	float cp[3];
+	int u1, u2, v1, v2;
+	float dx, dy, dz, d;
+	float *xptr, *nptr;
+	double denom = kernel_size_m_*kernel_size_m_;
+
+	// Compute the Bhattacharya coeff of the start hist vs the true face hist.
+	bhat_coeff = cvCompareHist( current_hist, new_hist, CV_COMP_BHATTACHARYYA);
+      
+	int iter;
+	for (iter = 0; iter < 10; iter++) {
+
+	  // Compute the next location of the center
+	  d = 0.0; // d = total distance moved (squared)
+	  total_weight = 0.0;
+	  num_points_in_kernel = 0;
+	  wi = 0.0;
+	  cvSetZero(next_point); 
+	  fptr = (float*)(curr_point->data.ptr);
+	  cp[0] = (*fptr); fptr++;
+	  cp[1] = (*fptr); fptr++;
+	  cp[2] = (*fptr); fptr++; 
+	  fptr = NULL;
+	
+	  // For each pixel within the kernel distance of the current position...
+	  if (cp[2]==0.0) {
+	    // The current point should never have a z-val of 0. 
+	    ROS_DEBUG_STREAM_NAMED("color_tracker","Current point has z=0");
+	    break;
+	}
+
+	  centerSize3DToLTRB2D(curr_point, kernel_size_m_, uvds);
+	  
+	  u1 = MAX((int)cvmGet(uvds,0,0),0);
+	  u2 = MIN((int)cvmGet(uvds,1,0),im_size.width);
+	  v1 = MAX((int)cvmGet(uvds,0,1),0);
+	  v2 = MIN((int)cvmGet(uvds,1,1),im_size.height);
+
+	  for (int v=v1; v<=v2; ++v) {
+	    xptr = (float*)(XYZ_->data.ptr + v*XYZ_->step) + 3*u1;
+	    rptr = (uchar*)(r_bins_mat_->imageData + v*r_bins_mat_->widthStep) + u1;
+	    gptr = (uchar*)(g_bins_mat_->imageData + v*g_bins_mat_->widthStep) + u1;
+	    for (int u = u1; u<=u2; ++u) {
+	      if (*(xptr+2) != 0.0) {
+		dx = (*xptr)-cp[0];
+		dy = (*(xptr+1))-cp[1];
+		dz = (*(xptr+2))-cp[2]; 
+		d = (dx*dx + dy*dy + dz*dz)/denom;
+		if (d <= 1.0){
+		  wi = sqrt(cvQueryHistValue_2D(current_hist, *rptr, *gptr)/cvQueryHistValue_2D(new_hist, *rptr, *gptr));
+		  total_weight += wi;
+		  nptr = (float *)(next_point->data.ptr);
+		  (*nptr) += wi*dx; ++nptr;
+		  (*nptr) += wi*dy; ++nptr;  
+		  (*nptr) += wi*dz;
+		  num_points_in_kernel++;
+		}
+	      }	  
+
+	      xptr+=3;
+	      ++rptr; ++gptr;
+	    }
+	  }
+
+	  // If there are no points in this kernel, don't move the point.
+	  if (num_points_in_kernel == 0) {
+	    ROS_DEBUG_STREAM_NAMED("color_tracker","No points in kernel" << cvmGet(curr_point,0,0) << " " << cvmGet(curr_point,0,1) << " " << cvmGet(curr_point,0,2));
+	    break;
+	  }
+	  // Move the point
+	  d = 0.0;      
+	  nptr = (float *)(next_point->data.ptr);
+	  for (int i=0; i<3; i++) {
+	    (*nptr) /= total_weight;
+	    d += (*nptr)*(*nptr);
+	    (*nptr) += cp[i];
+	    nptr++;
+	  } 
+	
+	  // This next loop backtracks the mean shift move if the new Bhattacharyya coeff is worse than the old one.
+	  // This is necessary because the move above isn't guaranteed to give a higher coeff value.
+	  bhat_coeff_new = 0.0;
+	  
+	  // Compute the histogram and Bhattacharya coeff at the new position.
+	  // Convert 3d point-size to 2d rectangle
+	  centerSize3DToLTRB2D(next_point, object_radius_m_, uvds); 
+	  num_points_in_kernel = computeRGHist(uvds, next_point, im_size, new_hist);      
+	  // If there are no points in this kernel, this is an invalid position.
+	  if (num_points_in_kernel == 0) {
+	    ROS_DEBUG_STREAM_NAMED("color_tracker","No points in kernel" << cvmGet(centerxyz,0,0) << " " << cvmGet(centerxyz,0,1) << " " << cvmGet(centerxyz,0,2));
+	    break;
+	  }
+	  bhat_coeff_new = cvCompareHist( current_hist, new_hist, CV_COMP_BHATTACHARYYA); 
+	
+	  while (true) {
+	    // If you've moved far but the Bhattacharyya coeff is worse, backtrack half way.
+	    if ((d <= EPS) || (bhat_coeff <= bhat_coeff_new)) {
+	      break;
+	    }
+
+	    ROS_DEBUG_STREAM_NAMED("color_tracker","Backtracking");
+	    d = 0.0;
+	    fptr = (float*)(next_point->data.ptr);
+	    for (int i=0; i<3; i++) {
+	      (*fptr) += cp[i];
+	      (*fptr) /= 2.0;
+	      d += ((*fptr)-cp[i])*((*fptr)-cp[i]);
+	      fptr++;
+	    }
+	    fptr = NULL;
+	  
+	    // Compute the histogram and Bhattacharya coeff at the new position.
+	    centerSize3DToLTRB2D(next_point, object_radius_m_, uvds); 
+	    num_points_in_kernel = computeRGHist(uvds, next_point, im_size, new_hist);      
+	    // If there are no points in this kernel, this is an invalid position. Set the new coeff low so that the backtracking continues. 
+	    if (num_points_in_kernel == 0) {
+	      ROS_DEBUG_STREAM_NAMED("color_tracker","No points in kernel" << cvmGet(next_point,0,0) << " " << cvmGet(next_point,0,1) << " " << cvmGet(next_point,0,2));
+	      bhat_coeff_new = -1.0;
+	    }
+	    else {
+	      bhat_coeff_new = cvCompareHist( current_hist, new_hist, CV_COMP_BHATTACHARYYA); 
+	    }
+	    
+	  }
+
+	  cvCopy(next_point,curr_point);
+	  cvSetZero(next_point);
+	  bhat_coeff = bhat_coeff_new;
+	    
+
+	  // Movement is small, break.
+	  if (d <= EPS) {
 	    break;
 	  }
 
-	  ROS_DEBUG_STREAM_NAMED("color_tracker","Backtracking");
-	  d = 0.0;
-	  fptr = (float*)(next_point->data.ptr);
-	  for (int i=0; i<3; i++) {
-	    (*fptr) += cp[i];
-	    (*fptr) /= 2.0;
-	    d += ((*fptr)-cp[i])*((*fptr)-cp[i]);
-	    fptr++;
-	  }
-	  fptr = NULL;
+	  // new_hist was already updated in the loop above.
 	  
-	  // Compute the histogram and Bhattacharya coeff at the new position.
-	  centerSize3DToLTRB2D(next_point, object_radius_m_, uvds); 
-	  num_points_in_kernel = computeRGHist(uvds, next_point, im_size, new_hist);      
-	  // If there are no points in this kernel, this is an invalid position. Set the new coeff low so that the backtracking continues. 
-	  if (num_points_in_kernel == 0) {
-	    ROS_DEBUG_STREAM_NAMED("color_tracker","No points in kernel" << cvmGet(next_point,0,0) << " " << cvmGet(next_point,0,1) << " " << cvmGet(next_point,0,2));
-	    bhat_coeff_new = -1.0;
-	  }
-	  else {
-	    bhat_coeff_new = cvCompareHist( current_hist_, new_hist, CV_COMP_BHATTACHARYYA); 
-	  }
-
+	}
+      
+	// Adapt the histogram, if requested. This could cause drift.
+	if (adapt_hist_) {
+	  current_hist = new_hist;
+	  new_hist = 0;
 	}
 
-	cvCopy(next_point,curr_point);
-	cvSetZero(next_point);
-	bhat_coeff = bhat_coeff_new;
-	    
-
-	// Movement is small, break.
-	if (d <= EPS) {
-	  break;
+	// Publish the 3d head center for this person and set it for the next callback.
+	centerSize3DToLTRB2D(curr_point,object_radius_m_, uvds);
+	// If the new histogram is good, publish the point. Otherwise, clear the point and stop tracking.
+	if (bhat_coeff > 0.3) {
+	  publishPoint(curr_point, uvds, &(current_pos->pos));
+	}
+	else {
+	  ROS_INFO_STREAM_NAMED("color_tracker","\n\nLost target\n\n");
+	  initialized_ = false;
 	}
 
-	// new_hist was already updated in the loop above.
-      
-      }
-      
-      // Adapt the histogram, if requested. This could cause drift.
-      if (adapt_hist_) {
-	current_hist_ = new_hist;
-	new_hist = 0;
-      }
+	ROS_DEBUG_STREAM_NAMED("color_tracker","Bhat coeff final: " << bhat_coeff << ", Pos " << cvmGet(curr_point,0,0) << ", " << cvmGet(curr_point,0,1) << ", " << cvmGet(curr_point,0,2) );
+ 
+	
+	// Cleanup
+	cvReleaseMat(&centerxyz); centerxyz = 0;
+	cvReleaseMat(&centeruvd); centeruvd = 0;
+	cvReleaseMat(&uvds); uvds = 0;
+	cvReleaseMat(&curr_point); curr_point = 0;
+	cvReleaseMat(&next_point); next_point = 0;
+	cvReleaseHist(&new_hist); new_hist = 0;
+	current_hist = 0;
 
-      // Publish the 3d head center for this person and set it for the next callback.
-      centerSize3DToLTRB2D(curr_point,object_radius_m_, uvds);
-      // If the new histogram is good, publish the point. Otherwise, clear the point and stop tracking.
-      if (bhat_coeff > 0.3) {
-	publishPoint(curr_point,uvds);
-      }
-      else {
-	ROS_INFO_STREAM_NAMED("color_tracker","\n\nLost target\n\n");
-	initialized_ = false;
-      }
+
+      } // End tracking this blob.
 
 
       // Timing
+      cout << "endtime" << endl;
       gettimeofday(&timeofday,NULL);
       ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
       ros::Duration diff = endt-startt;
-      ROS_DEBUG_STREAM_NAMED("color_tracker","Bhat coeff final: " << bhat_coeff << ", Pos " << cvmGet(curr_point,0,0) << ", " << cvmGet(curr_point,0,1) << ", " << cvmGet(curr_point,0,2) << " Duration " << diff.toSec() );
-
-    
-      // Cleanup
-      cvReleaseMat(&centerxyz); centerxyz = 0;
-      cvReleaseMat(&centeruvd); centeruvd = 0;
-      cvReleaseMat(&uvds); uvds = 0;
-      cvReleaseMat(&curr_point); curr_point = 0;
-      cvReleaseMat(&next_point); next_point = 0;
-      cvReleaseHist(&new_hist); new_hist = 0;
-
+      ROS_DEBUG_STREAM_NAMED("color_tracker","Duration " << diff.toSec() );
     }
 
 
@@ -643,30 +707,34 @@ namespace people
     CvStereoCamModel *cam_model_;
   
     bool initialized_;
-    CvHistogram *current_hist_;
 
     CvMat *uvd_, *xyz_;
     CvMat *XYZ_;
     IplImage *r_plane_norm_, *g_plane_norm_, *b_plane_norm_;
     IplImage *r_bins_mat_, *g_bins_mat_;
 
+    int last_blob_num_;
+
 
     /////////////////////////////////////////////////////////////////////
     // Publish the 3D center point of the object and an optional 2D box for visualization.
-    void publishPoint(CvMat *point, CvMat *uvds) {
+    void publishPoint(CvMat* curr_point, CvMat *uvds, robot_msgs::PositionMeasurement *pos ) {
       // Publish the 3d head center for this person.
-      current_pos_.header.stamp = limage_.header.stamp;
-      current_pos_.name = "stereo_color_tracker";
-      current_pos_.pos.x = cvmGet(point,0,0);
-      current_pos_.pos.y = cvmGet(point,0,1);
-      current_pos_.pos.z = cvmGet(point,0,2);
-      current_pos_.header.frame_id = limage_.header.frame_id;//"stereo_optical_frame";
-      current_pos_.reliability = 0.5;
-      current_pos_.initialization = 0;
-      current_pos_.covariance[0] = 0.09; current_pos_.covariance[1] = 0.0;  current_pos_.covariance[2] = 0.0;
-      current_pos_.covariance[3] = 0.0;  current_pos_.covariance[4] = 0.09; current_pos_.covariance[5] = 0.0;
-      current_pos_.covariance[6] = 0.0;  current_pos_.covariance[7] = 0.0;  current_pos_.covariance[8] = 0.09;
-      node_->publish("people_tracker_measurements",current_pos_);
+
+      // Update the restamped point.
+      // frame_id and stamp should be ok from the transformation.
+      pos->name = "stereo_color_tracker";
+      pos->pos.x = cvmGet(curr_point,0,0);
+      pos->pos.y = cvmGet(curr_point,0,1);
+      pos->pos.z = cvmGet(curr_point,0,2);
+      pos->reliability = 0.5;
+      pos->initialization = 0;
+      pos->covariance[0] = 0.09; pos->covariance[1] = 0.0;  pos->covariance[2] = 0.0;
+      pos->covariance[3] = 0.0;  pos->covariance[4] = 0.09; pos->covariance[5] = 0.0;
+      pos->covariance[6] = 0.0;  pos->covariance[7] = 0.0;  pos->covariance[8] = 0.09;
+
+
+      node_->publish("people_tracker_measurements",*pos);
 
 
       if (do_display_) {
