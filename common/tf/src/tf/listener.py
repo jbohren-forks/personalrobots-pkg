@@ -95,7 +95,7 @@ class TransformListener:
     def callback(self, data):
         for transform in data.transforms:
             #print "Got data:", transform.header.frame_id
-            self.set_transform(tf.transform_stamped_msg_to_bt(transform),"Waiting for ros 0.5")
+            self.set_transform(tf.transform_stamped_msg_to_bt(transform),data._connection_header["callerid"])
 
     def frame_graph_service(self, req):
         return FrameGraphResponse(self.all_frames_as_dot())
