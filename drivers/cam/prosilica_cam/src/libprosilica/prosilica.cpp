@@ -116,22 +116,25 @@ uint64_t getGuid(size_t i)
   return cameraList[i].UniqueId;
 }
 
-static void openCamera(boost::function<tPvErr (tPvAccessFlags)> open_fn)
+// TODO: support opening as monitor?
+static void openCamera(boost::function<tPvErr (tPvCameraInfo*)> info_fn,
+                       boost::function<tPvErr (tPvAccessFlags)> open_fn)
 {
-  tPvErr e = open_fn(ePvAccessMaster);
-  // Restarting the camera too quickly may trigger an access denied error
-  if (e == ePvErrAccessDenied) {
-    printf("Accessed denied opening camera, waiting and retrying...\n");
-    boost::this_thread::sleep(boost::posix_time::seconds(5));
-    e = open_fn(ePvAccessMaster);
-  }
-  CHECK_ERR( e, "Unable to open requested camera" );
+  tPvCameraInfo info;
+  CHECK_ERR( info_fn(&info), "Unable to find requested camera" );
+
+  if (!(info.PermittedAccess & ePvAccessMaster))
+    throw ProsilicaException("Unable to open camera as master. "
+                             "Another process is already using it.");
+  
+  CHECK_ERR( open_fn(ePvAccessMaster), "Unable to open requested camera" );
 }
 
 Camera::Camera(unsigned long guid, size_t bufferSize)
   : bufferSize_(bufferSize), mode_(None)
 {
-  openCamera(boost::bind(PvCameraOpen, guid, _1, &handle_));
+  openCamera(boost::bind(PvCameraInfo, guid, _1),
+             boost::bind(PvCameraOpen, guid, _1, &handle_));
   
   setup();
 }
@@ -140,7 +143,9 @@ Camera::Camera(const char* ip_address, size_t bufferSize)
   : bufferSize_(bufferSize), mode_(None)
 {
   unsigned long addr = inet_addr(ip_address);
-  openCamera(boost::bind(PvCameraOpenByAddr, addr, _1, &handle_));
+  tPvIpSettings settings;
+  openCamera(boost::bind(PvCameraInfoByAddr, addr, _1, &settings),
+             boost::bind(PvCameraOpenByAddr, addr, _1, &handle_));
   
   setup();
 }
