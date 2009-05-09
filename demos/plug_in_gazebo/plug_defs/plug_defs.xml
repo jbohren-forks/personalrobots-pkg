@@ -22,11 +22,12 @@
   <property name="plug_y_size" value="0.025" />
   <property name="plug_z_size" value="0.03" />
 
-  <property name="wall_x_loc" value="5.0" />
+  <property name="wall_x_loc" value="2.0" />
   <property name="handle_height" value="0.87" />
   <property name="jack_offset_y" value="0.05" />
   <property name="jack_offset_z" value="0.05" />
   <property name="jack_size"     value="0.04" />
+  <property name="outlet_height" value="0.3" />
 
   <!-- joint blocks -->
   <joint name="floor_joint" type="planar" /> 
@@ -121,7 +122,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/GrassFloor" />
+        <elem key="material" value="Gazebo/White" />
       </map>
       <geometry name="wall_visual_geom">
         <mesh scale="0.4 10 2" />
@@ -144,7 +145,7 @@
   
   <link name="outlet_link">
     <parent name="wall_link" />
-    <origin xyz="-0.21 0.0 -0.8" rpy="0 0 0" />
+    <origin xyz="-0.21 0.0 ${-1.0+outlet_height}" rpy="0 0 0" />
     <joint name="outlet_joint" />
     <inertial >
       <mass value="1" />
@@ -156,7 +157,7 @@
     <visual >
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material" value="Gazebo/White" />
+        <elem key="material" value="PR2/White" />
       </map>
       <geometry name="outlet_visual">
         <mesh scale="0.02 0.2 0.2" />
