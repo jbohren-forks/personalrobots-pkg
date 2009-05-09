@@ -1,0 +1,48 @@
+<launch>
+  <group name="wg">
+
+    <!-- start up robot -->
+    <include file="$(find erratic_gazebo)/erratic.launch"/>
+
+
+    <!-- Fake Localization -->
+    <node pkg="fake_localization" type="fake_localization" name="fake_localization" respawn="true" output="screen" >
+      <param name="odom_frame_id" value="odom"/>
+    </node>
+
+
+    <!-- Filter for base laser shadowing/veiling -->
+    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" name="base_shadow_filter_non_preserve" >
+      <param name="scan_topic" value="base_scan" />
+      <param name="cloud_topic" value="base_scan_marking" />
+      <param name="laser_max_range" value="30.0" />
+    </node>
+    
+    <!-- for clearing we want preservative -->
+    <node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" name="base_shadow_filter_preserve" >
+      <param name="scan_topic" value="base_scan" />
+      <param name="cloud_topic" value="base_scan_clearing" />
+      <param name="preservative" value="true" />
+      <param name="laser_max_range" value="30.0" />
+    </node>
+
+    <!-- for moving -->
+    <node pkg="nav" type="move_base" respawn="false" name="move_base" output="screen">
+      <param name="controller_frequency" value="10.0" />
+      
+      <rosparam file="$(find erratic_gazebo)/costmap_common_params.yaml" command="load" ns="navfn" />
+      <rosparam file="$(find erratic_gazebo)/costmap_common_params.yaml" command="load" ns="base_local_planner" />
+      <rosparam file="$(find erratic_gazebo)/navfn_params.yaml" command="load" />
+      <rosparam file="$(find erratic_gazebo)/base_local_planner_params.yaml" command="load" />
+    </node>
+
+    <!-- load map -->
+    <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" />
+
+    <!-- for visualization -->
+    <!--node pkg="rviz" type="rviz" respawn="false" output="screen" /-->
+    <node pkg="nav_view" type="nav_view" respawn="true" />
+
+  </group>
+</launch>
+
