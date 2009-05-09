@@ -282,7 +282,7 @@ private:
         it = messages_.erase(it);
 	--message_count_;
         failed_transform_count_ ++;
-        NOTIFIER_DEBUG("Discarding Message %d , Out of the back of Cache Time(stamp: %.3f + cache_length: %.3f < latest_transform_time %.3f.  Message Count now: %d", i, message->header.stamp.toSec(),  tf_->getCacheLength().toSec(), latest_transform_time.toSec(), message_count_);
+        NOTIFIER_DEBUG("Discarding Message %d , in frame %s, Out of the back of Cache Time(stamp: %.3f + cache_length: %.3f < latest_transform_time %.3f.  Message Count now: %d", i, message->header.frame_id.c_str(), message->header.stamp.toSec(),  tf_->getCacheLength().toSec(), latest_transform_time.toSec(), message_count_);
         continue;
       }
       
@@ -306,7 +306,7 @@ private:
         it = messages_.erase(it);
         --message_count_;
 
-        NOTIFIER_DEBUG("Message %d ready, count now %d", i, message_count_);
+        NOTIFIER_DEBUG("Message %d ready in frame %s at time %.3f, count now %d", i, message->header.frame_id.c_str(), message->header.stamp.toSec(), message_count_);
 
         ++successful_transform_count_;
       }
@@ -349,14 +349,14 @@ private:
         messages_.pop_front();
         --message_count_;
 
-        NOTIFIER_DEBUG("Removed old message, count now %d", message_count_);
+        NOTIFIER_DEBUG("Removed oldest message because buffer is full, count now %d", message_count_);
       }
 
       // Add the message to our list
       messages_.push_back(message);
       ++message_count_;
 
-      NOTIFIER_DEBUG("Added message, count now %d", message_count_);
+      NOTIFIER_DEBUG("Added message in frame %s at time %.3f, count now %d", message->header.frame_id.c_str(), message->header.stamp.toSec(), message_count_);
     }
   }
 
