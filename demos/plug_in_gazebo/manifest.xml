@@ -4,8 +4,8 @@
   <license>BSD</license>
   <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
-  <depend package="milestone2"/>
-  <depend package="plugs_core"/>
+  <depend package="milestone2_executive"/>
+  <depend package="milestone2_actions"/>
   <depend package="pr2_gazebo"/>
   <depend package="pr2_mechanism_controllers"/>
 </package>
