@@ -201,3 +201,18 @@ material PR2/Plug
 }
 
 
+material PR2/White
+{
+	technique
+	{
+		pass Ambient
+		{
+			ambient 1.000000 1.000000 1.000000 1.000000
+		}
+		pass PointLight
+		{
+			ambient 1.000000 1.000000 1.000000 1.000000
+		}
+
+	}
+}
