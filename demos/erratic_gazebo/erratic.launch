@@ -1,6 +1,11 @@
 <launch>
+	<param name="/use_sim_time" value="true" />	
+
   <!-- this launch file corresponds to robot model in ros-pkg/robot_descriptions/pr2/erratic_defs/robots for full erratic -->
   <group name="wg">
+    <!-- Create a transform sender for linking these frames. -->
+    <node pkg="tf" type="transform_sender" args="0 0 0 0 0 0 base_footprint base_link 40" />	
+
     <!-- send pr2.xml to param server -->
     <param name="robotdesc/erratic" command="$(find xacro)/xacro.py '$(find erratic_defs)/robots/erratic.xml'" />
 
