@@ -156,7 +156,8 @@ void JointPositionController::update()
     error = joint_state_->position_ - command_;
   }
 
-  joint_state_->commanded_effort_ = pid_controller_.updatePid(error, dt_);
+  joint_state_->commanded_effort = pid_controller_.updatePid(error, dt_);
+  //joint_state_->commanded_effort_ = pid_controller_.updatePid(error, joint_state_->velocity_, dt_);
 
 
 
@@ -201,6 +202,7 @@ void JointPositionControllerNode::update()
       tuning_publisher_->msg_.torque_measured = c_->joint_state_->applied_effort_;
       tuning_publisher_->msg_.torque          = c_->joint_state_->commanded_effort_;
       tuning_publisher_->msg_.time_step       = c_->dt_;
+      tuning_publisher_->msg_.count       = count;
 
       tuning_publisher_->unlockAndPublish();
     } 
