@@ -5,10 +5,6 @@
 #include "ros/node.h"
 #include "joy/Joy.h"
 
-// This should really go in the .msg
-#define MAX_BUTTONS 4
-#define MAX_AXES 4
-
 using namespace std;
 
 void *s_joy_func(void *);
@@ -101,8 +97,6 @@ int main(int argc, char **argv)
   joy.start();
   joy.spin();
   joy.stop();
-  
-//  exit(0);
   return 0;
 }
 
