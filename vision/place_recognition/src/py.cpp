@@ -213,18 +213,21 @@ static sig_data_t* extract_features(PyObject *self, PyObject *pim,
       sig += dimension;
     }
   } else {
-    unsigned int size = PySequence_Size(descriptors);
+    PyObject *fi = PySequence_Fast(descriptors, "descriptors");
+    if (fi == NULL)
+      return 0;
+    unsigned int size = PySequence_Fast_GET_SIZE(fi);
     *num_features = size;
     posix_memalign((void**)&image_features, 16, size*dimension*sizeof(sig_data_t));
     sig_data_t *dst = image_features;
-    PyObject *iterator = PyObject_GetIter(descriptors);
-    PyObject *d;
-    assert(iterator != NULL);
-    while ((d = PyIter_Next(iterator)) != NULL) {
-      signature_t *sig = (signature_t*)d;
+
+    for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(fi); i++) {
+      PyObject *item = PySequence_Fast_GET_ITEM(fi, i);
+      signature_t *sig = (signature_t*)item;
       memcpy((char*)dst, (char*)sig->data, dimension * sizeof(sig_data_t));
       dst += dimension;
     }
+    Py_DECREF(fi);
   }
 
   return image_features;
@@ -344,16 +347,16 @@ PyObject *vttopN(PyObject *self, PyObject *args)
 
   unsigned int N = ((vocabularytree_t*)self)->vt->databaseSize();
   PyObject *l = PyList_New(N);
-  for (unsigned j = 0; j < N; ++j)
-    PyList_SetItem(l, j, PyFloat_FromDouble(0.0));
 
   for (unsigned int j = 0; j < matches.size(); ++j) {
     unsigned int match_id = matches[j].id;
     assert(match_id < N);
-    PyList_SetItem(l, match_id, PyFloat_FromDouble(matches[j].score));
+    PyList_SET_ITEM(l, match_id, PyFloat_FromDouble(matches[j].score));
   }
+  for (unsigned j = 0; j < N; ++j)
+    if (PyList_GET_ITEM(l, j) == NULL)
+      PyList_SetItem(l, j, PyFloat_FromDouble(0.0));
   
-
   return l;
 }
 
