@@ -5,6 +5,9 @@
   <!-- load controllers -->
   <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
 
+  <!-- load controllers -->
+  <include file="$(find stereo_image_proc)/stereo.launch" />
+
   <!-- Run hztest -->
   <!-- Test for publication of 'left axis camera image publish rate' topic -->
   <test test-name="hztest_test_axis_left_image" pkg="rostest" type="hztest" time-limit="60" name="axis_left_image_test">
@@ -37,7 +40,16 @@
 
   <!-- Test for publication of 'left stereo camera image publish rate' topic -->
   <test test-name="hztest_test_stereo_left_image" pkg="rostest" type="hztest" time-limit="60" name="stereo_left_image_test">
-    <param name="topic" value="/stereo_l/image" />
+    <param name="topic" value="/stereo/left/image" />
+    <param name="hz" value="20.0" />
+    <param name="hzerror" value="1.0" />
+    <param name="test_duration" value="2.0" />
+    <param name="check_intervals" value="false" />    
+  </test>
+
+  <!-- Test for publication of 'left stereo camera image publish rate' topic -->
+  <test test-name="hztest_test_stereo_right_image" pkg="rostest" type="hztest" time-limit="60" name="stereo_right_image_test">
+    <param name="topic" value="/stereo/right/image" />
     <param name="hz" value="20.0" />
     <param name="hzerror" value="1.0" />
     <param name="test_duration" value="2.0" />
@@ -50,7 +62,7 @@
     for this test (raw_stereo_test vs. scan_test). -->
     <param name="topic" value="/stereo/raw_stereo" />
     <param name="hz" value="20.0" />
-    <param name="hzerror" value="2.0" />
+    <param name="hzerror" value="1.0" />
     <param name="test_duration" value="2.0" />
     <param name="check_intervals" value="false" />
   </test>
