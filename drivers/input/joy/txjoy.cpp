@@ -5,17 +5,14 @@
 #include "ros/ros.h"
 #include "joy/Joy.h"
 
-using namespace std;
-using namespace ros;
-
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "txjoy");
   ros::NodeHandle n;
   ros::Publisher pub = n.advertise<joy::Joy>("joy", 1);
-  string joy_dev;
+  std::string joy_dev;
   int deadzone = 0;
-  n.param<string>("~dev", joy_dev, "/dev/input/js0");
+  n.param<std::string>("~dev", joy_dev, "/dev/input/js0");
   n.param<int>("~deadzone", deadzone, 2000);
   int joy_fd = open(joy_dev.c_str(), O_RDONLY);
   if (joy_fd <= 0)
