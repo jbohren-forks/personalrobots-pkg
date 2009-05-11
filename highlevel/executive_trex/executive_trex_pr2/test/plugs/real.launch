@@ -13,9 +13,9 @@
   <param name="/trex/enable_plug_in" value="false"/>
   <param name="/trex/enable_detect_outlet_coarse" value="false"/>
   <param name="/trex/enable_detect_outlet_fine" value="false"/>
-  <param name="/trex/enable_doors_tuck_arms" value="false"/>
-  <param name="/trex/enable_doors_touch_door" value="false"/>
-  <param name="/trex/enable_doors_grasp_handle" value="false"/>
+  <param name="/trex/enable_tuck_arms" value="false"/>
+  <param name="/trex/enable_touch_door" value="true"/>
+  <param name="/trex/enable_grasp_handle" value="true"/>
   <node pkg="executive_trex_pr2" type="stub_ros_container" respawn="false" />
 
   <param name="/trex/update_rate" value="1"/>
