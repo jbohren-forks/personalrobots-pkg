@@ -5,5 +5,5 @@ rospack_add_library(hokuyo hokuyo.cpp)
 rospack_add_executable(hokuyo_node hokuyo_node.cpp)
 target_link_libraries(hokuyo_node hokuyo)
 
-rospack_add_compile_flags(hokuyo_node "-pg")
-rospack_add_link_flags(hokuyo_node "-pg")
+#rospack_add_compile_flags(hokuyo_node "-pg")
+#rospack_add_link_flags(hokuyo_node "-pg")
