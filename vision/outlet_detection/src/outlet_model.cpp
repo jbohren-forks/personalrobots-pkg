@@ -127,12 +127,12 @@ void find_hole_candidates(IplImage* grey, IplImage* mask, CvSeq* socket, vector<
 #else
 		CvRect bound = resize_rect(rect, 2.0f);
 #endif //_TUNING
+        bound = fit_rect(bound, grey);
 		
 #if 0
 		// !! this is old contrast calculation that I found unnecessary on 
 		// the latest data (16mm and 5mp)
 		// so this is disabled to save computational time
-		bound = fit_rect(bound, grey);
 		CvScalar avg_outside, std_outside;
 		cvSetImageROI(grey, bound);
 		avg_outside = cvSum(grey);
