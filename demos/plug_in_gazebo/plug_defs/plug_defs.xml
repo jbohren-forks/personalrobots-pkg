@@ -330,6 +330,18 @@
           <frameName>map</frameName>
           <interface:position name="p3d_outlet_position"/>
       </controller:ros_p3d>
+      <controller:ros_sim_iface name="sim_iface_plug_controller" plugin="libros_sim_iface.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1.0</updateRate>
+          <modelName>plug_link</modelName>
+          <topicName>plug_pose</topicName>
+          <frameName>map</frameName>
+          <xyz>0 0 0</xyz>
+          <rpy>0 0 0</rpy>
+          <vel>0 0 0</vel>
+          <angVel>0 0 0</angVel>
+          <interface:position name="sim_iface_plug_position"/>
+      </controller:ros_sim_iface>
     </verbatim>
   </map>
 
