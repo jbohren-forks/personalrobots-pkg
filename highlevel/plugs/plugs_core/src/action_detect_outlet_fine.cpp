@@ -54,7 +54,7 @@ DetectOutletFineAction::DetectOutletFineAction(ros::Node& node)
       return;
     }
   node_.advertise<robot_msgs::PointStamped>(head_controller_ + "/head_track_point",10);
-  node_.setParam("~display", 1);
+  node_.setParam("~display", 0);
   detector_ = new OutletTracker::OutletTracker(node);
   detector_->deactivate();  
   node_.subscribe("~outlet_pose", outlet_pose_msg_, &DetectOutletFineAction::foundOutlet, this, 1);
