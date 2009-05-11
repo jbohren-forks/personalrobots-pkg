@@ -6,6 +6,7 @@
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
   <depend package="amcl"/>
   <depend package="erratic_player"/>
+  <depend package="willow_maps"/>
   <depend package="sicktoolbox_wrapper"/>
   <depend package="map_server"/>
   <depend package="wavefront"/>
