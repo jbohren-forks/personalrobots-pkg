@@ -170,7 +170,10 @@ namespace robot_actions {
      */
     void publish(){
       makeCallback(_status, _goal, _feedback);
-      publishDiagnostics();
+      if (time_publish_diagnostics_ + ros::Duration(1.0) < ros::Time::now()){
+	time_publish_diagnostics_ = ros::Time::now();
+	publishDiagnostics();
+      }
     }
 
   protected:
@@ -287,6 +290,7 @@ namespace robot_actions {
     }
 
 
+    ros::Time time_publish_diagnostics_;
     const std::string _name; /*!< Name for the action */
     bool _preempt_request; /*!< True when preemption has been requested. */
     ActionStatus _status; /*!< The current action status */
