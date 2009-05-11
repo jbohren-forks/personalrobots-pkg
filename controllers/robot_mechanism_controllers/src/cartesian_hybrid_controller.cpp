@@ -408,7 +408,7 @@ bool CartesianHybridControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   command_notifier_.reset(new tf::MessageNotifier<robot_msgs::TaskFrameFormalism>(
                             &TF, node,
                             boost::bind(&CartesianHybridControllerNode::command, this, _1),
-                                        name_ + "/command", c_.chain_.getLinkName(0), 10));
+                                        name_ + "/command", c_.chain_.getLinkName(0), 100));
 
   pub_state_.reset(new realtime_tools::RealtimePublisher<robot_mechanism_controllers::CartesianHybridState>(name_ + "/state", 1));
   pub_tf_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>("/tf_message", 5));
