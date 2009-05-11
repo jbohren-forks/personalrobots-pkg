@@ -27,7 +27,7 @@
  *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
  *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING INeco 
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING INeco
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
@@ -42,9 +42,9 @@ UnplugAction::UnplugAction() :
   robot_actions::Action<std_msgs::Empty, std_msgs::Empty>("unplug"),
   action_name_("unplug"),
   node_(ros::Node::instance()),
-  arm_controller_("r_arm_hybrid_controller") 
+  arm_controller_("r_arm_hybrid_controller")
 {
- 
+
   node_->param(action_name_ + "/arm_controller", arm_controller_, arm_controller_);
 
   if(arm_controller_ == "" )
@@ -93,6 +93,7 @@ void  UnplugAction::checkUnplug()
   if (!isActive())
     return;
 
+  tff_msg_.header.stamp = ros::Time::now();
   node_->publish(arm_controller_ + "/command", tff_msg_);
 
   if(fabs(controller_state_msg_.last_pose_meas.vel.x + 0.1) < 0.02)
