@@ -243,8 +243,10 @@ public:
       if (calibrate_time_)
       {
        // first parameter false when 04LX laser used because 04LX sensor only accepts MD commands, not ME commands
+        ROS_INFO("Starting calibration");
         laser_.calcLatency(!LaserIsHokuyoModel04LX, min_ang_, max_ang_, cluster_, skip_);
         calibrate_time_ = false; // @todo Hack so that if there is a transmission the slow calibration process does not happen again.
+        ROS_INFO("Calibration finished");
       }
 
       hokuyo::LaserConfig config;
