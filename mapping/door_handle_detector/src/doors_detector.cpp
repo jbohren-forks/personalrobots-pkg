@@ -42,6 +42,7 @@ using namespace door_functions;
 #define DEBUG_FAILURES 0
 
 
+
 DoorDetector::DoorDetector (ros::Node* anode)
   : node_ (anode), tf_ (*anode)
 {
@@ -54,6 +55,7 @@ DoorDetector::DoorDetector (ros::Node* anode)
     node_->param ("~door_max_height", door_max_height_, 3.0);                  // maximum height of a door: 3m
     node_->param ("~door_min_width", door_min_width_, 0.7);                    // minimum width of a door: 0.7m
     node_->param ("~door_max_width", door_max_width_, 1.4);                    // maximum width of a door: 1.4m
+    node_->param ("~door_max_dist_from_prior", max_dist_from_prior_, 0.5);     // maximum distance between the detected door and the prior
     ROS_DEBUG ("Using the following thresholds for door detection [min-max height / min-max width]: %f-%f / %f-%f.",
                door_min_height_, door_max_height_, door_min_width_, door_max_width_);
 
@@ -371,10 +373,15 @@ bool
 
     goodness_factor[cc] *= (area / (door_frame * door_height));
 
+
     // ---[ Compute the distance from the door hinge to the prior of the door hinge
     double door_distance = fmax (0.001, fmin(distToHinge(door_tr, min_p), distToHinge(door_tr, max_p)));
+    if (door_distance > max_dist_from_prior_){
+      goodness_factor[cc] = 0;
+      continue;
+    }
     goodness_factor[cc] /= door_distance;
-    ROS_WARN ("A: Door candidate (%d, %d hull points, %d points) accepted with: average point density (%g), area (%g), width (%g), height (%g).\n Planar coefficients: [%g %g %g %g]",
+    ROS_INFO ("A: Door candidate (%d, %d hull points, %d points) accepted with: average point density (%g), area (%g), width (%g), height (%g).\n Planar coefficients: [%g %g %g %g]",
               cc, (int)pmap_.polygons[cc].points.size (), (int)inliers.size (), density, area, door_frame, door_height, coeff[cc][0], coeff[cc][1], coeff[cc][2], coeff[cc][3]);
   } // loop over clusters
 

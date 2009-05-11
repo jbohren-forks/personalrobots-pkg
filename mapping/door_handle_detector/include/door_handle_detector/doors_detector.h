@@ -101,7 +101,7 @@ private:
   std::string parameter_frame_, fixed_frame_;
 
   // Parameters regarding geometric constraints for the door/handle
-  double door_min_height_, door_min_width_, door_max_height_, door_max_width_, door_min_z_;
+  double door_min_height_, door_min_width_, door_max_height_, door_max_width_, door_min_z_, max_dist_from_prior_;
 
   // Parameters regarding the _fast_ normals/plane computation using a lower quality (downsampled) dataset
   double leaf_width_;
