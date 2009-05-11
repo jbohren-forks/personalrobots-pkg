@@ -63,7 +63,7 @@ public:
   /*!
    * \brief update send most recent motor commands and retrieve updates. This command must be run at a sufficient rate or else the motors will be disabled.
    */
-  void update(bool reset);
+  void update(bool reset, bool halt);
 
   /*!
    * \brief Initialize the EtherCAT Master Library.

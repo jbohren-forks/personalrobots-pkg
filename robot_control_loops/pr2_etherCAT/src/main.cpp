@@ -94,6 +94,7 @@ void Usage(string msg = "")
 
 static int g_quit = 0;
 static bool g_reset_motors = true;
+static bool g_halt_motors = false;
 static const int NSEC_PER_SEC = 1e+9;
 
 static struct
@@ -238,13 +239,14 @@ void *controlLoop(void *)
     {
       accumulator_set<double, stats<tag::max, tag::mean> > zero;
       acc = zero;
-      ec.update(true);
+      ec.update(true, g_halt_motors);
       g_reset_motors = false;
     }
     else
     {
-      ec.update(false);
+      ec.update(false, g_halt_motors);
     }
+    g_halt_motors = false;
     double after_ec = now();
     mcn.update();
     double after_mc = now();
@@ -288,7 +290,7 @@ void *controlLoop(void *)
     ec.hw_->actuators_[i]->command_.enable_ = false;
     ec.hw_->actuators_[i]->command_.effort_ = 0;
   }
-  ec.update(false);
+  ec.update(false, true);
 
   publisher.stop();
   if (rtpublisher) delete rtpublisher;
@@ -310,6 +312,12 @@ bool shutdownService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &r
 bool resetMotorsService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp)
 {
   g_reset_motors = true;
+  return true;
+}
+
+bool haltMotorsService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp)
+{
+  g_halt_motors = true;
   return true;
 }
 
@@ -518,6 +526,7 @@ int main(int argc, char *argv[])
 
   node->advertiseService("shutdown", shutdownService);
   node->advertiseService("reset_motors", resetMotorsService);
+  node->advertiseService("halt_motors", haltMotorsService);
 
   //Start thread
   int rv;

@@ -318,7 +318,7 @@ void EthercatHardware::publishDiagnostics()
   }
 }
 
-void EthercatHardware::update(bool reset)
+void EthercatHardware::update(bool reset, bool halt)
 {
   unsigned char *current, *last;
 
@@ -326,6 +326,9 @@ void EthercatHardware::update(bool reset)
 
   // Convert HW Interface commands to MCB-specific buffers
   current = current_buffer_;
+
+  if (halt)
+    halt_motors_ = true;
 
   if (reset)
   {
