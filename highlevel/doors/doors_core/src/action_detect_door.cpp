@@ -47,7 +47,6 @@ using namespace door_handle_detector;
 using namespace door_functions;
 
 static const string fixed_frame = "odom_combined";
-static const double max_dist_from_prior = 0.5;
 
 
 
@@ -145,19 +144,6 @@ bool DetectDoorAction::laserDetection(const door_msgs::Door& door_in, door_msgs:
 
   if (!ros::service::call("doors_detector_cloud", req_doordetect, res_doordetect)){
     ROS_ERROR("DetectDoorAction: failed to detect a door");
-    return false;
-  }
-
-  // check if door is close enough to prior
-  double dist_from_prior;
-  if (res_doordetect.doors[0].hinge == door_msgs::Door::HINGE_P1)
-   dist_from_prior = cloud_geometry::distances::pointToPointXYDistance(res_doordetect.doors[0].frame_p1, res_doordetect.doors[0].door_p1);
-  else if (res_doordetect.doors[0].hinge == door_msgs::Door::HINGE_P2)
-   dist_from_prior = cloud_geometry::distances::pointToPointXYDistance(res_doordetect.doors[0].frame_p2, res_doordetect.doors[0].door_p2);
-  else
-    ROS_ERROR("DetectDoorAction: Hinge side is not specified");
-  if (dist_from_prior > max_dist_from_prior){
-    ROS_ERROR("DetectDoorAction: Detected door is too far from prior: %f [m]", dist_from_prior);
     return false;
   }
 
