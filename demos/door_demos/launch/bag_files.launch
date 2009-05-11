@@ -4,19 +4,10 @@
 <!-- Laser tilt controller -->
   <param name="laser_tilt_controller/autostart" type="bool" value="true" />
   <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_experimental_controllers)/laser_tilt/laser_tilt_controller.xml" />
-  <node pkg="pr2_mechanism_controllers" type="send_periodic_cmd_srv.py" args="laser_tilt_controller linear 20.000000 0.982233 0.019344" />
-
-<!-- Stereo image processing -->
-  <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" />
-
-<!-- Filter for tilt laser shadowing/veiling -->
-  <node pkg="laser_scan" type="scan_shadows_filter_node" machine="three" name="tilt_shadow_filter">
-    <param name="scan_topic" value="tilt_scan" />
-    <param name="cloud_topic" value="tilt_scan_filtered" />
-  </node>
+  <node pkg="pr2_mechanism_controllers" type="send_periodic_cmd_srv.py" args="laser_tilt_controller linear 8.000000 0.173425 0.159271" />
 
 <!-- Laser scan assembler for tilt laser -->
-  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" machine="three" name="laser_scan_assembler">
+  <node pkg="point_cloud_assembler" type="laser_scan_assembler_srv" output="screen" name="laser_scan_assembler">
     <remap from="scan_in" to="tilt_scan"/>
     <param name="filters" textfile="$(find laser_scan)/default_scan_shadows.xml" />
     <param name="tf_cache_time_secs" type="double" value="10.0" />
@@ -26,7 +17,19 @@
     <param name="downsample_factor" type="int" value="1" />
   </node>
 
-<!-- recording -->
-  <node pkg="rosrecord" type="rosrecord" respawn="false" machine="four" args="tf_message pointcloud stereo_raw" />  
+<!-- Point cloud snapshotter -->
+  <node pkg="point_cloud_assembler" type="point_cloud_snapshotter" output="screen" name="point_cloud_snapshotter">
+    <remap from="laser_scanner_signal" to="laser_tilt_controller/laser_scanner_signal"/>
+    <remap from="build_cloud" to="laser_scan_assembler/build_cloud" />
+    <remap from="full_cloud" to="handle_cloud" />
+  </node>
+
+
+<!-- Stereo image processing -->
+  <node pkg="stereo_image_proc" type="stereoproc" respawn="false" machine="four" />
+
+<!-- base -->
+<include file="$(find pr2_alpha)/teleop_joystick.launch" />
+
 
 </launch>
