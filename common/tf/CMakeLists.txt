@@ -100,3 +100,12 @@ set_target_properties(python_${PROJECT_NAME}
 
 # Tests for swig
 rospack_add_pyunit_future(test/test_datatype_conversion.py)
+
+
+
+
+## Tutorials
+rospack_add_executable(tutorials/earth_tracker tutorials/earth_tracker.cpp)
+target_link_libraries(tutorials/earth_tracker tf)
+rospack_add_executable(tutorials/space_shuttle_tracker tutorials/space_shuttle_tracker.cpp)
+target_link_libraries(tutorials/space_shuttle_tracker tf)

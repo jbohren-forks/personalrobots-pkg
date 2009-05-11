@@ -6,10 +6,35 @@
 @b tf is a library for keeping track of coordinate frames.  There are both python binding and c++ bindings. 
 
  - @ref overview
+ - @ref utilities
  - @ref python
  - @ref cpp
+ - @ref tutorial
  - @ref faq
 
+
+@page utilities tf Utilities
+@section debugging_utilities  Debugging Utilities
+@subsection tf_monitor tf_monitor
+This node will listen to the tf_message topic and generate statistics to help diagnose problems.  
+
+\todo WRITE ME
+
+@subsection tf_echo tf_echo
+This node will echo the latest transform between two frames.
+
+\todo WRITE ME
+
+@subsection viewFrames viewFrames.py
+This node will generate a pdf of the current transform tree.  
+
+\todo WRITE ME
+
+@section helper_utilities Helper Utilites
+@subsection transform_sender transform_sender
+This is a command line tool to send static transforms periodically.  
+
+\todo WRITE ME
 
 @page overview Overview of Functionality
 @section summary Summary
