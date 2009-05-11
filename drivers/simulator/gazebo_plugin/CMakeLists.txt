@@ -35,6 +35,8 @@ rospack_add_library(gazebo_battery src/gazebo_battery.cpp)
 rospack_link_boost(gazebo_battery thread)
 rospack_add_library(ros_bumper src/ros_bumper.cpp)
 rospack_link_boost(ros_bumper thread)
+rospack_add_library(ros_sim_iface src/ros_sim_iface.cpp)
+rospack_link_boost(ros_sim_iface thread)
 
 
 

@@ -109,9 +109,9 @@ class RosSimIface : public Controller
   /// \brief ROS frame transform name to use in the pose message header.
   ///        This should typically match the link name the sensor is attached.
   /// \brief inputs
-  private: ParamT<std::string> topicNameP,frameNameP,bodyNameP;
-  private: ParamT<Vector3> xyzP,rpyP,velP,angVelP;
-  private: std::string topicName,frameName,bodyName;
+  private: ParamT<std::string> *topicNameP,*frameNameP,*modelNameP;
+  private: ParamT<Vector3> *xyzP,*rpyP,*velP,*angVelP;
+  private: std::string topicName,frameName,modelName;
   private: Vector3 xyz,rpy,vel,angVel;
 };
 

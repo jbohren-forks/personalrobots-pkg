@@ -57,10 +57,6 @@ RosSimIface::RosSimIface(Entity *parent)
     gzthrow("RosSimIface controller requires an Entity as its parent");
 
 
-  // set parent sensor to active automatically
-  this->myParent->SetActive(true);
-
-
   rosnode = ros::g_node; // comes from where?
   int argc = 0;
   char** argv = NULL;
@@ -74,7 +70,7 @@ RosSimIface::RosSimIface(Entity *parent)
   Param::Begin(&this->parameters);
   this->topicNameP = new ParamT<std::string>("topicName","simiface_pose", 0);
   this->frameNameP = new ParamT<std::string>("frameName","map", 0);
-  this->bodyNameP = new ParamT<std::string>("bodyName","base_link", 1);
+  this->modelNameP = new ParamT<std::string>("modelName","pr2_model", 1);
   this->xyzP  = new ParamT<Vector3>("xyz" ,Vector3(0,0,0), 0);
   this->rpyP  = new ParamT<Vector3>("rpy" ,Vector3(0,0,0), 0);
   this->velP  = new ParamT<Vector3>("vel" ,Vector3(0,0,0), 0);
@@ -89,7 +85,7 @@ RosSimIface::~RosSimIface()
 
   delete this->topicNameP;
   delete this->frameNameP;
-  delete this->bodyNameP;
+  delete this->modelNameP;
   delete this->xyzP;
   delete this->rpyP;
   delete this->velP;
@@ -103,7 +99,7 @@ void RosSimIface::LoadChild(XMLConfigNode *node)
 {
   this->topicNameP->Load(node);
   this->frameNameP->Load(node);
-  this->bodyNameP->Load(node);
+  this->modelNameP->Load(node);
   this->xyzP->Load(node);
   this->rpyP->Load(node);
   this->velP->Load(node);
@@ -111,7 +107,7 @@ void RosSimIface::LoadChild(XMLConfigNode *node)
 
   this->topicName = this->topicNameP->GetValue();
   this->frameName = this->frameNameP->GetValue();
-  this->bodyName = this->bodyNameP->GetValue();
+  this->modelName = this->modelNameP->GetValue();
   this->xyz = this->xyzP->GetValue();
   this->rpy = this->rpyP->GetValue();
   this->vel = this->velP->GetValue();
@@ -137,12 +133,7 @@ void RosSimIface::UpdateObjectPose()
   this->lock.lock();
   // copy data into pose
   this->poseMsg.header.frame_id = this->frameName;
-  this->poseMsg.header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
-  this->poseMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->poseMsg.header.stamp.sec) );
-
-
-
-
+  this->poseMsg.header.stamp.fromSec(floor(Simulator::Instance()->GetSimTime()));
 
   gazebo::Client *client = new gazebo::Client();
   gazebo::SimulationIface *simIface = new gazebo::SimulationIface();
@@ -157,7 +148,7 @@ void RosSimIface::UpdateObjectPose()
   catch (gazebo::GazeboError e)
   {
     std::cout << "Gazebo error: Unable to connect\n" << e << "\n";
-    return -1;
+    //return -1;
   }
 
   /// Open the Simulation Interface
@@ -168,13 +159,10 @@ void RosSimIface::UpdateObjectPose()
   catch (std::string e)
   {
     std::cout << "Gazebo error: Unable to connect to the sim interface\n" << e << "\n";
-    return -1;
+    //return -1;
   }
 
   //simIface->data->reset = 1;
-
-  // Example of how to move a model (box1_model)
-  uint8_t name[512] = "pioneer2dx_model1";
 
   for (int i=0; i< 10; i++)
   {
@@ -182,11 +170,12 @@ void RosSimIface::UpdateObjectPose()
 
     gazebo::SimulationRequestData *request = &(simIface->data->requests[simIface->data->requestCount++]);
 
-    request->type = gazebo::SimulationRequestData::SET_POSE2D;
-    memcpy(request->modelName, name, 512);
+    request->type = gazebo::SimulationRequestData::SET_POSE3D;
+    memcpy(request->modelName, this->modelName.c_str(), this->modelName.size());
 
-    request->modelPose.pos.x = i+.1;
-    request->modelPose.pos.y = 0;
+    request->modelPose.pos.x = this->poseMsg.pos.position.x;
+    request->modelPose.pos.y = this->poseMsg.pos.position.y;
+    request->modelPose.pos.z = this->poseMsg.pos.position.z;
 
     simIface->Unlock();
 
