@@ -171,9 +171,9 @@ if __name__ == '__main__':
     #@todo it would be nice to read an xml configuration file to get these parameters.
     rospy.init_node('pressure_info')
     pip1=pressureInformationPublisher('pressure/r_gripper_motor_info', 
-            'r_gripper_r_finger_tip_link', 'r_gripper_l_finger_tip_link')
+            'r_gripper_l_finger_tip_link', 'r_gripper_r_finger_tip_link')
     pip2=pressureInformationPublisher('pressure/l_gripper_motor_info', 
-            'l_gripper_r_finger_tip_link', 'l_gripper_l_finger_tip_link')
+            'l_gripper_l_finger_tip_link', 'l_gripper_r_finger_tip_link')
     
     while not rospy.is_shutdown():
         rospy.sleep(1)
