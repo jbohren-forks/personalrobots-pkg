@@ -44,8 +44,8 @@ MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
   action_name_("move_and_grasp_plug"),
   node_(ros::Node::instance()),
   gripper_controller_("r_gripper_position_controller"),  
-  arm_controller_("r_arm_cartesian_trajectory_controller")
-  lifted_(false);
+  arm_controller_("r_arm_cartesian_trajectory_controller"),
+  lifted_(false)
 {
 
   node_->param(action_name_ + "/gripper_controller", gripper_controller_, gripper_controller_);
