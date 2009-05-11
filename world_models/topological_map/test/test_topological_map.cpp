@@ -185,15 +185,15 @@ TEST(TopologicalMap, BasicAPI)
   // Outlets
   m.addOutlet(OutletInfo(1,2,3,4,5,6,7,4,"orange"));
   m.addOutlet(OutletInfo(10,20,30,40,50,60,70,1,"white"));
-  EXPECT_EQ(m.outletInfo(0).z, 3);
-  EXPECT_EQ(m.outletInfo(1).sockets_color, "white");
-  EXPECT_EQ(m.nearestOutlet(Point2D(3,4)), 0);
-  EXPECT_EQ(m.nearestOutlet(Point2D(15,16)), 1);
-  EXPECT_EQ(m.outletInfo(0).blocked, false);
+  EXPECT_EQ(m.outletInfo(1).z, 3);
+  EXPECT_EQ(m.outletInfo(2).sockets_color, "white");
+  EXPECT_EQ(m.nearestOutlet(Point2D(3,4)), 1);
+  EXPECT_EQ(m.nearestOutlet(Point2D(15,16)), 2);
   EXPECT_EQ(m.outletInfo(1).blocked, false);
-  m.observeOutletBlocked(1);
-  EXPECT_EQ(m.outletInfo(0).blocked, false);
-  EXPECT_EQ(m.outletInfo(1).blocked, true);
+  EXPECT_EQ(m.outletInfo(2).blocked, false);
+  m.observeOutletBlocked(2);
+  EXPECT_EQ(m.outletInfo(1).blocked, false);
+  EXPECT_EQ(m.outletInfo(2).blocked, true);
 }
 
 

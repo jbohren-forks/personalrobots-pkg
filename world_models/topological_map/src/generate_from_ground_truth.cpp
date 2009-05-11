@@ -137,7 +137,8 @@ RegionPtr getDoorCells (const Point2D& p1, const Point2D& p2, double width, doub
       Point2D p=cellCenter(Cell2D(r, c), resolution);
       double d, l;
       tie(l,d) = project(p);
-      
+
+      // This essentially uses an ellipse whose major axis is the door and minor axis size is width
       if ((l > -length_error_threshold) && (l < 1+length_error_threshold) && (d <= width*(1-3*pow(l-.5,2))))
         region->insert(Cell2D(r,c));
     }

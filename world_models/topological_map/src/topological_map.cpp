@@ -733,18 +733,18 @@ void TopologicalMap::MapImpl::setDoorCosts (const Time& t)
 
 OutletInfo& getOutletInfo (OutletVector& outlets, const OutletId id)
 {
-  if (id>=outlets.size())
+  if ((id==0)||(id>outlets.size()))
     throw UnknownOutletException(id);
   else
-    return outlets[id];
+    return outlets[id-1];
 }
 
 const OutletInfo& getOutletInfo (const OutletVector& outlets, const OutletId id)
 {
-  if (id>=outlets.size())
+  if ((id==0)||(id>outlets.size()))
     throw UnknownOutletException(id);
   else
-    return outlets[id];
+    return outlets[id-1];
 }
 
 struct CloserTo
@@ -770,7 +770,7 @@ OutletId TopologicalMap::MapImpl::nearestOutlet (const Point2D& p) const
   OutletVector::const_iterator pos = min_element(outlets_.begin(), outlets_.end(), CloserTo(p2.x, p2.y));
   if (pos==outlets_.end()) 
     throw NoOutletException(p2.x, p2.y);
-  return pos-outlets_.begin();
+  return 1+(pos-outlets_.begin());
 }
 
 void TopologicalMap::MapImpl::observeOutletBlocked (const OutletId id)
@@ -787,13 +787,13 @@ OutletInfo TopologicalMap::MapImpl::outletInfo (const OutletId id) const
 OutletId TopologicalMap::MapImpl::addOutlet (const OutletInfo& outlet)
 {
   outlets_.push_back(outlet);
-  return outlets_.size()-1;
+  return outlets_.size();
 }
 
 OutletIdSet TopologicalMap::MapImpl::allOutlets () const
 {
-  // For now, outlet ids are 0,...,num_outlets-1
-  return OutletIdSet(Counter(0), Counter(outlets_.size()));
+  // For now, outlet ids are 1,...,num_outlets
+  return OutletIdSet(Counter(1), Counter(1+outlets_.size()));
 }
   
 

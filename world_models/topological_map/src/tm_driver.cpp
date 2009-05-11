@@ -144,11 +144,11 @@ int main (int argc, char* argv[])
   cout << "Nearest outlet to " << p1 << " is " << m3.nearestOutlet(p1) << endl;
   cout << "Nearest outlet to " << p2 << " is " << m3.nearestOutlet(p2) << endl;
 
+  cout << "Outlet 2 blocked is " << m3.outletInfo(2).blocked << endl;
   cout << "Outlet 1 blocked is " << m3.outletInfo(1).blocked << endl;
-  cout << "Outlet 0 blocked is " << m3.outletInfo(0).blocked << endl;
-  m3.observeOutletBlocked(1);
+  m3.observeOutletBlocked(2);
+  cout << "Outlet 2 blocked is " << m3.outletInfo(2).blocked << endl;
   cout << "Outlet 1 blocked is " << m3.outletInfo(1).blocked << endl;
-  cout << "Outlet 0 blocked is " << m3.outletInfo(0).blocked << endl;
 
   
   
