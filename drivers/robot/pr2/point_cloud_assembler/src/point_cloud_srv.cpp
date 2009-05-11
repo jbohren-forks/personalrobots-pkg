@@ -98,7 +98,8 @@ public:
     if (!ros::service::call("laser_tilt_controller/set_periodic_cmd", scan_req, scan_res))
       ROS_ERROR("PointCloudSrv: error setting laser scanner periodic command");
     else
-    ROS_INFO("PointCloudSrv: commanded tilt laser scanner");
+      ROS_INFO("PointCloudSrv: commanded tilt laser scanner with period %f, amplitude %f and offset %f",
+	       scan_req.command.period, scan_req.command.amplitude, scan_req.command.offset);
 
 
     // wait for signal from laser to know when scan is finished
