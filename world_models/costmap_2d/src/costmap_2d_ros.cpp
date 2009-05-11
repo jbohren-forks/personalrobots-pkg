@@ -47,7 +47,7 @@ namespace costmap_2d {
 
   Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix) : ros_node_(ros_node), 
   tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true){
-    
+
     string topics_string;
     //get the topics that we'll subscribe to from the parameter server
     ros_node_.param("~" + prefix + "/costmap/observation_topics", topics_string, string(""));
@@ -347,7 +347,7 @@ namespace costmap_2d {
     for(unsigned int i = 0; i < marking_buffers_.size(); ++i){
       marking_buffers_[i]->lock();
       marking_buffers_[i]->getObservations(marking_observations);
-      current = current && marking_buffers_[i]->isCurrent();
+      current = marking_buffers_[i]->isCurrent() && current;
       marking_buffers_[i]->unlock();
     }
     return current;
@@ -359,7 +359,7 @@ namespace costmap_2d {
     for(unsigned int i = 0; i < clearing_buffers_.size(); ++i){
       clearing_buffers_[i]->lock();
       clearing_buffers_[i]->getObservations(clearing_observations);
-      current = current && clearing_buffers_[i]->isCurrent();
+      current = clearing_buffers_[i]->isCurrent() && current;
       clearing_buffers_[i]->unlock();
     }
     return current;
