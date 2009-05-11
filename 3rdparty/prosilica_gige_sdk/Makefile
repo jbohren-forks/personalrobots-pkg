@@ -1,8 +1,8 @@
 default: installed all
 
 ARCH = $(shell uname -m)
-TARBALL = build/Prosilica\ GigE\ SDK\ Linux\ 1.18.tgz
-TARBALL_URL = http://pr.willowgarage.com/downloads/Prosilica%20GigE%20SDK%20Linux%201.18.tgz
+TARBALL = build/Prosilica\ GigE\ SDK\ 1.20\ Linux.tgz
+TARBALL_URL = http://pr.willowgarage.com/downloads/Prosilica%20GigE%20SDK%201.20%20Linux.tgz
 SOURCE_DIR = build/Prosilica_GigE_SDK
 INITIAL_DIR = build/Prosilica\ GigE\ SDK
 # Spaces in tarball file name screw this up, awesome
