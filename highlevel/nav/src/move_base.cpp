@@ -45,19 +45,19 @@ namespace nav {
   MoveBase::MoveBase(ros::Node& ros_node, tf::TransformListener& tf) : 
     Action<robot_msgs::PoseStamped, robot_msgs::PoseStamped>(ros_node.getName()), ros_node_(ros_node), tf_(tf),
     run_planner_(true), tc_(NULL), planner_costmap_ros_(NULL), controller_costmap_ros_(NULL), 
-    planner_(NULL), valid_plan_(false), new_plan_(false) {
+    planner_(NULL), valid_plan_(false), new_plan_(false), attempted_rotation_(false), attempted_costmap_reset_(false) {
 
     //get some parameters that will be global to the move base node
     ros_node_.param("~navfn/robot_base_frame", robot_base_frame_, std::string("base_link"));
     ros_node_.param("~controller_frequency", controller_frequency_, 20.0);
+    ros_node_.param("~planner_patience", planner_patience_, 10.0);
 
     //for comanding the base
     ros_node_.advertise<robot_msgs::PoseDot>("cmd_vel", 1);
 
-    double inscribed_radius, circumscribed_radius;
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
-    ros_node_.param("~navfn/costmap/inscribed_radius", inscribed_radius, 0.325);
-    ros_node_.param("~navfn/costmap/circumscribed_radius", circumscribed_radius, 0.46);
+    ros_node_.param("~navfn/costmap/inscribed_radius", inscribed_radius_, 0.325);
+    ros_node_.param("~navfn/costmap/circumscribed_radius", circumscribed_radius_, 0.46);
 
     //create the ros wrapper for the planner's costmap... and initializer a pointer we'll use with the underlying map
     planner_costmap_ros_ = new Costmap2DROS(ros_node_, tf_, std::string("navfn"));
@@ -73,21 +73,21 @@ namespace nav {
 
     robot_msgs::Point pt;
     //create a square footprint
-    pt.x = inscribed_radius + .01;
-    pt.y = -1 * (inscribed_radius + .01);
+    pt.x = inscribed_radius_ + .01;
+    pt.y = -1 * (inscribed_radius_ + .01);
     footprint_.push_back(pt);
-    pt.x = -1 * (inscribed_radius + .01);
-    pt.y = -1 * (inscribed_radius + .01);
+    pt.x = -1 * (inscribed_radius_ + .01);
+    pt.y = -1 * (inscribed_radius_ + .01);
     footprint_.push_back(pt);
-    pt.x = -1 * (inscribed_radius + .01);
-    pt.y = inscribed_radius + .01;
+    pt.x = -1 * (inscribed_radius_ + .01);
+    pt.y = inscribed_radius_ + .01;
     footprint_.push_back(pt);
-    pt.x = inscribed_radius + .01;
-    pt.y = inscribed_radius + .01;
+    pt.x = inscribed_radius_ + .01;
+    pt.y = inscribed_radius_ + .01;
     footprint_.push_back(pt);
 
     //give the robot a nose
-    pt.x = circumscribed_radius;
+    pt.x = circumscribed_radius_;
     pt.y = 0;
     footprint_.push_back(pt);
 
@@ -165,8 +165,13 @@ namespace nav {
     bool valid_plan = planner_->makePlan(goal, global_plan);
 
     //we'll also push the goal point onto the end of the plan to make sure orientation is taken into account
-    if(valid_plan)
+    if(valid_plan){
       global_plan.push_back(goal);
+
+      //reset our flags for attempts to help create a valid plan
+      attempted_rotation_ = false;
+      attempted_costmap_reset_ = false;
+    }
 
     lock_.lock();
     //copy over the new global plan
@@ -206,7 +211,7 @@ namespace nav {
     makePlan(goal_);
 
     costmap_2d::Rate r(controller_frequency_);
-    while(!isPreemptRequested()){
+    while(!isPreemptRequested() && ros_node_.ok()){
       struct timeval start, end;
       double start_t, end_t, t_diff;
       gettimeofday(&start, NULL);
@@ -250,6 +255,15 @@ namespace nav {
         std::vector<Observation> observations;
         controller_costmap_ros_->getMarkingObservations(observations);
         valid_control = tc_->computeVelocityCommands(cmd_vel, observations);
+
+        //check for success
+        if(tc_->goalReached()){
+          if(attempted_rotation_)
+            valid_control = false;
+          else
+            return robot_actions::SUCCESS;
+        }
+
       }
       else{
         //we don't have a valid plan... so we want to stop
@@ -263,20 +277,32 @@ namespace nav {
 
       lock_.unlock();
 
-      //check for success
-      if(tc_->goalReached())
-        return robot_actions::SUCCESS;
-
-
       //if we don't have a valid control... we need to re-plan explicitly
       if(!valid_control){
-        makePlan(goal_);
+        //try to make a plan
+        if(!tryPlan(goal_)){
+          //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
+          if(attempted_costmap_reset_ && attempted_rotation_)
+            return robot_actions::ABORTED;
 
-        //if planning fails here... try to revert to the static map outside a given area
-        if(!valid_plan_){
-          resetCostmaps();
+          if(attempted_rotation_){
+            resetCostmaps();
+            attempted_rotation_ = false;
+            attempted_costmap_reset_ = true;
+          }
+          else{
+            //if planning fails... we'll try rotating in place to clear things out
+            double angle = M_PI; //rotate 180 degrees
+            tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time::now(), robot_base_frame_);
+            robot_msgs::PoseStamped rotate_goal_msg;
+            PoseStampedTFToMsg(rotate_goal, rotate_goal_msg);
+            global_plan_.clear();
+            global_plan_.push_back(rotate_goal_msg);
+            valid_plan_ = true;
+            new_plan_ = true;
+            attempted_rotation_ = true;
+          }
         }
-
       }
 
       gettimeofday(&end, NULL);
@@ -292,9 +318,36 @@ namespace nav {
     return robot_actions::PREEMPTED;
   }
 
+  bool MoveBase::tryPlan(robot_msgs::PoseStamped goal){
+    ros::Duration patience = ros::Duration(planner_patience_);
+    ros::Time attempt_end = ros::Time::now() + patience;
+    costmap_2d::Rate r(controller_frequency_);
+    while(ros::Time::now() < attempt_end && !isPreemptRequested() && ros_node_.ok()){
+      makePlan(goal);
+
+      //check if we've got a valid plan
+      if(valid_plan_)
+        return true;
+
+      //for now... we'll publish zero velocity
+      robot_msgs::PoseDot cmd_vel;
+
+      cmd_vel.vel.vx = 0.0;
+      cmd_vel.vel.vy = 0.0;
+      cmd_vel.ang_vel.vz = 0.0;
+      //give the base the velocity command
+      ros_node_.publish("cmd_vel", cmd_vel);
+
+      r.sleep();
+    }
+
+    //if we still don't have a valid plan... then our planning attempt has failed
+    return false;
+  }
+
   void MoveBase::resetCostmaps(){
-    planner_costmap_ros_->resetMapOutsideWindow(5.0, 5.0);
-    controller_costmap_ros_->resetMapOutsideWindow(5.0, 5.0);
+    planner_costmap_ros_->resetMapOutsideWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
+    controller_costmap_ros_->resetMapOutsideWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
   }
 
 };

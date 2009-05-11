@@ -40,7 +40,7 @@
 #include <robot_actions/action_runner.h>
 #include <nav_robot_actions/MoveBaseState.h>
 #include <robot_msgs/PoseStamped.h>
-#include <ros/node.h>
+#include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/rate.h>
@@ -105,6 +105,8 @@ namespace nav {
        */
       void resetCostmaps();
 
+      bool tryPlan(robot_msgs::PoseStamped goal);
+
       ros::Node& ros_node_;
       tf::TransformListener& tf_;
       bool run_planner_;
@@ -121,7 +123,8 @@ namespace nav {
       robot_msgs::PoseStamped goal_;
 
       tf::Stamped<tf::Pose> global_pose_;
-      double controller_frequency_;
+      double controller_frequency_, inscribed_radius_, circumscribed_radius_, planner_patience_;
+      bool attempted_rotation_, attempted_costmap_reset_;
 
   };
 };
