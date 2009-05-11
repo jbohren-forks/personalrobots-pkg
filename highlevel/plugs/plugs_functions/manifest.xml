@@ -1,0 +1,21 @@
+<package>
+  <description>
+   Plugs functions package
+  </description>
+
+  <author>Marius Muja</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="robot_msgs" />
+  <depend package="tf"/>
+
+
+ <export>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lplugs_functions"/>
+ </export>
+
+
+</package>

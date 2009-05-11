@@ -10,7 +10,7 @@
 #include "Agent.hh"
 #include "executive_trex_pr2/calc_angle_diff_constraint.h"
 #include "executive_trex_pr2/calc_distance_constraint.h"
-#include <outlet_detection/outlet_executive_functions.h>
+#include "plugs_functions/plugs_functions.h"
 #include "OrienteeringSolver.hh"
 #include "Utilities.hh"
 #include "LabelStr.hh"
@@ -91,7 +91,7 @@ namespace TREX{
 
       return new_scope;
     }
-   
+
     EntityId parentOf(const ConstrainedVariableId& var){
       // If it has a parent, that parent should be a token
       if(var->parent().isId()){
@@ -141,7 +141,7 @@ namespace TREX{
 			const LabelStr& propagatorName,
 			const ConstraintEngineId& constraintEngine,
 			const std::vector<ConstrainedVariableId>& variables)
-      : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
+      : ParamEqConstraint(name, propagatorName, constraintEngine, variables,
 			  "frame_id:time_stamp:latch_state:frame_p1_x:frame_p1_y:frame_p1_z:frame_p2_x:frame_p2_y:frame_p2_z:height:hinge:rot_dir:door_p1_x:door_p1_y:door_p1_z:door_p2_x:door_p2_y:door_p2_z:handle_x:handle_y:handle_z:travel_dir_x:travel_dir_y:travel_dir_z")
     {}
   };
@@ -152,7 +152,7 @@ namespace TREX{
 			const LabelStr& propagatorName,
 			const ConstraintEngineId& constraintEngine,
 			const std::vector<ConstrainedVariableId>& variables)
-      : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
+      : ParamEqConstraint(name, propagatorName, constraintEngine, variables,
 			  "frame_id:time_stamp:stowed:x:y:z")
     {}
   };
@@ -163,7 +163,7 @@ namespace TREX{
 			const LabelStr& propagatorName,
 			const ConstraintEngineId& constraintEngine,
 			const std::vector<ConstrainedVariableId>& variables)
-      : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
+      : ParamEqConstraint(name, propagatorName, constraintEngine, variables,
 			  "frame_id:time_stamp:x:y:z")
     {}
   };
@@ -174,7 +174,7 @@ namespace TREX{
 			const LabelStr& propagatorName,
 			const ConstraintEngineId& constraintEngine,
 			const std::vector<ConstrainedVariableId>& variables)
-      : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
+      : ParamEqConstraint(name, propagatorName, constraintEngine, variables,
 			  "frame_id:time_stamp:x:y:z:qx:qy:qz:qw")
     {}
   };
@@ -185,11 +185,11 @@ namespace TREX{
 			   const LabelStr& propagatorName,
 			   const ConstraintEngineId& constraintEngine,
 			   const std::vector<ConstrainedVariableId>& variables)
-      : ParamEqConstraint(name, propagatorName, constraintEngine, variables, 
+      : ParamEqConstraint(name, propagatorName, constraintEngine, variables,
 			  "frame_id:x:y:z:qx:qy:qz:qw")
     {}
   };
-  
+
   class TFGetRobotPoseConstraint: public Constraint {
   public:
     TFGetRobotPoseConstraint(const LabelStr& name,
@@ -209,14 +209,14 @@ namespace TREX{
       checkError(_frame_id.isSingleton(), "The frame has not been specified for tf to get robot pose. See model for error." << _frame_id.toString());
       condDebugMsg(!_frame_id.isSingleton(), "trex:error:tf_get_robot_pose",  "Frame has not been specified" << variables[7]->toLongString());
     }
-    
+
   private:
     void handleExecute(){
       debugMsg("trex:debug:propagation:tf_get_robot_pose",  "BEFORE: " << toString());
       tf::Stamped<tf::Pose> pose;
       getPose(pose);
 
-      debugMsg("trex:debug:propagation:tf_get_robot_pose", "Compute pose <" << 
+      debugMsg("trex:debug:propagation:tf_get_robot_pose", "Compute pose <" <<
 	       pose.getOrigin().x() << ", " <<
 	       pose.getOrigin().y() << ", " <<
 	       pose.getOrigin().z() << ", " <<
@@ -235,7 +235,7 @@ namespace TREX{
 
       debugMsg("trex:debug:propagation:tf_get_robot_pose",  "AFTER: " << toString());
     }
-    
+
     void getPose(tf::Stamped<tf::Pose>& pose){
       tf::Stamped<tf::Pose> robot_pose;
       robot_pose.setIdentity();
@@ -257,12 +257,12 @@ namespace TREX{
 	ROS_ERROR("Extrapolation Error: %s\n", ex.what());
       }
     }
-    
+
     IntervalDomain& _x, _y, _z, _qx, _qy, _qz, _qw; // Pose is the output
     StringDomain& _frame_id;
     const std::string _frame;
   };
-  
+
   class AllBoundsSetConstraint: public Constraint{
   public:
     AllBoundsSetConstraint(const LabelStr& name,
@@ -315,7 +315,7 @@ namespace TREX{
     const AbstractDomain& m_y;
     ObjectDomain& m_location;
   };
-    
+
   class RandomSelection: public Constraint{
   public:
     RandomSelection(const LabelStr& name,
@@ -360,28 +360,28 @@ namespace TREX{
 			  executive_trex_pr2::MapGetNextMoveConstraint, "map_get_next_move", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapConnectorConstraint, "map_connector", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapGetRegionFromPositionConstraint, "map_get_region_from_position", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapGetDoorwayFromPointsConstraint, "map_get_doorway_from_points", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapIsDoorwayConstraint, "map_is_doorway", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapGetDoorStateConstraint, "map_get_door_state", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapNotifyDoorBlockedConstraint, "map_notify_door_blocked", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapGetNearestOutletConstraint, "map_get_nearest_outlet", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapGetOutletStateConstraint, "map_get_outlet_state", "Default");
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::MapNotifyOutletBlockedConstraint, "map_notify_outlet_blocked", "Default");
 
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  TREX::TFGetRobotPoseConstraint, "tf_get_robot_pose", "Default");
 
       // Register functions for calculations in the door domain
-      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), 
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(),
 			  executive_trex_pr2::GetRobotPoseForDoorConstraint, "door_get_robot_pose_for_door", "Default");
 
       // Register SOLVER components for topological map.
@@ -405,11 +405,11 @@ namespace TREX{
 					 const LabelStr& propagatorName,
 					 const ConstraintEngineId& constraintEngine,
 					 const std::vector<ConstrainedVariableId>& variables)
-    :Constraint(name, propagatorName, constraintEngine, variables), 
+    :Constraint(name, propagatorName, constraintEngine, variables),
      _token(TREX::getParentToken(variables[0])){
     checkError(variables.size() == 1, "Invalid signature for " << name.toString() << ". Check the constraint signature in the model.");
   }
-	 
+
   /**
    * Will fire if any bounds are not singletons
    */
@@ -513,9 +513,9 @@ namespace TREX{
     debugMsg("trex:debug:propagation:world_model:plugs_get_offset_pose", "AFTER: " << toString());
   }
 
-  
-                        
-                      
+
+
+
 
   NearestLocation::NearestLocation(const LabelStr& name,
 				   const LabelStr& propagatorName,
@@ -527,7 +527,7 @@ namespace TREX{
       m_location(static_cast<ObjectDomain&>(getCurrentDomain(variables[2]))){
     checkError(variables.size() == 3, "Invalid Arg Count: " << variables.size());
   }
-  
+
   /**
    * Should wait till inputs are bound, then iterate over the locations and select the nearest one.
    */
@@ -538,7 +538,7 @@ namespace TREX{
     debugMsg("trex:debug:propagation:world_model:nearest_location",  "BEFORE: " << toString());
 
     if(m_x.isSingleton() && m_y.isSingleton()){
-      std::list<ObjectId> locations = m_location.makeObjectList();      
+      std::list<ObjectId> locations = m_location.makeObjectList();
       ObjectId nearestLocation = locations.front();
       for(std::list<ObjectId>::const_iterator it = locations.begin(); it != locations.end(); ++it){
 	iterations++;
@@ -563,7 +563,7 @@ namespace TREX{
       m_location.set(nearestLocation);
     }
 
-    debugMsg("trex:debug:propagation:world_model:nearest_location",  "AFTER: " << toString() 
+    debugMsg("trex:debug:propagation:world_model:nearest_location",  "AFTER: " << toString()
 	      <<  std::endl << std::endl << "After " << iterations << " iterations, found a location within " << minDistance << " meters.");
   }
 
@@ -584,7 +584,7 @@ namespace TREX{
       initialized = true;
     }
   }
-  
+
   /**
    * Randomly choose a value from the propagated domain
    */

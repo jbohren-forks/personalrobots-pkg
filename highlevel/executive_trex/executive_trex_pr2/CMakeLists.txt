@@ -68,7 +68,7 @@ set(TREX_FILES src/executive.cpp
 # trexdebug builds with a large number of run-time error checking running which is expensive
 # but gives good feedback in discovering problems.
 rospack_add_library(executive_trex_pr2_g ${TREX_FILES})
-target_link_libraries(executive_trex_pr2_g Utils_g TREX_g topological_graph outlet_executive_functions)
+target_link_libraries(executive_trex_pr2_g Utils_g TREX_g topological_graph plugs_functions)
 rospack_add_executable(bin/trexdebug src/main.cpp)
 target_link_libraries(bin/trexdebug executive_trex_pr2_g )
 rospack_link_boost(bin/trexdebug thread)
@@ -81,7 +81,7 @@ set_target_properties(bin/trexdebug PROPERTIES EXCLUDE_FROM_ALL false)
 
 # trexfast is about an order of magnitude faster than trexdebug
 rospack_add_library(executive_trex_pr2_o ${TREX_FILES})
-target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph outlet_executive_functions)
+target_link_libraries(executive_trex_pr2_o Utils_o TREX_o topological_graph plugs_functions)
 rospack_add_executable(bin/trexfast src/main.cpp)
 target_link_libraries(bin/trexfast executive_trex_pr2_o)
 rospack_link_boost(bin/trexfast thread)
