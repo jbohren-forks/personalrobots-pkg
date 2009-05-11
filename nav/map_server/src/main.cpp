@@ -166,7 +166,8 @@ int main(int argc, char **argv)
   }
   catch(std::runtime_error& e)
   {
-    fprintf(stderr, "%s\n", e.what());
+    ROS_ERROR("map_server exception: %s", e.what());
+    return -1;
   }
 
   return 0;
