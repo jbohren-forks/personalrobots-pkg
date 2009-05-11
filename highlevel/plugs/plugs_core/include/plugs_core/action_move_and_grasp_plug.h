@@ -89,6 +89,7 @@ private:
   
   double last_grasp_value_;
   int grasp_count_;
+  bool lifted_;
   std_msgs::Float64 gripper_cmd_;
    
  

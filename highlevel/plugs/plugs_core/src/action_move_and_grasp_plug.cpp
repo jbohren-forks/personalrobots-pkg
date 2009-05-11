@@ -45,6 +45,7 @@ MoveAndGraspPlugAction::MoveAndGraspPlugAction() :
   node_(ros::Node::instance()),
   gripper_controller_("r_gripper_position_controller"),  
   arm_controller_("r_arm_cartesian_trajectory_controller")
+  lifted_(false);
 {
 
   node_->param(action_name_ + "/gripper_controller", gripper_controller_, gripper_controller_);
@@ -193,12 +194,30 @@ void MoveAndGraspPlugAction::checkGrasp()
       {
         ROS_ERROR("%s: Failed to move arm.", action_name_.c_str());
         ROS_DEBUG("%s: aborted.", action_name_.c_str());
+        node_->unsubscribe(gripper_controller_ + "/state");
         deactivate(robot_actions::ABORTED, empty_);
         return;
       }
-      ROS_INFO("%s: succeeded.", action_name_.c_str());
-      node_->unsubscribe(gripper_controller_ + "/state");
-      deactivate(robot_actions::SUCCESS, empty_);
+      else if(!lifted_)
+      {
+        lifted_=true;
+        return;
+      }
+
+      //now check if we still have the plug.. 
+      if(lifted_ && controller_state_msg_.error > 0.02)
+      {
+        ROS_INFO("%s: succeeded.", action_name_.c_str());
+        node_->unsubscribe(gripper_controller_ + "/state");
+        deactivate(robot_actions::SUCCESS, empty_);
+      }
+      else
+      { 
+        ROS_INFO("%s: plug slipped out of gripper.", action_name_.c_str());
+        ROS_INFO("%s: aborted.", action_name_.c_str());
+        node_->unsubscribe(gripper_controller_ + "/state");
+        deactivate(robot_actions::ABORTED, empty_);
+      }
       return;
     }
   }
