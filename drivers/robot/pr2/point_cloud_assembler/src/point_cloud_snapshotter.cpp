@@ -101,9 +101,8 @@ public:
       req.begin = prev_signal_.header.stamp ;
       req.end   = cur_signal_.header.stamp ;
 
-      //printf("PointCloudSnapshotter::Making Service Call...\n") ;
-      ros::service::call("build_cloud", req, resp) ;
-      //printf("PointCloudSnapshotter::Done with service call\n") ;
+      if (!ros::service::call("build_cloud", req, resp))
+	ROS_ERROR("Failed to call service on point cloud assembler or laser scan assembler.");
 
       ros::Node::instance()->publish("full_cloud", resp.cloud) ;
       ROS_DEBUG("Snapshotter::Published Cloud size=%u", resp.cloud.get_pts_size()) ;
