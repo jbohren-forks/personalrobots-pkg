@@ -26,6 +26,7 @@ rospack_add_executable(test_executive_hybrid test/test_executive_hybrid.cpp)
 
 rospack_add_executable(test_approach test/test_approach.cpp)
 rospack_add_executable(test_state_stow test/test_stage_stow.cpp)
+rospack_add_executable(test_plug_in test/test_plug_in.cpp)
 
 
 # check for OpenMP
