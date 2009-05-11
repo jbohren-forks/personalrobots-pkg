@@ -48,7 +48,7 @@ namespace costmap_2d{
     : Costmap2D(cells_size_x, cells_size_y, xy_resolution, origin_x, origin_y, inscribed_radius, circumscribed_radius,
         inflation_radius, obstacle_range, (cells_size_z * z_resolution - origin_z), raytrace_range, weight, static_data, lethal_threshold),
     voxel_grid_(cells_size_x, cells_size_y, cells_size_z), xy_resolution_(xy_resolution), z_resolution_(z_resolution),
-    origin_z_(origin_z), unknown_threshold_(unknown_threshold + (16 - cells_size_z)), mark_threshold_(mark_threshold)
+    origin_z_(origin_z), unknown_threshold_(unknown_threshold + (16 - cells_size_z)), mark_threshold_(mark_threshold), size_z_(cells_size_z)
   {
   }
 
@@ -154,8 +154,13 @@ namespace costmap_2d{
 
         //now we need to compute the map coordinates for the observation
         unsigned int mx, my, mz;
-        if(!worldToMap3D(cloud.pts[i].x, cloud.pts[i].y, cloud.pts[i].z, mx, my, mz))
+        if(cloud.pts[i].z < origin_z_){
+          if(!worldToMap3D(cloud.pts[i].x, cloud.pts[i].y, origin_z_, mx, my, mz))
+            continue;
+        }
+        else if(!worldToMap3D(cloud.pts[i].x, cloud.pts[i].y, cloud.pts[i].z, mx, my, mz)){
           continue;
+        }
 
         //mark the cell in the voxel grid
         voxel_grid_.markVoxel(mx, my, mz);
@@ -188,16 +193,24 @@ namespace costmap_2d{
       double wpy = clearing_observation.cloud_.pts[i].y;
       double wpz = clearing_observation.cloud_.pts[i].z;
 
+      double desired_length = 3.0;
+      double distance = dist(ox, oy, oz, wpx, wpy, wpz);
+      double scaling_fact = desired_length / distance;
+      wpx = scaling_fact * (wpx - ox) + ox;
+      wpy = scaling_fact * (wpy - oy) + oy;
+      wpz = scaling_fact * (wpz - oz) + oz;
+
       double a = wpx - ox;
       double b = wpy - oy;
       double c = wpz - oz;
+
       //we can only raytrace to a maximum z height
       if(wpz > max_obstacle_height_){
         //we know we want the vector's z value to be max_z
-        double t = (max_obstacle_height_ - oz) / c;
+        double t = (max_obstacle_height_ - 0.2 - oz) / c;
         wpx = ox + a * t;
         wpy = oy + b * t;
-        wpz = max_obstacle_height_;
+        wpz = max_obstacle_height_ - 0.2;
       }
       //and we can only raytrace down to the floor
       else if(wpz < origin_z_){
@@ -239,7 +252,9 @@ namespace costmap_2d{
       double point_x, point_y, point_z;
       if(worldToMap3DFloat(wpx, wpy, wpz, point_x, point_y, point_z)){
         unsigned int cell_raytrace_range = cellDistance(raytrace_range_);
-        voxel_grid_.clearVoxelLineInMap(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z, costmap_, unknown_threshold_, mark_threshold_, cell_raytrace_range);
+        //voxel_grid_.markVoxelLine(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
+        voxel_grid_.markVoxelLine(point_x, point_y, point_z, sensor_x, sensor_y, sensor_z);
+        //voxel_grid_.clearVoxelLineInMap(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z, costmap_, unknown_threshold_, mark_threshold_, cell_raytrace_range);
       }
     }
   }

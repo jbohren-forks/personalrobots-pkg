@@ -48,6 +48,10 @@ namespace costmap_2d {
   Costmap2DROS::Costmap2DROS(ros::Node& ros_node, TransformListener& tf, string prefix) : ros_node_(ros_node), 
   tf_(tf), costmap_(NULL), map_update_thread_(NULL), costmap_publisher_(NULL), stop_updates_(false), initialized_(true){
 
+    ros_node_.param("~" + prefix + "/costmap/publish_voxel_map", publish_voxel_, false);
+    if(publish_voxel_)
+      ros_node_.advertise<robot_msgs::PointCloud>("/voxel_grid", 1);
+    
     string topics_string;
     //get the topics that we'll subscribe to from the parameter server
     ros_node_.param("~" + prefix + "/costmap/observation_topics", topics_string, string(""));
@@ -423,6 +427,14 @@ namespace costmap_2d {
     if(costmap_publisher_->active())
       costmap_publisher_->updateCostmapData(*costmap_);
 
+    if(publish_voxel_){
+      robot_msgs::PointCloud voxel_cloud;
+      ((VoxelCostmap2D*)costmap_)->getPoints(voxel_cloud);
+      voxel_cloud.header.frame_id = global_frame_;
+      voxel_cloud.header.stamp = ros::Time::now();
+      ros_node_.publish("/voxel_grid", voxel_cloud);
+    }
+
     costmap_->unlock();
 
   }
@@ -462,6 +474,9 @@ namespace costmap_2d {
     ROS_DEBUG("Resetting map outside window");
     costmap_->resetMapOutsideWindow(wx, wy, size_x, size_y);
     costmap_->unlock();
+
+    //make sure to force an update of the map to take in the latest sensor data
+    updateMap();
 
   }
 

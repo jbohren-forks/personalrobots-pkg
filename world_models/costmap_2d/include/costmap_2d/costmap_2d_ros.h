@@ -223,6 +223,7 @@ namespace costmap_2d {
       double transform_tolerance_; // timeout before transform errors
       Costmap2DPublisher* costmap_publisher_;
       bool stop_updates_, initialized_;
+      bool publish_voxel_;
 
   };
 };

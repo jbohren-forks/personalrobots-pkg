@@ -129,16 +129,25 @@ namespace costmap_2d {
         mx = ((wx - origin_x_) / xy_resolution_);
         my = ((wy - origin_y_) / xy_resolution_);
         mz = ((wz - origin_z_) / z_resolution_);
-        return true;
+
+        if(mx < size_x_ && my < size_y_ && mz < size_z_)
+          return true;
+
+        return false;
       }
 
       inline bool worldToMap3D(double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz){
         if(wx < origin_x_ || wy < origin_y_ || wz < origin_z_)
           return false;
+
         mx = (int) ((wx - origin_x_) / xy_resolution_);
         my = (int) ((wy - origin_y_) / xy_resolution_);
         mz = (int) ((wz - origin_z_) / z_resolution_);
-        return true;
+
+        if(mx < size_x_ && my < size_y_ && mz < size_z_)
+          return true;
+
+        return false;
       }
 
       inline void mapToWorld3D(unsigned int mx, unsigned int my, unsigned int mz, double& wx, double& wy, double& wz){
@@ -155,7 +164,7 @@ namespace costmap_2d {
     protected:
       voxel_grid::VoxelGrid voxel_grid_;
       double xy_resolution_, z_resolution_, origin_z_;
-      unsigned int unknown_threshold_, mark_threshold_;
+      unsigned int unknown_threshold_, mark_threshold_, size_z_;
 
   };
 };
