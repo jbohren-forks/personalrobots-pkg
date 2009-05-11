@@ -29,12 +29,13 @@
 
 #include "tf/transform_broadcaster.h"
 
-class TransformSender : public ros::Node
+class TransformSender
 {
 public:
+  ros::Node node_;
   //constructor
   TransformSender(double x, double y, double z, double yaw, double pitch, double roll, ros::Time time, const std::string& frame_id, const std::string& parent_id) :
-    ros::Node("transform_sender", ros::Node::ANONYMOUS_NAME),broadcaster(*this),
+    node_("transform_sender", ros::Node::ANONYMOUS_NAME),broadcaster(node_),
     transform_(btTransform(btQuaternion(yaw,pitch,roll), btVector3(x,y,z)), time, frame_id , parent_id){};
   //Clean up ros connections
   ~TransformSender() { }
@@ -78,7 +79,7 @@ int main(int argc, char ** argv)
 
 
 
-  while(tf_sender.ok())
+  while(tf_sender.node_.ok())
   {
     tf_sender.send();
     ROS_DEBUG("Sending transform from %s with parent %s\n", argv[7], argv[8]);
