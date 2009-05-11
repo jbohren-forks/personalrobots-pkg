@@ -42,7 +42,7 @@
 #include <kinematic_planning/KinematicStateMonitor.h>
 
 // service for planning to a link position
-#include <robot_srvs/KinematicPlanLinkPosition.h>
+#include <motion_planning_srvs/KinematicPlanLinkPosition.h>
 
 // messages to interact with the trajectory controller
 #include <robot_msgs/JointTraj.h>
@@ -62,7 +62,7 @@ public:
     void runExample(void)
     {
 	// construct the request for the motion planner
-	robot_msgs::KinematicPlanLinkPositionRequest req;
+	motion_planning_msgs::KinematicPlanLinkPositionRequest req;
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
@@ -79,7 +79,7 @@ public:
 	// place some constraints on the goal
 	req.set_goal_constraints_size(1);
 	// see the constraints message definition
-	req.goal_constraints[0].type = robot_msgs::PoseConstraint::POSITION_XYZ + robot_msgs::PoseConstraint::ORIENTATION_RY;
+	req.goal_constraints[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ + motion_planning_msgs::PoseConstraint::ORIENTATION_RY;
 	req.goal_constraints[0].robot_link = "r_gripper_palm_link";
 	req.goal_constraints[0].x = 0.75025;
 	req.goal_constraints[0].y = -0.188;	
@@ -95,8 +95,8 @@ public:
         req.goal_constraints[0].orientation_importance = 0.005;	// factor of importance of orientation relative to importance of position
 	
 	// define the service messages
-	robot_srvs::KinematicPlanLinkPosition::Request  s_req;
-	robot_srvs::KinematicPlanLinkPosition::Response s_res;
+	motion_planning_srvs::KinematicPlanLinkPosition::Request  s_req;
+	motion_planning_srvs::KinematicPlanLinkPosition::Response s_res;
 	s_req.value = req;
 	
 	if (ros::service::call("plan_kinematic_path_position", s_req, s_res))
@@ -119,7 +119,7 @@ public:
 protected:
 
     // convert a kinematic path message to a trajectory for the controller
-    void getTrajectoryMsg(robot_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
+    void getTrajectoryMsg(motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
     {	
         traj.set_points_size(path.get_states_size());	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
@@ -132,7 +132,7 @@ protected:
     }
     
     // send a command to the trajectory controller using a topic
-    void sendArmCommand(robot_msgs::KinematicPath &path, const std::string &model)
+    void sendArmCommand(motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
 	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);

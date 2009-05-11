@@ -38,8 +38,8 @@
 #define KINEMATIC_PLANNING_RPK_BASIC_REQUEST_LINK_POSITION_
 
 #include "kinematic_planning/RKPBasicRequest.h"
-#include <robot_srvs/KinematicPlanLinkPosition.h>
-#include <robot_srvs/KinematicReplanLinkPosition.h>
+#include <motion_planning_srvs/KinematicPlanLinkPosition.h>
+#include <motion_planning_srvs/KinematicReplanLinkPosition.h>
 
 namespace kinematic_planning
 {
@@ -50,7 +50,7 @@ namespace kinematic_planning
     {
     public:
 	
-        GoalToPosition(ompl::sb::SpaceInformationKinematic *si, RKPModelBase *model, const std::vector<robot_msgs::PoseConstraint> &pc) : ompl::sb::GoalRegion(si)
+        GoalToPosition(ompl::sb::SpaceInformationKinematic *si, RKPModelBase *model, const std::vector<motion_planning_msgs::PoseConstraint> &pc) : ompl::sb::GoalRegion(si)
 	{
 	    m_model = model;
 	    for (unsigned int i = 0 ; i < pc.size() ; ++i)
@@ -135,14 +135,14 @@ namespace kinematic_planning
     };
 
     template<>
-    RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>::RKPBasicRequest(void)
+    RKPBasicRequest<motion_planning_msgs::KinematicPlanLinkPositionRequest>::RKPBasicRequest(void)
     {
 	m_type = R_POSITION;
     }
 
     /** Validate request for planning towards a link position */
     template<>
-    bool RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>::isRequestValid(ModelMap &models, robot_msgs::KinematicPlanLinkPositionRequest &req)
+    bool RKPBasicRequest<motion_planning_msgs::KinematicPlanLinkPositionRequest>::isRequestValid(ModelMap &models, motion_planning_msgs::KinematicPlanLinkPositionRequest &req)
     {
 	if (!areSpaceParamsValid(models, req.params))
 	    return false;
@@ -160,10 +160,10 @@ namespace kinematic_planning
     
     /** Set the goal using a destination link position */
     template<>
-    void RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>::setupGoalState(RKPPlannerSetup *psetup, robot_msgs::KinematicPlanLinkPositionRequest &req)
+    void RKPBasicRequest<motion_planning_msgs::KinematicPlanLinkPositionRequest>::setupGoalState(RKPPlannerSetup *psetup, motion_planning_msgs::KinematicPlanLinkPositionRequest &req)
     {
 	/* set the goal */
-	std::vector<robot_msgs::PoseConstraint> pc;
+	std::vector<motion_planning_msgs::PoseConstraint> pc;
 	req.get_goal_constraints_vec(pc);
 	
 	GoalToPosition *goal = new GoalToPosition(psetup->si, psetup->model, pc);

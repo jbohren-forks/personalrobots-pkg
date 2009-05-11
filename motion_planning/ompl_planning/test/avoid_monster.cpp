@@ -40,8 +40,8 @@
 #include <gtest/gtest.h>
 #include <ros/node.h>
 
-#include <robot_srvs/KinematicPlanState.h>
-#include <robot_srvs/KinematicPlanLinkPosition.h>
+#include <motion_planning_srvs/KinematicPlanState.h>
+#include <motion_planning_srvs/KinematicPlanLinkPosition.h>
 
 class AvoidMonster : public ros::Node
 {
@@ -51,7 +51,7 @@ public:
     {
     }
   
-    void initialState(robot_msgs::KinematicState &state)
+    void initialState(motion_planning_msgs::KinematicState &state)
     {
 	state.set_vals_size(45);
 	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
@@ -60,7 +60,7 @@ public:
     
     void runTestBase(void)
     {
-	robot_msgs::KinematicPlanStateRequest req;
+	motion_planning_msgs::KinematicPlanStateRequest req;
 	
 	req.params.model_id = "pr2::base";
 	req.params.distance_metric = "L2Square";
@@ -82,16 +82,16 @@ public:
 	req.params.volumeMin.x = -10.0;	req.params.volumeMin.y = -10.0;	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 10.0;	req.params.volumeMax.y = 10.0;	req.params.volumeMax.z = 0.0;
 
-	robot_srvs::KinematicPlanState::Request r;
+	motion_planning_srvs::KinematicPlanState::Request r;
 	r.value = req;
 	
 	performCall(r);
     }
     
     
-    void performCall(robot_srvs::KinematicPlanState::Request &req)
+    void performCall(motion_planning_srvs::KinematicPlanState::Request &req)
     {	
-	robot_srvs::KinematicPlanState::Response res;
+	motion_planning_srvs::KinematicPlanState::Response res;
 	
 	if (ros::service::call("plan_kinematic_path_state", req, res))
 	{
@@ -107,7 +107,7 @@ public:
     
     void runTestLeftEEf(void)
     {
-	robot_msgs::KinematicPlanLinkPositionRequest req;
+	motion_planning_msgs::KinematicPlanLinkPositionRequest req;
 	
 	req.params.model_id = "pr2::right_arm";
 	req.params.distance_metric = "L2Square";
@@ -123,7 +123,7 @@ public:
 
 	// the goal region is basically the position of a set of bodies
 	req.set_goal_constraints_size(1);
-	req.goal_constraints[0].type = robot_msgs::PoseConstraint::POSITION_XYZ;
+	req.goal_constraints[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ;
 	req.goal_constraints[0].robot_link = "wrist_flex_right";
 	req.goal_constraints[0].x = 0.0;
 	req.goal_constraints[0].y = 0.0;
@@ -136,15 +136,15 @@ public:
 	req.params.volumeMin.x = -5.0;	req.params.volumeMin.y = -5.0;	req.params.volumeMin.z = 0.0;
 	req.params.volumeMax.x = 5.0;	req.params.volumeMax.y = 5.0;	req.params.volumeMax.z = 0.0;
 	
-	robot_srvs::KinematicPlanLinkPosition::Request r;
+	motion_planning_srvs::KinematicPlanLinkPosition::Request r;
 	r.value = req;
 	
 	performCall(r);
     }
 
-    void performCall(robot_srvs::KinematicPlanLinkPosition::Request &req)
+    void performCall(motion_planning_srvs::KinematicPlanLinkPosition::Request &req)
     {	
-	robot_srvs::KinematicPlanLinkPosition::Response res;	
+	motion_planning_srvs::KinematicPlanLinkPosition::Response res;	
 	if (ros::service::call("plan_kinematic_path_position", req, res))
 	{
 	    EXPECT_TRUE(res.value.path.get_states_size() > 0);

@@ -14,7 +14,7 @@ byte new_id
 # includes start and goal states) to define the motions for the
 # robot. If more intermediate states are needed, linear interpolation
 # is to be assumed.
-robot_msgs/KinematicPath path
+KinematicPath path
 
 
 # The threshold that was actually achieved. If the planner did not have enough time,

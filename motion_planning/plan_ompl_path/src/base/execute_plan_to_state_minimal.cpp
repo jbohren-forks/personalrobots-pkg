@@ -47,7 +47,7 @@
 #include <kinematic_planning/KinematicStateMonitor.h>
 
 // service for planning to a state
-#include <robot_srvs/KinematicPlanState.h>
+#include <motion_planning_srvs/KinematicPlanState.h>
 
 
 static const std::string GROUPNAME = "pr2::base";
@@ -63,7 +63,7 @@ public:
     void runExample(void)
     {
 	// construct the request for the motion planner
-	robot_msgs::KinematicPlanStateRequest req;
+	motion_planning_msgs::KinematicPlanStateRequest req;
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
@@ -95,8 +95,8 @@ public:
 	req.allowed_time = 1.0;
 	
 	// define the service messages
-	robot_srvs::KinematicPlanState::Request  s_req;
-	robot_srvs::KinematicPlanState::Response s_res;
+	motion_planning_srvs::KinematicPlanState::Request  s_req;
+	motion_planning_srvs::KinematicPlanState::Response s_res;
 	s_req.value = req;
 	
 	if (ros::service::call("plan_kinematic_path_state", s_req, s_res))

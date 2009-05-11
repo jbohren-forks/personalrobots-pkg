@@ -42,7 +42,7 @@
 #include <kinematic_planning/KinematicStateMonitor.h>
 
 // service for planning to a state
-#include <robot_srvs/KinematicPlanState.h>
+#include <motion_planning_srvs/KinematicPlanState.h>
 
 // messages to interact with the trajectory controller
 #include <robot_msgs/JointTraj.h>
@@ -62,7 +62,7 @@ public:
     void runExample(void)
     {
 	// construct the request for the motion planner
-	robot_msgs::KinematicPlanStateRequest req;
+	motion_planning_msgs::KinematicPlanStateRequest req;
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
@@ -84,8 +84,8 @@ public:
 	req.allowed_time = 1.0;
 	
 	// define the service messages
-	robot_srvs::KinematicPlanState::Request  s_req;
-	robot_srvs::KinematicPlanState::Response s_res;
+	motion_planning_srvs::KinematicPlanState::Request  s_req;
+	motion_planning_srvs::KinematicPlanState::Response s_res;
 	s_req.value = req;
 	
 	if (ros::service::call("plan_kinematic_path_state", s_req, s_res))
@@ -108,7 +108,7 @@ public:
 protected:
 
     // convert a kinematic path message to a trajectory for the controller
-    void getTrajectoryMsg(robot_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
+    void getTrajectoryMsg(motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
     {	
         traj.set_points_size(path.get_states_size());	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
@@ -121,7 +121,7 @@ protected:
     }
     
     // send a command to the trajectory controller using a topic
-    void sendArmCommand(robot_msgs::KinematicPath &path, const std::string &model)
+    void sendArmCommand(motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
 	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);

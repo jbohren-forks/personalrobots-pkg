@@ -87,8 +87,8 @@ Provides (name/type):
 #include "kinematic_planning/CollisionSpaceMonitor.h"
 #include <ompl/extension/samplingbased/kinematic/SpaceInformationKinematic.h>
 
-#include <robot_srvs/ValidateKinematicPath.h>
-#include <robot_srvs/ValidateKinematicState.h>
+#include <motion_planning_srvs/ValidateKinematicPath.h>
+#include <motion_planning_srvs/ValidateKinematicState.h>
 
 #include "kinematic_planning/ompl_extensions/RKPStateValidator.h"
 #include "kinematic_planning/ompl_extensions/RKPSpaceInformation.h"
@@ -137,7 +137,7 @@ public:
 	    delete i->second;
     }
     
-    bool validateState(robot_srvs::ValidateKinematicState::Request &req, robot_srvs::ValidateKinematicState::Response &res)
+    bool validateState(motion_planning_srvs::ValidateKinematicState::Request &req, motion_planning_srvs::ValidateKinematicState::Response &res)
     {
 	myModel *model = m_models[req.model_id];
 	if (model)
@@ -174,7 +174,7 @@ public:
 		    state->values[i] = req.state.vals[i];
 	    }
 	    
-	    std::vector<robot_msgs::PoseConstraint> cstrs;
+	    std::vector<motion_planning_msgs::PoseConstraint> cstrs;
 	    req.constraints.get_pose_vec(cstrs);
 	    static_cast<StateValidityPredicate*>(model->svc)->setPoseConstraints(cstrs);
 
@@ -198,7 +198,7 @@ public:
 	}
     }
     
-    bool validatePath(robot_srvs::ValidateKinematicPath::Request &req, robot_srvs::ValidateKinematicPath::Response &res)
+    bool validatePath(motion_planning_srvs::ValidateKinematicPath::Request &req, motion_planning_srvs::ValidateKinematicPath::Response &res)
     {
 	myModel *model = m_models[req.model_id];
 	if (model)
@@ -244,7 +244,7 @@ public:
 	    for (unsigned int i = 0 ; i < dim ; ++i)
 		goal->values[i] = req.goal_state.vals[i];
 	    
-	    std::vector<robot_msgs::PoseConstraint> cstrs;
+	    std::vector<motion_planning_msgs::PoseConstraint> cstrs;
 	    req.constraints.get_pose_vec(cstrs);
 	    static_cast<StateValidityPredicate*>(model->svc)->setPoseConstraints(cstrs);
 

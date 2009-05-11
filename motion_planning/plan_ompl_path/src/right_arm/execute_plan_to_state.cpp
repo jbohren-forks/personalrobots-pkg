@@ -52,13 +52,13 @@
 #include <kinematic_planning/KinematicStateMonitor.h>
 
 // service for planning to a state
-#include <robot_srvs/KinematicPlanState.h>
+#include <motion_planning_srvs/KinematicPlanState.h>
 
 // service for validating a straight line path
-#include <robot_srvs/ValidateKinematicPath.h>
+#include <motion_planning_srvs/ValidateKinematicPath.h>
 
 // message sent to visualizer to display the path
-#include <robot_msgs/DisplayKinematicPath.h>
+#include <motion_planning_msgs/DisplayKinematicPath.h>
 
 // messages and services to interact with the trajectory controller
 #include <robot_msgs/JointTraj.h>
@@ -77,7 +77,7 @@ public:
 	m_node->advertise<robot_msgs::JointTraj>("right_arm_trajectory_command", 1);
 	
 	// advertise the topic for displaying kinematic plans
-	m_node->advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
+	m_node->advertise<motion_planning_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
 	
 	// we can send commands to the trajectory controller both by using a topic, and by using services
 	use_topic_ = false;
@@ -86,7 +86,7 @@ public:
     void runExample(void)
     {
 	// construct the request for the motion planner
-	robot_msgs::KinematicPlanStateRequest req;
+	motion_planning_msgs::KinematicPlanStateRequest req;
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
@@ -117,7 +117,7 @@ public:
 	// are set large so that we always find a solution
 	// all these values have to be in the base_link frame 
 	req.constraints.set_pose_size(1);
-	req.constraints.pose[0].type = robot_msgs::PoseConstraint::POSITION_XYZ;
+	req.constraints.pose[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ;
 	req.constraints.pose[0].robot_link = "r_gripper_palm_link";
 	req.constraints.pose[0].x = 1;
 	req.constraints.pose[0].y = 1;
@@ -128,8 +128,8 @@ public:
 	req.allowed_time = 1.0;
 	
 	// define the service messages
-	robot_srvs::KinematicPlanState::Request  s_req;
-	robot_srvs::KinematicPlanState::Response s_res;
+	motion_planning_srvs::KinematicPlanState::Request  s_req;
+	motion_planning_srvs::KinematicPlanState::Response s_res;
 	s_req.value = req;
 	
 	if (ros::service::call("plan_kinematic_path_state", s_req, s_res))
@@ -167,7 +167,7 @@ public:
 protected:
 
     // get the current state from the StateParams instance monitored by the KinematicStateMonitor
-    void currentState(robot_msgs::KinematicState &state)
+    void currentState(motion_planning_msgs::KinematicState &state)
     {
 	state.set_vals_size(m_kmodel->getModelInfo().stateDimension);
 	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
@@ -175,7 +175,7 @@ protected:
     }
 
     // convert a kinematic path message to a trajectory for the controller
-    void getTrajectoryMsg(robot_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
+    void getTrajectoryMsg(motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
     {	
         traj.set_points_size(path.get_states_size());	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
@@ -188,7 +188,7 @@ protected:
     }
     
     // send a command to the trajectory controller using a topic
-    void sendArmCommand(robot_msgs::KinematicPath &path, const std::string &model)
+    void sendArmCommand(motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
 	robot_msgs::JointTraj traj;
 	getTrajectoryMsg(path, traj);
@@ -198,7 +198,7 @@ protected:
 
     // send a command to the trajectory controller using a service; 
     // also demo how to wait for the trajectory to finish executing
-    void sendArmCommandAndWait(robot_msgs::KinematicPath &path, const std::string &model)
+    void sendArmCommandAndWait(motion_planning_msgs::KinematicPath &path, const std::string &model)
     {	
 	pr2_mechanism_controllers::TrajectoryStart::Request  send_traj_start_req;	
 	pr2_mechanism_controllers::TrajectoryStart::Response send_traj_start_res;
@@ -230,9 +230,9 @@ protected:
     }
     
     // send a message that can be used to display the kinematic path
-    void sendDisplay(robot_msgs::KinematicState &start, robot_msgs::KinematicPath &path, const std::string &model)
+    void sendDisplay(motion_planning_msgs::KinematicState &start, motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
-	robot_msgs::DisplayKinematicPath dpath;
+	motion_planning_msgs::DisplayKinematicPath dpath;
 	dpath.frame_id = "base_link";
 	dpath.model_name = model;
 	dpath.start_state = start;
@@ -241,7 +241,7 @@ protected:
 	ROS_INFO("Sent planned path to display");
     }
     
-    void printPath(robot_msgs::KinematicPath &path)
+    void printPath(motion_planning_msgs::KinematicPath &path)
     {
 	printf("Path with %d states\n", (int)path.states.size());	
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
@@ -254,11 +254,11 @@ protected:
     }
     
     // check if straight line path is valid (motion_validator node)
-    bool verifyDirectPath(robot_msgs::KinematicState &start, robot_msgs::KinematicConstraints &cstrs,
-			  robot_msgs::KinematicState &goal, const std::string &model)
+    bool verifyDirectPath(motion_planning_msgs::KinematicState &start, motion_planning_msgs::KinematicConstraints &cstrs,
+			  motion_planning_msgs::KinematicState &goal, const std::string &model)
     {  
-	robot_srvs::ValidateKinematicPath::Request  req;	    
-	robot_srvs::ValidateKinematicPath::Response res;
+	motion_planning_srvs::ValidateKinematicPath::Request  req;	    
+	motion_planning_srvs::ValidateKinematicPath::Response res;
 	req.model_id = model;	    
 	req.start_state = start;	    
 	req.constraints = cstrs;

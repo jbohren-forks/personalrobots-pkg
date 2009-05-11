@@ -40,7 +40,7 @@
 #include <robot_msgs/PointCloud.h>
 #include <robot_msgs/CollisionMap.h>
 #include <robot_msgs/AttachedObject.h>
-#include <robot_srvs/CollisionCheckState.h>
+#include <motion_planning_srvs/CollisionCheckState.h>
 
 /** Main namespace */
 namespace kinematic_planning
@@ -169,7 +169,7 @@ namespace kinematic_planning
 		afterAttachBody(link);
 	}
 	
-	bool setCollisionState(robot_srvs::CollisionCheckState::Request &req, robot_srvs::CollisionCheckState::Response &res)
+	bool setCollisionState(motion_planning_srvs::CollisionCheckState::Request &req, motion_planning_srvs::CollisionCheckState::Response &res)
 	{
 	    m_collisionSpace->lock();
 	    int model_id = m_collisionSpace->getModelID(req.robot_name);

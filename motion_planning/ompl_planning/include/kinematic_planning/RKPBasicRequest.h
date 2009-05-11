@@ -39,9 +39,9 @@
 
 #include "kinematic_planning/RKPModel.h"
 
-#include <robot_msgs/KinematicPath.h>
-#include <robot_msgs/KinematicSpaceParameters.h>
-#include <robot_msgs/PoseConstraint.h>
+#include <motion_planning_msgs/KinematicPath.h>
+#include <motion_planning_msgs/KinematicSpaceParameters.h>
+#include <motion_planning_msgs/PoseConstraint.h>
 
 #include <ros/console.h>
 #include <iostream>
@@ -139,7 +139,7 @@ namespace kinematic_planning
 	    return m_activeReq;
 	}
 	
-	bool isStillValid(robot_msgs::KinematicPath &path)
+	bool isStillValid(motion_planning_msgs::KinematicPath &path)
 	{
 	    update();
 	    
@@ -180,7 +180,7 @@ namespace kinematic_planning
 	    return trivial;	    
 	}
 	
-	void execute(robot_msgs::KinematicPath &path, double &distance, bool &trivial, bool &approximate)
+	void execute(motion_planning_msgs::KinematicPath &path, double &distance, bool &trivial, bool &approximate)
 	{
 	    update();
 	    
@@ -218,7 +218,7 @@ namespace kinematic_planning
 	    /* configure state space and starting state */
 	    setupStateSpaceAndStartState(m_activePSetup, m_activeReq.params, m_activeReq.start_state);
 	    
-	    std::vector<robot_msgs::PoseConstraint> cstrs;
+	    std::vector<motion_planning_msgs::PoseConstraint> cstrs;
 	    m_activeReq.constraints.get_pose_vec(cstrs);
 	    setupPoseConstraints(m_activePSetup, cstrs);
 	    
@@ -227,7 +227,7 @@ namespace kinematic_planning
 	}
 
 	/** Validate common space parameters */
-	bool areSpaceParamsValid(const ModelMap &modelsRef, robot_msgs::KinematicSpaceParameters &params) const
+	bool areSpaceParamsValid(const ModelMap &modelsRef, motion_planning_msgs::KinematicSpaceParameters &params) const
 	{ 
 	    ModelMap::const_iterator pos = modelsRef.find(params.model_id);
 	    
@@ -269,8 +269,8 @@ namespace kinematic_planning
 	
 	/** Configure the state space for a given set of parameters and set the starting state */
 	void setupStateSpaceAndStartState(RKPPlannerSetup *psetup,
-					  robot_msgs::KinematicSpaceParameters &params,
-					  robot_msgs::KinematicState &start_state)
+					  motion_planning_msgs::KinematicSpaceParameters &params,
+					  motion_planning_msgs::KinematicState &start_state)
 	{
 	    /* set the workspace volume for planning */
 	    // only area or volume should go through... not sure what happens on really complicated models where 
@@ -307,7 +307,7 @@ namespace kinematic_planning
 	}
 	
 	/** Set the kinematic constraints to follow */
-	void setupPoseConstraints(RKPPlannerSetup *psetup, const std::vector<robot_msgs::PoseConstraint> &cstrs)
+	void setupPoseConstraints(RKPPlannerSetup *psetup, const std::vector<motion_planning_msgs::PoseConstraint> &cstrs)
 	{
 	    static_cast<StateValidityPredicate*>(psetup->si->getStateValidityChecker())->setPoseConstraints(cstrs);
 	}    
@@ -395,7 +395,7 @@ namespace kinematic_planning
 	}
 	
 	void fillSolution(RKPPlannerSetup *psetup, ompl::sb::PathKinematic *bestPath, double bestDifference,
-			  robot_msgs::KinematicPath &path, double &distance)
+			  motion_planning_msgs::KinematicPath &path, double &distance)
 	{
 	    const unsigned int dim = psetup->si->getStateDimension();
 	    

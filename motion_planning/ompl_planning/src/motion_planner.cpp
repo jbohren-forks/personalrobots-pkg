@@ -214,7 +214,7 @@ public:
 	m_node->advertiseService("replan_force",                   &KinematicPlanning::forceReplanning, this);
 	m_node->advertiseService("replan_stop",                    &KinematicPlanning::stopReplanning, this);
 
-	m_node->advertise<robot_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
+	m_node->advertise<motion_planning_msgs::KinematicPlanStatus>("kinematic_planning_status", 1);
 
 	// determine intervals; a value of 0 means forever
 	m_node->param("refresh_interval_collision_map", m_intervalCollisionMap, 3.0);
@@ -342,7 +342,7 @@ public:
 	}	
     }
 
-    bool replanToState(robot_srvs::KinematicReplanState::Request &req, robot_srvs::KinematicReplanState::Response &res)
+    bool replanToState(motion_planning_srvs::KinematicReplanState::Request &req, motion_planning_srvs::KinematicReplanState::Response &res)
     {
 	ROS_INFO("Request for replanning to a state");
 	bool st = false;
@@ -384,7 +384,7 @@ public:
 	return st;	
     }
     
-    bool replanToPosition(robot_srvs::KinematicReplanLinkPosition::Request &req, robot_srvs::KinematicReplanLinkPosition::Response &res)
+    bool replanToPosition(motion_planning_srvs::KinematicReplanLinkPosition::Request &req, motion_planning_srvs::KinematicReplanLinkPosition::Response &res)
     {
 	ROS_INFO("Request for replanning to a position");
 	bool st = false;
@@ -426,7 +426,7 @@ public:
 	return st;
     }
     
-    bool planToState(robot_srvs::KinematicPlanState::Request &req, robot_srvs::KinematicPlanState::Response &res)
+    bool planToState(motion_planning_srvs::KinematicPlanState::Request &req, motion_planning_srvs::KinematicPlanState::Response &res)
     {
 	ROS_INFO("Request for planning to a state");
 	bool trivial = false;
@@ -455,7 +455,7 @@ public:
 	return result;
     }
 
-    bool planToPosition(robot_srvs::KinematicPlanLinkPosition::Request &req, robot_srvs::KinematicPlanLinkPosition::Response &res)
+    bool planToPosition(motion_planning_srvs::KinematicPlanLinkPosition::Request &req, motion_planning_srvs::KinematicPlanLinkPosition::Response &res)
     {	
 	ROS_INFO("Request for planning to a position");
 	bool trivial = false;
@@ -523,7 +523,7 @@ public:
 	}
     }
 
-    void currentState(robot_msgs::KinematicState &state)
+    void currentState(motion_planning_msgs::KinematicState &state)
     {
 	state.set_vals_size(m_kmodel->getModelInfo().stateDimension);
 	const double *params = m_robotState->getParams();
@@ -632,7 +632,7 @@ protected:
     void replanToStateThread(void)
     {	
 	ros::Duration eps(0.001);
-	robot_msgs::KinematicPath solution;
+	motion_planning_msgs::KinematicPath solution;
 	unsigned int step = 0;
 	bool trivial = false;
 	bool approximate = false;
@@ -681,7 +681,7 @@ protected:
     void replanToPositionThread(void)
     {	
 	ros::Duration eps(0.001);
-	robot_msgs::KinematicPath solution;
+	motion_planning_msgs::KinematicPath solution;
 	unsigned int step = 0;
 	bool trivial = false;
 	bool approximate = false;
@@ -839,11 +839,12 @@ private:
 	model->addIKKPIECE(options); 
     }
 
-    ModelMap                                                        m_models;
-    RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>          m_requestStateOpenLoop;
-    RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>   m_requestLinkPositionOpenLoop;
-    RKPBasicRequest<robot_msgs::KinematicPlanStateRequest>          m_requestState;
-    RKPBasicRequest<robot_msgs::KinematicPlanLinkPositionRequest>   m_requestLinkPosition;
+    ModelMap                                                         m_models;
+
+    RKPBasicRequest<motion_planning_msgs::KinematicPlanStateRequest>        m_requestStateOpenLoop;
+    RKPBasicRequest<motion_planning_msgs::KinematicPlanLinkPositionRequest> m_requestLinkPositionOpenLoop;
+    RKPBasicRequest<motion_planning_msgs::KinematicPlanStateRequest>        m_requestState;
+    RKPBasicRequest<motion_planning_msgs::KinematicPlanLinkPositionRequest> m_requestLinkPosition;
     
 
     // intervals for determining whether the monitored state & map are up to date
@@ -858,9 +859,9 @@ private:
     int                                                             m_currentRequestType;
     
     // current status of the motion planner
-    robot_msgs::KinematicPlanStatus                                 m_currentPlanStatus; 
-    robot_msgs::KinematicPath                                       m_currentlyExecutedPath;
-    robot_msgs::KinematicState                                      m_currentlyExecutedPathStart;
+    motion_planning_msgs::KinematicPlanStatus                       m_currentPlanStatus; 
+    motion_planning_msgs::KinematicPath                             m_currentlyExecutedPath;
+    motion_planning_msgs::KinematicState                            m_currentlyExecutedPathStart;
     
     // lock used for changing the motion planner status
     boost::mutex                                                    m_statusLock;

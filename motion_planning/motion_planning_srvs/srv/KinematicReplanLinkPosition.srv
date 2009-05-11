@@ -1,0 +1,5 @@
+motion_planning_msgs/KinematicPlanLinkPositionRequest value
+
+---
+
+int32 id

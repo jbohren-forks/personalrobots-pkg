@@ -3,7 +3,7 @@
 
 
 # Parameters for the state space 
-robot_msgs/KinematicSpaceParameters params
+KinematicSpaceParameters params
 
 
 # The starting state for the robot. This is eth complete state of the
@@ -12,16 +12,16 @@ robot_msgs/KinematicSpaceParameters params
 # meaning for each element in the state vector can be extracted from
 # viewing the output of the robot model construction (the kinematic
 # model constructed from the parsed URDF model) in verbose mode
-robot_msgs/KinematicState start_state
+KinematicState start_state
 
 
 # The goal state for the model to plan for. The state is not explicit.
 # The goal is considered achieved if all the constraints are satisfied.
-robot_msgs/PoseConstraint[] goal_constraints
+PoseConstraint[] goal_constraints
 
 
 # No state in the produced motion plan will violate these constraints
-robot_msgs/KinematicConstraints constraints
+KinematicConstraints constraints
 
 
 # The number of times this plan is to be computed. Shortest solution

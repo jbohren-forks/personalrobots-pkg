@@ -43,16 +43,16 @@
 #include <kinematic_planning/KinematicStateMonitor.h>
 
 // service for (re)planning to a state
-#include <robot_srvs/KinematicReplanState.h>
+#include <motion_planning_srvs/KinematicReplanState.h>
 
 // service for (re)planning to a link position
-#include <robot_srvs/KinematicReplanLinkPosition.h>
+#include <motion_planning_srvs/KinematicReplanLinkPosition.h>
 
 // message for receiving the planning status
-#include <robot_msgs/KinematicPlanStatus.h>
+#include <motion_planning_msgs/KinematicPlanStatus.h>
 
 // message sent to visualizer to display the path
-#include <robot_msgs/DisplayKinematicPath.h>
+#include <motion_planning_msgs/DisplayKinematicPath.h>
 
 // messages to interact with the joint trajectory controller
 #include <robot_msgs/JointTraj.h>
@@ -76,7 +76,7 @@ public:
 	m_node->advertise<robot_msgs::PoseStamped>("cartesian_trajectory/command", 1);
 
 	// advertise the topic for displaying kinematic plans
-	m_node->advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
+	m_node->advertise<motion_planning_msgs::DisplayKinematicPath>("display_kinematic_path", 10);
 
 	m_node->subscribe("kinematic_planning_status", plan_status_, &PlanKinematicPath::receiveStatus, this, 1);
     }
@@ -84,7 +84,7 @@ public:
     void runRightArmToPositionA(void)
     {
 	// construct the request for the motion planner
-      robot_msgs::KinematicPlanStateRequest req;
+	motion_planning_msgs::KinematicPlanStateRequest req;
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
@@ -106,8 +106,8 @@ public:
 	req.allowed_time = 1.0;
 	
 	// define the service messages
-	robot_srvs::KinematicReplanState::Request  s_req;
-	robot_srvs::KinematicReplanState::Response s_res;
+	motion_planning_srvs::KinematicReplanState::Request  s_req;
+	motion_planning_srvs::KinematicReplanState::Response s_res;
 	s_req.value = req;
 	
 	if (ros::service::call("replan_kinematic_path_state", s_req, s_res))
@@ -119,7 +119,7 @@ public:
     void runRightArmToPositionB(void)
     {
 	// construct the request for the motion planner
-	robot_msgs::KinematicPlanLinkPositionRequest req;
+	motion_planning_msgs::KinematicPlanLinkPositionRequest req;
 	
 	req.params.model_id = GROUPNAME;
 	req.params.distance_metric = "L2Square";
@@ -131,7 +131,7 @@ public:
 	
 	// set the goal constraints
 	req.set_goal_constraints_size(1);
-	req.goal_constraints[0].type = robot_msgs::PoseConstraint::POSITION_XYZ + robot_msgs::PoseConstraint::ORIENTATION_RPY;
+	req.goal_constraints[0].type = motion_planning_msgs::PoseConstraint::POSITION_XYZ + motion_planning_msgs::PoseConstraint::ORIENTATION_RPY;
 	req.goal_constraints[0].robot_link = "r_gripper_r_finger_tip_link";
 	req.goal_constraints[0].x = 0.75025;
 	req.goal_constraints[0].y = -0.188;	
@@ -149,8 +149,8 @@ public:
 	req.allowed_time = 0.5;
 	
 	// define the service messages
-	robot_srvs::KinematicReplanLinkPosition::Request  s_req;
-	robot_srvs::KinematicReplanLinkPosition::Response s_res;
+	motion_planning_srvs::KinematicReplanLinkPosition::Request  s_req;
+	motion_planning_srvs::KinematicReplanLinkPosition::Response s_res;
 	s_req.value = req;
 	
 	if (ros::service::call("replan_kinematic_path_position", s_req, s_res))
@@ -241,7 +241,7 @@ protected:
 	double cmd[7];
 	m_robotState->copyParamsGroup(cmd, GROUPNAME);
 	
-	robot_msgs::KinematicPath stop_path;	
+	motion_planning_msgs::KinematicPath stop_path;	
 	stop_path.set_states_size(1);
 	stop_path.states[0].set_vals_size(7);
 	for (unsigned int i = 0 ; i < 7 ; ++i)
@@ -251,7 +251,7 @@ protected:
     }
     
     // get the current state from the StateParams instance monitored by the KinematicStateMonitor
-    void currentState(robot_msgs::KinematicState &state)
+    void currentState(motion_planning_msgs::KinematicState &state)
     {
 	state.set_vals_size(m_kmodel->getModelInfo().stateDimension);
 	for (unsigned int i = 0 ; i < state.get_vals_size() ; ++i)
@@ -259,7 +259,7 @@ protected:
     }
 
     // convert a kinematic path message to a trajectory for the controller
-    void getTrajectoryMsg(robot_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
+    void getTrajectoryMsg(motion_planning_msgs::KinematicPath &path, robot_msgs::JointTraj &traj)
     {	
         traj.set_points_size(path.get_states_size());	
 	for (unsigned int i = 0 ; i < path.get_states_size() ; ++i)
@@ -272,7 +272,7 @@ protected:
     }
     
     // send a command to the trajectory controller using a topic
-    void sendArmCommand(robot_msgs::KinematicPath &path, const std::string &model)
+    void sendArmCommand(motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
 	sendDisplay(path, model);
 	printPath(path);
@@ -282,9 +282,9 @@ protected:
 	ROS_INFO("Sent trajectory to controller");
     }
 
-    void sendDisplay(robot_msgs::KinematicPath &path, const std::string &model)
+    void sendDisplay(motion_planning_msgs::KinematicPath &path, const std::string &model)
     {
-	robot_msgs::DisplayKinematicPath dpath;
+	motion_planning_msgs::DisplayKinematicPath dpath;
 	dpath.frame_id = "base_link";
 	dpath.model_name = model;
 	currentState(dpath.start_state);
@@ -293,7 +293,7 @@ protected:
 	ROS_INFO("Sent planned path to display");
     }
 
-    void printPath(robot_msgs::KinematicPath &path)
+    void printPath(motion_planning_msgs::KinematicPath &path)
     {
 	printf("Path with %d states\n", (int)path.states.size());	
 	for (unsigned int i = 0 ; i < path.states.size() ; ++i)
@@ -305,9 +305,9 @@ protected:
 	printf("\n");
     }
     
-    robot_msgs::KinematicPlanStatus plan_status_;
-    int                             plan_id_;
-    bool                            robot_stopped_;
+    motion_planning_msgs::KinematicPlanStatus plan_status_;
+    int                                       plan_id_;
+    bool                                      robot_stopped_;
         
 };
 

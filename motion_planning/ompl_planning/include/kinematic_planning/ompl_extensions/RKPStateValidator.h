@@ -70,7 +70,7 @@ namespace kinematic_planning
 	    return valid;
 	}
 	
-	void setPoseConstraints(const std::vector<robot_msgs::PoseConstraint> &kc)
+	void setPoseConstraints(const std::vector<motion_planning_msgs::PoseConstraint> &kc)
 	{
 	    m_kce.use(m_model->kmodel, kc);
 	}

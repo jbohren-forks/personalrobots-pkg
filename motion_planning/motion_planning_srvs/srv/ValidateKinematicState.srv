@@ -14,11 +14,11 @@ string model_id
 # extracted from viewing the output of the robot model construction
 # (the kinematic model constructed from the parsed URDF model) in
 # verbose mode
-robot_msgs/KinematicState state
+motion_planning_msgs/KinematicState state
 
 
 # No state in the produced motion plan will violate these constraints
-robot_msgs/KinematicConstraints constraints
+motion_planning_msgs/KinematicConstraints constraints
 
 ---
 
