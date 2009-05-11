@@ -1,0 +1,24 @@
+/** 
+\page tutorial Tutorial
+
+This is a tutorial for the tf package the main documentations is at \ref index
+
+There are two parts 
+ - @ref tutorial_sending
+ - @ref tutorial_recieving
+
+\section tutorial_sending Sending tf_messages
+In the tf system nodes which have primary information about the relationship 
+between two coordinate frames broadcast their best estimate for that transform
+using tf::tfMessage data type over the /tf_messages topic.  Anyone can publish 
+these messages on these topics, however for convenience there is a helper class to make
+this quick to implement.  The helper class is the tf::TransformBroadcaster class.  
+
+There is also a node which allows command line tool which makes sending static transforms simple.  
+See @ref transform_sender. 
+
+
+\section tutorial_recieving Recieving and using tf_messages
+
+
+*/

@@ -52,9 +52,15 @@ public:
     double x = radius * cos(angle);
     double y = radius * sin(angle);
     if (orbit_fraction > 0.5) //The shuttle is visible half the time from hawaii and half the time from hawaii and half the time from canaveral
+    {
       broadcaster.sendTransform(btTransform(btQuaternion(0,0,0), btVector3(x,y,0)), ros::Time::now(), "space_shuttle", "hawaii");
+      ROS_INFO("Tracking Shuttle via hawaii");
+    }
     else
+    {
       broadcaster.sendTransform(btTransform(btQuaternion(0,0,0), btVector3(x,y,0)), ros::Time::now(), "space_shuttle", "canaveral");
+      ROS_INFO("Tracking Shuttle via canaveral");
+    }
     //note I haven't corrected this "observation" for the difference in position between hawaii and canaveral so the position will be discontinuous if 
     //hawaii and canaveral are not colocated(which they won't be for this example)
   };
@@ -66,6 +72,7 @@ public:
     double radius = 1e5;
     double x = radius * cos(angle);
     double y = radius * sin(angle);
+    ROS_INFO("Tracking Moon");
     broadcaster.sendTransform(btTransform(btQuaternion(-angle,0,0), btVector3(x,y,0)), ros::Time::now(), "moon", "earth");
   };
 private:
