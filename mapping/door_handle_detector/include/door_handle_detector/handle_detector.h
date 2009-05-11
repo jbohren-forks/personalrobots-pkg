@@ -87,6 +87,7 @@ private:
   void refineHandleCandidatesWithDoorOutliers (std::vector<int> &handle_indices, std::vector<int> &outliers,
                                                const robot_msgs::Polygon3D &polygon,
                                                const std::vector<double> &coeff, const robot_msgs::Point32 &door_axis,
+                                               const door_msgs::Door& door_prior,
                                                robot_msgs::PointCloud& pointcloud) const;
 
   /** \brief Select all points that could represent a handle, including the door

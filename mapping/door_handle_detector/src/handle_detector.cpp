@@ -206,7 +206,7 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, PointCloud point
   // Refine the remaining handle indices using the door outliers
   ROS_DEBUG (" -- handle indices before refinement: %d.", (int)handle_indices.size ());
   robot_msgs::Point32 door_axis = cloud_geometry::cross (coeff, z_axis_);
-  refineHandleCandidatesWithDoorOutliers (handle_indices, outliers, polygon, coeff, door_axis, pointcloud);
+  refineHandleCandidatesWithDoorOutliers (handle_indices, outliers, polygon, coeff, door_axis, door_tr, pointcloud);
   ROS_DEBUG (" -- handle indices after refinement: %d.", (int)handle_indices.size ());
 
   duration = ros::Time::now () - ts;
@@ -304,6 +304,7 @@ bool HandleDetector::detectHandle (const door_msgs::Door& door, PointCloud point
 void HandleDetector::refineHandleCandidatesWithDoorOutliers (vector<int> &handle_indices, vector<int> &outliers,
                                                              const Polygon3D &polygon,
                                                              const vector<double> &coeff, const Point32 &door_axis,
+                                                             const Door& door_prior,
                                                              PointCloud& pointcloud) const
 {
   // Split the remaining candidates into into clusters and remove solitary points (< euclidean_cluster_min_pts_)
@@ -352,15 +353,26 @@ void HandleDetector::refineHandleCandidatesWithDoorOutliers (vector<int> &handle
     if (line_inliers[i].size () == 0)
       continue;
 
-    robot_msgs::Point32 min_h, max_h;
+    robot_msgs::Point32 min_h, max_h, mid;
     cloud_geometry::statistics::getLargestXYPoints (pointcloud, line_inliers[i], min_h, max_h);
+    mid.x = (min_h.x + max_h.x)/2.0;  mid.y = (min_h.y + max_h.y)/2.0;
 
+    // score for line lengh
     double length = sqrt ( (min_h.x - max_h.x) * (min_h.x - max_h.x) + (min_h.y - max_h.y) * (min_h.y - max_h.y) );
     double fit = ((double)(line_inliers[i].size())) / ((double)(inliers[i].size()));
     double score = fit - 3.0 * fabs (length - 0.15);
-
     ROS_INFO ("  Handle line cluster %d with %d inliers, has fit %g and length %g  --> %g.", i, (int)line_inliers[i].size (), fit, length, score);
 
+    // score for side of the door
+    double dist_to_side = 0;
+    if (door_prior.hinge == Door::HINGE_P1)
+      dist_to_side = cloud_geometry::distances::pointToPointXYDistance(door_prior.door_p2, mid);
+    else if (door_prior.hinge == Door::HINGE_P2)
+      dist_to_side = cloud_geometry::distances::pointToPointXYDistance(door_prior.door_p1, mid);
+    else
+      ROS_ERROR("HandleDetector: Door hinge side not defined");
+    ROS_INFO ("  Handle is found at %f [m] from the door side", dist_to_side);
+    
     if (score > best_score)
     {
       best_score = score;
