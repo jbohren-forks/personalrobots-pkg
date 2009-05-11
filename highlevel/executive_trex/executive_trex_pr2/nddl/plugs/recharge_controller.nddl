@@ -119,7 +119,7 @@ RechargeController::Holds {
           eq(s.active, false);
         }
         else {
-          //contains_start(tuck_arms.Active cmd);
+          contains_start(safety_tuck_arms.Active cmd);
         }
       }
       else{
@@ -158,6 +158,7 @@ RechargeController::Holds {
             eq(cmd.z, coarse_feedback.z);
             eq(cmd.frame_id, coarse_feedback.frame_id);
 	    concurrent(cmd.end, end);
+            
 	  }
 	  else {
 	    if(outlet_detected_coarse == true){
@@ -185,7 +186,8 @@ RechargeController::Holds {
 		  concurrent(cmd.end, end);
 		}
 		else {
-		  if(plug_is_stowed == maybe){
+
+		  //if(plug_is_stowed == maybe){
 		    if(arms_tucked == false){
 		      contains_start(detect_plug_on_base.Active cmd);
 		      concurrent(cmd.end, end);
@@ -194,7 +196,7 @@ RechargeController::Holds {
 		      contains_start(plugs_untuck_arms.Active cmd);
 		      concurrent(cmd.end, end);
 		    }
-		  }
+                    //}
 		}
 	      }
 	    }
@@ -267,11 +269,13 @@ StowPlug::Active{
   eq_plug_stow_msg(object, ps.object);
 }
 
+
 // If we stow successfully, declare maybe. Requires confirmation!
+// Changing this to yes for now - BMM
 StowPlug::Inactive{
   if(status == SUCCESS){
     starts(RechargeController.Holds rc);
-    eq(rc.plug_is_stowed, maybe);
+    eq(rc.plug_is_stowed, yes);
     eq(rc.plug_in_hand, false);
   }
 }

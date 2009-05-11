@@ -10,6 +10,7 @@ RightGripperMechanism right_gripper_mechanism = new RightGripperMechanism(Extern
 //MoveBase move_base = new MoveBase(External);
 MoveBase move_base_local = new MoveBase(External);
 PlugsUntuckArms plugs_untuck_arms = new PlugsUntuckArms(External);
+// PlugsTuckArms plugs_tuck_arms = new PlugsTuckArms(External);
 MoveAndGraspPlug move_and_grasp_plug = new MoveAndGraspPlug(External);
 LocalizePlugInGripper localize_plug_in_gripper = new LocalizePlugInGripper(External);
 StowPlug stow_plug = new StowPlug(External);
@@ -36,6 +37,10 @@ DetectOutletFine::Active{
 }
 
 PlugsUntuckArms::Active{
+  contained_by(right_arm_mechanism.use_joint_trajectory_controller);
+}
+
+PlugsTuckArms::Active{
   contained_by(right_arm_mechanism.use_joint_trajectory_controller);
 }
 
