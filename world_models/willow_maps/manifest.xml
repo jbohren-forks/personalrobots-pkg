@@ -1,0 +1,14 @@
+<package>
+  <description brief="A package that holds Willow Garage maps">
+
+     willow_maps
+
+  </description>
+  <author>Eitan Marder-Eppstein/ YOUR E-MAIL HERE</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/willow_maps</url>
+
+</package>
+
+
