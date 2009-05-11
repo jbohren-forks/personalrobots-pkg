@@ -59,7 +59,7 @@
 #include "robot_msgs/Point32.h"
 #include "robot_msgs/Vector3.h"
 #include "robot_msgs/PointStamped.h"
-#include "robot_msgs/Door.h"
+#include "door_msgs/Door.h"
 //#include "robot_msgs/VisualizationMarker.h"
 
 #include <recognition_lambertian/visualization.h>
