@@ -90,8 +90,8 @@ class RosSimIface : public Controller
   /// \brief Finalize the controller, unadvertise topics
   protected: virtual void FiniChild();
 
-  /// \brief subscribe to ROS
-  private: std::string topicName;
+  /// \brief call back when a PoseWithRatesStamped message is published
+  private: void UpdateObjectPose();
 
   /// \brief A pointer to the parent entity
   private: Entity *myParent;
@@ -102,20 +102,16 @@ class RosSimIface : public Controller
   /// \brief ROS PoseWithRatesStamped message
   private: robot_msgs::PoseWithRatesStamped poseMsg;
 
-  /// \brief ROS Pose topic name
-  private: std::string topicName;
-
-  /// \brief ROS frame transform name to use in the pose message header.
-  ///        This should typically match the link name the sensor is attached.
-  private: std::string frameName;
-
   /// \brief A mutex to lock access to fields that are used in ROS message callbacks
   private: boost::mutex lock;
 
+  /// \brief ROS Pose topic name
+  /// \brief ROS frame transform name to use in the pose message header.
+  ///        This should typically match the link name the sensor is attached.
   /// \brief inputs
-  private: ParamT<std::string> topicNameP,frameNameP;
+  private: ParamT<std::string> topicNameP,frameNameP,bodyNameP;
   private: ParamT<Vector3> xyzP,rpyP,velP,angVelP;
-  private: std::string topicName,frameName;
+  private: std::string topicName,frameName,bodyName;
   private: Vector3 xyz,rpy,vel,angVel;
 };
 

@@ -74,6 +74,7 @@ RosSimIface::RosSimIface(Entity *parent)
   Param::Begin(&this->parameters);
   this->topicNameP = new ParamT<std::string>("topicName","simiface_pose", 0);
   this->frameNameP = new ParamT<std::string>("frameName","map", 0);
+  this->bodyNameP = new ParamT<std::string>("bodyName","base_link", 1);
   this->xyzP  = new ParamT<Vector3>("xyz" ,Vector3(0,0,0), 0);
   this->rpyP  = new ParamT<Vector3>("rpy" ,Vector3(0,0,0), 0);
   this->velP  = new ParamT<Vector3>("vel" ,Vector3(0,0,0), 0);
@@ -88,6 +89,7 @@ RosSimIface::~RosSimIface()
 
   delete this->topicNameP;
   delete this->frameNameP;
+  delete this->bodyNameP;
   delete this->xyzP;
   delete this->rpyP;
   delete this->velP;
@@ -101,6 +103,7 @@ void RosSimIface::LoadChild(XMLConfigNode *node)
 {
   this->topicNameP->Load(node);
   this->frameNameP->Load(node);
+  this->bodyNameP->Load(node);
   this->xyzP->Load(node);
   this->rpyP->Load(node);
   this->velP->Load(node);
@@ -108,6 +111,7 @@ void RosSimIface::LoadChild(XMLConfigNode *node)
 
   this->topicName = this->topicNameP->GetValue();
   this->frameName = this->frameNameP->GetValue();
+  this->bodyName = this->bodyNameP->GetValue();
   this->xyz = this->xyzP->GetValue();
   this->rpy = this->rpyP->GetValue();
   this->vel = this->velP->GetValue();
@@ -120,54 +124,22 @@ void RosSimIface::LoadChild(XMLConfigNode *node)
 void RosSimIface::InitChild()
 {
 
-  ROS_DEBUG("================= %s", this->topicName.c_str());
-  rosnode->advertise<image_msgs::Image>(this->topicName,1);
+  ROS_DEBUG("ros simiface subscribing to %s", this->topicName.c_str());
+  rosnode->subscribe( this->topicName, poseMsg, &RosSimIface::UpdateObjectPose, this, 10);
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void RosSimIface::UpdateChild()
+void RosSimIface::UpdateObjectPose()
 {
 
-  const unsigned char *src;
+  this->lock.lock();
+  // copy data into pose
+  this->poseMsg.header.frame_id = this->frameName;
+  this->poseMsg.header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
+  this->poseMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->poseMsg.header.stamp.sec) );
 
-  // Get a pointer to image data
-  src = this->myParent->GetImageData(0);
-
-  //std::cout << " updating SimIface " << this->topicName << " " << data->image_size << std::endl;
-  if (src)
-  {
-    //double tmpT0 = Simulator::Instance()->GetWallTime();
-
-    this->lock.lock();
-    // copy data into image
-    this->imageMsg.header.frame_id = this->frameName;
-    this->imageMsg.header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
-    this->imageMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->imageMsg.header.stamp.sec) );
-
-    //double tmpT1 = Simulator::Instance()->GetWallTime();
-    //double tmpT2;
-
-    /// @todo: don't bother if there are no subscribers
-    if (this->rosnode->numSubscribers(this->topicName) > 0)
-    {
-      // copy from src to imageMsg
-      fillImage(this->imageMsg   ,"image_raw" ,
-                this->height     ,this->width ,this->depth,
-                "mono"            ,"uint8"     ,
-                (void*)src );
-
-      //tmpT2 = Simulator::Instance()->GetWallTime();
-
-      // publish to ros
-      rosnode->publish(this->topicName,this->imageMsg);
-    }
-
-    //double tmpT3 = Simulator::Instance()->GetWallTime();
-
-    this->lock.unlock();
-  }
 
 
 
@@ -233,6 +205,15 @@ void RosSimIface::UpdateChild()
   simIface->Close();
   delete simIface;
 
+  this->lock.unlock();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Update the controller
+void RosSimIface::UpdateChild()
+{
+
+
 
 }
 
@@ -240,8 +221,7 @@ void RosSimIface::UpdateChild()
 // Finalize the controller
 void RosSimIface::FiniChild()
 {
-  rosnode->unadvertise(this->topicName);
-  this->myParent->SetActive(false);
+  rosnode->unsubscribe(this->topicName);
 }
 
 
