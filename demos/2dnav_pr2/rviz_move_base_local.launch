@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="rviz" type="rviz" name="rviz">
+    <remap from="goal" to="/move_base_local/activate" />
+  </node>
+</launch>
