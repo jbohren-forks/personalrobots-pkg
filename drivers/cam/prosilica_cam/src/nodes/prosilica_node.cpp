@@ -52,6 +52,7 @@
 
 #include "prosilica/prosilica.h"
 #include "prosilica_cam/PolledImage.h"
+#include "prosilica_cam/CamInfo.h"
 
 class ProsilicaNode
 {
@@ -214,6 +215,8 @@ public:
     node_.param("~thumbnail_size", thumbnail_size_, 128);
     node_.advertise<image_msgs::Image>("~thumbnail", 1);
 
+    node_.advertiseService("~cam_info_service", &ProsilicaNode::camInfoService, this, 0);
+
     diagnostic_.addUpdater( &ProsilicaNode::freqStatus );
   }
 
@@ -293,6 +296,15 @@ public:
 
     stop();
 
+    return true;
+  }
+
+  bool camInfoService(prosilica_cam::CamInfo::Request &req,
+                      prosilica_cam::CamInfo::Response &res)
+  {
+    if (!calibrated_)
+      return false;
+    res.cam_info = cam_info_;
     return true;
   }
 
