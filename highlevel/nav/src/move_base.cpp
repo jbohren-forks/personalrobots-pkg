@@ -259,7 +259,6 @@ namespace nav {
 
         //check for success
         if(tc_->goalReached()){
-          ROS_INFO("%d - %d", attempted_rotation_, done_half_rotation_);
           if(attempted_rotation_){
             valid_control = false;
             if(done_half_rotation_){
@@ -291,8 +290,13 @@ namespace nav {
         //try to make a plan
         if(done_half_rotation_ && !done_full_rotation_ || !tryPlan(goal_)){
           //if we've tried to reset our map and to rotate in place, to no avail, we'll abort the goal
-          if(attempted_costmap_reset_ && done_full_rotation_)
+          if(attempted_costmap_reset_ && done_full_rotation_){
+            attempted_rotation_ = false;
+            done_half_rotation_ = false;
+            done_full_rotation_ = false;
+            attempted_costmap_reset_ = false;
             return robot_actions::ABORTED;
+          }
 
           if(done_full_rotation_){
             resetCostmaps();
@@ -302,7 +306,6 @@ namespace nav {
             attempted_costmap_reset_ = true;
           }
           else{
-            ROS_INFO("new rot goal");
             //if planning fails... we'll try rotating in place to clear things out
             double angle = M_PI; //rotate 180 degrees
             tf::Stamped<tf::Pose> rotate_goal = tf::Stamped<tf::Pose>(tf::Pose(tf::Quaternion(angle, 0.0, 0.0), tf::Point(0.0, 0.0, 0.0)), ros::Time::now(), robot_base_frame_);
