@@ -461,6 +461,8 @@ namespace base_local_planner{
     for(unsigned int i = 0; i < new_plan.size(); ++i){
       global_plan_[i] = new_plan[i];
     }
+    //when we get a new plan... we'll stop any escape behaviors
+    escaping_ = false;
   }
 
   //create the trajectories we wish to score
