@@ -29,5 +29,8 @@
 <depend package="message_sequencing" />
 <sysdepend os="ubuntu" version="7.04-feisty" package="python-numpy"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
+<export>
+<cpp cflags="-I${prefix}/msg/cpp"/>
+</export>
 </package>
 
