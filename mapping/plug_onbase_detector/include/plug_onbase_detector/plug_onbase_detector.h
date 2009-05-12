@@ -371,7 +371,7 @@ class PlugOnBaseDetector
       reverse (clusters.begin (), clusters.end ());
 
       // Destroy the tree
-      // delete tree;
+      delete tree;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
