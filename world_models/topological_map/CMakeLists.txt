@@ -29,4 +29,8 @@ target_link_libraries(test/test_topological_map topological_graph)
 rospack_add_executable(bin/tm_driver src/tm_driver)
 target_link_libraries(bin/tm_driver topological_graph)
 
+rospack_add_executable(bin/visualize src/visualize)
+target_link_libraries(bin/visualize topological_graph)
+rospack_link_boost(bin/visualize program_options)						     
+
 rospack_add_executable(bin/door_sensor_fusion src/door_sensor_fusion.cpp)

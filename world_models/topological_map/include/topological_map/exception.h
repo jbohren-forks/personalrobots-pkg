@@ -160,6 +160,12 @@ struct UnknownOutletException: public TopologicalMapException
   UnknownOutletException (OutletId id) : TopologicalMapException (format ("Unknown outlet id %1%") % id) {}
 };
 
+struct NoApproachPositionException: public TopologicalMapException
+{
+  NoApproachPositionException (OutletId id, double r1, double r2) : 
+    TopologicalMapException (format ("No free cell within radius %1% of approach position at distance %2% from outlet %3%") % r2 % r1 % id) {}
+};
+
 } // namespace topological_map
 
 

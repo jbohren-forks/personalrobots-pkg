@@ -65,6 +65,7 @@ const string MARKER_TOPIC("visualization_marker");
 const string CONNECTOR_TOPIC("~connectors");
 const string MARKER_NS("topological_map");
 const string VISUALIZER_FRAME("map");
+const double OUTLET_APPROACH_DISTANCE(2.0);
 
 
 typedef set<ConnectorId> ConnectorSet;
@@ -153,13 +154,14 @@ void drawOutlet (const OutletId id, const TopologicalMap& m, const Publisher& pu
 {
   OutletInfo outlet = m.outletInfo(id);
   Marker marker;
-  marker.id = id+100;
+  marker.id = id+2000;
   marker.ns = MARKER_NS;
   marker.header.frame_id=VISUALIZER_FRAME;
   marker.type = Marker::ARROW;
   marker.action=Marker::ADD;
   marker.color.a=1.0;
-  marker.color.g=1.0;
+  marker.color.g=0.2;
+  marker.color.r=1.0;
   marker.scale.x=1.0;
   marker.scale.y=0.1;
   marker.scale.z=0.1;
@@ -171,6 +173,25 @@ void drawOutlet (const OutletId id, const TopologicalMap& m, const Publisher& pu
   marker.pose.orientation.z=outlet.qz;
   marker.pose.orientation.w=outlet.qw;
   pub.publish(marker);
+
+  // Approach position
+  Point2D approach_position = m.outletApproachPosition(id, OUTLET_APPROACH_DISTANCE, OUTLET_APPROACH_DISTANCE/4);
+  Marker approach_marker;
+  approach_marker.id = id+3000;
+  approach_marker.ns = MARKER_NS;
+  approach_marker.header.frame_id = VISUALIZER_FRAME;
+  approach_marker.type = Marker::SPHERE;
+  approach_marker.action = Marker::ADD;
+  approach_marker.color.a = 1.0;
+  approach_marker.color.r = 0.5;
+  approach_marker.color.g = 0.5;
+  approach_marker.scale.x = 0.2;
+  approach_marker.scale.y = 0.2;
+  approach_marker.scale.z = 0.2;
+  approach_marker.pose.position.x = approach_position.x;
+  approach_marker.pose.position.y = approach_position.y;
+  pub.publish(approach_marker);
+  
 }
 
 

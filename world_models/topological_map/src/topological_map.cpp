@@ -82,6 +82,7 @@ using tf::Transform;
 using tf::Vector3;
 using tf::Quaternion;
 using tf::Pose;
+using tf::Point;
 using robot_msgs::Point32;
 
 namespace topological_map
@@ -186,6 +187,21 @@ Point32 transform (const Transform& transform, const Point32& p)
   p2.y = v2.y();
   p2.z = v2.z();
   return p2;
+}
+
+RegionPtr TopologicalMap::MapImpl::squareRegion (const Point2D& p, const double radius) const
+{
+  ROS_DEBUG_STREAM_NAMED ("square_region", "Computing square region for point " << p << " with radius " << radius);
+  int cell_radius = floor(radius/resolution_);
+  MutableRegionPtr region(new Region);
+  Cell2D cell = containingCell(p);
+  for (int r = max(0,cell.r-cell_radius); r<=cell.r+cell_radius; ++r) {
+    for (int c = max(0,cell.c-cell_radius); c<=cell.c+cell_radius; ++c) {
+      region->insert(Cell2D(r,c));
+      ROS_DEBUG_STREAM_NAMED ("square_region", " inserting " << Cell2D(r,c));
+    }
+  }
+  return region;
 }
 
 
@@ -795,6 +811,47 @@ OutletIdSet TopologicalMap::MapImpl::allOutlets () const
   // For now, outlet ids are 1,...,num_outlets
   return OutletIdSet(Counter(1), Counter(1+outlets_.size()));
 }
+
+
+
+Point2D outletApproachCenter(const OutletInfo& outlet, const double distance)
+{
+  
+  Pose tf_pose(Quaternion(outlet.qx, outlet.qy, outlet.qz, outlet.qw),
+               Vector3(outlet.x, outlet.y, outlet.z));
+
+  Point point(distance, 0, 0);
+  Point new_origin = tf_pose*point;
+  tf_pose.setOrigin(new_origin);
+  Point2D approach_point(tf_pose.getOrigin().x(), tf_pose.getOrigin().y());
+
+  ROS_DEBUG_STREAM_NAMED ("outlet_approach", "Approach point for outlet at " << outlet.x << ", " << outlet.y << " is " << approach_point);
+  return approach_point;
+}
+ 
+ 
+
+bool closerToObstacles (const ObstacleDistanceArray& distances, const Cell2D& c1, const Cell2D& c2)
+{
+  double d1 = distances[c1.r][c1.c];
+  double d2 = distances[c2.r][c2.c];
+  ROS_DEBUG_STREAM_NAMED ("outlet_approach", " distance of " << c1 << " is " << d1 << " and distance of " << c2 << " is " << d2);
+  return distances[c1.r][c1.c] < distances[c2.r][c2.c];
+}
+  
+
+
+Point2D TopologicalMap::MapImpl::outletApproachPosition (const OutletId id, const double r1, const double r2) const
+{
+  RegionPtr region = squareRegion(outletApproachCenter(transformOutlet(transform_, outletInfo(id)), r1), r2);
+  Region::iterator pos = max_element(region->begin(), region->end(), bind(closerToObstacles, ref(obstacle_distances_), _1, _2));
+  
+  if (pos==region->end() || obstacle_distances_[pos->r][pos->c]==0) 
+    throw NoApproachPositionException(id,r1,r2);
+
+  ROS_DEBUG_STREAM_NAMED ("outlet_approach", " closest cell is " << *pos);
+  return inverseTransformPoint(cellCenter(*pos, resolution_));
+}
   
 
 
@@ -1219,6 +1276,11 @@ OutletId TopologicalMap::addOutlet (const OutletInfo& outlet)
 OutletIdSet TopologicalMap::allOutlets () const
 { 
   return map_impl_->allOutlets();
+}
+
+Point2D TopologicalMap::outletApproachPosition (OutletId id, double r1, double r2) const
+{
+  return map_impl_->outletApproachPosition (id, r1, r2);
 }
 
 RegionIdVector TopologicalMap::neighbors (const RegionId id) const

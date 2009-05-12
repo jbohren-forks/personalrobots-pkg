@@ -129,6 +129,12 @@ public:
   /// \return ids of all existing outlets
   OutletIdSet allOutlets() const;
 
+  /// For a given outlet, consider a circle whose center is at distance \a r1 from the outlet (along the outlet orientation vector), with radius \a r2
+  /// \return A point in this circle with maximum distance from static-map obstacles 
+  /// \throws NoApproachPositionException if there are no free points in the given radius
+  /// \throws UnknownOutletException 
+  Point2D outletApproachPosition (OutletId id, double r1, double r2) const;
+
   /// \return set of cells in region given id
   /// \throws UnknownRegionException
   RegionPtr regionCells (const RegionId id) const;
@@ -236,6 +242,8 @@ private:
 
   Point2D transformPoint(const Point2D& p) const;
   Point2D inverseTransformPoint(const Point2D& p) const;
+
+  RegionPtr squareRegion (const Point2D& p, double radius) const;
 
   GridPtr grid_;
   ObstacleDistanceArray obstacle_distances_;
