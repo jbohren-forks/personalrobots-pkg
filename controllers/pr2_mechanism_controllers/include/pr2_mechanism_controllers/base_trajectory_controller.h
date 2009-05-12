@@ -79,8 +79,6 @@ namespace pr2_mechanism_controllers
 
     robot_msgs::PoseDot getCommand();
 
-    bool sleepLeftover(ros::Time start, ros::Duration cycle_time);
-
     private:
     tf::Stamped<tf::Pose> global_pose_;
     std::vector<control_toolbox::Pid> pid_;

@@ -37,6 +37,7 @@
 #include <pr2_mechanism_controllers/base_trajectory_controller.h>
 #include <robot_msgs/DiagnosticMessage.h>
 #include <robot_msgs/DiagnosticStatus.h>
+#include <ros/rate.h>
 
 namespace pr2_mechanism_controllers
 {
@@ -50,7 +51,7 @@ namespace pr2_mechanism_controllers
     ros_node_.param("~control_topic_name", control_topic_name_, std::string("cmd_vel"));
     ros_node_.param("~controller_frequency", controller_frequency_, 100.0);
     ros_node_.param("~path_input_topic_name", path_input_topic_name_, std::string("/base/trajectory_controller/command"));
-    ros_node_.param("diagnostics_expected_publish_time",diagnostics_expected_publish_time_,0.2);
+    ros_node_.param("diagnostics_expected_publish_time",diagnostics_expected_publish_time_,1.0);
 
     ros_node_.param("~trajectory_type", trajectory_type_, std::string("linear"));
 
@@ -229,17 +230,14 @@ namespace pr2_mechanism_controllers
 
   void BaseTrajectoryController::spin()
   {
-    ros::Duration cycle_time = ros::Duration(1.0 / controller_frequency_);
+    ros::Rate control_rate(controller_frequency_);
     while(1)
     {
-
-      publishDiagnostics(false);
-
-      //get the start time of the loop
-      ros::Time start_time = ros::Time::now();
       current_time_ = ros::Time::now().toSec();
 
-      //update the global pose
+      //publishDiagnostics(false);
+
+
       updateGlobalPose();
 
       if(new_path_available_)
@@ -255,29 +253,21 @@ namespace pr2_mechanism_controllers
         stop_motion_ = true;
       }
 
-      if((current_time_ - path_updated_time_) > max_update_time_)
+      if (current_time_-path_updated_time_ > max_update_time_)
       {
         ROS_DEBUG("No path update in %f seconds. Stopping motion.",current_time_-path_updated_time_);
         stop_motion_ = true;
         control_state_ = "WATCHDOG - MOTION STOPPED";
       }
 
-      struct timeval start, end;
-      double start_t, end_t, t_diff;
-      gettimeofday(&start, NULL);
-        
+      ros::Time control_time = ros::Time::now();        
       updateControl();
-
-      gettimeofday(&end, NULL);
-      start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-      end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-      t_diff = end_t - start_t;
-      ROS_DEBUG("Full control cycle: %.9f", t_diff);
+      ROS_DEBUG("Full control cycle: %.9f", (ros::Time::now() - control_time).toSec());
 
       last_update_time_ = current_time_;
 
-      if(!sleepLeftover(start_time, cycle_time))      //sleep the remainder of the cycle
-        ROS_WARN("Control loop missed its desired cycle time of %.4f", cycle_time.toSec());
+      if (!control_rate.sleep())
+        ROS_WARN("Control loop missed its desired cycle rate of %.4f Hz", controller_frequency_);
     }
   }
 
@@ -444,25 +434,11 @@ namespace pr2_mechanism_controllers
 
     return return_cmd;
   }
-
-  bool BaseTrajectoryController::sleepLeftover(ros::Time start, ros::Duration cycle_time)
-  {
-    ros::Time expected_end = start + cycle_time;
-    ///@todo: because durations don't handle subtraction properly right now
-    ros::Duration sleep_time = ros::Duration((expected_end - ros::Time::now()).toSec()); 
-
-    if(sleep_time < ros::Duration(0.0)){
-      return false;
-    }
-
-    sleep_time.sleep();
-    return true;
-  }
-};
+}
 
 int main(int argc, char** argv){
   ros::init(argc, argv);
-  ros::Node ros_node("base/trajectory_controller");
+  ros::Node ros_node("base_trajectory_controller");
   tf::TransformListener tf(ros_node, true, ros::Duration(10));
   pr2_mechanism_controllers::BaseTrajectoryController move_base(ros_node, tf);
   move_base.spin();
