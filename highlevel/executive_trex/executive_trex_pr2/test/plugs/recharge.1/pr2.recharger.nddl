@@ -5,9 +5,6 @@ close();
 // Load the topological map
 map_initialize_from_file("willow.tmap");
 
-fact(recharge_controller.Holds f);
-f.active = false;
-
 // Generate a goal to recharge using the current position. Note that this requires the robot to be correclty localized!
 // We assume the robot is located near enough to the socket to complete using local navigation only
 rejectable(Recharger.Active g);

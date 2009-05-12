@@ -208,35 +208,47 @@ namespace TREX{
 	_qz(static_cast<IntervalDomain&>(getCurrentDomain(variables[5]))),
 	_qw(static_cast<IntervalDomain&>(getCurrentDomain(variables[6]))),
 	_frame_id(static_cast<StringDomain&>(getCurrentDomain(variables[7]))),
-	_frame(LabelStr(_frame_id.getSingletonValue()).toString()){
+	_frame(LabelStr(_frame_id.getSingletonValue()).toString()),
+	_propagated(false){
       checkError(_frame_id.isSingleton(), "The frame has not been specified for tf to get robot pose. See model for error." << _frame_id.toString());
       condDebugMsg(!_frame_id.isSingleton(), "trex:error:tf_get_robot_pose",  "Frame has not been specified" << variables[7]->toLongString());
     }
 
   private:
-    void handleExecute(){
+    virtual void handleExecute(){
       debugMsg("trex:debug:propagation:tf_get_robot_pose",  "BEFORE: " << toString());
-      tf::Stamped<tf::Pose> pose;
-      getPose(pose);
+
+      // Obtain pose if not already called
+      if(!_propagated){
+	getPose(_pose);
+	_propagated = true;
+      }
 
       debugMsg("trex:debug:propagation:tf_get_robot_pose", "Compute pose <" <<
-	       pose.getOrigin().x() << ", " <<
-	       pose.getOrigin().y() << ", " <<
-	       pose.getOrigin().z() << ", " <<
-	       pose.getRotation().x() << ", " <<
-	       pose.getRotation().y() << ", " <<
-	       pose.getRotation().z() << ", " <<
-	       pose.getRotation().w() << ", >");
+	       _pose.getOrigin().x() << ", " <<
+	       _pose.getOrigin().y() << ", " <<
+	       _pose.getOrigin().z() << ", " <<
+	       _pose.getRotation().x() << ", " <<
+	       _pose.getRotation().y() << ", " <<
+	       _pose.getRotation().z() << ", " <<
+	       _pose.getRotation().w() << ", >");
 
-      getCurrentDomain(getScope()[0]).set(pose.getOrigin().x());
-      getCurrentDomain(getScope()[1]).set(pose.getOrigin().y());
-      getCurrentDomain(getScope()[2]).set(pose.getOrigin().z());
-      getCurrentDomain(getScope()[3]).set(pose.getRotation().x());
-      getCurrentDomain(getScope()[4]).set(pose.getRotation().y());
-      getCurrentDomain(getScope()[5]).set(pose.getRotation().z());
-      getCurrentDomain(getScope()[6]).set(pose.getRotation().w());
+      getCurrentDomain(getScope()[0]).set(_pose.getOrigin().x());
+      getCurrentDomain(getScope()[1]).set(_pose.getOrigin().y());
+      getCurrentDomain(getScope()[2]).set(_pose.getOrigin().z());
+      getCurrentDomain(getScope()[3]).set(_pose.getRotation().x());
+      getCurrentDomain(getScope()[4]).set(_pose.getRotation().y());
+      getCurrentDomain(getScope()[5]).set(_pose.getRotation().z());
+      getCurrentDomain(getScope()[6]).set(_pose.getRotation().w());
 
       debugMsg("trex:debug:propagation:tf_get_robot_pose",  "AFTER: " << toString());
+    }
+
+    virtual void setSource(const ConstraintId& sourceConstraint) {
+      const TFGetRobotPoseConstraint* source_ptr = (TFGetRobotPoseConstraint*) sourceConstraint;
+      checkError(source_ptr != NULL, "Could not cast " << sourceConstraint->toLongString());
+      _pose = source_ptr->_pose;
+      _propagated = source_ptr->_propagated;
     }
 
     void getPose(tf::Stamped<tf::Pose>& pose){
@@ -264,6 +276,8 @@ namespace TREX{
     IntervalDomain& _x, _y, _z, _qx, _qy, _qz, _qw; // Pose is the output
     StringDomain& _frame_id;
     const std::string _frame;
+    bool _propagated;
+    tf::Stamped<tf::Pose> _pose;
   };
 
   class AllBoundsSetConstraint: public Constraint{

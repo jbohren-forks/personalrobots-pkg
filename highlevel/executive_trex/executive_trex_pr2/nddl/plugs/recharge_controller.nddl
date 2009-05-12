@@ -72,6 +72,10 @@ PlugState plug_state = new PlugState();
 Recharger recharger = new Recharger(Internal);
 RechargeController recharge_controller = new RechargeController();
 
+// Initialize controller to inactive
+fact(recharge_controller.Holds rc_initial_state);
+rc_initial_state.active = false;
+
 RechargeController::Holds{
   if(active == false){
     eq(in_position, false);
@@ -84,6 +88,8 @@ RechargeController::Holds{
     eq(plugged_in, false);
     eq(ready_to_grasp, false);
     contained_by(recharger.Inactive);
+    equals(outlet_state.Holds);
+    equals(plug_state.Holds);
   }
 
   met_by(Holds p);
