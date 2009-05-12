@@ -319,7 +319,7 @@ namespace nav {
           }
         }
 
-        //we don't want to sleep because we've been planning for awhile
+        r.sleep();
         continue;
       }
 
