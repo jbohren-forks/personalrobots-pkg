@@ -65,15 +65,15 @@ public:
     {
       ROS_ERROR("This sould never be called for the notifier only callsback when this is possible.  But it's good practice to use it anyway.");
     print_pose("object", pose);    
-    
+    }    
   };
-
+  
   NotifierUsingClass(tf::TransformListener& tfl): tfl_(tfl)
   {
     
   };
-
-
+  
+  
 };
 
 int main(int argc, char ** argv)
