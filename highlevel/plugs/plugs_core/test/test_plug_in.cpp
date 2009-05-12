@@ -122,7 +122,7 @@ int
   unplug.preempt();
   stow_plug.preempt();
 
-  Duration(1.0).sleep();
+  Duration(3.0).sleep();
 
   // Takes down controllers that might already be up
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -136,8 +136,6 @@ int
   switchlist.stop_controllers.push_back("r_arm_cartesian_twist_controller");
   switchlist.stop_controllers.push_back("r_arm_hybrid_controller");
   if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -10;
-
-  Duration(2.0).sleep();
 
   // Tucks arms
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -181,9 +179,10 @@ int
   if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -101;
 
   // Plug in
-  if (plug_in.execute(empty, empty, Duration(120.0)) != robot_actions::SUCCESS) return -105;
+  if (plug_in.execute(empty, empty, Duration(120.0)) != robot_actions::SUCCESS)
+    printf("Plug in failed!!\n");
 
-  Duration(10.0).sleep();
+  Duration(5.0).sleep();
 
   //unplug
   if (unplug.execute(empty, empty, Duration(100.0)) != robot_actions::SUCCESS) return -110;
