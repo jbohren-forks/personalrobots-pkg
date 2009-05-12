@@ -64,7 +64,9 @@ def detect_door(filename):
     d.header.frame_id = "base_footprint"
 
     rospy.wait_for_service('doors_detector_cloud')
-    s = rospy.ServiceProxy('doors_detector_cloud', DoorsDetectorCloud)
+    rospy.wait_for_service('handle_detector_cloud')
+    s_door   = rospy.ServiceProxy('doors_detector_cloud', DoorsDetectorCloud)
+    s_handle = rospy.ServiceProxy('handle_detector_cloud', DoorsDetectorCloud)
     print "created service proxy"
     for topic, msg, t in logplayer(filename, raw=True):
         if topic == '/full_cloud':
@@ -78,10 +80,16 @@ def detect_door(filename):
             msg.deserialize(message_data)
             d.header.stamp = msg.header.stamp
             try:
-                resp = s(d, msg)
+                resp_door = s_door(d, msg)
             except rospy.ServiceException, e:
                 print "Service call failed: %s"%e
             print "door detected"
+
+            try:
+                resp_handle = s_handle(resp_door.doors[0], msg)
+            except rospy.ServiceException, e:
+                print "Service call failed: %s"%e
+            print "handle detected at (%f, %f, %f)"%(resp_handle.doors[0].handle.x, resp_handle.doors[0].handle.y, resp_handle.doors[0].handle.z)
             return
     
 
