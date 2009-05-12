@@ -88,14 +88,6 @@ namespace nav {
 
     private:
       /**
-       * @brief  Sleeps for the remainder of a cycle
-       * @param  start The start time of the cycle
-       * @param  cycle_time The desired cycle time
-       * @return True if the desired cycle time is met, false otherwise
-       */
-      bool sleepLeftover(ros::Time start, ros::Duration cycle_time);
-
-      /**
        * @brief  Publishes the footprint of the robot for visualization purposes
        */
       void publishFootprint();
@@ -170,7 +162,6 @@ namespace nav {
       std::vector<robot_msgs::Point> footprint_;
       std::string global_frame_, control_frame_, robot_base_frame_;
       bool valid_plan_;
-      boost::recursive_mutex lock_;
       door_msgs::Door door_;
       pr2_robot_actions::Pose2D goal_;
 

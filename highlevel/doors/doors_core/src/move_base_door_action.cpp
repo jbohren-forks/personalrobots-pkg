@@ -38,6 +38,7 @@
 #include <doors_core/door_reactive_planner.h>
 #include <door_functions/door_functions.h>
 #include <kdl/frames.hpp>
+#include <ros/rate.h>
 
 
 using namespace base_local_planner;
@@ -161,12 +162,10 @@ namespace nav
     std::vector<pr2_robot_actions::Pose2D> global_plan;
     bool valid_plan = planner_->makePlan(getPose2D(global_pose_), global_plan);//makePlan(current_position, return_path);
 
-    lock_.lock();//copy over the new global plan
     valid_plan_ = valid_plan;
     global_plan_ = global_plan;
-    lock_.unlock();
 
-    publishPath(global_plan, "~gui_path", 0.0, 1.0, 0.0, 0.0);
+    //    publishPath(global_plan, "~gui_path", 0.0, 1.0, 0.0, 0.0);
   }
 
   void MoveBaseDoorAction::updateGlobalPose()
@@ -221,7 +220,6 @@ namespace nav
 
   void MoveBaseDoorAction::prunePlan()
   {
-    lock_.lock();
     std::vector<pr2_robot_actions::Pose2D>::iterator it = global_plan_.begin();
     while(it != global_plan_.end()){
       const pr2_robot_actions::Pose2D& w = *it;
@@ -235,7 +233,6 @@ namespace nav
       }
       it = global_plan_.erase(it);
     }
-    lock_.unlock();
   }
 
   robot_actions::ResultStatus MoveBaseDoorAction::execute(const door_msgs::Door& door, door_msgs::Door& feedback)
@@ -254,7 +251,7 @@ namespace nav
     updateGlobalPose();    //update the global pose
     makePlan();    //first... make a plan
 
-    ros::Duration cycle_time = ros::Duration(1.0 / controller_frequency_);
+    ros::Rate control_rate(controller_frequency_);
     while(!isPreemptRequested())
     {
       //get the start time of the loop
@@ -282,10 +279,6 @@ namespace nav
       }
       else 
       {
-        struct timeval start, end;
-        double start_t, end_t, t_diff;
-        gettimeofday(&start, NULL);
-
         //check that the observation buffers for the costmap are current
         if(!planner_cost_map_ros_->isCurrent()){
 	  ROS_DEBUG("Sensor data is out of date, we're not going to allow commanding of the base for safety");
@@ -294,7 +287,6 @@ namespace nav
         }
         makePlan();
         //pass plan to controller
-        lock_.lock();
         if(valid_plan_)
         {
           plan_state_ = "Plan valid";
@@ -305,24 +297,18 @@ namespace nav
           plan_state_ = "Plan invalid";
           dispatchControl(empty_plan_);
         }
-        lock_.unlock();
 
         //for visualization purposes
         //publishPath(global_plan_, "~gui_path", 0.0, 1.0, 0.0, 0.0);
-        publishFootprint();
+	//        publishFootprint();
 
-        gettimeofday(&end, NULL);
-        start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-        end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-        t_diff = end_t - start_t;
-        ROS_DEBUG("Full control cycle: %.9f", t_diff);
       }
-      if(!sleepLeftover(start_time, cycle_time))      //sleep the remainder of the cycle
+      if(!control_rate.sleep())
       {
-        ROS_WARN("Control loop missed its desired cycle time of %.4f", cycle_time.toSec());
+        ROS_WARN("Control loop missed its desired cycle frequency of %.4f Hz", controller_frequency_);
         plan_state_ = "Control loop missed cycle time";
       }
-        publishDiagnostics(false);
+      //publishDiagnostics(false);
 
     }
     //make sure to stop the costmap from running on return
@@ -352,22 +338,12 @@ namespace nav
           plan_out.points[0].time = 0.0;        
           ROS_DEBUG("Plan in had %d points, plan out has %d points",(int)plan_in.size(),(int)plan_out.points.size());
     }
+    ros::Time start_test = ros::Time::now();
     ros_node_.publish(control_topic_name_,plan_out);
+    ros::Duration tmp = ros::Time::now()-start_test;
+    ROS_INFO("Publish plan took %f sec ", (tmp).toSec());
   }
 
-
-  bool MoveBaseDoorAction::sleepLeftover(ros::Time start, ros::Duration cycle_time){
-    ros::Time expected_end = start + cycle_time;
-    ///@todo: because durations don't handle subtraction properly right now
-    ros::Duration sleep_time = ros::Duration((expected_end - ros::Time::now()).toSec()); 
-
-    if(sleep_time < ros::Duration(0.0)){
-      return false;
-    }
-
-    sleep_time.sleep();
-    return true;
-  }
 
   void MoveBaseDoorAction::resetCostmaps(){
     planner_cost_map_ros_->resetMapOutsideWindow(5.0, 5.0);
