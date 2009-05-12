@@ -230,11 +230,12 @@ namespace people
 	  RestampedPositionMeasurement rpm;
 	  rpm.pos = *person_pos_msg;
 	  rpm.restamp = person_pos_msg->header.stamp;
-	  rpm.hist = NULL;
+	  rpm.hist = 0;
 	  if (it == current_pos_list_.end()) {
 	    current_pos_list_.insert(pair<string, RestampedPositionMeasurement>(person_pos_msg->object_id, rpm));
 	  }
 	  else {
+	    cvReleaseHist(&((*it).second.hist)); (*it).second.hist = 0;
 	    (*it).second = rpm;
 	  }
 	  initialized_ = true;
@@ -276,6 +277,7 @@ namespace people
 	    current_pos_list_.insert(pair<string, RestampedPositionMeasurement>(pos_.object_id, rpm));
 	  }
 	  else {
+	    cvReleaseHist(&((*it).second.hist)); (*it).second.hist = 0;
 	    (*it).second = rpm;
 	  }
 	  initialized_ = true;
