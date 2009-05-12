@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-rospack(hokuyo_node)
-rospack_add_library(hokuyo hokuyo.cpp)
-rospack_add_executable(hokuyo_node hokuyo_node.cpp)
-target_link_libraries(hokuyo_node hokuyo)
 
-#rospack_add_compile_flags(hokuyo_node "-pg")
-#rospack_add_link_flags(hokuyo_node "-pg")
+set(ROS_BUILD_TYPE RelWithDebInfo)
+rospack(hokuyo_node)
+
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+
+add_subdirectory(src)

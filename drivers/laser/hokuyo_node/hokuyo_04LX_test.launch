@@ -6,7 +6,6 @@
   
   <node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
   
-  <node name="tf_FRAMEID_LASER" pkg="tf" type="transform_sender" args="0 0 0 0 0 0 FRAMEID_LASER map 100" respawn="false" output="screen"/>
+  <node name="tf_FRAMEID_LASER" pkg="tf" type="transform_sender" args="0 0 0 0 0 0 FRAMEID_LASER FRAMEID_LASER 100" respawn="false" output="screen"/>
   
-  <node name="tf_map" pkg="tf" type="transform_sender" args="0 0 0 0 0 0 map map 100" respawn="false" output="screen"/>
 </launch>
