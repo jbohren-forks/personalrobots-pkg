@@ -38,17 +38,22 @@ import rostopic
 from robot_actions.msg import *
 from std_msgs.msg import *
 
+STATUS = ['Undefined', 'Success', 'Aborted', 'Preempted', 'Active']
+
 class ActionWatcher:
     def __init__(self, name):
         self.name = name
         self.last_status = 0
 
-        self.activate_class, _, __ = rostopic.get_topic_class(self.name + '/activate')
-        self.feedback_class, _, __ = rostopic.get_topic_class(self.name + '/feedback')
+        try:
+            self.activate_class, _, __ = rostopic.get_topic_class(self.name + '/activate')
+            self.feedback_class, _, __ = rostopic.get_topic_class(self.name + '/feedback')
 
-        rospy.Subscriber(self.name + '/activate', self.activate_class, self.activate_cb)
-        rospy.Subscriber(self.name + '/feedback', self.feedback_class, self.feedback_cb)
-        rospy.Subscriber(self.name + '/preempt', Empty, self.preempt_cb)
+            rospy.Subscriber(self.name + '/activate', self.activate_class, self.activate_cb)
+            rospy.Subscriber(self.name + '/feedback', self.feedback_class, self.feedback_cb)
+            rospy.Subscriber(self.name + '/preempt', Empty, self.preempt_cb)
+        except roslib.packages.InvalidROSPkgException, ex:
+            print "Cannot watch %s because you do not have the messages built" % name
 
     def activate_cb(self, msg):
         print "- %s: new goal" % self.name
@@ -58,7 +63,9 @@ class ActionWatcher:
 
     def feedback_cb(self, msg):
         if msg.status.value != self.last_status:
-            print "- %s: status changed %d -> %d" % (self.name, self.last_status, msg.status.value)
+            print "- %s: status changed %s -> %s" % (self.name,
+                                                     STATUS[self.last_status],
+                                                     STATUS[msg.status.value])
             self.last_status = msg.status.value
 
 def get_actions(topics):
