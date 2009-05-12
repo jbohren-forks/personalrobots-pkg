@@ -267,8 +267,7 @@ private:
     int i = 0;
 
     typename L_Message::iterator it = messages_.begin();
-    typename L_Message::iterator end = messages_.end();
-    for (; it != end; ++i)
+    for (; it != messages_.end(); ++i)
     {
       MessagePtr& message = *it;
 
@@ -303,10 +302,11 @@ private:
         // If we get here the transform succeeded, so push the message onto the notify list, and erase it from or message list
         to_notify.push_back(message);
 
-        it = messages_.erase(it);
         --message_count_;
 
         NOTIFIER_DEBUG("Message %d ready in frame %s at time %.3f, count now %d", i, message->header.frame_id.c_str(), message->header.stamp.toSec(), message_count_);
+
+        it = messages_.erase(it);
 
         ++successful_transform_count_;
       }
