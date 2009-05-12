@@ -39,11 +39,11 @@
 #include <fstream>
 
 #include <ros/node.h>
-#include <robot_msgs/PositionMeasurement.h>
+#include <people_aware_nav/PersonOnPath.h>
+#include <people/PositionMeasurement.h>
 #include <visualization_msgs/Polyline.h>
 #include "tf/transform_listener.h"
 #include <tf/message_notifier.h>
-#include <people_aware_nav/PersonOnPath.h>
 #include <boost/thread/mutex.hpp>
 
 namespace people_aware_nav
@@ -54,9 +54,9 @@ class IsPersonOnPath
 public:
   ros::Node *node_;
   tf::TransformListener *tf_;
-  tf::MessageNotifier<robot_msgs::PositionMeasurement>* message_notifier_person_;
+  tf::MessageNotifier<people::PositionMeasurement>* message_notifier_person_;
   tf::MessageNotifier<visualization_msgs::Polyline>* message_notifier_path_;
-  robot_msgs::PositionMeasurement person_pos_;
+  people::PositionMeasurement person_pos_;
   visualization_msgs::Polyline path_;
   bool got_person_pos_, got_path_;
   std::string fixed_frame_;
@@ -78,7 +78,7 @@ public:
     node_->param("~/person_radius", person_radius_m, 0.8); 
     total_dist_sqr_m_ = robot_radius_m*robot_radius_m + person_radius_m*person_radius_m;
 
-    message_notifier_person_ = new tf::MessageNotifier<robot_msgs::PositionMeasurement> (tf_, node_, boost::bind(&IsPersonOnPath::personPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
+    message_notifier_person_ = new tf::MessageNotifier<people::PositionMeasurement> (tf_, node_, boost::bind(&IsPersonOnPath::personPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
     message_notifier_path_ = new tf::MessageNotifier<visualization_msgs::Polyline>(tf_, node_, boost::bind(&IsPersonOnPath::pathCB, this, _1), "/move_base_node/navfn/plan", fixed_frame_, 1);
 
     node_->advertiseService ("is_person_on_path", &IsPersonOnPath::personOnPathCB, this);
@@ -94,7 +94,7 @@ public:
   }
 
   // Person callback
-  void personPosCB(const tf::MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& person_pos_msg) 
+  void personPosCB(const tf::MessageNotifier<people::PositionMeasurement>::MessagePtr& person_pos_msg) 
   {
     boost::mutex::scoped_lock l2(person_mutex_);
     person_pos_ = *person_pos_msg;

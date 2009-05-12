@@ -5,6 +5,7 @@
 <review status="unreviewed" notes=""/>
 <depend package="roslisp" />
 <depend package="roslib" />
+<depend package="people" />
 <depend package="hallway_tracker" />
 <depend package="topic_synchronizer" />
 <depend package="tf" />

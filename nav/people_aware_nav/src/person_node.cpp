@@ -33,7 +33,7 @@
 #include <ros/console.h>
 #include <ros/assert.h>
 #include <ros/time.h>
-#include <robot_msgs/PositionMeasurement.h>
+#include <people/PositionMeasurement.h>
 #include <robot_msgs/Point.h>
 #include <robot_msgs/PointStamped.h>
 #include <robot_msgs/PointCloud.h>
@@ -47,7 +47,7 @@ namespace people_aware_nav
 
 using robot_msgs::Point;
 using robot_msgs::PointStamped;
-using robot_msgs::PositionMeasurement;
+using people::PositionMeasurement;
 using robot_msgs::PointCloud;
 using deprecated_msgs::Pose2DFloat32;
 using ros::Node;
@@ -128,7 +128,7 @@ public:
 private:
   Node node_;
   string global_frame_;
-  PositionMeasurement person_message_;
+  people::PositionMeasurement person_message_;
   ConstrainedGoal goal_message_;
   PointCloud hallway_points_;
   tf::TransformListener tf_;
