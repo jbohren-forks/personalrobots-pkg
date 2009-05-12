@@ -15,6 +15,8 @@ static const double DISPUNITSCALE =.25;
 
 /// testing the following member methods
 /// getDeltaX, getDeltaU, getZ, getDisparity
+#define CLOSE(a,b,e)  (fabs((a) - (b)) < (e))
+
 bool testGetDeltaXAndGetDeltaU() {
   CvStereoCamModel camModel;
   camModel.setCameraParams(FX, FY, TX, CLX, CRX, CY, DISPUNITSCALE);
@@ -24,26 +26,23 @@ bool testGetDeltaXAndGetDeltaU() {
     double du = 25.;
     double dx = camModel.getDeltaX(du, disp);
     double dx0 = du * TX/(disp*DISPUNITSCALE - (CLX - CRX));
-    double diff = 0.;
-    if ( dx != dx0 ) {
-      printf("getDeltaX() test failed, du=%f, raw disp=%f, dx=%f, dx0=%f\n",
-          du, disp, dx, dx0);
+    if ( !CLOSE(dx, dx0, 1e-5)) {
+      printf("getDeltaX() test failed, du=%f, raw disp=%f, dx=%f, dx0=%f diff=%e\n",
+          du, disp, dx, dx0, fabs(dx - dx0));
       return false;
     }
     double z  = camModel.getZ(disp);
     double z0 = FX*TX/(DISPUNITSCALE*disp - (CLX - CRX));
-    diff = fabs(z-z0);
-    if (diff > .1e-10) {
+    if (!CLOSE(z, z0, 1e-10)) {
       printf("getZ() test failed, disp = %f, z=%e, z0=%e, diff=%e\n",
-          disp, z, z0, diff);
+          disp, z, z0, fabs(z - z0));
       return false;
     }
     // and convert it back
     double du0 = camModel.getDeltaU(dx, z);
-    diff = fabs(du-du0);
-    if ( diff > .1e-10) {
+    if (!CLOSE(du, du0, 1e-10)) {
       printf("getDeltaU() test failed, dx=%f, z=%f, du=%e, du0=%e, diff=%e\n",
-          dx, z, du, du0, diff);
+          dx, z, du, du0, fabs(du - du0));
       return false;
     }
   }
