@@ -38,6 +38,7 @@ import roslib
 roslib.load_manifest('executive_python')
 import rospy
 from robot_msgs.msg import BatteryState
+import os
 
 class BatteryMonitorAdapter:
   def __init__(self, discharge_limit, charge_limit, state_topic, email_addresses, robot_name, mail_program):
@@ -63,11 +64,23 @@ class BatteryMonitorAdapter:
   def chargeDone(self):
     return (self.state.energy_remaining / self.state.energy_capacity) > self.charge_limit
 
+  def sendPluggedEmail(self):
+    mail_string = "To: "
+    for address in self.email_addresses: mail_string += address + ", "
+    mail_string += "\nFrom: %s@willowgarage.com" % self.robot_name
+    mail_string += "\nSubject: Thanks! I've been plugged in."
+    mail_string += "\n\nIf you're thinking about plugging me in after my last e-mail, don't bother. Someone else beat you to it. Thanks."
+
+    #since the robot's have mail servers installed on them... we'll just pipe out our e-mail
+    pipe = os.popen("%s -t" % self.mail_program, 'w')
+    pipe.write(mail_string)
+    pipe.close()
+
   def sendPlugEmail(self):
     mail_string = "To: "
     for address in self.email_addresses: mail_string += address + ", "
     mail_string += "\nFrom: %s@willowgarage.com" % self.robot_name
-    mail_string += "\nSubject: Battery level on robot below %.2f" % self.notify_limit
+    mail_string += "\nSubject: Battery level on robot below %.2f" % self.discharge_limit
     mail_string += "\n\nMy battery level has fallen below the notification level. You should probably think about plugging me in. \n\nThanks much,\n%s" % self.robot_name
 
     #since the robot's have mail servers installed on them... we'll just pipe out our e-mail
@@ -79,7 +92,7 @@ class BatteryMonitorAdapter:
     mail_string = "To: "
     for address in self.email_addresses: mail_string += address + ", "
     mail_string += "\nFrom: %s@willowgarage.com" % self.robot_name
-    mail_string += "\nSubject: Battery level on robot above %.2f" % self.notify_limit
+    mail_string += "\nSubject: Battery level on robot above %.2f" % self.charge_limit
     mail_string += "\n\nMy battery level is above the desired charge level. You should probably think about unplugging me. \n\nThanks much,\n%s" % self.robot_name
 
     #since the robot's have mail servers installed on them... we'll just pipe out our e-mail

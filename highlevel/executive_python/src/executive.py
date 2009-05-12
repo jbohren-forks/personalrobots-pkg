@@ -40,7 +40,8 @@ import rospy
 import random
 from std_msgs.msg import *
 from robot_msgs.msg import *
-from highlevel_controllers.msg import *
+from std_msgs.msg import *
+from robot_msgs.msg import *
 from battery_monitor_adapter import *
 from navigation_adapter import *
 
@@ -54,7 +55,8 @@ class Executive:
     self.cycle_time = cycle_time
     self.state = "nav"
     self.current_goal = self.goals[0]
-    self.email_sent = False
+    self.plugged_email_sent = False
+    self.unplug_email_sent = False
 
   def legalStates(self):
     return self.navigator.legalState() and self.batt_monitor.legalState()
@@ -90,13 +92,17 @@ class Executive:
           State Transitions from recharge:
             1) recharge --- robot is done charging ---> nav
         """
+        if (not self.plugged_email_sent) and self.batt_monitor.pluggedIn():
+          self.batt_monitor.sendPluggedEmail()
+          self.plugged_email_sent = True
         if self.batt_monitor.chargeDone():
           if(self.batt_monitor.pluggedIn()):
-            if not self.email_sent:
+            if not self.unplug_email_sent:
               self.batt_monitor.sendUnPlugEmail()
-              self.email_sent = True
+              self.unplug_email_sent = True
           else:
-            self.email_sent = False
+            self.unplug_email_sent = False
+            self.plugged_email_sent = False
             #resume the current goal
             self.navigator.sendGoal(self.current_goal, "map")
             self.state = "nav"
@@ -138,7 +144,7 @@ class Executive:
 
 if __name__ == '__main__':
   try:
-    batt_monitor = BatteryMonitorAdapter(.25, .85, "battery_state", ["watts@willowgarage.com", "eitan@willowgarage.com"], "pre", "/usr/sbin/sendmail")
+    batt_monitor = BatteryMonitorAdapter(.25, .75, "battery_state", ["watts@willowgarage.com", "eitan@willowgarage.com"], "pre", "/usr/sbin/sendmail")
     navigator = NavigationAdapter(30, 300, "/move_base/feedback", "/move_base/activate")
 
     goals = [
@@ -154,7 +160,7 @@ if __name__ == '__main__':
     [[18.098, 21.015, 0.000], [0.000, 0.000, 0.713, 0.701]]
     ]
 
-    executive = Executive(goals, chrg_stations, navigator, batt_monitor, recharger, 1.0)
+    executive = Executive(goals, chrg_stations, navigator, batt_monitor, 1.0)
     executive.run()
   except KeyboardInterrupt, e:
     pass
