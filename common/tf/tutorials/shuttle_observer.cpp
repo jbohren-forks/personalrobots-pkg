@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**\author Tully Foote/tfoote@willowgarage.com */
+/**\author Tully Foote/tfoote at willowgarage.com */
 
 #include "tf/transform_datatypes.h"
 #include "ros/ros.h"
