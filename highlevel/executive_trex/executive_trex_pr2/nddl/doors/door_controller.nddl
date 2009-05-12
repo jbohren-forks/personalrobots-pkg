@@ -112,6 +112,9 @@ MoveBehavior doorman = new MoveBehavior(Internal, true);
 DoorController door_controller = new DoorController();
 DoorState door_state = new DoorState();
 
+fact(door_controller.Holds dc_initial_state);
+dc_initial_state.active = false;
+
 DoorController::Holds{
   // Bind values for inactive case
   if(active == false){
@@ -125,6 +128,7 @@ DoorController::Holds{
     eq(check_doorway, true);
     eq(finishing, false);
     contained_by(doorman.Inactive);
+    equals(door_state.Holds);
   }
 
   // We will assume default values on commitment based on predecessor. We really want these values to be bound. These values carry

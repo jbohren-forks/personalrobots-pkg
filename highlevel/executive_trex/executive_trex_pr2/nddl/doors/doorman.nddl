@@ -40,4 +40,9 @@ MoveBehavior::Active {
   starts(door_state.Holds ds);
   map_get_door_state(ds.object, doorway_id);
   eq(ds.frame_id, frame_id);
+
+  // Set travel direction based on deltas
+  addEq(current_x, ds.travel_dir_x, x);
+  addEq(current_y, ds.travel_dir_y, y);
+  addEq(current_z, ds.travel_dir_z, z);
 }

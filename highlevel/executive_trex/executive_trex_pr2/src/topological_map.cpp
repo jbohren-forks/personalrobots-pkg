@@ -442,7 +442,7 @@ namespace executive_trex_pr2 {
 
     for(std::vector<ConstrainedVariableId>::const_iterator it = _token_id->parameters().begin(); it != _token_id->parameters().end(); ++it){
       ConstrainedVariableId var = *it;
-      ss << var->getName().toString() << " == " << var->lastDomain().toString() << std::endl;
+      ss << var->getName().toString() << "(" << var->getKey() << ") == " << var->lastDomain().toString() << std::endl;
     }
 
     return ss.str();
@@ -456,7 +456,8 @@ namespace executive_trex_pr2 {
     ROS_ASSERT(var.isValid());
 
     AbstractDomain& dom = getCurrentDomain(var);
-    debugMsg("map:get_door_state", "Setting " << value << " for " << param_name << " in " << dom.toString());
+    condDebugMsg(dom.isNumeric(), "map:get_door_state", "Setting " << value  << " for " << param_name << " in " << dom.toString());
+    condDebugMsg(!dom.isNumeric(), "map:get_door_state", "Setting " << LabelStr(value).toString() << " for " << param_name << " in " << dom.toString());
     dom.set(value);
     return !dom.isEmpty();
   }

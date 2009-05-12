@@ -48,7 +48,7 @@ namespace executive_trex_pr2 {
   void GetRobotPoseForDoorConstraint::handleExecute(){
     debugMsg("trex:debug:propagation:doors:get_robot_pose_for_door",  "BEFORE: " << toString());
 
-    static const std::string REQUIRED_PARAMS("frame_id:frame_p1_x:frame_p1_y:frame_p1_z:frame_p2_x:frame_p2_y:frame_p2_z:height:hinge:rot_dir:door_p1_x:door_p1_y:door_p1_z:door_p2_x:door_p2_y:door_p2_z:handle_x:handle_y:handle_z:travel_dir_x:travel_dir_y:travel_dir_z");
+    static const std::string REQUIRED_PARAMS(":frame_id:frame_p1_x:frame_p1_y:frame_p1_z:frame_p2_x:frame_p2_y:frame_p2_z:height:hinge:rot_dir:door_p1_x:door_p1_y:door_p1_z:door_p2_x:door_p2_y:door_p2_z:handle_x:handle_y:handle_z:travel_dir_x:travel_dir_y:travel_dir_z");
 
     // If required inputs are not bound, then do nothing
     if(!allSingletons(getScope(), REQUIRED_PARAMS))

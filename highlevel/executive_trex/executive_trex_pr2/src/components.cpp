@@ -25,13 +25,16 @@ namespace TREX{
     bool found_non_singleton(false);
     for(std::vector<ConstrainedVariableId>::const_iterator it = variables.begin(); it != variables.end(); ++it){
       ConstrainedVariableId var = *it;
-      if(!var->lastDomain().isSingleton() && variables_to_check.find(var->getName().toString()) != std::string::npos){
-	found_non_singleton = true;
-	debugMsg("trex:debug:propagation", var->toString() << " is not a singleton.");
+      if(!var->lastDomain().isSingleton()){
+	std::string with_delimiter = ":" + var->getName().toString();
+	if(variables_to_check.find(with_delimiter)  != std::string::npos){
+	  found_non_singleton = true;
+	  debugMsg("trex:debug:propagation", var->toLongString() << " is not a singleton.");
+	}
       }
     }
 
-    return found_non_singleton;
+    return !found_non_singleton;
   }
 
   tf::TransformListener& getTransformListener(){
