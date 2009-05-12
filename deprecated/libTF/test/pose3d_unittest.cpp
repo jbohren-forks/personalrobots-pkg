@@ -373,9 +373,9 @@ void testEulerConversion(double yaw, double pitch, double roll){
   Pose3D p;
   p.setFromEuler(0, 0, 0, yaw, pitch, roll);
   Euler e = p.getEuler();
-  EXPECT_FLOAT_EQ(e.yaw, yaw);
-  EXPECT_FLOAT_EQ(e.pitch, pitch);
-  EXPECT_FLOAT_EQ(e.roll, roll);
+  EXPECT_NEAR(e.yaw, yaw, 1e-15);
+  EXPECT_NEAR(e.pitch, pitch, 1e-15);
+  EXPECT_NEAR(e.roll, roll, 1e-15);
 }
 
 TEST(Pose3D, ToFromEulerConversions){
