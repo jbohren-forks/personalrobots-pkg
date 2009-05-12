@@ -125,6 +125,15 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
   std::string mapped_target_frame = remap(tf_prefix_, target_frame);
   std::string mapped_source_frame = remap(tf_prefix_, source_frame);
 
+  // Short circuit if zero length transform to allow lookups on non existant links
+  if (mapped_source_frame == mapped_target_frame)
+  {
+    transform.setIdentity();
+    transform.stamp_ = time;
+    transform.frame_id_ = target_frame;
+    return;
+  }    
+
   //  printf("Mapped Source: %s \nMapped Target: %s\n", mapped_source_frame.c_str(), mapped_target_frame.c_str());
   int retval = NO_ERROR;
   ros::Time temp_time;
@@ -201,6 +210,9 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
 
   ros::Time local_time = time;
 
+  //break out early if no op transform
+  if (mapped_source_frame == mapped_target_frame) return true;
+  
   if (local_time == ros::Time())
     if (NO_ERROR != getLatestCommonTime(mapped_source_frame, mapped_target_frame, local_time, NULL)) // set time if zero
       {

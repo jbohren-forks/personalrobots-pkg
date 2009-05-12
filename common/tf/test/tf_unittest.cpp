@@ -1271,6 +1271,11 @@ TEST(tf, remap)
 TEST(tf, canTransform)
 {
   Transformer mTR;
+
+  //confirm zero length list disconnected will return true
+  EXPECT_TRUE(mTR.canTransform("some_frame","some_frame", ros::Time()));
+  EXPECT_TRUE(mTR.canTransform("some_frame","some_frame", ros::Time::now()));
+
   //Create a two link tree between times 10 and 20
   for (int i = 10; i < 20; i++)
   {
@@ -1283,6 +1288,13 @@ TEST(tf, canTransform)
   ros::Time old_time = ros::Time().fromSec(5);
   ros::Time valid_time = ros::Time().fromSec(15);
   ros::Time future_time = ros::Time().fromSec(25);
+
+
+  //confirm zero length list disconnected will return true
+  EXPECT_TRUE(mTR.canTransform("some_frame","some_frame", zero_time));
+  EXPECT_TRUE(mTR.canTransform("some_frame","some_frame", old_time));
+  EXPECT_TRUE(mTR.canTransform("some_frame","some_frame", valid_time));
+  EXPECT_TRUE(mTR.canTransform("some_frame","some_frame", future_time));
 
   // Basic API Tests
 
@@ -1375,6 +1387,12 @@ TEST(tf, lookupTransform)
 
   try
   {
+    //confirm zero length list disconnected will return true
+    mTR.lookupTransform("some_frame","some_frame", zero_time, output);
+    mTR.lookupTransform("some_frame","some_frame", old_time, output);
+    mTR.lookupTransform("some_frame","some_frame", valid_time, output);
+    mTR.lookupTransform("some_frame","some_frame", future_time, output);
+
     //Valid data should pass
     mTR.lookupTransform("child", "parent", valid_time, output);
     mTR.lookupTransform("child", "other_child", valid_time, output);
