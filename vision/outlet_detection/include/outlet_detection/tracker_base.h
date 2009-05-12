@@ -74,12 +74,16 @@ protected:
 
   void saveImage();
 
+  // TODO: is this really not in roscpp somewhere?
+  bool waitForService(const std::string &service);
+
   ros::Node &node_;
   boost::thread active_thread_;
   
   prosilica_cam::PolledImage::Request req_;
   prosilica_cam::PolledImage::Response res_;
   std::string image_service_;
+  std::string cam_info_service_;
   image_msgs::Image& img_;
   image_msgs::CamInfo& cam_info_;
   image_msgs::CvBridge img_bridge_;

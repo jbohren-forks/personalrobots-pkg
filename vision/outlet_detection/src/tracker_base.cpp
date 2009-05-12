@@ -1,5 +1,6 @@
 #include "outlet_detection/tracker_base.h"
 #include <robot_msgs/PoseStamped.h>
+#include <prosilica_cam/CamInfo.h>
 #include <boost/bind.hpp>
 
 // TODO: don't use "high_def_frame" or handle the change of axes explicitly
@@ -19,6 +20,7 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
     save_count_(0), save_prefix_(prefix + "_failure")
 {
   node_.param("~image_service", image_service_, std::string("/prosilica/poll"));
+  node_.param("~cam_info_service", cam_info_service_, std::string("/prosilica/cam_info_service"));
 
   std::string policy;
   node_.param("~roi_policy", policy, std::string("FullResolution"));
@@ -150,9 +152,7 @@ void TrackerBase::spin()
       //cvWaitKey(0);
       usleep(100000);
     } else {
-      //ROS_WARN("Service call failed");
-      // TODO: wait for service to be available
-      usleep(100000);
+      waitForService(image_service_);
     }
   }
 }
@@ -177,8 +177,21 @@ void TrackerBase::setRoi(CvRect roi)
 
 void TrackerBase::setRoiToTargetFrame()
 {
-  // TODO: get K from camera
+  // Try to get calibration parameters
   if (!K_) {
+    if (waitForService(cam_info_service_)) {
+      prosilica_cam::CamInfo::Request cam_req;
+      prosilica_cam::CamInfo::Response cam_rsp;
+      if (ros::service::call(cam_info_service_, cam_req, cam_rsp)) {
+        cam_info_ = cam_rsp.cam_info;
+        processCamInfo();
+      }
+    }
+  }
+
+  // Otherwise fall back to using full frame
+  if (!K_) {
+    ROS_WARN("setRoiToTargetFrame: falling back to full frame");
     req_.region_x = req_.region_y = req_.width = req_.height = 0;
     return;
   }
@@ -219,4 +232,17 @@ void TrackerBase::saveImage()
   snprintf(filename, 32, "%s%03i.jpg", save_prefix_.c_str(), save_count_++);
   cvSaveImage(filename, img_bridge_.toIpl());
   ROS_INFO("Saved %s", filename);
+}
+
+bool TrackerBase::waitForService(const std::string &service)
+{
+  std::string host;
+  int port;
+  while (node_.ok() && !boost::this_thread::interruption_requested()) {
+    if (node_.lookupService(service, host, port))
+      return true;
+    usleep(100000);
+  }
+  
+  return false;
 }
