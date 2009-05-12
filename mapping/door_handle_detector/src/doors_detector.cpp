@@ -123,15 +123,15 @@ DoorDetector::DoorDetector (ros::Node* anode)
 bool
   DoorDetector::detectDoors(const door_msgs::Door& door, PointCloud pointcloud, std::vector<door_msgs::Door>& result) const
 {
-  ROS_INFO ("DoorDetector: Start detecting doors in a point cloud of size %i", (int)pointcloud.pts.size ());
+  ROS_INFO ("Start detecting doors in a point cloud of size %i", (int)pointcloud.pts.size ());
 
   // check if door message specifies hinge side and rot dir
   if (door.rot_dir == door_msgs::Door::UNKNOWN){
-    ROS_ERROR("DoorDetector: Door rotation direction not specified");
+    ROS_ERROR("Door rotation direction not specified");
     return false;
   }
   if (door.hinge == door_msgs::Door::UNKNOWN){
-    ROS_ERROR("DoorDetector: Door hinge side not specified");
+    ROS_ERROR("oor hinge side not specified");
     return false;
   }
 
@@ -141,21 +141,21 @@ bool
 
   // transform the PCD (Point Cloud Data) into the parameter_frame, and work there
   if (!tf_.canTransform(parameter_frame_, pointcloud.header.frame_id, pointcloud.header.stamp, timeout)){
-    ROS_ERROR ("DoorDetector: Could not transform point cloud from frame '%s' to frame '%s'.",
+    ROS_ERROR ("Could not transform point cloud from frame '%s' to frame '%s'.",
                pointcloud.header.frame_id.c_str (), parameter_frame_.c_str ());
     return false;
   }
   tf_.transformPointCloud (parameter_frame_, pointcloud, pointcloud);
-  ROS_INFO("DoorDetector: Pointcloud transformed to parameter frame");
+  ROS_INFO("Pointcloud transformed to parameter frame");
 
   // transform the door message into the parameter_frame, and work there
   Door door_tr;
   if (!transformTo(tf_, parameter_frame_, door, door_tr, fixed_frame_)){
-     ROS_ERROR ("DoorDetector: Could not transform door message from '%s' to '%s' at time %f.",
+     ROS_ERROR ("Could not transform door message from '%s' to '%s' at time %f.",
                 door.header.frame_id.c_str (), parameter_frame_.c_str (), door.header.stamp.toSec());
      return false;
    }
-   ROS_INFO("DoorDetector: door message transformed to parameter frame");
+   ROS_INFO("door message transformed to parameter frame");
 
   // Get the cloud viewpoint in the parameter frame
   PointStamped viewpoint_cloud_;
@@ -370,12 +370,13 @@ bool
                  cc, (int)pmap_.polygons[cc].points.size (), (int)inliers.size (), density, minimum_region_density_);
       continue;
     }
-
     goodness_factor[cc] *= (area / (door_frame * door_height));
 
-
     // ---[ Compute the distance from the door hinge to the prior of the door hinge
-    double door_distance = fmax (0.001, fmin(distToHinge(door_tr, min_p), distToHinge(door_tr, max_p)));
+    Point32 pnt1, pnt2;
+    cloud_geometry::statistics::getLargestXYPoints (pmap_.polygons[cc], pnt1, pnt2);
+    double door_distance = fmax (0.001, fmin(distToHinge(door_tr, pnt2), distToHinge(door_tr, pnt1)));
+    ROS_INFO("Dist from hinge is %f", door_distance);
     if (door_distance > max_dist_from_prior_){
       goodness_factor[cc] = 0;
       continue;
@@ -494,7 +495,7 @@ bool
 
     // check if door is latched
     double angle = getDoorAngle(result[nr_d]);
-    ROS_INFO("DoorsDetector: Door angle relative to frame is %f [deg]", angle*180.0/M_PI);
+    ROS_INFO("Door angle relative to frame is %f [deg]", angle*180.0/M_PI);
     if (fabs(angle) > 10.0*M_PI/180.0)
       result[nr_d].latch_state = Door::UNLATCHED;
     else
@@ -502,11 +503,10 @@ bool
 
     // transform door message
     if (!transformTo(tf_, fixed_frame_, result[nr_d], result[nr_d], fixed_frame_)){
-      ROS_ERROR ("DoorsDetector: could not tranform door from '%s' to '%s' at time %f",
+      ROS_ERROR ("could not tranform door from '%s' to '%s' at time %f",
 		 result[nr_d].header.frame_id.c_str(), fixed_frame_.c_str(), result[nr_d].header.stamp.toSec());
       return false;
     }
-    cout << "found door " << result[nr_d] << endl;
 
     nr_d++;
   }
@@ -598,7 +598,7 @@ double DoorDetector::distToHinge(const door_msgs::Door& door, robot_msgs::Point3
   else if (door.hinge == Door::HINGE_P2)
     dist = cloud_geometry::distances::pointToPointXYDistance(door.frame_p2, pnt);
   else
-    ROS_ERROR("DoorsDetector: Hinge side is not specified");
+    ROS_ERROR("Hinge side is not specified");
   return dist;
 }
 
