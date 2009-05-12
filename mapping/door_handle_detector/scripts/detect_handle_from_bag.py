@@ -52,17 +52,8 @@ from door_msgs.msg import *
 
 ## detect door
 ## @param cloud PointCloud
-def detect_door(filename):
+def detect_door(door_request, filename):
     print "reading file %s"%filename
-    d = Door()
-    d.frame_p1.x = 1.0
-    d.frame_p1.y = -0.5
-    d.frame_p2.x = 1.0
-    d.frame_p2.y = 0.5
-    d.hinge = d.HINGE_P2
-    d.rot_dir = d.ROT_DIR_COUNTERCLOCKWISE
-    d.header.frame_id = "base_footprint"
-
     rospy.wait_for_service('doors_detector_cloud')
     rospy.wait_for_service('handle_detector_cloud')
     s_door   = rospy.ServiceProxy('doors_detector_cloud', DoorsDetectorCloud)
@@ -89,9 +80,25 @@ def detect_door(filename):
                 resp_handle = s_handle(resp_door.doors[0], msg)
             except rospy.ServiceException, e:
                 print "Service call failed: %s"%e
-            print "handle detected at (%f, %f, %f)"%(resp_handle.doors[0].handle.x, resp_handle.doors[0].handle.y, resp_handle.doors[0].handle.z)
+            print "handle detected by laser at (%f, %f, %f)"%(resp_handle.doors[0].handle.x, resp_handle.doors[0].handle.y, resp_handle.doors[0].handle.z)
             return
     
+
+
+def detect_handle(door_request):
+    # block until the door_handle_detector service is available
+    print "Waiting for service...", rospy.resolve_name('door_handle_vision_detector')
+    rospy.wait_for_service('door_handle_vision_detector')
+    print "Service is available"
+    try:
+        find_handle = rospy.ServiceProxy('door_handle_vision_detector', DoorsDetector)
+        door_reply = find_handle(door_request)
+        print "Request finished"
+        return door_reply
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
+    print "handle detected by camera at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
+
 
 def usage():
     return "%s data.bag"%sys.argv[0]
@@ -100,7 +107,20 @@ def usage():
 if __name__ == "__main__":
     
     if len(sys.argv) == 2:
-        detect_door(sys.argv[1])
+        d = Door()
+        d.frame_p1.x = 1.0
+        d.frame_p1.y = -0.5
+        d.frame_p2.x = 1.0
+        d.frame_p2.y = 0.5
+        d.hinge = d.HINGE_P2
+        d.rot_dir = d.ROT_DIR_COUNTERCLOCKWISE
+        d.header.frame_id = "base_footprint"
+
+        detect_door(d, sys.argv[1])
+        detect_handle(d)
+
+
+
     else:
         print usage()
         sys.exit(1)

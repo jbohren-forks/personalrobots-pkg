@@ -1,0 +1,12 @@
+<launch>
+
+<!-- detectors -->
+  <include file="$(find door_handle_detector)/launch/door_handle_detector.xml" />
+
+<!-- play bag file -->
+  <node pkg="rosrecord" type="rosplay" args="-b 100  $(find door_handle_detector)/launch/full_cloud.bag " />
+
+<!-- run test  -->
+  <node pkg="door_handle_detector" type="detect_handle_from_bag.py" args="$(find door_handle_detector)/launch/full_cloud.bag" output="screen" />
+
+</launch>
