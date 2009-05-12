@@ -14,7 +14,7 @@
        xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
 
 
-  <include filename="$(find plug_in_gazebo)/plug_defs/plug_defs.xml" />
+  <include filename="$(find plug_in_gazebo)/plug_defs/outlet_defs.xml" />
 
   <map name="sensor" flag="gazebo">
     <verbatim key="mechanism_control_simulation">
