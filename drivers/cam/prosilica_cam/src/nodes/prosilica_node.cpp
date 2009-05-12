@@ -71,8 +71,6 @@ private:
   image_msgs::Image thumbnail_;
   int thumbnail_size_;
   
-  boost::mutex grab_mutex_;
-
   // calibration matrices
   double D_[5], K_[9], R_[9], P_[12];
   CvMat Dmat_, Kmat_, Rmat_, Pmat_;
@@ -304,15 +302,23 @@ public:
     if (mode_ != prosilica::Triggered)
       return false;
 
-    // TODO: need/don't need my own lock here?
-    boost::mutex::scoped_lock guard(grab_mutex_);
-    if (req.region_x || req.region_y || req.width || req.height) {
-      cam_->setRoi(req.region_x, req.region_y, req.width, req.height);
-    } else {
-      cam_->setRoiToWholeFrame();
-    }
+    tPvFrame* frame = NULL;
 
-    tPvFrame* frame = cam_->grab(req.timeout_ms);
+    try {
+      if (req.region_x || req.region_y || req.width || req.height) {
+        cam_->setRoi(req.region_x, req.region_y, req.width, req.height);
+      } else {
+        cam_->setRoiToWholeFrame();
+      }
+
+      frame = cam_->grab(req.timeout_ms);
+    }
+    catch (prosilica::ProsilicaException &e) {
+      ROS_ERROR("Prosilica exception: %s\n\tx = %d, y = %d, width = %d, height = %d",
+                e.what(), req.region_x, req.region_y, req.width, req.height);
+      return false;
+    }
+    
     if (!frame)
       return false;
 
