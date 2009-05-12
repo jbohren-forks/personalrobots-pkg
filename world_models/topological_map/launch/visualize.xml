@@ -2,7 +2,6 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <node pkg="rviz" type="rviz" respawn="false" />
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/maps/willow-full-0.025.pgm 0.025" respawn="false" />
     <node pkg="tf" type="transform_sender" args="0 0 0 0 0 0 map none 10"/>
     <node pkg="topological_map" type="visualize" args="-t $(find willow_maps)/willow.tmap" respawn="false" output="screen" />
