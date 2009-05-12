@@ -40,9 +40,10 @@
 #include <iostream>
 
 #include "ros/node.h"
+#include "ros/console.h"
 #include "CvStereoCamModel.h"
 #include "color_calib.h"
-#include <robot_msgs/PositionMeasurement.h>
+#include <people/PositionMeasurement.h>
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/DisparityInfo.h"
 #include "image_msgs/CamInfo.h"
@@ -93,7 +94,7 @@ public:
 
   People *people_;
   bool detect_faces_;
-  robot_msgs::PositionMeasurement init_pos_;
+  people::PositionMeasurement init_pos_;
   const char *haar_filename_;
 
   bool quit_;
@@ -149,10 +150,10 @@ public:
     sync_.ready();
 
     // Advertise a 3d position measurement for each head.
-    advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
+    advertise<people::PositionMeasurement>("people_tracker_measurements",1);
 
     if (!detect_faces_) {
-      subscribe<robot_msgs::PositionMeasurement>("people_tracker_filter",init_pos_, &StereoFaceColorTracker::init_pos_cb,1);
+      subscribe<people::PositionMeasurement>("people_tracker_filter",init_pos_, &StereoFaceColorTracker::init_pos_cb,1);
     }
 
   }
@@ -182,24 +183,18 @@ public:
   // Callback to (re)initialize the location of a face.
   void init_pos_cb() {
 
-    // Check that this is the right message, there are multiple people publishing "person_measurement"s.
-    //if (init_pos_.name != "track_starter_gui") {
-    //  return;
-    //}
     boost::mutex::scoped_lock lock(cv_mutex_);
 
     // Check that the timestamp is close to the current time. If not, just wait for another message.
     if ((init_pos_.header.stamp - last_image_time_) < ros::Duration().fromSec(-2.0)) {//2.0)) {
-      //printf("too delayed\n");
-      lock.unlock();
+      ROS_INFO_STREAM_NAMED("color_tracker","Initial position is too old.");
       return;
     }
 
     // Check that we have the camera parameters. Otherwise, we can't convert the position
     // to image coords anyway, so we might as well ignore this message.
     if (cam_model_ == NULL) {
-      printf("No cam model\n");
-      lock.unlock();
+      ROS_INFO_STREAM_NAMED("color_tracker","No camera model.");
       return;
     }
 
@@ -229,21 +224,17 @@ public:
       tf::PointMsgToTF(init_pos_.pos, pt);
       tf::Stamped<tf::Point> loc(pt, init_pos_.header.stamp, init_pos_.header.frame_id);
       try
-	{
-	  tf.transformPoint("stereo_optical_frame", init_pos_.header.stamp, loc, "odom_combined", loc); 
+      {
+	  tf.transformPoint(limage_.header.frame_id, init_pos_.header.stamp, loc, "odom_combined", loc); 
 	  // Converts things through the fixed frame into a new time. Use this if you want to go to a different time than loc already has.
-	} 
+      } 
       catch (tf::TransformException& ex)
-	{
-	}
+      {
+      }
 
-      //people_->setFaceCenter3D(-loc[1], -loc[2], loc[0], iperson);
       people_->setFaceCenter3D(loc[0],loc[1],loc[2],iperson);
-      printf("From filter: ");
-      people_->printFaceCenter3D(iperson);
-      //cvmSet(center_3d,0,0,-loc[1]);
-      //cvmSet(center_3d,0,1,-loc[2]);
-      //cvmSet(center_3d,0,2,loc[0]);      
+      ROS_INFO_STREAM_NAMED("color_tracker","From filter: " );
+      people_->printFaceCenter3D(iperson);     
       cvmSet(center_3d,0,0,loc[0]);
       cvmSet(center_3d,0,1,loc[1]);
       cvmSet(center_3d,0,2,loc[2]);
@@ -261,11 +252,11 @@ public:
     cvReleaseMat(&four_corners_2d);
     cvReleaseMat(&center_3d);
     cvReleaseMat(&size_3d);
-    lock.unlock();
   }
 
   /// The image callback when not all topics are sync'ed. Don't do anything, just wait for sync.
   void image_cb_timeout(ros::Time t) {
+    ROS_DEBUG_STREAM_NAMED("color_tracker","Message timeout");
   }
 
   /// The image callback. For each new image, copy it, perform face detection or track it, and draw the rectangles on the image.
@@ -280,14 +271,6 @@ public:
  
     last_image_time_ = limage_.header.stamp;
     
-    CvSize im_size;
-
-    if (limage_.encoding=="mono") {
-      printf("The left image is not a color image.\n");
-      lock.unlock();
-      return;
-    }
-
     // Set color calibration.
     bool do_calib = false;
     if (!calib_color_) {
@@ -306,14 +289,12 @@ public:
       }
     }
     else {
-      lock.unlock();
       return;
     }
     
+    // Set the disparity image.
     if (dbridge_.fromImage(dimage_)) {
       cv_image_disp_ = dbridge_.toIpl();
-      //cvSet(cv_image_disp_,cvScalar(400));
-      //cvDilate(cv_image_disp_, cv_image_disp_);
     }
     
 
@@ -329,7 +310,7 @@ public:
     double Tx = -rcinfo_.P[3]/Fx;
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/dispinfo_.dpp);
 
-    im_size = cvGetSize(cv_image_left_);
+    CvSize im_size = cvGetSize(cv_image_left_);
 
     // Kill anyone who hasn't received a filter update in a long time.
     people_->killIfFilterUpdateTimeout(limage_.header.stamp);
@@ -338,7 +319,6 @@ public:
 
     if (npeople==0) {
       // No people to track, try again later.
-      lock.unlock();
       return;
     }
 
@@ -348,7 +328,6 @@ public:
     bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, kernel_size_m, 0, NULL, NULL, end_points, tracked_each);//0.3
     if (!did_track) {
       // If tracking failed, just return.
-      lock.unlock();
       return;
     }
     // Copy endpoints and the new 2d bbox to the people structure.
@@ -357,17 +336,16 @@ public:
     CvMat *four_corners_2d = cvCreateMat(4,3,CV_32FC1); 
     CvMat *my_end_point = cvCreateMat(1,3,CV_32FC1);
     CvMat *my_size = cvCreateMat(1,2,CV_32FC1);
-    robot_msgs::PositionMeasurement pos;
+    people::PositionMeasurement pos;
 
     for (int iperson = 0; iperson < npeople; iperson++) {
       if (!tracked_each[iperson]) {
-	printf("\n\nPerson not tracked.\n\n");
 	continue;
       }
       people_->setFaceCenter3D(cvmGet(end_points,iperson,0),cvmGet(end_points,iperson,1),cvmGet(end_points,iperson,2),iperson);
       // Convert the new center and size to a 3d rect that is parallel with the camera plane.
       cvSet(my_size,cvScalar(people_->getFaceSize3D(iperson)));
-      printf("Face size before disp %f\n", people_->getFaceSize3D(iperson));
+      ROS_DEBUG_STREAM_NAMED("color_tracker","Face size before disp " << people_->getFaceSize3D(iperson));
       cvGetRow(end_points,my_end_point,iperson);
       people_->centerSizeToFourCorners(my_end_point,my_size, four_corners_3d);
       for (int icorner = 0; icorner < 4; icorner++) {
@@ -383,16 +361,10 @@ public:
 		  cvPoint(cvmGet(four_corners_2d,3,0),cvmGet(four_corners_2d,3,1)),
 		  cvScalar(255,255,255)); 
 
-      printf("From tracking: ");
-      people_->printFaceCenter3D(iperson);
-
       // Publish the 3d head center for this person.
       pos.header.stamp = limage_.header.stamp;
       pos.name = "stereo_face_color_tracker";
       pos.object_id = people_->getID(iperson);
-      //pos.pos.x = cvmGet(end_points,iperson,2);
-      //pos.pos.y = -1.0*cvmGet(end_points,iperson,0);
-      //pos.pos.z = -1.0*cvmGet(end_points,iperson,1);
       pos.pos.x = cvmGet(end_points,iperson,0);
       pos.pos.y = cvmGet(end_points,iperson,1);
       pos.pos.z = cvmGet(end_points,iperson,2);
@@ -414,13 +386,13 @@ public:
     gettimeofday(&timeofday,NULL);
     ros::Time endt = ros::Time().fromNSec(1e9*timeofday.tv_sec + 1e3*timeofday.tv_usec);
     ros::Duration diff = endt-startt;
-    printf("Start %f End %f Duration %f\n", startt.toSec(), endt.toSec(), diff.toSec());
+    ROS_DEBUG_STREAM_NAMED("color_tracker","Start " << startt.toSec() << " End " << endt.toSec() << " Duration " << diff.toSec() );
 
 #if  __FACE_COLOR_TRACKER_DISPLAY__
-    if (!cv_image_disp_out_) {
-      cv_image_disp_out_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
-    }
-    cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/dispinfo_.dpp);
+    //if (!cv_image_disp_out_) {
+    //  cv_image_disp_out_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+    //}
+    //cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/dispinfo_.dpp);
     cvShowImage("Face color tracker: Face Detection", cv_image_left_);
     //cvShowImage("Face color tracker: Disparity", cv_image_disp_out_);
 #endif

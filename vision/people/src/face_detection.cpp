@@ -43,7 +43,7 @@
 #include <boost/thread/mutex.hpp>
 
 #include "CvStereoCamModel.h"
-#include <robot_msgs/PositionMeasurement.h>
+#include <people/PositionMeasurement.h>
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/DisparityInfo.h"
 #include "image_msgs/CamInfo.h"
@@ -103,10 +103,10 @@ public:
   double *reliabilities_; /**< Reliability of the predictions. This should depend on the training file used. */
 
   bool external_init_; 
-  robot_msgs::PositionMeasurement pos_; /**< A person position update from the filter. */
+  people::PositionMeasurement pos_; /**< A person position update from the filter. */
   struct RestampedPositionMeasurement {
     ros::Time restamp;
-    robot_msgs::PositionMeasurement pos;
+    people::PositionMeasurement pos;
     double dist;
   };
   map<string, RestampedPositionMeasurement> pos_list_; /**< Queue of updated people positions from the filter. */
@@ -164,7 +164,7 @@ public:
     ROS_INFO_STREAM_NAMED("face_detector","Subscribed to images");
 
     // Advertise a position measure message.
-    advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
+    advertise<people::PositionMeasurement>("people_tracker_measurements",1);
 
     ROS_INFO_STREAM_NAMED("face_detector","Advertised people_tracker_measurements");
 
@@ -175,7 +175,7 @@ public:
     }
     // Subscribe to filter measurements.
     if (external_init_) {
-      subscribe<robot_msgs::PositionMeasurement>("people_tracker_filter",pos_,&FaceDetector::pos_cb,1);
+      subscribe<people::PositionMeasurement>("people_tracker_filter",pos_,&FaceDetector::pos_cb,1);
       ROS_INFO_STREAM_NAMED("face_detector","Subscribed to the person filter messages.");
     }
 
@@ -313,7 +313,7 @@ public:
 
       // Associate the found faces with previously seen faces, and publish all good face centers.
       Box2D3D *one_face;
-      robot_msgs::PositionMeasurement pos;
+      people::PositionMeasurement pos;
       for (uint iface = 0; iface < faces_vector.size(); iface++) {
 	one_face = &faces_vector[iface];
 	  
@@ -322,10 +322,7 @@ public:
 
 	  // Convert the face format to a PositionMeasurement msg.
 	  pos.header.stamp = limage_.header.stamp;
-	  pos.name = names_[0];
-	  //pos.pos.x = one_face->center3d.val[2]; 
-	  //pos.pos.y = -1.0*one_face->center3d.val[0];
-	  //pos.pos.z = -1.0*one_face->center3d.val[1]; 
+	  pos.name = names_[0]; 
 	  pos.pos.x = one_face->center3d.val[0]; 
 	  pos.pos.y = one_face->center3d.val[1];
 	  pos.pos.z = one_face->center3d.val[2]; 

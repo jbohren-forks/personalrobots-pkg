@@ -47,7 +47,7 @@
 #include "image_msgs/Image.h"
 #include "opencv_latest/CvBridge.h"
 #include "CvStereoCamModel.h"
-#include <robot_msgs/PositionMeasurement.h>
+#include <people/PositionMeasurement.h>
 #include "color_calib.h"
 #include "topic_synchronizer/topic_synchronizer.h"
 
@@ -114,7 +114,7 @@ public:
   IplImage *cv_disp_image_;
   IplImage *cv_disp_image_out_;
   boost::mutex cv_mutex_;
-  robot_msgs::PositionMeasurement pos;
+  people::PositionMeasurement pos;
   TopicSynchronizer<TrackStarterGUI> sync_;
   
 
@@ -140,7 +140,7 @@ public:
     uvd_ = cvCreateMat(1,3,CV_32FC1);
     xyz_ = cvCreateMat(1,3,CV_32FC1);
 
-    advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
+    advertise<people::PositionMeasurement>("people_tracker_measurements",1);
     std::list<std::string> left_list;
     //left_list.push_back(std::string("stereodcam/left/image_rect_color"));
     left_list.push_back(std::string("stereo/left/image_rect"));    
@@ -268,7 +268,7 @@ public:
 	  }
 	}
 	if (search) {  
-	  robot_msgs::PositionMeasurement pm;
+	  people::PositionMeasurement pm;
 	  pm.header.stamp = g_last_image_time;
 	  pm.name = "track_starter_gui";
 	  pm.object_id = "";//gxys.size();   

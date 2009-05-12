@@ -46,7 +46,7 @@
 
 #include "rosrecord/Player.h"
 
-#include "robot_msgs/PositionMeasurement.h"
+#include "people/PositionMeasurement.h"
 #include "laser_scan/LaserScan.h"
 #include "roslib/Header.h"
 
@@ -220,7 +220,7 @@ public:
 
   int feature_id_;
 
-  MessageNotifier<robot_msgs::PositionMeasurement>*  people_notifier_;
+  MessageNotifier<people::PositionMeasurement>*  people_notifier_;
   MessageNotifier<laser_scan::LaserScan>*  laser_notifier_;
 
   LegDetector() : 
@@ -241,10 +241,10 @@ public:
 
     // advertise topics
     advertise<robot_msgs::PointCloud>("kalman_filt_cloud",10);
-    advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
+    advertise<people::PositionMeasurement>("people_tracker_measurements",1);
 
     // subscribe to topics
-    people_notifier_ = new MessageNotifier<robot_msgs::PositionMeasurement>(&tfl_, this,  
+    people_notifier_ = new MessageNotifier<people::PositionMeasurement>(&tfl_, this,  
 									    boost::bind(&LegDetector::peopleCallback, this, _1), 
 									    "people_tracker_filter", fixed_frame, 10);
     laser_notifier_ = new MessageNotifier<laser_scan::LaserScan>(&tfl_, this,  
@@ -265,7 +265,7 @@ public:
 
   // Find the tracker that is closest to this person message
   // If a tracker was already assigned to a person, keep this assignment when the distance between them is not too large.
-  void peopleCallback(const MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& people_meas)
+  void peopleCallback(const MessageNotifier<people::PositionMeasurement>::MessagePtr& people_meas)
   {
     // If there are no legs, return.
     if (saved_features_.empty()) 
@@ -632,7 +632,7 @@ public:
       filter_visualize[i].z = est.pos_[2];
       weights[i] = *(float*)&(rgb[min(998, max(1, (int)trunc( reliability*999.0 )))]);
 
-      robot_msgs::PositionMeasurement pos;
+      people::PositionMeasurement pos;
       pos.header.stamp = (*sf_iter)->time_;
       pos.header.frame_id = fixed_frame;
       pos.name = "leg_detector";

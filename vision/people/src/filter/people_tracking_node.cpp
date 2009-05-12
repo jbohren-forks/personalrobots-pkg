@@ -39,7 +39,7 @@
 #include "tracker_kalman.h"
 #include "state_pos_vel.h"
 #include "rgb.h"
-#include <robot_msgs/PositionMeasurement.h>
+#include <people/PositionMeasurement.h>
 
 
 using namespace std;
@@ -83,14 +83,14 @@ namespace estimation
     param("~/follow_one_person", follow_one_person_, false);
 
     // advertise filter output
-    advertise<robot_msgs::PositionMeasurement>("people_tracker_filter",10);
+    advertise<people::PositionMeasurement>("people_tracker_filter",10);
 
     // advertise visualization
     advertise<robot_msgs::PointCloud>("people_tracker_filter_visualization",10);
     advertise<robot_msgs::PointCloud>("people_tracker_measurements_visualization",10);
 
     // register message sequencer
-    message_sequencer_ = new TimeSequencer<PositionMeasurement>(this, "people_tracker_measurements", 
+    message_sequencer_ = new TimeSequencer<people::PositionMeasurement>(this, "people_tracker_measurements", 
 								boost::bind(&PeopleTrackingNode::callbackRcv,  this, _1),
 								boost::bind(&PeopleTrackingNode::callbackDrop, this, _1),
 								ros::Duration().fromSec(sequencer_delay), 
@@ -115,7 +115,7 @@ namespace estimation
 
 
   // callback for messages
-  void PeopleTrackingNode::callbackRcv(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message)
+  void PeopleTrackingNode::callbackRcv(const boost::shared_ptr<people::PositionMeasurement>& message)
   {
     // get measurement in fixed frame
     Stamped<tf::Vector3> meas_rel, meas;
@@ -187,7 +187,7 @@ namespace estimation
 
 
   // callback for dropped messages
-  void PeopleTrackingNode::callbackDrop(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message)
+  void PeopleTrackingNode::callbackDrop(const boost::shared_ptr<people::PositionMeasurement>& message)
   {
     ROS_INFO("%s: DROPPED PACKAGE for %s from %s with delay %f !!!!!!!!!!!", 
 	     node_name_.c_str(), message->object_id.c_str(), message->name.c_str(), (ros::Time::now() - message->header.stamp).toSec());
@@ -219,7 +219,7 @@ namespace estimation
 	(*it)->updatePrediction(ros::Time::now().toSec() - sequencer_delay);
 
 	// publish filter result
-	PositionMeasurement est_pos;
+	people::PositionMeasurement est_pos;
 	(*it)->getEstimate(est_pos);
 	est_pos.header.frame_id = fixed_frame_;
 	publish("people_tracker_filter", est_pos);

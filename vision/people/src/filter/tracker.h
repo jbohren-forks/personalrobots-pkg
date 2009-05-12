@@ -38,7 +38,7 @@
 #define __TRACKER__
 
 #include "state_pos_vel.h"
-#include <robot_msgs/PositionMeasurement.h>
+#include <people/PositionMeasurement.h>
 #include <wrappers/matrix/matrix_wrapper.h>
 #include <string>
 
@@ -80,7 +80,7 @@ public:
 
   /// get filter posterior
   virtual void getEstimate(BFL::StatePosVel& est) const = 0;
-  virtual void getEstimate(robot_msgs::PositionMeasurement& est) const = 0;
+  virtual void getEstimate(people::PositionMeasurement& est) const = 0;
 
 private:
   std::string name_;

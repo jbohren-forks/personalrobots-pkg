@@ -52,7 +52,7 @@
 
 // messages
 #include <robot_msgs/PointCloud.h>
-#include <robot_msgs/PositionMeasurement.h>
+#include <people/PositionMeasurement.h>
 #include <message_sequencing/time_sequencer.h>
  
 // log files
@@ -72,10 +72,10 @@ public:
   virtual ~PeopleTrackingNode();
 
   /// callback for messages
-  void callbackRcv(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message);
+  void callbackRcv(const boost::shared_ptr<people::PositionMeasurement>& message);
 
   /// callback for dropped messages
-  void callbackDrop(const boost::shared_ptr<robot_msgs::PositionMeasurement>& message);
+  void callbackDrop(const boost::shared_ptr<people::PositionMeasurement>& message);
 
   /// tracker loop
   void spin();
@@ -85,7 +85,7 @@ private:
   std::string node_name_;
 
   /// message sequencer
-  message_sequencing::TimeSequencer<robot_msgs::PositionMeasurement>*  message_sequencer_;
+  message_sequencing::TimeSequencer<people::PositionMeasurement>*  message_sequencer_;
 
   /// trackers
   std::list<Tracker*> trackers_;

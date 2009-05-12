@@ -61,13 +61,13 @@ namespace estimation
     param("~/publish_rate", publish_rate_, 1.0);
 
     // advertise filter output
-    advertise<robot_msgs::PositionMeasurement>("people_tracker_filter",10);
+    advertise<people::PositionMeasurement>("people_tracker_filter",10);
 
     // advertise visualization
     advertise<robot_msgs::PointCloud>("goal_pos",10);
 
     // register message sequencer
-    people_notifier_ = new MessageNotifier<PositionMeasurement>(&robot_state_, this,  boost::bind(&PeopleFollower::callback, this, _1), 
+    people_notifier_ = new MessageNotifier<people::PositionMeasurement>(&robot_state_, this,  boost::bind(&PeopleFollower::callback, this, _1), 
                                                                "people_tracker_filter", fixed_frame_, 10);
     // advertise robot poses
     advertise<pr2_robot_actions::Pose2D>("/move_base_node/activate", 10);
@@ -101,7 +101,7 @@ namespace estimation
 
 
   // callback for messages
-  void PeopleFollower::callback(const MessageNotifier<PositionMeasurement>::MessagePtr& people_pos_msg)
+  void PeopleFollower::callback(const MessageNotifier<people::PositionMeasurement>::MessagePtr& people_pos_msg)
   {
     // get people pos in fixed frame
     Stamped<tf::Vector3> people_pos_rel, people_pos_fixed_frame;

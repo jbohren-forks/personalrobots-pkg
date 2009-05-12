@@ -136,7 +136,7 @@ namespace estimation
   };
 
 
-  void DetectorParticle::getEstimate(PositionMeasurement& est) const
+  void DetectorParticle::getEstimate(people::PositionMeasurement& est) const
   {
     Vector3 tmp = filter_->PostGet()->ExpectedValueGet();
 

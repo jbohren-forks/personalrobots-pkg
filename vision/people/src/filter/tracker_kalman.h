@@ -88,7 +88,7 @@ public:
 
   /// get filter posterior
   virtual void getEstimate(BFL::StatePosVel& est) const;
-  virtual void getEstimate(robot_msgs::PositionMeasurement& est) const;
+  virtual void getEstimate(people::PositionMeasurement& est) const;
 
 
 private:

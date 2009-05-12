@@ -40,7 +40,7 @@
 #include "ros/console.h"
 #include "CvStereoCamModel.h"
 #include "color_calib.h"
-#include <robot_msgs/PositionMeasurement.h>
+#include <people/PositionMeasurement.h>
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/DisparityInfo.h"
 #include "image_msgs/CamInfo.h"
@@ -85,7 +85,7 @@ namespace people
 
     bool on_robot_; // If true, use tf. Otherwise, ignore the frame.
     tf::TransformListener *tf_;
-    tf::MessageNotifier<robot_msgs::PositionMeasurement>* message_notifier_person_;
+    tf::MessageNotifier<people::PositionMeasurement>* message_notifier_person_;
     string fixed_frame_;
 
     ros::Time last_image_time_;
@@ -99,10 +99,10 @@ namespace people
     double kernel_size_m_;
     double object_radius_m_;
 
-    robot_msgs::PositionMeasurement pos_;
+    people::PositionMeasurement pos_;
     struct RestampedPositionMeasurement {
       ros::Time restamp;
-      robot_msgs::PositionMeasurement pos;
+      people::PositionMeasurement pos;
       CvHistogram *hist;
     };
     map<string, RestampedPositionMeasurement> current_pos_list_; /**< Queue of updated people positions from the filter. */
@@ -157,7 +157,7 @@ namespace people
       sync_ = new TopicSynchronizer<StereoColorTracker>(node_, this, &StereoColorTracker::imageCBAll, ros::Duration().fromSec(0.05), &StereoColorTracker::imageCBTimeout);
 
       // Advertise a 3d position measurement for each head.
-      node_->advertise<robot_msgs::PositionMeasurement>("people_tracker_measurements",1);
+      node_->advertise<people::PositionMeasurement>("people_tracker_measurements",1);
 
       if (do_display_) {
 	node_->advertise<image_msgs::ColoredLines>("lines_to_draw",1);
@@ -175,7 +175,7 @@ namespace people
       // Subscribe to the tracker measurements to initialize your position.
       if (on_robot_) {
 	tf_ = new tf::TransformListener(*node_); 
-	message_notifier_person_ = new tf::MessageNotifier<robot_msgs::PositionMeasurement> (tf_, node_, boost::bind(&StereoColorTracker::initPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
+	message_notifier_person_ = new tf::MessageNotifier<people::PositionMeasurement> (tf_, node_, boost::bind(&StereoColorTracker::initPosCB, this, _1), "people_tracker_measurements", fixed_frame_, 1);
       }
       else {
 	node_->subscribe("people_tracker_measurements",pos_,&StereoColorTracker::initPosCB2,this,1);
@@ -205,7 +205,7 @@ namespace people
 
     /////////////////////////////////////////////////////////////////////
     // Initialize the person's position.
-    void initPosCB(const tf::MessageNotifier<robot_msgs::PositionMeasurement>::MessagePtr& person_pos_msg)
+    void initPosCB(const tf::MessageNotifier<people::PositionMeasurement>::MessagePtr& person_pos_msg)
     {
       boost::mutex::scoped_lock pos_lock(pos_mutex_);
 
@@ -718,7 +718,7 @@ namespace people
 
     /////////////////////////////////////////////////////////////////////
     // Publish the 3D center point of the object and an optional 2D box for visualization.
-    void publishPoint(CvMat* curr_point, CvMat *uvds, robot_msgs::PositionMeasurement *pos ) {
+    void publishPoint(CvMat* curr_point, CvMat *uvds, people::PositionMeasurement *pos ) {
       // Publish the 3d head center for this person.
 
       // Update the restamped point.

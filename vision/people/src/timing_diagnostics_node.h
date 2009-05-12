@@ -44,7 +44,7 @@
 #include <ros/node.h>
 
 // messages
-#include <robot_msgs/PositionMeasurement.h>
+#include <people/PositionMeasurement.h>
  
 // log files
 #include <fstream>
@@ -67,7 +67,7 @@ public:
   void callbackFilter();
 
 private:
-  robot_msgs::PositionMeasurement measurement_, filter_;
+  people::PositionMeasurement measurement_, filter_;
 
   // file streams
   std::ofstream frontalface_file_, profileface_file_, legtracker_file_, filter_file_;
