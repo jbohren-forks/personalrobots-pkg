@@ -1026,7 +1026,7 @@ NavFn::savemap(const char *fname)
 {
   char fn[4096];
 
-  ROS_INFO("[NavFn] Saving costmap and start/goal points");
+  ROS_DEBUG("[NavFn] Saving costmap and start/goal points");
   // write start and goal points
   sprintf(fn,"%s.txt",fname);
   FILE *fp = fopen(fn,"w");
