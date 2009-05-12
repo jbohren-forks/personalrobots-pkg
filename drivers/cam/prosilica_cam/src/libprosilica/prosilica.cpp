@@ -39,6 +39,8 @@
 #include <cstring>
 #include <arpa/inet.h>
 
+#include <ros/console.h>
+
 #define CHECK_ERR(fnc, amsg)                               \
 do {                                                       \
   tPvErr err = fnc;                                        \
@@ -387,6 +389,10 @@ void Camera::frameDone(tPvFrame* frame)
     // TODO: thread safety OK here?
     boost::lock_guard<boost::mutex> guard(camPtr->frameMutex_);
     camPtr->userCallback_(frame);
+  }
+  else
+  {
+    ROS_WARN("Error in frame: %s\n", errorStrings[frame->Status]);
   }
   
   PvCaptureQueueFrame(camPtr->handle_, frame, Camera::frameDone);
