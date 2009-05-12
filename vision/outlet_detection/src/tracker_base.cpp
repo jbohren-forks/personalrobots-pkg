@@ -22,6 +22,7 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
 
   std::string policy;
   node_.param("~roi_policy", policy, std::string("FullResolution"));
+  //node_.param("~roi_policy", policy, std::string("LastImageLocation"));
   if (policy == std::string("FullResolution"))
     roi_policy_ = FullResolution;
   else if (policy == std::string("LastImageLocation"))
@@ -176,6 +177,12 @@ void TrackerBase::setRoi(CvRect roi)
 
 void TrackerBase::setRoiToTargetFrame()
 {
+  // TODO: get K from camera
+  if (!K_) {
+    req_.region_x = req_.region_y = req_.width = req_.height = 0;
+    return;
+  }
+  
   // Get target frame pose in high def frame
   robot_msgs::PointStamped origin, target_in_high_def;
   origin.header.frame_id = target_frame_id_;
