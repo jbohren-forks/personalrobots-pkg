@@ -7,7 +7,7 @@
 
 static inline CvRect resizeRect(CvRect rect, double alpha)
 {
-  return cvRect(rect.x + int(0.5*(1 - alpha)*rect.width), rect.y + int(0.5*(1 - alpha)*rect.height), 
+  return cvRect(rect.x + int(0.5*(1 - alpha)*rect.width), rect.y + int(0.5*(1 - alpha)*rect.height),
                 int(rect.width*alpha), int(rect.height*alpha));
 }
 
@@ -39,6 +39,8 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
     return;
   }
 
+  ROS_ERROR("ROI policy: %d", roi_policy_);
+
   req_.timeout_ms = 100; // TODO: magic number
 
   node_.param("~resize_factor_found", resize_factor_found_, 1.2);
@@ -46,7 +48,7 @@ TrackerBase::TrackerBase(ros::Node &node, std::string prefix)
   node_.param("~target_roi_size", target_roi_size_, 400);
 
   node_.param("~save_failures", save_failures_, 0);
-  
+
   node_.param("~display", display_, 1);
   if (display_) {
     cvNamedWindow(window_name_.c_str(), 0); // no autosize
@@ -60,7 +62,7 @@ TrackerBase::~TrackerBase()
     deactivate();
     active_thread_.join();
   }
-  
+
   cvReleaseMat(&K_);
 
   if (display_)
@@ -98,7 +100,7 @@ void TrackerBase::processImage()
 {
   tf::Transform transform;
   bool success = detectObject(transform);
-  
+
   if (success) {
     // Publish to topic
     robot_msgs::PoseStamped pose;
@@ -110,7 +112,7 @@ void TrackerBase::processImage()
     // Publish to TF
     tf_broadcaster_.sendTransform(transform, ros::Time::now(),
                                   object_frame_id_, "high_def_frame");
-    
+
     // Recenter ROI for next image request
     if (roi_policy_ == LastImageLocation) {
       CvRect object_roi = getBoundingBox();
@@ -124,7 +126,7 @@ void TrackerBase::processImage()
     // Save failure for debugging
     if (save_failures_)
       saveImage();
-    
+
     // Expand ROI for next image
     if (roi_policy_ == LastImageLocation) {
       CvRect object_roi = cvRect(req_.region_x, req_.region_y,
@@ -145,7 +147,7 @@ void TrackerBase::spin()
   {
     if (roi_policy_ == TargetFrame)
       setRoiToTargetFrame();
-    
+
     if (ros::service::call(image_service_, req_, res_)) {
       processCamInfo();
       processImage();
@@ -160,10 +162,12 @@ void TrackerBase::spin()
 CvRect TrackerBase::fitToFrame(CvRect roi)
 {
   CvRect fit;
-  fit.x = std::max(roi.x, 0);
-  fit.y = std::max(roi.y, 0);
-  fit.width = std::min(roi.x + roi.width, frame_w_) - fit.x;
-  fit.height = std::min(roi.y + roi.height, frame_h_) - fit.y;
+
+  fit.width = std::min(roi.width, frame_w_);
+  fit.height = std::min(roi.height, frame_h_);
+  fit.x = std::min(std::max(0, roi.x), frame_w_ - fit.width);
+  fit.y = std::min(std::max(0, roi.y), frame_h_ - fit.height);
+
   return fit;
 }
 
@@ -195,17 +199,25 @@ void TrackerBase::setRoiToTargetFrame()
     req_.region_x = req_.region_y = req_.width = req_.height = 0;
     return;
   }
-  
+
   // Get target frame pose in high def frame
   robot_msgs::PointStamped origin, target_in_high_def;
   origin.header.frame_id = target_frame_id_;
-  origin.header.stamp = img_.header.stamp;
-  tf_listener_.transformPoint("high_def_frame", origin, target_in_high_def);
+  origin.header.stamp = ros::Time::now();
+  try {
+    tf_listener_.canTransform("high_def_frame", origin.header.frame_id, origin.header.stamp, ros::Duration(0.5));
+    tf_listener_.transformPoint("high_def_frame", origin, target_in_high_def);
+  }
+  catch (tf::TransformException &ex)
+  {
+    ROS_WARN("Transform Exception %s", ex.what());
+    return;
+  }
 
   // Get intrinsic matrix of full frame by translating principal point
   K_->data.db[2] += req_.region_x;
   K_->data.db[5] += req_.region_y;
-  
+
   // Project to image coordinates
   CvPoint3D64f object_pt = cvPoint3D64f(-target_in_high_def.point.y,
                                         -target_in_high_def.point.z,
@@ -214,15 +226,16 @@ void TrackerBase::setRoiToTargetFrame()
   double zeros[] = {0, 0, 0};
   CvMat rotation_vector = cvMat(3, 1, CV_64FC1, zeros);
   CvMat translation_vector = cvMat(3, 1, CV_64FC1, zeros);
-  double point[2];
+  double point[2] = {0.0, 0.0};
   CvMat image_points = cvMat(1, 1, CV_64FC2, point);
   cvProjectPoints2(&object_points, &rotation_vector, &translation_vector,
                    K_, NULL, &image_points);
-  
+
   // Request ROI around projected point
   CvRect object_roi = cvRect(point[0] - target_roi_size_/2,
                              point[1] - target_roi_size_/2,
                              target_roi_size_, target_roi_size_);
+
   setRoi( fitToFrame(object_roi) );
 }
 
