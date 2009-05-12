@@ -731,7 +731,12 @@ private:
 
     bool fitSACLine(PointCloud& points, vector<int> indices, vector<double> &coeff, double dist_thresh, int min_pts, vector<Point32> &line_segment)
     {
+	ROS_INFO("Trying to fit a line in %d points", indices.size());
     	Point32 minP, maxP;
+
+	if ((int)indices.size()<min_pts) {
+		return false;
+	}
 
     	// Create and initialize the SAC model
     	sample_consensus::SACModelLine *model = new sample_consensus::SACModelLine ();
@@ -897,6 +902,7 @@ private:
         	ROS_ERROR ("Cannot find line in laser scan, aborting...");
         	return false;
         }
+
 
 //        showLineMarker(line_segment);
 
@@ -1199,51 +1205,65 @@ public:
 	void turnHead(float horizontalAngle, float verticalAngle)
 	{
 
-		if (horizontalAngle==0 && verticalAngle==0) return;
+	//	if (horizontalAngle==0 && verticalAngle==0) return;
 		PointStamped point;
 
 		point.header.stamp = ros::Time::now();
-		point.header.frame_id = "head_pan_link";
+		point.header.frame_id = "torso_lift_link";
 
 		point.point.x = 1;
 		point.point.y = tan(M_PI*horizontalAngle/180);
-		point.point.z = tan(M_PI*horizontalAngle/180)*tan(M_PI*verticalAngle/180);
+		point.point.z = tan(M_PI*verticalAngle/180);
 
 		publish(head_controller_ + "/head_track_point", point);
+		ros::Duration(1.0).sleep();
 	}
+
+
+	bool runDetectLoop(robot_msgs::PoseStamped& pose)
+	{
+		boost::unique_lock<boost::mutex> images_lock(cv_mutex);
+		for (int i=0;i<frames_number_;++i) {
+			ROS_INFO("OutletSpotter: waiting for images");
+			images_cv.wait(images_lock);
+
+			ROS_INFO("OutletSpotter: performing detection");
+			bool found = detectOutlet(pose);
+
+			if (display) {
+				cvShowImage("left", left);
+				//cvShowImage("right", right);
+				cvShowImage("contours", disp);
+				cvShowImage("disparity", disp_clone);
+			}
+
+			if (found) return true;;
+		}
+
+		return false;
+	}
+	
 
 
 	bool runOutletSpotter(const robot_msgs::PointStamped& request, robot_msgs::PoseStamped& pose)
 	{
 		bool found = false;
-        subscribeToData();
+		subscribeToData();
 
-        float directions[][2] = { {0,0}, {-5,0}, {10,0} };
+		float directions[][2] = { {0,0}, {-15,-10}, {0,-10}, {15,-10}, {15,0}, {0,0}, {-15,0,},{-15,10}, {0,10},{15,10} };
 
-        for (size_t k=0; k<sizeof(directions)/sizeof(directions[0]); ++k)
-        {
-        	turnHead(directions[k][0],directions[k][1]);
-        	boost::unique_lock<boost::mutex> images_lock(cv_mutex);
-        	for (int i=0;i<frames_number_;++i) {
-        		ROS_INFO("OutletSpotter: waiting for images");
-        		images_cv.wait(images_lock);
+		for (size_t k=0; k<sizeof(directions)/sizeof(directions[0]); ++k)
+		{
+			turnHead(directions[k][0],directions[k][1]);
+			found = runDetectLoop(pose);
 
-        		ROS_INFO("OutletSpotter: performing detection");
-        		found = detectOutlet(pose);
-        		if (found) break;
+			if (found) break;
 
-        		if (display) {
-        			cvShowImage("left", left);
-        			//cvShowImage("right", right);
-        			cvShowImage("contours", disp);
-        			cvShowImage("disparity", disp_clone);
-        		}
-        	}
-        }
+		}
 
-        unsubscribeFromData();
+		unsubscribeFromData();
 
-        showMarkers(pose);
+		showMarkers(pose);
 
 		return found;
 	}
