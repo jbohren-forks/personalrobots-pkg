@@ -44,6 +44,8 @@ class ActionWatcher:
     def __init__(self, name):
         self.name = name
         self.last_status = 0
+        self.goal_received = rospy.get_rostime()
+        self.last_preemption = roslib.rostime.Time(0.0)
 
         try:
             self.activate_class, _, __ = rostopic.get_topic_class(self.name + '/activate')
@@ -57,15 +59,24 @@ class ActionWatcher:
 
     def activate_cb(self, msg):
         print "- %s: new goal" % self.name
+        self.goal_received = rospy.get_rostime()
 
     def preempt_cb(self, msg):
-        print "- %s preempted" % self.name
+        now = rospy.get_rostime()
+        if (now - self.last_preemption).to_seconds() > 0.5:
+            print "- %s preempted" % self.name
+        self.last_preemption = now
 
     def feedback_cb(self, msg):
         if msg.status.value != self.last_status:
-            print "- %s: status changed %s -> %s" % (self.name,
-                                                     STATUS[self.last_status],
-                                                     STATUS[msg.status.value])
+            duration_str = ''
+            if msg.status.value == 1 and self.last_status != 0:
+                duration = rospy.get_rostime() - self.goal_received
+                duration_str = "(%.1f seconds)" % duration.to_seconds()
+            print "- %s: status changed %s -> %s  %s" % (self.name,
+                                                         STATUS[self.last_status],
+                                                         STATUS[msg.status.value],
+                                                         duration_str)
             self.last_status = msg.status.value
 
 def get_actions(topics):
