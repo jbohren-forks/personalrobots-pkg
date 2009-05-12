@@ -97,13 +97,14 @@ int
   robot_actions::ActionClient<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>
     move_base_local("move_base_local");
 
+  Duration(1.0).sleep();
 
   detect_outlet_coarse.preempt();
   tuck_arm.preempt();
   switch_controllers.preempt();
   move_base_local.preempt();
 
-  Duration(4.0).sleep();
+  Duration(1.0).sleep();
 
   // Takes down controllers that might already be up
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -111,6 +112,8 @@ int
   switchlist.stop_controllers.push_back("head_controller");
   switchlist.stop_controllers.push_back("laser_tilt_controller");
   if (switch_controllers.execute(switchlist, empty, switch_timeout) != robot_actions::SUCCESS) return -1;
+
+  Duration(2.0).sleep();
 
   // Tuck arms
   switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
@@ -122,10 +125,17 @@ int
 
   // Executes detect outlet (coarse)
   robot_msgs::PointStamped guess;
-  guess.header.frame_id = "odom_combined";  // Necessary?
+#if 0
+  guess.header.frame_id = "odom_combined";
   guess.point.x = 4.0;
   guess.point.y = 0.0;
   guess.point.z = 0.4;
+#else
+  guess.header.frame_id = "map";
+  guess.point.x = 9.899;
+  guess.point.y = 24.91;
+  guess.point.z = 0.4;
+#endif
   robot_msgs::PoseStamped coarse_outlet_pose_msg;
   int tries = 0;
   while (detect_outlet_coarse.execute(guess, coarse_outlet_pose_msg, Duration(300.0)) != robot_actions::SUCCESS)
