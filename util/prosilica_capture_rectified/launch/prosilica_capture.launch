@@ -1,0 +1,32 @@
+<launch>
+
+<include file="$(find pr2_alpha)/$(env ROBOT).machine" />
+
+<!-- Base Laser -->
+  <node machine="two" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
+    <param name="port" type="string" value="/dev/ttyACM0" />
+    <param name="frameid" type="string" value="base_laser" />
+    <param name="min_ang_degrees" type="double" value="-130.0" />
+    <param name="max_ang_degrees" type="double" value="130.0" />
+  </node>
+
+<!-- Filter for base laser shadowing/veiling -->
+<node pkg="laser_scan" type="scan_shadows_filter_node" respawn="true" machine="three" name="base_shadow_filter_non_preserve" >
+  <param name="scan_topic" value="base_scan" />
+  <param name="cloud_topic" value="base_scan_marking" />
+  <param name="laser_max_range" value="30.0" />
+</node>
+
+
+
+  <group ns="prosilica">
+    <include file="$(find prosilica_cam)/cam_settings.xml"/>
+    <param name="acquisition_mode" type="str" value="Triggered"/>
+  </group>
+  <node name="prosilica" pkg="prosilica_cam" type="prosilica_node" respawn="false" output="screen"/>
+  <node name="prosilica_capture" pkg="recognition_lambertian" type="prosilica_capture" respawn="false" output="screen">
+	<param name="display" value="true" />
+	<param name="capture_button" value="0" />
+	<param name="data_root" value="$(find recognition_lambertian)/outlets" />
+  </node>
+</launch>

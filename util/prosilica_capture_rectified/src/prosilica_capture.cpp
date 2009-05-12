@@ -110,8 +110,8 @@ public:
 		node.param("~capture_button", capture_button_, 0);
 		node.param("~display", display_, false);
 		node.param<string>("~data_root", data_root_, "./");
-		node.subscribe<robot_msgs::PointCloud,ProsilicaCapture>(base_laser_topic_, base_cloud_, &ProsilicaCapture::laser_callback, this, 1);
-		node.subscribe<joy::Joy,ProsilicaCapture>("joy", joy, &ProsilicaCapture::joy_callback, this, 1);
+		node.subscribe<robot_msgs::PointCloud,ProsilicaCapture>(base_laser_topic_, base_cloud_fetch_, &ProsilicaCapture::laser_callback, this, 1);
+		node.subscribe<joy::Joy,ProsilicaCapture>("/joy", joy, &ProsilicaCapture::joy_callback, this, 1);
 
 		if (display_) {
 			cvNamedWindow(windowName, 0);
@@ -164,6 +164,7 @@ public:
 		while (capture_cloud_point_) {
 			cloud_point_cv.wait(lock);
 		}
+		ROS_INFO("Got %d points",base_cloud_.pts.size());
 	}
 
 	void capture()
@@ -178,12 +179,11 @@ public:
 
 	void joy_callback()
 	{
-		joy.lock();
+		printf("Joystick callback\n");
 		if (capture_button_<(int)joy.buttons.size() && joy.buttons[capture_button_]) {
 			capture();
 			saveData();
 		}
-		joy.unlock();
 	}
 
 
@@ -276,7 +276,7 @@ public:
 //		printf("(%f,%f,%f)\n", start_point.x,start_point.y,start_point.z);
 
 		ROS_INFO("Filtering point cloud");
-		PointCloud wall_cloud = getWallCloud(base_cloud_,start_point,0.2);
+		PointCloud wall_cloud = getWallCloud(base_cloud_,start_point,0.4);
 
 		// fit a line in the outlet cloud
 		vector<int> indices(wall_cloud.pts.size());
@@ -315,20 +315,30 @@ public:
 		tf_->transformPoint("high_def_optical_frame", base_p1, prosilica_p1);
 		tf_->transformPoint("high_def_optical_frame", base_p2, prosilica_p2);
 
+
+		float length = 0.2;
+		double distance = sqrt(squaredPointDistance(line_segment[0],line_segment[1]));
+		float alpha = (distance-length)/(2*distance);
+		Vector3f p1= Vector3f(prosilica_p1.point.x,prosilica_p1.point.y,prosilica_p1.point.z);
+		Vector3f p2 = Vector3f(prosilica_p2.point.x,prosilica_p2.point.y,prosilica_p2.point.z);
+
+
+		Vector3f tmp;
+		tmp = (1-alpha)*p1+alpha*p2;
+		p2 = (1-alpha)*p2+alpha*p1;
+		p1 = tmp;
+
 		// project the points into the image plane
-		Vector3f p1 = Vector3f(prosilica_p1.point.x,prosilica_p1.point.y,prosilica_p1.point.z);
 		p1 = K*p1;
 		p1 /= p1.z();
 
 
-		Vector3f p2 = Vector3f(prosilica_p2.point.x,prosilica_p2.point.y,prosilica_p2.point.z);
 		p2 = K*p2;
 		p2 /= p2.z();
 
 		// find another 2 points higher up on the wall
-		double distance = sqrt(squaredPointDistance(line_segment[0],line_segment[1]));
-		base_p1.point.z += distance;
-		base_p2.point.z += distance;
+		base_p1.point.z -= length;
+		base_p2.point.z -= length;
 
 		// need the points in the prosilica frame
 		tf_->transformPoint("high_def_optical_frame", base_p1, prosilica_p1);
@@ -343,21 +353,25 @@ public:
 		p4 = K*p4;
 		p4 /= p4.z();
 
+		tmp = (1-alpha)*p3+alpha*p4;
+		p4 = (1-alpha)*p4+alpha*p3;
+		p3 = tmp;
+		
 		if (rectified) {
 			cvReleaseImage(&rectified);
 		}
 		rectified = cvCloneImage(image);
 		CvPoint2D32f objPts[4], imgPts[4];
 
-		objPts[0].x = 1000; objPts[0].y = 500;
+		objPts[0].x = 500; objPts[0].y = 500;
 		objPts[1].x = 1500; objPts[1].y = 500;
-		objPts[2].x = 1000; objPts[2].y = 1000;
-		objPts[3].x = 1500; objPts[3].y = 1000;
+		objPts[2].x = 500; objPts[2].y = 1500;
+		objPts[3].x = 1500; objPts[3].y = 1500;
 
-		imgPts[0].x = p4.x(); imgPts[0].y = p4.y();
-		imgPts[1].x = p3.x(); imgPts[1].y = p3.y();
-		imgPts[2].x = p2.x(); imgPts[2].y = p2.y();
-		imgPts[3].x = p1.x(); imgPts[3].y = p1.y();
+		imgPts[0].x = p2.x(); imgPts[0].y = p2.y();
+		imgPts[1].x = p1.x(); imgPts[1].y = p1.y();
+		imgPts[2].x = p4.x(); imgPts[2].y = p4.y();
+		imgPts[3].x = p3.x(); imgPts[3].y = p3.y();
 
 		// compute perspective transformation
 		CvMat *H = cvCreateMat(3,3,CV_32F);
@@ -371,6 +385,16 @@ public:
 			cvShowImage(rectifiedWindowName, rectified);
 		}
 	}
+
+
+	void save_intrinsics(char* filename)
+	{
+		ofstream fout(filename);
+		fout.setf(ios_base::scientific);
+		fout << K << endl;
+		fout.close();
+	}
+
 
 	void saveData()
 	{
@@ -386,9 +410,12 @@ public:
 			cvSaveImage( filename, rectified );
 			ROS_INFO("Saved image %s", filename);
 
-			sprintf(filename, "%s/base_laser%04u.jpg", data_root_.c_str(), index);
+			sprintf(filename, "%s/base_laser%04u.pcd", data_root_.c_str(), index);
 			cloud_io::savePCDFile (filename, base_cloud_, true);
 			ROS_INFO("Saved base point cloud %s", filename);
+			
+			sprintf(filename, "%s/intrinsics%04u.dat", data_root_.c_str(), index);
+			save_intrinsics(filename);
 			index++;
 		}
 

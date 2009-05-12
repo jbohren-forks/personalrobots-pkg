@@ -1,0 +1,28 @@
+<package>
+  <description>
+     A node for capturing outlet images with the prosilica camera and rectifying the homography based on the base laser reading.
+  </description>
+
+  <author>Marius Muja</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <review status="experimental" notes="beta"/>
+
+  <depend package="roscpp" />
+  <depend package="robot_msgs" />
+  <depend package="std_msgs" />
+  <depend package="opencv_latest"/>
+  <depend package="image_msgs"/>
+  <depend package="tf"/>
+  <depend package="prosilica_cam"/>
+  <depend package="eigen"/>
+  <depend package="point_cloud_mapping"/>
+  <depend package="joy"/>
+
+
+ <export>
+    <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp -I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
+ </export>
+
+
+</package>
