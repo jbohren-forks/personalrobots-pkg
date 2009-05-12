@@ -1,12 +1,14 @@
 <launch>
 
+<param name="use_sim_time" type="bool" value="True" />
+
 <!-- detectors -->
   <include file="$(find door_handle_detector)/launch/door_handle_detector.xml" />
 
 <!-- play bag file -->
-  <node pkg="rosrecord" type="rosplay" args="-b 100  $(find door_handle_detector)/launch/full_cloud.bag " />
+  <node pkg="rosrecord" type="rosplay" args="-b 100  $(find door_handle_detector)/launch/full_cloud_laser.bag " />
 
 <!-- run test  -->
-  <node pkg="door_handle_detector" type="detect_handle_from_bag.py" args="$(find door_handle_detector)/launch/full_cloud.bag" output="screen" />
+  <node pkg="door_handle_detector" type="detect_handle_from_bag.py" args="" output="screen" />
 
 </launch>

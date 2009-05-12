@@ -105,7 +105,7 @@ DoorDetector::DoorDetector (ros::Node* anode)
 
 
   // advertise services
-  node_->param ("~input_cloud_topic", input_cloud_topic_, string ("/snapshot_cloud"));
+  node_->param ("~input_cloud_topic", input_cloud_topic_, string ("/full_cloud"));
   node_->advertiseService ("doors_detector", &DoorDetector::detectDoorSrv, this);
   node_->advertiseService ("doors_detector_cloud", &DoorDetector::detectDoorCloudSrv, this);
   node_->advertise<visualization_msgs::Marker> ("visualization_marker", 100);
@@ -553,6 +553,16 @@ bool
 bool  DoorDetector::detectDoorSrv (door_handle_detector::DoorsDetector::Request &req,
                                    door_handle_detector::DoorsDetector::Response &resp)
 {
+  ROS_INFO("Transforming door message to fixed frame");
+  Door door_tr;
+  if (!transformTo(tf_, fixed_frame_, req.door, door_tr, fixed_frame_)){
+    ROS_ERROR ("Could not transform door message from '%s' to '%s' at time %f.",
+               req.door.header.frame_id.c_str (), fixed_frame_.c_str (), req.door.header.stamp.toSec());
+    return false;
+  }
+
+
+  ROS_INFO("Door detection waiting for pointcloud to come in on topic %s", input_cloud_topic_.c_str());
   // receive a new laser scan
   num_clouds_received_ = 0;
   tf::MessageNotifier<robot_msgs::PointCloud>* message_notifier =
@@ -563,7 +573,7 @@ bool  DoorDetector::detectDoorSrv (door_handle_detector::DoorsDetector::Request 
     tictoc.sleep ();
   delete message_notifier;
 
-  return detectDoors(req.door, pointcloud_, resp.doors);
+  return detectDoors(door_tr, pointcloud_, resp.doors);
 }
 
 

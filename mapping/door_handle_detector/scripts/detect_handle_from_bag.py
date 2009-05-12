@@ -50,42 +50,41 @@ from door_handle_detector.srv import *
 from door_msgs.msg import *
 
 
-## detect door
-## @param cloud PointCloud
-def detect_door(door_request, filename):
-    print "reading file %s"%filename
-    rospy.wait_for_service('doors_detector_cloud')
-    rospy.wait_for_service('handle_detector_cloud')
-    s_door   = rospy.ServiceProxy('doors_detector_cloud', DoorsDetectorCloud)
-    s_handle = rospy.ServiceProxy('handle_detector_cloud', DoorsDetectorCloud)
-    print "created service proxy"
-    for topic, msg, t in logplayer(filename, raw=True):
-        if topic == '/full_cloud':
-            print "found full cloud"
-            datatype = msg[0]
-            pytype = roslib.scriptutil.get_message_class(datatype)
-            if pytype is None:
-                raise ROSRecordException("cannot deserialize messages of type [%s]: cannot locate message class"%datatype)
-            message_data = msg[1]
-            msg = pytype()
-            msg.deserialize(message_data)
-            d.header.stamp = msg.header.stamp
-            try:
-                resp_door = s_door(d, msg)
-            except rospy.ServiceException, e:
-                print "Service call failed: %s"%e
-            print "door detected"
 
-            try:
-                resp_handle = s_handle(resp_door.doors[0], msg)
-            except rospy.ServiceException, e:
-                print "Service call failed: %s"%e
-            print "handle detected by laser at (%f, %f, %f)"%(resp_handle.doors[0].handle.x, resp_handle.doors[0].handle.y, resp_handle.doors[0].handle.z)
-            return
-    
+def detect_door_laser(door_request):
+    # block until the door_handle_detector service is available
+    print "Waiting for service...", rospy.resolve_name('doors_detector')
+    rospy.wait_for_service('doors_detector')
+    try:
+        print "Getting service proxy"
+        find_door_laser = rospy.ServiceProxy('doors_detector', DoorsDetector)
+        print "Calling service"
+        door_reply = find_door_laser(door_request)
+        print "Request finished"
+        return door_reply
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
 
 
-def detect_handle(door_request):
+
+def detect_handle_laser(door_request):
+    # block until the door_handle_detector service is available
+    print "Waiting for service...", rospy.resolve_name('handle_detector')
+    rospy.wait_for_service('doors_detector')
+    print "Service is available"
+    try:
+        find_handle_laser = rospy.ServiceProxy('handle_detector', DoorsDetector)
+        door_reply = find_handle_laser(door_request)
+        print "Request finished"
+        return door_reply
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
+    print "handle detected by camera at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
+
+
+
+
+def detect_handle_camera(door_request):
     # block until the door_handle_detector service is available
     print "Waiting for service...", rospy.resolve_name('door_handle_vision_detector')
     rospy.wait_for_service('door_handle_vision_detector')
@@ -100,28 +99,21 @@ def detect_handle(door_request):
     print "handle detected by camera at (%f, %f, %f)"%(door_reply.doors[0].handle.x, door_reply.doors[0].handle.y, door_reply.doors[0].handle.z)
 
 
-def usage():
-    return "%s data.bag"%sys.argv[0]
 
 
 if __name__ == "__main__":
     
-    if len(sys.argv) == 2:
-        d = Door()
-        d.frame_p1.x = 1.0
-        d.frame_p1.y = -0.5
-        d.frame_p2.x = 1.0
-        d.frame_p2.y = 0.5
-        d.hinge = d.HINGE_P2
-        d.rot_dir = d.ROT_DIR_COUNTERCLOCKWISE
-        d.header.frame_id = "base_footprint"
-
-        detect_door(d, sys.argv[1])
-        detect_handle(d)
-
-
-
-    else:
-        print usage()
-        sys.exit(1)
+    d = Door()
+    d.frame_p1.x = 1.0
+    d.frame_p1.y = -0.5
+    d.frame_p2.x = 1.0
+    d.frame_p2.y = 0.5
+    d.hinge = d.HINGE_P2
+    d.rot_dir = d.ROT_DIR_COUNTERCLOCKWISE
+    d.header.frame_id = "base_footprint"
+    d.header.stamp = rospy.get_rostime()
+    print "time ",d.header.stamp
+    
+    resp = detect_door_laser(d)
+#    resp = detect_handle_laser(resp.doors[0])
 
