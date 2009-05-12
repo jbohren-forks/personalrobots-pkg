@@ -346,8 +346,8 @@ namespace nav {
   }
 
   void MoveBase::resetCostmaps(){
-    planner_costmap_ros_->resetMapOutsideWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
-    controller_costmap_ros_->resetMapOutsideWindow(circumscribed_radius_ * 2, circumscribed_radius_ * 2);
+    planner_costmap_ros_->resetMapOutsideWindow(circumscribed_radius_ * 4, circumscribed_radius_ * 4);
+    controller_costmap_ros_->resetMapOutsideWindow(circumscribed_radius_ * 4, circumscribed_radius_ * 4);
   }
 
 };
@@ -362,6 +362,9 @@ int main(int argc, char** argv){
   runner.connect<robot_msgs::PoseStamped, nav_robot_actions::MoveBaseState, robot_msgs::PoseStamped>(move_base);
   runner.run();
 
+  //ros::MultiThreadedSpinner s;
+  //ros::spin(s);
+  
   ros_node.spin();
 
   return(0);
