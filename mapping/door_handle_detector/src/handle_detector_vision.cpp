@@ -595,7 +595,7 @@ private:
             return false;
         }
 
-        ROS_INFO("Handle at: (%d,%d,%d,%d)", r.x,r.y,r.width, r.height);
+        ROS_DEBUG("Handle at: (%d,%d,%d,%d)", r.x,r.y,r.width, r.height);
 
 
         return true;
