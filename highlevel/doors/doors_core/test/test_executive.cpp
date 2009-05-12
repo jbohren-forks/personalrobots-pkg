@@ -130,10 +130,11 @@ int
     switchlist.start_controllers.clear();  switchlist.stop_controllers.clear();
     switchlist.start_controllers.push_back("head_controller");
     if (switch_controllers.execute(switchlist, empty, timeout_short) != robot_actions::SUCCESS) return -1;
-    while (detect_handle.execute(door, tmp_door, timeout_long) != robot_actions::SUCCESS);
+    while (detect_handle.execute(door, tmp_door, timeout_long) == robot_actions::SUCCESS);
     door = tmp_door;
     cout << "detect handle " << door << endl;
   }
+  return 0;
 
   // approach door
   robot_msgs::PoseStamped goal_msg;

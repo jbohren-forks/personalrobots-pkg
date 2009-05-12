@@ -56,7 +56,9 @@ public:
   virtual robot_actions::ResultStatus execute(const door_msgs::Door& goal, door_msgs::Door& feedback);
 
 private:
+  void laserDetectionFunction(const door_msgs::Door& door_in, door_msgs::Door* door_out, bool* success);
   bool laserDetection(const door_msgs::Door& door_in, door_msgs::Door& door_out);
+  void cameraDetectionFunction(const door_msgs::Door& door, door_msgs::Door* door_out, bool* success);
   bool cameraDetection(const door_msgs::Door& door, door_msgs::Door& door_out);
 
   ros::Node& node_;
